@@ -311,6 +311,14 @@ def strategic(n_windows: int, *, route_labels_available: bool = False) -> dict:
                    "is impossible. A strategic read needs AlpaSim/NuRec map.xodr "
                    "or an external corpus — a WORK ITEM, not a pass."),
         "n": int(n_windows),
+        "how_to_populate": (
+            "the instrument now EXISTS: map-derived option sets from "
+            "stack/experiments/nurec-gsplat/strategic_gt.py, scored by "
+            "taniteval.strategic_optionset.strategic_family. What is still missing on THIS "
+            "stream is a substrate — the IDM would have to be driven on a NuRec scene that "
+            "ships map.xodr. ⛔ Do NOT substitute an ego-yaw route label: it cannot tell "
+            "whether the map admitted a choice, which is how route_head_eq_logged reached "
+            "1.0000 on a single-option clip."),
     }
 
 

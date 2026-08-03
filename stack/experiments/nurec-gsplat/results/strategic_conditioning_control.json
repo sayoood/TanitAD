@@ -1,0 +1,334 @@
+{
+ "tool": "strategic_conditioning_control.py",
+ "evidence_class": "MEASURED",
+ "scene": "7c72937c-c620-4776-9555-d57222c0081f",
+ "pose_offset": -1,
+ "rollout_dir": "G:\\Meine Ablage\\SayBouBase\\raw\\Projects\\TanitAD\\stack\\experiments\\alpasim-gsplat\\results\\scene2-realclose\\rollouts",
+ "WHAT_THIS_CONTROLS_FOR": "discrimination_control proves the LABELS have entropy (its ORACLE is built by copying route_gt_class — a tautology). It cannot tell whether an ARM's score is skill. This control scores the FED NAV COMMAND with no model at all, and a CONSTANT predictor, on the identical instances.",
+ "NAV_ECHO": {
+  "flagship-v1_empty": {
+   "head_is_deterministic_function_of_nav": true,
+   "nav_to_head_counts": {
+    "0": {
+     "1": 81
+    },
+    "1": {
+     "0": 369
+    }
+   },
+   "n_ticks": 450,
+   "verdict": "⛔ CIRCULAR — the route head reproduces the nav command the harness FEEDS the policy (closedloop_drive.py:330 derives nav from the LOGGED GT track). Any strategic accuracy from this head measures the conditioning input, not a decision. DO NOT QUOTE.",
+   "logit_key": "s_route_logits"
+  },
+  "flagship-v1_objects": {
+   "head_is_deterministic_function_of_nav": true,
+   "nav_to_head_counts": {
+    "0": {
+     "1": 81
+    },
+    "1": {
+     "0": 369
+    }
+   },
+   "n_ticks": 450,
+   "verdict": "⛔ CIRCULAR — the route head reproduces the nav command the harness FEEDS the policy (closedloop_drive.py:330 derives nav from the LOGGED GT track). Any strategic accuracy from this head measures the conditioning input, not a decision. DO NOT QUOTE.",
+   "logit_key": "s_route_logits"
+  },
+  "refc-base_empty": {
+   "head_is_deterministic_function_of_nav": false,
+   "nav_to_head_counts": {
+    "0": {
+     "0": 44,
+     "1": 35
+    },
+    "1": {
+     "1": 35,
+     "2": 281,
+     "0": 55
+    }
+   },
+   "n_ticks": 450,
+   "verdict": "not an echo — the head is not a function of nav on these ticks",
+   "logit_key": "route_logits"
+  },
+  "refc-base_objects": {
+   "head_is_deterministic_function_of_nav": false,
+   "nav_to_head_counts": {
+    "0": {
+     "2": 5,
+     "0": 36,
+     "1": 38
+    },
+    "1": {
+     "1": 97,
+     "2": 200,
+     "0": 74
+    }
+   },
+   "n_ticks": 450,
+   "verdict": "not an echo — the head is not a function of nav on these ticks",
+   "logit_key": "route_logits"
+  }
+ },
+ "ARMS": {
+  "flagship-v1_empty": {
+   "route_head": {
+    "what": "the ARM",
+    "route_class_accuracy": 1.0,
+    "confusion_gt_x_pred": {
+     "LEFT": {
+      "LEFT": 5
+     },
+     "STRAIGHT": {
+      "STRAIGHT": 1
+     }
+    },
+    "n_decision_instances_scored": 6,
+    "n_events_scoreable": 2,
+    "n_scenes_scored": 1,
+    "status": "OK"
+   },
+   "nav_echo": {
+    "what": "the FED NAV COMMAND, no model",
+    "route_class_accuracy": 1.0,
+    "confusion_gt_x_pred": {
+     "LEFT": {
+      "LEFT": 5
+     },
+     "STRAIGHT": {
+      "STRAIGHT": 1
+     }
+    },
+    "n_decision_instances_scored": 6,
+    "n_events_scoreable": 2,
+    "n_scenes_scored": 1,
+    "status": "OK"
+   },
+   "constant_left": {
+    "what": "CONSTANT_LEFT, no model, no input",
+    "route_class_accuracy": 0.8333,
+    "confusion_gt_x_pred": {
+     "LEFT": {
+      "LEFT": 5
+     },
+     "STRAIGHT": {
+      "LEFT": 1
+     }
+    },
+    "n_decision_instances_scored": 6,
+    "n_events_scoreable": 2,
+    "n_scenes_scored": 1,
+    "status": "OK"
+   },
+   "ARM_IS_INDISTINGUISHABLE_FROM_ITS_OWN_CONDITIONING": true
+  },
+  "flagship-v1_objects": {
+   "route_head": {
+    "what": "the ARM",
+    "route_class_accuracy": 1.0,
+    "confusion_gt_x_pred": {
+     "LEFT": {
+      "LEFT": 5
+     },
+     "STRAIGHT": {
+      "STRAIGHT": 1
+     }
+    },
+    "n_decision_instances_scored": 6,
+    "n_events_scoreable": 2,
+    "n_scenes_scored": 1,
+    "status": "OK"
+   },
+   "nav_echo": {
+    "what": "the FED NAV COMMAND, no model",
+    "route_class_accuracy": 1.0,
+    "confusion_gt_x_pred": {
+     "LEFT": {
+      "LEFT": 5
+     },
+     "STRAIGHT": {
+      "STRAIGHT": 1
+     }
+    },
+    "n_decision_instances_scored": 6,
+    "n_events_scoreable": 2,
+    "n_scenes_scored": 1,
+    "status": "OK"
+   },
+   "constant_left": {
+    "what": "CONSTANT_LEFT, no model, no input",
+    "route_class_accuracy": 0.8333,
+    "confusion_gt_x_pred": {
+     "LEFT": {
+      "LEFT": 5
+     },
+     "STRAIGHT": {
+      "LEFT": 1
+     }
+    },
+    "n_decision_instances_scored": 6,
+    "n_events_scoreable": 2,
+    "n_scenes_scored": 1,
+    "status": "OK"
+   },
+   "ARM_IS_INDISTINGUISHABLE_FROM_ITS_OWN_CONDITIONING": true
+  },
+  "refc-base_empty": {
+   "route_head": {
+    "what": "the ARM",
+    "route_class_accuracy": 0.0,
+    "confusion_gt_x_pred": {
+     "LEFT": {
+      "RIGHT": 5
+     },
+     "STRAIGHT": {
+      "none": 1
+     }
+    },
+    "n_decision_instances_scored": 6,
+    "n_events_scoreable": 2,
+    "n_scenes_scored": 1,
+    "status": "OK"
+   },
+   "nav_echo": {
+    "what": "the FED NAV COMMAND, no model",
+    "route_class_accuracy": 0.8333,
+    "confusion_gt_x_pred": {
+     "LEFT": {
+      "LEFT": 5
+     },
+     "STRAIGHT": {
+      "none": 1
+     }
+    },
+    "n_decision_instances_scored": 6,
+    "n_events_scoreable": 2,
+    "n_scenes_scored": 1,
+    "status": "OK"
+   },
+   "constant_left": {
+    "what": "CONSTANT_LEFT, no model, no input",
+    "route_class_accuracy": 0.8333,
+    "confusion_gt_x_pred": {
+     "LEFT": {
+      "LEFT": 5
+     },
+     "STRAIGHT": {
+      "none": 1
+     }
+    },
+    "n_decision_instances_scored": 6,
+    "n_events_scoreable": 2,
+    "n_scenes_scored": 1,
+    "status": "OK"
+   },
+   "ARM_IS_INDISTINGUISHABLE_FROM_ITS_OWN_CONDITIONING": false
+  },
+  "refc-base_objects": {
+   "route_head": {
+    "what": "the ARM",
+    "route_class_accuracy": 0.1667,
+    "confusion_gt_x_pred": {
+     "LEFT": {
+      "RIGHT": 4,
+      "LEFT": 1
+     },
+     "STRAIGHT": {
+      "none": 1
+     }
+    },
+    "n_decision_instances_scored": 6,
+    "n_events_scoreable": 2,
+    "n_scenes_scored": 1,
+    "status": "OK"
+   },
+   "nav_echo": {
+    "what": "the FED NAV COMMAND, no model",
+    "route_class_accuracy": 0.8333,
+    "confusion_gt_x_pred": {
+     "LEFT": {
+      "LEFT": 5
+     },
+     "STRAIGHT": {
+      "none": 1
+     }
+    },
+    "n_decision_instances_scored": 6,
+    "n_events_scoreable": 2,
+    "n_scenes_scored": 1,
+    "status": "OK"
+   },
+   "constant_left": {
+    "what": "CONSTANT_LEFT, no model, no input",
+    "route_class_accuracy": 0.8333,
+    "confusion_gt_x_pred": {
+     "LEFT": {
+      "LEFT": 5
+     },
+     "STRAIGHT": {
+      "none": 1
+     }
+    },
+    "n_decision_instances_scored": 6,
+    "n_events_scoreable": 2,
+    "n_scenes_scored": 1,
+    "status": "OK"
+   },
+   "ARM_IS_INDISTINGUISHABLE_FROM_ITS_OWN_CONDITIONING": false
+  }
+ },
+ "HEAD_VOCABULARY_BRANCHING": {
+  "note": "SCOREABLE (strategic_gt.py:312) is n_options over CONNECTING ROADS in the 4-way map vocabulary. route_class_accuracy is scored in CLASS space and a deployed head is 3-way (refb.py:68) — it cannot emit UTURN. Where the option set collapses to ONE head-emittable class there is nothing to choose and a constant predictor ties: the single-option degeneracy, one coordinate over.",
+  "n_scoreable_events": 2,
+  "n_DEGENERATE_in_head_space": 1,
+  "per_event": [
+   {
+    "event_id": "7c72937c-c620-4776-9555-d57222c0081f|J149|82",
+    "n_options_roads": 4,
+    "map_option_classes": [
+     0,
+     3
+    ],
+    "head_emittable_classes": [
+     0
+    ],
+    "route_gt_class": 0,
+    "DEGENERATE_IN_HEAD_SPACE": true
+   },
+   {
+    "event_id": "7c72937c-c620-4776-9555-d57222c0081f|J154|189",
+    "n_options_roads": 2,
+    "map_option_classes": [
+     0,
+     1
+    ],
+    "head_emittable_classes": [
+     0,
+     1
+    ],
+    "route_gt_class": 1,
+    "DEGENERATE_IN_HEAD_SPACE": false
+   }
+  ]
+ },
+ "PAIRED_INSTANCE_AUDIT": {
+  "n_shared_instances": 5,
+  "n_DISTINCT_DECISION_EVENTS": 1,
+  "distinct_event_ids": [
+   "7c72937c-c620-4776-9555-d57222c0081f|J149|82"
+  ],
+  "start_frames": [
+   0,
+   15,
+   30,
+   45,
+   60
+  ],
+  "flagship_v1": 1.0,
+  "refc_base": 0.0,
+  "CONSTANT_LEFT_no_model": 1.0,
+  "paired_flagship_minus_refc": 1.0,
+  "paired_CONSTANT_minus_refc": 1.0,
+  "⛔_reading": "score_closedloop_strategic.paired() reports n_shared_instances but NOT n_events — and every shared instance here is the SAME decision, re-driven from overlapping starts. A constant predictor reproduces the paired delta exactly, so the delta carries no information about the winning arm."
+ }
+}

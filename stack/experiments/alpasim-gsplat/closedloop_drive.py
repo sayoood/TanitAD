@@ -69,10 +69,20 @@ class InProcTransport:
         return dict(cx=float(c.cx), cy=float(c.cy), width=int(c.width), height=int(c.height),
                     poly=tuple(float(x) for x in c.angle_to_pixeldist_poly))
 
-    def render(self, cam_to_world: np.ndarray, ts_us: float) -> np.ndarray:
-        cam_to_nre = self.r.rig.world_to_nre @ cam_to_world
+    def render(self, cam_to_world: np.ndarray, ts_us: float,
+               cam_to_world_start: np.ndarray | None = None) -> np.ndarray:
+        """`cam_to_world` is the shutter-END pose. Supplying `cam_to_world_start`
+        switches on ROLLING-shutter rendering (the rig declares
+        `shutter_type = ROLLING_TOP_TO_BOTTOM`)."""
+        w2n = self.r.rig.world_to_nre
+        cam_to_nre = w2n @ cam_to_world
         tau = self.r.tau_of_us(ts_us)
-        img, _a, ms = self.r.render(cam_to_nre, tau=tau, actor_time_us=float(ts_us))
+        end = None
+        if cam_to_world_start is not None:
+            # gsplat's convention: `viewmats` = shutter START, `viewmats_rs` = END
+            cam_to_nre, end = w2n @ cam_to_world_start, cam_to_nre
+        img, _a, ms = self.r.render(cam_to_nre, tau=tau, actor_time_us=float(ts_us),
+                                    cam_to_nre_end=end)
         self.render_ms.append(ms)
         return img
 
@@ -118,18 +128,26 @@ class GrpcTransport:
             AvailableTrajectoriesRequest(scene_id=self.scene_id))
         return rep.available_trajectories[0].trajectory.poses
 
-    def render(self, cam_to_world: np.ndarray, ts_us: float) -> np.ndarray:
+    def render(self, cam_to_world: np.ndarray, ts_us: float,
+               cam_to_world_start: np.ndarray | None = None) -> np.ndarray:
         from alpasim_grpc.v0 import common_pb2 as cpb
         pb = self.pb
-        q = _R_to_quat_np(cam_to_world[:3, :3])
-        pose = cpb.Pose(vec=cpb.Vec3(x=cam_to_world[0, 3], y=cam_to_world[1, 3],
-                                     z=cam_to_world[2, 3]),
-                        quat=cpb.Quat(w=q[0], x=q[1], y=q[2], z=q[3]))
+
+        def _pose(T):
+            q = _R_to_quat_np(T[:3, :3])
+            return cpb.Pose(vec=cpb.Vec3(x=T[0, 3], y=T[1, 3], z=T[2, 3]),
+                            quat=cpb.Quat(w=q[0], x=q[1], y=q[2], z=q[3]))
+
+        # The wire protocol already carries a START/END PosePair — i.e. it was designed
+        # for a rolling shutter. Sending the same pose twice (what this did until
+        # 2026-08-03) throws that away and asks for a global-shutter frame.
+        end = _pose(cam_to_world)
+        start = _pose(cam_to_world_start) if cam_to_world_start is not None else end
         req = pb.RGBRenderRequest(
             scene_id=self.scene_id, resolution_h=self._cam["height"],
             resolution_w=self._cam["width"], camera_intrinsics=self.spec,
             frame_start_us=int(ts_us), frame_end_us=int(ts_us),
-            sensor_pose=pb.PosePair(start_pose=pose, end_pose=pose),
+            sensor_pose=pb.PosePair(start_pose=start, end_pose=end),
             image_format=pb.ImageFormat.RGB_UINT8_PLANAR)
         t0 = time.time()
         rep = self.stub.render_rgb(req)
@@ -384,7 +402,8 @@ def plan_to_poses(traj, v0):
 
 
 def run_rollout(transport, renderer, policy, intr, start_frame, n_steps, gt_T,
-                gt_ts_us, warm=NEED_FRAMES, save_frames=None, log=None, leadgeom=None):
+                gt_ts_us, warm=NEED_FRAMES, save_frames=None, log=None, leadgeom=None,
+                shutter_s=0.0, gt_stride=0):
     """One closed-loop rollout. Returns a record dict."""
     from collections import deque
     gf = GroundFollower(gt_T)
@@ -393,11 +412,31 @@ def run_rollout(transport, renderer, policy, intr, start_frame, n_steps, gt_T,
     rec = {"start_frame": start_frame, "n_steps": n_steps, "arm": policy.name,
            "steps": []}
 
+    # Rolling shutter: the rig declares ROLLING_TOP_TO_BOTTOM with a 30.559 ms readout,
+    # over which the ego moves up to 0.63 m. `shutter_s` > 0 renders the frame from the
+    # pose it had `shutter_s` earlier at the top of the image to the current pose at the
+    # bottom. The roll-back uses the SAME bicycle model this loop steps with, so the two
+    # can never disagree about the vehicle's motion.
+    Ts_cam = renderer.cam.T_sensor_rig
+
+    def _rollback(T, v_now, steer_now, dt):
+        if dt <= 0:
+            return None
+        D = np.eye(4)
+        D[:3, :3] = _rz(v_now / WHEELBASE * math.tan(steer_now) * dt)
+        D[0, 3] = v_now * dt
+        return T @ np.linalg.inv(D)
+
     # ---- force-GT warm-up: the observation window comes from the logged path ----
     for k in range(warm):
         f = min(start_frame + k, len(gt_T) - 1)
         T_rig = gt_T[f]
-        img = transport.render(T_rig @ renderer.cam.T_sensor_rig, gt_ts_us[f])
+        # on the logged path the true shutter-start rig pose is in the file
+        T_start = (renderer.rig.T_rig_world(renderer.cam_name, f * gt_stride, shutter=0)
+                   if (shutter_s > 0 and gt_stride) else None)
+        img = transport.render(T_rig @ Ts_cam, gt_ts_us[f],
+                               cam_to_world_start=(T_start @ Ts_cam
+                                                   if T_start is not None else None))
         frames.append(img)
     f0 = min(start_frame + warm - 1, len(gt_T) - 1)
     T_ego = gt_T[f0].copy()
@@ -448,7 +487,10 @@ def run_rollout(transport, renderer, policy, intr, start_frame, n_steps, gt_T,
         v = max(0.0, v + accel * DT)
         t_us = t_us + DT * 1e6
 
-        img = transport.render(T_ego @ renderer.cam.T_sensor_rig, t_us)
+        T_start = _rollback(T_ego, v, steer, shutter_s)
+        img = transport.render(T_ego @ Ts_cam, t_us,
+                               cam_to_world_start=(T_start @ Ts_cam
+                                                   if T_start is not None else None))
         frames.append(img)
         if log and k % 20 == 0:
             logger.info("%s  k=%3d  v=%.2f  steer=%+.3f  nav=%s", policy.name, k, v,
@@ -484,6 +526,22 @@ def main():
     ap.add_argument("--out", required=True)
     ap.add_argument("--save-video-frames", action="store_true")
     ap.add_argument("--loader-dir", default=None)
+    # ---- render quality (2026-08-03; every default keeps the previous behaviour) ----
+    ap.add_argument("--sky-gain", type=float, default=0.0,
+                    help="gated sky-env-map gain; 0 = off. MEASURED on scene 00040136: "
+                         "gain 0.3 cuts full-frame MAE 0.1007 -> 0.0811 and raises "
+                         "grad-NCC 0.2773 -> 0.2894. gain 1.0 over-brightens (MAE 0.1431).")
+    ap.add_argument("--sky-lo-deg", type=float, default=0.0)
+    ap.add_argument("--sky-hi-deg", type=float, default=6.0)
+    ap.add_argument("--rolling-shutter", action="store_true",
+                    help="render the declared ROLLING_TOP_TO_BOTTOM shutter. Biggest "
+                         "measured quality lever (grad-NCC 0.2774 -> 0.3170, MAE -9.4%%) "
+                         "and by far the most expensive (23 ms -> ~3700 ms/frame).")
+    ap.add_argument("--cull-scale-quantile", type=float, default=None,
+                    help="drop static splats above this quantile of max-axis scale")
+    ap.add_argument("--all-dynamic-layers", action="store_true",
+                    help="with --condition objects, also render dynamic_deformables "
+                         "(the scene ships 2 tracks / 1039 gaussians there)")
     args = ap.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s.%(msecs)03d %(levelname)s: %(message)s",
@@ -498,10 +556,23 @@ def main():
     sd = Path(args.scene_dir).expanduser()
     r = NuRecGsplatRenderer(sd, layers=[x for x in layers.split(",") if x],
                             loader_dir=args.loader_dir)
+    if args.cull_scale_quantile:
+        logger.info("scale cull: %s", r.cull_by_scale(args.cull_scale_quantile))
+    if args.sky_gain > 0:
+        sky = r.attach_sky(lo_deg=args.sky_lo_deg, hi_deg=args.sky_hi_deg,
+                           gain=args.sky_gain)
+        if sky is None:
+            raise SystemExit("--sky-gain given but the scene ships no sky-env-map")
+        logger.info("gated sky ON: gain=%.2f ramp %.1f-%.1f deg above horizon",
+                    args.sky_gain, args.sky_lo_deg, args.sky_hi_deg)
     attach_info = None
     if args.condition == "objects":
-        from actor_map import attach_actors_verified
-        info = attach_actors_verified(r, sd)
+        if args.all_dynamic_layers:
+            from actor_map import attach_all_dynamic_layers
+            info = attach_all_dynamic_layers(r, sd)
+        else:
+            from actor_map import attach_actors_verified
+            info = attach_actors_verified(r, sd)
         if info["verdict"] != "ACCEPTED":
             raise SystemExit("actor placement REFUSED by its own falsifier: "
                              + json.dumps({k: v for k, v in info.items() if k != "per_track"}))
@@ -524,6 +595,14 @@ def main():
     # and every TanitAD model run at 10 Hz. Sub-sample by 3 so one loop index is one
     # 0.1 s tick — feeding a 30 Hz stack to a 10 Hz-trained encoder would be the same
     # class of train/serve skew as a wrong raster.
+    # shutter READOUT duration, read from the rig's own per-frame timestamps rather
+    # than assumed (MEASURED: 30_559 us, constant across frames on this clip)
+    _t0, _t1 = r.frame_timestamps_us(0)
+    shutter_s = ((_t1 - _t0) / 1e6) if args.rolling_shutter else 0.0
+    if args.rolling_shutter:
+        logger.info("ROLLING SHUTTER ON: type=%s readout=%.1f ms — expect ~3.7 s/frame "
+                    "(vs ~23 ms global). Simulated time is unchanged; only wall clock.",
+                    r.rolling_shutter_type, shutter_s * 1e3)
     stride = int(round(1e5 / (r.frame_timestamps_us(1)[1] - r.frame_timestamps_us(0)[1])))
     n = r.n_frames() // stride
     gt_T = [r.gt_rig_to_world(f * stride) for f in range(n)]
@@ -559,9 +638,17 @@ def main():
                             [int(cv2.IMWRITE_JPEG_QUALITY), 90])
         t0 = time.time()
         rec = run_rollout(transport, r, pol, intr, s, args.steps, gt_T, gt_ts,
-                          save_frames=saver, log=True, leadgeom=leadgeom)
+                          save_frames=saver, log=True, leadgeom=leadgeom,
+                          shutter_s=shutter_s, gt_stride=stride)
         rec["wall_s"] = time.time() - t0
         rec["condition"] = args.condition
+        rec["render_quality"] = {
+            "layers": layers, "all_dynamic_layers": bool(args.all_dynamic_layers),
+            "sky_gain": args.sky_gain, "sky_ramp_deg": [args.sky_lo_deg, args.sky_hi_deg],
+            "rolling_shutter": bool(args.rolling_shutter),
+            "shutter_s": shutter_s, "shutter_type": r.rolling_shutter_type,
+            "cull_scale_quantile": args.cull_scale_quantile,
+            "cull": getattr(r, "cull_info", None)}
         rec["transport"] = "grpc" if args.addr else "inproc"
         rec["f_eff"] = pol.f_eff
         rec["frames_dir"] = str(vdir) if vdir else None

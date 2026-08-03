@@ -1,0 +1,168 @@
+{
+  "what": "ADVERSARIAL ROUND 2 over the cutin-scene stream's scene-2 panel (7c72937c). Every entry below is re-derived by this agent from the primary artifact with its own code, not read from the stream's summary.",
+  "evidence_class": "MEASURED (this agent; scripts in this directory; inputs are the staged rollouts/metrics/geometry JSONs)",
+  "verdict": "PARTIAL - the geometry refutation, the actor-map defect, the scene-2 nav echo and the scene-1 collision corrections all SURVIVE bit-exact. The HEADLINE null does NOT survive as stated for flagship-v1, and four counts are inflated.",
+
+  "SURVIVES": {
+    "S1_two_scenes_and_the_geometry": {
+      "probes": [
+        "ls /home/nvidia/nurec_scenes/sample_set/26.04_release/ -> 2 scenes",
+        "find /home/nvidia -name volume.nurec -> both scenes",
+        "find / -name '*.nurec' -> both scenes + work copies"
+      ],
+      "scene_7c72937c": {
+        "min_inlane_headway_m_probe1": 3.268,
+        "min_inlane_headway_m_probe2_parquet": 3.234,
+        "n_close_following_rows": 146
+      },
+      "scene_00040136": {
+        "min_inlane_headway_m_probe1": 46.246,
+        "min_inlane_headway_m_probe2_parquet": 46.224,
+        "n_close_following_rows": 0,
+        "n_cutin_events": 0
+      },
+      "the_original_error_is_real": "results/cutin/CUTIN_PANEL.json provenance.geometry_note cites sequence_tracks.json AND clipgt/obstacle.parquet - both for 00040136. Two tables, one scene.",
+      "caveat_the_stream_did_not_state": "the closest in-lane rows are a STOPPED queue: the 10 closest all have v_ego 0.000-0.001 m/s, v_lead 0.006-0.218 m/s and time_gap_s = inf. Over all 146 close rows, 52.1 percent have v_ego < 0.5 m/s and time_gap is finite on only 70/146."
+    },
+    "S2_actor_map_defect": {
+      "n_mapped": 92,
+      "n_strict": 61,
+      "discarded_at_exact_zero_cost": 31,
+      "all_92_best_cost_us_zero": true,
+      "all_92_best_track_unique": true,
+      "lead_tracks_117_and_80_strict_rejected": true,
+      "recomputed_by_me_with_the_strict_subset": {
+        "close_following_rows_renderable": 0,
+        "cutin_events_renderable": 0
+      },
+      "ab_pixels": {
+        "relaxed_mean_grad_ncc_on": 0.533,
+        "strict_mean": 0.434,
+        "relaxed_mean_on_minus_WRONGTIME": 0.1219,
+        "strict_mean_on_minus_WRONGTIME": 0.0327,
+        "note": "the controlled delta is a STRONGER argument than the raw on-time means the stream quoted."
+      }
+    },
+    "S3_nav_echo_scene2": {
+      "flagship_nav1_to_head0": "369/369",
+      "flagship_nav0_to_head1": "81/81",
+      "holds_in_both_conditions": true,
+      "refc_is_not_a_function_of_nav": "all 3 head classes appear under both nav values",
+      "triple_circularity": "nav is derived from the GT future by nav_command_v21; the logged route is derived from the SAME future by route_from_future_v21; route_logged_share.left = 0.82 = 369/450 = the nav=1 count. Harness -> model -> metric is a closed loop."
+    },
+    "S4_four_family_point_estimates_reproduced_bit_exact": {
+      "order": "[flagship-v1, refc-base], condition=objects, my own scorer over the staged rollouts",
+      "ade_0_2s": [6.2038, 3.4215],
+      "de_2s": [9.853, 6.3456],
+      "abs_target_speed_err_ms": [5.1412, 1.5489],
+      "heading_err_rad": [0.4922, 0.4422],
+      "curvature_err_1pm": [0.0413, 0.0556],
+      "yawrate_err_rads": [0.2631, 0.2041],
+      "cross_track_abs_m": [6.251, 2.5179]
+    },
+    "S5_per_class_PR_histograms_close": {
+      "flagship_supports_sum": 450,
+      "flagship_fires_sum": 450,
+      "flagship_TP_sum_matches_accuracy": "37 = 0.0822*450",
+      "refc_supports_sum": 450,
+      "refc_fires_sum": 450,
+      "refc_TP_sum_matches_accuracy": "27 = 0.0600*450",
+      "brake_stop_281_fires_0_true": true,
+      "turn_right_44_fires_0_true": true,
+      "refc_lane_keep_297_fires_17_TP_23_support": true,
+      "refc_accelerate_0_fires_241_support": true
+    },
+    "S6_scene1_collision_corrections_reproduced_exactly": {
+      "flagship/lead8": {"fires": 33, "inlane": 0, "precision": 0.0, "median_abs_y_m": 8.877},
+      "flagship/cutin": {"fires": 13, "inlane": 0, "precision": 0.0, "median_abs_y_m": 13.795},
+      "refc/lead8": {"fires": 134, "inlane": 27, "precision": 0.2015, "median_abs_y_m": 3.758},
+      "refc/cutin": {"fires": 59, "inlane": 3, "precision": 0.0508, "median_abs_y_m": 4.167}
+    },
+    "S7_route_key_mismatch_was_real": "CUTIN_PANEL.json carries n=0 with reason 'this arm exposes no strategic route logits at the deploy path' on ALL SIX refc-base cells; refc-base emits route_logits on 450/450 steps of every condition.",
+    "S8_pytest": "1850 passed, 12 skipped, 2 xfailed, 461.45 s, exit 0 (my run, C:/Users/Admin/venvs/tanitad). The stream reported 1847 - 3 tests landed from sibling streams in between.",
+    "S9_staging": "at session start git diff --cached --name-only was exactly 27 files, all under stack/experiments/alpasim-gsplat/. Sibling streams have since staged on top (48 files now)."
+  },
+
+  "REFUTED_OR_CORRECTED": {
+    "R1_cutin_event_count_is_a_sliding_start_overcount": {
+      "claimed": "44 cut-in events over 3 tracks; 21 renderable",
+      "measured": "3 DISTINCT crossings (tracks 34 k83-92, 65 k79-94, 117 k118-143); 1 DISTINCT renderable crossing (track 117 only)",
+      "mechanism": "scene_geometry.find_cutins emits one record per starting row a; the inner loop breaks at the first crossing but the outer loop does not, so one lane entry yields one record per approach tick.",
+      "second_defect": "summary.n_cutin_events_ALL = len(cut_all) = 44 while the emitted evidence list is cut_all[:40] - 40 rows, no truncation note (contrast: rows_note documents the row trimming).",
+      "consequence": "the cut-in subset (107/450 flagship, 99/450 refc windows) is exposure to ONE vehicle's single lane entry plus a 2 s reaction window (ticks 118-163), not to 21 events."
+    },
+    "R2_not_all_three_cutin_tracks_were_margin_casualties": {
+      "claimed": "Casualties: BOTH vehicles the ego follows (117/id30, 80/id38) and ALL THREE cut-in tracks",
+      "measured": "only track 117 appears in the actor map at all (accepted, strict-rejected). Tracks 34 and 65 have NO entry in per_track - they were never mappable, not thresholded away.",
+      "self_contradiction": "the stream's own open_risk says the missing cuboids are absent from the dynamic_rigids layer, not thresholded away. The measured bullet says the opposite."
+    },
+    "R3_scene1_circularity_is_NOT_established": {
+      "claimed": "flagship-v1's strategic 1.0000 is circular on scene 1 too",
+      "measured": "nav = 0 on 450/450 windows in every scene-1 cell. A constant head is trivially a deterministic function of a constant input; the guard cannot separate echo from constant. flagship's head = 1 on 450/450.",
+      "correct_statement": "on scene 1 the metric is DEGENERATE (one nav level, one head value, one logged class), not demonstrably circular. Same do-not-quote outcome, different root cause."
+    },
+    "R4_the_as_published_quote_is_false": {
+      "claimed": "as_published: 1.0000 quoted as strategic accuracy",
+      "measured": "CUTIN_PANEL.json already carried degenerate=true and the note 'NOT SKILL: the logged route takes 1 distinct value(s) and the head predicts 1 on these windows. A constant predictor scores the same.' The published panel did not quote it as skill."
+    },
+    "R5_the_negative_control_is_the_wrong_control_and_the_right_one_FAILS_for_flagship": {
+      "problem": "a CROSS-ARM contrast shows the metrics separate two different policies (effect ~2.8 m ADE). It does not show they can see a RENDER-CONDITION change on a fixed policy, which is the null's design.",
+      "right_control_exists_in_the_streams_own_banked_artifact": "results/cutin/CUTIN_PANEL.json, condition-vs-empty, same 16 paired metrics",
+      "refc_base": {"lead25": "12/16", "lead15": "8/16", "lead8": "13/16", "cutin": "3/16", "behind": "0/16"},
+      "flagship_v1": {"lead25": "0/16", "lead15": "0/16", "lead8": "1/16", "cutin": "1/16", "behind": "0/16"},
+      "consequence": "REF-C's scene-2 null is interpretable - the panel has been shown to detect a condition effect on REF-C. flagship-v1's is NOT: no positive control anywhere shows that a flagship reaction to a drawn object would be visible to this panel. 'NEITHER ARM MEASURABLY REACTS' is unsupported for flagship-v1."
+    },
+    "R6_wrong_time_control_number_is_a_single_frame": {
+      "claimed": "wrong-time negative control 0.4216",
+      "measured": "0.4216 is the FRAME-0 sample. The relaxed arm's mean over the three falsifier frames is 0.4110 (0.4216/0.4369/0.3746). Quoted against two means."
+    },
+    "R7_the_19_metric_denominator_is_inflated": {
+      "duplicate": "dist_to_gt_traj_m and cross_track_abs_m are bit-identical in all four contrast files (per_step_metrics stores dist_to_gt = abs(cross_track)) -> 18 distinct, not 19",
+      "circular_metric_counted_in_the_control": "route_head_eq_logged is stamped CIRCULAR_NAV_ECHO / do_not_quote inside families.STRATEGIC but appears UNSTAMPED in paired_A_minus_B and is counted as separated in both cross-arm contrasts",
+      "corrected_counts": {
+        "flagship_minus_refc_in_objects": "12/17",
+        "flagship_minus_refc_in_empty": "11/17",
+        "flagship_objects_vs_empty": "0/18",
+        "refc_objects_vs_empty": "0/18"
+      },
+      "further": "in objects-vs-empty, route_head_eq_logged for flagship has delta exactly 0.0 with a zero-width CI - structurally constant, so it cannot separate by construction; flagship's honest denominator is 17."
+    },
+    "R8_selective_quotation_reverses_the_safety_reading": {
+      "quoted": "real-lead time_gap 1.6389 s (flagship) / 4.7973 s (refc) - reads as REF-C keeping the safer gap",
+      "omitted_from_the_same_artifact": "real-lead headway_m 10.7126 m (flagship) / 2.2316 m (refc). REF-C sits 4.8x CLOSER; its time gap is larger only because it drives slower (target_speed_err -1.511 m/s vs +4.994).",
+      "also": "TTC-when-closing 3.2590 (defined on 52.5 percent of lead ticks) vs 5.9503 [0.4572, 9.6124] (10.6 percent) are placed side by side across a 5x difference in definedness."
+    },
+    "R9_MISSED_both_arms_drove_INTO_the_real_lead": {
+      "measured_in_the_streams_own_panel": {"flagship_min_headway_m": -4.423, "refc_min_headway_m": -4.6677},
+      "reading": "headway is bumper-to-bumper (x_lead - EGO_LEN 4.7 m). Negative means penetration: the lead's centre reached 0.28 m / 0.03 m from the ego origin.",
+      "gap": "no REAL-lead collision or contact rate is computed anywhere. The lateral gate and the precision report were added for the SYNTH lead only, and the synth block is n=0 on this scene. The LONGITUDINAL family is incomplete exactly where the data are most damning."
+    },
+    "R10_the_exposure_figure_is_not_measured_on_the_scored_windows": {
+      "claimed": "actors covering ~30 percent of frame (629k of 2.07M pixels)",
+      "measured": "629391/2073600 = 30.35 percent is correct, but it is measured at three GT RIG POSES (falsifier frames 0/60/120), not on the 450 scored windows.",
+      "on_the_scored_windows": {
+        "flagship_progress_rel_mean": 1.7396,
+        "flagship_max_cross_track_median_m": 19.85,
+        "flagship_max_cross_track_max_m": 42.08,
+        "flagship_corridor_departure_rate": 0.4533,
+        "refc_progress_rel_mean": 1.3006,
+        "refc_max_cross_track_median_m": 2.62,
+        "refc_corridor_departure_rate": 0.3044
+      },
+      "what_IS_established": "a real annotated renderable lead was inside the in-lane window on 49.1 percent (flagship) / 52.4 percent (refc) of ticks in the DRIVEN frame, mean headway 10.71 / 2.23 m. That is genuine exposure. The bumper-to-bumper, 30-percent-of-frame framing is not."
+    },
+    "R11_the_two_arms_are_scored_against_different_ground_truth": {
+      "flagship_logged_class_counts": {"lane_keep": 40, "turn_left": 259, "turn_right": 0, "accelerate": 151, "brake_stop": 0},
+      "refc_logged_class_counts": {"lane_keep": 23, "turn_left": 186, "turn_right": 0, "accelerate": 241, "brake_stop": 0},
+      "why": "the logged manoeuvre is taken at the ego's matched index i_gt, and the arms drive to different places",
+      "consequence": "cross-arm manoeuvre_plan_eq_logged / head_eq_logged separations are partly a difference in the induced label mix, not only in decision quality. Their majority baselines differ (0.5756 vs 0.5356)."
+    },
+    "R12_macro_F1_divides_by_5_with_2_empty_classes": "turn_right and brake_stop have ZERO support in the logged labels for both arms, so macro-F1 0.0717 / 0.0393 is depressed by construction. Over the 3 supported classes flagship's is 0.1195. State the divisor or restrict to supported classes."
+  },
+
+  "OPEN": {
+    "reconciliation": "stack/experiments/nurec-gsplat/results/closedloop_strategic_7c72937c.json scores the SAME scene from map.xodr option sets: 3 decision events, 1 excluded for a single option, 2 scoreable, 6 decision instances, and an ALIGNMENT offset FITTED because the closed-loop gt track has 199 poses and the labelled clipgt track has 202. The two reads of 7c72937c use different index spaces and must be reconciled before either is quoted.",
+    "the_experiment_that_would_settle_the_cutin_question": "the stream's proposed cut-in-targeted run does NOT fix the power problem: there is ONE distinct renderable cut-in on this scene. Placing 9 starts on ticks 118-143 gives 9 clusters of the SAME event, which is pseudo-replication, not 9 independent exposures. What is needed is more SCENES with cut-ins, or the synthetic dose-response ladder (which already discriminates for REF-C at 12-13/16).",
+    "flagship_positive_control": "before any flagship agent-blindness claim, run a condition that flagship demonstrably reacts to. On scene 1 it reacted to nothing at 25/15 m and to one metric at 8 m."
+  }
+}

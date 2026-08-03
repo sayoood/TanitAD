@@ -23,6 +23,7 @@ from tanitad.eval.sitclf_deploy import (
     is_vision_only,
     load_score_bundle,
     permute_labels_by_cluster,
+    precision_recall_at_budget,
     regime_strata,
     vision_only_arms,
 )
@@ -452,3 +453,58 @@ def test_label_permutation_is_deterministic_for_a_seed():
     a = permute_labels_by_cluster(y, cc, seed=11)
     b_ = permute_labels_by_cluster(y, cc, seed=11)
     assert np.array_equal(a, b_)
+
+
+# --------------------------------------------------------------------------- #
+# precision alongside recall (binding, 2026-08-03)                            #
+# --------------------------------------------------------------------------- #
+def test_precision_recall_at_budget_states_both_denominators():
+    """A recall number is unreadable without the count it was bought with."""
+    rng = np.random.default_rng(0)
+    n = 2000
+    y = rng.random(n) < 0.1
+    s = y * 1.0 + rng.normal(0, 0.5, n)
+    r = precision_recall_at_budget(y, s, np.ones(n, bool), top_frac=0.05)
+    assert r["n_alarm"] == 100 and r["n_pos"] == int(y.sum())
+    assert r["tp"] <= r["n_alarm"] and r["tp"] <= r["n_pos"]
+    assert abs(r["precision"] - r["tp"] / r["n_alarm"]) < 1e-5
+    assert abs(r["recall"] - r["tp"] / r["n_pos"]) < 1e-5
+    assert r["precision"] > r["base_rate"]
+
+
+def test_precision_falls_when_a_wider_budget_buys_recall():
+    """THE CONTROL THE RETRACTED CLAIM LACKED: raising recall by firing more must
+    show up as a precision cost. If precision did not move, the metric could not
+    see what a recall gain is paying."""
+    rng = np.random.default_rng(1)
+    n = 4000
+    y = rng.random(n) < 0.08
+    s = y * 1.0 + rng.normal(0, 0.8, n)
+    tight = precision_recall_at_budget(y, s, np.ones(n, bool), top_frac=0.02)
+    wide = precision_recall_at_budget(y, s, np.ones(n, bool), top_frac=0.30)
+    assert wide["recall"] > tight["recall"]
+    assert wide["precision"] < tight["precision"]
+
+
+def test_precision_at_budget_lands_at_the_base_rate_on_a_useless_score():
+    rng = np.random.default_rng(2)
+    n = 20000
+    y = rng.random(n) < 0.2
+    s = rng.normal(size=n)
+    r = precision_recall_at_budget(y, s, np.ones(n, bool), top_frac=0.10)
+    assert abs(r["precision"] - r["base_rate"]) < 0.03
+    assert abs(r["precision_lift"] - 1.0) < 0.16
+
+
+def test_precision_recall_ignores_invalid_and_nonfinite_rows():
+    y = np.array([1, 1, 0, 0, 1, 0], bool)
+    s = np.array([9.0, np.inf, 8.0, 1.0, 0.5, 0.0])
+    valid = np.array([1, 1, 1, 1, 0, 1], bool)
+    r = precision_recall_at_budget(y, s, valid, top_frac=0.5)
+    assert r["n_scorable"] == 4          # inf dropped, invalid row dropped
+    assert r["n_pos"] == 1
+
+
+def test_precision_recall_rejects_misaligned_inputs():
+    with pytest.raises(ValueError):
+        precision_recall_at_budget(np.zeros(5, bool), np.zeros(4), np.ones(5, bool))

@@ -1,0 +1,67 @@
+{
+ "_what": "STREAM D substrate re-verification + oracle ceiling",
+ "latent_cache": "C:\\Users\\Admin\\tanitad-data\\eval\\idm_derived_accel_latents.pt",
+ "encoder": "C:\\Users\\Admin\\tanitad-data\\eval\\v1_speedjerk_ckpt.pt",
+ "encoder_step": 29999,
+ "state_dim": 2048,
+ "n_episodes": 50,
+ "clean_band": [
+  40,
+  90
+ ],
+ "k": 4,
+ "stride": 2,
+ "horizons": [
+  5,
+  10,
+  15,
+  20
+ ],
+ "label_rederivation": {
+  "n_episodes_checked": 50,
+  "n_S_mismatch": 0,
+  "n_Q_mismatch": 0,
+  "verdict": "BIT-EXACT on all episodes"
+ },
+ "oracle_ceiling": {
+  "_what": "how well CAN long_accel is explainable from the TRUE speed track",
+  "n_windows": 6900,
+  "centred_difference_r2": 0.8993,
+  "centred_difference_corr": 0.9488,
+  "ridge_on_full_true_speed_window_r2_INSAMPLE": 0.9266,
+  "gt_long_accel_std_mps2": 0.6219,
+  "gt_long_accel_mae_about_mean_mps2": 0.4008,
+  "note": "the docstring claim of R\u00b2 0.902 was measured on a DIFFERENT window set (30 episodes / 8,940 windows); this is the number on the 50-episode clean band actually used here."
+ },
+ "target_character": {
+  "autocorr_of_long_accel_lag_1_2_4_8_windows_mean": [
+   0.7418,
+   0.7625,
+   0.637,
+   0.4196
+  ],
+  "n_episodes_in_autocorr": 49,
+  "n_episodes_per_lag": [
+   49,
+   48,
+   48,
+   48
+  ],
+  "lag_unit": "1 window = stride 2 frames = 0.2 s",
+  "r2_of_1s_boxcar_smoothed_vs_raw": 0.8123,
+  "frac_windows_with_long_accel_exactly_zero": 0.0757,
+  "degenerate_flat_accel_episodes": [
+   {
+    "episode": "ep_00045",
+    "n_windows": 138,
+    "std": 0.0,
+    "value": 0.0
+   }
+  ],
+  "interpretation": "R\u00b2 of a smoothed copy against the raw target upper-bounds what any SLOW predictor can score. If it is low, most of long_accel lives above the frequency a vision head could plausibly track."
+ },
+ "window_totals": {
+  "n_windows": 6900,
+  "n_episodes": 50
+ }
+}

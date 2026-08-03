@@ -1,0 +1,125 @@
+{
+  "what": "CORRECTIONS to the published results/cutin/CUTIN_PANEL.json (scene 00040136)",
+  "evidence_class": "MEASURED (re-scored from the SAME banked rollouts with the fixed cl_metrics.py)",
+  "estimator": "episode-cluster bootstrap over 9 rollout starts (disjoint segments of ONE clip)",
+  "C1_collision_rate_had_no_lateral_gate": {
+    "defect": "cl_metrics scored a collision as headway_m <= 0 with NO lateral gate, so a longitudinal PASS of a laterally-offset vehicle counted as a collision.",
+    "per_cell": {
+      "flagship-v1/lead8": {
+        "as_published_UNGATED": 0.0733,
+        "corrected_IN_LANE": 0.0,
+        "precision_of_the_ungated_test": 0.0,
+        "n_fires": 33,
+        "n_true_inlane": 0,
+        "median_abs_y_of_fires_m": 8.877,
+        "n": 450
+      },
+      "flagship-v1/cutin": {
+        "as_published_UNGATED": 0.0289,
+        "corrected_IN_LANE": 0.0,
+        "precision_of_the_ungated_test": 0.0,
+        "n_fires": 13,
+        "n_true_inlane": 0,
+        "median_abs_y_of_fires_m": 13.795,
+        "n": 450
+      },
+      "refc-base/lead8": {
+        "as_published_UNGATED": 0.2978,
+        "corrected_IN_LANE": 0.06,
+        "precision_of_the_ungated_test": 0.2015,
+        "n_fires": 134,
+        "n_true_inlane": 27,
+        "median_abs_y_of_fires_m": 3.758,
+        "n": 450
+      },
+      "refc-base/cutin": {
+        "as_published_UNGATED": 0.1311,
+        "corrected_IN_LANE": 0.0067,
+        "precision_of_the_ungated_test": 0.0508,
+        "n_fires": 59,
+        "n_true_inlane": 3,
+        "median_abs_y_of_fires_m": 4.167,
+        "n": 450
+      }
+    }
+  },
+  "C2_refc_strategic_family_was_falsely_reported_absent": {
+    "defect": "cl_metrics read only ex['s_route_logits']; refc-base emits 'route_logits'. The panel published REF-C's route head as {'n':0,'reason':'this arm exposes no strategic route logits at the deploy path'} \u2014 FALSE.",
+    "per_cell": {
+      "refc-base/lead8": {
+        "as_published": "n=0 'this arm exposes no strategic route logits at the deploy path'",
+        "corrected": [
+          0.2053,
+          0.0734,
+          0.4082
+        ],
+        "n_windows": 151,
+        "nav_echo": false,
+        "nav_to_head_map": {
+          "0": [
+            0,
+            1,
+            2
+          ]
+        },
+        "quotable": true
+      },
+      "refc-base/cutin": {
+        "as_published": "n=0 'this arm exposes no strategic route logits at the deploy path'",
+        "corrected": [
+          0.18,
+          0.0398,
+          0.4261
+        ],
+        "n_windows": 150,
+        "nav_echo": false,
+        "nav_to_head_map": {
+          "0": [
+            0,
+            1,
+            2
+          ]
+        },
+        "quotable": true
+      }
+    }
+  },
+  "C3_flagship_strategic_score_is_CIRCULAR": {
+    "defect": "flagship-v1's route head is a deterministic bijection of the nav command the harness FEEDS the policy, so route_head_eq_logged = 1.0000 measures the echo of its own input, not strategy.",
+    "per_cell": {
+      "flagship-v1/lead8": {
+        "as_published": "1.0000 quoted as strategic accuracy",
+        "corrected": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "n_windows": 136,
+        "nav_echo": true,
+        "nav_to_head_map": {
+          "0": [
+            1
+          ]
+        },
+        "quotable": false
+      },
+      "flagship-v1/cutin": {
+        "as_published": "1.0000 quoted as strategic accuracy",
+        "corrected": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "n_windows": 133,
+        "nav_echo": true,
+        "nav_to_head_map": {
+          "0": [
+            1
+          ]
+        },
+        "quotable": false
+      }
+    }
+  },
+  "reading": "Every flagship-v1 'collision' in the published panel was a phantom (precision 0.000 on 33 and 13 fires, median lateral offset 8.9 m and 13.8 m). REF-C's lead8 collision rate is 0.0600 in-lane, not the published 0.2978 \u2014 a 5x overstatement at precision 0.2015. REF-C's STRATEGIC family was never absent. flagship-v1's strategic 1.0000 is circular on this scene too, exactly as on 7c72937c."
+}

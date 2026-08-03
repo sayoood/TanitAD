@@ -292,6 +292,104 @@ road the ego is on when it leaves — with polyline **coverage** as the independ
 
 ---
 
+---
+
+# STREAM B (2026-08-03) — the labels are now WIRED INTO taniteval, and scored on real rollouts
+
+The escalation was *"wire strategic_gt.py option-set labels into the closed-loop STRATEGIC
+family"*. Done, plus two findings the real data forced out.
+
+## What was built
+
+| artifact | what it is |
+|---|---|
+| `taniteval/taniteval/strategic_optionset.py` | the CONSUMER. Turns option-set labels + an arm's route decisions into the STRATEGIC family, with `episode_cluster_bootstrap` (cluster = scene) and every degeneracy guard below. |
+| `taniteval/taniteval/four_families.py::strategic(win, hier, optionset)` | the option-set path now **takes precedence** over both legacy ego-yaw paths. `all_families(..., optionset=…)` threads it. |
+| `taniteval/tests/test_strategic_optionset.py` | 33 tests. Written so that reproducing `route_head_eq_logged = 1.0000` FAILS. |
+| `strategic_family_control.py` → `results/strategic_family_control.json` | the mandatory negative control on the 14 banked scenes. |
+| `score_closedloop_strategic.py` → `results/closedloop_strategic_7c72937c.json` | the REAL closed-loop panel scored against the option sets. |
+
+## (d) The negative control — MEASURED, on the real option sets
+
+`results/strategic_family_control.json`, 14 scenes → 12 admissible (2 refused by the
+self-consistency control), **15 scoreable events over 8 scenes**:
+
+| arm | route_class_accuracy | 95 % CI |
+|---|---|---|
+| ORACLE | **1.0000** | [1.0000, 1.0000] |
+| UNIFORM_RANDOM over option classes | 0.5333 | [0.2857, 0.7857] |
+| **CONSTANT_LEFT (the best constant)** | **0.5333** | [0.2857, 0.7857] |
+| CONSTANT_STRAIGHT | 0.3333 | [0.0624, 0.6111] |
+| CONSTANT_RIGHT | 0.1333 | [0.0000, 0.3333] |
+| NO_HEAD | 0.0000 | [0.0000, 0.0000] |
+
+**ORACLE − BEST_CONSTANT = +0.4667 [0.2143, 0.7143], `separated = true`** (paired
+episode-cluster bootstrap, cluster = scene). ⇒ **`DISCRIMINATES: true`**. A constant predictor
+does **not** score well, and `NO_HEAD` scores 0 rather than being dropped.
+
+⭐ **And the night clip scored ALONE returns `status: UNAVAILABLE`, `n = 0`, with
+`n_events_single_option_excluded = 4` — no accuracy field is emitted at all.** That is the
+1.0000 made structurally unreachable, not merely commented against.
+
+## (b) The wiring, run on the REAL closed-loop panel
+
+`results/closedloop_strategic_7c72937c.json` — the 9-rollout panel on the branch scene
+`7c72937c`, joined by `i_gt` → pose → decision event.
+
+**Alignment is fitted, not assumed.** The closed-loop `gt` track has **199** poses (arc
+125.064 m); the labelled clipgt track has **202** (arc 127.55 m). Offsets scanned against the
+labels' own `entry_arc_m` anchors: best `−1` (max residual **0.523 m**), vs `0` (1.966 m).
+**Every arm's accuracy is IDENTICAL at offsets −2, −1 and 0**, so the number does not rest on
+the alignment choice.
+
+| run | route_class_accuracy | confusion (gt → pred) | vs best constant (LEFT @ 0.8333) |
+|---|---|---|---|
+| flagship-v1 / empty | **1.0000** (6/6) | LEFT→LEFT 5, STRAIGHT→STRAIGHT 1 | +0.1667 |
+| flagship-v1 / objects | **1.0000** (6/6) | LEFT→LEFT 5, STRAIGHT→STRAIGHT 1 | +0.1667 |
+| refc-base / empty | **0.0000** (0/6) | **LEFT→RIGHT 5**, STRAIGHT→none 1 | −0.8333 |
+| refc-base / objects | **0.1667** (1/6) | LEFT→RIGHT 4, LEFT→LEFT 1, STRAIGHT→none 1 | −0.6667 |
+
+Paired on the 5 shared (event, rollout) instances: **flagship − refc = +1.000 (empty),
++0.800 (objects)**.
+
+⛔ **NONE OF THIS IS A VERDICT.** `n_scenes = 1`, so the episode-cluster bootstrap has ONE
+cluster and returns `lo == hi == point` — that is **no interval**, not a precise one. Every
+block carries `CI_NOT_ADMISSIBLE: true` and `beats_best_constant_ADMISSIBLE: false`. The point
+estimates are valid; the separation claim is not, until the T1 scene set is scored.
+
+## Two findings the real data forced
+
+**1. ⛔ INSTRUMENT-FAIL: REF-C's route head has been INVISIBLE to the closed-loop STRATEGIC
+family.** `cl_metrics.py:176` reads `ex["s_route_logits"]` only. MEASURED, two probes, same
+scene: **flagship-v1 writes `s_route_logits`** (3-wide, argmax {LEFT 369, STRAIGHT 81} / 450
+ticks) while **refc-base writes `route_logits`** (3-wide, argmax {LEFT 99, STRAIGHT 70,
+**RIGHT 281**} / 450 ticks). The harness has therefore been emitting *"this arm exposes no
+strategic route logits at the deploy path"* for the arm that **beats flagship v1 in
+closed-loop**, while its logits sat in the record under a neighbouring name.
+⇒ `strategic_optionset.ROUTE_LOGIT_KEYS` resolves a LIST of keys and reports
+`class_key_resolved`. **`cl_metrics.py` still has the bug — ESCALATED, not patched here
+(alpasim-gsplat is another stream's file).**
+
+**2. `decision_lead_distance_m` is RIGHT-CENSORED by the clip, and materially so.** A policy
+that commits **60 m** out scores **20.43 m** on this scene, because junction 149 sits at
+`entry_arc_m = 18.07` and there is no more approach to observe. flagship-v1's 16.77 m is
+**6 / 6 censored** — i.e. "correct for the whole observable approach", a lower bound. The block
+carries `n_censored_by_clip` and `available_lead_m_max`; comparing this metric across scene sets
+with different approach lengths compares the clips.
+
+## Guards that now make the 1.0000 unreachable
+
+1. Single-option junction ⇒ **`UNAVAILABLE` with the reason and n**, never a number.
+2. A **`None` prediction vs a `None` label scores 0**, never a free point.
+3. The floor that decides is the **BEST CONSTANT fitted on the same events**, not `1/k`.
+4. **Precision beside recall** on every class row; **both denominators** (`n_events_scoreable`
+   = distinct decisions, `n_decision_instances_scored` = times the arm was asked).
+5. A class head projected onto a road **excludes ambiguous events and says so** — on junction
+   149 three of the four options are UTURN.
+6. `UTURN` is **outside every deployed head's vocabulary** (`refb.py:68` is 3-way); those events
+   are counted, not silently deflating the arm.
+7. **One scene ⇒ no admissible interval.** Enforced on every interval in the block.
+
 ## Evidence class
 
 | claim | class |

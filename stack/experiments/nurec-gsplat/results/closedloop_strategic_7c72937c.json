@@ -1,0 +1,2025 @@
+{
+ "tool": "score_closedloop_strategic.py",
+ "evidence_class": "MEASURED",
+ "scene": "7c72937c-c620-4776-9555-d57222c0081f",
+ "label_n_poses": 202,
+ "closedloop_n_gt_poses": 199,
+ "closedloop_gt_total_arc_m": 125.064,
+ "ALIGNMENT": {
+  "note": "the closed-loop gt track and the labelled clipgt track are NOT the same index space (199 vs 202 poses). The offset is FITTED to the labels' own entry_arc_m anchors and the verdict is re-checked at its neighbours.",
+  "best_offset": -1,
+  "scan": [
+   {
+    "offset": -8,
+    "max_abs_arc_err_m": 9.284,
+    "errs_m": [
+     3.935,
+     8.019,
+     9.284
+    ]
+   },
+   {
+    "offset": -7,
+    "max_abs_arc_err_m": 7.923,
+    "errs_m": [
+     3.337,
+     6.836,
+     7.923
+    ]
+   },
+   {
+    "offset": -6,
+    "max_abs_arc_err_m": 6.551,
+    "errs_m": [
+     2.741,
+     5.644,
+     6.551
+    ]
+   },
+   {
+    "offset": -5,
+    "max_abs_arc_err_m": 5.159,
+    "errs_m": [
+     2.144,
+     4.438,
+     5.159
+    ]
+   },
+   {
+    "offset": -4,
+    "max_abs_arc_err_m": 3.752,
+    "errs_m": [
+     1.549,
+     3.226,
+     3.752
+    ]
+   },
+   {
+    "offset": -3,
+    "max_abs_arc_err_m": 2.337,
+    "errs_m": [
+     0.957,
+     2.014,
+     2.337
+    ]
+   },
+   {
+    "offset": -2,
+    "max_abs_arc_err_m": 0.91,
+    "errs_m": [
+     0.367,
+     0.781,
+     0.91
+    ]
+   },
+   {
+    "offset": -1,
+    "max_abs_arc_err_m": 0.523,
+    "errs_m": [
+     0.224,
+     0.452,
+     0.523
+    ]
+   },
+   {
+    "offset": 0,
+    "max_abs_arc_err_m": 1.966,
+    "errs_m": [
+     0.814,
+     1.699,
+     1.966
+    ]
+   },
+   {
+    "offset": 1,
+    "max_abs_arc_err_m": 3.421,
+    "errs_m": [
+     1.402,
+     2.963,
+     3.421
+    ]
+   },
+   {
+    "offset": 2,
+    "max_abs_arc_err_m": 4.894,
+    "errs_m": [
+     1.989,
+     4.236,
+     4.894
+    ]
+   },
+   {
+    "offset": 3,
+    "max_abs_arc_err_m": 6.388,
+    "errs_m": [
+     2.57,
+     5.509,
+     6.388
+    ]
+   },
+   {
+    "offset": 4,
+    "max_abs_arc_err_m": 7.879,
+    "errs_m": [
+     3.148,
+     6.801,
+     7.879
+    ]
+   },
+   {
+    "offset": 5,
+    "max_abs_arc_err_m": 9.365,
+    "errs_m": [
+     3.725,
+     8.102,
+     9.365
+    ]
+   },
+   {
+    "offset": 6,
+    "max_abs_arc_err_m": 10.873,
+    "errs_m": [
+     4.3,
+     9.406,
+     10.873
+    ]
+   },
+   {
+    "offset": 7,
+    "max_abs_arc_err_m": 12.375,
+    "errs_m": [
+     4.875,
+     10.719,
+     12.375
+    ]
+   },
+   {
+    "offset": 8,
+    "max_abs_arc_err_m": 13.883,
+    "errs_m": [
+     5.445,
+     12.049,
+     13.883
+    ]
+   }
+  ]
+ },
+ "arms": {
+  "flagship-v1_empty": {
+   "family": "STRATEGIC",
+   "source": "strategic_gt.py option sets (map.xodr) \u2014 MEASURED",
+   "n_scenes_supplied": 1,
+   "n_scenes_refused_by_selfconsistency": 0,
+   "scenes_refused": {},
+   "n_decision_events_total": 3,
+   "n_events_single_option_excluded": 1,
+   "vocabularies": {
+    "map_classes": [
+     "LEFT",
+     "STRAIGHT",
+     "RIGHT",
+     "UTURN"
+    ],
+    "head_classes": [
+     "route_left",
+     "route_straight",
+     "route_right"
+    ],
+    "head_index_to_map_class": {
+     "0": 0,
+     "1": 1,
+     "2": 2
+    },
+    "classes_no_head_can_emit": [
+     "UTURN"
+    ],
+    "\u26d4_third_vocabulary": "cl_metrics.py:39 ROUTE_NAMES=('left','straight','right','unknown') uses index 3 for UNKNOWN, NOT UTURN. Those labels come from route_from_future_v21 (ego-yaw derived) and are a DIFFERENT OBJECT from the map-derived class. Never mix them."
+   },
+   "status": "OK",
+   "arm": "flagship-v1/empty",
+   "n_events_scoreable": 2,
+   "n_decision_instances_scored": 6,
+   "n_scenes_scored": 1,
+   "n_events_without_a_prediction": 0,
+   "n_events_gt_outside_head_vocabulary": 0,
+   "\u26a0\ufe0f_outside_vocabulary_note": "a 3-way head (route_left, route_straight, route_right) CANNOT emit ['UTURN']; those events can only score wrong. Counted, not silently deflating the arm.",
+   "branching_factor": {
+    "values": [
+     4,
+     4,
+     4,
+     4,
+     4,
+     2
+    ],
+    "max": 4,
+    "distinct": [
+     2,
+     4
+    ]
+   },
+   "route_class_accuracy": {
+    "mean": 1.0,
+    "lo": 1.0,
+    "hi": 1.0,
+    "ci95": 0.0,
+    "se": 0.0,
+    "reducer": "mean",
+    "n_windows": 6,
+    "n_episodes": 1,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "CI_NOT_ADMISSIBLE": true,
+    "\u26d4_ci_note": "n_scenes = 1. The episode-cluster bootstrap resamples SCENES, so with one cluster every draw is the same set and lo == hi == the point estimate. That is not a zero-width interval, it is NO interval. The point estimate is valid; quote it WITHOUT bounds, and get more branch scenes (results/junction_turn_scenes.tsv lists 225) before claiming separation."
+   },
+   "route_class_per_class": {
+    "LEFT": {
+     "n_true": 5,
+     "n_pred": 5,
+     "n_correct": 5,
+     "recall": 1.0,
+     "precision": 1.0
+    },
+    "STRAIGHT": {
+     "n_true": 1,
+     "n_pred": 1,
+     "n_correct": 1,
+     "recall": 1.0,
+     "precision": 1.0
+    }
+   },
+   "route_class_confusion_gt_x_pred": {
+    "LEFT": {
+     "LEFT": 5
+    },
+    "STRAIGHT": {
+     "STRAIGHT": 1
+    }
+   },
+   "accuracy_by_branching_factor": {
+    "2": {
+     "n": 1,
+     "acc": 1.0
+    },
+    "4": {
+     "n": 5,
+     "acc": 1.0
+    }
+   },
+   "CLUSTER": "scene \u2014 the VALUE is per decision EVENT, never per pose",
+   "\u26d4_never_per_pose": "every pose approaching one junction carries the identical label; a pose-level n overstates the sample by ~50x (scene 7c72937c: 100 admissible poses, 2 events).",
+   "estimator": "episode_cluster_bootstrap (taniteval.ci), cluster = scene",
+   "floors": {
+    "uniform_over_options": 0.2917,
+    "uniform_over_option_CLASSES": 0.5,
+    "constant_predictor_per_class": {
+     "LEFT": 0.8333,
+     "STRAIGHT": 0.1667,
+     "RIGHT": 0.0
+    },
+    "BEST_CONSTANT": {
+     "class": "LEFT",
+     "accuracy": 0.8333
+    },
+    "\u26d4_which_floor_decides": "BEST_CONSTANT. 1/n_options is a *design* floor, not the empirical null \u2014 the programme has already retracted one claim for comparing against 1/k when the empirical null was higher. The constant is fitted on THESE events, which makes the baseline stronger and the arm's win CONSERVATIVE."
+   },
+   "vs_best_constant": {
+    "delta": 0.1667,
+    "lo": 0.1667,
+    "hi": 0.1667,
+    "ci95": 0.0,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 6,
+    "n_episodes": 1,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "baseline": "always LEFT",
+    "CI_NOT_ADMISSIBLE": true,
+    "\u26d4_ci_note": "n_scenes = 1. The episode-cluster bootstrap resamples SCENES, so with one cluster every draw is the same set and lo == hi == the point estimate. That is not a zero-width interval, it is NO interval. The point estimate is valid; quote it WITHOUT bounds, and get more branch scenes (results/junction_turn_scenes.tsv lists 225) before claiming separation."
+   },
+   "beats_best_constant": true,
+   "label_degenerate": false,
+   "prediction_degenerate": false,
+   "route_choice_accuracy_road_level": {
+    "mean": 1.0,
+    "lo": 1.0,
+    "hi": 1.0,
+    "ci95": 0.0,
+    "se": 0.0,
+    "reducer": "mean",
+    "n_windows": 6,
+    "n_episodes": 1,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "CI_NOT_ADMISSIBLE": true,
+    "\u26d4_ci_note": "n_scenes = 1. The episode-cluster bootstrap resamples SCENES, so with one cluster every draw is the same set and lo == hi == the point estimate. That is not a zero-width interval, it is NO interval. The point estimate is valid; quote it WITHOUT bounds, and get more branch scenes (results/junction_turn_scenes.tsv lists 225) before claiming separation."
+   },
+   "route_choice_note": "\u26a0\ufe0f DERIVED, not emitted: this arm predicts a CLASS, not a road identity. The class is projected onto the option whose class matches. 0 of 6 events are AMBIGUOUS (several options share the predicted class \u2014 e.g. scene 7c72937c junction 149 has THREE UTURN options) and are EXCLUDED, so the denominator here is 6, not 6. A road-level number on a class head is not comparable to one from a goal-selecting head.",
+   "n_events_class_to_road_ambiguous": 0,
+   "decision_lead_distance_m": {
+    "mean": 16.7717,
+    "lo": 16.7717,
+    "hi": 16.7717,
+    "ci95": 0.0,
+    "se": 0.0,
+    "reducer": "mean",
+    "n_windows": 6,
+    "n_episodes": 1,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "definition": "largest approach distance from which the choice was already correct and stayed correct to the junction; 0.0 = wrong at entry",
+    "available_lead_m_mean": 16.77,
+    "available_lead_m_max": 22.79,
+    "n_censored_by_clip": 6,
+    "\u26a0\ufe0f_censoring": "6 of 6 events are RIGHT-CENSORED \u2014 the arm was correct for the entire observable approach, so the value is a LOWER BOUND set by the clip, not by the arm. MEASURED on 7c72937c: a policy committing 60 m out scores 20.43 m because junction 149 sits at entry_arc_m 18.07. \u26d4 Never compare this across scene sets with different approach lengths.",
+    "evidence_class": "MEASURED value, HYPOTHESIS discriminator \u2014 never yet run against two real arms",
+    "CI_NOT_ADMISSIBLE": true,
+    "\u26d4_ci_note": "n_scenes = 1. The episode-cluster bootstrap resamples SCENES, so with one cluster every draw is the same set and lo == hi == the point estimate. That is not a zero-width interval, it is NO interval. The point estimate is valid; quote it WITHOUT bounds, and get more branch scenes (results/junction_turn_scenes.tsv lists 225) before claiming separation."
+   },
+   "\u26d4_SINGLE_SCENE": "scored on 1 scene. Point estimates are valid; NO interval on this block is admissible and `beats_best_constant` must not be quoted as a verdict \u2014 the resampling unit is the scene. A +-0.10 strategic verdict needs ~100+ branch scenes (results/junction_turn_scenes.tsv lists 225 candidates).",
+   "beats_best_constant_ADMISSIBLE": false,
+   "_binding_rule": "Sayed 2026-08-02: STRATEGIC is one of FOUR families reported in ADDITION to ADE, per-family, never pooled, each with its estimator and CI. A family reported UNAVAILABLE is a WORK ITEM, not a pass.",
+   "_join": {
+    "pose_offset": -1,
+    "n_rollouts": 9,
+    "n_ticks_out_of_range_total": 0,
+    "per_rollout": [
+     {
+      "start_frame": 0,
+      "pose_key": "i_gt",
+      "pose_offset": -1,
+      "class_key_candidates": [
+       "route_head",
+       "s_route_logits",
+       "route_logits"
+      ],
+      "class_key_resolved": [
+       "s_route_logits"
+      ],
+      "road_key": null,
+      "n_ticks_in": 50,
+      "n_ticks_out_of_range": 0,
+      "n_events_with_a_prediction": 1,
+      "rule": "scored at the LAST admissible tick before junction entry (min dist_to_decision_point_m)",
+      "\u26d4_key_note": "flagship-v1 writes `s_route_logits`, refc-base writes `route_logits` \u2014 MEASURED, same scene, same driver. Reading one key made REF-C's route head invisible to the closed-loop STRATEGIC family (cl_metrics.py:176). `class_key_resolved` records which key actually carried the decision, so that failure cannot recur silently."
+     },
+     {
+      "start_frame": 15,
+      "pose_key": "i_gt",
+      "pose_offset": -1,
+      "class_key_candidates": [
+       "route_head",
+       "s_route_logits",
+       "route_logits"
+      ],
+      "class_key_resolved": [
+       "s_route_logits"
+      ],
+      "road_key": null,
+      "n_ticks_in": 50,
+      "n_ticks_out_of_range": 0,
+      "n_events_with_a_prediction": 1,
+      "rule": "scored at the LAST admissible tick before junction entry (min dist_to_decision_point_m)",
+      "\u26d4_key_note": "flagship-v1 writes `s_route_logits`, refc-base writes `route_logits` \u2014 MEASURED, same scene, same driver. Reading one key made REF-C's route head invisible to the closed-loop STRATEGIC family (cl_metrics.py:176). `class_key_resolved` records which key actually carried the decision, so that failure cannot recur silently."
+     },
+     {
+      "start_frame": 30,
+      "pose_key": "i_gt",
+      "pose_offset": -1,
+      "class_key_candidates": [
+       "route_head",
+       "s_route_logits",
+       "route_logits"
+      ],
+      "class_key_resolved": [
+       "s_route_logits"
+      ],
+      "road_key": null,
+      "n_ticks_in": 50,
+      "n_ticks_out_of_range": 0,
+      "n_events_with_a_prediction": 1,
+      "rule": "scored at the LAST admissible tick before junction entry (min dist_to_decision_point_m)",
+      "\u26d4_key_note": "flagship-v1 writes `s_route_logits`, refc-base writes `route_logits` \u2014 MEASURED, same scene, same driver. Reading one key made REF-C's route head invisible to the closed-loop STRATEGIC family (cl_metrics.py:176). `class_key_resolved` records which key actually carried the decision, so that failure cannot recur silently."
+     },
+     {
+      "start_frame": 45,
+      "pose_key": "i_gt",
+      "pose_offset": -1,
+      "class_key_candidates": [
+       "route_head",
+       "s_route_logits",
+       "route_logits"
+      ],
+      "class_key_resolved": [
+       "s_route_logits"
+      ],
+      "road_key": null,
+      "n_ticks_in": 50,
+      "n_ticks_out_of_range": 0,
+      "n_events_with_a_prediction": 1,
+      "rule": "scored at the LAST admissible tick before junction entry (min dist_to_decision_point_m)",
+      "\u26d4_key_note": "flagship-v1 writes `s_route_logits`, refc-base writes `route_logits` \u2014 MEASURED, same scene, same driver. Reading one key made REF-C's route head invisible to the closed-loop STRATEGIC family (cl_metrics.py:176). `class_key_resolved` records which key actually carried the decision, so that failure cannot recur silently."
+     },
+     {
+      "start_frame": 60,
+      "pose_key": "i_gt",
+      "pose_offset": -1,
+      "class_key_candidates": [
+       "route_head",
+       "s_route_logits",
+       "route_logits"
+      ],
+      "class_key_resolved": [
+       "s_route_logits"
+      ],
+      "road_key": null,
+      "n_ticks_in": 50,
+      "n_ticks_out_of_range": 0,
+      "n_events_with_a_prediction": 1,
+      "rule": "scored at the LAST admissible tick before junction entry (min dist_to_decision_point_m)",
+      "\u26d4_key_note": "flagship-v1 writes `s_route_logits`, refc-base writes `route_logits` \u2014 MEASURED, same scene, same driver. Reading one key made REF-C's route head invisible to the closed-loop STRATEGIC family (cl_metrics.py:176). `class_key_resolved` records which key actually carried the decision, so that failure cannot recur silently."
+     },
+     {
+      "start_frame": 75,
+      "pose_key": "i_gt",
+      "pose_offset": -1,
+      "class_key_candidates": [
+       "route_head",
+       "s_route_logits",
+       "route_logits"
+      ],
+      "class_key_resolved": null,
+      "road_key": null,
+      "n_ticks_in": 50,
+      "n_ticks_out_of_range": 0,
+      "n_events_with_a_prediction": 0,
+      "rule": "scored at the LAST admissible tick before junction entry (min dist_to_decision_point_m)",
+      "\u26d4_key_note": "flagship-v1 writes `s_route_logits`, refc-base writes `route_logits` \u2014 MEASURED, same scene, same driver. Reading one key made REF-C's route head invisible to the closed-loop STRATEGIC family (cl_metrics.py:176). `class_key_resolved` records which key actually carried the decision, so that failure cannot recur silently."
+     },
+     {
+      "start_frame": 90,
+      "pose_key": "i_gt",
+      "pose_offset": -1,
+      "class_key_candidates": [
+       "route_head",
+       "s_route_logits",
+       "route_logits"
+      ],
+      "class_key_resolved": null,
+      "road_key": null,
+      "n_ticks_in": 50,
+      "n_ticks_out_of_range": 0,
+      "n_events_with_a_prediction": 0,
+      "rule": "scored at the LAST admissible tick before junction entry (min dist_to_decision_point_m)",
+      "\u26d4_key_note": "flagship-v1 writes `s_route_logits`, refc-base writes `route_logits` \u2014 MEASURED, same scene, same driver. Reading one key made REF-C's route head invisible to the closed-loop STRATEGIC family (cl_metrics.py:176). `class_key_resolved` records which key actually carried the decision, so that failure cannot recur silently."
+     },
+     {
+      "start_frame": 105,
+      "pose_key": "i_gt",
+      "pose_offset": -1,
+      "class_key_candidates": [
+       "route_head",
+       "s_route_logits",
+       "route_logits"
+      ],
+      "class_key_resolved": null,
+      "road_key": null,
+      "n_ticks_in": 50,
+      "n_ticks_out_of_range": 0,
+      "n_events_with_a_prediction": 0,
+      "rule": "scored at the LAST admissible tick before junction entry (min dist_to_decision_point_m)",
+      "\u26d4_key_note": "flagship-v1 writes `s_route_logits`, refc-base writes `route_logits` \u2014 MEASURED, same scene, same driver. Reading one key made REF-C's route head invisible to the closed-loop STRATEGIC family (cl_metrics.py:176). `class_key_resolved` records which key actually carried the decision, so that failure cannot recur silently."
+     },
+     {
+      "start_frame": 120,
+      "pose_key": "i_gt",
+      "pose_offset": -1,
+      "class_key_candidates": [
+       "route_head",
+       "s_route_logits",
+       "route_logits"
+      ],
+      "class_key_resolved": [
+       "s_route_logits"
+      ],
+      "road_key": null,
+      "n_ticks_in": 50,
+      "n_ticks_out_of_range": 0,
+      "n_events_with_a_prediction": 1,
+      "rule": "scored at the LAST admissible tick before junction entry (min dist_to_decision_point_m)",
+      "\u26d4_key_note": "flagship-v1 writes `s_route_logits`, refc-base writes `route_logits` \u2014 MEASURED, same scene, same driver. Reading one key made REF-C's route head invisible to the closed-loop STRATEGIC family (cl_metrics.py:176). `class_key_resolved` records which key actually carried the decision, so that failure cannot recur silently."
+     }
+    ]
+   }
+  },
+  "flagship-v1_objects": {
+   "family": "STRATEGIC",
+   "source": "strategic_gt.py option sets (map.xodr) \u2014 MEASURED",
+   "n_scenes_supplied": 1,
+   "n_scenes_refused_by_selfconsistency": 0,
+   "scenes_refused": {},
+   "n_decision_events_total": 3,
+   "n_events_single_option_excluded": 1,
+   "vocabularies": {
+    "map_classes": [
+     "LEFT",
+     "STRAIGHT",
+     "RIGHT",
+     "UTURN"
+    ],
+    "head_classes": [
+     "route_left",
+     "route_straight",
+     "route_right"
+    ],
+    "head_index_to_map_class": {
+     "0": 0,
+     "1": 1,
+     "2": 2
+    },
+    "classes_no_head_can_emit": [
+     "UTURN"
+    ],
+    "\u26d4_third_vocabulary": "cl_metrics.py:39 ROUTE_NAMES=('left','straight','right','unknown') uses index 3 for UNKNOWN, NOT UTURN. Those labels come from route_from_future_v21 (ego-yaw derived) and are a DIFFERENT OBJECT from the map-derived class. Never mix them."
+   },
+   "status": "OK",
+   "arm": "flagship-v1/objects",
+   "n_events_scoreable": 2,
+   "n_decision_instances_scored": 6,
+   "n_scenes_scored": 1,
+   "n_events_without_a_prediction": 0,
+   "n_events_gt_outside_head_vocabulary": 0,
+   "\u26a0\ufe0f_outside_vocabulary_note": "a 3-way head (route_left, route_straight, route_right) CANNOT emit ['UTURN']; those events can only score wrong. Counted, not silently deflating the arm.",
+   "branching_factor": {
+    "values": [
+     4,
+     4,
+     4,
+     4,
+     4,
+     2
+    ],
+    "max": 4,
+    "distinct": [
+     2,
+     4
+    ]
+   },
+   "route_class_accuracy": {
+    "mean": 1.0,
+    "lo": 1.0,
+    "hi": 1.0,
+    "ci95": 0.0,
+    "se": 0.0,
+    "reducer": "mean",
+    "n_windows": 6,
+    "n_episodes": 1,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "CI_NOT_ADMISSIBLE": true,
+    "\u26d4_ci_note": "n_scenes = 1. The episode-cluster bootstrap resamples SCENES, so with one cluster every draw is the same set and lo == hi == the point estimate. That is not a zero-width interval, it is NO interval. The point estimate is valid; quote it WITHOUT bounds, and get more branch scenes (results/junction_turn_scenes.tsv lists 225) before claiming separation."
+   },
+   "route_class_per_class": {
+    "LEFT": {
+     "n_true": 5,
+     "n_pred": 5,
+     "n_correct": 5,
+     "recall": 1.0,
+     "precision": 1.0
+    },
+    "STRAIGHT": {
+     "n_true": 1,
+     "n_pred": 1,
+     "n_correct": 1,
+     "recall": 1.0,
+     "precision": 1.0
+    }
+   },
+   "route_class_confusion_gt_x_pred": {
+    "LEFT": {
+     "LEFT": 5
+    },
+    "STRAIGHT": {
+     "STRAIGHT": 1
+    }
+   },
+   "accuracy_by_branching_factor": {
+    "2": {
+     "n": 1,
+     "acc": 1.0
+    },
+    "4": {
+     "n": 5,
+     "acc": 1.0
+    }
+   },
+   "CLUSTER": "scene \u2014 the VALUE is per decision EVENT, never per pose",
+   "\u26d4_never_per_pose": "every pose approaching one junction carries the identical label; a pose-level n overstates the sample by ~50x (scene 7c72937c: 100 admissible poses, 2 events).",
+   "estimator": "episode_cluster_bootstrap (taniteval.ci), cluster = scene",
+   "floors": {
+    "uniform_over_options": 0.2917,
+    "uniform_over_option_CLASSES": 0.5,
+    "constant_predictor_per_class": {
+     "LEFT": 0.8333,
+     "STRAIGHT": 0.1667,
+     "RIGHT": 0.0
+    },
+    "BEST_CONSTANT": {
+     "class": "LEFT",
+     "accuracy": 0.8333
+    },
+    "\u26d4_which_floor_decides": "BEST_CONSTANT. 1/n_options is a *design* floor, not the empirical null \u2014 the programme has already retracted one claim for comparing against 1/k when the empirical null was higher. The constant is fitted on THESE events, which makes the baseline stronger and the arm's win CONSERVATIVE."
+   },
+   "vs_best_constant": {
+    "delta": 0.1667,
+    "lo": 0.1667,
+    "hi": 0.1667,
+    "ci95": 0.0,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 6,
+    "n_episodes": 1,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "baseline": "always LEFT",
+    "CI_NOT_ADMISSIBLE": true,
+    "\u26d4_ci_note": "n_scenes = 1. The episode-cluster bootstrap resamples SCENES, so with one cluster every draw is the same set and lo == hi == the point estimate. That is not a zero-width interval, it is NO interval. The point estimate is valid; quote it WITHOUT bounds, and get more branch scenes (results/junction_turn_scenes.tsv lists 225) before claiming separation."
+   },
+   "beats_best_constant": true,
+   "label_degenerate": false,
+   "prediction_degenerate": false,
+   "route_choice_accuracy_road_level": {
+    "mean": 1.0,
+    "lo": 1.0,
+    "hi": 1.0,
+    "ci95": 0.0,
+    "se": 0.0,
+    "reducer": "mean",
+    "n_windows": 6,
+    "n_episodes": 1,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "CI_NOT_ADMISSIBLE": true,
+    "\u26d4_ci_note": "n_scenes = 1. The episode-cluster bootstrap resamples SCENES, so with one cluster every draw is the same set and lo == hi == the point estimate. That is not a zero-width interval, it is NO interval. The point estimate is valid; quote it WITHOUT bounds, and get more branch scenes (results/junction_turn_scenes.tsv lists 225) before claiming separation."
+   },
+   "route_choice_note": "\u26a0\ufe0f DERIVED, not emitted: this arm predicts a CLASS, not a road identity. The class is projected onto the option whose class matches. 0 of 6 events are AMBIGUOUS (several options share the predicted class \u2014 e.g. scene 7c72937c junction 149 has THREE UTURN options) and are EXCLUDED, so the denominator here is 6, not 6. A road-level number on a class head is not comparable to one from a goal-selecting head.",
+   "n_events_class_to_road_ambiguous": 0,
+   "decision_lead_distance_m": {
+    "mean": 16.7717,
+    "lo": 16.7717,
+    "hi": 16.7717,
+    "ci95": 0.0,
+    "se": 0.0,
+    "reducer": "mean",
+    "n_windows": 6,
+    "n_episodes": 1,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "definition": "largest approach distance from which the choice was already correct and stayed correct to the junction; 0.0 = wrong at entry",
+    "available_lead_m_mean": 16.77,
+    "available_lead_m_max": 22.79,
+    "n_censored_by_clip": 6,
+    "\u26a0\ufe0f_censoring": "6 of 6 events are RIGHT-CENSORED \u2014 the arm was correct for the entire observable approach, so the value is a LOWER BOUND set by the clip, not by the arm. MEASURED on 7c72937c: a policy committing 60 m out scores 20.43 m because junction 149 sits at entry_arc_m 18.07. \u26d4 Never compare this across scene sets with different approach lengths.",
+    "evidence_class": "MEASURED value, HYPOTHESIS discriminator \u2014 never yet run against two real arms",
+    "CI_NOT_ADMISSIBLE": true,
+    "\u26d4_ci_note": "n_scenes = 1. The episode-cluster bootstrap resamples SCENES, so with one cluster every draw is the same set and lo == hi == the point estimate. That is not a zero-width interval, it is NO interval. The point estimate is valid; quote it WITHOUT bounds, and get more branch scenes (results/junction_turn_scenes.tsv lists 225) before claiming separation."
+   },
+   "\u26d4_SINGLE_SCENE": "scored on 1 scene. Point estimates are valid; NO interval on this block is admissible and `beats_best_constant` must not be quoted as a verdict \u2014 the resampling unit is the scene. A +-0.10 strategic verdict needs ~100+ branch scenes (results/junction_turn_scenes.tsv lists 225 candidates).",
+   "beats_best_constant_ADMISSIBLE": false,
+   "_binding_rule": "Sayed 2026-08-02: STRATEGIC is one of FOUR families reported in ADDITION to ADE, per-family, never pooled, each with its estimator and CI. A family reported UNAVAILABLE is a WORK ITEM, not a pass.",
+   "_join": {
+    "pose_offset": -1,
+    "n_rollouts": 9,
+    "n_ticks_out_of_range_total": 0,
+    "per_rollout": [
+     {
+      "start_frame": 0,
+      "pose_key": "i_gt",
+      "pose_offset": -1,
+      "class_key_candidates": [
+       "route_head",
+       "s_route_logits",
+       "route_logits"
+      ],
+      "class_key_resolved": [
+       "s_route_logits"
+      ],
+      "road_key": null,
+      "n_ticks_in": 50,
+      "n_ticks_out_of_range": 0,
+      "n_events_with_a_prediction": 1,
+      "rule": "scored at the LAST admissible tick before junction entry (min dist_to_decision_point_m)",
+      "\u26d4_key_note": "flagship-v1 writes `s_route_logits`, refc-base writes `route_logits` \u2014 MEASURED, same scene, same driver. Reading one key made REF-C's route head invisible to the closed-loop STRATEGIC family (cl_metrics.py:176). `class_key_resolved` records which key actually carried the decision, so that failure cannot recur silently."
+     },
+     {
+      "start_frame": 15,
+      "pose_key": "i_gt",
+      "pose_offset": -1,
+      "class_key_candidates": [
+       "route_head",
+       "s_route_logits",
+       "route_logits"
+      ],
+      "class_key_resolved": [
+       "s_route_logits"
+      ],
+      "road_key": null,
+      "n_ticks_in": 50,
+      "n_ticks_out_of_range": 0,
+      "n_events_with_a_prediction": 1,
+      "rule": "scored at the LAST admissible tick before junction entry (min dist_to_decision_point_m)",
+      "\u26d4_key_note": "flagship-v1 writes `s_route_logits`, refc-base writes `route_logits` \u2014 MEASURED, same scene, same driver. Reading one key made REF-C's route head invisible to the closed-loop STRATEGIC family (cl_metrics.py:176). `class_key_resolved` records which key actually carried the decision, so that failure cannot recur silently."
+     },
+     {
+      "start_frame": 30,
+      "pose_key": "i_gt",
+      "pose_offset": -1,
+      "class_key_candidates": [
+       "route_head",
+       "s_route_logits",
+       "route_logits"
+      ],
+      "class_key_resolved": [
+       "s_route_logits"
+      ],
+      "road_key": null,
+      "n_ticks_in": 50,
+      "n_ticks_out_of_range": 0,
+      "n_events_with_a_prediction": 1,
+      "rule": "scored at the LAST admissible tick before junction entry (min dist_to_decision_point_m)",
+      "\u26d4_key_note": "flagship-v1 writes `s_route_logits`, refc-base writes `route_logits` \u2014 MEASURED, same scene, same driver. Reading one key made REF-C's route head invisible to the closed-loop STRATEGIC family (cl_metrics.py:176). `class_key_resolved` records which key actually carried the decision, so that failure cannot recur silently."
+     },
+     {
+      "start_frame": 45,
+      "pose_key": "i_gt",
+      "pose_offset": -1,
+      "class_key_candidates": [
+       "route_head",
+       "s_route_logits",
+       "route_logits"
+      ],
+      "class_key_resolved": [
+       "s_route_logits"
+      ],
+      "road_key": null,
+      "n_ticks_in": 50,
+      "n_ticks_out_of_range": 0,
+      "n_events_with_a_prediction": 1,
+      "rule": "scored at the LAST admissible tick before junction entry (min dist_to_decision_point_m)",
+      "\u26d4_key_note": "flagship-v1 writes `s_route_logits`, refc-base writes `route_logits` \u2014 MEASURED, same scene, same driver. Reading one key made REF-C's route head invisible to the closed-loop STRATEGIC family (cl_metrics.py:176). `class_key_resolved` records which key actually carried the decision, so that failure cannot recur silently."
+     },
+     {
+      "start_frame": 60,
+      "pose_key": "i_gt",
+      "pose_offset": -1,
+      "class_key_candidates": [
+       "route_head",
+       "s_route_logits",
+       "route_logits"
+      ],
+      "class_key_resolved": [
+       "s_route_logits"
+      ],
+      "road_key": null,
+      "n_ticks_in": 50,
+      "n_ticks_out_of_range": 0,
+      "n_events_with_a_prediction": 1,
+      "rule": "scored at the LAST admissible tick before junction entry (min dist_to_decision_point_m)",
+      "\u26d4_key_note": "flagship-v1 writes `s_route_logits`, refc-base writes `route_logits` \u2014 MEASURED, same scene, same driver. Reading one key made REF-C's route head invisible to the closed-loop STRATEGIC family (cl_metrics.py:176). `class_key_resolved` records which key actually carried the decision, so that failure cannot recur silently."
+     },
+     {
+      "start_frame": 75,
+      "pose_key": "i_gt",
+      "pose_offset": -1,
+      "class_key_candidates": [
+       "route_head",
+       "s_route_logits",
+       "route_logits"
+      ],
+      "class_key_resolved": null,
+      "road_key": null,
+      "n_ticks_in": 50,
+      "n_ticks_out_of_range": 0,
+      "n_events_with_a_prediction": 0,
+      "rule": "scored at the LAST admissible tick before junction entry (min dist_to_decision_point_m)",
+      "\u26d4_key_note": "flagship-v1 writes `s_route_logits`, refc-base writes `route_logits` \u2014 MEASURED, same scene, same driver. Reading one key made REF-C's route head invisible to the closed-loop STRATEGIC family (cl_metrics.py:176). `class_key_resolved` records which key actually carried the decision, so that failure cannot recur silently."
+     },
+     {
+      "start_frame": 90,
+      "pose_key": "i_gt",
+      "pose_offset": -1,
+      "class_key_candidates": [
+       "route_head",
+       "s_route_logits",
+       "route_logits"
+      ],
+      "class_key_resolved": null,
+      "road_key": null,
+      "n_ticks_in": 50,
+      "n_ticks_out_of_range": 0,
+      "n_events_with_a_prediction": 0,
+      "rule": "scored at the LAST admissible tick before junction entry (min dist_to_decision_point_m)",
+      "\u26d4_key_note": "flagship-v1 writes `s_route_logits`, refc-base writes `route_logits` \u2014 MEASURED, same scene, same driver. Reading one key made REF-C's route head invisible to the closed-loop STRATEGIC family (cl_metrics.py:176). `class_key_resolved` records which key actually carried the decision, so that failure cannot recur silently."
+     },
+     {
+      "start_frame": 105,
+      "pose_key": "i_gt",
+      "pose_offset": -1,
+      "class_key_candidates": [
+       "route_head",
+       "s_route_logits",
+       "route_logits"
+      ],
+      "class_key_resolved": null,
+      "road_key": null,
+      "n_ticks_in": 50,
+      "n_ticks_out_of_range": 0,
+      "n_events_with_a_prediction": 0,
+      "rule": "scored at the LAST admissible tick before junction entry (min dist_to_decision_point_m)",
+      "\u26d4_key_note": "flagship-v1 writes `s_route_logits`, refc-base writes `route_logits` \u2014 MEASURED, same scene, same driver. Reading one key made REF-C's route head invisible to the closed-loop STRATEGIC family (cl_metrics.py:176). `class_key_resolved` records which key actually carried the decision, so that failure cannot recur silently."
+     },
+     {
+      "start_frame": 120,
+      "pose_key": "i_gt",
+      "pose_offset": -1,
+      "class_key_candidates": [
+       "route_head",
+       "s_route_logits",
+       "route_logits"
+      ],
+      "class_key_resolved": [
+       "s_route_logits"
+      ],
+      "road_key": null,
+      "n_ticks_in": 50,
+      "n_ticks_out_of_range": 0,
+      "n_events_with_a_prediction": 1,
+      "rule": "scored at the LAST admissible tick before junction entry (min dist_to_decision_point_m)",
+      "\u26d4_key_note": "flagship-v1 writes `s_route_logits`, refc-base writes `route_logits` \u2014 MEASURED, same scene, same driver. Reading one key made REF-C's route head invisible to the closed-loop STRATEGIC family (cl_metrics.py:176). `class_key_resolved` records which key actually carried the decision, so that failure cannot recur silently."
+     }
+    ]
+   }
+  },
+  "long_flagship-v1_objects": {
+   "family": "STRATEGIC",
+   "source": "strategic_gt.py option sets (map.xodr) \u2014 MEASURED",
+   "n_scenes_supplied": 1,
+   "n_scenes_refused_by_selfconsistency": 0,
+   "scenes_refused": {},
+   "n_decision_events_total": 3,
+   "n_events_single_option_excluded": 1,
+   "vocabularies": {
+    "map_classes": [
+     "LEFT",
+     "STRAIGHT",
+     "RIGHT",
+     "UTURN"
+    ],
+    "head_classes": [
+     "route_left",
+     "route_straight",
+     "route_right"
+    ],
+    "head_index_to_map_class": {
+     "0": 0,
+     "1": 1,
+     "2": 2
+    },
+    "classes_no_head_can_emit": [
+     "UTURN"
+    ],
+    "\u26d4_third_vocabulary": "cl_metrics.py:39 ROUTE_NAMES=('left','straight','right','unknown') uses index 3 for UNKNOWN, NOT UTURN. Those labels come from route_from_future_v21 (ego-yaw derived) and are a DIFFERENT OBJECT from the map-derived class. Never mix them."
+   },
+   "status": "OK",
+   "arm": "flagship-v1/objects",
+   "n_events_scoreable": 2,
+   "n_decision_instances_scored": 2,
+   "n_scenes_scored": 1,
+   "n_events_without_a_prediction": 1,
+   "n_events_gt_outside_head_vocabulary": 0,
+   "\u26a0\ufe0f_outside_vocabulary_note": "a 3-way head (route_left, route_straight, route_right) CANNOT emit ['UTURN']; those events can only score wrong. Counted, not silently deflating the arm.",
+   "branching_factor": {
+    "values": [
+     4,
+     2
+    ],
+    "max": 4,
+    "distinct": [
+     2,
+     4
+    ]
+   },
+   "route_class_accuracy": {
+    "mean": 0.5,
+    "lo": 0.5,
+    "hi": 0.5,
+    "ci95": 0.0,
+    "se": 0.0,
+    "reducer": "mean",
+    "n_windows": 2,
+    "n_episodes": 1,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "CI_NOT_ADMISSIBLE": true,
+    "\u26d4_ci_note": "n_scenes = 1. The episode-cluster bootstrap resamples SCENES, so with one cluster every draw is the same set and lo == hi == the point estimate. That is not a zero-width interval, it is NO interval. The point estimate is valid; quote it WITHOUT bounds, and get more branch scenes (results/junction_turn_scenes.tsv lists 225) before claiming separation."
+   },
+   "route_class_per_class": {
+    "LEFT": {
+     "n_true": 1,
+     "n_pred": 1,
+     "n_correct": 1,
+     "recall": 1.0,
+     "precision": 1.0
+    },
+    "STRAIGHT": {
+     "n_true": 1,
+     "n_pred": 0,
+     "n_correct": 0,
+     "recall": 0.0,
+     "precision": null
+    }
+   },
+   "route_class_confusion_gt_x_pred": {
+    "LEFT": {
+     "LEFT": 1
+    },
+    "STRAIGHT": {
+     "none": 1
+    }
+   },
+   "accuracy_by_branching_factor": {
+    "2": {
+     "n": 1,
+     "acc": 0.0
+    },
+    "4": {
+     "n": 1,
+     "acc": 1.0
+    }
+   },
+   "CLUSTER": "scene \u2014 the VALUE is per decision EVENT, never per pose",
+   "\u26d4_never_per_pose": "every pose approaching one junction carries the identical label; a pose-level n overstates the sample by ~50x (scene 7c72937c: 100 admissible poses, 2 events).",
+   "estimator": "episode_cluster_bootstrap (taniteval.ci), cluster = scene",
+   "floors": {
+    "uniform_over_options": 0.375,
+    "uniform_over_option_CLASSES": 0.5,
+    "constant_predictor_per_class": {
+     "LEFT": 0.5,
+     "STRAIGHT": 0.5,
+     "RIGHT": 0.0
+    },
+    "BEST_CONSTANT": {
+     "class": "LEFT",
+     "accuracy": 0.5
+    },
+    "\u26d4_which_floor_decides": "BEST_CONSTANT. 1/n_options is a *design* floor, not the empirical null \u2014 the programme has already retracted one claim for comparing against 1/k when the empirical null was higher. The constant is fitted on THESE events, which makes the baseline stronger and the arm's win CONSERVATIVE."
+   },
+   "vs_best_constant": {
+    "delta": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "ci95": 0.0,
+    "p_delta_gt0": 0.0,
+    "separated": false,
+    "reducer": "mean",
+    "n_windows": 2,
+    "n_episodes": 1,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "baseline": "always LEFT",
+    "CI_NOT_ADMISSIBLE": true,
+    "\u26d4_ci_note": "n_scenes = 1. The episode-cluster bootstrap resamples SCENES, so with one cluster every draw is the same set and lo == hi == the point estimate. That is not a zero-width interval, it is NO interval. The point estimate is valid; quote it WITHOUT bounds, and get more branch scenes (results/junction_turn_scenes.tsv lists 225) before claiming separation."
+   },
+   "beats_best_constant": false,
+   "label_degenerate": false,
+   "prediction_degenerate": true,
+   "route_choice_accuracy_road_level": {
+    "mean": 1.0,
+    "lo": 1.0,
+    "hi": 1.0,
+    "ci95": 0.0,
+    "se": 0.0,
+    "reducer": "mean",
+    "n_windows": 1,
+    "n_episodes": 1,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "CI_NOT_ADMISSIBLE": true,
+    "\u26d4_ci_note": "n_scenes = 1. The episode-cluster bootstrap resamples SCENES, so with one cluster every draw is the same set and lo == hi == the point estimate. That is not a zero-width interval, it is NO interval. The point estimate is valid; quote it WITHOUT bounds, and get more branch scenes (results/junction_turn_scenes.tsv lists 225) before claiming separation."
+   },
+   "route_choice_note": "\u26a0\ufe0f DERIVED, not emitted: this arm predicts a CLASS, not a road identity. The class is projected onto the option whose class matches. 0 of 2 events are AMBIGUOUS (several options share the predicted class \u2014 e.g. scene 7c72937c junction 149 has THREE UTURN options) and are EXCLUDED, so the denominator here is 1, not 2. A road-level number on a class head is not comparable to one from a goal-selecting head.",
+   "n_events_class_to_road_ambiguous": 0,
+   "decision_lead_distance_m": {
+    "mean": 18.07,
+    "lo": 18.07,
+    "hi": 18.07,
+    "ci95": 0.0,
+    "se": 0.0,
+    "reducer": "mean",
+    "n_windows": 1,
+    "n_episodes": 1,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "definition": "largest approach distance from which the choice was already correct and stayed correct to the junction; 0.0 = wrong at entry",
+    "available_lead_m_mean": 18.07,
+    "available_lead_m_max": 18.07,
+    "n_censored_by_clip": 1,
+    "\u26a0\ufe0f_censoring": "1 of 1 events are RIGHT-CENSORED \u2014 the arm was correct for the entire observable approach, so the value is a LOWER BOUND set by the clip, not by the arm. MEASURED on 7c72937c: a policy committing 60 m out scores 20.43 m because junction 149 sits at entry_arc_m 18.07. \u26d4 Never compare this across scene sets with different approach lengths.",
+    "evidence_class": "MEASURED value, HYPOTHESIS discriminator \u2014 never yet run against two real arms",
+    "CI_NOT_ADMISSIBLE": true,
+    "\u26d4_ci_note": "n_scenes = 1. The episode-cluster bootstrap resamples SCENES, so with one cluster every draw is the same set and lo == hi == the point estimate. That is not a zero-width interval, it is NO interval. The point estimate is valid; quote it WITHOUT bounds, and get more branch scenes (results/junction_turn_scenes.tsv lists 225) before claiming separation."
+   },
+   "\u26d4_SINGLE_SCENE": "scored on 1 scene. Point estimates are valid; NO interval on this block is admissible and `beats_best_constant` must not be quoted as a verdict \u2014 the resampling unit is the scene. A +-0.10 strategic verdict needs ~100+ branch scenes (results/junction_turn_scenes.tsv lists 225 candidates).",
+   "beats_best_constant_ADMISSIBLE": false,
+   "_binding_rule": "Sayed 2026-08-02: STRATEGIC is one of FOUR families reported in ADDITION to ADE, per-family, never pooled, each with its estimator and CI. A family reported UNAVAILABLE is a WORK ITEM, not a pass.",
+   "_join": {
+    "pose_offset": -1,
+    "n_rollouts": 1,
+    "n_ticks_out_of_range_total": 0,
+    "per_rollout": [
+     {
+      "start_frame": 0,
+      "pose_key": "i_gt",
+      "pose_offset": -1,
+      "class_key_candidates": [
+       "route_head",
+       "s_route_logits",
+       "route_logits"
+      ],
+      "class_key_resolved": [
+       "s_route_logits"
+      ],
+      "road_key": null,
+      "n_ticks_in": 150,
+      "n_ticks_out_of_range": 0,
+      "n_events_with_a_prediction": 1,
+      "rule": "scored at the LAST admissible tick before junction entry (min dist_to_decision_point_m)",
+      "\u26d4_key_note": "flagship-v1 writes `s_route_logits`, refc-base writes `route_logits` \u2014 MEASURED, same scene, same driver. Reading one key made REF-C's route head invisible to the closed-loop STRATEGIC family (cl_metrics.py:176). `class_key_resolved` records which key actually carried the decision, so that failure cannot recur silently."
+     }
+    ]
+   }
+  },
+  "long_refc-base_objects": {
+   "family": "STRATEGIC",
+   "source": "strategic_gt.py option sets (map.xodr) \u2014 MEASURED",
+   "n_scenes_supplied": 1,
+   "n_scenes_refused_by_selfconsistency": 0,
+   "scenes_refused": {},
+   "n_decision_events_total": 3,
+   "n_events_single_option_excluded": 1,
+   "vocabularies": {
+    "map_classes": [
+     "LEFT",
+     "STRAIGHT",
+     "RIGHT",
+     "UTURN"
+    ],
+    "head_classes": [
+     "route_left",
+     "route_straight",
+     "route_right"
+    ],
+    "head_index_to_map_class": {
+     "0": 0,
+     "1": 1,
+     "2": 2
+    },
+    "classes_no_head_can_emit": [
+     "UTURN"
+    ],
+    "\u26d4_third_vocabulary": "cl_metrics.py:39 ROUTE_NAMES=('left','straight','right','unknown') uses index 3 for UNKNOWN, NOT UTURN. Those labels come from route_from_future_v21 (ego-yaw derived) and are a DIFFERENT OBJECT from the map-derived class. Never mix them."
+   },
+   "status": "OK",
+   "arm": "refc-base/objects",
+   "n_events_scoreable": 2,
+   "n_decision_instances_scored": 2,
+   "n_scenes_scored": 1,
+   "n_events_without_a_prediction": 1,
+   "n_events_gt_outside_head_vocabulary": 0,
+   "\u26a0\ufe0f_outside_vocabulary_note": "a 3-way head (route_left, route_straight, route_right) CANNOT emit ['UTURN']; those events can only score wrong. Counted, not silently deflating the arm.",
+   "branching_factor": {
+    "values": [
+     4,
+     2
+    ],
+    "max": 4,
+    "distinct": [
+     2,
+     4
+    ]
+   },
+   "route_class_accuracy": {
+    "mean": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "ci95": 0.0,
+    "se": 0.0,
+    "reducer": "mean",
+    "n_windows": 2,
+    "n_episodes": 1,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "CI_NOT_ADMISSIBLE": true,
+    "\u26d4_ci_note": "n_scenes = 1. The episode-cluster bootstrap resamples SCENES, so with one cluster every draw is the same set and lo == hi == the point estimate. That is not a zero-width interval, it is NO interval. The point estimate is valid; quote it WITHOUT bounds, and get more branch scenes (results/junction_turn_scenes.tsv lists 225) before claiming separation."
+   },
+   "route_class_per_class": {
+    "LEFT": {
+     "n_true": 1,
+     "n_pred": 0,
+     "n_correct": 0,
+     "recall": 0.0,
+     "precision": null
+    },
+    "STRAIGHT": {
+     "n_true": 1,
+     "n_pred": 0,
+     "n_correct": 0,
+     "recall": 0.0,
+     "precision": null
+    },
+    "RIGHT": {
+     "n_true": 0,
+     "n_pred": 1,
+     "n_correct": 0,
+     "recall": null,
+     "precision": 0.0
+    }
+   },
+   "route_class_confusion_gt_x_pred": {
+    "LEFT": {
+     "RIGHT": 1
+    },
+    "STRAIGHT": {
+     "none": 1
+    }
+   },
+   "accuracy_by_branching_factor": {
+    "2": {
+     "n": 1,
+     "acc": 0.0
+    },
+    "4": {
+     "n": 1,
+     "acc": 0.0
+    }
+   },
+   "CLUSTER": "scene \u2014 the VALUE is per decision EVENT, never per pose",
+   "\u26d4_never_per_pose": "every pose approaching one junction carries the identical label; a pose-level n overstates the sample by ~50x (scene 7c72937c: 100 admissible poses, 2 events).",
+   "estimator": "episode_cluster_bootstrap (taniteval.ci), cluster = scene",
+   "floors": {
+    "uniform_over_options": 0.375,
+    "uniform_over_option_CLASSES": 0.5,
+    "constant_predictor_per_class": {
+     "LEFT": 0.5,
+     "STRAIGHT": 0.5,
+     "RIGHT": 0.0
+    },
+    "BEST_CONSTANT": {
+     "class": "LEFT",
+     "accuracy": 0.5
+    },
+    "\u26d4_which_floor_decides": "BEST_CONSTANT. 1/n_options is a *design* floor, not the empirical null \u2014 the programme has already retracted one claim for comparing against 1/k when the empirical null was higher. The constant is fitted on THESE events, which makes the baseline stronger and the arm's win CONSERVATIVE."
+   },
+   "vs_best_constant": {
+    "delta": -0.5,
+    "lo": -0.5,
+    "hi": -0.5,
+    "ci95": 0.0,
+    "p_delta_gt0": 0.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 2,
+    "n_episodes": 1,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "baseline": "always LEFT",
+    "CI_NOT_ADMISSIBLE": true,
+    "\u26d4_ci_note": "n_scenes = 1. The episode-cluster bootstrap resamples SCENES, so with one cluster every draw is the same set and lo == hi == the point estimate. That is not a zero-width interval, it is NO interval. The point estimate is valid; quote it WITHOUT bounds, and get more branch scenes (results/junction_turn_scenes.tsv lists 225) before claiming separation."
+   },
+   "beats_best_constant": false,
+   "label_degenerate": false,
+   "prediction_degenerate": true,
+   "route_choice_accuracy_road_level": {
+    "n": 0,
+    "reason": "no event where the predicted class maps to exactly one option road"
+   },
+   "route_choice_note": "\u26a0\ufe0f DERIVED, not emitted: this arm predicts a CLASS, not a road identity. The class is projected onto the option whose class matches. 1 of 2 events are AMBIGUOUS (several options share the predicted class \u2014 e.g. scene 7c72937c junction 149 has THREE UTURN options) and are EXCLUDED, so the denominator here is 0, not 2. A road-level number on a class head is not comparable to one from a goal-selecting head.",
+   "n_events_class_to_road_ambiguous": 1,
+   "decision_lead_distance_m": {
+    "mean": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "ci95": 0.0,
+    "se": 0.0,
+    "reducer": "mean",
+    "n_windows": 1,
+    "n_episodes": 1,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "definition": "largest approach distance from which the choice was already correct and stayed correct to the junction; 0.0 = wrong at entry",
+    "available_lead_m_mean": 18.07,
+    "available_lead_m_max": 18.07,
+    "n_censored_by_clip": 0,
+    "\u26a0\ufe0f_censoring": "0 of 1 events are RIGHT-CENSORED \u2014 the arm was correct for the entire observable approach, so the value is a LOWER BOUND set by the clip, not by the arm. MEASURED on 7c72937c: a policy committing 60 m out scores 20.43 m because junction 149 sits at entry_arc_m 18.07. \u26d4 Never compare this across scene sets with different approach lengths.",
+    "evidence_class": "MEASURED value, HYPOTHESIS discriminator \u2014 never yet run against two real arms",
+    "CI_NOT_ADMISSIBLE": true,
+    "\u26d4_ci_note": "n_scenes = 1. The episode-cluster bootstrap resamples SCENES, so with one cluster every draw is the same set and lo == hi == the point estimate. That is not a zero-width interval, it is NO interval. The point estimate is valid; quote it WITHOUT bounds, and get more branch scenes (results/junction_turn_scenes.tsv lists 225) before claiming separation."
+   },
+   "\u26d4_SINGLE_SCENE": "scored on 1 scene. Point estimates are valid; NO interval on this block is admissible and `beats_best_constant` must not be quoted as a verdict \u2014 the resampling unit is the scene. A +-0.10 strategic verdict needs ~100+ branch scenes (results/junction_turn_scenes.tsv lists 225 candidates).",
+   "beats_best_constant_ADMISSIBLE": false,
+   "_binding_rule": "Sayed 2026-08-02: STRATEGIC is one of FOUR families reported in ADDITION to ADE, per-family, never pooled, each with its estimator and CI. A family reported UNAVAILABLE is a WORK ITEM, not a pass.",
+   "_join": {
+    "pose_offset": -1,
+    "n_rollouts": 1,
+    "n_ticks_out_of_range_total": 0,
+    "per_rollout": [
+     {
+      "start_frame": 0,
+      "pose_key": "i_gt",
+      "pose_offset": -1,
+      "class_key_candidates": [
+       "route_head",
+       "s_route_logits",
+       "route_logits"
+      ],
+      "class_key_resolved": [
+       "route_logits"
+      ],
+      "road_key": null,
+      "n_ticks_in": 150,
+      "n_ticks_out_of_range": 0,
+      "n_events_with_a_prediction": 1,
+      "rule": "scored at the LAST admissible tick before junction entry (min dist_to_decision_point_m)",
+      "\u26d4_key_note": "flagship-v1 writes `s_route_logits`, refc-base writes `route_logits` \u2014 MEASURED, same scene, same driver. Reading one key made REF-C's route head invisible to the closed-loop STRATEGIC family (cl_metrics.py:176). `class_key_resolved` records which key actually carried the decision, so that failure cannot recur silently."
+     }
+    ]
+   }
+  },
+  "refc-base_empty": {
+   "family": "STRATEGIC",
+   "source": "strategic_gt.py option sets (map.xodr) \u2014 MEASURED",
+   "n_scenes_supplied": 1,
+   "n_scenes_refused_by_selfconsistency": 0,
+   "scenes_refused": {},
+   "n_decision_events_total": 3,
+   "n_events_single_option_excluded": 1,
+   "vocabularies": {
+    "map_classes": [
+     "LEFT",
+     "STRAIGHT",
+     "RIGHT",
+     "UTURN"
+    ],
+    "head_classes": [
+     "route_left",
+     "route_straight",
+     "route_right"
+    ],
+    "head_index_to_map_class": {
+     "0": 0,
+     "1": 1,
+     "2": 2
+    },
+    "classes_no_head_can_emit": [
+     "UTURN"
+    ],
+    "\u26d4_third_vocabulary": "cl_metrics.py:39 ROUTE_NAMES=('left','straight','right','unknown') uses index 3 for UNKNOWN, NOT UTURN. Those labels come from route_from_future_v21 (ego-yaw derived) and are a DIFFERENT OBJECT from the map-derived class. Never mix them."
+   },
+   "status": "OK",
+   "arm": "refc-base/empty",
+   "n_events_scoreable": 2,
+   "n_decision_instances_scored": 6,
+   "n_scenes_scored": 1,
+   "n_events_without_a_prediction": 1,
+   "n_events_gt_outside_head_vocabulary": 0,
+   "\u26a0\ufe0f_outside_vocabulary_note": "a 3-way head (route_left, route_straight, route_right) CANNOT emit ['UTURN']; those events can only score wrong. Counted, not silently deflating the arm.",
+   "branching_factor": {
+    "values": [
+     4,
+     4,
+     4,
+     4,
+     4,
+     2
+    ],
+    "max": 4,
+    "distinct": [
+     2,
+     4
+    ]
+   },
+   "route_class_accuracy": {
+    "mean": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "ci95": 0.0,
+    "se": 0.0,
+    "reducer": "mean",
+    "n_windows": 6,
+    "n_episodes": 1,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "CI_NOT_ADMISSIBLE": true,
+    "\u26d4_ci_note": "n_scenes = 1. The episode-cluster bootstrap resamples SCENES, so with one cluster every draw is the same set and lo == hi == the point estimate. That is not a zero-width interval, it is NO interval. The point estimate is valid; quote it WITHOUT bounds, and get more branch scenes (results/junction_turn_scenes.tsv lists 225) before claiming separation."
+   },
+   "route_class_per_class": {
+    "LEFT": {
+     "n_true": 5,
+     "n_pred": 0,
+     "n_correct": 0,
+     "recall": 0.0,
+     "precision": null
+    },
+    "STRAIGHT": {
+     "n_true": 1,
+     "n_pred": 0,
+     "n_correct": 0,
+     "recall": 0.0,
+     "precision": null
+    },
+    "RIGHT": {
+     "n_true": 0,
+     "n_pred": 5,
+     "n_correct": 0,
+     "recall": null,
+     "precision": 0.0
+    }
+   },
+   "route_class_confusion_gt_x_pred": {
+    "LEFT": {
+     "RIGHT": 5
+    },
+    "STRAIGHT": {
+     "none": 1
+    }
+   },
+   "accuracy_by_branching_factor": {
+    "2": {
+     "n": 1,
+     "acc": 0.0
+    },
+    "4": {
+     "n": 5,
+     "acc": 0.0
+    }
+   },
+   "CLUSTER": "scene \u2014 the VALUE is per decision EVENT, never per pose",
+   "\u26d4_never_per_pose": "every pose approaching one junction carries the identical label; a pose-level n overstates the sample by ~50x (scene 7c72937c: 100 admissible poses, 2 events).",
+   "estimator": "episode_cluster_bootstrap (taniteval.ci), cluster = scene",
+   "floors": {
+    "uniform_over_options": 0.2917,
+    "uniform_over_option_CLASSES": 0.5,
+    "constant_predictor_per_class": {
+     "LEFT": 0.8333,
+     "STRAIGHT": 0.1667,
+     "RIGHT": 0.0
+    },
+    "BEST_CONSTANT": {
+     "class": "LEFT",
+     "accuracy": 0.8333
+    },
+    "\u26d4_which_floor_decides": "BEST_CONSTANT. 1/n_options is a *design* floor, not the empirical null \u2014 the programme has already retracted one claim for comparing against 1/k when the empirical null was higher. The constant is fitted on THESE events, which makes the baseline stronger and the arm's win CONSERVATIVE."
+   },
+   "vs_best_constant": {
+    "delta": -0.8333,
+    "lo": -0.8333,
+    "hi": -0.8333,
+    "ci95": 0.0,
+    "p_delta_gt0": 0.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 6,
+    "n_episodes": 1,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "baseline": "always LEFT",
+    "CI_NOT_ADMISSIBLE": true,
+    "\u26d4_ci_note": "n_scenes = 1. The episode-cluster bootstrap resamples SCENES, so with one cluster every draw is the same set and lo == hi == the point estimate. That is not a zero-width interval, it is NO interval. The point estimate is valid; quote it WITHOUT bounds, and get more branch scenes (results/junction_turn_scenes.tsv lists 225) before claiming separation."
+   },
+   "beats_best_constant": false,
+   "label_degenerate": false,
+   "prediction_degenerate": true,
+   "route_choice_accuracy_road_level": {
+    "n": 0,
+    "reason": "no event where the predicted class maps to exactly one option road"
+   },
+   "route_choice_note": "\u26a0\ufe0f DERIVED, not emitted: this arm predicts a CLASS, not a road identity. The class is projected onto the option whose class matches. 5 of 6 events are AMBIGUOUS (several options share the predicted class \u2014 e.g. scene 7c72937c junction 149 has THREE UTURN options) and are EXCLUDED, so the denominator here is 0, not 6. A road-level number on a class head is not comparable to one from a goal-selecting head.",
+   "n_events_class_to_road_ambiguous": 5,
+   "decision_lead_distance_m": {
+    "mean": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "ci95": 0.0,
+    "se": 0.0,
+    "reducer": "mean",
+    "n_windows": 5,
+    "n_episodes": 1,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "definition": "largest approach distance from which the choice was already correct and stayed correct to the junction; 0.0 = wrong at entry",
+    "available_lead_m_mean": 15.57,
+    "available_lead_m_max": 18.07,
+    "n_censored_by_clip": 0,
+    "\u26a0\ufe0f_censoring": "0 of 5 events are RIGHT-CENSORED \u2014 the arm was correct for the entire observable approach, so the value is a LOWER BOUND set by the clip, not by the arm. MEASURED on 7c72937c: a policy committing 60 m out scores 20.43 m because junction 149 sits at entry_arc_m 18.07. \u26d4 Never compare this across scene sets with different approach lengths.",
+    "evidence_class": "MEASURED value, HYPOTHESIS discriminator \u2014 never yet run against two real arms",
+    "CI_NOT_ADMISSIBLE": true,
+    "\u26d4_ci_note": "n_scenes = 1. The episode-cluster bootstrap resamples SCENES, so with one cluster every draw is the same set and lo == hi == the point estimate. That is not a zero-width interval, it is NO interval. The point estimate is valid; quote it WITHOUT bounds, and get more branch scenes (results/junction_turn_scenes.tsv lists 225) before claiming separation."
+   },
+   "\u26d4_SINGLE_SCENE": "scored on 1 scene. Point estimates are valid; NO interval on this block is admissible and `beats_best_constant` must not be quoted as a verdict \u2014 the resampling unit is the scene. A +-0.10 strategic verdict needs ~100+ branch scenes (results/junction_turn_scenes.tsv lists 225 candidates).",
+   "beats_best_constant_ADMISSIBLE": false,
+   "_binding_rule": "Sayed 2026-08-02: STRATEGIC is one of FOUR families reported in ADDITION to ADE, per-family, never pooled, each with its estimator and CI. A family reported UNAVAILABLE is a WORK ITEM, not a pass.",
+   "_join": {
+    "pose_offset": -1,
+    "n_rollouts": 9,
+    "n_ticks_out_of_range_total": 0,
+    "per_rollout": [
+     {
+      "start_frame": 0,
+      "pose_key": "i_gt",
+      "pose_offset": -1,
+      "class_key_candidates": [
+       "route_head",
+       "s_route_logits",
+       "route_logits"
+      ],
+      "class_key_resolved": [
+       "route_logits"
+      ],
+      "road_key": null,
+      "n_ticks_in": 50,
+      "n_ticks_out_of_range": 0,
+      "n_events_with_a_prediction": 1,
+      "rule": "scored at the LAST admissible tick before junction entry (min dist_to_decision_point_m)",
+      "\u26d4_key_note": "flagship-v1 writes `s_route_logits`, refc-base writes `route_logits` \u2014 MEASURED, same scene, same driver. Reading one key made REF-C's route head invisible to the closed-loop STRATEGIC family (cl_metrics.py:176). `class_key_resolved` records which key actually carried the decision, so that failure cannot recur silently."
+     },
+     {
+      "start_frame": 15,
+      "pose_key": "i_gt",
+      "pose_offset": -1,
+      "class_key_candidates": [
+       "route_head",
+       "s_route_logits",
+       "route_logits"
+      ],
+      "class_key_resolved": [
+       "route_logits"
+      ],
+      "road_key": null,
+      "n_ticks_in": 50,
+      "n_ticks_out_of_range": 0,
+      "n_events_with_a_prediction": 1,
+      "rule": "scored at the LAST admissible tick before junction entry (min dist_to_decision_point_m)",
+      "\u26d4_key_note": "flagship-v1 writes `s_route_logits`, refc-base writes `route_logits` \u2014 MEASURED, same scene, same driver. Reading one key made REF-C's route head invisible to the closed-loop STRATEGIC family (cl_metrics.py:176). `class_key_resolved` records which key actually carried the decision, so that failure cannot recur silently."
+     },
+     {
+      "start_frame": 30,
+      "pose_key": "i_gt",
+      "pose_offset": -1,
+      "class_key_candidates": [
+       "route_head",
+       "s_route_logits",
+       "route_logits"
+      ],
+      "class_key_resolved": [
+       "route_logits"
+      ],
+      "road_key": null,
+      "n_ticks_in": 50,
+      "n_ticks_out_of_range": 0,
+      "n_events_with_a_prediction": 1,
+      "rule": "scored at the LAST admissible tick before junction entry (min dist_to_decision_point_m)",
+      "\u26d4_key_note": "flagship-v1 writes `s_route_logits`, refc-base writes `route_logits` \u2014 MEASURED, same scene, same driver. Reading one key made REF-C's route head invisible to the closed-loop STRATEGIC family (cl_metrics.py:176). `class_key_resolved` records which key actually carried the decision, so that failure cannot recur silently."
+     },
+     {
+      "start_frame": 45,
+      "pose_key": "i_gt",
+      "pose_offset": -1,
+      "class_key_candidates": [
+       "route_head",
+       "s_route_logits",
+       "route_logits"
+      ],
+      "class_key_resolved": [
+       "route_logits"
+      ],
+      "road_key": null,
+      "n_ticks_in": 50,
+      "n_ticks_out_of_range": 0,
+      "n_events_with_a_prediction": 1,
+      "rule": "scored at the LAST admissible tick before junction entry (min dist_to_decision_point_m)",
+      "\u26d4_key_note": "flagship-v1 writes `s_route_logits`, refc-base writes `route_logits` \u2014 MEASURED, same scene, same driver. Reading one key made REF-C's route head invisible to the closed-loop STRATEGIC family (cl_metrics.py:176). `class_key_resolved` records which key actually carried the decision, so that failure cannot recur silently."
+     },
+     {
+      "start_frame": 60,
+      "pose_key": "i_gt",
+      "pose_offset": -1,
+      "class_key_candidates": [
+       "route_head",
+       "s_route_logits",
+       "route_logits"
+      ],
+      "class_key_resolved": [
+       "route_logits"
+      ],
+      "road_key": null,
+      "n_ticks_in": 50,
+      "n_ticks_out_of_range": 0,
+      "n_events_with_a_prediction": 1,
+      "rule": "scored at the LAST admissible tick before junction entry (min dist_to_decision_point_m)",
+      "\u26d4_key_note": "flagship-v1 writes `s_route_logits`, refc-base writes `route_logits` \u2014 MEASURED, same scene, same driver. Reading one key made REF-C's route head invisible to the closed-loop STRATEGIC family (cl_metrics.py:176). `class_key_resolved` records which key actually carried the decision, so that failure cannot recur silently."
+     },
+     {
+      "start_frame": 75,
+      "pose_key": "i_gt",
+      "pose_offset": -1,
+      "class_key_candidates": [
+       "route_head",
+       "s_route_logits",
+       "route_logits"
+      ],
+      "class_key_resolved": null,
+      "road_key": null,
+      "n_ticks_in": 50,
+      "n_ticks_out_of_range": 0,
+      "n_events_with_a_prediction": 0,
+      "rule": "scored at the LAST admissible tick before junction entry (min dist_to_decision_point_m)",
+      "\u26d4_key_note": "flagship-v1 writes `s_route_logits`, refc-base writes `route_logits` \u2014 MEASURED, same scene, same driver. Reading one key made REF-C's route head invisible to the closed-loop STRATEGIC family (cl_metrics.py:176). `class_key_resolved` records which key actually carried the decision, so that failure cannot recur silently."
+     },
+     {
+      "start_frame": 90,
+      "pose_key": "i_gt",
+      "pose_offset": -1,
+      "class_key_candidates": [
+       "route_head",
+       "s_route_logits",
+       "route_logits"
+      ],
+      "class_key_resolved": null,
+      "road_key": null,
+      "n_ticks_in": 50,
+      "n_ticks_out_of_range": 0,
+      "n_events_with_a_prediction": 0,
+      "rule": "scored at the LAST admissible tick before junction entry (min dist_to_decision_point_m)",
+      "\u26d4_key_note": "flagship-v1 writes `s_route_logits`, refc-base writes `route_logits` \u2014 MEASURED, same scene, same driver. Reading one key made REF-C's route head invisible to the closed-loop STRATEGIC family (cl_metrics.py:176). `class_key_resolved` records which key actually carried the decision, so that failure cannot recur silently."
+     },
+     {
+      "start_frame": 105,
+      "pose_key": "i_gt",
+      "pose_offset": -1,
+      "class_key_candidates": [
+       "route_head",
+       "s_route_logits",
+       "route_logits"
+      ],
+      "class_key_resolved": null,
+      "road_key": null,
+      "n_ticks_in": 50,
+      "n_ticks_out_of_range": 0,
+      "n_events_with_a_prediction": 0,
+      "rule": "scored at the LAST admissible tick before junction entry (min dist_to_decision_point_m)",
+      "\u26d4_key_note": "flagship-v1 writes `s_route_logits`, refc-base writes `route_logits` \u2014 MEASURED, same scene, same driver. Reading one key made REF-C's route head invisible to the closed-loop STRATEGIC family (cl_metrics.py:176). `class_key_resolved` records which key actually carried the decision, so that failure cannot recur silently."
+     },
+     {
+      "start_frame": 120,
+      "pose_key": "i_gt",
+      "pose_offset": -1,
+      "class_key_candidates": [
+       "route_head",
+       "s_route_logits",
+       "route_logits"
+      ],
+      "class_key_resolved": null,
+      "road_key": null,
+      "n_ticks_in": 50,
+      "n_ticks_out_of_range": 0,
+      "n_events_with_a_prediction": 0,
+      "rule": "scored at the LAST admissible tick before junction entry (min dist_to_decision_point_m)",
+      "\u26d4_key_note": "flagship-v1 writes `s_route_logits`, refc-base writes `route_logits` \u2014 MEASURED, same scene, same driver. Reading one key made REF-C's route head invisible to the closed-loop STRATEGIC family (cl_metrics.py:176). `class_key_resolved` records which key actually carried the decision, so that failure cannot recur silently."
+     }
+    ]
+   }
+  },
+  "refc-base_objects": {
+   "family": "STRATEGIC",
+   "source": "strategic_gt.py option sets (map.xodr) \u2014 MEASURED",
+   "n_scenes_supplied": 1,
+   "n_scenes_refused_by_selfconsistency": 0,
+   "scenes_refused": {},
+   "n_decision_events_total": 3,
+   "n_events_single_option_excluded": 1,
+   "vocabularies": {
+    "map_classes": [
+     "LEFT",
+     "STRAIGHT",
+     "RIGHT",
+     "UTURN"
+    ],
+    "head_classes": [
+     "route_left",
+     "route_straight",
+     "route_right"
+    ],
+    "head_index_to_map_class": {
+     "0": 0,
+     "1": 1,
+     "2": 2
+    },
+    "classes_no_head_can_emit": [
+     "UTURN"
+    ],
+    "\u26d4_third_vocabulary": "cl_metrics.py:39 ROUTE_NAMES=('left','straight','right','unknown') uses index 3 for UNKNOWN, NOT UTURN. Those labels come from route_from_future_v21 (ego-yaw derived) and are a DIFFERENT OBJECT from the map-derived class. Never mix them."
+   },
+   "status": "OK",
+   "arm": "refc-base/objects",
+   "n_events_scoreable": 2,
+   "n_decision_instances_scored": 6,
+   "n_scenes_scored": 1,
+   "n_events_without_a_prediction": 1,
+   "n_events_gt_outside_head_vocabulary": 0,
+   "\u26a0\ufe0f_outside_vocabulary_note": "a 3-way head (route_left, route_straight, route_right) CANNOT emit ['UTURN']; those events can only score wrong. Counted, not silently deflating the arm.",
+   "branching_factor": {
+    "values": [
+     4,
+     4,
+     4,
+     4,
+     4,
+     2
+    ],
+    "max": 4,
+    "distinct": [
+     2,
+     4
+    ]
+   },
+   "route_class_accuracy": {
+    "mean": 0.1667,
+    "lo": 0.1667,
+    "hi": 0.1667,
+    "ci95": 0.0,
+    "se": 0.0,
+    "reducer": "mean",
+    "n_windows": 6,
+    "n_episodes": 1,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "CI_NOT_ADMISSIBLE": true,
+    "\u26d4_ci_note": "n_scenes = 1. The episode-cluster bootstrap resamples SCENES, so with one cluster every draw is the same set and lo == hi == the point estimate. That is not a zero-width interval, it is NO interval. The point estimate is valid; quote it WITHOUT bounds, and get more branch scenes (results/junction_turn_scenes.tsv lists 225) before claiming separation."
+   },
+   "route_class_per_class": {
+    "LEFT": {
+     "n_true": 5,
+     "n_pred": 1,
+     "n_correct": 1,
+     "recall": 0.2,
+     "precision": 1.0
+    },
+    "STRAIGHT": {
+     "n_true": 1,
+     "n_pred": 0,
+     "n_correct": 0,
+     "recall": 0.0,
+     "precision": null
+    },
+    "RIGHT": {
+     "n_true": 0,
+     "n_pred": 4,
+     "n_correct": 0,
+     "recall": null,
+     "precision": 0.0
+    }
+   },
+   "route_class_confusion_gt_x_pred": {
+    "LEFT": {
+     "RIGHT": 4,
+     "LEFT": 1
+    },
+    "STRAIGHT": {
+     "none": 1
+    }
+   },
+   "accuracy_by_branching_factor": {
+    "2": {
+     "n": 1,
+     "acc": 0.0
+    },
+    "4": {
+     "n": 5,
+     "acc": 0.2
+    }
+   },
+   "CLUSTER": "scene \u2014 the VALUE is per decision EVENT, never per pose",
+   "\u26d4_never_per_pose": "every pose approaching one junction carries the identical label; a pose-level n overstates the sample by ~50x (scene 7c72937c: 100 admissible poses, 2 events).",
+   "estimator": "episode_cluster_bootstrap (taniteval.ci), cluster = scene",
+   "floors": {
+    "uniform_over_options": 0.2917,
+    "uniform_over_option_CLASSES": 0.5,
+    "constant_predictor_per_class": {
+     "LEFT": 0.8333,
+     "STRAIGHT": 0.1667,
+     "RIGHT": 0.0
+    },
+    "BEST_CONSTANT": {
+     "class": "LEFT",
+     "accuracy": 0.8333
+    },
+    "\u26d4_which_floor_decides": "BEST_CONSTANT. 1/n_options is a *design* floor, not the empirical null \u2014 the programme has already retracted one claim for comparing against 1/k when the empirical null was higher. The constant is fitted on THESE events, which makes the baseline stronger and the arm's win CONSERVATIVE."
+   },
+   "vs_best_constant": {
+    "delta": -0.6667,
+    "lo": -0.6667,
+    "hi": -0.6667,
+    "ci95": 0.0,
+    "p_delta_gt0": 0.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 6,
+    "n_episodes": 1,
+    "n_boot": 2000,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "baseline": "always LEFT",
+    "CI_NOT_ADMISSIBLE": true,
+    "\u26d4_ci_note": "n_scenes = 1. The episode-cluster bootstrap resamples SCENES, so with one cluster every draw is the same set and lo == hi == the point estimate. That is not a zero-width interval, it is NO interval. The point estimate is valid; quote it WITHOUT bounds, and get more branch scenes (results/junction_turn_scenes.tsv lists 225) before claiming separation."
+   },
+   "beats_best_constant": false,
+   "label_degenerate": false,
+   "prediction_degenerate": false,
+   "route_choice_accuracy_road_level": {
+    "mean": 1.0,
+    "lo": 1.0,
+    "hi": 1.0,
+    "ci95": 0.0,
+    "se": 0.0,
+    "reducer": "mean",
+    "n_windows": 1,
+    "n_episodes": 1,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "CI_NOT_ADMISSIBLE": true,
+    "\u26d4_ci_note": "n_scenes = 1. The episode-cluster bootstrap resamples SCENES, so with one cluster every draw is the same set and lo == hi == the point estimate. That is not a zero-width interval, it is NO interval. The point estimate is valid; quote it WITHOUT bounds, and get more branch scenes (results/junction_turn_scenes.tsv lists 225) before claiming separation."
+   },
+   "route_choice_note": "\u26a0\ufe0f DERIVED, not emitted: this arm predicts a CLASS, not a road identity. The class is projected onto the option whose class matches. 4 of 6 events are AMBIGUOUS (several options share the predicted class \u2014 e.g. scene 7c72937c junction 149 has THREE UTURN options) and are EXCLUDED, so the denominator here is 1, not 6. A road-level number on a class head is not comparable to one from a goal-selecting head.",
+   "n_events_class_to_road_ambiguous": 4,
+   "decision_lead_distance_m": {
+    "mean": 0.354,
+    "lo": 0.354,
+    "hi": 0.354,
+    "ci95": 0.0,
+    "se": 0.0,
+    "reducer": "mean",
+    "n_windows": 5,
+    "n_episodes": 1,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "definition": "largest approach distance from which the choice was already correct and stayed correct to the junction; 0.0 = wrong at entry",
+    "available_lead_m_mean": 15.57,
+    "available_lead_m_max": 18.07,
+    "n_censored_by_clip": 0,
+    "\u26a0\ufe0f_censoring": "0 of 5 events are RIGHT-CENSORED \u2014 the arm was correct for the entire observable approach, so the value is a LOWER BOUND set by the clip, not by the arm. MEASURED on 7c72937c: a policy committing 60 m out scores 20.43 m because junction 149 sits at entry_arc_m 18.07. \u26d4 Never compare this across scene sets with different approach lengths.",
+    "evidence_class": "MEASURED value, HYPOTHESIS discriminator \u2014 never yet run against two real arms",
+    "CI_NOT_ADMISSIBLE": true,
+    "\u26d4_ci_note": "n_scenes = 1. The episode-cluster bootstrap resamples SCENES, so with one cluster every draw is the same set and lo == hi == the point estimate. That is not a zero-width interval, it is NO interval. The point estimate is valid; quote it WITHOUT bounds, and get more branch scenes (results/junction_turn_scenes.tsv lists 225) before claiming separation."
+   },
+   "\u26d4_SINGLE_SCENE": "scored on 1 scene. Point estimates are valid; NO interval on this block is admissible and `beats_best_constant` must not be quoted as a verdict \u2014 the resampling unit is the scene. A +-0.10 strategic verdict needs ~100+ branch scenes (results/junction_turn_scenes.tsv lists 225 candidates).",
+   "beats_best_constant_ADMISSIBLE": false,
+   "_binding_rule": "Sayed 2026-08-02: STRATEGIC is one of FOUR families reported in ADDITION to ADE, per-family, never pooled, each with its estimator and CI. A family reported UNAVAILABLE is a WORK ITEM, not a pass.",
+   "_join": {
+    "pose_offset": -1,
+    "n_rollouts": 9,
+    "n_ticks_out_of_range_total": 0,
+    "per_rollout": [
+     {
+      "start_frame": 0,
+      "pose_key": "i_gt",
+      "pose_offset": -1,
+      "class_key_candidates": [
+       "route_head",
+       "s_route_logits",
+       "route_logits"
+      ],
+      "class_key_resolved": [
+       "route_logits"
+      ],
+      "road_key": null,
+      "n_ticks_in": 50,
+      "n_ticks_out_of_range": 0,
+      "n_events_with_a_prediction": 1,
+      "rule": "scored at the LAST admissible tick before junction entry (min dist_to_decision_point_m)",
+      "\u26d4_key_note": "flagship-v1 writes `s_route_logits`, refc-base writes `route_logits` \u2014 MEASURED, same scene, same driver. Reading one key made REF-C's route head invisible to the closed-loop STRATEGIC family (cl_metrics.py:176). `class_key_resolved` records which key actually carried the decision, so that failure cannot recur silently."
+     },
+     {
+      "start_frame": 15,
+      "pose_key": "i_gt",
+      "pose_offset": -1,
+      "class_key_candidates": [
+       "route_head",
+       "s_route_logits",
+       "route_logits"
+      ],
+      "class_key_resolved": [
+       "route_logits"
+      ],
+      "road_key": null,
+      "n_ticks_in": 50,
+      "n_ticks_out_of_range": 0,
+      "n_events_with_a_prediction": 1,
+      "rule": "scored at the LAST admissible tick before junction entry (min dist_to_decision_point_m)",
+      "\u26d4_key_note": "flagship-v1 writes `s_route_logits`, refc-base writes `route_logits` \u2014 MEASURED, same scene, same driver. Reading one key made REF-C's route head invisible to the closed-loop STRATEGIC family (cl_metrics.py:176). `class_key_resolved` records which key actually carried the decision, so that failure cannot recur silently."
+     },
+     {
+      "start_frame": 30,
+      "pose_key": "i_gt",
+      "pose_offset": -1,
+      "class_key_candidates": [
+       "route_head",
+       "s_route_logits",
+       "route_logits"
+      ],
+      "class_key_resolved": [
+       "route_logits"
+      ],
+      "road_key": null,
+      "n_ticks_in": 50,
+      "n_ticks_out_of_range": 0,
+      "n_events_with_a_prediction": 1,
+      "rule": "scored at the LAST admissible tick before junction entry (min dist_to_decision_point_m)",
+      "\u26d4_key_note": "flagship-v1 writes `s_route_logits`, refc-base writes `route_logits` \u2014 MEASURED, same scene, same driver. Reading one key made REF-C's route head invisible to the closed-loop STRATEGIC family (cl_metrics.py:176). `class_key_resolved` records which key actually carried the decision, so that failure cannot recur silently."
+     },
+     {
+      "start_frame": 45,
+      "pose_key": "i_gt",
+      "pose_offset": -1,
+      "class_key_candidates": [
+       "route_head",
+       "s_route_logits",
+       "route_logits"
+      ],
+      "class_key_resolved": [
+       "route_logits"
+      ],
+      "road_key": null,
+      "n_ticks_in": 50,
+      "n_ticks_out_of_range": 0,
+      "n_events_with_a_prediction": 1,
+      "rule": "scored at the LAST admissible tick before junction entry (min dist_to_decision_point_m)",
+      "\u26d4_key_note": "flagship-v1 writes `s_route_logits`, refc-base writes `route_logits` \u2014 MEASURED, same scene, same driver. Reading one key made REF-C's route head invisible to the closed-loop STRATEGIC family (cl_metrics.py:176). `class_key_resolved` records which key actually carried the decision, so that failure cannot recur silently."
+     },
+     {
+      "start_frame": 60,
+      "pose_key": "i_gt",
+      "pose_offset": -1,
+      "class_key_candidates": [
+       "route_head",
+       "s_route_logits",
+       "route_logits"
+      ],
+      "class_key_resolved": [
+       "route_logits"
+      ],
+      "road_key": null,
+      "n_ticks_in": 50,
+      "n_ticks_out_of_range": 0,
+      "n_events_with_a_prediction": 1,
+      "rule": "scored at the LAST admissible tick before junction entry (min dist_to_decision_point_m)",
+      "\u26d4_key_note": "flagship-v1 writes `s_route_logits`, refc-base writes `route_logits` \u2014 MEASURED, same scene, same driver. Reading one key made REF-C's route head invisible to the closed-loop STRATEGIC family (cl_metrics.py:176). `class_key_resolved` records which key actually carried the decision, so that failure cannot recur silently."
+     },
+     {
+      "start_frame": 75,
+      "pose_key": "i_gt",
+      "pose_offset": -1,
+      "class_key_candidates": [
+       "route_head",
+       "s_route_logits",
+       "route_logits"
+      ],
+      "class_key_resolved": null,
+      "road_key": null,
+      "n_ticks_in": 50,
+      "n_ticks_out_of_range": 0,
+      "n_events_with_a_prediction": 0,
+      "rule": "scored at the LAST admissible tick before junction entry (min dist_to_decision_point_m)",
+      "\u26d4_key_note": "flagship-v1 writes `s_route_logits`, refc-base writes `route_logits` \u2014 MEASURED, same scene, same driver. Reading one key made REF-C's route head invisible to the closed-loop STRATEGIC family (cl_metrics.py:176). `class_key_resolved` records which key actually carried the decision, so that failure cannot recur silently."
+     },
+     {
+      "start_frame": 90,
+      "pose_key": "i_gt",
+      "pose_offset": -1,
+      "class_key_candidates": [
+       "route_head",
+       "s_route_logits",
+       "route_logits"
+      ],
+      "class_key_resolved": null,
+      "road_key": null,
+      "n_ticks_in": 50,
+      "n_ticks_out_of_range": 0,
+      "n_events_with_a_prediction": 0,
+      "rule": "scored at the LAST admissible tick before junction entry (min dist_to_decision_point_m)",
+      "\u26d4_key_note": "flagship-v1 writes `s_route_logits`, refc-base writes `route_logits` \u2014 MEASURED, same scene, same driver. Reading one key made REF-C's route head invisible to the closed-loop STRATEGIC family (cl_metrics.py:176). `class_key_resolved` records which key actually carried the decision, so that failure cannot recur silently."
+     },
+     {
+      "start_frame": 105,
+      "pose_key": "i_gt",
+      "pose_offset": -1,
+      "class_key_candidates": [
+       "route_head",
+       "s_route_logits",
+       "route_logits"
+      ],
+      "class_key_resolved": null,
+      "road_key": null,
+      "n_ticks_in": 50,
+      "n_ticks_out_of_range": 0,
+      "n_events_with_a_prediction": 0,
+      "rule": "scored at the LAST admissible tick before junction entry (min dist_to_decision_point_m)",
+      "\u26d4_key_note": "flagship-v1 writes `s_route_logits`, refc-base writes `route_logits` \u2014 MEASURED, same scene, same driver. Reading one key made REF-C's route head invisible to the closed-loop STRATEGIC family (cl_metrics.py:176). `class_key_resolved` records which key actually carried the decision, so that failure cannot recur silently."
+     },
+     {
+      "start_frame": 120,
+      "pose_key": "i_gt",
+      "pose_offset": -1,
+      "class_key_candidates": [
+       "route_head",
+       "s_route_logits",
+       "route_logits"
+      ],
+      "class_key_resolved": null,
+      "road_key": null,
+      "n_ticks_in": 50,
+      "n_ticks_out_of_range": 0,
+      "n_events_with_a_prediction": 0,
+      "rule": "scored at the LAST admissible tick before junction entry (min dist_to_decision_point_m)",
+      "\u26d4_key_note": "flagship-v1 writes `s_route_logits`, refc-base writes `route_logits` \u2014 MEASURED, same scene, same driver. Reading one key made REF-C's route head invisible to the closed-loop STRATEGIC family (cl_metrics.py:176). `class_key_resolved` records which key actually carried the decision, so that failure cannot recur silently."
+     }
+    ]
+   }
+  }
+ },
+ "OFFSET_SENSITIVITY": {
+  "-2": {
+   "flagship-v1_empty": 1.0,
+   "flagship-v1_objects": 1.0,
+   "long_flagship-v1_objects": 0.5,
+   "long_refc-base_objects": 0.0,
+   "refc-base_empty": 0.0,
+   "refc-base_objects": 0.1667
+  },
+  "-1": {
+   "flagship-v1_empty": 1.0,
+   "flagship-v1_objects": 1.0,
+   "long_flagship-v1_objects": 0.5,
+   "long_refc-base_objects": 0.0,
+   "refc-base_empty": 0.0,
+   "refc-base_objects": 0.1667
+  },
+  "0": {
+   "flagship-v1_empty": 1.0,
+   "flagship-v1_objects": 1.0,
+   "long_flagship-v1_objects": 0.5,
+   "long_refc-base_objects": 0.0,
+   "refc-base_empty": 0.0,
+   "refc-base_objects": 0.1667
+  }
+ },
+ "PAIRED_flagship_vs_refc": {
+  "empty": {
+   "delta": 1.0,
+   "lo": 1.0,
+   "hi": 1.0,
+   "ci95": 0.0,
+   "p_delta_gt0": 1.0,
+   "separated": true,
+   "reducer": "mean",
+   "n_windows": 5,
+   "n_episodes": 1,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap",
+   "CI_NOT_ADMISSIBLE": true,
+   "\u26d4_ci_note": "n_scenes = 1. The episode-cluster bootstrap resamples SCENES, so with one cluster every draw is the same set and lo == hi == the point estimate. That is not a zero-width interval, it is NO interval. The point estimate is valid; quote it WITHOUT bounds, and get more branch scenes (results/junction_turn_scenes.tsv lists 225) before claiming separation.",
+   "n_shared_instances": 5,
+   "n_instances_A_only": 1,
+   "n_instances_B_only": 0
+  },
+  "objects": {
+   "delta": 0.8,
+   "lo": 0.8,
+   "hi": 0.8,
+   "ci95": 0.0,
+   "p_delta_gt0": 1.0,
+   "separated": true,
+   "reducer": "mean",
+   "n_windows": 5,
+   "n_episodes": 1,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap",
+   "CI_NOT_ADMISSIBLE": true,
+   "\u26d4_ci_note": "n_scenes = 1. The episode-cluster bootstrap resamples SCENES, so with one cluster every draw is the same set and lo == hi == the point estimate. That is not a zero-width interval, it is NO interval. The point estimate is valid; quote it WITHOUT bounds, and get more branch scenes (results/junction_turn_scenes.tsv lists 225) before claiming separation.",
+   "n_shared_instances": 5,
+   "n_instances_A_only": 1,
+   "n_instances_B_only": 0
+  }
+ }
+}

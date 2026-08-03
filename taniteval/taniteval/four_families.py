@@ -382,14 +382,44 @@ def tactical(win: dict, hier: dict | None = None) -> dict:
     return _decision_family(win, "tactical", "maneuver_pred", "maneuver_gt", classes)
 
 
-def strategic(win: dict, hier: dict | None = None) -> dict:
+def strategic(win: dict, hier: dict | None = None, optionset: dict | None = None) -> dict:
     """Strategic decision + route/goal setting.
+
+    ⭐ **THE OPTION-SET PATH (2026-08-03) — preferred, and it takes precedence.**
+    Pass ``optionset`` (or put it on ``win["optionset"]``) and the family is scored against
+    **map-derived option sets** by :mod:`taniteval.strategic_optionset`::
+
+        optionset = {"labels": <{scene: strategic_gt report}>,        # load_label_reports(...)
+                     "predictions": <{event_id: {"class":…, "road":…}}>,
+                     "arm": "refc-xl-30k"}                            # optional
+
+    ⛔ **Why this exists and why it OVERRIDES the legacy block below.** Both legacy paths score a
+    route class against a label derived from the ego's own future — which cannot separate *"took
+    the left branch"* from *"drifted left on a curving road"*, and **cannot see whether there was
+    a branch at all**. That is how the closed-loop harness published
+    ``route_head_eq_logged = 1.0000`` on a clip where MEASURED from ``map.xodr`` every junction
+    admitted exactly ONE continuation: a constant-predictor tie reported as a perfect score.
+    The option-set path refuses to score a single-option junction, states its denominator, and
+    compares against the **best constant predictor** by a paired episode-cluster bootstrap.
 
     ⚠️ GATE_PROTOCOL §0.7: ``nonav_route_beats_majority`` is VOID BY CONSTRUCTION. If a strategic
     number looks impossible, adjudicate **INSTRUMENT-FAIL**, never MODEL-FAIL — a healthy arm has
     already nearly died on that label bug. The void flag is carried in the output so no downstream
     reader can quote that comparison as a model verdict.
     """
+    opt = optionset if optionset is not None else win.get("optionset")
+    if opt:
+        from .strategic_optionset import strategic_family
+        out = strategic_family(opt["labels"], opt.get("predictions") or {},
+                               arm=opt.get("arm", "arm"),
+                               n_boot=opt.get("n_boot", 2000),
+                               seed=opt.get("seed", 0))
+        out["source"] = "strategic_optionset.strategic_family (map.xodr option sets)"
+        out["_supersedes"] = (
+            "the ego-yaw route label (route_from_future_v21 / seam_nav_to_strategic). Those "
+            "cannot see whether a branch EXISTED, which is how route_head_eq_logged reached "
+            "1.0000 on a single-option clip.")
+        return out
     if hier and not hier.get("skipped"):
         # ⚠️ VERIFIED key name, not guessed: hierarchy.py:857 stores the route block as
         # "seam_nav_to_strategic". A wrong key here would return None for every strategic
@@ -438,10 +468,18 @@ def strategic(win: dict, hier: dict | None = None) -> dict:
         classes = list(_RC)
     except Exception:
         classes = None
-    return _decision_family(win, "strategic", "route_pred", "route_gt", classes)
+    out = _decision_family(win, "strategic", "route_pred", "route_gt", classes)
+    if out.get("status") == "UNAVAILABLE":
+        out["how_to_populate"] = (
+            "supply `optionset` (map-derived option sets from "
+            "stack/experiments/nurec-gsplat/strategic_gt.py, consumed by "
+            "taniteval.strategic_optionset). A route label read off the ego's own future yaw is "
+            "NOT a substitute: it cannot tell whether the map admitted a choice.")
+    return out
 
 
-def all_families(win: dict, hier: dict | None = None, prefer_dense: bool = True) -> dict:
+def all_families(win: dict, hier: dict | None = None, prefer_dense: bool = True,
+                 optionset: dict | None = None) -> dict:
     """The full binding block for one arm. Attach to every eval result, beside ADE.
 
     ``win`` is a ``rollout.collect``/``refb_eval``/``refc_eval`` window dict; ``pred``/``gt`` are
@@ -450,6 +488,11 @@ def all_families(win: dict, hier: dict | None = None, prefer_dense: bool = True)
 
     ⭐ Pass ``hier``. A fidelity pass alone cannot see a decision error, and the binding rule
     treats an absent family as a work item rather than a pass.
+
+    ⭐ Pass ``optionset`` (2026-08-03) — ``{"labels":…, "predictions":…}`` from
+    :mod:`taniteval.strategic_optionset`. It is the ONLY strategic path that can tell a real
+    choice from a single-option junction, and it takes precedence over ``hier``. See
+    :func:`strategic`.
 
     ⭐ Pass ``win["lead"]`` too (2026-08-03). Without it the LONGITUDINAL family reports its
     distance-keeping half UNAVAILABLE and ``_complete`` stays False — which is the honest state,
@@ -484,7 +527,7 @@ def all_families(win: dict, hier: dict | None = None, prefer_dense: bool = True)
         "longitudinal": longitudinal(pred, gt, dt, win.get("lead")),
         "lateral": lateral(pred, gt, dt),
         "tactical": tactical(win, hier),
-        "strategic": strategic(win, hier),
+        "strategic": strategic(win, hier, optionset),
     }
     fam["_grid"] = {
         "used": "dense" if dense else "sparse",

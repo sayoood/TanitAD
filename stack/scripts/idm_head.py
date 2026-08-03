@@ -110,18 +110,45 @@ def derive_long_accel(speed_seq: Tensor, center: int, dt: float = DT) -> Tensor:
     [−0.4831, −0.0997]** (−0.2061 → −0.4591), and it also costs ``yaw_rate``
     (−0.1142 [−0.3635, −0.0688]).
 
-    WHY, and it is the same 5× that motivates the term above: at R² 0.72 the
-    speed channel still has MAE **4.04 m/s**, and a 0.2 s centred difference of
-    two such predictions carries ~5× that error against a target whose own MAE is
-    **0.45 m/s²**. The identity is real; the head's speed track is nowhere near
-    accurate enough to exploit it.
+    ⛔ **THE MECHANISM STATED HERE UNTIL 2026-08-03 WAS WRONG.** It read: *"at
+    R² 0.72 the speed channel still has MAE 4.04 m/s, and a 0.2 s centred
+    difference of two such predictions carries ~5× that error"*. That is only
+    valid if the speed error is WHITE at the differencing lag. MEASURED
+    (`…/incoming/2026-08-03-idm-accel-recoverability/raw/speed_error_mechanism.json`,
+    17 held-out episodes): the held-out speed error is **autocorrelated 0.9265 at
+    0.2 s** (0.8451 / 0.6719 / 0.4241 at 0.4 / 0.8 / 1.6 s), so differencing
+    **cancels ~93 % of its variance** instead of amplifying it. The route still
+    fails — derived accel R² **−65.89 [−112.09, −45.17]** against the CAN label —
+    because what survives is **4.787 m/s² of volatility against a target whose own
+    std is 0.587 m/s²**. It is a DYNAMIC-RANGE problem, not an amplification one.
+    The error budget says the speed track would need **σ ≲ 0.1 m/s** (derived
+    R² 0.549 at σ=0.1; 0.828 at σ=0.05) against the best arm's measured MAE of
+    4.72 — a **~47×** improvement.
 
     ⭐ The refutation produced the better diagnosis: on the same run the BASELINE's
     ``long_accel`` is **not separated** from a control whose latent↔target link
     was destroyed (−0.0984 [−0.3087, +0.0179]) while ``speed`` (+0.7187) and
-    ``yaw_rate`` (+0.2252) are. **The channel carries no recoverable information
-    from the frozen v1 latents at this scale**, so no reparameterisation of the
-    head can repair it — the lever is the representation or the data, not this.
+    ``yaw_rate`` (+0.2252) are.
+
+    ⭐⭐ **CONFIRMED AND BOUNDED 2026-08-03 over a 17-arm capacity/architecture
+    sweep** (`…/incoming/2026-08-03-idm-accel-recoverability/`): closed-form
+    kernel ridge (linear + rbf, four feature bases including a derivative basis,
+    the whole regularisation path), transformers at d64/L1 → d512/L6, MLPs, a
+    bi-GRU, a single-task accel-only head, a 2.5 s context and a
+    stationary-window-filtered refit **all land at or below the empirical null of
+    −0.0626**, and no paired ΔR² against a matched shuffled-latent control is
+    separated positive. The **capacity control is decisive**: the IDENTICAL
+    closed-form protocol fed the TRUE speed window recovers ``long_accel`` at
+    **R² +0.9262 [+0.8876, +0.9507]** — so the head, the regulariser and the
+    protocol are not the limit; the input is.
+
+    ⚠️ **QUOTE THE FLOOR WITH THE CLAIM.** The null is bounded by power, not
+    absolute. On a random carrier direction at SNR ≈ 7 the protocol detects a
+    planted TRUE R² of 0.3 and MISSES 0.1; on a high-variance carrier a true
+    R² of 0.6 can hide. What is excluded is that ``long_accel`` is carried as
+    strongly as ``steer`` is (measured +0.34, and detected) — **not** that the
+    latents contain nothing at all. The lever is the representation or the input,
+    not this reparameterisation.
 
     The code stays because it is off by default, cheap, and its contract is
     tested; it is kept as the settled negative result, not as a recommendation.

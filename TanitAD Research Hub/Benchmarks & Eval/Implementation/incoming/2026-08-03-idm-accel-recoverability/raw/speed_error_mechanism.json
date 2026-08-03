@@ -1,0 +1,129 @@
+{
+ "_what": "why the speed route cannot deliver long_accel",
+ "arm": "RIDGE_linear_window (best speed arm of the ladder)",
+ "speed_r2": 0.71451,
+ "speed_mae_mps": 4.71862,
+ "speed_rmse_mps": 5.75169,
+ "window_spacing_s": 0.2,
+ "speed_error_autocorr_lag_0p2_0p4_0p8_1p6_s": [
+  0.9265,
+  0.8451,
+  0.6719,
+  0.4241
+ ],
+ "n_episodes_in_autocorr": 17,
+ "reading": "HIGH autocorrelation at 0.2 s means the error is a SLOW bias that differencing would cancel; LOW means it is white and differencing amplifies it. This is the load-bearing fact behind the '5x amplification' argument, which was asserted, not measured.",
+ "derived_accel_direct": {
+  "_what": "the derived-accel route evaluated end to end: centred difference of the PREDICTED speed track, scored against the centred difference of the TRUE track and against the CAN label.",
+  "n_windows": 2312,
+  "n_episodes": 17,
+  "r2_vs_true_speed_difference": {
+   "point": -70.27883,
+   "lo": -122.22012,
+   "hi": -46.73867,
+   "ci95": 37.74072,
+   "se": 19.00874,
+   "statistic": "r2_dspeed",
+   "n_windows": 2312,
+   "n_episodes": 17,
+   "n_boot": 2000,
+   "n_boot_valid": 2000,
+   "estimator": "ap_episode_cluster_bootstrap",
+   "_lo_raw": -122.22011661636802,
+   "_hi_raw": -46.738670313330104
+  },
+  "r2_vs_CAN_long_accel": {
+   "point": -65.89479,
+   "lo": -112.08985,
+   "hi": -45.16868,
+   "ci95": 33.46058,
+   "se": 16.78442,
+   "statistic": "r2_can_accel",
+   "n_windows": 2312,
+   "n_episodes": 17,
+   "n_boot": 2000,
+   "n_boot_valid": 2000,
+   "estimator": "ap_episode_cluster_bootstrap",
+   "_lo_raw": -112.08984698524127,
+   "_hi_raw": -45.16867808071555
+  },
+  "ORACLE_true_difference_vs_CAN_long_accel": {
+   "point": 0.9198,
+   "lo": 0.87714,
+   "hi": 0.94471,
+   "ci95": 0.03378,
+   "se": 0.01732,
+   "statistic": "r2_oracle",
+   "n_windows": 2312,
+   "n_episodes": 17,
+   "n_boot": 2000,
+   "n_boot_valid": 2000,
+   "estimator": "ap_episode_cluster_bootstrap",
+   "_lo_raw": 0.877143700882849,
+   "_hi_raw": 0.9447066473181032
+  },
+  "std_true_difference_mps2": 0.56808,
+  "std_predicted_difference_mps2": 4.7874,
+  "std_CAN_long_accel_mps2": 0.58674
+ },
+ "error_budget_white_noise": {
+  "_what": "what speed accuracy the derived route would NEED. True speed plus white noise of the given std, differenced over 0.4 s, scored against the CAN label.",
+  "caveat": "white noise is the WORST case for differencing; a real predictor's error is partly autocorrelated, which is exactly why the measured autocorrelation above is reported first.",
+  "levels": [
+   {
+    "speed_noise_std_mps": 0.0,
+    "implied_speed_r2": 1.0,
+    "derived_accel_r2_vs_CAN": 0.9198
+   },
+   {
+    "speed_noise_std_mps": 0.05,
+    "implied_speed_r2": 1.0,
+    "derived_accel_r2_vs_CAN": 0.8278
+   },
+   {
+    "speed_noise_std_mps": 0.1,
+    "implied_speed_r2": 0.9999,
+    "derived_accel_r2_vs_CAN": 0.5491
+   },
+   {
+    "speed_noise_std_mps": 0.25,
+    "implied_speed_r2": 0.9995,
+    "derived_accel_r2_vs_CAN": -1.4065
+   },
+   {
+    "speed_noise_std_mps": 0.5,
+    "implied_speed_r2": 0.9978,
+    "derived_accel_r2_vs_CAN": -8.3982
+   },
+   {
+    "speed_noise_std_mps": 1.0,
+    "implied_speed_r2": 0.9914,
+    "derived_accel_r2_vs_CAN": -36.3776
+   },
+   {
+    "speed_noise_std_mps": 2.0,
+    "implied_speed_r2": 0.9655,
+    "derived_accel_r2_vs_CAN": -148.3207
+   },
+   {
+    "speed_noise_std_mps": 4.0,
+    "implied_speed_r2": 0.8619,
+    "derived_accel_r2_vs_CAN": -596.1439
+   }
+  ]
+ },
+ "self_consistency_scalar_vs_trajectory": {
+  "_what": "the same arm's scalar readout and its 2 s trajectory are two independent routes to the same physics. They must agree about WHICH channel is recoverable.",
+  "speed": {
+   "r2_scalar_route_vs_CAN_speed": 0.71451,
+   "r2_traj_route_vs_CAN_speed": 0.72416,
+   "corr_between_routes": 0.98374
+  },
+  "long_accel": {
+   "r2_scalar_route_vs_CAN_accel": -0.06259,
+   "r2_traj_route_vs_CAN_accel": -0.37917,
+   "r2_TRAJ_GT_route_vs_CAN_accel_ORACLE": 0.67062,
+   "note": "the trajectory route's accel is the mean of the horizon's 0.5 s speed differences \u2014 a FUTURE-window accel, not the instantaneous label, so the GT-trajectory row is the ceiling that route can reach and is reported beside it."
+  }
+ }
+}

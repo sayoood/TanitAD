@@ -1878,3 +1878,101 @@ flag defaulting OFF, and that silently removed an ablation.** Decoupled; `refc_f
 **+384 params (+0.000369 %)**, MEASURED, with the decoder bit-identical.
 ⇒ **RULE: before coupling two gated levers, ask which ABLATION the coupling deletes.** A conservative
 guard that makes an effect unattributable is not conservative.
+
+---
+
+## R-2026-08-03-h — "a 2,049-parameter RIDGE beats the 2.17 M-parameter head" — BOTH parameter counts belong to OTHER experiments
+
+**Retracted claim** (`…/2026-08-03-sitclf-fusion-wired/SITCLF_VISION_ONLY.md` §4 and §6.4, and the
+BACKLOG **B4** brief derived from it): *"on `roundabout` the 2,049-parameter ridge probe (0.01056)
+beats the 2.17 M-parameter transformer head (0.00721) on the same vision features."*
+
+**Root-cause class: C4 (inherited without re-verification) in its sharpest form —
+a CROSS-STREAM NUMERIC TRANSPLANT.** Both figures are correct *somewhere*; neither describes the two
+arms actually being compared. They were carried across from two sibling streams whose arms have
+similar names.
+
+| number | where it is TRUE | what it actually is |
+|---|---|---|
+| **2,049** | `…/2026-07-26-situation-semantics/SITUATION_SEMANTICS.md:197` | a linear ridge on the **raw frozen 2048-d state at t** (2048 + intercept), target `NOT_T_seen` |
+| **2.17 M** | `…/2026-07-26-h2-classifier/H2_CLASSIFIER.md:621-626` | **H2's** head at **d=256** — `head_img|trigger` = **2,173,187** params, a different stream, target and substrate |
+
+**MEASURED — what the two sitclf arms really are** (primary artifacts, read at HEAD):
+
+| arm | parameters | source |
+|---|---:|---|
+| `ridge_img` | **129** (16 PCA dims x win 8 + intercept) | `…/2026-07-26-situation-classifier/artifacts/train_summary.json` -> `selected.ridge_img.n_params` |
+| `head_img` | **417,028** (`in_dim` 16, `win` 8, `d` 128) | `…/checkpoints/head_img.pt`, summed `state_dict` |
+
+**The qualitative finding SURVIVES and gets stronger, the arithmetic does not.** The gap is
+**129 vs 417,028 = 3,233x**, not the 1,059x implied. What is retracted is every sentence that
+attaches "2,049" or "2.17 M" to a sitclf arm, and any inference that used the raw-2048 input as if
+`ridge_img` had consumed it — it did not; it consumed the SAME PCA-16 x 8-frame window as `head_img`
+(`sc_train.py:349-358`, `R_PCA = 16`, `window_flat`).
+
+**What it would have cost:** B4 was briefed to sweep "~2k to ~2.17M". Taken literally that ladder
+starts ABOVE the arm the finding is about — the 129-parameter floor would never have been built, and
+the experiment would have been unable to reproduce its own premise.
+
+**Guarded in code, not in prose** (`stack/tests/test_sitclf.py`):
+`test_head_param_count_reproduces_the_deployed_head_img_checkpoint` asserts **417,028** against the
+checkpoint, and `test_ridge_param_count_reproduces_the_banked_ridge_img_figure` asserts **129** and
+**2049** side by side so neither can be reintroduced silently.
+`tanitad.eval.sitclf.head_param_count` counts by CONSTRUCTING the module — a closed-form formula is
+exactly what would have reproduced the error.
+
+⇒ **RULE: a parameter count is a property of an ARTIFACT, so quote it from the artifact.**
+`sum(p.numel())` on the checkpoint, or the trainer's own `n_params` field — never from a neighbouring
+report, however similar the arm name. Arm names (`head_img`, `ridge_img`) repeat across streams with
+different architectures behind them; the name is not the specification.
+⇒ **RULE: when a claim compares two arms, name the ARTIFACT PATH of each.** This claim named neither,
+which is why two numbers from two other experiments could sit in it unchallenged.
+
+---
+
+## R-2026-08-03-i — the IDM `long_accel` MECHANISM ("5× error amplification") — the CONCLUSION survives, the EXPLANATION is retracted
+
+**Retracted claim** (`stack/scripts/idm_head.py`, `derive_long_accel` docstring, and
+`…/incoming/2026-08-03-idm-derived-accel/IDM_DERIVED_ACCEL.md`): *"at R² 0.72 the speed channel still
+has MAE 4.04 m/s, and a 0.2 s centred difference of two such predictions carries ~5× that error
+against a target whose own MAE is 0.45 m/s²."*
+
+**Root-cause class: an UNMEASURED INTERMEDIATE STEP inside a correct conclusion.** The "5×" is
+`1/(2·dt)`, the gain differencing applies to *white* noise. Nobody measured whether the speed error
+IS white at that lag — and it is not. The verdict the argument supported happened to be right, which
+is exactly why the wrong reason survived: a confirmed conclusion stops anyone auditing its premise.
+
+**MEASURED (mine)** —
+`…/incoming/2026-08-03-idm-accel-recoverability/raw/speed_error_mechanism.json`, best speed arm
+(ridge on the flattened latent window, R² +0.7145, MAE 4.7186 m/s), 17 held-out episodes:
+
+| quantity | value |
+|---|---|
+| autocorrelation of the held-out **speed error** at 0.2 / 0.4 / 0.8 / 1.6 s | **0.9265 / 0.8451 / 0.6719 / 0.4241** |
+| ⇒ variance of the error that SURVIVES a 0.2 s difference | **~7 %** (differencing cancels ~93 %) |
+| std of the true speed difference / the predicted difference / the CAN label | 0.568 / **4.787** / 0.587 m/s² |
+| derived accel vs the CAN label | R² **−65.89 [−112.09, −45.17]** |
+| ORACLE — true speed difference vs the CAN label | R² **+0.9198 [+0.8771, +0.9447]** |
+
+⇒ the route fails not because differencing *amplifies* the error but because the target's dynamic
+range (**0.587 m/s²**) is an order of magnitude below what survives the cancellation (**4.787 m/s²**).
+The error budget makes the requirement explicit: the speed track needs **σ ≲ 0.1 m/s**
+(derived R² 0.549 at σ=0.1, 0.828 at σ=0.05) — a **~47×** improvement over the measured 4.72 m/s MAE.
+
+**A second, softer retraction in the same docstring.** *"The channel carries no recoverable
+information from the frozen v1 latents at this scale, so no reparameterisation of the head can repair
+it"* was stated as an absolute from a **single-arm** null. It is now **much better supported** — 17
+latent-input arms (6 closed-form kernel ridge, linear+rbf on four feature bases over the whole
+regularisation path; 7 neural — transformers d64/L1→d512/L6, MLPs, a bi-GRU, an accel-only head;
+2 at a 2.5 s context; 2 stationary-filtered) all at or below the empirical null of −0.0626, with a
+**decisive capacity control**: the identical closed-form protocol on the TRUE speed window reaches
+**R² +0.9262 [+0.8876, +0.9507]**. But it is **bounded by power, not absolute**: a planted signal on
+a random carrier at SNR ≈ 7 is detected at true R² 0.3 and **missed at 0.1**, and on a high-variance
+carrier a true R² of 0.6 hides. The admissible form of the claim carries that floor.
+
+⇒ **RULE: when an argument has a mechanism, the mechanism is a CLAIM and needs its own evidence
+class.** "Differencing amplifies error by 5×" is a measurable statement about the error's
+autocorrelation; it was asserted from the arithmetic of `1/(2·dt)` alone.
+⇒ **RULE: a NULL is only admissible with a DETECTION FLOOR.** "X is not recoverable" and "X is not
+recoverable above strength S at this n" are different claims, and only the second is falsifiable.
+The floor costs one extra arm — the same probe run on a latent with a KNOWN signal planted in it.

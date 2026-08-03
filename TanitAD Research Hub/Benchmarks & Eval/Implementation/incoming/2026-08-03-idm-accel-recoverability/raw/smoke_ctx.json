@@ -1,0 +1,733 @@
+{
+ "_what": "STREAM D \u2014 capacity/architecture sweep answering whether long_accel is UNRECOVERABLE from the frozen v1 latents or merely UNRECOVERED by the head tried",
+ "substrate": {
+  "latent_cache": "C:\\Users\\Admin\\tanitad-data\\eval\\idm_derived_accel_latents.pt",
+  "encoder": "C:\\Users\\Admin\\tanitad-data\\eval\\v1_speedjerk_ckpt.pt",
+  "encoder_step": 29999,
+  "state_dim": 2048,
+  "k": 4,
+  "stride": 2,
+  "horizons": [
+   5,
+   10,
+   15,
+   20
+  ],
+  "verification": "raw/substrate_verification.json"
+ },
+ "split": {
+  "unit": "EPISODE-DISJOINT (identical to the P9 panel)",
+  "train_episodes": [
+   "ep_00041",
+   "ep_00042",
+   "ep_00044",
+   "ep_00045",
+   "ep_00047",
+   "ep_00048",
+   "ep_00050",
+   "ep_00051",
+   "ep_00053",
+   "ep_00054",
+   "ep_00056",
+   "ep_00057",
+   "ep_00059",
+   "ep_00060",
+   "ep_00062",
+   "ep_00063",
+   "ep_00065",
+   "ep_00066",
+   "ep_00068",
+   "ep_00069",
+   "ep_00071",
+   "ep_00072",
+   "ep_00074",
+   "ep_00075",
+   "ep_00077",
+   "ep_00078",
+   "ep_00080",
+   "ep_00081",
+   "ep_00083",
+   "ep_00084",
+   "ep_00086",
+   "ep_00087",
+   "ep_00089"
+  ],
+  "heldout_episodes": [
+   "ep_00040",
+   "ep_00043",
+   "ep_00046",
+   "ep_00049",
+   "ep_00052",
+   "ep_00055",
+   "ep_00058",
+   "ep_00061",
+   "ep_00064",
+   "ep_00067",
+   "ep_00070",
+   "ep_00073",
+   "ep_00076",
+   "ep_00079",
+   "ep_00082",
+   "ep_00085",
+   "ep_00088"
+  ],
+  "inner_select_episodes": [
+   "ep_00041",
+   "ep_00045",
+   "ep_00050",
+   "ep_00054",
+   "ep_00059",
+   "ep_00063",
+   "ep_00068",
+   "ep_00072",
+   "ep_00077",
+   "ep_00081",
+   "ep_00086"
+  ],
+  "n_train_windows": 4554,
+  "n_heldout_windows": 2346
+ },
+ "estimator": "episode-cluster bootstrap; PAIRED for every arm-vs-control contrast (taniteval/ci.py + tanitad.eval.ap_ci)",
+ "n_boot": 200,
+ "seeds": 3,
+ "arms": {
+  "NULL_train_mean": {
+   "kind": "empirical_null",
+   "_what": "constant = TRAIN mean of every output. The floor any arm must beat; NOT R\u00b2=0.",
+   "shuffled_latents": false,
+   "r2": {
+    "speed": {
+     "point": -0.00517,
+     "lo": -0.51839,
+     "hi": -0.00016,
+     "ci95": 0.25912,
+     "se": 0.15751,
+     "statistic": "r2_speed",
+     "n_windows": 2346,
+     "n_episodes": 17,
+     "n_boot": 200,
+     "n_boot_valid": 200,
+     "estimator": "ap_episode_cluster_bootstrap",
+     "_lo_raw": -0.5183920109368704,
+     "_hi_raw": -0.00016168051986764585
+    },
+    "yaw_rate": {
+     "point": -0.0221,
+     "lo": -0.07138,
+     "hi": -0.00077,
+     "ci95": 0.0353,
+     "se": 0.01874,
+     "statistic": "r2_yaw_rate",
+     "n_windows": 2346,
+     "n_episodes": 17,
+     "n_boot": 200,
+     "n_boot_valid": 200,
+     "estimator": "ap_episode_cluster_bootstrap",
+     "_lo_raw": -0.07137806031361642,
+     "_hi_raw": -0.0007693444962551032
+    },
+    "steer": {
+     "point": -0.04007,
+     "lo": -0.16172,
+     "hi": -0.01042,
+     "ci95": 0.07565,
+     "se": 0.03977,
+     "statistic": "r2_steer",
+     "n_windows": 2346,
+     "n_episodes": 17,
+     "n_boot": 200,
+     "n_boot_valid": 200,
+     "estimator": "ap_episode_cluster_bootstrap",
+     "_lo_raw": -0.16171903871879073,
+     "_hi_raw": -0.010418862924404412
+    },
+    "long_accel": {
+     "point": -0.06259,
+     "lo": -0.23483,
+     "hi": -0.00145,
+     "ci95": 0.11669,
+     "se": 0.06107,
+     "statistic": "r2_long_accel",
+     "n_windows": 2346,
+     "n_episodes": 17,
+     "n_boot": 200,
+     "n_boot_valid": 200,
+     "estimator": "ap_episode_cluster_bootstrap",
+     "_lo_raw": -0.23482961454872497,
+     "_hi_raw": -0.0014543474052265797
+    }
+   },
+   "r2_train_insample": {
+    "speed": -0.0,
+    "yaw_rate": 0.0,
+    "steer": -0.0,
+    "long_accel": -0.0
+   },
+   "mae": {
+    "speed": 9.56688,
+    "yaw_rate": 0.01936,
+    "steer": 0.00988,
+    "long_accel": 0.40568
+   },
+   "ade_2s": {
+    "mean": 12.0468,
+    "lo": 9.6502,
+    "hi": 14.3499,
+    "ci95": 2.3499,
+    "se": 1.2503,
+    "reducer": "mean",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "four_families": {
+    "LONGITUDINAL": {
+     "traj_speed_mae_mps": 9.654,
+     "traj_speed_bias_mps": -0.6327,
+     "along_mae_m": 12.0349,
+     "along_bias_m": -0.829,
+     "along_final_bias_m": -1.2489,
+     "accel_mae_mps2": 0.3949,
+     "n_windows": 2346,
+     "scalar_speed_mae_mps": 9.5669,
+     "scalar_speed_bias_mps": -0.774,
+     "distance_keeping": {
+      "status": "UNAVAILABLE",
+      "reason": "no lead-agent track on this substrate. comma2k19 ships no object annotation at all; PhysicalAI-AV ships obstacle.offline (97.44 % of the corpus) but the episode ingest does not read it. Implementing it is a WORK ITEM, not a pass.",
+      "n": 0
+     }
+    },
+    "LATERAL": {
+     "heading_mae_rad": 0.01671,
+     "n_heading": 8768,
+     "curvature_mae_inv_m": 0.00439,
+     "n_curvature": 6546,
+     "yaw_rate_mae_rad_s": 0.01728,
+     "n_pair_valid": 6546,
+     "cross_track_mae_m": 0.2808,
+     "cross_track_bias_m": -0.0245,
+     "cross_track_final_mae_m": 0.5916,
+     "n_windows": 2346,
+     "scalar_yaw_rate_mae_rad_s": 0.01936,
+     "scalar_steer_mae": 0.00988
+    },
+    "TACTICAL": {
+     "n_windows": 2346,
+     "thresholds": {
+      "lat_turn_rad": 0.15,
+      "lon_dv_mps": 1.0
+     },
+     "lateral": {
+      "classes": [
+       "right",
+       "straight",
+       "left"
+      ],
+      "confusion_gt_rows_pred_cols": [
+       [
+        0,
+        35,
+        0
+       ],
+       [
+        0,
+        2306,
+        0
+       ],
+       [
+        0,
+        5,
+        0
+       ]
+      ],
+      "support": [
+       35,
+       2306,
+       5
+      ],
+      "recall": [
+       0.0,
+       1.0,
+       0.0
+      ],
+      "balanced_accuracy": 0.3333,
+      "accuracy": 0.9829,
+      "chance_balanced_accuracy": 0.3333
+     },
+     "longitudinal": {
+      "classes": [
+       "decelerate",
+       "cruise",
+       "accelerate"
+      ],
+      "confusion_gt_rows_pred_cols": [
+       [
+        0,
+        268,
+        0
+       ],
+       [
+        0,
+        1975,
+        0
+       ],
+       [
+        0,
+        103,
+        0
+       ]
+      ],
+      "support": [
+       268,
+       1975,
+       103
+      ],
+      "recall": [
+       0.0,
+       1.0,
+       0.0
+      ],
+      "balanced_accuracy": 0.3333,
+      "accuracy": 0.8419,
+      "chance_balanced_accuracy": 0.3333
+     },
+     "mixed": {
+      "classes": [
+       "accelerate",
+       "decelerate",
+       "keep",
+       "left",
+       "right"
+      ],
+      "confusion_gt_rows_pred_cols": [
+       [
+        0,
+        0,
+        102,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        266,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        1938,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        5,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        35,
+        0,
+        0
+       ]
+      ],
+      "support": [
+       102,
+       266,
+       1938,
+       5,
+       35
+      ],
+      "recall": [
+       0.0,
+       0.0,
+       1.0,
+       0.0,
+       0.0
+      ],
+      "balanced_accuracy": 0.2,
+      "accuracy": 0.8261,
+      "chance_balanced_accuracy": 0.2
+     },
+     "goal_setting": {
+      "status": "PARTIAL",
+      "reason": "selected-vs-executed manoeuvre IS reported above. Anchor/goal selection is not: the IDM emits a single regressed trajectory, it has no anchor set to select from.",
+      "n": 2346
+     },
+     "from_long_accel_scalar": {
+      "classes": [
+       "decelerate",
+       "cruise",
+       "accelerate"
+      ],
+      "threshold_mps2": 0.5,
+      "confusion_gt_rows_pred_cols": [
+       [
+        0,
+        402,
+        0
+       ],
+       [
+        0,
+        1745,
+        0
+       ],
+       [
+        0,
+        199,
+        0
+       ]
+      ],
+      "support_gt": [
+       402,
+       1745,
+       199
+      ],
+      "n_fired_pred": [
+       0,
+       2346,
+       0
+      ],
+      "recall": [
+       0.0,
+       1.0,
+       0.0
+      ],
+      "precision": [
+       null,
+       0.7438,
+       null
+      ],
+      "balanced_accuracy": 0.3333,
+      "accuracy": 0.7438,
+      "chance_balanced_accuracy": 0.3333
+     }
+    },
+    "STRATEGIC": {
+     "status": "UNAVAILABLE",
+     "reason": "no route/goal label on the IDM's substrates. comma2k19 has none; PhysicalAI-AV settled at five probes as carrying no map, lane graph, junction annotation or route signal, and its egomotion is clip-local metres with no GNSS, so map-matching is impossible. A strategic read needs AlpaSim/NuRec map.xodr or an external corpus \u2014 a WORK ITEM, not a pass.",
+     "n": 2346,
+     "how_to_populate": "the instrument now EXISTS: map-derived option sets from stack/experiments/nurec-gsplat/strategic_gt.py, scored by taniteval.strategic_optionset.strategic_family. What is still missing on THIS stream is a substrate \u2014 the IDM would have to be driven on a NuRec scene that ships map.xodr. \u26d4 Do NOT substitute an ego-yaw route label: it cannot tell whether the map admitted a choice, which is how route_head_eq_logged reached 1.0000 on a single-option clip."
+    },
+    "_contract": "Four families reported per-family, never pooled, in ADDITION to ADE. A family marked UNAVAILABLE is a WORK ITEM, not a pass.",
+    "_unavailable": [
+     "STRATEGIC"
+    ]
+   },
+   "tactical_ba_ci": {
+    "lateral": {
+     "point": 0.33333,
+     "lo": 0.33333,
+     "hi": 1.0,
+     "ci95": 0.33333,
+     "se": 0.32176,
+     "statistic": "balanced_accuracy_lateral",
+     "n_windows": 2346,
+     "n_episodes": 17,
+     "n_boot": 200,
+     "n_boot_valid": 200,
+     "estimator": "ap_episode_cluster_bootstrap",
+     "_lo_raw": 0.3333333333333333,
+     "_hi_raw": 1.0
+    },
+    "longitudinal": {
+     "point": 0.33333,
+     "lo": 0.33333,
+     "hi": 0.33333,
+     "ci95": 0.0,
+     "se": 0.0,
+     "statistic": "balanced_accuracy_longitudinal",
+     "n_windows": 2346,
+     "n_episodes": 17,
+     "n_boot": 200,
+     "n_boot_valid": 200,
+     "estimator": "ap_episode_cluster_bootstrap",
+     "_lo_raw": 0.3333333333333333,
+     "_hi_raw": 0.3333333333333333
+    },
+    "mixed": {
+     "point": 0.2,
+     "lo": 0.2,
+     "hi": 0.33333,
+     "ci95": 0.06667,
+     "se": 0.06435,
+     "statistic": "balanced_accuracy_mixed",
+     "n_windows": 2346,
+     "n_episodes": 17,
+     "n_boot": 200,
+     "n_boot_valid": 200,
+     "estimator": "ap_episode_cluster_bootstrap",
+     "_lo_raw": 0.2,
+     "_hi_raw": 0.3333333333333333
+    },
+    "from_long_accel_scalar": {
+     "point": 0.33333,
+     "lo": 0.33333,
+     "hi": 0.33333,
+     "ci95": 0.0,
+     "se": 0.0,
+     "statistic": "balanced_accuracy_accel_scalar",
+     "n_windows": 2346,
+     "n_episodes": 17,
+     "n_boot": 200,
+     "n_boot_valid": 200,
+     "estimator": "ap_episode_cluster_bootstrap",
+     "_lo_raw": 0.3333333333333333,
+     "_hi_raw": 0.3333333333333333
+    }
+   }
+  }
+ },
+ "paired_vs_control": {},
+ "stages_run": [
+  "context"
+ ],
+ "context_length": {
+  "_what": "a 2.5 s window (k=12) against 0.8 s (k=4) on the SAME rows. The wide window is built from the per-frame latent track reconstructed out of the cached overlapping windows; the overlap is asserted bit-identical, so a context effect cannot be a mis-indexing artefact.",
+  "k_wide": 12,
+  "n_heldout_windows": 2210,
+  "n_heldout_windows_k4_full": 2346,
+  "arms": {
+   "CTX_k12_ridge_linear_window": {
+    "n_features": 51200,
+    "inner_val_r2_long_accel": -0.0,
+    "ORACLE_SELECTED_heldout_r2_UPPER_BOUND_cheating": {
+     "speed": {
+      "r2": 0.71954,
+      "gamma_mult": null,
+      "alpha": 3162277.6601683795
+     },
+     "yaw_rate": {
+      "r2": 0.23564,
+      "gamma_mult": null,
+      "alpha": 1000000.0
+     },
+     "steer": {
+      "r2": 0.40662,
+      "gamma_mult": null,
+      "alpha": 316.22776601683796
+     },
+     "long_accel": {
+      "r2": -0.06393,
+      "gamma_mult": null,
+      "alpha": 31622776.60168379
+     }
+    },
+    "heldout_r2": {
+     "speed": {
+      "point": 0.68047,
+      "lo": 0.3265,
+      "hi": 0.79247,
+      "ci95": 0.23298,
+      "se": 0.12974,
+      "statistic": "r2_speed",
+      "n_windows": 2210,
+      "n_episodes": 17,
+      "n_boot": 200,
+      "n_boot_valid": 200,
+      "estimator": "ap_episode_cluster_bootstrap",
+      "_lo_raw": 0.32650356882711484,
+      "_hi_raw": 0.792471102267253
+     },
+     "yaw_rate": {
+      "point": -0.01329,
+      "lo": -0.04906,
+      "hi": -4e-05,
+      "ci95": 0.02451,
+      "se": 0.0145,
+      "statistic": "r2_yaw_rate",
+      "n_windows": 2210,
+      "n_episodes": 17,
+      "n_boot": 200,
+      "n_boot_valid": 200,
+      "estimator": "ap_episode_cluster_bootstrap",
+      "_lo_raw": -0.04906074097021721,
+      "_hi_raw": -4.1144683839466855e-05
+     },
+     "steer": {
+      "point": 0.40662,
+      "lo": -4.9577,
+      "hi": 0.42731,
+      "ci95": 2.69251,
+      "se": 1.83946,
+      "statistic": "r2_steer",
+      "n_windows": 2210,
+      "n_episodes": 17,
+      "n_boot": 200,
+      "n_boot_valid": 200,
+      "estimator": "ap_episode_cluster_bootstrap",
+      "_lo_raw": -4.95770349727941,
+      "_hi_raw": 0.42731165147649675
+     },
+     "long_accel": {
+      "point": -0.06647,
+      "lo": -0.24402,
+      "hi": -0.00211,
+      "ci95": 0.12095,
+      "se": 0.06431,
+      "statistic": "r2_long_accel",
+      "n_windows": 2210,
+      "n_episodes": 17,
+      "n_boot": 200,
+      "n_boot_valid": 200,
+      "estimator": "ap_episode_cluster_bootstrap",
+      "_lo_raw": -0.24401669468838857,
+      "_hi_raw": -0.002109707873520016
+     }
+    }
+   },
+   "CTX_k4_ridge_linear_window_SAMEROWS": {
+    "n_features": 18432,
+    "inner_val_r2_long_accel": -0.0,
+    "ORACLE_SELECTED_heldout_r2_UPPER_BOUND_cheating": {
+     "speed": {
+      "r2": 0.71397,
+      "gamma_mult": null,
+      "alpha": 1000.0
+     },
+     "yaw_rate": {
+      "r2": 0.21011,
+      "gamma_mult": null,
+      "alpha": 1000000.0
+     },
+     "steer": {
+      "r2": 0.36488,
+      "gamma_mult": null,
+      "alpha": 3.1622776601683795
+     },
+     "long_accel": {
+      "r2": -0.06641,
+      "gamma_mult": null,
+      "alpha": 100000000.0
+     }
+    },
+    "heldout_r2": {
+     "speed": {
+      "point": 0.71397,
+      "lo": 0.40515,
+      "hi": 0.81282,
+      "ci95": 0.20383,
+      "se": 0.12938,
+      "statistic": "r2_speed",
+      "n_windows": 2210,
+      "n_episodes": 17,
+      "n_boot": 200,
+      "n_boot_valid": 200,
+      "estimator": "ap_episode_cluster_bootstrap",
+      "_lo_raw": 0.40515375965193834,
+      "_hi_raw": 0.8128196695732216
+     },
+     "yaw_rate": {
+      "point": -0.01329,
+      "lo": -0.04906,
+      "hi": -4e-05,
+      "ci95": 0.02451,
+      "se": 0.0145,
+      "statistic": "r2_yaw_rate",
+      "n_windows": 2210,
+      "n_episodes": 17,
+      "n_boot": 200,
+      "n_boot_valid": 200,
+      "estimator": "ap_episode_cluster_bootstrap",
+      "_lo_raw": -0.04906074097021721,
+      "_hi_raw": -4.1144683839466855e-05
+     },
+     "steer": {
+      "point": 0.34938,
+      "lo": -5.80693,
+      "hi": 0.37309,
+      "ci95": 3.09001,
+      "se": 2.00263,
+      "statistic": "r2_steer",
+      "n_windows": 2210,
+      "n_episodes": 17,
+      "n_boot": 200,
+      "n_boot_valid": 200,
+      "estimator": "ap_episode_cluster_bootstrap",
+      "_lo_raw": -5.8069328862502685,
+      "_hi_raw": 0.37308819634096035
+     },
+     "long_accel": {
+      "point": -0.06647,
+      "lo": -0.24402,
+      "hi": -0.00211,
+      "ci95": 0.12095,
+      "se": 0.06431,
+      "statistic": "r2_long_accel",
+      "n_windows": 2210,
+      "n_episodes": 17,
+      "n_boot": 200,
+      "n_boot_valid": 200,
+      "estimator": "ap_episode_cluster_bootstrap",
+      "_lo_raw": -0.24401669468838857,
+      "_hi_raw": -0.002109707873520016
+     }
+    }
+   }
+  },
+  "paired_wide_minus_narrow": {
+   "r2_speed": {
+    "delta": -0.0335,
+    "lo": -0.07968,
+    "hi": 0.01119,
+    "ci95": 0.04544,
+    "p_delta_gt0": 0.065,
+    "separated": false,
+    "statistic": "d_r2_speed",
+    "n_windows": 2210,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "n_boot_valid": 200,
+    "estimator": "paired_ap_episode_cluster_bootstrap"
+   },
+   "r2_yaw_rate": {
+    "delta": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "ci95": 0.0,
+    "p_delta_gt0": 0.0,
+    "separated": false,
+    "statistic": "d_r2_yaw_rate",
+    "n_windows": 2210,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "n_boot_valid": 200,
+    "estimator": "paired_ap_episode_cluster_bootstrap"
+   },
+   "r2_steer": {
+    "delta": 0.05724,
+    "lo": -0.13614,
+    "hi": 0.7469,
+    "ci95": 0.44152,
+    "p_delta_gt0": 0.92,
+    "separated": false,
+    "statistic": "d_r2_steer",
+    "n_windows": 2210,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "n_boot_valid": 200,
+    "estimator": "paired_ap_episode_cluster_bootstrap"
+   },
+   "r2_long_accel": {
+    "delta": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "ci95": 0.0,
+    "p_delta_gt0": 0.0,
+    "separated": false,
+    "statistic": "d_r2_long_accel",
+    "n_windows": 2210,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "n_boot_valid": 200,
+    "estimator": "paired_ap_episode_cluster_bootstrap"
+   }
+  }
+ }
+}

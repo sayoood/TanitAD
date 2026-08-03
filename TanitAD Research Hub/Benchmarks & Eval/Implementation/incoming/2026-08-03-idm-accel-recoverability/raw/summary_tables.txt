@@ -1,0 +1,175 @@
+
+### A. HELD-OUT R2 PER ARM (point [lo, hi]), 17 episodes / 2346 windows
+
+| arm | params/feats | speed | steer | yaw_rate | long_accel | long_accel TRAIN in-sample |
+|---|---:|---:|---:|---:|---:|---:|
+| NN_gru_d128_L2 | 760,460 | +0.4056 | +0.4379 | -0.3567 | **-0.1142 [-0.2620, -0.0246]** | +0.1237 |
+| NN_mlp_centre_h512 | 1,318,924 | +0.5951 | +0.1962 | -0.2453 | **-0.1629 [-0.3313, -0.0532]** | +0.2032 |
+| NN_mlp_window_h1024 | 19,939,340 | +0.5507 | +0.3457 | +0.0016 | **-0.1127 [-0.2484, -0.0175]** | +0.1082 |
+| NN_transformer_d256_L3_ACCELONLY | 2,899,724 | -3.6188 | -48.9676 | -34.3451 | **-0.1115 [-0.2569, -0.0201]** | +0.0920 |
+| NN_transformer_d256_L3_SHIPPED | 2,899,724 | +0.3229 | +0.3669 | -0.1299 | **-0.1482 [-0.3342, -0.0194]** | +0.0955 |
+| NN_transformer_d512_L6 | 19,975,180 | +0.4660 | +0.3673 | +0.1079 | **-0.1076 [-0.2488, -0.0148]** | +0.0540 |
+| NN_transformer_d64_L1 | 182,604 | -1.5863 | +0.3005 | -0.1857 | **-0.1421 [-0.3241, -0.0252]** | +0.0794 |
+| NULL_train_mean | 0 | -0.0052 | -0.0401 | -0.0221 | **-0.0626 [-0.2126, -0.0018]** | -0.0000 |
+| ORACLEIN_mlp_centreONLY_blind | 270,860 | +0.6134 | -0.0795 | -0.0697 | **-0.0909 [-0.2523, -0.0158]** | +0.0031 |
+| ORACLEIN_mlp_window_h512 | 274,956 | +0.4777 | -0.0972 | -0.0730 | **+0.4299 [+0.3034, +0.5251]** | +0.5628 |
+| ORACLEIN_transformer_d256_L3 | 2,375,692 | +0.4678 | -0.0778 | -0.1331 | **-0.1197 [-0.2941, -0.0338]** | +0.0038 |
+| RIDGE_linear_centre | 2,048 | +0.6857 | +0.2784 | -0.0221 | **-0.0626 [-0.2126, -0.0018]** | -0.0000 |
+| RIDGE_linear_centre_diff | 8,192 | +0.6650 | +0.2707 | -0.0221 | **-0.0626 [-0.2126, -0.0018]** | -0.0000 |
+| RIDGE_linear_diff | 6,144 | -0.0052 | -0.0401 | -0.0221 | **-0.0599 [-0.1979, +0.0033]** | +0.0805 |
+| RIDGE_linear_window | 18,432 | +0.7145 | +0.3426 | -0.0221 | **-0.0626 [-0.2126, -0.0018]** | -0.0000 |
+| RIDGE_rbf_centre | 2,048 | +0.5882 | -0.0401 | -0.0221 | **-0.0626 [-0.2126, -0.0018]** | -0.0000 |
+| RIDGE_rbf_window | 18,432 | +0.6213 | +0.3582 | -0.0221 | **-0.0626 [-0.2126, -0.0018]** | -0.0000 |
+
+### B. PAIRED dR2 vs the SHUFFLED-LATENT CONTROL (matched capacity)
+
+| arm | d speed | d steer | d long_accel |
+|---|---|---|---|
+| NN_gru_d128_L2 | +0.3799 [+0.2029, +0.5871]* | +0.3630 [-4.5690, +0.4178] | **-0.0391 [-0.1253, +0.0160]** |
+| NN_mlp_centre_h512 | +0.4780 [+0.3063, +0.6704]* | +0.2204 [-1.2738, +0.2503] | **-0.0969 [-0.2286, -0.0187]*** |
+| NN_mlp_window_h1024 | +0.4961 [+0.2522, +0.7224]* | +0.3780 [+0.2194, +1.4836]* | **-0.0495 [-0.1198, +0.0115]** |
+| NN_transformer_d256_L3_ACCELONLY | +0.0196 [+0.0105, +0.0483]* | -25.9170 [-2538.3794, -6.9045]* | **-0.0563 [-0.1233, -0.0037]*** |
+| NN_transformer_d256_L3_SHIPPED | +0.3470 [+0.2044, +0.5307]* | +0.3726 [-0.0917, +0.4001] | **-0.0848 [-0.2329, +0.0005]** |
+| NN_transformer_d512_L6 | +0.4262 [+0.2222, +0.6382]* | +0.4035 [-0.3680, +0.4352] | **-0.0435 [-0.1060, +0.0046]** |
+| NN_transformer_d64_L1 | +0.1257 [+0.0850, +0.2631]* | +0.2813 [-0.2950, +0.3048] | **-0.0795 [-0.2138, -0.0017]*** |
+| RIDGE_linear_centre | +0.6908 [+0.4874, +0.9628]* | +0.3185 [-6.9991, +0.3967] | **-0.0005 [-0.0365, +0.0205]** |
+| RIDGE_linear_centre_diff | +0.6702 [+0.5052, +0.9473]* | +0.3107 [-7.9647, +0.3969] | **-0.0032 [-0.0249, +0.0095]** |
+| RIDGE_linear_diff | +0.0000 [+0.0000, +0.0000] (DEGENERATE) | +0.0000 [+0.0000, +0.0000] (DEGENERATE) | **+0.0027 [-0.0670, +0.0417]** |
+| RIDGE_linear_window | +0.7197 [+0.5536, +0.9835]* | +0.3827 [-5.5229, +0.4543] | **+0.0038 [-0.0299, +0.0244]** |
+| RIDGE_rbf_centre | +0.5933 [+0.3117, +0.8909]* | +0.0000 [+0.0000, +0.0000] (DEGENERATE) | **-0.0026 [-0.0301, +0.0144]** |
+| RIDGE_rbf_window | +0.6265 [+0.3533, +0.9120]* | +0.3983 [-0.4572, +0.4296] | **-0.0001 [-0.0274, +0.0171]** |
+
+### B2. PAIRED dR2 vs the EMPIRICAL NULL (train-mean predictor)
+
+| arm | d long_accel |
+|---|---|
+| NN_gru_d128_L2 | -0.0516 [-0.1420, +0.0126] |
+| NN_mlp_centre_h512 | -0.1003 [-0.2399, -0.0115]* |
+| NN_mlp_window_h1024 | -0.0501 [-0.1423, +0.0295] |
+| NN_transformer_d256_L3_ACCELONLY | -0.0489 [-0.1214, +0.0157] |
+| NN_transformer_d256_L3_SHIPPED | -0.0857 [-0.2318, +0.0120] |
+| NN_transformer_d512_L6 | -0.0450 [-0.1123, +0.0155] |
+| NN_transformer_d64_L1 | -0.0795 [-0.2292, +0.0098] |
+| ORACLEIN_mlp_centreONLY_blind | -0.0284 [-0.0468, -0.0093]* |
+| ORACLEIN_mlp_window_h512 | +0.4925 [+0.3713, +0.6018]* |
+| ORACLEIN_transformer_d256_L3 | -0.0571 [-0.0910, -0.0219]* |
+| RIDGE_linear_centre | +0.0000 [+0.0000, +0.0000] (DEGENERATE) |
+| RIDGE_linear_centre_diff | +0.0000 [+0.0000, +0.0000] (DEGENERATE) |
+| RIDGE_linear_diff | +0.0027 [-0.0670, +0.0417] |
+| RIDGE_linear_window | +0.0000 [+0.0000, +0.0000] (DEGENERATE) |
+| RIDGE_rbf_centre | +0.0000 [+0.0000, +0.0000] (DEGENERATE) |
+| RIDGE_rbf_window | +0.0000 [+0.0000, +0.0000] (DEGENERATE) |
+
+### C. ORACLE-SELECTED UPPER BOUND (hyperparameter / epoch budget picked ON the held-out set — cheating, an upper bound only)
+
+| arm | long_accel | speed |
+|---|---:|---:|
+| NN_gru_d128_L2 | -0.0821 | (epoch-grid bound) |
+| NN_mlp_centre_h512 | -0.1174 | (epoch-grid bound) |
+| NN_mlp_window_h1024 | -0.0529 | (epoch-grid bound) |
+| NN_transformer_d256_L3_ACCELONLY | -0.0616 | (epoch-grid bound) |
+| NN_transformer_d256_L3_SHIPPED | -0.0721 | (epoch-grid bound) |
+| NN_transformer_d512_L6 | -0.0631 | (epoch-grid bound) |
+| NN_transformer_d64_L1 | -0.0388 | (epoch-grid bound) |
+| ORACLEIN_mlp_centreONLY_blind | -0.0448 | (epoch-grid bound) |
+| ORACLEIN_mlp_window_h512 | +0.2180 | (epoch-grid bound) |
+| ORACLEIN_transformer_d256_L3 | -0.0700 | (epoch-grid bound) |
+| RIDGE_linear_centre | -0.0626 | +0.6897 |
+| RIDGE_linear_centre_diff | -0.0443 | +0.6764 |
+| RIDGE_linear_diff | -0.0335 | -0.0052 |
+| RIDGE_linear_window | -0.0624 | +0.7176 |
+| RIDGE_rbf_centre | -0.0626 | +0.6830 |
+| RIDGE_rbf_window | -0.0625 | +0.7129 |
+
+### C2. NEURAL ARMS — epoch budget actually selected, and what the arm scored
+
+| arm | epochs | inner selection score | per-seed heldout long_accel R2 |
+|---|---:|---:|---|
+| NN_gru_d128_L2 | 40 | -0.3302 | [-0.108, -0.103, -0.1519] |
+| NN_mlp_centre_h512 | 40 | -0.0925 | [-0.1663, -0.1381, -0.2007] |
+| NN_mlp_window_h1024 | 40 | +0.0749 | [-0.1006, -0.1174, -0.1279] |
+| NN_transformer_d256_L3_ACCELONLY | 5 | -0.5305 | [-0.1141, -0.104, -0.1305] |
+| NN_transformer_d256_L3_SHIPPED | 40 | -0.1424 | [-0.154, -0.1482, -0.1506] |
+| NN_transformer_d512_L6 | 40 | -0.2085 | [-0.1111, -0.1233, -0.1013] |
+| NN_transformer_d64_L1 | 40 | -0.3625 | [-0.1278, -0.1337, -0.171] |
+| ORACLEIN_mlp_centreONLY_blind | 40 | +0.0675 | [-0.0823, -0.0912, -0.0999] |
+| ORACLEIN_mlp_window_h512 | 40 | +0.1486 | [0.5195, 0.4472, 0.2765] |
+| ORACLEIN_transformer_d256_L3 | 40 | -0.0505 | [-0.1153, -0.1135, -0.1309] |
+
+### D. DETECTION SENSITIVITY — amplitude sweep (clean signal, rho=1)
+
+| planted amplitude (frac of latent RMS) | heldout R2 long_accel |
+|---:|---|
+| 0 | -0.0626 [-0.2126, -0.0018] |
+| 1e-05 | +0.9434 [+0.9048, +0.9605] |
+| 3e-05 | +0.9923 [+0.9869, +0.9947] |
+| 0.0001 | +0.9982 [+0.9972, +0.9986] |
+| 0.0003 | +0.9992 [+0.9988, +0.9995] |
+| 0.001 | +0.9987 [+0.9981, +0.9990] |
+| 0.01 | +0.9993 [+0.9991, +0.9994] |
+
+### D2. correlation_sweep_random_dir
+
+| planted TRUE R2 | measured heldout R2 | oracle-selected | paired d vs control |
+|---:|---|---:|---|
+| 0 | -0.0626 [-0.2126, -0.0018] | -0.0626 | -0.0003 [-0.0362, +0.0207] |
+| 0.01 | -0.0626 [-0.2126, -0.0018] | -0.0624 | -0.0004 [-0.0362, +0.0207] |
+| 0.03 | -0.0626 [-0.2126, -0.0018] | -0.0604 | +0.0000 [+0.0000, +0.0000] (DEGENERATE) |
+| 0.1 | -0.0626 [-0.2126, -0.0018] | -0.0274 | +0.0011 [-0.0485, +0.0313] |
+| 0.3 | +0.1505 [+0.0147, +0.2210] | +0.1793 | +0.2131 [+0.0694, +0.3078]* |
+| 0.6 | +0.5067 [+0.2973, +0.5901] | +0.5152 | +0.5652 [+0.3004, +0.7423]* |
+
+### D2. correlation_sweep_random_dir_strong
+
+| planted TRUE R2 | measured heldout R2 | oracle-selected | paired d vs control |
+|---:|---|---:|---|
+| 0 | -0.0626 [-0.2126, -0.0018] | -0.0625 | +0.0004 [-0.0329, +0.0200] |
+| 0.01 | -0.0626 [-0.2126, -0.0018] | -0.0556 | +0.0003 [-0.0335, +0.0202] |
+| 0.03 | -0.0405 [-0.1820, +0.0130] | -0.0354 | +0.0221 [+0.0056, +0.0331]* |
+| 0.1 | +0.0304 [-0.0865, +0.0782] | +0.0304 | +0.0957 [+0.0246, +0.1384]* |
+| 0.3 | +0.2286 [+0.1032, +0.2832] | +0.2286 | +0.2912 [+0.1391, +0.3938]* |
+
+### D2. correlation_sweep_pc1_dir
+
+| planted TRUE R2 | measured heldout R2 | oracle-selected | paired d vs control |
+|---:|---|---:|---|
+| 0.1 | -0.0626 [-0.2126, -0.0018] | -0.0626 | -0.0014 [-0.0370, +0.0194] |
+| 0.6 | -0.0626 [-0.2126, -0.0018] | -0.0626 | -0.0023 [-0.0385, +0.0187] |
+
+### D2. correlation_sweep_pc1_dir_strong
+
+| planted TRUE R2 | measured heldout R2 | oracle-selected | paired d vs control |
+|---:|---|---:|---|
+| 0.1 | +0.0135 [-0.1197, +0.0760] | +0.0135 | +0.0735 [+0.0020, +0.1186]* |
+| 0.3 | +0.1878 [+0.0559, +0.2594] | +0.1949 | +0.2504 [+0.1021, +0.3488]* |
+
+native projection variance: {'random_dir': 0.54707, 'pc1_dir': 347.329417, 'note': 'injected projection variance at frac f is (f*rms*sqrt(D))^2 * var(planted content); divide by these to read the SNR the probe actually faces.'}
+
+### E. CONTEXT LENGTH (k=12 vs k=4, same 2210 rows)
+
+| arm | speed | steer | long_accel |
+|---|---:|---:|---|
+| CTX_k12_ridge_linear_window | +0.6805 | +0.4066 | -0.0665 [-0.2212, -0.0022] |
+| CTX_k4_ridge_linear_window_SAMEROWS | +0.7140 | +0.3494 | -0.0665 [-0.2212, -0.0022] |
+
+paired wide - narrow: {'r2_speed': '-0.0335 [-0.0741, +0.0137]', 'r2_yaw_rate': '+0.0000 [+0.0000, +0.0000]', 'r2_steer': '+0.0572 [-0.1433, +0.9388]', 'r2_long_accel': '+0.0000 [+0.0000, +0.0000]'}
+
+### F. FOUR FAMILIES (headline arms)
+
+* **NN_gru_d128_L2** — LONG scalar-speed MAE 7.3129 m/s, traj-speed MAE 12.1613, along MAE 11.5189 m, distance-keeping UNAVAILABLE | LAT heading 0.05605 rad, curvature 0.04983 1/m, yaw-rate 0.10205 rad/s, cross-track 0.2964 m | TACT lateral BA 0.4926 (chance 0.3333), longitudinal BA 0.3533, accel-scalar BA 0.3342 recall [0.0, 0.9977, 0.005] precision [0.0, 0.7453, 0.1429] support [402, 1745, 199] | STRAT UNAVAILABLE | ADE 11.5299 m [8.9886, 14.0281]
+* **NN_mlp_centre_h512** — LONG scalar-speed MAE 5.5081 m/s, traj-speed MAE 8.2805, along MAE 7.9684 m, distance-keeping UNAVAILABLE | LAT heading 0.04641 rad, curvature 0.02557 1/m, yaw-rate 0.05858 rad/s, cross-track 0.2978 m | TACT lateral BA 0.3038 (chance 0.3333), longitudinal BA 0.3286, accel-scalar BA 0.3423 recall [0.005, 0.9868, 0.0352] precision [0.3333, 0.7471, 0.2] support [402, 1745, 199] | STRAT UNAVAILABLE | ADE 7.9867 m [6.5832, 9.4302]
+* **NN_mlp_window_h1024** — LONG scalar-speed MAE 5.8026 m/s, traj-speed MAE 6.6123, along MAE 7.4622 m, distance-keeping UNAVAILABLE | LAT heading 0.04443 rad, curvature 0.02131 1/m, yaw-rate 0.05581 rad/s, cross-track 0.2972 m | TACT lateral BA 0.3041 (chance 0.3333), longitudinal BA 0.361, accel-scalar BA 0.3324 recall [0.0, 0.9971, 0.0] precision [0.0, 0.7442, 0.0] support [402, 1745, 199] | STRAT UNAVAILABLE | ADE 7.4911 m [5.8727, 9.2126]
+* **NN_transformer_d256_L3_ACCELONLY** — LONG scalar-speed MAE 20.4535 m/s, traj-speed MAE 17.8563, along MAE 21.916 m, distance-keeping UNAVAILABLE | LAT heading 0.99172 rad, curvature 2.33365 1/m, yaw-rate 3.3166 rad/s, cross-track 0.2982 m | TACT lateral BA 0.1644 (chance 0.3333), longitudinal BA 0.3343, accel-scalar BA 0.332 recall [0.0, 0.996, 0.0] precision [None, 0.7431, 0.0] support [402, 1745, 199] | STRAT UNAVAILABLE | ADE 21.9222 m [16.3139, 27.3737]
+* **NN_transformer_d256_L3_SHIPPED** — LONG scalar-speed MAE 7.9934 m/s, traj-speed MAE 12.5677, along MAE 12.314 m, distance-keeping UNAVAILABLE | LAT heading 0.08439 rad, curvature 0.03887 1/m, yaw-rate 0.08985 rad/s, cross-track 0.3005 m | TACT lateral BA 0.3927 (chance 0.3333), longitudinal BA 0.3291, accel-scalar BA 0.3314 recall [0.0, 0.9943, 0.0] precision [0.0, 0.7462, 0.0] support [402, 1745, 199] | STRAT UNAVAILABLE | ADE 12.325 m [9.7332, 14.8377]
+* **NN_transformer_d512_L6** — LONG scalar-speed MAE 6.6902 m/s, traj-speed MAE 8.6238, along MAE 9.1656 m, distance-keeping UNAVAILABLE | LAT heading 0.07764 rad, curvature 0.01978 1/m, yaw-rate 0.03843 rad/s, cross-track 0.2855 m | TACT lateral BA 0.322 (chance 0.3333), longitudinal BA 0.3205, accel-scalar BA 0.3333 recall [0.0, 1.0, 0.0] precision [None, 0.7438, None] support [402, 1745, 199] | STRAT UNAVAILABLE | ADE 9.1819 m [7.6678, 10.7227]
+* **NN_transformer_d64_L1** — LONG scalar-speed MAE 14.8563 m/s, traj-speed MAE 17.3133, along MAE 19.832 m, distance-keeping UNAVAILABLE | LAT heading 0.12147 rad, curvature 0.7563 1/m, yaw-rate 0.83396 rad/s, cross-track 0.295 m | TACT lateral BA 0.3353 (chance 0.3333), longitudinal BA 0.3235, accel-scalar BA 0.3312 recall [0.0, 0.9937, 0.0] precision [None, 0.7455, 0.0] support [402, 1745, 199] | STRAT UNAVAILABLE | ADE 19.838 m [14.5509, 24.9101]
+* **NULL_train_mean** — LONG scalar-speed MAE 9.5669 m/s, traj-speed MAE 9.654, along MAE 12.0349 m, distance-keeping UNAVAILABLE | LAT heading 0.01671 rad, curvature 0.00439 1/m, yaw-rate 0.01728 rad/s, cross-track 0.2808 m | TACT lateral BA 0.3333 (chance 0.3333), longitudinal BA 0.3333, accel-scalar BA 0.3333 recall [0.0, 1.0, 0.0] precision [None, 0.7438, None] support [402, 1745, 199] | STRAT UNAVAILABLE | ADE 12.0468 m [9.6082, 14.6289]
+* **ORACLEIN_mlp_centreONLY_blind** — LONG scalar-speed MAE 5.7832 m/s, traj-speed MAE 8.4016, along MAE 8.3452 m, distance-keeping UNAVAILABLE | LAT heading 0.04529 rad, curvature 0.02562 1/m, yaw-rate 0.08274 rad/s, cross-track 0.2874 m | TACT lateral BA 0.6379 (chance 0.3333), longitudinal BA 0.3364, accel-scalar BA 0.3333 recall [0.0, 1.0, 0.0] precision [None, 0.7438, None] support [402, 1745, 199] | STRAT UNAVAILABLE | ADE 8.3596 m [6.7483, 9.9861]
+* **ORACLEIN_mlp_window_h512** — LONG scalar-speed MAE 6.7397 m/s, traj-speed MAE 9.0786, along MAE 9.4409 m, distance-keeping UNAVAILABLE | LAT heading 0.01728 rad, curvature 0.00444 1/m, yaw-rate 0.01828 rad/s, cross-track 0.2843 m | TACT lateral BA 0.3144 (chance 0.3333), longitudinal BA 0.345, accel-scalar BA 0.4707 recall [0.3035, 0.9931, 0.1156] precision [0.9313, 0.7917, 0.8846] support [402, 1745, 199] | STRAT UNAVAILABLE | ADE 9.4537 m [7.7683, 11.1418]
+* **ORACLEIN_transformer_d256_L3** — LONG scalar-speed MAE 6.7422 m/s, traj-speed MAE 11.9177, along MAE 11.1487 m, distance-keeping UNAVAILABLE | LAT heading 0.05484 rad, curvature 0.03013 1/m, yaw-rate 0.10497 rad/s, cross-track 0.2879 m | TACT lateral BA 0.5115 (chance 0.3333), longitudinal BA 0.3288, accel-scalar BA 0.3333 recall [0.0, 1.0, 0.0] precision [None, 0.7438, None] support [402, 1745, 199] | STRAT UNAVAILABLE | ADE 11.1598 m [7.9997, 14.311]
+* **RIDGE_linear_centre** — LONG scalar-speed MAE 4.8233 m/s, traj-speed MAE 4.7203, along MAE 5.9703 m, distance-keeping UNAVAILABLE | LAT heading 0.06687 rad, curvature 0.00526 1/m, yaw-rate 0.01911 rad/s, cross-track 0.3035 m | TACT lateral BA 0.3407 (chance 0.3333), longitudinal BA 0.3298, accel-scalar BA 0.3333 recall [0.0, 1.0, 0.0] precision [None, 0.7438, None] support [402, 1745, 199] | STRAT UNAVAILABLE | ADE 6.0093 m [4.8661, 7.2556]
+* **RIDGE_linear_centre_diff** — LONG scalar-speed MAE 5.0826 m/s, traj-speed MAE 5.1396, along MAE 6.3992 m, distance-keeping UNAVAILABLE | LAT heading 0.01753 rad, curvature 0.00435 1/m, yaw-rate 0.01791 rad/s, cross-track 0.307 m | TACT lateral BA 0.3607 (chance 0.3333), longitudinal BA 0.3333, accel-scalar BA 0.3333 recall [0.0, 1.0, 0.0] precision [None, 0.7438, None] support [402, 1745, 199] | STRAT UNAVAILABLE | ADE 6.4442 m [5.1597, 7.7831]
+* **RIDGE_linear_diff** — LONG scalar-speed MAE 9.5669 m/s, traj-speed MAE 9.654, along MAE 12.0349 m, distance-keeping UNAVAILABLE | LAT heading 0.01671 rad, curvature 0.00439 1/m, yaw-rate 0.01728 rad/s, cross-track 0.2808 m | TACT lateral BA 0.3333 (chance 0.3333), longitudinal BA 0.3333, accel-scalar BA 0.3414 recall [0.0323, 0.992, 0.0] precision [0.619, 0.7477, 0.0] support [402, 1745, 199] | STRAT UNAVAILABLE | ADE 12.0468 m [9.6082, 14.6289]
+* **RIDGE_linear_window** — LONG scalar-speed MAE 4.7186 m/s, traj-speed MAE 4.5684, along MAE 5.8417 m, distance-keeping UNAVAILABLE | LAT heading 0.1213 rad, curvature 0.00619 1/m, yaw-rate 0.01953 rad/s, cross-track 0.2997 m | TACT lateral BA 0.3873 (chance 0.3333), longitudinal BA 0.3295, accel-scalar BA 0.3333 recall [0.0, 1.0, 0.0] precision [None, 0.7438, None] support [402, 1745, 199] | STRAT UNAVAILABLE | ADE 5.8823 m [4.8549, 7.016]
+* **RIDGE_rbf_centre** — LONG scalar-speed MAE 5.3158 m/s, traj-speed MAE 5.3153, along MAE 6.6468 m, distance-keeping UNAVAILABLE | LAT heading 0.01813 rad, curvature 0.00483 1/m, yaw-rate 0.02158 rad/s, cross-track 0.3043 m | TACT lateral BA 0.3333 (chance 0.3333), longitudinal BA 0.3778, accel-scalar BA 0.3333 recall [0.0, 1.0, 0.0] precision [None, 0.7438, None] support [402, 1745, 199] | STRAT UNAVAILABLE | ADE 6.6962 m [5.0258, 8.6436]
+* **RIDGE_rbf_window** — LONG scalar-speed MAE 5.0255 m/s, traj-speed MAE 5.0194, along MAE 6.2792 m, distance-keeping UNAVAILABLE | LAT heading 0.01949 rad, curvature 0.00461 1/m, yaw-rate 0.01918 rad/s, cross-track 0.308 m | TACT lateral BA 0.3332 (chance 0.3333), longitudinal BA 0.4138, accel-scalar BA 0.3333 recall [0.0, 1.0, 0.0] precision [None, 0.7438, None] support [402, 1745, 199] | STRAT UNAVAILABLE | ADE 6.3299 m [4.6615, 8.3118]

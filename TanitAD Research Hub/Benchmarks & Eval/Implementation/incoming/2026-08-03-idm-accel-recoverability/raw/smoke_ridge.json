@@ -1,0 +1,5442 @@
+{
+ "_what": "STREAM D \u2014 capacity/architecture sweep answering whether long_accel is UNRECOVERABLE from the frozen v1 latents or merely UNRECOVERED by the head tried",
+ "substrate": {
+  "latent_cache": "C:\\Users\\Admin\\tanitad-data\\eval\\idm_derived_accel_latents.pt",
+  "encoder": "C:\\Users\\Admin\\tanitad-data\\eval\\v1_speedjerk_ckpt.pt",
+  "encoder_step": 29999,
+  "state_dim": 2048,
+  "k": 4,
+  "stride": 2,
+  "horizons": [
+   5,
+   10,
+   15,
+   20
+  ],
+  "verification": "raw/substrate_verification.json"
+ },
+ "split": {
+  "unit": "EPISODE-DISJOINT (identical to the P9 panel)",
+  "train_episodes": [
+   "ep_00041",
+   "ep_00042",
+   "ep_00044",
+   "ep_00045",
+   "ep_00047",
+   "ep_00048",
+   "ep_00050",
+   "ep_00051",
+   "ep_00053",
+   "ep_00054",
+   "ep_00056",
+   "ep_00057",
+   "ep_00059",
+   "ep_00060",
+   "ep_00062",
+   "ep_00063",
+   "ep_00065",
+   "ep_00066",
+   "ep_00068",
+   "ep_00069",
+   "ep_00071",
+   "ep_00072",
+   "ep_00074",
+   "ep_00075",
+   "ep_00077",
+   "ep_00078",
+   "ep_00080",
+   "ep_00081",
+   "ep_00083",
+   "ep_00084",
+   "ep_00086",
+   "ep_00087",
+   "ep_00089"
+  ],
+  "heldout_episodes": [
+   "ep_00040",
+   "ep_00043",
+   "ep_00046",
+   "ep_00049",
+   "ep_00052",
+   "ep_00055",
+   "ep_00058",
+   "ep_00061",
+   "ep_00064",
+   "ep_00067",
+   "ep_00070",
+   "ep_00073",
+   "ep_00076",
+   "ep_00079",
+   "ep_00082",
+   "ep_00085",
+   "ep_00088"
+  ],
+  "inner_select_episodes": [
+   "ep_00041",
+   "ep_00045",
+   "ep_00050",
+   "ep_00054",
+   "ep_00059",
+   "ep_00063",
+   "ep_00068",
+   "ep_00072",
+   "ep_00077",
+   "ep_00081",
+   "ep_00086"
+  ],
+  "n_train_windows": 4554,
+  "n_heldout_windows": 2346
+ },
+ "estimator": "episode-cluster bootstrap; PAIRED for every arm-vs-control contrast (taniteval/ci.py + tanitad.eval.ap_ci)",
+ "n_boot": 200,
+ "seeds": 3,
+ "arms": {
+  "NULL_train_mean": {
+   "kind": "empirical_null",
+   "_what": "constant = TRAIN mean of every output. The floor any arm must beat; NOT R\u00b2=0.",
+   "shuffled_latents": false,
+   "r2": {
+    "speed": {
+     "point": -0.00517,
+     "lo": -0.51839,
+     "hi": -0.00016,
+     "ci95": 0.25912,
+     "se": 0.15751,
+     "statistic": "r2_speed",
+     "n_windows": 2346,
+     "n_episodes": 17,
+     "n_boot": 200,
+     "n_boot_valid": 200,
+     "estimator": "ap_episode_cluster_bootstrap",
+     "_lo_raw": -0.5183920109368704,
+     "_hi_raw": -0.00016168051986764585
+    },
+    "yaw_rate": {
+     "point": -0.0221,
+     "lo": -0.07138,
+     "hi": -0.00077,
+     "ci95": 0.0353,
+     "se": 0.01874,
+     "statistic": "r2_yaw_rate",
+     "n_windows": 2346,
+     "n_episodes": 17,
+     "n_boot": 200,
+     "n_boot_valid": 200,
+     "estimator": "ap_episode_cluster_bootstrap",
+     "_lo_raw": -0.07137806031361642,
+     "_hi_raw": -0.0007693444962551032
+    },
+    "steer": {
+     "point": -0.04007,
+     "lo": -0.16172,
+     "hi": -0.01042,
+     "ci95": 0.07565,
+     "se": 0.03977,
+     "statistic": "r2_steer",
+     "n_windows": 2346,
+     "n_episodes": 17,
+     "n_boot": 200,
+     "n_boot_valid": 200,
+     "estimator": "ap_episode_cluster_bootstrap",
+     "_lo_raw": -0.16171903871879073,
+     "_hi_raw": -0.010418862924404412
+    },
+    "long_accel": {
+     "point": -0.06259,
+     "lo": -0.23483,
+     "hi": -0.00145,
+     "ci95": 0.11669,
+     "se": 0.06107,
+     "statistic": "r2_long_accel",
+     "n_windows": 2346,
+     "n_episodes": 17,
+     "n_boot": 200,
+     "n_boot_valid": 200,
+     "estimator": "ap_episode_cluster_bootstrap",
+     "_lo_raw": -0.23482961454872497,
+     "_hi_raw": -0.0014543474052265797
+    }
+   },
+   "r2_train_insample": {
+    "speed": -0.0,
+    "yaw_rate": 0.0,
+    "steer": -0.0,
+    "long_accel": -0.0
+   },
+   "mae": {
+    "speed": 9.56688,
+    "yaw_rate": 0.01936,
+    "steer": 0.00988,
+    "long_accel": 0.40568
+   },
+   "ade_2s": {
+    "mean": 12.0468,
+    "lo": 9.6502,
+    "hi": 14.3499,
+    "ci95": 2.3499,
+    "se": 1.2503,
+    "reducer": "mean",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "four_families": {
+    "LONGITUDINAL": {
+     "traj_speed_mae_mps": 9.654,
+     "traj_speed_bias_mps": -0.6327,
+     "along_mae_m": 12.0349,
+     "along_bias_m": -0.829,
+     "along_final_bias_m": -1.2489,
+     "accel_mae_mps2": 0.3949,
+     "n_windows": 2346,
+     "scalar_speed_mae_mps": 9.5669,
+     "scalar_speed_bias_mps": -0.774,
+     "distance_keeping": {
+      "status": "UNAVAILABLE",
+      "reason": "no lead-agent track on this substrate. comma2k19 ships no object annotation at all; PhysicalAI-AV ships obstacle.offline (97.44 % of the corpus) but the episode ingest does not read it. Implementing it is a WORK ITEM, not a pass.",
+      "n": 0
+     }
+    },
+    "LATERAL": {
+     "heading_mae_rad": 0.01671,
+     "n_heading": 8768,
+     "curvature_mae_inv_m": 0.00439,
+     "n_curvature": 6546,
+     "yaw_rate_mae_rad_s": 0.01728,
+     "n_pair_valid": 6546,
+     "cross_track_mae_m": 0.2808,
+     "cross_track_bias_m": -0.0245,
+     "cross_track_final_mae_m": 0.5916,
+     "n_windows": 2346,
+     "scalar_yaw_rate_mae_rad_s": 0.01936,
+     "scalar_steer_mae": 0.00988
+    },
+    "TACTICAL": {
+     "n_windows": 2346,
+     "thresholds": {
+      "lat_turn_rad": 0.15,
+      "lon_dv_mps": 1.0
+     },
+     "lateral": {
+      "classes": [
+       "right",
+       "straight",
+       "left"
+      ],
+      "confusion_gt_rows_pred_cols": [
+       [
+        0,
+        35,
+        0
+       ],
+       [
+        0,
+        2306,
+        0
+       ],
+       [
+        0,
+        5,
+        0
+       ]
+      ],
+      "support": [
+       35,
+       2306,
+       5
+      ],
+      "recall": [
+       0.0,
+       1.0,
+       0.0
+      ],
+      "balanced_accuracy": 0.3333,
+      "accuracy": 0.9829,
+      "chance_balanced_accuracy": 0.3333
+     },
+     "longitudinal": {
+      "classes": [
+       "decelerate",
+       "cruise",
+       "accelerate"
+      ],
+      "confusion_gt_rows_pred_cols": [
+       [
+        0,
+        268,
+        0
+       ],
+       [
+        0,
+        1975,
+        0
+       ],
+       [
+        0,
+        103,
+        0
+       ]
+      ],
+      "support": [
+       268,
+       1975,
+       103
+      ],
+      "recall": [
+       0.0,
+       1.0,
+       0.0
+      ],
+      "balanced_accuracy": 0.3333,
+      "accuracy": 0.8419,
+      "chance_balanced_accuracy": 0.3333
+     },
+     "mixed": {
+      "classes": [
+       "accelerate",
+       "decelerate",
+       "keep",
+       "left",
+       "right"
+      ],
+      "confusion_gt_rows_pred_cols": [
+       [
+        0,
+        0,
+        102,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        266,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        1938,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        5,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        35,
+        0,
+        0
+       ]
+      ],
+      "support": [
+       102,
+       266,
+       1938,
+       5,
+       35
+      ],
+      "recall": [
+       0.0,
+       0.0,
+       1.0,
+       0.0,
+       0.0
+      ],
+      "balanced_accuracy": 0.2,
+      "accuracy": 0.8261,
+      "chance_balanced_accuracy": 0.2
+     },
+     "goal_setting": {
+      "status": "PARTIAL",
+      "reason": "selected-vs-executed manoeuvre IS reported above. Anchor/goal selection is not: the IDM emits a single regressed trajectory, it has no anchor set to select from.",
+      "n": 2346
+     }
+    },
+    "STRATEGIC": {
+     "status": "UNAVAILABLE",
+     "reason": "no route/goal label on the IDM's substrates. comma2k19 has none; PhysicalAI-AV settled at five probes as carrying no map, lane graph, junction annotation or route signal, and its egomotion is clip-local metres with no GNSS, so map-matching is impossible. A strategic read needs AlpaSim/NuRec map.xodr or an external corpus \u2014 a WORK ITEM, not a pass.",
+     "n": 2346,
+     "how_to_populate": "the instrument now EXISTS: map-derived option sets from stack/experiments/nurec-gsplat/strategic_gt.py, scored by taniteval.strategic_optionset.strategic_family. What is still missing on THIS stream is a substrate \u2014 the IDM would have to be driven on a NuRec scene that ships map.xodr. \u26d4 Do NOT substitute an ego-yaw route label: it cannot tell whether the map admitted a choice, which is how route_head_eq_logged reached 1.0000 on a single-option clip."
+    },
+    "_contract": "Four families reported per-family, never pooled, in ADDITION to ADE. A family marked UNAVAILABLE is a WORK ITEM, not a pass.",
+    "_unavailable": [
+     "STRATEGIC"
+    ]
+   }
+  },
+  "RIDGE_linear_centre": {
+   "kind": "closed_form_kernel_ridge",
+   "feature": "centre",
+   "kernel": "linear",
+   "n_features": 2048,
+   "gamma_mults": [
+    null
+   ],
+   "selected_per_output": {
+    "speed": {
+     "gamma_mult": null,
+     "alpha": 100.0,
+     "rule": "one_se_tiebreak"
+    },
+    "yaw_rate": {
+     "gamma_mult": null,
+     "alpha": 10000000000.0,
+     "rule": "skill_gate_to_train_mean"
+    },
+    "steer": {
+     "gamma_mult": null,
+     "alpha": 31.622776601683793,
+     "rule": "one_se_tiebreak"
+    },
+    "long_accel": {
+     "gamma_mult": null,
+     "alpha": 10000000000.0,
+     "rule": "skill_gate_to_train_mean"
+    }
+   },
+   "inner_val_r2_per_scalar": {
+    "speed": 0.6761,
+    "yaw_rate": -0.0,
+    "steer": 0.1555,
+    "long_accel": -0.0001
+   },
+   "inner_val_r2_best_over_grid": {
+    "speed": 0.6761,
+    "yaw_rate": 0.0001,
+    "steer": 0.1555,
+    "long_accel": -0.0001
+   },
+   "ORACLE_SELECTED_heldout_r2_UPPER_BOUND_cheating": {
+    "speed": {
+     "r2": 0.68969,
+     "gamma_mult": null,
+     "alpha": 316.22776601683796
+    },
+    "yaw_rate": {
+     "r2": 0.14931,
+     "gamma_mult": null,
+     "alpha": 100000.0
+    },
+    "steer": {
+     "r2": 0.33912,
+     "gamma_mult": null,
+     "alpha": 0.1
+    },
+    "long_accel": {
+     "r2": -0.06257,
+     "gamma_mult": null,
+     "alpha": 31622776.60168379
+    }
+   },
+   "shuffled_latents": false,
+   "selection_rule": "skill gate at inner-val R\u00b2 0.01 (else train mean), then largest alpha within 0.005 of the best",
+   "alpha_grid": [
+    0.0001,
+    10000000000.0,
+    29
+   ],
+   "r2": {
+    "speed": {
+     "point": 0.68567,
+     "lo": 0.32158,
+     "hi": 0.7943,
+     "ci95": 0.23636,
+     "se": 0.13957,
+     "statistic": "r2_speed",
+     "n_windows": 2346,
+     "n_episodes": 17,
+     "n_boot": 200,
+     "n_boot_valid": 200,
+     "estimator": "ap_episode_cluster_bootstrap",
+     "_lo_raw": 0.32158286715697754,
+     "_hi_raw": 0.7943039052627253
+    },
+    "yaw_rate": {
+     "point": -0.02209,
+     "lo": -0.07135,
+     "hi": -0.00076,
+     "ci95": 0.0353,
+     "se": 0.01874,
+     "statistic": "r2_yaw_rate",
+     "n_windows": 2346,
+     "n_episodes": 17,
+     "n_boot": 200,
+     "n_boot_valid": 200,
+     "estimator": "ap_episode_cluster_bootstrap",
+     "_lo_raw": -0.0713511650296689,
+     "_hi_raw": -0.0007606333702141754
+    },
+    "steer": {
+     "point": 0.27841,
+     "lo": -6.73734,
+     "hi": 0.30857,
+     "ci95": 3.52296,
+     "se": 2.3278,
+     "statistic": "r2_steer",
+     "n_windows": 2346,
+     "n_episodes": 17,
+     "n_boot": 200,
+     "n_boot_valid": 200,
+     "estimator": "ap_episode_cluster_bootstrap",
+     "_lo_raw": -6.737343947899098,
+     "_hi_raw": 0.3085668916301715
+    },
+    "long_accel": {
+     "point": -0.06259,
+     "lo": -0.23483,
+     "hi": -0.00146,
+     "ci95": 0.11668,
+     "se": 0.06107,
+     "statistic": "r2_long_accel",
+     "n_windows": 2346,
+     "n_episodes": 17,
+     "n_boot": 200,
+     "n_boot_valid": 200,
+     "estimator": "ap_episode_cluster_bootstrap",
+     "_lo_raw": -0.23482617874468042,
+     "_hi_raw": -0.0014574822527621595
+    }
+   },
+   "r2_train_insample": {
+    "speed": 0.875,
+    "yaw_rate": 0.0,
+    "steer": 0.7814,
+    "long_accel": 0.0
+   },
+   "mae": {
+    "speed": 4.82328,
+    "yaw_rate": 0.01936,
+    "steer": 0.01279,
+    "long_accel": 0.40568
+   },
+   "ade_2s": {
+    "mean": 6.0093,
+    "lo": 4.948,
+    "hi": 7.1603,
+    "ci95": 1.1061,
+    "se": 0.5811,
+    "reducer": "mean",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "four_families": {
+    "LONGITUDINAL": {
+     "traj_speed_mae_mps": 4.7203,
+     "traj_speed_bias_mps": 0.1297,
+     "along_mae_m": 5.9703,
+     "along_bias_m": -0.3019,
+     "along_final_bias_m": -0.423,
+     "accel_mae_mps2": 0.4813,
+     "n_windows": 2346,
+     "scalar_speed_mae_mps": 4.8233,
+     "scalar_speed_bias_mps": -0.3258,
+     "distance_keeping": {
+      "status": "UNAVAILABLE",
+      "reason": "no lead-agent track on this substrate. comma2k19 ships no object annotation at all; PhysicalAI-AV ships obstacle.offline (97.44 % of the corpus) but the episode ingest does not read it. Implementing it is a WORK ITEM, not a pass.",
+      "n": 0
+     }
+    },
+    "LATERAL": {
+     "heading_mae_rad": 0.06687,
+     "n_heading": 8735,
+     "curvature_mae_inv_m": 0.00526,
+     "n_curvature": 6522,
+     "yaw_rate_mae_rad_s": 0.01911,
+     "n_pair_valid": 6522,
+     "cross_track_mae_m": 0.3035,
+     "cross_track_bias_m": -0.0238,
+     "cross_track_final_mae_m": 0.6417,
+     "n_windows": 2346,
+     "scalar_yaw_rate_mae_rad_s": 0.01936,
+     "scalar_steer_mae": 0.01279
+    },
+    "TACTICAL": {
+     "n_windows": 2346,
+     "thresholds": {
+      "lat_turn_rad": 0.15,
+      "lon_dv_mps": 1.0
+     },
+     "lateral": {
+      "classes": [
+       "right",
+       "straight",
+       "left"
+      ],
+      "confusion_gt_rows_pred_cols": [
+       [
+        1,
+        33,
+        1
+       ],
+       [
+        8,
+        2291,
+        7
+       ],
+       [
+        0,
+        5,
+        0
+       ]
+      ],
+      "support": [
+       35,
+       2306,
+       5
+      ],
+      "recall": [
+       0.0286,
+       0.9935,
+       0.0
+      ],
+      "balanced_accuracy": 0.3407,
+      "accuracy": 0.977,
+      "chance_balanced_accuracy": 0.3333
+     },
+     "longitudinal": {
+      "classes": [
+       "decelerate",
+       "cruise",
+       "accelerate"
+      ],
+      "confusion_gt_rows_pred_cols": [
+       [
+        8,
+        260,
+        0
+       ],
+       [
+        52,
+        1895,
+        28
+       ],
+       [
+        1,
+        102,
+        0
+       ]
+      ],
+      "support": [
+       268,
+       1975,
+       103
+      ],
+      "recall": [
+       0.0299,
+       0.9595,
+       0.0
+      ],
+      "balanced_accuracy": 0.3298,
+      "accuracy": 0.8112,
+      "chance_balanced_accuracy": 0.3333
+     },
+     "mixed": {
+      "classes": [
+       "accelerate",
+       "decelerate",
+       "keep",
+       "left",
+       "right"
+      ],
+      "confusion_gt_rows_pred_cols": [
+       [
+        0,
+        1,
+        101,
+        0,
+        0
+       ],
+       [
+        0,
+        8,
+        257,
+        0,
+        1
+       ],
+       [
+        22,
+        52,
+        1850,
+        7,
+        7
+       ],
+       [
+        2,
+        0,
+        3,
+        0,
+        0
+       ],
+       [
+        2,
+        0,
+        31,
+        1,
+        1
+       ]
+      ],
+      "support": [
+       102,
+       266,
+       1938,
+       5,
+       35
+      ],
+      "recall": [
+       0.0,
+       0.0301,
+       0.9546,
+       0.0,
+       0.0286
+      ],
+      "balanced_accuracy": 0.2026,
+      "accuracy": 0.7924,
+      "chance_balanced_accuracy": 0.2
+     },
+     "goal_setting": {
+      "status": "PARTIAL",
+      "reason": "selected-vs-executed manoeuvre IS reported above. Anchor/goal selection is not: the IDM emits a single regressed trajectory, it has no anchor set to select from.",
+      "n": 2346
+     }
+    },
+    "STRATEGIC": {
+     "status": "UNAVAILABLE",
+     "reason": "no route/goal label on the IDM's substrates. comma2k19 has none; PhysicalAI-AV settled at five probes as carrying no map, lane graph, junction annotation or route signal, and its egomotion is clip-local metres with no GNSS, so map-matching is impossible. A strategic read needs AlpaSim/NuRec map.xodr or an external corpus \u2014 a WORK ITEM, not a pass.",
+     "n": 2346,
+     "how_to_populate": "the instrument now EXISTS: map-derived option sets from stack/experiments/nurec-gsplat/strategic_gt.py, scored by taniteval.strategic_optionset.strategic_family. What is still missing on THIS stream is a substrate \u2014 the IDM would have to be driven on a NuRec scene that ships map.xodr. \u26d4 Do NOT substitute an ego-yaw route label: it cannot tell whether the map admitted a choice, which is how route_head_eq_logged reached 1.0000 on a single-option clip."
+    },
+    "_contract": "Four families reported per-family, never pooled, in ADDITION to ADE. A family marked UNAVAILABLE is a WORK ITEM, not a pass.",
+    "_unavailable": [
+     "STRATEGIC"
+    ]
+   }
+  },
+  "RIDGE_linear_centre__CTRL": {
+   "kind": "closed_form_kernel_ridge",
+   "feature": "centre",
+   "kernel": "linear",
+   "n_features": 2048,
+   "gamma_mults": [
+    null
+   ],
+   "selected_per_output": {
+    "speed": {
+     "gamma_mult": null,
+     "alpha": 10000000000.0,
+     "rule": "skill_gate_to_train_mean"
+    },
+    "yaw_rate": {
+     "gamma_mult": null,
+     "alpha": 10000000000.0,
+     "rule": "skill_gate_to_train_mean"
+    },
+    "steer": {
+     "gamma_mult": null,
+     "alpha": 10000000000.0,
+     "rule": "skill_gate_to_train_mean"
+    },
+    "long_accel": {
+     "gamma_mult": null,
+     "alpha": 316227.7660168379,
+     "rule": "one_se_tiebreak"
+    }
+   },
+   "inner_val_r2_per_scalar": {
+    "speed": -0.0194,
+    "yaw_rate": -0.0,
+    "steer": -0.0343,
+    "long_accel": 0.0092
+   },
+   "inner_val_r2_best_over_grid": {
+    "speed": -0.0194,
+    "yaw_rate": 0.0079,
+    "steer": -0.0343,
+    "long_accel": 0.0109
+   },
+   "ORACLE_SELECTED_heldout_r2_UPPER_BOUND_cheating": {
+    "speed": {
+     "r2": -0.00457,
+     "gamma_mult": null,
+     "alpha": 316227.7660168379
+    },
+    "yaw_rate": {
+     "r2": -0.0221,
+     "gamma_mult": null,
+     "alpha": 10000000000.0
+    },
+    "steer": {
+     "r2": -0.02493,
+     "gamma_mult": null,
+     "alpha": 1000.0
+    },
+    "long_accel": {
+     "r2": -0.05888,
+     "gamma_mult": null,
+     "alpha": 10000.0
+    }
+   },
+   "shuffled_latents": true,
+   "selection_rule": "skill gate at inner-val R\u00b2 0.01 (else train mean), then largest alpha within 0.005 of the best",
+   "alpha_grid": [
+    0.0001,
+    10000000000.0,
+    29
+   ],
+   "r2": {
+    "speed": {
+     "point": -0.00517,
+     "lo": -0.51839,
+     "hi": -0.00016,
+     "ci95": 0.25911,
+     "se": 0.15751,
+     "statistic": "r2_speed",
+     "n_windows": 2346,
+     "n_episodes": 17,
+     "n_boot": 200,
+     "n_boot_valid": 200,
+     "estimator": "ap_episode_cluster_bootstrap",
+     "_lo_raw": -0.5183888167352901,
+     "_hi_raw": -0.0001616094428371679
+    },
+    "yaw_rate": {
+     "point": -0.0221,
+     "lo": -0.07144,
+     "hi": -0.00075,
+     "ci95": 0.03535,
+     "se": 0.01876,
+     "statistic": "r2_yaw_rate",
+     "n_windows": 2346,
+     "n_episodes": 17,
+     "n_boot": 200,
+     "n_boot_valid": 200,
+     "estimator": "ap_episode_cluster_bootstrap",
+     "_lo_raw": -0.07144145938909077,
+     "_hi_raw": -0.0007497602311119231
+    },
+    "steer": {
+     "point": -0.04007,
+     "lo": -0.16171,
+     "hi": -0.01041,
+     "ci95": 0.07565,
+     "se": 0.03977,
+     "statistic": "r2_steer",
+     "n_windows": 2346,
+     "n_episodes": 17,
+     "n_boot": 200,
+     "n_boot_valid": 200,
+     "estimator": "ap_episode_cluster_bootstrap",
+     "_lo_raw": -0.16171039406311144,
+     "_hi_raw": -0.010411495562193675
+    },
+    "long_accel": {
+     "point": -0.06212,
+     "lo": -0.21771,
+     "hi": -0.00281,
+     "ci95": 0.10745,
+     "se": 0.05952,
+     "statistic": "r2_long_accel",
+     "n_windows": 2346,
+     "n_episodes": 17,
+     "n_boot": 200,
+     "n_boot_valid": 200,
+     "estimator": "ap_episode_cluster_bootstrap",
+     "_lo_raw": -0.2177138988764243,
+     "_hi_raw": -0.0028119526046593733
+    }
+   },
+   "r2_train_insample": {
+    "speed": 0.0,
+    "yaw_rate": 0.0,
+    "steer": 0.0,
+    "long_accel": 0.0055
+   },
+   "mae": {
+    "speed": 9.56687,
+    "yaw_rate": 0.01936,
+    "steer": 0.00988,
+    "long_accel": 0.40517
+   },
+   "ade_2s": {
+    "mean": 12.0468,
+    "lo": 9.6501,
+    "hi": 14.3499,
+    "ci95": 2.3499,
+    "se": 1.2503,
+    "reducer": "mean",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "four_families": {
+    "LONGITUDINAL": {
+     "traj_speed_mae_mps": 9.654,
+     "traj_speed_bias_mps": -0.6327,
+     "along_mae_m": 12.0349,
+     "along_bias_m": -0.829,
+     "along_final_bias_m": -1.2489,
+     "accel_mae_mps2": 0.3949,
+     "n_windows": 2346,
+     "scalar_speed_mae_mps": 9.5669,
+     "scalar_speed_bias_mps": -0.774,
+     "distance_keeping": {
+      "status": "UNAVAILABLE",
+      "reason": "no lead-agent track on this substrate. comma2k19 ships no object annotation at all; PhysicalAI-AV ships obstacle.offline (97.44 % of the corpus) but the episode ingest does not read it. Implementing it is a WORK ITEM, not a pass.",
+      "n": 0
+     }
+    },
+    "LATERAL": {
+     "heading_mae_rad": 0.01671,
+     "n_heading": 8768,
+     "curvature_mae_inv_m": 0.00439,
+     "n_curvature": 6546,
+     "yaw_rate_mae_rad_s": 0.01728,
+     "n_pair_valid": 6546,
+     "cross_track_mae_m": 0.2808,
+     "cross_track_bias_m": -0.0245,
+     "cross_track_final_mae_m": 0.5916,
+     "n_windows": 2346,
+     "scalar_yaw_rate_mae_rad_s": 0.01936,
+     "scalar_steer_mae": 0.00988
+    },
+    "TACTICAL": {
+     "n_windows": 2346,
+     "thresholds": {
+      "lat_turn_rad": 0.15,
+      "lon_dv_mps": 1.0
+     },
+     "lateral": {
+      "classes": [
+       "right",
+       "straight",
+       "left"
+      ],
+      "confusion_gt_rows_pred_cols": [
+       [
+        0,
+        35,
+        0
+       ],
+       [
+        0,
+        2306,
+        0
+       ],
+       [
+        0,
+        5,
+        0
+       ]
+      ],
+      "support": [
+       35,
+       2306,
+       5
+      ],
+      "recall": [
+       0.0,
+       1.0,
+       0.0
+      ],
+      "balanced_accuracy": 0.3333,
+      "accuracy": 0.9829,
+      "chance_balanced_accuracy": 0.3333
+     },
+     "longitudinal": {
+      "classes": [
+       "decelerate",
+       "cruise",
+       "accelerate"
+      ],
+      "confusion_gt_rows_pred_cols": [
+       [
+        0,
+        268,
+        0
+       ],
+       [
+        0,
+        1975,
+        0
+       ],
+       [
+        0,
+        103,
+        0
+       ]
+      ],
+      "support": [
+       268,
+       1975,
+       103
+      ],
+      "recall": [
+       0.0,
+       1.0,
+       0.0
+      ],
+      "balanced_accuracy": 0.3333,
+      "accuracy": 0.8419,
+      "chance_balanced_accuracy": 0.3333
+     },
+     "mixed": {
+      "classes": [
+       "accelerate",
+       "decelerate",
+       "keep",
+       "left",
+       "right"
+      ],
+      "confusion_gt_rows_pred_cols": [
+       [
+        0,
+        0,
+        102,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        266,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        1938,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        5,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        35,
+        0,
+        0
+       ]
+      ],
+      "support": [
+       102,
+       266,
+       1938,
+       5,
+       35
+      ],
+      "recall": [
+       0.0,
+       0.0,
+       1.0,
+       0.0,
+       0.0
+      ],
+      "balanced_accuracy": 0.2,
+      "accuracy": 0.8261,
+      "chance_balanced_accuracy": 0.2
+     },
+     "goal_setting": {
+      "status": "PARTIAL",
+      "reason": "selected-vs-executed manoeuvre IS reported above. Anchor/goal selection is not: the IDM emits a single regressed trajectory, it has no anchor set to select from.",
+      "n": 2346
+     }
+    },
+    "STRATEGIC": {
+     "status": "UNAVAILABLE",
+     "reason": "no route/goal label on the IDM's substrates. comma2k19 has none; PhysicalAI-AV settled at five probes as carrying no map, lane graph, junction annotation or route signal, and its egomotion is clip-local metres with no GNSS, so map-matching is impossible. A strategic read needs AlpaSim/NuRec map.xodr or an external corpus \u2014 a WORK ITEM, not a pass.",
+     "n": 2346,
+     "how_to_populate": "the instrument now EXISTS: map-derived option sets from stack/experiments/nurec-gsplat/strategic_gt.py, scored by taniteval.strategic_optionset.strategic_family. What is still missing on THIS stream is a substrate \u2014 the IDM would have to be driven on a NuRec scene that ships map.xodr. \u26d4 Do NOT substitute an ego-yaw route label: it cannot tell whether the map admitted a choice, which is how route_head_eq_logged reached 1.0000 on a single-option clip."
+    },
+    "_contract": "Four families reported per-family, never pooled, in ADDITION to ADE. A family marked UNAVAILABLE is a WORK ITEM, not a pass.",
+    "_unavailable": [
+     "STRATEGIC"
+    ]
+   }
+  },
+  "RIDGE_linear_centre_diff": {
+   "kind": "closed_form_kernel_ridge",
+   "feature": "centre_diff",
+   "kernel": "linear",
+   "n_features": 8192,
+   "gamma_mults": [
+    null
+   ],
+   "selected_per_output": {
+    "speed": {
+     "gamma_mult": null,
+     "alpha": 316227.7660168379,
+     "rule": "one_se_tiebreak"
+    },
+    "yaw_rate": {
+     "gamma_mult": null,
+     "alpha": 10000000000.0,
+     "rule": "skill_gate_to_train_mean"
+    },
+    "steer": {
+     "gamma_mult": null,
+     "alpha": 100.0,
+     "rule": "one_se_tiebreak"
+    },
+    "long_accel": {
+     "gamma_mult": null,
+     "alpha": 10000000000.0,
+     "rule": "skill_gate_to_train_mean"
+    }
+   },
+   "inner_val_r2_per_scalar": {
+    "speed": 0.6488,
+    "yaw_rate": -0.0,
+    "steer": 0.1128,
+    "long_accel": -0.0001
+   },
+   "inner_val_r2_best_over_grid": {
+    "speed": 0.6489,
+    "yaw_rate": 0.0001,
+    "steer": 0.1128,
+    "long_accel": 0.0076
+   },
+   "ORACLE_SELECTED_heldout_r2_UPPER_BOUND_cheating": {
+    "speed": {
+     "r2": 0.67636,
+     "gamma_mult": null,
+     "alpha": 316.22776601683796
+    },
+    "yaw_rate": {
+     "r2": 0.04465,
+     "gamma_mult": null,
+     "alpha": 1000000.0
+    },
+    "steer": {
+     "r2": 0.30657,
+     "gamma_mult": null,
+     "alpha": 0.31622776601683794
+    },
+    "long_accel": {
+     "r2": -0.04431,
+     "gamma_mult": null,
+     "alpha": 1000000.0
+    }
+   },
+   "shuffled_latents": false,
+   "selection_rule": "skill gate at inner-val R\u00b2 0.01 (else train mean), then largest alpha within 0.005 of the best",
+   "alpha_grid": [
+    0.0001,
+    10000000000.0,
+    29
+   ],
+   "r2": {
+    "speed": {
+     "point": 0.665,
+     "lo": 0.33361,
+     "hi": 0.77509,
+     "ci95": 0.22074,
+     "se": 0.11701,
+     "statistic": "r2_speed",
+     "n_windows": 2346,
+     "n_episodes": 17,
+     "n_boot": 200,
+     "n_boot_valid": 200,
+     "estimator": "ap_episode_cluster_bootstrap",
+     "_lo_raw": 0.33361463396081625,
+     "_hi_raw": 0.7750889179925942
+    },
+    "yaw_rate": {
+     "point": -0.02208,
+     "lo": -0.07134,
+     "hi": -0.00075,
+     "ci95": 0.03529,
+     "se": 0.01874,
+     "statistic": "r2_yaw_rate",
+     "n_windows": 2346,
+     "n_episodes": 17,
+     "n_boot": 200,
+     "n_boot_valid": 200,
+     "estimator": "ap_episode_cluster_bootstrap",
+     "_lo_raw": -0.07134386443446639,
+     "_hi_raw": -0.0007547906816678328
+    },
+    "steer": {
+     "point": 0.27066,
+     "lo": -7.50587,
+     "hi": 0.3067,
+     "ci95": 3.90629,
+     "se": 2.62416,
+     "statistic": "r2_steer",
+     "n_windows": 2346,
+     "n_episodes": 17,
+     "n_boot": 200,
+     "n_boot_valid": 200,
+     "estimator": "ap_episode_cluster_bootstrap",
+     "_lo_raw": -7.5058742280501765,
+     "_hi_raw": 0.3067001909511569
+    },
+    "long_accel": {
+     "point": -0.06258,
+     "lo": -0.23481,
+     "hi": -0.00145,
+     "ci95": 0.11668,
+     "se": 0.06107,
+     "statistic": "r2_long_accel",
+     "n_windows": 2346,
+     "n_episodes": 17,
+     "n_boot": 200,
+     "n_boot_valid": 200,
+     "estimator": "ap_episode_cluster_bootstrap",
+     "_lo_raw": -0.23481261232357264,
+     "_hi_raw": -0.001450033112745202
+    }
+   },
+   "r2_train_insample": {
+    "speed": 0.7096,
+    "yaw_rate": 0.0,
+    "steer": 0.8043,
+    "long_accel": 0.0
+   },
+   "mae": {
+    "speed": 5.08257,
+    "yaw_rate": 0.01936,
+    "steer": 0.01305,
+    "long_accel": 0.40568
+   },
+   "ade_2s": {
+    "mean": 6.4442,
+    "lo": 5.2327,
+    "hi": 7.7858,
+    "ci95": 1.2765,
+    "se": 0.6435,
+    "reducer": "mean",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "four_families": {
+    "LONGITUDINAL": {
+     "traj_speed_mae_mps": 5.1396,
+     "traj_speed_bias_mps": 0.556,
+     "along_mae_m": 6.3992,
+     "along_bias_m": 0.5813,
+     "along_final_bias_m": 1.0013,
+     "accel_mae_mps2": 0.4094,
+     "n_windows": 2346,
+     "scalar_speed_mae_mps": 5.0826,
+     "scalar_speed_bias_mps": 0.3647,
+     "distance_keeping": {
+      "status": "UNAVAILABLE",
+      "reason": "no lead-agent track on this substrate. comma2k19 ships no object annotation at all; PhysicalAI-AV ships obstacle.offline (97.44 % of the corpus) but the episode ingest does not read it. Implementing it is a WORK ITEM, not a pass.",
+      "n": 0
+     }
+    },
+    "LATERAL": {
+     "heading_mae_rad": 0.01753,
+     "n_heading": 8766,
+     "curvature_mae_inv_m": 0.00435,
+     "n_curvature": 6545,
+     "yaw_rate_mae_rad_s": 0.01791,
+     "n_pair_valid": 6545,
+     "cross_track_mae_m": 0.307,
+     "cross_track_bias_m": -0.0251,
+     "cross_track_final_mae_m": 0.6496,
+     "n_windows": 2346,
+     "scalar_yaw_rate_mae_rad_s": 0.01936,
+     "scalar_steer_mae": 0.01305
+    },
+    "TACTICAL": {
+     "n_windows": 2346,
+     "thresholds": {
+      "lat_turn_rad": 0.15,
+      "lon_dv_mps": 1.0
+     },
+     "lateral": {
+      "classes": [
+       "right",
+       "straight",
+       "left"
+      ],
+      "confusion_gt_rows_pred_cols": [
+       [
+        3,
+        32,
+        0
+       ],
+       [
+        6,
+        2298,
+        2
+       ],
+       [
+        0,
+        5,
+        0
+       ]
+      ],
+      "support": [
+       35,
+       2306,
+       5
+      ],
+      "recall": [
+       0.0857,
+       0.9965,
+       0.0
+      ],
+      "balanced_accuracy": 0.3607,
+      "accuracy": 0.9808,
+      "chance_balanced_accuracy": 0.3333
+     },
+     "longitudinal": {
+      "classes": [
+       "decelerate",
+       "cruise",
+       "accelerate"
+      ],
+      "confusion_gt_rows_pred_cols": [
+       [
+        0,
+        268,
+        0
+       ],
+       [
+        0,
+        1975,
+        0
+       ],
+       [
+        0,
+        103,
+        0
+       ]
+      ],
+      "support": [
+       268,
+       1975,
+       103
+      ],
+      "recall": [
+       0.0,
+       1.0,
+       0.0
+      ],
+      "balanced_accuracy": 0.3333,
+      "accuracy": 0.8419,
+      "chance_balanced_accuracy": 0.3333
+     },
+     "mixed": {
+      "classes": [
+       "accelerate",
+       "decelerate",
+       "keep",
+       "left",
+       "right"
+      ],
+      "confusion_gt_rows_pred_cols": [
+       [
+        0,
+        0,
+        102,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        266,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        1930,
+        2,
+        6
+       ],
+       [
+        0,
+        0,
+        5,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        32,
+        0,
+        3
+       ]
+      ],
+      "support": [
+       102,
+       266,
+       1938,
+       5,
+       35
+      ],
+      "recall": [
+       0.0,
+       0.0,
+       0.9959,
+       0.0,
+       0.0857
+      ],
+      "balanced_accuracy": 0.2163,
+      "accuracy": 0.824,
+      "chance_balanced_accuracy": 0.2
+     },
+     "goal_setting": {
+      "status": "PARTIAL",
+      "reason": "selected-vs-executed manoeuvre IS reported above. Anchor/goal selection is not: the IDM emits a single regressed trajectory, it has no anchor set to select from.",
+      "n": 2346
+     }
+    },
+    "STRATEGIC": {
+     "status": "UNAVAILABLE",
+     "reason": "no route/goal label on the IDM's substrates. comma2k19 has none; PhysicalAI-AV settled at five probes as carrying no map, lane graph, junction annotation or route signal, and its egomotion is clip-local metres with no GNSS, so map-matching is impossible. A strategic read needs AlpaSim/NuRec map.xodr or an external corpus \u2014 a WORK ITEM, not a pass.",
+     "n": 2346,
+     "how_to_populate": "the instrument now EXISTS: map-derived option sets from stack/experiments/nurec-gsplat/strategic_gt.py, scored by taniteval.strategic_optionset.strategic_family. What is still missing on THIS stream is a substrate \u2014 the IDM would have to be driven on a NuRec scene that ships map.xodr. \u26d4 Do NOT substitute an ego-yaw route label: it cannot tell whether the map admitted a choice, which is how route_head_eq_logged reached 1.0000 on a single-option clip."
+    },
+    "_contract": "Four families reported per-family, never pooled, in ADDITION to ADE. A family marked UNAVAILABLE is a WORK ITEM, not a pass.",
+    "_unavailable": [
+     "STRATEGIC"
+    ]
+   }
+  },
+  "RIDGE_linear_centre_diff__CTRL": {
+   "kind": "closed_form_kernel_ridge",
+   "feature": "centre_diff",
+   "kernel": "linear",
+   "n_features": 8192,
+   "gamma_mults": [
+    null
+   ],
+   "selected_per_output": {
+    "speed": {
+     "gamma_mult": null,
+     "alpha": 10000000000.0,
+     "rule": "skill_gate_to_train_mean"
+    },
+    "yaw_rate": {
+     "gamma_mult": null,
+     "alpha": 10000000000.0,
+     "rule": "skill_gate_to_train_mean"
+    },
+    "steer": {
+     "gamma_mult": null,
+     "alpha": 10000000000.0,
+     "rule": "skill_gate_to_train_mean"
+    },
+    "long_accel": {
+     "gamma_mult": null,
+     "alpha": 1000000.0,
+     "rule": "one_se_tiebreak"
+    }
+   },
+   "inner_val_r2_per_scalar": {
+    "speed": -0.0194,
+    "yaw_rate": -0.0,
+    "steer": -0.0343,
+    "long_accel": 0.0091
+   },
+   "inner_val_r2_best_over_grid": {
+    "speed": -0.0194,
+    "yaw_rate": 0.0038,
+    "steer": -0.0334,
+    "long_accel": 0.013
+   },
+   "ORACLE_SELECTED_heldout_r2_UPPER_BOUND_cheating": {
+    "speed": {
+     "r2": -0.00432,
+     "gamma_mult": null,
+     "alpha": 3162277.6601683795
+    },
+    "yaw_rate": {
+     "r2": -0.02211,
+     "gamma_mult": null,
+     "alpha": 10000000000.0
+    },
+    "steer": {
+     "r2": -0.03112,
+     "gamma_mult": null,
+     "alpha": 10000.0
+    },
+    "long_accel": {
+     "r2": -0.05381,
+     "gamma_mult": null,
+     "alpha": 31622.776601683792
+    }
+   },
+   "shuffled_latents": true,
+   "selection_rule": "skill gate at inner-val R\u00b2 0.01 (else train mean), then largest alpha within 0.005 of the best",
+   "alpha_grid": [
+    0.0001,
+    10000000000.0,
+    29
+   ],
+   "r2": {
+    "speed": {
+     "point": -0.00517,
+     "lo": -0.51839,
+     "hi": -0.00016,
+     "ci95": 0.25911,
+     "se": 0.15751,
+     "statistic": "r2_speed",
+     "n_windows": 2346,
+     "n_episodes": 17,
+     "n_boot": 200,
+     "n_boot_valid": 200,
+     "estimator": "ap_episode_cluster_bootstrap",
+     "_lo_raw": -0.5183890450032512,
+     "_hi_raw": -0.00016086246607728235
+    },
+    "yaw_rate": {
+     "point": -0.02211,
+     "lo": -0.07146,
+     "hi": -0.00077,
+     "ci95": 0.03535,
+     "se": 0.01876,
+     "statistic": "r2_yaw_rate",
+     "n_windows": 2346,
+     "n_episodes": 17,
+     "n_boot": 200,
+     "n_boot_valid": 200,
+     "estimator": "ap_episode_cluster_bootstrap",
+     "_lo_raw": -0.07146360043812679,
+     "_hi_raw": -0.0007693104678485827
+    },
+    "steer": {
+     "point": -0.04007,
+     "lo": -0.16172,
+     "hi": -0.01041,
+     "ci95": 0.07565,
+     "se": 0.03977,
+     "statistic": "r2_steer",
+     "n_windows": 2346,
+     "n_episodes": 17,
+     "n_boot": 200,
+     "n_boot_valid": 200,
+     "estimator": "ap_episode_cluster_bootstrap",
+     "_lo_raw": -0.16171634710891195,
+     "_hi_raw": -0.010411578713309933
+    },
+    "long_accel": {
+     "point": -0.05933,
+     "lo": -0.22535,
+     "hi": 0.00111,
+     "ci95": 0.11323,
+     "se": 0.06019,
+     "statistic": "r2_long_accel",
+     "n_windows": 2346,
+     "n_episodes": 17,
+     "n_boot": 200,
+     "n_boot_valid": 200,
+     "estimator": "ap_episode_cluster_bootstrap",
+     "_lo_raw": -0.22535414036941692,
+     "_hi_raw": 0.0011134892106901115
+    }
+   },
+   "r2_train_insample": {
+    "speed": 0.0,
+    "yaw_rate": 0.0,
+    "steer": 0.0,
+    "long_accel": 0.0071
+   },
+   "mae": {
+    "speed": 9.56687,
+    "yaw_rate": 0.01936,
+    "steer": 0.00988,
+    "long_accel": 0.40495
+   },
+   "ade_2s": {
+    "mean": 12.0468,
+    "lo": 9.6501,
+    "hi": 14.3499,
+    "ci95": 2.3499,
+    "se": 1.2503,
+    "reducer": "mean",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "four_families": {
+    "LONGITUDINAL": {
+     "traj_speed_mae_mps": 9.654,
+     "traj_speed_bias_mps": -0.6327,
+     "along_mae_m": 12.0349,
+     "along_bias_m": -0.829,
+     "along_final_bias_m": -1.2489,
+     "accel_mae_mps2": 0.3949,
+     "n_windows": 2346,
+     "scalar_speed_mae_mps": 9.5669,
+     "scalar_speed_bias_mps": -0.774,
+     "distance_keeping": {
+      "status": "UNAVAILABLE",
+      "reason": "no lead-agent track on this substrate. comma2k19 ships no object annotation at all; PhysicalAI-AV ships obstacle.offline (97.44 % of the corpus) but the episode ingest does not read it. Implementing it is a WORK ITEM, not a pass.",
+      "n": 0
+     }
+    },
+    "LATERAL": {
+     "heading_mae_rad": 0.01671,
+     "n_heading": 8768,
+     "curvature_mae_inv_m": 0.00439,
+     "n_curvature": 6546,
+     "yaw_rate_mae_rad_s": 0.01728,
+     "n_pair_valid": 6546,
+     "cross_track_mae_m": 0.2808,
+     "cross_track_bias_m": -0.0245,
+     "cross_track_final_mae_m": 0.5916,
+     "n_windows": 2346,
+     "scalar_yaw_rate_mae_rad_s": 0.01936,
+     "scalar_steer_mae": 0.00988
+    },
+    "TACTICAL": {
+     "n_windows": 2346,
+     "thresholds": {
+      "lat_turn_rad": 0.15,
+      "lon_dv_mps": 1.0
+     },
+     "lateral": {
+      "classes": [
+       "right",
+       "straight",
+       "left"
+      ],
+      "confusion_gt_rows_pred_cols": [
+       [
+        0,
+        35,
+        0
+       ],
+       [
+        0,
+        2306,
+        0
+       ],
+       [
+        0,
+        5,
+        0
+       ]
+      ],
+      "support": [
+       35,
+       2306,
+       5
+      ],
+      "recall": [
+       0.0,
+       1.0,
+       0.0
+      ],
+      "balanced_accuracy": 0.3333,
+      "accuracy": 0.9829,
+      "chance_balanced_accuracy": 0.3333
+     },
+     "longitudinal": {
+      "classes": [
+       "decelerate",
+       "cruise",
+       "accelerate"
+      ],
+      "confusion_gt_rows_pred_cols": [
+       [
+        0,
+        268,
+        0
+       ],
+       [
+        0,
+        1975,
+        0
+       ],
+       [
+        0,
+        103,
+        0
+       ]
+      ],
+      "support": [
+       268,
+       1975,
+       103
+      ],
+      "recall": [
+       0.0,
+       1.0,
+       0.0
+      ],
+      "balanced_accuracy": 0.3333,
+      "accuracy": 0.8419,
+      "chance_balanced_accuracy": 0.3333
+     },
+     "mixed": {
+      "classes": [
+       "accelerate",
+       "decelerate",
+       "keep",
+       "left",
+       "right"
+      ],
+      "confusion_gt_rows_pred_cols": [
+       [
+        0,
+        0,
+        102,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        266,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        1938,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        5,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        35,
+        0,
+        0
+       ]
+      ],
+      "support": [
+       102,
+       266,
+       1938,
+       5,
+       35
+      ],
+      "recall": [
+       0.0,
+       0.0,
+       1.0,
+       0.0,
+       0.0
+      ],
+      "balanced_accuracy": 0.2,
+      "accuracy": 0.8261,
+      "chance_balanced_accuracy": 0.2
+     },
+     "goal_setting": {
+      "status": "PARTIAL",
+      "reason": "selected-vs-executed manoeuvre IS reported above. Anchor/goal selection is not: the IDM emits a single regressed trajectory, it has no anchor set to select from.",
+      "n": 2346
+     }
+    },
+    "STRATEGIC": {
+     "status": "UNAVAILABLE",
+     "reason": "no route/goal label on the IDM's substrates. comma2k19 has none; PhysicalAI-AV settled at five probes as carrying no map, lane graph, junction annotation or route signal, and its egomotion is clip-local metres with no GNSS, so map-matching is impossible. A strategic read needs AlpaSim/NuRec map.xodr or an external corpus \u2014 a WORK ITEM, not a pass.",
+     "n": 2346,
+     "how_to_populate": "the instrument now EXISTS: map-derived option sets from stack/experiments/nurec-gsplat/strategic_gt.py, scored by taniteval.strategic_optionset.strategic_family. What is still missing on THIS stream is a substrate \u2014 the IDM would have to be driven on a NuRec scene that ships map.xodr. \u26d4 Do NOT substitute an ego-yaw route label: it cannot tell whether the map admitted a choice, which is how route_head_eq_logged reached 1.0000 on a single-option clip."
+    },
+    "_contract": "Four families reported per-family, never pooled, in ADDITION to ADE. A family marked UNAVAILABLE is a WORK ITEM, not a pass.",
+    "_unavailable": [
+     "STRATEGIC"
+    ]
+   }
+  },
+  "RIDGE_linear_diff": {
+   "kind": "closed_form_kernel_ridge",
+   "feature": "diff",
+   "kernel": "linear",
+   "n_features": 6144,
+   "gamma_mults": [
+    null
+   ],
+   "selected_per_output": {
+    "speed": {
+     "gamma_mult": null,
+     "alpha": 10000000000.0,
+     "rule": "skill_gate_to_train_mean"
+    },
+    "yaw_rate": {
+     "gamma_mult": null,
+     "alpha": 10000000000.0,
+     "rule": "skill_gate_to_train_mean"
+    },
+    "steer": {
+     "gamma_mult": null,
+     "alpha": 10000000000.0,
+     "rule": "skill_gate_to_train_mean"
+    },
+    "long_accel": {
+     "gamma_mult": null,
+     "alpha": 3162.2776601683795,
+     "rule": "one_se_tiebreak"
+    }
+   },
+   "inner_val_r2_per_scalar": {
+    "speed": -0.0194,
+    "yaw_rate": -0.0,
+    "steer": -0.0343,
+    "long_accel": 0.0523
+   },
+   "inner_val_r2_best_over_grid": {
+    "speed": -0.0194,
+    "yaw_rate": 0.0,
+    "steer": -0.0277,
+    "long_accel": 0.0542
+   },
+   "ORACLE_SELECTED_heldout_r2_UPPER_BOUND_cheating": {
+    "speed": {
+     "r2": -0.00517,
+     "gamma_mult": null,
+     "alpha": 10000000000.0
+    },
+    "yaw_rate": {
+     "r2": -0.00636,
+     "gamma_mult": null,
+     "alpha": 3162277.6601683795
+    },
+    "steer": {
+     "r2": -0.0386,
+     "gamma_mult": null,
+     "alpha": 1000000.0
+    },
+    "long_accel": {
+     "r2": -0.03348,
+     "gamma_mult": null,
+     "alpha": 316227.7660168379
+    }
+   },
+   "shuffled_latents": false,
+   "selection_rule": "skill gate at inner-val R\u00b2 0.01 (else train mean), then largest alpha within 0.005 of the best",
+   "alpha_grid": [
+    0.0001,
+    10000000000.0,
+    29
+   ],
+   "r2": {
+    "speed": {
+     "point": -0.00517,
+     "lo": -0.51839,
+     "hi": -0.00016,
+     "ci95": 0.25911,
+     "se": 0.15751,
+     "statistic": "r2_speed",
+     "n_windows": 2346,
+     "n_episodes": 17,
+     "n_boot": 200,
+     "n_boot_valid": 200,
+     "estimator": "ap_episode_cluster_bootstrap",
+     "_lo_raw": -0.5183922216232516,
+     "_hi_raw": -0.000162398086146009
+    },
+    "yaw_rate": {
+     "point": -0.02208,
+     "lo": -0.07137,
+     "hi": -0.00076,
+     "ci95": 0.0353,
+     "se": 0.01874,
+     "statistic": "r2_yaw_rate",
+     "n_windows": 2346,
+     "n_episodes": 17,
+     "n_boot": 200,
+     "n_boot_valid": 200,
+     "estimator": "ap_episode_cluster_bootstrap",
+     "_lo_raw": -0.07137076370283194,
+     "_hi_raw": -0.000763501052511406
+    },
+    "steer": {
+     "point": -0.04007,
+     "lo": -0.16172,
+     "hi": -0.01041,
+     "ci95": 0.07565,
+     "se": 0.03977,
+     "statistic": "r2_steer",
+     "n_windows": 2346,
+     "n_episodes": 17,
+     "n_boot": 200,
+     "n_boot_valid": 200,
+     "estimator": "ap_episode_cluster_bootstrap",
+     "_lo_raw": -0.1617181197873938,
+     "_hi_raw": -0.010413803350199542
+    },
+    "long_accel": {
+     "point": -0.0599,
+     "lo": -0.2165,
+     "hi": 0.00127,
+     "ci95": 0.10889,
+     "se": 0.05724,
+     "statistic": "r2_long_accel",
+     "n_windows": 2346,
+     "n_episodes": 17,
+     "n_boot": 200,
+     "n_boot_valid": 200,
+     "estimator": "ap_episode_cluster_bootstrap",
+     "_lo_raw": -0.21650178300344672,
+     "_hi_raw": 0.0012700723054118348
+    }
+   },
+   "r2_train_insample": {
+    "speed": 0.0,
+    "yaw_rate": 0.0,
+    "steer": 0.0,
+    "long_accel": 0.0805
+   },
+   "mae": {
+    "speed": 9.56688,
+    "yaw_rate": 0.01936,
+    "steer": 0.00988,
+    "long_accel": 0.41475
+   },
+   "ade_2s": {
+    "mean": 12.0468,
+    "lo": 9.6502,
+    "hi": 14.3499,
+    "ci95": 2.3499,
+    "se": 1.2503,
+    "reducer": "mean",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "four_families": {
+    "LONGITUDINAL": {
+     "traj_speed_mae_mps": 9.654,
+     "traj_speed_bias_mps": -0.6327,
+     "along_mae_m": 12.0349,
+     "along_bias_m": -0.829,
+     "along_final_bias_m": -1.2489,
+     "accel_mae_mps2": 0.3949,
+     "n_windows": 2346,
+     "scalar_speed_mae_mps": 9.5669,
+     "scalar_speed_bias_mps": -0.774,
+     "distance_keeping": {
+      "status": "UNAVAILABLE",
+      "reason": "no lead-agent track on this substrate. comma2k19 ships no object annotation at all; PhysicalAI-AV ships obstacle.offline (97.44 % of the corpus) but the episode ingest does not read it. Implementing it is a WORK ITEM, not a pass.",
+      "n": 0
+     }
+    },
+    "LATERAL": {
+     "heading_mae_rad": 0.01671,
+     "n_heading": 8768,
+     "curvature_mae_inv_m": 0.00439,
+     "n_curvature": 6546,
+     "yaw_rate_mae_rad_s": 0.01728,
+     "n_pair_valid": 6546,
+     "cross_track_mae_m": 0.2808,
+     "cross_track_bias_m": -0.0245,
+     "cross_track_final_mae_m": 0.5916,
+     "n_windows": 2346,
+     "scalar_yaw_rate_mae_rad_s": 0.01936,
+     "scalar_steer_mae": 0.00988
+    },
+    "TACTICAL": {
+     "n_windows": 2346,
+     "thresholds": {
+      "lat_turn_rad": 0.15,
+      "lon_dv_mps": 1.0
+     },
+     "lateral": {
+      "classes": [
+       "right",
+       "straight",
+       "left"
+      ],
+      "confusion_gt_rows_pred_cols": [
+       [
+        0,
+        35,
+        0
+       ],
+       [
+        0,
+        2306,
+        0
+       ],
+       [
+        0,
+        5,
+        0
+       ]
+      ],
+      "support": [
+       35,
+       2306,
+       5
+      ],
+      "recall": [
+       0.0,
+       1.0,
+       0.0
+      ],
+      "balanced_accuracy": 0.3333,
+      "accuracy": 0.9829,
+      "chance_balanced_accuracy": 0.3333
+     },
+     "longitudinal": {
+      "classes": [
+       "decelerate",
+       "cruise",
+       "accelerate"
+      ],
+      "confusion_gt_rows_pred_cols": [
+       [
+        0,
+        268,
+        0
+       ],
+       [
+        0,
+        1975,
+        0
+       ],
+       [
+        0,
+        103,
+        0
+       ]
+      ],
+      "support": [
+       268,
+       1975,
+       103
+      ],
+      "recall": [
+       0.0,
+       1.0,
+       0.0
+      ],
+      "balanced_accuracy": 0.3333,
+      "accuracy": 0.8419,
+      "chance_balanced_accuracy": 0.3333
+     },
+     "mixed": {
+      "classes": [
+       "accelerate",
+       "decelerate",
+       "keep",
+       "left",
+       "right"
+      ],
+      "confusion_gt_rows_pred_cols": [
+       [
+        0,
+        0,
+        102,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        266,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        1938,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        5,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        35,
+        0,
+        0
+       ]
+      ],
+      "support": [
+       102,
+       266,
+       1938,
+       5,
+       35
+      ],
+      "recall": [
+       0.0,
+       0.0,
+       1.0,
+       0.0,
+       0.0
+      ],
+      "balanced_accuracy": 0.2,
+      "accuracy": 0.8261,
+      "chance_balanced_accuracy": 0.2
+     },
+     "goal_setting": {
+      "status": "PARTIAL",
+      "reason": "selected-vs-executed manoeuvre IS reported above. Anchor/goal selection is not: the IDM emits a single regressed trajectory, it has no anchor set to select from.",
+      "n": 2346
+     }
+    },
+    "STRATEGIC": {
+     "status": "UNAVAILABLE",
+     "reason": "no route/goal label on the IDM's substrates. comma2k19 has none; PhysicalAI-AV settled at five probes as carrying no map, lane graph, junction annotation or route signal, and its egomotion is clip-local metres with no GNSS, so map-matching is impossible. A strategic read needs AlpaSim/NuRec map.xodr or an external corpus \u2014 a WORK ITEM, not a pass.",
+     "n": 2346,
+     "how_to_populate": "the instrument now EXISTS: map-derived option sets from stack/experiments/nurec-gsplat/strategic_gt.py, scored by taniteval.strategic_optionset.strategic_family. What is still missing on THIS stream is a substrate \u2014 the IDM would have to be driven on a NuRec scene that ships map.xodr. \u26d4 Do NOT substitute an ego-yaw route label: it cannot tell whether the map admitted a choice, which is how route_head_eq_logged reached 1.0000 on a single-option clip."
+    },
+    "_contract": "Four families reported per-family, never pooled, in ADDITION to ADE. A family marked UNAVAILABLE is a WORK ITEM, not a pass.",
+    "_unavailable": [
+     "STRATEGIC"
+    ]
+   }
+  },
+  "RIDGE_linear_diff__CTRL": {
+   "kind": "closed_form_kernel_ridge",
+   "feature": "diff",
+   "kernel": "linear",
+   "n_features": 6144,
+   "gamma_mults": [
+    null
+   ],
+   "selected_per_output": {
+    "speed": {
+     "gamma_mult": null,
+     "alpha": 10000000000.0,
+     "rule": "skill_gate_to_train_mean"
+    },
+    "yaw_rate": {
+     "gamma_mult": null,
+     "alpha": 10000000000.0,
+     "rule": "skill_gate_to_train_mean"
+    },
+    "steer": {
+     "gamma_mult": null,
+     "alpha": 10000000000.0,
+     "rule": "skill_gate_to_train_mean"
+    },
+    "long_accel": {
+     "gamma_mult": null,
+     "alpha": 10000000000.0,
+     "rule": "skill_gate_to_train_mean"
+    }
+   },
+   "inner_val_r2_per_scalar": {
+    "speed": -0.0194,
+    "yaw_rate": -0.0,
+    "steer": -0.0343,
+    "long_accel": -0.0001
+   },
+   "inner_val_r2_best_over_grid": {
+    "speed": -0.0194,
+    "yaw_rate": 0.0003,
+    "steer": -0.033,
+    "long_accel": 0.003
+   },
+   "ORACLE_SELECTED_heldout_r2_UPPER_BOUND_cheating": {
+    "speed": {
+     "r2": -0.00457,
+     "gamma_mult": null,
+     "alpha": 3162277.6601683795
+    },
+    "yaw_rate": {
+     "r2": -0.0221,
+     "gamma_mult": null,
+     "alpha": 10000000000.0
+    },
+    "steer": {
+     "r2": -0.04007,
+     "gamma_mult": null,
+     "alpha": 10000000000.0
+    },
+    "long_accel": {
+     "r2": -0.05722,
+     "gamma_mult": null,
+     "alpha": 100000.0
+    }
+   },
+   "shuffled_latents": true,
+   "selection_rule": "skill gate at inner-val R\u00b2 0.01 (else train mean), then largest alpha within 0.005 of the best",
+   "alpha_grid": [
+    0.0001,
+    10000000000.0,
+    29
+   ],
+   "r2": {
+    "speed": {
+     "point": -0.00517,
+     "lo": -0.51839,
+     "hi": -0.00016,
+     "ci95": 0.25912,
+     "se": 0.15751,
+     "statistic": "r2_speed",
+     "n_windows": 2346,
+     "n_episodes": 17,
+     "n_boot": 200,
+     "n_boot_valid": 200,
+     "estimator": "ap_episode_cluster_bootstrap",
+     "_lo_raw": -0.5183924445707233,
+     "_hi_raw": -0.00016093108355500992
+    },
+    "yaw_rate": {
+     "point": -0.0221,
+     "lo": -0.07143,
+     "hi": -0.00079,
+     "ci95": 0.03532,
+     "se": 0.01875,
+     "statistic": "r2_yaw_rate",
+     "n_windows": 2346,
+     "n_episodes": 17,
+     "n_boot": 200,
+     "n_boot_valid": 200,
+     "estimator": "ap_episode_cluster_bootstrap",
+     "_lo_raw": -0.07142833111023651,
+     "_hi_raw": -0.0007888935178749777
+    },
+    "steer": {
+     "point": -0.04007,
+     "lo": -0.16172,
+     "hi": -0.01042,
+     "ci95": 0.07565,
+     "se": 0.03977,
+     "statistic": "r2_steer",
+     "n_windows": 2346,
+     "n_episodes": 17,
+     "n_boot": 200,
+     "n_boot_valid": 200,
+     "estimator": "ap_episode_cluster_bootstrap",
+     "_lo_raw": -0.1617249722631411,
+     "_hi_raw": -0.010418942193348924
+    },
+    "long_accel": {
+     "point": -0.06259,
+     "lo": -0.23483,
+     "hi": -0.00145,
+     "ci95": 0.11669,
+     "se": 0.06107,
+     "statistic": "r2_long_accel",
+     "n_windows": 2346,
+     "n_episodes": 17,
+     "n_boot": 200,
+     "n_boot_valid": 200,
+     "estimator": "ap_episode_cluster_bootstrap",
+     "_lo_raw": -0.2348286266719186,
+     "_hi_raw": -0.0014531032131910864
+    }
+   },
+   "r2_train_insample": {
+    "speed": 0.0,
+    "yaw_rate": 0.0,
+    "steer": 0.0,
+    "long_accel": 0.0
+   },
+   "mae": {
+    "speed": 9.56688,
+    "yaw_rate": 0.01936,
+    "steer": 0.00988,
+    "long_accel": 0.40568
+   },
+   "ade_2s": {
+    "mean": 12.0468,
+    "lo": 9.6501,
+    "hi": 14.3498,
+    "ci95": 2.3499,
+    "se": 1.2503,
+    "reducer": "mean",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "four_families": {
+    "LONGITUDINAL": {
+     "traj_speed_mae_mps": 9.654,
+     "traj_speed_bias_mps": -0.6327,
+     "along_mae_m": 12.0349,
+     "along_bias_m": -0.829,
+     "along_final_bias_m": -1.2489,
+     "accel_mae_mps2": 0.3949,
+     "n_windows": 2346,
+     "scalar_speed_mae_mps": 9.5669,
+     "scalar_speed_bias_mps": -0.774,
+     "distance_keeping": {
+      "status": "UNAVAILABLE",
+      "reason": "no lead-agent track on this substrate. comma2k19 ships no object annotation at all; PhysicalAI-AV ships obstacle.offline (97.44 % of the corpus) but the episode ingest does not read it. Implementing it is a WORK ITEM, not a pass.",
+      "n": 0
+     }
+    },
+    "LATERAL": {
+     "heading_mae_rad": 0.01671,
+     "n_heading": 8768,
+     "curvature_mae_inv_m": 0.00439,
+     "n_curvature": 6546,
+     "yaw_rate_mae_rad_s": 0.01728,
+     "n_pair_valid": 6546,
+     "cross_track_mae_m": 0.2808,
+     "cross_track_bias_m": -0.0245,
+     "cross_track_final_mae_m": 0.5916,
+     "n_windows": 2346,
+     "scalar_yaw_rate_mae_rad_s": 0.01936,
+     "scalar_steer_mae": 0.00988
+    },
+    "TACTICAL": {
+     "n_windows": 2346,
+     "thresholds": {
+      "lat_turn_rad": 0.15,
+      "lon_dv_mps": 1.0
+     },
+     "lateral": {
+      "classes": [
+       "right",
+       "straight",
+       "left"
+      ],
+      "confusion_gt_rows_pred_cols": [
+       [
+        0,
+        35,
+        0
+       ],
+       [
+        0,
+        2306,
+        0
+       ],
+       [
+        0,
+        5,
+        0
+       ]
+      ],
+      "support": [
+       35,
+       2306,
+       5
+      ],
+      "recall": [
+       0.0,
+       1.0,
+       0.0
+      ],
+      "balanced_accuracy": 0.3333,
+      "accuracy": 0.9829,
+      "chance_balanced_accuracy": 0.3333
+     },
+     "longitudinal": {
+      "classes": [
+       "decelerate",
+       "cruise",
+       "accelerate"
+      ],
+      "confusion_gt_rows_pred_cols": [
+       [
+        0,
+        268,
+        0
+       ],
+       [
+        0,
+        1975,
+        0
+       ],
+       [
+        0,
+        103,
+        0
+       ]
+      ],
+      "support": [
+       268,
+       1975,
+       103
+      ],
+      "recall": [
+       0.0,
+       1.0,
+       0.0
+      ],
+      "balanced_accuracy": 0.3333,
+      "accuracy": 0.8419,
+      "chance_balanced_accuracy": 0.3333
+     },
+     "mixed": {
+      "classes": [
+       "accelerate",
+       "decelerate",
+       "keep",
+       "left",
+       "right"
+      ],
+      "confusion_gt_rows_pred_cols": [
+       [
+        0,
+        0,
+        102,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        266,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        1938,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        5,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        35,
+        0,
+        0
+       ]
+      ],
+      "support": [
+       102,
+       266,
+       1938,
+       5,
+       35
+      ],
+      "recall": [
+       0.0,
+       0.0,
+       1.0,
+       0.0,
+       0.0
+      ],
+      "balanced_accuracy": 0.2,
+      "accuracy": 0.8261,
+      "chance_balanced_accuracy": 0.2
+     },
+     "goal_setting": {
+      "status": "PARTIAL",
+      "reason": "selected-vs-executed manoeuvre IS reported above. Anchor/goal selection is not: the IDM emits a single regressed trajectory, it has no anchor set to select from.",
+      "n": 2346
+     }
+    },
+    "STRATEGIC": {
+     "status": "UNAVAILABLE",
+     "reason": "no route/goal label on the IDM's substrates. comma2k19 has none; PhysicalAI-AV settled at five probes as carrying no map, lane graph, junction annotation or route signal, and its egomotion is clip-local metres with no GNSS, so map-matching is impossible. A strategic read needs AlpaSim/NuRec map.xodr or an external corpus \u2014 a WORK ITEM, not a pass.",
+     "n": 2346,
+     "how_to_populate": "the instrument now EXISTS: map-derived option sets from stack/experiments/nurec-gsplat/strategic_gt.py, scored by taniteval.strategic_optionset.strategic_family. What is still missing on THIS stream is a substrate \u2014 the IDM would have to be driven on a NuRec scene that ships map.xodr. \u26d4 Do NOT substitute an ego-yaw route label: it cannot tell whether the map admitted a choice, which is how route_head_eq_logged reached 1.0000 on a single-option clip."
+    },
+    "_contract": "Four families reported per-family, never pooled, in ADDITION to ADE. A family marked UNAVAILABLE is a WORK ITEM, not a pass.",
+    "_unavailable": [
+     "STRATEGIC"
+    ]
+   }
+  },
+  "RIDGE_linear_window": {
+   "kind": "closed_form_kernel_ridge",
+   "feature": "window",
+   "kernel": "linear",
+   "n_features": 18432,
+   "gamma_mults": [
+    null
+   ],
+   "selected_per_output": {
+    "speed": {
+     "gamma_mult": null,
+     "alpha": 1000.0,
+     "rule": "one_se_tiebreak"
+    },
+    "yaw_rate": {
+     "gamma_mult": null,
+     "alpha": 10000000000.0,
+     "rule": "skill_gate_to_train_mean"
+    },
+    "steer": {
+     "gamma_mult": null,
+     "alpha": 100.0,
+     "rule": "one_se_tiebreak"
+    },
+    "long_accel": {
+     "gamma_mult": null,
+     "alpha": 10000000000.0,
+     "rule": "skill_gate_to_train_mean"
+    }
+   },
+   "inner_val_r2_per_scalar": {
+    "speed": 0.724,
+    "yaw_rate": -0.0,
+    "steer": 0.3539,
+    "long_accel": -0.0001
+   },
+   "inner_val_r2_best_over_grid": {
+    "speed": 0.7266,
+    "yaw_rate": 0.0001,
+    "steer": 0.3539,
+    "long_accel": -0.0001
+   },
+   "ORACLE_SELECTED_heldout_r2_UPPER_BOUND_cheating": {
+    "speed": {
+     "r2": 0.71755,
+     "gamma_mult": null,
+     "alpha": 3162.2776601683795
+    },
+    "yaw_rate": {
+     "r2": 0.20766,
+     "gamma_mult": null,
+     "alpha": 316227.7660168379
+    },
+    "steer": {
+     "r2": 0.39204,
+     "gamma_mult": null,
+     "alpha": 1.0
+    },
+    "long_accel": {
+     "r2": -0.0624,
+     "gamma_mult": null,
+     "alpha": 100000000.0
+    }
+   },
+   "shuffled_latents": false,
+   "selection_rule": "skill gate at inner-val R\u00b2 0.01 (else train mean), then largest alpha within 0.005 of the best",
+   "alpha_grid": [
+    0.0001,
+    10000000000.0,
+    29
+   ],
+   "r2": {
+    "speed": {
+     "point": 0.71451,
+     "lo": 0.4165,
+     "hi": 0.81757,
+     "ci95": 0.20054,
+     "se": 0.12509,
+     "statistic": "r2_speed",
+     "n_windows": 2346,
+     "n_episodes": 17,
+     "n_boot": 200,
+     "n_boot_valid": 200,
+     "estimator": "ap_episode_cluster_bootstrap",
+     "_lo_raw": 0.41649532098318764,
+     "_hi_raw": 0.8175691093581342
+    },
+    "yaw_rate": {
+     "point": -0.02201,
+     "lo": -0.07121,
+     "hi": -0.00069,
+     "ci95": 0.03526,
+     "se": 0.01874,
+     "statistic": "r2_yaw_rate",
+     "n_windows": 2346,
+     "n_episodes": 17,
+     "n_boot": 200,
+     "n_boot_valid": 200,
+     "estimator": "ap_episode_cluster_bootstrap",
+     "_lo_raw": -0.07120854177105879,
+     "_hi_raw": -0.0006889753462418657
+    },
+    "steer": {
+     "point": 0.34262,
+     "lo": -5.20264,
+     "hi": 0.36612,
+     "ci95": 2.78438,
+     "se": 1.86963,
+     "statistic": "r2_steer",
+     "n_windows": 2346,
+     "n_episodes": 17,
+     "n_boot": 200,
+     "n_boot_valid": 200,
+     "estimator": "ap_episode_cluster_bootstrap",
+     "_lo_raw": -5.202640377953727,
+     "_hi_raw": 0.3661179869690059
+    },
+    "long_accel": {
+     "point": -0.06258,
+     "lo": -0.2348,
+     "hi": -0.00148,
+     "ci95": 0.11666,
+     "se": 0.06106,
+     "statistic": "r2_long_accel",
+     "n_windows": 2346,
+     "n_episodes": 17,
+     "n_boot": 200,
+     "n_boot_valid": 200,
+     "estimator": "ap_episode_cluster_bootstrap",
+     "_lo_raw": -0.23479534023751383,
+     "_hi_raw": -0.001479323128847431
+    }
+   },
+   "r2_train_insample": {
+    "speed": 0.9241,
+    "yaw_rate": 0.0,
+    "steer": 0.9101,
+    "long_accel": 0.0001
+   },
+   "mae": {
+    "speed": 4.71862,
+    "yaw_rate": 0.01936,
+    "steer": 0.01203,
+    "long_accel": 0.40568
+   },
+   "ade_2s": {
+    "mean": 5.8823,
+    "lo": 4.8675,
+    "hi": 6.9691,
+    "ci95": 1.0508,
+    "se": 0.5417,
+    "reducer": "mean",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "four_families": {
+    "LONGITUDINAL": {
+     "traj_speed_mae_mps": 4.5684,
+     "traj_speed_bias_mps": 0.3627,
+     "along_mae_m": 5.8417,
+     "along_bias_m": -0.4001,
+     "along_final_bias_m": -0.583,
+     "accel_mae_mps2": 0.4951,
+     "n_windows": 2346,
+     "scalar_speed_mae_mps": 4.7186,
+     "scalar_speed_bias_mps": -0.3978,
+     "distance_keeping": {
+      "status": "UNAVAILABLE",
+      "reason": "no lead-agent track on this substrate. comma2k19 ships no object annotation at all; PhysicalAI-AV ships obstacle.offline (97.44 % of the corpus) but the episode ingest does not read it. Implementing it is a WORK ITEM, not a pass.",
+      "n": 0
+     }
+    },
+    "LATERAL": {
+     "heading_mae_rad": 0.1213,
+     "n_heading": 8697,
+     "curvature_mae_inv_m": 0.00619,
+     "n_curvature": 6490,
+     "yaw_rate_mae_rad_s": 0.01953,
+     "n_pair_valid": 6490,
+     "cross_track_mae_m": 0.2997,
+     "cross_track_bias_m": -0.0254,
+     "cross_track_final_mae_m": 0.6337,
+     "n_windows": 2346,
+     "scalar_yaw_rate_mae_rad_s": 0.01936,
+     "scalar_steer_mae": 0.01203
+    },
+    "TACTICAL": {
+     "n_windows": 2346,
+     "thresholds": {
+      "lat_turn_rad": 0.15,
+      "lon_dv_mps": 1.0
+     },
+     "lateral": {
+      "classes": [
+       "right",
+       "straight",
+       "left"
+      ],
+      "confusion_gt_rows_pred_cols": [
+       [
+        6,
+        23,
+        6
+       ],
+       [
+        16,
+        2284,
+        6
+       ],
+       [
+        0,
+        5,
+        0
+       ]
+      ],
+      "support": [
+       35,
+       2306,
+       5
+      ],
+      "recall": [
+       0.1714,
+       0.9905,
+       0.0
+      ],
+      "balanced_accuracy": 0.3873,
+      "accuracy": 0.9761,
+      "chance_balanced_accuracy": 0.3333
+     },
+     "longitudinal": {
+      "classes": [
+       "decelerate",
+       "cruise",
+       "accelerate"
+      ],
+      "confusion_gt_rows_pred_cols": [
+       [
+        12,
+        255,
+        1
+       ],
+       [
+        79,
+        1864,
+        32
+       ],
+       [
+        6,
+        97,
+        0
+       ]
+      ],
+      "support": [
+       268,
+       1975,
+       103
+      ],
+      "recall": [
+       0.0448,
+       0.9438,
+       0.0
+      ],
+      "balanced_accuracy": 0.3295,
+      "accuracy": 0.7997,
+      "chance_balanced_accuracy": 0.3333
+     },
+     "mixed": {
+      "classes": [
+       "accelerate",
+       "decelerate",
+       "keep",
+       "left",
+       "right"
+      ],
+      "confusion_gt_rows_pred_cols": [
+       [
+        0,
+        5,
+        94,
+        0,
+        3
+       ],
+       [
+        1,
+        12,
+        250,
+        1,
+        2
+       ],
+       [
+        29,
+        72,
+        1821,
+        5,
+        11
+       ],
+       [
+        2,
+        0,
+        3,
+        0,
+        0
+       ],
+       [
+        0,
+        1,
+        22,
+        6,
+        6
+       ]
+      ],
+      "support": [
+       102,
+       266,
+       1938,
+       5,
+       35
+      ],
+      "recall": [
+       0.0,
+       0.0451,
+       0.9396,
+       0.0,
+       0.1714
+      ],
+      "balanced_accuracy": 0.2312,
+      "accuracy": 0.7839,
+      "chance_balanced_accuracy": 0.2
+     },
+     "goal_setting": {
+      "status": "PARTIAL",
+      "reason": "selected-vs-executed manoeuvre IS reported above. Anchor/goal selection is not: the IDM emits a single regressed trajectory, it has no anchor set to select from.",
+      "n": 2346
+     }
+    },
+    "STRATEGIC": {
+     "status": "UNAVAILABLE",
+     "reason": "no route/goal label on the IDM's substrates. comma2k19 has none; PhysicalAI-AV settled at five probes as carrying no map, lane graph, junction annotation or route signal, and its egomotion is clip-local metres with no GNSS, so map-matching is impossible. A strategic read needs AlpaSim/NuRec map.xodr or an external corpus \u2014 a WORK ITEM, not a pass.",
+     "n": 2346,
+     "how_to_populate": "the instrument now EXISTS: map-derived option sets from stack/experiments/nurec-gsplat/strategic_gt.py, scored by taniteval.strategic_optionset.strategic_family. What is still missing on THIS stream is a substrate \u2014 the IDM would have to be driven on a NuRec scene that ships map.xodr. \u26d4 Do NOT substitute an ego-yaw route label: it cannot tell whether the map admitted a choice, which is how route_head_eq_logged reached 1.0000 on a single-option clip."
+    },
+    "_contract": "Four families reported per-family, never pooled, in ADDITION to ADE. A family marked UNAVAILABLE is a WORK ITEM, not a pass.",
+    "_unavailable": [
+     "STRATEGIC"
+    ]
+   }
+  },
+  "RIDGE_linear_window__CTRL": {
+   "kind": "closed_form_kernel_ridge",
+   "feature": "window",
+   "kernel": "linear",
+   "n_features": 18432,
+   "gamma_mults": [
+    null
+   ],
+   "selected_per_output": {
+    "speed": {
+     "gamma_mult": null,
+     "alpha": 10000000000.0,
+     "rule": "skill_gate_to_train_mean"
+    },
+    "yaw_rate": {
+     "gamma_mult": null,
+     "alpha": 10000000000.0,
+     "rule": "skill_gate_to_train_mean"
+    },
+    "steer": {
+     "gamma_mult": null,
+     "alpha": 10000000000.0,
+     "rule": "skill_gate_to_train_mean"
+    },
+    "long_accel": {
+     "gamma_mult": null,
+     "alpha": 3162277.6601683795,
+     "rule": "one_se_tiebreak"
+    }
+   },
+   "inner_val_r2_per_scalar": {
+    "speed": -0.0195,
+    "yaw_rate": -0.0,
+    "steer": -0.0343,
+    "long_accel": 0.0091
+   },
+   "inner_val_r2_best_over_grid": {
+    "speed": -0.0195,
+    "yaw_rate": 0.0005,
+    "steer": -0.0343,
+    "long_accel": 0.0118
+   },
+   "ORACLE_SELECTED_heldout_r2_UPPER_BOUND_cheating": {
+    "speed": {
+     "r2": -0.00311,
+     "gamma_mult": null,
+     "alpha": 3162277.6601683795
+    },
+    "yaw_rate": {
+     "r2": -0.02218,
+     "gamma_mult": null,
+     "alpha": 10000000000.0
+    },
+    "steer": {
+     "r2": -0.02081,
+     "gamma_mult": null,
+     "alpha": 10000.0
+    },
+    "long_accel": {
+     "r2": -0.06156,
+     "gamma_mult": null,
+     "alpha": 100000.0
+    }
+   },
+   "shuffled_latents": true,
+   "selection_rule": "skill gate at inner-val R\u00b2 0.01 (else train mean), then largest alpha within 0.005 of the best",
+   "alpha_grid": [
+    0.0001,
+    10000000000.0,
+    29
+   ],
+   "r2": {
+    "speed": {
+     "point": -0.00516,
+     "lo": -0.51835,
+     "hi": -0.00016,
+     "ci95": 0.2591,
+     "se": 0.1575,
+     "statistic": "r2_speed",
+     "n_windows": 2346,
+     "n_episodes": 17,
+     "n_boot": 200,
+     "n_boot_valid": 200,
+     "estimator": "ap_episode_cluster_bootstrap",
+     "_lo_raw": -0.5183548606298773,
+     "_hi_raw": -0.00015702342194285856
+    },
+    "yaw_rate": {
+     "point": -0.02218,
+     "lo": -0.072,
+     "hi": -0.00053,
+     "ci95": 0.03573,
+     "se": 0.01887,
+     "statistic": "r2_yaw_rate",
+     "n_windows": 2346,
+     "n_episodes": 17,
+     "n_boot": 200,
+     "n_boot_valid": 200,
+     "estimator": "ap_episode_cluster_bootstrap",
+     "_lo_raw": -0.07199569769872408,
+     "_hi_raw": -0.0005281907722656958
+    },
+    "steer": {
+     "point": -0.04007,
+     "lo": -0.16163,
+     "hi": -0.01032,
+     "ci95": 0.07565,
+     "se": 0.03975,
+     "statistic": "r2_steer",
+     "n_windows": 2346,
+     "n_episodes": 17,
+     "n_boot": 200,
+     "n_boot_valid": 200,
+     "estimator": "ap_episode_cluster_bootstrap",
+     "_lo_raw": -0.16162737015320228,
+     "_hi_raw": -0.010317465597475747
+    },
+    "long_accel": {
+     "point": -0.06641,
+     "lo": -0.22358,
+     "hi": -0.00548,
+     "ci95": 0.10905,
+     "se": 0.05985,
+     "statistic": "r2_long_accel",
+     "n_windows": 2346,
+     "n_episodes": 17,
+     "n_boot": 200,
+     "n_boot_valid": 200,
+     "estimator": "ap_episode_cluster_bootstrap",
+     "_lo_raw": -0.22357538385124906,
+     "_hi_raw": -0.005475225025555644
+    }
+   },
+   "r2_train_insample": {
+    "speed": 0.0,
+    "yaw_rate": 0.0,
+    "steer": 0.0,
+    "long_accel": 0.0056
+   },
+   "mae": {
+    "speed": 9.56679,
+    "yaw_rate": 0.01936,
+    "steer": 0.00988,
+    "long_accel": 0.40622
+   },
+   "ade_2s": {
+    "mean": 12.0467,
+    "lo": 9.65,
+    "hi": 14.35,
+    "ci95": 2.35,
+    "se": 1.2503,
+    "reducer": "mean",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "four_families": {
+    "LONGITUDINAL": {
+     "traj_speed_mae_mps": 9.654,
+     "traj_speed_bias_mps": -0.6326,
+     "along_mae_m": 12.0348,
+     "along_bias_m": -0.8288,
+     "along_final_bias_m": -1.2486,
+     "accel_mae_mps2": 0.3949,
+     "n_windows": 2346,
+     "scalar_speed_mae_mps": 9.5668,
+     "scalar_speed_bias_mps": -0.7739,
+     "distance_keeping": {
+      "status": "UNAVAILABLE",
+      "reason": "no lead-agent track on this substrate. comma2k19 ships no object annotation at all; PhysicalAI-AV ships obstacle.offline (97.44 % of the corpus) but the episode ingest does not read it. Implementing it is a WORK ITEM, not a pass.",
+      "n": 0
+     }
+    },
+    "LATERAL": {
+     "heading_mae_rad": 0.01671,
+     "n_heading": 8768,
+     "curvature_mae_inv_m": 0.00439,
+     "n_curvature": 6546,
+     "yaw_rate_mae_rad_s": 0.01728,
+     "n_pair_valid": 6546,
+     "cross_track_mae_m": 0.2808,
+     "cross_track_bias_m": -0.0245,
+     "cross_track_final_mae_m": 0.5916,
+     "n_windows": 2346,
+     "scalar_yaw_rate_mae_rad_s": 0.01936,
+     "scalar_steer_mae": 0.00988
+    },
+    "TACTICAL": {
+     "n_windows": 2346,
+     "thresholds": {
+      "lat_turn_rad": 0.15,
+      "lon_dv_mps": 1.0
+     },
+     "lateral": {
+      "classes": [
+       "right",
+       "straight",
+       "left"
+      ],
+      "confusion_gt_rows_pred_cols": [
+       [
+        0,
+        35,
+        0
+       ],
+       [
+        0,
+        2306,
+        0
+       ],
+       [
+        0,
+        5,
+        0
+       ]
+      ],
+      "support": [
+       35,
+       2306,
+       5
+      ],
+      "recall": [
+       0.0,
+       1.0,
+       0.0
+      ],
+      "balanced_accuracy": 0.3333,
+      "accuracy": 0.9829,
+      "chance_balanced_accuracy": 0.3333
+     },
+     "longitudinal": {
+      "classes": [
+       "decelerate",
+       "cruise",
+       "accelerate"
+      ],
+      "confusion_gt_rows_pred_cols": [
+       [
+        0,
+        268,
+        0
+       ],
+       [
+        0,
+        1975,
+        0
+       ],
+       [
+        0,
+        103,
+        0
+       ]
+      ],
+      "support": [
+       268,
+       1975,
+       103
+      ],
+      "recall": [
+       0.0,
+       1.0,
+       0.0
+      ],
+      "balanced_accuracy": 0.3333,
+      "accuracy": 0.8419,
+      "chance_balanced_accuracy": 0.3333
+     },
+     "mixed": {
+      "classes": [
+       "accelerate",
+       "decelerate",
+       "keep",
+       "left",
+       "right"
+      ],
+      "confusion_gt_rows_pred_cols": [
+       [
+        0,
+        0,
+        102,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        266,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        1938,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        5,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        35,
+        0,
+        0
+       ]
+      ],
+      "support": [
+       102,
+       266,
+       1938,
+       5,
+       35
+      ],
+      "recall": [
+       0.0,
+       0.0,
+       1.0,
+       0.0,
+       0.0
+      ],
+      "balanced_accuracy": 0.2,
+      "accuracy": 0.8261,
+      "chance_balanced_accuracy": 0.2
+     },
+     "goal_setting": {
+      "status": "PARTIAL",
+      "reason": "selected-vs-executed manoeuvre IS reported above. Anchor/goal selection is not: the IDM emits a single regressed trajectory, it has no anchor set to select from.",
+      "n": 2346
+     }
+    },
+    "STRATEGIC": {
+     "status": "UNAVAILABLE",
+     "reason": "no route/goal label on the IDM's substrates. comma2k19 has none; PhysicalAI-AV settled at five probes as carrying no map, lane graph, junction annotation or route signal, and its egomotion is clip-local metres with no GNSS, so map-matching is impossible. A strategic read needs AlpaSim/NuRec map.xodr or an external corpus \u2014 a WORK ITEM, not a pass.",
+     "n": 2346,
+     "how_to_populate": "the instrument now EXISTS: map-derived option sets from stack/experiments/nurec-gsplat/strategic_gt.py, scored by taniteval.strategic_optionset.strategic_family. What is still missing on THIS stream is a substrate \u2014 the IDM would have to be driven on a NuRec scene that ships map.xodr. \u26d4 Do NOT substitute an ego-yaw route label: it cannot tell whether the map admitted a choice, which is how route_head_eq_logged reached 1.0000 on a single-option clip."
+    },
+    "_contract": "Four families reported per-family, never pooled, in ADDITION to ADE. A family marked UNAVAILABLE is a WORK ITEM, not a pass.",
+    "_unavailable": [
+     "STRATEGIC"
+    ]
+   }
+  },
+  "RIDGE_rbf_centre": {
+   "kind": "closed_form_kernel_ridge",
+   "feature": "centre",
+   "kernel": "rbf",
+   "n_features": 2048,
+   "gamma_mults": [
+    0.25,
+    1.0,
+    4.0
+   ],
+   "selected_per_output": {
+    "speed": {
+     "gamma_mult": 1.0,
+     "alpha": 0.03162277660168379,
+     "rule": "one_se_tiebreak"
+    },
+    "yaw_rate": {
+     "gamma_mult": 0.25,
+     "alpha": 10000000000.0,
+     "rule": "skill_gate_to_train_mean"
+    },
+    "steer": {
+     "gamma_mult": 0.25,
+     "alpha": 10000000000.0,
+     "rule": "skill_gate_to_train_mean"
+    },
+    "long_accel": {
+     "gamma_mult": 0.25,
+     "alpha": 10000000000.0,
+     "rule": "skill_gate_to_train_mean"
+    }
+   },
+   "inner_val_r2_per_scalar": {
+    "speed": 0.7604,
+    "yaw_rate": -0.0,
+    "steer": -0.0343,
+    "long_accel": -0.0001
+   },
+   "inner_val_r2_best_over_grid": {
+    "speed": 0.7608,
+    "yaw_rate": 0.0001,
+    "steer": -0.0008,
+    "long_accel": -0.0001
+   },
+   "ORACLE_SELECTED_heldout_r2_UPPER_BOUND_cheating": {
+    "speed": {
+     "r2": 0.68291,
+     "gamma_mult": 0.25,
+     "alpha": 10.0
+    },
+    "yaw_rate": {
+     "r2": 0.15456,
+     "gamma_mult": 0.25,
+     "alpha": 10.0
+    },
+    "steer": {
+     "r2": 0.36499,
+     "gamma_mult": 0.25,
+     "alpha": 0.01
+    },
+    "long_accel": {
+     "r2": -0.06258,
+     "gamma_mult": 0.25,
+     "alpha": 10000.0
+    }
+   },
+   "shuffled_latents": false,
+   "selection_rule": "skill gate at inner-val R\u00b2 0.01 (else train mean), then largest alpha within 0.005 of the best",
+   "alpha_grid": [
+    0.0001,
+    10000000000.0,
+    29
+   ],
+   "r2": {
+    "speed": {
+     "point": 0.58719,
+     "lo": 0.13559,
+     "hi": 0.7416,
+     "ci95": 0.30301,
+     "se": 0.17282,
+     "statistic": "r2_speed",
+     "n_windows": 2346,
+     "n_episodes": 17,
+     "n_boot": 200,
+     "n_boot_valid": 200,
+     "estimator": "ap_episode_cluster_bootstrap",
+     "_lo_raw": 0.13559227573380483,
+     "_hi_raw": 0.7416049172779432
+    },
+    "yaw_rate": {
+     "point": -0.0221,
+     "lo": -0.07138,
+     "hi": -0.00077,
+     "ci95": 0.0353,
+     "se": 0.01874,
+     "statistic": "r2_yaw_rate",
+     "n_windows": 2346,
+     "n_episodes": 17,
+     "n_boot": 200,
+     "n_boot_valid": 200,
+     "estimator": "ap_episode_cluster_bootstrap",
+     "_lo_raw": -0.07137806211045505,
+     "_hi_raw": -0.0007693432705067615
+    },
+    "steer": {
+     "point": -0.04007,
+     "lo": -0.16172,
+     "hi": -0.01042,
+     "ci95": 0.07565,
+     "se": 0.03977,
+     "statistic": "r2_steer",
+     "n_windows": 2346,
+     "n_episodes": 17,
+     "n_boot": 200,
+     "n_boot_valid": 200,
+     "estimator": "ap_episode_cluster_bootstrap",
+     "_lo_raw": -0.1617190205663679,
+     "_hi_raw": -0.0104188555579961
+    },
+    "long_accel": {
+     "point": -0.06259,
+     "lo": -0.23483,
+     "hi": -0.00145,
+     "ci95": 0.11669,
+     "se": 0.06107,
+     "statistic": "r2_long_accel",
+     "n_windows": 2346,
+     "n_episodes": 17,
+     "n_boot": 200,
+     "n_boot_valid": 200,
+     "estimator": "ap_episode_cluster_bootstrap",
+     "_lo_raw": -0.2348296039349063,
+     "_hi_raw": -0.0014543466686925905
+    }
+   },
+   "r2_train_insample": {
+    "speed": 0.9869,
+    "yaw_rate": 0.0,
+    "steer": 0.0,
+    "long_accel": 0.0
+   },
+   "mae": {
+    "speed": 5.32461,
+    "yaw_rate": 0.01936,
+    "steer": 0.00988,
+    "long_accel": 0.40568
+   },
+   "ade_2s": {
+    "mean": 6.7071,
+    "lo": 5.0148,
+    "hi": 8.6333,
+    "ci95": 1.8093,
+    "se": 0.9007,
+    "reducer": "mean",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "four_families": {
+    "LONGITUDINAL": {
+     "traj_speed_mae_mps": 5.3241,
+     "traj_speed_bias_mps": 0.4874,
+     "along_mae_m": 6.6576,
+     "along_bias_m": 0.6153,
+     "along_final_bias_m": 0.9884,
+     "accel_mae_mps2": 0.506,
+     "n_windows": 2346,
+     "scalar_speed_mae_mps": 5.3246,
+     "scalar_speed_bias_mps": 0.4668,
+     "distance_keeping": {
+      "status": "UNAVAILABLE",
+      "reason": "no lead-agent track on this substrate. comma2k19 ships no object annotation at all; PhysicalAI-AV ships obstacle.offline (97.44 % of the corpus) but the episode ingest does not read it. Implementing it is a WORK ITEM, not a pass.",
+      "n": 0
+     }
+    },
+    "LATERAL": {
+     "heading_mae_rad": 0.01811,
+     "n_heading": 8765,
+     "curvature_mae_inv_m": 0.00483,
+     "n_curvature": 6543,
+     "yaw_rate_mae_rad_s": 0.02156,
+     "n_pair_valid": 6543,
+     "cross_track_mae_m": 0.304,
+     "cross_track_bias_m": -0.0134,
+     "cross_track_final_mae_m": 0.6337,
+     "n_windows": 2346,
+     "scalar_yaw_rate_mae_rad_s": 0.01936,
+     "scalar_steer_mae": 0.00988
+    },
+    "TACTICAL": {
+     "n_windows": 2346,
+     "thresholds": {
+      "lat_turn_rad": 0.15,
+      "lon_dv_mps": 1.0
+     },
+     "lateral": {
+      "classes": [
+       "right",
+       "straight",
+       "left"
+      ],
+      "confusion_gt_rows_pred_cols": [
+       [
+        0,
+        35,
+        0
+       ],
+       [
+        0,
+        2306,
+        0
+       ],
+       [
+        0,
+        5,
+        0
+       ]
+      ],
+      "support": [
+       35,
+       2306,
+       5
+      ],
+      "recall": [
+       0.0,
+       1.0,
+       0.0
+      ],
+      "balanced_accuracy": 0.3333,
+      "accuracy": 0.9829,
+      "chance_balanced_accuracy": 0.3333
+     },
+     "longitudinal": {
+      "classes": [
+       "decelerate",
+       "cruise",
+       "accelerate"
+      ],
+      "confusion_gt_rows_pred_cols": [
+       [
+        62,
+        194,
+        12
+       ],
+       [
+        211,
+        1741,
+        23
+       ],
+       [
+        18,
+        83,
+        2
+       ]
+      ],
+      "support": [
+       268,
+       1975,
+       103
+      ],
+      "recall": [
+       0.2313,
+       0.8815,
+       0.0194
+      ],
+      "balanced_accuracy": 0.3774,
+      "accuracy": 0.7694,
+      "chance_balanced_accuracy": 0.3333
+     },
+     "mixed": {
+      "classes": [
+       "accelerate",
+       "decelerate",
+       "keep",
+       "left",
+       "right"
+      ],
+      "confusion_gt_rows_pred_cols": [
+       [
+        2,
+        17,
+        83,
+        0,
+        0
+       ],
+       [
+        12,
+        60,
+        194,
+        0,
+        0
+       ],
+       [
+        22,
+        189,
+        1727,
+        0,
+        0
+       ],
+       [
+        0,
+        5,
+        0,
+        0,
+        0
+       ],
+       [
+        1,
+        20,
+        14,
+        0,
+        0
+       ]
+      ],
+      "support": [
+       102,
+       266,
+       1938,
+       5,
+       35
+      ],
+      "recall": [
+       0.0196,
+       0.2256,
+       0.8911,
+       0.0,
+       0.0
+      ],
+      "balanced_accuracy": 0.2273,
+      "accuracy": 0.7626,
+      "chance_balanced_accuracy": 0.2
+     },
+     "goal_setting": {
+      "status": "PARTIAL",
+      "reason": "selected-vs-executed manoeuvre IS reported above. Anchor/goal selection is not: the IDM emits a single regressed trajectory, it has no anchor set to select from.",
+      "n": 2346
+     }
+    },
+    "STRATEGIC": {
+     "status": "UNAVAILABLE",
+     "reason": "no route/goal label on the IDM's substrates. comma2k19 has none; PhysicalAI-AV settled at five probes as carrying no map, lane graph, junction annotation or route signal, and its egomotion is clip-local metres with no GNSS, so map-matching is impossible. A strategic read needs AlpaSim/NuRec map.xodr or an external corpus \u2014 a WORK ITEM, not a pass.",
+     "n": 2346,
+     "how_to_populate": "the instrument now EXISTS: map-derived option sets from stack/experiments/nurec-gsplat/strategic_gt.py, scored by taniteval.strategic_optionset.strategic_family. What is still missing on THIS stream is a substrate \u2014 the IDM would have to be driven on a NuRec scene that ships map.xodr. \u26d4 Do NOT substitute an ego-yaw route label: it cannot tell whether the map admitted a choice, which is how route_head_eq_logged reached 1.0000 on a single-option clip."
+    },
+    "_contract": "Four families reported per-family, never pooled, in ADDITION to ADE. A family marked UNAVAILABLE is a WORK ITEM, not a pass.",
+    "_unavailable": [
+     "STRATEGIC"
+    ]
+   }
+  },
+  "RIDGE_rbf_centre__CTRL": {
+   "kind": "closed_form_kernel_ridge",
+   "feature": "centre",
+   "kernel": "rbf",
+   "n_features": 2048,
+   "gamma_mults": [
+    0.25,
+    1.0,
+    4.0
+   ],
+   "selected_per_output": {
+    "speed": {
+     "gamma_mult": 0.25,
+     "alpha": 10000000000.0,
+     "rule": "skill_gate_to_train_mean"
+    },
+    "yaw_rate": {
+     "gamma_mult": 0.25,
+     "alpha": 10000000000.0,
+     "rule": "skill_gate_to_train_mean"
+    },
+    "steer": {
+     "gamma_mult": 0.25,
+     "alpha": 10000000000.0,
+     "rule": "skill_gate_to_train_mean"
+    },
+    "long_accel": {
+     "gamma_mult": 0.25,
+     "alpha": 100.0,
+     "rule": "one_se_tiebreak"
+    }
+   },
+   "inner_val_r2_per_scalar": {
+    "speed": -0.0194,
+    "yaw_rate": -0.0,
+    "steer": -0.0343,
+    "long_accel": 0.0061
+   },
+   "inner_val_r2_best_over_grid": {
+    "speed": -0.0194,
+    "yaw_rate": 0.0,
+    "steer": -0.0307,
+    "long_accel": 0.0111
+   },
+   "ORACLE_SELECTED_heldout_r2_UPPER_BOUND_cheating": {
+    "speed": {
+     "r2": -0.00496,
+     "gamma_mult": 4.0,
+     "alpha": 1000.0
+    },
+    "yaw_rate": {
+     "r2": -0.0221,
+     "gamma_mult": 0.25,
+     "alpha": 10000000000.0
+    },
+    "steer": {
+     "r2": -0.02301,
+     "gamma_mult": 0.25,
+     "alpha": 1.0
+    },
+    "long_accel": {
+     "r2": -0.05544,
+     "gamma_mult": 4.0,
+     "alpha": 31.622776601683793
+    }
+   },
+   "shuffled_latents": true,
+   "selection_rule": "skill gate at inner-val R\u00b2 0.01 (else train mean), then largest alpha within 0.005 of the best",
+   "alpha_grid": [
+    0.0001,
+    10000000000.0,
+    29
+   ],
+   "r2": {
+    "speed": {
+     "point": -0.00517,
+     "lo": -0.51839,
+     "hi": -0.00016,
+     "ci95": 0.25912,
+     "se": 0.15751,
+     "statistic": "r2_speed",
+     "n_windows": 2346,
+     "n_episodes": 17,
+     "n_boot": 200,
+     "n_boot_valid": 200,
+     "estimator": "ap_episode_cluster_bootstrap",
+     "_lo_raw": -0.5183922160414346,
+     "_hi_raw": -0.00016167806072160904
+    },
+    "yaw_rate": {
+     "point": -0.0221,
+     "lo": -0.07138,
+     "hi": -0.00077,
+     "ci95": 0.0353,
+     "se": 0.01874,
+     "statistic": "r2_yaw_rate",
+     "n_windows": 2346,
+     "n_episodes": 17,
+     "n_boot": 200,
+     "n_boot_valid": 200,
+     "estimator": "ap_episode_cluster_bootstrap",
+     "_lo_raw": -0.07137806825629331,
+     "_hi_raw": -0.0007693422074957768
+    },
+    "steer": {
+     "point": -0.04007,
+     "lo": -0.16172,
+     "hi": -0.01042,
+     "ci95": 0.07565,
+     "se": 0.03977,
+     "statistic": "r2_steer",
+     "n_windows": 2346,
+     "n_episodes": 17,
+     "n_boot": 200,
+     "n_boot_valid": 200,
+     "estimator": "ap_episode_cluster_bootstrap",
+     "_lo_raw": -0.16171901854069298,
+     "_hi_raw": -0.010418858420016792
+    },
+    "long_accel": {
+     "point": -0.06216,
+     "lo": -0.22677,
+     "hi": -0.0032,
+     "ci95": 0.11178,
+     "se": 0.06007,
+     "statistic": "r2_long_accel",
+     "n_windows": 2346,
+     "n_episodes": 17,
+     "n_boot": 200,
+     "n_boot_valid": 200,
+     "estimator": "ap_episode_cluster_bootstrap",
+     "_lo_raw": -0.22676579363277855,
+     "_hi_raw": -0.0031972540351977263
+    }
+   },
+   "r2_train_insample": {
+    "speed": 0.0,
+    "yaw_rate": 0.0,
+    "steer": 0.0,
+    "long_accel": 0.004
+   },
+   "mae": {
+    "speed": 9.56688,
+    "yaw_rate": 0.01936,
+    "steer": 0.00988,
+    "long_accel": 0.40549
+   },
+   "ade_2s": {
+    "mean": 12.0468,
+    "lo": 9.6502,
+    "hi": 14.3499,
+    "ci95": 2.3499,
+    "se": 1.2503,
+    "reducer": "mean",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "four_families": {
+    "LONGITUDINAL": {
+     "traj_speed_mae_mps": 9.654,
+     "traj_speed_bias_mps": -0.6327,
+     "along_mae_m": 12.0349,
+     "along_bias_m": -0.829,
+     "along_final_bias_m": -1.2489,
+     "accel_mae_mps2": 0.3949,
+     "n_windows": 2346,
+     "scalar_speed_mae_mps": 9.5669,
+     "scalar_speed_bias_mps": -0.774,
+     "distance_keeping": {
+      "status": "UNAVAILABLE",
+      "reason": "no lead-agent track on this substrate. comma2k19 ships no object annotation at all; PhysicalAI-AV ships obstacle.offline (97.44 % of the corpus) but the episode ingest does not read it. Implementing it is a WORK ITEM, not a pass.",
+      "n": 0
+     }
+    },
+    "LATERAL": {
+     "heading_mae_rad": 0.01671,
+     "n_heading": 8768,
+     "curvature_mae_inv_m": 0.00439,
+     "n_curvature": 6546,
+     "yaw_rate_mae_rad_s": 0.01728,
+     "n_pair_valid": 6546,
+     "cross_track_mae_m": 0.2808,
+     "cross_track_bias_m": -0.0245,
+     "cross_track_final_mae_m": 0.5916,
+     "n_windows": 2346,
+     "scalar_yaw_rate_mae_rad_s": 0.01936,
+     "scalar_steer_mae": 0.00988
+    },
+    "TACTICAL": {
+     "n_windows": 2346,
+     "thresholds": {
+      "lat_turn_rad": 0.15,
+      "lon_dv_mps": 1.0
+     },
+     "lateral": {
+      "classes": [
+       "right",
+       "straight",
+       "left"
+      ],
+      "confusion_gt_rows_pred_cols": [
+       [
+        0,
+        35,
+        0
+       ],
+       [
+        0,
+        2306,
+        0
+       ],
+       [
+        0,
+        5,
+        0
+       ]
+      ],
+      "support": [
+       35,
+       2306,
+       5
+      ],
+      "recall": [
+       0.0,
+       1.0,
+       0.0
+      ],
+      "balanced_accuracy": 0.3333,
+      "accuracy": 0.9829,
+      "chance_balanced_accuracy": 0.3333
+     },
+     "longitudinal": {
+      "classes": [
+       "decelerate",
+       "cruise",
+       "accelerate"
+      ],
+      "confusion_gt_rows_pred_cols": [
+       [
+        0,
+        268,
+        0
+       ],
+       [
+        0,
+        1975,
+        0
+       ],
+       [
+        0,
+        103,
+        0
+       ]
+      ],
+      "support": [
+       268,
+       1975,
+       103
+      ],
+      "recall": [
+       0.0,
+       1.0,
+       0.0
+      ],
+      "balanced_accuracy": 0.3333,
+      "accuracy": 0.8419,
+      "chance_balanced_accuracy": 0.3333
+     },
+     "mixed": {
+      "classes": [
+       "accelerate",
+       "decelerate",
+       "keep",
+       "left",
+       "right"
+      ],
+      "confusion_gt_rows_pred_cols": [
+       [
+        0,
+        0,
+        102,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        266,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        1938,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        5,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        35,
+        0,
+        0
+       ]
+      ],
+      "support": [
+       102,
+       266,
+       1938,
+       5,
+       35
+      ],
+      "recall": [
+       0.0,
+       0.0,
+       1.0,
+       0.0,
+       0.0
+      ],
+      "balanced_accuracy": 0.2,
+      "accuracy": 0.8261,
+      "chance_balanced_accuracy": 0.2
+     },
+     "goal_setting": {
+      "status": "PARTIAL",
+      "reason": "selected-vs-executed manoeuvre IS reported above. Anchor/goal selection is not: the IDM emits a single regressed trajectory, it has no anchor set to select from.",
+      "n": 2346
+     }
+    },
+    "STRATEGIC": {
+     "status": "UNAVAILABLE",
+     "reason": "no route/goal label on the IDM's substrates. comma2k19 has none; PhysicalAI-AV settled at five probes as carrying no map, lane graph, junction annotation or route signal, and its egomotion is clip-local metres with no GNSS, so map-matching is impossible. A strategic read needs AlpaSim/NuRec map.xodr or an external corpus \u2014 a WORK ITEM, not a pass.",
+     "n": 2346,
+     "how_to_populate": "the instrument now EXISTS: map-derived option sets from stack/experiments/nurec-gsplat/strategic_gt.py, scored by taniteval.strategic_optionset.strategic_family. What is still missing on THIS stream is a substrate \u2014 the IDM would have to be driven on a NuRec scene that ships map.xodr. \u26d4 Do NOT substitute an ego-yaw route label: it cannot tell whether the map admitted a choice, which is how route_head_eq_logged reached 1.0000 on a single-option clip."
+    },
+    "_contract": "Four families reported per-family, never pooled, in ADDITION to ADE. A family marked UNAVAILABLE is a WORK ITEM, not a pass.",
+    "_unavailable": [
+     "STRATEGIC"
+    ]
+   }
+  },
+  "RIDGE_rbf_window": {
+   "kind": "closed_form_kernel_ridge",
+   "feature": "window",
+   "kernel": "rbf",
+   "n_features": 18432,
+   "gamma_mults": [
+    0.25,
+    1.0,
+    4.0
+   ],
+   "selected_per_output": {
+    "speed": {
+     "gamma_mult": 1.0,
+     "alpha": 0.03162277660168379,
+     "rule": "one_se_tiebreak"
+    },
+    "yaw_rate": {
+     "gamma_mult": 0.25,
+     "alpha": 10000000000.0,
+     "rule": "skill_gate_to_train_mean"
+    },
+    "steer": {
+     "gamma_mult": 0.25,
+     "alpha": 0.31622776601683794,
+     "rule": "one_se_tiebreak"
+    },
+    "long_accel": {
+     "gamma_mult": 0.25,
+     "alpha": 10000000000.0,
+     "rule": "skill_gate_to_train_mean"
+    }
+   },
+   "inner_val_r2_per_scalar": {
+    "speed": 0.8047,
+    "yaw_rate": -0.0,
+    "steer": 0.0916,
+    "long_accel": -0.0001
+   },
+   "inner_val_r2_best_over_grid": {
+    "speed": 0.8096,
+    "yaw_rate": 0.0002,
+    "steer": 0.0916,
+    "long_accel": -0.0001
+   },
+   "ORACLE_SELECTED_heldout_r2_UPPER_BOUND_cheating": {
+    "speed": {
+     "r2": 0.71289,
+     "gamma_mult": 0.25,
+     "alpha": 10.0
+    },
+    "yaw_rate": {
+     "r2": 0.21418,
+     "gamma_mult": 0.25,
+     "alpha": 10.0
+    },
+    "steer": {
+     "r2": 0.49213,
+     "gamma_mult": 0.25,
+     "alpha": 0.001
+    },
+    "long_accel": {
+     "r2": -0.06248,
+     "gamma_mult": 0.25,
+     "alpha": 1000.0
+    }
+   },
+   "shuffled_latents": false,
+   "selection_rule": "skill gate at inner-val R\u00b2 0.01 (else train mean), then largest alpha within 0.005 of the best",
+   "alpha_grid": [
+    0.0001,
+    10000000000.0,
+    29
+   ],
+   "r2": {
+    "speed": {
+     "point": 0.63218,
+     "lo": 0.21479,
+     "hi": 0.799,
+     "ci95": 0.29211,
+     "se": 0.16874,
+     "statistic": "r2_speed",
+     "n_windows": 2346,
+     "n_episodes": 17,
+     "n_boot": 200,
+     "n_boot_valid": 200,
+     "estimator": "ap_episode_cluster_bootstrap",
+     "_lo_raw": 0.2147896575427519,
+     "_hi_raw": 0.7990025857596555
+    },
+    "yaw_rate": {
+     "point": -0.0221,
+     "lo": -0.07138,
+     "hi": -0.00077,
+     "ci95": 0.0353,
+     "se": 0.01874,
+     "statistic": "r2_yaw_rate",
+     "n_windows": 2346,
+     "n_episodes": 17,
+     "n_boot": 200,
+     "n_boot_valid": 200,
+     "estimator": "ap_episode_cluster_bootstrap",
+     "_lo_raw": -0.07137806220223958,
+     "_hi_raw": -0.0007693430629374387
+    },
+    "steer": {
+     "point": 0.35851,
+     "lo": -0.52012,
+     "hi": 0.36395,
+     "ci95": 0.44203,
+     "se": 0.27819,
+     "statistic": "r2_steer",
+     "n_windows": 2346,
+     "n_episodes": 17,
+     "n_boot": 200,
+     "n_boot_valid": 200,
+     "estimator": "ap_episode_cluster_bootstrap",
+     "_lo_raw": -0.5201166352139451,
+     "_hi_raw": 0.3639482912484115
+    },
+    "long_accel": {
+     "point": -0.06259,
+     "lo": -0.23483,
+     "hi": -0.00145,
+     "ci95": 0.11669,
+     "se": 0.06107,
+     "statistic": "r2_long_accel",
+     "n_windows": 2346,
+     "n_episodes": 17,
+     "n_boot": 200,
+     "n_boot_valid": 200,
+     "estimator": "ap_episode_cluster_bootstrap",
+     "_lo_raw": -0.23482960389212645,
+     "_hi_raw": -0.0014543466328521375
+    }
+   },
+   "r2_train_insample": {
+    "speed": 0.9952,
+    "yaw_rate": 0.0,
+    "steer": 0.9409,
+    "long_accel": 0.0
+   },
+   "mae": {
+    "speed": 4.92836,
+    "yaw_rate": 0.01936,
+    "steer": 0.009,
+    "long_accel": 0.40568
+   },
+   "ade_2s": {
+    "mean": 6.3381,
+    "lo": 4.7577,
+    "hi": 8.2586,
+    "ci95": 1.7505,
+    "se": 0.9169,
+    "reducer": "mean",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "four_families": {
+    "LONGITUDINAL": {
+     "traj_speed_mae_mps": 5.0261,
+     "traj_speed_bias_mps": 0.3389,
+     "along_mae_m": 6.2874,
+     "along_bias_m": 0.4428,
+     "along_final_bias_m": 0.6878,
+     "accel_mae_mps2": 0.5459,
+     "n_windows": 2346,
+     "scalar_speed_mae_mps": 4.9284,
+     "scalar_speed_bias_mps": 0.2768,
+     "distance_keeping": {
+      "status": "UNAVAILABLE",
+      "reason": "no lead-agent track on this substrate. comma2k19 ships no object annotation at all; PhysicalAI-AV ships obstacle.offline (97.44 % of the corpus) but the episode ingest does not read it. Implementing it is a WORK ITEM, not a pass.",
+      "n": 0
+     }
+    },
+    "LATERAL": {
+     "heading_mae_rad": 0.0195,
+     "n_heading": 8763,
+     "curvature_mae_inv_m": 0.00461,
+     "n_curvature": 6540,
+     "yaw_rate_mae_rad_s": 0.01919,
+     "n_pair_valid": 6540,
+     "cross_track_mae_m": 0.3081,
+     "cross_track_bias_m": -0.0138,
+     "cross_track_final_mae_m": 0.6529,
+     "n_windows": 2346,
+     "scalar_yaw_rate_mae_rad_s": 0.01936,
+     "scalar_steer_mae": 0.009
+    },
+    "TACTICAL": {
+     "n_windows": 2346,
+     "thresholds": {
+      "lat_turn_rad": 0.15,
+      "lon_dv_mps": 1.0
+     },
+     "lateral": {
+      "classes": [
+       "right",
+       "straight",
+       "left"
+      ],
+      "confusion_gt_rows_pred_cols": [
+       [
+        0,
+        33,
+        2
+       ],
+       [
+        1,
+        2305,
+        0
+       ],
+       [
+        0,
+        5,
+        0
+       ]
+      ],
+      "support": [
+       35,
+       2306,
+       5
+      ],
+      "recall": [
+       0.0,
+       0.9996,
+       0.0
+      ],
+      "balanced_accuracy": 0.3332,
+      "accuracy": 0.9825,
+      "chance_balanced_accuracy": 0.3333
+     },
+     "longitudinal": {
+      "classes": [
+       "decelerate",
+       "cruise",
+       "accelerate"
+      ],
+      "confusion_gt_rows_pred_cols": [
+       [
+        96,
+        148,
+        24
+       ],
+       [
+        258,
+        1688,
+        29
+       ],
+       [
+        20,
+        80,
+        3
+       ]
+      ],
+      "support": [
+       268,
+       1975,
+       103
+      ],
+      "recall": [
+       0.3582,
+       0.8547,
+       0.0291
+      ],
+      "balanced_accuracy": 0.414,
+      "accuracy": 0.7617,
+      "chance_balanced_accuracy": 0.3333
+     },
+     "mixed": {
+      "classes": [
+       "accelerate",
+       "decelerate",
+       "keep",
+       "left",
+       "right"
+      ],
+      "confusion_gt_rows_pred_cols": [
+       [
+        3,
+        19,
+        80,
+        0,
+        0
+       ],
+       [
+        24,
+        94,
+        148,
+        0,
+        0
+       ],
+       [
+        28,
+        235,
+        1674,
+        0,
+        1
+       ],
+       [
+        0,
+        4,
+        1,
+        0,
+        0
+       ],
+       [
+        0,
+        22,
+        11,
+        2,
+        0
+       ]
+      ],
+      "support": [
+       102,
+       266,
+       1938,
+       5,
+       35
+      ],
+      "recall": [
+       0.0294,
+       0.3534,
+       0.8638,
+       0.0,
+       0.0
+      ],
+      "balanced_accuracy": 0.2493,
+      "accuracy": 0.7549,
+      "chance_balanced_accuracy": 0.2
+     },
+     "goal_setting": {
+      "status": "PARTIAL",
+      "reason": "selected-vs-executed manoeuvre IS reported above. Anchor/goal selection is not: the IDM emits a single regressed trajectory, it has no anchor set to select from.",
+      "n": 2346
+     }
+    },
+    "STRATEGIC": {
+     "status": "UNAVAILABLE",
+     "reason": "no route/goal label on the IDM's substrates. comma2k19 has none; PhysicalAI-AV settled at five probes as carrying no map, lane graph, junction annotation or route signal, and its egomotion is clip-local metres with no GNSS, so map-matching is impossible. A strategic read needs AlpaSim/NuRec map.xodr or an external corpus \u2014 a WORK ITEM, not a pass.",
+     "n": 2346,
+     "how_to_populate": "the instrument now EXISTS: map-derived option sets from stack/experiments/nurec-gsplat/strategic_gt.py, scored by taniteval.strategic_optionset.strategic_family. What is still missing on THIS stream is a substrate \u2014 the IDM would have to be driven on a NuRec scene that ships map.xodr. \u26d4 Do NOT substitute an ego-yaw route label: it cannot tell whether the map admitted a choice, which is how route_head_eq_logged reached 1.0000 on a single-option clip."
+    },
+    "_contract": "Four families reported per-family, never pooled, in ADDITION to ADE. A family marked UNAVAILABLE is a WORK ITEM, not a pass.",
+    "_unavailable": [
+     "STRATEGIC"
+    ]
+   }
+  },
+  "RIDGE_rbf_window__CTRL": {
+   "kind": "closed_form_kernel_ridge",
+   "feature": "window",
+   "kernel": "rbf",
+   "n_features": 18432,
+   "gamma_mults": [
+    0.25,
+    1.0,
+    4.0
+   ],
+   "selected_per_output": {
+    "speed": {
+     "gamma_mult": 0.25,
+     "alpha": 10000000000.0,
+     "rule": "skill_gate_to_train_mean"
+    },
+    "yaw_rate": {
+     "gamma_mult": 0.25,
+     "alpha": 10000000000.0,
+     "rule": "skill_gate_to_train_mean"
+    },
+    "steer": {
+     "gamma_mult": 0.25,
+     "alpha": 10000000000.0,
+     "rule": "skill_gate_to_train_mean"
+    },
+    "long_accel": {
+     "gamma_mult": 0.25,
+     "alpha": 100.0,
+     "rule": "one_se_tiebreak"
+    }
+   },
+   "inner_val_r2_per_scalar": {
+    "speed": -0.0194,
+    "yaw_rate": -0.0,
+    "steer": -0.0343,
+    "long_accel": 0.0061
+   },
+   "inner_val_r2_best_over_grid": {
+    "speed": -0.0194,
+    "yaw_rate": 0.0002,
+    "steer": -0.0302,
+    "long_accel": 0.011
+   },
+   "ORACLE_SELECTED_heldout_r2_UPPER_BOUND_cheating": {
+    "speed": {
+     "r2": 0.0009,
+     "gamma_mult": 4.0,
+     "alpha": 10.0
+    },
+    "yaw_rate": {
+     "r2": -0.0221,
+     "gamma_mult": 0.25,
+     "alpha": 10000000000.0
+    },
+    "steer": {
+     "r2": -0.01149,
+     "gamma_mult": 0.25,
+     "alpha": 0.31622776601683794
+    },
+    "long_accel": {
+     "r2": -0.05831,
+     "gamma_mult": 4.0,
+     "alpha": 31.622776601683793
+    }
+   },
+   "shuffled_latents": true,
+   "selection_rule": "skill gate at inner-val R\u00b2 0.01 (else train mean), then largest alpha within 0.005 of the best",
+   "alpha_grid": [
+    0.0001,
+    10000000000.0,
+    29
+   ],
+   "r2": {
+    "speed": {
+     "point": -0.00517,
+     "lo": -0.51839,
+     "hi": -0.00016,
+     "ci95": 0.25912,
+     "se": 0.15751,
+     "statistic": "r2_speed",
+     "n_windows": 2346,
+     "n_episodes": 17,
+     "n_boot": 200,
+     "n_boot_valid": 200,
+     "estimator": "ap_episode_cluster_bootstrap",
+     "_lo_raw": -0.5183922159278922,
+     "_hi_raw": -0.0001616779943078401
+    },
+    "yaw_rate": {
+     "point": -0.0221,
+     "lo": -0.07138,
+     "hi": -0.00077,
+     "ci95": 0.0353,
+     "se": 0.01874,
+     "statistic": "r2_yaw_rate",
+     "n_windows": 2346,
+     "n_episodes": 17,
+     "n_boot": 200,
+     "n_boot_valid": 200,
+     "estimator": "ap_episode_cluster_bootstrap",
+     "_lo_raw": -0.07137806741572605,
+     "_hi_raw": -0.0007693413652733627
+    },
+    "steer": {
+     "point": -0.04007,
+     "lo": -0.16172,
+     "hi": -0.01042,
+     "ci95": 0.07565,
+     "se": 0.03977,
+     "statistic": "r2_steer",
+     "n_windows": 2346,
+     "n_episodes": 17,
+     "n_boot": 200,
+     "n_boot_valid": 200,
+     "estimator": "ap_episode_cluster_bootstrap",
+     "_lo_raw": -0.16171901844011968,
+     "_hi_raw": -0.010418858040468156
+    },
+    "long_accel": {
+     "point": -0.06453,
+     "lo": -0.22861,
+     "hi": -0.00505,
+     "ci95": 0.11178,
+     "se": 0.06008,
+     "statistic": "r2_long_accel",
+     "n_windows": 2346,
+     "n_episodes": 17,
+     "n_boot": 200,
+     "n_boot_valid": 200,
+     "estimator": "ap_episode_cluster_bootstrap",
+     "_lo_raw": -0.22860927591829422,
+     "_hi_raw": -0.005046091738183862
+    }
+   },
+   "r2_train_insample": {
+    "speed": 0.0,
+    "yaw_rate": 0.0,
+    "steer": 0.0,
+    "long_accel": 0.0042
+   },
+   "mae": {
+    "speed": 9.56688,
+    "yaw_rate": 0.01936,
+    "steer": 0.00988,
+    "long_accel": 0.40606
+   },
+   "ade_2s": {
+    "mean": 12.0468,
+    "lo": 9.6502,
+    "hi": 14.3499,
+    "ci95": 2.3499,
+    "se": 1.2503,
+    "reducer": "mean",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "four_families": {
+    "LONGITUDINAL": {
+     "traj_speed_mae_mps": 9.654,
+     "traj_speed_bias_mps": -0.6327,
+     "along_mae_m": 12.0349,
+     "along_bias_m": -0.829,
+     "along_final_bias_m": -1.2489,
+     "accel_mae_mps2": 0.3949,
+     "n_windows": 2346,
+     "scalar_speed_mae_mps": 9.5669,
+     "scalar_speed_bias_mps": -0.774,
+     "distance_keeping": {
+      "status": "UNAVAILABLE",
+      "reason": "no lead-agent track on this substrate. comma2k19 ships no object annotation at all; PhysicalAI-AV ships obstacle.offline (97.44 % of the corpus) but the episode ingest does not read it. Implementing it is a WORK ITEM, not a pass.",
+      "n": 0
+     }
+    },
+    "LATERAL": {
+     "heading_mae_rad": 0.01671,
+     "n_heading": 8768,
+     "curvature_mae_inv_m": 0.00439,
+     "n_curvature": 6546,
+     "yaw_rate_mae_rad_s": 0.01728,
+     "n_pair_valid": 6546,
+     "cross_track_mae_m": 0.2808,
+     "cross_track_bias_m": -0.0245,
+     "cross_track_final_mae_m": 0.5916,
+     "n_windows": 2346,
+     "scalar_yaw_rate_mae_rad_s": 0.01936,
+     "scalar_steer_mae": 0.00988
+    },
+    "TACTICAL": {
+     "n_windows": 2346,
+     "thresholds": {
+      "lat_turn_rad": 0.15,
+      "lon_dv_mps": 1.0
+     },
+     "lateral": {
+      "classes": [
+       "right",
+       "straight",
+       "left"
+      ],
+      "confusion_gt_rows_pred_cols": [
+       [
+        0,
+        35,
+        0
+       ],
+       [
+        0,
+        2306,
+        0
+       ],
+       [
+        0,
+        5,
+        0
+       ]
+      ],
+      "support": [
+       35,
+       2306,
+       5
+      ],
+      "recall": [
+       0.0,
+       1.0,
+       0.0
+      ],
+      "balanced_accuracy": 0.3333,
+      "accuracy": 0.9829,
+      "chance_balanced_accuracy": 0.3333
+     },
+     "longitudinal": {
+      "classes": [
+       "decelerate",
+       "cruise",
+       "accelerate"
+      ],
+      "confusion_gt_rows_pred_cols": [
+       [
+        0,
+        268,
+        0
+       ],
+       [
+        0,
+        1975,
+        0
+       ],
+       [
+        0,
+        103,
+        0
+       ]
+      ],
+      "support": [
+       268,
+       1975,
+       103
+      ],
+      "recall": [
+       0.0,
+       1.0,
+       0.0
+      ],
+      "balanced_accuracy": 0.3333,
+      "accuracy": 0.8419,
+      "chance_balanced_accuracy": 0.3333
+     },
+     "mixed": {
+      "classes": [
+       "accelerate",
+       "decelerate",
+       "keep",
+       "left",
+       "right"
+      ],
+      "confusion_gt_rows_pred_cols": [
+       [
+        0,
+        0,
+        102,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        266,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        1938,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        5,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        35,
+        0,
+        0
+       ]
+      ],
+      "support": [
+       102,
+       266,
+       1938,
+       5,
+       35
+      ],
+      "recall": [
+       0.0,
+       0.0,
+       1.0,
+       0.0,
+       0.0
+      ],
+      "balanced_accuracy": 0.2,
+      "accuracy": 0.8261,
+      "chance_balanced_accuracy": 0.2
+     },
+     "goal_setting": {
+      "status": "PARTIAL",
+      "reason": "selected-vs-executed manoeuvre IS reported above. Anchor/goal selection is not: the IDM emits a single regressed trajectory, it has no anchor set to select from.",
+      "n": 2346
+     }
+    },
+    "STRATEGIC": {
+     "status": "UNAVAILABLE",
+     "reason": "no route/goal label on the IDM's substrates. comma2k19 has none; PhysicalAI-AV settled at five probes as carrying no map, lane graph, junction annotation or route signal, and its egomotion is clip-local metres with no GNSS, so map-matching is impossible. A strategic read needs AlpaSim/NuRec map.xodr or an external corpus \u2014 a WORK ITEM, not a pass.",
+     "n": 2346,
+     "how_to_populate": "the instrument now EXISTS: map-derived option sets from stack/experiments/nurec-gsplat/strategic_gt.py, scored by taniteval.strategic_optionset.strategic_family. What is still missing on THIS stream is a substrate \u2014 the IDM would have to be driven on a NuRec scene that ships map.xodr. \u26d4 Do NOT substitute an ego-yaw route label: it cannot tell whether the map admitted a choice, which is how route_head_eq_logged reached 1.0000 on a single-option clip."
+    },
+    "_contract": "Four families reported per-family, never pooled, in ADDITION to ADE. A family marked UNAVAILABLE is a WORK ITEM, not a pass.",
+    "_unavailable": [
+     "STRATEGIC"
+    ]
+   }
+  }
+ },
+ "paired_vs_control": {
+  "RIDGE_linear_centre_minus_CTRL": {
+   "r2_speed": {
+    "delta": 0.69084,
+    "lo": 0.50329,
+    "hi": 0.9364,
+    "ci95": 0.21656,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "statistic": "d_r2_speed",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "n_boot_valid": 200,
+    "estimator": "paired_ap_episode_cluster_bootstrap"
+   },
+   "r2_yaw_rate": {
+    "delta": 2e-05,
+    "lo": -3e-05,
+    "hi": 0.0001,
+    "ci95": 6e-05,
+    "p_delta_gt0": 0.85,
+    "separated": false,
+    "statistic": "d_r2_yaw_rate",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "n_boot_valid": 200,
+    "estimator": "paired_ap_episode_cluster_bootstrap"
+   },
+   "r2_steer": {
+    "delta": 0.31849,
+    "lo": -6.65157,
+    "hi": 0.40597,
+    "ci95": 3.52877,
+    "p_delta_gt0": 0.635,
+    "separated": false,
+    "statistic": "d_r2_steer",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "n_boot_valid": 200,
+    "estimator": "paired_ap_episode_cluster_bootstrap"
+   },
+   "r2_long_accel": {
+    "delta": -0.00046,
+    "lo": -0.02628,
+    "hi": 0.01914,
+    "ci95": 0.02271,
+    "p_delta_gt0": 0.485,
+    "separated": false,
+    "statistic": "d_r2_long_accel",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "n_boot_valid": 200,
+    "estimator": "paired_ap_episode_cluster_bootstrap"
+   },
+   "ade_2s": {
+    "delta": -6.0375,
+    "lo": -8.6234,
+    "hi": -3.2489,
+    "ci95": 2.6873,
+    "p_delta_gt0": 0.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "estimator": "paired_episode_cluster_bootstrap"
+   }
+  },
+  "RIDGE_linear_centre_minus_NULLMEAN": {
+   "r2_speed": {
+    "delta": 0.69084,
+    "lo": 0.50328,
+    "hi": 0.9364,
+    "ci95": 0.21656,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "statistic": "d_r2_speed",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "n_boot_valid": 200,
+    "estimator": "paired_ap_episode_cluster_bootstrap"
+   },
+   "r2_yaw_rate": {
+    "delta": 1e-05,
+    "lo": 0.0,
+    "hi": 3e-05,
+    "ci95": 1e-05,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "statistic": "d_r2_yaw_rate",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "n_boot_valid": 200,
+    "estimator": "paired_ap_episode_cluster_bootstrap"
+   },
+   "r2_steer": {
+    "delta": 0.31849,
+    "lo": -6.65157,
+    "hi": 0.40597,
+    "ci95": 3.52877,
+    "p_delta_gt0": 0.635,
+    "separated": false,
+    "statistic": "d_r2_steer",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "n_boot_valid": 200,
+    "estimator": "paired_ap_episode_cluster_bootstrap"
+   },
+   "r2_long_accel": {
+    "delta": 0.0,
+    "lo": -0.0,
+    "hi": 0.0,
+    "ci95": 0.0,
+    "p_delta_gt0": 0.565,
+    "separated": false,
+    "statistic": "d_r2_long_accel",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "n_boot_valid": 200,
+    "estimator": "paired_ap_episode_cluster_bootstrap"
+   },
+   "ade_2s": {
+    "delta": -6.0375,
+    "lo": -8.6234,
+    "hi": -3.2489,
+    "ci95": 2.6872,
+    "p_delta_gt0": 0.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "estimator": "paired_episode_cluster_bootstrap"
+   }
+  },
+  "RIDGE_linear_centre_diff_minus_CTRL": {
+   "r2_speed": {
+    "delta": 0.67017,
+    "lo": 0.49765,
+    "hi": 0.93543,
+    "ci95": 0.21889,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "statistic": "d_r2_speed",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "n_boot_valid": 200,
+    "estimator": "paired_ap_episode_cluster_bootstrap"
+   },
+   "r2_yaw_rate": {
+    "delta": 3e-05,
+    "lo": -1e-05,
+    "hi": 0.00013,
+    "ci95": 7e-05,
+    "p_delta_gt0": 0.96,
+    "separated": false,
+    "statistic": "d_r2_yaw_rate",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "n_boot_valid": 200,
+    "estimator": "paired_ap_episode_cluster_bootstrap"
+   },
+   "r2_steer": {
+    "delta": 0.31074,
+    "lo": -7.4201,
+    "hi": 0.40191,
+    "ci95": 3.91101,
+    "p_delta_gt0": 0.635,
+    "separated": false,
+    "statistic": "d_r2_steer",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "n_boot_valid": 200,
+    "estimator": "paired_ap_episode_cluster_bootstrap"
+   },
+   "r2_long_accel": {
+    "delta": -0.00324,
+    "lo": -0.02042,
+    "hi": 0.00869,
+    "ci95": 0.01455,
+    "p_delta_gt0": 0.345,
+    "separated": false,
+    "statistic": "d_r2_long_accel",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "n_boot_valid": 200,
+    "estimator": "paired_ap_episode_cluster_bootstrap"
+   },
+   "ade_2s": {
+    "delta": -5.6026,
+    "lo": -8.0929,
+    "hi": -3.1781,
+    "ci95": 2.4574,
+    "p_delta_gt0": 0.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "estimator": "paired_episode_cluster_bootstrap"
+   }
+  },
+  "RIDGE_linear_centre_diff_minus_NULLMEAN": {
+   "r2_speed": {
+    "delta": 0.67017,
+    "lo": 0.49765,
+    "hi": 0.93543,
+    "ci95": 0.21889,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "statistic": "d_r2_speed",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "n_boot_valid": 200,
+    "estimator": "paired_ap_episode_cluster_bootstrap"
+   },
+   "r2_yaw_rate": {
+    "delta": 2e-05,
+    "lo": 1e-05,
+    "hi": 3e-05,
+    "ci95": 1e-05,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "statistic": "d_r2_yaw_rate",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "n_boot_valid": 200,
+    "estimator": "paired_ap_episode_cluster_bootstrap"
+   },
+   "r2_steer": {
+    "delta": 0.31074,
+    "lo": -7.4201,
+    "hi": 0.40191,
+    "ci95": 3.911,
+    "p_delta_gt0": 0.635,
+    "separated": false,
+    "statistic": "d_r2_steer",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "n_boot_valid": 200,
+    "estimator": "paired_ap_episode_cluster_bootstrap"
+   },
+   "r2_long_accel": {
+    "delta": 1e-05,
+    "lo": 0.0,
+    "hi": 2e-05,
+    "ci95": 1e-05,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "statistic": "d_r2_long_accel",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "n_boot_valid": 200,
+    "estimator": "paired_ap_episode_cluster_bootstrap"
+   },
+   "ade_2s": {
+    "delta": -5.6026,
+    "lo": -8.0929,
+    "hi": -3.1781,
+    "ci95": 2.4574,
+    "p_delta_gt0": 0.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "estimator": "paired_episode_cluster_bootstrap"
+   }
+  },
+  "RIDGE_linear_diff_minus_CTRL": {
+   "r2_speed": {
+    "delta": -0.0,
+    "lo": -0.0,
+    "hi": -0.0,
+    "ci95": 0.0,
+    "p_delta_gt0": 0.01,
+    "separated": true,
+    "statistic": "d_r2_speed",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "n_boot_valid": 200,
+    "estimator": "paired_ap_episode_cluster_bootstrap"
+   },
+   "r2_yaw_rate": {
+    "delta": 2e-05,
+    "lo": -1e-05,
+    "hi": 7e-05,
+    "ci95": 4e-05,
+    "p_delta_gt0": 0.9,
+    "separated": false,
+    "statistic": "d_r2_yaw_rate",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "n_boot_valid": 200,
+    "estimator": "paired_ap_episode_cluster_bootstrap"
+   },
+   "r2_steer": {
+    "delta": 0.0,
+    "lo": 0.0,
+    "hi": 2e-05,
+    "ci95": 1e-05,
+    "p_delta_gt0": 0.995,
+    "separated": true,
+    "statistic": "d_r2_steer",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "n_boot_valid": 200,
+    "estimator": "paired_ap_episode_cluster_bootstrap"
+   },
+   "r2_long_accel": {
+    "delta": 0.00269,
+    "lo": -0.07903,
+    "hi": 0.03912,
+    "ci95": 0.05908,
+    "p_delta_gt0": 0.625,
+    "separated": false,
+    "statistic": "d_r2_long_accel",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "n_boot_valid": 200,
+    "estimator": "paired_ap_episode_cluster_bootstrap"
+   },
+   "ade_2s": {
+    "delta": 3e-06,
+    "lo": 1e-06,
+    "hi": 7e-06,
+    "ci95": 3e-06,
+    "p_delta_gt0": 0.99,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "display_dp": 6,
+    "display_note": "rendered at 6 dp, not the usual 4: at 4 dp the printed interval would have contradicted separated=True. The extra digits are a RENDERING fix, not extra precision \u2014 the estimator and the separation test are unchanged."
+   }
+  },
+  "RIDGE_linear_diff_minus_NULLMEAN": {
+   "r2_speed": {
+    "delta": -0.0,
+    "lo": -0.0,
+    "hi": -0.0,
+    "ci95": 0.0,
+    "p_delta_gt0": 0.0,
+    "separated": true,
+    "statistic": "d_r2_speed",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "n_boot_valid": 200,
+    "estimator": "paired_ap_episode_cluster_bootstrap"
+   },
+   "r2_yaw_rate": {
+    "delta": 1e-05,
+    "lo": 0.0,
+    "hi": 2e-05,
+    "ci95": 1e-05,
+    "p_delta_gt0": 0.985,
+    "separated": true,
+    "statistic": "d_r2_yaw_rate",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "n_boot_valid": 200,
+    "estimator": "paired_ap_episode_cluster_bootstrap"
+   },
+   "r2_steer": {
+    "delta": 0.0,
+    "lo": 0.0,
+    "hi": 1e-05,
+    "ci95": 1e-05,
+    "p_delta_gt0": 0.98,
+    "separated": true,
+    "statistic": "d_r2_steer",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "n_boot_valid": 200,
+    "estimator": "paired_ap_episode_cluster_bootstrap"
+   },
+   "r2_long_accel": {
+    "delta": 0.00269,
+    "lo": -0.07903,
+    "hi": 0.03912,
+    "ci95": 0.05908,
+    "p_delta_gt0": 0.625,
+    "separated": false,
+    "statistic": "d_r2_long_accel",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "n_boot_valid": 200,
+    "estimator": "paired_ap_episode_cluster_bootstrap"
+   },
+   "ade_2s": {
+    "delta": 1e-06,
+    "lo": 1e-06,
+    "hi": 2e-06,
+    "ci95": 1e-06,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "display_dp": 6,
+    "display_note": "rendered at 6 dp, not the usual 4: at 4 dp the printed interval would have contradicted separated=True. The extra digits are a RENDERING fix, not extra precision \u2014 the estimator and the separation test are unchanged."
+   }
+  },
+  "RIDGE_linear_window_minus_CTRL": {
+   "r2_speed": {
+    "delta": 0.71968,
+    "lo": 0.56311,
+    "hi": 1.0173,
+    "ci95": 0.2271,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "statistic": "d_r2_speed",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "n_boot_valid": 200,
+    "estimator": "paired_ap_episode_cluster_bootstrap"
+   },
+   "r2_yaw_rate": {
+    "delta": 0.00016,
+    "lo": -0.00026,
+    "hi": 0.00079,
+    "ci95": 0.00053,
+    "p_delta_gt0": 0.875,
+    "separated": false,
+    "statistic": "d_r2_yaw_rate",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "n_boot_valid": 200,
+    "estimator": "paired_ap_episode_cluster_bootstrap"
+   },
+   "r2_steer": {
+    "delta": 0.38269,
+    "lo": -5.11946,
+    "hi": 0.46603,
+    "ci95": 2.79274,
+    "p_delta_gt0": 0.635,
+    "separated": false,
+    "statistic": "d_r2_steer",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "n_boot_valid": 200,
+    "estimator": "paired_ap_episode_cluster_bootstrap"
+   },
+   "r2_long_accel": {
+    "delta": 0.00382,
+    "lo": -0.02346,
+    "hi": 0.02338,
+    "ci95": 0.02342,
+    "p_delta_gt0": 0.61,
+    "separated": false,
+    "statistic": "d_r2_long_accel",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "n_boot_valid": 200,
+    "estimator": "paired_ap_episode_cluster_bootstrap"
+   },
+   "ade_2s": {
+    "delta": -6.1644,
+    "lo": -8.7358,
+    "hi": -3.6288,
+    "ci95": 2.5535,
+    "p_delta_gt0": 0.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "estimator": "paired_episode_cluster_bootstrap"
+   }
+  },
+  "RIDGE_linear_window_minus_NULLMEAN": {
+   "r2_speed": {
+    "delta": 0.71968,
+    "lo": 0.56312,
+    "hi": 1.01729,
+    "ci95": 0.22708,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "statistic": "d_r2_speed",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "n_boot_valid": 200,
+    "estimator": "paired_ap_episode_cluster_bootstrap"
+   },
+   "r2_yaw_rate": {
+    "delta": 8e-05,
+    "lo": 3e-05,
+    "hi": 0.00021,
+    "ci95": 9e-05,
+    "p_delta_gt0": 0.995,
+    "separated": true,
+    "statistic": "d_r2_yaw_rate",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "n_boot_valid": 200,
+    "estimator": "paired_ap_episode_cluster_bootstrap"
+   },
+   "r2_steer": {
+    "delta": 0.3827,
+    "lo": -5.11943,
+    "hi": 0.46603,
+    "ci95": 2.79273,
+    "p_delta_gt0": 0.635,
+    "separated": false,
+    "statistic": "d_r2_steer",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "n_boot_valid": 200,
+    "estimator": "paired_ap_episode_cluster_bootstrap"
+   },
+   "r2_long_accel": {
+    "delta": 0.0,
+    "lo": -3e-05,
+    "hi": 5e-05,
+    "ci95": 4e-05,
+    "p_delta_gt0": 0.595,
+    "separated": false,
+    "statistic": "d_r2_long_accel",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "n_boot_valid": 200,
+    "estimator": "paired_ap_episode_cluster_bootstrap"
+   },
+   "ade_2s": {
+    "delta": -6.1644,
+    "lo": -8.7357,
+    "hi": -3.6288,
+    "ci95": 2.5535,
+    "p_delta_gt0": 0.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "estimator": "paired_episode_cluster_bootstrap"
+   }
+  },
+  "RIDGE_rbf_centre_minus_CTRL": {
+   "r2_speed": {
+    "delta": 0.59236,
+    "lo": 0.32845,
+    "hi": 0.81256,
+    "ci95": 0.24206,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "statistic": "d_r2_speed",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "n_boot_valid": 200,
+    "estimator": "paired_ap_episode_cluster_bootstrap"
+   },
+   "r2_yaw_rate": {
+    "delta": 0.0,
+    "lo": -0.0,
+    "hi": 0.0,
+    "ci95": 0.0,
+    "p_delta_gt0": 0.865,
+    "separated": false,
+    "statistic": "d_r2_yaw_rate",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "n_boot_valid": 200,
+    "estimator": "paired_ap_episode_cluster_bootstrap"
+   },
+   "r2_steer": {
+    "delta": 0.0,
+    "lo": -0.0,
+    "hi": 0.0,
+    "ci95": 0.0,
+    "p_delta_gt0": 0.745,
+    "separated": false,
+    "statistic": "d_r2_steer",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "n_boot_valid": 200,
+    "estimator": "paired_ap_episode_cluster_bootstrap",
+    "degenerate": true,
+    "degenerate_note": "the two arms emit IDENTICAL predictions on this channel (both fell back to the train mean). No contrast exists; `separated` is forced False and must not be quoted."
+   },
+   "r2_long_accel": {
+    "delta": -0.00043,
+    "lo": -0.0182,
+    "hi": 0.01242,
+    "ci95": 0.01531,
+    "p_delta_gt0": 0.49,
+    "separated": false,
+    "statistic": "d_r2_long_accel",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "n_boot_valid": 200,
+    "estimator": "paired_ap_episode_cluster_bootstrap"
+   },
+   "ade_2s": {
+    "delta": -5.3397,
+    "lo": -7.6222,
+    "hi": -2.5096,
+    "ci95": 2.5563,
+    "p_delta_gt0": 0.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "estimator": "paired_episode_cluster_bootstrap"
+   }
+  },
+  "RIDGE_rbf_centre_minus_NULLMEAN": {
+   "r2_speed": {
+    "delta": 0.59236,
+    "lo": 0.32845,
+    "hi": 0.81256,
+    "ci95": 0.24206,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "statistic": "d_r2_speed",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "n_boot_valid": 200,
+    "estimator": "paired_ap_episode_cluster_bootstrap"
+   },
+   "r2_yaw_rate": {
+    "delta": -0.0,
+    "lo": -0.0,
+    "hi": 0.0,
+    "ci95": 0.0,
+    "p_delta_gt0": 0.1,
+    "separated": false,
+    "statistic": "d_r2_yaw_rate",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "n_boot_valid": 200,
+    "estimator": "paired_ap_episode_cluster_bootstrap",
+    "degenerate": true,
+    "degenerate_note": "the two arms emit IDENTICAL predictions on this channel (both fell back to the train mean). No contrast exists; `separated` is forced False and must not be quoted."
+   },
+   "r2_steer": {
+    "delta": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "ci95": 0.0,
+    "p_delta_gt0": 1.0,
+    "separated": false,
+    "statistic": "d_r2_steer",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "n_boot_valid": 200,
+    "estimator": "paired_ap_episode_cluster_bootstrap",
+    "degenerate": true,
+    "degenerate_note": "the two arms emit IDENTICAL predictions on this channel (both fell back to the train mean). No contrast exists; `separated` is forced False and must not be quoted."
+   },
+   "r2_long_accel": {
+    "delta": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "ci95": 0.0,
+    "p_delta_gt0": 0.985,
+    "separated": true,
+    "statistic": "d_r2_long_accel",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "n_boot_valid": 200,
+    "estimator": "paired_ap_episode_cluster_bootstrap"
+   },
+   "ade_2s": {
+    "delta": -5.3397,
+    "lo": -7.6222,
+    "hi": -2.5096,
+    "ci95": 2.5563,
+    "p_delta_gt0": 0.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "estimator": "paired_episode_cluster_bootstrap"
+   }
+  },
+  "RIDGE_rbf_window_minus_CTRL": {
+   "r2_speed": {
+    "delta": 0.63735,
+    "lo": 0.38992,
+    "hi": 0.86417,
+    "ci95": 0.23713,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "statistic": "d_r2_speed",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "n_boot_valid": 200,
+    "estimator": "paired_ap_episode_cluster_bootstrap"
+   },
+   "r2_yaw_rate": {
+    "delta": 0.0,
+    "lo": -0.0,
+    "hi": 0.0,
+    "ci95": 0.0,
+    "p_delta_gt0": 0.875,
+    "separated": false,
+    "statistic": "d_r2_yaw_rate",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "n_boot_valid": 200,
+    "estimator": "paired_ap_episode_cluster_bootstrap"
+   },
+   "r2_steer": {
+    "delta": 0.39859,
+    "lo": -0.43121,
+    "hi": 0.44077,
+    "ci95": 0.43599,
+    "p_delta_gt0": 0.805,
+    "separated": false,
+    "statistic": "d_r2_steer",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "n_boot_valid": 200,
+    "estimator": "paired_ap_episode_cluster_bootstrap"
+   },
+   "r2_long_accel": {
+    "delta": 0.00194,
+    "lo": -0.01673,
+    "hi": 0.01482,
+    "ci95": 0.01578,
+    "p_delta_gt0": 0.585,
+    "separated": false,
+    "statistic": "d_r2_long_accel",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "n_boot_valid": 200,
+    "estimator": "paired_ap_episode_cluster_bootstrap"
+   },
+   "ade_2s": {
+    "delta": -5.7087,
+    "lo": -8.1983,
+    "hi": -2.9265,
+    "ci95": 2.6359,
+    "p_delta_gt0": 0.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "estimator": "paired_episode_cluster_bootstrap"
+   }
+  },
+  "RIDGE_rbf_window_minus_NULLMEAN": {
+   "r2_speed": {
+    "delta": 0.63735,
+    "lo": 0.38992,
+    "hi": 0.86417,
+    "ci95": 0.23713,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "statistic": "d_r2_speed",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "n_boot_valid": 200,
+    "estimator": "paired_ap_episode_cluster_bootstrap"
+   },
+   "r2_yaw_rate": {
+    "delta": -0.0,
+    "lo": -0.0,
+    "hi": 0.0,
+    "ci95": 0.0,
+    "p_delta_gt0": 0.15,
+    "separated": false,
+    "statistic": "d_r2_yaw_rate",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "n_boot_valid": 200,
+    "estimator": "paired_ap_episode_cluster_bootstrap",
+    "degenerate": true,
+    "degenerate_note": "the two arms emit IDENTICAL predictions on this channel (both fell back to the train mean). No contrast exists; `separated` is forced False and must not be quoted."
+   },
+   "r2_steer": {
+    "delta": 0.39859,
+    "lo": -0.43121,
+    "hi": 0.44077,
+    "ci95": 0.43599,
+    "p_delta_gt0": 0.805,
+    "separated": false,
+    "statistic": "d_r2_steer",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "n_boot_valid": 200,
+    "estimator": "paired_ap_episode_cluster_bootstrap"
+   },
+   "r2_long_accel": {
+    "delta": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "ci95": 0.0,
+    "p_delta_gt0": 0.985,
+    "separated": true,
+    "statistic": "d_r2_long_accel",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "n_boot_valid": 200,
+    "estimator": "paired_ap_episode_cluster_bootstrap"
+   },
+   "ade_2s": {
+    "delta": -5.7087,
+    "lo": -8.1983,
+    "hi": -2.9265,
+    "ci95": 2.6359,
+    "p_delta_gt0": 0.0,
+    "separated": true,
+    "reducer": "mean",
+    "n_windows": 2346,
+    "n_episodes": 17,
+    "n_boot": 200,
+    "estimator": "paired_episode_cluster_bootstrap"
+   }
+  }
+ },
+ "stages_run": [
+  "ridge"
+ ]
+}

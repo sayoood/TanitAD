@@ -1,0 +1,4213 @@
+{
+  "what": "close-following / cut-in discriminating panel on REAL scene geometry",
+  "scene": "7c72937c-c620-4776-9555-d57222c0081f",
+  "evidence_class": "MEASURED (this agent, artifacts in results/scene2-realclose/)",
+  "REFUTES": {
+    "claim": "'No close-following / cut-in geometry exists in the material we have' \u2014 results/cutin/CUTIN_PANEL.json, provenance.geometry_FOUND_in_scene = false.",
+    "why_it_was_wrong": "the two probes cited for it (sequence_tracks.json and clipgt/obstacle.parquet) read the SAME scene, 00040136. Two tables of one scene are one location, not two. Thor holds TWO NuRec scenes; 7c72937c was never probed.",
+    "root_cause_class": "absence-at-one-location asserted as absence (AGENT_OPERATING_STANDARD rule 2)",
+    "corrected_finding": {
+      "min_inlane_headway_m": 3.268,
+      "n_close_following_rows": 146,
+      "n_cutin_events": 44,
+      "scene_00040136_for_comparison": {
+        "min_inlane_headway_m": 46.246,
+        "n_close_following_rows": 0,
+        "n_cutin_events": 0
+      },
+      "probe1_sequence_tracks_json": {
+        "min_inlane_headway_m": 3.268,
+        "n_close_following_rows": 146
+      },
+      "probe2_obstacle_parquet": {
+        "available": true,
+        "path": "/home/nvidia/nurec_scenes/sample_set/26.04_release/7c72937c-c620-4776-9555-d57222c0081f/extracted/clipgt/obstacle.parquet",
+        "n_rows": 10543,
+        "n_infov_ahead_rows": 4984,
+        "n_inlane_ahead_rows": 347,
+        "min_inlane_headway_m": 3.234,
+        "n_close_following_rows": 146,
+        "closest_5_inlane": [
+          {
+            "k": 13,
+            "track_id": "30",
+            "label": "automobile",
+            "x": 8.911,
+            "y": -0.109,
+            "headway_m": 3.234,
+            "time_gap_s": Infinity
+          },
+          {
+            "k": 14,
+            "track_id": "30",
+            "label": "automobile",
+            "x": 8.911,
+            "y": -0.108,
+            "headway_m": 3.234,
+            "time_gap_s": Infinity
+          },
+          {
+            "k": 15,
+            "track_id": "30",
+            "label": "automobile",
+            "x": 8.912,
+            "y": -0.107,
+            "headway_m": 3.235,
+            "time_gap_s": Infinity
+          },
+          {
+            "k": 12,
+            "track_id": "30",
+            "label": "automobile",
+            "x": 8.913,
+            "y": -0.11,
+            "headway_m": 3.236,
+            "time_gap_s": Infinity
+          },
+          {
+            "k": 11,
+            "track_id": "30",
+            "label": "automobile",
+            "x": 8.915,
+            "y": -0.109,
+            "headway_m": 3.238,
+            "time_gap_s": Infinity
+          }
+        ],
+        "agrees_with_probe1": true
+      },
+      "self_consistency_control": {
+        "n": 149,
+        "future_x_min_m": 2.075,
+        "future_x_median_m": 5.957,
+        "future_absy_median_m": 0.091,
+        "frac_x_positive": 1.0,
+        "verdict": "PASS"
+      }
+    },
+    "the_constructed_lead_was_never_necessary": "synth_actor.py's lead25/lead15/lead8/cutin conditions were built because the geometry was believed absent. They remain valid as a dose-response instrument, but they are no longer the only way to test the question."
+  },
+  "SECOND_DEFECT_FIXED": {
+    "what": "actor_map.py's relative-margin rule discarded 31 of 92 cuboids that matched their track at cost EXACTLY 0 us \u2014 including BOTH vehicles the ego follows and ALL THREE cut-in tracks.",
+    "consequence_before_fix": {
+      "n_close_following_rows_RENDERABLE": 0,
+      "n_cutin_events_RENDERABLE": 0,
+      "meaning": "the scene's real close-following geometry was invisible to the renderer, so the test could not have seen it."
+    },
+    "after_fix": {
+      "n_close_following_rows_RENDERABLE": 146,
+      "n_cutin_events_RENDERABLE": 21,
+      "n_renderable_tracks": 92
+    },
+    "adjudicated_by_pixels_not_by_argument": {
+      "strict_margin": {
+        "n_mapped": 61,
+        "falsifier": [
+          {
+            "frame": 0,
+            "grad_ncc_actors_off": 0.393,
+            "grad_ncc_actors_on": 0.4399,
+            "grad_ncc_actors_on_WRONG_TIME": 0.3943,
+            "delta_on_minus_off": 0.0469,
+            "delta_on_minus_wrongtime": 0.0456,
+            "pixels_changed_by_actors": 154733,
+            "pass": true
+          },
+          {
+            "frame": 60,
+            "grad_ncc_actors_off": 0.4032,
+            "grad_ncc_actors_on": 0.4597,
+            "grad_ncc_actors_on_WRONG_TIME": 0.4353,
+            "delta_on_minus_off": 0.0565,
+            "delta_on_minus_wrongtime": 0.0244,
+            "pixels_changed_by_actors": 166601,
+            "pass": true
+          },
+          {
+            "frame": 120,
+            "grad_ncc_actors_off": 0.3604,
+            "grad_ncc_actors_on": 0.4025,
+            "grad_ncc_actors_on_WRONG_TIME": 0.3743,
+            "delta_on_minus_off": 0.042,
+            "delta_on_minus_wrongtime": 0.0282,
+            "pixels_changed_by_actors": 157517,
+            "pass": true
+          }
+        ],
+        "mean_grad_ncc_on": 0.434,
+        "mean_delta_on_minus_off": 0.0485
+      },
+      "relaxed_exact_or_margin": {
+        "n_mapped": 92,
+        "falsifier": [
+          {
+            "frame": 0,
+            "grad_ncc_actors_off": 0.393,
+            "grad_ncc_actors_on": 0.5318,
+            "grad_ncc_actors_on_WRONG_TIME": 0.4216,
+            "delta_on_minus_off": 0.1388,
+            "delta_on_minus_wrongtime": 0.1101,
+            "pixels_changed_by_actors": 629391,
+            "pass": true
+          },
+          {
+            "frame": 60,
+            "grad_ncc_actors_off": 0.4032,
+            "grad_ncc_actors_on": 0.5785,
+            "grad_ncc_actors_on_WRONG_TIME": 0.4369,
+            "delta_on_minus_off": 0.1753,
+            "delta_on_minus_wrongtime": 0.1416,
+            "pixels_changed_by_actors": 639834,
+            "pass": true
+          },
+          {
+            "frame": 120,
+            "grad_ncc_actors_off": 0.3604,
+            "grad_ncc_actors_on": 0.4886,
+            "grad_ncc_actors_on_WRONG_TIME": 0.3746,
+            "delta_on_minus_off": 0.1281,
+            "delta_on_minus_wrongtime": 0.114,
+            "pixels_changed_by_actors": 528901,
+            "pass": true
+          }
+        ],
+        "mean_grad_ncc_on": 0.533,
+        "mean_delta_on_minus_off": 0.1474
+      },
+      "verdict": "RELAXED WINS ON PIXELS"
+    },
+    "assignment_is_a_bijection": "all 92 best_track values distinct, all at best_cost_us == 0 \u2014 nothing ambiguous was let in"
+  },
+  "THIRD_DEFECT_FIXED": {
+    "what": "cl_metrics.py read only `s_route_logits`; refc-base emits `route_logits`, so the panel published REF-C's STRATEGIC route head as absent \u2014 false.",
+    "now": "both names probed; REF-C's route head scores on 403 windows."
+  },
+  "FOURTH_DEFECT_FOUND": {
+    "what": "the STRATEGIC route metric is CIRCULAR on flagship-v1: its route head is a deterministic bijection of the nav command the harness FEEDS it (nav=1 -> head=0 on 369/369, nav=0 -> head=1 on 81/81).",
+    "consequence": "flagship-v1 scored route_head_eq_logged = 1.0000 [1.0000, 1.0000] on 417 windows. That is the echo of its own conditioning input, NOT strategic skill. Do not quote it.",
+    "refc_base_is_not_an_echo": "head is not a function of nav; scores 0.2605 [0.1119, 0.4537] on 403 windows.",
+    "guard": "cl_metrics.families() now computes route_head_nav_echo_check and stamps CIRCULAR_NAV_ECHO / do_not_quote on the affected metrics."
+  },
+  "NEGATIVE_CONTROL_the_instrument_discriminates": {
+    "why_this_is_reported_first": "a null is only worth reading if the instrument could have shown an effect. Same 450 windows, same estimator, cross-arm contrast:",
+    "flagship_minus_refc_in_objects_separated": 14,
+    "flagship_minus_refc_in_empty_separated": 13,
+    "of_n_metrics": 19,
+    "verdict": "PASS \u2014 the panel separates arms decisively on these windows, so the objects-vs-empty null below is a property of the ARMS, not a dead instrument."
+  },
+  "HEADLINE": {
+    "objects_vs_empty_flagship_separated": 0,
+    "objects_vs_empty_refc_separated": 0,
+    "of_n_metrics": 19,
+    "reading": "NEITHER ARM MEASURABLY REACTS to real dynamic agents \u2014 now established at BUMPER-TO-BUMPER range (min in-lane headway 3.268 m, actors ~30 % of frame), not only at the 40-45 m / 0.02-0.4 %-of-frame distance that made the first null dismissible."
+  },
+  "paired_contrasts": {
+    "flagship-v1_objects_minus_empty": {
+      "ade_0_2s": {
+        "delta": -0.139,
+        "lo": -0.9046,
+        "hi": 0.5592,
+        "n_used": 450,
+        "separated": false
+      },
+      "dist_to_gt_traj_m": {
+        "delta": -0.1043,
+        "lo": -0.547,
+        "hi": 0.3128,
+        "n_used": 450,
+        "separated": false
+      },
+      "abs_target_speed_err_ms": {
+        "delta": -0.1613,
+        "lo": -0.8153,
+        "hi": 0.4409,
+        "n_used": 450,
+        "separated": false
+      },
+      "along_track_ade_m": {
+        "delta": -0.1907,
+        "lo": -0.9692,
+        "hi": 0.4999,
+        "n_used": 450,
+        "separated": false
+      },
+      "heading_err_rad": {
+        "delta": 0.0017,
+        "lo": -0.0076,
+        "hi": 0.0111,
+        "n_used": 450,
+        "separated": false
+      },
+      "curvature_err_1pm": {
+        "delta": 0.0001,
+        "lo": -0.0005,
+        "hi": 0.0007,
+        "n_used": 450,
+        "separated": false
+      },
+      "yawrate_err_rads": {
+        "delta": -0.0002,
+        "lo": -0.004,
+        "hi": 0.0036,
+        "n_used": 450,
+        "separated": false
+      },
+      "cross_track_abs_m": {
+        "delta": -0.1043,
+        "lo": -0.547,
+        "hi": 0.3128,
+        "n_used": 450,
+        "separated": false
+      },
+      "manoeuvre_plan_eq_logged": {
+        "delta": 0.0022,
+        "lo": -0.0422,
+        "hi": 0.0467,
+        "n_used": 450,
+        "separated": false
+      },
+      "lateral_ade_m": {
+        "delta": 0.0327,
+        "lo": -0.0121,
+        "hi": 0.0866,
+        "n_used": 450,
+        "separated": false
+      },
+      "executed_speed_err_ms": {
+        "delta": -0.2108,
+        "lo": -0.5689,
+        "hi": 0.1033,
+        "n_used": 450,
+        "separated": false
+      },
+      "abs_executed_speed_err_ms": {
+        "delta": -0.2688,
+        "lo": -0.605,
+        "hi": 0.029,
+        "n_used": 450,
+        "separated": false
+      },
+      "synth_lead_headway_m": {
+        "n": 0,
+        "reason": "no jointly finite windows"
+      },
+      "synth_lead_time_gap_s": {
+        "n": 0,
+        "reason": "no jointly finite windows"
+      },
+      "synth_lead_frac_tg_below_1s": {
+        "n": 0,
+        "reason": "no jointly finite windows"
+      },
+      "synth_lead_collision_rate_inlane": {
+        "n": 0,
+        "reason": "no jointly finite windows"
+      },
+      "real_lead_headway_m": {
+        "delta": -3.085,
+        "lo": -7.0906,
+        "hi": 0.9169,
+        "n_used": 220,
+        "separated": false
+      },
+      "real_lead_time_gap_s": {
+        "delta": -0.2445,
+        "lo": -0.5627,
+        "hi": 0.0844,
+        "n_used": 220,
+        "separated": false
+      },
+      "real_lead_frac_tg_below_1s": {
+        "delta": 0.0591,
+        "lo": -0.0099,
+        "hi": 0.1245,
+        "n_used": 220,
+        "separated": false
+      },
+      "real_lead_ttc_s_when_closing": {
+        "delta": -0.2451,
+        "lo": -0.9381,
+        "hi": 0.0892,
+        "n_used": 112,
+        "separated": false
+      },
+      "manoeuvre_head_eq_logged": {
+        "delta": 0.0356,
+        "lo": -0.0022,
+        "hi": 0.0778,
+        "n_used": 450,
+        "separated": false
+      },
+      "route_head_eq_logged": {
+        "delta": 0.0,
+        "lo": 0.0,
+        "hi": 0.0,
+        "n_used": 415,
+        "separated": false
+      },
+      "route_corridor_departure_rate": {
+        "delta": 0.0133,
+        "lo": -0.0422,
+        "hi": 0.0756,
+        "n_used": 450,
+        "separated": false
+      }
+    },
+    "refc-base_objects_minus_empty": {
+      "ade_0_2s": {
+        "delta": -0.1567,
+        "lo": -0.3569,
+        "hi": 0.0028,
+        "n_used": 450,
+        "separated": false
+      },
+      "dist_to_gt_traj_m": {
+        "delta": 0.0589,
+        "lo": -0.1605,
+        "hi": 0.2992,
+        "n_used": 450,
+        "separated": false
+      },
+      "abs_target_speed_err_ms": {
+        "delta": -0.2161,
+        "lo": -0.4486,
+        "hi": 0.0114,
+        "n_used": 450,
+        "separated": false
+      },
+      "along_track_ade_m": {
+        "delta": -0.1591,
+        "lo": -0.4367,
+        "hi": 0.0937,
+        "n_used": 450,
+        "separated": false
+      },
+      "heading_err_rad": {
+        "delta": 0.0224,
+        "lo": -0.0123,
+        "hi": 0.057,
+        "n_used": 450,
+        "separated": false
+      },
+      "curvature_err_1pm": {
+        "delta": 0.0096,
+        "lo": -0.0008,
+        "hi": 0.0261,
+        "n_used": 450,
+        "separated": false
+      },
+      "yawrate_err_rads": {
+        "delta": -0.0017,
+        "lo": -0.0098,
+        "hi": 0.0058,
+        "n_used": 450,
+        "separated": false
+      },
+      "cross_track_abs_m": {
+        "delta": 0.0589,
+        "lo": -0.1605,
+        "hi": 0.2992,
+        "n_used": 450,
+        "separated": false
+      },
+      "manoeuvre_plan_eq_logged": {
+        "delta": -0.0422,
+        "lo": -0.1133,
+        "hi": 0.0044,
+        "n_used": 450,
+        "separated": false
+      },
+      "lateral_ade_m": {
+        "delta": 0.0358,
+        "lo": -0.0354,
+        "hi": 0.1163,
+        "n_used": 450,
+        "separated": false
+      },
+      "executed_speed_err_ms": {
+        "delta": 0.1378,
+        "lo": -0.0366,
+        "hi": 0.3145,
+        "n_used": 450,
+        "separated": false
+      },
+      "abs_executed_speed_err_ms": {
+        "delta": -0.1471,
+        "lo": -0.3248,
+        "hi": 0.0273,
+        "n_used": 450,
+        "separated": false
+      },
+      "synth_lead_headway_m": {
+        "n": 0,
+        "reason": "no jointly finite windows"
+      },
+      "synth_lead_time_gap_s": {
+        "n": 0,
+        "reason": "no jointly finite windows"
+      },
+      "synth_lead_frac_tg_below_1s": {
+        "n": 0,
+        "reason": "no jointly finite windows"
+      },
+      "synth_lead_collision_rate_inlane": {
+        "n": 0,
+        "reason": "no jointly finite windows"
+      },
+      "real_lead_headway_m": {
+        "delta": 0.2584,
+        "lo": -0.1674,
+        "hi": 0.621,
+        "n_used": 236,
+        "separated": false
+      },
+      "real_lead_time_gap_s": {
+        "delta": 1.9479,
+        "lo": -0.0502,
+        "hi": 3.8341,
+        "n_used": 236,
+        "separated": false
+      },
+      "real_lead_frac_tg_below_1s": {
+        "delta": -0.0381,
+        "lo": -0.0893,
+        "hi": 0.0,
+        "n_used": 236,
+        "separated": false
+      },
+      "real_lead_ttc_s_when_closing": {
+        "delta": 3.6475,
+        "lo": -0.0193,
+        "hi": 6.0921,
+        "n_used": 25,
+        "separated": false
+      },
+      "manoeuvre_head_eq_logged": {
+        "delta": -0.0378,
+        "lo": -0.1,
+        "hi": 0.0,
+        "n_used": 450,
+        "separated": false
+      },
+      "route_head_eq_logged": {
+        "delta": 0.0447,
+        "lo": -0.0054,
+        "hi": 0.1111,
+        "n_used": 403,
+        "separated": false
+      },
+      "route_corridor_departure_rate": {
+        "delta": 0.0089,
+        "lo": -0.0044,
+        "hi": 0.0244,
+        "n_used": 450,
+        "separated": false
+      }
+    },
+    "flagship_minus_refc_in_objects": {
+      "ade_0_2s": {
+        "delta": 2.7824,
+        "lo": 1.3983,
+        "hi": 4.1244,
+        "n_used": 450,
+        "separated": true
+      },
+      "dist_to_gt_traj_m": {
+        "delta": 3.7331,
+        "lo": 2.0629,
+        "hi": 5.5117,
+        "n_used": 450,
+        "separated": true
+      },
+      "abs_target_speed_err_ms": {
+        "delta": 3.5923,
+        "lo": 2.5621,
+        "hi": 4.6657,
+        "n_used": 450,
+        "separated": true
+      },
+      "along_track_ade_m": {
+        "delta": 3.0872,
+        "lo": 1.3454,
+        "hi": 4.8373,
+        "n_used": 450,
+        "separated": true
+      },
+      "heading_err_rad": {
+        "delta": 0.05,
+        "lo": -0.1376,
+        "hi": 0.2273,
+        "n_used": 450,
+        "separated": false
+      },
+      "curvature_err_1pm": {
+        "delta": -0.0143,
+        "lo": -0.0321,
+        "hi": 0.0025,
+        "n_used": 450,
+        "separated": false
+      },
+      "yawrate_err_rads": {
+        "delta": 0.0591,
+        "lo": 0.0007,
+        "hi": 0.1224,
+        "n_used": 450,
+        "separated": true
+      },
+      "cross_track_abs_m": {
+        "delta": 3.7331,
+        "lo": 2.0629,
+        "hi": 5.5117,
+        "n_used": 450,
+        "separated": true
+      },
+      "manoeuvre_plan_eq_logged": {
+        "delta": 0.1978,
+        "lo": 0.0488,
+        "hi": 0.3401,
+        "n_used": 450,
+        "separated": true
+      },
+      "lateral_ade_m": {
+        "delta": 0.4035,
+        "lo": 0.0172,
+        "hi": 0.7766,
+        "n_used": 450,
+        "separated": true
+      },
+      "executed_speed_err_ms": {
+        "delta": 4.3516,
+        "lo": 3.4397,
+        "hi": 5.3753,
+        "n_used": 450,
+        "separated": true
+      },
+      "abs_executed_speed_err_ms": {
+        "delta": 1.5066,
+        "lo": 0.2243,
+        "hi": 2.8468,
+        "n_used": 450,
+        "separated": true
+      },
+      "synth_lead_headway_m": {
+        "n": 0,
+        "reason": "no jointly finite windows"
+      },
+      "synth_lead_time_gap_s": {
+        "n": 0,
+        "reason": "no jointly finite windows"
+      },
+      "synth_lead_frac_tg_below_1s": {
+        "n": 0,
+        "reason": "no jointly finite windows"
+      },
+      "synth_lead_collision_rate_inlane": {
+        "n": 0,
+        "reason": "no jointly finite windows"
+      },
+      "real_lead_headway_m": {
+        "delta": 3.0969,
+        "lo": -0.407,
+        "hi": 8.7494,
+        "n_used": 200,
+        "separated": false
+      },
+      "real_lead_time_gap_s": {
+        "delta": -3.892,
+        "lo": -6.5363,
+        "hi": 0.1341,
+        "n_used": 200,
+        "separated": false
+      },
+      "real_lead_frac_tg_below_1s": {
+        "delta": 0.35,
+        "lo": 0.0843,
+        "hi": 0.4742,
+        "n_used": 200,
+        "separated": true
+      },
+      "real_lead_ttc_s_when_closing": {
+        "delta": -5.5227,
+        "lo": -8.6766,
+        "hi": -0.2661,
+        "n_used": 16,
+        "separated": true
+      },
+      "manoeuvre_head_eq_logged": {
+        "delta": 0.0222,
+        "lo": -0.0689,
+        "hi": 0.1089,
+        "n_used": 450,
+        "separated": false
+      },
+      "route_head_eq_logged": {
+        "delta": 0.7406,
+        "lo": 0.5464,
+        "hi": 0.8889,
+        "n_used": 401,
+        "separated": true
+      },
+      "route_corridor_departure_rate": {
+        "delta": 0.1489,
+        "lo": 0.0555,
+        "hi": 0.2489,
+        "n_used": 450,
+        "separated": true
+      }
+    },
+    "flagship_minus_refc_in_empty": {
+      "ade_0_2s": {
+        "delta": 2.7646,
+        "lo": 1.4007,
+        "hi": 4.1916,
+        "n_used": 450,
+        "separated": true
+      },
+      "dist_to_gt_traj_m": {
+        "delta": 3.8964,
+        "lo": 2.0052,
+        "hi": 5.8806,
+        "n_used": 450,
+        "separated": true
+      },
+      "abs_target_speed_err_ms": {
+        "delta": 3.5375,
+        "lo": 2.4212,
+        "hi": 4.711,
+        "n_used": 450,
+        "separated": true
+      },
+      "along_track_ade_m": {
+        "delta": 3.1188,
+        "lo": 1.3514,
+        "hi": 4.9703,
+        "n_used": 450,
+        "separated": true
+      },
+      "heading_err_rad": {
+        "delta": 0.0707,
+        "lo": -0.1155,
+        "hi": 0.2497,
+        "n_used": 450,
+        "separated": false
+      },
+      "curvature_err_1pm": {
+        "delta": -0.0049,
+        "lo": -0.0199,
+        "hi": 0.0099,
+        "n_used": 450,
+        "separated": false
+      },
+      "yawrate_err_rads": {
+        "delta": 0.0576,
+        "lo": -0.0006,
+        "hi": 0.1224,
+        "n_used": 450,
+        "separated": false
+      },
+      "cross_track_abs_m": {
+        "delta": 3.8964,
+        "lo": 2.0052,
+        "hi": 5.8806,
+        "n_used": 450,
+        "separated": true
+      },
+      "manoeuvre_plan_eq_logged": {
+        "delta": 0.1533,
+        "lo": 0.0422,
+        "hi": 0.2844,
+        "n_used": 450,
+        "separated": true
+      },
+      "lateral_ade_m": {
+        "delta": 0.4065,
+        "lo": 0.0429,
+        "hi": 0.7591,
+        "n_used": 450,
+        "separated": true
+      },
+      "executed_speed_err_ms": {
+        "delta": 4.7002,
+        "lo": 3.6809,
+        "hi": 5.7557,
+        "n_used": 450,
+        "separated": true
+      },
+      "abs_executed_speed_err_ms": {
+        "delta": 1.6283,
+        "lo": 0.2767,
+        "hi": 3.0512,
+        "n_used": 450,
+        "separated": true
+      },
+      "synth_lead_headway_m": {
+        "n": 0,
+        "reason": "no jointly finite windows"
+      },
+      "synth_lead_time_gap_s": {
+        "n": 0,
+        "reason": "no jointly finite windows"
+      },
+      "synth_lead_frac_tg_below_1s": {
+        "n": 0,
+        "reason": "no jointly finite windows"
+      },
+      "synth_lead_collision_rate_inlane": {
+        "n": 0,
+        "reason": "no jointly finite windows"
+      },
+      "real_lead_headway_m": {
+        "delta": 8.3791,
+        "lo": 4.2896,
+        "hi": 14.8085,
+        "n_used": 219,
+        "separated": true
+      },
+      "real_lead_time_gap_s": {
+        "delta": -1.3972,
+        "lo": -2.4836,
+        "hi": 0.447,
+        "n_used": 219,
+        "separated": false
+      },
+      "real_lead_frac_tg_below_1s": {
+        "delta": 0.2237,
+        "lo": -0.0653,
+        "hi": 0.4049,
+        "n_used": 219,
+        "separated": false
+      },
+      "real_lead_ttc_s_when_closing": {
+        "delta": -8.6034,
+        "lo": -19.4905,
+        "hi": -0.2768,
+        "n_used": 27,
+        "separated": true
+      },
+      "manoeuvre_head_eq_logged": {
+        "delta": -0.0511,
+        "lo": -0.1489,
+        "hi": 0.0578,
+        "n_used": 450,
+        "separated": false
+      },
+      "route_head_eq_logged": {
+        "delta": 0.7861,
+        "lo": 0.5763,
+        "hi": 0.9333,
+        "n_used": 402,
+        "separated": true
+      },
+      "route_corridor_departure_rate": {
+        "delta": 0.1444,
+        "lo": 0.0578,
+        "hi": 0.2444,
+        "n_used": 450,
+        "separated": true
+      }
+    }
+  },
+  "cutin_window_subset": {
+    "flagship-v1": {
+      "denominator": {
+        "n_all_paired_windows": 450,
+        "n_cutin_windows": 107,
+        "cutin_share": 0.2378,
+        "n_renderable_cutin_events": 21,
+        "n_cutin_ticks": 46,
+        "post_ticks_reaction_window": 20,
+        "n_clusters_all": 9,
+        "n_clusters_cutin": 3,
+        "note": "cut-in ticks come from the SCENE annotation (scene_geometry.py, renderable tracks only), never from the rollouts."
+      },
+      "paired": {
+        "ade_0_2s": {
+          "delta": 0.6548,
+          "lo": -0.8742,
+          "hi": 1.5738,
+          "n_used": 107,
+          "family": "ADE",
+          "separated": false
+        },
+        "dist_to_gt_traj_m": {
+          "delta": 0.061,
+          "lo": -1.1885,
+          "hi": 0.5585,
+          "n_used": 107,
+          "family": "ADE",
+          "separated": false
+        },
+        "abs_target_speed_err_ms": {
+          "delta": 0.4919,
+          "lo": -0.9148,
+          "hi": 1.3774,
+          "n_used": 107,
+          "family": "LONGITUDINAL",
+          "separated": false
+        },
+        "along_track_ade_m": {
+          "delta": 0.5932,
+          "lo": -1.0255,
+          "hi": 1.5722,
+          "n_used": 107,
+          "family": "LONGITUDINAL",
+          "separated": false
+        },
+        "heading_err_rad": {
+          "delta": 0.0227,
+          "lo": -0.0073,
+          "hi": 0.0675,
+          "n_used": 107,
+          "family": "LATERAL",
+          "separated": false
+        },
+        "curvature_err_1pm": {
+          "delta": 0.0012,
+          "lo": -0.0008,
+          "hi": 0.0042,
+          "n_used": 107,
+          "family": "LATERAL",
+          "separated": false
+        },
+        "yawrate_err_rads": {
+          "delta": 0.0083,
+          "lo": -0.0061,
+          "hi": 0.0263,
+          "n_used": 107,
+          "family": "LATERAL",
+          "separated": false
+        },
+        "cross_track_abs_m": {
+          "delta": 0.061,
+          "lo": -1.1885,
+          "hi": 0.5585,
+          "n_used": 107,
+          "family": "LATERAL",
+          "separated": false
+        },
+        "lateral_ade_m": {
+          "delta": 0.1227,
+          "lo": 0.0053,
+          "hi": 0.297,
+          "n_used": 107,
+          "family": "LATERAL",
+          "separated": true
+        },
+        "manoeuvre_plan_eq_logged": {
+          "delta": 0.0,
+          "lo": -0.0588,
+          "hi": 0.0435,
+          "n_used": 107,
+          "family": "TACTICAL",
+          "separated": false
+        },
+        "manoeuvre_head_eq_logged": {
+          "delta": -0.0093,
+          "lo": -0.0588,
+          "hi": 0.0217,
+          "n_used": 107,
+          "family": "TACTICAL",
+          "separated": false
+        },
+        "route_corridor_departure_rate": {
+          "delta": 0.028,
+          "lo": 0.0,
+          "hi": 0.0882,
+          "n_used": 107,
+          "family": "STRATEGIC",
+          "separated": false
+        },
+        "route_head_eq_logged": {
+          "delta": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_used": 72,
+          "family": "STRATEGIC",
+          "separated": false
+        }
+      }
+    },
+    "refc-base": {
+      "denominator": {
+        "n_all_paired_windows": 450,
+        "n_cutin_windows": 99,
+        "cutin_share": 0.22,
+        "n_renderable_cutin_events": 21,
+        "n_cutin_ticks": 46,
+        "post_ticks_reaction_window": 20,
+        "n_clusters_all": 9,
+        "n_clusters_cutin": 3,
+        "note": "cut-in ticks come from the SCENE annotation (scene_geometry.py, renderable tracks only), never from the rollouts."
+      },
+      "paired": {
+        "ade_0_2s": {
+          "delta": -0.3812,
+          "lo": -0.9064,
+          "hi": 0.1206,
+          "n_used": 99,
+          "family": "ADE",
+          "separated": false
+        },
+        "dist_to_gt_traj_m": {
+          "delta": 0.3083,
+          "lo": -0.6685,
+          "hi": 0.7535,
+          "n_used": 99,
+          "family": "ADE",
+          "separated": false
+        },
+        "abs_target_speed_err_ms": {
+          "delta": -0.2862,
+          "lo": -0.6753,
+          "hi": 0.0564,
+          "n_used": 99,
+          "family": "LONGITUDINAL",
+          "separated": false
+        },
+        "along_track_ade_m": {
+          "delta": -0.4161,
+          "lo": -0.9774,
+          "hi": 0.1206,
+          "n_used": 99,
+          "family": "LONGITUDINAL",
+          "separated": false
+        },
+        "heading_err_rad": {
+          "delta": 0.0461,
+          "lo": -0.0179,
+          "hi": 0.1018,
+          "n_used": 99,
+          "family": "LATERAL",
+          "separated": false
+        },
+        "curvature_err_1pm": {
+          "delta": 0.0023,
+          "lo": -0.0028,
+          "hi": 0.0056,
+          "n_used": 99,
+          "family": "LATERAL",
+          "separated": false
+        },
+        "yawrate_err_rads": {
+          "delta": 0.0054,
+          "lo": -0.0086,
+          "hi": 0.0098,
+          "n_used": 99,
+          "family": "LATERAL",
+          "separated": false
+        },
+        "cross_track_abs_m": {
+          "delta": 0.3083,
+          "lo": -0.6685,
+          "hi": 0.7535,
+          "n_used": 99,
+          "family": "LATERAL",
+          "separated": false
+        },
+        "lateral_ade_m": {
+          "delta": 0.1296,
+          "lo": -0.0232,
+          "hi": 0.2612,
+          "n_used": 99,
+          "family": "LATERAL",
+          "separated": false
+        },
+        "manoeuvre_plan_eq_logged": {
+          "delta": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_used": 99,
+          "family": "TACTICAL",
+          "separated": false
+        },
+        "manoeuvre_head_eq_logged": {
+          "delta": -0.0303,
+          "lo": -0.0652,
+          "hi": 0.0,
+          "n_used": 99,
+          "family": "TACTICAL",
+          "separated": false
+        },
+        "route_corridor_departure_rate": {
+          "delta": 0.0101,
+          "lo": 0.0,
+          "hi": 0.0233,
+          "n_used": 99,
+          "family": "STRATEGIC",
+          "separated": false
+        },
+        "route_head_eq_logged": {
+          "delta": -0.0577,
+          "lo": -0.125,
+          "hi": 0.0,
+          "n_used": 52,
+          "family": "STRATEGIC",
+          "separated": false
+        }
+      }
+    },
+    "power_caveat": "the cut-in windows fall in only 3 of the 9 rollout-start clusters, so the cluster bootstrap has 3 resampling units there. With 13 metrics x 2 arms = 26 tests at 95 %, ~1.3 false separations are EXPECTED; exactly 1 was observed (flagship lateral_ade_m, lo=+0.0053). It is not a finding."
+  },
+  "four_families_per_arm": {
+    "flagship-v1": {
+      "objects": {
+        "ADE": {
+          "ade_0_2s": {
+            "mean": 6.2038,
+            "lo": 4.9934,
+            "hi": 7.3828,
+            "ci95": 1.1947,
+            "se": 0.605,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "de_0_5s": {
+            "mean": 2.5365,
+            "lo": 2.1279,
+            "hi": 2.9496,
+            "ci95": 0.4109,
+            "se": 0.2077,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "de_1s": {
+            "mean": 4.9894,
+            "lo": 4.1018,
+            "hi": 5.8726,
+            "ci95": 0.8854,
+            "se": 0.4512,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "de_1_5s": {
+            "mean": 7.4364,
+            "lo": 5.9721,
+            "hi": 8.8709,
+            "ci95": 1.4494,
+            "se": 0.735,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "de_2s": {
+            "mean": 9.853,
+            "lo": 7.7645,
+            "hi": 11.8476,
+            "ci95": 2.0415,
+            "se": 1.031,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "dist_to_gt_traj_m": {
+            "mean": 6.251,
+            "lo": 2.9681,
+            "hi": 9.662,
+            "ci95": 3.3469,
+            "se": 1.7097,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "note": "plan vs the log's own motion from the matched point; `dist_to_gt_traj_m` is the CLOSED-LOOP deviation of the driven path from the logged path."
+        },
+        "LONGITUDINAL": {
+          "target_speed_err_ms": {
+            "mean": 4.9943,
+            "lo": 4.1513,
+            "hi": 5.8594,
+            "ci95": 0.8541,
+            "se": 0.438,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "abs_target_speed_err_ms": {
+            "mean": 5.1412,
+            "lo": 4.3621,
+            "hi": 5.9144,
+            "ci95": 0.7762,
+            "se": 0.3951,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "executed_speed_err_ms": {
+            "mean": 2.8748,
+            "lo": 1.762,
+            "hi": 4.0436,
+            "ci95": 1.1408,
+            "se": 0.5741,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "along_track_ade_m": {
+            "mean": 5.8687,
+            "lo": 4.755,
+            "hi": 6.9798,
+            "ci95": 1.1124,
+            "se": 0.566,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "along_track_0_5s_m": {
+            "mean": 2.5199,
+            "lo": 2.1144,
+            "hi": 2.9268,
+            "ci95": 0.4062,
+            "se": 0.206,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "along_track_1s_m": {
+            "mean": 4.8575,
+            "lo": 4.0096,
+            "hi": 5.7168,
+            "ci95": 0.8536,
+            "se": 0.4344,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "along_track_1_5s_m": {
+            "mean": 7.0474,
+            "lo": 5.7053,
+            "hi": 8.3907,
+            "ci95": 1.3427,
+            "se": 0.6882,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "along_track_2s_m": {
+            "mean": 9.05,
+            "lo": 7.1923,
+            "hi": 10.8613,
+            "ci95": 1.8345,
+            "se": 0.9381,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "headway_m": {
+            "mean": 10.7126,
+            "lo": 3.3841,
+            "hi": 22.6094,
+            "ci95": 9.6126,
+            "se": 4.9174,
+            "reducer": "mean",
+            "n_windows": 221,
+            "n_episodes": 7,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 221,
+            "n_total": 221
+          },
+          "time_gap_s": {
+            "mean": 1.6389,
+            "lo": 0.8154,
+            "hi": 2.2831,
+            "ci95": 0.7339,
+            "se": 0.3798,
+            "reducer": "mean",
+            "n_windows": 221,
+            "n_episodes": 7,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 221,
+            "n_total": 221
+          },
+          "lead_present_rate": 0.4911111111111111,
+          "min_headway_m": {
+            "mean": -4.423,
+            "lo": -4.423,
+            "hi": -4.3457,
+            "ci95": 0.0387,
+            "se": 0.0306,
+            "reducer": "<lambda>",
+            "n_windows": 221,
+            "n_episodes": 7,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 221,
+            "n_total": 221
+          },
+          "frac_time_gap_below_1s": {
+            "mean": 0.7195,
+            "lo": 0.573,
+            "hi": 0.8621,
+            "ci95": 0.1445,
+            "se": 0.0729,
+            "reducer": "mean",
+            "n_windows": 221,
+            "n_episodes": 7,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 221,
+            "n_total": 221
+          },
+          "frac_time_gap_below_0_5s": {
+            "mean": 0.6833,
+            "lo": 0.5373,
+            "hi": 0.8481,
+            "ci95": 0.1554,
+            "se": 0.0792,
+            "reducer": "mean",
+            "n_windows": 221,
+            "n_episodes": 7,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 221,
+            "n_total": 221
+          },
+          "ttc_s_when_closing": {
+            "mean": 3.259,
+            "lo": 2.3023,
+            "hi": 4.4987,
+            "ci95": 1.0982,
+            "se": 0.5785,
+            "reducer": "mean",
+            "n_windows": 116,
+            "n_episodes": 6,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 116,
+            "n_total": 221
+          },
+          "ttc_defined_rate": 0.5249,
+          "real_lead_note": "REAL annotated lead from the scene's own sequence_tracks, restricted to the tracks the renderer actually draws when --renderable-from is given. Headway is bumper-to-bumper (EGO_LEN=4.7 m), in-lane band |y| < 2.0 m, search window 0 < x < 80.0 m."
+        },
+        "LATERAL": {
+          "heading_err_rad": {
+            "mean": 0.4922,
+            "lo": 0.3478,
+            "hi": 0.6345,
+            "ci95": 0.1434,
+            "se": 0.0733,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "curvature_err_1pm": {
+            "mean": 0.0413,
+            "lo": 0.0275,
+            "hi": 0.0547,
+            "ci95": 0.0136,
+            "se": 0.0069,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "yawrate_err_rads": {
+            "mean": 0.2631,
+            "lo": 0.161,
+            "hi": 0.3705,
+            "ci95": 0.1048,
+            "se": 0.0537,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "cross_track_abs_m": {
+            "mean": 6.251,
+            "lo": 2.9681,
+            "hi": 9.662,
+            "ci95": 3.3469,
+            "se": 1.7097,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "cross_track_signed_m": {
+            "mean": -5.7286,
+            "lo": -9.52,
+            "hi": -2.0347,
+            "ci95": 3.7426,
+            "se": 1.8955,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "lateral_ade_m": {
+            "mean": 1.4531,
+            "lo": 1.0562,
+            "hi": 1.876,
+            "ci95": 0.4099,
+            "se": 0.2112,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          }
+        },
+        "TACTICAL": {
+          "manoeuvre_plan_eq_logged": {
+            "mean": 0.2733,
+            "lo": 0.1378,
+            "hi": 0.42,
+            "ci95": 0.1411,
+            "se": 0.0728,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "manoeuvre_exec_eq_plan": {
+            "mean": 0.4852,
+            "lo": 0.3667,
+            "hi": 0.6148,
+            "ci95": 0.1241,
+            "se": 0.0638,
+            "reducer": "mean",
+            "n_windows": 270,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 270,
+            "n_total": 450
+          },
+          "plan_class_share": {
+            "lane_keep": 0.3556,
+            "turn_left": 0.0444,
+            "turn_right": 0.0289,
+            "accelerate": 0.3933,
+            "brake_stop": 0.1778
+          },
+          "logged_class_share": {
+            "lane_keep": 0.0889,
+            "turn_left": 0.5756,
+            "turn_right": 0.0,
+            "accelerate": 0.3356,
+            "brake_stop": 0.0
+          },
+          "confusion_logged_x_planned": [
+            [
+              16,
+              8,
+              0,
+              11,
+              5
+            ],
+            [
+              115,
+              6,
+              7,
+              65,
+              66
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              29,
+              6,
+              6,
+              101,
+              9
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "confusion_planned_x_executed": [
+            [
+              12,
+              0,
+              0,
+              74,
+              5
+            ],
+            [
+              0,
+              0,
+              0,
+              18,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              7,
+              0
+            ],
+            [
+              1,
+              1,
+              0,
+              119,
+              0
+            ],
+            [
+              12,
+              0,
+              0,
+              21,
+              0
+            ]
+          ],
+          "class_names": [
+            "lane_keep",
+            "turn_left",
+            "turn_right",
+            "accelerate",
+            "brake_stop"
+          ],
+          "head_eq_plan": {
+            "mean": 0.2956,
+            "lo": 0.2378,
+            "hi": 0.3467,
+            "ci95": 0.0544,
+            "se": 0.0282,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "head_eq_logged": {
+            "mean": 0.0822,
+            "lo": 0.0378,
+            "hi": 0.1356,
+            "ci95": 0.0489,
+            "se": 0.0254,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "head_class_share": {
+            "lane_keep": 0.1422,
+            "turn_left": 0.0867,
+            "turn_right": 0.0978,
+            "accelerate": 0.0489,
+            "brake_stop": 0.6244
+          },
+          "head_vs_logged_per_class_PR": {
+            "lane_keep": {
+              "precision": 0.0469,
+              "recall": 0.075,
+              "f1": 0.0577,
+              "support_n_true": 40,
+              "n_fires": 64
+            },
+            "turn_left": {
+              "precision": 0.4872,
+              "recall": 0.0734,
+              "f1": 0.1275,
+              "support_n_true": 259,
+              "n_fires": 39
+            },
+            "turn_right": {
+              "precision": 0.0,
+              "recall": null,
+              "f1": 0.0,
+              "support_n_true": 0,
+              "n_fires": 44
+            },
+            "accelerate": {
+              "precision": 0.6818,
+              "recall": 0.0993,
+              "f1": 0.1734,
+              "support_n_true": 151,
+              "n_fires": 22
+            },
+            "brake_stop": {
+              "precision": 0.0,
+              "recall": null,
+              "f1": 0.0,
+              "support_n_true": 0,
+              "n_fires": 281
+            },
+            "_macro_f1": 0.0717,
+            "_accuracy": 0.0822,
+            "_majority_class_baseline_acc": 0.5756,
+            "_n": 450
+          },
+          "plan_vs_logged_per_class_PR": {
+            "lane_keep": {
+              "precision": 0.1,
+              "recall": 0.4,
+              "f1": 0.16,
+              "support_n_true": 40,
+              "n_fires": 160
+            },
+            "turn_left": {
+              "precision": 0.3,
+              "recall": 0.0232,
+              "f1": 0.043,
+              "support_n_true": 259,
+              "n_fires": 20
+            },
+            "turn_right": {
+              "precision": 0.0,
+              "recall": null,
+              "f1": 0.0,
+              "support_n_true": 0,
+              "n_fires": 13
+            },
+            "accelerate": {
+              "precision": 0.5706,
+              "recall": 0.6689,
+              "f1": 0.6159,
+              "support_n_true": 151,
+              "n_fires": 177
+            },
+            "brake_stop": {
+              "precision": 0.0,
+              "recall": null,
+              "f1": 0.0,
+              "support_n_true": 0,
+              "n_fires": 80
+            },
+            "_macro_f1": 0.1638,
+            "_accuracy": 0.2733,
+            "_majority_class_baseline_acc": 0.5756,
+            "_n": 450
+          }
+        },
+        "STRATEGIC": {
+          "route_corridor_departure_rate": {
+            "mean": 0.4533,
+            "lo": 0.26,
+            "hi": 0.6289,
+            "ci95": 0.1845,
+            "se": 0.0939,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "route_logged_share": {
+            "left": 0.82,
+            "straight": 0.1067,
+            "right": 0.0,
+            "unknown": 0.0733
+          },
+          "route_label_valid_rate": 0.9267,
+          "route_derivation_reason_share": {
+            "tight_transient": 0.82,
+            "gray_zone": 0.0733,
+            "road_following": 0.1067
+          },
+          "logged_net_dyaw_rad": {
+            "mean": 1.3986,
+            "lo": 0.8594,
+            "hi": 1.8828,
+            "ci95": 0.5117,
+            "se": 0.2688,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "route_head_eq_logged": {
+            "mean": 1.0,
+            "lo": 1.0,
+            "hi": 1.0,
+            "ci95": 0.0,
+            "se": 0.0,
+            "reducer": "mean",
+            "n_windows": 417,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 417,
+            "n_total": 417,
+            "CIRCULAR_NAV_ECHO": true,
+            "do_not_quote": "the route head is a deterministic function of the nav input"
+          },
+          "route_head_nav_echo_check": {
+            "head_is_deterministic_function_of_nav": true,
+            "nav_to_head_map": {
+              "1": [
+                0
+              ],
+              "0": [
+                1
+              ]
+            },
+            "n": 450,
+            "verdict": "CIRCULAR \u2014 route_head_eq_logged above reproduces the nav command the policy was GIVEN and is NOT evidence of strategic skill; do not quote it"
+          },
+          "route_head_share": {
+            "left": 0.82,
+            "straight": 0.18,
+            "right": 0.0
+          },
+          "route_head_side_eq_graded_proxy": {
+            "mean": 0.9356,
+            "lo": 0.8444,
+            "hi": 1.0,
+            "ci95": 0.0778,
+            "se": 0.0408,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "route_head_side_note": "PROXY, not the trained target: agreement between the route head's lateral side and sign(cumulative logged heading change) with a 5 deg deadband. Reported because the discrete route class is UNKNOWN on this clip.",
+          "route_head_side_per_class_PR": {
+            "straight": {
+              "precision": 0.642,
+              "recall": 1.0,
+              "f1": 0.782,
+              "support_n_true": 52,
+              "n_fires": 81
+            },
+            "left": {
+              "precision": 1.0,
+              "recall": 0.9271,
+              "f1": 0.9622,
+              "support_n_true": 398,
+              "n_fires": 369
+            },
+            "right": {
+              "precision": null,
+              "recall": null,
+              "f1": 0.0,
+              "support_n_true": 0,
+              "n_fires": 0
+            },
+            "_macro_f1": 0.5814,
+            "_accuracy": 0.9356,
+            "_majority_class_baseline_acc": 0.8844,
+            "_n": 450
+          },
+          "route_head_vs_logged_per_class_PR": {
+            "left": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0,
+              "support_n_true": 369,
+              "n_fires": 369
+            },
+            "straight": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0,
+              "support_n_true": 48,
+              "n_fires": 48
+            },
+            "right": {
+              "precision": null,
+              "recall": null,
+              "f1": 0.0,
+              "support_n_true": 0,
+              "n_fires": 0
+            },
+            "unknown": {
+              "precision": null,
+              "recall": null,
+              "f1": 0.0,
+              "support_n_true": 0,
+              "n_fires": 0
+            },
+            "_macro_f1": 0.5,
+            "_accuracy": 1.0,
+            "_majority_class_baseline_acc": 0.8849,
+            "_n": 417
+          },
+          "route_progress_rel": {
+            "mean": 1.7396,
+            "lo": 1.1798,
+            "hi": 2.3765,
+            "ci95": 0.5984,
+            "se": 0.3059,
+            "reducer": "mean",
+            "n_windows": 9,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 9,
+            "n_total": 9
+          },
+          "route_progress_note": "straight-line distance the ego covered divided by the logged path length over the same tick span; one value per rollout, so the cluster IS the window here (n_windows == n_episodes by construction)."
+        }
+      },
+      "empty": {
+        "ADE": {
+          "ade_0_2s": {
+            "mean": 6.3428,
+            "lo": 5.1809,
+            "hi": 7.5055,
+            "ci95": 1.1623,
+            "se": 0.5883,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "de_0_5s": {
+            "mean": 2.6194,
+            "lo": 2.2111,
+            "hi": 3.0291,
+            "ci95": 0.409,
+            "se": 0.2091,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "de_1s": {
+            "mean": 5.1354,
+            "lo": 4.2819,
+            "hi": 6.0044,
+            "ci95": 0.8613,
+            "se": 0.4444,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "de_1_5s": {
+            "mean": 7.6083,
+            "lo": 6.1992,
+            "hi": 9.0145,
+            "ci95": 1.4077,
+            "se": 0.714,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "de_2s": {
+            "mean": 10.0082,
+            "lo": 8.052,
+            "hi": 11.9826,
+            "ci95": 1.9653,
+            "se": 0.9948,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "dist_to_gt_traj_m": {
+            "mean": 6.3553,
+            "lo": 2.8779,
+            "hi": 9.925,
+            "ci95": 3.5235,
+            "se": 1.7993,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "note": "plan vs the log's own motion from the matched point; `dist_to_gt_traj_m` is the CLOSED-LOOP deviation of the driven path from the logged path."
+        },
+        "LONGITUDINAL": {
+          "target_speed_err_ms": {
+            "mean": 5.098,
+            "lo": 4.0148,
+            "hi": 6.0426,
+            "ci95": 1.0139,
+            "se": 0.5129,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "abs_target_speed_err_ms": {
+            "mean": 5.3024,
+            "lo": 4.5071,
+            "hi": 6.0769,
+            "ci95": 0.7849,
+            "se": 0.3982,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "executed_speed_err_ms": {
+            "mean": 3.0856,
+            "lo": 1.8229,
+            "hi": 4.2864,
+            "ci95": 1.2317,
+            "se": 0.6285,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "along_track_ade_m": {
+            "mean": 6.0594,
+            "lo": 4.9845,
+            "hi": 7.1724,
+            "ci95": 1.094,
+            "se": 0.5606,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "along_track_0_5s_m": {
+            "mean": 2.6049,
+            "lo": 2.1955,
+            "hi": 3.0129,
+            "ci95": 0.4087,
+            "se": 0.2092,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "along_track_1s_m": {
+            "mean": 5.0247,
+            "lo": 4.1686,
+            "hi": 5.8813,
+            "ci95": 0.8563,
+            "se": 0.4372,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "along_track_1_5s_m": {
+            "mean": 7.2834,
+            "lo": 5.9785,
+            "hi": 8.6362,
+            "ci95": 1.3288,
+            "se": 0.6816,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "along_track_2s_m": {
+            "mean": 9.3244,
+            "lo": 7.5613,
+            "hi": 11.1618,
+            "ci95": 1.8002,
+            "se": 0.9206,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "headway_m": {
+            "mean": 13.6884,
+            "lo": 7.053,
+            "hi": 24.1259,
+            "ci95": 8.5365,
+            "se": 4.3031,
+            "reducer": "mean",
+            "n_windows": 233,
+            "n_episodes": 7,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 233,
+            "n_total": 233
+          },
+          "time_gap_s": {
+            "mean": 1.8333,
+            "lo": 1.0169,
+            "hi": 2.5617,
+            "ci95": 0.7724,
+            "se": 0.3961,
+            "reducer": "mean",
+            "n_windows": 233,
+            "n_episodes": 7,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 233,
+            "n_total": 233
+          },
+          "lead_present_rate": 0.5177777777777778,
+          "min_headway_m": {
+            "mean": -4.4638,
+            "lo": -4.4638,
+            "hi": -4.3684,
+            "ci95": 0.0477,
+            "se": 0.0349,
+            "reducer": "<lambda>",
+            "n_windows": 233,
+            "n_episodes": 7,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 233,
+            "n_total": 233
+          },
+          "frac_time_gap_below_1s": {
+            "mean": 0.6695,
+            "lo": 0.5163,
+            "hi": 0.8111,
+            "ci95": 0.1474,
+            "se": 0.0745,
+            "reducer": "mean",
+            "n_windows": 233,
+            "n_episodes": 7,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 233,
+            "n_total": 233
+          },
+          "frac_time_gap_below_0_5s": {
+            "mean": 0.6309,
+            "lo": 0.4698,
+            "hi": 0.7913,
+            "ci95": 0.1608,
+            "se": 0.0834,
+            "reducer": "mean",
+            "n_windows": 233,
+            "n_episodes": 7,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 233,
+            "n_total": 233
+          },
+          "ttc_s_when_closing": {
+            "mean": 3.4148,
+            "lo": 2.5585,
+            "hi": 4.4618,
+            "ci95": 0.9517,
+            "se": 0.4875,
+            "reducer": "mean",
+            "n_windows": 132,
+            "n_episodes": 6,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 132,
+            "n_total": 233
+          },
+          "ttc_defined_rate": 0.5665,
+          "real_lead_note": "REAL annotated lead from the scene's own sequence_tracks, restricted to the tracks the renderer actually draws when --renderable-from is given. Headway is bumper-to-bumper (EGO_LEN=4.7 m), in-lane band |y| < 2.0 m, search window 0 < x < 80.0 m."
+        },
+        "LATERAL": {
+          "heading_err_rad": {
+            "mean": 0.4904,
+            "lo": 0.3442,
+            "hi": 0.6326,
+            "ci95": 0.1442,
+            "se": 0.0734,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "curvature_err_1pm": {
+            "mean": 0.0412,
+            "lo": 0.0274,
+            "hi": 0.0545,
+            "ci95": 0.0136,
+            "se": 0.0069,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "yawrate_err_rads": {
+            "mean": 0.2633,
+            "lo": 0.1614,
+            "hi": 0.3698,
+            "ci95": 0.1042,
+            "se": 0.0534,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "cross_track_abs_m": {
+            "mean": 6.3553,
+            "lo": 2.8779,
+            "hi": 9.925,
+            "ci95": 3.5235,
+            "se": 1.7993,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "cross_track_signed_m": {
+            "mean": -6.0104,
+            "lo": -9.8335,
+            "hi": -2.2772,
+            "ci95": 3.7781,
+            "se": 1.9193,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "lateral_ade_m": {
+            "mean": 1.4204,
+            "lo": 1.026,
+            "hi": 1.8408,
+            "ci95": 0.4074,
+            "se": 0.2112,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          }
+        },
+        "TACTICAL": {
+          "manoeuvre_plan_eq_logged": {
+            "mean": 0.2711,
+            "lo": 0.1444,
+            "hi": 0.4,
+            "ci95": 0.1278,
+            "se": 0.0655,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "manoeuvre_exec_eq_plan": {
+            "mean": 0.4593,
+            "lo": 0.3889,
+            "hi": 0.5259,
+            "ci95": 0.0685,
+            "se": 0.0355,
+            "reducer": "mean",
+            "n_windows": 270,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 270,
+            "n_total": 450
+          },
+          "plan_class_share": {
+            "lane_keep": 0.3733,
+            "turn_left": 0.0156,
+            "turn_right": 0.0311,
+            "accelerate": 0.3822,
+            "brake_stop": 0.1978
+          },
+          "logged_class_share": {
+            "lane_keep": 0.0889,
+            "turn_left": 0.5756,
+            "turn_right": 0.0,
+            "accelerate": 0.3356,
+            "brake_stop": 0.0
+          },
+          "confusion_logged_x_planned": [
+            [
+              27,
+              2,
+              0,
+              4,
+              7
+            ],
+            [
+              103,
+              4,
+              7,
+              77,
+              68
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              38,
+              1,
+              7,
+              91,
+              14
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "confusion_planned_x_executed": [
+            [
+              12,
+              0,
+              0,
+              91,
+              8
+            ],
+            [
+              0,
+              0,
+              0,
+              7,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              7,
+              0
+            ],
+            [
+              4,
+              0,
+              0,
+              110,
+              0
+            ],
+            [
+              10,
+              0,
+              0,
+              19,
+              2
+            ]
+          ],
+          "class_names": [
+            "lane_keep",
+            "turn_left",
+            "turn_right",
+            "accelerate",
+            "brake_stop"
+          ],
+          "head_eq_plan": {
+            "mean": 0.2867,
+            "lo": 0.2,
+            "hi": 0.3712,
+            "ci95": 0.0856,
+            "se": 0.0436,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "head_eq_logged": {
+            "mean": 0.0467,
+            "lo": 0.0044,
+            "hi": 0.1134,
+            "ci95": 0.0545,
+            "se": 0.0317,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "head_class_share": {
+            "lane_keep": 0.0711,
+            "turn_left": 0.0378,
+            "turn_right": 0.0889,
+            "accelerate": 0.0533,
+            "brake_stop": 0.7489
+          },
+          "head_vs_logged_per_class_PR": {
+            "lane_keep": {
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0,
+              "support_n_true": 40,
+              "n_fires": 32
+            },
+            "turn_left": {
+              "precision": 0.2353,
+              "recall": 0.0154,
+              "f1": 0.029,
+              "support_n_true": 259,
+              "n_fires": 17
+            },
+            "turn_right": {
+              "precision": 0.0,
+              "recall": null,
+              "f1": 0.0,
+              "support_n_true": 0,
+              "n_fires": 40
+            },
+            "accelerate": {
+              "precision": 0.7083,
+              "recall": 0.1126,
+              "f1": 0.1943,
+              "support_n_true": 151,
+              "n_fires": 24
+            },
+            "brake_stop": {
+              "precision": 0.0,
+              "recall": null,
+              "f1": 0.0,
+              "support_n_true": 0,
+              "n_fires": 337
+            },
+            "_macro_f1": 0.0447,
+            "_accuracy": 0.0467,
+            "_majority_class_baseline_acc": 0.5756,
+            "_n": 450
+          },
+          "plan_vs_logged_per_class_PR": {
+            "lane_keep": {
+              "precision": 0.1607,
+              "recall": 0.675,
+              "f1": 0.2596,
+              "support_n_true": 40,
+              "n_fires": 168
+            },
+            "turn_left": {
+              "precision": 0.5714,
+              "recall": 0.0154,
+              "f1": 0.0301,
+              "support_n_true": 259,
+              "n_fires": 7
+            },
+            "turn_right": {
+              "precision": 0.0,
+              "recall": null,
+              "f1": 0.0,
+              "support_n_true": 0,
+              "n_fires": 14
+            },
+            "accelerate": {
+              "precision": 0.5291,
+              "recall": 0.6026,
+              "f1": 0.5635,
+              "support_n_true": 151,
+              "n_fires": 172
+            },
+            "brake_stop": {
+              "precision": 0.0,
+              "recall": null,
+              "f1": 0.0,
+              "support_n_true": 0,
+              "n_fires": 89
+            },
+            "_macro_f1": 0.1706,
+            "_accuracy": 0.2711,
+            "_majority_class_baseline_acc": 0.5756,
+            "_n": 450
+          }
+        },
+        "STRATEGIC": {
+          "route_corridor_departure_rate": {
+            "mean": 0.44,
+            "lo": 0.2488,
+            "hi": 0.6201,
+            "ci95": 0.1856,
+            "se": 0.0941,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "route_logged_share": {
+            "left": 0.82,
+            "straight": 0.1022,
+            "right": 0.0,
+            "unknown": 0.0778
+          },
+          "route_label_valid_rate": 0.9222,
+          "route_derivation_reason_share": {
+            "tight_transient": 0.82,
+            "gray_zone": 0.0778,
+            "road_following": 0.1022
+          },
+          "logged_net_dyaw_rad": {
+            "mean": 1.3903,
+            "lo": 0.8544,
+            "hi": 1.867,
+            "ci95": 0.5063,
+            "se": 0.267,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "route_head_eq_logged": {
+            "mean": 1.0,
+            "lo": 1.0,
+            "hi": 1.0,
+            "ci95": 0.0,
+            "se": 0.0,
+            "reducer": "mean",
+            "n_windows": 415,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 415,
+            "n_total": 415,
+            "CIRCULAR_NAV_ECHO": true,
+            "do_not_quote": "the route head is a deterministic function of the nav input"
+          },
+          "route_head_nav_echo_check": {
+            "head_is_deterministic_function_of_nav": true,
+            "nav_to_head_map": {
+              "1": [
+                0
+              ],
+              "0": [
+                1
+              ]
+            },
+            "n": 450,
+            "verdict": "CIRCULAR \u2014 route_head_eq_logged above reproduces the nav command the policy was GIVEN and is NOT evidence of strategic skill; do not quote it"
+          },
+          "route_head_share": {
+            "left": 0.82,
+            "straight": 0.18,
+            "right": 0.0
+          },
+          "route_head_side_eq_graded_proxy": {
+            "mean": 0.9311,
+            "lo": 0.8333,
+            "hi": 1.0,
+            "ci95": 0.0833,
+            "se": 0.0435,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "route_head_side_note": "PROXY, not the trained target: agreement between the route head's lateral side and sign(cumulative logged heading change) with a 5 deg deadband. Reported because the discrete route class is UNKNOWN on this clip.",
+          "route_head_side_per_class_PR": {
+            "straight": {
+              "precision": 0.6173,
+              "recall": 1.0,
+              "f1": 0.7634,
+              "support_n_true": 50,
+              "n_fires": 81
+            },
+            "left": {
+              "precision": 1.0,
+              "recall": 0.9225,
+              "f1": 0.9597,
+              "support_n_true": 400,
+              "n_fires": 369
+            },
+            "right": {
+              "precision": null,
+              "recall": null,
+              "f1": 0.0,
+              "support_n_true": 0,
+              "n_fires": 0
+            },
+            "_macro_f1": 0.5743,
+            "_accuracy": 0.9311,
+            "_majority_class_baseline_acc": 0.8889,
+            "_n": 450
+          },
+          "route_head_vs_logged_per_class_PR": {
+            "left": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0,
+              "support_n_true": 369,
+              "n_fires": 369
+            },
+            "straight": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0,
+              "support_n_true": 46,
+              "n_fires": 46
+            },
+            "right": {
+              "precision": null,
+              "recall": null,
+              "f1": 0.0,
+              "support_n_true": 0,
+              "n_fires": 0
+            },
+            "unknown": {
+              "precision": null,
+              "recall": null,
+              "f1": 0.0,
+              "support_n_true": 0,
+              "n_fires": 0
+            },
+            "_macro_f1": 0.5,
+            "_accuracy": 1.0,
+            "_majority_class_baseline_acc": 0.8892,
+            "_n": 415
+          },
+          "route_progress_rel": {
+            "mean": 1.7927,
+            "lo": 1.2182,
+            "hi": 2.4477,
+            "ci95": 0.6147,
+            "se": 0.3129,
+            "reducer": "mean",
+            "n_windows": 9,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 9,
+            "n_total": 9
+          },
+          "route_progress_note": "straight-line distance the ego covered divided by the logged path length over the same tick span; one value per rollout, so the cluster IS the window here (n_windows == n_episodes by construction)."
+        }
+      }
+    },
+    "refc-base": {
+      "objects": {
+        "ADE": {
+          "ade_0_2s": {
+            "mean": 3.4215,
+            "lo": 3.0879,
+            "hi": 3.7629,
+            "ci95": 0.3375,
+            "se": 0.175,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "de_0_5s": {
+            "mean": 0.913,
+            "lo": 0.6859,
+            "hi": 1.1393,
+            "ci95": 0.2267,
+            "se": 0.1156,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "de_1s": {
+            "mean": 2.2992,
+            "lo": 1.9325,
+            "hi": 2.6697,
+            "ci95": 0.3686,
+            "se": 0.1896,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "de_1_5s": {
+            "mean": 4.1281,
+            "lo": 3.7153,
+            "hi": 4.5513,
+            "ci95": 0.418,
+            "se": 0.215,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "de_2s": {
+            "mean": 6.3456,
+            "lo": 5.9178,
+            "hi": 6.7805,
+            "ci95": 0.4313,
+            "se": 0.2206,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "dist_to_gt_traj_m": {
+            "mean": 2.5179,
+            "lo": 0.8425,
+            "hi": 4.345,
+            "ci95": 1.7512,
+            "se": 0.8926,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "note": "plan vs the log's own motion from the matched point; `dist_to_gt_traj_m` is the CLOSED-LOOP deviation of the driven path from the logged path."
+        },
+        "LONGITUDINAL": {
+          "target_speed_err_ms": {
+            "mean": -1.511,
+            "lo": -1.9924,
+            "hi": -1.0422,
+            "ci95": 0.4751,
+            "se": 0.2455,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "abs_target_speed_err_ms": {
+            "mean": 1.5489,
+            "lo": 1.087,
+            "hi": 2.0212,
+            "ci95": 0.4671,
+            "se": 0.2401,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "executed_speed_err_ms": {
+            "mean": -1.4768,
+            "lo": -1.9744,
+            "hi": -0.9751,
+            "ci95": 0.4997,
+            "se": 0.2562,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "along_track_ade_m": {
+            "mean": 2.7815,
+            "lo": 1.9658,
+            "hi": 3.5465,
+            "ci95": 0.7903,
+            "se": 0.4043,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "along_track_0_5s_m": {
+            "mean": 0.8613,
+            "lo": 0.6012,
+            "hi": 1.117,
+            "ci95": 0.2579,
+            "se": 0.1332,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "along_track_1s_m": {
+            "mean": 2.0034,
+            "lo": 1.4166,
+            "hi": 2.5602,
+            "ci95": 0.5718,
+            "se": 0.2943,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "along_track_1_5s_m": {
+            "mean": 3.3617,
+            "lo": 2.3731,
+            "hi": 4.2899,
+            "ci95": 0.9584,
+            "se": 0.4904,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "along_track_2s_m": {
+            "mean": 4.8994,
+            "lo": 3.4282,
+            "hi": 6.2676,
+            "ci95": 1.4197,
+            "se": 0.7144,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "headway_m": {
+            "mean": 2.2316,
+            "lo": 0.3371,
+            "hi": 3.2693,
+            "ci95": 1.4661,
+            "se": 0.7515,
+            "reducer": "mean",
+            "n_windows": 236,
+            "n_episodes": 7,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 236,
+            "n_total": 236
+          },
+          "time_gap_s": {
+            "mean": 4.7973,
+            "lo": 0.8892,
+            "hi": 7.9635,
+            "ci95": 3.5372,
+            "se": 1.837,
+            "reducer": "mean",
+            "n_windows": 236,
+            "n_episodes": 7,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 236,
+            "n_total": 236
+          },
+          "lead_present_rate": 0.5244444444444445,
+          "min_headway_m": {
+            "mean": -4.6677,
+            "lo": -4.6677,
+            "hi": -4.6046,
+            "ci95": 0.0315,
+            "se": 0.0276,
+            "reducer": "<lambda>",
+            "n_windows": 236,
+            "n_episodes": 7,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 236,
+            "n_total": 236
+          },
+          "frac_time_gap_below_1s": {
+            "mean": 0.4534,
+            "lo": 0.2867,
+            "hi": 0.7448,
+            "ci95": 0.2291,
+            "se": 0.1163,
+            "reducer": "mean",
+            "n_windows": 236,
+            "n_episodes": 7,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 236,
+            "n_total": 236
+          },
+          "frac_time_gap_below_0_5s": {
+            "mean": 0.4068,
+            "lo": 0.2483,
+            "hi": 0.694,
+            "ci95": 0.2228,
+            "se": 0.1168,
+            "reducer": "mean",
+            "n_windows": 236,
+            "n_episodes": 7,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 236,
+            "n_total": 236
+          },
+          "ttc_s_when_closing": {
+            "mean": 5.9503,
+            "lo": 0.4572,
+            "hi": 9.6124,
+            "ci95": 4.5776,
+            "se": 3.2256,
+            "reducer": "mean",
+            "n_windows": 25,
+            "n_episodes": 2,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 25,
+            "n_total": 236
+          },
+          "ttc_defined_rate": 0.1059,
+          "real_lead_note": "REAL annotated lead from the scene's own sequence_tracks, restricted to the tracks the renderer actually draws when --renderable-from is given. Headway is bumper-to-bumper (EGO_LEN=4.7 m), in-lane band |y| < 2.0 m, search window 0 < x < 80.0 m."
+        },
+        "LATERAL": {
+          "heading_err_rad": {
+            "mean": 0.4422,
+            "lo": 0.1676,
+            "hi": 0.7398,
+            "ci95": 0.2861,
+            "se": 0.1479,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "curvature_err_1pm": {
+            "mean": 0.0556,
+            "lo": 0.0316,
+            "hi": 0.0807,
+            "ci95": 0.0246,
+            "se": 0.0128,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "yawrate_err_rads": {
+            "mean": 0.2041,
+            "lo": 0.0618,
+            "hi": 0.356,
+            "ci95": 0.1471,
+            "se": 0.0767,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "cross_track_abs_m": {
+            "mean": 2.5179,
+            "lo": 0.8425,
+            "hi": 4.345,
+            "ci95": 1.7512,
+            "se": 0.8926,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "cross_track_signed_m": {
+            "mean": -2.4906,
+            "lo": -4.3375,
+            "hi": -0.7995,
+            "ci95": 1.769,
+            "se": 0.9015,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "lateral_ade_m": {
+            "mean": 1.0497,
+            "lo": 0.3313,
+            "hi": 1.8145,
+            "ci95": 0.7416,
+            "se": 0.3828,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          }
+        },
+        "TACTICAL": {
+          "manoeuvre_plan_eq_logged": {
+            "mean": 0.0756,
+            "lo": 0.0222,
+            "hi": 0.1378,
+            "ci95": 0.0578,
+            "se": 0.0305,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "manoeuvre_exec_eq_plan": {
+            "mean": 0.5778,
+            "lo": 0.4629,
+            "hi": 0.6963,
+            "ci95": 0.1167,
+            "se": 0.0595,
+            "reducer": "mean",
+            "n_windows": 270,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 270,
+            "n_total": 450
+          },
+          "plan_class_share": {
+            "lane_keep": 0.4489,
+            "turn_left": 0.1622,
+            "turn_right": 0.2622,
+            "accelerate": 0.0422,
+            "brake_stop": 0.0844
+          },
+          "logged_class_share": {
+            "lane_keep": 0.0511,
+            "turn_left": 0.4133,
+            "turn_right": 0.0,
+            "accelerate": 0.5356,
+            "brake_stop": 0.0
+          },
+          "confusion_logged_x_planned": [
+            [
+              14,
+              2,
+              6,
+              0,
+              1
+            ],
+            [
+              62,
+              5,
+              83,
+              4,
+              32
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              126,
+              66,
+              29,
+              15,
+              5
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "confusion_planned_x_executed": [
+            [
+              82,
+              22,
+              4,
+              0,
+              8
+            ],
+            [
+              23,
+              27,
+              0,
+              0,
+              0
+            ],
+            [
+              26,
+              7,
+              38,
+              0,
+              1
+            ],
+            [
+              11,
+              2,
+              0,
+              0,
+              0
+            ],
+            [
+              8,
+              0,
+              2,
+              0,
+              9
+            ]
+          ],
+          "class_names": [
+            "lane_keep",
+            "turn_left",
+            "turn_right",
+            "accelerate",
+            "brake_stop"
+          ],
+          "head_eq_plan": {
+            "mean": 0.5933,
+            "lo": 0.4889,
+            "hi": 0.6912,
+            "ci95": 0.1011,
+            "se": 0.0517,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "head_eq_logged": {
+            "mean": 0.06,
+            "lo": 0.02,
+            "hi": 0.1178,
+            "ci95": 0.0489,
+            "se": 0.0258,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "head_class_share": {
+            "lane_keep": 0.66,
+            "turn_left": 0.0778,
+            "turn_right": 0.2622,
+            "accelerate": 0.0,
+            "brake_stop": 0.0
+          },
+          "head_vs_logged_per_class_PR": {
+            "lane_keep": {
+              "precision": 0.0572,
+              "recall": 0.7391,
+              "f1": 0.1063,
+              "support_n_true": 23,
+              "n_fires": 297
+            },
+            "turn_left": {
+              "precision": 0.2857,
+              "recall": 0.0538,
+              "f1": 0.0905,
+              "support_n_true": 186,
+              "n_fires": 35
+            },
+            "turn_right": {
+              "precision": 0.0,
+              "recall": null,
+              "f1": 0.0,
+              "support_n_true": 0,
+              "n_fires": 118
+            },
+            "accelerate": {
+              "precision": null,
+              "recall": 0.0,
+              "f1": 0.0,
+              "support_n_true": 241,
+              "n_fires": 0
+            },
+            "brake_stop": {
+              "precision": null,
+              "recall": null,
+              "f1": 0.0,
+              "support_n_true": 0,
+              "n_fires": 0
+            },
+            "_macro_f1": 0.0393,
+            "_accuracy": 0.06,
+            "_majority_class_baseline_acc": 0.5356,
+            "_n": 450
+          },
+          "plan_vs_logged_per_class_PR": {
+            "lane_keep": {
+              "precision": 0.0693,
+              "recall": 0.6087,
+              "f1": 0.1244,
+              "support_n_true": 23,
+              "n_fires": 202
+            },
+            "turn_left": {
+              "precision": 0.0685,
+              "recall": 0.0269,
+              "f1": 0.0386,
+              "support_n_true": 186,
+              "n_fires": 73
+            },
+            "turn_right": {
+              "precision": 0.0,
+              "recall": null,
+              "f1": 0.0,
+              "support_n_true": 0,
+              "n_fires": 118
+            },
+            "accelerate": {
+              "precision": 0.7895,
+              "recall": 0.0622,
+              "f1": 0.1154,
+              "support_n_true": 241,
+              "n_fires": 19
+            },
+            "brake_stop": {
+              "precision": 0.0,
+              "recall": null,
+              "f1": 0.0,
+              "support_n_true": 0,
+              "n_fires": 38
+            },
+            "_macro_f1": 0.0557,
+            "_accuracy": 0.0756,
+            "_majority_class_baseline_acc": 0.5356,
+            "_n": 450
+          }
+        },
+        "STRATEGIC": {
+          "route_corridor_departure_rate": {
+            "mean": 0.3044,
+            "lo": 0.0978,
+            "hi": 0.52,
+            "ci95": 0.2111,
+            "se": 0.1053,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "route_logged_share": {
+            "left": 0.8244,
+            "straight": 0.0711,
+            "right": 0.0,
+            "unknown": 0.1044
+          },
+          "route_label_valid_rate": 0.8956,
+          "route_derivation_reason_share": {
+            "tight_transient": 0.8244,
+            "gray_zone": 0.1044,
+            "road_following": 0.0711
+          },
+          "logged_net_dyaw_rad": {
+            "mean": 1.5665,
+            "lo": 0.9493,
+            "hi": 2.0756,
+            "ci95": 0.5632,
+            "se": 0.2889,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "route_head_eq_logged": {
+            "mean": 0.2605,
+            "lo": 0.1119,
+            "hi": 0.4537,
+            "ci95": 0.1709,
+            "se": 0.09,
+            "reducer": "mean",
+            "n_windows": 403,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 403,
+            "n_total": 403
+          },
+          "route_head_nav_echo_check": {
+            "head_is_deterministic_function_of_nav": false,
+            "nav_to_head_map": {
+              "1": [
+                0,
+                1,
+                2
+              ],
+              "0": [
+                0,
+                1,
+                2
+              ]
+            },
+            "n": 450,
+            "verdict": "not an echo \u2014 the head is not a function of nav on these windows"
+          },
+          "route_head_share": {
+            "left": 0.2444,
+            "straight": 0.3,
+            "right": 0.4556
+          },
+          "route_head_side_eq_graded_proxy": {
+            "mean": 0.3089,
+            "lo": 0.1267,
+            "hi": 0.5112,
+            "ci95": 0.1922,
+            "se": 0.1018,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "route_head_side_note": "PROXY, not the trained target: agreement between the route head's lateral side and sign(cumulative logged heading change) with a 5 deg deadband. Reported because the discrete route class is UNKNOWN on this clip.",
+          "route_head_side_per_class_PR": {
+            "straight": {
+              "precision": 0.2519,
+              "recall": 0.8718,
+              "f1": 0.3908,
+              "support_n_true": 39,
+              "n_fires": 135
+            },
+            "left": {
+              "precision": 0.9545,
+              "recall": 0.2555,
+              "f1": 0.4031,
+              "support_n_true": 411,
+              "n_fires": 110
+            },
+            "right": {
+              "precision": 0.0,
+              "recall": null,
+              "f1": 0.0,
+              "support_n_true": 0,
+              "n_fires": 205
+            },
+            "_macro_f1": 0.2646,
+            "_accuracy": 0.3089,
+            "_majority_class_baseline_acc": 0.9133,
+            "_n": 450
+          },
+          "route_head_vs_logged_per_class_PR": {
+            "left": {
+              "precision": 0.9867,
+              "recall": 0.1995,
+              "f1": 0.3318,
+              "support_n_true": 371,
+              "n_fires": 75
+            },
+            "straight": {
+              "precision": 0.2422,
+              "recall": 0.9688,
+              "f1": 0.3875,
+              "support_n_true": 32,
+              "n_fires": 128
+            },
+            "right": {
+              "precision": 0.0,
+              "recall": null,
+              "f1": 0.0,
+              "support_n_true": 0,
+              "n_fires": 200
+            },
+            "unknown": {
+              "precision": null,
+              "recall": null,
+              "f1": 0.0,
+              "support_n_true": 0,
+              "n_fires": 0
+            },
+            "_macro_f1": 0.1798,
+            "_accuracy": 0.2605,
+            "_majority_class_baseline_acc": 0.9206,
+            "_n": 403
+          },
+          "route_progress_rel": {
+            "mean": 1.3006,
+            "lo": 1.0627,
+            "hi": 1.6153,
+            "ci95": 0.2763,
+            "se": 0.143,
+            "reducer": "mean",
+            "n_windows": 9,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 9,
+            "n_total": 9
+          },
+          "route_progress_note": "straight-line distance the ego covered divided by the logged path length over the same tick span; one value per rollout, so the cluster IS the window here (n_windows == n_episodes by construction)."
+        }
+      },
+      "empty": {
+        "ADE": {
+          "ade_0_2s": {
+            "mean": 3.5782,
+            "lo": 3.2005,
+            "hi": 4.0082,
+            "ci95": 0.4039,
+            "se": 0.2094,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "de_0_5s": {
+            "mean": 1.0153,
+            "lo": 0.7616,
+            "hi": 1.2601,
+            "ci95": 0.2493,
+            "se": 0.1256,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "de_1s": {
+            "mean": 2.4626,
+            "lo": 2.0719,
+            "hi": 2.8817,
+            "ci95": 0.4049,
+            "se": 0.2056,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "de_1_5s": {
+            "mean": 4.3199,
+            "lo": 3.856,
+            "hi": 4.8483,
+            "ci95": 0.4961,
+            "se": 0.256,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "de_2s": {
+            "mean": 6.515,
+            "lo": 5.9523,
+            "hi": 7.1714,
+            "ci95": 0.6095,
+            "se": 0.3131,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "dist_to_gt_traj_m": {
+            "mean": 2.459,
+            "lo": 0.8011,
+            "hi": 4.3138,
+            "ci95": 1.7563,
+            "se": 0.9016,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "note": "plan vs the log's own motion from the matched point; `dist_to_gt_traj_m` is the CLOSED-LOOP deviation of the driven path from the logged path."
+        },
+        "LONGITUDINAL": {
+          "target_speed_err_ms": {
+            "mean": -1.658,
+            "lo": -2.1804,
+            "hi": -1.1106,
+            "ci95": 0.5349,
+            "se": 0.2739,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "abs_target_speed_err_ms": {
+            "mean": 1.7649,
+            "lo": 1.22,
+            "hi": 2.2806,
+            "ci95": 0.5303,
+            "se": 0.2717,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "executed_speed_err_ms": {
+            "mean": -1.6146,
+            "lo": -2.1519,
+            "hi": -1.0475,
+            "ci95": 0.5522,
+            "se": 0.2809,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "along_track_ade_m": {
+            "mean": 2.9405,
+            "lo": 2.0339,
+            "hi": 3.813,
+            "ci95": 0.8896,
+            "se": 0.4479,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "along_track_0_5s_m": {
+            "mean": 0.9576,
+            "lo": 0.6481,
+            "hi": 1.2437,
+            "ci95": 0.2978,
+            "se": 0.1503,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "along_track_1s_m": {
+            "mean": 2.1536,
+            "lo": 1.4745,
+            "hi": 2.7806,
+            "ci95": 0.653,
+            "se": 0.3318,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "along_track_1_5s_m": {
+            "mean": 3.5509,
+            "lo": 2.4367,
+            "hi": 4.611,
+            "ci95": 1.0871,
+            "se": 0.5459,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "along_track_2s_m": {
+            "mean": 5.1001,
+            "lo": 3.5575,
+            "hi": 6.5886,
+            "ci95": 1.5156,
+            "se": 0.7718,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "headway_m": {
+            "mean": 1.7066,
+            "lo": -0.4177,
+            "hi": 2.9901,
+            "ci95": 1.7039,
+            "se": 0.8659,
+            "reducer": "mean",
+            "n_windows": 264,
+            "n_episodes": 7,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 264,
+            "n_total": 264
+          },
+          "time_gap_s": {
+            "mean": 2.5687,
+            "lo": 0.6752,
+            "hi": 4.1482,
+            "ci95": 1.7365,
+            "se": 0.9207,
+            "reducer": "mean",
+            "n_windows": 264,
+            "n_episodes": 7,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 264,
+            "n_total": 264
+          },
+          "lead_present_rate": 0.5866666666666667,
+          "min_headway_m": {
+            "mean": -4.631,
+            "lo": -4.631,
+            "hi": -4.5785,
+            "ci95": 0.0262,
+            "se": 0.018,
+            "reducer": "<lambda>",
+            "n_windows": 264,
+            "n_episodes": 7,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 264,
+            "n_total": 264
+          },
+          "frac_time_gap_below_1s": {
+            "mean": 0.5114,
+            "lo": 0.3425,
+            "hi": 0.7847,
+            "ci95": 0.2211,
+            "se": 0.1145,
+            "reducer": "mean",
+            "n_windows": 264,
+            "n_episodes": 7,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 264,
+            "n_total": 264
+          },
+          "frac_time_gap_below_0_5s": {
+            "mean": 0.4583,
+            "lo": 0.2781,
+            "hi": 0.7444,
+            "ci95": 0.2331,
+            "se": 0.1245,
+            "reducer": "mean",
+            "n_windows": 264,
+            "n_episodes": 7,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 264,
+            "n_total": 264
+          },
+          "ttc_s_when_closing": {
+            "mean": 8.4435,
+            "lo": 0.4766,
+            "hi": 23.5082,
+            "ci95": 11.5158,
+            "se": 4.3652,
+            "reducer": "mean",
+            "n_windows": 39,
+            "n_episodes": 3,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 39,
+            "n_total": 264
+          },
+          "ttc_defined_rate": 0.1477,
+          "real_lead_note": "REAL annotated lead from the scene's own sequence_tracks, restricted to the tracks the renderer actually draws when --renderable-from is given. Headway is bumper-to-bumper (EGO_LEN=4.7 m), in-lane band |y| < 2.0 m, search window 0 < x < 80.0 m."
+        },
+        "LATERAL": {
+          "heading_err_rad": {
+            "mean": 0.4197,
+            "lo": 0.1425,
+            "hi": 0.7222,
+            "ci95": 0.2899,
+            "se": 0.1492,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "curvature_err_1pm": {
+            "mean": 0.046,
+            "lo": 0.0226,
+            "hi": 0.071,
+            "ci95": 0.0242,
+            "se": 0.0125,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "yawrate_err_rads": {
+            "mean": 0.2058,
+            "lo": 0.0635,
+            "hi": 0.3609,
+            "ci95": 0.1487,
+            "se": 0.0769,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "cross_track_abs_m": {
+            "mean": 2.459,
+            "lo": 0.8011,
+            "hi": 4.3138,
+            "ci95": 1.7563,
+            "se": 0.9016,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "cross_track_signed_m": {
+            "mean": -2.3893,
+            "lo": -4.2819,
+            "hi": -0.6895,
+            "ci95": 1.7962,
+            "se": 0.9223,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "lateral_ade_m": {
+            "mean": 1.0139,
+            "lo": 0.3056,
+            "hi": 1.7776,
+            "ci95": 0.736,
+            "se": 0.3812,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          }
+        },
+        "TACTICAL": {
+          "manoeuvre_plan_eq_logged": {
+            "mean": 0.1178,
+            "lo": 0.0467,
+            "hi": 0.1934,
+            "ci95": 0.0734,
+            "se": 0.0381,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "manoeuvre_exec_eq_plan": {
+            "mean": 0.5481,
+            "lo": 0.4222,
+            "hi": 0.6444,
+            "ci95": 0.1111,
+            "se": 0.0546,
+            "reducer": "mean",
+            "n_windows": 270,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 270,
+            "n_total": 450
+          },
+          "plan_class_share": {
+            "lane_keep": 0.3889,
+            "turn_left": 0.1644,
+            "turn_right": 0.2711,
+            "accelerate": 0.0711,
+            "brake_stop": 0.1044
+          },
+          "logged_class_share": {
+            "lane_keep": 0.0822,
+            "turn_left": 0.4133,
+            "turn_right": 0.0,
+            "accelerate": 0.5044,
+            "brake_stop": 0.0
+          },
+          "confusion_logged_x_planned": [
+            [
+              17,
+              3,
+              13,
+              1,
+              3
+            ],
+            [
+              65,
+              5,
+              91,
+              0,
+              25
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              93,
+              66,
+              18,
+              31,
+              19
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "confusion_planned_x_executed": [
+            [
+              85,
+              25,
+              2,
+              0,
+              1
+            ],
+            [
+              14,
+              27,
+              0,
+              1,
+              1
+            ],
+            [
+              16,
+              1,
+              34,
+              0,
+              0
+            ],
+            [
+              13,
+              17,
+              0,
+              0,
+              0
+            ],
+            [
+              24,
+              0,
+              7,
+              0,
+              2
+            ]
+          ],
+          "class_names": [
+            "lane_keep",
+            "turn_left",
+            "turn_right",
+            "accelerate",
+            "brake_stop"
+          ],
+          "head_eq_plan": {
+            "mean": 0.58,
+            "lo": 0.4511,
+            "hi": 0.7,
+            "ci95": 0.1244,
+            "se": 0.0641,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "head_eq_logged": {
+            "mean": 0.0978,
+            "lo": 0.0378,
+            "hi": 0.1711,
+            "ci95": 0.0667,
+            "se": 0.0342,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "head_class_share": {
+            "lane_keep": 0.6222,
+            "turn_left": 0.1067,
+            "turn_right": 0.2711,
+            "accelerate": 0.0,
+            "brake_stop": 0.0
+          },
+          "head_vs_logged_per_class_PR": {
+            "lane_keep": {
+              "precision": 0.1143,
+              "recall": 0.8649,
+              "f1": 0.2019,
+              "support_n_true": 37,
+              "n_fires": 280
+            },
+            "turn_left": {
+              "precision": 0.25,
+              "recall": 0.0645,
+              "f1": 0.1026,
+              "support_n_true": 186,
+              "n_fires": 48
+            },
+            "turn_right": {
+              "precision": 0.0,
+              "recall": null,
+              "f1": 0.0,
+              "support_n_true": 0,
+              "n_fires": 122
+            },
+            "accelerate": {
+              "precision": null,
+              "recall": 0.0,
+              "f1": 0.0,
+              "support_n_true": 227,
+              "n_fires": 0
+            },
+            "brake_stop": {
+              "precision": null,
+              "recall": null,
+              "f1": 0.0,
+              "support_n_true": 0,
+              "n_fires": 0
+            },
+            "_macro_f1": 0.0609,
+            "_accuracy": 0.0978,
+            "_majority_class_baseline_acc": 0.5044,
+            "_n": 450
+          },
+          "plan_vs_logged_per_class_PR": {
+            "lane_keep": {
+              "precision": 0.0971,
+              "recall": 0.4595,
+              "f1": 0.1604,
+              "support_n_true": 37,
+              "n_fires": 175
+            },
+            "turn_left": {
+              "precision": 0.0676,
+              "recall": 0.0269,
+              "f1": 0.0385,
+              "support_n_true": 186,
+              "n_fires": 74
+            },
+            "turn_right": {
+              "precision": 0.0,
+              "recall": null,
+              "f1": 0.0,
+              "support_n_true": 0,
+              "n_fires": 122
+            },
+            "accelerate": {
+              "precision": 0.9688,
+              "recall": 0.1366,
+              "f1": 0.2394,
+              "support_n_true": 227,
+              "n_fires": 32
+            },
+            "brake_stop": {
+              "precision": 0.0,
+              "recall": null,
+              "f1": 0.0,
+              "support_n_true": 0,
+              "n_fires": 47
+            },
+            "_macro_f1": 0.0876,
+            "_accuracy": 0.1178,
+            "_majority_class_baseline_acc": 0.5044,
+            "_n": 450
+          }
+        },
+        "STRATEGIC": {
+          "route_corridor_departure_rate": {
+            "mean": 0.2956,
+            "lo": 0.0911,
+            "hi": 0.52,
+            "ci95": 0.2144,
+            "se": 0.1065,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "route_logged_share": {
+            "left": 0.8244,
+            "straight": 0.0733,
+            "right": 0.0,
+            "unknown": 0.1022
+          },
+          "route_label_valid_rate": 0.8978,
+          "route_derivation_reason_share": {
+            "tight_transient": 0.8244,
+            "gray_zone": 0.1022,
+            "road_following": 0.0733
+          },
+          "logged_net_dyaw_rad": {
+            "mean": 1.5686,
+            "lo": 0.9515,
+            "hi": 2.0757,
+            "ci95": 0.5621,
+            "se": 0.2894,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "route_head_eq_logged": {
+            "mean": 0.2178,
+            "lo": 0.069,
+            "hi": 0.4302,
+            "ci95": 0.1806,
+            "se": 0.0952,
+            "reducer": "mean",
+            "n_windows": 404,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 404,
+            "n_total": 404
+          },
+          "route_head_nav_echo_check": {
+            "head_is_deterministic_function_of_nav": false,
+            "nav_to_head_map": {
+              "1": [
+                0,
+                1,
+                2
+              ],
+              "0": [
+                0,
+                1
+              ]
+            },
+            "n": 450,
+            "verdict": "not an echo \u2014 the head is not a function of nav on these windows"
+          },
+          "route_head_share": {
+            "left": 0.22,
+            "straight": 0.1556,
+            "right": 0.6244
+          },
+          "route_head_side_eq_graded_proxy": {
+            "mean": 0.2933,
+            "lo": 0.0756,
+            "hi": 0.5556,
+            "ci95": 0.24,
+            "se": 0.1232,
+            "reducer": "mean",
+            "n_windows": 450,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 450,
+            "n_total": 450
+          },
+          "route_head_side_note": "PROXY, not the trained target: agreement between the route head's lateral side and sign(cumulative logged heading change) with a 5 deg deadband. Reported because the discrete route class is UNKNOWN on this clip.",
+          "route_head_side_per_class_PR": {
+            "straight": {
+              "precision": 0.4857,
+              "recall": 0.9714,
+              "f1": 0.6476,
+              "support_n_true": 35,
+              "n_fires": 70
+            },
+            "left": {
+              "precision": 0.9899,
+              "recall": 0.2361,
+              "f1": 0.3813,
+              "support_n_true": 415,
+              "n_fires": 99
+            },
+            "right": {
+              "precision": 0.0,
+              "recall": null,
+              "f1": 0.0,
+              "support_n_true": 0,
+              "n_fires": 281
+            },
+            "_macro_f1": 0.343,
+            "_accuracy": 0.2933,
+            "_majority_class_baseline_acc": 0.9222,
+            "_n": 450
+          },
+          "route_head_vs_logged_per_class_PR": {
+            "left": {
+              "precision": 1.0,
+              "recall": 0.1482,
+              "f1": 0.2582,
+              "support_n_true": 371,
+              "n_fires": 55
+            },
+            "straight": {
+              "precision": 0.4853,
+              "recall": 1.0,
+              "f1": 0.6535,
+              "support_n_true": 33,
+              "n_fires": 68
+            },
+            "right": {
+              "precision": 0.0,
+              "recall": null,
+              "f1": 0.0,
+              "support_n_true": 0,
+              "n_fires": 281
+            },
+            "unknown": {
+              "precision": null,
+              "recall": null,
+              "f1": 0.0,
+              "support_n_true": 0,
+              "n_fires": 0
+            },
+            "_macro_f1": 0.2279,
+            "_accuracy": 0.2178,
+            "_majority_class_baseline_acc": 0.9183,
+            "_n": 404
+          },
+          "route_progress_rel": {
+            "mean": 1.2955,
+            "lo": 1.0478,
+            "hi": 1.6089,
+            "ci95": 0.2806,
+            "se": 0.1448,
+            "reducer": "mean",
+            "n_windows": 9,
+            "n_episodes": 9,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap",
+            "n_used": 9,
+            "n_total": 9
+          },
+          "route_progress_note": "straight-line distance the ego covered divided by the logged path length over the same tick span; one value per rollout, so the cluster IS the window here (n_windows == n_episodes by construction)."
+        }
+      }
+    }
+  },
+  "estimator_note": "episode-cluster bootstrap over ROLLOUT STARTS. The clusters are disjoint segments of ONE clip, not independent episodes \u2014 the interval is the right estimator for the resampling unit available, and the unit is stated here so it is never mistaken for the 40-episode val bootstrap.",
+  "within_sim_note": "WITHIN-SIM RELATIVE. REF-C open-loop ADE is 1.5157 on these NuRec reconstructions vs 0.4728 on real footage (3.21x OOD). Orderings survive; absolute rates do not.",
+  "renderable_restricted": {
+    "source": "/home/nvidia/cutin_out/scene2/actor_map_7c72937c.json",
+    "n_tracks": 92
+  },
+  "artifacts": {
+    "rollouts": "results/scene2-realclose/rollouts/ (4 files, 9 starts x 50 steps)",
+    "metrics": "results/scene2-realclose/metrics/ (6 files)",
+    "geometry": "results/scene2-realclose/SCENE2_GEOMETRY{,_renderable}.json",
+    "actor_map": "results/scene2-realclose/actor_map_7c72937c.json",
+    "on_thor": "/home/nvidia/scene2_out (incl. long_* runs with saved frames), /home/nvidia/cutin_out/scene2"
+  }
+}

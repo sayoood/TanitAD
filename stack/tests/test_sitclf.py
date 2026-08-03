@@ -11,9 +11,13 @@ from tanitad.eval.sitclf import (
     causal_window,
     clip_runs,
     cluster_folds,
+    head_param_count,
     late_fuse_scores,
     predict_sit_head,
+    ridge_param_count,
+    ridge_scores,
     train_sit_head,
+    width_for_param_budget,
 )
 
 
@@ -179,3 +183,110 @@ def test_late_fusion_rejects_misaligned_inputs():
     with pytest.raises(ValueError):
         late_fuse_scores(np.zeros((10, 2)), np.zeros(9), np.ones(10, bool),
                          np.zeros(10))
+
+
+# --------------------------------------------------------------------------- #
+# matched capacity (BACKLOG B4)                                               #
+# --------------------------------------------------------------------------- #
+def test_head_param_count_matches_the_real_module():
+    """Counted from the constructed module, so it cannot drift from the class."""
+    m = CausalSitHead(16, 8, d=36, n_out=3)
+    assert head_param_count(16, 8, 36, 3) == sum(p.numel() for p in m.parameters())
+
+
+def test_head_param_count_refuses_a_width_the_module_cannot_build():
+    """4 attention heads => d must be a multiple of 4. Solving a budget over all
+    integers proposed d=37 and the module raised deep inside torch, which reads
+    as a torch bug rather than an illegal rung."""
+    with pytest.raises(ValueError):
+        head_param_count(16, 8, 37, 3)
+
+
+def test_head_param_count_reproduces_the_deployed_head_img_checkpoint():
+    """CONTRACT AGAINST AN ARTIFACT, not against arithmetic.
+
+    `checkpoints/head_img.pt` holds 417,028 parameters at in_dim=16, win=8,
+    d=128. It has been quoted in two hub documents as "2.17 M". A formula-only
+    count would have reproduced the error; this asserts the artifact's number.
+    """
+    assert head_param_count(16, 8, 128, 3) == 417028
+
+
+def test_width_for_param_budget_is_the_smallest_width_that_reaches_it():
+    d = width_for_param_budget(100_000, 16, 8, 3)
+    assert d % 4 == 0
+    assert head_param_count(16, 8, d, 3) >= 100_000
+    assert head_param_count(16, 8, d - 4, 3) < 100_000
+
+
+def test_width_for_param_budget_moves_with_in_dim_which_is_why_it_exists():
+    """Matched capacity across REPRESENTATIONS needs the width solved per input.
+
+    At the same width a PCA-64 head has strictly more parameters than a PCA-16
+    head, so comparing widths would confound representation with capacity.
+    """
+    d16 = width_for_param_budget(50_000, 16, 8, 3)
+    d64 = width_for_param_budget(50_000, 64, 8, 3)
+    assert d64 <= d16
+    for d, k in ((d16, 16), (d64, 64)):
+        assert head_param_count(k, 8, d, 3) >= 50_000
+
+
+def test_width_for_param_budget_refuses_an_unreachable_budget():
+    with pytest.raises(ValueError):
+        width_for_param_budget(10**9, 16, 8, 3, d_max=64)
+
+
+def test_ridge_param_count_reproduces_the_banked_ridge_img_figure():
+    """`train_summary.json` records ridge_img at n_params = 129 (16 PCA dims x
+    win 8 + intercept). The same document set has quoted it as "2,049", which is
+    2048+1 — the count for a ridge on the RAW readout, an arm that was never
+    fitted. Both numbers are asserted here so neither can be reintroduced."""
+    assert ridge_param_count(16 * 8, per_situation=False) == 129
+    assert ridge_param_count(2048, per_situation=False) == 2049
+
+
+def test_ridge_recovers_a_linear_signal_and_beats_chance():
+    rng = np.random.default_rng(0)
+    n, d = 4000, 12
+    X = rng.normal(size=(n, d))
+    w = rng.normal(size=d)
+    p = 1.0 / (1.0 + np.exp(-(X @ w)))
+    Y = (rng.random(n) < p).astype(np.uint8)[:, None]
+    V = np.ones_like(Y, bool)
+    tr, te = slice(0, 3000), slice(3000, n)
+    s = ridge_scores(X[tr], Y[tr], V[tr], X[te], lam=1.0)
+    assert s.shape == (n - 3000, 1)
+    assert average_precision(Y[te, 0], s[:, 0]) > 1.5 * Y[te, 0].mean()
+
+
+def test_ridge_on_destroyed_features_lands_at_chance():
+    """The floor arm's own negative control: permute the features and the ridge
+    must fall back to the base rate. If it did not, the ladder's floor would be
+    manufacturing signal and every rung above it would be unreadable."""
+    rng = np.random.default_rng(1)
+    n, d = 4000, 12
+    X = rng.normal(size=(n, d))
+    Y = (rng.random(n) < 0.2).astype(np.uint8)[:, None]
+    V = np.ones_like(Y, bool)
+    tr, te = slice(0, 3000), slice(3000, n)
+    s = ridge_scores(X[tr], Y[tr], V[tr], X[te], lam=1.0)
+    ap = average_precision(Y[te, 0], s[:, 0])
+    assert abs(ap - Y[te, 0].mean()) < 0.06
+
+
+def test_ridge_skips_a_situation_with_too_few_valid_rows():
+    rng = np.random.default_rng(2)
+    X = rng.normal(size=(200, 5))
+    Y = np.zeros((200, 2), np.uint8)
+    Y[:60, 0] = 1
+    V = np.ones((200, 2), bool)
+    V[:, 1] = False                       # situation 1 has no valid row at all
+    s = ridge_scores(X, Y, V, X, lam=1.0)
+    assert np.any(s[:, 0] != 0) and np.all(s[:, 1] == 0)
+
+
+def test_ridge_rejects_misaligned_windows():
+    with pytest.raises(ValueError):
+        ridge_scores(np.zeros((10, 4)), np.zeros((10, 2), np.uint8),
+                     np.ones((10, 2), bool), np.zeros((5, 3)))

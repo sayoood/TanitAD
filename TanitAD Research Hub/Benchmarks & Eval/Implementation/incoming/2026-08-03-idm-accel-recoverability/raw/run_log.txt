@@ -1,0 +1,117 @@
+[    0.2s] device=cuda stages=['context', 'neural', 'oracle', 'ridge', 'sensitivity'] estimator=ci.py
+[    0.3s] episodes  train 33 (inner-fit 22 / inner-sel 11)  heldout 17
+[    0.3s] windows   train 4,554  heldout 2,346  clusters 17
+[   12.2s]   RIDGE_linear_centre: inner speed=+0.676 yaw_rate=-0.000 steer=+0.155 long_accel=-0.000
+[   23.6s]   RIDGE_linear_centre__CTRL: inner speed=-0.009 yaw_rate=-0.000 steer=-0.015 long_accel=+0.009
+[   48.9s]   RIDGE_linear_window: inner speed=+0.724 yaw_rate=-0.000 steer=+0.354 long_accel=-0.000
+[   74.4s]   RIDGE_linear_window__CTRL: inner speed=-0.009 yaw_rate=-0.000 steer=-0.015 long_accel=+0.009
+[   89.4s]   RIDGE_linear_diff: inner speed=-0.009 yaw_rate=-0.000 steer=-0.015 long_accel=+0.052
+[  104.6s]   RIDGE_linear_diff__CTRL: inner speed=-0.009 yaw_rate=-0.000 steer=-0.015 long_accel=-0.000
+[  121.5s]   RIDGE_linear_centre_diff: inner speed=+0.649 yaw_rate=-0.000 steer=+0.113 long_accel=-0.000
+[  138.6s]   RIDGE_linear_centre_diff__CTRL: inner speed=-0.009 yaw_rate=-0.000 steer=-0.015 long_accel=+0.009
+[  173.7s]   RIDGE_rbf_centre: inner speed=+0.761 yaw_rate=-0.000 steer=-0.015 long_accel=-0.000
+[  208.3s]   RIDGE_rbf_centre__CTRL: inner speed=-0.009 yaw_rate=-0.000 steer=-0.015 long_accel=+0.009
+[  290.1s]   RIDGE_rbf_window: inner speed=+0.810 yaw_rate=-0.000 steer=+0.093 long_accel=-0.000
+[  373.1s]   RIDGE_rbf_window__CTRL: inner speed=-0.009 yaw_rate=-0.000 steer=-0.015 long_accel=+0.008
+[  398.3s]   NN_transformer_d64_L1: 182,604 params  epochs 40  inner score -0.3625  best-budget heldout accel -0.0388  (25.2s)
+[  422.5s]   NN_transformer_d64_L1__CTRL: 182,604 params  epochs 40  inner score -0.4420  best-budget heldout accel -0.0527  (24.1s)
+[  469.4s]   NN_transformer_d256_L3_SHIPPED: 2,899,724 params  epochs 40  inner score -0.1424  best-budget heldout accel -0.0721  (46.9s)
+[  516.5s]   NN_transformer_d256_L3_SHIPPED__CTRL: 2,899,724 params  epochs 40  inner score -0.1474  best-budget heldout accel -0.0616  (47.0s)
+[  712.8s]   NN_transformer_d512_L6: 19,975,180 params  epochs 40  inner score -0.2085  best-budget heldout accel -0.0631  (196.3s)
+[  909.1s]   NN_transformer_d512_L6__CTRL: 19,975,180 params  epochs 40  inner score -0.0497  best-budget heldout accel -0.0498  (196.2s)
+[  927.5s]   NN_mlp_centre_h512: 1,318,924 params  epochs 40  inner score -0.0925  best-budget heldout accel -0.1174  (18.4s)
+[  944.8s]   NN_mlp_centre_h512__CTRL: 1,318,924 params  epochs 40  inner score -0.2518  best-budget heldout accel -0.0604  (17.2s)
+[  990.0s]   NN_mlp_window_h1024: 19,939,340 params  epochs 40  inner score +0.0749  best-budget heldout accel -0.0529  (45.3s)
+[ 1035.8s]   NN_mlp_window_h1024__CTRL: 19,939,340 params  epochs 40  inner score -0.2339  best-budget heldout accel -0.0362  (45.7s)
+[ 1067.8s]   NN_gru_d128_L2: 760,460 params  epochs 40  inner score -0.3302  best-budget heldout accel -0.0821  (32.0s)
+[ 1098.4s]   NN_gru_d128_L2__CTRL: 760,460 params  epochs 40  inner score -0.3588  best-budget heldout accel -0.0966  (30.5s)
+[ 1118.1s]   NN_transformer_d256_L3_ACCELONLY: 2,899,724 params  epochs 5  inner score -0.5305  best-budget heldout accel -0.0616  (19.7s)
+[ 1137.1s]   NN_transformer_d256_L3_ACCELONLY__CTRL: 2,899,724 params  epochs 5  inner score -0.5339  best-budget heldout accel -0.0527  (18.8s)
+[ 1150.2s]   SENS amp frac=0: inner -0.0000 heldout -0.0626 [-0.2126,-0.0018]
+[ 1162.3s]   SENS amp frac=1e-05: inner +0.9483 heldout +0.9434 [+0.9048,+0.9605]
+[ 1174.8s]   SENS amp frac=3e-05: inner +0.9945 heldout +0.9923 [+0.9869,+0.9947]
+[ 1188.1s]   SENS amp frac=0.0001: inner +0.9995 heldout +0.9982 [+0.9972,+0.9986]
+[ 1201.4s]   SENS amp frac=0.0003: inner +0.9999 heldout +0.9992 [+0.9988,+0.9995]
+[ 1215.4s]   SENS amp frac=0.001: inner +1.0000 heldout +0.9987 [+0.9981,+0.9990]
+[ 1228.4s]   SENS amp frac=0.01: inner +1.0000 heldout +0.9993 [+0.9991,+0.9994]
+[ 1252.6s]   SENS random_dir f=0.05 rho2=0: heldout -0.0626 oracle-sel -0.0626 dCTRL -0.0003
+[ 1277.4s]   SENS random_dir f=0.05 rho2=0.01: heldout -0.0626 oracle-sel -0.0624 dCTRL -0.0004
+[ 1300.4s]   SENS random_dir f=0.05 rho2=0.03: heldout -0.0626 oracle-sel -0.0604 dCTRL +0.0000
+[ 1324.0s]   SENS random_dir f=0.05 rho2=0.1: heldout -0.0626 oracle-sel -0.0274 dCTRL +0.0011
+[ 1347.8s]   SENS random_dir f=0.05 rho2=0.3: heldout +0.1505 oracle-sel +0.1793 dCTRL +0.2131*
+[ 1371.6s]   SENS random_dir f=0.05 rho2=0.6: heldout +0.5067 oracle-sel +0.5152 dCTRL +0.5652*
+[ 1394.9s]   SENS random_dir_strong f=0.5 rho2=0: heldout -0.0626 oracle-sel -0.0625 dCTRL +0.0004
+[ 1417.9s]   SENS random_dir_strong f=0.5 rho2=0.01: heldout -0.0626 oracle-sel -0.0556 dCTRL +0.0003
+[ 1440.9s]   SENS random_dir_strong f=0.5 rho2=0.03: heldout -0.0405 oracle-sel -0.0354 dCTRL +0.0221*
+[ 1463.9s]   SENS random_dir_strong f=0.5 rho2=0.1: heldout +0.0304 oracle-sel +0.0304 dCTRL +0.0957*
+[ 1487.6s]   SENS random_dir_strong f=0.5 rho2=0.3: heldout +0.2286 oracle-sel +0.2286 dCTRL +0.2912*
+[ 1511.0s]   SENS pc1_dir f=0.05 rho2=0.1: heldout -0.0626 oracle-sel -0.0626 dCTRL -0.0014
+[ 1533.9s]   SENS pc1_dir f=0.05 rho2=0.6: heldout -0.0626 oracle-sel -0.0626 dCTRL -0.0023
+[ 1557.3s]   SENS pc1_dir_strong f=2.0 rho2=0.1: heldout +0.0135 oracle-sel +0.0135 dCTRL +0.0735*
+[ 1580.3s]   SENS pc1_dir_strong f=2.0 rho2=0.3: heldout +0.1878 oracle-sel +0.1949 dCTRL +0.2504*
+[ 1613.8s]   ORACLEIN_transformer_d256_L3: 2,375,692 params inner score -0.0505 best-budget heldout accel -0.0700 (33.5s)
+[ 1619.3s]   ORACLEIN_mlp_window_h512: 274,956 params inner score +0.1486 best-budget heldout accel +0.2180 (5.5s)
+[ 1625.3s]   ORACLEIN_mlp_centreONLY_blind: 270,860 params inner score +0.0675 best-budget heldout accel -0.0448 (5.9s)
+[ 1627.1s]   context k=12: heldout windows 2,210 (vs 2,346 at k=4)
+[ 1678.8s]   CONTEXT CTX_k12_ridge_linear_window: long_accel -0.0665
+[ 1702.2s]   CONTEXT CTX_k4_ridge_linear_window_SAMEROWS: long_accel -0.0665
+[ 1703.3s]   SCORED NN_gru_d128_L2: speed=+0.4056 yaw_rate=-0.3567 steer=+0.4379 long_accel=-0.1142
+[ 1703.9s]   SCORED NN_gru_d128_L2__CTRL: speed=+0.0258 yaw_rate=-0.1863 steer=+0.0749 long_accel=-0.0751
+[ 1704.5s]   SCORED NN_mlp_centre_h512: speed=+0.5951 yaw_rate=-0.2453 steer=+0.1962 long_accel=-0.1629
+[ 1705.1s]   SCORED NN_mlp_centre_h512__CTRL: speed=+0.1171 yaw_rate=-0.5878 steer=-0.0242 long_accel=-0.0660
+[ 1705.8s]   SCORED NN_mlp_window_h1024: speed=+0.5507 yaw_rate=+0.0016 steer=+0.3457 long_accel=-0.1127
+[ 1706.4s]   SCORED NN_mlp_window_h1024__CTRL: speed=+0.0546 yaw_rate=-0.1609 steer=-0.0323 long_accel=-0.0632
+[ 1707.0s]   SCORED NN_transformer_d256_L3_ACCELONLY: speed=-3.6188 yaw_rate=-34.3451 steer=-48.9676 long_accel=-0.1115
+[ 1707.7s]   SCORED NN_transformer_d256_L3_ACCELONLY__CTRL: speed=-3.6383 yaw_rate=-115.9287 steer=-23.0506 long_accel=-0.0552
+[ 1708.4s]   SCORED NN_transformer_d256_L3_SHIPPED: speed=+0.3229 yaw_rate=-0.1299 steer=+0.3669 long_accel=-0.1482
+[ 1709.1s]   SCORED NN_transformer_d256_L3_SHIPPED__CTRL: speed=-0.0241 yaw_rate=-0.2398 steer=-0.0056 long_accel=-0.0634
+[ 1709.7s]   SCORED NN_transformer_d512_L6: speed=+0.4660 yaw_rate=+0.1079 steer=+0.3673 long_accel=-0.1076
+[ 1710.4s]   SCORED NN_transformer_d512_L6__CTRL: speed=+0.0398 yaw_rate=-0.0448 steer=-0.0363 long_accel=-0.0641
+[ 1711.0s]   SCORED NN_transformer_d64_L1: speed=-1.5863 yaw_rate=-0.1857 steer=+0.3005 long_accel=-0.1421
+[ 1711.6s]   SCORED NN_transformer_d64_L1__CTRL: speed=-1.7120 yaw_rate=-0.2233 steer=+0.0191 long_accel=-0.0625
+[ 1712.2s]   SCORED NULL_train_mean: speed=-0.0052 yaw_rate=-0.0221 steer=-0.0401 long_accel=-0.0626
+[ 1712.9s]   SCORED ORACLEIN_mlp_centreONLY_blind: speed=+0.6134 yaw_rate=-0.0697 steer=-0.0795 long_accel=-0.0909
+[ 1713.5s]   SCORED ORACLEIN_mlp_window_h512: speed=+0.4777 yaw_rate=-0.0730 steer=-0.0972 long_accel=+0.4299
+[ 1714.1s]   SCORED ORACLEIN_transformer_d256_L3: speed=+0.4678 yaw_rate=-0.1331 steer=-0.0778 long_accel=-0.1197
+[ 1714.7s]   SCORED RIDGE_linear_centre: speed=+0.6857 yaw_rate=-0.0221 steer=+0.2784 long_accel=-0.0626
+[ 1715.3s]   SCORED RIDGE_linear_centre__CTRL: speed=-0.0052 yaw_rate=-0.0221 steer=-0.0401 long_accel=-0.0621
+[ 1715.9s]   SCORED RIDGE_linear_centre_diff: speed=+0.6650 yaw_rate=-0.0221 steer=+0.2707 long_accel=-0.0626
+[ 1716.6s]   SCORED RIDGE_linear_centre_diff__CTRL: speed=-0.0052 yaw_rate=-0.0221 steer=-0.0401 long_accel=-0.0593
+[ 1717.2s]   SCORED RIDGE_linear_diff: speed=-0.0052 yaw_rate=-0.0221 steer=-0.0401 long_accel=-0.0599
+[ 1717.8s]   SCORED RIDGE_linear_diff__CTRL: speed=-0.0052 yaw_rate=-0.0221 steer=-0.0401 long_accel=-0.0626
+[ 1718.4s]   SCORED RIDGE_linear_window: speed=+0.7145 yaw_rate=-0.0221 steer=+0.3426 long_accel=-0.0626
+[ 1719.0s]   SCORED RIDGE_linear_window__CTRL: speed=-0.0052 yaw_rate=-0.0221 steer=-0.0401 long_accel=-0.0664
+[ 1719.6s]   SCORED RIDGE_rbf_centre: speed=+0.5882 yaw_rate=-0.0221 steer=-0.0401 long_accel=-0.0626
+[ 1720.3s]   SCORED RIDGE_rbf_centre__CTRL: speed=-0.0052 yaw_rate=-0.0221 steer=-0.0401 long_accel=-0.0600
+[ 1720.9s]   SCORED RIDGE_rbf_window: speed=+0.6213 yaw_rate=-0.0221 steer=+0.3582 long_accel=-0.0626
+[ 1721.5s]   SCORED RIDGE_rbf_window__CTRL: speed=-0.0052 yaw_rate=-0.0221 steer=-0.0401 long_accel=-0.0624
+[ 1722.0s]   PAIRED NN_gru_d128_L2_minus_CTRL: speed=+0.3799* yaw_rate=-0.1704 steer=+0.3630 long_accel=-0.0391
+[ 1722.5s]   PAIRED NN_gru_d128_L2_minus_NULLMEAN: speed=+0.4108* yaw_rate=-0.3346* steer=+0.4779 long_accel=-0.0516
+[ 1722.9s]   PAIRED NN_mlp_centre_h512_minus_CTRL: speed=+0.4780* yaw_rate=+0.3425 steer=+0.2204 long_accel=-0.0969*
+[ 1723.4s]   PAIRED NN_mlp_centre_h512_minus_NULLMEAN: speed=+0.6003* yaw_rate=-0.2232* steer=+0.2363 long_accel=-0.1003*
+[ 1723.9s]   PAIRED NN_mlp_window_h1024_minus_CTRL: speed=+0.4961* yaw_rate=+0.1625 steer=+0.3780* long_accel=-0.0495
+[ 1724.4s]   PAIRED NN_mlp_window_h1024_minus_NULLMEAN: speed=+0.5558* yaw_rate=+0.0237 steer=+0.3857 long_accel=-0.0501
+[ 1724.9s]   PAIRED NN_transformer_d256_L3_ACCELONLY_minus_CTRL: speed=+0.0196* yaw_rate=+81.5836* steer=-25.9170* long_accel=-0.0563*
+[ 1725.4s]   PAIRED NN_transformer_d256_L3_ACCELONLY_minus_NULLMEAN: speed=-3.6136* yaw_rate=-34.3230* steer=-48.9275* long_accel=-0.0489
+[ 1725.9s]   PAIRED NN_transformer_d256_L3_SHIPPED_minus_CTRL: speed=+0.3470* yaw_rate=+0.1099* steer=+0.3726 long_accel=-0.0848
+[ 1726.4s]   PAIRED NN_transformer_d256_L3_SHIPPED_minus_NULLMEAN: speed=+0.3281* yaw_rate=-0.1078* steer=+0.4070 long_accel=-0.0857
+[ 1726.8s]   PAIRED NN_transformer_d512_L6_minus_CTRL: speed=+0.4262* yaw_rate=+0.1527* steer=+0.4035 long_accel=-0.0435
+[ 1727.3s]   PAIRED NN_transformer_d512_L6_minus_NULLMEAN: speed=+0.4712* yaw_rate=+0.1300 steer=+0.4073 long_accel=-0.0450
+[ 1727.9s]   PAIRED NN_transformer_d64_L1_minus_CTRL: speed=+0.1257* yaw_rate=+0.0377 steer=+0.2813 long_accel=-0.0795*
+[ 1728.4s]   PAIRED NN_transformer_d64_L1_minus_NULLMEAN: speed=-1.5812* yaw_rate=-0.1636* steer=+0.3406 long_accel=-0.0795
+[ 1728.9s]   PAIRED ORACLEIN_mlp_centreONLY_blind_minus_NULLMEAN: speed=+0.6186* yaw_rate=-0.0476* steer=-0.0394 long_accel=-0.0284*
+[ 1729.4s]   PAIRED ORACLEIN_mlp_window_h512_minus_NULLMEAN: speed=+0.4829* yaw_rate=-0.0509 steer=-0.0571 long_accel=+0.4925*
+[ 1729.9s]   PAIRED ORACLEIN_transformer_d256_L3_minus_NULLMEAN: speed=+0.4730* yaw_rate=-0.1110* steer=-0.0377 long_accel=-0.0571*
+[ 1730.4s]   PAIRED RIDGE_linear_centre_minus_CTRL: speed=+0.6908* yaw_rate=+0.0000 steer=+0.3185 long_accel=-0.0005
+[ 1730.9s]   PAIRED RIDGE_linear_centre_minus_NULLMEAN: speed=+0.6908* yaw_rate=+0.0000 steer=+0.3185 long_accel=+0.0000
+[ 1731.3s]   PAIRED RIDGE_linear_centre_diff_minus_CTRL: speed=+0.6702* yaw_rate=+0.0000 steer=+0.3107 long_accel=-0.0032
+[ 1731.8s]   PAIRED RIDGE_linear_centre_diff_minus_NULLMEAN: speed=+0.6702* yaw_rate=+0.0000 steer=+0.3107 long_accel=+0.0000
+[ 1732.3s]   PAIRED RIDGE_linear_diff_minus_CTRL: speed=+0.0000 yaw_rate=+0.0000 steer=+0.0000 long_accel=+0.0027
+[ 1732.8s]   PAIRED RIDGE_linear_diff_minus_NULLMEAN: speed=+0.0000 yaw_rate=+0.0000 steer=+0.0000 long_accel=+0.0027
+[ 1733.2s]   PAIRED RIDGE_linear_window_minus_CTRL: speed=+0.7197* yaw_rate=+0.0000 steer=+0.3827 long_accel=+0.0038
+[ 1733.7s]   PAIRED RIDGE_linear_window_minus_NULLMEAN: speed=+0.7197* yaw_rate=+0.0000 steer=+0.3827 long_accel=+0.0000
+[ 1734.2s]   PAIRED RIDGE_rbf_centre_minus_CTRL: speed=+0.5933* yaw_rate=+0.0000 steer=+0.0000 long_accel=-0.0026
+[ 1734.6s]   PAIRED RIDGE_rbf_centre_minus_NULLMEAN: speed=+0.5933* yaw_rate=+0.0000 steer=+0.0000 long_accel=+0.0000
+[ 1735.1s]   PAIRED RIDGE_rbf_window_minus_CTRL: speed=+0.6265* yaw_rate=+0.0000 steer=+0.3983 long_accel=-0.0001
+[ 1735.6s]   PAIRED RIDGE_rbf_window_minus_NULLMEAN: speed=+0.6265* yaw_rate=+0.0000 steer=+0.3983 long_accel=+0.0000
+[ 1735.6s] wrote results_accel_recoverability.json

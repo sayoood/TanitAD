@@ -176,6 +176,108 @@ def train_sit_head(Xtr, Ytr, Vtr, *, win: int, in_dim: int, epochs: int = 8,
     return model
 
 
+# --------------------------------------------------------------------------- #
+# MATCHED CAPACITY (BACKLOG B4)                                               #
+# --------------------------------------------------------------------------- #
+#: ``CausalSitHead`` fixes 4 attention heads, so a legal width is a multiple of
+#: 4. Solving a parameter budget over ALL integers silently proposes widths the
+#: module refuses to build ("embed_dim must be divisible by num_heads").
+HEAD_N_HEADS = 4
+
+
+def head_param_count(in_dim: int, win: int, d: int,
+                     n_out: int = len(SITUATIONS)) -> int:
+    """Exact parameter count of :class:`CausalSitHead` at width ``d``.
+
+    Counted by CONSTRUCTING the module, never by a closed-form formula. A
+    formula is what let ``head_img`` be quoted at "2.17 M" when the checkpoint
+    holds **417,028** (`checkpoints/head_img.pt`) — an arithmetic claim about an
+    artifact that was never checked against the artifact.
+    """
+    d = int(d)
+    if d < 1 or d % HEAD_N_HEADS:
+        raise ValueError(f"width must be a positive multiple of {HEAD_N_HEADS}, got {d}")
+    m = CausalSitHead(int(in_dim), int(win), d=d, n_out=int(n_out))
+    return int(sum(p.numel() for p in m.parameters()))
+
+
+def width_for_param_budget(budget: int, in_dim: int, win: int,
+                           n_out: int = len(SITUATIONS),
+                           d_max: int = 1024) -> int:
+    """Smallest legal width whose parameter count is >= ``budget``.
+
+    This is what makes a capacity ladder *matched*: rungs are specified as
+    parameter budgets and the width is solved for, so a change of ``in_dim``
+    (PCA rank) or ``win`` cannot silently move the rungs. Comparing a PCA-16
+    head against a PCA-64 head at the same *width* would compare different
+    capacities and call it a representation effect.
+    """
+    if budget < 1:
+        raise ValueError(f"budget must be >= 1, got {budget}")
+    h = HEAD_N_HEADS
+    lo, hi = 1, int(d_max) // h
+    if head_param_count(in_dim, win, hi * h, n_out) < budget:
+        raise ValueError(f"budget {budget} unreachable at d <= {hi * h}")
+    while lo < hi:
+        mid = (lo + hi) // 2
+        if head_param_count(in_dim, win, mid * h, n_out) >= budget:
+            hi = mid
+        else:
+            lo = mid + 1
+    return int(lo * h)
+
+
+def ridge_scores(Xtr, Ytr, Vtr, Xte, lam: float = 1.0) -> np.ndarray:
+    """CLOSED-FORM ridge on +-1 targets, per situation -> ``[n_te, n_out]``.
+
+    Ported verbatim from ``sc_train.ridge_fit_predict`` (the recipe that
+    produced the banked ``ridge_img`` arm) so the ladder's LINEAR floor is the
+    same estimator the banked table reports, not a re-derivation of it. Closed
+    form on purpose: with no optimiser there is no optimiser to blame when the
+    floor beats a transformer.
+
+    ``Xtr``/``Xte`` are the FLAT windows from :func:`causal_window`;
+    standardisation uses TRAIN rows only and the intercept is never penalised.
+    """
+    A0 = np.asarray(Xtr, dtype=np.float64)
+    B0 = np.asarray(Xte, dtype=np.float64)
+    Y = np.asarray(Ytr)
+    V = np.asarray(Vtr).astype(bool)
+    if A0.ndim != 2 or B0.ndim != 2 or A0.shape[1] != B0.shape[1]:
+        raise ValueError(f"ridge needs aligned [N, D] windows: {A0.shape} vs {B0.shape}")
+    if Y.shape[0] != A0.shape[0] or V.shape != Y.shape:
+        raise ValueError("ridge needs Ytr/Vtr aligned with Xtr")
+    mu = A0.mean(0, keepdims=True)
+    sd = np.maximum(A0.std(0, keepdims=True), 1e-3)
+    A = np.concatenate([(A0 - mu) / sd, np.ones((len(A0), 1))], 1)
+    B = np.concatenate([(B0 - mu) / sd, np.ones((len(B0), 1))], 1)
+    eye = np.eye(A.shape[1])
+    eye[-1, -1] = 0.0                       # never penalise the intercept
+    out = np.zeros((len(B0), Y.shape[1]), np.float64)
+    for i in range(Y.shape[1]):
+        m = V[:, i]
+        if m.sum() < 50:
+            continue
+        Am = A[m]
+        t = np.where(Y[m, i].astype(bool), 1.0, -1.0)
+        w = np.linalg.solve(Am.T @ Am + lam * eye, Am.T @ t)
+        out[:, i] = B @ w
+    return out.astype(np.float32)
+
+
+def ridge_param_count(flat_dim: int, n_out: int = len(SITUATIONS),
+                      per_situation: bool = True) -> int:
+    """Parameters of :func:`ridge_scores`: ``flat_dim + 1`` weights per output.
+
+    ``per_situation=False`` returns the per-head figure the banked
+    ``train_summary.json`` records (``ridge_img`` -> **129** = 16 PCA dims x
+    win 8 + intercept), which is the number that belongs on a capacity axis
+    beside a transformer's total.
+    """
+    n = int(flat_dim) + 1
+    return n * int(n_out) if per_situation else n
+
+
 @torch.no_grad()
 def predict_sit_head(model: CausalSitHead, X, in_dim: int, *, device: str = "cpu",
                      batch: int = 8192) -> np.ndarray:

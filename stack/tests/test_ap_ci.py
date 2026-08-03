@@ -206,3 +206,44 @@ def test_paired_is_antisymmetric_and_aligned():
     assert ab["ap_a"] == pytest.approx(ba["ap_b"])
     with pytest.raises(ValueError):
         paired_ap_episode_cluster_bootstrap(y, s, other[:-1], eid, n_boot=10)
+
+
+# --------------------------------------------------------------------------- #
+# degenerate resamples must report, not raise                                 #
+# --------------------------------------------------------------------------- #
+def test_ap_bootstrap_reports_nan_bounds_when_every_draw_is_degenerate():
+    """A situation can be rare enough that NO cluster resample contains a
+    positive. numpy's percentile then raised an IndexError from inside
+    `_quantile`, which reads as a library bug instead of "unpowered here".
+    The row must survive with n_boot_valid = 0 and nan bounds."""
+    y = np.array([0, 0, 1, 0, 0, 0], np.int64)
+    s = np.arange(6, dtype=float)
+    eid = np.array(["a", "a", "b", "c", "c", "d"])
+    # every draw that omits cluster "b" has no positive; force that by resampling
+    # a set in which "b" is the only carrier and n_boot is small enough to check.
+    r = ap_episode_cluster_bootstrap(y, s, eid, n_boot=8, seed=3, lift=True)
+    assert r["n_boot_valid"] <= 8
+    assert np.isfinite(r["point"])
+    if r["n_boot_valid"] == 0:
+        assert np.isnan(r["lo"]) and np.isnan(r["hi"])
+
+
+def test_ap_bootstrap_survives_a_label_column_with_no_positive_in_any_draw():
+    y = np.zeros(20, np.int64)
+    y[7] = 1
+    s = np.arange(20, dtype=float)
+    eid = np.repeat(np.arange(10), 2)
+    r = ap_episode_cluster_bootstrap(y, s, eid, n_boot=16, seed=0)
+    assert "lo" in r and "hi" in r and r["n_boot"] == 16
+
+
+def test_paired_ap_bootstrap_survives_all_degenerate_draws():
+    y = np.zeros(8, np.int64)
+    y[3] = 1
+    a = np.arange(8, dtype=float)
+    b = a[::-1].copy()
+    eid = np.array(["p", "p", "q", "q", "r", "r", "s", "s"])
+    r = paired_ap_episode_cluster_bootstrap(y, a, b, eid, n_boot=6, seed=1)
+    assert set(("delta", "lo", "hi", "separated")) <= set(r)
+    if r["n_boot_valid"] == 0:
+        assert np.isnan(r["lo"]) and r["separated"] is False

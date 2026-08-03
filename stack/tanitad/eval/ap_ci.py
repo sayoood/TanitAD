@@ -110,11 +110,28 @@ def _draws(uniq, idx_by_ep, n_boot, seed):
     yield from _tv_draws(uniq, idx_by_ep, n_boot, seed)
 
 
+def _bounds(vals, alpha):
+    """Percentile bounds, or ``(nan, nan)`` when EVERY draw was degenerate.
+
+    A situation can be so rare that most cluster resamples contain no positive
+    at all; at the limit none does and ``vals`` is empty. ``np.percentile`` then
+    raises an ``IndexError`` from deep inside numpy, which reads as a library
+    bug rather than "this arm is unpowered here". Returning nan bounds keeps
+    ``n_boot_valid: 0`` visible in the row, which is the honest report.
+    """
+    v = np.asarray(vals, dtype=np.float64)
+    if v.size == 0:
+        return float("nan"), float("nan")
+    lo, hi = np.percentile(v, [100 * alpha / 2, 100 * (1 - alpha / 2)])
+    return float(lo), float(hi)
+
+
 def _pack(point, boots, alpha, extra):
-    lo, hi = np.percentile(boots, [100 * alpha / 2, 100 * (1 - alpha / 2)])
+    lo, hi = _bounds(boots, alpha)
     out = {"lo": round(float(lo), 5), "hi": round(float(hi), 5),
            "ci95": round(float((hi - lo) / 2.0), 5),
-           "se": round(float(boots.std(ddof=1)), 5)}
+           "se": (round(float(boots.std(ddof=1)), 5) if boots.size > 1
+                  else float("nan"))}
     out.update(extra)
     out["_lo_raw"], out["_hi_raw"] = float(lo), float(hi)
     return {**{"point": round(float(point), 5)}, **out}
@@ -186,10 +203,11 @@ def paired_stat_episode_cluster_bootstrap(fn_a, fn_b, eid, *,
                   for sel in _draws(uniq, idx_by_ep, n_boot, seed)])
     ok = np.isfinite(d)
     dv = d[ok]
-    lo, hi = np.percentile(dv, [100 * alpha / 2, 100 * (1 - alpha / 2)])
+    lo, hi = _bounds(dv, alpha)
     return {"delta": round(float(point), 5), "lo": round(float(lo), 5),
             "hi": round(float(hi), 5), "ci95": round(float((hi - lo) / 2.0), 5),
-            "p_delta_gt0": round(float((dv > 0).mean()), 4),
+            "p_delta_gt0": (round(float((dv > 0).mean()), 4) if dv.size
+                            else float("nan")),
             "separated": bool(lo > 0 or hi < 0), "statistic": name,
             "n_windows": int(len(eid)), "n_episodes": int(len(uniq)),
             "n_boot": int(n_boot), "n_boot_valid": int(ok.sum()),
@@ -223,12 +241,13 @@ def paired_ap_episode_cluster_bootstrap(y, s_a, s_b, eid, *,
                   for sel in _draws(uniq, idx_by_ep, n_boot, seed)])
     ok = np.isfinite(d)
     dv = d[ok]
-    lo, hi = np.percentile(dv, [100 * alpha / 2, 100 * (1 - alpha / 2)])
+    lo, hi = _bounds(dv, alpha)
     separated = bool(lo > 0 or hi < 0)
     return {"delta": round(float(point), 5),
             "lo": round(float(lo), 5), "hi": round(float(hi), 5),
             "ci95": round(float((hi - lo) / 2.0), 5),
-            "p_delta_gt0": round(float((dv > 0).mean()), 4),
+            "p_delta_gt0": (round(float((dv > 0).mean()), 4) if dv.size
+                            else float("nan")),
             "separated": separated,
             "statistic": "ap_lift" if lift else "ap",
             "ap_a": round(float(stat(y, a)), 5),

@@ -126,9 +126,19 @@ control is ≤ 0 everywhere, so no separation above can be an artifact of the co
 does not separate and returns the wild interval [−9.11, +3.29]. Its `PRIMARY − NEG_VISION` bound
 touches +0.14. Treat every roundabout row as suggestive, not decision-grade.
 
-⭐ **Notable:** on `roundabout` the **2,049-parameter ridge probe (0.01056) beats the 2.17 M-parameter
-transformer head (0.00721)** on the *same* vision features — independent support for
-`sc_train_v2.py`'s AMENDMENT A1 note that *the head has been the bottleneck, not the features*.
+⭐ **Notable:** on `roundabout` the **ridge probe (0.01056) beats the transformer head (0.00721)** on
+the *same* vision features — independent support for `sc_train_v2.py`'s AMENDMENT A1 note that *the
+head has been the bottleneck, not the features*.
+
+⛔ **CORRECTED 2026-08-03 (`RETRACTION_LOG.md` R-2026-08-03-h).** This sentence originally read
+*"the 2,049-parameter ridge probe beats the 2.17 M-parameter transformer head"*. **Both parameter
+counts belong to other experiments** and neither describes these arms. MEASURED from the primary
+artifacts: `ridge_img` has **129** parameters per head (16 PCA dims x win 8 + intercept —
+`artifacts/train_summary.json` -> `selected.ridge_img.n_params`) and `head_img` has **417,028**
+(`checkpoints/head_img.pt`, summed `state_dict`; `in_dim` 16, `win` 8, `d` 128). "2,049" is the
+`2026-07-26-situation-semantics` ridge on the RAW 2048-d state; "2.17 M" is **H2's** d=256 head
+(`H2_CLASSIFIER.md:621`, 2,173,187). The qualitative finding is unchanged and in fact **stronger** —
+the gap is **3,233x**, not 1,059x — and both arms consume the SAME PCA-16 x 8-frame window.
 
 ---
 
@@ -173,9 +183,11 @@ egomotion is clip-local metres with no GNSS). A **WORK ITEM**, not a pass.
    lateral stratum. `late_fuse_scores` stays implemented and tested for the day a genuinely
    independent second vision score exists; it has no role today.
 3. ⚠️ **`roundabout` must not decide anything** at 721 positives — its own label control fails.
-4. ⭐ **The real lever is the head, not the camera.** A 2,049-parameter ridge beats a 2.17 M-parameter
-   transformer on roundabout, and 68 % of lane-change anticipation runs never alarm at a 5 % budget.
-   A matched-capacity vision head (BACKLOG **B4**) is the next experiment, not more fusion.
+4. ⭐ **The real lever is the head, not the camera.** A **129**-parameter ridge beats a **417,028**-parameter
+   transformer on roundabout (counts CORRECTED — see §4 and `RETRACTION_LOG.md` R-2026-08-03-h), and
+   68 % of lane-change anticipation runs never alarm at a 5 % budget. A matched-capacity vision head
+   (BACKLOG **B4**) is the next experiment, not more fusion.
+   ⇒ **EXECUTED**: `…/2026-08-03-sitclf-matched-capacity/`.
 5. ⚠️ **Correct the "STRICTLY CAUSAL" comment's guarantee** — done in `situations.py`; the
    `np.gradient` centred difference reads 0.1 s past t.
 

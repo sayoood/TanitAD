@@ -318,6 +318,42 @@ def _top_frac_alarm(s, fin, top_frac: float) -> np.ndarray:
     return alarm
 
 
+def precision_recall_at_budget(y, s, valid, *, top_frac: float = 0.05) -> dict:
+    """PRECISION and recall at a fixed alarm budget, with both denominators.
+
+    ⚠️ Binding rule (2026-08-03): *"report precision alongside recall — a
+    recall-only frontier cannot see what it is paying."* That is not abstract
+    here: the same programme published a "brake_stop 0.026 -> 0.503, free win"
+    claim that was **retracted the same week** once precision was attached
+    (0.2340 -> 0.1711, 380 fires for 153 true positives). AP alone cannot expose
+    it either, because AP integrates over every operating point and the deployed
+    system runs at ONE.
+
+    Both denominators are returned explicitly — ``n_alarm`` (what precision
+    divides by) and ``n_pos`` (what recall divides by) — so a gain that lives on
+    a shrinking denominator is visible in the row rather than inferred.
+    """
+    y = np.asarray(y).astype(bool).ravel()
+    s = np.asarray(s, dtype=np.float64).ravel()
+    valid = np.asarray(valid).astype(bool).ravel()
+    if y.shape != s.shape or y.shape != valid.shape:
+        raise ValueError(f"aligned [N] inputs required: {y.shape} {s.shape} {valid.shape}")
+    fin = valid & np.isfinite(s)
+    alarm = _top_frac_alarm(s, fin, top_frac)
+    n_alarm = int(alarm.sum())
+    n_pos = int((y & fin).sum())
+    tp = int((alarm & y).sum())
+    base = float(y[fin].mean()) if fin.any() else float("nan")
+    prec = (tp / n_alarm) if n_alarm else float("nan")
+    return {"top_frac": top_frac, "n_scorable": int(fin.sum()),
+            "n_alarm": n_alarm, "n_pos": n_pos, "tp": tp,
+            "precision": round(prec, 5),
+            "recall": round(tp / n_pos, 5) if n_pos else float("nan"),
+            "base_rate": round(base, 6),
+            "precision_lift": (round(prec / base, 5)
+                               if n_alarm and base > 0 else float("nan"))}
+
+
 def anticipation_lead_s(y, s, clip_cluster, valid, *, hz: float = 10.0,
                         top_frac: float = 0.05) -> dict:
     """Median seconds by which the first alarm precedes the onset it anticipates.
@@ -413,6 +449,13 @@ def four_family_report(bundle: ScoreBundle, situation: str, *,
         "anticipation_lead": {
             fused_name: anticipation_lead_s(y, fused, eid, m),
             baseline_name: anticipation_lead_s(y, baseline, eid, m),
+        },
+        # ⚠️ the operating point, WITH precision. AP is a ranking average over
+        # every threshold; the deployed system runs at one, and a recall-only
+        # read of that one point is how the retracted "free win" was published.
+        "operating_point_5pct": {
+            fused_name: precision_recall_at_budget(y, fused, m),
+            baseline_name: precision_recall_at_budget(y, baseline, m),
         },
     }
 

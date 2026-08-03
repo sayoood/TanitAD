@@ -118,24 +118,49 @@ def route_gt_at(gtp, i):
         return 3, False, f"error:{type(e).__name__}", 0.0
 
 
-def actors_at(tracks, frac, ego):
-    """Annotated agents at normalised clip time `frac`, in the ego frame."""
+def actors_at(tracks, frac, ego, keep=None, dfrac=None):
+    """Annotated agents at normalised clip time `frac`, in the ego frame.
+
+    `keep` — restrict to these track INDICES. Used to score only the agents the renderer
+    actually draws: crediting distance-keeping to a lead the model cannot see would be a
+    metric that measures the annotation rather than the policy.
+    `dfrac` — normalised-time step used to finite-difference each track's world position
+    into a speed, which is what makes TTC computable at all.
+    """
     out = []
     if tracks is None:
         return out
     for i in range(len(tracks)):
+        if keep is not None and i not in keep:
+            continue
         T = tracks.pose_at(i, frac)
         if T is None:
             continue
         r = ego_frame(T[:2, 3] - np.array(ego[:2]), ego[3])
-        out.append({"id": tracks.ids[i], "xy": [float(T[0, 3]), float(T[1, 3])],
+        spd = None
+        if dfrac:
+            Tp = tracks.pose_at(i, min(1.0, frac + dfrac))
+            Tm = tracks.pose_at(i, max(0.0, frac - dfrac))
+            if Tp is not None and Tm is not None:
+                dt = (min(1.0, frac + dfrac) - max(0.0, frac - dfrac))
+                if dt > 0:
+                    spd = float(np.linalg.norm(Tp[:2, 3] - Tm[:2, 3]) / (dt * _CLIP_SPAN_S[0]))
+        out.append({"id": tracks.ids[i], "idx": i,
+                    "xy": [float(T[0, 3]), float(T[1, 3])],
                     "yaw": float(math.atan2(T[1, 0], T[0, 0])),
                     "rig": [float(r[0]), float(r[1])],
+                    "v": spd,
                     "dist": float(np.linalg.norm(r))})
     return out
 
 
-def per_step_metrics(rec, gt, tracks=None, lead_ref=None):
+# clip duration in seconds, set once per rollout file so `actors_at` can turn a
+# normalised-time difference into a real speed. A module-level cell rather than a global
+# constant because it is a property of the clip, not of the metric.
+_CLIP_SPAN_S = [20.0]
+
+
+def per_step_metrics(rec, gt, tracks=None, lead_ref=None, keep_tracks=None):
     xy, gyaw, gv, gtp = gt_arrays(gt)
     N = len(gt)
     steps = rec["steps"]
@@ -173,18 +198,33 @@ def per_step_metrics(rec, gt, tracks=None, lead_ref=None):
             man_exec = classify(sub)
         ex = st.get("extra", {})
         man_head = int(np.argmax(ex["maneuver_logits"])) if "maneuver_logits" in ex else None
-        route_head = int(np.argmax(ex["s_route_logits"])) if "s_route_logits" in ex else None
+        # ⚠️ CORRECTED 2026-08-03: this read only `s_route_logits`. flagship-v1 emits that
+        # name; refc-base emits `route_logits` — on 450/450 steps of all six conditions.
+        # The panel therefore published REF-C's STRATEGIC route head as
+        # {"n":0,"reason":"this arm exposes no strategic route logits at the deploy path"},
+        # which is FALSE: the head was there the whole time and a key-name mismatch
+        # deleted a whole metric family for one of the two arms. Probe both names.
+        rl = ex.get("s_route_logits", ex.get("route_logits"))
+        route_head = int(np.argmax(rl)) if rl is not None else None
         rgt, rok, rreason, rnet = route_gt_at(gtp, i)
 
         frac = float(np.clip((st["t_us"] - ts0) / max(ts1 - ts0, 1.0), 0.0, 1.0))
-        acts = actors_at(tracks, frac, e)
-        lead_idx, headway, tgap, ttc = -1, None, None, None
+        acts = actors_at(tracks, frac, e, keep=keep_tracks, dfrac=0.005)
+        lead_idx, headway, tgap, ttc, v_lead = -1, None, None, None, None
         cand = [(a["rig"][0], n) for n, a in enumerate(acts)
                 if a["rig"][0] > 0 and abs(a["rig"][1]) < LEAD_HALF_W and a["rig"][0] < LEAD_MAX_X]
         if cand:
             xlead, lead_idx = min(cand)
             headway = float(xlead - EGO_LEN)
             tgap = headway / max(st["v"], 0.1)
+            v_lead = acts[lead_idx].get("v")
+            # TTC is only defined while CLOSING. An opening gap has no time-to-collision
+            # and must not be recorded as a large-but-finite one, which would make a
+            # mean over it meaningless.
+            if v_lead is not None:
+                closing = st["v"] - v_lead
+                if closing > 0.1 and headway > 0:
+                    ttc = float(headway / closing)
         out.append({
             "k": k, "i_gt": i, "trunc": bool(trunc),
             "de": de.tolist(), "ade": float(de.mean()), "de2s": float(de[-1]),
@@ -198,11 +238,12 @@ def per_step_metrics(rec, gt, tracks=None, lead_ref=None):
             "curv_err": float(abs(kap_pl - kap_gt)), "curv_plan": float(kap_pl),
             "curv_gt": float(kap_gt),
             "yawrate_err": float(abs(yr_exec - yr_gt)),
+            "nav": (int(st["nav"]) if st.get("nav") is not None else None),
             "man_plan": man_plan, "man_gt": man_gt, "man_exec": man_exec,
             "man_head": man_head, "route_gt": rgt, "route_valid": rok,
             "route_reason": rreason, "route_net_dyaw": rnet, "route_head": route_head,
             "corridor_departure": int(abs(ct) > CORRIDOR_M),
-            "headway": headway, "time_gap": tgap, "ttc": ttc,
+            "headway": headway, "time_gap": tgap, "ttc": ttc, "v_lead": v_lead,
             "lead_idx": lead_idx, "actors": acts,
         })
         # --- CONSTRUCTED lead geometry (synth_actor.LeadGeometry) ------------------
@@ -222,8 +263,22 @@ def per_step_metrics(rec, gt, tracks=None, lead_ref=None):
                 # bumper-to-bumper headway <= 0 means the ego has driven INTO the lead.
                 # The lead is a rendered object with no physics, so nothing stops it —
                 # which is precisely why it has to be counted rather than assumed away.
+                #
+                # ⚠️ CORRECTED 2026-08-03 — THIS TEST HAD NO LATERAL GATE, so it counted a
+                # longitudinal PASS as a collision. MEASURED on the banked rollouts: of
+                # flagship-v1/cutin's 13 "collisions" the median |y| was 13.795 m and
+                # NONE were in-lane; flagship-v1/lead8's 33 had median |y| 8.877 m, also
+                # 0 % in-lane. A car 13 m to the side is not a collision. `synth_collision`
+                # is kept UNGATED under its old name for continuity and is no longer the
+                # quotable number; `synth_collision_inlane` is, and the precision of the
+                # ungated detector against the gated truth is reported next to it.
                 "synth_collision": (float(e["headway_m"] <= 0.0)
                                     if e.get("headway_m") is not None else np.nan),
+                "synth_collision_inlane": (
+                    float(e["headway_m"] <= 0.0 and abs(e["y"]) <= LEAD_HALF_W)
+                    if (e.get("headway_m") is not None and e.get("y") is not None)
+                    else np.nan),
+                "synth_collision_abs_y": (abs(e["y"]) if e.get("y") is not None else np.nan),
                 # is the lead actually in the ego's lane at this tick? On a curving road
                 # a vehicle 15 m ahead is genuinely offset in the ego frame, so this is
                 # reported, not asserted.
@@ -233,8 +288,8 @@ def per_step_metrics(rec, gt, tracks=None, lead_ref=None):
     return out
 
 
-def rollout_summary(rec, gt, tracks=None, lead_ref=None):
-    m = per_step_metrics(rec, gt, tracks, lead_ref)
+def rollout_summary(rec, gt, tracks=None, lead_ref=None, keep_tracks=None):
+    m = per_step_metrics(rec, gt, tracks, lead_ref, keep_tracks)
     xy, gyaw, gv, gtp = gt_arrays(gt)
     e0, e1 = rec["steps"][0]["ego"], rec["steps"][-1]["ego"]
     driven = float(np.linalg.norm(np.array(e1[:2]) - np.array(e0[:2])))
@@ -265,6 +320,37 @@ def _ci(vals, eid, reduce="mean"):
     return r
 
 
+def per_class_pr(y_true, y_pred, names):
+    """Per-class PRECISION, RECALL, F1 and BOTH denominators.
+
+    ⛔ BINDING (this programme, 2026-08-03): a rate is never reported without the price it
+    pays. A recall-only frontier published a "brake_stop 0.026 -> 0.503 free win" that was
+    really 0.0719 -> 0.4248 recall bought with precision 0.2340 -> 0.1711 — 380 fires for
+    153 true cases. So precision, recall, support (n true) and n_pred (n fires) travel
+    together here, plus the majority-class baseline that any constant predictor achieves.
+    """
+    y_true, y_pred = np.asarray(y_true, int), np.asarray(y_pred, int)
+    out, f1s = {}, []
+    for c, nm in enumerate(names):
+        tp = int(((y_pred == c) & (y_true == c)).sum())
+        fp = int(((y_pred == c) & (y_true != c)).sum())
+        fn = int(((y_pred != c) & (y_true == c)).sum())
+        prec = tp / (tp + fp) if (tp + fp) else None
+        rec = tp / (tp + fn) if (tp + fn) else None
+        f1 = (2 * prec * rec / (prec + rec)) if (prec and rec) else 0.0
+        f1s.append(f1)
+        out[nm] = {"precision": (round(prec, 4) if prec is not None else None),
+                   "recall": (round(rec, 4) if rec is not None else None),
+                   "f1": round(f1, 4), "support_n_true": tp + fn, "n_fires": tp + fp}
+    supp = np.bincount(y_true, minlength=len(names))
+    out["_macro_f1"] = round(float(np.mean(f1s)), 4)
+    out["_accuracy"] = round(float((y_true == y_pred).mean()), 4) if y_true.size else None
+    out["_majority_class_baseline_acc"] = (
+        round(float(supp.max() / supp.sum()), 4) if supp.sum() else None)
+    out["_n"] = int(y_true.size)
+    return out
+
+
 def _paired(a, b, eid):
     from taniteval.ci import paired_episode_cluster_bootstrap
     a, b = np.asarray(a, float), np.asarray(b, float)
@@ -276,12 +362,18 @@ def _paired(a, b, eid):
     return r
 
 
-def collect(path, tracks=None, drop_truncated=True, lead_ref=None):
+def collect(path, tracks=None, drop_truncated=True, lead_ref=None, keep_tracks=None):
     d = load_rollouts(path)
     gt = d["gt"]
+    # real clip duration, so `actors_at` can finite-difference a normalised-time step
+    # into m/s instead of assuming a nominal 20 s.
+    try:
+        _CLIP_SPAN_S[0] = max(1e-3, (gt[-1]["ts_us"] - gt[0]["ts_us"]) / 1e6)
+    except Exception:                                            # noqa: BLE001
+        pass
     rows, eids, summ = [], [], []
     for rec in d["rollouts"]:
-        m, s = rollout_summary(rec, gt, tracks, lead_ref)
+        m, s = rollout_summary(rec, gt, tracks, lead_ref, keep_tracks)
         summ.append(s)
         for x in m:
             if drop_truncated and x["trunc"]:
@@ -316,6 +408,29 @@ def families(rows, eids, summ=None):
         fam["LONGITUDINAL"]["time_gap_s"] = _ci(
             [r["time_gap"] for r in rows if r["headway"] is not None], hwe)
         fam["LONGITUDINAL"]["lead_present_rate"] = float(len(hw) / max(len(rows), 1))
+        # closest approach to the REAL annotated lead, and the unsafe-gap rates. These
+        # are the distance-keeping numbers the family is actually about; the mean headway
+        # alone cannot distinguish "never got close" from "got close and recovered".
+        fam["LONGITUDINAL"]["min_headway_m"] = _ci(
+            hw, hwe, reduce=lambda v: float(np.min(v)))
+        fam["LONGITUDINAL"]["frac_time_gap_below_1s"] = _ci(
+            [float(r["time_gap"] < 1.0) for r in rows if r["headway"] is not None], hwe)
+        fam["LONGITUDINAL"]["frac_time_gap_below_0_5s"] = _ci(
+            [float(r["time_gap"] < 0.5) for r in rows if r["headway"] is not None], hwe)
+        ttcs = [(r["ttc"] if r["ttc"] is not None else np.nan)
+                for r in rows if r["headway"] is not None]
+        n_ttc = int(np.isfinite(ttcs).sum())
+        fam["LONGITUDINAL"]["ttc_s_when_closing"] = (
+            _ci(ttcs, hwe) if n_ttc else
+            {"n": 0, "reason": "the ego never closed on the lead at > 0.1 m/s on any "
+                               "tick where a lead was present — TTC is undefined, not "
+                               "missing"})
+        fam["LONGITUDINAL"]["ttc_defined_rate"] = round(n_ttc / max(len(hw), 1), 4)
+        fam["LONGITUDINAL"]["real_lead_note"] = (
+            "REAL annotated lead from the scene's own sequence_tracks, restricted to the "
+            "tracks the renderer actually draws when --renderable-from is given. Headway "
+            f"is bumper-to-bumper (EGO_LEN={EGO_LEN} m), in-lane band |y| < {LEAD_HALF_W} m, "
+            f"search window 0 < x < {LEAD_MAX_X} m.")
     else:
         fam["LONGITUDINAL"]["distance_keeping"] = {
             "n": 0, "reason": "no annotated agent inside the in-lane window "
@@ -339,8 +454,23 @@ def families(rows, eids, summ=None):
         fam["LONGITUDINAL"]["synth_lead_ttc_s"] = _ci(
             [(rows[i]["synth_ttc"] if rows[i]["synth_ttc"] is not None else np.nan)
              for i in ok], oe)
-        fam["LONGITUDINAL"]["synth_lead_collision_rate"] = _ci(
+        fam["LONGITUDINAL"]["synth_lead_collision_rate_UNGATED_DO_NOT_QUOTE"] = _ci(
             [rows[i]["synth_collision"] for i in ok], oe)
+        fam["LONGITUDINAL"]["synth_lead_collision_rate_inlane"] = _ci(
+            [rows[i]["synth_collision_inlane"] for i in ok], oe)
+        # what the ungated detector was PAYING: of the ticks it called a collision, how
+        # many were actually in-lane? This is the precision that the ungated rate hid.
+        fires = [i for i in ok if rows[i]["synth_collision"] == 1.0]
+        true_in = [i for i in fires if rows[i]["synth_collision_inlane"] == 1.0]
+        ys = [rows[i]["synth_collision_abs_y"] for i in fires
+              if np.isfinite(rows[i].get("synth_collision_abs_y", np.nan))]
+        fam["LONGITUDINAL"]["synth_lead_collision_precision"] = {
+            "n_fires": len(fires), "n_true_inlane": len(true_in),
+            "precision": (round(len(true_in) / len(fires), 4) if fires else None),
+            "median_abs_y_of_fires_m": (round(float(np.median(ys)), 3) if ys else None),
+            "note": "precision of the UNGATED headway<=0 test against the in-lane truth "
+                    f"(|y| <= {LEAD_HALF_W} m). The ungated rate counts a longitudinal "
+                    "PASS as a collision; quote `synth_lead_collision_rate_inlane`."}
         fam["LONGITUDINAL"]["synth_lead_inlane_rate"] = _ci(
             [rows[i]["synth_inlane"] for i in ok], oe)
         fam["LONGITUDINAL"]["synth_lead_note"] = (
@@ -383,6 +513,12 @@ def families(rows, eids, summ=None):
         fam["TACTICAL"]["head_class_share"] = {
             MAN_NAMES[c]: round(float(np.mean([r["man_head"] == c for r in rows])), 4)
             for c in range(5)}
+        # PRECISION alongside recall, per class, with both denominators.
+        hrows = [r for r in rows if r["man_head"] is not None]
+        fam["TACTICAL"]["head_vs_logged_per_class_PR"] = per_class_pr(
+            [r["man_gt"] for r in hrows], [r["man_head"] for r in hrows], MAN_NAMES)
+        fam["TACTICAL"]["plan_vs_logged_per_class_PR"] = per_class_pr(
+            [r["man_gt"] for r in rows], [r["man_plan"] for r in rows], MAN_NAMES)
     else:
         fam["TACTICAL"]["maneuver_head"] = {
             "n": 0, "reason": "this arm exposes no maneuver_head logits at the deploy path"}
@@ -435,6 +571,37 @@ def families(rows, eids, summ=None):
         fam["STRATEGIC"]["route_head_eq_logged"] = {
             "n": 0, "reason": "this arm exposes no strategic route logits at the deploy path"}
     if has_head:
+        # ⛔ NAV-ECHO GUARD (added 2026-08-03 after it fired on the first scene it saw).
+        # The harness FEEDS a nav command to the policy. If the route head is a
+        # deterministic function of that input, `route_head_eq_logged` measures the echo
+        # of the model's own conditioning, not a strategic decision — and it scores
+        # perfectly, because the nav command was derived from the same log the route
+        # label is derived from. MEASURED on scene 7c72937c: flagship-v1's head is an
+        # exact bijection of nav (nav=1 -> head=0 on 369/369, nav=0 -> head=1 on 81/81)
+        # and scored route_head_eq_logged = 1.0000 [1.0000, 1.0000]. REF-C's is not a
+        # function of nav and scored 0.2605. The guard is computed, not assumed.
+        nav_map = {}
+        circular = None
+        if all(r.get("nav") is not None for r in rows) and rows:
+            for r in rows:
+                nav_map.setdefault(int(r["nav"]), set()).add(r["route_head"])
+            circular = all(len(v) == 1 for v in nav_map.values()) and len(nav_map) >= 1
+        fam["STRATEGIC"]["route_head_nav_echo_check"] = {
+            "head_is_deterministic_function_of_nav": circular,
+            "nav_to_head_map": {str(k): sorted(x for x in v if x is not None)
+                                for k, v in nav_map.items()},
+            "n": len(rows),
+            "verdict": ("CIRCULAR — route_head_eq_logged above reproduces the nav command "
+                        "the policy was GIVEN and is NOT evidence of strategic skill; do "
+                        "not quote it" if circular else
+                        "not an echo — the head is not a function of nav on these windows"
+                        if circular is False else "not evaluated (nav missing)")}
+        if circular:
+            for k in ("route_head_eq_logged", "route_head_side_eq_graded_proxy"):
+                if isinstance(fam["STRATEGIC"].get(k), dict):
+                    fam["STRATEGIC"][k]["CIRCULAR_NAV_ECHO"] = True
+                    fam["STRATEGIC"][k]["do_not_quote"] = (
+                        "the route head is a deterministic function of the nav input")
         fam["STRATEGIC"]["route_head_share"] = {
             ROUTE_NAMES[c]: round(float(np.mean([r["route_head"] == c for r in rows])), 4)
             for c in range(3)}
@@ -451,6 +618,13 @@ def families(rows, eids, summ=None):
             "PROXY, not the trained target: agreement between the route head's lateral "
             "side and sign(cumulative logged heading change) with a 5 deg deadband. "
             "Reported because the discrete route class is UNKNOWN on this clip.")
+        # PRECISION alongside recall on the graded proxy, so a head that wins by always
+        # saying `straight` is visible as such rather than scoring as skill.
+        fam["STRATEGIC"]["route_head_side_per_class_PR"] = per_class_pr(
+            gt_side, hd, ("straight", "left", "right"))
+        if vr:
+            fam["STRATEGIC"]["route_head_vs_logged_per_class_PR"] = per_class_pr(
+                [r["route_gt"] for r in vr], [r["route_head"] for r in vr], ROUTE_NAMES)
     else:
         fam["STRATEGIC"]["route_head"] = {
             "n": 0, "reason": "this arm exposes no strategic route logits at the deploy path"}
@@ -471,6 +645,10 @@ def main():
     ap.add_argument("--a", required=True, help="arm A rollouts json")
     ap.add_argument("--b", default=None, help="arm B rollouts json (paired)")
     ap.add_argument("--tracks", default=None)
+    ap.add_argument("--renderable-from", default=None,
+                    help="actor_map.json — restrict the REAL-lead search to the tracks "
+                         "the renderer actually draws. Without it the distance-keeping "
+                         "metric can credit an agent the model never saw.")
     ap.add_argument("--lead-ref", default=None,
                     help="constructed condition whose lead geometry to score "
                          "(lead25/lead15/lead8/cutin/behind). Applied to BOTH arms so "
@@ -480,8 +658,12 @@ def main():
 
     from gsplat_renderer import ActorTracks
     tr = ActorTracks(args.tracks) if args.tracks and Path(args.tracks).exists() else None
+    keep = None
+    if args.renderable_from and Path(args.renderable_from).exists():
+        am = json.loads(Path(args.renderable_from).read_text())
+        keep = {int(x["best_track"]) for x in am["per_track"] if x["accepted"]}
 
-    dA, rA, eA, sA = collect(args.a, tr, lead_ref=args.lead_ref)
+    dA, rA, eA, sA = collect(args.a, tr, lead_ref=args.lead_ref, keep_tracks=keep)
     res = {"arm_A": {"name": dA["arm"], "condition": dA["condition"], "ckpt": dA["ckpt"],
                      "f_eff": dA["f_eff"], "n_windows": len(rA),
                      "n_clusters": int(len(set(eA.tolist()))),
@@ -497,8 +679,10 @@ def main():
         "absolute rates do not.")
 
     res["lead_ref"] = args.lead_ref
+    res["renderable_restricted"] = (None if keep is None else
+                                    {"source": args.renderable_from, "n_tracks": len(keep)})
     if args.b:
-        dB, rB, eB, sB = collect(args.b, tr, lead_ref=args.lead_ref)
+        dB, rB, eB, sB = collect(args.b, tr, lead_ref=args.lead_ref, keep_tracks=keep)
         res["arm_B"] = {"name": dB["arm"], "condition": dB["condition"], "ckpt": dB["ckpt"],
                         "f_eff": dB["f_eff"], "n_windows": len(rB),
                         "n_clusters": int(len(set(eB.tolist()))),
@@ -526,6 +710,25 @@ def main():
                         ("synth_lead_time_gap_s", lambda r: r.get("synth_time_gap", np.nan)),
                         ("synth_lead_frac_tg_below_1s",
                          lambda r: r.get("synth_tg_below_1s", np.nan)),
+                        ("synth_lead_collision_rate_inlane",
+                         lambda r: r.get("synth_collision_inlane", np.nan)),
+                        # REAL annotated lead — the distance-keeping contrast
+                        ("real_lead_headway_m",
+                         lambda r: (r["headway"] if r["headway"] is not None else np.nan)),
+                        ("real_lead_time_gap_s",
+                         lambda r: (r["time_gap"] if r["time_gap"] is not None else np.nan)),
+                        ("real_lead_frac_tg_below_1s",
+                         lambda r: (float(r["time_gap"] < 1.0)
+                                    if r["time_gap"] is not None else np.nan)),
+                        ("real_lead_ttc_s_when_closing",
+                         lambda r: (r["ttc"] if r.get("ttc") is not None else np.nan)),
+                        ("manoeuvre_head_eq_logged",
+                         lambda r: (float(r["man_head"] == r["man_gt"])
+                                    if r["man_head"] is not None else np.nan)),
+                        ("route_head_eq_logged",
+                         lambda r: (float(r["route_head"] == r["route_gt"])
+                                    if (r["route_head"] is not None and r["route_valid"])
+                                    else np.nan)),
                         ("route_corridor_departure_rate", lambda r: float(r["corridor_departure"]))):
             va = [fn(KA[c]) for c in common]
             vb = [fn(KB[c]) for c in common]
