@@ -66,6 +66,21 @@ Graft seams (gated, zero-init / identity starts — byte-identical when off):
     model is unchanged at step 0. Exists because the 4-way ``nav_cmd`` is
     ``follow`` on ~75-79 % of windows and is a CONSTANT at eval (``nav_cmd=
     None``) — the C6 confound. Additive: nav_cmd is kept.
+  - **D-SEL — the SELECTION surface** (all default False / 0, so an all-off
+    build is byte-identical to pre-D-SEL REF-C). REF-C's separation from the
+    flagship is entirely LATERAL and every one of its measured defects is about
+    WHICH candidate is emitted, not which are proposed: the refined fan is
+    ranked by the UNREFINED score (``sel_refined``), 72.08 % of that fan is not
+    physically flyable (``sel_reach_clamp``), the consequences of the candidates
+    never reach the ranking (``graft_cons``), the grafts that do reach it are
+    uncapped (``seam_clamp``), and the strategic route can only warp the
+    condition, never choose (``graft_route``). Rationale, the measurements, and
+    the argued list of flagship levers that do NOT transfer: ``refc_select.py``.
+    Preset: :func:`refc_select_config` (+385 parameters, MEASURED).
+  - ``ego_valid_channel`` (default False, X15): an explicit "v0 is present" flag
+    beside the ego-dropped speed, for the measurement encoder and the tactical
+    head. 0.0 m/s is in-distribution "stationary", so zero-filling a withheld
+    speed is a confident lie the reader cannot detect.
   - ``graft_imagination`` (default False, H15): a belief field over the conv-map
     tokens — latent-advection prior (object permanence) + transformer refinement
     + per-cell epistemic log-variance gating a residual belief written back into
