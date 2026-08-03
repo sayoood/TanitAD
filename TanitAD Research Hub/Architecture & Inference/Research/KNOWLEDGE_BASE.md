@@ -3,6 +3,24 @@
 > Curated, deduplicated, newest first. Format:
 > `[YYYY-MM-DD] [source] finding (1-3 lines) — impact: H_x / WP_y — link`
 
+- [2026-08-03] [repo/MEASURED] **The LONGITUDINAL family's distance-keeping half is implemented and its
+  gauge is ADMITTED.** `four_families.longitudinal` had returned `distance_keeping: UNAVAILABLE` since the
+  binding rule landed (2026-08-02) because our ingest never read `obstacle.offline`. Now: `lead_metrics.py`
+  (headway / time-gap / min-TTC) + `build_lead_tracks.py` (the rig→world→t0 frame composition, which is the
+  genuinely new part — `lead_state_gate.lead_frame` answers "where is the lead NOW", scoring an arm needs
+  "where would it have been relative to the path THIS ARM PREDICTED"). **Pre-registered D-LEAD-1 GT-vs-CV
+  control PASSED on all three:** Δ min-TTC **+1.7474 s** [1.5813, 1.9218], Δ headway **+0.9769 m**
+  [0.8830, 1.0758], Δ time-gap **+0.1641 s** [0.1499, 0.1786]; paired episode-cluster bootstrap, **14,027
+  windows / 1,431 clip clusters**, B=2000, all separated with the correct sign. ⛔ Says NOTHING about any
+  arm — it measures the gauge. ⛔ min-TTC is **censored** at 30 s on ~50 % of windows; quote `n_closing`.
+  ⛔ **The eval path is not yet fed** — arm evals still report UNAVAILABLE until `win["lead"]` is built for
+  the 40 val episodes (backlog P0 L1). — impact: the binding four-family rule / H-LONG / D1
+  — `Research/2026-08-03-longitudinal-distance-keeping.md` + `…/incoming/2026-08-03-longitudinal-distance-keeping/raw/dlead1_discrimination.json`
+- [2026-08-03] [PUBLISHED] **ADE does not predict closed-loop driving score: ρ = −0.36, p = 0.43 (n=8)**
+  ([2605.00066](https://arxiv.org/html/2605.00066)); PDMS aggregate ρ = 0.90, Ego Progress alone ρ = 0.83.
+  Direction is citable, magnitudes are not (n=8, p-values, no CI). ⇒ an arm ranking resting on ADE alone is,
+  on the field's own evidence, uninformative about closed-loop driving — which is the empirical case for
+  Sayed's binding four-family rule. — impact: all gates / instrument doctrine — `Research/2026-08-03-sota-scan/SOTA_SCAN.md` §2
 - [2026-07-18] [repo/measured] **OPERATIVE flagship-speed @19k: the σ-dissipation + attractor collapse
   REPRODUCES (drops the pre-reset caveat); readout isotropy is CONVERGING toward admissibility.** Re-ran
   E1+E2 (backlog P0.1) on `flagship-speed` (WorldModel flagship4b, action_dim=3, step 19000) on the eval

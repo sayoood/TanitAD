@@ -4,7 +4,152 @@
 > Read this file first. It tells you where the project stands, what is decided, and what to do next.
 > Update it at the end of every working session (see `Project Steering/CONTINUATION_PROTOCOL.md`).
 
+---
+
+## ORCHESTRATOR DAILY SWEEP LEDGER
+
+The orchestrator went from a **Friday-only** slot to **daily** on 2026-08-03 because this role was
+the measured bottleneck: it is the only party that may write an INTAKE verdict or merge an
+`agent/*` branch, and the queue had reached 25 un-adjudicated packages (oldest 25 days) and 11
+unmerged branches (oldest 2026-07-10). CLAUDE.md names deliverables stranded 10–12 days as a
+programme failure; this was that failure at scale. **The two debt numbers below must fall. If a
+row does not move them, the sweep did not happen.**
+
+| date | INTAKE total | decided | un-adjudicated | verdicts written | unmerged `agent/*` |
+|---|---|---|---|---|---|
+| 2026-08-03 (baseline, pre-sweep) | 38 | 13 | **25** (oldest 25 d) | — | **11** (oldest 2026-07-10) |
+| 2026-08-03 (after first daily sweep) | **46** | **19** | **27** (oldest 24 d) | **5** | **7** |
+
+⚠️ **READ THAT SECOND ROW HONESTLY: the un-adjudicated count went UP, 25 → 27, and the sweep is
+still the right one.** Five verdicts were written (25 → 20), and then merging three previously
+unmerged branches and salvaging four stranded packages **surfaced 8 more INTAKE packages that had
+existed for weeks on branches nobody could see** (total 38 → 46), 7 of them un-adjudicated.
+The debt did not grow — **it became visible.** A queue measured only over what has already been
+merged understates itself, which is precisely how 11 branches accumulated. Expect the count to
+keep rising for a few sweeps as the remaining branches land, then fall. The number to watch until
+then is **decided: 13 → 19**, and **oldest un-adjudicated: 25 d → 24 d**.
+
+### 2026-08-03 — verdicts (all 5 with the package's own tests RE-RUN here, not inherited)
+
+| package | age | verdict |
+|---|---|---|
+| `Benchmarks & Eval/…/2026-08-02-ctrv-floor` | 1 d | **integrate-with-changes** (priority override) |
+| `Architecture & Inference/…/2026-07-10-orthogonality-instrument` | **24 d** | **integrate-with-changes** |
+| `Production & Optimization/…/2026-07-09-models-predictor-failfast` | 25 d | **integrate-with-changes** |
+| `Tools&DevEnv/…/2026-07-09-testsuite-io-profiling` | 25 d | **integrate-with-changes** |
+| `Data Engineering/…/2026-07-09-physicalai-r1-selection` | 25 d | **reject-with-reason** (superseded by the R0-derived canonical corpus; its only follow-up is on the parity path) |
+
+Suites green after all four integrations: **stack 1719 passed** (was 1694, +25 new tests),
+**taniteval 785 passed** (was 784 + 1 FAILED), **tools 164 passed**.
+
+### 🔴 2026-08-03 — THE CANONICAL DRIVING GATE'S FLOOR COULD NOT TURN
+
+`taniteval/driving.py` scored every arm against `FLOORS = ("cv", "holdv0")` — **two straight
+lines**. `driving_diagnostic.baseline_waypoints` returns **three** trivial predictors and
+`rollout.collect` discarded the third. Every lateral / turn / curvature verdict the programme has
+published was therefore measured against a floor family **structurally unable to turn**.
+CTRV is now the third floor (integrated this sweep, zero extra compute — the tensor was already
+being computed and thrown away). Three consequences are **Project Steering's to carry**:
+
+1. **The "FIRST arm below EVERY trivial bar" claim below needs RESTATING, not deleting.**
+   MEASURED on the canonical 881-window / 40-episode val with the programme's own paired
+   episode-cluster bootstrap: flagship-v1 vs CV is **+0.4106 separated**; flagship-v1 vs **CTRV**
+   is **+0.0993 [−0.026, +0.220] — NOT separated**. The point estimate is still below the floor;
+   the *separation* is not there. The `CTRV 0.523` quoted in the 2026-07-20 block below was
+   **INHERITED from another corpus with no interval**. `MODEL_REGISTRY.md` §0.3 carries the same
+   wording and is queued for a dedicated edit (the registry is the quotable source, so it does not
+   get a drive-by fix).
+2. **12 arms "beat the floor" under CV; 6 do under CTRV.** 16 of 25 banked arms' headline verdicts
+   move; seven flip to *losing* to the trivial floor. Any arm-ranking quoted from before
+   2026-08-03 is a two-floor ranking.
+3. **QUARANTINED until re-run with three floors:** the v4 30k gate's
+   `sustained_turn +1.2416 favours model` and `where_the_win_lives = "lateral only"`
+   (`incoming/2026-07-28-v4-30k-gate`). Turn wins are **real but ~5× smaller** than published
+   (`sustained_turn` ADE +1.8063 → **+0.3398**, still separated and still favouring the model).
+
+Open work item, accepted not fixed: `windows_flagship-v4.1-10k.pt`, `-v4.2-step4000.pt` and
+`-v16-ab-ft.pt` carry a **packed-string `eid`** (e.g. `808464434`) where every other dump uses
+`0..39`. Any cross-arm join keyed on `eid` mis-joins those three. One-line normalisation at dump
+write time, owned by Benchmarks & Eval — not done mid-sweep because it would break the alignment
+precondition the CTRV backfill depends on.
+
+### 2026-08-03 — branch dispositions
+
+**MERGED (3):**
+- `agent/opponent-20260802` — SC-13 **RESOLVED** + the Wayve deep-dive. Cleared **four** branches
+  at once: it already carried `agent/opponent-20260721` and `agent/opponent-20260720` as merge
+  parents. (The task tracker still showed SC-13 and the Wayve work as *pending* — they were done
+  and invisible.)
+- `agent/data-engineering-20260802` — A3 clean v2-line val + the debt list.
+- `agent/tools-devenv-20260803` — **fleet_probe v2**, prioritised over the older queue because it
+  is a monitor-correctness fix: the host list was hardcoded, so the probe **missed the live
+  flagship and reported GREEN four times by finding nothing**. Also carried
+  `agent/tools-devenv-20260721`'s rrd dual-sink guard.
+
+**MUST NOT BE MERGED — superseded in full (3), verified package-by-package against tip:**
+- `agent/tools-devenv-20260721` — **every** package it carries is already on tip (36/36),
+  including `2026-07-21-rrd-dual-sink-guard`, which arrived via the 0803 merge above.
+- `agent/opponent-20260715` — its unique asset, `incoming/2026-07-15-stationary-lead-scenario`, is
+  superseded on tip by `2026-07-31-stationary-lead-scenario` (same SC-13 scenario, later run). A
+  trial merge produced **7 conflicts** across `PROJECT_STATE.md`, `HYPOTHESIS_LEDGER.md`,
+  `SCENARIO_DATABASE.md`, `WEAKNESS_CATALOG.md`, `OPPONENT_PROFILES.md` and the agent's `STATE.md`
+  — i.e. resolving them would import **19-day-old living-doc state that the 0802 merge just
+  superseded**. Aborted deliberately; this is a negative-value merge, not a pending one.
+- `agent/prod-opt-20260711` — its unique package `2026-07-11-imagination-nll-logvar-clamp`
+  (the silent-NaN `exp(-logvar)` guard) was **salvaged by path** rather than merged; tip already
+  carries the later `2026-07-17-imagination-logvar-clamp`, so the branch itself adds only stale
+  `PROJECT_STATE.md` / `LEADERBOARD.md` state.
+
+**SALVAGED BY PATH — unique packages rescued without importing 3-week-stale living docs (4 pkgs
+from 3 branches):**
+`2026-07-10-worldmodel-synthetic-pose-probe` (from `agent/data-engineering-20260710`),
+`2026-07-11-focal-invariance-validation` + `2026-07-11-semantic-label-survey` (from
+`agent/data-engineering-20260711`), `2026-07-11-imagination-nll-logvar-clamp` + its research note
+(from `agent/prod-opt-20260711`). Presence verified with `git ls-files --cached`, **not** with a
+`git add` exit code (CLAUDE.md: `git add` can silently no-op and its exit code is not evidence).
+Those three branches are now content-empty apart from stale doc state.
+
+**STILL OPEN — needs verification before merge, NOT a rubber stamp (1):**
+- `agent/pod-code-intake-20260720` (2 commits, 14 d) — *"rescue: INTEGRATE REF-B v2 + reconstruct
+  flagship v1's two missing flags"* + a `MODEL_REGISTRY.md` gap-register edit. It touches
+  `train_flagship4b.py`, `refb_train.py`, `flagship_losses.py`, `metric_dynamics.py` and the
+  **registry**, all of which have moved substantially in 14 days. A blind merge here could
+  resurrect a fixed bug (the pod-drift class: pod2 sat at `0f93b98` while the v5 gate fix was at
+  HEAD). Next sweep: diff each hunk against tip and re-run `test_flagship4b` / `test_refb`.
+
+**BLOCKED BY THE PARITY INVARIANT — must not be merged as-is (1):**
+- `agent/phase0-highway-dataset` (3 commits, 2026-07-12) — *"scenario-stratified PhysicalAI
+  selection (INCLUDE HIGHWAY)"*, modifying `stack/scripts/physicalai_r0.py` and
+  `stack/tanitad/data/physicalai.py`. **It re-selects episodes**, which CLAUDE.md's parity
+  invariant requires refusing: the canonical corpus is `physicalai-train-e438721ae894`
+  (2,376 episodes, skip-hash `f09e44db`) and anything that re-selects breaks cross-arm
+  comparability for every banked arm. Its two *decode* commits (PyAV thread cap; batched f-theta
+  crop, ~12× build-memory cut) are **parity-neutral and worth having** — extract those two by path
+  in a future sweep, leave the selection change out.
+
+### 2026-08-03 — agent health (6 research agents, first day of the daily rotation)
+
+| agent | STATE `LAST_RUN` at sweep start | ran today? | verdict |
+|---|---|---|---|
+| Benchmarks & Eval | 2026-08-02 | yes | **healthy** — landed the CTRV package, the highest-value item in the queue. Self-corrected a 16-day-stale STATE. |
+| Data Engineering | 2026-07-18 | yes | **run was INVISIBLE, not missing** — its 2026-08-03 STATE bump sat on an unmerged branch. Fixed by the merge above. This is the bottleneck, not the agent. |
+| Opponent Analyzer | "run #3, real wall-clock 2026-07-17" | yes | same class — SC-13 RESOLVED + Wayve deep-dive were done and unmerged. Fixed by the merge. ⚠️ carries a **future-dated** research note (`2026-08-07-…`), the known narrative-clock artifact. |
+| Production & Optimization | 2026-07-18 | yes | **landed increments** (B1 fan measured; two new INTAKE packages today) **but did NOT advance its STATE** — a real miss under the "a run whose STATE did not advance is invisible" rule. |
+| Tools&DevEnv | 2026-07-20 | yes | landed fleet_probe v2; STATE advanced only on its branch, now merged. |
+| Architecture & Inference | **2026-07-18 (16 days stale)** | yes (filed `2026-08-03-longitudinal-distance-keeping`) | **the worst STATE hygiene of the six.** Scheduler recorded a run on 07-29 that its STATE never reflected. Its today package has **no INTAKE.md**, so it is committed but *not adjudicable* — flagged, not counted. |
+
+**Cadence call — the daily slot is paying for itself, keep all six daily.** The evidence is that
+four of six agents were producing work that was invisible purely because nothing merged; one sweep
+converted that into 3 merges, 4 salvaged packages and 5 verdicts. No agent shows churn-instead-of-
+increment. **The instrument to fix is not the cadence but STATE hygiene:** 4 of 6 STATEs did not
+advance on the day the agent ran, which is what made the debt invisible in the first place.
+
+---
+
 - **Last update:** 2026-07-20 (Orchestrator weekly report **2026-W33**, covers 2026-07-18 → 2026-07-20.
+  ⚠️ **The "FIRST arm below EVERY trivial bar" claim in this block is CORRECTED by the CTRV entry
+  above (2026-08-03): vs CTRV it is a tie, not a separated win, and the `CTRV 0.523` quoted here was
+  INHERITED from another corpus with no interval.**
   **THE CENTRAL QUESTION CLOSED POSITIVE: flagship-v1 @30k FINAL = ADE@2s 0.4522 ± 0.031 m — the FIRST
   arm below EVERY trivial bar** (best-of-3 floor 0.5005, CTRV 0.523, no-vision ego-status ceiling 0.5735,
   CV 0.838), n=881/40 held-out eps, metric-BEV TanitEval. W32's TOP RISK ("the trained-encoder 4-brain

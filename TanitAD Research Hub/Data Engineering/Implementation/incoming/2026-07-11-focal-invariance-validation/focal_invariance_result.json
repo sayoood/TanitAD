@@ -1,0 +1,58 @@
+{
+  "meta": {
+    "hardware": "RTX 4060",
+    "ckpt": "ckpt_full.pt",
+    "base_corpus": "cosmos-drive-dreams (front_wide_120fov)",
+    "n_scenes": 48,
+    "n_clips": 12,
+    "native_hw": [
+      704,
+      1280
+    ],
+    "hfov_deg": 120.0,
+    "size": 256,
+    "F_REF": 266.0,
+    "f_eff_base_mean": 265.71,
+    "wall_clock_s": 7.9,
+    "cost_usd": 0.0
+  },
+  "zooms": {
+    "1.25": {
+      "f_eff_wrong_mean": 265.71,
+      "drift_correct_mean": 0.0411,
+      "drift_correct_median": 0.0353,
+      "drift_wrong_mean": 0.4018,
+      "drift_wrong_median": 0.3786,
+      "drift_reduction_x": 9.77,
+      "cos_correct_mean": 0.999,
+      "cos_wrong_mean": 0.9191,
+      "falsifier_pass": true
+    },
+    "1.5": {
+      "f_eff_wrong_mean": 265.71,
+      "drift_correct_mean": 0.049,
+      "drift_correct_median": 0.0405,
+      "drift_wrong_mean": 0.7108,
+      "drift_wrong_median": 0.6422,
+      "drift_reduction_x": 14.5,
+      "cos_correct_mean": 0.9986,
+      "cos_wrong_mean": 0.7529,
+      "falsifier_pass": true
+    },
+    "2.0": {
+      "f_eff_wrong_mean": 265.71,
+      "drift_correct_mean": 0.0629,
+      "drift_correct_median": 0.0507,
+      "drift_wrong_mean": 0.9344,
+      "drift_wrong_median": 0.8573,
+      "drift_reduction_x": 14.87,
+      "cos_correct_mean": 0.9972,
+      "cos_wrong_mean": 0.6,
+      "falsifier_pass": true
+    }
+  },
+  "verdict": {
+    "d016_validated": true,
+    "note": "drift_correct << drift_wrong across zooms => using per-camera intrinsics (D-016) removes focal nuisance in the trained encoder's latent space."
+  }
+}

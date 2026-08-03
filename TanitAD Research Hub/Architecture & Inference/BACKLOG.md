@@ -3,6 +3,31 @@
 Prioritized roadmap (D-020 §4). Each run: execute ≥1 item, report measured numbers, re-prioritize.
 Format per item: goal / method / resource / expected number / falsifier.
 
+## P0 — BINDING FOUR-FAMILY RULE (Sayed 2026-08-02). Highest priority; supersedes the block below.
+
+L0. **[✅ DONE 2026-08-03 — the gauge is ADMITTED]** LONGITUDINAL distance-keeping implemented
+   (`taniteval/taniteval/lead_metrics.py` + `build_lead_tracks.py`) and admitted by the pre-registered
+   **D-LEAD-1** GT-vs-CV control: Δ min-TTC **+1.7474 s** [1.5813, 1.9218], Δ headway **+0.9769 m**,
+   Δ time-gap **+0.1641 s**, paired episode-cluster bootstrap, 14,027 windows / 1,431 clusters, all
+   separated. 0 GPU, 125 s, $0. Note `Research/2026-08-03-longitudinal-distance-keeping.md`.
+
+L1. ⭐ **NEXT — feed the eval path: build `win["lead"]` for the 40 val episodes.** Until this lands,
+   arm evals STILL report the family UNAVAILABLE — the instrument exists but is not fed.
+   *Method:* pull the `obstacle.offline` chunks covering the 40 val episodes onto the eval host (or
+   run `build_lead_tracks.py` on the dev box and bank the per-window lead arrays beside the 27 banked
+   window dumps); emit `win["lead"] = {leads, lead_lens, speeds}` in the runner. *Resource:* 0 GPU.
+   *Expected:* ≈38 % of val windows carry a causal lead (this run's rate over 41,087 windows).
+   *Falsifier:* < 20 % ⇒ the val set is too free-flow; report the family **NOT-APPLICABLE with its n**
+   per the binding rule's clause 5, never silently dropped. *Gate:* the binding rule itself.
+
+L2. **Closing-only stratum beside the censored min-TTC mean.** ~50 % of windows never close and sit at
+   the 30 s cap, so the pooled mean is a mean over censored data. *Falsifier:* if the closing-only Δ
+   ranks arms identically to the pooled Δ, the stratum is redundant — drop it and say so.
+
+L3. **TACTICAL + STRATEGIC families: same treatment.** Each needs its own pre-registered
+   discrimination control before it scores an arm (C63's lesson: measure an imported metric's
+   precondition FIRST, as its own pre-registered step, with an INSTRUMENT-FAIL branch).
+
 ## P0 — FLEET DIRECTIVE 2026-07-17 (Sayed; supersedes prior P0 ordering; resource-mandated G-I)
 
 Context you must load first: `Project Steering/FLEET_REVIEW_2026-07-17.md`. The flagship-speed arm
