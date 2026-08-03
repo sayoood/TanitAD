@@ -1398,3 +1398,34 @@ FIXES (all live):
 - **`oom_kill` on pod2 read 6 earlier and 0 now** — the counter is not a durable history; do not
   quote it as "killed N times" without a timestamped source.
 - The v5f OOM is **GPU**, not container RAM: container usage was 1.4 GB at the time of death.
+
+
+## 2026-08-03 — PI DECISION on the scenario classifier: **NO EGO-ONLY HEADS**
+
+**Sayed, asked whether to switch the deployed sitclf to `head_ego`: "no ego heads."**
+
+⇒ **The ego-only swap is REJECTED and must not be proposed again.** The finding that produced it
+still stands — `head_img_ego` is separated-WORSE than `head_ego`
+(`lane_change` ΔAP-lift **+2.3524 [+0.8591, +4.2364]**, `intersection` **+0.9485 [+0.2237, +1.6944]**,
+paired episode-cluster bootstrap) — but **the response is to FIX THE FUSION, not to drop vision.**
+
+**Why the PI is right, mechanically.** `sc_train.py:143` fuses with
+`np.concatenate([img, S["E"]], 1)`: a **16-dim PCA image block** normalised by its own global
+mean-abs (`:132-133`) against a **3-dim ego block** scaled by a hand-set
+`EGO_SCALE = [10, 2, 0.5]` (`:38`). The two normalisations are unrelated, so the modalities enter
+the shared `Linear` at an arbitrary relative scale and **the wider block wins**. That is a
+scale-mismatch bug. It is NOT evidence that the camera carries no signal — and the banked gen-1
+numbers say it does: image arm above chance, `lane_change` ΔAP **+0.01987 [+0.01141, +0.02901]`,
+`intersection` **+0.04894 [+0.03735, +0.06277]**, AUROC 0.703 / 0.769, anticipation lead 1.4-2.0 s.
+
+⇒ **The correct fix is `late_fuse_scores` (`stack/tanitad/eval/sitclf.py`), which KEEPS BOTH
+MODALITIES** and fuses at score level, where each modality is first reduced to one calibrated
+number and therefore cannot be swamped. 13 tests pass.
+⚠️ **It is implemented, tested, and CONSUMED BY NOTHING** — `grep late_fuse_scores` outside its own
+module returns only tests. That is the programme's recurring "implemented but unmerged" failure
+(LAL-v2: 12 days; an orthogonality instrument: 10 days). **Wiring it is the open work item**, and it
+is now the sitclf action rather than the head swap.
+
+⭐ **Class: this is CLAUDE.md rule 5 in practice** — *"When ambition meets inconvenient evidence, the
+answer is the cheapest discriminating experiment, not a scoped-down goal."* Dropping vision because
+a fusion bug made it look useless would have been exactly the scoped-down goal the rule forbids.
