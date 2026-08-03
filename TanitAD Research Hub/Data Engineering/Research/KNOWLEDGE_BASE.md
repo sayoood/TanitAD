@@ -3,6 +3,38 @@
 > Curated, deduplicated, newest first. Format:
 > `[YYYY-MM-DD] [source] finding (1-3 lines) — impact: H_x / WP_y — link`
 
+- [2026-08-02] [measured/corpus] **A "clean v2 val" is NOT clean for v1 — 62 of a 600-clip draw sit in v1's
+  TRAIN split** (24 in v1's val). Disjointness proofs are written against ONE corpus and are silent about every
+  other arm that will be scored on the split; C64 in mirror image. ⇒ any new split excludes **every** corpus an
+  arm was trained on (`load(..., exclude_paths=[...])`). Parity-free remainder = **8,298** of 9,987, so 600 clips
+  is **not available** once v1 is excluded (headroom 0.95) — **n=400 is the largest fully-clean balanced split**
+  (max |d| 0.0409, cell-census 69.4 %, sha256 `abe041db72a045b3…`). Bonus, no pod needed: at CLIP granularity
+  **256 of v1's 600 parity-val clips (42.7 %) are inside v2corpus's training selection** (≠ C64's 21/40 EVAL
+  EPISODES — different unit, never merge) — impact: C64/A3/A5/MODEL_REGISTRY comparability —
+  `2026-08-02-v2-clean-val-semantics-and-selector.md` §5
+- [2026-08-02] [measured/method] **Stratum headroom belongs to its AXIS SET, and cell-matching ≠ balance.**
+  The same remainder gives headroom **6.77× (junction only) → 4.05× (+has_turn) → 1.07× (+speed) → 0.77 =
+  INFEASIBLE (+has_brake)** at n=600 — so "6.77× ⇒ feasible" was one axis wide, exactly like quoting an exponent
+  without its window. And the cell-quota design it justified leaves **max |d| 0.3997 (10/13 axes over the 0.10
+  bar)**; greedy covariate balancing on the four-family axes reaches **0.0094** in 0.2 s, the shipped hybrid
+  (quota+balance) **0.0532** with cell-L1 0.0047. ⚠️ Neither is exchangeable: within each matched cell the
+  remainder is still skewed (median |d| **0.359**, p90 0.915) and max KS stays 0.12–0.19 vs a 0.057 critical
+  value — the residue of a quota selector cannot be matched back into its parent, only mean-balanced — impact:
+  every future split/selector, D1 strata, four-family reporting — same note §2–4
+- [2026-08-02] [measured/schema] **`v2_pool_scored.parquet` semantics are now a machine-checked contract**
+  (`pool_columns.py`, 34/34 checks PASS on 18,988 rows, corruption-tested): `lk,tl,tr,ac,bs(+v2)` are frame
+  **COUNTS** out of `nlab` (⇒ `lk_rate` train **0.4500** vs remainder 0.6718, reproducing the design's
+  "lane_keep 45.0 %"); `stopped/city/hw/stop_frac` are **FRACTIONS** with `stopped+city+hw ≡ 1`; `nlab ≡ 179`
+  for every clip so the `lk` misread was a pure scale error. Also: the pool has **18,988 rows but 18,987 unique
+  clips** — `32ad1a3a-…` is registered under chunks 1573 AND 3117 and is in the v2 selection (both figures were
+  in circulation, neither labelled) — impact: A3 unblocked, any consumer of the pool — same note §1
+- [2026-08-02] [measured/absence] **PhysicalAI-AV has NO session/drive id and NO absolute clock** — probed at
+  four locations: `clip_index` (3 cols), `data_collection` (5 cols), `feature_presence` (36 presence flags), and
+  `egomotion.timestamp` itself, which starts at −0.2 ms and spans ~137 s ⇒ **clip-local microseconds**. ⇒ the
+  L2D-style time-overlap dedup that retired that trap on 2026-07-22 **cannot be run here**, and with no lat/lon
+  either there is no cross-clip identity linkage on any axis we hold. **Clip granularity is the provable ceiling
+  for every PhysicalAI split** — state it, don't imply drive-level cleanliness — impact: I3/split doctrine/C64 —
+  same note §8
 - [2026-07-18] [measured/mix] **Curve-rebalance measured on real bytes (FLEET P0#3): the "74% straight" is a
   comma/HIGHWAY property, not a whole-corpus one.** 630 eps / 125,247 windows, D1 eval strata (`|net yaw@2s|`
   <5°/5-20°/>20°): **comma2k19 83.1% straight** (10.5/6.4 gentle/sharp), **PhysicalAI 56.0%** (23.4/20.6) —

@@ -2,6 +2,35 @@
 
 Prioritized roadmap (D-020 §4). Each run: execute ≥1 item, report measured numbers, re-prioritize.
 
+## P0 — CURRENT (re-prioritized 2026-08-02 against `Project Steering/BACKLOG.md`, the live pull-list)
+
+⚠️ The P0 block below this one is the **2026-07-17 fleet directive** and is largely superseded: the
+programme moved to the autonomous main loop around 07-24, and the live pull-list is now
+`Project Steering/BACKLOG.md`. Kept for provenance, not as the current order.
+
+1. ~~**A3 — the clean v2-line val**~~ ⭐ **BUILT 2026-08-02** (`…/incoming/2026-08-02-v2-clean-val-selector/`,
+   27 ✓). Semantics contract (34/34 on 18,988 rows) + feasibility re-measured per axis set + balancing
+   selector + frozen manifests (n=400 `abe041db72a045b3…`, n=300). **Remaining: PI freeze-or-reject.**
+   *(Corrections it carries: 6.77×→1.07× headroom; cell-quota max |d| 0.3997; 62 of a v2-clean 600-draw
+   sit in v1's TRAIN.)*
+2. **Re-derive the split at drive level IF the absence lifts.** Falsifier standing: PhysicalAI ships no
+   session id and a clip-local clock (4 probes). If any future probe finds an absolute clock or session
+   key, every PhysicalAI split — parity included — must be re-checked for drive-straddling leakage.
+   0 GPU, ~2 h.
+3. **`validate_pool()` over EVERY corpus-selection parquet we hold** (`r0_selection.parquet`,
+   `phase0_selection.parquet`, `r0_selection_v2.parquet`, the TanitDataSet catalogs). The A3 defect was a
+   missing contract, and the same class of column ships in all of them. Expected: the identity table per
+   file + any second `18,988 vs 18,987`-style duplicate. 0 GPU, ~2 h.
+4. **Balance the PARITY val the same way** — measure v1's own 600-clip val against its 2,400-clip train on
+   the four-family axes. If the deployed val is itself unbalanced (it was drawn by `randperm`, not
+   matched), every headline number carries a distributional offset nobody has quantified. 0 GPU, ~1 h.
+   Falsifier: max |d| < 0.10 ⇒ the parity val is fine and this closes.
+5. **ZOD real-bytes verification** — unchanged, still ACCESS-blocked (`zod_pilot_jobcard.md` ready).
+6. **`stats` uint8-safe** (small fix, 2026-07-17) — auto-`to_float_frames`/assert dtype.
+
+---
+
+
 ## P0 — FLEET DIRECTIVE 2026-07-17 (Sayed; supersedes prior P0 ordering; resource-mandated G-I)
 
 Context: `Project Steering/FLEET_REVIEW_2026-07-17.md`. Review verdict on your work: D-016 R1

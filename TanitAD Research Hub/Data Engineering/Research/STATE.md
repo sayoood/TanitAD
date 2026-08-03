@@ -1,10 +1,74 @@
 # STATE — Data Engineering
 
-LAST_RUN: 2026-07-18 (Tuesday agent) — branch `agent/data-engineering-20260718` (worktree `C:/Users/Admin/wt-de-0718`, D-026). TWO increments: (1) ZOD ingest [P0#1] AM; (2) curve-rebalance measured [P0#3] PM.
+LAST_RUN: 2026-08-02 (Tuesday agent) — branch `agent/data-engineering-20260802` (worktree `C:/Users/Admin/wt-de-0802`, D-026). Executed `Project Steering/BACKLOG.md` **A3** (C64 option B) end-to-end: column semantics → feasibility re-measurement → selector → frozen candidate manifests.
+QUALITY: full (G-A…G-E, G-H, G-D1 n/a — no new corpus row, G-D2 satisfied by the contract+corruption tests, G-I declared). One intake pkg, **27 ✓ standalone**, 3 measured experiments, no `stack/` file touched.
+RESOURCE (G-I): dev-box **CPU only**, ~2.6 h session / **6.1 s** for the measurement itself, **$0**. No GPU, no pod, no network. Why not the eval pod: the question is a property of two parquet files — no model, checkpoint or GPU is in the path, and the eval pod's value this week is the arms it is scoring.
+
+## This run (2026-08-02): A3 — the clean v2-line val, unblocked and re-scoped by what it measured
+
+- **The blocker is gone.** `pool_columns.py` turns `v2_pool_scored.parquet`'s semantics into a
+  machine-checked contract — **34/34 checks PASS on 18,988 real rows**, every identity corruption-tested.
+  `lk…bs` are frame COUNTS out of `nlab` (`lk_rate` train **0.4500** vs remainder 0.6718 — reproduces the
+  design's "lane_keep 45.0 %"); `stopped/city/hw` are FRACTIONS with `stopped+city+hw ≡ 1`. `nlab ≡ 179`
+  everywhere ⇒ the `lk` misread was a pure scale error, rank-preserving.
+- ⛔ **A3's "6.77× ⇒ FEASIBLE" was one axis wide.** Headroom at n=600: junction **6.77×** → +has_turn 4.05×
+  → +speed **1.07×** → +has_brake **0.77× INFEASIBLE**. Headroom belongs to its axis set, like an exponent
+  to its window. And the cell-quota design it justified leaves **max |d| 0.3997 (10/13 axes over bar)**;
+  greedy balancing reaches **0.0094**, the shipped hybrid **0.0532** with the cell match intact (L1 0.0047).
+- ⚠️ **No draw from this remainder is exchangeable with train** — within each matched cell the residue is
+  still skewed (median |d| **0.359**, p90 0.915, max 2.351); max KS 0.12–0.19 vs a 0.057 critical value.
+  Mean-balanced ≠ distributionally matched, and this limit travels with any v2-line number.
+- ⛔ **THE FINDING THAT CHANGED THE DELIVERABLE: a clean v2 val is not clean for v1.** A v2-only-clean
+  600-draw holds **62 clips of v1's TRAIN** (+24 of v1's val) ⇒ scoring v1 there scores it on its own
+  training data. Manifests now exclude the whole parity selection; parity-free remainder **8,298** ⇒
+  **600 is unavailable** (headroom 0.95). **Shipped: n=400** (max |d| 0.0409, census 69.4 %, sha256
+  `abe041db72a045b3…`) + n=300 variant.
+- **Partly answers backlog A5 with no pod:** at CLIP granularity **256 of v1's 600 parity-val clips
+  (42.7 %)** sit inside v2corpus's training selection ⚠️ **not** the same statistic as C64's 21/40 EVAL
+  EPISODES — compare within a granularity, never across.
+- **Absence, four probes:** PhysicalAI-AV ships **no session/drive id and no absolute clock**
+  (`egomotion.timestamp` is clip-local µs) ⇒ the L2D time-overlap dedup cannot be run and **clip
+  granularity is the provable ceiling** for every PhysicalAI split.
+- **Provenance correction:** the pool has **18,988 rows / 18,987 unique clips** — `32ad1a3a-…` is registered
+  under chunks 1573 AND 3117 and is in the v2 selection. Both figures were in circulation, unlabelled.
+- Intake: `Implementation/incoming/2026-08-02-v2-clean-val-selector/` (`pool_columns.py`,
+  `clean_val_select.py`, `make_results.py`, `tests/` 27 ✓, `selector_comparison.json`, 2 manifests, INTAKE).
+- Note: `2026-08-02-v2-clean-val-semantics-and-selector.md`.
+
+### ESCALATIONS (this run)
+1. ⭐ **PI (C64 option B):** the split is **400 clips, not 600**, and the reason is contamination, not taste.
+   Freeze `v2_clean_val_manifest.json` / the n=300 variant — or reject option B on the exchangeability limit.
+2. **Orchestrator:** intake `pool_columns.py` → `stack/tanitad/data/`, `clean_val_select.py` →
+   `stack/scripts/` (additive, 27 standalone tests) so every future consumer of the pool validates first.
+3. **`Project Steering/BACKLOG.md` A3** carried the 6.77× figure; corrected on this branch.
+
+### D-026 session guard (G-F) — `RESULT: PASS`, and the debt it surfaces
+- Run from the worktree root against tip `c6c1701`: **PASS** (nothing stranded uncommitted).
+- ⚠️ **WARN: 11 unmerged `agent/*` branches** vs tip — `agent/opponent-20260802` (+5),
+  `agent/benchmarks-eval-20260802` (+3), `agent/phase0-highway-dataset` (+3),
+  `agent/data-engineering-20260711` (+2), `agent/opponent-20260721` (+2),
+  `agent/pod-code-intake-20260720` (+2), `agent/prod-opt-20260711` (+2), plus four at +1
+  (`data-engineering-20260710`, `opponent-20260715`, `opponent-20260720`, `tools-devenv-20260721`).
+  **Two of my own discipline's branches are in there and predate this run by three weeks.**
+- ⚠️ **WARN: 26 INTAKE packages carry no orchestrator verdict**, oldest 25 days — the same
+  unfixed backlog PROJECT_STATE flagged as "19 of 23" on 07-20; it has grown, not shrunk.
+  Four are mine (`2026-07-15-pandaset-loader`, `2026-07-17-d016-r1-pinhole-rectify`,
+  `2026-07-18-curve-rebalance`, `2026-07-18-zod-loader`) plus the two VLM packages.
+  ⇒ **orchestrator escalation**, not a note nobody re-reads.
+
+### Fleet context
+- **No Monday output exists this week** (last `tools-devenv` note 2026-07-21): the weekly-agent cadence has
+  been superseded by the autonomous main loop since ~07-24. Consumed `LOOP_STATE.md`, C64/C65 and the
+  DE-touching commits (`fe400f0`, `2b7fe3f`, `82692f2`, `af78e86`) instead.
+- **This STATE was 15 days stale** (LAST_RUN 2026-07-18) while the DE work it should describe — TanitDataSet,
+  the L2D adapter, the lead-state gate, the v2 corpus — landed through the main loop. Naming the gap rather
+  than back-filling it: those runs are recorded in their own notes and commits.
+
+## Prior run (2026-07-18, Tuesday agent) — branch `agent/data-engineering-20260718` (worktree `C:/Users/Admin/wt-de-0718`, D-026). TWO increments: (1) ZOD ingest [P0#1] AM; (2) curve-rebalance measured [P0#3] PM.
 QUALITY: full (G-A…G-E, G-H, G-D1, G-D2, G-I met; 2 intake pkgs 19✓ + 12✓ standalone; 2 measured experiments [ZOD geometry falsifier + curve-rebalance on 630 real eps]; no `stack/` files touched).
 RESOURCE (G-I): local RTX-4060 dev box only, ~2.4 h total, $0. Both experiments are pure-CPU (closed-form geometry + epcache pose reads) — no model/GPU/network needed to answer them; the GPU halves (ZOD 5-drive precompute) are ACCESS-blocked → shipped as a job card (M-3). Why not eval-pod/Colab: neither question needs a model or GPU; the compute-blocked real-bytes work is escalated, not skipped.
 
-## This run — increment 2 (2026-07-18 PM): curve-rebalance MEASURED [FLEET P0#3]
+### 2026-07-18 increment 2 (PM): curve-rebalance MEASURED [FLEET P0#3]
 - **The data-side attack on the #1 risk, on real bytes.** Analyzer `curve_rebalance.py` (intake
   `2026-07-18-curve-rebalance/`, 12✓) measures the D1 curvature strata (`|net yaw@2s|` <5°/5-20°/>20°, copied
   verbatim from `driving_diagnostic.py` + drift-guard test) per source and derives a turn-weighted sampling recipe.
@@ -20,7 +84,7 @@ RESOURCE (G-I): local RTX-4060 dev box only, ~2.4 h total, $0. Both experiments 
   ScenePilot-4K → Benchmarks seam. No status change (P8).
 - Note: `2026-07-18-curve-rebalance-measured-and-idm-lit.md`.
 
-## This run — increment 1 (2026-07-18 AM): ZOD ingest
+### 2026-07-18 increment 1 (AM): ZOD ingest
 - **ZOD loader SHIPPED — the FLEET_REVIEW P0#1 / OWN_DATASET_PLAN §7#1 unlock** (intake `2026-07-18-zod-loader/`,
   `zod.py` + 19✓ + job card + INTAKE). CC-BY-SA-4.0 owned real-urban: 14 EU countries, day/night/seasons/weather,
   **real CAN steer + OxTS RT3000 ego-motion** — the diversity the 74%-straight day-only mix lacks.
