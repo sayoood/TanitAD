@@ -354,6 +354,105 @@ def precision_recall_at_budget(y, s, valid, *, top_frac: float = 0.05) -> dict:
                                if n_alarm and base > 0 else float("nan"))}
 
 
+def event_anticipation_report(s, valid, onsets, clip_cluster, *, hz: float = 10.0,
+                              top_frac: float = 0.05, h_max_s: float = 5.0,
+                              deploy_lead_s: float = 3.0) -> dict:
+    """⭐ EVENT-level anticipation quality that does NOT depend on the label's ``lead_s``.
+
+    WHY THIS IS NOT :func:`precision_recall_at_budget` OR :func:`anticipation_lead_s`
+    --------------------------------------------------------------------------------
+    Both of those take ``y`` — the anticipation target — and ``y`` is a function of
+    ``lead_s``. So neither can compare two heads trained or deployed at DIFFERENT
+    horizons: the label, the base rate and the scorable rows all move with the lead,
+    and a "gain" can be nothing but a shrunken denominator. MEASURED 2026-08-03: the
+    same reference arm on ``intersection`` reads AP-lift 2.032 at a 1 s lead and 1.362
+    at 5 s, on 2,455 vs 10,678 positives — the same head, two different numbers.
+
+    This function takes **no label**. It takes the ONSETS, which are a property of the
+    drive and not of any horizon choice, and asks the three questions a tactical layer
+    actually cares about, all at ONE fixed alarm budget:
+
+    * **did we warn at all?** — ``event_recall``, over a denominator (``n_onsets``)
+      that is IDENTICAL for every arm;
+    * **how early?** — ``median_lead_s``, over the onsets that were warned;
+    * **what did it cost?** — ``alarm_precision_*``, over a denominator (``n_alarm``)
+      that is identical for every arm *by construction*, because the budget is a RANK
+      quantile (see :func:`_top_frac_alarm`).
+
+    ⚠️ **An onset with no alarm contributes NO lead** and is counted in
+    ``n_onsets_no_alarm``. Scoring it as 0 s would reward an arm that never fires with
+    perfect punctuality — the recall-only defect, in the lead metric.
+
+    ⚠️ **The look-back never crosses a clip.** A row counts for an onset only if it is
+    in the SAME cluster; without that, an onset in the first frames of one drive is
+    "warned" by an alarm at the end of the previous one.
+
+    ``alarm_precision_h_max`` and ``alarm_precision_deploy`` are the same statistic at
+    two horizons — the yardstick's own ``h_max_s`` and the DEPLOYED ``deploy_lead_s`` —
+    so a change is visible both on the metric's terms and on the deployed system's.
+    """
+    s = np.asarray(s, dtype=np.float64).ravel()
+    valid = np.asarray(valid).astype(bool).ravel()
+    cc = np.asarray(clip_cluster).ravel()
+    onsets = np.asarray(onsets, dtype=np.int64).ravel()
+    if not (s.size == valid.size == cc.size):
+        raise ValueError(f"aligned [N] inputs required: {s.shape} {valid.shape} {cc.shape}")
+    if onsets.size and (onsets.min() < 0 or onsets.max() >= s.size):
+        raise ValueError("onsets must index rows of s")
+    if h_max_s <= 0 or deploy_lead_s <= 0:
+        raise ValueError("horizons must be positive")
+    back = int(round(h_max_s * hz))
+    fin = valid & np.isfinite(s)
+    alarm = _top_frac_alarm(s, fin, top_frac)
+
+    warned, leads, scorable = [], [], []
+    for g in onsets:
+        lo = max(0, g - back)
+        idx = np.arange(lo, g)
+        idx = idx[fin[idx] & (cc[idx] == cc[g])]
+        scorable.append(idx.size > 0)
+        if idx.size == 0:
+            warned.append(False)
+            continue
+        hit = idx[alarm[idx]]
+        warned.append(bool(hit.size))
+        if hit.size:
+            leads.append(float((g - hit[0]) / hz))
+    warned = np.asarray(warned, bool)
+    scorable = np.asarray(scorable, bool)
+    n_on = int(scorable.sum())          # onsets a fixed budget could ever have warned
+    n_w = int((warned & scorable).sum())
+
+    # an alarm row is USEFUL at horizon h iff some onset falls in (t, t + h*hz]
+    def _prec(h):
+        if not alarm.any():
+            return float("nan")
+        rows = np.flatnonzero(alarm)
+        w = int(round(h * hz))
+        good = np.zeros(rows.size, bool)
+        for c in np.unique(cc[rows]):
+            sel = np.flatnonzero(cc[rows] == c)
+            og = onsets[cc[onsets] == c] if onsets.size else np.empty(0, np.int64)
+            if og.size == 0:
+                continue
+            og = np.sort(og)
+            k = np.searchsorted(og, rows[sel], side="right")
+            has = k < og.size
+            good[sel[has]] = (og[k[has]] - rows[sel][has]) <= w
+        return float(good.mean())
+
+    return {"n_scorable": int(fin.sum()), "n_alarm": int(alarm.sum()),
+            "n_onsets": n_on, "n_onsets_total": int(onsets.size),
+            "n_onsets_unreachable": int(onsets.size - n_on),
+            "n_onsets_warned": n_w, "n_onsets_no_alarm": n_on - n_w,
+            "event_recall": (round(n_w / n_on, 5) if n_on else float("nan")),
+            "median_lead_s": (round(float(np.median(leads)), 3) if leads else None),
+            "alarm_precision_h_max": round(_prec(h_max_s), 5),
+            "alarm_precision_deploy": round(_prec(deploy_lead_s), 5),
+            "h_max_s": h_max_s, "deploy_lead_s": deploy_lead_s, "top_frac": top_frac,
+            "_horizon_independent": True}
+
+
 def anticipation_lead_s(y, s, clip_cluster, valid, *, hz: float = 10.0,
                         top_frac: float = 0.05) -> dict:
     """Median seconds by which the first alarm precedes the onset it anticipates.

@@ -1,0 +1,461 @@
+{
+ "min_copies": 2,
+ "artifacts": {
+  "raw-train-epcache-256px": {
+   "kind": "corpus",
+   "desc": "Raw parity TRAIN epcache, 256 px \u2014 the canonical train corpus",
+   "expected_members": 2376,
+   "parity": "physicalai-train-e438721ae894 / skip-hash f09e44db / 2376 eps",
+   "copies": 1,
+   "durable_copies": 1,
+   "volatile_machines": [],
+   "copy_machines": [
+    "hf:Sayood/tanitad-physicalai-w120-256x640cyl"
+   ],
+   "locations": [
+    {
+     "host": "hf:Sayood/tanitad-physicalai-w120-256x640cyl",
+     "path": "epcache-256px-phase0/physicalai-train-e438721ae894",
+     "status": "PRESENT",
+     "count": 2376,
+     "bytes": 278782982592
+    },
+    {
+     "host": "thor",
+     "path": "/home/nvidia/epcache/epcache-256px-phase0/physicalai-train-e438721ae894",
+     "status": "PARTIAL",
+     "count": 1075,
+     "bytes": 126149030018
+    },
+    {
+     "host": "thor",
+     "path": "/home/nvidia/epcache_prefix/physicalai-train-e438721ae894",
+     "status": "PARTIAL",
+     "count": 208,
+     "bytes": 24396457072
+    },
+    {
+     "host": "pod5",
+     "path": "/workspace/data/epcache-256px-phase0/physicalai-train-e438721ae894",
+     "status": "ABSENT",
+     "count": 0,
+     "bytes": 0
+    },
+    {
+     "host": "pod5",
+     "path": "/workspace/data/_stage/physicalai-train-e438721ae894",
+     "status": "ABSENT",
+     "count": 0,
+     "bytes": 0
+    },
+    {
+     "host": "pod4",
+     "path": "/workspace/data/physicalai-train-e438721ae894",
+     "status": "ABSENT",
+     "count": 0,
+     "bytes": 0
+    },
+    {
+     "host": "pod4",
+     "path": "/workspace/rescue/data/physicalai_v2",
+     "status": "ABSENT",
+     "count": 0,
+     "bytes": 32340621176
+    }
+   ],
+   "unknown_locations": 0,
+   "partial_locations": [
+    "thor:/home/nvidia/epcache/epcache-256px-phase0/physicalai-train-e438721ae894",
+    "thor:/home/nvidia/epcache_prefix/physicalai-train-e438721ae894"
+   ],
+   "verdict": "SINGLE_COPY"
+  },
+  "raw-val-epcache-256px": {
+   "kind": "raster",
+   "desc": "Raw parity VAL epcache, 256 px \u2014 the REF-C val raster; every published REF-C number is computed on the first 40 episodes",
+   "expected_members": 600,
+   "parity": "physicalai-val-0c5f7dac3b11 / 600 clips",
+   "copies": 1,
+   "durable_copies": 1,
+   "volatile_machines": [],
+   "copy_machines": [
+    "hf:Sayood/tanitad-physicalai-w120-256x640cyl"
+   ],
+   "locations": [
+    {
+     "host": "hf:Sayood/tanitad-physicalai-w120-256x640cyl",
+     "path": "epcache-256px-phase0/physicalai-val-0c5f7dac3b11",
+     "status": "PRESENT",
+     "count": 600,
+     "bytes": 70389845888
+    },
+    {
+     "host": "thor",
+     "path": "/home/nvidia/valdata/physicalai-val-0c5f7dac3b11",
+     "status": "PARTIAL",
+     "count": 40,
+     "bytes": 4697689792
+    },
+    {
+     "host": "pod5",
+     "path": "/workspace/data/epcache-256px-phase0/physicalai-val-0c5f7dac3b11",
+     "status": "ABSENT",
+     "count": 0,
+     "bytes": 0
+    },
+    {
+     "host": "pod4",
+     "path": "/workspace/data/physicalai-val-0c5f7dac3b11",
+     "status": "ABSENT",
+     "count": 0,
+     "bytes": 0
+    }
+   ],
+   "unknown_locations": 0,
+   "partial_locations": [
+    "thor:/home/nvidia/valdata/physicalai-val-0c5f7dac3b11"
+   ],
+   "verdict": "SINGLE_COPY"
+  },
+  "raw-val-epcache-256px-eval40": {
+   "kind": "raster",
+   "desc": "The 40 val episodes the canonical eval actually reads (ep_00000..ep_00039). Tracked separately from the 600 because it is the subset that decides published numbers.",
+   "expected_members": 40,
+   "parity": "first 40 of physicalai-val-0c5f7dac3b11",
+   "copies": 2,
+   "durable_copies": 2,
+   "volatile_machines": [],
+   "copy_machines": [
+    "hf:Sayood/tanitad-physicalai-w120-256x640cyl",
+    "thor"
+   ],
+   "locations": [
+    {
+     "host": "hf:Sayood/tanitad-physicalai-w120-256x640cyl",
+     "path": "epcache-256px-phase0/physicalai-val-0c5f7dac3b11",
+     "status": "PRESENT",
+     "count": 40,
+     "bytes": 4697689792
+    },
+    {
+     "host": "thor",
+     "path": "/home/nvidia/valdata/physicalai-val-0c5f7dac3b11",
+     "status": "PRESENT",
+     "count": 40,
+     "bytes": 4697689792
+    },
+    {
+     "host": "pod5",
+     "path": "/workspace/data/epcache-256px-phase0/physicalai-val-0c5f7dac3b11",
+     "status": "ABSENT",
+     "count": 0,
+     "bytes": 0
+    }
+   ],
+   "unknown_locations": 0,
+   "partial_locations": [],
+   "verdict": "OK"
+  },
+  "w120-train-cyl": {
+   "kind": "corpus",
+   "desc": "w120 256x640 cylindrical TRAIN cache (v2 corpus)",
+   "expected_members": 2400,
+   "parity": "physicalai-train-e438721ae894-w120-256x640cyl",
+   "copies": 2,
+   "durable_copies": 1,
+   "volatile_machines": [
+    "pod5"
+   ],
+   "copy_machines": [
+    "hf:Sayood/tanitad-physicalai-w120-256x640cyl",
+    "pod5"
+   ],
+   "locations": [
+    {
+     "host": "hf:Sayood/tanitad-physicalai-w120-256x640cyl",
+     "path": "physicalai-train-e438721ae894-w120-256x640cyl",
+     "status": "PRESENT",
+     "count": 2400,
+     "bytes": 84984604480
+    },
+    {
+     "host": "pod5",
+     "path": "/workspace/data/physicalai-train-e438721ae894-w120-256x640cyl",
+     "status": "PRESENT",
+     "count": 2400,
+     "bytes": 85000673346
+    },
+    {
+     "host": "pod4",
+     "path": "/workspace/data/physicalai-train-e438721ae894-w120-256x640cyl",
+     "status": "ABSENT",
+     "count": 0,
+     "bytes": 0
+    },
+    {
+     "host": "thor",
+     "path": "/home/nvidia/traindata/physicalai-train-e438721ae894-w120-256x640cyl",
+     "status": "ABSENT",
+     "count": 0,
+     "bytes": 0
+    }
+   ],
+   "unknown_locations": 0,
+   "partial_locations": [],
+   "verdict": "OK",
+   "volatility_warning": "only 1 durable copy/copies; the rest are on rented pods ['pod5'] \u2014 one termination from SINGLE_COPY"
+  },
+  "w120-val-cyl": {
+   "kind": "raster",
+   "desc": "w120 256x640 cylindrical VAL cache (v2 corpus)",
+   "expected_members": 600,
+   "parity": "physicalai-val-0c5f7dac3b11-w120-256x640cyl",
+   "copies": 2,
+   "durable_copies": 1,
+   "volatile_machines": [
+    "pod5"
+   ],
+   "copy_machines": [
+    "hf:Sayood/tanitad-physicalai-w120-256x640cyl",
+    "pod5"
+   ],
+   "locations": [
+    {
+     "host": "hf:Sayood/tanitad-physicalai-w120-256x640cyl",
+     "path": "physicalai-val-0c5f7dac3b11-w120-256x640cyl",
+     "status": "PRESENT",
+     "count": 600,
+     "bytes": 21202764096
+    },
+    {
+     "host": "pod5",
+     "path": "/workspace/data/physicalai-val-0c5f7dac3b11-w120-256x640cyl",
+     "status": "PRESENT",
+     "count": 600,
+     "bytes": 21209029919
+    },
+    {
+     "host": "thor",
+     "path": "/home/nvidia/valdata/physicalai-val-0c5f7dac3b11-w120-256x640cyl",
+     "status": "PARTIAL",
+     "count": 35,
+     "bytes": 1301382831
+    }
+   ],
+   "unknown_locations": 0,
+   "partial_locations": [
+    "thor:/home/nvidia/valdata/physicalai-val-0c5f7dac3b11-w120-256x640cyl"
+   ],
+   "verdict": "OK",
+   "volatility_warning": "only 1 durable copy/copies; the rest are on rented pods ['pod5'] \u2014 one termination from SINGLE_COPY"
+  },
+  "anchors-flagship-v4-dense": {
+   "kind": "anchors",
+   "desc": "flagship_v4_anchors_dense.pt \u2014 the 256x20x2 dense anchor set the v4/v5 anchored-diffusion planner is defined against",
+   "expected_members": null,
+   "parity": null,
+   "copies": 3,
+   "durable_copies": 2,
+   "volatile_machines": [
+    "pod5"
+   ],
+   "copy_machines": [
+    "github",
+    "pod5",
+    "repo"
+   ],
+   "locations": [
+    {
+     "host": "repo",
+     "path": "TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-07-28-pod-migration-rescue/flagship_v4_anchors_dense.pt",
+     "status": "PRESENT",
+     "count": 1,
+     "bytes": 42983
+    },
+    {
+     "host": "github",
+     "path": "TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-07-28-pod-migration-rescue/flagship_v4_anchors_dense.pt",
+     "status": "PRESENT",
+     "count": 1,
+     "bytes": null,
+     "ref": "origin"
+    },
+    {
+     "host": "pod5",
+     "path": "/workspace/experiments/flagship_v4_anchors_dense.pt",
+     "status": "PRESENT",
+     "count": 1,
+     "bytes": 42550
+    },
+    {
+     "host": "pod4",
+     "path": "/workspace/experiments/flagship_v4_anchors_dense.pt",
+     "status": "ABSENT",
+     "count": 0,
+     "bytes": 0
+    },
+    {
+     "host": "thor",
+     "path": "/home/nvidia/models/flagship_v4_anchors_dense.pt",
+     "status": "ABSENT",
+     "count": 0,
+     "bytes": 0
+    }
+   ],
+   "unknown_locations": 0,
+   "partial_locations": [],
+   "verdict": "OK"
+  },
+  "anchors-refc-small64": {
+   "kind": "anchors",
+   "desc": "refc_anchors_small64.pt \u2014 REF-C small anchor set",
+   "expected_members": null,
+   "parity": null,
+   "copies": 2,
+   "durable_copies": 2,
+   "volatile_machines": [],
+   "copy_machines": [
+    "github",
+    "repo"
+   ],
+   "locations": [
+    {
+     "host": "repo",
+     "path": "TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-22-refc-small-30k/refc_anchors_small64.pt",
+     "status": "PRESENT",
+     "count": 1,
+     "bytes": 5597
+    },
+    {
+     "host": "github",
+     "path": "TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-22-refc-small-30k/refc_anchors_small64.pt",
+     "status": "PRESENT",
+     "count": 1,
+     "bytes": null,
+     "ref": "origin"
+    },
+    {
+     "host": "pod5",
+     "path": "/workspace/experiments/refc_anchors_small64.pt",
+     "status": "ABSENT",
+     "count": 0,
+     "bytes": 0
+    },
+    {
+     "host": "thor",
+     "path": "/home/nvidia/models/refc_anchors_small64.pt",
+     "status": "ABSENT",
+     "count": 0,
+     "bytes": 0
+    }
+   ],
+   "unknown_locations": 0,
+   "partial_locations": [],
+   "verdict": "OK"
+  },
+  "anchors-dev256": {
+   "kind": "anchors",
+   "desc": "anchors_dev256.pt \u2014 per-candidate label anchor set",
+   "expected_members": null,
+   "parity": null,
+   "copies": 2,
+   "durable_copies": 2,
+   "volatile_machines": [],
+   "copy_machines": [
+    "github",
+    "repo"
+   ],
+   "locations": [
+    {
+     "host": "repo",
+     "path": "TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-07-27-percandidate-labels/raw/anchors_dev256.pt",
+     "status": "PRESENT",
+     "count": 1,
+     "bytes": 42842
+    },
+    {
+     "host": "github",
+     "path": "TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-07-27-percandidate-labels/raw/anchors_dev256.pt",
+     "status": "PRESENT",
+     "count": 1,
+     "bytes": null,
+     "ref": "origin"
+    },
+    {
+     "host": "thor",
+     "path": "/home/nvidia/models/anchors_dev256.pt",
+     "status": "ABSENT",
+     "count": 0,
+     "bytes": 0
+    }
+   ],
+   "unknown_locations": 0,
+   "partial_locations": [],
+   "verdict": "OK"
+  },
+  "evaldumps-windows-fan": {
+   "kind": "evaldump",
+   "desc": "Banked per-window eval dumps (windows_*.pt / fan_*.pt) \u2014 the 0-GPU re-analysis surface behind the CI recomputes",
+   "expected_members": 29,
+   "parity": null,
+   "copies": 3,
+   "durable_copies": 2,
+   "volatile_machines": [
+    "pod5"
+   ],
+   "copy_machines": [
+    "github",
+    "pod5",
+    "repo"
+   ],
+   "locations": [
+    {
+     "host": "repo",
+     "path": "taniteval/results",
+     "status": "PRESENT",
+     "count": 29,
+     "bytes": 14806612
+    },
+    {
+     "host": "github",
+     "path": "taniteval/results",
+     "status": "PRESENT",
+     "count": 29,
+     "bytes": null,
+     "ref": "origin"
+    },
+    {
+     "host": "pod5",
+     "path": "/workspace/TanitAD/taniteval/results",
+     "status": "PRESENT",
+     "count": 29,
+     "bytes": 22722019
+    },
+    {
+     "host": "pod4",
+     "path": "/workspace/TanitAD/taniteval/results",
+     "status": "ABSENT",
+     "count": 0,
+     "bytes": 0
+    },
+    {
+     "host": "thor",
+     "path": "/home/nvidia/TanitAD/taniteval/results",
+     "status": "PARTIAL",
+     "count": 27,
+     "bytes": 22647950
+    }
+   ],
+   "unknown_locations": 0,
+   "partial_locations": [
+    "thor:/home/nvidia/TanitAD/taniteval/results"
+   ],
+   "verdict": "OK"
+  }
+ },
+ "warnings": [],
+ "fleet_warnings": [
+  "AMBER ALIAS_GONE: tanitad-pod2 has a role hint but no longer appears in config \u2014 pod released, or config drifted?",
+  "AMBER HOST_UNCLASSIFIED: pod2-TERMINATED (69.30.85.123:22091, aliases tanitad-pod2-TERMINATED) is in the ssh config with no ROLE_HINTS entry \u2014 probed, but 'healthy' is undefined for it until someone classifies it"
+ ]
+}

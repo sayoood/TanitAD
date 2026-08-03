@@ -2567,3 +2567,143 @@ before. **The escalation was read and the same defect was written again.**
 ⇒ **RULE: every "separated from a control" trigger carries a DIRECTION predicate** —
 *separated **and** the delta favours the treatment*. A bare `separated` is satisfied by a control
 that beats you.
+
+---
+
+## R-2026-08-03-rigpair — ⛔ "+0.930 → −2.465" PAIRS TWO DIFFERENT EXPERIMENTS
+
+**What has been circulated** (`LATENT_BOTTLENECK.md` §5 RANK 1, the D-APPEAR brief, and several
+summaries): *"the measured cross-rig collapse, frozen v1 speed R² **+0.930 → −2.465**"*, cited to
+`…/incoming/2026-07-22-idm-proof/results.json`.
+
+**What that file actually says**, read from source today:
+
+| JSON path | value |
+|---|---|
+| `experiments/rigA_to_rigB/val/in_rig_heldout_rigA/r2/speed` | **+0.7863** |
+| `experiments/rigA_to_rigB/val/cross_rig_rigB/r2/speed` | **−2.4654** |
+| `experiments/physicalai_to_comma2k19/val/in_corpus_heldout_paival/r2/speed` | **+0.9297** |
+
+⇒ The **+0.930 is the in-corpus baseline of a DIFFERENT experiment** (the PhysicalAI→comma2k19 arm).
+The rig experiment's own in-rig baseline is **+0.7863**. The collapse is **+0.7863 → −2.4654**.
+
+**Root-cause class: C4 (inherited without re-verification) compounded by C6 (confounded
+comparison).** Both numbers live in one JSON under one `experiments` key, so a top-level grep for
+"the biggest and the smallest speed R²" produces a pair that reads like a before/after and is not
+one. Nobody re-opened the file because the pair had a plausible shape and an artifact path.
+⇒ **RULE: a "X → Y" pair must name ONE experiment key, not one FILE.** Quote the JSON path of both
+halves, not the filename; a shared artifact path is not evidence that two numbers are comparable.
+⇒ **RULE: an in-domain baseline may only be paired with an out-of-domain number produced by the
+SAME fit.** The cheapest check is that the two paths share every path component above the split.
+
+### And the claim the pair was carrying does not reproduce
+
+MEASURED today (`…/incoming/2026-08-03-appearance-shortcut-audit/results_p2_rig.json`), on the
+principal-point-cropped episode cache, exact ridge, 116 rig-A + 120 rig-B episodes: the frozen v1
+latent shows **no cross-rig speed drop at all** — A→A **+0.7052**, B→B **+0.7194**, B→A **+0.7127**,
+A→B **+0.7011** — and the two rigs' horizon rows agree to **8 of 256** (a legacy geometric-centre
+crop would be **~100 rows** off). ⚠️ Two things differ from the 2026-07-22 run — the cache geometry
+**and** the head (a 2.9 M-param MLP that can extrapolate to R² −2.47 off-domain vs a ridge that
+structurally cannot) — so the −2.4654 is **NOT attributed here**; it is only shown not to reproduce.
+⇒ **RULE: "does not reproduce" and "is explained" are different claims.** Say which one you have.
+
+---
+
+## R-2026-08-03-appear — ⚠️ THE APPEARANCE SHORTCUT IS CORPUS-SPECIFIC (a pre-registered withdrawal)
+
+**What was circulated**, from `LATENT_BOTTLENECK.md` §0.0: *"on this corpus `speed` is read mostly
+from STATIC APPEARANCE — one static frame is 93 % of the full learned latent's speed accuracy, and
+~1.75× the best motion-only arm"*, offered as *plausibly one fact* behind the 88.7 % longitudinal
+gap and the cross-rig collapse.
+
+**MEASURED off-highway** (`…/2026-08-03-appearance-shortcut-audit/results_p1_physicalai.json`,
+same encoder `v1_speedjerk_ckpt.pt` step 29999, same recipe, 240 PhysicalAI episodes,
+80 held out): the still frame reads `speed` at **−0.0025 = the empirical null**, against the latent
+window's **+0.6752**. **RATIO −0.0037** vs comma2k19's **0.9296**. The ordering does not shrink,
+**it reverses**: motion energy separates (`mot16_window_rbf` **+0.4124**) while every appearance
+form is at the null.
+
+⚠️ **This is NOT a retraction of a careless claim** — `LATENT_BOTTLENECK.md` labelled it a
+HYPOTHESIS at programme scale, wrote the transfer test as its own RANK 1, and §7 named the exact
+corpus property responsible. It is logged because the CLASS is worth having, and because the
+withdrawal was pre-registered (`PREREG_APPEARANCE_SHORTCUT.md`, OUTCOME C) rather than argued after
+the fact.
+
+**Root-cause class: NEW — C16, EPISODE-DISJOINT MISTAKEN FOR DOMAIN-DISJOINT.**
+The ladder (`results_p1b_mechanism.json`) shows the map exists on BOTH corpora and transfers on only
+one: still-frame speed R² **within-clip +0.9825 → across-clip +0.6642** on comma2k19 (68 % retained)
+against **+0.8023 → −0.0025** on PhysicalAI (0 % retained). comma2k19 val is **one driver, one
+vehicle, one camera, one road class**, so holding out 17 of its 50 episodes does **not** hold out a
+domain; PhysicalAI's 500 clips span cities, vehicles and two rigs and it does.
+⇒ **RULE: state what the held-out unit is INDEPENDENT OF, not just that it is disjoint.** An
+episode-disjoint split on a single-rig, single-road-class corpus certifies far less than the phrase
+suggests, and a memorisation-shaped result will pass it.
+⇒ **RULE (cheap and general): before believing any probe result, run it once with a random WINDOW
+split as well.** If within-unit ≫ across-unit the arm is memorising; if the two agree the arm has
+found something that travels. It costs one extra fit and it is what turned this null from
+"the probe is broken" into a mechanism.
+
+| # | class | recognition signal |
+|---|---|---|
+| **C16** | **Episode-disjoint mistaken for domain-disjoint** | a held-out split is described only as "disjoint", and the corpus has one rig / one vehicle / one road class |
+
+---
+
+## R-2026-08-03-mem — ⛔ "v5f is at 98–100 % of its container cap and OOM-looping" is RETRACTED
+
+**What I claimed**, three times in one hour, and acted on each time: that the v5f trainer was pinned
+against its 50 GB container cap, that the `rc=137` SIGKILL was a container OOM, and that my
+`--workers 8 / --v2-lru 64 / --batch 8` change had caused it.
+
+**MEASURED**, on `tanitad-new`, **with nothing running at all**:
+
+| `/sys/fs/cgroup/memory/memory.stat` | |
+|---|---|
+| `cache` | **37.0 GB** ← reclaimable page cache |
+| `rss` | **0.1 GB** |
+| `usage_in_bytes` | 37.2 GB → **74 % of the cap, at idle** |
+| **`memory.failcnt`** | **0** |
+
+Under load: `usage_in_bytes` **98–100 %** while `rss` was **4.9 GB** and `failcnt` still **0**.
+
+⇒ **`memory.usage_in_bytes` counts page cache and is not a pressure signal.** A cgroup that has
+never hit its limit reports `failcnt 0`, and it did — throughout. **The container-OOM diagnosis is
+refuted.** The `rc=137` remains **UNEXPLAINED**, and I am recording it as unexplained rather than
+attaching it to the first plausible mechanism.
+
+**Root-cause class: a counter that aggregates something RECLAIMABLE, read as pressure.** This is the
+**third costume** of one trap already in the preflight twice — *"never judge pod disk with `df`"* (it
+reports the cluster, hides the quota) and *"on Thor `free`/`tegrastats` show 106 GB used on an idle
+box"*. I had written the Thor entry into `CLAUDE.md` **the same day** and still walked into it.
+⇒ **RULE: before reading any usage counter as pressure, read it with the load REMOVED.** An idle
+baseline separates "in use" from "accounted to us". It costs one measurement and it is the whole
+diagnosis.
+⇒ **RULE: prefer the counter that only moves on the event you care about** — `failcnt` /
+`memory.events`, not `usage_in_bytes`; `torch.cuda.max_memory_allocated()`, not `mem_get_info`.
+
+**Cost:** ~40 min of v5f training and three unnecessary restarts. v5f is back on its exact
+known-good config (`--batch 4 --accum 16 --v2-lru 4 --workers 4`), resumed at step 4001 from a
+checkpoint at 4000, `rss` 4.9 GB, `failcnt` 0.
+
+**What SURVIVES and is still worth having.** The original diagnosis stands and is independent of
+this error: **v5f is INPUT-BOUND** — GPU utilisation median **~39 %** on the shipped config against
+v1arch's **79 %** at the same effective batch. And the `--batch 8` run MEASURED GPU utilisation at
+**~94 %**. That gain is real and is still on the table; it is blocked only on explaining the
+`rc=137`, which must be done before retrying rather than assumed away.
+
+### Two ops mechanisms bought at the same time
+
+1. **`supervise_run.sh` sources its manifest ONCE at startup, not per relaunch.** My first relaunch
+   came back on the OLD command and looked successful. Correct order: edit manifest → kill the
+   **supervisor** first → kill the trainer → start a fresh supervisor. **Verify by grepping flags out
+   of the RUNNING process**, never by reading the manifest back.
+2. **Restarting a supervisor immediately after killing the old one races its `flock`** — the new one
+   exits with *"another supervisor holds …lock"* and **nothing runs**, while the log reads like a
+   normal startup. Poll until both are gone; a lock with no holder in `/proc/*/fd` is debris.
+
+⚠️ **And `pgrep -f <pattern>` self-matched my own ssh command THREE times in this sequence** — once
+reporting a dead supervisor as alive, once listing my own shell as *both* the trainer and the
+supervisor because the command string contained both literals. The preflight rule says "kill by
+explicit PID"; the sharper form is: ⇒ **`pgrep`/`pkill -f` are inadmissible for STATE CHECKS too,
+not just for killing. Use `kill -0 <explicit PID>`, or an `awk` filter that excludes your own
+command.**
