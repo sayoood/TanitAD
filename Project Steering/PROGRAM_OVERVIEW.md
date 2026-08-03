@@ -12,8 +12,13 @@
 > exact training command, data key, code state, results, and reconstruction gaps, plus the decision log
 > behind them. This document is the *strategy*; the registry is the *record*.
 >
-> **Last refreshed:** 2026-07-25 · Phase 0 (~day 21 / 42) · **Next refresh:** the coupled-flagship 30 k
-> verdict, or Phase-0 exit.
+> **Last refreshed:** 2026-08-03 · Phase 0 (~day 30 / 42) · **Next refresh:** Phase-0 exit, or the
+> v5f / v1arch 30 k verdicts.
+>
+> **Refresh convention:** §5.0 carries the current state and is rewritten each refresh. §§5.1–5.4 are
+> the **2026-07-25 snapshot**, retained because their tables are still the provenance for the
+> open-loop bake-off; where 5.0 and 5.1–5.4 disagree, **5.0 is newer**. §5.0.5 lists what is
+> **RETRACTED** and may not be re-quoted from any of them.
 >
 > **Evidence class on every load-bearing number** (CLAUDE.md operating standard): `MEASURED` (ours +
 > artifact) · `PUBLISHED` (cited) · `INHERITED` · `ESTIMATED` · `HYPOTHESIS`. Unmarked numbers in the
@@ -35,9 +40,9 @@ of L4, not a goal). North-star framing: win on **hierarchy + imagination + self-
 per-scenario excellence**, not on scale.
 
 ## 1. The three claims we must make undeniable
-| Claim | Goal | Proof artifact | Where it stands (2026-07-25) |
+| Claim | Goal | Proof artifact | Where it stands (**2026-08-03**) |
 |---|---|---|---|
-| **C1 — It drives** | Goal 1 | Closed-loop success + latency/FLOPs ledger (Orin/Thor envelope) | 🔶 Open-loop **cleared** (0.452 m, below every trivial floor). Closed-loop **not** — and now measured three ways: 1.685 m self-referential in-house, **1.488 m [1.329, 1.647] on the new n=40 real-footage low-OOD instrument where REF-C base scores 0.564**, 2/12 pass on the reconstruction suite. **The deficit is measured LONGITUDINAL, not lane-keeping.** Latency side is done: composed planning tick **18.75 ms p50**, 10 Hz at p99 with 5.3× headroom, FP16 |
+| **C1 — It drives** | Goal 1 | Closed-loop success + latency/FLOPs ledger (Orin/Thor envelope) | 🔶 Open-loop **cleared** (0.4271 full-set, below every trivial floor). Closed-loop **not** — now measured four ways: 1.685 m self-referential in-house, **1.488 m [1.329, 1.647] on the n=40 real-footage low-OOD instrument where REF-C base scores 0.564**, 2/12 pass on the reconstruction suite, and — new — **closed-loop on a NuRec reconstruction rendered on the Jetson Thor, where REF-C beats flagship v1 and the separation is ENTIRELY LATERAL while ADE does not separate** (§5.0.1). **The deficit is measured LONGITUDINAL, not lane-keeping.** Latency side is now measured **end-to-end on real weights**, not composed: **60.3 ms p50 / 63.1 ms p95 on Thor against a 100 ms budget** (§5.0.2) |
 | **C2 — It needs magnitudes less data** | Goal 2 (prio) | Data-efficiency slope vs supervised baseline at matched params | 🔶 Still not a slope — but the **enabling mechanism is now measured**: pseudo-label WM pretraining captures **~96 %** (proxy, 8 seeds) / **109 % speed, 71 % yaw** (parity target, 4 seeds) of real-label value, and an 80-clip CC YouTube pilot reaches **≈92 % of ceiling** (directional). Corpus baseline now exact: **13.13 h, 4.73 epochs at 30 k** |
 | **C3 — It is inherently safe & compliant** | Goal 2 (prio) | Fallback brain, self-monitoring AUROC, rule-violation rates, UN-ADS regulation trace | 🔶 Instruments built; D8 separation still preview-only (p≈0.047 paired). **New: SC-14 traffic-light scenario + TLC metric** (`red_entry_gate × stop_quality × green_flow`; a single red-run zeroes it) — design oracle **rule_barrier 1.0 vs soft_prior 0.0**, the H9 hard-barrier claim made scorable. Model-side TLC/LAL/OKRI/LOPS **renderer-gated** |
 
@@ -46,12 +51,12 @@ latency, and the **CNCE** metric (first real value: **median 210,551** on the de
 architecture, comma val, 30 eps).
 
 ## 2. The four edges and the plan to build each
-| Edge | Core hypotheses | How it's built | Status (2026-07-25) |
+| Edge | Core hypotheses | How it's built | Status (**2026-08-03**; ③ and ④ updated, ① and ② are the 07-25 reading) |
 |---|---|---|---|
 | **① Planning / Hierarchy** | H1 (4-brain: strategic/tactical/operative + fallback-MRC), H26 (cross-level alignment) | Three E2E abstraction layers at different clock rates + a fallback that forces a Minimal-Risk Condition on collapse | 🔶 **Built and in its first real training round.** The v3 design shipped as **flagship-v4** (three *planners* over the WM, ≈247.9 M — 30 M smaller than v1). Four **warm-start** arms failed (best 10 k `ade_0_2s` **0.8522 [0.75, 0.98]** vs a 0.60 bar); a ~0-GPU **cosine pre-probe** (seam cos **+0.0043**) refuted gradient surgery and selected **co-evolution from random init**, which is working (canary **15.674 → ~1.4** under full coupling, ADE ~0.48 at 40 % of training, 10 k gate CONTINUE). Standing evidence unchanged: heads are a lossy readout (P2 planner 0.893 vs head 3.150 open-loop; 1.038 vs 1.685 closed-loop) |
 | **② Data efficiency** | H3 (LeJEPA/SigReg world model), H4 (frozen vs trained encoder), H7 (1000× data via IDM) | Latent world model, no perception labels; inverse-dynamics to mine action-free video; focal-length canonicalization | ✅→🔶 **H4 is now SPLIT** (the flat "closed-negative" was unsafe — see the ledger): the ceiling is **static decode** off a frozen JEPA latent (3.65 m, the REF-A band), not freezing — a planner reading the *same* frozen WM through its dynamics reaches **0.599 m**. ⇒ **H4a** (frozen + supervised regression) refuted; **H4b** (frozen + feature-prediction + planning) **OPEN and positive**. **H7 has its first end-to-end evidence** (pseudo-label pretraining ≈96 % / 109 % of real-label value; YouTube pilot ≈92 % of ceiling). The C2 **slope** is still unmeasured — now the clearest single gap |
-| **③ Inference efficiency** | H5 (efficient decode/inference transfer), H2 (modality steering), H8 (MoE) | 263 M vs 15–120× larger; imagine-and-select instead of generative rollout | ✅ **Closed for the deployed arm.** ⚠️ the old "deploy tick 11.16 ms" was a *different tick* (retracted). Real **planning tick** 100.29 ms eager → **18.75 ms p50 composed (5.35×)**, 10 Hz at **p99** with 5.3× headroom; levers are **sequenced, not additive**. **FP16 is the deployment precision, INT8 REJECTED** (no latency win; W+A INT8 collapses the readout head to cos 0.566 and costs +0.0215 m over 20 steps). CEM is **not** latency-blocked (K=8 fan 20.82 ms, ~0.3 ms/candidate). H2/MoE are Phase-1 |
-| **④ Safety / self-knowledge** | H11 (self-monitoring), H9 (rule compliance), H15 (imagination), H14 (physical grounding) | Per-level monitors + hard rule barriers + ImaginationField (advection + epistemic σ) + kinematic/Kamm grounding | 🔶 Instruments built and **now partly real**: first MEASURED beyond-ADE numbers on the deployed architecture (decision-tick p50 **14.33 ms**, TMS **0.0435** = expert-log band, CNCE **210,551**) + **SC-14/TLC**. **H15 `vision_use` still flat at ~12 %**; D8 separation still preview-only; σ-dissipation stands (0.357 → 0.011 by k=4). The **binding gap is the renderer**: closed-loop TLC/LAL/OKRI/LOPS cannot be computed without one |
+| **③ Inference efficiency** | H5 (efficient decode/inference transfer), H2 (modality steering), H8 (MoE) | 263 M vs 15–120× larger; imagine-and-select instead of generative rollout | ✅ **Closed for the deployed arm, and now proven ON THE TARGET SILICON.** ⚠️ the old "deploy tick 11.16 ms" was a *different tick* (retracted). **MEASURED end-to-end on Jetson Thor with real step-29999 weights: 60.3 ms p50 / 63.1 ms p95 against a 100 ms budget** (60 windows / 12 eps, K=20, 9-candidate fan) — §5.0.2. **FP16/bf16 is the deployment precision, INT8 REJECTED** (no latency win; W+A INT8 collapses the readout head to cos 0.566 and costs +0.0215 m over 20 steps — **on real weights**; ⛔ the random-weight precision table is RETRACTED, §5.0.5). ⚠️ **Scope: latency + tactical-decision, not four-family accuracy** — `TacticalSelector` has **no production caller today**, so this makes the *designed* path affordable rather than speeding up what runs now. H2/MoE are Phase-1 |
+| **④ Safety / self-knowledge** | H11 (self-monitoring), H9 (rule compliance), H15 (imagination), H14 (physical grounding) | Per-level monitors + hard rule barriers + ImaginationField (advection + epistemic σ) + kinematic/Kamm grounding | 🔶 Instruments built and **now partly real**: first MEASURED beyond-ADE numbers on the deployed architecture (decision-tick p50 **14.33 ms**, TMS **0.0435** = expert-log band, CNCE **210,551**) + **SC-14/TLC**. **H15 `vision_use` still flat at ~12 %**; D8 separation still preview-only; σ-dissipation stands (0.357 → 0.011 by k=4). ⭐ **The renderer half of the gap is now OPEN, not blocked** — gsplat renders NuRec natively on aarch64 and a full closed-loop panel ran on Thor (§5.0.3). ⛔ **But the SAFETY half is still missing and for a NEW reason**: it is the **renderer wire contract, not `alpasim_runtime`**, so there is **no collision / offroad / scene score** — TLC/LAL/OKRI/LOPS closed-loop still need the runtime finished (bounded: `cargo` is present) |
 
 ## 3. Hypothesis ledger
 
@@ -113,9 +118,183 @@ pass it**. What remains genuinely blocked is the *safety-grade* half — off-roa
 a map + reactive agents, i.e. a renderer, and every renderer we have sits at ~3.2× observation-OOD.
 *Only then do more cameras/sensors/the H-stack proceed.*
 
-## 5. Current state & latest achievements (2026-07-25)
+## 5. Current state & latest achievements
 
-### 5.1 The open-loop bake-off — settled, and the top of the table is a three-way tie
+### 5.0 — THE CURRENT STATE (2026-08-03)
+
+> §§5.1–5.4 below are the **2026-07-25 snapshot**, kept for their provenance tables. Where they and
+> this section disagree, **this section is newer**. §5.0.5 is the do-not-re-quote list.
+
+#### 5.0.1 ⭐⭐ Closed-loop on a neural reconstruction, on the edge device — and **ADE saw nothing**
+
+`MEASURED` — run dir **`stack/experiments/alpasim-gsplat/results/`**
+(`metrics_empty.json`, `metrics_objects.json`, `contract_test.json`, `actor_map.json`); code
+`stack/experiments/alpasim-gsplat/`; videos
+`TanitAD Research Hub/Evaluation/Videos/alpasim-closedloop/` (4 × 18.0 s, 1800×850, each verified by
+**decoding it back** and md5-matched to Thor).
+
+**9 rollout starts × 50 ticks in a NuRec reconstruction rendered ON THE JETSON THOR**, paired over
+**437 shared windows**, episode-cluster bootstrap. Paired Δ = flagship v1 − REF-C base (positive =
+flagship worse), empty-road:
+
+| family | metric | paired Δ [CI95] | sep |
+|---|---|---|:--:|
+| **ADE** | `ade_0_2s` | **+0.7885 [−0.8653, +2.7282]** | ❌ |
+| **LONGITUDINAL** | `abs_target_speed_err_ms` | +1.1242 [−0.1008, +2.5657] | ❌ |
+| **LONGITUDINAL** | `along_track_ade_m` | +0.6498 [−1.0166, +2.5903] | ❌ |
+| **LATERAL** | `cross_track_abs_m` (= `dist_to_gt_traj_m`) | **+1.1705 [+0.0296, +2.2438]** | ✅ |
+| **LATERAL** | `heading_err_rad` | **+0.0838 [+0.0278, +0.1750]** | ✅ |
+| **LATERAL** | `curvature_err_1pm` | **+0.0050 [+0.0008, +0.0130]** | ✅ |
+| **LATERAL** | `yawrate_err_rads` | **+0.0378 [+0.0201, +0.0565]** | ✅ |
+| **TACTICAL** | `manoeuvre_plan_eq_logged` | +0.0709 [−0.1241, +0.2600] | ❌ |
+| **STRATEGIC** | `route_corridor_departure_rate` | +0.2037 [−0.0023, +0.3982] | ❌ |
+
+⭐ **REF-C base beats flagship v1 closed-loop and the whole separation is LATERAL. An ADE-only table
+would have reported NO DIFFERENCE** on a comparison where four lateral measures separate cleanly and
+in the same direction. **This is why the four-family rule is binding** — and it reproduces the
+07-23 native-1080 n=12 suite on **different hardware, a different renderer and a different scene**,
+so the doctrine is not an artifact of one harness.
+
+**Three defects only the families expose:**
+1. **The arms fail longitudinally in OPPOSITE directions** — flagship `target_speed_err_ms`
+   **−2.0412 m/s** (too slow), REF-C **+1.3307 m/s** (too fast). **A pooled score cancels this.**
+2. **The flagship does not execute what it selects** — `manoeuvre_exec_eq_plan` **0.4481** vs REF-C
+   **0.8741**.
+3. 🔴 **REF-C's 5-way manoeuvre head NEVER emits a longitudinal class** — closed-loop
+   `head_class_share` lane_keep 0.627 / turn_right 0.373 / **accelerate 0 / brake_stop 0**, while
+   **41.9 %** of logged windows are `brake_stop`. **The programme's top defect**, the documented
+   lat+lon-mixing softmax, seen in CLOSED LOOP for the first time rather than inferred open-loop.
+
+**Bounds that travel with the result:**
+- ⛔ **Within-sim relative** — REF-C open-loop 1.5157 on these reconstructions vs 0.4728 on real
+  footage (**3.21× OOD**). Orderings survive; **absolute rates do not**.
+- ⚠️ **The clusters are disjoint segments of ONE clip**, not independent episodes — stated in the
+  JSON so it is never mistaken for the 40-episode val bootstrap.
+- ⚠️ **STRATEGIC is degenerate on a junction-free 20 s clip.** Flagship `route_head_eq_logged`
+  **1.0000** is a constant-predictor tie; `route_label_valid_rate` 0.3778/0.3867, the rest
+  `gray_zone`. **A junction scene is required before any strategic-accuracy claim.** TTC reported as
+  **n = 0 with its reason**, not dropped.
+- **Objects vs empty road is NULL for both arms** (19/20 CIs contain zero) — bounded honestly to
+  *distant* traffic (0.02–0.4 % of frame at 40–45 m, ~2.8 s gap), **not** claimed as vision being
+  ignored. A close-following / cut-in scene is the discriminating follow-up.
+- 🔴 **Instrument property that constrains every future sim number: the renderer is a STEP FUNCTION
+  of pose.** Identical pose is bit-exact, but 1e-9 → 1e-4 rad all give the same mean pixel delta with
+  no growth — discrete blend-order ties among 3.1 M semi-transparent gaussians, **not** float
+  precision. Decision-level cost on one identical window: **0.0000 m** in-process, **4.59 m** through
+  the gRPC float32 pose round-trip, **6.65 m** under a 0.1 px camera rotation. ⇒ **All production
+  numbers must come from ONE numerical path**, and **bit-identical is the wrong acceptance criterion**
+  for a splat renderer.
+
+#### 5.0.2 ⭐ The Thor planning tick is UNDER budget — measured end-to-end on real weights
+
+`MEASURED` — artifact **`TanitAD Research Hub/Production & Optimization/Implementation/incoming/2026-08-03-thor-batch9-engine/thor_d6_tick_intent_K20.json`**;
+engines at `thor:~/trt_deploy/`; runbook `TanitAD Research Hub/Production & Optimization/THOR_DEPLOYMENT_RUNBOOK.md`.
+
+First tick measured **end-to-end** (encoder + strategic head + tactical head + 9-candidate fan +
+`step_readout` decode + SE(2) + scoring) rather than composed arithmetically. **60 real held-out
+windows / 12 episodes, real step-29999 weights, K = 20, budget 100 ms:**
+
+| configuration | p50 | p95 | vs budget |
+|---|---:|---:|---|
+| fp32 eager, serialised fan | 764.1 | 768.4 | 764 % |
+| bf16 + engine, **caller not fixed** | 372.0 | 380.1 | 372 % |
+| bf16 + eager batched, no engine | 204.4 | 205.7 | 204 % |
+| **bf16 + dynamic 1..9 engine, BATCHED fan** | **60.3** | **63.1** | **60 % / 63 % — PASSES** |
+
+**6.17× from the batching fix alone** (`speedup_B_to_C` 6.169), **12.7×** over fp32 eager.
+⚠️ **"Rebuild the engine at batch 9" was an INSUFFICIENT instruction** — `TacticalSelector` LOOPS
+over candidates, so the rebuilt engine with the unchanged caller measures **272.8 ms, worse** than
+the batch-1 engine's 265.7. The batching had to be implemented in `stack/`
+(`propose_and_score(..., batch_fan=True)`). ⇒ **an optimisation stated as an artifact change must
+name the CALLER shape it requires.**
+
+⚠️ **Scope stated plainly: LATENCY + tactical-decision, NOT a four-family accuracy claim.** Two
+probes confirm `TacticalSelector` has **no production caller today** (the only closed-loop driver is
+heads-only, ~24 ms) ⇒ this makes the **designed** path affordable rather than speeding up what runs
+now. **NOT DONE:** the four-family panel was not re-run (argued unnecessary via 1.57e-4 b9-vs-b1
+numerics — *argued, not measured*).
+
+#### 5.0.3 ⭐ The renderer blocker is gone — and the scope limit is exact
+
+`MEASURED` — `stack/experiments/nurec-gsplat/` (+ `FINDINGS.md`, `isp_report.json`) and
+`stack/experiments/alpasim-gsplat/`.
+
+- NVIDIA's NRE renderer is amd64-only, **but it is not required**: `volume.nurec` is
+  **gzip + MessagePack**, and **gsplat 1.5.3 renders it natively on aarch64 including the f-theta
+  camera model** at **16–28 ms / 1920×1080 frame** with the scene GPU-resident; whole closed loop
+  **0.09–0.21 s/step = 5–11 Hz**. *(The banked 224.98 ms / 4.4 FPS was a **first-call** number and is
+  superseded; steady state at 3.1 M gaussians is 0.10–0.17 s/frame.)*
+- Validation is by **gradient-NCC** against the scene's own shipped reference video. **PSNR and plain
+  NCC are INADMISSIBLE here** — §5.0.5.
+- ⭐ Also extracted from the USDZ: **`map.xodr`, `clipgt/lane.parquet`, `clipgt/obstacle.parquet`** —
+  the **strategic-map material the programme has been missing**, since PhysicalAI-AV ships none
+  (its card says verbatim that open maps data is not included).
+- ⛔ **SCOPE LIMIT, binding on every sim number: this is AlpaSim's renderer WIRE CONTRACT satisfied by
+  our renderer, driven by a TanitAD closed-loop harness. It is NOT `alpasim_runtime.simulate`.**
+  MEASURED on Thor: `alpasim_grpc`, `alpasim_utils`, `alpasim_wizard` import; **`alpasim_runtime`,
+  `alpasim_controller`, `alpasim_physics`, `utils_rs` do not**, and `uv` is absent ⇒ **there is NO
+  AlpaSim collision / offroad / scene score** for these runs; the four TanitAD families are what is
+  measured instead. `cargo` IS present ⇒ finishing the runtime is **bounded, not blocked**.
+
+#### 5.0.4 REF-C's route pathway is LIVE — the defect is the ARCHITECTURE, not the label
+
+`MEASURED` — run dir **`TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-08-03-lan-refc-e0/`**
+(REF-C-base 104.192 M, **859 windows / 39 val episodes**, **256 px square raster asserted before any
+forward pass**, paired episode-cluster bootstrap n_boot 2000). Pre-registration:
+`PREREG_lan_refc.md`.
+
+- **E0 verdict RESPONSIVE, not INERT** — sweeping `nav_cmd` over the label-reachable commands
+  {follow, left, right} moves the trajectory **0.2416 m**; the bit-identical-input control is
+  **exactly 0.0** (tol 1e-6). ⇒ every published REF-C number held a **LIVE** input constant, not a
+  dead one. Different defect, different fix.
+- **The pre-registered fallback is refuted too.** Handing REF-C the **oracle** route degrades lateral
+  (`cross_mae` +0.0031 [+0.0001, +0.0063] **separated worse**) and buys nothing anywhere; its own
+  produced route is worse still (ADE +0.0118 [+0.0011, +0.0227]). ⇒ **do not re-score the REF-C rows
+  expecting a gain.**
+- **The 5-way defect reproduces open-loop at n=859** — accelerate **0/93**, brake_stop **7/78** — and
+  is **INVARIANT to `nav_cmd`**, because both aux heads read the pooled feature only.
+  ⛔ **LAN as specified CANNOT fix it**: `lan_emb`/`lan_dir` reach only the decoder, never the
+  manoeuvre or route head. Naming that now saves the GPU-days a LAN arm would have cost.
+- **A 4-way `nav_cmd` sweep is really a 3-way sweep** — `ROUTE_TO_NAV` maps the 3-class label onto
+  nav {0,1,2}; index 3 is an untrained embedding row that dominates the raw sweep (1.5126 vs 0.2416)
+  and would have overstated route sensitivity **7.3×**. An OOD probe mislabelled as a route response.
+- ⚠️ `ep_00028.pt` was a truncated transfer ⇒ **39/40 episodes, NOT window-comparable** to the
+  published 881-window rows.
+
+#### 5.0.5 ⛔ RETRACTED — may not be re-quoted from this document or any older one
+
+Full entries and root-cause classes in [`RETRACTION_LOG.md`](RETRACTION_LOG.md).
+
+| retracted | what is true instead |
+|---|---|
+| **PSNR / plain NCC on the NuRec night clip** | A **WRONG** reference frame beats the correct one under both (PSNR 17.457 > 16.758; NCC 0.782 > 0.704) — every frame is a dark night street, so ~17 dB measures "both images are dark". ✅ **grad-NCC discriminates** (argmax = frame 0); on the corrected `wxyz` quaternion layout **0.3802** vs best wrong **0.2110**, margin **+0.1692**. The mapping is validated by **STRUCTURE, not photometry**. ⇒ *on a low-dynamic-range corpus the negative control runs FIRST and CHOOSES the metric.* |
+| **The ISP / per-frame-photometry lead** | **Dead.** PPISP found (`.post_processings.0.ppisp.*`, 3594 views): exposure **exactly 0** for all 3594, colour **identical** (std == 0), vignetting max \|α\| 0.0047 ⇒ **combined 0.18 %**, because `per_frame_ppisp_enabled: false`. **The scene ships no per-frame photometry.** ⭐ The real residual is **COVERAGE, not colour** — 79–81 % of the absolute error is in pixels **no gaussian covers**; the "near-equal ~0.45 per-channel gain" was an averaging artifact (masked to covered pixels the channels spread 1.55–3.4×). ⚠️ Enabling the sky env-map made the render **worse**. ⚠️ Standing risk: the `f0` appearance-basis choice was selected **on PSNR** and therefore rests on a retracted metric. |
+| **The Thor precision / quantisation table** (*"precision gate PASS, error does not compound"*) | **Measured on a RANDOMLY-INITIALISED model fed `torch.randn`** — no `torch.load` in any of the five scripts. Quantisation error is a function of the *trained* distribution; a random net has no outlier channels. 🔴 **We measured the OPPOSITE on real weights** (paper §7.10): W+A INT8 collapses the post-pool `readout_head` to cos 0.566, costing **+0.0215 m ADE@2s** — past the 0.02 m pre-registered falsifier, degradation growing 27× from 0.5 s to 2 s. ✅ **Latency survives** (weight-independent). ⚠️ The CUDA-graph "bit-exact" row is near-tautological (a *static* input replayed must reproduce itself). Also: **`thor:~/trt/predictor_fp16.plan` was itself built from random weights** and was never deployable — superseded by `thor:~/trt_deploy/`. |
+| **The ego-only `sitclf` swap** | **REJECTED by the PI — "no ego heads" — and must not be proposed again.** The finding stands (`head_img_ego` separated-**worse** than `head_ego`: lane_change ΔAP-lift +2.3524 [+0.8591, +4.2364]; intersection +0.9485 [+0.2237, +1.6944]) **but the response is to FIX THE FUSION.** `sc_train.py:143` concatenates a 16-d PCA image block normalised by its own mean-abs against a 3-d ego block on a hand-set `EGO_SCALE` — an arbitrary relative scale, so the wider block wins. **A scale bug, not evidence the camera carries no signal** (image arm: lane_change ΔAP +0.01987 [+0.01141, +0.02901], AUROC 0.703/0.769, anticipation lead 1.4–2.0 s). Fix = `late_fuse_scores` (`stack/tanitad/eval/sitclf.py`, 13 tests pass) — **implemented and consumed by nothing; wiring it is the open work item.** |
+| **"REF-C's route pathway is INERT"** | **REFUTED** by §5.0.4. Every premise was individually MEASURED; the *conclusion* was an **inference** that travelled through six documents wearing its premises' evidence class. **A chain of MEASURED links does not make the conclusion MEASURED.** |
+| **Every four-family ABSOLUTE RATE published before 2026-08-03** | Wrong by **5×–25×** — `four_families.py` hard-coded `DT_S = 0.1` while its inputs are the sparse 4-waypoint **0.5 s** grid. `speed_*` **/5.00**, `accel_*` **/25.00**, `yaw_rate_*` /6.48, `curvature_*` **/8.36**, `heading_*` /1.90 (the last two via the `MIN_DS` mask alone — dt-invariant and *still* wrong). Ground truth: ego speed 12.4565 m/s vs the instrument's 62.9789. ✅ **Every cross-arm comparison, rank and paired delta SURVIVES** (common factor). **FIXED + tested** (`infer_dt`, `prefer_dense`, `MIN_DS_MPS`, a `_grid` provenance block, 12 tests). |
+| **`overlapping_holdout_se`** (the block once labelled *"8-split episode-disjoint jackknife"*) | Neither a jackknife nor a valid SE, **and it biases the point estimate** (−6.67 % to +11.69 %, bidirectional, 27 arms). It manufactured the programme's one "load-bearing" hierarchy seam: `ctx→tactical` +0.0439 → true **+0.0148**. |
+| **`flagship4b-phase0-30k` as "the deployed v1"** | It is the **no-speed ablation control** (2.918 m). The deployed v1 is **`flagship4b-speedjerk-30k`**. |
+
+⚠️ **Also standing:** REF-A I-JEPA's val number is **unusable** (~80 % val leakage); **no
+learning-curve exponent may be quoted bare** (window + R² + n, and nothing below R² 0.80).
+
+#### 5.0.6 Fleet (2026-08-03)
+
+| Host | Run | State |
+|---|---|---|
+| `tanitad-thor` | Jetson AGX Thor (aarch64, Blackwell sm_110) — edge inference, four-family evals, **and the renderer** | 🟢 the programme's only non-pod compute; two venvs **never mixed** (`tanitad-edge` vs `tanitad-train`) |
+| `tanitad-new` | **v5f** (429-token, 176×624) | 🟢 training — ⛔ **DO NOT TOUCH** |
+| `tanitad-pod4` | **`flagship-v1arch-v2bal-30k`** | 🟢 training — ⛔ **DO NOT TOUCH** |
+| `tanitad-pod2` | — | ⚪ evacuated, idle; rescue payload at `_pod_backup/pod2-2026-08-03/` |
+
+`INHERITED` (from `LOOP_STATE.md`; not re-verified in this refresh). ⚠️ **flagship v1 + REF-C are
+256 px SQUARE; v5f is 429-token (176×624) — NEVER score an arm off its own raster** (that error
+produced a published `speed_mae` of 3.06 m/s for an arm whose registry ADE@2s is 0.4728).
+
+---
+
+### 5.1 The open-loop bake-off (2026-07-25 snapshot) — settled, and the top is a three-way tie
 All numbers: TanitEval, physicalai val (`physicalai-val-0c5f7dac3b11`), **881 windows / 40 episodes**.
 ⚠️ The `±` column is the **deprecated** `overlapping_holdout_se`. Updated 2026-07-26: it is
 **1.107–3.100× too narrow, median 1.499×** over 27 arms (the old "1.28–2.06×" was under-sampled at 10),
@@ -152,7 +331,7 @@ diffusion arm**, so *scale bought nothing above 104 M on this corpus*. (3) The f
 comparison are still legacy statistics (no windows dump for the head); the ratio is far too large for the
 ≤ 11.7 % bias to touch, but neither scalar is decision-grade on its own.
 
-### 5.2 What moved the program this round
+### 5.2 What moved the program in the round to 2026-07-25
 
 **(a) ⭐ The crux: a planner CAN be coupled to the world model — the failures were a warm-start artifact.**
 The v3 design shipped as **flagship-v4**: v1's trunk + a strategic planner in a 128-d subspace + tactical
@@ -261,7 +440,7 @@ negative** on a monotone 5 k→30 k curve (3.755 → 2.920, best is last — a c
 overfitting); and **P2**, the training-free CEM planner over frozen v1 that beats the tactical head by
 +2.257 ± 0.329 m open-loop and drifts 38 % less closed-loop.
 
-### 5.3 What is running right now (fleet ~2026-07-25)
+### 5.3 What was running on 2026-07-25 — ⛔ **SUPERSEDED by §5.0.6, do not read as current**
 | Pod | Run | State |
 |---|---|---|
 | `tanitad-pod2` | ⭐ **flagship-v4 from-scratch → 30 k** | 🟢 ~step 11.9 k, λ_plan 1.0, canary in-band, restarts 0; ~2 days to 30 k, auto-continues. ⚠️ 3.2 GB ckpt on **pod2 disk only** — HF backup 403-blocked (mid-checkpoint-loss risk). **NEVER eval here** |
@@ -272,7 +451,7 @@ overfitting); and **P2**, the training-free CEM planner over frozen v1 that beat
 v4 gate relay, and a REF-C arm. Minimal safe unblock ≈13 GB (superseded v4.1/v4.2/v4.2b + the val-leaked
 refa-ijepa) — **Sayed's click; irreversible deletes are not run autonomously.**
 
-### 5.4 Stack & tooling maturity
+### 5.4 Stack & tooling maturity (2026-07-25)
 Train pipeline ✅ · gate runner ✅ (`run_gate.py`, `estimator` field now mandatory) ·
 **TanitEval ✅ PRODUCTIONIZED + IN-REPO** — one canonical `runner.py` CLI (20 subcommands, closed-loop
 wired in), **episode-cluster bootstrap as the default CI** with `overlapping_holdout_se` deprecated
@@ -303,7 +482,8 @@ implementation, each with a knowledge base, BACKLOG, and ≥1 measured experimen
 | **Project Steering** (Fri) | plans, reports, resource control | 3×/day program reports, **`RETRACTION_LOG.md`** (the self-learning mechanism), the model registry, **this document + the living paper** |
 | **Production & Optimization** | ONNX/TRT/quant, latency, compliance | the corrected **two-tick** latency doctrine; composed tick 100.29 → **18.75 ms**; per-layer FP16-vs-INT8 benchmark |
 
-Cross-cutting: the living paper (`Paper/TANITAD_PAPER.md` — now **v0.6**), `LEADERBOARD.md`,
+Cross-cutting: the living paper (`Paper/TANITAD_PAPER.md` — now **v0.8**, §7.12 = the closed-loop
+result in §5.0.1), `LEADERBOARD.md`,
 `SCENARIO_DATABASE.md` (SC-01…SC-14), `GATE_PROTOCOL.md`, `RETRACTION_LOG.md`.
 
 **Honest agent-health note — the standing risk has changed shape.** Git hygiene is **materially better**:
@@ -317,6 +497,30 @@ at power. The countermeasure is now doctrine — evidence class on every claim, 
 absence, the cheapest metric-or-power check *before* declaring closure.
 
 ## 7. Honest position (P8)
+
+> **Amended 2026-08-03.** The five bullets below are new; the 07-25 body that follows them stands
+> except where §5.0 supersedes it.
+
+- ⭐ **Newly settled — the four-family doctrine paid for itself.** On the strongest closed-loop test
+  the programme has run (§5.0.1), **ADE reported nothing** while four lateral measures separated
+  cleanly and in the same direction. The rule is no longer a methodological preference; it is the
+  only reason that comparison has a verdict.
+- ⭐ **Newly settled — the edge device is not the constraint.** The full designed planning tick is
+  **60.3 ms p50 / 63.1 ms p95 on Jetson Thor with real trained weights**, against a 100 ms budget
+  (§5.0.2), and Thor also **renders** the reconstruction (§5.0.3). ⚠️ It is a **latency** result:
+  `TacticalSelector` has no production caller yet.
+- 🔴 **Newly localised — the top defect is REF-C's 5-way manoeuvre head**, which **never emits a
+  longitudinal class** while 41.9 % of logged windows are `brake_stop`; reproduced closed-loop and
+  open-loop (n=859), **invariant to `nav_cmd`**, and **not fixable by LAN as specified** (§5.0.4).
+  Factorising lat × lon is the work item.
+- **Newly refuted — "REF-C's route pathway is inert."** It is **RESPONSIVE** (0.2416 m, control 0.0),
+  and supplying the **oracle** route makes lateral *worse*. **The architecture is the defect, not the
+  label** — so the cheap eval-side fix that was pre-registered as the remedy is dead.
+- ⚠️ **Newly bounded — the safety half of closed-loop is still missing, for a NEW reason.** We have a
+  renderer; we do **not** have `alpasim_runtime`, so there is **no collision / offroad / scene
+  score**. That is bounded work (`cargo` present), not a blocker — but nothing safety-grade may be
+  claimed until it lands.
+
 - **Proven:** the 4-brain latent world model **beats every trivial floor open-loop** (0.452 m vs
   best-of-3 0.5005, CTRV 0.523, no-vision ego ceiling 0.5735, CV 0.825), and it does so *causally* —
   ablating the scene inverts a +0.796 m oracle-beating margin to −0.529 m (vision effect +1.325 m,
@@ -353,14 +557,40 @@ absence, the cheapest metric-or-power check *before* declaring closure.
      it also gates the closed-loop half of TLC/LAL/OKRI/LOPS.
   5. **Data.** 13.13 h, 4.73 epochs, **42.6 % of clips with no turn, 0 % semantic scenarios.** The v2
      corpus fixes the kinematic half; the semantic half needs the VLM track.
-- **Top risks:** the live flagship's **checkpoint on a single pod disk with HF backup 403-blocked**;
-  **premature certainty** (four closure claims reopened by zero-cost checks in one session — the
-  countermeasure is doctrine, not vigilance); the **v4 gate cannot render a complete formal verdict**
+- **Top risks:** ✅ *the "checkpoint on a single pod disk with HF backup 403-blocked" risk is
+  CLEARED* — everything has a home as of 2026-08-03 (`Sayood/tanitad-archive-pod2-2026-08`, 11.76 GB,
+  verified from HF's side; parity survived the round trip on both corpus sha256s). Replaced by:
+  **provider-console state no probe can see** (a "critical error on this machine" banner plus
+  scheduled maintenance 2026-08-06→08 that a live run will not survive in place); **cgroup limits
+  read at the wrong scope** (`free` shows the host, not the 50 GB container limit — the same trap
+  `df` sets for disk); **premature certainty** (four closure claims reopened by zero-cost checks in
+  one session — the countermeasure is doctrine, not vigilance); the **v4 gate cannot render a
+  complete formal verdict**
   (3 of 8 kill secondaries still have no emitter); open-loop ⊥ closed-loop; PhysicalAI-AV license
   firewall (never in public claims); **YouTube-IDM scale-up now carries a licensing/privacy obligation**
   (pointers + pseudo-labels only, face/plate blur pre-downscale, never raw bytes).
 
 ## 8. The critical path from here
+
+### 8.0 As of 2026-08-03 — this supersedes 8.1–8.6 where they conflict
+
+1. **Factorise REF-C's manoeuvre head into lateral × longitudinal.** The single most localised defect
+   in the programme (§5.0.4), now observed in **both** loops, invariant to the route input, and
+   **provably not addressed by LAN**. Everything else in the tactical family is downstream of it.
+2. **Make the STRATEGIC family scoreable.** It is currently degenerate — a junction-free 20 s clip
+   ties any constant predictor, and `route_label_valid_rate` is ~0.38. **A junction scene is a
+   precondition for any strategic claim**, and the hierarchy is the programme's thesis. The
+   USDZ-extracted `map.xodr` / `lane.parquet` (§5.0.3) is the material for it.
+3. **Finish `alpasim_runtime` on Thor** to convert the renderer wire contract into a **safety-grade**
+   closed-loop score (collision / offroad). Bounded — `cargo` is present.
+4. **Wire `late_fuse_scores`.** Implemented, tested, **consumed by nothing** — the programme's
+   recurring "implemented but unmerged" failure, and the PI's chosen answer to the sitclf question.
+5. **Wire distance-keeping into LONGITUDINAL.** The reader exists and is not wired; a family with a
+   built-but-unwired instrument is a **work item, not a pass**.
+6. **Re-quote nothing from §5.0.5** — including in the paper, the registry and the reports. Several
+   of those numbers are still live in older documents.
+
+### 8.1–8.6 (2026-07-25)
 1. **Finish the co-evolved flagship to 30 k and gate it properly.** Two prerequisites, both instrument
    work: run the **canonical `eval_flagship_v4.py`** rather than the trainer's in-loop val (C1), and
    build emitters for the **3 kill secondaries that have none** — a gate that cannot complete is an
@@ -388,3 +618,12 @@ measured properly for the first time, at low observation-OOD and at n=40, the de
 104 M reference arm**, and the deficit is **longitudinal**. That gap — plus the renderer that would let
 us measure safety rather than drift — is the honest distance between "the world model works" and "the
 edge is proven."
+
+> **Amended 2026-08-03.** Two of the three sentences above have moved. (i) The REF-C-beats-flagship
+> result now **replicates closed-loop on a NuRec reconstruction rendered on the Jetson Thor**, on
+> different hardware and a different renderer — and there **the separation is entirely LATERAL while
+> ADE sees nothing** (§5.0.1), which is a sharper and more uncomfortable finding than "the deficit is
+> longitudinal": *both* are true of different arms and different loops, which is exactly what a
+> pooled score would have hidden. (ii) **The renderer is no longer the blocker** — we render NuRec
+> natively on aarch64 (§5.0.3). What remains is **the simulator runtime**, so the honest distance is
+> now: *a factorised manoeuvre head, a junction scene, and a collision score.*

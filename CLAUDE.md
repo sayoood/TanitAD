@@ -247,6 +247,36 @@ same idling the rule above forbids, wearing a timer.
    them wait.
 
 
+## ⛔ BINDING — LABELS MAY USE EGO; INFERENCE IS VISION-ONLY (Sayed, 2026-08-03)
+
+**Sayed, verbatim:** *"for ground truth data of scenario classification you can use both ego and
+other label, for inference only vision."*
+
+| stage | what may be used |
+|---|---|
+| **Ground truth / label derivation** | ego state, other agents, maps, future poses — anything. Labels are built offline; privileged signals are FINE here. |
+| **Inference** | ⛔ **VISION ONLY.** No ego state, no privileged channel. |
+
+⇒ For the scenario classifier the deployable arm is **`head_img` (image-only)** — NOT `head_img_ego`
+and NOT `head_ego`. This supersedes both earlier candidates: the ego-only swap (already ruled out,
+*"no ego heads"*) **and** score-level fusion of image+ego, because that is still ego-at-inference.
+
+⭐ **WHY THIS PROBABLY DISSOLVES THE SITCLF ANOMALY — verify, do not assume.** The situation labels
+are derived from **ego dynamics** (`stack/tanitad/data/situations.py`). If a label is a function of
+ego state, a classifier *given* ego state at inference is partly reading **the label's own source** —
+that is a **LEAK, not a capability**. It would make the banked ranking (`head_ego` 0.0697 >
+`head_img_ego` 0.0525 > `head_img` 0.0376) a measure of leak magnitude rather than evidence about
+vision, and it makes `situations.py:19`'s *"VISION ADDS NOTHING OVER EGO STATE"* **unfalsifiable as
+stated**. Establish the label provenance from source (two probes, quote file:line) before any further
+sitclf claim.
+
+⚠️ **"Vision scores worse" is never a reason to reopen ego at inference.** If the vision-only arm is
+weak, the finding is *how much*, *why*, and *what would fix it*.
+
+⚠️ **Generalise the test, not just the case:** for ANY head, ask whether its inputs at inference
+include something the label was derived from. That is the same family as the C6 confound (a decoder
+compared on its marginal) and the REF-A I-JEPA leak (~80 % of val inside train).
+
 ## ⛔ BINDING — AT LEAST FIVE PARALLEL STREAMS, ALWAYS (Sayed, 2026-08-03)
 
 **Sayed:** *"dont idle, always have at least 5 streams in parallel, use the loop, goal and workflow
