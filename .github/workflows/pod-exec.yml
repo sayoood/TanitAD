@@ -58,12 +58,17 @@ jobs:
       - name: Resolve target
         id: t
         run: |
+          # Host/port default to the console's "SSH over exposed TCP" values
+          # (CONFIRMED 2026-08-04 from the PI's console screenshots). A secret,
+          # when set, overrides — needed after a RunPod VOLUME RESIZE, which
+          # stops the pod and REASSIGNS its SSH port (symptom: `Connection
+          # refused`, not `timed out`).
           if [ "${{ inputs.pod }}" = "pod4" ]; then
-            echo "host=${{ secrets.POD4_HOST }}" >> "$GITHUB_OUTPUT"
-            echo "port=${{ secrets.POD4_PORT }}" >> "$GITHUB_OUTPUT"
+            echo "host=${{ secrets.POD4_HOST || '69.30.85.48' }}" >> "$GITHUB_OUTPUT"
+            echo "port=${{ secrets.POD4_PORT || '22192' }}" >> "$GITHUB_OUTPUT"
           else
-            echo "host=${{ secrets.PODNEW_HOST }}" >> "$GITHUB_OUTPUT"
-            echo "port=${{ secrets.PODNEW_PORT }}" >> "$GITHUB_OUTPUT"
+            echo "host=${{ secrets.PODNEW_HOST || '69.30.85.106' }}" >> "$GITHUB_OUTPUT"
+            echo "port=${{ secrets.PODNEW_PORT || '22039' }}" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Set up SSH key

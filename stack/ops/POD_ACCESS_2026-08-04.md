@@ -40,7 +40,39 @@ recorded rejection, or actually receiving bytes, settles it. (Same family as the
 `tegrastats` and `memory.usage_in_bytes` traps in CLAUDE.md: a probe reporting the
 wrong scope is worse than no probe, because it looks like an answer.)
 
-## Option A — training monitoring, with NO policy change (recommended)
+## Option 0 — a GitHub-hosted runner IS the shell (recommended)
+
+`github.com` / `api.github.com` are reachable, and a GitHub runner has ordinary
+internet egress, so it reaches the pods fine and its output comes back through the
+API. Two workflows, split by blast radius:
+
+- `.github/workflows/pod-telemetry.yml` — **read-only by construction**, every 15 min.
+- `.github/workflows/pod-exec.yml` — **real `ssh`**, behind `environment: pods` with a
+  required reviewer, so every run needs approval.
+
+⭐ **This is also the right place for the key.** An SSH private key must never go in an
+environment variable (readable by anyone using the environment); **GitHub Actions
+secrets are encrypted at rest, injected only into the job, and masked in logs.**
+
+**Setup is ONE secret**, because host/port are an IP and a port, not secrets —
+they default to the console's *"SSH over exposed TCP"* values, CONFIRMED
+2026-08-04 from the PI's console screenshots with both pods green:
+
+| pod | console name / id | endpoint |
+|---|---|---|
+| pod4 | `interesting_gray_ant` / `v9ni8rpan3qyn3` | `root@69.30.85.48 -p 22192` |
+| tanitad-new | `added_red_guine…` / `szv0r2e1qgjq09` | `root@69.30.85.106 -p 22039` |
+
+1. **Create the `pods` environment FIRST** (Settings → Environments), self as required
+   reviewer. ⛔ Until it exists `pod-exec.yml` is a loaded surface, not a control.
+2. Add secret **`TANITAD_POD_SSH_KEY`** = contents of `~/.ssh/tanitad_pod`.
+   ⚠️ That key, **not** the console's `id_ed25519` — the console key does not work.
+
+⚠️ Optional overrides `POD4_PORT` / `PODNEW_PORT` exist because **a RunPod volume
+resize stops the pod and reassigns its SSH port** (symptom: `Connection refused`, not
+`timed out`). Set them if the defaults stop working.
+
+## Option A — pod-side push, also with NO policy change
 
 GitHub is already reachable, so **push from the pod** instead of pulling from outside.
 `stack/ops/pod_telemetry_push.sh` drains GPU, cgroup `rss`/`failcnt`, a real `dd` disk

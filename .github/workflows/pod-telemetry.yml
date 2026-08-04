@@ -40,10 +40,22 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: pod4
+          # Host/port are NOT secrets — they are an IP and a port, already in
+          # the handoff and on the console's "SSH over exposed TCP" line
+          # (CONFIRMED 2026-08-04 from the PI's console screenshots, both pods
+          # green/running). Defaulting them means ONE secret to set, not five.
+          # ⚠️ A RunPod VOLUME RESIZE STOPS THE POD AND REASSIGNS ITS SSH PORT
+          # (CLAUDE.md) — the symptom is `Connection refused`, not `timed out`.
+          # When that happens set the POD*_PORT secret to override; the secret
+          # wins over the default below.
+          - name: pod4                 # console: interesting_gray_ant / v9ni8rpan3qyn3
+            default_host: 69.30.85.48
+            default_port: '22192'
             host_secret: POD4_HOST
             port_secret: POD4_PORT
-          - name: tanitad-new
+          - name: tanitad-new          # console: added_red_guine… / szv0r2e1qgjq09
+            default_host: 69.30.85.106
+            default_port: '22039'
             host_secret: PODNEW_HOST
             port_secret: PODNEW_PORT
     steps:
@@ -64,14 +76,15 @@ jobs:
       - name: Collect telemetry
         if: env.SKIP != '1'
         env:
-          HOST: ${{ secrets[matrix.host_secret] }}
-          PORT: ${{ secrets[matrix.port_secret] }}
+          HOST: ${{ secrets[matrix.host_secret] || matrix.default_host }}
+          PORT: ${{ secrets[matrix.port_secret] || matrix.default_port }}
           POD: ${{ matrix.name }}
         run: |
           set -uo pipefail
           if [ -z "${HOST:-}" ] || [ -z "${PORT:-}" ]; then
-            echo "::warning::host/port secret missing for ${POD}"; exit 0
+            echo "::warning::no host/port for ${POD}"; exit 0
           fi
+          echo "target ${POD} = ${HOST}:${PORT}"
           mkdir -p telemetry
           OUT="telemetry/${POD}.md"
 
