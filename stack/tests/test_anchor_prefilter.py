@@ -351,3 +351,65 @@ def test_a_withheld_speed_keeps_its_WHOLE_fan():
                        ego_keep=torch.tensor([True, False]))
     # one row unfiltered => the batch budget is the full fan, so nothing saved
     assert d["sel_tele"]["prefilter_k"] == on.decoder.anchors.shape[0]
+
+
+# --- THE OFFLINE CALIBRATION, on the REAL trained fans ---------------------- #
+#
+# This is the claim the runtime telemetry deliberately REFUSES to make (see
+# `test_the_runtime_telemetry_makes_no_claim_it_cannot_check`): does the
+# prefilter preserve the SHIPPED pick? Answering it needs the full fan, which is
+# exactly the cost the flag avoids -- so it is answered ONCE here, offline,
+# against banked fans decoded by the real 30k checkpoints.
+
+FANS = REPO / "taniteval" / "results"
+
+
+@pytest.mark.parametrize("arm,n", [("refc-xl-30k", 256), ("refc-base-30k", 128)])
+def test_prefilter_preserves_the_SHIPPED_pick_on_the_trained_fans(arm, n):
+    """MEASURED 2026-08-04 on ckpt_step 29999, 881 canonical val windows:
+
+        XL-256   survivors 74.0 (max 102)  3.46x  881/881 identical  dADE 0.0
+        base-128 survivors 36.0 (max  51)  3.55x  881/881 identical  dADE 0.0
+
+    The survivor means reproduce `be2da04` (74.0 / 36.0) exactly, and 102 is the
+    worst-window count that commit warns a FIXED budget of 92 would have missed.
+    """
+    fp = FANS / f"fan_{arm}.pt"
+    if not fp.exists():
+        pytest.skip(f"{fp.name} absent")
+    d = torch.load(fp, map_location="cpu", weights_only=False)
+    a = _load(ANCHORS_FULL)[:d["n_anchors"]]
+    assert d["n_anchors"] == n
+    keep = sl.anchor_reachability_mask(a, d["v0"])
+    keep = keep | (~keep.any(dim=1))[:, None]
+    rep = sl.anchor_prefilter_report(keep, d["sel"])
+
+    # (1) the pick is never pruned
+    assert rep["winner_survives_frac"] == 1.0
+    assert rep["rows_empty"] == 0
+    # (2) the restricted argmax IS the shipped index, on every window
+    restricted = d["logits"].masked_fill(~keep, float("-inf")).argmax(dim=1)
+    assert torch.equal(restricted, d["sel"]), "selection index moved"
+    # (3) therefore the emitted trajectory, and every metric built on it, is
+    #     unchanged -- EXACTLY, not within a tolerance
+    fan, gt = d["fan"], d["gt"]
+    rows = torch.arange(len(d["sel"]))
+    ade = lambda i: (fan[rows, i] - gt).norm(dim=-1).mean(dim=-1)
+    assert float((ade(restricted) - ade(d["sel"])).abs().max()) == 0.0
+    # (4) and it actually saved something
+    assert rep["decode_speedup"] > 3.0
+
+
+def test_the_band_is_not_knife_edge_on_the_trained_fans():
+    """⚠️ The committed anchors are a REBUILD and match the originals to
+    7.6e-06 m (float32 rounding), not bit-exactly. If survivors sat on the band
+    edge that difference could flip candidates and the calibration above would
+    be fragile. MEASURED: ZERO flips under +/-1e-5 m on both arms."""
+    fp = FANS / "fan_refc-xl-30k.pt"
+    if not fp.exists():
+        pytest.skip("fan_refc-xl-30k.pt absent")
+    d = torch.load(fp, map_location="cpu", weights_only=False)
+    a = _load(ANCHORS_FULL)[:d["n_anchors"]]
+    base = sl.anchor_reachability_mask(a, d["v0"])
+    for eps in (1e-5, -1e-5):
+        assert torch.equal(sl.anchor_reachability_mask(a + eps, d["v0"]), base)
