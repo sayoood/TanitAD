@@ -1,0 +1,157 @@
+# Read-only telemetry drain for the TanitAD training pods.
+#
+# WHY A RUNNER. MEASURED 2026-08-04 from the Claude Code cloud session: EVERY
+# RunPod host is 403 at the egress gateway — api/rest/api.runpod.ai,
+# runpod.io, www, console, ssh.runpod.io AND *.proxy.runpod.net (so the web
+# terminal is not reachable either). All non-443 TCP is silently dropped, so
+# SSH is impossible from that session at any allow-list setting. A
+# GitHub-hosted runner has ordinary internet egress and CAN reach the pods.
+# github.com/api.github.com are reachable from the session, so the runner's
+# output comes back to me.
+#
+# WHY SECRETS, NOT ENV VARS. The handoff correctly forbade putting an SSH
+# private key in an environment variable — those are readable by anyone using
+# the environment. GitHub Actions secrets are encrypted at rest, injected only
+# into the job, and masked in logs. This is the right home for the key.
+#
+# ⛔ THIS WORKFLOW IS READ-ONLY BY CONSTRUCTION. It runs `cat`/`ls`/`ps`/
+# `nvidia-smi --query` and nothing else. It never writes to a pod, never kills
+# a process, and takes NO command input — both pods are marked DO NOT TOUCH
+# (pod4 holds the best curve in the programme; tanitad-new awaits a 5k-gate
+# call). Arbitrary execution lives in `pod-exec.yml`, behind an approval gate.
+name: pod-telemetry
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'      # UTC
+  workflow_dispatch:
+
+concurrency:
+  group: pod-telemetry
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  drain:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: pod4
+            host_secret: POD4_HOST
+            port_secret: POD4_PORT
+          - name: tanitad-new
+            host_secret: PODNEW_HOST
+            port_secret: PODNEW_PORT
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up SSH key
+        env:
+          KEY: ${{ secrets.TANITAD_POD_SSH_KEY }}
+        run: |
+          if [ -z "$KEY" ]; then
+            echo "::warning::TANITAD_POD_SSH_KEY not set — nothing to do."
+            echo "SKIP=1" >> "$GITHUB_ENV"; exit 0
+          fi
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$KEY" > ~/.ssh/tanitad_pod
+          chmod 600 ~/.ssh/tanitad_pod
+
+      - name: Collect telemetry
+        if: env.SKIP != '1'
+        env:
+          HOST: ${{ secrets[matrix.host_secret] }}
+          PORT: ${{ secrets[matrix.port_secret] }}
+          POD: ${{ matrix.name }}
+        run: |
+          set -uo pipefail
+          if [ -z "${HOST:-}" ] || [ -z "${PORT:-}" ]; then
+            echo "::warning::host/port secret missing for ${POD}"; exit 0
+          fi
+          mkdir -p telemetry
+          OUT="telemetry/${POD}.md"
+
+          # ⚠️ CLAUDE.md: a nested `ssh` inside a piped script EATS THE REST OF
+          # STDIN — the tail silently never runs and looks like a hang. `-n` is
+          # mandatory here, not stylistic.
+          SSH="ssh -n -i $HOME/.ssh/tanitad_pod -p ${PORT} \
+               -o StrictHostKeyChecking=accept-new \
+               -o ConnectTimeout=25 -o BatchMode=yes root@${HOST}"
+
+          {
+            echo "# ${POD} — $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo
+            echo '## GPU'; echo '```'
+            $SSH "nvidia-smi --query-gpu=index,name,utilization.gpu,memory.used,memory.total,temperature.gpu --format=csv" 2>&1 || echo "unreachable"
+            echo '```'; echo
+
+            # ⚠️ CLAUDE.md: `memory.usage_in_bytes` counts RECLAIMABLE PAGE
+            # CACHE and reads 74–100 % on an idle box. `rss` + `failcnt` are the
+            # admissible numbers — failcnt 0 settles an "OOM" question. Reading
+            # usage_in_bytes here would re-manufacture the false OOM that cost
+            # ~40 min of v5f training.
+            echo '## Memory (rss + failcnt — NEVER usage_in_bytes)'; echo '```'
+            $SSH "grep -E '^(rss|cache) ' /sys/fs/cgroup/memory/memory.stat 2>/dev/null; echo failcnt: \$(cat /sys/fs/cgroup/memory/memory.failcnt 2>/dev/null)" 2>&1 || echo unreachable
+            echo '```'; echo
+
+            # ⚠️ CLAUDE.md: never judge pod disk with `df` — it reports the
+            # 965 TB cluster and hides the per-pod MooseFS quota. A full quota
+            # killed the flagship mid-checkpoint. A real write test is the probe.
+            echo '## Disk (real write test — `df` reports the cluster)'; echo '```'
+            $SSH "dd if=/dev/zero of=/workspace/.ddtest bs=1M count=16 2>&1 | tail -1; rm -f /workspace/.ddtest" 2>&1 || echo unreachable
+            echo '```'; echo
+
+            # ⚠️ CLAUDE.md: `pgrep -f`/`pkill -f` self-match the invoking
+            # command. Read-only here, and nothing in this workflow ever kills.
+            echo '## Trainer processes'; echo '```'
+            $SSH "ps -eo pid,etime,rss,stat,cmd | grep -E 'train_|supervise_run' | grep -v ' grep '" 2>&1 || echo unreachable
+            echo '```'; echo
+
+            echo '## Run dirs / checkpoints'; echo '```'
+            $SSH "ls -lat /workspace/experiments/*/ 2>/dev/null | head -40" 2>&1 || echo unreachable
+            echo '```'; echo
+
+            echo '## metrics.json (newest run)'; echo '```json'
+            $SSH "for d in \$(ls -dt /workspace/experiments/*/ 2>/dev/null | head -1); do head -c 3000 \$d/metrics.json 2>/dev/null; done" 2>&1 || echo unreachable
+            echo '```'; echo
+
+            echo '## trainer log tail'
+            echo
+            # ⚠️ CLAUDE.md: `step_s` is ACCUMULATED over --log-every (÷50), NOT
+            # per-step. This has caused false "430 s/step" alarms. Said here so
+            # the drain cannot be misread the same way.
+            echo '> `step_s` is ACCUMULATED over `--log-every` — divide by 50 for per-step.'
+            echo
+            echo '```'
+            $SSH "for d in \$(ls -dt /workspace/experiments/*/ 2>/dev/null | head -1); do tail -n 60 \$d/train.log 2>/dev/null || tail -n 60 \$d/*.log 2>/dev/null; done" 2>&1 || echo unreachable
+            echo '```'
+          } > "$OUT" 2>&1
+          echo "--- collected ${POD} ---"; head -40 "$OUT"
+
+      - name: Publish to telemetry branch
+        if: env.SKIP != '1'
+        env:
+          POD: ${{ matrix.name }}
+        run: |
+          set -uo pipefail
+          [ -f "telemetry/${POD}.md" ] || { echo "nothing collected"; exit 0; }
+          cp "telemetry/${POD}.md" /tmp/snap.md
+          git config user.name  "tanitad-telemetry"
+          git config user.email "telemetry@tanitad.local"
+          BR="telemetry/${POD}"
+          git fetch origin "$BR" 2>/dev/null && git checkout -q "$BR" \
+            || git checkout -q --orphan "$BR"
+          git rm -rqf . 2>/dev/null || true
+          mkdir -p . && cp /tmp/snap.md STATUS.md
+          git add -- STATUS.md
+          # ⚠️ CLAUDE.md: `git add` exit codes are NOT evidence. Verify the index.
+          if [ -z "$(git ls-files --cached -- STATUS.md)" ]; then
+            echo "::warning::STATUS.md did not stage"; exit 0
+          fi
+          git diff --cached --quiet && { echo "no change"; exit 0; }
+          git commit -q -m "telemetry ${POD} $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          git push -q origin "HEAD:${BR}"

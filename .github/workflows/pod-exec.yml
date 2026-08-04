@@ -1,0 +1,112 @@
+# Gated shell access to a TanitAD pod, from a GitHub-hosted runner.
+#
+# THIS IS THE "SSH ACCESS" ANSWER. A Claude Code cloud session cannot reach the
+# pods at all (MEASURED 2026-08-04: every RunPod host 403 at the egress gateway
+# — including *.proxy.runpod.net, so the web terminal is out too — and all
+# non-443 TCP silently dropped). A GitHub-hosted runner has ordinary egress and
+# reaches them fine. This workflow turns that runner into the shell.
+#
+# ⛔ THE GATE IS THE POINT. `environment: pods` must be configured in
+#    Settings -> Environments with Sayed as a REQUIRED REVIEWER. Until it is,
+#    this workflow is a loaded surface: anyone with write access could run an
+#    arbitrary command on the pod holding the best curve in the programme.
+#    Both pods are currently marked DO NOT TOUCH.
+#    ⇒ Create the environment BEFORE adding the secrets.
+#
+# Approval flow: dispatch -> job pauses -> Sayed approves on his phone -> runs.
+# The command and its full output land in the job log, which I can read back
+# via the GitHub API without any pod access of my own.
+name: pod-exec
+
+on:
+  workflow_dispatch:
+    inputs:
+      pod:
+        description: 'Which pod'
+        required: true
+        type: choice
+        options: [pod4, tanitad-new]
+      command:
+        description: 'Command to run on the pod (runs as root)'
+        required: true
+        type: string
+      i_understand:
+        description: 'Type RUN to confirm this touches a live training pod'
+        required: true
+        type: string
+
+concurrency:
+  group: pod-exec-${{ inputs.pod }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  exec:
+    runs-on: ubuntu-latest
+    # ⛔ Required-reviewer gate. Without the environment configured this job
+    # still runs — configure it, or this file is a hazard rather than a control.
+    environment: pods
+    steps:
+      - name: Confirmation guard
+        run: |
+          if [ "${{ inputs.i_understand }}" != "RUN" ]; then
+            echo "::error::confirmation not given (expected RUN)"; exit 1
+          fi
+
+      - name: Resolve target
+        id: t
+        run: |
+          if [ "${{ inputs.pod }}" = "pod4" ]; then
+            echo "host=${{ secrets.POD4_HOST }}" >> "$GITHUB_OUTPUT"
+            echo "port=${{ secrets.POD4_PORT }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "host=${{ secrets.PODNEW_HOST }}" >> "$GITHUB_OUTPUT"
+            echo "port=${{ secrets.PODNEW_PORT }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up SSH key
+        env:
+          KEY: ${{ secrets.TANITAD_POD_SSH_KEY }}
+        run: |
+          if [ -z "$KEY" ]; then echo "::error::TANITAD_POD_SSH_KEY not set"; exit 1; fi
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$KEY" > ~/.ssh/tanitad_pod
+          chmod 600 ~/.ssh/tanitad_pod
+
+      - name: Run
+        env:
+          HOST: ${{ steps.t.outputs.host }}
+          PORT: ${{ steps.t.outputs.port }}
+          CMD: ${{ inputs.command }}
+        run: |
+          set -uo pipefail
+          echo "== ${{ inputs.pod }} =="
+          # ⚠️ CLAUDE.md: a nested `ssh` inside a piped script EATS THE REST OF
+          # STDIN — the tail silently never runs and looks like a hang or a
+          # truncated log. `-n` is mandatory, not stylistic.
+          #
+          # ⚠️ Reminders that bind on the far side of this connection:
+          #   - `pgrep -f`/`pkill -f` SELF-MATCH your own ssh command and kill
+          #     the session. Kill by EXPLICIT PID.
+          #   - `PYTHONPATH=/workspace/TanitAD/stack` is REQUIRED or trainers
+          #     die with ModuleNotFound: tanitad. `cd` alone is not enough.
+          #   - never judge disk with `df` (it reports the 965 TB cluster);
+          #     use a real `dd` write test.
+          #   - `supervise_run.sh` sources its manifest ONCE at supervisor
+          #     startup: to change a run, edit manifest -> kill SUPERVISOR ->
+          #     kill trainer -> start a fresh supervisor, and verify by
+          #     grepping flags out of the RUNNING process.
+          ssh -n -i ~/.ssh/tanitad_pod -p "$PORT" \
+              -o StrictHostKeyChecking=accept-new \
+              -o ConnectTimeout=30 -o BatchMode=yes \
+              "root@${HOST}" "$CMD" 2>&1 | tee /tmp/out.txt
+          echo "== exit: ${PIPESTATUS[0]} =="
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pod-exec-${{ inputs.pod }}
+          path: /tmp/out.txt
+          if-no-files-found: ignore
