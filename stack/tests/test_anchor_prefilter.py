@@ -225,3 +225,129 @@ def test_the_20_step_DEV_set_has_a_HIGH_SPEED_COVERAGE_HOLE():
     rep = sl.anchor_prefilter_report(
         keep, torch.zeros(v0.shape[0], dtype=torch.long))
     assert rep["decode_speedup"] < 3.4, "dev set should underperform production"
+
+
+# --- THE CORRECTNESS PROOF: on a real model, on vs off ---------------------- #
+#
+# The mask tests above are about the band. THIS is about the decoder: does
+# decoding only the survivors emit the same trajectory as decoding all N?
+# It is exact iff candidates do not interact, and `CrossAttnLayer` cross-attends
+# q->kv with NO self-attention over the candidate axis (per-token MLP and
+# LayerNorm). That is a structural fact, so it is verified here rather than
+# assumed -- and this test is what fails if a candidate-axis interaction is ever
+# added to the decoder, which would silently make the flag unsound.
+
+from tanitad.refs.refc import RefCModel, refc_smoke_config       # noqa: E402
+
+
+def _smoke(prefilter: bool):
+    cfg = refc_smoke_config()
+    cfg.sel_reach_clamp = False
+    cfg.sel_anchor_prefilter = prefilter
+    torch.manual_seed(0)
+    m = RefCModel(cfg).eval()
+    return m
+
+
+def _same_weights(a, b):
+    b.load_state_dict(a.state_dict())
+    return b
+
+
+def test_prefilter_is_BIT_EXACT_on_every_candidate_it_decodes():
+    """THE structural claim. For every surviving candidate, the confidence and
+    the offset must be BIT-identical to the full decode -- that is what
+    candidate-independence buys, and it is what fails if self-attention over the
+    candidate axis is ever added to ``CrossAttnLayer``."""
+    off = _smoke(False)
+    on = _same_weights(off, _smoke(True)).eval()
+    torch.manual_seed(1)
+    fmap = torch.randn(4, off.decoder.feat_proj.in_features, 4, 4)
+    mvec = torch.randn(4, off.decoder.cond_proj.in_features)
+    v_ms = torch.tensor([4.0, 9.0, 14.0, 22.0])
+    with torch.no_grad():
+        d0 = off.decoder(fmap, mvec, v_ms=v_ms)
+        d1 = on.decoder(fmap, mvec, v_ms=v_ms)
+    keep = sl.anchor_reachability_mask(
+        off.decoder.anchors.to(fmap.dtype), v_ms)
+    assert keep.any() and not keep.all(), "need a partial band to test anything"
+    assert float((d0["offset"] - d1["offset"]).abs()[keep].max()) == 0.0
+    assert float((d0["anchor_logits"]
+                  - d1["anchor_logits"]).abs()[keep].max()) == 0.0
+
+
+def test_the_prefiltered_pick_IS_the_survivor_restricted_argmax():
+    """The exact semantic, stated as an equality rather than a hope.
+
+    ⚠️ It is NOT 'the same pick as the full fan'. On a TRAINED model those
+    coincide -- 881/881, because 72-74 % of the fan is unreachable and MEASURED
+    never selected -- but that is a property of a trained score, not of this
+    code. Under random init the full-fan argmax is arbitrary and frequently
+    unreachable, so pinning full-fan equality here would pin the wrong thing.
+    """
+    off = _smoke(False)
+    on = _same_weights(off, _smoke(True)).eval()
+    torch.manual_seed(1)
+    fmap = torch.randn(4, off.decoder.feat_proj.in_features, 4, 4)
+    mvec = torch.randn(4, off.decoder.cond_proj.in_features)
+    v_ms = torch.tensor([4.0, 9.0, 14.0, 22.0])
+    with torch.no_grad():
+        d0 = off.decoder(fmap, mvec, v_ms=v_ms)
+        d1 = on.decoder(fmap, mvec, v_ms=v_ms)
+    keep = sl.anchor_reachability_mask(
+        off.decoder.anchors.to(fmap.dtype), v_ms)
+    restricted = d0["sel_score"].masked_fill(~keep, float("-inf")).argmax(dim=1)
+    assert torch.equal(restricted, d1["sel_idx"])
+
+
+def test_the_runtime_telemetry_makes_no_claim_it_cannot_check():
+    """`winner_survives_frac` must NOT appear in the decoder telemetry: `sel_idx`
+    is already the restricted argmax, so it would be 1.0000 by construction and
+    read as a verified invariant. Winner-survival is an OFFLINE calibration."""
+    on = _smoke(True)
+    torch.manual_seed(5)
+    fmap = torch.randn(3, on.decoder.feat_proj.in_features, 4, 4)
+    mvec = torch.randn(3, on.decoder.cond_proj.in_features)
+    with torch.no_grad():
+        d = on.decoder(fmap, mvec, v_ms=torch.tensor([6.0, 6.5, 7.0]))
+    assert "winner_survives_frac" not in d["sel_tele"]
+    assert "prefilter_survivors_mean" in d["sel_tele"]
+    assert "prefilter_rows_full_fan" in d["sel_tele"]
+
+
+def test_prefilter_actually_reduced_the_decode_width():
+    """An 'exact' prefilter that pruned nothing would pass the test above while
+    saving nothing -- pin that it really shrank the decode."""
+    on = _smoke(True)
+    torch.manual_seed(2)
+    fmap = torch.randn(3, on.decoder.feat_proj.in_features, 4, 4)
+    mvec = torch.randn(3, on.decoder.cond_proj.in_features)
+    with torch.no_grad():
+        d = on.decoder(fmap, mvec, v_ms=torch.tensor([6.0, 6.5, 7.0]))
+    assert d["sel_tele"]["prefilter_speedup"] > 1.0
+    assert d["sel_tele"]["prefilter_k"] < on.decoder.anchors.shape[0]
+
+
+def test_prefilter_is_INERT_without_a_speed():
+    """No ``v_ms`` -> no band -> the untouched path, and no prefilter telemetry."""
+    on = _smoke(True)
+    torch.manual_seed(3)
+    fmap = torch.randn(2, on.decoder.feat_proj.in_features, 4, 4)
+    mvec = torch.randn(2, on.decoder.cond_proj.in_features)
+    with torch.no_grad():
+        d = on.decoder(fmap, mvec)
+    assert "prefilter_k" not in d["sel_tele"]
+
+
+def test_a_withheld_speed_keeps_its_WHOLE_fan():
+    """``ego_keep`` False -> that row must not be filtered at all, or the
+    withheld channel decides which candidates are even computed."""
+    on = _smoke(True)
+    torch.manual_seed(4)
+    fmap = torch.randn(2, on.decoder.feat_proj.in_features, 4, 4)
+    mvec = torch.randn(2, on.decoder.cond_proj.in_features)
+    with torch.no_grad():
+        d = on.decoder(fmap, mvec, v_ms=torch.tensor([8.0, 8.0]),
+                       ego_keep=torch.tensor([True, False]))
+    # one row unfiltered => the batch budget is the full fan, so nothing saved
+    assert d["sel_tele"]["prefilter_k"] == on.decoder.anchors.shape[0]

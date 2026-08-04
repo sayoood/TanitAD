@@ -379,6 +379,22 @@ class SelectionConfig:
     #                                   table already carries every index).
     reach_clamp: bool = False         # S2 bounded-acceleration candidate band
     accel_max: float = 2.5            # m/s^2 for that band
+    # S2b: THE SAME BAND, MOVED BEFORE THE DECODE. S2 filters `anchors+offset`,
+    # so by the time it runs all N decodes are paid and it can only narrow an
+    # argmax. `v0` is known PRE-decode, so the band applies to the ANCHORS and
+    # only survivors need decoding. INFERENCE-ONLY and no retrain: it changes
+    # which candidates are computed, never any weight.
+    # MEASURED (be2da04, re-measured 2026-08-04 on the 881 canonical val
+    # speeds): 3.46x on the 256 vocabulary, 3.70x on 64, ZERO empty windows,
+    # and the SELECTION INDEX identical on 881/881.
+    # ⛔ EXACTNESS RESTS ON ONE STRUCTURAL FACT, verified in source rather than
+    # assumed: `CrossAttnLayer` cross-attends q->kv with NO self-attention over
+    # the candidate axis, and its MLP/LayerNorm are per-token. Candidates are
+    # therefore INDEPENDENT and decoding a subset is bit-identical for that
+    # subset. If a candidate-axis interaction is ever added to the decoder this
+    # flag becomes UNSOUND and must be retired with it.
+    anchor_prefilter: bool = False    # S2b decode only reachable anchors
+    anchor_prefilter_guard: bool = True   # verify the winner survived
     graft_cons: bool = False          # S3 consequence score reaches the ranking
     cons_detach: bool = True          # ...with law_head under no_grad
     graft_route: bool = False         # S5 route readout reaches the ranking
@@ -532,6 +548,12 @@ class RefCConfig:
     #                                   score stays unmasked so no -inf reaches
     #                                   a cross-entropy)
     sel_accel_max: float = 2.5        # m/s^2 for that band (flagship v1.5's)
+    # S2b: the SAME band moved BEFORE the decode, so only reachable anchors are
+    # decoded. INFERENCE-ONLY and OUTPUT-EXACT (candidates are independent —
+    # `CrossAttnLayer` has no self-attention over the candidate axis), so it
+    # needs NO retrain and changes no weight. See `SelectionConfig`.
+    sel_anchor_prefilter: bool = False
+    sel_anchor_prefilter_guard: bool = True
     graft_cons: bool = False          # S3 candidate-conditioned CONSEQUENCE
     #                                   scoring through law_head — the only
     #                                   form of cond_imagination REF-C's world
@@ -601,7 +623,10 @@ class RefCConfig:
             refined=self.sel_refined, score_emitted=self.sel_score_emitted,
             score_emitted_t=self.sel_score_emitted_t,
             reach_clamp=self.sel_reach_clamp,
-            accel_max=self.sel_accel_max, graft_cons=self.graft_cons,
+            accel_max=self.sel_accel_max,
+            anchor_prefilter=self.sel_anchor_prefilter,
+            anchor_prefilter_guard=self.sel_anchor_prefilter_guard,
+            graft_cons=self.graft_cons,
             cons_detach=self.cons_detach, graft_route=self.graft_route,
             graft_goal=self.graft_goal,
             seam_clamp=self.seam_clamp, seam_fail=self.seam_fail,
@@ -1291,7 +1316,52 @@ class AnchoredDiffusionDecoder(nn.Module):
         anchors = self.anchors.to(fmap.dtype)                 # [N, S, 2]
         n = anchors.shape[0]
         x0 = anchors[None].expand(b, n, self.n_steps, 2)
-        conf0, offset = self._decode(kv, cond, x0, 0)         # classifier pass
+
+        # ---- S2b: PRE-DECODE anchor band (opt-in, inference-only) ---------- #
+        # Gather the survivors into a dense [B, K, S, 2], decode ONLY those, and
+        # scatter back. Pruned rows come back with conf = -inf so they can never
+        # win, and with offset 0 so the emitted fan still HAS N entries and every
+        # downstream consumer keeps its shape.
+        pre_keep = None
+        pre_tele: dict = {}          # merged into `tele` once it exists (l.~1373)
+        if sel.anchor_prefilter and v_ms is not None:
+            pre_keep = sl.anchor_reachability_mask(
+                anchors, v_ms.to(anchors.dtype), accel_max=sel.accel_max,
+                horizon_s=sel.horizon_s)
+            if ego_keep is not None:
+                # ⚠️ STRONGER than the S2 version of this guard. `v_ms` is the
+                # PRE-dropout speed; at S2 it could only bias a ranking, but
+                # here it decides which candidates are COMPUTED AT ALL. A row
+                # whose speed was withheld keeps its whole fan.
+                pre_keep = pre_keep | (~ego_keep)[:, None]
+            dead = ~pre_keep.any(dim=1)          # unreachable-everywhere window
+            pre_keep = pre_keep | dead[:, None]  # ...keeps its whole fan
+            k = int(pre_keep.sum(dim=1).max())
+            if k < n:
+                # dense top-k gather: `keep` sorts survivors first, and the
+                # per-row pad re-uses a survivor index so the gather is valid;
+                # padded slots are re-masked to -inf below.
+                order = pre_keep.to(torch.int8).argsort(dim=1, descending=True,
+                                                        stable=True)
+                sub = order[:, :k]                            # [B, K]
+                took = pre_keep.gather(1, sub)                # [B, K] bool
+                xs = x0.gather(
+                    1, sub[:, :, None, None].expand(b, k, self.n_steps, 2))
+                c_s, o_s = self._decode(kv, cond, xs, 0)
+                conf0 = x0.new_full((b, n), float("-inf"))
+                conf0.scatter_(1, sub, c_s.masked_fill(~took, float("-inf")))
+                offset = x0.new_zeros(b, n, self.n_steps, 2)
+                offset.scatter_(
+                    1, sub[:, :, None, None].expand(b, k, self.n_steps, 2),
+                    o_s * took[:, :, None, None].to(o_s.dtype))
+                pre_tele["prefilter_k"] = int(k)
+                pre_tele["prefilter_speedup"] = round(float(n) / max(k, 1), 3)
+            else:                                 # nothing to save this batch
+                conf0, offset = self._decode(kv, cond, x0, 0)
+                pre_tele["prefilter_k"] = int(n)
+                pre_tele["prefilter_speedup"] = 1.0
+        else:
+            conf0, offset = self._decode(kv, cond, x0, 0)     # classifier pass
         x = anchors[None] + offset                            # [B, N, S, 2]
 
         # ---- priors on the CLASSIFIER surface (unchanged semantics) ---------
@@ -1413,6 +1483,33 @@ class AnchoredDiffusionDecoder(nn.Module):
             tele["reach_frac_windows_empty"] = round(
                 float(dead.to(score.dtype).mean().detach()), 4)
         idx = rank.argmax(dim=1)                              # [B] (detached)
+        # S2b telemetry + THE RUNTIME GUARD. `be2da04` keeps two claims apart:
+        # the VARIABLE-width policy is structurally exact, while a FIXED budget
+        # is an EMPIRICAL CALIBRATION (XL's worst window had 102 survivors
+        # against a budget of 92, and held only because the winner's rank never
+        # exceeded 92 ON THAT CORPUS). So equivalence is ASSERTED PER BATCH and
+        # never assumed: `winner_survives_frac < 1.0` means the prefilter would
+        # have changed the emitted trajectory, which is a CORRECTNESS failure,
+        # not a speed regression.
+        if pre_tele:
+            tele.update(pre_tele)
+        if pre_keep is not None and sel.anchor_prefilter_guard:
+            # ⛔ WHAT THIS CAN AND CANNOT CHECK. `idx` is ALREADY the restricted
+            # argmax, so asking whether it survived the band is TAUTOLOGICAL —
+            # it is a survivor by construction and would report 1.0000 forever,
+            # whether or not the prefilter changed the emitted trajectory. That
+            # is worse than no check, because it reads as a verified invariant.
+            # Winner-survival is only answerable by ALSO decoding the full fan,
+            # which is the cost this flag exists to avoid, so it is an OFFLINE
+            # CALIBRATION (feed `anchor_prefilter_report` the FULL-fan idx from
+            # a banked fan) and NOT a runtime guarantee. What IS honest at
+            # runtime is the budget and the empty-row count.
+            surv = pre_keep.sum(dim=1)
+            tele["prefilter_survivors_mean"] = round(
+                float(surv.to(torch.float32).mean()), 3)
+            tele["prefilter_survivors_max"] = int(surv.max())
+            tele["prefilter_rows_full_fan"] = int((surv == pre_keep.shape[1])
+                                                  .sum())
         traj = x[torch.arange(b, device=x.device), idx]       # [B, S, 2]
         out = {"anchor_logits": conf, "refined_logits": refined,
                "anchor_traj": x, "offset": offset, "sel_score": score,
