@@ -46,6 +46,7 @@ from __future__ import annotations
 
 import sys
 
+import numpy as np
 import torch
 
 # ⛔ was: sys.path.insert(0, "/root/TanitAD/stack"[/scripts]) — that put a
@@ -216,13 +217,97 @@ def dense_speed_profile(path_dense, dt: float = DT):
     return torch.linalg.norm(d, dim=-1) / dt
 
 
+# --- eid normalisation ------------------------------------------------- #
+# THE DEFECT. `collect` stores `ep.episode_id` verbatim. Most episode builders
+# hand it the val-list INDEX (0..39), but three arms were evaluated through a
+# builder that hands it the true PhysicalAI episode id as a 4-char hex STRING
+# ('0002', '0084', ...), and that string reached the dump reinterpreted as a
+# big-endian ASCII byte-packing: `windows_flagship-v4.1-10k.pt`,
+# `-v4.2-step4000.pt` and `-v16-ab-ft.pt` carry `eid` 808464434 (== b'0002')
+# where every other dump carries 0. Any cross-arm join keyed on `eid`
+# therefore mis-joins exactly those three, silently — they do not error, they
+# match nothing.
+#
+# MEASURED here 2026-08-04 over all 27 committed dumps (3 affected, 24 clean):
+# each affected dump's `gt` is BIT-IDENTICAL to the canonical
+# `windows_flagship-30k.pt` (max |Δ| = 0.0), so row i is the same window in
+# both; the packed ids form a clean 40-way bijection with the canonical ids;
+# and first-appearance rank reproduces the canonical 0..39 EXACTLY on all
+# three. That is what licenses the repair below — it is a proven relabelling,
+# not an inferred one.
+_ASCII = frozenset(range(0x20, 0x7F))
+
+
+def _unpack_ascii(v: int) -> str | None:
+    """Decode ONE big-endian ASCII byte-packing, or None if it is not one.
+
+    The guard is deliberately narrow. A genuine episode index is small, so
+    anything below 2**24 is left alone unconditionally — this can never touch
+    a real 0..39 id, and a dump whose ids are a non-contiguous integer SUBSET
+    (say {0, 5, 9}) keeps them, because rank-remapping those would invent a
+    new join key rather than repair one.
+    """
+    if not isinstance(v, (int, np.integer)) or int(v) < (1 << 24):
+        return None
+    b = int(v).to_bytes(8, "big").lstrip(b"\x00")
+    if not b or any(c not in _ASCII for c in b):
+        return None
+    return b.decode("ascii")
+
+
+def normalise_eid(eid):
+    """Canonicalise a dump's ``eid`` to the join key the programme uses.
+
+    Returns ``(eid_canonical, eid_raw)``. ``eid_raw`` is None when nothing was
+    changed — which is the case for every clean dump, so this is the identity
+    on 24 of the 27 committed fixtures and cannot perturb a banked number.
+
+    When the ids ARE a packed-ASCII run, the canonical id becomes the episode's
+    index in FIRST-APPEARANCE order (``collect`` iterates episodes in val-list
+    order, so that index is the val-list index by construction) and the decoded
+    true ids are preserved in ``eid_raw`` — the provenance is normalised, not
+    discarded.
+    """
+    vals = list(np.asarray(eid).tolist())
+    if not vals:
+        return eid, None
+    decoded = [_unpack_ascii(v) for v in vals]
+    if any(d is None for d in decoded):
+        return eid, None                      # not a packed run — leave it be
+    order: dict[str, int] = {}
+    for d in decoded:
+        order.setdefault(d, len(order))
+    return [order[d] for d in decoded], decoded
+
+
 def save_windows(data, path):
-    """Persist a collect() window dict (dense keys included when present)."""
-    torch.save({k: v for k, v in data.items()}, path)
+    """Persist a collect() window dict (dense keys included when present).
+
+    ``eid`` is canonicalised on the way out (see :func:`normalise_eid`) so the
+    packed-ASCII defect cannot be written again. This is the identity for a
+    dump whose ids are already episode indices.
+    """
+    out = {k: v for k, v in data.items()}
+    if "eid" in out:
+        canon, raw = normalise_eid(out["eid"])
+        if raw is not None:
+            out["eid"], out["eid_raw"] = canon, raw
+    torch.save(out, path)
 
 
 def load_windows(path):
     """Load a window dump. Dumps written before 2026-07-25, and those from
     ``refb_eval`` / ``refc_eval``, carry NO dense keys — read them with
-    ``win.get("pred_dense")`` and degrade, never assume."""
-    return torch.load(path, map_location="cpu", weights_only=False)
+    ``win.get("pred_dense")`` and degrade, never assume.
+
+    The three packed-``eid`` dumps are ALSO repaired here, not only at write
+    time: they are already committed, they cannot be regenerated without the
+    checkpoints, and a write-time-only fix would leave every existing join
+    against them wrong. ``eid_raw`` carries the decoded true ids.
+    """
+    win = torch.load(path, map_location="cpu", weights_only=False)
+    if isinstance(win, dict) and "eid" in win and "eid_raw" not in win:
+        canon, raw = normalise_eid(win["eid"])
+        if raw is not None:
+            win["eid"], win["eid_raw"] = canon, raw
+    return win
