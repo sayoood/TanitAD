@@ -1,0 +1,38 @@
+[23:00:22] substrate 99,477 x 2048  500 clips  device=cuda
+[23:00:23] events rebuilt for 500 clips, 99,477 frames — C-FID OK
+[23:00:23] hist_ok(32) keeps 83,977/99,477 rows (84.4%)
+[23:00:23] C-POW   lane_change: 56,979 rows, 1,472 pos,  55 positive clusters -> PASS
+[23:00:23] C-POW    roundabout: 56,868 rows, 1,022 pos,  37 positive clusters -> UNDERPOWERED
+[23:00:23] C-POW  intersection: 50,975 rows, 5,889 pos, 216 positive clusters -> PASS
+[23:00:25]   PCA+windows built shuf=False fold=0 (3s)
+[23:00:26]   PCA+windows built shuf=False fold=1 (5s)
+[23:00:29] C-FID-RIDGE: multi-lambda path bit-identical to stack ridge_scores at every W (max|diff| 0.0e+00)
+[23:00:30]   grid W= 1 shuf=False done (9s)
+[23:00:33]   grid W= 4 shuf=False done (11s)
+[23:00:38]   grid W= 8 shuf=False done (16s)
+[23:00:47]   grid W=16 shuf=False done (26s)
+[23:01:05]   grid W=32 shuf=False done (44s)
+[23:01:07]   PCA+windows built shuf=True fold=0 (46s)
+[23:01:08]   PCA+windows built shuf=True fold=1 (47s)
+[23:01:09]   grid W= 1 shuf=True done (48s)
+[23:01:12]   grid W= 4 shuf=True done (51s)
+[23:01:17]   grid W= 8 shuf=True done (56s)
+[23:01:26]   grid W=16 shuf=True done (65s)
+[23:01:44]   grid W=32 shuf=True done (82s)
+[23:01:44] event universe: 325 scorable onsets ([57, 37, 231] per situation)
+[23:01:44]   arm         FROZEN: {'fold0.lane_change': {'win': 8, 'lead_s': 3.0}, 'fold0.roundabout': {'win': 8, 'lead_s': 3.0}, 'fold0.intersection': {'win': 8, 'lead_s': 3.0}, 'fold1.lane_change': {'win': 8, 'lead_s': 3.0}, 'fold1.roundabout': {'win': 8, 'lead_s': 3.0}, 'fold1.intersection': {'win': 8, 'lead_s': 3.0}}
+[23:01:44]   arm         PS_SEL: {'fold0.lane_change': {'win': 4, 'lead_s': 4.0}, 'fold0.roundabout': {'win': 32, 'lead_s': 1.0}, 'fold0.intersection': {'win': 4, 'lead_s': 5.0}, 'fold1.lane_change': {'win': 1, 'lead_s': 5.0}, 'fold1.roundabout': {'win': 1, 'lead_s': 1.0}, 'fold1.intersection': {'win': 32, 'lead_s': 5.0}}
+[23:01:44]   arm       C_GLOBAL: {'fold0.lane_change': {'win': 32, 'lead_s': 1.0}, 'fold0.roundabout': {'win': 32, 'lead_s': 1.0}, 'fold0.intersection': {'win': 32, 'lead_s': 1.0}, 'fold1.lane_change': {'win': 1, 'lead_s': 1.0}, 'fold1.roundabout': {'win': 1, 'lead_s': 1.0}, 'fold1.intersection': {'win': 1, 'lead_s': 1.0}}
+[23:01:44]   arm    NULL_FROZEN: {'fold0.lane_change': {'win': 8, 'lead_s': 3.0}, 'fold0.roundabout': {'win': 8, 'lead_s': 3.0}, 'fold0.intersection': {'win': 8, 'lead_s': 3.0}, 'fold1.lane_change': {'win': 8, 'lead_s': 3.0}, 'fold1.roundabout': {'win': 8, 'lead_s': 3.0}, 'fold1.intersection': {'win': 8, 'lead_s': 3.0}}
+[23:01:44]   arm    NULL_PS_SEL: {'fold0.lane_change': {'win': 32, 'lead_s': 5.0}, 'fold0.roundabout': {'win': 8, 'lead_s': 5.0}, 'fold0.intersection': {'win': 1, 'lead_s': 1.0}, 'fold1.lane_change': {'win': 32, 'lead_s': 1.0}, 'fold1.roundabout': {'win': 32, 'lead_s': 3.0}, 'fold1.intersection': {'win': 32, 'lead_s': 3.0}}
+[23:01:44]   arm  NULL_C_GLOBAL: {'fold0.lane_change': {'win': 8, 'lead_s': 5.0}, 'fold0.roundabout': {'win': 8, 'lead_s': 5.0}, 'fold0.intersection': {'win': 8, 'lead_s': 5.0}, 'fold1.lane_change': {'win': 32, 'lead_s': 1.0}, 'fold1.roundabout': {'win': 32, 'lead_s': 1.0}, 'fold1.intersection': {'win': 32, 'lead_s': 1.0}}
+[23:01:44]   arm    C_ORACLE_PS: {'fold0.lane_change': {'win': 16, 'lead_s': 5.0}, 'fold0.roundabout': {'win': 1, 'lead_s': 3.0}, 'fold0.intersection': {'win': 1, 'lead_s': 1.0}, 'fold1.lane_change': {'win': 32, 'lead_s': 1.0}, 'fold1.roundabout': {'win': 32, 'lead_s': 4.0}, 'fold1.intersection': {'win': 4, 'lead_s': 2.0}}
+[23:01:45] 2000 cluster draws over 500 clusters prepared (84s)
+[23:07:11]   lane_change: Q-A bootstrapped 32 columns over 56,979 rows (326s)
+[23:07:13]   lane_change: VERDICT NO_EFFECT_ABOVE_MDE | PS_SEL vs FROZEN -0.0132 [-0.1081,+0.0871] | ORACLE +0.8528 SEP | cells above frozen: NONE | Q-B best cell CELL_w32_L1.0 (329s)
+[23:13:30]   roundabout: Q-A bootstrapped 32 columns over 56,868 rows (376s)
+[23:13:32]   roundabout: VERDICT UNDERPOWERED_C_POW | PS_SEL vs FROZEN +0.9091 [-0.6232,+2.9841] | ORACLE +0.0239 | cells above frozen: ['CELL_w4_L1.0', 'CELL_w4_L2.0', 'CELL_w8_L1.0'] | Q-B best cell CELL_w4_L1.0 (379s)
+[23:20:38]   intersection: Q-A bootstrapped 32 columns over 50,975 rows (425s)
+[23:20:40]   intersection: VERDICT NO_PER_SITUATION_GAIN_EXISTS | PS_SEL vs FROZEN -0.1280 [-0.3126,+0.0291] | ORACLE -0.1674 SEP | cells above frozen: ['CELL_w4_L2.0', 'CELL_w4_L3.0'] | Q-B best cell CELL_w16_L2.0 (427s)
+[23:20:42] wrote results_horizon_ps.scores.npz
+[23:20:42] wrote results_horizon_ps.json (1220s total)

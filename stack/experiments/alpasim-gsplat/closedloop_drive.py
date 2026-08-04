@@ -180,6 +180,11 @@ def _R_to_quat_np(R):
 # ------------------------------------------------------------------------------- #
 class _BasePolicy:
     name = "?"
+    # E1: does this arm's INPUT actually carry the nav command's companion bit?
+    # The driver reads this before passing `nav_known`, so a bit that cannot be
+    # consumed is recorded as DROPPED in the payload instead of vanishing. An
+    # arm that says False is not broken — it is un-wired, and the rollout says so.
+    consumes_nav_known = False
 
     def __init__(self, device="cuda"):
         import torch
@@ -230,7 +235,11 @@ class FlagshipV1Policy(_BasePolicy):
         self.horizons = list(cfg.tactical_policy.waypoint_horizons)
         logger.info("flagship v1 loaded step=%s horizons=%s", self.step, self.horizons)
 
-    def plan(self, frames, intr, v0, nav_cmd):
+    def plan(self, frames, intr, v0, nav_cmd, nav_known=None):
+        # ⛔ `nav_known` is ACCEPTED AND NOT CONSUMED here: the flagship's
+        # `StrategicPolicy` FiLM-conditions on `nav_emb(nav_cmd)` alone and has no
+        # companion-bit seam (`consumes_nav_known` is False, so the driver never
+        # passes one). Named, not hidden — see the E1 note in `refs/refc.py`.
         torch = self.torch
         with torch.no_grad():
             fw = self.canon(frames, intr)
@@ -253,16 +262,23 @@ class RefCPolicy(_BasePolicy):
         self.name = f"refc-{preset}"
         from refc_v12_cache import load_frozen
         self.model, self.cfg, self.step = load_frozen(ckpt, preset, None, self.device)
-        logger.info("REF-C %s loaded step=%s anchors=%d", preset, self.step,
-                    self.cfg.anchors.n_anchors)
+        self.consumes_nav_known = bool(getattr(self.cfg, "nav_known_channel", False))
+        logger.info("REF-C %s loaded step=%s anchors=%d nav_known_channel=%s", preset,
+                    self.step, self.cfg.anchors.n_anchors, self.consumes_nav_known)
 
-    def plan(self, frames, intr, v0, nav_cmd):
+    def plan(self, frames, intr, v0, nav_cmd, nav_known=None):
         torch = self.torch
         with torch.no_grad():
             fw = self.canon(frames, intr)
             v0t = torch.tensor([float(v0)], dtype=torch.float32, device=self.device)
             navt = torch.tensor([nav_cmd], dtype=torch.long, device=self.device)
-            out = self.model(fw, nav_cmd=navt, v0=v0t, steps=2)
+            # E1: only fed when the loaded ckpt was BUILT with the channel. The
+            # model raises if it is handed a bit it cannot read, so this branch is
+            # the whole guard — there is no silent-drop path.
+            nk = (torch.tensor([float(nav_known)], dtype=torch.float32,
+                               device=self.device)
+                  if (self.consumes_nav_known and nav_known is not None) else None)
+            out = self.model(fw, nav_cmd=navt, v0=v0t, steps=2, nav_known=nk)
             traj = out["traj"][0].float().cpu().numpy()
         extra = {}
         for k, v in out.items():
@@ -355,7 +371,7 @@ def nav_from_route(gtp, i, horizon_steps=None):
     short-horizon variant is computed alongside it for the strategic family.
     """
     import torch
-    from refb_labels import nav_command_v21
+    from refb_labels import nav_command_v21, nav_input_v22
     t = torch.from_numpy(gtp).float()
     out = {}
     try:
@@ -363,6 +379,19 @@ def nav_from_route(gtp, i, horizon_steps=None):
         out["nav_canonical"], out["nav_valid"] = int(nav), bool(valid)
     except Exception as e:                                   # noqa: BLE001
         out["nav_canonical"], out["nav_valid"], out["nav_err"] = 0, False, repr(e)[:80]
+    # E1: the COMPANION BIT. `nav_command_v21` collapses ROUTE_UNKNOWN and
+    # ROUTE_STRAIGHT onto the same NAV_FOLLOW token, so `nav_valid` is NOT the
+    # same statement — a window can be `valid` and still be a road-following
+    # judgement rather than a route one. `nav_known` is 0.0 exactly when the
+    # command is the UNKNOWN sentinel. It is RECORDED on every tick whether or
+    # not any arm consumes it: measuring how often the input is a confession is
+    # the point, and it costs one label call.
+    try:
+        _nv, known = nav_input_v22(t, int(i))
+        out["nav_known"] = float(known)
+        out["nav_known_agrees_canonical"] = bool(_nv == out["nav_canonical"])
+    except Exception as e:                                   # noqa: BLE001
+        out["nav_known"], out["nav_known_err"] = None, repr(e)[:80]
     try:
         h = int(horizon_steps or min(60, max(10, gtp.shape[0] - int(i) - 2)))
         nav_s, valid_s = nav_command_v21(t, int(i), horizon_steps=h, min_steps=10)
@@ -456,14 +485,23 @@ def run_rollout(transport, renderer, policy, intr, start_frame, n_steps, gt_T,
     for k in range(n_steps):
         i_gt = gf.nearest(T_ego[:3, 3])
         nav, navd = nav_from_route(gtp, i_gt)
+        nk = navd.get("nav_known")
         t_plan = time.time()
-        traj, extra = policy.plan(list(frames), intr, v, nav)
+        traj, extra = policy.plan(
+            list(frames), intr, v, nav,
+            nav_known=(nk if getattr(policy, "consumes_nav_known", False) else None))
         plan_ms = (time.time() - t_plan) * 1000.0
         steer, accel, v_target, kappa = wp_to_control(traj[LOOKAHEAD_IDX], v)
 
         # --- record BEFORE stepping (state at decision time) ---------------------
         st = {
             "k": k, "t_us": float(t_us), "i_gt": i_gt, "nav": nav,
+            # E1 provenance: WAS the bit fed, not merely computed. A rollout whose
+            # `nav_known_fed` is False is one where the model could not tell an
+            # UNKNOWN sentinel from a real "go straight".
+            "nav_known": nk,
+            "nav_known_fed": bool(getattr(policy, "consumes_nav_known", False)
+                                  and nk is not None),
             "ego": [float(T_ego[0, 3]), float(T_ego[1, 3]), float(T_ego[2, 3]), _yaw(T_ego)],
             "v": v, "plan": traj.tolist(), "steer": steer, "accel": accel,
             "v_target": v_target, "kappa_plan": kappa, "plan_ms": plan_ms,

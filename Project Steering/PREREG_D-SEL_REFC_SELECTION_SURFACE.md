@@ -137,7 +137,7 @@ untrained), and the top-level field overstates route sensitivity **7.3×**.
 ## 4. What is implemented and staged
 
 `tanitad/refs/refc_select.py` (new) · `tanitad/refs/refc.py` · `scripts/refc_train.py` ·
-`tests/test_refc_select.py` (new). All flags default OFF; an all-off build is **byte-identical**
+`tests/test_refc_select.py` (new, 22 tests). All flags default OFF; an all-off build is **byte-identical**
 (state_dict keys **and** values) and **bit-identical in the forward** to pre-D-SEL REF-C — verified
 against `git show HEAD:stack/tanitad/refs/refc.py` across 6 flag combinations (`{}`, factored+F1, LAN,
 grounded, refc1, imagination): `keys=True vals=True FORWARD-BIT-IDENTICAL=True` for every one.
@@ -149,6 +149,7 @@ grounded, refc1, imagination): `keys=True vals=True FORWARD-BIT-IDENTICAL=True` 
 | **S3** | `graft_cons` | per-candidate consequence through `law_head` (under `no_grad`), projected by the decoder's OWN `feat_proj`, scored by its OWN `conf_head`, scale fixed by a param-free `layer_norm`; one zero-init gate | **1** |
 | **S4** | `seam_clamp` | in-graph per-sample norm cap on the TOTAL graft per surface + sustained-saturation fail-loud | **0** |
 | **S5** | `graft_route` | zero-init `Linear(N_ROUTE, n_anchors, bias=False)` from the strategic readout onto the ranked score | **384** |
+| **S6** | `graft_goal` | a PREDICTED GEOMETRIC goal (unit bearing + signed along-track preference) from the image embedding alone, reaching the ranked score through the SAME param-free geometric compatibility LAN uses, on **two independent** zero-init gates — see §4b | **2,117** (`Linear(feat,3)` = 2,115 + 2 gates) |
 | — | `ego_valid_channel` | X15: explicit "v0 is present" flag for the measurement encoder and (with F1) the tactical head | 128 (+384 with F1) |
 
 **MEASURED capacity — the control, not an estimate.** `param_breakdown`, pinned by
@@ -199,6 +200,108 @@ effect to information; report the marginal, not the total* — is satisfied by c
 | **S1 identity** | `steps == 0 ⇒ refined_logits IS anchor_logits` (identity, not approximate equality), so `--mode classifier` is provably a control arm | pinned by test |
 | **empty-set fallback** | a window whose survivor set is empty keeps its whole fan — an unreachable-everywhere window is a measurement failure, not a licence to emit nothing | `refc.AnchoredDiffusionDecoder.forward` |
 | **preflight banner** | prints every D-SEL axis + the measured `n_selection_params` + `s1_inert_because_classifier_mode` before step 0 | `refc_train.train` |
+
+---
+
+## 4b. S6 — THE GOAL INPUT, under the PI's 2026-08-03 ruling
+
+> *"yes a goal input is admissible, at the same time, we need to be careful not to include the result of
+> the situation classification in the goal input."* — Sayed, 2026-08-03.
+
+### 4b.1 What the goal is computed from — declared, for every arm
+
+Declared in machine-readable form by `RefCModel.goal_provenance()`, written into every run's
+`config.json`, and asserted by `tests/test_refc_select.py`.
+
+| arm | the goal input is computed from | supplied or predicted | form |
+|---|---|---|---|
+| `refc-base-30k` (control) | — no goal input | — | — |
+| `dsel-*` (§7) | — no goal input | — | — |
+| `dsel-route` (S5) | `route_head(pooled)` — the model's own 3-way route readout | **predicted** | ⚠️ **categorical** |
+| `dsel-goal` (S6) | `goal_head(pooled)` — mean-pooled conv features of the **last frame**, and nothing else | **predicted** | **geometric** (unit bearing + signed along-track preference) |
+| *(LAN `graft_lan` alone, for contrast)* | `lan_window_features(poses, …)` — the ego's own future path | ⚠️ **supplied** | geometric |
+
+### 4b.2 The admissibility check, applied
+
+**"Could this goal have been computed from the situation classifier's output?"** — **NO**, and the reason
+is structural rather than a promise:
+
+* The situation classifier is a **separate model** (the sitclf stream's `head_img`). `RefCModel` does not
+  import it, does not load it, and receives no batch field carrying its posterior, argmax, embedding, or
+  any feature derived from them. **There is no output in this graph to leak.**
+* Nothing in REF-C's loss is supervised by a `situations.py`-derived label.
+
+### 4b.3 The shared trunk — declared, and why it is not a back door
+
+`goal_head`, `route_head` and the tactical head all read the **same `pooled`**. Stated explicitly, as
+required. Why that is not a back door:
+
+1. **A shared trunk can only launder a signal that exists in the graph**, and the classifier's does not
+   (4b.2). The concern the ruling names — the planner echoing the classifier the way flagship v1's route
+   head echoes the nav we feed it (nav=1→head=0 on **369/369**, nav=0→head=1 on **81/81**, scored 1.0000)
+   — requires the echoed signal to be *present as an input*. It is absent here.
+2. **Giving the goal its own trunk would be a capacity change, not an attribution fix** — C34's rule
+   (*match capacity before attributing an effect to information*) cuts against separating it.
+3. **Attributability is bought by the zero-init gates instead.** `goal_gate` and `goal_dist_gate` start at
+   exactly 0, so the ranked score is bit-identical to the goal-free baseline at step 0 (pinned by test)
+   and the exact ablation is "set the gate to 0" — no retrain needed to remove the lever.
+
+⚠️ **The residual risk, named rather than dismissed:** if a FUTURE arm ever supervises REF-C's route or
+goal head from a `situations.py`-derived label, the shared trunk stops being harmless and the
+admissibility check must be re-run. That is a rule about future edits, and it lives in
+`goal_provenance()` so it is read at the point of change.
+
+### 4b.4 Categorical vs geometric — why S5 is demoted and S6 is the real goal lever
+
+With proper no-navigation controls, the published evidence is that a **categorical** command buys
+approximately nothing (TransFuser perturbed to None/Random/Left/Right → PDMS flat **84.0–84.7**;
+no-nav → command-only **+0.2**) while a **geometric** goal buys a lot (route path + turn-by-turn **+2.3**;
+GoalFlow goal **point** **+4.7**). *(Evidence class: **PUBLISHED**, via the parallel research stream —
+INHERITED by this document, not re-derived here.)*
+
+That is a second, independent reason for §6.3's registered prediction that **S5 is NULL**: it is
+categorical *by construction*. S6 is the form the evidence actually supports. Both are kept, because
+S5 costs 384 parameters and is the only test of the readout pathway — but they are **never mixed into one
+arm** (`refc_goal_config()` explicitly turns `graft_route` off).
+
+And S6 is **predicted, not supplied**: a supplied route is optimistic by construction on PhysicalAI, whose
+only route supplier is the ego's own future path. The LAN corridor is S6's **training label** and is never
+read at inference — asserted operationally by the test that withholds `lan` at eval and shows the goal
+outputs are **bit-unchanged**.
+
+### 4b.5 ⛔ SEQUENCING — S6 is CONDITIONAL, not an independent win
+
+Carried honestly from the research stream's own caveat: a predicted goal must predict **along-track**
+distance from latents in which `long_accel` was **MEASURED unrecoverable across 17 head architectures**
+(K7). And REF-C is **structurally single-instant** — `refc.py`'s forward keeps only the LAST frame's
+feature map, so the cross-attended tokens carry one instant. A sibling stream is testing exactly that.
+
+⇒ **Our own prior predicts PARTIAL FAILURE**, and the architecture is built to measure it rather than be
+defeated by it: **two independent gates**.
+
+| gate | axis | recoverable from one frame? | registered prediction |
+|---|---|---|---|
+| `goal_gate` | bearing (lateral topology) | yes | **opens** — this is the half the published wins are about |
+| `goal_dist_gate` | along-track distance | **K7 says no** | **stays ≈ 0** |
+
+⭐ **`goal_dist_gate` is therefore an INSTRUMENT for the temporal-feature question**, readable off a
+training log rather than needing its own experiment. If it opens anyway, the K7 prior is wrong on this
+substrate — and that is the finding, reported as such.
+
+⚠️ **A declared confound on the along-track LABEL.** Which LAN arc-length is "first admissible" depends on
+the leak guard (`2 s of path length + min_lead_m`), which is partly a function of the ego's own **speed**.
+So the along-track head is partly being asked to predict speed from a single frame — which is precisely
+the K7 quantity. This is documented at `RefCModel.goal_targets` and is *why* the gate is separate. It is
+not a reason to drop the term; it is a reason not to read a null there as "goals do not work".
+
+**Recommended ordering, so this is a sequence and not a list of independent wins:**
+
+1. **E-SEL-0 / E-SEL-1** (§6) — 0 GPU-days, decides whether the selection surface is worth a retrain.
+2. **`dsel-full`** — the selection arm.
+3. **temporal features** (sibling stream) — the precondition S6's along-track half depends on.
+4. **`dsel-goal`** — only after (3) reports, so a null on `goal_dist_gate` is interpretable rather than
+   ambiguous between "goals don't help" and "the features weren't there yet". *(The bearing half can be
+   read from (4) regardless, which is why (4) is not strictly blocked by (3) — but the ARM'S HEADLINE is.)*
 
 ---
 
@@ -269,7 +372,30 @@ the shuffled control, S3 is a mechanism without information and must not consume
 | **S3 LIVE** | E-SEL-1 Spearman ρ separated from C-shuffled, `\|ρ\| ≥ 0.10` | the world model discriminates candidates; the `cond_imagination` port has information to work with | include S3 in the retrain arm |
 | **S3 DEAD** | ρ CI includes the shuffled control | REF-C's LAW head is candidate-blind in practice | **drop S3 from the arm** and say so; do not reframe it as "needs training to emerge" |
 | **S5 (registered as the LOWEST-prior lever)** | — | `route_head(pooled)` is nav-blind by architecture, its junction accuracy 0.7613 sits **BELOW** that scene's majority baseline 0.7806, and an image-free NAV_ECHO table beats it by 0.1724 | **I expect S5 to be NULL.** It is included because zero-init means training decides and it is the only test of the readout pathway. If the learned `route_to_anchor` norm stays at ~0, that is the answer and it gets reported as such |
+| **S6 BEARING LIVE** | `goal_gate` learns \|w\| ≥ 0.05 **and** the arm's LATERAL family is not separated worse | a predicted geometric goal reaches selection and the lateral half works | keep S6; report the bearing win separately from the along-track null |
+| **S6 ALONG-TRACK NULL (predicted)** | `goal_dist_gate` stays \|w\| < 0.01 through 30 k | K7 holds on this substrate: along-track distance is not recoverable from single-instant latents | report it as a **positive read on the temporal-feature question**, not as "goals do not work" |
+| **S6 ALONG-TRACK LIVE** | `goal_dist_gate` learns \|w\| ≥ 0.05 | the K7 prior is WRONG here | say so; it materially raises the priority of a predicted goal POINT (GoalFlow's +4.7 form) |
 | **INDETERMINATE** | E-SEL-0 separated but < 0.02 m | too small to justify a GPU-day on its own | tie-break on E-SEL-1: S3 LIVE ⇒ run the arm (S1+S2+S3+S4); S3 DEAD ⇒ ship S2+S4 only |
+| **S1 SEPARATED ADVERSELY** ⚠️ *(added 2026-08-03, AFTER the result — see the note below)* | E-SEL-0 paired ΔADE@2s separated and the refined confidence is **WORSE** | the refined readout is not noise (else it would not separate) but it is not a drop-in ranker either — the most likely cause is that it is **off-distribution**: a t=0 classifier being asked about denoised trajectories it was never supervised on | **do not ship, do not drop.** Check `rank_acc` against chance: **well above chance ⇒ the premise survives and S1 must CLIMB OUT (supervise the refined readout on refined trajectories), not HARVEST**; **at chance ⇒ this collapses into S1 DEAD** |
+
+⛔ **HONEST NOTE ON THE FIFTH BRANCH — it was added after seeing the result, and that is a defect,
+not a feature.** The registered table had **no branch for "separated adversely"**: every S1 row
+assumed *separated-and-better* or *not-separated*. What MEASURED happened is *separated and worse*
+(`refc-base` **+0.8372 m [+0.6915, +0.9939]**, `refc-xl` **+0.9187 m [+0.7778, +1.0669]**), so the
+experiment produced an outcome its own decision table could not express.
+
+⇒ **The 2026-08-03 adjudication of E-SEL-0 is therefore POST-HOC and must be labelled that way
+wherever it is quoted.** It does not carry the evidential weight of a pre-registered branch, and
+adding the row now does not retroactively confer it. The row exists so the protocol can represent
+this outcome **next time** — not so that this time can be scored as if it had been.
+
+⇒ **RULE, general: a two-sided quantity needs a THREE-sided table** — better, worse, and not
+separated. A branch table that enumerates only "wins" and "doesn't win" silently assumes the lever
+cannot hurt, and that assumption is exactly what an experiment is for. Before registering, ask of
+every row: *what if this comes back separated in the direction I did not consider?*
+*(Same family as the R-2026-08-03-dtac1 lesson — "a mechanism that is real in the source is not
+thereby the binding constraint" — one level up: a table that cannot express an outcome cannot
+adjudicate it.)*
 
 **Registered personal prediction:** *S1 NEEDS TRAINING* (E-SEL-0 not separated, C-shuffled clearly worse)
 and *S3 LIVE at a small ρ, 0.10–0.25*. **If E-SEL-0 comes back a FREE WIN ≥ 0.02 m, I was wrong about
@@ -304,6 +430,7 @@ optimizer/schedule/seed. **The ONLY differences are the named flags.**
 | `dsel-s1only` | `--sel-refined --labels v21` | S1 alone (the ranking objective) |
 | `dsel-nocons` | `--sel-refined --sel-reach-clamp --seam-clamp 1.0 --labels v21` | `dsel-full − dsel-nocons` = S3's marginal |
 | `dsel-route` | `dsel-full` + `--graft-route` | S5's marginal (only if S3 is LIVE; else it confounds two weak levers) |
+| `dsel-goal` | `dsel-full` + `--graft-lan --graft-goal` (⛔ **`--graft-route` OFF**) | S6's marginal. **Sequenced behind the temporal-feature stream** — see §4b.5. Two route-ish levers in one arm would be unattributable, so the categorical one is switched off |
 
 ⚠️ `dsel-s1only` vs `dsel-nocons` is **not** a clean S2+S4 estimate — S2 is MEASURED inert on ADE, so its
 value is compute, and S4 only acts when a graft saturates. Both are reported as **telemetry**
@@ -386,6 +513,12 @@ re-read. These are addressed to named owners.
 | trainer: flags, ranked-score CE, guards, banner | `stack/scripts/refc_train.py` | repo, **staged** |
 | tests (new, 20) | `stack/tests/test_refc_select.py` | repo, **staged** |
 | this pre-registration | `Project Steering/PREREG_D-SEL_REFC_SELECTION_SURFACE.md` | repo, **staged** |
+
+⚠️ **Provenance note, so an auditor is not confused later.** `refc_select.py` and `refc.py` were staged
+mid-session and were then swept into commit **`035bc79`** ("Rule: a GOAL input is admissible …") by a
+concurrent orchestrator commit — the documented *"`git commit` commits the ENTIRE INDEX"* hazard, seen
+from the receiving side. The work is therefore **in the repo** (definition-of-done satisfied, nothing
+stranded), but `035bc79`'s message does not describe it. This stream did not commit and did not push.
 
 **Nothing is committed and nothing is pushed** (AGENT_OPERATING_STANDARD rule 1). Nothing lives only on a
 pod or only in a worktree. No checkpoint was produced and no pod was touched.

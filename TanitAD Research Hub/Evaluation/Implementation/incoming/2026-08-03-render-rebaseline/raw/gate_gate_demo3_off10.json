@@ -1,0 +1,122 @@
+{
+ "gate": "reference_alignment",
+ "ref_offset_applied": 10,
+ "k": 6,
+ "probe_frames": [
+  60,
+  300,
+  450
+ ],
+ "frames_offered": [
+  60,
+  150,
+  300,
+  450
+ ],
+ "frames_skipped_incomplete_window": [],
+ "informative_frames": [
+  60,
+  300,
+  450
+ ],
+ "offwindow_frames": [],
+ "uninformative_frames": {},
+ "min_prominence": 0.02,
+ "min_modal_mass": 0.5,
+ "residual_argmax_by_frame": {
+  "60": -4,
+  "300": -4,
+  "450": -4
+ },
+ "residual_offset_bootstrap": {
+  "point": -4,
+  "refused": false,
+  "reason": "ok",
+  "n_units": 3,
+  "B": 1000,
+  "mass": {
+   "-4": 1.0
+  },
+  "frac_refused": 0.0,
+  "modal_mass": 1.0,
+  "estimator": "bootstrap over probed frames of argmax(mean curve); an integer estimator has no meaningful SE, so the mass function IS the interval"
+ },
+ "residual_mass_at_zero": 0.0,
+ "residual_subframe_mean": -3.722,
+ "per_frame": {
+  "60": {
+   "grad_ncc_by_offset": {
+    "-6": 0.30738,
+    "-5": 0.35021,
+    "-4": 0.42394,
+    "-3": 0.38544,
+    "-2": 0.31798,
+    "-1": 0.28611,
+    "0": 0.26371,
+    "1": 0.25024,
+    "2": 0.24354,
+    "3": 0.23139,
+    "4": 0.22031,
+    "5": 0.22072,
+    "6": 0.20381
+   },
+   "argmax_offset": -4,
+   "refused": false,
+   "reason": "ok",
+   "informative": true,
+   "prominence": 0.10596,
+   "subframe_offset": -3.843,
+   "gain_vs_offset0": 0.16023
+  },
+  "300": {
+   "grad_ncc_by_offset": {
+    "-6": 0.30452,
+    "-5": 0.34974,
+    "-4": 0.44409,
+    "-3": 0.41211,
+    "-2": 0.33518,
+    "-1": 0.29687,
+    "0": 0.27565,
+    "1": 0.25716,
+    "2": 0.24876,
+    "3": 0.24129,
+    "4": 0.23894,
+    "5": 0.23451,
+    "6": 0.2296
+   },
+   "argmax_offset": -4,
+   "refused": false,
+   "reason": "ok",
+   "informative": true,
+   "prominence": 0.10891,
+   "subframe_offset": -3.7531,
+   "gain_vs_offset0": 0.16844
+  },
+  "450": {
+   "grad_ncc_by_offset": {
+    "-6": 0.32126,
+    "-5": 0.36439,
+    "-4": 0.44547,
+    "-3": 0.43925,
+    "-2": 0.3711,
+    "-1": 0.32611,
+    "0": 0.3004,
+    "1": 0.27929,
+    "2": 0.26242,
+    "3": 0.24875,
+    "4": 0.24465,
+    "5": 0.23897,
+    "6": 0.23456
+   },
+   "argmax_offset": -4,
+   "refused": false,
+   "reason": "ok",
+   "informative": true,
+   "prominence": 0.07437,
+   "subframe_offset": -3.5712,
+   "gain_vs_offset0": 0.14507
+  }
+ },
+ "pass": false,
+ "why": "the harness's other negative control uses MIN_WRONG_GAP=40 and is structurally blind to a small index error; this one is not"
+}

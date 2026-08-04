@@ -1,0 +1,194 @@
+{
+ "generated": "2026-08-03T21:08:17",
+ "device": "cuda",
+ "torch": "2.11.0+cu128",
+ "window_W": 8,
+ "source_facts": {
+  "single_instant_site": "stack/tanitad/refs/refc.py:1412-1422 (fmap = fmap_all.reshape(b,w,...)[:, -1])",
+  "window_default": "RefCConfig.window = 8 (refc.py:386)",
+  "encoder_already_runs_all_W_frames": "refc.py:1414-1415 encoder(frames.reshape(b*w, ...)) under hierarchy=True (default; 'hierarchy true' in REF-C-XL's run config per MODEL_REGISTRY.md 4.1) -> approach A adds ZERO encoder FLOPs; 7 of 8 feature maps are computed then dropped",
+  "input_is_a_3_frame_stack": "refc.py:241 in_channels=9 'D-015 3-frame RGB stack (latest = [-3:])' -> one model 'frame' already spans 300 ms"
+ },
+ "presets": {
+  "refc_small": {
+   "params_total": 54690001,
+   "param_breakdown": {
+    "encoder": 47862976,
+    "measurement": 17280,
+    "strategic": 1608768,
+    "decoder": 2950729,
+    "imagination": 0,
+    "lan": 0,
+    "aux": 134152,
+    "law": 2116096,
+    "speed": 0,
+    "selection": 0,
+    "goal": 0,
+    "total": 54690001
+   },
+   "feat_dim": 512,
+   "token_grid": [
+    8,
+    8
+   ],
+   "n_tokens_per_frame": 64,
+   "n_anchors": 64,
+   "d": 256,
+   "layers": 3,
+   "ff_mult": 4,
+   "diffusion_steps": 0,
+   "decoder_passes": 1,
+   "today_KV64": {
+    "kv_len": 64,
+    "median_s": 0.006987,
+    "peak_mib": 226.7,
+    "analytic_macs": {
+     "per_layer_proj": 16777216,
+     "per_layer_attn": 2097152,
+     "per_layer_mlp": 33554432,
+     "per_layer_total": 52428800,
+     "decoder_total": 157286400,
+     "attn_share_of_layer": 0.04
+    }
+   },
+   "approachA_KVW": {
+    "kv_len": 512,
+    "median_s": 0.003885,
+    "peak_mib": 234.2,
+    "analytic_macs": {
+     "per_layer_proj": 75497472,
+     "per_layer_attn": 16777216,
+     "per_layer_mlp": 33554432,
+     "per_layer_total": 125829120,
+     "decoder_total": 377487360,
+     "attn_share_of_layer": 0.1333
+    }
+   },
+   "ratio_time": 0.556,
+   "ratio_decoder_macs": 2.4,
+   "ratio_peak_mib": 1.033,
+   "approachA_added_params": 2049,
+   "approachA_added_params_pct": 0.00375
+  },
+  "refc_base": {
+   "params_total": 104191577,
+   "param_breakdown": {
+    "encoder": 90458632,
+    "measurement": 17280,
+    "strategic": 1903680,
+    "decoder": 8634505,
+    "imagination": 0,
+    "lan": 0,
+    "aux": 274760,
+    "law": 2902720,
+    "speed": 0,
+    "selection": 0,
+    "goal": 0,
+    "total": 104191577
+   },
+   "feat_dim": 704,
+   "token_grid": [
+    8,
+    8
+   ],
+   "n_tokens_per_frame": 64,
+   "n_anchors": 128,
+   "d": 384,
+   "layers": 4,
+   "ff_mult": 4,
+   "diffusion_steps": 0,
+   "decoder_passes": 1,
+   "today_KV64": {
+    "kv_len": 64,
+    "median_s": 0.010325,
+    "peak_mib": 440.0,
+    "analytic_macs": {
+     "per_layer_proj": 56623104,
+     "per_layer_attn": 6291456,
+     "per_layer_mlp": 150994944,
+     "per_layer_total": 213909504,
+     "decoder_total": 855638016,
+     "attn_share_of_layer": 0.0294
+    }
+   },
+   "approachA_KVW": {
+    "kv_len": 512,
+    "median_s": 0.009454,
+    "peak_mib": 447.3,
+    "analytic_macs": {
+     "per_layer_proj": 188743680,
+     "per_layer_attn": 50331648,
+     "per_layer_mlp": 150994944,
+     "per_layer_total": 390070272,
+     "decoder_total": 1560281088,
+     "attn_share_of_layer": 0.129
+    }
+   },
+   "ratio_time": 0.916,
+   "ratio_decoder_macs": 1.824,
+   "ratio_peak_mib": 1.017,
+   "approachA_added_params": 3073,
+   "approachA_added_params_pct": 0.00295
+  },
+  "refc_xl": {
+   "params_total": 251932584,
+   "param_breakdown": {
+    "encoder": 199496532,
+    "measurement": 17280,
+    "strategic": 4133472,
+    "decoder": 22702345,
+    "imagination": 20986339,
+    "lan": 0,
+    "aux": 513960,
+    "law": 4082656,
+    "speed": 0,
+    "selection": 0,
+    "goal": 0,
+    "total": 251932584
+   },
+   "feat_dim": 992,
+   "token_grid": [
+    8,
+    8
+   ],
+   "n_tokens_per_frame": 64,
+   "n_anchors": 256,
+   "d": 512,
+   "layers": 6,
+   "ff_mult": 4,
+   "diffusion_steps": 2,
+   "decoder_passes": 3,
+   "today_KV64": {
+    "kv_len": 64,
+    "median_s": 0.047857,
+    "peak_mib": 1011.9,
+    "analytic_macs": {
+     "per_layer_proj": 167772160,
+     "per_layer_attn": 16777216,
+     "per_layer_mlp": 536870912,
+     "per_layer_total": 721420288,
+     "decoder_total": 12985565184,
+     "attn_share_of_layer": 0.0233
+    }
+   },
+   "approachA_KVW": {
+    "kv_len": 512,
+    "median_s": 0.06703,
+    "peak_mib": 1015.7,
+    "analytic_macs": {
+     "per_layer_proj": 402653184,
+     "per_layer_attn": 134217728,
+     "per_layer_mlp": 536870912,
+     "per_layer_total": 1073741824,
+     "decoder_total": 19327352832,
+     "attn_share_of_layer": 0.125
+    }
+   },
+   "ratio_time": 1.401,
+   "ratio_decoder_macs": 1.488,
+   "ratio_peak_mib": 1.004,
+   "approachA_added_params": 4097,
+   "approachA_added_params_pct": 0.00163
+  }
+ }
+}

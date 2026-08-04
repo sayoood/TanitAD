@@ -1,0 +1,31 @@
+[    0.4s] 240 episodes -> 160 train / 80 held out; 4787 / 2390 windows
+[    0.9s] NULL_train_mean speed R2 -0.0025
+[   98.1s] v1_window                  feat= 18432 speed R2 +0.6752  d_vs_shuf +0.6777 [+0.6328,+0.7235] SEP  (97s)
+[  196.7s] pix32_centre_rbf           feat=  1024 speed R2 -0.0025  d_vs_shuf +0.0000 [+0.0000,+0.0000] ---  (99s)
+[  227.5s] v1_centre                  feat=  2048 speed R2 +0.6391  d_vs_shuf +0.6416 [+0.5919,+0.6905] SEP  (31s)
+[  295.2s] v1_tdiff                   feat= 16384 speed R2 -0.0025  d_vs_shuf +0.0000 [+0.0000,+0.0000] ---  (68s)
+[  329.0s] pix32_centre               feat=  1024 speed R2 -0.0025  d_vs_shuf +0.0000 [+0.0000,+0.0000] ---  (34s)
+[  362.1s] stk32_centre               feat=  1024 speed R2 -0.0025  d_vs_shuf +0.0000 [+0.0000,+0.0000] ---  (33s)
+[  494.4s] stk32_centre_rbf           feat=  1024 speed R2 -0.0025  d_vs_shuf +0.0000 [+0.0000,+0.0000] ---  (132s)
+[  626.5s] pix8_tdiff_rbf             feat=   512 speed R2 +0.2492  d_vs_shuf +0.2517 [+0.1351,+0.3450] SEP  (132s)
+[  739.3s] mot8_window_rbf            feat=   576 speed R2 +0.3922  d_vs_shuf +0.3947 [+0.2906,+0.4869] SEP  (113s)
+[  905.7s] mot16_window_rbf           feat=  2304 speed R2 +0.4124  d_vs_shuf +0.4149 [+0.3155,+0.5005] SEP  (166s)
+[ 1015.1s] mot8_centre_rbf            feat=    64 speed R2 +0.3707  d_vs_shuf +0.3732 [+0.2810,+0.4545] SEP  (109s)
+[ 1133.4s] pix1_window_rbf            feat=     9 speed R2 -0.0025  d_vs_shuf +0.0000 [+0.0000,+0.0000] ---  (118s)
+[ 1211.5s] v1_window_shufframes       feat= 18432 speed R2 +0.6812  d_vs_shuf +0.6837 [+0.6396,+0.7301] SEP  (78s)
+[ 1267.4s] pix32_window               feat=  9216 speed R2 -0.0025  d_vs_shuf +0.0000 [+0.0000,+0.0000] ---  (56s)
+[ 1328.4s] pix32_window_shufframes    feat=  9216 speed R2 -0.0025  d_vs_shuf +0.0000 [+0.0000,+0.0000] ---  (61s)
+Traceback (most recent call last):
+  File "G:\Meine Ablage\SayBouBase\raw\Projects\TanitAD\TanitAD Research Hub\Architecture & Inference\Implementation\incoming\2026-08-03-appearance-shortcut-audit\run_p1_offhighway.py", line 445, in <module>
+    main()
+    ~~~~^^
+  File "G:\Meine Ablage\SayBouBase\raw\Projects\TanitAD\TanitAD Research Hub\Architecture & Inference\Implementation\incoming\2026-08-03-appearance-shortcut-audit\run_p1_offhighway.py", line 430, in main
+    log(f"\u2b50 PRIMARY RATIO = {ratio:.4f} (comma reference 0.9296) -> {outcome}")
+    ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Meine Ablage\SayBouBase\raw\Projects\TanitAD\TanitAD Research Hub\Architecture & Inference\Implementation\incoming\2026-08-03-appearance-shortcut-audit\run_p1_offhighway.py", line 57, in log
+    print(f"[{time.time() - T0:7.1f}s] {m}", flush=True)
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2b50' in position 11: character maps to <undefined>

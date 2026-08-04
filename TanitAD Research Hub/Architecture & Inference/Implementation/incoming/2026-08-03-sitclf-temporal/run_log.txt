@@ -1,0 +1,193 @@
+[20:49:26] substrate 99,477 rows x 2048  500 clips  device=cuda
+[20:49:26] common scorable rows (full 32-frame history): 83,977 of 99,477 (84.4%)
+[20:49:26]   lane_change: scorable 66,368 pos 1,498 base 0.02257 clusters+ 55
+[20:49:26]   roundabout: scorable 66,454 pos 1,034 base 0.01556 clusters+ 37
+[20:49:26]   intersection: scorable 59,708 pos 6,286 base 0.10528 clusters+ 216
+[20:49:26] STAGE 0 - subspace diagnostic (does appearance PCA-16 discard the motion subspace?)
+[20:49:27]     motion source built (shuf=False): 98,977 rows with a valid delta
+[20:49:29]   rank 16: appearance basis holds 0.9665 of appearance variance and 0.9520 of DELTA variance; the motion basis holds 0.8952 of DELTA variance; mean principal cos 0.9803
+[20:49:31]   rank 64: appearance basis holds 0.9997 of appearance variance and 0.9971 of DELTA variance; the motion basis holds 0.9931 of DELTA variance; mean principal cos 0.8814
+[20:49:31] STAGE 1 - NEG_FEAT (image features permuted ACROSS clips), fitted FIRST
+[20:49:34]     NEG_FEAT__ridge_app128_w1 ridge fit 39,793 lam*=10000 sel_mAP=0.06002
+[20:49:37]     NEG_FEAT__ridge_app128_w1 ridge fit 39,794 lam*=10000 sel_mAP=0.04528
+[20:49:37]   NEG_FEAT__ridge_app128_w1: 129 params/head, flat 128, history 0.0s (6s)
+[20:49:40]     NEG_FEAT__ridge_app64_w2 ridge fit 39,793 lam*=10000 sel_mAP=0.06160
+[20:49:43]     NEG_FEAT__ridge_app64_w2 ridge fit 39,794 lam*=10000 sel_mAP=0.04435
+[20:49:43]   NEG_FEAT__ridge_app64_w2: 129 params/head, flat 128, history 0.1s (6s)
+[20:49:46]     NEG_FEAT__ridge_app32_w4 ridge fit 39,793 lam*=10000 sel_mAP=0.06588
+[20:49:48]     NEG_FEAT__ridge_app32_w4 ridge fit 39,794 lam*=10000 sel_mAP=0.04431
+[20:49:48]   NEG_FEAT__ridge_app32_w4: 129 params/head, flat 128, history 0.3s (5s)
+[20:49:51]     NEG_FEAT__ridge_app16_w8 ridge fit 39,793 lam*=10000 sel_mAP=0.04118
+[20:49:54]     NEG_FEAT__ridge_app16_w8 ridge fit 39,794 lam*=1 sel_mAP=0.03921
+[20:49:54]   NEG_FEAT__ridge_app16_w8: 129 params/head, flat 128, history 0.7s (5s)
+[20:49:57]     NEG_FEAT__ridge_app8_w16 ridge fit 39,793 lam*=10000 sel_mAP=0.05323
+[20:49:59]     NEG_FEAT__ridge_app8_w16 ridge fit 39,794 lam*=1000 sel_mAP=0.05240
+[20:49:59]   NEG_FEAT__ridge_app8_w16: 129 params/head, flat 128, history 1.5s (5s)
+[20:50:02]     NEG_FEAT__ridge_app4_w32 ridge fit 39,793 lam*=10000 sel_mAP=0.04230
+[20:50:04]     NEG_FEAT__ridge_app4_w32 ridge fit 39,794 lam*=1000 sel_mAP=0.05723
+[20:50:04]   NEG_FEAT__ridge_app4_w32: 129 params/head, flat 128, history 3.1s (5s)
+[20:50:07]     NEG_FEAT__ridge_app16_w1 ridge fit 39,793 lam*=10 sel_mAP=0.04185
+[20:50:08]     NEG_FEAT__ridge_app16_w1 ridge fit 39,794 lam*=10000 sel_mAP=0.03965
+[20:50:08]   NEG_FEAT__ridge_app16_w1: 17 params/head, flat 16, history 0.0s (3s)
+[20:50:11]     NEG_FEAT__ridge_app16_w4 ridge fit 39,793 lam*=10000 sel_mAP=0.04169
+[20:50:13]     NEG_FEAT__ridge_app16_w4 ridge fit 39,794 lam*=10000 sel_mAP=0.03950
+[20:50:13]   NEG_FEAT__ridge_app16_w4: 65 params/head, flat 64, history 0.3s (4s)
+[20:50:17]     NEG_FEAT__ridge_app16_w16 ridge fit 39,793 lam*=10000 sel_mAP=0.03909
+[20:50:21]     NEG_FEAT__ridge_app16_w16 ridge fit 39,794 lam*=10 sel_mAP=0.03982
+[20:50:22]   NEG_FEAT__ridge_app16_w16: 257 params/head, flat 256, history 1.5s (8s)
+[20:50:28]     NEG_FEAT__ridge_app16_w32 ridge fit 39,793 lam*=10000 sel_mAP=0.03800
+[20:50:35]     NEG_FEAT__ridge_app16_w32 ridge fit 39,794 lam*=1000 sel_mAP=0.04435
+[20:50:36]   NEG_FEAT__ridge_app16_w32: 513 params/head, flat 512, history 3.1s (14s)
+[20:50:38]     motion source built (shuf=True): 98,977 rows with a valid delta
+[20:50:40]     NEG_FEAT__ridge_mot16_w8 ridge fit 39,793 lam*=10000 sel_mAP=0.03611
+[20:50:41]     NEG_FEAT__ridge_mot16_w8 ridge fit 39,794 lam*=10 sel_mAP=0.03874
+[20:50:41]   NEG_FEAT__ridge_mot16_w8: 129 params/head, flat 128, history 0.7s (4s)
+[20:50:45]     NEG_FEAT__ridge_app8mot8_w8 ridge fit 39,793 lam*=10000 sel_mAP=0.05723
+[20:50:50]     NEG_FEAT__ridge_app8mot8_w8 ridge fit 39,794 lam*=10000 sel_mAP=0.05213
+[20:50:50]   NEG_FEAT__ridge_app8mot8_w8: 129 params/head, flat 128, history 0.7s (8s)
+[20:50:56]     NEG_FEAT__ridge_app16mot16_w8 ridge fit 39,793 lam*=10000 sel_mAP=0.03974
+[20:51:01]     NEG_FEAT__ridge_app16mot16_w8 ridge fit 39,794 lam*=10000 sel_mAP=0.04059
+[20:51:02]   NEG_FEAT__ridge_app16mot16_w8: 257 params/head, flat 256, history 0.7s (11s)
+[20:51:09]     NEG_FEAT__ridge_mot16_w32 ridge fit 39,793 lam*=1 sel_mAP=0.03856
+[20:51:16]     NEG_FEAT__ridge_mot16_w32 ridge fit 39,794 lam*=1 sel_mAP=0.04290
+[20:51:18]   NEG_FEAT__ridge_mot16_w32: 513 params/head, flat 512, history 3.1s (15s)
+[20:51:23]     NEG_FEAT__ridge_app16_w8_diffparam ridge fit 39,793 lam*=10000 sel_mAP=0.04004
+[20:51:26]     NEG_FEAT__ridge_app16_w8_diffparam ridge fit 39,794 lam*=10 sel_mAP=0.03924
+[20:51:27]   NEG_FEAT__ridge_app16_w8_diffparam: 129 params/head, flat 128, history 0.7s (8s)
+[20:51:28]     NEG_FEAT__CPOS_ego_w8 ridge fit 39,793 lam*=1 sel_mAP=0.07857
+[20:51:29]     NEG_FEAT__CPOS_ego_w8 ridge fit 39,794 lam*=10000 sel_mAP=0.12110
+[20:51:29]   NEG_FEAT__CPOS_ego_w8: 25 params/head, flat 24, history 0.7s (1s)
+[20:51:31]     NEG_FEAT__CPOS_ego_w32 ridge fit 39,793 lam*=1 sel_mAP=0.07991
+[20:51:33]     NEG_FEAT__CPOS_ego_w32 ridge fit 39,794 lam*=10 sel_mAP=0.11960
+[20:51:34]   NEG_FEAT__CPOS_ego_w32: 97 params/head, flat 96, history 3.1s (3s)
+[20:51:36]     NEG_FEAT__CPOS_ORACLE_egofuture30 ridge fit 39,793 lam*=1 sel_mAP=0.17698
+[20:51:37]     NEG_FEAT__CPOS_ORACLE_egofuture30 ridge fit 39,794 lam*=1000 sel_mAP=0.21622
+[20:51:38]   NEG_FEAT__CPOS_ORACLE_egofuture30: 91 params/head, flat 90, history 0.0s (3s)
+[20:51:54]     NEG_FEAT__tf_app16_w8_d128 d=128 win=8 fit 39,793 epoch*=4/8 sel_mAP=0.12705 curve=[0.04096, 0.06763, 0.12151, 0.12705, 0.06517, 0.06094, 0.04942, 0.05093]
+[20:52:04]     NEG_FEAT__tf_app16_w8_d128 d=128 win=8 fit 39,794 epoch*=4/8 sel_mAP=0.05007 curve=[0.04579, 0.04145, 0.04809, 0.05007, 0.04928, 0.04867, 0.04784, 0.04679]
+[20:52:04]   NEG_FEAT__tf_app16_w8_d128: 417,028 params/head, flat 128, history 0.7s (24s)
+[20:52:32]     NEG_FEAT__tf_app16_w32 d=128 win=32 fit 39,793 epoch*=2/8 sel_mAP=0.10395 curve=[0.05246, 0.10395, 0.08953, 0.07414, 0.06857, 0.04926, 0.04398, 0.05454]
+[20:52:55]     NEG_FEAT__tf_app16_w32 d=128 win=32 fit 39,794 epoch*=7/8 sel_mAP=0.05538 curve=[0.03805, 0.0378, 0.04469, 0.04789, 0.04904, 0.04866, 0.05538, 0.05254]
+[20:52:55]   NEG_FEAT__tf_app16_w32: 420,100 params/head, flat 512, history 3.1s (48s)
+[20:53:04]     NEG_FEAT__tf_app8mot8_w8 d=128 win=8 fit 39,793 epoch*=1/8 sel_mAP=0.05317 curve=[0.05317, 0.04239, 0.04395, 0.04353, 0.04071, 0.04618, 0.04306, 0.04028]
+[20:53:13]     NEG_FEAT__tf_app8mot8_w8 d=128 win=8 fit 39,794 epoch*=5/8 sel_mAP=0.07118 curve=[0.04364, 0.0501, 0.05839, 0.06408, 0.07118, 0.05269, 0.05171, 0.0484]
+[20:53:13]   NEG_FEAT__tf_app8mot8_w8: 417,028 params/head, flat 128, history 0.7s (17s)
+[20:53:23]     NEG_FEAT__tf_app16_w8_diffparam d=128 win=8 fit 39,793 epoch*=2/8 sel_mAP=0.07055 curve=[0.05536, 0.07055, 0.05197, 0.03567, 0.03631, 0.03675, 0.03504, 0.04303]
+[20:53:31]     NEG_FEAT__tf_app16_w8_diffparam d=128 win=8 fit 39,794 epoch*=8/8 sel_mAP=0.04955 curve=[0.04547, 0.04755, 0.04783, 0.04718, 0.04544, 0.04863, 0.04265, 0.04955]
+[20:53:31]   NEG_FEAT__tf_app16_w8_diffparam: 417,028 params/head, flat 128, history 0.7s (16s)
+[20:53:33]   NULL lane_change ap-lift: ridge_app128_w1=1.196 ridge_app64_w2=1.272 ridge_app32_w4=1.110 ridge_app16_w8=1.087 ridge_app8_w16=1.268 ridge_app4_w32=1.160 ridge_app16_w1=1.274 ridge_app16_w4=1.184 ridge_app16_w16=1.027 ridge_app16_w32=1.025 ridge_mot16_w8=0.899 ridge_app8mot8_w8=1.310 ridge_app16mot16_w8=1.110 ridge_mot16_w32=1.036 ridge_app16_w8_diffparam=1.030 CPOS_ego_w8=2.019 CPOS_ego_w32=2.050 CPOS_ORACLE_egofuture30=2.357 tf_app16_w8_d128=1.121 tf_app16_w32=1.072 tf_app8mot8_w8=1.327 tf_app16_w8_diffparam=1.167
+[20:53:33]   NULL roundabout ap-lift: ridge_app128_w1=0.982 ridge_app64_w2=0.856 ridge_app32_w4=0.858 ridge_app16_w8=0.753 ridge_app8_w16=0.849 ridge_app4_w32=0.925 ridge_app16_w1=0.715 ridge_app16_w4=0.730 ridge_app16_w16=0.779 ridge_app16_w32=0.819 ridge_mot16_w8=0.884 ridge_app8mot8_w8=0.840 ridge_app16mot16_w8=0.754 ridge_mot16_w32=0.885 ridge_app16_w8_diffparam=0.757 CPOS_ego_w8=1.361 CPOS_ego_w32=1.534 CPOS_ORACLE_egofuture30=7.477 tf_app16_w8_d128=0.881 tf_app16_w32=0.930 tf_app8mot8_w8=1.054 tf_app16_w8_diffparam=0.910
+[20:53:33]   NULL intersection ap-lift: ridge_app128_w1=0.995 ridge_app64_w2=1.034 ridge_app32_w4=1.014 ridge_app16_w8=0.987 ridge_app8_w16=1.018 ridge_app4_w32=1.021 ridge_app16_w1=1.008 ridge_app16_w4=0.991 ridge_app16_w16=0.993 ridge_app16_w32=0.999 ridge_mot16_w8=0.998 ridge_app8mot8_w8=1.042 ridge_app16mot16_w8=1.002 ridge_mot16_w32=0.963 ridge_app16_w8_diffparam=0.985 CPOS_ego_w8=1.438 CPOS_ego_w32=1.434 CPOS_ORACLE_egofuture30=1.746 tf_app16_w8_d128=0.992 tf_app16_w32=0.956 tf_app8mot8_w8=0.987 tf_app16_w8_diffparam=0.960
+[20:53:33] STAGE 2 - the real ladder
+[20:53:35]     ridge_app128_w1 ridge fit 39,793 lam*=10000 sel_mAP=0.05276
+[20:53:38]     ridge_app128_w1 ridge fit 39,794 lam*=10000 sel_mAP=0.06438
+[20:53:38]   ridge_app128_w1: 129 params/head, flat 128, history 0.0s (6s)
+[20:53:42]     ridge_app64_w2 ridge fit 39,793 lam*=1 sel_mAP=0.05452
+[20:53:45]     ridge_app64_w2 ridge fit 39,794 lam*=10 sel_mAP=0.07279
+[20:53:45]   ridge_app64_w2: 129 params/head, flat 128, history 0.1s (5s)
+[20:53:49]     ridge_app32_w4 ridge fit 39,793 lam*=10 sel_mAP=0.05977
+[20:53:52]     ridge_app32_w4 ridge fit 39,794 lam*=1000 sel_mAP=0.06451
+[20:53:52]   ridge_app32_w4: 129 params/head, flat 128, history 0.3s (5s)
+[20:53:56]     ridge_app16_w8 ridge fit 39,793 lam*=10000 sel_mAP=0.08939
+[20:53:58]     ridge_app16_w8 ridge fit 39,794 lam*=10000 sel_mAP=0.07351
+[20:53:59]   ridge_app16_w8: 129 params/head, flat 128, history 0.7s (5s)
+[20:54:02]     ridge_app8_w16 ridge fit 39,793 lam*=1000 sel_mAP=0.06268
+[20:54:05]     ridge_app8_w16 ridge fit 39,794 lam*=10000 sel_mAP=0.06651
+[20:54:05]   ridge_app8_w16: 129 params/head, flat 128, history 1.5s (5s)
+[20:54:09]     ridge_app4_w32 ridge fit 39,793 lam*=10 sel_mAP=0.05690
+[20:54:12]     ridge_app4_w32 ridge fit 39,794 lam*=100 sel_mAP=0.07952
+[20:54:12]   ridge_app4_w32: 129 params/head, flat 128, history 3.1s (5s)
+[20:54:16]     ridge_app16_w1 ridge fit 39,793 lam*=10000 sel_mAP=0.08330
+[20:54:17]     ridge_app16_w1 ridge fit 39,794 lam*=10000 sel_mAP=0.07895
+[20:54:17]   ridge_app16_w1: 17 params/head, flat 16, history 0.0s (3s)
+[20:54:22]     ridge_app16_w4 ridge fit 39,793 lam*=10000 sel_mAP=0.08720
+[20:54:24]     ridge_app16_w4 ridge fit 39,794 lam*=10000 sel_mAP=0.07744
+[20:54:24]   ridge_app16_w4: 65 params/head, flat 64, history 0.3s (5s)
+[20:54:31]     ridge_app16_w16 ridge fit 39,793 lam*=10000 sel_mAP=0.09226
+[20:54:36]     ridge_app16_w16 ridge fit 39,794 lam*=100 sel_mAP=0.06791
+[20:54:37]   ridge_app16_w16: 257 params/head, flat 256, history 1.5s (10s)
+[20:54:45]     ridge_app16_w32 ridge fit 39,793 lam*=10000 sel_mAP=0.07577
+[20:54:54]     ridge_app16_w32 ridge fit 39,794 lam*=1000 sel_mAP=0.07406
+[20:54:55]   ridge_app16_w32: 513 params/head, flat 512, history 3.1s (16s)
+[20:54:59]     motion source built (shuf=False): 98,977 rows with a valid delta
+[20:55:01]     ridge_mot16_w8 ridge fit 39,793 lam*=1 sel_mAP=0.04193
+[20:55:03]     ridge_mot16_w8 ridge fit 39,794 lam*=100 sel_mAP=0.04880
+[20:55:04]   ridge_mot16_w8: 129 params/head, flat 128, history 0.7s (6s)
+[20:55:09]     ridge_app8mot8_w8 ridge fit 39,793 lam*=10000 sel_mAP=0.05740
+[20:55:13]     ridge_app8mot8_w8 ridge fit 39,794 lam*=10000 sel_mAP=0.06768
+[20:55:13]   ridge_app8mot8_w8: 129 params/head, flat 128, history 0.7s (7s)
+[20:55:19]     ridge_app16mot16_w8 ridge fit 39,793 lam*=10000 sel_mAP=0.08794
+[20:55:23]     ridge_app16mot16_w8 ridge fit 39,794 lam*=10 sel_mAP=0.06955
+[20:55:24]   ridge_app16mot16_w8: 257 params/head, flat 256, history 0.7s (8s)
+[20:55:31]     ridge_mot16_w32 ridge fit 39,793 lam*=1 sel_mAP=0.04919
+[20:55:37]     ridge_mot16_w32 ridge fit 39,794 lam*=10000 sel_mAP=0.05722
+[20:55:39]   ridge_mot16_w32: 513 params/head, flat 512, history 3.1s (12s)
+[20:55:43]     ridge_app16_w8_diffparam ridge fit 39,793 lam*=1 sel_mAP=0.08666
+[20:55:46]     ridge_app16_w8_diffparam ridge fit 39,794 lam*=100 sel_mAP=0.06988
+[20:55:46]   ridge_app16_w8_diffparam: 129 params/head, flat 128, history 0.7s (5s)
+[20:55:49]     CPOS_ego_w8 ridge fit 39,793 lam*=1 sel_mAP=0.07857
+[20:55:49]     CPOS_ego_w8 ridge fit 39,794 lam*=10000 sel_mAP=0.12110
+[20:55:49]   CPOS_ego_w8: 25 params/head, flat 24, history 0.7s (1s)
+[20:55:53]     CPOS_ego_w32 ridge fit 39,793 lam*=1 sel_mAP=0.07991
+[20:55:54]     CPOS_ego_w32 ridge fit 39,794 lam*=10 sel_mAP=0.11960
+[20:55:54]   CPOS_ego_w32: 97 params/head, flat 96, history 3.1s (2s)
+[20:55:58]     CPOS_ORACLE_egofuture30 ridge fit 39,793 lam*=1 sel_mAP=0.17698
+[20:55:59]     CPOS_ORACLE_egofuture30 ridge fit 39,794 lam*=1000 sel_mAP=0.21622
+[20:55:59]   CPOS_ORACLE_egofuture30: 91 params/head, flat 90, history 0.0s (2s)
+[20:56:11]     tf_app16_w8_d128 d=128 win=8 fit 39,793 epoch*=3/8 sel_mAP=0.08620 curve=[0.07292, 0.07314, 0.0862, 0.07794, 0.08486, 0.06311, 0.06388, 0.05354]
+[20:56:23]     tf_app16_w8_d128 d=128 win=8 fit 39,794 epoch*=2/8 sel_mAP=0.12052 curve=[0.07487, 0.12052, 0.09056, 0.09615, 0.10833, 0.09168, 0.06994, 0.09953]
+[20:56:23]   tf_app16_w8_d128: 417,028 params/head, flat 128, history 0.7s (21s)
+[20:56:50]     tf_app16_w32 d=128 win=32 fit 39,793 epoch*=3/8 sel_mAP=0.10894 curve=[0.09551, 0.07774, 0.10894, 0.05786, 0.07309, 0.06405, 0.06166, 0.059]
+[20:57:12]     tf_app16_w32 d=128 win=32 fit 39,794 epoch*=1/8 sel_mAP=0.06816 curve=[0.06816, 0.06013, 0.05517, 0.06122, 0.05886, 0.0513, 0.05115, 0.05281]
+[20:57:12]   tf_app16_w32: 420,100 params/head, flat 512, history 3.1s (44s)
+[20:57:28]     tf_app8mot8_w8 d=128 win=8 fit 39,793 epoch*=5/8 sel_mAP=0.09364 curve=[0.05622, 0.05931, 0.07037, 0.06639, 0.09364, 0.08884, 0.08306, 0.0886]
+[20:57:39]     tf_app8mot8_w8 d=128 win=8 fit 39,794 epoch*=1/8 sel_mAP=0.07219 curve=[0.07219, 0.05956, 0.06115, 0.06262, 0.05993, 0.06653, 0.06708, 0.05946]
+[20:57:39]   tf_app8mot8_w8: 417,028 params/head, flat 128, history 0.7s (23s)
+[20:57:56]     tf_app16_w8_diffparam d=128 win=8 fit 39,793 epoch*=1/8 sel_mAP=0.05674 curve=[0.05674, 0.0549, 0.05053, 0.04924, 0.04792, 0.04585, 0.04489, 0.04683]
+[20:58:09]     tf_app16_w8_diffparam d=128 win=8 fit 39,794 epoch*=8/8 sel_mAP=0.08463 curve=[0.07166, 0.06778, 0.06729, 0.06343, 0.06966, 0.0616, 0.06598, 0.08463]
+[20:58:09]   tf_app16_w8_diffparam: 417,028 params/head, flat 128, history 0.7s (24s)
+[20:58:13] STAGE 3 - NEG_LABEL (labels permuted across whole CLUSTERS)
+[20:58:14]   NEG_LABEL lane_change: {'ridge_app16_w8': np.float64(1.13729), 'ridge_app16_w32': np.float64(1.2652), 'ridge_mot16_w8': np.float64(1.18158)}
+[20:58:14]   NEG_LABEL roundabout: {'ridge_app16_w8': np.float64(0.99495), 'ridge_app16_w32': np.float64(1.00051), 'ridge_mot16_w8': np.float64(1.00062)}
+[20:58:14]   NEG_LABEL intersection: {'ridge_app16_w8': np.float64(0.97428), 'ridge_app16_w32': np.float64(1.02412), 'ridge_mot16_w8': np.float64(1.00868)}
+[20:58:14] STAGE 4 - AP / AP-lift, paired vs own null and vs the reference arm
+[21:00:12]   lane_change            ridge_app128_w1: AP=0.03254 lift=1.442 P@5%=0.0404 R@5%=0.0895 (fires 3318/1498 true) vs-null +0.246  vs-ref +0.182 [-0.120,+0.679]
+[21:02:00]   lane_change             ridge_app64_w2: AP=0.03262 lift=1.445 P@5%=0.0371 R@5%=0.0821 (fires 3318/1498 true) vs-null +0.173  vs-ref +0.186 [-0.081,+0.637]
+[21:03:53]   lane_change             ridge_app32_w4: AP=0.02834 lift=1.256 P@5%=0.0232 R@5%=0.0514 (fires 3318/1498 true) vs-null +0.145  vs-ref -0.004 [-0.165,+0.164]
+[21:04:57]   lane_change             ridge_app16_w8: AP=0.02842 lift=1.259 P@5%=0.0175 R@5%=0.0387 (fires 3318/1498 true) vs-null +0.172  REFERENCE
+[21:06:56]   lane_change             ridge_app8_w16: AP=0.03466 lift=1.536 P@5%=0.0344 R@5%=0.0761 (fires 3318/1498 true) vs-null +0.268  vs-ref +0.276 [+0.034,+0.574] SEP
+[21:08:55]   lane_change             ridge_app4_w32: AP=0.03609 lift=1.599 P@5%=0.0326 R@5%=0.0721 (fires 3318/1498 true) vs-null +0.439  vs-ref +0.340 [+0.026,+0.702] SEP
+[21:10:32]   lane_change             ridge_app16_w1: AP=0.02911 lift=1.290 P@5%=0.0154 R@5%=0.0340 (fires 3318/1498 true) vs-null +0.016  vs-ref +0.030 [-0.020,+0.079]
+[21:11:52]   lane_change             ridge_app16_w4: AP=0.02904 lift=1.287 P@5%=0.0166 R@5%=0.0367 (fires 3318/1498 true) vs-null +0.103  vs-ref +0.027 [-0.006,+0.061]
+[21:13:24]   lane_change            ridge_app16_w16: AP=0.02933 lift=1.299 P@5%=0.0226 R@5%=0.0501 (fires 3318/1498 true) vs-null +0.272  vs-ref +0.040 [-0.061,+0.162]
+[21:15:16]   lane_change            ridge_app16_w32: AP=0.03044 lift=1.348 P@5%=0.0335 R@5%=0.0741 (fires 3318/1498 true) vs-null +0.323  vs-ref +0.089 [-0.126,+0.429]
+[21:16:59]   lane_change             ridge_mot16_w8: AP=0.02227 lift=0.987 P@5%=0.0271 R@5%=0.0601 (fires 3318/1498 true) vs-null +0.088  vs-ref -0.273 [-0.570,-0.012] SEP
+[21:18:23]   lane_change          ridge_app8mot8_w8: AP=0.03340 lift=1.480 P@5%=0.0280 R@5%=0.0621 (fires 3318/1498 true) vs-null +0.170  vs-ref +0.220 [-0.002,+0.482]
+[21:19:45]   lane_change        ridge_app16mot16_w8: AP=0.02835 lift=1.256 P@5%=0.0178 R@5%=0.0394 (fires 3318/1498 true) vs-null +0.146  vs-ref -0.003 [-0.062,+0.051]
+[21:21:16]   lane_change            ridge_mot16_w32: AP=0.02326 lift=1.031 P@5%=0.0280 R@5%=0.0621 (fires 3318/1498 true) vs-null -0.006  vs-ref -0.229 [-0.541,+0.088]
+[21:22:58]   lane_change   ridge_app16_w8_diffparam: AP=0.02850 lift=1.262 P@5%=0.0181 R@5%=0.0401 (fires 3318/1498 true) vs-null +0.232  vs-ref +0.003 [-0.052,+0.057]
+[21:24:46]   lane_change                CPOS_ego_w8: AP=0.04557 lift=2.019 P@5%=0.0461 R@5%=0.1021 (fires 3318/1498 true) vs-null +0.000  vs-ref +0.760 [+0.371,+1.300] SEP
+[21:26:30]   lane_change               CPOS_ego_w32: AP=0.04628 lift=2.050 P@5%=0.0422 R@5%=0.0935 (fires 3318/1498 true) vs-null +0.000  vs-ref +0.791 [+0.411,+1.295] SEP
+[21:28:04]   lane_change    CPOS_ORACLE_egofuture30: AP=0.05320 lift=2.357 P@5%=0.0546 R@5%=0.1208 (fires 3318/1498 true) vs-null +0.000  vs-ref +1.098 [+0.610,+1.942] SEP
+[21:29:25]   lane_change           tf_app16_w8_d128: AP=0.03889 lift=1.723 P@5%=0.0419 R@5%=0.0928 (fires 3318/1498 true) vs-null +0.602* vs-ref +0.463 [+0.162,+0.962] SEP
+[21:30:29]   lane_change               tf_app16_w32: AP=0.03572 lift=1.583 P@5%=0.0476 R@5%=0.1055 (fires 3318/1498 true) vs-null +0.510  vs-ref +0.323 [-0.036,+0.861]
+[21:31:40]   lane_change             tf_app8mot8_w8: AP=0.03161 lift=1.401 P@5%=0.0319 R@5%=0.0708 (fires 3318/1498 true) vs-null +0.074  vs-ref +0.141 [-0.151,+0.487]
+[21:32:49]   lane_change      tf_app16_w8_diffparam: AP=0.03342 lift=1.481 P@5%=0.0265 R@5%=0.0587 (fires 3318/1498 true) vs-null +0.313  vs-ref +0.221 [-0.073,+0.604]
+[21:32:49]   lane_change: PEAK = tf_app16_w8_d128 | separating above ridge_app16_w8: ['ridge_app8_w16', 'ridge_app4_w32', 'tf_app16_w8_d128'] | C-POS True | MDE 0.44876 -> CONFIRMED
+[21:34:02]   roundabout            ridge_app128_w1: AP=0.03951 lift=2.540 P@5%=0.0584 R@5%=0.1876 (fires 3323/1034 true) vs-null +1.558* vs-ref +0.075 [-0.582,+0.792]
+[21:35:15]   roundabout             ridge_app64_w2: AP=0.04270 lift=2.744 P@5%=0.0545 R@5%=0.1751 (fires 3323/1034 true) vs-null +1.888* vs-ref +0.280 [-0.343,+1.408]
+[21:36:30]   roundabout             ridge_app32_w4: AP=0.04374 lift=2.811 P@5%=0.0536 R@5%=0.1721 (fires 3323/1034 true) vs-null +1.953* vs-ref +0.347 [-0.116,+1.259]
+[21:37:13]   roundabout             ridge_app16_w8: AP=0.03834 lift=2.464 P@5%=0.0409 R@5%=0.1315 (fires 3323/1034 true) vs-null +1.711* REFERENCE
+[21:38:21]   roundabout             ridge_app8_w16: AP=0.03475 lift=2.234 P@5%=0.0367 R@5%=0.1180 (fires 3323/1034 true) vs-null +1.385* vs-ref -0.230 [-0.790,+0.133]
+[21:39:18]   roundabout             ridge_app4_w32: AP=0.03515 lift=2.259 P@5%=0.0491 R@5%=0.1576 (fires 3323/1034 true) vs-null +1.334* vs-ref -0.205 [-0.907,+0.903]
+[21:40:16]   roundabout             ridge_app16_w1: AP=0.03315 lift=2.131 P@5%=0.0349 R@5%=0.1122 (fires 3323/1034 true) vs-null +1.416* vs-ref -0.333 [-0.707,-0.108] SEP
+[21:41:18]   roundabout             ridge_app16_w4: AP=0.03587 lift=2.305 P@5%=0.0376 R@5%=0.1209 (fires 3323/1034 true) vs-null +1.575* vs-ref -0.159 [-0.394,-0.029] SEP
+[21:42:13]   roundabout            ridge_app16_w16: AP=0.03723 lift=2.393 P@5%=0.0469 R@5%=0.1509 (fires 3323/1034 true) vs-null +1.613* vs-ref -0.071 [-0.245,+0.231]
+[21:43:08]   roundabout            ridge_app16_w32: AP=0.04286 lift=2.755 P@5%=0.0478 R@5%=0.1538 (fires 3323/1034 true) vs-null +1.935* vs-ref +0.291 [-0.285,+1.293]
+[21:44:01]   roundabout             ridge_mot16_w8: AP=0.02197 lift=1.412 P@5%=0.0340 R@5%=0.1093 (fires 3323/1034 true) vs-null +0.528* vs-ref -1.052 [-1.878,-0.546] SEP
+[21:44:51]   roundabout          ridge_app8mot8_w8: AP=0.03655 lift=2.349 P@5%=0.0370 R@5%=0.1190 (fires 3323/1034 true) vs-null +1.509* vs-ref -0.115 [-0.491,+0.269]
+[21:45:42]   roundabout        ridge_app16mot16_w8: AP=0.03771 lift=2.423 P@5%=0.0466 R@5%=0.1499 (fires 3323/1034 true) vs-null +1.669* vs-ref -0.041 [-0.260,+0.171]
+[21:46:35]   roundabout            ridge_mot16_w32: AP=0.03334 lift=2.143 P@5%=0.0518 R@5%=0.1663 (fires 3323/1034 true) vs-null +1.258* vs-ref -0.321 [-1.044,+0.531]
+[21:47:24]   roundabout   ridge_app16_w8_diffparam: AP=0.03833 lift=2.463 P@5%=0.0478 R@5%=0.1538 (fires 3323/1034 true) vs-null +1.706* vs-ref -0.001 [-0.146,+0.260]
+[21:48:10]   roundabout                CPOS_ego_w8: AP=0.02118 lift=1.361 P@5%=0.0352 R@5%=0.1132 (fires 3323/1034 true) vs-null +0.000  vs-ref -1.103 [-1.964,-0.622] SEP
+[21:49:00]   roundabout               CPOS_ego_w32: AP=0.02387 lift=1.534 P@5%=0.0421 R@5%=0.1354 (fires 3323/1034 true) vs-null +0.000  vs-ref -0.930 [-1.729,-0.442] SEP

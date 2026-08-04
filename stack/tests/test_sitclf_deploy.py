@@ -22,6 +22,7 @@ from tanitad.eval.sitclf_deploy import (
     VISION_NULL_ARMS,
     is_vision_only,
     load_score_bundle,
+    event_anticipation_report,
     permute_labels_by_cluster,
     precision_recall_at_budget,
     regime_strata,
@@ -508,3 +509,181 @@ def test_precision_recall_ignores_invalid_and_nonfinite_rows():
 def test_precision_recall_rejects_misaligned_inputs():
     with pytest.raises(ValueError):
         precision_recall_at_budget(np.zeros(5, bool), np.zeros(4), np.ones(5, bool))
+
+
+# --------------------------------------------------------------------------- #
+# the EVENT-level, HORIZON-INDEPENDENT yardstick                              #
+# --------------------------------------------------------------------------- #
+def _two_clip_setup():
+    """Two 100-frame clips, one onset each at frame 60 (global 60 and 160)."""
+    n = 200
+    cc = np.concatenate([np.zeros(100, np.int64), np.ones(100, np.int64)])
+    onsets = np.array([60, 160])
+    return n, cc, onsets
+
+
+def test_event_report_takes_NO_label_so_it_cannot_move_with_lead_s():
+    """The property the whole instrument exists for, asserted on the signature.
+
+    `precision_recall_at_budget` and `anticipation_lead_s` both take `y`, which is a
+    function of `lead_s`; this one takes onsets. If a `y` parameter ever appears here
+    the horizon-independence claim is dead, so the check is on the parameter list.
+    """
+    import inspect
+    params = inspect.signature(event_anticipation_report).parameters
+    assert "y" not in params and "lead_s" not in params
+    assert "onsets" in params
+
+
+def test_event_recall_is_1_when_every_onset_has_an_alarm_in_its_window():
+    n, cc, onsets = _two_clip_setup()
+    s = np.zeros(n)
+    s[[55, 155]] = 10.0                       # 0.5 s before each onset
+    r = event_anticipation_report(s, np.ones(n, bool), onsets, cc,
+                                  top_frac=0.05, h_max_s=5.0)
+    assert r["n_onsets"] == 2
+    assert r["n_onsets_warned"] == 2
+    assert r["event_recall"] == 1.0
+    assert r["median_lead_s"] == 0.5
+
+
+def test_an_onset_with_no_alarm_contributes_NO_lead_not_a_zero():
+    """The recall-only defect, in the lead metric: never reward silence with 0 s."""
+    n, cc, onsets = _two_clip_setup()
+    s = np.zeros(n)
+    s[55] = 10.0                              # clip 0 warned at 0.5 s, clip 1 silent
+    s[5] = 9.0                                # clip 1's budget spent far from its onset
+    r = event_anticipation_report(s, np.ones(n, bool), onsets, cc,
+                                  top_frac=0.01, h_max_s=5.0)
+    assert r["n_onsets_warned"] == 1
+    assert r["n_onsets_no_alarm"] == 1
+    assert r["event_recall"] == 0.5
+    assert r["median_lead_s"] == 0.5          # the silent onset did NOT contribute 0.0
+
+
+def test_the_lookback_NEVER_crosses_a_clip_boundary():
+    """Without the cluster guard, clip 1's onset at frame 0+ is 'warned' by clip 0's tail."""
+    n = 200
+    cc = np.concatenate([np.zeros(100, np.int64), np.ones(100, np.int64)])
+    onsets = np.array([102])                  # 2 frames into clip 1
+    s = np.zeros(n)
+    s[98] = 10.0                              # in clip 0, 0.4 s earlier in GLOBAL index
+    r = event_anticipation_report(s, np.ones(n, bool), onsets, cc,
+                                  top_frac=0.01, h_max_s=5.0)
+    assert r["n_alarm"] == 2                  # rank budget, ties keep input order
+    assert r["n_onsets_warned"] == 0, "an alarm in the previous drive must not count"
+    assert r["median_lead_s"] is None
+
+
+def test_the_alarm_budget_is_IDENTICAL_across_arms_so_precision_is_comparable():
+    n, cc, onsets = _two_clip_setup()
+    rng = np.random.default_rng(0)
+    a = event_anticipation_report(rng.normal(size=n), np.ones(n, bool), onsets, cc,
+                                  top_frac=0.05)
+    b = event_anticipation_report(rng.normal(size=n) * 100 + 7, np.ones(n, bool),
+                                  onsets, cc, top_frac=0.05)
+    assert a["n_alarm"] == b["n_alarm"] == 10
+    assert a["n_onsets"] == b["n_onsets"]     # both denominators fixed
+
+
+def test_alarm_precision_is_reported_at_BOTH_horizons_and_the_shorter_is_no_larger():
+    n, cc, onsets = _two_clip_setup()
+    s = np.zeros(n)
+    s[[35, 55, 135, 155]] = [1.0, 4.0, 2.0, 3.0]   # 2.5 s and 0.5 s before each onset
+    r = event_anticipation_report(s, np.ones(n, bool), onsets, cc, top_frac=0.02,
+                                  h_max_s=5.0, deploy_lead_s=1.0)
+    assert r["n_alarm"] == 4
+    assert r["alarm_precision_h_max"] == 1.0       # all four within 5 s of an onset
+    assert r["alarm_precision_deploy"] == 0.5      # only the two within 1 s
+    assert r["alarm_precision_deploy"] <= r["alarm_precision_h_max"]
+
+
+def test_onsets_with_no_reachable_scorable_row_are_EXCLUDED_not_counted_as_missed():
+    """An onset at frame 0 of a clip could never be warned; charging it to recall
+    would make the metric depend on where clips happen to start."""
+    n, cc, _ = _two_clip_setup()
+    onsets = np.array([0, 60])
+    s = np.zeros(n)
+    s[55] = 10.0
+    r = event_anticipation_report(s, np.ones(n, bool), onsets, cc, top_frac=0.01)
+    assert r["n_onsets_total"] == 2
+    assert r["n_onsets_unreachable"] == 1
+    assert r["n_onsets"] == 1 and r["event_recall"] == 1.0
+
+
+def test_event_report_rejects_misaligned_inputs_and_out_of_range_onsets():
+    n, cc, onsets = _two_clip_setup()
+    with pytest.raises(ValueError):
+        event_anticipation_report(np.zeros(n), np.ones(n - 1, bool), onsets, cc)
+    with pytest.raises(ValueError):
+        event_anticipation_report(np.zeros(n), np.ones(n, bool), np.array([n + 5]), cc)
+
+
+# --------------------------------------------------------------------------- #
+# the CHANCE FLOOR — added 2026-08-04 after a MEASURED near-miss                #
+#                                                                             #
+# On the B4 substrate at a 5 % budget the uniform-random floor for             #
+# `event_recall` is 0.8088 on `lane_change`, the DEPLOYED head scores 0.1404   #
+# and the best re-tuned cell 0.4912: every real arm is far BELOW chance, and   #
+# a `+0.3333` delta between two of them reads as skill while being a move      #
+# toward randomness. The floor now travels with the number it qualifies.       #
+# --------------------------------------------------------------------------- #
+def test_event_report_publishes_a_CHANCE_FLOOR_beside_every_headline():
+    """A headline with no floor is how a sub-chance operating point hides."""
+    n, cc, onsets = _two_clip_setup()
+    r = event_anticipation_report(np.zeros(n), np.ones(n, bool), onsets, cc, top_frac=0.05)
+    for k in ("chance_event_recall", "chance_alarm_precision_h_max",
+              "chance_alarm_precision_deploy", "event_recall_vs_chance",
+              "alarm_precision_lift_h_max", "alarm_precision_lift_deploy"):
+        assert k in r, f"{k} missing — the floor must not be optional"
+
+
+def test_the_analytic_chance_recall_matches_a_uniform_random_simulation():
+    """The floor is an exact hypergeometric expectation, not an approximation."""
+    rng = np.random.default_rng(7)
+    n = 4000
+    cc = np.repeat(np.arange(8), n // 8)
+    onsets = np.arange(120, n, 250)
+    empirical = []
+    for _ in range(400):
+        r = event_anticipation_report(rng.random(n), np.ones(n, bool), onsets, cc,
+                                      top_frac=0.05, h_max_s=2.0)
+        empirical.append(r["event_recall"])
+        analytic = r["chance_event_recall"]
+    assert abs(float(np.mean(empirical)) - analytic) < 0.02, (
+        f"analytic floor {analytic} vs simulated {np.mean(empirical):.4f}")
+
+
+def test_a_dispersed_score_beats_a_concentrated_one_on_event_recall_alone():
+    """⚠️ THE DEFECT THE FLOOR EXISTS TO EXPOSE.
+
+    `event_recall` at a fixed GLOBAL budget rewards spreading alarms out. A score that
+    fires once before every onset warns everything; a score that spends the identical
+    budget inside one clip warns almost nothing — with no reference to skill at all.
+    """
+    n = 2000
+    cc = np.repeat(np.arange(4), n // 4)
+    onsets = np.arange(60, n, 100)
+    k = int(round(0.05 * n))
+    dispersed = np.zeros(n)
+    dispersed[(onsets[:, None] - np.arange(1, 1 + k // len(onsets))[None, :]).ravel()] = 1.0
+    concentrated = np.zeros(n)
+    concentrated[:k] = 1.0
+    a = event_anticipation_report(dispersed, np.ones(n, bool), onsets, cc, top_frac=0.05)
+    b = event_anticipation_report(concentrated, np.ones(n, bool), onsets, cc, top_frac=0.05)
+    assert a["n_alarm"] == b["n_alarm"]                      # identical budget
+    assert a["event_recall"] > b["event_recall"]
+    assert np.isfinite(a["chance_event_recall"])             # and the floor is quotable
+
+
+def test_a_useless_score_lands_at_a_precision_LIFT_of_about_one():
+    """The precision lift is the axis that is NOT gamed by dispersion: a random score
+    sits at 1.0 on it, so `< 1.0` is a genuine below-chance verdict."""
+    rng = np.random.default_rng(3)
+    n = 6000
+    cc = np.repeat(np.arange(6), n // 6)
+    onsets = np.arange(150, n, 300)
+    lifts = [event_anticipation_report(rng.random(n), np.ones(n, bool), onsets, cc,
+                                       top_frac=0.05)["alarm_precision_lift_h_max"]
+             for _ in range(60)]
+    assert 0.85 < float(np.mean(lifts)) < 1.15, float(np.mean(lifts))

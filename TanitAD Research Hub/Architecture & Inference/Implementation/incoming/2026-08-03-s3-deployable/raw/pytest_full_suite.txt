@@ -1,0 +1,69 @@
+........................................................................ [  3%]
+.....................ssss............................................... [  7%]
+........................................................................ [ 10%]
+........................................................................ [ 14%]
+........................................................................ [ 18%]
+........................................................................ [ 21%]
+........................................................................ [ 25%]
+........................................................................ [ 29%]
+........................................................................ [ 32%]
+........................................................................ [ 36%]
+........................................................................ [ 40%]
+......................s................................................. [ 43%]
+........................................................................ [ 47%]
+........................................................................ [ 51%]
+........................................................................ [ 54%]
+........................................................................ [ 58%]
+........................................................................ [ 61%]
+........................................................................ [ 65%]
+........................................................................ [ 69%]
+......................................................................s. [ 72%]
+........................................................................ [ 76%]
+............xx.......................................................... [ 80%]
+.............................sssss...................................... [ 83%]
+........................................................................ [ 87%]
+........................................................................ [ 91%]
+........................................................................ [ 94%]
+........................................................................ [ 98%]
+...............................                                          [100%]
+============================== warnings summary ===============================
+tests/test_accum_effective_batch.py::test_the_loss_is_DETERMINISTIC_only_once_BOTH_knob_sets_are_off
+  G:\Meine Ablage\SayBouBase\raw\Projects\TanitAD\stack\tests\test_accum_effective_batch.py:209: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+    assert float(t1) == float(t2), (float(t1), float(t2))
+
+tests/test_predictor_failfast.py::test_export_safe
+  G:\Meine Ablage\SayBouBase\raw\Projects\TanitAD\stack\tests\test_predictor_failfast.py:108: DeprecationWarning: You are using the legacy TorchScript-based ONNX export. Starting in PyTorch 2.9, the new torch.export-based ONNX exporter has become the default. Learn more about the new export logic: https://docs.pytorch.org/docs/stable/onnx_export.html. For exporting control flow: https://pytorch.org/tutorials/beginner/onnx/export_control_flow_model_to_onnx_tutorial.html
+    torch.onnx.export(m, (s, a), str(out_path),
+
+tests/test_predictor_failfast.py::test_export_safe
+tests/test_readout_onnx_pool.py::test_readout_exports_to_onnx_at_the_deployed_geometry
+  C:\Users\Admin\venvs\tanitad\Lib\site-packages\torch\onnx\_internal\torchscript_exporter\utils.py:218: DeprecationWarning: The feature will be removed. Please remove usage of this function
+    setup_onnx_logging(verbose) as log_ctx,
+
+tests/test_predictor_failfast.py::test_export_safe
+  G:\Meine Ablage\SayBouBase\raw\Projects\TanitAD\stack\tanitad\models\_validate.py:50: TracerWarning: Converting a tensor to a Python boolean might cause the trace to be incorrect. We can't record the data flow of Python values, so this value will be treated as a constant in the future. This means that the trace might not generalize to other inputs!
+    if b != ba or w != wa:
+
+tests/test_predictor_failfast.py::test_export_safe
+  G:\Meine Ablage\SayBouBase\raw\Projects\TanitAD\stack\tanitad\models\_validate.py:54: TracerWarning: Converting a tensor to a Python boolean might cause the trace to be incorrect. We can't record the data flow of Python values, so this value will be treated as a constant in the future. This means that the trace might not generalize to other inputs!
+    if w != window:
+
+tests/test_predictor_failfast.py::test_export_safe
+  G:\Meine Ablage\SayBouBase\raw\Projects\TanitAD\stack\tanitad\models\_validate.py:58: TracerWarning: Converting a tensor to a Python boolean might cause the trace to be incorrect. We can't record the data flow of Python values, so this value will be treated as a constant in the future. This means that the trace might not generalize to other inputs!
+    if s != state_dim:
+
+tests/test_predictor_failfast.py::test_export_safe
+  G:\Meine Ablage\SayBouBase\raw\Projects\TanitAD\stack\tanitad\models\_validate.py:60: TracerWarning: Converting a tensor to a Python boolean might cause the trace to be incorrect. We can't record the data flow of Python values, so this value will be treated as a constant in the future. This means that the trace might not generalize to other inputs!
+    if a != action_dim:
+
+tests/test_readout_onnx_pool.py::test_readout_exports_to_onnx_at_the_deployed_geometry
+  G:\Meine Ablage\SayBouBase\raw\Projects\TanitAD\stack\tests\test_readout_onnx_pool.py:113: DeprecationWarning: You are using the legacy TorchScript-based ONNX export. Starting in PyTorch 2.9, the new torch.export-based ONNX exporter has become the default. Learn more about the new export logic: https://docs.pytorch.org/docs/stable/onnx_export.html. For exporting control flow: https://pytorch.org/tutorials/beginner/onnx/export_control_flow_model_to_onnx_tutorial.html
+    torch.onnx.export(ro, (tok,), buf, input_names=["tokens"], output_names=["state"],
+
+tests/test_resim.py::test_sample_bundle_serves_over_fastapi
+  C:\Users\Admin\venvs\tanitad\Lib\site-packages\fastapi\testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1962 passed, 12 skipped, 2 xfailed, 10 warnings in 856.70s (0:14:16)

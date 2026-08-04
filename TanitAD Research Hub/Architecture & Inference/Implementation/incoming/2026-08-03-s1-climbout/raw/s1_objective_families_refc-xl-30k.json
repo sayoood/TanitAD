@@ -1,0 +1,1072 @@
+{
+  "experiment": "four-family decomposition of the OBJECTIVE diagnostic (POST-HOC)",
+  "arm": "refc-xl-30k",
+  "n_windows": 881,
+  "n_episodes": 40,
+  "status": "POST-HOC. Decides no registered branch. Added because an ADE delta alone is an incomplete result (binding rule, 2026-08-02).",
+  "unavailable_families": {
+    "TACTICAL_manoeuvre_decision": {
+      "n": 0,
+      "reason": "a fan bank stores no decoded manoeuvre logits"
+    },
+    "STRATEGIC": {
+      "n": 0,
+      "reason": "no route/goal label in a fan bank, and the decode used nav_mode='follow_constant' so the route input was never exercised (the C6 confound, inherited deliberately so the contrast stays paired against the published 0.4728 / 0.4714)"
+    },
+    "LONGITUDINAL_distance_keeping": {
+      "n": 0,
+      "reason": "`taniteval/lead_source.py` (the obstacle.offline join) is NOT present on this host and the repo mount was in a whole-mount READ-FAILURE state for this whole run; the val epcache carries only frames/actions/poses/maneuvers, no obstacle tracks. This is a RUN, not a work item, the moment either is reachable \u2014 coverage is ~270 of these exact 881 windows."
+    }
+  },
+  "arms": {
+    "B-both": {
+      "features": [
+        "logits",
+        "refined_logits"
+      ],
+      "ade_ce": 0.640352,
+      "ade_softade": 0.473311,
+      "tactical": {
+        "ce": {
+          "rank_acc": {
+            "mean": 0.2247,
+            "lo": 0.1739,
+            "hi": 0.2815,
+            "ci95": 0.0538,
+            "se": 0.027,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          },
+          "sel_gap": {
+            "mean": 0.4764,
+            "lo": 0.3966,
+            "hi": 0.5586,
+            "ci95": 0.081,
+            "se": 0.0402,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          },
+          "frac_sel_2x_worse": {
+            "mean": 0.5857,
+            "lo": 0.5096,
+            "hi": 0.6534,
+            "ci95": 0.0719,
+            "se": 0.0365,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          }
+        },
+        "softade": {
+          "rank_acc": {
+            "mean": 0.3099,
+            "lo": 0.2656,
+            "hi": 0.3621,
+            "ci95": 0.0483,
+            "se": 0.0245,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          },
+          "sel_gap": {
+            "mean": 0.3094,
+            "lo": 0.2425,
+            "hi": 0.3803,
+            "ci95": 0.0689,
+            "se": 0.0357,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          },
+          "frac_sel_2x_worse": {
+            "mean": 0.454,
+            "lo": 0.3853,
+            "hi": 0.5193,
+            "ci95": 0.067,
+            "se": 0.0353,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          }
+        },
+        "_note": "the goal/anchor-SELECTION half of TACTICAL. The manoeuvre-decision half needs decoded manoeuvre logits, which a fan bank does not store \u2014 reported UNAVAILABLE with n below, never silently dropped."
+      },
+      "families_softade_minus_ce": {
+        "_tag": "B-both: softADE - CE",
+        "_dt_s": 0.5,
+        "_dt_provenance": "derived from wp_steps [5, 10, 15, 20] x dt_s 0.1 -> 0.5s grid",
+        "LONGITUDINAL": {
+          "speed_abs_err_mps": {
+            "delta": -0.1816,
+            "lo": -0.2599,
+            "hi": -0.1159,
+            "ci95": 0.072,
+            "p_delta_gt0": 0.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "speed_signed_err_mps": {
+            "delta": 0.3986,
+            "lo": 0.3187,
+            "hi": 0.4791,
+            "ci95": 0.0802,
+            "p_delta_gt0": 1.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "along_abs_err_m": {
+            "delta": -0.1691,
+            "lo": -0.2429,
+            "hi": -0.1066,
+            "ci95": 0.0682,
+            "p_delta_gt0": 0.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "along_signed_err_m": {
+            "delta": 0.3755,
+            "lo": 0.3007,
+            "hi": 0.4503,
+            "ci95": 0.0748,
+            "p_delta_gt0": 1.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          }
+        },
+        "LATERAL": {
+          "cross_abs_err_m": {
+            "delta": -0.0086,
+            "lo": -0.0162,
+            "hi": -0.0014,
+            "ci95": 0.0074,
+            "p_delta_gt0": 0.003,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "heading_abs_err_deg": {
+            "delta": -0.051,
+            "lo": -0.0968,
+            "hi": -0.0078,
+            "ci95": 0.0445,
+            "p_delta_gt0": 0.009,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "curvature_abs_err_1pm": {
+            "delta": -0.0017,
+            "lo": -0.0027,
+            "hi": -0.0009,
+            "ci95": 0.0009,
+            "p_delta_gt0": 0.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "yaw_rate_abs_err_degps": {
+            "delta": -0.142,
+            "lo": -0.2054,
+            "hi": -0.0829,
+            "ci95": 0.0612,
+            "p_delta_gt0": 0.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          }
+        },
+        "TACTICAL": "see rankers.* \u2014 rank_acc / sel_gap / frac_sel_2x_worse are the goal/anchor-selection half and ARE computed",
+        "STRATEGIC": "UNAVAILABLE \u2014 see families.*._strategic_reason (no route/goal label in a fan bank), n = 0"
+      },
+      "families_softade_minus_shipped": {
+        "_tag": "B-both: softADE - shipped",
+        "_dt_s": 0.5,
+        "_dt_provenance": "derived from wp_steps [5, 10, 15, 20] x dt_s 0.1 -> 0.5s grid",
+        "LONGITUDINAL": {
+          "speed_abs_err_mps": {
+            "delta": 0.0012,
+            "lo": -0.0076,
+            "hi": 0.0102,
+            "ci95": 0.0089,
+            "p_delta_gt0": 0.59,
+            "separated": false,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "speed_signed_err_mps": {
+            "delta": -0.0298,
+            "lo": -0.0475,
+            "hi": -0.0152,
+            "ci95": 0.0162,
+            "p_delta_gt0": 0.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "along_abs_err_m": {
+            "delta": 0.0021,
+            "lo": -0.0063,
+            "hi": 0.0106,
+            "ci95": 0.0085,
+            "p_delta_gt0": 0.691,
+            "separated": false,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "along_signed_err_m": {
+            "delta": -0.0278,
+            "lo": -0.0445,
+            "hi": -0.0136,
+            "ci95": 0.0154,
+            "p_delta_gt0": 0.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          }
+        },
+        "LATERAL": {
+          "cross_abs_err_m": {
+            "delta": -0.0004,
+            "lo": -0.0029,
+            "hi": 0.0019,
+            "ci95": 0.0024,
+            "p_delta_gt0": 0.3635,
+            "separated": false,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "heading_abs_err_deg": {
+            "delta": -0.0021,
+            "lo": -0.0205,
+            "hi": 0.0122,
+            "ci95": 0.0163,
+            "p_delta_gt0": 0.41,
+            "separated": false,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "curvature_abs_err_1pm": {
+            "delta": 0.00011,
+            "lo": 1e-05,
+            "hi": 0.00025,
+            "ci95": 0.00012,
+            "p_delta_gt0": 0.9925,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap",
+            "display_dp": 5,
+            "display_note": "rendered at 5 dp, not the usual 4: at 4 dp the printed interval would have contradicted separated=True. The extra digits are a RENDERING fix, not extra precision \u2014 the estimator and the separation test are unchanged."
+          },
+          "yaw_rate_abs_err_degps": {
+            "delta": 0.0014,
+            "lo": -0.0145,
+            "hi": 0.0146,
+            "ci95": 0.0145,
+            "p_delta_gt0": 0.58,
+            "separated": false,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          }
+        },
+        "TACTICAL": "see rankers.* \u2014 rank_acc / sel_gap / frac_sel_2x_worse are the goal/anchor-selection half and ARE computed",
+        "STRATEGIC": "UNAVAILABLE \u2014 see families.*._strategic_reason (no route/goal label in a fan bank), n = 0"
+      },
+      "paired_ade_softade_minus_ce": {
+        "delta": -0.167,
+        "lo": -0.239,
+        "hi": -0.107,
+        "ci95": 0.066,
+        "p_delta_gt0": 0.0,
+        "separated": true,
+        "reducer": "mean",
+        "n_windows": 881,
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "paired_ade_softade_minus_shipped": {
+        "delta": 0.0019,
+        "lo": -0.0057,
+        "hi": 0.0096,
+        "ci95": 0.0076,
+        "p_delta_gt0": 0.6775,
+        "separated": false,
+        "reducer": "mean",
+        "n_windows": 881,
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      }
+    },
+    "D-lon+scores": {
+      "features": [
+        "logits",
+        "refined_logits",
+        "along_end_m",
+        "dv_mps",
+        "abs_dv_mps",
+        "outside_band_mps"
+      ],
+      "ade_ce": 0.513515,
+      "ade_softade": 0.467456,
+      "tactical": {
+        "ce": {
+          "rank_acc": {
+            "mean": 0.2611,
+            "lo": 0.2113,
+            "hi": 0.3156,
+            "ci95": 0.0521,
+            "se": 0.0265,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          },
+          "sel_gap": {
+            "mean": 0.3496,
+            "lo": 0.2675,
+            "hi": 0.4344,
+            "ci95": 0.0834,
+            "se": 0.0422,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          },
+          "frac_sel_2x_worse": {
+            "mean": 0.5028,
+            "lo": 0.4331,
+            "hi": 0.5685,
+            "ci95": 0.0677,
+            "se": 0.0349,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          }
+        },
+        "softade": {
+          "rank_acc": {
+            "mean": 0.3178,
+            "lo": 0.2724,
+            "hi": 0.3685,
+            "ci95": 0.048,
+            "se": 0.0246,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          },
+          "sel_gap": {
+            "mean": 0.3035,
+            "lo": 0.2273,
+            "hi": 0.3824,
+            "ci95": 0.0775,
+            "se": 0.0397,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          },
+          "frac_sel_2x_worse": {
+            "mean": 0.4449,
+            "lo": 0.373,
+            "hi": 0.5153,
+            "ci95": 0.0711,
+            "se": 0.036,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          }
+        },
+        "_note": "the goal/anchor-SELECTION half of TACTICAL. The manoeuvre-decision half needs decoded manoeuvre logits, which a fan bank does not store \u2014 reported UNAVAILABLE with n below, never silently dropped."
+      },
+      "families_softade_minus_ce": {
+        "_tag": "D-lon+scores: softADE - CE",
+        "_dt_s": 0.5,
+        "_dt_provenance": "derived from wp_steps [5, 10, 15, 20] x dt_s 0.1 -> 0.5s grid",
+        "LONGITUDINAL": {
+          "speed_abs_err_mps": {
+            "delta": -0.0385,
+            "lo": -0.0619,
+            "hi": -0.0151,
+            "ci95": 0.0234,
+            "p_delta_gt0": 0.0005,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "speed_signed_err_mps": {
+            "delta": 0.0801,
+            "lo": 0.0527,
+            "hi": 0.1087,
+            "ci95": 0.028,
+            "p_delta_gt0": 1.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "along_abs_err_m": {
+            "delta": -0.0389,
+            "lo": -0.062,
+            "hi": -0.0168,
+            "ci95": 0.0226,
+            "p_delta_gt0": 0.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "along_signed_err_m": {
+            "delta": 0.0718,
+            "lo": 0.0433,
+            "hi": 0.1011,
+            "ci95": 0.0289,
+            "p_delta_gt0": 1.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          }
+        },
+        "LATERAL": {
+          "cross_abs_err_m": {
+            "delta": -0.0158,
+            "lo": -0.0297,
+            "hi": -0.0059,
+            "ci95": 0.0119,
+            "p_delta_gt0": 0.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "heading_abs_err_deg": {
+            "delta": -0.109,
+            "lo": -0.1781,
+            "hi": -0.048,
+            "ci95": 0.065,
+            "p_delta_gt0": 0.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "curvature_abs_err_1pm": {
+            "delta": -0.0004,
+            "lo": -0.001,
+            "hi": 0.0,
+            "ci95": 0.0005,
+            "p_delta_gt0": 0.0365,
+            "separated": false,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "yaw_rate_abs_err_degps": {
+            "delta": -0.1336,
+            "lo": -0.2166,
+            "hi": -0.057,
+            "ci95": 0.0798,
+            "p_delta_gt0": 0.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          }
+        },
+        "TACTICAL": "see rankers.* \u2014 rank_acc / sel_gap / frac_sel_2x_worse are the goal/anchor-selection half and ARE computed",
+        "STRATEGIC": "UNAVAILABLE \u2014 see families.*._strategic_reason (no route/goal label in a fan bank), n = 0"
+      },
+      "families_softade_minus_shipped": {
+        "_tag": "D-lon+scores: softADE - shipped",
+        "_dt_s": 0.5,
+        "_dt_provenance": "derived from wp_steps [5, 10, 15, 20] x dt_s 0.1 -> 0.5s grid",
+        "LONGITUDINAL": {
+          "speed_abs_err_mps": {
+            "delta": -0.0063,
+            "lo": -0.0348,
+            "hi": 0.0217,
+            "ci95": 0.0283,
+            "p_delta_gt0": 0.3285,
+            "separated": false,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "speed_signed_err_mps": {
+            "delta": -0.0016,
+            "lo": -0.037,
+            "hi": 0.0309,
+            "ci95": 0.0339,
+            "p_delta_gt0": 0.4525,
+            "separated": false,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "along_abs_err_m": {
+            "delta": -0.0036,
+            "lo": -0.0304,
+            "hi": 0.0225,
+            "ci95": 0.0265,
+            "p_delta_gt0": 0.393,
+            "separated": false,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "along_signed_err_m": {
+            "delta": -0.0007,
+            "lo": -0.0337,
+            "hi": 0.0298,
+            "ci95": 0.0317,
+            "p_delta_gt0": 0.47,
+            "separated": false,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          }
+        },
+        "LATERAL": {
+          "cross_abs_err_m": {
+            "delta": -0.0009,
+            "lo": -0.0045,
+            "hi": 0.0025,
+            "ci95": 0.0035,
+            "p_delta_gt0": 0.32,
+            "separated": false,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "heading_abs_err_deg": {
+            "delta": -0.0172,
+            "lo": -0.0648,
+            "hi": 0.0191,
+            "ci95": 0.0419,
+            "p_delta_gt0": 0.2285,
+            "separated": false,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "curvature_abs_err_1pm": {
+            "delta": -0.0,
+            "lo": -0.0004,
+            "hi": 0.0003,
+            "ci95": 0.0003,
+            "p_delta_gt0": 0.4335,
+            "separated": false,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "yaw_rate_abs_err_degps": {
+            "delta": -0.0271,
+            "lo": -0.0898,
+            "hi": 0.029,
+            "ci95": 0.0594,
+            "p_delta_gt0": 0.174,
+            "separated": false,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          }
+        },
+        "TACTICAL": "see rankers.* \u2014 rank_acc / sel_gap / frac_sel_2x_worse are the goal/anchor-selection half and ARE computed",
+        "STRATEGIC": "UNAVAILABLE \u2014 see families.*._strategic_reason (no route/goal label in a fan bank), n = 0"
+      },
+      "paired_ade_softade_minus_ce": {
+        "delta": -0.0461,
+        "lo": -0.069,
+        "hi": -0.0239,
+        "ci95": 0.0226,
+        "p_delta_gt0": 0.0,
+        "separated": true,
+        "reducer": "mean",
+        "n_windows": 881,
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "paired_ade_softade_minus_shipped": {
+        "delta": -0.004,
+        "lo": -0.03,
+        "hi": 0.0216,
+        "ci95": 0.0258,
+        "p_delta_gt0": 0.3755,
+        "separated": false,
+        "reducer": "mean",
+        "n_windows": 881,
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      }
+    },
+    "C-lon": {
+      "features": [
+        "along_end_m",
+        "dv_mps",
+        "abs_dv_mps",
+        "outside_band_mps"
+      ],
+      "ade_ce": 0.958228,
+      "ade_softade": 0.961232,
+      "tactical": {
+        "ce": {
+          "rank_acc": {
+            "mean": 0.1635,
+            "lo": 0.1205,
+            "hi": 0.2118,
+            "ci95": 0.0457,
+            "se": 0.0235,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          },
+          "sel_gap": {
+            "mean": 0.7943,
+            "lo": 0.6409,
+            "hi": 0.9493,
+            "ci95": 0.1542,
+            "se": 0.0769,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          },
+          "frac_sel_2x_worse": {
+            "mean": 0.6697,
+            "lo": 0.5982,
+            "hi": 0.7384,
+            "ci95": 0.0701,
+            "se": 0.0364,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          }
+        },
+        "softade": {
+          "rank_acc": {
+            "mean": 0.1714,
+            "lo": 0.1261,
+            "hi": 0.2236,
+            "ci95": 0.0487,
+            "se": 0.0249,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          },
+          "sel_gap": {
+            "mean": 0.7973,
+            "lo": 0.6393,
+            "hi": 0.9528,
+            "ci95": 0.1568,
+            "se": 0.0782,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          },
+          "frac_sel_2x_worse": {
+            "mean": 0.6617,
+            "lo": 0.5873,
+            "hi": 0.7307,
+            "ci95": 0.0717,
+            "se": 0.037,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          }
+        },
+        "_note": "the goal/anchor-SELECTION half of TACTICAL. The manoeuvre-decision half needs decoded manoeuvre logits, which a fan bank does not store \u2014 reported UNAVAILABLE with n below, never silently dropped."
+      },
+      "families_softade_minus_ce": {
+        "_tag": "C-lon: softADE - CE",
+        "_dt_s": 0.5,
+        "_dt_provenance": "derived from wp_steps [5, 10, 15, 20] x dt_s 0.1 -> 0.5s grid",
+        "LONGITUDINAL": {
+          "speed_abs_err_mps": {
+            "delta": 0.0004,
+            "lo": -0.0032,
+            "hi": 0.0047,
+            "ci95": 0.0039,
+            "p_delta_gt0": 0.5245,
+            "separated": false,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "speed_signed_err_mps": {
+            "delta": 0.0108,
+            "lo": 0.0058,
+            "hi": 0.017,
+            "ci95": 0.0056,
+            "p_delta_gt0": 1.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "along_abs_err_m": {
+            "delta": -0.0029,
+            "lo": -0.0054,
+            "hi": -0.0003,
+            "ci95": 0.0025,
+            "p_delta_gt0": 0.011,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "along_signed_err_m": {
+            "delta": 0.0091,
+            "lo": 0.0059,
+            "hi": 0.0125,
+            "ci95": 0.0033,
+            "p_delta_gt0": 1.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          }
+        },
+        "LATERAL": {
+          "cross_abs_err_m": {
+            "delta": 0.0042,
+            "lo": -0.008,
+            "hi": 0.0169,
+            "ci95": 0.0125,
+            "p_delta_gt0": 0.7315,
+            "separated": false,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "heading_abs_err_deg": {
+            "delta": 0.0392,
+            "lo": -0.0475,
+            "hi": 0.1386,
+            "ci95": 0.093,
+            "p_delta_gt0": 0.7675,
+            "separated": false,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "curvature_abs_err_1pm": {
+            "delta": -0.0,
+            "lo": -0.0004,
+            "hi": 0.0003,
+            "ci95": 0.0004,
+            "p_delta_gt0": 0.516,
+            "separated": false,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "yaw_rate_abs_err_degps": {
+            "delta": 0.0429,
+            "lo": -0.0574,
+            "hi": 0.1509,
+            "ci95": 0.1041,
+            "p_delta_gt0": 0.774,
+            "separated": false,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          }
+        },
+        "TACTICAL": "see rankers.* \u2014 rank_acc / sel_gap / frac_sel_2x_worse are the goal/anchor-selection half and ARE computed",
+        "STRATEGIC": "UNAVAILABLE \u2014 see families.*._strategic_reason (no route/goal label in a fan bank), n = 0"
+      },
+      "families_softade_minus_shipped": {
+        "_tag": "C-lon: softADE - shipped",
+        "_dt_s": 0.5,
+        "_dt_provenance": "derived from wp_steps [5, 10, 15, 20] x dt_s 0.1 -> 0.5s grid",
+        "LONGITUDINAL": {
+          "speed_abs_err_mps": {
+            "delta": 0.0802,
+            "lo": 0.0355,
+            "hi": 0.1249,
+            "ci95": 0.0447,
+            "p_delta_gt0": 1.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "speed_signed_err_mps": {
+            "delta": 0.0029,
+            "lo": -0.062,
+            "hi": 0.0687,
+            "ci95": 0.0653,
+            "p_delta_gt0": 0.5345,
+            "separated": false,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "along_abs_err_m": {
+            "delta": 0.0386,
+            "lo": -0.0056,
+            "hi": 0.0833,
+            "ci95": 0.0444,
+            "p_delta_gt0": 0.954,
+            "separated": false,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "along_signed_err_m": {
+            "delta": -0.0481,
+            "lo": -0.1064,
+            "hi": 0.0094,
+            "ci95": 0.0579,
+            "p_delta_gt0": 0.0505,
+            "separated": false,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          }
+        },
+        "LATERAL": {
+          "cross_abs_err_m": {
+            "delta": 0.5561,
+            "lo": 0.441,
+            "hi": 0.6679,
+            "ci95": 0.1134,
+            "p_delta_gt0": 1.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "heading_abs_err_deg": {
+            "delta": 4.5476,
+            "lo": 3.554,
+            "hi": 5.5981,
+            "ci95": 1.022,
+            "p_delta_gt0": 1.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "curvature_abs_err_1pm": {
+            "delta": 0.014,
+            "lo": 0.0098,
+            "hi": 0.0185,
+            "ci95": 0.0043,
+            "p_delta_gt0": 1.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "yaw_rate_abs_err_degps": {
+            "delta": 5.3279,
+            "lo": 4.148,
+            "hi": 6.5463,
+            "ci95": 1.1991,
+            "p_delta_gt0": 1.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          }
+        },
+        "TACTICAL": "see rankers.* \u2014 rank_acc / sel_gap / frac_sel_2x_worse are the goal/anchor-selection half and ARE computed",
+        "STRATEGIC": "UNAVAILABLE \u2014 see families.*._strategic_reason (no route/goal label in a fan bank), n = 0"
+      },
+      "paired_ade_softade_minus_ce": {
+        "delta": 0.003,
+        "lo": -0.008,
+        "hi": 0.0151,
+        "ci95": 0.0115,
+        "p_delta_gt0": 0.6815,
+        "separated": false,
+        "reducer": "mean",
+        "n_windows": 881,
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "paired_ade_softade_minus_shipped": {
+        "delta": 0.4898,
+        "lo": 0.3859,
+        "hi": 0.5987,
+        "ci95": 0.1064,
+        "p_delta_gt0": 1.0,
+        "separated": true,
+        "reducer": "mean",
+        "n_windows": 881,
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      }
+    }
+  },
+  "prereg_pin": {
+    "file": "PREREG_S1_CLIMBOUT.md",
+    "bytes": 20301,
+    "sha256": "39eb43a1536f161dafdf25d79c7894bc308f1efd143992a703a05da71265adf5",
+    "git_blob_id_lf": "8dc68daf8cf6a086dba5782045af9e35f1241b85",
+    "git_blob_id_raw": "8dc68daf8cf6a086dba5782045af9e35f1241b85",
+    "pinned_at_utc": "2026-08-03T21:45:00Z",
+    "why": "the Google Drive repo mount was in a whole-mount READ-FAILURE state when this experiment ran, so the prereg could not be `git add`ed BEFORE measuring. The falsifiable object is therefore the git BLOB ID computed from the exact bytes the run used - a deterministic function of content, identical to what `git ls-files -s` must print once the file is staged. Verify: git ls-files -s -- <path> must show git_blob_id_lf.",
+    "verify": "git hash-object PREREG_S1_CLIMBOUT.md   # must equal git_blob_id_lf"
+  },
+  "estimator": "paired_episode_cluster_bootstrap / episode_cluster_bootstrap, unit = episode, n_boot = 2000; overlapping_holdout_se NEVER",
+  "wall_s": 311.9
+}

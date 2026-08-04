@@ -1,0 +1,1724 @@
+{
+ "scene": "7c72937c-c620-4776-9555-d57222c0081f",
+ "condition": "logged",
+ "arm_A": "flagship-v1",
+ "arm_B": "refc-base",
+ "ckpt_A": "/home/nvidia/models/flagship-v1-speedjerk/ckpt.pt",
+ "ckpt_B": "/home/nvidia/models/refc-base/ckpt.pt",
+ "n_windows_A": 170,
+ "n_windows_B": 170,
+ "n_clusters": 9,
+ "cluster_note": "9 DISJOINT contiguous segments of ONE clip, used as the episode-cluster bootstrap's resampling unit. Not 40 independent episodes.",
+ "degenerate_in_open_loop": [
+  "cross_track_abs_m",
+  "cross_track_signed_m",
+  "dist_to_gt_traj_m",
+  "executed_speed_err_ms",
+  "route_corridor_departure_rate",
+  "manoeuvre_exec_eq_plan"
+ ],
+ "nav_known_summary": {
+  "n_ticks": 199,
+  "known_1": 170,
+  "known_0": 29,
+  "source": "refb_labels.nav_input_v22 on the BANKED gt poses"
+ },
+ "families_A": {
+  "ADE": {
+   "ade_0_2s": {
+    "mean": 2.2431,
+    "lo": 1.6524,
+    "hi": 3.0405,
+    "ci95": 0.694,
+    "se": 0.3616,
+    "reducer": "mean",
+    "n_windows": 170,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 170,
+    "n_total": 170
+   },
+   "de_0_5s": {
+    "mean": 0.8202,
+    "lo": 0.6129,
+    "hi": 1.0758,
+    "ci95": 0.2315,
+    "se": 0.1199,
+    "reducer": "mean",
+    "n_windows": 170,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 170,
+    "n_total": 170
+   },
+   "de_1s": {
+    "mean": 1.7331,
+    "lo": 1.292,
+    "hi": 2.311,
+    "ci95": 0.5095,
+    "se": 0.2663,
+    "reducer": "mean",
+    "n_windows": 170,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 170,
+    "n_total": 170
+   },
+   "de_1_5s": {
+    "mean": 2.6829,
+    "lo": 1.9815,
+    "hi": 3.6365,
+    "ci95": 0.8275,
+    "se": 0.4319,
+    "reducer": "mean",
+    "n_windows": 170,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 170,
+    "n_total": 170
+   },
+   "de_2s": {
+    "mean": 3.7362,
+    "lo": 2.724,
+    "hi": 5.1399,
+    "ci95": 1.208,
+    "se": 0.6381,
+    "reducer": "mean",
+    "n_windows": 170,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 170,
+    "n_total": 170
+   },
+   "dist_to_gt_traj_m": {
+    "mean": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "ci95": 0.0,
+    "se": 0.0,
+    "reducer": "mean",
+    "n_windows": 170,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 170,
+    "n_total": 170
+   },
+   "note": "plan vs the log's own motion from the matched point; `dist_to_gt_traj_m` is the CLOSED-LOOP deviation of the driven path from the logged path."
+  },
+  "LONGITUDINAL": {
+   "target_speed_err_ms": {
+    "mean": -0.3737,
+    "lo": -1.2913,
+    "hi": 0.3988,
+    "ci95": 0.845,
+    "se": 0.4355,
+    "reducer": "mean",
+    "n_windows": 170,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 170,
+    "n_total": 170
+   },
+   "abs_target_speed_err_ms": {
+    "mean": 1.5897,
+    "lo": 1.1881,
+    "hi": 2.0622,
+    "ci95": 0.437,
+    "se": 0.2254,
+    "reducer": "mean",
+    "n_windows": 170,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 170,
+    "n_total": 170
+   },
+   "executed_speed_err_ms": {
+    "mean": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "ci95": 0.0,
+    "se": 0.0,
+    "reducer": "mean",
+    "n_windows": 170,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 170,
+    "n_total": 170
+   },
+   "along_track_ade_m": {
+    "mean": 2.1574,
+    "lo": 1.5528,
+    "hi": 2.9802,
+    "ci95": 0.7137,
+    "se": 0.3772,
+    "reducer": "mean",
+    "n_windows": 170,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 170,
+    "n_total": 170
+   },
+   "along_track_0_5s_m": {
+    "mean": 0.8165,
+    "lo": 0.6094,
+    "hi": 1.0736,
+    "ci95": 0.2321,
+    "se": 0.1205,
+    "reducer": "mean",
+    "n_windows": 170,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 170,
+    "n_total": 170
+   },
+   "along_track_1s_m": {
+    "mean": 1.7037,
+    "lo": 1.257,
+    "hi": 2.2977,
+    "ci95": 0.5204,
+    "se": 0.271,
+    "reducer": "mean",
+    "n_windows": 170,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 170,
+    "n_total": 170
+   },
+   "along_track_1_5s_m": {
+    "mean": 2.5878,
+    "lo": 1.8664,
+    "hi": 3.5705,
+    "ci95": 0.852,
+    "se": 0.4498,
+    "reducer": "mean",
+    "n_windows": 170,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 170,
+    "n_total": 170
+   },
+   "along_track_2s_m": {
+    "mean": 3.5218,
+    "lo": 2.4373,
+    "hi": 5.0229,
+    "ci95": 1.2928,
+    "se": 0.6797,
+    "reducer": "mean",
+    "n_windows": 170,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 170,
+    "n_total": 170
+   },
+   "distance_keeping": {
+    "n": 0,
+    "reason": "NOT MEASURED \u2014 no annotated agent was observed on any window. That is what you get both from a scene with no agents AND from running without `--tracks`, so this is reported as an unmeasured family rather than as a property of the scene. Re-run with `--tracks <sequence_tracks.json>` to distinguish them.",
+    "n_actor_observations": 0
+   }
+  },
+  "LATERAL": {
+   "heading_err_rad": {
+    "mean": 0.1484,
+    "lo": 0.072,
+    "hi": 0.2446,
+    "ci95": 0.0863,
+    "se": 0.0448,
+    "reducer": "mean",
+    "n_windows": 170,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 170,
+    "n_total": 170
+   },
+   "curvature_err_1pm": {
+    "mean": 0.0192,
+    "lo": 0.0092,
+    "hi": 0.0289,
+    "ci95": 0.0099,
+    "se": 0.005,
+    "reducer": "mean",
+    "n_windows": 170,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 170,
+    "n_total": 170
+   },
+   "yawrate_err_rads": {
+    "mean": 0.1132,
+    "lo": 0.0313,
+    "hi": 0.2248,
+    "ci95": 0.0968,
+    "se": 0.0499,
+    "reducer": "mean",
+    "n_windows": 170,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 170,
+    "n_total": 170
+   },
+   "cross_track_abs_m": {
+    "mean": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "ci95": 0.0,
+    "se": 0.0,
+    "reducer": "mean",
+    "n_windows": 170,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 170,
+    "n_total": 170
+   },
+   "cross_track_signed_m": {
+    "mean": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "ci95": 0.0,
+    "se": 0.0,
+    "reducer": "mean",
+    "n_windows": 170,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 170,
+    "n_total": 170
+   },
+   "lateral_ade_m": {
+    "mean": 0.3353,
+    "lo": 0.1703,
+    "hi": 0.5185,
+    "ci95": 0.1741,
+    "se": 0.089,
+    "reducer": "mean",
+    "n_windows": 170,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 170,
+    "n_total": 170
+   }
+  },
+  "TACTICAL": {
+   "manoeuvre_plan_eq_logged": {
+    "mean": 0.4882,
+    "lo": 0.2924,
+    "hi": 0.7054,
+    "ci95": 0.2065,
+    "se": 0.1049,
+    "reducer": "mean",
+    "n_windows": 170,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 170,
+    "n_total": 170
+   },
+   "manoeuvre_exec_eq_plan": {
+    "mean": 0.5,
+    "lo": 0.2,
+    "hi": 0.8889,
+    "ci95": 0.3444,
+    "se": 0.1716,
+    "reducer": "mean",
+    "n_windows": 10,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 10,
+    "n_total": 170
+   },
+   "plan_class_share": {
+    "lane_keep": 0.1706,
+    "turn_left": 0.3588,
+    "turn_right": 0.0,
+    "accelerate": 0.2647,
+    "brake_stop": 0.2059
+   },
+   "logged_class_share": {
+    "lane_keep": 0.1353,
+    "turn_left": 0.3235,
+    "turn_right": 0.0,
+    "accelerate": 0.5412,
+    "brake_stop": 0.0
+   },
+   "confusion_logged_x_planned": [
+    [
+     8,
+     5,
+     0,
+     8,
+     2
+    ],
+    [
+     6,
+     41,
+     0,
+     3,
+     5
+    ],
+    [
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    [
+     15,
+     15,
+     0,
+     34,
+     28
+    ],
+    [
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   ],
+   "confusion_planned_x_executed": [
+    [
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    [
+     0,
+     2,
+     0,
+     0,
+     0
+    ],
+    [
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    [
+     2,
+     1,
+     0,
+     3,
+     0
+    ],
+    [
+     0,
+     0,
+     0,
+     2,
+     0
+    ]
+   ],
+   "class_names": [
+    "lane_keep",
+    "turn_left",
+    "turn_right",
+    "accelerate",
+    "brake_stop"
+   ],
+   "head_eq_plan": {
+    "mean": 0.5176,
+    "lo": 0.3117,
+    "hi": 0.7427,
+    "ci95": 0.2155,
+    "se": 0.1106,
+    "reducer": "mean",
+    "n_windows": 170,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 170,
+    "n_total": 170
+   },
+   "head_eq_logged": {
+    "mean": 0.5765,
+    "lo": 0.3764,
+    "hi": 0.7831,
+    "ci95": 0.2033,
+    "se": 0.1048,
+    "reducer": "mean",
+    "n_windows": 170,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 170,
+    "n_total": 170
+   },
+   "head_class_share": {
+    "lane_keep": 0.0941,
+    "turn_left": 0.3294,
+    "turn_right": 0.0,
+    "accelerate": 0.3882,
+    "brake_stop": 0.1882
+   },
+   "head_vs_logged_per_class_PR": {
+    "lane_keep": {
+     "precision": 0.0,
+     "recall": 0.0,
+     "f1": 0.0,
+     "support_n_true": 23,
+     "n_fires": 16
+    },
+    "turn_left": {
+     "precision": 0.7857,
+     "recall": 0.8,
+     "f1": 0.7928,
+     "support_n_true": 55,
+     "n_fires": 56
+    },
+    "turn_right": {
+     "precision": null,
+     "recall": null,
+     "f1": 0.0,
+     "support_n_true": 0,
+     "n_fires": 0
+    },
+    "accelerate": {
+     "precision": 0.8182,
+     "recall": 0.587,
+     "f1": 0.6835,
+     "support_n_true": 92,
+     "n_fires": 66
+    },
+    "brake_stop": {
+     "precision": 0.0,
+     "recall": null,
+     "f1": 0.0,
+     "support_n_true": 0,
+     "n_fires": 32
+    },
+    "_macro_f1": 0.2953,
+    "_accuracy": 0.5765,
+    "_majority_class_baseline_acc": 0.5412,
+    "_n": 170,
+    "_n_input": 170,
+    "_n_dropped_unpaired": 0
+   },
+   "plan_vs_logged_per_class_PR": {
+    "lane_keep": {
+     "precision": 0.2759,
+     "recall": 0.3478,
+     "f1": 0.3077,
+     "support_n_true": 23,
+     "n_fires": 29
+    },
+    "turn_left": {
+     "precision": 0.6721,
+     "recall": 0.7455,
+     "f1": 0.7069,
+     "support_n_true": 55,
+     "n_fires": 61
+    },
+    "turn_right": {
+     "precision": null,
+     "recall": null,
+     "f1": 0.0,
+     "support_n_true": 0,
+     "n_fires": 0
+    },
+    "accelerate": {
+     "precision": 0.7556,
+     "recall": 0.3696,
+     "f1": 0.4964,
+     "support_n_true": 92,
+     "n_fires": 45
+    },
+    "brake_stop": {
+     "precision": 0.0,
+     "recall": null,
+     "f1": 0.0,
+     "support_n_true": 0,
+     "n_fires": 35
+    },
+    "_macro_f1": 0.3022,
+    "_accuracy": 0.4882,
+    "_majority_class_baseline_acc": 0.5412,
+    "_n": 170,
+    "_n_input": 170,
+    "_n_dropped_unpaired": 0
+   },
+   "head_stamp_key": [
+    "maneuver_logits"
+   ]
+  },
+  "STRATEGIC": {
+   "route_corridor_departure_rate": {
+    "mean": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "ci95": 0.0,
+    "se": 0.0,
+    "reducer": "mean",
+    "n_windows": 170,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 170,
+    "n_total": 170
+   },
+   "route_logged_share": {
+    "left": 0.7118,
+    "straight": 0.2,
+    "right": 0.0,
+    "unknown": 0.0882
+   },
+   "route_label_valid_rate": 0.9118,
+   "route_derivation_reason_share": {
+    "tight_transient": 0.7118,
+    "gray_zone": 0.0882,
+    "road_following": 0.2
+   },
+   "logged_net_dyaw_rad": {
+    "mean": 1.3799,
+    "lo": 0.6622,
+    "hi": 2.018,
+    "ci95": 0.6779,
+    "se": 0.3492,
+    "reducer": "mean",
+    "n_windows": 170,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 170,
+    "n_total": 170
+   },
+   "route_label_error_rate": 0.0,
+   "route_head_eq_logged": {
+    "mean": 1.0,
+    "lo": 1.0,
+    "hi": 1.0,
+    "ci95": 0.0,
+    "se": 0.0,
+    "reducer": "mean",
+    "n_windows": 155,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 155,
+    "n_total": 155,
+    "CIRCULAR_NAV_ECHO": true,
+    "do_not_quote": "the route head is a deterministic function of the nav input"
+   },
+   "route_head_nav_echo_check": {
+    "head_is_deterministic_function_of_nav": true,
+    "identifiable": true,
+    "n_distinct_nav": 2,
+    "n_distinct_head": 2,
+    "nav_to_head_map": {
+     "1": [
+      0
+     ],
+     "0": [
+      1
+     ]
+    },
+    "n": 170,
+    "verdict": "CIRCULAR \u2014 route_head_eq_logged above reproduces the nav command the policy was GIVEN and is NOT evidence of strategic skill; do not quote it"
+   },
+   "route_head_share": {
+    "left": 0.7118,
+    "straight": 0.2882,
+    "right": 0.0,
+    "CIRCULAR_NAV_ECHO": true,
+    "do_not_quote": "the route head is a deterministic function of the nav input"
+   },
+   "route_head_stamp_key": [
+    "s_route_logits"
+   ],
+   "route_head_side_eq_graded_proxy": {
+    "mean": 0.9235,
+    "lo": 0.8254,
+    "hi": 1.0,
+    "ci95": 0.0873,
+    "se": 0.0468,
+    "reducer": "mean",
+    "n_windows": 170,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 170,
+    "n_total": 170,
+    "CIRCULAR_NAV_ECHO": true,
+    "do_not_quote": "the route head is a deterministic function of the nav input"
+   },
+   "route_head_side_note": "PROXY, not the trained target: agreement between the route head's lateral side and sign(cumulative logged heading change) with a 5 deg deadband. Reported because the discrete route class is UNKNOWN on this clip.",
+   "route_head_side_per_class_PR": {
+    "straight": {
+     "precision": 0.7347,
+     "recall": 1.0,
+     "f1": 0.8471,
+     "support_n_true": 36,
+     "n_fires": 49
+    },
+    "left": {
+     "precision": 1.0,
+     "recall": 0.903,
+     "f1": 0.949,
+     "support_n_true": 134,
+     "n_fires": 121
+    },
+    "right": {
+     "precision": null,
+     "recall": null,
+     "f1": 0.0,
+     "support_n_true": 0,
+     "n_fires": 0
+    },
+    "_macro_f1": 0.5987,
+    "_accuracy": 0.9235,
+    "_majority_class_baseline_acc": 0.7882,
+    "_n": 170,
+    "_n_input": 170,
+    "_n_dropped_unpaired": 0,
+    "CIRCULAR_NAV_ECHO": true,
+    "do_not_quote": "the route head is a deterministic function of the nav input"
+   },
+   "route_head_vs_logged_per_class_PR": {
+    "left": {
+     "precision": 1.0,
+     "recall": 1.0,
+     "f1": 1.0,
+     "support_n_true": 121,
+     "n_fires": 121
+    },
+    "straight": {
+     "precision": 1.0,
+     "recall": 1.0,
+     "f1": 1.0,
+     "support_n_true": 34,
+     "n_fires": 34
+    },
+    "right": {
+     "precision": null,
+     "recall": null,
+     "f1": 0.0,
+     "support_n_true": 0,
+     "n_fires": 0
+    },
+    "unknown": {
+     "precision": null,
+     "recall": null,
+     "f1": 0.0,
+     "support_n_true": 0,
+     "n_fires": 0
+    },
+    "_macro_f1": 0.5,
+    "_accuracy": 1.0,
+    "_majority_class_baseline_acc": 0.7806,
+    "_n": 155,
+    "_n_input": 155,
+    "_n_dropped_unpaired": 0,
+    "CIRCULAR_NAV_ECHO": true,
+    "do_not_quote": "the route head is a deterministic function of the nav input"
+   },
+   "route_progress_rel": {
+    "mean": 0.9909,
+    "lo": 0.9782,
+    "hi": 0.9996,
+    "ci95": 0.0107,
+    "se": 0.0059,
+    "reducer": "mean",
+    "n_windows": 8,
+    "n_episodes": 8,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 8,
+    "n_total": 8
+   },
+   "route_progress_note": "straight-line distance the ego covered divided by the logged path length over the same tick span; one value per rollout, so the cluster IS the window here (n_windows == n_episodes by construction)."
+  }
+ },
+ "families_B": {
+  "ADE": {
+   "ade_0_2s": {
+    "mean": 0.76,
+    "lo": 0.5366,
+    "hi": 0.9828,
+    "ci95": 0.2231,
+    "se": 0.115,
+    "reducer": "mean",
+    "n_windows": 170,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 170,
+    "n_total": 170
+   },
+   "de_0_5s": {
+    "mean": 0.1124,
+    "lo": 0.0784,
+    "hi": 0.1536,
+    "ci95": 0.0376,
+    "se": 0.0198,
+    "reducer": "mean",
+    "n_windows": 170,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 170,
+    "n_total": 170
+   },
+   "de_1s": {
+    "mean": 0.3941,
+    "lo": 0.2638,
+    "hi": 0.5304,
+    "ci95": 0.1333,
+    "se": 0.0696,
+    "reducer": "mean",
+    "n_windows": 170,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 170,
+    "n_total": 170
+   },
+   "de_1_5s": {
+    "mean": 0.8977,
+    "lo": 0.6168,
+    "hi": 1.1827,
+    "ci95": 0.283,
+    "se": 0.1451,
+    "reducer": "mean",
+    "n_windows": 170,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 170,
+    "n_total": 170
+   },
+   "de_2s": {
+    "mean": 1.6358,
+    "lo": 1.1889,
+    "hi": 2.0802,
+    "ci95": 0.4457,
+    "se": 0.2294,
+    "reducer": "mean",
+    "n_windows": 170,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 170,
+    "n_total": 170
+   },
+   "dist_to_gt_traj_m": {
+    "mean": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "ci95": 0.0,
+    "se": 0.0,
+    "reducer": "mean",
+    "n_windows": 170,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 170,
+    "n_total": 170
+   },
+   "note": "plan vs the log's own motion from the matched point; `dist_to_gt_traj_m` is the CLOSED-LOOP deviation of the driven path from the logged path."
+  },
+  "LONGITUDINAL": {
+   "target_speed_err_ms": {
+    "mean": 0.0639,
+    "lo": -0.0665,
+    "hi": 0.2088,
+    "ci95": 0.1377,
+    "se": 0.071,
+    "reducer": "mean",
+    "n_windows": 170,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 170,
+    "n_total": 170
+   },
+   "abs_target_speed_err_ms": {
+    "mean": 0.1885,
+    "lo": 0.1189,
+    "hi": 0.282,
+    "ci95": 0.0815,
+    "se": 0.0433,
+    "reducer": "mean",
+    "n_windows": 170,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 170,
+    "n_total": 170
+   },
+   "executed_speed_err_ms": {
+    "mean": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "ci95": 0.0,
+    "se": 0.0,
+    "reducer": "mean",
+    "n_windows": 170,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 170,
+    "n_total": 170
+   },
+   "along_track_ade_m": {
+    "mean": 0.6785,
+    "lo": 0.4316,
+    "hi": 0.9369,
+    "ci95": 0.2526,
+    "se": 0.1312,
+    "reducer": "mean",
+    "n_windows": 170,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 170,
+    "n_total": 170
+   },
+   "along_track_0_5s_m": {
+    "mean": 0.1077,
+    "lo": 0.0723,
+    "hi": 0.1508,
+    "ci95": 0.0393,
+    "se": 0.0207,
+    "reducer": "mean",
+    "n_windows": 170,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 170,
+    "n_total": 170
+   },
+   "along_track_1s_m": {
+    "mean": 0.3688,
+    "lo": 0.2345,
+    "hi": 0.5191,
+    "ci95": 0.1423,
+    "se": 0.0738,
+    "reducer": "mean",
+    "n_windows": 170,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 170,
+    "n_total": 170
+   },
+   "along_track_1_5s_m": {
+    "mean": 0.814,
+    "lo": 0.519,
+    "hi": 1.1355,
+    "ci95": 0.3082,
+    "se": 0.1603,
+    "reducer": "mean",
+    "n_windows": 170,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 170,
+    "n_total": 170
+   },
+   "along_track_2s_m": {
+    "mean": 1.4235,
+    "lo": 0.8959,
+    "hi": 1.9698,
+    "ci95": 0.537,
+    "se": 0.2757,
+    "reducer": "mean",
+    "n_windows": 170,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 170,
+    "n_total": 170
+   },
+   "distance_keeping": {
+    "n": 0,
+    "reason": "NOT MEASURED \u2014 no annotated agent was observed on any window. That is what you get both from a scene with no agents AND from running without `--tracks`, so this is reported as an unmeasured family rather than as a property of the scene. Re-run with `--tracks <sequence_tracks.json>` to distinguish them.",
+    "n_actor_observations": 0
+   }
+  },
+  "LATERAL": {
+   "heading_err_rad": {
+    "mean": 0.1436,
+    "lo": 0.0525,
+    "hi": 0.2433,
+    "ci95": 0.0954,
+    "se": 0.0487,
+    "reducer": "mean",
+    "n_windows": 170,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 170,
+    "n_total": 170
+   },
+   "curvature_err_1pm": {
+    "mean": 0.0402,
+    "lo": 0.0087,
+    "hi": 0.0887,
+    "ci95": 0.04,
+    "se": 0.0224,
+    "reducer": "mean",
+    "n_windows": 170,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 170,
+    "n_total": 170
+   },
+   "yawrate_err_rads": {
+    "mean": 0.1006,
+    "lo": 0.0196,
+    "hi": 0.2158,
+    "ci95": 0.0981,
+    "se": 0.0508,
+    "reducer": "mean",
+    "n_windows": 170,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 170,
+    "n_total": 170
+   },
+   "cross_track_abs_m": {
+    "mean": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "ci95": 0.0,
+    "se": 0.0,
+    "reducer": "mean",
+    "n_windows": 170,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 170,
+    "n_total": 170
+   },
+   "cross_track_signed_m": {
+    "mean": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "ci95": 0.0,
+    "se": 0.0,
+    "reducer": "mean",
+    "n_windows": 170,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 170,
+    "n_total": 170
+   },
+   "lateral_ade_m": {
+    "mean": 0.1721,
+    "lo": 0.0592,
+    "hi": 0.3023,
+    "ci95": 0.1215,
+    "se": 0.0628,
+    "reducer": "mean",
+    "n_windows": 170,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 170,
+    "n_total": 170
+   }
+  },
+  "TACTICAL": {
+   "manoeuvre_plan_eq_logged": {
+    "mean": 0.4412,
+    "lo": 0.2282,
+    "hi": 0.6721,
+    "ci95": 0.2219,
+    "se": 0.1163,
+    "reducer": "mean",
+    "n_windows": 170,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 170,
+    "n_total": 170
+   },
+   "manoeuvre_exec_eq_plan": {
+    "mean": 0.3,
+    "lo": 0.0833,
+    "hi": 0.6667,
+    "ci95": 0.2917,
+    "se": 0.1549,
+    "reducer": "mean",
+    "n_windows": 10,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 10,
+    "n_total": 170
+   },
+   "plan_class_share": {
+    "lane_keep": 0.3353,
+    "turn_left": 0.3941,
+    "turn_right": 0.0353,
+    "accelerate": 0.1412,
+    "brake_stop": 0.0941
+   },
+   "logged_class_share": {
+    "lane_keep": 0.1353,
+    "turn_left": 0.3235,
+    "turn_right": 0.0,
+    "accelerate": 0.5412,
+    "brake_stop": 0.0
+   },
+   "confusion_logged_x_planned": [
+    [
+     9,
+     9,
+     2,
+     0,
+     3
+    ],
+    [
+     6,
+     42,
+     0,
+     0,
+     7
+    ],
+    [
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    [
+     42,
+     16,
+     4,
+     24,
+     6
+    ],
+    [
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   ],
+   "confusion_planned_x_executed": [
+    [
+     0,
+     0,
+     0,
+     3,
+     0
+    ],
+    [
+     2,
+     2,
+     0,
+     0,
+     0
+    ],
+    [
+     0,
+     0,
+     0,
+     1,
+     0
+    ],
+    [
+     0,
+     0,
+     0,
+     1,
+     0
+    ],
+    [
+     0,
+     1,
+     0,
+     0,
+     0
+    ]
+   ],
+   "class_names": [
+    "lane_keep",
+    "turn_left",
+    "turn_right",
+    "accelerate",
+    "brake_stop"
+   ],
+   "head_eq_plan": {
+    "mean": 0.5882,
+    "lo": 0.3757,
+    "hi": 0.7948,
+    "ci95": 0.2096,
+    "se": 0.1094,
+    "reducer": "mean",
+    "n_windows": 170,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 170,
+    "n_total": 170
+   },
+   "head_eq_logged": {
+    "mean": 0.3941,
+    "lo": 0.16,
+    "hi": 0.6335,
+    "ci95": 0.2368,
+    "se": 0.118,
+    "reducer": "mean",
+    "n_windows": 170,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 170,
+    "n_total": 170
+   },
+   "head_class_share": {
+    "lane_keep": 0.6471,
+    "turn_left": 0.3529,
+    "turn_right": 0.0,
+    "accelerate": 0.0,
+    "brake_stop": 0.0
+   },
+   "head_vs_logged_per_class_PR": {
+    "lane_keep": {
+     "precision": 0.2091,
+     "recall": 1.0,
+     "f1": 0.3459,
+     "support_n_true": 23,
+     "n_fires": 110
+    },
+    "turn_left": {
+     "precision": 0.7333,
+     "recall": 0.8,
+     "f1": 0.7652,
+     "support_n_true": 55,
+     "n_fires": 60
+    },
+    "turn_right": {
+     "precision": null,
+     "recall": null,
+     "f1": 0.0,
+     "support_n_true": 0,
+     "n_fires": 0
+    },
+    "accelerate": {
+     "precision": null,
+     "recall": 0.0,
+     "f1": 0.0,
+     "support_n_true": 92,
+     "n_fires": 0
+    },
+    "brake_stop": {
+     "precision": null,
+     "recall": null,
+     "f1": 0.0,
+     "support_n_true": 0,
+     "n_fires": 0
+    },
+    "_macro_f1": 0.2222,
+    "_accuracy": 0.3941,
+    "_majority_class_baseline_acc": 0.5412,
+    "_n": 170,
+    "_n_input": 170,
+    "_n_dropped_unpaired": 0
+   },
+   "plan_vs_logged_per_class_PR": {
+    "lane_keep": {
+     "precision": 0.1579,
+     "recall": 0.3913,
+     "f1": 0.225,
+     "support_n_true": 23,
+     "n_fires": 57
+    },
+    "turn_left": {
+     "precision": 0.6269,
+     "recall": 0.7636,
+     "f1": 0.6885,
+     "support_n_true": 55,
+     "n_fires": 67
+    },
+    "turn_right": {
+     "precision": 0.0,
+     "recall": null,
+     "f1": 0.0,
+     "support_n_true": 0,
+     "n_fires": 6
+    },
+    "accelerate": {
+     "precision": 1.0,
+     "recall": 0.2609,
+     "f1": 0.4138,
+     "support_n_true": 92,
+     "n_fires": 24
+    },
+    "brake_stop": {
+     "precision": 0.0,
+     "recall": null,
+     "f1": 0.0,
+     "support_n_true": 0,
+     "n_fires": 16
+    },
+    "_macro_f1": 0.2655,
+    "_accuracy": 0.4412,
+    "_majority_class_baseline_acc": 0.5412,
+    "_n": 170,
+    "_n_input": 170,
+    "_n_dropped_unpaired": 0
+   },
+   "head_stamp_key": [
+    "maneuver_logits"
+   ]
+  },
+  "STRATEGIC": {
+   "route_corridor_departure_rate": {
+    "mean": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "ci95": 0.0,
+    "se": 0.0,
+    "reducer": "mean",
+    "n_windows": 170,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 170,
+    "n_total": 170
+   },
+   "route_logged_share": {
+    "left": 0.7118,
+    "straight": 0.2,
+    "right": 0.0,
+    "unknown": 0.0882
+   },
+   "route_label_valid_rate": 0.9118,
+   "route_derivation_reason_share": {
+    "tight_transient": 0.7118,
+    "gray_zone": 0.0882,
+    "road_following": 0.2
+   },
+   "logged_net_dyaw_rad": {
+    "mean": 1.3799,
+    "lo": 0.6622,
+    "hi": 2.018,
+    "ci95": 0.6779,
+    "se": 0.3492,
+    "reducer": "mean",
+    "n_windows": 170,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 170,
+    "n_total": 170
+   },
+   "route_label_error_rate": 0.0,
+   "route_head_eq_logged": {
+    "mean": 0.7613,
+    "lo": 0.5437,
+    "hi": 0.9736,
+    "ci95": 0.215,
+    "se": 0.1094,
+    "reducer": "mean",
+    "n_windows": 155,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 155,
+    "n_total": 155
+   },
+   "route_head_nav_echo_check": {
+    "head_is_deterministic_function_of_nav": false,
+    "identifiable": true,
+    "n_distinct_nav": 2,
+    "n_distinct_head": 3,
+    "nav_to_head_map": {
+     "1": [
+      0,
+      1,
+      2
+     ],
+     "0": [
+      0,
+      1
+     ]
+    },
+    "n": 170,
+    "verdict": "not an echo \u2014 the head is not a function of nav on these windows"
+   },
+   "route_head_share": {
+    "left": 0.5706,
+    "straight": 0.3882,
+    "right": 0.0412
+   },
+   "route_head_stamp_key": [
+    "route_logits"
+   ],
+   "route_head_side_eq_graded_proxy": {
+    "mean": 0.7824,
+    "lo": 0.5755,
+    "hi": 0.9764,
+    "ci95": 0.2004,
+    "se": 0.1045,
+    "reducer": "mean",
+    "n_windows": 170,
+    "n_episodes": 9,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 170,
+    "n_total": 170
+   },
+   "route_head_side_note": "PROXY, not the trained target: agreement between the route head's lateral side and sign(cumulative logged heading change) with a 5 deg deadband. Reported because the discrete route class is UNKNOWN on this clip.",
+   "route_head_side_per_class_PR": {
+    "straight": {
+     "precision": 0.5455,
+     "recall": 1.0,
+     "f1": 0.7059,
+     "support_n_true": 36,
+     "n_fires": 66
+    },
+    "left": {
+     "precision": 1.0,
+     "recall": 0.7239,
+     "f1": 0.8398,
+     "support_n_true": 134,
+     "n_fires": 97
+    },
+    "right": {
+     "precision": 0.0,
+     "recall": null,
+     "f1": 0.0,
+     "support_n_true": 0,
+     "n_fires": 7
+    },
+    "_macro_f1": 0.5152,
+    "_accuracy": 0.7824,
+    "_majority_class_baseline_acc": 0.7882,
+    "_n": 170,
+    "_n_input": 170,
+    "_n_dropped_unpaired": 0
+   },
+   "route_head_vs_logged_per_class_PR": {
+    "left": {
+     "precision": 1.0,
+     "recall": 0.6942,
+     "f1": 0.8195,
+     "support_n_true": 121,
+     "n_fires": 84
+    },
+    "straight": {
+     "precision": 0.5312,
+     "recall": 1.0,
+     "f1": 0.6939,
+     "support_n_true": 34,
+     "n_fires": 64
+    },
+    "right": {
+     "precision": 0.0,
+     "recall": null,
+     "f1": 0.0,
+     "support_n_true": 0,
+     "n_fires": 7
+    },
+    "unknown": {
+     "precision": null,
+     "recall": null,
+     "f1": 0.0,
+     "support_n_true": 0,
+     "n_fires": 0
+    },
+    "_macro_f1": 0.3783,
+    "_accuracy": 0.7613,
+    "_majority_class_baseline_acc": 0.7806,
+    "_n": 155,
+    "_n_input": 155,
+    "_n_dropped_unpaired": 0
+   },
+   "route_progress_rel": {
+    "mean": 0.9909,
+    "lo": 0.9782,
+    "hi": 0.9996,
+    "ci95": 0.0107,
+    "se": 0.0059,
+    "reducer": "mean",
+    "n_windows": 8,
+    "n_episodes": 8,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_used": 8,
+    "n_total": 8
+   },
+   "route_progress_note": "straight-line distance the ego covered divided by the logged path length over the same tick span; one value per rollout, so the cluster IS the window here (n_windows == n_episodes by construction)."
+  }
+ },
+ "strategic_by_known_A": {
+  "n_windows": 170,
+  "nav_known_1_count": 155,
+  "nav_known_0_count": 15,
+  "nav_known_0_share_of_follow": 0.3061,
+  "route_scorable_count": 155,
+  "n_follow_windows": 49,
+  "known_1": {
+   "mean": 1.0,
+   "lo": 1.0,
+   "hi": 1.0,
+   "ci95": 0.0,
+   "se": 0.0,
+   "reducer": "mean",
+   "n_windows": 155,
+   "n_episodes": 9,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap",
+   "n_used": 155,
+   "n_total": 170
+  },
+  "known_0": {
+   "n": 0,
+   "reason": "no scorable window in this stratum"
+  }
+ },
+ "strategic_by_known_B": {
+  "n_windows": 170,
+  "nav_known_1_count": 155,
+  "nav_known_0_count": 15,
+  "nav_known_0_share_of_follow": 0.3061,
+  "route_scorable_count": 155,
+  "n_follow_windows": 49,
+  "known_1": {
+   "mean": 0.7613,
+   "lo": 0.5437,
+   "hi": 0.9736,
+   "ci95": 0.215,
+   "se": 0.1094,
+   "reducer": "mean",
+   "n_windows": 155,
+   "n_episodes": 9,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap",
+   "n_used": 155,
+   "n_total": 170
+  },
+  "known_0": {
+   "n": 0,
+   "reason": "no scorable window in this stratum"
+  }
+ },
+ "conditioning_echo_control_A": {
+  "n_observations": 181,
+  "n_usable": 181,
+  "n_observations_whose_answer_MOVED_with_the_input": 181,
+  "echo_rate": 1.0,
+  "ECHO": true,
+  "DETERMINISTIC_ECHO": true,
+  "input_to_output_map_if_deterministic": {
+   "0": 1,
+   "1": 0,
+   "2": 2
+  },
+  "\u26d4_verdict": "the route head is a relabelling of its own conditioning input: it changes answer when ONLY the input changes and the observation does not. Any accuracy scored while that input is an ORACLE is the oracle, not the arm.",
+  "\u2b50_why_this_is_not_the_constant_guard": "an echo is NOT constant and BEATS every constant predictor, so BEST_CONSTANT cannot catch it. It is the second way to score 1.0000 without deciding anything, and it is the one that survived the first guard.",
+  "sweep_source": "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD\\8fc25020-a1d5-4e1b-a9e2-aeccf845c5a2\\scratchpad\\navsweep\\sweep_flagship_objects.json",
+  "nav_values_swept": [
+   0,
+   1,
+   2
+  ],
+  "nav3_excluded_reason": "_ROUTE_TO_NAV never emits NAV_STRAIGHT=3, so that embedding row is untrained and a sweep over it is an out-of-vocabulary probe, not a condition."
+ },
+ "conditioning_echo_control_B": {
+  "n_observations": 181,
+  "n_usable": 181,
+  "n_observations_whose_answer_MOVED_with_the_input": 0,
+  "echo_rate": 0.0,
+  "ECHO": false,
+  "DETERMINISTIC_ECHO": false,
+  "input_to_output_map_if_deterministic": null,
+  "\u26d4_verdict": "not an echo on this sweep \u2014 the answer is driven by the observation, not by the conditioning input.",
+  "\u2b50_why_this_is_not_the_constant_guard": "an echo is NOT constant and BEATS every constant predictor, so BEST_CONSTANT cannot catch it. It is the second way to score 1.0000 without deciding anything, and it is the one that survived the first guard.",
+  "sweep_source": "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD\\8fc25020-a1d5-4e1b-a9e2-aeccf845c5a2\\scratchpad\\navsweep\\sweep_refc_objects.json",
+  "nav_values_swept": [
+   0,
+   1,
+   2
+  ],
+  "nav3_excluded_reason": "_ROUTE_TO_NAV never emits NAV_STRAIGHT=3, so that embedding row is untrained and a sweep over it is an out-of-vocabulary probe, not a condition."
+ },
+ "paired_A_minus_B": {
+  "ADE:ade_0_2s": {
+   "delta": 1.4831,
+   "lo": 0.8427,
+   "hi": 2.261,
+   "ci95": 0.7092,
+   "p_delta_gt0": 1.0,
+   "separated": true,
+   "reducer": "mean",
+   "n_windows": 170,
+   "n_episodes": 9,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap",
+   "n_used": 170
+  },
+  "LONGITUDINAL:abs_target_speed_err_ms": {
+   "delta": 1.4013,
+   "lo": 0.9754,
+   "hi": 1.9154,
+   "ci95": 0.47,
+   "p_delta_gt0": 1.0,
+   "separated": true,
+   "reducer": "mean",
+   "n_windows": 170,
+   "n_episodes": 9,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap",
+   "n_used": 170
+  },
+  "LONGITUDINAL:along_track_ade_m": {
+   "delta": 1.479,
+   "lo": 0.834,
+   "hi": 2.2657,
+   "ci95": 0.7159,
+   "p_delta_gt0": 1.0,
+   "separated": true,
+   "reducer": "mean",
+   "n_windows": 170,
+   "n_episodes": 9,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap",
+   "n_used": 170
+  },
+  "LONGITUDINAL:real_lead_headway_m": {
+   "n": 0,
+   "reason": "no jointly finite windows"
+  },
+  "LONGITUDINAL:real_lead_time_gap_s": {
+   "n": 0,
+   "reason": "no jointly finite windows"
+  },
+  "LONGITUDINAL:real_lead_ttc_s_when_closing": {
+   "n": 0,
+   "reason": "no jointly finite windows"
+  },
+  "LATERAL:heading_err_rad": {
+   "delta": 0.0048,
+   "lo": -0.0536,
+   "hi": 0.0647,
+   "ci95": 0.0592,
+   "p_delta_gt0": 0.5885,
+   "separated": false,
+   "reducer": "mean",
+   "n_windows": 170,
+   "n_episodes": 9,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap",
+   "n_used": 170
+  },
+  "LATERAL:curvature_err_1pm": {
+   "delta": -0.021,
+   "lo": -0.0676,
+   "hi": 0.0088,
+   "ci95": 0.0382,
+   "p_delta_gt0": 0.2345,
+   "separated": false,
+   "reducer": "mean",
+   "n_windows": 170,
+   "n_episodes": 9,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap",
+   "n_used": 170
+  },
+  "LATERAL:yawrate_err_rads": {
+   "delta": 0.0126,
+   "lo": 0.0043,
+   "hi": 0.0212,
+   "ci95": 0.0084,
+   "p_delta_gt0": 1.0,
+   "separated": true,
+   "reducer": "mean",
+   "n_windows": 170,
+   "n_episodes": 9,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap",
+   "n_used": 170
+  },
+  "LATERAL:lateral_ade_m": {
+   "delta": 0.1631,
+   "lo": 0.1082,
+   "hi": 0.2249,
+   "ci95": 0.0584,
+   "p_delta_gt0": 1.0,
+   "separated": true,
+   "reducer": "mean",
+   "n_windows": 170,
+   "n_episodes": 9,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap",
+   "n_used": 170
+  },
+  "TACTICAL:manoeuvre_plan_eq_logged": {
+   "delta": 0.0471,
+   "lo": -0.0588,
+   "hi": 0.1385,
+   "ci95": 0.0987,
+   "p_delta_gt0": 0.8045,
+   "separated": false,
+   "reducer": "mean",
+   "n_windows": 170,
+   "n_episodes": 9,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap",
+   "n_used": 170
+  },
+  "TACTICAL:manoeuvre_head_eq_logged": {
+   "delta": 0.1824,
+   "lo": -0.0473,
+   "hi": 0.4564,
+   "ci95": 0.2519,
+   "p_delta_gt0": 0.926,
+   "separated": false,
+   "reducer": "mean",
+   "n_windows": 170,
+   "n_episodes": 9,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap",
+   "n_used": 170
+  },
+  "STRATEGIC:route_head_eq_logged": {
+   "delta": 0.2387,
+   "lo": 0.0264,
+   "hi": 0.4563,
+   "ci95": 0.215,
+   "p_delta_gt0": 0.9965,
+   "separated": true,
+   "reducer": "mean",
+   "n_windows": 155,
+   "n_episodes": 9,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap",
+   "n_used": 155
+  }
+ },
+ "paired_n_windows": 170
+}

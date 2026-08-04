@@ -90,11 +90,31 @@ def _set_precision(mode: str):
     }
 
 
+def _num(s):
+    """A telemetry field or None. ⛔ NEVER raise: Tegra/Jetson (`NVIDIA Thor`) reports `[N/A]` for
+    `memory.used` and `clocks.sm`, and a bare `float()` there raised ValueError, aborting
+    :func:`_gpu_state` BEFORE the compute-apps probe below ever ran. `exclusive` then stayed None,
+    and `run_and_save` quarantined EVERY Thor run as `.CONTAMINATED-*` on an idle GPU
+    (MEASURED 2026-08-04: both arms quarantined with `gpu_exclusive_before: null` — *null*, not
+    False — while `--query-compute-apps` returned empty, i.e. the GPU genuinely WAS exclusive).
+    Missing telemetry is missing telemetry; it is not evidence of contention."""
+    try:
+        return float(s)
+    except (TypeError, ValueError):
+        return None
+
+
 def _gpu_state(idx: int = 0) -> dict:
-    """Sample the GPU so a contaminated benchmark is visible in the artifact."""
+    """Sample the GPU so a contaminated benchmark is visible in the artifact.
+
+    ⛔ The two probes are INDEPENDENT on purpose. Exclusivity is decided ONLY by
+    `--query-compute-apps`, which works on every device we run on; the descriptive `--query-gpu`
+    telemetry must never be able to suppress it. They shared one `try` until 2026-08-04, which made
+    the contamination check structurally unable to report an answer on Thor.
+    """
     out = {"name": None, "other_compute_procs": None, "util_pct": None,
            "mem_used_mb": None, "sm_clock_mhz": None, "exclusive": None}
-    try:
+    try:                                        # descriptive telemetry — best effort
         q = subprocess.run(
             ["nvidia-smi", "--query-gpu=name,utilization.gpu,memory.used,"
              "clocks.sm,temperature.gpu,power.draw",
@@ -102,12 +122,21 @@ def _gpu_state(idx: int = 0) -> dict:
             capture_output=True, text=True, timeout=20)
         f = [s.strip() for s in q.stdout.strip().split(",")]
         if len(f) >= 6:
-            out.update(name=f[0], util_pct=float(f[1]), mem_used_mb=float(f[2]),
-                       sm_clock_mhz=float(f[3]), temp_c=float(f[4]),
-                       power_w=float(f[5]))
+            out.update(name=f[0] or None, util_pct=_num(f[1]), mem_used_mb=_num(f[2]),
+                       sm_clock_mhz=_num(f[3]), temp_c=_num(f[4]), power_w=_num(f[5]))
+            out["telemetry_unavailable"] = [k for k, v in
+                                            (("util_pct", out["util_pct"]),
+                                             ("mem_used_mb", out["mem_used_mb"]),
+                                             ("sm_clock_mhz", out["sm_clock_mhz"]))
+                                            if v is None] or None
+    except Exception as e:                                   # fail loud, not fatal
+        out["telemetry_error"] = f"{type(e).__name__}: {str(e)[:80]}"
+    try:                                        # THE exclusivity decision — its own try
         p = subprocess.run(
             ["nvidia-smi", "--query-compute-apps=pid,used_memory",
              "--format=csv,noheader"], capture_output=True, text=True, timeout=20)
+        if p.returncode != 0:
+            raise RuntimeError(f"nvidia-smi exit {p.returncode}")
         procs = [ln for ln in p.stdout.strip().splitlines() if ln.strip()]
         mypid = str(subprocess.os.getpid())
         others = [ln for ln in procs if not ln.split(",")[0].strip() == mypid]

@@ -1,0 +1,10 @@
+{
+  "file": "PREREG_S1_CLIMBOUT.md",
+  "bytes": 20301,
+  "sha256": "39eb43a1536f161dafdf25d79c7894bc308f1efd143992a703a05da71265adf5",
+  "git_blob_id_lf": "8dc68daf8cf6a086dba5782045af9e35f1241b85",
+  "git_blob_id_raw": "8dc68daf8cf6a086dba5782045af9e35f1241b85",
+  "pinned_at_utc": "2026-08-03T21:45:00Z",
+  "why": "the Google Drive repo mount was in a whole-mount READ-FAILURE state when this experiment ran, so the prereg could not be `git add`ed BEFORE measuring. The falsifiable object is therefore the git BLOB ID computed from the exact bytes the run used - a deterministic function of content, identical to what `git ls-files -s` must print once the file is staged. Verify: git ls-files -s -- <path> must show git_blob_id_lf.",
+  "verify": "git hash-object PREREG_S1_CLIMBOUT.md   # must equal git_blob_id_lf"
+}

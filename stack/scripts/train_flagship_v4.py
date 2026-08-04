@@ -27,6 +27,7 @@ import argparse
 import json
 import math
 import os
+import shlex
 import socket
 import sys
 import time
@@ -1816,6 +1817,19 @@ def build_parser() -> argparse.ArgumentParser:
                          "require=True; on the v2 path this is opt-in so no "
                          "existing command changes, and a v5-class run MUST "
                          "pass it.")
+    # The [PARITY] preflight below says "Pass --require-parity, or RECORD WHY this
+    # arm is deliberately non-parity". Until 2026-08-03 there was NO flag to record it
+    # with, so the only way past the guard was to satisfy it — i.e. the sentence named a
+    # remedy that did not exist, and a legitimately non-parity v2 arm (toy episodes, the
+    # 9 000-clip corpus 4b7eeeac222d, an OOD probe) was UNRUNNABLE through this trainer.
+    # ⛔ Do NOT turn this into a bare --force boolean. The mechanism IS the sentence a
+    # human had to type: a boolean records that someone wanted past the guard, a reason
+    # records WHY, and only the second survives into config.json as evidence. Shape is
+    # mirrored EXACTLY from --heldout-off-reason (same guard, same failure class).
+    ap.add_argument("--parity-off-reason", dest="parity_off_reason", default="",
+                    help="Required INSTEAD OF --require-parity on a v2 run: why this arm "
+                         "is deliberately non-parity. Recorded in config.json, echoed at "
+                         "launch, and reproduced in the staged command.")
     ap.add_argument("--poses-train"); ap.add_argument("--poses-val")
     ap.add_argument("--labels-train"); ap.add_argument("--labels-val")
     ap.add_argument("--trunk", help="warm-start ckpt: flagship4b-speedjerk-30k (v1); "
@@ -2075,6 +2089,8 @@ NOT_A_PATH: dict[str, str] = {
     "device":      "a torch device string",
     "heldout_off_reason": "free prose — the human-written justification required alongside "
                           "--no-heldout-gate; recorded, never opened",
+    "parity_off_reason":  "free prose — the human-written justification required INSTEAD OF "
+                          "--require-parity on a v2 run; recorded, never opened",
 }
 
 
@@ -2151,7 +2167,7 @@ def preflight_asserts(a) -> list[str]:
     # ~29.5 GPU-h — half the v4 30k run — went into training past the best
     # checkpoint because there was NO held-out early-stop signal. Launching
     # without the gate is now a deliberate, visible act.
-    if not getattr(a, "heldout_gate", True) and not getattr(a, "heldout_off_reason", ""):
+    if not getattr(a, "heldout_gate", True) and not _off_reason(a, "heldout_off_reason"):
         problems.append(
             "[HELDOUT-GATE] --no-heldout-gate: this run would have NO held-out "
             "early-stop signal. MEASURED cost of that on the v4 30k run: ~29.5 "
@@ -2215,13 +2231,26 @@ def preflight_asserts(a) -> list[str]:
     # unregistered cache after one printed line. Preflight is where that becomes
     # visible, since the guard itself must stay permissive.
     if getattr(a, "v2_train_cache", None) and not getattr(a, "require_parity",
-                                                          False):
+                                                          False) \
+            and not _off_reason(a, "parity_off_reason"):
         problems.append(
             "[PARITY] --v2-train-cache without --require-parity: an unregistered "
             "or mismatched v2 cache prints ONE NON-PARITY line and TRAINS "
             "ANYWAY. Every cross-arm number off such a run is void, invisibly. "
             "Pass --require-parity, or record why this arm is deliberately "
-            "non-parity.")
+            "non-parity with --parity-off-reason '<why>'.")
+    # ⛔ The two flags are MUTUALLY EXCLUSIVE, and that is not pedantry. A command
+    # carrying both says "enforce parity" and "this arm is deliberately non-parity"
+    # at once; the guard would enforce and the reason would sit in config.json as a
+    # false provenance record — a run that IS parity, described as one that is not.
+    # Whichever way a reader resolves it, one of the two is wrong, so refuse instead.
+    if getattr(a, "require_parity", False) and _off_reason(a, "parity_off_reason"):
+        problems.append(
+            "[PARITY] --require-parity AND --parity-off-reason were BOTH passed. "
+            "They are opposites: the first REFUSES an unregistered corpus, the "
+            "second records why this arm deliberately trains on one. config.json "
+            "would carry a non-parity justification for a parity-enforced run. "
+            "Pass exactly one.")
     # ⭐ …and when it IS passed, ACTUALLY RUN THE GUARD. Until 2026-07-27 the
     # branch above was the whole of the parity preflight: it checked the flag,
     # never the cache, so `--print-launch --require-parity` printed OK against a
@@ -2292,6 +2321,43 @@ def preflight_asserts(a) -> list[str]:
                         "Override intentionally only if you know why.")
     # encoder-touching lever count: λ_plan (1) + strategic (2) = 2 of 2, door CLOSED
     return problems
+
+
+def _off_reason(a, dest: str) -> str:
+    """A guard-off justification, STRIPPED — or ``""`` when there is none.
+
+    ⚠️ ``.strip()`` is the whole point and not tidiness. Both flags are deliberately
+    *reasons rather than booleans*, and ``--parity-off-reason '   '`` is a boolean
+    wearing a string's clothes: it satisfies a bare truthiness test, unlocks the
+    guard, and writes whitespace into ``config.json`` where the justification should
+    be. ``--heldout-off-reason`` shipped with exactly that hole (a raw truthiness
+    check) and it is closed here for both.
+    """
+    return str(getattr(a, dest, "") or "").strip()
+
+
+def _off_reason_banner(a) -> list[str]:
+    """The two GUARD-OFF justifications, echoed where a human reads them.
+
+    ⚠️ Both ``--heldout-off-reason`` and ``--parity-off-reason`` advertise that they
+    are "echoed at launch". Until 2026-08-03 neither was: ``heldout_off_reason``
+    appeared in exactly three places (the parser, ``NOT_A_PATH``, and the preflight
+    that requires it), so the only surface it ever reached was ``config.json``'s
+    ``args`` blob — read after the fact, by whoever goes looking. A justification
+    that is never SHOWN cannot do the job it exists for, which is to make disabling
+    a guard a visible act at the moment it happens rather than an archaeological
+    finding afterwards.
+    """
+    out: list[str] = []
+    why = _off_reason(a, "heldout_off_reason")
+    if why and not getattr(a, "heldout_gate", True):
+        out.append(f"⚠️ HELD-OUT GATE OFF — recorded reason: {why}")
+    why = _off_reason(a, "parity_off_reason")
+    if why:
+        out.append(f"⚠️ DELIBERATELY NON-PARITY — recorded reason: {why}")
+        out.append("   ⛔ Numbers off this arm are NOT cross-arm comparable with the "
+                   "parity arms.")
+    return out
 
 
 def _staged_command(a) -> str:
@@ -2369,6 +2435,17 @@ def _staged_command(a) -> str:
     # that dropped the flag would turn an enforced run into an unenforced one.
     if getattr(a, "require_parity", False):
         parts.append("--require-parity")
+    # ⭐ …and so must the two REASONS, for the mirror-image cause. The staged string is
+    # what a human copies onto the pod; a reason dropped here means the copied command
+    # trips its own preflight (the run never starts) — or, on the parity side, the
+    # justification never reaches that run's config.json and the arm loses the only
+    # record of WHY it is non-parity. MEASURED omission: --heldout-off-reason was
+    # absent from this reconstruction from the day it was added (2026-08-03 audit).
+    for flag, dest in (("--heldout-off-reason", "heldout_off_reason"),
+                       ("--parity-off-reason", "parity_off_reason")):
+        why = _off_reason(a, dest)
+        if why:
+            parts.append(f"{flag} {shlex.quote(why)}")
     return " ".join(parts)
 
 
@@ -2414,6 +2491,8 @@ def main(argv=None) -> int:
         else:
             print(f"trunk init: warm-start from {a.trunk}")
         print(f"parity: {PARITY_KEY} / skip-hash {PARITY_SKIP_HASH} (episodes must not re-select)")
+        for line in _off_reason_banner(a):
+            print(line)
         print(f"phases: A[0,{a.phase_a_steps}) B[{a.phase_a_steps},{a.phase_b_steps}) "
               f"C[{a.phase_b_steps},{a.steps})  |  gate at {a.gate_step}")
         print(f"levers: lambda_plan + strategic = 2 of 2 encoder-touching (door CLOSED)")
@@ -2436,6 +2515,10 @@ def main(argv=None) -> int:
         for p in problems:
             print("  -", p)
         return 2
+    # The REAL run is the surface that matters most: this is the log a post-mortem
+    # reads. A guard that was turned off must say so in it, next to its reason.
+    for line in _off_reason_banner(a):
+        print(line, flush=True)
     train(a)
     return 0
 

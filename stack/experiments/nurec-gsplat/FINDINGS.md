@@ -7,6 +7,27 @@
 
 # ⭐ CRACKED: NuRec scenes render on the Jetson Thor with gsplat
 
+> ## ⛔⛔ 2026-08-03 — EVERY ABSOLUTE IN THIS FILE IS SUPERSEDED A SECOND TIME (frame alignment)
+>
+> The `wxyz` correction below fixed the run directory. It did **not** fix the reference index: every
+> absolute here was scored against a video frame **6 frames too early** (`R-2026-08-03-k`). The rule
+> is **per scene** — `video_index = rig_index + (n_mp4_decodable − n_rig)`, **+6 on `00040136`, +5 on
+> `7c72937c`** — MEASURED by the renderer's own ±10 neighbour scan (`{6: 12}` / `{5: 12}`, zero
+> refusals, bootstrap mass 1.00), and agreeing exactly with the frame counts (605 − 599, 604 − 599).
+>
+> ⇒ the decode-validation numbers in the `wxyz` table below (**0.3802** correct vs **0.2110** best
+> wrong) are **superseded**; at the corrected index `background+road` scores **0.4228** (5 frames) /
+> **0.4549** (12 frames) on this scene. **The VERDICT is unchanged — the payload decodes, and the
+> margin is larger still.** `⛔ grad-NCC only` and `⛔ the per-frame ISP hypothesis is dead` both stand.
+>
+> ⚠️ The negative control in that table **passed at the wrong offset too**: `wrong_frames_for()`
+> enforces `MIN_WRONG_GAP = 40` and is blind to a 6-frame error by construction. A neighbour-offset
+> gate now runs in `render_quality.py` before any arm may report a number.
+>
+> Re-baseline + gate:
+> `TanitAD Research Hub/Evaluation/Implementation/incoming/2026-08-03-render-rebaseline/` ·
+> `Project Steering/RETRACTION_LOG.md` → `R-2026-08-03-align`.
+
 **MEASURED 2026-08-02, Thor (aarch64 Blackwell `sm_110`).** The one open unknown blocking
 AlpaSim-on-Thor — *does the NuRec gaussian payload map onto gsplat's parameterisation?* — is
 **ANSWERED YES**. We can render NVIDIA's neural reconstructions ourselves, on the edge device,

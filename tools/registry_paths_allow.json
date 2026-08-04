@@ -1,0 +1,87 @@
+{
+ "_doc": [
+  "Citations in Project Steering/MODEL_REGISTRY.md that tools/registry_paths.py would",
+  "otherwise flag NOT_A_PATH, with a reason each. Read tools/registry_paths.py's module",
+  "docstring before adding anything here.",
+  "",
+  "status 'pattern'    = never was a citation. A filename CONVENTION (ep_*.pt), a command",
+  "                      TEMPLATE (results/<key>.json), verbatim tool output, or a defective",
+  "                      citation QUOTED as the worked example of the rule that bans it.",
+  "status 'unresolved' = a REAL defect that cannot be repaired, because the artifact is on a",
+  "                      host that no longer exists and is in no backup. Kept visible and",
+  "                      counted forever; never silently closed. Governed by max_unresolved.",
+  "",
+  "'occurrences' is how many times the exact backticked token appears in the registry. If the",
+  "token is re-introduced at a NEW site the count changes and the check fails — that is the",
+  "whole point: this file excuses specific, counted sites, not a token forever.",
+  "",
+  "max_unresolved is a RATCHET. Adding an 'unresolved' entry without raising it fails the",
+  "check, and raising it is a one-line reviewable diff. Lower it whenever one is resolved."
+ ],
+ "max_unresolved": 1,
+ "entries": [
+  {
+   "citation": "ep_*.pt",
+   "status": "pattern",
+   "occurrences": 2,
+   "added": "2026-08-03",
+   "reason": "The per-episode cache FILENAME CONTRACT (§0 'Episode contract', and the 80-file denominator note). It names a convention, not one artifact; the caches themselves live on pods and are never repo-relative."
+  },
+  {
+   "citation": "eval_*.py",
+   "status": "pattern",
+   "occurrences": 2,
+   "added": "2026-08-03",
+   "reason": "The RULE 'only eval_*.py output may be quoted, never trainer val' — it names the class of harness scripts as against the trainer, not a file. Naming one script would break the rule it states."
+  },
+  {
+   "citation": "windows_*.pt",
+   "status": "pattern",
+   "occurrences": 3,
+   "added": "2026-08-03",
+   "reason": "The per-window dump family. Two sites state a capability ('windows_*.pt persistence'), one states an ABSENCE ('no windows_*.pt in the repo' for planner_p2) — an absence claim cannot be given a concrete filename by construction."
+  },
+  {
+   "citation": "results/<key>.json",
+   "status": "pattern",
+   "occurrences": 1,
+   "added": "2026-08-03",
+   "reason": "A CLI INVOCATION TEMPLATE in the TanitEval usage row: `--model <key>` writes `results/<key>.json`. `<key>` is the placeholder the caller substitutes."
+  },
+  {
+   "citation": "?? stack/tanitad/refs/refc.py",
+   "status": "pattern",
+   "occurrences": 1,
+   "added": "2026-08-03",
+   "reason": "VERBATIM `git status` OUTPUT quoted as evidence that the pod copy was untracked. `??` is git's untracked marker, not part of a path. The repo path itself is cited correctly in the same cell."
+  },
+  {
+   "citation": "…_vs_refc-{base,xl}-30k.json",
+   "status": "pattern",
+   "occurrences": 1,
+   "added": "2026-08-03",
+   "reason": "§4.2 quotes this defective form AS THE WORKED EXAMPLE of the rule 'a shell brace expansion is not a citation', immediately above the two real paths. Rewriting it would delete the evidence for the rule. Same principle as R8 §2.2: a quote of a defective source stands."
+  },
+  {
+   "citation": "taniteval/results/eff_*.json",
+   "status": "pattern",
+   "occurrences": 1,
+   "added": "2026-08-03",
+   "reason": "R14 quotes §6's ORIGINAL wording verbatim ('measured 2026-07-20, taniteval/results/eff_*.json') as the evidence that a prose figure and its cited artifact disagree. The quote must stand; §6's own citation was rewritten to name the committed files."
+  },
+  {
+   "citation": "taniteval/results/driving_*.json",
+   "status": "pattern",
+   "occurrences": 1,
+   "added": "2026-08-03",
+   "reason": "R5's deliverable column names the WHOLE 27-file family that the LEADERBOARD rewrite regenerates, not a single result. The three numbers §6 draws from it are cited file-by-file at their own site."
+  },
+  {
+   "citation": "gate_step{1k,5k,10k}.json",
+   "status": "unresolved",
+   "occurrences": 1,
+   "added": "2026-08-03",
+   "reason": "§1.1 flagship-v1-no-speed. Doubly wrong: a brace expansion, AND the wrong stem — the emitters (stack/scripts/watch_gates.py:213, stack/scripts/evaluate_checkpoint.py:201) write `gates_step<step>.json`, plural, full integer. UNRESOLVABLE: tanitad-pod2 is terminated and the run dir is absent from pod4's rescue dump (MEASURED 2026-08-03), so no correct filename can be verified. Left visible rather than rewritten to a guess."
+  }
+ ]
+}

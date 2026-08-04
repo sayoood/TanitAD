@@ -1,0 +1,87 @@
+{
+ "gate": "reference_alignment",
+ "ref_offset_applied": 6,
+ "k": 3,
+ "probe_frames": [
+  60,
+  300,
+  450
+ ],
+ "frames_offered": [
+  0,
+  60,
+  150,
+  300,
+  450
+ ],
+ "frames_skipped_incomplete_window": [
+  0
+ ],
+ "residual_argmax_by_frame": {
+  "60": 0,
+  "300": 0,
+  "450": 0
+ },
+ "residual_offset_bootstrap": {
+  "point": 0,
+  "refused": false,
+  "reason": "ok",
+  "n_units": 3,
+  "B": 1000,
+  "mass": {
+   "0": 1.0
+  },
+  "frac_refused": 0.0,
+  "modal_mass": 1.0,
+  "estimator": "bootstrap over probed frames of argmax(mean curve); an integer estimator has no meaningful SE, so the mass function IS the interval"
+ },
+ "per_frame": {
+  "60": {
+   "grad_ncc_by_offset": {
+    "-3": 0.28016,
+    "-2": 0.30738,
+    "-1": 0.35021,
+    "0": 0.42394,
+    "1": 0.38544,
+    "2": 0.31798,
+    "3": 0.28611
+   },
+   "argmax_offset": 0,
+   "refused": false,
+   "reason": "ok",
+   "gain_vs_offset0": 0.0
+  },
+  "300": {
+   "grad_ncc_by_offset": {
+    "-3": 0.27768,
+    "-2": 0.30452,
+    "-1": 0.34974,
+    "0": 0.44409,
+    "1": 0.41211,
+    "2": 0.33518,
+    "3": 0.29687
+   },
+   "argmax_offset": 0,
+   "refused": false,
+   "reason": "ok",
+   "gain_vs_offset0": 0.0
+  },
+  "450": {
+   "grad_ncc_by_offset": {
+    "-3": 0.29729,
+    "-2": 0.32126,
+    "-1": 0.36439,
+    "0": 0.44547,
+    "1": 0.43925,
+    "2": 0.3711,
+    "3": 0.32611
+   },
+   "argmax_offset": 0,
+   "refused": false,
+   "reason": "ok",
+   "gain_vs_offset0": 0.0
+  }
+ },
+ "pass": true,
+ "why": "the harness's other negative control uses MIN_WRONG_GAP=40 and is structurally blind to a small index error; this one is not"
+}

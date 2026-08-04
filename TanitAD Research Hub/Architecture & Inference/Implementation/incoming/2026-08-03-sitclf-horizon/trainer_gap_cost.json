@@ -1,0 +1,70 @@
+{
+ "_what": "P3 \u2014 what a PER-SITUATION (window, lead_s) head would cost, in params and in build",
+ "_correction": {
+  "stale_claim": "the situation classifier still has no promoted trainer (sibling MANIFEST Sec 5)",
+  "status": "FALSE AT HEAD \u2014 stack/scripts/sitclf_train.py exists",
+  "landed_in": "49e2229 2026-08-03 LONGITUDINAL distance-keeping is COMPUTABLE - the four-family n=0 hole is closed",
+  "root_cause_class": "absence found at ONE location is not absence; the claim was true when written and the trainer landed the same day",
+  "probes": [
+   "ls stack/scripts | grep -i sit -> sitclf_train.py",
+   "git log -- stack/scripts/sitclf_train.py -> 49e2229",
+   "read the module: --win is already exposed FOR THIS STUDY"
+  ]
+ },
+ "_capacity_precedent": {
+  "rejected_lever_params": 272001,
+  "accepted_levers": [
+   897,
+   385,
+   128
+  ]
+ },
+ "_which_axis_matters": "B4 MEASURED on `intersection` that the 129-param ridge (lift 1.677) BEATS every transformer arm (best 1.486 at 423,172 params), so the capacity axis for this head is the RIDGE, not the transformer (results_matched_capacity.json, primary source)",
+ "ridge_floor_the_deployed_recipe": {
+  "per_head_by_window": {
+   "W1": 17,
+   "W4": 65,
+   "W8": 129,
+   "W16": 257,
+   "W32": 513
+  },
+  "frozen_total_W8_x3_situations": 387,
+  "per_situation_examples": {
+   "all_W1": {
+    "params": 51,
+    "delta": -336
+   },
+   "lane_change_W32_others_W8": {
+    "params": 771,
+    "delta": 384
+   },
+   "all_W32": {
+    "params": 1539,
+    "delta": 1152
+   }
+  },
+  "reading": "a per-situation WINDOW on the ridge floor costs -336 to +1152 params, i.e. INSIDE the band of accepted levers. Capacity is NOT what makes this expensive."
+ },
+ "transformer_if_it_were_the_arm": {
+  "shared_head_w8_d128_nout3": 417028,
+  "three_heads_w8_d128_nout1": 1250310,
+  "delta": 833282,
+  "reading": "three per-situation transformer heads cost +833,282 params \u2014 over 3x the +272,001 lever this programme rejected. But B4 says the transformer is not the arm."
+ },
+ "what_would_actually_have_to_be_BUILT": [
+  {
+   "item": "per-situation WINDOW",
+   "where": "stack/scripts/sitclf_train.py",
+   "why_it_is_not_just_a_flag": "causal_window() is called ONCE and its `keep` mask filters X, Y, V and clip together (sitclf_train.py:172-174). Three windows give three DIFFERENT keep masks, so the single-array contract breaks: it needs three heads, each with its own row set, plus a fusion/emit contract for the three score columns.",
+   "param_cost_on_the_ridge_floor": "-336 to +1152",
+   "param_cost_on_the_transformer": "+833,282"
+  },
+  {
+   "item": "per-situation LEAD",
+   "where": "the substrate builder, not the trainer",
+   "why": "the trainer has no --lead: the lead is baked into the substrate's `y` [N, S] at ONE lead_s. A per-situation lead needs S label sets built at S different leads.",
+   "param_cost": 0,
+   "real_cost": "a downstream CONTRACT change \u2014 the tactical layer must be told which horizon each channel carries, and every banked sitclf number becomes incomparable"
+  }
+ ]
+}

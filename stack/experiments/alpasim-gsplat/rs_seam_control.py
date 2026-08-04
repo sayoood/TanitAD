@@ -36,6 +36,7 @@ from pathlib import Path
 
 import numpy as np
 
+from frame_align import scene_ref_offset
 from render_quality import CAM, build_renderer, grad_ncc, load_refs, parse_arm
 from rs_sweep import CONFIGS
 
@@ -73,7 +74,9 @@ def main():
     n_clip = rig.n_frames(CAM)
     frames = sorted(set(int(round(x)) for x in
                         np.linspace(0, n_clip - 1, a.n_frames_auto)))
-    refs = load_refs(scene / f"{CAM}.mp4", frames, (int(cam.width), int(cam.height)))
+    ref_offset = scene_ref_offset(scene, n_clip)   # R-2026-08-03-k, per scene
+    refs = load_refs(scene / f"{CAM}.mp4", frames, (int(cam.width), int(cam.height)),
+                     ref_offset=ref_offset)
     r, _ = build_renderer(scene, parse_arm(CONFIGS[a.config]), a.loader_dir)
     H = r.height
     ns = [int(x) for x in a.slices.split(",")]

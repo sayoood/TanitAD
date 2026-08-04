@@ -24,6 +24,20 @@ grad-NCC 0.3424). ⛔ All AlpaSim numbers are **WITHIN-SIM RELATIVE**: REF-C's o
 is 1.5157 on these reconstructions vs 0.4728 on real footage — **3.21× OOD**. Orderings
 survive; absolute rates do not.
 
+
+> ⛔ **SUPERSEDED 2026-08-03 — the reference video is offset from the rig by a per-scene
+> constant** (`+6` on `00040136`, `+5` on `7c72937c`; rule: `video_idx = rig_idx +
+> (n_mp4_decodable − n_rig_frames)`, measured by the renderer, unanimous over 12 frames each).
+> Re-baselined against the **aligned** reference the improvement is **roughly half the size and
+> does not replicate**: `00040136` n=5 **+13.5 %** (was +23.4 %), n=12 **+8.0 %**, and
+> `7c72937c` n=12 **+4.4 % — NOT SEPARATED** [−0.0097, +0.0521]. Absolutes move too:
+> BEFORE 0.2774 → **0.4228**, AFTER 0.3424 → **0.4800**. The render is still better; the
+> magnitude quoted here is not. Corrected table + estimator:
+> `TanitAD Research Hub/Evaluation/Implementation/incoming/2026-08-03-render-rebaseline/`;
+> `RETRACTION_LOG.md` R-2026-08-03-align. ⚠️ No closed-loop conclusion moves — `cl_metrics.py`
+> never opens the reference video.
+
+
 ---
 
 **56 videos, 49.8 MB total** *(the pod3 set below; the AlpaSim folders above are counted separately).*

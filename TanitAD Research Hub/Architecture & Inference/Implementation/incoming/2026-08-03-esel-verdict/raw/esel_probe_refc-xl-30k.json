@@ -1,0 +1,849 @@
+{
+ "what": "E-SEL-0 / E-SEL-1 — the 0-GPU-day probe that gates the D-SEL retrain",
+ "prereg": {
+  "path": "Project Steering/PREREG_D-SEL_REFC_SELECTION_SURFACE.md",
+  "staged_blob": "52c005840ef23788aac561330fb115709fa733df",
+  "worktree_blob": "52c005840ef23788aac561330fb115709fa733df",
+  "thresholds_unmoved_since_staging": true,
+  "how_to_verify": "git ls-files -s -- 'Project Steering/PREREG_D-SEL_REFC_SELECTION_SURFACE.md' && git hash-object 'Project Steering/PREREG_D-SEL_REFC_SELECTION_SURFACE.md'  # must match",
+  "thresholds": {
+   "S1_FREE_WIN": "E-SEL-0 paired dADE@2s separated AND >= 0.02 m better",
+   "S1_NEEDS_TRAINING": "E-SEL-0 not separated AND C-shuffled clearly worse than refined (frac_sel_2x_worse gap >= 0.05)",
+   "S1_DEAD": "E-SEL-0 not separated AND C-shuffled indistinguishable from refined",
+   "S3_LIVE": "E-SEL-1 Spearman rho separated from C-shuffled AND |rho| >= 0.10",
+   "S3_DEAD": "rho CI includes the shuffled control",
+   "INDETERMINATE": "E-SEL-0 separated but < 0.02 m; tie-break on E-SEL-1 (S3 LIVE => run S1+S2+S3+S4; S3 DEAD => ship S2+S4 only)",
+   "RED_FLAG_STOP": "ADE separated better by > 0.10 m => stop and audit for a leak, do not publish",
+   "registered_prediction": "S1 NEEDS TRAINING (E-SEL-0 not separated, C-shuffled clearly worse) and S3 LIVE at a small rho, 0.10-0.25",
+   "free_win_m": 0.02,
+   "frac_2x_gap_m": 0.05,
+   "rho_min": 0.1,
+   "red_flag_m": 0.1
+  }
+ },
+ "arm": "refc-xl-30k",
+ "generated_utc": "2026-08-03T19:37:06Z",
+ "estimator": {
+  "point_and_interval": "episode_cluster_bootstrap",
+  "paired": "paired_episode_cluster_bootstrap",
+  "resampling_unit": "episode",
+  "n_boot": 2000,
+  "⛔": "overlapping_holdout_se is NEVER called — it is not a jackknife, not a valid SE, and it biases the POINT estimate bidirectionally (mean-of-split-means)"
+ },
+ "fan_bank": {
+  "path": "taniteval\\results\\fan_refc-xl-30k.pt",
+  "sha256": "d952fd6b320646556988ee427b7ef4ff34ba7fea9a4487df56e028abf7172ed6",
+  "n_windows": 881,
+  "n_anchors": 256,
+  "n_episodes": 40,
+  "wp_steps": [
+   5,
+   10,
+   15,
+   20
+  ],
+  "decode_ckpt": "/root/models/refc-xl-30k/ckpt.pt",
+  "decode_ckpt_step": 29999,
+  "diffusion_steps": 2,
+  "nav_mode": "follow_constant (implied)",
+  "stores_refined_logits": false,
+  "stores_pooled": false
+ },
+ "run_mode": "fan-only",
+ "controls": {
+  "C-raster": {
+   "control": "C-raster",
+   "required": {
+    "frame_hw": [
+     256,
+     256
+    ],
+    "token_grid": [
+     8,
+     8
+    ],
+    "n_tokens": 64,
+    "channels": 9
+   },
+   "scored_a_decode": false,
+   "status": "NOT-APPLICABLE (fan-only mode)",
+   "reason": "no decode is run in fan-only mode, so no raster is fed to REF-C. The banked fan is the OUTPUT of a decode that already ran at the trained raster on the eval pod (ckpt '/root/models/refc-xl-30k/ckpt.pt', step 29999).",
+   "⛔": "⛔ THIS CONTROL BECOMES BINDING THE MOMENT A --ckpt DECODE IS ADDED. The only val cache currently reachable off-pod is the w120 256x640 CYLINDRICAL flagship cache; feeding that to REF-C IS R-2026-08-02-a and this control must REFUSE it."
+  },
+  "C-identity": {
+   "control": "C-identity",
+   "argmax_logits_equals_sel": true,
+   "recomputed_selected_ade_0_2s": 0.471439,
+   "published_selected_ade_0_2s": 0.4714,
+   "abs_deviation": 3.936e-05,
+   "tolerance": 1e-06,
+   "note": "the published value is stored rounded to 4 dp, so the admissible deviation is max(1e-6, 5e-5 rounding half-width); the argmax==sel check is the BIT-EXACT half of this control",
+   "status": "PASS"
+  },
+  "C-oracle-floor": {
+   "control": "C-oracle-floor",
+   "recomputed_oracle_in_fan_ade_0_2s": 0.16395,
+   "published_oracle_in_fan_ade_0_2s": 0.164,
+   "abs_deviation": 4.974e-05,
+   "arm_the_number_belongs_to": "refc-xl-30k",
+   "⚠️": "0.1640 / 45.4 % are REF-C-XL's; base is 0.1914 / 41.09 %",
+   "status": "PASS"
+  },
+  "C-shuffled": {
+   "control": "C-shuffled",
+   "mechanism": "uniform permutation of the score along the candidate axis then argmax == a UNIFORM RANDOM CANDIDATE, for any score; hence score-independent and computable in closed form from the bank alone",
+   "ade_0_2s": {
+    "mean": 13.9564,
+    "lo": 13.0055,
+    "hi": 14.9846,
+    "ci95": 0.9896,
+    "se": 0.5154,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "sel_gap": {
+    "mean": 13.7924,
+    "lo": 12.8382,
+    "hi": 14.8257,
+    "ci95": 0.9937,
+    "se": 0.5167,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "frac_sel_2x_worse": {
+    "mean": 0.9894,
+    "lo": 0.9884,
+    "hi": 0.9903,
+    "ci95": 0.0009,
+    "se": 0.0005,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "rank_acc_exact": 0.003906,
+   "selftest_empirical_mean_ade": 14.089035,
+   "selftest_empirical_sd_over_seeds": 0.298372,
+   "selftest_n_seeds": 24,
+   "selftest_closed_form_mean_ade": 13.956381
+  }
+ },
+ "rankers": {
+  "shipped": {
+   "tag": "shipped (t=0 classifier)",
+   "ade_0_2s": {
+    "mean": 0.4714,
+    "lo": 0.3896,
+    "hi": 0.5556,
+    "ci95": 0.083,
+    "se": 0.0434,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "sel_gap": {
+    "mean": 0.3075,
+    "lo": 0.2397,
+    "hi": 0.3778,
+    "ci95": 0.0691,
+    "se": 0.0351,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "frac_sel_2x_worse": {
+    "mean": 0.454,
+    "lo": 0.3814,
+    "hi": 0.5216,
+    "ci95": 0.0701,
+    "se": 0.0361,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "rank_acc": {
+    "mean": 0.311,
+    "lo": 0.2667,
+    "hi": 0.361,
+    "ci95": 0.0471,
+    "se": 0.0239,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   }
+  },
+  "oracle": {
+   "tag": "oracle-in-fan",
+   "ade_0_2s": {
+    "mean": 0.164,
+    "lo": 0.1414,
+    "hi": 0.1902,
+    "ci95": 0.0244,
+    "se": 0.0124,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "sel_gap": {
+    "mean": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "ci95": 0.0,
+    "se": 0.0,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "frac_sel_2x_worse": {
+    "mean": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "ci95": 0.0,
+    "se": 0.0,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "rank_acc": {
+    "mean": 1.0,
+    "lo": 1.0,
+    "hi": 1.0,
+    "ci95": 0.0,
+    "se": 0.0,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   }
+  },
+  "shuffled": {
+   "control": "C-shuffled",
+   "mechanism": "uniform permutation of the score along the candidate axis then argmax == a UNIFORM RANDOM CANDIDATE, for any score; hence score-independent and computable in closed form from the bank alone",
+   "ade_0_2s": {
+    "mean": 13.9564,
+    "lo": 13.0055,
+    "hi": 14.9846,
+    "ci95": 0.9896,
+    "se": 0.5154,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "sel_gap": {
+    "mean": 13.7924,
+    "lo": 12.8382,
+    "hi": 14.8257,
+    "ci95": 0.9937,
+    "se": 0.5167,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "frac_sel_2x_worse": {
+    "mean": 0.9894,
+    "lo": 0.9884,
+    "hi": 0.9903,
+    "ci95": 0.0009,
+    "se": 0.0005,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "rank_acc_exact": 0.003906,
+   "selftest_empirical_mean_ade": 14.089035,
+   "selftest_empirical_sd_over_seeds": 0.298372,
+   "selftest_n_seeds": 24,
+   "selftest_closed_form_mean_ade": 13.956381
+  },
+  "paired_shipped_minus_shuffled_ade": {
+   "delta": -13.4849,
+   "lo": -14.5341,
+   "hi": -12.517,
+   "ci95": 1.0086,
+   "p_delta_gt0": 0.0,
+   "separated": true,
+   "reducer": "mean",
+   "n_windows": 881,
+   "n_episodes": 40,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap"
+  },
+  "paired_shipped_minus_shuffled_frac2x": {
+   "delta": -0.5353,
+   "lo": -0.6079,
+   "hi": -0.4683,
+   "ci95": 0.0698,
+   "p_delta_gt0": 0.0,
+   "separated": true,
+   "reducer": "mean",
+   "n_windows": 881,
+   "n_episodes": 40,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap"
+  },
+  "headroom_shipped_vs_oracle": {
+   "delta": 0.3075,
+   "lo": 0.2397,
+   "hi": 0.3778,
+   "ci95": 0.0691,
+   "p_delta_gt0": 1.0,
+   "separated": true,
+   "reducer": "mean",
+   "n_windows": 881,
+   "n_episodes": 40,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap"
+  }
+ },
+ "families": {
+  "shipped": {
+   "longitudinal": {
+    "speed_mae_mps": 0.4545,
+    "speed_bias_mps": 0.0209,
+    "speed_rmse_mps": 0.7674,
+    "along_mae_m": 0.4168,
+    "along_bias_m": 0.0259,
+    "along_final_bias_m": 0.0511,
+    "accel_mae_mps2": 0.504,
+    "ego_progress": {
+     "status": "OK",
+     "convention": "human_dir",
+     "progress_ratio_mean": 1.0134,
+     "progress_ratio_median": 0.9982,
+     "progress_error_mean": 0.0918,
+     "under_progress_rate": 0.5365,
+     "gt_progress_mean_m": 26.4324,
+     "n": 850,
+     "n_windows": 881,
+     "n_excluded_low_gt_progress": 31,
+     "min_progress_m": 0.5,
+     "t0_axis_gt_self_ratio": 0.9919,
+     "t0_axis_gt_self_ratio_note": "what the GROUND TRUTH scores under pseudosim's published t0-axis reading. 1.0 means the windows are straight; below 1.0 is the CURVATURE CONFOUND — the human charged for under-progress it did not commit, and an arm that drives straighter than the human rewarded for it.",
+     "definition": "along-track distance covered / the human's, both projected on the human's own final-displacement direction; dt-invariant; <1 = under-drives, >1 = over-drives; GT scores exactly 1.0 by construction",
+     "published_motivation": "arXiv 2605.00066 — Ego Progress alone rho=0.83 vs closed-loop Driving Score while traditional L2 gives rho=-0.36 (p=0.43, n=8, NO CI). Direction only; those magnitudes are NOT a target."
+    },
+    "dt_s": 0.5,
+    "rate_scaling_note": "speed ~ 1/dt, accel ~ 1/dt^2. Numbers computed with a wrong dt are off by those powers; along_* are dt-invariant.",
+    "distance_keeping": {
+     "status": "UNAVAILABLE",
+     "reason": "no lead-agent track supplied — pass `lead=` (see this function's caller docstring). PhysicalAI-AV ships obstacle.offline (3D agent tracks, 97.44 % of the corpus); the reader is `Architecture & Inference/Implementation/incoming/2026-08-03-longitudinal-distance-keeping/build_lead_tracks.py`. Not supplying it is a WORK ITEM, not a pass.",
+     "n": 0
+    },
+    "n_windows": 881
+   },
+   "lateral": {
+    "heading_mae_deg": 1.1054,
+    "yaw_rate_mae_degps": 1.7587,
+    "curvature_mae_1pm": 0.006421,
+    "curvature_bias_1pm": -0.000761,
+    "cross_mae_m": 0.131,
+    "cross_bias_m": -0.0,
+    "cross_final_mae_m": 0.3072,
+    "n_steps_heading": 3354,
+    "n_steps_curvature": 2511,
+    "excluded_below_min_ds": 170,
+    "min_ds_m": 0.25,
+    "min_ds_mps": 0.5,
+    "dt_s": 0.5,
+    "dt_invariant": [
+     "heading_mae_deg",
+     "curvature_*",
+     "cross_*"
+    ],
+    "n_windows": 881
+   },
+   "tactical": {
+    "status": "PARTIAL — goal/anchor-selection half MEASURED; manoeuvre-decision half UNAVAILABLE (no decoded manoeuvre in a fan bank)",
+    "reason": "tactical decisions not present in the scored pass (missing ['maneuver_pred', 'maneuver_gt']). A world-model FIDELITY pass does not traverse the hierarchy — run_one prints this explicitly. Producing this family needs a hierarchy-traversing eval, which is a WORK ITEM.",
+    "n": 0,
+    "goal_anchor_selection": {
+     "rank_acc": {
+      "mean": 0.311,
+      "lo": 0.2667,
+      "hi": 0.361,
+      "ci95": 0.0471,
+      "se": 0.0239,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "sel_gap": {
+      "mean": 0.3075,
+      "lo": 0.2397,
+      "hi": 0.3778,
+      "ci95": 0.0691,
+      "se": 0.0351,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "frac_sel_2x_worse": {
+      "mean": 0.454,
+      "lo": 0.3814,
+      "hi": 0.5216,
+      "ci95": 0.0701,
+      "se": 0.0361,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     }
+    }
+   },
+   "strategic": {
+    "status": "UNAVAILABLE",
+    "reason": "strategic decisions not present in the scored pass (missing ['route_pred', 'route_gt']). A world-model FIDELITY pass does not traverse the hierarchy — run_one prints this explicitly. Producing this family needs a hierarchy-traversing eval, which is a WORK ITEM.",
+    "n": 0,
+    "how_to_populate": "supply `optionset` (map-derived option sets from stack/experiments/nurec-gsplat/strategic_gt.py, consumed by taniteval.strategic_optionset). A route label read off the ego's own future yaw is NOT a substitute: it cannot tell whether the map admitted a choice."
+   },
+   "_grid": {
+    "used": "sparse",
+    "dt_s": 0.5,
+    "horizon_steps": 4,
+    "provenance": "SPARSE waypoint view; derived from wp_steps [5, 10, 15, 20] x dt_s 0.1 -> 0.5s grid",
+    "⛔_history": "BEFORE 2026-08-03 this module hard-coded dt=0.1 s while reading the SPARSE 4-waypoint view (0.5 s spacing), so EVERY published speed_* was x5, EVERY accel_* x25 and EVERY yaw_rate_* x5. Positions, heading and curvature were unaffected. Cross-arm comparisons stay valid (common factor); ABSOLUTE quotations and any comparison to a physical bar do not. MEASURED negative control: GT ego speed 12.4565 m/s vs _seq_geometry 62.9789 m/s = 5.0559x, on 859 real held-out windows."
+   },
+   "_binding_rule": "Sayed 2026-08-02: every eval reports LONGITUDINAL + LATERAL + TACTICAL + STRATEGIC in ADDITION to ADE. Per-family, never pooled. A family reported UNAVAILABLE is a WORK ITEM, not a pass.",
+   "_families_unavailable": [
+    "tactical",
+    "strategic"
+   ],
+   "_complete": false,
+   "_tag": "shipped",
+   "_strategic_reason": "STRATEGIC is UNAVAILABLE from a fan bank: refc_rerank.dump stores no route/goal label and no decoded strategic decision, and it decoded with nav_mode='follow_constant' (the historical nav_cmd=None), so the route input was never exercised. n = 881 windows, 0 with a strategic label. This is a WORK ITEM (prereg §7.1 needs it for the S5 arm), not a pass.",
+   "_tactical_note": "the DECISION half of TACTICAL (selected-vs-executed manoeuvre, the full confusion) needs decoded manoeuvre logits, which the fan bank does not store. The GOAL/ANCHOR-SELECTION half — rank_acc, sel_gap, frac_sel_2x_worse — IS computed, and is the half D-SEL exists to move."
+  },
+  "oracle": {
+   "longitudinal": {
+    "speed_mae_mps": 0.1602,
+    "speed_bias_mps": -0.0028,
+    "speed_rmse_mps": 0.2486,
+    "along_mae_m": 0.1166,
+    "along_bias_m": 0.0047,
+    "along_final_bias_m": -0.0022,
+    "accel_mae_mps2": 0.33,
+    "ego_progress": {
+     "status": "OK",
+     "convention": "human_dir",
+     "progress_ratio_mean": 0.9985,
+     "progress_ratio_median": 1.0,
+     "progress_error_mean": 0.0262,
+     "under_progress_rate": 0.5,
+     "gt_progress_mean_m": 26.4324,
+     "n": 850,
+     "n_windows": 881,
+     "n_excluded_low_gt_progress": 31,
+     "min_progress_m": 0.5,
+     "t0_axis_gt_self_ratio": 0.9919,
+     "t0_axis_gt_self_ratio_note": "what the GROUND TRUTH scores under pseudosim's published t0-axis reading. 1.0 means the windows are straight; below 1.0 is the CURVATURE CONFOUND — the human charged for under-progress it did not commit, and an arm that drives straighter than the human rewarded for it.",
+     "definition": "along-track distance covered / the human's, both projected on the human's own final-displacement direction; dt-invariant; <1 = under-drives, >1 = over-drives; GT scores exactly 1.0 by construction",
+     "published_motivation": "arXiv 2605.00066 — Ego Progress alone rho=0.83 vs closed-loop Driving Score while traditional L2 gives rho=-0.36 (p=0.43, n=8, NO CI). Direction only; those magnitudes are NOT a target."
+    },
+    "dt_s": 0.5,
+    "rate_scaling_note": "speed ~ 1/dt, accel ~ 1/dt^2. Numbers computed with a wrong dt are off by those powers; along_* are dt-invariant.",
+    "distance_keeping": {
+     "status": "UNAVAILABLE",
+     "reason": "no lead-agent track supplied — pass `lead=` (see this function's caller docstring). PhysicalAI-AV ships obstacle.offline (3D agent tracks, 97.44 % of the corpus); the reader is `Architecture & Inference/Implementation/incoming/2026-08-03-longitudinal-distance-keeping/build_lead_tracks.py`. Not supplying it is a WORK ITEM, not a pass.",
+     "n": 0
+    },
+    "n_windows": 881
+   },
+   "lateral": {
+    "heading_mae_deg": 0.8413,
+    "yaw_rate_mae_degps": 1.574,
+    "curvature_mae_1pm": 0.006672,
+    "curvature_bias_1pm": -0.00058,
+    "cross_mae_m": 0.0885,
+    "cross_bias_m": -0.0082,
+    "cross_final_mae_m": 0.1984,
+    "n_steps_heading": 3355,
+    "n_steps_curvature": 2509,
+    "excluded_below_min_ds": 169,
+    "min_ds_m": 0.25,
+    "min_ds_mps": 0.5,
+    "dt_s": 0.5,
+    "dt_invariant": [
+     "heading_mae_deg",
+     "curvature_*",
+     "cross_*"
+    ],
+    "n_windows": 881
+   },
+   "tactical": {
+    "status": "PARTIAL — goal/anchor-selection half MEASURED; manoeuvre-decision half UNAVAILABLE (no decoded manoeuvre in a fan bank)",
+    "reason": "tactical decisions not present in the scored pass (missing ['maneuver_pred', 'maneuver_gt']). A world-model FIDELITY pass does not traverse the hierarchy — run_one prints this explicitly. Producing this family needs a hierarchy-traversing eval, which is a WORK ITEM.",
+    "n": 0,
+    "goal_anchor_selection": {
+     "rank_acc": {
+      "mean": 1.0,
+      "lo": 1.0,
+      "hi": 1.0,
+      "ci95": 0.0,
+      "se": 0.0,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "sel_gap": {
+      "mean": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "ci95": 0.0,
+      "se": 0.0,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "frac_sel_2x_worse": {
+      "mean": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "ci95": 0.0,
+      "se": 0.0,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     }
+    }
+   },
+   "strategic": {
+    "status": "UNAVAILABLE",
+    "reason": "strategic decisions not present in the scored pass (missing ['route_pred', 'route_gt']). A world-model FIDELITY pass does not traverse the hierarchy — run_one prints this explicitly. Producing this family needs a hierarchy-traversing eval, which is a WORK ITEM.",
+    "n": 0,
+    "how_to_populate": "supply `optionset` (map-derived option sets from stack/experiments/nurec-gsplat/strategic_gt.py, consumed by taniteval.strategic_optionset). A route label read off the ego's own future yaw is NOT a substitute: it cannot tell whether the map admitted a choice."
+   },
+   "_grid": {
+    "used": "sparse",
+    "dt_s": 0.5,
+    "horizon_steps": 4,
+    "provenance": "SPARSE waypoint view; derived from wp_steps [5, 10, 15, 20] x dt_s 0.1 -> 0.5s grid",
+    "⛔_history": "BEFORE 2026-08-03 this module hard-coded dt=0.1 s while reading the SPARSE 4-waypoint view (0.5 s spacing), so EVERY published speed_* was x5, EVERY accel_* x25 and EVERY yaw_rate_* x5. Positions, heading and curvature were unaffected. Cross-arm comparisons stay valid (common factor); ABSOLUTE quotations and any comparison to a physical bar do not. MEASURED negative control: GT ego speed 12.4565 m/s vs _seq_geometry 62.9789 m/s = 5.0559x, on 859 real held-out windows."
+   },
+   "_binding_rule": "Sayed 2026-08-02: every eval reports LONGITUDINAL + LATERAL + TACTICAL + STRATEGIC in ADDITION to ADE. Per-family, never pooled. A family reported UNAVAILABLE is a WORK ITEM, not a pass.",
+   "_families_unavailable": [
+    "tactical",
+    "strategic"
+   ],
+   "_complete": false,
+   "_tag": "oracle-in-fan",
+   "_strategic_reason": "STRATEGIC is UNAVAILABLE from a fan bank: refc_rerank.dump stores no route/goal label and no decoded strategic decision, and it decoded with nav_mode='follow_constant' (the historical nav_cmd=None), so the route input was never exercised. n = 881 windows, 0 with a strategic label. This is a WORK ITEM (prereg §7.1 needs it for the S5 arm), not a pass.",
+   "_tactical_note": "the DECISION half of TACTICAL (selected-vs-executed manoeuvre, the full confusion) needs decoded manoeuvre logits, which the fan bank does not store. The GOAL/ANCHOR-SELECTION half — rank_acc, sel_gap, frac_sel_2x_worse — IS computed, and is the half D-SEL exists to move."
+  },
+  "paired_oracle_minus_shipped": {
+   "_tag": "oracle-in-fan MINUS shipped",
+   "_dt_s": 0.5,
+   "_dt_provenance": "derived from wp_steps [5, 10, 15, 20] x dt_s 0.1 -> 0.5s grid",
+   "LONGITUDINAL": {
+    "speed_abs_err_mps": {
+     "delta": -0.2943,
+     "lo": -0.3657,
+     "hi": -0.225,
+     "ci95": 0.0704,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 881,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "speed_signed_err_mps": {
+     "delta": -0.0237,
+     "lo": -0.1148,
+     "hi": 0.065,
+     "ci95": 0.0899,
+     "p_delta_gt0": 0.3055,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 881,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "along_abs_err_m": {
+     "delta": -0.3002,
+     "lo": -0.3682,
+     "hi": -0.2351,
+     "ci95": 0.0665,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 881,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "along_signed_err_m": {
+     "delta": -0.0212,
+     "lo": -0.1081,
+     "hi": 0.0633,
+     "ci95": 0.0857,
+     "p_delta_gt0": 0.3185,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 881,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   },
+   "LATERAL": {
+    "cross_abs_err_m": {
+     "delta": -0.0425,
+     "lo": -0.0645,
+     "hi": -0.0236,
+     "ci95": 0.0205,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 881,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "heading_abs_err_deg": {
+     "delta": -0.2443,
+     "lo": -0.4006,
+     "hi": -0.1087,
+     "ci95": 0.1459,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 881,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "curvature_abs_err_1pm": {
+     "delta": 0.0004,
+     "lo": -0.0007,
+     "hi": 0.0017,
+     "ci95": 0.0012,
+     "p_delta_gt0": 0.7515,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 881,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "yaw_rate_abs_err_degps": {
+     "delta": -0.1695,
+     "lo": -0.3813,
+     "hi": 0.0257,
+     "ci95": 0.2035,
+     "p_delta_gt0": 0.0485,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 881,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   },
+   "TACTICAL": "see rankers.* — rank_acc / sel_gap / frac_sel_2x_worse are the goal/anchor-selection half and ARE computed",
+   "STRATEGIC": "UNAVAILABLE — see families.*._strategic_reason (no route/goal label in a fan bank), n = 0"
+  },
+  "paired_shipped_minus_shuffled": {
+   "_tag": "shipped MINUS one shuffled draw (control)",
+   "_dt_s": 0.5,
+   "_dt_provenance": "derived from wp_steps [5, 10, 15, 20] x dt_s 0.1 -> 0.5s grid",
+   "LONGITUDINAL": {
+    "speed_abs_err_mps": {
+     "delta": -10.1761,
+     "lo": -10.9346,
+     "hi": -9.42,
+     "ci95": 0.7573,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 881,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "speed_signed_err_mps": {
+     "delta": -5.781,
+     "lo": -7.9,
+     "hi": -3.6455,
+     "ci95": 2.1273,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 881,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "along_abs_err_m": {
+     "delta": -13.4007,
+     "lo": -14.613,
+     "hi": -12.2764,
+     "ci95": 1.1683,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 881,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "along_signed_err_m": {
+     "delta": -5.014,
+     "lo": -8.2516,
+     "hi": -1.6692,
+     "ci95": 3.2912,
+     "p_delta_gt0": 0.003,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 881,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   },
+   "LATERAL": {
+    "cross_abs_err_m": {
+     "delta": -0.7485,
+     "lo": -0.8765,
+     "hi": -0.6307,
+     "ci95": 0.1229,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 881,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "heading_abs_err_deg": {
+     "delta": -18.8037,
+     "lo": -22.6982,
+     "hi": -15.0548,
+     "ci95": 3.8217,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 881,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "curvature_abs_err_1pm": {
+     "delta": -0.0911,
+     "lo": -0.1108,
+     "hi": -0.0739,
+     "ci95": 0.0184,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 881,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "yaw_rate_abs_err_degps": {
+     "delta": -38.961,
+     "lo": -50.7622,
+     "hi": -27.9832,
+     "ci95": 11.3895,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 881,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   },
+   "TACTICAL": "see rankers.* — rank_acc / sel_gap / frac_sel_2x_worse are the goal/anchor-selection half and ARE computed",
+   "STRATEGIC": "UNAVAILABLE — see families.*._strategic_reason (no route/goal label in a fan bank), n = 0"
+  }
+ },
+ "S2_reachability": {
+  "band": "v_term in [max(0, v0 - 5.0), v0 + 5.0] m/s; accel_max=2.5, horizon_s=2.0 — flagship_v15's OWN goal clamp, NOT tuned",
+  "frac_candidates_removed": 0.7208,
+  "frac_windows_with_empty_survivor_set": 0.0,
+  "oracle_survives_frac": 1.0,
+  "oracle_ade_unfiltered": 0.164,
+  "oracle_ade_after_clip": 0.164,
+  "as_trained_ade": 0.4714,
+  "clipped_ade": 0.4714,
+  "search_space_cheaper_x": 3.5818,
+  "paired_clipped_minus_as_trained": {
+   "delta": 0.0,
+   "lo": 0.0,
+   "hi": 0.0,
+   "ci95": 0.0,
+   "p_delta_gt0": 0.0,
+   "separated": false,
+   "reducer": "mean",
+   "n_windows": 881,
+   "n_episodes": 40,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap"
+  },
+  "role": "PRECONDITION, not a win — S2 is MEASURED inert on ADE and its value is COMPUTE (it is what lets S3 exist). Claiming an ADE effect for it would contradict its own measurement."
+ },
+ "E-SEL-0": {
+  "experiment": "E-SEL-0",
+  "status": "BLOCKED — treatment leg not computable from the bank",
+  "reason": "refc_rerank.dump stores `logits` = anchor_logits (the t=0 classifier pass) and the refined `fan`, but NOT the refined confidence — the decoder DISCARDED it, which is defect D1 itself. Recovering it needs a decoder forward over the val episodes at REF-C's 256x256 raster.",
+  "n_windows_treatment": 0,
+  "n_windows_control": 881,
+  "control_leg": {
+   "C-shuffled": "MEASURED — see controls.C-shuffled",
+   "shipped": "MEASURED — see rankers.shipped"
+  },
+  "what_would_unblock_it": "--ckpt <refc-base-30k ckpt.pt> --data <physicalai-val-0c5f7dac3b11 episode cache at [T,9,256,256]>. RefCModel.forward returns `refined_logits` unconditionally post-D-SEL, so this is ONE forward, no training.",
+  "⛔": "no substitute statistic is reported in its place. A different experiment presented as this one is the failure mode the pre-registration exists to prevent."
+ },
+ "E-SEL-1": {
+  "experiment": "E-SEL-1",
+  "status": "BLOCKED — not computable from the bank",
+  "reason": "needs (a) `pooled` per window, (b) REF-C's trained `law_head`, and (c) z_{t+5} — the no_grad encoding of the frame 5 steps ahead. refc_rerank.dump stores none of the three; all require a checkpoint AND the val episode cache at REF-C's 256x256 raster.",
+  "n_windows": 0,
+  "note": "law_head is [pooled, traj] -> pooled_{t+5} and is a single MLP evaluation per candidate, so this is cheap ONCE the two inputs exist — it is an access problem, not a compute one.",
+  "⛔": "imagine_probes is NOT a fallback: IMAGINATION_HAS_CANDIDATE_AXIS = False (32 tokens identical for all 256 candidates) and REF-C's law_head cannot be iterated. The prereg refuses that port from source."
+ },
+ "wall_s": 3.8
+}

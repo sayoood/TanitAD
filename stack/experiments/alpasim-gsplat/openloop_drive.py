@@ -219,10 +219,17 @@ def main():
         ego = [float(T_rig[0, 3]), float(T_rig[1, 3]), float(T_rig[2, 3]), _yaw(T_rig)]
         v = float(gtp[k, 3])
         nav, navd = nav_from_route(gtp, k)
+        nk = navd.get("nav_known")
         fl = list(frames)
         for a, pol in pols.items():
             t_p = time.time()
-            traj, extra = pol.plan(fl, intr, v, nav)
+            # E1: the companion bit reaches the arm only if the arm was BUILT to
+            # read it (`consumes_nav_known`). Either way it is recorded per tick,
+            # so "the model could not distinguish UNKNOWN from STRAIGHT" becomes a
+            # readable property of the rollout rather than an inference from source.
+            traj, extra = pol.plan(
+                fl, intr, v, nav,
+                nav_known=(nk if getattr(pol, "consumes_nav_known", False) else None))
             ms = (time.time() - t_p) * 1000.0
             plan_ms[a].append(ms)
             # SAME controller as the closed loop, RECORDED not APPLIED. It is what makes
@@ -231,6 +238,9 @@ def main():
             steer, accel, v_target, kappa = wp_to_control(traj[LOOKAHEAD_IDX], v)
             per_arm_steps[a].append({
                 "k": k, "t_us": float(gt_ts[k]), "i_gt": int(k), "nav": int(nav),
+                "nav_known": nk,
+                "nav_known_fed": bool(getattr(pol, "consumes_nav_known", False)
+                                      and nk is not None),
                 "nav_detail": navd, "ego": ego, "v": v, "plan": traj.tolist(),
                 "steer": steer, "accel": accel, "v_target": v_target,
                 "kappa_plan": kappa, "plan_ms": ms, "extra": extra,

@@ -1,0 +1,108 @@
+{
+  "collected_at": "2026-08-04T06:44:00Z",
+  "host": "e98a867e7c55",
+  "memory": {
+    "limit_bytes": 49999998976,
+    "memsw_limit_bytes": 49999998976,
+    "usage_bytes": 49282052096,
+    "max_usage_bytes": 49999998976,
+    "failcnt_counters": {
+      "memory.failcnt": 0,
+      "memory.memsw.failcnt": 29219916,
+      "memory.kmem.failcnt": 0
+    },
+    "which_failcnt_is_live": {
+      "live": "memory.memsw.failcnt",
+      "frozen": [
+        "memory.failcnt"
+      ],
+      "reason": "memsw limit (49999998976) <= memory limit (49999998976) and swap is 0, so the memsw counter is charged first and absorbs every failure: memory.failcnt is STRUCTURALLY FROZEN AT 0 and proves nothing"
+    },
+    "live_failcnt_value": 29219916,
+    "headroom": {
+      "unreclaimable_bytes": 10753982464,
+      "unreclaimable_gb": 10.02,
+      "reclaimable_cache_gb": 35.62,
+      "limit_gb": 46.57,
+      "headroom_gb": 36.55,
+      "unreclaimable_pct_of_limit": 21.5
+    },
+    "memory_stat": {
+      "rss": 5368467456,
+      "cache": 43629305856,
+      "shmem": 5385515008,
+      "swap": 0,
+      "mapped_file": 5435219968,
+      "active_anon": 10094276608,
+      "inactive_anon": 659562496,
+      "active_file": 13432532992,
+      "inactive_file": 24811216896
+    },
+    "oom": {
+      "oom_kill": 1,
+      "under_oom": 0,
+      "oom_kill_disable": 0,
+      "window_start_epoch": 1785710792.4839933,
+      "window_hours": 31.96,
+      "quotable": true,
+      "caveat": "counts tasks in this cgroup killed by ANY OOM killer (this cgroup's or the host's global one) \u2014 it does NOT by itself say which",
+      "statement": "1 OOM kill(s) in this container since it started 31.96 h ago \u2014 NOT a lifetime history of the pod"
+    },
+    "note": "usage_in_bytes INCLUDES reclaimable page cache and is NOT a pressure signal \u2014 read headroom.unreclaimable_gb against limit_gb instead"
+  },
+  "kernel_log": {
+    "dmesg_readable": false,
+    "kmsg_readable": false,
+    "detail": "dmesg: read kernel buffer failed: Operation not permitted",
+    "warning": "kernel log NOT readable from here \u2014 an OOM kill CANNOT be confirmed or excluded via dmesg. Use the cgroup oom counter and the provider console (RunPod surfaces an OOM banner)."
+  },
+  "cpu": {
+    "effective_cpus": 7.65,
+    "window_s": 5.0,
+    "delta_nr_periods": 50,
+    "delta_nr_throttled": 0,
+    "delta_throttled_time_s": 0.0,
+    "throttled_period_pct": 0.0,
+    "lifetime_nr_throttled": 206
+  },
+  "gpu": {
+    "available": true,
+    "utilization_pct": {
+      "n": 12,
+      "median": 99.5,
+      "mean": 76.42,
+      "min": 22.0,
+      "max": 100.0
+    },
+    "memory_used_mib": {
+      "n": 12,
+      "median": 16071.0,
+      "mean": 16071.0,
+      "min": 16071.0,
+      "max": 16071.0
+    },
+    "note": "a single sample of an input-bound trainer is meaningless; >=10 required"
+  },
+  "processes": [
+    {
+      "pid": 30599,
+      "alive": true,
+      "rss_kb": 7789696,
+      "anon_kb": 2083188,
+      "file_kb": 442208,
+      "shmem_kb": 5264300,
+      "threads": 16,
+      "cmdline": "python3 -u scripts/train_flagship_v4.py --v2-train-cache /workspace/data/physicalai-train-e438721ae894-w120-256x640cyl --v2-val-cache /workspace/data/physicalai-val-0c5f7dac3b11-w120-256x640cyl --v2-lru 4 --require-parity --frame-h 256 --frame-w 640 --frame-hfov 120 --projection cylindrical --v2-subframe 176x624 --from-scratch --batch 4 --accum 16 --save-every 250 --anchors-dense /workspace/experi"
+    },
+    {
+      "pid": 30649,
+      "alive": true,
+      "rss_kb": 2565812,
+      "anon_kb": 2389680,
+      "file_kb": 102848,
+      "shmem_kb": 73284,
+      "threads": 3,
+      "cmdline": "python3 -u scripts/train_flagship_v4.py --v2-train-cache /workspace/data/physicalai-train-e438721ae894-w120-256x640cyl --v2-val-cache /workspace/data/physicalai-val-0c5f7dac3b11-w120-256x640cyl --v2-lru 4 --require-parity --frame-h 256 --frame-w 640 --frame-hfov 120 --projection cylindrical --v2-subframe 176x624 --from-scratch --batch 4 --accum 16 --save-every 250 --anchors-dense /workspace/experi"
+    }
+  ]
+}

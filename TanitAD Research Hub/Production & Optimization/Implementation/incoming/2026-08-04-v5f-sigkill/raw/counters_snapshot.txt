@@ -1,0 +1,84 @@
+# cgroup + host counters, tanitad-new, captured 2026-08-04T06:48:10Z
+## /sys/fs/cgroup/memory
+--- memory.limit_in_bytes
+49999998976
+--- memory.memsw.limit_in_bytes
+49999998976
+--- memory.usage_in_bytes
+49189191680
+--- memory.max_usage_in_bytes
+49999998976
+--- memory.failcnt
+0
+--- memory.memsw.failcnt
+29296119
+--- memory.kmem.failcnt
+0
+--- memory.oom_control
+oom_kill_disable 0
+under_oom 0
+oom_kill 1
+## memory.stat (head 22)
+cache 43333881856
+rss 5573615616
+rss_huge 0
+shmem 5385515008
+mapped_file 5435219968
+dirty 8192
+writeback 0
+workingset_refault_anon 0
+workingset_refault_file 53979170
+swap 0
+swapcached 0
+pgpgin 31106085030
+pgpgout 31094162665
+pgfault 30360862056
+pgmajfault 1247
+inactive_anon 643891200
+active_anon 10315157504
+inactive_file 23711801344
+active_file 14236495872
+unevictable 0
+hierarchical_memory_limit 49999998976
+hierarchical_memsw_limit 49999998976
+## container start
+    PID                  STARTED ELAPSED CMD
+      1 Sun Aug  2 22:46:31 2026  115299 /sbin/docker-init -- /opt/nvidia/nvidia_entrypoint.sh /start.sh
+## cpu quota + stat
+765000
+100000
+nr_periods 941410
+nr_throttled 206
+throttled_time 413835528370
+nr_bursts 0
+burst_time 0
+## pids
+5120
+43
+max 0
+## host mem/swap
+               total        used        free      shared  buff/cache   available
+Mem:             503          67         107           6         328         425
+Swap:              0           0           0
+Filename				Type		Size		Used		Priority
+## dmesg access
+dmesg: read kernel buffer failed: Operation not permitted
+## gpu
+NVIDIA A40, 46068 MiB, 16071 MiB
+            SRAM Uncorrectable Parity     : 0
+            SRAM Uncorrectable SEC-DED    : 0
+            DRAM Uncorrectable            : 0
+            SRAM Uncorrectable Parity     : 0
+            SRAM Uncorrectable SEC-DED    : 0
+            DRAM Uncorrectable            : 0
+## v2 cache mean payload (n=40 sample)
+n=40 mean_bytes=34985158 mean_MB=33.36
+## live v5f process tree RSS split
+pid=30573 VmRSS:=2316 RssAnon:=0 RssFile:=2316 RssShmem:=0 Threads:=1 
+pid=30599 VmRSS:=7789600 RssAnon:=2083188 RssFile:=442208 RssShmem:=5264204 Threads:=16 
+pid=30649 VmRSS:=2293400 RssAnon:=2190552 RssFile:=102848 RssShmem:=0 Threads:=3 
+pid=30712 VmRSS:=2265756 RssAnon:=2163648 RssFile:=102108 RssShmem:=0 Threads:=3 
+pid=30775 VmRSS:=2131000 RssAnon:=2028916 RssFile:=102084 RssShmem:=0 Threads:=3 
+pid=30838 VmRSS:=2359484 RssAnon:=2257432 RssFile:=102052 RssShmem:=0 Threads:=3 
+## RUNNING trainer flags (from /proc, not the manifest)
+python3 -u scripts/train_flagship_v4.py --v2-train-cache /workspace/data/physicalai-train-e438721ae894-w120-256x640cyl --v2-val-cache /workspace/data/physicalai-val-0c5f7dac3b11-w120-256x640cyl --v2-lru 4 --require-parity --frame-h 256 --frame-w 640 --frame-hfov 120 --projection cylindrical --v2-subframe 176x624 --from-scratch --batch 4 --accum 16 --save-every 250 --anchors-dense /workspace/experiments/flagship_v4_anchors_dense.pt --cond-imagination --no-heldout-gate --heldout-off-reason PI directive: no heldout gate. Migrated from the faulty pod2 (critical hardware error + maintenance 08-06..08-08). --workers 4 --out /workspace/experiments/flagship-v5f-w120-30k 

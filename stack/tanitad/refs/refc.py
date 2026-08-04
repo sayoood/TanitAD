@@ -77,6 +77,13 @@ Graft seams (gated, zero-init / identity starts — byte-identical when off):
     condition, never choose (``graft_route``). Rationale, the measurements, and
     the argued list of flagship levers that do NOT transfer: ``refc_select.py``.
     Preset: :func:`refc_select_config` (+385 parameters, MEASURED).
+  - ``graft_goal`` (default False, S6): a **PREDICTED GEOMETRIC** goal — bearing
+    + signed along-track preference, from the image embedding ALONE — reaching
+    the ranked score through the same param-free geometric compatibility LAN
+    uses, on TWO independent zero-init gates. Admissible under the PI ruling of
+    2026-08-03; what it is computed from is declared by
+    :meth:`RefCModel.goal_provenance` and written into every ``config.json``.
+    Preset: :func:`refc_goal_config`.
   - ``ego_valid_channel`` (default False, X15): an explicit "v0 is present" flag
     beside the ego-dropped speed, for the measurement encoder and the tactical
     head. 0.0 m/s is in-distribution "stationary", so zero-filling a withheld
@@ -360,11 +367,23 @@ class SelectionConfig:
     to one built before D-SEL existed.
     """
     refined: bool = False             # S1 rank on the refined confidence
+    score_emitted: bool = False       # S1b read that confidence FROM THE EMITTED
+    #                                   fan (one extra conf-only pass), so the
+    #                                   scored object IS the ranked object
+    score_emitted_t: int = -1         # ...with WHICH timestep token. -1 continues
+    #                                   the loop's own schedule; >=0 pins one.
+    #                                   t=0 is the ONLY token `loss_cls` ever
+    #                                   supervises, and "this estimate is clean"
+    #                                   is arguably what a denoised fan IS.
+    #                                   0 parameters either way (the embedding
+    #                                   table already carries every index).
     reach_clamp: bool = False         # S2 bounded-acceleration candidate band
     accel_max: float = 2.5            # m/s^2 for that band
     graft_cons: bool = False          # S3 consequence score reaches the ranking
     cons_detach: bool = True          # ...with law_head under no_grad
     graft_route: bool = False         # S5 route readout reaches the ranking
+    graft_goal: bool = False          # S6 predicted GEOMETRIC goal (bearing +
+    #                                   along-track), two independent gates
     seam_clamp: float = 0.0           # S4 norm cap on the total graft (<=0 off)
     seam_fail: float = 1.5
     seam_fail_frac: float = 0.75
@@ -373,8 +392,9 @@ class SelectionConfig:
 
     @property
     def any_on(self) -> bool:
-        return bool(self.refined or self.reach_clamp or self.graft_cons
-                    or self.graft_route or self.seam_clamp > 0.0)
+        return bool(self.refined or self.score_emitted or self.reach_clamp
+                    or self.graft_cons or self.graft_route or self.graft_goal
+                    or self.seam_clamp > 0.0)
 
 
 @dataclass
@@ -431,6 +451,82 @@ class RefCConfig:
     #                                   confidence (today: the t=0 classifier
     #                                   score ranks post-denoise trajectories).
     #                                   Inert at steps=0 BY CONSTRUCTION.
+    # --- S1's CLIMB-OUT: two ZERO-PARAMETER distribution matches --------------
+    # E-SEL-0 MEASURED that the refined readout, UNSUPERVISED, ranks 0.8372 m
+    # (base) / 0.9187 m (XL) WORSE than the shipped t=0 score - separated, both
+    # arms - while still scoring 8.7x / 16.6x chance. So it is off-distribution,
+    # not uninformative, and S1 must CLIMB OUT (supervise it) rather than HARVEST
+    # it. These two flags remove the two places where the object that is SCORED,
+    # the object that is SUPERVISED and the object that is EMITTED are still
+    # three different things. Both cost 0 parameters.
+    sel_score_emitted: bool = False   # S1b the ranked confidence is read from the
+    #                                   EMITTED fan. Today the last denoise pass
+    #                                   scores its own INPUT `x_in` and the fan
+    #                                   that leaves the decoder is `x_in + off` -
+    #                                   the emitted trajectories are never scored
+    #                                   by any head. Costs one extra conf-only
+    #                                   decoder pass; 0 parameters. Inert at
+    #                                   steps=0 BY CONSTRUCTION (as S1 is).
+    sel_ce_reach: bool = False        # S1c the ranked-score CE normalises over
+    #                                   EXACTLY the survivor set the argmax ranks
+    #                                   over, and its target is the best candidate
+    #                                   IN that set. Today the CE is a full-fan
+    #                                   softmax while the selector solves a
+    #                                   ~26-28 % sized problem: MEASURED 73.76 %
+    #                                   (base) / 72.08 % (XL) of the fan is
+    #                                   unreachable and never selected, and
+    #                                   S3_DEPLOYABLE 3.2 measured that a
+    #                                   statistic over the whole candidate axis is
+    #                                   DOMINATED by candidates no selector ever
+    #                                   picks. REQUIRES sel_reach_clamp (the mask
+    #                                   is its survivor set); the trainer refuses
+    #                                   the combination without it. 0 parameters.
+    sel_score_emitted_t: int = -1     # ...and with WHICH timestep token (-1 =
+    #                                   continue the loop's schedule). MEASURED
+    #                                   POST-HOC: `loss_cls` supervises the conf
+    #                                   head ONLY at t=0, so the token matters.
+    # --- E-OBJ-1: the OBJECTIVE the ranked score is trained under --------------
+    # "ce"      (default) the INCUMBENT one-hot cross-entropy. Bit-unchanged.
+    # "softade" the EXPECTED fan error under the score's own softmax -- a
+    #           METRIC-AWARE objective. ⭐ MEASURED (E-OBJ-1, frozen 30 k weights,
+    #           881 windows, LOEO, paired episode-cluster bootstrap): swapping a
+    #           fitted ranker's objective from the CE to this recovers -0.0974 m
+    #           (base) / -0.1670 m (XL) of its deficit, separated, and the
+    #           recovery is LONGITUDINAL (`speed_abs` -0.1102 / -0.1816).
+    # "softce"  the CE form with a SOFTENED target `softmax(-fan_err/tau)`.
+    #           ⚠️ MEASURED SEPARATED **WORSE** than the incumbent CE (+0.0909 m
+    #           base) at every tau in {0.1, 0.25, 0.5}. It is implemented ONLY so
+    #           that a `softade` arm has the control that separates
+    #           METRIC-AWARENESS from TARGET-SOFTNESS in training. ⛔ Not a
+    #           recommendation.
+    # 0 parameters, all three: they change a scalar loss, never a module.
+    # ⚠️ SCALE: "ce"/"softce" are in NATS, "softade" is in METRES, and
+    # REFINED_CLS_WEIGHT was calibrated for the former. An arm that swaps the
+    # objective MUST decide that weight explicitly -- the trainer says so loudly.
+    sel_ce_objective: str = "ce"
+    #: extra multiplier on `loss_rcls`, applied ONLY when `sel_ce_objective` is
+    #: not "ce", so the incumbent path stays bit-identical. It exists because the
+    #: objective swap changes the loss's UNITS, and a silent re-weighting of the
+    #: selection term against LAW / maneuver / trajectory is exactly the kind of
+    #: confound that makes an arm unattributable. The trainer refuses a value
+    #: other than 1.0 on the "ce" path rather than recording an inert number.
+    sel_ce_weight: float = 1.0
+    # --- E-OBJ-1: the TARGET SHAPE of the ranked-score CE ----------------------
+    # `loss_rcls` is a ONE-HOT cross-entropy over ~128 near-duplicate candidates:
+    # one winner, 127 losers, and the loser that missed by a centimetre is
+    # penalised exactly as hard as the one that missed by ten metres. MEASURED
+    # (E-S1-0 3.1): under that objective EVERY fitted ranker is separated WORSE
+    # than the incumbent selector - including feature sets that CONTAIN the
+    # incumbent's own score - with a C-leak gap of -0.001 to -0.003 m, i.e. NOT
+    # overfitting. Softening the TARGET to `softmax(-fan_err / tau)` keeps the CE
+    # form (and with it the gradient path `cons_gate` / `route_to_anchor` depend
+    # on - see the note at loss_rcls) and only stops the objective insisting on
+    # one winner among near-duplicates.
+    #   0.0 (default) => the INCUMBENT one-hot target, bit-unchanged.
+    #   tau -> 0      => converges to the one-hot target BY CONSTRUCTION, which is
+    #                    what makes this a continuous knob and not a new loss.
+    # 0 parameters: it changes a target tensor, never a module.
+    sel_ce_soft_tau: float = 0.0
     sel_reach_clamp: bool = False     # S2 bounded-acceleration band on the
     #                                   CANDIDATES (argmax only; the returned
     #                                   score stays unmasked so no -inf reaches
@@ -447,6 +543,16 @@ class RefCConfig:
     graft_route: bool = False         # S5 the strategic route READOUT reaches
     #                                   the ranked score (zero-init), instead of
     #                                   only warping the decoder condition
+    graft_goal: bool = False          # S6 a PREDICTED GEOMETRIC goal (bearing +
+    #                                   along-track distance) reaches the ranked
+    #                                   score through the SAME param-free
+    #                                   geometric compatibility LAN uses. The
+    #                                   PI's 2026-08-03 ruling: a goal input is
+    #                                   admissible, but it must be GEOMETRIC and
+    #                                   PREDICTED, never categorical-and-
+    #                                   supplied, and it must not carry the
+    #                                   situation classifier's output in any
+    #                                   form. See RefCModel.goal_provenance().
     seam_clamp: float = 0.0           # S4 in-graph norm cap on the TOTAL graft
     #                                   per surface, as a multiple of the base
     #                                   score norm. <=0 disables; below the cap
@@ -463,6 +569,24 @@ class RefCConfig:
     #                                   head. 0.0 m/s is in-distribution
     #                                   "stationary"; masking to it is a
     #                                   confident lie.
+    nav_known_channel: bool = False   # E1: the COMPANION BIT of the nav command.
+    #                                   `nav_command_v21` collapses ROUTE_UNKNOWN
+    #                                   and ROUTE_STRAIGHT onto the SAME
+    #                                   NAV_FOLLOW token, so "the road goes
+    #                                   straight" and "I could not judge the
+    #                                   route" are BYTE-IDENTICAL at the model
+    #                                   input. MEASURED: 1,985 of 3,179 (62.4 %)
+    #                                   `follow` windows are a collapsed UNKNOWN.
+    #                                   This adds `nav_known` in {0,1} beside the
+    #                                   one-hot, exactly as `ego_valid_channel`
+    #                                   adds the "v0 is present" flag beside the
+    #                                   ego-dropped speed — the same X15 rule
+    #                                   ("never zero-fill a channel whose zero is
+    #                                   a valid in-distribution value"), applied
+    #                                   to the route instead of the speed.
+    #                                   ⛔ DEFAULT OFF. Turning it on changes what
+    #                                   every arm is fed and is a PI decision.
+    #                                   Feed it from `refb_labels.nav_input_v22`.
     tactical_latent_dim: int = 512      # external target_latent width (S)
     refc1: bool = False           # fixed-distance path + target-speed class
     path_dists: tuple[float, ...] = (2.0, 5.0, 10.0, 20.0)   # metres (refc1)
@@ -474,9 +598,12 @@ class RefCConfig:
         the trajectory horizons (0.1 s steps), never a constant — the reachable
         band and the anchors must agree about how long the plan is."""
         return SelectionConfig(
-            refined=self.sel_refined, reach_clamp=self.sel_reach_clamp,
+            refined=self.sel_refined, score_emitted=self.sel_score_emitted,
+            score_emitted_t=self.sel_score_emitted_t,
+            reach_clamp=self.sel_reach_clamp,
             accel_max=self.sel_accel_max, graft_cons=self.graft_cons,
             cons_detach=self.cons_detach, graft_route=self.graft_route,
+            graft_goal=self.graft_goal,
             seam_clamp=self.seam_clamp, seam_fail=self.seam_fail,
             seam_fail_frac=self.seam_fail_frac,
             seam_fail_patience=self.seam_fail_patience,
@@ -657,6 +784,10 @@ def refc_select_config() -> RefCConfig:
     ``ego_valid_channel`` is NOT in this preset: it changes the measurement
     encoder's INPUT, so it is an input lever, not a selection lever, and mixing
     it in would make the arm non-attributable. It has its own arm.
+
+    ``graft_goal`` (S6) is NOT in this preset either, and for a stronger reason:
+    it is **SEQUENCED BEHIND** the temporal-feature question, not independent of
+    it. See :func:`refc_goal_config`.
     """
     cfg = refc_config()
     cfg.sel_refined = True
@@ -664,6 +795,77 @@ def refc_select_config() -> RefCConfig:
     cfg.graft_cons = True
     cfg.graft_route = True
     cfg.seam_clamp = 1.0
+    return cfg
+
+
+def refc_goal_config() -> RefCConfig:
+    """D-SEL + S6, the **PREDICTED GEOMETRIC GOAL** arm (PI ruling 2026-08-03).
+
+    *"yes a goal input is admissible, at the same time, we need to be careful
+    not to include the result of the situation classification in the goal
+    input."* — Sayed, 2026-08-03.
+
+    WHAT THE GOAL IS COMPUTED FROM is declared in machine-readable form by
+    :meth:`RefCModel.goal_provenance`, written into every run's ``config.json``,
+    and asserted by ``tests/test_refc_select.py``. In one line: **the image
+    embedding of the last frame, and nothing else.** No situation-classifier
+    output exists in this graph in any form.
+
+    WHY GEOMETRIC AND PREDICTED. With proper no-navigation controls, a
+    CATEGORICAL command buys ~nothing (TransFuser perturbed to
+    None/Random/Left/Right: PDMS flat 84.0-84.7; no-nav -> command-only **+0.2**)
+    while a GEOMETRIC goal buys a lot (route path + turn-by-turn **+2.3**;
+    GoalFlow goal POINT **+4.7**). And a SUPPLIED route is optimistic by
+    construction on PhysicalAI, whose only route supplier is the ego's own
+    future path. So S6 predicts a bearing + an along-track preference from
+    vision and feeds them to the SAME param-free geometric compatibility LAN
+    uses. ``--graft-lan`` is required because the corridor is the head's
+    TRAINING LABEL — never a model input for this seam.
+
+    ⛔ **SEQUENCING, NOT A STANDALONE WIN.** A predicted goal must predict
+    along-track distance from latents in which ``long_accel`` was MEASURED
+    unrecoverable across 17 head architectures (K7). Our own prior therefore
+    predicts PARTIAL FAILURE — the bearing half should work, the along-track
+    half should not. The two gates are separate precisely so that prediction is
+    MEASURED rather than assumed.
+
+    ⛔ **CORRECTED 2026-08-03 — two claims in the previous version of this
+    paragraph were wrong, and the second one could have killed this arm for
+    free.**
+
+    1. *"REF-C is structurally single-instant"* is **imprecise**. It keeps one
+       feature **map**, but that map is computed from a D-015 **3-frame stack**
+       (``in_channels=9``), so it already carries **~300 ms** of motion — not
+       zero. Verified numerically: ``frames_u8[t][6:9] == frames_u8[t+1][3:6]``,
+       max|d| = 0.0. Two independent streams corroborated it on different files
+       and corpora. What REF-C discards is *history beyond that stack*, which is
+       a much weaker statement than "single-instant".
+    2. ⭐ *"conditional on the sibling temporal-feature stream"* is **RETRACTED**.
+       The two do **not** share an input path — REF-C keeps ONE feature map
+       (``forward``, this file), while the situation classifier stacks **eight**
+       via ``sitclf.causal_window``. A null in that stream is therefore **not
+       evidence about S6**, and registering S6 as contingent on it would have
+       let an unrelated result cancel a lever that was never tested.
+       **S6 needs its own evidence.** It is an independent lever whose
+       along-track half carries a stated adverse prior — not a dependent one.
+
+    ⇒ **RULE: an arm may only be registered as conditional on another result
+    when the two share the mechanism, not merely the topic.** Check the input
+    path before writing "conditional on".
+
+    Capacity, MEASURED: ``goal_head`` = ``Linear(feat, 3)`` = 2,115 on base,
+    plus two scalar gates.
+    """
+    cfg = refc_select_config()
+    cfg.graft_route = False       # the categorical pathway is NOT mixed in: two
+    #                               route-ish levers in one arm is unattributable
+    # ⛔ ``graft_lan`` STAYS OFF. It is the SUPPLIED corridor as a MODEL INPUT —
+    # exactly the thing the ruling says a goal must not be. The trainer mints the
+    # `lan` batch field for S6's LABEL without building this input pathway, so
+    # the arm reads a PREDICTED goal and nothing supplied. (An earlier draft of
+    # this preset set it True and would have contaminated the arm with both.)
+    cfg.graft_lan = False
+    cfg.graft_goal = True
     return cfg
 
 
@@ -929,6 +1131,26 @@ class AnchoredDiffusionDecoder(nn.Module):
         self.cons_gate: nn.Parameter | None = None
         if self.sel.graft_cons:
             self.cons_gate = nn.Parameter(torch.zeros(1))
+        # S6: the PREDICTED GEOMETRIC goal, on TWO INDEPENDENT zero-init gates.
+        #
+        # ⭐ THE SPLIT IS THE INSTRUMENT, not tidiness. The PI's ruling carries a
+        # caveat that binds this lever: a predicted goal must predict ALONG-TRACK
+        # distance from latents in which `long_accel` was measured UNRECOVERABLE
+        # across 17 head architectures (K7), and REF-C is structurally
+        # single-instant — `RefCModel.forward` cross-attends the LAST frame's
+        # feature map only. The BEARING half is lateral topology and is
+        # recoverable from one frame; the ALONG-TRACK half is exactly the half
+        # our own prior says should fail until temporal features land.
+        # Two gates therefore let the arm MEASURE that prediction instead of
+        # being defeated by it: `goal_dist_gate` staying at ~0 while
+        # `goal_gate` opens IS the K7 result, read off a training run, and it is
+        # the cheapest available read on whether the sibling temporal-feature
+        # stream is a precondition for goal conditioning.
+        self.goal_gate: nn.Parameter | None = None
+        self.goal_dist_gate: nn.Parameter | None = None
+        if self.sel.graft_goal:
+            self.goal_gate = nn.Parameter(torch.zeros(1))
+            self.goal_dist_gate = nn.Parameter(torch.zeros(1))
 
     def load_anchors(self, anchors: Tensor) -> None:
         """Install an externally-built anchor vocabulary (build_refc_anchors.py).
@@ -995,6 +1217,29 @@ class AnchoredDiffusionDecoder(nn.Module):
             fail_frac=self.sel.seam_fail_frac, patience=patience,
             state=state, surface=surface)
 
+    def _goal_along_prior(self, dist_pref: Tensor) -> Tensor:
+        """Along-track compatibility of every anchor with a PREDICTED goal
+        distance. ``dist_pref`` [B] in [-1, 1] -> [B, N].
+
+        Each anchor's terminal FORWARD displacement, z-scored across the fan (so
+        the term is scale-free and cannot become a second confidence), times a
+        signed preference: +1 = "the goal is far, prefer plans that cover
+        ground", -1 = "the goal is near, prefer plans that do not".
+
+        ⚠️ THIS IS THE AXIS A *SUPPLIED* ROUTE MAY NEVER TOUCH.
+        :meth:`_lan_anchor_prior` is deliberately along-track-free, because a
+        supplied route's along-track content is the ego's own future progress —
+        i.e. its speed — and feeding that back as an input is a leak
+        (GOAL_INPUT.md measured that axis at +83.7 %). The distinction that makes
+        this admissible is PROVENANCE, not shape: ``dist_pref`` is PREDICTED from
+        the image embedding at inference and never read from the label. The
+        label is used only to train the head, which is the sanctioned direction
+        ("LABELS MAY USE EGO; INFERENCE IS VISION-ONLY").
+        """
+        end_x = self.anchors.to(dist_pref.dtype)[:, -1, 0]           # [N]
+        z = (end_x - end_x.mean()) / end_x.std().clamp_min(1e-6)     # [N]
+        return z[None] * dist_pref.reshape(-1, 1)                   # [B, N]
+
     @staticmethod
     def _grounded_score(x: Tensor) -> Tensor:
         """Param-free progress/collision proxy over decoded endpoints [B,N,S,2]:
@@ -1012,7 +1257,9 @@ class AnchoredDiffusionDecoder(nn.Module):
                 route_prior: Tensor | None = None,
                 cons_head=None, cons_ctx: Tensor | None = None,
                 v_ms: Tensor | None = None,
-                ego_keep: Tensor | None = None) -> dict:
+                ego_keep: Tensor | None = None,
+                goal_dir: Tensor | None = None,
+                goal_dist_pref: Tensor | None = None) -> dict:
         """D-SEL adds five OPTIONAL ranking inputs; with all flags off the
         emitted ``traj`` / ``sel_idx`` are bit-identical to pre-D-SEL REF-C.
 
@@ -1089,12 +1336,49 @@ class AnchoredDiffusionDecoder(nn.Module):
             refined, _ = self._apply_grafts(r_conf, terms, self._seam_refined,
                                             "refined", 0)
 
+        # S1b: THE READOUT ABOVE SCORES THE WRONG OBJECT, AND IT IS ONE LINE
+        # OF SOURCE. `_decode(kv, cond, x_in, t)` returns the confidence OF
+        # `x_in` alongside the offset that improves it, and the loop then emits
+        # `x = x_in + off`. So `refined` is the confidence of the estimate the
+        # LAST pass CONSUMED, never of the fan that leaves this method - the
+        # emitted trajectories are scored by no head at all. That is D1 again,
+        # one denoise step less severe: the shipped ranker is 2 passes stale and
+        # S1's refined ranker is 1 pass stale.
+        #
+        # THE EMITTED FAN IS NOT TOUCHED. The extra pass keeps its confidence and
+        # DISCARDS its offset, so `anchor_traj` - and therefore the published
+        # oracle-in-fan (0.1914 base / 0.1640 XL) that every D-SEL contrast is
+        # paired against - is bit-unchanged. The cost is one extra decoder pass
+        # and ZERO parameters.
+        #
+        # `t_idx` continues the loop's own schedule (pass i used `i + 1`),
+        # clamped to the embedding table exactly as the loop clamps it.
+        prefinal = None
+        if sel.score_emitted and steps > 0:
+            t_e = (min(steps + 1, self.cfg.diffusion_steps)
+                   if sel.score_emitted_t < 0
+                   else min(sel.score_emitted_t, self.cfg.diffusion_steps))
+            e_conf, _ = self._decode(kv, cond, x, t_e)
+            prefinal = refined
+            refined, _ = self._apply_grafts(e_conf, terms, self._seam_refined,
+                                            "refined", 0)
+
         # ---- the RANKED score ------------------------------------------------
         base = refined if sel.refined else conf
         r_terms: list[Tensor] = []
         cons_s = None
         if self.route_to_anchor is not None and route_prior is not None:
             r_terms.append(self.route_to_anchor(route_prior))
+        # S6: the PREDICTED goal reaches SELECTION through the SAME param-free
+        # geometric compatibility the SUPPLIED LAN route uses — identical
+        # mechanism, different provenance — and through a separately-gated
+        # along-track term. Two gates, so bearing and distance are individually
+        # ablatable and the K7 prediction is readable off the learned values.
+        if self.goal_gate is not None and goal_dir is not None:
+            r_terms.append(self.goal_gate * self._lan_anchor_prior(goal_dir))
+        if self.goal_dist_gate is not None and goal_dist_pref is not None:
+            r_terms.append(self.goal_dist_gate
+                           * self._goal_along_prior(goal_dist_pref))
         if (self.cons_gate is not None and cons_head is not None
                 and cons_ctx is not None):
             cons_s = sl.consequence_scores(x, cons_ctx, cons_head,
@@ -1113,6 +1397,7 @@ class AnchoredDiffusionDecoder(nn.Module):
         # everywhere window is a measurement failure, not a licence to emit
         # nothing.
         rank = score
+        reach_keep = None
         if sel.reach_clamp and v_ms is not None:
             keep = sl.reachability_mask(x, v_ms.to(x.dtype),
                                         accel_max=sel.accel_max,
@@ -1121,6 +1406,7 @@ class AnchoredDiffusionDecoder(nn.Module):
                 keep = keep | (~ego_keep)[:, None]
             dead = ~keep.any(dim=1)
             keep = keep | dead[:, None]
+            reach_keep = keep
             rank = score.masked_fill(~keep, float("-inf"))
             tele["reach_frac_candidates_clipped"] = round(
                 float(1.0 - keep.to(score.dtype).mean().detach()), 4)
@@ -1133,6 +1419,18 @@ class AnchoredDiffusionDecoder(nn.Module):
                "traj": traj, "sel_idx": idx, "sel_tele": tele}
         if cons_s is not None:
             out["cons_score"] = cons_s
+        if prefinal is not None:
+            # S1b's own control, carried in the SAME forward: the readout S1
+            # ships today, next to the one that scores the emitted fan. A
+            # cross-forward comparison would confound the change with float
+            # non-determinism; this one cannot.
+            out["prefinal_logits"] = prefinal
+        if reach_keep is not None:
+            # S1c consumes this in the trainer. The argmax above already ranks
+            # over exactly this set, so exporting it is what lets the CROSS-
+            # ENTROPY normalise over the same support instead of over a fan that
+            # is 72-74 % unpickable.
+            out["reach_keep"] = reach_keep
         return out
 
 
@@ -1246,7 +1544,15 @@ class RefCModel(nn.Module):
         # (``V15Config.ego_null_row``). The channel is preferred here because it
         # also reaches the TACTICAL head, which reads ``v`` directly and would be
         # untouched by a row swapped in at the measurement OUTPUT.
-        d_meas_in = 1 + len(NAV_COMMANDS) + (1 if cfg.ego_valid_channel else 0)
+        # E1 (``nav_known_channel``): the same rule one channel over. The nav
+        # one-hot cannot express "this command is the UNKNOWN sentinel", because
+        # `_ROUTE_TO_NAV.get(route, NAV_FOLLOW)` maps BOTH `ROUTE_STRAIGHT` and
+        # `ROUTE_UNKNOWN` to `follow`. Without the bit the network's only options
+        # are to trust a meaningless command on 62.4 % of `follow` windows or to
+        # learn to ignore the command channel entirely — and evaluating REF-C
+        # with ``nav_cmd=None`` is what the second one looks like from outside.
+        d_meas_in = (1 + len(NAV_COMMANDS) + (1 if cfg.ego_valid_channel else 0)
+                     + (1 if cfg.nav_known_channel else 0))
         self.measurement = nn.Sequential(
             nn.Linear(d_meas_in, cfg.measurement.hidden), nn.ReLU(inplace=True),
             nn.Linear(cfg.measurement.hidden, cfg.measurement.d_out),
@@ -1338,6 +1644,15 @@ class RefCModel(nn.Module):
                 nn.Linear(d_tac, cfg.decoder.aux_hidden), nn.ReLU(inplace=True),
                 nn.Linear(cfg.decoder.aux_hidden, N_MANEUVERS))
         self.route_head = nn.Linear(feat, N_ROUTE)
+        # S6 (gated): the PREDICTED GEOMETRIC goal head. THREE outputs off the
+        # image embedding alone — (cos, sin) of the route bearing at the first
+        # admissible arc-length, and a signed along-track preference. ONE Linear,
+        # not an MLP: the capacity control that caught a +272,001-parameter
+        # tactical head applies here too, and a goal head that needs depth to
+        # read a bearing off a trained trunk is a different claim than the one
+        # being tested. Provenance is declared by :meth:`goal_provenance`.
+        if cfg.graft_goal:
+            self.goal_head = nn.Linear(feat, 3)
         # LAW aux (KEEP): decoded trajectory enters NON-detached — gradients flow.
         self.law_head = nn.Sequential(
             nn.Linear(feat + 2 * n_steps, cfg.law.hidden),
@@ -1349,6 +1664,78 @@ class RefCModel(nn.Module):
                 nn.Linear(feat + cfg.measurement.d_out, cfg.speed_hidden),
                 nn.ReLU(inplace=True),
                 nn.Linear(cfg.speed_hidden, cfg.speed_bins))
+
+    # --- S6 goal provenance (the PI's admissibility check, in code) ----------
+    @staticmethod
+    def goal_provenance() -> dict:
+        """WHAT THE GOAL IS COMPUTED FROM — declared, not left implicit.
+
+        Binding ruling (Sayed, 2026-08-03): *"yes a goal input is admissible, at
+        the same time, we need to be careful not to include the result of the
+        situation classification in the goal input."* The admissibility check is
+        **"could this goal have been computed from the situation classifier's
+        output?"** — and if yes, it is inadmissible until shown otherwise.
+
+        REF-C's answer, from source:
+
+        * **AT INFERENCE the goal is a function of ``pooled`` and NOTHING else.**
+          ``pooled`` is the mean-pooled conv feature of the LAST frame. No
+          situation-classifier output — posterior, argmax, embedding, or any
+          feature derived from them — exists anywhere in ``RefCModel``'s graph.
+          The situation classifier is a SEPARATE model (the sitclf stream's
+          ``head_img``); REF-C neither imports it, loads it, nor receives its
+          output as a batch field. There is no output to leak.
+        * **THE SHARED TRUNK IS DECLARED, AND HERE IS WHY IT IS NOT A BACK
+          DOOR.** ``goal_head``, ``route_head`` and the tactical head all read
+          the SAME ``pooled``. That is a shared ENCODER, which is what the model
+          IS; giving the goal its own trunk would be a capacity change, not an
+          attribution fix (C34: match capacity before attributing an effect to
+          information). Attributability is bought instead by the ZERO-INIT
+          gates: ``goal_gate`` and ``goal_dist_gate`` start at exactly 0, so the
+          ranked score is bit-identical to the goal-free baseline at step 0 and
+          the exact ablation is "set the gate to 0". A shared trunk can only
+          launder a signal that EXISTS in the graph — and the classifier's does
+          not.
+        * **GEOMETRIC, NOT CATEGORICAL.** The published evidence with proper
+          no-navigation controls says a categorical command buys ~nothing
+          (TransFuser perturbed to None/Random/Left/Right: PDMS flat 84.0-84.7;
+          no-nav -> command-only **+0.2**) while a geometric goal buys a lot
+          (route path + turn-by-turn **+2.3**; GoalFlow goal POINT **+4.7**).
+          So the goal here is a BEARING and an along-track preference entering a
+          param-free geometric compatibility — the same surface LAN uses — and
+          NOT another class token. *(This is also why S5, which IS categorical,
+          is registered as the lowest-prior lever.)*
+        * **PREDICTED, NOT SUPPLIED.** A supplied route is optimistic by
+          construction on PhysicalAI, whose only route supplier is the ego's own
+          future path. ``lan`` (the supplied corridor) is used ONLY as the
+          TRAINING LABEL for ``goal_head``; at inference the seam reads the
+          HEAD's output. That is the sanctioned direction of the standing rule
+          "LABELS MAY USE EGO; INFERENCE IS VISION-ONLY", and it is asserted by
+          ``tests/test_refc_select.py``, which shows the goal terms are
+          bit-unchanged when the ``lan`` field is withheld at eval.
+
+        Returned as data so a run's ``config.json`` and any results file carry
+        the declaration rather than a reader having to trust a docstring.
+        """
+        return {
+            "inference_inputs": ["pooled (mean-pooled conv features, last frame)"],
+            "contains_situation_classifier_output": False,
+            "situation_classifier_in_graph": False,
+            "shared_trunk_with": ["route_head", "maneuver_head/tactical_trunk"],
+            "shared_trunk_justification":
+                "shared ENCODER, not a shared signal; attributability comes "
+                "from the zero-init gates, and a shared trunk cannot launder a "
+                "signal that is absent from the graph",
+            "form": "geometric (bearing + signed along-track preference)",
+            "supplied_or_predicted": "predicted",
+            "label_source": "tanitad.data.lan.lan_window_features (ego future "
+                            "path, arc-length resampled, leak-guarded) — TRAIN "
+                            "ONLY; never read at inference",
+            "admissibility_check":
+                "could this goal have been computed from the situation "
+                "classifier's output? NO — that output is not in the graph, is "
+                "not a batch field, and is not a label source here.",
+        }
 
     # --- encode surface -----------------------------------------------------
     def encode_pooled(self, frames: Tensor) -> Tensor:
@@ -1407,11 +1794,49 @@ class RefCModel(nn.Module):
                             torch.zeros_like(picked[:, 1]))
         return torch.stack([cos_b, sin_b, any_valid.to(lan.dtype)], dim=-1)
 
+    @staticmethod
+    def goal_targets(lan: Tensor, k: int) -> tuple[Tensor, Tensor, Tensor]:
+        """LAN corridor -> ``(bearing [B, 2], dist_pref [B], valid [B])``.
+
+        The TRAINING LABEL for :attr:`goal_head`, and **only** that: nothing in
+        :meth:`forward` calls this. ``bearing`` is the unit route direction at
+        the first admissible arc-length; ``dist_pref`` maps that anchor's INDEX
+        (arc-lengths are ascending, so the index is monotone in distance) onto
+        [-1, +1] — near goal -> -1, far goal -> +1.
+
+        ⚠️ **DECLARED CONFOUND on ``dist_pref``, because it decides how the S6
+        result may be read.** Which arc-length is "first admissible" depends on
+        LAN's leak guard, which is ``2 s of path length + min_lead_m`` — i.e. it
+        is partly a function of the ego's own SPEED. So a head trained on it is
+        partly being asked to predict speed from a single frame, which is
+        precisely the K7 quantity measured UNRECOVERABLE across 17 head
+        architectures. That is not a reason to drop the term; it is the reason
+        the gate is SEPARATE and the reason the pre-registration predicts it
+        stays near zero. If ``goal_dist_gate`` opens anyway, the K7 prior is
+        wrong on this substrate and that is the finding.
+
+        The bearing half carries no such confound: lateral topology is
+        recoverable from one frame, and it is the half the published
+        goal-conditioning wins (route path +2.3, goal point +4.7) are about.
+        """
+        f = lan.reshape(lan.shape[0], k, LAN_FEATS_PER_ANCHOR)
+        valid = f[..., 3] > 0.5                                   # [B, K]
+        any_valid = valid.any(dim=-1)
+        first = torch.argmax(valid.to(lan.dtype), dim=-1)         # [B]
+        idx = first.reshape(-1, 1, 1).expand(-1, 1, LAN_FEATS_PER_ANCHOR)
+        picked = torch.gather(f, 1, idx).squeeze(1)               # [B, 4]
+        bearing = picked[:, :2] / torch.linalg.vector_norm(
+            picked[:, :2], dim=-1, keepdim=True).clamp_min(1e-6)
+        span = max(k - 1, 1)
+        dist_pref = first.to(lan.dtype) / span * 2.0 - 1.0
+        return bearing, dist_pref, any_valid
+
     def forward(self, frames: Tensor, nav_cmd: Tensor | None = None,
                 v0: Tensor | None = None,
                 maneuver_logits: Tensor | None = None,
                 target_latent: Tensor | None = None, steps: int = 0,
-                lan: Tensor | None = None) -> dict:
+                lan: Tensor | None = None,
+                nav_known: Tensor | None = None) -> dict:
         """frames [B, W, C, H, W'], nav_cmd [B] long (None -> `follow`), v0 [B]
         current ego speed (None -> zeros; scaled /10 inside). ``maneuver_logits``
         / ``target_latent`` are OPTIONAL external tactical-brain seams (else the
@@ -1448,6 +1873,7 @@ class RefCModel(nn.Module):
         if self.cfg.graft_imagination:
             fmap, imag_logvar = self.imagination(fmap)
 
+        nav_cmd_given, known = nav_cmd is not None, None
         if nav_cmd is None:                      # unlabeled -> follow (idx 0)
             nav_cmd = torch.zeros(b, dtype=torch.long, device=frames.device)
         nav = F.one_hot(nav_cmd, len(NAV_COMMANDS)).to(pooled.dtype)
@@ -1463,7 +1889,31 @@ class RefCModel(nn.Module):
             keep = keep * (torch.rand(b, 1, device=v.device)
                            >= self.cfg.ego_dropout).to(v.dtype)
             v = v * keep                         # per-sample Bernoulli zero
-        meas_in = [v, nav] + ([keep] if self.cfg.ego_valid_channel else [])
+        # E1: the nav command's COMPANION BIT. Fail loud in BOTH directions —
+        # a `nav_known` that is silently dropped is exactly the class of bug this
+        # seam exists to remove, and a gate that is on while the caller forgets
+        # the bit would quietly assert "this command is a real judgement" on
+        # every window.
+        if nav_known is not None and not self.cfg.nav_known_channel:
+            raise ValueError(
+                "nav_known was supplied but cfg.nav_known_channel is False — it "
+                "would be silently dropped. Turn the gate on or stop passing it.")
+        if self.cfg.nav_known_channel:
+            if nav_known is None:
+                if not nav_cmd_given:
+                    # `nav_cmd=None` -> the `follow` fallback IS the sentinel, so
+                    # the honest companion bit is 0.0 and needs no argument.
+                    nav_known = torch.zeros(b, dtype=pooled.dtype,
+                                            device=pooled.device)
+                else:
+                    raise ValueError(
+                        "nav_known_channel is on and a nav_cmd was supplied, so "
+                        "nav_known must be supplied too (refb_labels."
+                        "nav_input_v22 returns the pair). Defaulting it to 1.0 "
+                        "would assert a judgement the labeller never made.")
+            known = nav_known.to(pooled.dtype).reshape(b, 1)
+        meas_in = ([v, nav] + ([keep] if self.cfg.ego_valid_channel else [])
+                   + ([known] if self.cfg.nav_known_channel else []))
         m = self.measurement(torch.cat(meas_in, dim=-1))
 
         # Aux heads (image branch): maneuver logits also drive the H19 reweight.
@@ -1536,13 +1986,31 @@ class RefCModel(nn.Module):
         cons_ctx = pooled if self.cfg.graft_cons else None
         v_ms = (v0.to(pooled.dtype) if (self.cfg.sel_reach_clamp
                                         and v0 is not None) else None)
+        #   S6  the PREDICTED geometric goal. Read from `pooled` ALONE — never
+        #       from `lan`, which is the training LABEL only. `valid` is pinned
+        #       to 1 because a PREDICTION is always defined; the supplied
+        #       corridor's validity flag belongs to the label, and letting it
+        #       reach here would make the seam silently depend on the label at
+        #       eval. Provenance: `RefCModel.goal_provenance()`.
+        goal_dir = goal_dist_pref = None
+        if self.cfg.graft_goal:
+            g = self.goal_head(pooled)                        # [B, 3]
+            bearing = g[:, :2] / torch.linalg.vector_norm(
+                g[:, :2], dim=-1, keepdim=True).clamp_min(1e-6)
+            goal_dir = torch.cat(
+                [bearing, torch.ones_like(bearing[:, :1])], dim=-1)   # [B, 3]
+            goal_dist_pref = torch.tanh(g[:, 2])              # [B] in (-1, 1)
+            out_goal = {"goal_bearing": bearing, "goal_dist_pref": goal_dist_pref}
+        else:
+            out_goal = {}
         dec = self.decoder(fmap, m, ctx=ctx, maneuver_logits=reweight,
                            target_latent=target_latent, steps=steps,
                            lan_emb=lan_emb, lan_dir=lan_dir,
                            lat_prior=lat_prior, lon_prior=lon_prior,
                            route_prior=route_prior, cons_head=cons_head,
                            cons_ctx=cons_ctx, v_ms=v_ms,
-                           ego_keep=keep.squeeze(-1) > 0.5)
+                           ego_keep=keep.squeeze(-1) > 0.5,
+                           goal_dir=goal_dir, goal_dist_pref=goal_dist_pref)
         traj = dec["traj"]
         law_pred = self.law_head(torch.cat([pooled, traj.reshape(b, -1)],
                                            dim=-1))
@@ -1557,9 +2025,17 @@ class RefCModel(nn.Module):
                "anchor_traj": dec["anchor_traj"], "offset": dec["offset"],
                "sel_idx": dec["sel_idx"], "maneuver_logits": man_logits,
                "route_logits": route_logits, "law_pred": law_pred,
-               "measurement": m}
+               "measurement": m, **out_goal}
         if "cons_score" in dec:
             out["cons_score"] = dec["cons_score"]
+        for _k in ("prefinal_logits", "reach_keep"):
+            # S1b's in-forward control and S1c's CE support, passed through
+            # VERBATIM: `compute_losses` reads `reach_keep` and the probes read
+            # both. Re-deriving either outside the decoder is how two
+            # definitions of the same mask drift apart - the reason
+            # `refc_select.reachability_mask` is a re-export and not a copy.
+            if _k in dec:
+                out[_k] = dec[_k]
         if ctx is not None:
             out["ctx"] = ctx
         if lat_logits is not None:
@@ -1616,7 +2092,13 @@ def param_breakdown(model: RefCModel) -> dict[str, int]:
     # must keep summing to `total` exactly (pinned by tests/test_refc.py), and a
     # line that double-counted would make the capacity control unreadable.
     n_sel = ((cnt(dec.route_to_anchor) if dec.route_to_anchor is not None else 0)
-             + (dec.cons_gate.numel() if dec.cons_gate is not None else 0))
+             + (dec.cons_gate.numel() if dec.cons_gate is not None else 0)
+             + (dec.goal_gate.numel() + dec.goal_dist_gate.numel()
+                if dec.goal_gate is not None else 0))
+    # S6's head is a MODEL-level input head (like `lan_enc`), reported on its own
+    # line: the goal is the lever under the PI's admissibility ruling and its
+    # cost must be readable without unpicking a 40 M-parameter decoder row.
+    n_goal = cnt(model.goal_head) if model.cfg.graft_goal else 0
     return {
         "encoder": cnt(model.encoder),
         "measurement": cnt(model.measurement),
@@ -1631,5 +2113,6 @@ def param_breakdown(model: RefCModel) -> dict[str, int]:
         "law": cnt(model.law_head),
         "speed": cnt(model.speed_cls) if model.cfg.refc1 else 0,
         "selection": n_sel,
+        "goal": n_goal,
         "total": cnt(model),
     }

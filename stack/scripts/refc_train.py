@@ -105,6 +105,11 @@ LON_WEIGHT = MANEUVER_WEIGHT / 2.0     # 0.05
 # point rather than inventing one.
 REFINED_CLS_WEIGHT = 1.0
 
+# S6 goal-head supervision, held at ROUTE_WEIGHT so the goal arm differs from
+# the control in STRUCTURE, not in aux loss budget — the same discipline
+# LAT_WEIGHT/LON_WEIGHT apply to the factored tactical seam.
+GOAL_WEIGHT = ROUTE_WEIGHT             # 0.1
+
 TCP_LR = 1e-4                 # Adam lr — the DiffusionDrive/TCP operating point
 LAW_AHEAD = 5                 # LAW target: pooled latent 0.5 s (5 steps) ahead
 SPEED_AHEAD = 5              # refc1 speed target: v at t+5 (same 0.5 s horizon)
@@ -316,6 +321,60 @@ class RouteV3Dataset(RouteV21Dataset):
 
 # ---- losses ------------------------------------------------------------------
 
+def ranked_score_loss(ce_score: torch.Tensor, ce_err: torch.Tensor, *,
+                      objective: str = "ce", tau: float = 0.0,
+                      weight: float = 1.0) -> torch.Tensor:
+    """E-OBJ-1 — the ranked-score objective, as ONE function so it is testable.
+
+    ``ce_score`` [B, N] the ranked score (already masked to ``min/4`` off the survivor set when
+    ``sel_ce_reach`` is on); ``ce_err`` [B, N] the per-candidate fan error (``+inf`` off that
+    same set). The three objectives share support, masking and shape and differ ONLY in what
+    they ask of the score:
+
+    ``ce`` (INCUMBENT)
+        ``F.cross_entropy(ce_score, argmin ce_err)`` — a ONE-HOT target over ~128 near-duplicate
+        candidates, so the candidate that missed by a centimetre is penalised exactly as hard as
+        the one that missed by ten metres.
+    ``softade``
+        ``E_{i~softmax(ce_score)}[ce_err_i]`` — METRIC-AWARE. ⭐ MEASURED (E-OBJ-1, frozen 30 k
+        weights, 881 windows, LOEO, paired episode-cluster bootstrap) to recover −0.0974 m
+        (base) / −0.1670 m (XL) of a fitted ranker's deficit, separated, and the recovery is
+        LONGITUDINAL (``speed_abs`` −0.1102 / −0.1816).
+    ``softce``
+        ``CE(ce_score, softmax(−ce_err/tau))`` — the CE FORM with a softened TARGET. ⚠️ MEASURED
+        SEPARATED **WORSE** than the incumbent (+0.0909 m base) at every tau in {0.1, 0.25, 0.5}.
+        It is the CONTROL that separates metric-awareness from target-softness, not a candidate.
+
+    ⛔ ``ce_err`` is DETACHED in every branch. It is differentiable w.r.t. ``anchor_traj``, so
+    without the detach ``softade`` would also push the FAN and would stop being a SELECTION
+    objective — confounding it with a trajectory objective and making the arm unattributable.
+    The incumbent detaches its own target (``r_star.detach()``) for exactly this reason.
+
+    ⛔ ``weight`` is applied ONLY off the ``ce`` path, so the incumbent stays bit-identical.
+    It exists because ``softade`` is in METRES while the CE is in NATS.
+    """
+    err = ce_err.detach()
+    if objective == "softade":
+        # +inf * 0 is NaN. `softmax(ce_score)` is ~0 exactly where `ce_err` is +inf (both are
+        # masked on the same set), so replacing those entries with 0 changes nothing that is
+        # weighted and removes the NaN by construction rather than by luck.
+        err0 = torch.where(torch.isfinite(err), err, torch.zeros_like(err))
+        loss = (torch.softmax(ce_score, dim=1) * err0).sum(1).mean()
+    elif objective == "softce":
+        if not tau > 0.0:
+            raise ValueError("softce needs tau > 0 (tau -> 0 IS the one-hot target)")
+        # `reach_keep` always leaves >= 1 survivor per row (the decoder's own empty-set
+        # fallback), so this softmax always has a finite maximum to subtract and the target is
+        # exactly 0 wherever `log_softmax` is most negative.
+        q = torch.softmax(-err / float(tau), dim=1)
+        loss = -(q * F.log_softmax(ce_score, dim=1)).sum(1).mean()
+    elif objective == "ce":
+        loss = F.cross_entropy(ce_score, err.argmin(dim=1))
+    else:
+        raise ValueError(f"unknown sel_ce_objective {objective!r}")
+    return loss if objective == "ce" else float(weight) * loss
+
+
 def compute_losses(model: RefCModel, batch: dict, device: str = "cpu",
                    mode: str = "diffusion") -> dict:
     """One forward pass -> all loss components (tensors, differentiable).
@@ -384,8 +443,32 @@ def compute_losses(model: RefCModel, batch: dict, device: str = "cpu",
     loss_rcls = torch.zeros((), device=out["pooled"].device)
     if cfg.sel_refined or cfg.graft_cons or cfg.graft_route:
         fan_err = (out["anchor_traj"] - traj_tgt[:, None]).norm(dim=-1).mean(-1)
-        r_star = fan_err.argmin(dim=1)                      # [B] oracle index
-        loss_rcls = F.cross_entropy(out["sel_score"], r_star.detach())
+        # S1c - THE CE MUST NORMALISE OVER THE SET THE ARGMAX RANKS OVER.
+        # Without this the objective is a full-fan softmax while the selector
+        # solves a ~26-28 % sized problem: MEASURED 73.76 % (base) / 72.08 % (XL)
+        # of the emitted fan is outside the bounded-acceleration band, is never
+        # selected, and deleting it moves ADE by EXACTLY 0.0. A softmax that
+        # normalises over those candidates spends its mass on classes that can
+        # never win - the same mechanism S3_DEPLOYABLE 3.2 measured when a rank
+        # correlation over the full candidate axis turned out to be disconnected
+        # from selection quality FOR EVERY SCORE, including the future-seeing one.
+        #
+        # The TARGET moves with the support: `r_star` becomes the best candidate
+        # IN the survivor set, so the CE is never asked to put mass on a class its
+        # own softmax has masked out (which is how a masked CE produces NaN).
+        # `reach_keep` always has >= 1 survivor per row - the decoder's empty-set
+        # fallback ORs a dead row back to its whole fan - so both the argmin and
+        # the log-softmax are finite by construction, not by luck.
+        ce_score, ce_err = out["sel_score"], fan_err
+        if cfg.sel_ce_reach:
+            keep = out["reach_keep"]                          # [B, N] bool
+            ce_err = fan_err.masked_fill(~keep, float("inf"))
+            ce_score = out["sel_score"].masked_fill(
+                ~keep, torch.finfo(out["sel_score"].dtype).min / 4)
+        r_star = ce_err.argmin(dim=1)                       # [B] oracle index
+        loss_rcls = ranked_score_loss(
+            ce_score, ce_err, objective=cfg.sel_ce_objective,
+            tau=cfg.sel_ce_soft_tau, weight=cfg.sel_ce_weight)
         with torch.no_grad():
             oracle = fan_err.min(dim=1).values
             sel_err = fan_err[ar, out["sel_idx"]]
@@ -399,6 +482,11 @@ def compute_losses(model: RefCModel, batch: dict, device: str = "cpu",
                 # 45.4 % on refc-xl-30k / 41.09 % on refc-base-30k at 30 k.
                 "frac_sel_2x_worse": (sel_err > 2.0 * oracle).float().mean(),
             }
+            if cfg.sel_ce_reach:
+                # telemetry, not a metric: how much of the fan the CE is actually
+                # normalising over, so a silent collapse to "the whole fan" (or
+                # to one candidate) is visible in train_log.jsonl, not inferred.
+                sel_extra["ce_support_frac"] = keep.float().mean()
 
     # LAW latent MSE: no_grad target through the same encoder.
     with torch.no_grad():
@@ -471,6 +559,34 @@ def compute_losses(model: RefCModel, batch: dict, device: str = "cpu",
                  .float().mean() if bool(mask.any())
                  else torch.zeros((), device=out["pooled"].device))
 
+    # S6: the PREDICTED GEOMETRIC goal. The head reads the IMAGE EMBEDDING only
+    # (`RefCModel.goal_provenance()`); the LAN corridor appears here as the
+    # TRAINING LABEL and nowhere else — the sanctioned direction of "LABELS MAY
+    # USE EGO; INFERENCE IS VISION-ONLY".
+    loss_goal = torch.zeros((), device=out["pooled"].device)
+    goal_extra: dict = {}
+    if cfg.graft_goal:
+        if lan is None:
+            raise ValueError(
+                "graft_goal is on but the batch carries no `lan` field — the "
+                "goal head would be a DEAD parameter with no label. Pass "
+                "--graft-lan (which mints the corridor) alongside --graft-goal; "
+                "the corridor is the LABEL only, never a model input here.")
+        g_dir, g_dist, g_valid = RefCModel.goal_targets(lan, cfg.lan.k)
+        if bool(g_valid.any()):
+            mv = g_valid
+            # bearing: cosine distance on unit vectors (angle-only, so a
+            # magnitude the head cannot know is never regressed)
+            l_dir = (1.0 - (out["goal_bearing"][mv] * g_dir[mv]).sum(-1)).mean()
+            l_dist = (out["goal_dist_pref"][mv] - g_dist[mv]).abs().mean()
+            loss_goal = l_dir + l_dist
+            goal_extra = {"goal_dir": l_dir.detach(), "goal_dist": l_dist.detach(),
+                          "goal_valid_frac": g_valid.float().mean(),
+                          # the K7 instrument, readable per log line
+                          "goal_gate": model.decoder.goal_gate.detach().abs()[0],
+                          "goal_dist_gate":
+                              model.decoder.goal_dist_gate.detach().abs()[0]}
+
     # refc1: target-speed classification (bins over [0, speed_max]).
     if cfg.refc1:
         v_tgt = fut_poses[:, SPEED_AHEAD - 1, 3].clamp(0.0, cfg.speed_max)
@@ -486,7 +602,8 @@ def compute_losses(model: RefCModel, batch: dict, device: str = "cpu",
     loss = (TRAJ_WEIGHT * loss_traj + ANCHOR_CLS_WEIGHT * loss_cls
             + REFINED_CLS_WEIGHT * loss_rcls
             + LAW_WEIGHT * loss_law + ROUTE_WEIGHT * loss_route
-            + MANEUVER_WEIGHT * loss_man + SPEED_CLS_WEIGHT * loss_speed_cls)
+            + MANEUVER_WEIGHT * loss_man + SPEED_CLS_WEIGHT * loss_speed_cls
+            + GOAL_WEIGHT * loss_goal)
     anchor_acc = (out["anchor_logits"].argmax(dim=1) == a_star).float().mean()
     man_acc = (out["maneuver_logits"].argmax(dim=1) == man_tgt).float().mean()
     return {"loss": loss, "traj": loss_traj, "cls": loss_cls, "law": loss_law,
@@ -495,7 +612,7 @@ def compute_losses(model: RefCModel, batch: dict, device: str = "cpu",
             "anchor_acc": anchor_acc, "man_acc": man_acc,
             "route_acc": route_acc, "route_valid_frac": mask.float().mean(),
             "nav_follow_frac": (nav_cmd == 0).float().mean(),
-            **sel_extra, "sel_tele": out["sel_tele"],
+            **sel_extra, **goal_extra, "sel_tele": out["sel_tele"],
             **lat_extra,
             **({"graft_lat_norm": model.decoder.lat_to_anchor(
                 out["lat_logits"].detach().log_softmax(-1)).norm(dim=-1).mean(),
@@ -526,7 +643,9 @@ def assert_selection_params_are_alive(model) -> dict:
     """
     checks, dead = {}, []
     for name, p in model.named_parameters():
-        if not any(t in name for t in ("route_to_anchor", "cons_gate")):
+        if not any(t in name for t in ("route_to_anchor", "cons_gate",
+                                       "goal_gate", "goal_dist_gate",
+                                       "goal_head")):
             continue
         g = 0.0 if p.grad is None else float(p.grad.abs().sum())
         checks[name] = g
@@ -583,9 +702,19 @@ def train(args) -> dict:
     _presets = {"small": refc_small_config, "base": refc_config,
                 "xl": refc_xl_config}
     cfg = refc_smoke_config() if args.smoke else _presets[args.config]()
+    # ⭐ THE CORRIDOR IS NEEDED IN TWO DIFFERENT ROLES, AND THEY ARE SEPARATED.
+    #   --graft-lan  : the corridor as a MODEL INPUT (the SUPPLIED route).
+    #   --graft-goal : the corridor as the goal head's TRAINING LABEL ONLY.
+    # Both need the dataset to emit the `lan` field; only the first may build the
+    # input pathway. Conflating them would give the S6 arm a supplied route AND a
+    # predicted one — precisely what the PI ruling of 2026-08-03 forbids ("a
+    # supplied route is optimistic by construction on PhysicalAI, whose only
+    # route supplier is the ego's own future path").
+    want_lan_field = bool(args.graft_lan or args.graft_goal)
+    if want_lan_field:
+        cfg.lan = RefCLanConfig(k=len(args.lan_arclengths))
     if args.graft_lan:
         cfg.graft_lan = True
-        cfg.lan = RefCLanConfig(k=len(args.lan_arclengths))
         cfg.route_dropout = args.route_dropout
     cfg.refc1 = bool(args.refc1)       # gated BEFORE build (module presence)
     # D-TAC1 (gated BEFORE build — module presence, REF-B convention).
@@ -593,6 +722,8 @@ def train(args) -> dict:
     cfg.tactical_speed_input = bool(args.tactical_speed_input)
     cfg.man_prior_tau = float(args.man_prior_tau)
     cfg.graft_prior_center = not args.no_graft_prior_center
+    # E1 (gated BEFORE build — it widens measurement.0.weight by one column).
+    cfg.nav_known_channel = bool(args.nav_known_channel)
     # --man-prior-tau is the F3 DECISION lever and it acts on the per-axis
     # priors, which only exist with the factored seam — so it still requires it.
     # --tactical-speed-input (F1 INPUT) does NOT: it applies to the shipped 5-way
@@ -603,12 +734,126 @@ def train(args) -> dict:
         raise SystemExit("--man-prior-tau requires --factored-maneuver (it "
                          "adjusts the per-axis lat/lon class priors, which only "
                          "the factored seam registers)")
+    # S1c NEEDS S2's SURVIVOR SET, AND A SILENTLY-INERT FLAG IS THE WORST
+    # OUTCOME. Without --sel-reach-clamp the decoder computes no mask, so
+    # --sel-ce-reach would train the FULL-FAN CE while config.json claimed the
+    # restricted one - an arm that reads as a treatment and behaves as a control.
+    # That is the D-TAC1 `tactical_speed_input` failure exactly ("a conservative
+    # guard that makes an effect unattributable is not conservative"). Refuse at
+    # parse time, not after a GPU-day.
+    # ...and the SAME silent-inert class for S1b: with `sel_refined` off the
+    # ranked score is `conf`, so moving the REFINED readout cannot reach the
+    # argmax at all. ⚠️ MEASURED (E-S1-0, frozen 30 k weights): scoring the
+    # emitted fan is 0.99 m WORSE than scoring its predecessor, because it moves
+    # the readout FURTHER from the only distribution `loss_cls` supervises. S1b
+    # is therefore admissible ONLY inside an arm that also SUPERVISES the readout
+    # it moves - which is exactly what --sel-refined turns on.
+    if bool(args.sel_score_emitted) and not bool(args.sel_refined):
+        raise SystemExit(
+            "--sel-score-emitted requires --sel-refined. Without S1 the ranked "
+            "score is the t=0 classifier `conf`, so moving the REFINED readout "
+            "cannot reach the argmax - the flag would be SILENTLY INERT while "
+            "config.json recorded it as ON. And at frozen weights the emitted "
+            "readout is MEASURED 0.99 m WORSE (E-S1-0), so it must never be "
+            "shipped without the supervision that is supposed to repair it.")
+    # ⚠️ MEASURED, and loud because the default is the WORSE half of a 5.5x
+    # difference. E-S1-0 dose-response, refc-base-30k, 881 windows, frozen 30 k
+    # weights, selection ADE@2s over the S2-reachable survivors:
+    #     conf(anchors, t=0)  SUPERVISED  0.4728   <- the shipped ranker
+    #     conf(X_1,     t=2)              1.3100   <- what S1 ranks on TODAY
+    #     conf(X_2,     t=2)              2.3024   <- S1b at the default token
+    #     conf(X_2,     t=0)              0.6253   <- S1b at the SUPERVISED token
+    # Pinning the token is -1.6771 m [-1.9430, -1.4091], separated, for ZERO
+    # parameters: `loss_cls` supervises `conf_head` at t=0 ONLY, so t=1/t=2 are
+    # tokens no confidence objective ever shaped.
+    if bool(args.sel_score_emitted) and int(args.sel_score_emitted_t) < 0:
+        print("[d-sel] ⚠️ --sel-score-emitted with --sel-score-emitted-t -1 "
+              "(continue the denoise schedule). MEASURED at frozen 30 k weights "
+              "this is the WORSE choice: 2.3024 vs 0.6253 selection ADE@2s, a "
+              "paired -1.6771 m [-1.9430, -1.4091] in favour of `-t 0`. Both "
+              "cost 0 parameters. Pass `--sel-score-emitted-t 0` unless the "
+              "arm's purpose is to test the token itself.", flush=True)
+    if bool(args.sel_ce_reach) and not bool(args.sel_reach_clamp):
+        raise SystemExit(
+            "--sel-ce-reach requires --sel-reach-clamp. S1c normalises the "
+            "ranked-score CE over the SAME survivor set the argmax ranks over, "
+            "and that set is S2's reachability mask - with S2 off there is no "
+            "mask, and the flag would be SILENTLY INERT while config.json "
+            "recorded it as ON.")
+    # E-OBJ-1 - THE SAME SILENTLY-INERT CLASS, a third time. `loss_rcls` is only
+    # BUILT when one of `sel_refined` / `graft_cons` / `graft_route` is on; with
+    # all three off there is no ranked-score CE at all, so changing its objective
+    # would change nothing while config.json recorded a treatment. Refuse at parse
+    # time, not after a GPU-day.
+    if str(args.sel_ce_objective) not in ("ce", "softade", "softce"):
+        raise SystemExit("--sel-ce-objective must be ce | softade | softce")
+    if float(args.sel_ce_soft_tau) < 0.0:
+        raise SystemExit("--sel-ce-soft-tau must be >= 0 (0 = the incumbent "
+                         "one-hot target). A negative temperature would put the "
+                         "CE's mass on the WORST candidate.")
+    _obj_on = (str(args.sel_ce_objective) != "ce"
+               or float(args.sel_ce_soft_tau) > 0.0)
+    if _obj_on and not (bool(args.sel_refined) or bool(args.graft_cons)
+                        or bool(args.graft_route)):
+        raise SystemExit(
+            "--sel-ce-objective / --sel-ce-soft-tau require one of --sel-refined "
+            "/ --graft-cons / --graft-route. `loss_rcls` is only constructed when "
+            "a lever touches the ranked score; with none on there is no "
+            "ranked-score objective to change and the flag would be SILENTLY "
+            "INERT while config.json recorded it as ON.")
+    if str(args.sel_ce_objective) == "softce" and float(args.sel_ce_soft_tau) <= 0.0:
+        raise SystemExit("--sel-ce-objective softce requires --sel-ce-soft-tau > 0 "
+                         "(tau -> 0 IS the incumbent one-hot target, so tau = 0 "
+                         "would make the flag inert).")
+    if float(args.sel_ce_soft_tau) > 0.0 and str(args.sel_ce_objective) != "softce":
+        raise SystemExit("--sel-ce-soft-tau is only read by --sel-ce-objective "
+                         "softce; passing it with ce or softade would record a "
+                         "parameter the run never uses — the same silently-inert "
+                         "class the other D-SEL guards exist for.")
+    if str(args.sel_ce_objective) == "softce":
+        # ⚠️ MEASURED, and loud, because this arm is a CONTROL and not a candidate.
+        # E-OBJ-1, refc-base-30k, 881 windows, frozen 30 k weights, LOEO selection
+        # ADE@2s over the S2-reachable survivors, paired episode-cluster bootstrap:
+        # softening the TARGET is +0.0909 m WORSE than the incumbent one-hot CE and
+        # +0.1883 m worse than the metric-aware objective, separated, at every tau
+        # in {0.1, 0.25, 0.5}.
+        print("[e-obj] ⚠️ --sel-ce-objective softce is the CONTROL arm, not the "
+              "candidate. MEASURED at frozen 30 k weights it is +0.0909 m WORSE "
+              "than the incumbent CE and +0.1883 m worse than `softade`, "
+              "separated, at every tau tested. It exists so a `softade` arm can "
+              "separate METRIC-AWARENESS from TARGET-SOFTNESS.", flush=True)
+    if str(args.sel_ce_objective) == "softade":
+        # ⚠️ THE SCALE CHANGE, stated where it cannot be missed. `loss_rcls` moves
+        # from NATS to METRES and REFINED_CLS_WEIGHT (1.0) was calibrated for the
+        # former. This is not a detail: it silently re-weights the whole selection
+        # term against LAW, maneuver and trajectory losses.
+        print(f"[e-obj] ⚠️ --sel-ce-objective softade changes `loss_rcls` from a "
+              f"cross-entropy in NATS to an expected error in METRES. "
+              f"REFINED_CLS_WEIGHT is {REFINED_CLS_WEIGHT} and was calibrated for "
+              f"the CE scale, so --sel-ce-weight (now "
+              f"{float(args.sel_ce_weight)}) is the knob that decides how the "
+              f"selection term weighs against LAW / maneuver / trajectory. "
+              f"Decide it EXPLICITLY; leaving it at 1.0 is a CHOICE, not a "
+              f"default.", flush=True)
+    if (float(args.sel_ce_weight) != 1.0
+            and str(args.sel_ce_objective) == "ce"):
+        raise SystemExit("--sel-ce-weight is only applied off the incumbent "
+                         "objective. Passing it with --sel-ce-objective ce would "
+                         "record a number the run never uses (the incumbent path "
+                         "is kept bit-identical on purpose).")
     # --- D-SEL: the selection surface (gated BEFORE build, module presence) ---
     cfg.sel_refined = bool(args.sel_refined)
+    cfg.sel_score_emitted = bool(args.sel_score_emitted)
+    cfg.sel_score_emitted_t = int(args.sel_score_emitted_t)
+    cfg.sel_ce_objective = str(args.sel_ce_objective)
+    cfg.sel_ce_soft_tau = float(args.sel_ce_soft_tau)
+    cfg.sel_ce_weight = float(args.sel_ce_weight)
+    cfg.sel_ce_reach = bool(args.sel_ce_reach)
     cfg.sel_reach_clamp = bool(args.sel_reach_clamp)
     cfg.sel_accel_max = float(args.sel_accel_max)
     cfg.graft_cons = bool(args.graft_cons)
     cfg.graft_route = bool(args.graft_route)
+    cfg.graft_goal = bool(args.graft_goal)
     cfg.seam_clamp = float(args.seam_clamp)
     cfg.ego_valid_channel = bool(args.ego_valid_channel)
     # ⛔ C6 GUARD. Under --labels v1 the route CE target is
@@ -618,6 +863,17 @@ def train(args) -> dict:
     # This is the same failure class as RETRACTION_LOG C6 and R-2026-08-03-l
     # (flagship's route_class_accuracy = 1.0000 is an oracle-conditioning echo,
     # not a decision). Refuse at ARGUMENT-PARSE time, not after a GPU-day.
+    # S6 mints its OWN label (`want_lan_field` above) and must NOT be forced to
+    # turn on the supplied-route model input to get it. But `--graft-goal
+    # --graft-lan` together IS admissible as an explicit contrast arm, so it is
+    # allowed and merely announced — the config.json records both, and the
+    # provenance row says which one the goal seam actually reads.
+    if cfg.graft_goal and cfg.graft_lan:
+        print("[d-sel] ⚠️ --graft-goal WITH --graft-lan: this arm carries BOTH "
+              "the SUPPLIED corridor (a model input) and the PREDICTED goal. "
+              "That is a contrast arm, not the S6 arm — refc_goal_config() "
+              "keeps graft_lan OFF so the goal is predicted and nothing is "
+              "supplied (PI ruling 2026-08-03).", flush=True)
     if cfg.graft_route and args.labels == "v1":
         raise SystemExit(
             "--graft-route requires --labels v21 or v3. Under v1 the route CE "
@@ -642,21 +898,21 @@ def train(args) -> dict:
     label_stats: dict | None = None
     lan_stats: dict | None = None
     lan_cfg = LanConfig(arclengths_m=tuple(args.lan_arclengths),
-                        min_lead_m=args.lan_min_lead_m) if args.graft_lan else None
-    lan_kw = {"lan_cfg": lan_cfg} if args.graft_lan else {}
+                        min_lead_m=args.lan_min_lead_m) if want_lan_field else None
+    lan_kw = {"lan_cfg": lan_cfg} if want_lan_field else {}
     if args.labels in ("v21", "v3"):
         dcls = RouteV21Dataset if args.labels == "v21" else RouteV3Dataset
-        if args.graft_lan:
+        if want_lan_field:
             dcls = lan_dataset_class(dcls)
         ds = dcls(train_eps, use_net_dyaw=args.use_net_dyaw, **lan_kw, **ds_kw)
         label_stats = ds.label_stats()
         print(f"[labels] {args.labels} route (use_net_dyaw="
               f"{args.use_net_dyaw}): {json.dumps(label_stats)}", flush=True)
     else:
-        dcls = (lan_dataset_class(FailLoudWindowDataset) if args.graft_lan
+        dcls = (lan_dataset_class(FailLoudWindowDataset) if want_lan_field
                 else FailLoudWindowDataset)
         ds = dcls(train_eps, **lan_kw, **ds_kw)
-    if args.graft_lan:
+    if want_lan_field:
         lan_stats = ds.lan_stats()
         print(f"[lan] route-input coverage: {json.dumps(lan_stats)}", flush=True)
     assert len(ds) >= batch, \
@@ -674,20 +930,42 @@ def train(args) -> dict:
     # D-SEL flag set would be a wiring bug, so the banner asserts rather than
     # merely reports.
     _sel = cfg.selection()
-    print(json.dumps({"d_sel": {
+    dsel_row = {
         "sel_on": _sel.any_on, "sel_refined": cfg.sel_refined,
+        "sel_score_emitted": cfg.sel_score_emitted,
+        "sel_score_emitted_t": cfg.sel_score_emitted_t,
+        "sel_ce_reach": cfg.sel_ce_reach,
         "sel_reach_clamp": cfg.sel_reach_clamp,
         "sel_accel_max": cfg.sel_accel_max, "horizon_s": _sel.horizon_s,
         "graft_cons": cfg.graft_cons, "cons_detach": cfg.cons_detach,
         "graft_route": cfg.graft_route, "seam_clamp": cfg.seam_clamp,
+        "graft_goal": cfg.graft_goal,
+        "goal_provenance": RefCModel.goal_provenance() if cfg.graft_goal
+        else None,
         "ego_valid_channel": cfg.ego_valid_channel,
         "labels": args.labels, "mode": args.mode,
         "n_selection_params": param_breakdown(model)["selection"],
+        "n_goal_params": param_breakdown(model)["goal"],
         # S1 is inert at 0 denoise steps BY CONSTRUCTION — say so rather than
         # let a `--mode classifier --sel-refined` run look like a live arm.
         "s1_inert_because_classifier_mode": (cfg.sel_refined
                                              and args.mode == "classifier"),
-    }}), flush=True)
+        # S1b is inert at 0 denoise steps for the same structural reason.
+        "s1b_inert_because_classifier_mode": (cfg.sel_score_emitted
+                                              and args.mode == "classifier"),
+        "ce_support": ("reachable_only" if cfg.sel_ce_reach else "full_fan"),
+        # E-OBJ-1 — WHICH objective the ranked score is trained under, and at what
+        # weight. Recorded in the banner (not only in config.json) because a run
+        # whose selection loss changed UNITS must not be readable as the control.
+        "sel_ce_objective": cfg.sel_ce_objective,
+        "sel_ce_soft_tau": cfg.sel_ce_soft_tau,
+        "sel_ce_weight": cfg.sel_ce_weight,
+        "sel_ce_units": ("metres" if cfg.sel_ce_objective == "softade" else "nats"),
+        "sel_ce_objective_inert_because_no_ranked_score": (
+            cfg.sel_ce_objective != "ce"
+            and not (cfg.sel_refined or cfg.graft_cons or cfg.graft_route)),
+    }
+    print(json.dumps({"d_sel": dsel_row}), flush=True)
 
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -728,6 +1006,11 @@ def train(args) -> dict:
                                         if args.labels in ("v21", "v3")
                                         else "n/a"),
              "train_label_stats": label_stats},
+         # D-SEL axes + the goal-provenance declaration. The artifact must
+         # describe its own goal, exactly as it already describes its own labels:
+         # the PI's admissibility ruling is checkable from the run directory
+         # alone, without re-reading source.
+         "d_sel": dsel_row,
          "data": {"cache_dir": str(train_dir), "n_episodes": len(train_eps),
                   "n_windows": len(ds)},
          "param_breakdown": param_breakdown(model)},
@@ -764,7 +1047,8 @@ def train(args) -> dict:
         opt.zero_grad(set_to_none=True)
         out = compute_losses(model, batch_d, device, mode=args.mode)
         out["loss"].backward()
-        if not _sel_checked and (cfg.graft_cons or cfg.graft_route):
+        if not _sel_checked and (cfg.graft_cons or cfg.graft_route
+                                 or cfg.graft_goal):
             print(json.dumps({"d_sel_gradients": {
                 k: round(v, 8) for k, v in
                 assert_selection_params_are_alive(model).items()}}), flush=True)
@@ -799,8 +1083,11 @@ def train(args) -> dict:
                 # seam ratios were already computed and thrown away before D-SEL
                 # (graft_lat_norm/conf_norm were logged with no actuator).
                 **{k: sc(out[k]) for k in
-                   ("cls_refined", "oracle_ade", "sel_ade", "sel_gap",
-                    "rank_acc", "frac_sel_2x_worse") if k in out},
+                   ("cls_refined", "ce_support_frac", "oracle_ade",
+                    "sel_ade", "sel_gap",
+                    "rank_acc", "frac_sel_2x_worse", "goal_dir", "goal_dist",
+                    "goal_valid_frac", "goal_gate", "goal_dist_gate")
+                   if k in out},
                 **out.get("sel_tele", {}),
                 "gnorm": round(gnorm, 4), "lr": cur_lr,
                 "data_s": round(t_data, 1), "step_s": round(t_step, 1),
@@ -824,7 +1111,7 @@ def train(args) -> dict:
         # ⚠️ The val set MUST carry the same route input as train, or the arm is
         # evaluated on a route it never receives — which is exactly the
         # nav_cmd=None confound (RETRACTION_LOG C6) reintroduced by omission.
-        if args.graft_lan:
+        if want_lan_field:
             vcls = lan_dataset_class(vcls if vcls is not None
                                      else FailLoudWindowDataset)
             vkw = dict(vkw, lan_cfg=lan_cfg)
@@ -844,7 +1131,8 @@ def train(args) -> dict:
                                     "nav_follow_frac")}
         # D-SEL selection diagnostic on val, when the arm carries it.
         metrics["val"].update({k: round(float(vout[k]), 5) for k in
-                               ("cls_refined", "oracle_ade", "sel_ade",
+                               ("cls_refined", "ce_support_frac",
+                                "oracle_ade", "sel_ade",
                                 "sel_gap", "rank_acc", "frac_sel_2x_worse")
                                if k in vout})
         if "lan_valid_frac" in vout:
@@ -929,7 +1217,65 @@ def main(argv=None):
     ap.add_argument("--no-graft-prior-center", action="store_true",
                     help="feed the anchor grafts the raw log-posterior instead "
                          "of the log-likelihood ratio (ablation).")
+    # --- E1: the nav command's COMPANION BIT ---------------------------------
+    ap.add_argument("--nav-known-channel", action="store_true",
+                    help="E1 INPUT: feed the nav command's `known` bit "
+                         "alongside the command itself (+128 params, exactly "
+                         "one column of measurement.0.weight). "
+                         "nav_command_v21 collapses ROUTE_UNKNOWN and "
+                         "ROUTE_STRAIGHT onto the SAME NAV_FOLLOW token, so "
+                         "'the road goes straight' and 'I could not judge the "
+                         "route' are byte-identical at the model input. "
+                         "MEASURED: 70.78 % of `follow` tokens corpus-wide are "
+                         "the UNKNOWN sentinel (3,537/4,997), rising monotonely "
+                         "from 34.69 % at 15+ m/s to 96.05 % at 1-3 m/s. "
+                         "The bit was never missing -- refb_labels.py:621 "
+                         "returns it and every consumer dropped it at the "
+                         "model boundary, so this is a PLUMBING gap, not a "
+                         "labelling one.")
     # --- D-SEL: the SELECTION surface (see tanitad/refs/refc_select.py) ------
+    ap.add_argument("--sel-score-emitted", action="store_true",
+                    help="S1b: read the ranked confidence FROM THE EMITTED fan "
+                         "(one extra conf-only decoder pass; the offset is "
+                         "discarded so anchor_traj is bit-unchanged). Today the "
+                         "last denoise pass scores its own INPUT and the fan "
+                         "that leaves the decoder is scored by no head at all. "
+                         "0 parameters. Inert at --mode classifier.")
+    ap.add_argument("--sel-score-emitted-t", type=int, default=-1,
+                    help="S1b timestep token for the emitted-fan readout. -1 "
+                         "continues the denoise schedule; 0 pins the ONLY token "
+                         "`loss_cls` ever supervises. 0 parameters either way.")
+    ap.add_argument("--sel-ce-reach", action="store_true",
+                    help="S1c: normalise the ranked-score CE over EXACTLY the "
+                         "survivor set the argmax ranks over, with its target "
+                         "the best candidate IN that set. REQUIRES "
+                         "--sel-reach-clamp. 0 parameters.")
+    ap.add_argument("--sel-ce-objective", default="ce",
+                    choices=("ce", "softade", "softce"),
+                    help="E-OBJ-1: WHICH objective trains the ranked score. "
+                         "`ce` (default) is the incumbent one-hot CE, "
+                         "bit-unchanged. `softade` is the METRIC-AWARE expected "
+                         "fan error under the score's own softmax — MEASURED at "
+                         "frozen weights to recover -0.0974 m (base) / -0.1670 m "
+                         "(XL) of a fitted ranker's deficit, separated, and the "
+                         "recovery is LONGITUDINAL. `softce` softens the CE's "
+                         "TARGET instead and is MEASURED SEPARATED WORSE than the "
+                         "incumbent (+0.0909 m) — it exists as the CONTROL that "
+                         "separates metric-awareness from target-softness, not as "
+                         "a candidate. 0 parameters, all three.")
+    ap.add_argument("--sel-ce-soft-tau", type=float, default=0.0,
+                    help="temperature of the softened CE target, read ONLY by "
+                         "--sel-ce-objective softce. tau -> 0 IS the incumbent "
+                         "one-hot target by construction. 0 parameters.")
+    ap.add_argument("--sel-ce-weight", type=float, default=1.0,
+                    help="multiplier on `loss_rcls`, applied ONLY when "
+                         "--sel-ce-objective is not `ce`. It exists because "
+                         "`softade` is in METRES while the CE is in NATS and "
+                         "REFINED_CLS_WEIGHT was calibrated for the latter — "
+                         "leaving this at 1.0 is a CHOICE about how selection "
+                         "weighs against LAW / maneuver / trajectory, not a "
+                         "default. Refused on the `ce` path so no inert number "
+                         "is recorded.")
     ap.add_argument("--sel-refined", action="store_true",
                     help="S1: rank the refined fan with the REFINED confidence "
                          "and supervise it (adds the cls_refined CE). Today the "
@@ -953,6 +1299,17 @@ def main(argv=None):
                     help="S5: the strategic route READOUT reaches the ranked "
                          "score (zero-init). REQUIRES --labels v21/v3 — under "
                          "v1 the route target is circular with nav_cmd.")
+    ap.add_argument("--graft-goal", action="store_true",
+                    help="S6: a PREDICTED GEOMETRIC goal (bearing + signed "
+                         "along-track preference) reaches the ranked score "
+                         "through the SAME param-free geometric compatibility "
+                         "LAN uses, on TWO independent zero-init gates. The "
+                         "head reads the IMAGE EMBEDDING ONLY; the LAN corridor "
+                         "is its TRAINING LABEL and nothing else, so this "
+                         "REQUIRES --graft-lan. Geometric-and-predicted, per "
+                         "the PI ruling of 2026-08-03 — never categorical and "
+                         "never supplied. Carries no situation-classifier "
+                         "output in any form (RefCModel.goal_provenance()).")
     ap.add_argument("--seam-clamp", type=float, default=0.0,
                     help="S4: cap the TOTAL anchor graft at this multiple of "
                          "the base score's norm (<=0 disables; 1.0 is v4's). "

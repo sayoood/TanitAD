@@ -1440,6 +1440,20 @@ commanded speed falls 12.96 → 7.05 m/s against a logged ~15.0), isolated by a 
 cull**, and licensed by a determinism control that returned **exactly 0.0** on 450/450 windows.
 Current panel: `stack/experiments/alpasim-gsplat/results/closedloop-hq-render/`.
 
+
+> ⛔ **SUPERSEDED 2026-08-03 — the reference video is offset from the rig by a per-scene
+> constant** (`+6` on `00040136`, `+5` on `7c72937c`; rule: `video_idx = rig_idx +
+> (n_mp4_decodable − n_rig_frames)`, measured by the renderer, unanimous over 12 frames each).
+> Re-baselined against the **aligned** reference the improvement is **roughly half the size and
+> does not replicate**: `00040136` n=5 **+13.5 %** (was +23.4 %), n=12 **+8.0 %**, and
+> `7c72937c` n=12 **+4.4 % — NOT SEPARATED** [−0.0097, +0.0521]. Absolutes move too:
+> BEFORE 0.2774 → **0.4228**, AFTER 0.3424 → **0.4800**. The render is still better; the
+> magnitude quoted here is not. Corrected table + estimator:
+> `TanitAD Research Hub/Evaluation/Implementation/incoming/2026-08-03-render-rebaseline/`;
+> `RETRACTION_LOG.md` R-2026-08-03-align. ⚠️ No closed-loop conclusion moves — `cl_metrics.py`
+> never opens the reference video.
+
+
 ⇒ **An ADE-only table would have reported "no difference" on a comparison where four lateral
 measures separate cleanly and in the same direction.** This reproduces the 2026-07-23 native-1080
 n = 12 suite on **different hardware, a different renderer and a different scene** — the doctrine is

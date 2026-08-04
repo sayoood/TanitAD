@@ -11,12 +11,15 @@ from tanitad.eval.sitclf import (
     causal_window,
     clip_runs,
     cluster_folds,
+    diff_reparam,
     head_param_count,
     late_fuse_scores,
     predict_sit_head,
     ridge_param_count,
     ridge_scores,
+    temporal_difference,
     train_sit_head,
+    undiff_reparam,
     width_for_param_budget,
 )
 
@@ -290,3 +293,136 @@ def test_ridge_rejects_misaligned_windows():
     with pytest.raises(ValueError):
         ridge_scores(np.zeros((10, 4)), np.zeros((10, 2), np.uint8),
                      np.ones((10, 2), bool), np.zeros((5, 3)))
+
+
+# --------------------------------------------------------------------------- #
+# temporal primitives — the instruments behind the "is it missing motion?" test #
+# --------------------------------------------------------------------------- #
+def test_temporal_difference_never_crosses_a_clip():
+    X = np.arange(12, dtype=np.float32)[:, None] ** 2
+    st, en = clip_runs(np.array([0] * 5 + [1] * 7))
+    d, ok = temporal_difference(X, st, en, k=1)
+    # the first frame of EVERY clip has no in-clip predecessor
+    assert not ok[0] and not ok[5]
+    assert ok[1:5].all() and ok[6:].all()
+    assert d[6, 0] == pytest.approx(X[6, 0] - X[5, 0])
+    # ...and it must NOT have reached back into clip 0
+    assert d[5, 0] == 0.0
+
+
+def test_temporal_difference_does_not_edge_pad_the_head_to_a_fake_zero():
+    """A padded difference is exactly 0.0 — the signature of a STATIONARY scene.
+
+    Emitting that for the first frames of every clip would teach a head that
+    every drive begins parked, which is the single most misleading value this
+    feature can take. The rows are zero-filled but reported INVALID, and this
+    test is what keeps those two facts tied together.
+    """
+    rng = np.random.default_rng(0)
+    X = rng.normal(size=(30, 4)).astype(np.float32)
+    st, en = clip_runs(np.array([0] * 15 + [1] * 15))
+    d, ok = temporal_difference(X, st, en, k=3)
+    assert not ok[:3].any() and not ok[15:18].any()
+    assert np.all(d[~ok] == 0.0)
+    assert np.abs(d[ok]).sum() > 0
+
+
+def test_temporal_difference_k_larger_than_the_clip_yields_no_valid_row():
+    X = np.zeros((4, 2), np.float32)
+    st, en = clip_runs(np.array([0, 0, 0, 0]))
+    _d, ok = temporal_difference(X, st, en, k=9)
+    assert not ok.any()
+
+
+def test_diff_reparam_round_trips_exactly():
+    """The invariance CONTROL is only a control if the map really loses nothing."""
+    rng = np.random.default_rng(3)
+    win, c = 6, 5
+    X = rng.normal(size=(40, win * c)).astype(np.float32)
+    back = undiff_reparam(diff_reparam(X, win, c), win, c)
+    assert np.allclose(X, back, atol=1e-5)
+
+
+def test_diff_reparam_leads_with_the_present_frame_and_then_differences():
+    win, c = 4, 2
+    # blocks are offsets -(win-1)..0, so block 3 is the present frame
+    X = np.array([[1, 1, 2, 2, 4, 4, 7, 7]], dtype=np.float32)
+    out = diff_reparam(X, win, c).ravel()
+    assert list(out[:2]) == [7.0, 7.0]                  # f_t
+    assert list(out[2:4]) == [3.0, 3.0]                 # f_t - f_{t-1}
+    assert list(out[4:6]) == [2.0, 2.0]                 # f_{t-1} - f_{t-2}
+    assert list(out[6:8]) == [1.0, 1.0]                 # f_{t-2} - f_{t-3}
+
+
+def test_diff_reparam_rejects_a_window_that_does_not_match():
+    with pytest.raises(ValueError):
+        diff_reparam(np.zeros((5, 7), np.float32), 4, 2)
+
+
+def _pca1(A):
+    """Top-1 PC of `A` by SVD — the test's own PCA, so it cannot inherit a bug."""
+    mu = A.mean(0, keepdims=True)
+    _u, _s, vt = np.linalg.svd(A - mu, full_matrices=False)
+    return mu, vt[:1].T
+
+
+def test_a_MOTION_ONLY_signal_is_INVISIBLE_to_appearance_pca_and_VISIBLE_to_motion_pca():
+    """⭐ THE CONTRACT THE WHOLE TEMPORAL STUDY RESTS ON.
+
+    A null result in the real experiment ("a motion basis does not beat the
+    appearance basis") is only interpretable if the instrument could have
+    detected a motion-basis gain had one existed. This builds the case where the
+    answer is known by construction:
+
+      * a LARGE-variance appearance direction ``u`` carrying a slow random walk;
+      * a SMALL-variance direction ``v`` carrying a fast sign flip, so
+        ``Var(v-component) << Var(u-component)`` but
+        ``Var(delta v-component) >> Var(delta u-component)``;
+      * the label depends ONLY on the sign of the change along ``v``.
+
+    A rank-1 PCA fitted on the frames must therefore pick ``u`` and throw the
+    label away, while a rank-1 PCA fitted on the temporal DIFFERENCE must pick
+    ``v`` and keep it. If this test ever fails, the motion arms in
+    ``run_temporal.py`` cannot be trusted to have had a chance.
+    """
+    rng = np.random.default_rng(11)
+    n_clip, T, D = 24, 260, 24
+    F, ys, cid = [], [], []
+    for c in range(n_clip):
+        a = np.cumsum(rng.normal(0, 1.0, T))              # slow, HUGE marginal variance
+        b = rng.choice([-1.0, 1.0], T)                    # fast, tiny marginal variance
+        m = 2.0 * b
+        X = rng.normal(0, 0.05, (T, D))                   # isotropic nuisance
+        X[:, 0] += a
+        X[:, 1] += m
+        y = np.zeros(T, np.uint8)
+        y[1:] = (np.diff(m) > 0).astype(np.uint8)         # PURE motion label
+        F.append(X.astype(np.float32))
+        ys.append(y)
+        cid.append(np.full(T, c))
+    F = np.concatenate(F)
+    y = np.concatenate(ys)[:, None]
+    st, en = clip_runs(np.concatenate(cid))
+
+    # the appearance PCA really does pick the big slow direction, and the motion
+    # PCA really does pick the small fast one — assert it, do not assume it
+    d1, ok = temporal_difference(F, st, en, k=1)
+    mu_a, Wa = _pca1(F)
+    mu_m, Wm = _pca1(d1[ok])
+    assert abs(Wa[0, 0]) > 0.99, "appearance PC1 should be the high-variance direction"
+    assert abs(Wm[1, 0]) > 0.99, "motion PC1 should be the fast-difference direction"
+
+    win = 4
+    Xa, _ = causal_window((F - mu_a) @ Wa, st, en, win)
+    Xm, _ = causal_window((d1 - mu_m) @ Wm, st, en, win)
+    V = np.ones_like(y, bool)
+    V[~ok] = False
+    tr = np.zeros(len(y), bool)
+    tr[: len(y) // 2] = True                              # fit on the first half only
+    te = ~tr
+    base = float(y[te, 0].mean())
+    ap_app = average_precision(y[te, 0], ridge_scores(Xa[tr], y[tr], V[tr], Xa[te])[:, 0])
+    ap_mot = average_precision(y[te, 0], ridge_scores(Xm[tr], y[tr], V[tr], Xm[te])[:, 0])
+    assert ap_app < 1.35 * base, f"appearance PCA should be near chance, got {ap_app} vs {base}"
+    assert ap_mot > 3.0 * base, f"motion PCA should recover the label, got {ap_mot} vs {base}"
+    assert ap_mot > 2.5 * ap_app

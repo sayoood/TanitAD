@@ -150,7 +150,8 @@ Grounding heads live **outside** the model (separate ckpt keys) so a vanilla `Wo
 | Field | Value |
 |---|---|
 | **Status** | **SUPERSEDED** — killed by the 2026-07-14 speed reset at step **22,950**; retained as the causal ablation control |
-| **Location** | `tanitad-pod2:/workspace/experiments/flagship4b-phase0-30k/` (`ckpt.pt`, `config.json`, `train_log.jsonl`, `gate_step{1k,5k,10k}.json`) |
+| **Location** | 🔴 **`tanitad-pod2` IS TERMINATED.** The run dir `/workspace/experiments/flagship4b-phase0-30k/` went with it, and it is **absent from pod4's rescue dump** (MEASURED 2026-08-03, read-only `ls /workspace/rescue/experiments/`). **Reachable copies — of `ckpt.pt` ONLY:** (a) dev box `_pod_backup/pod2-2026-08-03/ckpts/flagship4b-phase0-30k_ckpt.pt`, **3 302 176 350 B**, md5 `74be81035699c362e2fd0e5197880506` (per `_pod_backup/pod2-2026-08-03/ckpts/BACKUP_LOG.txt`) — ⚠️ **git-ignored by `.gitignore:48`, so it is NOT in the repo and one disk failure ends it**; (b) HF `Sayood/tanitad-flagship-4b-phase0`. ⛔ **`config.json`, `train_log.jsonl` and the per-gate JSONs have no reachable copy.** |
+| **⛔ UNRESOLVED citation** | This row used to cite `gate_step{1k,5k,10k}.json`, which is wrong twice over: a **shell brace expansion names no file**, and the stem is wrong as well. MEASURED 2026-08-03 from the emitters — `stack/scripts/watch_gates.py:213` and `stack/scripts/evaluate_checkpoint.py:201` both write `f"gates_step{step}.json"` — so the real name is **gates_step<full-integer>.json** (plural `gates`, no `k` abbreviation), and **no `gate_step*` writer exists anywhere in the tree**. ⛔ **I did not rewrite it to a guess**: the host is terminated and the dir is not in the rescue dump, so neither the filenames nor the gate steps can be verified, and a confidently wrong citation is worse than an obviously broken one. Tracked as the single `unresolved` entry in `tools/registry_paths_allow.json`; resolving it means finding the run dir, then lowering that file's `max_unresolved`. |
 | **Distinguishing flags** | `speed_input=false`, `action_dim=2`, `jerk_weight=0.0`, `aux_accel=false`, `rollout_k=4` |
 | **Params (from run config)** | encoder 87,121,280 · operative 96,607,490 · tactical_pred 26,534,912 · tactical_policy 22,736,141 · strategic_policy 8,385,027 · h15 22,055,683 · grounding_heads 13,432,338 → **total_model 263,440,533 / trainable 276,872,871** ✅ |
 | **Data** | `physicalai-train-e438721ae894`, skip-hash `f09e44db`, cache `/workspace/data/physicalai_phase0/_epcache` |
@@ -279,7 +280,7 @@ CI [+1.04, +1.64]** (CI-separated). Upcoming-curvature decode R² 0.254 vs 0.031
 **OOD:** physicalai (in-dist) 0.427 vs floor 0.523, win 49.7 % ✅ | comma2k19 0.849 vs floor 0.372, win
 17.5 % ✗ | cosmos 0.583 vs 0.358, win 29.4 % ✗. **Generalization is the open gap.**
 
-**Closed-loop (imagination-in-the-loop, no renderer):** closed_bike ADE@2s **1.685 ± 0.098**, FDE 3.530,
+**Closed-loop (imagination-in-the-loop, no renderer):** closed_bike ADE@2s **1.685 ± 0.098** ⚠️ **(estimator NOT STATED — flagged 2026-08-03, not guessed.** `±` elsewhere in this document means `overlapping_holdout_se`; if this closed-loop figure is something else, e.g. a spread over rollouts, it must say which), FDE 3.530,
 divergence >5 m 22.2 %. Open-loop 0.452 → closed-loop 1.685: **open-loop does not predict closed-loop.**
 
 **Efficiency — TWO DIFFERENT TICKS. Neither may be quoted without its definition.**
@@ -423,7 +424,7 @@ ADE@2s **0.6277 ± 0.0551** heldout / **0.6152** full-set · FDE 1.3173 · miss 
 
 **Results — step 6,000 (`flagship-v2-6k`)** ✅ *(from `results/flagship-v2-6k.json`)*
 
-ADE@0.5s **1.2389** · ADE@1s 2.3276 · ADE@1.5s 4.0048 · **ADE@2s 6.179 ± 1.2845** (7.4× CV) · FDE@2s
+ADE@0.5s **1.2389** · ADE@1s 2.3276 · ADE@1.5s 4.0048 · **ADE@2s 6.179 ± 1.2845** (7.4× CV; ⚠️ **estimator label added 2026-08-03** — `±` in this document is `overlapping_holdout_se`, **DEPRECATED and BIASED in the point estimate** (§1.4's header states the convention). The decision-grade interval is the episode-cluster bootstrap; §6 gives it as **5.9396 [4.3273, 7.6249]**) · FDE@2s
 12.7015 · miss@2m 0.8407. Offline reproduction (full-set) 5.94.
 
 **Diagnosis (why it was killed, not continued):**
@@ -643,9 +644,11 @@ comparison, and the paired bootstrap above is the valid one.** *(Conclusion unch
 CORRECTED 2026-07-26** — the reason previously given here was wrong, and wrongly reassuring; see below.)*
 
 Two eid FAMILIES do exist: `bench.py` clusters on **file indices 0–39**, while
-`eval_flagship_v15/v16.py` deliberately cluster on the **real `episode_id`** (`real_episode_ids()`,
-e.g. 808464434) *because the eval pod's estimator does* — see the v15 docstring: *"using file indices
-instead would produce a DIFFERENT episode partition and therefore a different heldout mean."*
+`stack/scripts/eval_flagship_v15.py` and `stack/scripts/eval_flagship_v16.py` deliberately cluster on
+the **real `episode_id`** (`real_episode_ids()` — `eval_flagship_v15.py:125`, `eval_flagship_v16.py:171`;
+e.g. 808464434) *because the eval pod's estimator does* — see the v15 docstring
+(`stack/scripts/eval_flagship_v15.py:128-130`): *"using file indices instead would produce a DIFFERENT
+episode partition and therefore a different heldout mean."*
 
 > 🔧 **CORRECTION (2026-07-26). This block used to say `split_by_episode` "hashes the id *values*", so
 > the two families drew "different random partitions". IT DOES NOT HASH.** MEASURED from the emitter:
@@ -683,9 +686,32 @@ identical **elementwise, max diff 0.0** (re-verified 2026-07-26).
 **G-A verdict: PARTIAL — 2 of 5.** ✅ G1 (<0.458) ✅ G2 (<0.4522) · ❌ oracle ≤0.22 (0.2815)
 · ❌ miss ≤0.10 (0.1067, narrow) · ❌ canary flat (+0.650). **Branch 1 does not fire.**
 
-**What it settles:** unfreezing 4 ViT blocks buys only **8.4 %** of the fan gap — nowhere near REF-C's
-0.1640. Frozen-vs-trained encoder is confirmed as the *direction*, but this is **not** the route to a
-REF-C-grade fan, and the WM cost makes it actively hostile to a design built on that WM (v3.5).
+**What it settles:** unfreezing 4 ViT blocks is **not** the route to a REF-C-grade fan, and the WM
+cost makes it actively hostile to a design built on that WM (v3.5). Frozen-vs-trained encoder is
+confirmed as the *direction* only.
+
+⛔ **CORRECTED 2026-08-03 — the earlier sentence here conflated two different quantities.** It read
+*"buys only 8.4 % of the fan gap — nowhere near REF-C's 0.1640"*. Both halves were wrong:
+
+| quantity | value |
+|---|---|
+| **relative** improvement in the fan number (0.3073 → 0.2815) | **8.40 %** ← *this is what 8.4 % actually is* |
+| fraction of the gap **to REF-C-XL** (0.1640) closed | **18.0 %** |
+| fraction of the gap **to REF-C-base** (0.1914) closed | **22.3 %** |
+| fraction of the distance to **this gate's own `oracle ≤ 0.22` bar** closed | **29.55 %** |
+
+**8.4 % is a relative change in the fan, not a fraction of a gap.** And **0.1640 is REF-C-XL's fan,
+not base's** — base is **0.1914**, so comparing a base-scale lever against XL's number overstates
+the shortfall. The verdict is unchanged (18–22 % of a gap is not closing it, and the canary went
++144 %), but the magnitude must be quoted correctly.
+
+⚠️ **DO NOT MERGE THIS 8.4 % WITH THE OTHER ONE.** §4's *"a learned re-scorer recovers at most 8.4 %
+of the gap across 47 trained arms"* is an unrelated quantity that coincidentally shares the digits —
+that one **is** a fraction-of-gap, about a re-scorer, on REF-C. This one is a relative change, about
+unfreezing, on the flagship. Two numbers, one string; quote the section, never the bare figure.
+⚠️ The re-scorer 8.4 % resolves to a **prose note, not a results JSON** — it is `INHERITED` until
+someone re-derives it from the 47 arms' raw output, and it is load-bearing for the D-SEL adverse
+prior (`PREREG_D-SEL_REFC_SELECTION_SURFACE.md`).
 
 ⚠️ **Process note (mine).** At step 2500 a transient spike (oracle 2.08, gnorm 161) plus a monotone
 canary trend led me to report a "decisive failure". **It recovered completely** — 5,999 lands ~~the best
@@ -897,9 +923,9 @@ Per the pre-registered rule this **confirms "floor too high"** → v4.2b (floor 
 | **Distinguishing lever** | **`--from-scratch`** = skip `_warmstart_trunk`, random-init the trunk (the not-frozen gate then passes trivially). Byte-identical to v4.2b in every other flag (eff batch 64, lr_trunk 1e-4, floor 0.25, λ_plan sched) → **one-lever attributability**: if v4.2b's canary runs away and this one does not, the warm-start coupling is confirmed as the cause. |
 | **Validation** | MEASURED: full `pytest -q` **786 passed / 2 skipped** + 5 new from-scratch tests (14 passed in `test_train_flagship_v4.py`). `--smoke-loop` from random init: canary baseline **1.5189** → drops monotonically **1.385 → 1.312 → 1.232 → 1.179 → 1.165** as the WM co-evolves — **improves, does not collapse** (the existence-proof for the through-line above). |
 | **Cost** | **MEASURED 59.04 h** — `metrics.json` `wallclock_s` **212 544.6** (= 212 544.6 / 3600), on **pod2 / NVIDIA A40 46 068 MiB**, host `08f6ce7d8e55` (the supervisor's *"supervisor UP on 08f6ce7d8e55"* matches pod2's live `hostname`, both MEASURED 2026-07-27). ⚠️ The superseded row carried **~53 h ESTIMATED**: the estimate was **~11 % low**, and *"zero GPU-day committed"* understated the real spend by **≈2.5 GPU-days**. |
-| **Result** | ⚠️ **Two protocols — never mix them.** **(a) TRAINER in-loop val** (`metrics.json`, n = **881**): `ade@2s` **0.5063**, `oracle_ade@2s` 0.1892, `sel_gap@2s` 0.3172, `miss@2m` 0.2145; `canary_ade@2s` **1.1409** against a random-init `canary_baseline` **15.6742** (the co-evolution signature — no collapse). ⛔ **Trainer val is NOT quotable against v1** (§0, and the v1.6 retraction at §1.5's sibling row). **(b) DECISION-GRADE** `eval_flagship_v4.py`, **episode-cluster bootstrap**, **881 windows / 40 val episodes**: @ step **15 000** `ade_0_2s` **0.5839 [0.4962, 0.6821]**, **paired** vs deployed v1 **+0.1568 [+0.0630, +0.2504]** (`p_delta_gt0` 1.0, ✅ separated; **positive = BEHIND v1**) — `…/incoming/2026-07-25-flagship-v4-midtrain-eval/flagship-v4-fromscratch-15k.json` + `…_lateral_and_paired.json`. @ step **29 999**: deployable **produced** surface **0.8563 [0.7282, 1.0035]**, `beats_cv` **❌** (CV floor 0.8377 on the same windows); **oracle-goal** surface 0.6423 [0.5348, 0.7586], `beats_cv` ✅ but `goal_provenance.deployable = false` ⇒ **not a leaderboard number** — `…/incoming/2026-07-26-v4-30k-gate/raw/flagship-v4-fromscratch-30k-{produced,oracle}.json` (both `ckpt_step 29999`). |
+| **Result** | ⚠️ **Two protocols — never mix them.** **(a) TRAINER in-loop val** (`metrics.json`, n = **881**): `ade@2s` **0.5063**, `oracle_ade@2s` 0.1892, `sel_gap@2s` 0.3172, `miss@2m` 0.2145; `canary_ade@2s` **1.1409** against a random-init `canary_baseline` **15.6742** (the co-evolution signature — no collapse). ⛔ **Trainer val is NOT quotable against v1** (§0, and the v1.6 retraction at §1.5's sibling row). **(b) DECISION-GRADE** `eval_flagship_v4.py`, **episode-cluster bootstrap**, **881 windows / 40 val episodes**: @ step **15 000** `ade_0_2s` **0.5839 [0.4962, 0.6821]**, **paired** vs deployed v1 **+0.1568 [+0.0630, +0.2504]** (`p_delta_gt0` 1.0, ✅ separated; **positive = BEHIND v1**) — `…/incoming/2026-07-25-flagship-v4-midtrain-eval/flagship-v4-fromscratch-15k.json` + `…_lateral_and_paired.json`. @ step **29 999**: deployable **produced** surface **0.8563 [0.7282, 1.0035]**, `beats_cv` **❌** (CV floor 0.8377 on the same windows); **oracle-goal** surface 0.6423 [0.5348, 0.7586], `beats_cv` ✅ but `goal_provenance.deployable = false` ⇒ **not a leaderboard number** — `…/incoming/2026-07-26-v4-30k-gate/raw/flagship-v4-fromscratch-30k-produced.json` and `…/incoming/2026-07-26-v4-30k-gate/raw/flagship-v4-fromscratch-30k-oracle.json` (both `ckpt_step 29999`). ✅ **Both raw files re-read 2026-08-03 and both match this row exactly**: `cluster_bootstrap.model.ade_0_2s` 0.8563 [0.7282, 1.0035] and 0.6423 [0.5348, 0.7586], `goal_provenance.deployable` `true` and `false`. |
 | **Code state** | `--from-scratch` / `--trunk none` sentinel in `stack/scripts/train_flagship_v4.py`; the run's own `config.json` proves the lever was **in force**: `"from_scratch": true`, `trunk.init "from-scratch (random)"`, `trunk.ckpt null`, `trunk.step -1`. **As launched** (`config.json` → `args`): `steps 30000, batch 16, accum 4 (eff 64), lr_head 1e-4, lr_trunk 1e-4, warmup 2000, lam_mult_floor 0.25, phase_a_steps 2000, phase_b_steps 8000, gate_step 10000, labels v3, strategic full, dense_plan true, rollout_k 4, eval_episodes 40, seed 0`. Tests in `stack/tests/test_train_flagship_v4.py`. |
-| **Location** | `tanitad-pod2:/workspace/experiments/flagship-v4-fromscratch/` — `ckpt.pt` **3 243 109 310 B** (step 29999) + `ckpt_step{5,10,15,20}000.pt`; `train_log.jsonl` **661 rows**, last row step **29999** (`plan_ade 0.3659`, `oracle_ade 0.1647`). ⭐ **Partly HF-backed** (MEASURED 2026-07-27, HF API): `Sayood/flagship-v4-fromscratch`, public + **`gated: manual`**, `lastModified` **2026-07-26T09:12:06Z**, files `ckpt.pt`, `ckpt_step20000.pt`, `config.json`, `metrics.json`, `train_log.jsonl`, `README.md`. 🔴 **`ckpt_step{5,10,15}000.pt` exist on the pod disk ONLY** — the 15 k milestone that carries this arm's decision-grade read is single-disk. |
+| **Location** | `tanitad-pod2:/workspace/experiments/flagship-v4-fromscratch/` — `ckpt.pt` **3 243 109 310 B** (step 29999) + `ckpt_step5000.pt`, `ckpt_step10000.pt`, `ckpt_step15000.pt`, `ckpt_step20000.pt` (written out 2026-08-03; the ckpt_step<full-integer>.pt form is MEASURED from the HF sibling `ckpt_step20000.pt` listed later in this row); `train_log.jsonl` **661 rows**, last row step **29999** (`plan_ade 0.3659`, `oracle_ade 0.1647`). ⭐ **Partly HF-backed** (MEASURED 2026-07-27, HF API): `Sayood/flagship-v4-fromscratch`, public + **`gated: manual`**, `lastModified` **2026-07-26T09:12:06Z**, files `ckpt.pt`, `ckpt_step20000.pt`, `config.json`, `metrics.json`, `train_log.jsonl`, `README.md`. 🔴 **`ckpt_step5000.pt`, `ckpt_step10000.pt` and `ckpt_step15000.pt` have NO REACHABLE COPY** (MEASURED 2026-08-03, read-only `ls`: `tanitad-pod2` is terminated and this run dir is **absent from pod4's rescue dump** `/workspace/rescue/experiments/`; the HF file list in this row is `ckpt.pt` + `ckpt_step20000.pt` only) — the 15 k milestone that carries this arm's decision-grade read is **gone**, unless a copy exists somewhere not yet probed (three locations were probed: pod2, pod4's rescue dump, HF). |
 
 > 🟥 **GATE-COMPLETENESS / RECONSTRUCTION RISK (the whole v4 line).** The v4 held-out eval **driver was
 > the standing blocker** — it did not exist until `eval_flagship_v4.py` was built + O-03-validated on
@@ -961,6 +987,68 @@ with resume-duplicated rows in its tail.
 > would have made **labels a second differing variable** vs §1.3.
 
 Full provenance: `TanitAD Research Hub/Data Engineering/Implementation/incoming/2026-07-25-v2-launch-readiness/V2_LAUNCH_READINESS.md`.
+
+---
+
+### 1.8 flagship-v5f — `flagship-v5f-w120-30k` — 🟢 **RUNNING** (step 3,650 @ 2026-08-03T18:57Z)
+
+**The 120° wide-FOV cylindrical arm with conditional imagination.** Added to the registry
+2026-08-03 — it had been the programme's headline live run for days **with no registry row**, so
+every quoted v5f fact was un-anchored. All fields below are MEASURED off the pod in one probe.
+
+| Field | Value |
+|---|---|
+| **Status** | 🟢 RUNNING on `tanitad-new` (pod5, `69.30.85.106:22039`), trainer PID **19412**. Migrated from the faulty pod2. Resumed `[resume] step 1001`. |
+| **Location** | `tanitad-new:/workspace/experiments/flagship-v5f-w120-30k/` · log `…/train_log.jsonl` (+ `/workspace/v5f_run.log`) |
+| **Corpus** ✅ | **PARITY VERIFIED by the trainer itself**: `physicalai-train-e438721ae894-w120-256x640cyl`, **2400 clips**, clip sha256 `e61a04553df5…` matching the committed manifest; sibling of `physicalai-train-e438721ae894`, skip-hash **`f09e44db`**. Val: `physicalai-val-0c5f7dac3b11-w120-256x640cyl`, 600 clips, sha256 `0b176d2e5cb4…`. |
+| **Geometry** | 256×640, `f_ref` 305.5775, **cylindrical**, HFOV 120°, subframe 176×624, `frame_tag` `256x640f305.5775cyl` |
+| **Levers** | `--from-scratch` (trunk *init* only) · `--cond-imagination` · `--batch 4 --accum 16` (eff_batch **64**) · `--anchors-dense` · `--save-every 250` · ⚠️ `--no-heldout-gate` with `--heldout-off-reason` *"PI directive: no heldout gate. Migrated from the faulty pod2…"* |
+| **Trainability** | `[v4][not-frozen]` self-check PASSES: **631/631** trunk tensors require grad and sit in the AdamW `trunk` group at lr 1e-4; encoder **149/149**, predictor **159/159** trainable; `gnorm_trunk > 0` confirmed in the log. |
+| **Throughput** | **MEASURED 19.58 s/step** over the last 250 steps ⇒ **143.3 h ≈ 6.0 days** remaining to 30 k. |
+| **Container RAM** | ⚠️ `memory.max` = **49,999,998,976 B (50 GB)** — the *same* cap as the pod2 that was OOM-killed 6×. The migration runbook asked for more and did not get it. |
+| **HF** | `Sayood/tanitad-flagship-v5f-w120` (ckpt + config + probe_vocab) |
+
+#### ⛔ The 13:00 "v5f IS GOING THE WRONG WAY" alarm is WITHDRAWN
+
+MEASURED, **500-step block medians** (n ≥ 4 per block — never one logged line):
+
+| step block | `g_op_fwd_ade_m` | `plan_ade` | `oracle_ade` | `sel_gap` | `rank_acc` | `frac_sel_2x_worse` |
+|---|---|---|---|---|---|---|
+| 1000–1500 | 0.3522 | 1.4935 | 0.8798 | 0.4510 | 0.2500 | 0.2500 |
+| 1500–2000 | 0.2933 | 1.3949 | 0.8382 | 0.4878 | 0.0000 | 0.3750 |
+| **2000–2500** | **0.4191** ← *the alarm* | 1.6597 | 0.9450 | 0.5681 | 0.1250 | 0.2500 |
+| 2500–3000 | 0.1784 | 1.0714 | 0.5902 | 0.3980 | 0.1250 | 0.2500 |
+| 3000–3500 | 0.2389 | 0.9762 | 0.5663 | 0.3432 | 0.0000 | 0.2500 |
+| 3500–4000 *(n=4)* | 0.1893 | 1.0251 | **0.5254** | 0.4715 | 0.3750 | 0.5000 |
+
+The 13:00 report read **0.64–1.02 around step 2300** and headlined *"v5f IS GOING THE WRONG WAY"*.
+Block medians show that was the **2000–2500 bump**, and the run has since printed 0.1784 / 0.2389 /
+0.1893 — **better than anything before the bump**. ⇒ **No restart. The HYPOTHESIS stated alongside
+the alarm (LR warm-up under a changed `--batch 4 --accum 16` regime) is the reading the data now
+supports**, and the recommendation *"hold to 5 k, do not restart on 3 noisy points"* was correct.
+⭐ **Root-cause class: a 3-point read inside an LR warm-up is not a trend — block-median it or do
+not raise it.** Same family as the three earlier `g_op_fwd_ade_m` misreads, in both directions.
+
+#### ⭐ What the same table shows instead — the fan is good and the SELECTOR is the defect
+
+- `oracle_ade` **improves monotonically after the bump**: 0.9450 → 0.5902 → 0.5663 → **0.5254**.
+  The best candidate in the fan is getting substantially better.
+- `sel_gap` = `plan_ade − oracle_ade` **does not close**: 0.4510 / 0.4878 / 0.5681 / 0.3980 /
+  0.3432 / 0.4715 — no trend across 2,650 steps.
+- `rank_acc` sits at **0.000–0.375** and `frac_sel_2x_worse_than_oracle` at **0.25–0.50**: the
+  selector picks a candidate **≥2× worse than the oracle on a quarter to a half of logged steps**.
+- ⇒ At step 3,650 `plan_ade` **1.0251** vs `oracle_ade` **0.5254** — **the arm would be ~2× better
+  if it merely chose correctly among candidates it already generates.**
+
+⇒ **This is the TACTICAL family failing live in the flagship's own training log**, independent of
+REF-C's manoeuvre head (§ the D-TAC1 stream) and of the sitclf work — three instruments now point at
+selection rather than generation. ⛔ It is **not** visible in `g_op_fwd_ade_m`, which is why an
+ADE-only read of this run says "healthy".
+
+⚠️ **These are TRAINER-log numbers, not eval output.** Per the operating standard they are a curve
+watch and are **not quotable as a result** — trainer val has run ~10 % optimistic vs `eval_*.py`
+before. The 5 k gate must be adjudicated on `stack/scripts/run_gate.py`, on the four families, with
+the paired episode-cluster bootstrap.
 
 ---
 
@@ -1120,9 +1208,18 @@ state_dict, old ckpts resume). Command:
 Result (`refb-10k`): **0.8255 ± 0.0992** heldout / 0.8372 full-set, FDE 1.6714, miss 0.2641 — turns
 +0.255 m better than the 6 k, straights slightly worse.
 
-> ⚠️ **Lineage trap, documented:** `refb-speed-30k/ckpt_prepatch_step8500.pt` is **byte-identical (md5)**
-> to `refb-speed-30k/ckpt.pt`. There is one checkpoint, and it is at **step 10,000**, not 8,500. The file
-> name is wrong.
+> ⚠️ **Lineage trap, documented:** `tanitad-pod4:/workspace/rescue/experiments/refb-speed-30k/ckpt_prepatch_step8500.pt`
+> is **byte-identical (md5)** to
+> `tanitad-pod4:/workspace/rescue/experiments/refb-speed-30k/ckpt.pt`. There is one checkpoint, and it is
+> at **step 10,000**, not 8,500. The file name is wrong.
+>
+> 📍 **Host added 2026-08-03 (this citation was a host-less fragment and resolved to nothing).** The run
+> was produced on `tanitad-pod` at `/workspace/experiments/refb-speed-30k/`; that pod refuses connections
+> as of 2026-08-03 and the **only reachable copy is pod4's rescue dump**. MEASURED (mine, read-only `ls`
+> over ssh, 2026-08-03): both files present, **3 153 889 214 B each** — equal size, consistent with the
+> byte-identical claim above, though I did **not** re-run md5 (that would put sustained disk I/O on a pod
+> that is training `flagship-v1arch-v2bal-30k`). ⛔ **No HF copy**: no repo under `Sayood/` holds a file of
+> that size (corpus-durability sweep, 2026-08-03) — so this arm is **single-disk on a rented pod**.
 
 ### 3.4 REF-B refbpatch — `refb-refbpatch-30k` (crashed)
 
@@ -1139,7 +1236,7 @@ a MooseFS mmap slice crossing the worker boundary. Fixed by cloning mmap window 
 | Field | Value |
 |---|---|
 | **Status** | ✅ **COMPLETE at step 29999** (`metrics.json: {"final": {"step": 29999, …}, "steps": 30000}`, ckpt written 2026-07-19 20:19 UTC) |
-| **Location** | `tanitad-pod:/workspace/experiments/refb-refbpatch-v2-30k/` · milestones `tanitad-pod:/root/refb_milestones/ckpt_step{5000,15000,20000}.pt` · eval copy `tanitad-eval:/root/models/refb-v2-30k/ckpt.pt` |
+| **Location** | `tanitad-pod:/workspace/experiments/refb-refbpatch-v2-30k/` · milestones `tanitad-pod:/root/refb_milestones/ckpt_step5000.pt`, `tanitad-pod:/root/refb_milestones/ckpt_step15000.pt`, `tanitad-pod:/root/refb_milestones/ckpt_step20000.pt` · eval copy `tanitad-eval:/root/models/refb-v2-30k/ckpt.pt`. ⚠️ **Reachability MEASURED 2026-08-03:** both `tanitad-pod` and `tanitad-eval` return `Connection refused` at their recorded addresses (a RunPod volume resize presents the same way, so this is *unreachable*, not *proven destroyed*), and `/root/refb_milestones/` is **not** in pod4's rescue dump. The **run dir itself IS rescued** — `tanitad-pod4:/workspace/rescue/experiments/refb-refbpatch-v2-30k/` — and its `ckpt.pt` size-matches the `ckpt.pt` in HF `Sayood/tanitad-refb-speed`. ⛔ **The three milestones have no reachable copy.** |
 | **Distinguishing flags** | `--arch-v2 --refbpatch` (arch-v2 **implies** refbpatch) |
 | **The v2 architecture delta** | `yaw_input=True` (**B2**: ego proprioception widened `v0` → `[v0, yr0]`) and `anchored_tactical=True` (**B1**: a DiffusionDrive/VADv2-faithful **time-anchored** tactical decoder replacing the unimodal `wp_heads`), with `anchor_space="time"`, `anchor_n=128`, `anchor_pool=4096`, `anchor_d=384`, `anchor_layers=4`, `anchor_heads=8`. Anchors are **FPS over real GT trajectory targets** built from the dataset at launch, not the synthetic default. ✅ |
 | **Params** | encoder 179,263,616 · operative 52,256,526 · **tactical 30,270,742** (was 21.7 M) · strategic 8,385,667 · fallback 1,443,329 → **271,619,880** ✅ |
@@ -1215,7 +1312,7 @@ target-speed head. Grafts: `hierarchy`, `graft_maneuver` (H19 maneuver→anchor 
 | **Data** | `/workspace/pai_epcache` (pod3 copy of the same 2,376-ep parity set); anchors `/workspace/experiments/refc_anchors_full.pt` built by `stack/scripts/build_refc_anchors.py` |
 | **Exact command** *(live `ps`)* | `cd /workspace/TanitAD/stack && PYTHONPATH=/workspace/TanitAD/stack PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True nohup python3 scripts/refc_train.py --data-root /workspace/pai_epcache --out /workspace/experiments/refc-diffusion-xl-30k --steps 30000 --mode diffusion --config xl --anchors /workspace/experiments/refc_anchors_full.pt --batch 20 --workers 6` ✅ |
 | **Code state** | `stack/tanitad/refs/refc.py` + `stack/scripts/refc_train.py` are **committed in this repo** (`6025769`, `7e9c402`, 15 refc tests). ⚠️ On pod3 the file shows as **untracked** (`?? stack/tanitad/refs/refc.py`) — the pod predates the commit; verify the pod copy matches HEAD before claiming byte-parity. |
-| **HF** | ✅ **`Sayood/tanitad-refc-xl`** — public + **gated `manual`** (access by owner approval), pushed 2026-07-25. Files: `ckpt.pt` **3,024,021,445 B** (md5 `966d4eff1ea5ddf86efba01b8344e198`, re-verified against this row immediately before upload), `config.json`, `metrics.json`, model card. Anonymous `resolve/ckpt.pt` returns **401 `GatedRepo`** — weights are NOT world-downloadable (verified, not assumed). Now 3 copies (HF + eval pod + pod3). Note: `…/incoming/2026-07-25-refc-hf-push/NOTE.md` |
+| **HF** | ✅ **`Sayood/tanitad-refc-xl`** — public + **gated `manual`** (access by owner approval), pushed 2026-07-25. Files: `ckpt.pt` **3,024,021,445 B** (md5 `966d4eff1ea5ddf86efba01b8344e198`, re-verified against this row immediately before upload), `config.json`, `metrics.json`, model card. An anonymous `HEAD` of `https://huggingface.co/Sayood/tanitad-refc-xl/resolve/main/ckpt.pt` returns **401 `GatedRepo`** *(re-verified by me 2026-08-03, unauthenticated request, `X-Error-Code: GatedRepo`)* — weights are NOT world-downloadable (verified, not assumed). Now 3 copies (HF + eval pod + pod3). Note: `…/incoming/2026-07-25-refc-hf-push/NOTE.md` |
 
 **Results — FINAL step 29,999 (`refc-xl-30k`), 881 windows** ✅ *(read from the raw eval run 2026-07-20)*
 
@@ -1257,7 +1354,7 @@ target-speed head. Grafts: `hierarchy`, `graft_maneuver` (H19 maneuver→anchor 
 >
 > **⛔ THE ORACLE GAP IS ~92 % IRREDUCIBLE — stop quoting it as available headroom.**
 > REF-C v1.2 settled this across **47 trained arms**: a learned re-scorer recovers at most
-> **8.4 % of the gap on its own training data**. Not capacity (smaller heads are worse), not
+> **8.4 % of the ORACLE gap, on its own training data** *(qualifier added 2026-08-03: an unrelated **8.4 %** at §1.6 is a **relative** change in the flagship's fan — the two were merging)*. Not capacity (smaller heads are worse), not
 > overfitting (dev tracks train). The 0.1640 oracle is a **minimum over 256 candidates scored
 > against ONE realised future** — most of the distance below the incumbent is that minimum's
 > *statistics over aleatoric outcomes*, not recoverable signal. An earlier revision of this
@@ -1357,9 +1454,28 @@ scale-A/B matched-vocabulary control nests vs both base and XL (`nested vocabula
 Eval **identical to base/XL**: `taniteval.refc_eval` on the canonical 40-ep / 881-window val, nav=follow,
 2 truncated-denoise steps.
 
-**Results — FINAL step 29,999 (`refc-small-30k`), 881 windows** ✅ *(raw:
-`taniteval/results/refc-small-30k.json`, `scaleab_refc-small-30k_vs_refc-{base,xl}-30k.json`; repo copies
-in `TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-22-refc-small-30k/`)*
+**Results — FINAL step 29,999 (`refc-small-30k`), 881 windows** ✅
+
+⛔ **CITATION CORRECTED 2026-08-03.** This block previously cited
+`taniteval/results/refc-small-30k.json` as *the raw* and the hub directory as *"repo copies"*.
+**`taniteval/results/refc-small-30k.json` DOES NOT EXIST** (probed at `taniteval/results/`,
+`taniteval/taniteval/results/`, and repo-wide by name). The hub directory is not a copy — **it is
+the only source**, and it holds more than the dead citation claimed:
+
+```
+TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-22-refc-small-30k/
+  refc-small-30k.json                          ← the raw eval output
+  scaleab_refc-small-30k_vs_refc-base-30k.json
+  scaleab_refc-small-30k_vs_refc-xl-30k.json   ← the brace form `{base,xl}` was never a real path
+  windows_refc-small-30k.pt   fan_refc-small-30k.pt
+  refc_anchors_small64.pt     provenance.json  eval_registry_after.py
+```
+
+⇒ **RULE: a shell brace expansion is not a citation.** `…_vs_refc-{base,xl}-30k.json` names no file
+and cannot be checked by anything that reads the registry literally — which is every reader and
+every script. Write both paths.
+⇒ **RULE: never label the only copy of an artifact a "copy".** It invites deletion of the thing the
+number rests on, and it sends the next reader to a path that does not exist.
 
 | Metric (full-set, episode-cluster bootstrap B=2000) | **small** (54.7 M) | base (104.2 M) | XL (251.9 M) |
 |---|---|---|---|
@@ -1419,7 +1535,7 @@ at 12 % of the 100 ms budget. Evidence class: **MEASURED** (this run + eval, art
 | **Code** | `stack/scripts/refc_train.py` gained `--labels {v1,v21}` (**default `v1` = XL-reproducible**), `RouteV21Dataset`, a fail-loud masked route CE, and 5 k/15 k/20 k/30 k **milestone archiving** (the gate series XL lacks). 15/15 `tests/test_refc.py` pass. Pod3 drift repaired before launch (`refb_labels.py` still had `use_net_dyaw=True`; `ckpt_io.py` was absent) — backups in `/workspace/ops/backup-20260720-refcmed/`. |
 | **Eval** | canonical `taniteval.refc_eval` path, **identical to XL**: n=881 windows / 40 val eps / `/root/valdata/physicalai-val-0c5f7dac3b11`, window 8 / stride 8, nav=follow, 2 truncated-denoise steps. Parity proven three ways: same 881 `eid`s, bit-identical GT, and **bit-identical CV baseline in every stratum** (0.6468 / 0.9345 / 0.9322 high/med/low, 0.4393 / 1.3566 / 2.3764 straight/gentle/sharp — the same numbers §4.1 prints for XL). Registry entry `refc-base-30k` added to `taniteval/taniteval/registry.py` with `config_preset="base"`. |
 | **Note** | `TanitAD Research Hub/Benchmarks & Eval/Research/2026-07-20-refc-medium-scaling.md` (pre-registered the reading rule) |
-| **HF** | ✅ **`Sayood/tanitad-refc-base`** — public + **gated `manual`**, pushed 2026-07-25. Files: `ckpt.pt` **1,250,838,325 B** (md5 `8f10d6f934f4199e11ddc7352e074939`, re-verified immediately before upload), `config.json`, `metrics.json`, model card. Anonymous `resolve/ckpt.pt` returns **401 `GatedRepo`**. Now 3 copies (HF + eval pod + pod3). Note: `…/incoming/2026-07-25-refc-hf-push/NOTE.md` |
+| **HF** | ✅ **`Sayood/tanitad-refc-base`** — public + **gated `manual`**, pushed 2026-07-25. Files: `ckpt.pt` **1,250,838,325 B** (md5 `8f10d6f934f4199e11ddc7352e074939`, re-verified immediately before upload), `config.json`, `metrics.json`, model card. An anonymous `HEAD` of `https://huggingface.co/Sayood/tanitad-refc-base/resolve/main/ckpt.pt` returns **401 `GatedRepo`** *(re-verified by me 2026-08-03, unauthenticated request, `X-Error-Code: GatedRepo`)*. Now 3 copies (HF + eval pod + pod3). Note: `…/incoming/2026-07-25-refc-hf-push/NOTE.md` |
 
 **Results — FINAL step 29,999 (`refc-base-30k`), 881 windows** ✅ *(raw: `taniteval/results/refc-base-30k.json`)*
 
@@ -1436,7 +1552,7 @@ at 12 % of the 100 ms budget. Evidence class: **MEASURED** (this run + eval, art
 > and a **2.20× encoder cut** (90,458,632 vs 199,496,532) cost **nothing measurable** on this corpus.
 > Per-window ADE correlation 0.789, so the pairing is doing real work (the test is not weak).
 > Estimator: `taniteval/ci.py` episode-cluster bootstrap, B=2000 over the 40 val episodes; paired form
-> for the deltas. Reproduce from `taniteval/results/{windows,fan}_refc-{base,xl}-30k.pt` with
+> for the deltas. Reproduce from `taniteval/results/windows_refc-base-30k.pt`, `taniteval/results/windows_refc-xl-30k.pt`, `taniteval/results/fan_refc-base-30k.pt` and `taniteval/results/fan_refc-xl-30k.pt` (four files, all verified present 2026-08-03) with
 > `taniteval/refc_scale_ab.py analyze`.
 
 **Strata — FINAL step 29,999** *(CV column is bit-identical to §4.1's, which is the parity proof)*:
@@ -1518,7 +1634,7 @@ widening this encoder — on the only near-matched test we have (base's 90.5 M v
 The program's first **external-simulator** closed-loop numbers (the §8.1-#3 imagination-in-the-loop harness
 was self-referential). AlpaSim on **NuRec** photoreal reconstructions, **480×854**, 20 s rollouts. Raw
 (`…/incoming/2026-07-22-alpasim-closedloop-evalpod/`): `REFC_suite_results.json`
-(+ `REFC_suite_{base,xl}_results.json`), open-loop control `REFC_openloop_diagnostic.json`, flagship
+(+ `REFC_suite_base_results.json` and `REFC_suite_xl_results.json`, both verified present 2026-08-03), open-loop control `REFC_openloop_diagnostic.json`, flagship
 `Flagship_v1_results-summary.json`. **"pass" = no at-fault collision AND no off-road** (`score_criteria`).
 
 > ⚠️⚠️ **These numbers are ENV-CONFOUNDED, not a clean model result (`RETRACTION_LOG.md` C6, 07-22).**
@@ -1724,7 +1840,7 @@ milestone ladder. **Every one of these was previously published as a split-mean.
    un-recomputable) — the *ratio* is far too large for the ≤ 11.7 % bias to touch, but neither scalar is
    decision-grade on its own.
 3. **Ranks 1–2 tie on accuracy, so latency is the tiebreaker — and it is not close.** Measured
-   2026-07-20 on one A40, batch 1, identical precision flags (`taniteval/results/eff_*.json`):
+   2026-07-20 on one A40, batch 1, identical precision flags. ⛔ **UNRESOLVED SOURCE (2026-08-03).** This reading cited a wildcard, which names no file — and the figures below are **not in any committed artifact**, so it cannot simply be repointed. MEASURED 2026-08-03, `plan_step.p50_ms` in the committed files: `taniteval/results/eff_flagship-30k.json` → **97.32 / 97.70 / 123.83** and `taniteval/results/eff_refc-xl-30k.json` → **44.06 / 27.78 / 21.00** (fp32/tf32/amp16). ⇒ **neither** triple below matches its own artifact, which extends **R14** (that row had REF-C's fp32/tf32 as agreeing; amp16 is 26.12 vs **21.00**). ⛔ **Do not re-cite these six figures** — re-measure on an idle A40, or restate from the committed JSONs. The ranking they support is unaffected:
    flagship planning tick **103.42 / 93.76 / 104.49 ms** (fp32/tf32/amp16) vs REF-C **44.28 / 27.84 /
    26.12 ms** — **2.3–4.0× faster**, and REF-C **meets the 10 Hz budget at p99 in all three precisions
    while the flagship misses in all three**. REF-C does **1.75× the FLOPs** (702 vs 402 GFLOPs) and is
@@ -1732,9 +1848,9 @@ milestone ladder. **Every one of these was previously published as a split-mean.
    rollout is **launch/serialisation-bound**, not arithmetic-bound. ⚠️ Direction reverses for *batched*
    throughput (flagship 34.8 vs REF-C 29.9 windows/s @ batch 32) — REF-C wins latency, the flagship wins
    bulk eval. See §1.2 for the two-tick definition and the retracted "11.16 ms" framing. ⚠️ These three
-   latency figures conflict with the committed `eff_*.json` — see **R14**.
+   latency figures conflict with the committed `taniteval/results/eff_flagship-30k.json` and `taniteval/results/eff_refc-xl-30k.json` (and so does the REF-C row — see the UNRESOLVED-SOURCE note at reading 3) — see **R14**.
 4. **The 1= tie is not a tie on driving — and latency is no longer the only separator.** MEASURED
-   2026-07-21, TanitEval v2 tier-0 over these same 881 windows (`taniteval/results/driving_*.json`;
+   2026-07-21, TanitEval v2 tier-0 over these same 881 windows (`taniteval/results/driving_refc-xl-30k.json`, `taniteval/results/driving_refc-base-30k.json` and `taniteval/results/driving_flagship-30k.json`, key `vs_floor_paired.cv.long_abs_2s_m` — all three re-read 2026-08-03, exact, `estimator paired_episode_cluster_bootstrap`;
    `Benchmarks & Eval/LEADERBOARD.md` §2). Splitting the 2 s residual on the GT path tangent:
    **REF-C-XL beats CV along-track by +0.2170 [+0.0584, +0.3783] and REF-C-base by +0.2300
    [+0.0773, +0.3816], both CI-separated — while flagship v1's along-track win is +0.2543
@@ -1784,7 +1900,7 @@ milestone ladder. **Every one of these was previously published as a split-mean.
 | R7 | **REF-C three-size scaling study never ran** — 🟡 **middle rung now training** (`base` measured 104,191,577 and launched 2026-07-20, §4.3); `small` still only smoked, and the `base` run carries a **scale/label confound** (v2.1 labels vs XL's v1) | 🟡 medium | n/a | let `base` finish + evaluate; then either add a label-controlled arm or state the confound wherever the ladder is quoted |
 | R8 | **REF-A I-JEPA canonical-val result is leak-contaminated** (80 % of val in its train set) | 🟡 medium | flagged in `taniteval/registry.py` | 🟥 **REMEDIATION CORRECTED 2026-07-28 — this cell used to read "re-evaluate on the `f1b378` val", which prescribed the 77.5 %-LEAKED split as the cure for a leak.** Re-evaluate on the **content-verified clean** `physicalai-val-0c5f7dac3b11` (0/40 and 0/600 by sha256 of raw `poses` and `frames_u8`, 2026-07-28). ✅ **ALL FOUR SITES CLOSED 2026-07-28** (`…/incoming/2026-07-28-leaky-cache-audit/`): the **source** `taniteval/registry.py:85-97` now names `0c5f7dac3b11` and records why (taniteval 773 passed); `Paper/TANITAD_PAPER.md` §7.2 corrected — ⚠️ **that paper contradicted itself, since its own §5 already recorded the 78 % overlap AND that the harness "refuses it in code"**; `DOC_CORRECTION_SWEEP.md` corrected with its superseded wording preserved. **§2.2 is deliberately NOT reworded** — it *quotes* the defective source, so the quote stands and carries an inline ⛔. ⇒ **One `note=` string propagated into four documents because each inherited the phrase instead of checking the artifact.** |
 | R9 | **REF-B rev2, `refa-4brain-speedyaw-30k`** have no eval record | 🟢 low | n/a | either evaluate or mark explicitly superseded |
-| R10 | **`refb-speed-30k/ckpt_prepatch_step8500.pt` is misnamed** — it is step 10,000 and byte-identical to `ckpt.pt` | 🟢 low | pod1 | rename |
+| R10 | **`tanitad-pod4:/workspace/rescue/experiments/refb-speed-30k/ckpt_prepatch_step8500.pt` is misnamed** — it is step 10,000 and byte-identical to `ckpt.pt` | 🟢 low | ⚠️ **host corrected 2026-08-03: NOT "pod1".** The originating pod (`tanitad-pod`) refuses connections; the only reachable copy is `tanitad-pod4:/workspace/rescue/experiments/refb-speed-30k/` (MEASURED, read-only `ls`, both files 3 153 889 214 B) | rename — ⛔ **but not while pod4 is training**; and this arm has **no HF copy**, so the rename must not be a move that risks the only copy |
 | R11 | ~~`combined_tick_harness.py` is not in HEAD~~ ✅ **NOT A GAP — retracted within the hour it was written 2026-07-20.** The harness and its raw JSONs **are** tracked: `Production & Optimization/Implementation/combined_tick/{combined_tick_harness.py, combined_tick_20260718.json, vram_fp16/fp32_20260718.json}`. I asserted the gap from `REPO_TRIAGE_2026-07-20.md`, which was written **before** this session's merges landed, instead of checking `git ls-files` — the exact prose-over-primary-source failure this document exists to prevent. Kept visible as a worked example, not deleted | — | in-repo | ⚠️ `REPO_TRIAGE_2026-07-20.md` is now stale on this point and should be date-stamped or retired |
 | R12 | ✅ **CLOSED 2026-07-21 — measured.** The planning tick now has an optimised variant and **the 10 Hz miss is resolved**: composed **18.75 ms p50 / 18.76 p99 = 53.3 Hz**, 5.35× (§1.2). ⚠️ **Four predictions written into this row on 07-20 were REFUTED by the measurement** — recorded rather than deleted, because the pattern is the lesson: (1) *"capturing all 20 steps in ONE graph should beat 2.57×"* — **no**, whole-rollout capture equals per-step capture to **7.7 µs/step** (57.18 vs 57.33 ms); inter-step CPU round-trips were **never** the cost, and a constrained runtime that can only capture one step loses **0.3 %**; (2) tick-level gain is **1.75×**, not 2.57× — 2.57× was a *stage* figure and stage speedups do not equal tick speedups; (3) `torch.compile(reduce-overhead)` **wins on Linux** (52.89) though it failed on Windows; (4) levers are **sequenced, not additive** — capture first, everything else is worth ~1.0× before it | — | `taniteval/results/eff_levers_flagship-30k.json`, `taniteval/taniteval/efficiency.py`, `Production & Optimization/Research/2026-07-20-flagship-v1-inference-levers-measured.md` | done |
 | R13 | **Three code sites were escalated as CUDA-graph "prerequisites" and are NOT** — capture succeeded with zero build errors and **exact** equivalence despite ~38 allocating `torch.cat`s (`metric_dynamics.py:241-242`) and a per-call mask rebuild (`predictor.py:112`), because allocations *inside* a capture come from the graph's own private memory pool. They remain real waste (L7's 2 discarded horizon heads = ~252 MB/tick of needless DRAM reads) and matter on a bandwidth-bound Jetson, but they **never blocked anything** | 🟢 low | in-repo | treat as an efficiency cleanup, not a blocker; the "static-address" rule applies to tensors crossing the capture boundary, not to internal allocation |
@@ -1850,8 +1966,22 @@ they were made in the operator loop and never got an ADR.
    `V3_GOAL_VOCABULARY_V1.md` before implementation (D-A9). ⚠️
 6. **Supervised-IDM does not transfer cross-domain (2026-07-22 finding — not a model row).** A 2.9 M
    inverse-dynamics head reaches PhysicalAI held-out speed R² **0.930** but **fails cross-domain** —
-   comma2k19 speed R² 0.657 / yaw R² 0.000, and even same-corpus **rig-B speed R² −2.465** (ADE ratio
-   2.40 / 4.01; both FAIL the cross-domain >0.9 gate). The YouTube-scale IDM data pipeline is **gated on
+   comma2k19 speed R² 0.657 / yaw R² 0.000, and even same-corpus **rig-B speed R² −2.4654** (ADE ratio
+   2.40 / 4.01; both FAIL the cross-domain >0.9 gate).
+
+   ⛔ **CORRECTED 2026-08-03 — do NOT quote "0.930 → −2.465" as the cross-rig drop.** Those two
+   numbers come from **two different experiments**: 0.930 is the *held-out* read of one run, while
+   −2.4654 is the *cross-rig* read of another, **whose own within-rig baseline is +0.7863**. The
+   honest cross-rig pair is therefore **+0.7863 → −2.4654**; pairing it with 0.930 borrows a
+   baseline from an experiment that was not the one generalised across rigs, and overstates the drop.
+   ⇒ **RULE: a "X → Y" degradation pair must come from ONE experiment.** If the baseline and the
+   stressed read are from different runs, the difference contains the between-run delta as well as
+   the effect, and nothing separates them afterwards.
+   *(MEASURED in the D-APPEAR audit, 2026-08-03; see also R-2026-08-03-appear.)*
+   ⚠️ **And the cross-rig collapse itself does not reproduce in the current cache**: A→A +0.7052,
+   B→A +0.7127, paired **+0.0075 [−0.0318, +0.0502] NOT separated**. The −2.4654 is **not
+   attributed** — cache geometry (the rigs' horizons agree on 8 of 256 rows here) and MLP
+   extrapolation both remain live explanations. Do not cite it as an established mechanism. The YouTube-scale IDM data pipeline is **gated on
    the re-gate** and does not proceed on these numbers. Raw:
    `TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-07-22-idm-proof/results.json`.
    **UPDATE 2026-07-24 — the fix was built and it FAILED.** The own dynamics-encoder designed to give this
@@ -1933,7 +2063,7 @@ head a **rig-robust** latent — the substrate the YouTube-scale IDM-pretraining
 episodes (splits are **by rig / by corpus**, orthogonal to the WM selection). It is therefore **not** on the
 §6 trajectory leaderboard — it is scored by a **cross-rig IDM probe** (speed/yaw R² on a held-out camera
 rig), a different harness. Design docs:
-`…/incoming/2026-07-22-own-dynamics-encoder/{DESIGN,LAUNCH_PLAN,PRE_REGISTRATION}.md`.
+`…/incoming/2026-07-22-own-dynamics-encoder/DESIGN.md`, `…/incoming/2026-07-22-own-dynamics-encoder/LAUNCH_PLAN.md` and `…/incoming/2026-07-22-own-dynamics-encoder/PRE_REGISTRATION.md` (all three verified present 2026-08-03).
 
 **The refutation chain (every step MEASURED, artifact-cited).** The target is a latent whose cross-rig
 speed R² clears the **>0.9** gate:

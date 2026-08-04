@@ -1,0 +1,140 @@
+{
+ "n_windows": 881,
+ "n_lead_windows": 270,
+ "denominators": {
+  "all_windows": 881,
+  "lead_windows": 270,
+  "note": "rates are reported over BOTH; a rate over the arm-kept subset alone is survivorship-selected and is never the headline"
+ },
+ "arms": {
+  "refc-base-30k": {
+   "kept_windows": 241,
+   "keep_rate_over_lead": 0.8926,
+   "overshoot_gap_lt_0": 7,
+   "overshoot_rate_over_lead": 0.0259,
+   "lost_outside_corridor_only": 22,
+   "min_headway_lt_2m": {
+    "n": 0,
+    "over_lead_windows": 0.0,
+    "over_kept": 0.0
+   },
+   "min_headway_lt_5m": {
+    "n": 1,
+    "over_lead_windows": 0.0037,
+    "over_kept": 0.0041
+   },
+   "contact_precursor_total": {
+    "n": 7,
+    "definition": "the predicted path either passes the lead rear face (gap<0 at some step) OR closes to under 2 m of it",
+    "over_lead_windows": 0.0259
+   }
+  },
+  "flagship-30k": {
+   "kept_windows": 228,
+   "keep_rate_over_lead": 0.8444,
+   "overshoot_gap_lt_0": 25,
+   "overshoot_rate_over_lead": 0.0926,
+   "lost_outside_corridor_only": 17,
+   "min_headway_lt_2m": {
+    "n": 0,
+    "over_lead_windows": 0.0,
+    "over_kept": 0.0
+   },
+   "min_headway_lt_5m": {
+    "n": 1,
+    "over_lead_windows": 0.0037,
+    "over_kept": 0.0044
+   },
+   "contact_precursor_total": {
+    "n": 25,
+    "definition": "the predicted path either passes the lead rear face (gap<0 at some step) OR closes to under 2 m of it",
+    "over_lead_windows": 0.0926
+   }
+  },
+  "cv": {
+   "kept_windows": 236,
+   "keep_rate_over_lead": 0.8741,
+   "overshoot_gap_lt_0": 2,
+   "overshoot_rate_over_lead": 0.0074,
+   "lost_outside_corridor_only": 32,
+   "min_headway_lt_2m": {
+    "n": 0,
+    "over_lead_windows": 0.0,
+    "over_kept": 0.0
+   },
+   "min_headway_lt_5m": {
+    "n": 7,
+    "over_lead_windows": 0.0259,
+    "over_kept": 0.0297
+   },
+   "contact_precursor_total": {
+    "n": 2,
+    "definition": "the predicted path either passes the lead rear face (gap<0 at some step) OR closes to under 2 m of it",
+    "over_lead_windows": 0.0074
+   }
+  },
+  "gt_oracle": {
+   "kept_windows": 247,
+   "keep_rate_over_lead": 0.9148,
+   "overshoot_gap_lt_0": 3,
+   "overshoot_rate_over_lead": 0.0111,
+   "lost_outside_corridor_only": 20,
+   "min_headway_lt_2m": {
+    "n": 0,
+    "over_lead_windows": 0.0,
+    "over_kept": 0.0
+   },
+   "min_headway_lt_5m": {
+    "n": 1,
+    "over_lead_windows": 0.0037,
+    "over_kept": 0.004
+   },
+   "contact_precursor_total": {
+    "n": 3,
+    "definition": "the predicted path either passes the lead rear face (gap<0 at some step) OR closes to under 2 m of it",
+    "over_lead_windows": 0.0111
+   }
+  }
+ },
+ "paired_lost_lead_rate": {
+  "flagship-30k_minus_refc-base-30k": {
+   "delta": 0.0481,
+   "lo": -0.036,
+   "hi": 0.1489,
+   "ci95": 0.0924,
+   "p_delta_gt0": 0.825,
+   "separated": false,
+   "reducer": "mean",
+   "n_windows": 270,
+   "n_episodes": 21,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap"
+  },
+  "flagship-30k_minus_gt_oracle": {
+   "delta": 0.0704,
+   "lo": -0.0117,
+   "hi": 0.1745,
+   "ci95": 0.0931,
+   "p_delta_gt0": 0.9135,
+   "separated": false,
+   "reducer": "mean",
+   "n_windows": 270,
+   "n_episodes": 21,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap"
+  },
+  "refc-base-30k_minus_gt_oracle": {
+   "delta": 0.0222,
+   "lo": 0.0076,
+   "hi": 0.0413,
+   "ci95": 0.0169,
+   "p_delta_gt0": 0.998,
+   "separated": true,
+   "reducer": "mean",
+   "n_windows": 270,
+   "n_episodes": 21,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap"
+  }
+ }
+}

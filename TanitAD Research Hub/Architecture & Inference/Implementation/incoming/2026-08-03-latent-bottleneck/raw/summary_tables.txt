@@ -1,0 +1,399 @@
+==============================================================================
+TABLE 1 — the D probe ladder (results_temporal_falsifier.json)
+==============================================================================
+                 arm   kern       F   speed R2      d speed   accel R2                    d accel
+     NULL_train_mean      -       0    -0.0052        n/a     -0.0626                        n/a
+ORACLE_true_speed_window      -       9    +0.9994        n/a     +0.9262                        n/a
+           v1_centre linear    2048    +0.6857    +0.6908*    -0.0626 +0.0000 [+0.0000, +0.0000]
+           v1_window linear   18432    +0.7145    +0.7197*    -0.0626 +0.0000 [+0.0000, +0.0000]
+             v1_diff linear    6144    -0.0052    +0.0000     -0.0599 +0.0027 [-0.0670, +0.0417]
+            v1_tdiff linear   16384    -0.0052    +0.0000     -0.0626 +0.0000 [+0.0000, +0.0000]
+         v1_abstdiff linear   16384    +0.3341    +0.3393*    -0.0626 +0.0000 [+0.0000, +0.0000]
+        pix32_centre linear    1024    -0.0588    -0.0536     -0.0552 +0.0074 [-0.0234, +0.0317]
+        pix32_window linear    9216    +0.1004    +0.1055     -0.0558 +0.0068 [-0.0226, +0.0298]
+          pix32_diff linear    3072    -0.0052    +0.0000     -0.0626 +0.0000 [+0.0000, +0.0000]
+         pix32_tdiff linear    8192    -0.0052    +0.0000     -0.0626 +0.0000 [+0.0000, +0.0000]
+      pix32_abstdiff linear    8192    +0.2209    +0.2261     -0.0626 +0.0000 [+0.0000, +0.0000]
+          pix8_tdiff linear     512    -0.0052    +0.0000     -0.0626 +0.0000 [+0.0000, +0.0000]
+       pix8_abstdiff linear     512    +0.2461    +0.2512*    -0.0626 +0.0000 [+0.0000, +0.0000]
+         pix1_window linear       9    -0.0052    +0.0000     -0.0620 +0.0006 [-0.0311, +0.0224]
+          pix1_tdiff linear       8    -0.0052    +0.0000     -0.0626 +0.0000 [+0.0000, +0.0000]
+        stk32_centre linear    1024    -0.1016    -0.0964     -0.0559 +0.0066 [-0.0239, +0.0306]
+        stk32_window linear    3072    +0.0965    +0.1017     -0.0559 +0.0067 [-0.0235, +0.0303]
+         stk32_tdiff linear    2048    -0.0052    +0.0000     -0.0626 +0.0000 [+0.0000, +0.0000]
+      stk32_abstdiff linear    2048    +0.1703    +0.1755     -0.0626 +0.0000 [+0.0000, +0.0000]
+          stk8_tdiff linear     128    -0.0052    +0.0000     -0.0626 +0.0000 [+0.0000, +0.0000]
+       stk8_abstdiff linear     128    +0.0739    +0.0791     -0.0626 +0.0000 [+0.0000, +0.0000]
+        mot16_centre linear     256    +0.1761    +0.1813     -0.0626 +0.0000 [+0.0000, +0.0000]
+        mot16_window linear    2304    +0.2367    +0.2419     -0.0626 +0.0000 [+0.0000, +0.0000]
+         mot16_tdiff linear    2048    -0.0052    +0.0000     -0.0626 +0.0000 [+0.0000, +0.0000]
+         mot8_centre linear      64    +0.0936    +0.0988     -0.0626 +0.0000 [+0.0000, +0.0000]
+         mot8_window linear     576    +0.2048    +0.2100     -0.0626 +0.0000 [+0.0000, +0.0000]
+          mot8_tdiff linear     512    -0.0052    +0.0000     -0.0626 +0.0000 [+0.0000, +0.0000]
+   pix8_abstdiff_rbf    rbf     512    +0.4150    +0.4202*    -0.0837 -0.0212 [-0.0593, +0.0172]
+      pix8_tdiff_rbf    rbf     512    +0.3778    +0.3829     -0.0831 -0.0205 [-0.0664, +0.0071]
+     pix1_window_rbf    rbf       9    -0.0631    -0.0580     -0.0396 +0.0230 [-0.0202, +0.0523]
+   stk8_abstdiff_rbf    rbf     128    +0.3846    +0.3898*    -0.0804 -0.0178 [-0.0546, +0.0110]
+      stk8_tdiff_rbf    rbf     128    +0.3479    +0.3531*    -0.0633 -0.0007 [-0.0335, +0.0226]
+    pix32_centre_rbf    rbf    1024    +0.6642    +0.6693*    -0.2561 -0.1935 [-0.6523, +0.0936]
+     mot8_window_rbf    rbf     576    +0.5582    +0.5633*    -0.0626 +0.0000 [+0.0000, +0.0000]
+      mot8_tdiff_rbf    rbf     512    +0.1449    +0.1501     -0.0841 -0.0215 [-0.0642, +0.0071]
+    mot16_window_rbf    rbf    2304    +0.5148    +0.5200*    -0.0626 +0.0000 [+0.0000, +0.0000]
+
+VERDICT: "V_video_limited"
+  oracle long_accel R2      : 0.92623
+  temporal arms over floor  : []
+  temporal arms under floor : []
+  single-instant controls   : {'pix32_centre': {'separated': False, 'r2': -0.05522}, 'stk32_centre': {'separated': False, 'r2': -0.05594}, 'pix32_centre_rbf': {'separated': False, 'r2': -0.25613}}
+  v1 latent arms separated  : []
+  POSITIVE CONTROL (speed separated) per arm:
+                 v1_centre: True
+                 v1_window: True
+                   v1_diff: False
+                  v1_tdiff: False
+               v1_abstdiff: True
+              pix32_centre: False
+              pix32_window: False
+                pix32_diff: False
+               pix32_tdiff: False
+            pix32_abstdiff: False
+                pix8_tdiff: False
+             pix8_abstdiff: True
+               pix1_window: False
+                pix1_tdiff: False
+              stk32_centre: False
+              stk32_window: False
+               stk32_tdiff: False
+            stk32_abstdiff: False
+                stk8_tdiff: False
+             stk8_abstdiff: False
+              mot16_centre: False
+              mot16_window: False
+               mot16_tdiff: False
+               mot8_centre: False
+               mot8_window: False
+                mot8_tdiff: False
+         pix8_abstdiff_rbf: True
+            pix8_tdiff_rbf: False
+           pix1_window_rbf: False
+         stk8_abstdiff_rbf: True
+            stk8_tdiff_rbf: True
+          pix32_centre_rbf: True
+           mot8_window_rbf: True
+            mot8_tdiff_rbf: False
+          mot16_window_rbf: True
+
+  ADMISSIBILITY: best hand-built-substrate speed R2 +0.6642 vs best v1-latent speed R2 +0.7145
+  -> the learned latent is 1.1x the better SPEED reader
+
+==============================================================================
+TABLE 2 — the mechanism (results_mechanism.json)
+==============================================================================
+                                quantity       LATENT       ORACLE
+                      speed R2 at centre      0.69117          1.0
+        PRED within-window increment std      0.40739      0.58144
+                        gain (pred/true)       0.6998       0.9988
+              corr(pred incr, true incr)       0.0891      0.99997
+        TRUE within-window increment std      0.58213
+                     error-increment std      0.68013
+               derivative SNR (true/err)       0.8559
+             err autocorr lag1 in-window      0.99993
+
+  LATENT SELF-SIMILARITY (cosine):
+               cos_adjacent_window_positions_100ms: 0.98825
+                             cos_window_ends_800ms: 0.91398
+                       cos_random_other_row_centre: 0.3277
+
+  DIRECT-INCREMENT REGRESSION (target = the true increments):
+        latent: corr     0.0007   long_accel R2 -0.0622 [-0.2119, -0.0017]
+        oracle: corr    0.99997   long_accel R2 +0.8982 [+0.8450, +0.9278]
+
+  SHARED PER-POSITION READOUT (one linear speed direction):
+      centre speed R2  0.67674
+      pred incr std    29.69462 (true 0.58213)
+      corr(incr)       0.00608
+      long_accel R2    -869.9009 [-1488.8237, -625.3266]
+
+==============================================================================
+TABLE 3 — the precision ladder (results_precision_ladder.json)
+==============================================================================
+  NULL    -0.0626 [-0.2126, -0.0018]
+  ORACLE  +0.8974 [+0.8439, +0.9273]
+
+   sigma     white cd     white SG       ar1 cd       ar1 SG
+     0.0       0.8974       0.9277       0.8974       0.9277
+    0.02       0.8413       0.9260       0.8897       0.9264
+    0.05       0.5198       0.9162       0.8448       0.9175
+     0.1      -0.5516       0.8773       0.6994       0.8829
+     0.2      -4.7690       0.7317       0.1033       0.7569
+    0.35     -16.2996       0.3508      -1.5843       0.3804
+     0.5     -36.7861      -0.3207      -3.9245      -0.1576
+    0.75     -79.0980      -1.7216     -10.4344      -1.7430
+     1.0    -142.3330      -4.0781     -18.9159      -3.6499
+     1.5    -327.6113     -10.0037     -44.9941      -9.2826
+     2.0    -605.9633     -19.0972     -82.1321     -17.0736
+     3.0   -1292.6872     -45.1223    -185.1582     -38.6550
+    4.72   -3296.1957    -108.6594    -455.8599    -104.6537
+
+  PRECISION TARGET (sigma at which derived accel clears R2):
+{
+      "sigma_for_r2_0.5": {
+            "white": {
+                  "central_diff": 0.05064299684589221,
+                  "best_savgol": 0.28111143637244845
+            },
+            "ar1_matched": {
+                  "central_diff": 0.12609520043938713,
+                  "best_savgol": 0.2930076008165069
+            }
+      },
+      "sigma_for_r2_0.7": {
+            "white": {
+                  "central_diff": 0.029913254763763726,
+                  "best_savgol": 0.2095249917496621
+            },
+            "ar1_matched": {
+                  "central_diff": 0.09970497284405522,
+                  "best_savgol": 0.2176599064781772
+            }
+      }
+}
+
+  REAL latent-read track: centre R2 0.69117  sigma 5.94292 m/s  err autocorr 0.9999
+      derived accel: central diff -0.3845 [-0.7932, -0.1570]
+                     best SG      -0.3773 [-0.7785, -0.1496]  (stencil 4/2, SELECTED ON HELDOUT = upper bound)
+
+  ONE-MECHANISM TEST (matched sigma=5.94292 rho=0.9999):
+      simulated +0.6495 [+0.3971, +0.7576]
+      real      -0.3773 [-0.7785, -0.1496]
+      paired d  +1.0268 [+0.7653, +1.2849]*
+
+==============================================================================
+TABLE 4 — approach A cost (raw/temporal_kv_cost.json)
+==============================================================================
+  refc_small  params   54,690,001  KV 64->512  decoder   0.157->  0.377 GMAC (x2.4)  peak   226.7->  234.2 MiB (x1.033)  +2049 params (0.00375%)
+              attn share of a decoder layer: 0.04 -> 0.1333
+   refc_base  params  104,191,577  KV 64->512  decoder   0.856->  1.560 GMAC (x1.824)  peak   440.0->  447.3 MiB (x1.017)  +3073 params (0.00295%)
+              attn share of a decoder layer: 0.0294 -> 0.129
+     refc_xl  params  251,932,584  KV 64->512  decoder  12.986-> 19.327 GMAC (x1.488)  peak  1011.9-> 1015.7 MiB (x1.004)  +4097 params (0.00163%)
+              attn share of a decoder layer: 0.0233 -> 0.125
+
+  NOTE: wall-clock ratios in the JSON were taken under GPU contention and are NOT quotable; MACs / memory / params are.
+
+==============================================================================
+TABLE 5 — the four families, headline arm (results_temporal_falsifier.json)
+==============================================================================
+  headline arm = v1_window   (best non-oracle speed reader)
+{
+  "LONGITUDINAL": {
+    "traj_speed_mae_mps": 4.5684,
+    "traj_speed_bias_mps": 0.3627,
+    "along_mae_m": 5.8417,
+    "along_bias_m": -0.4001,
+    "along_final_bias_m": -0.583,
+    "accel_mae_mps2": 0.4951,
+    "n_windows": 2346,
+    "scalar_speed_mae_mps": 4.7186,
+    "scalar_speed_bias_mps": -0.3978,
+    "distance_keeping": {
+      "status": "UNAVAILABLE",
+      "reason": "no lead-agent track on this substrate. comma2k19 ships no object annotation at all; PhysicalAI-AV ships obstacle.offline (97.44 % of the corpus) but the episode ingest does not read it. Implementing it is a WORK ITEM, not a pass.",
+      "n": 0
+    }
+  },
+  "LATERAL": {
+    "heading_mae_rad": 0.1213,
+    "n_heading": 8697,
+    "curvature_mae_inv_m": 0.00619,
+    "n_curvature": 6490,
+    "yaw_rate_mae_rad_s": 0.01953,
+    "n_pair_valid": 6490,
+    "cross_track_mae_m": 0.2997,
+    "cross_track_bias_m": -0.0254,
+    "cross_track_final_mae_m": 0.6337,
+    "n_windows": 2346,
+    "scalar_yaw_rate_mae_rad_s": 0.01936,
+    "scalar_steer_mae": 0.01203
+  },
+  "TACTICAL": {
+    "n_windows": 2346,
+    "thresholds": {
+      "lat_turn_rad": 0.15,
+      "lon_dv_mps": 1.0
+    },
+    "lateral": {
+      "classes": [
+        "right",
+        "straight",
+        "left"
+      ],
+      "confusion_gt_rows_pred_cols": [
+        [
+          6,
+          23,
+          6
+        ],
+        [
+          16,
+          2284,
+          6
+        ],
+        [
+          0,
+          5,
+          0
+        ]
+      ],
+      "support": [
+        35,
+        2306,
+        5
+      ],
+      "recall": [
+        0.1714,
+        0.9905,
+        0.0
+      ],
+      "balanced_accuracy": 0.3873,
+      "accuracy": 0.9761,
+      "chance_balanced_accuracy": 0.3333
+    },
+    "longitudinal": {
+      "classes": [
+        "decelerate",
+        "cruise",
+        "accelerate"
+      ],
+      "confusion_gt_rows_pred_cols": [
+        [
+          12,
+          255,
+          1
+        ],
+        [
+          79,
+          1864,
+          32
+        ],
+        [
+          6,
+          97,
+          0
+        ]
+      ],
+      "support": [
+        268,
+        1975,
+        103
+      ],
+      "recall": [
+        0.0448,
+        0.9438,
+        0.0
+      ],
+      "balanced_accuracy": 0.3295,
+      "accuracy": 0.7997,
+      "chance_balanced_accuracy": 0.3333
+    },
+    "mixed": {
+      "classes": [
+        "accelerate",
+        "decelerate",
+        "keep",
+        "left",
+        "right"
+      ],
+      "confusion_gt_rows_pred_cols": [
+        [
+          0,
+          5,
+          94,
+          0,
+          3
+        ],
+        [
+          1,
+          12,
+          250,
+          1,
+          2
+        ],
+        [
+          29,
+          72,
+          1821,
+          5,
+          11
+        ],
+        [
+          2,
+          0,
+          3,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          22,
+          6,
+          6
+        ]
+      ],
+      "support": [
+        102,
+        266,
+        1938,
+        5,
+        35
+      ],
+      "recall": [
+        0.0,
+        0.0451,
+        0.9396,
+        0.0,
+        0.1714
+      ],
+      "balanced_accuracy": 0.2312,
+      "accuracy": 0.7839,
+      "chance_balanced_accuracy": 0.2
+    },
+    "goal_setting": {
+      "status": "PARTIAL",
+      "reason": "selected-vs-executed manoeuvre IS reported above. Anchor/goal selection is not: the IDM emits a single regressed trajectory, it has no anchor set to select from.",
+      "n": 2346
+    },
+    "from_long_accel_scalar": {
+      "classes": [
+        "decelerate",
+        "cruise",
+        "accelerate"
+      ],
+      "threshold_mps2": 0.5,
+      "confusion_gt_rows_pred_cols": [
+        [
+          0,
+          402,
+          0
+        ],
+        [
+          0,
+          1745,
+          0
+        ],
+        [
+          0,
+          199,
+          0
+        ]
+      ],
+      "support_gt": [
+        402,
+        1745,
+        199
+      ],
+      "n_fired_pred": [
+        0,
+        2346,
+        0
+      

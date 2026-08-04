@@ -1,0 +1,323 @@
+{
+ "_what": "the PI's admissibility check, run as a computation on the real val40 signals",
+ "_instrument": "stack/tanitad/eval/goal_admissibility.py",
+ "_ruling": "Sayed 2026-08-03: labels may use ego / other agents / maps / future poses; INFERENCE is the constrained side. And a goal input must not carry the situation classifier's output in any form.",
+ "n_windows": 637,
+ "n_episodes": 40,
+ "echo_demonstrations": {
+  "supplied_band_scored_on_band": {
+   "n": 637,
+   "n_input_values": 20,
+   "n_output_values": 20,
+   "functional_agreement": 1.0,
+   "bijection": true,
+   "is_echo": true,
+   "_reads": "functional_agreement is the accuracy of the BEST possible lookup table from this input to this output. At 1.0 the output carries no information the input did not already carry, so any score it earns is an echo, not skill.",
+   "_why_this_is_here": "the trap, on the real 637 tokens: an arm FED the target-speed band and SCORED on target-speed band accuracy earns 1.000000 by construction. That is the flagship-v1 route head's 1.0000 exactly. \u26d4 Never score a head on a quantity it is fed."
+  },
+  "current_speed_band_predicts_target_band": {
+   "n": 637,
+   "n_input_values": 20,
+   "n_output_values": 20,
+   "functional_agreement": 0.543171,
+   "bijection": false,
+   "is_echo": false,
+   "_reads": "functional_agreement is the accuracy of the BEST possible lookup table from this input to this output. At 1.0 the output carries no information the input did not already carry, so any score it earns is an echo, not skill.",
+   "_why_this_is_here": "the FREE baseline in echo terms: how much of the target-speed band is already determined by the CURRENT speed band, which the model holds anyway. A goal head must beat this or it is a dead parameter."
+  }
+ },
+ "verdicts": {
+  "vt_oracle_SUPPLIED": {
+   "signal": "vt_oracle (supplied at inference)",
+   "supplied_at_inference": true,
+   "verdict": "INADMISSIBLE",
+   "failures": [
+    "HORIZON OVERLAP: 20 scored steps are inside the derivation window",
+    "PRIVILEGED INCREMENT: a supplied signal adds delta_r2=0.0929 over the legal inputs"
+   ],
+   "warnings": [],
+   "_note": "a signal that is INADMISSIBLE as an inference input may still be a perfectly good LABEL \u2014 PI ruling 2026-08-03: labels may use ego, other agents, maps and future poses. Re-run with supplied_at_inference=False to score it as a label.",
+   "checks": {
+    "echo": null,
+    "horizon": {
+     "read_window": [
+      8,
+      207
+     ],
+     "scored_window": [
+      7,
+      28
+     ],
+     "n_overlap_steps": 20,
+     "disjoint": false,
+     "_reads": "disjoint=False means the signal is computed from a superset of the thing being measured. Admissible as a LABEL; INADMISSIBLE as an input at inference."
+    },
+    "increment": {
+     "n": 637,
+     "n_episodes": 40,
+     "r2_legal_only": 0.6202,
+     "r2_with_extra": 0.7131,
+     "delta_r2": 0.0929,
+     "_reads": "delta_r2 is the information the candidate adds ABOVE what the model already legally holds. On a SUPPLIED privileged signal that is the leak magnitude; on a PREDICTED signal it is the lever. The caller must say which."
+    },
+    "provenance": {
+     "goal_inputs": [
+      "pooled",
+      "v0"
+     ],
+     "situation_outputs": [
+      "sit_argmax",
+      "sit_embedding",
+      "sit_logits",
+      "sit_posterior"
+     ],
+     "shared_symbols": [],
+     "name_derived_symbols": [],
+     "disjoint": true,
+     "_limitation": "DECLARED provenance only. A shared trunk is not a shared signal and this check cannot tell them apart; it fails loud on the obvious violation and forces the provenance to be written down."
+    }
+   }
+  },
+  "vt_oracle_AS_LABEL": {
+   "signal": "vt_oracle (offline label)",
+   "supplied_at_inference": false,
+   "verdict": "ADMISSIBLE",
+   "failures": [],
+   "warnings": [
+    "HORIZON OVERLAP: 20 scored steps are inside the derivation window"
+   ],
+   "_note": "a signal that is INADMISSIBLE as an inference input may still be a perfectly good LABEL \u2014 PI ruling 2026-08-03: labels may use ego, other agents, maps and future poses. Re-run with supplied_at_inference=False to score it as a label.",
+   "checks": {
+    "echo": null,
+    "horizon": {
+     "read_window": [
+      8,
+      207
+     ],
+     "scored_window": [
+      7,
+      28
+     ],
+     "n_overlap_steps": 20,
+     "disjoint": false,
+     "_reads": "disjoint=False means the signal is computed from a superset of the thing being measured. Admissible as a LABEL; INADMISSIBLE as an input at inference."
+    },
+    "increment": {
+     "n": 637,
+     "n_episodes": 40,
+     "r2_legal_only": 0.6202,
+     "r2_with_extra": 0.7131,
+     "delta_r2": 0.0929,
+     "_reads": "delta_r2 is the information the candidate adds ABOVE what the model already legally holds. On a SUPPLIED privileged signal that is the leak magnitude; on a PREDICTED signal it is the lever. The caller must say which."
+    },
+    "provenance": {
+     "goal_inputs": [
+      "pooled",
+      "v0"
+     ],
+     "situation_outputs": [
+      "sit_argmax",
+      "sit_embedding",
+      "sit_logits",
+      "sit_posterior"
+     ],
+     "shared_symbols": [],
+     "name_derived_symbols": [],
+     "disjoint": true,
+     "_limitation": "DECLARED provenance only. A shared trunk is not a shared signal and this check cannot tell them apart; it fails loud on the obvious violation and forces the provenance to be written down."
+    }
+   }
+  },
+  "vt_guarded_SUPPLIED": {
+   "signal": "vt_guarded (supplied at inference)",
+   "supplied_at_inference": true,
+   "verdict": "INADMISSIBLE",
+   "failures": [
+    "PRIVILEGED INCREMENT: a supplied signal adds delta_r2=0.0996 over the legal inputs"
+   ],
+   "warnings": [],
+   "_note": "a signal that is INADMISSIBLE as an inference input may still be a perfectly good LABEL \u2014 PI ruling 2026-08-03: labels may use ego, other agents, maps and future poses. Re-run with supplied_at_inference=False to score it as a label.",
+   "checks": {
+    "echo": null,
+    "horizon": {
+     "read_window": [
+      28,
+      207
+     ],
+     "scored_window": [
+      7,
+      28
+     ],
+     "n_overlap_steps": 0,
+     "disjoint": true,
+     "_reads": "disjoint=False means the signal is computed from a superset of the thing being measured. Admissible as a LABEL; INADMISSIBLE as an input at inference."
+    },
+    "increment": {
+     "n": 637,
+     "n_episodes": 40,
+     "r2_legal_only": 0.6202,
+     "r2_with_extra": 0.7198,
+     "delta_r2": 0.0996,
+     "_reads": "delta_r2 is the information the candidate adds ABOVE what the model already legally holds. On a SUPPLIED privileged signal that is the leak magnitude; on a PREDICTED signal it is the lever. The caller must say which."
+    },
+    "provenance": {
+     "goal_inputs": [
+      "pooled",
+      "v0"
+     ],
+     "situation_outputs": [
+      "sit_argmax",
+      "sit_embedding",
+      "sit_logits",
+      "sit_posterior"
+     ],
+     "shared_symbols": [],
+     "name_derived_symbols": [],
+     "disjoint": true,
+     "_limitation": "DECLARED provenance only. A shared trunk is not a shared signal and this check cannot tell them apart; it fails loud on the obvious violation and forces the provenance to be written down."
+    }
+   }
+  },
+  "vt_guarded_AS_LABEL": {
+   "signal": "vt_guarded (offline label)",
+   "supplied_at_inference": false,
+   "verdict": "ADMISSIBLE",
+   "failures": [],
+   "warnings": [],
+   "_note": "a signal that is INADMISSIBLE as an inference input may still be a perfectly good LABEL \u2014 PI ruling 2026-08-03: labels may use ego, other agents, maps and future poses. Re-run with supplied_at_inference=False to score it as a label.",
+   "checks": {
+    "echo": null,
+    "horizon": {
+     "read_window": [
+      28,
+      207
+     ],
+     "scored_window": [
+      7,
+      28
+     ],
+     "n_overlap_steps": 0,
+     "disjoint": true,
+     "_reads": "disjoint=False means the signal is computed from a superset of the thing being measured. Admissible as a LABEL; INADMISSIBLE as an input at inference."
+    },
+    "increment": {
+     "n": 637,
+     "n_episodes": 40,
+     "r2_legal_only": 0.6202,
+     "r2_with_extra": 0.7198,
+     "delta_r2": 0.0996,
+     "_reads": "delta_r2 is the information the candidate adds ABOVE what the model already legally holds. On a SUPPLIED privileged signal that is the leak magnitude; on a PREDICTED signal it is the lever. The caller must say which."
+    },
+    "provenance": {
+     "goal_inputs": [
+      "pooled",
+      "v0"
+     ],
+     "situation_outputs": [
+      "sit_argmax",
+      "sit_embedding",
+      "sit_logits",
+      "sit_posterior"
+     ],
+     "shared_symbols": [],
+     "name_derived_symbols": [],
+     "disjoint": true,
+     "_limitation": "DECLARED provenance only. A shared trunk is not a shared signal and this check cannot tell them apart; it fails loud on the obvious violation and forces the provenance to be written down."
+    }
+   }
+  },
+  "vt_predicted_from_image_and_v0": {
+   "signal": "v_hat_target = f(pooled, v0), trained on vt_guarded",
+   "supplied_at_inference": false,
+   "verdict": "ADMISSIBLE",
+   "failures": [],
+   "warnings": [],
+   "_note": "a signal that is INADMISSIBLE as an inference input may still be a perfectly good LABEL \u2014 PI ruling 2026-08-03: labels may use ego, other agents, maps and future poses. Re-run with supplied_at_inference=False to score it as a label.",
+   "checks": {
+    "echo": null,
+    "horizon": {
+     "read_window": [
+      28,
+      207
+     ],
+     "scored_window": [
+      7,
+      28
+     ],
+     "n_overlap_steps": 0,
+     "disjoint": true,
+     "_reads": "disjoint=False means the signal is computed from a superset of the thing being measured. Admissible as a LABEL; INADMISSIBLE as an input at inference."
+    },
+    "increment": null,
+    "provenance": {
+     "goal_inputs": [
+      "pooled",
+      "v0"
+     ],
+     "situation_outputs": [
+      "sit_argmax",
+      "sit_embedding",
+      "sit_logits",
+      "sit_posterior"
+     ],
+     "shared_symbols": [],
+     "name_derived_symbols": [],
+     "disjoint": true,
+     "_limitation": "DECLARED provenance only. A shared trunk is not a shared signal and this check cannot tell them apart; it fails loud on the obvious violation and forces the provenance to be written down."
+    }
+   }
+  },
+  "COUNTEREXAMPLE_goal_carrying_the_situation_classifier": {
+   "signal": "v_hat_target = f(pooled, v0, sit_posterior)",
+   "supplied_at_inference": false,
+   "verdict": "INADMISSIBLE",
+   "failures": [
+    "SITUATION-CLASSIFIER OUTPUT is inside the goal path"
+   ],
+   "warnings": [],
+   "_note": "a signal that is INADMISSIBLE as an inference input may still be a perfectly good LABEL \u2014 PI ruling 2026-08-03: labels may use ego, other agents, maps and future poses. Re-run with supplied_at_inference=False to score it as a label.",
+   "checks": {
+    "echo": null,
+    "horizon": {
+     "read_window": [
+      28,
+      207
+     ],
+     "scored_window": [
+      7,
+      28
+     ],
+     "n_overlap_steps": 0,
+     "disjoint": true,
+     "_reads": "disjoint=False means the signal is computed from a superset of the thing being measured. Admissible as a LABEL; INADMISSIBLE as an input at inference."
+    },
+    "increment": null,
+    "provenance": {
+     "goal_inputs": [
+      "pooled",
+      "sit_posterior",
+      "v0"
+     ],
+     "situation_outputs": [
+      "sit_argmax",
+      "sit_embedding",
+      "sit_logits",
+      "sit_posterior"
+     ],
+     "shared_symbols": [
+      "sit_posterior"
+     ],
+     "name_derived_symbols": [],
+     "disjoint": false,
+     "_limitation": "DECLARED provenance only. A shared trunk is not a shared signal and this check cannot tell them apart; it fails loud on the obvious violation and forces the provenance to be written down."
+    }
+   }
+  }
+ },
+ "_shared_trunk_note": "`pooled` feeds the goal head AND, in any fused arm, the situation head. That is a shared ENCODER, not a shared signal: attributability comes from the situation classifier's OUTPUT being absent from the goal path's graph, which is what `situation_disjoint` records. The same argument `RefCModel._goal_provenance` already makes for S6. \u26a0\ufe0f It is an argument about the graph, not a measurement \u2014 if a future arm trains the two heads jointly with a shared loss, re-examine it.",
+ "_what_this_check_CANNOT_do": [
+  "detect a statistical leak that is not functional (echo_score)",
+  "detect autocorrelation across a disjoint boundary (horizon_disjoint) \u2014 which is why incremental_information is not optional",
+  "detect laundering through a learned trunk (situation_disjoint takes DECLARED provenance)"
+ ]
+}

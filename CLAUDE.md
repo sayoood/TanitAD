@@ -99,6 +99,38 @@ Every subagent brief MUST carry the preamble in
   2026-07-27: pod2 sat at `0f93b98` while the v5 gate fix was at HEAD — **a v5 launch from that pod
   would have restored the crash the fix removed.** ⇒ **syncing the pod and verifying with a real
   `import` is a RUNBOOK STEP before any launch**, not a nicety; `git log` on the pod is not proof.
+- ⛔ **On the Jetson Thor, THREE standard memory probes all lie — and they lie in BOTH directions.**
+  MEASURED 2026-08-03: `torch.cuda.mem_get_info()` reported **3.4 GB free while 60 GB was allocated
+  AND WRITTEN**; `free`/`tegrastats` showed **106 GB "used" on a completely idle box** and moved only
+  **+596 MB** for those same 60 GB; `/proc/self/status` `VmRSS` read **0.62 GB against 24 GB
+  allocated**. On unified memory these numbers are not merely imprecise, they are unrelated to the
+  question. ⇒ **Only in-process `torch.cuda.max_memory_allocated()` is admissible on Thor.**
+  *(This cost a wrong answer that was caught: a batch-64 OOM was read as "the ceiling is 32" while a
+  phantom 100 GB sat on the box; the true ceiling is 64.)* Same class as the `df` trap above —
+  **a probe that reports the wrong scope is worse than no probe, because it looks like an answer.**
+- ⚠️ **Thor inverts both A40 batching instincts.** Throughput is **flat at 12.3–14.1 windows/s across
+  a 6× batch range** — the 20 SMs saturate at **batch 8**, so a bigger batch buys nothing and only
+  costs memory. Each dataloader worker costs **~8.6 GB host RAM**. ⇒ **small batches, few workers.**
+- ⛔ **`memory.usage_in_bytes` (cgroup v1) COUNTS RECLAIMABLE PAGE CACHE — it is NOT memory
+  pressure.** MEASURED 2026-08-03 on `tanitad-new` **with nothing running at all**: `usage_in_bytes`
+  **37.2 GB of a 50 GB cap (74 %)**, of which `cache` **37.0 GB** and `rss` **0.1 GB**. Under load it
+  read **98–100 %** while `rss` was **4.9 GB**. ⇒ **Read `memory.stat`'s `rss`, and read
+  `memory.failcnt` / `memory.events` — a cgroup that has never hit its limit reports `failcnt 0`,
+  and that is the fact that settles it.** *(Cost: I read 98 % as an imminent OOM and restarted the
+  v5f trainer THREE times on it, losing ~40 min of training and inventing a container-OOM diagnosis
+  that `failcnt 0` refutes.)* **Exactly the `df` trap and the Thor `free`/`tegrastats` trap in a
+  third costume: a counter that aggregates something reclaimable, read as pressure.**
+- ⚠️ **`supervise_run.sh` SOURCES ITS MANIFEST ONCE, at supervisor startup — not per relaunch.**
+  Editing `runs.d/<run>.env` under a live supervisor changes nothing: it replays the `TRAIN_CMD` it
+  captured when it booted, and the relaunch looks successful while running the OLD config. ⇒ **To
+  change a supervised run: edit the manifest → kill the SUPERVISOR first → kill the trainer →
+  start a fresh supervisor.** Killing the trainer first just makes the supervisor restore the stale
+  command. **Verify by grepping the flags out of the RUNNING process**, never by reading the manifest.
+- ⚠️ **Restarting a supervisor immediately after killing the old one RACES ITS `flock`** — the new
+  one prints *"another supervisor holds …lock — exiting"* and dies, leaving **nothing running** while
+  the log looks like a normal startup. Wait until the old supervisor **and** trainer are actually
+  gone (poll `ps`), then start. If a lock is left behind with no holder (scan `/proc/*/fd`), it is
+  debris — `rm` it. Same shape as the stale `.git/index.lock` rule below.
 - **Verify before alarming.** Check the metric's definition and take multiple samples first;
   several "outages" were measurement artifacts.
 

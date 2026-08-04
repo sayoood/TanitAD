@@ -18,6 +18,7 @@ import sys
 from pathlib import Path
 
 import numpy as np
+import pytest
 import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
@@ -49,6 +50,24 @@ def test_window_features_shapes_and_diff_basis():
     # the diff basis really is antisymmetric window positions
     got = AP.window_features(Z, "diff")[:, :d]
     assert torch.allclose(got, Z[:, w // 2 + 1] - Z[:, w // 2 - 1])
+
+
+def test_adjacent_frame_bases():
+    """``tdiff``/``abstdiff`` are the FIRST differences — the one stencil the
+    symmetric ``diff`` basis can never form (D-LATENT, 2026-08-03)."""
+    Z, _ = _toy()
+    n, w, d = Z.shape
+    td = AP.window_features(Z, "tdiff")
+    ad = AP.window_features(Z, "abstdiff")
+    assert td.shape == (n, (w - 1) * d)
+    assert ad.shape == (n, (w - 1) * d)
+    assert torch.allclose(td[:, :d], Z[:, 1] - Z[:, 0])
+    assert torch.allclose(td[:, -d:], Z[:, w - 1] - Z[:, w - 2])
+    assert torch.allclose(ad, td.abs())
+    # a single-frame window has no temporal derivative and must say so
+    with pytest.raises(ValueError):
+        AP.window_features(Z[:, :1], "tdiff")
+    assert set(AP.FEATURE_BUILDERS) >= {"tdiff", "abstdiff"}
 
 
 def test_dual_ridge_equals_primal_ridge():

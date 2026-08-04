@@ -833,8 +833,21 @@ def test_train_flagship4b_is_untouched_by_this_change():
     """
     import hashlib
     p = Path(__file__).resolve().parents[1] / "scripts" / "train_flagship4b.py"
-    assert hashlib.sha256(p.read_bytes()).hexdigest() == \
-        "3c7e0ab9abd11c78bae21c344935544b1474e5b318271f3d117b1c2b3eb02572", (
+    # ⚠️ **HASH THE LINE-ENDING-NORMALISED BYTES, NOT THE RAW ONES.** The repo has
+    # no `.gitattributes`, so the working tree is CRLF on the Windows dev box and
+    # LF on every Linux pod / cloud checkout — and a raw `read_bytes()` hash makes
+    # this guard report the SAME FILE as modified depending only on where it ran.
+    # MEASURED 2026-08-04 on a Linux checkout: raw hash `702a683b…`, and
+    # CRLF-normalising the identical bytes reproduces the previous pin
+    # `3c7e0ab9…` EXACTLY — i.e. the trainer had not changed at all and the pin
+    # was firing on the platform, not on an edit. That is a false positive in a
+    # guard whose whole value is that a failure means something; left alone it
+    # trains the reader to re-baseline on red, which is precisely how a real edit
+    # would slip through. The pin below is the same content, keyed on `\n`, so it
+    # now means the same thing on every platform.
+    src = p.read_bytes().replace(b"\r\n", b"\n")
+    assert hashlib.sha256(src).hexdigest() == \
+        "702a683bb21dee3eb319d1f4869aac36bd333266612c442d074565a60d9cd4b3", (
             "train_flagship4b.py changed. This trainer produced v1, v2corpus, RR-20/RR-CTL "
             "and v1arch — published weights and registry numbers depend on it. Confirm the "
             "edit is intended AND that no arm is mid-run on it, then update this pin "

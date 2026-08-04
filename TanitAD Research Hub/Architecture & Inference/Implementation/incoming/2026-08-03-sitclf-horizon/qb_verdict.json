@@ -1,0 +1,130 @@
+{
+ "_what": "the Sec 5 predicates applied to Q-B's primary metric (event_recall)",
+ "_no_predicate_changed": "identical branch order to the run script's Q-A verdict; only the metric the deltas come from differs",
+ "_limitation": "PS-SEL selects on the Q-A criterion for BOTH questions. On Q-B it is not the arm that question deserves. A Q-B-criterion selection was NOT run and is NOT added post-hoc \u2014 that would be a forking path.",
+ "per_situation": {
+  "lane_change": {
+   "n_onsets": 57,
+   "n_onset_bearing_clusters": 55,
+   "C_POW_pass": true,
+   "VERDICT_QB": "NO_PER_SITUATION_GAIN_EXISTS",
+   "PS_SEL_vs_FROZEN_event_recall": {
+    "delta": -0.01754,
+    "lo": -0.08163,
+    "hi": 0.04,
+    "ci95": 0.06082,
+    "p_delta_gt0": 0.181,
+    "separated": false,
+    "n_boot": 2000,
+    "n_boot_valid": 2000,
+    "estimator": "paired_ap_episode_cluster_bootstrap (cluster draws, taniteval)"
+   },
+   "C_GLOBAL_vs_FROZEN_event_recall": {
+    "delta": 0.33333,
+    "lo": 0.15,
+    "hi": 0.5,
+    "ci95": 0.175,
+    "p_delta_gt0": 1.0,
+    "separated": true,
+    "n_boot": 2000,
+    "n_boot_valid": 2000,
+    "estimator": "paired_ap_episode_cluster_bootstrap (cluster draws, taniteval)"
+   },
+   "C_ORACLE_PS_vs_FROZEN_event_recall": {
+    "delta": 0.17544,
+    "lo": 0.0,
+    "hi": 0.34724,
+    "ci95": 0.17362,
+    "p_delta_gt0": 0.9715,
+    "separated": false,
+    "n_boot": 2000,
+    "n_boot_valid": 2000,
+    "estimator": "paired_ap_episode_cluster_bootstrap (cluster draws, taniteval)"
+   },
+   "PS_SEL_vs_C_GLOBAL": "UNAVAILABLE \u2014 a difference of two paired deltas is not a paired delta; the run banked each arm against FROZEN only",
+   "READING": "the FROZEN setting is beaten on event warning by a SHARED (not per-situation) configuration: C_GLOBAL +0.3333 [+0.1500, +0.5000]"
+  },
+  "roundabout": {
+   "n_onsets": 37,
+   "n_onset_bearing_clusters": 37,
+   "C_POW_pass": false,
+   "VERDICT_QB": "UNDERPOWERED_C_POW",
+   "PS_SEL_vs_FROZEN_event_recall": {
+    "delta": 0.40541,
+    "lo": 0.16667,
+    "hi": 0.62792,
+    "ci95": 0.23063,
+    "p_delta_gt0": 0.9995,
+    "separated": true,
+    "n_boot": 2000,
+    "n_boot_valid": 2000,
+    "estimator": "paired_ap_episode_cluster_bootstrap (cluster draws, taniteval)"
+   },
+   "C_GLOBAL_vs_FROZEN_event_recall": {
+    "delta": 0.40541,
+    "lo": 0.16667,
+    "hi": 0.62792,
+    "ci95": 0.23063,
+    "p_delta_gt0": 0.9995,
+    "separated": true,
+    "n_boot": 2000,
+    "n_boot_valid": 2000,
+    "estimator": "paired_ap_episode_cluster_bootstrap (cluster draws, taniteval)"
+   },
+   "C_ORACLE_PS_vs_FROZEN_event_recall": {
+    "delta": -0.02703,
+    "lo": -0.125,
+    "hi": 0.06525,
+    "ci95": 0.09513,
+    "p_delta_gt0": 0.1855,
+    "separated": false,
+    "n_boot": 2000,
+    "n_boot_valid": 2000,
+    "estimator": "paired_ap_episode_cluster_bootstrap (cluster draws, taniteval)"
+   },
+   "PS_SEL_vs_C_GLOBAL": "UNAVAILABLE \u2014 a difference of two paired deltas is not a paired delta; the run banked each arm against FROZEN only",
+   "READING": "the FROZEN setting is beaten on event warning by a SHARED (not per-situation) configuration: C_GLOBAL +0.4054 [+0.1667, +0.6279]"
+  },
+  "intersection": {
+   "n_onsets": 231,
+   "n_onset_bearing_clusters": 216,
+   "C_POW_pass": true,
+   "VERDICT_QB": "NO_PER_SITUATION_GAIN_EXISTS",
+   "PS_SEL_vs_FROZEN_event_recall": {
+    "delta": -0.01732,
+    "lo": -0.0625,
+    "hi": 0.03043,
+    "ci95": 0.04647,
+    "p_delta_gt0": 0.217,
+    "separated": false,
+    "n_boot": 2000,
+    "n_boot_valid": 2000,
+    "estimator": "paired_ap_episode_cluster_bootstrap (cluster draws, taniteval)"
+   },
+   "C_GLOBAL_vs_FROZEN_event_recall": {
+    "delta": 0.05195,
+    "lo": -0.00412,
+    "hi": 0.10732,
+    "ci95": 0.05572,
+    "p_delta_gt0": 0.962,
+    "separated": false,
+    "n_boot": 2000,
+    "n_boot_valid": 2000,
+    "estimator": "paired_ap_episode_cluster_bootstrap (cluster draws, taniteval)"
+   },
+   "C_ORACLE_PS_vs_FROZEN_event_recall": {
+    "delta": -0.0303,
+    "lo": -0.07597,
+    "hi": 0.01322,
+    "ci95": 0.04459,
+    "p_delta_gt0": 0.0705,
+    "separated": false,
+    "n_boot": 2000,
+    "n_boot_valid": 2000,
+    "estimator": "paired_ap_episode_cluster_bootstrap (cluster draws, taniteval)"
+   },
+   "PS_SEL_vs_C_GLOBAL": "UNAVAILABLE \u2014 a difference of two paired deltas is not a paired delta; the run banked each arm against FROZEN only",
+   "READING": "no arm beats the frozen setting on event warning"
+  }
+ }
+}

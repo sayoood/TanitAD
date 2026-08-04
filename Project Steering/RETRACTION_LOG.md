@@ -2264,3 +2264,886 @@ the verdict but do touch what may be quoted from it:**
    `flagship/navSTRAIGHT` an out-of-vocabulary probe rather than a condition. Harmless for the
    verdict (`nav_oracle ∈ {0,1,2}`, verified over all 4745 poses), but `flagship/navSTRAIGHT 0.3879`
    must not be read as a result.
+
+---
+
+## R-2026-08-03-nav — ⛔ "the closed-loop rollouts fed nav=0 everywhere because `nav_command_v21`
+## needs 25 s of lookahead and the scenes are 20 s" is REFUTED
+
+**Retracted claim (mine, stated to the PI):** *the scenes are ~20 s, `NAV_HORIZON_STEPS = 250`
+(25 s), therefore the route label can never be judged and every tick was fed `NAV_FOLLOW` — the
+model never received a turn command.*
+
+**MEASURED 2026-08-03**, re-derived from the banked rollouts
+(`stack/experiments/alpasim-gsplat/results/openloop-thor-2026-08-03/rollouts/`), all four arms
+(flagship-v1 × REF-C-base × empty × objects), 190 scored ticks each:
+
+| scene | frames | nav actually fed | `nav_valid` |
+|---|---|---|---|
+| **junction 7c72937c** | 199 (19.9 s) | **NAV_LEFT on 121 / 190**, FOLLOW on 69 | **161 / 190** |
+| 00040136 (night) | 199 (19.9 s) | FOLLOW on 190 / 190 | 65 / 190 |
+
+`route_from_future_v21` **clamps the horizon to the available future** — on the 199-frame junction
+scene it integrates `arc = 125.1 m` and returns a turn, `valid=True`, at t = 0/5/10. The 25 s
+default is a *cap*, not a *requirement*. Identical for all four arms, so this is a property of the
+label function, not of an arm.
+
+⇒ **The consequence is the opposite of what I reported.** On the junction scene the models *were*
+given the correct turn command on 121 of 190 ticks and still tracked the road. **That makes the
+missed exit a MODEL failure, not a nav-plumbing failure** — and it is therefore admissible evidence
+about the strategic level, which the plumbing story would have thrown away.
+
+**Root-cause class: I read the MECHANISM off a function's DEFAULT PARAMETER instead of measuring
+its BEHAVIOUR on the actual data.** `NAV_HORIZON_STEPS = 250` and `T = 199` is a true pair of facts
+that supports a false conclusion; one call on the real poses refutes it. Same family as
+"a mechanism that is real in the source is not thereby the binding constraint" (R-2026-08-03-dtac1),
+one level earlier: here the mechanism was not even real.
+⇒ **RULE: never infer what a label function did from its signature. Read the value it actually
+emitted — the rollouts record `nav` and `nav_valid` per tick precisely so this is a lookup, not a
+derivation.**
+
+### What survives, and is the real defect
+
+⚠️ **`nav_valid` is 65/190 on the night scene and 161/190 on the junction scene, and the model
+cannot see that bit.** `nav_command_v21` collapses `ROUTE_UNKNOWN` and `ROUTE_STRAIGHT` onto the
+**same `NAV_FOLLOW`** token, so *"the road goes straight"* and *"I could not judge the route"* are
+byte-identical at the model input. On the night scene **125 of 190 `FOLLOW` tokens are the
+UNKNOWN sentinel**, not a route statement. Corroborated on the corpus at scale: of 3,179 windows
+fed `follow`, **1,985 (62.4 %) are a collapsed UNKNOWN**
+(`…/incoming/2026-08-03-refc-corpus-and-labels/`).
+⇒ The fix is `nav_input_v22`'s **`(cmd, known)` pair** — already implemented in
+`stack/scripts/refb_labels.py`, not yet wired into any trainer or driver.
+
+### Second defect, separately confirmed here
+
+`closedloop_drive.py:368` and `score_t1_strategic.py:392` pass `min_steps=10` to a v2.1 signature
+that had dropped the parameter; a bare `except` swallowed the `TypeError`, so **the
+scene-length-adapted short-horizon nav had never once executed** — every banked rollout row carries
+`nav_short_err: TypeError(...)`. Fixed at HEAD (`refb_labels.py`, 18 tests in
+`stack/tests/test_label_causality_and_nav.py`); re-verified live 2026-08-03: the call now returns
+`valid=True`. Re-running it over the banked poses changes the short-horizon value on **7 of 22**
+ticks of the night scene and correctly **declines to judge** on the junction scene (the 6 s window
+cannot see a 125 m arc).
+⇒ **RULE: a bare `except` around a label call converts a signature breakage into a plausible
+default. Record the exception in the artifact — that is the only reason this was findable.**
+
+---
+
+## R-2026-08-03-v5f — ⛔ the "v5f IS GOING THE WRONG WAY" alarm is WITHDRAWN
+
+**Retracted claim (mine, headlined in the 13:00 program report):** *v5f is degrading — it sat around
+0.31 at steps 1800–2000 and is now 0.64–1.02; a decision is needed at the 5 k milestone.*
+
+**MEASURED 2026-08-03T18:57Z**, `tanitad-new:/workspace/experiments/flagship-v5f-w120-30k/train_log.jsonl`,
+53 metric rows, **500-step block medians** (n ≥ 4 per block):
+
+| block | 1000–1500 | 1500–2000 | **2000–2500** | 2500–3000 | 3000–3500 | 3500–4000 |
+|---|---|---|---|---|---|---|
+| `g_op_fwd_ade_m` | 0.3522 | 0.2933 | **0.4191** | 0.1784 | 0.2389 | 0.1893 |
+
+The alarm was the **2000–2500 bump**. The run has since printed values **better than anything before
+it**. The HYPOTHESIS filed next to the alarm — LR warm-up under the changed `--batch 4 --accum 16`
+regime — is what the data supports. **No restart.** Full row now at `MODEL_REGISTRY.md` §1.8.
+
+**Root-cause class: a 3-point read inside an LR warm-up is not a trend.** This is the *fourth*
+`g_op_fwd_ade_m` misread this programme, and the second in the "raised an alarm" direction (the
+others read a lucky batch as a 73 % drop). The existing rule — *read ≥3 logged steps* — was
+**followed and was still insufficient**, because 3 consecutive logged points span only 150 steps.
+⇒ **STRENGTHENED RULE: on this metric, quote a BLOCK MEDIAN over ≥500 steps with its n, or do not
+raise it. Never compare two blocks that straddle a warm-up boundary.**
+⇒ **RULE: an alarm and its own hedge must be resolved by the same instrument that raised it.** The
+13:00 report hedged correctly and recommended holding; the hedge is what saved the run, and it only
+worked because the alarm was written with the counter-hypothesis attached.
+
+### What the same probe found instead — and it is the more important result
+
+`oracle_ade` improves monotonically after the bump (0.9450 → 0.5902 → 0.5663 → **0.5254**) while
+`sel_gap = plan_ade − oracle_ade` **does not close at all** (0.4510 / 0.4878 / 0.5681 / 0.3980 /
+0.3432 / 0.4715 over 2,650 steps), `rank_acc` sits at **0.000–0.375**, and
+`frac_sel_2x_worse_than_oracle` at **0.25–0.50**. At step 3,650: `plan_ade` **1.0251** vs
+`oracle_ade` **0.5254**.
+⇒ **The fan is good and the SELECTOR is the defect — the arm would be ~2× better if it merely chose
+correctly among candidates it already generates.** ⛔ Invisible in `g_op_fwd_ade_m`, which is why an
+ADE-only read of this run reports "healthy". Third independent instrument now pointing at selection
+rather than generation (with D-TAC1's within-`lane_keep` finding and the closed-loop TACTICAL row).
+⚠️ Trainer-log numbers: a curve watch, **not quotable as a result**. The 5 k gate is adjudicated on
+`stack/scripts/run_gate.py` over the four families with the paired episode-cluster bootstrap.
+
+---
+
+## R-2026-08-03-latent — ⛔ "our models keep only the LAST frame, so the cross-attended tokens are SINGLE-INSTANT and a single RGB frame cannot carry velocity" — the PREMISE is FALSE, and the CONCLUSION it supported is separately refuted
+
+**Retracted** 2026-08-03. **Class C3 (mechanism instead of measurement)**, compounded by
+**C4 (inherited without re-verification)**.
+
+**What was asserted**, and used to brief two parallel streams as the load-bearing mechanism behind
+the `long_accel` null, the sitclf capacity curve and the 88.7 % longitudinal gap:
+
+> the model computes feature maps for all W frames and KEEPS ONLY THE LAST … the 64 tokens the
+> anchor queries cross-attend are single-instant … a single RGB frame cannot carry relative
+> velocity, closing rate, or TTC.
+
+**The `[:, -1]` read is CORRECT** (`stack/tanitad/refs/refc.py:1683`). **Everything drawn from it is
+not**, on three independent measurements:
+
+1. **The kept tensor is NOT a single RGB frame.** `refc.py:241` — `in_channels: int = 9`,
+   *"D-015 3-frame RGB stack (latest = `[-3:]`)"* — and the stack is **sliding**:
+   `frames_u8[t][6:9] == frames_u8[t+1][3:6]` at **max |d| = 0.0**. One model "frame" already spans
+   **300 ms**. Corroborated independently by the sitclf-temporal stream on a different corpus and a
+   different file (`config.py:17`, `:360`; PhysicalAI cache `[199, 9, 256, 256]`).
+2. **Keeping the other W−1 frames would not help.** `v1_window` — **all nine** latents, 18,432
+   features — is **at the null** on `long_accel` (−0.0626, Δ vs its shuffled control +0.0000) while
+   separating on `speed` (+0.7145, Δ +0.7197\*) in the same draw. The latent's frame-to-frame
+   jitter along its own speed direction is **51.0×** the physical signal and correlates **+0.0061**
+   with it.
+3. **The channel is not recoverable from the video at all, at this n.** Pre-registered probe
+   (`Project Steering/PREREG_TEMPORAL_LATENT.md`), **35 arms** over four substrates (frozen v1
+   latent, raw frames, the D-015 sub-frame stack, full-resolution motion energy), linear and rbf,
+   8–18,432 features: **zero** separate positive on `long_accel`; **six** separate positive on
+   `speed`; the oracle (true speed window, 9 features) reaches **+0.9262**.
+
+**And the finding that replaces it:** a **single static 32×32 grayscale frame** reads `speed` at
+**R² +0.6642 [separated]** — **93 %** of the full 800 ms learned latent's +0.7145, and **1.75×** the
+best motion-only arm in the panel (+0.3778). All **ten** LINEAR pure-difference arms sit at exactly
+the null (−0.0052); their rbf counterparts reach +0.1449…+0.3778. ⇒ **on this corpus appearance
+DOMINATES motion for reading speed**, and nothing in the pipeline was ever forced to learn motion.
+⚠️ MEASURED on comma2k19 highway only — the magnitude elsewhere is UNKNOWN and is the top-ranked
+follow-up.
+
+**Root-cause class C3, in its most expensive form: a correct line of code was read, and a physical
+consequence was inferred from it without measuring the tensor's shape or the channel's
+recoverability.** The inference was reasonable, it was repeated in two briefs, and it would have
+funded an architecture change (keep W frames — MEASURED cost: decoder MACs ×1.49 on REF-C-XL, peak
+memory ×1.004, +4,097 params) that the data says cannot work for the channel it was proposed for.
+
+⇒ **STRENGTHENED RULE: an architectural claim about WHAT A TENSOR CONTAINS must cite a measured
+SHAPE and a measured RECOVERABILITY, not a line of code.** `in_channels=9` is four characters away
+from the line everyone read. Related to **C15** (semantics from a name) — here the semantics were
+taken from an *indexing expression* instead.
+
+Evidence: `TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-08-03-latent-bottleneck/`
+(`LATENT_BOTTLENECK.md`, `results_mechanism.json`, `results_temporal_falsifier.json`,
+`results_precision_ladder.json`, `raw/temporal_kv_cost.json`).
+
+---
+
+## R-2026-08-03-hf — ⛔ "HF pulls at 93 MB/s" is RETRACTED (real: 23 MB/s, 4× slower)
+
+**Retracted claim (mine).** The 2026-08-03 06:30 program report published a migration table with
+`HF → new pod, 106 GB … 93 MB/s`, and I re-used 93 MB/s in agent briefs the same day as the number
+to size transfer plans against.
+
+**MEASURED 2026-08-03** on the Thor parity-corpus pull: the sustained rate is **23 MB/s**. Any plan
+sized on 93 MB/s is wrong by **~2.5 h on a 278 GB corpus**. Upload (368–377 MB/s) is unaffected —
+this retraction is about the **download** leg only.
+
+**Root-cause class: a single leg of one transfer, measured once, promoted to a constant.** 93 MB/s
+was real for that pod, that day, that file mix; it was never re-measured and it became a planning
+input. Same family as *"the trainer's 13 s/step"*, which was the **cumulative mean** rather than the
+marginal rate, and as the `225 ms/frame` render figure that turned out to be a **first-call** number.
+⇒ **RULE: a throughput figure is only quotable with its date, its direction, and its endpoints.
+Re-measure before sizing anything on it.** Upload and download are different numbers; a mean over a
+run and its current marginal rate are different numbers.
+
+⭐ **The important finding underneath it.** Before the pull, the raw parity corpus was probed for and
+**not found on any live machine**: pod1/pod3/eval all `Connection refused`; pod4 and `tanitad-new`
+hold no raw epcache (three probes each). It survives **only** on HF
+(`Sayood/tanitad-physicalai-w120-256x640cyl` → `epcache-256px-phase0/`), where strict parity does
+pass on the listing — uid `sha256 9877bef6…7386`, **2376/2376**, all 24 skip indices.
+⇒ ⛔ **HF is currently the ONLY copy of the raw parity corpus**, and the E-SEL stream independently
+escalated that the 256 px REF-C val raster it evaluates on has **one reachable copy**. Two streams,
+two artifacts, same failure mode, found the same day. **Corpus durability is now the top
+non-scientific risk in the programme.**
+
+---
+
+## R-2026-08-03-hor — ⛔ `--heldout-off-reason` (MINE, shipped today) had THREE latent defects
+
+**What I claimed** when I added it earlier this session: a required reason string that is recorded
+with the run, deliberately **not** a bare `--force` boolean, so an operator must state intent.
+
+**What was actually true**, found only when another agent mirrored the flag's shape to build
+`--parity-off-reason` and tested the mirror properly:
+
+1. **Whitespace unlocked the guard** — a reason of `" "` satisfied the required-reason check, so the
+   flag degraded to exactly the `--force` boolean it was designed not to be.
+2. **The reason never survived `_staged_command`** — it was accepted, then dropped before the run
+   record was written, so the intent it exists to capture was not persisted anywhere.
+3. **It was never echoed**, despite the help text saying it would be.
+
+All three are fixed for **both** flags, with 17 tests. Suite **1932 passed**, 12 skipped, 2 xfailed.
+
+**Root-cause class: I tested that the flag EXISTS, not that it WORKS.** Every defect is downstream
+of the argument parser, and my check stopped at the parser. A guard whose bypass is unlocked by a
+space is not a guard, and a reason that is not persisted is not a record.
+⇒ **RULE: for any guard, test the BYPASS PATH, not the happy path** — pass the degenerate value
+(empty, whitespace, the sentinel) and assert it is refused; then assert the recorded artifact
+actually contains the reason. Same family as *"a seam that is wired but cannot change the output is
+decoration"*, one level down: a rail that can be stepped over is not a rail.
+⇒ **RULE: mirroring an existing pattern is a free audit of the original.** This one found three
+defects in code I had shipped hours earlier. When copying a shape, test the source too.
+
+---
+
+## R-2026-08-03-cite — ⛔ CITATION DRIFT: `refc.py:1112-1117` is the WRONG line range,
+## and it propagated into every brief I wrote today
+
+**What I circulated.** That `refc.py:1112-1117` *"computes feature maps for all W frames and keeps
+only the last"*, and that this was the mechanism behind both the sitclf capacity ceiling and
+`long_accel`'s unrecoverability. It went into **three agent briefs**, the chat summary, and a
+program report.
+
+**What is actually at those lines:** `_goal_along_prior` — the **anchor-endpoint prior**. Nothing to
+do with feature maps. The correct location is **`refc.py:1688, 1691`**.
+
+**And the claim the citation was carrying is itself refuted** (see the latent-bottleneck stream,
+2026-08-03): REF-C's input is `in_channels=9`, a D-015 **3-frame stack**, so the kept map already
+spans **~300 ms**. "Single-instant" was wrong in substance as well as in address.
+
+**Root-cause class: a line number quoted from memory across a file that other streams were editing
+concurrently.** Line numbers are the least stable identifier in a live repo, and I re-quoted mine
+without re-reading. The claim looked verified *because it carried a precise-looking citation* — a
+false precision that made it harder, not easier, to check.
+⇒ **RULE: cite a SYMBOL, not a line range** — `RefCModel.forward`, `_goal_along_prior` — and re-read
+before re-quoting. A line range is admissible only alongside the symbol name, so drift is detectable.
+⇒ **RULE: a precise citation is not evidence the claim was checked.** Three agents accepted this one
+because it was specific.
+
+### Also retracted here: S6's registered conditionality
+
+`refc.py`'s `refc_goal_config` docstring registered the S6 predicted-goal arm as **"conditional on
+the sibling temporal-feature stream"**. **Retracted** — the two do **not** share an input path
+(REF-C keeps one feature map; `sitclf.causal_window` stacks eight). A null in the temporal stream is
+not evidence about S6, and the registration would have let an unrelated result **silently cancel a
+lever that had never been tested**. Fixed in `refc.py`; S6 is an independent lever.
+⇒ **RULE: an arm may be registered as conditional on another result only when the two share the
+MECHANISM, not merely the topic.** Check the input path before writing "conditional on".
+
+---
+
+## R-2026-08-03-rho — ⛔ A RANK CORRELATION OVER THE CANDIDATE AXIS WAS USED TO SIZE A SELECTOR,
+## and it is not a proxy for one — MEASURED on both REF-C arms
+
+**What was circulated.** `PREREG_D-SEL…` §6.3 registered *"S3 LIVE ⇒ include S3 in the retrain
+arm"*, triggered by Spearman `ρ(cons_i, −ADE_i)` over REF-C's whole candidate axis. E-SEL-1
+measured **ρ = 0.6657** (base) / **0.6212** (XL) and the branch fired.
+
+**What is NOT retracted.** E-SEL-1's ρ is correct and reproduces **inside its own CI** from an
+independently decoded, **bit-identical** fan. E-SEL also flagged, correctly, that the statistic uses
+the **future frame** `z_{t+5}` which the deployed path never sees, and refused to quote 0.65 as an
+effect size. That refusal was right and is the reason this measurement exists.
+
+**What IS retracted: the inference from a high ρ to a fundable SELECTOR.** MEASURED 2026-08-03
+(`…/incoming/2026-08-03-s3-deployable/`, 881 windows / 40 episodes, both arms):
+
+* the score with **ρ = 0.6657 — the one allowed to see the future — selects at 6.49 m ADE@2s**
+  against a shipped 0.4728, i.e. **13.7× worse**;
+* the **deployable** score selects at **20.23 m / 35.86 m**, i.e. **worse than the random control**
+  (14.54 / 13.96 m);
+* a **zero-parameter** score (distance to the constant-velocity baseline) reaches **ρ = 0.995** and
+  still selects **worse than shipped** (0.815 m).
+
+**Root-cause class: the statistic was computed over a population the decision cannot act on.**
+**72–74 % of REF-C's fan is outside the reachable band and deleting it is MEASURED exactly inert on
+ADE** — so a full-axis rank correlation is dominated by candidates **no selector ever picks**.
+Restricted to the reachable survivors, ρ collapses: **oracle 0.6657 → 0.3008**, and the **deployable
+score → −0.0286 [−0.0863, +0.0277], a CI that crosses zero**.
+
+⇒ **RULE: a correlation only sizes a decision if it is computed over the candidates the decision can
+actually choose between.** Report ρ on the actionable subset **beside** the full-axis ρ, or do not
+quote it for a selector.
+⇒ **RULE: convert a correlation into the decision's own units by MEASURING the decision** — here,
+run the argmax and the gated graft — never by arguing from the correlation's magnitude.
+⇒ This is the same family as the C6 confound and the REF-A I-JEPA leak one level out: not a leaked
+*input*, but a **statistic whose support does not match the deployed choice**.
+
+### Also logged: the branch-table defect reproduced ONE DAY after it was escalated
+
+`PREREG_S3_DEPLOYABLE.md` §4 (written 2026-08-03) registered *"ρ_deploy **separated from**
+C-ctxswap AND **separated from** C-cv"* as the FUND trigger. Both separations came back
+**ADVERSE** — the controls beat the score — and the trigger fired anyway, exactly as
+`PREREG_D-SEL…` §6.3's four S1 branches could not express E-SEL-0's adverse separation the day
+before. **The escalation was read and the same defect was written again.**
+⇒ **RULE: every "separated from a control" trigger carries a DIRECTION predicate** —
+*separated **and** the delta favours the treatment*. A bare `separated` is satisfied by a control
+that beats you.
+
+---
+
+## R-2026-08-03-rigpair — ⛔ "+0.930 → −2.465" PAIRS TWO DIFFERENT EXPERIMENTS
+
+**What has been circulated** (`LATENT_BOTTLENECK.md` §5 RANK 1, the D-APPEAR brief, and several
+summaries): *"the measured cross-rig collapse, frozen v1 speed R² **+0.930 → −2.465**"*, cited to
+`…/incoming/2026-07-22-idm-proof/results.json`.
+
+**What that file actually says**, read from source today:
+
+| JSON path | value |
+|---|---|
+| `experiments/rigA_to_rigB/val/in_rig_heldout_rigA/r2/speed` | **+0.7863** |
+| `experiments/rigA_to_rigB/val/cross_rig_rigB/r2/speed` | **−2.4654** |
+| `experiments/physicalai_to_comma2k19/val/in_corpus_heldout_paival/r2/speed` | **+0.9297** |
+
+⇒ The **+0.930 is the in-corpus baseline of a DIFFERENT experiment** (the PhysicalAI→comma2k19 arm).
+The rig experiment's own in-rig baseline is **+0.7863**. The collapse is **+0.7863 → −2.4654**.
+
+**Root-cause class: C4 (inherited without re-verification) compounded by C6 (confounded
+comparison).** Both numbers live in one JSON under one `experiments` key, so a top-level grep for
+"the biggest and the smallest speed R²" produces a pair that reads like a before/after and is not
+one. Nobody re-opened the file because the pair had a plausible shape and an artifact path.
+⇒ **RULE: a "X → Y" pair must name ONE experiment key, not one FILE.** Quote the JSON path of both
+halves, not the filename; a shared artifact path is not evidence that two numbers are comparable.
+⇒ **RULE: an in-domain baseline may only be paired with an out-of-domain number produced by the
+SAME fit.** The cheapest check is that the two paths share every path component above the split.
+
+### And the claim the pair was carrying does not reproduce
+
+MEASURED today (`…/incoming/2026-08-03-appearance-shortcut-audit/results_p2_rig.json`), on the
+principal-point-cropped episode cache, exact ridge, 116 rig-A + 120 rig-B episodes: the frozen v1
+latent shows **no cross-rig speed drop at all** — A→A **+0.7052**, B→B **+0.7194**, B→A **+0.7127**,
+A→B **+0.7011** — and the two rigs' horizon rows agree to **8 of 256** (a legacy geometric-centre
+crop would be **~100 rows** off). ⚠️ Two things differ from the 2026-07-22 run — the cache geometry
+**and** the head (a 2.9 M-param MLP that can extrapolate to R² −2.47 off-domain vs a ridge that
+structurally cannot) — so the −2.4654 is **NOT attributed here**; it is only shown not to reproduce.
+⇒ **RULE: "does not reproduce" and "is explained" are different claims.** Say which one you have.
+
+---
+
+## R-2026-08-03-appear — ⚠️ THE APPEARANCE SHORTCUT IS CORPUS-SPECIFIC (a pre-registered withdrawal)
+
+**What was circulated**, from `LATENT_BOTTLENECK.md` §0.0: *"on this corpus `speed` is read mostly
+from STATIC APPEARANCE — one static frame is 93 % of the full learned latent's speed accuracy, and
+~1.75× the best motion-only arm"*, offered as *plausibly one fact* behind the 88.7 % longitudinal
+gap and the cross-rig collapse.
+
+**MEASURED off-highway** (`…/2026-08-03-appearance-shortcut-audit/results_p1_physicalai.json`,
+same encoder `v1_speedjerk_ckpt.pt` step 29999, same recipe, 240 PhysicalAI episodes,
+80 held out): the still frame reads `speed` at **−0.0025 = the empirical null**, against the latent
+window's **+0.6752**. **RATIO −0.0037** vs comma2k19's **0.9296**. The ordering does not shrink,
+**it reverses**: motion energy separates (`mot16_window_rbf` **+0.4124**) while every appearance
+form is at the null.
+
+⚠️ **This is NOT a retraction of a careless claim** — `LATENT_BOTTLENECK.md` labelled it a
+HYPOTHESIS at programme scale, wrote the transfer test as its own RANK 1, and §7 named the exact
+corpus property responsible. It is logged because the CLASS is worth having, and because the
+withdrawal was pre-registered (`PREREG_APPEARANCE_SHORTCUT.md`, OUTCOME C) rather than argued after
+the fact.
+
+**Root-cause class: NEW — C16, EPISODE-DISJOINT MISTAKEN FOR DOMAIN-DISJOINT.**
+The ladder (`results_p1b_mechanism.json`) shows the map exists on BOTH corpora and transfers on only
+one: still-frame speed R² **within-clip +0.9825 → across-clip +0.6642** on comma2k19 (68 % retained)
+against **+0.8023 → −0.0025** on PhysicalAI (0 % retained). comma2k19 val is **one driver, one
+vehicle, one camera, one road class**, so holding out 17 of its 50 episodes does **not** hold out a
+domain; PhysicalAI's 500 clips span cities, vehicles and two rigs and it does.
+⇒ **RULE: state what the held-out unit is INDEPENDENT OF, not just that it is disjoint.** An
+episode-disjoint split on a single-rig, single-road-class corpus certifies far less than the phrase
+suggests, and a memorisation-shaped result will pass it.
+⇒ **RULE (cheap and general): before believing any probe result, run it once with a random WINDOW
+split as well.** If within-unit ≫ across-unit the arm is memorising; if the two agree the arm has
+found something that travels. It costs one extra fit and it is what turned this null from
+"the probe is broken" into a mechanism.
+
+| # | class | recognition signal |
+|---|---|---|
+| **C16** | **Episode-disjoint mistaken for domain-disjoint** | a held-out split is described only as "disjoint", and the corpus has one rig / one vehicle / one road class |
+
+---
+
+## R-2026-08-03-mem — ⛔ "v5f is at 98–100 % of its container cap and OOM-looping" is RETRACTED
+
+**What I claimed**, three times in one hour, and acted on each time: that the v5f trainer was pinned
+against its 50 GB container cap, that the `rc=137` SIGKILL was a container OOM, and that my
+`--workers 8 / --v2-lru 64 / --batch 8` change had caused it.
+
+**MEASURED**, on `tanitad-new`, **with nothing running at all**:
+
+| `/sys/fs/cgroup/memory/memory.stat` | |
+|---|---|
+| `cache` | **37.0 GB** ← reclaimable page cache |
+| `rss` | **0.1 GB** |
+| `usage_in_bytes` | 37.2 GB → **74 % of the cap, at idle** |
+| **`memory.failcnt`** | **0** |
+
+Under load: `usage_in_bytes` **98–100 %** while `rss` was **4.9 GB** and `failcnt` still **0**.
+
+⇒ **`memory.usage_in_bytes` counts page cache and is not a pressure signal.** A cgroup that has
+never hit its limit reports `failcnt 0`, and it did — throughout. **The container-OOM diagnosis is
+refuted.** The `rc=137` remains **UNEXPLAINED**, and I am recording it as unexplained rather than
+attaching it to the first plausible mechanism.
+
+**Root-cause class: a counter that aggregates something RECLAIMABLE, read as pressure.** This is the
+**third costume** of one trap already in the preflight twice — *"never judge pod disk with `df`"* (it
+reports the cluster, hides the quota) and *"on Thor `free`/`tegrastats` show 106 GB used on an idle
+box"*. I had written the Thor entry into `CLAUDE.md` **the same day** and still walked into it.
+⇒ **RULE: before reading any usage counter as pressure, read it with the load REMOVED.** An idle
+baseline separates "in use" from "accounted to us". It costs one measurement and it is the whole
+diagnosis.
+⇒ **RULE: prefer the counter that only moves on the event you care about** — `failcnt` /
+`memory.events`, not `usage_in_bytes`; `torch.cuda.max_memory_allocated()`, not `mem_get_info`.
+
+**Cost:** ~40 min of v5f training and three unnecessary restarts. v5f is back on its exact
+known-good config (`--batch 4 --accum 16 --v2-lru 4 --workers 4`), resumed at step 4001 from a
+checkpoint at 4000, `rss` 4.9 GB, `failcnt` 0.
+
+**What SURVIVES and is still worth having.** The original diagnosis stands and is independent of
+this error: **v5f is INPUT-BOUND** — GPU utilisation median **~39 %** on the shipped config against
+v1arch's **79 %** at the same effective batch. And the `--batch 8` run MEASURED GPU utilisation at
+**~94 %**. That gain is real and is still on the table; it is blocked only on explaining the
+`rc=137`, which must be done before retrying rather than assumed away.
+
+### Two ops mechanisms bought at the same time
+
+1. **`supervise_run.sh` sources its manifest ONCE at startup, not per relaunch.** My first relaunch
+   came back on the OLD command and looked successful. Correct order: edit manifest → kill the
+   **supervisor** first → kill the trainer → start a fresh supervisor. **Verify by grepping flags out
+   of the RUNNING process**, never by reading the manifest back.
+2. **Restarting a supervisor immediately after killing the old one races its `flock`** — the new one
+   exits with *"another supervisor holds …lock"* and **nothing runs**, while the log reads like a
+   normal startup. Poll until both are gone; a lock with no holder in `/proc/*/fd` is debris.
+
+⚠️ **And `pgrep -f <pattern>` self-matched my own ssh command THREE times in this sequence** — once
+reporting a dead supervisor as alive, once listing my own shell as *both* the trainer and the
+supervisor because the command string contained both literals. The preflight rule says "kill by
+explicit PID"; the sharper form is: ⇒ **`pgrep`/`pkill -f` are inadmissible for STATE CHECKS too,
+not just for killing. Use `kill -0 <explicit PID>`, or an `awk` filter that excludes your own
+command.**
+
+---
+
+## R-2026-08-03-corpus — ⛔ "the raw parity corpus was not found on any live machine" is RETRACTED
+
+**What I wrote**, in a program report and then into an agent brief as an established premise:
+*"pod1/pod3/eval all `Connection refused`; pod4 and `tanitad-new` hold no raw epcache (three probes
+each). It survives ONLY on HF."* I labelled corpus durability the programme's top non-scientific
+risk on the strength of it.
+
+**MEASURED:** `tanitad-thor` was holding it the whole time —
+`~/epcache/epcache-256px-phase0/physicalai-train-e438721ae894` and
+`~/valdata/physicalai-val-0c5f7dac3b11` with **40/40** val episodes present.
+
+**Root-cause class: ABSENCE FOUND AT ONE LOCATION, REPORTED AS ABSENCE** — the rule that is already
+first in the operating standard, with the 12-day Vulkan-ICD failure attached to it. The probes swept
+`/workspace/...`, which is where the *pods* keep a corpus. **Thor keeps its corpus in `$HOME`.** One
+probe shape, applied to a host with a different layout, and the answer inverts.
+⇒ **RULE: a negative probe must vary the PATH SHAPE, not only the host.** "Not at `/workspace/X` on
+four machines" is one probe repeated four times, not four probes.
+⇒ **RULE: I inherited this from a sibling stream's report and promoted it to a brief premise without
+re-deriving it.** That is exactly the INHERITED→MEASURED laundering the evidence-class rule exists to
+stop, and it is worse in a brief than in a report, because a brief is read as settled ground.
+
+**The risk survives the retraction, in a smaller and better-specified form** — Thor's *train* holding
+is partial, so the 278.78 GB raw parity train epcache still has one non-durable copy plus HF. But it
+had to be re-derived, and the sharper census is:
+
+| artifact | size | copies | durable | status |
+|---|---|---|---|---|
+| raw parity TRAIN epcache 256 px | 278.78 GB | 1 | 1 (HF) | mitigation in flight |
+| raw parity VAL epcache 256 px | 70.39 GB | 1 | 1 (HF) | mitigation armed, sequenced behind the train pull |
+| **9 checkpoints on `pod4`** | ~28 GB | 1 | **0** | 🔴 **PI authorisation required** |
+
+✅ **Closed:** the 256 px REF-C val raster — **40/40 episodes match the HF LFS sha256 bit-for-bit**
+and `torch.load` cleanly, including the previously 21 %-truncated `ep_00028`. Size and exit code were
+not accepted as evidence.
+
+### Registry citation defects: the brace-expansion bug is NOT isolated
+
+The `…_vs_refc-{base,xl}-30k.json` defect corrected earlier today is **one of 17**. Full sweep of
+`MODEL_REGISTRY.md`: **252 citations — 115 EXISTS · 4 MISSING · 17 NOT_A_PATH · 22 pod paths
+(uncheckable)**. All 4 MISSING are **malformed citations, not missing artifacts**. Five cited pod
+paths are stranded with no repo counterpart.
+
+⚠️ **Process note, recorded because it is a real exposure.** An agent command printed `Keys.txt` to
+its tool output. **VERIFIED: `Keys.txt` is git-ignored (`.gitignore:44`), has never been staged, and
+appears in no commit on any branch.** The exposure is confined to the session transcript. The HF
+token was redacted by the agent; **the file's other keys were not**, so they should be treated as
+disclosed and rotated. ⇒ **RULE: read the token programmatically (`grep -oE 'hf_[A-Za-z0-9]+'`) —
+never `cat`, `head` or print the file, not even once, not even to check it exists.**
+
+---
+
+## R-2026-08-03-align — the reference-offset CORRECTION, and three claims made ABOUT it that do not hold
+
+`R-2026-08-03-k` established that every absolute render-fidelity number on `00040136` was scored
+against a reference **6 frames too early**. This entry closes it: the rule is now measured, the
+absolutes are re-baselined, a gate is in the code — and **three statements made while establishing
+the +6 are withdrawn.**
+
+**THE RULE (MEASURED, mine, on 2 of 2 scenes that have both files):**
+
+> `video_frame_index = rig_frame_index + (n_mp4_decodable − n_rig_frames)`
+> **+6** on `00040136` (605 − 599) · **+5** on `7c72937c` (604 − 599).
+
+Renderer neighbour scan, k = ±10, 12 frames per scene, PRODUCTION render, only the reference index
+varying: `argmax_histogram` **`{6: 12}`** and **`{5: 12}`** — unanimous, **zero refusals**, bootstrap
+mass **1.00** on each point (bootstrap over probed frames of `argmax(mean curve)`, B=2000; an
+integer estimator has no meaningful SE, so the **mass function IS the interval**). Gain over the
+shipped indexing: **+0.1797** and **+0.1699** grad-NCC, free.
+⭐ **`7c72937c` had never been scanned by the renderer at all** — its +5 rested on arithmetic. It is
+now MEASURED, and it agrees with the counting predictor exactly.
+Artifacts: `…/incoming/2026-08-03-render-rebaseline/raw/rs_frame_offset_{00040136,7c72937c}_k10*.json`.
+
+### 1. RETRACTED — "cross-correlating image motion against ego translation … peaks at exactly +6 and turns over at +7" as an INDEPENDENT CONFIRMATION
+
+Source: `stack/experiments/alpasim-gsplat/results/2026-08-03-rolling-shutter-adversarial/ALIGNMENT_DIRECTION_GPUFREE.json`,
+cited as one of *"3 independent probes incl. a renderer-free one"*.
+**Literally true and NOT decisive.** MEASURED (mine, `raw/align_gpufree.json`): peak `r = 0.44884`
+at +6; **best competitor outside ±1 is `r = 0.44341` at +8**; **prominence 0.0054** — a 1.2 %
+separation across a ±2-frame span on a curve that ramps monotonically 0.383 → 0.449. It **agrees**;
+it cannot **discriminate**. The genuinely independent confirmations are `count_delta` (the dataset's
+own counts) and `leader_pad` (the frozen head block).
+
+### 2. RETRACTED — `static_head_block_frames = 5` on `7c72937c` as evidence of a leader
+
+Same file. That scene's own `rig_ego_speed_mps_first_9_frames` field reads **`0.0` for all nine
+frames**. A stationary camera produces near-identical frames with no synthetic leader, so the block
+length is **not identifiable from the video alone** there. `frame_align.leader_pad()` now REFUSES
+(`ego_stationary_unidentifiable`) instead of reporting the number. The +5 is unaffected — it stands
+on `count_delta` **and** the renderer scan.
+
+### 3. SUPERSEDED — "rolling shutter buys +0.0210 at ~90× the render cost" (`R-2026-08-03-j`)
+
+That delta was measured against a reference 5–6 frames out of alignment. Re-measured at the
+corrected reference, same code, same frames, paired bootstrap over frames B=10000
+(`raw/RS_MARGINAL_REBASELINE.json`), RS over the deployed config:
+
+| scene / n | superseded | **corrected** | ratio | cost |
+|---|---|---|---|---|
+| `00040136` n=12 | +0.0179 [+0.0124, +0.0237] | **+0.1158** [+0.1046, +0.1285] | **×6.5** | ×93.5 |
+| `7c72937c` n=12 | +0.0542 [+0.0332, +0.0782] | **+0.1615** [+0.1440, +0.1803] | **×3.0** | ×81.6 |
+
+⚠️ **This does NOT vindicate rolling-shutter physics** — `R-2026-08-03-j`'s retraction of the CAUSE
+is now *better* supported. An RS render sweeps the pose across a **30.559 ms readout ≈ 0.917 of a
+frame**, so it spans the newly measured **sub-frame residual** (+0.232 fr / 7.75 ms on `00040136`,
++0.164 fr / 5.47 ms on `7c72937c`) by construction. A temporal-smear arm gaining most when a
+temporal misalignment is removed is evidence the gain is TEMPORAL, not shutter-specific. **The
+deployment verdict is untouched: 2498–3684 ms against a 36 ms budget. RS stays off.**
+
+### AND THE HEADLINE THE PROGRAMME SHIPPED: "+23.4 % grad-NCC" SURVIVES AT ROUGHLY HALF SIZE, AND DOES NOT REPLICATE
+
+Same code, same scene, same frames, same arms — **only `--ref-offset` differs**, and the offset-0 arm
+reproduces the shipped `panel6_chosen` EXACTLY (0.2774 / 0.3424 / 0.3747), so this is not confounded
+by a code change. Paired bootstrap over frames, B=10000 (`raw/REBASELINE_TABLE.json`):
+
+| contrast | superseded | **corrected** |
+|---|---|---|
+| `00040136` n=5 (the shipped panel) | **+23.4 %**, Δ +0.0650 [+0.0422, +0.0923] sep | **+13.5 %**, Δ +0.0572 [+0.0323, +0.0892] sep |
+| `00040136` n=12 | +22.1 %, Δ +0.0564 sep | **+8.0 %**, Δ +0.0362 [+0.0083, +0.0648] sep |
+| `7c72937c` n=12 | +8.4 %, Δ +0.0233 [+0.0014, +0.0490] sep | **+4.4 %**, Δ +0.0199 **[−0.0097, +0.0521] NOT sep** |
+
+⇒ Under the standing rule already written into `Q2_RENDER_FIDELITY_PLAN.md` §R4 (*improvement = CI
+above 0 on ≥2 of 3 scenes*), the shipped configuration now clears **1 of 2**. Not a refutation — a
+**loss of the evidence that justified it**, and the `cull=0.95` / `sky-gain=0.3` optima were both
+chosen by maximising grad-NCC against the misaligned reference and must be re-swept.
+✅ **What is untouched: every closed-loop number, including `R-2026-08-03-C`.** `cl_metrics.py` never
+opens the reference video (no `load_refs`, no `VideoCapture`, no `.mp4`); the four families come from
+rollout poses and `sequence_tracks.json`. The one channel by which the correction could still reach
+them — the render CONFIG was selected on the biased criterion — is flagged as a follow-up, not a claim.
+
+**Root-cause class: C14 — A SWEEP'S GRID END RE-LABELLED AS A MEASURED LIMIT, in its ESTIMATOR form:
+an instrument structurally incapable of reporting anything but an answer.** `max(d, key=score)`
+returns an offset on a monotone curve, on a flat curve, and on pure noise. In this work alone it did
+so three times: a ±3 scan that stopped at its edge still rising and reported *"≥ +3"*; the
+cross-correlation on `7c72937c` that rose monotonically −15 → +15 and argmaxed at **+15**; and the
+gate's own first version, which classified a **flat** curve peaking at the window edge as
+*"the residual is off-window"* and **blocked a CORRECT offset**.
+
+⇒ **RULE: an estimator that cannot return "I do not know" is not an estimator, it is a formatter.**
+Every alignment curve now goes through `frame_align.adjudicate()`, which refuses on `weak`,
+`not_separated`, `boundary` or `no_turnover` — and the ORDER matters: signal strength is adjudicated
+BEFORE window position, because a flat curve peaking at an edge is *no signal*, not *off-window*, and
+those demand opposite responses.
+⇒ **RULE: a control that the estimator passes by REFUSING proves nothing.** `motion_lag`'s
+injected-shift controls all "fail" on real data purely because it refuses the base case; that is
+stated in the report rather than scored as a pass.
+⇒ **Shipped so it cannot recur:** `render_quality.py::assert_reference_aligned` runs BEFORE any arm
+reports a number, is **on by default**, derives the offset **per scene**, and has three outcomes —
+PASS / FAILED / **CANNOT CERTIFY** (no probe frame carries signal), the last explicitly *not*
+"aligned". Demonstrated on the real scenes: it REFUSES the shipped configuration on both
+(naming +6 and +5), REFUSES an **over**-correction of +10 (naming −4, so it cannot be satisfied by
+pushing the offset until the number looks good), and PASSES at +6 and +5. 50 tests
+(`stack/tests/test_frame_align.py`, `test_render_quality_alignment_gate.py`,
+`test_ref_offset_repo_wide.py`), full suite **2031 passed**.
+
+⚠️ **NOT established:** that the rule holds beyond **n = 2 scenes**. Only 2 of the 79 NuRec scenes on
+Thor have `rig_trajectories.json` (the rest are mp4-only), both are 599-rig-frame clips from one
+release, and there is **no fps field, no dropped-frame marker and no manifest field** that predicts
+the delta — `data_info.json` says 599 on both. The offset must be **estimated per scene**, and that
+estimate is part of every future render number.
+
+---
+
+## R-2026-08-03-appear — ⛔ "APPEARANCE DOMINATES MOTION" is CORPUS-SPECIFIC, and I reported it
+## as a programme-scale finding
+
+**What I reported to the PI**, as the finding that "reframes the programme": *a single 32×32
+grayscale STILL FRAME reads `speed` at +0.6642 — 93 % of the 800 ms learned latent and 1.75× the
+best motion-only arm; all ten linear pure-difference arms sit at the null; nothing in our training
+ever forced the encoder to learn motion.* I attached to it the hypothesis that this re-explains the
+88.7 % longitudinal gap and the cross-rig collapse.
+
+**MEASURED on PhysicalAI-AV** (pre-registered OUTCOME C, `PREREG_APPEARANCE_SHORTCUT.md`, S/C/P/VOID
+with every threshold fixed before any PhysicalAI number existed). Encoder-matched — same frozen
+`v1_speedjerk_ckpt.pt` @ 29999, same recipe, 240 eps → 160/80, 4,787/2,390 windows matched to
+comma's 4,554/2,346:
+
+| arm | comma2k19 highway | **PhysicalAI-AV** |
+|---|---:|---:|
+| `pix32_centre_rbf` — one 32×32 grey still frame | **+0.6642** | **−0.0025 = the empirical null** |
+| `v1_window` — 18,432 features, 800 ms | +0.7145 | **+0.6752** |
+| **ratio** | **0.9296** | **−0.0037** [−0.0498, −0.0000] |
+
+The run is **admissible, not VOID**: `v1_window` separates (+0.6777 [+0.6328, +0.7235]) and the null
+arm reproduces the floor.
+
+⇒ **The programme-scale claim is WITHDRAWN.** And it does not merely shrink — **the ordering
+reverses**: on PhysicalAI every appearance form is at the null (1,024 / 9,216 / 9 features; linear,
+rbf, single-instant, within-stack) while **64 features of motion energy separate** (`mot8_centre_rbf`
++0.3707, `mot16_window_rbf` +0.4124).
+
+### The mechanism, established by a pre-registered ladder rather than argued
+
+| corpus | still-frame arm | within-clip split (leaky) | across-clip split (real) | retained |
+|---|---|---:|---:|---:|
+| comma2k19 | `pix32_centre_rbf` | +0.9825 | +0.6642 | **68 %** |
+| PhysicalAI | `pix32_centre_rbf` | +0.8023 | −0.0025 | **0 %** |
+
+Both rival explanations were killed by measurement, not by assertion: the PhysicalAI substrate is not
+degenerate (**higher** dynamic range than comma's, 0 constant features) and its speed distribution is
+not narrower (**CV 0.621 vs 0.589**). The appearance→speed map **exists on both corpora and transfers
+on one**, because **comma2k19 val is a single driver / vehicle / camera / road class**.
+
+⭐ **Root-cause class C16: EPISODE-DISJOINT ≠ DOMAIN-DISJOINT.** A held-out split that separates
+*episodes* can leave the *domain* fully shared, and a shortcut that memorises the domain then reads
+as a capability. **Cheap general fix: run every probe once with a RANDOM-WINDOW split too.** The gap
+between the two splits IS the shortcut, measured — 68 % on comma, 0 % on PhysicalAI.
+⇒ **RULE: a probe on a single-domain corpus cannot support a programme-scale claim about
+representations, however clean its held-out split.** I promoted a comma2k19-highway result to
+"reframes the programme" in one step.
+
+### Two further corrections that travel with it
+
+1. ⛔ **"+0.930 → −2.465" pairs TWO DIFFERENT EXPERIMENTS.** 0.930 is one run's *held-out* read;
+   −2.4654 is another run's *cross-rig* read, and **that run's own within-rig baseline is +0.7863**.
+   The honest pair is **+0.7863 → −2.4654**. Fixed in `MODEL_REGISTRY.md`; the figure also appears in
+   ~8 other documents which the registry now supersedes.
+   ⇒ **RULE: a "X → Y" degradation pair must come from ONE experiment**, or the difference silently
+   contains the between-run delta as well as the effect.
+2. ⚠️ **The cross-rig collapse does not reproduce in the current cache**: A→A +0.7052, B→A +0.7127,
+   paired **+0.0075 [−0.0318, +0.0502] NOT separated**. The −2.4654 is **NOT ATTRIBUTED** — cache
+   geometry (the rigs' horizons agree on 8 of 256 rows here) and MLP extrapolation both remain live.
+   **The appearance shortcut is NOT a third explanation for it** — it is at the null in all four rig
+   cells.
+
+### What the audit CONFIRMED rather than overturned
+
+- **The scenario classifier is NOT threatened** on all three situations: the shortcut's first hop
+  does not exist on this corpus (still→speed R² **+0.0102** vs latent **+0.6900**). This agrees
+  independently with the sitclf stream's own still-frame control (motion worth ~70 % of the skill).
+  ⚠️ Only `intersection` is properly powered; the agent said so rather than dressing up the other two.
+- **`long_accel`'s unrecoverability is untouched** by this retraction — that result stands on its own
+  17-architecture evidence.
+- The **0-GPU latent screen is now promoted** to `stack/tanitad/eval/latent_screen.py` with 12
+  contract tests, reproducing its reference through the promoted module and passing its oracle
+  control. ⚠️ **New fact: the same encoder is 6.9× LESS jittery on PhysicalAI than on comma2k19**, so
+  **the screen's thresholds are corpus-dependent and must carry their corpus.**
+
+⚠️ The agent also found and reported **a defect in its own pre-registration** (AP-lift's chance level
+is 1.0, not 0 — the raw form would have wrongly read THREATENED on `lane_change`) rather than
+quietly using the corrected form.
+
+---
+
+## R-2026-08-04-failcnt — ⛔ THE REFUTATION IN `R-2026-08-03-mem` WAS ITSELF BUILT ON AN UNUSABLE COUNTER
+
+**What `R-2026-08-03-mem` concluded**, and what has been carried since: *"A cgroup that has never
+hit its limit reports `failcnt 0`, and it did — throughout. **The container-OOM diagnosis is
+refuted.** The `rc=137` remains **UNEXPLAINED**."*
+
+**MEASURED 2026-08-04 on the same pod** (`tanitad-new`,
+`…/incoming/2026-08-04-v5f-sigkill/raw/counters_snapshot.txt`):
+
+| counter | value |
+|---|---|
+| `memory.limit_in_bytes` | 49,999,998,976 (46.57 GiB) |
+| `memory.memsw.limit_in_bytes` | 49,999,998,976 — **EQUAL** |
+| cgroup `swap` / host swap | **0 / 0** |
+| `memory.failcnt` | **0** |
+| **`memory.memsw.failcnt`** | **28,908,911** → **29,219,916** 26 min later (**≈ 200 failures/s**) |
+| `memory.max_usage_in_bytes` | 49,999,998,976 — **exactly the limit** |
+| `memory.oom_control` | `oom_kill_disable 0  under_oom 0  ` **`oom_kill 1`** |
+
+In cgroup v1, `try_charge()` charges **memsw first** and `page_counter_try_charge` increments
+`failcnt` on the counter it exceeded. With `memsw.limit <= memory.limit` and no swap — this
+container, and the ordinary Docker/RunPod default — **memsw absorbs every failure and
+`memory.failcnt` is pinned at 0 for the container's life, however hard the cap is hit.** The data
+prove it without the kernel source: a cgroup whose **peak usage equals its limit exactly** has
+certainly hit that limit, and `failcnt 0` beside it is only explicable by the memsw-first path.
+
+⇒ **The `rc=137` is EXPLAINED: a SIGKILL from the OOM killer.** The attempted
+`--batch 8 --accum 8 --v2-lru 64 --workers 8` projects to **≈51.2 GiB of UNRECLAIMABLE memory
+(`rss + shmem`) against a 46.57 GiB cap** — LRU **18.8 GiB** (measured 33.4 MB/clip × (8+1) × 64),
+4 extra workers **+8.1 GiB**, transport **+15.1 GiB**, on a 9.90 GiB base. It died at **3 min**,
+during DataLoader warm-up, which is exactly when that burst peaks. Full workings, and the seven
+alternatives refuted one by one (operator `kill -9` path, `memwatch`, supervisor guards, GPU fault,
+double-launch, CPU quota, MooseFS `Errno 5`): `…/incoming/2026-08-04-v5f-sigkill/V5F_SIGKILL.md`.
+
+**What still stands from `R-2026-08-03-mem`:** `memory.usage_in_bytes` counts reclaimable page cache
+and is **not** a pressure signal (37.2 GB of 50 at idle, `rss` 0.1 GB). That is correct, and the
+idle-baseline rule it bought is excellent. **Only the `failcnt` half fails.**
+
+⚠️ **Residual, stated rather than papered over:** `dmesg` is `Operation not permitted` in this
+container and `/dev/kmsg` is unreadable, so the kernel's own OOM report cannot be read from inside.
+`oom_kill` increments for a task in this memcg killed by **either** the memcg or the host's global
+OOM killer, so the two are **not formally separated** — host-OOM is strongly disfavoured (503 GiB
+host, 414 GiB available, zero swap) but not excluded. The RunPod console settles it in one look.
+
+**Root-cause class: NEW — C17, A COUNTER THAT IS STRUCTURALLY FROZEN FOR THIS CONFIGURATION, READ
+AS EVIDENCE OF ABSENCE.**
+This is the sibling of C-`R-2026-08-03-mem`'s *"a counter that aggregates something RECLAIMABLE,
+read as pressure"* — and it bit **the fix for that very error, in the same hour**. Note the shape:
+the earlier retraction's own closing rule (*"prefer the counter that only moves on the event you
+care about — `failcnt`"*) was **right**, and was then applied to a counter that **cannot move**. A
+correct rule aimed at the wrong instrument produces a confident wrong answer, and it inherits all
+the authority of the retraction that introduced it.
+⇒ **RULE: before reading a zero as absence, establish that the counter is ABLE to be non-zero.**
+A counter at 0 that *cannot* move and one that *did not* move are the same digit and opposite facts.
+Cheap general check: find a sibling counter that IS non-zero (`memory.memsw.failcnt` here), or
+induce the event once and confirm the counter responds.
+⇒ This is CLAUDE.md's *"absence found at ONE location is not absence"* in a cgroup costume: the
+generalisation is **absence found with ONE instrument is not absence.**
+
+| # | class | recognition signal |
+|---|---|---|
+| **C17** | **Structurally-frozen counter read as absence** | a zero is load-bearing, and nobody has shown the counter can be non-zero in this configuration |
+
+**Instrument shipped so this is not re-derived:** `stack/scripts/pod_kill_forensics.py`
+(+ `stack/tests/test_pod_kill_forensics.py`, 21 tests). `live_failcnt()` decides which `failcnt`
+can move and names the frozen one; `unreclaimable_bytes()` reports `rss + shmem` instead of
+`usage_in_bytes`; `oom_window()` **refuses to return a bare `oom_kill` count** without the
+container-start window (it read 6 then 0 on pod2 and was over-quoted); `decode_exit_code()` states
+that 137 is SIGKILL and **never** a CUDA OOM, which exits 1 with a traceback.
+
+⚠️ **Two corrections that travel with this.** (1) `V2CompressedCache`'s docstring said
+"~2-4 MB/clip"; the 256×640 lossless-PNG caches MEASURE **33.36 MB/clip** (n=40, reproduced) —
+**8-17× low**, and budgeting from it is what made the fatal config look affordable. Fixed in
+`v2_dataset.py`. (2) The *"GPU median ~39 %"* premise for the speed-up is **unstable**: on the same
+unchanged config, **median 33 % (n=20)** and, 20 min later, **median 99.5 % (n=12)** — utilisation
+is bimodal across the 16-step accumulation cycle. **The size of that prize is currently unmeasured**
+and should be re-measured with a step-synchronised instrument before a cutover is spent on it.
+
+---
+
+## R-2026-08-03-mem — ⛔ AMENDED 2026-08-04. Half of this entry is itself wrong.
+
+That entry retracted the container-OOM diagnosis of v5f's `rc=137` on two grounds. **One stands, one
+does not, and the `rc=137` is NOT unexplained.**
+
+| the entry's grounds | verdict |
+|---|---|
+| *"`memory.usage_in_bytes` counts reclaimable page cache and is not pressure"* | ✅ **STANDS** — measured at idle: `cache` 37.0 GB / `rss` 0.1 GB |
+| *"`memory.failcnt` was 0 throughout, so the cgroup never hit its limit"* | ⛔ **WRONG — that counter CANNOT MOVE on this cgroup** |
+
+**MEASURED, and I re-verified it myself before amending:**
+
+```
+memory.limit_in_bytes        49,999,998,976
+memory.memsw.limit_in_bytes  49,999,998,976   <- EQUAL, and swap is 0
+memory.max_usage_in_bytes    49,999,998,976   <- EXACTLY the limit
+memory.failcnt                            0   <- structurally frozen
+memory.memsw.failcnt             29,660,004   <- ~200 failures/second
+memory.oom_control            oom_kill 1
+```
+
+In cgroup v1, `try_charge()` charges **memsw first**. With `memsw.limit == limit` and no swap, memsw
+absorbs **every** failure and `memory.failcnt` can never increment. **A cgroup whose peak usage
+equals its limit has certainly hit it.**
+
+⇒ **The `rc=137` WAS a container memory-cgroup OOM kill.** Seven alternatives were refuted with
+artifacts — including my own tooling (my cutover script targeted only hardcoded PID 19412, sent a
+plain SIGTERM 7.5 min earlier and had no escalation line; `memwatch.sh` has no kill path and was
+created 6 min *after* the death), the supervisor guards (pod copy bit-identical to repo, md5
+`0daf4be6…`, sends no signal), a GPU fault (0 uncorrectable ECC — and **SIGKILL is never a CUDA OOM,
+which exits 1**), double-launch, CPU quota (**0.0 %** throttled) and MooseFS `Errno 5`.
+⚠️ **Residual, not papered over:** `dmesg` is denied here, so the memcg OOM killer cannot be formally
+separated from the host's global one. Host-OOM is strongly disfavoured but not excluded.
+
+⭐ **And the mechanism closes arithmetically.** `V2CompressedCache`'s LRU is **per-process**, and the
+measured mean payload is **33.36 MB/clip (n=40, reproduced)** — the class docstring claimed
+**"2–4 MB", 8–17× low**. The attempted config projects to **~51.2 GiB unreclaimable (`rss+shmem`)
+against a 46.57 GiB cap**: LRU 18.8 + 4 extra workers 8.1 + transport 15.1 on a 9.9 GiB base. It died
+at **3 minutes — during DataLoader warm-up, exactly when that burst peaks.**
+
+### Root-cause class: I REPLACED ONE UNVALIDATED COUNTER WITH ANOTHER
+
+Correcting the `usage_in_bytes` error, I reached for the nearest alternative counter and **never
+checked that IT could move**. `failcnt = 0` was not evidence of absence; it was **absence of
+evidence**, and I published it as a refutation.
+⇒ **RULE: a counter reading zero is evidence only if you have shown it CAN be non-zero.** Check an
+instrument's dynamic range before using it as a negative — the cheapest form is to find the sibling
+counter that *is* moving (`memsw.failcnt` here, at 200/s).
+⇒ **RULE: when you retract a measurement error, the replacement measurement needs MORE scrutiny than
+the original, not less.** A correction carries the authority of having just been careful, and that is
+exactly when an unvalidated instrument slips through.
+
+### Two operational facts that fall out of it
+
+1. ⛔ **`--v2-lru 64` must never be retried on this cache.** MEASURED: under `shuffle=True` over
+   410,202 windows / 2,400 clips it buys **~2.7 % hit rate for 18.8 GiB**.
+2. ⚠️ **The "GPU utilisation ~39 %" premise is UNSTABLE and the prize is currently unmeasured.** On
+   the *same unchanged config*: median **33 % (n=20)**, then **99.5 % (n=12)** twenty minutes later.
+   Utilisation is **bimodal across the 16-step accumulation cycle**, so any single median is an
+   artifact of when it was sampled. ⇒ **Re-measure with a step-synchronised instrument before
+   spending a cutover on it.** (I quoted 39 % to the PI as though it were stable; it is not.)
+
+---
+
+## R-2026-08-04-briefs — ⛔ TWO PREMISES I PUT INTO AGENT BRIEFS WERE WRONG, one of them load-bearing
+
+### 1. The anchor provenance — a synthetic rebuild would have silently invalidated every REF-C number
+
+**What I briefed** as established fact: *"`refc_anchors_full.pt` is reconstructible — `build_refc_anchors.py` is in the repo and the config records `{n 256, pool 4096, seed 0}`."*
+
+**MEASURED: that triple is `refc_xl_config()`'s UNUSED SYNTHETIC DEFAULT** (`MODEL_REGISTRY.md:1299/1309`), **not the file's provenance.** The real artifacts record **`pool_size 200000`** — the `--data-root` path. Corroborated three ways: `refc_anchors_small64.pt`'s own metadata, `flagship_v4_anchors_dense.pt`, and registry:1241's explicit *"not the synthetic default"*.
+
+⇒ **A rebuild on my premise would have produced a COMPLETELY DIFFERENT VOCABULARY that still loads
+with shape `[256, 4, 2]`** — and every REF-C comparison scored against it would have been silently
+invalid. The agent caught it before building.
+⇒ **RULE: a config default is not provenance.** A field present in a config object may be the value
+that was *used*, or the value that was *never overridden*. Read the artifact's own recorded metadata,
+not the constructor that could have made it.
+⇒ **RULE: a shape check is not an identity check.** `[256, 4, 2]` loads for any 256 anchors; the
+thing that would have failed loudly is the nesting relationship, which is why the rebuild was
+deliberately staged as `refc_anchors_full_REBUILD.pt` and **not** under the scoring name.
+*(The rebuild reproduces the same VOCABULARY, not the same BYTES: 59/64 rows bit-exact vs
+`small64`, 5 differ by ≤7.63e-06 m (≤64 ULP), **selection order preserved**; a second Thor run is
+`torch.equal` to the first, so it is cross-host float rounding, not nondeterminism. Architecture vs
+torch version could not be separated — stated, not guessed.)*
+
+### 2. The speed-stratification caveat I propagated is FALSE on the surface it was applied to
+
+**What I briefed**, twice: *"20.7 % of lead windows sit at 0–1 m/s where the metric cannot
+discriminate, and the 15+ m/s band is UNPOWERED (n=2)."*
+
+**MEASURED on the canonical val40 — both claims INVERT:** the **15+ m/s band is the LARGEST
+lead-bearing band (88 leads)**, and the 0–1 m/s crawl defect is **1.9 %, not 20.7 %**. Verified four
+ways (max speed-source disagreement 0.002 m/s).
+
+**Root-cause class: a caveat measured on ONE corpus surface (R0) quoted as a property of THE METRIC.**
+It was true where it was measured and false where I applied it — and because it was a *caveat*, it
+read as conservative rather than as a claim needing its own evidence.
+⇒ **RULE: a stratification caveat carries its surface, exactly like a throughput number carries its
+endpoints.** "n=2 in the top band" is a fact about a dataset, never about an instrument.
+⇒ **RULE: conservative-sounding claims still need evidence classes.** A caveat that discourages work
+can do as much damage as an optimistic claim that invites it.
+
+### 3. Also fixed here — an instrument that could not certify ANY Thor run
+
+Both Thor efficiency runs came back quarantined as `.CONTAMINATED-*`. **Not contention:** Tegra's
+`nvidia-smi` returns `[N/A]` for `memory.used`, `float()` raised inside `_gpu_state`'s **single
+shared `try`**, and the `--query-compute-apps` probe on the following lines **never ran**, leaving
+`exclusive = null` — not `False`. `taniteval.efficiency` was **structurally unable to certify any
+Thor run**, and would have reported that as contention forever. Fixed with a defensive `_num()` and
+independent try blocks, +2 regression tests.
+⇒ **RULE: one `try` around several probes converts a failure in the first into silence from all of
+them.** Same family as the bare `except` that hid the `min_steps` TypeError and made a nav fallback
+that had never once executed look like a working default.
