@@ -405,12 +405,13 @@ def event_anticipation_report(s, valid, onsets, clip_cluster, *, hz: float = 10.
     fin = valid & np.isfinite(s)
     alarm = _top_frac_alarm(s, fin, top_frac)
 
-    warned, leads, scorable = [], [], []
+    warned, leads, scorable, reach = [], [], [], []
     for g in onsets:
         lo = max(0, g - back)
         idx = np.arange(lo, g)
         idx = idx[fin[idx] & (cc[idx] == cc[g])]
         scorable.append(idx.size > 0)
+        reach.append(int(idx.size))          # rows a uniform-random budget could have hit
         if idx.size == 0:
             warned.append(False)
             continue
@@ -420,8 +421,40 @@ def event_anticipation_report(s, valid, onsets, clip_cluster, *, hz: float = 10.
             leads.append(float((g - hit[0]) / hz))
     warned = np.asarray(warned, bool)
     scorable = np.asarray(scorable, bool)
+    reach = np.asarray(reach, np.int64)
     n_on = int(scorable.sum())          # onsets a fixed budget could ever have warned
     n_w = int((warned & scorable).sum())
+
+    # ⭐ THE CHANCE FLOOR, computed exactly, and NOT optional.
+    #
+    # MEASURED 2026-08-04 on the B4 substrate: at a 5 % rank budget with a 5 s look-back
+    # the UNIFORM-RANDOM floor for `event_recall` is 0.8088 on `lane_change`, while the
+    # DEPLOYED head scores 0.1404 and the best re-tuned cell 0.4912 — every real arm is
+    # far BELOW chance. The reason is structural: `event_recall` at a fixed GLOBAL budget
+    # is maximised by DISPERSING alarms, and a classifier that concentrates its alarms on
+    # the clips that matter is penalised for it. A report that quotes `event_recall`, or a
+    # DELTA in it, without this number can present a move toward randomness as skill —
+    # which is exactly what happened: the same (W, L) change earns the identical +0.0877
+    # on CLIP-PERMUTED features, where no skill can exist.
+    #
+    # ``chance_event_recall`` is the exact expectation over a uniformly random alarm set of
+    # the SAME size k: an onset with m reachable rows is missed with probability
+    # C(n - m, k) / C(n, k). ``chance_alarm_precision_*`` is the fraction of scorable rows
+    # that lie within the horizon before some onset — what a random alarm would score.
+    n_fin, k_al = int(fin.sum()), int(alarm.sum())
+
+    def _p_miss(m):
+        if m <= 0 or k_al <= 0:
+            return 1.0
+        if n_fin - m < k_al:
+            return 0.0
+        from math import lgamma
+        lg = lgamma
+        return float(np.exp(lg(n_fin - m + 1) - lg(n_fin - m - k_al + 1)
+                            - lg(n_fin + 1) + lg(n_fin - k_al + 1)))
+
+    chance_recall = (round(float(np.mean([1.0 - _p_miss(m) for m in reach[scorable]])), 5)
+                     if n_on else float("nan"))
 
     # an alarm row is USEFUL at horizon h iff some onset falls in (t, t + h*hz]
     def _prec(h):
@@ -441,14 +474,40 @@ def event_anticipation_report(s, valid, onsets, clip_cluster, *, hz: float = 10.
             good[sel[has]] = (og[k[has]] - rows[sel][has]) <= w
         return float(good.mean())
 
+    # what a uniform-random alarm of the same size would score on precision: the share of
+    # scorable rows that lie within h before some onset.
+    def _chance_prec(h):
+        if not n_fin:
+            return float("nan")
+        w = int(round(h * hz))
+        near = np.zeros(s.size, bool)
+        for g in onsets:
+            near[max(0, g - w):g] |= cc[max(0, g - w):g] == cc[g]
+        return float((near & fin).sum() / n_fin)
+
+    er = (round(n_w / n_on, 5) if n_on else float("nan"))
+    p_hmax, p_dep = round(_prec(h_max_s), 5), round(_prec(deploy_lead_s), 5)
+    c_hmax, c_dep = round(_chance_prec(h_max_s), 5), round(_chance_prec(deploy_lead_s), 5)
     return {"n_scorable": int(fin.sum()), "n_alarm": int(alarm.sum()),
             "n_onsets": n_on, "n_onsets_total": int(onsets.size),
             "n_onsets_unreachable": int(onsets.size - n_on),
             "n_onsets_warned": n_w, "n_onsets_no_alarm": n_on - n_w,
-            "event_recall": (round(n_w / n_on, 5) if n_on else float("nan")),
+            "event_recall": er,
             "median_lead_s": (round(float(np.median(leads)), 3) if leads else None),
-            "alarm_precision_h_max": round(_prec(h_max_s), 5),
-            "alarm_precision_deploy": round(_prec(deploy_lead_s), 5),
+            "alarm_precision_h_max": p_hmax,
+            "alarm_precision_deploy": p_dep,
+            # ⭐ the chance floor travels WITH the number it qualifies, so it cannot be
+            # dropped by a report that quotes only the headline.
+            "chance_event_recall": chance_recall,
+            "chance_alarm_precision_h_max": c_hmax,
+            "chance_alarm_precision_deploy": c_dep,
+            "event_recall_vs_chance": (round(er - chance_recall, 5)
+                                       if np.isfinite(er) and np.isfinite(chance_recall)
+                                       else float("nan")),
+            "alarm_precision_lift_h_max": (round(p_hmax / c_hmax, 5) if c_hmax > 0
+                                           else float("nan")),
+            "alarm_precision_lift_deploy": (round(p_dep / c_dep, 5) if c_dep > 0
+                                            else float("nan")),
             "h_max_s": h_max_s, "deploy_lead_s": deploy_lead_s, "top_frac": top_frac,
             "_horizon_independent": True}
 

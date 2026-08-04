@@ -1,0 +1,98 @@
+{
+ "host": "tanitad-thor",
+ "env": {
+  "gpu": "NVIDIA Thor",
+  "capability": "11.0",
+  "total_mem_MiB": 125772,
+  "torch": "2.13.0+cu130",
+  "cuda": "13.0",
+  "platform": "linux",
+  "machine": "aarch64"
+ },
+ "protocol_note": "planning tick = encode(8-frame window) + 20 SEQUENTIAL predictor steps -> per-step metric dpose -> SE(2) accumulate; batch 1; warmup discarded; cuda.Event timing",
+ "arms": {
+  "flagship-30k": {
+   "status": "OK",
+   "ckpt": "/home/nvidia/models/flagship-v1-speedjerk/ckpt.pt",
+   "ckpt_step": 29999,
+   "fp32": {
+    "p50_ms": 183.7228,
+    "p95_ms": 188.6597,
+    "p99_ms": 188.8666,
+    "mean_ms": 185.3444,
+    "std_ms": 2.3343,
+    "min_ms": 183.3327,
+    "max_ms": 188.8862,
+    "iters": 200,
+    "warmup": 30,
+    "gpu_reported": "NVIDIA Thor"
+   },
+   "tf32": {
+    "p50_ms": 81.5811,
+    "p95_ms": 82.842,
+    "p99_ms": 85.0586,
+    "mean_ms": 81.8249,
+    "std_ms": 0.9944,
+    "min_ms": 81.191,
+    "max_ms": 91.3467,
+    "iters": 200,
+    "warmup": 30,
+    "gpu_reported": "NVIDIA Thor"
+   },
+   "amp16": {
+    "p50_ms": 73.0134,
+    "p95_ms": 73.3932,
+    "p99_ms": 74.5699,
+    "mean_ms": 73.0497,
+    "std_ms": 0.3191,
+    "min_ms": 72.4696,
+    "max_ms": 75.3226,
+    "iters": 200,
+    "warmup": 30,
+    "gpu_reported": "NVIDIA Thor"
+   }
+  },
+  "refc-xl-30k": {
+   "status": "OK",
+   "ckpt": "/home/nvidia/models/refc-xl/ckpt.pt",
+   "ckpt_step": 29999,
+   "fp32": {
+    "p50_ms": 164.8794,
+    "p95_ms": 165.1246,
+    "p99_ms": 165.5249,
+    "mean_ms": 164.9042,
+    "std_ms": 0.1608,
+    "min_ms": 164.6414,
+    "max_ms": 166.134,
+    "iters": 200,
+    "warmup": 30,
+    "gpu_reported": "NVIDIA Thor"
+   },
+   "tf32": {
+    "p50_ms": 55.7331,
+    "p95_ms": 55.8927,
+    "p99_ms": 55.9986,
+    "mean_ms": 55.6715,
+    "std_ms": 0.2453,
+    "min_ms": 54.3693,
+    "max_ms": 56.0549,
+    "iters": 200,
+    "warmup": 30,
+    "gpu_reported": "NVIDIA Thor"
+   },
+   "amp16": {
+    "p50_ms": 46.4213,
+    "p95_ms": 47.0885,
+    "p99_ms": 47.4769,
+    "mean_ms": 46.5962,
+    "std_ms": 0.5354,
+    "min_ms": 45.5234,
+    "max_ms": 52.1285,
+    "iters": 200,
+    "warmup": 30,
+    "gpu_reported": "NVIDIA Thor"
+   }
+  }
+ },
+ "torch_max_memory_allocated_MiB": 1466.4
+}

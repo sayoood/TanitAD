@@ -1,0 +1,73 @@
+{
+ "n_rows": 64,
+ "bit_exact_rows": 59,
+ "differing_rows": [
+  4,
+  19,
+  37,
+  40,
+  63
+ ],
+ "per_row": {
+  "4": {
+   "max_abs": 7.62939453125e-06,
+   "max_rel": 5.887270617677132e-06,
+   "max_ulp": 64,
+   "n_elem_differ": 7
+  },
+  "19": {
+   "max_abs": 1.9073486328125e-06,
+   "max_rel": 7.855762191866233e-07,
+   "max_ulp": 8,
+   "n_elem_differ": 7
+  },
+  "37": {
+   "max_abs": 3.814697265625e-06,
+   "max_rel": 7.051688953652047e-06,
+   "max_ulp": 64,
+   "n_elem_differ": 5
+  },
+  "40": {
+   "max_abs": 1.430511474609375e-06,
+   "max_rel": 5.440282961899356e-07,
+   "max_ulp": 6,
+   "n_elem_differ": 7
+  },
+  "63": {
+   "max_abs": 9.5367431640625e-07,
+   "max_rel": 1.7099571323342388e-06,
+   "max_ulp": 16,
+   "n_elem_differ": 5
+  }
+ },
+ "allclose_atol_1e5": true,
+ "global_max_abs_m": 7.62939453125e-06,
+ "global_max_ulp": 64,
+ "order_preserved_within_1e5": true,
+ "_what": "Reproduction test for the stranded refc_anchors_full.pt. Rebuilt on Thor from the parity train cache and compared against the ONLY committed descendant, refc_anchors_small64.pt, whose provenance.json asserts small64 == base128[:64] == full256[:64].",
+ "rebuild": {
+  "host": "tanitad-thor (aarch64, NVIDIA Thor)",
+  "file": "TanitAD Research Hub/Data Engineering/Implementation/incoming/2026-08-04-instrument-durability/refc_anchors_full_REBUILD.pt",
+  "file_sha256": "8e6cf38afdf0dd51b6967773de17f5213cdc06229c4600f25547a651c7be5bda",
+  "anchors_sha256": "584ba99b058df745e366fc6f708f2ef2411cc564b125e70e9ccee921dda47694",
+  "command": "PYTHONPATH=<stack>:<stack>/scripts python scripts/build_refc_anchors.py --data-root /home/nvidia/epcache/epcache-256px-phase0 --out refc_anchors_full_rebuild.pt --n-anchors 256 --horizons 5,10,15,20 --seed 0 --max-pool 200000",
+  "parity_guard": "[parity] *train* cache: physicalai-train-e438721ae894 VERIFIED - 2376 episodes, uid sha256 9877bef64da3... matches the committed manifest (skip-hash f09e44db)",
+  "determinism_on_host": "second identical run -> torch.equal True, same sha256 (so the delta below is NOT nondeterminism)",
+  "runtime_s": "<20"
+ },
+ "compared_against": {
+  "file": "TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-22-refc-small-30k/refc_anchors_small64.pt",
+  "sha256": "c5449ebe0852a1497e2e875cf54287e78300536c2f17aedebfe0a71b261dedc0",
+  "its_metadata": {
+   "method": "fps-prefix-slice",
+   "pool_size": 200000,
+   "seed": 0,
+   "source": "base128[:64] == full256[:64] (nested FPS prefix, seed 0)"
+  }
+ },
+ "VERDICT": "REPRODUCES AS THE SAME VOCABULARY, NOT AS THE SAME BYTES. 59/64 rows bit-exact, 5 rows within 64 ULP (<=7.63e-06 m), selection ORDER preserved, allclose(atol=1e-5) True. Deterministic on-host (2 runs, torch.equal True) AND the 5 differing rows appear nowhere in the rebuilt 256 as exact matches -> they are ROUNDED versions of the same trajectories, not substitutions. Cause: cross-host float32 rounding in the pool.",
+ "CONSEQUENCE": "refc_scale_ab.analyze checks nesting with torch.equal, which this rebuild FAILS. Admissible as a provenance reconstruction and citation target; NOT admissible as a drop-in scoring vocabulary until either a bit-exact amd64 rebuild exists or the check is relaxed to a stated tolerance. PI/orchestrator decision.",
+ "CORRECTION_TO_BRIEF": "The brief cited the config's '{n 256, pool 4096, seed 0}' as the anchor provenance. pool 4096 is refc_xl_config()'s UNUSED SYNTHETIC DEFAULT (MODEL_REGISTRY.md:1299/1309). The real artifacts record pool_size 200000 = the --data-root path. Building synthetically would have produced a DIFFERENT vocabulary that still loaded with shape [256,4,2].",
+ "cause_NOT_separable": "The rebuild host differs from the original in BOTH architecture (aarch64 vs amd64) AND toolchain (torch 2.13.0+cu130 here; pod3's version is not recorded in any artifact found). 'Cross-host rounding' is the admissible claim; 'architecture' specifically is NOT, and would need an amd64 host carrying the parity cache.",
+ "differing_rows_found_elsewhere_in_rebuilt_256": 0
+}

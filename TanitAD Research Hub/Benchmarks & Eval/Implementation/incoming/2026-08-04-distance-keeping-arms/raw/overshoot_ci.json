@@ -1,0 +1,127 @@
+{
+ "_what": "OVERSHOOT = the arm's predicted path passes the lead vehicle's rear face at some horizon step. A rear-end contact precursor, computed over the 270 LEAD windows.",
+ "_estimator": "episode-cluster bootstrap; paired for deltas. B=2000, seed 0.",
+ "n_lead_windows": 270,
+ "n_episodes": 21,
+ "rate": {
+  "refc-base-30k": {
+   "n": 28,
+   "mean": 0.1037,
+   "lo": 0.0192,
+   "hi": 0.215,
+   "ci95": 0.0979,
+   "se": 0.0513,
+   "reducer": "mean",
+   "n_windows": 270,
+   "n_episodes": 21,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap"
+  },
+  "flagship-30k": {
+   "n": 28,
+   "mean": 0.1037,
+   "lo": 0.0153,
+   "hi": 0.2196,
+   "ci95": 0.1022,
+   "se": 0.053,
+   "reducer": "mean",
+   "n_windows": 270,
+   "n_episodes": 21,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap"
+  },
+  "cv": {
+   "n": 3,
+   "mean": 0.0111,
+   "lo": 0.0,
+   "hi": 0.0338,
+   "ci95": 0.0169,
+   "se": 0.0094,
+   "reducer": "mean",
+   "n_windows": 270,
+   "n_episodes": 21,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap"
+  },
+  "gt_oracle": {
+   "n": 6,
+   "mean": 0.0222,
+   "lo": 0.0034,
+   "hi": 0.051,
+   "ci95": 0.0238,
+   "se": 0.0123,
+   "reducer": "mean",
+   "n_windows": 270,
+   "n_episodes": 21,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap"
+  }
+ },
+ "paired": {
+  "flagship-30k_minus_refc-base-30k": {
+   "delta": 0.0,
+   "lo": -0.0117,
+   "hi": 0.0103,
+   "ci95": 0.011,
+   "p_delta_gt0": 0.34,
+   "separated": false,
+   "reducer": "mean",
+   "n_windows": 270,
+   "n_episodes": 21,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap"
+  },
+  "flagship-30k_minus_gt_oracle": {
+   "delta": 0.0815,
+   "lo": 0.0,
+   "hi": 0.1824,
+   "ci95": 0.0912,
+   "p_delta_gt0": 0.9745,
+   "separated": false,
+   "reducer": "mean",
+   "n_windows": 270,
+   "n_episodes": 21,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap"
+  },
+  "refc-base-30k_minus_gt_oracle": {
+   "delta": 0.0815,
+   "lo": 0.0074,
+   "hi": 0.1771,
+   "ci95": 0.0848,
+   "p_delta_gt0": 0.9975,
+   "separated": true,
+   "reducer": "mean",
+   "n_windows": 270,
+   "n_episodes": 21,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap"
+  },
+  "flagship-30k_minus_cv": {
+   "delta": 0.0926,
+   "lo": 0.0074,
+   "hi": 0.2038,
+   "ci95": 0.0982,
+   "p_delta_gt0": 0.9975,
+   "separated": true,
+   "reducer": "mean",
+   "n_windows": 270,
+   "n_episodes": 21,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap"
+  },
+  "refc-base-30k_minus_cv": {
+   "delta": 0.0926,
+   "lo": 0.0106,
+   "hi": 0.2021,
+   "ci95": 0.0958,
+   "p_delta_gt0": 1.0,
+   "separated": true,
+   "reducer": "mean",
+   "n_windows": 270,
+   "n_episodes": 21,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap"
+  }
+ }
+}

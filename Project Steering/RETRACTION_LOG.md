@@ -2950,3 +2950,200 @@ representations, however clean its held-out split.** I promoted a comma2k19-high
 ⚠️ The agent also found and reported **a defect in its own pre-registration** (AP-lift's chance level
 is 1.0, not 0 — the raw form would have wrongly read THREATENED on `lane_change`) rather than
 quietly using the corrected form.
+
+---
+
+## R-2026-08-04-failcnt — ⛔ THE REFUTATION IN `R-2026-08-03-mem` WAS ITSELF BUILT ON AN UNUSABLE COUNTER
+
+**What `R-2026-08-03-mem` concluded**, and what has been carried since: *"A cgroup that has never
+hit its limit reports `failcnt 0`, and it did — throughout. **The container-OOM diagnosis is
+refuted.** The `rc=137` remains **UNEXPLAINED**."*
+
+**MEASURED 2026-08-04 on the same pod** (`tanitad-new`,
+`…/incoming/2026-08-04-v5f-sigkill/raw/counters_snapshot.txt`):
+
+| counter | value |
+|---|---|
+| `memory.limit_in_bytes` | 49,999,998,976 (46.57 GiB) |
+| `memory.memsw.limit_in_bytes` | 49,999,998,976 — **EQUAL** |
+| cgroup `swap` / host swap | **0 / 0** |
+| `memory.failcnt` | **0** |
+| **`memory.memsw.failcnt`** | **28,908,911** → **29,219,916** 26 min later (**≈ 200 failures/s**) |
+| `memory.max_usage_in_bytes` | 49,999,998,976 — **exactly the limit** |
+| `memory.oom_control` | `oom_kill_disable 0  under_oom 0  ` **`oom_kill 1`** |
+
+In cgroup v1, `try_charge()` charges **memsw first** and `page_counter_try_charge` increments
+`failcnt` on the counter it exceeded. With `memsw.limit <= memory.limit` and no swap — this
+container, and the ordinary Docker/RunPod default — **memsw absorbs every failure and
+`memory.failcnt` is pinned at 0 for the container's life, however hard the cap is hit.** The data
+prove it without the kernel source: a cgroup whose **peak usage equals its limit exactly** has
+certainly hit that limit, and `failcnt 0` beside it is only explicable by the memsw-first path.
+
+⇒ **The `rc=137` is EXPLAINED: a SIGKILL from the OOM killer.** The attempted
+`--batch 8 --accum 8 --v2-lru 64 --workers 8` projects to **≈51.2 GiB of UNRECLAIMABLE memory
+(`rss + shmem`) against a 46.57 GiB cap** — LRU **18.8 GiB** (measured 33.4 MB/clip × (8+1) × 64),
+4 extra workers **+8.1 GiB**, transport **+15.1 GiB**, on a 9.90 GiB base. It died at **3 min**,
+during DataLoader warm-up, which is exactly when that burst peaks. Full workings, and the seven
+alternatives refuted one by one (operator `kill -9` path, `memwatch`, supervisor guards, GPU fault,
+double-launch, CPU quota, MooseFS `Errno 5`): `…/incoming/2026-08-04-v5f-sigkill/V5F_SIGKILL.md`.
+
+**What still stands from `R-2026-08-03-mem`:** `memory.usage_in_bytes` counts reclaimable page cache
+and is **not** a pressure signal (37.2 GB of 50 at idle, `rss` 0.1 GB). That is correct, and the
+idle-baseline rule it bought is excellent. **Only the `failcnt` half fails.**
+
+⚠️ **Residual, stated rather than papered over:** `dmesg` is `Operation not permitted` in this
+container and `/dev/kmsg` is unreadable, so the kernel's own OOM report cannot be read from inside.
+`oom_kill` increments for a task in this memcg killed by **either** the memcg or the host's global
+OOM killer, so the two are **not formally separated** — host-OOM is strongly disfavoured (503 GiB
+host, 414 GiB available, zero swap) but not excluded. The RunPod console settles it in one look.
+
+**Root-cause class: NEW — C17, A COUNTER THAT IS STRUCTURALLY FROZEN FOR THIS CONFIGURATION, READ
+AS EVIDENCE OF ABSENCE.**
+This is the sibling of C-`R-2026-08-03-mem`'s *"a counter that aggregates something RECLAIMABLE,
+read as pressure"* — and it bit **the fix for that very error, in the same hour**. Note the shape:
+the earlier retraction's own closing rule (*"prefer the counter that only moves on the event you
+care about — `failcnt`"*) was **right**, and was then applied to a counter that **cannot move**. A
+correct rule aimed at the wrong instrument produces a confident wrong answer, and it inherits all
+the authority of the retraction that introduced it.
+⇒ **RULE: before reading a zero as absence, establish that the counter is ABLE to be non-zero.**
+A counter at 0 that *cannot* move and one that *did not* move are the same digit and opposite facts.
+Cheap general check: find a sibling counter that IS non-zero (`memory.memsw.failcnt` here), or
+induce the event once and confirm the counter responds.
+⇒ This is CLAUDE.md's *"absence found at ONE location is not absence"* in a cgroup costume: the
+generalisation is **absence found with ONE instrument is not absence.**
+
+| # | class | recognition signal |
+|---|---|---|
+| **C17** | **Structurally-frozen counter read as absence** | a zero is load-bearing, and nobody has shown the counter can be non-zero in this configuration |
+
+**Instrument shipped so this is not re-derived:** `stack/scripts/pod_kill_forensics.py`
+(+ `stack/tests/test_pod_kill_forensics.py`, 21 tests). `live_failcnt()` decides which `failcnt`
+can move and names the frozen one; `unreclaimable_bytes()` reports `rss + shmem` instead of
+`usage_in_bytes`; `oom_window()` **refuses to return a bare `oom_kill` count** without the
+container-start window (it read 6 then 0 on pod2 and was over-quoted); `decode_exit_code()` states
+that 137 is SIGKILL and **never** a CUDA OOM, which exits 1 with a traceback.
+
+⚠️ **Two corrections that travel with this.** (1) `V2CompressedCache`'s docstring said
+"~2-4 MB/clip"; the 256×640 lossless-PNG caches MEASURE **33.36 MB/clip** (n=40, reproduced) —
+**8-17× low**, and budgeting from it is what made the fatal config look affordable. Fixed in
+`v2_dataset.py`. (2) The *"GPU median ~39 %"* premise for the speed-up is **unstable**: on the same
+unchanged config, **median 33 % (n=20)** and, 20 min later, **median 99.5 % (n=12)** — utilisation
+is bimodal across the 16-step accumulation cycle. **The size of that prize is currently unmeasured**
+and should be re-measured with a step-synchronised instrument before a cutover is spent on it.
+
+---
+
+## R-2026-08-03-mem — ⛔ AMENDED 2026-08-04. Half of this entry is itself wrong.
+
+That entry retracted the container-OOM diagnosis of v5f's `rc=137` on two grounds. **One stands, one
+does not, and the `rc=137` is NOT unexplained.**
+
+| the entry's grounds | verdict |
+|---|---|
+| *"`memory.usage_in_bytes` counts reclaimable page cache and is not pressure"* | ✅ **STANDS** — measured at idle: `cache` 37.0 GB / `rss` 0.1 GB |
+| *"`memory.failcnt` was 0 throughout, so the cgroup never hit its limit"* | ⛔ **WRONG — that counter CANNOT MOVE on this cgroup** |
+
+**MEASURED, and I re-verified it myself before amending:**
+
+```
+memory.limit_in_bytes        49,999,998,976
+memory.memsw.limit_in_bytes  49,999,998,976   <- EQUAL, and swap is 0
+memory.max_usage_in_bytes    49,999,998,976   <- EXACTLY the limit
+memory.failcnt                            0   <- structurally frozen
+memory.memsw.failcnt             29,660,004   <- ~200 failures/second
+memory.oom_control            oom_kill 1
+```
+
+In cgroup v1, `try_charge()` charges **memsw first**. With `memsw.limit == limit` and no swap, memsw
+absorbs **every** failure and `memory.failcnt` can never increment. **A cgroup whose peak usage
+equals its limit has certainly hit it.**
+
+⇒ **The `rc=137` WAS a container memory-cgroup OOM kill.** Seven alternatives were refuted with
+artifacts — including my own tooling (my cutover script targeted only hardcoded PID 19412, sent a
+plain SIGTERM 7.5 min earlier and had no escalation line; `memwatch.sh` has no kill path and was
+created 6 min *after* the death), the supervisor guards (pod copy bit-identical to repo, md5
+`0daf4be6…`, sends no signal), a GPU fault (0 uncorrectable ECC — and **SIGKILL is never a CUDA OOM,
+which exits 1**), double-launch, CPU quota (**0.0 %** throttled) and MooseFS `Errno 5`.
+⚠️ **Residual, not papered over:** `dmesg` is denied here, so the memcg OOM killer cannot be formally
+separated from the host's global one. Host-OOM is strongly disfavoured but not excluded.
+
+⭐ **And the mechanism closes arithmetically.** `V2CompressedCache`'s LRU is **per-process**, and the
+measured mean payload is **33.36 MB/clip (n=40, reproduced)** — the class docstring claimed
+**"2–4 MB", 8–17× low**. The attempted config projects to **~51.2 GiB unreclaimable (`rss+shmem`)
+against a 46.57 GiB cap**: LRU 18.8 + 4 extra workers 8.1 + transport 15.1 on a 9.9 GiB base. It died
+at **3 minutes — during DataLoader warm-up, exactly when that burst peaks.**
+
+### Root-cause class: I REPLACED ONE UNVALIDATED COUNTER WITH ANOTHER
+
+Correcting the `usage_in_bytes` error, I reached for the nearest alternative counter and **never
+checked that IT could move**. `failcnt = 0` was not evidence of absence; it was **absence of
+evidence**, and I published it as a refutation.
+⇒ **RULE: a counter reading zero is evidence only if you have shown it CAN be non-zero.** Check an
+instrument's dynamic range before using it as a negative — the cheapest form is to find the sibling
+counter that *is* moving (`memsw.failcnt` here, at 200/s).
+⇒ **RULE: when you retract a measurement error, the replacement measurement needs MORE scrutiny than
+the original, not less.** A correction carries the authority of having just been careful, and that is
+exactly when an unvalidated instrument slips through.
+
+### Two operational facts that fall out of it
+
+1. ⛔ **`--v2-lru 64` must never be retried on this cache.** MEASURED: under `shuffle=True` over
+   410,202 windows / 2,400 clips it buys **~2.7 % hit rate for 18.8 GiB**.
+2. ⚠️ **The "GPU utilisation ~39 %" premise is UNSTABLE and the prize is currently unmeasured.** On
+   the *same unchanged config*: median **33 % (n=20)**, then **99.5 % (n=12)** twenty minutes later.
+   Utilisation is **bimodal across the 16-step accumulation cycle**, so any single median is an
+   artifact of when it was sampled. ⇒ **Re-measure with a step-synchronised instrument before
+   spending a cutover on it.** (I quoted 39 % to the PI as though it were stable; it is not.)
+
+---
+
+## R-2026-08-04-briefs — ⛔ TWO PREMISES I PUT INTO AGENT BRIEFS WERE WRONG, one of them load-bearing
+
+### 1. The anchor provenance — a synthetic rebuild would have silently invalidated every REF-C number
+
+**What I briefed** as established fact: *"`refc_anchors_full.pt` is reconstructible — `build_refc_anchors.py` is in the repo and the config records `{n 256, pool 4096, seed 0}`."*
+
+**MEASURED: that triple is `refc_xl_config()`'s UNUSED SYNTHETIC DEFAULT** (`MODEL_REGISTRY.md:1299/1309`), **not the file's provenance.** The real artifacts record **`pool_size 200000`** — the `--data-root` path. Corroborated three ways: `refc_anchors_small64.pt`'s own metadata, `flagship_v4_anchors_dense.pt`, and registry:1241's explicit *"not the synthetic default"*.
+
+⇒ **A rebuild on my premise would have produced a COMPLETELY DIFFERENT VOCABULARY that still loads
+with shape `[256, 4, 2]`** — and every REF-C comparison scored against it would have been silently
+invalid. The agent caught it before building.
+⇒ **RULE: a config default is not provenance.** A field present in a config object may be the value
+that was *used*, or the value that was *never overridden*. Read the artifact's own recorded metadata,
+not the constructor that could have made it.
+⇒ **RULE: a shape check is not an identity check.** `[256, 4, 2]` loads for any 256 anchors; the
+thing that would have failed loudly is the nesting relationship, which is why the rebuild was
+deliberately staged as `refc_anchors_full_REBUILD.pt` and **not** under the scoring name.
+*(The rebuild reproduces the same VOCABULARY, not the same BYTES: 59/64 rows bit-exact vs
+`small64`, 5 differ by ≤7.63e-06 m (≤64 ULP), **selection order preserved**; a second Thor run is
+`torch.equal` to the first, so it is cross-host float rounding, not nondeterminism. Architecture vs
+torch version could not be separated — stated, not guessed.)*
+
+### 2. The speed-stratification caveat I propagated is FALSE on the surface it was applied to
+
+**What I briefed**, twice: *"20.7 % of lead windows sit at 0–1 m/s where the metric cannot
+discriminate, and the 15+ m/s band is UNPOWERED (n=2)."*
+
+**MEASURED on the canonical val40 — both claims INVERT:** the **15+ m/s band is the LARGEST
+lead-bearing band (88 leads)**, and the 0–1 m/s crawl defect is **1.9 %, not 20.7 %**. Verified four
+ways (max speed-source disagreement 0.002 m/s).
+
+**Root-cause class: a caveat measured on ONE corpus surface (R0) quoted as a property of THE METRIC.**
+It was true where it was measured and false where I applied it — and because it was a *caveat*, it
+read as conservative rather than as a claim needing its own evidence.
+⇒ **RULE: a stratification caveat carries its surface, exactly like a throughput number carries its
+endpoints.** "n=2 in the top band" is a fact about a dataset, never about an instrument.
+⇒ **RULE: conservative-sounding claims still need evidence classes.** A caveat that discourages work
+can do as much damage as an optimistic claim that invites it.
+
+### 3. Also fixed here — an instrument that could not certify ANY Thor run
+
+Both Thor efficiency runs came back quarantined as `.CONTAMINATED-*`. **Not contention:** Tegra's
+`nvidia-smi` returns `[N/A]` for `memory.used`, `float()` raised inside `_gpu_state`'s **single
+shared `try`**, and the `--query-compute-apps` probe on the following lines **never ran**, leaving
+`exclusive = null` — not `False`. `taniteval.efficiency` was **structurally unable to certify any
+Thor run**, and would have reported that as contention forever. Fixed with a defensive `_num()` and
+independent try blocks, +2 regression tests.
+⇒ **RULE: one `try` around several probes converts a failure in the first into silence from all of
+them.** Same family as the bare `except` that hid the `min_steps` TypeError and made a nav fallback
+that had never once executed look like a working default.

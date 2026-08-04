@@ -321,6 +321,60 @@ class RouteV3Dataset(RouteV21Dataset):
 
 # ---- losses ------------------------------------------------------------------
 
+def ranked_score_loss(ce_score: torch.Tensor, ce_err: torch.Tensor, *,
+                      objective: str = "ce", tau: float = 0.0,
+                      weight: float = 1.0) -> torch.Tensor:
+    """E-OBJ-1 — the ranked-score objective, as ONE function so it is testable.
+
+    ``ce_score`` [B, N] the ranked score (already masked to ``min/4`` off the survivor set when
+    ``sel_ce_reach`` is on); ``ce_err`` [B, N] the per-candidate fan error (``+inf`` off that
+    same set). The three objectives share support, masking and shape and differ ONLY in what
+    they ask of the score:
+
+    ``ce`` (INCUMBENT)
+        ``F.cross_entropy(ce_score, argmin ce_err)`` — a ONE-HOT target over ~128 near-duplicate
+        candidates, so the candidate that missed by a centimetre is penalised exactly as hard as
+        the one that missed by ten metres.
+    ``softade``
+        ``E_{i~softmax(ce_score)}[ce_err_i]`` — METRIC-AWARE. ⭐ MEASURED (E-OBJ-1, frozen 30 k
+        weights, 881 windows, LOEO, paired episode-cluster bootstrap) to recover −0.0974 m
+        (base) / −0.1670 m (XL) of a fitted ranker's deficit, separated, and the recovery is
+        LONGITUDINAL (``speed_abs`` −0.1102 / −0.1816).
+    ``softce``
+        ``CE(ce_score, softmax(−ce_err/tau))`` — the CE FORM with a softened TARGET. ⚠️ MEASURED
+        SEPARATED **WORSE** than the incumbent (+0.0909 m base) at every tau in {0.1, 0.25, 0.5}.
+        It is the CONTROL that separates metric-awareness from target-softness, not a candidate.
+
+    ⛔ ``ce_err`` is DETACHED in every branch. It is differentiable w.r.t. ``anchor_traj``, so
+    without the detach ``softade`` would also push the FAN and would stop being a SELECTION
+    objective — confounding it with a trajectory objective and making the arm unattributable.
+    The incumbent detaches its own target (``r_star.detach()``) for exactly this reason.
+
+    ⛔ ``weight`` is applied ONLY off the ``ce`` path, so the incumbent stays bit-identical.
+    It exists because ``softade`` is in METRES while the CE is in NATS.
+    """
+    err = ce_err.detach()
+    if objective == "softade":
+        # +inf * 0 is NaN. `softmax(ce_score)` is ~0 exactly where `ce_err` is +inf (both are
+        # masked on the same set), so replacing those entries with 0 changes nothing that is
+        # weighted and removes the NaN by construction rather than by luck.
+        err0 = torch.where(torch.isfinite(err), err, torch.zeros_like(err))
+        loss = (torch.softmax(ce_score, dim=1) * err0).sum(1).mean()
+    elif objective == "softce":
+        if not tau > 0.0:
+            raise ValueError("softce needs tau > 0 (tau -> 0 IS the one-hot target)")
+        # `reach_keep` always leaves >= 1 survivor per row (the decoder's own empty-set
+        # fallback), so this softmax always has a finite maximum to subtract and the target is
+        # exactly 0 wherever `log_softmax` is most negative.
+        q = torch.softmax(-err / float(tau), dim=1)
+        loss = -(q * F.log_softmax(ce_score, dim=1)).sum(1).mean()
+    elif objective == "ce":
+        loss = F.cross_entropy(ce_score, err.argmin(dim=1))
+    else:
+        raise ValueError(f"unknown sel_ce_objective {objective!r}")
+    return loss if objective == "ce" else float(weight) * loss
+
+
 def compute_losses(model: RefCModel, batch: dict, device: str = "cpu",
                    mode: str = "diffusion") -> dict:
     """One forward pass -> all loss components (tensors, differentiable).
@@ -412,7 +466,9 @@ def compute_losses(model: RefCModel, batch: dict, device: str = "cpu",
             ce_score = out["sel_score"].masked_fill(
                 ~keep, torch.finfo(out["sel_score"].dtype).min / 4)
         r_star = ce_err.argmin(dim=1)                       # [B] oracle index
-        loss_rcls = F.cross_entropy(ce_score, r_star.detach())
+        loss_rcls = ranked_score_loss(
+            ce_score, ce_err, objective=cfg.sel_ce_objective,
+            tau=cfg.sel_ce_soft_tau, weight=cfg.sel_ce_weight)
         with torch.no_grad():
             oracle = fan_err.min(dim=1).values
             sel_err = fan_err[ar, out["sel_idx"]]
@@ -724,10 +780,74 @@ def train(args) -> dict:
             "and that set is S2's reachability mask - with S2 off there is no "
             "mask, and the flag would be SILENTLY INERT while config.json "
             "recorded it as ON.")
+    # E-OBJ-1 - THE SAME SILENTLY-INERT CLASS, a third time. `loss_rcls` is only
+    # BUILT when one of `sel_refined` / `graft_cons` / `graft_route` is on; with
+    # all three off there is no ranked-score CE at all, so changing its objective
+    # would change nothing while config.json recorded a treatment. Refuse at parse
+    # time, not after a GPU-day.
+    if str(args.sel_ce_objective) not in ("ce", "softade", "softce"):
+        raise SystemExit("--sel-ce-objective must be ce | softade | softce")
+    if float(args.sel_ce_soft_tau) < 0.0:
+        raise SystemExit("--sel-ce-soft-tau must be >= 0 (0 = the incumbent "
+                         "one-hot target). A negative temperature would put the "
+                         "CE's mass on the WORST candidate.")
+    _obj_on = (str(args.sel_ce_objective) != "ce"
+               or float(args.sel_ce_soft_tau) > 0.0)
+    if _obj_on and not (bool(args.sel_refined) or bool(args.graft_cons)
+                        or bool(args.graft_route)):
+        raise SystemExit(
+            "--sel-ce-objective / --sel-ce-soft-tau require one of --sel-refined "
+            "/ --graft-cons / --graft-route. `loss_rcls` is only constructed when "
+            "a lever touches the ranked score; with none on there is no "
+            "ranked-score objective to change and the flag would be SILENTLY "
+            "INERT while config.json recorded it as ON.")
+    if str(args.sel_ce_objective) == "softce" and float(args.sel_ce_soft_tau) <= 0.0:
+        raise SystemExit("--sel-ce-objective softce requires --sel-ce-soft-tau > 0 "
+                         "(tau -> 0 IS the incumbent one-hot target, so tau = 0 "
+                         "would make the flag inert).")
+    if float(args.sel_ce_soft_tau) > 0.0 and str(args.sel_ce_objective) != "softce":
+        raise SystemExit("--sel-ce-soft-tau is only read by --sel-ce-objective "
+                         "softce; passing it with ce or softade would record a "
+                         "parameter the run never uses — the same silently-inert "
+                         "class the other D-SEL guards exist for.")
+    if str(args.sel_ce_objective) == "softce":
+        # ⚠️ MEASURED, and loud, because this arm is a CONTROL and not a candidate.
+        # E-OBJ-1, refc-base-30k, 881 windows, frozen 30 k weights, LOEO selection
+        # ADE@2s over the S2-reachable survivors, paired episode-cluster bootstrap:
+        # softening the TARGET is +0.0909 m WORSE than the incumbent one-hot CE and
+        # +0.1883 m worse than the metric-aware objective, separated, at every tau
+        # in {0.1, 0.25, 0.5}.
+        print("[e-obj] ⚠️ --sel-ce-objective softce is the CONTROL arm, not the "
+              "candidate. MEASURED at frozen 30 k weights it is +0.0909 m WORSE "
+              "than the incumbent CE and +0.1883 m worse than `softade`, "
+              "separated, at every tau tested. It exists so a `softade` arm can "
+              "separate METRIC-AWARENESS from TARGET-SOFTNESS.", flush=True)
+    if str(args.sel_ce_objective) == "softade":
+        # ⚠️ THE SCALE CHANGE, stated where it cannot be missed. `loss_rcls` moves
+        # from NATS to METRES and REFINED_CLS_WEIGHT (1.0) was calibrated for the
+        # former. This is not a detail: it silently re-weights the whole selection
+        # term against LAW, maneuver and trajectory losses.
+        print(f"[e-obj] ⚠️ --sel-ce-objective softade changes `loss_rcls` from a "
+              f"cross-entropy in NATS to an expected error in METRES. "
+              f"REFINED_CLS_WEIGHT is {REFINED_CLS_WEIGHT} and was calibrated for "
+              f"the CE scale, so --sel-ce-weight (now "
+              f"{float(args.sel_ce_weight)}) is the knob that decides how the "
+              f"selection term weighs against LAW / maneuver / trajectory. "
+              f"Decide it EXPLICITLY; leaving it at 1.0 is a CHOICE, not a "
+              f"default.", flush=True)
+    if (float(args.sel_ce_weight) != 1.0
+            and str(args.sel_ce_objective) == "ce"):
+        raise SystemExit("--sel-ce-weight is only applied off the incumbent "
+                         "objective. Passing it with --sel-ce-objective ce would "
+                         "record a number the run never uses (the incumbent path "
+                         "is kept bit-identical on purpose).")
     # --- D-SEL: the selection surface (gated BEFORE build, module presence) ---
     cfg.sel_refined = bool(args.sel_refined)
     cfg.sel_score_emitted = bool(args.sel_score_emitted)
     cfg.sel_score_emitted_t = int(args.sel_score_emitted_t)
+    cfg.sel_ce_objective = str(args.sel_ce_objective)
+    cfg.sel_ce_soft_tau = float(args.sel_ce_soft_tau)
+    cfg.sel_ce_weight = float(args.sel_ce_weight)
     cfg.sel_ce_reach = bool(args.sel_ce_reach)
     cfg.sel_reach_clamp = bool(args.sel_reach_clamp)
     cfg.sel_accel_max = float(args.sel_accel_max)
@@ -834,6 +954,16 @@ def train(args) -> dict:
         "s1b_inert_because_classifier_mode": (cfg.sel_score_emitted
                                               and args.mode == "classifier"),
         "ce_support": ("reachable_only" if cfg.sel_ce_reach else "full_fan"),
+        # E-OBJ-1 — WHICH objective the ranked score is trained under, and at what
+        # weight. Recorded in the banner (not only in config.json) because a run
+        # whose selection loss changed UNITS must not be readable as the control.
+        "sel_ce_objective": cfg.sel_ce_objective,
+        "sel_ce_soft_tau": cfg.sel_ce_soft_tau,
+        "sel_ce_weight": cfg.sel_ce_weight,
+        "sel_ce_units": ("metres" if cfg.sel_ce_objective == "softade" else "nats"),
+        "sel_ce_objective_inert_because_no_ranked_score": (
+            cfg.sel_ce_objective != "ce"
+            and not (cfg.sel_refined or cfg.graft_cons or cfg.graft_route)),
     }
     print(json.dumps({"d_sel": dsel_row}), flush=True)
 
@@ -1120,6 +1250,32 @@ def main(argv=None):
                          "survivor set the argmax ranks over, with its target "
                          "the best candidate IN that set. REQUIRES "
                          "--sel-reach-clamp. 0 parameters.")
+    ap.add_argument("--sel-ce-objective", default="ce",
+                    choices=("ce", "softade", "softce"),
+                    help="E-OBJ-1: WHICH objective trains the ranked score. "
+                         "`ce` (default) is the incumbent one-hot CE, "
+                         "bit-unchanged. `softade` is the METRIC-AWARE expected "
+                         "fan error under the score's own softmax — MEASURED at "
+                         "frozen weights to recover -0.0974 m (base) / -0.1670 m "
+                         "(XL) of a fitted ranker's deficit, separated, and the "
+                         "recovery is LONGITUDINAL. `softce` softens the CE's "
+                         "TARGET instead and is MEASURED SEPARATED WORSE than the "
+                         "incumbent (+0.0909 m) — it exists as the CONTROL that "
+                         "separates metric-awareness from target-softness, not as "
+                         "a candidate. 0 parameters, all three.")
+    ap.add_argument("--sel-ce-soft-tau", type=float, default=0.0,
+                    help="temperature of the softened CE target, read ONLY by "
+                         "--sel-ce-objective softce. tau -> 0 IS the incumbent "
+                         "one-hot target by construction. 0 parameters.")
+    ap.add_argument("--sel-ce-weight", type=float, default=1.0,
+                    help="multiplier on `loss_rcls`, applied ONLY when "
+                         "--sel-ce-objective is not `ce`. It exists because "
+                         "`softade` is in METRES while the CE is in NATS and "
+                         "REFINED_CLS_WEIGHT was calibrated for the latter — "
+                         "leaving this at 1.0 is a CHOICE about how selection "
+                         "weighs against LAW / maneuver / trajectory, not a "
+                         "default. Refused on the `ce` path so no inert number "
+                         "is recorded.")
     ap.add_argument("--sel-refined", action="store_true",
                     help="S1: rank the refined fan with the REFINED confidence "
                          "and supervise it (adds the cls_refined CE). Today the "

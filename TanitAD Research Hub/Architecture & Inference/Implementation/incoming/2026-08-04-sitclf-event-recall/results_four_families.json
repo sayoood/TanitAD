@@ -1,0 +1,2936 @@
+{
+ "_what": "the four BINDING families for the SHARED-re-tune candidates vs the frozen cell",
+ "_binding": "CLAUDE.md 2026-08-02 \u2014 a ranking metric alone is an INCOMPLETE result",
+ "_ego_block": "CAUSAL rebuild (sitclf_b4_substrate.ego_causal.npz). The quarantined legacy leaky block is also run, as ::legacy_ego, so the difference is measured not asserted.",
+ "_vision_only": "ego is the STRATIFICATION variable only; no arm reads it as an input",
+ "_powered": "verdicts are issued for lane_change (55 pos clusters) and intersection (216) only. roundabout has 37 against a bar of 40 -> UNDERPOWERED_C_POW, reported with its n, bar NOT lowered.",
+ "n_boot": 2000,
+ "strata_n_boot": 500,
+ "situations": {
+  "lane_change::CELL_w8_L1.0": {
+   "situation": "lane_change",
+   "families": {
+    "TACTICAL": {
+     "_what": "situation anticipation = the tactical decision. AP and AP-lift per situation; the paired delta is the decision-quality change.",
+     "n_rows_scored": 56979,
+     "n_rows_dropped_nonfinite": 0,
+     "base_rate": 0.025834,
+     "n_pos": 1472,
+     "ap": {
+      "CELL_w8_L1.0": 0.03454,
+      "CELL_w8_L3.0": 0.03339
+     },
+     "ap_lift": {
+      "CELL_w8_L1.0": 1.33706,
+      "CELL_w8_L3.0": 1.29263
+     },
+     "paired_delta_ap_lift": {
+      "delta": 0.04443,
+      "lo": -0.06526,
+      "hi": 0.23156,
+      "ci95": 0.14841,
+      "p_delta_gt0": 0.7825,
+      "separated": false,
+      "statistic": "ap_lift",
+      "ap_a": 1.33706,
+      "ap_b": 1.29263,
+      "base_rate": 0.025834,
+      "n_pos": 1472,
+      "n_windows": 56979,
+      "n_episodes": 500,
+      "n_boot": 2000,
+      "n_boot_valid": 2000,
+      "estimator": "paired_ap_episode_cluster_bootstrap"
+     },
+     "single_arm_ci": {
+      "CELL_w8_L1.0": {
+       "point": 1.33706,
+       "lo": 1.08984,
+       "hi": 1.74413,
+       "ci95": 0.32714,
+       "se": 0.16831,
+       "statistic": "ap_lift",
+       "base_rate": 0.025834,
+       "n_pos": 1472,
+       "n_windows": 56979,
+       "n_episodes": 500,
+       "n_boot": 2000,
+       "n_boot_valid": 2000,
+       "estimator": "ap_episode_cluster_bootstrap",
+       "_lo_raw": 1.089843980907006,
+       "_hi_raw": 1.7441288029716926
+      },
+      "CELL_w8_L3.0": {
+       "point": 1.29263,
+       "lo": 1.07346,
+       "hi": 1.58934,
+       "ci95": 0.25794,
+       "se": 0.13442,
+       "statistic": "ap_lift",
+       "base_rate": 0.025834,
+       "n_pos": 1472,
+       "n_windows": 56979,
+       "n_episodes": 500,
+       "n_boot": 2000,
+       "n_boot_valid": 2000,
+       "estimator": "ap_episode_cluster_bootstrap",
+       "_lo_raw": 1.0734629717321527,
+       "_hi_raw": 1.5893441573748575
+      }
+     },
+     "anticipation_lead": {
+      "CELL_w8_L1.0": {
+       "median_lead_s": 2.3,
+       "n_runs": 70,
+       "n_runs_no_alarm": 57,
+       "n_alarm_rows": 2849,
+       "top_frac": 0.05
+      },
+      "CELL_w8_L3.0": {
+       "median_lead_s": 2.4,
+       "n_runs": 70,
+       "n_runs_no_alarm": 63,
+       "n_alarm_rows": 2849,
+       "top_frac": 0.05
+      }
+     },
+     "operating_point_5pct": {
+      "CELL_w8_L1.0": {
+       "top_frac": 0.05,
+       "n_scorable": 56979,
+       "n_alarm": 2849,
+       "n_pos": 1472,
+       "tp": 99,
+       "precision": 0.03475,
+       "recall": 0.06726,
+       "base_rate": 0.025834,
+       "precision_lift": 1.34509
+      },
+      "CELL_w8_L3.0": {
+       "top_frac": 0.05,
+       "n_scorable": 56979,
+       "n_alarm": 2849,
+       "n_pos": 1472,
+       "tp": 65,
+       "precision": 0.02282,
+       "recall": 0.04416,
+       "base_rate": 0.025834,
+       "precision_lift": 0.88314
+      }
+     }
+    },
+    "LONGITUDINAL": {
+     "_what": "a classification target has no predicted speed/headway (LONGITUDINAL) or heading/curvature/cross-track (LATERAL) to score, so the family is reported as decision quality STRATIFIED BY REGIME: does the change hold where the ego is actually decelerating / turning?",
+     "_not_computable": "target-speed accuracy, headway/time-gap/TTC",
+     "_not_computable_reason": "the arm emits a per-frame situation probability, not a trajectory",
+     "strata": {
+      "decelerating": {
+       "n_rows": 12659,
+       "n_pos": 85,
+       "base_rate": 0.006715,
+       "ap_lift": {
+        "CELL_w8_L1.0": 2.0193,
+        "CELL_w8_L3.0": 2.17299
+       },
+       "paired_delta_ap_lift": {
+        "delta": -0.15369,
+        "lo": -0.90725,
+        "hi": 0.65816,
+        "ci95": 0.78271,
+        "p_delta_gt0": 0.2385,
+        "separated": false,
+        "statistic": "ap_lift",
+        "ap_a": 2.0193,
+        "ap_b": 2.17299,
+        "base_rate": 0.006715,
+        "n_pos": 85,
+        "n_windows": 12659,
+        "n_episodes": 366,
+        "n_boot": 500,
+        "n_boot_valid": 499,
+        "estimator": "paired_ap_episode_cluster_bootstrap"
+       }
+      },
+      "steady": {
+       "n_rows": 26732,
+       "n_pos": 705,
+       "base_rate": 0.026373,
+       "ap_lift": {
+        "CELL_w8_L1.0": 1.34707,
+        "CELL_w8_L3.0": 1.32094
+       },
+       "paired_delta_ap_lift": {
+        "delta": 0.02613,
+        "lo": -0.06396,
+        "hi": 0.11666,
+        "ci95": 0.09031,
+        "p_delta_gt0": 0.666,
+        "separated": false,
+        "statistic": "ap_lift",
+        "ap_a": 1.34707,
+        "ap_b": 1.32094,
+        "base_rate": 0.026373,
+        "n_pos": 705,
+        "n_windows": 26732,
+        "n_episodes": 499,
+        "n_boot": 500,
+        "n_boot_valid": 500,
+        "estimator": "paired_ap_episode_cluster_bootstrap"
+       }
+      },
+      "accelerating": {
+       "n_rows": 17588,
+       "n_pos": 682,
+       "base_rate": 0.038776,
+       "ap_lift": {
+        "CELL_w8_L1.0": 1.26681,
+        "CELL_w8_L3.0": 1.20016
+       },
+       "paired_delta_ap_lift": {
+        "delta": 0.06665,
+        "lo": -0.11142,
+        "hi": 0.60081,
+        "ci95": 0.35612,
+        "p_delta_gt0": 0.718,
+        "separated": false,
+        "statistic": "ap_lift",
+        "ap_a": 1.26681,
+        "ap_b": 1.20016,
+        "base_rate": 0.038776,
+        "n_pos": 682,
+        "n_windows": 17588,
+        "n_episodes": 415,
+        "n_boot": 500,
+        "n_boot_valid": 500,
+        "estimator": "paired_ap_episode_cluster_bootstrap"
+       }
+      },
+      "low_speed_lt8": {
+       "n_rows": 42508,
+       "n_pos": 605,
+       "base_rate": 0.014233,
+       "ap_lift": {
+        "CELL_w8_L1.0": 1.3176,
+        "CELL_w8_L3.0": 1.24526
+       },
+       "paired_delta_ap_lift": {
+        "delta": 0.07234,
+        "lo": -0.07747,
+        "hi": 0.41679,
+        "ci95": 0.24713,
+        "p_delta_gt0": 0.83,
+        "separated": false,
+        "statistic": "ap_lift",
+        "ap_a": 1.3176,
+        "ap_b": 1.24526,
+        "base_rate": 0.014233,
+        "n_pos": 605,
+        "n_windows": 42508,
+        "n_episodes": 488,
+        "n_boot": 500,
+        "n_boot_valid": 500,
+        "estimator": "paired_ap_episode_cluster_bootstrap"
+       }
+      },
+      "cruise_ge8": {
+       "n_rows": 14471,
+       "n_pos": 867,
+       "base_rate": 0.059913,
+       "ap_lift": {
+        "CELL_w8_L1.0": 1.24571,
+        "CELL_w8_L3.0": 1.17382
+       },
+       "paired_delta_ap_lift": {
+        "delta": 0.07189,
+        "lo": -0.07333,
+        "hi": 0.54838,
+        "ci95": 0.31086,
+        "p_delta_gt0": 0.836,
+        "separated": false,
+        "statistic": "ap_lift",
+        "ap_a": 1.24571,
+        "ap_b": 1.17382,
+        "base_rate": 0.059913,
+        "n_pos": 867,
+        "n_windows": 14471,
+        "n_episodes": 340,
+        "n_boot": 500,
+        "n_boot_valid": 500,
+        "estimator": "paired_ap_episode_cluster_bootstrap"
+       }
+      }
+     }
+    },
+    "LATERAL": {
+     "_what": "a classification target has no predicted speed/headway (LONGITUDINAL) or heading/curvature/cross-track (LATERAL) to score, so the family is reported as decision quality STRATIFIED BY REGIME: does the change hold where the ego is actually decelerating / turning?",
+     "_not_computable": "heading, curvature, yaw-rate, cross-track error",
+     "_not_computable_reason": "the arm emits a per-frame situation probability, not a trajectory",
+     "strata": {
+      "straight": {
+       "n_rows": 32632,
+       "n_pos": 405,
+       "base_rate": 0.012411,
+       "ap_lift": {
+        "CELL_w8_L1.0": 1.8007,
+        "CELL_w8_L3.0": 1.60634
+       },
+       "paired_delta_ap_lift": {
+        "delta": 0.19437,
+        "lo": -0.1675,
+        "hi": 0.79355,
+        "ci95": 0.48052,
+        "p_delta_gt0": 0.874,
+        "separated": false,
+        "statistic": "ap_lift",
+        "ap_a": 1.8007,
+        "ap_b": 1.60634,
+        "base_rate": 0.012411,
+        "n_pos": 405,
+        "n_windows": 32632,
+        "n_episodes": 492,
+        "n_boot": 500,
+        "n_boot_valid": 500,
+        "estimator": "paired_ap_episode_cluster_bootstrap"
+       }
+      },
+      "turning": {
+       "n_rows": 24347,
+       "n_pos": 1067,
+       "base_rate": 0.043825,
+       "ap_lift": {
+        "CELL_w8_L1.0": 0.9729,
+        "CELL_w8_L3.0": 0.96502
+       },
+       "paired_delta_ap_lift": {
+        "delta": 0.00788,
+        "lo": -0.07343,
+        "hi": 0.19076,
+        "ci95": 0.13209,
+        "p_delta_gt0": 0.55,
+        "separated": false,
+        "statistic": "ap_lift",
+        "ap_a": 0.9729,
+        "ap_b": 0.96502,
+        "base_rate": 0.043825,
+        "n_pos": 1067,
+        "n_windows": 24347,
+        "n_episodes": 459,
+        "n_boot": 500,
+        "n_boot_valid": 500,
+        "estimator": "paired_ap_episode_cluster_bootstrap"
+       }
+      }
+     }
+    },
+    "STRATEGIC": {
+     "_status": "UNAVAILABLE",
+     "_reason": "no route/goal/map label exists on PhysicalAI-AV \u2014 settled at five probes (no map, lane graph, junction annotation or route signal; egomotion is clip-local metres with no GNSS), so there is no strategic target to score this arm against.",
+     "n_rows": 56979
+    }
+   },
+   "estimator": "paired_ap_episode_cluster_bootstrap (episode-cluster, paired)",
+   "n_clusters": 500,
+   "n_boot": 2000
+  },
+  "lane_change::CELL_w32_L1.0": {
+   "situation": "lane_change",
+   "families": {
+    "TACTICAL": {
+     "_what": "situation anticipation = the tactical decision. AP and AP-lift per situation; the paired delta is the decision-quality change.",
+     "n_rows_scored": 56979,
+     "n_rows_dropped_nonfinite": 0,
+     "base_rate": 0.025834,
+     "n_pos": 1472,
+     "ap": {
+      "CELL_w32_L1.0": 0.0381,
+      "CELL_w8_L3.0": 0.03339
+     },
+     "ap_lift": {
+      "CELL_w32_L1.0": 1.47462,
+      "CELL_w8_L3.0": 1.29263
+     },
+     "paired_delta_ap_lift": {
+      "delta": 0.18199,
+      "lo": -0.0471,
+      "hi": 0.48394,
+      "ci95": 0.26552,
+      "p_delta_gt0": 0.9355,
+      "separated": false,
+      "statistic": "ap_lift",
+      "ap_a": 1.47462,
+      "ap_b": 1.29263,
+      "base_rate": 0.025834,
+      "n_pos": 1472,
+      "n_windows": 56979,
+      "n_episodes": 500,
+      "n_boot": 2000,
+      "n_boot_valid": 2000,
+      "estimator": "paired_ap_episode_cluster_bootstrap"
+     },
+     "single_arm_ci": {
+      "CELL_w32_L1.0": {
+       "point": 1.47462,
+       "lo": 1.20666,
+       "hi": 1.88969,
+       "ci95": 0.34152,
+       "se": 0.17357,
+       "statistic": "ap_lift",
+       "base_rate": 0.025834,
+       "n_pos": 1472,
+       "n_windows": 56979,
+       "n_episodes": 500,
+       "n_boot": 2000,
+       "n_boot_valid": 2000,
+       "estimator": "ap_episode_cluster_bootstrap",
+       "_lo_raw": 1.2066608051108372,
+       "_hi_raw": 1.8896924512602136
+      },
+      "CELL_w8_L3.0": {
+       "point": 1.29263,
+       "lo": 1.07346,
+       "hi": 1.58934,
+       "ci95": 0.25794,
+       "se": 0.13442,
+       "statistic": "ap_lift",
+       "base_rate": 0.025834,
+       "n_pos": 1472,
+       "n_windows": 56979,
+       "n_episodes": 500,
+       "n_boot": 2000,
+       "n_boot_valid": 2000,
+       "estimator": "ap_episode_cluster_bootstrap",
+       "_lo_raw": 1.0734629717321527,
+       "_hi_raw": 1.5893441573748575
+      }
+     },
+     "anticipation_lead": {
+      "CELL_w32_L1.0": {
+       "median_lead_s": 1.8,
+       "n_runs": 70,
+       "n_runs_no_alarm": 45,
+       "n_alarm_rows": 2849,
+       "top_frac": 0.05
+      },
+      "CELL_w8_L3.0": {
+       "median_lead_s": 2.4,
+       "n_runs": 70,
+       "n_runs_no_alarm": 63,
+       "n_alarm_rows": 2849,
+       "top_frac": 0.05
+      }
+     },
+     "operating_point_5pct": {
+      "CELL_w32_L1.0": {
+       "top_frac": 0.05,
+       "n_scorable": 56979,
+       "n_alarm": 2849,
+       "n_pos": 1472,
+       "tp": 159,
+       "precision": 0.05581,
+       "recall": 0.10802,
+       "base_rate": 0.025834,
+       "precision_lift": 2.16029
+      },
+      "CELL_w8_L3.0": {
+       "top_frac": 0.05,
+       "n_scorable": 56979,
+       "n_alarm": 2849,
+       "n_pos": 1472,
+       "tp": 65,
+       "precision": 0.02282,
+       "recall": 0.04416,
+       "base_rate": 0.025834,
+       "precision_lift": 0.88314
+      }
+     }
+    },
+    "LONGITUDINAL": {
+     "_what": "a classification target has no predicted speed/headway (LONGITUDINAL) or heading/curvature/cross-track (LATERAL) to score, so the family is reported as decision quality STRATIFIED BY REGIME: does the change hold where the ego is actually decelerating / turning?",
+     "_not_computable": "target-speed accuracy, headway/time-gap/TTC",
+     "_not_computable_reason": "the arm emits a per-frame situation probability, not a trajectory",
+     "strata": {
+      "decelerating": {
+       "n_rows": 12659,
+       "n_pos": 85,
+       "base_rate": 0.006715,
+       "ap_lift": {
+        "CELL_w32_L1.0": 3.08001,
+        "CELL_w8_L3.0": 2.17299
+       },
+       "paired_delta_ap_lift": {
+        "delta": 0.90702,
+        "lo": -0.68139,
+        "hi": 5.20056,
+        "ci95": 2.94097,
+        "p_delta_gt0": 0.8277,
+        "separated": false,
+        "statistic": "ap_lift",
+        "ap_a": 3.08001,
+        "ap_b": 2.17299,
+        "base_rate": 0.006715,
+        "n_pos": 85,
+        "n_windows": 12659,
+        "n_episodes": 366,
+        "n_boot": 500,
+        "n_boot_valid": 499,
+        "estimator": "paired_ap_episode_cluster_bootstrap"
+       }
+      },
+      "steady": {
+       "n_rows": 26732,
+       "n_pos": 705,
+       "base_rate": 0.026373,
+       "ap_lift": {
+        "CELL_w32_L1.0": 1.57987,
+        "CELL_w8_L3.0": 1.32094
+       },
+       "paired_delta_ap_lift": {
+        "delta": 0.25893,
+        "lo": 4e-05,
+        "hi": 0.62295,
+        "ci95": 0.31146,
+        "p_delta_gt0": 0.976,
+        "separated": true,
+        "statistic": "ap_lift",
+        "ap_a": 1.57987,
+        "ap_b": 1.32094,
+        "base_rate": 0.026373,
+        "n_pos": 705,
+        "n_windows": 26732,
+        "n_episodes": 499,
+        "n_boot": 500,
+        "n_boot_valid": 500,
+        "estimator": "paired_ap_episode_cluster_bootstrap"
+       }
+      },
+      "accelerating": {
+       "n_rows": 17588,
+       "n_pos": 682,
+       "base_rate": 0.038776,
+       "ap_lift": {
+        "CELL_w32_L1.0": 1.29201,
+        "CELL_w8_L3.0": 1.20016
+       },
+       "paired_delta_ap_lift": {
+        "delta": 0.09185,
+        "lo": -0.24124,
+        "hi": 0.43989,
+        "ci95": 0.34057,
+        "p_delta_gt0": 0.716,
+        "separated": false,
+        "statistic": "ap_lift",
+        "ap_a": 1.29201,
+        "ap_b": 1.20016,
+        "base_rate": 0.038776,
+        "n_pos": 682,
+        "n_windows": 17588,
+        "n_episodes": 415,
+        "n_boot": 500,
+        "n_boot_valid": 500,
+        "estimator": "paired_ap_episode_cluster_bootstrap"
+       }
+      },
+      "low_speed_lt8": {
+       "n_rows": 42508,
+       "n_pos": 605,
+       "base_rate": 0.014233,
+       "ap_lift": {
+        "CELL_w32_L1.0": 1.45615,
+        "CELL_w8_L3.0": 1.24526
+       },
+       "paired_delta_ap_lift": {
+        "delta": 0.21089,
+        "lo": -0.14967,
+        "hi": 0.95379,
+        "ci95": 0.55173,
+        "p_delta_gt0": 0.872,
+        "separated": false,
+        "statistic": "ap_lift",
+        "ap_a": 1.45615,
+        "ap_b": 1.24526,
+        "base_rate": 0.014233,
+        "n_pos": 605,
+        "n_windows": 42508,
+        "n_episodes": 488,
+        "n_boot": 500,
+        "n_boot_valid": 500,
+        "estimator": "paired_ap_episode_cluster_bootstrap"
+       }
+      },
+      "cruise_ge8": {
+       "n_rows": 14471,
+       "n_pos": 867,
+       "base_rate": 0.059913,
+       "ap_lift": {
+        "CELL_w32_L1.0": 1.36326,
+        "CELL_w8_L3.0": 1.17382
+       },
+       "paired_delta_ap_lift": {
+        "delta": 0.18944,
+        "lo": -0.14405,
+        "hi": 0.45629,
+        "ci95": 0.30017,
+        "p_delta_gt0": 0.89,
+        "separated": false,
+        "statistic": "ap_lift",
+        "ap_a": 1.36326,
+        "ap_b": 1.17382,
+        "base_rate": 0.059913,
+        "n_pos": 867,
+        "n_windows": 14471,
+        "n_episodes": 340,
+        "n_boot": 500,
+        "n_boot_valid": 500,
+        "estimator": "paired_ap_episode_cluster_bootstrap"
+       }
+      }
+     }
+    },
+    "LATERAL": {
+     "_what": "a classification target has no predicted speed/headway (LONGITUDINAL) or heading/curvature/cross-track (LATERAL) to score, so the family is reported as decision quality STRATIFIED BY REGIME: does the change hold where the ego is actually decelerating / turning?",
+     "_not_computable": "heading, curvature, yaw-rate, cross-track error",
+     "_not_computable_reason": "the arm emits a per-frame situation probability, not a trajectory",
+     "strata": {
+      "straight": {
+       "n_rows": 32632,
+       "n_pos": 405,
+       "base_rate": 0.012411,
+       "ap_lift": {
+        "CELL_w32_L1.0": 1.645,
+        "CELL_w8_L3.0": 1.60634
+       },
+       "paired_delta_ap_lift": {
+        "delta": 0.03867,
+        "lo": -0.50868,
+        "hi": 0.55861,
+        "ci95": 0.53365,
+        "p_delta_gt0": 0.51,
+        "separated": false,
+        "statistic": "ap_lift",
+        "ap_a": 1.645,
+        "ap_b": 1.60634,
+        "base_rate": 0.012411,
+        "n_pos": 405,
+        "n_windows": 32632,
+        "n_episodes": 492,
+        "n_boot": 500,
+        "n_boot_valid": 500,
+        "estimator": "paired_ap_episode_cluster_bootstrap"
+       }
+      },
+      "turning": {
+       "n_rows": 24347,
+       "n_pos": 1067,
+       "base_rate": 0.043825,
+       "ap_lift": {
+        "CELL_w32_L1.0": 1.15614,
+        "CELL_w8_L3.0": 0.96502
+       },
+       "paired_delta_ap_lift": {
+        "delta": 0.19112,
+        "lo": 0.00341,
+        "hi": 0.42694,
+        "ci95": 0.21177,
+        "p_delta_gt0": 0.976,
+        "separated": true,
+        "statistic": "ap_lift",
+        "ap_a": 1.15614,
+        "ap_b": 0.96502,
+        "base_rate": 0.043825,
+        "n_pos": 1067,
+        "n_windows": 24347,
+        "n_episodes": 459,
+        "n_boot": 500,
+        "n_boot_valid": 500,
+        "estimator": "paired_ap_episode_cluster_bootstrap"
+       }
+      }
+     }
+    },
+    "STRATEGIC": {
+     "_status": "UNAVAILABLE",
+     "_reason": "no route/goal/map label exists on PhysicalAI-AV \u2014 settled at five probes (no map, lane graph, junction annotation or route signal; egomotion is clip-local metres with no GNSS), so there is no strategic target to score this arm against.",
+     "n_rows": 56979
+    }
+   },
+   "estimator": "paired_ap_episode_cluster_bootstrap (episode-cluster, paired)",
+   "n_clusters": 500,
+   "n_boot": 2000
+  },
+  "roundabout::CELL_w8_L1.0": {
+   "situation": "roundabout",
+   "families": {
+    "TACTICAL": {
+     "_what": "situation anticipation = the tactical decision. AP and AP-lift per situation; the paired delta is the decision-quality change.",
+     "n_rows_scored": 56868,
+     "n_rows_dropped_nonfinite": 0,
+     "base_rate": 0.017971,
+     "n_pos": 1022,
+     "ap": {
+      "CELL_w8_L1.0": 0.05963,
+      "CELL_w8_L3.0": 0.0442
+     },
+     "ap_lift": {
+      "CELL_w8_L1.0": 3.31816,
+      "CELL_w8_L3.0": 2.45952
+     },
+     "paired_delta_ap_lift": {
+      "delta": 0.85864,
+      "lo": 0.31435,
+      "hi": 1.59976,
+      "ci95": 0.6427,
+      "p_delta_gt0": 0.9995,
+      "separated": true,
+      "statistic": "ap_lift",
+      "ap_a": 3.31816,
+      "ap_b": 2.45952,
+      "base_rate": 0.017971,
+      "n_pos": 1022,
+      "n_windows": 56868,
+      "n_episodes": 500,
+      "n_boot": 2000,
+      "n_boot_valid": 2000,
+      "estimator": "paired_ap_episode_cluster_bootstrap"
+     },
+     "single_arm_ci": {
+      "CELL_w8_L1.0": {
+       "point": 3.31816,
+       "lo": 2.33009,
+       "hi": 4.92498,
+       "ci95": 1.29745,
+       "se": 0.67343,
+       "statistic": "ap_lift",
+       "base_rate": 0.017971,
+       "n_pos": 1022,
+       "n_windows": 56868,
+       "n_episodes": 500,
+       "n_boot": 2000,
+       "n_boot_valid": 2000,
+       "estimator": "ap_episode_cluster_bootstrap",
+       "_lo_raw": 2.3300883903470404,
+       "_hi_raw": 4.924981760302261
+      },
+      "CELL_w8_L3.0": {
+       "point": 2.45952,
+       "lo": 1.76834,
+       "hi": 3.77749,
+       "ci95": 1.00458,
+       "se": 0.51194,
+       "statistic": "ap_lift",
+       "base_rate": 0.017971,
+       "n_pos": 1022,
+       "n_windows": 56868,
+       "n_episodes": 500,
+       "n_boot": 2000,
+       "n_boot_valid": 2000,
+       "estimator": "ap_episode_cluster_bootstrap",
+       "_lo_raw": 1.7683360562377108,
+       "_hi_raw": 3.7774869987388153
+      }
+     },
+     "anticipation_lead": {
+      "CELL_w8_L1.0": {
+       "median_lead_s": 1.0,
+       "n_runs": 40,
+       "n_runs_no_alarm": 13,
+       "n_alarm_rows": 2843,
+       "top_frac": 0.05
+      },
+      "CELL_w8_L3.0": {
+       "median_lead_s": 1.8,
+       "n_runs": 40,
+       "n_runs_no_alarm": 29,
+       "n_alarm_rows": 2843,
+       "top_frac": 0.05
+      }
+     },
+     "operating_point_5pct": {
+      "CELL_w8_L1.0": {
+       "top_frac": 0.05,
+       "n_scorable": 56868,
+       "n_alarm": 2843,
+       "n_pos": 1022,
+       "tp": 218,
+       "precision": 0.07668,
+       "recall": 0.21331,
+       "base_rate": 0.017971,
+       "precision_lift": 4.26675
+      },
+      "CELL_w8_L3.0": {
+       "top_frac": 0.05,
+       "n_scorable": 56868,
+       "n_alarm": 2843,
+       "n_pos": 1022,
+       "tp": 145,
+       "precision": 0.051,
+       "recall": 0.14188,
+       "base_rate": 0.017971,
+       "precision_lift": 2.83797
+      }
+     }
+    },
+    "LONGITUDINAL": {
+     "_what": "a classification target has no predicted speed/headway (LONGITUDINAL) or heading/curvature/cross-track (LATERAL) to score, so the family is reported as decision quality STRATIFIED BY REGIME: does the change hold where the ego is actually decelerating / turning?",
+     "_not_computable": "target-speed accuracy, headway/time-gap/TTC",
+     "_not_computable_reason": "the arm emits a per-frame situation probability, not a trajectory",
+     "strata": {
+      "decelerating": {
+       "n_rows": 12958,
+       "n_pos": 206,
+       "base_rate": 0.015898,
+       "ap_lift": {
+        "CELL_w8_L1.0": 1.36617,
+        "CELL_w8_L3.0": 1.5395
+       },
+       "paired_delta_ap_lift": {
+        "delta": -0.17332,
+        "lo": -1.86084,
+        "hi": 0.40864,
+        "ci95": 1.13474,
+        "p_delta_gt0": 0.268,
+        "separated": false,
+        "statistic": "ap_lift",
+        "ap_a": 1.36617,
+        "ap_b": 1.5395,
+        "base_rate": 0.015898,
+        "n_pos": 206,
+        "n_windows": 12958,
+        "n_episodes": 365,
+        "n_boot": 500,
+        "n_boot_valid": 500,
+        "estimator": "paired_ap_episode_cluster_bootstrap"
+       }
+      },
+      "steady": {
+       "n_rows": 26288,
+       "n_pos": 447,
+       "base_rate": 0.017004,
+       "ap_lift": {
+        "CELL_w8_L1.0": 7.07326,
+        "CELL_w8_L3.0": 3.21866
+       },
+       "paired_delta_ap_lift": {
+        "delta": 3.85461,
+        "lo": 1.11135,
+        "hi": 8.07089,
+        "ci95": 3.47977,
+        "p_delta_gt0": 0.998,
+        "separated": true,
+        "statistic": "ap_lift",
+        "ap_a": 7.07326,
+        "ap_b": 3.21866,
+        "base_rate": 0.017004,
+        "n_pos": 447,
+        "n_windows": 26288,
+        "n_episodes": 498,
+        "n_boot": 500,
+        "n_boot_valid": 500,
+        "estimator": "paired_ap_episode_cluster_bootstrap"
+       }
+      },
+      "accelerating": {
+       "n_rows": 17622,
+       "n_pos": 369,
+       "base_rate": 0.02094,
+       "ap_lift": {
+        "CELL_w8_L1.0": 2.60997,
+        "CELL_w8_L3.0": 2.25085
+       },
+       "paired_delta_ap_lift": {
+        "delta": 0.35911,
+        "lo": -0.52197,
+        "hi": 2.35796,
+        "ci95": 1.43996,
+        "p_delta_gt0": 0.774,
+        "separated": false,
+        "statistic": "ap_lift",
+        "ap_a": 2.60997,
+        "ap_b": 2.25085,
+        "base_rate": 0.02094,
+        "n_pos": 369,
+        "n_windows": 17622,
+        "n_episodes": 417,
+        "n_boot": 500,
+        "n_boot_valid": 500,
+        "estimator": "paired_ap_episode_cluster_bootstrap"
+       }
+      },
+      "low_speed_lt8": {
+       "n_rows": 40819,
+       "n_pos": 924,
+       "base_rate": 0.022637,
+       "ap_lift": {
+        "CELL_w8_L1.0": 3.05672,
+        "CELL_w8_L3.0": 2.29056
+       },
+       "paired_delta_ap_lift": {
+        "delta": 0.76616,
+        "lo": 0.30369,
+        "hi": 1.36206,
+        "ci95": 0.52919,
+        "p_delta_gt0": 0.998,
+        "separated": true,
+        "statistic": "ap_lift",
+        "ap_a": 3.05672,
+        "ap_b": 2.29056,
+        "base_rate": 0.022637,
+        "n_pos": 924,
+        "n_windows": 40819,
+        "n_episodes": 486,
+        "n_boot": 500,
+        "n_boot_valid": 500,
+        "estimator": "paired_ap_episode_cluster_bootstrap"
+       }
+      },
+      "cruise_ge8": {
+       "n_rows": 16049,
+       "n_pos": 98,
+       "base_rate": 0.006106,
+       "ap_lift": {
+        "CELL_w8_L1.0": 5.40737,
+        "CELL_w8_L3.0": 2.14157
+       },
+       "paired_delta_ap_lift": {
+        "delta": 3.26579,
+        "lo": 0.07422,
+        "hi": 16.65682,
+        "ci95": 8.2913,
+        "p_delta_gt0": 0.994,
+        "separated": true,
+        "statistic": "ap_lift",
+        "ap_a": 5.40737,
+        "ap_b": 2.14157,
+        "base_rate": 0.006106,
+        "n_pos": 98,
+        "n_windows": 16049,
+        "n_episodes": 346,
+        "n_boot": 500,
+        "n_boot_valid": 499,
+        "estimator": "paired_ap_episode_cluster_bootstrap"
+       }
+      }
+     }
+    },
+    "LATERAL": {
+     "_what": "a classification target has no predicted speed/headway (LONGITUDINAL) or heading/curvature/cross-track (LATERAL) to score, so the family is reported as decision quality STRATIFIED BY REGIME: does the change hold where the ego is actually decelerating / turning?",
+     "_not_computable": "heading, curvature, yaw-rate, cross-track error",
+     "_not_computable_reason": "the arm emits a per-frame situation probability, not a trajectory",
+     "strata": {
+      "straight": {
+       "n_rows": 33610,
+       "n_pos": 337,
+       "base_rate": 0.010027,
+       "ap_lift": {
+        "CELL_w8_L1.0": 7.62548,
+        "CELL_w8_L3.0": 4.05303
+       },
+       "paired_delta_ap_lift": {
+        "delta": 3.57245,
+        "lo": 1.15084,
+        "hi": 9.96718,
+        "ci95": 4.40817,
+        "p_delta_gt0": 1.0,
+        "separated": true,
+        "statistic": "ap_lift",
+        "ap_a": 7.62548,
+        "ap_b": 4.05303,
+        "base_rate": 0.010027,
+        "n_pos": 337,
+        "n_windows": 33610,
+        "n_episodes": 496,
+        "n_boot": 500,
+        "n_boot_valid": 500,
+        "estimator": "paired_ap_episode_cluster_bootstrap"
+       }
+      },
+      "turning": {
+       "n_rows": 23258,
+       "n_pos": 685,
+       "base_rate": 0.029452,
+       "ap_lift": {
+        "CELL_w8_L1.0": 2.04064,
+        "CELL_w8_L3.0": 1.70918
+       },
+       "paired_delta_ap_lift": {
+        "delta": 0.33146,
+        "lo": -0.01942,
+        "hi": 0.70698,
+        "ci95": 0.3632,
+        "p_delta_gt0": 0.974,
+        "separated": false,
+        "statistic": "ap_lift",
+        "ap_a": 2.04064,
+        "ap_b": 1.70918,
+        "base_rate": 0.029452,
+        "n_pos": 685,
+        "n_windows": 23258,
+        "n_episodes": 460,
+        "n_boot": 500,
+        "n_boot_valid": 500,
+        "estimator": "paired_ap_episode_cluster_bootstrap"
+       }
+      }
+     }
+    },
+    "STRATEGIC": {
+     "_status": "UNAVAILABLE",
+     "_reason": "no route/goal/map label exists on PhysicalAI-AV \u2014 settled at five probes (no map, lane graph, junction annotation or route signal; egomotion is clip-local metres with no GNSS), so there is no strategic target to score this arm against.",
+     "n_rows": 56868
+    }
+   },
+   "estimator": "paired_ap_episode_cluster_bootstrap (episode-cluster, paired)",
+   "n_clusters": 500,
+   "n_boot": 2000
+  },
+  "roundabout::CELL_w32_L1.0": {
+   "situation": "roundabout",
+   "families": {
+    "TACTICAL": {
+     "_what": "situation anticipation = the tactical decision. AP and AP-lift per situation; the paired delta is the decision-quality change.",
+     "n_rows_scored": 56868,
+     "n_rows_dropped_nonfinite": 0,
+     "base_rate": 0.017971,
+     "n_pos": 1022,
+     "ap": {
+      "CELL_w32_L1.0": 0.04881,
+      "CELL_w8_L3.0": 0.0442
+     },
+     "ap_lift": {
+      "CELL_w32_L1.0": 2.71572,
+      "CELL_w8_L3.0": 2.45952
+     },
+     "paired_delta_ap_lift": {
+      "delta": 0.25621,
+      "lo": -0.3332,
+      "hi": 1.24021,
+      "ci95": 0.78671,
+      "p_delta_gt0": 0.7515,
+      "separated": false,
+      "statistic": "ap_lift",
+      "ap_a": 2.71572,
+      "ap_b": 2.45952,
+      "base_rate": 0.017971,
+      "n_pos": 1022,
+      "n_windows": 56868,
+      "n_episodes": 500,
+      "n_boot": 2000,
+      "n_boot_valid": 2000,
+      "estimator": "paired_ap_episode_cluster_bootstrap"
+     },
+     "single_arm_ci": {
+      "CELL_w32_L1.0": {
+       "point": 2.71572,
+       "lo": 1.72407,
+       "hi": 4.52328,
+       "ci95": 1.3996,
+       "se": 0.71834,
+       "statistic": "ap_lift",
+       "base_rate": 0.017971,
+       "n_pos": 1022,
+       "n_windows": 56868,
+       "n_episodes": 500,
+       "n_boot": 2000,
+       "n_boot_valid": 2000,
+       "estimator": "ap_episode_cluster_bootstrap",
+       "_lo_raw": 1.7240733030760733,
+       "_hi_raw": 4.52328032473628
+      },
+      "CELL_w8_L3.0": {
+       "point": 2.45952,
+       "lo": 1.76834,
+       "hi": 3.77749,
+       "ci95": 1.00458,
+       "se": 0.51194,
+       "statistic": "ap_lift",
+       "base_rate": 0.017971,
+       "n_pos": 1022,
+       "n_windows": 56868,
+       "n_episodes": 500,
+       "n_boot": 2000,
+       "n_boot_valid": 2000,
+       "estimator": "ap_episode_cluster_bootstrap",
+       "_lo_raw": 1.7683360562377108,
+       "_hi_raw": 3.7774869987388153
+      }
+     },
+     "anticipation_lead": {
+      "CELL_w32_L1.0": {
+       "median_lead_s": 0.6,
+       "n_runs": 40,
+       "n_runs_no_alarm": 21,
+       "n_alarm_rows": 2843,
+       "top_frac": 0.05
+      },
+      "CELL_w8_L3.0": {
+       "median_lead_s": 1.8,
+       "n_runs": 40,
+       "n_runs_no_alarm": 29,
+       "n_alarm_rows": 2843,
+       "top_frac": 0.05
+      }
+     },
+     "operating_point_5pct": {
+      "CELL_w32_L1.0": {
+       "top_frac": 0.05,
+       "n_scorable": 56868,
+       "n_alarm": 2843,
+       "n_pos": 1022,
+       "tp": 167,
+       "precision": 0.05874,
+       "recall": 0.16341,
+       "base_rate": 0.017971,
+       "precision_lift": 3.26856
+      },
+      "CELL_w8_L3.0": {
+       "top_frac": 0.05,
+       "n_scorable": 56868,
+       "n_alarm": 2843,
+       "n_pos": 1022,
+       "tp": 145,
+       "precision": 0.051,
+       "recall": 0.14188,
+       "base_rate": 0.017971,
+       "precision_lift": 2.83797
+      }
+     }
+    },
+    "LONGITUDINAL": {
+     "_what": "a classification target has no predicted speed/headway (LONGITUDINAL) or heading/curvature/cross-track (LATERAL) to score, so the family is reported as decision quality STRATIFIED BY REGIME: does the change hold where the ego is actually decelerating / turning?",
+     "_not_computable": "target-speed accuracy, headway/time-gap/TTC",
+     "_not_computable_reason": "the arm emits a per-frame situation probability, not a trajectory",
+     "strata": {
+      "decelerating": {
+       "n_rows": 12958,
+       "n_pos": 206,
+       "base_rate": 0.015898,
+       "ap_lift": {
+        "CELL_w32_L1.0": 1.21745,
+        "CELL_w8_L3.0": 1.5395
+       },
+       "paired_delta_ap_lift": {
+        "delta": -0.32205,
+        "lo": -1.85924,
+        "hi": 0.4314,
+        "ci95": 1.14532,
+        "p_delta_gt0": 0.152,
+        "separated": false,
+        "statistic": "ap_lift",
+        "ap_a": 1.21745,
+        "ap_b": 1.5395,
+        "base_rate": 0.015898,
+        "n_pos": 206,
+        "n_windows": 12958,
+        "n_episodes": 365,
+        "n_boot": 500,
+        "n_boot_valid": 500,
+        "estimator": "paired_ap_episode_cluster_bootstrap"
+       }
+      },
+      "steady": {
+       "n_rows": 26288,
+       "n_pos": 447,
+       "base_rate": 0.017004,
+       "ap_lift": {
+        "CELL_w32_L1.0": 5.29582,
+        "CELL_w8_L3.0": 3.21866
+       },
+       "paired_delta_ap_lift": {
+        "delta": 2.07716,
+        "lo": -0.51953,
+        "hi": 5.85799,
+        "ci95": 3.18876,
+        "p_delta_gt0": 0.956,
+        "separated": false,
+        "statistic": "ap_lift",
+        "ap_a": 5.29582,
+        "ap_b": 3.21866,
+        "base_rate": 0.017004,
+        "n_pos": 447,
+        "n_windows": 26288,
+        "n_episodes": 498,
+        "n_boot": 500,
+        "n_boot_valid": 500,
+        "estimator": "paired_ap_episode_cluster_bootstrap"
+       }
+      },
+      "accelerating": {
+       "n_rows": 17622,
+       "n_pos": 369,
+       "base_rate": 0.02094,
+       "ap_lift": {
+        "CELL_w32_L1.0": 2.1894,
+        "CELL_w8_L3.0": 2.25085
+       },
+       "paired_delta_ap_lift": {
+        "delta": -0.06146,
+        "lo": -1.111,
+        "hi": 2.12124,
+        "ci95": 1.61612,
+        "p_delta_gt0": 0.438,
+        "separated": false,
+        "statistic": "ap_lift",
+        "ap_a": 2.1894,
+        "ap_b": 2.25085,
+        "base_rate": 0.02094,
+        "n_pos": 369,
+        "n_windows": 17622,
+        "n_episodes": 417,
+        "n_boot": 500,
+        "n_boot_valid": 500,
+        "estimator": "paired_ap_episode_cluster_bootstrap"
+       }
+      },
+      "low_speed_lt8": {
+       "n_rows": 40819,
+       "n_pos": 924,
+       "base_rate": 0.022637,
+       "ap_lift": {
+        "CELL_w32_L1.0": 2.48261,
+        "CELL_w8_L3.0": 2.29056
+       },
+       "paired_delta_ap_lift": {
+        "delta": 0.19205,
+        "lo": -0.31499,
+        "hi": 0.86917,
+        "ci95": 0.59208,
+        "p_delta_gt0": 0.742,
+        "separated": false,
+        "statistic": "ap_lift",
+        "ap_a": 2.48261,
+        "ap_b": 2.29056,
+        "base_rate": 0.022637,
+        "n_pos": 924,
+        "n_windows": 40819,
+        "n_episodes": 486,
+        "n_boot": 500,
+        "n_boot_valid": 500,
+        "estimator": "paired_ap_episode_cluster_bootstrap"
+       }
+      },
+      "cruise_ge8": {
+       "n_rows": 16049,
+       "n_pos": 98,
+       "base_rate": 0.006106,
+       "ap_lift": {
+        "CELL_w32_L1.0": 5.27826,
+        "CELL_w8_L3.0": 2.14157
+       },
+       "paired_delta_ap_lift": {
+        "delta": 3.13669,
+        "lo": -0.01092,
+        "hi": 27.28239,
+        "ci95": 13.64666,
+        "p_delta_gt0": 0.9719,
+        "separated": false,
+        "statistic": "ap_lift",
+        "ap_a": 5.27826,
+        "ap_b": 2.14157,
+        "base_rate": 0.006106,
+        "n_pos": 98,
+        "n_windows": 16049,
+        "n_episodes": 346,
+        "n_boot": 500,
+        "n_boot_valid": 499,
+        "estimator": "paired_ap_episode_cluster_bootstrap"
+       }
+      }
+     }
+    },
+    "LATERAL": {
+     "_what": "a classification target has no predicted speed/headway (LONGITUDINAL) or heading/curvature/cross-track (LATERAL) to score, so the family is reported as decision quality STRATIFIED BY REGIME: does the change hold where the ego is actually decelerating / turning?",
+     "_not_computable": "heading, curvature, yaw-rate, cross-track error",
+     "_not_computable_reason": "the arm emits a per-frame situation probability, not a trajectory",
+     "strata": {
+      "straight": {
+       "n_rows": 33610,
+       "n_pos": 337,
+       "base_rate": 0.010027,
+       "ap_lift": {
+        "CELL_w32_L1.0": 4.84432,
+        "CELL_w8_L3.0": 4.05303
+       },
+       "paired_delta_ap_lift": {
+        "delta": 0.79129,
+        "lo": -1.25107,
+        "hi": 3.92465,
+        "ci95": 2.58786,
+        "p_delta_gt0": 0.754,
+        "separated": false,
+        "statistic": "ap_lift",
+        "ap_a": 4.84432,
+        "ap_b": 4.05303,
+        "base_rate": 0.010027,
+        "n_pos": 337,
+        "n_windows": 33610,
+        "n_episodes": 496,
+        "n_boot": 500,
+        "n_boot_valid": 500,
+        "estimator": "paired_ap_episode_cluster_bootstrap"
+       }
+      },
+      "turning": {
+       "n_rows": 23258,
+       "n_pos": 685,
+       "base_rate": 0.029452,
+       "ap_lift": {
+        "CELL_w32_L1.0": 1.89693,
+        "CELL_w8_L3.0": 1.70918
+       },
+       "paired_delta_ap_lift": {
+        "delta": 0.18775,
+        "lo": -0.24755,
+        "hi": 0.73071,
+        "ci95": 0.48913,
+        "p_delta_gt0": 0.806,
+        "separated": false,
+        "statistic": "ap_lift",
+        "ap_a": 1.89693,
+        "ap_b": 1.70918,
+        "base_rate": 0.029452,
+        "n_pos": 685,
+        "n_windows": 23258,
+        "n_episodes": 460,
+        "n_boot": 500,
+        "n_boot_valid": 500,
+        "estimator": "paired_ap_episode_cluster_bootstrap"
+       }
+      }
+     }
+    },
+    "STRATEGIC": {
+     "_status": "UNAVAILABLE",
+     "_reason": "no route/goal/map label exists on PhysicalAI-AV \u2014 settled at five probes (no map, lane graph, junction annotation or route signal; egomotion is clip-local metres with no GNSS), so there is no strategic target to score this arm against.",
+     "n_rows": 56868
+    }
+   },
+   "estimator": "paired_ap_episode_cluster_bootstrap (episode-cluster, paired)",
+   "n_clusters": 500,
+   "n_boot": 2000
+  },
+  "intersection::CELL_w8_L1.0": {
+   "situation": "intersection",
+   "families": {
+    "TACTICAL": {
+     "_what": "situation anticipation = the tactical decision. AP and AP-lift per situation; the paired delta is the decision-quality change.",
+     "n_rows_scored": 50975,
+     "n_rows_dropped_nonfinite": 0,
+     "base_rate": 0.115527,
+     "n_pos": 5889,
+     "ap": {
+      "CELL_w8_L1.0": 0.19232,
+      "CELL_w8_L3.0": 0.18454
+     },
+     "ap_lift": {
+      "CELL_w8_L1.0": 1.6647,
+      "CELL_w8_L3.0": 1.59737
+     },
+     "paired_delta_ap_lift": {
+      "delta": 0.06733,
+      "lo": -0.03042,
+      "hi": 0.17115,
+      "ci95": 0.10078,
+      "p_delta_gt0": 0.911,
+      "separated": false,
+      "statistic": "ap_lift",
+      "ap_a": 1.6647,
+      "ap_b": 1.59737,
+      "base_rate": 0.115527,
+      "n_pos": 5889,
+      "n_windows": 50975,
+      "n_episodes": 500,
+      "n_boot": 2000,
+      "n_boot_valid": 2000,
+      "estimator": "paired_ap_episode_cluster_bootstrap"
+     },
+     "single_arm_ci": {
+      "CELL_w8_L1.0": {
+       "point": 1.6647,
+       "lo": 1.42358,
+       "hi": 2.02209,
+       "ci95": 0.29926,
+       "se": 0.1511,
+       "statistic": "ap_lift",
+       "base_rate": 0.115527,
+       "n_pos": 5889,
+       "n_windows": 50975,
+       "n_episodes": 500,
+       "n_boot": 2000,
+       "n_boot_valid": 2000,
+       "estimator": "ap_episode_cluster_bootstrap",
+       "_lo_raw": 1.4235774140607462,
+       "_hi_raw": 2.0220936001957877
+      },
+      "CELL_w8_L3.0": {
+       "point": 1.59737,
+       "lo": 1.37204,
+       "hi": 1.91696,
+       "ci95": 0.27246,
+       "se": 0.14018,
+       "statistic": "ap_lift",
+       "base_rate": 0.115527,
+       "n_pos": 5889,
+       "n_windows": 50975,
+       "n_episodes": 500,
+       "n_boot": 2000,
+       "n_boot_valid": 2000,
+       "estimator": "ap_episode_cluster_bootstrap",
+       "_lo_raw": 1.3720373678351132,
+       "_hi_raw": 1.9169643001577144
+      }
+     },
+     "anticipation_lead": {
+      "CELL_w8_L1.0": {
+       "median_lead_s": 2.6,
+       "n_runs": 251,
+       "n_runs_no_alarm": 204,
+       "n_alarm_rows": 2549,
+       "top_frac": 0.05
+      },
+      "CELL_w8_L3.0": {
+       "median_lead_s": 2.45,
+       "n_runs": 251,
+       "n_runs_no_alarm": 199,
+       "n_alarm_rows": 2549,
+       "top_frac": 0.05
+      }
+     },
+     "operating_point_5pct": {
+      "CELL_w8_L1.0": {
+       "top_frac": 0.05,
+       "n_scorable": 50975,
+       "n_alarm": 2549,
+       "n_pos": 5889,
+       "tp": 655,
+       "precision": 0.25696,
+       "recall": 0.11122,
+       "base_rate": 0.115527,
+       "precision_lift": 2.22427
+      },
+      "CELL_w8_L3.0": {
+       "top_frac": 0.05,
+       "n_scorable": 50975,
+       "n_alarm": 2549,
+       "n_pos": 5889,
+       "tp": 649,
+       "precision": 0.25461,
+       "recall": 0.11021,
+       "base_rate": 0.115527,
+       "precision_lift": 2.20389
+      }
+     }
+    },
+    "LONGITUDINAL": {
+     "_what": "a classification target has no predicted speed/headway (LONGITUDINAL) or heading/curvature/cross-track (LATERAL) to score, so the family is reported as decision quality STRATIFIED BY REGIME: does the change hold where the ego is actually decelerating / turning?",
+     "_not_computable": "target-speed accuracy, headway/time-gap/TTC",
+     "_not_computable_reason": "the arm emits a per-frame situation probability, not a trajectory",
+     "strata": {
+      "decelerating": {
+       "n_rows": 11931,
+       "n_pos": 2512,
+       "base_rate": 0.210544,
+       "ap_lift": {
+        "CELL_w8_L1.0": 1.48554,
+        "CELL_w8_L3.0": 1.56597
+       },
+       "paired_delta_ap_lift": {
+        "delta": -0.08043,
+        "lo": -0.16859,
+        "hi": 0.01278,
+        "ci95": 0.09069,
+        "p_delta_gt0": 0.038,
+        "separated": false,
+        "statistic": "ap_lift",
+        "ap_a": 1.48554,
+        "ap_b": 1.56597,
+        "base_rate": 0.210544,
+        "n_pos": 2512,
+        "n_windows": 11931,
+        "n_episodes": 359,
+        "n_boot": 500,
+        "n_boot_valid": 500,
+        "estimator": "paired_ap_episode_cluster_bootstrap"
+       }
+      },
+      "steady": {
+       "n_rows": 24719,
+       "n_pos": 2179,
+       "base_rate": 0.088151,
+       "ap_lift": {
+        "CELL_w8_L1.0": 1.43699,
+        "CELL_w8_L3.0": 1.31295
+       },
+       "paired_delta_ap_lift": {
+        "delta": 0.12404,
+        "lo": 0.03606,
+        "hi": 0.31957,
+        "ci95": 0.14175,
+        "p_delta_gt0": 1.0,
+        "separated": true,
+        "statistic": "ap_lift",
+        "ap_a": 1.43699,
+        "ap_b": 1.31295,
+        "base_rate": 0.088151,
+        "n_pos": 2179,
+        "n_windows": 24719,
+        "n_episodes": 495,
+        "n_boot": 500,
+        "n_boot_valid": 500,
+        "estimator": "paired_ap_episode_cluster_bootstrap"
+       }
+      },
+      "accelerating": {
+       "n_rows": 14325,
+       "n_pos": 1198,
+       "base_rate": 0.08363,
+       "ap_lift": {
+        "CELL_w8_L1.0": 1.9736,
+        "CELL_w8_L3.0": 1.90915
+       },
+       "paired_delta_ap_lift": {
+        "delta": 0.06445,
+        "lo": -0.15954,
+        "hi": 0.28502,
+        "ci95": 0.22228,
+        "p_delta_gt0": 0.732,
+        "separated": false,
+        "statistic": "ap_lift",
+        "ap_a": 1.9736,
+        "ap_b": 1.90915,
+        "base_rate": 0.08363,
+        "n_pos": 1198,
+        "n_windows": 14325,
+        "n_episodes": 406,
+        "n_boot": 500,
+        "n_boot_valid": 500,
+        "estimator": "paired_ap_episode_cluster_bootstrap"
+       }
+      },
+      "low_speed_lt8": {
+       "n_rows": 34899,
+       "n_pos": 5077,
+       "base_rate": 0.145477,
+       "ap_lift": {
+        "CELL_w8_L1.0": 1.59181,
+        "CELL_w8_L3.0": 1.55948
+       },
+       "paired_delta_ap_lift": {
+        "delta": 0.03233,
+        "lo": -0.0632,
+        "hi": 0.12776,
+        "ci95": 0.09548,
+        "p_delta_gt0": 0.742,
+        "separated": false,
+        "statistic": "ap_lift",
+        "ap_a": 1.59181,
+        "ap_b": 1.55948,
+        "base_rate": 0.145477,
+        "n_pos": 5077,
+        "n_windows": 34899,
+        "n_episodes": 488,
+        "n_boot": 500,
+        "n_boot_valid": 500,
+        "estimator": "paired_ap_episode_cluster_bootstrap"
+       }
+      },
+      "cruise_ge8": {
+       "n_rows": 16076,
+       "n_pos": 812,
+       "base_rate": 0.05051,
+       "ap_lift": {
+        "CELL_w8_L1.0": 1.38783,
+        "CELL_w8_L3.0": 1.3855
+       },
+       "paired_delta_ap_lift": {
+        "delta": 0.00233,
+        "lo": -0.29315,
+        "hi": 0.15259,
+        "ci95": 0.22287,
+        "p_delta_gt0": 0.508,
+        "separated": false,
+        "statistic": "ap_lift",
+        "ap_a": 1.38783,
+        "ap_b": 1.3855,
+        "base_rate": 0.05051,
+        "n_pos": 812,
+        "n_windows": 16076,
+        "n_episodes": 346,
+        "n_boot": 500,
+        "n_boot_valid": 500,
+        "estimator": "paired_ap_episode_cluster_bootstrap"
+       }
+      }
+     }
+    },
+    "LATERAL": {
+     "_what": "a classification target has no predicted speed/headway (LONGITUDINAL) or heading/curvature/cross-track (LATERAL) to score, so the family is reported as decision quality STRATIFIED BY REGIME: does the change hold where the ego is actually decelerating / turning?",
+     "_not_computable": "heading, curvature, yaw-rate, cross-track error",
+     "_not_computable_reason": "the arm emits a per-frame situation probability, not a trajectory",
+     "strata": {
+      "straight": {
+       "n_rows": 33354,
+       "n_pos": 4990,
+       "base_rate": 0.149607,
+       "ap_lift": {
+        "CELL_w8_L1.0": 1.48848,
+        "CELL_w8_L3.0": 1.38771
+       },
+       "paired_delta_ap_lift": {
+        "delta": 0.10076,
+        "lo": 0.0167,
+        "hi": 0.19865,
+        "ci95": 0.09098,
+        "p_delta_gt0": 0.988,
+        "separated": true,
+        "statistic": "ap_lift",
+        "ap_a": 1.48848,
+        "ap_b": 1.38771,
+        "base_rate": 0.149607,
+        "n_pos": 4990,
+        "n_windows": 33354,
+        "n_episodes": 496,
+        "n_boot": 500,
+        "n_boot_valid": 500,
+        "estimator": "paired_ap_episode_cluster_bootstrap"
+       }
+      },
+      "turning": {
+       "n_rows": 17621,
+       "n_pos": 899,
+       "base_rate": 0.051019,
+       "ap_lift": {
+        "CELL_w8_L1.0": 1.28768,
+        "CELL_w8_L3.0": 1.43919
+       },
+       "paired_delta_ap_lift": {
+        "delta": -0.15151,
+        "lo": -0.35902,
+        "hi": -0.02077,
+        "ci95": 0.16913,
+        "p_delta_gt0": 0.012,
+        "separated": true,
+        "statistic": "ap_lift",
+        "ap_a": 1.28768,
+        "ap_b": 1.43919,
+        "base_rate": 0.051019,
+        "n_pos": 899,
+        "n_windows": 17621,
+        "n_episodes": 442,
+        "n_boot": 500,
+        "n_boot_valid": 500,
+        "estimator": "paired_ap_episode_cluster_bootstrap"
+       }
+      }
+     }
+    },
+    "STRATEGIC": {
+     "_status": "UNAVAILABLE",
+     "_reason": "no route/goal/map label exists on PhysicalAI-AV \u2014 settled at five probes (no map, lane graph, junction annotation or route signal; egomotion is clip-local metres with no GNSS), so there is no strategic target to score this arm against.",
+     "n_rows": 50975
+    }
+   },
+   "estimator": "paired_ap_episode_cluster_bootstrap (episode-cluster, paired)",
+   "n_clusters": 500,
+   "n_boot": 2000
+  },
+  "intersection::CELL_w32_L1.0": {
+   "situation": "intersection",
+   "families": {
+    "TACTICAL": {
+     "_what": "situation anticipation = the tactical decision. AP and AP-lift per situation; the paired delta is the decision-quality change.",
+     "n_rows_scored": 50975,
+     "n_rows_dropped_nonfinite": 0,
+     "base_rate": 0.115527,
+     "n_pos": 5889,
+     "ap": {
+      "CELL_w32_L1.0": 0.17788,
+      "CELL_w8_L3.0": 0.18454
+     },
+     "ap_lift": {
+      "CELL_w32_L1.0": 1.53975,
+      "CELL_w8_L3.0": 1.59737
+     },
+     "paired_delta_ap_lift": {
+      "delta": -0.05762,
+      "lo": -0.21551,
+      "hi": 0.06401,
+      "ci95": 0.13976,
+      "p_delta_gt0": 0.1765,
+      "separated": false,
+      "statistic": "ap_lift",
+      "ap_a": 1.53975,
+      "ap_b": 1.59737,
+      "base_rate": 0.115527,
+      "n_pos": 5889,
+      "n_windows": 50975,
+      "n_episodes": 500,
+      "n_boot": 2000,
+      "n_boot_valid": 2000,
+      "estimator": "paired_ap_episode_cluster_bootstrap"
+     },
+     "single_arm_ci": {
+      "CELL_w32_L1.0": {
+       "point": 1.53975,
+       "lo": 1.34086,
+       "hi": 1.81045,
+       "ci95": 0.2348,
+       "se": 0.12223,
+       "statistic": "ap_lift",
+       "base_rate": 0.115527,
+       "n_pos": 5889,
+       "n_windows": 50975,
+       "n_episodes": 500,
+       "n_boot": 2000,
+       "n_boot_valid": 2000,
+       "estimator": "ap_episode_cluster_bootstrap",
+       "_lo_raw": 1.3408574222721474,
+       "_hi_raw": 1.8104538186350674
+      },
+      "CELL_w8_L3.0": {
+       "point": 1.59737,
+       "lo": 1.37204,
+       "hi": 1.91696,
+       "ci95": 0.27246,
+       "se": 0.14018,
+       "statistic": "ap_lift",
+       "base_rate": 0.115527,
+       "n_pos": 5889,
+       "n_windows": 50975,
+       "n_episodes": 500,
+       "n_boot": 2000,
+       "n_boot_valid": 2000,
+       "estimator": "ap_episode_cluster_bootstrap",
+       "_lo_raw": 1.3720373678351132,
+       "_hi_raw": 1.9169643001577144
+      }
+     },
+     "anticipation_lead": {
+      "CELL_w32_L1.0": {
+       "median_lead_s": 2.2,
+       "n_runs": 251,
+       "n_runs_no_alarm": 188,
+       "n_alarm_rows": 2549,
+       "top_frac": 0.05
+      },
+      "CELL_w8_L3.0": {
+       "median_lead_s": 2.45,
+       "n_runs": 251,
+       "n_runs_no_alarm": 199,
+       "n_alarm_rows": 2549,
+       "top_frac": 0.05
+      }
+     },
+     "operating_point_5pct": {
+      "CELL_w32_L1.0": {
+       "top_frac": 0.05,
+       "n_scorable": 50975,
+       "n_alarm": 2549,
+       "n_pos": 5889,
+       "tp": 639,
+       "precision": 0.25069,
+       "recall": 0.10851,
+       "base_rate": 0.115527,
+       "precision_lift": 2.16993
+      },
+      "CELL_w8_L3.0": {
+       "top_frac": 0.05,
+       "n_scorable": 50975,
+       "n_alarm": 2549,
+       "n_pos": 5889,
+       "tp": 649,
+       "precision": 0.25461,
+       "recall": 0.11021,
+       "base_rate": 0.115527,
+       "precision_lift": 2.20389
+      }
+     }
+    },
+    "LONGITUDINAL": {
+     "_what": "a classification target has no predicted speed/headway (LONGITUDINAL) or heading/curvature/cross-track (LATERAL) to score, so the family is reported as decision quality STRATIFIED BY REGIME: does the change hold where the ego is actually decelerating / turning?",
+     "_not_computable": "target-speed accuracy, headway/time-gap/TTC",
+     "_not_computable_reason": "the arm emits a per-frame situation probability, not a trajectory",
+     "strata": {
+      "decelerating": {
+       "n_rows": 11931,
+       "n_pos": 2512,
+       "base_rate": 0.210544,
+       "ap_lift": {
+        "CELL_w32_L1.0": 1.38198,
+        "CELL_w8_L3.0": 1.56597
+       },
+       "paired_delta_ap_lift": {
+        "delta": -0.18399,
+        "lo": -0.35146,
+        "hi": -0.03809,
+        "ci95": 0.15669,
+        "p_delta_gt0": 0.01,
+        "separated": true,
+        "statistic": "ap_lift",
+        "ap_a": 1.38198,
+        "ap_b": 1.56597,
+        "base_rate": 0.210544,
+        "n_pos": 2512,
+        "n_windows": 11931,
+        "n_episodes": 359,
+        "n_boot": 500,
+        "n_boot_valid": 500,
+        "estimator": "paired_ap_episode_cluster_bootstrap"
+       }
+      },
+      "steady": {
+       "n_rows": 24719,
+       "n_pos": 2179,
+       "base_rate": 0.088151,
+       "ap_lift": {
+        "CELL_w32_L1.0": 1.33467,
+        "CELL_w8_L3.0": 1.31295
+       },
+       "paired_delta_ap_lift": {
+        "delta": 0.02172,
+        "lo": -0.13586,
+        "hi": 0.17731,
+        "ci95": 0.15659,
+        "p_delta_gt0": 0.598,
+        "separated": false,
+        "statistic": "ap_lift",
+        "ap_a": 1.33467,
+        "ap_b": 1.31295,
+        "base_rate": 0.088151,
+        "n_pos": 2179,
+        "n_windows": 24719,
+        "n_episodes": 495,
+        "n_boot": 500,
+        "n_boot_valid": 500,
+        "estimator": "paired_ap_episode_cluster_bootstrap"
+       }
+      },
+      "accelerating": {
+       "n_rows": 14325,
+       "n_pos": 1198,
+       "base_rate": 0.08363,
+       "ap_lift": {
+        "CELL_w32_L1.0": 1.83511,
+        "CELL_w8_L3.0": 1.90915
+       },
+       "paired_delta_ap_lift": {
+        "delta": -0.07404,
+        "lo": -0.47113,
+        "hi": 0.32167,
+        "ci95": 0.3964,
+        "p_delta_gt0": 0.374,
+        "separated": false,
+        "statistic": "ap_lift",
+        "ap_a": 1.83511,
+        "ap_b": 1.90915,
+        "base_rate": 0.08363,
+        "n_pos": 1198,
+        "n_windows": 14325,
+        "n_episodes": 406,
+        "n_boot": 500,
+        "n_boot_valid": 500,
+        "estimator": "paired_ap_episode_cluster_bootstrap"
+       }
+      },
+      "low_speed_lt8": {
+       "n_rows": 34899,
+       "n_pos": 5077,
+       "base_rate": 0.145477,
+       "ap_lift": {
+        "CELL_w32_L1.0": 1.48145,
+        "CELL_w8_L3.0": 1.55948
+       },
+       "paired_delta_ap_lift": {
+        "delta": -0.07803,
+        "lo": -0.24216,
+        "hi": 0.05211,
+        "ci95": 0.14713,
+        "p_delta_gt0": 0.1,
+        "separated": false,
+        "statistic": "ap_lift",
+        "ap_a": 1.48145,
+        "ap_b": 1.55948,
+        "base_rate": 0.145477,
+        "n_pos": 5077,
+        "n_windows": 34899,
+        "n_episodes": 488,
+        "n_boot": 500,
+        "n_boot_valid": 500,
+        "estimator": "paired_ap_episode_cluster_bootstrap"
+       }
+      },
+      "cruise_ge8": {
+       "n_rows": 16076,
+       "n_pos": 812,
+       "base_rate": 0.05051,
+       "ap_lift": {
+        "CELL_w32_L1.0": 1.41016,
+        "CELL_w8_L3.0": 1.3855
+       },
+       "paired_delta_ap_lift": {
+        "delta": 0.02467,
+        "lo": -0.50483,
+        "hi": 0.40294,
+        "ci95": 0.45389,
+        "p_delta_gt0": 0.604,
+        "separated": false,
+        "statistic": "ap_lift",
+        "ap_a": 1.41016,
+        "ap_b": 1.3855,
+        "base_rate": 0.05051,
+        "n_pos": 812,
+        "n_windows": 16076,
+        "n_episodes": 346,
+        "n_boot": 500,
+        "n_boot_valid": 500,
+        "estimator": "paired_ap_episode_cluster_bootstrap"
+       }
+      }
+     }
+    },
+    "LATERAL": {
+     "_what": "a classification target has no predicted speed/headway (LONGITUDINAL) or heading/curvature/cross-track (LATERAL) to score, so the family is reported as decision quality STRATIFIED BY REGIME: does the change hold where the ego is actually decelerating / turning?",
+     "_not_computable": "heading, curvature, yaw-rate, cross-track error",
+     "_not_computable_reason": "the arm emits a per-frame situation probability, not a trajectory",
+     "strata": {
+      "straight": {
+       "n_rows": 33354,
+       "n_pos": 4990,
+       "base_rate": 0.149607,
+       "ap_lift": {
+        "CELL_w32_L1.0": 1.40121,
+        "CELL_w8_L3.0": 1.38771
+       },
+       "paired_delta_ap_lift": {
+        "delta": 0.0135,
+        "lo": -0.11579,
+        "hi": 0.12133,
+        "ci95": 0.11856,
+        "p_delta_gt0": 0.562,
+        "separated": false,
+        "statistic": "ap_lift",
+        "ap_a": 1.40121,
+        "ap_b": 1.38771,
+        "base_rate": 0.149607,
+        "n_pos": 4990,
+        "n_windows": 33354,
+        "n_episodes": 496,
+        "n_boot": 500,
+        "n_boot_valid": 500,
+        "estimator": "paired_ap_episode_cluster_bootstrap"
+       }
+      },
+      "turning": {
+       "n_rows": 17621,
+       "n_pos": 899,
+       "base_rate": 0.051019,
+       "ap_lift": {
+        "CELL_w32_L1.0": 1.21698,
+        "CELL_w8_L3.0": 1.43919
+       },
+       "paired_delta_ap_lift": {
+        "delta": -0.22221,
+        "lo": -0.58182,
+        "hi": 0.00626,
+        "ci95": 0.29404,
+        "p_delta_gt0": 0.03,
+        "separated": false,
+        "statistic": "ap_lift",
+        "ap_a": 1.21698,
+        "ap_b": 1.43919,
+        "base_rate": 0.051019,
+        "n_pos": 899,
+        "n_windows": 17621,
+        "n_episodes": 442,
+        "n_boot": 500,
+        "n_boot_valid": 500,
+        "estimator": "paired_ap_episode_cluster_bootstrap"
+       }
+      }
+     }
+    },
+    "STRATEGIC": {
+     "_status": "UNAVAILABLE",
+     "_reason": "no route/goal/map label exists on PhysicalAI-AV \u2014 settled at five probes (no map, lane graph, junction annotation or route signal; egomotion is clip-local metres with no GNSS), so there is no strategic target to score this arm against.",
+     "n_rows": 50975
+    }
+   },
+   "estimator": "paired_ap_episode_cluster_bootstrap (episode-cluster, paired)",
+   "n_clusters": 500,
+   "n_boot": 2000
+  },
+  "lane_change::CELL_w8_L1.0::legacy_ego": {
+   "situation": "lane_change",
+   "families": {
+    "TACTICAL": {
+     "_what": "situation anticipation = the tactical decision. AP and AP-lift per situation; the paired delta is the decision-quality change.",
+     "n_rows_scored": 56979,
+     "n_rows_dropped_nonfinite": 0,
+     "base_rate": 0.025834,
+     "n_pos": 1472,
+     "ap": {
+      "CELL_w8_L1.0": 0.03454,
+      "CELL_w8_L3.0": 0.03339
+     },
+     "ap_lift": {
+      "CELL_w8_L1.0": 1.33706,
+      "CELL_w8_L3.0": 1.29263
+     },
+     "paired_delta_ap_lift": {
+      "delta": 0.04443,
+      "lo": -0.06526,
+      "hi": 0.23156,
+      "ci95": 0.14841,
+      "p_delta_gt0": 0.7825,
+      "separated": false,
+      "statistic": "ap_lift",
+      "ap_a": 1.33706,
+      "ap_b": 1.29263,
+      "base_rate": 0.025834,
+      "n_pos": 1472,
+      "n_windows": 56979,
+      "n_episodes": 500,
+      "n_boot": 2000,
+      "n_boot_valid": 2000,
+      "estimator": "paired_ap_episode_cluster_bootstrap"
+     },
+     "single_arm_ci": {
+      "CELL_w8_L1.0": {
+       "point": 1.33706,
+       "lo": 1.08984,
+       "hi": 1.74413,
+       "ci95": 0.32714,
+       "se": 0.16831,
+       "statistic": "ap_lift",
+       "base_rate": 0.025834,
+       "n_pos": 1472,
+       "n_windows": 56979,
+       "n_episodes": 500,
+       "n_boot": 2000,
+       "n_boot_valid": 2000,
+       "estimator": "ap_episode_cluster_bootstrap",
+       "_lo_raw": 1.089843980907006,
+       "_hi_raw": 1.7441288029716926
+      },
+      "CELL_w8_L3.0": {
+       "point": 1.29263,
+       "lo": 1.07346,
+       "hi": 1.58934,
+       "ci95": 0.25794,
+       "se": 0.13442,
+       "statistic": "ap_lift",
+       "base_rate": 0.025834,
+       "n_pos": 1472,
+       "n_windows": 56979,
+       "n_episodes": 500,
+       "n_boot": 2000,
+       "n_boot_valid": 2000,
+       "estimator": "ap_episode_cluster_bootstrap",
+       "_lo_raw": 1.0734629717321527,
+       "_hi_raw": 1.5893441573748575
+      }
+     },
+     "anticipation_lead": {
+      "CELL_w8_L1.0": {
+       "median_lead_s": 2.3,
+       "n_runs": 70,
+       "n_runs_no_alarm": 57,
+       "n_alarm_rows": 2849,
+       "top_frac": 0.05
+      },
+      "CELL_w8_L3.0": {
+       "median_lead_s": 2.4,
+       "n_runs": 70,
+       "n_runs_no_alarm": 63,
+       "n_alarm_rows": 2849,
+       "top_frac": 0.05
+      }
+     },
+     "operating_point_5pct": {
+      "CELL_w8_L1.0": {
+       "top_frac": 0.05,
+       "n_scorable": 56979,
+       "n_alarm": 2849,
+       "n_pos": 1472,
+       "tp": 99,
+       "precision": 0.03475,
+       "recall": 0.06726,
+       "base_rate": 0.025834,
+       "precision_lift": 1.34509
+      },
+      "CELL_w8_L3.0": {
+       "top_frac": 0.05,
+       "n_scorable": 56979,
+       "n_alarm": 2849,
+       "n_pos": 1472,
+       "tp": 65,
+       "precision": 0.02282,
+       "recall": 0.04416,
+       "base_rate": 0.025834,
+       "precision_lift": 0.88314
+      }
+     }
+    },
+    "LONGITUDINAL": {
+     "_what": "a classification target has no predicted speed/headway (LONGITUDINAL) or heading/curvature/cross-track (LATERAL) to score, so the family is reported as decision quality STRATIFIED BY REGIME: does the change hold where the ego is actually decelerating / turning?",
+     "_not_computable": "target-speed accuracy, headway/time-gap/TTC",
+     "_not_computable_reason": "the arm emits a per-frame situation probability, not a trajectory",
+     "strata": {
+      "decelerating": {
+       "n_rows": 12607,
+       "n_pos": 86,
+       "base_rate": 0.006822,
+       "ap_lift": {
+        "CELL_w8_L1.0": 1.99189,
+        "CELL_w8_L3.0": 2.15224
+       },
+       "paired_delta_ap_lift": {
+        "delta": -0.16035,
+        "lo": -0.97583,
+        "hi": 0.65933,
+        "ci95": 0.81758,
+        "p_delta_gt0": 0.234,
+        "separated": false,
+        "statistic": "ap_lift",
+        "ap_a": 1.99189,
+        "ap_b": 2.15224,
+        "base_rate": 0.006822,
+        "n_pos": 86,
+        "n_windows": 12607,
+        "n_episodes": 363,
+        "n_boot": 500,
+        "n_boot_valid": 500,
+        "estimator": "paired_ap_episode_cluster_bootstrap"
+       }
+      },
+      "steady": {
+       "n_rows": 26746,
+       "n_pos": 705,
+       "base_rate": 0.026359,
+       "ap_lift": {
+        "CELL_w8_L1.0": 1.35362,
+        "CELL_w8_L3.0": 1.32049
+       },
+       "paired_delta_ap_lift": {
+        "delta": 0.03313,
+        "lo": -0.05578,
+        "hi": 0.12158,
+        "ci95": 0.08868,
+        "p_delta_gt0": 0.718,
+        "separated": false,
+        "statistic": "ap_lift",
+        "ap_a": 1.35362,
+        "ap_b": 1.32049,
+        "base_rate": 0.026359,
+        "n_pos": 705,
+        "n_windows": 26746,
+        "n_episodes": 499,
+        "n_boot": 500,
+        "n_boot_valid": 500,
+        "estimator": "paired_ap_episode_cluster_bootstrap"
+       }
+      },
+      "accelerating": {
+       "n_rows": 17626,
+       "n_pos": 681,
+       "base_rate": 0.038636,
+       "ap_lift": {
+        "CELL_w8_L1.0": 1.25983,
+        "CELL_w8_L3.0": 1.20306
+       },
+       "paired_delta_ap_lift": {
+        "delta": 0.05676,
+        "lo": -0.11739,
+        "hi": 0.57408,
+        "ci95": 0.34574,
+        "p_delta_gt0": 0.7,
+        "separated": false,
+        "statistic": "ap_lift",
+        "ap_a": 1.25983,
+        "ap_b": 1.20306,
+        "base_rate": 0.038636,
+        "n_pos": 681,
+        "n_windows": 17626,
+        "n_episodes": 415,
+        "n_boot": 500,
+        "n_boot_valid": 500,
+        "estimator": "paired_ap_episode_cluster_bootstrap"
+       }
+      },
+      "low_speed_lt8": {
+       "n_rows": 42508,
+       "n_pos": 605,
+       "base_rate": 0.014233,
+       "ap_lift": {
+        "CELL_w8_L1.0": 1.3176,
+        "CELL_w8_L3.0": 1.24526
+       },
+       "paired_delta_ap_lift": {
+        "delta": 0.07234,
+        "lo": -0.07747,
+        "hi": 0.41679,
+        "ci95": 0.24713,
+        "p_delta_gt0": 0.83,
+        "separated": false,
+        "statistic": "ap_lift",
+        "ap_a": 1.3176,
+        "ap_b": 1.24526,
+        "base_rate": 0.014233,
+        "n_pos": 605,
+        "n_windows": 42508,
+        "n_episodes": 488,
+        "n_boot": 500,
+        "n_boot_valid": 500,
+        "estimator": "paired_ap_episode_cluster_bootstrap"
+       }
+      },
+      "cruise_ge8": {
+       "n_rows": 14471,
+       "n_pos": 867,
+       "base_rate": 0.059913,
+       "ap_lift": {
+        "CELL_w8_L1.0": 1.24571,
+        "CELL_w8_L3.0": 1.17382
+       },
+       "paired_delta_ap_lift": {
+        "delta": 0.07189,
+        "lo": -0.07333,
+        "hi": 0.54838,
+        "ci95": 0.31086,
+        "p_delta_gt0": 0.836,
+        "separated": false,
+        "statistic": "ap_lift",
+        "ap_a": 1.24571,
+        "ap_b": 1.17382,
+        "base_rate": 0.059913,
+        "n_pos": 867,
+        "n_windows": 14471,
+        "n_episodes": 340,
+        "n_boot": 500,
+        "n_boot_valid": 500,
+        "estimator": "paired_ap_episode_cluster_bootstrap"
+       }
+      }
+     }
+    },
+    "LATERAL": {
+     "_what": "a classification target has no predicted speed/headway (LONGITUDINAL) or heading/curvature/cross-track (LATERAL) to score, so the family is reported as decision quality STRATIFIED BY REGIME: does the change hold where the ego is actually decelerating / turning?",
+     "_not_computable": "heading, curvature, yaw-rate, cross-track error",
+     "_not_computable_reason": "the arm emits a per-frame situation probability, not a trajectory",
+     "strata": {
+      "straight": {
+       "n_rows": 32585,
+       "n_pos": 398,
+       "base_rate": 0.012214,
+       "ap_lift": {
+        "CELL_w8_L1.0": 1.81838,
+        "CELL_w8_L3.0": 1.60073
+       },
+       "paired_delta_ap_lift": {
+        "delta": 0.21765,
+        "lo": -0.1661,
+        "hi": 0.84465,
+        "ci95": 0.50537,
+        "p_delta_gt0": 0.884,
+        "separated": false,
+        "statistic": "ap_lift",
+        "ap_a": 1.81838,
+        "ap_b": 1.60073,
+        "base_rate": 0.012214,
+        "n_pos": 398,
+        "n_windows": 32585,
+        "n_episodes": 492,
+        "n_boot": 500,
+        "n_boot_valid": 500,
+        "estimator": "paired_ap_episode_cluster_bootstrap"
+       }
+      },
+      "turning": {
+       "n_rows": 24394,
+       "n_pos": 1074,
+       "base_rate": 0.044027,
+       "ap_lift": {
+        "CELL_w8_L1.0": 0.97312,
+        "CELL_w8_L3.0": 0.96606
+       },
+       "paired_delta_ap_lift": {
+        "delta": 0.00706,
+        "lo": -0.06904,
+        "hi": 0.19286,
+        "ci95": 0.13095,
+        "p_delta_gt0": 0.528,
+        "separated": false,
+        "statistic": "ap_lift",
+        "ap_a": 0.97312,
+        "ap_b": 0.96606,
+        "base_rate": 0.044027,
+        "n_pos": 1074,
+        "n_windows": 24394,
+        "n_episodes": 460,
+        "n_boot": 500,
+        "n_boot_valid": 500,
+        "estimator": "paired_ap_episode_cluster_bootstrap"
+       }
+      }
+     }
+    },
+    "STRATEGIC": {
+     "_status": "UNAVAILABLE",
+     "_reason": "no route/goal/map label exists on PhysicalAI-AV \u2014 settled at five probes (no map, lane graph, junction annotation or route signal; egomotion is clip-local metres with no GNSS), so there is no strategic target to score this arm against.",
+     "n_rows": 56979
+    }
+   },
+   "estimator": "paired_ap_episode_cluster_bootstrap (episode-cluster, paired)",
+   "n_clusters": 500,
+   "n_boot": 2000
+  },
+  "roundabout::CELL_w8_L1.0::legacy_ego": {
+   "situation": "roundabout",
+   "families": {
+    "TACTICAL": {
+     "_what": "situation anticipation = the tactical decision. AP and AP-lift per situation; the paired delta is the decision-quality change.",
+     "n_rows_scored": 56868,
+     "n_rows_dropped_nonfinite": 0,
+     "base_rate": 0.017971,
+     "n_pos": 1022,
+     "ap": {
+      "CELL_w8_L1.0": 0.05963,
+      "CELL_w8_L3.0": 0.0442
+     },
+     "ap_lift": {
+      "CELL_w8_L1.0": 3.31816,
+      "CELL_w8_L3.0": 2.45952
+     },
+     "paired_delta_ap_lift": {
+      "delta": 0.85864,
+      "lo": 0.31435,
+      "hi": 1.59976,
+      "ci95": 0.6427,
+      "p_delta_gt0": 0.9995,
+      "separated": true,
+      "statistic": "ap_lift",
+      "ap_a": 3.31816,
+      "ap_b": 2.45952,
+      "base_rate": 0.017971,
+      "n_pos": 1022,
+      "n_windows": 56868,
+      "n_episodes": 500,
+      "n_boot": 2000,
+      "n_boot_valid": 2000,
+      "estimator": "paired_ap_episode_cluster_bootstrap"
+     },
+     "single_arm_ci": {
+      "CELL_w8_L1.0": {
+       "point": 3.31816,
+       "lo": 2.33009,
+       "hi": 4.92498,
+       "ci95": 1.29745,
+       "se": 0.67343,
+       "statistic": "ap_lift",
+       "base_rate": 0.017971,
+       "n_pos": 1022,
+       "n_windows": 56868,
+       "n_episodes": 500,
+       "n_boot": 2000,
+       "n_boot_valid": 2000,
+       "estimator": "ap_episode_cluster_bootstrap",
+       "_lo_raw": 2.3300883903470404,
+       "_hi_raw": 4.924981760302261
+      },
+      "CELL_w8_L3.0": {
+       "point": 2.45952,
+       "lo": 1.76834,
+       "hi": 3.77749,
+       "ci95": 1.00458,
+       "se": 0.51194,
+       "statistic": "ap_lift",
+       "base_rate": 0.017971,
+       "n_pos": 1022,
+       "n_windows": 56868,
+       "n_episodes": 500,
+       "n_boot": 2000,
+       "n_boot_valid": 2000,
+       "estimator": "ap_episode_cluster_bootstrap",
+       "_lo_raw": 1.7683360562377108,
+       "_hi_raw": 3.7774869987388153
+      }
+     },
+     "anticipation_lead": {
+      "CELL_w8_L1.0": {
+       "median_lead_s": 1.0,
+       "n_runs": 40,
+       "n_runs_no_alarm": 13,
+       "n_alarm_rows": 2843,
+       "top_frac": 0.05
+      },
+      "CELL_w8_L3.0": {
+       "median_lead_s": 1.8,
+       "n_runs": 40,
+       "n_runs_no_alarm": 29,
+       "n_alarm_rows": 2843,
+       "top_frac": 0.05
+      }
+     },
+     "operating_point_5pct": {
+      "CELL_w8_L1.0": {
+       "top_frac": 0.05,
+       "n_scorable": 56868,
+       "n_alarm": 2843,
+       "n_pos": 1022,
+       "tp": 218,
+       "precision": 0.07668,
+       "recall": 0.21331,
+       "base_rate": 0.017971,
+       "precision_lift": 4.26675
+      },
+      "CELL_w8_L3.0": {
+       "top_frac": 0.05,
+       "n_scorable": 56868,
+       "n_alarm": 2843,
+       "n_pos": 1022,
+       "tp": 145,
+       "precision": 0.051,
+       "recall": 0.14188,
+       "base_rate": 0.017971,
+       "precision_lift": 2.83797
+      }
+     }
+    },
+    "LONGITUDINAL": {
+     "_what": "a classification target has no predicted speed/headway (LONGITUDINAL) or heading/curvature/cross-track (LATERAL) to score, so the family is reported as decision quality STRATIFIED BY REGIME: does the change hold where the ego is actually decelerating / turning?",
+     "_not_computable": "target-speed accuracy, headway/time-gap/TTC",
+     "_not_computable_reason": "the arm emits a per-frame situation probability, not a trajectory",
+     "strata": {
+      "decelerating": {
+       "n_rows": 12921,
+       "n_pos": 205,
+       "base_rate": 0.015866,
+       "ap_lift": {
+        "CELL_w8_L1.0": 1.35705,
+        "CELL_w8_L3.0": 1.49775
+       },
+       "paired_delta_ap_lift": {
+        "delta": -0.14071,
+        "lo": -1.64973,
+        "hi": 0.60371,
+        "ci95": 1.12672,
+        "p_delta_gt0": 0.316,
+        "separated": false,
+        "statistic": "ap_lift",
+        "ap_a": 1.35705,
+        "ap_b": 1.49775,
+        "base_rate": 0.015866,
+        "n_pos": 205,
+        "n_windows": 12921,
+        "n_episodes": 363,
+        "n_boot": 500,
+        "n_boot_valid": 500,
+        "estimator": "paired_ap_episode_cluster_bootstrap"
+       }
+      },
+      "steady": {
+       "n_rows": 26290,
+       "n_pos": 449,
+       "base_rate": 0.017079,
+       "ap_lift": {
+        "CELL_w8_L1.0": 7.19859,
+        "CELL_w8_L3.0": 3.21386
+       },
+       "paired_delta_ap_lift": {
+        "delta": 3.98473,
+        "lo": 1.21536,
+        "hi": 8.25041,
+        "ci95": 3.51752,
+        "p_delta_gt0": 1.0,
+        "separated": true,
+        "statistic": "ap_lift",
+        "ap_a": 7.19859,
+        "ap_b": 3.21386,
+        "base_rate": 0.017079,
+        "n_pos": 449,
+        "n_windows": 26290,
+        "n_episodes": 498,
+        "n_boot": 500,
+        "n_boot_valid": 500,
+        "estimator": "paired_ap_episode_cluster_bootstrap"
+       }
+      },
+      "accelerating": {
+       "n_rows": 17657,
+       "n_pos": 368,
+       "base_rate": 0.020842,
+       "ap_lift": {
+        "CELL_w8_L1.0": 2.56565,
+        "CELL_w8_L3.0": 2.25851
+       },
+       "paired_delta_ap_lift": {
+        "delta": 0.30714,
+        "lo": -0.56849,
+        "hi": 2.21795,
+        "ci95": 1.39322,
+        "p_delta_gt0": 0.716,
+        "separated": false,
+        "statistic": "ap_lift",
+        "ap_a": 2.56565,
+        "ap_b": 2.25851,
+        "base_rate": 0.020842,
+        "n_pos": 368,
+        "n_windows": 17657,
+        "n_episodes": 417,
+        "n_boot": 500,
+        "n_boot_valid": 500,
+        "estimator": "paired_ap_episode_cluster_bootstrap"
+       }
+      },
+      "low_speed_lt8": {
+       "n_rows": 40819,
+       "n_pos": 924,
+       "base_rate": 0.022637,
+       "ap_lift": {
+        "CELL_w8_L1.0": 3.05672,
+        "CELL_w8_L3.0": 2.29056
+       },
+       "paired_delta_ap_lift": {
+        "delta": 0.76616,
+        "lo": 0.30369,
+        "hi": 1.36206,
+        "ci95": 0.52919,
+        "p_delta_gt0": 0.998,
+        "separated": true,
+        "statistic": "ap_lift",
+        "ap_a": 3.05672,
+        "ap_b": 2.29056,
+        "base_rate": 0.022637,
+        "n_pos": 924,
+        "n_windows": 40819,
+        "n_episodes": 486,
+        "n_boot": 500,
+        "n_boot_valid": 500,
+        "estimator": "paired_ap_episode_cluster_bootstrap"
+       }
+      },
+      "cruise_ge8": {
+       "n_rows": 16049,
+       "n_pos": 98,
+       "base_rate": 0.006106,
+       "ap_lift": {
+        "CELL_w8_L1.0": 5.40737,
+        "CELL_w8_L3.0": 2.14157
+       },
+       "paired_delta_ap_lift": {
+        "delta": 3.26579,
+        "lo": 0.07422,
+        "hi": 16.65682,
+        "ci95": 8.2913,
+        "p_delta_gt0": 0.994,
+        "separated": true,
+        "statistic": "ap_lift",
+        "ap_a": 5.40737,
+        "ap_b": 2.14157,
+        "base_rate": 0.006106,
+        "n_pos": 98,
+        "n_windows": 16049,
+        "n_episodes": 346,
+        "n_boot": 500,
+        "n_boot_valid": 499,
+        "estimator": "paired_ap_episode_cluster_bootstrap"
+       }
+      }
+     }
+    },
+    "LATERAL": {
+     "_what": "a classification target has no predicted speed/headway (LONGITUDINAL) or heading/curvature/cross-track (LATERAL) to score, so the family is reported as decision quality STRATIFIED BY REGIME: does the change hold where the ego is actually decelerating / turning?",
+     "_not_computable": "heading, curvature, yaw-rate, cross-track error",
+     "_not_computable_reason": "the arm emits a per-frame situation probability, not a trajectory",
+     "strata": {
+      "straight": {
+       "n_rows": 33572,
+       "n_pos": 338,
+       "base_rate": 0.010068,
+       "ap_lift": {
+        "CELL_w8_L1.0": 7.79565,
+        "CELL_w8_L3.0": 4.38257
+       },
+       "paired_delta_ap_lift": {
+        "delta": 3.41308,
+        "lo": 1.10638,
+        "hi": 9.59205,
+        "ci95": 4.24284,
+        "p_delta_gt0": 1.0,
+        "separated": true,
+        "statistic": "ap_lift",
+        "ap_a": 7.79565,
+        "ap_b": 4.38257,
+        "base_rate": 0.010068,
+        "n_pos": 338,
+        "n_windows": 33572,
+        "n_episodes": 496,
+        "n_boot": 500,
+        "n_boot_valid": 500,
+        "estimator": "paired_ap_episode_cluster_bootstrap"
+       }
+      },
+      "turning": {
+       "n_rows": 23296,
+       "n_pos": 684,
+       "base_rate": 0.029361,
+       "ap_lift": {
+        "CELL_w8_L1.0": 1.99217,
+        "CELL_w8_L3.0": 1.69688
+       },
+       "paired_delta_ap_lift": {
+        "delta": 0.29528,
+        "lo": -0.04854,
+        "hi": 0.65178,
+        "ci95": 0.35016,
+        "p_delta_gt0": 0.956,
+        "separated": false,
+        "statistic": "ap_lift",
+        "ap_a": 1.99217,
+        "ap_b": 1.69688,
+        "base_rate": 0.029361,
+        "n_pos": 684,
+        "n_windows": 23296,
+        "n_episodes": 461,
+        "n_boot": 500,
+        "n_boot_valid": 500,
+        "estimator": "paired_ap_episode_cluster_bootstrap"
+       }
+      }
+     }
+    },
+    "STRATEGIC": {
+     "_status": "UNAVAILABLE",
+     "_reason": "no route/goal/map label exists on PhysicalAI-AV \u2014 settled at five probes (no map, lane graph, junction annotation or route signal; egomotion is clip-local metres with no GNSS), so there is no strategic target to score this arm against.",
+     "n_rows": 56868
+    }
+   },
+   "estimator": "paired_ap_episode_cluster_bootstrap (episode-cluster, paired)",
+   "n_clusters": 500,
+   "n_boot": 2000
+  },
+  "intersection::CELL_w8_L1.0::legacy_ego": {
+   "situation": "intersection",
+   "families": {
+    "TACTICAL": {
+     "_what": "situation anticipation = the tactical decision. AP and AP-lift per situation; the paired delta is the decision-quality change.",
+     "n_rows_scored": 50975,
+     "n_rows_dropped_nonfinite": 0,
+     "base_rate": 0.115527,
+     "n_pos": 5889,
+     "ap": {
+      "CELL_w8_L1.0": 0.19232,
+      "CELL_w8_L3.0": 0.18454
+     },
+     "ap_lift": {
+      "CELL_w8_L1.0": 1.6647,
+      "CELL_w8_L3.0": 1.59737
+     },
+     "paired_delta_ap_lift": {
+      "delta": 0.06733,
+      "lo": -0.03042,
+      "hi": 0.17115,
+      "ci95": 0.10078,
+      "p_delta_gt0": 0.911,
+      "separated": false,
+      "statistic": "ap_lift",
+      "ap_a": 1.6647,
+      "ap_b": 1.59737,
+      "base_rate": 0.115527,
+      "n_pos": 5889,
+      "n_windows": 50975,
+      "n_episodes": 500,
+      "n_boot": 2000,
+      "n_boot_valid": 2000,
+      "estimator": "paired_ap_episode_cluster_bootstrap"
+     },
+     "single_arm_ci": {
+      "CELL_w8_L1.0": {
+       "point": 1.6647,
+       "lo": 1.42358,
+       "hi": 2.02209,
+       "ci95": 0.29926,
+       "se": 0.1511,
+       "statistic": "ap_lift",
+       "base_rate": 0.115527,
+       "n_pos": 5889,
+       "n_windows": 50975,
+       "n_episodes": 500,
+       "n_boot": 2000,
+       "n_boot_valid": 2000,
+       "estimator": "ap_episode_cluster_bootstrap",
+       "_lo_raw": 1.4235774140607462,
+       "_hi_raw": 2.0220936001957877
+      },
+      "CELL_w8_L3.0": {
+       "point": 1.59737,
+       "lo": 1.37204,
+       "hi": 1.91696,
+       "ci95": 0.27246,
+       "se": 0.14018,
+       "statistic": "ap_lift",
+       "base_rate": 0.115527,
+       "n_pos": 5889,
+       "n_windows": 50975,
+       "n_episodes": 500,
+       "n_boot": 2000,
+       "n_boot_valid": 2000,
+       "estimator": "ap_episode_cluster_bootstrap",
+       "_lo_raw": 1.3720373678351132,
+       "_hi_raw": 1.9169643001577144
+      }
+     },
+     "anticipation_lead": {
+      "CELL_w8_L1.0": {
+       "median_lead_s": 2.6,
+       "n_runs": 251,
+       "n_runs_no_alarm": 204,
+       "n_alarm_rows": 2549,
+       "top_frac": 0.05
+      },
+      "CELL_w8_L3.0": {
+       "median_lead_s": 2.45,
+       "n_runs": 251,
+       "n_runs_no_alarm": 199,
+       "n_alarm_rows": 2549,
+       "top_frac": 0.05
+      }
+     },
+     "operating_point_5pct": {
+      "CELL_w8_L1.0": {
+       "top_frac": 0.05,
+       "n_scorable": 50975,
+       "n_alarm": 2549,
+       "n_pos": 5889,
+       "tp": 655,
+       "precision": 0.25696,
+       "recall": 0.11122,
+       "base_rate": 0.115527,
+       "precision_lift": 2.22427
+      },
+      "CELL_w8_L3.0": {
+       "top_frac": 0.05,
+       "n_scorable": 50975,
+       "n_alarm": 2549,
+       "n_pos": 5889,
+       "tp": 649,
+       "precision": 0.25461,
+       "recall": 0.11021,
+       "base_rate": 0.115527,
+       "precision_lift": 2.20389
+      }
+     }
+    },
+    "LONGITUDINAL": {
+     "_what": "a classification target has no predicted speed/headway (LONGITUDINAL) or heading/curvature/cross-track (LATERAL) to score, so the family is reported as decision quality STRATIFIED BY REGIME: does the change hold where the ego is actually decelerating / turning?",
+     "_not_computable": "target-speed accuracy, headway/time-gap/TTC",
+     "_not_computable_reason": "the arm emits a per-frame situation probability, not a trajectory",
+     "strata": {
+      "decelerating": {
+       "n_rows": 11942,
+       "n_pos": 2520,
+       "base_rate": 0.21102,
+       "ap_lift": {
+        "CELL_w8_L1.0": 1.47594,
+        "CELL_w8_L3.0": 1.5522
+       },
+       "paired_delta_ap_lift": {
+        "delta": -0.07627,
+        "lo": -0.16861,
+        "hi": 0.00833,
+        "ci95": 0.08847,
+        "p_delta_gt0": 0.04,
+        "separated": false,
+        "statistic": "ap_lift",
+        "ap_a": 1.47594,
+        "ap_b": 1.5522,
+        "base_rate": 0.21102,
+        "n_pos": 2520,
+        "n_windows": 11942,
+        "n_episodes": 356,
+        "n_boot": 500,
+        "n_boot_valid": 500,
+        "estimator": "paired_ap_episode_cluster_bootstrap"
+       }
+      },
+      "steady": {
+       "n_rows": 24719,
+       "n_pos": 2173,
+       "base_rate": 0.087908,
+       "ap_lift": {
+        "CELL_w8_L1.0": 1.45808,
+        "CELL_w8_L3.0": 1.32851
+       },
+       "paired_delta_ap_lift": {
+        "delta": 0.12957,
+        "lo": 0.04056,
+        "hi": 0.33002,
+        "ci95": 0.14473,
+        "p_delta_gt0": 0.998,
+        "separated": true,
+        "statistic": "ap_lift",
+        "ap_a": 1.45808,
+        "ap_b": 1.32851,
+        "base_rate": 0.087908,
+        "n_pos": 2173,
+        "n_windows": 24719,
+        "n_episodes": 494,
+        "n_boot": 500,
+        "n_boot_valid": 500,
+        "estimator": "paired_ap_episode_cluster_bootstrap"
+       }
+      },
+      "accelerating": {
+       "n_rows": 14314,
+       "n_pos": 1196,
+       "base_rate": 0.083555,
+       "ap_lift": {
+        "CELL_w8_L1.0": 1.96632,
+        "CELL_w8_L3.0": 1.91183
+       },
+       "paired_delta_ap_lift": {
+        "delta": 0.05449,
+        "lo": -0.17985,
+        "hi": 0.27607,
+        "ci95": 0.22796,
+        "p_delta_gt0": 0.71,
+        "separated": false,
+        "statistic": "ap_lift",
+        "ap_a": 1.96632,
+        "ap_b": 1.91183,
+        "base_rate": 0.083555,
+        "n_pos": 1196,
+        "n_windows": 14314,
+        "n_episodes": 406,
+        "n_boot": 500,
+        "n_boot_valid": 500,
+        "estimator": "paired_ap_episode_cluster_bootstrap"
+       }
+      },
+      "low_speed_lt8": {
+       "n_rows": 34899,
+       "n_pos": 5077,
+       "base_rate": 0.145477,
+       "ap_lift": {
+        "CELL_w8_L1.0": 1.59181,
+        "CELL_w8_L3.0": 1.55948
+       },
+       "paired_delta_ap_lift": {
+        "delta": 0.03233,
+        "lo": -0.0632,
+        "hi": 0.12776,
+        "ci95": 0.09548,
+        "p_delta_gt0": 0.742,
+        "separated": false,
+        "statistic": "ap_lift",
+        "ap_a": 1.59181,
+        "ap_b": 1.55948,
+        "base_rate": 0.145477,
+        "n_pos": 5077,
+        "n_windows": 34899,
+        "n_episodes": 488,
+        "n_boot": 500,
+        "n_boot_valid": 500,
+        "estimator": "paired_ap_episode_cluster_bootstrap"
+       }
+      },
+      "cruise_ge8": {
+       "n_rows": 16076,
+       "n_pos": 812,
+       "base_rate": 0.05051,
+       "ap_lift": {
+        "CELL_w8_L1.0": 1.38783,
+        "CELL_w8_L3.0": 1.3855
+       },
+       "paired_delta_ap_lift": {
+        "delta": 0.00233,
+        "lo": -0.29315,
+        "hi": 0.15259,
+        "ci95": 0.22287,
+        "p_delta_gt0": 0.508,
+        "separated": false,
+        "statistic": "ap_lift",
+        "ap_a": 1.38783,
+        "ap_b": 1.3855,
+        "base_rate": 0.05051,
+        "n_pos": 812,
+        "n_windows": 16076,
+        "n_episodes": 346,
+        "n_boot": 500,
+        "n_boot_valid": 500,
+        "estimator": "paired_ap_episode_cluster_bootstrap"
+       }
+      }
+     }
+    },
+    "LATERAL": {
+     "_what": "a classification target has no predicted speed/headway (LONGITUDINAL) or heading/curvature/cross-track (LATERAL) to score, so the family is reported as decision quality STRATIFIED BY REGIME: does the change hold where the ego is actually decelerating / turning?",
+     "_not_computable": "heading, curvature, yaw-rate, cross-track error",
+     "_not_computable_reason": "the arm emits a per-frame situation probability, not a trajectory",
+     "strata": {
+      "straight": {
+       "n_rows": 33368,
+       "n_pos": 4966,
+       "base_rate": 0.148825,
+       "ap_lift": {
+        "CELL_w8_L1.0": 1.4912,
+        "CELL_w8_L3.0": 1.39043
+       },
+       "paired_delta_ap_lift": {
+        "delta": 0.10077,
+        "lo": 0.0165,
+        "hi": 0.19996,
+        "ci95": 0.09173,
+        "p_delta_gt0": 0.988,
+        "separated": true,
+        "statistic": "ap_lift",
+        "ap_a": 1.4912,
+        "ap_b": 1.39043,
+        "base_rate": 0.148825,
+        "n_pos": 4966,
+        "n_windows": 33368,
+        "n_episodes": 496,
+        "n_boot": 500,
+        "n_boot_valid": 500,
+        "estimator": "paired_ap_episode_cluster_bootstrap"
+       }
+      },
+      "turning": {
+       "n_rows": 17607,
+       "n_pos": 923,
+       "base_rate": 0.052422,
+       "ap_lift": {
+        "CELL_w8_L1.0": 1.35106,
+        "CELL_w8_L3.0": 1.49809
+       },
+       "paired_delta_ap_lift": {
+        "delta": -0.14703,
+        "lo": -0.32484,
+        "hi": -0.02479,
+        "ci95": 0.15002,
+        "p_delta_gt0": 0.008,
+        "separated": true,
+        "statistic": "ap_lift",
+        "ap_a": 1.35106,
+        "ap_b": 1.49809,
+        "base_rate": 0.052422,
+        "n_pos": 923,
+        "n_windows": 17607,
+        "n_episodes": 444,
+        "n_boot": 500,
+        "n_boot_valid": 500,
+        "estimator": "paired_ap_episode_cluster_bootstrap"
+       }
+      }
+     }
+    },
+    "STRATEGIC": {
+     "_status": "UNAVAILABLE",
+     "_reason": "no route/goal/map label exists on PhysicalAI-AV \u2014 settled at five probes (no map, lane graph, junction annotation or route signal; egomotion is clip-local metres with no GNSS), so there is no strategic target to score this arm against.",
+     "n_rows": 50975
+    }
+   },
+   "estimator": "paired_ap_episode_cluster_bootstrap (episode-cluster, paired)",
+   "n_clusters": 500,
+   "n_boot": 2000
+  }
+ }
+}

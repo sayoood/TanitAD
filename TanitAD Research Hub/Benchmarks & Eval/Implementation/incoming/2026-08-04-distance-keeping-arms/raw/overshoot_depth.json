@@ -1,0 +1,99 @@
+{
+ "_what": "overshoot depth over the 270 LEAD windows",
+ "n_lead_windows": 270,
+ "arms": {
+  "refc-base-30k": {
+   "n_overshoot_windows": 28,
+   "first_negative_step_hist": {
+    "0.5s": 5,
+    "1.0s": 4,
+    "1.5s": 11,
+    "2.0s": 8
+   },
+   "mean_steps_in_corridor_over_lead": 3.037,
+   "n_zero_steps_in_corridor": 29,
+   "max_overrun_past_rear_face_m": 38.917,
+   "mean_overrun_when_overshooting_m": 13.799
+  },
+  "flagship-30k": {
+   "n_overshoot_windows": 28,
+   "first_negative_step_hist": {
+    "0.5s": 17,
+    "1.0s": 7,
+    "1.5s": 3,
+    "2.0s": 1
+   },
+   "mean_steps_in_corridor_over_lead": 2.948,
+   "n_zero_steps_in_corridor": 42,
+   "max_overrun_past_rear_face_m": 39.466,
+   "mean_overrun_when_overshooting_m": 14.718
+  },
+  "cv": {
+   "n_overshoot_windows": 3,
+   "first_negative_step_hist": {
+    "0.5s": 0,
+    "1.0s": 1,
+    "1.5s": 1,
+    "2.0s": 1
+   },
+   "mean_steps_in_corridor_over_lead": 3.196,
+   "n_zero_steps_in_corridor": 34,
+   "max_overrun_past_rear_face_m": 37.861,
+   "mean_overrun_when_overshooting_m": 18.9
+  },
+  "gt_oracle": {
+   "n_overshoot_windows": 6,
+   "first_negative_step_hist": {
+    "0.5s": 0,
+    "1.0s": 2,
+    "1.5s": 2,
+    "2.0s": 2
+   },
+   "mean_steps_in_corridor_over_lead": 3.304,
+   "n_zero_steps_in_corridor": 23,
+   "max_overrun_past_rear_face_m": 38.577,
+   "mean_overrun_when_overshooting_m": 15.964
+  }
+ },
+ "paired_mean_overrun_m": {
+  "flagship-30k_minus_refc-base-30k": {
+   "delta": 0.0953,
+   "lo": -0.3827,
+   "hi": 0.5412,
+   "ci95": 0.4619,
+   "p_delta_gt0": 0.6385,
+   "separated": false,
+   "reducer": "mean",
+   "n_windows": 270,
+   "n_episodes": 21,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap"
+  },
+  "flagship-30k_minus_gt_oracle": {
+   "delta": 1.1716,
+   "lo": 0.0425,
+   "hi": 2.8167,
+   "ci95": 1.3871,
+   "p_delta_gt0": 0.9995,
+   "separated": true,
+   "reducer": "mean",
+   "n_windows": 270,
+   "n_episodes": 21,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap"
+  },
+  "refc-base-30k_minus_gt_oracle": {
+   "delta": 1.0763,
+   "lo": 0.1496,
+   "hi": 2.4749,
+   "ci95": 1.1627,
+   "p_delta_gt0": 1.0,
+   "separated": true,
+   "reducer": "mean",
+   "n_windows": 270,
+   "n_episodes": 21,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap"
+  }
+ }
+}

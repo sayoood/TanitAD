@@ -1,0 +1,42 @@
+TEST SUITE — 2026-08-04, stream: sitclf event-recall deployability
+=================================================================
+
+COMMAND   cd stack && OMP_NUM_THREADS=6 python -m pytest -q
+RESULT    2 failed, 2066 passed, 12 skipped, 2 xfailed, 10 warnings in 1020.82s (0:17:00)
+
+THE TWO FAILURES ARE FOREIGN AND TRANSIENT — verified, not assumed
+-----------------------------------------------------------------
+  FAILED tests/test_nav_known_channel.py::test_refc_train_exposes_nav_known_channel_and_it_reaches_the_config
+  FAILED tests/test_refc_labels_v3_wiring.py::test_labels_v3_is_selectable
+
+Three probes, because "it is not my change" is a claim that needs evidence:
+
+  1. RE-RUN IN ISOLATION, same interpreter, same flags:
+       pytest -q tests/test_nav_known_channel.py tests/test_refc_labels_v3_wiring.py
+       -> 18 passed in 25.60s.   BOTH PASS.
+
+  2. THE FILES UNDER TEST ARE ANOTHER AGENT'S, STAGED-MODIFIED WHILE THIS SUITE RAN:
+       git status --short -- stack/
+         M  stack/scripts/refc_train.py        <- another stream, staged
+         M  stack/tanitad/refs/refc.py         <- another stream, staged
+       Both failing tests import and assert on exactly refc_train.py's argparse/config
+       wiring. A file rewritten mid-suite is the mechanism.
+
+  3. NEITHER FILE IS TOUCHED BY THIS STREAM. This stream's only stack/ changes are
+       stack/tanitad/eval/sitclf_deploy.py   (additive: the chance floor)
+       stack/tests/test_sitclf_deploy.py     (+4 tests)
+     and neither failing test imports either module.
+
+THIS STREAM'S OWN TESTS
+-----------------------
+  pytest -q stack/tests/test_sitclf_deploy.py  ->  47 passed in 27.93s
+  (43 before this stream, +4 added: the floor keys must exist; the analytic floor
+   matches a 400-run simulation; a DISPERSED score beats a CONCENTRATED one on event
+   recall at the identical budget; a useless score lands at a precision LIFT of ~1.0)
+
+MOVING BASELINE — disclosed, not smoothed over
+----------------------------------------------
+  The brief quotes 2043 passed / 12 skipped / 2 xfailed. This run collected 2068
+  (2066 passed + 2 failed): +25 against that baseline, of which +4 are mine and +21
+  arrived from concurrent streams during the session. Checked against `git log` and
+  `git status` before treating the change as anything but a moving baseline.

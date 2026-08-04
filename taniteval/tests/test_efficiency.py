@@ -245,6 +245,63 @@ def test_realtime_budget_constants_match_the_eval_protocol():
     assert abs(1.0 / ro.DT - E.DT_HZ) < 1e-9
 
 
+def test_gpu_state_tegra_na_telemetry_still_decides_exclusivity():
+    """⛔ REGRESSION (2026-08-04, Thor). Tegra reports `[N/A]` for `memory.used`/`clocks.sm`.
+
+    That made `float()` raise inside the SHARED try, so the `--query-compute-apps` probe never ran,
+    `exclusive` stayed None, and `run_and_save` quarantined every Thor run as `.CONTAMINATED-*`
+    on a demonstrably idle GPU. Missing telemetry must not be readable as contention.
+    """
+    class _R:
+        def __init__(self, out, rc=0):
+            self.stdout, self.returncode, self.stderr = out, rc, ""
+
+    calls = []
+
+    def fake_run(cmd, **kw):
+        calls.append(cmd)
+        if any("--query-compute-apps" in c for c in cmd):
+            return _R("")                                   # empty => exclusive
+        return _R("NVIDIA Thor, 0, [N/A], [N/A], 39, 2.77")  # Tegra telemetry
+
+    orig = E.subprocess.run
+    E.subprocess.run = fake_run
+    try:
+        st = E._gpu_state()
+    finally:
+        E.subprocess.run = orig
+
+    assert any("--query-compute-apps" in c for cmd in calls for c in cmd), \
+        "the exclusivity probe must run even when --query-gpu telemetry is [N/A]"
+    assert st["exclusive"] is True, f"idle Tegra GPU must read exclusive, got {st}"
+    assert st["other_compute_procs"] == 0
+    assert st["name"] == "NVIDIA Thor"
+    assert st["mem_used_mb"] is None and st["sm_clock_mhz"] is None
+    assert st["util_pct"] == 0.0 and st["temp_c"] == 39.0     # the parseable ones survive
+    assert "mem_used_mb" in (st.get("telemetry_unavailable") or [])
+
+
+def test_gpu_state_reports_contention_when_another_process_holds_the_gpu():
+    """The other half: a real neighbour must still read NOT exclusive."""
+    class _R:
+        def __init__(self, out, rc=0):
+            self.stdout, self.returncode, self.stderr = out, rc, ""
+
+    def fake_run(cmd, **kw):
+        if any("--query-compute-apps" in c for c in cmd):
+            return _R("999, 8000 MiB\n")
+        return _R("NVIDIA A40, 12, 3000, 1740, 51, 120.0")
+
+    orig = E.subprocess.run
+    E.subprocess.run = fake_run
+    try:
+        st = E._gpu_state()
+    finally:
+        E.subprocess.run = orig
+    assert st["exclusive"] is False and st["other_compute_procs"] == 1
+    assert st["mem_used_mb"] == 3000.0                         # A40 path unchanged
+
+
 if __name__ == "__main__":
     fns = [v for k, v in sorted(globals().items())
            if k.startswith("test_") and callable(v)]

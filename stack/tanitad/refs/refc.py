@@ -485,6 +485,48 @@ class RefCConfig:
     #                                   continue the loop's schedule). MEASURED
     #                                   POST-HOC: `loss_cls` supervises the conf
     #                                   head ONLY at t=0, so the token matters.
+    # --- E-OBJ-1: the OBJECTIVE the ranked score is trained under --------------
+    # "ce"      (default) the INCUMBENT one-hot cross-entropy. Bit-unchanged.
+    # "softade" the EXPECTED fan error under the score's own softmax -- a
+    #           METRIC-AWARE objective. ⭐ MEASURED (E-OBJ-1, frozen 30 k weights,
+    #           881 windows, LOEO, paired episode-cluster bootstrap): swapping a
+    #           fitted ranker's objective from the CE to this recovers -0.0974 m
+    #           (base) / -0.1670 m (XL) of its deficit, separated, and the
+    #           recovery is LONGITUDINAL (`speed_abs` -0.1102 / -0.1816).
+    # "softce"  the CE form with a SOFTENED target `softmax(-fan_err/tau)`.
+    #           ⚠️ MEASURED SEPARATED **WORSE** than the incumbent CE (+0.0909 m
+    #           base) at every tau in {0.1, 0.25, 0.5}. It is implemented ONLY so
+    #           that a `softade` arm has the control that separates
+    #           METRIC-AWARENESS from TARGET-SOFTNESS in training. ⛔ Not a
+    #           recommendation.
+    # 0 parameters, all three: they change a scalar loss, never a module.
+    # ⚠️ SCALE: "ce"/"softce" are in NATS, "softade" is in METRES, and
+    # REFINED_CLS_WEIGHT was calibrated for the former. An arm that swaps the
+    # objective MUST decide that weight explicitly -- the trainer says so loudly.
+    sel_ce_objective: str = "ce"
+    #: extra multiplier on `loss_rcls`, applied ONLY when `sel_ce_objective` is
+    #: not "ce", so the incumbent path stays bit-identical. It exists because the
+    #: objective swap changes the loss's UNITS, and a silent re-weighting of the
+    #: selection term against LAW / maneuver / trajectory is exactly the kind of
+    #: confound that makes an arm unattributable. The trainer refuses a value
+    #: other than 1.0 on the "ce" path rather than recording an inert number.
+    sel_ce_weight: float = 1.0
+    # --- E-OBJ-1: the TARGET SHAPE of the ranked-score CE ----------------------
+    # `loss_rcls` is a ONE-HOT cross-entropy over ~128 near-duplicate candidates:
+    # one winner, 127 losers, and the loser that missed by a centimetre is
+    # penalised exactly as hard as the one that missed by ten metres. MEASURED
+    # (E-S1-0 3.1): under that objective EVERY fitted ranker is separated WORSE
+    # than the incumbent selector - including feature sets that CONTAIN the
+    # incumbent's own score - with a C-leak gap of -0.001 to -0.003 m, i.e. NOT
+    # overfitting. Softening the TARGET to `softmax(-fan_err / tau)` keeps the CE
+    # form (and with it the gradient path `cons_gate` / `route_to_anchor` depend
+    # on - see the note at loss_rcls) and only stops the objective insisting on
+    # one winner among near-duplicates.
+    #   0.0 (default) => the INCUMBENT one-hot target, bit-unchanged.
+    #   tau -> 0      => converges to the one-hot target BY CONSTRUCTION, which is
+    #                    what makes this a continuous knob and not a new loss.
+    # 0 parameters: it changes a target tensor, never a module.
+    sel_ce_soft_tau: float = 0.0
     sel_reach_clamp: bool = False     # S2 bounded-acceleration band on the
     #                                   CANDIDATES (argmax only; the returned
     #                                   score stays unmasked so no -inf reaches

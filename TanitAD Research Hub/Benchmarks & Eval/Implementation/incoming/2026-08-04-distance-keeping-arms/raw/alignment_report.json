@@ -1,0 +1,49 @@
+{
+ "_what": "row-alignment precondition for attaching a lead block to a banked pred dump",
+ "n_windows_rebuilt": 881,
+ "n_episodes": 40,
+ "wp_rel_s": [
+  0.5,
+  1.0,
+  1.5,
+  2.0
+ ],
+ "arms": {
+  "refc-base-30k": {
+   "n_rows": 881,
+   "wp_steps": [
+    5,
+    10,
+    15,
+    20
+   ],
+   "eid_partition_matches_episode_order": true,
+   "gt_max_abs_err_m": 7.62939453125e-06,
+   "gt_p999_abs_err_m": 7.62939453125e-06,
+   "gt_max_abs_m": 73.53993225097656,
+   "f32_ulp_at_max": 7.62939453125e-06,
+   "gt_within_4ulp": true,
+   "cv_max_abs_err_m_vs_holdv0": 1.3434221744537354,
+   "_cv_note": "the scorer's internal 'CV' is [poses[:,3]*t, 0] = go_straight on the RECORDED speed channel; the dump's cv is baseline_waypoints()['constant_velocity'] = finite-difference last-step velocity vector extrapolated (has a lateral component). Different floors, both valid; the canonical driving_*.json floor is the dump's.",
+   "pred_finite_frac": 1.0
+  },
+  "flagship-30k": {
+   "n_rows": 881,
+   "wp_steps": [
+    5,
+    10,
+    15,
+    20
+   ],
+   "eid_partition_matches_episode_order": true,
+   "gt_max_abs_err_m": 7.62939453125e-06,
+   "gt_p999_abs_err_m": 7.62939453125e-06,
+   "gt_max_abs_m": 73.53993225097656,
+   "f32_ulp_at_max": 7.62939453125e-06,
+   "gt_within_4ulp": true,
+   "cv_max_abs_err_m_vs_holdv0": 1.3434221744537354,
+   "_cv_note": "the scorer's internal 'CV' is [poses[:,3]*t, 0] = go_straight on the RECORDED speed channel; the dump's cv is baseline_waypoints()['constant_velocity'] = finite-difference last-step velocity vector extrapolated (has a lateral component). Different floors, both valid; the canonical driving_*.json floor is the dump's.",
+   "pred_finite_frac": 1.0
+  }
+ }
+}

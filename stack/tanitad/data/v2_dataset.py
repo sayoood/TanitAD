@@ -227,8 +227,26 @@ class V2CompressedCache:
     is shared by all :class:`LazyV2Episode` of that dir.
 
     The LRU is per-PROCESS and never crosses the DataLoader-worker boundary (see
-    ``__getstate__``): every worker fills its own, so total RAM is
-    ``num_workers * lru_size * mean_payload`` (~2-4 MB/clip).
+    ``__getstate__``): every worker fills its own AND the parent holds one more,
+    so total RAM is ``(num_workers + 1) * lru_size * mean_payload`` per cache dir.
+
+    ⚠️ **``mean_payload`` IS CACHE-SPECIFIC AND THE OLD "~2-4 MB/clip" HERE WAS
+    8-17x LOW.** MEASURED 2026-08-04 on
+    ``physicalai-train-e438721ae894-w120-256x640cyl``: **33.36 MB/clip** (n=40;
+    reproduced on a second independent sample) — the 2-4 MB figure was written
+    for the old SQUARE JPEG caches, not a 256x640 LOSSLESS-PNG one. Budgeting
+    from the stale number made ``--workers 8 --v2-lru 64`` look affordable when
+    it is **18.8 GiB of unreclaimable RAM**, and that config was SIGKILLed by
+    the container OOM killer three minutes into warm-up on 2026-08-03
+    (``…/incoming/2026-08-04-v5f-sigkill/V5F_SIGKILL.md``).
+    ⇒ **Measure the payload of YOUR cache before sizing ``lru_size``.**
+
+    ⚠️ And note what a big LRU actually buys: under ``shuffle=True`` over
+    410,202 windows spread across 2400 clips, consecutive samples come from
+    essentially random clips, so the hit rate is only ~``lru_size / n_clips``
+    — **2.7 % at lru 64 against 0.17 % at lru 4, for +18 GiB.** On a
+    shuffled corpus this LRU is a poor RAM trade; it pays off only when access
+    is clip-local.
 
     ⭐ ``frame`` (opt-in, 2026-07-28) is THE RIG-CLEAN FIX ON THE TRAINING PATH.
     A CENTRED sub-frame of the geometry a clip was built at is a pure pixel
