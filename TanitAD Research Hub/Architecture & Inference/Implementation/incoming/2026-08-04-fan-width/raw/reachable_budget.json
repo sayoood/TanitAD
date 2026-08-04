@@ -1,0 +1,1442 @@
+{
+ "what": "the decisive budget: how many DECODES reproduce the full fan",
+ "prereg": {
+  "path": "TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-08-04-fan-width/PREREG_FAN_WIDTH.md",
+  "staged_blob": "1bffa9db6a6047325dceff1ef787d67ab2fd5152",
+  "worktree_blob": "1bffa9db6a6047325dceff1ef787d67ab2fd5152",
+  "blob_at_write_time": "1bffa9db6a6047325dceff1ef787d67ab2fd5152"
+ },
+ "generated_utc": "2026-08-04T07:18:23Z",
+ "estimator": {
+  "paired": "paired_episode_cluster_bootstrap",
+  "unit": "episode",
+  "n_boot": 2000,
+  "⛔": "overlapping_holdout_se is NEVER called"
+ },
+ "band": "v_mean in [max(0, v0-5.0), v0+5.0] m/s — flagship_v15's OWN clamp via refc_select.reachability_mask, accel_max=2.5, horizon_s=2.0. NOT tuned here.",
+ "arms": {
+  "refc-base-30k": {
+   "bank": "G:\\Meine Ablage\\SayBouBase\\raw\\Projects\\TanitAD\\taniteval\\results\\fan_refc-base-30k.pt",
+   "n_windows": 881,
+   "n_anchors": 128,
+   "n_episodes": 40,
+   "A_selection_containment": {
+    "full_fan_argmax_inside_DECODED_band_frac": 1.0,
+    "full_fan_argmax_inside_ANCHOR_band_frac": 1.0,
+    "n_windows_where_winner_fails_the_anchor_band": 0,
+    "budget_rank_of_the_winner_under_the_anchor_band": {
+     "median": 21.0,
+     "p95": 38.0,
+     "max": 46
+    },
+    "⭐": "the DECODED-band figure is the literal content of 'S2 is exactly ADE-inert'. The ANCHOR-band figure is the one a pre-decode filter actually gets, and it is measured, not inherited from the decoded one."
+   },
+   "B_minimum_sufficient_budget": {
+    "N_suff": 46,
+    "compute_saving_x": 2.783,
+    "selection_bit_identical_to_full_fan": true,
+    "criterion": "the smallest N whose anchor-band prefix reproduces the full-fan SELECTION INDEX on 100 % of windows — bit-exact, not an ADE tie",
+    "anchor_band_survivors_per_window": {
+     "median": 39.0,
+     "mean": 36.03,
+     "min": 11,
+     "max": 51,
+     "p95": 49.0
+    },
+    "⚠️": "N_suff is driven by the WORST window, so it is the worst-case budget. The median window needs far fewer; a variable-width fan would be cheaper still and is NOT measured here."
+   },
+   "C_budget_ladder_vs_full_fan": [
+    {
+     "n_decodes": 1,
+     "compute_saving_x": 128.0,
+     "selected_ade_0_2s": 3.835706,
+     "full_fan_selected_ade_0_2s": 0.472773,
+     "oracle_in_subset": 3.835706,
+     "selection_index_identical_to_full_fan_frac": 0.06924,
+     "paired_vs_FULL_fan": {
+      "delta": 3.3629,
+      "lo": 2.4883,
+      "hi": 4.362,
+      "ci95": 0.9369,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "verdict": "worse"
+    },
+    {
+     "n_decodes": 2,
+     "compute_saving_x": 64.0,
+     "selected_ade_0_2s": 2.726217,
+     "full_fan_selected_ade_0_2s": 0.472773,
+     "oracle_in_subset": 1.660729,
+     "selection_index_identical_to_full_fan_frac": 0.06924,
+     "paired_vs_FULL_fan": {
+      "delta": 2.2534,
+      "lo": 1.6494,
+      "hi": 3.0017,
+      "ci95": 0.6762,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "verdict": "worse"
+    },
+    {
+     "n_decodes": 4,
+     "compute_saving_x": 32.0,
+     "selected_ade_0_2s": 1.624682,
+     "full_fan_selected_ade_0_2s": 0.472773,
+     "oracle_in_subset": 0.971147,
+     "selection_index_identical_to_full_fan_frac": 0.07832,
+     "paired_vs_FULL_fan": {
+      "delta": 1.1519,
+      "lo": 0.9381,
+      "hi": 1.3804,
+      "ci95": 0.2212,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "verdict": "worse"
+    },
+    {
+     "n_decodes": 8,
+     "compute_saving_x": 16.0,
+     "selected_ade_0_2s": 1.101999,
+     "full_fan_selected_ade_0_2s": 0.472773,
+     "oracle_in_subset": 0.511044,
+     "selection_index_identical_to_full_fan_frac": 0.265607,
+     "paired_vs_FULL_fan": {
+      "delta": 0.6292,
+      "lo": 0.4848,
+      "hi": 0.7973,
+      "ci95": 0.1563,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "verdict": "worse"
+    },
+    {
+     "n_decodes": 16,
+     "compute_saving_x": 8.0,
+     "selected_ade_0_2s": 0.753417,
+     "full_fan_selected_ade_0_2s": 0.472773,
+     "oracle_in_subset": 0.297154,
+     "selection_index_identical_to_full_fan_frac": 0.414302,
+     "paired_vs_FULL_fan": {
+      "delta": 0.2806,
+      "lo": 0.1907,
+      "hi": 0.3826,
+      "ci95": 0.096,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "verdict": "worse"
+    },
+    {
+     "n_decodes": 32,
+     "compute_saving_x": 4.0,
+     "selected_ade_0_2s": 0.547958,
+     "full_fan_selected_ade_0_2s": 0.472773,
+     "oracle_in_subset": 0.222727,
+     "selection_index_identical_to_full_fan_frac": 0.796822,
+     "paired_vs_FULL_fan": {
+      "delta": 0.0752,
+      "lo": 0.0322,
+      "hi": 0.1319,
+      "ci95": 0.0499,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "verdict": "worse"
+    },
+    {
+     "n_decodes": 46,
+     "compute_saving_x": 2.783,
+     "selected_ade_0_2s": 0.472773,
+     "full_fan_selected_ade_0_2s": 0.472773,
+     "oracle_in_subset": 0.192144,
+     "selection_index_identical_to_full_fan_frac": 1.0,
+     "paired_vs_FULL_fan": {
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "ci95": 0.0,
+      "p_delta_gt0": 0.0,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "verdict": "not separated"
+    },
+    {
+     "n_decodes": 48,
+     "compute_saving_x": 2.667,
+     "selected_ade_0_2s": 0.472773,
+     "full_fan_selected_ade_0_2s": 0.472773,
+     "oracle_in_subset": 0.191581,
+     "selection_index_identical_to_full_fan_frac": 1.0,
+     "paired_vs_FULL_fan": {
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "ci95": 0.0,
+      "p_delta_gt0": 0.0,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "verdict": "not separated"
+    },
+    {
+     "n_decodes": 64,
+     "compute_saving_x": 2.0,
+     "selected_ade_0_2s": 0.472773,
+     "full_fan_selected_ade_0_2s": 0.472773,
+     "oracle_in_subset": 0.191423,
+     "selection_index_identical_to_full_fan_frac": 1.0,
+     "paired_vs_FULL_fan": {
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "ci95": 0.0,
+      "p_delta_gt0": 0.0,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "verdict": "not separated"
+    },
+    {
+     "n_decodes": 96,
+     "compute_saving_x": 1.333,
+     "selected_ade_0_2s": 0.472773,
+     "full_fan_selected_ade_0_2s": 0.472773,
+     "oracle_in_subset": 0.191423,
+     "selection_index_identical_to_full_fan_frac": 1.0,
+     "paired_vs_FULL_fan": {
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "ci95": 0.0,
+      "p_delta_gt0": 0.0,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "verdict": "not separated"
+    },
+    {
+     "n_decodes": 128,
+     "compute_saving_x": 1.0,
+     "selected_ade_0_2s": 0.472773,
+     "full_fan_selected_ade_0_2s": 0.472773,
+     "oracle_in_subset": 0.191423,
+     "selection_index_identical_to_full_fan_frac": 1.0,
+     "paired_vs_FULL_fan": {
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "ci95": 0.0,
+      "p_delta_gt0": 0.0,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "verdict": "not separated"
+    }
+   ],
+   "four_families": {
+    "_dt_s": 0.5,
+    "_dt_provenance": "derived from wp_steps [5, 10, 15, 20] x dt_s 0.1 -> 0.5s grid",
+    "full_fan": {
+     "longitudinal": {
+      "speed_mae_mps": 0.446,
+      "speed_bias_mps": 0.0206,
+      "speed_rmse_mps": 0.7617,
+      "along_mae_m": 0.4166,
+      "along_bias_m": 0.0272,
+      "along_final_bias_m": 0.0584,
+      "accel_mae_mps2": 0.4976,
+      "ego_progress": {
+       "status": "OK",
+       "convention": "human_dir",
+       "progress_ratio_mean": 1.0119,
+       "progress_ratio_median": 1.0005,
+       "progress_error_mean": 0.0964,
+       "under_progress_rate": 0.4859,
+       "gt_progress_mean_m": 26.4324,
+       "n": 850,
+       "n_windows": 881,
+       "n_excluded_low_gt_progress": 31,
+       "min_progress_m": 0.5,
+       "t0_axis_gt_self_ratio": 0.9919,
+       "t0_axis_gt_self_ratio_note": "what the GROUND TRUTH scores under pseudosim's published t0-axis reading. 1.0 means the windows are straight; below 1.0 is the CURVATURE CONFOUND — the human charged for under-progress it did not commit, and an arm that drives straighter than the human rewarded for it.",
+       "definition": "along-track distance covered / the human's, both projected on the human's own final-displacement direction; dt-invariant; <1 = under-drives, >1 = over-drives; GT scores exactly 1.0 by construction",
+       "published_motivation": "arXiv 2605.00066 — Ego Progress alone rho=0.83 vs closed-loop Driving Score while traditional L2 gives rho=-0.36 (p=0.43, n=8, NO CI). Direction only; those magnitudes are NOT a target."
+      },
+      "dt_s": 0.5,
+      "rate_scaling_note": "speed ~ 1/dt, accel ~ 1/dt^2. Numbers computed with a wrong dt are off by those powers; along_* are dt-invariant.",
+      "distance_keeping": {
+       "status": "UNAVAILABLE",
+       "reason": "no lead-agent track supplied — pass `lead=` (see this function's caller docstring). PhysicalAI-AV ships obstacle.offline (3D agent tracks, 97.44 % of the corpus); the reader is `Architecture & Inference/Implementation/incoming/2026-08-03-longitudinal-distance-keeping/build_lead_tracks.py`. Not supplying it is a WORK ITEM, not a pass.",
+       "n": 0
+      },
+      "n_windows": 881
+     },
+     "lateral": {
+      "heading_mae_deg": 1.146,
+      "yaw_rate_mae_degps": 1.8506,
+      "curvature_mae_1pm": 0.007711,
+      "curvature_bias_1pm": -0.000986,
+      "cross_mae_m": 0.1313,
+      "cross_bias_m": 0.002,
+      "cross_final_mae_m": 0.305,
+      "n_steps_heading": 3347,
+      "n_steps_curvature": 2504,
+      "excluded_below_min_ds": 177,
+      "min_ds_m": 0.25,
+      "min_ds_mps": 0.5,
+      "dt_s": 0.5,
+      "dt_invariant": [
+       "heading_mae_deg",
+       "curvature_*",
+       "cross_*"
+      ],
+      "n_windows": 881
+     },
+     "tactical": {
+      "status": "UNAVAILABLE",
+      "reason": "tactical decisions not present in the scored pass (missing ['maneuver_pred', 'maneuver_gt']). A world-model FIDELITY pass does not traverse the hierarchy — run_one prints this explicitly. Producing this family needs a hierarchy-traversing eval, which is a WORK ITEM.",
+      "n": 0
+     },
+     "strategic": {
+      "status": "UNAVAILABLE",
+      "reason": "strategic decisions not present in the scored pass (missing ['route_pred', 'route_gt']). A world-model FIDELITY pass does not traverse the hierarchy — run_one prints this explicitly. Producing this family needs a hierarchy-traversing eval, which is a WORK ITEM.",
+      "n": 0,
+      "how_to_populate": "supply `optionset` (map-derived option sets from stack/experiments/nurec-gsplat/strategic_gt.py, consumed by taniteval.strategic_optionset). A route label read off the ego's own future yaw is NOT a substitute: it cannot tell whether the map admitted a choice."
+     },
+     "_grid": {
+      "used": "sparse",
+      "dt_s": 0.5,
+      "horizon_steps": 4,
+      "provenance": "SPARSE waypoint view; derived from wp_steps [5, 10, 15, 20] x dt_s 0.1 -> 0.5s grid",
+      "⛔_history": "BEFORE 2026-08-03 this module hard-coded dt=0.1 s while reading the SPARSE 4-waypoint view (0.5 s spacing), so EVERY published speed_* was x5, EVERY accel_* x25 and EVERY yaw_rate_* x5. Positions, heading and curvature were unaffected. Cross-arm comparisons stay valid (common factor); ABSOLUTE quotations and any comparison to a physical bar do not. MEASURED negative control: GT ego speed 12.4565 m/s vs _seq_geometry 62.9789 m/s = 5.0559x, on 859 real held-out windows."
+     },
+     "_binding_rule": "Sayed 2026-08-02: every eval reports LONGITUDINAL + LATERAL + TACTICAL + STRATEGIC in ADDITION to ADE. Per-family, never pooled. A family reported UNAVAILABLE is a WORK ITEM, not a pass.",
+     "_families_unavailable": [
+      "tactical",
+      "strategic"
+     ],
+     "_complete": false
+    },
+    "anchor_band_N_suff": {
+     "longitudinal": {
+      "speed_mae_mps": 0.446,
+      "speed_bias_mps": 0.0206,
+      "speed_rmse_mps": 0.7617,
+      "along_mae_m": 0.4166,
+      "along_bias_m": 0.0272,
+      "along_final_bias_m": 0.0584,
+      "accel_mae_mps2": 0.4976,
+      "ego_progress": {
+       "status": "OK",
+       "convention": "human_dir",
+       "progress_ratio_mean": 1.0119,
+       "progress_ratio_median": 1.0005,
+       "progress_error_mean": 0.0964,
+       "under_progress_rate": 0.4859,
+       "gt_progress_mean_m": 26.4324,
+       "n": 850,
+       "n_windows": 881,
+       "n_excluded_low_gt_progress": 31,
+       "min_progress_m": 0.5,
+       "t0_axis_gt_self_ratio": 0.9919,
+       "t0_axis_gt_self_ratio_note": "what the GROUND TRUTH scores under pseudosim's published t0-axis reading. 1.0 means the windows are straight; below 1.0 is the CURVATURE CONFOUND — the human charged for under-progress it did not commit, and an arm that drives straighter than the human rewarded for it.",
+       "definition": "along-track distance covered / the human's, both projected on the human's own final-displacement direction; dt-invariant; <1 = under-drives, >1 = over-drives; GT scores exactly 1.0 by construction",
+       "published_motivation": "arXiv 2605.00066 — Ego Progress alone rho=0.83 vs closed-loop Driving Score while traditional L2 gives rho=-0.36 (p=0.43, n=8, NO CI). Direction only; those magnitudes are NOT a target."
+      },
+      "dt_s": 0.5,
+      "rate_scaling_note": "speed ~ 1/dt, accel ~ 1/dt^2. Numbers computed with a wrong dt are off by those powers; along_* are dt-invariant.",
+      "distance_keeping": {
+       "status": "UNAVAILABLE",
+       "reason": "no lead-agent track supplied — pass `lead=` (see this function's caller docstring). PhysicalAI-AV ships obstacle.offline (3D agent tracks, 97.44 % of the corpus); the reader is `Architecture & Inference/Implementation/incoming/2026-08-03-longitudinal-distance-keeping/build_lead_tracks.py`. Not supplying it is a WORK ITEM, not a pass.",
+       "n": 0
+      },
+      "n_windows": 881
+     },
+     "lateral": {
+      "heading_mae_deg": 1.146,
+      "yaw_rate_mae_degps": 1.8506,
+      "curvature_mae_1pm": 0.007711,
+      "curvature_bias_1pm": -0.000986,
+      "cross_mae_m": 0.1313,
+      "cross_bias_m": 0.002,
+      "cross_final_mae_m": 0.305,
+      "n_steps_heading": 3347,
+      "n_steps_curvature": 2504,
+      "excluded_below_min_ds": 177,
+      "min_ds_m": 0.25,
+      "min_ds_mps": 0.5,
+      "dt_s": 0.5,
+      "dt_invariant": [
+       "heading_mae_deg",
+       "curvature_*",
+       "cross_*"
+      ],
+      "n_windows": 881
+     },
+     "tactical": {
+      "status": "UNAVAILABLE",
+      "reason": "tactical decisions not present in the scored pass (missing ['maneuver_pred', 'maneuver_gt']). A world-model FIDELITY pass does not traverse the hierarchy — run_one prints this explicitly. Producing this family needs a hierarchy-traversing eval, which is a WORK ITEM.",
+      "n": 0
+     },
+     "strategic": {
+      "status": "UNAVAILABLE",
+      "reason": "strategic decisions not present in the scored pass (missing ['route_pred', 'route_gt']). A world-model FIDELITY pass does not traverse the hierarchy — run_one prints this explicitly. Producing this family needs a hierarchy-traversing eval, which is a WORK ITEM.",
+      "n": 0,
+      "how_to_populate": "supply `optionset` (map-derived option sets from stack/experiments/nurec-gsplat/strategic_gt.py, consumed by taniteval.strategic_optionset). A route label read off the ego's own future yaw is NOT a substitute: it cannot tell whether the map admitted a choice."
+     },
+     "_grid": {
+      "used": "sparse",
+      "dt_s": 0.5,
+      "horizon_steps": 4,
+      "provenance": "SPARSE waypoint view; derived from wp_steps [5, 10, 15, 20] x dt_s 0.1 -> 0.5s grid",
+      "⛔_history": "BEFORE 2026-08-03 this module hard-coded dt=0.1 s while reading the SPARSE 4-waypoint view (0.5 s spacing), so EVERY published speed_* was x5, EVERY accel_* x25 and EVERY yaw_rate_* x5. Positions, heading and curvature were unaffected. Cross-arm comparisons stay valid (common factor); ABSOLUTE quotations and any comparison to a physical bar do not. MEASURED negative control: GT ego speed 12.4565 m/s vs _seq_geometry 62.9789 m/s = 5.0559x, on 859 real held-out windows."
+     },
+     "_binding_rule": "Sayed 2026-08-02: every eval reports LONGITUDINAL + LATERAL + TACTICAL + STRATEGIC in ADDITION to ADE. Per-family, never pooled. A family reported UNAVAILABLE is a WORK ITEM, not a pass.",
+     "_families_unavailable": [
+      "tactical",
+      "strategic"
+     ],
+     "_complete": false
+    }
+   }
+  },
+  "refc-xl-30k": {
+   "bank": "G:\\Meine Ablage\\SayBouBase\\raw\\Projects\\TanitAD\\taniteval\\results\\fan_refc-xl-30k.pt",
+   "n_windows": 881,
+   "n_anchors": 256,
+   "n_episodes": 40,
+   "A_selection_containment": {
+    "full_fan_argmax_inside_DECODED_band_frac": 1.0,
+    "full_fan_argmax_inside_ANCHOR_band_frac": 1.0,
+    "n_windows_where_winner_fails_the_anchor_band": 0,
+    "budget_rank_of_the_winner_under_the_anchor_band": {
+     "median": 38.0,
+     "p95": 82.0,
+     "max": 92
+    },
+    "⭐": "the DECODED-band figure is the literal content of 'S2 is exactly ADE-inert'. The ANCHOR-band figure is the one a pre-decode filter actually gets, and it is measured, not inherited from the decoded one."
+   },
+   "B_minimum_sufficient_budget": {
+    "N_suff": 92,
+    "compute_saving_x": 2.783,
+    "selection_bit_identical_to_full_fan": true,
+    "criterion": "the smallest N whose anchor-band prefix reproduces the full-fan SELECTION INDEX on 100 % of windows — bit-exact, not an ADE tie",
+    "anchor_band_survivors_per_window": {
+     "median": 83.0,
+     "mean": 74.01,
+     "min": 24,
+     "max": 102,
+     "p95": 99.0
+    },
+    "⚠️": "N_suff is driven by the WORST window, so it is the worst-case budget. The median window needs far fewer; a variable-width fan would be cheaper still and is NOT measured here."
+   },
+   "C_budget_ladder_vs_full_fan": [
+    {
+     "n_decodes": 1,
+     "compute_saving_x": 256.0,
+     "selected_ade_0_2s": 4.122307,
+     "full_fan_selected_ade_0_2s": 0.471439,
+     "oracle_in_subset": 4.122307,
+     "selection_index_identical_to_full_fan_frac": 0.052213,
+     "paired_vs_FULL_fan": {
+      "delta": 3.6509,
+      "lo": 2.852,
+      "hi": 4.5776,
+      "ci95": 0.8628,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "verdict": "worse"
+    },
+    {
+     "n_decodes": 2,
+     "compute_saving_x": 128.0,
+     "selected_ade_0_2s": 2.662184,
+     "full_fan_selected_ade_0_2s": 0.471439,
+     "oracle_in_subset": 2.218291,
+     "selection_index_identical_to_full_fan_frac": 0.052213,
+     "paired_vs_FULL_fan": {
+      "delta": 2.1907,
+      "lo": 1.8225,
+      "hi": 2.6067,
+      "ci95": 0.3921,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "verdict": "worse"
+    },
+    {
+     "n_decodes": 4,
+     "compute_saving_x": 64.0,
+     "selected_ade_0_2s": 2.019022,
+     "full_fan_selected_ade_0_2s": 0.471439,
+     "oracle_in_subset": 1.508356,
+     "selection_index_identical_to_full_fan_frac": 0.056754,
+     "paired_vs_FULL_fan": {
+      "delta": 1.5476,
+      "lo": 1.3183,
+      "hi": 1.7853,
+      "ci95": 0.2335,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "verdict": "worse"
+    },
+    {
+     "n_decodes": 8,
+     "compute_saving_x": 32.0,
+     "selected_ade_0_2s": 1.388596,
+     "full_fan_selected_ade_0_2s": 0.471439,
+     "oracle_in_subset": 0.783992,
+     "selection_index_identical_to_full_fan_frac": 0.093076,
+     "paired_vs_FULL_fan": {
+      "delta": 0.9172,
+      "lo": 0.753,
+      "hi": 1.0881,
+      "ci95": 0.1676,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "verdict": "worse"
+    },
+    {
+     "n_decodes": 16,
+     "compute_saving_x": 16.0,
+     "selected_ade_0_2s": 1.030184,
+     "full_fan_selected_ade_0_2s": 0.471439,
+     "oracle_in_subset": 0.460027,
+     "selection_index_identical_to_full_fan_frac": 0.174801,
+     "paired_vs_FULL_fan": {
+      "delta": 0.5587,
+      "lo": 0.4238,
+      "hi": 0.7029,
+      "ci95": 0.1396,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "verdict": "worse"
+    },
+    {
+     "n_decodes": 32,
+     "compute_saving_x": 8.0,
+     "selected_ade_0_2s": 0.681041,
+     "full_fan_selected_ade_0_2s": 0.471439,
+     "oracle_in_subset": 0.286864,
+     "selection_index_identical_to_full_fan_frac": 0.392736,
+     "paired_vs_FULL_fan": {
+      "delta": 0.2096,
+      "lo": 0.1414,
+      "hi": 0.2972,
+      "ci95": 0.0779,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "verdict": "worse"
+    },
+    {
+     "n_decodes": 48,
+     "compute_saving_x": 5.333,
+     "selected_ade_0_2s": 0.543651,
+     "full_fan_selected_ade_0_2s": 0.471439,
+     "oracle_in_subset": 0.208734,
+     "selection_index_identical_to_full_fan_frac": 0.631101,
+     "paired_vs_FULL_fan": {
+      "delta": 0.0722,
+      "lo": 0.0394,
+      "hi": 0.106,
+      "ci95": 0.0333,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "verdict": "worse"
+    },
+    {
+     "n_decodes": 64,
+     "compute_saving_x": 4.0,
+     "selected_ade_0_2s": 0.497078,
+     "full_fan_selected_ade_0_2s": 0.471439,
+     "oracle_in_subset": 0.180393,
+     "selection_index_identical_to_full_fan_frac": 0.792281,
+     "paired_vs_FULL_fan": {
+      "delta": 0.0256,
+      "lo": 0.0067,
+      "hi": 0.0476,
+      "ci95": 0.0205,
+      "p_delta_gt0": 0.996,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "verdict": "worse"
+    },
+    {
+     "n_decodes": 92,
+     "compute_saving_x": 2.783,
+     "selected_ade_0_2s": 0.471439,
+     "full_fan_selected_ade_0_2s": 0.471439,
+     "oracle_in_subset": 0.164744,
+     "selection_index_identical_to_full_fan_frac": 1.0,
+     "paired_vs_FULL_fan": {
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "ci95": 0.0,
+      "p_delta_gt0": 0.0,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "verdict": "not separated"
+    },
+    {
+     "n_decodes": 96,
+     "compute_saving_x": 2.667,
+     "selected_ade_0_2s": 0.471439,
+     "full_fan_selected_ade_0_2s": 0.471439,
+     "oracle_in_subset": 0.164246,
+     "selection_index_identical_to_full_fan_frac": 1.0,
+     "paired_vs_FULL_fan": {
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "ci95": 0.0,
+      "p_delta_gt0": 0.0,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "verdict": "not separated"
+    },
+    {
+     "n_decodes": 128,
+     "compute_saving_x": 2.0,
+     "selected_ade_0_2s": 0.471439,
+     "full_fan_selected_ade_0_2s": 0.471439,
+     "oracle_in_subset": 0.16395,
+     "selection_index_identical_to_full_fan_frac": 1.0,
+     "paired_vs_FULL_fan": {
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "ci95": 0.0,
+      "p_delta_gt0": 0.0,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "verdict": "not separated"
+    },
+    {
+     "n_decodes": 192,
+     "compute_saving_x": 1.333,
+     "selected_ade_0_2s": 0.471439,
+     "full_fan_selected_ade_0_2s": 0.471439,
+     "oracle_in_subset": 0.16395,
+     "selection_index_identical_to_full_fan_frac": 1.0,
+     "paired_vs_FULL_fan": {
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "ci95": 0.0,
+      "p_delta_gt0": 0.0,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "verdict": "not separated"
+    },
+    {
+     "n_decodes": 256,
+     "compute_saving_x": 1.0,
+     "selected_ade_0_2s": 0.471439,
+     "full_fan_selected_ade_0_2s": 0.471439,
+     "oracle_in_subset": 0.16395,
+     "selection_index_identical_to_full_fan_frac": 1.0,
+     "paired_vs_FULL_fan": {
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "ci95": 0.0,
+      "p_delta_gt0": 0.0,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "verdict": "not separated"
+    }
+   ],
+   "four_families": {
+    "_dt_s": 0.5,
+    "_dt_provenance": "derived from wp_steps [5, 10, 15, 20] x dt_s 0.1 -> 0.5s grid",
+    "full_fan": {
+     "longitudinal": {
+      "speed_mae_mps": 0.4545,
+      "speed_bias_mps": 0.0209,
+      "speed_rmse_mps": 0.7674,
+      "along_mae_m": 0.4168,
+      "along_bias_m": 0.0259,
+      "along_final_bias_m": 0.0511,
+      "accel_mae_mps2": 0.504,
+      "ego_progress": {
+       "status": "OK",
+       "convention": "human_dir",
+       "progress_ratio_mean": 1.0134,
+       "progress_ratio_median": 0.9982,
+       "progress_error_mean": 0.0918,
+       "under_progress_rate": 0.5365,
+       "gt_progress_mean_m": 26.4324,
+       "n": 850,
+       "n_windows": 881,
+       "n_excluded_low_gt_progress": 31,
+       "min_progress_m": 0.5,
+       "t0_axis_gt_self_ratio": 0.9919,
+       "t0_axis_gt_self_ratio_note": "what the GROUND TRUTH scores under pseudosim's published t0-axis reading. 1.0 means the windows are straight; below 1.0 is the CURVATURE CONFOUND — the human charged for under-progress it did not commit, and an arm that drives straighter than the human rewarded for it.",
+       "definition": "along-track distance covered / the human's, both projected on the human's own final-displacement direction; dt-invariant; <1 = under-drives, >1 = over-drives; GT scores exactly 1.0 by construction",
+       "published_motivation": "arXiv 2605.00066 — Ego Progress alone rho=0.83 vs closed-loop Driving Score while traditional L2 gives rho=-0.36 (p=0.43, n=8, NO CI). Direction only; those magnitudes are NOT a target."
+      },
+      "dt_s": 0.5,
+      "rate_scaling_note": "speed ~ 1/dt, accel ~ 1/dt^2. Numbers computed with a wrong dt are off by those powers; along_* are dt-invariant.",
+      "distance_keeping": {
+       "status": "UNAVAILABLE",
+       "reason": "no lead-agent track supplied — pass `lead=` (see this function's caller docstring). PhysicalAI-AV ships obstacle.offline (3D agent tracks, 97.44 % of the corpus); the reader is `Architecture & Inference/Implementation/incoming/2026-08-03-longitudinal-distance-keeping/build_lead_tracks.py`. Not supplying it is a WORK ITEM, not a pass.",
+       "n": 0
+      },
+      "n_windows": 881
+     },
+     "lateral": {
+      "heading_mae_deg": 1.1054,
+      "yaw_rate_mae_degps": 1.7587,
+      "curvature_mae_1pm": 0.006421,
+      "curvature_bias_1pm": -0.000761,
+      "cross_mae_m": 0.131,
+      "cross_bias_m": -0.0,
+      "cross_final_mae_m": 0.3072,
+      "n_steps_heading": 3354,
+      "n_steps_curvature": 2511,
+      "excluded_below_min_ds": 170,
+      "min_ds_m": 0.25,
+      "min_ds_mps": 0.5,
+      "dt_s": 0.5,
+      "dt_invariant": [
+       "heading_mae_deg",
+       "curvature_*",
+       "cross_*"
+      ],
+      "n_windows": 881
+     },
+     "tactical": {
+      "status": "UNAVAILABLE",
+      "reason": "tactical decisions not present in the scored pass (missing ['maneuver_pred', 'maneuver_gt']). A world-model FIDELITY pass does not traverse the hierarchy — run_one prints this explicitly. Producing this family needs a hierarchy-traversing eval, which is a WORK ITEM.",
+      "n": 0
+     },
+     "strategic": {
+      "status": "UNAVAILABLE",
+      "reason": "strategic decisions not present in the scored pass (missing ['route_pred', 'route_gt']). A world-model FIDELITY pass does not traverse the hierarchy — run_one prints this explicitly. Producing this family needs a hierarchy-traversing eval, which is a WORK ITEM.",
+      "n": 0,
+      "how_to_populate": "supply `optionset` (map-derived option sets from stack/experiments/nurec-gsplat/strategic_gt.py, consumed by taniteval.strategic_optionset). A route label read off the ego's own future yaw is NOT a substitute: it cannot tell whether the map admitted a choice."
+     },
+     "_grid": {
+      "used": "sparse",
+      "dt_s": 0.5,
+      "horizon_steps": 4,
+      "provenance": "SPARSE waypoint view; derived from wp_steps [5, 10, 15, 20] x dt_s 0.1 -> 0.5s grid",
+      "⛔_history": "BEFORE 2026-08-03 this module hard-coded dt=0.1 s while reading the SPARSE 4-waypoint view (0.5 s spacing), so EVERY published speed_* was x5, EVERY accel_* x25 and EVERY yaw_rate_* x5. Positions, heading and curvature were unaffected. Cross-arm comparisons stay valid (common factor); ABSOLUTE quotations and any comparison to a physical bar do not. MEASURED negative control: GT ego speed 12.4565 m/s vs _seq_geometry 62.9789 m/s = 5.0559x, on 859 real held-out windows."
+     },
+     "_binding_rule": "Sayed 2026-08-02: every eval reports LONGITUDINAL + LATERAL + TACTICAL + STRATEGIC in ADDITION to ADE. Per-family, never pooled. A family reported UNAVAILABLE is a WORK ITEM, not a pass.",
+     "_families_unavailable": [
+      "tactical",
+      "strategic"
+     ],
+     "_complete": false
+    },
+    "anchor_band_N_suff": {
+     "longitudinal": {
+      "speed_mae_mps": 0.4545,
+      "speed_bias_mps": 0.0209,
+      "speed_rmse_mps": 0.7674,
+      "along_mae_m": 0.4168,
+      "along_bias_m": 0.0259,
+      "along_final_bias_m": 0.0511,
+      "accel_mae_mps2": 0.504,
+      "ego_progress": {
+       "status": "OK",
+       "convention": "human_dir",
+       "progress_ratio_mean": 1.0134,
+       "progress_ratio_median": 0.9982,
+       "progress_error_mean": 0.0918,
+       "under_progress_rate": 0.5365,
+       "gt_progress_mean_m": 26.4324,
+       "n": 850,
+       "n_windows": 881,
+       "n_excluded_low_gt_progress": 31,
+       "min_progress_m": 0.5,
+       "t0_axis_gt_self_ratio": 0.9919,
+       "t0_axis_gt_self_ratio_note": "what the GROUND TRUTH scores under pseudosim's published t0-axis reading. 1.0 means the windows are straight; below 1.0 is the CURVATURE CONFOUND — the human charged for under-progress it did not commit, and an arm that drives straighter than the human rewarded for it.",
+       "definition": "along-track distance covered / the human's, both projected on the human's own final-displacement direction; dt-invariant; <1 = under-drives, >1 = over-drives; GT scores exactly 1.0 by construction",
+       "published_motivation": "arXiv 2605.00066 — Ego Progress alone rho=0.83 vs closed-loop Driving Score while traditional L2 gives rho=-0.36 (p=0.43, n=8, NO CI). Direction only; those magnitudes are NOT a target."
+      },
+      "dt_s": 0.5,
+      "rate_scaling_note": "speed ~ 1/dt, accel ~ 1/dt^2. Numbers computed with a wrong dt are off by those powers; along_* are dt-invariant.",
+      "distance_keeping": {
+       "status": "UNAVAILABLE",
+       "reason": "no lead-agent track supplied — pass `lead=` (see this function's caller docstring). PhysicalAI-AV ships obstacle.offline (3D agent tracks, 97.44 % of the corpus); the reader is `Architecture & Inference/Implementation/incoming/2026-08-03-longitudinal-distance-keeping/build_lead_tracks.py`. Not supplying it is a WORK ITEM, not a pass.",
+       "n": 0
+      },
+      "n_windows": 881
+     },
+     "lateral": {
+      "heading_mae_deg": 1.1054,
+      "yaw_rate_mae_degps": 1.7587,
+      "curvature_mae_1pm": 0.006421,
+      "curvature_bias_1pm": -0.000761,
+      "cross_mae_m": 0.131,
+      "cross_bias_m": -0.0,
+      "cross_final_mae_m": 0.3072,
+      "n_steps_heading": 3354,
+      "n_steps_curvature": 2511,
+      "excluded_below_min_ds": 170,
+      "min_ds_m": 0.25,
+      "min_ds_mps": 0.5,
+      "dt_s": 0.5,
+      "dt_invariant": [
+       "heading_mae_deg",
+       "curvature_*",
+       "cross_*"
+      ],
+      "n_windows": 881
+     },
+     "tactical": {
+      "status": "UNAVAILABLE",
+      "reason": "tactical decisions not present in the scored pass (missing ['maneuver_pred', 'maneuver_gt']). A world-model FIDELITY pass does not traverse the hierarchy — run_one prints this explicitly. Producing this family needs a hierarchy-traversing eval, which is a WORK ITEM.",
+      "n": 0
+     },
+     "strategic": {
+      "status": "UNAVAILABLE",
+      "reason": "strategic decisions not present in the scored pass (missing ['route_pred', 'route_gt']). A world-model FIDELITY pass does not traverse the hierarchy — run_one prints this explicitly. Producing this family needs a hierarchy-traversing eval, which is a WORK ITEM.",
+      "n": 0,
+      "how_to_populate": "supply `optionset` (map-derived option sets from stack/experiments/nurec-gsplat/strategic_gt.py, consumed by taniteval.strategic_optionset). A route label read off the ego's own future yaw is NOT a substitute: it cannot tell whether the map admitted a choice."
+     },
+     "_grid": {
+      "used": "sparse",
+      "dt_s": 0.5,
+      "horizon_steps": 4,
+      "provenance": "SPARSE waypoint view; derived from wp_steps [5, 10, 15, 20] x dt_s 0.1 -> 0.5s grid",
+      "⛔_history": "BEFORE 2026-08-03 this module hard-coded dt=0.1 s while reading the SPARSE 4-waypoint view (0.5 s spacing), so EVERY published speed_* was x5, EVERY accel_* x25 and EVERY yaw_rate_* x5. Positions, heading and curvature were unaffected. Cross-arm comparisons stay valid (common factor); ABSOLUTE quotations and any comparison to a physical bar do not. MEASURED negative control: GT ego speed 12.4565 m/s vs _seq_geometry 62.9789 m/s = 5.0559x, on 859 real held-out windows."
+     },
+     "_binding_rule": "Sayed 2026-08-02: every eval reports LONGITUDINAL + LATERAL + TACTICAL + STRATEGIC in ADDITION to ADE. Per-family, never pooled. A family reported UNAVAILABLE is a WORK ITEM, not a pass.",
+     "_families_unavailable": [
+      "tactical",
+      "strategic"
+     ],
+     "_complete": false
+    }
+   }
+  },
+  "refc-small-30k": {
+   "bank": "G:\\Meine Ablage\\SayBouBase\\raw\\Projects\\TanitAD\\TanitAD Research Hub\\Benchmarks & Eval\\Implementation\\incoming\\2026-07-22-refc-small-30k\\fan_refc-small-30k.pt",
+   "n_windows": 881,
+   "n_anchors": 64,
+   "n_episodes": 40,
+   "A_selection_containment": {
+    "full_fan_argmax_inside_DECODED_band_frac": 1.0,
+    "full_fan_argmax_inside_ANCHOR_band_frac": 1.0,
+    "n_windows_where_winner_fails_the_anchor_band": 0,
+    "budget_rank_of_the_winner_under_the_anchor_band": {
+     "median": 9.0,
+     "p95": 21.0,
+     "max": 23
+    },
+    "⭐": "the DECODED-band figure is the literal content of 'S2 is exactly ADE-inert'. The ANCHOR-band figure is the one a pre-decode filter actually gets, and it is measured, not inherited from the decoded one."
+   },
+   "B_minimum_sufficient_budget": {
+    "N_suff": 23,
+    "compute_saving_x": 2.783,
+    "selection_bit_identical_to_full_fan": true,
+    "criterion": "the smallest N whose anchor-band prefix reproduces the full-fan SELECTION INDEX on 100 % of windows — bit-exact, not an ADE tie",
+    "anchor_band_survivors_per_window": {
+     "median": 19.0,
+     "mean": 17.28,
+     "min": 6,
+     "max": 25,
+     "p95": 23.0
+    },
+    "⚠️": "N_suff is driven by the WORST window, so it is the worst-case budget. The median window needs far fewer; a variable-width fan would be cheaper still and is NOT measured here."
+   },
+   "C_budget_ladder_vs_full_fan": [
+    {
+     "n_decodes": 1,
+     "compute_saving_x": 64.0,
+     "selected_ade_0_2s": 3.454993,
+     "full_fan_selected_ade_0_2s": 0.526072,
+     "oracle_in_subset": 3.454993,
+     "selection_index_identical_to_full_fan_frac": 0.130533,
+     "paired_vs_FULL_fan": {
+      "delta": 2.9289,
+      "lo": 2.0222,
+      "hi": 3.9727,
+      "ci95": 0.9753,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "verdict": "worse"
+    },
+    {
+     "n_decodes": 2,
+     "compute_saving_x": 32.0,
+     "selected_ade_0_2s": 2.05724,
+     "full_fan_selected_ade_0_2s": 0.526072,
+     "oracle_in_subset": 1.222938,
+     "selection_index_identical_to_full_fan_frac": 0.130533,
+     "paired_vs_FULL_fan": {
+      "delta": 1.5312,
+      "lo": 1.1573,
+      "hi": 2.0005,
+      "ci95": 0.4216,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "verdict": "worse"
+    },
+    {
+     "n_decodes": 4,
+     "compute_saving_x": 16.0,
+     "selected_ade_0_2s": 1.446548,
+     "full_fan_selected_ade_0_2s": 0.526072,
+     "oracle_in_subset": 0.645182,
+     "selection_index_identical_to_full_fan_frac": 0.171396,
+     "paired_vs_FULL_fan": {
+      "delta": 0.9205,
+      "lo": 0.7337,
+      "hi": 1.1241,
+      "ci95": 0.1952,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "verdict": "worse"
+    },
+    {
+     "n_decodes": 8,
+     "compute_saving_x": 8.0,
+     "selected_ade_0_2s": 0.857978,
+     "full_fan_selected_ade_0_2s": 0.526072,
+     "oracle_in_subset": 0.363471,
+     "selection_index_identical_to_full_fan_frac": 0.46084,
+     "paired_vs_FULL_fan": {
+      "delta": 0.3319,
+      "lo": 0.2155,
+      "hi": 0.4639,
+      "ci95": 0.1242,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "verdict": "worse"
+    },
+    {
+     "n_decodes": 16,
+     "compute_saving_x": 4.0,
+     "selected_ade_0_2s": 0.570056,
+     "full_fan_selected_ade_0_2s": 0.526072,
+     "oracle_in_subset": 0.240385,
+     "selection_index_identical_to_full_fan_frac": 0.854711,
+     "paired_vs_FULL_fan": {
+      "delta": 0.044,
+      "lo": 0.0074,
+      "hi": 0.0946,
+      "ci95": 0.0436,
+      "p_delta_gt0": 0.996,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "verdict": "worse"
+    },
+    {
+     "n_decodes": 23,
+     "compute_saving_x": 2.783,
+     "selected_ade_0_2s": 0.526072,
+     "full_fan_selected_ade_0_2s": 0.526072,
+     "oracle_in_subset": 0.221297,
+     "selection_index_identical_to_full_fan_frac": 1.0,
+     "paired_vs_FULL_fan": {
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "ci95": 0.0,
+      "p_delta_gt0": 0.0,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "verdict": "not separated"
+    },
+    {
+     "n_decodes": 32,
+     "compute_saving_x": 2.0,
+     "selected_ade_0_2s": 0.526072,
+     "full_fan_selected_ade_0_2s": 0.526072,
+     "oracle_in_subset": 0.221297,
+     "selection_index_identical_to_full_fan_frac": 1.0,
+     "paired_vs_FULL_fan": {
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "ci95": 0.0,
+      "p_delta_gt0": 0.0,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "verdict": "not separated"
+    },
+    {
+     "n_decodes": 48,
+     "compute_saving_x": 1.333,
+     "selected_ade_0_2s": 0.526072,
+     "full_fan_selected_ade_0_2s": 0.526072,
+     "oracle_in_subset": 0.221297,
+     "selection_index_identical_to_full_fan_frac": 1.0,
+     "paired_vs_FULL_fan": {
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "ci95": 0.0,
+      "p_delta_gt0": 0.0,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "verdict": "not separated"
+    },
+    {
+     "n_decodes": 64,
+     "compute_saving_x": 1.0,
+     "selected_ade_0_2s": 0.526072,
+     "full_fan_selected_ade_0_2s": 0.526072,
+     "oracle_in_subset": 0.221297,
+     "selection_index_identical_to_full_fan_frac": 1.0,
+     "paired_vs_FULL_fan": {
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "ci95": 0.0,
+      "p_delta_gt0": 0.0,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "verdict": "not separated"
+    }
+   ],
+   "four_families": {
+    "_dt_s": 0.5,
+    "_dt_provenance": "derived from wp_steps [5, 10, 15, 20] x dt_s 0.1 -> 0.5s grid",
+    "full_fan": {
+     "longitudinal": {
+      "speed_mae_mps": 0.5063,
+      "speed_bias_mps": 0.054,
+      "speed_rmse_mps": 0.856,
+      "along_mae_m": 0.4652,
+      "along_bias_m": 0.0525,
+      "along_final_bias_m": 0.115,
+      "accel_mae_mps2": 0.594,
+      "ego_progress": {
+       "status": "OK",
+       "convention": "human_dir",
+       "progress_ratio_mean": 1.0255,
+       "progress_ratio_median": 0.9997,
+       "progress_error_mean": 0.1111,
+       "under_progress_rate": 0.5106,
+       "gt_progress_mean_m": 26.4324,
+       "n": 850,
+       "n_windows": 881,
+       "n_excluded_low_gt_progress": 31,
+       "min_progress_m": 0.5,
+       "t0_axis_gt_self_ratio": 0.9919,
+       "t0_axis_gt_self_ratio_note": "what the GROUND TRUTH scores under pseudosim's published t0-axis reading. 1.0 means the windows are straight; below 1.0 is the CURVATURE CONFOUND — the human charged for under-progress it did not commit, and an arm that drives straighter than the human rewarded for it.",
+       "definition": "along-track distance covered / the human's, both projected on the human's own final-displacement direction; dt-invariant; <1 = under-drives, >1 = over-drives; GT scores exactly 1.0 by construction",
+       "published_motivation": "arXiv 2605.00066 — Ego Progress alone rho=0.83 vs closed-loop Driving Score while traditional L2 gives rho=-0.36 (p=0.43, n=8, NO CI). Direction only; those magnitudes are NOT a target."
+      },
+      "dt_s": 0.5,
+      "rate_scaling_note": "speed ~ 1/dt, accel ~ 1/dt^2. Numbers computed with a wrong dt are off by those powers; along_* are dt-invariant.",
+      "distance_keeping": {
+       "status": "UNAVAILABLE",
+       "reason": "no lead-agent track supplied — pass `lead=` (see this function's caller docstring). PhysicalAI-AV ships obstacle.offline (3D agent tracks, 97.44 % of the corpus); the reader is `Architecture & Inference/Implementation/incoming/2026-08-03-longitudinal-distance-keeping/build_lead_tracks.py`. Not supplying it is a WORK ITEM, not a pass.",
+       "n": 0
+      },
+      "n_windows": 881
+     },
+     "lateral": {
+      "heading_mae_deg": 1.2236,
+      "yaw_rate_mae_degps": 2.0007,
+      "curvature_mae_1pm": 0.00798,
+      "curvature_bias_1pm": -0.001192,
+      "cross_mae_m": 0.1493,
+      "cross_bias_m": 0.0014,
+      "cross_final_mae_m": 0.3417,
+      "n_steps_heading": 3345,
+      "n_steps_curvature": 2503,
+      "excluded_below_min_ds": 179,
+      "min_ds_m": 0.25,
+      "min_ds_mps": 0.5,
+      "dt_s": 0.5,
+      "dt_invariant": [
+       "heading_mae_deg",
+       "curvature_*",
+       "cross_*"
+      ],
+      "n_windows": 881
+     },
+     "tactical": {
+      "status": "UNAVAILABLE",
+      "reason": "tactical decisions not present in the scored pass (missing ['maneuver_pred', 'maneuver_gt']). A world-model FIDELITY pass does not traverse the hierarchy — run_one prints this explicitly. Producing this family needs a hierarchy-traversing eval, which is a WORK ITEM.",
+      "n": 0
+     },
+     "strategic": {
+      "status": "UNAVAILABLE",
+      "reason": "strategic decisions not present in the scored pass (missing ['route_pred', 'route_gt']). A world-model FIDELITY pass does not traverse the hierarchy — run_one prints this explicitly. Producing this family needs a hierarchy-traversing eval, which is a WORK ITEM.",
+      "n": 0,
+      "how_to_populate": "supply `optionset` (map-derived option sets from stack/experiments/nurec-gsplat/strategic_gt.py, consumed by taniteval.strategic_optionset). A route label read off the ego's own future yaw is NOT a substitute: it cannot tell whether the map admitted a choice."
+     },
+     "_grid": {
+      "used": "sparse",
+      "dt_s": 0.5,
+      "horizon_steps": 4,
+      "provenance": "SPARSE waypoint view; derived from wp_steps [5, 10, 15, 20] x dt_s 0.1 -> 0.5s grid",
+      "⛔_history": "BEFORE 2026-08-03 this module hard-coded dt=0.1 s while reading the SPARSE 4-waypoint view (0.5 s spacing), so EVERY published speed_* was x5, EVERY accel_* x25 and EVERY yaw_rate_* x5. Positions, heading and curvature were unaffected. Cross-arm comparisons stay valid (common factor); ABSOLUTE quotations and any comparison to a physical bar do not. MEASURED negative control: GT ego speed 12.4565 m/s vs _seq_geometry 62.9789 m/s = 5.0559x, on 859 real held-out windows."
+     },
+     "_binding_rule": "Sayed 2026-08-02: every eval reports LONGITUDINAL + LATERAL + TACTICAL + STRATEGIC in ADDITION to ADE. Per-family, never pooled. A family reported UNAVAILABLE is a WORK ITEM, not a pass.",
+     "_families_unavailable": [
+      "tactical",
+      "strategic"
+     ],
+     "_complete": false
+    },
+    "anchor_band_N_suff": {
+     "longitudinal": {
+      "speed_mae_mps": 0.5063,
+      "speed_bias_mps": 0.054,
+      "speed_rmse_mps": 0.856,
+      "along_mae_m": 0.4652,
+      "along_bias_m": 0.0525,
+      "along_final_bias_m": 0.115,
+      "accel_mae_mps2": 0.594,
+      "ego_progress": {
+       "status": "OK",
+       "convention": "human_dir",
+       "progress_ratio_mean": 1.0255,
+       "progress_ratio_median": 0.9997,
+       "progress_error_mean": 0.1111,
+       "under_progress_rate": 0.5106,
+       "gt_progress_mean_m": 26.4324,
+       "n": 850,
+       "n_windows": 881,
+       "n_excluded_low_gt_progress": 31,
+       "min_progress_m": 0.5,
+       "t0_axis_gt_self_ratio": 0.9919,
+       "t0_axis_gt_self_ratio_note": "what the GROUND TRUTH scores under pseudosim's published t0-axis reading. 1.0 means the windows are straight; below 1.0 is the CURVATURE CONFOUND — the human charged for under-progress it did not commit, and an arm that drives straighter than the human rewarded for it.",
+       "definition": "along-track distance covered / the human's, both projected on the human's own final-displacement direction; dt-invariant; <1 = under-drives, >1 = over-drives; GT scores exactly 1.0 by construction",
+       "published_motivation": "arXiv 2605.00066 — Ego Progress alone rho=0.83 vs closed-loop Driving Score while traditional L2 gives rho=-0.36 (p=0.43, n=8, NO CI). Direction only; those magnitudes are NOT a target."
+      },
+      "dt_s": 0.5,
+      "rate_scaling_note": "speed ~ 1/dt, accel ~ 1/dt^2. Numbers computed with a wrong dt are off by those powers; along_* are dt-invariant.",
+      "distance_keeping": {
+       "status": "UNAVAILABLE",
+       "reason": "no lead-agent track supplied — pass `lead=` (see this function's caller docstring). PhysicalAI-AV ships obstacle.offline (3D agent tracks, 97.44 % of the corpus); the reader is `Architecture & Inference/Implementation/incoming/2026-08-03-longitudinal-distance-keeping/build_lead_tracks.py`. Not supplying it is a WORK ITEM, not a pass.",
+       "n": 0
+      },
+      "n_windows": 881
+     },
+     "lateral": {
+      "heading_mae_deg": 1.2236,
+      "yaw_rate_mae_degps": 2.0007,
+      "curvature_mae_1pm": 0.00798,
+      "curvature_bias_1pm": -0.001192,
+      "cross_mae_m": 0.1493,
+      "cross_bias_m": 0.0014,
+      "cross_final_mae_m": 0.3417,
+      "n_steps_heading": 3345,
+      "n_steps_curvature": 2503,
+      "excluded_below_min_ds": 179,
+      "min_ds_m": 0.25,
+      "min_ds_mps": 0.5,
+      "dt_s": 0.5,
+      "dt_invariant": [
+       "heading_mae_deg",
+       "curvature_*",
+       "cross_*"
+      ],
+      "n_windows": 881
+     },
+     "tactical": {
+      "status": "UNAVAILABLE",
+      "reason": "tactical decisions not present in the scored pass (missing ['maneuver_pred', 'maneuver_gt']). A world-model FIDELITY pass does not traverse the hierarchy — run_one prints this explicitly. Producing this family needs a hierarchy-traversing eval, which is a WORK ITEM.",
+      "n": 0
+     },
+     "strategic": {
+      "status": "UNAVAILABLE",
+      "reason": "strategic decisions not present in the scored pass (missing ['route_pred', 'route_gt']). A world-model FIDELITY pass does not traverse the hierarchy — run_one prints this explicitly. Producing this family needs a hierarchy-traversing eval, which is a WORK ITEM.",
+      "n": 0,
+      "how_to_populate": "supply `optionset` (map-derived option sets from stack/experiments/nurec-gsplat/strategic_gt.py, consumed by taniteval.strategic_optionset). A route label read off the ego's own future yaw is NOT a substitute: it cannot tell whether the map admitted a choice."
+     },
+     "_grid": {
+      "used": "sparse",
+      "dt_s": 0.5,
+      "horizon_steps": 4,
+      "provenance": "SPARSE waypoint view; derived from wp_steps [5, 10, 15, 20] x dt_s 0.1 -> 0.5s grid",
+      "⛔_history": "BEFORE 2026-08-03 this module hard-coded dt=0.1 s while reading the SPARSE 4-waypoint view (0.5 s spacing), so EVERY published speed_* was x5, EVERY accel_* x25 and EVERY yaw_rate_* x5. Positions, heading and curvature were unaffected. Cross-arm comparisons stay valid (common factor); ABSOLUTE quotations and any comparison to a physical bar do not. MEASURED negative control: GT ego speed 12.4565 m/s vs _seq_geometry 62.9789 m/s = 5.0559x, on 859 real held-out windows."
+     },
+     "_binding_rule": "Sayed 2026-08-02: every eval reports LONGITUDINAL + LATERAL + TACTICAL + STRATEGIC in ADDITION to ADE. Per-family, never pooled. A family reported UNAVAILABLE is a WORK ITEM, not a pass.",
+     "_families_unavailable": [
+      "tactical",
+      "strategic"
+     ],
+     "_complete": false
+    }
+   }
+  }
+ },
+ "retrained_ladder": {
+  "window_alignment": {
+   "refc-base-30k": {
+    "gt_bit_identical_to_refc-base-30k": true,
+    "eid_identical": true,
+    "n_windows": 881
+   },
+   "refc-xl-30k": {
+    "gt_bit_identical_to_refc-base-30k": true,
+    "eid_identical": true,
+    "n_windows": 881
+   },
+   "refc-small-30k": {
+    "gt_bit_identical_to_refc-base-30k": true,
+    "eid_identical": true,
+    "n_windows": 881
+   }
+  },
+  "pairs": [
+   {
+    "narrower": "refc-small-30k (64 anchors)",
+    "wider": "refc-base-30k (128 anchors)",
+    "paired_selected_narrow_minus_wide": {
+     "delta": 0.0533,
+     "lo": 0.0167,
+     "hi": 0.0925,
+     "ci95": 0.0379,
+     "p_delta_gt0": 0.9965,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 881,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "paired_oracle_narrow_minus_wide": {
+     "delta": 0.0299,
+     "lo": 0.0204,
+     "hi": 0.0398,
+     "ci95": 0.0097,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 881,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   },
+   {
+    "narrower": "refc-base-30k (128 anchors)",
+    "wider": "refc-xl-30k (256 anchors)",
+    "paired_selected_narrow_minus_wide": {
+     "delta": 0.0013,
+     "lo": -0.0281,
+     "hi": 0.0316,
+     "ci95": 0.0298,
+     "p_delta_gt0": 0.537,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 881,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "paired_oracle_narrow_minus_wide": {
+     "delta": 0.0275,
+     "lo": 0.0142,
+     "hi": 0.0405,
+     "ci95": 0.0131,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 881,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   }
+  ],
+  "points": {
+   "refc-small-30k": {
+    "n_anchors": 64,
+    "selected_ade_0_2s": 0.526072,
+    "oracle_in_fan_ade_0_2s": 0.221297
+   },
+   "refc-base-30k": {
+    "n_anchors": 128,
+    "selected_ade_0_2s": 0.472773,
+    "oracle_in_fan_ade_0_2s": 0.191423
+   },
+   "refc-xl-30k": {
+    "n_anchors": 256,
+    "selected_ade_0_2s": 0.471439,
+    "oracle_in_fan_ade_0_2s": 0.16395
+   }
+  },
+  "⚠️_confound": "these three arms differ in DECODER CAPACITY as well as anchor count (refc-small / -base / -xl), so a difference here is width+capacity, never width alone. It is reported because it is the only RETRAINED ladder that exists and because prefix truncation provably cannot answer the retrained question — not because the confound is small."
+ },
+ "wall_s": 10.2
+}

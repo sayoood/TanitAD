@@ -1,0 +1,55 @@
+{
+ "what": "VARIABLE-WIDTH policy: decode EXACTLY the anchor-band survivors, per window",
+ "why_bit_exact": "the survivor set contains every survivor by construction, and the full-fan argmax lies inside the anchor band on 1.0000 of windows (measured), so argmax over survivors == argmax over the full fan",
+ "estimator": "episode_cluster_bootstrap, unit=episode, n_boot=2000",
+ "arms": {
+  "refc-small-30k": {
+   "n_anchors": 64,
+   "selection_bit_identical": true,
+   "mean_decodes_per_window": 17.283,
+   "mean_decodes_ci": {
+    "mean": 17.2826,
+    "lo": 15.9715,
+    "hi": 18.5659
+   },
+   "median_decodes": 19.0,
+   "p95_decodes": 23.0,
+   "max_decodes": 25,
+   "AVERAGE_saving_x": 3.703,
+   "worst_case_saving_x": 2.56,
+   "fixed_width_N_suff_saving_x": 2.783
+  },
+  "refc-base-30k": {
+   "n_anchors": 128,
+   "selection_bit_identical": true,
+   "mean_decodes_per_window": 36.033,
+   "mean_decodes_ci": {
+    "mean": 36.0329,
+    "lo": 33.0765,
+    "hi": 38.9357
+   },
+   "median_decodes": 39.0,
+   "p95_decodes": 49.0,
+   "max_decodes": 51,
+   "AVERAGE_saving_x": 3.552,
+   "worst_case_saving_x": 2.51,
+   "fixed_width_N_suff_saving_x": 2.783
+  },
+  "refc-xl-30k": {
+   "n_anchors": 256,
+   "selection_bit_identical": true,
+   "mean_decodes_per_window": 74.011,
+   "mean_decodes_ci": {
+    "mean": 74.0114,
+    "lo": 67.9263,
+    "hi": 79.9218
+   },
+   "median_decodes": 83.0,
+   "p95_decodes": 99.0,
+   "max_decodes": 102,
+   "AVERAGE_saving_x": 3.459,
+   "worst_case_saving_x": 2.51,
+   "fixed_width_N_suff_saving_x": 2.783
+  }
+ }
+}

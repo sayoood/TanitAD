@@ -643,3 +643,78 @@ def test_savgol_is_length_preserving_and_exact_on_a_ramp_in_the_interior():
     assert np.abs(out - v)[half:-half].max() < 1e-9, "interior must be exact"
     step = v[1] - v[0]
     assert np.abs(out - v).max() < step, "edge artefact under one sample step"
+
+
+# --------------------------------------------------------------------------- #
+# (h) the LEAK-GUARDED mint — D-VT1, 2026-08-04                                #
+# --------------------------------------------------------------------------- #
+def test_vtarget_v2_read_window_CONTAINS_the_scored_horizon():
+    """The defect vtarget_guarded exists to close, pinned as a FACT about v2.
+
+    v2 reads v[l+1 : l+200]. The scored horizon is {l .. l+20} (decoder
+    horizons=(5,10,15,20); the manoeuvre label dv = v(t+2s) - v(t) reads l+20).
+    So the label is computed from a SUPERSET of the thing being measured — fine
+    for a label, inadmissible as an inference input.
+    """
+    from tanitad.lake.vtarget import VT_GUARD_STEPS
+    ell, t_len = 7, 199
+    v2_lo, v2_hi = ell + 1, min(ell + VT_LOOK_HI, t_len)
+    scored = set(range(ell, ell + VT_GUARD_STEPS + 1))
+    assert scored & set(range(v2_lo, v2_hi)), "v2 must overlap (that is the defect)"
+    assert VT_GUARD_STEPS == 20, "raising a scored horizon must raise the guard"
+
+
+def test_vtarget_guarded_read_window_is_DISJOINT_from_the_scored_horizon():
+    """The guard, proved by index arithmetic over the module's own helper —
+    not re-derived in prose. Checked at every window origin of a 199-frame clip.
+    """
+    from tanitad.lake.vtarget import VT_GUARD_STEPS, read_window
+    t_len = 199
+    for ell in range(7, t_len - 20, 8):              # rollout.collect's grid
+        lo, hi = read_window(ell, t_len, VT_GUARD_STEPS)
+        scored = set(range(ell, ell + VT_GUARD_STEPS + 1))
+        assert not (scored & set(range(lo, hi))), f"leak at l={ell}"
+        assert lo >= ell + VT_GUARD_STEPS + 1 or lo == hi
+
+
+def test_vtarget_guarded_is_vtarget_v2_when_the_guard_is_zero():
+    """guard_steps=0 must reproduce v2 exactly EXCEPT the raw-speed fallback,
+    so the guard is the only behavioural difference and is auditable as a diff."""
+    from tanitad.lake.vtarget import vtarget_guarded
+    rng = np.random.default_rng(3)
+    v = 12.0 + rng.normal(0, 0.4, 199)
+    last = np.arange(7, 171, 8)
+    a, va, la, _ = vtarget_v2(v, last, min_lookahead=50)
+    b, vb, lb, _ = vtarget_guarded(v, last, guard_steps=0, min_lookahead=50)
+    assert np.array_equal(va, vb) and np.array_equal(la, lb)
+    assert np.allclose(a[va], b[vb]), "valid windows must be bit-comparable"
+
+
+def test_vtarget_guarded_fallback_is_the_RAW_current_speed():
+    """A zero-phase smoother reads 0.5 s into the future, so vs[l] would leave a
+    leak inside the fallback of the very function that removes one. The fallback
+    must be v[l] — the same number the model already gets as v0."""
+    from tanitad.lake.vtarget import vtarget_guarded
+    v = np.zeros(199)
+    v[:60] = 5.0
+    v[60:] = 25.0                                    # a step the smoother spreads
+    near_end = np.array([190])                       # forced fallback (no lookahead)
+    vt, valid, _look, vs = vtarget_guarded(v, near_end, min_lookahead=50)
+    assert not bool(valid[0])
+    assert vt[0] == v[190]
+    ell = np.array([57])                             # inside the smoother's reach
+    _vt2, _v2, _l2, vs2 = vtarget_guarded(v, ell, min_lookahead=50)
+    assert abs(vs2[57] - v[57]) > 1e-6, "vs[l] really does see the future here"
+
+
+def test_vtarget_guarded_costs_lookahead_and_says_so():
+    """The guard is not free: excising 2 s off the near end invalidates windows
+    v2 would have accepted. The cost must be VISIBLE in `valid`, never silent."""
+    from tanitad.lake.vtarget import vtarget_guarded
+    v = np.full(199, 15.0)
+    last = np.arange(7, 171, 8)
+    _a, va, _la, _ = vtarget_v2(v, last, min_lookahead=50)
+    _b, vb, lb, _ = vtarget_guarded(v, last, min_lookahead=50)
+    assert vb.sum() < va.sum(), "the guard must drop windows, not hide the drop"
+    assert np.all(~vb | va), "guarded-valid must imply v2-valid"
+    assert np.all(lb[vb] >= 50)

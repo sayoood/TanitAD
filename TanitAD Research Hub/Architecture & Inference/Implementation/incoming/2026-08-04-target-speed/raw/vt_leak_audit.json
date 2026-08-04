@@ -1,0 +1,1640 @@
+{
+ "_what": "leak audit \u2014 what the horizon guard actually removes",
+ "_estimator": "paired_episode_cluster_bootstrap (taniteval.ci), unit = val episode, B=2000. NEVER overlapping_holdout_se",
+ "_guard_steps": 20,
+ "_guard_derivation": "RefCConfig.trajectory.horizons[-1] == 20 and lead_source.K_MAX == 20 and the manoeuvre label dv = v(t+2s) - v(t) reads pose l+20",
+ "_canonical_881": true,
+ "_sha_ok_all": true,
+ "coverage": {
+  "n_windows": 881,
+  "n_valid_oracle": 718,
+  "n_valid_guarded": 637,
+  "n_valid_both": 637,
+  "n_guarded_valid_but_not_oracle": 0,
+  "guard_cost_windows": 81,
+  "_reads": "guarded-valid is a SUBSET of oracle-valid by construction (the guard only shortens the read window); n_guarded_valid_but_not_oracle must be 0"
+ },
+ "pooled_valid_both": {
+  "_n_windows": 637,
+  "_n_episodes": 40,
+  "targets": {
+   "dv_2s": {
+    "r2": {
+     "PAST": 0.6202,
+     "PAST+GUARD": 0.7198,
+     "PAST+BAND": 0.7211,
+     "PAST+ORACLE": 0.7131
+    },
+    "rmse": {
+     "PAST": 0.8475,
+     "PAST+GUARD": 0.7279,
+     "PAST+BAND": 0.7263,
+     "PAST+ORACLE": 0.7366
+    },
+    "delta_r2_over_past": {
+     "PAST+GUARD": 0.0996,
+     "PAST+BAND": 0.1009,
+     "PAST+ORACLE": 0.0929
+    },
+    "paired_mse_reduction_vs_PAST": {
+     "PAST+GUARD": {
+      "delta": 0.1884,
+      "lo": 0.102,
+      "hi": 0.2991,
+      "ci95": 0.0986,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 637,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "_reads": "delta > 0 => adding this label REDUCES squared error, i.e. it injects information the causal past does not already hold"
+     },
+     "PAST+BAND": {
+      "delta": 0.1908,
+      "lo": 0.1028,
+      "hi": 0.3021,
+      "ci95": 0.0997,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 637,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "_reads": "delta > 0 => adding this label REDUCES squared error, i.e. it injects information the causal past does not already hold"
+     },
+     "PAST+ORACLE": {
+      "delta": 0.1757,
+      "lo": 0.0765,
+      "hi": 0.2917,
+      "ci95": 0.1076,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 637,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "_reads": "delta > 0 => adding this label REDUCES squared error, i.e. it injects information the causal past does not already hold"
+     }
+    },
+    "paired_ORACLE_minus_GUARD": {
+     "delta": 0.0126,
+     "lo": -0.0072,
+     "hi": 0.0431,
+     "ci95": 0.0251,
+     "p_delta_gt0": 0.8,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 637,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "_reads": "delta > 0 => the GUARDED label predicts the scored quantity BETTER than the unguarded one, i.e. the excision removed nothing. separated=False means the two are statistically indistinguishable \u2014 which is itself the finding: the guard is not a weaker input."
+    }
+   },
+   "along_2s": {
+    "r2": {
+     "PAST": 0.9986,
+     "PAST+GUARD": 0.9989,
+     "PAST+BAND": 0.9989,
+     "PAST+ORACLE": 0.9988
+    },
+    "rmse": {
+     "PAST": 0.7065,
+     "PAST+GUARD": 0.6365,
+     "PAST+BAND": 0.6338,
+     "PAST+ORACLE": 0.6407
+    },
+    "delta_r2_over_past": {
+     "PAST+GUARD": 0.0003,
+     "PAST+BAND": 0.0003,
+     "PAST+ORACLE": 0.0002
+    },
+    "paired_mse_reduction_vs_PAST": {
+     "PAST+GUARD": {
+      "delta": 0.0939,
+      "lo": 0.0435,
+      "hi": 0.159,
+      "ci95": 0.0577,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 637,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "_reads": "delta > 0 => adding this label REDUCES squared error, i.e. it injects information the causal past does not already hold"
+     },
+     "PAST+BAND": {
+      "delta": 0.0974,
+      "lo": 0.0476,
+      "hi": 0.1624,
+      "ci95": 0.0574,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 637,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "_reads": "delta > 0 => adding this label REDUCES squared error, i.e. it injects information the causal past does not already hold"
+     },
+     "PAST+ORACLE": {
+      "delta": 0.0887,
+      "lo": 0.0247,
+      "hi": 0.159,
+      "ci95": 0.0671,
+      "p_delta_gt0": 0.999,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 637,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "_reads": "delta > 0 => adding this label REDUCES squared error, i.e. it injects information the causal past does not already hold"
+     }
+    },
+    "paired_ORACLE_minus_GUARD": {
+     "delta": 0.0053,
+     "lo": -0.0089,
+     "hi": 0.0258,
+     "ci95": 0.0173,
+     "p_delta_gt0": 0.6605,
+     "separated": false,
+     "reducer": "mean",
+     "n_windows": 637,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap",
+     "_reads": "delta > 0 => the GUARDED label predicts the scored quantity BETTER than the unguarded one, i.e. the excision removed nothing. separated=False means the two are statistically indistinguishable \u2014 which is itself the finding: the guard is not a weaker input."
+    }
+   }
+  },
+  "_tag": "valid_both"
+ },
+ "by_speed": {
+  "0-1": {
+   "n": 39,
+   "n_episodes": 8,
+   "dv_2s": {
+    "rmse": {
+     "PAST": 1.3273,
+     "PAST+GUARD": 1.0548,
+     "PAST+ORACLE": 1.0719
+    },
+    "mse_reduction_vs_PAST": {
+     "PAST+GUARD": {
+      "delta": 0.6489,
+      "lo": -0.0531,
+      "hi": 2.1094,
+      "ci95": 1.0813,
+      "p_delta_gt0": 0.951,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 39,
+      "n_episodes": 8,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "PAST+ORACLE": {
+      "delta": 0.6127,
+      "lo": -0.0844,
+      "hi": 2.0657,
+      "ci95": 1.0751,
+      "p_delta_gt0": 0.938,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 39,
+      "n_episodes": 8,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     }
+    }
+   },
+   "along_2s": {
+    "rmse": {
+     "PAST": 1.0383,
+     "PAST+GUARD": 0.8652,
+     "PAST+ORACLE": 0.8793
+    },
+    "mse_reduction_vs_PAST": {
+     "PAST+GUARD": {
+      "delta": 0.3294,
+      "lo": -0.031,
+      "hi": 1.0876,
+      "ci95": 0.5593,
+      "p_delta_gt0": 0.9475,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 39,
+      "n_episodes": 8,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "PAST+ORACLE": {
+      "delta": 0.3049,
+      "lo": -0.0615,
+      "hi": 1.0562,
+      "ci95": 0.5589,
+      "p_delta_gt0": 0.924,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 39,
+      "n_episodes": 8,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     }
+    }
+   }
+  },
+  "1-3": {
+   "n": 42,
+   "n_episodes": 13,
+   "dv_2s": {
+    "rmse": {
+     "PAST": 0.9202,
+     "PAST+GUARD": 0.9129,
+     "PAST+ORACLE": 0.9759
+    },
+    "mse_reduction_vs_PAST": {
+     "PAST+GUARD": {
+      "delta": 0.0133,
+      "lo": -0.3847,
+      "hi": 0.3542,
+      "ci95": 0.3694,
+      "p_delta_gt0": 0.556,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 42,
+      "n_episodes": 13,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "PAST+ORACLE": {
+      "delta": -0.1057,
+      "lo": -0.715,
+      "hi": 0.3505,
+      "ci95": 0.5328,
+      "p_delta_gt0": 0.3925,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 42,
+      "n_episodes": 13,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     }
+    }
+   },
+   "along_2s": {
+    "rmse": {
+     "PAST": 0.8126,
+     "PAST+GUARD": 0.8223,
+     "PAST+ORACLE": 0.8697
+    },
+    "mse_reduction_vs_PAST": {
+     "PAST+GUARD": {
+      "delta": -0.0159,
+      "lo": -0.2899,
+      "hi": 0.2309,
+      "ci95": 0.2604,
+      "p_delta_gt0": 0.479,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 42,
+      "n_episodes": 13,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "PAST+ORACLE": {
+      "delta": -0.0961,
+      "lo": -0.5152,
+      "hi": 0.2217,
+      "ci95": 0.3684,
+      "p_delta_gt0": 0.3485,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 42,
+      "n_episodes": 13,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     }
+    }
+   }
+  },
+  "3-6": {
+   "n": 96,
+   "n_episodes": 15,
+   "dv_2s": {
+    "rmse": {
+     "PAST": 1.0405,
+     "PAST+GUARD": 1.0283,
+     "PAST+ORACLE": 1.0322
+    },
+    "mse_reduction_vs_PAST": {
+     "PAST+GUARD": {
+      "delta": 0.0253,
+      "lo": -0.4162,
+      "hi": 0.3663,
+      "ci95": 0.3912,
+      "p_delta_gt0": 0.563,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 96,
+      "n_episodes": 15,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "PAST+ORACLE": {
+      "delta": 0.0171,
+      "lo": -0.4756,
+      "hi": 0.3866,
+      "ci95": 0.4311,
+      "p_delta_gt0": 0.539,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 96,
+      "n_episodes": 15,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     }
+    }
+   },
+   "along_2s": {
+    "rmse": {
+     "PAST": 0.8956,
+     "PAST+GUARD": 0.8866,
+     "PAST+ORACLE": 0.8941
+    },
+    "mse_reduction_vs_PAST": {
+     "PAST+GUARD": {
+      "delta": 0.0161,
+      "lo": -0.2486,
+      "hi": 0.2073,
+      "ci95": 0.228,
+      "p_delta_gt0": 0.566,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 96,
+      "n_episodes": 15,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "PAST+ORACLE": {
+      "delta": 0.0027,
+      "lo": -0.3187,
+      "hi": 0.219,
+      "ci95": 0.2689,
+      "p_delta_gt0": 0.5225,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 96,
+      "n_episodes": 15,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     }
+    }
+   }
+  },
+  "6-10": {
+   "n": 137,
+   "n_episodes": 19,
+   "dv_2s": {
+    "rmse": {
+     "PAST": 1.0552,
+     "PAST+GUARD": 0.8492,
+     "PAST+ORACLE": 0.8581
+    },
+    "mse_reduction_vs_PAST": {
+     "PAST+GUARD": {
+      "delta": 0.3924,
+      "lo": 0.0717,
+      "hi": 0.9649,
+      "ci95": 0.4466,
+      "p_delta_gt0": 0.997,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 137,
+      "n_episodes": 19,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "PAST+ORACLE": {
+      "delta": 0.3772,
+      "lo": 0.0763,
+      "hi": 0.9228,
+      "ci95": 0.4233,
+      "p_delta_gt0": 0.9975,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 137,
+      "n_episodes": 19,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     }
+    }
+   },
+   "along_2s": {
+    "rmse": {
+     "PAST": 0.8762,
+     "PAST+GUARD": 0.7485,
+     "PAST+ORACLE": 0.7478
+    },
+    "mse_reduction_vs_PAST": {
+     "PAST+GUARD": {
+      "delta": 0.2075,
+      "lo": 0.028,
+      "hi": 0.5202,
+      "ci95": 0.2461,
+      "p_delta_gt0": 0.9945,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 137,
+      "n_episodes": 19,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "PAST+ORACLE": {
+      "delta": 0.2086,
+      "lo": 0.0286,
+      "hi": 0.5241,
+      "ci95": 0.2478,
+      "p_delta_gt0": 0.9945,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 137,
+      "n_episodes": 19,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     }
+    }
+   }
+  },
+  "10-15": {
+   "n": 128,
+   "n_episodes": 13,
+   "dv_2s": {
+    "rmse": {
+     "PAST": 0.5964,
+     "PAST+GUARD": 0.4886,
+     "PAST+ORACLE": 0.4919
+    },
+    "mse_reduction_vs_PAST": {
+     "PAST+GUARD": {
+      "delta": 0.1169,
+      "lo": -0.0143,
+      "hi": 0.3153,
+      "ci95": 0.1648,
+      "p_delta_gt0": 0.9565,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 128,
+      "n_episodes": 13,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "PAST+ORACLE": {
+      "delta": 0.1137,
+      "lo": -0.0188,
+      "hi": 0.3176,
+      "ci95": 0.1682,
+      "p_delta_gt0": 0.947,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 128,
+      "n_episodes": 13,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     }
+    }
+   },
+   "along_2s": {
+    "rmse": {
+     "PAST": 0.5192,
+     "PAST+GUARD": 0.4522,
+     "PAST+ORACLE": 0.4491
+    },
+    "mse_reduction_vs_PAST": {
+     "PAST+GUARD": {
+      "delta": 0.0651,
+      "lo": -0.0152,
+      "hi": 0.1866,
+      "ci95": 0.1009,
+      "p_delta_gt0": 0.934,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 128,
+      "n_episodes": 13,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "PAST+ORACLE": {
+      "delta": 0.0678,
+      "lo": -0.0135,
+      "hi": 0.1933,
+      "ci95": 0.1034,
+      "p_delta_gt0": 0.9395,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 128,
+      "n_episodes": 13,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     }
+    }
+   }
+  },
+  "15-inf": {
+   "n": 195,
+   "n_episodes": 15,
+   "dv_2s": {
+    "rmse": {
+     "PAST": 0.5127,
+     "PAST+GUARD": 0.3809,
+     "PAST+ORACLE": 0.3696
+    },
+    "mse_reduction_vs_PAST": {
+     "PAST+GUARD": {
+      "delta": 0.1178,
+      "lo": 0.0471,
+      "hi": 0.2248,
+      "ci95": 0.0889,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 195,
+      "n_episodes": 15,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "PAST+ORACLE": {
+      "delta": 0.1263,
+      "lo": 0.0464,
+      "hi": 0.2558,
+      "ci95": 0.1047,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 195,
+      "n_episodes": 15,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     }
+    }
+   },
+   "along_2s": {
+    "rmse": {
+     "PAST": 0.4019,
+     "PAST+GUARD": 0.3369,
+     "PAST+ORACLE": 0.3232
+    },
+    "mse_reduction_vs_PAST": {
+     "PAST+GUARD": {
+      "delta": 0.048,
+      "lo": 0.019,
+      "hi": 0.0848,
+      "ci95": 0.0329,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 195,
+      "n_episodes": 15,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "PAST+ORACLE": {
+      "delta": 0.057,
+      "lo": 0.0213,
+      "hi": 0.1062,
+      "ci95": 0.0424,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 195,
+      "n_episodes": 15,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     }
+    }
+   }
+  }
+ },
+ "label_geometry": {
+  "n": 637,
+  "mean_abs_diff_mps": 0.2259,
+  "median_abs_diff_mps": 0.0522,
+  "p90_abs_diff_mps": 0.4452,
+  "guarded_minus_oracle_mean_mps": -0.0781,
+  "same_band_rate": 0.8587,
+  "corr_guarded_oracle": 0.997,
+  "corr_guarded_v0": 0.9286,
+  "corr_oracle_v0": 0.9389,
+  "n_bands": 23,
+  "_reads": "same_band_rate is how often the 23-band quantisation ERASES the guard \u2014 where it is high the guarded and unguarded conditioning inputs are the same token and the excision buys nothing at the model's interface"
+ },
+ "_by_speed_note": "`by_speed` is the PRIMARY stratified view: ONE leave-one-episode-out fit over all valid windows, then its out-of-fold predictions SLICED by ego speed. `by_speed_refit` re-fits inside each stratum and is reported only as a secondary \u2014 at n=39..195 per band those fits are underpowered and their negative delta-R^2 are a fitting artefact, not a finding.",
+ "by_speed_refit": {
+  "0-1": {
+   "_n_windows": 39,
+   "_n_episodes": 8,
+   "targets": {
+    "dv_2s": {
+     "r2": {
+      "PAST": 0.5113,
+      "PAST+GUARD": 0.3853,
+      "PAST+BAND": 0.2954,
+      "PAST+ORACLE": 0.3879
+     },
+     "rmse": {
+      "PAST": 1.0212,
+      "PAST+GUARD": 1.1453,
+      "PAST+BAND": 1.2262,
+      "PAST+ORACLE": 1.1428
+     },
+     "delta_r2_over_past": {
+      "PAST+GUARD": -0.126,
+      "PAST+BAND": -0.2159,
+      "PAST+ORACLE": -0.1234
+     },
+     "paired_mse_reduction_vs_PAST": {
+      "PAST+GUARD": {
+       "delta": -0.2689,
+       "lo": -0.8699,
+       "hi": 0.2786,
+       "ci95": 0.5743,
+       "p_delta_gt0": 0.1505,
+       "separated": false,
+       "reducer": "mean",
+       "n_windows": 39,
+       "n_episodes": 8,
+       "n_boot": 2000,
+       "estimator": "paired_episode_cluster_bootstrap",
+       "_reads": "delta > 0 => adding this label REDUCES squared error, i.e. it injects information the causal past does not already hold"
+      },
+      "PAST+BAND": {
+       "delta": -0.4606,
+       "lo": -1.7218,
+       "hi": 0.3799,
+       "ci95": 1.0509,
+       "p_delta_gt0": 0.1815,
+       "separated": false,
+       "reducer": "mean",
+       "n_windows": 39,
+       "n_episodes": 8,
+       "n_boot": 2000,
+       "estimator": "paired_episode_cluster_bootstrap",
+       "_reads": "delta > 0 => adding this label REDUCES squared error, i.e. it injects information the causal past does not already hold"
+      },
+      "PAST+ORACLE": {
+       "delta": -0.2632,
+       "lo": -0.8648,
+       "hi": 0.2832,
+       "ci95": 0.574,
+       "p_delta_gt0": 0.1545,
+       "separated": false,
+       "reducer": "mean",
+       "n_windows": 39,
+       "n_episodes": 8,
+       "n_boot": 2000,
+       "estimator": "paired_episode_cluster_bootstrap",
+       "_reads": "delta > 0 => adding this label REDUCES squared error, i.e. it injects information the causal past does not already hold"
+      }
+     },
+     "paired_ORACLE_minus_GUARD": {
+      "delta": -0.0056,
+      "lo": -0.016,
+      "hi": 0.0104,
+      "ci95": 0.0132,
+      "p_delta_gt0": 0.2335,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 39,
+      "n_episodes": 8,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "_reads": "delta > 0 => the GUARDED label predicts the scored quantity BETTER than the unguarded one, i.e. the excision removed nothing. separated=False means the two are statistically indistinguishable \u2014 which is itself the finding: the guard is not a weaker input."
+     }
+    },
+    "along_2s": {
+     "r2": {
+      "PAST": 0.7326,
+      "PAST+GUARD": 0.6702,
+      "PAST+BAND": 0.6216,
+      "PAST+ORACLE": 0.6706
+     },
+     "rmse": {
+      "PAST": 0.8223,
+      "PAST+GUARD": 0.9133,
+      "PAST+BAND": 0.9782,
+      "PAST+ORACLE": 0.9127
+     },
+     "delta_r2_over_past": {
+      "PAST+GUARD": -0.0624,
+      "PAST+BAND": -0.111,
+      "PAST+ORACLE": -0.062
+     },
+     "paired_mse_reduction_vs_PAST": {
+      "PAST+GUARD": {
+       "delta": -0.1578,
+       "lo": -0.5098,
+       "hi": 0.1192,
+       "ci95": 0.3145,
+       "p_delta_gt0": 0.132,
+       "separated": false,
+       "reducer": "mean",
+       "n_windows": 39,
+       "n_episodes": 8,
+       "n_boot": 2000,
+       "estimator": "paired_episode_cluster_bootstrap",
+       "_reads": "delta > 0 => adding this label REDUCES squared error, i.e. it injects information the causal past does not already hold"
+      },
+      "PAST+BAND": {
+       "delta": -0.2807,
+       "lo": -1.0389,
+       "hi": 0.1752,
+       "ci95": 0.6071,
+       "p_delta_gt0": 0.1715,
+       "separated": false,
+       "reducer": "mean",
+       "n_windows": 39,
+       "n_episodes": 8,
+       "n_boot": 2000,
+       "estimator": "paired_episode_cluster_bootstrap",
+       "_reads": "delta > 0 => adding this label REDUCES squared error, i.e. it injects information the causal past does not already hold"
+      },
+      "PAST+ORACLE": {
+       "delta": -0.1567,
+       "lo": -0.5165,
+       "hi": 0.121,
+       "ci95": 0.3187,
+       "p_delta_gt0": 0.139,
+       "separated": false,
+       "reducer": "mean",
+       "n_windows": 39,
+       "n_episodes": 8,
+       "n_boot": 2000,
+       "estimator": "paired_episode_cluster_bootstrap",
+       "_reads": "delta > 0 => adding this label REDUCES squared error, i.e. it injects information the causal past does not already hold"
+      }
+     },
+     "paired_ORACLE_minus_GUARD": {
+      "delta": -0.001,
+      "lo": -0.0068,
+      "hi": 0.0088,
+      "ci95": 0.0078,
+      "p_delta_gt0": 0.388,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 39,
+      "n_episodes": 8,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "_reads": "delta > 0 => the GUARDED label predicts the scored quantity BETTER than the unguarded one, i.e. the excision removed nothing. separated=False means the two are statistically indistinguishable \u2014 which is itself the finding: the guard is not a weaker input."
+     }
+    }
+   },
+   "_tag": "0-1"
+  },
+  "1-3": {
+   "_n_windows": 42,
+   "_n_episodes": 13,
+   "targets": {
+    "dv_2s": {
+     "r2": {
+      "PAST": 0.7149,
+      "PAST+GUARD": 0.6843,
+      "PAST+BAND": 0.701,
+      "PAST+ORACLE": 0.6717
+     },
+     "rmse": {
+      "PAST": 0.9864,
+      "PAST+GUARD": 1.038,
+      "PAST+BAND": 1.0103,
+      "PAST+ORACLE": 1.0585
+     },
+     "delta_r2_over_past": {
+      "PAST+GUARD": -0.0306,
+      "PAST+BAND": -0.014,
+      "PAST+ORACLE": -0.0432
+     },
+     "paired_mse_reduction_vs_PAST": {
+      "PAST+GUARD": {
+       "delta": -0.1043,
+       "lo": -0.6589,
+       "hi": 0.2034,
+       "ci95": 0.4311,
+       "p_delta_gt0": 0.3655,
+       "separated": false,
+       "reducer": "mean",
+       "n_windows": 42,
+       "n_episodes": 13,
+       "n_boot": 2000,
+       "estimator": "paired_episode_cluster_bootstrap",
+       "_reads": "delta > 0 => adding this label REDUCES squared error, i.e. it injects information the causal past does not already hold"
+      },
+      "PAST+BAND": {
+       "delta": -0.0476,
+       "lo": -0.4812,
+       "hi": 0.207,
+       "ci95": 0.3441,
+       "p_delta_gt0": 0.429,
+       "separated": false,
+       "reducer": "mean",
+       "n_windows": 42,
+       "n_episodes": 13,
+       "n_boot": 2000,
+       "estimator": "paired_episode_cluster_bootstrap",
+       "_reads": "delta > 0 => adding this label REDUCES squared error, i.e. it injects information the causal past does not already hold"
+      },
+      "PAST+ORACLE": {
+       "delta": -0.1474,
+       "lo": -0.781,
+       "hi": 0.195,
+       "ci95": 0.488,
+       "p_delta_gt0": 0.344,
+       "separated": false,
+       "reducer": "mean",
+       "n_windows": 42,
+       "n_episodes": 13,
+       "n_boot": 2000,
+       "estimator": "paired_episode_cluster_bootstrap",
+       "_reads": "delta > 0 => adding this label REDUCES squared error, i.e. it injects information the causal past does not already hold"
+      }
+     },
+     "paired_ORACLE_minus_GUARD": {
+      "delta": 0.0431,
+      "lo": 0.005,
+      "hi": 0.1192,
+      "ci95": 0.0571,
+      "p_delta_gt0": 0.9995,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 42,
+      "n_episodes": 13,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "_reads": "delta > 0 => the GUARDED label predicts the scored quantity BETTER than the unguarded one, i.e. the excision removed nothing. separated=False means the two are statistically indistinguishable \u2014 which is itself the finding: the guard is not a weaker input."
+     }
+    },
+    "along_2s": {
+     "r2": {
+      "PAST": 0.8379,
+      "PAST+GUARD": 0.8053,
+      "PAST+BAND": 0.8139,
+      "PAST+ORACLE": 0.7999
+     },
+     "rmse": {
+      "PAST": 0.9617,
+      "PAST+GUARD": 1.0539,
+      "PAST+BAND": 1.0304,
+      "PAST+ORACLE": 1.0684
+     },
+     "delta_r2_over_past": {
+      "PAST+GUARD": -0.0326,
+      "PAST+BAND": -0.024,
+      "PAST+ORACLE": -0.0379
+     },
+     "paired_mse_reduction_vs_PAST": {
+      "PAST+GUARD": {
+       "delta": -0.1858,
+       "lo": -0.6693,
+       "hi": 0.0665,
+       "ci95": 0.3679,
+       "p_delta_gt0": 0.2985,
+       "separated": false,
+       "reducer": "mean",
+       "n_windows": 42,
+       "n_episodes": 13,
+       "n_boot": 2000,
+       "estimator": "paired_episode_cluster_bootstrap",
+       "_reads": "delta > 0 => adding this label REDUCES squared error, i.e. it injects information the causal past does not already hold"
+      },
+      "PAST+BAND": {
+       "delta": -0.1369,
+       "lo": -0.5097,
+       "hi": 0.0693,
+       "ci95": 0.2895,
+       "p_delta_gt0": 0.2815,
+       "separated": false,
+       "reducer": "mean",
+       "n_windows": 42,
+       "n_episodes": 13,
+       "n_boot": 2000,
+       "estimator": "paired_episode_cluster_bootstrap",
+       "_reads": "delta > 0 => adding this label REDUCES squared error, i.e. it injects information the causal past does not already hold"
+      },
+      "PAST+ORACLE": {
+       "delta": -0.2165,
+       "lo": -0.7564,
+       "hi": 0.0589,
+       "ci95": 0.4077,
+       "p_delta_gt0": 0.2675,
+       "separated": false,
+       "reducer": "mean",
+       "n_windows": 42,
+       "n_episodes": 13,
+       "n_boot": 2000,
+       "estimator": "paired_episode_cluster_bootstrap",
+       "_reads": "delta > 0 => adding this label REDUCES squared error, i.e. it injects information the causal past does not already hold"
+      }
+     },
+     "paired_ORACLE_minus_GUARD": {
+      "delta": 0.0307,
+      "lo": 0.003,
+      "hi": 0.0868,
+      "ci95": 0.0419,
+      "p_delta_gt0": 0.9995,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 42,
+      "n_episodes": 13,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "_reads": "delta > 0 => the GUARDED label predicts the scored quantity BETTER than the unguarded one, i.e. the excision removed nothing. separated=False means the two are statistically indistinguishable \u2014 which is itself the finding: the guard is not a weaker input."
+     }
+    }
+   },
+   "_tag": "1-3"
+  },
+  "3-6": {
+   "_n_windows": 96,
+   "_n_episodes": 15,
+   "targets": {
+    "dv_2s": {
+     "r2": {
+      "PAST": 0.5878,
+      "PAST+GUARD": 0.5782,
+      "PAST+BAND": 0.5788,
+      "PAST+ORACLE": 0.5702
+     },
+     "rmse": {
+      "PAST": 1.0817,
+      "PAST+GUARD": 1.0942,
+      "PAST+BAND": 1.0935,
+      "PAST+ORACLE": 1.1046
+     },
+     "delta_r2_over_past": {
+      "PAST+GUARD": -0.0096,
+      "PAST+BAND": -0.0091,
+      "PAST+ORACLE": -0.0176
+     },
+     "paired_mse_reduction_vs_PAST": {
+      "PAST+GUARD": {
+       "delta": -0.0273,
+       "lo": -0.1987,
+       "hi": 0.0947,
+       "ci95": 0.1467,
+       "p_delta_gt0": 0.3675,
+       "separated": false,
+       "reducer": "mean",
+       "n_windows": 96,
+       "n_episodes": 15,
+       "n_boot": 2000,
+       "estimator": "paired_episode_cluster_bootstrap",
+       "_reads": "delta > 0 => adding this label REDUCES squared error, i.e. it injects information the causal past does not already hold"
+      },
+      "PAST+BAND": {
+       "delta": -0.0257,
+       "lo": -0.2002,
+       "hi": 0.1001,
+       "ci95": 0.1501,
+       "p_delta_gt0": 0.3825,
+       "separated": false,
+       "reducer": "mean",
+       "n_windows": 96,
+       "n_episodes": 15,
+       "n_boot": 2000,
+       "estimator": "paired_episode_cluster_bootstrap",
+       "_reads": "delta > 0 => adding this label REDUCES squared error, i.e. it injects information the causal past does not already hold"
+      },
+      "PAST+ORACLE": {
+       "delta": -0.0501,
+       "lo": -0.2397,
+       "hi": 0.0744,
+       "ci95": 0.1571,
+       "p_delta_gt0": 0.265,
+       "separated": false,
+       "reducer": "mean",
+       "n_windows": 96,
+       "n_episodes": 15,
+       "n_boot": 2000,
+       "estimator": "paired_episode_cluster_bootstrap",
+       "_reads": "delta > 0 => adding this label REDUCES squared error, i.e. it injects information the causal past does not already hold"
+      }
+     },
+     "paired_ORACLE_minus_GUARD": {
+      "delta": 0.0228,
+      "lo": -0.0076,
+      "hi": 0.072,
+      "ci95": 0.0398,
+      "p_delta_gt0": 0.9105,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 96,
+      "n_episodes": 15,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "_reads": "delta > 0 => the GUARDED label predicts the scored quantity BETTER than the unguarded one, i.e. the excision removed nothing. separated=False means the two are statistically indistinguishable \u2014 which is itself the finding: the guard is not a weaker input."
+     }
+    },
+    "along_2s": {
+     "r2": {
+      "PAST": 0.8601,
+      "PAST+GUARD": 0.8575,
+      "PAST+BAND": 0.8579,
+      "PAST+ORACLE": 0.8541
+     },
+     "rmse": {
+      "PAST": 0.9246,
+      "PAST+GUARD": 0.9331,
+      "PAST+BAND": 0.9317,
+      "PAST+ORACLE": 0.9442
+     },
+     "delta_r2_over_past": {
+      "PAST+GUARD": -0.0026,
+      "PAST+BAND": -0.0021,
+      "PAST+ORACLE": -0.006
+     },
+     "paired_mse_reduction_vs_PAST": {
+      "PAST+GUARD": {
+       "delta": -0.0158,
+       "lo": -0.1155,
+       "hi": 0.0513,
+       "ci95": 0.0834,
+       "p_delta_gt0": 0.3705,
+       "separated": false,
+       "reducer": "mean",
+       "n_windows": 96,
+       "n_episodes": 15,
+       "n_boot": 2000,
+       "estimator": "paired_episode_cluster_bootstrap",
+       "_reads": "delta > 0 => adding this label REDUCES squared error, i.e. it injects information the causal past does not already hold"
+      },
+      "PAST+BAND": {
+       "delta": -0.0131,
+       "lo": -0.1104,
+       "hi": 0.0554,
+       "ci95": 0.0829,
+       "p_delta_gt0": 0.394,
+       "separated": false,
+       "reducer": "mean",
+       "n_windows": 96,
+       "n_episodes": 15,
+       "n_boot": 2000,
+       "estimator": "paired_episode_cluster_bootstrap",
+       "_reads": "delta > 0 => adding this label REDUCES squared error, i.e. it injects information the causal past does not already hold"
+      },
+      "PAST+ORACLE": {
+       "delta": -0.0365,
+       "lo": -0.1451,
+       "hi": 0.0317,
+       "ci95": 0.0884,
+       "p_delta_gt0": 0.189,
+       "separated": false,
+       "reducer": "mean",
+       "n_windows": 96,
+       "n_episodes": 15,
+       "n_boot": 2000,
+       "estimator": "paired_episode_cluster_bootstrap",
+       "_reads": "delta > 0 => adding this label REDUCES squared error, i.e. it injects information the causal past does not already hold"
+      }
+     },
+     "paired_ORACLE_minus_GUARD": {
+      "delta": 0.0207,
+      "lo": 0.0027,
+      "hi": 0.0477,
+      "ci95": 0.0225,
+      "p_delta_gt0": 0.9885,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 96,
+      "n_episodes": 15,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "_reads": "delta > 0 => the GUARDED label predicts the scored quantity BETTER than the unguarded one, i.e. the excision removed nothing. separated=False means the two are statistically indistinguishable \u2014 which is itself the finding: the guard is not a weaker input."
+     }
+    }
+   },
+   "_tag": "3-6"
+  },
+  "6-10": {
+   "_n_windows": 137,
+   "_n_episodes": 19,
+   "targets": {
+    "dv_2s": {
+     "r2": {
+      "PAST": 0.4618,
+      "PAST+GUARD": 0.6385,
+      "PAST+BAND": 0.6445,
+      "PAST+ORACLE": 0.6137
+     },
+     "rmse": {
+      "PAST": 1.1228,
+      "PAST+GUARD": 0.9202,
+      "PAST+BAND": 0.9125,
+      "PAST+ORACLE": 0.9513
+     },
+     "delta_r2_over_past": {
+      "PAST+GUARD": 0.1767,
+      "PAST+BAND": 0.1827,
+      "PAST+ORACLE": 0.1518
+     },
+     "paired_mse_reduction_vs_PAST": {
+      "PAST+GUARD": {
+       "delta": 0.414,
+       "lo": -0.0425,
+       "hi": 1.0771,
+       "ci95": 0.5598,
+       "p_delta_gt0": 0.961,
+       "separated": false,
+       "reducer": "mean",
+       "n_windows": 137,
+       "n_episodes": 19,
+       "n_boot": 2000,
+       "estimator": "paired_episode_cluster_bootstrap",
+       "_reads": "delta > 0 => adding this label REDUCES squared error, i.e. it injects information the causal past does not already hold"
+      },
+      "PAST+BAND": {
+       "delta": 0.428,
+       "lo": -0.0151,
+       "hi": 1.0882,
+       "ci95": 0.5516,
+       "p_delta_gt0": 0.9705,
+       "separated": false,
+       "reducer": "mean",
+       "n_windows": 137,
+       "n_episodes": 19,
+       "n_boot": 2000,
+       "estimator": "paired_episode_cluster_bootstrap",
+       "_reads": "delta > 0 => adding this label REDUCES squared error, i.e. it injects information the causal past does not already hold"
+      },
+      "PAST+ORACLE": {
+       "delta": 0.3557,
+       "lo": -0.0755,
+       "hi": 0.9961,
+       "ci95": 0.5358,
+       "p_delta_gt0": 0.937,
+       "separated": false,
+       "reducer": "mean",
+       "n_windows": 137,
+       "n_episodes": 19,
+       "n_boot": 2000,
+       "estimator": "paired_episode_cluster_bootstrap",
+       "_reads": "delta > 0 => adding this label REDUCES squared error, i.e. it injects information the causal past does not already hold"
+      }
+     },
+     "paired_ORACLE_minus_GUARD": {
+      "delta": 0.0583,
+      "lo": -0.0047,
+      "hi": 0.1339,
+      "ci95": 0.0693,
+      "p_delta_gt0": 0.96,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 137,
+      "n_episodes": 19,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "_reads": "delta > 0 => the GUARDED label predicts the scored quantity BETTER than the unguarded one, i.e. the excision removed nothing. separated=False means the two are statistically indistinguishable \u2014 which is itself the finding: the guard is not a weaker input."
+     }
+    },
+    "along_2s": {
+     "r2": {
+      "PAST": 0.8974,
+      "PAST+GUARD": 0.9219,
+      "PAST+BAND": 0.9226,
+      "PAST+ORACLE": 0.9184
+     },
+     "rmse": {
+      "PAST": 0.9312,
+      "PAST+GUARD": 0.8121,
+      "PAST+BAND": 0.8086,
+      "PAST+ORACLE": 0.8305
+     },
+     "delta_r2_over_past": {
+      "PAST+GUARD": 0.0246,
+      "PAST+BAND": 0.0252,
+      "PAST+ORACLE": 0.021
+     },
+     "paired_mse_reduction_vs_PAST": {
+      "PAST+GUARD": {
+       "delta": 0.2077,
+       "lo": -0.0501,
+       "hi": 0.5707,
+       "ci95": 0.3104,
+       "p_delta_gt0": 0.9345,
+       "separated": false,
+       "reducer": "mean",
+       "n_windows": 137,
+       "n_episodes": 19,
+       "n_boot": 2000,
+       "estimator": "paired_episode_cluster_bootstrap",
+       "_reads": "delta > 0 => adding this label REDUCES squared error, i.e. it injects information the causal past does not already hold"
+      },
+      "PAST+BAND": {
+       "delta": 0.2133,
+       "lo": -0.0352,
+       "hi": 0.5757,
+       "ci95": 0.3055,
+       "p_delta_gt0": 0.9495,
+       "separated": false,
+       "reducer": "mean",
+       "n_windows": 137,
+       "n_episodes": 19,
+       "n_boot": 2000,
+       "estimator": "paired_episode_cluster_bootstrap",
+       "_reads": "delta > 0 => adding this label REDUCES squared error, i.e. it injects information the causal past does not already hold"
+      },
+      "PAST+ORACLE": {
+       "delta": 0.1774,
+       "lo": -0.0779,
+       "hi": 0.5533,
+       "ci95": 0.3156,
+       "p_delta_gt0": 0.8935,
+       "separated": false,
+       "reducer": "mean",
+       "n_windows": 137,
+       "n_episodes": 19,
+       "n_boot": 2000,
+       "estimator": "paired_episode_cluster_bootstrap",
+       "_reads": "delta > 0 => adding this label REDUCES squared error, i.e. it injects information the causal past does not already hold"
+      }
+     },
+     "paired_ORACLE_minus_GUARD": {
+      "delta": 0.0303,
+      "lo": -0.0086,
+      "hi": 0.0817,
+      "ci95": 0.0452,
+      "p_delta_gt0": 0.912,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 137,
+      "n_episodes": 19,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "_reads": "delta > 0 => the GUARDED label predicts the scored quantity BETTER than the unguarded one, i.e. the excision removed nothing. separated=False means the two are statistically indistinguishable \u2014 which is itself the finding: the guard is not a weaker input."
+     }
+    }
+   },
+   "_tag": "6-10"
+  },
+  "10-15": {
+   "_n_windows": 128,
+   "_n_episodes": 13,
+   "targets": {
+    "dv_2s": {
+     "r2": {
+      "PAST": 0.6818,
+      "PAST+GUARD": 0.6387,
+      "PAST+BAND": 0.6248,
+      "PAST+ORACLE": 0.6307
+     },
+     "rmse": {
+      "PAST": 0.6151,
+      "PAST+GUARD": 0.6555,
+      "PAST+BAND": 0.668,
+      "PAST+ORACLE": 0.6627
+     },
+     "delta_r2_over_past": {
+      "PAST+GUARD": -0.0432,
+      "PAST+BAND": -0.057,
+      "PAST+ORACLE": -0.0511
+     },
+     "paired_mse_reduction_vs_PAST": {
+      "PAST+GUARD": {
+       "delta": -0.0513,
+       "lo": -0.2901,
+       "hi": 0.0939,
+       "ci95": 0.192,
+       "p_delta_gt0": 0.314,
+       "separated": false,
+       "reducer": "mean",
+       "n_windows": 128,
+       "n_episodes": 13,
+       "n_boot": 2000,
+       "estimator": "paired_episode_cluster_bootstrap",
+       "_reads": "delta > 0 => adding this label REDUCES squared error, i.e. it injects information the causal past does not already hold"
+      },
+      "PAST+BAND": {
+       "delta": -0.0678,
+       "lo": -0.2779,
+       "hi": 0.0372,
+       "ci95": 0.1575,
+       "p_delta_gt0": 0.247,
+       "separated": false,
+       "reducer": "mean",
+       "n_windows": 128,
+       "n_episodes": 13,
+       "n_boot": 2000,
+       "estimator": "paired_episode_cluster_bootstrap",
+       "_reads": "delta > 0 => adding this label REDUCES squared error, i.e. it injects information the causal past does not already hold"
+      },
+      "PAST+ORACLE": {
+       "delta": -0.0608,
+       "lo": -0.3202,
+       "hi": 0.0865,
+       "ci95": 0.2034,
+       "p_delta_gt0": 0.3015,
+       "separated": false,
+       "reducer": "mean",
+       "n_windows": 128,
+       "n_episodes": 13,
+       "n_boot": 2000,
+       "estimator": "paired_episode_cluster_bootstrap",
+       "_reads": "delta > 0 => adding this label REDUCES squared error, i.e. it injects information the causal past does not already hold"
+      }
+     },
+     "paired_ORACLE_minus_GUARD": {
+      "delta": 0.0095,
+      "lo": -0.0131,
+      "hi": 0.0374,
+      "ci95": 0.0252,
+      "p_delta_gt0": 0.797,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 128,
+      "n_episodes": 13,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "_reads": "delta > 0 => the GUARDED label predicts the scored quantity BETTER than the unguarded one, i.e. the excision removed nothing. separated=False means the two are statistically indistinguishable \u2014 which is itself the finding: the guard is not a weaker input."
+     }
+    },
+    "along_2s": {
+     "r2": {
+      "PAST": 0.9509,
+      "PAST+GUARD": 0.9426,
+      "PAST+BAND": 0.9421,
+      "PAST+ORACLE": 0.9419
+     },
+     "rmse": {
+      "PAST": 0.5267,
+      "PAST+GUARD": 0.5693,
+      "PAST+BAND": 0.5717,
+      "PAST+ORACLE": 0.573
+     },
+     "delta_r2_over_past": {
+      "PAST+GUARD": -0.0083,
+      "PAST+BAND": -0.0088,
+      "PAST+ORACLE": -0.009
+     },
+     "paired_mse_reduction_vs_PAST": {
+      "PAST+GUARD": {
+       "delta": -0.0467,
+       "lo": -0.142,
+       "hi": 0.0206,
+       "ci95": 0.0813,
+       "p_delta_gt0": 0.1105,
+       "separated": false,
+       "reducer": "mean",
+       "n_windows": 128,
+       "n_episodes": 13,
+       "n_boot": 2000,
+       "estimator": "paired_episode_cluster_bootstrap",
+       "_reads": "delta > 0 => adding this label REDUCES squared error, i.e. it injects information the causal past does not already hold"
+      },
+      "PAST+BAND": {
+       "delta": -0.0495,
+       "lo": -0.1439,
+       "hi": 0.0097,
+       "ci95": 0.0768,
+       "p_delta_gt0": 0.0875,
+       "separated": false,
+       "reducer": "mean",
+       "n_windows": 128,
+       "n_episodes": 13,
+       "n_boot": 2000,
+       "estimator": "paired_episode_cluster_bootstrap",
+       "_reads": "delta > 0 => adding this label REDUCES squared error, i.e. it injects information the causal past does not already hold"
+      },
+      "PAST+ORACLE": {
+       "delta": -0.0509,
+       "lo": -0.1648,
+       "hi": 0.0238,
+       "ci95": 0.0943,
+       "p_delta_gt0": 0.1175,
+       "separated": false,
+       "reducer": "mean",
+       "n_windows": 128,
+       "n_episodes": 13,
+       "n_boot": 2000,
+       "estimator": "paired_episode_cluster_bootstrap",
+       "_reads": "delta > 0 => adding this label REDUCES squared error, i.e. it injects information the causal past does not already hold"
+      }
+     },
+     "paired_ORACLE_minus_GUARD": {
+      "delta": 0.0042,
+      "lo": -0.0076,
+      "hi": 0.0211,
+      "ci95": 0.0143,
+      "p_delta_gt0": 0.7225,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 128,
+      "n_episodes": 13,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "_reads": "delta > 0 => the GUARDED label predicts the scored quantity BETTER than the unguarded one, i.e. the excision removed nothing. separated=False means the two are statistically indistinguishable \u2014 which is itself the finding: the guard is not a weaker input."
+     }
+    }
+   },
+   "_tag": "10-15"
+  },
+  "15-inf": {
+   "_n_windows": 195,
+   "_n_episodes": 15,
+   "targets": {
+    "dv_2s": {
+     "r2": {
+      "PAST": 0.6537,
+      "PAST+GUARD": 0.7458,
+      "PAST+BAND": 0.7623,
+      "PAST+ORACLE": 0.793
+     },
+     "rmse": {
+      "PAST": 0.5062,
+      "PAST+GUARD": 0.4337,
+      "PAST+BAND": 0.4194,
+      "PAST+ORACLE": 0.3914
+     },
+     "delta_r2_over_past": {
+      "PAST+GUARD": 0.0921,
+      "PAST+BAND": 0.1086,
+      "PAST+ORACLE": 0.1393
+     },
+     "paired_mse_reduction_vs_PAST": {
+      "PAST+GUARD": {
+       "delta": 0.0682,
+       "lo": -0.0166,
+       "hi": 0.1847,
+       "ci95": 0.1006,
+       "p_delta_gt0": 0.914,
+       "separated": false,
+       "reducer": "mean",
+       "n_windows": 195,
+       "n_episodes": 15,
+       "n_boot": 2000,
+       "estimator": "paired_episode_cluster_bootstrap",
+       "_reads": "delta > 0 => adding this label REDUCES squared error, i.e. it injects information the causal past does not already hold"
+      },
+      "PAST+BAND": {
+       "delta": 0.0804,
+       "lo": 0.0082,
+       "hi": 0.1883,
+       "ci95": 0.0901,
+       "p_delta_gt0": 0.991,
+       "separated": true,
+       "reducer": "mean",
+       "n_windows": 195,
+       "n_episodes": 15,
+       "n_boot": 2000,
+       "estimator": "paired_episode_cluster_bootstrap",
+       "_reads": "delta > 0 => adding this label REDUCES squared error, i.e. it injects information the causal past does not already hold"
+      },
+      "PAST+ORACLE": {
+       "delta": 0.1031,
+       "lo": -0.0072,
+       "hi": 0.2481,
+       "ci95": 0.1276,
+       "p_delta_gt0": 0.967,
+       "separated": false,
+       "reducer": "mean",
+       "n_windows": 195,
+       "n_episodes": 15,
+       "n_boot": 2000,
+       "estimator": "paired_episode_cluster_bootstrap",
+       "_reads": "delta > 0 => adding this label REDUCES squared error, i.e. it injects information the causal past does not already hold"
+      }
+     },
+     "paired_ORACLE_minus_GUARD": {
+      "delta": -0.0349,
+      "lo": -0.1336,
+      "hi": 0.0194,
+      "ci95": 0.0765,
+      "p_delta_gt0": 0.1585,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 195,
+      "n_episodes": 15,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "_reads": "delta > 0 => the GUARDED label predicts the scored quantity BETTER than the unguarded one, i.e. the excision removed nothing. separated=False means the two are statistically indistinguishable \u2014 which is itself the finding: the guard is not a weaker input."
+     }
+    },
+    "along_2s": {
+     "r2": {
+      "PAST": 0.9992,
+      "PAST+GUARD": 0.9993,
+      "PAST+BAND": 0.9993,
+      "PAST+ORACLE": 0.9994
+     },
+     "rmse": {
+      "PAST": 0.3755,
+      "PAST+GUARD": 0.3637,
+      "PAST+BAND": 0.3523,
+      "PAST+ORACLE": 0.3351
+     },
+     "delta_r2_over_past": {
+      "PAST+GUARD": 0.0,
+      "PAST+BAND": 0.0001,
+      "PAST+ORACLE": 0.0002
+     },
+     "paired_mse_reduction_vs_PAST": {
+      "PAST+GUARD": {
+       "delta": 0.0087,
+       "lo": -0.0366,
+       "hi": 0.0516,
+       "ci95": 0.0441,
+       "p_delta_gt0": 0.639,
+       "separated": false,
+       "reducer": "mean",
+       "n_windows": 195,
+       "n_episodes": 15,
+       "n_boot": 2000,
+       "estimator": "paired_episode_cluster_bootstrap",
+       "_reads": "delta > 0 => adding this label REDUCES squared error, i.e. it injects information the causal past does not already hold"
+      },
+      "PAST+BAND": {
+       "delta": 0.0168,
+       "lo": -0.005,
+       "hi": 0.0473,
+       "ci95": 0.0261,
+       "p_delta_gt0": 0.901,
+       "separated": false,
+       "reducer": "mean",
+       "n_windows": 195,
+       "n_episodes": 15,
+       "n_boot": 2000,
+       "estimator": "paired_episode_cluster_bootstrap",
+       "_reads": "delta > 0 => adding this label REDUCES squared error, i.e. it injects information the causal past does not already hold"
+      },
+      "PAST+ORACLE": {
+       "delta": 0.0287,
+       "lo": -0.0093,
+       "hi": 0.0791,
+       "ci95": 0.0442,
+       "p_delta_gt0": 0.916,
+       "separated": false,
+       "reducer": "mean",
+       "n_windows": 195,
+       "n_episodes": 15,
+       "n_boot": 2000,
+       "estimator": "paired_episode_cluster_bootstrap",
+       "_reads": "delta > 0 => adding this label REDUCES squared error, i.e. it injects information the causal past does not already hold"
+      }
+     },
+     "paired_ORACLE_minus_GUARD": {
+      "delta": -0.02,
+      "lo": -0.0731,
+      "hi": 0.0083,
+      "ci95": 0.0407,
+      "p_delta_gt0": 0.1355,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 195,
+      "n_episodes": 15,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "_reads": "delta > 0 => the GUARDED label predicts the scored quantity BETTER than the unguarded one, i.e. the excision removed nothing. separated=False means the two are statistically indistinguishable \u2014 which is itself the finding: the guard is not a weaker input."
+     }
+    }
+   },
+   "_tag": "15-inf"
+  }
+ },
+ "lead_interaction": {
+  "n": 637,
+  "n_rows_joined": 881,
+  "_join": "POSITIONAL on the canonical 881 grid; verified by row-wise episode stem equality and by two independently derived ego speeds agreeing to 0.00181 m/s",
+  "_subset": "windows with BOTH labels valid, as everywhere else here",
+  "by_state": {
+   "LEAD": {
+    "n": 197,
+    "mean_v0_mps": 10.912,
+    "mean_vt_guarded_mps": 13.1166,
+    "mean_vt_minus_v0_mps": 2.2046,
+    "frac_vt_above_v0": 0.7563
+   },
+   "NO_LEAD": {
+    "n": 395,
+    "mean_v0_mps": 13.2149,
+    "mean_vt_guarded_mps": 14.8429,
+    "mean_vt_minus_v0_mps": 1.628,
+    "frac_vt_above_v0": 0.7241
+   },
+   "NO_LABEL": {
+    "n": 45,
+    "mean_v0_mps": 13.3678,
+    "mean_vt_guarded_mps": 13.5903,
+    "mean_vt_minus_v0_mps": 0.2225,
+    "frac_vt_above_v0": 0.7556
+   }
+  },
+  "lead_gap_corr": {
+   "n": 197,
+   "corr_gap_vs_vt_minus_v0": -0.4442,
+   "_reads": "a POSITIVE correlation means the label rises as the road ahead clears \u2014 i.e. the 'free-flow' gate did NOT remove the lead's influence and the label is partly a following behaviour, not an aspiration"
+  }
+ }
+}

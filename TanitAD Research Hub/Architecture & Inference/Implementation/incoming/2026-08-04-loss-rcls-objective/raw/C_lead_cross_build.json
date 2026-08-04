@@ -1,0 +1,52 @@
+{
+  "_what": "C-lead-cross-build: two INDEPENDENT builds of the val40 lead block, on two hosts, by two runners, compared element-wise. A single-source instrument is one disk away from being unfalsifiable; this is the second probe the standard requires.",
+  "_evidence_class": "MEASURED",
+  "build_A": {
+    "path": "thor:/home/nvidia/leadwork/val40_lead_blocks.pt (pulled)",
+    "host": "tanitad-thor (aarch64)",
+    "runner": "val40_lead_run.py",
+    "sha256": "cb30adfb824cd1b64e504885a7a7eee37674686fd81f7030fa21d24452581fee"
+  },
+  "build_B": {
+    "path": "TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-08-04-distance-keeping-arms/raw/val40_lead_block.npz",
+    "host": "dev box (x86_64), Benchmarks & Eval stream",
+    "runner": "code/build_val40_lead_block.py",
+    "sha256": "26aa40ed760aa021b86dbe8af6c24e17538a13a7cbb19cc04eb8191c0a8f307a"
+  },
+  "n_windows": 881,
+  "n_episodes": 40,
+  "counts_A": {
+    "LEAD": 270,
+    "NO_LEAD": 551,
+    "NO_LABEL": 60
+  },
+  "counts_B": {
+    "LEAD": 270,
+    "NO_LEAD": 551,
+    "NO_LABEL": 60
+  },
+  "state_identical": true,
+  "fields": {
+    "leads": {
+      "nan_pattern_identical": true,
+      "max_abs_delta_on_finite": 2.2737367544323206e-13,
+      "n_finite": 2154
+    },
+    "lead_lens": {
+      "nan_pattern_identical": true,
+      "max_abs_delta_on_finite": 0.0,
+      "n_finite": 270
+    },
+    "speeds": {
+      "nan_pattern_identical": true,
+      "max_abs_delta_on_finite": 1.9539925233402755e-14,
+      "n_finite": 881
+    },
+    "gap0_m": {
+      "nan_pattern_identical": true,
+      "max_abs_delta_on_finite": 0.0,
+      "n_finite": 270
+    }
+  },
+  "verdict": "the two builds agree to float64 round-off (max 2.3e-13 m on lead positions, EXACTLY 0 on lead_lens and gap0_m) and on every one of the 881 window states. The distance-keeping instrument is REPLICATED, not single-source."
+}

@@ -1,0 +1,262 @@
+{
+ "what": "REF-C latency vs fan width on the deployment target",
+ "host": "thor6",
+ "arch": "aarch64",
+ "torch": "2.13.0+cu130",
+ "device": "NVIDIA Thor",
+ "ckpt": "/home/nvidia/models/refc-xl/ckpt.pt",
+ "ckpt_step": 29999,
+ "preset": "xl",
+ "n_anchors_full": 256,
+ "diffusion_steps": 2,
+ "batch": 1,
+ "sd_missing": 0,
+ "sd_unexpected": 0,
+ "protocol": {
+  "warmup": 15,
+  "timed_iters": 60,
+  "sync": "torch.cuda.synchronize() around every region",
+  "⚠️": "mem_get_info / free / tegrastats / VmRSS all LIE on Thor — only in-process torch.cuda.max_memory_allocated is admissible"
+ },
+ "rungs": [
+  {
+   "n_anchors": 8,
+   "decoder": {
+    "p50_ms": 5.4142,
+    "p95_ms": 5.6187,
+    "min_ms": 5.3331,
+    "max_ms": 5.6803,
+    "n_warmup": 15,
+    "n_timed": 60,
+    "⚠️": "p50/p95 after warm-up; a first call is NOT quotable"
+   },
+   "decoder_peak_mem_MiB_in_process": 979.26,
+   "decoder_only_hz": 184.7,
+   "end_to_end_p50_ms": 35.4569,
+   "end_to_end_hz": 28.2,
+   "decoder_share_of_total": 0.1527
+  },
+  {
+   "n_anchors": 16,
+   "decoder": {
+    "p50_ms": 5.6333,
+    "p95_ms": 5.7299,
+    "min_ms": 5.5191,
+    "max_ms": 5.8683,
+    "n_warmup": 15,
+    "n_timed": 60,
+    "⚠️": "p50/p95 after warm-up; a first call is NOT quotable"
+   },
+   "decoder_peak_mem_MiB_in_process": 979.3,
+   "decoder_only_hz": 177.52,
+   "end_to_end_p50_ms": 35.676,
+   "end_to_end_hz": 28.03,
+   "decoder_share_of_total": 0.1579
+  },
+  {
+   "n_anchors": 23,
+   "decoder": {
+    "p50_ms": 6.1646,
+    "p95_ms": 6.2241,
+    "min_ms": 5.9988,
+    "max_ms": 6.3244,
+    "n_warmup": 15,
+    "n_timed": 60,
+    "⚠️": "p50/p95 after warm-up; a first call is NOT quotable"
+   },
+   "decoder_peak_mem_MiB_in_process": 979.35,
+   "decoder_only_hz": 162.22,
+   "end_to_end_p50_ms": 36.2073,
+   "end_to_end_hz": 27.62,
+   "decoder_share_of_total": 0.1703
+  },
+  {
+   "n_anchors": 32,
+   "decoder": {
+    "p50_ms": 6.205,
+    "p95_ms": 6.2521,
+    "min_ms": 6.0429,
+    "max_ms": 6.2592,
+    "n_warmup": 15,
+    "n_timed": 60,
+    "⚠️": "p50/p95 after warm-up; a first call is NOT quotable"
+   },
+   "decoder_peak_mem_MiB_in_process": 979.46,
+   "decoder_only_hz": 161.16,
+   "end_to_end_p50_ms": 36.2477,
+   "end_to_end_hz": 27.59,
+   "decoder_share_of_total": 0.1712
+  },
+  {
+   "n_anchors": 46,
+   "decoder": {
+    "p50_ms": 7.4768,
+    "p95_ms": 7.4996,
+    "min_ms": 7.3473,
+    "max_ms": 7.5628,
+    "n_warmup": 15,
+    "n_timed": 60,
+    "⚠️": "p50/p95 after warm-up; a first call is NOT quotable"
+   },
+   "decoder_peak_mem_MiB_in_process": 979.79,
+   "decoder_only_hz": 133.75,
+   "end_to_end_p50_ms": 37.5195,
+   "end_to_end_hz": 26.65,
+   "decoder_share_of_total": 0.1993
+  },
+  {
+   "n_anchors": 48,
+   "decoder": {
+    "p50_ms": 7.4827,
+    "p95_ms": 7.6635,
+    "min_ms": 7.3276,
+    "max_ms": 8.3975,
+    "n_warmup": 15,
+    "n_timed": 60,
+    "⚠️": "p50/p95 after warm-up; a first call is NOT quotable"
+   },
+   "decoder_peak_mem_MiB_in_process": 979.84,
+   "decoder_only_hz": 133.64,
+   "end_to_end_p50_ms": 37.5254,
+   "end_to_end_hz": 26.65,
+   "decoder_share_of_total": 0.1994
+  },
+  {
+   "n_anchors": 64,
+   "decoder": {
+    "p50_ms": 7.5803,
+    "p95_ms": 8.0073,
+    "min_ms": 7.4453,
+    "max_ms": 8.1306,
+    "n_warmup": 15,
+    "n_timed": 60,
+    "⚠️": "p50/p95 after warm-up; a first call is NOT quotable"
+   },
+   "decoder_peak_mem_MiB_in_process": 980.22,
+   "decoder_only_hz": 131.92,
+   "end_to_end_p50_ms": 37.623,
+   "end_to_end_hz": 26.58,
+   "decoder_share_of_total": 0.2015
+  },
+  {
+   "n_anchors": 92,
+   "decoder": {
+    "p50_ms": 9.0827,
+    "p95_ms": 9.4938,
+    "min_ms": 8.8572,
+    "max_ms": 9.5492,
+    "n_warmup": 15,
+    "n_timed": 60,
+    "⚠️": "p50/p95 after warm-up; a first call is NOT quotable"
+   },
+   "decoder_peak_mem_MiB_in_process": 980.88,
+   "decoder_only_hz": 110.1,
+   "end_to_end_p50_ms": 39.1254,
+   "end_to_end_hz": 25.56,
+   "decoder_share_of_total": 0.2321
+  },
+  {
+   "n_anchors": 96,
+   "decoder": {
+    "p50_ms": 9.2988,
+    "p95_ms": 9.619,
+    "min_ms": 8.97,
+    "max_ms": 9.7794,
+    "n_warmup": 15,
+    "n_timed": 60,
+    "⚠️": "p50/p95 after warm-up; a first call is NOT quotable"
+   },
+   "decoder_peak_mem_MiB_in_process": 980.97,
+   "decoder_only_hz": 107.54,
+   "end_to_end_p50_ms": 39.3415,
+   "end_to_end_hz": 25.42,
+   "decoder_share_of_total": 0.2364
+  },
+  {
+   "n_anchors": 128,
+   "decoder": {
+    "p50_ms": 9.4602,
+    "p95_ms": 9.8456,
+    "min_ms": 9.177,
+    "max_ms": 9.9328,
+    "n_warmup": 15,
+    "n_timed": 60,
+    "⚠️": "p50/p95 after warm-up; a first call is NOT quotable"
+   },
+   "decoder_peak_mem_MiB_in_process": 981.73,
+   "decoder_only_hz": 105.71,
+   "end_to_end_p50_ms": 39.5029,
+   "end_to_end_hz": 25.31,
+   "decoder_share_of_total": 0.2395
+  },
+  {
+   "n_anchors": 192,
+   "decoder": {
+    "p50_ms": 10.5953,
+    "p95_ms": 10.9027,
+    "min_ms": 10.2032,
+    "max_ms": 10.9748,
+    "n_warmup": 15,
+    "n_timed": 60,
+    "⚠️": "p50/p95 after warm-up; a first call is NOT quotable"
+   },
+   "decoder_peak_mem_MiB_in_process": 983.24,
+   "decoder_only_hz": 94.38,
+   "end_to_end_p50_ms": 40.638,
+   "end_to_end_hz": 24.61,
+   "decoder_share_of_total": 0.2607
+  },
+  {
+   "n_anchors": 256,
+   "decoder": {
+    "p50_ms": 11.7895,
+    "p95_ms": 12.0943,
+    "min_ms": 11.3959,
+    "max_ms": 12.15,
+    "n_warmup": 15,
+    "n_timed": 60,
+    "⚠️": "p50/p95 after warm-up; a first call is NOT quotable"
+   },
+   "decoder_peak_mem_MiB_in_process": 985.18,
+   "decoder_only_hz": 84.82,
+   "end_to_end_p50_ms": 41.8322,
+   "end_to_end_hz": 23.91,
+   "decoder_share_of_total": 0.2818
+  },
+  {
+   "n_anchors": 256,
+   "decoder": {
+    "p50_ms": 11.8751,
+    "p95_ms": 12.073,
+    "min_ms": 11.4325,
+    "max_ms": 12.1506,
+    "n_warmup": 15,
+    "n_timed": 60,
+    "⚠️": "p50/p95 after warm-up; a first call is NOT quotable"
+   },
+   "decoder_peak_mem_MiB_in_process": 985.18,
+   "decoder_only_hz": 84.21,
+   "end_to_end_p50_ms": 41.9178,
+   "end_to_end_hz": 23.86,
+   "decoder_share_of_total": 0.2833
+  }
+ ],
+ "encoder_ms": {
+  "p50_ms": 30.0427,
+  "p95_ms": 30.9085,
+  "min_ms": 28.9915,
+  "max_ms": 31.0257,
+  "n_warmup": 15,
+  "n_timed": 60,
+  "⚠️": "p50/p95 after warm-up; a first call is NOT quotable"
+ },
+ "encoder_feat_dim": 992,
+ "decoder_feat_proj_in": 992,
+ "fmap_shape": [
+  1,
+  992,
+  8,
+  8
+ ],
+ "encoder_note": "the encoder does NOT scale with N. Only the decoder does, so an end-to-end speed-up is bounded by decoder_share = decoder / (encoder + decoder)."
+}
