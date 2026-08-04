@@ -1,0 +1,3188 @@
+{
+  "experiment": "E-S1-0 \u2014 is there a TARGET for S1's climb-out?",
+  "arm": "refc-base-30k",
+  "n_windows": 881,
+  "n_episodes": 40,
+  "n_anchors": 128,
+  "bank": {
+    "path": "/home/nvidia/fan_refined_refc-base-30k.pt",
+    "sha256": "c5488baaffa993da968d468d8ff9dea148a2e86df8a4dbddfa538040f78461f5",
+    "ckpt": "/home/nvidia/models/refc-base/ckpt.pt",
+    "ckpt_step": 29999,
+    "steps": 2,
+    "nav_mode": "follow_constant",
+    "host": "thor6"
+  },
+  "published": {
+    "selected_ade2s": 0.4728,
+    "oracle_ade2s": 0.1914,
+    "frac_sel_2x_worse": 0.4109,
+    "sel_gap": 0.2813,
+    "n_anchors": 128,
+    "source": "taniteval/results/scaleab_refc-base-30k_vs_refc-xl-30k.json"
+  },
+  "prereg": {
+    "path": "TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-08-03-s1-climbout/PREREG_S1_CLIMBOUT.md",
+    "staged_blob": "<not staged>",
+    "worktree_blob": "",
+    "thresholds_unmoved_since_staging": false,
+    "how_to_verify": "git ls-files -s -- 'TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-08-03-s1-climbout/PREREG_S1_CLIMBOUT.md' && git hash-object 'TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-08-03-s1-climbout/PREREG_S1_CLIMBOUT.md'   # must match",
+    "thresholds": {
+      "estimator": "paired_episode_cluster_bootstrap / episode_cluster_bootstrap, unit = episode, n_boot = 2000; overlapping_holdout_se NEVER",
+      "material_m": 0.02,
+      "red_flag_m": 0.1,
+      "leak_gap_frac": 0.5,
+      "S1_TARGET_EXISTS": "ADE(B-both) - ADE(shipped) separated AND <= -0.02 m AND LATERAL not separated worse AND C-leak gap < 50 %",
+      "S1_TARGET_MARGINAL": "separated and better but > -0.02 m",
+      "S1_NOT_SEPARATED": "CI includes 0 => S1 IS DEAD AFTER ALL (\u00a74.4)",
+      "S1_ADVERSE": "separated AND worse => S1 IS DEAD AFTER ALL, more strongly",
+      "LON_LEVER_LIVE": "ADE(C-lon) - ADE(shipped) separated AND <= -0.02 m AND the LONGITUDINAL family separated better",
+      "LON_LEVER_NULL": "CI includes 0",
+      "LON_LEVER_ADVERSE": "separated AND worse",
+      "S1b_HYGIENE": "|dADE| < 0.02 m or not separated (PREDICTED)",
+      "registered_prediction": "B-both S1-NOT-SEPARATED; C-lon LON-LEVER-NULL at ~55 % confidence; S1b HYGIENE; overall \u00a74.4 fires and S1 is reported DEAD",
+      "direction_predicate": "EVERY trigger reads 'separated AND the delta favours the treatment' \u2014 a trigger satisfied literally while its controls beat the score is what happened to S3",
+      "vacuous_controls_declared": [
+        "C-shuffled"
+      ]
+    },
+    "parent": {
+      "path": "Project Steering/PREREG_D-SEL_REFC_SELECTION_SURFACE.md",
+      "staged_blob": "<not staged>",
+      "worktree_blob": "",
+      "thresholds_unmoved_since_staging": false,
+      "how_to_verify": "git ls-files -s -- 'Project Steering/PREREG_D-SEL_REFC_SELECTION_SURFACE.md' && git hash-object 'Project Steering/PREREG_D-SEL_REFC_SELECTION_SURFACE.md'  # must match",
+      "thresholds": {
+        "S1_FREE_WIN": "E-SEL-0 paired dADE@2s separated AND >= 0.02 m better",
+        "S1_NEEDS_TRAINING": "E-SEL-0 not separated AND C-shuffled clearly worse than refined (frac_sel_2x_worse gap >= 0.05)",
+        "S1_DEAD": "E-SEL-0 not separated AND C-shuffled indistinguishable from refined",
+        "S3_LIVE": "E-SEL-1 Spearman rho separated from C-shuffled AND |rho| >= 0.10",
+        "S3_DEAD": "rho CI includes the shuffled control",
+        "INDETERMINATE": "E-SEL-0 separated but < 0.02 m; tie-break on E-SEL-1 (S3 LIVE => run S1+S2+S3+S4; S3 DEAD => ship S2+S4 only)",
+        "RED_FLAG_STOP": "ADE separated better by > 0.10 m => stop and audit for a leak, do not publish",
+        "registered_prediction": "S1 NEEDS TRAINING (E-SEL-0 not separated, C-shuffled clearly worse) and S3 LIVE at a small rho, 0.10-0.25",
+        "free_win_m": 0.02,
+        "frac_2x_gap_m": 0.05,
+        "rho_min": 0.1,
+        "red_flag_m": 0.1
+      }
+    },
+    "pin": {
+      "file": "PREREG_S1_CLIMBOUT.md",
+      "bytes": 20301,
+      "sha256": "39eb43a1536f161dafdf25d79c7894bc308f1efd143992a703a05da71265adf5",
+      "git_blob_id_lf": "8dc68daf8cf6a086dba5782045af9e35f1241b85",
+      "git_blob_id_raw": "8dc68daf8cf6a086dba5782045af9e35f1241b85",
+      "pinned_at_utc": "2026-08-03T21:45:00Z",
+      "why": "the Google Drive repo mount was in a whole-mount READ-FAILURE state when this experiment ran, so the prereg could not be `git add`ed BEFORE measuring. The falsifiable object is therefore the git BLOB ID computed from the exact bytes the run used - a deterministic function of content, identical to what `git ls-files -s` must print once the file is staged. Verify: git ls-files -s -- <path> must show git_blob_id_lf.",
+      "verify": "git hash-object PREREG_S1_CLIMBOUT.md   # must equal git_blob_id_lf"
+    }
+  },
+  "protocol": {
+    "fit": "listwise softmax CE vs the oracle index, restricted to the S2-reachable survivors, no bias (a per-window constant cancels in the softmax)",
+    "eval": "LEAVE-ONE-EPISODE-OUT, asserted disjoint per fold",
+    "estimator": "paired_episode_cluster_bootstrap / episode_cluster_bootstrap, unit = episode, n_boot = 2000; overlapping_holdout_se NEVER",
+    "headline": "selection ADE@2s over the survivors, PAIRED vs shipped",
+    "iters": 400,
+    "lr": 0.25
+  },
+  "reachability": {
+    "frac_candidates_removed": 0.7376,
+    "frac_windows_with_empty_survivor_set": 0.0,
+    "search_space_cheaper_x": 3.8109,
+    "accel_max": 2.5,
+    "horizon_s": 2.0
+  },
+  "shipped": {
+    "tag": "shipped",
+    "ade_0_2s": {
+      "mean": 0.4728,
+      "lo": 0.3835,
+      "hi": 0.5699,
+      "ci95": 0.0932,
+      "se": 0.0472,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+    },
+    "sel_gap": {
+      "mean": 0.2814,
+      "lo": 0.2127,
+      "hi": 0.3543,
+      "ci95": 0.0708,
+      "se": 0.0365,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+    },
+    "frac_sel_2x_worse": {
+      "mean": 0.4109,
+      "lo": 0.3439,
+      "hi": 0.4773,
+      "ci95": 0.0667,
+      "se": 0.0339,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+    },
+    "rank_acc": {
+      "mean": 0.3292,
+      "lo": 0.2705,
+      "hi": 0.3946,
+      "ci95": 0.0621,
+      "se": 0.0316,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+    }
+  },
+  "arms": {
+    "A-shipped": {
+      "features": [
+        "logits"
+      ],
+      "degenerate_control": true,
+      "loeo": {
+        "tag": "A-shipped",
+        "ade_0_2s": {
+          "mean": 0.4728,
+          "lo": 0.3835,
+          "hi": 0.5699,
+          "ci95": 0.0932,
+          "se": 0.0472,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "sel_gap": {
+          "mean": 0.2814,
+          "lo": 0.2127,
+          "hi": 0.3543,
+          "ci95": 0.0708,
+          "se": 0.0365,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "frac_sel_2x_worse": {
+          "mean": 0.4109,
+          "lo": 0.3439,
+          "hi": 0.4773,
+          "ci95": 0.0667,
+          "se": 0.0339,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "rank_acc": {
+          "mean": 0.3292,
+          "lo": 0.2705,
+          "hi": 0.3946,
+          "ci95": 0.0621,
+          "se": 0.0316,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        }
+      },
+      "paired_vs_shipped": {
+        "delta": 0.0,
+        "lo": 0.0,
+        "hi": 0.0,
+        "ci95": 0.0,
+        "p_delta_gt0": 0.0,
+        "separated": false,
+        "reducer": "mean",
+        "n_windows": 881,
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "C-leak_in_sample_ade": 0.472772,
+      "C-leak_gap_m": 0.0,
+      "rho_reachable": {
+        "n_windows": 881,
+        "mean": 0.5272,
+        "lo": 0.496,
+        "hi": 0.5589,
+        "ci95": 0.0314,
+        "se": 0.0161,
+        "reducer": "mean",
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap",
+        "_note": "SECONDARY DIAGNOSTIC on the S2-reachable subset. rho over the full candidate axis is NOT a proxy for a selector (S3_DEPLOYABLE \u00a73): rho 0.6657 selects at 6.49 m."
+      },
+      "weights": {
+        "objective": "ce",
+        "n_folds": 40,
+        "w_mean": [
+          1.5676792674476892
+        ],
+        "w_std": [
+          0.018516256525528883
+        ],
+        "w_insample": [
+          1.5675565425940012
+        ],
+        "features": [
+          "logits"
+        ]
+      }
+    },
+    "A-refined": {
+      "features": [
+        "refined_logits"
+      ],
+      "degenerate_control": true,
+      "loeo": {
+        "tag": "A-refined",
+        "ade_0_2s": {
+          "mean": 1.31,
+          "lo": 1.1958,
+          "hi": 1.4418,
+          "ci95": 0.123,
+          "se": 0.0644,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "sel_gap": {
+          "mean": 1.1186,
+          "lo": 1.0002,
+          "hi": 1.2496,
+          "ci95": 0.1247,
+          "se": 0.0649,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "frac_sel_2x_worse": {
+          "mean": 0.8695,
+          "lo": 0.8205,
+          "hi": 0.9159,
+          "ci95": 0.0477,
+          "se": 0.0245,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "rank_acc": {
+          "mean": 0.0681,
+          "lo": 0.0398,
+          "hi": 0.0999,
+          "ci95": 0.0301,
+          "se": 0.0153,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        }
+      },
+      "paired_vs_shipped": {
+        "delta": 0.8372,
+        "lo": 0.6915,
+        "hi": 0.9939,
+        "ci95": 0.1512,
+        "p_delta_gt0": 1.0,
+        "separated": true,
+        "reducer": "mean",
+        "n_windows": 881,
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "C-leak_in_sample_ade": 1.310019,
+      "C-leak_gap_m": 0.0,
+      "rho_reachable": {
+        "n_windows": 881,
+        "mean": 0.5519,
+        "lo": 0.5047,
+        "hi": 0.597,
+        "ci95": 0.0461,
+        "se": 0.0237,
+        "reducer": "mean",
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap",
+        "_note": "SECONDARY DIAGNOSTIC on the S2-reachable subset. rho over the full candidate axis is NOT a proxy for a selector (S3_DEPLOYABLE \u00a73): rho 0.6657 selects at 6.49 m."
+      },
+      "weights": {
+        "objective": "ce",
+        "n_folds": 40,
+        "w_mean": [
+          1.4207696719199727
+        ],
+        "w_std": [
+          0.016128048528626978
+        ],
+        "w_insample": [
+          1.4206927612994842
+        ],
+        "features": [
+          "refined_logits"
+        ]
+      }
+    },
+    "B-both": {
+      "features": [
+        "logits",
+        "refined_logits"
+      ],
+      "degenerate_control": false,
+      "loeo": {
+        "tag": "B-both",
+        "ade_0_2s": {
+          "mean": 0.5667,
+          "lo": 0.4771,
+          "hi": 0.6574,
+          "ci95": 0.0902,
+          "se": 0.0462,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "sel_gap": {
+          "mean": 0.3753,
+          "lo": 0.3055,
+          "hi": 0.4499,
+          "ci95": 0.0722,
+          "se": 0.0365,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "frac_sel_2x_worse": {
+          "mean": 0.496,
+          "lo": 0.4325,
+          "hi": 0.5591,
+          "ci95": 0.0633,
+          "se": 0.0328,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "rank_acc": {
+          "mean": 0.2849,
+          "lo": 0.2281,
+          "hi": 0.35,
+          "ci95": 0.0609,
+          "se": 0.0313,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        }
+      },
+      "paired_vs_shipped": {
+        "delta": 0.094,
+        "lo": 0.0507,
+        "hi": 0.141,
+        "ci95": 0.0451,
+        "p_delta_gt0": 1.0,
+        "separated": true,
+        "reducer": "mean",
+        "n_windows": 881,
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "C-leak_in_sample_ade": 0.565696,
+      "C-leak_gap_m": -0.001042,
+      "rho_reachable": {
+        "n_windows": 881,
+        "mean": 0.5884,
+        "lo": 0.5619,
+        "hi": 0.6137,
+        "ci95": 0.0259,
+        "se": 0.0134,
+        "reducer": "mean",
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap",
+        "_note": "SECONDARY DIAGNOSTIC on the S2-reachable subset. rho over the full candidate axis is NOT a proxy for a selector (S3_DEPLOYABLE \u00a73): rho 0.6657 selects at 6.49 m."
+      },
+      "weights": {
+        "objective": "ce",
+        "n_folds": 40,
+        "w_mean": [
+          1.2269606733211067,
+          0.6775583991687479
+        ],
+        "w_std": [
+          0.024321509300954582,
+          0.021208432813491388
+        ],
+        "w_insample": [
+          1.226827614130047,
+          0.6775294418408762
+        ],
+        "features": [
+          "logits",
+          "refined_logits"
+        ]
+      }
+    },
+    "C-lon": {
+      "features": [
+        "along_end_m",
+        "dv_mps",
+        "abs_dv_mps",
+        "outside_band_mps"
+      ],
+      "degenerate_control": false,
+      "loeo": {
+        "tag": "C-lon",
+        "ade_0_2s": {
+          "mean": 0.6864,
+          "lo": 0.5501,
+          "hi": 0.8258,
+          "ci95": 0.1378,
+          "se": 0.0713,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "sel_gap": {
+          "mean": 0.495,
+          "lo": 0.3815,
+          "hi": 0.6104,
+          "ci95": 0.1145,
+          "se": 0.0592,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "frac_sel_2x_worse": {
+          "mean": 0.5539,
+          "lo": 0.4904,
+          "hi": 0.6159,
+          "ci95": 0.0628,
+          "se": 0.0323,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "rank_acc": {
+          "mean": 0.2304,
+          "lo": 0.1829,
+          "hi": 0.282,
+          "ci95": 0.0495,
+          "se": 0.0252,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        }
+      },
+      "paired_vs_shipped": {
+        "delta": 0.2137,
+        "lo": 0.1459,
+        "hi": 0.2858,
+        "ci95": 0.07,
+        "p_delta_gt0": 1.0,
+        "separated": true,
+        "reducer": "mean",
+        "n_windows": 881,
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "C-leak_in_sample_ade": 0.685475,
+      "C-leak_gap_m": -0.000966,
+      "rho_reachable": {
+        "n_windows": 881,
+        "mean": 0.8941,
+        "lo": 0.8656,
+        "hi": 0.9207,
+        "ci95": 0.0275,
+        "se": 0.0143,
+        "reducer": "mean",
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap",
+        "_note": "SECONDARY DIAGNOSTIC on the S2-reachable subset. rho over the full candidate axis is NOT a proxy for a selector (S3_DEPLOYABLE \u00a73): rho 0.6657 selects at 6.49 m."
+      },
+      "weights": {
+        "objective": "ce",
+        "n_folds": 40,
+        "w_mean": [
+          0.12501136857352318,
+          0.12501136857351333,
+          -3.4681983508050527,
+          -2.1160904122442603
+        ],
+        "w_std": [
+          0.03355066801713329,
+          0.03355066801713368,
+          0.06808954869545272,
+          0.002623898243270308
+        ],
+        "w_insample": [
+          0.12444065061117113,
+          0.12444065061116145,
+          -3.4660891645317493,
+          -2.1160166896313046
+        ],
+        "features": [
+          "along_end_m",
+          "dv_mps",
+          "abs_dv_mps",
+          "outside_band_mps"
+        ]
+      }
+    },
+    "D-lon+scores": {
+      "features": [
+        "logits",
+        "refined_logits",
+        "along_end_m",
+        "dv_mps",
+        "abs_dv_mps",
+        "outside_band_mps"
+      ],
+      "degenerate_control": false,
+      "loeo": {
+        "tag": "D-lon+scores",
+        "ade_0_2s": {
+          "mean": 0.5124,
+          "lo": 0.4155,
+          "hi": 0.6168,
+          "ci95": 0.1007,
+          "se": 0.0507,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "sel_gap": {
+          "mean": 0.321,
+          "lo": 0.244,
+          "hi": 0.4035,
+          "ci95": 0.0798,
+          "se": 0.0401,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "frac_sel_2x_worse": {
+          "mean": 0.4699,
+          "lo": 0.4057,
+          "hi": 0.533,
+          "ci95": 0.0636,
+          "se": 0.0331,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "rank_acc": {
+          "mean": 0.2894,
+          "lo": 0.2307,
+          "hi": 0.3549,
+          "ci95": 0.0621,
+          "se": 0.0315,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        }
+      },
+      "paired_vs_shipped": {
+        "delta": 0.0396,
+        "lo": 0.0045,
+        "hi": 0.072,
+        "ci95": 0.0337,
+        "p_delta_gt0": 0.984,
+        "separated": true,
+        "reducer": "mean",
+        "n_windows": 881,
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "C-leak_in_sample_ade": 0.510368,
+      "C-leak_gap_m": -0.002024,
+      "rho_reachable": {
+        "n_windows": 881,
+        "mean": 0.8933,
+        "lo": 0.8721,
+        "hi": 0.9141,
+        "ci95": 0.021,
+        "se": 0.011,
+        "reducer": "mean",
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap",
+        "_note": "SECONDARY DIAGNOSTIC on the S2-reachable subset. rho over the full candidate axis is NOT a proxy for a selector (S3_DEPLOYABLE \u00a73): rho 0.6657 selects at 6.49 m."
+      },
+      "weights": {
+        "objective": "ce",
+        "n_folds": 40,
+        "w_mean": [
+          0.4243198908719849,
+          0.96990813134523,
+          0.6452877415275584,
+          0.6452877415275486,
+          -2.7584922527854134,
+          -1.8789877620362294
+        ],
+        "w_std": [
+          0.016857412392578538,
+          0.021990271761398197,
+          0.03656066097631244,
+          0.036560660976312866,
+          0.0662876505556657,
+          0.002857376263550756
+        ],
+        "w_insample": [
+          0.4242311781464038,
+          0.9698579442073222,
+          0.6446682510968954,
+          0.6446682510968874,
+          -2.756663775058927,
+          -1.8789811843555004
+        ],
+        "features": [
+          "logits",
+          "refined_logits",
+          "along_end_m",
+          "dv_mps",
+          "abs_dv_mps",
+          "outside_band_mps"
+        ]
+      }
+    },
+    "E-cv": {
+      "features": [
+        "neg_cv_dist_m"
+      ],
+      "degenerate_control": true,
+      "loeo": {
+        "tag": "E-cv",
+        "ade_0_2s": {
+          "mean": 0.8149,
+          "lo": 0.5957,
+          "hi": 1.0554,
+          "ci95": 0.2298,
+          "se": 0.1199,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "sel_gap": {
+          "mean": 0.6235,
+          "lo": 0.4237,
+          "hi": 0.8436,
+          "ci95": 0.2099,
+          "se": 0.1087,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "frac_sel_2x_worse": {
+          "mean": 0.5096,
+          "lo": 0.4222,
+          "hi": 0.5959,
+          "ci95": 0.0868,
+          "se": 0.0445,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "rank_acc": {
+          "mean": 0.286,
+          "lo": 0.2182,
+          "hi": 0.3591,
+          "ci95": 0.0705,
+          "se": 0.0368,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        }
+      },
+      "paired_vs_shipped": {
+        "delta": 0.3421,
+        "lo": 0.1745,
+        "hi": 0.5421,
+        "ci95": 0.1838,
+        "p_delta_gt0": 1.0,
+        "separated": true,
+        "reducer": "mean",
+        "n_windows": 881,
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "C-leak_in_sample_ade": 0.814882,
+      "C-leak_gap_m": 0.0,
+      "rho_reachable": {
+        "n_windows": 881,
+        "mean": 0.882,
+        "lo": 0.8371,
+        "hi": 0.9223,
+        "ci95": 0.0426,
+        "se": 0.023,
+        "reducer": "mean",
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap",
+        "_note": "SECONDARY DIAGNOSTIC on the S2-reachable subset. rho over the full candidate axis is NOT a proxy for a selector (S3_DEPLOYABLE \u00a73): rho 0.6657 selects at 6.49 m."
+      },
+      "weights": {
+        "objective": "ce",
+        "n_folds": 40,
+        "w_mean": [
+          2.4326381644615416
+        ],
+        "w_std": [
+          0.08449647921199521
+        ],
+        "w_insample": [
+          2.4296487124519315
+        ],
+        "features": [
+          "neg_cv_dist_m"
+        ]
+      }
+    },
+    "A-emitted": {
+      "features": [
+        "emitted_logits"
+      ],
+      "degenerate_control": true,
+      "loeo": {
+        "tag": "A-emitted",
+        "ade_0_2s": {
+          "mean": 2.3024,
+          "lo": 2.1068,
+          "hi": 2.4943,
+          "ci95": 0.1937,
+          "se": 0.0983,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "sel_gap": {
+          "mean": 2.111,
+          "lo": 1.9092,
+          "hi": 2.3118,
+          "ci95": 0.2013,
+          "se": 0.103,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "frac_sel_2x_worse": {
+          "mean": 0.9285,
+          "lo": 0.8807,
+          "hi": 0.9649,
+          "ci95": 0.0421,
+          "se": 0.0219,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "rank_acc": {
+          "mean": 0.0352,
+          "lo": 0.0125,
+          "hi": 0.0682,
+          "ci95": 0.0278,
+          "se": 0.0149,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        }
+      },
+      "paired_vs_shipped": {
+        "delta": 1.8296,
+        "lo": 1.5878,
+        "hi": 2.0663,
+        "ci95": 0.2393,
+        "p_delta_gt0": 1.0,
+        "separated": true,
+        "reducer": "mean",
+        "n_windows": 881,
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "C-leak_in_sample_ade": 2.302392,
+      "C-leak_gap_m": 0.0,
+      "rho_reachable": {
+        "n_windows": 881,
+        "mean": 0.4424,
+        "lo": 0.3605,
+        "hi": 0.5257,
+        "ci95": 0.0826,
+        "se": 0.0418,
+        "reducer": "mean",
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap",
+        "_note": "SECONDARY DIAGNOSTIC on the S2-reachable subset. rho over the full candidate axis is NOT a proxy for a selector (S3_DEPLOYABLE \u00a73): rho 0.6657 selects at 6.49 m."
+      },
+      "weights": {
+        "objective": "ce",
+        "n_folds": 40,
+        "w_mean": [
+          0.7659063331502102
+        ],
+        "w_std": [
+          0.014320023862392542
+        ],
+        "w_insample": [
+          0.7658360450546482
+        ],
+        "features": [
+          "emitted_logits"
+        ]
+      }
+    },
+    "B-both+emitted": {
+      "features": [
+        "logits",
+        "refined_logits",
+        "emitted_logits"
+      ],
+      "degenerate_control": false,
+      "loeo": {
+        "tag": "B-both+emitted",
+        "ade_0_2s": {
+          "mean": 0.6574,
+          "lo": 0.5467,
+          "hi": 0.775,
+          "ci95": 0.1142,
+          "se": 0.0589,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "sel_gap": {
+          "mean": 0.466,
+          "lo": 0.3687,
+          "hi": 0.5709,
+          "ci95": 0.1011,
+          "se": 0.051,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "frac_sel_2x_worse": {
+          "mean": 0.5437,
+          "lo": 0.4723,
+          "hi": 0.6164,
+          "ci95": 0.0721,
+          "se": 0.036,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "rank_acc": {
+          "mean": 0.2599,
+          "lo": 0.1975,
+          "hi": 0.3311,
+          "ci95": 0.0668,
+          "se": 0.0343,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        }
+      },
+      "paired_vs_shipped": {
+        "delta": 0.1846,
+        "lo": 0.1195,
+        "hi": 0.2541,
+        "ci95": 0.0673,
+        "p_delta_gt0": 1.0,
+        "separated": true,
+        "reducer": "mean",
+        "n_windows": 881,
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "C-leak_in_sample_ade": 0.656882,
+      "C-leak_gap_m": -0.000522,
+      "rho_reachable": {
+        "n_windows": 881,
+        "mean": 0.5923,
+        "lo": 0.5534,
+        "hi": 0.6291,
+        "ci95": 0.0379,
+        "se": 0.0195,
+        "reducer": "mean",
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap",
+        "_note": "SECONDARY DIAGNOSTIC on the S2-reachable subset. rho over the full candidate axis is NOT a proxy for a selector (S3_DEPLOYABLE \u00a73): rho 0.6657 selects at 6.49 m."
+      },
+      "weights": {
+        "objective": "ce",
+        "n_folds": 40,
+        "w_mean": [
+          0.9552765008178202,
+          2.2715530347243087,
+          -1.6888765353061637
+        ],
+        "w_std": [
+          0.020524285480712084,
+          0.034293128072677925,
+          0.03546809907228002
+        ],
+        "w_insample": [
+          0.9551413163404814,
+          2.271355390288063,
+          -1.6886253985388637
+        ],
+        "features": [
+          "logits",
+          "refined_logits",
+          "emitted_logits"
+        ]
+      }
+    },
+    "D-all": {
+      "features": [
+        "logits",
+        "refined_logits",
+        "along_end_m",
+        "dv_mps",
+        "abs_dv_mps",
+        "outside_band_mps",
+        "emitted_logits"
+      ],
+      "degenerate_control": false,
+      "loeo": {
+        "tag": "D-all",
+        "ade_0_2s": {
+          "mean": 0.5128,
+          "lo": 0.4172,
+          "hi": 0.6145,
+          "ci95": 0.0987,
+          "se": 0.0503,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "sel_gap": {
+          "mean": 0.3214,
+          "lo": 0.2445,
+          "hi": 0.4028,
+          "ci95": 0.0791,
+          "se": 0.0397,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "frac_sel_2x_worse": {
+          "mean": 0.4711,
+          "lo": 0.4064,
+          "hi": 0.5346,
+          "ci95": 0.0641,
+          "se": 0.0331,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        },
+        "rank_acc": {
+          "mean": 0.2894,
+          "lo": 0.2318,
+          "hi": 0.3526,
+          "ci95": 0.0604,
+          "se": 0.0312,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "episode_cluster_bootstrap"
+        }
+      },
+      "paired_vs_shipped": {
+        "delta": 0.04,
+        "lo": 0.0038,
+        "hi": 0.0735,
+        "ci95": 0.0348,
+        "p_delta_gt0": 0.9835,
+        "separated": true,
+        "reducer": "mean",
+        "n_windows": 881,
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "C-leak_in_sample_ade": 0.50958,
+      "C-leak_gap_m": -0.003209,
+      "rho_reachable": {
+        "n_windows": 881,
+        "mean": 0.8916,
+        "lo": 0.8702,
+        "hi": 0.9127,
+        "ci95": 0.0212,
+        "se": 0.0111,
+        "reducer": "mean",
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap",
+        "_note": "SECONDARY DIAGNOSTIC on the S2-reachable subset. rho over the full candidate axis is NOT a proxy for a selector (S3_DEPLOYABLE \u00a73): rho 0.6657 selects at 6.49 m."
+      },
+      "weights": {
+        "objective": "ce",
+        "n_folds": 40,
+        "w_mean": [
+          0.4212963711908665,
+          1.1089570934531108,
+          0.6022672977031264,
+          0.602267297703119,
+          -2.728145114776662,
+          -1.741250521213269,
+          -0.22935296131945404
+        ],
+        "w_std": [
+          0.01678890286506228,
+          0.038558861063484676,
+          0.038359923246143734,
+          0.03835992324614413,
+          0.06834946148034615,
+          0.0029686362741327267,
+          0.05076296986626998
+        ],
+        "w_insample": [
+          0.4212221055534093,
+          1.108632565946233,
+          0.6016080711354221,
+          0.6016080711354154,
+          -2.7264181047856697,
+          -1.7412330766727417,
+          -0.2291316343822081
+        ],
+        "features": [
+          "logits",
+          "refined_logits",
+          "along_end_m",
+          "dv_mps",
+          "abs_dv_mps",
+          "outside_band_mps",
+          "emitted_logits"
+        ]
+      }
+    }
+  },
+  "controls": {
+    "C-reproduce": {
+      "control": "C-identity",
+      "argmax_logits_equals_sel": true,
+      "recomputed_selected_ade_0_2s": 0.472772,
+      "published_selected_ade_0_2s": 0.4728,
+      "n_windows": 881,
+      "canonical_n_windows": 881,
+      "abs_deviation": 2.785e-05,
+      "tolerance": 1e-06,
+      "note": "the published value is stored rounded to 4 dp, so the admissible deviation is max(1e-6, 5e-5 rounding half-width); the argmax==sel check is the BIT-EXACT half of this control",
+      "status": "PASS"
+    },
+    "C-oracle-floor": {
+      "control": "C-oracle-floor",
+      "recomputed_oracle_in_fan_ade_0_2s": 0.191421,
+      "published_oracle_in_fan_ade_0_2s": 0.1914,
+      "n_windows": 881,
+      "canonical_n_windows": 881,
+      "abs_deviation": 2.126e-05,
+      "arm_the_number_belongs_to": "refc-base-30k",
+      "\u26a0\ufe0f": "0.1640 / 45.4 % are REF-C-XL's; base is 0.1914 / 41.09 %",
+      "status": "PASS"
+    },
+    "C-raster": {
+      "control": "C-raster",
+      "required": {
+        "frame_hw": [
+          256,
+          256
+        ],
+        "token_grid": [
+          8,
+          8
+        ],
+        "n_tokens": 64,
+        "channels": 9
+      },
+      "scored_a_decode": false,
+      "status": "NOT-APPLICABLE (fan-only mode)",
+      "reason": "no decode is run in fan-only mode, so no raster is fed to REF-C. The banked fan is the OUTPUT of a decode that already ran at the trained raster on the eval pod (ckpt '/home/nvidia/models/refc-base/ckpt.pt', step 29999).",
+      "\u26d4": "\u26d4 THIS CONTROL BECOMES BINDING THE MOMENT A --ckpt DECODE IS ADDED. The only val cache currently reachable off-pod is the w120 256x640 CYLINDRICAL flagship cache; feeding that to REF-C IS R-2026-08-02-a and this control must REFUSE it."
+    },
+    "C-monotone": {
+      "what": "a strictly-monotone function of ONE banked scalar has the IDENTICAL argmax, so these two rows are CONTROLS and must reproduce their incumbent selectors exactly",
+      "A-shipped_ade": 0.472772,
+      "shipped_ade": 0.472772,
+      "A-refined_ade": 1.310019,
+      "refined_argmax_ade": 1.310019,
+      "shipped_matches": true,
+      "refined_matches": true,
+      "can_fire": true
+    },
+    "C-permuted-target": {
+      "what": "features permuted INDEPENDENTLY per window, then fit and evaluated LOEO. Must land at the uniform-random floor; a score above it means the split leaks or the protocol is broken.",
+      "ade": 2.6898,
+      "uniform_floor_over_survivors": 2.7816,
+      "paired_vs_floor": {
+        "delta": -0.0918,
+        "lo": -0.2527,
+        "hi": 0.0718,
+        "ci95": 0.1623,
+        "p_delta_gt0": 0.1325,
+        "separated": false,
+        "reducer": "mean",
+        "n_windows": 881,
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "can_fire": true
+    },
+    "C-shuffled": {
+      "what": "permute-then-argmax is a uniform pick for ANY score",
+      "status": "VACUOUS BY CONSTRUCTION \u2014 reported, never load-bearing",
+      "can_fire": false
+    }
+  },
+  "objective_diagnostic": {
+    "status": "POST-HOC. Decides NO registered branch and moved no threshold. It exists because EVERY registered fit came back separated ADVERSE \u2014 including one whose feature set CONTAINS the incumbent score \u2014 which makes 'no information' and 'wrong objective' the two live readings, and they license opposite decisions.",
+    "registered_objective": "listwise softmax CE vs the oracle INDEX \u2014 the objective refc_train.loss_rcls uses",
+    "diagnostic_objective": "expected ADE under the score's own softmax over survivors (a soft argmax ADE)",
+    "arms": {
+      "A-shipped": {
+        "features": [
+          "logits"
+        ],
+        "loeo": {
+          "tag": "A-shipped-softade",
+          "ade_0_2s": {
+            "mean": 0.4728,
+            "lo": 0.3835,
+            "hi": 0.5699,
+            "ci95": 0.0932,
+            "se": 0.0472,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          },
+          "sel_gap": {
+            "mean": 0.2814,
+            "lo": 0.2127,
+            "hi": 0.3543,
+            "ci95": 0.0708,
+            "se": 0.0365,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          },
+          "frac_sel_2x_worse": {
+            "mean": 0.4109,
+            "lo": 0.3439,
+            "hi": 0.4773,
+            "ci95": 0.0667,
+            "se": 0.0339,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          },
+          "rank_acc": {
+            "mean": 0.3292,
+            "lo": 0.2705,
+            "hi": 0.3946,
+            "ci95": 0.0621,
+            "se": 0.0316,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          }
+        },
+        "paired_vs_shipped": {
+          "delta": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "ci95": 0.0,
+          "p_delta_gt0": 0.0,
+          "separated": false,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap"
+        },
+        "paired_vs_same_features_under_CE": {
+          "delta": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "ci95": 0.0,
+          "p_delta_gt0": 0.0,
+          "separated": false,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap"
+        },
+        "weights": {
+          "objective": "softade",
+          "n_folds": 40,
+          "w_mean": [
+            12.401393971932091
+          ],
+          "w_std": [
+            0.0399069910958144
+          ],
+          "w_insample": [
+            12.401516151182026
+          ],
+          "features": [
+            "logits"
+          ]
+        }
+      },
+      "B-both": {
+        "features": [
+          "logits",
+          "refined_logits"
+        ],
+        "loeo": {
+          "tag": "B-both-softade",
+          "ade_0_2s": {
+            "mean": 0.4694,
+            "lo": 0.3836,
+            "hi": 0.5614,
+            "ci95": 0.0889,
+            "se": 0.0457,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          },
+          "sel_gap": {
+            "mean": 0.2779,
+            "lo": 0.2123,
+            "hi": 0.3485,
+            "ci95": 0.0681,
+            "se": 0.0351,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          },
+          "frac_sel_2x_worse": {
+            "mean": 0.4075,
+            "lo": 0.3451,
+            "hi": 0.4688,
+            "ci95": 0.0619,
+            "se": 0.0315,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          },
+          "rank_acc": {
+            "mean": 0.3303,
+            "lo": 0.275,
+            "hi": 0.3919,
+            "ci95": 0.0584,
+            "se": 0.0302,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          }
+        },
+        "paired_vs_shipped": {
+          "delta": -0.0034,
+          "lo": -0.0122,
+          "hi": 0.0047,
+          "ci95": 0.0085,
+          "p_delta_gt0": 0.2095,
+          "separated": false,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap"
+        },
+        "paired_vs_same_features_under_CE": {
+          "delta": -0.0974,
+          "lo": -0.1417,
+          "hi": -0.0573,
+          "ci95": 0.0422,
+          "p_delta_gt0": 0.0,
+          "separated": true,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap"
+        },
+        "weights": {
+          "objective": "softade",
+          "n_folds": 40,
+          "w_mean": [
+            13.191223331853593,
+            0.6835101353330297
+          ],
+          "w_std": [
+            0.04826995742554232,
+            0.08521971126213039
+          ],
+          "w_insample": [
+            13.191388522131264,
+            0.6827780875741857
+          ],
+          "features": [
+            "logits",
+            "refined_logits"
+          ]
+        }
+      },
+      "C-lon": {
+        "features": [
+          "along_end_m",
+          "dv_mps",
+          "abs_dv_mps",
+          "outside_band_mps"
+        ],
+        "loeo": {
+          "tag": "C-lon-softade",
+          "ade_0_2s": {
+            "mean": 0.6872,
+            "lo": 0.5514,
+            "hi": 0.8263,
+            "ci95": 0.1374,
+            "se": 0.071,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          },
+          "sel_gap": {
+            "mean": 0.4958,
+            "lo": 0.3819,
+            "hi": 0.6126,
+            "ci95": 0.1154,
+            "se": 0.0589,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          },
+          "frac_sel_2x_worse": {
+            "mean": 0.5551,
+            "lo": 0.4898,
+            "hi": 0.6182,
+            "ci95": 0.0642,
+            "se": 0.0329,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          },
+          "rank_acc": {
+            "mean": 0.2316,
+            "lo": 0.1827,
+            "hi": 0.286,
+            "ci95": 0.0516,
+            "se": 0.0265,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          }
+        },
+        "paired_vs_shipped": {
+          "delta": 0.2145,
+          "lo": 0.1458,
+          "hi": 0.2862,
+          "ci95": 0.0702,
+          "p_delta_gt0": 1.0,
+          "separated": true,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap"
+        },
+        "paired_vs_same_features_under_CE": {
+          "delta": 0.0008,
+          "lo": -0.005,
+          "hi": 0.0076,
+          "ci95": 0.0063,
+          "p_delta_gt0": 0.5885,
+          "separated": false,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap"
+        },
+        "weights": {
+          "objective": "softade",
+          "n_folds": 40,
+          "w_mean": [
+            0.9310550521211043,
+            0.9310550521211042,
+            -10.847234930502811,
+            -1.5596570412517565
+          ],
+          "w_std": [
+            0.05580788407284154,
+            0.055807884072841527,
+            0.03927858679723513,
+            0.0014371687342313328
+          ],
+          "w_insample": [
+            0.9311705349796222,
+            0.9311705349796221,
+            -10.847340002735027,
+            -1.5596285327487445
+          ],
+          "features": [
+            "along_end_m",
+            "dv_mps",
+            "abs_dv_mps",
+            "outside_band_mps"
+          ]
+        }
+      },
+      "D-lon+scores": {
+        "features": [
+          "logits",
+          "refined_logits",
+          "along_end_m",
+          "dv_mps",
+          "abs_dv_mps",
+          "outside_band_mps"
+        ],
+        "loeo": {
+          "tag": "D-lon+scores-softade",
+          "ade_0_2s": {
+            "mean": 0.4751,
+            "lo": 0.3815,
+            "hi": 0.5746,
+            "ci95": 0.0965,
+            "se": 0.0494,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          },
+          "sel_gap": {
+            "mean": 0.2837,
+            "lo": 0.2106,
+            "hi": 0.3617,
+            "ci95": 0.0755,
+            "se": 0.0387,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          },
+          "frac_sel_2x_worse": {
+            "mean": 0.3961,
+            "lo": 0.3364,
+            "hi": 0.4557,
+            "ci95": 0.0597,
+            "se": 0.0305,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          },
+          "rank_acc": {
+            "mean": 0.3428,
+            "lo": 0.2886,
+            "hi": 0.4048,
+            "ci95": 0.0581,
+            "se": 0.03,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "episode_cluster_bootstrap"
+          }
+        },
+        "paired_vs_shipped": {
+          "delta": 0.0023,
+          "lo": -0.0201,
+          "hi": 0.0231,
+          "ci95": 0.0216,
+          "p_delta_gt0": 0.587,
+          "separated": false,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap"
+        },
+        "paired_vs_same_features_under_CE": {
+          "delta": -0.0373,
+          "lo": -0.0597,
+          "hi": -0.0148,
+          "ci95": 0.0225,
+          "p_delta_gt0": 0.0,
+          "separated": true,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap"
+        },
+        "weights": {
+          "objective": "softade",
+          "n_folds": 40,
+          "w_mean": [
+            9.26791197036182,
+            2.221627947504609,
+            2.323113269019305,
+            2.3231132690193044,
+            -5.199676088023786,
+            -1.5283675535720789
+          ],
+          "w_std": [
+            0.07541950566979859,
+            0.07619074203706844,
+            0.08376745970927554,
+            0.08376745970927556,
+            0.07541199351117579,
+            0.0006135198837474976
+          ],
+          "w_insample": [
+            9.268018783062354,
+            2.2218996819500503,
+            2.3231306307350676,
+            2.323130630735068,
+            -5.200419627894978,
+            -1.5283622176681606
+          ],
+          "features": [
+            "logits",
+            "refined_logits",
+            "along_end_m",
+            "dv_mps",
+            "abs_dv_mps",
+            "outside_band_mps"
+          ]
+        }
+      }
+    }
+  },
+  "s1b": {
+    "controls": {
+      "fan_bit_identical_to_esel": true,
+      "gt_bit_identical": true,
+      "eid_match": true,
+      "prefinal_reproduces_esel_refined": true,
+      "emitted_differs_from_prefinal": true,
+      "can_fire": true
+    },
+    "emitted": {
+      "tag": "S1b-emitted",
+      "ade_0_2s": {
+        "mean": 2.3024,
+        "lo": 2.1068,
+        "hi": 2.4943,
+        "ci95": 0.1937,
+        "se": 0.0983,
+        "reducer": "mean",
+        "n_windows": 881,
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "sel_gap": {
+        "mean": 2.111,
+        "lo": 1.9092,
+        "hi": 2.3118,
+        "ci95": 0.2013,
+        "se": 0.103,
+        "reducer": "mean",
+        "n_windows": 881,
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "frac_sel_2x_worse": {
+        "mean": 0.9285,
+        "lo": 0.8807,
+        "hi": 0.9649,
+        "ci95": 0.0421,
+        "se": 0.0219,
+        "reducer": "mean",
+        "n_windows": 881,
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "rank_acc": {
+        "mean": 0.0352,
+        "lo": 0.0125,
+        "hi": 0.0682,
+        "ci95": 0.0278,
+        "se": 0.0149,
+        "reducer": "mean",
+        "n_windows": 881,
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      }
+    },
+    "prefinal": {
+      "tag": "S1-prefinal",
+      "ade_0_2s": {
+        "mean": 1.31,
+        "lo": 1.1958,
+        "hi": 1.4418,
+        "ci95": 0.123,
+        "se": 0.0644,
+        "reducer": "mean",
+        "n_windows": 881,
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "sel_gap": {
+        "mean": 1.1186,
+        "lo": 1.0002,
+        "hi": 1.2496,
+        "ci95": 0.1247,
+        "se": 0.0649,
+        "reducer": "mean",
+        "n_windows": 881,
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "frac_sel_2x_worse": {
+        "mean": 0.8695,
+        "lo": 0.8205,
+        "hi": 0.9159,
+        "ci95": 0.0477,
+        "se": 0.0245,
+        "reducer": "mean",
+        "n_windows": 881,
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      },
+      "rank_acc": {
+        "mean": 0.0681,
+        "lo": 0.0398,
+        "hi": 0.0999,
+        "ci95": 0.0301,
+        "se": 0.0153,
+        "reducer": "mean",
+        "n_windows": 881,
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap"
+      }
+    },
+    "paired_emitted_minus_prefinal": {
+      "delta": 0.9924,
+      "lo": 0.7848,
+      "hi": 1.1888,
+      "ci95": 0.202,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "paired_emitted_minus_shipped": {
+      "delta": 1.8296,
+      "lo": 1.5878,
+      "hi": 2.0663,
+      "ci95": 0.2393,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "agreement_emitted_vs_prefinal": 0.1691,
+    "corr_emitted_prefinal": 0.9038
+  },
+  "families": {
+    "A-shipped": {
+      "paired_vs_shipped": {
+        "_tag": "A-shipped-minus-shipped",
+        "_dt_s": 0.5,
+        "_dt_provenance": "derived from wp_steps [5, 10, 15, 20] x dt_s 0.1 -> 0.5s grid",
+        "LONGITUDINAL": {
+          "speed_abs_err_mps": {
+            "delta": 0.0,
+            "lo": 0.0,
+            "hi": 0.0,
+            "ci95": 0.0,
+            "p_delta_gt0": 0.0,
+            "separated": false,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "speed_signed_err_mps": {
+            "delta": 0.0,
+            "lo": 0.0,
+            "hi": 0.0,
+            "ci95": 0.0,
+            "p_delta_gt0": 0.0,
+            "separated": false,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "along_abs_err_m": {
+            "delta": 0.0,
+            "lo": 0.0,
+            "hi": 0.0,
+            "ci95": 0.0,
+            "p_delta_gt0": 0.0,
+            "separated": false,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "along_signed_err_m": {
+            "delta": 0.0,
+            "lo": 0.0,
+            "hi": 0.0,
+            "ci95": 0.0,
+            "p_delta_gt0": 0.0,
+            "separated": false,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          }
+        },
+        "LATERAL": {
+          "cross_abs_err_m": {
+            "delta": 0.0,
+            "lo": 0.0,
+            "hi": 0.0,
+            "ci95": 0.0,
+            "p_delta_gt0": 0.0,
+            "separated": false,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "heading_abs_err_deg": {
+            "delta": 0.0,
+            "lo": 0.0,
+            "hi": 0.0,
+            "ci95": 0.0,
+            "p_delta_gt0": 0.0,
+            "separated": false,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "curvature_abs_err_1pm": {
+            "delta": 0.0,
+            "lo": 0.0,
+            "hi": 0.0,
+            "ci95": 0.0,
+            "p_delta_gt0": 0.0,
+            "separated": false,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "yaw_rate_abs_err_degps": {
+            "delta": 0.0,
+            "lo": 0.0,
+            "hi": 0.0,
+            "ci95": 0.0,
+            "p_delta_gt0": 0.0,
+            "separated": false,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          }
+        },
+        "TACTICAL": "see rankers.* \u2014 rank_acc / sel_gap / frac_sel_2x_worse are the goal/anchor-selection half and ARE computed",
+        "STRATEGIC": "UNAVAILABLE \u2014 see families.*._strategic_reason (no route/goal label in a fan bank), n = 0"
+      },
+      "absolute": {
+        "_tag": "A-shipped",
+        "status": "UNAVAILABLE on this host \u2014 ModuleNotFoundError: No module named 'taniteval.progress'",
+        "n": 881,
+        "why_it_is_not_load_bearing": "R-2026-08-03-c: absolute four-family RATES before the dt fix are wrong by 5x-25x; cross-arm ranks and PAIRED deltas survive. `families.*.paired_vs_shipped` IS computed and is what prereg \u00a76 judges on."
+      }
+    },
+    "A-refined": {
+      "paired_vs_shipped": {
+        "_tag": "A-refined-minus-shipped",
+        "_dt_s": 0.5,
+        "_dt_provenance": "derived from wp_steps [5, 10, 15, 20] x dt_s 0.1 -> 0.5s grid",
+        "LONGITUDINAL": {
+          "speed_abs_err_mps": {
+            "delta": 0.8946,
+            "lo": 0.7494,
+            "hi": 1.0462,
+            "ci95": 0.1484,
+            "p_delta_gt0": 1.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "speed_signed_err_mps": {
+            "delta": -1.0492,
+            "lo": -1.2233,
+            "hi": -0.8472,
+            "ci95": 0.1881,
+            "p_delta_gt0": 0.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "along_abs_err_m": {
+            "delta": 0.8556,
+            "lo": 0.7082,
+            "hi": 1.0143,
+            "ci95": 0.1531,
+            "p_delta_gt0": 1.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "along_signed_err_m": {
+            "delta": -0.971,
+            "lo": -1.1502,
+            "hi": -0.7561,
+            "ci95": 0.197,
+            "p_delta_gt0": 0.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          }
+        },
+        "LATERAL": {
+          "cross_abs_err_m": {
+            "delta": 0.037,
+            "lo": 0.0242,
+            "hi": 0.0525,
+            "ci95": 0.0142,
+            "p_delta_gt0": 1.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "heading_abs_err_deg": {
+            "delta": 0.4188,
+            "lo": 0.2481,
+            "hi": 0.6797,
+            "ci95": 0.2158,
+            "p_delta_gt0": 1.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "curvature_abs_err_1pm": {
+            "delta": 0.0066,
+            "lo": 0.0037,
+            "hi": 0.0101,
+            "ci95": 0.0032,
+            "p_delta_gt0": 1.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "yaw_rate_abs_err_degps": {
+            "delta": 1.0268,
+            "lo": 0.7961,
+            "hi": 1.3032,
+            "ci95": 0.2536,
+            "p_delta_gt0": 1.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          }
+        },
+        "TACTICAL": "see rankers.* \u2014 rank_acc / sel_gap / frac_sel_2x_worse are the goal/anchor-selection half and ARE computed",
+        "STRATEGIC": "UNAVAILABLE \u2014 see families.*._strategic_reason (no route/goal label in a fan bank), n = 0"
+      },
+      "absolute": {
+        "_tag": "A-refined",
+        "status": "UNAVAILABLE on this host \u2014 ModuleNotFoundError: No module named 'taniteval.progress'",
+        "n": 881,
+        "why_it_is_not_load_bearing": "R-2026-08-03-c: absolute four-family RATES before the dt fix are wrong by 5x-25x; cross-arm ranks and PAIRED deltas survive. `families.*.paired_vs_shipped` IS computed and is what prereg \u00a76 judges on."
+      }
+    },
+    "B-both": {
+      "paired_vs_shipped": {
+        "_tag": "B-both-minus-shipped",
+        "_dt_s": 0.5,
+        "_dt_provenance": "derived from wp_steps [5, 10, 15, 20] x dt_s 0.1 -> 0.5s grid",
+        "LONGITUDINAL": {
+          "speed_abs_err_mps": {
+            "delta": 0.1073,
+            "lo": 0.0616,
+            "hi": 0.1575,
+            "ci95": 0.048,
+            "p_delta_gt0": 1.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "speed_signed_err_mps": {
+            "delta": -0.2678,
+            "lo": -0.3161,
+            "hi": -0.2235,
+            "ci95": 0.0463,
+            "p_delta_gt0": 0.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "along_abs_err_m": {
+            "delta": 0.0963,
+            "lo": 0.0503,
+            "hi": 0.1452,
+            "ci95": 0.0474,
+            "p_delta_gt0": 1.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "along_signed_err_m": {
+            "delta": -0.2535,
+            "lo": -0.2995,
+            "hi": -0.2115,
+            "ci95": 0.044,
+            "p_delta_gt0": 0.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          }
+        },
+        "LATERAL": {
+          "cross_abs_err_m": {
+            "delta": 0.0043,
+            "lo": -0.0008,
+            "hi": 0.0102,
+            "ci95": 0.0055,
+            "p_delta_gt0": 0.9525,
+            "separated": false,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "heading_abs_err_deg": {
+            "delta": 0.0188,
+            "lo": -0.0103,
+            "hi": 0.0495,
+            "ci95": 0.0299,
+            "p_delta_gt0": 0.891,
+            "separated": false,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "curvature_abs_err_1pm": {
+            "delta": 0.001,
+            "lo": 0.0003,
+            "hi": 0.0021,
+            "ci95": 0.0009,
+            "p_delta_gt0": 1.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "yaw_rate_abs_err_degps": {
+            "delta": 0.082,
+            "lo": 0.0373,
+            "hi": 0.1301,
+            "ci95": 0.0464,
+            "p_delta_gt0": 1.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          }
+        },
+        "TACTICAL": "see rankers.* \u2014 rank_acc / sel_gap / frac_sel_2x_worse are the goal/anchor-selection half and ARE computed",
+        "STRATEGIC": "UNAVAILABLE \u2014 see families.*._strategic_reason (no route/goal label in a fan bank), n = 0"
+      },
+      "absolute": {
+        "_tag": "B-both",
+        "status": "UNAVAILABLE on this host \u2014 ModuleNotFoundError: No module named 'taniteval.progress'",
+        "n": 881,
+        "why_it_is_not_load_bearing": "R-2026-08-03-c: absolute four-family RATES before the dt fix are wrong by 5x-25x; cross-arm ranks and PAIRED deltas survive. `families.*.paired_vs_shipped` IS computed and is what prereg \u00a76 judges on."
+      }
+    },
+    "C-lon": {
+      "paired_vs_shipped": {
+        "_tag": "C-lon-minus-shipped",
+        "_dt_s": 0.5,
+        "_dt_provenance": "derived from wp_steps [5, 10, 15, 20] x dt_s 0.1 -> 0.5s grid",
+        "LONGITUDINAL": {
+          "speed_abs_err_mps": {
+            "delta": 0.0564,
+            "lo": 0.0145,
+            "hi": 0.0942,
+            "ci95": 0.0398,
+            "p_delta_gt0": 0.9975,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "speed_signed_err_mps": {
+            "delta": -0.0644,
+            "lo": -0.1264,
+            "hi": -0.0114,
+            "ci95": 0.0575,
+            "p_delta_gt0": 0.011,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "along_abs_err_m": {
+            "delta": 0.0455,
+            "lo": 0.0043,
+            "hi": 0.0851,
+            "ci95": 0.0404,
+            "p_delta_gt0": 0.984,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "along_signed_err_m": {
+            "delta": -0.0747,
+            "lo": -0.1357,
+            "hi": -0.0228,
+            "ci95": 0.0565,
+            "p_delta_gt0": 0.0025,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          }
+        },
+        "LATERAL": {
+          "cross_abs_err_m": {
+            "delta": 0.2306,
+            "lo": 0.1633,
+            "hi": 0.3008,
+            "ci95": 0.0687,
+            "p_delta_gt0": 1.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "heading_abs_err_deg": {
+            "delta": 1.9919,
+            "lo": 1.398,
+            "hi": 2.5882,
+            "ci95": 0.5951,
+            "p_delta_gt0": 1.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "curvature_abs_err_1pm": {
+            "delta": 0.0069,
+            "lo": 0.0047,
+            "hi": 0.0093,
+            "ci95": 0.0023,
+            "p_delta_gt0": 1.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "yaw_rate_abs_err_degps": {
+            "delta": 2.4304,
+            "lo": 1.7629,
+            "hi": 3.1036,
+            "ci95": 0.6703,
+            "p_delta_gt0": 1.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          }
+        },
+        "TACTICAL": "see rankers.* \u2014 rank_acc / sel_gap / frac_sel_2x_worse are the goal/anchor-selection half and ARE computed",
+        "STRATEGIC": "UNAVAILABLE \u2014 see families.*._strategic_reason (no route/goal label in a fan bank), n = 0"
+      },
+      "absolute": {
+        "_tag": "C-lon",
+        "status": "UNAVAILABLE on this host \u2014 ModuleNotFoundError: No module named 'taniteval.progress'",
+        "n": 881,
+        "why_it_is_not_load_bearing": "R-2026-08-03-c: absolute four-family RATES before the dt fix are wrong by 5x-25x; cross-arm ranks and PAIRED deltas survive. `families.*.paired_vs_shipped` IS computed and is what prereg \u00a76 judges on."
+      }
+    },
+    "D-lon+scores": {
+      "paired_vs_shipped": {
+        "_tag": "D-lon+scores-minus-shipped",
+        "_dt_s": 0.5,
+        "_dt_provenance": "derived from wp_steps [5, 10, 15, 20] x dt_s 0.1 -> 0.5s grid",
+        "LONGITUDINAL": {
+          "speed_abs_err_mps": {
+            "delta": 0.0368,
+            "lo": 0.0002,
+            "hi": 0.0708,
+            "ci95": 0.0353,
+            "p_delta_gt0": 0.975,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "speed_signed_err_mps": {
+            "delta": -0.0986,
+            "lo": -0.1562,
+            "hi": -0.0487,
+            "ci95": 0.0537,
+            "p_delta_gt0": 0.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "along_abs_err_m": {
+            "delta": 0.0344,
+            "lo": -0.0021,
+            "hi": 0.0677,
+            "ci95": 0.0349,
+            "p_delta_gt0": 0.9655,
+            "separated": false,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "along_signed_err_m": {
+            "delta": -0.0919,
+            "lo": -0.1464,
+            "hi": -0.0434,
+            "ci95": 0.0515,
+            "p_delta_gt0": 0.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          }
+        },
+        "LATERAL": {
+          "cross_abs_err_m": {
+            "delta": 0.0122,
+            "lo": 0.0045,
+            "hi": 0.0215,
+            "ci95": 0.0085,
+            "p_delta_gt0": 0.9995,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "heading_abs_err_deg": {
+            "delta": 0.0644,
+            "lo": 0.0213,
+            "hi": 0.1118,
+            "ci95": 0.0453,
+            "p_delta_gt0": 0.9995,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "curvature_abs_err_1pm": {
+            "delta": 0.0005,
+            "lo": 0.0001,
+            "hi": 0.001,
+            "ci95": 0.0005,
+            "p_delta_gt0": 0.995,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "yaw_rate_abs_err_degps": {
+            "delta": 0.1148,
+            "lo": 0.0518,
+            "hi": 0.1865,
+            "ci95": 0.0674,
+            "p_delta_gt0": 1.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          }
+        },
+        "TACTICAL": "see rankers.* \u2014 rank_acc / sel_gap / frac_sel_2x_worse are the goal/anchor-selection half and ARE computed",
+        "STRATEGIC": "UNAVAILABLE \u2014 see families.*._strategic_reason (no route/goal label in a fan bank), n = 0"
+      },
+      "absolute": {
+        "_tag": "D-lon+scores",
+        "status": "UNAVAILABLE on this host \u2014 ModuleNotFoundError: No module named 'taniteval.progress'",
+        "n": 881,
+        "why_it_is_not_load_bearing": "R-2026-08-03-c: absolute four-family RATES before the dt fix are wrong by 5x-25x; cross-arm ranks and PAIRED deltas survive. `families.*.paired_vs_shipped` IS computed and is what prereg \u00a76 judges on."
+      }
+    },
+    "E-cv": {
+      "paired_vs_shipped": {
+        "_tag": "E-cv-minus-shipped",
+        "_dt_s": 0.5,
+        "_dt_provenance": "derived from wp_steps [5, 10, 15, 20] x dt_s 0.1 -> 0.5s grid",
+        "LONGITUDINAL": {
+          "speed_abs_err_mps": {
+            "delta": 0.0839,
+            "lo": 0.0301,
+            "hi": 0.1338,
+            "ci95": 0.0518,
+            "p_delta_gt0": 1.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "speed_signed_err_mps": {
+            "delta": -0.0871,
+            "lo": -0.1569,
+            "hi": -0.0232,
+            "ci95": 0.0669,
+            "p_delta_gt0": 0.003,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "along_abs_err_m": {
+            "delta": 0.0638,
+            "lo": 0.0137,
+            "hi": 0.1104,
+            "ci95": 0.0484,
+            "p_delta_gt0": 0.993,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "along_signed_err_m": {
+            "delta": -0.0373,
+            "lo": -0.1016,
+            "hi": 0.0191,
+            "ci95": 0.0604,
+            "p_delta_gt0": 0.1025,
+            "separated": false,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          }
+        },
+        "LATERAL": {
+          "cross_abs_err_m": {
+            "delta": 0.3437,
+            "lo": 0.178,
+            "hi": 0.5468,
+            "ci95": 0.1844,
+            "p_delta_gt0": 1.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "heading_abs_err_deg": {
+            "delta": 2.5708,
+            "lo": 1.5322,
+            "hi": 3.6768,
+            "ci95": 1.0723,
+            "p_delta_gt0": 1.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "curvature_abs_err_1pm": {
+            "delta": 0.0077,
+            "lo": 0.0046,
+            "hi": 0.011,
+            "ci95": 0.0032,
+            "p_delta_gt0": 1.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "yaw_rate_abs_err_degps": {
+            "delta": 2.7218,
+            "lo": 1.6697,
+            "hi": 3.8929,
+            "ci95": 1.1116,
+            "p_delta_gt0": 1.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          }
+        },
+        "TACTICAL": "see rankers.* \u2014 rank_acc / sel_gap / frac_sel_2x_worse are the goal/anchor-selection half and ARE computed",
+        "STRATEGIC": "UNAVAILABLE \u2014 see families.*._strategic_reason (no route/goal label in a fan bank), n = 0"
+      },
+      "absolute": {
+        "_tag": "E-cv",
+        "status": "UNAVAILABLE on this host \u2014 ModuleNotFoundError: No module named 'taniteval.progress'",
+        "n": 881,
+        "why_it_is_not_load_bearing": "R-2026-08-03-c: absolute four-family RATES before the dt fix are wrong by 5x-25x; cross-arm ranks and PAIRED deltas survive. `families.*.paired_vs_shipped` IS computed and is what prereg \u00a76 judges on."
+      }
+    },
+    "A-emitted": {
+      "paired_vs_shipped": {
+        "_tag": "A-emitted-minus-shipped",
+        "_dt_s": 0.5,
+        "_dt_provenance": "derived from wp_steps [5, 10, 15, 20] x dt_s 0.1 -> 0.5s grid",
+        "LONGITUDINAL": {
+          "speed_abs_err_mps": {
+            "delta": 2.0094,
+            "lo": 1.7354,
+            "hi": 2.2827,
+            "ci95": 0.2737,
+            "p_delta_gt0": 1.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "speed_signed_err_mps": {
+            "delta": -2.1858,
+            "lo": -2.5293,
+            "hi": -1.843,
+            "ci95": 0.3431,
+            "p_delta_gt0": 0.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "along_abs_err_m": {
+            "delta": 1.8523,
+            "lo": 1.6061,
+            "hi": 2.0952,
+            "ci95": 0.2445,
+            "p_delta_gt0": 1.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "along_signed_err_m": {
+            "delta": -1.9916,
+            "lo": -2.3132,
+            "hi": -1.6578,
+            "ci95": 0.3277,
+            "p_delta_gt0": 0.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          }
+        },
+        "LATERAL": {
+          "cross_abs_err_m": {
+            "delta": 0.0776,
+            "lo": 0.0576,
+            "hi": 0.1001,
+            "ci95": 0.0213,
+            "p_delta_gt0": 1.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "heading_abs_err_deg": {
+            "delta": 1.3967,
+            "lo": 1.039,
+            "hi": 1.8286,
+            "ci95": 0.3948,
+            "p_delta_gt0": 1.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "curvature_abs_err_1pm": {
+            "delta": 0.0209,
+            "lo": 0.0131,
+            "hi": 0.0306,
+            "ci95": 0.0087,
+            "p_delta_gt0": 1.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "yaw_rate_abs_err_degps": {
+            "delta": 3.4227,
+            "lo": 2.6372,
+            "hi": 4.3557,
+            "ci95": 0.8593,
+            "p_delta_gt0": 1.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          }
+        },
+        "TACTICAL": "see rankers.* \u2014 rank_acc / sel_gap / frac_sel_2x_worse are the goal/anchor-selection half and ARE computed",
+        "STRATEGIC": "UNAVAILABLE \u2014 see families.*._strategic_reason (no route/goal label in a fan bank), n = 0"
+      },
+      "absolute": {
+        "_tag": "A-emitted",
+        "status": "UNAVAILABLE on this host \u2014 ModuleNotFoundError: No module named 'taniteval.progress'",
+        "n": 881,
+        "why_it_is_not_load_bearing": "R-2026-08-03-c: absolute four-family RATES before the dt fix are wrong by 5x-25x; cross-arm ranks and PAIRED deltas survive. `families.*.paired_vs_shipped` IS computed and is what prereg \u00a76 judges on."
+      }
+    },
+    "B-both+emitted": {
+      "paired_vs_shipped": {
+        "_tag": "B-both+emitted-minus-shipped",
+        "_dt_s": 0.5,
+        "_dt_provenance": "derived from wp_steps [5, 10, 15, 20] x dt_s 0.1 -> 0.5s grid",
+        "LONGITUDINAL": {
+          "speed_abs_err_mps": {
+            "delta": 0.1576,
+            "lo": 0.1041,
+            "hi": 0.2128,
+            "ci95": 0.0543,
+            "p_delta_gt0": 1.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "speed_signed_err_mps": {
+            "delta": -0.3391,
+            "lo": -0.4005,
+            "hi": -0.2811,
+            "ci95": 0.0597,
+            "p_delta_gt0": 0.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "along_abs_err_m": {
+            "delta": 0.1883,
+            "lo": 0.1225,
+            "hi": 0.2581,
+            "ci95": 0.0678,
+            "p_delta_gt0": 1.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "along_signed_err_m": {
+            "delta": -0.3635,
+            "lo": -0.4502,
+            "hi": -0.2876,
+            "ci95": 0.0813,
+            "p_delta_gt0": 0.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          }
+        },
+        "LATERAL": {
+          "cross_abs_err_m": {
+            "delta": 0.0099,
+            "lo": 0.0029,
+            "hi": 0.0177,
+            "ci95": 0.0074,
+            "p_delta_gt0": 0.9985,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "heading_abs_err_deg": {
+            "delta": 1.2401,
+            "lo": 0.3683,
+            "hi": 2.2815,
+            "ci95": 0.9566,
+            "p_delta_gt0": 1.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "curvature_abs_err_1pm": {
+            "delta": 0.0167,
+            "lo": 0.0051,
+            "hi": 0.0316,
+            "ci95": 0.0133,
+            "p_delta_gt0": 1.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "yaw_rate_abs_err_degps": {
+            "delta": 1.3501,
+            "lo": 0.3962,
+            "hi": 2.5459,
+            "ci95": 1.0749,
+            "p_delta_gt0": 1.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          }
+        },
+        "TACTICAL": "see rankers.* \u2014 rank_acc / sel_gap / frac_sel_2x_worse are the goal/anchor-selection half and ARE computed",
+        "STRATEGIC": "UNAVAILABLE \u2014 see families.*._strategic_reason (no route/goal label in a fan bank), n = 0"
+      },
+      "absolute": {
+        "_tag": "B-both+emitted",
+        "status": "UNAVAILABLE on this host \u2014 ModuleNotFoundError: No module named 'taniteval.progress'",
+        "n": 881,
+        "why_it_is_not_load_bearing": "R-2026-08-03-c: absolute four-family RATES before the dt fix are wrong by 5x-25x; cross-arm ranks and PAIRED deltas survive. `families.*.paired_vs_shipped` IS computed and is what prereg \u00a76 judges on."
+      }
+    },
+    "D-all": {
+      "paired_vs_shipped": {
+        "_tag": "D-all-minus-shipped",
+        "_dt_s": 0.5,
+        "_dt_provenance": "derived from wp_steps [5, 10, 15, 20] x dt_s 0.1 -> 0.5s grid",
+        "LONGITUDINAL": {
+          "speed_abs_err_mps": {
+            "delta": 0.0379,
+            "lo": 0.0002,
+            "hi": 0.0722,
+            "ci95": 0.036,
+            "p_delta_gt0": 0.9755,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "speed_signed_err_mps": {
+            "delta": -0.0977,
+            "lo": -0.1546,
+            "hi": -0.048,
+            "ci95": 0.0533,
+            "p_delta_gt0": 0.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "along_abs_err_m": {
+            "delta": 0.036,
+            "lo": -0.0022,
+            "hi": 0.07,
+            "ci95": 0.0361,
+            "p_delta_gt0": 0.971,
+            "separated": false,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "along_signed_err_m": {
+            "delta": -0.0907,
+            "lo": -0.145,
+            "hi": -0.0425,
+            "ci95": 0.0513,
+            "p_delta_gt0": 0.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          }
+        },
+        "LATERAL": {
+          "cross_abs_err_m": {
+            "delta": 0.0105,
+            "lo": 0.0034,
+            "hi": 0.0198,
+            "ci95": 0.0082,
+            "p_delta_gt0": 0.9995,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "heading_abs_err_deg": {
+            "delta": 0.0384,
+            "lo": -0.0016,
+            "hi": 0.0832,
+            "ci95": 0.0424,
+            "p_delta_gt0": 0.9685,
+            "separated": false,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "curvature_abs_err_1pm": {
+            "delta": 0.0005,
+            "lo": 0.0001,
+            "hi": 0.0011,
+            "ci95": 0.0005,
+            "p_delta_gt0": 0.9915,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "yaw_rate_abs_err_degps": {
+            "delta": 0.0706,
+            "lo": 0.013,
+            "hi": 0.136,
+            "ci95": 0.0615,
+            "p_delta_gt0": 0.9945,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          }
+        },
+        "TACTICAL": "see rankers.* \u2014 rank_acc / sel_gap / frac_sel_2x_worse are the goal/anchor-selection half and ARE computed",
+        "STRATEGIC": "UNAVAILABLE \u2014 see families.*._strategic_reason (no route/goal label in a fan bank), n = 0"
+      },
+      "absolute": {
+        "_tag": "D-all",
+        "status": "UNAVAILABLE on this host \u2014 ModuleNotFoundError: No module named 'taniteval.progress'",
+        "n": 881,
+        "why_it_is_not_load_bearing": "R-2026-08-03-c: absolute four-family RATES before the dt fix are wrong by 5x-25x; cross-arm ranks and PAIRED deltas survive. `families.*.paired_vs_shipped` IS computed and is what prereg \u00a76 judges on."
+      }
+    },
+    "S1b-emitted": {
+      "paired_vs_shipped": {
+        "_tag": "S1b-emitted-minus-shipped",
+        "_dt_s": 0.5,
+        "_dt_provenance": "derived from wp_steps [5, 10, 15, 20] x dt_s 0.1 -> 0.5s grid",
+        "LONGITUDINAL": {
+          "speed_abs_err_mps": {
+            "delta": 2.0094,
+            "lo": 1.7354,
+            "hi": 2.2827,
+            "ci95": 0.2737,
+            "p_delta_gt0": 1.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "speed_signed_err_mps": {
+            "delta": -2.1858,
+            "lo": -2.5293,
+            "hi": -1.843,
+            "ci95": 0.3431,
+            "p_delta_gt0": 0.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "along_abs_err_m": {
+            "delta": 1.8523,
+            "lo": 1.6061,
+            "hi": 2.0952,
+            "ci95": 0.2445,
+            "p_delta_gt0": 1.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "along_signed_err_m": {
+            "delta": -1.9916,
+            "lo": -2.3132,
+            "hi": -1.6578,
+            "ci95": 0.3277,
+            "p_delta_gt0": 0.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          }
+        },
+        "LATERAL": {
+          "cross_abs_err_m": {
+            "delta": 0.0776,
+            "lo": 0.0576,
+            "hi": 0.1001,
+            "ci95": 0.0213,
+            "p_delta_gt0": 1.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "heading_abs_err_deg": {
+            "delta": 1.3967,
+            "lo": 1.039,
+            "hi": 1.8286,
+            "ci95": 0.3948,
+            "p_delta_gt0": 1.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "curvature_abs_err_1pm": {
+            "delta": 0.0209,
+            "lo": 0.0131,
+            "hi": 0.0306,
+            "ci95": 0.0087,
+            "p_delta_gt0": 1.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          },
+          "yaw_rate_abs_err_degps": {
+            "delta": 3.4227,
+            "lo": 2.6372,
+            "hi": 4.3557,
+            "ci95": 0.8593,
+            "p_delta_gt0": 1.0,
+            "separated": true,
+            "reducer": "mean",
+            "n_windows": 881,
+            "n_episodes": 40,
+            "n_boot": 2000,
+            "estimator": "paired_episode_cluster_bootstrap"
+          }
+        },
+        "TACTICAL": "see rankers.* \u2014 rank_acc / sel_gap / frac_sel_2x_worse are the goal/anchor-selection half and ARE computed",
+        "STRATEGIC": "UNAVAILABLE \u2014 see families.*._strategic_reason (no route/goal label in a fan bank), n = 0"
+      },
+      "absolute": {
+        "_tag": "S1b-emitted",
+        "status": "UNAVAILABLE on this host \u2014 ModuleNotFoundError: No module named 'taniteval.progress'",
+        "n": 881,
+        "why_it_is_not_load_bearing": "R-2026-08-03-c: absolute four-family RATES before the dt fix are wrong by 5x-25x; cross-arm ranks and PAIRED deltas survive. `families.*.paired_vs_shipped` IS computed and is what prereg \u00a76 judges on."
+      }
+    },
+    "_ceiling_oracle_minus_shipped": {
+      "_tag": "oracle-minus-shipped",
+      "_dt_s": 0.5,
+      "_dt_provenance": "derived from wp_steps [5, 10, 15, 20] x dt_s 0.1 -> 0.5s grid",
+      "LONGITUDINAL": {
+        "speed_abs_err_mps": {
+          "delta": -0.2688,
+          "lo": -0.3436,
+          "hi": -0.1987,
+          "ci95": 0.0724,
+          "p_delta_gt0": 0.0,
+          "separated": true,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap"
+        },
+        "speed_signed_err_mps": {
+          "delta": -0.0172,
+          "lo": -0.1013,
+          "hi": 0.0634,
+          "ci95": 0.0823,
+          "p_delta_gt0": 0.343,
+          "separated": false,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap"
+        },
+        "along_abs_err_m": {
+          "delta": -0.2781,
+          "lo": -0.3515,
+          "hi": -0.209,
+          "ci95": 0.0713,
+          "p_delta_gt0": 0.0,
+          "separated": true,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap"
+        },
+        "along_signed_err_m": {
+          "delta": -0.0165,
+          "lo": -0.0972,
+          "hi": 0.0604,
+          "ci95": 0.0788,
+          "p_delta_gt0": 0.345,
+          "separated": false,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap"
+        }
+      },
+      "LATERAL": {
+        "cross_abs_err_m": {
+          "delta": -0.0334,
+          "lo": -0.0555,
+          "hi": -0.0151,
+          "ci95": 0.0202,
+          "p_delta_gt0": 0.0,
+          "separated": true,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap"
+        },
+        "heading_abs_err_deg": {
+          "delta": -0.1334,
+          "lo": -0.3127,
+          "hi": 0.0307,
+          "ci95": 0.1717,
+          "p_delta_gt0": 0.06,
+          "separated": false,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap"
+        },
+        "curvature_abs_err_1pm": {
+          "delta": 0.0013,
+          "lo": -0.0011,
+          "hi": 0.0045,
+          "ci95": 0.0028,
+          "p_delta_gt0": 0.7925,
+          "separated": false,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap"
+        },
+        "yaw_rate_abs_err_degps": {
+          "delta": 0.1212,
+          "lo": -0.1571,
+          "hi": 0.4239,
+          "ci95": 0.2905,
+          "p_delta_gt0": 0.786,
+          "separated": false,
+          "reducer": "mean",
+          "n_windows": 881,
+          "n_episodes": 40,
+          "n_boot": 2000,
+          "estimator": "paired_episode_cluster_bootstrap"
+        }
+      },
+      "TACTICAL": "see rankers.* \u2014 rank_acc / sel_gap / frac_sel_2x_worse are the goal/anchor-selection half and ARE computed",
+      "STRATEGIC": "UNAVAILABLE \u2014 see families.*._strategic_reason (no route/goal label in a fan bank), n = 0"
+    }
+  },
+  "wall_s": 260.1,
+  "verdict": {
+    "B-both": {
+      "branch": "ADVERSE",
+      "delta_m": 0.094,
+      "separated": true,
+      "favours_treatment": false,
+      "leak_gap_m": -0.001042
+    },
+    "C-lon": {
+      "branch": "ADVERSE",
+      "delta_m": 0.2137,
+      "separated": true,
+      "favours_treatment": false,
+      "leak_gap_m": -0.000966
+    },
+    "D-lon+scores": {
+      "branch": "ADVERSE",
+      "delta_m": 0.0396,
+      "separated": true,
+      "favours_treatment": false,
+      "leak_gap_m": -0.002024
+    },
+    "S1b": {
+      "branch": "S1b-ADVERSE",
+      "delta_m": 0.9924,
+      "separated": true,
+      "favours_treatment": false
+    },
+    "S1_IS_DEAD_AFTER_ALL": {
+      "fired": true,
+      "rule": "CI includes 0 => S1 IS DEAD AFTER ALL (\u00a74.4)",
+      "what_it_does_NOT_license": "'supervising the refined readout cannot work'. Prereg \u00a72 registers IN ADVANCE that a monotone re-weighting of a banked scalar cannot test the climb-out; a null bounds the FREE version only."
+    },
+    "registered_prediction": "B-both S1-NOT-SEPARATED; C-lon LON-LEVER-NULL at ~55 % confidence; S1b HYGIENE; overall \u00a74.4 fires and S1 is reported DEAD"
+  }
+}

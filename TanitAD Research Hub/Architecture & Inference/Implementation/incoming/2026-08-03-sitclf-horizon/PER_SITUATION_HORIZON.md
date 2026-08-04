@@ -330,6 +330,24 @@ carries, and every banked sitclf number becomes incomparable.
 
 ---
 
+## 10b. Test suite and the one code change
+
+`cd stack && pytest -q` → **2031 passed, 12 skipped, 2 xfailed** (243.65 s), green.
+⚠️ The baseline **moved during this session**: it was **1962 passed / 12 skipped / 2 xfailed** when I
+started, so `+69`. **8 of those are mine** (`stack/tests/test_sitclf_deploy.py`, 35 → **43** in that
+file); the rest arrived from sibling streams — checked against `git log` before treating the change
+as anything but a moving baseline.
+
+**The one code change this stream made** is additive:
+`stack/tanitad/eval/sitclf_deploy.py::event_anticipation_report` — the horizon-independent event
+yardstick, promoted out of the analysis script because `precision_recall_at_budget` and
+`anticipation_lead_s` both take `y`, which is a function of `lead_s`, and therefore **cannot compare
+two heads at different horizons**. Its two load-bearing tests are that the look-back **never crosses
+a clip boundary** and that an unwarned onset contributes **no lead** rather than a 0 s that would
+reward silence. Nothing existing in `stack/` was modified.
+
+---
+
 ## 11. What this redirects
 
 1. ⛔ **Do not build per-situation head machinery.** The pre-registered null fired on the

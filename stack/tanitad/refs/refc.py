@@ -367,6 +367,16 @@ class SelectionConfig:
     to one built before D-SEL existed.
     """
     refined: bool = False             # S1 rank on the refined confidence
+    score_emitted: bool = False       # S1b read that confidence FROM THE EMITTED
+    #                                   fan (one extra conf-only pass), so the
+    #                                   scored object IS the ranked object
+    score_emitted_t: int = -1         # ...with WHICH timestep token. -1 continues
+    #                                   the loop's own schedule; >=0 pins one.
+    #                                   t=0 is the ONLY token `loss_cls` ever
+    #                                   supervises, and "this estimate is clean"
+    #                                   is arguably what a denoised fan IS.
+    #                                   0 parameters either way (the embedding
+    #                                   table already carries every index).
     reach_clamp: bool = False         # S2 bounded-acceleration candidate band
     accel_max: float = 2.5            # m/s^2 for that band
     graft_cons: bool = False          # S3 consequence score reaches the ranking
@@ -382,8 +392,8 @@ class SelectionConfig:
 
     @property
     def any_on(self) -> bool:
-        return bool(self.refined or self.reach_clamp or self.graft_cons
-                    or self.graft_route or self.graft_goal
+        return bool(self.refined or self.score_emitted or self.reach_clamp
+                    or self.graft_cons or self.graft_route or self.graft_goal
                     or self.seam_clamp > 0.0)
 
 
@@ -441,6 +451,40 @@ class RefCConfig:
     #                                   confidence (today: the t=0 classifier
     #                                   score ranks post-denoise trajectories).
     #                                   Inert at steps=0 BY CONSTRUCTION.
+    # --- S1's CLIMB-OUT: two ZERO-PARAMETER distribution matches --------------
+    # E-SEL-0 MEASURED that the refined readout, UNSUPERVISED, ranks 0.8372 m
+    # (base) / 0.9187 m (XL) WORSE than the shipped t=0 score - separated, both
+    # arms - while still scoring 8.7x / 16.6x chance. So it is off-distribution,
+    # not uninformative, and S1 must CLIMB OUT (supervise it) rather than HARVEST
+    # it. These two flags remove the two places where the object that is SCORED,
+    # the object that is SUPERVISED and the object that is EMITTED are still
+    # three different things. Both cost 0 parameters.
+    sel_score_emitted: bool = False   # S1b the ranked confidence is read from the
+    #                                   EMITTED fan. Today the last denoise pass
+    #                                   scores its own INPUT `x_in` and the fan
+    #                                   that leaves the decoder is `x_in + off` -
+    #                                   the emitted trajectories are never scored
+    #                                   by any head. Costs one extra conf-only
+    #                                   decoder pass; 0 parameters. Inert at
+    #                                   steps=0 BY CONSTRUCTION (as S1 is).
+    sel_ce_reach: bool = False        # S1c the ranked-score CE normalises over
+    #                                   EXACTLY the survivor set the argmax ranks
+    #                                   over, and its target is the best candidate
+    #                                   IN that set. Today the CE is a full-fan
+    #                                   softmax while the selector solves a
+    #                                   ~26-28 % sized problem: MEASURED 73.76 %
+    #                                   (base) / 72.08 % (XL) of the fan is
+    #                                   unreachable and never selected, and
+    #                                   S3_DEPLOYABLE 3.2 measured that a
+    #                                   statistic over the whole candidate axis is
+    #                                   DOMINATED by candidates no selector ever
+    #                                   picks. REQUIRES sel_reach_clamp (the mask
+    #                                   is its survivor set); the trainer refuses
+    #                                   the combination without it. 0 parameters.
+    sel_score_emitted_t: int = -1     # ...and with WHICH timestep token (-1 =
+    #                                   continue the loop's schedule). MEASURED
+    #                                   POST-HOC: `loss_cls` supervises the conf
+    #                                   head ONLY at t=0, so the token matters.
     sel_reach_clamp: bool = False     # S2 bounded-acceleration band on the
     #                                   CANDIDATES (argmax only; the returned
     #                                   score stays unmasked so no -inf reaches
@@ -512,7 +556,9 @@ class RefCConfig:
         the trajectory horizons (0.1 s steps), never a constant — the reachable
         band and the anchors must agree about how long the plan is."""
         return SelectionConfig(
-            refined=self.sel_refined, reach_clamp=self.sel_reach_clamp,
+            refined=self.sel_refined, score_emitted=self.sel_score_emitted,
+            score_emitted_t=self.sel_score_emitted_t,
+            reach_clamp=self.sel_reach_clamp,
             accel_max=self.sel_accel_max, graft_cons=self.graft_cons,
             cons_detach=self.cons_detach, graft_route=self.graft_route,
             graft_goal=self.graft_goal,
@@ -1248,6 +1294,33 @@ class AnchoredDiffusionDecoder(nn.Module):
             refined, _ = self._apply_grafts(r_conf, terms, self._seam_refined,
                                             "refined", 0)
 
+        # S1b: THE READOUT ABOVE SCORES THE WRONG OBJECT, AND IT IS ONE LINE
+        # OF SOURCE. `_decode(kv, cond, x_in, t)` returns the confidence OF
+        # `x_in` alongside the offset that improves it, and the loop then emits
+        # `x = x_in + off`. So `refined` is the confidence of the estimate the
+        # LAST pass CONSUMED, never of the fan that leaves this method - the
+        # emitted trajectories are scored by no head at all. That is D1 again,
+        # one denoise step less severe: the shipped ranker is 2 passes stale and
+        # S1's refined ranker is 1 pass stale.
+        #
+        # THE EMITTED FAN IS NOT TOUCHED. The extra pass keeps its confidence and
+        # DISCARDS its offset, so `anchor_traj` - and therefore the published
+        # oracle-in-fan (0.1914 base / 0.1640 XL) that every D-SEL contrast is
+        # paired against - is bit-unchanged. The cost is one extra decoder pass
+        # and ZERO parameters.
+        #
+        # `t_idx` continues the loop's own schedule (pass i used `i + 1`),
+        # clamped to the embedding table exactly as the loop clamps it.
+        prefinal = None
+        if sel.score_emitted and steps > 0:
+            t_e = (min(steps + 1, self.cfg.diffusion_steps)
+                   if sel.score_emitted_t < 0
+                   else min(sel.score_emitted_t, self.cfg.diffusion_steps))
+            e_conf, _ = self._decode(kv, cond, x, t_e)
+            prefinal = refined
+            refined, _ = self._apply_grafts(e_conf, terms, self._seam_refined,
+                                            "refined", 0)
+
         # ---- the RANKED score ------------------------------------------------
         base = refined if sel.refined else conf
         r_terms: list[Tensor] = []
@@ -1282,6 +1355,7 @@ class AnchoredDiffusionDecoder(nn.Module):
         # everywhere window is a measurement failure, not a licence to emit
         # nothing.
         rank = score
+        reach_keep = None
         if sel.reach_clamp and v_ms is not None:
             keep = sl.reachability_mask(x, v_ms.to(x.dtype),
                                         accel_max=sel.accel_max,
@@ -1290,6 +1364,7 @@ class AnchoredDiffusionDecoder(nn.Module):
                 keep = keep | (~ego_keep)[:, None]
             dead = ~keep.any(dim=1)
             keep = keep | dead[:, None]
+            reach_keep = keep
             rank = score.masked_fill(~keep, float("-inf"))
             tele["reach_frac_candidates_clipped"] = round(
                 float(1.0 - keep.to(score.dtype).mean().detach()), 4)
@@ -1302,6 +1377,18 @@ class AnchoredDiffusionDecoder(nn.Module):
                "traj": traj, "sel_idx": idx, "sel_tele": tele}
         if cons_s is not None:
             out["cons_score"] = cons_s
+        if prefinal is not None:
+            # S1b's own control, carried in the SAME forward: the readout S1
+            # ships today, next to the one that scores the emitted fan. A
+            # cross-forward comparison would confound the change with float
+            # non-determinism; this one cannot.
+            out["prefinal_logits"] = prefinal
+        if reach_keep is not None:
+            # S1c consumes this in the trainer. The argmax above already ranks
+            # over exactly this set, so exporting it is what lets the CROSS-
+            # ENTROPY normalise over the same support instead of over a fan that
+            # is 72-74 % unpickable.
+            out["reach_keep"] = reach_keep
         return out
 
 
@@ -1899,6 +1986,14 @@ class RefCModel(nn.Module):
                "measurement": m, **out_goal}
         if "cons_score" in dec:
             out["cons_score"] = dec["cons_score"]
+        for _k in ("prefinal_logits", "reach_keep"):
+            # S1b's in-forward control and S1c's CE support, passed through
+            # VERBATIM: `compute_losses` reads `reach_keep` and the probes read
+            # both. Re-deriving either outside the decoder is how two
+            # definitions of the same mask drift apart - the reason
+            # `refc_select.reachability_mask` is a re-export and not a copy.
+            if _k in dec:
+                out[_k] = dec[_k]
         if ctx is not None:
             out["ctx"] = ctx
         if lat_logits is not None:

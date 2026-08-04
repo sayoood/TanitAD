@@ -389,8 +389,30 @@ def compute_losses(model: RefCModel, batch: dict, device: str = "cpu",
     loss_rcls = torch.zeros((), device=out["pooled"].device)
     if cfg.sel_refined or cfg.graft_cons or cfg.graft_route:
         fan_err = (out["anchor_traj"] - traj_tgt[:, None]).norm(dim=-1).mean(-1)
-        r_star = fan_err.argmin(dim=1)                      # [B] oracle index
-        loss_rcls = F.cross_entropy(out["sel_score"], r_star.detach())
+        # S1c - THE CE MUST NORMALISE OVER THE SET THE ARGMAX RANKS OVER.
+        # Without this the objective is a full-fan softmax while the selector
+        # solves a ~26-28 % sized problem: MEASURED 73.76 % (base) / 72.08 % (XL)
+        # of the emitted fan is outside the bounded-acceleration band, is never
+        # selected, and deleting it moves ADE by EXACTLY 0.0. A softmax that
+        # normalises over those candidates spends its mass on classes that can
+        # never win - the same mechanism S3_DEPLOYABLE 3.2 measured when a rank
+        # correlation over the full candidate axis turned out to be disconnected
+        # from selection quality FOR EVERY SCORE, including the future-seeing one.
+        #
+        # The TARGET moves with the support: `r_star` becomes the best candidate
+        # IN the survivor set, so the CE is never asked to put mass on a class its
+        # own softmax has masked out (which is how a masked CE produces NaN).
+        # `reach_keep` always has >= 1 survivor per row - the decoder's empty-set
+        # fallback ORs a dead row back to its whole fan - so both the argmin and
+        # the log-softmax are finite by construction, not by luck.
+        ce_score, ce_err = out["sel_score"], fan_err
+        if cfg.sel_ce_reach:
+            keep = out["reach_keep"]                          # [B, N] bool
+            ce_err = fan_err.masked_fill(~keep, float("inf"))
+            ce_score = out["sel_score"].masked_fill(
+                ~keep, torch.finfo(out["sel_score"].dtype).min / 4)
+        r_star = ce_err.argmin(dim=1)                       # [B] oracle index
+        loss_rcls = F.cross_entropy(ce_score, r_star.detach())
         with torch.no_grad():
             oracle = fan_err.min(dim=1).values
             sel_err = fan_err[ar, out["sel_idx"]]
@@ -404,6 +426,11 @@ def compute_losses(model: RefCModel, batch: dict, device: str = "cpu",
                 # 45.4 % on refc-xl-30k / 41.09 % on refc-base-30k at 30 k.
                 "frac_sel_2x_worse": (sel_err > 2.0 * oracle).float().mean(),
             }
+            if cfg.sel_ce_reach:
+                # telemetry, not a metric: how much of the fan the CE is actually
+                # normalising over, so a silent collapse to "the whole fan" (or
+                # to one candidate) is visible in train_log.jsonl, not inferred.
+                sel_extra["ce_support_frac"] = keep.float().mean()
 
     # LAW latent MSE: no_grad target through the same encoder.
     with torch.no_grad():
@@ -651,8 +678,57 @@ def train(args) -> dict:
         raise SystemExit("--man-prior-tau requires --factored-maneuver (it "
                          "adjusts the per-axis lat/lon class priors, which only "
                          "the factored seam registers)")
+    # S1c NEEDS S2's SURVIVOR SET, AND A SILENTLY-INERT FLAG IS THE WORST
+    # OUTCOME. Without --sel-reach-clamp the decoder computes no mask, so
+    # --sel-ce-reach would train the FULL-FAN CE while config.json claimed the
+    # restricted one - an arm that reads as a treatment and behaves as a control.
+    # That is the D-TAC1 `tactical_speed_input` failure exactly ("a conservative
+    # guard that makes an effect unattributable is not conservative"). Refuse at
+    # parse time, not after a GPU-day.
+    # ...and the SAME silent-inert class for S1b: with `sel_refined` off the
+    # ranked score is `conf`, so moving the REFINED readout cannot reach the
+    # argmax at all. ⚠️ MEASURED (E-S1-0, frozen 30 k weights): scoring the
+    # emitted fan is 0.99 m WORSE than scoring its predecessor, because it moves
+    # the readout FURTHER from the only distribution `loss_cls` supervises. S1b
+    # is therefore admissible ONLY inside an arm that also SUPERVISES the readout
+    # it moves - which is exactly what --sel-refined turns on.
+    if bool(args.sel_score_emitted) and not bool(args.sel_refined):
+        raise SystemExit(
+            "--sel-score-emitted requires --sel-refined. Without S1 the ranked "
+            "score is the t=0 classifier `conf`, so moving the REFINED readout "
+            "cannot reach the argmax - the flag would be SILENTLY INERT while "
+            "config.json recorded it as ON. And at frozen weights the emitted "
+            "readout is MEASURED 0.99 m WORSE (E-S1-0), so it must never be "
+            "shipped without the supervision that is supposed to repair it.")
+    # ⚠️ MEASURED, and loud because the default is the WORSE half of a 5.5x
+    # difference. E-S1-0 dose-response, refc-base-30k, 881 windows, frozen 30 k
+    # weights, selection ADE@2s over the S2-reachable survivors:
+    #     conf(anchors, t=0)  SUPERVISED  0.4728   <- the shipped ranker
+    #     conf(X_1,     t=2)              1.3100   <- what S1 ranks on TODAY
+    #     conf(X_2,     t=2)              2.3024   <- S1b at the default token
+    #     conf(X_2,     t=0)              0.6253   <- S1b at the SUPERVISED token
+    # Pinning the token is -1.6771 m [-1.9430, -1.4091], separated, for ZERO
+    # parameters: `loss_cls` supervises `conf_head` at t=0 ONLY, so t=1/t=2 are
+    # tokens no confidence objective ever shaped.
+    if bool(args.sel_score_emitted) and int(args.sel_score_emitted_t) < 0:
+        print("[d-sel] ⚠️ --sel-score-emitted with --sel-score-emitted-t -1 "
+              "(continue the denoise schedule). MEASURED at frozen 30 k weights "
+              "this is the WORSE choice: 2.3024 vs 0.6253 selection ADE@2s, a "
+              "paired -1.6771 m [-1.9430, -1.4091] in favour of `-t 0`. Both "
+              "cost 0 parameters. Pass `--sel-score-emitted-t 0` unless the "
+              "arm's purpose is to test the token itself.", flush=True)
+    if bool(args.sel_ce_reach) and not bool(args.sel_reach_clamp):
+        raise SystemExit(
+            "--sel-ce-reach requires --sel-reach-clamp. S1c normalises the "
+            "ranked-score CE over the SAME survivor set the argmax ranks over, "
+            "and that set is S2's reachability mask - with S2 off there is no "
+            "mask, and the flag would be SILENTLY INERT while config.json "
+            "recorded it as ON.")
     # --- D-SEL: the selection surface (gated BEFORE build, module presence) ---
     cfg.sel_refined = bool(args.sel_refined)
+    cfg.sel_score_emitted = bool(args.sel_score_emitted)
+    cfg.sel_score_emitted_t = int(args.sel_score_emitted_t)
+    cfg.sel_ce_reach = bool(args.sel_ce_reach)
     cfg.sel_reach_clamp = bool(args.sel_reach_clamp)
     cfg.sel_accel_max = float(args.sel_accel_max)
     cfg.graft_cons = bool(args.graft_cons)
@@ -736,6 +812,9 @@ def train(args) -> dict:
     _sel = cfg.selection()
     dsel_row = {
         "sel_on": _sel.any_on, "sel_refined": cfg.sel_refined,
+        "sel_score_emitted": cfg.sel_score_emitted,
+        "sel_score_emitted_t": cfg.sel_score_emitted_t,
+        "sel_ce_reach": cfg.sel_ce_reach,
         "sel_reach_clamp": cfg.sel_reach_clamp,
         "sel_accel_max": cfg.sel_accel_max, "horizon_s": _sel.horizon_s,
         "graft_cons": cfg.graft_cons, "cons_detach": cfg.cons_detach,
@@ -751,6 +830,10 @@ def train(args) -> dict:
         # let a `--mode classifier --sel-refined` run look like a live arm.
         "s1_inert_because_classifier_mode": (cfg.sel_refined
                                              and args.mode == "classifier"),
+        # S1b is inert at 0 denoise steps for the same structural reason.
+        "s1b_inert_because_classifier_mode": (cfg.sel_score_emitted
+                                              and args.mode == "classifier"),
+        "ce_support": ("reachable_only" if cfg.sel_ce_reach else "full_fan"),
     }
     print(json.dumps({"d_sel": dsel_row}), flush=True)
 
@@ -870,7 +953,8 @@ def train(args) -> dict:
                 # seam ratios were already computed and thrown away before D-SEL
                 # (graft_lat_norm/conf_norm were logged with no actuator).
                 **{k: sc(out[k]) for k in
-                   ("cls_refined", "oracle_ade", "sel_ade", "sel_gap",
+                   ("cls_refined", "ce_support_frac", "oracle_ade",
+                    "sel_ade", "sel_gap",
                     "rank_acc", "frac_sel_2x_worse", "goal_dir", "goal_dist",
                     "goal_valid_frac", "goal_gate", "goal_dist_gate")
                    if k in out},
@@ -917,7 +1001,8 @@ def train(args) -> dict:
                                     "nav_follow_frac")}
         # D-SEL selection diagnostic on val, when the arm carries it.
         metrics["val"].update({k: round(float(vout[k]), 5) for k in
-                               ("cls_refined", "oracle_ade", "sel_ade",
+                               ("cls_refined", "ce_support_frac",
+                                "oracle_ade", "sel_ade",
                                 "sel_gap", "rank_acc", "frac_sel_2x_worse")
                                if k in vout})
         if "lan_valid_frac" in vout:
@@ -1019,6 +1104,22 @@ def main(argv=None):
                          "model boundary, so this is a PLUMBING gap, not a "
                          "labelling one.")
     # --- D-SEL: the SELECTION surface (see tanitad/refs/refc_select.py) ------
+    ap.add_argument("--sel-score-emitted", action="store_true",
+                    help="S1b: read the ranked confidence FROM THE EMITTED fan "
+                         "(one extra conf-only decoder pass; the offset is "
+                         "discarded so anchor_traj is bit-unchanged). Today the "
+                         "last denoise pass scores its own INPUT and the fan "
+                         "that leaves the decoder is scored by no head at all. "
+                         "0 parameters. Inert at --mode classifier.")
+    ap.add_argument("--sel-score-emitted-t", type=int, default=-1,
+                    help="S1b timestep token for the emitted-fan readout. -1 "
+                         "continues the denoise schedule; 0 pins the ONLY token "
+                         "`loss_cls` ever supervises. 0 parameters either way.")
+    ap.add_argument("--sel-ce-reach", action="store_true",
+                    help="S1c: normalise the ranked-score CE over EXACTLY the "
+                         "survivor set the argmax ranks over, with its target "
+                         "the best candidate IN that set. REQUIRES "
+                         "--sel-reach-clamp. 0 parameters.")
     ap.add_argument("--sel-refined", action="store_true",
                     help="S1: rank the refined fan with the REFINED confidence "
                          "and supervise it (adds the cls_refined CE). Today the "
