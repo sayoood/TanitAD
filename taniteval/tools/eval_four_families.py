@@ -68,10 +68,29 @@ def main():
                     help="⛔ leaves TACTICAL and STRATEGIC UNAVAILABLE. For a "
                          "smoke test only — the result is NOT admissible.")
     ap.add_argument("--device", default="cuda")
+    ap.add_argument("--windows-in", default=None,
+                    help="RESCORE an already-banked windows dump instead of "
+                         "running inference. The whole point of the lead block "
+                         "is that it attaches row-for-row to a scored dump, so "
+                         "closing the distance-keeping half must not cost "
+                         "another scoring pass.")
+    ap.add_argument("--lead", default=None,
+                    help="lead block from tools/build_lead_block.py. Without it "
+                         "the distance-keeping half of LONGITUDINAL stays "
+                         "UNAVAILABLE — a WORK ITEM, not a pass.")
+    ap.add_argument("--carry-hierarchy-from", default=None,
+                    help="a prior output JSON whose TACTICAL/STRATEGIC blocks "
+                         "were computed by hierarchy.run on THESE windows. "
+                         "Spliced verbatim rather than recomputed; the corpus "
+                         "and n_windows are checked to match.")
     a = ap.parse_args()
 
     if os.path.isdir(a.out):
         sys.exit(f"--out must be a FILE, got a directory: {a.out}")
+    if a.windows_in and not a.skip_hierarchy and not a.carry_hierarchy_from:
+        sys.exit("--windows-in cannot run hierarchy.run (it needs the model and "
+                 "the episodes). Pass --carry-hierarchy-from <prior json>, or "
+                 "--skip-hierarchy and accept an inadmissible result.")
 
     from taniteval import ci, four_families as ff, hierarchy, loaders, rollout
     from taniteval.data import load_frames
@@ -84,45 +103,89 @@ def main():
         files = files[:a.episodes]
     _p(f"[corpus] {a.corpus}\n[corpus] episodes {len(files)} of {n_avail} available")
 
-    entry = {"arch": "flagship-worldmodel-v2" if a.run_config
-             else "flagship-worldmodel",
-             "ckpt": a.ckpt, "run_config": a.run_config,
-             "speed_input": bool(a.speed_input)}
-    t0 = time.time()
-    h = loaders.load(entry, device=a.device)
-    model, step_readout = h["model"].eval(), h["step_readout"]
-    if step_readout is None:
-        sys.exit("this checkpoint exposes no grounded step readout — the "
-                 "operative rollout cannot be decoded from it")
-    _p(f"[model] loaded STRICT in {time.time()-t0:.1f}s  arch={entry['arch']}  "
-       f"step={h.get('step')}  state_dim={h.get('state_dim')}  "
-       f"speed_input={a.speed_input}")
-
-    eps = load_frames(files)
-    _p(f"[episodes] {len(eps)} loaded, T[0]={eps[0].feats.shape}")
-
-    # ---- LONGITUDINAL + LATERAL: the world-model fidelity pass -------------- #
-    t0 = time.time()
-    win = rollout.collect(model, step_readout, eps, a.device,
-                          stride=a.stride, batch=a.batch,
-                          speed_input=a.speed_input)
-    _p(f"[collect] {win['pred'].shape[0]} windows in {time.time()-t0:.0f}s")
-    if a.windows_out:
-        rollout.save_windows(win, a.windows_out)
-        _p(f"[collect] windows -> {a.windows_out}")
-
-    # ---- TACTICAL + STRATEGIC: the pass that traverses the brains ----------- #
-    hier = None
-    if not a.skip_hierarchy:
+    hier, carried = None, None
+    if a.windows_in:
+        win = rollout.load_windows(a.windows_in)
+        _p(f"[windows] {win['pred'].shape[0]} rows loaded from {a.windows_in} "
+           f"(NO inference)")
+    else:
+        entry = {"arch": "flagship-worldmodel-v2" if a.run_config
+                 else "flagship-worldmodel",
+                 "ckpt": a.ckpt, "run_config": a.run_config,
+                 "speed_input": bool(a.speed_input)}
         t0 = time.time()
-        hier = hierarchy.run(model, step_readout, eps, a.device,
-                             speed_input=a.speed_input, max_eps=len(eps),
-                             stride=a.stride, batch=max(a.batch, 16),
-                             n_boot=a.n_boot)
-        _p(f"[hierarchy] {hier.get('n_windows')} windows in "
-           f"{time.time()-t0:.0f}s  skipped={hier.get('skipped')}")
+        h = loaders.load(entry, device=a.device)
+        model, step_readout = h["model"].eval(), h["step_readout"]
+        if step_readout is None:
+            sys.exit("this checkpoint exposes no grounded step readout — the "
+                     "operative rollout cannot be decoded from it")
+        _p(f"[model] loaded STRICT in {time.time()-t0:.1f}s  arch={entry['arch']}"
+           f"  step={h.get('step')}  state_dim={h.get('state_dim')}  "
+           f"speed_input={a.speed_input}")
+
+        eps = load_frames(files)
+        _p(f"[episodes] {len(eps)} loaded, T[0]={eps[0].feats.shape}")
+
+        # ---- LONGITUDINAL + LATERAL: the world-model fidelity pass ---------- #
+        t0 = time.time()
+        win = rollout.collect(model, step_readout, eps, a.device,
+                              stride=a.stride, batch=a.batch,
+                              speed_input=a.speed_input)
+        _p(f"[collect] {win['pred'].shape[0]} windows in {time.time()-t0:.0f}s")
+        if a.windows_out:
+            rollout.save_windows(win, a.windows_out)
+            _p(f"[collect] windows -> {a.windows_out}")
+
+        # ---- TACTICAL + STRATEGIC: the pass that traverses the brains ------- #
+        if not a.skip_hierarchy:
+            t0 = time.time()
+            hier = hierarchy.run(model, step_readout, eps, a.device,
+                                 speed_input=a.speed_input, max_eps=len(eps),
+                                 stride=a.stride, batch=max(a.batch, 16),
+                                 n_boot=a.n_boot)
+            _p(f"[hierarchy] {hier.get('n_windows')} windows in "
+               f"{time.time()-t0:.0f}s  skipped={hier.get('skipped')}")
+
+    # ---- the lead block: the distance-keeping half of LONGITUDINAL ---------- #
+    if a.lead:
+        lead = torch.load(a.lead, map_location="cpu", weights_only=False)
+        n_lead = int(np.asarray(lead["leads"]).shape[0])
+        n_win = int(win["pred"].shape[0])
+        # ⛔ POSITIONAL JOIN. A length mismatch means the block was built on a
+        # different window grid, and every row after the first divergence would
+        # score this arm's trajectory against another episode's traffic — a
+        # plausible number, not an error. Refuse rather than truncate.
+        if n_lead != n_win:
+            sys.exit(f"lead block has {n_lead} rows for {n_win} scored windows — "
+                     f"different window grids. Rebuild the lead block against "
+                     f"this corpus/stride; do NOT truncate.")
+        win["lead"] = {"leads": np.asarray(lead["leads"]),
+                       "lead_lens": np.asarray(lead["lead_lens"]),
+                       "speeds": np.asarray(lead["speeds"]),
+                       "state": np.asarray(lead["state"]),
+                       "eid": list(lead["eid"]), "n_boot": a.n_boot}
+        _p(f"[lead] attached {n_lead} rows  counts={lead.get('counts')}")
 
     fam = ff.all_families(win, hier=hier)
+
+    if a.carry_hierarchy_from:
+        # The decision families were computed by hierarchy.run on THESE windows;
+        # recomputing them would cost a second ~15-minute pass and could only
+        # reproduce the same numbers. Splice, and check the provenance matches.
+        prior = json.load(open(a.carry_hierarchy_from))
+        if prior.get("n_windows") != int(win["pred"].shape[0]):
+            sys.exit(f"--carry-hierarchy-from has n_windows "
+                     f"{prior.get('n_windows')} vs {int(win['pred'].shape[0])} "
+                     f"here — different windows, refusing to splice")
+        for k in ("tactical", "strategic"):
+            fam[k] = prior["four_families"][k]
+            fam[k]["_carried_from"] = a.carry_hierarchy_from
+        fam["_families_unavailable"] = [
+            k for k, v in fam.items()
+            if isinstance(v, dict) and v.get("status") == "UNAVAILABLE"]
+        fam["_complete"] = (not fam["_families_unavailable"]
+                            and fam["longitudinal"]["distance_keeping"]["status"] == "OK")
+        carried = a.carry_hierarchy_from
 
     # ---- ADE + per-family CIs, ONE episode-cluster resampling --------------- #
     # ⛔ The components are computed with four_families' OWN `_seq_geometry`, not
@@ -178,7 +241,9 @@ def main():
         "run_config": a.run_config,
         "corpus": a.corpus,
         "corpus_key": os.path.basename(a.corpus.rstrip("/")),
-        "episodes_scored": len(eps),
+        # --windows-in never materialises `eps`; the corpus listing is the
+        # denominator either way, and it is the one already checked above.
+        "episodes_scored": len(files),
         "episodes_available": n_avail,
         "episodes_flag": a.episodes,
         "stride": a.stride,
@@ -187,6 +252,9 @@ def main():
         "four_families": fam,
         "intervals": boots,
         "pc2": win.get("pc2"),
+        "windows_in": a.windows_in,
+        "lead_block": a.lead,
+        "hierarchy_carried_from": carried,
         "_estimator": ("episode-cluster bootstrap over the corpus's episodes "
                        "(taniteval.ci). ⛔ overlapping_holdout_se is NOT used: it "
                        "biases the POINT ESTIMATE, not only the interval."),
