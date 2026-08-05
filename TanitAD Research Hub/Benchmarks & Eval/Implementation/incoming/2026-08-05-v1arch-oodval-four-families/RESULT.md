@@ -89,6 +89,31 @@ excluded, never counted as free flow.
 
 ---
 
+### ⛔ ADE IS ~0.64-CORRELATED WITH SPEED — any ADE ranking of episodes is partly a speed ranking
+
+MEASURED on the same 6,382 windows: **Pearson r(`v0`, per-window ADE) = 0.6408**. ADE is a
+displacement over a fixed 2 s horizon, so it scales with distance travelled — ~38 m at 19 m/s
+against ~4 m at 2 m/s, which makes an identical *relative* error ~9× larger in metres.
+
+The effect is not subtle at the tails. Taking the 12 best and 12 worst episodes **by ADE**:
+
+| set | n windows | mean `v0` | stopped (< 0.5 m/s) | mean ADE |
+|---|---|---|---|---|
+| best 12 | 266 | **2.34 m/s** | **32.7 %** | 0.173 m |
+| corpus | 6,382 | 7.54 m/s | 11.8 % | 0.575 m |
+| worst 12 | 264 | **19.19 m/s** | **0.0 %** | 1.454 m |
+
+⇒ **A "worst episodes" list selected on ADE is close to a "fastest episodes" list.** A third of the
+best-12 windows are the vehicle standing still. Nothing above is invalidated — the four families are
+corpus-wide and the LONGITUDINAL over-speed finding is a *rate over all windows* (71.95 % / 75.51 %),
+immune to this — but **any per-episode ADE comparison, and any ranked highlight reel, must be
+speed-matched or read as a speed contrast.**
+
+⚠️ Same family as the pooled distance-keeping number this block already stratifies: a statistic
+averaged over regimes that do not resemble each other. **WORK ITEM: a speed-matched episode ranking.**
+
+---
+
 ## LATERAL — tight, and not the problem
 
 | metric | value | CI |

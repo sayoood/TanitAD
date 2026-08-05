@@ -50,6 +50,31 @@ are a sample, not the corpus. Quote the corpus number for the corpus.
 Every file was verified by **decoding it back** (`raw/video_verification.json`: `decode_rc 0`, zero
 decode errors on all three) and md5-matched between pod4 and this repo.
 
+
+### ⛔ THE WORST/BEST SPLIT IS MOSTLY A SPEED SPLIT — do not read it as good-vs-bad model
+
+MEASURED over the same 6,382 windows the reels are drawn from:
+
+| reel | n windows | mean `v0` | median `v0` | windows stopped (< 0.5 m/s) | mean ADE |
+|---|---|---|---|---|---|
+| **best12** | 266 | **2.34 m/s** | 2.30 | **32.7 %** | 0.173 m |
+| whole corpus | 6,382 | 7.54 m/s | 6.44 | 11.8 % | 0.575 m |
+| **worst12** | 264 | **19.19 m/s** | 19.61 | **0.0 %** | 1.454 m |
+
+**Pearson r(`v0`, per-window ADE) = 0.6408.** ADE is a displacement over a fixed 2 s horizon, so it
+scales with how far the car travels: at 19 m/s the ego covers ~38 m in the window and at 2 m/s it
+covers ~4 m. An identical *relative* error is then ~9× larger in metres.
+
+⇒ **The two ranked reels are largely a 19 m/s clip next to a 2 m/s clip.** A third of the best-12
+windows are the car standing still, where the prediction is close to trivial. Watching them
+side by side and concluding *"the model falls apart here and nails it there"* is reading the speed
+distribution, not the model. The `spread` reel is the one to judge behaviour from; the ranked reels
+are useful for **seeing what a large error looks like**, not for attributing it.
+
+⚠️ This is the same defect class as quoting a pooled distance-keeping number: a statistic averaged
+over regimes that do not resemble each other. A speed-matched comparison is the fix, and it is a
+WORK ITEM — not done here.
+
 ---
 
 ## The layout
