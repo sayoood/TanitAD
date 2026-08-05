@@ -155,3 +155,46 @@ def test_cli_help_works_without_a_gpu():
                        capture_output=True, text=True, timeout=120)
     assert r.returncode == 0, r.stderr[-800:]
     assert "--episode-list" in r.stdout and "--corpus" in r.stdout
+
+
+# --- the banner must FIT, not merely be present ----------------------------- #
+
+def test_the_caveat_wraps_instead_of_running_off_the_canvas():
+    """⛔ MEASURED on the first render: at the real 962 px canvas the caveat was
+    clipped at "NOT autonomous driving, N…", so the words "NOT a hierarchy
+    result" appeared in ZERO frames of ZERO reels. PIL draws past the edge with
+    no error and a downscaled still hides it, so the guarantee this whole tool
+    exists to provide was silently absent."""
+    from PIL import Image, ImageDraw
+    m = _tool_module()
+    d = ImageDraw.Draw(Image.new("RGB", (10, 10)))
+    font = _fonts()["sub"]
+    text = ("OPEN LOOP — ego follows the LOG. Rollout decodes the EXPERT'S TRUE "
+            "FUTURE ACTIONS: world-model FIDELITY, NOT autonomous driving, "
+            "NOT a hierarchy result.")
+    W = m.PAD + m.W_CAM + m.PAD + m.W_BEV + m.PAD
+    lines = m.wrap(d, text, font, W - 2 * m.PAD)
+    assert len(lines) <= 2, (
+        f"the caveat needs {len(lines)} lines but the banner draws 2; it would "
+        f"be truncated on every frame")
+    assert "NOT a hierarchy result" in " ".join(lines)
+    for ln in lines:
+        assert d.textlength(ln, font=font) <= W - 2 * m.PAD
+
+
+def test_the_banner_reserves_room_for_the_wrapped_lines():
+    m = _tool_module()
+    assert m.H_BAN >= 30 + 2 * 17 + 4, (
+        "H_BAN must clear the title plus both wrapped caveat lines, or the "
+        "second line is painted over by the camera panel")
+
+
+def test_fit_ellipsises_rather_than_clipping():
+    """A title cut mid-word ('(2/12, expli') reads as data. An ellipsis reads as
+    truncation."""
+    from PIL import Image, ImageDraw
+    m = _tool_module()
+    d = ImageDraw.Draw(Image.new("RGB", (10, 10)))
+    font = _fonts()["sub"]
+    out = m.fit(d, "x" * 400, font, 100)
+    assert out.endswith("…") and d.textlength(out, font=font) <= 100

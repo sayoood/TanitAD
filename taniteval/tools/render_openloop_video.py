@@ -48,7 +48,7 @@ from PIL import Image, ImageDraw
 
 W_CAM = 512
 W_BEV = 420
-H_BAN = 46                      # top banner
+H_BAN = 76                      # top banner (2 wrapped caveat lines)
 H_HUD = 96                      # bottom HUD
 PAD = 10
 
@@ -74,6 +74,38 @@ def _ffmpeg() -> str:
         sys.exit("no ffmpeg on PATH and imageio-ffmpeg is not installed "
                  "(`pip install imageio-ffmpeg` ships a static binary). "
                  "Refusing to render frames that could not be encoded.")
+
+
+def wrap(draw, text, font, max_w):
+    """⛔ Wrap to the canvas, do NOT let PIL run text off the edge.
+
+    MEASURED on the first render: at 962 px the banner caveat was clipped at
+    "NOT autonomous driving, N…" — so the words "NOT a hierarchy result" were
+    absent from every frame of every reel. The one guarantee this whole file
+    exists to provide was silently missing, and it looked fine in a downscaled
+    still. PIL draws past the edge without any error, which is why this is a
+    function and not a comment saying "keep the string short"."""
+    words, lines, cur = text.split(), [], ""
+    for w in words:
+        trial = f"{cur} {w}".strip()
+        if draw.textlength(trial, font=font) <= max_w:
+            cur = trial
+        else:
+            if cur:
+                lines.append(cur)
+            cur = w
+    if cur:
+        lines.append(cur)
+    return lines
+
+
+def fit(draw, text, font, max_w):
+    """Single line, ellipsised rather than clipped — a cut word reads as data."""
+    if draw.textlength(text, font=font) <= max_w:
+        return text
+    while text and draw.textlength(text + "…", font=font) > max_w:
+        text = text[:-1]
+    return text + "…"
 
 
 def draw_bev_large(size, gt, pred, xmax, ymax, past, cols, fonts):
@@ -289,14 +321,18 @@ def main():
 
             # --- banner: the claim guard ------------------------------------ #
             d.rectangle([0, 0, W, H_BAN], fill=HUD_BG)
-            d.text((PAD, 5), f"{a.arm}  ·  {clabel}  ·  ep {ei:05d} "
-                             f"({rank+1}/{len(idx)}, {select})",
+            d.text((PAD, 4),
+                   fit(d, f"{a.arm}  ·  {clabel}  ·  ep {ei:05d} "
+                          f"({rank+1}/{len(idx)}, {select})",
+                       fonts["big"], W - 2 * PAD),
                    fill=HUD_FG, font=fonts["big"])
-            d.text((PAD, 28),
-                   "OPEN LOOP — ego follows the LOG. Rollout decodes the "
-                   "EXPERT'S TRUE FUTURE ACTIONS: world-model FIDELITY, "
-                   "NOT autonomous driving, NOT a hierarchy result.",
-                   fill=(235, 180, 90), font=fonts["sub"])
+            for li, ln in enumerate(wrap(
+                    d, "OPEN LOOP — ego follows the LOG. Rollout decodes the "
+                       "EXPERT'S TRUE FUTURE ACTIONS: world-model FIDELITY, "
+                       "NOT autonomous driving, NOT a hierarchy result.",
+                    fonts["sub"], W - 2 * PAD)[:2]):
+                d.text((PAD, 30 + li * 17), ln, fill=(235, 180, 90),
+                       font=fonts["sub"])
 
             # --- HUD --------------------------------------------------------- #
             y = H_BAN + W_CAM
