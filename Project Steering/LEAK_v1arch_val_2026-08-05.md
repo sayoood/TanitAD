@@ -69,3 +69,45 @@ training curve is still a valid statement about optimisation, and the arm may be
 
 Both pods were **read-only** throughout: manifests and config JSON only. v1arch had already
 finished (step 29999, clean supervisor exit 03:15:27Z) and its GPU is idle; v5f continues untouched.
+
+---
+
+## 6. UPDATE — the eval was attempted, and the HARNESS ITSELF refused the number
+
+**PI ruling 2026-08-05:** the 9000-clip pool was **deliberate** — v1arch exists to test the effect of
+*more and better-distributed data*. The corpus choice is therefore settled and not a defect. The
+val-overlap below is a separate fact and survives that ruling.
+
+MEASURED on pod4 (GPU idle, training finished): building a val split from the canonical episodes
+that exist in v1arch's own geometry yields **23 of 40** (57.5 %) — and every one of them is in the
+training pool, because *being in the pool is what makes them available*. The other **17 exist only
+at 256×640 cylindrical**, which this 256×256 checkpoint cannot consume.
+
+`eval_flagship_v4.py` ran to completion on those 23 (3937 windows, ckpt step 29999) and then
+**refused to certify its own output**:
+
+```
+"mode": "MODE_A_canary_only_validation",
+"canary_ade_2s_MEASURED": 0.6838,     vs v1's known FULL-SET 0.4271, tolerance 0.05
+"HARNESS_VALIDATED": false,
+"verdict": "HARNESS NOT VALIDATED — DO NOT proceed to score any v4 checkpoint
+            with this harness until the discrepancy is found and fixed."
+```
+
+⭐ **That is the guard working, not a bug.** The canary reproduces v1's canonical-val number; fed a
+non-canonical split it cannot, and it stops rather than emitting a plausible figure. ⇒ **No
+certified number for v1arch is obtainable from any data now on either pod.**
+
+## 7. What a clean eval corpus requires
+
+The minimal correct set is the **17 canonical val episodes that are NOT in the 9000-clip pool**,
+built as v2 caches at **256×256** (v1arch's geometry). That yields a genuinely held-out,
+canonical-subset val — smaller n, but admissible and comparable episode-for-episode.
+
+BLOCKED ON A CREDENTIAL, and it must not travel through chat:
+* `Keys.txt` is git-ignored and lives on the dev box; it is **not** in the repo checkout and **not**
+  on either pod (checked: `/root/.cache/huggingface/token`, `/root/.huggingface/token`,
+  `/workspace/Keys.txt`, `/root/Keys.txt`, `/workspace/TanitAD/Keys.txt` — all absent;
+  `HF_TOKEN`/`HUGGING_FACE_HUB_TOKEN` unset on both).
+* `huggingface_hub` is installed on `tanitad-new` (1.26.0) but **absent on pod4**.
+* pod4 has internet (github 200, hf 200) and its GPU is now idle, so it is the right host.
