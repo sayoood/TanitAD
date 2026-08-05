@@ -323,3 +323,65 @@ answer is decided in advance by the parameter count.**
 - arXiv **2511.00088**, *Alpamayo-R1: Bridging Reasoning and Action Prediction for Generalizable
   Autonomous Driving in the Long Tail* — the predecessor's mechanism and ablations
 - `https://huggingface.co/nvidia/Alpamayo-R1-10B` — predecessor metadata
+
+---
+
+## 10. ⭐ RUNNING — Alpamayo 2 Super executes on a 46 GB A40 at **25.84 GiB peak**
+
+**MEASURED 2026-08-05, pod4 (A40 46,068 MiB).** NVIDIA's profile is **72,115 MiB on an H100 80 GB**
+and they state non-H100 architectures are unvalidated. 4-bit NF4 on the backbone alone brings that
+to **25.84 GiB — a 2.79× reduction — and the model produces correct, semantically grounded output.**
+
+```
+[quant] NF4 backbone · BF16 skip-list ['visual','lm_head','expert','action_in_proj','action_out_proj'] · attn=sdpa
+[quant] Linear4bit modules: 448
+[quant] weights resident: 23.58 GiB
+Chain-of-Causation: "Nudge left to avoid the cones on the right side."
+minADE: 1.4222202 meters
+[quant] PEAK device memory: 25.84 GiB (A40 capacity 45.0 GiB)
+A2_RUN_RC=0
+```
+
+**The output is right, not merely well-formed.** The clip
+(`030c760c-ae38-49aa-9ad8-f5650a545d26`, `t0_us 5,100,000`) is a roadworks scene; cones are visible
+in the cross-right, front-wide and rear-right views, and the predicted path nudges left. The model
+reasoned about the correct object and acted on it.
+
+### What was quantised, and what was deliberately not
+
+The checkpoint splits cleanly — `vlm.*` (1,058 tensors, the 32 B Qwen3-VL) and `expert.*`
+(717 tensors, the 2.3 B diffusion head), read from `model.safetensors.index.json`:
+
+| | |
+|---|---|
+| **NF4 (double-quant, bf16 compute)** | `vlm.model.language_model.*` — 448 `Linear4bit` modules |
+| **kept BF16** | `vlm.model.visual.*`, `vlm.lm_head`, **all of `expert.*`** incl. `action_in_proj` / `action_out_proj` |
+
+⛔ **Quantising the action expert would have been the wrong saving.** It is the module that emits the
+trajectory; 4-biting 2.3 B to save ~3.5 GB, when the 31 B backbone is where the memory actually sits,
+corrupts the measured output to buy almost nothing. The vision tower is likewise small and is the
+only thing that sees.
+
+Exactly one line of NVIDIA's code is patched — `inference_smoke.py:133` — so data loading, prompt
+construction, CoC generation, expert sampling, minADE and visualisation are all theirs.
+
+### ⛔ How this number may and may not be used
+
+- **`QUANTISED-4BIT-UNVALIDATED`.** NF4 is lossy and is not an NVIDIA-validated configuration.
+- **The 1.4222 m minADE here may NOT be compared to their published 0.911 m.** Theirs is
+  **minADE₆** (best of 6 samples) over **1,434 curated challenging samples**; this is **one sample**
+  of **one** trajectory (`num_trajectory_samples: 1`) on **one** clip, 4-bit. Different estimator,
+  different denominator, different precision. Three reasons, any one of which is disqualifying.
+- What it **is** good for: a **self-consistent** comparison against our own arm on our own windows,
+  where both sides are measured by us under one protocol.
+
+### Practical notes for anyone reproducing
+
+- The env is Python **3.12** via `uv` (the pod ships 3.11); torch 2.8.0+cu128, transformers 4.57.1,
+  flash-attn 2.8.3 built from source, bitsandbytes 0.50.0.
+- ⚠️ **Do not override `HF_HOME`.** The first attempt did, which pointed token lookup at an empty
+  cache and produced a `GatedRepoError 401` on the PhysicalAI-AV dataset — a failure that looks like
+  a permissions problem and is actually a path problem.
+- ⚠️ The venv on MooseFS costs **~6 minutes of import time per run**. Put it on local disk
+  (pod4 has a 500 GB overlay at `/`, 771 MB used) before iterating.
+- Load is ~18 s/shard × 15 shards ≈ 4.5 min from MooseFS.
