@@ -34,8 +34,10 @@ produces.** It looks like the car driving. It is not.
 | [`v1arch_oodval_openloop_worst12.mp4`](v1arch_oodval_openloop_worst12.mp4) | `explicit:worst-12-by-ADE-from-banked-eval` | 12 | 2,050 | 3 min 25 s | 1.4626 m |
 | [`v1arch_oodval_openloop_best12.mp4`](v1arch_oodval_openloop_best12.mp4) | `explicit:best-12-by-ADE-CHERRY-PICKED` | 12 | 2,059 | 3 min 26 s | 0.1701 m |
 
-All **962 × 654 @ 10 fps**. Per-episode ADE ranges: representative **0.215 – 1.443 m**,
+All **962 × 684 @ 10 fps** (68.4 MB / 19.7 MB / 23.7 MB). Per-episode ADE ranges: representative **0.215 – 1.443 m**,
 worst12 **1.336 – 1.630 m**, best12 **0.138 – 0.197 m**.
+
+⛔ ⚠️ **`.gitignore` bans `*.mp4`** to stop raw dataset video being committed; these three are curated evaluation artifacts and were added with `git add -f`, the same convention as the 16 mp4s already tracked under `Videos/`.
 
 ⛔ **The selection mode is in the banner of every frame**, including the literal word
 `CHERRY-PICKED` on the best-12 reel, so a hand-picked clip can never be quoted as a representative
@@ -52,7 +54,11 @@ decode errors on all three) and md5-matched between pod4 and this repo.
 
 ## The layout
 
-![representative reel](stills/v1arch_oodval_openloop_representative_s2.jpg)
+![a frame from the worst-12 reel](stills/v1arch_oodval_openloop_worst12_frame136.jpg)
+
+*Frame 136 of ep 00163 (worst-12 reel). Note the BEV: the orange 2.0 s marker sits
+**beyond** the green one — the over-speed defect, visible directly. The banner carries the
+full caveat on two lines; the ADE trace shows the per-frame history rather than a mean.*
 
 1. **CAMERA (512 × 512)** — ground truth **green (wide)** underneath the prediction **orange
    (narrow)**, projected through the flat-ground pinhole (`cx = cy = 128`, `f_eff 266`,
