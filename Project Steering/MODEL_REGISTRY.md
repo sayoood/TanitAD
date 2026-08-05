@@ -1052,6 +1052,56 @@ the paired episode-cluster bootstrap.
 
 ---
 
+### 1.9 flagship-**v1arch** — `flagship-v1arch-v2bal-30k` — ✅ **COMPLETE at step 29999** (2026-08-05)
+
+**The v1 ARCHITECTURE on more, better-distributed data.** ⛔ **Every `v2_*` lever in its own
+`config.json` is `false`** — MEASURED off the run's `cfg` block on pod4, 2026-08-05:
+`v2_anchor_tactical`, `v2_ego_to_planners`, `v2_gated_intent`, `v2_goal_decode`, `v2_labels`,
+`v2_route_from_vision`, `v2_encoder_ego_decorr` all `false`; `v2_ego_dropout`, `v2_fa_dropout`,
+`v2_nav_dropout`, `v2_traj_jerk` all `0.0`; `v21_route_labels` `false`. So **architecture is held
+constant and only the data varies** — which is what makes the PI's question (*the effect of more
+and better-distributed data*) attributable. ⚠️ **It is NOT a v2-architecture arm and must never be
+quoted as one.**
+
+| Field | Value |
+|---|---|
+| **Status** | ✅ COMPLETE, clean finish at step **29999**. Supervisor **adopted** it (`trainer ALREADY RUNNING outside this supervisor (pid 9076)`), did not launch it, and exited without relaunching. |
+| **Location** | `tanitad-pod4:/workspace/experiments/flagship-v1arch-v2bal-30k/` (`ckpt.pt`, `ckpt_step{5000,15000,20000}.pt`, `config.json`, `train_log.jsonl`) |
+| **Checkpoint shape** | keys `['grounding','model','opt','step']` — **no `head` key**. ⛔ `eval_flagship_v4.py` gates its full metric path on `is_v4 = … and ("head" in ck)`, so on this checkpoint it can ONLY run `MODE_A_canary_only_validation`: it exits 0, prints an ADE, and **emits no per-window `pred`/`gt` at all**. Use `taniteval/tools/eval_four_families.py`. |
+| **Architecture** | `predictor` d_model 768 / depth 10 / heads 12 / window 8 / **action_dim 3** (`speed_input` true) · `tactical_policy` **n_maneuvers 5**, wp horizons [5,10,15,20], cadence 5 · `strategic_policy` n_commands 4, **n_route 3**, d_ctx 256, cadence 20 · `h15` enabled (mask_prob 0.5) · state_dim 2048 |
+| **Corpus** ⛔ | `"v2_parity": {"parity": false, "checked": false, "clips_present": 9000}`, `"require_parity": false`. **This arm is OFF the parity corpus by design** (that was the experiment). ⛔ **21 of the 40 canonical val episodes are INSIDE its 9000-clip training pool** — see `LEAK_v1arch_val_2026-08-05.md`. Canonical-val numbers for this arm are train-contaminated and inadmissible. |
+| **The admissible eval corpus** | `physicalai-oodval-6f4b94e4c7ce-q90` — PhysicalAI-AV's **own official eval split** (`reasoning/ood_reasoning.parquet`, `{train 1450, val 290}`), **290 clips, ZERO overlap** with the training pool, JPEG-q90 round-tripped to the training format. 6,382 windows / 290 episode clusters. |
+
+#### Result — the first COMPLETE four-family block in the programme (`_complete: true`)
+
+⛔ **ADE is one row of four.** Estimator: **episode-cluster bootstrap** over the 290 clips,
+n_boot 2000. ⛔ **Not comparable to any canonical-val number** until other arms are scored here.
+
+| family | headline | reading |
+|---|---|---|
+| — (ADE) | `ade_mean_4wp` **0.5752** [0.5370, 0.6142] · `fde_2s` **1.4018** [1.3040, 1.5010] | |
+| **LONGITUDINAL** | `speed_bias` **+0.484 m/s** · `along_final_bias` **+0.943 m** · `ego_progress` **1.0795×** · time-gap at 15+ m/s **1.43 s** | ⛔ systematic **over-speed**, and MEASURED it is **71.95 %** of windows ahead at 2 s and **75.51 %** faster than the human — a **prior**, not a tail |
+| **LATERAL** | `cross_mae` **0.0552 m** [0.0500, 0.0611] · `heading_mae` 0.806° · `curvature_bias` −0.000126 | tight; not where effort belongs |
+| **TACTICAL** | κ **0.6033** (SUBSTANTIAL), agreement 0.8881 [0.8740, 0.9021] · **`seams_beneficial_of_3` = 0** | the manoeuvre label is honest; the **seam is FALSIFIED at this checkpoint** |
+| **STRATEGIC** | `route_acc_follow` **0.8031** == `majority_straight_rate` **0.8031** · `follow_pred_distribution` **{left 0, straight 1737, right 0}** · `route_acc_nav` 1.0000 | ⛔ **no vision-only route skill at all** — a constant predictor. `route_acc_nav` is an **echo** of its own input. Confirmed **off-leak**. |
+
+Distance-keeping (n = 2,846 lead windows): headway **25.53 m**, time-gap **5.76 s**, min-TTC
+**14.73 s** (632 censored at the 30 s cap). Window states LEAD 3,002 / NO_LEAD 2,752 / NO_LABEL 628.
+
+**JPEG-format control:** raw uint8 vs the q90 round-trip on the same 6,382 windows — max |pixel
+delta| **185**, every metric moves **< 0.03** (largest: heading 0.0236°); tactical and strategic
+identical. **q90 is the headline** because it is format-faithful.
+
+⚠️ **Two harnesses disagree 0.8 %** on this corpus: `eval_flagship_v4.py`'s MODE-A canary gives
+**0.5705**, `eval_four_families.py` gives **0.5752**. Recorded, not smoothed over; unresolved.
+
+**Artifacts:** `TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-08-05-v1arch-oodval-four-families/`
+(RESULT.md + raw JSON) · protocol `EVAL_PROTOCOL_OODVAL_2026-08-05.md` · videos
+`TanitAD Research Hub/Evaluation/Videos/v1arch-oodval-openloop-2026-08-05/` · pod4
+`/workspace/evalout/` (windows dumps, lead block).
+
+---
+
 ## 2. REF-A — the frozen-encoder arm (H4)
 
 **Shared:** frozen **DINOv2-B/14** features (224 px, 16×16 grid, dim 768) precomputed once; only the
