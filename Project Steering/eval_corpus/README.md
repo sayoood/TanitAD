@@ -105,3 +105,46 @@ official_val clean           290
 
 `v1arch_clean_val_19.txt` is retained as the canonical-subset fallback for when comparability with
 the existing 40-episode arms matters more than power.
+
+---
+
+## Build state 2026-08-05 — everything de-risked except one cost decision
+
+| step | state |
+|---|---|
+| HF auth on pod4 | ✅ `huggingface_hub` installed, `whoami` → **Sayood** |
+| official val split | ✅ 290 clips, **0** intersect v1arch's 9000-clip pool |
+| clip → chunk map | ✅ **290/290 mapped to 221 distinct chunks** (`/workspace/hfmeta/clip2chunk.json`) |
+| chunk index consistent across modalities | ✅ verified: camera chunk N ↔ egomotion chunk N holds the same clip |
+| order file | ✅ 290 rows, clip_id ascending, `ORDER_MD5 99819cdfd580fce26f5bcbe001686cca` |
+| **cache key** | ✅ **`6f4b94e4c7ce`** ⇒ corpus name `physicalai-oodval-6f4b94e4c7ce` |
+| **build params (tool's own report)** | ✅ `{'size': 256, 'n_stack': 3, 'hz': 10, 'calib': 'ftheta_v2'}` |
+
+⭐ That params line is an **independent confirmation of the geometry** — `size 256`, `n_stack 3`,
+`calib ftheta_v2` — matching v1arch's cache (`image_size 256`, `n_stack 3`) and NOT cylindrical. The
+earlier inference is now corroborated by the builder itself.
+
+`rebuild_pai_rolling.py` also asserts per-clip f-theta intrinsics resolve on the first built clip —
+*"else the crop silently reverts to geometric-center (wrong pixels)"* — which is exactly the guard
+the geometry question needed.
+
+### ⚠️ THE ONE OPEN COST DECISION: 442 GB vs 4.4 GB
+
+`rebuild_pai_rolling.py` fetches **one whole 2 GB camera chunk at a time**. It was designed for
+building the FULL corpus, where a chunk yields ~100 useful clips. Here the 290 clips are spread over
+**221 chunks — about 1.3 clips per chunk** — so the rolling path would download
+
+  **221 × 2.05 GB ≈ 442 GB to extract ≈ 4.4 GB of useful video.**
+
+MEASURED alternative: `zipfile` over `HfFileSystem` does **byte-range random access** on the remote
+zip — opening a 2 GB chunk and reading its central directory costs **1.7 s**, and reading one clip's
+15.4 MB mp4 costs **1.6 s at 9.9 MB/s**. So pre-staging only the needed members is
+**290 × 15.4 MB ≈ 4.4 GB, ~8 min of transfer** — a **100× saving**.
+
+⇒ **Plan: pre-stage the mp4 + egomotion members by byte range into the layout
+`rebuild_pai_rolling.py` expects, then run the builder so it finds them locally.** The
+byte-identical guarantee is unaffected: it rests on the BUILD pipeline (decode + params + ordered
+clip list), not on how the bytes were fetched — the same member bytes arrive either way.
+
+⚠️ Do NOT judge the pod's headroom with `df` (it reports the 965 TB cluster) — a real `dd` write
+test precedes the stage.
