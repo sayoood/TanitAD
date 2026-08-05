@@ -49,6 +49,18 @@ The OOD split is PhysicalAI's own out-of-distribution selection, not a random ho
 longitudinal error is a metre, and it has a *sign*. An arm can win ADE while setting the wrong speed,
 and this one does — it is consistently early/fast rather than randomly wrong.
 
+⭐ **And it is not a few outliers dragging a mean — it is most windows.** MEASURED over all 6,382:
+
+| | |
+|---|---|
+| prediction **ahead** of the human at 2.0 s (along-track) | **71.95 %** of windows |
+| median overshoot at 2.0 s | **+0.7152 m** (mean +0.9433 m) |
+| predicted mean speed **faster** than the human's | **75.51 %** of windows |
+
+A mean bias of +0.484 m/s is consistent with a symmetric distribution plus a heavy tail; a
+**72 / 76 % rate** is not. The arm has a systematic over-speed prior, and any fix has to move the
+central tendency, not clip a tail.
+
 ### Distance-keeping (n = 2,846 windows with a lead)
 
 | | value |
