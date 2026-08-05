@@ -3147,3 +3147,31 @@ independent try blocks, +2 regression tests.
 ⇒ **RULE: one `try` around several probes converts a failure in the first into silence from all of
 them.** Same family as the bare `except` that hid the `min_steps` TypeError and made a nav fallback
 that had never once executed look like a working default.
+
+---
+
+## R-2026-08-05-crlf — "~2.7 KB of unrecovered Google Drive doc edits" — RETRACTED, it is CRLF
+
+**Retracted:** the session handoff's **priority item 2**, *"recover ~2.7 KB of Google Drive doc
+edits"* (`PROJECT_STATE.md` +395 B, `Paper/TANITAD_PAPER.md` +1,865 B, `README.md` +369 B,
+`.gitignore` +51 B).
+
+**MEASURED 2026-08-05: every delta equals that file's LINE COUNT, exactly.** The two large files
+were byte-compared against the raw Drive bytes and are **identical after `\r\n → \n`** — 101,754 ==
+101,754 and 157,043 == 157,043. `.gitignore` matches once measured at `7f34086`, the pre-session
+state (910 + 51 = 961); it is 1,016 B at HEAD only because this session added `**/gotty_url.txt`.
+**There are no unrecovered edits.** Detail: `Project Steering/DRIVE_DOC_DELTA_IS_CRLF_2026-08-05.md`.
+
+**Root-cause class: a SIZE or TIMESTAMP difference read as a CONTENT difference.** This is the
+**third** CRLF incident of the session — the v5 trainer pin went red on a file nobody had edited
+(the CRLF hash reproduced the old pin, the git blob was identical on both refs), and the same class
+sits in `CLAUDE.md` already. What made this one convincing was that *four* files agreed and both
+signals pointed the same way: Drive was **bigger** and **later**. Both were true; neither implies an
+edit.
+⇒ **RULE: before sizing work from a byte delta, check whether the delta equals the newline count.**
+One `wc -l` closes it. Normalise line endings before any cross-store diff.
+⇒ **RULE: `read_file_content` on the Drive connector is NOT the file.** It returns a natural-language
+representation — on `PROJECT_STATE.md` it gave **106,585 B for a 102,149 B file**, escaped the
+markdown (`\#` for `#`) and added trailing spaces, so a diff built on it showed **293 of 395 lines
+differing**. Acting on that would have written hundreds of phantom changes into the repo. Use
+`download_file_content` (base64 of the real bytes) for anything byte-level.
