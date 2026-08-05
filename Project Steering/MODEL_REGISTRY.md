@@ -1066,11 +1066,11 @@ quoted as one.**
 | Field | Value |
 |---|---|
 | **Status** | ✅ COMPLETE, clean finish at step **29999**. Supervisor **adopted** it (`trainer ALREADY RUNNING outside this supervisor (pid 9076)`), did not launch it, and exited without relaunching. |
-| **Location** | `tanitad-pod4:/workspace/experiments/flagship-v1arch-v2bal-30k/` (`ckpt.pt`, `ckpt_step{5000,15000,20000}.pt`, `config.json`, `train_log.jsonl`) |
+| **Location** | `tanitad-pod4:/workspace/experiments/flagship-v1arch-v2bal-30k/` (`ckpt.pt`, `ckpt_step5000.pt`, `ckpt_step15000.pt`, `ckpt_step20000.pt`, `config.json`, `train_log.jsonl`) |
 | **Checkpoint shape** | keys `['grounding','model','opt','step']` — **no `head` key**. ⛔ `eval_flagship_v4.py` gates its full metric path on `is_v4 = … and ("head" in ck)`, so on this checkpoint it can ONLY run `MODE_A_canary_only_validation`: it exits 0, prints an ADE, and **emits no per-window `pred`/`gt` at all**. Use `taniteval/tools/eval_four_families.py`. |
 | **Architecture** | `predictor` d_model 768 / depth 10 / heads 12 / window 8 / **action_dim 3** (`speed_input` true) · `tactical_policy` **n_maneuvers 5**, wp horizons [5,10,15,20], cadence 5 · `strategic_policy` n_commands 4, **n_route 3**, d_ctx 256, cadence 20 · `h15` enabled (mask_prob 0.5) · state_dim 2048 |
 | **Corpus** ⛔ | `"v2_parity": {"parity": false, "checked": false, "clips_present": 9000}`, `"require_parity": false`. **This arm is OFF the parity corpus by design** (that was the experiment). ⛔ **21 of the 40 canonical val episodes are INSIDE its 9000-clip training pool** — see `LEAK_v1arch_val_2026-08-05.md`. Canonical-val numbers for this arm are train-contaminated and inadmissible. |
-| **The admissible eval corpus** | `physicalai-oodval-6f4b94e4c7ce-q90` — PhysicalAI-AV's **own official eval split** (`reasoning/ood_reasoning.parquet`, `{train 1450, val 290}`), **290 clips, ZERO overlap** with the training pool, JPEG-q90 round-tripped to the training format. 6,382 windows / 290 episode clusters. |
+| **The admissible eval corpus** | `physicalai-oodval-6f4b94e4c7ce-q90` — PhysicalAI-AV's **own official eval split** (HF dataset `nvidia/PhysicalAI-Autonomous-Vehicles`, `ood_reasoning.parquet` under its `reasoning` prefix; split sizes `{train 1450, val 290}`), **290 clips, ZERO overlap** with the training pool, JPEG-q90 round-tripped to the training format. 6,382 windows / 290 episode clusters. |
 
 #### Result — the first COMPLETE four-family block in the programme (`_complete: true`)
 
