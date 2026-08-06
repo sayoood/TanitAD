@@ -824,8 +824,25 @@ TRAJ_WEIGHT = 1.0
 ANCHOR_CLS_WEIGHT = 1.0
 REFINED_CLS_WEIGHT = 1.0
 
+# ⛔ KINEMATIC TERM WEIGHTS — ALL DEFAULT TO ZERO ON PURPOSE.
+# `loss_traj` is pure position L1, so heading, curvature, acceleration and jerk are
+# UNCONSTRAINED, and every defect measured on flagship v1 follows: accel RMS 4.21x
+# human, jerk 30.6x, and a heading channel nothing ever scored (MEASURED 2026-08-06,
+# 6,834 windows). A term that is not in the loss is not being learned.
+# ⚠️ Defaulting to 0.0 means EVERY EXISTING ARM IS BIT-IDENTICAL under this change --
+# parity is sacred and a silent loss change would break cross-arm comparability for
+# every number in MODEL_REGISTRY.md. A new arm opts in explicitly.
+# ⭐ `net_yaw` is the SAMPLING-INDEPENDENT lateral term: MEASURED, it is the quantity
+# that regressed 62 % under inference-time re-timing while cross-track improved 20 %,
+# so it is the honest target for "improve the heading".
+HEADING_WEIGHT = 0.0
+NET_YAW_WEIGHT = 0.0
+ACCEL_BARRIER_WEIGHT = 0.0
+JERK_BARRIER_WEIGHT = 0.0
 
-def v15_losses(out: dict, anchors: Tensor, traj_tgt: Tensor) -> dict:
+
+def v15_losses(out: dict, anchors: Tensor, traj_tgt: Tensor,
+               kin_weights: dict | None = None) -> dict:
     """anchor-cls CE + traj-recon L1 + REFINED-rank CE.
 
     ``out`` from :meth:`FlagshipV15Head.forward`; ``anchors`` [N, S, 2];
@@ -868,6 +885,25 @@ def v15_losses(out: dict, anchors: Tensor, traj_tgt: Tensor) -> dict:
 
     loss = (TRAJ_WEIGHT * loss_traj + ANCHOR_CLS_WEIGHT * loss_cls
             + REFINED_CLS_WEIGHT * loss_rcls)
+
+    # ---- KINEMATIC TERMS, opt-in ------------------------------------------
+    # ⛔ Applied to `out["traj"]` -- the SELECTED trajectory, i.e. the one that is
+    # actually driven -- NOT to `recon`. Supervising the reconstruction would make
+    # the anchor nearest the GT smooth while leaving the deployed pick untouched,
+    # which is the C6 confound in a new costume: improving something adjacent to
+    # the thing being measured.
+    kw = {**{"heading": HEADING_WEIGHT, "net_yaw": NET_YAW_WEIGHT,
+             "accel": ACCEL_BARRIER_WEIGHT, "jerk": JERK_BARRIER_WEIGHT},
+          **(kin_weights or {})}
+    kin_extra = {}
+    if any(w > 0.0 for w in kw.values()):
+        from tanitad.models.kinematic import kinematic_losses
+        kin = kinematic_losses(out["traj"], traj_tgt)
+        for k, w in kw.items():
+            if w > 0.0:
+                loss = loss + w * kin[k]
+        kin_extra = {f"kin_{k}": v.detach() for k, v in kin.items()}
+        kin_extra["kin_weights"] = kw
     with torch.no_grad():
         ade = (out["traj"] - traj_tgt).norm(dim=-1).mean()
         ade2s = (out["traj"][:, -1] - traj_tgt[:, -1]).norm(dim=-1).mean()
@@ -880,7 +916,7 @@ def v15_losses(out: dict, anchors: Tensor, traj_tgt: Tensor) -> dict:
             "cls_refined": loss_rcls, "anchor_acc": acc, "ade": ade,
             "fde2s": ade2s, "oracle_ade": oracle,
             "sel_gap": ade - oracle, "rank_acc": rank_acc,
-            "frac_sel_2x_worse_than_oracle": worse2x}
+            "frac_sel_2x_worse_than_oracle": worse2x, **kin_extra}
 
 
 def param_breakdown(head: FlagshipV15Head) -> dict[str, int]:

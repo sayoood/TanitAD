@@ -99,21 +99,34 @@ _DS_EPS = 1e-8
 
 
 
-def _squash(x: Tensor, limit: float) -> Tensor:
-    """Bound ``x`` to (-limit, limit) while keeping a NON-ZERO gradient everywhere.
+#: Fraction of ``limit`` below which :func:`_squash` is EXACTLY the identity.
+SQUASH_KNEE = 0.9
 
-    ⛔ THREE CANDIDATES, TWO OF THEM TRAPS.
+
+def _squash(x: Tensor, limit: float, knee: float = SQUASH_KNEE) -> Tensor:
+    """Bound ``x`` to (-limit, limit), identity well inside it, non-zero gradient outside.
+
+    ⛔ FOUR CANDIDATES, THREE OF THEM TRAPS.
     ``clamp`` has exactly zero gradient outside the range, so a head that initialises
     outside it can never learn back in — a silent dead head.
     ``tanh`` looks like the fix and is not: MEASURED 2026-08-06, ``1 - tanh(51)**2``
     evaluates to **exactly 0.0** in float32, so a control 500 m/s² against a 9.8 limit
     lands in a region where the gradient has UNDERFLOWED to zero. tanh does not remove
     the cliff, it moves it out to where nobody tests.
-    Softsign ``x / (1 + |x|/limit)`` decays as 1/x² instead of exponentially: at the
-    same 51× overshoot the gradient is ~3.7e-4 — small, but representable and nonzero,
-    so the head recovers instead of dying.
+    Plain softsign ``x / (1 + |x|/limit)`` keeps the gradient — but it is NOT the
+    identity inside the range: MEASURED 2026-08-06, a curvature of 0.04 against the
+    0.33 limit came back as 0.0357, an 11 % shrink on a control that was never near
+    the bound. Composed through a decode that must reproduce its own anchor, that cost
+    **0.594 m** — the anchor vocabulary became unreachable and the head would have had
+    to learn to undo the squash before it could learn anything.
+    ⇒ Identity below ``knee * limit``, then a C¹ rational tail that saturates at
+    ``limit`` with a 1/x² gradient decay. Exact where it matters, safe where it does not.
     """
-    return x / (1.0 + x.abs() / limit)
+    a = knee * limit
+    span = limit - a
+    excess = (x.abs() - a).clamp_min(0.0)
+    tail = a + span * excess / (excess + span)
+    return torch.where(x.abs() <= a, x, torch.sign(x) * tail)
 
 
 def rollout_unicycle(state0: Tensor, controls: Tensor, dt: float = 0.1,
@@ -405,3 +418,112 @@ def _interp1d(q: Tensor, xs: Tensor, ys: Tensor) -> Tensor:
     y0, y1 = ys[idx - 1], ys[idx]
     w = (q - x0) / (x1 - x0).clamp_min(1e-8)
     return y0 + w * (y1 - y0)
+
+
+# --------------------------------------------------------------------------- #
+# TRAINING-SIDE: kinematic loss terms, and the differentiable unicycle decode   #
+#                                                                              #
+# ⛔ WHY THE HEAD LEARNS BAD KINEMATICS. `flagship_v15.v15_losses` supervises   #
+# trajectories with `(recon - traj_tgt).abs().mean()` — PURE POSITION L1.       #
+# Nothing in it constrains heading, curvature, acceleration or jerk. Every      #
+# defect measured on v1arch follows directly: accel RMS 4.21x human, jerk       #
+# 30.6x, and a heading channel that only looks healthy because ADE never        #
+# scored it. A term that is not in the loss is not being learned.               #
+#                                                                              #
+# ⚠️ POSITION L1 DOES NOT IMPLY HEADING. Two paths can agree at every waypoint  #
+# to within centimetres and still have different tangents at every step,        #
+# because L1 on positions is invariant to how the samples are distributed       #
+# along the curve. That is not a corner case — it is what re-timing v1arch      #
+# demonstrated: MEASURED 2026-08-06, cross-track improved 20 % while net-yaw    #
+# error got 62 % WORSE on the same paths.                                       #
+# --------------------------------------------------------------------------- #
+
+
+def _headings(path: Tensor, dt: float = DT_RETIME):
+    """[B,S,2] -> (heading [B,S], step length [B,S], moving mask [B,S])."""
+    p = torch.cat([torch.zeros_like(path[:, :1]), path], dim=1)
+    d = p[:, 1:] - p[:, :-1]
+    ds = torch.linalg.norm(d, dim=-1)
+    return torch.atan2(d[..., 1], d[..., 0]), ds, ds > (MIN_DS_MPS * dt)
+
+
+def kinematic_losses(pred: Tensor, tgt: Tensor, dt: float = DT_RETIME,
+                     accel_limit: float = 2.689,
+                     jerk_limit: float = 6.369) -> dict:
+    """Heading / net-yaw / accel / jerk terms for a [B,S,2] trajectory pair.
+
+    ⭐ ``heading`` and ``net_yaw`` are the two the position loss cannot see, and
+    ``net_yaw`` is the SAMPLING-INDEPENDENT one — it is the quantity that
+    regressed 62 % under re-timing while cross-track improved, so it is the
+    honest target for "fix the heading".
+
+    ⛔ ``accel`` and ``jerk`` are BARRIERS, not shrinkage: only the excess above
+    the limit is penalised. A plain ``lambda * jerk**2`` would also punish
+    legitimate emergency braking and hard avoidance, i.e. it would train the arm
+    to be smooth when it should be decisive. Defaults are the human's own p99 on
+    PhysicalAI OOD-val (MEASURED 2026-08-06, 6,834 windows).
+
+    ⚠️ Steps below ``MIN_DS_MPS`` are masked out of the heading terms. A stopped
+    ego has no path tangent and its heading is free to flip; including those
+    steps would train the head against noise. Same gate as
+    ``four_families.lateral`` and ``unicycle_controls_from_path``.
+    """
+    hp, _, mp = _headings(pred, dt)
+    hg, _, mg = _headings(tgt, dt)
+    both = mp & mg
+    dh = (hp - hg + math.pi) % (2 * math.pi) - math.pi
+    n = both.sum().clamp_min(1)
+    head = (dh.abs() * both).sum() / n
+
+    # net yaw over the window: sum of WRAPPED per-step turns, masked
+    wrap = lambda x: (x + math.pi) % (2 * math.pi) - math.pi      # noqa: E731
+    vp = mp[:, 1:] & mp[:, :-1]
+    vg = mg[:, 1:] & mg[:, :-1]
+    ny_p = (wrap(hp[:, 1:] - hp[:, :-1]) * vp).sum(1)
+    ny_g = (wrap(hg[:, 1:] - hg[:, :-1]) * vg).sum(1)
+    net_yaw = (ny_p - ny_g).abs().mean()
+
+    ca = unicycle_controls_from_path(pred, dt)[..., 0]
+    accel = torch.relu(ca.abs() - accel_limit).mean()
+    jerk = torch.relu(((ca[:, 1:] - ca[:, :-1]) / dt).abs() - jerk_limit).mean()
+    return {"heading": head, "net_yaw": net_yaw, "accel": accel, "jerk": jerk}
+
+
+def unicycle_decode(base: Tensor, delta: Tensor, v0: Tensor,
+                    dt: float = DT_RETIME,
+                    accel_limit: float = A2S_ACCEL_LIMIT,
+                    curvature_limit: float = A2S_CURVATURE_LIMIT) -> Tensor:
+    """⭐ THE RETRAIN PATH: compose a correction in CONTROL space, not position.
+
+    ``base`` [B,S,2] an anchor trajectory, ``delta`` [B,S,2] the head's output
+    read as ``(d_accel, d_curvature)``, ``v0`` [B] the ego's true entry speed.
+    Returns [B,S,2], differentiable end-to-end through :func:`rollout_unicycle`.
+
+    ⛔ WHY THIS IS THE RIGHT PLACE TO CHANGE THE HEAD. The anchor VOCABULARY is
+    already kinematically feasible — ``fourbrain._synth_anchor_pool`` builds it
+    from random unicycle rollouts. It is the free-form per-waypoint OFFSET that
+    destroys feasibility: nothing stops it moving waypoint k by 2 m and waypoint
+    k+1 by −2 m, which is a 400 m/s³ jerk the position loss never sees. Adding
+    the offset in control space instead makes every output feasible BY
+    CONSTRUCTION, and it changes ~one line of the decode rather than the
+    diffusion machinery, the anchors, the selection head or the losses.
+
+    ⇒ It also fixes the heading channel structurally: heading is
+    ``yaw += v * kappa * dt``, so the head now emits the quantity heading is
+    made of, instead of positions from which heading is a fragile by-product.
+
+    ⚠️ The bounds are applied by :func:`rollout_unicycle`'s softsign — saturating
+    but never zero-gradient, so a head that initialises outside the range can
+    still learn back in. Do NOT swap them for a hard clamp here; that is the
+    dead-head trap, and it is only safe in the inference-time
+    :func:`retime_path`, which has no gradient to preserve.
+    """
+    if base.shape != delta.shape:
+        raise ValueError(f"base {tuple(base.shape)} != delta {tuple(delta.shape)}")
+    c = unicycle_controls_from_path(base, dt) + delta
+    B = base.shape[0]
+    v0 = torch.as_tensor(v0, dtype=base.dtype, device=base.device).reshape(B)
+    z = torch.zeros_like(v0)
+    state0 = torch.stack([z, z, z, v0], dim=-1)
+    return rollout_unicycle(state0, c, dt, accel_limit=accel_limit,
+                            curvature_limit=curvature_limit)[..., :2]
