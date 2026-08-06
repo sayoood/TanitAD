@@ -1163,8 +1163,18 @@ v1arch number banked before. (2) STRATEGIC UNAVAILABLE (no map — unchanged). ~
 UNAVAILABLE~~ — closed above; the 2026-08-06 claim "lead block not on pod4" was itself a **stale
 absence-claim** (the 290-episode block and v1arch's complete LEAD JSON already existed at
 `pod4:/workspace/evalout/` — `v1arch_oodval_q90_4fam_LEAD.json`, `families_unavailable=[]`).
-(3) TACTICAL declared-head metrics are identical to v1arch's (policies untouched). (4) reliance
-CI not computed (canary batch); families CI'd as above.
+(3) TACTICAL **declared-head** metrics are identical to v1arch's (policies untouched — the
+declared dwell 0.55 s toggling defect is NOT fixed by v1.6 and still needs its own lever).
+The **EXECUTED-manoeuvre** side, MEASURED 2026-08-06
+(`…/results/v16_tactical_executed.json`, `classify_maneuver` over each window's 2 s path,
+6,834 stride-1 windows; ⚠️ yaw at horizon from last-segment heading — the dump stores xy only):
+agreement with GT-executed **v1arch 0.5016 → v1.6 0.7694**; executed toggle rate v1arch 0.0620
+→ v1.6 **0.0309** vs GT 0.0318 — paired Δ(v1.6−v1arch) −0.0311 [−0.0462, −0.0177] separated,
+Δ(v1.6−GT) −0.0009 [−0.0066, +0.0055] NOT separated; executed dwell 2.61 s → 4.38 s (GT 3.52 s
+— v1.6 slightly over-steady: it under-executes `accelerate`, 577 vs GT 975, the conservative
+tail of its speed profile). v1arch's executed distribution over-calls `accelerate` 2,668 vs
+GT 975 — the longitudinal defect visible in decision space. (4) reliance CI not computed
+(canary batch); families CI'd as above.
 
 ## 2. REF-A — the frozen-encoder arm (H4)
 
