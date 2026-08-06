@@ -586,3 +586,76 @@ per episode — a further work item, and cheap now that the harness exists.
 **Artifacts:** `comparison/a2_four_families.json` (all four families, both arms, with every
 UNAVAILABLE reason and n) · `comparison/alpamayo_traj_2s.json.xz` (Alpamayo's 2 s waypoints) ·
 `tools/a2_four_families.py` (the scorer).
+
+## 13. ⭐ LEVERAGE IDEA #1 IMPLEMENTED — and the recovered controls give a sharper number than any ADE
+
+The `accel MAE` gap in §12 said *what* is wrong. Recovering the controls each arm's path
+**implies** says *how much*, in the units a control head would actually emit.
+
+`stack/tanitad/models/kinematic.py` gains `rollout_unicycle` (the Alpamayo
+`(accel, curvature)` action space), `unicycle_controls_from_path` (its inverse) and
+`entry_speed_mismatch`. 12 tests, all green.
+
+⚠️ **We already had half of this and it was dead code.** `rollout_bicycle` — a differentiable
+kinematic-bicycle integrator with a Kamm-circle penalty — has been in the repo since H14 Track 1,
+is exported from `models/__init__`, is NaN-tested, and is imported by **no model and no trainer**
+(verified by grep over `stack/`). The flagship emits free waypoints. Wiring a control head is
+therefore a **new capability**, not a switch.
+
+### MEASURED — what each arm's path implies it commanded (39 clips, 2 s, dt = 0.1 s)
+
+| | Alpamayo 2 Super | TanitAD flagship | human (GT) |
+|---|---|---|---|
+| implied accel RMS (m/s²) | 1.027 | **4.1656** | **0.8048** |
+| **× the human's accel magnitude** | **1.27×** | **5.18×** | 1.00× |
+| implied accel MAE vs human (m/s²) | 0.5090 | 1.7350 | — |
+| implied accel **bias** (m/s²) | +0.1076 | **+0.7160** | — |
+| implied curvature RMS (1/m) | 0.030829 | 0.032496 | 0.020914–0.024488 |
+| implied curvature MAE (1/m) | 0.008497 | **0.008275** | — |
+| entry transient MAE (m/s²) | 1.4039 | 1.5367 | **0.4249 (floor)** |
+
+⭐ **Our arm commands 5.18× the acceleration magnitude a human does.** Alpamayo commands 1.27×.
+That is the single most specific statement the programme has about the longitudinal defect, and
+**no ADE at any horizon can express it** — a path can match position while thrashing the throttle.
+
+⭐ **And the launch is NOT where the two arms differ.** Both sit at ~1.4–1.5 m/s² of entry
+transient against the instrument's own floor of **0.4249** (what the *human's* path scores against
+the ego's recorded `v0` under the same chord reading). The arms are indistinguishable there. The
+defect is in the **sustained acceleration profile**, which is exactly what an integrated
+`(accel, curvature)` head constrains and a free-waypoint head does not.
+
+⚠️ **On curvature the two arms are the same** (MAE 0.00828 vs 0.00850) and **both over-command**
+relative to the human (0.032/0.031 vs 0.021/0.024 RMS). Consistent with §12's LATERAL read: the
+lateral channel is not our problem.
+
+### ⛔ Two traps this work caught, both of which would have shipped a number
+
+1. **An off-by-one in the inverse map.** `rollout_unicycle` advances position on the speed at the
+   *start* of each step, so step `k`'s displacement reveals the speed *before* `accel[k]` — the
+   inverse is shifted by one. The naive version drifted **1.2233 m** over 2 s and returned every
+   control one step late. Caught only because the round-trip test integrates → recovers →
+   re-integrates and compares.
+2. **`tanh` is not a safe saturating squash.** MEASURED: `1 - tanh(51)**2` is **exactly 0.0** in
+   float32, so a control far outside its limit has an *underflowed* gradient — the same silent
+   dead-head a hard `clamp` produces, moved out to where nobody tests. Replaced with softsign
+   `x / (1 + |x|/limit)`, whose 1/x² decay leaves ~3.7e-4 at the same overshoot.
+3. **Curvature at a standstill is undetermined, not large.** `yaw_rate = v·κ`, so at `v ≈ 0` every
+   κ gives the same zero heading change. Ungated, the implied-curvature MAE came back as
+   **1.6 × 10⁶** and **7.6 × 10³** 1/m — meaningless numbers on their way into this table. Gated at
+   `MIN_DS_MPS = 0.5`, the same constant `four_families` uses.
+
+### The pre-registration this makes possible
+
+**Both outcomes committed in advance.** An arm whose operative head emits `(accel, curvature)` and
+integrates through `rollout_unicycle`, trained otherwise identically to `flagship-v1arch-v2bal-30k`:
+
+* **PASS** — implied accel RMS drops toward the human's 0.80 (target: ≤ 2.0×, i.e. ≤ 1.6 m/s²) **and**
+  `speed_bias_mps` falls below +0.15 m/s, **without** LATERAL regressing (curvature MAE ≤ 0.0090).
+* **FAIL** — accel RMS stays above 3× the human's, **or** lateral regresses. Then the action space
+  is not the lever and the defect is in the loss or the corpus, not the parameterisation.
+
+⚠️ The comparison must be run at **matched steps** and read through `taniteval.four_families`, not
+through ADE — the whole point is that ADE could not see this.
+
+**Artifacts:** `comparison/implied_controls.json` · `stack/tanitad/models/kinematic.py` ·
+`stack/tests/test_unicycle_action_space.py`.
