@@ -1140,12 +1140,31 @@ every canary. Baseline control: the displacement readout scores 8.72 (cannot fun
 latents), and its **frozen-latents arm collapses to the CV floor** — what both decoders consume
 is the **predictor's rolled prediction**.
 
+**DISTANCE-KEEPING — MEASURED 2026-08-06** (`…/2026-08-06-v1-defect-triage/results/v16_distance_keeping.json`,
+built from a fresh 40-episode lead block — `lead_block_40.report.json`: 880 stride-8 windows, LEAD 419 /
+NO_LEAD 329 / NO_LABEL 132; 5 clips lack `obstacle.offline`, 1 stationary clip fails registration — joined
+row-for-row to the stride-8 subset of the SAME scored dump as the table above, no re-inference; paired
+episode-cluster bootstrap, 30 lead-bearing episodes, 2,000 draws; sign below is **v1arch − v1.6** / **GT − v1.6**):
+
+| metric | v1arch | **v1.6** | GT | v1arch−v1.6 [CI95] | GT−v1.6 [CI95] |
+|---|---|---|---|---|---|
+| min headway (m) | 25.23 | **25.52** | 25.39 | −0.238 [−0.385, −0.091] ✅ | −0.026 [−0.225, +0.153] ✗ |
+| min time-gap (s) | 7.71 | **7.98** | 7.98 | −0.138 [−0.252, −0.049] ✅ | −0.010 [−0.064, +0.042] ✗ |
+| min TTC (s) | 14.97 | **17.82** | 17.10 | **−2.818 [−3.892, −1.784] ✅** | −0.597 [−1.393, +0.099] ✗ |
+
+Reading: v1arch is CI-separated **more aggressive** on all three (2.8 s lower min-TTC — the longitudinal
+speed/accel defect showing up against real traffic), while **v1.6 is statistically indistinguishable from
+GT on every distance-keeping metric** at this n. ⚠️ 40-episode subset grid, not the 290-corpus grid the
+v1arch OOD-val LEAD numbers use — compare within this table only.
+
 **⛔ Standing caveats:** (1) all trajectory numbers are **action-conditioned WM rollouts under
 TRUE future actions — NOT closed-loop planning**; applies equally to both arms and to every
-v1arch number banked before. (2) `distance_keeping` UNAVAILABLE (lead block not on pod4 —
-standing rebuild item); STRATEGIC UNAVAILABLE (no map — unchanged). (3) TACTICAL declared-head
-metrics are identical to v1arch's (policies untouched). (4) reliance CI not computed (canary
-batch); families CI'd as above.
+v1arch number banked before. (2) STRATEGIC UNAVAILABLE (no map — unchanged). ~~distance_keeping
+UNAVAILABLE~~ — closed above; the 2026-08-06 claim "lead block not on pod4" was itself a **stale
+absence-claim** (the 290-episode block and v1arch's complete LEAD JSON already existed at
+`pod4:/workspace/evalout/` — `v1arch_oodval_q90_4fam_LEAD.json`, `families_unavailable=[]`).
+(3) TACTICAL declared-head metrics are identical to v1arch's (policies untouched). (4) reliance
+CI not computed (canary batch); families CI'd as above.
 
 ## 2. REF-A — the frozen-encoder arm (H4)
 
