@@ -98,18 +98,21 @@ def test_zero_init_means_the_decoder_starts_kinematically_valid():
     from a physically absurd trajectory — a far worse basin. Zero-init makes step 0
     exactly 'hold v0, go straight'."""
     m = UnicycleStepReadout(state_dim=16)
-    z = torch.randn(5, 16)
-    assert float(m(z, z).abs().max()) == 0.0
+    z, v, zr = torch.randn(5, 16), torch.full((5,), 9.0), torch.zeros(5)
+    a, yr = m(z, z, v, zr, zr)
+    assert float(a.abs().max()) == 0.0 and float(yr.abs().max()) == 0.0
 
 
-def test_warm_start_copies_the_trunk_and_refuses_a_mismatch():
+def test_warm_start_copies_the_latent_columns_and_refuses_a_mismatch():
     """⭐ The trunk has already learned to read a latent transition — the expensive
-    half. ⚠️ And a shape mismatch must RAISE, never silently return a random module
-    wearing the name 'warm-started'."""
+    half. ⚠️ Only the 2*state_dim LATENT columns can be copied now that the head also
+    takes speed and previous controls; that partial copy is stated, not hidden. And a
+    shape mismatch must RAISE, never silently return a random module wearing the name
+    'warm-started'."""
     sr = StepDisplacementReadout(state_dim=16, hidden=64)
     m = UnicycleStepReadout.warm_start_from(sr, state_dim=16, hidden=64)
-    assert torch.equal(m.net[1].weight, sr.net[1].weight)
-    assert torch.equal(m.net[0].weight, sr.net[0].weight)
+    assert torch.equal(m.net[1].weight[:, :32], sr.net[1].weight)
+    assert torch.equal(m.net[0].weight[:32], sr.net[0].weight)
     assert float(m.net[-1].weight.abs().max()) == 0.0        # head still zero
     try:
         UnicycleStepReadout.warm_start_from(sr, state_dim=16, hidden=128)
@@ -178,3 +181,103 @@ def test_shape_contract():
         except ValueError:
             continue
         raise AssertionError(f"accepted {tuple(bad.shape)}")
+
+
+# --------------------------------------------------------------------------- #
+# The four MEASURED design choices — one test per claim, so an arm that changed  #
+# four things at once is never the only evidence for any of them.               #
+# --------------------------------------------------------------------------- #
+
+def test_output_channels_are_scaled_to_their_own_target_std():
+    """⛔ MEASURED 38.5x scale ratio: accel std 0.80438, curvature std 0.02091. With one
+    shared output layer the curvature channel is ~38x under-resolved. A unit raw output
+    must land near each channel's own target scale."""
+    from tanitad.models.metric_dynamics import ACCEL_SCALE, YAWRATE_SCALE
+    m = UnicycleStepReadout(state_dim=8, hidden=16, predict_delta=False,
+                            speed_input=False)
+    with torch.no_grad():
+        m.net[-1].bias.copy_(torch.tensor([1.0, 1.0]))     # unit raw output
+    z, v, zr = torch.zeros(1, 8), torch.full((1,), 20.0), torch.zeros(1)
+    a, yr = m(z, z, v, zr, zr)
+    assert abs(float(a) - ACCEL_SCALE) < 1e-6
+    assert abs(float(yr) - YAWRATE_SCALE) < 1e-6
+    assert ACCEL_SCALE / YAWRATE_SCALE > 10.0              # the imbalance is real
+
+
+def test_yaw_rate_parameterisation_still_cannot_turn_in_place():
+    """⛔ THE TRAP IN CHOICE (2). Yaw rate is the better-conditioned target (kurtosis
+    10.4 vs curvature's 38.9), but predicting it WITHOUT the |v|*kappa_max bound would
+    quietly restore turn-in-place — the exact defect the unicycle exists to remove."""
+    m = UnicycleStepReadout(state_dim=8, hidden=16, predict_delta=False,
+                            speed_input=False, curvature_limit=0.33)
+    with torch.no_grad():
+        m.net[-1].bias.copy_(torch.tensor([0.0, 100.0]))   # demand a huge yaw rate
+    z, zr = torch.zeros(1, 8), torch.zeros(1)
+    _, yr_stopped = m(z, z, torch.zeros(1), zr, zr)
+    _, yr_moving = m(z, z, torch.full((1,), 12.0), zr, zr)
+    assert float(yr_stopped.abs()) == 0.0                  # v=0 -> bound is 0
+    assert abs(float(yr_moving) - 12.0 * 0.33) < 1e-5      # bounded, not unbounded
+
+
+def test_speed_is_actually_an_input():
+    """Choice (3): the target's conditional distribution depends strongly on v (its
+    low-speed tail is 9.5x the high-speed one). A head that ignores v is fitting the
+    marginal."""
+    torch.manual_seed(0)
+    m = UnicycleStepReadout(state_dim=8, hidden=16, speed_input=True,
+                            predict_delta=False)
+    with torch.no_grad():
+        nn.init.normal_(m.net[-1].weight, std=1.0)
+    z, zr = torch.randn(1, 8), torch.zeros(1)
+    a_slow, _ = m(z, z, torch.full((1,), 1.0), zr, zr)
+    a_fast, _ = m(z, z, torch.full((1,), 18.0), zr, zr)
+    assert abs(float(a_slow) - float(a_fast)) > 1e-6
+
+    off = UnicycleStepReadout(state_dim=8, hidden=16, speed_input=False,
+                              predict_delta=False)
+    with torch.no_grad():
+        nn.init.normal_(off.net[-1].weight, std=1.0)
+    b_slow, _ = off(z, z, torch.full((1,), 1.0), zr, zr)
+    b_fast, _ = off(z, z, torch.full((1,), 18.0), zr, zr)
+    assert abs(float(b_slow) - float(b_fast)) < 1e-9       # the ablation is a real off
+
+
+def test_delta_head_is_smooth_by_default():
+    """⭐ CHOICE (4), the biggest. MEASURED: accel delta std 0.17494 against an absolute
+    std of 0.80438 — a 4.6x easier target — with lag-1 autocorrelation +0.977. A delta
+    head's natural output scale IS THE JERK, so smoothness is the DEFAULT rather than
+    something a barrier has to fight the head for.
+
+    With random weights, the ABSOLUTE head's step-to-step accel change is ~its full
+    output scale; the DELTA head's is ~its (much smaller) delta scale."""
+    from tanitad.models.metric_dynamics import ACCEL_SCALE, DACCEL_SCALE
+    torch.manual_seed(0)
+    S, K = 8, 20
+    zs = [torch.randn(1, S) for _ in range(K + 1)]
+
+    def run(delta: bool):
+        m = UnicycleStepReadout(state_dim=S, hidden=32, predict_delta=delta,
+                                speed_input=False)
+        with torch.no_grad():
+            nn.init.normal_(m.net[-1].weight, std=1.0)
+        a_prev = yr_prev = torch.zeros(1)
+        v, accs = torch.full((1,), 12.0), []
+        for j in range(K):
+            a, yr = m(zs[j], zs[j + 1], v, a_prev, yr_prev)
+            accs.append(float(a)); a_prev, yr_prev = a, yr
+        d = torch.tensor(accs)[1:] - torch.tensor(accs)[:-1]
+        return float(d.abs().mean())
+
+    assert run(True) < run(False), (run(True), run(False))
+    assert DACCEL_SCALE < ACCEL_SCALE / 3.0                # 0.175 vs 0.804
+
+
+def test_every_choice_can_be_switched_off_for_the_ablation():
+    """⛔ An arm that changed four things at once and improved would be UNATTRIBUTABLE —
+    the --v2 conflation failure. One flag per claim."""
+    S = 8
+    base = UnicycleStepReadout(S, hidden=16, predict_delta=False, speed_input=False)
+    assert base.in_dim == 2 * S
+    assert UnicycleStepReadout(S, 16, predict_delta=True, speed_input=False).in_dim == 2 * S + 2
+    assert UnicycleStepReadout(S, 16, predict_delta=False, speed_input=True).in_dim == 2 * S + 1
+    assert UnicycleStepReadout(S, 16, predict_delta=True, speed_input=True).in_dim == 2 * S + 3

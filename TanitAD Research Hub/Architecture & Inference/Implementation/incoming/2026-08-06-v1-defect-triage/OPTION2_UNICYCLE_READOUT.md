@@ -120,3 +120,91 @@ programme.
    position L1 on the 20-wp rollout **+ `kinematic_losses` at dt = 0.1** (the dense grid — no dt
    trap here, unlike the v15 head's 0.5 s horizon grid).
 2. ⛔ **Not launched.** `train()`'s own docstring reserves a launch for the PI.
+
+---
+
+## 7. ⭐ HEAD PARAMETERISATION — four optimisations, each from a MEASUREMENT
+
+**Sayed, 2026-08-06:** *"Do you see any room for optimizations regarding the setup of the
+parameters for the head?"*
+
+Yes — and the naive version (two raw linear outputs read as *(accel, curvature)*) is badly
+conditioned in three separate ways that are invisible without looking at what the human's
+controls actually do. All statistics below: the human's own recovered controls, 39 OOD-val
+clips × 20 steps, **MEASURED 2026-08-06**.
+
+### The target distributions
+
+| target | std | \|mean\| | p1 / p99 | kurtosis |
+|---|---|---|---|---|
+| accel (m/s²) | **0.80438** | 0.02742 | −2.061 / 1.820 | — |
+| curvature (1/m) | **0.02091** | 0.00038 | −0.0565 / 0.0835 | **38.9** |
+| yaw rate (rad/s) | 0.06930 | 0.00845 | −0.2254 / 0.1610 | **10.4** |
+| speed (m/s) | 4.26535 | 6.08461 | 0 / 20.65 | — |
+
+### (1) Per-channel output scaling — a **38.5×** imbalance
+
+accel std **0.80438** against curvature std **0.02091**. One `Linear(hidden, 2)` gives both
+channels the same initial gradient scale, so **the curvature channel is ~38× under-resolved**
+and spends early training dominated by accel. ⇒ Each channel is emitted in units of its own
+target std.
+
+### (2) Predict YAW RATE, not curvature
+
+`kappa = yaw_rate / v` **explodes as v → 0**, and the data shows it:
+
+| | curvature | yaw rate |
+|---|---|---|
+| kurtosis (Gaussian = 3.0) | **38.9** | 10.4 |
+| \|·\| p99 at v < 3 m/s | **0.1748** | 0.3452 |
+| \|·\| p99 at v > 8 m/s | 0.0184 | 0.1521 |
+| **low/high-speed tail ratio** | **9.5×** | **2.3×** |
+
+Regressing a target whose variance changes **9.5×** with an input the head is not even given is
+a bad objective. ⇒ Emit yaw rate.
+
+⛔ **AND THE TRAP IN DOING SO.** Predicting yaw rate *without* a bound would quietly restore
+**turn-in-place** — the exact defect the unicycle exists to remove, since `dyaw = yaw_rate·dt`
+no longer references `v`. ⇒ The yaw rate is clamped to `±|v|·kappa_max`: at `v = 0` the bound is
+**0**, so the property survives. Pinned by `test_yaw_rate_parameterisation_still_cannot_turn_in_place`.
+
+### (3) Speed as an input
+
+The 9.5× tail ratio above **is** a conditional dependence on `v`. `StepDisplacementReadout` sees
+only `(z_t, z_next)` and must infer speed from the latents; the head is fitting the *marginal*
+when the *conditional* is what it needs. ⇒ The carried speed is concatenated to the input.
+⚠️ Not privileged: `v0` is already a model input under `speed_input=True`, and the carried `v` is
+that plus the head's own outputs.
+
+### (4) ⭐ Predict the DELTA, not the level — the biggest one
+
+| target | abs std | **delta std** | ratio | lag-1 autocorr |
+|---|---|---|---|---|
+| **accel** | 0.80438 | **0.17494** | **0.22** | **+0.977** |
+| curvature | 0.02091 | 0.01126 | 0.54 | +0.852 |
+| yaw rate | 0.06930 | 0.03459 | 0.50 | +0.874 |
+
+The step-to-step change in acceleration is a **4.6× easier target** than its level, and the
+signal is strongly autocorrelated (**+0.977**) — i.e. nowhere near white, which is the condition
+under which delta-prediction would *hurt*.
+
+⇒ **A delta head's natural output scale IS THE JERK.** Smoothness becomes the DEFAULT rather
+than something a barrier term has to fight the head for. This is the *structural* version of the
+jerk fix, and it is why the head carries `(v, a_prev, yr_prev)` across steps — the rollout loop
+was already sequential, so it costs nothing.
+
+### ⛔ Every choice is a separate flag
+
+`predict_delta`, `speed_input`, and the curvature-vs-yaw-rate primitive can each be switched off.
+**An arm that changed four things at once and improved would be UNATTRIBUTABLE** — the `--v2`
+conflation failure. One flag per claim, one test per claim
+(`test_every_choice_can_be_switched_off_for_the_ablation`).
+
+⚠️ **The scale constants are derived from 39 val clips.** They are distributional priors, not
+metric tuning, and the run must not be presented as if they came from train. Widening them to the
+train corpus is a cheap improvement and is a work item.
+
+⚠️ **Warm-start is now PARTIAL.** The input width changed (extra speed / previous-control
+columns), so only the `2·state_dim` latent columns of the first layer can be copied from the
+trained displacement readout. Stated rather than hidden, and shape-checked — a mismatch raises
+rather than returning a random module labelled "warm-started".
