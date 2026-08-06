@@ -385,3 +385,64 @@ construction, CoC generation, expert sampling, minADE and visualisation are all 
 - ⚠️ The venv on MooseFS costs **~6 minutes of import time per run**. Put it on local disk
   (pod4 has a 500 GB overlay at `/`, 771 MB used) before iterating.
 - Load is ~18 s/shard × 15 shards ≈ 4.5 min from MooseFS.
+
+---
+
+## 11. ⭐ THE RESULT — Alpamayo is UNBIASED where our arm is not
+
+**MEASURED 2026-08-06, 39 paired clips**, both truncated to a **2.0 s / 20-waypoint**
+horizon on the same PhysicalAI OOD-val clips at the same nominal `t0 = 5.1 s`.
+
+| | Alpamayo 2 Super | TanitAD flagship-v1arch |
+|---|---|---|
+| ADE @2 s | **0.2703 m** | 0.3303 m |
+| **speed bias** | **+0.0569 m/s** | **+0.4245 m/s** |
+| **frac faster than human** | **59.0%** | **84.6%** |
+| along bias @2 s | +0.1132 m | +0.8176 m |
+| frac ahead at 2 s | 59.0% | 79.5% |
+| (Alpamayo native 6.4 s ADE) | 2.4026 m | — |
+
+### ⇒ The over-speed is OURS, not the data's
+
+Alpamayo sits at **+0.057 m/s** and **59.0 %** faster-than-human — a coin flip, i.e. essentially
+**unbiased**. Our arm is **+0.42 m/s** and faster on **84.6 %** of these clips, consistent with the
+corpus-wide **+0.484 m/s / 75.5 %** measured independently over 6,382 windows.
+
+**A 34 B model trained on ~115,000 h of the same-family data does NOT run ahead of the human.**
+So the bias does not live in the ground truth or the label convention — it is ours, and it is
+ours to fix. That converts leverage idea #1 (the unicycle accel/curvature action space) from a
+plausible borrowing into a **motivated** one.
+
+### ⭐ And the second reading, which favours us
+
+The ADE gap is **0.2703 vs 0.3303 — a factor of 1.22** — against **~115× the parameters**
+and **~190× the input pixels**. On the axis this programme actually claims — capability per
+parameter, per camera — that is a strong showing, and it is the only axis on which the outcome
+was not decided in advance.
+
+### How the ground truth was obtained, and why it is trustworthy
+
+The trajectory capture returned **empty GT**: `sample_trajectories_from_data(data=model_inputs)`
+receives the model's *inputs*, which carry ego history but no future. Rather than re-run 40
+samples, the GT was reconstructed from the staged `egomotion` parquet — and then **proven**:
+recomputing ADE between Alpamayo's own captured prediction and the reconstructed GT reproduces
+the `min_ade_m` NVIDIA's code printed, to within **0.0220 m (mean 0.0047 m)** over 39 samples.
+The check *refuses to write* a GT that does not reproduce their metric — a flipped sign would
+have been small, plausible and wrong.
+
+### ⛔ Caveats, carried in the JSON and burned into the video banner
+
+* **n = 39**, unweighted mean over clips — not an episode-cluster bootstrap
+* Alpamayo is **NF4-quantised**, which is **not** an NVIDIA-validated configuration
+* ⛔ **CONTAMINATION UNRESOLVED** — these clips are PhysicalAI-AV, which Alpamayo lists as a
+  **TRAINING** dataset. Any advantage may be contamination rather than capability.
+* **not like-for-like**: 34.3 B vs < 0.3 B · 6 cameras @1920×1080 vs ONE 256×256 crop ·
+  Alpamayo truncated 6.4 s → 2.0 s · its published headline is minADE₆ (best-of-6), this is 1 sample
+* **alignment**: our window origins sit on an 0.8 s stride, so |dt| ≤ 0.4 s. Each model is scored
+  against **its own** GT at **its own** t0. The over-speed *rate* is robust to that; a per-clip ADE
+  difference is not.
+
+**Artifacts:** `comparison/comparison.json` (all 39 rows + per-clip CoC) ·
+`comparison/alpamayo_oodval.jsonl` (40 runs, all CoC text) · `comparison/alpamayo_gt.json`
+(reconstructed GT + validation) · video at
+`TanitAD Research Hub/Evaluation/Videos/alpamayo2-vs-flagship-2026-08-06/`.

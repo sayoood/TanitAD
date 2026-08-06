@@ -114,8 +114,12 @@ def main():
     for row in cmp_["rows"]:
         i = row["i"]
         z = np.load(os.path.join(a.traj_dir, f"traj_{i:04d}.npz"))
+        # ⛔ Do NOT read z["gt_xyz"] -- it is EMPTY. The captured `data` is the
+        # model's INPUT and carries ego history but no future, so the array is
+        # shape (0,) and `.shape[-2]` raises. The BEV's reference is OUR ground
+        # truth at OUR t0 (fsr["gt"]); Alpamayo's own t0 differs by the recorded
+        # align_err_s, which the text panel states.
         P = np.asarray(z["pred_xyz"]).reshape(-1, z["pred_xyz"].shape[-2], 3)[0]
-        G = np.asarray(z["gt_xyz"]).reshape(-1, z["gt_xyz"].shape[-2], 3)[0]
         alp = P[:20, :2]
         fsr = fs_rows.get(i)
         if fsr is None:
