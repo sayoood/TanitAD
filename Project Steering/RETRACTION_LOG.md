@@ -3219,9 +3219,29 @@ any path-tangent quantity.
 **⛔ Blast radius — NOT confined to this document.** `DIR_YAW_RAD` is `taniteval/hierarchy.py:164`
 and feeds `consistency.maneuver_vs_trajectory`, `commanded_route_vs_maneuver`,
 `commanded_route_vs_trajectory` and every `*_turn_subset` in the hierarchy panel — **every published
-manoeuvre-coherence κ in the programme**, all on the same 2 s horizon over the same corpus. Those
-must be re-read at 0.10 with the sensitivity published; any verdict that flipped between 0.15 and
-0.10 was never decision-grade. **Open work item.**
+manoeuvre-coherence κ in the programme**, all on the same 2 s horizon over the same corpus.
+
+⭐ **RESOLVED for the deployed arm, 2026-08-06, and it lands in the panel's favour.** The
+`flagship-v1arch-v2bal-30k` panel was re-run gate-swept (step 29999, **880 windows**, 40 OOD-val
+q90 episodes, 141 s; `…/2026-08-06-v1-defect-triage/results/`). `verdict_stable = true` —
+κ stays at or above the panel's own 0.2 coherence threshold at **every** swept gate
+(`kappa_range [0.2038, 0.5787]`). **The published coherence call was NOT an artifact and is not
+retracted.**
+
+⚠️ **The number still does not travel.** 0.5787 is true only at 0.15; the same model on the same
+windows scores 0.2038 at 0.01 — a **2.8×** span. ⇒ the VERDICT is quotable, the MAGNITUDE is not,
+ever, without its gate. And `kappa_turn_subset` at the published gate is **0.2005** — sitting *on*
+the threshold, so the comfortable headline is carried by the straight-dominated majority; on the
+windows where a direction decision actually exists, coherence is marginal.
+
+⚠️ **A second correction, by power rather than by error:** this retraction quoted the flagship's
+declared-vs-driven κ as **0.3432** from 39 single windows. The 880-window panel reads **0.5787** at
+the same gate. Quote the panel; the 39-clip figure was under-powered.
+
+**Still open:** REF-B / REF-C / v2corpus panels carry unswept κ. They now report
+`gate_sensitivity.status = UNAVAILABLE` with the reason in their own output, so the gap is visible
+rather than silent. Re-running them is cheap but **not urgent — no live decision rests on an
+unswept number now that the deployed arm's verdict has held.**
 
 **How it was caught, because the route generalises:** the low κ was checked against the obvious
 confound before being reported — Alpamayo's own CoC says *"Nudge left to pass the parked SUV"*, and a
