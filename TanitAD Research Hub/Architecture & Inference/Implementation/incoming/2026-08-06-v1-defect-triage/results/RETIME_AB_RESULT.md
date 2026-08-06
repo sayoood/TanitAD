@@ -80,3 +80,60 @@ escaped the first read. The re-run is queued.
   better than baseline — but it is a val-derived prior and is stated as one.
 * The ADE gain is **smaller at scale** than on 39 clips (−10.6 % vs −19.0 %). The 39-clip
   figure was optimistic; quote this one.
+
+---
+
+## ⛔ ADDENDUM — my mechanism for the curvature regression was WRONG, falsified by experiment
+
+The section above attributed the +13.4 % curvature regression *"entirely"* to the 17.9 % of
+windows whose schedule over-runs the arm's own curve and gets a straight-tangent tail, and
+implemented `_extend_by_arc` to continue with the curve's final curvature instead.
+
+**MEASURED — the full-scale re-run with the arc fix (`retime_ab_v1arch_arcext.json.xz`,
+same 6,834 windows):**
+
+| metric | tangent extrapolation | **arc extrapolation** | change |
+|---|---|---|---|
+| curvature MAE (1/m) | 0.006922 | **0.006920** | **−0.03 %** |
+| ADE @2 s | 0.320537 | 0.320537 | 0 |
+| jerk RMS | 4.953547 | 4.953546 | 0 |
+| all temporal metrics | — | — | **byte-identical** |
+
+**The fix does essentially nothing, so the hypothesis is refuted.** The over-run is real
+(17.9 % of windows, mean 0.120 m, max 0.214 m) but it is **~1 % of one window's arc length**,
+so it touches too few samples to move a pooled metric. A plausible mechanism that survived a
+sanity check still had to be tested, and it did not survive the test.
+
+### What the lateral change actually is — measured on sampling-INDEPENDENT quantities
+
+Curvature MAE is estimated as `dh/ds` on discrete samples, so re-timing changes the estimator's
+own grid (mean step 0.6509 m → 0.6164 m) and the metric is not strictly comparable across two
+time-parameterisations of the same curve. To settle it, two quantities that do **not** depend
+on the sampling:
+
+| | BEFORE | AFTER | |
+|---|---|---|---|
+| **net yaw error over 2 s** (rad) | 0.1201 | **0.1944** | **+62 % — genuinely WORSE** |
+| **cross-track error at 2 s** (m) | 0.1961 | **0.1565** | **−20 % — genuinely BETTER** |
+
+⇒ **There is a real lateral trade-off, not purely an instrument artifact.** Re-timing moves the
+arm's *lateral position* closer to the human's while making its *heading profile* worse.
+Curvature RMS is essentially unchanged (0.03174 → 0.03152) while per-step |dh| rises 41 %
+(0.00915 → 0.01289), so the metric is picking up both a real heading change and a grid change,
+and separating those two contributions **is not resolved here**.
+
+⛔ **No third hypothesis is offered.** One mechanism was proposed, tested at full scale, and
+refuted; a second (pure sampling artifact) is only partly consistent with the evidence. Stating
+a third would be guessing in the same shape that just failed. **The honest position: 7 metrics
+improve substantially, cross-track improves, heading degrades, and why the heading degrades is
+an OPEN QUESTION.**
+
+### The decision this supports
+
+The trade is favourable on the evidence available — jerk 30.6× → 2.90× human, speed bias −91 %,
+frame-to-frame control jump −61 %, cross-track −20 %, against a heading-error rise of 0.07 rad
+(4°) over 2 s. But ⛔ **it must not be deployed on that arithmetic alone**: heading error is what
+a lane-keeping failure looks like, and 4° is not nothing. **Before any deployment, run the
+episode-cluster bootstrap over the 40 episodes** — `tools/retime_ab.py` now banks
+`per_episode[].delta`, the paired per-cluster quantity `taniteval/ci.py` consumes, so the
+interval is a post-hoc computation and needs no further GPU.

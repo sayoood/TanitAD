@@ -226,6 +226,30 @@ def main():
            "after": four_family_row(Rall, Gall, v0all),
            "human": four_family_row(Gall, Gall, v0all)}
 
+    # ⛔ BANK PER-EPISODE MEANS, or no interval is ever computable from this artifact.
+    # Windows inside an episode are strongly dependent -- an i.i.d. CI over 6,834 of them
+    # would be badly optimistic -- so the decision-grade estimator is the EPISODE-CLUSTER
+    # bootstrap over the 40 episodes (taniteval/ci.py). Pooling to a single scalar throws
+    # away exactly the structure that estimator needs, and the loss is irreversible
+    # without another GPU pass. Banking the per-episode PAIRED deltas costs nothing and
+    # makes the interval a post-hoc computation.
+    off, per_ep = 0, []
+    for e in EP:
+        n = e["P"].shape[0]
+        b = four_family_row(Pall[off:off + n], Gall[off:off + n], v0all[off:off + n])
+        a_ = four_family_row(Rall[off:off + n], Gall[off:off + n], v0all[off:off + n])
+        per_ep.append({"n_windows": int(n),
+                       "before": b, "after": a_,
+                       "delta": {k: round(a_[k] - b[k], 6) for k in b}})
+        off += n
+    res["per_episode"] = per_ep
+    res["_estimator_note"] = (
+        "headline rows are unweighted means over ALL windows and carry NO interval. "
+        "Windows within an episode are strongly dependent, so an i.i.d. CI would be "
+        "badly optimistic. `per_episode[].delta` is the PAIRED per-cluster delta the "
+        "episode-cluster bootstrap (taniteval/ci.py) consumes -- compute the interval "
+        "from it rather than re-running the model.")
+
     # ---- temporal stability, BEFORE and AFTER ---------------------------------
     for tag, getter in (("before", lambda e: e["P"]), ("after", retime_ep)):
         sh, cj, jk = [], [], []
