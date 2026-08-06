@@ -446,3 +446,143 @@ have been small, plausible and wrong.
 `comparison/alpamayo_oodval.jsonl` (40 runs, all CoC text) · `comparison/alpamayo_gt.json`
 (reconstructed GT + validation) · video at
 `TanitAD Research Hub/Evaluation/Videos/alpamayo2-vs-flagship-2026-08-06/`.
+
+### What Alpamayo was actually fed — its FULL validated trajectory profile
+
+Recorded per sample, not asserted afterwards. Every one of the 40 runs carries
+`image_frames_shape: [6, 4, 3, 1080, 1920]` — **6 cameras × 4 frames at native 1920×1080** —
+and the sidecar records `camera_indices: [0, 1, 2, 3, 5, 6]`.
+
+That is NVIDIA's own `DRIVING_SIX_CAMERA_FOUR_FRAME` profile, defined at
+`src/alpamayo2_super/input_profiles.py:40-41` as `camera_ids=(0, 1, 2, 3, 5, 6)` and asserted by
+`assert_task_input(...)` — the batch called `inference_smoke.run_smoke(...)` with **no camera
+override**, so the model ran on its default, validated trajectory input.
+
+| | |
+|---|---|
+| rig cameras present in the source clip | **7** — `[0..6]`, from `camera_cross_left_120fov` to `camera_front_tele_30fov` |
+| given to Alpamayo | **6** — `[0, 1, 2, 3, 5, 6]` = cross-left, front-wide, cross-right, rear-left, rear-right, front-tele |
+| withheld | **1** — id `4`, `camera_rear_tele_30fov` |
+
+⚠️ **The withheld camera is not a handicap we imposed.** NVIDIA's card splits the profiles by
+task: **trajectory / meta-action / auto-labeling / grounding use `[0,1,2,3,5,6]`**, while **VQA uses
+`[0,1,2,3,4,5]`**. Rear-tele is a VQA camera; excluding it for trajectory *is* the validated
+configuration. Giving it would have been the deviation.
+
+⇒ **The ~190× pixel asymmetry stated in the banner and in `comparison.json` is real and is
+Alpamayo's full intended input** — 6 × 4 × 1920 × 1080 against our arm's single 256×256 front
+crop. Alpamayo was not run degraded; our arm was not run flattered.
+
+⚠️ The one configuration deviation remains **NF4 quantisation of the backbone**, which is ours and
+is not NVIDIA-validated. It is stated with every number and is a separate work item
+(bf16 re-run on a 80 GB card) — not a camera question.
+
+## 12. ⛔ THE FOUR BINDING FAMILIES — and only one of them favours the 34 B model
+
+The §11 table is **ADE plus one longitudinal scalar**, which under the binding rule of 2026-08-02
+is *one row of four*. Scored properly, per family, never pooled — same 39 clips, same 2.0 s /
+20-waypoint dense 0.1 s grid, each arm against **its own** GT at **its own** t0, computed by
+`taniteval.four_families` rather than re-implemented:
+
+### LONGITUDINAL — Alpamayo wins decisively, and the margin is bigger than ADE suggested
+
+| | Alpamayo 2 Super | TanitAD flagship-v1arch | ratio |
+|---|---|---|---|
+| speed MAE (m/s) | **0.3833** | 0.7050 | 1.84× |
+| speed **bias** (m/s, + = too fast) | **+0.0569** | +0.4245 | 7.5× |
+| **accel MAE (m/s²)** | **0.5077** | **1.7644** | **3.48×** |
+| along bias (m) | +0.0315 | +0.1543 | 4.9× |
+| along final bias @2 s (m) | +0.1132 | +0.8176 | 7.2× |
+| ego-progress ratio (GT = 1.0) | 0.9836 | 1.0566 | — |
+| under-progress rate | 0.3714 | 0.1714 | — |
+| distance keeping (headway / time-gap / TTC) | **UNAVAILABLE** | **UNAVAILABLE** | — |
+
+⭐ **The new finding is `accel MAE`, not the speed bias.** Our arm's **acceleration profile is
+3.48× worse** than Alpamayo's — a metric ADE cannot see at all, and one that no previous report
+carried. Combined with the +0.42 m/s bias and the 1.057 progress ratio, the picture is specific:
+**our arm accelerates too hard, too often, and ends up ahead** — it is not merely mis-set on a
+constant speed offset.
+
+⇒ This sharpens leverage idea #1 from "borrow the unicycle action space" to a **prediction**: a
+model that emits **acceleration** and integrates it, rather than emitting free waypoints, is
+directly regularised on precisely the quantity we are 3.5× worse on. That is now a
+**pre-registerable** experiment with a named metric, not an architectural preference.
+
+⛔ **`distance_keeping` is UNAVAILABLE for both arms and that is a WORK ITEM, not a pass.** The
+banked OOD-val lead block is keyed on our 0.8 s rollout window grid; Alpamayo ran at clip
+`t0 = 5.1 s`, so the two do not join. Building it needs a `build_lead_block.py` pass over
+`obstacle.offline` at these 39 origins. Half of the binding LONGITUDINAL family is therefore
+missing from this comparison, and it is stated rather than dropped.
+
+### LATERAL — our arm is COMPETITIVE, and better on curvature
+
+| | Alpamayo 2 Super | TanitAD flagship-v1arch |
+|---|---|---|
+| heading MAE (deg) | **0.6794** | 0.7800 |
+| yaw-rate MAE (deg/s) | 1.8285 | **1.7791** |
+| **curvature MAE (1/m)** | 0.009162 | **0.007551** |
+| curvature bias (1/m) | +0.001021 | −0.001996 |
+| cross-track MAE (m) | **0.0398** | 0.0493 |
+| cross-track bias (m, + = left) | +0.0036 | −0.0241 |
+
+⭐ **This is the most important row in the whole comparison and ADE had hidden it.** A sub-0.3 B
+front-crop-only model matches a 34.3 B six-camera model on heading and yaw-rate, and **beats it on
+curvature MAE (0.00755 vs 0.00916)**. The deficit that produced the ADE gap is **not lateral**.
+
+⇒ Independent confirmation, from an entirely different direction, of the programme's own
+"88.7 % of the oracle gap is longitudinal" finding. Two unrelated instruments now agree on where
+the defect lives — which is the strongest form of evidence available here.
+
+### TACTICAL — split verdict, and our declared head is only WEAKLY coupled to what we drive
+
+Both arms scored on the **same instrument** — the manoeuvre actually *executed*, derived from net
+yaw over the 2 s horizon at the 0.15 rad gate, so the comparison does not depend on either arm's
+declared head.
+
+| | Alpamayo 2 Super | TanitAD flagship-v1arch |
+|---|---|---|
+| executed-manoeuvre accuracy | 0.7949 | **0.8462** |
+| executed-manoeuvre **κ** | 0.3333 | **0.4968** |
+| left-turn recall (n = 2) | 0.5 | **0.0** |
+| declared manoeuvre head | **UNAVAILABLE** | present |
+| declared vs **driven** κ | — | **0.3432 — WEAK** |
+| declared vs GT direction | — | acc 0.8718 · κ 0.5886 |
+
+⚠️ **Our arm's declared manoeuvre is only WEAKLY coupled to the path it actually drives**
+(κ = 0.3432). Not decorative — the earlier "0 of 881 accelerate" pathology is **absent** here, all
+five classes are emitted (`lane_keep` 10, `turn_left` 4, `turn_right` 3, `accelerate` 8,
+`brake_stop` 14) — but a κ of 0.34 means the decision layer and the trajectory layer are drifting
+apart. This is exactly the class of defect a scalar ADE cannot see, which is why the family is
+binding.
+
+⚠️ **Our arm drove 0 of 2 left turns** (Alpamayo drove 1 of 2). n = 2, so this is a flag for a
+larger turn-subset panel, not a finding.
+
+⛔ Alpamayo's **declared** manoeuvre is UNAVAILABLE because this pass ran the **trajectory** task
+only; its meta-action head exists (`text_tasks.py`) and was not invoked. Its Chain-of-Causation
+text was captured for all 39 clips, but **free text is not a scored decision** and is not counted
+here. WORK ITEM: re-run the same 39 clips under the meta-action task.
+
+### STRATEGIC — UNAVAILABLE for BOTH arms, and *that* is the finding
+
+Neither arm can be scored, for the **same** reason: PhysicalAI-AV ships **no map, lane graph,
+junction annotation or route signal** (five independent probes; the card says verbatim *"we do not
+include open maps data"*). The only route label derivable is from the ego's own future path, which
+cannot separate *"took the left branch"* from *"drifted left on a curving road"* — and scoring
+against it is what produced flagship v1's `route_head_eq_logged = 1.0000`, an **echo of its own
+nav input read as skill**. Republishing that number would be worse than reporting nothing.
+
+⇒ The admissible instrument is `taniteval.strategic_optionset` over **map-derived option sets**,
+which needs AlpaSim or an external corpus. **The programme's central thesis — that the hierarchy
+works — remains unmeasured at its top level, for us and for a 34 B reference system alike.**
+
+### The estimator, stated because a number without one is inadmissible
+
+Unweighted mean over 39 paired clips, **one window per clip**. ⛔ That is **not** the decision-grade
+estimator: with one window per episode the episode-cluster bootstrap degenerates to the i.i.d.
+case, so **no CI is quoted here rather than a wrong one**. A decision-grade read needs many windows
+per episode — a further work item, and cheap now that the harness exists.
+
+**Artifacts:** `comparison/a2_four_families.json` (all four families, both arms, with every
+UNAVAILABLE reason and n) · `comparison/alpamayo_traj_2s.json.xz` (Alpamayo's 2 s waypoints) ·
+`tools/a2_four_families.py` (the scorer).
