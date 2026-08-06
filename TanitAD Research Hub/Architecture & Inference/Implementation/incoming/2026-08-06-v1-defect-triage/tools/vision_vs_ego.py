@@ -68,13 +68,15 @@ def decode_unicycle(trans, v0):
 
 
 files = sorted(glob.glob("/workspace/pai_epcache/physicalai-oodval-6f4b94e4c7ce-q90/ep_*.pt"))[:40]
-arms = ("real", "hold_act", "mean_lat", "cv")
+arms = ("real", "hold_act", "mean_lat", "swap_ep", "cv")
 per_ep = {a: [] for a in arms}
 gt_by_ep = []
 Z_ctx, Z_hat = [], {5: [], 10: [], 20: []}
+Z_hatH = {5: [], 10: [], 20: []}
 TGT = {k: {"v": [], "accel": [], "yawrate": []} for k in (0, 5, 10, 20)}
 EP_ID = []
 t0 = time.time()
+prev_states = None
 for fi, f in enumerate(files):
     ep = load_frames([f])[0]
     poses = ep.poses.float()
@@ -125,18 +127,31 @@ for fi, f in enumerate(files):
             faH = awE[:, -1:, :].expand(-1, K, -1)
             trH = rollout_transitions(model.predictor, states, awE, faH, K)
             outs["hold_act"].append(decode_unicycle(trH, v0).float().cpu().numpy())
+            for kk in (5, 10, 20):
+                Z_hatH[kk].append(trH[kk - 1][1].float().cpu().numpy())
 
             # -- mean_lat: vision removed, ego intent kept -------------------------
             sM = states.mean(0, keepdim=True).expand_as(states).contiguous()
             trM = rollout_transitions(model.predictor, sM, awE, faE, K)
             outs["mean_lat"].append(decode_unicycle(trM, v0).float().cpu().numpy())
 
+            # -- swap_ep: latents from a DIFFERENT episode, ego intent kept ---------
+            if prev_states is not None:
+                n = min(len(ch), prev_states.shape[0])
+                sS = states.clone()
+                sS[:n] = prev_states[:n]
+                trS = rollout_transitions(model.predictor, sS, awE, faE, K)
+                outs["swap_ep"].append(decode_unicycle(trS, v0).float().cpu().numpy())
+            else:
+                outs["swap_ep"].append(decode_unicycle(tr, v0).float().cpu().numpy())
+
             # -- cv floor ----------------------------------------------------------
             cv = torch.zeros(len(ch), K, 3, device=DEV)
-            cv[:, :, 0] = (v0[:, None] * DT).cumsum(1)
+            cv[:, :, 0] = v0[:, None] * DT * torch.arange(1, K + 1, device=DEV)[None, :]
             outs["cv"].append(cv.float().cpu().numpy())
 
             gts.append(gt_ego_waypoints(pl, fp, list(range(1, K + 1))).cpu().numpy())
+    prev_states = states.detach().clone()          # last chunk -> next episode's swap
     for a in arms:
         per_ep[a].append(np.concatenate(outs[a]))
     gt_by_ep.append(np.concatenate(gts))
@@ -154,7 +169,8 @@ def fam(P, G):
 out = {"_grid": "stride-8, 40 OOD-val q90 episodes",
        "_arms": {"real": "vision + true future actions (banked eval condition)",
                  "hold_act": "vision kept, future actions held at last context action",
-                 "mean_lat": "batch-mean latents, true actions (vision removed)",
+                 "mean_lat": "chunk-mean latents (WEAK ablation: same-episode adjacent windows)",
+                 "swap_ep": "latents swapped from a different episode (STRONG vision ablation; ep0 falls back to real)",
                  "cv": "hold v0 straight"}}
 G = np.concatenate(gt_by_ep)
 ades = {}
@@ -166,9 +182,12 @@ for a in arms:
     print(f"[{a}] ade={ade:.4f}  speed_mae={smae:.4f}", flush=True)
 denom = ades["cv"] - ades["real"]
 out["attribution"] = {
-    "vision_share_of_cv_gap": float((ades["mean_lat"] - ades["real"]) / denom),
+    "vision_share_of_cv_gap_swap": float((ades["swap_ep"] - ades["real"]) / denom),
+    "vision_share_of_cv_gap_meanchunk": float((ades["mean_lat"] - ades["real"]) / denom),
     "future_action_share_of_cv_gap": float((ades["hold_act"] - ades["real"]) / denom),
-    "_note": "shares can sum !=1 (interaction); each is degradation/(cv-real)."}
+    "_note": "shares can sum !=1 (interaction); each is degradation/(cv-real). "
+             "swap_ep is the decision-grade vision ablation; mean_lat is weak "
+             "(same-episode chunk mean) and kept only for comparison."}
 print("[attribution]", out["attribution"], flush=True)
 
 # ---- ridge probes: what do z_ctx and z_hat_k linearly encode? -----------------
@@ -195,12 +214,15 @@ def ridge_r2(Z, y, ep, lam=10.0):
 
 probes = {}
 for kk in (0, 5, 10, 20):
-    Zk = Zc if kk == 0 else np.concatenate(Z_hat[kk])
-    src = "z_ctx" if kk == 0 else f"z_hat_{kk}"
-    for tgt in ("v", "accel", "yawrate"):
-        y = np.concatenate(TGT[kk][tgt])
-        m = np.isfinite(y)
-        probes[f"{src}->{tgt}@t+{kk*DT:.1f}s"] = ridge_r2(Zk[m], y[m], EP[m])
+    srcs = [("z_ctx" if kk == 0 else f"z_hat_{kk}",
+             Zc if kk == 0 else np.concatenate(Z_hat[kk]))]
+    if kk:
+        srcs.append((f"z_hatHOLD_{kk}", np.concatenate(Z_hatH[kk])))
+    for src, Zk in srcs:
+        for tgt in ("v", "accel", "yawrate"):
+            y = np.concatenate(TGT[kk][tgt])
+            m = np.isfinite(y)
+            probes[f"{src}->{tgt}@t+{kk*DT:.1f}s"] = ridge_r2(Zk[m], y[m], EP[m])
 # cross-check: can the CONTEXT state alone predict the future? (ego-extrapolation ceiling)
 for kk in (10, 20):
     y = np.concatenate(TGT[kk]["v"])
