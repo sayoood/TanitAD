@@ -3175,3 +3175,55 @@ representation — on `PROJECT_STATE.md` it gave **106,585 B for a 102,149 B fil
 markdown (`\#` for `#`) and added trailing spaces, so a diff built on it showed **293 of 395 lines
 differing**. Acting on that would have written hundreds of phantom changes into the repo. Use
 `download_file_content` (base64 of the real bytes) for anything byte-level.
+
+## R-2026-08-06-yawgate — the TACTICAL κ ranking of Alpamayo vs flagship — RETRACTED, it was the gate
+
+**Retracted:** from the four-family Alpamayo comparison committed at `340333d`
+(`…/2026-08-05-alpamayo2-super/ALPAMAYO2_SUPER_ANALYSIS.md` §12,
+`comparison/a2_four_families.json`), the claims that on 39 paired OOD-val clips our arm's
+**executed-manoeuvre κ was 0.4968 against Alpamayo's 0.3333**, that Alpamayo's **declared** lateral
+manoeuvre was weakly coupled at **κ 0.1488**, and that our arm **"drove 0 of 2 left turns"**.
+
+**MEASURED 2026-08-06 (`comparison/a2_gate_audit.json`), two independent defects, both in the
+instrument:**
+
+1. **Net yaw was summed over steps where the ego was not moving.** At `v ≈ 0` the path tangent
+   flips freely; one stopped window contributed a net yaw of **π**. Excluding steps below
+   `MIN_DS_MPS = 0.5` — as `four_families._seq_geometry` already does — moved Alpamayo's executed κ
+   from **0.3333 to 0.4882** on its own.
+2. **`DIR_YAW_RAD = 0.15` is ~6.5× the typical turn on this horizon.** The **human's own** median
+   |net yaw| over 2 s is **0.023 rad**, p90 **0.185**, and only **17.9 %** of windows exceed the
+   gate. Nearly every window classifies as "straight" by construction.
+
+**Corrected reading.** At gate **0.10** the two arms are **indistinguishable on executed manoeuvre
+— κ 0.7263 (ours) vs 0.7292 (Alpamayo)**. The published ranking was an artifact. And the genuine
+finding was invisible at 0.15: as the gate tightens the two **declarations move in opposite
+directions** — Alpamayo's rises 0.196 → 0.466 while ours falls 0.440 → 0.116, i.e. its declaration
+carries fine lateral information (the "nudges" its own Chain-of-Causation names) that our gate
+discarded, and ours carries only coarse information. Gate-free sign-only agreement is **0.7143 for
+both**, over **n = 21** declared turns for Alpamayo against **n = 7** for ours.
+
+**Root-cause class: A THRESHOLD QUOTED AS IF IT WERE A MEASUREMENT.** A classifier gate is a free
+parameter of the instrument. Reporting one κ at one gate, with no sweep, publishes the gate's
+opinion as the model's. This is the same family as *"never quote a learning-curve exponent without
+its fit window"* and *"never quote an interval without its estimator"* — a number whose value is set
+by an unstated analysis choice.
+⇒ **RULE: any classification threshold that decides a reported statistic must be SWEPT, and the
+sensitivity published with the number.** If a verdict flips inside the plausible range of the
+threshold, there is no verdict.
+⇒ **RULE (second, and it is the third sighting of this class): a quantity undefined in a regime must
+not be aggregated over that regime.** `df` reporting the cluster instead of the pod quota; curvature
+at `v ≈ 0` returning 1.6 × 10⁶ 1/m; yaw at `v ≈ 0` returning π. Gate by displacement before summing
+any path-tangent quantity.
+
+**⛔ Blast radius — NOT confined to this document.** `DIR_YAW_RAD` is `taniteval/hierarchy.py:164`
+and feeds `consistency.maneuver_vs_trajectory`, `commanded_route_vs_maneuver`,
+`commanded_route_vs_trajectory` and every `*_turn_subset` in the hierarchy panel — **every published
+manoeuvre-coherence κ in the programme**, all on the same 2 s horizon over the same corpus. Those
+must be re-read at 0.10 with the sensitivity published; any verdict that flipped between 0.15 and
+0.10 was never decision-grade. **Open work item.**
+
+**How it was caught, because the route generalises:** the low κ was checked against the obvious
+confound before being reported — Alpamayo's own CoC says *"Nudge left to pass the parked SUV"*, and a
+nudge is not a 0.15 rad turn. ⇒ **Before reporting a coherence statistic as low, ask what scale the
+declaration is about and whether the instrument can see it.**

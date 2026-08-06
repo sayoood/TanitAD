@@ -659,3 +659,105 @@ through ADE — the whole point is that ADE could not see this.
 
 **Artifacts:** `comparison/implied_controls.json` · `stack/tanitad/models/kinematic.py` ·
 `stack/tests/test_unicycle_action_space.py`.
+
+## 14. ⛔ CORRECTION to §12's TACTICAL block — two defects, both ours, and the conclusion flips
+
+Running Alpamayo's **meta-action** task (39/39, 1561 s on the A40) closed the
+declared-TACTICAL work item — and in checking its result against an obvious confound,
+found that **§12's TACTICAL numbers were artifacts of the instrument, not readings of the
+models.** Corrected here; the LONGITUDINAL, LATERAL and STRATEGIC blocks are unaffected.
+
+### Defect 1 — net yaw was summed over steps where the ego was not moving
+
+`yaw` has no meaning at `v ≈ 0`: the path tangent flips freely. One stopped window
+contributed a net yaw of **π**. Steps below `MIN_DS_MPS = 0.5` are now excluded, exactly
+as `four_families._seq_geometry` does. **This alone moved Alpamayo's executed-manoeuvre
+κ from 0.3333 to 0.4882.** Third appearance of the same trap in this work — after
+`df` on pod disk and curvature-at-standstill: *a quantity that is undefined in a regime,
+aggregated over that regime, read as a measurement.*
+
+### Defect 2 — the 0.15 rad direction gate is mis-scaled for 2 s windows
+
+Alpamayo's own Chain-of-Causation says things like *"Nudge left to pass the parked SUV"*.
+A **nudge** is nowhere near a 0.15 rad net-heading turn, so a low κ might be a threshold
+mismatch rather than incoherence. It was.
+
+**MEASURED, on the human's own paths:** median |net yaw| over 2 s is **0.023 rad**, p90
+**0.185**, and only **17.9 %** of windows exceed the 0.15 gate. `hierarchy.DIR_YAW_RAD`
+is ~6.5× the typical turn, so nearly every window is "straight" by construction.
+
+| gate (rad) | Alpamayo declared κ | flagship declared κ | Alpamayo executed κ | flagship executed κ |
+|---|---|---|---|---|
+| **0.15** (as published in §12) | 0.1961 | **0.4402** | 0.4882 | **0.6176** |
+| 0.10 | 0.3004 | 0.3743 | **0.7292** | **0.7263** |
+| 0.06 | 0.2639 | 0.2835 | 0.7222 | 0.7132 |
+| 0.04 | **0.4059** | 0.2390 | 0.6277 | 0.6848 |
+| 0.03 | **0.4553** | 0.1986 | 0.6926 | 0.5752 |
+| 0.01 | **0.4660** | 0.1159 | 0.8077 | 0.3953 |
+
+### ⇒ What actually changes
+
+1. ⛔ **RETRACTED: "our executed-manoeuvre κ 0.4968 beats Alpamayo's 0.3333".** At the
+   gate where the instrument is best matched to the data (0.10, near the human's p90 of
+   0.185/2), the two arms are **indistinguishable — 0.7263 vs 0.7292**. The §12 ranking
+   was a gate artifact compounded by the stopped-window contamination.
+2. ⭐ **NEW, and it is the substantive finding: the two arms' declarations move in
+   OPPOSITE directions as the gate tightens.** Alpamayo's rises 0.196 → 0.466; ours falls
+   0.440 → 0.116. Its declaration carries **fine** lateral information — the nudges — that
+   our gate discards; ours carries only **coarse** information, agreeing on big turns and
+   saying nothing about small ones. That is exactly what a vocabulary with severity
+   (`Steer Left` vs `Sharp Steer Left`) buys, and our 5-way softmax has no severity axis
+   at all.
+3. **Gate-free cross-check.** Discarding magnitude entirely and asking only whether the
+   driven path leans the declared way: **0.7143 for both arms** — but over **n = 21**
+   declared turns for Alpamayo against **n = 7** for ours. It declares 3× as many
+   lateral actions, and is right about them just as often.
+4. ⚠️ **"Our arm drove 0 of 2 left turns"** from §12 was computed under both defects and
+   is withdrawn; the turn subset is gate-defined and n = 2 either way.
+
+### ⭐ The architectural finding the meta-action run was launched for
+
+Alpamayo declares a manoeuvre on **three independent axes**:
+
+```
+Longitudinal: Gentle Deceleration.
+Lateral:      Steer Left.
+Lane:         Lane Keep.
+```
+
+| axis | observed vocabulary (n = 39) |
+|---|---|
+| **Longitudinal** | Gentle Deceleration 15 · Maintain Speed 9 · Gentle Acceleration 9 · Stop 5 · Strong Acceleration 1 |
+| **Lateral** | Go Straight 13 · Steer Right 13 · Steer Left 6 · Sharp Steer Left 2 · *(absent 5)* |
+| **Lane** | Lane Keep 32 · Turn Left 2 · *(absent 5)* |
+
+Our flagship declares **one 5-way softmax** over
+`[lane_keep, turn_left, turn_right, accelerate, brake_stop]`, which **mixes** the lateral
+and longitudinal decisions into a mutually-exclusive choice. *"Decelerating **and**
+turning left"* is one label there and is **unrepresentable** here. CLAUDE.md names this
+mixing as the programme's single largest known defect — and this is a working system that
+does not have it, with the measured consequence in row 2 above.
+
+⚠️ **`Stop` short-circuits the axes.** In all 5 rows where the longitudinal action is
+`Stop`, generation ends before the Lateral and Lane axes are emitted. The axes are
+therefore *not* fully independent in Alpamayo's own scheme — a factorisation we borrow
+must decide deliberately whether to reproduce that. Recorded because the parser counts
+unparsed rows rather than dropping them.
+
+⚠️ **Sampled, not modal.** `generate_text` runs at temperature 0.6; one draw per clip,
+seed 42. Stability across draws is **UNMEASURED** and is a work item — a κ computed on
+single samples has a variance floor we have not quantified.
+
+### ⛔ Blast radius beyond this document
+
+`DIR_YAW_RAD = 0.15` is `taniteval/hierarchy.py:164` and feeds
+`consistency.maneuver_vs_trajectory`, `commanded_route_vs_maneuver`,
+`commanded_route_vs_trajectory` and every `*_turn_subset` in the hierarchy panel — i.e.
+**every published manoeuvre-coherence κ in the programme**. Those were computed on the
+same 2 s horizon over the same corpus. **They should be re-read at 0.10 and the
+sensitivity published**, and any verdict that flipped between 0.15 and 0.10 was never
+decision-grade. Logged in `RETRACTION_LOG.md`.
+
+**Artifacts:** `comparison/alpamayo_meta_action.jsonl.xz` (all 39 raw generations) ·
+`comparison/a2_meta_action_parsed.json` · `comparison/a2_gate_audit.json` ·
+`tools/a2_meta_action.py`, `tools/a2_parse_meta_action.py`, `tools/a2_gate_audit.py`.

@@ -1,0 +1,185 @@
+{
+ "_evidence_class": "MEASURED (ours)",
+ "_why": "the 0.15 rad direction gate (hierarchy.DIR_YAW_RAD) decides every TACTICAL number in the four-family block. This measures whether the numbers are stable under it or produced by it.",
+ "_min_ds_gate": "steps below 0.5 m/s excluded from the net-yaw sum; a stopped ego has no tangent and produced a net yaw of pi in the ungated pass",
+ "gates_swept": [
+  0.15,
+  0.1,
+  0.06,
+  0.04,
+  0.03,
+  0.02,
+  0.01
+ ],
+ "turn_magnitude": {
+  "n": 39,
+  "median_abs_net_yaw_rad": 0.023,
+  "p90_abs_net_yaw_rad": 0.185,
+  "max_abs_net_yaw_rad": 0.3266,
+  "frac_above_0p15": 0.1795,
+  "_read": "this is the HUMAN's own net yaw over 2 s. If the gate exceeds the bulk of it, every window is 'straight' by construction."
+ },
+ "alpamayo_declared_lateral": {
+  "n": 34,
+  "sweep": {
+   "0.15": {
+    "vs_driven_agreement": 0.5,
+    "vs_driven_kappa": 0.1961,
+    "vs_gt_kappa": 0.1547,
+    "n_gt_turns": 6
+   },
+   "0.10": {
+    "vs_driven_agreement": 0.5588,
+    "vs_driven_kappa": 0.3004,
+    "vs_gt_kappa": 0.2956,
+    "n_gt_turns": 10
+   },
+   "0.06": {
+    "vs_driven_agreement": 0.5294,
+    "vs_driven_kappa": 0.2639,
+    "vs_gt_kappa": 0.2589,
+    "n_gt_turns": 13
+   },
+   "0.04": {
+    "vs_driven_agreement": 0.6176,
+    "vs_driven_kappa": 0.4059,
+    "vs_gt_kappa": 0.3602,
+    "n_gt_turns": 15
+   },
+   "0.03": {
+    "vs_driven_agreement": 0.6471,
+    "vs_driven_kappa": 0.4553,
+    "vs_gt_kappa": 0.4553,
+    "n_gt_turns": 17
+   },
+   "0.02": {
+    "vs_driven_agreement": 0.5882,
+    "vs_driven_kappa": 0.3687,
+    "vs_gt_kappa": 0.4138,
+    "n_gt_turns": 19
+   },
+   "0.01": {
+    "vs_driven_agreement": 0.6471,
+    "vs_driven_kappa": 0.466,
+    "vs_gt_kappa": 0.377,
+    "n_gt_turns": 24
+   }
+  },
+  "sign_only_on_declared_turns": {
+   "n": 21,
+   "agreement": 0.7143,
+   "_read": "magnitude discarded entirely: does the driven path lean the declared way AT ALL? This is the gate-free read."
+  }
+ },
+ "flagship_declared_maneuver": {
+  "n": 39,
+  "sweep": {
+   "0.15": {
+    "vs_driven_agreement": 0.8462,
+    "vs_driven_kappa": 0.4402,
+    "vs_gt_kappa": 0.5886,
+    "n_gt_turns": 7
+   },
+   "0.10": {
+    "vs_driven_agreement": 0.7692,
+    "vs_driven_kappa": 0.3743,
+    "vs_gt_kappa": 0.5348,
+    "n_gt_turns": 8
+   },
+   "0.06": {
+    "vs_driven_agreement": 0.641,
+    "vs_driven_kappa": 0.2835,
+    "vs_gt_kappa": 0.4567,
+    "n_gt_turns": 13
+   },
+   "0.04": {
+    "vs_driven_agreement": 0.5897,
+    "vs_driven_kappa": 0.239,
+    "vs_gt_kappa": 0.4214,
+    "n_gt_turns": 14
+   },
+   "0.03": {
+    "vs_driven_agreement": 0.5385,
+    "vs_driven_kappa": 0.1986,
+    "vs_gt_kappa": 0.3889,
+    "n_gt_turns": 15
+   },
+   "0.02": {
+    "vs_driven_agreement": 0.4359,
+    "vs_driven_kappa": 0.1333,
+    "vs_gt_kappa": 0.2397,
+    "n_gt_turns": 21
+   },
+   "0.01": {
+    "vs_driven_agreement": 0.3077,
+    "vs_driven_kappa": 0.1159,
+    "vs_gt_kappa": 0.2665,
+    "n_gt_turns": 24
+   }
+  },
+  "sign_only_on_declared_turns": {
+   "n": 7,
+   "agreement": 0.7143
+  }
+ },
+ "flagship_executed_vs_gt": {
+  "0.15": {
+   "accuracy": 0.8974,
+   "kappa": 0.6176
+  },
+  "0.10": {
+   "accuracy": 0.8974,
+   "kappa": 0.7263
+  },
+  "0.06": {
+   "accuracy": 0.8462,
+   "kappa": 0.7132
+  },
+  "0.04": {
+   "accuracy": 0.8205,
+   "kappa": 0.6848
+  },
+  "0.03": {
+   "accuracy": 0.7436,
+   "kappa": 0.5752
+  },
+  "0.02": {
+   "accuracy": 0.641,
+   "kappa": 0.4551
+  },
+  "0.01": {
+   "accuracy": 0.5897,
+   "kappa": 0.3953
+  }
+ },
+ "alpamayo_executed_vs_gt": {
+  "0.15": {
+   "accuracy": 0.8718,
+   "kappa": 0.4882
+  },
+  "0.10": {
+   "accuracy": 0.8974,
+   "kappa": 0.7292
+  },
+  "0.06": {
+   "accuracy": 0.8718,
+   "kappa": 0.7222
+  },
+  "0.04": {
+   "accuracy": 0.7949,
+   "kappa": 0.6277
+  },
+  "0.03": {
+   "accuracy": 0.8205,
+   "kappa": 0.6926
+  },
+  "0.02": {
+   "accuracy": 0.8462,
+   "kappa": 0.7562
+  },
+  "0.01": {
+   "accuracy": 0.8718,
+   "kappa": 0.8077
+  }
+ }
+}
