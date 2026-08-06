@@ -8,6 +8,8 @@ realizable by construction. Also provides the Kamm-circle friction penalty
 
 from __future__ import annotations
 
+import math
+
 import torch
 from torch import Tensor
 
@@ -345,7 +347,49 @@ def retime_path(path: Tensor, v0: Tensor, dt: float = DT_RETIME,
     for b in range(B):
         out[b, :, 0] = _interp1d(s_new[b], s[b], p[b, :, 0])
         out[b, :, 1] = _interp1d(s_new[b], s[b], p[b, :, 1])
+    # ⛔ BEYOND THE END OF THE CURVE, CONTINUE THE ARC — NOT THE TANGENT.
+    # MEASURED 2026-08-06: 17.9 % of windows (all low-speed, mean v0 4.77 m/s) have a
+    # schedule that OUTRUNS the curve, because the ego's true v0 exceeds what the arm's
+    # own first waypoint implied. Under-running windows are off-curve by 4.44e-16 m —
+    # machine zero — but a straight-tangent extrapolation put over-running ones up to
+    # 0.2146 m off, and that showed up at full scale as a REAL curvature regression
+    # (MAE 0.006103 -> 0.006922 over 6,834 windows). Continuing with the curve's final
+    # curvature keeps the lateral channel intact by construction.
+    _extend_by_arc(out, p, s, s_new)
     return out
+
+
+def _extend_by_arc(out: Tensor, p: Tensor, s: Tensor, s_new: Tensor) -> None:
+    """In-place: rewrite samples that lie PAST the curve as a constant-curvature
+    continuation of its final arc. A straight continuation is the ``kappa -> 0`` limit
+    of this and is handled by the same branch, so a straight path is untouched."""
+    B = out.shape[0]
+    seg = s[:, 1:] - s[:, :-1]                                   # [B,K]
+    d = p[:, 1:] - p[:, :-1]
+    head = torch.atan2(d[..., 1], d[..., 0])                     # [B,K]
+    dh = (head[:, 1:] - head[:, :-1] + math.pi) % (2 * math.pi) - math.pi
+    for b in range(B):
+        beyond = s_new[b] > s[b, -1]
+        if not bool(beyond.any()):
+            continue
+        # final heading and curvature of the curve, from its last usable segment
+        valid = seg[b] > _DS_EPS
+        if not bool(valid.any()):
+            continue
+        j = int(torch.nonzero(valid).max())
+        h_end = head[b, j]
+        k_end = (dh[b, j - 1] / seg[b, j].clamp_min(_DS_EPS)) if j >= 1 else \
+            torch.zeros((), dtype=out.dtype, device=out.device)
+        k_end = k_end.clamp(-A2S_CURVATURE_LIMIT, A2S_CURVATURE_LIMIT)
+        u = (s_new[b][beyond] - s[b, -1]).clamp_min(0.0)         # extra arc length
+        if bool((k_end.abs() < 1e-6).item()):
+            dx, dy = u * torch.cos(h_end), u * torch.sin(h_end)
+        else:
+            h2 = h_end + k_end * u
+            dx = (torch.sin(h2) - torch.sin(h_end)) / k_end
+            dy = -(torch.cos(h2) - torch.cos(h_end)) / k_end
+        out[b, beyond, 0] = p[b, -1, 0] + dx
+        out[b, beyond, 1] = p[b, -1, 1] + dy
 
 
 def _interp1d(q: Tensor, xs: Tensor, ys: Tensor) -> Tensor:
