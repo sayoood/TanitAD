@@ -102,6 +102,10 @@ def main():
     ap.add_argument("--w-net-yaw", type=float, default=0.5)
     ap.add_argument("--w-accel", type=float, default=0.05)
     ap.add_argument("--w-jerk", type=float, default=0.05)
+    ap.add_argument("--w-speed", type=float, default=0.0,
+                    help="speed-profile L1 (run-6 lever, PREREG_V161_SPEEDLOSS.md): "
+                         "prices near-term speed error uniformly across the horizon, "
+                         "against the decel-ramp defect. 0.0 = run-5 loss exactly.")
     # ⛔ RUN-5 STRUCTURAL FIX (2026-08-06). Run 4 FAILED the reliance gate at 0.0891 —
     # the canary measured the head migrating onto the v0/feedback shortcut as ADE
     # improved (0.588@500 -> 0.089@3000). The discriminating probe cleared the trunk:
@@ -291,9 +295,16 @@ def main():
         gt = gt_ego_waypoints(pose_last, fut_poses, list(range(1, a.k + 1)))
         pos_l1 = (wp - gt).abs().mean()
         kin = kinematic_losses(wp, gt, dt=0.1)
+        # speed-profile L1 (eps INSIDE sqrt -- the stopped-path NaN-grad trap)
+        zp = wp.new_zeros(wp.shape[0], 1, 2)
+        dp = torch.diff(torch.cat([zp, wp[..., :2]], 1), dim=1)
+        dg = torch.diff(torch.cat([zp, gt[..., :2]], 1), dim=1)
+        vp = (dp.pow(2).sum(-1) + 1e-12).sqrt() / 0.1
+        vg = (dg.pow(2).sum(-1) + 1e-12).sqrt() / 0.1
+        speed_l1 = (vp - vg).abs().mean()
         loss = (a.w_pos * pos_l1 + a.w_heading * kin["heading"]
                 + a.w_net_yaw * kin["net_yaw"] + a.w_accel * kin["accel"]
-                + a.w_jerk * kin["jerk"])
+                + a.w_jerk * kin["jerk"] + a.w_speed * speed_l1)
         opt.zero_grad(set_to_none=True)
         loss.backward()
         gnorm = torch.nn.utils.clip_grad_norm_(head.parameters(), 5.0)
@@ -307,6 +318,7 @@ def main():
                    "kin_net_yaw": round(float(kin["net_yaw"]), 5),
                    "kin_accel": round(float(kin["accel"]), 5),
                    "kin_jerk": round(float(kin["jerk"]), 5),
+                   "speed_l1": round(float(speed_l1), 5),
                    "gnorm": round(float(gnorm), 3),
                    "lr": sched.get_last_lr()[0],
                    "elapsed_s": round(time.time() - t0, 1)}
