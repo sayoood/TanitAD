@@ -102,6 +102,16 @@ def main():
     ap.add_argument("--w-net-yaw", type=float, default=0.5)
     ap.add_argument("--w-accel", type=float, default=0.05)
     ap.add_argument("--w-jerk", type=float, default=0.05)
+    # ⛔ RUN-5 STRUCTURAL FIX (2026-08-06). Run 4 FAILED the reliance gate at 0.0891 —
+    # the canary measured the head migrating onto the v0/feedback shortcut as ADE
+    # improved (0.588@500 -> 0.089@3000). The discriminating probe cleared the trunk:
+    # the ORIGINAL readout scores wm_reliance 8.72 (mean-latent ADE 1.62 m, 3x WORSE
+    # than CV), so the latents DO carry the content and the shortcut was the head's
+    # own input surface. ⇒ Remove the surface, not the temptation: with both flags
+    # false the head reads ONLY (z_prev, z_hat) and cannot bypass the WM by
+    # construction. shortcut_dropout becomes moot.
+    ap.add_argument("--head-speed-input", action="store_true")
+    ap.add_argument("--head-delta", action="store_true")
     a = ap.parse_args()
 
     torch.manual_seed(a.seed)
@@ -134,7 +144,13 @@ def main():
           flush=True)
 
     state_dim = sr_old.net[1].weight.shape[1] // 2
-    head = UnicycleStepReadout.warm_start_from(sr_old, state_dim, hidden=512).to(dev)
+    head = UnicycleStepReadout.warm_start_from(
+        sr_old, state_dim, hidden=512,
+        speed_input=bool(a.head_speed_input),
+        predict_delta=bool(a.head_delta)).to(dev)
+    print(f"[trainer] head inputs: latents only + "
+          f"speed_input={head.speed_input} predict_delta={head.predict_delta}",
+          flush=True)
     n_par = sum(p.numel() for p in head.parameters())
     opt = torch.optim.AdamW(head.parameters(), lr=a.lr, weight_decay=1e-4)
     sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=a.steps)
