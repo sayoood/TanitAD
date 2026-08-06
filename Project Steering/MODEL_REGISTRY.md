@@ -1103,6 +1103,50 @@ identical. **q90 is the headline** because it is format-faithful.
 
 ---
 
+### 1.10 flagship-**v1.6** — `flagship-v16-unicycle` — ✅ **COMPLETE** (2026-08-06) — the unicycle trajectory readout on the FROZEN v1arch trunk
+
+⛔ **NAME DISAMBIGUATION, load-bearing:** "v1.6" ALSO names §1.4b's `flagship-v16-ab-ft`
+(2026-07, the arm behind the retracted "best-in-program" claim). These are **different
+models**. Quote the registry key, never the bare "v1.6".
+
+| | |
+|---|---|
+| **architecture** | `flagship-v1arch-v2bal-30k` trunk (encoder 87.02 M + predictor 91.36 M + policies), **entirely frozen** (md5 `c1157528…` proved identical before/after training) + `UnicycleStepReadout` **2.11 M** trainable — latent transition `(z_prev, z_hat)` → per-step `(accel, yaw_rate)`, integrated non-holonomically (`dy ≡ 0`, `yaw_rate` bounded by `\|v\|·κ_max`, v carried from the TRUE v0). ⛔ `speed_input=False, predict_delta=False` — the head reads ONLY the WM latents; the v0/feedback shortcut surface was REMOVED after run 4 failed the reliance gate at 0.0891 (`…/2026-08-06-v1-defect-triage/results/UNICYCLE_RUN4_RESULT.md`). |
+| **training** | 3,000 steps, batch 32, AdamW lr 3e-4 cosine, 58 min on one A40. Loss = pos-L1 + 0.3·heading + 0.5·net-yaw + 0.05·accel-barrier + 0.05·jerk-barrier (barriers above the TRAIN-corpus human p99; dense 0.1 s grid). Train corpus: 600 eps of `epcache-physicalai-v2bal-4b7eeeac222d` (local copy). Head warm-started from `grounding.step.op`, zero-init output (= constant-velocity start). |
+| **parity** | trunk untouched ⇒ inherits v1arch's parity (skip-hash `f09e44db` lineage). Eval corpus: `physicalai-oodval-6f4b94e4c7ce-q90`, 40 episodes, stride-1 rollout grid, **6,834 windows** — the SAME grid as every banked v1arch temporal/kinematic number. |
+| **ckpt** | `pod4:/workspace/experiments/unicycle-readout-v2-latentsonly/unicycle_readout.pt` (⚠️ single disk — banking to repo/HF is an open item) |
+
+**RESULTS — MEASURED 2026-08-06, paired episode-cluster bootstrap over 40 episodes, 2,000
+draws** (`…/2026-08-06-v1-defect-triage/results/v16_full_eval.json.xz`). Δ = v1.6 − v1arch,
+same windows, same frozen-trunk latent rolls (decoder-only contrast by construction):
+
+| metric | v1arch | **v1.6** | Δ [CI95] | separated |
+|---|---|---|---|---|
+| ADE 2 s (m) | 0.3584 | **0.3398** | −0.0186 [−0.0706, +0.0293] | ✗ (parity) |
+| speed bias (m/s) | +0.3793 | **−0.0265** | −0.4058 [−0.5162, −0.3022] | ✅ |
+| along-final bias (m) | +0.7524 | **−0.0511** | −0.8036 [−1.0197, −0.5851] | ✅ |
+| accel RMS (m/s²) | 2.9465 | **0.7172** | −2.2293 [−3.0886, −1.4641] | ✅ (human ≈ 0.91) |
+| accel MAE (m/s²) | 1.8240 | **0.5499** | −1.2741 [−1.6534, −0.9324] | ✅ |
+| jerk RMS (m/s³) | 36.1682 | **1.1334** | −35.0348 [−46.6907, −24.8134] | ✅ (human ≈ 1.71) |
+| **net-yaw err (rad)** | 0.0307 | **0.0108** | −0.0199 [−0.0248, −0.0153] | ✅ (−65 %) |
+| heading MAE (rad/step) | 0.0027 | **0.0015** | −0.0012 [−0.0015, −0.0009] | ✅ |
+| cross-track MAE (m) | 0.0502 | **0.0363** | −0.0139 [−0.0193, −0.0091] | ✅ |
+| replan shift (m, 0.1 s) | 0.0947 | **0.0604** | — | (point est.) |
+| **replan accel jump (m/s²)** | 1.1310 | **0.1016** | — | (point est., **11×** lower) |
+
+**WM-reliance** (canary-grade, 128-window fixed batch): final **0.6233 — gate PASS ≥ 0.5**;
+per-arm decomposition shows real latents ~halve the heading error vs batch-mean latents at
+every canary. Baseline control: the displacement readout scores 8.72 (cannot function without
+latents), and its **frozen-latents arm collapses to the CV floor** — what both decoders consume
+is the **predictor's rolled prediction**.
+
+**⛔ Standing caveats:** (1) all trajectory numbers are **action-conditioned WM rollouts under
+TRUE future actions — NOT closed-loop planning**; applies equally to both arms and to every
+v1arch number banked before. (2) `distance_keeping` UNAVAILABLE (lead block not on pod4 —
+standing rebuild item); STRATEGIC UNAVAILABLE (no map — unchanged). (3) TACTICAL declared-head
+metrics are identical to v1arch's (policies untouched). (4) reliance CI not computed (canary
+batch); families CI'd as above.
+
 ## 2. REF-A — the frozen-encoder arm (H4)
 
 **Shared:** frozen **DINOv2-B/14** features (224 px, 16×16 grid, dim 768) precomputed once; only the
