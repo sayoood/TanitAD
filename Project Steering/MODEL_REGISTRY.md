@@ -1176,6 +1176,59 @@ tail of its speed profile). v1arch's executed distribution over-calls `accelerat
 GT 975 — the longitudinal defect visible in decision space. (4) reliance CI not computed
 (canary batch); families CI'd as above.
 
+### 1.11 flagship-v1.7 — `flagship-v17-speedloss` — pre-registered run 6, outcome **B**
+
+**MEASURED 2026-08-06** (`…/2026-08-06-v1-defect-triage/PREREG_V161_SPEEDLOSS.md` — gates and
+both outcomes were committed BEFORE launch). v1.6's exact recipe + **one change**:
+`--w-speed 0.5` speed-profile L1. Trunk frozen; head 2.11 M latents-only; 3,000 steps, 55 min.
+**ckpt:** `pod4:/workspace/experiments/unicycle-readout-v3-speedloss/unicycle_readout.pt`, banked
+in-repo as `results/unicycle_readout_run6.pt` (md5 `e389f638cc2e7ac4d67bf57479936b7f`).
+
+**Gates verdict — the PRIMARY gates FAILED; the pre-registered hypothesis is REFUTED:**
+
+| gate | target | measured (eval-grade, same 6,834-window grid) | verdict |
+|---|---|---|---|
+| P1 decel response ratio | ≥ 0.40 | **0.1547** (v1.6: 0.1623 — unchanged) | ❌ |
+| P2 accel lag | ≤ +0.15 s | **+0.173 s** (from +0.28) | ❌ |
+| N1 ADE vs v1.6 | not CI-worse | **−0.0549 [−0.0713, −0.0412] CI-BETTER** (0.2849 vs 0.3398) | ✅ |
+| N2 jerk RMS | ≤ 3.42 | 1.567 (human 1.71) | ✅ |
+| N3 net-yaw | not CI-worse | Δ +0.0001, not separated | ✅ |
+| N4 reliance | ≥ 0.5 | **1.1849** (>1: cannot function without WM) | ✅ |
+| N5 replan accel jump | ≤ 0.30 | 0.125 *(GT-frame approx transform)* | ✅ |
+
+⇒ **Outcome B binds:** the position-loss hypothesis for the decel ramp is refuted for the
+speed-L1 lever — near-term response barely moved while everything global improved. The next
+pre-registered lever is the **event-weighted near-term accel-matching term**, NOT weight tuning.
+v1.7 **is** CI-separated better than v1.6 on ADE (−16 %) and speed MAE (−0.072 [−0.094, −0.051]),
+with every non-regression gate green — registered as the best open-loop head in the lineage,
+**not** as the lag fix. Speed_l1 evidence: `results/run6_train_log.jsonl.xz`; analysis:
+`results/closed_loop_analysis.json`.
+
+### 1.12 CLOSED-LOOP (decoder-conditioned predictor) — MEASURED 2026-08-06
+
+**The predictor rolled on the DECODER'S OWN actions** (steer = atan(2.9·κ), accel direct — the
+`signals_at` contract), no recorded future anywhere; perception context unchanged (imagination
+closed loop, not re-perception). `tools/closed_loop_dump.py` → `results/closed_loop_analysis.json`;
+grid identical to §1.10 (o16 arm reproduces the banked v1.6 dump **byte-exactly, max |Δ| = 0.0**).
+
+| metric | v1.6 open | v1.6 closed | v1.7 open | v1.7 closed | CV floor |
+|---|---|---|---|---|---|
+| ADE (m) | 0.3398 | **0.4714** (+0.132 [0.112, 0.152]) | 0.2849 | **0.4616** (+0.177 [0.148, 0.208]) | 0.5352 |
+| net-yaw err (rad) | 0.0108 | **0.0725** (×6.7) | 0.0109 | 0.0761 | — |
+| speed MAE (m/s) | 0.441 | 0.606 | 0.369 | 0.598 | — |
+| **S-curve reproduction** | **0.9785** | **0.0538** | 0.9785 | 0.0430 | 0 |
+
+**⛔ The finding that re-frames the open-loop numbers:** the **hold-action arm reproduces 0.0 %
+of S-reversals** (and closed-loop ~5 %) vs 97.9 % open-loop — the counter-steer in the open-loop
+eval came from the TRUE-action conditioning, **not from vision**. Open-loop LATERAL skill is
+largely an action echo; closed-loop the stack drives near-straight with speed control, retaining
+**~33 %** of its open-loop ADE advantage over CV (v1.6: (0.535−0.471)/(0.535−0.340)). The §1.10
+vision-attribution (35 % of the CV gap, swap-latents) still holds at the ADE level — vision
+carries speed/scene content — but the lateral reversal channel specifically is action-driven.
+This is the measured content of the standing "NOT closed-loop planning" caveat, and the
+programme's next lever set (policy-actions closed loop, lateral-capable heads, MPC-style search
+over the predictor) starts from these numbers.
+
 ## 2. REF-A — the frozen-encoder arm (H4)
 
 **Shared:** frozen **DINOv2-B/14** features (224 px, 16×16 grid, dim 768) precomputed once; only the
