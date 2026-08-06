@@ -388,3 +388,157 @@ def grounding_losses(grounding: HierarchicalGrounding, predictor,
         log[f"g_{lvl}_mid_de_m"] = round(mid_de, 4)
         log[f"g_{lvl}_fwd_ade_m"] = round(fwd_ade, 4)
     return total, parts, log
+
+
+# --------------------------------------------------------------------------- #
+# UNICYCLE STEP READOUT — Option 2: the trajectory decoder, on a FROZEN trunk   #
+#                                                                              #
+# ⭐ WHAT v1arch's "trajectory head" ACTUALLY IS. `flagship-v1arch-v2bal-30k`   #
+# has NO anchored-diffusion head — its checkpoint holds only encoder,          #
+# predictor, readout, imagination, inv_dyn and the two policies. The 20        #
+# waypoints come from `rollout_decode(predictor, ..., step_readout, k=20)`:    #
+# the operative predictor rolled 20 steps in LATENT space, each transition     #
+# decoded by `StepDisplacementReadout` into a free (dx, dy, dyaw).             #
+# ⇒ The DECODER is the head. It is 6.32 M parameters against a 178 M frozen    #
+# encoder+predictor, which is why Option 2 is hours rather than days.          #
+#                                                                              #
+# ⛔ WHY A FREE (dx, dy, dyaw) DECODE PRODUCES THE MEASURED DEFECTS.           #
+# Nothing couples the three channels or ties them to the ego's real speed:     #
+#   * dx_j is free, so the implied speed can jump between steps -> jerk RMS    #
+#     52.13 against a human 1.71 (MEASURED, 6,834 windows);                    #
+#   * dx_1 is free of the ego's true v0 -> a launch transient of 1.98 m/s^2    #
+#     against a 0.42 instrument floor;                                         #
+#   * dy_j is free, i.e. the decoder may translate the ego SIDEWAYS. A road    #
+#     vehicle cannot. Every metre of that is a heading error by construction.  #
+#   * dyaw_j is independent of speed, so the decoder can turn while stopped.   #
+#                                                                              #
+# ⭐ THE UNICYCLE REMOVES ALL FOUR AS REPRESENTABLE STATES, and it does so     #
+# while emitting the SAME [B, K, 3] `step_dpose`, so `accumulate_se2` — the    #
+# geometry that is already unit-pinned against the GT waypoints — is unchanged.#
+# `dy == 0` IS the non-holonomic constraint. That is the whole idea.           #
+# --------------------------------------------------------------------------- #
+
+class UnicycleStepReadout(nn.Module):
+    """Latent transition -> per-step ``(accel, curvature)``, integrated as a unicycle.
+
+    Same input contract as :class:`StepDisplacementReadout` (``z_t, z_next``) and the
+    same trunk shape, so it can be WARM-STARTED from a trained one — only the output
+    layer differs (2 channels, not 3). Emits ``(a, kappa)``; the caller
+    (:func:`rollout_decode_unicycle`) carries the speed state.
+
+    ⛔ THE OUTPUT LAYER IS ZERO-INITIALISED ON PURPOSE. At init the decode is then
+    exactly "hold the ego's true v0, go straight" — a kinematically valid, stable
+    trajectory rather than noise. A randomly-initialised control head integrates its
+    own noise twice and starts from a trajectory that is not merely wrong but
+    physically absurd, which is a far worse basin to descend from.
+
+    ⚠️ It CANNOT represent a sideways translation or a turn-in-place. Those are not
+    capabilities being removed — they are decoder freedoms that no road vehicle has
+    and that the position loss never penalised.
+    """
+
+    def __init__(self, state_dim: int, hidden: int = 512):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.LayerNorm(2 * state_dim),
+            nn.Linear(2 * state_dim, hidden), nn.GELU(),
+            nn.Linear(hidden, 2),
+        )
+        nn.init.zeros_(self.net[-1].weight)
+        nn.init.zeros_(self.net[-1].bias)
+
+    def forward(self, z_t: Tensor, z_next: Tensor) -> Tensor:
+        """-> ``[B, 2]`` = (accel m/s^2, curvature 1/m), UNBOUNDED here.
+
+        Bounding happens in the rollout, where the speed state is available and where
+        the same squash the training path uses can be applied once."""
+        return self.net(torch.cat([z_t, z_next], dim=-1))
+
+    @classmethod
+    def warm_start_from(cls, sr: "StepDisplacementReadout",
+                        state_dim: int, hidden: int = 512) -> "UnicycleStepReadout":
+        """Copy the trained trunk (LayerNorm + first Linear) from a displacement
+        readout; the output layer stays zero.
+
+        ⭐ Free and strictly better than random: the trunk has already learned to read
+        a latent transition, which is the expensive half. Only the 2-channel head is
+        new. ⚠️ The shapes must match exactly — a silent shape mismatch would leave a
+        randomly-initialised trunk wearing the name 'warm-started'.
+        """
+        m = cls(state_dim, hidden)
+        if (sr.net[0].weight.shape == m.net[0].weight.shape
+                and sr.net[1].weight.shape == m.net[1].weight.shape):
+            m.net[0].load_state_dict(sr.net[0].state_dict())
+            m.net[1].load_state_dict(sr.net[1].state_dict())
+        else:
+            raise ValueError(
+                f"trunk shape mismatch: displacement readout "
+                f"{tuple(sr.net[1].weight.shape)} vs unicycle "
+                f"{tuple(m.net[1].weight.shape)} — refusing to return a randomly "
+                f"initialised module labelled 'warm-started'")
+        return m
+
+
+def unicycle_step_dpose(controls: Tensor, v0: Tensor, dt: float = 0.1,
+                        accel_limit: float | None = None,
+                        curvature_limit: float | None = None) -> Tensor:
+    """``controls`` [B, K, 2] = (accel, curvature) + ``v0`` [B] -> ``step_dpose``
+    [B, K, 3] in the SAME convention :func:`accumulate_se2` consumes.
+
+    ``dx = v*dt``, ``dy = 0`` (non-holonomic), ``dyaw = v*kappa*dt``, then
+    ``v += a*dt`` clamped at zero.
+
+    ⛔ THE UPDATE ORDER MATCHES ``accumulate_se2`` AND ``rollout_unicycle``: the step
+    advances on the speed and heading held at its START, and ``v`` updates last.
+    Integrating with the post-update speed would lengthen every trajectory — an
+    over-progress bias, which is the defect this exists to remove.
+    """
+    from tanitad.models.kinematic import _squash
+
+    if controls.dim() != 3 or controls.shape[-1] != 2:
+        raise ValueError(f"controls must be [B, K, 2], got {tuple(controls.shape)}")
+    b, k, _ = controls.shape
+    a = controls[..., 0]
+    kap = controls[..., 1]
+    if accel_limit is not None:
+        a = _squash(a, accel_limit)
+    if curvature_limit is not None:
+        kap = _squash(kap, curvature_limit)
+    v = torch.as_tensor(v0, dtype=controls.dtype, device=controls.device).reshape(b)
+    out = []
+    for j in range(k):
+        out.append(torch.stack([v * dt, torch.zeros_like(v), v * kap[:, j] * dt], -1))
+        v = (v + a[:, j] * dt).clamp_min(0.0)
+    return torch.stack(out, dim=1)                        # [B, K, 3]
+
+
+def rollout_decode_unicycle(predictor, states: Tensor, actions: Tensor,
+                            future_actions: Tensor | None,
+                            readout: UnicycleStepReadout, k: int, v0: Tensor,
+                            dt: float = 0.1, accel_limit: float | None = None,
+                            curvature_limit: float | None = None
+                            ) -> tuple[Tensor, Tensor]:
+    """Drop-in for :func:`rollout_decode` with a unicycle decode.
+
+    Returns ``(waypoints [B, k, 2], step_dpose [B, k, 3])`` — identical signature, and
+    the waypoints come from the SAME :func:`accumulate_se2`, so nothing downstream
+    (metrics, overlays, the four-family instrument) needs to know which decoder ran.
+
+    ⚠️ THE LATENT ROLL IS BYTE-IDENTICAL to :func:`rollout_decode`'s — same predictor,
+    same action bookkeeping. Only the decode differs. That is deliberate: an ablation
+    between the two decoders must not also be an ablation of the rollout, or the result
+    would be unattributable.
+    """
+    win_s, win_a = states, actions
+    ctrl = []
+    for j in range(k):
+        z_hat = predictor(win_s, win_a)[1]
+        ctrl.append(readout(win_s[:, -1], z_hat))
+        if j < k - 1:
+            a_next = (future_actions[:, j] if future_actions is not None
+                      else win_a[:, -1])
+            win_s = torch.cat([win_s[:, 1:], z_hat.unsqueeze(1)], dim=1)
+            win_a = torch.cat([win_a[:, 1:], a_next.unsqueeze(1)], dim=1)
+    step_dpose = unicycle_step_dpose(torch.stack(ctrl, dim=1), v0, dt,
+                                     accel_limit, curvature_limit)
+    return accumulate_se2(step_dpose), step_dpose
