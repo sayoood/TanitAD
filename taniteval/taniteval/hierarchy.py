@@ -901,7 +901,13 @@ def _assemble(rec, n_boot=N_BOOT, seed=0):
                   "maneuver_vs_trajectory is the same-timescale coherence test."),
     }
     # ⛔ NEVER QUOTE A COHERENCE KAPPA WITHOUT ITS GATE. See _gate_sensitivity.
-    if A.get("traj_net_yaw") and A.get("gt_net_yaw"):
+    # ⚠️ `A` holds NUMPY ARRAYS (line 710), so `if A.get(k)` raises
+    # "truth value of an array ... is ambiguous" — it does NOT fall through to the
+    # UNAVAILABLE branch, it kills the whole panel AFTER the GPU pass has completed.
+    # MEASURED 2026-08-06: cost one full 40-episode pass. Test the KEY and the
+    # LENGTH, never the array's truthiness.
+    _has_yaw = all(len(A.get(k, ())) for k in ("traj_net_yaw", "gt_net_yaw"))
+    if _has_yaw:
         consistency["gate_sensitivity"] = _gate_sensitivity(
             A["traj_net_yaw"], A["gt_net_yaw"], man_dir)
     else:

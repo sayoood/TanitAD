@@ -84,3 +84,19 @@ def test_degenerate_single_class_returns_none_not_a_fake_kappa():
     out = _gate_sensitivity(flat, flat, [R_STRAIGHT] * 100)
     assert out["per_gate"][f"{DIR_YAW_RAD:.2f}"]["maneuver_vs_trajectory_kappa"] is None
     assert out["kappa_range"] is None
+
+
+def test_assemble_guard_survives_numpy_arrays_and_missing_keys():
+    """⛔ THE BUG THIS PINS, and it cost a full 40-episode GPU pass. `_assemble` turns
+    every banked list into a numpy array, so the guard `if A.get("traj_net_yaw")` raised
+    *"truth value of an array with more than one element is ambiguous"* — it did NOT fall
+    through to the UNAVAILABLE branch, it killed the panel AFTER the model had run.
+
+    The guard must behave correctly for all three real shapes: present-and-populated,
+    absent (a pre-2026-08-06 panel), and present-but-empty."""
+    populated = {"traj_net_yaw": np.zeros(7), "gt_net_yaw": np.zeros(7)}
+    absent = {"gt_dir": np.zeros(7)}
+    empty = {"traj_net_yaw": np.zeros(0), "gt_net_yaw": np.zeros(0)}
+    for A, expect in ((populated, True), (absent, False), (empty, False)):
+        got = all(len(A.get(k, ())) for k in ("traj_net_yaw", "gt_net_yaw"))
+        assert bool(got) is expect, (A.keys(), got, expect)
