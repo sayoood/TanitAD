@@ -210,6 +210,82 @@ def _dir_of(net_yaw):
     return d
 
 
+#: Gates swept by :func:`_gate_sensitivity`. ``DIR_YAW_RAD`` is included so the
+#: published value is always visible inside its own sweep.
+GATE_SWEEP = (0.15, 0.10, 0.06, 0.04, 0.02, 0.01)
+
+
+def _gate_sensitivity(traj_net, gt_net, man_dir):
+    """⛔ THE DIRECTION GATE IS A FREE PARAMETER OF THE INSTRUMENT — publish its
+    sensitivity, never a single kappa.
+
+    MEASURED 2026-08-06 (RETRACTION_LOG R-2026-08-06-yawgate): ``DIR_YAW_RAD =
+    0.15`` is ~6.5x the typical 2 s turn on this corpus — the HUMAN's own median
+    |net yaw| is **0.023 rad**, p90 **0.185**, and only **17.9 %** of windows
+    exceed the gate — so nearly every window classifies as "straight" by
+    construction. A published coherence kappa at one gate is partly the gate's
+    opinion. On the Alpamayo comparison the ranking of two arms REVERSED between
+    0.15 and 0.10, and the substantive finding (one arm's declaration carries
+    fine lateral information, the other's only coarse) was invisible at 0.15.
+
+    ⇒ ``verdict_stable`` is the field that matters: if the coherence verdict
+    flips inside the swept range there is NO verdict, and quoting the 0.15 value
+    would be quoting a threshold as if it were a measurement.
+
+    ⚠️ Free to compute — it reads the RAW net yaw banked alongside the classes,
+    so it never costs a model re-run. That is the entire reason the raw value is
+    banked.
+    """
+    import numpy as _np
+    tn, gn = _np.asarray(traj_net, float), _np.asarray(gt_net, float)
+    md = _np.asarray(man_dir)
+    n = min(len(tn), len(gn), len(md))
+    tn, gn, md = tn[:n], gn[:n], md[:n]
+
+    def _cls(v, g):
+        return _np.where(v > g, R_LEFT, _np.where(v < -g, R_RIGHT, R_STRAIGHT))
+
+    def _k(x, y):
+        labs = sorted(set(x.tolist()) | set(y.tolist()))
+        po = float((x == y).mean())
+        pe = sum((x == c).mean() * (y == c).mean() for c in labs)
+        return None if abs(1.0 - pe) < 1e-9 else round((po - pe) / (1.0 - pe), 4)
+
+    per_gate = {f"{g:.2f}": {
+        "maneuver_vs_trajectory_kappa": _k(md, _cls(tn, g)),
+        "trajectory_vs_gt_kappa": _k(_cls(tn, g), _cls(gn, g)),
+        "frac_gt_turning": round(float((_np.abs(gn) > g).mean()), 4),
+    } for g in GATE_SWEEP}
+
+    ks = [v["maneuver_vs_trajectory_kappa"] for v in per_gate.values()
+          if v["maneuver_vs_trajectory_kappa"] is not None]
+    verdicts = {bool(k >= 0.2) for k in ks}
+    return {
+        "published_gate_rad": DIR_YAW_RAD,
+        "gates": list(GATE_SWEEP),
+        "per_gate": per_gate,
+        "gt_turn_magnitude": {
+            "median_abs_net_yaw_rad": round(float(_np.median(_np.abs(gn))), 4),
+            "p90_abs_net_yaw_rad": round(float(_np.percentile(_np.abs(gn), 90)), 4),
+            "frac_above_published_gate": round(
+                float((_np.abs(gn) > DIR_YAW_RAD).mean()), 4),
+            "_read": ("the HUMAN's own net yaw. If the gate exceeds the bulk of "
+                      "it, every window is 'straight' by construction and the "
+                      "kappa is measuring the gate."),
+        },
+        "kappa_range": [min(ks), max(ks)] if ks else None,
+        "verdict_stable": len(verdicts) == 1,
+        "_verdict_note": ("verdict = kappa >= 0.2 (the coherence threshold this "
+                          "panel uses). verdict_stable False means the coherence "
+                          "call FLIPS inside the swept gate range -> there is no "
+                          "verdict, and the published-gate value must not be "
+                          "quoted alone."),
+        "_provenance": ("R-2026-08-06-yawgate. Computed from the RAW net yaw "
+                        "banked per window, so it costs no GPU."),
+        "n_windows": n,
+    }
+
+
 # --------------------------------------------------------------------------- #
 # THE DECISION-GRADE ESTIMATOR — episode-cluster bootstrap (taniteval/ci.py)    #
 #                                                                              #
@@ -532,6 +608,16 @@ def run(model, step_readout, episodes, device, speed_input=False, max_eps=40,
                 wp_head - gtwp, dim=-1).mean(1).cpu().tolist()
             rec["goal_cos_real"] += goal_cos_real.cpu().tolist()
             rec["gt_dir"] += _dir_of(gt_net).cpu().tolist()
+            # ⛔ BANK THE RAW NET YAW, NOT ONLY THE CLASS. `_dir_of` applies
+            # DIR_YAW_RAD and the continuous quantity is then GONE, so a panel
+            # could never be re-read at another gate without re-running the
+            # model. MEASURED 2026-08-06 (R-2026-08-06-yawgate): 0.15 rad is
+            # ~6.5x the typical 2 s turn on this corpus -- the human's own
+            # median |net yaw| is 0.023 rad and only 17.9 % of windows exceed
+            # the gate -- so every published manoeuvre-coherence kappa was
+            # partly the gate's opinion. Keeping the raw value makes the sweep
+            # in `_gate_sensitivity` free instead of a GPU re-run.
+            rec["gt_net_yaw"] += gt_net.cpu().tolist()
 
             cache.append(dict(states=states.half().cpu(), aw=aw.cpu(),
                               fa=fa.cpu(), gtwp=gtwp.cpu(), z_goal=z_goal.cpu(),
@@ -601,7 +687,9 @@ def run(model, step_readout, episodes, device, speed_input=False, max_eps=40,
             rec[f"ade_op_{tag}"] += torch.linalg.norm(
                 wp_op[:, IDX] - gtwp, dim=-1).mean(1).cpu().tolist()
             if tag == "none":     # canonical (intent-free) rollout = grounded traj
-                rec["traj_dir"] += _dir_of(dp[..., 2].sum(1)).cpu().tolist()
+                _tnet = dp[..., 2].sum(1)
+                rec["traj_dir"] += _dir_of(_tnet).cpu().tolist()
+                rec["traj_net_yaw"] += _tnet.cpu().tolist()   # see gt_net_yaw
 
     _trace.__exit__()
     # FAIL LOUD before assembly: a hierarchy panel whose scored pass skipped a
@@ -812,6 +900,20 @@ def _assemble(rec, n_boot=N_BOOT, seed=0):
                   "cross-timescale disagreement is CORRECT, not incoherence. "
                   "maneuver_vs_trajectory is the same-timescale coherence test."),
     }
+    # ⛔ NEVER QUOTE A COHERENCE KAPPA WITHOUT ITS GATE. See _gate_sensitivity.
+    if A.get("traj_net_yaw") and A.get("gt_net_yaw"):
+        consistency["gate_sensitivity"] = _gate_sensitivity(
+            A["traj_net_yaw"], A["gt_net_yaw"], man_dir)
+    else:
+        consistency["gate_sensitivity"] = {
+            "status": "UNAVAILABLE",
+            "reason": ("this panel predates the raw-net-yaw banking (2026-08-06) "
+                       "and stored only the THRESHOLDED classes, so it cannot be "
+                       "re-read at another gate without re-running the model. "
+                       "⛔ Its maneuver-coherence kappa is therefore quoted at a "
+                       "single unswept gate and is NOT decision-grade — see "
+                       "RETRACTION_LOG R-2026-08-06-yawgate."),
+            "n": 0}
 
     # ---- H18: grounded rollout vs ungrounded tactical head @ the goal ------
     # grounded = canonical intent-free operative rollout endpoint (the calibrated
