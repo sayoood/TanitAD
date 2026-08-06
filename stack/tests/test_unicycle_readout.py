@@ -189,9 +189,15 @@ def test_shape_contract():
 # --------------------------------------------------------------------------- #
 
 def test_output_channels_are_scaled_to_their_own_target_std():
-    """⛔ MEASURED 38.5x scale ratio: accel std 0.80438, curvature std 0.02091. With one
-    shared output layer the curvature channel is ~38x under-resolved. A unit raw output
-    must land near each channel's own target scale."""
+    """⛔ MEASURED on the TRAIN corpus (660,080 samples): accel std 0.88361 vs yaw-rate
+    std 0.13091 — a 6.7x ratio, and against CURVATURE (std 0.03207) it is 27.6x. With one
+    shared output layer the lateral channel is badly under-resolved. A unit raw output
+    must land on each channel's own target scale.
+
+    ⚠️ The constants moved when the corpus widened (yaw-rate std 0.06930 -> 0.13091,
+    nearly 2x), so this test asserts the RELATIONSHIP, not a frozen literal — a test that
+    pins the number would have to be edited every time the estimate improves, which is
+    how a test stops being a check and becomes a copy."""
     from tanitad.models.metric_dynamics import ACCEL_SCALE, YAWRATE_SCALE
     m = UnicycleStepReadout(state_dim=8, hidden=16, predict_delta=False,
                             speed_input=False)
@@ -201,7 +207,7 @@ def test_output_channels_are_scaled_to_their_own_target_std():
     a, yr = m(z, z, v, zr, zr)
     assert abs(float(a) - ACCEL_SCALE) < 1e-6
     assert abs(float(yr) - YAWRATE_SCALE) < 1e-6
-    assert ACCEL_SCALE / YAWRATE_SCALE > 10.0              # the imbalance is real
+    assert ACCEL_SCALE / YAWRATE_SCALE > 4.0               # the imbalance is real
 
 
 def test_yaw_rate_parameterisation_still_cannot_turn_in_place():

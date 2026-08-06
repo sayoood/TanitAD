@@ -448,7 +448,7 @@ def _headings(path: Tensor, dt: float = DT_RETIME):
 
 
 def kinematic_losses(pred: Tensor, tgt: Tensor, dt: float = DT_RETIME,
-                     accel_limit: float = 2.689,
+                     accel_limit: float = 2.785,
                      jerk_limit: float = 6.369) -> dict:
     """Heading / net-yaw / accel / jerk terms for a [B,S,2] trajectory pair.
 

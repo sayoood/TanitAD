@@ -424,14 +424,26 @@ def grounding_losses(grounding: HierarchicalGrounding, predictor,
 # (2026-08-06). Each constant here is a fact about the target distribution.    #
 # --------------------------------------------------------------------------- #
 
-#: std of the human's per-step acceleration (m/s^2). MEASURED 0.80438.
-ACCEL_SCALE = 0.804
-#: std of the human's per-step yaw rate (rad/s). MEASURED 0.06930.
-YAWRATE_SCALE = 0.069
-#: std of the STEP-TO-STEP CHANGE in each, i.e. the natural scale of a delta head.
-#: MEASURED: accel 0.17494, yaw-rate 0.03459.
-DACCEL_SCALE = 0.175
-DYAWRATE_SCALE = 0.035
+# ⛔ WIDENED TO THE TRAIN CORPUS 2026-08-06. The first version of these constants came
+# from 39 VAL clips = 780 samples; they now come from 1,500 train episodes / 33,004
+# windows / 660,080 samples — 846x more — on the trainer's own stride-8 window grid.
+# ⚠️ THE VAL ESTIMATE WAS MATERIALLY WRONG ON THE CHANNEL THAT MATTERS: yaw-rate std
+# 0.06930 -> 0.13091, nearly 2x. The val split under-represented turning, and using it
+# would have left the yaw-rate channel ~2x under-scaled — the exact conditioning defect
+# the scaling exists to remove. A 780-sample estimate of a tailed quantity is not an
+# estimate. Artifact: `.../2026-08-06-v1-defect-triage/results/control_stats_train.json`.
+#: std of the human's per-step acceleration (m/s^2). MEASURED 0.88361 (train).
+ACCEL_SCALE = 0.884
+#: std of the human's per-step yaw rate (rad/s). MEASURED 0.13091 (train).
+YAWRATE_SCALE = 0.131
+#: std of the STEP-TO-STEP CHANGE in each — the natural scale of a delta head.
+#: MEASURED (train): accel 0.16537, yaw-rate 0.02548.
+#: ⭐ The delta/absolute ratios are 0.187 and 0.195 with lag-1 autocorrelations of +0.983
+#: and +0.981 — i.e. the delta-prediction argument is STRONGER on train than it looked on
+#: val (where yaw-rate read 0.50 / +0.874). A delta head's output scale is ~5x smaller
+#: than a level head's, and that scale IS the jerk.
+DACCEL_SCALE = 0.165
+DYAWRATE_SCALE = 0.025
 #: ego speed normaliser, matching the trainers' convention.
 SPEED_SCALE = 10.0
 
@@ -479,15 +491,37 @@ class UnicycleStepReadout(nn.Module):
     Every option can be switched off, because an arm that changed four things at once
     and improved would be **unattributable** — the same failure as the ``--v2``
     conflation. The ablation is one flag per claim.
+
+    ⛔ **(5) AND THE COUNTER-MEASURE THE FIRST FOUR MADE NECESSARY.** Choices (3) and (4)
+    each open a path that BYPASSES THE WORLD MODEL. With a lag-1 autocorrelation of
+    **+0.977**, ``a_j ~= a_{j-1}`` is an excellent predictor using **no latents at all**;
+    and ``v`` alone reconstructs most of a mostly-straight, mostly-constant-speed
+    corpus. A head that took those two shortcuts would be a **driving-dynamics
+    predictor wearing a decoder's name** — it would score well and carry none of the
+    world model's content, which is the opposite of what this arm is for.
+    ⇒ ``shortcut_dropout`` randomly blanks the ``(v, a_prev, yr_prev)`` INPUT columns
+    (the integrator still uses the real values — only the head's READ of them is
+    dropped), so the latent pathway must carry that information on those samples.
+    ⇒ ``detach_feedback`` stops the gradient through the recurrence, so the head cannot
+    learn a self-consistent autoregressive trajectory that ignores the latents.
+    ⚠️ Dropping the LATENTS instead would be exactly backwards: that teaches robustness
+    to missing latents, i.e. it REWARDS the shortcut.
+
+    ⭐ And the head's output is already the RESIDUAL OVER CONSTANT VELOCITY by
+    construction — zero output = "hold v0, go straight" — so every departure from CV is
+    something the head chose, and `wm_reliance.py` can attribute it.
     """
 
     def __init__(self, state_dim: int, hidden: int = 512, *,
                  predict_delta: bool = True, speed_input: bool = True,
-                 curvature_limit: float = 0.33):
+                 curvature_limit: float = 0.33,
+                 shortcut_dropout: float = 0.1, detach_feedback: bool = True):
         super().__init__()
         self.predict_delta = bool(predict_delta)
         self.speed_input = bool(speed_input)
         self.curvature_limit = float(curvature_limit)
+        self.shortcut_dropout = float(shortcut_dropout)
+        self.detach_feedback = bool(detach_feedback)
         # (3) + (4): the head sees the carried speed and its own previous controls,
         # which is what makes a delta prediction well-posed at all.
         extra = (1 if self.speed_input else 0) + (2 if self.predict_delta else 0)
@@ -510,12 +544,21 @@ class UnicycleStepReadout(nn.Module):
 
         ``v`` is the carried speed; ``a_prev`` / ``yr_prev`` are the previous step's
         emitted controls (zeros at step 0)."""
+        # ⛔ The feedback the head READS is detachable and droppable; the values the
+        # INTEGRATOR uses are always the real ones. Blanking the read is what forces the
+        # latent pathway to carry the information — blanking the integrator would just
+        # break the physics.
+        a_in = a_prev.detach() if self.detach_feedback else a_prev
+        yr_in = yr_prev.detach() if self.detach_feedback else yr_prev
+        keep = 1.0
+        if self.training and self.shortcut_dropout > 0.0:
+            keep = (torch.rand_like(v) >= self.shortcut_dropout).to(v.dtype)
         feat = [z_t, z_next]
         if self.speed_input:
-            feat.append((v / SPEED_SCALE).unsqueeze(-1))
+            feat.append((keep * v / SPEED_SCALE).unsqueeze(-1))
         if self.predict_delta:
-            feat.append((a_prev / ACCEL_SCALE).unsqueeze(-1))
-            feat.append((yr_prev / YAWRATE_SCALE).unsqueeze(-1))
+            feat.append((keep * a_in / ACCEL_SCALE).unsqueeze(-1))
+            feat.append((keep * yr_in / YAWRATE_SCALE).unsqueeze(-1))
         raw = self.net(torch.cat(feat, dim=-1))                # [B, 2]
         if self.predict_delta:
             a = a_prev + raw[:, 0] * DACCEL_SCALE

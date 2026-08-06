@@ -208,3 +208,121 @@ train corpus is a cheap improvement and is a work item.
 columns), so only the `2·state_dim` latent columns of the first layer can be copied from the
 trained displacement readout. Stated rather than hidden, and shape-checked — a mismatch raises
 rather than returning a random module labelled "warm-started".
+
+---
+
+## 8. Corpus widened — and the val estimate was materially wrong
+
+**MEASURED 2026-08-06**, 1,500 train episodes / **33,004 windows / 660,080 samples** on the
+trainer's own stride-8 grid — **846×** the 780 samples the first constants came from
+(`results/control_stats_train.json`).
+
+| | val (780) | **train (660,080)** | |
+|---|---|---|---|
+| accel std | 0.80438 | **0.88361** | |
+| **yaw-rate std** | 0.06930 | **0.13091** | ⚠️ **nearly 2×** |
+| accel delta std | 0.17494 | **0.16537** | |
+| yaw-rate delta std | 0.03459 | **0.02548** | |
+| accel delta/abs · lag-1 | 0.22 · +0.977 | **0.187 · +0.983** | |
+| **yaw-rate delta/abs · lag-1** | 0.50 · +0.874 | **0.195 · +0.981** | ⭐ much stronger |
+| curvature kurtosis | 38.9 | 25.9 | |
+| curvature tail ratio (slow/fast) | 9.5× | 7.13× | |
+| **yaw-rate tail ratio** | 2.3× | **1.46×** | ⭐ better |
+| accel p99 | 2.172 | **2.7847** | |
+
+⚠️ **The val estimate was wrong on the channel that matters.** Yaw-rate std nearly **doubled**
+— the val split under-represents turning — so training with the val constant would have left
+the **lateral channel ~2× under-scaled**, which is precisely the conditioning defect the scaling
+exists to remove. **A 780-sample estimate of a tailed quantity is not an estimate.**
+
+⭐ **Every design choice survived and two got stronger.** The delta/absolute ratio for yaw rate
+fell from 0.50 to **0.195** with autocorrelation rising to **+0.981** — delta-prediction is a
+**5× easier target** on train, not the 2× val suggested. And the yaw-rate-over-curvature
+conditioning argument improves (tail ratio 1.46× vs curvature's 7.13×).
+
+⚠️ **One constant is still val-derived and is flagged, not blended silently:** `jerk_limit`
+(6.369). The train pass banked the delta *std* but not its *p99*. One more cheap CPU pass fixes
+it; until then, `accel_limit` is train-derived and `jerk_limit` is not.
+
+---
+
+## 9. ⛔ WM RELIANCE — "the decoder must rely on the WM": optimize, assure, validate
+
+**Sayed, 2026-08-06:** *"we need to be very careful not to train a driving dynamic predictor not
+using the wm."*
+
+⭐ **The risk is real and §7's own optimisations created it.** Two of the four choices open paths
+that bypass the world model entirely:
+
+* **speed as an input** — on a mostly-straight, mostly-constant-speed corpus `v` alone
+  reconstructs most of the trajectory;
+* **delta prediction with carried `a_prev`/`yr_prev`** — lag-1 autocorrelation **+0.983**, so
+  `a_j ≈ a_{j−1}` is an excellent predictor **using no latents at all**.
+
+A head taking both would score well on ADE and carry **none** of the world model's content — a
+driving-dynamics predictor wearing a decoder's name, and every hierarchy claim resting on it
+would be void. **I did not flag this when proposing them.**
+
+### ⛔ "Real beats none" is NOT the test
+
+`hierarchy.py:846` already names this confound for the tactical seam: *"a frozen-encoder
+operative can co-adapt to always having the term (real > none) WITHOUT using its per-window
+content (real == mean)"*. The strict test is **real vs MEAN**. `wm_reliance.py` reuses that
+logic rather than inventing a second one.
+
+### VALIDATE — five arms, one number
+
+| arm | what it removes |
+|---|---|
+| `real` | — |
+| `mean` | per-window content (batch-mean latents; distribution kept) |
+| `shuffled` | the pairing (marginal kept **exactly**) |
+| `frozen` | the WM's **temporal** content only |
+| `cv` | everything — constant velocity from the true `v0`, the analytic floor |
+
+⭐ **`cv` is what makes it interpretable**: the head's output is the residual over constant
+velocity *by construction* (zero output = hold v0, go straight — pinned by
+`test_cv_arm_matches_a_zero_initialised_unicycle_head`). So
+
+```
+wm_reliance = 1 − (ADE(cv) − ADE(mean)) / (ADE(cv) − ADE(real))
+```
+
+*Of everything the decoder adds over constant velocity, what fraction REQUIRES the world model's
+per-window content?* Near 0 = a driving-dynamics predictor that happens to sit downstream of a
+world model.
+
+⚠️ **Only the latents are ablated** — `v0`, the actions and the integrator are untouched in every
+arm. Ablating `v0` too would conflate *"does it use the WM"* with *"does it use the ego speed"*,
+which are different questions with different answers.
+
+⚠️ **`wm_reliance > 1` is reported, not clipped**: it means the latent-free arm is *worse* than
+CV, i.e. the shortcut pathway actively hurts without the latents to steer it. That is **stronger**
+evidence of reliance, and clipping would erase the distinction between *fully reliant* and
+*cannot function at all without the WM*.
+
+### ASSURE — two counter-measures in the head
+
+* **`shortcut_dropout`** (default 0.1) randomly blanks the `(v, a_prev, yr_prev)` **input**
+  columns. The integrator still uses the real values — only the head's *read* is dropped — so the
+  latent pathway must carry that information on those samples.
+  ⛔ **Dropping the LATENTS instead would be exactly backwards**: that teaches robustness to
+  missing latents, i.e. it *rewards* the shortcut.
+* **`detach_feedback`** (default on) stops the gradient through the recurrence, so the head cannot
+  learn a self-consistent autoregressive trajectory that ignores the latents.
+
+### GATE — so a bypassed head cannot quietly ship
+
+`wm_reliance_gate(rel, min_reliance=0.5)` → PASS / FAIL / UNAVAILABLE. **Pre-registered at 0.5**,
+deliberately not 0.9: the ego-state pathway is legitimate and a real decoder will use both. What
+must never happen is a head whose value is ~entirely reachable without the latents.
+**UNAVAILABLE** when the head does not beat CV — the ratio is then undefined, and reporting 0.0
+would read as *"bypassed"* when the truth is *"not computable"*. That is itself a finding: a
+decoder that does not beat constant velocity has nothing to attribute.
+
+**Anchored by two synthetic extremes** (`test_a_head_that_ignores_latents_scores_near_zero_reliance`,
+`test_a_head_that_depends_on_latents_scores_high_reliance`) plus a monotonicity test — a metric
+like this is uninterpretable without heads whose behaviour is known by construction.
+
+⚠️ **Point estimates, no interval.** For a decision-grade read, resample with the episode-cluster
+bootstrap over paired per-episode deltas.
