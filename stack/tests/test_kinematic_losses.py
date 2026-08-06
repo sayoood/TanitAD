@@ -195,3 +195,28 @@ def test_kin_dt_is_mandatory_and_the_grid_matters():
     assert float(a["kin_accel"]) > float(b["kin_accel"]) * 5.0, \
         (float(a["kin_accel"]), float(b["kin_accel"]))
     assert a["kin_dt"] == 0.1 and b["kin_dt"] == 0.5
+
+
+def test_backward_is_finite_on_a_batch_containing_a_stopped_path():
+    """⛔ THE TRAP THAT KILLED THE FIRST TRAINING RUN (2026-08-06). atan2 and norm have
+    NaN GRADIENTS at exactly (0,0) even though their forward values are fine, and
+    masking the OUTPUT does not help: 0 * NaN = NaN in backward. Every eval pass was
+    clean — none of them call backward() — and the train corpus contains stopped
+    episodes (v = 0.00), so the run NaN'd from its first logged step. Third costume of
+    the F-5/6/7 sqrt-relu trap (`kamm_circle_violation`)."""
+    K = 20
+    pred = torch.zeros(2, K, 2, dtype=torch.float64, requires_grad=True)
+    with torch.no_grad():
+        pred[1, :, 0] = torch.arange(1, K + 1, dtype=torch.float64)  # one moving path
+    tgt = torch.zeros(2, K, 2, dtype=torch.float64)
+    tgt[1, :, 0] = torch.arange(1, K + 1, dtype=torch.float64) * 1.1
+    L = kinematic_losses(pred, tgt)
+    total = sum(L.values())
+    total.backward()
+    assert torch.isfinite(total), L
+    assert torch.isfinite(pred.grad).all(), "NaN gradient on the stopped path"
+
+    # and through the inverse map, which the accel/jerk barriers use
+    pred2 = torch.zeros(1, K, 2, dtype=torch.float64, requires_grad=True)
+    unicycle_controls_from_path(pred2).pow(2).sum().backward()
+    assert torch.isfinite(pred2.grad).all()

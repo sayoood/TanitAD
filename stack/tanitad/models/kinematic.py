@@ -218,13 +218,19 @@ def unicycle_controls_from_path(path: Tensor, dt: float = 0.1) -> Tensor:
     zero = torch.zeros_like(path[:, :1])
     p = torch.cat([zero, path], dim=1)                     # [B, K+1, 2]
     d = p[:, 1:] - p[:, :-1]                               # [B, K, 2]
-    ds = torch.linalg.norm(d, dim=-1)                      # [B, K]
+    # ⛔ epsilon INSIDE the sqrt: norm's gradient at exactly 0 is NaN, and the accel
+    # barrier backpropagates through this on paths that contain stopped steps. Same
+    # F-5/6/7 class as `_headings` above; masking after the op does not help.
+    ds = (d.pow(2).sum(-1) + 1e-12).sqrt()                 # [B, K]
     speed = ds / dt
 
     accel = (speed[:, 1:] - speed[:, :-1]) / dt            # [B, K-1]
     accel = torch.cat([accel, accel[:, -1:]], dim=1)       # last is unobservable
 
-    heading = torch.atan2(d[..., 1], d[..., 0])
+    _mv = ds > (MIN_DS_MPS * dt)
+    _d_safe = torch.where(_mv.unsqueeze(-1), d,
+                          torch.stack([torch.ones_like(ds), torch.zeros_like(ds)], -1))
+    heading = torch.atan2(_d_safe[..., 1], _d_safe[..., 0])
     dh = heading[:, 1:] - heading[:, :-1]
     dh = (dh + torch.pi) % (2 * torch.pi) - torch.pi
     # curvature = dheading / ds. ⛔ The arc the heading turned through between step k
@@ -440,11 +446,25 @@ def _interp1d(q: Tensor, xs: Tensor, ys: Tensor) -> Tensor:
 
 
 def _headings(path: Tensor, dt: float = DT_RETIME):
-    """[B,S,2] -> (heading [B,S], step length [B,S], moving mask [B,S])."""
+    """[B,S,2] -> (heading [B,S], step length [B,S], moving mask [B,S]).
+
+    ⛔ BACKWARD-SAFE AT ZERO DISPLACEMENT, and this is not optional. ``atan2`` and
+    ``norm`` both have NaN GRADIENTS at exactly (0, 0) even though their forward
+    values are fine, and masking the OUTPUT does not help: ``0 * NaN = NaN`` in the
+    backward pass. MEASURED 2026-08-06: the first unicycle-readout training run
+    NaN'd from its first logged step because the train corpus contains STOPPED
+    episodes (v = 0.00) — while every eval and baseline pass was clean, because
+    none of them call backward(). This is the F-5/6/7 sqrt-relu trap
+    (`kamm_circle_violation`, `test_kinematic_nan.py`) in its third costume.
+    ⇒ norms get an epsilon INSIDE the sqrt; atan2's INPUT is substituted with a
+    safe (1, 0) on non-moving steps BEFORE the op, not masked after it."""
     p = torch.cat([torch.zeros_like(path[:, :1]), path], dim=1)
     d = p[:, 1:] - p[:, :-1]
-    ds = torch.linalg.norm(d, dim=-1)
-    return torch.atan2(d[..., 1], d[..., 0]), ds, ds > (MIN_DS_MPS * dt)
+    ds = (d.pow(2).sum(-1) + 1e-12).sqrt()
+    moving = ds > (MIN_DS_MPS * dt)
+    d_safe = torch.where(moving.unsqueeze(-1), d,
+                         torch.stack([torch.ones_like(ds), torch.zeros_like(ds)], -1))
+    return torch.atan2(d_safe[..., 1], d_safe[..., 0]), ds, moving
 
 
 def kinematic_losses(pred: Tensor, tgt: Tensor, dt: float = DT_RETIME,
