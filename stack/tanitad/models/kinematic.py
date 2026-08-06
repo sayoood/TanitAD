@@ -82,6 +82,9 @@ def kamm_circle_violation(controls: Tensor, v: Tensor, wheelbase: float = 2.7,
 
 #: PUBLISHED — Alpamayo 2 Super's own action-space bounds. Kept as named
 #: constants so an arm that deviates has to say so rather than drift.
+#: Waypoint spacing of the deployed 2 s / 20-waypoint plan.
+DT_RETIME = 0.1
+
 A2S_ACCEL_LIMIT = 9.8          # m/s^2
 A2S_CURVATURE_LIMIT = 0.33     # 1/m
 
@@ -245,3 +248,116 @@ def entry_speed_mismatch(path: Tensor, v0: Tensor, dt: float = 0.1) -> Tensor:
     if path.shape[-1] != 2:
         raise ValueError(f"path must be [B, K, 2], got trailing dim {path.shape[-1]}")
     return (torch.linalg.norm(path[:, 0], dim=-1) / dt - v0) / dt
+
+
+# --------------------------------------------------------------------------- #
+# RETIMING — a RETRAIN-FREE fix for a frozen free-waypoint head                 #
+#                                                                              #
+# ⭐ WHY THIS EXISTS. Every measurement so far describes flagship v1 without    #
+# changing it. MEASURED 2026-08-06 on 6,834 windows: intra-plan jerk RMS        #
+# 52.21 m/s^3 against a human floor of 1.71 (30.6x); implied accel RMS 4.17     #
+# against 0.80 (5.18x); launch transient 1.54 against a 0.42 floor; and the     #
+# commanded acceleration revised by 1.10 m/s^2 EVERY 0.1 s frame while the      #
+# human's entire accel RMS is 0.80. All four are LONGITUDINAL. The arm's        #
+# LATERAL channel is fine — it beats a 34.3 B six-camera model on curvature.    #
+#                                                                              #
+# ⇒ So do not touch the geometry. Keep the curve the model drew and fix only    #
+# the SCHEDULE ALONG IT: re-time the path under a true initial speed and        #
+# bounded acceleration and jerk. "Where it wants to go" is preserved exactly;   #
+# "how fast it gets there" is made feasible.                                    #
+#                                                                              #
+# ⛔ WHY RE-TIMING AND NOT RE-INTEGRATING WITH THE RECOVERED CURVATURE. Under   #
+# the unicycle, yaw_rate = v * kappa. Change the speed profile and re-integrate #
+# the SAME kappa and the heading history changes with it — the path bends       #
+# differently and the lateral channel, which is our one healthy channel, is     #
+# silently corrupted. Re-sampling the ORIGINAL curve at new arc lengths cannot  #
+# do that: the geometric curve is bit-identical, only the sample times move.    #
+#                                                                              #
+# ⚠️ THIS IS NOT A SUBSTITUTE FOR THE UNICYCLE HEAD. It is a projection applied #
+# after the fact: the model still THINKS in free waypoints and still needs a    #
+# retrain to plan feasibly. This buys the deployable arm a feasible output      #
+# today, and gives the retrain a measured baseline to beat.                     #
+# --------------------------------------------------------------------------- #
+
+#: Human 2 s jerk RMS on PhysicalAI OOD-val, MEASURED 2026-08-06 (n=6,834 windows;
+#: Alpamayo 2 Super scores 1.79 through the identical instrument). The default
+#: barrier is set well ABOVE it — the aim is to remove the 30x thrash, not to
+#: flatten legitimate emergency braking.
+HUMAN_JERK_RMS_MPS3 = 1.71
+
+
+def retime_path(path: Tensor, v0: Tensor, dt: float = DT_RETIME,
+                accel_limit: float = 4.0,
+                jerk_limit: float = 12.0) -> Tensor:
+    """Re-time an ego-frame path [B,K,2] so its SPEED PROFILE is feasible.
+
+    Returns [B,K,2]: the SAME geometric curve, re-sampled at arc lengths produced
+    by integrating a bounded-acceleration, bounded-jerk schedule from the ego's
+    TRUE entry speed ``v0`` [B].
+
+    Three defects are removed by construction:
+      * **launch transient** — the schedule starts at ``v0``, so the first step
+        cannot disagree with the ego's real speed;
+      * **accel magnitude** — every commanded accel is clamped to ``accel_limit``;
+      * **jerk** — successive accels may differ by at most ``jerk_limit * dt``.
+
+    ⛔ A HARD CLAMP IS CORRECT HERE and would be wrong in a trained head. There is
+    no gradient to preserve: this runs at inference on a frozen model, so the
+    dead-head argument that forced softsign in :func:`rollout_unicycle` does not
+    apply. Clamping is exact, cheap and has no tuning surface.
+
+    ⚠️ The re-timed path may run PAST the end of the original curve (if the arm was
+    under-driving) — the tail is then extrapolated along the final tangent, which is
+    a straight-line continuation and is flagged in the docstring rather than hidden.
+    Running SHORT is not a problem: the samples simply stop earlier along the curve.
+    """
+    if path.dim() != 3 or path.shape[-1] != 2:
+        raise ValueError(f"path must be [B, K, 2], got {tuple(path.shape)}")
+    B, K, _ = path.shape
+    v0 = torch.as_tensor(v0, dtype=path.dtype, device=path.device).reshape(B)
+
+    # --- arc length of the ORIGINAL curve, origin prepended ---------------------
+    p = torch.cat([torch.zeros_like(path[:, :1]), path], dim=1)      # [B,K+1,2]
+    seg = torch.linalg.norm(p[:, 1:] - p[:, :-1], dim=-1)            # [B,K]
+    s = torch.cumsum(seg, dim=1)                                     # [B,K]
+    s = torch.cat([torch.zeros_like(s[:, :1]), s], dim=1)            # [B,K+1]
+
+    # --- the arm's OWN implied speed profile, which we retime TOWARDS -----------
+    want = seg / dt                                                  # [B,K]
+
+    # --- feasible schedule: bounded accel, bounded jerk, exact v0 ---------------
+    v = v0.clone()
+    a_prev = torch.zeros_like(v0)
+    s_new, dist = [], torch.zeros_like(v0)
+    for k in range(K):
+        a = (want[:, k] - v) / dt                       # accel that would hit it
+        a = a.clamp(-accel_limit, accel_limit)
+        a = torch.max(torch.min(a, a_prev + jerk_limit * dt),
+                      a_prev - jerk_limit * dt)          # jerk barrier
+        dist = dist + v * dt                             # advance on the PRE-update
+        s_new.append(dist)                               # speed, as rollout_* does
+        v = (v + a * dt).clamp_min(0.0)
+        a_prev = a
+    s_new = torch.stack(s_new, dim=1)                                # [B,K]
+
+    # --- resample the ORIGINAL curve at the new arc lengths ---------------------
+    out = torch.empty_like(path)
+    for b in range(B):
+        out[b, :, 0] = _interp1d(s_new[b], s[b], p[b, :, 0])
+        out[b, :, 1] = _interp1d(s_new[b], s[b], p[b, :, 1])
+    return out
+
+
+def _interp1d(q: Tensor, xs: Tensor, ys: Tensor) -> Tensor:
+    """Linear interpolation of ``ys`` at query points ``q`` over knots ``xs``.
+
+    ⛔ Beyond the last knot this EXTRAPOLATES along the final segment's direction
+    rather than clamping. Clamping would pile every over-running sample onto the
+    curve's endpoint and manufacture a hard stop that the arm never planned — a
+    speed fix that invents a braking event is worse than no fix.
+    """
+    idx = torch.searchsorted(xs.contiguous(), q.contiguous()).clamp(1, xs.numel() - 1)
+    x0, x1 = xs[idx - 1], xs[idx]
+    y0, y1 = ys[idx - 1], ys[idx]
+    w = (q - x0) / (x1 - x0).clamp_min(1e-8)
+    return y0 + w * (y1 - y0)
