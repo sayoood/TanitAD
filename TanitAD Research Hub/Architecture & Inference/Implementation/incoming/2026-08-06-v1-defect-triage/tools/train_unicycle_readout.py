@@ -84,7 +84,15 @@ def main():
     ap.add_argument("--k", type=int, default=20)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--device", default="cuda")
-    ap.add_argument("--train-episodes", type=int, default=1500)
+    ap.add_argument("--train-episodes", type=int, default=600)
+    # ⛔ I/O SHAPE, MEASURED 2026-08-06: 32 windows from 32 RANDOM episodes against a
+    # 96-payload LRU over MooseFS = ~30 cold payload loads per batch -> 55 s/step
+    # (the first ~120 steps were fast only because the control-stats pass had warmed
+    # the page cache). Drawing FEW episodes x MANY windows per batch cuts payload
+    # loads ~8x; the mild within-batch correlation is an accepted trade for a
+    # fine-tune probe and is stated here rather than discovered later.
+    ap.add_argument("--eps-per-batch", type=int, default=4)
+    ap.add_argument("--lru", type=int, default=384)
     ap.add_argument("--val-every", type=int, default=250)
     ap.add_argument("--reliance-every", type=int, default=500)
     ap.add_argument("--log-every", type=int, default=50)
@@ -134,7 +142,7 @@ def main():
           f"(warm-started trunk, zero output)", flush=True)
 
     # ---- data ------------------------------------------------------------------
-    eps = build_v2_providers(a.train_cache, lru_size=96, verbose=True)
+    eps = build_v2_providers(a.train_cache, lru_size=a.lru, verbose=True)
     rng = random.Random(a.seed)
     rng.shuffle(eps)
     eps = eps[:a.train_episodes]
@@ -142,18 +150,26 @@ def main():
 
     def sample_batch(b):
         fw, aw_l, fa_l, pl, fp = [], [], [], [], []
+        per_ep = max(1, b // a.eps_per_batch)
+        chosen = [eps[rng.randrange(len(eps))] for _ in range(a.eps_per_batch)]
+        gi = 0
         while len(fw) < b:
-            ep = eps[rng.randrange(len(eps))]
+            ep = chosen[gi % len(chosen)]
+            gi += 1
             T = ep.poses.shape[0]
             if T < W + a.k + 1:
+                chosen[(gi - 1) % len(chosen)] = eps[rng.randrange(len(eps))]
                 continue
-            s = rng.randrange(0, T - W - a.k)
-            last = s + W - 1
-            fw.append(torch.as_tensor(ep.frames[s:s + W]))
-            aw_l.append(ep.actions[s:s + W])
-            fa_l.append(ep.actions[s + W:s + W + a.k])
-            pl.append(ep.poses[last])
-            fp.append(ep.poses[last + 1:last + 1 + a.k])
+            for _ in range(per_ep):
+                if len(fw) >= b:
+                    break
+                s = rng.randrange(0, T - W - a.k)
+                last = s + W - 1
+                fw.append(torch.as_tensor(ep.frames[s:s + W]))
+                aw_l.append(ep.actions[s:s + W])
+                fa_l.append(ep.actions[s + W:s + W + a.k])
+                pl.append(ep.poses[last])
+                fp.append(ep.poses[last + 1:last + 1 + a.k])
         frames = torch.stack(fw).to(dev).float().div_(255.0)
         aw = torch.stack(aw_l).to(dev).float()
         fa = torch.stack(fa_l).to(dev).float()
