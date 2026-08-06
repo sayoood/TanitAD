@@ -181,5 +181,41 @@ would have told you.
 Instruments — `stack/tanitad/models/kinematic.py` (`rollout_unicycle`,
 `unicycle_controls_from_path`, `entry_speed_mismatch`), `tools/temporal_stability.py`.
 
-**Open.** The inter-frame replan measurement (§2b) and the toggle rate (§3) are pending a run
-on the idle A40; the hierarchy panel re-run that carries `gate_sensitivity` is in flight.
+---
+
+## 5. ⭐ RESULTS — both pending runs landed, and they change the ORDER of the fixes
+
+Full detail in `results/`. Headlines, **MEASURED 2026-08-06 on the idle A40**:
+
+**`results/TEMPORAL_STABILITY_RESULT.md`** — 6,834 windows / 6,794 consecutive pairs, 40
+episodes, **stride 1 so consecutive windows are 0.1 s apart**:
+
+| | flagship v1 | GT floor |
+|---|---|---|
+| replan shift mean / p90 / max (m) | 0.0947 / 0.2022 / **1.0722** | **0.0** |
+| **replan accel jump mean (m/s²)** | **1.1021** | **0.0001** |
+| intra-plan jerk RMS (m/s³) | **52.2148** | **1.7066** (30.6×) |
+| manoeuvre toggle rate / mean dwell | **0.1759** / **5.53 windows = 0.55 s** | — |
+
+⭐ **Observation (2) is a CONTROL-space defect, not a position-space one.** In position the
+replan is nearly fine — 9.5 cm mean over 0.1 s. In control it is not: the commanded
+acceleration at the **same absolute instant** is revised by **1.1021 m/s² every 0.1 s**, and
+the human's *entire* accel RMS is 0.8048. A small position shift hides a large acceleration
+change — which is what a passenger feels and what no position metric can see.
+
+⭐ **Observation (3) is literal.** Mean dwell **0.55 s** — the declared manoeuvre changes about
+twice a second.
+
+**`results/GATE_RERUN_RESULT.md`** — 880-window gate-swept panel: `verdict_stable = true`,
+κ range [0.2038, 0.5787]. The published coherence verdict holds; the magnitude spans 2.8× and
+is not quotable without its gate. `kappa_turn_subset = 0.2005`, *on* the threshold.
+
+⇒ **Revised order of action.** The jerk barrier and the control-EMA move up, because the
+defect is now located precisely: it is in the **commanded acceleration**, both within a plan
+(30.6× the human) and across plans (1.1 m/s² per frame). Both are structurally invisible to a
+free-waypoint head and directly addressable once the head emits controls — which is a fourth
+independent argument for the unicycle, and the strongest one.
+
+**Open.** Episode-cluster bootstrap over the 40 episodes for the temporal numbers (pairs within
+an episode are strongly dependent, so no CI is quoted rather than an optimistic one); REF-B /
+REF-C / v2corpus panels still carry unswept κ and now say so in their own output.
