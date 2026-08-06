@@ -159,3 +159,39 @@ def test_decode_shape_contract():
     except ValueError:
         return
     raise AssertionError("accepted mismatched delta shape")
+
+
+def test_kin_dt_is_mandatory_and_the_grid_matters():
+    """⛔ THE 25x TRAP. `out['traj']` is on the head's HORIZON grid — four waypoints at
+    0.5 s for the default (5,10,15,20) — not twenty at 0.1 s. Accel scales as 1/dt^2,
+    so assuming 0.1 inflates it 25x and jerk 125x: the barriers would fire on ordinary
+    driving and train the arm to crawl. `four_families._DT_CONTRACT` documents the same
+    trap; the programme has already published wrong speed numbers to it once.
+
+    A wrong dt does not crash — it silently trains the wrong objective. So the loss
+    REFUSES to guess."""
+    from tanitad.models.flagship_v15 import v15_losses
+
+    B, N, S = 2, 4, 4
+    out = {"anchor_traj": torch.randn(B, N, S, 2),
+           "anchor_logits": torch.randn(B, N), "sel_score": torch.randn(B, N),
+           "sel_idx": torch.zeros(B, dtype=torch.long)}
+    out["traj"] = out["anchor_traj"][:, 0]
+    anch, tgt = torch.randn(N, S, 2), torch.randn(B, S, 2)
+
+    # zero weights: dt is irrelevant and must NOT be demanded
+    v15_losses(out, anch, tgt)
+
+    try:
+        v15_losses(out, anch, tgt, kin_weights={"jerk": 0.1})
+    except ValueError as e:
+        assert "kin_dt" in str(e)
+    else:
+        raise AssertionError("accepted a kinematic weight with no kin_dt")
+
+    # and the value genuinely matters: 1/dt^2 on accel between 0.1 and 0.5
+    a = v15_losses(out, anch, tgt, kin_weights={"accel": 1.0}, kin_dt=0.1)
+    b = v15_losses(out, anch, tgt, kin_weights={"accel": 1.0}, kin_dt=0.5)
+    assert float(a["kin_accel"]) > float(b["kin_accel"]) * 5.0, \
+        (float(a["kin_accel"]), float(b["kin_accel"]))
+    assert a["kin_dt"] == 0.1 and b["kin_dt"] == 0.5

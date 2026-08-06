@@ -116,8 +116,13 @@ def v4_loss_step(world, grounding, head: FlagshipV4Head, batch: dict,
     # ⛔ `kin_weights` defaults to None -> every weight 0.0 -> the loss is
     # BIT-IDENTICAL to every arm trained before 2026-08-06. Parity is sacred; a
     # silent loss change would invalidate every cross-arm number in the registry.
+    # ⛔ dt is the HEAD'S HORIZON SPACING (0.5 s for the default (5,10,15,20)), NOT
+    # the 0.1 s tick. Accel scales as 1/dt^2 -- passing 0.1 would inflate it 25x and
+    # the barriers would fire on ordinary driving. Derived, never assumed.
+    kin_dt = ((horizons[1] - horizons[0]) * 0.1 if len(horizons) > 1
+              else horizons[0] * 0.1)
     plan_l = v15_losses(out, head.decoder.anchors, traj_tgt,
-                        kin_weights=kin_weights)
+                        kin_weights=kin_weights, kin_dt=kin_dt)
 
     # --- (3) factorised LAT×LON×DIST CE (masked; §6.2) --------------------------
     fac_loss = torch.zeros((), device=states.device)

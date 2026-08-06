@@ -842,7 +842,8 @@ JERK_BARRIER_WEIGHT = 0.0
 
 
 def v15_losses(out: dict, anchors: Tensor, traj_tgt: Tensor,
-               kin_weights: dict | None = None) -> dict:
+               kin_weights: dict | None = None,
+               kin_dt: float | None = None) -> dict:
     """anchor-cls CE + traj-recon L1 + REFINED-rank CE.
 
     ``out`` from :meth:`FlagshipV15Head.forward`; ``anchors`` [N, S, 2];
@@ -898,12 +899,29 @@ def v15_losses(out: dict, anchors: Tensor, traj_tgt: Tensor,
     kin_extra = {}
     if any(w > 0.0 for w in kw.values()):
         from tanitad.models.kinematic import kinematic_losses
-        kin = kinematic_losses(out["traj"], traj_tgt)
+        # ⛔ `kin_dt` IS MANDATORY AND HAS NO DEFAULT. `out["traj"]` is on the head's
+        # HORIZON grid -- `n_steps = len(cfg.horizons)`, i.e. FOUR waypoints at 0.5 s,
+        # NOT twenty at 0.1 s. Speed scales as 1/dt and acceleration as 1/dt^2, so
+        # assuming 0.1 here inflates accel 25x and jerk 125x: the barriers would fire
+        # on ordinary driving and the MIN_DS gate would be 5x too small. This is
+        # `four_families._DT_CONTRACT` exactly, and it has already cost the programme
+        # a set of published speed numbers.
+        # ⇒ FAIL LOUD rather than default. A wrong dt does not crash, it silently
+        # trains the wrong objective, which is far worse than a stack trace.
+        if kin_dt is None:
+            raise ValueError(
+                "kin_dt is REQUIRED when any kinematic weight is non-zero. It is the "
+                "spacing of out['traj'], which is the head's horizon grid "
+                "((horizons[1]-horizons[0]) * 0.1 s = 0.5 s for the default "
+                "(5,10,15,20)), NOT 0.1. Accel scales as 1/dt^2 -- guessing is a 25x "
+                "error that trains silently.")
+        kin = kinematic_losses(out["traj"], traj_tgt, dt=kin_dt)
         for k, w in kw.items():
             if w > 0.0:
                 loss = loss + w * kin[k]
         kin_extra = {f"kin_{k}": v.detach() for k, v in kin.items()}
         kin_extra["kin_weights"] = kw
+        kin_extra["kin_dt"] = kin_dt        # never quote a rate without its grid
     with torch.no_grad():
         ade = (out["traj"] - traj_tgt).norm(dim=-1).mean()
         ade2s = (out["traj"][:, -1] - traj_tgt[:, -1]).norm(dim=-1).mean()

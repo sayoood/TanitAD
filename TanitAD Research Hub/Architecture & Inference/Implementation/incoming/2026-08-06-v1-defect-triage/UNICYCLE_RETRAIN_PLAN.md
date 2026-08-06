@@ -58,7 +58,16 @@ to be smooth exactly when it should be decisive.
 sacred — a silent loss change would invalidate every cross-arm number in `MODEL_REGISTRY.md`. A
 run that uses them prints a banner saying the arm is **not loss-comparable** to those that did not.
 
-**Status:** `--smoke` green, `tests/test_flagship_v15.py` green, 35 kinematic tests green.
+⛔ **`kin_dt` IS MANDATORY AND HAS NO DEFAULT — a 25× trap caught in review.** `out["traj"]` is
+on the head's **HORIZON grid**: `n_steps = len(cfg.horizons)`, i.e. **four waypoints at 0.5 s**,
+not twenty at 0.1 s. Speed scales as 1/dt and acceleration as **1/dt²**, so assuming 0.1 inflates
+accel **25×** and jerk **125×** — the barriers would fire on ordinary driving and train the arm to
+crawl, and the `MIN_DS` heading gate would be 5× too small. This is `four_families._DT_CONTRACT`
+exactly, and the programme has already published wrong speed numbers to it once. The loss now
+**refuses to guess** and raises; the trainer **derives** it from `head.cfg.horizons`. A wrong dt
+does not crash — it silently trains the wrong objective, which is far worse than a stack trace.
+
+**Status:** `--smoke` green, `tests/test_flagship_v15.py` green, 36 kinematic tests green.
 
 ## 2. What is BUILT BUT NOT WIRED — the unicycle head
 
