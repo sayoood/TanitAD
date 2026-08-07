@@ -1,0 +1,34 @@
+{
+ "_n": 39,
+ "_horizon_s": 2.0,
+ "_dt_s": 0.1,
+ "_what": "controls RECOVERED from each arm's banked waypoints via tanitad.models.kinematic.unicycle_controls_from_path. NOT the arms' outputs -- neither arm emits controls. This is what each path IMPLIES it commanded.",
+ "_evidence_class": "MEASURED (ours)",
+ "_caveat": "chord-average controls from a discrete path; curvature gated at MIN_DS_MPS=0.5 because at v~0 curvature is undetermined, not large.",
+ "alpamayo2-super": {
+  "implied_accel_mae_mps2": 0.509,
+  "implied_accel_bias_mps2": 0.1076,
+  "implied_accel_rms_mps2": 1.027,
+  "human_accel_rms_mps2": 0.8087,
+  "accel_magnitude_vs_human": 1.27,
+  "implied_curvature_mae_1pm": 0.008497,
+  "implied_curvature_rms_1pm": 0.030829,
+  "human_curvature_rms_1pm": 0.024488,
+  "entry_transient_mae_mps2": 1.4039,
+  "entry_transient_bias_mps2": -0.2639
+ },
+ "flagship-v1arch-v2bal-30k": {
+  "implied_accel_mae_mps2": 1.735,
+  "implied_accel_bias_mps2": 0.716,
+  "implied_accel_rms_mps2": 4.1656,
+  "human_accel_rms_mps2": 0.8048,
+  "accel_magnitude_vs_human": 5.176,
+  "implied_curvature_mae_1pm": 0.008275,
+  "implied_curvature_rms_1pm": 0.032496,
+  "human_curvature_rms_1pm": 0.020914,
+  "entry_transient_mae_mps2": 1.5367,
+  "entry_transient_bias_mps2": 0.2663
+ },
+ "_gt_entry_transient_mae_mps2": 0.4249,
+ "_gt_entry_transient_note": "the HUMAN path has a 0.4249 m/s^2 entry transient under this chord-based reading -- that is the instrument's own floor, not a defect. Both arms sit at ~1.4-1.5, i.e. ~3.5x the floor and INDISTINGUISHABLE FROM EACH OTHER: the launch is NOT where the two arms differ. The sustained accel profile is."
+}

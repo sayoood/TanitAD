@@ -388,3 +388,288 @@ def grounding_losses(grounding: HierarchicalGrounding, predictor,
         log[f"g_{lvl}_mid_de_m"] = round(mid_de, 4)
         log[f"g_{lvl}_fwd_ade_m"] = round(fwd_ade, 4)
     return total, parts, log
+
+
+# --------------------------------------------------------------------------- #
+# UNICYCLE STEP READOUT — Option 2: the trajectory decoder, on a FROZEN trunk   #
+#                                                                              #
+# ⭐ WHAT v1arch's "trajectory head" ACTUALLY IS. `flagship-v1arch-v2bal-30k`   #
+# has NO anchored-diffusion head — its checkpoint holds only encoder,          #
+# predictor, readout, imagination, inv_dyn and the two policies. The 20        #
+# waypoints come from `rollout_decode(predictor, ..., step_readout, k=20)`:    #
+# the operative predictor rolled 20 steps in LATENT space, each transition     #
+# decoded by `StepDisplacementReadout` into a free (dx, dy, dyaw).             #
+# ⇒ The DECODER is the head. It is 6.32 M parameters against a 178 M frozen    #
+# encoder+predictor, which is why Option 2 is hours rather than days.          #
+#                                                                              #
+# ⛔ WHY A FREE (dx, dy, dyaw) DECODE PRODUCES THE MEASURED DEFECTS.           #
+# Nothing couples the three channels or ties them to the ego's real speed:     #
+#   * dx_j is free, so the implied speed can jump between steps -> jerk RMS    #
+#     52.13 against a human 1.71 (MEASURED, 6,834 windows);                    #
+#   * dx_1 is free of the ego's true v0 -> a launch transient of 1.98 m/s^2    #
+#     against a 0.42 instrument floor;                                         #
+#   * dy_j is free, i.e. the decoder may translate the ego SIDEWAYS. A road    #
+#     vehicle cannot. Every metre of that is a heading error by construction.  #
+#   * dyaw_j is independent of speed, so the decoder can turn while stopped.   #
+#                                                                              #
+# ⭐ THE UNICYCLE REMOVES ALL FOUR AS REPRESENTABLE STATES, and it does so     #
+# while emitting the SAME [B, K, 3] `step_dpose`, so `accumulate_se2` — the    #
+# geometry that is already unit-pinned against the GT waypoints — is unchanged.#
+# `dy == 0` IS the non-holonomic constraint. That is the whole idea.           #
+# --------------------------------------------------------------------------- #
+
+# --------------------------------------------------------------------------- #
+# The four design choices below are MEASURED, not preferences. All statistics  #
+# are the HUMAN's own controls recovered from 39 OOD-val clips x 20 steps      #
+# (2026-08-06). Each constant here is a fact about the target distribution.    #
+# --------------------------------------------------------------------------- #
+
+# ⛔ WIDENED TO THE TRAIN CORPUS 2026-08-06. The first version of these constants came
+# from 39 VAL clips = 780 samples; they now come from 1,500 train episodes / 33,004
+# windows / 660,080 samples — 846x more — on the trainer's own stride-8 window grid.
+# ⚠️ THE VAL ESTIMATE WAS MATERIALLY WRONG ON THE CHANNEL THAT MATTERS: yaw-rate std
+# 0.06930 -> 0.13091, nearly 2x. The val split under-represented turning, and using it
+# would have left the yaw-rate channel ~2x under-scaled — the exact conditioning defect
+# the scaling exists to remove. A 780-sample estimate of a tailed quantity is not an
+# estimate. Artifact: `.../2026-08-06-v1-defect-triage/results/control_stats_train.json`.
+#: std of the human's per-step acceleration (m/s^2). MEASURED 0.88361 (train).
+ACCEL_SCALE = 0.884
+#: std of the human's per-step yaw rate (rad/s). MEASURED 0.13091 (train).
+YAWRATE_SCALE = 0.131
+#: std of the STEP-TO-STEP CHANGE in each — the natural scale of a delta head.
+#: MEASURED (train): accel 0.16537, yaw-rate 0.02548.
+#: ⭐ The delta/absolute ratios are 0.187 and 0.195 with lag-1 autocorrelations of +0.983
+#: and +0.981 — i.e. the delta-prediction argument is STRONGER on train than it looked on
+#: val (where yaw-rate read 0.50 / +0.874). A delta head's output scale is ~5x smaller
+#: than a level head's, and that scale IS the jerk.
+DACCEL_SCALE = 0.165
+DYAWRATE_SCALE = 0.025
+#: ego speed normaliser, matching the trainers' convention.
+SPEED_SCALE = 10.0
+
+
+class UnicycleStepReadout(nn.Module):
+    """Latent transition -> per-step ``(accel, yaw_rate)``, integrated as a unicycle.
+
+    ⭐ FOUR DESIGN CHOICES, EACH FROM A MEASUREMENT OF THE TARGET DISTRIBUTION. The
+    naive version — two raw linear outputs read as (accel, curvature) — is badly
+    conditioned in three separate ways, and none of them is visible without looking at
+    what the human's controls actually do.
+
+    **(1) PER-CHANNEL OUTPUT SCALING.** MEASURED: accel std **0.80438**, curvature std
+    **0.02091** — a **38.5x** scale ratio. One ``Linear(hidden, 2)`` gives both channels
+    the same initial gradient scale, so the curvature channel is ~38x under-resolved and
+    spends early training being dominated by accel. Each channel is emitted in units of
+    its own target std.
+
+    **(2) YAW RATE, NOT CURVATURE.** MEASURED: curvature kurtosis **38.9** (Gaussian is
+    3.0) and its low-speed tail is **9.5x** the high-speed one — because
+    ``kappa = yaw_rate / v`` explodes as ``v -> 0``. Yaw rate is far better behaved:
+    kurtosis **10.4**, low/high-speed tail ratio only **2.3x**. Regressing a target
+    whose variance changes 9.5x with an input the head is not even given is a bad
+    objective; yaw rate is the well-conditioned one.
+    ⛔ **AND THE NON-HOLONOMIC PROPERTY IS KEPT ANYWAY** by bounding the yaw rate at
+    ``|v| * curvature_limit``: at ``v = 0`` the bound is 0, so the ego still cannot turn
+    in place. Predicting yaw rate WITHOUT that bound would quietly restore the exact
+    defect the unicycle exists to remove.
+
+    **(3) SPEED AS AN INPUT.** The conditional distribution of the target depends
+    strongly on ``v`` (the 9.5x tail ratio above IS that dependence). The displacement
+    readout sees only ``(z_t, z_next)`` and must infer speed from the latents. Feeding
+    the carried speed makes the head's job conditional instead of marginal.
+    ⚠️ Not privileged information: ``v0`` is already a model input under
+    ``speed_input=True``, and the carried ``v`` is that plus the head's own outputs.
+
+    **(4) PREDICT THE DELTA, NOT THE LEVEL.** MEASURED, and this is the biggest one:
+    the step-to-step change in accel has std **0.17494** against an absolute std of
+    **0.80438** — a **4.6x easier target** — with a lag-1 autocorrelation of **+0.977**.
+    Yaw rate is the same story (0.03459 vs 0.06930, corr +0.874).
+    ⇒ A delta head's natural output scale IS THE JERK, so smoothness is the DEFAULT
+    rather than something a barrier term has to fight the head for. This is the
+    structural version of the jerk fix.
+
+    Every option can be switched off, because an arm that changed four things at once
+    and improved would be **unattributable** — the same failure as the ``--v2``
+    conflation. The ablation is one flag per claim.
+
+    ⛔ **(5) AND THE COUNTER-MEASURE THE FIRST FOUR MADE NECESSARY.** Choices (3) and (4)
+    each open a path that BYPASSES THE WORLD MODEL. With a lag-1 autocorrelation of
+    **+0.977**, ``a_j ~= a_{j-1}`` is an excellent predictor using **no latents at all**;
+    and ``v`` alone reconstructs most of a mostly-straight, mostly-constant-speed
+    corpus. A head that took those two shortcuts would be a **driving-dynamics
+    predictor wearing a decoder's name** — it would score well and carry none of the
+    world model's content, which is the opposite of what this arm is for.
+    ⇒ ``shortcut_dropout`` randomly blanks the ``(v, a_prev, yr_prev)`` INPUT columns
+    (the integrator still uses the real values — only the head's READ of them is
+    dropped), so the latent pathway must carry that information on those samples.
+    ⇒ ``detach_feedback`` stops the gradient through the recurrence, so the head cannot
+    learn a self-consistent autoregressive trajectory that ignores the latents.
+    ⚠️ Dropping the LATENTS instead would be exactly backwards: that teaches robustness
+    to missing latents, i.e. it REWARDS the shortcut.
+
+    ⭐ And the head's output is already the RESIDUAL OVER CONSTANT VELOCITY by
+    construction — zero output = "hold v0, go straight" — so every departure from CV is
+    something the head chose, and `wm_reliance.py` can attribute it.
+    """
+
+    def __init__(self, state_dim: int, hidden: int = 512, *,
+                 predict_delta: bool = True, speed_input: bool = True,
+                 curvature_limit: float = 0.33,
+                 shortcut_dropout: float = 0.1, detach_feedback: bool = True):
+        super().__init__()
+        self.predict_delta = bool(predict_delta)
+        self.speed_input = bool(speed_input)
+        self.curvature_limit = float(curvature_limit)
+        self.shortcut_dropout = float(shortcut_dropout)
+        self.detach_feedback = bool(detach_feedback)
+        # (3) + (4): the head sees the carried speed and its own previous controls,
+        # which is what makes a delta prediction well-posed at all.
+        extra = (1 if self.speed_input else 0) + (2 if self.predict_delta else 0)
+        self.in_dim = 2 * state_dim + extra
+        self.net = nn.Sequential(
+            nn.LayerNorm(self.in_dim),
+            nn.Linear(self.in_dim, hidden), nn.GELU(),
+            nn.Linear(hidden, 2),
+        )
+        # ⛔ Zero-init the OUTPUT layer only. At init the decode is then exactly
+        # "hold the true v0, go straight" — kinematically valid. A randomly
+        # initialised control head integrates its own noise TWICE and starts from a
+        # physically absurd trajectory, which is a far worse basin to descend from.
+        nn.init.zeros_(self.net[-1].weight)
+        nn.init.zeros_(self.net[-1].bias)
+
+    def forward(self, z_t: Tensor, z_next: Tensor, v: Tensor,
+                a_prev: Tensor, yr_prev: Tensor) -> tuple[Tensor, Tensor]:
+        """-> ``(accel [B], yaw_rate [B])`` for this step, in physical units.
+
+        ``v`` is the carried speed; ``a_prev`` / ``yr_prev`` are the previous step's
+        emitted controls (zeros at step 0)."""
+        # ⛔ The feedback the head READS is detachable and droppable; the values the
+        # INTEGRATOR uses are always the real ones. Blanking the read is what forces the
+        # latent pathway to carry the information — blanking the integrator would just
+        # break the physics.
+        a_in = a_prev.detach() if self.detach_feedback else a_prev
+        yr_in = yr_prev.detach() if self.detach_feedback else yr_prev
+        keep = 1.0
+        if self.training and self.shortcut_dropout > 0.0:
+            keep = (torch.rand_like(v) >= self.shortcut_dropout).to(v.dtype)
+        feat = [z_t, z_next]
+        if self.speed_input:
+            feat.append((keep * v / SPEED_SCALE).unsqueeze(-1))
+        if self.predict_delta:
+            feat.append((keep * a_in / ACCEL_SCALE).unsqueeze(-1))
+            feat.append((keep * yr_in / YAWRATE_SCALE).unsqueeze(-1))
+        raw = self.net(torch.cat(feat, dim=-1))                # [B, 2]
+        if self.predict_delta:
+            a = a_prev + raw[:, 0] * DACCEL_SCALE
+            yr = yr_prev + raw[:, 1] * DYAWRATE_SCALE
+        else:
+            a = raw[:, 0] * ACCEL_SCALE
+            yr = raw[:, 1] * YAWRATE_SCALE
+        # (2) the bound that keeps "cannot turn in place" while predicting yaw rate
+        cap = v.abs() * self.curvature_limit
+        return a, yr.clamp(-cap, cap)
+
+    @classmethod
+    def warm_start_from(cls, sr: "StepDisplacementReadout", state_dim: int,
+                        hidden: int = 512, **kw) -> "UnicycleStepReadout":
+        """Copy the trained trunk's FIRST LINEAR for the latent columns; the extra
+        input columns and the output layer stay fresh.
+
+        ⭐ The trunk has already learned to read a latent transition — the expensive
+        half. ⚠️ The input width now differs (extra speed / previous-control columns),
+        so only the ``2 * state_dim`` latent columns can be copied; the rest are left at
+        their init. That partial copy is stated rather than hidden, and the shapes are
+        CHECKED — a mismatch raises instead of returning a random module wearing the
+        name 'warm-started'.
+        """
+        m = cls(state_dim, hidden, **kw)
+        if sr.net[1].weight.shape[1] != 2 * state_dim:
+            raise ValueError(
+                f"displacement readout expects {sr.net[1].weight.shape[1]} inputs, not "
+                f"2*state_dim={2 * state_dim} — refusing a 'warm start' that is random")
+        if sr.net[1].weight.shape[0] != m.net[1].weight.shape[0]:
+            raise ValueError(
+                f"hidden mismatch {sr.net[1].weight.shape[0]} vs "
+                f"{m.net[1].weight.shape[0]} — refusing a random 'warm start'")
+        with torch.no_grad():
+            m.net[1].weight[:, :2 * state_dim].copy_(sr.net[1].weight)
+            m.net[1].bias.copy_(sr.net[1].bias)
+            m.net[0].weight[:2 * state_dim].copy_(sr.net[0].weight)
+            m.net[0].bias[:2 * state_dim].copy_(sr.net[0].bias)
+        return m
+
+
+def unicycle_step_dpose(controls: Tensor, v0: Tensor, dt: float = 0.1,
+                        accel_limit: float | None = None,
+                        curvature_limit: float | None = None) -> Tensor:
+    """``controls`` [B, K, 2] = (accel, CURVATURE) + ``v0`` [B] -> ``step_dpose``
+    [B, K, 3] in the convention :func:`accumulate_se2` consumes.
+
+    ``dx = v*dt``, ``dy = 0`` (non-holonomic), ``dyaw = v*kappa*dt``, then
+    ``v += a*dt`` clamped at zero.
+
+    ⛔ THE UPDATE ORDER MATCHES ``accumulate_se2`` AND ``rollout_unicycle``: the step
+    advances on the speed and heading held at its START, and ``v`` updates last.
+    Integrating with the post-update speed would lengthen every trajectory — an
+    over-progress bias, the defect this exists to remove.
+
+    ⚠️ This is the CURVATURE-parameterised primitive, kept for the oracle
+    reconstruction and the ablation arm. The trained head emits YAW RATE instead — see
+    :class:`UnicycleStepReadout` (2) for the measured reason.
+    """
+    from tanitad.models.kinematic import _squash
+
+    if controls.dim() != 3 or controls.shape[-1] != 2:
+        raise ValueError(f"controls must be [B, K, 2], got {tuple(controls.shape)}")
+    b, k, _ = controls.shape
+    a, kap = controls[..., 0], controls[..., 1]
+    if accel_limit is not None:
+        a = _squash(a, accel_limit)
+    if curvature_limit is not None:
+        kap = _squash(kap, curvature_limit)
+    v = torch.as_tensor(v0, dtype=controls.dtype, device=controls.device).reshape(b)
+    out = []
+    for j in range(k):
+        out.append(torch.stack([v * dt, torch.zeros_like(v), v * kap[:, j] * dt], -1))
+        v = (v + a[:, j] * dt).clamp_min(0.0)
+    return torch.stack(out, dim=1)
+
+
+def rollout_decode_unicycle(predictor, states: Tensor, actions: Tensor,
+                            future_actions: Tensor | None,
+                            readout: UnicycleStepReadout, k: int, v0: Tensor,
+                            dt: float = 0.1) -> tuple[Tensor, Tensor]:
+    """Drop-in for :func:`rollout_decode` with a unicycle decode.
+
+    Returns ``(waypoints [B, k, 2], step_dpose [B, k, 3])`` — identical signature, and
+    the waypoints come from the SAME :func:`accumulate_se2`, so nothing downstream
+    (metrics, overlays, the four-family instrument) needs to know which decoder ran.
+
+    ⚠️ THE LATENT ROLL IS BYTE-IDENTICAL to :func:`rollout_decode`'s — same predictor,
+    same action bookkeeping. Only the decode differs. An ablation between the two
+    decoders must not also be an ablation of the rollout, or it is unattributable.
+
+    ⛔ The speed and the previous controls are carried ACROSS steps, which is what makes
+    the delta parameterisation well-posed. The loop was already sequential, so this
+    costs nothing.
+    """
+    win_s, win_a = states, actions
+    b = states.shape[0]
+    v = torch.as_tensor(v0, dtype=states.dtype, device=states.device).reshape(b)
+    a_prev = torch.zeros_like(v)
+    yr_prev = torch.zeros_like(v)
+    out = []
+    for j in range(k):
+        z_hat = predictor(win_s, win_a)[1]
+        a_j, yr_j = readout(win_s[:, -1], z_hat, v, a_prev, yr_prev)
+        out.append(torch.stack([v * dt, torch.zeros_like(v), yr_j * dt], dim=-1))
+        v = (v + a_j * dt).clamp_min(0.0)
+        a_prev, yr_prev = a_j, yr_j
+        if j < k - 1:
+            a_next = (future_actions[:, j] if future_actions is not None
+                      else win_a[:, -1])
+            win_s = torch.cat([win_s[:, 1:], z_hat.unsqueeze(1)], dim=1)
+            win_a = torch.cat([win_a[:, 1:], a_next.unsqueeze(1)], dim=1)
+    step_dpose = torch.stack(out, dim=1)                  # [B, k, 3]
+    return accumulate_se2(step_dpose), step_dpose

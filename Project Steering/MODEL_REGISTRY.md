@@ -1052,6 +1052,183 @@ the paired episode-cluster bootstrap.
 
 ---
 
+### 1.9 flagship-**v1arch** — `flagship-v1arch-v2bal-30k` — ✅ **COMPLETE at step 29999** (2026-08-05)
+
+**The v1 ARCHITECTURE on more, better-distributed data.** ⛔ **Every `v2_*` lever in its own
+`config.json` is `false`** — MEASURED off the run's `cfg` block on pod4, 2026-08-05:
+`v2_anchor_tactical`, `v2_ego_to_planners`, `v2_gated_intent`, `v2_goal_decode`, `v2_labels`,
+`v2_route_from_vision`, `v2_encoder_ego_decorr` all `false`; `v2_ego_dropout`, `v2_fa_dropout`,
+`v2_nav_dropout`, `v2_traj_jerk` all `0.0`; `v21_route_labels` `false`. So **architecture is held
+constant and only the data varies** — which is what makes the PI's question (*the effect of more
+and better-distributed data*) attributable. ⚠️ **It is NOT a v2-architecture arm and must never be
+quoted as one.**
+
+| Field | Value |
+|---|---|
+| **Status** | ✅ COMPLETE, clean finish at step **29999**. Supervisor **adopted** it (`trainer ALREADY RUNNING outside this supervisor (pid 9076)`), did not launch it, and exited without relaunching. |
+| **Location** | `tanitad-pod4:/workspace/experiments/flagship-v1arch-v2bal-30k/` (`ckpt.pt`, `ckpt_step5000.pt`, `ckpt_step15000.pt`, `ckpt_step20000.pt`, `config.json`, `train_log.jsonl`) |
+| **Checkpoint shape** | keys `['grounding','model','opt','step']` — **no `head` key**. ⛔ `eval_flagship_v4.py` gates its full metric path on `is_v4 = … and ("head" in ck)`, so on this checkpoint it can ONLY run `MODE_A_canary_only_validation`: it exits 0, prints an ADE, and **emits no per-window `pred`/`gt` at all**. Use `taniteval/tools/eval_four_families.py`. |
+| **Architecture** | `predictor` d_model 768 / depth 10 / heads 12 / window 8 / **action_dim 3** (`speed_input` true) · `tactical_policy` **n_maneuvers 5**, wp horizons [5,10,15,20], cadence 5 · `strategic_policy` n_commands 4, **n_route 3**, d_ctx 256, cadence 20 · `h15` enabled (mask_prob 0.5) · state_dim 2048 |
+| **Corpus** ⛔ | `"v2_parity": {"parity": false, "checked": false, "clips_present": 9000}`, `"require_parity": false`. **This arm is OFF the parity corpus by design** (that was the experiment). ⛔ **21 of the 40 canonical val episodes are INSIDE its 9000-clip training pool** — see `LEAK_v1arch_val_2026-08-05.md`. Canonical-val numbers for this arm are train-contaminated and inadmissible. |
+| **HF** ⭐ | `Sayood/tanitad-flagship-v1arch-v2bal` — **PUBLIC + GATED (`auto`)**, published 2026-08-05. `ckpt.pt` (3,302,203,998 B, the exact evaluated artifact), `config.json`, `summary.json`, `train_log.jsonl`, model card. Verified ANONYMOUSLY: metadata 200, `private False`, `gated auto`, and an unauthenticated `ckpt.pt` fetch returns **401 — the gate is enforced**, while the card (7,439 B) is publicly readable so the caveats reach a reader before the gate does. ⚠️ The milestone checkpoints are NOT published: `ckpt.pt` is the artifact every number below was measured on, and shipping the others invites *"which one produced this?"*. |
+| **The admissible eval corpus** | `physicalai-oodval-6f4b94e4c7ce-q90` — PhysicalAI-AV's **own official eval split** (HF dataset `nvidia/PhysicalAI-Autonomous-Vehicles`, `ood_reasoning.parquet` under its `reasoning` prefix; split sizes `{train 1450, val 290}`), **290 clips, ZERO overlap** with the training pool, JPEG-q90 round-tripped to the training format. 6,382 windows / 290 episode clusters. |
+
+#### Result — the first COMPLETE four-family block in the programme (`_complete: true`)
+
+⛔ **ADE is one row of four.** Estimator: **episode-cluster bootstrap** over the 290 clips,
+n_boot 2000. ⛔ **Not comparable to any canonical-val number** until other arms are scored here.
+
+| family | headline | reading |
+|---|---|---|
+| — (ADE) | `ade_mean_4wp` **0.5752** [0.5370, 0.6142] · `fde_2s` **1.4018** [1.3040, 1.5010] | |
+| **LONGITUDINAL** | `speed_bias` **+0.484 m/s** · `along_final_bias` **+0.943 m** · `ego_progress` **1.0795×** · time-gap at 15+ m/s **1.43 s** | ⛔ systematic **over-speed**, and MEASURED it is **71.95 %** of windows ahead at 2 s and **75.51 %** faster than the human — a **prior**, not a tail |
+| **LATERAL** | `cross_mae` **0.0552 m** [0.0500, 0.0611] · `heading_mae` 0.806° · `curvature_bias` −0.000126 | tight; not where effort belongs |
+| **TACTICAL** | κ **0.6033** (SUBSTANTIAL), agreement 0.8881 [0.8740, 0.9021] · **`seams_beneficial_of_3` = 0** | the manoeuvre label is honest; the **seam is FALSIFIED at this checkpoint** |
+| **STRATEGIC** | `route_acc_follow` **0.8031** == `majority_straight_rate` **0.8031** · `follow_pred_distribution` **{left 0, straight 1737, right 0}** · `route_acc_nav` 1.0000 | ⛔ **no vision-only route skill at all** — a constant predictor. `route_acc_nav` is an **echo** of its own input. Confirmed **off-leak**. |
+
+Distance-keeping (n = 2,846 lead windows): headway **25.53 m**, time-gap **5.76 s**, min-TTC
+**14.73 s** (632 censored at the 30 s cap). Window states LEAD 3,002 / NO_LEAD 2,752 / NO_LABEL 628.
+
+**JPEG-format control:** raw uint8 vs the q90 round-trip on the same 6,382 windows — max |pixel
+delta| **185**, every metric moves **< 0.03** (largest: heading 0.0236°); tactical and strategic
+identical. **q90 is the headline** because it is format-faithful.
+
+⚠️ **Two harnesses disagree 0.8 %** on this corpus: `eval_flagship_v4.py`'s MODE-A canary gives
+**0.5705**, `eval_four_families.py` gives **0.5752**. Recorded, not smoothed over; unresolved.
+
+**Artifacts:** `TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-08-05-v1arch-oodval-four-families/`
+(RESULT.md + raw JSON) · protocol `EVAL_PROTOCOL_OODVAL_2026-08-05.md` · videos
+`TanitAD Research Hub/Evaluation/Videos/v1arch-oodval-openloop-2026-08-05/` · pod4
+`/workspace/evalout/` (windows dumps, lead block).
+
+---
+
+### 1.10 flagship-**v1.6** — `flagship-v16-unicycle` — ✅ **COMPLETE** (2026-08-06) — the unicycle trajectory readout on the FROZEN v1arch trunk
+
+⛔ **NAME DISAMBIGUATION, load-bearing:** "v1.6" ALSO names §1.4b's `flagship-v16-ab-ft`
+(2026-07, the arm behind the retracted "best-in-program" claim). These are **different
+models**. Quote the registry key, never the bare "v1.6".
+
+| | |
+|---|---|
+| **architecture** | `flagship-v1arch-v2bal-30k` trunk (encoder 87.02 M + predictor 91.36 M + policies), **entirely frozen** (md5 `c1157528…` proved identical before/after training) + `UnicycleStepReadout` **2.11 M** trainable — latent transition `(z_prev, z_hat)` → per-step `(accel, yaw_rate)`, integrated non-holonomically (`dy ≡ 0`, `yaw_rate` bounded by `\|v\|·κ_max`, v carried from the TRUE v0). ⛔ `speed_input=False, predict_delta=False` — the head reads ONLY the WM latents; the v0/feedback shortcut surface was REMOVED after run 4 failed the reliance gate at 0.0891 (`…/2026-08-06-v1-defect-triage/results/UNICYCLE_RUN4_RESULT.md`). |
+| **training** | 3,000 steps, batch 32, AdamW lr 3e-4 cosine, 58 min on one A40. Loss = pos-L1 + 0.3·heading + 0.5·net-yaw + 0.05·accel-barrier + 0.05·jerk-barrier (barriers above the TRAIN-corpus human p99; dense 0.1 s grid). Train corpus: 600 eps of `epcache-physicalai-v2bal-4b7eeeac222d` (local copy). Head warm-started from `grounding.step.op`, zero-init output (= constant-velocity start). |
+| **parity** | trunk untouched ⇒ inherits v1arch's parity (skip-hash `f09e44db` lineage). Eval corpus: `physicalai-oodval-6f4b94e4c7ce-q90`, 40 episodes, stride-1 rollout grid, **6,834 windows** — the SAME grid as every banked v1arch temporal/kinematic number. |
+| **ckpt** | `pod4:/workspace/experiments/unicycle-readout-v2-latentsonly/unicycle_readout.pt` · **banked in-repo 2026-08-06**: `TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-08-06-v1-defect-triage/results/unicycle_readout_v16.pt` (8.4 MB, md5 `81f7f3a19ad0da97fb55ed9270f2f884` verified matching the pod copy — single-disk risk closed) |
+
+**RESULTS — MEASURED 2026-08-06, paired episode-cluster bootstrap over 40 episodes, 2,000
+draws** (`…/2026-08-06-v1-defect-triage/results/v16_full_eval.json.xz`). Δ = v1.6 − v1arch,
+same windows, same frozen-trunk latent rolls (decoder-only contrast by construction):
+
+| metric | v1arch | **v1.6** | Δ [CI95] | separated |
+|---|---|---|---|---|
+| ADE 2 s (m) | 0.3584 | **0.3398** | −0.0186 [−0.0706, +0.0293] | ✗ (parity) |
+| speed bias (m/s) | +0.3793 | **−0.0265** | −0.4058 [−0.5162, −0.3022] | ✅ |
+| along-final bias (m) | +0.7524 | **−0.0511** | −0.8036 [−1.0197, −0.5851] | ✅ |
+| accel RMS (m/s²) | 2.9465 | **0.7172** | −2.2293 [−3.0886, −1.4641] | ✅ (human ≈ 0.91) |
+| accel MAE (m/s²) | 1.8240 | **0.5499** | −1.2741 [−1.6534, −0.9324] | ✅ |
+| jerk RMS (m/s³) | 36.1682 | **1.1334** | −35.0348 [−46.6907, −24.8134] | ✅ (human ≈ 1.71) |
+| **net-yaw err (rad)** | 0.0307 | **0.0108** | −0.0199 [−0.0248, −0.0153] | ✅ (−65 %) |
+| heading MAE (rad/step) | 0.0027 | **0.0015** | −0.0012 [−0.0015, −0.0009] | ✅ |
+| cross-track MAE (m) | 0.0502 | **0.0363** | −0.0139 [−0.0193, −0.0091] | ✅ |
+| replan shift (m, 0.1 s) | 0.0947 | **0.0604** | — | (point est.) |
+| **replan accel jump (m/s²)** | 1.1310 | **0.1016** | — | (point est., **11×** lower) |
+
+**WM-reliance** (canary-grade, 128-window fixed batch): final **0.6233 — gate PASS ≥ 0.5**;
+per-arm decomposition shows real latents ~halve the heading error vs batch-mean latents at
+every canary. Baseline control: the displacement readout scores 8.72 (cannot function without
+latents), and its **frozen-latents arm collapses to the CV floor** — what both decoders consume
+is the **predictor's rolled prediction**.
+
+**DISTANCE-KEEPING — MEASURED 2026-08-06** (`…/2026-08-06-v1-defect-triage/results/v16_distance_keeping.json`,
+built from a fresh 40-episode lead block — `lead_block_40.report.json`: 880 stride-8 windows, LEAD 419 /
+NO_LEAD 329 / NO_LABEL 132; 5 clips lack `obstacle.offline`, 1 stationary clip fails registration — joined
+row-for-row to the stride-8 subset of the SAME scored dump as the table above, no re-inference; paired
+episode-cluster bootstrap, 30 lead-bearing episodes, 2,000 draws; sign below is **v1arch − v1.6** / **GT − v1.6**):
+
+| metric | v1arch | **v1.6** | GT | v1arch−v1.6 [CI95] | GT−v1.6 [CI95] |
+|---|---|---|---|---|---|
+| min headway (m) | 25.23 | **25.52** | 25.39 | −0.238 [−0.385, −0.091] ✅ | −0.026 [−0.225, +0.153] ✗ |
+| min time-gap (s) | 7.71 | **7.98** | 7.98 | −0.138 [−0.252, −0.049] ✅ | −0.010 [−0.064, +0.042] ✗ |
+| min TTC (s) | 14.97 | **17.82** | 17.10 | **−2.818 [−3.892, −1.784] ✅** | −0.597 [−1.393, +0.099] ✗ |
+
+Reading: v1arch is CI-separated **more aggressive** on all three (2.8 s lower min-TTC — the longitudinal
+speed/accel defect showing up against real traffic), while **v1.6 is statistically indistinguishable from
+GT on every distance-keeping metric** at this n. ⚠️ 40-episode subset grid, not the 290-corpus grid the
+v1arch OOD-val LEAD numbers use — compare within this table only.
+
+**⛔ Standing caveats:** (1) all trajectory numbers are **action-conditioned WM rollouts under
+TRUE future actions — NOT closed-loop planning**; applies equally to both arms and to every
+v1arch number banked before. (2) STRATEGIC UNAVAILABLE (no map — unchanged). ~~distance_keeping
+UNAVAILABLE~~ — closed above; the 2026-08-06 claim "lead block not on pod4" was itself a **stale
+absence-claim** (the 290-episode block and v1arch's complete LEAD JSON already existed at
+`pod4:/workspace/evalout/` — `v1arch_oodval_q90_4fam_LEAD.json`, `families_unavailable=[]`).
+(3) TACTICAL **declared-head** metrics are identical to v1arch's (policies untouched — the
+declared dwell 0.55 s toggling defect is NOT fixed by v1.6 and still needs its own lever).
+The **EXECUTED-manoeuvre** side, MEASURED 2026-08-06
+(`…/results/v16_tactical_executed.json`, `classify_maneuver` over each window's 2 s path,
+6,834 stride-1 windows; ⚠️ yaw at horizon from last-segment heading — the dump stores xy only):
+agreement with GT-executed **v1arch 0.5016 → v1.6 0.7694**; executed toggle rate v1arch 0.0620
+→ v1.6 **0.0309** vs GT 0.0318 — paired Δ(v1.6−v1arch) −0.0311 [−0.0462, −0.0177] separated,
+Δ(v1.6−GT) −0.0009 [−0.0066, +0.0055] NOT separated; executed dwell 2.61 s → 4.38 s (GT 3.52 s
+— v1.6 slightly over-steady: it under-executes `accelerate`, 577 vs GT 975, the conservative
+tail of its speed profile). v1arch's executed distribution over-calls `accelerate` 2,668 vs
+GT 975 — the longitudinal defect visible in decision space. (4) reliance CI not computed
+(canary batch); families CI'd as above.
+
+### 1.11 flagship-v1.7 — `flagship-v17-speedloss` — pre-registered run 6, outcome **B**
+
+**MEASURED 2026-08-06** (`…/2026-08-06-v1-defect-triage/PREREG_V161_SPEEDLOSS.md` — gates and
+both outcomes were committed BEFORE launch). v1.6's exact recipe + **one change**:
+`--w-speed 0.5` speed-profile L1. Trunk frozen; head 2.11 M latents-only; 3,000 steps, 55 min.
+**ckpt:** `pod4:/workspace/experiments/unicycle-readout-v3-speedloss/unicycle_readout.pt`, banked
+in-repo as `results/unicycle_readout_run6.pt` (md5 `e389f638cc2e7ac4d67bf57479936b7f`).
+
+**Gates verdict — the PRIMARY gates FAILED; the pre-registered hypothesis is REFUTED:**
+
+| gate | target | measured (eval-grade, same 6,834-window grid) | verdict |
+|---|---|---|---|
+| P1 decel response ratio | ≥ 0.40 | **0.1547** (v1.6: 0.1623 — unchanged) | ❌ |
+| P2 accel lag | ≤ +0.15 s | **+0.173 s** (from +0.28) | ❌ |
+| N1 ADE vs v1.6 | not CI-worse | **−0.0549 [−0.0713, −0.0412] CI-BETTER** (0.2849 vs 0.3398) | ✅ |
+| N2 jerk RMS | ≤ 3.42 | 1.567 (human 1.71) | ✅ |
+| N3 net-yaw | not CI-worse | Δ +0.0001, not separated | ✅ |
+| N4 reliance | ≥ 0.5 | **1.1849** (>1: cannot function without WM) | ✅ |
+| N5 replan accel jump | ≤ 0.30 | 0.125 *(GT-frame approx transform)* | ✅ |
+
+⇒ **Outcome B binds:** the position-loss hypothesis for the decel ramp is refuted for the
+speed-L1 lever — near-term response barely moved while everything global improved. The next
+pre-registered lever is the **event-weighted near-term accel-matching term**, NOT weight tuning.
+v1.7 **is** CI-separated better than v1.6 on ADE (−16 %) and speed MAE (−0.072 [−0.094, −0.051]),
+with every non-regression gate green — registered as the best open-loop head in the lineage,
+**not** as the lag fix. Speed_l1 evidence: `results/run6_train_log.jsonl.xz`; analysis:
+`results/closed_loop_analysis.json`.
+
+### 1.12 CLOSED-LOOP (decoder-conditioned predictor) — MEASURED 2026-08-06
+
+**The predictor rolled on the DECODER'S OWN actions** (steer = atan(2.9·κ), accel direct — the
+`signals_at` contract), no recorded future anywhere; perception context unchanged (imagination
+closed loop, not re-perception). `tools/closed_loop_dump.py` → `results/closed_loop_analysis.json`;
+grid identical to §1.10 (o16 arm reproduces the banked v1.6 dump **byte-exactly, max |Δ| = 0.0**).
+
+| metric | v1.6 open | v1.6 closed | v1.7 open | v1.7 closed | CV floor |
+|---|---|---|---|---|---|
+| ADE (m) | 0.3398 | **0.4714** (+0.132 [0.112, 0.152]) | 0.2849 | **0.4616** (+0.177 [0.148, 0.208]) | 0.5352 |
+| net-yaw err (rad) | 0.0108 | **0.0725** (×6.7) | 0.0109 | 0.0761 | — |
+| speed MAE (m/s) | 0.441 | 0.606 | 0.369 | 0.598 | — |
+| **S-curve reproduction** | **0.9785** | **0.0538** | 0.9785 | 0.0430 | 0 |
+
+**⛔ The finding that re-frames the open-loop numbers:** the **hold-action arm reproduces 0.0 %
+of S-reversals** (and closed-loop ~5 %) vs 97.9 % open-loop — the counter-steer in the open-loop
+eval came from the TRUE-action conditioning, **not from vision**. Open-loop LATERAL skill is
+largely an action echo; closed-loop the stack drives near-straight with speed control, retaining
+**~33 %** of its open-loop ADE advantage over CV (v1.6: (0.535−0.471)/(0.535−0.340)). The §1.10
+vision-attribution (35 % of the CV gap, swap-latents) still holds at the ADE level — vision
+carries speed/scene content — but the lateral reversal channel specifically is action-driven.
+This is the measured content of the standing "NOT closed-loop planning" caveat, and the
+programme's next lever set (policy-actions closed loop, lateral-capable heads, MPC-style search
+over the predictor) starts from these numbers.
+
 ## 2. REF-A — the frozen-encoder arm (H4)
 
 **Shared:** frozen **DINOv2-B/14** features (224 px, 16×16 grid, dim 768) precomputed once; only the

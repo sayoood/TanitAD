@@ -3147,3 +3147,112 @@ independent try blocks, +2 regression tests.
 ⇒ **RULE: one `try` around several probes converts a failure in the first into silence from all of
 them.** Same family as the bare `except` that hid the `min_steps` TypeError and made a nav fallback
 that had never once executed look like a working default.
+
+---
+
+## R-2026-08-05-crlf — "~2.7 KB of unrecovered Google Drive doc edits" — RETRACTED, it is CRLF
+
+**Retracted:** the session handoff's **priority item 2**, *"recover ~2.7 KB of Google Drive doc
+edits"* (`PROJECT_STATE.md` +395 B, `Paper/TANITAD_PAPER.md` +1,865 B, `README.md` +369 B,
+`.gitignore` +51 B).
+
+**MEASURED 2026-08-05: every delta equals that file's LINE COUNT, exactly.** The two large files
+were byte-compared against the raw Drive bytes and are **identical after `\r\n → \n`** — 101,754 ==
+101,754 and 157,043 == 157,043. `.gitignore` matches once measured at `7f34086`, the pre-session
+state (910 + 51 = 961); it is 1,016 B at HEAD only because this session added `**/gotty_url.txt`.
+**There are no unrecovered edits.** Detail: `Project Steering/DRIVE_DOC_DELTA_IS_CRLF_2026-08-05.md`.
+
+**Root-cause class: a SIZE or TIMESTAMP difference read as a CONTENT difference.** This is the
+**third** CRLF incident of the session — the v5 trainer pin went red on a file nobody had edited
+(the CRLF hash reproduced the old pin, the git blob was identical on both refs), and the same class
+sits in `CLAUDE.md` already. What made this one convincing was that *four* files agreed and both
+signals pointed the same way: Drive was **bigger** and **later**. Both were true; neither implies an
+edit.
+⇒ **RULE: before sizing work from a byte delta, check whether the delta equals the newline count.**
+One `wc -l` closes it. Normalise line endings before any cross-store diff.
+⇒ **RULE: `read_file_content` on the Drive connector is NOT the file.** It returns a natural-language
+representation — on `PROJECT_STATE.md` it gave **106,585 B for a 102,149 B file**, escaped the
+markdown (`\#` for `#`) and added trailing spaces, so a diff built on it showed **293 of 395 lines
+differing**. Acting on that would have written hundreds of phantom changes into the repo. Use
+`download_file_content` (base64 of the real bytes) for anything byte-level.
+
+## R-2026-08-06-yawgate — the TACTICAL κ ranking of Alpamayo vs flagship — RETRACTED, it was the gate
+
+**Retracted:** from the four-family Alpamayo comparison committed at `340333d`
+(`…/2026-08-05-alpamayo2-super/ALPAMAYO2_SUPER_ANALYSIS.md` §12,
+`comparison/a2_four_families.json`), the claims that on 39 paired OOD-val clips our arm's
+**executed-manoeuvre κ was 0.4968 against Alpamayo's 0.3333**, that Alpamayo's **declared** lateral
+manoeuvre was weakly coupled at **κ 0.1488**, and that our arm **"drove 0 of 2 left turns"**.
+
+**MEASURED 2026-08-06 (`comparison/a2_gate_audit.json`), two independent defects, both in the
+instrument:**
+
+1. **Net yaw was summed over steps where the ego was not moving.** At `v ≈ 0` the path tangent
+   flips freely; one stopped window contributed a net yaw of **π**. Excluding steps below
+   `MIN_DS_MPS = 0.5` — as `four_families._seq_geometry` already does — moved Alpamayo's executed κ
+   from **0.3333 to 0.4882** on its own.
+2. **`DIR_YAW_RAD = 0.15` is ~6.5× the typical turn on this horizon.** The **human's own** median
+   |net yaw| over 2 s is **0.023 rad**, p90 **0.185**, and only **17.9 %** of windows exceed the
+   gate. Nearly every window classifies as "straight" by construction.
+
+**Corrected reading.** At gate **0.10** the two arms are **indistinguishable on executed manoeuvre
+— κ 0.7263 (ours) vs 0.7292 (Alpamayo)**. The published ranking was an artifact. And the genuine
+finding was invisible at 0.15: as the gate tightens the two **declarations move in opposite
+directions** — Alpamayo's rises 0.196 → 0.466 while ours falls 0.440 → 0.116, i.e. its declaration
+carries fine lateral information (the "nudges" its own Chain-of-Causation names) that our gate
+discarded, and ours carries only coarse information. Gate-free sign-only agreement is **0.7143 for
+both**, over **n = 21** declared turns for Alpamayo against **n = 7** for ours.
+
+**Root-cause class: A THRESHOLD QUOTED AS IF IT WERE A MEASUREMENT.** A classifier gate is a free
+parameter of the instrument. Reporting one κ at one gate, with no sweep, publishes the gate's
+opinion as the model's. This is the same family as *"never quote a learning-curve exponent without
+its fit window"* and *"never quote an interval without its estimator"* — a number whose value is set
+by an unstated analysis choice.
+⇒ **RULE: any classification threshold that decides a reported statistic must be SWEPT, and the
+sensitivity published with the number.** If a verdict flips inside the plausible range of the
+threshold, there is no verdict.
+⇒ **RULE (second, and it is the third sighting of this class): a quantity undefined in a regime must
+not be aggregated over that regime.** `df` reporting the cluster instead of the pod quota; curvature
+at `v ≈ 0` returning 1.6 × 10⁶ 1/m; yaw at `v ≈ 0` returning π. Gate by displacement before summing
+any path-tangent quantity.
+
+**⛔ Blast radius — NOT confined to this document.** `DIR_YAW_RAD` is `taniteval/hierarchy.py:164`
+and feeds `consistency.maneuver_vs_trajectory`, `commanded_route_vs_maneuver`,
+`commanded_route_vs_trajectory` and every `*_turn_subset` in the hierarchy panel — **every published
+manoeuvre-coherence κ in the programme**, all on the same 2 s horizon over the same corpus.
+
+⭐ **RESOLVED for the deployed arm, 2026-08-06, and it lands in the panel's favour.** The
+`flagship-v1arch-v2bal-30k` panel was re-run gate-swept (step 29999, **880 windows**, 40 OOD-val
+q90 episodes, 141 s; `…/2026-08-06-v1-defect-triage/results/`). `verdict_stable = true` —
+κ stays at or above the panel's own 0.2 coherence threshold at **every** swept gate
+(`kappa_range [0.2038, 0.5787]`). **The published coherence call was NOT an artifact and is not
+retracted.**
+
+⚠️ **The number still does not travel.** 0.5787 is true only at 0.15; the same model on the same
+windows scores 0.2038 at 0.01 — a **2.8×** span. ⇒ the VERDICT is quotable, the MAGNITUDE is not,
+ever, without its gate. And `kappa_turn_subset` at the published gate is **0.2005** — sitting *on*
+the threshold, so the comfortable headline is carried by the straight-dominated majority; on the
+windows where a direction decision actually exists, coherence is marginal.
+
+⚠️ **A second correction, by power rather than by error:** this retraction quoted the flagship's
+declared-vs-driven κ as **0.3432** from 39 single windows. The 880-window panel reads **0.5787** at
+the same gate. Quote the panel; the 39-clip figure was under-powered.
+
+**Still open:** REF-B / REF-C / v2corpus panels carry unswept κ. They now report
+`gate_sensitivity.status = UNAVAILABLE` with the reason in their own output, so the gap is visible
+rather than silent. Re-running them is cheap but **not urgent — no live decision rests on an
+unswept number now that the deployed arm's verdict has held.**
+
+**How it was caught, because the route generalises:** the low κ was checked against the obvious
+confound before being reported — Alpamayo's own CoC says *"Nudge left to pass the parked SUV"*, and a
+nudge is not a 0.15 rad turn. ⇒ **Before reporting a coherence statistic as low, ask what scale the
+declaration is about and whether the instrument can see it.**
+
+## 2026-08-07 — v5f review: two claims corrected same-day
+
+- **Claim:** "v5f has no goal/route conditioning of candidate generation." **FALSE** —
+  `flagship_v15.py` defines cond_vtarget + cond_route generation tokens (ReZero-gated,
+  goal-dropout 0.5). **Class: absence asserted from ONE file (the v4 wrapper) without
+  probing the inherited class** — the CLAUDE.md rule-2 class, inside a review that cited it.
+- **Claim:** "horizon = 2 s." **Incomplete** — dense 2 s operative + 5 s tactical knots
+  (TACTICAL_HORIZONS). Class: config read from one function, not the whole config path.
