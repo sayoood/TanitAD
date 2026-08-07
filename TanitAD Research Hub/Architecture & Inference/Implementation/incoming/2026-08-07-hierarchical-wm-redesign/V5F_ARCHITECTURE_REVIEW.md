@@ -34,12 +34,12 @@ What remains true: the goals are COARSE (a speed band + a 3-way route class) —
 the redesign's geometric g_tac (goal point + heading + speed); and the LAT×LON×DIST grafts
 are additionally ranking-side priors. The E5 lever therefore refines rather than
 introduces goal conditioning in this lineage.
-Consequences: (a) in an intersection the fan must happen to contain the correct branch —
-nothing *steers* generation toward it; (b) the navigation capability the programme needs
-("finding the right lane in difficult situations") has no input path at all. **Redesign
-mapping:** E5's goal-conditioned decode applies to this head directly — `g_tac` as a
-generation-conditioning token, not another ranking graft. The admissibility rule travels
-(geometric goal only; never the situation classifier's output).
+Remaining consequence (with the correction): a 3-way route class can bias WHICH branch
+the fan explores only coarsely — it cannot name a lane or a gap; the geometric g_tac of
+the redesign (goal point + heading + speed) is the E5 refinement of this existing
+mechanism, entering exactly where cond_route already enters (a gated generation token).
+The admissibility rule travels (geometric goal only; never the situation classifier's
+output).
 
 ## 2. Hierarchical thinking — one level deep, plus a spatial (not temporal) abstraction
 
