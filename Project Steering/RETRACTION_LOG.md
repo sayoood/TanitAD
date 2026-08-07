@@ -3247,3 +3247,12 @@ unswept number now that the deployed arm's verdict has held.**
 confound before being reported — Alpamayo's own CoC says *"Nudge left to pass the parked SUV"*, and a
 nudge is not a 0.15 rad turn. ⇒ **Before reporting a coherence statistic as low, ask what scale the
 declaration is about and whether the instrument can see it.**
+
+## 2026-08-07 — v5f review: two claims corrected same-day
+
+- **Claim:** "v5f has no goal/route conditioning of candidate generation." **FALSE** —
+  `flagship_v15.py` defines cond_vtarget + cond_route generation tokens (ReZero-gated,
+  goal-dropout 0.5). **Class: absence asserted from ONE file (the v4 wrapper) without
+  probing the inherited class** — the CLAUDE.md rule-2 class, inside a review that cited it.
+- **Claim:** "horizon = 2 s." **Incomplete** — dense 2 s operative + 5 s tactical knots
+  (TACTICAL_HORIZONS). Class: config read from one function, not the whole config path.

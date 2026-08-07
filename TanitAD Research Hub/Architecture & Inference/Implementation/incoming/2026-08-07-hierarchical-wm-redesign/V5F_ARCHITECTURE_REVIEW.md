@@ -19,12 +19,21 @@ registry §1.8, and the live training log (MEASURED, step 21,250).
   captures barely half the fan's quality** — plan 0.42–0.48 vs oracle 0.21. The fan is
   excellent; the choosing is not.
 
-## 1. Goal propagation — absent where it matters
+## 1. Goal propagation — ⛔ CORRECTED 2026-08-07 (first version of this section RETRACTED)
 
-What v5f has: factorised LAT×LON×DIST **grafts on the candidate RANKING** (zero-init,
-norm-clamped) and the ego-history conditioning of the head. What it does **not** have: any
-goal, route, or nav conditioning of candidate **generation** — the anchors are noised and
-refined unconditionally with respect to intent, and intent enters only as a scoring prior.
+**Retraction:** the original review claimed v5f has "no goal, route, or nav conditioning of
+candidate generation". **Wrong** — read from `flagship_v4.py` alone; `flagship_v15.py`'s
+conditioning block (which v5f inherits) defines `cond_vtarget` (tactical set-speed, 23
+bands) and `cond_route` (strategic route class, v2.1 derivation) as GENERATION-conditioning
+tokens, entering through ReZero gates (init 0.1) under **goal-dropout 0.5** (the H25/H26
+anti-shortcut rule), with per-gate contribution norms monitored every log step.
+*Root-cause class: absence claimed from ONE location (the v4 wrapper) without probing the
+class it inherits from — the CLAUDE.md rule-2 class, again.*
+
+What remains true: the goals are COARSE (a speed band + a 3-way route class) — far from
+the redesign's geometric g_tac (goal point + heading + speed); and the LAT×LON×DIST grafts
+are additionally ranking-side priors. The E5 lever therefore refines rather than
+introduces goal conditioning in this lineage.
 Consequences: (a) in an intersection the fan must happen to contain the correct branch —
 nothing *steers* generation toward it; (b) the navigation capability the programme needs
 ("finding the right lane in difficult situations") has no input path at all. **Redesign
@@ -45,11 +54,12 @@ the operative level, no slow-clock state. **Redesign mapping:** v5f is the natur
 pillar's claim needs; and its imagination field should be *kept* and read by the future
 tactical layer (the two mechanisms compose: spatial belief + temporal abstraction).
 
-## 3. Time horizon — 2 s, short of every planning-grade anchor
+## 3. Time horizon — ⚠️ REFINED: dense 2 s operative + coarse 5 s tactical knots
 
-Dense operative anchors at steps 1..20 @ 0.1 s = **2 s**, vs Alpamayo 6.4 s, UniAD 6 s,
-nuPlan/Waymo 8 s (PUBLISHED). The 120° FOV makes the *spatial* context wide while the
-*temporal* reach stays short — an odd asymmetry for a planner. **Redesign mapping:** E-H1's
+Corrected detail: besides the dense 1..20 @ 0.1 s (2 s) operative anchors, v5f's head also
+carries TACTICAL_HORIZONS = 10 knots @ 0.5 s = **5 s coarse** (anchor knots and imagination
+reads live there). Still short of Alpamayo 6.4 s / UniAD 6 s / nuPlan+Waymo 8 s
+(PUBLISHED) at the dense level, but the 2 s figure alone understated the head's reach. **Redesign mapping:** E-H1's
 verdict transfers only partially (different geometry/trunk); a w120 variant of E-H1 should
 run on the 30k checkpoint before any v5f-lineage horizon decision.
 
