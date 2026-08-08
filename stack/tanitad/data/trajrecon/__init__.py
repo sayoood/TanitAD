@@ -38,6 +38,15 @@ honestly-annotated one.
 
 **Deliberate divergences from upstream** (each with the measurement that forced it):
 
+* ``camera.py`` — ``estimate_foe``'s rotation gate is fed from the **gyro**
+  (``_gyro_rot_on_frame_pairs``) rather than from ``timesync.image_angular_rate``.
+  That function is a TIMING instrument: its own docstring says the yaw amplitude
+  is "only approximate" because forward translation leaks into ``tx``, and the
+  leak scales with SPEED. MEASURED 2026-08-08 at 70–84 km/h: camera |yaw| p50
+  **5.42 deg/s** vs gyro **1.46 deg/s**, so all three axes passed the 2.01 deg/s
+  gate on **0.4 %** of frames — below ``estimate_foe``'s own 10-frame floor, and
+  it returned ``None``. With the gyro the same clip yields **425,093 flow
+  vectors at 86 % inliers**, and the camera verdict goes **DEGRADED → OK**.
 * ``pipeline.py`` — ``self_calibrate`` now passes ``max_yaw_correction_deg`` to
   ``lane_calib.estimate`` explicitly. Upstream always used the default 4.0, which
   gates the lane-VP yaw against ``cam.yaw``. When the FOE fit fails, ``cam.yaw``

@@ -339,6 +339,70 @@ independent corroboration, since width is measured at the settled yaw.
 ⚠️ `pipeline.py` is therefore **no longer byte-exact** against upstream. `__init__.py` now carries an
 explicit "deliberate divergences" section rather than letting the verbatim claim rot silently.
 
+## 7c. ⭐⭐⭐ ROOT CAUSE FIXED: the gyro-gated FOE, and the cascade it unblocked
+
+`estimate_foe`'s rotation gate now reads the **gyro** instead of `image_angular_rate`
+(`camera._gyro_rot_on_frame_pairs`). It builds a `(t_mid, omega, comps)` triple of the same shape,
+so `estimate_foe` consumes it unchanged. Two details carry the safety:
+
+* `t_mid` is `0.5 * (pts[:-1] + pts[1:])` — the *identical* arithmetic `estimate_foe` uses to
+  recompute midpoints, so its `< 1e-6` join matches bit-exactly.
+* `comps` is the rotation **magnitude** replicated across three columns, making
+  `np.all(|comps| < r, axis=1)` equal `|ω| < r`. Mount-frame independent (no phone-axes → camera-axes
+  mapping needed) and strictly conservative. Intervals with no gyro sample are `inf`, never `0.0` —
+  a zero-filled gap would read as *the quietest data available*.
+
+### The FOE now succeeds, and three methods agree
+
+```
+FOE at (797,464) px, 425093 flow vectors, inliers=0.86        <- was: no usable frame pairs
+yaw: FOE -6.31 deg -> lane VP -7.01 deg (-0.70 deg, 0.49 m at 40 m)
+```
+
+| method | physics | yaw |
+|---|---|---|
+| FOE, gyro-gated | translational optical flow | **−6.31°** |
+| `lane_calib` VP | lane markings | **−7.01°** |
+| independent fit (ours, §7b) | lane markings, own code | **−6.05°** [−6.28, −5.83] |
+
+The FOE pixel **(797, 464)** against our independent VP **(803.3, 523.4)**: the *x* agree to **6 px
+= 0.24°**, from entirely different cues. **And the credibility gate now passes on merit** — 0.70°
+apart, well inside the original 4.0° — not because anything was loosened.
+
+### The cascade from one fix
+
+| | before | after |
+|---|---|---|
+| FOE | no usable frame pairs | **425,093 vectors, 86 % inliers** |
+| lane yaw | declined | **−7.01° accepted** |
+| lane **lateral** | declined (7 usable frames) | **+0.25 m MEASURED** |
+| `plane_calib` | 8 homographies, h = 2.139 m, 10.3° off FOE | **14**, h = **1.691 m**, **4.8°** off |
+| `scale_calib` | **0 tracks** | **1576 tracks**, f·h = 1608 |
+| lane-VP vs FOE row | 62.0 px | **13.7 px** |
+| horizon row | 540.0 (nominal) | **464.4** |
+| **camera verdict** | **DEGRADED** | **✅ OK** |
+
+Final provenance, every line from `raw/calibration_14-19-54_foe-gyro.json`:
+
+```
+yaw_deg          -7.007  <- lane vanishing point, 976 segments / 59 straight frames (spread 0.20 deg)
+pitch_deg        -2.928  <- FOE at (797,464) px, 425093 flow vectors, inliers=0.86
+lateral_offset_m  +0.25  <- ego-lane centre vs camera over 59 frames (lane width 3.60 m)
+height_m           1.17  <- operator default (NOT MEASURED)   <-- the only one left
+foe_rotation_gate        <- gyro |omega| per frame interval
+```
+
+⇒ **The brief's Step-5 item 3 is now fully answered** except camera height, and that one is honestly
+labelled. `plane_calib` still declines its height (spread ±0.56 m over 14 homographies), so 1.17 m
+remains an operator value — a tape measure settles it in a minute.
+
+⚠️ **This supersedes §7b's conclusion that the pipeline.py yaw-gate fix was what recovered the
+measurement.** With a working FOE the *original* 4.0° gate passes on its own. The `pipeline.py`
+change is still correct — it is the safety net for when the FOE genuinely fails — but it is no
+longer the load-bearing fix. The load-bearing fix is this one.
+
+⚠️ `camera.py` is now also a **deliberate divergence** from upstream; recorded in `__init__.py`.
+
 ## 8. What is still open
 
 1. ⭐ **Fix `estimate_foe`'s rotation gate to read the gyro** (§7b). This is now the top item: it is

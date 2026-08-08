@@ -356,6 +356,59 @@ def straight_windows(traj, t_video_start: float, video_duration: float,
     return out
 
 
+def _gyro_rot_on_frame_pairs(video, session, sync):
+    """Camera rotation rate at every frame-pair midpoint, straight from the gyro.
+
+    Returns a ``(t_mid, omega, comps)`` triple shaped exactly like
+    :func:`timesync.image_angular_rate`, so :func:`estimate_foe` consumes it
+    unchanged — but the numbers are the phone's true angular rate rather than an
+    image-motion proxy that forward translation inflates with speed.
+
+    Two details that matter:
+
+    * ``t_mid`` is built as ``0.5 * (pts[:-1] + pts[1:])``, the *identical*
+      arithmetic ``estimate_foe`` uses to recompute pair midpoints. The two
+      arrays are therefore bit-identical and its ``< 1e-6`` join matches
+      exactly. (Verified: this join was suspected of being a float-equality bug
+      and is not — both sides derive from the same ``video.pts``.)
+    * ``comps`` carries the rotation MAGNITUDE replicated across three columns,
+      so ``estimate_foe``'s ``np.all(np.abs(comps) < max_rot_rate, axis=1)``
+      becomes ``|omega| < max_rot_rate``. That is deliberately mount-frame
+      independent — it needs no mapping from phone body axes to camera axes —
+      and strictly conservative, since a magnitude below the bound puts every
+      component below it too.
+
+    Intervals containing no gyro sample are set to ``inf`` so they can never
+    pass, rather than defaulting to zero and silently reading as "quiet".
+    """
+    if session is None or not session.has("gyro"):
+        return None
+    pts = np.asarray(video.pts, dtype=float)
+    if len(pts) < 3:
+        return None
+    gy = session["gyro"]
+    tg = gy["seconds_elapsed"].to_numpy(dtype=float)
+    wg = gy[["x", "y", "z"]].to_numpy(dtype=float)
+
+    n = len(pts) - 1
+    mid = 0.5 * (pts[:-1] + pts[1:])                  # video time
+    edges = pts + sync.t_video_start                  # gyro/session time
+    idx = np.clip(np.searchsorted(edges, tg) - 1, 0, n - 1)
+    inside = (tg >= edges[0]) & (tg <= edges[-1])
+    acc = np.zeros((n, 3))
+    cnt = np.zeros(n)
+    np.add.at(cnt, idx[inside], 1)
+    for k in range(3):
+        np.add.at(acc[:, k], idx[inside], wg[inside, k])
+    good = cnt > 0
+    acc[good] /= cnt[good, None]
+    mag = np.linalg.norm(acc, axis=1)
+    mag[~good] = np.inf
+    if not np.isfinite(mag).any():
+        return None
+    return mid, mag, np.repeat(mag[:, None], 3, axis=1)
+
+
 def calibrate_camera(video, session, sync, traj=None, cam_flow=None, vframe=None,
                      height_m: float = 1.25, hfov_deg: float = 66.0,
                      refine_focal: bool = True, refine_foe: bool = True,
@@ -396,9 +449,40 @@ def calibrate_camera(video, session, sync, traj=None, cam_flow=None, vframe=None
             cam.source["extrinsics_note"] = (
                 "no straight-driving window inside the analysed clip - kept nominal mount")
         else:
-            foe = estimate_foe(video, cam, wins, cam_flow=cam_flow)
+            # Rotation gate: prefer the GYRO over the image-derived rates.
+            #
+            # `estimate_foe` drops frame pairs whose rotation rate exceeds
+            # `max_rot_rate` (2.01 deg/s), reading those rates from
+            # `image_angular_rate`. But that function is a TIMING instrument --
+            # its own docstring (timesync.py:236-239) says the yaw amplitude is
+            # "only approximate" because forward translation leaks into `tx`,
+            # and that "only the timing of the signal is used". Thresholding its
+            # amplitudes absolutely is a misuse, and the leak SCALES WITH SPEED.
+            #
+            # MEASURED 2026-08-08 on 14-19-54 (70-84 km/h), t=5..20 s, n=449:
+            #   camera |yaw|  p50 5.42 deg/s   passes 2.01 deg/s gate:  4.5%
+            #   gyro   |x|    p50 1.46 deg/s   passes:                 64.6%
+            #   ALL THREE camera axes pass on 0.4% of frames -- 2 of 449.
+            # Over the ~1200 frames of cam_flow coverage that is ~5 usable
+            # frames, below `estimate_foe`'s own `len(idxs) < 10` floor, so it
+            # returned None and the mount stayed nominal. That nominal 0.0 then
+            # caused lane_calib to reject a good -7.01 deg yaw for disagreeing
+            # with a "FOE" that never existed -- 4.9 m of lateral error at 40 m.
+            #
+            # The gyro measures the camera's rotation directly and carries no
+            # translation leak, so the same 2.01 deg/s threshold becomes a real
+            # 2.01 deg/s. MEASURED with it: 47.5% of frames quiet and 371
+            # consecutive pairs in the same window, against the 10 required.
+            rot = _gyro_rot_on_frame_pairs(video, session, sync)
+            cam.source["foe_rotation_gate"] = (
+                "gyro |omega| per frame interval" if rot is not None
+                else "image_angular_rate (no gyro stream; amplitudes are "
+                     "speed-inflated -- see camera.py)")
+            foe = estimate_foe(video, cam, wins,
+                               cam_flow=(rot if rot is not None else cam_flow))
             if foe is None:
-                cam.source["extrinsics_note"] = "FOE fit produced no usable flow - kept nominal"
+                cam.source["extrinsics_note"] = (
+                    "FOE fit selected no usable frame pairs - kept nominal")
             elif foe["n_flow"] <= 2000:
                 cam.source["extrinsics_note"] = (
                     f"only {foe['n_flow']} flow vectors (<2000) - kept nominal mount")
