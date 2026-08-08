@@ -317,6 +317,42 @@ def process_one(zip_path, out_dir, scratch, args, log) -> dict:
                            vframe=vframe, height_m=args.cam_height)
     cam, calib = self_calibrate(video, cam, traj, sync, args, log,
                                 session=session, vframe=vframe)
+
+    # ---- operator overrides, for VALIDATION runs ---------------------------- #
+    # Applied AFTER every estimator so they are authoritative, and recorded in the
+    # provenance as an override rather than a measurement. This exists because the
+    # ground plane cannot separate focal length from height (scale_calib.py), so
+    # settling the geometry needs externally supplied values to be pinned and the
+    # rest re-derived against them. Anything set here is NOT a measurement and the
+    # provenance must never let it read as one.
+    for flag, attr, unit in (("cam_yaw", "yaw", "deg"),
+                             ("cam_pitch", "pitch", "deg"),
+                             ("cam_roll", "roll", "deg")):
+        val = getattr(args, flag, None)
+        if val is None:
+            continue
+        setattr(cam, attr, float(np.deg2rad(val)))
+        calib["parameters"][f"{attr}_deg"] = {
+            "value": round(float(val), 3), "unit": unit,
+            "source": f"OPERATOR OVERRIDE --{flag.replace('_', '-')} (not measured)"}
+        log(f"    override: {attr} = {val:+.3f} deg (operator)", "WARN")
+    if getattr(args, "horizon_row", None) is not None:
+        # Equivalent to a pitch override, but expressed in the quantity that is
+        # directly observable in the image: the row the lane markings converge to.
+        # pitch = atan((row - cy) / fy)
+        row = float(args.horizon_row)
+        cam.pitch = float(np.arctan2(row - cam.cy, cam.fy))
+        calib["parameters"]["pitch_deg"] = {
+            "value": round(float(np.rad2deg(cam.pitch)), 3), "unit": "deg",
+            "source": f"OPERATOR OVERRIDE --horizon-row {row:.1f} px (not measured)"}
+        log(f"    override: horizon row = {row:.1f} px "
+            f"-> pitch {np.rad2deg(cam.pitch):+.3f} deg (operator)", "WARN")
+    if getattr(args, "lock_lateral", False):
+        calib["parameters"]["lateral_offset_m"] = {
+            "value": round(float(args.lateral_offset), 3), "unit": "m",
+            "source": "OPERATOR OVERRIDE --lock-lateral (not measured)"}
+        log(f"    override: lateral offset locked at {args.lateral_offset:+.3f} m", "WARN")
+
     # The trajectory is about to be re-referenced to the vehicle, so the camera
     # is no longer at the origin: it sits at the mount position.  project()
     # already subtracts t_v, it simply was never told.
@@ -531,8 +567,11 @@ def self_calibrate(video, cam, traj, sync, args, log, session=None, vframe=None)
             prov = LC.apply(cam, res)
             for k, v in prov.items():
                 rec["parameters"][k] = v
-            if res.lateral_offset_m is not None:
+            if res.lateral_offset_m is not None and not getattr(args, "lock_lateral", False):
                 args.lateral_offset = res.lateral_offset_m
+            elif res.lateral_offset_m is not None:
+                log(f"    lane lateral {res.lateral_offset_m:+.2f} m NOT applied "
+                    f"(--lock-lateral holds {args.lateral_offset:+.2f} m)", "WARN")
         except Exception as e:
             log(f"lane calibration skipped: {e}", "WARN")
 
@@ -874,6 +913,24 @@ def main():
                          "NEGATIVE (phone mounted right of centre). Unobservable from "
                          "motion - measure it once per mount.")
     ap.add_argument("--cam-height", type=float, default=1.17)
+    # ---- operator overrides for VALIDATION runs -------------------------------
+    # The ground plane cannot separate focal length from camera height
+    # (scale_calib.py), so pinning the geometry needs external values supplied and
+    # the rest re-derived against them. Every one of these is recorded in the
+    # provenance as "OPERATOR OVERRIDE ... (not measured)" so a validation run can
+    # never be mistaken for a measurement.
+    ap.add_argument("--cam-yaw", type=float, default=None,
+                    help="override mount yaw (deg), applied after all estimators")
+    ap.add_argument("--cam-pitch", type=float, default=None,
+                    help="override mount pitch (deg), applied after all estimators")
+    ap.add_argument("--cam-roll", type=float, default=None,
+                    help="override mount roll (deg), applied after all estimators")
+    ap.add_argument("--horizon-row", type=float, default=None,
+                    help="override pitch by the row the lane markings converge to "
+                         "(px). Directly observable in the image, unlike pitch; "
+                         "pitch = atan((row - cy) / fy). Overrides --cam-pitch.")
+    ap.add_argument("--lock-lateral", action="store_true",
+                    help="keep --lateral-offset even if lane_calib measures one")
     ap.add_argument("--vehicle-width", type=float, default=1.8)
     ap.add_argument("--wheelbase", type=float, default=AUDI_A6_ETRON["wheelbase_m"])
     ap.add_argument("--steering-ratio", type=float, default=AUDI_A6_ETRON["steering_ratio"])

@@ -104,6 +104,49 @@ def test_the_gate_being_guarded_still_exists():
         "whether the pipeline.py workaround is still the right fix")
 
 
+def test_every_operator_override_is_labelled_as_not_measured():
+    """An override must never be readable as a measurement.
+
+    The ground plane cannot separate focal length from camera height
+    (`scale_calib.py`), so settling this geometry needs externally supplied values
+    pinned and the rest re-derived. That is legitimate — but a validation run whose
+    provenance says "yaw_deg: -7.01" with no qualifier is indistinguishable from a
+    measured one three weeks later, and `calibration.json` is exactly the artifact
+    someone will quote. So every override writes "OPERATOR OVERRIDE ... (not
+    measured)" into the provenance, and this pins that.
+    """
+    for flag in ("--cam-yaw", "--cam-pitch", "--cam-roll", "--horizon-row",
+                 "--lock-lateral"):
+        assert flag in PIPELINE, f"{flag} override is gone"
+    n_override = PIPELINE.count("OPERATOR OVERRIDE")
+    assert n_override >= 4, (
+        f"only {n_override} provenance strings say OPERATOR OVERRIDE; every "
+        f"override path must label itself as not measured")
+    assert "(not measured)" in PIPELINE
+
+
+def test_locked_lateral_actually_blocks_the_lane_calib_override():
+    """`--lock-lateral` is pointless unless it beats the estimator.
+
+    `lane_calib` assigns `args.lateral_offset = res.lateral_offset_m`, so without
+    the guard the operator value is silently replaced and the run reports a number
+    the operator never asked for.
+    """
+    assert re.search(r"res\.lateral_offset_m is not None and not "
+                     r"getattr\(args, \"lock_lateral\", False\)", PIPELINE), (
+        "the lock-lateral guard on lane_calib's assignment is missing")
+
+
+def test_horizon_row_override_is_expressed_in_the_observable_quantity():
+    """Pitch is not directly observable; the row the lane markings converge to is.
+
+    MEASURED 2026-08-08: lane VP row 523.4 px, 95% CI [513.3, 534.8], against the
+    pipeline's 464.4 — 59 px, 2.29 deg of pitch. Being able to set the row directly
+    is what makes that measurement usable without hand-converting it.
+    """
+    assert "np.arctan2(row - cam.cy, cam.fy)" in PIPELINE
+
+
 def test_declined_yaw_still_collapses_to_none_so_the_diagnostic_is_suppressed():
     """Pin layer 3, the one that hid the error.
 
