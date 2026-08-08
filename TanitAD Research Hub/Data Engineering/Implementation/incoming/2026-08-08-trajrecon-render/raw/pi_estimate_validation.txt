@@ -69,3 +69,41 @@ only through the LONGITUDINAL product f*h -- and scale_calib declined at 62% spr
 An error in f leaves lane width and centring perfect while putting the 40 m point of
 the trajectory at the visual position of 30 m; scale_calib.py documents exactly that
 failure (its Pacific Coast Highway case, 33% off).
+
+## 5. SWEEP RESULT — horizon forced to 523.4, lateral locked at the PI's -0.12 m
+
+Three runs, --horizon-row 523.4 --lateral-offset -0.12 --lock-lateral, yaw -7.01 from the
+lane VP, h in {1.03, 1.12, 1.21}. All three VERDICT: OK. --lock-lateral confirmed working
+("lane lateral +0.30 m NOT applied"). Visually h=1.03 overshoots onto the shoulder; h=1.21
+fits the lane best.
+
+### The corridor/lane ratio is a FOCAL-FREE height estimator
+
+The corridor's image half-width at row v is 0.9*(v - v_horizon)/h, and the real lane's is
+1.75*(v - v_horizon)/h_true. The focal length and the horizon both CANCEL in the ratio:
+
+    corridor_px / lane_px = (0.9/1.75) * (h_true/h_assumed) = 0.514 * h_true/h_assumed
+
+Measured on the h=1.21 render (green overlay extent vs detected lane paint):
+
+    panel row 446:  corridor 146 px / lane 337 px = 0.433  ->  h_true 1.02 m
+    panel row 489:  corridor 211 px / lane 427 px = 0.494  ->  h_true 1.16 m
+    panel row 532:  corridor 275 px / lane 499 px = 0.551  ->  h_true 1.30 m
+    panel row 576:  corridor 340 px / lane 596 px = 0.571  ->  h_true 1.34 m
+
+=> h_true ~ 1.0-1.35 m, centred near 1.2 m. Independent of the ridge-histogram method in
+   section 2 (which gave 1.03-1.21 m) and agreeing with it. BOTH EXCLUDE 1.6 m.
+
+⚠️ SELF-CORRECTION: I reported by eye that the corridor "spans nearly the full lane", which
+would have implied h_true ~ 2.4 m. MEASURED it is 43-57% of the lane against an expected
+51.4% -- i.e. approximately correct. The eyeball reading was wrong; the h=1.21 geometry is
+close to right. Recorded because the wrong reading was already stated.
+
+⚠️ The ratio drifts upward with row (0.433 -> 0.571), so a single h does not fit every row
+perfectly. That residual points at the horizon row still being slightly off, or at the road
+not being planar over the window. It is a ~30% spread and should not be over-read.
+
+Lane-paint detection here is the weak link: peak picking on brightness catches the guardrail
+and the sunlit rock face, and the right-hand line had to be chosen from several candidates.
+The LEFT line is unambiguous (344/277/211/146 px across the four rows, cleanly diverging);
+the right is not. Treat the ratios as approximate.
