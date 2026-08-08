@@ -1,0 +1,121 @@
+21:23:07 INFO  pipeline 1.6.1-lateral: 1 archive(s) in /root/trajdata/in
+21:23:07 INFO  output -> /root/trajdata/out_validated   scratch -> /tmp/trajpipe
+21:23:07 INFO  lateral offset -0.12 m, camera height 1.21 m
+21:23:07 INFO  
+21:23:07 INFO  [1/1] 2026-08-08_14-19-54-android.zip  (forced)
+21:23:07 INFO  unpacking 2026-08-08_14-19-54-android.zip (180 MB) -> local scratch
+21:23:08 INFO  --- structure ---
+21:23:08 INFO      VERDICT: DEGRADED
+21:23:08 INFO      [DEGRADED] EMPTY_CSV              Annotation.csv is essentially empty
+21:23:08 INFO                                         bytes=0
+21:23:08 INFO      measurements:
+21:23:08 INFO          platform_detected            android
+21:23:08 INFO  session SM-G990B  82.5s  streams=['accel', 'gyro', 'gravity', 'total_accel', 'orientation', 'magnetometer', 'gps', 'barometer']
+21:23:36 INFO  --- content ---
+21:23:36 INFO      VERDICT: OK
+21:23:36 INFO      measurements:
+21:23:36 INFO          platform                     android
+21:23:36 INFO          device                       SM-G990B
+21:23:36 INFO          gravity_mag_ms2              9.8067
+21:23:36 INFO          total_accel_mag_ms2          10.0104
+21:23:36 INFO          unit_notes                   accel: derived: total_accel - gravity [m/s^2, linear]; gravity: Gravity.csv [m/s^2]; total_accel: TotalAcceleration.csv [m/s^2]
+21:23:36 INFO          frozen_fraction              0.0
+21:23:36 INFO          n_fixes                      83
+21:23:36 INFO          hacc_median_m                3.81
+21:23:36 INFO          n_speed_missing              0
+21:23:36 INFO          speed_range_ms               (19.65, 23.64)
+21:23:36 INFO          max_gap_s                    1.0
+21:23:36 INFO          accel_hz                     105.17
+21:23:36 INFO          gyro_hz                      105.17
+21:23:36 INFO          gravity_hz                   105.17
+21:23:36 INFO          gravity_norm                 9.807
+21:23:36 INFO          gyro_absmax                  0.511
+21:23:36 INFO          gps_distance_m               1730.7
+21:23:36 INFO          moving_fraction              1.0
+21:23:36 INFO          accel_tier                   1
+21:23:36 INFO          accel_quality                0.394
+21:23:36 INFO          video_duration_s             81.75
+21:23:36 INFO          video_frames                 2446
+21:23:36 INFO          video_fps                    29.922
+21:23:36 INFO          sensor_duration_s            82.52
+21:23:36 INFO  synchronising video to sensors (optical flow vs gyro)...
+21:23:51 INFO  --- sync ---
+21:23:51 INFO      VERDICT: OK
+21:23:51 INFO      measurements:
+21:23:51 INFO          t_video_start_s              3.3043
+21:23:51 INFO          sync_source                  gyro-xcorr (bands agree to 2 ms)
+21:23:51 INFO          sync_score                   0.47
+21:23:51 INFO  vehicle frame: gps-accel (r=+0.23) | up=gravity (sign from GNSS (r=+0.37)), lateral_score=0.306
+21:23:55 INFO  --- validation ---
+21:23:55 INFO      [VALIDATION]
+21:23:55 INFO        hold-out (GNSS not seen by the filter)
+21:23:55 INFO          position (m)               mean=0.59 m  rms=0.70 m  p95=1.36 m  max=1.71 m  n=82
+21:23:55 INFO          speed (m/s)                mean=0.06 m/s  rms=0.08 m/s  p95=0.16 m/s  max=0.22 m/s  n=82
+21:23:55 INFO          heading (deg, v>=2.5)      mean=0.43 deg  rms=0.53 deg  p95=0.97 deg  max=1.00 deg  n=82
+21:23:55 INFO          folds                      5 (each holds out every 5th fix ~ 5 s outage)
+21:23:55 INFO      
+21:23:55 INFO        in-sample (fit residual)
+21:23:55 INFO          position (m)               mean=0.56 m  rms=0.65 m  p95=1.19 m  max=1.45 m  n=82
+21:23:55 INFO          speed (m/s)                mean=0.01 m/s  rms=0.01 m/s  p95=0.03 m/s  max=0.06 m/s  n=82
+21:23:55 INFO      
+21:23:55 INFO        internal consistency
+21:23:55 INFO          |d(pos)/dt| vs speed state rms=0.0017 m/s
+21:23:55 INFO          course vs heading (v>2)    rms=0.007 deg
+21:23:55 INFO          speed non-negative         min=19.661 m/s
+21:23:55 INFO          pos 1-sigma                median=1.27 m  max=1.92 m
+21:23:55 INFO          longitudinal accel         p99=1.81 m/s^2  max=3.54
+21:23:55 INFO          yaw rate                   p99=4.1 deg/s  max=4.5
+21:23:55 INFO  --- trajectory ---
+21:23:55 INFO      VERDICT: OK
+21:23:55 INFO      measurements:
+21:23:55 INFO          speed_max_ms                 23.69
+21:23:55 INFO          pos_sigma_median_m           1.27
+21:23:55 INFO          accel_p99_ms2                1.81
+21:23:55 INFO          yawrate_p99_degs             4.1
+21:23:55 INFO          holdout_position (m)         mean=0.59 m  rms=0.70 m  p95=1.36 m  max=1.71 m  n=82
+21:23:55 INFO          holdout_speed (m/s)          mean=0.06 m/s  rms=0.08 m/s  p95=0.16 m/s  max=0.22 m/s  n=82
+21:23:55 INFO          holdout_heading (deg, v>=2.5) mean=0.43 deg  rms=0.53 deg  p95=0.97 deg  max=1.00 deg  n=82
+21:23:55 INFO          holdout_folds                5 (each holds out every 5th fix ~ 5 s outage)
+21:23:55 INFO          holdout_pos_rms_m            0.7
+21:23:55 INFO  --- steering ---
+21:23:55 INFO      Steering [Audi A6 e-tron, L=2.946 m, ratio 15.9:1]
+21:23:55 INFO        wheel angle :   -13.0 ..   +12.2 deg  (p99 |.| = 12.1)
+21:23:55 INFO        wheel rate  : p99   19.0 deg/s   max   50.0 deg/s
+21:23:55 INFO        curvature   : max |k| 0.0034 1/m (min radius 293.9 m)
+21:23:55 INFO        1-sigma     : median   0.7 deg (p90 0.7)
+21:23:55 INFO        valid       : 100.0 % of samples
+21:24:38 WARN  plane calibration produced too few usable homographies
+21:24:38 WARN  vertical-VP calibration found too few vertical lines
+21:24:49 INFO  --- lane markings ---
+21:24:49 INFO      LaneCalib(yaw=-7.01 deg, lateral=+0.25 m, lane_width=3.80 m, frames=59, segments=976, yaw_spread=0.20 deg)
+21:24:49 INFO      pitch cross-check: lane VP row is 13.7 px from the FOE row
+21:24:49 INFO      yaw: FOE -6.31 deg -> lane VP -7.01 deg (-0.70 deg, 0.49 m at 40 m)
+21:24:49 WARN      lane lateral +0.25 m NOT applied (--lock-lateral holds -0.12 m)
+21:25:49 INFO  --- scale (f vs h) ---
+21:25:49 INFO      ScaleCalib(f*h=1608 from 1576 tracks, spread 62%, focal=declined, height=declined)
+21:25:49 WARN      f*h declined: track spread 62% is too wide
+21:25:49 WARN      override: horizon row = 523.4 px -> pitch -0.643 deg (operator)
+21:25:49 WARN      override: lateral offset locked at -0.120 m
+21:25:49 INFO  --- camera ---
+21:25:49 INFO      VERDICT: OK
+21:25:49 INFO      measurements:
+21:25:49 INFO          hfov_deg                     66.0
+21:25:49 INFO          mount_yaw_deg                -7.01
+21:25:49 INFO          mount_pitch_deg              -0.64
+21:25:49 INFO          mount_roll_deg               0.0
+21:25:49 INFO          cam_height_m                 1.21
+21:25:49 INFO          horizon_row_px               523.4
+21:25:49 INFO  2216 of 2446 frames have a complete [-3, +5] s window
+21:25:52 INFO  extracting 2216 frames (stride 1)...
+21:28:27 INFO      video 300/2216 (120s)
+21:30:23 INFO      video 600/2216 (236s)
+21:32:19 INFO      video 900/2216 (352s)
+21:34:14 INFO      video 1200/2216 (467s)
+21:36:18 INFO      video 1500/2216 (591s)
+21:38:13 INFO      video 1800/2216 (706s)
+21:40:09 INFO      video 2100/2216 (822s)
+21:40:53 INFO      video: 2216 frames in 866s -> 156 MB
+21:40:53 INFO      -> DONE in 1066s
+21:40:53 INFO  
+21:40:53 INFO  pipeline finished. {'DONE': 1}
+21:40:53 INFO  registry: /root/trajdata/out_validated/_registry.json
