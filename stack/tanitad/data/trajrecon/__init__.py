@@ -58,8 +58,8 @@ import importlib
 __all__ = [
     "accel_source", "camera", "diagnose", "frame_folder", "frames", "geo",
     "ground_calib", "io_sensorlogger", "lane_calib", "pipeline", "plane_calib",
-    "quality", "render_video", "scale_calib", "steering", "timesync",
-    "trajectory", "validate", "viz", "vp_calib",
+    "quality", "render_video", "run_demo", "scale_calib", "steering",
+    "timesync", "trajectory", "validate", "vehicle_frame", "viz", "vp_calib",
 ]
 
 
