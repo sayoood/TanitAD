@@ -1,0 +1,152 @@
+19:22:20 INFO  pipeline 1.6.1-lateral: 2 archive(s) in /root/trajdata/in
+19:22:20 INFO  output -> /root/trajdata/out   scratch -> /tmp/trajpipe
+19:22:20 INFO  lateral offset -0.35 m, camera height 1.17 m
+19:22:20 INFO  
+19:22:20 INFO  [1/2] 2026-08-08_14-05-42-android.zip  (new)
+19:22:20 INFO  unpacking 2026-08-08_14-05-42-android.zip (19 MB) -> local scratch
+19:22:20 INFO  --- structure ---
+19:22:20 INFO      VERDICT: DEGRADED
+19:22:20 INFO      [DEGRADED] EMPTY_CSV              Annotation.csv is essentially empty
+19:22:20 INFO                                         bytes=0
+19:22:20 INFO      measurements:
+19:22:20 INFO          platform_detected            android
+19:22:20 INFO  session SM-G990B  9.2s  streams=['accel', 'gyro', 'gravity', 'total_accel', 'orientation', 'magnetometer', 'gps', 'barometer']
+19:22:23 INFO  --- content ---
+19:22:23 INFO      VERDICT: REJECT
+19:22:23 INFO      [REJECT  ] NO_MOTION              only 40 m travelled (< 50.0 m)
+19:22:23 INFO      [DEGRADED] ACCEL_UNUSABLE         accelerometer carries no usable longitudinal signal; speed will be GNSS-driven only
+19:22:23 INFO                                         source=disabled (total_accel - R(q)^T*g, quality=0.03)
+19:22:23 INFO      [DEGRADED] WEAK_VEHICLE_FRAME     phone->vehicle lateral axis is weakly determined
+19:22:23 INFO                                         lateral_score=0.041
+19:22:23 INFO      [REJECT  ] TOO_SHORT              less than 15 s of overlapping video and sensor data
+19:22:23 INFO                                         overlap_s=8.5
+19:22:23 INFO      measurements:
+19:22:23 INFO          platform                     android
+19:22:23 INFO          device                       SM-G990B
+19:22:23 INFO          gravity_mag_ms2              9.8067
+19:22:23 INFO          total_accel_mag_ms2          9.9633
+19:22:23 INFO          unit_notes                   accel: derived: total_accel - gravity [m/s^2, linear]; gravity: Gravity.csv [m/s^2]; total_accel: TotalAcceleration.csv [m/s^2]
+19:22:23 INFO          frozen_fraction              0.0
+19:22:23 INFO          n_fixes                      10
+19:22:23 INFO          hacc_median_m                3.81
+19:22:23 INFO          n_speed_missing              0
+19:22:23 INFO          speed_range_ms               (3.46, 5.32)
+19:22:23 INFO          max_gap_s                    1.0
+19:22:23 INFO          accel_hz                     105.17
+19:22:23 INFO          gyro_hz                      105.17
+19:22:23 INFO          gravity_hz                   105.17
+19:22:23 INFO          gravity_norm                 9.807
+19:22:23 INFO          gyro_absmax                  0.533
+19:22:23 INFO          gps_distance_m               39.8
+19:22:23 INFO          moving_fraction              1.0
+19:22:23 INFO          accel_tier                   4
+19:22:23 INFO          accel_quality                0.031
+19:22:23 INFO          video_duration_s             8.53
+19:22:23 INFO          video_frames                 256
+19:22:23 INFO          video_fps                    30.006
+19:22:23 INFO          sensor_duration_s            9.22
+19:22:23 ERROR REJECTED at the content check; nothing was processed
+19:22:23 INFO      -> REJECTED in 3s
+19:22:23 INFO  
+19:22:23 INFO  [2/2] 2026-08-08_14-19-54-android.zip  (new)
+19:22:23 INFO  unpacking 2026-08-08_14-19-54-android.zip (180 MB) -> local scratch
+19:22:24 INFO  --- structure ---
+19:22:24 INFO      VERDICT: DEGRADED
+19:22:24 INFO      [DEGRADED] EMPTY_CSV              Annotation.csv is essentially empty
+19:22:24 INFO                                         bytes=0
+19:22:24 INFO      measurements:
+19:22:24 INFO          platform_detected            android
+19:22:24 INFO  session SM-G990B  82.5s  streams=['accel', 'gyro', 'gravity', 'total_accel', 'orientation', 'magnetometer', 'gps', 'barometer']
+19:22:51 INFO  --- content ---
+19:22:51 INFO      VERDICT: OK
+19:22:51 INFO      measurements:
+19:22:51 INFO          platform                     android
+19:22:51 INFO          device                       SM-G990B
+19:22:51 INFO          gravity_mag_ms2              9.8067
+19:22:51 INFO          total_accel_mag_ms2          10.0104
+19:22:51 INFO          unit_notes                   accel: derived: total_accel - gravity [m/s^2, linear]; gravity: Gravity.csv [m/s^2]; total_accel: TotalAcceleration.csv [m/s^2]
+19:22:51 INFO          frozen_fraction              0.0
+19:22:51 INFO          n_fixes                      83
+19:22:51 INFO          hacc_median_m                3.81
+19:22:51 INFO          n_speed_missing              0
+19:22:51 INFO          speed_range_ms               (19.65, 23.64)
+19:22:51 INFO          max_gap_s                    1.0
+19:22:51 INFO          accel_hz                     105.17
+19:22:51 INFO          gyro_hz                      105.17
+19:22:51 INFO          gravity_hz                   105.17
+19:22:51 INFO          gravity_norm                 9.807
+19:22:51 INFO          gyro_absmax                  0.511
+19:22:51 INFO          gps_distance_m               1730.7
+19:22:51 INFO          moving_fraction              1.0
+19:22:51 INFO          accel_tier                   1
+19:22:51 INFO          accel_quality                0.394
+19:22:51 INFO          video_duration_s             81.75
+19:22:51 INFO          video_frames                 2446
+19:22:51 INFO          video_fps                    29.922
+19:22:51 INFO          sensor_duration_s            82.52
+19:22:51 INFO  synchronising video to sensors (optical flow vs gyro)...
+19:23:06 INFO  --- sync ---
+19:23:06 INFO      VERDICT: OK
+19:23:06 INFO      measurements:
+19:23:06 INFO          t_video_start_s              3.3043
+19:23:06 INFO          sync_source                  gyro-xcorr (bands agree to 2 ms)
+19:23:06 INFO          sync_score                   0.47
+19:23:06 INFO  vehicle frame: gps-accel (r=+0.23) | up=gravity (sign from GNSS (r=+0.37)), lateral_score=0.306
+19:23:10 INFO  --- validation ---
+19:23:10 INFO      [VALIDATION]
+19:23:10 INFO        hold-out (GNSS not seen by the filter)
+19:23:10 INFO          position (m)               mean=0.59 m  rms=0.70 m  p95=1.36 m  max=1.71 m  n=82
+19:23:10 INFO          speed (m/s)                mean=0.06 m/s  rms=0.08 m/s  p95=0.16 m/s  max=0.22 m/s  n=82
+19:23:10 INFO          heading (deg, v>=2.5)      mean=0.43 deg  rms=0.53 deg  p95=0.97 deg  max=1.00 deg  n=82
+19:23:10 INFO          folds                      5 (each holds out every 5th fix ~ 5 s outage)
+19:23:10 INFO      
+19:23:10 INFO        in-sample (fit residual)
+19:23:10 INFO          position (m)               mean=0.56 m  rms=0.65 m  p95=1.19 m  max=1.45 m  n=82
+19:23:10 INFO          speed (m/s)                mean=0.01 m/s  rms=0.01 m/s  p95=0.03 m/s  max=0.06 m/s  n=82
+19:23:10 INFO      
+19:23:10 INFO        internal consistency
+19:23:10 INFO          |d(pos)/dt| vs speed state rms=0.0017 m/s
+19:23:10 INFO          course vs heading (v>2)    rms=0.007 deg
+19:23:10 INFO          speed non-negative         min=19.661 m/s
+19:23:10 INFO          pos 1-sigma                median=1.27 m  max=1.92 m
+19:23:10 INFO          longitudinal accel         p99=1.81 m/s^2  max=3.54
+19:23:10 INFO          yaw rate                   p99=4.1 deg/s  max=4.5
+19:23:10 INFO  --- trajectory ---
+19:23:10 INFO      VERDICT: OK
+19:23:10 INFO      measurements:
+19:23:10 INFO          speed_max_ms                 23.69
+19:23:10 INFO          pos_sigma_median_m           1.27
+19:23:10 INFO          accel_p99_ms2                1.81
+19:23:10 INFO          yawrate_p99_degs             4.1
+19:23:10 INFO          holdout_position (m)         mean=0.59 m  rms=0.70 m  p95=1.36 m  max=1.71 m  n=82
+19:23:10 INFO          holdout_speed (m/s)          mean=0.06 m/s  rms=0.08 m/s  p95=0.16 m/s  max=0.22 m/s  n=82
+19:23:10 INFO          holdout_heading (deg, v>=2.5) mean=0.43 deg  rms=0.53 deg  p95=0.97 deg  max=1.00 deg  n=82
+19:23:10 INFO          holdout_folds                5 (each holds out every 5th fix ~ 5 s outage)
+19:23:10 INFO          holdout_pos_rms_m            0.7
+19:23:10 INFO  --- steering ---
+19:23:10 INFO      Steering [Audi A6 e-tron, L=2.946 m, ratio 15.9:1]
+19:23:10 INFO        wheel angle :   -13.0 ..   +12.2 deg  (p99 |.| = 12.1)
+19:23:10 INFO        wheel rate  : p99   19.0 deg/s   max   50.0 deg/s
+19:23:10 INFO        curvature   : max |k| 0.0034 1/m (min radius 293.9 m)
+19:23:10 INFO        1-sigma     : median   0.7 deg (p90 0.7)
+19:23:10 INFO        valid       : 100.0 % of samples
+19:23:53 WARN  plane calibration produced too few usable homographies
+19:23:53 WARN  vertical-VP calibration found too few vertical lines
+19:23:53 WARN  lane calibration skipped: cannot unpack non-iterable numpy.int32 object
+19:24:25 INFO  --- scale (f vs h) ---
+19:24:25 INFO      ScaleCalib(f*h=nan from 0 tracks, spread nan%, focal=declined, height=declined)
+19:24:25 WARN      only 0 usable tracks
+19:24:25 INFO  --- camera ---
+19:24:25 INFO      VERDICT: DEGRADED
+19:24:25 INFO      [DEGRADED] MOUNT_NOT_CALIBRATED   mount angles were not estimated from the data; nominal values in use
+19:24:25 INFO      measurements:
+19:24:25 INFO          hfov_deg                     66.0
+19:24:25 INFO          mount_yaw_deg                0.0
+19:24:25 INFO          mount_pitch_deg              0.0
+19:24:25 INFO          mount_roll_deg               0.0
+19:24:25 INFO          cam_height_m                 1.17
+19:24:25 INFO          horizon_row_px               540.0
+19:24:25 INFO  2216 of 2446 frames have a complete [-3, +5] s window
+19:24:28 INFO  extracting 2216 frames (stride 1)...
+19:26:59 INFO      video 300/2216 (117s)
+19:28:57 INFO      video 600/2216 (235s)
