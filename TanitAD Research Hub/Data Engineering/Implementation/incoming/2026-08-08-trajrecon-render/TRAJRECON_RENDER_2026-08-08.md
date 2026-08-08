@@ -257,13 +257,102 @@ made §8.1 diagnosable at all.
 outcome, but under cv2 5 `lane_calib` never got to *have* an opinion — the decline above was
 indistinguishable from a crash. A gate that cannot run is not a gate that passed.
 
+## 7b. ⭐⭐ THE YAW WAS MEASURED AND THROWN AWAY — and the root cause is an instrument misuse
+
+Sayed flagged the overlay yaw as wrong. It is, and the pipeline had already computed the right
+answer. The full chain, every step measured:
+
+### The immediate defect
+
+`lane_calib` measured **mount yaw −7.01°** (59 frames, 976 segments, half-split spread **0.20°** —
+its own stability gate is 0.6°, comfortably passed). It was then discarded by the credibility gate
+at `lane_calib.py:243`:
+
+```
+yaw declined: -7.01 deg is 7.0 deg from the FOE, not credible
+```
+
+**There was no FOE.** Every FOE failure path in `camera.py` (`:396,:401,:403,:408`) leaves `cam.yaw`
+at the nominal **0.0** and records `extrinsics_note`; only the success path (`:414`) sets
+`extrinsics`. Our `calibration.json` has **no `extrinsics` key**. So the gate
+`abs(yaw_deg - degrees(cam.yaw)) > 4.0` degenerated into *"reject any mount yaw beyond 4° of dead
+ahead"* — **rejecting hardest exactly when the mount is most crooked**, which is when the correction
+matters most.
+
+**Independently confirmed** (`raw/independent_vp_yaw_fit.txt`) with a from-scratch VP fit — not
+trajrecon code — over 154 straight frames / 6689 segments: **−6.05°, 95 % CI [−6.28, −5.83]**.
+
+**Cost:** lateral error `d·tan θ` — 1.2 m at 10 m, 2.5 m at 20 m, **4.9 m at 40 m**. Half a 3.50 m
+lane is 1.75 m, so the corridor leaves its own lane **~15 m ahead**. Diagnostic: the error grows
+with distance (a yaw signature); a bad lateral offset would be a constant shift.
+
+### Three layers made it quiet, and the third is the worst
+
+1. the gate rejected a good measurement against a placeholder;
+2. the warning **called the placeholder "the FOE"** — `pipeline.py:482` even names the variable
+   `foe_yaw` — so the log reads like a real disagreement between two independent estimates;
+3. `lane_calib.py:295` returns `yaw_deg if yaw_ok else None`, so `pipeline.py:494`'s
+   `if res.yaw_deg is not None` was False and the one line that spells out the damage **never
+   printed**: `yaw: FOE +0.00 deg -> lane VP -7.01 deg (-7.01 deg, 4.89 m at 40 m)`.
+   **The louder the error, the quieter the log.**
+
+### ⭐ Root cause: a timing instrument used as a magnitude instrument
+
+`raw/foe_root_cause_probe.txt`. `estimate_foe` drops any frame pair whose rotation rate exceeds
+**2.01 °/s on all three axes**, reading those rates from `timesync.image_angular_rate` — whose own
+docstring (`timesync.py:236-239`) says:
+
+> *"Forward translation still leaks into `tx` ... so the yaw amplitude here is only approximate.
+> That is fine — **only the timing of the signal is used**."*
+
+MEASURED over t = 5–20 s, n = 449 pairs:
+
+| | p50 | pass < 2.01 °/s |
+|---|---|---|
+| **camera** yaw | **5.42 °/s** | **4.5 %** |
+| camera pitch | 2.80 °/s | 33.4 % |
+| camera roll | 1.87 °/s | 53.2 % |
+| **all three** | — | **0.4 % — 2 of 449 frames** |
+| **gyro** x/y/z (true rotation, 105 Hz) | 1.46 / 1.64 / 1.81 °/s | 64.6 / 57.1 / 54.5 % |
+
+The camera-derived yaw rate is inflated **~3.7×** over the true rate, and the leak **scales with
+speed** — this clip is 70–84 km/h. At 0.4 %, the first 40 s (the `cam_flow` coverage, since
+`--calib-seconds` defaults to 40 on an 81.75 s video) yields **~5 usable frames**, below
+`estimate_foe`'s `if len(idxs) < 10: return None`.
+
+**The data is fine; the instrument feeding the gate is not.** Gating on the *gyro* instead, averaged
+per frame interval, gives **49.0 % quiet frames and 393 consecutive pairs** in the same 40 s — far
+above the 10 needed. And the message `"FOE fit produced no usable flow"` points at the flow when the
+actual cause is the **frame selection**.
+
+### Fixed, and verified
+
+At the **call site** (`pipeline.py`), not inside `lane_calib` — the caller is what knows whether a
+FOE reference exists, so it supplies the bound: 4.0° when the FOE was measured, else **15.0°**, the
+same plausibility constant `camera.py:405` uses on the FOE itself. The half-split stability gate is
+untouched and remains the real quality check.
+
+Result: `yaw=-7.01 deg` **accepted**, `mount_yaw_deg -7.01` applied, the suppressed diagnostic prints
+`4.89 m at 40 m` (hand calculation: 4.92 m), and the **measured lane width moved 3.50 → 3.60 m** —
+independent corroboration, since width is measured at the settled yaw.
+
+⚠️ `pipeline.py` is therefore **no longer byte-exact** against upstream. `__init__.py` now carries an
+explicit "deliberate divergences" section rather than letting the verbatim claim rot silently.
+
 ## 8. What is still open
 
-1. **Four independent declines on a clean 74 s daylight highway clip.** The recurring theme is the
-   **FOE**: `lane_calib`'s yaw is 7.0° from it, `plane_calib`'s pitch 10.3° from it, and the lane VP
-   row sits 62 px off it — while the FOE fit itself "produced no usable flow". If the FOE reference
-   is wrong, three cross-checks are being judged against a bad ruler. **This is the first thing to
-   investigate before scaling this corpus**, and it is cheap: the disagreements are all recorded.
+1. ⭐ **Fix `estimate_foe`'s rotation gate to read the gyro** (§7b). This is now the top item: it is
+   the upstream cause of the yaw defect, it is measured, and recovering the FOE would also deliver
+   **pitch**, which is still nominal 0.0. Not a one-line swap — `calibrate_camera` passes the same
+   `cam_flow` to `estimate_focal_from_gyro`, which genuinely needs the *image* flow, so
+   `estimate_foe` needs its own rotation source rather than a substitution.
+   Related and cheap: `--calib-seconds` (default 40) silently caps `cam_flow` coverage to the first
+   40 s of an 81.75 s clip, halving the FOE's frame budget for no stated reason.
+2. **The `MOUNT_NOT_CALIBRATED` message is now stale.** `diagnose.py:301` keys it on
+   `"extrinsics" not in cam.source`, which only the FOE sets — so the block prints *"nominal values
+   in use"* two lines above `mount_yaw_deg -7.01`. The `DEGRADED` **verdict is still correct**
+   (pitch, roll, height and lateral genuinely are nominal), so the verdict logic was deliberately
+   left alone; only the wording is wrong.
 2. **`scale_calib` gets 0 usable tracks under both cv2 majors.** Independent of the FOE question,
    and unexplained.
 3. **Recording A is unusable** (40 m, 8.5 s). If short clips are expected in the corpus, the 50 m /

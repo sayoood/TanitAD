@@ -1,0 +1,53 @@
+# WHY THE FOE FIT FAILED — MEASURED 2026-08-08, rec 14-19-54
+#
+# estimate_foe (camera.py:174) drops any frame pair whose own measured rotation
+# rate exceeds max_rot_rate = 0.035 rad/s = 2.01 deg/s on ALL THREE axes, using
+# the `comps` array from timesync.image_angular_rate.
+#
+# image_angular_rate's OWN DOCSTRING (timesync.py:236-239) says:
+#   "Forward translation still leaks into `tx` whenever the tracked features sit
+#    asymmetrically about the focus of expansion, so the yaw amplitude here is
+#    only approximate. That is fine -- ONLY THE TIMING of the signal is used."
+# estimate_foe then uses those AMPLITUDES in an absolute threshold.
+
+image_angular_rate, t=5..20 s, n=449 frame pairs:
+  CAMERA |yaw  | deg/s: p50   5.42   p90   8.31   pass<2.01:   4.5%
+  CAMERA |pitch| deg/s: p50   2.80   p90   6.35   pass<2.01:  33.4%
+  CAMERA |roll | deg/s: p50   1.87   p90   5.78   pass<2.01:  53.2%
+  ALL THREE pass (what estimate_foe requires):   0.4%   ->  2 of 449 frames
+
+GYRO over the same window (the true rotation of the phone, 105 Hz):
+  GYRO   |x| deg/s: p50 1.46   p90 3.97   pass<2.01: 64.6%
+  GYRO   |y| deg/s: p50 1.64   p90 4.99   pass<2.01: 57.1%
+  GYRO   |z| deg/s: p50 1.81   p90 5.07   pass<2.01: 54.5%
+
+=> The camera-derived yaw rate is inflated ~3.7x over the true rate
+   (5.42 vs 1.46 deg/s median). That is the documented forward-translation leak,
+   and it scales with SPEED -- this clip is 70-84 km/h.
+
+=> At 0.4% pass rate, the first 40 s (~1200 frames, the cam_flow coverage set by
+   --calib-seconds 40 on an 81.75 s video) yields ~5 usable frames, BELOW
+   estimate_foe's `if len(idxs) < 10: return None`.
+   The message it prints, "FOE fit produced no usable flow", points at the flow
+   when the actual cause is the FRAME SELECTION.
+
+Cross-check that it is NOT simply a bumpy-road problem: gating on GYRO instead,
+averaged per frame interval, gives 49.0% quiet frames and 393 CONSECUTIVE PAIRS
+in the first 40 s -- far above the 10 needed. The data is fine; the instrument
+feeding the gate is not.
+
+THE CAUSAL CHAIN, end to end:
+  1. image_angular_rate amplitudes are speed-inflated by design (timing-only tool)
+  2. estimate_foe thresholds those amplitudes absolutely
+  3. at highway speed ~0.4% of frames pass -> fewer than 10 -> return None
+  4. cam.yaw stays NOMINAL 0.0 and source["extrinsics"] is never set
+  5. lane_calib's credibility gate compares its real -7.01 deg against that 0.0
+     and rejects it as "7.0 deg from the FOE"
+  6. the overlay ships with ~7 deg of yaw error = 4.9 m of lateral error at 40 m
+
+PROPOSED FIX (not implemented here): feed estimate_foe's rotation gate from the
+GYRO, which is present at 105 Hz and which camera.py already uses elsewhere
+(gyro_yaw_rate, for focal refinement). It measures the camera's rotation directly
+and carries no translation leak. This is NOT a one-line change -- calibrate_camera
+passes the same cam_flow to estimate_focal_from_gyro, which genuinely needs the
+IMAGE flow -- so estimate_foe needs its own rotation source rather than a swap.
