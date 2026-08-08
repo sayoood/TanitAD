@@ -189,12 +189,85 @@ holds) and guarded by `stack/tests/test_trajrecon_imports.py`. Full write-up in 
 committed. The container is ephemeral. Re-running from the two Drive ids reproduces them exactly;
 the ids, sizes and md5s in §1 are the reproduction key.
 
-## 7. What is still open
+## 7. ⭐ The opencv-4.x re-run — the fix did NOT recover the measurement, and that is the finding
 
-1. **Re-run under opencv 4.x** so `lane_calib` actually runs and the lateral offset is measured
-   rather than assumed. Nothing else in the run changes.
-2. **`plane_calib` / `vp_calib` / `scale_calib` all declined on this recording.** Genuine, but three
-   independent declines on a clean 74 s daylight highway clip is worth understanding before this
-   corpus is scaled up.
+The obvious follow-up was to re-run under `opencv-python-headless<5` so `lane_calib` would work.
+Done (`--force --only 14-19-54 --no-video`, cv2 **4.14.0**, `HoughLinesP` back to `(N,1,4)`).
+
+**First: the solve is deterministic.** Trajectory and steering came back bit-identical — hold-out
+0.70 m / 0.08 m/s / 0.53°, min radius 293.9 m, `steer_valid` 100 %. ⇒ the cv2 major touches
+**calibration only**, which was assumed before and is now measured.
+
+**Second, and the point: `lane_calib` now runs — and declines anyway.**
+
+```
+LaneCalib(yaw=declined, lateral=declined, lane_width=3.50 m, frames=59, segments=976,
+          yaw_spread=0.20 deg)
+  WARN  yaw declined: -7.01 deg is 7.0 deg from the FOE, not credible
+  WARN  lateral declined: only 7 usable frames
+  INFO  pitch cross-check: lane VP row is 62.0 px from the FOE row
+```
+
+59 frames, 976 segments — real work, then refused on its own quality gates. `plane_calib` likewise
+now produces a fit and rejects it:
+
+```
+PlaneCalib from 8 road homographies
+  roll = +0.80 deg (spread +/-14.85) | pitch = +10.29 deg (spread +/-3.00) | height = 2.139 m (spread +/-0.222)
+  pitch cross-check vs FOE +0.00 deg: 10.29 deg apart
+  WARN  plane height rejected: only 8 homographies; pitch disagrees with the FOE by 10.3 deg;
+        height spread +/-0.22 m; height 2.14 m is not a windscreen mount
+```
+
+`vp_calib` (too few vertical lines) and `scale_calib` (0 usable tracks) are unchanged.
+
+**Camera verdict under cv2 4.14 is IDENTICAL to cv2 5.0:** `DEGRADED`, `MOUNT_NOT_CALIBRATED`,
+yaw/pitch/roll 0.0, height 1.17, hfov 66.0.
+
+`diff` of the two `calibration.json` files is exact and worth quoting, because it says precisely
+what the pin bought — **every applied parameter is identical; only the `cross_checks` block gains
+detail**:
+
+```diff
+-        "plane": "insufficient homographies",
++        "pitch_foe_vs_plane_deg": 10.294,
++        "plane_pairs": 8,
++        "plane_height_rejected": "only 8 homographies; pitch disagrees with the FOE by 10.3 deg;
++                                  height spread +/-0.22 m; height 2.14 m is not a windscreen mount",
++        "lane_frames": 59,
++        "lane_segments": 976,
++        "pitch_foe_vs_lane_vp_px": 62.0,
+```
+
+`K`, `extrinsics` and every entry under `parameters` are byte-identical. So the pin did not change
+the *answer* — it changed a silent failure into a **recorded, numeric disagreement**, which is what
+made §8.1 diagnosable at all.
+
+### Two consequences
+
+1. ⇒ **The delivered video is not materially wrong.** It was rendered with nominal calibration, and
+   the correctly-pinned run yields that same nominal calibration. **No re-render is needed** — which
+   is only knowable because the re-run was actually done rather than assumed either way.
+2. ⇒ **The brief's Step-5 item 3 now has a real answer, and it is a negative one:** the lateral
+   offset and camera height **cannot be measured from this recording**. Not "a bug stopped us" —
+   every calibrator that could speak, spoke, and each declined for a stated numeric reason. That is
+   a materially different and more useful claim than the cv2-5 run could support.
+
+⚠️ **The opencv cap is still right and still worth having.** It did not change this recording's
+outcome, but under cv2 5 `lane_calib` never got to *have* an opinion — the decline above was
+indistinguishable from a crash. A gate that cannot run is not a gate that passed.
+
+## 8. What is still open
+
+1. **Four independent declines on a clean 74 s daylight highway clip.** The recurring theme is the
+   **FOE**: `lane_calib`'s yaw is 7.0° from it, `plane_calib`'s pitch 10.3° from it, and the lane VP
+   row sits 62 px off it — while the FOE fit itself "produced no usable flow". If the FOE reference
+   is wrong, three cross-checks are being judged against a bad ruler. **This is the first thing to
+   investigate before scaling this corpus**, and it is cheap: the disagreements are all recorded.
+2. **`scale_calib` gets 0 usable tracks under both cv2 majors.** Independent of the FOE question,
+   and unexplained.
 3. **Recording A is unusable** (40 m, 8.5 s). If short clips are expected in the corpus, the 50 m /
    15 s gates are the thing to revisit — deliberately, not by loosening flags to make one file pass.
+4. **A windscreen-mount height of 2.139 m was rejected as implausible.** Either the homographies are
+   bad or the mount is not where the prior assumes; a tape measure settles it in one minute and
+   would unblock `--cam-height`.
