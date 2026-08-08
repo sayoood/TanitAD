@@ -480,8 +480,38 @@ def self_calibrate(video, cam, traj, sync, args, log, session=None, vframe=None)
         try:
             from trajlib import lane_calib as LC
             foe_yaw = float(np.rad2deg(cam.yaw))
+            # `lane_calib`'s credibility gate rejects a lane-VP yaw more than
+            # `max_yaw_correction_deg` (default 4.0) from `cam.yaw`, and calls
+            # cam.yaw "the FOE". That is only true when the FOE fit SUCCEEDED.
+            # Every failure path in camera.py (:396,:401,:403,:408) leaves
+            # cam.yaw at the NOMINAL 0.0 and records `extrinsics_note`; only the
+            # success path (:414) sets `extrinsics`. So with no FOE the gate
+            # silently degenerates into "reject any mount yaw beyond 4 deg of
+            # dead ahead" -- and it rejects HARDEST exactly when the mount is
+            # most crooked, which is when the correction matters most.
+            #
+            # MEASURED 2026-08-08 on 14-19-54: the FOE fit produced no usable
+            # flow, lane_calib measured -7.01 deg with a half-split spread of
+            # 0.20 deg (its own stability gate is 0.6 -- comfortably passed),
+            # and the yaw was discarded for being "7.0 deg from the FOE" that
+            # did not exist. An independent VP fit over 154 straight frames /
+            # 6689 segments gives -6.05 deg [95% CI -6.28, -5.83]. Shipping 0.0
+            # put >1 lane width of lateral error into the overlay beyond ~15 m.
+            #
+            # Fix: the CALLER decides whether the cross-check is applicable,
+            # because the caller is what knows whether a FOE reference exists.
+            # With no FOE there is nothing to agree with, so the bound becomes a
+            # plain plausibility limit on mount yaw -- 15 deg, the same constant
+            # camera.py:405 uses to sanity-check the FOE itself. The half-split
+            # stability gate is untouched and remains the real quality check.
+            foe_measured = "extrinsics" in cam.source
             res = LC.estimate(session, video, cam, vframe,
-                              t_video_start_s=sync.t_video_start)
+                              t_video_start_s=sync.t_video_start,
+                              max_yaw_correction_deg=(4.0 if foe_measured else 15.0))
+            if not foe_measured:
+                rec["cross_checks"]["lane_yaw_gate"] = (
+                    "no FOE reference; agreement gate replaced by a 15 deg "
+                    "plausibility bound (camera.py:405)")
             log.block("lane markings", str(res))
             for n in res.notes:
                 log(f"    {n}", "WARN")

@@ -31,12 +31,31 @@ instead. This mirrors the lazy ``av`` import in :mod:`tanitad.data.comma2k19`.
 
 Provenance and evidence class
 -----------------------------
-This package was copied verbatim from the upstream ``trajlib`` project; the
-module bodies are unmodified. Accuracy figures quoted in ``README.md`` (hold-out
-RMS 2.23 m position, 1.27 m/s speed, 0.84 deg heading on the 2025-08-11 session)
-are **INHERITED** from that project's own documentation. They have NOT been
-reproduced in this repo and must not be cited as a TanitAD result until
-re-measured here with :mod:`.validate`.
+This package was copied from the upstream ``trajlib`` project. The module bodies
+were originally unmodified; **that is no longer true and the exceptions are
+listed here**, because a silently-drifted "verbatim" copy is worse than an
+honestly-annotated one.
+
+**Deliberate divergences from upstream** (each with the measurement that forced it):
+
+* ``pipeline.py`` — ``self_calibrate`` now passes ``max_yaw_correction_deg`` to
+  ``lane_calib.estimate`` explicitly. Upstream always used the default 4.0, which
+  gates the lane-VP yaw against ``cam.yaw``. When the FOE fit fails, ``cam.yaw``
+  is the **nominal 0.0**, so that gate degenerates into "reject any mount yaw
+  beyond 4 deg of dead ahead" — rejecting hardest exactly when the mount is most
+  crooked. MEASURED 2026-08-08 on ``14-19-54``: a stable −7.01 deg (half-split
+  spread 0.20 deg) was discarded as "7.0 deg from the FOE" that did not exist,
+  and an independent VP fit over 154 straight frames / 6689 segments gives
+  −6.05 deg [95 % CI −6.28, −5.83]. Shipping 0.0 put **4.9 m of lateral error at
+  40 m** into the overlay — outside the ego lane from ~15 m onward.
+
+Accuracy figures quoted in ``README.md`` (hold-out RMS 2.23 m position, 1.27 m/s
+speed, 0.84 deg heading on the 2025-08-11 session) are **INHERITED** from that
+project's own documentation. They have NOT been reproduced in this repo and must
+not be cited as a TanitAD result. *(Our own 2026-08-08 hold-out — 0.70 m /
+0.08 m/s / 0.53 deg — is in
+``TanitAD Research Hub/Data Engineering/Implementation/incoming/2026-08-08-trajrecon-render/``.
+It is a different recording and route, so it supersedes rather than beats them.)*
 
 ⚠️ ``README.md`` and the code DISAGREE on the default camera height: the README's
 parameter table says 1.25 m, its own limitations section says 1.17 m, and
