@@ -1,0 +1,71 @@
+# VALIDATION AGAINST THE PI'S ESTIMATES — 2026-08-08
+# Run at the PI's request as VALIDATION, explicitly NOT as a final measurement.
+# PI estimates: camera height ~1.6 m ("plausible"), lateral offset -12 cm.
+
+## 1. HORIZON ROW — the pipeline is wrong by 2.29 deg  [SOLID]
+
+Lane vanishing point over 154 straight frames / 6689 Hough segments, 300-resample
+frame bootstrap:
+
+    lane VP = (803.3, 523.4) px
+    horizon ROW 523.4   95% CI [513.3, 534.8]
+    pipeline uses 464.4 (pitch -2.93 deg, from the FOE)
+    -> 59.0 px apart = 2.29 deg of pitch; the CI excludes the pipeline value widely.
+
+For GROUND PROJECTION the correct horizon is where the ROAD PLANE vanishes, i.e. the
+lane VP -- not the FOE, which is where the DIRECTION OF TRAVEL projects. The two
+coincide only on a level road with no sideslip. So the PI's "pitch is wrong" is
+CONFIRMED, and the FOE-derived pitch should not be used for the ground homography.
+
+## 2. CAMERA HEIGHT — the evidence does NOT support 1.6 m  [MEASURED, with caveats]
+
+scale_calib.py's own derivation gives a FOCAL-FREE lateral relation:
+    y = (u - cx) * h / (v - v_horizon)          <- no f anywhere
+so with the horizon measured above, lane width is a direct function of h ALONE.
+
+Ridge points, rows 0.55H..0.86H, horizon 523.4, 154 straight frames:
+
+    h = 1.17 m  ->  lane width 3.40 m   (IQR 1.42, n=140)   lane centre +0.25 m
+    h = 1.40 m  ->  lane width 4.00 m   (IQR 1.95, n=139)   lane centre +0.25 m
+    h = 1.60 m  ->  lane width 4.50 m   (IQR 3.35, n=140)   lane centre +0.30 m
+    h = 1.69 m  ->  lane width 4.70 m   (IQR 2.97, n=142)   lane centre +0.33 m
+
+n is STABLE at 139-142 across the sweep (the earlier confounded attempt ranged
+19-64), and width scales linearly with h as the physics requires. Fitting
+width ~ 2.9 * h:
+
+    lane 3.50 m  ->  h = 1.21 m
+    lane 3.25 m  ->  h = 1.12 m
+    lane 3.00 m  ->  h = 1.03 m
+
+=> For any plausible French RD/RN lane (3.00-3.50 m) the implied height is
+   1.03-1.21 m. 1.6 m would require a 4.5 m lane; 1.69 m would require 4.7 m.
+   This AGREES with the 1.17 m operator default and with scale_calib's implied
+   1.088 m (f*h 1608.1 / f 1478.3), and DISAGREES with plane_calib's 1.691 m.
+
+CAVEATS, stated because two earlier attempts at this were confounded:
+  * assumes the two detected ridge peaks are the EGO LANE's edges. If they were the
+    left line and the far shoulder line, the true separation is larger and h scales
+    up with it. Cross-check: at h=1.17 the pair measures 3.40 m; were it the whole
+    carriageway the implied lane would be ~1.7 m, which is impossible -- so the pair
+    is one lane.
+  * assumes a standard lane width. That is the external metric being leaned on, and
+    it is exactly the quantity a tape measure or the road's classification settles.
+  * IQRs are 1.4-3.4 m: the MEDIAN is well determined by n~140, individual frames
+    are not.
+
+## 3. LATERAL OFFSET
+
+Measured lane centre sits +0.25..+0.30 m from the camera (camera LEFT of lane
+centre) and is insensitive to h. The PI's -0.12 m is the phone's offset from the
+VEHICLE centreline; these are different quantities and differ by however far the
+car sits off lane centre. They are reconcilable if the vehicle ran ~0.37 m left of
+lane centre. NOT independently checked here.
+
+## 4. WHAT IS STILL UNPINNED
+
+The focal length. Lateral geometry is blind to it (section 2), so f is constrained
+only through the LONGITUDINAL product f*h -- and scale_calib declined at 62% spread.
+An error in f leaves lane width and centring perfect while putting the 40 m point of
+the trajectory at the visual position of 30 m; scale_calib.py documents exactly that
+failure (its Pacific Coast Highway case, 33% off).
