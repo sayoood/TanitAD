@@ -54,6 +54,34 @@ recording it must be set to 3.50 or the ground-projection scale carries the erro
 from __future__ import annotations
 
 import importlib
+import sys
+
+# ---------------------------------------------------------------------------
+# The ``trajlib`` alias — without it NOTHING in this package runs.
+# ---------------------------------------------------------------------------
+# The 24 upstream modules were landed BYTE-EXACT, so 7 of them still import each
+# other under the upstream distribution name: ``from trajlib import timesync``,
+# ``from trajlib.camera import calibrate_camera``, and so on (pipeline.py:53-62,
+# render_video.py:25-34, run_demo.py:23-24, and 4 more). Nothing in this repo
+# provides ``trajlib``, so the documented entry point
+#
+#     python -m tanitad.data.trajrecon.pipeline ...
+#
+# died at the first import until this alias existed.
+#
+# It went unnoticed because `stack/tests/test_trajrecon_*.py` read the sources as
+# BYTES -- they check for control characters and valid UTF-8, and never import a
+# single module. Byte-integrity was proven; runnability never was. The static
+# check in `test_trajrecon_imports.py` is the guard that actually covers it.
+#
+# Rewriting the imports was the alternative and was rejected: byte-exactness is
+# the property that makes "verified against upstream" mean anything here, and it
+# is what `test_trajrecon_integrity.py` exists to protect. Aliasing keeps the
+# upstream bodies untouched and puts the adaptation in this file, which is ours.
+#
+# `setdefault`, not assignment: if a real upstream `trajlib` is installed it wins,
+# and we never shadow it.
+sys.modules.setdefault("trajlib", sys.modules[__name__])
 
 __all__ = [
     "accel_source", "camera", "contract", "diagnose", "frame_folder", "frames",
