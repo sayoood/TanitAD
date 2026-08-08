@@ -403,6 +403,34 @@ longer the load-bearing fix. The load-bearing fix is this one.
 
 ⚠️ `camera.py` is now also a **deliberate divergence** from upstream; recorded in `__init__.py`.
 
+### 7d. ⚠️ Do NOT read "VERDICT: OK" as "the calibration is now right"
+
+Yaw is settled. **Pitch and height are not**, and they are what govern the near-field ground
+projection. Measured, on the same run that reports OK:
+
+| quantity | estimates | status |
+|---|---|---|
+| **pitch** | FOE **−2.93°** vs `plane_calib` **+1.89°** | **4.82° apart** |
+| **height** | `scale_calib` implies **1.088 m** (f·h 1608.1 / f 1478.3; declined, spread 62 %) · `plane_calib` **1.691 m** (declined, ±0.56) · **1.17 m operator default IN USE** | **1.09–1.69 m, a 55 % spread** |
+| **lane width** | passed `--lane-width 3.50`, `lane_calib` **measured 3.60 m** | **+2.9 %**, consistent with the f·h uncertainty |
+
+The consequence is visible. Applying pitch −2.93° widened the near-field corridor by **+15 %**
+(514 → 591 px at row 0.96H) and it now **overhangs the right lane edge**, where the yaw-only render
+sat inside the lane near the car but diverged with distance. Yaw error is a *wedge*; pitch/height
+error is a *near-field scale* error. **The first is fixed; the second is now the dominant one.**
+
+⚠️ **And the verdict itself is over-optimistic for exactly the reason the old message was
+over-pessimistic.** `diagnose.py:301` keys on `"extrinsics" in cam.source` — a single boolean for
+"did the FOE run". Before the fix that made it claim "nominal values in use" while yaw was measured;
+now it reports **OK** while camera height is still an unmeasured operator default and two pitch
+estimates disagree by 4.8°. Same single-key test, opposite failure. It should key on *which*
+parameters were measured, not on whether one estimator ran.
+
+⇒ **Cheapest next action, by a wide margin: put a tape measure on the phone mount.** `scale_calib`
+can only observe the **product** f·h, so an external height pins the focal length, which pins the
+entire ground projection — and would settle the 3.50-vs-3.60 lane-width discrepancy at the same
+time. One minute of physical measurement replaces all three declined estimators.
+
 ## 8. What is still open
 
 1. ⭐ **Fix `estimate_foe`'s rotation gate to read the gyro** (§7b). This is now the top item: it is
