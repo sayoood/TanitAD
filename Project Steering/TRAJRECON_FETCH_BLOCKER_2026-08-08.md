@@ -121,3 +121,41 @@ been changed" and that the file "must be shared" — both were treated as settle
 Measured: the first was not effective for the Drive hosts, and the second was never done at all.
 Same family as the standing rule that a claim deciding real work must be **MEASURED**, not
 INHERITED — and the reason the Step-1 probe exists as a gate rather than a formality.
+
+## Addendum — the smaller recording does NOT unblock it either (MEASURED, same session)
+
+The PI added `2026-08-08_14-05-42-android.zip` (`1AiH-m9E5tt73Q8kyvwFqVGpfjGVvDyzK`,
+**18,701,510 B**, an earlier drive the same day) and asked to try it. It is **10x smaller and still
+36x too large** for the only route that does not need the network:
+
+| | |
+|---|---|
+| binary | 18,701,510 B (18.7 MB) |
+| base64 | 24,935,348 chars (24.9 MB) |
+| tokens @ ~3.5 chars/token | **~7,124,385** |
+| context window | ~200,000 |
+| **over by** | **~36x** |
+
+⛔ **The download was NOT attempted.** A truncated base64 stream yields a corrupt archive that would
+then be processed as if real — the exact fictional-input failure the pipeline's `REJECT` exists to
+prevent — and an untruncated one ends the session. The arithmetic decides it; no probe needed.
+
+⚠️ **This file is ALSO owner-only**: `{"role":"owner","type":"user"}`, no `anyone`/link permission.
+So Blocker 2 is not specific to the 180 MB file — **nothing in the folder is link-shared.**
+
+**Consequence for sizing:** the inline-base64 ceiling is roughly **300-600 KB of binary**, i.e. ~0.5 %
+of even this "small" zip. **No Sensor Logger recording will ever fit.** Stop treating a smaller file
+as the workaround — the route is closed by orders of magnitude, not by a margin.
+
+### Third route, discovered here: API key over the ALREADY-REACHABLE host
+
+`www.googleapis.com` is reachable (measured above). For a file shared "anyone with the link", Drive
+v3 accepts a **plain API key** — no OAuth, and **no environment change**:
+
+```bash
+curl -L -o ~/trajdata/in/rec.zip \
+  "https://www.googleapis.com/drive/v3/files/<id>?alt=media&key=$GOOGLE_API_KEY"
+```
+
+Requires (a) link-sharing and (b) a Drive-API-enabled key. Costs a secret in the transcript, so the
+GitHub release asset remains preferred — at 18.7 MB that upload is seconds.
