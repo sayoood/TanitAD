@@ -159,3 +159,50 @@ curl -L -o ~/trajdata/in/rec.zip \
 
 Requires (a) link-sharing and (b) a Drive-API-enabled key. Costs a secret in the transcript, so the
 GitHub release asset remains preferred — at 18.7 MB that upload is seconds.
+
+## ✅ RESOLUTION 2026-08-08 — Blocker 2 CLEARED. Only "start a new session" remains.
+
+**Blocker 2 (link-sharing) is FIXED — MEASURED, both files:**
+
+```json
+{"permissions":[{"role":"reader","type":"anyone"}, {"role":"owner","type":"user", ...}]}
+```
+
+| file | id | size | sharing |
+|---|---|---|---|
+| `2026-08-08_14-05-42-android.zip` | `1AiH-m9E5tt73Q8kyvwFqVGpfjGVvDyzK` | 18,701,510 B | ✅ `anyone/reader` |
+| `2026-08-08_14-19-54-android.zip` | `1DitzfASALJhJ5GqE-sBEqa3t_oyOipHN` | 179,607,367 B | ✅ `anyone/reader` |
+
+**Blocker 1 config is also in place** — the PI's screenshot shows network access `Custom` with
+`drive.google.com`, `drive.usercontent.google.com`, `*.googleusercontent.com` and the
+package-manager default list retained.
+
+⛔ **But it cannot help THIS session** — re-probed after the change: `drive.google.com`,
+`drive.usercontent.google.com`, `docs.google.com` all still `000`/CONNECT 403. **An environment
+change applies only to sessions created after it.** This is not a fault to debug; it is the
+documented semantics, and it is why Step 1 is a gate.
+
+⚠️ **Confirmed there is no keyless side door, so do not go looking for one again.** With the file
+now genuinely public, every reachable Google host was probed: `www.googleapis.com` and
+`content.googleapis.com` answer `403` *"The request is missing a valid API key"* (254 B),
+`drive.googleapis.com` 404s, and every `googleusercontent.com` host is still CONNECT-denied.
+Public sharing does **not** make the Drive REST API anonymous.
+
+### ⇒ The next session runs it. Nothing else is outstanding.
+
+Sharing is done and the allowlist is configured, so a **newly created session** needs only:
+
+```bash
+curl -sS -o /dev/null -w "%{http_code}\n" --max-time 20 https://drive.google.com   # expect 200/3xx
+pip install gdown numpy scipy pandas opencv-python-headless matplotlib
+apt-get update -qq && apt-get install -y ffmpeg          # ffprobe too
+mkdir -p ~/trajdata/in
+gdown 1AiH-m9E5tt73Q8kyvwFqVGpfjGVvDyzK -O ~/trajdata/in/2026-08-08_14-05-42-android.zip
+ls -l ~/trajdata/in/            # MUST be 18,701,510 B -- a few KB means the interstitial
+cd /home/user/TanitAD/stack
+python -m tanitad.data.trajrecon.pipeline \
+    --input-dir ~/trajdata/in --output-dir ~/trajdata/out --lane-width 3.50
+```
+
+Start with the **18.7 MB** recording (faster round trip), then repeat with the 180 MB one. Report
+all four metric families, quote raw `report.json`, and treat a `REJECT` as a valid result.
