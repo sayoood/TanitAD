@@ -27,6 +27,13 @@ net = ["truststore>=0.9"]
 # (PhysicalAI egomotion/clip-index), episode visualization.
 real = ["av>=12", "huggingface_hub>=0.24", "truststore>=0.9",
         "pandas>=2.0", "pyarrow>=15", "pillow>=10"]
+# Trajectory reconstruction from smartphone dashcam recordings
+# (tanitad/data/trajrecon): Sensor Logger CSV ingest, EKF+RTS smoothing, optical
+# -flow/gyro time sync, camera calibration, BEV + in-image overlay rendering.
+# ALSO REQUIRES ffmpeg AND ffprobe ON PATH -- trajrecon.timesync probes container
+# PTS with ffprobe, and neither is a pip dependency. `apt-get install ffmpeg`
+# supplies both; imageio-ffmpeg supplies ffmpeg ONLY and is not sufficient.
+trajrecon = ["opencv-python>=4.9", "scipy>=1.11", "pandas>=2.0", "matplotlib>=3.8"]
 
 [tool.setuptools.packages.find]
 include = ["tanitad*"]
