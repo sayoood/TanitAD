@@ -131,6 +131,22 @@ Every subagent brief MUST carry the preamble in
   the log looks like a normal startup. Wait until the old supervisor **and** trainer are actually
   gone (poll `ps`), then start. If a lock is left behind with no holder (scan `/proc/*/fd`), it is
   debris — `rm` it. Same shape as the stale `.git/index.lock` rule below.
+- **Google Drive needs THREE hosts, and a web session already has all three.** MEASURED 2026-08-08
+  (three tools; `…/incoming/2026-08-08-google-drive-domains/`): `drive.google.com` (entry point —
+  `/uc?export=download` serves **no bytes**, it answers **303**), `drive.usercontent.google.com`
+  (**the bytes**), `*.googleusercontent.com` (`lh3.`, `drive-thirdparty.`, the older
+  `doc-XX-XX-docs.` shards). All three answer through the agent proxy with `ssl_verify_result=0`
+  and **no 403/407**, so the egress policy already permits Drive — use
+  `python tools/gdrive_fetch.py --check` rather than re-deriving it.
+  ⚠️ **These cover ANONYMOUS downloads only.** Unauthenticated Drive answers
+  `302 → accounts.google.com`, which is deliberately NOT allowlisted ⇒ **a sign-in redirect means
+  the file is not shared, NOT that the allowlist is too narrow.** The two readings prescribe
+  opposite fixes and only one is right.
+  ⚠️ **A 404 from these hosts is a HEALTHY answer — the host served us.** Only 403/407 (proxy policy
+  denial, per `/root/.ccr/README.md`) or a dead tunnel is a block. *(This bug was live in the
+  preflight's own classifier and a test caught it: every domain would have been reported blocked
+  while all three were answering.)* Same family as the `df`, Thor-`free` and cgroup-`usage_in_bytes`
+  traps above — **a probe answering a different question than the one asked.**
 - **Verify before alarming.** Check the metric's definition and take multiple samples first;
   several "outages" were measurement artifacts.
 
