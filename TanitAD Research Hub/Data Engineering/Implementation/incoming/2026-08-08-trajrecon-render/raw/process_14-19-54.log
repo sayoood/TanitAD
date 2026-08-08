@@ -1,54 +1,3 @@
-19:22:20 INFO  pipeline 1.6.1-lateral: 2 archive(s) in /root/trajdata/in
-19:22:20 INFO  output -> /root/trajdata/out   scratch -> /tmp/trajpipe
-19:22:20 INFO  lateral offset -0.35 m, camera height 1.17 m
-19:22:20 INFO  
-19:22:20 INFO  [1/2] 2026-08-08_14-05-42-android.zip  (new)
-19:22:20 INFO  unpacking 2026-08-08_14-05-42-android.zip (19 MB) -> local scratch
-19:22:20 INFO  --- structure ---
-19:22:20 INFO      VERDICT: DEGRADED
-19:22:20 INFO      [DEGRADED] EMPTY_CSV              Annotation.csv is essentially empty
-19:22:20 INFO                                         bytes=0
-19:22:20 INFO      measurements:
-19:22:20 INFO          platform_detected            android
-19:22:20 INFO  session SM-G990B  9.2s  streams=['accel', 'gyro', 'gravity', 'total_accel', 'orientation', 'magnetometer', 'gps', 'barometer']
-19:22:23 INFO  --- content ---
-19:22:23 INFO      VERDICT: REJECT
-19:22:23 INFO      [REJECT  ] NO_MOTION              only 40 m travelled (< 50.0 m)
-19:22:23 INFO      [DEGRADED] ACCEL_UNUSABLE         accelerometer carries no usable longitudinal signal; speed will be GNSS-driven only
-19:22:23 INFO                                         source=disabled (total_accel - R(q)^T*g, quality=0.03)
-19:22:23 INFO      [DEGRADED] WEAK_VEHICLE_FRAME     phone->vehicle lateral axis is weakly determined
-19:22:23 INFO                                         lateral_score=0.041
-19:22:23 INFO      [REJECT  ] TOO_SHORT              less than 15 s of overlapping video and sensor data
-19:22:23 INFO                                         overlap_s=8.5
-19:22:23 INFO      measurements:
-19:22:23 INFO          platform                     android
-19:22:23 INFO          device                       SM-G990B
-19:22:23 INFO          gravity_mag_ms2              9.8067
-19:22:23 INFO          total_accel_mag_ms2          9.9633
-19:22:23 INFO          unit_notes                   accel: derived: total_accel - gravity [m/s^2, linear]; gravity: Gravity.csv [m/s^2]; total_accel: TotalAcceleration.csv [m/s^2]
-19:22:23 INFO          frozen_fraction              0.0
-19:22:23 INFO          n_fixes                      10
-19:22:23 INFO          hacc_median_m                3.81
-19:22:23 INFO          n_speed_missing              0
-19:22:23 INFO          speed_range_ms               (3.46, 5.32)
-19:22:23 INFO          max_gap_s                    1.0
-19:22:23 INFO          accel_hz                     105.17
-19:22:23 INFO          gyro_hz                      105.17
-19:22:23 INFO          gravity_hz                   105.17
-19:22:23 INFO          gravity_norm                 9.807
-19:22:23 INFO          gyro_absmax                  0.533
-19:22:23 INFO          gps_distance_m               39.8
-19:22:23 INFO          moving_fraction              1.0
-19:22:23 INFO          accel_tier                   4
-19:22:23 INFO          accel_quality                0.031
-19:22:23 INFO          video_duration_s             8.53
-19:22:23 INFO          video_frames                 256
-19:22:23 INFO          video_fps                    30.006
-19:22:23 INFO          sensor_duration_s            9.22
-19:22:23 ERROR REJECTED at the content check; nothing was processed
-19:22:23 INFO      -> REJECTED in 3s
-19:22:23 INFO  
-19:22:23 INFO  [2/2] 2026-08-08_14-19-54-android.zip  (new)
 19:22:23 INFO  unpacking 2026-08-08_14-19-54-android.zip (180 MB) -> local scratch
 19:22:24 INFO  --- structure ---
 19:22:24 INFO      VERDICT: DEGRADED
@@ -156,7 +105,3 @@
 19:36:36 INFO      video 1800/2216 (694s)
 19:38:29 INFO      video 2100/2216 (807s)
 19:39:15 INFO      video: 2216 frames in 852s -> 156 MB
-19:39:15 INFO      -> DONE in 1012s
-19:39:15 INFO  
-19:39:15 INFO  pipeline finished. {'REJECTED': 1, 'DONE': 1}
-19:39:15 INFO  registry: /root/trajdata/out/_registry.json

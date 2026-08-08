@@ -84,7 +84,13 @@ lateral_score 0.306.
 ### 3.4 Trajectory and steering
 
 2216 of 2446 frames carry a complete [−3, +5] s window — **100 % of the emitted records**, spanning
-3.50–77.49 s (74.0 s), ≈ 1558 m integrated.
+3.50–77.49 s (74.0 s). `gps_distance_m` **1730.7** over the full 82.5 s session; integrating the
+emitted speed over the 74.0 s window gives ≈ 1558 m. Both are correct for their spans — the report's
+1730.7 m is the one to quote.
+
+Accelerometer quality separates the two recordings cleanly: **`accel_tier` 1, `accel_quality`
+0.394** here, against tier 4 / 0.031 on recording A (which is why A's speed would have been
+GNSS-only). 83 GNSS fixes, `frozen_fraction` 0.0, `moving_fraction` 1.0, `max_gap_s` 1.0.
 
 | | |
 |---|---|
@@ -117,6 +123,26 @@ default, *not* a `plane_calib` measurement; lateral offset is the −0.35 prior,
 measurement. Reporting either as "measured" would be false. This is visible in `validation.png`:
 the projected corridor sits right of the true ego lane, which is what an uncalibrated mount yaw plus
 a fallback lateral prior look like.
+
+**Credit where due: the pipeline does not hide this.** `raw/calibration_14-19-54.json` labels every
+parameter with its provenance, and the labels are the honest ones:
+
+```json
+"height_m":          {"value": 1.17, "source": "operator default (not measured)"},
+"roll_deg":          {"value": 0.0,  "source": "assumed level (not measured)"},
+"lateral_offset_m":  {"value": -0.35,"source": "operator prior"},
+"intrinsics_note":   "gyro focal refinement rejected (r=0.24, n=57) - kept nominal",
+"extrinsics_note":   "FOE fit produced no usable flow - kept nominal"
+```
+
+An instrument that writes "not measured" next to its own defaults is doing the thing this programme
+keeps having to relearn. The failure here is the dependency cap, not the pipeline's honesty.
+
+### 3.6 The render
+
+`overlay.mp4`: **1898×720**, h264, 29.92 fps, **2216 frames, 74.06 s, 156 MB**, encoded in 852 s
+(~2.6 frames/s — the cost of compositing a 1080p projection plus a BEV panel per frame). Total
+pipeline wall time 1012 s. A 1280-wide, CRF-30 delivery copy is 14 MB.
 
 ## 4. The cv2 5.0 break — MEASURED, and it degrades instead of failing
 
