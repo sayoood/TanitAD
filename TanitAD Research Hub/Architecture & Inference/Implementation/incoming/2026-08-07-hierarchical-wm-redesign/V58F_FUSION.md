@@ -45,8 +45,9 @@ so T1/closed-loop rolls are trustworthy.
 
 | id | question | pod | cost | gate |
 |---|---|---|---|---|
-| W1 = X0-lite | does kinematic-cost re-rank alone close sel_gap? (no WM roll needed) | 5 | 1 h | ≥30 % gap closed |
-| W2 | fan feasibility census (v5f 30k own fan) | 5 | in W1 dump | decides retrofit urgency |
+| W1 = X0-lite | does kinematic-cost re-rank alone close sel_gap? (no WM roll needed) | 5 | 1 h | ≥30 % gap closed — **RUN 2026-08-09: REFUTED, −16.7 %** (re-rank worsens; registry §1.13) |
+| W2 | fan feasibility census (v5f 30k own fan) | 5 | in W1 dump | **RUN 2026-08-09: 97.6 % steps / 100 % candidates infeasible incl. oracle; mean \|a\| 252 m/s² → retrofit urgency MAXIMAL** |
+| W2b | (added, exploratory) 3-tap smoother probe | 5 | in W1 dump | sel accel 8.10→3.09, BOTH ADEs improve (jitter = denoise residue) — partial "W4-lite", stack it, not a substitute |
 | W3 = stage-A on v5f trunk | is the co-trained trunk more action-controllable than v1arch's? | 5 | 3 h probes | R²(action-response) comparison |
 | W4 = unicycle-anchor head retrofit | retrain ONLY the offset head to emit (a,κ) on the frozen 30k trunk | 5 | ~4 h | accel MAE < 1.5 AND oracle not worse than +10 % |
 | W5 = E-H1-w120 | 6 s horizon on the w120 trunk | 5 | 2 h | ADE(6s) ≤ 3×ADE(2s) |
@@ -57,6 +58,12 @@ W4 is the **load-bearing novelty** of v5.8f: it converts the fan to controls at 
 cost (the anchor head is small) — if it passes, v5.8f needs NO trunk retrain to get a
 feasible fan; if it fails, unicycle anchors become a v6 trunk-training lever and v5.8f
 ships with projection-to-manifold instead (stated fallback).
+
+**W1/W2 measured update (2026-08-09, registry §1.13):** W1's failure is *structural* — with
+97.6 % of fan steps infeasible, any waypoint-space kinematic cost ranks jitter, not manoeuvre
+quality. Therefore W7's WM-roll re-rank is gated not only on W3 but on a **kinematically clean
+fan** (W4 head, or minimally the 3-tap smoother). W4 training launched the same night
+(`train_v58f_unicycle_head.py` on the frozen 30k trunk, pod5; gates in `w4_gate.json`).
 
 ## 4. Assembly sequence
 

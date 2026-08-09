@@ -1254,6 +1254,32 @@ This is the measured content of the standing "NOT closed-loop planning" caveat, 
 programme's next lever set (policy-actions closed loop, lateral-capable heads, MPC-style search
 over the predictor) starts from these numbers.
 
+### 1.13 v5.8f wedge ladder — W1/W2/W2b (X0-lite) — MEASURED 2026-08-09 [TIER T0 diagnostic on the v5f 30k fan]
+
+One GPU pass over the exact §1.8 grid (881 windows, oracle goal, `sel_idx` = the head's own
+pick), full 256-candidate `anchor_traj` fan in **float32** (an f16 first pass gave the same
+census to 3 decimals — the jitter is model output, not storage precision). Artifacts:
+`…/incoming/2026-08-07-hierarchical-wm-redesign/{x0_lite_f32.json, tools_x0_lite.py}`.
+Point estimates on the fixed grid; no interval computed (wedge diagnostic, not an eval row).
+
+| quantity | value |
+|---|---|
+| **W1 (PRE-REGISTERED gate: kinematic re-rank of top-8 closes ≥ 30 % of sel_gap)** | **REFUTED: −16.7 %** (re-rank WORSENS: sel ADE 0.4011 → 0.4351; gap 0.2036 → 0.2376) |
+| W2 census: fan steps violating \|a\|≤4 ∨ \|yr\|≤0.33v+0.05 | **97.6 %** of all 256×20×881 steps |
+| W2 census: candidates infeasible (>5 % bad steps) — selected / oracle / all | **100 % / 100 % / 100 %** |
+| W2: mean \|accel\| over ALL candidates | 252.1 m/s² |
+| W2: selected-candidate accel MAE | **8.10 m/s²** — cross-validates §1.8 four-families' 8.11 on an independent code path |
+| W2b (exploratory, NOT pre-registered): 3-tap [.25 .5 .25] smoother | sel ADE 0.4011→**0.3975**, oracle 0.1975→**0.1879**, sel accel MAE 8.10→**3.09**, sel mean \|yaw-rate\| 81.9→49.0 °/s, still 32 % steps infeasible; smoothed-cost re-rank still fails (−17.1 %) |
+
+**Reading.** The fan's step-level jitter is truncated-denoise residue AROUND the true path —
+smoothing improves BOTH ADE numbers, which noise-around-signal predicts and signal-content does
+not. Consequences: (1) any waypoint-space kinematic cost ranks jitter, not manoeuvre quality —
+W1's failure is structural, so **W7 (WM-roll re-rank) must run on a kinematically clean fan**;
+(2) a free smoother is a partial "W4-lite" (accel 3.09, still 2× the W4 gate of 1.5) — worth
+stacking, not a substitute; (3) **W4 (unicycle-anchor emission head) stays the load-bearing
+v5.8f wedge**, launched 2026-08-09 ~22:45Z on pod5 (`train_v58f_unicycle_head.py`, gates
+pre-registered in `w4_gate.json`: selected accel MAE < 1.5 ∧ oracle ADE ≤ 1.10×0.1975).
+
 ## 2. REF-A — the frozen-encoder arm (H4)
 
 **Shared:** frozen **DINOv2-B/14** features (224 px, 16×16 grid, dim 768) precomputed once; only the
