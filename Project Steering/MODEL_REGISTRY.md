@@ -990,7 +990,32 @@ Full provenance: `TanitAD Research Hub/Data Engineering/Implementation/incoming/
 
 ---
 
-### 1.8 flagship-v5f — `flagship-v5f-w120-30k` — 🟢 **RUNNING** (step 3,650 @ 2026-08-03T18:57Z)
+### 1.8 flagship-v5f — `flagship-v5f-w120-30k` — ✅ **COMPLETE at 30,000** (2026-08-09T19:23Z)
+
+**FINAL EVAL [TIER T0 — teacher-forced WM; see EVAL_DOCTRINE.md] — MEASURED 2026-08-09,
+`eval_flagship_v4.py` on the full 600-episode w120 val corpus (881 windows, frame parity
+`176x624f305.5775cyl` MATCHES the ckpt config; imagination probes fed via the run's frozen
+`probe_vocab.pt`):**
+
+| metric (dense 1..20 @ 10 Hz) | value |
+|---|---|
+| **ade@2s (selected)** | **0.4011 m** |
+| **oracle_ade@2s (best-in-fan)** | **0.1975 m** |
+| **sel_gap** | **0.2036 m — the selector still leaves ~half** |
+| miss@2m | 0.1487 |
+| 4-wp convention: ade / oracle | 0.5191 / 0.2453 |
+| seam_norm_ratio_max | 0.099 (clamp 1.0 — grafts healthy) |
+| wm_canary_ade@2s | 1.245 *(inert-controller regime, benign by construction)* |
+
+⚠️ **w120 geometry ⇒ NOT comparable to any 256×256-pinhole number** (cross-frame). ⛔ All
+values T0; T1 closed-loop is queued (E1.4). **ckpt frozen `ckpt_30k_final.pt`, HF:
+`Sayood/tanitad-flagship-v5f-w120` (public, gated=auto: ckpt + config + train log + eval
+JSON).** Post-30k queue: T1 eval · fan-feasibility dump · X0 diffusion-MPC re-rank ·
+selector ranking retrofit · w120 E-H1. Eval-harness fixes this required (both committed):
+frame args via the existing shared helper, and `_imagination_inputs` + `probe_vocab.pt`
+threading for cond-imagination heads.
+
+#### (history) run record — was 🟢 RUNNING (step 3,650 @ 2026-08-03T18:57Z)
 
 **The 120° wide-FOV cylindrical arm with conditional imagination.** Added to the registry
 2026-08-03 — it had been the programme's headline live run for days **with no registry row**, so
