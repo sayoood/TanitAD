@@ -3256,3 +3256,12 @@ declaration is about and whether the instrument can see it.**
   probing the inherited class** — the CLAUDE.md rule-2 class, inside a review that cited it.
 - **Claim:** "horizon = 2 s." **Incomplete** — dense 2 s operative + 5 s tactical knots
   (TACTICAL_HORIZONS). Class: config read from one function, not the whole config path.
+
+## 2026-08-09 — eval frame-args "fix" was a duplicate: the flags already existed
+
+- Added --frame-h/-w/-hfov/--f-ref/--projection to eval_flagship_v4 believing they were
+  missing; they are provided by `tanitad/geometry.py:279`'s shared helper — the duplicate
+  crashed argparse. **Class: absence asserted after grepping ONE file (the script) for
+  add_argument, missing the shared helper** — rule-2, third instance this week. The real
+  eval2 failure was my own invocation (passed --v2-subframe without the --frame-* flags
+  that already existed).

@@ -891,14 +891,6 @@ def main(argv=None) -> int:
                          "this path. Mutually exclusive with --val-cache.")
     ap.add_argument("--v2-lru", type=int, default=64,
                     help="decoded-payload LRU per v2 cache dir")
-    # w120-class checkpoints: declare the CACHE geometry (same flags and the same
-    # resolution path as train_flagship_v4 — frame_from_args getattr-defaults keep
-    # every existing invocation byte-identical when these are absent).
-    ap.add_argument("--frame-h", type=int, default=None)
-    ap.add_argument("--frame-w", type=int, default=None)
-    ap.add_argument("--frame-hfov", type=float, default=None)
-    ap.add_argument("--f-ref", type=float, default=None)
-    ap.add_argument("--projection", default=None)
     ap.add_argument("--v2-subframe", default=None,
                     help="⭐ HxW (e.g. 176x624) -- the CENTRED SUB-FRAME the "
                          "MODEL reads out of the cache, or 'none' to read the "
