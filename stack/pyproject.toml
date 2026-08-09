@@ -27,6 +27,27 @@ net = ["truststore>=0.9"]
 # (PhysicalAI egomotion/clip-index), episode visualization.
 real = ["av>=12", "huggingface_hub>=0.24", "truststore>=0.9",
         "pandas>=2.0", "pyarrow>=15", "pillow>=10"]
+# Trajectory reconstruction from smartphone dashcam recordings
+# (tanitad/data/trajrecon): Sensor Logger CSV ingest, EKF+RTS smoothing, optical
+# -flow/gyro time sync, camera calibration, BEV + in-image overlay rendering.
+# ALSO REQUIRES ffmpeg AND ffprobe ON PATH -- trajrecon.timesync probes container
+# PTS with ffprobe, and neither is a pip dependency. `apt-get install ffmpeg`
+# supplies both; imageio-ffmpeg supplies ffmpeg ONLY and is not sufficient.
+#
+# ⚠️ opencv is capped BELOW 5. MEASURED 2026-08-08 on the 14-19-54 recording:
+# cv2 5.0.0 changed `HoughLinesP` to return shape (N, 4) where every 4.x returns
+# (N, 1, 4). `lane_calib.py:182` iterates `seg[:, 0]`, which under 5.x is a 1-D
+# array of scalars, so the unpack raises
+#     "cannot unpack non-iterable numpy.int32 object"
+# and the pipeline DEGRADES RATHER THAN FAILS: lane calibration is skipped with a
+# warning, the lateral offset silently falls back to the -0.35 prior, and the run
+# still reports VERDICT: OK. That is the dangerous shape -- a dependency break
+# that costs a measurement instead of raising.
+# The unbounded `>=4.9` is what admitted 5.x. Capping is preferred over patching
+# `lane_calib.py`, because the 24 upstream modules are landed byte-exact and that
+# provenance is worth more than avoiding a version pin. (`vp_calib.py:120` is NOT
+# affected -- it uses `.reshape(-1, 4)`, which is correct under both shapes.)
+trajrecon = ["opencv-python>=4.9,<5", "scipy>=1.11", "pandas>=2.0", "matplotlib>=3.8"]
 
 [tool.setuptools.packages.find]
 include = ["tanitad*"]

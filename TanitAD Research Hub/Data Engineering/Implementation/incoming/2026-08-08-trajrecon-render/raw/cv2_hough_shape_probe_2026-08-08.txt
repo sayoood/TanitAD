@@ -1,0 +1,12 @@
+# MEASURED 2026-08-08 — cv2 return shapes, the four APIs trajrecon uses
+# opencv-python-headless 5.0.0, numpy 2.4.6
+HoughLinesP          (10, 4)   <- CHANGED in 5.x (4.x returns (N,1,4))
+HoughLines           (23, 1, 2)   unchanged
+goodFeaturesToTrack  (22, 1, 2)   unchanged
+calcOpticalFlowPyrLK (22, 1, 2)   unchanged, status (22, 1) uint8
+
+lane_calib.py:182 does `for x1,y1,x2,y2 in seg[:, 0]` -> under 5.x seg[:,0] is 1-D:
+  TypeError: cannot unpack non-iterable numpy.int32 object
+
+vp_calib.py:120 does `hl.reshape(-1, 4)` -> correct under BOTH shapes:
+  (10, 4)  OK

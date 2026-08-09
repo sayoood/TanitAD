@@ -1,0 +1,167 @@
+{
+ "recording": "2026-08-08_14-19-54-android",
+ "zip": "2026-08-08_14-19-54-android.zip",
+ "status": "DONE",
+ "started_utc": "2026-08-08T20:08:59.306819+00:00",
+ "outputs": {
+  "sensors/": "8 streams on a common timebase",
+  "trajectory.jsonl": "2216 frames, ego frame FLU, past+future",
+  "validation.png": "composite at t=40.5s",
+  "calibration.json": "per-recording parameter set with provenance per parameter"
+ },
+ "calibration_set": {
+  "per_recording": true,
+  "parameters": {
+   "focal_px": {
+    "value": 1478.3,
+    "unit": "px",
+    "source": "nominal HFOV=66.0 deg"
+   },
+   "hfov_deg": {
+    "value": 66.0,
+    "unit": "deg",
+    "source": "derived from focal"
+   },
+   "yaw_deg": {
+    "value": -7.007,
+    "unit": "deg",
+    "source": "lane vanishing point, 976 segments over 59 straight frames (half-split spread 0.20 deg)"
+   },
+   "pitch_deg": {
+    "value": -2.928,
+    "unit": "deg",
+    "source": "FOE at (797,464) px, 425093 flow vectors, inliers=0.86"
+   },
+   "height_m": {
+    "value": 1.17,
+    "unit": "m",
+    "source": "operator default (not measured)"
+   },
+   "roll_deg": {
+    "value": 0.0,
+    "unit": "deg",
+    "source": "assumed level (not measured)"
+   },
+   "lateral_offset_m": {
+    "value": 0.25,
+    "unit": "m",
+    "source": "ego-lane centre vs camera over 59 frames (lane width 3.60 m)",
+    "note": "+left. Assumes lane-centred driving on average over the session."
+   },
+   "mount_longitudinal_m": {
+    "value": 2.1,
+    "unit": "m",
+    "source": "operator prior",
+    "note": "+forward. Phone position ahead of the vehicle reference point (rear axle). The exported trajectory is the rear axle's path, not the phone's: a point mounted this far forward swings wide through every turn, and ignoring it left up to 2.6 m of lateral error at intersections while straight-road checks still showed centimetres."
+   },
+   "trajectory_reference": {
+    "value": "rear axle",
+    "unit": "-",
+    "source": "phone re-referenced by (L=2.10, W=+0.25) m via a per-point rigid transform"
+   },
+   "vehicle_width_m": {
+    "value": 1.8,
+    "unit": "m",
+    "source": "operator setting"
+   }
+  },
+  "cross_checks": {
+   "pitch_foe_vs_plane_deg": 4.82,
+   "plane_pairs": 14,
+   "plane_height_rejected": "only 14 homographies; pitch disagrees with the FOE by 4.8 deg; height spread +/-0.56 m",
+   "vertical_vp": "insufficient vertical lines",
+   "lane_frames": 59,
+   "lane_segments": 976,
+   "pitch_foe_vs_lane_vp_px": 13.7,
+   "yaw_foe_vs_lane_deg": -0.699,
+   "fh_px_m": 1608.1,
+   "fh_tracks": 1576,
+   "fh_spread": 0.618,
+   "hfov_deg": 66.0
+  }
+ },
+ "diagnosis": {
+  "verdict": "DEGRADED",
+  "stats": {
+   "platform_detected": "android",
+   "platform": "android",
+   "device": "SM-G990B",
+   "gravity_mag_ms2": 9.8067,
+   "total_accel_mag_ms2": 10.0104,
+   "unit_notes": "accel: derived: total_accel - gravity [m/s^2, linear]; gravity: Gravity.csv [m/s^2]; total_accel: TotalAcceleration.csv [m/s^2]",
+   "frozen_fraction": 0.0,
+   "n_fixes": 83,
+   "hacc_median_m": 3.81,
+   "n_speed_missing": 0,
+   "speed_range_ms": [
+    19.65,
+    23.64
+   ],
+   "max_gap_s": 1.0,
+   "accel_hz": 105.17,
+   "gyro_hz": 105.17,
+   "gravity_hz": 105.17,
+   "gravity_norm": 9.807,
+   "gyro_absmax": 0.511,
+   "gps_distance_m": 1730.7,
+   "moving_fraction": 1.0,
+   "accel_tier": 1,
+   "accel_quality": 0.394,
+   "video_duration_s": 81.75,
+   "video_frames": 2446,
+   "video_fps": 29.922,
+   "sensor_duration_s": 82.52,
+   "t_video_start_s": 3.3043,
+   "sync_source": "gyro-xcorr (bands agree to 2 ms)",
+   "sync_score": 0.47,
+   "speed_max_ms": 23.69,
+   "pos_sigma_median_m": 1.27,
+   "accel_p99_ms2": 1.81,
+   "yawrate_p99_degs": 4.1,
+   "holdout_position (m)": "mean=0.59 m  rms=0.70 m  p95=1.36 m  max=1.71 m  n=82",
+   "holdout_speed (m/s)": "mean=0.06 m/s  rms=0.08 m/s  p95=0.16 m/s  max=0.22 m/s  n=82",
+   "holdout_heading (deg, v>=2.5)": "mean=0.43 deg  rms=0.53 deg  p95=0.97 deg  max=1.00 deg  n=82",
+   "holdout_folds": "5 (each holds out every 5th fix ~ 5 s outage)",
+   "holdout_pos_rms_m": 0.7,
+   "hfov_deg": 66.0,
+   "mount_yaw_deg": -7.01,
+   "mount_pitch_deg": -2.93,
+   "mount_roll_deg": 0.0,
+   "cam_height_m": 1.17,
+   "horizon_row_px": 464.4
+  },
+  "findings": [
+   {
+    "level": "DEGRADED",
+    "code": "EMPTY_CSV",
+    "message": "Annotation.csv is essentially empty",
+    "evidence": {
+     "bytes": 0
+    }
+   }
+  ]
+ },
+ "calibration": {
+  "fx": 1478.2703652619996,
+  "fy": 1478.2703652619996,
+  "cx": 960.0,
+  "cy": 540.0,
+  "yaw_deg": -7.00714655308642,
+  "pitch_deg": -2.9284411988898906,
+  "roll_deg": 0.0,
+  "height_m": 1.17,
+  "lateral_offset_m": 0.0,
+  "sources": {
+   "intrinsics": "nominal HFOV=66.0 deg",
+   "intrinsics_note": "gyro focal refinement rejected (r=0.24, n=57) - kept nominal",
+   "foe_rotation_gate": "gyro |omega| per frame interval",
+   "extrinsics": "FOE at (797,464) px, 425093 flow vectors, inliers=0.86"
+  }
+ },
+ "sync": {
+  "t_video_start_s": 3.304303217517917,
+  "source": "gyro-xcorr (bands agree to 2 ms)"
+ },
+ "finished_utc": "2026-08-08T20:12:33.273252+00:00",
+ "duration_s": 213.96648740768433
+}
