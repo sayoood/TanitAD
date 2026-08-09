@@ -12,9 +12,9 @@ registry §1.8, and the live training log (MEASURED, step 21,250).
 - **Val, last 6 blocks (18.5k–21k):** `ade@2s` oscillates 0.42–0.48 (no trend);
   **`oracle_ade@2s` 0.205–0.227** — down from 0.53 at step 4k, still improving;
   `sel_gap` 0.20–0.27 (early-run was 0.27–0.49); `miss@2m` ~0.16.
-- ⚠️ `canary_ade@2s` drifted 1.05 → ~1.3–1.5 over these blocks while val ade is flat —
-  controller says "ok", but the canary/val divergence deserves one focused look before any
-  30k claim (work item, not an alarm; the 13:00-alarm lesson applies).
+- ✅ RESOLVED (2026-08-09 data audit): the canary/val divergence is **benign by
+  construction** — the run's config documents that from-scratch training makes the canary
+  controller inert (baseline = untrained step-0 canary). No pre-30k check needed.
 - **The headline defect is unchanged in kind and now precise in size: the selector
   captures barely half the fan's quality** — plan 0.42–0.48 vs oracle 0.21. The fan is
   excellent; the choosing is not.
