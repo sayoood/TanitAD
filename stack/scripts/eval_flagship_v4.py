@@ -588,6 +588,7 @@ def collect_planner(world, grounding, head, ds_val, device, dd, episodes,
                     stride, batch, wp_steps=WP_STEPS, goal_mode="oracle",
                     goal_head=None, goal_fallback=False,
                     select_rule="as-trained", c2=None, agree_dump=None,
+                    ckpt_path=None,
                     oracle_channels=()):
     """v4 PLANNER PATH: head-selected trajectory (lambda_plan=1, NOT fed true
     future actions), re-encoding the CURRENT (jointly fine-tuned) trunk.
@@ -664,6 +665,20 @@ def collect_planner(world, grounding, head, ds_val, device, dd, episodes,
     dense_ade_sum = dense_oracle_sum = dense_selgap_sum = dense_missfde_sum = 0.0
     wp_oracle_sum = wp_ade_sum = 0.0
     seam_ratios: list[float] = []
+    # cond-imagination checkpoints (v5f): the head REQUIRES the imagined-consequence
+    # tokens. Load the run's own frozen probe vocabulary (probe_vocab.pt beside the
+    # ckpt) and feed the trainer's exact _imagination_inputs each batch. A missing
+    # vocabulary fails loud - a silent skip would score a head minus 32 of its inputs.
+    _imag_on = bool(getattr(getattr(head, "cfg", None), "cond_imagination", False))
+    _probes = None
+    if _imag_on:
+        import pathlib
+        from train_flagship_v4 import _imagination_inputs
+        _pv = pathlib.Path(ckpt_path).parent / "probe_vocab.pt"
+        if not _pv.exists():
+            raise SystemExit(f"[v4-eval] cond_imagination head but no {_pv}")
+        _probes = torch.load(_pv, map_location=device)
+        print(f"[v4-eval] imagination probes loaded: {tuple(_probes.shape)}", flush=True)
     pose_cache: dict[int, torch.Tensor] = {}
     n = 0
     t0 = time.time()
@@ -686,6 +701,9 @@ def collect_planner(world, grounding, head, ds_val, device, dd, episodes,
             agree.update(goal_kw, b, rec.pop("scalars", None))
         goal_rec = {k: v for k, v in rec.items() if k != "scalars"}
         # --- pass 2: the planner head, on whatever goal that resolved to ------
+        if _imag_on:
+            goal_kw.update(_imagination_inputs(world, head.cfg, b, st,
+                                               probes=_probes))
         out = head(st, v0, lambda_plan=1.0, **goal_kw)
 
         # --- OPTIONAL C2 re-selection over the SAME frozen fan ---------------
@@ -1160,6 +1178,7 @@ def main(argv=None) -> int:
 
     data, diag = collect_planner(world, grounding, head, ds_val, device, dd,
                                  a.episodes, a.stride, a.batch,
+                                 ckpt_path=a.ckpt,
                                  goal_mode=a.goal_mode, goal_head=goal_head,
                                  goal_fallback=a.goal_fallback,
                                  select_rule=a.select_rule, c2=c2,
