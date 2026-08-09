@@ -1116,7 +1116,7 @@ models**. Quote the registry key, never the bare "v1.6".
 | **parity** | trunk untouched ⇒ inherits v1arch's parity (skip-hash `f09e44db` lineage). Eval corpus: `physicalai-oodval-6f4b94e4c7ce-q90`, 40 episodes, stride-1 rollout grid, **6,834 windows** — the SAME grid as every banked v1arch temporal/kinematic number. |
 | **ckpt** | `pod4:/workspace/experiments/unicycle-readout-v2-latentsonly/unicycle_readout.pt` · **banked in-repo 2026-08-06**: `TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-08-06-v1-defect-triage/results/unicycle_readout_v16.pt` (8.4 MB, md5 `81f7f3a19ad0da97fb55ed9270f2f884` verified matching the pod copy — single-disk risk closed) |
 
-**RESULTS — MEASURED 2026-08-06, paired episode-cluster bootstrap over 40 episodes, 2,000
+**RESULTS [TIER T0 — teacher-forced; see EVAL_DOCTRINE.md] — MEASURED 2026-08-06, paired episode-cluster bootstrap over 40 episodes, 2,000
 draws** (`…/2026-08-06-v1-defect-triage/results/v16_full_eval.json.xz`). Δ = v1.6 − v1arch,
 same windows, same frozen-trunk latent rolls (decoder-only contrast by construction):
 
@@ -1204,7 +1204,7 @@ with every non-regression gate green — registered as the best open-loop head i
 **not** as the lag fix. Speed_l1 evidence: `results/run6_train_log.jsonl.xz`; analysis:
 `results/closed_loop_analysis.json`.
 
-### 1.12 CLOSED-LOOP (decoder-conditioned predictor) — MEASURED 2026-08-06
+### 1.12 CLOSED-LOOP (decoder-conditioned predictor) — MEASURED 2026-08-06 [TIER T1 — the PRIMARY eval per EVAL_DOCTRINE.md]
 
 **The predictor rolled on the DECODER'S OWN actions** (steer = atan(2.9·κ), accel direct — the
 `signals_at` contract), no recorded future anywhere; perception context unchanged (imagination
