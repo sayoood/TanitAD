@@ -96,8 +96,11 @@ def main():
     from taniteval.data import load_frames
 
     files = sorted(glob.glob(os.path.join(a.corpus, "ep_*.pt")))
-    if not files:
+    if not files and not a.windows_in:
         sys.exit(f"no ep_*.pt under {a.corpus}")
+    # --windows-in rescore never loads episodes (inference and hierarchy are both
+    # skipped/carried), so a corpus in another on-disk format (e.g. the w120
+    # v2-compressed cache) is fine as PROVENANCE — recorded, not globbed.
     n_avail = len(files)
     if a.episodes:
         files = files[:a.episodes]
