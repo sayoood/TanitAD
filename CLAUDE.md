@@ -377,6 +377,16 @@ fewer than five live streams and unexhausted backlog is not finished.
 still sequential. The programme's throughput is set by how many independent questions are being
 answered at once, not by how carefully one is.)*
 
+## ⛔ BINDING — EVERY NUMBER CARRIES ITS EVAL TIER (EVAL_DOCTRINE.md, 2026-08-06)
+
+**T0** (teacher-forced / true-future-conditioned) is a **WM diagnostic — NEVER "driving
+performance"**. **T1** (action-closed loop: the model conditioned on its OWN actions) is the
+**PRIMARY tier for any capability claim**. **T2** (re-perception sim) is not provisioned.
+*Why this exists (MEASURED, §1.12): open-loop lateral skill was an ACTION ECHO — S-curve
+reproduction 97.9 % open-loop, 0.0 % hold-action, ~5 % closed-loop.* A registry row or report
+quoting a number without its tier stamp is incomplete; comparisons across tiers are invalid.
+Instrument: `taniteval/tools/t1_eval.py` (E1.2).
+
 ## ⛔ BINDING — EVERY EVAL REPORTS FOUR METRIC FAMILIES, NOT ADE (Sayed, 2026-08-02)
 
 **Sayed, verbatim, after asking repeatedly:** *"Despite I told you many times, don't consider only

@@ -1209,7 +1209,8 @@ both outcomes were committed BEFORE launch). v1.6's exact recipe + **one change*
 **ckpt:** `pod4:/workspace/experiments/unicycle-readout-v3-speedloss/unicycle_readout.pt`, banked
 in-repo as `results/unicycle_readout_run6.pt` (md5 `e389f638cc2e7ac4d67bf57479936b7f`).
 
-**Gates verdict — the PRIMARY gates FAILED; the pre-registered hypothesis is REFUTED:**
+**Gates verdict [TIER T0 — teacher-forced; see EVAL_DOCTRINE.md] — the PRIMARY gates FAILED;
+the pre-registered hypothesis is REFUTED:**
 
 | gate | target | measured (eval-grade, same 6,834-window grid) | verdict |
 |---|---|---|---|
