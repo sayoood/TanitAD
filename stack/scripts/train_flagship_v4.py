@@ -963,7 +963,7 @@ def _training_loop(*, out_dir: Path, device, amp: bool, world, grounding, head,
                    eval_episodes: int, batch: int, milestones,
                    accum: int = 1, canary_override=None,
                    heldout_gate=None, heldout_episodes=None,
-                   probes=None) -> dict:
+                   probes=None, kin_weights: dict | None = None) -> dict:
     """Run the joint WM + planner training loop. Auto-resumes from ``ckpt.pt`` if
     present (pod-restart safe). Returns a result dict (final step, canary trace,
     controller multiplier trace, milestone archives) for the smoke proof.
@@ -1549,7 +1549,7 @@ def train(a) -> dict:
         canary_horizons=(5, 10, 15, 20), canary_kmax=20,
         eval_episodes=a.eval_episodes, batch=a.batch, accum=a.accum,
         milestones=milestones, heldout_gate=hgate, heldout_episodes=hg_eps,
-        probes=probes)
+        probes=probes, kin_weights=kin_weights)
 
 
 def _is_from_scratch(a) -> bool:
