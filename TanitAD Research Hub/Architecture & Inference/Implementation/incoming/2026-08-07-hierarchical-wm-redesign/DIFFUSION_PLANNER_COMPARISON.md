@@ -261,3 +261,15 @@ diffusion algorithm**, which is shared line-for-line between the two planners.
   frozen** during head training (`refc_train.py:891` — one Adam over `model.parameters()`); it is
   co-trained under the planner's own losses. The frozen-trunk member of this lineage is flagship
   v1.5. §3 H3 is stated accordingly.
+
+---
+
+## H4 CLOSED — MEASURED 2026-08-10 ~19:05Z (the doc's named 5-minute check, run same-day)
+
+Census on the RAW `anchors_dense` vocabulary alone (256×20×2 @10 Hz, from the fanfull dump's
+`anchors.npz`), identical rule: **accel MAE 1.97 m/s²**, step-infeasible **10.6 %**,
+candidate-infeasible 35.2 %. Against the refined fan's 252 m/s² / 97.6 %: the vocabulary is
+data-plausible and largely innocent — **the roughness is manufactured by the per-step offset +
+truncated-denoise path (H1), not the anchor build.** H1's standing is upgraded from "ranked
+first" to "confirmed by elimination on this axis too" (W4's reparameterisation already
+confirmed it constructively). Evidence class MEASURED; tool = the W2 census inline, pod5.
