@@ -1324,6 +1324,26 @@ memorises train-window selection.** Per PREREG_W4C_SPATIAL_SCORING.md this ACTIV
 fast-selector attempt; its G-null retires fast scoring to a W7-distillation target.
 Artifact: `w4b_gate_kin.json`.
 
+### 1.13b E4.4 — tactical stage-0, first trained instance — MEASURED 2026-08-10 ~21:50Z [TIER T0 diagnostic, 881-grid val, n@4s = 761]
+
+**Pre-registered gate (goal FDE@4s < CV-extrapolated): FAILED — but by SELECTION, not
+generation.** Goal FDE of the SELECTED tactical goal: 5.89 / **12.86** / 21.50 m at 2/4/6 s
+vs CV baseline 1.65 / 6.09 / 12.46. The FAN's oracle: 2.38 / **5.28** / **9.92** —
+**the 8-candidate goal fan BEATS CV at 4 s and 6 s; the selector throws the advantage away**
+(sel_gap_tac 8.95 in the mixed-unit ordering quantity). Trainer: `train_tactical_stage0.py`
+(6.39 M trainable on the frozen trunk, 4,000 steps + eval-only gate recovery after the
+reporting-bug fix `0f6367e`). Artifact: `e44_gate.json`.
+
+**Cross-level finding (programme-defining, now measured at BOTH hierarchy levels):**
+operative fan oracle 0.108 vs selected 0.56–0.79; tactical fan oracle 5.28 vs selected
+12.86. **Fans generate adequate hypotheses; learned pooled-feature selectors fail to find
+them.** Convergent suspects: (a) the scoring features (W4c tests the spatial-attention
+alternative), (b) the ranking objective itself (margin at GT-nearest under a MIXED-UNIT
+error for the tactical level — flagged by the artifact's own units_note), (c) selection as
+argmax at all (W7's roll-and-cost is the structural alternative). E5 goal-conditioning
+should train with ORACLE (hindsight) goals and treat predicted-goal selection as the
+separately-gated component it has now proven to be.
+
 ## 2. REF-A — the frozen-encoder arm (H4)
 
 **Shared:** frozen **DINOv2-B/14** features (224 px, 16×16 grid, dim 768) precomputed once; only the
