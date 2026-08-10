@@ -49,7 +49,7 @@ so T1/closed-loop rolls are trustworthy.
 | W2 | fan feasibility census (v5f 30k own fan) | 5 | in W1 dump | **RUN 2026-08-09: 97.6 % steps / 100 % candidates infeasible incl. oracle; mean \|a\| 252 m/s² → retrofit urgency MAXIMAL** |
 | W2b | (added, exploratory) 3-tap smoother probe | 5 | in W1 dump | sel accel 8.10→3.09, BOTH ADEs improve (jitter = denoise residue) — partial "W4-lite", stack it, not a substitute |
 | W3 = stage-A on v5f trunk | is the co-trained trunk more action-controllable than v1arch's? | 5 | 3 h probes | R²(action-response) comparison |
-| W4 = unicycle-anchor head retrofit | retrain ONLY the offset head to emit (a,κ) on the frozen 30k trunk | 5 | ~4 h | accel MAE < 1.5 AND oracle not worse than +10 % |
+| W4 = unicycle-anchor head retrofit | retrain ONLY the offset head to emit (a,κ) on the frozen 30k trunk | 5 | ~4 h | **RUN 2026-08-10: PASS both gates — accel MAE 0.774 (<1.5), oracle 0.1077 (BEATS 0.1991 by 46 %), violations 0.0. New defect exposed: frozen selector near-uninformed on the new fan (sel ADE 0.79) → W4b selector recalibration + W7 now unblocked. Registry §1.13; HF /w4/** |
 | W5 = E-H1-w120 | 6 s horizon on the w120 trunk | 5 | 2 h | ADE(6s) ≤ 3×ADE(2s) |
 | W6 = E4+E5 tactical | S-curve restoration via g_tac (v1arch trunk first — cheaper) | 4 | 7 h | T1 S-rate > 0.5 |
 | W7 = X0 full | WM-roll MPC re-rank top-8 (needs W3 pass) | 5 | 2 h | ≥50 % sel_gap closed at T1 |

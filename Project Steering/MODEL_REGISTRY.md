@@ -1281,6 +1281,28 @@ stacking, not a substitute; (3) **W4 (unicycle-anchor emission head) stays the l
 v5.8f wedge**, launched 2026-08-09 ~22:45Z on pod5 (`train_v58f_unicycle_head.py`, gates
 pre-registered in `w4_gate.json`: selected accel MAE < 1.5 ∧ oracle ADE ≤ 1.10×0.1975).
 
+**W4 RESULT — MEASURED 2026-08-10 [TIER T0 diagnostic, same 881-window grid]: both
+pre-registered gates PASS.** `UnicycleEmission` (109,096 trainable params, 2-layer MLP off the
+offset-head query, a=4·tanh / κ=0.2·tanh, unicycle-integrated; trunk+head frozen, md5-identical
+before/after; 4,000 steps, 5.7 h — two prior attempts died in the 2026-08-10 ~05:00Z MooseFS
+I/O incident, third ran clean). Artifact: `…/2026-08-07-hierarchical-wm-redesign/w4_gate.json`;
+weights: HF `Sayood/tanitad-flagship-v5f-w120` `/w4/`.
+
+| quantity (new unicycle fan vs original, SAME grid) | new | original |
+|---|---|---|
+| oracle ADE | **0.1077 m** | 0.1991 m |
+| selected-candidate accel MAE | **0.774 m/s²** (winner 0.261; census-violation frac **0.0**) | 9.297 m/s² |
+| selected ADE (FROZEN selector's pick) | 0.7933 m | 0.4056 m |
+
+**Reading.** The re-parameterised fan is feasible BY CONSTRUCTION *and* its oracle nearly
+halves — the waypoint jitter was hiding coverage, not providing it. The one regression is the
+**frozen selector**: its scores were learned against the old fan's geometry, so its argmax on
+the new fan is near-uninformed (0.79 ≈ CV-floor territory). That is a selector-calibration
+defect, NOT a fan defect — and it is exactly the seam W7 (MPC re-rank) and an L4-style selector
+re-distill were built for. Next rung: re-rank/retrain the SELECTOR on the frozen new fan
+(cheap, selector-only) — pre-register before running. Estimator note: corpus-grid point
+estimates; the episode-cluster bootstrap runs before any leaderboard/publication claim.
+
 ## 2. REF-A — the frozen-encoder arm (H4)
 
 **Shared:** frozen **DINOv2-B/14** features (224 px, 16×16 grid, dim 768) precomputed once; only the
