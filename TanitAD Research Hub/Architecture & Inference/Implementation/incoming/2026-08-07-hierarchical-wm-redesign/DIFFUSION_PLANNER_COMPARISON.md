@@ -273,3 +273,27 @@ data-plausible and largely innocent — **the roughness is manufactured by the p
 truncated-denoise path (H1), not the anchor build.** H1's standing is upgraded from "ranked
 first" to "confirmed by elimination on this axis too" (W4's reparameterisation already
 confirmed it constructively). Evidence class MEASURED; tool = the W2 census inline, pod5.
+
+## Mode-structure measurement — MEASURED 2026-08-10 ~19:30Z (the "richness" question, PI)
+
+Same two dumps, softmax over each model's own selection logits:
+
+| | REF-C-XL | v5f-30k |
+|---|---|---|
+| selector entropy (mean) | **0.97** | 2.22 |
+| modes > 1 % (mean / median) | **4.6 / 4** | 12.0 / 12 |
+| windows with ≥ 3 modes | 87.9 % | 99.2 % |
+
+**Reading: the perceived "richness" of REF-C is NOT more hypotheses — it is FEWER, cleaner,
+more decisive ones.** REF-C concentrates mass on ~4–5 well-separated, geometrically clean
+(4-pt band-limited) candidates — at an intersection these are exactly the left/straight/right
+families, which reads as "strong vision-based road hypotheses". v5f smears mass over ~12 weak
+modes whose 10 Hz jitter additionally blurs adjacent candidates into visual noise. Candidate
+mechanism for the concentration difference (code-grounded, UNMEASURED yet): both models'
+base conf pass is spatially grounded (anchors cross-attend the 8×8 conv map, refc.py:1193),
+but v5f's SELECTION quantity is refined_logits + factorised LAT×LON×DIST grafts read off the
+FLAT pooled state at rank ≈ 16 (flagship_v4.py:317-321) + vt gating — the grafts/gating may
+be the smearing stage. Discriminating experiment (cheap, needs one GPU forward pass batch):
+capture v5f's RAW anchor_logits vs final sel_score per window; compare entropies. If raw conf
+is REF-C-like concentrated, the port target is precise: keep the spatial conf, drop/repair
+the graft dilution.
