@@ -78,4 +78,10 @@ runs. P6 piggybacks P3's perturbation rolls. P7 is 0-GPU off existing dumps (x0_
 fan+scores+GT for the OLD fan; rerun on the unicycle fan's eval windows). Order: P7 (tonight,
 0-GPU) → P1/P2 harness → P3/P6 (W3) → P4 → P5 (with E1.4).
 
-- [ ] P7 run · [ ] P1/P2 harness built · [ ] P3/P6 (=W3) · [ ] P4 join built · [ ] P5 (=E1.4)
+- [x] **P7 RUN 2026-08-10 — GATE PASSED on the v5f-30k original fan (first probe of the
+  battery):** endpoint-dispersion Spearman ρ = **0.4915**, selector-entropy ρ = **0.3954**
+  (gate ≥ 0.3), permutation p ≈ 0, n = 881. The fan's uncertainty is calibrated — where it
+  spreads, it errs. Caveat carried: dump lacks episode ids → permutation p, not the cluster
+  CI; registry-grade rerun binds to the v5.8f eval windows. Artifacts: `p7_calibration.json`
+  (+ pod5 authoritative copy), `tools_p7_calibration.py`.
+- [ ] P1/P2 harness built · [ ] P3/P6 (=W3) · [ ] P4 join built · [ ] P5 (=E1.4)
