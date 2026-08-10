@@ -37,6 +37,25 @@ already; P8/P9 verdicts appended as they land), and **V8 puts the decoded world-
 screen next to the plan** — the PI's "predicting the right relevant part" made visible in the
 same artifact that shows the driving.
 
+## COMPLETE P-battery implementation map (added 2026-08-10 ~21:10Z — the PI flagged that
+I1–I3 covered only P8/P9; this closes the plan for ALL probes)
+
+| probe | instrument | implementation state | pod slot | gate |
+|---|---|---|---|---|
+| P1 decodability curve | linear probes on ẑ_{t+k} for speed/yaw-rate/curvature/lead-TTC | **to build**: `probe_latent_state.py` — reuses P8's predictor-roll harness (rollout_transitions) + I1a join for lead labels | pod5 after P8 (I1b) — shares its encodes, +1 GPU-h | R²(ẑ,k=10) ≥ 0.85×R²(z); smooth degradation |
+| P2 nuisance non-retention | same harness, labels = clip-ID + illumination/weather (from the VLM labeling PH1 when it lands; clip-ID needs nothing) | **to build**: same script, `--probe nuisance` | with P1 (same run) | clip-ID decodability FALLS with k |
+| P3 counterfactual sign map | = W3 stage-A probe pack (swap/hold/amplified action rolls, sign+gain vs unicycle analytic) | **to build**: `stage_a_probes.py` (design exists in defect-triage stage-A notes) | pod5 after W5 (~3 GPU-h) | ≥95 % sign-correct; gain ∈ [0.5×, 2×] |
+| P4 agent permanence | P8 occupancy decode on occluded-agent windows (visibility flags ALREADY in the I1a join) | **covered** — falls out of I1c's occluded split | with I1c | occluded < 2× visible error |
+| P5 compounding boundedness | = E1.4 T1 rows (t1_eval, committed) | **covered** — E1.4 run | pod4 after byte-close gate | T1 curve below CV through 2 s; no super-linear log-slope |
+| P6 ego/scene factorisation | subspace analysis on P3's perturbation rolls | **to build**: analysis notebook-grade script off P3's banked rolls, 0-GPU | dev, after P3 | ≥80 % action-change in ≤32-dim subspace; scene probes invariant <5 % |
+| P7 fan calibration | tools_p7_calibration.py | ✅ RUN — PASSED (ρ 0.49); registry-grade rerun on v5.8f windows queued with §1.14 | trivial | done |
+| P8 occupancy readout + reel | committed harness + I1a join | I1a join runs post-sweep on pod4 → I1b/I1c pod5 | tonight/tomorrow | IoU retention ≥0.8×; permanence |
+| P9 saliency | probe-gradient overlays on P1/P8 probes | **to build**: rides P1/P8 harness, +0.5 GPU-h | with I2 | pre-stated saliency-location sanity |
+
+Total additional build: 2 scripts (P1/P2 probe harness; P3 stage-A pack) + 1 analysis script
+(P6). Agent-buildable 0-GPU-testable like everything else; GPU cost ≈ 5 h on top of the
+already-scheduled I1/I2.
+
 ## Standing rules that bind every line
 
 Pre-registered gates before runs; four families + tier stamps on every eval row; episode-cluster
