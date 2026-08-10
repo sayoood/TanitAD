@@ -466,8 +466,10 @@ def mini_eval(world, tac, ds_val, mint: TacticalLabelMint, device, *,
                        "fan_min": per_tau("fmin")},
         "goal_heading_err_rad": {"selected": per_tau("head")},
         "goal_speed_err_ms": {"selected": per_tau("speed")},
-        "sel_gap_tac": {k: round(gsum[k] / ng, 4)
-                        for k in ("selected_err", "oracle_err", "gap")}
+        "sel_gap_tac": {out_k: round(gsum[in_k] / ng, 4)
+                        for out_k, in_k in (("selected_err", "sel_err"),
+                                            ("oracle_err", "oracle_err"),
+                                            ("gap", "gap"))}
         | {"n": gsum["n"]},
         "macro_f1": macro,
         "wallclock_s": round(time.time() - t0, 1),
@@ -544,6 +546,9 @@ def build_args(argv=None):
     ap.add_argument("--episodes", type=int, default=40)
     ap.add_argument("--stride", type=int, default=8)
     ap.add_argument("--eval-batch", type=int, default=16)
+    ap.add_argument("--eval-only", action="store_true",
+                    help="skip training; load <out>/tactical_stage0.pt and run "
+                         "only the held-out mini-eval + gate writer")
     return ap.parse_args(argv)
 
 
@@ -660,7 +665,17 @@ def main(argv=None) -> int:
           f"aux={aux_enabled} ({n_par / 1e6:.3f} M trainable; frozen "
           f"everything else)", flush=True)
     opt = torch.optim.AdamW(tac.parameters(), lr=a.lr, weight_decay=1e-4)
-    sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=a.steps)
+    sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=max(a.steps, 1))
+    if a.eval_only:
+        # gate-recovery path: the 2026-08-10 run trained fine and crashed only
+        # in mini_eval's reporting (sel_gap key mismatch, fixed above) — reload
+        # the saved head and skip straight to the held-out gate.
+        _ck = torch.load(os.path.join(a.out, "tactical_stage0.pt"),
+                         map_location=device)
+        tac.load_state_dict(_ck["tactical"])
+        a.steps = 0
+        print(f"[e44] EVAL-ONLY: loaded tactical_stage0.pt (train step "
+              f"{_ck.get('step')}) — skipping training", flush=True)
 
     # ---- label mint + partner-constrained sampler ---------------------------
     mint = TacticalLabelMint(GOAL_TAUS)
