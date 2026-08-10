@@ -61,6 +61,33 @@ made measurable: actions must move the ego through the world, not repaint the wo
 ρ ≥ 0.3 with the CI excluding 0. *A model that knows WHAT it cannot predict is evidence the
 rest is not accident.*
 
+## P8/P9 — DECODING THE ENVIRONMENT PART OF THE LATENT (PI ask 2026-08-10: "not only the
+ego dynamics but also the environment related part")
+
+**P8 — BEV occupancy readout (the environment made VISIBLE).** Train a small frozen-latent
+decoder `z → BEV occupancy raster` (ego-frame, 60×32 m grid, agents rasterised from
+`obstacle.offline` cuboids; ~1M params, trunk NEVER updated — a readout, so it measures what
+the latent already carries, the §1.10 latents-only discipline). Then apply it to PREDICTED
+latents ẑ_{t+k}: `decode(ẑ_{t+k})` vs the GT raster at t+k IS the picture of "what the WM
+believes the world will look like". Metrics: occupancy IoU and per-agent position error vs
+horizon k, split visible/occluded (the P4 join reused). Gates: (a) IoU(ẑ_{t+k}) ≥ 0.8 ×
+IoU(z_{t+k}) at k=10 (prediction retains the scene, not just ego); (b) occluded-agent
+positional error < 2× visible (permanence, same gate as P4 but now VISUALISED). Deliverable
+includes a reel: camera | decoded-BEV-from-ẑ | GT-BEV, side by side over the horizon.
+
+**P9 — probe-gradient saliency (WHERE in the image the environment knowledge comes from).**
+For each P1/P8 probe output (lead gap, occupancy cell, curvature), backprop through predictor
++ encoder to the input frames; render the saliency as a camera overlay. Sanity gates
+(qualitative, pre-stated): lead-gap saliency concentrates on the lead vehicle region;
+curvature saliency on lane/road geometry; if saliency is diffuse or sits on sky/hood, the
+probe is reading a shortcut — flag, don't narrate around it. Cheap (one backward per probe),
+runs on the P8 harness.
+
+**Latent-geometry views (supporting, not gated):** PCA/2-D embedding of ẑ coloured by speed,
+curvature, lead-gap, road class — the organisation-at-a-glance figure; and counterfactual
+latent surgery along probe directions (+gap ⇒ plan relaxes braking) linking interpretation
+back to control. Both fall out of the P8 harness for free.
+
 ## Discipline
 
 Every probe: 881-window grid (or the labelled subset for P4, n reported), episode-cluster
