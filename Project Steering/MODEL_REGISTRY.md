@@ -1303,6 +1303,18 @@ re-distill were built for. Next rung: re-rank/retrain the SELECTOR on the frozen
 (cheap, selector-only) — pre-register before running. Estimator note: corpus-grid point
 estimates; the episode-cluster bootstrap runs before any leaderboard/publication claim.
 
+**W4b RESULT (feat variant) — MEASURED 2026-08-10 ~18:20Z, held-out 881 grid, per
+PREREG_W4B_SELECTOR.md: G1 FAILED, G2 engaged, pruner NOT viable.** Selected ADE **0.5600**
+vs gate ≤ 0.45 (frozen-selector reference 0.7933 — the rescorer recovers a large fraction but
+not enough); top-8 oracle **0.3185** vs pruner threshold ≤ 0.15 (full oracle 0.1077 — the
+rescorer's ranking does not concentrate the good candidates). ⚠️ The TRAIN monitor sat at
+0.21–0.33 while held-out is 0.56 — the rescorer memorises train-window selection rather than
+generalising it; the offset-query feature alone does not carry a generalising selection
+signal for the unicycle fan. Per the prereg's bound G2 consequence: **W7 (WM-roll re-rank on
+the clean fan) is now the primary selection mechanism** for v5.8f; the kin variant (adds
+(a,κ) inputs) is running and reported when it lands. Artifact:
+`…/2026-08-07-hierarchical-wm-redesign/w4b_gate_feat.json`.
+
 ## 2. REF-A — the frozen-encoder arm (H4)
 
 **Shared:** frozen **DINOv2-B/14** features (224 px, 16×16 grid, dim 768) precomputed once; only the
