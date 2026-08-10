@@ -1344,6 +1344,27 @@ argmax at all (W7's roll-and-cost is the structural alternative). E5 goal-condit
 should train with ORACLE (hindsight) goals and treat predicted-goal selection as the
 separately-gated component it has now proven to be.
 
+### 1.14 v5.8f — FIRST ASSEMBLED T0 NUMBERS — MEASURED 2026-08-10 ~22:35Z [TIER T0, 881 grid; families + cluster-CI rescore pending on the banked windows]
+
+Assembly = frozen v5f-30k trunk + W4 UnicycleEmission fan + selector per gate
+(`tanitad/models/v58f.py`, eval `eval_v58f.py`; artifacts HF `/v58f/`, windows banked for
+rescore). Two arms, same 881 windows:
+
+| arm | selected ADE | oracle ADE | sel accel MAE | vs v5f baseline (0.4011 / 0.1975 / 8.10) |
+|---|---|---|---|---|
+| **v58f rescorer-top8-kincost** (gate-decided) | **0.4815** | **0.1077** | **0.515** | ADE +0.08 WORSE · oracle 1.8× BETTER · accel **16× BETTER** |
+| v58f frozen-argmax (control) | 0.7933 | 0.1077 | 0.774 | reproduces the W4 selector-mismatch reference |
+
+**Honest reading.** v5.8f currently trades +0.08 m selected ADE against a 16× kinematic
+improvement (0.515 vs 8.10 m/s², violations ~0) and a fan whose oracle nearly halves. The
+whole deficit is SELECTION (sel_gap 0.374 vs v5f's 0.204) — and unlike v5f's, this gap sits
+over a feasible fan with 0.37 m of recoverable headroom. Selection ladder state: W4b
+feat/kin FAILED (memorisation), W4c (spatial attention) TRAINING, W7 (WM-roll re-rank)
+primary. Notable: top8+kinematic-cost (0.4815) beats the trained rescorer argmax (0.560) —
+on a clean fan the W1-refuted kinematic cost becomes USEFUL as a tie-breaker, exactly as the
+fusion doc predicted. NOT yet a release row: four families + episode-cluster CIs on the
+banked windows, then T1 (E1.4), complete it.
+
 ## 2. REF-A — the frozen-encoder arm (H4)
 
 **Shared:** frozen **DINOv2-B/14** features (224 px, 16×16 grid, dim 768) precomputed once; only the
