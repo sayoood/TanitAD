@@ -1315,6 +1315,15 @@ the clean fan) is now the primary selection mechanism** for v5.8f; the kin varia
 (a,κ) inputs) is running and reported when it lands. Artifact:
 `…/2026-08-07-hierarchical-wm-redesign/w4b_gate_feat.json`.
 
+**W4b kin variant — MEASURED 2026-08-10 ~21:30Z: G1 FAILED IDENTICALLY** (held-out selected
+ADE **0.5637** vs feat's 0.5600; top-8 oracle 0.3155, pruner not viable). Adding the
+candidates' own (a,κ) kinematics to the scorer moved the held-out number by <0.004 —
+**the failure is not the input surface; pooled-feature per-candidate scoring on this trunk
+memorises train-window selection.** Per PREREG_W4C_SPATIAL_SCORING.md this ACTIVATES W4c
+(spatial cross-attention scoring, the REF-C conf mechanism, no grafts/gating) as the last
+fast-selector attempt; its G-null retires fast scoring to a W7-distillation target.
+Artifact: `w4b_gate_kin.json`.
+
 ## 2. REF-A — the frozen-encoder arm (H4)
 
 **Shared:** frozen **DINOv2-B/14** features (224 px, 16×16 grid, dim 768) precomputed once; only the
