@@ -111,4 +111,12 @@ fan+scores+GT for the OLD fan; rerun on the unicycle fan's eval windows). Order:
   spreads, it errs. Caveat carried: dump lacks episode ids → permutation p, not the cluster
   CI; registry-grade rerun binds to the v5.8f eval windows. Artifacts: `p7_calibration.json`
   (+ pod5 authoritative copy), `tools_p7_calibration.py`.
+- [x] **P7 REGISTRY-GRADE RERUN 2026-08-10 ~23:35Z (eid-clustered CIs, v5.8f arms) — BOTH
+  v5.8f ARMS FAIL:** frozen-argmax scores on the unicycle fan ρ = 0.2622 [0.091, 0.410]
+  (positive but below gate — miscalibrated by the re-parameterisation, not dead); the W4b
+  rescorer ρ = **0.0542 [−0.140, 0.239]** with near-uniform entropy 5.41 — **no uncertainty
+  information at all**, consistent with the memorisation verdict. The original pass holds
+  ONLY for the v5f fan+selector pairing. Consequence: v5.8f's calibrated-uncertainty
+  property must be restored by W4c (if it learns real scores) or carried by W7's roll-based
+  costs — P7 re-runs on whichever selection mechanism ships. Artifact: `p7_regrade.json`.
 - [ ] P1/P2 harness built · [ ] P3/P6 (=W3) · [ ] P4 join built · [ ] P5 (=E1.4)
