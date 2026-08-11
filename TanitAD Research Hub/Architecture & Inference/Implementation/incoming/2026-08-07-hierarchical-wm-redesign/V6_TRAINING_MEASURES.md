@@ -46,7 +46,14 @@ promoted from retrofit to design: the emission space is born feasible, a=a_max·
 | O5 | short-horizon **rollout-consistency loss** (multi-step latent rollout ≤2 s, error at every step, not endpoint-only) | compounding-error shaping — the T1 lesson (P5) trained in | P5: T1 log-slope ≤ baselines through 2 s |
 | O6 | SIGReg (full_relaxed) per layer — KEPT (PI 2026-08-11) | anti-collapse validated by spectrum monitoring across training (participation ratio, top-k share — the H-COTRAIN instrument becomes a standing training-time monitor) | effective rank retention ≥0.8× across any curriculum phase |
 
-## 2. LAYER T — tactical (2–8 s; manoeuvre + interaction)
+> **HORIZON SPEC (PI 2026-08-11, binding):** planned trajectories span **up to 6 s** —
+> one 60-step (a, κ)@10 Hz unicycle rollout covering the operative (0–2 s) AND tactical
+> (2–6 s) bands seam-free by construction; emission k=20→60, roll selection to 6 s, four
+> families + T1/P5 reported at 0–2 s AND 0–6 s; W5/E-H1 promoted to REQUIRED precursor
+> (v5.8f 6 s baseline before v6 trains). See HIERARCHY_VOCABULARY.md §4b.
+
+## 2. LAYER T — tactical (2–6 s; manoeuvre + interaction; goals ground the 2–6 s band of
+## the SAME 6 s trajectory)
 
 Actions: manoeuvre-scale geometric goals (anchor selection / corridor targets) — factored
 LAT×LON (the 5-way-mixed-softmax defect retired by design). Conditions its own predictor;

@@ -68,6 +68,24 @@ completeness is MEASURED as coverage of the 4,800-clip distribution).
 **Operative layer** keeps continuous (a, κ) unicycle controls (W4/W4r-proven) — no
 tokenization at 10 Hz.
 
+## 4b. TRAJECTORY HORIZON SPEC (PI clarification 2026-08-11 — BINDING for v6)
+
+**Every planned trajectory spans up to 6 s — covering BOTH the operative and the tactical
+horizon in one kinematically consistent rollout.** Concretely:
+- The fan/plan is a **60-step control sequence (a, κ) @10 Hz integrated through ONE
+  unicycle rollout 0→6 s** — never two stitched trajectories. Segment semantics: 0–2 s is
+  the operative band (fine control authority), 2–6 s is the tactical band (the same
+  controls, shaped by `g_tac` conditioning) — the shared integrator makes the 2 s seam
+  discontinuity-free BY CONSTRUCTION (the X2 seam metrics verify, not repair).
+- The tactical layer's goals therefore ground at 2–6 s (the earlier 2–8 s note is
+  superseded); the strategic layer conditions beyond 6 s via goals only.
+- Emission heads scale k=20 → k=60; the diffusion proposal generator diffuses the full
+  6 s control sequence; W7-style roll selection rolls to 6 s (roll-k scales with it).
+- **Eval consequence:** four families + oracle/selected reported at BOTH 0–2 s and 0–6 s;
+  T1/P5 compounding measured to 6 s. **E-H1/W5 (6 s on the w120 trunk, gate ADE(6s) ≤
+  3×ADE(2s)) is promoted from queued to REQUIRED precursor** — it baselines v5.8f at 6 s
+  before v6 trains against it.
+
 ## 5. Wiring (the "correctly wired" requirement, explicit)
 
 S-predictor: `z_str_{t+K} = P_S(z_str_t, a_str_t)` · T-predictor:
