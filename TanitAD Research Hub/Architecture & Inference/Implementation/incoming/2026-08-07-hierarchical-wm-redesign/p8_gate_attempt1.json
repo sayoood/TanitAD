@@ -1,0 +1,135 @@
+{
+ "PASS": false,
+ "_estimator_note": "plain corpus-grid means over the eval-default window grid; the DECISION-grade interval for any registry claim is the episode-cluster bootstrap (taniteval/ci.py) \u2014 run it before publishing",
+ "_evidence_class": "MEASURED (ours; artifact = this JSON)",
+ "base_ckpt": "/workspace/experiments/flagship-v5f-w120-30k/ckpt_30k_final.pt",
+ "base_step": 29999,
+ "gate_a": {
+  "computable": true,
+  "iou_enc": 0.00027267320949378356,
+  "iou_pred": 0.00011229281902641935,
+  "k": 10,
+  "n_enc": 579,
+  "n_pred": 612,
+  "pass": false,
+  "ratio": 0.411822,
+  "reason": null,
+  "retention": 0.8,
+  "rule": "IoU(decode(z_hat_t+k)) >= 0.8 x IoU(decode(z_t+k encoded)) at k=10"
+ },
+ "head": {
+  "ch0": 4,
+  "ch1": 16,
+  "grid_shape": [
+   120,
+   64
+  ],
+  "n_trainable": 984817,
+  "param_band": [
+   500000,
+   2000000
+  ]
+ },
+ "mini_eval": {
+  "grid_rule": {
+   "batch": 16,
+   "episodes": 40,
+   "n_grid_windows": 881,
+   "stride": 8
+  },
+  "iou_k0_readout": 0.0002512256975530962,
+  "n_k0": 581,
+  "per_k": {
+   "10": {
+    "iou_enc": 0.00027267320949378356,
+    "iou_pred": 0.00011229281902641935,
+    "n_enc": 579,
+    "n_no_label": 58,
+    "n_pred": 612
+   },
+   "15": {
+    "iou_enc": 0.00025418731618426845,
+    "iou_pred": 0.0009209675046925744,
+    "n_enc": 576,
+    "n_no_label": 56,
+    "n_pred": 600
+   },
+   "20": {
+    "iou_enc": 0.0003947943440991743,
+    "iou_pred": 0.0013514139268100878,
+    "n_enc": 580,
+    "n_no_label": 57,
+    "n_pred": 605
+   },
+   "5": {
+    "iou_enc": 0.00030057339139444674,
+    "iou_pred": 0.0001237984528691346,
+    "n_enc": 575,
+    "n_no_label": 59,
+    "n_pred": 581
+   }
+  },
+  "visible_occluded_split": {
+   "10": {
+    "n_occluded_enc": 194,
+    "n_occluded_pred": 194,
+    "n_visible_enc": 548,
+    "n_visible_pred": 548,
+    "recall_occluded_enc": 0.0,
+    "recall_occluded_pred": 0.00046860357535254095,
+    "recall_visible_enc": 0.00032005944190696423,
+    "recall_visible_pred": 0.00012862370188014894
+   },
+   "15": {
+    "n_occluded_enc": 181,
+    "n_occluded_pred": 181,
+    "n_visible_enc": 547,
+    "n_visible_pred": 547,
+    "recall_occluded_enc": 8.124796910345225e-05,
+    "recall_occluded_pred": 0.0013812154696132596,
+    "recall_visible_enc": 0.0003455633819409709,
+    "recall_visible_pred": 0.0011771597147798353
+   },
+   "20": {
+    "n_occluded_enc": 167,
+    "n_occluded_pred": 167,
+    "n_visible_enc": 553,
+    "n_visible_pred": 553,
+    "recall_occluded_enc": 0.0006237524801385617,
+    "recall_occluded_pred": 0.0,
+    "recall_visible_enc": 0.0004467857996537392,
+    "recall_visible_pred": 0.0016474242359618733
+   },
+   "5": {
+    "n_occluded_enc": 165,
+    "n_occluded_pred": 165,
+    "n_visible_enc": 556,
+    "n_visible_pred": 556,
+    "recall_occluded_enc": 0.0,
+    "recall_occluded_pred": 0.0,
+    "recall_visible_enc": 0.00041189134956786424,
+    "recall_visible_pred": 0.00014191701264529348
+   },
+   "available": true,
+   "metric": "cell recall vs subset raster (IoU vs a subset is confounded \u2014 the decoder legitimately predicts the complement subset's cells)"
+  },
+  "wallclock_s": 233.7
+ },
+ "probe": "P8 BEV occupancy readout (WM_PHYSICS_PROOF.md P8)",
+ "raster_source": {
+  "kind": "join-file",
+  "n_clips": 137,
+  "n_records": 26084,
+  "occlusion_flags": true,
+  "path": "/workspace/data/p8_join/combined140.jsonl"
+ },
+ "steps": 3000,
+ "tier": "T0-diagnostic (representation probe \u2014 NEVER a driving-performance number; one row of the WM-physics battery, not a standalone driving eval)",
+ "training_target": "BCE on decode(z_t) vs GT raster at t \u2014 ENCODED latents only; predicted path eval-only by design",
+ "trunk_frozen_proof": {
+  "identical": true,
+  "md5_after": "49bb5b81d4b8b59c8a5193c5b26fb60f",
+  "md5_before": "49bb5b81d4b8b59c8a5193c5b26fb60f"
+ },
+ "wall_s": 21099.5
+}
