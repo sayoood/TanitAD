@@ -111,4 +111,6 @@ byte-close) completes first; PH0 slots after. Design/prompt/schema work (0-GPU) 
 in parallel without violating the sequencing — implementation agents are NOT to be spawned
 until the block clears.
 
-- [ ] PH0 prereg written · [ ] PH0 run · [ ] taxonomy frozen · [ ] PH1 · [ ] PH2 wired
+- [x] PH0 prereg written (`PREREG_PH0_VLM.md`, 2026-08-11 — gates + both
+  outcomes + PH1 selection rule bound) · [ ] PH0 run · [ ] taxonomy frozen ·
+  [ ] PH1 · [ ] PH2 wired
