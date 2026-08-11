@@ -76,6 +76,13 @@ Every subagent brief MUST carry the preamble in
      (⛔ never copy a private key — that is correctly classifier-blocked, and you never need to);
   3. connect to the source's **direct** mapping — `$RUNPOD_PUBLIC_IP:$RUNPOD_TCP_PORT_22`, read
      from the source's own env.
+  ⚠️ **The env-advertised direct mapping can be DEAD while the pod is healthy.** MEASURED
+  2026-08-11: BOTH pod4 and pod5 refuse connections on their own `$RUNPOD_PUBLIC_IP:
+  $RUNPOD_TCP_PORT_22` (Connection refused; sshd up and listening on :22; both directions
+  tried) — stale mappings after migrations/restarts, and no `.runpod.internal` DNS on this
+  account. ⇒ **Probe with `ssh -n ... 'echo OK'` BEFORE building a transfer on the direct
+  path, and fall back to the HF relay (shard tar + MANIFEST-last protocol, ~118 MB/s) when
+  it refuses.** The C56 42 MB/s measurement was on a different pod pair.
   ⚠️ **Use the DIRECT port, not the `ssh.runpod.io` proxy.** The proxy genuinely cannot move files
   (sftp → `subsystem request failed on channel 0`; `scp -O` → exit 2); it serves an interactive
   shell only. *That* is the true limitation the old rule had generalised into "pods cannot SSH".
