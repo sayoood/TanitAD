@@ -1430,6 +1430,20 @@ P5/T1 lens applies). Lead-gap probe NOT JUDGEABLE (negative R² both sides — t
 class-agnostic join needs the vehicle-class filter; instrument fix queued, not a model
 verdict). Artifact: `p12_gate.json`.
 
+**P1 LEAD-GAP RESOLUTION — MEASURED 2026-08-11 ~17:20Z (two runs, pod4): the instrument
+was fixed AND the failure survived it — MODEL VERDICT "missing state variable".**
+Run 1 (class filter applied, provenance in-artifact, n=266 vehicle-lead windows): still
+R²(enc) ≤ 0; P1's other 3 targets PASS their retention gates (speed pred 0.993/enc 0.744).
+Run 2 (transform + capability-ceiling probes, episode-disjoint OOF, CPU off the banked
+arrays): log1p/inverse/TTC-proxy linear ALL fail and the 2-layer MLP ceiling reads
+**−0.334** — the latent lacks a readable lead-distance variable in any parameterization
+tested (small-n caveat stamped in the battery doc). Load-bearing consequence: 88.7 % of
+the oracle gap is longitudinal, and this is the missing longitudinal state variable ⇒
+**auxiliary lead-readout loss (obstacle.offline join labels) promoted to a named stage-B/v6
+lever**; headway/TTC stay GT-join instruments; P8's decoded-BEV lead read-off is the
+convergent locator (encoder-vs-readout). Artifacts: `p12_gate_clsfilter.json`,
+`p1_lead_transforms.json` (+ HF /battery/ probe arrays).
+
 ## 2. REF-A — the frozen-encoder arm (H4)
 
 **Shared:** frozen **DINOv2-B/14** features (224 px, 16×16 grid, dim 768) precomputed once; only the

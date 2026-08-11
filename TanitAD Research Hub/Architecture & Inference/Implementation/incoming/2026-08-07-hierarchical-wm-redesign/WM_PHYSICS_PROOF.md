@@ -183,3 +183,24 @@ fan+scores+GT for the OLD fan; rerun on the unicycle fan's eval windows). Order:
   (P1 partial-fail, class "missing state variable") with direct consequences for the
   LONGITUDINAL family's headway/TTC instruments. Artifact: `p12_gate_clsfilter.json`
   (pod4 `p1-rerun-clsfilter/`; probe arrays banked beside it).
+- [x] **P1 LEAD FOLLOW-UP RUN 2026-08-11 ~17:15Z — H-ABSENT SUPPORTED (MODEL VERDICT,
+  class "missing state variable").** All three transform probes (log1p / inverse /
+  TTC-proxy) AND the 2-layer-MLP capability ceiling read nothing from the ENCODED latent
+  at k=10 (MLP R² **−0.334**; linear transforms −5.7 to −154, all far below the 0.30
+  gate) — episode-disjoint OOF on the same 266-lead-window subset. *(Stated caveat:
+  n=266 against a high-dim latent limits linear-probe power — the wildly negative linear
+  values are overfit symptoms — but the regularised MLP agreeing at −0.33 and the parent
+  run's ≤0 make the direction unambiguous; and the aux-readout lever below is justified
+  under EITHER reading, since it shapes the representation as well as reads it.)* ⇒ **v5f's latent does not carry a readable
+  lead-distance variable, in any parameterization, at any probe capacity tested.** This is
+  load-bearing for the programme: 88.7 % of the oracle gap is LONGITUDINAL, and the state
+  variable longitudinal control most needs is the one the WM cannot surface. Pre-registered
+  consequences now ACTIVE: (1) headway/TTC remain GT-join instruments (never latent
+  probes); (2) **auxiliary lead-readout loss** (labels from the obstacle.offline join)
+  is promoted to a named stage-B/v6 training lever — the cheapest intervention that could
+  make P4/P8's object-level claims and the LONGITUDINAL family improve together;
+  (3) P8's decoded-BEV lead read-off is the convergent test — if the occupancy decode
+  (attempt-2) shows the lead vehicle, the information enters the latent but dies before
+  the pooled readout, which localises the defect to the readout path rather than the
+  encoder. Artifact: `p1_lead_transforms.json` (+ instrument `p1_lead_transforms.py`,
+  4 CPU tests).
