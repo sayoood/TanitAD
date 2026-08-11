@@ -83,6 +83,43 @@ curvature saliency on lane/road geometry; if saliency is diffuse or sits on sky/
 probe is reading a shortcut — flag, don't narrate around it. Cheap (one backward per probe),
 runs on the P8 harness.
 
+## I4 — VALIDATING AND LEVERAGING THE IMAGINATION CHANNEL (PI ask 2026-08-11: "how can we
+validate and leverage the imagination capability included in v5f and thus in v5.8f?")
+
+v5f trains with `--cond-imagination`; the trunk carries an imagination-conditioned rollout
+path. Whether that channel CONTRIBUTES (vs rides along) has never been isolated. Three
+probes, pre-registered:
+
+**I4a — Imagination ablation attribution (mandatory FIRST — the attribution gate).**
+Re-run the banked 881-grid eval three ways on the SAME checkpoint: (i) intact, (ii)
+imagination input ZEROED, (iii) imagination input SHUFFLED across windows (keeps marginal
+statistics, breaks correspondence). Gate: if intact vs zeroed differ by <5 % on every
+family, the channel is inert — every "imagination" claim is retired until a training-side
+fix lands (result class: rider, not driver). If zeroed degrades ≥5 % on any family, the
+delta IS the measured imagination contribution, quoted per family with cluster CIs. ~1
+GPU-h off existing dumps + one eval pass. *Same admissibility family as the nav-echo test:
+an input's value is what breaks when you break it, not what the architecture diagram says.*
+
+**I4b — Occluded-split prediction (imagination's PHYSICAL test; rides P4/P8, 0 extra GPU).**
+The P4/P8 occluded-agent split IS the imagination testbed: predicting an agent the pixels
+cannot see is exactly what an imagination channel is FOR. Report the P4 and P8-occluded
+gates stratified intact-vs-zeroed (from I4a's runs): if the occluded-split error is where
+the zeroed arm loses most, imagination is doing object permanence — the strongest possible
+validation, and it is VISIBLE in the P8 reel.
+
+**I4c — Occlusion-stress windows (targeted, only if I4a passes).** Mine the val corpus for
+the ~top-100 hardest occlusion windows (lead agent occluded ≥5 of 20 future steps, from the
+P8 join's occlusion flags); run the I4a triplet there. Gate: imagination delta on stress
+windows ≥ 2× the full-grid delta (the channel concentrates where imagination is needed).
+
+**Leverage paths (run in this order, each gated on the previous):** (1) imagination-closed
+W7 roll-cost — ALREADY LIVE (`w7_gate*.json` roll.imagination_closed=true); its calibration
+ρ is I4's downstream consumer. (2) Per-candidate imagination axis: expose the top-8
+candidates' imagined consequences as the selection feature (the documented no-candidate-axis
+limitation, closed with imagination rather than a learned scorer). (3) φ_tac conditioning:
+feed the tactical goal-fan the imagined 1-s state instead of the encoded present (E5.x,
+after E4.4's oracle-goal finding).
+
 **Latent-geometry views (supporting, not gated):** PCA/2-D embedding of ẑ coloured by speed,
 curvature, lead-gap, road class — the organisation-at-a-glance figure; and counterfactual
 latent surgery along probe directions (+gap ⇒ plan relaxes braking) linking interpretation

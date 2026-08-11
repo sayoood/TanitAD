@@ -1365,7 +1365,10 @@ after on the full held-out W3 pack: **lateral gain 0.27 → 0.971/0.966** (gate 
 longitudinal gain 0.972 (reported); **P6 subspace stays exactly 3-dim**; no-harm passed.
 The single root defect behind the action echo, the three scoring failures and W7's ceiling
 is closed at head-scale cost. Repaired ckpt: `stage-a-predictor/ckpt_stage_a.pt`;
-artifact `stage_a_gate.json`. W7-on-repaired (K=32) running — the selection verdict.
+artifact `stage_a_gate.json`. W7-on-repaired (K=32) ran ~07:35Z: gate FAIL by INSTRUMENT
+COMPOSITION (the frozen-trunk-trained W4 head/selector don't compose with the repaired
+trunk — §1.14), while roll-cost calibration nearly doubled (ρ 0.716) — the repair's
+signal survives; W4r head refit on the stage-A trunk is the queued next pairing.
 
 ### 1.14 v5.8f — FIRST ASSEMBLED T0 NUMBERS — MEASURED 2026-08-10 ~22:35Z [TIER T0, 881 grid; families + cluster-CI rescore pending on the banked windows]
 
@@ -1400,6 +1403,24 @@ DEFECT: the trunk under-weights actions in its rollout.** ⇒ **Stage-A post-tra
 (V18 E3.4: L_ctrl gain repair, targets measured by W3 — lateral gain into [0.5, 2],
 longitudinal sign ≥95 %, preserve the 3-dim action subspace) is THE critical path** for
 selection AND closed-loop capability; W7 re-runs after it. Artifacts: `w7_gate_k{8,32,64}.json`.
+
+**W7-ON-REPAIRED (stage-A trunk, K=32) — MEASURED 2026-08-11 ~07:35Z [T0, 881 grid]: gate
+FAIL (selected 2.3468 vs thr 0.4505; frac closed −2.27) — but the failure is INSTRUMENT
+COMPOSITION, not a repair verdict.** Mechanism inside the same artifact: the in-run FROZEN
+selector on the recomputed fan reads **3.448** (banked 0.7933 on the frozen trunk) and the
+fan oracle degrades **0.289** (banked 0.1077) — stage-A necessarily moved the trunk's
+feature/state distribution, and the W4 emission head + frozen selector, both trained on
+FROZEN-trunk features (`w4_meta.w4_base_ckpt = ckpt_30k_final.pt`), no longer compose with
+it; winner-in-shortlist only 19.6 %. Evidence FOR the repair in the same run: across-window
+roll-cost calibration **ρ 0.7164 [0.5847, 0.7696]** (episode-cluster bootstrap, n=881; P7
+gate PASS — ~1.8× the frozen trunk's 0.399, the strongest calibration measured in the
+programme), and W7's pick ≤ the in-run frozen pick on **71.1 %** of windows. Families
+stated per the 2026-08-02 rule: LON speed MAE 0.989 m/s, accel MAE 1.067; LAT heading MAE
+0.173 rad, curvature MAE 6.05 pm, yaw-rate MAE 0.250; TACTICAL winner-hit 0.9 %, sel-rank
+29.9 %; STRATEGIC n/a (no route label — settled). ⇒ **W4r: refit the 4000-step unicycle
+emission head on the stage-A trunk (cheap), then W7 re-runs — that pairing is the selection
+verdict.** Artifact `w7_gate_repaired_k32.json`; per-window arrays `w7_eval_windows.pt`
+(pod5, `w7-repaired-k32/`).
 
 **P1/P2 (decodability battery) — MEASURED 2026-08-11 ~02:30Z [T0-diagnostic]:** driving-state
 decodability from the PREDICTED latent EXCEEDS the encoded one (speed R² 0.99 vs 0.73,
