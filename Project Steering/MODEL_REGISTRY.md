@@ -1356,6 +1356,17 @@ argmax at all (W7's roll-and-cost is the structural alternative). E5 goal-condit
 should train with ORACLE (hindsight) goals and treat predicted-goal selection as the
 separately-gated component it has now proven to be.
 
+### 1.13c STAGE-A POST-TRAINING — MEASURED 2026-08-11 ~07:20Z [TIER T1-diagnostic, 881 grid]: **ALL GATES PASS — the action interface is REPAIRED**
+
+Predictor-only post-training (`train_stage_a.py`, 3,000 steps, L_ctrl response-form vs the
+unicycle analytic + L_factual + L_scene; encoder/head/emission frozen, md5-proof). Before →
+after on the full held-out W3 pack: **lateral gain 0.27 → 0.971/0.966** (gate [0.5, 2.0]);
+**longitudinal sign 0.745/0.787 → 1.0/1.0** (gate ≥0.95); lateral sign stays 1.0;
+longitudinal gain 0.972 (reported); **P6 subspace stays exactly 3-dim**; no-harm passed.
+The single root defect behind the action echo, the three scoring failures and W7's ceiling
+is closed at head-scale cost. Repaired ckpt: `stage-a-predictor/ckpt_stage_a.pt`;
+artifact `stage_a_gate.json`. W7-on-repaired (K=32) running — the selection verdict.
+
 ### 1.14 v5.8f — FIRST ASSEMBLED T0 NUMBERS — MEASURED 2026-08-10 ~22:35Z [TIER T0, 881 grid; families + cluster-CI rescore pending on the banked windows]
 
 Assembly = frozen v5f-30k trunk + W4 UnicycleEmission fan + selector per gate

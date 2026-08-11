@@ -1,0 +1,351 @@
+{
+ "item": "V18 E3.4 stage-A predictor-only post-training \u2014 the W3 gain repair (registry \u00a71.14 W7 block; losses L_ctrl + L_factual + L_scene, module docstring)",
+ "tier": "T1-diagnostic \u2014 counterfactual-action controllability of the WM roll, NEVER driving performance (EVAL_DOCTRINE.md)",
+ "gate": {
+  "checks": {
+   "lat_gain_left": {
+    "rule": "median lateral gain in [0.5, 2.0] vs unicycle-analytic",
+    "value": 0.9708756873666431,
+    "pass": true
+   },
+   "lat_sign_stays_left": {
+    "rule": "lateral sign rate STAYS >= 0.95",
+    "value": 1.0,
+    "pre_value": 0.9951807228915662,
+    "pass": true
+   },
+   "lat_gain_right": {
+    "rule": "median lateral gain in [0.5, 2.0] vs unicycle-analytic",
+    "value": 0.966073473105549,
+    "pass": true
+   },
+   "lat_sign_stays_right": {
+    "rule": "lateral sign rate STAYS >= 0.95",
+    "value": 1.0,
+    "pre_value": 0.9915662650602409,
+    "pass": true
+   },
+   "lon_sign_brake": {
+    "rule": "longitudinal sign rate >= 0.95",
+    "value": 1.0,
+    "pre_value": 0.7447795823665894,
+    "pass": true
+   },
+   "lon_gain_brake_reported_not_gated": {
+    "value": 0.9724024383342791,
+    "pre_value": 0.34734272443480396,
+    "pass": "not gated"
+   },
+   "lon_sign_throttle": {
+    "rule": "longitudinal sign rate >= 0.95",
+    "value": 1.0,
+    "pre_value": 0.7866061293984109,
+    "pass": true
+   },
+   "lon_gain_throttle_reported_not_gated": {
+    "value": 0.9722432388327622,
+    "pre_value": 0.27797126698523905,
+    "pass": "not gated"
+   },
+   "p6_dims": {
+    "rule": "dims capturing 80 % of counterfactual latent-delta variance <= 32 (preserve the factorisation)",
+    "value": 3,
+    "pre_value": 3,
+    "pass": true
+   },
+   "no_harm_factual_ade": {
+    "rule": "factual-roll ADE on the val grid NOT worse than +10 % vs the pre-training predictor (both measured in this run)",
+    "ade_pre_m": 0.17606137692928314,
+    "ade_post_m": 0.1191057413816452,
+    "cap_m": 0.193668,
+    "pass": true
+   }
+  },
+  "PASS": true,
+  "outcomes_bound_in_advance": {
+   "PASS": "PASS -> W7 re-run + E1.4 T1 re-run on the repaired trunk",
+   "FAIL": "FAIL -> the gain defect is not post-trainable at predictor-scale; the lever moves to joint trunk training (v6)"
+  }
+ },
+ "probe_pre": {
+  "per_channel": {
+   "left": {
+    "n_grid": 881,
+    "n_admissible": 830,
+    "n_excluded_no_analytic_response": 51,
+    "admissibility_eps_m": 0.01,
+    "sign_rate": 0.9951807228915662,
+    "gain_median": 0.2713789052529889,
+    "gain_p25": 0.0380486569101961,
+    "gain_p75": 0.6576729599209437,
+    "kind": "steer"
+   },
+   "right": {
+    "n_grid": 881,
+    "n_admissible": 830,
+    "n_excluded_no_analytic_response": 51,
+    "admissibility_eps_m": 0.01,
+    "sign_rate": 0.9915662650602409,
+    "gain_median": 0.2334114525927031,
+    "gain_p25": 0.02622051586997069,
+    "gain_p75": 0.5798183206254065,
+    "kind": "steer"
+   },
+   "brake": {
+    "n_grid": 881,
+    "n_admissible": 862,
+    "n_excluded_no_analytic_response": 19,
+    "admissibility_eps_m": 0.01,
+    "sign_rate": 0.7447795823665894,
+    "gain_median": 0.34734272443480396,
+    "gain_p25": 0.14047802863388387,
+    "gain_p75": 0.5555546136565931,
+    "kind": "accel"
+   },
+   "throttle": {
+    "n_grid": 881,
+    "n_admissible": 881,
+    "n_excluded_no_analytic_response": 0,
+    "admissibility_eps_m": 0.01,
+    "sign_rate": 0.7866061293984109,
+    "gain_median": 0.27797126698523905,
+    "gain_p25": 0.13891971353744373,
+    "gain_p75": 0.5040147369166982,
+    "kind": "accel"
+   }
+  },
+  "p6": {
+   "computable": true,
+   "n_rows": 4405,
+   "latent_dim": 2048,
+   "var_target": 0.8,
+   "dims_for_var_target": 3,
+   "energy_fraction_in_subspace_per_channel": {
+    "left": 0.940897116885734,
+    "right": 0.9136214522620465,
+    "brake": 0.7490753724148561,
+    "throttle": 0.7850478648722204,
+    "hold": 0.7459360844419668
+   },
+   "centering": "uncentered (deltas have a meaningful zero \u2014 stated design choice, module docstring)",
+   "spectrum_head_normalised": [
+    0.416039,
+    0.296824,
+    0.127787,
+    0.041666,
+    0.035345,
+    0.022032,
+    0.012095,
+    0.010192,
+    0.006288,
+    0.005713,
+    0.004137,
+    0.002485,
+    0.001937,
+    0.001862,
+    0.001617,
+    0.001316,
+    0.000957,
+    0.000902,
+    0.000756,
+    0.000689,
+    0.00058,
+    0.000511,
+    0.000462,
+    0.000399,
+    0.00032,
+    0.000314,
+    0.000296,
+    0.000255,
+    0.000228,
+    0.000201,
+    0.000174,
+    0.00017,
+    0.000159,
+    0.000151,
+    0.000138,
+    0.000135,
+    0.00013,
+    0.000122,
+    0.000115,
+    0.000106
+   ],
+   "k": 10
+  },
+  "hold": {
+   "n_grid": 881,
+   "endpoint_delta_median_m": 0.03737824037671089,
+   "endpoint_delta_p90_m": 0.17921984195709229
+  },
+  "factual_ade": 0.17606137692928314,
+  "n_windows": 881
+ },
+ "probe_post": {
+  "per_channel": {
+   "left": {
+    "n_grid": 881,
+    "n_admissible": 830,
+    "n_excluded_no_analytic_response": 51,
+    "admissibility_eps_m": 0.01,
+    "sign_rate": 1.0,
+    "gain_median": 0.9708756873666431,
+    "gain_p25": 0.9048815005022335,
+    "gain_p75": 1.056957837144804,
+    "kind": "steer"
+   },
+   "right": {
+    "n_grid": 881,
+    "n_admissible": 830,
+    "n_excluded_no_analytic_response": 51,
+    "admissibility_eps_m": 0.01,
+    "sign_rate": 1.0,
+    "gain_median": 0.966073473105549,
+    "gain_p25": 0.8776182569481391,
+    "gain_p75": 1.0431638441156028,
+    "kind": "steer"
+   },
+   "brake": {
+    "n_grid": 881,
+    "n_admissible": 862,
+    "n_excluded_no_analytic_response": 19,
+    "admissibility_eps_m": 0.01,
+    "sign_rate": 1.0,
+    "gain_median": 0.9724024383342791,
+    "gain_p25": 0.9027821064939252,
+    "gain_p75": 1.0836412617734879,
+    "kind": "accel"
+   },
+   "throttle": {
+    "n_grid": 881,
+    "n_admissible": 881,
+    "n_excluded_no_analytic_response": 0,
+    "admissibility_eps_m": 0.01,
+    "sign_rate": 1.0,
+    "gain_median": 0.9722432388327622,
+    "gain_p25": 0.9027829435432171,
+    "gain_p75": 1.0421342210019136,
+    "kind": "accel"
+   }
+  },
+  "p6": {
+   "computable": true,
+   "n_rows": 4405,
+   "latent_dim": 2048,
+   "var_target": 0.8,
+   "dims_for_var_target": 3,
+   "energy_fraction_in_subspace_per_channel": {
+    "left": 0.9407526430389861,
+    "right": 0.9361647460959689,
+    "brake": 0.4604747360997887,
+    "throttle": 0.5039112403250926,
+    "hold": 0.7360408050732302
+   },
+   "centering": "uncentered (deltas have a meaningful zero \u2014 stated design choice, module docstring)",
+   "spectrum_head_normalised": [
+    0.704974,
+    0.073126,
+    0.071257,
+    0.047456,
+    0.029518,
+    0.018193,
+    0.013566,
+    0.007449,
+    0.005613,
+    0.004584,
+    0.003281,
+    0.002154,
+    0.001849,
+    0.001375,
+    0.0013,
+    0.001222,
+    0.000939,
+    0.000834,
+    0.000674,
+    0.000655,
+    0.000566,
+    0.000433,
+    0.000402,
+    0.000367,
+    0.000345,
+    0.000315,
+    0.000267,
+    0.000249,
+    0.000241,
+    0.000203,
+    0.000199,
+    0.000191,
+    0.000184,
+    0.000168,
+    0.000159,
+    0.000147,
+    0.000133,
+    0.00013,
+    0.000126,
+    0.000122
+   ],
+   "k": 10
+  },
+  "hold": {
+   "n_grid": 881,
+   "endpoint_delta_median_m": 0.06277405470609665,
+   "endpoint_delta_p90_m": 0.2500012516975403
+  },
+  "factual_ade": 0.1191057413816452,
+  "n_windows": 881
+ },
+ "probe_convention": "stage_a_probes.probe_batch byte-reused \u2014 six arms, unclamped named counterfactuals (dkappa 0.02, daccel 2.0), the W3 pack; directly comparable with w3_gate.json",
+ "training": {
+  "steps": 3000,
+  "bs": 8,
+  "lr": 1e-05,
+  "wd": 0.0,
+  "k": 10,
+  "ctrl_form": "response",
+  "weights": {
+   "w_ctrl": 1.0,
+   "w_fact": 1.0,
+   "w_scene": 0.3
+  },
+  "n_basis": 8,
+  "arms": [
+   "left",
+   "right",
+   "brake",
+   "throttle",
+   "random"
+  ],
+  "envelope": {
+   "a_max_mps2": 4.0,
+   "kappa_max_1pm": 0.2
+  },
+  "random_draws": {
+   "dkappa_max": 0.05,
+   "daccel_max": 3.0
+  },
+  "n_trainable": 91361280,
+  "n_frozen": 185646760,
+  "train_corpus_dirs": [
+   "/workspace/data/physicalai-train-e438721ae894-w120-256x640cyl"
+  ],
+  "scene_estimator_note": "batch-local top-8 uncentered PCA \u2014 an APPROXIMATION of W3's corpus-level 3-dim action subspace"
+ },
+ "frozen_proof": {
+  "frozen_md5_before": "6f6ca588ae56af8e9117f2d7c34ef578",
+  "frozen_md5_after": "6f6ca588ae56af8e9117f2d7c34ef578",
+  "identical": true,
+  "predictor_md5_before": "1436e465cba49776a845fbd6ed9bba9d",
+  "predictor_md5_after": "7561fd7087c1fb2763b645057863d912",
+  "predictor_changed": true
+ },
+ "repaired_ckpt": "/workspace/experiments/stage-a-predictor/ckpt_stage_a.pt",
+ "base_ckpt": "/workspace/experiments/flagship-v5f-w120-30k/ckpt_30k_final.pt",
+ "base_step": 29999,
+ "grid": {
+  "episodes": 40,
+  "stride": 8,
+  "n_windows": 881
+ },
+ "wall_s": 14284.1,
+ "_estimator_note": "point estimates over the corpus grid; per-window arrays banked to stage_a_windows.npz \u2014 the DECISION-grade interval for any registry claim is the episode-cluster bootstrap (taniteval/ci.py) over the 40 val episodes; run it pod-side before publishing",
+ "_evidence_class": "MEASURED (ours; artifact = this JSON + stage_a_windows.npz + train_log.jsonl)"
+}
