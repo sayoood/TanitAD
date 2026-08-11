@@ -1377,6 +1377,27 @@ on a clean fan the W1-refuted kinematic cost becomes USEFUL as a tie-breaker, ex
 fusion doc predicted. NOT yet a release row: four families + episode-cluster CIs on the
 banked windows, then T1 (E1.4), complete it.
 
+**W7 RESULT + K-SWEEP — MEASURED 2026-08-11 ~02:45Z [T0, 881 grid]: gate FAILED at every K,
+and the failure CONVERGES the night onto one root cause.** K=8: sel 0.5772 (shortlist oracle
+0.4401 — pruner-starved) but the roll-cost is the programme's FIRST CALIBRATED selection
+signal (Spearman ρ 0.399 vs 0.05–0.26 for every learned scorer). K=32/64: shortlist oracle
+improves hugely (0.182 / 0.142) yet selection stalls (0.5173 / 0.5319) and cost-calibration
+COLLAPSES (0.106 / 0.047) — with many similar good candidates, the WM's rolled consequences
+barely differ, so the cost drowns. **Why: W3 measured the WM's action-response gain at ~0.27
+(¼ physical). W4b/W4c's scoring failures, W7's ceiling, and §1.12's action echo are ONE
+DEFECT: the trunk under-weights actions in its rollout.** ⇒ **Stage-A post-training
+(V18 E3.4: L_ctrl gain repair, targets measured by W3 — lateral gain into [0.5, 2],
+longitudinal sign ≥95 %, preserve the 3-dim action subspace) is THE critical path** for
+selection AND closed-loop capability; W7 re-runs after it. Artifacts: `w7_gate_k{8,32,64}.json`.
+
+**P1/P2 (decodability battery) — MEASURED 2026-08-11 ~02:30Z [T0-diagnostic]:** driving-state
+decodability from the PREDICTED latent EXCEEDS the encoded one (speed R² 0.99 vs 0.73,
+curvature 0.84 vs 0.51, yaw-rate 0.86 vs 0.80 at k=5) — the rollout carries the
+action-implied state strongly (caveat stamped: partly the action conditioning itself, the
+P5/T1 lens applies). Lead-gap probe NOT JUDGEABLE (negative R² both sides — the
+class-agnostic join needs the vehicle-class filter; instrument fix queued, not a model
+verdict). Artifact: `p12_gate.json`.
+
 ## 2. REF-A — the frozen-encoder arm (H4)
 
 **Shared:** frozen **DINOv2-B/14** features (224 px, 16×16 grid, dim 768) precomputed once; only the
