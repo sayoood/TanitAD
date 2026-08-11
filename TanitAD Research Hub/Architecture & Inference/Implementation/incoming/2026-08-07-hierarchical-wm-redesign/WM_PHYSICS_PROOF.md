@@ -167,3 +167,19 @@ fan+scores+GT for the OLD fan; rerun on the unicycle fan's eval windows). Order:
   sign to ≥95 %, preserve the 3-dim factorisation. E1.4 T1 rows for v5.8f re-run after.
 - [x] P1/P2 harness built (committed 3eed42f; RUNNING on pod5 now) · [x] P4 join built
   (39/40 eps, 195,805 boxes) · [x] P5 instrument validated (E1.4 byte-close PASSED 713b9d1)
+- [x] **P1 LEAD-GAP RERUN WITH THE VEHICLE-CLASS FILTER — MEASURED 2026-08-11 ~16:15Z
+  (pod4, 881 grid, filter provenance stamped in-artifact): THE CLASS FILTER DID NOT
+  DISSOLVE THE FAILURE.** With vehicle-only lead candidates (n(lead) ≈ 266/881 per k,
+  ~557 labelled-clear), the ENCODED-latent lead-gap probe still reads **R²(enc) ≤ 0 at
+  k=10** — retention undefined, per the artifact's own reason string ("the encoded-latent
+  probe itself failed; fix the probe/target before gating the predictor"). Control that the
+  instrument works elsewhere, same run: speed R²(pred) 0.993 / (enc) 0.744; two further
+  driving targets 0.759/0.551 and 0.865/0.728 (pred/enc). ⇒ the class-agnostic join was a
+  REAL defect but not the root cause here. Next discriminating step (cheap, pre-registered
+  here before running): (a) TARGET TRANSFORM — probe log-gap, inverse-gap and TTC instead
+  of metres (a latent plausibly codes nearness, not metres); (b) CAPABILITY CEILING — a
+  2-layer MLP probe on the encoded latent as the non-linearity control: if even the MLP
+  stays ≤ 0, the latent genuinely lacks lead distance and that becomes a MODEL verdict
+  (P1 partial-fail, class "missing state variable") with direct consequences for the
+  LONGITUDINAL family's headway/TTC instruments. Artifact: `p12_gate_clsfilter.json`
+  (pod4 `p1-rerun-clsfilter/`; probe arrays banked beside it).
