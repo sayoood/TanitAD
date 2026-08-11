@@ -22,6 +22,11 @@ window (SAM checkpoints are small next to the VLM arms); PH0's prereg gains an O
 Engine-C column — measured mask-vs-join agreement on the 50 pilot clips decides whether
 Engine C enters PH1.
 
+**Image-coordinate requirement (PI 2026-08-11):** every semantic claim any engine emits
+(VLM sign/light/agent fields, SAM instances) MUST carry its image-space grounding —
+bounding box `[x0,y0,x1,y1]` and, where the engine provides it, the pixel contour/mask
+reference + frame index. Ungrounded claims are `disputed` by default in the fusion gate.
+
 ## 1. Sources the vocabulary is derived from
 
 1. **Alpamayo-2-Super inference data** (our banked 4,800-clip augmentation, 5 tasks incl.
@@ -82,6 +87,8 @@ Engine C enters PH1.
 | `SPEED_BAND` | v_lo, v_hi | LON axis — **SET BY THE TACTICAL LAYER (PI decision 2026-08-11): target speed is a tactical responsibility, computed from traffic-sign inputs (VLM/OCR speed-limit fields) and prior speed information (corridor speed statistics), bounded by the strategic layer's `REDUCE_TO` only as an upper envelope** |
 | **`YIELD_AT`** | position_arc_m, gap_slot | **PI addition**: yield point + the gap being yielded to (merge/roundabout/unprotected turn) |
 | **`STOP_POINT`** | position_arc_m, reason ∈ {sign, light, queue, hazard} | **PI addition**: tactical stop with grounded position |
+| **`WAIT_FOR_ONCOMING`** | narrow_arc_m, oncoming_slot | **PI addition**: hold before a narrows/parked-lane pinch until oncoming traffic clears (narrow-road negotiation) |
+| **`EVADE_IN_CORRIDOR`** | lat_offset_m, obstacle_slot, past_arc_m | **PI addition**: in-corridor lateral evasion around open doors / cyclists / pedestrians / parked vehicles — bounded by corridor, NOT a lane change |
 | **`TRAFFIC_LIGHT_REACT`** | light_slot_id, state ∈ {red, yellow, green}, stopline_arc_m | **PI addition**: light state from the VLM/signage fields (eval + goal-head supervision; never trunk) — proceed/prepare-stop/stop resolved by the LON action given this goal |
 
 **Actions** `a_tac` (factored, each with continuous envelope args):
