@@ -8,6 +8,20 @@ remaining programme tasks.** The complete, correctly-wired 4B hierarchy is a v6 
 every layer emits ACTIONS conditioning its own predictor and GOALS conditioning the layer
 below, drawn from the vocabulary defined here.
 
+## 0b. Engine C — SAM-family segmentation in the labeling pipeline (PI idea 2026-08-11)
+
+Add Meta's SAM line (SAM 2/3 video segmentation) as **Engine C** beside Engine A
+(geometry) and Engine B (VLM): offline, per-clip semantic/instance masks — drivable
+surface, lane furniture, agent instances tracked through time — giving (a) richer
+grounding for the VLM's claims (a sign/light claim must overlap a mask), (b) mask-level
+agent tracks that cross-check `obstacle.offline` and extend labels to classes it lacks
+(static furniture), (c) lane/road-surface geometry PhysicalAI's labels never had — the
+closest admissible thing to the missing map. Usage stays labeling-side only (frozen-probe /
+goal-head / eval-strata discipline unchanged). Feasibility smoke on pod4 rides the PH0
+window (SAM checkpoints are small next to the VLM arms); PH0's prereg gains an OPTIONAL
+Engine-C column — measured mask-vs-join agreement on the 50 pilot clips decides whether
+Engine C enters PH1.
+
 ## 1. Sources the vocabulary is derived from
 
 1. **Alpamayo-2-Super inference data** (our banked 4,800-clip augmentation, 5 tasks incl.
@@ -30,6 +44,14 @@ below, drawn from the vocabulary defined here.
   thesis; the aux-label retraction stands).
 - **Every token must be HINDSIGHT-DERIVABLE** from Engine A geometry alone (VLM enriches;
   geometry guarantees) — so the vocabulary works even where the VLM abstains.
+- **Every goal token carries OPTIONAL temporal and spatial constraint slots (PI
+  2026-08-11):** `within_m` / `by_time_s` / `at_arc_m` / `hold_for_s` — uniformly typed,
+  so "change lane within 500 m", "stop at arc 82 m", "hold corridor for 12 s" are all
+  expressible without new token types. Unset = unconstrained.
+- **Near-field is TIME-scaled, not metre-scaled (PI correction):** a fixed 40 m band
+  cannot cover a 6 s horizon (180 m at 30 m/s). All near-field weighting (V6 measure O2)
+  and constraint defaults use TIME-TO-REACH (arc_length / v_ego, capped at the 6 s
+  horizon) — speed-adaptive by construction.
 
 ## 3. STRATEGIC vocabulary (horizon 8–30 s+, conditions the tactical layer)
 
@@ -42,7 +64,8 @@ below, drawn from the vocabulary defined here.
 | `TURN_LEFT` / `TURN_RIGHT` / `STRAIGHT_THROUGH` | intersection arc | E7.1 turn events |
 | `ROUTE_TO` | text_token_id (city/POI vocab from OCR), evidence_id | ONLY with signage OCR (G1-gated); abstains otherwise |
 | `STOP_AT` | distance_m | signage/geometry (stop events in hindsight speed profile) |
-| `NONE_ABSTAIN` | — | honest ceiling |
+| **`FOLLOW_MAIN_ROAD`** | — | **THE DEFAULT strategic goal whenever no navigation route is set up (PI 2026-08-11)** — hindsight-derivable as the corridor-continuation prior; replaces `NONE_ABSTAIN` as the no-route baseline (abstain remains only for genuinely ambiguous geometry) |
+| `NONE_ABSTAIN` | — | honest ceiling (ambiguous geometry only, given FOLLOW_MAIN_ROAD above) |
 
 **Actions** `a_str` (emitted by S, condition S's own predictor; horizon-typed):
 `PREPARE_LANE_CHANGE(dir, within_m)` · `HOLD_CORRIDOR(arc_m)` · `REDUCE_TO(v_target, within_m)`
@@ -56,7 +79,10 @@ below, drawn from the vocabulary defined here.
 | `ANCHOR_GOAL` | anchor_id ∈ fan vocab, t_reach_s | the geometric goal-point lever (the +4.7 PDMS class) |
 | `CORRIDOR_OFFSET` | lat_offset_m, arc_m | curvature-relative corridor frame |
 | `GAP_TARGET` | agent_slot_id, time_gap_s | from the perception head's agent slots (§6) |
-| `SPEED_BAND` | v_lo, v_hi | LON axis |
+| `SPEED_BAND` | v_lo, v_hi | LON axis — **SET BY THE TACTICAL LAYER (PI decision 2026-08-11): target speed is a tactical responsibility, computed from traffic-sign inputs (VLM/OCR speed-limit fields) and prior speed information (corridor speed statistics), bounded by the strategic layer's `REDUCE_TO` only as an upper envelope** |
+| **`YIELD_AT`** | position_arc_m, gap_slot | **PI addition**: yield point + the gap being yielded to (merge/roundabout/unprotected turn) |
+| **`STOP_POINT`** | position_arc_m, reason ∈ {sign, light, queue, hazard} | **PI addition**: tactical stop with grounded position |
+| **`TRAFFIC_LIGHT_REACT`** | light_slot_id, state ∈ {red, yellow, green}, stopline_arc_m | **PI addition**: light state from the VLM/signage fields (eval + goal-head supervision; never trunk) — proceed/prepare-stop/stop resolved by the LON action given this goal |
 
 **Actions** `a_tac` (factored, each with continuous envelope args):
 - LAT: `LANE_KEEP` · `LANE_CHANGE_L/R(within_m)` · `ABORT_LC` · `NUDGE_L/R(lat_m)`
