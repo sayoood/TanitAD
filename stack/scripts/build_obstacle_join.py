@@ -583,6 +583,11 @@ def build_args(argv=None):
     ap.add_argument("--episodes", type=int, default=40,
                     help="first N clips in provider (sorted-file) order — the "
                          "same rule mini_eval's `e < episodes` uses")
+    ap.add_argument("--skip-episodes", type=int, default=0,
+                    help="skip the first K clips of that order (P8 decoder-"
+                         "training joins must be episode-disjoint from the "
+                         "first-40 eval grid; --skip-episodes 40 --episodes "
+                         "100 joins clips 40..139)")
     ap.add_argument("--out", required=True, help="output jsonl or jsonl.xz")
     ap.add_argument("--labels-root", nargs="*", default=[],
                     help="extra roots to probe for label zips")
@@ -608,7 +613,12 @@ def main(argv=None) -> int:
     out_p = Path(a.out)
     out_p.parent.mkdir(parents=True, exist_ok=True)
 
-    clips, n_corpus = corpus_first_clips(a.corpus, a.episodes)
+    clips, n_corpus = corpus_first_clips(a.corpus,
+                                         a.skip_episodes + a.episodes)
+    if a.skip_episodes:
+        clips = clips[a.skip_episodes:]
+        print(f"[join] skipping first {a.skip_episodes} clips (episode-"
+              f"disjoint from the eval grid); joining {len(clips)}", flush=True)
     print(f"[join] corpus {a.corpus}: {n_corpus} clips; joining first "
           f"{len(clips)} (provider order = sorted files)", flush=True)
 
