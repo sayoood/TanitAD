@@ -126,6 +126,17 @@ Every subagent brief MUST carry the preamble in
   change a supervised run: edit the manifest → kill the SUPERVISOR first → kill the trainer →
   start a fresh supervisor.** Killing the trainer first just makes the supervisor restore the stale
   command. **Verify by grepping the flags out of the RUNNING process**, never by reading the manifest.
+- ⚠️ **A supervisor whose run never wrote its DONE-MARKER will RESURRECT the finished run the
+  moment whatever made its relaunches crash gets fixed.** MEASURED 2026-08-11: the v5f run finished
+  2026-08-09 but `summary.json` was never written; its supervisor kept relaunching for 2 days, each
+  attempt insta-crashing on the `kin_weights` NameError — until the fix was synced to the pod, at
+  which point a relaunch SUCCEEDED, resumed from a stale `ckpt.pt`, and started overwriting
+  `config.json`/`metrics.json`/`ckpt.pt` in the canonical run directory while burning GPU next to a
+  live eval. ⇒ **When a supervised run completes, write the done-marker (`summary.json` with
+  `"done": true`) in the SAME turn** — it is also the correct remote off-switch: writing it made the
+  supervisor exit cleanly ~20 min later with no kill needed. Backups live in
+  `/workspace/experiments/v5f-30k-SAFE/` (md5-verified `ckpt_30k_final.pt`). A silent-crashing fix
+  landing IS the trigger, so audit `ps` for supervisors after shipping any trainer fix.
 - ⚠️ **Restarting a supervisor immediately after killing the old one RACES ITS `flock`** — the new
   one prints *"another supervisor holds …lock — exiting"* and dies, leaving **nothing running** while
   the log looks like a normal startup. Wait until the old supervisor **and** trainer are actually
