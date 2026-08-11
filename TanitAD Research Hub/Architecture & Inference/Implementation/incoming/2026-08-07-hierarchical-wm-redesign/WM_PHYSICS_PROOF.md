@@ -119,4 +119,14 @@ fan+scores+GT for the OLD fan; rerun on the unicycle fan's eval windows). Order:
   ONLY for the v5f fan+selector pairing. Consequence: v5.8f's calibrated-uncertainty
   property must be restored by W4c (if it learns real scores) or carried by W7's roll-based
   costs — P7 re-runs on whichever selection mechanism ships. Artifact: `p7_regrade.json`.
-- [ ] P1/P2 harness built · [ ] P3/P6 (=W3) · [ ] P4 join built · [ ] P5 (=E1.4)
+- [x] **P3/P6 (=W3) RUN 2026-08-11 ~01:20Z — P3 FAIL with load-bearing structure, P6 PASS
+  decisively** (artifact `w3_gate.json`, 881 grid, tier T1-diagnostic): LATERAL sign
+  99.5 %/99.2 % (gate ≥95 % ✓) but **gain median 0.27/0.23 vs [0.5, 2.0] — the WM turns the
+  RIGHT WAY at ~¼ the physical magnitude** (the §1.12 near-straight closed-loop driving,
+  now mechanistic); LONGITUDINAL sign only 74.5 %/78.7 % ✗. **P6: action-induced latent
+  change lives in a 3-DIM subspace** (gate ≤32) with 0.94/0.91 lateral energy — the ego
+  interface is real, low-rank, correctly signed, and MUFFLED. ⇒ stage-A post-training
+  (L_ctrl) now has a measured target: raise lateral gain into [0.5, 2], fix longitudinal
+  sign to ≥95 %, preserve the 3-dim factorisation. E1.4 T1 rows for v5.8f re-run after.
+- [x] P1/P2 harness built (committed 3eed42f; RUNNING on pod5 now) · [x] P4 join built
+  (39/40 eps, 195,805 boxes) · [x] P5 instrument validated (E1.4 byte-close PASSED 713b9d1)
