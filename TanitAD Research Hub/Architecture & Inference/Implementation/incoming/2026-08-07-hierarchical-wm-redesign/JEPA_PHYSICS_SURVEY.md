@@ -77,6 +77,58 @@ is spent. RC1-true collapses the problem to architecture routing; RC1-false make
 
 - [ ] LF0 run · [ ] RC verdict banked · [ ] first training lever chosen by LF0's outcome
 
+## 4. Drive-JEPA (arXiv 2601.22032, Jan 2026) — how the newest driving system uses its WM,
+## and why it validates STAGED training (PI question 2026-08-11)
+
+**Their recipe, faithfully summarized:** (1) **Stage 1 — representation**: a ViT encoder is
+V-JEPA-pretrained on large-scale driving video (masked latent prediction; NO planner in the
+loop) so the features are *predictive* by construction. (2) **Stage 2 — planning on top**:
+a proposal-centric planner over the frozen predictive features — **waypoint-anchored
+proposal generation** (structurally our anchor fan), guided by **multimodal trajectory
+distillation** (simulator-generated + human trajectories shape the proposal distribution),
+then **momentum-aware trajectory selection** scoring cross-frame comfort (structurally our
+kinematic-cost / temporal-stability selection). Single front camera. Results: **NAVSIM v1
+93.7 PDMS, NAVSIM v2 87.8 EPDMS, Bench2Drive 64.52 — SOTA.**
+
+**The load-bearing observation for us:** the WM's job in Drive-JEPA is to FORM the
+representation (pretraining objective), not to be co-trained with the planner from
+scratch — the planner is a *post-trained consumer*. That is the PI's proposed staging, and
+it is also V-JEPA 2 → 2-AC's recipe (SSL first, action-conditioning post-trained on 62 h
+unlabeled interaction data), and DINO-WM's (frozen features, dynamics learned after).
+**Nobody at the frontier co-trains the planning gradient into the encoder from step 0.**
+
+**Our own gate history says the same thing:** every STAGED component we added post-hoc
+passed its gates (W4 emission-head retrofit PASS; stage-A predictor-only repair ALL PASS,
+gain 0.27→0.97), while the co-trained path produced the muffled action interface, three
+selector failures, and the missing lead-distance variable. H-COTRAIN's milestone curve
+(PREREG_H_COTRAIN.md, running tonight) is the quantitative version of this observation.
+
+## 5. Proposed v6 training recipe — E-S "staged flagship" (candidate, PI spend decision)
+
+- **S-W (world stage):** WM-only from scratch — `--lambda-plan 0` (mode "0" exists in the
+  trainer today) + the LF2/LF3 objective shaping (readout-grid masking, near-field
+  weighting) + LF1 interaction-weighted sampling. GATES: the P-battery (P1 incl. the lead
+  route LF0 selects, P6 factorisation, P8 IoU retention, SIGReg spectrum).
+- **S-P (planning stage):** planner post-trained on the FROZEN S-W trunk — anchor fan +
+  unicycle emission + W7-style roll selection (our already-validated staged parts), with a
+  Drive-JEPA-style option: distill proposal diversity from oracle/kinematically-feasible
+  trajectory sets (label-free: they come from geometry, not perception labels).
+- **S-J (optional joint polish):** ONLY if S-P plateaus, brief joint fine-tune with
+  gradient isolation (stop-grad planner→encoder), no-harm gated by the same P-battery.
+- **Decision inputs before any spend:** tonight's H-COTRAIN curve + W7-w4r verdict; the
+  cheapest confirmatory arm is mode-0-vs-sched at matched steps (both curves probed with
+  the frozen battery).
+
+Bonus (for the scaling-ladder S1 question): "Geographic Diversity Beats Data Volume for
+Cross-Domain Generalization in Zero-Label JEPA Driving World Models"
+(arXiv 2607.04500) — distribution beats volume for JEPA driving WMs; folds directly into
+the S1 data-mix arm design.
+
+## Sources (added)
+- Drive-JEPA: https://arxiv.org/abs/2601.22032 · https://github.com/linhanwang/Drive-JEPA
+- Geographic diversity vs volume: https://arxiv.org/pdf/2607.04500
+- HanoiWorld (JEPA WM + RNN long-horizon planning): https://arxiv.org/pdf/2601.01577
+
 ## Sources
 
 - V-JEPA 2: https://arxiv.org/abs/2506.09985 · https://ai.meta.com/blog/v-jepa-2-world-model-benchmarks/
