@@ -1430,6 +1430,30 @@ P5/T1 lens applies). Lead-gap probe NOT JUDGEABLE (negative R² both sides — t
 class-agnostic join needs the vehicle-class filter; instrument fix queued, not a model
 verdict). Artifact: `p12_gate.json`.
 
+**W7-FULL (selector-free, all 256 candidates) — MEASURED 2026-08-12 ~00:15Z [T0, 881
+grid, pod4]: GATE FAIL 3.3348 vs 0.4505 — and it closes the selection question with a
+MECHANISM, not another confound.** This run removed every stale component at once: the
+repaired stage-A trunk, the W4r head refit on it, NO shortlist (topk = 256, so
+`winner_in_shortlist_frac` = 1.0 — the true best candidate is always available), selection
+= argmin of roll-cost + kinematic cost. Result: fan **oracle 0.1273** (excellent) but
+**selected 3.3348**, sel_gap 3.207; the frozen selector on the same fan reads 4.4159, so
+W7 beats it on 67.5 % of windows and still fails absolutely.
+**The diagnostic pair that explains it:** the cost's *within-window* rank correlation over
+the 256 candidates is **ρ_mean 0.445 / ρ_median 0.497** (it ranks broadly correctly) while
+*across-window* calibration is ρ 0.3185 [0.2064, 0.4086] — yet the **argmin** is 26× the
+oracle. That combination is the **winner's curse**: with a noisily-correlated cost over 256
+candidates, the minimiser selects for cost UNDER-estimation, not for quality, and enlarging
+the candidate set makes argmin worse — the same direction as the earlier frozen-trunk
+K-sweep (0.577 → 0.517 → 0.532 at K = 8/32/64). ⇒ **Two consequences, both load-bearing:**
+(1) **v5.8f ships the FROZEN-trunk assembly** (rescorer-top8+kincost, selected 0.4815
+[0.393, 0.577], §1.14 above) — the stage-A trunk's physics is better but every frozen
+consumer trained on the old features mis-ranks on it (frozen selector 0.7933 → 4.4159),
+and **you cannot repair a trunk and keep its planner**; (2) that sentence IS the staged-
+training argument for v6 — consumers must be (re)trained ON the trunk they consume
+(S-W → S-T → S-S), and argmin-over-a-large-fan must be replaced by a
+noise-robust rule (top-m aggregation / sharpened cost), pre-registered before it is used.
+Artifact: `w7_full_gate.json`; per-window arrays `w7-full-roll/w7_eval_windows.pt`.
+
 **P8 BEV-OCCUPANCY READOUT (attempt 2) — MEASURED 2026-08-12 ~00:05Z [T0-diagnostic,
 881 grid, pod4]: GATE PASS — the PREDICTED latent retains the environment.** Attempt 1's
 all-empty collapse was an instrument failure (unweighted BCE on overwhelmingly empty

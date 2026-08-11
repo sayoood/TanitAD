@@ -44,6 +44,50 @@ per-episode npz dumps (schema below), and ``--analyze-only <dump-dir>``
 consumes an existing dump — including the ORIGINAL §1.12 ``dump_cl`` (its arm
 keys ``o16/o6/c16/c6/h16`` carry default tier stamps).
 
+E1.4 ADAPTER — THE v5f / v5.8f STACK (2026-08-11, ADDITIVE)
+-----------------------------------------------------------
+The §1.12 path reads a RAW epcache (``--corpus <dir of ep_*.pt>``) and a
+SEPARATE ``UnicycleStepReadout`` checkpoint (``--head``). The w120 flagship
+corpora are v2 compressed caches (``*.v2ep.pt``) and the v5f/v5.8f checkpoints
+carry their OWN metric decoder inside the grounding module, so two additive
+inputs exist:
+
+``--v2-val-cache DIR [DIR…]``  the v2 corpus, read through the SAME providers
+    ``scripts/eval_flagship_v4.py`` and ``scripts/w7_roll_rerank.py`` use
+    (``build_v2_val_episodes`` -> ``tanitad.data.v2_dataset.build_v2_providers``,
+    IMPORTED — no fourth decode path), wrapped by :class:`V2RawEp` into the
+    exact ``(feats, poses, actions)`` surface the roll already consumes. The
+    geometry flags (``--frame-h/-w/--frame-hfov/--projection/--v2-subframe``)
+    are the eval-side rig-clean seam, resolved by the trainer's OWN
+    ``resolve_v2_frames`` via ``eval_flagship_v4.resolve_eval_frames``.
+
+``--grounding-readout``  decode with the checkpoint's own
+    ``grounding.step['op']`` (:class:`StepDisplacementReadout`) instead of a
+    ``--head`` ckpt. T0/hold arms go through
+    ``metric_dynamics.decode_transitions(step_readout, rollout_transitions(…), k)``
+    — byte-the-same call convention as ``scripts/w7_roll_rerank.py`` and
+    ``scripts/stage_a_probes.py``, i.e. the canary decode
+    (``train_flagship_v4.py:584-586``). ⭐ Consequence worth stating: with
+    ``--with-t0-open-loop`` the ``ol`` arm IS the WM canary quantity, so its
+    dense ADE is an in-run cross-check against the run's banked canary.
+
+⛔ **Nothing on the legacy path changed.** ``--corpus`` + ``--head`` still runs
+:func:`run_rollout` — the byte-close-validated §1.12 roll — untouched, and the
+adapter lives in :func:`run_rollout_ext`. The duplication of the window loop is
+DELIBERATE: parameterising the validated loop would put the byte-close gate at
+risk for a cosmetic gain. ``stack/tests/test_t1_v2_adapter.py`` pins that
+separation (source-hash guard + dispatch predicate).
+
+⚠️ THE ONE PIECE OF NEW MATH, stated so it can be attacked: the T1 closed loop
+needs the decoder's emission expressed in the corpus ACTION contract, and the
+grounding readout emits a Δpose, not controls. :func:`implied_controls` inverts
+``physicalai.signals_at`` (physicalai.py:596-641) exactly as :func:`roll_closed`
+already does for the unicycle head — speed from the step displacement (the same
+definition :func:`controls` uses), accel from its finite difference, yaw rate
+from ``dyaw``, and ``steer = atan(wheelbase * yaw_rate / max(v, 0.3))``. The
+``ol``/``ha`` arms need none of it (they consume recorded/held actions), which
+is why the T0-vs-T1 triplet is the right thing to run in one pass.
+
 DUMP SCHEMA (per-episode ``ep*.npz``)
 -------------------------------------
     g    [N,K,2]  GT ego-frame waypoints            (required)
@@ -702,6 +746,379 @@ def roll_closed(model, head, states, awE, v0, ego, k=K, dt=DT,
     return accumulate_se2(torch.stack(rows, 1))
 
 
+# ============================================================================ #
+# E1.4 ADAPTER — v2 caches + the checkpoint's OWN grounding decoder            #
+# ⛔ EVERYTHING BELOW IS ADDITIVE. The §1.12 roll (:func:`run_rollout`), its    #
+# decode helpers (:func:`decode_open`, :func:`roll_closed`) and the whole      #
+# analysis are untouched; the adapter never calls into them except by their    #
+# public signatures. Pinned by stack/tests/test_t1_v2_adapter.py.              #
+# ============================================================================ #
+def implied_controls(dpose, v_prev, dt=DT, wheelbase=WHEELBASE):
+    """Δpose ``[B, 3]`` (dx, dy, dyaw) + carried speed ``[B]`` -> the controls
+    the corpus action contract would have recorded for that step.
+
+    Returns ``(v [B], accel [B], yaw_rate [B], steer [B])`` where
+
+        v        = ||(dx, dy)|| / dt      the step's realised speed
+        accel    = (v - v_prev) / dt      its finite difference
+        yaw_rate = dyaw / dt
+        steer    = atan(wheelbase * yaw_rate / max(v, 0.3))
+
+    ⭐ WHY THIS EXACT FORM (it is an inversion, not an invention):
+    * ``physicalai.signals_at`` (physicalai.py:596-641) mints
+      ``steer = atan(wheelbase * curvature)`` and ``poses[:, 3] = v``, and
+      :func:`roll_closed` already closes the unicycle head's loop with
+      ``kappa = yaw_rate / max(v, 0.3)`` — the SAME clamp, reused verbatim so
+      the two closed loops differ only in where the motion came from;
+    * speed as ``||Δ|| / dt`` is the definition :func:`controls` (the VERBATIM
+      ``analyze_cl`` port that SCORES this dump) already uses, so the loop feeds
+      back the same kinematics the analysis reads out. Taking ``dx`` alone would
+      silently drop the free decoder's lateral component — and that component is
+      exactly the defect ``UnicycleStepReadout`` exists to remove, so it must not
+      be hidden by the feedback path.
+    ⚠️ ``accel`` at step 0 is measured against the OBSERVED ``v0``, the same
+    anchor :func:`roll_closed` starts its integrator from.
+    """
+    import torch
+    v = torch.linalg.vector_norm(dpose[..., :2].float(), dim=-1) / dt
+    accel = (v - v_prev.float()) / dt
+    yaw_rate = dpose[..., 2].float() / dt
+    steer = torch.atan(wheelbase * (yaw_rate / v.clamp_min(0.3)))
+    return v, accel, yaw_rate, steer
+
+
+def roll_closed_grounding(model, step_readout, states, awE, v0, ego, k=K,
+                          dt=DT, wheelbase=WHEELBASE):
+    """T1 for a checkpoint whose decoder is ``grounding.step['op']``.
+
+    The twin of :func:`roll_closed`: each predictor step is conditioned on the
+    action implied by the Δpose the readout JUST emitted (:func:`implied_controls`),
+    the appended ego channel holds v0 throughout (the trunk's own rollout
+    contract — the canary and ``w7_roll_rerank`` hold it constant too), and the
+    waypoints are ``accumulate_se2`` of the emitted Δposes, i.e. exactly what
+    ``decode_transitions`` would return on the same transitions.
+
+    ⚠️ pod-verification pending on this box (no CUDA, no checkpoint): the
+    action-feedback arithmetic and the ``[B, k, 2]`` contract are CPU-tested
+    against a stub predictor/readout in ``stack/tests/test_t1_v2_adapter.py``.
+    """
+    import torch
+    from tanitad.models.metric_dynamics import accumulate_se2
+    win_s, win_a = states, awE
+    v_prev = v0.float().clone()
+    rows = []
+    for j in range(k):
+        z_hat = model.predictor(win_s, win_a)[1]
+        d = step_readout(win_s[:, -1], z_hat).float()          # [B, 3]
+        rows.append(d)
+        if j < k - 1:
+            v, accel, _yr, steer = implied_controls(d, v_prev, dt=dt,
+                                                    wheelbase=wheelbase)
+            a_next = torch.stack([steer, accel], -1)           # [B, 2]
+            a_next = torch.cat([a_next, ego.float()], -1)      # ego channel: v0
+            win_s = torch.cat([win_s[:, 1:], z_hat.unsqueeze(1)], 1)
+            win_a = torch.cat([win_a[:, 1:],
+                               a_next.unsqueeze(1).to(win_a.dtype)], 1)
+            v_prev = v
+    return accumulate_se2(torch.stack(rows, 1))
+
+
+def decode_open_grounding(step_readout, trans, k):
+    """Decode pre-rolled transitions with the grounding readout -> ``[B, k, 2]``.
+
+    A one-line delegation to ``metric_dynamics.decode_transitions`` — the SAME
+    call ``w7_roll_rerank.mini_eval`` makes (``decode_transitions(grounding.
+    step['op'], trans, roll_k)``, w7_roll_rerank.py:649) and the pinned twin of
+    the canary's ``rollout_decode`` (train_flagship_v4.py:584-586). Tier depends
+    on what ``trans`` was rolled under: recorded future actions -> **T0**; the
+    held t0 action -> the T1 hold-action control.
+    """
+    from tanitad.models.metric_dynamics import decode_transitions
+    return decode_transitions(step_readout, trans, k)[0]
+
+
+class V2RawEp:
+    """``taniteval.data.RawEp``-shaped view over ONE v2 provider.
+
+    ``RawEp`` (taniteval/data.py:218-225) is the surface the roll consumes:
+    ``.feats`` uint8 ``[T, C, H, W]`` sliceable on dim 0, ``.actions`` / ``.poses``
+    float32 ``[T, 2]`` / ``[T, 4]``. A :class:`tanitad.data.v2_dataset.LazyV2Episode`
+    already exposes exactly that under the names ``.frames`` / ``.actions`` /
+    ``.poses``, so this is a RENAME, not a decode: the JPEG/PNG decode stays in
+    the provider's own ``_V2FramesProxy`` (partial, LRU-bounded), which is the
+    module the trainers read through.
+    """
+
+    __slots__ = ("feats", "actions", "poses", "episode_id", "clip_index")
+
+    def __init__(self, provider, clip_index: int):
+        self.feats = provider.frames                # proxy; dim-0 slice decodes
+        self.actions = provider.actions.float()
+        self.poses = provider.poses.float()
+        self.episode_id = int(getattr(provider, "episode_id", clip_index))
+        self.clip_index = int(clip_index)
+
+
+def uses_ext_rollout(a) -> bool:
+    """``True`` when the roll must take the E1.4 adapter path.
+
+    ⛔ The legacy ``--corpus`` + ``--head`` combination NEVER returns ``True``.
+    That is the whole mechanism keeping the byte-close-validated
+    :func:`run_rollout` reachable and unchanged."""
+    return bool(getattr(a, "v2_val_cache", None)
+                or getattr(a, "grounding_readout", False))
+
+
+def _stack_scripts_on_path():
+    """Put ``<repo>/stack/scripts`` on ``sys.path`` — LAZILY and only here.
+
+    ``eval_flagship_v4`` / ``train_flagship_v4`` live in ``stack/scripts`` and
+    are plain modules, not a package. Inserting that directory at IMPORT time
+    would change the module-resolution surface of the legacy path too (a
+    ``stack/scripts/*.py`` could shadow a stdlib/taniteval name), so it happens
+    inside the adapter and nowhere else."""
+    p = os.path.join(_REPO, "stack", "scripts")
+    if os.path.isdir(p) and p not in sys.path:
+        sys.path.insert(0, p)
+    return p
+
+
+def resolve_ext_frames(a):
+    """``(cfg, cache_frame, model_frame)`` for the adapter path.
+
+    Delegates to ``eval_flagship_v4.resolve_eval_frames`` -> the TRAINER's own
+    ``resolve_v2_frames``, so this tool cannot resolve ``--v2-subframe`` a
+    second, different way. With no geometry flags it returns the canonical
+    256x256 frame and nothing moves."""
+    _stack_scripts_on_path()
+    from eval_flagship_v4 import _eval_cfg, resolve_eval_frames
+    cfg = _eval_cfg()
+    cache_frame, model_frame = resolve_eval_frames(a, cfg, label="t1_eval")
+    return cfg, cache_frame, model_frame
+
+
+def ext_episode_sources(a, *, cache_frame, model_frame):
+    """``(loaders, provenance)`` — one zero-arg loader per episode.
+
+    Each loader returns an object carrying ``.feats`` / ``.poses`` / ``.actions``
+    (a :class:`V2RawEp` for a v2 cache, ``taniteval.data.RawEp`` for a raw
+    epcache). Loading stays per-episode and lazy, exactly as the §1.12 loop does,
+    so a 40-episode roll never materialises 40 decoded clips."""
+    if getattr(a, "v2_val_cache", None):
+        _stack_scripts_on_path()
+        from eval_flagship_v4 import build_v2_val_episodes
+        providers, prov = build_v2_val_episodes(
+            a, cache_frame=cache_frame, train_frame=model_frame)
+        n_avail = len(providers)
+        if a.episodes:
+            providers = providers[:a.episodes]
+        loaders = [(lambda p=p, i=i: V2RawEp(p, i))
+                   for i, p in enumerate(providers)]
+        prov = dict(prov)
+        prov.update({"corpus_format": "v2-compressed",
+                     "dirs": list(a.v2_val_cache) if isinstance(
+                         a.v2_val_cache, (list, tuple)) else [a.v2_val_cache],
+                     "episode_ids": [int(p.episode_id) for p in providers],
+                     "n_episodes": len(providers), "n_available": n_avail})
+        return loaders, prov
+    from taniteval.data import load_frames
+    files = sorted(glob.glob(os.path.join(a.corpus, "ep_*.pt")))
+    if not files:
+        sys.exit(f"no ep_*.pt under {a.corpus}")
+    n_avail = len(files)
+    if a.episodes:
+        files = files[:a.episodes]
+    return ([(lambda f=f: load_frames([f])[0]) for f in files],
+            {"corpus_format": "raw-epcache", "dirs": [a.corpus],
+             "files": files, "n_episodes": len(files), "n_available": n_avail})
+
+
+def load_ext_trunk(a, model_frame):
+    """MODE-A load (model + grounding) through ``eval_flagship_v4.load_v1_from_ck``.
+
+    IMPORTED, not reimplemented — the same loader ``stage_a_probes`` uses for
+    v1/v4/v5f checkpoints, so the encoder is built at ``model_frame`` and the
+    state dict loads STRICT. Returns ``(world, grounding, base_step)``."""
+    import torch
+    _stack_scripts_on_path()
+    from eval_flagship_v4 import load_v1_from_ck
+    ck = torch.load(a.ckpt, map_location="cpu", weights_only=False)
+    if not isinstance(ck, dict) or "model" not in ck or "grounding" not in ck:
+        sys.exit(f"[t1] {a.ckpt} has no 'model'+'grounding' keys — the adapter "
+                 f"path needs a flagship trunk checkpoint (v1/v4/v5f shape). "
+                 f"Keys: {sorted(ck)[:12] if isinstance(ck, dict) else type(ck)}")
+    world, grounding, base_step = load_v1_from_ck(ck, a.device,
+                                                 frame=model_frame)
+    del ck
+    return world, grounding, base_step
+
+
+def run_rollout_ext(a):
+    """The E1.4 roll: v2 (or raw) corpus x grounding (or unicycle-head) decode.
+
+    Writes the SAME per-episode dump schema :func:`run_rollout` writes, so
+    :func:`analyze` — and therefore every number's estimator and tier stamp — is
+    reached unchanged. Returns a provenance dict for the output record.
+
+    ⚠️ pod-verification pending: this box has no CUDA, no checkpoint and no v2
+    corpus. What IS verified here (``stack/tests/test_t1_v2_adapter.py``): the
+    ``(feats, poses, actions)`` adapter contract, the closed-loop feedback
+    arithmetic against a stub trunk, the decode call convention against
+    ``w7_roll_rerank``'s imported ``decode_transitions``, and the dump schema.
+    """
+    import torch
+
+    # ⛔ tanitad FIRST, deliberately. ``taniteval.rollout`` calls
+    # ``stack_guard.ensure_stack_on_path()``, which can put a DIFFERENT stack
+    # tree at the front of sys.path when this host carries two (the
+    # STALE_IMPORT_GUARD failure: a plausible wrong number instead of an
+    # error). Binding ``tanitad`` from the tree this tool was launched from
+    # before that runs makes the resolution deterministic — first import wins.
+    _stack_scripts_on_path()
+    from tanitad.models.metric_dynamics import (UnicycleStepReadout,
+                                                gt_ego_waypoints,
+                                                rollout_transitions)
+    from taniteval.rollout import SPEED_SCALE
+
+    t0 = time.time()
+    cfg, cache_frame, model_frame = resolve_ext_frames(a)
+    world, grounding, base_step = load_ext_trunk(a, model_frame)
+    model = world.eval()
+    for p in model.parameters():
+        p.requires_grad_(False)
+    state_dim = int(getattr(model, "state_dim", 0) or a.head_state_dim)
+    _p(f"[model] loaded STRICT in {time.time()-t0:.1f}s  step={base_step}  "
+       f"state_dim={state_dim}  frame={model_frame.height}x{model_frame.width}")
+
+    if a.grounding_readout:
+        step_readout = grounding.step["op"].eval()
+        for p in step_readout.parameters():
+            p.requires_grad_(False)
+        head = None
+        dec = {"kind": "grounding.step['op'] (StepDisplacementReadout)",
+               "source": "the checkpoint's OWN metric decoder",
+               "open_decode": "metric_dynamics.decode_transitions — the "
+                              "w7_roll_rerank / canary call convention",
+               "closed_feedback": "implied_controls (physicalai.signals_at "
+                                  "inverse; same clamp as roll_closed)"}
+    else:
+        ck = torch.load(a.head, map_location="cpu", weights_only=False)
+        head = UnicycleStepReadout(state_dim, hidden=a.head_hidden,
+                                   speed_input=bool(a.head_speed_input),
+                                   predict_delta=bool(a.head_predict_delta)
+                                   ).to(a.device)
+        head.load_state_dict(ck["head"])
+        head.eval()
+        step_readout = None
+        dec = {"kind": "UnicycleStepReadout (--head ckpt)", "ckpt": a.head,
+               "hidden": a.head_hidden,
+               "speed_input": bool(a.head_speed_input),
+               "predict_delta": bool(a.head_predict_delta)}
+    _p(f"[decoder] {dec['kind']}")
+
+    loaders, corpus_prov = ext_episode_sources(a, cache_frame=cache_frame,
+                                               model_frame=model_frame)
+    _p(f"[corpus] {corpus_prov['corpus_format']} — episodes "
+       f"{corpus_prov['n_episodes']} of {corpus_prov['n_available']} "
+       f"(§1.12 grid default: first {EPISODES_DEFAULT})")
+    os.makedirs(a.dump_dir, exist_ok=True)
+
+    dev = a.device
+    dev_type = torch.device(dev).type
+    amp_on = (dev_type == "cuda") and bool(a.grounding_readout) \
+        and not a.no_amp
+    k, w, dt, stride = a.horizon_k, a.window, a.dt, max(1, int(a.window_stride))
+    arm_keys = ["cl"] + (["ol"] if a.with_t0_open_loop else []) \
+        + (["ha"] if a.with_hold_action else [])
+    _p(f"[grid] window={w} k={k} dt={dt} stride={stride} chunk={a.chunk} "
+       f"amp={amp_on} arms={arm_keys}")
+    n_win = 0
+    t0 = time.time()
+    for fi, load_ep in enumerate(loaders):
+        ep = load_ep()
+        poses = ep.poses.float()
+        T = min(int(ep.feats.shape[0]), int(poses.shape[0]),
+                int(ep.actions.shape[0]))
+        starts = list(range(0, T - w - k, stride))
+        acc = {kk: [] for kk in ["g"] + arm_keys}
+        lastl = []
+        with torch.no_grad():
+            for i0 in range(0, len(starts), a.chunk):
+                ch = starts[i0:i0 + a.chunk]
+                last = torch.tensor([s + w - 1 for s in ch])
+                fw = torch.stack([torch.as_tensor(ep.feats[s:s + w])
+                                  for s in ch]).to(dev).float().div_(255.0)
+                aw = torch.stack([ep.actions[s:s + w]
+                                  for s in ch]).to(dev).float()
+                pl = poses[last].to(dev)
+                ego = pl[:, 3:4] / SPEED_SCALE
+                awE = torch.cat([aw, ego[:, None].expand(-1, aw.shape[1], -1)],
+                                -1)
+                v0 = pl[:, 3]
+                with torch.autocast(dev_type, dtype=torch.bfloat16,
+                                    enabled=amp_on):
+                    states = model.encode_window(fw)
+                    aw3 = awE.to(states.dtype)
+                    if a.grounding_readout:
+                        cl = roll_closed_grounding(model, step_readout, states,
+                                                   aw3, v0, ego, k=k, dt=dt,
+                                                   wheelbase=a.wheelbase)
+                    else:
+                        cl = roll_closed(model, head, states, awE, v0, ego,
+                                         k=k, dt=dt, wheelbase=a.wheelbase)
+                    acc["cl"].append(cl.float().cpu().numpy())
+                    if a.with_t0_open_loop:
+                        fa = torch.stack([ep.actions[s + w:s + w + k]
+                                          for s in ch]).to(dev).float()
+                        faE = torch.cat(
+                            [fa, ego[:, None].expand(-1, fa.shape[1], -1)], -1)
+                        tr = rollout_transitions(model.predictor, states, aw3,
+                                                 faE.to(states.dtype), k)
+                        ol = (decode_open_grounding(step_readout, tr, k)
+                              if a.grounding_readout
+                              else decode_open(head, tr, v0, dt=dt))
+                        acc["ol"].append(ol.float().cpu().numpy())
+                    if a.with_hold_action:
+                        faH = aw3[:, -1:, :].expand(-1, k, -1)
+                        trH = rollout_transitions(model.predictor, states, aw3,
+                                                  faH, k)
+                        ha = (decode_open_grounding(step_readout, trH, k)
+                              if a.grounding_readout
+                              else decode_open(head, trH, v0, dt=dt))
+                        acc["ha"].append(ha.float().cpu().numpy())
+                fp = torch.stack([poses[s + w:s + w + k]
+                                  for s in ch]).to(dev)
+                acc["g"].append(gt_ego_waypoints(pl, fp, list(range(1, k + 1)))
+                                .float().cpu().numpy())
+                lastl += [int(x) for x in last]
+        np.savez_compressed(
+            os.path.join(a.dump_dir, f"ep{fi:03d}.npz"),
+            **{kk: np.concatenate(v).astype(np.float32)
+               for kk, v in acc.items()},
+            ws=np.array(lastl))
+        n_win += len(lastl)
+        _p(f"  [{fi+1}/{len(loaders)}] {len(lastl)} windows  "
+           f"{time.time()-t0:.0f}s")
+    _p("T1_DUMP_DONE")
+    return {"path": "run_rollout_ext (E1.4 adapter)",
+            "decoder": dec, "corpus": corpus_prov,
+            "base_step": base_step, "state_dim": state_dim,
+            "cache_frame": cache_frame.to_dict(),
+            "model_frame": model_frame.to_dict(),
+            "v2_subframe": getattr(a, "v2_subframe", None),
+            "grid": {"window": w, "horizon_k": k, "dt_s": dt,
+                     "window_stride": stride, "n_windows": n_win,
+                     "episodes": len(loaders)},
+            "amp_bf16": amp_on,
+            "arms": arm_keys,
+            "canary_equivalent_arm": ("ol — decode_transitions over the "
+                                      "recorded-action roll IS the WM canary "
+                                      "quantity (train_flagship_v4.py:584-586)"
+                                      if (a.grounding_readout
+                                          and a.with_t0_open_loop) else None),
+            "wallclock_s": round(time.time() - t0, 1)}
+
+
 def run_rollout(a):
     """Roll the checkpoint over the corpus and write the per-episode dump.
 
@@ -836,6 +1253,33 @@ def main(argv=None):
                          "RUN'S OWN cfg and loaded STRICT")
     ap.add_argument("--arm", required=True, help="label for the output record")
     ap.add_argument("--corpus", default=None, help="dir of ep_*.pt episodes")
+    # -- E1.4 adapter: the v2 corpus + the checkpoint's own decoder ----------- #
+    ap.add_argument("--v2-val-cache", default=None, nargs="+",
+                    help="v2 compressed VAL split dir(s) of *.v2ep.pt — the "
+                         "w120 flagship corpus format. Exactly one of this and "
+                         "--corpus, never both (two CORPUS FORMATS, not two "
+                         "sources to mix). Selects run_rollout_ext.")
+    ap.add_argument("--v2-lru", type=int, default=64,
+                    help="v2 payload LRU per cache dir (measure YOUR cache's "
+                         "MB/clip before raising it — 33 MB/clip on the w120 "
+                         "PNG caches)")
+    ap.add_argument("--v2-subframe", default=None, metavar="HxW",
+                    help="centred sub-frame the model reads (e.g. 176x624) — "
+                         "MUST match the run; cross-checked vs the cache")
+    ap.add_argument("--require-parity", action="store_true")
+    ap.add_argument("--grounding-readout", action="store_true",
+                    help="decode with the CHECKPOINT'S OWN grounding.step['op'] "
+                         "(StepDisplacementReadout) instead of a --head ckpt — "
+                         "the v5f/v5.8f decoder. Selects run_rollout_ext.")
+    ap.add_argument("--window-stride", type=int, default=1,
+                    help="window grid stride on the adapter path; 1 = the "
+                         "§1.12 stride-1 grid (default). Recorded in the "
+                         "output either way.")
+    ap.add_argument("--no-amp", action="store_true",
+                    help="disable bf16 autocast on the adapter path. AMP is ON "
+                         "by default for --grounding-readout on cuda because "
+                         "that is the regime the canary/W7/stage_a numbers this "
+                         "arm is compared against were produced in.")
     ap.add_argument("--out", required=True, help="JSON output FILE (not a dir)")
     ap.add_argument("--episodes", type=int, default=EPISODES_DEFAULT,
                     help=f"first N episodes of the sorted corpus; the §1.12 "
@@ -893,20 +1337,52 @@ def main(argv=None):
     ap.add_argument("--byte-check-key", default="b",
                     help="key in the reference dump ('b' = the banked v1.6 "
                          "open-loop arm in the v16 dump)")
+    # the geometry flags come from tanitad.geometry itself — never re-spelled
+    # here, because "a geometry can never be spelled two different ways" is the
+    # whole point of that module. Absent stack -> the flags are absent, and the
+    # adapter path refuses below with the import error rather than guessing.
+    geom_err = None
+    try:
+        from tanitad.geometry import add_geometry_args
+        add_geometry_args(ap)          # --frame-h/-w/--frame-hfov/--projection
+    except Exception as ex:            # noqa: BLE001 (no stack on this host)
+        geom_err = f"{type(ex).__name__}: {ex}"
     a = ap.parse_args(argv)
 
     if os.path.isdir(a.out):
         sys.exit(f"--out must be a FILE, got a directory: {a.out}")
+    ext = uses_ext_rollout(a)
     if a.analyze_only is None:
-        for req, name in ((a.ckpt, "--ckpt"), (a.corpus, "--corpus"),
-                          (a.head, "--head"), (a.dump_dir, "--dump-dir")):
-            if not req:
+        if a.corpus and a.v2_val_cache:
+            sys.exit("[t1] --corpus (raw epcache) and --v2-val-cache (v2 "
+                     "compressed) are two CORPUS FORMATS, not two sources to "
+                     "mix. Pass exactly one.")
+        if a.head and a.grounding_readout:
+            sys.exit("[t1] --head (a separate UnicycleStepReadout ckpt) and "
+                     "--grounding-readout (the checkpoint's OWN "
+                     "grounding.step['op']) are two DECODERS. Pass exactly "
+                     "one — scoring one arm's decoder under the other's name "
+                     "is unattributable.")
+        req = [(a.ckpt, "--ckpt"), (a.dump_dir, "--dump-dir"),
+               (a.corpus or a.v2_val_cache, "--corpus or --v2-val-cache"),
+               (a.head or a.grounding_readout, "--head or --grounding-readout")]
+        for r, name in req:
+            if not r:
                 sys.exit(f"rollout mode needs {name} (or use --analyze-only)")
+        if ext and geom_err:
+            sys.exit(f"[t1] the adapter path (--v2-val-cache / "
+                     f"--grounding-readout) needs the tanitad stack on "
+                     f"PYTHONPATH, but importing tanitad.geometry failed: "
+                     f"{geom_err}")
 
+    rollout_prov = None
     if a.analyze_only:
         dump_dir = a.analyze_only
     else:
-        run_rollout(a)
+        if ext:
+            rollout_prov = run_rollout_ext(a)
+        else:
+            run_rollout(a)
         dump_dir = a.dump_dir
         if a.dump_only:
             _p(f"[dump-only] dump at {dump_dir}; analyze later with "
@@ -930,12 +1406,23 @@ def main(argv=None):
 
     rec = analyze(dump_files, tiers=_parse_tiers(a.tiers),
                   n_boot=a.n_boot, dt=a.dt, lead=lead, byte_check=byte_check)
+    corpus_dir = a.corpus or (a.v2_val_cache[0] if a.v2_val_cache else None)
     rec.update({"arm": a.arm, "ckpt": a.ckpt, "run_config": a.run_config,
                 "corpus": a.corpus,
-                "corpus_key": (os.path.basename(a.corpus.rstrip("/"))
-                               if a.corpus else None),
+                "v2_val_cache": a.v2_val_cache,
+                "corpus_key": (os.path.basename(str(corpus_dir).rstrip("/"))
+                               if corpus_dir else None),
                 "episodes_flag": a.episodes, "dump_dir": dump_dir,
                 "lead_block": a.lead,
+                "decoder": ("grounding.step['op']" if a.grounding_readout
+                            else ("UnicycleStepReadout(--head)" if a.head
+                                  else None)),
+                "rollout_provenance": rollout_prov,
+                "rollout_path": (
+                    "n/a — analyze-only (no roll in this invocation)"
+                    if a.analyze_only else
+                    ("run_rollout_ext (E1.4 adapter)" if ext
+                     else "run_rollout (§1.12 byte-close path)")),
                 "mode": "analyze-only" if a.analyze_only else "rollout+analyze"})
     with open(a.out, "w") as f:
         json.dump(rec, f, indent=1, default=str)
