@@ -112,6 +112,17 @@ the ~top-100 hardest occlusion windows (lead agent occluded ≥5 of 20 future st
 P8 join's occlusion flags); run the I4a triplet there. Gate: imagination delta on stress
 windows ≥ 2× the full-grid delta (the channel concentrates where imagination is needed).
 
+- [x] **I4a RUN 2026-08-11 ~19:40Z — IMAGINATION IS LOAD-BEARING, decisively.** Same 881
+  grid, same checkpoint, three arms: INTACT ADE **0.4011** (byte-matches the banked v5f
+  baseline — instrument parity proven in-run), oracle 0.1975; **ZERO ADE 7.6493 (19×
+  collapse**, oracle 1.457, miss@2m 0.80); **SHUFFLE ADE 1.2492** (3.1×, oracle 0.426).
+  Zero ≫ shuffle ≫ intact proves the head reads imagination as a CONTENT signal (correspondence
+  matters), not a bias. Stated caveat: the head was TRAINED with imagination present, so
+  ablation measures DEPENDENCE of this architecture, not retrain-without value; I4b's
+  occluded-split stratification is the next refinement. Artifacts:
+  `i4a/flagship-v5f-w120-30k-i4a-{none,zero,shuffle}.json` (pod5; registry-grade CI rescore
+  with the banked windows at harvest).
+
 **Leverage paths (run in this order, each gated on the previous):** (1) imagination-closed
 W7 roll-cost — ALREADY LIVE (`w7_gate*.json` roll.imagination_closed=true); its calibration
 ρ is I4's downstream consumer. (2) Per-candidate imagination axis: expose the top-8
