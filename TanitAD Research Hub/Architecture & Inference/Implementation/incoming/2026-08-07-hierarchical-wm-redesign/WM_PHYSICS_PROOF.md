@@ -196,9 +196,11 @@ fan+scores+GT for the OLD fan; rerun on the unicycle fan's eval windows). Order:
   load-bearing for the programme: 88.7 % of the oracle gap is LONGITUDINAL, and the state
   variable longitudinal control most needs is the one the WM cannot surface. Pre-registered
   consequences now ACTIVE: (1) headway/TTC remain GT-join instruments (never latent
-  probes); (2) **auxiliary lead-readout loss** (labels from the obstacle.offline join)
-  is promoted to a named stage-B/v6 training lever — the cheapest intervention that could
-  make P4/P8's object-level claims and the LONGITUDINAL family improve together;
+  probes); (2) ⚠️ RETRACTED SAME DAY (PI): the auxiliary lead-readout loss — labels into
+  the trunk break the JEPA self-supervised thesis; replaced by the LABEL-FREE program in
+  `JEPA_PHYSICS_SURVEY.md` (LF0 locate-first on pre-pool spatial tokens, then
+  interaction-weighted sampling / masked-latent objectives / dense near-field loss
+  shaping, all gated on this same frozen lead battery);
   (3) P8's decoded-BEV lead read-off is the convergent test — if the occupancy decode
   (attempt-2) shows the lead vehicle, the information enters the latent but dies before
   the pooled readout, which localises the defect to the readout path rather than the

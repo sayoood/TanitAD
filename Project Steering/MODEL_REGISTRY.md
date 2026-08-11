@@ -1438,11 +1438,14 @@ Run 2 (transform + capability-ceiling probes, episode-disjoint OOF, CPU off the 
 arrays): log1p/inverse/TTC-proxy linear ALL fail and the 2-layer MLP ceiling reads
 **−0.334** — the latent lacks a readable lead-distance variable in any parameterization
 tested (small-n caveat stamped in the battery doc). Load-bearing consequence: 88.7 % of
-the oracle gap is longitudinal, and this is the missing longitudinal state variable ⇒
-**auxiliary lead-readout loss (obstacle.offline join labels) promoted to a named stage-B/v6
-lever**; headway/TTC stay GT-join instruments; P8's decoded-BEV lead read-off is the
-convergent locator (encoder-vs-readout). Artifacts: `p12_gate_clsfilter.json`,
-`p1_lead_transforms.json` (+ HF /battery/ probe arrays).
+the oracle gap is longitudinal, and this is the missing longitudinal state variable.
+⚠️ **The aux-label-loss lever originally proposed here was RETRACTED the same day by the
+PI (labels into the trunk break the JEPA self-supervised thesis); the response is the
+LABEL-FREE lever program in `JEPA_PHYSICS_SURVEY.md`** — LF0 (locate: probe PRE-POOL
+spatial tokens + P8 decoded-BEV read-off; probe-only, admissible) then
+interaction-weighted sampling / masked-latent objectives / dense near-field loss shaping,
+each gated on the SAME frozen P1 lead battery. Headway/TTC stay GT-join instruments.
+Artifacts: `p12_gate_clsfilter.json`, `p1_lead_transforms.json` (+ HF /battery/ arrays).
 
 ## 2. REF-A — the frozen-encoder arm (H4)
 
