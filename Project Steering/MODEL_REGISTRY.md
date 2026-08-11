@@ -1430,6 +1430,21 @@ P5/T1 lens applies). Lead-gap probe NOT JUDGEABLE (negative R² both sides — t
 class-agnostic join needs the vehicle-class filter; instrument fix queued, not a model
 verdict). Artifact: `p12_gate.json`.
 
+**W4r + W7-w4r — MEASURED 2026-08-11 ~19:10Z [T0, 881 grid]: the repair arc closes on ONE
+remaining stale part.** W4r (unicycle head refit ON the stage-A trunk, 4000 steps, trunk
+md5-frozen): **GATE PASS — fan oracle 0.1273** (cap 0.2173 vs the 0.1975 reference ✓),
+winner accel MAE 0.276, selected-accel 0.697, violations 0.0. The fan on the repaired
+trunk is HEALTHY. Same fan through the FROZEN selector: selected **4.416** — and W7-w4r
+(K=32, frozen-selector shortlist) FAILS at **3.614** (thr 0.4505) because the shortlist
+itself is poisoned: fan oracle 0.127 vs shortlist ceiling set by a selector still trained
+on frozen-trunk features. Chain of eliminations now complete: trunk repaired (§1.13c),
+head refit PASS, roll-cost calibrated (ρ 0.716) — **the frozen selector is the last stale
+component, and it sits in W7's PRUNER, not its cost.** ⇒ **W7-FULL queued (topk 256 = no
+shortlist, selector-free): roll-cost + kinematic cost over the whole healthy fan — the
+first selection read of the fully-repaired pipeline with NO stale part anywhere** (pod4,
+behind p8c; W4r head relayed via HF /battery/). Artifacts: `w4r_gate.json`,
+`w7-repaired-w4r-k32/w7_gate.json` (pod5).
+
 **P1 LEAD-GAP RESOLUTION — MEASURED 2026-08-11 ~17:20Z (two runs, pod4): the instrument
 was fixed AND the failure survived it — MODEL VERDICT "missing state variable".**
 Run 1 (class filter applied, provenance in-artifact, n=266 vehicle-lead windows): still
