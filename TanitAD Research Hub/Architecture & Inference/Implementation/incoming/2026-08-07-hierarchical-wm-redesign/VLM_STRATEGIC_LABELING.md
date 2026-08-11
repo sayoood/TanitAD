@@ -51,7 +51,13 @@ events (E4.1 LON axis) + distance-to-event estimates (arc-length to the next
 turn/merge/stop). Output: a structured GEOMETRIC SUMMARY per clip (machine-readable, unit-
 carrying), which (a) seeds the VLM prompt, (b) gates its claims.
 
-**Engine B — VLM (Qwen2.5/3-VL, 7–8 B first, bigger only if the pilot demands):**
+**Engine B — VLM (PI directive: Qwen 3.5, 8 B at LEAST, or bigger — corrected 2026-08-11
+after the PI caught a silent downgrade to 2.5-VL): official candidates measured against the
+A40 envelope: `Qwen/Qwen3.5-9B` (bf16, the workhorse arm) and `Qwen/Qwen3.5-27B-FP8`
+(~27 GB, the bigger-quality arm); PH0 runs BOTH on the pilot clips and the measured
+quality/wall decides PH1's model. Video-frame input capability verified against the model
+card at pilot time (Qwen3.5 ships natively multimodal — VERIFY, do not assume). Both
+prefetching on pod4.**
 two low-fps clips (PAST: t0−8 s → t0, FUTURE: t0 → t0+12 s; front camera, ~2 fps, 448 px)
 + the geometric summary + a STRICT JSON schema prompt. Two-pass protocol:
 1. **Extract** — scenario/domain/signs/agents/ego-behaviour + proposed strategic goal and
