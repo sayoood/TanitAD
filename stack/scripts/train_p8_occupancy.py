@@ -205,10 +205,12 @@ class JoinFileReader:
     def __init__(self, path: str | os.PathLike):
         self.path = str(path)
         self._by_clip: dict[tuple[str, int], np.ndarray] = {}
+        self._cls_by_clip: dict[tuple[str, int], np.ndarray] = {}
         self._clip_of_uid: dict[int, str] = {}
         self._clip_of_legacy: dict[int, str] = {}
         self._ambiguous_legacy: set[int] = set()
         self.has_occlusion_flags = False
+        self.has_classes = False
         seen_clips: set[str] = set()
         n_lines = 0
         with open(self.path, "r", encoding="utf-8") as fh:
@@ -230,6 +232,18 @@ class JoinFileReader:
                                      f"clip {cid!r} frame {fi} — the join "
                                      f"builder emitted this frame twice")
                 self._by_clip[key] = ag
+                # per-agent label_class ("cls" in the 2026-08 join schema) —
+                # kept ALIGNED with the [A, 6] rows so consumers (the P1
+                # lead-gap probe) can filter candidates by class. Older join
+                # files without the field stay loadable: has_classes False,
+                # lookup_classes -> None, behaviour unchanged.
+                if isinstance(rec["agents"], list) and any(
+                        isinstance(d, dict) and "cls" in d
+                        for d in rec["agents"]):
+                    self._cls_by_clip[key] = np.asarray(
+                        [str(d.get("cls", "")) for d in rec["agents"]],
+                        dtype=object)
+                    self.has_classes = True
                 if (ag.shape[0] > 0) and (ag[:, 5] >= 0.0).any():
                     self.has_occlusion_flags = True
                 if cid not in seen_clips:
@@ -268,6 +282,15 @@ class JoinFileReader:
         if cid is None:
             return None
         return self._by_clip.get((cid, int(frame_idx)))
+
+    def lookup_classes(self, episode_id: int,
+                       frame_idx: int) -> np.ndarray | None:
+        """Per-agent ``label_class`` strings aligned with :meth:`lookup`'s rows,
+        or ``None`` when the record (or the whole file) carries no classes."""
+        cid = self._clip_of(episode_id)
+        if cid is None:
+            return None
+        return self._cls_by_clip.get((cid, int(frame_idx)))
 
     def raster(self, episode_id: int, frame_idx: int,
                grid: BEVGrid = GRID_DEFAULT,

@@ -354,3 +354,57 @@ def test_yaw_rate_at_k():
     assert abs(float(yaw_rate_at_k(fp2, k=10)[0])) < 1.0
     with pytest.raises(ValueError):
         yaw_rate_at_k(fp, k=1)
+
+
+# ============================================================================
+# lead-gap CLASS FILTER (the 2026-08-11 instrument fix: a pedestrian in the
+# corridor is not a lead VEHICLE)
+# ============================================================================
+def test_lead_gap_class_filter_drops_non_vehicles():
+    from probe_latent_state import VEHICLE_CLASSES
+    ag = np.array([_agent(6.0, 0.0), _agent(20.0, 0.2)])
+    # class-agnostic (old behaviour, classes=None): pedestrian at 6 m wins
+    assert lead_gap_from_agents(ag) == 4.0
+    # with classes: the pedestrian is excluded, the automobile at 20 m leads
+    cls = np.array(["person", "automobile"], dtype=object)
+    assert lead_gap_from_agents(ag, classes=cls) == 18.0
+    # corridor full of non-vehicles -> labelled, but NO lead vehicle
+    assert lead_gap_from_agents(ag, classes=np.array(
+        ["person", "cyclist"], dtype=object)) is None
+    assert "automobile" in VEHICLE_CLASSES
+
+
+def test_lead_gap_class_filter_misalignment_raises():
+    ag = np.array([_agent(6.0, 0.0), _agent(20.0, 0.2)])
+    with pytest.raises(ValueError):
+        lead_gap_from_agents(ag, classes=np.array(["automobile"], dtype=object))
+
+
+def test_join_reader_classes_roundtrip(tmp_path):
+    """cls survives the reader aligned with lookup's rows; a class-less file
+    stays loadable with has_classes False (old joins keep working)."""
+    from train_p8_occupancy import episode_uid_of_clip
+    p = tmp_path / "agents_cls.jsonl"
+    recs = [
+        {"clip_id": "clipB", "frame_idx": 2, "agents": [
+            {"cx": 6.0, "cy": 0.0, "yaw": 0.0, "l": 4.0, "w": 2.0,
+             "cls": "person"},
+            {"cx": 20.0, "cy": 0.2, "yaw": 0.0, "l": 4.0, "w": 2.0,
+             "cls": "automobile"}]},
+    ]
+    p.write_text("\n".join(json.dumps(r) for r in recs), encoding="utf-8")
+    join = JoinFileReader(p)
+    uid = episode_uid_of_clip("clipB")
+    assert join.has_classes is True
+    cls = join.lookup_classes(uid, 2)
+    assert list(cls) == ["person", "automobile"]
+    # the wired path: reader agents + reader classes -> vehicle-pure gap
+    assert lead_gap_from_agents(join.lookup(uid, 2), classes=cls) == 18.0
+    # class-less legacy file: loadable, has_classes False, lookup_classes None
+    q = tmp_path / "agents_nocls.jsonl"
+    q.write_text(json.dumps({"clip_id": "clipB", "frame_idx": 2, "agents": [
+        {"cx": 6.0, "cy": 0.0, "yaw": 0.0, "l": 4.0, "w": 2.0}]}),
+        encoding="utf-8")
+    legacy = JoinFileReader(q)
+    assert legacy.has_classes is False
+    assert legacy.lookup_classes(episode_uid_of_clip("clipB"), 2) is None

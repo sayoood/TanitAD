@@ -114,10 +114,13 @@ from train_p8_occupancy import (JoinFileReader, p8_latents,  # noqa: E402
                                 window_frame)
 
 try:                                     # lead corridor: the SAME constants the
-    from lead_state_gate import LEAD_LAT_M, LEAD_MAX_GAP_M  # noqa: E402
+    from lead_state_gate import (LEAD_LAT_M, LEAD_MAX_GAP_M,  # noqa: E402
+                                 VEHICLE_CLASSES)
 except ImportError:                      # I1a gate fixed before any number was
     LEAD_LAT_M = 2.0                     # read (lead_state_gate.py:86-87);
     LEAD_MAX_GAP_M = 80.0                # fallback for hosts without pandas.
+    VEHICLE_CLASSES = ("automobile", "heavy_truck", "bus", "other_vehicle",
+                       "trailer")        # lead_state_gate.py:88 verbatim
 
 KS_DEFAULT = (5, 10, 15, 20)             # 0.5/1/1.5/2 s @10 Hz — the WP_STEPS grid
 GATE_K = 10                              # P1 retention horizon (doc verbatim)
@@ -365,7 +368,8 @@ def logistic_probe_cv(X: np.ndarray, y_class: np.ndarray,
 # ============================================================================
 def lead_gap_from_agents(agents: np.ndarray | None,
                          lat_max: float = LEAD_LAT_M,
-                         max_gap: float = LEAD_MAX_GAP_M) -> float | None:
+                         max_gap: float = LEAD_MAX_GAP_M,
+                         classes=None) -> float | None:
     """Lead-vehicle gap (m) from ego-frame agents ``[A, 6] = (cx, cy, yaw, l,
     w, occ)`` — the ``lead_state_gate.lead_frame`` definition on the join-file
     schema: gap = cx - l/2 (bumper distance, :239), candidate iff gap in
@@ -379,6 +383,16 @@ def lead_gap_from_agents(agents: np.ndarray | None,
         return None
     gap = ag[:, 0] - ag[:, 3] / 2.0
     cand = (gap >= 0.0) & (gap <= max_gap) & (np.abs(ag[:, 1]) < lat_max)
+    if classes is not None:
+        # the 2026-08-11 instrument fix: a pedestrian crossing the corridor is
+        # not a LEAD VEHICLE — lead_state_gate.py:242's class gate, applied
+        # here the moment the join carries classes. classes rows are aligned
+        # with `agents` rows by JoinFileReader.lookup_classes.
+        cls = np.asarray(classes, dtype=object)
+        if cls.shape[0] != ag.shape[0]:
+            raise ValueError(f"classes ({cls.shape[0]}) misaligned with "
+                             f"agents ({ag.shape[0]})")
+        cand &= np.isin(cls.astype(str), np.asarray(VEHICLE_CLASSES))
     if not cand.any():
         return None
     return float(gap[cand].min())
@@ -584,7 +598,8 @@ def collect_grid(world, ds_val, device, *, ks: tuple[int, ...], amp_on: bool,
                     if ag is None:
                         lead_census[k]["no_label"] += 1
                     else:
-                        g = lead_gap_from_agents(ag)
+                        g = lead_gap_from_agents(
+                            ag, classes=join.lookup_classes(eid, pf + k))
                         if g is None:
                             lead_census[k]["labelled_no_lead"] += 1
                         else:
@@ -840,10 +855,12 @@ def main(argv=None) -> int:
             "path": a.join_file,
             "corridor": {"lat_max_m": LEAD_LAT_M, "max_gap_m": LEAD_MAX_GAP_M,
                          "gap_def": "cx - l/2 (lead_state_gate.lead_frame:239)"},
-            "class_filter": "NONE — the join-file schema carries no "
-                            "label_class; build the join with agents_at_time("
-                            "classes=VEHICLE_CLASSES) pod-side for class "
-                            "purity",
+            "class_filter": (
+                {"vehicle_classes": list(VEHICLE_CLASSES),
+                 "applied": "per-record (lookup_classes aligned rows)"}
+                if getattr(join, "has_classes", False) else
+                "NONE — this join file predates the `cls` field; rebuild with "
+                "build_obstacle_join.py (2026-08 schema) for class purity"),
             "census_per_k": col["lead_census"],
         },
         "grid": {"episodes": a.episodes, "stride": a.stride,
