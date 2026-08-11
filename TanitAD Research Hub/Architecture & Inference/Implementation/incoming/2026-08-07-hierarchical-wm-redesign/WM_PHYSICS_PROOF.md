@@ -176,6 +176,19 @@ fan+scores+GT for the OLD fan; rerun on the unicycle fan's eval windows). Order:
   interface is real, low-rank, correctly signed, and MUFFLED. ⇒ stage-A post-training
   (L_ctrl) now has a measured target: raise lateral gain into [0.5, 2], fix longitudinal
   sign to ≥95 %, preserve the 3-dim factorisation. E1.4 T1 rows for v5.8f re-run after.
+- [x] **P8 RUN (attempt 2) 2026-08-12 ~00:05Z — GATE PASS, and P4 rides it.** After the
+  attempt-1 all-empty collapse was diagnosed as an instrument failure (unweighted BCE on
+  ~1.24 % positive cells), the fixed readout (measured pos_weight 79.7 + soft-Dice + τ*
+  sweep, τ* chosen on the ENCODED arm so the retention gate can only get harder) lifts IoU
+  **74×** and passes: k=10 **IoU(ẑ) 0.01869 / IoU(z_enc) 0.02005 = retention 0.932**
+  (gate ≥0.8), τ* = 0.7. **The predictor loses only ~7 % of the scene the encoder exposes.**
+  P4 permanence, measured on the same run: **occluded recall ≥ visible** (enc 0.2178 vs
+  0.1881; pred 0.1743 vs 0.1717) — the latent carries agents the camera cannot see.
+  ⚠️ Absolute IoU is low (~0.02, a 1 M-param readout on frozen latents vs sparse rasters):
+  the quotable claim is the RATIO, not the absolute; and occluded≥visible needs a
+  diffuseness control (a decoder painting broad blobs would score both alike) before it is
+  quoted as permanence standing alone — that control is the next cheap probe.
+  Artifacts: `p8_gate_attempt2.json`, reel `p8-occupancy-c/reel/`.
 - [x] P1/P2 harness built (committed 3eed42f; RUNNING on pod5 now) · [x] P4 join built
   (39/40 eps, 195,805 boxes) · [x] P5 instrument validated (E1.4 byte-close PASSED 713b9d1)
 - [x] **P1 LEAD-GAP RERUN WITH THE VEHICLE-CLASS FILTER — MEASURED 2026-08-11 ~16:15Z

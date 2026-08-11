@@ -1430,6 +1430,26 @@ P5/T1 lens applies). Lead-gap probe NOT JUDGEABLE (negative R² both sides — t
 class-agnostic join needs the vehicle-class filter; instrument fix queued, not a model
 verdict). Artifact: `p12_gate.json`.
 
+**P8 BEV-OCCUPANCY READOUT (attempt 2) — MEASURED 2026-08-12 ~00:05Z [T0-diagnostic,
+881 grid, pod4]: GATE PASS — the PREDICTED latent retains the environment.** Attempt 1's
+all-empty collapse was an instrument failure (unweighted BCE on overwhelmingly empty
+rasters, IoU 2.7e-4 — see `p8_gate_attempt1.json`); attempt 2 (measured `pos_weight`
+79.7 from 1.239 % positive cells, + soft-Dice, + a 9-point threshold sweep with τ* chosen
+on the ENCODED arm — the conservative side) lifts the readout **74×** and makes the gate
+computable: at k=10, **IoU(decode(ẑ)) 0.01869 vs IoU(decode(z_enc)) 0.02005 → retention
+ratio 0.932** (gate ≥0.80) at **τ* = 0.7** (interior maximum of the sweep;
+0.0149→0.0191→0.0180 across 0.05→0.7→0.8). ⇒ **rolling the predictor forward loses only
+~7 % of the scene the encoder itself exposes** — the environment survives prediction, which
+is the property P8 exists to test. **Object permanence (P4's gate, now VISUALISED):
+occluded-agent recall is NOT worse than visible — enc 0.2178 occluded vs 0.1881 visible;
+pred 0.1743 vs 0.1717 at k=10** (n 194/548), i.e. the latent carries agents the camera
+cannot see. ⚠️ Honest limitation stamped: the ABSOLUTE IoU is low (~0.02) — a 1 M-param
+readout on frozen latents against sparse rasters — so the admissible claim is the
+RETENTION RATIO (one instrument, two inputs), not the absolute occupancy quality; and the
+occluded≥visible parity must be re-checked against a diffuseness control before it is
+quoted as permanence on its own. Artifacts: `p8_gate_attempt2.json`; reel
+`p8-occupancy-c/reel/` (camera | decode(ẑ) | belief∩truth at the same τ*).
+
 **I4a IMAGINATION ABLATION — MEASURED 2026-08-11 ~19:40Z [T0, 881 grid]: the imagination
 channel is LOAD-BEARING, not decorative.** Three arms, same checkpoint, same grid, only the
 imagination input changed (`eval_flagship_v4 --imagination-ablate`): **intact ADE 0.4011**
