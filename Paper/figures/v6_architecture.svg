@@ -1,0 +1,229 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1140" width="1600" height="1140" font-family="Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#46586e"/></marker>
+    <marker id="ahGoal" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#c2701a"/></marker>
+    <marker id="ahAct" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#0e7490"/></marker>
+    <marker id="ahUp" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#64748b"/></marker>
+    <style>
+      .t{fill:#1a2332} .s{fill:#46586e} .m{fill:#64748b}
+      .h1{font-size:26px;font-weight:700;letter-spacing:-0.3px}
+      .h2{font-size:13px;font-weight:600;letter-spacing:0.7px}
+      .lyr{font-size:18px;font-weight:700}
+      .sub{font-size:12.5px;font-weight:600}
+      .bd{font-size:11.5px} .sm{font-size:10.8px} .xs{font-size:9.8px}
+      .mono{font-family:'SF Mono','JetBrains Mono',Menlo,Consolas,monospace}
+      .panel{fill:#ffffff;stroke:#c9d3de;stroke-width:1.2}
+      .soft{fill:#f4f7fa;stroke:#dbe3ec;stroke-width:1}
+      .flow{stroke:#46586e;stroke-width:1.6;fill:none;marker-end:url(#ah)}
+      .goal{stroke:#c2701a;stroke-width:2.1;fill:none;marker-end:url(#ahGoal)}
+      .act{stroke:#0e7490;stroke-width:1.9;fill:none;marker-end:url(#ahAct)}
+      .up{stroke:#64748b;stroke-width:1.4;fill:none;stroke-dasharray:5 4;marker-end:url(#ahUp)}
+    </style>
+  </defs>
+  <rect width="1600" height="1140" fill="#ffffff"/>
+
+  <text x="52" y="50" class="t h1">TanitAD v6 — hierarchical JEPA world model with staged, label-free training</text>
+  <text x="52" y="74" class="s bd">Four abstraction layers, each with its own predictor and action space · goals condition downward · latents flow upward through stop-grad</text>
+  <text x="52" y="91" class="s bd">One 6 s trajectory spans the operative and tactical bands · sub-300 M parameters · no perception label, map or reward in any trunk loss</text>
+  <line x1="52" y1="106" x2="1548" y2="106" stroke="#c9d3de" stroke-width="1.2"/>
+
+  <!-- ============ ENCODER COLUMN ============ -->
+  <text x="52" y="136" class="m h2">INPUT &amp; ENCODER</text>
+  <rect x="52" y="150" width="176" height="70" rx="6" class="soft"/>
+  <text x="140" y="175" text-anchor="middle" class="t sm" font-weight="600">Front camera video</text>
+  <text x="140" y="193" text-anchor="middle" class="m xs">120° cyl · 256×640 · 10 Hz</text>
+  <text x="140" y="209" text-anchor="middle" class="m xs">+ proprioception (v₀, controls)</text>
+  <path class="flow" d="M140,220 L140,246"/>
+  <rect x="52" y="250" width="176" height="142" rx="6" class="panel"/>
+  <text x="140" y="274" text-anchor="middle" class="t sub">Encoder <tspan class="mono">f_θ</tspan></text>
+  <text x="140" y="292" text-anchor="middle" class="m xs">spatial cell tokens —</text>
+  <text x="140" y="306" text-anchor="middle" class="m xs">never pooled away (DINO-WM)</text>
+  <rect x="66" y="316" width="148" height="62" rx="4" fill="#eef4f9" stroke="#c9dcea"/>
+  <text x="140" y="334" text-anchor="middle" class="s xs" font-weight="700">E-ENC arm · pre-registered</text>
+  <text x="140" y="350" text-anchor="middle" class="m xs">(a) shared + per-layer adapters</text>
+  <text x="140" y="366" text-anchor="middle" class="m xs">(b) per-layer encoders</text>
+  <text x="52" y="412" class="m xs">SIGReg (full_relaxed) anti-collapse;</text>
+  <text x="52" y="426" class="m xs">latent spectrum monitored per layer.</text>
+  <text x="52" y="452" class="m xs">Labels may supervise readouts and</text>
+  <text x="52" y="466" class="m xs">goal heads only — never a trunk loss.</text>
+
+  <!-- encoder taps -->
+  <path class="flow" d="M228,286 L262,286 L262,192 L336,192"/>
+  <path class="flow" d="M228,304 L276,304 L276,398 L336,398"/>
+  <path class="flow" d="M228,322 L290,322 L290,604 L336,604"/>
+  <path class="flow" d="M228,340 L248,340 L248,782 L336,782"/>
+
+  <!-- ============ STRATEGIC ============ -->
+  <rect x="336" y="132" width="686" height="132" rx="8" fill="#faf7fd" stroke="#d9c9ea" stroke-width="1.4"/>
+  <rect x="336" y="132" width="6" height="132" rx="3" fill="#6b4d8f"/>
+  <text x="358" y="157" class="lyr" fill="#553c73">Strategic brain</text>
+  <text x="358" y="176" class="m sm">horizon 8–30 s+ · clock ≈ 0.5 Hz · influences beyond 6 s through goals only</text>
+  <rect x="358" y="188" width="186" height="60" rx="5" class="panel"/>
+  <text x="451" y="209" text-anchor="middle" class="t sm" font-weight="600">Predictor <tspan class="mono">P_S</tspan></text>
+  <text x="451" y="231" text-anchor="middle" class="m xs mono">z_str(t+K) = P_S(z_str, a_str)</text>
+  <rect x="558" y="188" width="212" height="60" rx="5" fill="#effafc" stroke="#a9d6e2"/>
+  <text x="664" y="207" text-anchor="middle" class="sm" font-weight="700" fill="#0b5d73">action head → a_str</text>
+  <text x="664" y="224" text-anchor="middle" class="m xs mono">PREPARE_LANE_CHANGE · REDUCE_TO</text>
+  <text x="664" y="240" text-anchor="middle" class="m xs mono">PREPARE_EXIT · PREPARE_STOP</text>
+  <rect x="784" y="188" width="222" height="60" rx="5" fill="#fff7ed" stroke="#e9c9a0"/>
+  <text x="895" y="207" text-anchor="middle" class="sm" font-weight="700" fill="#9a5b12">goal head → g_str</text>
+  <text x="895" y="224" text-anchor="middle" class="m xs mono">FOLLOW_MAIN_ROAD  (default)</text>
+  <text x="895" y="240" text-anchor="middle" class="m xs mono">ROUTE_TO · LANE_TARGET · TURN</text>
+  <path class="act" d="M558,218 L548,218"/>
+
+  <!-- ============ TACTICAL ============ -->
+  <rect x="336" y="338" width="686" height="148" rx="8" fill="#f2f9fb" stroke="#b6d8e4" stroke-width="1.4"/>
+  <rect x="336" y="338" width="6" height="148" rx="3" fill="#1f6f8b"/>
+  <text x="358" y="363" class="lyr" fill="#17576d">Tactical brain</text>
+  <text x="358" y="382" class="m sm">2–6 s band of the shared trajectory · clock ≈ 2 Hz · owns target speed (signs + priors)</text>
+  <rect x="358" y="394" width="186" height="60" rx="5" class="panel"/>
+  <text x="451" y="415" text-anchor="middle" class="t sm" font-weight="600">Predictor <tspan class="mono">P_T</tspan></text>
+  <text x="451" y="437" text-anchor="middle" class="m xs mono">P_T(z_tac, a_tac | g_str)</text>
+  <rect x="558" y="394" width="212" height="60" rx="5" fill="#effafc" stroke="#a9d6e2"/>
+  <text x="664" y="412" text-anchor="middle" class="sm" font-weight="700" fill="#0b5d73">action head → a_tac</text>
+  <text x="664" y="429" text-anchor="middle" class="m xs mono">LAT · LANE_KEEP/CHANGE · EVADE</text>
+  <text x="664" y="445" text-anchor="middle" class="m xs mono">LON · FOLLOW · BRAKE_TO · WAIT</text>
+  <rect x="784" y="394" width="222" height="60" rx="5" fill="#fff7ed" stroke="#e9c9a0"/>
+  <text x="895" y="412" text-anchor="middle" class="sm" font-weight="700" fill="#9a5b12">goal head → g_tac</text>
+  <text x="895" y="429" text-anchor="middle" class="m xs mono">ANCHOR_GOAL · SPEED_BAND · GAP</text>
+  <text x="895" y="445" text-anchor="middle" class="m xs mono">YIELD_AT · STOP · LIGHT_REACT</text>
+  <path class="act" d="M558,424 L548,424"/>
+  <text x="358" y="472" class="m xs">goal tokens carry optional constraints — within_m · by_time_s · at_arc_m · hold_for_s   ·   near-field weighting scales by time-to-reach, not metres</text>
+
+  <!-- ============ OPERATIVE ============ -->
+  <rect x="336" y="544" width="686" height="144" rx="8" fill="#fdf8f1" stroke="#e8d2b4" stroke-width="1.4"/>
+  <rect x="336" y="544" width="6" height="144" rx="3" fill="#b06a1f"/>
+  <text x="358" y="569" class="lyr" fill="#8a5316">Operative brain</text>
+  <text x="358" y="588" class="m sm">0–2 s band · clock 10 Hz · continuous controls, never tokenised</text>
+  <rect x="358" y="600" width="186" height="60" rx="5" class="panel"/>
+  <text x="451" y="621" text-anchor="middle" class="t sm" font-weight="600">Predictor <tspan class="mono">P_O</tspan></text>
+  <text x="451" y="643" text-anchor="middle" class="m xs mono">P_O(z_op, (a,κ) | g_tac)</text>
+  <rect x="558" y="600" width="212" height="60" rx="5" fill="#effafc" stroke="#a9d6e2"/>
+  <text x="664" y="618" text-anchor="middle" class="sm" font-weight="700" fill="#0b5d73">unicycle emission</text>
+  <text x="664" y="635" text-anchor="middle" class="m xs mono">a = a_max·tanh   κ = κ_max·tanh</text>
+  <text x="664" y="651" text-anchor="middle" class="m xs">feasible by construction (W4 / W4r)</text>
+  <rect x="784" y="600" width="222" height="60" rx="5" fill="#f6f7f9" stroke="#cfd7e0"/>
+  <text x="895" y="618" text-anchor="middle" class="sm" font-weight="700" fill="#3f4c5c">diffusion proposals</text>
+  <text x="895" y="635" text-anchor="middle" class="m xs">diffuse the 6 s CONTROL sequence</text>
+  <text x="895" y="651" text-anchor="middle" class="m xs">temporally correlated noise</text>
+  <path class="act" d="M558,630 L548,630"/>
+  <text x="358" y="678" class="m xs">L_ctrl in response form from step 0 — counterfactual action arms each batch; response gain trained into [0.5, 2]× the unicycle analytic</text>
+
+  <!-- ============ CONTEXT ============ -->
+  <rect x="336" y="744" width="686" height="96" rx="8" fill="#f4faf6" stroke="#bcdcc6" stroke-width="1.4"/>
+  <rect x="336" y="744" width="6" height="96" rx="3" fill="#4a7c59"/>
+  <text x="358" y="769" class="lyr" fill="#3a6347">Context &amp; fallback brain</text>
+  <text x="358" y="788" class="m sm">self-knowledge: fan spread and roll-cost variance → calibrated uncertainty (P7 ρ = 0.716, measured)</text>
+  <text x="358" y="806" class="m sm">nuisance non-retention is monitored, never optimised · fallback fires when imagined consequences disagree</text>
+  <text x="358" y="824" class="m sm">beyond the calibrated band</text>
+
+  <!-- goals downward -->
+  <path class="goal" d="M895,248 L895,290 L451,290 L451,394"/>
+  <text x="600" y="284" class="xs" fill="#9a5b12" font-weight="700">g_str conditions the tactical predictor</text>
+  <path class="goal" d="M895,454 L895,500 L451,500 L451,600"/>
+  <text x="600" y="494" class="xs" fill="#9a5b12" font-weight="700">g_tac conditions the operative predictor</text>
+
+  <!-- latents upward -->
+  <path class="up" d="M336,646 L312,646 L312,470 L336,470"/>
+  <path class="up" d="M336,440 L322,440 L322,264 L336,264"/>
+  <circle cx="312" cy="558" r="10" fill="#ffffff" stroke="#b91c1c" stroke-width="1.6"/>
+  <path d="M305,565 L319,551" stroke="#b91c1c" stroke-width="1.6"/>
+  <circle cx="322" cy="352" r="10" fill="#ffffff" stroke="#b91c1c" stroke-width="1.6"/>
+  <path d="M315,359 L329,345" stroke="#b91c1c" stroke-width="1.6"/>
+
+  <!-- ============ TRAJECTORY ============ -->
+  <text x="1052" y="136" class="m h2">ONE 6 s TRAJECTORY</text>
+  <rect x="1052" y="150" width="496" height="196" rx="8" class="panel"/>
+  <text x="1072" y="176" class="t sm" font-weight="700">60-step (a, κ) at 10 Hz → a single unicycle rollout</text>
+  <text x="1072" y="195" class="m xs">operative and tactical bands share ONE integrator, so the 2 s seam is</text>
+  <text x="1072" y="210" class="m xs">discontinuity-free by construction — seam metrics verify, never repair</text>
+  <rect x="1072" y="224" width="148" height="26" rx="4" fill="#f6e6d2" stroke="#d8b489"/>
+  <rect x="1220" y="224" width="292" height="26" rx="4" fill="#dceef4" stroke="#a9d6e2"/>
+  <text x="1146" y="242" text-anchor="middle" class="xs" fill="#8a5316" font-weight="700">0 – 2 s  operative</text>
+  <text x="1366" y="242" text-anchor="middle" class="xs" fill="#0b5d73" font-weight="700">2 – 6 s  tactical</text>
+  <line x1="1072" y1="260" x2="1512" y2="260" stroke="#c9d3de"/>
+  <text x="1072" y="274" class="m xs">0 s</text>
+  <text x="1220" y="274" text-anchor="middle" class="m xs">2 s</text>
+  <text x="1512" y="274" text-anchor="end" class="m xs">6 s</text>
+  <text x="1072" y="298" class="s sm" font-weight="700">Selection = latent MPC (the W7 mechanism)</text>
+  <text x="1072" y="315" class="m xs">roll every candidate through P_O under its own actions; cost = imagined-</text>
+  <text x="1072" y="330" class="m xs">vs-candidate consistency + kinematics. Distilled selector warm-starts,</text>
+  <text x="1072" y="340" class="m xs">MPC refines the top-K.</text>
+
+  <!-- ============ INTERPRETATION HEADS ============ -->
+  <text x="1052" y="382" class="m h2">INTERPRETATION HEADS — FROZEN LATENTS</text>
+  <rect x="1052" y="396" width="496" height="286" rx="8" class="soft"/>
+  <rect x="1068" y="412" width="464" height="42" rx="5" fill="#ffffff" stroke="#cfd7e0"/>
+  <text x="1084" y="430" class="t sm" font-weight="700">Perception — agent slots</text>
+  <text x="1084" y="446" class="m xs">bbox (cx, cy, yaw, l, w) · state (v, yaw-rate, occluded) · class &amp; size</text>
+  <rect x="1068" y="462" width="464" height="42" rx="5" fill="#ffffff" stroke="#cfd7e0"/>
+  <text x="1084" y="480" class="t sm" font-weight="700">BEV occupancy readout (P8)</text>
+  <text x="1084" y="496" class="m xs">decode(ẑ) vs GT raster — what the WM believes the world will look like</text>
+  <rect x="1068" y="512" width="464" height="42" rx="5" fill="#ffffff" stroke="#cfd7e0"/>
+  <text x="1084" y="530" class="t sm" font-weight="700">Kinematic readout</text>
+  <text x="1084" y="546" class="m xs">speed R² 0.99 · yaw-rate 0.86 · curvature 0.84 (measured on v5f)</text>
+  <rect x="1068" y="562" width="464" height="42" rx="5" fill="#ffffff" stroke="#cfd7e0"/>
+  <text x="1084" y="580" class="t sm" font-weight="700">Lead state — gap · closing speed · TTC</text>
+  <text x="1084" y="596" class="m xs">absent in v5f (measured); v6 targets it label-free via O2 / O3 / O4</text>
+  <rect x="1068" y="612" width="464" height="42" rx="5" fill="#ffffff" stroke="#cfd7e0"/>
+  <text x="1084" y="630" class="t sm" font-weight="700">Uncertainty · probe-gradient saliency (P9)</text>
+  <text x="1084" y="646" class="m xs">where in the image each physical belief comes from</text>
+  <text x="1068" y="670" class="m xs">Scenario / domain tags from the VLM pipeline — eval strata only, never an input.</text>
+  <path class="up" d="M1022,616 L1038,616 L1038,540 L1048,540"/>
+
+  <!-- ============ LEGEND ============ -->
+  <text x="1052" y="716" class="m h2">LEGEND</text>
+  <g transform="translate(1052,730)">
+    <line x1="0" y1="14" x2="34" y2="14" stroke="#c2701a" stroke-width="2.1" marker-end="url(#ahGoal)"/>
+    <text x="44" y="18" class="s xs">goals — condition the layer below</text>
+    <line x1="0" y1="36" x2="34" y2="36" stroke="#0e7490" stroke-width="1.9" marker-end="url(#ahAct)"/>
+    <text x="44" y="40" class="s xs">actions — condition the layer's own predictor</text>
+    <line x1="0" y1="58" x2="34" y2="58" stroke="#64748b" stroke-width="1.4" stroke-dasharray="5 4" marker-end="url(#ahUp)"/>
+    <text x="44" y="62" class="s xs">latents upward — stop-grad or EMA-slow copy</text>
+    <circle cx="17" cy="82" r="9" fill="#ffffff" stroke="#b91c1c" stroke-width="1.6"/>
+    <path d="M11,88 L23,76" stroke="#b91c1c" stroke-width="1.6"/>
+    <text x="44" y="86" class="s xs">gradient-isolation barrier — enforced in code, tested</text>
+  </g>
+
+  <!-- ============ STAGED TRAINING ============ -->
+  <line x1="52" y1="884" x2="1548" y2="884" stroke="#c9d3de" stroke-width="1.2"/>
+  <text x="52" y="912" class="m h2">STAGED TRAINING — EACH STAGE GATED BY THE FROZEN WM-PHYSICS BATTERY BEFORE THE NEXT BEGINS</text>
+  <rect x="52" y="926" width="348" height="130" rx="7" fill="#fdf8f1" stroke="#e8d2b4" stroke-width="1.4"/>
+  <text x="72" y="950" class="t sub" fill="#8a5316">S-W · world stage</text>
+  <text x="72" y="970" class="m sm">operative WM only — planner absent, λ_plan ≡ 0</text>
+  <text x="72" y="988" class="m sm">O1 response-form L_ctrl · O2 time-scaled near-field</text>
+  <text x="72" y="1006" class="m sm">O3 masked spatial latents · O4 interaction sampling</text>
+  <text x="72" y="1024" class="m sm">O5 rollout consistency · O6 SIGReg + spectrum</text>
+  <text x="72" y="1046" class="xs" fill="#8a5316" font-weight="700">gate: P1 · P3 · P6 · P8 · rank retention ≥ 0.8×</text>
+  <path class="flow" d="M406,991 L428,991"/>
+  <rect x="434" y="926" width="348" height="130" rx="7" fill="#f2f9fb" stroke="#b6d8e4" stroke-width="1.4"/>
+  <text x="454" y="950" class="t sub" fill="#17576d">S-T · tactical stage</text>
+  <text x="454" y="970" class="m sm">tactical layer trains on the FROZEN world stage</text>
+  <text x="454" y="988" class="m sm">goal-conditioned prediction · manoeuvre contrastives</text>
+  <text x="454" y="1006" class="m sm">roll-cost distillation into the selector</text>
+  <text x="454" y="1024" class="m sm">momentum-aware temporal consistency</text>
+  <text x="454" y="1046" class="xs" fill="#17576d" font-weight="700">gate: four families at 0–2 s and 0–6 s · T1 tier</text>
+  <path class="flow" d="M788,991 L810,991"/>
+  <rect x="816" y="926" width="348" height="130" rx="7" fill="#faf7fd" stroke="#d9c9ea" stroke-width="1.4"/>
+  <text x="836" y="950" class="t sub" fill="#553c73">S-S · strategic stage</text>
+  <text x="836" y="970" class="m sm">strategic layer on the frozen tactical stage</text>
+  <text x="836" y="988" class="m sm">g_str from the VLM + geometry + SAM pipeline,</text>
+  <text x="836" y="1006" class="m sm">into the GOAL HEAD only · domain-diverse mix</text>
+  <text x="836" y="1024" class="m sm">the strategic family becomes computable</text>
+  <text x="836" y="1046" class="xs" fill="#553c73" font-weight="700">gate: STRATEGIC family + goal-provenance audit</text>
+  <path class="flow" d="M1170,991 L1192,991"/>
+  <rect x="1198" y="926" width="350" height="130" rx="7" fill="#f6f7f9" stroke="#cfd7e0" stroke-width="1.4" stroke-dasharray="6 4"/>
+  <text x="1218" y="950" class="t sub" fill="#3f4c5c">S-J · optional joint polish</text>
+  <text x="1218" y="970" class="m sm">only if S-T / S-S plateau · isolation stays ON</text>
+  <text x="1218" y="988" class="m sm">brief, small λ, no planner → encoder path</text>
+  <text x="1218" y="1006" class="m sm">the H-COTRAIN curve decides whether it is</text>
+  <text x="1218" y="1024" class="m sm">permitted at all</text>
+  <text x="1218" y="1046" class="xs" fill="#3f4c5c" font-weight="700">gate: no-harm on the full battery, else revert</text>
+
+  <text x="52" y="1092" class="m xs">Every measure shown is either a defect measured on v5f (W3 action gain, P1 lead-state absence, P7/P8 readouts) or a mechanism published in the JEPA world-model line</text>
+  <text x="52" y="1108" class="m xs">(V-JEPA 2 / 2-AC, DINO-WM, Drive-JEPA, AD-L-JEPA, V-JEPA 2.1). The frozen battery P1–P9 + I4 is the single yardstick carried from v5f to v6.</text>
+</svg>
