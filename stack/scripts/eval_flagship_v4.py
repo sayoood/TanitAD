@@ -584,12 +584,31 @@ def apply_c2_selection(out: dict, horizons, ref, tag: str) -> dict:
     return tele
 
 
+def ablate_imagined(imag, mode: str):
+    """I4a (WM_PHYSICS_PROOF): break the imagination input, keep everything else.
+
+    ``zero``    -> zeros_like: the head runs minus its 32 consequence tokens.
+    ``shuffle`` -> roll-by-1 across the batch: marginal statistics preserved,
+                   window<->consequence correspondence destroyed (deterministic,
+                   no RNG, no fixed points for B >= 2).
+    The intact-vs-zero delta IS the measured imagination contribution; intact
+    ~= shuffle would mean the head reads imagination as a bias, not a signal.
+    """
+    if mode == "none":
+        return imag
+    if mode == "zero":
+        return torch.zeros_like(imag)
+    if mode == "shuffle":
+        return imag.roll(1, dims=0)
+    raise ValueError(f"unknown imagination ablation {mode!r}")
+
+
 def collect_planner(world, grounding, head, ds_val, device, dd, episodes,
                     stride, batch, wp_steps=WP_STEPS, goal_mode="oracle",
                     goal_head=None, goal_fallback=False,
                     select_rule="as-trained", c2=None, agree_dump=None,
                     ckpt_path=None,
-                    oracle_channels=()):
+                    oracle_channels=(), imagination_ablate="none"):
     """v4 PLANNER PATH: head-selected trajectory (lambda_plan=1, NOT fed true
     future actions), re-encoding the CURRENT (jointly fine-tuned) trunk.
 
@@ -704,6 +723,9 @@ def collect_planner(world, grounding, head, ds_val, device, dd, episodes,
         if _imag_on:
             goal_kw.update(_imagination_inputs(world, head.cfg, b, st,
                                                probes=_probes))
+            if imagination_ablate != "none":
+                goal_kw["imagined"] = ablate_imagined(goal_kw["imagined"],
+                                                      imagination_ablate)
         out = head(st, v0, lambda_plan=1.0, **goal_kw)
 
         # --- OPTIONAL C2 re-selection over the SAME frozen fan ---------------
@@ -829,6 +851,7 @@ def collect_planner(world, grounding, head, ds_val, device, dd, episodes,
 
     diag = {
         "n_windows": n,
+        "imagination_ablate": imagination_ablate,
         "select_rule": select_rule,
         "c2_selection": c2_tele or None,
         "goal_mode": goal_mode,
@@ -918,6 +941,16 @@ def main(argv=None) -> int:
                          "(that path lives on the TRAINING pod, not this one)")
     ap.add_argument("--cond-imagination", choices=("auto", "true", "false"),
                     default="auto")
+    ap.add_argument("--imagination-ablate", choices=("none", "zero", "shuffle"),
+                    default="none",
+                    help="I4a (WM_PHYSICS_PROOF): ablate the imagination input "
+                         "on a cond_imagination head. 'zero' removes the 32 "
+                         "consequence tokens' content; 'shuffle' (roll-by-1 "
+                         "across the batch) keeps their marginal statistics "
+                         "but breaks correspondence. Only meaningful when the "
+                         "head has cond_imagination; the output JSON is "
+                         "stamped so an ablated run can never be quoted as "
+                         "intact.")
     ap.add_argument("--goal-mode", choices=goal_modes.GOAL_MODES,
                     default="oracle",
                     help="WHERE THE GOAL COMES FROM (MODE B only). 'oracle' "
@@ -1173,6 +1206,7 @@ def main(argv=None) -> int:
                                  ckpt_path=a.ckpt,
                                  goal_mode=a.goal_mode, goal_head=goal_head,
                                  goal_fallback=a.goal_fallback,
+                                 imagination_ablate=a.imagination_ablate,
                                  select_rule=a.select_rule, c2=c2,
                                  agree_dump=(results_dir
                                              / f"goalagree_{a.key}.pt"),
@@ -1224,6 +1258,7 @@ def main(argv=None) -> int:
     # SELECTION PROVENANCE — stamped for every mode so no artifact can be read
     # without knowing WHICH candidate of the fan it deployed.
     res["select_rule"] = a.select_rule
+    res["imagination_ablate"] = a.imagination_ablate
     res["c2_scorer"] = (None if c2 is None else
                         {"tag": c2["tag"], "self_scoring": c2["self_scoring"],
                          "step": c2.get("scorer_step")})
