@@ -1324,6 +1324,18 @@ memorises train-window selection.** Per PREREG_W4C_SPATIAL_SCORING.md this ACTIV
 fast-selector attempt; its G-null retires fast scoring to a W7-distillation target.
 Artifact: `w4b_gate_kin.json`.
 
+**W4c RESULT — MEASURED 2026-08-11 ~00:50Z: G-NULL ENGAGED — the spatial port ALSO fails**
+(held-out selected ADE **0.6609** vs gate ≤ 0.45; entropy 5.37 — still smeared; final
+train-vs-heldout gap 0.139 — the memorisation signature persists even with spatial
+attention + dropout). **Three independent scoring surfaces (pooled query / +kinematics /
+spatial cross-attention) have now failed the same held-out gate.** Per the bound G-null:
+⛔ **fast per-candidate scoring on this trunk is RETIRED** — no fourth attempt without new
+evidence; selection moves ENTIRELY to **W7 (WM-roll re-rank)**, and a fast selector may
+return only as a DISTILLATION of W7 (L4). Scientifically this is the programme's own thesis
+arriving by elimination: the selection information is not in light readouts of the trunk's
+features — it is in the CONSEQUENCES, i.e. rolling the world model. Artifact:
+`w4c_gate.json`.
+
 ### 1.13b E4.4 — tactical stage-0, first trained instance — MEASURED 2026-08-10 ~21:50Z [TIER T0 diagnostic, 881-grid val, n@4s = 761]
 
 **Pre-registered gate (goal FDE@4s < CV-extrapolated): FAILED — but by SELECTION, not
