@@ -887,6 +887,67 @@ def test_preflight_refuses_lambda_plan_in_S_W(tmp_path):
     assert any("S-W is the WORLD stage" in p for p in probs)
 
 
+def test_preflight_refuses_a_staged_run_that_starts_from_nothing(tmp_path):
+    """The OTHER half of X5. A gate saying "S-W passed" is worthless if S-T then
+    trains on a randomly-initialised trunk — that is not the staged protocol,
+    it is four unrelated models with a gate between them."""
+    from train_v6_staged import preflight
+    for stage in ("S-T", "S-S", "S-J"):
+        a = tiny_args(tmp_path, stage=stage)
+        a.dry_run = False
+        a.v2_cache = ["/data/train"]
+        assert any("--init-from" in p for p in preflight(a)), stage
+        a.init_from = "/w/prev/ckpt.pt"
+        assert not any("--init-from" in p for p in preflight(a)), stage
+    a = tiny_args(tmp_path, stage="S-W")           # S-W starts the ladder
+    a.dry_run, a.v2_cache = False, ["/data/train"]
+    assert not any("--init-from" in p for p in preflight(a))
+
+
+def test_load_stage_init_round_trips_and_reports_the_trunk_md5(tmp_path):
+    """The ladder must be ONE lineage: stage N+1 loads stage N's whole stack,
+    and the report names the trunk it stands on."""
+    from train_v6_staged import _save_ckpt, load_stage_init
+    torch.manual_seed(7)
+    src = V6Stack(tiny_cfg())
+    with torch.no_grad():                          # move it off its init
+        for p in src.parameters():
+            p.add_(torch.randn_like(p) * 0.01)
+    ck = tmp_path / "ckpt.pt"
+    opt = torch.optim.AdamW(list(src.parameters())[:1], lr=1e-4)
+    _save_ckpt(ck, stack=src, opt=opt, step=1234,
+               cfg_json={"stage": "S-W"})
+    dst = V6Stack(tiny_cfg())
+    assert not torch.equal(next(iter(dst.parameters())),
+                           next(iter(src.parameters())))
+    rep = load_stage_init(dst, ck)
+    assert rep["missing_keys"] == [] and rep["unexpected_keys"] == []
+    assert rep["init_step"] == 1234 and rep["prev_stage"] == "S-W"
+    assert len(rep["trunk_md5_after_load"]) == 32
+    for (n, a), (m, b) in zip(dst.named_parameters(), src.named_parameters()):
+        assert n == m and torch.equal(a, b), n
+    # the md5 is over the TRUNK only, so it identifies which S-W this stands on
+    dst2 = V6Stack(tiny_cfg())
+    rep2 = load_stage_init(dst2, ck)
+    assert rep2["trunk_md5_after_load"] == rep["trunk_md5_after_load"]
+
+
+def test_load_stage_init_refuses_a_geometry_mismatch(tmp_path):
+    """A key mismatch means the stages were built with DIFFERENT geometry.
+    Loading it loosely is how a stage ends up on a random trunk while its log
+    looks healthy."""
+    from train_v6_staged import _save_ckpt, load_stage_init
+    src = V6Stack(tiny_cfg())
+    ck = tmp_path / "ckpt.pt"
+    _save_ckpt(ck, stack=src, opt=torch.optim.AdamW(
+        list(src.parameters())[:1], lr=1e-4), step=1, cfg_json={})
+    other = V6Stack(tiny_cfg(d_tac=64))            # different tactical width
+    with pytest.raises(RuntimeError):
+        load_stage_init(other, ck)
+    with pytest.raises(SystemExit, match="does not exist"):
+        load_stage_init(src, tmp_path / "nope.pt")
+
+
 def test_preflight_refuses_a_reasonless_gate_override(tmp_path):
     from train_v6_staged import preflight
     a = tiny_args(tmp_path)

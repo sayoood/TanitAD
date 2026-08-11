@@ -1035,7 +1035,12 @@ def train(a) -> dict:
     rng = random.Random(a.seed)
     gen = torch.Generator().manual_seed(a.seed + 1)
 
-    stack = build_stack_from_args(a).to(device)
+    stack = build_stack_from_args(a)
+    init_report: dict = {"init_from": None}
+    if a.init_from:
+        init_report = load_stage_init(stack, a.init_from)
+        print(f"[v6] initialised from {json.dumps(init_report)}", flush=True)
+    stack = stack.to(device)
     freeze = apply_stage_freeze(stack, a.stage)
     print(f"[v6] stage {a.stage}: trainable "
           f"{freeze['n_trainable']/1e6:.2f} M / frozen "
@@ -1159,7 +1164,9 @@ def train(a) -> dict:
     sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=a.steps)
 
     cfg_json = _run_config(a, stack, freeze) | {"o4": o4log,
-                                                "precondition": pre}
+                                                "precondition": pre,
+                                                "init": init_report,
+                                                "max_horizon": max_h}
     (out_dir / "config.json").write_text(json.dumps(cfg_json, indent=1))
     log_path = out_dir / "train_log.jsonl"
     fh = open(log_path, "a")
@@ -1322,6 +1329,39 @@ def _save_ckpt(path: Path, *, stack, opt, step: int, cfg_json: dict) -> None:
                 "step": step, "config": cfg_json}, path)
 
 
+def load_stage_init(stack: V6Stack, ckpt_path, *, strict: bool = True) -> dict:
+    """Initialise stage N+1 from stage N's checkpoint — the OTHER half of X5.
+
+    A gate that says "S-W passed" is worthless if S-T then starts from random
+    weights: the staged protocol's whole claim is that each layer trains ON the
+    one below. This loads the full ``V6Stack`` state_dict (every stage saves the
+    WHOLE stack, so the ladder is one lineage, not four unrelated models).
+
+    ``strict=True`` by default. A key mismatch means the two stages were built
+    with DIFFERENT geometry — silently allowing that is how a stage ends up
+    training on a randomly-initialised trunk while its log looks healthy. The
+    returned report carries the md5 of the loaded trunk so the run row can name
+    exactly which S-W it stands on.
+    """
+    p = Path(ckpt_path)
+    if not p.exists():
+        raise SystemExit(f"[v6] ⛔ --init-from {p} does not exist")
+    ck = torch.load(p, map_location="cpu", weights_only=False)
+    sd = ck.get("stack", ck)
+    missing, unexpected = stack.load_state_dict(sd, strict=strict)
+    import hashlib
+    h = hashlib.md5()
+    for n, prm in sorted(stack.named_parameters()):
+        if stack.group_of(n) in ("encoder", "readout", "predictor_op"):
+            h.update(n.encode())
+            h.update(prm.detach().cpu().numpy().tobytes())
+    return {"init_from": str(p), "init_step": int(ck.get("step", -1)),
+            "missing_keys": list(missing), "unexpected_keys": list(unexpected),
+            "trunk_md5_after_load": h.hexdigest(),
+            "prev_stage": (ck.get("config") or {}).get("stage"),
+            "_evidence_class": "MEASURED (ours; md5 over the loaded trunk)"}
+
+
 # ============================================================================
 # CLI
 # ============================================================================
@@ -1340,6 +1380,10 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--gate-off-reason", default="",
                     help="why the inconclusive gate is being overridden — "
                          "recorded in config.json and printed as a banner")
+    ap.add_argument("--init-from", default=None,
+                    help="previous stage's ckpt.pt — S-T/S-S/S-J MUST start "
+                         "from the stage below, or the ladder is four "
+                         "unrelated models with a gate between them")
     ap.add_argument("--gate-probes", default=None,
                     help="JSON of externally-run battery probes to fold into "
                          "this stage's gate")
@@ -1496,6 +1540,14 @@ def preflight(a) -> list[str]:
                         "sacred)")
     if a.o5_k > a.plan_steps:
         problems.append(f"--o5-k {a.o5_k} exceeds --plan-steps {a.plan_steps}")
+    if (not a.dry_run and STAGE_PRECONDITION.get(a.stage)
+            and not a.init_from):
+        problems.append(
+            f"--stage {a.stage} without --init-from: it must start from "
+            f"{STAGE_PRECONDITION[a.stage]}'s ckpt.pt. A gate saying the stage "
+            f"below passed is worthless if this stage then trains on a "
+            f"randomly-initialised trunk — that is not the staged protocol, "
+            f"it is four unrelated models with a gate between them.")
     return problems
 
 

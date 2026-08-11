@@ -17,7 +17,7 @@ as driving performance — capability claims are **T1** (`taniteval/tools/t1_eva
 |---|---|---|
 | `stack/tanitad/models/v6.py` | the v6 **composition module**: `V6Config`, `V6Stack`, the goal-token vocabulary, the X3 isolation check, and the pure measure primitives (O2/O3/O4/O6) | the model |
 | `stack/scripts/train_v6_staged.py` | the **staged trainer CLI** (`--stage S-W|S-T|S-S|S-J`), the measure losses, the per-stage gate hook, `--dry-run` | the loop |
-| `stack/tests/test_v6_staged.py` | 73 CPU-only pins — no GPU, no corpus, no checkpoint | the proof it assembles |
+| `stack/tests/test_v6_staged.py` | 76 CPU-only pins — no GPU, no corpus, no checkpoint | the proof it assembles |
 
 ### 1.1 What is IMPORTED, never re-implemented
 
@@ -204,13 +204,20 @@ nohup python3 scripts/train_v6_staged.py \
 PYTHONPATH=/workspace/TanitAD/stack OMP_NUM_THREADS=6 \
 nohup python3 scripts/train_v6_staged.py \
   --stage S-T \
-  --prev-gate /workspace/experiments/v6-SW-30k/stage_gate.json \
+  --prev-gate  /workspace/experiments/v6-SW-30k/stage_gate.json \
+  --init-from  /workspace/experiments/v6-SW-30k/ckpt.pt \
+  --max-horizon 60 \
   --out /workspace/experiments/v6-ST-10k \
   --v2-cache ... --v2-val-cache ...  (same corpus args as S-W) \
   --steps 10000 --batch 16 --lr 1e-4 --w-t1 1.0 \
   > /workspace/experiments/v6-ST-10k/train.out 2>&1 &
 ```
 
+* ⛔ **`--init-from` is REQUIRED** for S-T/S-S/S-J and preflight refuses without it. A gate
+  saying "S-W passed" is worthless if this stage then trains on a randomly-initialised trunk —
+  that is not the staged protocol, it is four unrelated models with a gate between them. The
+  load is `strict=True` (a key mismatch = different geometry) and the run config records the
+  **md5 of the loaded trunk**, so the row names exactly which S-W it stands on.
 * **trains:** `layer_tac` (adapter, `P_T`, `goal_head_tac`, factored LAT/LON action heads,
   `vocab_tac`, `vocab_a_lat/lon`) and `planner` (`cond_op`, `plan_proj`, `cand_queries`, emission)
 * **frozen:** everything below — this is Drive-JEPA's shape (the planner is a **post-trained consumer**)
@@ -227,7 +234,8 @@ nohup python3 scripts/train_v6_staged.py \
 PYTHONPATH=/workspace/TanitAD/stack OMP_NUM_THREADS=6 \
 nohup python3 scripts/train_v6_staged.py \
   --stage S-S \
-  --prev-gate /workspace/experiments/v6-ST-10k/stage_gate.json \
+  --prev-gate  /workspace/experiments/v6-ST-10k/stage_gate.json \
+  --init-from  /workspace/experiments/v6-ST-10k/ckpt.pt \
   --out /workspace/experiments/v6-SS-8k \
   --v2-cache ... --steps 8000 --batch 16 --lr 1e-4 --w-s1 1.0 \
   > /workspace/experiments/v6-SS-8k/train.out 2>&1 &
@@ -247,7 +255,9 @@ nohup python3 scripts/train_v6_staged.py \
 PYTHONPATH=/workspace/TanitAD/stack OMP_NUM_THREADS=6 \
 nohup python3 scripts/train_v6_staged.py \
   --stage S-J \
-  --prev-gate /workspace/experiments/v6-SS-8k/stage_gate.json \
+  --prev-gate  /workspace/experiments/v6-SS-8k/stage_gate.json \
+  --init-from  /workspace/experiments/v6-SS-8k/ckpt.pt \
+  --max-horizon 60 \
   --out /workspace/experiments/v6-SJ-3k \
   --v2-cache ... --steps 3000 --batch 16 --lr 3e-5 \
   > /workspace/experiments/v6-SJ-3k/train.out 2>&1 &
@@ -406,6 +416,7 @@ re-cost before letting 30 k steps run.
 | 10 | 7 concurrent arms at GPU `sm` 0–6 % for 50 minutes, looking exactly like a hang | torch spawns ~113 threads **per process** | `OMP_NUM_THREADS=6` is set defensively in `main()` **and** belongs in the launch line so it is visible in `ps` |
 | 11 | an "OOM" that is not one | `memory.usage_in_bytes` counts **reclaimable page cache** (MEASURED 37.2 GB of a 50 GB cap with *nothing running*) | read `memory.stat`'s `rss` and `memory.failcnt` — `failcnt 0` settles it. This cost ~40 min of training and an invented container-OOM diagnosis |
 | 12 | **the 6 s horizon looks like a corpus limitation and gets quietly abandoned** | inheriting v4's `plan.max_horizon` (**MEASURED 20**) makes §4b untrainable — S-T could never start at all, because a 6 s planner has no target in a 2 s window | v6 **derives its own** `max_horizon` from the stage's needs and prints it beside v4's; §3.6. Refusals (below-need, below-`maneuver_h`, 0 windows) are explicit — *a silently shortened horizon is not the same experiment* |
+| 13a | **stage N+1 silently trains on a random trunk** | `--init-from` omitted; the gate passed, the log looks healthy, and the ladder is four unrelated models | preflight **refuses** S-T/S-S/S-J without `--init-from`; the load is `strict=True` and the config records the loaded trunk's md5 |
 | 13 | a stage runs with **no trainable parameters** | the freeze map and the stage disagree | `train()` refuses; `test_stage_freeze_trains_exactly_the_declared_groups` pins the map |
 | 14 | a new head escapes the isolation probe | it was added without appending to the declared planner-side surface | `test_planner_surface_is_total` fails when a planner param becomes unreachable from the declaration |
 | 15 | a gate is "passed" that never ran | a missing probe read as satisfied | `pass: null` ≠ `pass: true`; the override needs a **stated reason**, printed as a banner and stored in `config.json` |
@@ -419,7 +430,7 @@ re-cost before letting 30 k steps run.
 |---|---|---|
 | `stack/tanitad/models/v6.py` | repo working tree, index | **staged**; verified with `git ls-files --cached` + an index-blob-vs-worktree md5 compare (`git add` exit codes are not evidence) |
 | `stack/scripts/train_v6_staged.py` | repo working tree, index | **staged**, verified the same way |
-| `stack/tests/test_v6_staged.py` | repo working tree, index | **staged**, verified · **73 tests green, CPU-only** (no GPU, no corpus, no checkpoint) |
+| `stack/tests/test_v6_staged.py` | repo working tree, index | **staged**, verified · **76 tests green, CPU-only** (no GPU, no corpus, no checkpoint) |
 | `…/incoming/2026-08-07-hierarchical-wm-redesign/V6_TRAINER_DESIGN.md` | this file, repo working tree, index | **staged**, verified |
 
 **This agent committed nothing and pushed nothing** — the `AGENT_OPERATING_STANDARD` contract.
