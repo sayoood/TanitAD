@@ -102,6 +102,15 @@ Every subagent brief MUST carry the preamble in
   **fresh inode from Bash** did. ⛔ **`git add` exit codes are not evidence. Verify with
   `git ls-files --cached <path>`** — and note the sibling rule that `git status --short` scoped to a
   path can also mislead, so `git ls-files --stage` is the check for what is really in the index.
+- ⛔ **PODS HAVE NO GIT CREDENTIALS — `git fetch` on a pod HANGS (not fails), and the checkout's
+  HEAD is ancient.** MEASURED 2026-08-11: pod5 HEAD sat at `6d714ad` (weeks old) while its working
+  tree was fully current — every pod-side script this campaign arrived by md5-verified FILE-SHIP,
+  never by git. A chain step doing `git fetch && git checkout -B <branch> origin/<branch>` on a pod
+  therefore (a) hangs on the fetch, and (b) if the fetch fails but the checkout runs, RESETS the
+  tree to the ancient commit, destroying the shipped files. ⇒ **Never put git sync in a pod chain.
+  Ship files (xz+b64 PTY push, per-file md5) or the HF stack-tar relay, and grep-verify the
+  specific fix is present before any launch.** (The verify-gates caught this: three chains
+  refused to run stale code rather than running it.)
 - **A pod's `stack/` checkout drifts silently and a launch from it resurrects fixed bugs.** MEASURED
   2026-07-27: pod2 sat at `0f93b98` while the v5 gate fix was at HEAD — **a v5 launch from that pod
   would have restored the crash the fix removed.** ⇒ **syncing the pod and verifying with a real
