@@ -1022,6 +1022,10 @@ def train(a) -> dict:
               flush=True)
         print("=" * 72, flush=True)
 
+    # ---- resume / done-marker discipline BEFORE anything expensive --------
+    rg = resume_guard(out_dir, resume=a.resume, force_rerun=a.force_rerun)
+    print(f"[v6] launch mode: {json.dumps(rg)}", flush=True)
+
     # ---- the val corpus is for probing, never training ---------------------
     overlap = (set(map(os.path.abspath, a.v2_cache))
                & set(map(os.path.abspath, a.v2_val_cache or [])))
@@ -1162,11 +1166,24 @@ def train(a) -> dict:
                          f"— the freeze map and the stage disagree")
     opt = torch.optim.AdamW(trainable, lr=a.lr, weight_decay=a.wd)
     sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=a.steps)
+    start_step = 0
+    if rg["mode"] == "resume":
+        start_step = load_resume(stack, opt, rg["from"])
+        for _ in range(start_step):
+            sched.step()                       # replay the LR schedule
+        print(f"[v6] RESUMED at step {start_step} from {rg['from']} — "
+              f"{a.steps - start_step} steps remain", flush=True)
+        if start_step >= a.steps:
+            raise SystemExit(
+                f"[v6] ⛔ the checkpoint is already at step {start_step} >= "
+                f"--steps {a.steps}. Nothing to do. If this run finished, its "
+                f"summary.json should say so; write it or raise --steps.")
 
     cfg_json = _run_config(a, stack, freeze) | {"o4": o4log,
                                                 "precondition": pre,
                                                 "init": init_report,
-                                                "max_horizon": max_h}
+                                                "max_horizon": max_h,
+                                                "launch_mode": rg}
     (out_dir / "config.json").write_text(json.dumps(cfg_json, indent=1))
     log_path = out_dir / "train_log.jsonl"
     fh = open(log_path, "a")
@@ -1178,7 +1195,7 @@ def train(a) -> dict:
     t0 = time.time()
     steps_g = tuple(range(1, a.o1_k + 1))
     dev_type = "cuda" if device == "cuda" else "cpu"
-    for step in range(1, a.steps + 1):
+    for step in range(start_step + 1, a.steps + 1):
         idx = sample(a.batch)
         b = _to_device(default_collate([ds_train[i] for i in idx]), device)
         aw2 = b["actions"][..., :2].float()
@@ -1274,9 +1291,12 @@ def train(a) -> dict:
                 # ⚠️ ALREADY DIVIDED by --log-every. The trap this avoids:
                 # trainer logs that accumulate step_s over the log interval and
                 # get read as a per-step time (the false "430 s/step" alarm).
-                "step_s": round((time.time() - t0) / step, 4),
-                "step_s_note": f"elapsed/step over {step} steps (NOT "
-                               f"accumulated over --log-every)"}
+                "step_s": round((time.time() - t0)
+                                / max(step - start_step, 1), 4),
+                "step_s_note": f"elapsed/step over the "
+                               f"{step - start_step} steps THIS process ran "
+                               f"(NOT accumulated over --log-every, and NOT "
+                               f"divided by the resumed step number)"}
             history.append(rec)
             fh.write(json.dumps(rec) + "\n")
             fh.flush()
@@ -1300,7 +1320,8 @@ def train(a) -> dict:
     # days; writing this IS the correct remote off-switch.
     summary = {
         "done": True, "run": f"v6-staged-{a.stage}", "stage": a.stage,
-        "steps": a.steps, "out": str(out_dir),
+        "steps": a.steps, "resumed_from_step": start_step,
+        "out": str(out_dir),
         "gate_verdict": gate["verdict"], "gate": "stage_gate.json",
         "elapsed_s": round(time.time() - t0, 1),
         "param_report": stack.param_report(),
@@ -1327,6 +1348,63 @@ def _load_gate_probes(path) -> dict:
 def _save_ckpt(path: Path, *, stack, opt, step: int, cfg_json: dict) -> None:
     torch.save({"stack": stack.state_dict(), "opt": opt.state_dict(),
                 "step": step, "config": cfg_json}, path)
+
+
+def resume_guard(out_dir, *, resume: str, force_rerun: bool) -> dict:
+    """Decide whether this launch RESUMES, STARTS FRESH, or is REFUSED.
+
+    ⛔ Two refusals, and both come straight from measured incidents:
+
+    1. **A finished run must not be relaunched.** MEASURED 2026-08-09/11: the
+       v5f run completed but never wrote its done-marker; its supervisor kept
+       relaunching for two days, and the moment the crash-cause was fixed a
+       relaunch SUCCEEDED, resumed from a stale ``ckpt.pt``, and began
+       overwriting ``config.json``/``metrics.json``/``ckpt.pt`` in the
+       canonical run directory while burning GPU next to a live eval. This
+       trainer writes ``summary.json {"done": true}`` in the same turn it
+       finishes, and refuses to start where one already exists. **That file is
+       the off-switch**; ``--force-rerun`` is the only way past it.
+    2. **A fresh start must not silently overwrite a live checkpoint.**
+       ``supervise_run.sh`` replays the ``TRAIN_CMD`` it captured at supervisor
+       startup, so a relaunch runs the SAME command — with ``--resume off``
+       that would restart at step 0 on top of an existing ``ckpt.pt``. Refused
+       unless ``--force-rerun`` says so out loud.
+    """
+    out = Path(out_dir)
+    ck, done = out / "ckpt.pt", out / "summary.json"
+    if done.exists() and not force_rerun:
+        try:
+            marker = json.loads(done.read_text())
+        except Exception:
+            marker = {}
+        if marker.get("done") is True:
+            raise SystemExit(
+                f"[v6] ⛔ {done} says this run is DONE "
+                f"(stage {marker.get('stage')}, {marker.get('steps')} steps, "
+                f"gate {marker.get('gate_verdict')}). Refusing to relaunch: a "
+                f"finished run that gets relaunched resumes from a stale "
+                f"ckpt.pt and overwrites the canonical run directory. Pass "
+                f"--force-rerun ONLY if you mean to discard that run, or point "
+                f"--out somewhere else.")
+    if resume == "auto" and ck.exists():
+        return {"mode": "resume", "from": str(ck)}
+    if resume == "off" and ck.exists() and not force_rerun:
+        raise SystemExit(
+            f"[v6] ⛔ --resume off with an existing {ck}. A supervisor replays "
+            f"the command it captured at startup, so this would restart at "
+            f"step 0 ON TOP of a live checkpoint. Use --resume auto, point "
+            f"--out elsewhere, or say --force-rerun.")
+    return {"mode": "fresh", "from": None}
+
+
+def load_resume(stack: V6Stack, opt, ckpt_path) -> int:
+    """Restore stack + optimiser + step from ``ckpt.pt``. Returns the step to
+    continue FROM (0 if nothing to resume)."""
+    ck = torch.load(Path(ckpt_path), map_location="cpu", weights_only=False)
+    stack.load_state_dict(ck["stack"], strict=True)
+    if opt is not None and "opt" in ck:
+        opt.load_state_dict(ck["opt"])
+    return int(ck.get("step", 0))
 
 
 def load_stage_init(stack: V6Stack, ckpt_path, *, strict: bool = True) -> dict:
@@ -1380,6 +1458,14 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--gate-off-reason", default="",
                     help="why the inconclusive gate is being overridden — "
                          "recorded in config.json and printed as a banner")
+    ap.add_argument("--resume", choices=("auto", "off"), default="auto",
+                    help="auto = continue from <out>/ckpt.pt when present "
+                         "(a supervisor replays its captured command, so a "
+                         "relaunch MUST NOT restart at step 0)")
+    ap.add_argument("--force-rerun", action="store_true",
+                    help="⛔ discard a DONE run or overwrite a live ckpt.pt. "
+                         "The done-marker is the remote off-switch; this is "
+                         "the only way past it.")
     ap.add_argument("--init-from", default=None,
                     help="previous stage's ckpt.pt — S-T/S-S/S-J MUST start "
                          "from the stage below, or the ladder is four "

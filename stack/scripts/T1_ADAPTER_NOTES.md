@@ -152,7 +152,9 @@ indistinguishable from a dead chain), **greps the shipped `t1_eval.py` for
 the adapter flags and functions and refuses with
 `T1_EXIT=SYNC_FAILED_FLAG_MISSING` if any is absent** (pods have no git — a
 missing flag means a stale file, and running the old code silently would produce
-a legacy-path error, not a T1 row), runs the adapter's own CPU tests as a
+a legacy-path error, not a T1 row), then does a **real import** of the tool's
+dependencies against that pod's `stack/` tree
+(`T1_EXIT=SYNC_FAILED_STACK_IMPORTS`), runs the adapter's own CPU tests as a
 pre-flight (**the pod has torchvision, so `test_real_v2_provider_path` — which
 SKIPS on the dev box — actually drives `build_v2_providers` → `V2RawEp` there,
 before any GPU time**; a failure is `T1_EXIT=ADAPTER_TESTS_FAILED`), then runs
@@ -208,7 +210,24 @@ whatever is used is stamped into every JSON under `rollout_provenance.grid`.
    `stable_episode_id`, but the bootstrap clusters on the **dump file** (one npz
    per episode), so clustering is correct regardless. The ids are recorded in
    `rollout_provenance.corpus.episode_ids` for cross-checking against W4/W7 runs.
-6. **`stage-a-repaired` shares v5f's grounding heads** (Stage-A trains the
+6. **⛔ POD5'S `stack/` TREE IS STALE — MEASURED 2026-08-11.** The first launch
+   produced `T1_EXIT=NO_ARMS_PRODUCED`: pod5's `tanitad/models/metric_dynamics.py`
+   **predates `UnicycleStepReadout`** (added 2026-08-06), and the tool imported
+   that class eagerly even though `--grounding-readout` never uses it. Fixed by
+   binding it lazily inside the `--head` branch (commit `78f4c92`) — and the
+   chain now runs a **real import probe** (§4), because the greps passed while
+   the imports did not. Two consequences to carry:
+   * the **legacy `--head` path cannot run on pod5** until its stack is synced —
+     it genuinely needs that class. `--grounding-readout` does not.
+   * the T1 rows will be produced **against that tree**. Everything the adapter
+     touches (`accumulate_se2` / `rollout_transitions` / `decode_transitions` /
+     `gt_ego_waypoints`, the 2026-07-28 v2 eval seam, `tanitad.geometry`) is now
+     import-checked before launch, but "imports" is not "current" — if the pod
+     stack is behind on any of them semantically, that is a drift risk of the
+     documented class (CLAUDE.md: *"a pod's `stack/` checkout drifts silently and
+     a launch from it resurrects fixed bugs"*). **Syncing pod5's stack is the
+     right fix; the probe is the guard, not the cure.**
+7. **`stage-a-repaired` shares v5f's grounding heads** (Stage-A trains the
    predictor only and re-saves the original head/grounding). So the two arms
    differ **only** in the predictor — which is exactly the attribution this pair
    is for, and worth stating wherever the delta is quoted.

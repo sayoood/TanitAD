@@ -17,7 +17,7 @@ as driving performance — capability claims are **T1** (`taniteval/tools/t1_eva
 |---|---|---|
 | `stack/tanitad/models/v6.py` | the v6 **composition module**: `V6Config`, `V6Stack`, the goal-token vocabulary, the X3 isolation check, and the pure measure primitives (O2/O3/O4/O6) | the model |
 | `stack/scripts/train_v6_staged.py` | the **staged trainer CLI** (`--stage S-W|S-T|S-S|S-J`), the measure losses, the per-stage gate hook, `--dry-run` | the loop |
-| `stack/tests/test_v6_staged.py` | 76 CPU-only pins — no GPU, no corpus, no checkpoint | the proof it assembles |
+| `stack/tests/test_v6_staged.py` | 80 CPU-only pins — no GPU, no corpus, no checkpoint | the proof it assembles |
 
 ### 1.1 What is IMPORTED, never re-implemented
 
@@ -267,6 +267,28 @@ nohup python3 scripts/train_v6_staged.py \
   stop-grad/EMA). Gate: the frozen battery **FLAT** across the joint phase (the H-COTRAIN rule).
 * Run S-J **only if S-T/S-S plateau** (`JEPA_PHYSICS_SURVEY` §5).
 
+### 3.4b ⛔ Resume + the done-marker — the supervisor discipline, in code
+
+`supervise_run.sh` **sources its manifest ONCE, at supervisor startup**, and replays the
+`TRAIN_CMD` it captured. Every relaunch therefore runs the SAME flags. Two guards, each from a
+measured incident, fire **before** anything expensive:
+
+| guard | the incident it prevents |
+|---|---|
+| `<out>/summary.json` says `"done": true` ⇒ **REFUSE** (only `--force-rerun` passes) | MEASURED 2026-08-09/11: the v5f run finished but never wrote its done-marker. Its supervisor relaunched for **two days**; when the crash-cause was fixed a relaunch SUCCEEDED, resumed from a stale `ckpt.pt`, and began overwriting `config.json`/`metrics.json`/`ckpt.pt` in the canonical run directory **while burning GPU next to a live eval**. |
+| `--resume off` with an existing `ckpt.pt` ⇒ **REFUSE** | a replayed command would restart at **step 0 on top of a live checkpoint** |
+
+`--resume auto` (default) restores stack + optimiser + step and **replays the LR schedule**, so a
+relaunch continues rather than restarting. A checkpoint already at or past `--steps` is refused
+with an explicit message rather than looping over an empty range.
+
+⭐ **The done-marker is also the correct REMOTE OFF-SWITCH**: `train()` writes
+`summary.json {"done": true}` in the same turn the run finishes, and writing it by hand makes a
+live supervisor exit cleanly (~20 min) with no kill needed.
+
+⚠️ `step_s` is divided by the steps **this process** ran, not by the resumed step number — a
+resumed run would otherwise report an absurdly small per-step time and look 10x faster than it is.
+
 ### 3.5 The pre-registered CONTROL arms (never defaults)
 
 | arm | flag | what it isolates |
@@ -406,7 +428,7 @@ re-cost before letting 30 k steps run.
 |---|---|---|---|
 | 1 | `ModuleNotFound: tanitad` | `cd` alone is not enough on a pod | `--print-launch` emits the `PYTHONPATH=`-correct line; §3.0 |
 | 2 | **a launch from a stale pod checkout resurrects a fixed bug** | pods have **NO git credentials**: `git fetch` **HANGS**, and a `checkout -B` after a failed fetch **RESETS the tree to an ancient HEAD and destroys shipped files** (MEASURED 2026-08-11: pod5 HEAD at `6d714ad`, weeks old, while its tree was current) | ⛔ **never put git sync in a pod chain.** Ship files (md5-verified), then §3.0's md5 + grep-verify + `--dry-run` **before** every launch |
-| 3 | a supervised run is **RESURRECTED** days after it finished | the run never wrote its done-marker, so the supervisor kept relaunching; when the crash-cause was fixed a relaunch SUCCEEDED, resumed from a stale `ckpt.pt`, and started overwriting `config.json`/`metrics.json` next to a live eval | the trainer writes `summary.json` with `"done": true` **in the same turn it finishes** — that file is also the correct remote off-switch |
+| 3 | a supervised run is **RESURRECTED** days after it finished, or a relaunch **restarts at step 0 over a live checkpoint** | the run never wrote its done-marker, so the supervisor kept relaunching; when the crash-cause was fixed a relaunch SUCCEEDED, resumed from a stale `ckpt.pt`, and started overwriting `config.json`/`metrics.json` next to a live eval | the trainer writes `summary.json` with `"done": true` **in the same turn it finishes**, and `resume_guard` **REFUSES to launch** into a DONE directory (only `--force-rerun` passes) or to restart fresh over an existing `ckpt.pt`; §3.4b |
 | 4 | editing `runs.d/<run>.env` under a live supervisor changes nothing | `supervise_run.sh` **sources its manifest ONCE, at supervisor startup**, and replays the captured `TRAIN_CMD` | to change a supervised v6 run: edit the manifest → kill the **SUPERVISOR** first → kill the trainer → start a fresh supervisor. **Verify by grepping the flags out of the RUNNING process**, never by reading the manifest |
 | 5 | the restarted supervisor races the old one's `flock` and **nothing runs** | the new one prints *"another supervisor holds …lock — exiting"* and dies while the log looks like a normal startup | poll `ps` until BOTH the old supervisor and the trainer are gone, then start. A lock with no holder (scan `/proc/*/fd`) is debris — `rm` it |
 | 6 | **two trainers on one pod** ⇒ both crawl, or an eval is contaminated | *"never add GPU/RAM load to a pod that is training, and never eval on a training pod"* | one stage per pod; S-T cannot start before S-W's gate exists anyway (§4) |
@@ -430,7 +452,7 @@ re-cost before letting 30 k steps run.
 |---|---|---|
 | `stack/tanitad/models/v6.py` | repo working tree, index | **staged**; verified with `git ls-files --cached` + an index-blob-vs-worktree md5 compare (`git add` exit codes are not evidence) |
 | `stack/scripts/train_v6_staged.py` | repo working tree, index | **staged**, verified the same way |
-| `stack/tests/test_v6_staged.py` | repo working tree, index | **staged**, verified · **76 tests green, CPU-only** (no GPU, no corpus, no checkpoint) |
+| `stack/tests/test_v6_staged.py` | repo working tree, index | **staged**, verified · **80 tests green, CPU-only** (run under `-W error::UserWarning`) (no GPU, no corpus, no checkpoint) |
 | `…/incoming/2026-08-07-hierarchical-wm-redesign/V6_TRAINER_DESIGN.md` | this file, repo working tree, index | **staged**, verified |
 
 **This agent committed nothing and pushed nothing** — the `AGENT_OPERATING_STANDARD` contract.

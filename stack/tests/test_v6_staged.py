@@ -949,6 +949,75 @@ def test_load_stage_init_refuses_a_geometry_mismatch(tmp_path):
         load_stage_init(src, tmp_path / "nope.pt")
 
 
+def test_resume_guard_refuses_to_relaunch_a_DONE_run(tmp_path):
+    """MEASURED 2026-08-09/11: the v5f run finished but never wrote its
+    done-marker; its supervisor relaunched for TWO DAYS, and when the
+    crash-cause was fixed a relaunch succeeded, resumed from a stale ckpt.pt,
+    and started overwriting the canonical run directory next to a live eval.
+    The done-marker IS the remote off-switch — so it has to actually stop a
+    launch."""
+    from train_v6_staged import resume_guard
+    (tmp_path / "summary.json").write_text(json.dumps(
+        {"done": True, "stage": "S-W", "steps": 30000,
+         "gate_verdict": "PASS"}))
+    (tmp_path / "ckpt.pt").write_bytes(b"stale")
+    with pytest.raises(SystemExit, match="says this run is DONE"):
+        resume_guard(tmp_path, resume="auto", force_rerun=False)
+    # --force-rerun is the ONLY way past it, and it is explicit
+    rg = resume_guard(tmp_path, resume="auto", force_rerun=True)
+    assert rg["mode"] == "resume"
+    # a marker that does NOT claim done must not block
+    (tmp_path / "summary.json").write_text(json.dumps({"done": False}))
+    assert resume_guard(tmp_path, resume="auto",
+                        force_rerun=False)["mode"] == "resume"
+    # and a corrupt marker must not block either (it is not a done claim)
+    (tmp_path / "summary.json").write_text("{not json")
+    assert resume_guard(tmp_path, resume="auto",
+                        force_rerun=False)["mode"] == "resume"
+
+
+def test_resume_guard_refuses_to_restart_over_a_live_checkpoint(tmp_path):
+    """`supervise_run.sh` SOURCES ITS MANIFEST ONCE and replays the captured
+    command, so a relaunch runs the SAME flags. With `--resume off` that would
+    restart at step 0 on top of a live ckpt.pt."""
+    from train_v6_staged import resume_guard
+    assert resume_guard(tmp_path, resume="off",
+                        force_rerun=False)["mode"] == "fresh"
+    (tmp_path / "ckpt.pt").write_bytes(b"live")
+    with pytest.raises(SystemExit, match="--resume off with an existing"):
+        resume_guard(tmp_path, resume="off", force_rerun=False)
+    assert resume_guard(tmp_path, resume="off",
+                        force_rerun=True)["mode"] == "fresh"
+    assert resume_guard(tmp_path, resume="auto",
+                        force_rerun=False) == {"mode": "resume",
+                                               "from": str(tmp_path
+                                                           / "ckpt.pt")}
+
+
+def test_load_resume_restores_stack_optimiser_and_step(tmp_path):
+    from train_v6_staged import _save_ckpt, load_resume
+    torch.manual_seed(11)
+    src = V6Stack(tiny_cfg())
+    with torch.no_grad():
+        for p in src.parameters():
+            p.add_(torch.randn_like(p) * 0.02)
+    opt = torch.optim.AdamW(src.parameters(), lr=1e-4)
+    opt.zero_grad(set_to_none=True)
+    next(iter(src.parameters())).grad = torch.ones_like(
+        next(iter(src.parameters())))
+    opt.step()                                   # give the optimiser real state
+    ck = tmp_path / "ckpt.pt"
+    _save_ckpt(ck, stack=src, opt=opt, step=4321, cfg_json={"stage": "S-W"})
+
+    dst = V6Stack(tiny_cfg())
+    dopt = torch.optim.AdamW(dst.parameters(), lr=1e-4)
+    step = load_resume(dst, dopt, ck)
+    assert step == 4321
+    for (n, a), (m, b) in zip(dst.named_parameters(), src.named_parameters()):
+        assert n == m and torch.equal(a, b), n
+    assert dopt.state_dict()["state"], "optimiser moments were not restored"
+
+
 def test_preflight_refuses_a_reasonless_gate_override(tmp_path):
     from train_v6_staged import preflight
     a = tiny_args(tmp_path)
@@ -994,3 +1063,48 @@ def test_gate_folds_in_externally_run_probes(tmp_path, stack):
     gate = run_stage_gate(stack, "S-W", out_dir=tmp_path, extra_probes=ext)
     assert gate["pass"] is True and gate["verdict"] == "PASS"
     assert gate["param_report"]["within_budget"]
+
+
+def test_the_whole_ladder_hands_off_through_the_WRITTEN_files(tmp_path, stack):
+    """END-TO-END X5: the gate file a stage WRITES must be the gate file the
+    next stage READS.
+
+    The pieces are tested separately above, but the handoff is the thing X5 is
+    actually about — and a seam that is only ever tested from both sides at
+    once is exactly the kind that fails on the pod. This walks the real ladder
+    S-W → S-T → S-S → S-J through :func:`run_stage_gate`'s files, then plants a
+    FAIL at the tactical rung and checks the ladder stops there.
+    """
+    from train_v6_staged import run_stage_gate
+    paths = {}
+    for stage in STAGES:                       # every rung PASSES
+        d = tmp_path / stage
+        ext = {p: {"pass": True, "status": "run"}
+               for p in STAGE_GATE_SPEC[stage]["required"]}
+        g = run_stage_gate(stack, stage, out_dir=d, extra_probes=ext)
+        assert g["pass"] is True, stage
+        paths[stage] = d / "stage_gate.json"
+        assert paths[stage].exists()
+    # each stage accepts the PREVIOUS stage's own written file, and that file
+    # names the stage after it — the ladder is linked, not four islands
+    for stage, prev in STAGE_PRECONDITION.items():
+        if prev is None:
+            continue
+        rep = assert_stage_precondition(stage, paths[prev])
+        assert rep["ok"] and rep["prev_verdict"] == "PASS"
+        assert json.loads(paths[prev].read_text())["next_stage"] == stage
+
+    # now FAIL the tactical rung: S-S must refuse, and no flag opens it
+    d = tmp_path / "S-T-failed"
+    bad = {p: {"pass": True, "status": "run"}
+           for p in STAGE_GATE_SPEC["S-T"]["required"]}
+    bad["sel_gap"] = {"pass": False, "status": "run", "value": 0.91}
+    g = run_stage_gate(stack, "S-T", out_dir=d, extra_probes=bad)
+    assert g["pass"] is False and g["failed_required"] == ["sel_gap"]
+    assert "MUST NOT launch" in g["bound_outcomes"]["FAIL"]
+    with pytest.raises(GatePreconditionError, match="FAILED its gate"):
+        assert_stage_precondition("S-S", d / "stage_gate.json")
+    with pytest.raises(GatePreconditionError, match="no override for a FAIL"):
+        assert_stage_precondition("S-S", d / "stage_gate.json",
+                                  allow_inconclusive=True,
+                                  off_reason="the schedule slipped")

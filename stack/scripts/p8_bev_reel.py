@@ -253,15 +253,36 @@ def main(argv=None) -> int:
 
     if not frames_out:
         raise SystemExit("[reel] no labelled windows on the grid — nothing to render")
-    mp4 = os.path.join(out_dir, "p8_belief_reel.mp4")
-    import imageio.v2 as imageio
-    w = imageio.get_writer(mp4, fps=known.fps, macro_block_size=1)
-    for f in frames_out:
-        w.append_data(f)
-    w.close()
+    # Video when an encoder exists; otherwise a PIL contact sheet — the pods do
+    # not all carry imageio/cv2/ffmpeg, and a missing codec must not cost the
+    # deliverable (MEASURED 2026-08-12: pod4's venv has PIL only).
+    from PIL import Image
     still = os.path.join(out_dir, "p8_belief_still.png")
-    imageio.imwrite(still, frames_out[len(frames_out) // 2])
-    print(f"[reel] wrote {mp4} ({len(frames_out)} frames) + {still}", flush=True)
+    Image.fromarray(frames_out[len(frames_out) // 2]).save(still)
+    sheet = os.path.join(out_dir, "p8_belief_sheet.png")
+    cols = 1
+    fh, fw = frames_out[0].shape[:2]
+    rows = min(len(frames_out), 12)
+    canvas = Image.new("RGB", (fw * cols, fh * rows), (17, 21, 28))
+    for i, f in enumerate(frames_out[:rows]):
+        canvas.paste(Image.fromarray(f), (0, i * fh))
+    canvas.save(sheet)
+    made = [still, sheet]
+    try:
+        import imageio.v2 as imageio
+        mp4 = os.path.join(out_dir, "p8_belief_reel.mp4")
+        w = imageio.get_writer(mp4, fps=known.fps, macro_block_size=1)
+        for f in frames_out:
+            w.append_data(f)
+        w.close()
+        made.append(mp4)
+    except Exception as e:
+        print(f"[reel] no video encoder ({type(e).__name__}) — stills only",
+              flush=True)
+        for i, f in enumerate(frames_out):
+            Image.fromarray(f).save(os.path.join(out_dir, f"frame_{i:03d}.png"))
+        made.append(f"{len(frames_out)} PNG frames")
+    print(f"[reel] wrote {len(frames_out)} frames -> {made}", flush=True)
     print("P8REEL_DONE", flush=True)
     return 0
 

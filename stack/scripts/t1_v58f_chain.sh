@@ -72,6 +72,20 @@ python3 -c "import ast,sys; ast.parse(open(sys.argv[1]).read())" "$TOOL" \
   || fail SYNC_FAILED_T1_EVAL_UNPARSEABLE
 echo "[t1] instrument verified: adapter flags + functions present in $TOOL"
 
+# --- 2b. A REAL IMPORT AGAINST THIS POD'S STACK TREE ----------------------
+# ⛔ MEASURED 2026-08-11 on pod5: the greps above all passed and BOTH ARMS then
+# died on an ImportError, because the pod's stack/ predates a class the tool
+# imported (T1_EXIT=NO_ARMS_PRODUCED after two full launches). A grep proves the
+# FILE is current; only a real import proves its DEPENDENCIES are
+# (CLAUDE.md: "verifying with a real import is a RUNBOOK STEP before any
+# launch; git log on the pod is not proof"). Seconds here, two arms there.
+python3 -c "import sys; sys.path[:0]=['$REPO/stack','$REPO/stack/scripts']; \
+from tanitad.models.metric_dynamics import accumulate_se2, decode_transitions, rollout_transitions, gt_ego_waypoints, StepDisplacementReadout; \
+from eval_flagship_v4 import _eval_cfg, resolve_eval_frames, build_v2_val_episodes, load_v1_from_ck; \
+from tanitad.geometry import add_geometry_args; \
+print('[t1] pod stack imports OK: metric_dynamics roll+decode, the v2 eval seam, geometry')" \
+  || fail SYNC_FAILED_STACK_IMPORTS
+
 # --- 3. inputs ------------------------------------------------------------
 [ -d "$CORPUS" ] || fail NO_CORPUS
 mkdir -p "$OUT" || fail NO_OUT_DIR
