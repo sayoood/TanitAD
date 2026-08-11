@@ -1430,6 +1430,19 @@ P5/T1 lens applies). Lead-gap probe NOT JUDGEABLE (negative R² both sides — t
 class-agnostic join needs the vehicle-class filter; instrument fix queued, not a model
 verdict). Artifact: `p12_gate.json`.
 
+**I4a IMAGINATION ABLATION — MEASURED 2026-08-11 ~19:40Z [T0, 881 grid]: the imagination
+channel is LOAD-BEARING, not decorative.** Three arms, same checkpoint, same grid, only the
+imagination input changed (`eval_flagship_v4 --imagination-ablate`): **intact ADE 0.4011**
+(byte-matches the banked v5f baseline — an in-run instrument-parity proof), oracle 0.1975,
+miss@2m 0.149; **zeroed 7.6493** (19× collapse; oracle 1.457, miss@2m 0.805); **shuffled
+1.2492** (3.1×; oracle 0.426). The ordering zero ≫ shuffle ≫ intact is the discriminating
+result: shuffling preserves the marginal statistics and destroys only the
+window↔consequence correspondence, so the planner is reading imagination as CONTENT, not
+as a bias term. ⚠️ Caveat stamped: the head was TRAINED with imagination present, so this
+measures the dependence of THIS architecture, not the value of retraining without it;
+I4b (occluded-split stratification) is the next refinement. Artifacts:
+`i4a/flagship-v5f-w120-30k-i4a-{none,zero,shuffle}.json` (pod5).
+
 **W4r + W7-w4r — MEASURED 2026-08-11 ~19:10Z [T0, 881 grid]: the repair arc closes on ONE
 remaining stale part.** W4r (unicycle head refit ON the stage-A trunk, 4000 steps, trunk
 md5-frozen): **GATE PASS — fan oracle 0.1273** (cap 0.2173 vs the 0.1975 reference ✓),
