@@ -145,7 +145,10 @@ python3 -u /workspace/TanitAD/taniteval/tools/t1_summary.py \
 ```
 
 `t1_v58f_chain.sh` wraps exactly this: waits for `COTRAIN_EXIT` in
-`/tmp/cotrain.log` (one trainer per pod), **greps the shipped `t1_eval.py` for
+`/tmp/cotrain.log` (one trainer per pod; the wait is **bounded** —
+`T1_WAIT_MAX_S`, default 6 h — and ends with `T1_EXIT=TIMEOUT_WAITING_COTRAIN`
+rather than hanging silently, because a silent forever-wait is
+indistinguishable from a dead chain), **greps the shipped `t1_eval.py` for
 the adapter flags and functions and refuses with
 `T1_EXIT=SYNC_FAILED_FLAG_MISSING` if any is absent** (pods have no git — a
 missing flag means a stale file, and running the old code silently would produce

@@ -88,7 +88,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import math
 import os
 import random
 import sys
@@ -584,7 +583,7 @@ def v6_loss_step(stack: V6Stack, batch: dict, *, stage: str,
         terms["plan"] = w.lambda_plan * lp
         # §4b: report the bands SEPARATELY. A pooled 0–6 s number cannot show
         # the 2 s seam, and the seam is what X2 exists to verify.
-        op_b, tac_b = cfg.split_bands(fan[ar, winner], dim=-2)
+        op_b, tac_b = cfg.split_bands(fan[ar, winner].detach(), dim=-2)
         t_op, t_tac = cfg.split_bands(tgt.float(), dim=-2)
         log |= {"plan_wta": float(lp.detach()),
                 "plan_ade_0_2s": float((op_b - t_op).norm(dim=-1).mean()),
@@ -1053,35 +1052,64 @@ def train(a) -> dict:
     # stride_str = 20 at the default clocks) — predicting one operative tick
     # ahead and calling it a tactical prediction is an identity map wearing a
     # hierarchy's name, so the corpus window has to actually carry those steps.
-    need = max(a.o1_k, a.o5_k,
+    # ⚠️ only the stages that actually run an O-layer term need the encoded
+    # future latents, and encoding them is the single largest per-step cost.
+    # S-T/S-S would otherwise pay max(o1_k, o5_k) = 20 extra encoder passes per
+    # sample for tensors no live loss reads.
+    needs_ztrue = bool(w_stage.o1_ctrl or w_stage.o1_fact or w_stage.o1_scene
+                       or w_stage.o2_nearfield or w_stage.o3_masked
+                       or w_stage.o5_rollout)
+    need_k = max(a.o1_k, a.o5_k) if needs_ztrue else 0
+    need = max(need_k,
                stack.cfg.stride_tac if w_stage.t1_latent else 0,
                stack.cfg.stride_str if w_stage.s1_latent else 0,
-               stack.cfg.plan_steps if w_stage.lambda_plan else 0)
-    if plan.max_horizon < need:
+               stack.cfg.plan_steps if w_stage.lambda_plan else 0,
+               1)
+    # ⚠️ ``plan.max_horizon`` is the FLAGSHIP-v4 loss's horizon (MEASURED 20 at
+    # the current config) — it is NOT a property of the cache. ``max_horizon``
+    # is a WINDOWING parameter (data/_contract.py:118-121:
+    # ``t_max = frames - window - max_horizon``), so v6 sets its OWN. Inheriting
+    # v4's 20 would make §4b's 6 s horizon structurally untrainable while
+    # looking like a corpus limitation.
+    max_h = int(a.max_horizon) if a.max_horizon else max(need,
+                                                         plan.maneuver_h)
+    if max_h < need:
         raise SystemExit(
-            f"[v6] ⛔ the corpus window carries max_horizon "
-            f"{plan.max_horizon} but stage {a.stage} needs {need} future "
-            f"steps (o1_k={a.o1_k}, o5_k={a.o5_k}, stride_tac="
+            f"[v6] ⛔ --max-horizon {max_h} < the {need} future steps stage "
+            f"{a.stage} needs (o1_k={a.o1_k}, o5_k={a.o5_k}, stride_tac="
             f"{stack.cfg.stride_tac}, stride_str={stack.cfg.stride_str}, "
-            f"plan_steps={stack.cfg.plan_steps}). §4b's 6 s horizon needs a "
-            f"cache built with max_horizon >= {PLAN_STEPS}; rebuild the cache "
-            f"or lower the horizons and SAY SO in the run row — a silently "
-            f"shortened horizon is not the same experiment.")
+            f"plan_steps={stack.cfg.plan_steps}). A silently shortened horizon "
+            f"is not the same experiment.")
+    if max_h < plan.maneuver_h:
+        raise SystemExit(f"[v6] ⛔ --max-horizon {max_h} < maneuver_h "
+                         f"{plan.maneuver_h} (the dataset asserts this)")
+    print(f"[v6] windowing: window {stack.cfg.predictor.window} + "
+          f"max_horizon {max_h} (v4's plan says {plan.max_horizon}; v6 sets "
+          f"its own). ⚠️ a LONGER horizon yields FEWER windows per episode — "
+          f"episode selection (parity) is untouched, the window count is not.",
+          flush=True)
 
     train_eps, _tp = build_train_episodes(a, cache_frame=cache_frame,
                                           train_frame=model_frame)
     ds_train = FlagshipWindowDataset(
-        train_eps, window=stack.cfg.predictor.window,
-        max_horizon=plan.max_horizon, maneuver_h=plan.maneuver_h,
+        train_eps, window=stack.cfg.predictor.window, max_horizon=max_h,
+        maneuver_h=plan.maneuver_h,
         channels=stack.cfg.encoder.in_channels)
     print(f"[v6] train {len(train_eps)} eps / {len(ds_train)} windows",
           flush=True)
+    if not len(ds_train):
+        raise SystemExit(
+            f"[v6] ⛔ 0 training windows at window "
+            f"{stack.cfg.predictor.window} + max_horizon {max_h} — the "
+            f"episodes are shorter than {stack.cfg.predictor.window + max_h} "
+            f"frames. Lower the horizons or rebuild the cache with longer "
+            f"episodes.")
     if a.v2_val_cache:
         val_eps, _vp = build_v2_val_episodes(a, cache_frame=cache_frame,
                                              train_frame=model_frame)
         ds_val = FlagshipWindowDataset(
-            val_eps, window=stack.cfg.predictor.window,
-            max_horizon=plan.max_horizon, maneuver_h=plan.maneuver_h,
+            val_eps, window=stack.cfg.predictor.window, max_horizon=max_h,
+            maneuver_h=plan.maneuver_h,
             channels=stack.cfg.encoder.in_channels)
         print(f"[v6] val {len(val_eps)} eps / {len(ds_val)} windows",
               flush=True)
@@ -1089,15 +1117,31 @@ def train(a) -> dict:
     # ---- O4: interaction-weighted sampling (ACTIONS ONLY) ------------------
     if a.o4_alpha > 0:
         print(f"[v6] O4: scoring {len(ds_train)} windows by ego-kinematic "
-              f"saliency (label-free) ...", flush=True)
+              f"saliency (label-free, ACTIONS ONLY) ...", flush=True)
+        # ⚠️ read the ACTION arrays straight off the episode providers
+        # (``ep.actions[t : t+W+H]`` — the ``EpisodeWindowDataset`` slicing at
+        # data/_contract.py:132-135). Going through ``ds_train[i]`` would DECODE
+        # EVERY FRAME OF THE CORPUS to compute a scalar over two action
+        # channels: hundreds of thousands of window payload loads on MooseFS
+        # before step 1. The saliency needs no pixels by construction, and that
+        # is exactly what makes O4 label-free in the first place.
+        w_win = stack.cfg.predictor.window
+        span = w_win + need
         acts = []
-        for i in range(len(ds_train)):
-            it = ds_train[i]
-            acts.append(torch.cat([it["actions"][:, :2].float(),
-                                   it["future_actions"][:, :2].float()],
-                                  dim=0))
+        for e_i, t in ds_train.index:
+            arr = ds_train.episodes[e_i].actions[t:t + span]
+            acts.append(torch.as_tensor(arr[:, :2]).float())
+        # episodes near their end yield short slices — pad by edge-repeat so the
+        # stack is rectangular. Edge-repeat adds ZERO jerk and ZERO reversals,
+        # so a truncated window is scored on what it actually contains and is
+        # never inflated by the padding.
+        n_max = max(x.shape[0] for x in acts)
+        acts = [x if x.shape[0] == n_max else
+                torch.cat([x, x[-1:].expand(n_max - x.shape[0], 2)], dim=0)
+                for x in acts]
         w4, o4log = build_o4_weights(torch.stack(acts), dt=stack.cfg.dt,
                                      alpha=a.o4_alpha, floor=a.o4_floor)
+        o4log["o4_span_steps"] = int(n_max)
         print(f"[v6] O4 {json.dumps(o4log)}", flush=True)
         sample = InteractionSampler(ds_train.index, w4,
                                     eps_per_batch=a.eps_per_batch,
@@ -1133,38 +1177,58 @@ def train(a) -> dict:
         aw2 = b["actions"][..., :2].float()
         fa2 = b["future_actions"][..., :2].float()
         v0 = b["pose_last"][:, 3].float()
-        need_k = max(a.o1_k, a.o5_k)
-        with torch.no_grad():
-            # ONE encoder pass over all need_k future frames, not need_k passes
-            # — the future-frame encode is the single largest per-step cost in
-            # S-W (26 frames/sample at the defaults vs v1's ~8), and a Python
-            # loop over it wastes the batch dimension the GPU is built for.
-            ff = b["future_frames"][:, :need_k]
-            fb, fk = ff.shape[:2]
-            z_flat = stack.readout(stack.encoder(
-                ff.reshape(fb * fk, *ff.shape[2:]))).reshape(fb, fk, -1)
-            z_true = [z_flat[:, j].detach() for j in range(need_k)]
+        z_true: list = []
+        if need_k:
+            with torch.no_grad():
+                # ONE encoder pass over all need_k future frames, not need_k
+                # passes — the future-frame encode is the single largest
+                # per-step cost in S-W (26 frames/sample at the defaults vs
+                # v1's ~8), and a Python loop over it wastes the batch
+                # dimension the GPU is built for.
+                ff = b["future_frames"][:, :need_k]
+                fb, fk = ff.shape[:2]
+                z_flat = stack.readout(stack.encoder(
+                    ff.reshape(fb * fk, *ff.shape[2:]))).reshape(fb, fk, -1)
+                z_true = [z_flat[:, j].detach() for j in range(need_k)]
         dk, da = sample_random_deltas(aw2.shape[0], gen, a.rand_dkappa_max,
                                       a.rand_daccel_max)
         batch = {
             "frames": b["frames"], "actions2": aw2, "future_actions2": fa2,
             "v0": v0, "z_true_steps": z_true,
-            "gt_wp": gt_ego_waypoints(b["pose_last"].float(),
-                                      b["future_poses"].float(), steps_g),
         }
+        if needs_ztrue:
+            batch["gt_wp"] = gt_ego_waypoints(b["pose_last"].float(),
+                                              b["future_poses"].float(),
+                                              steps_g)
+        if not stack.cfg.shared_encoder:
+            # E-ENC arm (b): each layer encodes the CURRENT frame with its own
+            # encoder. ⚠️ The clock difference lives in the TARGETS (each layer
+            # predicts one of ITS OWN ticks ahead), not in which frame each
+            # encoder sees now — "now" is the same instant for all three
+            # layers, and pretending otherwise would silently shift the
+            # layers' observation times relative to each other.
+            batch["own_frames_tac"] = b["frames"][:, -1]
+            batch["own_frames_str"] = b["frames"][:, -1]
         # each higher layer's target sits ONE OF ITS OWN TICKS ahead
         if w_stage.t1_latent or w_stage.s1_latent:
+            shared = stack.cfg.shared_encoder
             with torch.no_grad():
-                if w_stage.t1_latent:
-                    zf = stack.readout(stack.encoder(
-                        b["future_frames"][:, stack.cfg.stride_tac - 1]))
-                    batch["z_tac_next_target"] = \
-                        stack.layer_targets(zf)["z_tac"]
-                if w_stage.s1_latent:
-                    zf = stack.readout(stack.encoder(
-                        b["future_frames"][:, stack.cfg.stride_str - 1]))
-                    batch["z_str_next_target"] = \
-                        stack.layer_targets(zf)["z_str"]
+                for key, stride, want in (
+                        ("z_tac_next_target", stack.cfg.stride_tac,
+                         w_stage.t1_latent),
+                        ("z_str_next_target", stack.cfg.stride_str,
+                         w_stage.s1_latent)):
+                    if not want:
+                        continue
+                    fut = b["future_frames"][:, stride - 1]
+                    zf = stack.readout(stack.encoder(fut))
+                    o_t = None if shared else stack.readout_tac(
+                        stack.encoder_tac(fut))
+                    o_s = None if shared else stack.readout_str(
+                        stack.encoder_str(fut))
+                    tgt = stack.layer_targets(zf, o_t, o_s)
+                    batch[key] = tgt["z_tac" if key.startswith("z_tac")
+                                     else "z_str"]
         if w_stage.lambda_plan:
             batch["plan_target"] = gt_ego_waypoints(
                 b["pose_last"].float(), b["future_poses"].float(),
@@ -1187,9 +1251,13 @@ def train(a) -> dict:
         stack.ema_update()
 
         if step % a.spectrum_every == 0:
-            # O6's standing monitor — a SERIES, because retention is a ratio.
-            spectrum_last = spectrum_report(
-                L["out"]["z_op"].detach().float())
+            # O6's standing monitor — a SERIES, because retention is a RATIO
+            # and a single reading can neither pass nor fail it. Measured on
+            # the SAME tensor SIGReg acts on ([B*W, d_op], not just the last
+            # frame): B rows would estimate a 2048-dim spectrum from 16
+            # samples, which is a number, not a measurement.
+            zw = L["out"]["z_op_win"].detach().float()
+            spectrum_last = spectrum_report(zw.reshape(-1, zw.shape[-1]))
             fh.write(json.dumps({"step": step,
                                  "spectrum": spectrum_last}) + "\n")
         if step % a.log_every == 0:
@@ -1368,6 +1436,12 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--no-require-parity", dest="require_parity",
                     action="store_false")
     ap.add_argument("--eps-per-batch", type=int, default=4)
+    ap.add_argument("--max-horizon", type=int, default=None,
+                    help="future steps each window carries. Unset = derived "
+                         "from the stage's own needs (o1_k, o5_k, stride_tac, "
+                         "stride_str, plan_steps). ⚠️ NOT inherited from the "
+                         "v4 horizon plan, which is 20 and would make §4b's "
+                         "6 s horizon structurally untrainable.")
     # ---- optimisation ------------------------------------------------------
     ap.add_argument("--steps", type=int, default=30000)
     ap.add_argument("--batch", type=int, default=16)

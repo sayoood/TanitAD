@@ -194,9 +194,9 @@ nohup python3 scripts/train_v6_staged.py \
 * **frozen:** `layer_tac`, `layer_str`, `planner`
 * **losses in force:** O1 (ctrl 1.0 / fact 1.0 / scene 0.3) · O2 1.0 · O3 1.0 · O5 1.0 · O6 0.1
 * **λ_plan ≡ 0** — the trainer **refuses to start** S-W with a non-zero `--lambda-plan`.
-* ⚠️ **6 s O5:** `--o5-k 60` is the §4b horizon, but it needs a cache built with
-  `max_horizon >= 60`. The trainer refuses with an explicit message rather than silently
-  shortening — *a silently shortened horizon is not the same experiment*.
+* ⚠️ **`--o5-k 60` is the §4b horizon as a REPRESENTATION lever (= LF4).** It costs the extra
+  future-frame encodes and needs `--max-horizon 60` (see §3.6). `--o5-k 20` is the catalog's
+  ≤2 s row; whichever is run, **say which in the run row**.
 
 ### 3.2 S-T — tactical layer + the operative planner, on the FROZEN S-W trunk
 
@@ -267,6 +267,32 @@ nohup python3 scripts/train_v6_staged.py \
 | O5 endpoint | `--o5-mode endpoint` | reproduces the compounding defect O5 fixes |
 | ⛔ isolation off | `--no-isolate-planner` / `--no-isolate-uplink` **+ `--i-know-this-is-the-control-arm`** | the co-trained path. Preflight refuses without the explicit acknowledgement. |
 
+### 3.6 ⚠️ `--max-horizon` — the finding that would otherwise have cost a pod day
+
+**MEASURED dev-side (2026-08-11):** `_plan(_eval_cfg())` — the horizon plan every existing
+flagship trainer inherits — returns **`max_horizon = 20`**, i.e. each window carries **2 s** of
+future. A v6 trainer that inherited it would make §4b's 6 s horizon **structurally
+untrainable**, and it would fail *looking like a corpus limitation*:
+
+* S-W `--o5-k 60` → refused (needs 60 future latents);
+* **S-T at all** → refused, because `λ_plan` needs a 60-step ground-truth plan target. The
+  6 s planner has no target inside a 2 s window.
+
+**But `max_horizon` is not a property of the cache.** It is a **windowing parameter**
+(`tanitad/data/_contract.py:118-121`: `t_max = frames − window − max_horizon`); the cache
+stores whole episodes. So v6 **derives its own** from the stage's actual needs
+(`o1_k`, `o5_k`, `stride_tac`, `stride_str`, `plan_steps`), overridable with `--max-horizon`,
+and **prints what it chose next to what v4's plan would have said**.
+
+| consequence | detail |
+|---|---|
+| ✅ parity is untouched | parity is **EPISODE selection** (`physicalai-train-e438721ae894`, 2376 episodes, skip-hash `f09e44db`). Windowing inside an episode is a training-config choice, and O4 reweights rather than removes. |
+| ⚠️ the window COUNT drops | a 120-frame episode yields `120 − 6 − 20 = 94` windows at v4's horizon and `120 − 6 − 60 = 54` at 6 s — **≈43 % fewer**. That is a real distribution change vs v5f and belongs in the run row. |
+| ⛔ refusals, not silence | `--max-horizon` below what the stage needs, below `maneuver_h`, or yielding **0 windows** all raise with an explicit message. |
+
+⇒ **S-T/S-J launches must add `--max-horizon 60`** (or accept the derived value, which is 60
+whenever `λ_plan > 0`). Confirm on the pod from the trainer's own `[v6] windowing:` line.
+
 ---
 
 ## 4. Gates — what each stage must pass, and what "gated" means
@@ -334,10 +360,18 @@ programme's own history says estimates here run **~11 % low** (`MODEL_REGISTRY` 
 | stage | steps | ESTIMATED s/step (A40) | ESTIMATED A40-hours | note |
 |---|---|---|---|---|
 | **S-W** | 30 000 | 21–35 | **175–290** (7–12 A40-days) | the whole cost centre; every lever below acts here |
-| **S-T** | 10 000 | 6–10 | **17–28** | trunk frozen, no O1/O5 rolls; forward-only through the encoder |
-| **S-S** | 8 000 | 5–9 | **11–20** | strategic layer only |
+| **S-T** | 10 000 | 6–10 | **17–28** | trunk frozen, no O1/O5 rolls, and **no future-frame encodes** (the trainer skips them when no O-layer term is live) — forward-only through the encoder |
+| **S-S** | 8 000 | 5–9 | **11–20** | strategic layer only; one future-frame encode at `stride_str` |
 | **S-J** | 3 000 | 21–35 | **18–29** | all terms live again |
 | **total** | | | **≈220–370 A40-hours** | |
+
+**One-off startup cost — the O4 pre-pass.** `--o4-alpha > 0` scores every training window
+once before step 1. It reads the ACTION arrays straight off the episode providers
+(`ep.actions[t : t+W+H]`) and **decodes no frames**: the saliency needs no pixels by
+construction, which is what makes O4 label-free in the first place. Going through
+`ds_train[i]` instead would decode the entire corpus for a scalar over two channels —
+hundreds of thousands of payload loads on MooseFS before the first step. Expect seconds,
+not hours; if it is slow, that is a symptom, not the design.
 
 ⛔ **THE FIRST ACTION ON THE POD IS TO RE-COST FROM THE RUN'S OWN LOG.** The trainer logs
 `step_s` **already divided** (with `step_s_note` naming the divisor) precisely so nobody
@@ -371,7 +405,7 @@ re-cost before letting 30 k steps run.
 | 9 | "training is 430 s/step!" | `step_s` in the older trainers is **ACCUMULATED over `--log-every`** | this trainer logs `step_s` **already divided** and ships `step_s_note` naming the divisor |
 | 10 | 7 concurrent arms at GPU `sm` 0–6 % for 50 minutes, looking exactly like a hang | torch spawns ~113 threads **per process** | `OMP_NUM_THREADS=6` is set defensively in `main()` **and** belongs in the launch line so it is visible in `ps` |
 | 11 | an "OOM" that is not one | `memory.usage_in_bytes` counts **reclaimable page cache** (MEASURED 37.2 GB of a 50 GB cap with *nothing running*) | read `memory.stat`'s `rss` and `memory.failcnt` — `failcnt 0` settles it. This cost ~40 min of training and an invented container-OOM diagnosis |
-| 12 | a 6 s O5 silently becomes a 2 s O5 | the corpus window's `max_horizon` is shorter than `--o5-k` | the trainer **refuses with an explicit message** naming `o1_k`, `o5_k`, `stride_tac`, `stride_str`, `plan_steps` — *a silently shortened horizon is not the same experiment* |
+| 12 | **the 6 s horizon looks like a corpus limitation and gets quietly abandoned** | inheriting v4's `plan.max_horizon` (**MEASURED 20**) makes §4b untrainable — S-T could never start at all, because a 6 s planner has no target in a 2 s window | v6 **derives its own** `max_horizon` from the stage's needs and prints it beside v4's; §3.6. Refusals (below-need, below-`maneuver_h`, 0 windows) are explicit — *a silently shortened horizon is not the same experiment* |
 | 13 | a stage runs with **no trainable parameters** | the freeze map and the stage disagree | `train()` refuses; `test_stage_freeze_trains_exactly_the_declared_groups` pins the map |
 | 14 | a new head escapes the isolation probe | it was added without appending to the declared planner-side surface | `test_planner_surface_is_total` fails when a planner param becomes unreachable from the declaration |
 | 15 | a gate is "passed" that never ran | a missing probe read as satisfied | `pass: null` ≠ `pass: true`; the override needs a **stated reason**, printed as a banner and stored in `config.json` |
@@ -383,22 +417,41 @@ re-cost before letting 30 k steps run.
 
 | artifact | where it lives | state |
 |---|---|---|
-| `stack/tanitad/models/v6.py` | repo working tree | **staged** (`git add`), verified with `git ls-files --cached` |
-| `stack/scripts/train_v6_staged.py` | repo working tree | **staged**, verified |
-| `stack/tests/test_v6_staged.py` | repo working tree | **staged**, verified · 73 tests green, CPU-only |
-| `…/incoming/2026-08-07-hierarchical-wm-redesign/V6_TRAINER_DESIGN.md` | this file, repo working tree | **staged**, verified |
+| `stack/tanitad/models/v6.py` | repo working tree, index | **staged**; verified with `git ls-files --cached` + an index-blob-vs-worktree md5 compare (`git add` exit codes are not evidence) |
+| `stack/scripts/train_v6_staged.py` | repo working tree, index | **staged**, verified the same way |
+| `stack/tests/test_v6_staged.py` | repo working tree, index | **staged**, verified · **73 tests green, CPU-only** (no GPU, no corpus, no checkpoint) |
+| `…/incoming/2026-08-07-hierarchical-wm-redesign/V6_TRAINER_DESIGN.md` | this file, repo working tree, index | **staged**, verified |
 
-**Not committed, not pushed** — the `AGENT_OPERATING_STANDARD` contract: agents stage into the
-working tree and never commit, never push.
+**This agent committed nothing and pushed nothing** — the `AGENT_OPERATING_STANDARD` contract.
+
+⚠️ **The index was committed by ANOTHER agent mid-task.** Commit `0c30a0f` (a W7-FULL banking
+commit) swept an in-progress snapshot of all four files in alongside its own work — the exact
+hazard CLAUDE.md records twice (*"`git commit` commits the ENTIRE INDEX, not the files you just
+`git add`ed"*; `60265d3` swallowed the eval tooling, `3d41bd0` swallowed REF-C v1.2's rescorer).
+**Nothing is lost and nothing is stranded:** the post-commit improvements — the `--max-horizon`
+derivation (§3.6), the O4 action-array pre-pass, the S-T/S-S future-encode skip, and the doc
+updates — are **staged on top of that commit** (`git diff --cached`: v6.py +5/−3,
+train_v6_staged.py +170/−48, V6_TRAINER_DESIGN.md +55/−9; `test_v6_staged.py` is already
+current in HEAD). Whoever commits next gets the finished versions.
+
+⚠️ **Foreign staged entries are present in the index** (a concurrent T1-adapter stream:
+`stack/scripts/T1_ADAPTER_NOTES.md`, `stack/scripts/t1_v58f_chain.sh`). Anyone committing must
+check `git status --short` FIRST and either name them in the message or use a pathspec — and
+⛔ **`git commit -- <pathspec>` SEGFAULTS on this repo**, so the admissible route is a
+pathspec-free `git commit -F <msgfile>` **after** listing `git diff --cached --name-only` and
+confirming every entry is intended.
 
 ### 7.1 Escalations for the PI (not "please merge" buried in a doc)
 
 1. **S-W's cost is the decision.** ESTIMATED **175–290 A40-hours** for 30 k steps. Levers are in
    §5; the honest move is to launch, read `step_s` at step 500, and re-cost before committing
    the full ladder.
-2. **`--o5-k 60` (the §4b 6 s horizon as a REPRESENTATION lever, = LF4) needs a corpus cache
-   with `max_horizon >= 60`.** Today's `w120` caches do not carry it. Either rebuild the cache
-   or run S-W at `--o5-k 20` and say so in the run row.
+2. **The 6 s horizon is trainable on today's caches — but it costs ~43 % of the windows.**
+   MEASURED: `plan.max_horizon` is **20**, and inheriting it would have made S-T structurally
+   impossible. `max_horizon` is a *windowing* parameter, so v6 sets its own (§3.6). Parity
+   (episode selection) is untouched; the **window count** drops from `120−6−20 = 94` to
+   `120−6−60 = 54` per 120-frame episode. That is a real distribution change vs v5f and needs
+   a PI decision: accept it, or rebuild the cache with longer episodes.
 3. **W5/E-H1 is a REQUIRED precursor** (§4b promotes it): v5.8f must be baselined at 6 s
    **before** v6 trains against it, or there is no yardstick for the thing v6 changes.
 4. **S2 (`g_str` supervision) is not wired** and must not be improvised — it comes from

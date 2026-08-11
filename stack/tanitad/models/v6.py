@@ -78,7 +78,6 @@ from dataclasses import dataclass, field, replace
 from pathlib import Path
 
 import torch
-import torch.nn.functional as F
 from torch import Tensor, nn
 
 from tanitad.config import EncoderConfig, PredictorConfig, ReadoutConfig
@@ -87,8 +86,8 @@ from tanitad.models.encoder import ViTEncoder
 from tanitad.models.metric_dynamics import StepDisplacementReadout
 from tanitad.models.predictor import OperativePredictor
 from tanitad.models.readout import SpatialGridReadout
-from tanitad.models.sigreg import SigReg, position_relaxed
-from tanitad.models.tactical import FTac, n_params
+from tanitad.models.sigreg import SigReg
+from tanitad.models.tactical import FTac
 
 __all__ = [
     # vocabulary (HIERARCHY_VOCABULARY §3/§4)

@@ -41,12 +41,25 @@ SUMM=$REPO/taniteval/tools/t1_summary.py
 exec >>"$LOG" 2>&1
 echo "=== t1_v58f_chain start $(date -u +%FT%TZ) ==="
 
+fail() { echo "T1_EXIT=$1"; exit 1; }
+
 # --- 1. the GPU is not ours until the co-train run releases it -------------
-until grep -q 'COTRAIN_EXIT' /tmp/cotrain.log 2>/dev/null; do sleep 180; done
+# BOUNDED: a silent forever-wait is indistinguishable from a dead chain, so the
+# wait ends with a MARKER instead (the watcher can then decide, and no T1 row is
+# ever produced next to a live trainer).
+WAIT_MAX=${T1_WAIT_MAX_S:-21600}                    # 6 h
+waited=0
+until grep -q 'COTRAIN_EXIT' /tmp/cotrain.log 2>/dev/null; do
+  sleep 180
+  waited=$((waited + 180))
+  if [ "$waited" -ge "$WAIT_MAX" ]; then
+    echo "[t1] waited ${waited}s for COTRAIN_EXIT in /tmp/cotrain.log — giving up"
+    fail TIMEOUT_WAITING_COTRAIN
+  fi
+done
 echo "[t1] COTRAIN_EXIT seen: $(grep COTRAIN_EXIT /tmp/cotrain.log | tail -1)"
 
 # --- 2. VERIFY THE SHIPPED INSTRUMENT (a missing flag = a stale file) ------
-fail() { echo "T1_EXIT=$1"; exit 1; }
 [ -f "$TOOL" ] || fail SYNC_FAILED_NO_T1_EVAL
 [ -f "$SUMM" ] || fail SYNC_FAILED_NO_T1_SUMMARY
 for tok in -- --v2-val-cache --grounding-readout --window-stride \
