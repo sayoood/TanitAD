@@ -401,7 +401,7 @@ def test_zero_control_rollout_is_the_constant_velocity_path(stack):
     plan = stack.emit(torch.randn(b, stack.cfg.d_op),
                       torch.randn(b, stack.cfg.d_goal_embed),
                       torch.full((b,), v))
-    wp = plan["waypoints"][:, 0]                          # [B, 60, 2]
+    wp = plan["waypoints"][:, 0].detach()                 # [B, 60, 2]
     want_x = torch.arange(1, 61).float() * v * stack.cfg.dt
     assert torch.allclose(wp[..., 0], want_x.expand(b, 60), atol=1e-3)
     assert float(wp[..., 1].abs().max()) < 1e-5           # no lateral motion
@@ -560,7 +560,8 @@ def test_o3_scores_only_masked_cells(stack):
     # an empty mask contributes zero but stays in the graph
     z, zlog = o3_masked_cell_loss(stack.masked_cells, ctx, true,
                                   torch.zeros(b, c, dtype=torch.bool))
-    assert float(z) == 0.0 and zlog["o3_n_masked"] == 0 and z.requires_grad
+    assert float(z.detach()) == 0.0 and zlog["o3_n_masked"] == 0
+    assert z.requires_grad          # still in the graph, contributes nothing
 
 
 def test_o4_saliency_rises_on_high_jerk_windows():

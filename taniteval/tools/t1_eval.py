@@ -975,8 +975,11 @@ def run_rollout_ext(a):
     # error). Binding ``tanitad`` from the tree this tool was launched from
     # before that runs makes the resolution deterministic — first import wins.
     _stack_scripts_on_path()
-    from tanitad.models.metric_dynamics import (UnicycleStepReadout,
-                                                gt_ego_waypoints,
+    # UnicycleStepReadout is needed ONLY by the legacy --head path. Importing it
+    # eagerly makes an older pod-side metric_dynamics.py (which predates the
+    # class) fail the ENTIRE tool, including --grounding-readout, which uses the
+    # checkpoint's own decoder and never touches it. Bound lazily below.
+    from tanitad.models.metric_dynamics import (gt_ego_waypoints,
                                                 rollout_transitions)
     from taniteval.rollout import SPEED_SCALE
 
@@ -1002,6 +1005,7 @@ def run_rollout_ext(a):
                "closed_feedback": "implied_controls (physicalai.signals_at "
                                   "inverse; same clamp as roll_closed)"}
     else:
+        from tanitad.models.metric_dynamics import UnicycleStepReadout
         ck = torch.load(a.head, map_location="cpu", weights_only=False)
         head = UnicycleStepReadout(state_dim, hidden=a.head_hidden,
                                    speed_input=bool(a.head_speed_input),

@@ -6,7 +6,7 @@
 #   /workspace/experiments/t1-v58f/t1_v5f_30k.json        arm 1 (frozen trunk)
 #   /workspace/experiments/t1-v58f/t1_stage_a_repaired.json arm 2 (repaired)
 #   /workspace/experiments/t1-v58f/t1_summary.json        both + PAIRED CIs
-#   …/dump_v5f_30k/ep*.npz, …/dump_stage_a/ep*.npz        per-window dumps
+#   …/dump_v5f_30k/ep*.npz, …/dump_stage_a_repaired/ep*.npz  per-window dumps
 #
 # Both arms roll the SAME grid (same corpus, --episodes, --window-stride,
 # --window, --horizon-k) with --with-t0-open-loop --with-hold-action, so the
@@ -62,9 +62,8 @@ echo "[t1] COTRAIN_EXIT seen: $(grep COTRAIN_EXIT /tmp/cotrain.log | tail -1)"
 # --- 2. VERIFY THE SHIPPED INSTRUMENT (a missing flag = a stale file) ------
 [ -f "$TOOL" ] || fail SYNC_FAILED_NO_T1_EVAL
 [ -f "$SUMM" ] || fail SYNC_FAILED_NO_T1_SUMMARY
-for tok in -- --v2-val-cache --grounding-readout --window-stride \
+for tok in --v2-val-cache --grounding-readout --window-stride \
            run_rollout_ext roll_closed_grounding implied_controls V2RawEp; do
-  [ "$tok" = "--" ] && continue
   grep -q -- "$tok" "$TOOL" || { echo "[t1] MISSING '$tok' in $TOOL"; \
     fail SYNC_FAILED_FLAG_MISSING; }
 done
