@@ -435,3 +435,46 @@ def test_window_frame_and_covered_indices(tmp_path):
     sample = make_covered_sampler(ds, [0, 2], eps_per_batch=2, rng=rng)
     got = sample(16)
     assert len(got) == 16 and set(got) <= {0, 2}
+
+
+# ============================================================================
+# attempt-2 fix (2026-08-11): imbalance-robust loss + operating-point sweep —
+# attempt 1 collapsed to all-empty (batch_iou 0.0, gate ratio 0.41 on IoUs of
+# 3e-4) because unweighted BCE rewards exactly that on ~1 % positives.
+# ============================================================================
+def test_soft_dice_punishes_all_empty():
+    from train_p8_occupancy import soft_dice_loss
+    tgt = torch.zeros(2, 8, 8)
+    tgt[:, 2:4, 2:4] = 1.0                       # sparse positives
+    empty_logits = torch.full((2, 8, 8), -20.0)  # the attempt-1 collapse
+    good_logits = torch.where(tgt > 0.5, 20.0, -20.0)
+    l_empty = float(soft_dice_loss(empty_logits, tgt))
+    l_good = float(soft_dice_loss(good_logits, tgt))
+    assert l_empty > 0.75                        # collapse is expensive now
+    assert l_good < 0.05                         # overlap is rewarded
+
+
+def test_iou_at_tau_recovers_subthreshold_signal():
+    from train_p8_occupancy import iou_at_tau
+    tgt = torch.zeros(1, 8, 8)
+    tgt[:, 1:3, 1:3] = 1.0
+    # a timid readout: right cells, sigmoid ~0.3 (logit -0.85) — invisible at
+    # tau 0.5 (attempt 1's only operating point), perfect at tau 0.2
+    logits = torch.where(tgt > 0.5, -0.85, -20.0)
+    assert float(iou_at_tau(logits, tgt, 0.5)[0]) == 0.0
+    assert float(iou_at_tau(logits, tgt, 0.2)[0]) == 1.0
+
+
+def test_tau_grid_contains_legacy_operating_point():
+    # 0.5 stays in the grid so the at_05 companion columns are always defined
+    from train_p8_occupancy import TAU_GRID
+    assert 0.5 in TAU_GRID
+
+
+def test_pos_weight_default_is_auto():
+    # the attempt-1 default (1.0) is exactly what collapsed — auto is the fix
+    import inspect
+    from train_p8_occupancy import build_args
+    src = inspect.getsource(build_args)
+    assert '"--pos-weight", default="auto"' in src
+    assert "--w-dice" in src

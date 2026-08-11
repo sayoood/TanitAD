@@ -378,12 +378,42 @@ def iou_at_05(logits: Tensor, target: Tensor) -> Tensor:
                        torch.full_like(union, float("nan")))
 
 
-def cell_recall(logits: Tensor, subset_target: Tensor) -> Tensor:
+#: mini-eval operating-point sweep (attempt-2 fix, 2026-08-11): attempt 1
+#: measured IoU only at sigmoid 0.5 on an all-empty-collapsed readout and got
+#: 0.0003 vs 0.0001 — a ratio of noise. The sweep finds the readout's actual
+#: operating point; tau* is chosen on the ENCODED arm, which makes the
+#: pred/enc >= 0.8 retention gate strictly HARDER, never easier.
+TAU_GRID = (0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8)
+
+
+def iou_at_tau(logits: Tensor, target: Tensor, tau: float) -> Tensor:
+    """Per-window IoU at sigmoid threshold ``tau``. ``[B, nx, ny]`` -> ``[B]``."""
+    pred = (torch.sigmoid(logits) > tau).float()
+    tgt = (target > 0.5).float()
+    inter = (pred * tgt).sum(dim=(-2, -1))
+    union = ((pred + tgt) > 0.5).float().sum(dim=(-2, -1))
+    return torch.where(union > 0, inter / union.clamp_min(1.0),
+                       torch.full_like(union, float("nan")))
+
+
+def soft_dice_loss(logits: Tensor, target: Tensor, eps: float = 1.0) -> Tensor:
+    """Mean soft-Dice loss — the imbalance-robust overlap objective (attempt-2
+    fix): an all-empty prediction scores ~1.0 here regardless of how rare the
+    positive class is, which is exactly the collapse BCE alone rewarded."""
+    p = torch.sigmoid(logits)
+    tgt = (target > 0.5).float()
+    inter = (p * tgt).sum(dim=(-2, -1))
+    denom = p.sum(dim=(-2, -1)) + tgt.sum(dim=(-2, -1))
+    return (1.0 - (2.0 * inter + eps) / (denom + eps)).mean()
+
+
+def cell_recall(logits: Tensor, subset_target: Tensor,
+                tau: float = 0.5) -> Tensor:
     """Fraction of subset-GT cells the decoded raster marks occupied ``[B]``;
     NaN where the subset is empty. (The visible/occluded split metric: recall
     against a SUBSET raster is well-defined where IoU is confounded — the
     decoder legitimately predicts the other subset's cells too.)"""
-    pred = (logits > 0.0).float()
+    pred = (torch.sigmoid(logits) > tau).float()
     tgt = (subset_target > 0.5).float()
     n = tgt.sum(dim=(-2, -1))
     hit = (pred * tgt).sum(dim=(-2, -1))
@@ -584,9 +614,11 @@ def mini_eval(world, head, ds_val, source, device, *, ks: tuple[int, ...],
         raise SystemExit("[p8] mini-eval selected 0 windows — check "
                          "--episodes/--stride against the val cache")
     ks_all = tuple(sorted(set(ks)))
-    acc = {k: {"enc": [], "pred": []} for k in ks_all}
-    acc0: list[float] = []
-    occ_acc = {k: {p: {s: [] for s in ("visible", "occluded")}
+    acc = {k: {p: {t: [] for t in TAU_GRID} for p in ("enc", "pred")}
+           for k in ks_all}
+    acc0: dict[float, list[float]] = {t: [] for t in TAU_GRID}
+    occ_acc = {k: {p: {s: {t: [] for t in TAU_GRID}
+                       for s in ("visible", "occluded")}
                    for p in ("enc", "pred")} for k in ks_all} \
         if source.has_occlusion_flags else None
     n_grid = 0
@@ -601,8 +633,10 @@ def mini_eval(world, head, ds_val, source, device, *, ks: tuple[int, ...],
         r0, keep0, miss0 = batch_rasters(ds_val, idx, source, 0, grid)
         no_label[0] += miss0
         if r0 is not None:
-            v = iou_at_05(head(z_t[keep0]), r0.to(device))
-            acc0.extend(v.cpu().tolist())
+            l0 = head(z_t[keep0])
+            r0d = r0.to(device)
+            for t in TAU_GRID:
+                acc0[t].extend(iou_at_tau(l0, r0d, t).cpu().tolist())
         for k in ks_all:
             rk, keep, miss = batch_rasters(ds_val, idx, source, k, grid)
             no_label[k] += miss
@@ -611,8 +645,9 @@ def mini_eval(world, head, ds_val, source, device, *, ks: tuple[int, ...],
             rk = rk.to(device)
             log_enc = head(z_enc[k][keep])
             log_pred = head(z_hat[k][keep])
-            acc[k]["enc"].extend(iou_at_05(log_enc, rk).cpu().tolist())
-            acc[k]["pred"].extend(iou_at_05(log_pred, rk).cpu().tolist())
+            for t in TAU_GRID:
+                acc[k]["enc"][t].extend(iou_at_tau(log_enc, rk, t).cpu().tolist())
+                acc[k]["pred"][t].extend(iou_at_tau(log_pred, rk, t).cpu().tolist())
             if occ_acc is not None:
                 for s in ("visible", "occluded"):
                     rs, ks_keep, _m = batch_rasters(ds_val, idx, source, k,
@@ -624,18 +659,30 @@ def mini_eval(world, head, ds_val, source, device, *, ks: tuple[int, ...],
                     rows = [ks_keep.index(keep[j]) for j in sub]
                     if not sub:
                         continue
-                    occ_acc[k]["enc"][s].extend(
-                        cell_recall(log_enc[sub], rs[rows]).cpu().tolist())
-                    occ_acc[k]["pred"][s].extend(
-                        cell_recall(log_pred[sub], rs[rows]).cpu().tolist())
+                    for t in TAU_GRID:
+                        occ_acc[k]["enc"][s][t].extend(cell_recall(
+                            log_enc[sub], rs[rows], tau=t).cpu().tolist())
+                        occ_acc[k]["pred"][s][t].extend(cell_recall(
+                            log_pred[sub], rs[rows], tau=t).cpu().tolist())
     head.train()
+    # tau* on the ENCODED arm, pooled over all ks (one operating point for the
+    # readout; choosing on enc makes the pred/enc retention gate harder).
+    pooled_enc = {t: [x for k in ks_all for x in acc[k]["enc"][t]]
+                  for t in TAU_GRID}
+    tau_means = {t: _mean_n(pooled_enc[t])[0] for t in TAU_GRID}
+    tau_star = max(TAU_GRID,
+                   key=lambda t: (-1.0 if tau_means[t] is None
+                                  else tau_means[t]))
     per_k = {}
     for k in ks_all:
-        me, ne = _mean_n(acc[k]["enc"])
-        mp, np_ = _mean_n(acc[k]["pred"])
+        me, ne = _mean_n(acc[k]["enc"][tau_star])
+        mp, np_ = _mean_n(acc[k]["pred"][tau_star])
+        me5, _ = _mean_n(acc[k]["enc"][0.5])
+        mp5, _ = _mean_n(acc[k]["pred"][0.5])
         per_k[k] = {"iou_enc": me, "n_enc": ne, "iou_pred": mp, "n_pred": np_,
+                    "iou_enc_at_05": me5, "iou_pred_at_05": mp5,
                     "n_no_label": no_label[k]}
-    m0, n0 = _mean_n(acc0)
+    m0, n0 = _mean_n(acc0[tau_star])
     if occ_acc is not None:
         split = {"available": True, "metric": "cell recall vs subset raster "
                  "(IoU vs a subset is confounded — the decoder legitimately "
@@ -644,7 +691,7 @@ def mini_eval(world, head, ds_val, source, device, *, ks: tuple[int, ...],
             row = {}
             for p in ("enc", "pred"):
                 for s in ("visible", "occluded"):
-                    mv, nv = _mean_n(occ_acc[k][p][s])
+                    mv, nv = _mean_n(occ_acc[k][p][s][tau_star])
                     row[f"recall_{s}_{p}"] = mv
                     row[f"n_{s}_{p}"] = nv
             split[str(k)] = row
@@ -655,6 +702,10 @@ def mini_eval(world, head, ds_val, source, device, *, ks: tuple[int, ...],
                            "the flags come from the pod-side P4 join, which was "
                            "not provided here"}
     return {"iou_k0_readout": m0, "n_k0": n0, "per_k": per_k,
+            "tau_star": tau_star,
+            "tau_rule": "argmax mean ENCODED-arm IoU pooled over ks (harder "
+                        "for the pred/enc retention gate, never easier)",
+            "tau_sweep_enc_pooled": {str(t): tau_means[t] for t in TAU_GRID},
             "visible_occluded_split": split,
             "grid_rule": {"episodes": episodes, "stride": stride,
                           "batch": batch, "n_grid_windows": n_grid},
@@ -699,9 +750,19 @@ def build_args(argv=None):
     ap.add_argument("--device", default="cuda")
     ap.add_argument("--no-amp", action="store_true")
     ap.add_argument("--eps-per-batch", type=int, default=4)
-    ap.add_argument("--pos-weight", type=float, default=1.0,
-                    help="BCE positive-class weight (occupancy is sparse; the "
-                         "VALUE is a stated knob, not a measured optimum)")
+    ap.add_argument("--pos-weight", default="auto",
+                    help="BCE positive-class weight: 'auto' (DEFAULT since the "
+                         "2026-08-11 attempt-2 fix: neg/pos ratio measured on "
+                         "a sample of training rasters, capped at 200 — "
+                         "attempt 1 ran at 1.0 and collapsed to all-empty) "
+                         "or an explicit float")
+    ap.add_argument("--w-dice", type=float, default=0.5,
+                    help="weight of the soft-Dice term added to BCE (0 "
+                         "disables; the imbalance-robust overlap objective — "
+                         "attempt-2 fix)")
+    ap.add_argument("--pos-weight-sample", type=int, default=256,
+                    help="labelled train windows sampled for the 'auto' "
+                         "pos-weight measurement")
     ap.add_argument("--ch0", type=int, default=4)
     ap.add_argument("--ch1", type=int, default=16)
     ap.add_argument("--ks", default="5,10,15,20",
@@ -813,13 +874,36 @@ def main(argv=None) -> int:
           f"else)", flush=True)
     opt = torch.optim.AdamW(head.parameters(), lr=a.lr, weight_decay=1e-4)
     sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=a.steps)
+    # ---- pos-weight: measured from the data unless overridden ---------------
+    if str(a.pos_weight).lower() == "auto":
+        smp = rng.sample(covered, k=min(a.pos_weight_sample, len(covered)))
+        n_pos = n_tot = 0
+        for j0 in range(0, len(smp), 64):
+            r, _keep, _m = batch_rasters(ds_train, smp[j0:j0 + 64], source, 0,
+                                         GRID_DEFAULT)
+            if r is None:
+                continue
+            n_pos += int((r > 0.5).sum())
+            n_tot += int(r.numel())
+        if n_pos == 0:
+            raise SystemExit("[p8] pos-weight auto: sampled rasters contain "
+                             "ZERO occupied cells — the join/grid is broken, "
+                             "refusing to train on empties")
+        pos_weight = min(200.0, (n_tot - n_pos) / n_pos)
+        print(f"[p8] pos-weight AUTO: occupied {n_pos}/{n_tot} cells "
+              f"({100.0 * n_pos / n_tot:.3f} %) over {len(smp)} sampled "
+              f"windows -> pos_weight {pos_weight:.1f} (cap 200)", flush=True)
+    else:
+        pos_weight = float(a.pos_weight)
+        print(f"[p8] pos-weight EXPLICIT: {pos_weight}", flush=True)
     bce = nn.BCEWithLogitsLoss(
-        pos_weight=torch.tensor(float(a.pos_weight), device=device))
+        pos_weight=torch.tensor(pos_weight, device=device))
 
     log_path = os.path.join(a.out, "train_log.jsonl")
     fh = open(log_path, "a")
     fh.write(json.dumps({
         "run": "p8-bev-occupancy-readout", "args": vars(a),
+        "pos_weight_effective": pos_weight, "w_dice": a.w_dice,
         "base_ckpt": a.ckpt, "base_step": base_step,
         "trunk_md5": md5_before, "n_trainable": n_par,
         "grid": {"x_fwd_m": GRID_DEFAULT.x_fwd_m,
@@ -850,6 +934,8 @@ def main(argv=None) -> int:
         tgt = tgt.to(device)
         logits = head(z_t[keep])
         loss = bce(logits, tgt)
+        if a.w_dice > 0.0:
+            loss = loss + a.w_dice * soft_dice_loss(logits, tgt)
         opt.zero_grad(set_to_none=True)
         loss.backward()
         gnorm = torch.nn.utils.clip_grad_norm_(head.parameters(), 5.0)
