@@ -755,6 +755,16 @@ def main(argv=None) -> int:
     # ---- raster source + coverage census (NO_LABEL is counted, never zeroed) -
     source = build_raster_source(a, train_eps)
     covered = covered_indices(ds_train, source, k=0)
+    # episode-disjoint guard: when --v2-cache IS the val corpus, the mini-eval
+    # grid (episodes < a.episodes in provider order) must never train the
+    # decoder. Harmless when the corpora differ (train-corpus episode indices
+    # also start at 0, but their labels come from a disjoint clip set).
+    if any(c in a.v2_cache for c in a.v2_val_cache):
+        n_before = len(covered)
+        covered = [i for i in covered if ds_train.index[i][0] >= a.episodes]
+        print(f"[p8] eval-grid exclusion: dropped {n_before - len(covered)} "
+              f"windows of episodes < {a.episodes} from TRAINING "
+              f"(episode-disjoint from the mini-eval grid)", flush=True)
     n_cov_eps = len({ds_train.index[i][0] for i in covered})
     print(f"[p8] raster source: {a.raster_source} ({source.n_records} records, "
           f"{source.n_clips} clips, occlusion_flags="
