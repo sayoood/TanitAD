@@ -161,7 +161,42 @@ structurally blocked until PH2** wires `g_str`.
 | **Distance-keeping / headway** | Needs a lead block on the T1 dense grid (`tools/build_lead_block.py`). This is the other half of LONGITUDINAL and, given tonight's finding, the highest-value missing instrument. |
 | **STRATEGIC family** | Blocked on the corpus; PH2 is the instrument. |
 | **HF release bundle** | ✅ **PUBLISHED** — `RELEASE_DONE`, 20 artifacts + media + the 18 pilot files, MANIFEST last. |
-| **W7-PROG** | Pre-registered (`PREREG_W7_PROG.md`) with all three outcomes bound. Not yet launched. |
+| **W7-PROG** | ✅ **Ran and returned a pre-registered PARTIAL** — see below. |
+
+### W7-PROG — the anti-degeneracy term is real, monotone, and far too small
+
+Pre-registered before the run (`PREREG_W7_PROG.md`), all three outcomes bound. Only `--w-prog`
+changed against the W7-FULL control. The primary endpoint was declared in advance to be the
+**argmin's error-rank**, not ADE, because the mechanism under test is a ranking claim.
+
+| arm | `--w-prog` | error-rank /256 | gate ADE | across-window Spearman |
+|---|---|---|---|---|
+| control (= W7-FULL) | 0.0 | **132.3** | 3.3348 | **+0.3185** |
+| `w7-prog-01` | 0.1 | **130.31** | 3.4360 | **−0.4244** |
+| `w7-prog-05` | 0.5 | **126.69** | 3.7398 | — |
+
+The rank falls **monotonically** with the weight, so my degenerate-minimiser account is supported
+in *direction* — and refuted in *magnitude*. The entire effect is **5.6 rank positions of 256, 2.2 %
+of the fan**; the argmin still sits essentially at the median, and gate ADE gets monotonically
+worse. **PARTIAL**, and its consequence was fixed in advance and is now in force: **the cost needs
+a goal-conditioned component, not a bigger anti-degeneracy weight, and W7-style self-consistency
+selection is retired as a headline route.**
+
+One finding beyond the pre-registration, recorded separately rather than folded into the verdict:
+enabling the term **flips the across-window calibration sign** (+0.3185 → −0.4244). A cost that is
+*negatively* calibrated across windows is worse than an uninformative one — independent evidence
+that this cost family is mis-specified for selection, not merely under-tuned.
+
+### One durable fix while chasing the lead block
+
+The distance-keeping instrument could not be built tonight, and the reason is worth stating: the
+obstacle and egomotion labels **are** staged on pod5, so the ingest half is unblocked — but the T1
+dumps carried only `['cl','g','ha','ol','ws']`, so the only way to say which clip `ep037.npz` holds
+was to re-derive the provider order and assume it matched. That is precisely the positional join
+`build_lead_block.py` warns *"silently puts another clip's traffic on every window"*. Rather than
+produce a headway number I could not defend, I made the dump carry `eid` and `clip_index`, so a
+downstream join can now **verify** identity instead of trusting sort order. Distance-keeping is a
+clean, unblocked work item for the next session.
 
 ---
 
