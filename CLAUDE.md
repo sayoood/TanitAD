@@ -158,6 +158,42 @@ Every subagent brief MUST carry the preamble in
   the log looks like a normal startup. Wait until the old supervisor **and** trainer are actually
   gone (poll `ps`), then start. If a lock is left behind with no holder (scan `/proc/*/fd`), it is
   debris — `rm` it. Same shape as the stale `.git/index.lock` rule below.
+- ⛔ **`uv pip install <anything>` CAN SILENTLY REPLACE TORCH WITH A WHEEL THE DRIVER CANNOT RUN.**
+  MEASURED TWICE on pod4 2026-08-11/12: `uv pip install -U accelerate` and then, 20 minutes later,
+  `uv pip install "compressed-tensors>=0.15.0"` each resolved **torch from the default PyPI index**
+  and landed **torch 2.13.0+cu130** on a **CUDA-12.8 driver (570.195.03)**. Result:
+  `torch.cuda.is_available()` **False**, and every GPU job on the pod dies. Neither command names
+  torch — it arrives through the dependency closure (`accelerate`, `compressed-tensors` both
+  require it). ⇒ **Install torch-dependent packages with `--no-deps`, and (re)install torch from
+  the pinned index LAST so nothing can drag it forward again**:
+  `uv pip install --python $PY --index-url https://download.pytorch.org/whl/cu128 "torch==2.8.0"
+  "torchvision==0.23.0"`. **Verify with a real `conv2d` on CUDA, not with `import torch`** —
+  cuBLAS/matmul can succeed while cuDNN/conv is broken.
+- ⚠️ **`CUDNN_STATUS_NOT_INITIALIZED` on a healthy pod usually means CUDA NEVER INITIALISED —
+  it is NOT evidence of a cuDNN version conflict.** MEASURED 2026-08-12: I read that error as
+  `nvidia-cudnn-cu13` shadowing `-cu12`, purged the cu13 wheels, and **removed the cuDNN torch
+  actually needed** (`ImportError: libcudnn.so.9`) — turning a one-command fix into three rounds.
+  The real cause was the cu130 torch above. ⇒ **Fix the torch/driver pair first and purge nothing;**
+  if a reinstall is needed use `--reinstall` from the pinned index, which restores the whole
+  `nvidia-*-cu12` set. *(Same class as the `df` / Thor `free` / cgroup `usage_in_bytes` traps: a
+  symptom read as its own root cause.)*
+- ⛔ **AN ANALYSIS-TIME IMPORT THAT FAILS AFTER THE ROLLOUT DESTROYS THE RUN'S OUTPUT WHILE THE
+  COMPUTE IS ALREADY PAID FOR.** MEASURED 2026-08-11: `t1_eval.py` rolled **both arms, all 40
+  episodes, 6 844 windows each (~11 min/arm)** and then died in `analyze()` on
+  `from taniteval import selgap` — pod5's package predates the module. `T1_EXIT=NO_ARMS_PRODUCED`
+  reads like a total failure; it was a **100 %-complete run with a missing last step**. Same class
+  as the `UnicycleStepReadout` failure earlier the same night. ⇒ **Check for `--analyze-only` (or
+  the dump dir) BEFORE re-running anything** — re-analysing the banked dumps recovered every number
+  with **zero GPU**. The durable fix is a **preflight import probe at startup**, so a missing
+  optional module fails in 2 seconds instead of after the expensive part.
+- ⚠️ **THE GOTTY PTY DROPS OUTPUT IN A SYSTEMATIC PATTERN, AND A PLAIN `base64` PULL GOES SILENTLY
+  CORRUPT.** MEASURED 2026-08-12 pulling a 24 KB JSON: **5 of every 14 lines dropped** (lines
+  11–15, 25–29, 39–43, 53–57 of 62) — the blob still looks like base64 and fails only at
+  `binascii` with a padding error, i.e. it can also decode to *garbage* rather than erroring.
+  Widening to `-w 200` made it worse, not better. ⇒ **Frame every line with its number
+  (`awk '{printf "@%04d@%s#\n", NR, $0}'`), emit the expected line count, then refetch exactly the
+  missing/short lines with `awk 'NR==n'` and reassemble.** Verify the reassembled bytes by md5 or
+  by parsing the JSON — never by eye.
 - **Verify before alarming.** Check the metric's definition and take multiple samples first;
   several "outages" were measurement artifacts.
 
