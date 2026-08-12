@@ -152,6 +152,9 @@ _TIER_NOTE = {
     "T1": "action-closed loop (imagination) — the PRIMARY offline tier",
 }
 _FAN_SUFFIXES = ("_fan_err", "_sel_idx", "_fan_scores")
+# Per-episode metadata written beside the arms. NOT arms: they carry no
+# trajectories, produce no numbers, and must not be asked for a tier stamp.
+_META_KEYS = ("eid", "clip_index")
 
 _ESTIMATOR_NOTE = (
     "point estimates are FULL-SET pooled means over windows; intervals are the "
@@ -324,7 +327,13 @@ def analyze(dump_files, *, tiers=None, gt_key="g", n_boot=2000, seed=0,
         keys = list(d0.files)
     if gt_key not in keys:
         raise ValueError(f"dump has no GT key {gt_key!r}; keys: {keys}")
-    arms = [k for k in keys if k not in (gt_key, "ws")
+    # ⛔ METADATA keys are not arms. `eid`/`clip_index` carry the episode's
+    # identity so a downstream join (the lead block) can VERIFY which clip a
+    # dump holds instead of trusting sort order — but resolve_tiers below
+    # demands a T0/T1 stamp for every arm, so leaving them in makes the whole
+    # analyze() fail with "arms ['clip_index','eid'] carry no tier stamp".
+    # The tier guard is correct and stays; the fix is to name the metadata.
+    arms = [k for k in keys if k not in (gt_key, "ws", *_META_KEYS)
             and not k.endswith(_FAN_SUFFIXES)]
     if not arms:
         raise ValueError(f"dump has no arm keys beside {gt_key!r}/'ws': {keys}")
@@ -1105,11 +1114,23 @@ def run_rollout_ext(a):
                 acc["g"].append(gt_ego_waypoints(pl, fp, list(range(1, k + 1)))
                                 .float().cpu().numpy())
                 lastl += [int(x) for x in last]
+        # ⛔ eid TRAVELS WITH THE DUMP. Without it the only way to say which clip
+        # ep037.npz holds is to re-derive the provider enumeration order and
+        # assume it matches — the exact positional join that
+        # tools/build_lead_block.py warns "silently puts another clip's traffic
+        # on every window". MEASURED 2026-08-12: the first T1 dumps carried only
+        # ['cl','g','ha','ol','ws'], which is why the lead block — and with it
+        # the distance-keeping half of LONGITUDINAL, where 88.7 % of the oracle
+        # gap lives — could not be attached to them safely. Two scalars fix that
+        # permanently: a downstream join can VERIFY identity instead of trusting
+        # sort order.
         np.savez_compressed(
             os.path.join(a.dump_dir, f"ep{fi:03d}.npz"),
             **{kk: np.concatenate(v).astype(np.float32)
                for kk, v in acc.items()},
-            ws=np.array(lastl))
+            ws=np.array(lastl),
+            eid=np.array([int(getattr(ep, "episode_id", fi))]),
+            clip_index=np.array([int(getattr(ep, "clip_index", fi))]))
         n_win += len(lastl)
         _p(f"  [{fi+1}/{len(loaders)}] {len(lastl)} windows  "
            f"{time.time()-t0:.0f}s")

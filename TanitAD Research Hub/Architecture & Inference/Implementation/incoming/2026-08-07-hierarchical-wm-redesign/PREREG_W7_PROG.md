@@ -80,3 +80,38 @@ The REFUTE row is not decoration. The degenerate-minimiser story is *my* reading
 curve, and this programme has had three root-cause readings falsified in one session before
 (CLAUDE.md, the `git commit` segfault). If both non-zero arms leave the error-rank at the median,
 the correct response is to say the mechanism is unknown — not to try `--w-prog 2.0`.
+
+---
+
+## 6. OUTCOME — recorded 2026-08-12 ~05:40Z
+
+**⭐ PARTIAL.** Both arms ran clean on pod4; the primary endpoint was read with
+`w7_selection_rules.py` off each arm's own `w7_eval_windows.pt`.
+
+| arm | `--w-prog` | **error-rank of argmin** /256 | gate `w7_selected_ade` | across-window Spearman |
+|---|---|---|---|---|
+| control (= W7-FULL) | 0.0 | **132.3** | 3.3348 | **+0.3185** |
+| `w7-prog-01` | 0.1 | **130.31** | 3.4360 | **−0.4244** |
+| `w7-prog-05` | 0.5 | **126.69** | 3.7398 | — |
+
+**Against §4:** CONFIRM required rank < 100 **and** an ADE improvement — neither arm met either
+half. REFUTE required rank ≥ 128 on **both** non-zero arms — `w7-prog-05` reads 126.69, so REFUTE
+does not fire. **PARTIAL stands**, and it is the honest reading rather than a convenient one: the
+rank falls **monotonically** with the weight, so the degenerate-minimiser account in §1 is
+supported in *direction* and refuted in *magnitude*. The entire effect is **5.6 rank positions of
+256 — 2.2 % of the fan** — and the argmin remains essentially at the median.
+
+**The binding consequence, fixed in advance in §4 and now in force:** the term is real but not
+sufficient; **the cost needs a goal-conditioned component, not a bigger anti-degeneracy weight, and
+W7-style self-consistency selection is retired as a headline route.** The next lever is the
+V-JEPA-2-AC / DINO-WM goal-cost contrast (paper §3.12).
+
+**One finding beyond the pre-registration.** Enabling the term **flips the across-window
+calibration sign**: Spearman(cost, realised error) goes **+0.3185 → −0.4244**. A cost that is
+*negatively* calibrated across windows is worse than an uninformative one, and it explains the ADE
+regression. That is independent evidence this cost family is not merely under-tuned — it is
+mis-specified for selection. Recorded here rather than folded into the verdict, because it was not
+a pre-registered endpoint.
+
+⚠️ EXPLORATORY stamp holds: these arms re-use the W7 scoring windows and none is quotable as a
+v5.8f number.

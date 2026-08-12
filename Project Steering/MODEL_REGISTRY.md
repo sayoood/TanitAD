@@ -1644,6 +1644,37 @@ PH0→PH1→PH2. Distance-keeping (the other half of LONGITUDINAL) also remains 
 pending a lead block on this dense grid (`tools/build_lead_block.py`) — a WORK ITEM, not a
 pass, and the half where 88.7 % of the T0 oracle gap was measured to live.
 
+**W7-PROG — MEASURED 2026-08-12 ~05:40Z [EXPLORATORY, 881 grid, pod4]: PRE-REGISTERED
+OUTCOME = PARTIAL. The anti-degeneracy term is REAL, MONOTONE, and FAR TOO SMALL.**
+Pre-registration `PREREG_W7_PROG.md` (written before the run, all three outcomes bound). Only
+`--w-prog` changes against the W7-FULL control, so the contrast is attributable. PRIMARY endpoint
+was declared to be the **argmin's mean ERROR-RANK over the 256-candidate fan**, not ADE, because
+the mechanism under test is a ranking claim.
+
+| arm | `--w-prog` | **error-rank of argmin** /256 | gate `w7_selected_ade` |
+|---|---|---|---|
+| control (= W7-FULL) | 0.0 | **132.3** | 3.3348 |
+| `w7-prog-01` | 0.1 | **130.31** | 3.4360 |
+| `w7-prog-05` | 0.5 | **126.69** | 3.7398 |
+
+The rank falls **monotonically** with the weight (132.3 → 130.31 → 126.69) — so the degenerate-
+minimiser account is **not** wrong: switching on the progress term does move the argmin toward
+better candidates, exactly as predicted. But the whole effect is **5.6 rank positions of 256
+(2.2 % of the fan)**, the argmin still sits essentially at the median, and the gate ADE gets
+**monotonically worse** (3.3348 → 3.4360 → 3.7398). ⇒ **PARTIAL**, by the pre-registered rule
+(`w7-prog-05` clears the <128 clause; neither arm approaches the <100 CONFIRM threshold and
+neither improves ADE). Per the pre-registration's own PARTIAL branch, the consequence is binding
+and was fixed in advance: **the cost needs a goal-conditioned component, not a larger
+anti-degeneracy weight, and W7-style self-consistency selection is retired as a headline route**
+(the V-JEPA-2-AC / DINO-WM goal-cost contrast in the paper is the next lever).
+
+⚠️ Also measured and worth its own line: with the progress term the across-window calibration
+**flips sign** — Spearman(cost, realised error) goes **+0.3185 (control) → −0.4244 (w-prog 0.1)**.
+A cost that is *negatively* calibrated across windows is worse than an uninformative one, which is
+the mechanism behind the ADE regression and independent evidence that this cost family is not
+merely under-tuned. ⚠️ EXPLORATORY stamp holds: this re-uses the W7 scoring windows, so no arm
+here is quotable as a v5.8f number. Artifacts: `w7-prog-{01,05}/w7_gate.json` + `rules.json` (pod4).
+
 Instrument change that made this possible: `t1_eval.py` now calls
 `all_families(win, tactical_from_traj=True, tier=t)`. At T1 nothing steers the rollout but the
 arm's own actions, so the driven path IS its manoeuvre decision; at T0 the same block is

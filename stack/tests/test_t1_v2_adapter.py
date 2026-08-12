@@ -484,14 +484,24 @@ def test_run_rollout_ext_writes_the_documented_dump_and_analyze_reads_it(
     files = sorted(str(f) for f in dump.glob("ep*.npz"))
     assert len(files) == 2
     with np.load(files[0]) as d:
-        assert set(d.files) == {"g", "cl", "ol", "ha", "ws"}
+        assert set(d.files) == {"g", "cl", "ol", "ha", "ws",
+                                "eid", "clip_index"}
         n = d["g"].shape[0]
         assert d["g"].shape == (n, K, 2) and d["g"].dtype == np.float32
         for arm in ("cl", "ol", "ha"):
             assert d[arm].shape == (n, K, 2)
         assert d["ws"].shape == (n,)
+        # ⛔ episode identity travels WITH the dump. The first T1 dumps carried
+        # only the five arrays above, so attaching a lead block (and with it the
+        # distance-keeping half of LONGITUDINAL) meant re-deriving the provider
+        # order and ASSUMING it matched — the positional join that
+        # build_lead_block.py warns puts another clip's traffic on every window.
+        assert d["eid"].shape == (1,) and d["clip_index"].shape == (1,)
+        assert int(d["clip_index"][0]) == 0, "ep000 must be clip_index 0"
         # T1 and T0 are different rolls, not the same numbers twice
         assert not np.allclose(d["cl"], d["ol"])
+    with np.load(files[1]) as d1:
+        assert int(d1["clip_index"][0]) == 1, "identity must differ per episode"
 
     res = t1.analyze(files, n_boot=25, dt=DT)
     assert res["arms"]["cl"]["tier"] == "T1"
