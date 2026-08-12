@@ -59,6 +59,17 @@ Every subagent brief MUST carry the preamble in
 
 ## Traps preflight (each of these has cost hours more than once)
 
+- ⛔ **A POLLING MONITOR WHOSE FILTER CONTAINS THE PATTERN IT SEARCHES FOR WILL MATCH ITS OWN
+  ECHOED COMMAND — and report a failure that never happened.** MEASURED THREE TIMES this session,
+  most recently 2026-08-12: a monitor grepping a pod log for `"Traceback|CUDA out of memory"` fired
+  `W7PROG: Traceback CUDA out of memory` while the run was **healthy and 3 minutes in** (8 930 MiB
+  GPU, progressing) — the interactive PTY **echoes the command line back**, so the literal pattern
+  text appears in the output stream and the client-side filter matches it. This is the same family
+  as the `pgrep -f` trap below, in a monitoring costume, and it is worse because it invents a
+  **false failure** rather than a false absence. ⇒ **Make the emitted token disjoint from the
+  searched token**: compute counts pod-side and emit an opaque marker
+  (`echo "ZZ${done}-${errs}-${arms}ZZ"`), then parse `ZZ…ZZ` client-side. Never grep the raw
+  stream for the same words your command contains.
 - **`pgrep -f <trainer>` / `pkill -f <trainer>` self-matches your own ssh command** and kills your
   session — returns empty output and looks like nothing happened. Kill by **explicit PID**.
 - **`PYTHONPATH=/workspace/TanitAD/stack` is REQUIRED** on pods or trainers die with
