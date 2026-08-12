@@ -264,8 +264,16 @@ def render_clip(rec: dict, frames: list, engine_a: dict | None,
         canvas.paste(pan, (cam.width + BEV_W, 0))
         panels.append(canvas)
 
+    # ⚠️ Pick the frame that actually CARRIES boxes, not the middle one. The
+    # middle frame is usually empty (groundings cluster on the frames where a
+    # sign is clearest), which makes the still look as though nothing was
+    # detected — a viewer that under-sells a working extraction is its own
+    # kind of misleading.
+    best = max(by_frame, key=lambda k: len(by_frame[k])) if by_frame \
+        else len(panels) // 2
+    best = min(best, len(panels) - 1)
     still = os.path.join(out_dir, f"{cid}_still.png")
-    panels[len(panels) // 2].save(still)
+    panels[best].save(still)
     outs = [still]
     try:
         import imageio.v2 as imageio
