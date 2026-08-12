@@ -91,8 +91,13 @@ S_B3 = {
     "properties": {
         "visible": {"type": "boolean"},
         "frame_idx": {"type": "integer", "minimum": 0, "maximum": 39},
+        # ⭐ NORMALIZED 0–1000, which is Qwen-VL's OWN trained convention.
+        # Asking for raw pixels fought that training and produced coordinates
+        # that looked wildly out of frame (952 on a 448 px frame) but were
+        # perfectly consistent in the model's native space. Work WITH it and
+        # convert to pixels in post.
         "bbox": {"type": "array", "minItems": 4, "maxItems": 4,
-                 "items": {"type": "integer", "minimum": 0, "maximum": 448}},
+                 "items": {"type": "integer", "minimum": 0, "maximum": 1000}},
     },
 }
 
@@ -143,8 +148,9 @@ If you see no legible signs, answer n_signs 0 and an empty list."""
 P_B3 = """Same driving video. Sign {idx} was reported as: kind={kind}, \
 text="{text}".
 
-Locate THAT sign. Give the frame index where it is clearest and its pixel \
-bounding box [x0,y0,x1,y1] in that frame. Frames are {px} px on the long side.
+Locate THAT sign. Give the frame index where it is clearest and its bounding \
+box [x0,y0,x1,y1] in NORMALIZED coordinates 0-1000, where 0 is the left/top \
+edge and 1000 is the right/bottom edge of the frame.
 If you cannot actually see it, answer visible false with bbox [0,0,0,0]."""
 
 P_B4 = """Same driving video. The frames AFTER the decision time are HINDSIGHT \
@@ -176,7 +182,21 @@ separately from the trajectory."""
 # in the schemas above is therefore DECORATIVE, and this layer is what actually
 # holds them. Nor does `maxItems` imply distinct: B4 emitted hold_corridor three
 # times. Anything the grammar cannot guarantee is checked here, by hand.
-def validate_v2(call: str, obj: dict, *, px: int = 448,
+BBOX_MAX = 1000          # normalized space; see S_B3
+
+
+def norm_to_px(bbox, w: int, h: int) -> list[int]:
+    """[0,1000] normalized -> pixels for THIS frame's own w/h.
+
+    ⚠️ x and y have DIFFERENT pixel ranges (frames here are 179x448), which is
+    the second half of the bug: validating both against a single 448 maximum
+    was wrong even in pixel space."""
+    x0, y0, x1, y1 = bbox
+    return [int(round(x0 / BBOX_MAX * w)), int(round(y0 / BBOX_MAX * h)),
+            int(round(x1 / BBOX_MAX * w)), int(round(y1 / BBOX_MAX * h))]
+
+
+def validate_v2(call: str, obj: dict, *, px: int = BBOX_MAX,
                 n_frames: int = 40) -> list[str]:
     """Return a list of violations; empty means valid. Pure — CPU-testable."""
     e: list[str] = []
@@ -215,7 +235,7 @@ def validate_v2(call: str, obj: dict, *, px: int = 448,
             e.append("B3.bbox not 4 ints")
         else:
             if any(not isinstance(v, int) or not 0 <= v <= px for v in bb):
-                e.append(f"B3.bbox {bb} outside 0..{px}")  # THE measured defect
+                e.append(f"B3.bbox {bb} outside 0..{px}")
             elif bb != [0, 0, 0, 0] and not (bb[0] < bb[2] and bb[1] < bb[3]):
                 e.append(f"B3.bbox {bb} not x0<x1 and y0<y1")
         fi = obj.get("frame_idx")
@@ -231,12 +251,12 @@ def validate_v2(call: str, obj: dict, *, px: int = 448,
         if not isinstance(acts, list):
             e.append("B4.actions not a list")
         else:
-            seen = set()
+            # ⚠️ Duplicates are NOT a violation. MEASURED: the model pads the
+            # array to maxItems, repeating the same verb — 6 of 8 clips. That
+            # is a formatting artifact carrying no wrong content, and failing
+            # the record for it DISCARDED a perfectly good goal_kind. They are
+            # deduped by dedupe_actions() and counted as a warning instead.
             for i, a in enumerate(acts):
-                key = (a.get("verb"), a.get("direction"))
-                if key in seen:                      # maxItems != distinct
-                    e.append(f"B4.actions[{i}] duplicate {key}")
-                seen.add(key)
                 if a.get("verb") not in ACTION_VERBS:
                     e.append(f"B4.actions[{i}].verb {a.get('verb')!r} "
                              f"off-vocabulary")
@@ -248,6 +268,24 @@ def validate_v2(call: str, obj: dict, *, px: int = 448,
                 and obj.get("goal_evidence_sign") is None:
             e.append("B4.goal_kind route_to without goal_evidence_sign")
     return e
+
+
+def dedupe_actions(sym: dict | None) -> tuple[dict | None, int]:
+    """Drop repeated (verb, direction) pairs, preserving order. Returns the
+    cleaned record and how many duplicates were removed."""
+    if not sym or not isinstance(sym.get("actions"), list):
+        return sym, 0
+    seen, keep = set(), []
+    for a in sym["actions"]:
+        k = (a.get("verb"), a.get("direction"))
+        if k in seen:
+            continue
+        seen.add(k)
+        keep.append(a)
+    n = len(sym["actions"]) - len(keep)
+    if n:
+        sym = dict(sym, actions=keep)
+    return sym, n
 
 
 def _fmt_engine_a(ea: dict | None) -> str:
@@ -392,6 +430,7 @@ class ConstrainedVLM:
 
 def run_clip(vlm, frames, n_past, engine_a, *, px=448, dump=None):
     n_last = len(frames) - 1
+    frame_h, frame_w = int(frames[0].shape[0]), int(frames[0].shape[1])
     calls, rec = [], {}
 
     def record(name, prompt, schema, max_new=256):
@@ -432,13 +471,19 @@ def run_clip(vlm, frames, n_past, engine_a, *, px=448, dump=None):
             idx=i, kind=s.get("kind"), text=s.get("text", ""), px=px), S_B3, 96)
         grounded.append(g)
     rec["grounding"] = grounded
+    # normalized -> pixels, recorded BESIDE the raw so both are auditable
+    rec["grounding_px"] = [norm_to_px(g["bbox"], frame_w, frame_h)
+                           if g and g.get("bbox") else None for g in grounded]
 
     sign_desc = json.dumps([{"i": i, "kind": s.get("kind"),
                              "text": s.get("text", "")}
                             for i, s in enumerate(
                                 (rec["signs"] or {}).get("signs", [])[:6])])
-    rec["symbols"] = record("B4_symbols", P_B4.format(
+    sym = record("B4_symbols", P_B4.format(
         engine_a=_fmt_engine_a(engine_a), signs=sign_desc), S_B4, 192)
+    sym, n_dup = dedupe_actions(sym)
+    rec["symbols"] = sym
+    rec["_n_action_dupes_dropped"] = n_dup
 
     rec["_calls"] = calls
     rec["_all_valid"] = all(c["valid"] for c in calls)
@@ -446,6 +491,7 @@ def run_clip(vlm, frames, n_past, engine_a, *, px=448, dump=None):
     rec["_n_violation_fail"] = sum(1 for c in calls
                                    if c["parsed_ok"] and c["violations"])
     rec["_n_retried"] = sum(1 for c in calls if c["retried"])
+    rec["_frame_wh"] = [frame_w, frame_h]
     return rec
 
 

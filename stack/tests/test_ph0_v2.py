@@ -1,12 +1,20 @@
 """CPU tests for PH0 v2 — the four-call solvable structure.
 
 ⛔ THE REASON THIS FILE EXISTS. MEASURED on pod4 2026-08-12: grammar-constrained
-decoding enforces STRUCTURE and TYPE but NOT numeric bounds. A schema declaring
-``{"type":"integer","maximum":448}`` still let Qwen3.5-9B emit
-``bbox:[952,100,975,160]`` on a 448 px frame. Every ``minimum``/``maximum`` in
-the v2 schemas is therefore DECORATIVE, and ``validate_v2`` is what actually
-holds them. Nor does ``maxItems`` imply distinct — B4 emitted ``hold_corridor``
-three times. These tests pin the checks the grammar cannot make.
+decoding enforces STRUCTURE and TYPE but NOT numeric bounds — a schema declaring
+``maximum`` is DECORATIVE, so ``validate_v2`` is what actually holds it.
+
+⚠️ AND THE VALIDATOR ITSELF WAS WRONG FIRST. I read ``bbox:[952,100,975,160]``
+as an out-of-frame hallucination against a 448 px maximum. It was neither:
+Qwen-VL emits NORMALIZED 0–1000 coordinates, its own trained convention, so the
+model was perfectly consistent. The check was wrong twice over — frames here are
+179x448, so y never reaches 448 either, and a single maximum for both axes could
+not have been right in any coordinate space. Likewise ``maxItems`` does not imply
+distinct, but a repeated verb is a PADDING ARTIFACT, not wrong content, and
+rejecting the record for it discarded a good ``goal_kind``.
+
+These tests pin both what the grammar cannot check AND the two places my own
+checks were the defect.
 """
 from __future__ import annotations
 
@@ -17,36 +25,67 @@ import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "scripts"))
 
-from ph0_v2 import (ACTION_VERBS, GOAL_KINDS, S_B1, S_B2, S_B3,  # noqa: E402
-                    S_B4, validate_v2)
+from ph0_v2 import (ACTION_VERBS, BBOX_MAX, GOAL_KINDS, S_B1,  # noqa: E402
+                    S_B2, S_B3, S_B4, dedupe_actions, norm_to_px,
+                    validate_v2)
 
 
 # --------------------------------------------------------------------------- #
 # the measured defects                                                         #
 # --------------------------------------------------------------------------- #
-def test_bbox_outside_frame_is_caught():
-    """THE measured case: [952,100,975,160] on a 448 px frame."""
+def test_bbox_beyond_the_normalized_range_is_caught():
     v = validate_v2("B3_ground_0",
                     {"visible": True, "frame_idx": 0,
-                     "bbox": [952, 100, 975, 160]}, px=448)
-    assert any("outside 0..448" in e for e in v)
+                     "bbox": [1200, 100, 1300, 160]})
+    assert any("outside 0..1000" in e for e in v)
 
 
-def test_bbox_within_frame_passes():
-    assert validate_v2("B3_ground_0",
-                       {"visible": True, "frame_idx": 0,
-                        "bbox": [352, 100, 375, 130]}, px=448) == []
+def test_the_measured_952_bbox_is_VALID_in_normalized_space():
+    """⭐ THE CORRECTION. [952,100,975,160] was flagged as out-of-frame against
+    a 448 px maximum — but Qwen-VL emits NORMALIZED 0–1000 coordinates, which
+    is its trained convention. The model was consistent; the validator was
+    wrong, and it was wrong twice over because frames are 179x448, so y never
+    reaches 448 either. Working WITH the convention is the fix."""
+    assert validate_v2("B3_ground_0", {"visible": True, "frame_idx": 0,
+                                       "bbox": [952, 100, 975, 160]}) == []
 
 
-def test_duplicate_actions_are_caught():
-    """maxItems 3 does NOT imply distinct — the model emitted hold_corridor
-    three times and the grammar was happy."""
-    v = validate_v2("B4_symbols", {
+def test_norm_to_px_uses_separate_x_and_y_ranges():
+    """x and y have DIFFERENT pixel extents (179x448) — a single maximum for
+    both was the second half of the bug."""
+    assert norm_to_px([0, 0, 1000, 1000], 448, 179) == [0, 0, 448, 179]
+    assert norm_to_px([500, 500, 1000, 1000], 448, 179) == [224, 90, 448, 179]
+
+
+def test_bbox_max_is_the_normalized_range():
+    assert BBOX_MAX == 1000
+
+
+def test_duplicate_actions_are_NOT_a_violation():
+    """MEASURED: the model pads the array to maxItems, repeating a verb — 6 of
+    8 clips. That carries no wrong content, and failing the record for it
+    DISCARDED a perfectly good goal_kind. Deduped, not rejected."""
+    assert validate_v2("B4_symbols", {
         "goal_kind": "follow_main_road", "goal_evidence_sign": None,
         "conf": "high",
         "actions": [{"verb": "hold_corridor", "direction": "none"},
-                    {"verb": "hold_corridor", "direction": "none"}]})
-    assert any("duplicate" in e for e in v)
+                    {"verb": "hold_corridor", "direction": "none"}]}) == []
+
+
+def test_dedupe_actions_drops_repeats_and_counts_them():
+    sym, n = dedupe_actions({"actions": [
+        {"verb": "hold_corridor", "direction": "none"},
+        {"verb": "hold_corridor", "direction": "none"},
+        {"verb": "prepare_lane_change", "direction": "right"}]})
+    assert n == 1
+    assert [a["verb"] for a in sym["actions"]] == ["hold_corridor",
+                                                  "prepare_lane_change"]
+
+
+def test_dedupe_preserves_order_and_handles_none():
+    assert dedupe_actions(None) == (None, 0)
+    sym, n = dedupe_actions({"actions": []})
+    assert n == 0
 
 
 def test_distinct_actions_pass():
@@ -110,13 +149,13 @@ def test_overlong_ocr_text_is_caught():
 # --------------------------------------------------------------------------- #
 def test_frame_idx_out_of_range_is_caught():
     v = validate_v2("B3_ground_0", {"visible": True, "frame_idx": 99,
-                                    "bbox": [1, 1, 2, 2]}, n_frames=40)
+                                    "bbox": [10, 10, 20, 20]}, n_frames=40)
     assert any("frame_idx" in e for e in v)
 
 
 def test_inverted_bbox_is_caught():
     v = validate_v2("B3_ground_0", {"visible": True, "frame_idx": 0,
-                                    "bbox": [300, 200, 100, 50]})
+                                    "bbox": [600, 400, 200, 100]})
     assert any("x0<x1" in e for e in v)
 
 

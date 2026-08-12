@@ -227,9 +227,20 @@ def render_clip(rec: dict, frames: list, engine_a: dict | None,
     # group grounded boxes by the frame they were reported in
     by_frame: dict[int, list] = {}
     signs = (rec.get("signs") or {}).get("signs") or []
+    # ⛔ B3 returns NORMALIZED 0–1000 (Qwen-VL's convention). Drawing those as
+    # pixels puts every box off-frame — which is exactly how the coordinate-space
+    # bug looked before it was understood. Prefer the converted grounding_px,
+    # and convert here if an older artifact lacks it.
+    px_boxes = rec.get("grounding_px")
+    fw, fh = (rec.get("_frame_wh") or [frames[0].shape[1], frames[0].shape[0]])
     for i, g in enumerate(rec.get("grounding") or []):
         if not g or not g.get("visible"):
             continue
+        if px_boxes and i < len(px_boxes) and px_boxes[i]:
+            g = dict(g, bbox=px_boxes[i])
+        elif g.get("bbox"):
+            from ph0_v2 import norm_to_px
+            g = dict(g, bbox=norm_to_px(g["bbox"], fw, fh))
         s = signs[i] if i < len(signs) else {}
         bad = [v for c in rec.get("_calls", [])
                if c["call"] == f"B3_ground_{i}" for v in (c.get("violations") or [])]
