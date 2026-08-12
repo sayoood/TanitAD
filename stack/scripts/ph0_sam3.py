@@ -31,17 +31,46 @@ MASK_COLOURS = [(42, 120, 214), (235, 104, 52), (74, 58, 167),
                 (26, 148, 106), (196, 62, 140), (176, 132, 20)]
 
 
-def build_predictor(device: str = "cuda"):
+def find_bpe() -> str | None:
+    """SAM3's text encoder needs the CLIP BPE vocab, and the sam3 wheel does NOT
+    ship it — it defaults to `site-packages/assets/bpe_simple_vocab_16e6.txt.gz`
+    which does not exist, so the builder dies with a FileNotFound three frames
+    deep. ⚠️ It is NOT in the `facebook/sam3` HF repo either: that repo carries
+    HF-format tokenizer files (vocab.json + merges.txt), not the CLIP .gz.
+    `open_clip` ships the canonical file, so we locate it there."""
+    import glob
+    for pat in ("/workspace/a2venv/lib/python3.12/site-packages/open_clip/"
+                "bpe_simple_vocab_16e6.txt.gz",
+                "**/open_clip/bpe_simple_vocab_16e6.txt.gz",
+                "**/bpe_simple_vocab_16e6.txt.gz"):
+        if os.path.exists(pat):
+            return pat
+        hits = glob.glob(pat, recursive=True)
+        if hits:
+            return hits[0]
+    for root in ("/workspace/a2venv", "/usr/lib/python3", "/root"):
+        for dp, _dn, fn in os.walk(root):
+            if "bpe_simple_vocab_16e6.txt.gz" in fn:
+                return os.path.join(dp, "bpe_simple_vocab_16e6.txt.gz")
+    return None
+
+
+def build_predictor(device: str = "cuda", bpe_path: str | None = None):
     """Returns (predictor, meta) or raises with a useful message."""
     import sam3
     from sam3.model_builder import SAM3InteractiveImagePredictor
+    bpe = bpe_path or find_bpe()
+    if bpe is None:
+        raise SystemExit("[sam3] CLIP BPE vocab not found — install "
+                         "open_clip_torch (--no-deps) or pass --bpe-path")
     model = sam3.build_sam3_image_model(device=device, eval_mode=True,
-                                        load_from_HF=True,
+                                        load_from_HF=True, bpe_path=bpe,
                                         enable_segmentation=True)
     return SAM3InteractiveImagePredictor(model), {
         "builder": "sam3.build_sam3_image_model",
         "predictor": "SAM3InteractiveImagePredictor",
-        "weights": "facebook/sam3 (load_from_HF=True)"}
+        "weights": "facebook/sam3 (load_from_HF=True)",
+        "bpe_path": bpe}
 
 
 def segment_boxes(predictor, image, boxes_px: list[list[int]]) -> list[dict]:
@@ -135,6 +164,8 @@ def main(argv=None) -> int:
     ap.add_argument("--out", required=True)
     ap.add_argument("--n", type=int, default=4)
     ap.add_argument("--device", default="cuda")
+    ap.add_argument("--bpe-path", default=None,
+                    help="CLIP BPE vocab .gz; auto-located from open_clip")
     a = ap.parse_args(argv)
 
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -146,7 +177,7 @@ def main(argv=None) -> int:
     os.makedirs(a.out, exist_ok=True)
     d = json.load(open(a.v2_json))
     t0 = time.time()
-    predictor, meta = build_predictor(a.device)
+    predictor, meta = build_predictor(a.device, a.bpe_path)
     print(f"[sam3] predictor up in {time.time()-t0:.0f}s · {meta['weights']}",
           flush=True)
 
