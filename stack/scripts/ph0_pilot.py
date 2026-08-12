@@ -814,6 +814,29 @@ def apply_verdicts(rec: dict, verdicts: list[dict]) -> dict:
     return rec
 
 
+class NullVLM:
+    """Engine B DISABLED — the other three engines still run.
+
+    Exists because engine B's availability is an entirely separate question from
+    whether engines A (ego geometry), C (SAM) and D (Alpamayo) and the fusion
+    gate work, and on 2026-08-12 the VLM arms blocked the whole pilot for reasons
+    that had nothing to do with the pipeline: `Qwen3.5-9B` is TEXT-only and
+    rejected the video kwargs, `Qwen3.5-27B-FP8` needs 43.23 GiB of a 44.43 GiB
+    card, and `gemma-4-31B-it-qat-w4a16-ct` loaded UNQUANTISED (38.83 GiB, then
+    `KeyError: 'weight_packed'`) under transformers 5.15 + compressed-tensors
+    0.18. Running the pilot without engine B isolates that failure instead of
+    letting it masquerade as a pipeline failure.
+
+    ⚠️ A record produced this way has `engine_b_disabled: true` in its provenance
+    and EMPTY scenario/domain/signs/strategic blocks. It is a pipeline validation
+    artifact and must NEVER be read as a vocabulary-extraction result."""
+
+    model_id = "none (--no-vlm)"
+
+    def chat_json(self, frames, prompt):                    # noqa: ARG002
+        return {}, False
+
+
 class VLMEngine:
     """Engine B wrapper: AutoProcessor/AutoModelForCausalLM with video chat
     template. Instantiated pod-side only (lazy heavy imports)."""
@@ -1016,6 +1039,11 @@ def main(argv=None) -> int:
                          "{clip_id, video} objects (ph0_clips.json works)")
     ap.add_argument("--records", default=None,
                     help="Alpamayo augmentation records.parquet (Engine D)")
+    ap.add_argument("--no-vlm", action="store_true",
+                    help="DISABLE engine B and run engines A/C/D + fusion only. "
+                         "Records get engine_b_disabled:true and empty "
+                         "scenario/domain/signs/strategic blocks — a pipeline "
+                         "validation artifact, NEVER a vocabulary result.")
     ap.add_argument("--arm", default="Qwen/Qwen3.5-9B",
                     help="VLM model id (PH0 arm)")
     ap.add_argument("--sam", default=None,
@@ -1047,10 +1075,12 @@ def main(argv=None) -> int:
         records_df = pd.read_parquet(args.records)
 
     import torch
-    vlm = VLMEngine(args.arm, max_new_tokens=args.max_new_tokens)
-    arm_tag = args.arm.replace("/", "_")
+    vlm = NullVLM() if args.no_vlm \
+        else VLMEngine(args.arm, max_new_tokens=args.max_new_tokens)
+    arm_tag = ("no-vlm" if args.no_vlm else args.arm).replace("/", "_")
 
-    summary: dict = {"arm": args.arm, "prompt_hash": prompt_hash(),
+    summary: dict = {"arm": vlm.model_id, "engine_b_disabled": bool(args.no_vlm),
+                     "prompt_hash": prompt_hash(),
                      "schema_version": SCHEMA_VERSION, "clips": []}
     walls = []
     for entry in clip_spec:

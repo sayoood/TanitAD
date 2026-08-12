@@ -526,3 +526,37 @@ class TestLazyImports:
         assert pp._resolve_clip({"clip_id": "c9", "video": "/v/c9.mp4"},
                                 None) == ("c9", "/v/c9.mp4")
         assert pp._resolve_clip("abc", None) == ("abc", None)
+
+
+# --------------------------------------------------------------------------- #
+# --no-vlm: engine B disabled, the other three engines still run               #
+# --------------------------------------------------------------------------- #
+def test_null_vlm_returns_empty_extraction_and_is_labelled():
+    """The failure this guards: on 2026-08-12 every VLM arm was unusable for a
+    reason unrelated to the pipeline (text-only model, OOM, broken w4a16), and
+    the whole pilot reported 0/8 ok — indistinguishable from a pipeline bug."""
+    import ph0_pilot as P
+    v = P.NullVLM()
+    obj, valid = v.chat_json([], "anything")
+    assert obj == {} and valid is False
+    assert "no-vlm" in v.model_id, "provenance must say engine B was disabled"
+
+
+def test_null_vlm_record_cannot_be_mistaken_for_an_extraction():
+    """An empty record must carry NO scenario/sign content — a --no-vlm artifact
+    is pipeline validation, never a vocabulary-extraction result."""
+    import ph0_pilot as P
+    obj, _ = P.NullVLM().chat_json([], "p")
+    for k in ("scenario", "domain", "signs", "strategic"):
+        assert not (obj.get(k) or {}), f"{k} must be empty under --no-vlm"
+
+
+def test_no_vlm_flag_exists_and_defaults_off():
+    import ph0_pilot as P
+    ap = P.build_parser() if hasattr(P, "build_parser") else None
+    if ap is None:
+        import inspect
+        src = inspect.getsource(P.main)
+        assert '"--no-vlm"' in src and "action=\"store_true\"" in src
+    else:
+        assert ap.parse_args(["--clips", "c", "--out", "o"]).no_vlm is False
