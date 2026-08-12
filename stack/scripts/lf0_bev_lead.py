@@ -137,7 +137,8 @@ def main(argv=None) -> int:
 
     from tanitad.data.bev_raster import GRID_DEFAULT
     from train_p8_occupancy import (BEVOccupancyHead, batch_rasters,
-                                    build_args, p8_latents)
+                                    build_args, build_raster_source,
+                                    p8_latents)
 
     nx, ny = GRID_DEFAULT.shape
     cols = {w: corridor_cols(ny, GRID_DEFAULT.y_half_m, GRID_DEFAULT.cell_m, w)
@@ -165,34 +166,62 @@ def main(argv=None) -> int:
     from train_flagship4b import FlagshipWindowDataset
     from train_flagship_v4 import _to_device
 
-    cfg = _eval_cfg(args)
-    frame = resolve_eval_frames(args)
-    world, _plan_m, base_step = load_v1_from_ck(args, frame)
-    world.eval().to(device)
-    providers, _prov = build_v2_val_episodes(args, cache_frame=frame,
-                                             train_frame=frame)
-    ds_val = FlagshipWindowDataset(providers, cfg, _plan(args))
+    # ⛔ This block is COPIED from scripts/p8_bev_reel.py, not re-derived. Three
+    # of these calls have signatures that accept a wrong argument silently-ish:
+    # `_eval_cfg(frame=None)` takes a FRAME, and passing the args namespace dies
+    # three files away in geometry.apply_frame with
+    # "'Namespace' object has no attribute 'height'". Re-deriving this wiring
+    # cost two failed launches; the reel is the working reference and LF0 must
+    # decode exactly the way the reel does or it is not reading the same rasters.
+    cfg = _eval_cfg()
+    cache_frame, model_frame = resolve_eval_frames(args, cfg, label="lf0_bev_lead")
+    plan = _plan(cfg)
+    ck = torch.load(a.ckpt, map_location="cpu", weights_only=False)
+    world, _g, base_step = load_v1_from_ck(ck, device, frame=model_frame)
+    del ck
+    world.eval()
+    val_eps, _prov = build_v2_val_episodes(args, cache_frame=cache_frame,
+                                           train_frame=model_frame)
+    ds_val = FlagshipWindowDataset(val_eps, window=cfg.predictor.window,
+                                   max_horizon=plan.max_horizon,
+                                   maneuver_h=plan.maneuver_h,
+                                   channels=cfg.encoder.in_channels)
 
-    head = BEVOccupancyHead(world.state_dim, grid=GRID_DEFAULT).to(device)
-    sd = torch.load(os.path.join(a.p8_run, "p8_head.pt"), map_location="cpu")
-    head.load_state_dict(sd["model"] if "model" in sd else sd)
+    head = BEVOccupancyHead(world.state_dim, grid=GRID_DEFAULT,
+                            enforce_band=True).to(device)
+    hp = os.path.join(a.p8_run, "p8_head.pt")
+    if not os.path.exists(hp):
+        cands = [f for f in os.listdir(a.p8_run) if f.endswith(".pt")]
+        if not cands:
+            raise SystemExit(f"[lf0] no head checkpoint in {a.p8_run}")
+        hp = os.path.join(a.p8_run, sorted(cands)[-1])
+    sd = torch.load(hp, map_location=device, weights_only=False)
+    head.load_state_dict(sd["head"] if isinstance(sd, dict) and "head" in sd
+                         else (sd["model"] if isinstance(sd, dict)
+                               and "model" in sd else sd))
     head.eval()
+    print(f"[lf0] head {os.path.basename(hp)} · world step {base_step}",
+          flush=True)
 
     n = min(a.n_windows, len(ds_val))
     reads = {f"{src}@{w}": np.full(n, np.nan)
              for src in ("gt", "enc", "pred") for w in CORRIDOR_M}
     truth = np.full(n, np.nan)
 
+    source = build_raster_source(args, val_eps)
+
     with torch.no_grad():
         for i in range(n):
             b = _to_device(default_collate([ds_val[i]]), device)
             # GT raster at the SAME k the latents are rolled to
-            rk, keep, _ = batch_rasters(ds_val, [i], "gt", a.k, GRID_DEFAULT)
+            rk, keep, _m = batch_rasters(ds_val, [i], source, a.k, GRID_DEFAULT)
+            if rk is None:
+                continue                       # NO_LABEL — never free flow
             _zt, z_enc, z_hat = p8_latents(world, b, (a.k,), amp_on=amp_on,
-                                           device=device)
+                                           want_pred=True, want_enc_k=True)
             pe = torch.sigmoid(head(z_enc[a.k])).float().cpu().numpy()[0]
             pp = torch.sigmoid(head(z_hat[a.k])).float().cpu().numpy()[0]
-            g = np.asarray(rk)[0] if keep is None or keep[0] else None
+            g = np.asarray(rk)[0] if (keep is None or bool(keep[0])) else None
             for w, cc in cols.items():
                 kw = dict(tau=a.tau, cols=cc, cell_m=GRID_DEFAULT.cell_m,
                           min_row=a.min_row)
