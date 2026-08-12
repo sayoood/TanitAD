@@ -1678,6 +1678,31 @@ RETENTION RATIO, not the absolute occupancy quality". LF0 is what that caveat me
 the decode preserves enough *relative* structure to score retention 0.932, and is far too diffuse
 to support the statement *"there is a vehicle at 18 m in my lane"*. Both results stand together.
 
+**⭐ REFINEMENT (2026-08-12, from the rendered panels — `Paper/figures/lf0_bev_panels.svg`):
+"the decode shows an empty lane" UNDERSTATES it. The decode is NOT blank.** In the three
+inspected windows it puts **40 / 43 / 45** (encoded) and **68 / 43 / 35** (predicted) cells
+above τ — *comparable to the ground truth's 33 / 31 / 31* — but essentially none inside the
+ego band. The failure is **confident MISLOCATION, not absence of output**, which is exactly
+what IoU ≈ 0.02 beside a retention ratio of 0.932 means: the relative structure survives
+prediction, the absolute placement does not.
+
+**⚠️ A "small lateral offset" hypothesis was raised from eyeballing those panels (the decoded
+mass sits just outside the band) and TESTED — it is NOT SUPPORTED.** Corridor-width sweep on
+the same run:
+
+| width | `enc` censored | `enc` n | `enc` R² | `enc` MAE | `pred` censored | `pred` n |
+|---|---|---|---|---|---|---|
+| ±1.0 m | 82.17 % | 23 | −21.31 | 27.93 | 92.25 % | 10 |
+| ±1.5 m | 81.40 % | 24 | −21.00 | 26.85 | 92.25 % | 10 |
+| ±2.0 m | **68.22 %** | 41 | **−28.66** | **30.71** | 92.25 % | 10 |
+
+Widening to ±2.0 m recovers 14 points of encoded censoring but makes **R² and MAE WORSE**, so
+the extra detections are **other traffic at wrong distances**, not a laterally-displaced lead —
+a genuine offset would have recovered the lead at the *right* range and improved the fit. The
+predicted arm is **completely flat across all three widths** (identical censoring, n, R² and
+MAE), i.e. widening the band adds nothing whatsoever. ⇒ the failure is not a calibration or
+band-geometry artefact.
+
 **⇒ Consequences, and they are load-bearing.** (1) **The survey's RC1 is REFUTED**: exposing an
 existing read-off does not close the lead gap, so there is **no zero-training fix** and the
 longitudinal lever must be training-side. (2) This is the **second independent test**, with a

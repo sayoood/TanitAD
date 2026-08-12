@@ -80,7 +80,10 @@ unavailable).
   family is reported factored.
 - **TACTICAL goal-setting — direction right, distance wrong.** Goal bearing MAE 4.8098° vs
   goal range ratio **1.7584**, long-bias +18.5801 m vs lat-bias −1.2061 m. ⇒ **the model
-  knows WHERE to go and not HOW FAR.**
+  predicts the correct DIRECTION of travel and badly overestimates the DISTANCE.**
+  ⚠️ Earlier phrasing ("knows where to go") was too loose and implied road understanding.
+  This is bearing accuracy toward the *human's future position* — the model has **no
+  representation of road or lane structure available to it at all** (§7b).
 - **STRATEGIC — `n/a` with reason and n = 6 844** (no map, lane graph, or route signal in
   PhysicalAI-AV), per clause 5.
 
@@ -202,7 +205,7 @@ ahead of v6, and it is now blocked on one decision (D7).
 |---|---|---|---|
 | **D1** | S-W A40-hours before the first gate | **Authorise ≤12 A40-h to a step-500 re-cost**, four branches pre-registered now (<21 h proceed+re-cost · 21–35 proceed · 35–50 apply `--o5-k 10` first · **>50 STOP, that's a defect not a cost**) | ⛔ v6 launch |
 | **D2** | which pod runs S-W | **Provision a dedicated A40.** Both current pods are free but have tracks; ship files md5-verified, never git | ⛔ v6 launch |
-| **D7** | VLM checkpoint — all three arms unusable (text-only / 27B OOM at 43 GiB / gemma-4 broken 4-bit) | **Pick a 7–12 B vision-language checkpoint.** Pipeline is proven **8/8 with engine B disabled**, so this is a model choice, not a code fix | ⛔ PH1 → STRATEGIC |
+| **D7** | ⚠️ **CORRECTED 2026-08-12 — see §7a. Probably NOT a decision.** Only the 27B OOM claim was true; the 9B and gemma-4 both fail on the same **`swscaler` video-decode error**, which is environmental | **Do not pick a model yet.** Fix the decode error first; the 9B we already have may be fine. Re-run the smoke, then decide | ⛔ PH1 → STRATEGIC |
 | **D3** | W5/E-H1 6 s baseline before or parallel to v6 | **PARALLEL** — the precursor binds the *claim*, not the *launch* | no |
 | **D4** | 6 s window loss vs cache rebuild | **Accept** — smaller than feared, S-W unaffected; deferrable to S-T | no |
 | **D5** | E-ENC shared (87.89 M) vs per-layer (120.74 M) | **Shared for the first S-W**; matched pair as a short arm, not a second 175–290 h run | no |
@@ -253,6 +256,49 @@ the dump carry `eid`/`clip_index` instead. A missing metric is a work item; a fa
 is worse.
 
 ---
+
+## 7a. ⚠️ Correction — the VLM arms (raised by the PI, 2026-08-12)
+
+I wrote "all three arms unusable (text-only / OOM / broken 4-bit)". **Only the OOM was true.**
+Re-read from `ph0_smoke.json` rather than from my own summary:
+
+| arm | ACTUAL current error |
+|---|---|
+| `Qwen3.5-9B` | `BlockingIOError: [Errno 11]` — **`[swscaler] Failed initializing scaling graph`** |
+| `Qwen3.5-27B-FP8` | `OutOfMemoryError` — 43.23 GiB on a 44.43 GiB card ✅ genuinely too big |
+| `gemma-4-31B-it-qat-w4a16-ct` | **the same swscaler error** |
+
+"Text-only" for the 9B was simply wrong — it is a **video-decode resource failure**, not a model
+capability limit. "Broken 4-bit" for gemma was **STALE**: that was the `compressed-tensors`
+ImportError, which I fixed hours earlier with a `--no-deps` install. And a
+"Resource temporarily unavailable" on a scaling-context allocation is thread/FD exhaustion —
+**environmental**, the same family as the torch-113-threads trap. The videos themselves are
+well-formed (1 MB mp4s from the bridge).
+
+**Root cause of the error: I carried a stale characterisation from an earlier smoke run into a
+PI decision request** instead of re-probing. That is the "absence found at ONE location is not
+absence" rule, broken inside the document that exists to escalate decisions.
+
+## 7b. ⚠️ Correction — the BEV contains no road structure (raised by the PI, 2026-08-12)
+
+Asked whether the extracted BEV includes road / corridor / lane boundaries. **It does not.**
+From source (`bev_raster.py:79-82`), the raster is built from `obstacle.offline`, whose full
+measured enum is **10 classes, ALL DYNAMIC AGENTS**: automobile · heavy_truck · bus ·
+other_vehicle · trailer · person · rider · stroller · animal · protruding_object. No lane
+boundary, no road edge, no drivable area, no junction — consistent with the settled fact that
+PhysicalAI-AV ships no map data.
+
+Two of my own phrasings were therefore misleading and are corrected:
+1. **The "ego corridor" in LF0 is not perceived.** It is a hand-defined ±1.5 m band (grid
+   columns 29–34) — my assumption about where the ego lane is. Now drawn dashed and labelled
+   "ASSUMED" in the figure, and stamped in the artifact's `_no_map` field.
+2. **"Knows where to go"** is bearing accuracy toward the human's future position, not road
+   understanding (§2.2).
+
+⇒ This *sharpens* the longitudinal story: the model has **no road-structure representation at
+all**, and the one dynamic-agent channel it does have does not survive the decode well enough
+to locate the lead vehicle. **Two independent gaps that I had been treating as one.**
+Figure: `Paper/figures/lf0_bev_panels.svg` (+ generator, reads the artifact at render time).
 
 ## 8. Bottom line
 
