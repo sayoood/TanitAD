@@ -1591,6 +1591,66 @@ night. Artifacts: `t1_v58f_summary.json` (banked in
 `…/incoming/2026-08-07-hierarchical-wm-redesign/`), per-arm `t1_v5f_30k.json` /
 `t1_stage_a_repaired.json` and the 80 episode dumps (pod5:`/workspace/experiments/t1-v58f/`).
 
+**⭐ T1 FOUR-FAMILY RESCORE — MEASURED 2026-08-12 ~00:55Z [6 arms, 15 paired contrasts,
+`FF_EXIT=0`, same 6 844-window grid; `taniteval/tools/ff_rescore.py`]. THE MECHANISM BEHIND
+THE DIVERGENCE, AND IT IS DIRECTIONAL, NOT NOISE.** The binding rule is now satisfied on
+these rows (`rule_satisfied: true`, `_families_unavailable: ['strategic']` only).
+
+**LONGITUDINAL — the closed loop ACCELERATES AWAY.** `stage-a-repaired · cl`: speed MAE
+**9.7291** m/s with **speed BIAS +9.3892** — the bias is ~96 % of the error, so this is a
+systematic over-speed, not scatter. Along-track MAE 9.2655 with **bias +9.0407** and final
+bias **+18.5801 m**; accel MAE **19.0948 m/s²** (>1.9 g — physically impossible, i.e. a true
+blow-up); **ego progress ratio 1.7279** (median 1.0994), so the arm drives **1.73× the
+distance the human did**. Target-speed accuracy: **0.3398 / 0.5069 / 0.6564** within
+0.5 / 1.0 / 2.0 m/s. ⇒ **the v6 longitudinal work item is a runaway-acceleration failure with
+a known sign** — far more actionable than "ADE 9.37".
+
+**LATERAL — healthy, and NOT the problem.** heading MAE **3.8776°**, yaw-rate MAE
+**4.9188 °/s**, curvature MAE **0.0186 1/m** (bias −0.0024), cross-track MAE **0.7446 m**
+(final 2.1565). n_steps 128 988 heading / 122 151 curvature, 7 892 steps excluded below
+`min_ds` 0.05 m. All four LATERAL members the rule names are present — heading, curvature,
+yaw-rate and cross-track — and none of them is where the failure lives.
+
+**TACTICAL — the factored view shows longitudinal decision-making is AT CHANCE.**
+
+| decision axis | accuracy | Cohen's κ |
+|---|---|---|
+| lateral (`stage-a-repaired · cl`) | 0.7515 | **0.3795** |
+| **longitudinal** (`stage-a-repaired · cl`) | 0.3327 | ⛔ **0.0405** |
+| collapsed 5-way | 0.3036 | 0.1404 |
+| lateral — **hold-action control** | 0.8675 | 0.6427 |
+| longitudinal — **hold-action control** | 0.5586 | 0.2072 |
+
+κ 0.0405 is chance agreement. The collapsed 5-way (κ 0.1404) sits *between* the two axes and
+reports neither — **the direct measurement of the lat/lon-mixing softmax defect CLAUDE.md
+names as our largest known architectural problem**, and it is only visible because the family
+is reported factored. Per-class lateral: `lane_keep` recall 0.8092 / precision 0.8747;
+`turn_left` 0.4994 / 0.6627; `turn_right` recall 0.6003 / **precision 0.2879** (1 195
+predicted against 573 true — right turns over-predicted 2.1×). ⚠️ The hold-action control
+beats the model on BOTH axes, which is the tactical restatement of Finding 2 above.
+
+**TACTICAL goal-setting — the DIRECTION is right and the DISTANCE is wrong.** Goal bearing
+MAE **4.8098°** (bias −1.8323°, n 6 603, 241 windows excluded below 0.5 m) against goal range
+ratio **1.7584** and long-bias **+18.5801 m** vs lat-bias **−1.2061 m**. ⇒ **the model knows
+WHERE to go and not HOW FAR** — one clean sentence that ADE, and even ADE-plus-FDE, cannot
+express. (`goal_point_error_m` 19.5256 is FDE under another name and is labelled as such in
+the artifact, not sold as a new metric.)
+
+**STRATEGIC — `n/a` with reason and n = 6 844**, per clause 5 of the binding rule:
+PhysicalAI-AV carries no map, no lane graph, no junction/roundabout label, no traffic-light
+feature and no route/goal signal (the dataset card says verbatim *"we do not include open
+maps data"*). No rescore can close this; the programme's instrument is the VLM pipeline
+PH0→PH1→PH2. Distance-keeping (the other half of LONGITUDINAL) also remains UNAVAILABLE
+pending a lead block on this dense grid (`tools/build_lead_block.py`) — a WORK ITEM, not a
+pass, and the half where 88.7 % of the T0 oracle gap was measured to live.
+
+Instrument change that made this possible: `t1_eval.py` now calls
+`all_families(win, tactical_from_traj=True, tier=t)`. At T1 nothing steers the rollout but the
+arm's own actions, so the driven path IS its manoeuvre decision; at T0 the same block is
+stamped as substantially an ACTION ECHO so a teacher-forced tactical number can never be read
+as skill. Artifacts: `four_families/ff_{stageA,v5f30k}_{cl,ol,ha}.json` + `ff_comparison.json`
+(pod5:`/workspace/experiments/t1-v58f/four_families/`).
+
 ## 2. REF-A — the frozen-encoder arm (H4)
 
 **Shared:** frozen **DINOv2-B/14** features (224 px, 16×16 grid, dim 768) precomputed once; only the
