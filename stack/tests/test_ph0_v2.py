@@ -296,3 +296,144 @@ def test_degenerate_bbox_is_caught():
     v = validate_v2("B3_ground_1", {"visible": True, "frame_idx": 5,
                                     "bbox": [750, 1000, 750, 1000]})
     assert any("x0<x1" in e for e in v)
+
+
+# =========================================================================== #
+# v2.2 — EGO STATE IN THE PROMPT (PI, 2026-08-12)                             #
+# =========================================================================== #
+def _synth_poses(n=200, v0=10.0, a=0.0, w=0.0, dt=0.1):
+    """Straight/curving synthetic track at 10 Hz: [T,4] = x, y, yaw, v."""
+    import math
+    rows, x, y, yaw = [], 0.0, 0.0, 0.0
+    for i in range(n):
+        v = max(0.0, v0 + a * i * dt)
+        rows.append([x, y, yaw, v])
+        x += v * dt * math.cos(yaw)
+        y += v * dt * math.sin(yaw)
+        yaw += w * dt
+    return rows
+
+
+def test_ego_past_state_uses_only_the_past():
+    """⛔ The whole point: B1/B2 must not receive future evidence. A track that
+    is steady before t0 and slams the brakes after it must read 'steady'."""
+    from ph0_v2 import ego_past_state
+    import math
+    rows, x, v = [], 0.0, 10.0
+    for i in range(200):
+        rows.append([x, 0.0, 0.0, v])
+        x += v * 0.1
+        v = v if i < 80 else max(0.0, v - 0.5)      # brakes only AFTER t0=80
+    st = ego_past_state(rows, 80)
+    assert st["motion"] == "steady"
+    assert st["v_now_ms"] == pytest.approx(10.0, abs=0.01)
+    assert st["v_min_ms"] == pytest.approx(10.0, abs=0.01)   # no future leak
+    assert not math.isnan(st["dist_travelled_m"])
+
+
+def test_ego_past_state_window_is_eight_seconds():
+    from ph0_v2 import ego_past_state, EGO_WINDOW_S
+    st = ego_past_state(_synth_poses(300), 200)
+    assert st["window_s"] == pytest.approx(EGO_WINDOW_S, abs=0.05)
+
+
+def test_ego_past_state_detects_braking_and_accelerating():
+    from ph0_v2 import ego_past_state
+    assert ego_past_state(_synth_poses(200, v0=20.0, a=-1.0), 150)["motion"] \
+        == "braking"
+    assert ego_past_state(_synth_poses(200, v0=2.0, a=1.0), 150)["motion"] \
+        == "accelerating"
+
+
+def test_ego_past_state_detects_turn_direction():
+    from ph0_v2 import ego_past_state
+    assert ego_past_state(_synth_poses(200, w=0.2), 150)["turning"] \
+        == "turning_left"
+    assert ego_past_state(_synth_poses(200, w=-0.2), 150)["turning"] \
+        == "turning_right"
+    assert ego_past_state(_synth_poses(200, w=0.0), 150)["turning"] == "straight"
+
+
+def test_ego_past_state_yaw_wraps_at_pi():
+    """A track crossing the ±pi seam must not mint a ~62 rad/s yaw rate."""
+    from ph0_v2 import ego_past_state
+    import math
+    rows = [[float(i), 0.0, ((i * 0.05 + math.pi) % (2 * math.pi)) - math.pi,
+             10.0] for i in range(200)]
+    st = ego_past_state(rows, 150)
+    assert abs(st["yaw_rate_rad_s"]) < 1.0
+
+
+def test_ego_past_state_returns_none_on_unusable_poses():
+    from ph0_v2 import ego_past_state
+    assert ego_past_state([], 5) is None
+    assert ego_past_state([[0.0, 0.0, 0.0, 1.0]], 0) is None      # T<2
+    assert ego_past_state(_synth_poses(50), 0) is None            # t0 at 0
+
+
+def test_b2_block_is_speed_redacted_and_b1_is_not():
+    """⛔ THE LEAK. B2 reads sign TEXT and a speed sign's text is a NUMBER. If
+    the model can see its own speedometer, '50' can be transcribed from the ego
+    state instead of read off the sign, and the sign channel stops being
+    falsifiable. Same family as the nav-echo defect."""
+    from ph0_v2 import ego_past_state, ego_section
+    st = ego_past_state(_synth_poses(200, v0=13.9), 150)
+    b2 = ego_section("B2_signs", st, "past")
+    b1 = ego_section("B1_scene", st, "past")
+    for k in ("v_now_ms", "v_now_kmh", "v_mean_ms", "v_min_ms", "v_max_ms"):
+        assert k not in b2, f"{k} leaked into the sign-reading prompt"
+        assert k in b1
+    assert "50.0" not in b2                      # 13.9 m/s == 50.0 km/h
+    assert "NEVER copy a number from it" in b2
+    assert "motion" in b2 and "turning" in b2    # still gets the useful part
+
+
+def test_ego_full_mode_is_the_leak_measurement_arm():
+    """`full` exists so the redaction's cost is MEASURABLE rather than assumed:
+    the delta in speed-sign recall between past and full IS the leak size."""
+    from ph0_v2 import ego_past_state, ego_section
+    st = ego_past_state(_synth_poses(200, v0=13.9), 150)
+    assert "v_now_kmh" in ego_section("B2_signs", st, "full")
+
+
+def test_ego_mode_none_reproduces_v21_prompts_byte_identically():
+    """The control arm must be EXACT, not approximately the old prompt."""
+    from ph0_v2 import ego_past_state, ego_section
+    st = ego_past_state(_synth_poses(200), 150)
+    for call in ("B1_scene", "B2_signs", "B4_symbols"):
+        assert ego_section(call, st, "none") == ""
+
+
+def test_b3_never_receives_ego_state():
+    """B3 is pure spatial localisation — ego kinematics cannot help it, and it
+    is the call that repeats up to 6x per clip."""
+    from ph0_v2 import ego_past_state, ego_section
+    st = ego_past_state(_synth_poses(200), 150)
+    for i in range(6):
+        assert ego_section(f"B3_ground_{i}", st, "past") == ""
+        assert ego_section(f"B3_ground_{i}", st, "full") == ""
+
+
+def test_missing_ego_emits_no_block_at_all():
+    """No ego_root is not an error — it must degrade to the v2.1 prompt, not to
+    a prompt containing an empty EGO_STATE header the model must interpret."""
+    from ph0_v2 import ego_section
+    assert ego_section("B1_scene", None, "past") == ""
+
+
+def test_ego_section_is_valid_json_after_the_header():
+    from ph0_v2 import ego_past_state, ego_section
+    import json as _json
+    st = ego_past_state(_synth_poses(200), 150)
+    for call in ("B1_scene", "B2_signs", "B4_symbols"):
+        body = ego_section(call, st, "past").split("\n")[-2]
+        _json.loads(body)
+
+
+def test_fmt_ego_drops_none_valued_keys():
+    """A short window makes accel_3s unmeasurable; the prompt must omit it
+    rather than assert `null`, which reads as a measured zero."""
+    from ph0_v2 import ego_past_state, fmt_ego
+    st = ego_past_state(_synth_poses(20), 5)      # 0.5 s of history
+    assert st["accel_3s_ms2"] is None
+    assert "accel_3s_ms2" not in fmt_ego(st)

@@ -19,6 +19,11 @@ one short string, so the grammar stays small.
 
 Every call's PROMPT and RAW MODEL OUTPUT are dumped to the artifact so a reader
 can verify what was asked and what came back, rather than trusting a pass rate.
+
+v2.2 adds the ego state to the prompt (PI, 2026-08-12). See the EGO STATE block
+below for why that is in-contract for a LABEL pipeline, and for the one place it
+would have leaked (B2 reads sign numbers; the speedometer is a number) and how
+that is redacted rather than hoped away.
 """
 from __future__ import annotations
 
@@ -39,7 +44,8 @@ ACTION_VERBS = ["prepare_lane_change", "hold_corridor", "reduce_to",
 SIGN_KINDS = ["light", "speed", "nav", "stop", "yield", "other"]
 CONF = ["low", "med", "high"]
 
-SCHEMA_VERSION = "ph0-v2.1"      # v2.1 = corrected video inference
+SCHEMA_VERSION = "ph0-v2.2"      # v2.1 = corrected video inference
+                                 # v2.2 = ego state in the prompt (PI request)
 VIDEO_SAMPLE_FPS = 2.0           # must match sample_clip_frames()
 
 # --------------------------------------------------------------------------- #
@@ -314,6 +320,135 @@ def dedupe_actions(sym: dict | None) -> tuple[dict | None, int]:
     return sym, n
 
 
+# --------------------------------------------------------------------------- #
+# EGO STATE IN THE PROMPT (PI, 2026-08-12: "give also the ego states as          #
+# additional input for the vlm")                                                #
+# --------------------------------------------------------------------------- #
+# ⭐ WHY THIS IS ADMISSIBLE HERE, and where it would NOT be. PH0 is a LABEL
+# DERIVATION pipeline — it mints pseudo-labels offline for v6 to train on. The
+# binding rule (CLAUDE.md, Sayed 2026-08-03) is explicit that at the label stage
+# "ego state, other agents, maps, future poses — anything" may be used, and that
+# it is INFERENCE that is vision-only. So ego here is in-contract. What it does
+# NOT license is a v6 head consuming ego at inference; that constraint lives on
+# the deployed arm and is unchanged by this.
+#
+# ⚠️ THE ONE REAL LEAK, AND WHY B2 IS REDACTED. B2 reads sign TEXT, and a speed
+# sign's text is a NUMBER. Hand the model its own speedometer and "50" can be
+# transcribed from the ego state rather than read off the sign — which would
+# make the sign channel unfalsifiable exactly the way the nav-echo defect and
+# the REF-A I-JEPA leak were. Same test as always: does an input contain
+# something the thing being measured also produces? For B2 + speed signs, yes.
+# ⇒ B2 sees a SPEED-REDACTED block (motion words, no magnitudes). The redaction
+# is itself measurable: `--ego-in-prompt full` shows the unredacted block to B2
+# as well, and the delta in speed-sign recall between the two runs IS the leak
+# magnitude. B3 gets NO block at all — it is pure spatial localisation, ego
+# kinematics is irrelevant to it, and it is the call that repeats up to 6x.
+EGO_WINDOW_S = 8.0               # the pre-decision window; matches t0_s=8.0
+EGO_MODES = ("none", "past", "full")
+
+
+def _wrap_pi(a):
+    import numpy as np
+    return (a + np.pi) % (2.0 * np.pi) - np.pi
+
+
+def ego_past_state(poses, t0_idx: int, *, dt: float = 0.1,
+                   window_s: float = EGO_WINDOW_S) -> dict | None:
+    """PAST-ONLY ego kinematics over the window ending at the decision time.
+
+    ⛔ Deliberately carries NOTHING after `t0_idx`. Engine A already supplies the
+    future (that is the hindsight channel, and B4 is the only call entitled to
+    it); mixing the two here would put future evidence into B1/B2, whose whole
+    job is to describe what is visible up to the decision.
+
+    poses is [T, 4] = (x, y, yaw_rad, v_ms) at 1/dt Hz. Returns None rather than
+    raising when the array is unusable — absence of ego is not an error, the
+    caller just emits no block."""
+    import numpy as np
+    p = poses.detach().cpu() if hasattr(poses, "detach") else poses
+    p = np.asarray(p, dtype=float)
+    if p.ndim != 2 or p.shape[0] < 2 or p.shape[1] < 4:
+        return None
+    T = int(p.shape[0])
+    t0 = max(0, min(int(t0_idx), T - 1))
+    if t0 < 1:
+        return None
+    i0 = max(0, t0 - int(round(window_s / dt)))
+    v, yaw, xy = p[i0:t0 + 1, 3], p[i0:t0 + 1, 2], p[i0:t0 + 1, :2]
+
+    def _accel(sec):
+        k = int(round(sec / dt))
+        if k <= 0 or k >= len(v):
+            return None
+        return round(float((v[-1] - v[-1 - k]) / (k * dt)), 2)
+
+    dyaw = _wrap_pi(np.diff(yaw))
+
+    def _yawrate(sec):
+        k = int(round(sec / dt))
+        if k <= 0 or k > len(dyaw):
+            return None
+        return round(float(dyaw[-k:].sum() / (k * dt)), 3)
+
+    a1, a3, r1 = _accel(1.0), _accel(3.0), _yawrate(1.0)
+    v_now = float(v[-1])
+    a_ref = a3 if a3 is not None else (a1 or 0.0)
+    r_ref = r1 or 0.0
+    motion = ("stopped" if v_now < 0.5 else
+              "braking" if a_ref <= -0.6 else
+              "accelerating" if a_ref >= 0.6 else "steady")
+    turning = ("turning_left" if r_ref > 0.06 else
+               "turning_right" if r_ref < -0.06 else "straight")
+    return {
+        "window_s": round((len(v) - 1) * dt, 1),
+        "v_now_ms": round(v_now, 2),
+        "v_now_kmh": round(v_now * 3.6, 1),
+        "v_mean_ms": round(float(v.mean()), 2),
+        "v_min_ms": round(float(v.min()), 2),
+        "v_max_ms": round(float(v.max()), 2),
+        "accel_1s_ms2": a1, "accel_3s_ms2": a3,
+        "yaw_rate_rad_s": r1,
+        "net_dyaw_rad": round(float(dyaw.sum()), 3) if len(dyaw) else 0.0,
+        "dist_travelled_m": round(
+            float(np.linalg.norm(np.diff(xy, axis=0), axis=1).sum()), 1),
+        "motion": motion, "turning": turning,
+    }
+
+
+# keys stripped for B2 — every one of them is a magnitude a sign could state
+_EGO_SPEED_KEYS = ("v_now_ms", "v_now_kmh", "v_mean_ms", "v_min_ms", "v_max_ms")
+
+
+def fmt_ego(st: dict | None, *, redact_speed: bool = False) -> str:
+    if not st:
+        return "{}"
+    d = {k: v for k, v in st.items()
+         if v is not None and not (redact_speed and k in _EGO_SPEED_KEYS)}
+    return json.dumps(d)
+
+
+_EGO_TAIL = {
+    "B1_scene": "Use it to judge road type and lane count. It tells you nothing "
+                "about what any sign says.",
+    "B2_signs": "It tells you HOW THE CAR MOVED. It does NOT tell you any "
+                "sign's text or number. NEVER copy a number from it into "
+                "`text` — if a number is not legible in the image, use \"\".",
+    "B4_symbols": "This is the state the decision was made FROM; ENGINE_A is "
+                  "what actually happened after it.",
+}
+
+
+def ego_section(call: str, st: dict | None, mode: str = "past") -> str:
+    """The prompt fragment, or "" — so `mode="none"` reproduces v2.1's prompts
+    BYTE-IDENTICALLY and the ablation control is exact rather than approximate."""
+    if not st or mode == "none" or call not in _EGO_TAIL:
+        return ""
+    body = fmt_ego(st, redact_speed=(call == "B2_signs" and mode != "full"))
+    return (f"\n\nEGO_STATE — measured from the ego vehicle's own sensors over "
+            f"the {st.get('window_s', EGO_WINDOW_S):.0f}s BEFORE the decision "
+            f"time. It is FACT, not a guess:\n{body}\n{_EGO_TAIL[call]}")
+
+
 def _fmt_engine_a(ea: dict | None) -> str:
     """Engine A summary for the B4 prompt — compact and metric, so the model
     is anchored by geometry rather than asked to invent it."""
@@ -474,7 +609,8 @@ class ConstrainedVLM:
             return raw, None, f"{type(e).__name__}: {e}"
 
 
-def run_clip(vlm, frames, n_past, engine_a, *, px=448, dump=None):
+def run_clip(vlm, frames, n_past, engine_a, *, px=448, dump=None,
+             ego_state=None, ego_mode="past"):
     n_last = len(frames) - 1
     frame_h, frame_w = int(frames[0].shape[0]), int(frames[0].shape[1])
     calls, rec = [], {}
@@ -508,8 +644,11 @@ def run_clip(vlm, frames, n_past, engine_a, *, px=448, dump=None):
     # budgets have headroom now that whitespace is capped at 1 — the single
     # measured parse failure was a whitespace-driven truncation at 128.
     rec["scene"] = record("B1_scene", P_B1.format(
-        n_past_1=n_past - 1, n_past=n_past, n_last=n_last), S_B1, 192)
-    sg_raw = record("B2_signs", P_B2, S_B2, 384)
+        n_past_1=n_past - 1, n_past=n_past, n_last=n_last)
+        + ego_section("B1_scene", ego_state, ego_mode), S_B1, 192)
+    sg_raw = record("B2_signs",
+                    P_B2 + ego_section("B2_signs", ego_state, ego_mode),
+                    S_B2, 384)
     sg_raw, n_sign_dup = dedupe_signs(sg_raw)
     rec["signs"] = sg_raw
     rec["_n_sign_dupes_dropped"] = n_sign_dup
@@ -530,11 +669,16 @@ def run_clip(vlm, frames, n_past, engine_a, *, px=448, dump=None):
                             for i, s in enumerate(
                                 (rec["signs"] or {}).get("signs", [])[:6])])
     sym = record("B4_symbols", P_B4.format(
-        engine_a=_fmt_engine_a(engine_a), signs=sign_desc), S_B4, 192)
+        engine_a=_fmt_engine_a(engine_a), signs=sign_desc)
+        + ego_section("B4_symbols", ego_state, ego_mode), S_B4, 192)
     sym, n_dup = dedupe_actions(sym)
     rec["symbols"] = sym
     rec["_n_action_dupes_dropped"] = n_dup
 
+    # banked so the leak audit ("did B2's speed text come from the sign or from
+    # the speedometer?") is computable from the artifact alone, with no re-run
+    rec["ego_state"] = ego_state
+    rec["_ego_prompt_mode"] = ego_mode if ego_state else "none"
     rec["_calls"] = calls
     rec["_all_valid"] = all(c["valid"] for c in calls)
     rec["_n_parse_fail"] = sum(1 for c in calls if not c["parsed_ok"])
@@ -553,6 +697,12 @@ def main(argv=None) -> int:
     ap.add_argument("--arm", default="Qwen/Qwen3.5-9B")
     ap.add_argument("--out", required=True)
     ap.add_argument("--n", type=int, default=4)
+    ap.add_argument("--ego-in-prompt", default="past", choices=EGO_MODES,
+                    help="none = v2.1 prompts byte-identically (control); "
+                         "past = pre-decision ego kinematics to B1/B4, "
+                         "speed-REDACTED to B2 (default); "
+                         "full = unredacted everywhere — the leak-measurement "
+                         "arm, NOT the production setting")
     ap.add_argument("--resume", action="store_true",
                     help="skip clips already present and all-valid in --out; "
                          "REQUIRED for any run large enough to be interrupted")
@@ -574,11 +724,20 @@ def main(argv=None) -> int:
     if a.resume and os.path.exists(out_path):
         try:
             prev = json.load(open(out_path))
-            for c in prev.get("clips", []):
-                if c.get("_all_valid"):
-                    done[c["clip_id"]] = c
-            print(f"[v2] resume: {len(done)} clips already all-valid",
-                  flush=True)
+            # ⛔ a resume across a DIFFERENT ego mode would silently mint a
+            # half-and-half artifact whose clips were asked different questions.
+            # Refuse the reuse rather than produce an uncomparable file.
+            pm = prev.get("ego_prompt_mode")
+            if pm is not None and pm != a.ego_in_prompt:
+                print(f"[v2] resume REFUSED: {out_path} was run with "
+                      f"ego_in_prompt={pm!r}, this run is {a.ego_in_prompt!r} "
+                      f"— starting fresh", flush=True)
+            else:
+                for c in prev.get("clips", []):
+                    if c.get("_all_valid"):
+                        done[c["clip_id"]] = c
+                print(f"[v2] resume: {len(done)} clips already all-valid",
+                      flush=True)
         except Exception as e:
             print(f"[v2] resume: unreadable {out_path} ({e}) — starting fresh",
                   flush=True)
@@ -598,6 +757,7 @@ def main(argv=None) -> int:
         ok_ = [c for c in partial if c.get("_all_valid")]
         json.dump({"schema_version": SCHEMA_VERSION, "arm": a.arm,
                    "auto_class": getattr(vlm, "auto_class", None),
+                   "ego_prompt_mode": a.ego_in_prompt,
                    "n": len(partial), "n_all_calls_valid": len(ok_),
                    "n_parse_failures": sum(c.get("_n_parse_fail", 0)
                                            for c in partial),
@@ -616,17 +776,21 @@ def main(argv=None) -> int:
         vp = os.path.join(a.video_root, f"{cid}.mp4")
         try:
             frames, times, n_past = sample_clip_frames(vp, t0_s=8.0)
-            ea = None
+            ea, est = None, None
             if a.ego_root:
                 try:
                     poses = load_ego_poses(cid, a.ego_root)
                     if poses is not None:
+                        t0_idx = int(round(8.0 * POSE_HZ))
                         ea = engine_a_for_prompt(
-                            engine_a_summary(poses, int(round(8.0 * POSE_HZ))))
+                            engine_a_summary(poses, t0_idx))
+                        est = ego_past_state(poses, t0_idx,
+                                             dt=1.0 / POSE_HZ)
                 except Exception as e:
                     print(f"[v2] engine A failed {cid}: "
                           f"{type(e).__name__}: {e}", flush=True)
-            rec = run_clip(vlm, frames, n_past, ea)
+            rec = run_clip(vlm, frames, n_past, ea, ego_state=est,
+                           ego_mode=a.ego_in_prompt)
             rec["clip_id"] = cid
             out_clips.append(rec)
             print(f"[v2] {ci+1}/{len(todo)} {cid[:8]} "
@@ -643,6 +807,7 @@ def main(argv=None) -> int:
     pf = sum(c.get("_n_parse_fail", 0) for c in out_clips)
     summary = {"schema_version": SCHEMA_VERSION, "arm": a.arm,
                "auto_class": getattr(vlm, "auto_class", None),
+               "ego_prompt_mode": a.ego_in_prompt,
                "n": len(out_clips),
                "n_all_calls_valid": len(ok), "n_parse_failures": pf,
                "n_violation_failures": sum(c.get("_n_violation_fail", 0)

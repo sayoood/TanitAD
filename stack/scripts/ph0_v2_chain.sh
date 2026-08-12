@@ -13,6 +13,9 @@ S="$REPO/stack"
 CLIPS="${CLIPS:-/workspace/ph0_mini/clips.json}"
 VIDEOS="${VIDEOS:-/workspace/ph0_mini/videos}"
 EGO="${EGO:-/workspace/ph0_mini/ego}"
+# none = v2.1 control (prompts byte-identical) | past = production
+# | full = leak-measurement arm, B2 sees the speedometer
+EGO_MODE="${EGO_MODE:-past}"
 ARM="${ARM:-Qwen/Qwen3.5-9B}"
 OUT="${OUT:-/workspace/ph0_mini/v2}"
 N="${N:-8}"
@@ -43,7 +46,8 @@ done
 # `git log` on a pod proves nothing — its HEAD is weeks stale while the working
 # tree is current. Each token below is a fix that must not silently regress.
 for tok in "validate_v2" "force_json_field_order" "max_consecutive_whitespaces" \
-           "allowed_tokens" "AutoModelForImageTextToText"; do
+           "allowed_tokens" "AutoModelForImageTextToText" "ego_past_state" \
+           "_EGO_SPEED_KEYS"; do
   grep -q "$tok" "$S/scripts/ph0_v2.py" || {
     echo "[v2] 11 STALE ph0_v2.py — missing '$tok'" >> "$LOG"
     echo "V2_EXIT=11" >> "$LOG"; exit 1; }
@@ -71,6 +75,16 @@ try:
     CharacterLevelParserConfig(max_consecutive_whitespaces=1,
                                force_json_field_order=True,
                                max_json_array_length=6)
+    # v2.2: the B2 speed redaction is the one thing standing between the sign
+    # channel and an unfalsifiable "read" of the ego speedometer. Gate on it.
+    from ph0_v2 import ego_past_state, ego_section
+    _st = ego_past_state([[i * 1.39, 0.0, 0.0, 13.9] for i in range(200)], 150)
+    assert _st and _st["v_now_kmh"] == 50.0, "ego state not computed"
+    _b2 = ego_section("B2_signs", _st, "past")
+    assert "50.0" not in _b2 and "v_now_ms" not in _b2, \
+        "B2 ego block is NOT speed-redacted — sign text could be transcribed "\
+        "from the speedometer"
+    assert "v_now_kmh" in ego_section("B1_scene", _st, "past")
     import torch
     assert torch.cuda.is_available(), "CUDA unavailable"
     print("V2_IMPORTS_OK")
@@ -90,7 +104,8 @@ rm -f "$OUT/.ddtest"
 # ---- run ------------------------------------------------------------------ #
 "$PY" -u scripts/ph0_v2.py \
   --clips "$CLIPS" --video-root "$VIDEOS" --ego-root "$EGO" \
-  --arm "$ARM" --out "$OUT" --n "$N" $RESUME >> "$LOG" 2>&1
+  --arm "$ARM" --out "$OUT" --n "$N" --ego-in-prompt "$EGO_MODE" \
+  $RESUME >> "$LOG" 2>&1
 rc=$?
 [ "$rc" -eq 0 ] || { echo "V2_EXIT=RUN_$rc" >> "$LOG"; exit "$rc"; }
 grep -q PH0V2_DONE "$LOG" || { echo "V2_EXIT=NO_DONE_MARKER" >> "$LOG"; exit 1; }
