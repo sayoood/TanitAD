@@ -501,9 +501,13 @@ def test_run_rollout_ext_writes_the_documented_dump_and_analyze_reads_it(
         "n_windows"]
     dec = res["paired_decision_grade"]["paired_closed_minus_open"]
     assert dec["estimator"] == "paired_episode_cluster_bootstrap"
-    for fam in ("tactical", "strategic"):
-        assert res["arms"]["cl"]["four_families"][fam]["status"] == \
-            "UNAVAILABLE"
+    # STRATEGIC stays UNAVAILABLE — PhysicalAI-AV carries no map, lane graph or
+    # route signal, so no rescore can close it (the VLM PH2 pipeline is the
+    # programme's answer). TACTICAL is now derived from the driven trajectory,
+    # which at T1 nothing but the arm's own actions produced.
+    assert res["arms"]["cl"]["four_families"]["strategic"]["status"] == \
+        "UNAVAILABLE"
+    assert res["arms"]["cl"]["four_families"]["tactical"]["status"] == "OK"
 
 
 def test_run_rollout_ext_head_mode_calls_the_legacy_roll_closed(monkeypatch,

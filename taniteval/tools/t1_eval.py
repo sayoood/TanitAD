@@ -474,10 +474,20 @@ def analyze(dump_files, *, tiers=None, gt_key="g", n_boot=2000, seed=0,
                            "eid": list(lead["eid"]), "n_boot": n_boot}
 
         # -- FOUR FAMILIES: taniteval machinery, not a copy ------------------ #
-        # TACTICAL/STRATEGIC have no inputs in a T1 dump (no decision heads are
-        # traversed) -> all_families reports them UNAVAILABLE with reason + n,
+        # STRATEGIC has no inputs on this corpus (no map, no lane graph, no
+        # route signal) -> all_families reports it UNAVAILABLE with reason + n,
         # which is the binding shape. Stamp tier/estimator on every family.
-        fam = ff.all_families(win)
+        #
+        # TACTICAL *is* recoverable here: at T1 no recorded future steers the
+        # rollout, so the path the arm actually drove IS its manoeuvre decision
+        # made manifest, and comparing it to the human's is a real decision
+        # comparison rather than a fidelity score. Passing `tier` matters —
+        # four_families uses it to stamp the T0 rows as substantially an ACTION
+        # ECHO (§1.12), so a teacher-forced tactical number can never be read
+        # as skill. Without this flag every T1 row the programme has produced
+        # carried TACTICAL: UNAVAILABLE, which the binding rule calls a work
+        # item, not a pass.
+        fam = ff.all_families(win, tactical_from_traj=True, tier=t)
         for fk in ("longitudinal", "lateral", "tactical", "strategic"):
             fam[fk]["tier"] = t
             fam[fk].setdefault("n", fam[fk].get("n_windows", fam[fk].get("n", N)))

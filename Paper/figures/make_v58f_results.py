@@ -13,6 +13,7 @@ INK = "#0b0b0b"
 INK2 = "#52514e"
 MUTED = "#8a8880"
 GRID = "#e6e5e1"
+CARD = "#ffffff"
 ARM = "#2a78d6"        # categorical slot 1 — measured pipeline arm
 CTRL = "#eb6834"       # categorical slot 2 — control / pre-repair / ablation
 GATE = "#4a3aa7"       # violet — pre-registered gate marker
@@ -123,10 +124,15 @@ def panel_svg(p, ox, oy):
         o.append(f'<rect x="{plot_x}" y="{y}" width="{bw:.1f}" height="{BAR_H}" '
                  f'rx="4" fill="{colour}"/>')
         txt = f"{val:.3f}" if val < 10 else f"{val:.2f}"
-        o.append(f'<text x="{plot_x+bw+7:.1f}" y="{y+BAR_H*0.74:.0f}" '
-                 f'font-size="11" font-weight="700" fill="{INK}" '
-                 f'paint-order="stroke" stroke="{SURFACE}" stroke-width="3.4" '
+        # NOTE: paint-order="stroke" is NOT honoured by every SVG rasteriser
+        # (our PNG export ignores it), which erases the glyph under its own
+        # halo — present in the file, invisible in the render. Draw the halo as
+        # a separate underlay element, which works everywhere.
+        lbl = (f'x="{plot_x+bw+7:.1f}" y="{y+BAR_H*0.74:.0f}" font-size="11" '
+               f'font-weight="700"')
+        o.append(f'<text {lbl} fill="{CARD}" stroke="{CARD}" stroke-width="3.4" '
                  f'stroke-linejoin="round">{txt}</text>')
+        o.append(f'<text {lbl} fill="{INK}">{txt}</text>')
 
     o.append(f'<line x1="{plot_x}" y1="{top-8}" x2="{plot_x}" '
              f'y2="{top+len(p["bars"])*(BAR_H+BAR_GAP)-2}" stroke="{GRID}" '
@@ -190,24 +196,32 @@ def main():
         ("removing its content costs 19× in ADE, and", False),
         ("breaking only the correspondence still costs 3×.", False),
     ]
-    yy = oy + 28
+    yy = oy + 26
     for text, bold in lines:
         if text:
             out.append(f'<text x="{ox+16}" y="{yy}" font-size="'
                        f'{"13.5" if bold else "11.2"}" '
                        f'font-weight="{"700" if bold else "400"}" '
                        f'fill="{INK if bold else INK2}">{esc(text)}</text>')
-        yy += 17 if not bold else 22
+        yy += 15 if not bold else 21
 
     out.append(f'<text x="40" y="{H-22}" font-size="9.8" fill="{MUTED}">'
-               'Selection is not yet closed: W7 over a frozen-selector shortlist '
-               'still fails its ≤ 0.4505 gate — the selector-free full-fan run is '
-               'the outstanding measurement. Failed gates are reported as results.</text>')
+               'Selection is NOT closed by this arc: the selector-free full-fan run '
+               'has since failed the same ≤ 0.4505 gate at 3.335 m over a 0.127 m '
+               'oracle — see Figure 3. Failed gates are reported as results.</text>')
     out.append("</svg>")
     p = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                      "v58f_results.svg")
-    open(p, "w").write("\n".join(out))
+    svg = "\n".join(out)
+    open(p, "w").write(svg)
     print("wrote", p)
+    try:
+        import cairosvg
+        pp = p.replace(".svg", ".png")
+        cairosvg.svg2png(bytestring=svg.encode(), write_to=pp, scale=2.0)
+        print("wrote", pp)
+    except ImportError:
+        print("cairosvg absent — SVG only")
 
 
 if __name__ == "__main__":

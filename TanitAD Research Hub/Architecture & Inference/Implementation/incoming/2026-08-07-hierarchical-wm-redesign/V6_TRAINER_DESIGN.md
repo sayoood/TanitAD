@@ -474,6 +474,34 @@ check `git status --short` FIRST and either name them in the message or use a pa
 pathspec-free `git commit -F <msgfile>` **after** listing `git diff --cached --name-only` and
 confirming every entry is intended.
 
+### 7.0 Test evidence — MEASURED, with the control arm
+
+| run | result |
+|---|---|
+| `pytest tests/test_v6_staged.py -q -W error::UserWarning` | **80 passed, 0 warnings** |
+| whole-suite `--collect-only` | **2,588 tests, 0 collection errors** |
+| full suite **WITH** `test_v6_staged.py` | 23 failed / **2,548 passed** |
+| full suite **WITHOUT** `test_v6_staged.py` (the control) | 23 failed / **2,472 passed** |
+| **Δ** | **failures +0**; passes **+76** (= the v6 suite size at that commit) |
+
+⇒ **The same 23 failures occur with and without this work.** Nothing outside the three v6
+files imports `tanitad.models.v6` or `train_v6_staged`, so ignoring the v6 test file reproduces
+the pre-v6 state exactly — which is what makes that row a control rather than a hopeful
+comparison.
+
+⚠️ **The 23 are a STANDING hazard for the "`pytest -q` must stay green before any commit"
+invariant**, and none of them belong to v6. Diagnosed:
+
+| file | n | cause | evidence class |
+|---|---|---|---|
+| `tests/test_readout_onnx_pool.py` | 1 | `Module onnx is not installed!` — absent optional dep | MEASURED (`import onnx` → `ModuleNotFoundError`) |
+| `tests/test_resim.py` | 2 | asserts a **Windows** basename: `assert 'C:\ckpts\refb.pt' in ('main.pt', 'refb.pt')` — `os.path.basename` does not split `\` on Linux | MEASURED (isolation run) |
+| `tests/test_rig_clean_fix.py` | 20 | **suite-order dependent**: all 20 PASS in isolation, and pass alongside the v6 file (110 passed together) — some earlier module leaves global state | MEASURED (isolation + pairwise + control) |
+
+Fixes are cheap (`pip install onnx`; `PurePath(...).name` or `PureWindowsPath`; bisect the
+rig_clean polluter) but they are **not v6 work** — filed here so they are visible rather than
+rediscovered by whoever next needs a green suite.
+
 ### 7.1 Escalations for the PI (not "please merge" buried in a doc)
 
 1. **S-W's cost is the decision.** ESTIMATED **175–290 A40-hours** for 30 k steps. Levers are in

@@ -224,13 +224,18 @@ def test_an_arm_without_a_tier_is_a_hard_error(tmp_path):
 def test_families_without_inputs_report_unavailable_with_reason_and_n(tmp_path):
     res = t1.analyze(s_dump(tmp_path), n_boot=N_BOOT)
     blk = res["arms"]["cl"]
-    # a T1 dump traverses no decision heads -> TACTICAL/STRATEGIC UNAVAILABLE
-    for fk in ("tactical", "strategic"):
-        fam = blk["four_families"][fk]
-        assert fam["status"] == "UNAVAILABLE"
-        assert fam["reason"] and fam["n"] == 0
-    assert set(blk["four_families"]["_families_unavailable"]) == \
-        {"tactical", "strategic"}
+    # STRATEGIC has no inputs on this corpus (no map, no lane graph, no route
+    # signal) -> UNAVAILABLE with reason + n, which is the binding shape.
+    fam = blk["four_families"]["strategic"]
+    assert fam["status"] == "UNAVAILABLE"
+    assert fam["reason"] and fam["n"] == 0
+    # TACTICAL is now recovered FROM THE TRAJECTORY: at T1 nothing steers the
+    # rollout but the arm's own actions, so the driven path IS its manoeuvre
+    # decision. Before this, every T1 row carried TACTICAL: UNAVAILABLE — the
+    # binding rule calls that a work item, not a pass.
+    tac = blk["four_families"]["tactical"]
+    assert tac["status"] == "OK", "T1 tactical must be computed, not skipped"
+    assert set(blk["four_families"]["_families_unavailable"]) == {"strategic"}
     # no lead block -> the distance-keeping HALF of LONGITUDINAL is a work item
     dk = blk["four_families"]["longitudinal"]["distance_keeping"]
     assert dk["status"] == "UNAVAILABLE" and "WORK ITEM" in dk["reason"]

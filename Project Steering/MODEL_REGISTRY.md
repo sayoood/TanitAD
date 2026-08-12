@@ -1519,6 +1519,78 @@ interaction-weighted sampling / masked-latent objectives / dense near-field loss
 each gated on the SAME frozen P1 lead battery. Headway/TTC stay GT-join instruments.
 Artifacts: `p12_gate_clsfilter.json`, `p1_lead_transforms.json` (+ HF /battery/ arrays).
 
+**⭐ T1 PSEUDO-CLOSED-LOOP — MEASURED 2026-08-11 ~23:27Z, analysed 2026-08-12 ~00:10Z
+[TIER T1 = PRIMARY; 6 844 windows / 40 val episodes, stride 1; episode-cluster bootstrap;
+pod5]. THE HEADLINE MEASUREMENT OF THE v5.8f CAMPAIGN, and it is two findings, not one.**
+
+Instrument `taniteval/tools/t1_eval.py` (`--v2-val-cache --grounding-readout`), three
+surfaces per arm: **`cl`** = action-closed loop (the model conditioned on its OWN actions,
+**T1**), **`ol`** = teacher-forced (**T0**, a WM diagnostic and never driving performance),
+**`ha`** = hold-action control (**T1**). Point estimates are `full_set` pooled means;
+intervals are the episode-cluster bootstrap and cross-arm deltas the **paired** version on
+the same windows — `overlapping_holdout_se` is used nowhere.
+
+| arm | surface | tier | ADE dense (m) | FDE last (m) | LON speed MAE (m/s) | LON along MAE (m) | LAT cross MAE (m) | LAT heading MAE (°) |
+|---|---|---|---|---|---|---|---|---|
+| `v5f-30k` | `cl` | **T1** | **23.9837** [21.442, 26.347] | 53.4756 | 26.9356 | 23.8965 | 0.9993 | 3.6204 |
+| `v5f-30k` | `ol` | T0 | 0.9397 [0.8162, 1.0679] | 2.8003 | 1.4431 | 0.8762 | 0.1947 | 3.3483 |
+| `v5f-30k` | `ha` | **T1** | 0.9597 [0.8361, 1.0879] | 2.8631 | 1.4531 | 0.8901 | 0.2072 | 4.5954 |
+| `stage-a-repaired` | `cl` | **T1** | **9.3697** [6.6822, 12.2576] | 19.5256 | 9.7291 | 9.2655 | 0.7446 | 5.3945 |
+| `stage-a-repaired` | `ol` | T0 | 0.3659 [0.2926, 0.4521] | 1.0231 | 0.5113 | 0.2990 | 0.1534 | 1.8351 |
+| `stage-a-repaired` | `ha` | **T1** | 0.4246 [0.3500, 0.5132] | 1.2242 | 0.5671 | 0.3487 | 0.1689 | 3.9859 |
+
+**FINDING 1 — the stage-A repair wins on every surface, decisively and separated.**
+Paired `stage-a-repaired − v5f-30k`, same windows: `cl` ADE **−14.6139 [−16.9319, −12.2010]**
+(`p_delta_gt0` 0.0, ✅ separated) with `cl` LON speed MAE **−17.2064 [−19.7815, −14.4927]`;
+`ol` ADE −0.5739 [−0.7002, −0.4570]; `ha` ADE −0.5351 [−0.6644, −0.4181]. The repair was
+designed to restore action-response gain (0.27 → 0.971/0.966, longitudinal sign 1.0, §1.13c)
+and it improves **exactly the axis it targeted** — a clean confirmation, not a coincidence.
+
+**FINDING 2 — ⛔ THE CLOSED LOOP DIVERGES, AND THE HOLD-ACTION CONTROL BEATS IT BY 22×.**
+For the repaired arm `ha` **0.4246** vs `cl` **9.3697**; for v5f `ha` 0.9597 vs `cl` 23.9837.
+A control that simply holds the last action is an order of magnitude better than the model
+driving itself. Within-arm paired `cl − ol`: **+9.0039 [6.3659, 11.8487]** (repaired) and
+**+23.0439 [20.5613, 25.3884]** (v5f), both separated at `p_delta_gt0` 1.0. ⇒ **No
+closed-loop driving competence may be claimed for either arm.** The T0 number (0.3659) and
+the T1 number (9.3697) differ by **25×** on the same checkpoint and the same windows — this
+row is the strongest evidence yet for the tier doctrine, and it is exactly the failure
+`EVAL_DOCTRINE.md` was written to expose.
+
+**⭐ THE DIVERGENCE IS ~99 % LONGITUDINAL — visible ONLY because the four families are
+reported.** Of the repaired arm's `cl` ADE 9.3697, **LON along-track MAE is 9.2655** while
+**LAT cross-track MAE is 0.7446**; for v5f, 23.8965 of 23.9837 against 0.9993 lateral. The
+car holds its lane and its SPEED integrates away (LON speed MAE 9.73 and 26.94 m/s — both
+physically implausible, i.e. a true blow-up rather than a graceful degradation). This
+sharpens the standing "88.7 % of the oracle gap is longitudinal" (§1.14, T0) to **~99 % at
+T1**, and it converges with the P1 verdict that the latent lacks a readable lead-distance
+variable. ⚠️ A scalar ADE would have shown a 25× gap and NOT shown that it is one axis —
+this is the four-family rule earning its cost in a single row.
+
+**Consequences for v6, all load-bearing.** (1) The staged ladder is now empirically, not
+just architecturally, motivated: **S-W must produce a world model stable under its OWN
+actions before any planner is attached** — that is precisely the quantity `cl − ol` measures,
+and it is the natural S-W gate. (2) The longitudinal channel is the design target, not the
+lateral one. (3) `ha` is the floor any closed-loop claim must clear first; clearing `ol` is
+not evidence of anything driving-related.
+
+⚠️ Scope stamped honestly: `ha` is a strong baseline partly *because* the corpus is
+short-horizon and near-constant-speed — that is what makes it the right "do nothing clever"
+floor, not a reason to discount it. TACTICAL/STRATEGIC were `UNAVAILABLE` in this run
+(`_families_unavailable`); TACTICAL has since been closed at source for all future T1 runs
+(`t1_eval.py` now passes `tactical_from_traj=True, tier=t` — at T1 the driven path IS the
+manoeuvre decision), and STRATEGIC stays `n/a` with reason + n because PhysicalAI-AV carries
+no map, lane graph or route signal. Distance-keeping remains UNAVAILABLE pending a lead
+block on this dense grid (`tools/build_lead_block.py`) — a WORK ITEM, not a pass.
+
+⚠️ Instrument note for anyone reproducing: both arms rolled all 40 episodes and then died in
+`analyze()` on `from taniteval import selgap` (pod5's package predates the module). The
+dumps survived, so the numbers above come from `--analyze-only` over them with **zero GPU
+recompute** — but an analysis-time import that fails after 11 minutes of rollout is a
+standing hazard, and the same class as the `UnicycleStepReadout` failure earlier the same
+night. Artifacts: `t1_v58f_summary.json` (banked in
+`…/incoming/2026-08-07-hierarchical-wm-redesign/`), per-arm `t1_v5f_30k.json` /
+`t1_stage_a_repaired.json` and the 80 episode dumps (pod5:`/workspace/experiments/t1-v58f/`).
+
 ## 2. REF-A — the frozen-encoder arm (H4)
 
 **Shared:** frozen **DINOv2-B/14** features (224 px, 16×16 grid, dim 768) precomputed once; only the
