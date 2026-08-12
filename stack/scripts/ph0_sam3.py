@@ -283,7 +283,15 @@ def run_clip_frames(processor, frames, concepts, vlm_boxes, *,
     from PIL import Image
     out_frames: dict[str, dict] = {}
     per_concept: dict[str, int] = {c: 0 for c in concepts}
-    for fi in range(0, len(frames), max(1, frame_stride)):
+    # ⛔ THE FIX. Running only strided frames and then snapping each VLM box to
+    # the nearest strided frame compared engine B and engine C on frames up to
+    # ~3.5 s of driving apart, and the resulting 0/8 "agreement" was a property
+    # of the SNAPPING, not of the VLM's boxes. Every frame the VLM actually
+    # grounded on is now run EXACTLY, so the cross-check is frame-identical.
+    todo = sorted(set(range(0, len(frames), max(1, frame_stride)))
+                  | {int(v.get("frame_idx", 0)) for v in vlm_boxes
+                     if 0 <= int(v.get("frame_idx", 0)) < len(frames)})
+    for fi in todo:
         img = Image.fromarray(frames[fi])
         dets = []
         for c in concepts:
@@ -302,8 +310,7 @@ def run_clip_frames(processor, frames, concepts, vlm_boxes, *,
                                "det": dets}
     agree = []
     for vb in vlm_boxes:
-        fi = str(int(vb.get("frame_idx", 0)) // max(1, frame_stride)
-                 * max(1, frame_stride))
+        fi = str(int(vb.get("frame_idx", 0)))       # EXACT frame, never snapped
         best = None
         for d in out_frames.get(fi, {}).get("det", []):
             if d.get("concept") != "traffic sign" or not d.get("box_xyxy"):
@@ -314,6 +321,11 @@ def run_clip_frames(processor, frames, concepts, vlm_boxes, *,
                         "sam3_score": d.get("score")}
         agree.append({"vlm_box": vb["box_xyxy"], "vlm_label": vb.get("label"),
                       "frame_idx": vb.get("frame_idx"),
+                      "sam3_frame_idx": int(fi),
+                      "frame_aligned": True,
+                      "n_sam3_signs_on_frame": sum(
+                          1 for d in out_frames.get(fi, {}).get("det", [])
+                          if d.get("concept") == "traffic sign"),
                       "best_sam3_sign": best,
                       "matched": bool(best and best["iou"] > 0.0)})
     return {"frames": out_frames, "per_concept_hits": per_concept,

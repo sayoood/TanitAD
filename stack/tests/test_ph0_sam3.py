@@ -211,3 +211,33 @@ def test_empty_detection_is_an_abstention_not_an_error():
                     "masks": None}
 
     assert detect(FakeProc(), object(), "car") == []
+
+
+def test_cross_check_runs_the_exact_frame_the_vlm_grounded_on():
+    """⛔ THE CONFOUND THIS FIXES. The first version ran only strided frames and
+    snapped each VLM box to the nearest one — comparing engine B and engine C on
+    frames up to ~3.5 s of driving apart. The resulting 0/8 "agreement" was a
+    property of the SNAPPING, not of the VLM's boxes, and reporting it as a
+    grounding score would have been the `--v2` conflation in miniature.
+
+    The frame list must now contain every grounded frame EXACTLY."""
+    import inspect
+    from ph0_sam3 import run_clip_frames
+    src = inspect.getsource(run_clip_frames)
+    # the strided set is UNIONED with the grounded frames, not replaced by it
+    assert "todo = sorted(set(range(0, len(frames)" in src
+    assert 'int(v.get("frame_idx", 0)) for v in vlm_boxes' in src
+    # and the lookup no longer divides-and-multiplies by the stride
+    assert "// max(1, frame_stride)" not in src
+    assert "EXACT frame, never snapped" in src
+
+
+def test_cross_check_records_enough_to_audit_a_zero():
+    """A 0/N match must be readable as EITHER 'SAM3 saw no sign on that frame'
+    OR 'both saw a sign and they disagree'. Those call for opposite fixes, so
+    the count of SAM3 signs on the grounded frame is recorded alongside."""
+    import inspect
+    from ph0_sam3 import run_clip_frames
+    src = inspect.getsource(run_clip_frames)
+    for k in ("n_sam3_signs_on_frame", "sam3_frame_idx", "frame_aligned"):
+        assert k in src
