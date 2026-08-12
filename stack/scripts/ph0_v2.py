@@ -222,11 +222,42 @@ class ConstrainedVLM:
         self.model_id = model_id
         self._torch = torch
         self.tok = getattr(self.processor, "tokenizer", None) or self.processor
-        from lmformatenforcer import JsonSchemaParser
-        from lmformatenforcer.integrations.transformers import \
-            build_transformers_prefix_allowed_tokens_fn
+        # ⛔ lm-format-enforcer's OWN transformers integration is broken against
+        # transformers 5.x: it does `from transformers.tokenization_utils import
+        # PreTrainedTokenizerBase`, which moved, and then re-raises the import
+        # error as the very misleading "transformers is not installed".
+        # Its CORE enforcer is fine, so we build the adapter ourselves rather
+        # than depend on their shim. This is the standard pattern their
+        # integration uses, not an invention.
+        from lmformatenforcer import JsonSchemaParser, TokenEnforcer
+        from lmformatenforcer.tokenenforcer import TokenEnforcerTokenizerData
         self._JsonSchemaParser = JsonSchemaParser
-        self._build_fn = build_transformers_prefix_allowed_tokens_fn
+        self._TokenEnforcer = TokenEnforcer
+        self._tok_data = self._build_tokenizer_data(TokenEnforcerTokenizerData)
+
+    def _build_tokenizer_data(self, TokenEnforcerTokenizerData):
+        """Vocabulary table the enforcer needs: (id, text-after-a-digit,
+        is_word_start). Built ONCE per model — it is a full vocab sweep."""
+        tok = self.tok
+        token_0 = tok.encode("0")[-1]
+        specials = set(getattr(tok, "all_special_ids", []) or [])
+        regular = []
+        for tid in range(len(tok)):
+            if tid in specials:
+                continue
+            try:
+                after_0 = tok.decode([token_0, tid])[1:]
+                plain = tok.decode([tid])
+            except Exception:
+                continue
+            regular.append((tid, after_0, len(after_0) > len(plain)))
+        # signature VERIFIED on pod4, not assumed:
+        #   (regular_tokens, decoder, eos_token_id, use_bitmask, vocab_size)
+        # use_bitmask=False makes get_allowed_tokens return a LIST of ids,
+        # which is what generate()'s prefix_allowed_tokens_fn expects; True
+        # would return a tensor mask and silently mis-drive generation.
+        return TokenEnforcerTokenizerData(regular, tok.decode,
+                                          tok.eos_token_id, False, len(tok))
 
     def ask(self, frames, prompt: str, schema: dict, max_new: int = 256):
         """One constrained call. Returns (raw_text, parsed_or_None, err)."""
@@ -242,7 +273,10 @@ class ConstrainedVLM:
         inputs = {k: (v.to(self.model.device) if hasattr(v, "to") else v)
                   for k, v in inputs.items()}
         parser = self._JsonSchemaParser(schema)
-        prefix_fn = self._build_fn(self.tok, parser)
+        enforcer = self._TokenEnforcer(self._tok_data, parser)
+
+        def prefix_fn(_batch_id, sent):
+            return enforcer.get_allowed_tokens(sent.tolist())
         n_in = inputs["input_ids"].shape[1]
         with torch.no_grad():
             out = self.model.generate(**inputs, max_new_tokens=max_new,
