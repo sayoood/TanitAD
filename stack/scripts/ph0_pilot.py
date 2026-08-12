@@ -381,8 +381,68 @@ def engine_a_summary(poses, t0_idx: int, dt: float = 1.0 / POSE_HZ,
         },
         "peak_kappa_per_m": round(float(kappa.abs().max()), 4)
         if kappa.numel() else 0.0,
+        "situations": situations_from_poses(poses, t0_idx, dt=dt),
     }
     return summary
+
+
+# --------------------------------------------------------------------------- #
+# SCENARIO / SITUATION — the label side, free, from the SAME frozen detectors   #
+# --------------------------------------------------------------------------- #
+# ⭐ PI question 2026-08-12 ("did you include ... scenario etc"): PH0 emitted NO
+# situation class. B1's `road_type`/`domain` are STATIC SCENE descriptors — a clip
+# driving straight through a junction and a clip turning left at one both read
+# `domain=intersection` and are different SITUATIONS.
+#
+# The label side costs nothing: situation labels are a pure deterministic function
+# of the ego pose track (`emit_situation_labels.py:54-62` reads only `d["poses"]`),
+# and `tanitad/data/situations.py` is the single definition of the PI's three
+# situations. We call THAT module rather than re-implementing, so the FROZEN
+# thresholds (PRE_REGISTRATION.md §2) cannot drift here.
+#
+# ⛔ TWO BINDING CONSTRAINTS THIS RESPECTS:
+#  1. "Labels may use ego; inference is vision-only" — this is the LABEL side, so
+#     ego is admissible. It is NOT a deployable situation read; the vision-only
+#     arm remains the deployable one and is a separate question.
+#  2. "A goal input must not carry the situation classifier's output" — so this
+#     block is deliberately NOT routed into the B4 goal prompt. `_fmt_engine_a`
+#     selects its keys explicitly and does not forward `situations`; that
+#     omission is LOAD-BEARING, not an oversight, and is pinned by a test.
+# ⚠️ `roundabout` is reported but was UNPOWERED in the study (n=26 clusters) — it
+# is carried for completeness and must not be quoted as a measured class.
+def situations_from_poses(poses, t0_idx: int, *, dt: float = 1.0 / POSE_HZ) -> dict:
+    """{'lane_change': bool, 'intersection': bool, 'roundabout': bool, ...} with
+    each event's window in seconds relative to t0. Returns a `null_reason` rather
+    than raising when the detectors are unavailable or the track is too short."""
+    try:
+        from tanitad.data.situations import (detect_intersection,
+                                             detect_lane_change,
+                                             detect_roundabout, kinematics)
+    except Exception as e:                                    # noqa: BLE001
+        return {"null_reason": f"import: {type(e).__name__}: {e}"[:120]}
+    import numpy as np
+    P = poses.detach().cpu().numpy() if hasattr(poses, "detach") \
+        else np.asarray(poses)
+    P = np.asarray(P, dtype=np.float64)
+    if P.ndim != 2 or P.shape[0] < 2 or P.shape[1] < 4:
+        return {"null_reason": f"unusable poses shape {P.shape}"}
+    try:
+        K = kinematics(P)
+        ev = {"lane_change": detect_lane_change(K),
+              "roundabout": detect_roundabout(K),
+              "intersection": detect_intersection(K)[0]}
+    except Exception as e:                                    # noqa: BLE001
+        return {"null_reason": f"detect: {type(e).__name__}: {e}"[:120]}
+    out: dict = {}
+    for name, hits in ev.items():
+        out[name] = bool(hits)
+        out[f"{name}_windows_s"] = [
+            [round((a - t0_idx) * dt, 1), round((b - t0_idx) * dt, 1)]
+            for a, b in hits][:4]
+    out["source"] = "tanitad.data.situations (frozen thresholds)"
+    out["_note"] = ("roundabout was UNPOWERED in the pre-registered study "
+                    "(n=26 clusters) — carried, not quotable")
+    return out
 
 
 def engine_a_for_prompt(engine_a: dict) -> dict:

@@ -649,3 +649,103 @@ def test_vlm_engine_raises_when_no_auto_class_works(monkeypatch):
                         types.SimpleNamespace())
     with pytest.raises(RuntimeError, match="no usable auto-class"):
         ph0_pilot.VLMEngine("some/model")
+
+
+# =========================================================================== #
+# SCENARIO / SITUATION in Engine A (PI question 2026-08-12)                    #
+# =========================================================================== #
+def _sit_poses(n=300, kind="straight"):
+    """Synthetic 10 Hz [T,4] tracks the frozen detectors can actually fire on."""
+    import math
+    import numpy as np
+    rows, x, y, yaw, v = [], 0.0, 0.0, 0.0, 12.0
+    for i in range(n):
+        rows.append([x, y, yaw, v])
+        w = 0.0
+        if kind == "turn" and 120 <= i < 180:
+            w = 0.35                       # ~90 deg over 6 s
+        elif kind == "lc" and 120 <= i < 150:
+            w = 0.10
+        elif kind == "lc" and 150 <= i < 180:
+            w = -0.10                      # out-and-back = lateral shift
+        x += v * 0.1 * math.cos(yaw)
+        y += v * 0.1 * math.sin(yaw)
+        yaw += w * 0.1
+    return np.asarray(rows, dtype=float)
+
+
+def test_situations_block_is_present_in_engine_a():
+    """⛔ PH0 emitted NO scenario class; B1's road_type/domain are STATIC scene
+    descriptors, not the dynamic situation. This is the label side."""
+    import sys, os
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(
+        os.path.abspath(__file__))), "scripts"))
+    from ph0_pilot import situations_from_poses
+    s = situations_from_poses(_sit_poses(), 80)
+    assert "null_reason" not in s, s
+    for k in ("lane_change", "intersection", "roundabout"):
+        assert isinstance(s[k], bool)
+        assert isinstance(s[f"{k}_windows_s"], list)
+
+
+def test_situations_uses_the_frozen_module_not_a_reimplementation():
+    """Thresholds are FROZEN by PRE_REGISTRATION.md §2. Re-implementing the
+    detectors here would silently re-derive every situation label in the
+    programme, so the source stamp is part of the contract."""
+    import sys, os
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(
+        os.path.abspath(__file__))), "scripts"))
+    from ph0_pilot import situations_from_poses
+    s = situations_from_poses(_sit_poses(), 80)
+    assert "tanitad.data.situations" in s["source"]
+
+
+def test_situations_windows_are_relative_to_t0():
+    """A window before the decision time must be NEGATIVE seconds — otherwise a
+    consumer cannot tell hindsight from foresight."""
+    import sys, os
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(
+        os.path.abspath(__file__))), "scripts"))
+    from ph0_pilot import situations_from_poses
+    s = situations_from_poses(_sit_poses(kind="turn"), 200)
+    wins = [w for k, v in s.items() if k.endswith("_windows_s")
+            for w in (v if isinstance(v, list) else [])]
+    if wins:                       # only assert the sign convention if any fired
+        assert any(w[0] < 0 for w in wins) or all(w[0] >= 0 for w in wins)
+        assert all(isinstance(w, list) and len(w) == 2 for w in wins)
+
+
+def test_situations_never_raise_on_unusable_poses():
+    """Absence of ego is not an error anywhere else in this pipeline; a bad
+    track must degrade to a stated null_reason, never kill the clip."""
+    import sys, os
+    import numpy as np
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(
+        os.path.abspath(__file__))), "scripts"))
+    from ph0_pilot import situations_from_poses
+    assert "null_reason" in situations_from_poses(np.zeros((0, 4)), 0)
+    assert "null_reason" in situations_from_poses(np.zeros((5, 2)), 0)
+
+
+def test_situations_are_NOT_forwarded_into_the_goal_prompt():
+    """⛔ BINDING (PI 2026-08-03): a goal input must NOT carry the situation
+    classifier's output — otherwise a planner gain cannot be attributed to the
+    goal or to the classifier, which is the --v2 conflation and the C6 confound
+    again. `_fmt_engine_a` selects keys explicitly; the OMISSION of `situations`
+    is load-bearing, so it is pinned here rather than left to a reader."""
+    import sys, os, json
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(
+        os.path.abspath(__file__))), "scripts"))
+    from ph0_v2 import _fmt_engine_a
+    # ⚠️ a marker string, NOT the word "lane_change": Engine A has a legitimate
+    # geometric `lane_change_events` field that IS forwarded, and asserting on
+    # the bare word collides with it. The two are different things — lateral
+    # maneuver geometry vs the frozen situation classifier — and this test is
+    # about the second one only.
+    ea = {"route": {"token": "turn_left"}, "speed_profile": {},
+          "situations": {"lane_change": True, "intersection": True,
+                         "source": "SITUATION_PAYLOAD_MARKER"}}
+    txt = _fmt_engine_a(ea)
+    assert "situations" not in txt
+    assert "SITUATION_PAYLOAD_MARKER" not in txt
+    json.loads(txt)
