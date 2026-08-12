@@ -167,6 +167,89 @@ DO NOT output distances, speeds, times or durations — those are measured \
 separately from the trajectory."""
 
 
+# --------------------------------------------------------------------------- #
+# POST-PARSE VALIDATION                                                         #
+# --------------------------------------------------------------------------- #
+# ⛔ MEASURED 2026-08-12: the grammar enforces STRUCTURE and TYPE but NOT
+# numeric bounds. A schema saying {"type":"integer","maximum":448} still let the
+# model emit bbox [952,100,975,160] on a 448 px frame. Every `minimum`/`maximum`
+# in the schemas above is therefore DECORATIVE, and this layer is what actually
+# holds them. Nor does `maxItems` imply distinct: B4 emitted hold_corridor three
+# times. Anything the grammar cannot guarantee is checked here, by hand.
+def validate_v2(call: str, obj: dict, *, px: int = 448,
+                n_frames: int = 40) -> list[str]:
+    """Return a list of violations; empty means valid. Pure — CPU-testable."""
+    e: list[str] = []
+    if not isinstance(obj, dict):
+        return [f"{call}: not an object"]
+
+    if call == "B1_scene":
+        for k in ("lanes_visible", "lane_ego"):
+            v = obj.get(k)
+            if not isinstance(v, int) or not 0 <= v <= 6:
+                e.append(f"B1.{k}={v!r} outside 0..6")
+        if isinstance(obj.get("lane_ego"), int) \
+                and isinstance(obj.get("lanes_visible"), int) \
+                and obj["lanes_visible"] > 0 \
+                and obj["lane_ego"] >= obj["lanes_visible"]:
+            e.append(f"B1.lane_ego {obj['lane_ego']} >= lanes_visible "
+                     f"{obj['lanes_visible']}")
+
+    elif call == "B2_signs":
+        n, signs = obj.get("n_signs"), obj.get("signs")
+        if not isinstance(signs, list):
+            e.append("B2.signs not a list")
+        elif not isinstance(n, int) or n != len(signs):
+            # the whole point of emitting n_signs FIRST is that it must match
+            e.append(f"B2.n_signs {n!r} != len(signs) {len(signs)}")
+        for i, s in enumerate(signs or []):
+            if s.get("kind") != "light" and s.get("state") != "none":
+                e.append(f"B2.signs[{i}] state {s.get('state')!r} on a "
+                         f"non-light ({s.get('kind')!r})")
+            if len(str(s.get("text", ""))) > 40:
+                e.append(f"B2.signs[{i}].text longer than 40")
+
+    elif call.startswith("B3_ground"):
+        bb = obj.get("bbox")
+        if not (isinstance(bb, list) and len(bb) == 4):
+            e.append("B3.bbox not 4 ints")
+        else:
+            if any(not isinstance(v, int) or not 0 <= v <= px for v in bb):
+                e.append(f"B3.bbox {bb} outside 0..{px}")  # THE measured defect
+            elif bb != [0, 0, 0, 0] and not (bb[0] < bb[2] and bb[1] < bb[3]):
+                e.append(f"B3.bbox {bb} not x0<x1 and y0<y1")
+        fi = obj.get("frame_idx")
+        if not isinstance(fi, int) or not 0 <= fi < n_frames:
+            e.append(f"B3.frame_idx={fi!r} outside 0..{n_frames-1}")
+        if obj.get("visible") is False and obj.get("bbox") != [0, 0, 0, 0]:
+            e.append("B3.visible false but bbox non-zero")
+
+    elif call == "B4_symbols":
+        if obj.get("goal_kind") not in GOAL_KINDS:
+            e.append(f"B4.goal_kind {obj.get('goal_kind')!r} off-vocabulary")
+        acts = obj.get("actions")
+        if not isinstance(acts, list):
+            e.append("B4.actions not a list")
+        else:
+            seen = set()
+            for i, a in enumerate(acts):
+                key = (a.get("verb"), a.get("direction"))
+                if key in seen:                      # maxItems != distinct
+                    e.append(f"B4.actions[{i}] duplicate {key}")
+                seen.add(key)
+                if a.get("verb") not in ACTION_VERBS:
+                    e.append(f"B4.actions[{i}].verb {a.get('verb')!r} "
+                             f"off-vocabulary")
+                if a.get("verb") == "prepare_lane_change" \
+                        and a.get("direction") not in ("left", "right"):
+                    e.append(f"B4.actions[{i}] lane change needs a side")
+        # the prereg's own rule: route_to REQUIRES read signage
+        if obj.get("goal_kind") == "route_to" \
+                and obj.get("goal_evidence_sign") is None:
+            e.append("B4.goal_kind route_to without goal_evidence_sign")
+    return e
+
+
 def _fmt_engine_a(ea: dict | None) -> str:
     """Engine A summary for the B4 prompt — compact and metric, so the model
     is anchored by geometry rather than asked to invent it."""
@@ -230,9 +313,12 @@ class ConstrainedVLM:
         # than depend on their shim. This is the standard pattern their
         # integration uses, not an invention.
         from lmformatenforcer import JsonSchemaParser, TokenEnforcer
+        from lmformatenforcer.characterlevelparser import \
+            CharacterLevelParserConfig
         from lmformatenforcer.tokenenforcer import TokenEnforcerTokenizerData
         self._JsonSchemaParser = JsonSchemaParser
         self._TokenEnforcer = TokenEnforcer
+        self._CfgCls = CharacterLevelParserConfig
         self._tok_data = self._build_tokenizer_data(TokenEnforcerTokenizerData)
 
     def _build_tokenizer_data(self, TokenEnforcerTokenizerData):
@@ -272,7 +358,16 @@ class ConstrainedVLM:
             return_dict=True, return_tensors="pt")
         inputs = {k: (v.to(self.model.device) if hasattr(v, "to") else v)
                   for k, v in inputs.items()}
-        parser = self._JsonSchemaParser(schema)
+        # ⭐ config VERIFIED on pod4, and it fixes two measured defects:
+        #  · max_consecutive_whitespaces default is 12 — the model burned its
+        #    whole token budget on tabs/spaces and B1 TRUNCATED mid-object.
+        #    1 is enough for readability and cannot eat a budget.
+        #  · force_json_field_order makes `required` order BINDING, so B2's
+        #    n_signs really is emitted before signs[] instead of by luck.
+        cfg = self._CfgCls(max_consecutive_whitespaces=1,
+                           force_json_field_order=True,
+                           max_json_array_length=6)
+        parser = self._JsonSchemaParser(schema, config=cfg)
         enforcer = self._TokenEnforcer(self._tok_data, parser)
 
         def prefix_fn(_batch_id, sent):
@@ -300,17 +395,36 @@ def run_clip(vlm, frames, n_past, engine_a, *, px=448, dump=None):
     calls, rec = [], {}
 
     def record(name, prompt, schema, max_new=256):
+        """One call, retried ONCE on a validation failure with the violations
+        fed back. Retry is on VALIDATION, not on parse — the grammar makes a
+        parse failure a budget problem, which a retry cannot fix."""
         t = time.time()
         raw, parsed, err = vlm.ask(frames, prompt, schema, max_new)
+        viol = validate_v2(name, parsed) if parsed is not None else []
+        attempts, retried = 1, False
+        if parsed is not None and viol:
+            retried = True
+            fix = (prompt + "\n\nYour previous answer violated: "
+                   + "; ".join(viol[:4]) + "\nAnswer again, corrected.")
+            raw2, parsed2, err2 = vlm.ask(frames, fix, schema, max_new)
+            viol2 = validate_v2(name, parsed2) if parsed2 is not None else []
+            attempts = 2
+            if parsed2 is not None and not viol2:
+                raw, parsed, err, viol = raw2, parsed2, err2, viol2
         calls.append({"call": name, "prompt": prompt, "raw_output": raw,
                       "parsed": parsed, "error": err,
-                      "valid": parsed is not None,
+                      "violations": viol, "retried": retried,
+                      "attempts": attempts,
+                      "parsed_ok": parsed is not None,
+                      "valid": parsed is not None and not viol,
                       "wall_s": round(time.time() - t, 1)})
-        return parsed
+        return parsed if not viol else None
 
+    # budgets have headroom now that whitespace is capped at 1 — the single
+    # measured parse failure was a whitespace-driven truncation at 128.
     rec["scene"] = record("B1_scene", P_B1.format(
-        n_past_1=n_past - 1, n_past=n_past, n_last=n_last), S_B1, 128)
-    rec["signs"] = record("B2_signs", P_B2, S_B2, 256)
+        n_past_1=n_past - 1, n_past=n_past, n_last=n_last), S_B1, 192)
+    rec["signs"] = record("B2_signs", P_B2, S_B2, 384)
 
     grounded = []
     for i, s in enumerate((rec["signs"] or {}).get("signs", [])[:6]):
@@ -328,7 +442,10 @@ def run_clip(vlm, frames, n_past, engine_a, *, px=448, dump=None):
 
     rec["_calls"] = calls
     rec["_all_valid"] = all(c["valid"] for c in calls)
-    rec["_n_parse_fail"] = sum(1 for c in calls if c["error"])
+    rec["_n_parse_fail"] = sum(1 for c in calls if not c["parsed_ok"])
+    rec["_n_violation_fail"] = sum(1 for c in calls
+                                   if c["parsed_ok"] and c["violations"])
+    rec["_n_retried"] = sum(1 for c in calls if c["retried"])
     return rec
 
 
@@ -340,6 +457,9 @@ def main(argv=None) -> int:
     ap.add_argument("--arm", default="Qwen/Qwen3.5-9B")
     ap.add_argument("--out", required=True)
     ap.add_argument("--n", type=int, default=4)
+    ap.add_argument("--resume", action="store_true",
+                    help="skip clips already present and all-valid in --out; "
+                         "REQUIRED for any run large enough to be interrupted")
     a = ap.parse_args(argv)
 
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -348,13 +468,55 @@ def main(argv=None) -> int:
                            sample_clip_frames)
 
     os.makedirs(a.out, exist_ok=True)
+    out_path = os.path.join(a.out, "ph0_v2.json")
     clips = json.load(open(a.clips))[:a.n]
-    print(f"[v2] {len(clips)} clips · arm {a.arm}", flush=True)
-    vlm = ConstrainedVLM(a.arm)
-    print(f"[v2] auto_class {vlm.auto_class}", flush=True)
 
-    out_clips = []
-    for ci, cid in enumerate(clips):
+    # ---- resume: a 50-clip run at ~60 s/clip is ~50 min, long enough that a
+    # pod hiccup must not cost the whole thing. Only ALL-VALID clips are
+    # skipped; a partial clip is redone rather than left half-scored.
+    done: dict = {}
+    if a.resume and os.path.exists(out_path):
+        try:
+            prev = json.load(open(out_path))
+            for c in prev.get("clips", []):
+                if c.get("_all_valid"):
+                    done[c["clip_id"]] = c
+            print(f"[v2] resume: {len(done)} clips already all-valid",
+                  flush=True)
+        except Exception as e:
+            print(f"[v2] resume: unreadable {out_path} ({e}) — starting fresh",
+                  flush=True)
+
+    todo = [c for c in clips if c not in done]
+    print(f"[v2] {len(clips)} clips ({len(todo)} to run) · arm {a.arm}",
+          flush=True)
+    if not todo:
+        print("[v2] nothing to do", flush=True)
+    vlm = ConstrainedVLM(a.arm) if todo else None
+    if vlm:
+        print(f"[v2] auto_class {vlm.auto_class}", flush=True)
+
+    def _write(partial):
+        """Incremental write after EVERY clip — a crash at clip 47 of 50 must
+        not discard 46 finished clips."""
+        ok_ = [c for c in partial if c.get("_all_valid")]
+        json.dump({"schema_version": SCHEMA_VERSION, "arm": a.arm,
+                   "auto_class": getattr(vlm, "auto_class", None),
+                   "n": len(partial), "n_all_calls_valid": len(ok_),
+                   "n_parse_failures": sum(c.get("_n_parse_fail", 0)
+                                           for c in partial),
+                   "n_violation_failures": sum(c.get("_n_violation_fail", 0)
+                                               for c in partial),
+                   "n_retried_calls": sum(c.get("_n_retried", 0)
+                                          for c in partial),
+                   "constrained_decoding":
+                       "lm-format-enforcer JsonSchemaParser "
+                       "(ws<=1, force_field_order, max_array 6)",
+                   "complete": False, "clips": partial},
+                  open(out_path, "w"), indent=1)
+
+    out_clips = list(done.values())
+    for ci, cid in enumerate(todo):
         vp = os.path.join(a.video_root, f"{cid}.mp4")
         try:
             frames, times, n_past = sample_clip_frames(vp, t0_s=8.0)
@@ -371,20 +533,30 @@ def main(argv=None) -> int:
             rec = run_clip(vlm, frames, n_past, ea)
             rec["clip_id"] = cid
             out_clips.append(rec)
-            print(f"[v2] {ci+1}/{len(clips)} {cid[:8]} "
+            print(f"[v2] {ci+1}/{len(todo)} {cid[:8]} "
                   f"all_valid={rec['_all_valid']} "
-                  f"parse_fail={rec['_n_parse_fail']}", flush=True)
+                  f"parse_fail={rec['_n_parse_fail']} "
+                  f"viol={rec['_n_violation_fail']} "
+                  f"retried={rec['_n_retried']}", flush=True)
         except Exception as e:
             out_clips.append({"clip_id": cid, "fatal": f"{type(e).__name__}: {e}"})
             print(f"[v2] {ci+1} {cid[:8]} FATAL {e}", flush=True)
+        _write(out_clips)
 
     ok = [c for c in out_clips if c.get("_all_valid")]
     pf = sum(c.get("_n_parse_fail", 0) for c in out_clips)
     summary = {"schema_version": SCHEMA_VERSION, "arm": a.arm,
-               "auto_class": vlm.auto_class, "n": len(out_clips),
+               "auto_class": getattr(vlm, "auto_class", None),
+               "n": len(out_clips),
                "n_all_calls_valid": len(ok), "n_parse_failures": pf,
-               "constrained_decoding": "lm-format-enforcer JsonSchemaParser",
-               "clips": out_clips}
+               "n_violation_failures": sum(c.get("_n_violation_fail", 0)
+                                           for c in out_clips),
+               "n_retried_calls": sum(c.get("_n_retried", 0)
+                                      for c in out_clips),
+               "constrained_decoding":
+                   "lm-format-enforcer JsonSchemaParser "
+                   "(ws<=1, force_field_order, max_array 6)",
+               "complete": True, "clips": out_clips}
     p = os.path.join(a.out, "ph0_v2.json")
     json.dump(summary, open(p, "w"), indent=1)
     print(f"[v2] all-calls-valid {len(ok)}/{len(out_clips)} · "
