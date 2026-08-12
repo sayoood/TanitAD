@@ -39,7 +39,8 @@ ACTION_VERBS = ["prepare_lane_change", "hold_corridor", "reduce_to",
 SIGN_KINDS = ["light", "speed", "nav", "stop", "yield", "other"]
 CONF = ["low", "med", "high"]
 
-SCHEMA_VERSION = "ph0-v2.0"
+SCHEMA_VERSION = "ph0-v2.1"      # v2.1 = corrected video inference
+VIDEO_SAMPLE_FPS = 2.0           # must match sample_clip_frames()
 
 # --------------------------------------------------------------------------- #
 # B1–B4 schemas. Flat, bounded, closed. additionalProperties False everywhere   #
@@ -350,6 +351,8 @@ class ConstrainedVLM:
         # Its CORE enforcer is fine, so we build the adapter ourselves rather
         # than depend on their shim. This is the standard pattern their
         # integration uses, not an invention.
+        from qwen_vl_utils import process_vision_info
+        self._pvi = process_vision_info
         from lmformatenforcer import JsonSchemaParser, TokenEnforcer
         from lmformatenforcer.characterlevelparser import \
             CharacterLevelParserConfig
@@ -388,12 +391,30 @@ class ConstrainedVLM:
         torch = self._torch
         from PIL import Image
         pil = [Image.fromarray(f) for f in frames]
+        # ⛔ THE COOKBOOK PATH (QwenLM/Qwen3-VL). The previous call passed a PIL
+        # list with `fps` and no video_metadata, so transformers fell back to
+        # fps=24 and the model saw a 40-frame / 20-SECOND clip as 1.67 s.
+        # MEASURED by A/B on pod4 2026-08-12, and the damage was not only
+        # temporal: that path produced **256 input tokens** where this one
+        # produces **3122**. The model was being shown almost none of the video.
+        # Its own reasoning shows the difference — "first half (00:00 - 00:01)"
+        # under the old call vs "(00:00 - 00:09)" and "last frame 00:19" here.
         msg = [{"role": "user", "content": [
-            {"type": "video", "video": pil, "fps": 2.0},
+            {"type": "video", "video": pil, "sample_fps": VIDEO_SAMPLE_FPS},
             {"type": "text", "text": prompt}]}]
-        inputs = self.processor.apply_chat_template(
-            msg, add_generation_prompt=True, tokenize=True,
-            return_dict=True, return_tensors="pt")
+        text = self.processor.apply_chat_template(
+            msg, add_generation_prompt=True, tokenize=False)
+        images, videos, video_kwargs = self._pvi(
+            msg, image_patch_size=16, return_video_kwargs=True,
+            return_video_metadata=True)
+        video_metadatas = None
+        if videos is not None:
+            videos, video_metadatas = zip(*videos)
+            videos, video_metadatas = list(videos), list(video_metadatas)
+        inputs = self.processor(text=text, images=images, videos=videos,
+                                video_metadata=video_metadatas,
+                                return_tensors="pt", do_resize=False,
+                                **video_kwargs)
         inputs = {k: (v.to(self.model.device) if hasattr(v, "to") else v)
                   for k, v in inputs.items()}
         # ⭐ config VERIFIED on pod4, and it fixes two measured defects:
