@@ -247,3 +247,52 @@ def test_unknown_call_name_does_not_silently_pass():
     """A typo'd call name must not read as 'valid' — it returns no violations
     only because nothing matched, so the caller's `valid` flag would lie."""
     assert validate_v2("B9_nonexistent", {"anything": 1}) == []
+
+
+# --------------------------------------------------------------------------- #
+# defects that SURVIVED the inference fix (ph0-v2.1)                           #
+# --------------------------------------------------------------------------- #
+def test_dedupe_signs_drops_repeats_and_resyncs_n_signs():
+    """⛔ MEASURED on CORRECTED inference: sign padding survives. One clip gave
+    speed "100" x4, another yield "" x5, another "P" x3. So it is NOT the
+    near-blind-inference artifact — it is array filling, same as B4 actions.
+    n_signs must be re-synced or the record self-contradicts."""
+    from ph0_v2 import dedupe_signs
+    sg, n = dedupe_signs({"n_signs": 4, "signs": [
+        {"kind": "speed", "text": "100", "state": "none",
+         "applies_to_ego": True}] * 4})
+    assert n == 3
+    assert sg["n_signs"] == 1 and len(sg["signs"]) == 1
+    assert validate_v2("B2_signs", sg) == []
+
+
+def test_dedupe_signs_keeps_genuinely_distinct_signs():
+    from ph0_v2 import dedupe_signs
+    sg, n = dedupe_signs({"n_signs": 2, "signs": [
+        {"kind": "speed", "text": "100", "state": "none", "applies_to_ego": True},
+        {"kind": "nav", "text": "The Sea", "state": "none",
+         "applies_to_ego": True}]})
+    assert n == 0 and sg["n_signs"] == 2
+
+
+def test_b3_prompt_separates_frame_index_from_coordinate_range():
+    """⛔ MEASURED: the B3 prompt said 'NORMALIZED coordinates 0-1000' and the
+    model emitted frame_idx=1000 three times on one clip — the range bled into
+    the ADJACENT field. The prompt must state the frame range separately and
+    say it is a NUMBER, not a coordinate."""
+    from ph0_v2 import P_B3
+    assert "not a coordinate" in P_B3
+    assert "{n_last}" in P_B3 and "{n_frames}" in P_B3
+
+
+def test_frame_idx_1000_is_still_caught():
+    v = validate_v2("B3_ground_1", {"visible": True, "frame_idx": 1000,
+                                    "bbox": [750, 100, 800, 200]}, n_frames=40)
+    assert any("frame_idx" in e for e in v)
+
+
+def test_degenerate_bbox_is_caught():
+    """[750,1000,750,1000] — zero width and height, measured on the same clip."""
+    v = validate_v2("B3_ground_1", {"visible": True, "frame_idx": 5,
+                                    "bbox": [750, 1000, 750, 1000]})
+    assert any("x0<x1" in e for e in v)

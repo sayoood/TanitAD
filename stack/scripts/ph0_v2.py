@@ -149,9 +149,11 @@ If you see no legible signs, answer n_signs 0 and an empty list."""
 P_B3 = """Same driving video. Sign {idx} was reported as: kind={kind}, \
 text="{text}".
 
-Locate THAT sign. Give the frame index where it is clearest and its bounding \
-box [x0,y0,x1,y1] in NORMALIZED coordinates 0-1000, where 0 is the left/top \
-edge and 1000 is the right/bottom edge of the frame.
+Locate THAT sign.
+- frame_idx: which frame it is clearest in. An INTEGER from 0 to {n_last} \
+(there are {n_frames} frames). This is a frame NUMBER, not a coordinate.
+- bbox [x0,y0,x1,y1]: its box in NORMALIZED image coordinates 0-1000, where 0 \
+is the left/top edge and 1000 is the right/bottom edge. Require x0<x1 and y0<y1.
 If you cannot actually see it, answer visible false with bbox [0,0,0,0]."""
 
 P_B4 = """Same driving video. The frames AFTER the decision time are HINDSIGHT \
@@ -269,6 +271,29 @@ def validate_v2(call: str, obj: dict, *, px: int = BBOX_MAX,
                 and obj.get("goal_evidence_sign") is None:
             e.append("B4.goal_kind route_to without goal_evidence_sign")
     return e
+
+
+def dedupe_signs(sg: dict | None) -> tuple[dict | None, int]:
+    """Drop repeated (kind, text, applies_to_ego) signs and re-sync n_signs.
+
+    ⛔ MEASURED on CORRECTED inference (ph0-v2.1): the padding survives. One
+    clip reported speed "100" x4, another yield "" x5, another "P" x3. So this
+    is NOT the near-blind-inference artifact — it is the model filling the array
+    to maxItems, exactly as it did for B4 actions. I deduped actions and left
+    signs, which is why the duplicates were still here to find."""
+    if not sg or not isinstance(sg.get("signs"), list):
+        return sg, 0
+    seen, keep = set(), []
+    for s_ in sg["signs"]:
+        k = (s_.get("kind"), s_.get("text"), s_.get("applies_to_ego"))
+        if k in seen:
+            continue
+        seen.add(k)
+        keep.append(s_)
+    n = len(sg["signs"]) - len(keep)
+    if n:
+        sg = dict(sg, signs=keep, n_signs=len(keep))
+    return sg, n
 
 
 def dedupe_actions(sym: dict | None) -> tuple[dict | None, int]:
@@ -484,12 +509,16 @@ def run_clip(vlm, frames, n_past, engine_a, *, px=448, dump=None):
     # measured parse failure was a whitespace-driven truncation at 128.
     rec["scene"] = record("B1_scene", P_B1.format(
         n_past_1=n_past - 1, n_past=n_past, n_last=n_last), S_B1, 192)
-    rec["signs"] = record("B2_signs", P_B2, S_B2, 384)
+    sg_raw = record("B2_signs", P_B2, S_B2, 384)
+    sg_raw, n_sign_dup = dedupe_signs(sg_raw)
+    rec["signs"] = sg_raw
+    rec["_n_sign_dupes_dropped"] = n_sign_dup
 
     grounded = []
     for i, s in enumerate((rec["signs"] or {}).get("signs", [])[:6]):
         g = record(f"B3_ground_{i}", P_B3.format(
-            idx=i, kind=s.get("kind"), text=s.get("text", ""), px=px), S_B3, 96)
+            idx=i, kind=s.get("kind"), text=s.get("text", ""),
+            n_last=n_last, n_frames=len(frames)), S_B3, 96)
         grounded.append(g)
     rec["grounding"] = grounded
     # normalized -> pixels, recorded BESIDE the raw so both are auditable
