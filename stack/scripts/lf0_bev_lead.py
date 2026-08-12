@@ -145,7 +145,15 @@ def main(argv=None) -> int:
     print(f"[lf0] grid {nx}x{ny} cell {GRID_DEFAULT.cell_m} m · corridor cols "
           + " ".join(f"{w}m:{len(c)}" for w, c in cols.items()), flush=True)
 
-    args = build_args(rest + ["--out", os.path.join(a.out, "_tmp")])
+    # ⛔ --ckpt is consumed by OUR parser, so it never reaches build_args and the
+    # P8 parser dies with "the following arguments are required: --ckpt".
+    # Re-inject it rather than making the caller pass it twice — a duplicated
+    # flag is the kind of thing that drifts between the two copies.
+    # --v2-cache is likewise required by the TRAINER's parser; LF0 never builds a
+    # train loader, so the caller points it at the val cache (as p8_bev_reel
+    # does) and it is only there to satisfy the shared arg surface.
+    args = build_args(rest + ["--ckpt", a.ckpt,
+                              "--out", os.path.join(a.out, "_tmp")])
     device = args.device if torch.cuda.is_available() else "cpu"
     amp_on = (device == "cuda") and not getattr(args, "no_amp", False)
     os.makedirs(a.out, exist_ok=True)
