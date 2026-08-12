@@ -15,9 +15,16 @@ API verified on pod4 2026-08-12, not guessed:
   sam3.model_builder.SAM3InteractiveImagePredictor(sam_model, ...)
     .set_image_batch(image_list) · .predict(box=..., multimask_output=...)
 
-⚠️ SAM3 weights come from `facebook/sam3` (HTTP 200 with our token, verified;
-`sam3-large`/`sam3-base` are 404 and do not exist). `load_from_HF=True` fetches
-them, so HF_HOME must be set and the token present.
+⛔ BLOCKED ON A HUMAN ACTION, NOT ON CODE. `facebook/sam3` is
+``"gated": "manual"`` — access must be REQUESTED on the model page and approved
+by Meta. MEASURED with our own valid token (whoami = Sayood):
+    /api/models/facebook/sam3            -> 200   (metadata is public)
+    /resolve/main/config.json            -> 403
+    hf_hub_download                      -> GatedRepoError: 401
+⚠️ The 200 on metadata says NOTHING about file access, and I twice reported this
+repo as "available" on that basis. `sam3-large` / `sam3-base` are 404 and do not
+exist. Everything else in this engine is wired and verified; the moment access is
+granted, `load_from_HF=True` will fetch and this runs unchanged.
 """
 from __future__ import annotations
 
