@@ -131,10 +131,14 @@ def main(argv=None) -> int:
     ap.add_argument("--n-windows", type=int, default=400)
     ap.add_argument("--min-row", type=int, default=2,
                     help="skip the first rows — the ego's own footprint")
+    ap.add_argument("--save-panels", type=int, default=0,
+                    help="save N GT|enc|pred panels for windows where the GT "
+                         "HAS a lead in the corridor (the interesting case)")
     a, rest = ap.parse_known_args(argv)
 
     import torch
 
+    from tanitad.data.bev_raster import ALL_CLASSES as RASTER_CLASSES
     from tanitad.data.bev_raster import GRID_DEFAULT
     from train_p8_occupancy import (BEVOccupancyHead, batch_rasters,
                                     build_args, build_raster_source,
@@ -209,6 +213,7 @@ def main(argv=None) -> int:
     truth = np.full(n, np.nan)
 
     source = build_raster_source(args, val_eps)
+    panels: list[dict] = []
 
     with torch.no_grad():
         for i in range(n):
@@ -239,6 +244,17 @@ def main(argv=None) -> int:
             # the TRUE gap is the GT raster's own read at the headline corridor:
             # it is a geometric fact about the labelled scene, not a model output
             truth[i] = reads[f"gt@{HEADLINE_CORRIDOR}"][i]
+            # Panels are saved ONLY where the GT has a lead in the corridor —
+            # that is the case the whole probe is about, and sampling windows
+            # with no lead would make the decode look better than it is.
+            if (a.save_panels and np.isfinite(truth[i])
+                    and len(panels) < a.save_panels):
+                panels.append({"i": i, "gt": g.astype(np.float32),
+                               "enc": pe.astype(np.float32),
+                               "pred": pp.astype(np.float32),
+                               "true_m": float(truth[i]),
+                               "enc_m": float(reads[f"enc@{HEADLINE_CORRIDOR}"][i]),
+                               "pred_m": float(reads[f"pred@{HEADLINE_CORRIDOR}"][i])})
             if (i + 1) % 50 == 0:
                 print(f"[lf0] {i+1}/{n}", flush=True)
 
@@ -295,6 +311,29 @@ def main(argv=None) -> int:
             f"{pr2}, enc R2 {er2} < {GATE_R2}). With P1's pooled MLP ceiling at "
             f"-0.334 and the reader sanity-checked, 'missing state variable' "
             f"survives its second independent test")
+    if panels:
+        np.savez_compressed(
+            os.path.join(a.out, "lf0_panels.npz"),
+            gt=np.stack([p["gt"] for p in panels]),
+            enc=np.stack([p["enc"] for p in panels]),
+            pred=np.stack([p["pred"] for p in panels]),
+            true_m=np.array([p["true_m"] for p in panels]),
+            enc_m=np.array([p["enc_m"] for p in panels]),
+            pred_m=np.array([p["pred_m"] for p in panels]),
+            window=np.array([p["i"] for p in panels]),
+            corridor_cols=cols[HEADLINE_CORRIDOR],
+            cell_m=np.array([GRID_DEFAULT.cell_m]),
+            y_half_m=np.array([GRID_DEFAULT.y_half_m]),
+            tau=np.array([a.tau]),
+            # ⛔ what the raster DOES and DOES NOT contain, travelling with the
+            # data so a viewer cannot mistake the corridor band for perception
+            _classes=np.array(list(RASTER_CLASSES)),
+            _no_map=np.array(["obstacle.offline is 10 DYNAMIC AGENT classes. "
+                              "There is NO lane boundary, road edge, drivable "
+                              "area or corridor in this raster. The corridor "
+                              "band is a HAND-DEFINED +/-1.5 m geometric "
+                              "assumption, not a perceived lane."]))
+        print(f"[lf0] saved {len(panels)} panels", flush=True)
     json.dump(res, open(os.path.join(a.out, "lf0_gate.json"), "w"), indent=1)
     print(json.dumps({k: res[k] for k in ("verdict", "reader_sanity")},
                      indent=1), flush=True)
