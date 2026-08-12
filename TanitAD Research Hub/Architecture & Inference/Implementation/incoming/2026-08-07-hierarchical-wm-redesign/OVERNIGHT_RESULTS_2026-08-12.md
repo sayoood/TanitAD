@@ -157,10 +157,50 @@ structurally blocked until PH2** wires `g_str`.
 
 | item | state |
 |---|---|
-| **VLM pilot (PH0)** | Bridge **fixed** (8 clips, 199 frames each, 0 failures — it had been silently skipping every clip on a key mismatch). The pilot then failed because the fallback arm `Qwen3.5-9B` is **text-only** and rejects video kwargs. Re-running the arm smoke on the now-free GPU with the 4-bit `gemma-4-31B` and `Qwen3.5-27B-FP8`. |
-| **Distance-keeping / headway** | Needs a lead block on the T1 dense grid (`tools/build_lead_block.py`). |
+| **VLM pilot (PH0)** | ⚠️ **Pipeline VALIDATED 8/8; engine B (the VLM) is the one open blocker — and it needs your call.** See §7. |
+| **Distance-keeping / headway** | Needs a lead block on the T1 dense grid (`tools/build_lead_block.py`). This is the other half of LONGITUDINAL and, given tonight's finding, the highest-value missing instrument. |
 | **STRATEGIC family** | Blocked on the corpus; PH2 is the instrument. |
-| **HF release bundle** | Media pushed; the ckpt/gate bundle runs from pod5. |
+| **HF release bundle** | ✅ **PUBLISHED** — `RELEASE_DONE`, 20 artifacts + media + the 18 pilot files, MANIFEST last. |
+| **W7-PROG** | Pre-registered (`PREREG_W7_PROG.md`) with all three outcomes bound. Not yet launched. |
+
+---
+
+## 7. The VLM pilot — what works, and the one decision you need to make
+
+**The pipeline is validated.** With engine B disabled the pilot ran **8/8 clips ok**, produced 8
+overlay videos (40 frames each) and the records behind them. The three-pane renderer works:
+camera overlay, BEV, and text. Engine A (ego-algorithmic) produced the path, the route-merge
+label, v0 63 km/h and the `lc_left` anchor; engine D joined 5 Alpamayo record rows; the fusion
+gate reported cleanly. Two real bugs were found and fixed getting here:
+
+1. **The bridge was silently skipping every clip** — it looked for a `frames` key the compressed
+   v2 cache does not have, printed `BRIDGE_DONE n=0`, and **exited 0**, so the chain read it as
+   success and launched a 9 B VLM against an empty directory. It now uses the canonical
+   `decode_full_episode` and yields 8 clips × 199 frames, 0 failures. A zero-clip bridge is now a
+   non-zero exit, and the channel slice is pose-aligned (`[-3:]`, not `[:3]`).
+2. **`--no-vlm` added** so engine B's availability can never again masquerade as a pipeline
+   failure. Records carry `engine_b_disabled: true` and empty scenario/domain/signs/strategic
+   blocks — a validation artifact, never a vocabulary result. 40 tests green.
+
+**⛔ The blocker: all three candidate arms are unusable on pod4 as configured.**
+
+| arm | what happened |
+|---|---|
+| `Qwen/Qwen3.5-9B` | **TEXT-only.** Loads fine, then rejects every clip: `model_kwargs not used: ['pixel_values_videos', 'video_grid_thw']`. It was only ever the chain's *fallback*. |
+| `Qwen/Qwen3.5-27B-FP8` | **OOM** — needs **43.23 GiB** of a **44.43 GiB** card. No headroom for video activations. |
+| `google/gemma-4-31B-it-qat-w4a16-ct` | **The 4-bit path is broken**: loaded **unquantised** (38.83 GiB allocated) and then `KeyError: 'weight_packed'` under transformers 5.15 + compressed-tensors 0.18. |
+
+**Your decision (D7).** Three options, my recommendation first:
+
+1. ⭐ **Fetch a VL model sized for a 44 GB card** (~7–12 B vision-language, bf16). Cheapest, most
+   likely to work, and PH1 can start the same day. Needs you to name the checkpoint — I did not
+   want to guess a repo ID and burn download time and disk on a wrong one.
+2. **Fix the w4a16 path** — pin a transformers/compressed-tensors pair known to work with
+   gemma-4-qat. Keeps the 31 B quality but is open-ended debugging.
+3. **Provision a bigger card** (80 GB) and use `Qwen3.5-27B-FP8` as intended.
+
+Until one of these lands, PH1 and the vocabulary mapping stay blocked — but nothing else does:
+engines A, C and D, the fusion gate, the bridge and the renderer are all proven.
 
 ### Two things that cost time overnight, now written into `CLAUDE.md`
 
