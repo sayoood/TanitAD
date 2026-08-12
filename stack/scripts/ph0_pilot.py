@@ -44,6 +44,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import re
 import sys
 import time
@@ -641,10 +642,33 @@ def _resize_long(img: np.ndarray, px: int) -> np.ndarray:
         Image.BILINEAR))
 
 
+def _decoder_threads() -> int:
+    """Threads to allow the video decoder — deliberately TINY.
+
+    ⛔ MEASURED on pod4 2026-08-12: every VLM arm failed with
+    ``BlockingIOError: [Errno 11] ... [swscaler] Failed initializing scaling
+    graph (Resource temporarily unavailable)``. EAGAIN there is a THREAD
+    CREATION failure inside libswscale, not a corrupt video — the clips decode
+    fine on their own. The cause is the same "a probe reporting the wrong
+    scope" trap CLAUDE.md records for ``df``/``free``/cgroup counters:
+    ``nproc`` reports the HOST's 96 CPUs, so ffmpeg (and torch, at ~113 threads
+    per process) size their pools to 96 and collide with the container's real
+    allowance. This looked exactly like "the model is text-only / broken",
+    which is how it reached a PI decision request as a model-availability
+    problem when it was an environment one.
+
+    ⇒ Pin it to 1. Video decode here is a handful of frames at 2 fps; threads
+    buy nothing and cost the whole run."""
+    return int(os.environ.get("PH0_DECODER_THREADS", "1"))
+
+
 def _read_frames_at(video_path: str, times_s: list[float],
                     px: int) -> list[np.ndarray]:
     try:
         import cv2
+        # same reason as _decoder_threads(): cv2 auto-sizes to the host CPU
+        # count and its resize/convert pools hit the same ceiling.
+        cv2.setNumThreads(_decoder_threads())
         cap = cv2.VideoCapture(video_path)
         if not cap.isOpened():
             raise RuntimeError(f"cv2 cannot open {video_path}")
@@ -662,6 +686,10 @@ def _read_frames_at(video_path: str, times_s: list[float],
     import av                                        # stack [real] extra
     container = av.open(video_path)
     stream = container.streams.video[0]
+    # see _decoder_threads(): this is THE fix for the swscaler EAGAIN that made
+    # every VLM arm look unavailable. Set on the stream before any decode.
+    stream.thread_count = _decoder_threads()
+    stream.thread_type = "NONE"
     decoded, want = [], sorted(set(max(0.0, t) for t in times_s))
     frames_by_t: dict[float, np.ndarray] = {}
     wi = 0
@@ -837,20 +865,62 @@ class NullVLM:
         return {}, False
 
 
+# Auto-classes tried IN ORDER for engine B. The first two are the
+# vision-language classes; AutoModelForCausalLM is LAST and is text-only.
+#
+# ⛔ MEASURED on pod4 2026-08-12, and it is the real reason this arm looked
+# "text-only" for a day: loading a VLM through AutoModelForCausalLM SUCCEEDS —
+# the weights load, VRAM fills (16.68 GB for the 9B), nothing raises — and then
+# `generate()` dies with
+#   ValueError: The following `model_kwargs` are not used by the model:
+#   ['mm_token_type_ids', 'pixel_values_videos', 'video_grid_thw']
+# because the text-only class has no vision tower to consume them. 8/8 clips
+# failed in 0.6 s each while the run exited 0 with no traceback. A checkpoint
+# that is perfectly capable of video therefore presented as a model-availability
+# problem. The auto-class is OURS to choose, so choose it correctly and RECORD
+# which one was used.
+VLM_AUTO_CLASSES = ("AutoModelForImageTextToText", "AutoModelForVision2Seq",
+                    "AutoModelForCausalLM")
+
+
 class VLMEngine:
-    """Engine B wrapper: AutoProcessor/AutoModelForCausalLM with video chat
-    template. Instantiated pod-side only (lazy heavy imports)."""
+    """Engine B wrapper: AutoProcessor + the first VLM auto-class that both
+    imports and accepts the processor's video kwargs. Pod-side only (lazy
+    heavy imports)."""
 
     def __init__(self, model_id: str, max_new_tokens: int = 2048):
         import torch
-        from transformers import AutoModelForCausalLM, AutoProcessor
+        import transformers
+        from transformers import AutoProcessor
         self.model_id = model_id
         self.max_new_tokens = max_new_tokens
         self.processor = AutoProcessor.from_pretrained(
             model_id, trust_remote_code=True)
-        self.model = AutoModelForCausalLM.from_pretrained(
-            model_id, torch_dtype="auto", device_map="cuda:0",
-            trust_remote_code=True)
+        self.model, self.auto_class, errs = None, None, []
+        for name in VLM_AUTO_CLASSES:
+            cls = getattr(transformers, name, None)
+            if cls is None:
+                errs.append(f"{name}: not in transformers "
+                            f"{transformers.__version__}")
+                continue
+            try:
+                self.model = cls.from_pretrained(
+                    model_id, torch_dtype="auto", device_map="cuda:0",
+                    trust_remote_code=True)
+                self.auto_class = name
+                break
+            except Exception as e:                       # try the next class
+                errs.append(f"{name}: {type(e).__name__}: {str(e)[:120]}")
+        if self.model is None:
+            raise RuntimeError(
+                f"no usable auto-class for {model_id}; tried "
+                f"{list(VLM_AUTO_CLASSES)} -> {errs}")
+        if self.auto_class == "AutoModelForCausalLM":
+            # not fatal (a text-only arm is a legitimate ablation) but it must
+            # never be mistaken for a working video path again
+            print(f"[ph0][WARN] {model_id} loaded through the TEXT-ONLY "
+                  f"AutoModelForCausalLM — video kwargs will be rejected at "
+                  f"generate(). Earlier classes failed: {errs}", flush=True)
         self.model.eval()
         self._torch = torch
 

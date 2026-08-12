@@ -560,3 +560,92 @@ def test_no_vlm_flag_exists_and_defaults_off():
         assert '"--no-vlm"' in src and "action=\"store_true\"" in src
     else:
         assert ap.parse_args(["--clips", "c", "--out", "o"]).no_vlm is False
+
+
+# --------------------------------------------------------------------------- #
+# decoder thread pinning — the swscaler EAGAIN fix                             #
+# --------------------------------------------------------------------------- #
+def test_decoder_threads_defaults_to_one():
+    """MEASURED on pod4: every VLM arm died with
+    `BlockingIOError: [Errno 11] ... [swscaler] Failed initializing scaling
+    graph`. EAGAIN there is thread-creation failure inside libswscale — nproc
+    reports the HOST's 96 CPUs, so ffmpeg sizes its pool to 96 and collides
+    with the container's real allowance. Video decode here is a handful of
+    frames at 2 fps, so threads buy nothing and cost the entire run."""
+    import ph0_pilot
+    assert ph0_pilot._decoder_threads() == 1
+
+
+def test_decoder_threads_is_overridable(monkeypatch):
+    import ph0_pilot
+    monkeypatch.setenv("PH0_DECODER_THREADS", "4")
+    assert ph0_pilot._decoder_threads() == 4
+
+
+def test_pyav_path_pins_thread_count_before_decoding():
+    """A source guard: the pin must be set on the stream BEFORE any decode call,
+    otherwise libswscale has already allocated its pool."""
+    import inspect
+
+    import ph0_pilot
+    src = inspect.getsource(ph0_pilot._read_frames_at)
+    code = "\n".join(ln.split("#", 1)[0] for ln in src.splitlines())
+    assert "thread_count = _decoder_threads()" in code
+    assert code.index("thread_count") < code.index("container.decode("), \
+        "thread_count must be pinned before the first decode"
+    assert "cv2.setNumThreads" in code, "the cv2 path needs the same pin"
+
+
+# --------------------------------------------------------------------------- #
+# engine B auto-class selection — the "text-only" misdiagnosis                 #
+# --------------------------------------------------------------------------- #
+def test_vlm_auto_classes_try_vision_before_text_only():
+    """MEASURED on pod4: loading a VLM through AutoModelForCausalLM SUCCEEDS
+    (weights load, 16.68 GB VRAM, no traceback) and then generate() rejects
+    ['mm_token_type_ids','pixel_values_videos','video_grid_thw'] because the
+    text-only class has no vision tower. 8/8 clips failed in 0.6 s while the run
+    exited 0 — so a capable checkpoint presented as a model-availability
+    problem. Text-only must be the LAST resort, never the first choice."""
+    from ph0_pilot import VLM_AUTO_CLASSES
+    assert VLM_AUTO_CLASSES[-1] == "AutoModelForCausalLM"
+    assert "AutoModelForImageTextToText" in VLM_AUTO_CLASSES
+    assert VLM_AUTO_CLASSES.index("AutoModelForImageTextToText") < \
+        VLM_AUTO_CLASSES.index("AutoModelForCausalLM")
+
+
+def test_vlm_engine_records_which_auto_class_loaded(monkeypatch):
+    """The chosen class must be recorded, not just used — otherwise the next
+    reader cannot tell a video run from a text-only one."""
+    import types
+
+    import ph0_pilot
+
+    class _M:
+        def eval(self): return self
+    fake = types.SimpleNamespace(
+        __version__="5.15.0",
+        AutoProcessor=types.SimpleNamespace(
+            from_pretrained=staticmethod(lambda *a, **k: object())),
+        AutoModelForImageTextToText=types.SimpleNamespace(
+            from_pretrained=staticmethod(lambda *a, **k: _M())),
+    )
+    monkeypatch.setitem(__import__("sys").modules, "transformers", fake)
+    monkeypatch.setitem(__import__("sys").modules, "torch",
+                        types.SimpleNamespace())
+    eng = ph0_pilot.VLMEngine("some/model")
+    assert eng.auto_class == "AutoModelForImageTextToText"
+
+
+def test_vlm_engine_raises_when_no_auto_class_works(monkeypatch):
+    import types
+
+    import ph0_pilot
+    fake = types.SimpleNamespace(
+        __version__="5.15.0",
+        AutoProcessor=types.SimpleNamespace(
+            from_pretrained=staticmethod(lambda *a, **k: object())))
+    monkeypatch.setitem(__import__("sys").modules, "transformers", fake)
+    monkeypatch.setitem(__import__("sys").modules, "torch",
+                        types.SimpleNamespace())
+    with pytest.raises(RuntimeError, match="no usable auto-class"):
+        ph0_pilot.VLMEngine("some/model")
