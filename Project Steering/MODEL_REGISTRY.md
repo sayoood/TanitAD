@@ -1644,6 +1644,52 @@ PH0→PH1→PH2. Distance-keeping (the other half of LONGITUDINAL) also remains 
 pending a lead block on this dense grid (`tools/build_lead_block.py`) — a WORK ITEM, not a
 pass, and the half where 88.7 % of the T0 oracle gap was measured to live.
 
+**⭐ PH0 v2 VLM EXTRACTION — GATE PASS — MEASURED 2026-08-12 [8-clip smoke, pod4,
+`Qwen/Qwen3.5-9B` via `AutoModelForImageTextToText`, grammar-constrained].** The PI's
+decided stack (engine B Qwen3.5-9B · engine C SAM3 · engine A algorithmic integrated ego
+path) against the pre-registered v2 gate in `PH0_TARGET_STRUCTURE_v2.md` §5:
+
+| criterion | v0.1 MEASURED | v2 threshold | v2 MEASURED | |
+|---|---|---|---|---|
+| clips with ALL calls valid | 1 / 8 | ≥ 6 / 8 | **8 / 8** | ✅ |
+| hard `no parseable JSON` failures | 3 / 8 | 0 / 8 | **0 / 8** | ✅ |
+| B1 scene valid | — | ≥ 7 / 8 | **8 / 8** | ✅ |
+| B4 goal ∈ vocabulary | — | ≥ 7 / 8 | **8 / 8** | ✅ |
+
+`retried = 0` — every call was valid on its first attempt; the retry path never fired.
+Extracted symbols are coherent: `urban/day` 3 signs → `follow_main_road`+`hold_corridor`;
+`urban/night` → `turn_left`+[`prepare_lane_change`,`reduce_to`]; `highway/snow` 0 signs →
+abstained to `follow_main_road`; one `route_to` carrying its required `goal_evidence_sign`.
+
+**What made it solvable** (all four are mechanisms, not tuning): the single 5-section /
+4-level / ~30-field object split into **four flat calls**; grammar-constrained decoding, so
+an unparseable output is impossible by construction; `max_consecutive_whitespaces=1`, since
+the default 12 let the model burn its budget on tabs and truncate mid-object; and
+`force_json_field_order=True`, which makes `n_signs` genuinely precede `signs[]` rather than
+by luck. ⭐ **The organising principle is the load-bearing part: the VLM chooses SYMBOLS, the
+algorithm supplies NUMBERS, SAM3 supplies PIXELS.** Every metric slot (`within_m`,
+`by_time_s`, `at_arc_m`, `hold_for_s`, `v_target_ms`) was REMOVED from the VLM's job —
+Engine A measures them — and a test fails if any reappears.
+
+⚠️ **Two of the defects on the way were OURS, and both had misled a report.** (1) The arm was
+called "unusable / text-only" for a day; it was a `[swscaler]` EAGAIN (ffmpeg sizing its pool
+to the HOST's 96 CPUs) plus loading a VLM through the **text-only** `AutoModelForCausalLM`,
+which loads fine and then rejects the vision kwargs at `generate()`. (2) `bbox
+[952,100,975,160]` was read as an out-of-frame hallucination against a 448 px maximum —
+Qwen-VL emits **normalized 0–1000** coordinates, its own trained convention, so the model was
+self-consistent and the check was wrong twice over (frames are 179×448, so y never reaches
+448 either). Also retracted: duplicate actions are a padding artifact, not a content error,
+and rejecting the record for them discarded a good `goal_kind`.
+
+⚠️ **Scope stamp: n = 8 is a SMOKE, not a measurement.** The prereg is explicit that PH1's
+50 clips produce quotable rates; this gate exists to decide whether PH1 is worth launching,
+and it says yes. Still open: the processor reports `fps=24` for a 2 fps sample (a temporal
+mismatch that B4's hindsight premise depends on), `alpamayo_rows = 0` on every clip (engine D
+contributed nothing), and SAM3's real API is installed but not yet wired.
+Artifacts: `ph0_mini/v2/ph0_v2.json` (every prompt + raw model output banked per call),
+`ph0_mini/v2/viz/` (overlay MP4 + stills); instruments `stack/scripts/ph0_v2.py`,
+`ph0_v2_chain.sh`, `ph0_v2_overlay.py`, 44 CPU tests.
+
 **⛔ LF0 — MEASURED 2026-08-12 ~08:30Z [T0 diagnostic, 900 windows scanned / 129 labelled,
 pod4]: THE DECODED BEV DOES NOT READ THE LEAD GAP. RC1 IS NOT SUPPORTED — there is no
 zero-training fix.** `scripts/lf0_bev_lead.py`, a **zero-parameter geometric read**: walk the
