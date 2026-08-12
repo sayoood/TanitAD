@@ -1150,6 +1150,11 @@ def main(argv=None) -> int:
     arm_tag = ("no-vlm" if args.no_vlm else args.arm).replace("/", "_")
 
     summary: dict = {"arm": vlm.model_id, "engine_b_disabled": bool(args.no_vlm),
+                     # WHICH auto-class actually loaded the arm. Without this a
+                     # reader cannot tell a real video run from one that fell
+                     # through to text-only AutoModelForCausalLM — the failure
+                     # that cost a day and reached a PI decision request.
+                     "auto_class": getattr(vlm, "auto_class", None),
                      "prompt_hash": prompt_hash(),
                      "schema_version": SCHEMA_VERSION, "clips": []}
     walls = []
