@@ -276,7 +276,13 @@ class ConstrainedVLM:
         enforcer = self._TokenEnforcer(self._tok_data, parser)
 
         def prefix_fn(_batch_id, sent):
-            return enforcer.get_allowed_tokens(sent.tolist())
+            # get_allowed_tokens returns lmformatenforcer's OWN TokenList, not a
+            # list — it has no __len__/__iter__, so handing it straight to
+            # generate() dies with "object of type 'TokenList' has no len()".
+            # With use_bitmask=False its .allowed_tokens IS a plain list of ids
+            # (verified from the class source, not guessed).
+            t = enforcer.get_allowed_tokens(sent.tolist())
+            return getattr(t, "allowed_tokens", t)
         n_in = inputs["input_ids"].shape[1]
         with torch.no_grad():
             out = self.model.generate(**inputs, max_new_tokens=max_new,
