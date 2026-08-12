@@ -1644,6 +1644,51 @@ PH0→PH1→PH2. Distance-keeping (the other half of LONGITUDINAL) also remains 
 pending a lead block on this dense grid (`tools/build_lead_block.py`) — a WORK ITEM, not a
 pass, and the half where 88.7 % of the T0 oracle gap was measured to live.
 
+**⛔ LF0 — MEASURED 2026-08-12 ~08:30Z [T0 diagnostic, 900 windows scanned / 129 labelled,
+pod4]: THE DECODED BEV DOES NOT READ THE LEAD GAP. RC1 IS NOT SUPPORTED — there is no
+zero-training fix.** `scripts/lf0_bev_lead.py`, a **zero-parameter geometric read**: walk the
+decoded occupancy raster forward along the ego corridor, return the range of the first cell
+≥ τ. τ = 0.7 **inherited** from the P8 gate, never re-tuned. Nothing is fitted, so a spatial
+arm cannot win by having more capacity than P1's pooled probe — which is why this and not a
+spatial-token probe is the admissible first test.
+
+**Reader sanity gate: PASSED**, and it is a precondition, not a formality. GT reads at other
+corridor widths rank-agree with the headline: `gt@1.0` ρ **1.0** (R² 0.9998, MAE 0.0144 m),
+`gt@2.0` ρ **0.9596** (R² 0.8904, MAE 0.2829 m). The corridor geometry is right and the reader
+recovers the labelled scene essentially exactly.
+
+| arm (corridor 1.5 m) | R² | ρ | MAE (m) | n paired | **censored on labelled** |
+|---|---|---|---|---|---|
+| `gt@1.5` (= truth, by construction) | 1.0 | 1.0 | 0.0 | 129 | 0 % |
+| **`enc@1.5`** (decoded ENCODED latent) | **−21.00** | 0.3826 | **26.85** | 24 | ⛔ **81.4 %** |
+| **`pred@1.5`** (decoded PREDICTED latent) | **−16.12** | −0.7091 | **42.65** | 10 | ⛔ **92.3 %** |
+
+**⭐ THE FINDING IS THE CENSORING RATE, not the R².** In **81.4 %** (encoded) and **92.3 %**
+(predicted) of the windows where the ground truth has a lead vehicle in the ego corridor, the
+decoded BEV has **no occupied cell there at all** — it shows an empty lane. That statistic rests
+on all **129** labelled windows and is decision-grade. When the decode does fire, the read is
+wrong by **26.85 m / 42.65 m** on a grid only 60 m deep. ⚠️ The R² and ρ values sit on n = 24 and
+n = 10 (the latter exactly at the pre-declared floor) and are **NOT decision-grade** — in
+particular `pred`'s ρ = −0.71 on n = 10 is noise, not an inverted signal, and must not be quoted
+as one.
+
+**This is the concrete consequence of P8's own stamped limitation, not a contradiction of it.**
+§1.14 already records that P8's absolute IoU is ~0.02 and that "the admissible claim is the
+RETENTION RATIO, not the absolute occupancy quality". LF0 is what that caveat means in practice:
+the decode preserves enough *relative* structure to score retention 0.932, and is far too diffuse
+to support the statement *"there is a vehicle at 18 m in my lane"*. Both results stand together.
+
+**⇒ Consequences, and they are load-bearing.** (1) **The survey's RC1 is REFUTED**: exposing an
+existing read-off does not close the lead gap, so there is **no zero-training fix** and the
+longitudinal lever must be training-side. (2) This is the **second independent test**, with a
+different instrument class — a zero-parameter geometric read versus P1's fitted probe (linear
+R²(enc) ≤ 0, every transform failed, 2-layer MLP ceiling **−0.334**) — reaching the same verdict:
+**the lead gap is not readable from this latent in any form yet probed**. (3) It converges with
+the T1 result above: the closed loop is ~99 % longitudinal and over-accelerates (progress ratio
+1.7279, speed bias +9.3892 m/s), and the model cannot see the vehicle in front of it. Artifacts:
+`lf0-bev-lead/lf0_gate.json` (pod4); instrument `stack/scripts/lf0_bev_lead.py` + `lf0_chain.sh`,
+21 CPU tests.
+
 **W7-PROG — MEASURED 2026-08-12 ~05:40Z [EXPLORATORY, 881 grid, pod4]: PRE-REGISTERED
 OUTCOME = PARTIAL. The anti-degeneracy term is REAL, MONOTONE, and FAR TOO SMALL.**
 Pre-registration `PREREG_W7_PROG.md` (written before the run, all three outcomes bound). Only

@@ -75,7 +75,18 @@ the AD-L-JEPA line uses occupancy too.
 is spent. RC1-true collapses the problem to architecture routing; RC1-false makes LF1
 (cheapest training lever, stage-B scale) the first spend, gated on the frozen probes.
 
-- [ ] LF0 run · [ ] RC verdict banked · [ ] first training lever chosen by LF0's outcome
+- [x] **LF0 RUN 2026-08-12 — FAILED. RC1 REFUTED: there is no zero-training fix.**
+      The decoded BEV shows an EMPTY ego corridor in **81.4 %** (encoded) / **92.3 %**
+      (predicted) of the windows where the ground truth has a lead vehicle, over 129
+      labelled windows; when it fires the read is wrong by 26.85 m / 42.65 m on a 60 m
+      grid. The reader passed its sanity gate first (GT reads rank-agree, ρ 1.0 / 0.96),
+      so this is a statement about the latent and not the instrument. Registry §1.14.
+- [x] **RC verdict banked** — second independent test, different instrument class
+      (zero-parameter geometric read vs P1's fitted probe), same conclusion.
+- [ ] first training lever chosen — **LF0's outcome forces a TRAINING-side lever**;
+      the cheap read-off route is closed. Candidates in §3: interaction-weighted
+      sampling, masked-latent objectives, dense near-field loss shaping — each still
+      gated on the SAME frozen P1 lead battery, and each still label-free in the trunk.
 
 ## 4. Drive-JEPA (arXiv 2601.22032, Jan 2026) — how the newest driving system uses its WM,
 ## and why it validates STAGED training (PI question 2026-08-11)
