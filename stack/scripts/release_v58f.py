@@ -43,8 +43,27 @@ ARTIFACTS = [
      "gates/i4a_zero.json", False, "registry §1.14 — imagination zeroed"),
     ("experiments/i4a/flagship-v5f-w120-30k-i4a-shuffle.json",
      "gates/i4a_shuffle.json", False, "registry §1.14 — imagination shuffled"),
+    # ⭐ the T1 block is the campaign's headline evidence (registry §1.14): the
+    # repair wins by -14.61 m paired AND a hold-action control beats the closed
+    # loop 22x. It ships as REQUIRED — a v5.8f release without its primary-tier
+    # numbers would invite exactly the T0-as-driving-performance reading the
+    # tier doctrine exists to prevent.
     ("experiments/t1-v58f/t1_summary.json",
-     "gates/t1_summary.json", False, "registry §1.14 — T1 pseudo-closed-loop"),
+     "gates/t1_summary.json", True, "registry §1.14 — T1 pseudo-closed-loop"),
+    ("experiments/t1-v58f/t1_v5f_30k.json",
+     "gates/t1_v5f_30k.json", False, "registry §1.14 — T1 arm, v5f-30k"),
+    ("experiments/t1-v58f/t1_stage_a_repaired.json",
+     "gates/t1_stage_a_repaired.json", False,
+     "registry §1.14 — T1 arm, stage-a-repaired"),
+    ("experiments/t1-v58f/four_families/ff_comparison.json",
+     "gates/four_families/ff_comparison.json", False,
+     "registry §1.14 — the four-family rescore index"),
+] + [
+    (f"experiments/t1-v58f/four_families/ff_{arm}_{s}.json",
+     f"gates/four_families/ff_{arm}_{s}.json", False,
+     f"registry §1.14 — four families, {arm} {s}")
+    for arm in ("stageA", "v5f30k") for s in ("cl", "ol", "ha")
+] + [
     ("experiments/p8-occupancy-c/reel/p8_belief_reel.mp4",
      "media/p8_belief_reel.mp4", False, "the WM's believed scene (I1c)"),
     ("experiments/p8-occupancy-c/reel/p8_belief_still.png",
