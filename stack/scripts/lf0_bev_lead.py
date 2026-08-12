@@ -214,14 +214,21 @@ def main(argv=None) -> int:
         for i in range(n):
             b = _to_device(default_collate([ds_val[i]]), device)
             # GT raster at the SAME k the latents are rolled to
-            rk, keep, _m = batch_rasters(ds_val, [i], source, a.k, GRID_DEFAULT)
+            # ⛔ batch_rasters returns (rasters | None, KEPT_POSITIONS, n_no_label).
+            # `keep` is a list of INDICES INTO idx, not booleans — for a
+            # single-window batch the valid value is [0], and `bool(keep[0])` is
+            # `bool(0)` = False. Gating on it discarded EVERY valid raster and
+            # produced n_paired=0 on all six arms. `rk is None` is the NO_LABEL
+            # test (which is what p8_bev_reel checks), and it is the only one.
+            rk, keep, _n_no_label = batch_rasters(ds_val, [i], source, a.k,
+                                                  GRID_DEFAULT)
             if rk is None:
                 continue                       # NO_LABEL — never free flow
             _zt, z_enc, z_hat = p8_latents(world, b, (a.k,), amp_on=amp_on,
                                            want_pred=True, want_enc_k=True)
             pe = torch.sigmoid(head(z_enc[a.k])).float().cpu().numpy()[0]
             pp = torch.sigmoid(head(z_hat[a.k])).float().cpu().numpy()[0]
-            g = np.asarray(rk)[0] if (keep is None or bool(keep[0])) else None
+            g = np.asarray(rk).reshape(-1, nx, ny)[0]
             for w, cc in cols.items():
                 kw = dict(tau=a.tau, cols=cc, cell_m=GRID_DEFAULT.cell_m,
                           min_row=a.min_row)

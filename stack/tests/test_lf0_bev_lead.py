@@ -178,3 +178,38 @@ def test_tau_default_is_the_inherited_p8_gate_value():
 def test_headline_corridor_is_among_those_reported():
     from lf0_bev_lead import HEADLINE_CORRIDOR
     assert HEADLINE_CORRIDOR in CORRIDOR_M
+
+
+# --------------------------------------------------------------------------- #
+# the kept-positions trap                                                      #
+# --------------------------------------------------------------------------- #
+def test_kept_positions_are_indices_not_booleans():
+    """batch_rasters returns (rasters|None, KEPT_POSITIONS, n_no_label). `keep`
+    is a list of indices INTO idx — for a single-window batch the valid value is
+    [0], and `bool(keep[0])` is `bool(0)` = False.
+
+    MEASURED 2026-08-12: gating the ground-truth raster on `bool(keep[0])`
+    discarded EVERY valid raster and produced n_paired=0 on all six arms. The
+    NO_LABEL test is `rasters is None` — the same check p8_bev_reel uses — and
+    it is the only one. This pins the semantics so the confusion cannot return."""
+    keep_for_one_valid_window = [0]
+    assert bool(keep_for_one_valid_window[0]) is False, (
+        "this is the trap: the first kept POSITION is 0, which is falsy")
+    assert len(keep_for_one_valid_window) == 1, (
+        "validity is 'a position was kept', i.e. a non-empty list — never the "
+        "truthiness of its first element")
+    assert not [] , "an empty kept-positions list is the real 'nothing kept'"
+
+
+def test_source_of_the_lf0_gt_read_does_not_gate_on_keep():
+    """A source-level guard: the GT branch must not resurrect the bool(keep[0])
+    test. Cheap, and it caught a real regression class once already."""
+    import inspect
+
+    import lf0_bev_lead as L
+    src = inspect.getsource(L.main)
+    # Strip comments before scanning: the fix's own explanatory comment quotes
+    # `bool(keep[0])` to say why it is wrong, and a naive scan trips on that.
+    code = "\n".join(ln.split("#", 1)[0] for ln in src.splitlines())
+    assert "bool(keep[" not in code, "the kept-positions trap has returned"
+    assert "if rk is None" in code, "NO_LABEL must be tested by `rk is None`"
