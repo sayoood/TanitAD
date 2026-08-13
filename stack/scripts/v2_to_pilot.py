@@ -83,6 +83,56 @@ def pick_clips(corpus: str, records: str | None, n: int, seed: int) -> list[str]
     return [pool[i] for i in order[:n]], corp
 
 
+def write_mp4(path: str, frames, fps: int) -> str:
+    """Write an RGB uint8 [T,H,W,3] stack to H.264, using whatever the host has.
+
+    ⛔ WHY THIS IS NOT JUST ``imageio.get_writer``. MEASURED 2026-08-13: pod5 —
+    the pod that HOLDS the 80 GB corpus — has ``imageio_ffmpeg`` (which bundles
+    the ffmpeg BINARY) but not ``imageio``, and no cv2 and no av. The bridge
+    failed 2400/2400 clips on ``ModuleNotFoundError: imageio``.
+
+    ⚠️ And installing it was the wrong fix: pod5 was TRAINING at the time, and
+    ``uv pip install`` has twice replaced torch with a wheel the driver cannot
+    run (CLAUDE.md). The binary is already on disk behind
+    ``imageio_ffmpeg.get_ffmpeg_exe()``; piping raw frames to it adds no package
+    and cannot touch the running job's environment.
+
+    Order: imageio (nicest when present) -> bundled ffmpeg binary -> raise with
+    both reasons, so a failure names what was tried rather than the last error."""
+    import subprocess
+    import numpy as _np
+    arr = _np.ascontiguousarray(_np.asarray(frames, dtype=_np.uint8))
+    if arr.ndim != 4 or arr.shape[-1] != 3:
+        raise ValueError(f"expected [T,H,W,3] uint8, got {arr.shape}")
+    try:
+        import imageio.v2 as _iio
+        w = _iio.get_writer(path, fps=fps, macro_block_size=1)
+        for f in arr:
+            w.append_data(f)
+        w.close()
+        return "imageio"
+    except ImportError as e_iio:
+        try:
+            import imageio_ffmpeg
+            exe = imageio_ffmpeg.get_ffmpeg_exe()
+        except Exception as e_bin:                        # noqa: BLE001
+            raise RuntimeError(
+                f"no mp4 writer: imageio ({e_iio}); "
+                f"imageio_ffmpeg ({type(e_bin).__name__}: {e_bin})") from e_iio
+        T, H, W, _ = arr.shape
+        cmd = [exe, "-y", "-v", "error", "-f", "rawvideo", "-pix_fmt", "rgb24",
+               "-s", f"{W}x{H}", "-r", str(fps), "-i", "-",
+               "-an", "-c:v", "libx264", "-pix_fmt", "yuv420p",
+               "-crf", "18", path]
+        pr = subprocess.run(cmd, input=arr.tobytes(),
+                            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if pr.returncode != 0 or not os.path.exists(path):
+            raise RuntimeError(
+                f"ffmpeg rc={pr.returncode}: "
+                f"{pr.stderr.decode('utf-8', 'replace')[:200]}")
+        return "imageio_ffmpeg"
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser("v2_to_pilot")
     ap.add_argument("--corpus", required=True)
@@ -109,8 +159,6 @@ def main(argv=None) -> int:
             # imageio) lands in failures.json with its reason and still exits
             # non-zero, rather than raising past the handler and leaving no
             # record of WHICH stage of the bridge was unusable.
-            import imageio.v2 as imageio
-
             from tanitad.data.v2_dataset import decode_full_episode
             ep = decode_full_episode(corp[cid])
             arr = stacked_to_rgb(ep.frames)
@@ -119,10 +167,7 @@ def main(argv=None) -> int:
                 raise ValueError(f"{arr.shape[0]} frames vs {p.shape[0]} poses "
                                  f"— refusing to write a misaligned clip")
             mp4 = os.path.join(vdir, f"{cid}.mp4")
-            w = imageio.get_writer(mp4, fps=a.fps, macro_block_size=1)
-            for f in arr:
-                w.append_data(f)
-            w.close()
+            write_mp4(mp4, arr, a.fps)
             np.savez(os.path.join(edir, f"{cid}.npz"), poses=p[:, :4],
                      actions=torch.as_tensor(ep.actions).float().numpy())
             written.append(cid)

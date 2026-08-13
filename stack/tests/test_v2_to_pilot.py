@@ -154,3 +154,93 @@ def test_one_bad_clip_does_not_kill_the_batch(tmp_path):
     import json
     assert json.load(open(out / "clips.json")) == ["good"]
     assert len(json.load(open(out / "failures.json"))) == 1
+
+
+# =========================================================================== #
+# write_mp4 — the host-tolerant writer                                        #
+# =========================================================================== #
+def test_write_mp4_falls_back_to_the_bundled_ffmpeg_binary(tmp_path,
+                                                           monkeypatch):
+    """⛔ MEASURED 2026-08-13: pod5 — the pod HOLDING the 80 GB corpus — has
+    imageio_ffmpeg (the ffmpeg BINARY) but not imageio, and no cv2/av. The
+    bridge failed 2400/2400 clips on ModuleNotFoundError. Installing imageio was
+    the WRONG fix: pod5 was training, and `uv pip install` has twice replaced
+    torch with a wheel the driver cannot run. The binary is already there."""
+    import builtins
+    import sys as _sys
+    import numpy as np
+    from v2_to_pilot import write_mp4
+
+    real_import = builtins.__import__
+
+    def no_imageio(name, *args, **kw):
+        if name == "imageio.v2" or name == "imageio":
+            raise ImportError("simulated: imageio absent, as on pod5")
+        return real_import(name, *args, **kw)
+
+    monkeypatch.setattr(builtins, "__import__", no_imageio)
+    monkeypatch.delitem(_sys.modules, "imageio", raising=False)
+    monkeypatch.delitem(_sys.modules, "imageio.v2", raising=False)
+
+    pytest.importorskip("imageio_ffmpeg")
+    out = str(tmp_path / "f.mp4")
+    frames = (np.random.default_rng(0).random((6, 32, 64, 3)) * 255
+              ).astype(np.uint8)
+    backend = write_mp4(out, frames, 10)
+    assert backend == "imageio_ffmpeg"
+    assert os.path.getsize(out) > 200
+
+
+def test_write_mp4_rejects_a_wrong_shaped_stack(tmp_path):
+    """A misshaped array must fail LOUDLY here, not produce a green-screen mp4
+    that only reveals itself in a rendered overlay hours later."""
+    import numpy as np
+    from v2_to_pilot import write_mp4
+    with pytest.raises(ValueError):
+        write_mp4(str(tmp_path / "x.mp4"),
+                  np.zeros((4, 8, 8), np.uint8), 10)      # missing channel dim
+    with pytest.raises(ValueError):
+        write_mp4(str(tmp_path / "y.mp4"),
+                  np.zeros((4, 8, 8, 4), np.uint8), 10)   # RGBA, not RGB
+
+
+def test_write_mp4_names_everything_it_tried_when_no_backend_exists(tmp_path,
+                                                                    monkeypatch):
+    """A failure must say WHICH backends were unavailable — the last error alone
+    sent me chasing the wrong fix once already."""
+    import builtins
+    import numpy as np
+    from v2_to_pilot import write_mp4
+    real_import = builtins.__import__
+
+    def none_available(name, *args, **kw):
+        if name in ("imageio", "imageio.v2", "imageio_ffmpeg"):
+            raise ImportError(f"simulated: {name} absent")
+        return real_import(name, *args, **kw)
+
+    monkeypatch.setattr(builtins, "__import__", none_available)
+    with pytest.raises(RuntimeError) as ei:
+        write_mp4(str(tmp_path / "z.mp4"),
+                  np.zeros((2, 8, 8, 3), np.uint8), 10)
+    msg = str(ei.value)
+    assert "imageio" in msg and "imageio_ffmpeg" in msg
+
+
+def test_module_structure_is_intact():
+    """⛔ A COLUMN-0 `def` INSERTED INTO main()'s BODY SILENTLY ABSORBS THE REST
+    OF main INTO THE HELPER. It is valid syntax, so `ast.parse` passes, the
+    import works, and the only symptom is `main()` returning None instead of its
+    exit code. MEASURED 2026-08-13 while adding write_mp4 — caught by
+    test_zero_written_is_a_nonzero_exit going `assert None == 3`.
+
+    This pins the shape directly so the next reader gets a named failure."""
+    import ast
+    import inspect
+    import v2_to_pilot
+    tree = ast.parse(inspect.getsource(v2_to_pilot))
+    fns = {n.name: n for n in tree.body if isinstance(n, ast.FunctionDef)}
+    assert {"stacked_to_rgb", "pick_clips", "write_mp4", "main"} <= set(fns)
+    # main must still END in a return — an absorbed body loses it
+    assert any(isinstance(n, ast.Return) for n in ast.walk(fns["main"]))
+    # and write_mp4 must be small: if it swallowed main it would be huge
+    assert len(fns["write_mp4"].body) < 12, "write_mp4 absorbed another function"
