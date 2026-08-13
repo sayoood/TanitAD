@@ -811,7 +811,10 @@ def build_stack_from_args(a) -> V6Stack:
         isolate_planner_from_encoder=not a.no_isolate_planner,
         isolate_uplink=not a.no_isolate_uplink, uplink=a.uplink,
         ema_decay=a.ema_decay, sigreg_slices=a.sigreg_slices,
-        sigreg_free_dims=a.sigreg_free_dims, param_budget=a.param_budget)
+        sigreg_free_dims=a.sigreg_free_dims, param_budget=a.param_budget,
+        f_hidden_tac=a.f_hidden_tac, f_hidden_str=a.f_hidden_str,
+        f_blocks=a.f_blocks,
+        vit5_encoder=bool(a.vit5_encoder), n_registers=a.n_registers)
     stack = V6Stack(cfg)
     rep = stack.assert_param_budget()
     print(f"[v6] params {rep['total']/1e6:.2f} M / budget "
@@ -1497,6 +1500,22 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--n-candidates", type=int, default=8)
     ap.add_argument("--param-budget", type=int, default=300_000_000)
     # ---- E-ENC arm (§0 Q1) -------------------------------------------------
+    ap.add_argument("--f-hidden-tac", type=int, default=512,
+                    help="FTac residual-MLP hidden width, tactical layer")
+    ap.add_argument("--f-hidden-str", type=int, default=512,
+                    help="FTac residual-MLP hidden width, strategic layer")
+    ap.add_argument("--f-blocks", type=int, default=3,
+                    help="FTac residual blocks per layer predictor")
+    ap.add_argument("--vit5-encoder", action="store_true",
+                    help="ViT-5 recipe encoder (arXiv 2602.08071): RMSNorm + "
+                         "LayerScale + QK-Norm + register tokens + joint "
+                         "APE/2D-axial-RoPE, GeLU MLP (ViT-5 REJECTS SwiGLU). "
+                         "CHANGES THE PARAMETER COUNT -- a declared arm, never "
+                         "a silent upgrade.")
+    ap.add_argument("--n-registers", type=int, default=4,
+                    help="register tokens; consumed internally and STRIPPED "
+                         "before the readout (they are not at a place in the "
+                         "image)")
     ap.add_argument("--per-layer-encoders", action="store_true",
                     help="E-ENC arm (b): per-layer encoders instead of one "
                          "common encoder + adapters. Decide at MATCHED TOTAL "

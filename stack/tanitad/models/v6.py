@@ -82,7 +82,7 @@ from torch import Tensor, nn
 
 from tanitad.config import EncoderConfig, PredictorConfig, ReadoutConfig
 from tanitad.eval.spectral import effective_rank, participation_ratio
-from tanitad.models.encoder import ViTEncoder
+from tanitad.models.encoder import ViT5Encoder, ViTEncoder
 from tanitad.models.metric_dynamics import StepDisplacementReadout
 from tanitad.models.predictor import OperativePredictor
 from tanitad.models.readout import SpatialGridReadout
@@ -666,6 +666,15 @@ class V6Config:
     #:         at MATCHED TOTAL PARAMS; a tie goes to the common encoder on the
     #:         parameter budget. Separate encoders must EARN their params.
     shared_encoder: bool = True
+    #: ⭐ ViT-5 recipe encoder (PI 2026-08-13). RMSNorm + LayerScale + QK-Norm +
+    #: register tokens + joint APE/2D-axial-RoPE, GeLU MLP (ViT-5 REJECTS
+    #: SwiGLU: it over-gates against LayerScale and compact models suffer most).
+    #: PUBLISHED: arXiv 2602.08071, 84.2 % IN-1k vs DeiT-III-B 83.8 %.
+    #: ⚠️ Default False so every banked v6 number stays reproducible; turning it
+    #: on CHANGES THE PARAMETER COUNT and is therefore a declared arm, not a
+    #: silent upgrade.
+    vit5_encoder: bool = False
+    n_registers: int = 4
     adapter_hidden: int = 512
 
     # ---- §4b horizon spec (BINDING) ----------------------------------------
@@ -1009,7 +1018,9 @@ class V6Stack(nn.Module):
         gh, gw = cfg.grid_shape
 
         # ---- encoders (E-ENC arm) ------------------------------------------
-        self.encoder = ViTEncoder(cfg.encoder)
+        _Enc = ((lambda c: ViT5Encoder(c, n_registers=cfg.n_registers))
+                if cfg.vit5_encoder else ViTEncoder)
+        self.encoder = _Enc(cfg.encoder)
         self.readout = SpatialGridReadout(
             self.encoder.n_tokens, cfg.encoder.d_model, grid=cfg.readout.grid,
             d_readout=cfg.readout.d_readout,
@@ -1022,13 +1033,13 @@ class V6Stack(nn.Module):
         self.encoder_tac = self.readout_tac = None
         self.encoder_str = self.readout_str = None
         if not cfg.shared_encoder:
-            self.encoder_tac = ViTEncoder(cfg.encoder)
+            self.encoder_tac = _Enc(cfg.encoder)
             self.readout_tac = SpatialGridReadout(
                 self.encoder_tac.n_tokens, cfg.encoder.d_model,
                 grid=cfg.readout.grid, d_readout=cfg.readout.d_readout,
                 token_grid=self.encoder_tac.grid_shape,
                 grid_w=cfg.readout.grid_w)
-            self.encoder_str = ViTEncoder(cfg.encoder)
+            self.encoder_str = _Enc(cfg.encoder)
             self.readout_str = SpatialGridReadout(
                 self.encoder_str.n_tokens, cfg.encoder.d_model,
                 grid=cfg.readout.grid, d_readout=cfg.readout.d_readout,
