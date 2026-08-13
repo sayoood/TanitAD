@@ -836,7 +836,7 @@ def test_loss_step_refuses_an_all_zero_weight_set(stack):
     b["gt_wp"] = torch.randn(2, 10, 2)
     zero = V6LossWeights(o1_ctrl=0, o1_fact=0, o1_scene=0, o2_nearfield=0,
                          o3_masked=0, o5_rollout=0, o6_sigreg=0, t1_latent=0,
-                         s1_latent=0, lambda_plan=0)
+                         s1_latent=0, lambda_plan=0, seam_op=0)
     with pytest.raises(RuntimeError, match="NO loss terms"):
         v6_loss_step(stack, b, stage="S-J", weights=zero, o1_k=10, o5_k=12)
 
@@ -1148,3 +1148,68 @@ def test_the_g_tac_seam_TRAINS_in_ST_and_not_in_SW():
     blocked = {n for n, p in m.named_parameters()
                if n.startswith("predictor_op.blocks") and p.requires_grad}
     assert blocked == set(), f"S-T must not train trunk dynamics: {blocked}"
+
+
+def test_seam_loss_trains_intent_proj_in_ST(stack):
+    """⛔ THE OTHER HALF of the seam fix (the grouping was the first half): an
+    S-T loss must actually FLOW through the goal-conditioned operative
+    prediction. Before this term, t1_latent trained layer_tac and lambda_plan
+    trained the planner, and zhat_op_seam fed NOTHING — the downlink existed in
+    forward and not in the optimisation."""
+    import torch
+    from tanitad.models.v6 import apply_stage_freeze
+    with torch.no_grad():                     # off the zero inits (see the
+        for blk in stack.predictor_op.blocks:  # planner-surface test)
+            blk.film.to_scale_shift.weight.normal_(0.0, 0.1)
+    apply_stage_freeze(stack, "S-T")
+    b = synthetic_train_batch(stack, batch=2, k=2, seed=5)
+    b["plan_target"] = torch.randn(2, stack.cfg.plan_steps, 2)
+    w = V6LossWeights().for_stage("S-T")
+    assert w.seam_op > 0
+    r = v6_loss_step(stack, b, stage="S-T", weights=w, o1_k=1, o5_k=1)
+    assert "seam" in r and "seam_op" in r["log"]
+    r["loss"].backward()
+    g = stack.predictor_op.intent_proj.weight.grad
+    assert g is not None and float(g.abs().sum()) > 0, (
+        "seam loss must reach intent_proj — otherwise the hierarchy downlink "
+        "still does not learn in S-T")
+
+
+def test_modern_predictor_blocks_have_the_vit5_properties():
+    """ViT-5-recipe predictor (PI 2026-08-13): RMSNorm, QK-Norm, LayerScale,
+    bias-free attention, GeLU (NOT SwiGLU), and the SAME FiLM seam."""
+    import torch
+    from tanitad.config import PredictorConfig
+    from tanitad.models.predictor import ModernCausalBlock, OperativePredictor
+    cfg = PredictorConfig(d_model=128, depth=2, n_heads=4, action_dim=3,
+                          modern=True)
+    m = OperativePredictor(cfg, state_dim=256, intent_dim=64)
+    blk = m.blocks[0]
+    assert isinstance(blk, ModernCausalBlock)
+    assert blk.qkv.bias is None and blk.proj.bias is None
+    assert torch.allclose(blk.ls1, torch.full_like(blk.ls1, 1e-5))
+    acts = [type(x).__name__ for x in blk.mlp]
+    assert "GELU" in acts and len(blk.mlp) == 3      # 2-matmul FFN, no gating
+    # FiLM seam identical: zero-init -> identity start
+    assert float(blk.film.to_scale_shift.weight.abs().sum()) == 0.0
+    # legacy arm unchanged
+    leg = OperativePredictor(PredictorConfig(d_model=128, depth=2, n_heads=4,
+                                             action_dim=3), state_dim=256)
+    from tanitad.models.predictor import CausalBlock
+    assert isinstance(leg.blocks[0], CausalBlock)
+
+
+def test_modern_predictor_forward_backward_and_distinct_state_dict():
+    """The modern arm must run end-to-end AND be un-resumable from a legacy
+    checkpoint (strict load must fail loudly, never silently mis-map)."""
+    import torch
+    from tanitad.config import PredictorConfig
+    from tanitad.models.predictor import OperativePredictor
+    kw = dict(d_model=128, depth=2, n_heads=4, action_dim=3)
+    new = OperativePredictor(PredictorConfig(modern=True, **kw), state_dim=256)
+    old = OperativePredictor(PredictorConfig(**kw), state_dim=256)
+    out = new(torch.randn(2, 6, 256), torch.randn(2, 6, 3))
+    sum(o.sum() for o in out.values()).backward()
+    import pytest as _pt
+    with _pt.raises(RuntimeError):
+        new.load_state_dict(old.state_dict(), strict=True)

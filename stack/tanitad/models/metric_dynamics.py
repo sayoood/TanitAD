@@ -245,18 +245,39 @@ def rollout_decode(predictor, states: Tensor, actions: Tensor,
 
 
 def rollout_transitions(predictor, states: Tensor, actions: Tensor,
-                        future_actions: Tensor | None, k: int
+                        future_actions: Tensor | None, k: int,
+                        grad_checkpoint: bool = False
                         ) -> list[tuple[Tensor, Tensor]]:
     """Roll ``predictor`` ``k`` steps under the TRUE action sequence and return
     the per-step ``(z_prev, z_hat)`` latent transitions (the input pairs a step
     readout decodes). Rolls the predictor ONCE so the hierarchical grounding can
     decode SEVERAL per-level step readouts on the SAME rolled latents instead of
     re-rolling per level (the REF-A rollout-reuse pattern). Byte-identical to the
-    roll inside :func:`rollout_decode` (unit-pinned)."""
+    roll inside :func:`rollout_decode` (unit-pinned).
+
+    ⛔ ``grad_checkpoint`` exists because of a MEASURED OOM (2026-08-13): the
+    O5 rollout at k=60 through the 190 M config-E predictor holds ~k activation
+    graphs and killed the run at 37.97 GiB on a 44 GiB A40 ("Tried to allocate
+    7.08 GiB"). Checkpointing each step stores only the step BOUNDARY latents
+    and recomputes block activations in backward: memory O(1) in k instead of
+    O(k), compute ~2x for the predictor part. ⚠️ It preserves the full-chain
+    gradient EXACTLY — this is not truncated BPTT; step 60's error still
+    reshapes step 1's prediction, which is the entire point of O5. Guarded to
+    training + grad-enabled so eval paths are byte-identical to before."""
     win_s, win_a = states, actions
     trans: list[tuple[Tensor, Tensor]] = []
+    use_ckpt = (grad_checkpoint and torch.is_grad_enabled()
+                and any(p.requires_grad for p in predictor.parameters()))
+
+    def _step(ws, wa):
+        return predictor(ws, wa)[1]                      # 1-step head
+
     for j in range(k):
-        z_hat = predictor(win_s, win_a)[1]               # 1-step head
+        if use_ckpt:
+            z_hat = torch.utils.checkpoint.checkpoint(
+                _step, win_s, win_a, use_reentrant=False)
+        else:
+            z_hat = _step(win_s, win_a)
         trans.append((win_s[:, -1], z_hat))
         if j < k - 1:
             a_next = (future_actions[:, j] if future_actions is not None

@@ -47,6 +47,52 @@ class CausalBlock(nn.Module):
         return x
 
 
+class ModernCausalBlock(nn.Module):
+    """The ViT-5-recipe counterpart of :class:`CausalBlock` (PI 2026-08-13).
+
+    RMSNorm for both norms · QK-Norm inside attention · LayerScale (1e-5) on
+    both residual branches · no bias on qkv/proj · SDPA attention · GeLU MLP
+    kept (ViT-5 measured SwiGLU HURTING compact models against LayerScale).
+    The FiLM conditioning seam is IDENTICAL to CausalBlock — same zero-init,
+    same placement before the MLP — so every conditioning property that is
+    tested (identity start, intent reachability, the g_tac seam) carries over
+    unchanged. At 12 layers deep this is where ViT-5's ablations say QK-Norm
+    and LayerScale stop being cosmetic; at the old depth 6 they were optional.
+    """
+
+    def __init__(self, d: int, n_heads: int, cond_dim: int,
+                 ls_init: float = 1e-5):
+        super().__init__()
+        from tanitad.models.encoder import RMSNorm
+        if d % n_heads:
+            raise ValueError(f"d_model {d} not divisible by n_heads {n_heads}")
+        self.n_heads, self.head_dim = n_heads, d // n_heads
+        self.norm1 = RMSNorm(d)
+        self.qkv = nn.Linear(d, 3 * d, bias=False)
+        self.proj = nn.Linear(d, d, bias=False)
+        self.q_norm = RMSNorm(self.head_dim)
+        self.k_norm = RMSNorm(self.head_dim)
+        self.ls1 = nn.Parameter(ls_init * torch.ones(d))
+        self.film = FiLM(cond_dim, d)
+        self.norm2 = RMSNorm(d)
+        self.mlp = nn.Sequential(nn.Linear(d, 4 * d), nn.GELU(),
+                                 nn.Linear(4 * d, d))
+        self.ls2 = nn.Parameter(ls_init * torch.ones(d))
+
+    def forward(self, x: Tensor, cond: Tensor, mask: Tensor) -> Tensor:
+        B, N, D = x.shape
+        h = self.norm1(x)
+        qkv = self.qkv(h).reshape(B, N, 3, self.n_heads, self.head_dim)
+        q, k, v = qkv.permute(2, 0, 3, 1, 4)
+        q, k = self.q_norm(q), self.k_norm(k)
+        # mask convention matches nn.MultiheadAttention's float attn_mask
+        am = mask if mask is None else mask.to(q.dtype)
+        o = torch.nn.functional.scaled_dot_product_attention(
+            q, k, v, attn_mask=am)
+        x = x + self.ls1 * self.proj(o.transpose(1, 2).reshape(B, N, D))
+        return x + self.ls2 * self.mlp(self.film(self.norm2(x), cond))
+
+
 class OperativePredictor(nn.Module):
     """Predicts future compact states from a causal window of (state, action).
 
@@ -80,7 +126,8 @@ class OperativePredictor(nn.Module):
         self.pos = nn.Parameter(torch.zeros(1, cfg.window, d))
         nn.init.trunc_normal_(self.pos, std=0.02)
         self.blocks = nn.ModuleList(
-            CausalBlock(d, cfg.n_heads, cond_dim=d) for _ in range(cfg.depth))
+            (ModernCausalBlock if cfg.modern else CausalBlock)(
+                d, cfg.n_heads, cond_dim=d) for _ in range(cfg.depth))
         self.norm = nn.LayerNorm(d)
         self.heads = nn.ModuleDict(
             {str(k): nn.Linear(d, state_dim) for k in cfg.horizons})

@@ -153,6 +153,12 @@ class V6LossWeights:
     s1_latent: float = 1.0      # long-horizon strategic latent prediction
     # planner
     lambda_plan: float = 0.0    # ≡ 0 in S-W by construction
+    # ⛔ THE g_tac->OPERATIVE SEAM LOSS (added 2026-08-13, PI question). In S-T
+    # the trunk is frozen, so the ONLY way this term can fall is for the goal
+    # embedding to carry usable information about the future through
+    # intent_proj — which is precisely "the operative predictor learns to be
+    # actioned by the tactical goals". Zero in S-W (no goals flow) and S-S.
+    seam_op: float = 1.0
 
     def for_stage(self, stage: str) -> "V6LossWeights":
         """The weights actually in force for ``stage``.
@@ -164,7 +170,7 @@ class V6LossWeights:
         """
         if stage == "S-W":
             return replace(self, t1_latent=0.0, s1_latent=0.0,
-                           lambda_plan=0.0)
+                           lambda_plan=0.0, seam_op=0.0)
         if stage == "S-T":
             return replace(self, o1_ctrl=0.0, o1_fact=0.0, o1_scene=0.0,
                            o2_nearfield=0.0, o3_masked=0.0, o5_rollout=0.0,
@@ -172,7 +178,8 @@ class V6LossWeights:
         if stage == "S-S":
             return replace(self, o1_ctrl=0.0, o1_fact=0.0, o1_scene=0.0,
                            o2_nearfield=0.0, o3_masked=0.0, o5_rollout=0.0,
-                           o6_sigreg=0.0, t1_latent=0.0, lambda_plan=0.0)
+                           o6_sigreg=0.0, t1_latent=0.0, lambda_plan=0.0,
+                           seam_op=0.0)
         if stage == "S-J":
             return self
         raise ValueError(f"unknown stage {stage!r}; expected one of {STAGES}")
@@ -503,7 +510,8 @@ def v6_loss_step(stack: V6Stack, batch: dict, *, stage: str,
         aw3, fa3 = _lift3(batch["actions2"], batch["v0"]), _lift3(
             batch["future_actions2"], batch["v0"])
         trans = rollout_transitions(stack.predictor_op, states, aw3, fa3,
-                                    k_roll)
+                                    k_roll,
+                                    grad_checkpoint=cfg.encoder.grad_checkpoint)
         zhat_steps = [t[1] for t in trans]
 
         # ---- O5: error at EVERY step --------------------------------------
@@ -550,6 +558,19 @@ def v6_loss_step(stack: V6Stack, batch: dict, *, stage: str,
                             cfg.sigreg_free_dims)
         terms["o6"] = w.o6_sigreg * l6
         log["o6_sigreg"] = float(l6.detach())
+
+    # ---- the g_tac->operative SEAM (S-T / S-J) ------------------------------
+    if w.seam_op:
+        if not z_true:
+            raise ValueError(
+                "seam_op > 0 needs at least one encoded future latent "
+                "(z_true_steps) — the S-T batch must run the future encode "
+                "with need_k >= 1, not skip it")
+        seam = out["zhat_op_seam"]
+        k1 = min(int(kk) for kk in seam)          # the 1-step head
+        lseam = (seam[k1].float() - z_true[k1 - 1].float()).abs().mean()
+        terms["seam"] = w.seam_op * lseam
+        log["seam_op"] = float(lseam.detach())
 
     # ---- T1: goal-conditioned tactical latent prediction --------------------
     if w.t1_latent:
@@ -800,7 +821,7 @@ def build_stack_from_args(a) -> V6Stack:
     pr = PredictorConfig(d_model=a.pred_dim, depth=a.pred_depth,
                          n_heads=a.pred_heads, window=a.window,
                          horizons=tuple(a.horizons), action_dim=3,
-                         residual=True)
+                         residual=True, modern=bool(a.pred_modern))
     cfg = V6Config(
         encoder=enc, readout=ro, predictor=pr,
         d_tac=a.d_tac, d_str=a.d_str, d_goal_embed=a.d_goal_embed,
@@ -1072,6 +1093,10 @@ def train(a) -> dict:
                        or w_stage.o2_nearfield or w_stage.o3_masked
                        or w_stage.o5_rollout)
     need_k = max(a.o1_k, a.o5_k) if needs_ztrue else 0
+    # the seam loss needs exactly ONE encoded future latent — the cheapest
+    # possible future encode, and only in the stages where the seam trains
+    if w_stage.seam_op and need_k < 1:
+        need_k = 1
     need = max(need_k,
                stack.cfg.stride_tac if w_stage.t1_latent else 0,
                stack.cfg.stride_str if w_stage.s1_latent else 0,
@@ -1488,6 +1513,11 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--readout-grid", type=int, default=4)
     ap.add_argument("--readout-grid-w", type=int, default=None)
     ap.add_argument("--readout-dim", type=int, default=128)
+    ap.add_argument("--pred-modern", action="store_true",
+                    help="ViT-5-recipe predictor blocks (RMSNorm + QK-Norm + "
+                         "LayerScale + bias-free attention). CHANGES THE "
+                         "STATE-DICT KEYS: a declared arm; strict load refuses "
+                         "legacy checkpoints rather than silently mis-mapping.")
     ap.add_argument("--pred-dim", type=int, default=768)
     ap.add_argument("--pred-depth", type=int, default=6)
     ap.add_argument("--pred-heads", type=int, default=12)
