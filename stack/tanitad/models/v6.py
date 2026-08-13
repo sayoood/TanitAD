@@ -1126,6 +1126,19 @@ class V6Stack(nn.Module):
         ("encoder.", "encoder"), ("readout.", "readout"),
         ("encoder_tac.", "encoder"), ("readout_tac.", "readout"),
         ("encoder_str.", "encoder"), ("readout_str.", "readout"),
+        # ⛔ THE g_tac SEAM TRAINS WITH THE PLANNER, NOT WITH THE TRUNK.
+        # MEASURED 2026-08-13 (PI question "how will the operative predictor
+        # learn to react to tactical goals if trained alone?"): with intent_proj
+        # under `predictor_op`, S-W trains it while intent=None (zero gradient —
+        # dead weight at random init) and S-T FREEZES it exactly when g_tac
+        # first flows. The goal-injection port would stay random until S-J and
+        # the hierarchy's downlink would silently not learn in its own stage.
+        # The DYNAMICS stay trunk-frozen in S-T; only the goal-injection port
+        # moves with the goal-conditioning side. Listed BEFORE the general
+        # prefix: group_of picks the LONGEST match, so order is documentation,
+        # correctness comes from specificity.
+        ("predictor_op.intent_proj.", "planner"),
+        ("predictor_op.intent_gate", "planner"),
         ("predictor_op.", "predictor_op"),
         ("step_readout_op.", "predictor_op"),
         ("adapter_tac.", "layer_tac"), ("predictor_tac.", "layer_tac"),
@@ -1376,6 +1389,21 @@ class V6Stack(nn.Module):
         zh_op = self.predictor_op(z_op_win, actions,
                                   intent=self._cut(e_g_tac, cut))
 
+        # ---- THE g_tac->OPERATIVE SEAM, exercised on DETACHED trunk inputs --
+        # ⛔ Added 2026-08-13 after a PI question exposed that NO S-T loss
+        # flowed through the goal-conditioned operative prediction: t1_latent
+        # trains layer_tac, lambda_plan trains the planner, and zh_op fed
+        # neither — so intent_proj (the hierarchy's downlink) would have
+        # stayed at random init until S-J. The same failure shape as v5's
+        # nav-echo: a conditioning path present in the diagram, absent from
+        # the optimisation.
+        # Trunk inputs are DETACHED so gradient through this tensor reaches
+        # ONLY the goal-injection side (intent_proj + the goal embeddings) —
+        # which is what makes it admissible in `planner_side` under X3: it
+        # cannot carry gradient into the encoder BY CONSTRUCTION.
+        zh_op_seam = self.predictor_op(z_op_win.detach(), actions.detach(),
+                                       intent=self._cut(e_g_tac, cut))
+
         # ---- the ONE 6 s plan ----------------------------------------------
         plan = self.emit(z_plan, e_g_tac, v0)
 
@@ -1386,7 +1414,8 @@ class V6Stack(nn.Module):
             "g_str": g_str, "a_str": a_str, "g_tac": g_tac,
             "a_lat": a_lat, "a_lon": a_lon,
             "e_g_str": e_g_str, "e_g_tac": e_g_tac,
-            "zhat_op": zh_op, "zhat_tac": zh_tac, "zhat_str": zh_str,
+            "zhat_op": zh_op, "zhat_op_seam": zh_op_seam,
+            "zhat_tac": zh_tac, "zhat_str": zh_str,
             "plan": plan,
             # ⛔ THE DECLARED PLANNER-SIDE SURFACE (X3). Every tensor here must
             # carry ZERO gradient into any encoder/readout parameter.
@@ -1395,6 +1424,10 @@ class V6Stack(nn.Module):
                 a_str["args"], g_tac["logits"], g_tac["args"],
                 a_lat["logits"], a_lon["logits"],
                 plan["feat"], plan["a"], plan["kappa"], plan["waypoints"],
+                # the seam: detached-trunk, goal-conditioned — reaches
+                # intent_proj and nothing in the encoder (X3-safe by the
+                # .detach() above, and the probe now VERIFIES that)
+                *zh_op_seam.values(),
             ],
             # higher-layer latents: must carry zero gradient into the layer(s)
             # BELOW them (stop-grad / EMA uplink).

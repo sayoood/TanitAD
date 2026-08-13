@@ -263,6 +263,17 @@ def test_planner_surface_is_total():
     with torch.no_grad():                     # off the CV warm start
         s.emission.net[-1].weight.normal_(0.0, 0.1)
         s.emission.net[-1].bias.normal_(0.0, 0.1)
+        # ⛔ Same class as the emission perturbation above, found 2026-08-13
+        # when intent_proj joined the planner group: FiLM.to_scale_shift is
+        # ZERO-INIT (identity start, deliberate), so at init
+        # dL/d(intent_proj.W) ∝ W_film = 0 EXACTLY — the seam is
+        # architecturally reachable but first-order-dead until S-W moves the
+        # FiLM. Reachability is an ARCHITECTURE property (the X3 probe's own
+        # philosophy), so the probe runs off the zero init. S-W training
+        # guarantees W_film != 0 by the time S-T needs the seam: the same
+        # FiLM carries the action conditioning that S-W trains.
+        for blk in s.predictor_op.blocks:
+            blk.film.to_scale_shift.weight.normal_(0.0, 0.1)
     out = s.forward(**s.synthetic_batch(2))
     planner = list(s.group_parameters("planner"))
     live = V6Stack._live_edges(V6Stack._probe_scalar(out["planner_side"]),
@@ -1108,3 +1119,32 @@ def test_the_whole_ladder_hands_off_through_the_WRITTEN_files(tmp_path, stack):
         assert_stage_precondition("S-S", d / "stage_gate.json",
                                   allow_inconclusive=True,
                                   off_reason="the schedule slipped")
+
+
+def test_the_g_tac_seam_TRAINS_in_ST_and_not_in_SW():
+    """⛔ FOUND BY A PI QUESTION, 2026-08-13: "how will the operative predictor
+    learn to be actioned by the tactical goals if it is trained alone?"
+
+    With intent_proj grouped under `predictor_op`, S-W trained it while
+    intent=None (zero gradient — dead weight at random init) and S-T FROZE it
+    exactly when g_tac first flows. The downlink of the hierarchy would have
+    silently stayed random until S-J — the same failure shape as v5's
+    nav-echo: a conditioning path that exists in the diagram but not in the
+    optimisation. The seam is now grouped with the PLANNER (the
+    goal-conditioning side); the trunk DYNAMICS stay frozen in S-T."""
+    from tanitad.models.v6 import V6Config, V6Stack, apply_stage_freeze
+    m = V6Stack(V6Config())
+    apply_stage_freeze(m, "S-W")
+    sw = {n for n, p in m.named_parameters()
+          if "intent" in n and p.requires_grad}
+    assert sw == set(), f"S-W must not train the unused seam: {sw}"
+    apply_stage_freeze(m, "S-T")
+    st = {n for n, p in m.named_parameters()
+          if "intent" in n and p.requires_grad}
+    assert "predictor_op.intent_proj.weight" in st, (
+        "S-T must train the g_tac->operative seam — otherwise the hierarchy's "
+        "downlink learns only at S-J")
+    # and the trunk dynamics stay frozen in S-T
+    blocked = {n for n, p in m.named_parameters()
+               if n.startswith("predictor_op.blocks") and p.requires_grad}
+    assert blocked == set(), f"S-T must not train trunk dynamics: {blocked}"
