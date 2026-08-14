@@ -48,7 +48,7 @@ pay for a video tokenizer or a diffusion decoder.
 | [NVIDIA Cosmos](https://blogs.nvidia.com/blog/cosmos-world-foundation-models/) | **4 B – 14 B** | AR 4B/12B, diffusion 7B/14B |
 | Epona | 2.5 B | via the [driving WM survey](https://github.com/HaoranZhuExplorer/World-Models-Autonomous-Driving-Survey) |
 | [Orbis v1](https://arxiv.org/abs/2507.13162) | **469 M** | flow-matching |
-| [Orbis 2](https://www.automotiveworld.com/news/university-of-freiburg-and-natix-unveil-orbis-2-model/) | ~½ of Cosmos-v2.5 | ⭐ see §3 |
+| [Orbis 2](https://arxiv.org/abs/2607.15898) | **1 067 M** (512 M high-level + 555 M low-level) | ⭐ see §3 · <6 k H100-h |
 
 ### Class B — VLA / reasoning driving models
 | model | params | note |
@@ -157,8 +157,14 @@ step-change in spend and belongs in the same decision as the band itself.
 - **GAIA-2's exact count is inferred**, not published in the sources reachable from here
   (arxiv, HuggingFace and openaccess are egress-blocked in this environment). It is marked ⚠️
   above and must not be quoted as MEASURED or PUBLISHED-exact.
-- **Orbis 2's absolute parameter count** is stated only relative to Cosmos-v2.5 in the press
-  release; the paper itself was unreachable. Its *architecture* claim is what the argument
-  above rests on, and that is quoted directly.
+- ~~**Orbis 2's absolute parameter count** is stated only relative to Cosmos-v2.5 in the press
+  release; the paper itself was unreachable.~~ **RESOLVED 2026-08-14: 1 067 M** (512 M
+  high-level ST-Transformer + 555 M low-level generator incl. 43 M adaLN conditioning),
+  <6 k H100-h, 5 890 h of training video. Full analysis, sources and caveats in
+  **`ORBIS2_ANALYSIS.md`**. ⚠️ Still snippet-sourced — arxiv remains egress-blocked, and the
+  512/43/1067 split is an inferred reconciliation. ⭐ **The new fact that matters for THIS
+  document: Orbis 2 puts its parameter mass on the ABSTRACT level (512 M high-level), the
+  inverse of v6's 68.6 %-on-the-operative-predictor split — a third independent system
+  arguing for config D over config C.**
 - **Class D counts are backbone-only** in several sources (ResNet-34 21.8 M, V2-99 96.9 M);
   full-system totals are larger and were not consistently reported.

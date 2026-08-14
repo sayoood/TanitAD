@@ -23,11 +23,25 @@ even finish one pass over its own corpus. That single number reframes every othe
 | Chinchilla-style target (20 tokens/param) | **6.73 B** |
 | **unique data ÷ that target** | **0.31 %** |
 | V-JEPA 2 pretraining | **> 1 000 000 hours** → ratio **1 : 75 000** |
+| ⭐ **Orbis 2 pretraining** (same task, same model class) | **5 890 hours**, 1 epoch → ratio **1 : 443** |
+| ⭐ **hours per M-param: Orbis 2 vs v6** | **5.52 vs 0.040** → **139× under, size-normalised** |
 
 ⚠️ **Read the Chinchilla row carefully.** [20 tokens/parameter](https://lifearchitect.ai/chinchilla/)
 is an LLM-on-text law; a latent world model on video is a different regime and the constant
 is not transferable. What *is* transferable is the **order of magnitude**, and 0.31 % is not
 a calibration quibble. The V-JEPA 2 ratio is the same message from our own family.
+
+⭐ **The Orbis 2 rows are the load-bearing ones, added 2026-08-14 — they are TASK-MATCHED.**
+[Orbis 2](https://arxiv.org/abs/2607.15898) is a hierarchical *driving* world model, 1 067 M
+params, trained one epoch over **5 890 hours** of driving video, and fine-tuned for
+action-conditioning on a 500 h subset of **the same PhysicalAI-AV corpus we use**. Unlike
+Chinchilla (wrong modality) and V-JEPA 2 (general video), it needs no transfer argument.
+**Normalised for model size we are 139× under it.** Full analysis + caveats:
+`ORBIS2_ANALYSIS.md`. ⚠️ Snippet-sourced — arxiv is egress-blocked here.
+
+⇒ **This also settles the lever ranking below:** only lever 2 (a larger corpus) or lever 3
+(a frozen pretrained encoder, importing someone else's hours) can close a **443×** gap.
+Levers 1, 4 and 5 are worth single-digit factors and cannot substitute for either.
 
 ⭐ **The uncomfortable implication, stated plainly.** Config E/F at 336 M was chosen to sit
 in the PI's 250–350 M band. On 13.3 hours of unique video that is **heavily
@@ -95,9 +109,11 @@ all for S-W.
 [V-JEPA 2](https://ai.meta.com/blog/v-jepa-2-world-model-benchmarks/) spends 1 B of its
 1.2 B parameters on an encoder pretrained on a million hours, then adapts with *a small
 amount* of robot data. [DINO-WM](https://dino-wm.github.io/) goes further: **freeze a
-pretrained encoder entirely** and train only a ~19 M predictor. [Orbis 2](https://www.automotiveworld.com/news/university-of-freiburg-and-natix-unveil-orbis-2-model/)
-compresses **DINOv2** features as its high-level latent and beat Cosmos-v2.5 on **one third
-of the data**.
+pretrained encoder entirely** and train only a ~19 M predictor. [Orbis 2](https://arxiv.org/abs/2607.15898)
+compresses **DINOv2B** features as its high-level latent and beat Cosmos-v2.5 on **one third
+of the data** — and reports that **the compression projection itself stabilised training and
+improved long-horizon rollout quality**, which is the regime our 6 s / K=60 contract lives in.
+⭐ That is the strongest external support any lever in this document has, and it is for P1.
 
 > **Recommendation P1: run an arm with a FROZEN pretrained visual encoder** (DINOv2 or
 > V-JEPA 2), our readout on top, and train only the predictor + hierarchy. It converts the
