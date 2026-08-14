@@ -64,7 +64,30 @@ call site so `p8_latents` stays byte-identical for every other caller.
 - yaw_rate and curvature are negative under both conditions, so the control says nothing about
   them either way.
 
-## 4. Next
+## 4. The 5 k checkpoint — MEASURED 2026-08-14, run autonomously by the watcher
+
+Checkpoint step **5000** (16.7 % of training), same 881-window grid, control run in the
+same pass. `r2_enc / r2_pred`:
+
+| target | k=5 | k=10 | k=15 | k=20 |
+|---|---|---|---|---|
+| speed | −1.43 / **+1.00** | **−0.74** / +0.99 | −0.84 / +0.97 | −0.84 / +0.96 |
+| speed — v0 SHUFFLED | −1.43 / **−0.40** | −0.74 / −0.33 | −0.84 / −0.52 | −0.84 / −0.38 |
+| yaw_rate | −1.53 / −1.82 | −3.07 / −1.60 | −1.73 / −1.24 | −1.79 / −1.67 |
+| curvature | −1.94 / −2.20 | −3.28 / −1.80 | −1.69 / −1.10 | −2.05 / −1.35 |
+
+**Two findings:**
+
+1. ⛔ **The speed echo persists unchanged at 5 k** (+0.96…1.00 → −0.33…−0.52 under the
+   control). The P1 speed row remains inadmissible; expect this at every checkpoint —
+   it is structural (the FiLM v0 channel), not a training phase.
+2. ⭐ **The encoded-latent curve is moving.** `r2_enc(speed, k=10)`: **−2.30 → −0.74**
+   between 2.5 k and 5 k; yaw_rate and curvature also less negative at most horizons.
+   Still all below zero — no linear decodability yet — but the direction is right, and
+   this two-point curve is exactly the instrument working as designed. Next point: 10 k.
+
+P3/P6 still exited 1 at 5 k: pod4's copy of `v6_probe_trunk` predated the `V6Grounding`
+shim (fixed on the pod immediately after; the 10 k run should produce the first P3/P6 verdict).
 
 - **Re-run at the next milestones** (5 k, 10 k) — the value is the curve, not this point.
 - **Always run the control alongside**, now that it is one flag.
