@@ -2,6 +2,40 @@
 # P-BATTERY on a v6 checkpoint — the frozen-latent interpretation heads that
 # decide whether S-W's world model may propagate upward (X5).
 #
+# ⛔⛔ MEASURED 2026-08-14, pod4: THIS CHAIN CANNOT YET RUN ON A v6 CHECKPOINT.
+# The probes are built for the v5 `WorldModel`, not merely for the v5 checkpoint
+# FORMAT, and the failure walks forward one layer at a time as each surface
+# assumption is fixed:
+#
+#   run 1  ModuleNotFoundError: train_p8_occupancy / train_v58f_unicycle_head
+#          -> shipped; these are sibling imports of the probes.
+#   run 2  KeyError: 'model'
+#          -> v6 writes {"stack": sd, "opt", "step", "config"}; v5 wrote
+#             {"model": ...}. Fixed properly in ckpt_compat.state_dict_of and
+#             replay.arms.load_checkpoint_state (+ test_v6_ckpt_layout_compat).
+#   run 3  KeyError: 'model' again, from a THIRD site — a bare `sd = ck["model"]`
+#          in a v5-era script (e.g. eval_flagship_v4.py:332). Many such sites
+#          exist; they must all route through ckpt_compat.state_dict_of.
+#   run 4  (against the fp16 snapshot, which IS in v5 `model`-key layout)
+#          KeyError: 'predictor.act_emb.0.weight'
+#          -> `ckpt_compat._ACT_KEY`, a v5 WorldModel PARAMETER NAME. v6's
+#             module tree has no such key (it is `predictor_op.*`).
+#
+# ⇒ **The blocker is architectural, not a path or a key.** Run 4 is the one that
+# settles it: even a checkpoint in perfect v5 layout fails, because the probe
+# builds a v5 WorldModel and infers action_dim from v5 parameter names. Porting
+# the P-battery to v6 means giving the probes a V6Stack construction path and a
+# v6 action-dim source — real work, not a shim.
+#
+# ⚠️ DO NOT "fix" this by relaxing the load to strict=False. That would leave the
+# probe tensors random-initialised and produce NUMBERS THAT LOOK LIKE RESULTS —
+# the exact failure ckpt_compat's own docstring was written to prevent.
+#
+# Until that port lands, this chain is correct and useful for **v5-era**
+# checkpoints only, and the v6 X5 gate has NO instrument. That gap is the point:
+# S-W is training now, and the gate meant to decide whether its world model may
+# propagate upward cannot currently read it.
+#
 # ⛔ WHY THIS EXISTS. Both E-ENC arms wrote `gate_verdict: INCONCLUSIVE` because
 # P1/P3/P6 are computed by EXTERNAL probe scripts and folded in via
 # `--gate-probes`, which nothing was supplying. A gate that cannot reach a
