@@ -2,10 +2,21 @@
 # P-BATTERY on a v6 checkpoint — the frozen-latent interpretation heads that
 # decide whether S-W's world model may propagate upward (X5).
 #
-# ⛔⛔ MEASURED 2026-08-14, pod4: THIS CHAIN CANNOT YET RUN ON A v6 CHECKPOINT.
-# The probes are built for the v5 `WorldModel`, not merely for the v5 checkpoint
-# FORMAT, and the failure walks forward one layer at a time as each surface
-# assumption is fixed:
+# ✅ v6 SUPPORT LANDED 2026-08-14. `tanitad/eval/v6_probe_trunk.py` rebuilds the
+# exact trained `V6Stack` from the run's own `config["args"]` and presents it
+# through the four-item interface the probes actually use — `encode_window`,
+# `.predictor`, `.state_dim`, `.parameters()`. VERIFIED on pod4 against the live
+# v6F-SW-30k checkpoint:
+#
+#     [p12] trunk generation: v6 (V6Stack)
+#     [p12] trunk frozen · base step 2500 · state_dim 2048 · md5 e98e45a5647d
+#
+# `state_dim 2048` is `cfg.d_op` — the geometry firewall — so the right thing
+# loaded, not merely something.
+#
+# ⛔ THE HISTORY BELOW IS KEPT ON PURPOSE. It cost four runs to learn that the
+# blocker was ARCHITECTURAL rather than a path or a key, and each layer looked
+# like the whole problem while it was the top one:
 #
 #   run 1  ModuleNotFoundError: train_p8_occupancy / train_v58f_unicycle_head
 #          -> shipped; these are sibling imports of the probes.
@@ -21,20 +32,25 @@
 #          -> `ckpt_compat._ACT_KEY`, a v5 WorldModel PARAMETER NAME. v6's
 #             module tree has no such key (it is `predictor_op.*`).
 #
-# ⇒ **The blocker is architectural, not a path or a key.** Run 4 is the one that
-# settles it: even a checkpoint in perfect v5 layout fails, because the probe
-# builds a v5 WorldModel and infers action_dim from v5 parameter names. Porting
-# the P-battery to v6 means giving the probes a V6Stack construction path and a
-# v6 action-dim source — real work, not a shim.
+#   run 5  GEOMETRY VIOLATION — the probes declared 256x256 pinhole (the v5
+#          `_eval_cfg()` default) while the v6 run trains 256x640 cylindrical.
+#          The guard REFUSED, correctly. Fixed below by reading the frame from
+#          the run's own config.json rather than restating it on the CLI.
 #
-# ⚠️ DO NOT "fix" this by relaxing the load to strict=False. That would leave the
-# probe tensors random-initialised and produce NUMBERS THAT LOOK LIKE RESULTS —
-# the exact failure ckpt_compat's own docstring was written to prevent.
+# ⇒ Run 4 was the one that settled the diagnosis: even a checkpoint in perfect
+# v5 `{"model": ...}` layout failed, because the probe BUILDS a v5 WorldModel and
+# infers action_dim from v5 parameter names. The port had to supply a V6Stack
+# construction path — which turned out to be thin, because `V6Stack` already has
+# `encode_window`, and `OperativePredictor.forward` returns `dict[int, Tensor]`
+# so `rollout_transitions`' `predictor(ws, wa)[1]` selects the 1-step head
+# exactly as for v5. v6 is built with `action_dim=3`, the same 3-channel lifted
+# format `lift_actions3` emits, so actions needed no translation either.
 #
-# Until that port lands, this chain is correct and useful for **v5-era**
-# checkpoints only, and the v6 X5 gate has NO instrument. That gap is the point:
-# S-W is training now, and the gate meant to decide whether its world model may
-# propagate upward cannot currently read it.
+# ⚠️ DO NOT "fix" any future layer of this by relaxing the load to strict=False.
+# That would leave probe tensors random-initialised and produce NUMBERS THAT
+# LOOK LIKE RESULTS — the exact failure ckpt_compat's own docstring was written
+# to prevent. The load is strict because the architecture is rebuilt from the
+# run's own args.
 #
 # ⛔ WHY THIS EXISTS. Both E-ENC arms wrote `gate_verdict: INCONCLUSIVE` because
 # P1/P3/P6 are computed by EXTERNAL probe scripts and folded in via
@@ -95,17 +111,42 @@ except Exception as e:                                          # noqa: BLE001
 PYEOF
 grep -q PB_IMPORTS_OK "$LOG" || { echo "PB_EXIT=IMPORTS" >> "$LOG"; exit 1; }
 
+# ---- geometry: taken from the RUN, never from the v5 eval default --------- #
+# ⛔ MEASURED 2026-08-14: with the geometry left to `_eval_cfg()` the probes
+# declared 256x256 pinhole while the v6 run trains 256x640 cylindrical, and the
+# geometry guard refused — CORRECTLY. The frame is a property of the checkpoint,
+# so it is read from the run's own banked `config.json` rather than restated on
+# the command line, where it would drift the moment a run changes geometry.
+GEOM="$("$PY" - "$CKPT" <<'PYEOF'
+import json, sys
+from pathlib import Path
+cj = Path(sys.argv[1]).parent / "config.json"
+if not cj.is_file():
+    sys.exit(0)                       # v5 ckpts: leave the old default alone
+a = (json.loads(cj.read_text()) or {}).get("args") or {}
+out = []
+for flag, key in (("--frame-h", "frame_h"), ("--frame-w", "frame_w"),
+                  ("--frame-hfov", "frame_hfov"), ("--f-ref", "f_ref"),
+                  ("--projection", "projection")):
+    v = a.get(key)
+    if v is not None:
+        out += [flag, str(v)]
+print(" ".join(out))
+PYEOF
+)"
+echo "PB_GEOM=$GEOM" >> "$LOG"
+
 # ---- P1 / P2 — latent readout retention (incl. lead_gap = perception) ----- #
 J=""
 [ -n "$JOIN" ] && J="--join-file $JOIN"
 "$PY" -u scripts/probe_latent_state.py --ckpt "$CKPT" \
   --v2-val-cache "$VAL" --require-parity --out "$OUT/p1p2" \
-  --ks 5,10,15,20 --episodes 40 --stride 8 $J >> "$LOG" 2>&1
+  --ks 5,10,15,20 --episodes 40 --stride 8 $J $GEOM >> "$LOG" 2>&1
 echo "PB_P1_EXIT=$?" >> "$LOG"
 
 # ---- P3 / P6 — action-response sign & gain, action-subspace dims ---------- #
 "$PY" -u scripts/stage_a_probes.py --ckpt "$CKPT" \
-  --v2-val-cache "$VAL" --require-parity --out "$OUT/p3p6" >> "$LOG" 2>&1
+  --v2-val-cache "$VAL" --require-parity --out "$OUT/p3p6" $GEOM >> "$LOG" 2>&1
 echo "PB_P3_EXIT=$?" >> "$LOG"
 
 # ---- fold into ONE --gate-probes JSON ------------------------------------- #
