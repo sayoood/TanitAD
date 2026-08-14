@@ -75,7 +75,8 @@ def test_end_to_end_record_and_the_leak_whitelist(tmp_path):
     v2p = tmp_path / "v2.json"
     v2p.write_text(json.dumps([V2]))
     s3p = tmp_path / "sam3.json"
-    s3p.write_text(json.dumps([SAM3]))
+    s3p.write_text(json.dumps({"engine": "sam3", "n_clips": 1,
+                            "clips": [SAM3]}))
     out = tmp_path / "fused"
     assert main(["--v2-json", str(v2p), "--sam3", str(s3p),
                  "--ego-root", str(tmp_path / "ego"), "--out", str(out)]) == 0
@@ -114,3 +115,49 @@ def test_speed_sign_units_are_not_assumed():
     v2["speed_profile"]["v_min_future"] = 5.0      # ~= 20 km/h -> plausible
     cor, _ = corroborate(v2, SAM3, [])
     assert cor["speed_sign_vs_ego"]["verdict"] == "corroborated"
+
+
+def test_production_wrapper_format_is_parsed(tmp_path):
+    """The real sam3.json is a metadata wrapper with records under "clips".
+    The first fuse run matched 0 of 600 because of this — pinned."""
+    (tmp_path / "ego").mkdir()
+    (tmp_path / "v2.json").write_text(json.dumps([V2]))
+    (tmp_path / "s.json").write_text(json.dumps(
+        {"engine": "sam3", "frame_stride": 6, "clips": [SAM3]}))
+    out = tmp_path / "fused"
+    main(["--v2-json", str(tmp_path / "v2.json"), "--sam3",
+          str(tmp_path / "s.json"), "--ego-root", str(tmp_path / "ego"),
+          "--out", str(out)])
+    rec = json.loads((out / "c1.json").read_text())
+    assert rec["perception"]["tracks"], "wrapper records must produce tracks"
+
+
+def test_zero_sam3_records_refuses_loudly(tmp_path):
+    (tmp_path / "ego").mkdir()
+    (tmp_path / "v2.json").write_text(json.dumps([V2]))
+    (tmp_path / "s.json").write_text(json.dumps({"engine": "sam3"}))
+    with pytest.raises(SystemExit, match="0 SAM3 records"):
+        main(["--v2-json", str(tmp_path / "v2.json"), "--sam3",
+              str(tmp_path / "s.json"), "--ego-root", str(tmp_path / "ego"),
+              "--out", str(tmp_path / "fused")])
+
+
+def test_missing_situations_is_not_computable_not_conflict():
+    v2 = json.loads(json.dumps(V2))
+    v2["scene"]["road_type"] = "junction"
+    del v2["situations"]
+    cor, conflicts = corroborate(v2, SAM3, [])
+    assert cor["scene_vs_situations"]["verdict"] == "not_computable"
+    assert not any(c.get("check") == "scene_vs_situations" for c in conflicts)
+
+
+def test_ego_spine_recomputed_from_npz(tmp_path):
+    import numpy as np
+    from ph1_fuse import ego_from_npz
+    poses = np.zeros((50, 4), dtype=np.float32)
+    poses[:, 3] = np.linspace(8.0, 0.2, 50)          # decelerating to a stop
+    np.savez(tmp_path / "c9.npz", poses=poses, actions=np.zeros((50, 2)))
+    spine = ego_from_npz(str(tmp_path / "c9.npz"))
+    assert spine["speed_profile"]["stops"] >= 1
+    assert spine["speed_profile"]["v_min_future"] < 0.5
+    assert spine["speed_profile"]["src"] == "ego_npz"

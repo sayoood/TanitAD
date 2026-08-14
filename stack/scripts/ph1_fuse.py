@@ -144,6 +144,34 @@ def build_tracks(frames: dict) -> list[dict]:
     return out
 
 
+def ego_from_npz(path: str) -> dict:
+    """Engine-A style metric spine computed from the bridged ego npz.
+
+    The v2 records carry only ego_state (the prompt view); route/speed_profile/
+    situations are NOT in them (MEASURED on the 600-clip production output).
+    speed_profile is recomputed here deterministically from poses[:, 3]; the
+    frozen situation detectors are NOT re-implemented — situations stay absent
+    unless the record carries them, and checks degrade to not_computable.
+    """
+    import numpy as np
+    try:
+        d = np.load(path)
+        poses = d["poses"]
+    except Exception:                                       # noqa: BLE001
+        return {}
+    v = poses[:, 3].astype(float)
+    yaw = poses[:, 2].astype(float)
+    stops = int(((v[:-1] >= STOP_V) & (v[1:] < STOP_V)).sum()
+                + (1 if v[0] < STOP_V else 0))
+    net_dyaw = float(yaw[-1] - yaw[0])
+    return {"speed_profile": {
+                "v_t0": float(v[0]), "v_min_future": float(v.min()),
+                "v_max_future": float(v.max()),
+                "net_dv": float(v[-1] - v[0]), "stops": stops,
+                "src": "ego_npz"},
+            "net_dyaw_rad": net_dyaw}
+
+
 def corroborate(v2: dict, sam3: dict, tracks: list[dict]) -> tuple[dict, list]:
     cor, conflicts = {}, []
     sp = v2.get("speed_profile") or {}
@@ -180,17 +208,26 @@ def corroborate(v2: dict, sam3: dict, tracks: list[dict]) -> tuple[dict, list]:
             conflicts.append({"check": "red_light_vs_stop", "n_red": len(reds)})
     # --- scene vs situations ---------------------------------------------- #
     scene = v2.get("scene") or {}
-    sit = v2.get("situations") or {}
+    sit = v2.get("situations")
     claims_int = "intersection" in str(scene.get("domain", "")) or \
                  scene.get("road_type") == "junction"
     if claims_int:
-        ok = bool(sit.get("intersection"))
-        cor["scene_vs_situations"] = {
-            "scene_claims_intersection": True,
-            "ego_intersection_window": ok,
-            "verdict": "corroborated" if ok else "conflict", "src": ["vlm", "ego"]}
-        if not ok:
-            conflicts.append({"check": "scene_vs_situations"})
+        if sit is None:
+            # ⚠️ absent data must not manufacture a conflict — the frozen
+            # situation detectors did not run on this batch, and saying
+            # "conflict" here would be a fabricated disagreement.
+            cor["scene_vs_situations"] = {"verdict": "not_computable",
+                                          "reason": "no situations source",
+                                          "src": ["vlm"]}
+        else:
+            ok = bool(sit.get("intersection"))
+            cor["scene_vs_situations"] = {
+                "scene_claims_intersection": True,
+                "ego_intersection_window": ok,
+                "verdict": "corroborated" if ok else "conflict",
+                "src": ["vlm", "ego"]}
+            if not ok:
+                conflicts.append({"check": "scene_vs_situations"})
     # --- goal evidence grounded by SAM3 ----------------------------------- #
     sym = v2.get("symbols") or {}
     if sym.get("goal_kind") == "route_to":
@@ -307,11 +344,26 @@ def main(argv=None) -> int:
              else sorted(glob.glob(os.path.join(a.sam3, "*.json"))))
     for p in paths:
         d = json.load(open(p))
-        rows = d if isinstance(d, list) else (
-            list(d.values()) if "clip_id" not in d else [d])
+        # MEASURED formats: the production sam3.json is a metadata wrapper with
+        # the records under "clips" (596 rows); older outputs were a bare list
+        # or one record. The first fuse run matched 0 of 600 because this
+        # wrapper wasn't handled — n_sam3 is asserted below so an empty
+        # perception layer can never again look like a successful fuse.
+        if isinstance(d, dict) and isinstance(d.get("clips"), list):
+            rows = d["clips"]
+        elif isinstance(d, list):
+            rows = d
+        elif isinstance(d, dict) and "clip_id" in d:
+            rows = [d]
+        else:
+            rows = list(d.values()) if isinstance(d, dict) else []
         for r in rows:
             if isinstance(r, dict) and r.get("clip_id"):
                 sam3_by[r["clip_id"]] = r
+    if not sam3_by:
+        raise SystemExit("[fuse] loaded 0 SAM3 records — refusing to emit "
+                         "fused records with an empty perception layer "
+                         f"(looked in {a.sam3})")
 
     alp_by: dict[str, dict] = {}
     if a.records:
@@ -328,6 +380,12 @@ def main(argv=None) -> int:
             continue
         s3 = sam3_by.get(cid) or {}
         tracks = build_tracks(s3.get("frames") or {})
+        # engine-A spine: recompute from the bridged npz when the v2 record
+        # does not carry it (the production records do not — MEASURED)
+        if "speed_profile" not in r:
+            spine = ego_from_npz(os.path.join(a.ego_root, f"{cid}.npz"))
+            if spine:
+                r = {**r, **spine}
         cor, conf = corroborate(r, s3, tracks)
         alp = alp_by.get(cid)
         vocab, vconf = emit_vocab(r, alp)
