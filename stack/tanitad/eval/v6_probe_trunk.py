@@ -126,6 +126,29 @@ class V6ProbeTrunk:
         return self
 
 
+class V6Grounding:
+    """The v5 ``grounding`` surface, backed by v6's own metric decode.
+
+    ⛔ P3/P6 decode rolled latents through ``grounding.step["op"]``. v6 has no
+    separate grounding module — the equivalent head is ``step_readout_op``,
+    which v6.py deliberately groups with ``predictor_op`` (a WM-side module
+    trained in S-W) rather than with the planner, "because a mis-grouping here
+    would let the planner sculpt the metric decode, which is the C6 confound in
+    miniature". Exposing it here keeps that grouping intact: the probe reads the
+    same head the WM trained, and nothing planner-side is involved.
+    """
+
+    def __init__(self, stack):
+        self.stack = stack
+        self.step = {"op": stack.step_readout_op}
+
+    def parameters(self, recurse: bool = True):
+        return self.stack.step_readout_op.parameters(recurse)
+
+    def named_parameters(self, *a, **kw):
+        return self.stack.step_readout_op.named_parameters(*a, **kw)
+
+
 def load_v6_from_ck(ck, device, *, ckpt_path=None) -> tuple[V6ProbeTrunk, int]:
     """Rebuild the exact trained :class:`V6Stack`, freeze it, wrap it.
 
@@ -152,7 +175,7 @@ def load_trunk_auto(ck, device, *, ckpt_path=None, frame=None):
     """
     if is_v6_checkpoint(ck):
         trunk, step = load_v6_from_ck(ck, device, ckpt_path=ckpt_path)
-        return trunk, None, step
+        return trunk, V6Grounding(trunk.stack), step
     _ensure_scripts()
     from eval_flagship_v4 import load_v1_from_ck  # noqa: PLC0415
 

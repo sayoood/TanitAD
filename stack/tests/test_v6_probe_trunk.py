@@ -97,3 +97,27 @@ def test_adapter_exposes_the_trunks_window(tiny_stack):
     t = V6ProbeTrunk(tiny_stack)
     assert t.window == int(tiny_stack.cfg.predictor.window)
     assert getattr(object(), "window", 8) == 8       # the v5 fallback path
+
+
+def test_grounding_shim_exposes_the_wm_side_step_readout(tiny_stack):
+    """P3/P6 decode through `grounding.step["op"]`. v6 has no separate
+    grounding module; the equivalent head is `step_readout_op`, which v6 groups
+    with predictor_op (WM-side) precisely so the planner cannot sculpt the
+    metric decode. The shim must expose THAT head, not a planner one."""
+    from tanitad.eval.v6_probe_trunk import V6Grounding
+    g = V6Grounding(tiny_stack)
+    assert g.step["op"] is tiny_stack.step_readout_op
+    assert len(list(g.named_parameters())) > 0
+
+
+def test_load_trunk_auto_returns_a_grounding_for_v6(monkeypatch, tiny_stack):
+    """The 3-tuple contract: (world, grounding, step). Returning None for
+    grounding made stage_a_probes die with
+    AttributeError: 'NoneType' object has no attribute 'step'."""
+    import tanitad.eval.v6_probe_trunk as m
+    monkeypatch.setattr(m, "load_v6_from_ck",
+                        lambda ck, dev, **kw: (V6ProbeTrunk(tiny_stack), 42))
+    world, grounding, step = m.load_trunk_auto({"stack": {}, "config": {}},
+                                               "cpu")
+    assert grounding is not None and "op" in grounding.step
+    assert step == 42
