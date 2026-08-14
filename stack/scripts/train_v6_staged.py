@@ -432,7 +432,8 @@ def v6_loss_step(stack: V6Stack, batch: dict, *, stage: str,
                  daccel: float = DACCEL_DEFAULT,
                  rand_dk: Tensor | None = None,
                  rand_da: Tensor | None = None,
-                 generator: torch.Generator | None = None) -> dict:
+                 generator: torch.Generator | None = None,
+                 rollout_grad_checkpoint: bool | None = None) -> dict:
     """One batch of the v6 staged objective.
 
     BATCH CONTRACT (all tensors on one device):
@@ -509,9 +510,18 @@ def v6_loss_step(stack: V6Stack, batch: dict, *, stage: str,
                              f"got {len(z_true)}")
         aw3, fa3 = _lift3(batch["actions2"], batch["v0"]), _lift3(
             batch["future_actions2"], batch["v0"])
+        # ⛔ The rollout's checkpointing is NOT the encoder's. It used to read
+        # `cfg.encoder.grad_checkpoint`, which coupled two unrelated decisions
+        # to one flag: the k=60 roll NEEDS checkpointing (it fixed a MEASURED
+        # 37.97/44 GiB OOM), while the encoder's is a pure speed/memory trade
+        # that costs ~2x the ViT forward and may be unaffordable to keep when
+        # the GPU has headroom. MEASURED 2026-08-14: S-W ran at 42.8 % mean GPU
+        # util with 20 GB free — i.e. paying recompute it did not need to.
+        # Default preserves the old behaviour exactly when unset.
+        rgc = (cfg.encoder.grad_checkpoint if rollout_grad_checkpoint is None
+               else bool(rollout_grad_checkpoint))
         trans = rollout_transitions(stack.predictor_op, states, aw3, fa3,
-                                    k_roll,
-                                    grad_checkpoint=cfg.encoder.grad_checkpoint)
+                                    k_roll, grad_checkpoint=rgc)
         zhat_steps = [t[1] for t in trans]
 
         # ---- O5: error at EVERY step --------------------------------------
@@ -806,6 +816,19 @@ def run_stage_gate(stack: V6Stack, stage: str, *, out_dir,
 # building the stack from args
 # ============================================================================
 
+def resolve_gc(a, field: str) -> bool:
+    """Resolve a per-site grad-checkpoint override against the master flag.
+
+    ``auto`` (the default) follows ``--grad-checkpoint``, so every launch
+    command written before the split behaves byte-identically. ``on``/``off``
+    decide that one site independently.
+    """
+    v = getattr(a, field, "auto")
+    if v in (None, "auto"):
+        return bool(getattr(a, "grad_checkpoint", False))
+    return v == "on"
+
+
 def build_stack_from_args(a) -> V6Stack:
     """Instantiate :class:`V6Stack` from the CLI, enforcing the sub-300M
     invariant AND the X3 matrix BEFORE any GPU time is spent. Both refusals are
@@ -815,7 +838,7 @@ def build_stack_from_args(a) -> V6Stack:
                         image_width=a.frame_w, patch_size=a.patch,
                         d_model=a.enc_dim, depth=a.enc_depth,
                         n_heads=a.enc_heads,
-                        grad_checkpoint=bool(a.grad_checkpoint))
+                        grad_checkpoint=resolve_gc(a, "enc_grad_checkpoint"))
     ro = ReadoutConfig(grid=a.readout_grid, d_readout=a.readout_dim,
                        grid_w=a.readout_grid_w)
     pr = PredictorConfig(d_model=a.pred_dim, depth=a.pred_depth,
@@ -1294,7 +1317,9 @@ def train(a) -> dict:
                              o3_band_rows=a.o3_band_rows,
                              o2_tau_s=a.o2_tau_s, dkappa=a.dkappa,
                              daccel=a.daccel, rand_dk=dk.to(device),
-                             rand_da=da.to(device), generator=gen)
+                             rand_da=da.to(device), generator=gen,
+                             rollout_grad_checkpoint=resolve_gc(
+                                 a, "rollout_grad_checkpoint"))
         opt.zero_grad(set_to_none=True)
         L["loss"].backward()
         gn = torch.nn.utils.clip_grad_norm_(trainable, a.clip)
@@ -1509,7 +1534,23 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--enc-dim", type=int, default=384)
     ap.add_argument("--enc-depth", type=int, default=8)
     ap.add_argument("--enc-heads", type=int, default=6)
-    ap.add_argument("--grad-checkpoint", action="store_true")
+    ap.add_argument("--grad-checkpoint", action="store_true",
+                    help="master switch: checkpoint the ENCODER blocks and "
+                         "(unless --rollout-grad-checkpoint overrides) the "
+                         "k-step rollout")
+    # ⛔ These two used to be ONE flag, which coupled unrelated decisions. The
+    # k=60 rollout NEEDS checkpointing (it fixed a MEASURED 37.97/44 GiB OOM);
+    # the encoder's is a pure speed/memory trade costing ~2x the ViT forward.
+    # MEASURED 2026-08-14: S-W sat at 42.8 % mean GPU util with 20 GB free —
+    # paying recompute it did not need. `auto` = follow --grad-checkpoint, so
+    # every existing launch command behaves byte-identically.
+    ap.add_argument("--enc-grad-checkpoint", choices=("auto", "on", "off"),
+                    default="auto",
+                    help="override checkpointing for the ENCODER only")
+    ap.add_argument("--rollout-grad-checkpoint", choices=("auto", "on", "off"),
+                    default="auto",
+                    help="override checkpointing for the k-step ROLLOUT only; "
+                         "turning this off at k=60 restores a measured OOM")
     ap.add_argument("--readout-grid", type=int, default=4)
     ap.add_argument("--readout-grid-w", type=int, default=None)
     ap.add_argument("--readout-dim", type=int, default=128)
