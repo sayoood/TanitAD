@@ -69,11 +69,22 @@ def _script_module(name: str):
 
 
 def load_checkpoint_state(path: str | Path) -> tuple[dict, int]:
-    """Load a checkpoint -> (state_dict, step). Accepts both the trainer
-    format ``{"model": sd, "step": n, ...}`` and a bare state dict."""
+    """Load a checkpoint -> (state_dict, step). Accepts the v5 trainer format
+    ``{"model": sd, "step": n, ...}``, the **v6** staged-trainer format
+    ``{"stack": sd, "opt": …, "step": n, "config": …}``, and a bare state dict.
+
+    ⛔ The ``"stack"`` branch exists because the P-battery died on a real v6
+    checkpoint with ``KeyError: 'model'`` (MEASURED 2026-08-14, pod4). These
+    loaders predate v6 and silently assumed the v5 key. Without it the fallback
+    returns the WHOLE checkpoint dict as if it were a state_dict — which is
+    worse than the KeyError, because ``opt``/``step``/``config`` then look like
+    parameter entries instead of failing loudly.
+    """
     ck = torch.load(str(path), map_location="cpu", weights_only=True)
-    if isinstance(ck, dict) and "model" in ck:
-        return ck["model"], int(ck.get("step", -1))
+    if isinstance(ck, dict):
+        for key in ("model", "stack"):
+            if key in ck:
+                return ck[key], int(ck.get("step", -1))
     return ck, -1
 
 
