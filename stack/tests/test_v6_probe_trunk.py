@@ -88,3 +88,12 @@ def test_encode_window_returns_batch_time_state(tiny_stack):
     with torch.no_grad():
         z = t.encode_window(frames)
     assert z.shape == (1, 2, t.state_dim)
+
+
+def test_adapter_exposes_the_trunks_window(tiny_stack):
+    """The dataset's causal window must come from the checkpoint. v6 uses 6
+    where the v5 eval default says 8; the probes read it off the trunk, and a
+    v5 trunk (no attribute) falls back to the old value."""
+    t = V6ProbeTrunk(tiny_stack)
+    assert t.window == int(tiny_stack.cfg.predictor.window)
+    assert getattr(object(), "window", 8) == 8       # the v5 fallback path

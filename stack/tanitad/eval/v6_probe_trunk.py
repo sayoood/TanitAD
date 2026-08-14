@@ -100,6 +100,13 @@ class V6ProbeTrunk:
         self.predictor = stack.predictor_op
         #: the geometry firewall's width — the single source of the state dim.
         self.state_dim = int(stack.cfg.d_op)
+        #: ⛔ the causal window is the TRUNK's, not the v5 eval default.
+        #: MEASURED 2026-08-14: v6's predictor is configured for window 6 while
+        #: `_eval_cfg()` says 8, and the mismatch surfaced as a ValueError deep
+        #: inside `validate_operative_inputs` rather than at the seam. The
+        #: probes read `getattr(world, "window", cfg.predictor.window)`, so a v5
+        #: trunk (no such attribute) keeps the old behaviour exactly.
+        self.window = int(stack.cfg.predictor.window)
 
     def encode_window(self, frames: Tensor) -> Tensor:
         return self.stack.encode_window(frames)

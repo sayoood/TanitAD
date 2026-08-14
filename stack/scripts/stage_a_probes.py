@@ -498,7 +498,14 @@ def main(argv=None) -> int:
     # ---- val data (the W4-family loader seam, imported) ---------------------
     val_eps, val_prov = build_v2_val_episodes(
         a, cache_frame=cache_frame, train_frame=model_frame)
-    ds_val = FlagshipWindowDataset(val_eps, window=cfg.predictor.window,
+    # ⛔ The window is the TRUNK's, not the v5 eval default. MEASURED
+    # 2026-08-14: v6's predictor is configured for window 6 while
+    # `_eval_cfg()` says 8, and the mismatch surfaced as a ValueError deep
+    # inside the predictor. Same class as the geometry seam above: a
+    # property of the checkpoint must be read from the checkpoint.
+    ds_val = FlagshipWindowDataset(val_eps,
+                                   window=getattr(world, "window",
+                                                  cfg.predictor.window),
                                    max_horizon=plan.max_horizon,
                                    maneuver_h=plan.maneuver_h,
                                    channels=cfg.encoder.in_channels)
