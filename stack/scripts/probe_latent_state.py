@@ -546,7 +546,7 @@ def p2_gate_dict(acc_by_k: dict, chance: float, *, k_lo: int = P2_K_LO,
 # ============================================================================
 def collect_grid(world, ds_val, device, *, ks: tuple[int, ...], amp_on: bool,
                  join: JoinFileReader | None, episodes: int, stride: int,
-                 batch: int) -> dict:
+                 batch: int, speed_echo_control: bool = False) -> dict:
     """Latents + targets over the canonical eval grid (e < episodes, t % stride
     == 0 — the 881-window rule). Returns numpy arrays keyed for the probes."""
     from torch.utils.data import default_collate
@@ -575,6 +575,22 @@ def collect_grid(world, ds_val, device, *, ks: tuple[int, ...], amp_on: bool,
     for b0 in range(0, n, batch):
         idx = sel[b0:b0 + batch]
         b = _to_device(default_collate([ds_val[i] for i in idx]), device)
+        if speed_echo_control:
+            # ⛔ THE SPEED-ECHO CONTROL. `lift_actions3` appends v0/SPEED_SCALE
+            # as the predictor's 3rd action channel, constant along the horizon,
+            # and the predictor is FiLM-conditioned on it — so ẑ carries v0 BY
+            # CONSTRUCTION, and future speed is smooth in v0. A high
+            # R²(ẑ, speed) may therefore be an ECHO of the probe's own input
+            # rather than a learned dynamic (the v1 route-head failure: an exact
+            # bijection of its own nav input, scored 1.0000).
+            #
+            # The control permutes v0 ACROSS THE BATCH: same frames, same
+            # recorded actions, WRONG speed scalar. z_enc is untouched (it comes
+            # from encode_window). If R²(ẑ, speed) collapses, the number was the
+            # echo; if it survives, the predictor genuinely carries speed.
+            v0 = b["pose_last"][:, 3]
+            b["pose_last"][:, 3] = v0[torch.randperm(v0.shape[0],
+                                                     device=v0.device)]
         zt, ze, zh = p8_latents(world, b, ks_all, amp_on=amp_on,
                                 want_pred=True, want_enc_k=True)
         del zt
@@ -756,6 +772,12 @@ def build_args(argv=None):
     ap.add_argument("--folds", type=int, default=5)
     ap.add_argument("--episodes", type=int, default=40)
     ap.add_argument("--stride", type=int, default=8)
+    ap.add_argument("--speed-echo-control", action="store_true",
+                    help="permute v0 across the batch before the action "
+                         "lift: same frames and recorded actions, WRONG "
+                         "speed scalar. If R2(z_hat, speed) collapses, the "
+                         "headline number was an echo of the probe's own "
+                         "input, not a learned dynamic.")
     ap.add_argument("--eval-batch", type=int, default=16)
     ap.add_argument("--seed", type=int, default=0)
     return ap.parse_args(argv)
@@ -833,7 +855,8 @@ def main(argv=None) -> int:
     # ---- collect latents + targets over the canonical grid ------------------
     col = collect_grid(world, ds_val, device, ks=ks, amp_on=amp_on, join=join,
                        episodes=a.episodes, stride=a.stride,
-                       batch=a.eval_batch)
+                       batch=a.eval_batch,
+                       speed_echo_control=bool(a.speed_echo_control))
     md5_after = module_md5(world)
 
     # ---- probes (CPU, closed-form/deterministic) ----------------------------
