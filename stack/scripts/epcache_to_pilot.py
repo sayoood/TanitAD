@@ -8,10 +8,25 @@ w120 val cache, of which only 56 are in the Alpamayo record set.
 v2_to_pilot.py cannot read this: it takes a v2 --corpus (provider format), and
 the epcache is per-episode tensors. This is the missing adapter.
 
-geometry: frames_u8 is (T, 9, 256, 256) -- NINE channels, 256x256 PINHOLE, not
-the 256x640 cylindrical the w120 caches use. Channels 0:3 are the front camera.
-Stated, not silently reshaped: the VLM sees a narrower field than it did on the
-w120 clips, so sign/agent recall is NOT comparable across the two batches.
+⛔ THE CHANNEL INDEX IS NOT ARBITRARY, AND MY FIRST VERSION GOT IT WRONG.
+frames_u8 is (T, 9, 256, 256). The 9 channels are NOT three cameras -- there is
+exactly ONE camera in this corpus, `_FRONT_WIDE_CAM = "camera_front_wide_120fov"`
+(physicalai.py:232), i.e. the 120-degree wide front camera. The 9 channels are
+the **D-015 temporal stack**: 3 frames at 100 ms, channel-stacked, and
+`comma2k19.stack_frames` states the order verbatim --
+
+    "Oldest frame first, CURRENT FRAME IN THE LAST 3 CHANNELS."
+
+So the current 120-deg frame is channels **6:9**. An earlier version of this
+script took 0:3 and therefore rendered the **t-200 ms** frame: the VLM would
+label a scene 200 ms stale relative to the ego state it is given, and SAM3's
+frame-exact VLM cross-check (the one whose confound we already fixed once)
+would be misaligned by two ticks. Measured cost: one wasted VLM launch.
+
+⚠️ GEOMETRY, stated rather than silently reshaped: this cache is 256x256
+PINHOLE, not the 256x640 cylindrical of the w120 caches. Same physical 120-deg
+camera, different projection and crop, so sign/agent recall is NOT comparable
+between the two batches and the two must not be pooled.
 """
 import glob, json, os, sys
 import numpy as np
@@ -35,7 +50,11 @@ for p in eps:
     try:
         d = torch.load(p, map_location="cpu", weights_only=False)
         fr = d["frames_u8"]                                  # (T, 9, H, W)
-        rgb = fr[:, :3].permute(0, 2, 3, 1).contiguous().numpy()
+        if fr.shape[1] % 3:
+            raise ValueError(f"{cid}: {fr.shape[1]} channels is not a multiple "
+                             "of 3 — the D-015 stack assumption is wrong here")
+        cur = fr.shape[1] - 3            # LAST 3 = the current 120-deg frame
+        rgb = fr[:, cur:cur + 3].permute(0, 2, 3, 1).contiguous().numpy()
         iio.mimwrite(f"{OUT}/videos/{cid}.mp4", rgb, fps=FPS,
                      codec="libx264", quality=7)
         np.savez(f"{OUT}/ego/{cid}.npz",
