@@ -789,8 +789,16 @@ def main(argv=None) -> int:
     # ---- frozen trunk: MODE A (model + grounding; no planner head) ----------
     print(f"[p12] loading checkpoint {a.ckpt} ...", flush=True)
     ck = torch.load(a.ckpt, map_location="cpu", weights_only=False)
-    world, _grounding, base_step = load_v1_from_ck(ck, device,
-                                                   frame=model_frame)
+    # v6 checkpoints ({"stack": …}) rebuild a V6Stack and are wrapped in the
+    # v5 trunk interface; v5 checkpoints take the byte-identical old path.
+    # MEASURED 2026-08-14: without this the probe died on a v6 ckpt at
+    # `predictor.act_emb.0.weight` — a v5 PARAMETER name (see v6_probe_trunk).
+    from tanitad.eval.v6_probe_trunk import is_v6_checkpoint, load_trunk_auto
+    is_v6 = is_v6_checkpoint(ck)
+    world, _grounding, base_step = load_trunk_auto(
+        ck, device, ckpt_path=a.ckpt, frame=model_frame)
+    print(f"[p12] trunk generation: {'v6 (V6Stack)' if is_v6 else 'v5'}",
+          flush=True)
     del ck
     assert not any(p.requires_grad for p in world.parameters())
     md5_before = module_md5(world)

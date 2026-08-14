@@ -479,13 +479,21 @@ def main(argv=None) -> int:
     # ---- frozen trunk: MODE A (model + grounding; no planner head) ----------
     print(f"[w3] loading checkpoint {a.ckpt} ...", flush=True)
     ck = torch.load(a.ckpt, map_location="cpu", weights_only=False)
-    world, grounding, base_step = load_v1_from_ck(ck, device,
-                                                  frame=model_frame)
+    # v6 ({"stack": …}) rebuilds a V6Stack behind the v5 trunk interface; v5
+    # takes the byte-identical old path. See tanitad/eval/v6_probe_trunk.
+    from tanitad.eval.v6_probe_trunk import is_v6_checkpoint, load_trunk_auto
+    is_v6 = is_v6_checkpoint(ck)
+    world, grounding, base_step = load_trunk_auto(
+        ck, device, ckpt_path=a.ckpt, frame=model_frame)
     del ck
     assert not any(p.requires_grad for p in world.parameters())
-    md5_before = module_md5(world, grounding)
-    print(f"[w3] trunk frozen · base step {base_step} · "
-          f"state_dim {world.state_dim} · md5 {md5_before[:12]}", flush=True)
+    # ⚠️ v6 has no separate grounding module (its metric decode lives inside the
+    # stack as step_readout_op), so the md5 covers whatever modules exist —
+    # never `module_md5(world, None)`, which would crash on named_parameters().
+    md5_before = module_md5(*[m for m in (world, grounding) if m is not None])
+    print(f"[w3] trunk frozen ({'v6' if is_v6 else 'v5'}) · base step "
+          f"{base_step} · state_dim {world.state_dim} · "
+          f"md5 {md5_before[:12]}", flush=True)
 
     # ---- val data (the W4-family loader seam, imported) ---------------------
     val_eps, val_prov = build_v2_val_episodes(
@@ -543,7 +551,7 @@ def main(argv=None) -> int:
             print(f"[w3] {done}/{len(sel)} windows "
                   f"({time.time() - t0:.0f} s)", flush=True)
 
-    md5_after = module_md5(world, grounding)
+    md5_after = module_md5(*[m for m in (world, grounding) if m is not None])
 
     # ---- P3 + P6 ------------------------------------------------------------
     per_channel = {}
