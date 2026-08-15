@@ -95,8 +95,15 @@ for b0 in range(0, len(todo), BATCH):
               "--out", f"{out}/v2"], f"{out}/v2.log")
     print(f"{tag} VLM_RC={rc}", flush=True)
 
+    # ⛔ --n is REQUIRED here: ph0_sam3.py defaults to n=4 (ph0_sam3.py:411),
+    # and this invocation originally omitted it — every aug120 batch got SAM3
+    # on only its first 4 clips while SAM3_RC=0 read as full coverage
+    # (MEASURED 2026-08-15: 86/201 distinct clips covered; the fusion marks
+    # the other 115 as named partials). Same class as the df/quota trap: a
+    # stage that succeeds on the wrong scope looks like an answer.
     rc = run([PY, "-u", "scripts/ph0_sam3.py", "--v2-json",
               f"{out}/v2/ph0_v2.json", "--video-root", f"{out}/videos",
+              "--n", str(len(batch)),
               "--out", f"{out}/sam3"], f"{out}/sam3.log")
     print(f"{tag} SAM3_RC={rc}", flush=True)
 

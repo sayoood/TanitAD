@@ -103,7 +103,10 @@ print({s.rfilename: s.size for s in m.siblings if "v6F-SW-30k/" in s.rfilename})
 1. **P3/P6 verdict** — never produced on v6 (the 5 k run predated the pod-side
    `V6Grounding` patch; the patch is applied and committed; the 10 k watcher will get it).
 2. **BEV (P8) probe** — not ported to v6; O3 trains but the probe-side BEV eval is v5-only.
-3. **aug120 batch fusion** (§4.3a) — labels exist, fusion not run.
+3. ~~**aug120 batch fusion** (§4.3a) — labels exist, fusion not run.~~ **DONE 2026-08-15**:
+   all **201/201** clips fused and on HF (`fused_aug120/`, far-side verified) — 88 corroborations,
+   10 conflicts, 201 with the Alpamayo layer. **What remains is the SAM3 leg, not the fusion** —
+   see the corrected item 11. Record: `…/incoming/2026-08-15-aug120-fusion/AUG120_FUSION_RESULT.md`.
 4. **The 4 472-clip build** (§4.3b) — scoped, not started.
 5. **E-ENC in ViT-5 form** — the 384×8-vs-768×12 question was answered only for the plain
    ViT; the running encoder's width has no measurement in its current architecture.
@@ -116,10 +119,17 @@ print({s.rfilename: s.size for s in m.siblings if "v6F-SW-30k/" in s.rfilename})
 9. **`ph0_ood/` on pod4 is invalid data** — superseded; do not archive or reuse (§4.3d).
 10. The **sitclf label-provenance probe** (the `head_img` leak question) remains open from
     the earlier campaign.
-11. **`batch_00184` (8 clips) has v2 labels but NO SAM3 output** — its SAM3 stage never
-    produced a directory (`B184_SAM3_ABSENT` at archive time). Fully re-derivable: the
-    8 `<clip_id>.v2ep.pt` shards are in the w120 corpus on HF; re-bridge and run
-    `ph0_sam3.py` on a fresh pod (~3 min of GPU).
+11. ⚠️ **CORRECTED 2026-08-15 — this item understated the gap by 14×.** As written it said only
+    **`batch_00184` (8 clips) has v2 labels but NO SAM3 output** (`B184_SAM3_ABSENT` at archive
+    time). That is true, and it is **not the whole defect**: MEASURED at fusion, **115 of the 201
+    aug120 clips (57.2 %) have no SAM3 record at all**, spread across *every* batch. Root cause —
+    `aug120_pipeline.py` never passed `--n` to `ph0_sam3.py`, whose default is **4**
+    (`ph0_sam3.py:411`), so each batch got SAM3 on its first 4 clips only while printing
+    `SAM3_RC=0`. **Fixed in `aug120_pipeline.py`**; the labels are not retro-filled. All 201 clips
+    are fused with the 115 marked as *named* partials (`perception.absent`), never silent zeros.
+    Re-derivable as stated (shards are in the w120 corpus on HF), now **~30 min of GPU for 115
+    clips**, then a re-fuse (fuser resumes; minutes, no GPU).
+    Detail: `…/incoming/2026-08-15-aug120-fusion/AUG120_FUSION_RESULT.md §3`.
 12. **`ckpt_final_stop.pt` == `ckpt.pt`** (md5-verified at stop). It exists as a separate
     name so that a future resumed run overwriting `ckpt.pt` on HF can never destroy the
     step-6250 stop point. Resume from either; they are the same bytes today.

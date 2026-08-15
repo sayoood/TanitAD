@@ -6,10 +6,16 @@ the real v6 lists; the goal/situation disjointness assert holds; and the fused
 record's inference whitelist never contains the ego layer.
 """
 import json
+import sys
+from pathlib import Path
 
 import pytest
 
-from ph1_fuse import build_tracks, corroborate, emit_vocab, main
+# the suite's standard scripts-dir insert; without it this file only imported
+# when an alphabetically-earlier test had already done the insert
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+
+from ph1_fuse import build_tracks, corroborate, emit_vocab, main  # noqa: E402
 
 V2 = {
     "clip_id": "c1", "_frame_wh": [448, 179],
@@ -149,6 +155,54 @@ def test_missing_situations_is_not_computable_not_conflict():
     cor, conflicts = corroborate(v2, SAM3, [])
     assert cor["scene_vs_situations"]["verdict"] == "not_computable"
     assert not any(c.get("check") == "scene_vs_situations" for c in conflicts)
+
+
+def _v2_second_clip():
+    v2b = json.loads(json.dumps(V2))
+    v2b["clip_id"] = "c2"
+    v2b["symbols"] = {"goal_kind": "route_to", "goal_evidence_sign": 0,
+                      "actions": []}
+    del v2b["signs"]                       # keep the partial-clip case minimal
+    return v2b
+
+
+def test_missing_sam3_without_flag_refuses_loudly(tmp_path):
+    """A v2 clip with no SAM3 record is a partial, and a partial must be
+    NAMED, not silent (the val-600 run silently fused 4 such clips)."""
+    (tmp_path / "ego").mkdir()
+    (tmp_path / "v2.json").write_text(json.dumps([V2, _v2_second_clip()]))
+    (tmp_path / "s.json").write_text(json.dumps([SAM3]))     # c1 only
+    with pytest.raises(SystemExit, match="NO SAM3"):
+        main(["--v2-json", str(tmp_path / "v2.json"), "--sam3",
+              str(tmp_path / "s.json"), "--ego-root", str(tmp_path / "ego"),
+              "--out", str(tmp_path / "fused")])
+
+
+def test_missing_sam3_with_flag_is_a_named_partial(tmp_path):
+    """With --missing-sam3-ok REASON the clip fuses from its other layers,
+    perception carries the absence, and no SAM3-dependent check fabricates
+    a verdict from the empty detector."""
+    (tmp_path / "ego").mkdir()
+    (tmp_path / "v2.json").write_text(json.dumps([V2, _v2_second_clip()]))
+    (tmp_path / "s.json").write_text(json.dumps([SAM3]))     # c1 only
+    out = tmp_path / "fused"
+    assert main(["--v2-json", str(tmp_path / "v2.json"), "--sam3",
+                 str(tmp_path / "s.json"), "--ego-root", str(tmp_path / "ego"),
+                 "--missing-sam3-ok", "B184_SAM3_ABSENT",
+                 "--out", str(out)]) == 0
+    rec = json.loads((out / "c2.json").read_text())
+    assert rec["perception"]["absent"] == "B184_SAM3_ABSENT"
+    assert rec["perception"]["tracks"] == []
+    # urban + zero tracks must NOT fabricate flagged_empty_urban, and the
+    # route_to goal must NOT be scored provisional by a detector that never ran
+    assert rec["corroboration"]["census_vs_scene"]["verdict"] == "not_computable"
+    assert rec["corroboration"]["goal_evidence"]["verdict"] == "not_computable"
+    # the clip WITH sam3 is untouched by the flag
+    rec1 = json.loads((out / "c1.json").read_text())
+    assert "absent" not in rec1["perception"] and rec1["perception"]["tracks"]
+    summ = json.loads((out / "_summary.json").read_text())
+    assert summ["sam3_missing"] == 1
+    assert summ["missing_sam3_reason"] == "B184_SAM3_ABSENT"
 
 
 def test_ego_spine_recomputed_from_npz(tmp_path):

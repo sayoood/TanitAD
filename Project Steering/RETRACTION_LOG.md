@@ -3308,3 +3308,49 @@ declaration is about and whether the instrument can see it.**
   add_argument, missing the shared helper** — rule-2, third instance this week. The real
   eval2 failure was my own invocation (passed --v2-subframe without the --frame-* flags
   that already existed).
+## 2026-08-15 — "batch_00184 (8 clips) has no SAM3" was the visible 7 % of a 57 % gap
+
+**Claim (runbook §6.11, written at pod stop):** the aug120 SAM3 gap is **`batch_00184`, 8 clips**,
+whose SAM3 stage never produced a directory. **Incomplete by 14×.** MEASURED at fusion against the
+far side of `Sayood/tanitad-ph0-aug120`: **115 of 201 clips (57.2 %) have no SAM3 record at all**,
+in *every* batch, not one.
+
+**Root cause of the underlying defect:** `aug120_pipeline.py` passed `--n` to the bridge and to the
+VLM and **omitted it for SAM3**, whose default is **4** (`ph0_sam3.py:387`, consumed at `:411`
+`[:a.n]`). Every batch got SAM3 on its first 4 clips — verified per file: 25 sam3.json × exactly 4
+records, and those 4 are exactly the first 4 of that batch's v2 order. The stage printed
+`SAM3_RC=0` throughout.
+
+**Root cause of the WRONG CLAIM (the part that generalises):** `batch_00184` was found by a
+**structural** probe — a far-side listing showed one batch prefix with 1 file where every other had
+2. That probe can only see a **missing file**, never a **short file**. The 24 batches whose SAM3
+stage silently covered 4 of 8 or 4 of 40 clips all had a sam3.json present, so they looked complete
+at exactly the granularity the probe operated at.
+
+⇒ **NEW CLASS — C18: a defect found by a probe is bounded by that probe's granularity.**
+
+| # | class | recognition signal |
+|---|---|---|
+| **C18** | **Defect scoped by the probe that found it** | *"the gap is N items"*, where N came from listing CONTAINERS (files, directories, repos) rather than counting their CONTENTS against what was submitted |
+
+**The check that settles it is a conservation count: `n_out == n_in` per stage, per batch.** Here it
+was one line — `len(sam3.clips)` vs `len(v2.clips)` — and it turned 8 into 115.
+
+⚠️ Sibling of **C2** (absence from a single probe) and a first cousin of the `df` / `tegrastats` /
+`memory.usage_in_bytes` family, but distinct and worth its own number: those are probes reporting
+the **wrong scope**; this is a probe reporting the **right scope at the wrong resolution**, which is
+harder to spot because the answer it gives is *true* — just not the whole count.
+
+⇒ **RULE: every pipeline stage writes its own coverage record (`n_in`, `n_out`, the ids it skipped)
+into the batch it pushes.** An `rc=0` is not coverage. This is now the standing requirement for the
+4,472-clip build (`…/incoming/2026-08-15-aug120-fusion/NEXT_4472_BUILD_INPUTS.md §2`).
+
+**Second, smaller correction found in the same pass:** the published val-600 fusion summary reads
+`n_v2: 600, n_sam3: 596`, and under the fuser as it then stood those **4 clips were fused with a
+silently empty perception layer** — no marker, and their `census_vs_scene` / `goal_evidence`
+verdicts were computed from a detector that never ran. Same class as the `0/600` join defect pinned
+in `2da0799`, one level down. The fuser now **refuses** a partial SAM3 leg unless the operator names
+it (`--missing-sam3-ok REASON`) and stamps `perception.absent` per record; the SAM3-dependent checks
+return `not_computable` instead of a fabricated verdict. **`fused_w120val/` on HF still carries the
+4 unmarked records** — correcting them would re-baseline the published 175/41/56, so it is flagged,
+not silently redone.

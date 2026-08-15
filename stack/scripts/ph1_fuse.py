@@ -21,7 +21,16 @@ Binding rules enforced structurally here (not by convention):
 Usage:
   PYTHONPATH=<stack> python3 scripts/ph1_fuse.py \
       --v2-json <v2/ph0_v2.json> --sam3 <sam3 dir-or-json> \
-      --ego-root <ego/> [--records <records.parquet>] --out <fused/>
+      --ego-root <ego/> [--records <records.parquet>] \
+      [--missing-sam3-ok REASON] --out <fused/>
+
+A clip present in --v2-json but absent from the SAM3 output is a NAMED
+PARTIAL, never a silent zero: without --missing-sam3-ok the run refuses
+loudly; with it, the clip is fused from its other layers and its perception
+layer carries {"absent": REASON}, and every SAM3-dependent corroboration
+degrades to not_computable instead of fabricating a verdict from an empty
+detector. (The 600-clip val run predates this and silently fused 4 such
+clips with an empty perception layer — MEASURED n_v2=600 vs n_sam3=596.)
 """
 from __future__ import annotations
 
@@ -172,7 +181,8 @@ def ego_from_npz(path: str) -> dict:
             "net_dyaw_rad": net_dyaw}
 
 
-def corroborate(v2: dict, sam3: dict, tracks: list[dict]) -> tuple[dict, list]:
+def corroborate(v2: dict, sam3: dict, tracks: list[dict],
+                sam3_absent: bool = False) -> tuple[dict, list]:
     cor, conflicts = {}, []
     sp = v2.get("speed_profile") or {}
     v_now = (v2.get("ego_state") or {}).get("v_now_ms")
@@ -232,18 +242,32 @@ def corroborate(v2: dict, sam3: dict, tracks: list[dict]) -> tuple[dict, list]:
     sym = v2.get("symbols") or {}
     if sym.get("goal_kind") == "route_to":
         ev = sym.get("goal_evidence_sign")
-        n_sign_frames = sum(1 for t in tracks if t["concept"] == "traffic sign")
-        cor["goal_evidence"] = {
-            "evidence_sign_idx": ev, "sam3_sign_tracks": n_sign_frames,
-            "verdict": ("grounded" if ev is not None and n_sign_frames > 0
-                        else "provisional"), "src": ["vlm", "sam3"]}
+        if sam3_absent:
+            # ⚠️ same rule as the situations fix: an absent detector must not
+            # manufacture a "provisional/ungrounded" verdict — it saw nothing.
+            cor["goal_evidence"] = {"evidence_sign_idx": ev,
+                                    "verdict": "not_computable",
+                                    "reason": "sam3 absent for this clip",
+                                    "src": ["vlm"]}
+        else:
+            n_sign_frames = sum(1 for t in tracks
+                                if t["concept"] == "traffic sign")
+            cor["goal_evidence"] = {
+                "evidence_sign_idx": ev, "sam3_sign_tracks": n_sign_frames,
+                "verdict": ("grounded" if ev is not None and n_sign_frames > 0
+                            else "provisional"), "src": ["vlm", "sam3"]}
     # --- census vs scene --------------------------------------------------- #
-    n_agents = sum(1 for t in tracks
-                   if t["concept"] in ("car", "truck", "bus", "pedestrian",
-                                       "cyclist"))
-    if scene.get("road_type") == "urban" and n_agents == 0:
-        cor["census_vs_scene"] = {"verdict": "flagged_empty_urban",
-                                  "src": ["sam3", "vlm"]}
+    if scene.get("road_type") == "urban":
+        n_agents = sum(1 for t in tracks
+                       if t["concept"] in ("car", "truck", "bus", "pedestrian",
+                                           "cyclist"))
+        if sam3_absent:
+            cor["census_vs_scene"] = {"verdict": "not_computable",
+                                      "reason": "sam3 absent for this clip",
+                                      "src": ["vlm"]}
+        elif n_agents == 0:
+            cor["census_vs_scene"] = {"verdict": "flagged_empty_urban",
+                                      "src": ["sam3", "vlm"]}
     return cor, conflicts
 
 
@@ -331,6 +355,12 @@ def main(argv=None) -> int:
     ap.add_argument("--ego-root", required=True)
     ap.add_argument("--records", default=None,
                     help="Alpamayo records.parquet (optional layer)")
+    ap.add_argument("--missing-sam3-ok", default=None, metavar="REASON",
+                    help="permit clips present in --v2-json but absent from "
+                         "the SAM3 output: fuse their other layers, stamp "
+                         "perception {'absent': REASON}, and degrade the "
+                         "SAM3-dependent checks to not_computable. Without "
+                         "this flag a partial SAM3 leg refuses loudly.")
     ap.add_argument("--out", required=True)
     a = ap.parse_args(argv)
     os.makedirs(a.out, exist_ok=True)
@@ -364,6 +394,13 @@ def main(argv=None) -> int:
         raise SystemExit("[fuse] loaded 0 SAM3 records — refusing to emit "
                          "fused records with an empty perception layer "
                          f"(looked in {a.sam3})")
+    missing = sorted(c for c in v2_by if c not in sam3_by)
+    if missing and not a.missing_sam3_ok:
+        raise SystemExit(
+            f"[fuse] {len(missing)} of {len(v2_by)} v2 clips have NO SAM3 "
+            f"record (e.g. {missing[:3]}) — pass --missing-sam3-ok REASON "
+            "to fuse them with the perception layer explicitly marked "
+            "absent, or complete the SAM3 leg first")
 
     alp_by: dict[str, dict] = {}
     if a.records:
@@ -373,11 +410,13 @@ def main(argv=None) -> int:
             alp_by[cid] = {row["task"]: row.get("raw_json")
                            for _, row in g.iterrows()}
 
-    n, summ = 0, {"corroborated": 0, "conflicts": 0, "with_alpamayo": 0}
+    n, summ = 0, {"corroborated": 0, "conflicts": 0, "with_alpamayo": 0,
+                  "sam3_missing": 0}
     for cid, r in sorted(v2_by.items()):
         dst = os.path.join(a.out, f"{cid}.json")
         if os.path.exists(dst):
             continue
+        absent_reason = a.missing_sam3_ok if cid not in sam3_by else None
         s3 = sam3_by.get(cid) or {}
         tracks = build_tracks(s3.get("frames") or {})
         # engine-A spine: recompute from the bridged npz when the v2 record
@@ -386,7 +425,8 @@ def main(argv=None) -> int:
             spine = ego_from_npz(os.path.join(a.ego_root, f"{cid}.npz"))
             if spine:
                 r = {**r, **spine}
-        cor, conf = corroborate(r, s3, tracks)
+        cor, conf = corroborate(r, s3, tracks,
+                                sam3_absent=absent_reason is not None)
         alp = alp_by.get(cid)
         vocab, vconf = emit_vocab(r, alp)
         conf += vconf
@@ -400,7 +440,9 @@ def main(argv=None) -> int:
                      "lane_change_events", "situations") if k in r},
             "perception": {"tracks": tracks,
                            "per_concept_hits": s3.get("per_concept_hits"),
-                           "src": "sam3"},
+                           "src": "sam3",
+                           **({"absent": absent_reason}
+                              if absent_reason else {})},
             "semantics": {"scene": r.get("scene"), "signs": r.get("signs"),
                           "symbols": r.get("symbols"), "src": "vlm",
                           "sign_text_status": "pending_g1_gate"},
@@ -419,11 +461,14 @@ def main(argv=None) -> int:
         summ["corroborated"] += sum(1 for c in cor.values()
                                     if c.get("verdict") == "corroborated")
         summ["with_alpamayo"] += int(alp is not None)
+        summ["sam3_missing"] += int(absent_reason is not None)
         if n % 100 == 0:
             print(f"[fuse] {n} fused", flush=True)
     summ["n_fused"] = n
     summ["n_v2"] = len(v2_by)
     summ["n_sam3"] = len(sam3_by)
+    if a.missing_sam3_ok:
+        summ["missing_sam3_reason"] = a.missing_sam3_ok
     json.dump(summ, open(os.path.join(a.out, "_summary.json"), "w"), indent=1)
     print(f"FUSE_DONE {json.dumps(summ)}")
     return 0
