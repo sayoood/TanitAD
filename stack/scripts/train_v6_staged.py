@@ -159,6 +159,17 @@ class V6LossWeights:
     # intent_proj — which is precisely "the operative predictor learns to be
     # actioned by the tactical goals". Zero in S-W (no goals flow) and S-S.
     seam_op: float = 1.0
+    #: SELECTION (V6F_PLANNER_DESIGN.md). ⛔ DEFAULT 0.0 = OFF everywhere, so the
+    #: incumbent loss is bit-identical. Needs ``cfg.selector != "none"``.
+    #: The objective is E-OBJ-1's ``softade``: the EXPECTED fan error under the
+    #: scorer's own softmax — METRIC-AWARE with a hard optimum. That decomposition
+    #: is MEASURED, not chosen: swapping a fitted ranker's objective from the
+    #: one-hot CE to ``softade`` recovered −0.0974 m (base) / −0.1670 m (XL),
+    #: separated, and the recovery was LONGITUDINAL — while SOFTENING the CE
+    #: target was separated WORSE (+0.0909 m) at every tau. Metric-awareness
+    #: helps; target-softness hurts. ⚠️ Units: this term is in METRES while every
+    #: other term is not, so its weight is a declared decision, never a default.
+    w_select: float = 0.0
 
     def for_stage(self, stage: str) -> "V6LossWeights":
         """The weights actually in force for ``stage``.
@@ -170,7 +181,7 @@ class V6LossWeights:
         """
         if stage == "S-W":
             return replace(self, t1_latent=0.0, s1_latent=0.0,
-                           lambda_plan=0.0, seam_op=0.0)
+                           lambda_plan=0.0, seam_op=0.0, w_select=0.0)
         if stage == "S-T":
             return replace(self, o1_ctrl=0.0, o1_fact=0.0, o1_scene=0.0,
                            o2_nearfield=0.0, o3_masked=0.0, o5_rollout=0.0,
@@ -179,7 +190,7 @@ class V6LossWeights:
             return replace(self, o1_ctrl=0.0, o1_fact=0.0, o1_scene=0.0,
                            o2_nearfield=0.0, o3_masked=0.0, o5_rollout=0.0,
                            o6_sigreg=0.0, t1_latent=0.0, lambda_plan=0.0,
-                           seam_op=0.0)
+                           seam_op=0.0, w_select=0.0)
         if stage == "S-J":
             return self
         raise ValueError(f"unknown stage {stage!r}; expected one of {STAGES}")
@@ -611,7 +622,23 @@ def v6_loss_step(stack: V6Stack, batch: dict, *, stage: str,
         winner = err.argmin(dim=1)
         ar = torch.arange(fan.shape[0], device=fan.device)
         lp = err[ar, winner].mean()
+        # ⚠️ epsilon-RELAXED WTA (default 0.0 == the incumbent PURE WTA, and the
+        # term below is not even constructed then, so the graph is unchanged).
+        # Under pure WTA the N−1 LOSING candidates receive EXACTLY ZERO gradient
+        # and nothing bounds the fan's MEAN. MEASURED on the banked REF-C-XL fan
+        # 2026-08-15: oracle 0.1639 m against a fan mean of 13.9564 m — 85x —
+        # and that is the regime in which a cost's argmin is a coin flip.
+        # Bounding the losers is the cheapest structural defence available, and
+        # it costs zero parameters.
+        if cfg.plan_wta_eps > 0.0:
+            n = err.shape[1]
+            if n > 1:
+                loser = (err.sum(dim=1) - err[ar, winner]) / (n - 1)
+                lp = lp + cfg.plan_wta_eps * loser.mean()
+                log["plan_loser_mean"] = float(loser.mean().detach())
         terms["plan"] = w.lambda_plan * lp
+        log["fan_mean_ade"] = float(err.mean().detach())
+        log["fan_oracle_ade"] = float(err.min(dim=1).values.mean().detach())
         # §4b: report the bands SEPARATELY. A pooled 0–6 s number cannot show
         # the 2 s seam, and the seam is what X2 exists to verify.
         op_b, tac_b = cfg.split_bands(fan[ar, winner].detach(), dim=-2)
@@ -619,6 +646,35 @@ def v6_loss_step(stack: V6Stack, batch: dict, *, stage: str,
         log |= {"plan_wta": float(lp.detach()),
                 "plan_ade_0_2s": float((op_b - t_op).norm(dim=-1).mean()),
                 "plan_ade_2_6s": float((tac_b - t_tac).norm(dim=-1).mean())}
+
+        # ---- SELECTION (w_select, default 0.0 == absent) --------------------
+        if w.w_select:
+            if "sel_score" not in out["plan"]:
+                raise ValueError(
+                    "w_select > 0 with cfg.selector='none' — a selection loss "
+                    "with no scorer is how a selector silently never trains. "
+                    "Build the stack with --selector goal.")
+            score = out["plan"]["sel_score"].float()          # [B, N]
+            # E-OBJ-1 `softade`: EXPECTED fan error under the scorer's own
+            # softmax. Metric-aware (a loser that misses by a centimetre is not
+            # punished like one that misses by ten metres — the defect that made
+            # EVERY fitted ranker in E-S1-0 separated WORSE than the incumbent),
+            # and its optimum is still a sharp distribution on the low-error
+            # candidate, so it optimises the LOWER TAIL that governs argmax.
+            p = score.softmax(dim=-1)
+            lsel = (p * err.detach()).sum(dim=-1).mean()
+            terms["select"] = w.w_select * lsel
+            sel_idx = score.argmax(dim=-1)
+            rank = err.argsort(dim=1).argsort(dim=1)
+            log |= {"sel_softade": float(lsel.detach()),
+                    "sel_ade": float(err[ar, sel_idx].mean().detach()),
+                    # ⭐ THE PRIMARY ENDPOINT for a ranking claim (W7-PROG's
+                    # precedent). 0 = always the true best, 0.5 = a coin flip.
+                    "sel_norm_err_rank": float(
+                        rank[ar, sel_idx].float().mean().detach()
+                        / max(err.shape[1] - 1, 1)),
+                    "sel_gap": float((err[ar, sel_idx]
+                                      - err.min(dim=1).values).mean().detach())}
 
     if not terms:
         raise RuntimeError(f"stage {stage} produced NO loss terms — every "
@@ -858,6 +914,8 @@ def build_stack_from_args(a) -> V6Stack:
         sigreg_free_dims=a.sigreg_free_dims, param_budget=a.param_budget,
         f_hidden_tac=a.f_hidden_tac, f_hidden_str=a.f_hidden_str,
         f_blocks=a.f_blocks,
+        selector=a.selector, selector_tau_m=a.selector_tau_m,
+        plan_wta_eps=a.plan_wta_eps,
         vit5_encoder=bool(a.vit5_encoder), n_registers=a.n_registers)
     stack = V6Stack(cfg)
     rep = stack.assert_param_budget()
@@ -994,6 +1052,7 @@ def _weights_from_args(a) -> V6LossWeights:
         o1_ctrl=a.w_o1_ctrl, o1_fact=a.w_o1_fact, o1_scene=a.w_o1_scene,
         o2_nearfield=a.w_o2, o3_masked=a.w_o3, o5_rollout=a.w_o5,
         o6_sigreg=a.w_o6, t1_latent=a.w_t1, s1_latent=a.w_s1,
+        w_select=a.w_select,
         lambda_plan=resolve_lambda_plan(a))
 
 
@@ -1570,6 +1629,22 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--adapter-hidden", type=int, default=512)
     ap.add_argument("--n-candidates", type=int, default=8)
     ap.add_argument("--param-budget", type=int, default=300_000_000)
+    # ---- SELECTION (V6F_PLANNER_DESIGN.md) — ALL DEFAULT-OFF ---------------
+    ap.add_argument("--selector", choices=("none", "goal"), default="none",
+                    help="'none' (default) builds NO scorer and leaves the "
+                         "state_dict byte-identical. 'goal' builds the +267 "
+                         "GoalDistanceScorer — the mechanism E-WC measured.")
+    ap.add_argument("--selector-tau-m", type=float, default=1.0,
+                    help="selection temperature in metres (goal scorer only)")
+    ap.add_argument("--plan-wta-eps", type=float, default=0.0,
+                    help="epsilon-relaxed WTA: weight on the LOSING candidates' "
+                         "mean error. 0.0 (default) is the incumbent pure WTA, "
+                         "under which N-1 candidates get ZERO gradient and "
+                         "nothing bounds the fan mean.")
+    ap.add_argument("--w-select", type=float, default=0.0,
+                    help="weight on the softade selection loss. 0.0 = the term "
+                         "is absent. ⚠️ in METRES while the other terms are "
+                         "not — a declared decision, never a default.")
     # ---- E-ENC arm (§0 Q1) -------------------------------------------------
     ap.add_argument("--f-hidden-tac", type=int, default=512,
                     help="FTac residual-MLP hidden width, tactical layer")
@@ -1701,6 +1776,23 @@ def preflight(a) -> list[str]:
             f"stage and its planner is ABSENT (λ_plan ≡ 0). A planner "
             f"gradient here destroys the stage's attributability — the exact "
             f"co-training defect the staging exists to avoid.")
+    if a.stage == "S-W" and a.selector != "none":
+        problems.append(
+            f"--stage S-W with --selector {a.selector}: the planner group is "
+            f"FROZEN in S-W, so a scorer built here would be untrainable dead "
+            f"weight AND would change the state_dict — which breaks a strict "
+            f"resume of the live S-W run. Selection is an S-T lever.")
+    if a.w_select and a.selector == "none":
+        problems.append(
+            f"--w-select {a.w_select} with --selector none: a selection loss "
+            f"with no scorer is how a selector silently never trains.")
+    if (a.selector != "none" and not a.w_select
+            and not getattr(a, "i_know_this_is_the_control_arm", False)):
+        problems.append(
+            f"--selector {a.selector} with --w-select 0: the scorer would be "
+            f"built, consume its parameters and never receive a gradient. If "
+            f"an inert-scorer control is what you want, say so explicitly by "
+            f"passing --w-select 0 AND --i-know-this-is-the-control-arm.")
     if a.allow_inconclusive_gate and not a.gate_off_reason.strip():
         problems.append("--allow-inconclusive-gate needs --gate-off-reason "
                         "(an override with no stated reason is an "

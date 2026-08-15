@@ -96,7 +96,7 @@ __all__ = [
     "GOAL_ARG_SLOTS", "GOAL_ARG_NAMES",
     # config + stack
     "V6Config", "V6Stack", "GoalVocabulary", "GoalHead", "GoalConditioner",
-    "IsolationViolation", "PARAM_BUDGET",
+    "GoalDistanceScorer", "IsolationViolation", "PARAM_BUDGET",
     # horizon (§4b)
     "PLAN_STEPS", "DT", "HORIZON_S", "OP_BAND_S", "TAC_BAND_S",
     # staging (X5)
@@ -613,6 +613,82 @@ class GoalConditioner(nn.Module):
         return self.proj(self.vocab.encode(ids_or_probs, args, arg_mask))
 
 
+class GoalDistanceScorer(nn.Module):
+    """SELECTION over the fan, by distance to a PREDICTED goal point (+267).
+
+    ``score_i = − ‖endpoint_i − ĝ‖ / tau + b_i`` with ``ĝ = W · e_g_tac + c``.
+
+    ⭐ WHY THIS SHAPE AND NOT A LEARNED COST OVER THE FAN. MEASURED 2026-08-15
+    on the banked in-repo REF-C-XL fan (881 windows / 40 episodes / 256
+    candidates, `sel_winners_curse_law.py`, paired episode-cluster bootstrap):
+
+      * a world-model ROLL-CONSISTENCY score — the W7 quantity, present in that
+        dump as ``cons_score`` — selects at **6.4501 m** against a fan oracle of
+        **0.1639 m**, is **+5.9787 [+5.3217, +6.7625] WORSE** than the shipped
+        supervised selector, and its normalised error-rank **RISES** with the
+        candidate count (0.241 at N=4 → 0.286 at N=256) while its lower-tail hit
+        rate **COLLAPSES** (0.57 → 0.28). That is the winner's curse, replicated
+        independently of W7 on a different model and a different grid.
+      * selection by distance to a goal point behaves the OPPOSITE way: its
+        normalised error-rank FALLS with N (0.006 → 0.001 at sigma 0) and its
+        lower-tail hit rate is **1.00**, because a candidate-INDEPENDENT
+        reference has no degenerate minimiser — inaction cannot minimise it.
+      * the requirement curve is measured, not assumed: at **sigma 0.5 m** the
+        goal rule is **−0.1591 [−0.2300, −0.0894] BETTER** than the trained
+        selector (separated); at **sigma 1.0 m** it is **+0.0943 [+0.0241,
+        +0.1650] WORSE** (separated). ⇒ **the goal head must reach ≈0.8 m
+        1-sigma endpoint accuracy to be worth having**, and that is a gate, not
+        a hope.
+
+    ⛔ THE HONESTY HAZARD, STATED RATHER THAN BURIED. A goal head trained to
+    regress the future endpoint IS a trajectory predictor; selecting on it would
+    move the planning into the goal head and call the result a hierarchy. Two
+    things bound that, both structural:
+      1. **The goal is 2 numbers**, decoded from the goal embedding only — an
+         information bottleneck against a 60x2 plan. A "goal" wide enough to
+         carry the path is not a goal, and this module cannot emit one.
+      2. **The goal-echo control** (replace ĝ by its corpus marginal) must be
+         reported beside every number. MEASURED on the same fan: the echo
+         selects at **7.8237 m** against the live goal's 0.7862 m, so the null
+         is far away and a win cannot be an artefact of "any goal point works".
+
+    ⛔ ADMISSIBILITY (PI 2026-08-03). The only input is ``e_g_tac``, which comes
+    from ``goal_head_tac(z_tac_p, cond=e_g_str)`` — vision-derived latents and
+    the strategic goal. No situation-classifier output in any form, no ego state
+    at inference. The check to run is *"could this have been computed from the
+    situation classifier's output?"* — no such path exists into this module.
+    """
+
+    def __init__(self, d_goal_embed: int, n_candidates: int, *,
+                 tau_m: float = 1.0):
+        super().__init__()
+        # ĝ: the predicted goal POINT (x, y) in the ego frame at the horizon.
+        self.goal_point = nn.Linear(int(d_goal_embed), 2)
+        nn.init.zeros_(self.goal_point.weight)
+        nn.init.zeros_(self.goal_point.bias)
+        # per-candidate prior. Zero-init so the head starts as a pure
+        # goal-distance rule and any learned per-candidate bias is visible as a
+        # DEPARTURE from that, not as the thing being measured.
+        self.cand_bias = nn.Parameter(torch.zeros(int(n_candidates)))
+        self.log_tau = nn.Parameter(torch.tensor(float(math.log(tau_m))))
+
+    def forward(self, waypoints: Tensor, g_embed: Tensor) -> dict:
+        """``waypoints`` [B, N, T, 2] · ``g_embed`` [B, d_goal_embed] ->
+        ``{"score" [B, N], "goal_point" [B, 2], "goal_dist" [B, N]}``.
+
+        Higher score == better, so ``score.argmax(-1)`` is the incumbent rule
+        and any noise-robust aggregator is a strictly later decision.
+        """
+        if waypoints.ndim != 4 or waypoints.shape[-1] != 2:
+            raise ValueError(f"waypoints must be [B, N, T, 2], got "
+                             f"{tuple(waypoints.shape)}")
+        g = self.goal_point(g_embed.to(waypoints.dtype))          # [B, 2]
+        d = (waypoints[:, :, -1] - g[:, None]).norm(dim=-1)       # [B, N]
+        tau = self.log_tau.exp().clamp_min(1e-3).to(d.dtype)
+        return {"score": -d / tau + self.cand_bias.to(d.dtype)[None],
+                "goal_point": g, "goal_dist": d}
+
+
 # ============================================================================
 # X3 — the gradient-isolation matrix, as a config + a MEASURED check
 # ============================================================================
@@ -700,6 +776,31 @@ class V6Config:
     emission_squash: str = "squash"
     d_plan_feat: int = 256         # z_op -> emission feature projection
 
+    # ---- SELECTION (V6F_PLANNER_DESIGN.md) ---------------------------------
+    #: ⛔ DEFAULT OFF. ``"none"`` builds NO scorer and leaves the state_dict
+    #: byte-identical to the pre-selector v6 (proved in
+    #: ``tests/test_v6_selector.py::test_all_off_is_byte_identical_to_head``).
+    #: ``"goal"`` builds :class:`GoalDistanceScorer` — **+267 parameters** — the
+    #: mechanism E-WC MEASURED: a goal point of 1-sigma accuracy 0.5 m beats a
+    #: trained selector by −0.1591 m [−0.2300, −0.0894] paired-separated on the
+    #: banked REF-C-XL fan, while the world-model roll-consistency cost the W7
+    #: line used is +5.9787 m [+5.3217, +6.7625] WORSE than that same selector.
+    #: ⚠️ NEVER judge a ``"goal"`` arm without the ``"mlp"`` capacity control
+    #: (V6F_PLANNER_DESIGN §5) — an arm that wins on capacity read as winning on
+    #: mechanism is the C6 confound.
+    selector: str = "none"
+    #: Selection temperature (metres) for the goal-distance logit. Only read
+    #: when ``selector != "none"``.
+    selector_tau_m: float = 1.0
+    #: epsilon-RELAXED winner-take-all for the plan loss. ⛔ DEFAULT 0.0 = the
+    #: incumbent PURE WTA, bit-identical. MEASURED consequence of pure WTA: the
+    #: N−1 losing candidates receive EXACTLY ZERO gradient, so nothing bounds
+    #: the fan's MEAN. The banked REF-C-XL fan shows what that regime looks like
+    #: — oracle 0.1639 m against a fan MEAN of 13.9564 m — and a fan whose mean
+    #: is 85x its oracle is the regime in which every selector's argmin fails.
+    #: Consumed by ``scripts/train_v6_staged.py``; holds no parameters.
+    plan_wta_eps: float = 0.0
+
     # ---- vocabulary --------------------------------------------------------
     d_goal_embed: int = 128
 
@@ -762,6 +863,19 @@ class V6Config:
                 f"the tactical band must end at the plan horizon "
                 f"{self.horizon_s} s (plan_steps {self.plan_steps} x dt "
                 f"{self.dt}), got {self.tac_band_s[1]}")
+        if self.selector not in ("none", "goal"):
+            raise ValueError(
+                f"selector must be none|goal, got {self.selector!r}. "
+                f"'mlp' is the pre-registered CAPACITY CONTROL and is not "
+                f"implemented yet — running 'goal' without it would make a win "
+                f"unattributable between mechanism and capacity "
+                f"(V6F_PLANNER_DESIGN.md §5).")
+        if self.selector_tau_m <= 0.0:
+            raise ValueError(f"selector_tau_m must be > 0, got "
+                             f"{self.selector_tau_m}")
+        if not 0.0 <= self.plan_wta_eps <= 1.0:
+            raise ValueError(f"plan_wta_eps must be in [0, 1], got "
+                             f"{self.plan_wta_eps}")
         if self.uplink not in ("stopgrad", "ema"):
             raise ValueError(f"uplink must be stopgrad|ema, got {self.uplink!r}")
         if not 0.0 < self.ema_decay < 1.0:
@@ -1132,6 +1246,16 @@ class V6Stack(nn.Module):
                              readout_grid_ranges(gh, gw).reshape(-1),
                              persistent=False)
 
+        # ---- SELECTION (default OFF) — built LAST, and only when asked ------
+        # Constructed at the very END so the ``"none"`` path consumes NO RNG and
+        # creates NO state_dict key, and the ``"goal"`` path disturbs no other
+        # module's initialisation. That is what makes the byte-identity proof in
+        # tests/test_v6_selector.py TOTAL rather than approximate.
+        self.cand_score = None
+        if cfg.selector == "goal":
+            self.cand_score = GoalDistanceScorer(
+                cfg.d_goal_embed, cfg.n_candidates, tau_m=cfg.selector_tau_m)
+
     # -- grouping ------------------------------------------------------------
     #: prefix -> group. Longest matching prefix wins, so ``predictor_tac``
     #: cannot be swallowed by ``predictor_op``'s entry.
@@ -1165,6 +1289,11 @@ class V6Stack(nn.Module):
         ("ema_adapter_str.", "layer_str"),
         ("cond_op.", "planner"), ("plan_proj.", "planner"),
         ("cand_queries.", "planner"), ("emission.", "planner"),
+        # SELECTION is a PLANNER module: it is trained in S-T on the trunk it
+        # consumes, never in S-W. "You cannot repair a trunk and keep its
+        # planner" (registry §1.14) applies to the selector first of all — the
+        # frozen selector read 0.7933 -> 4.4159 when the trunk moved under it.
+        ("cand_score.", "planner"),
         ("masked_cells.", "aux"), ("sigreg.", "aux"),
     )
 
@@ -1327,9 +1456,20 @@ class V6Stack(nn.Module):
         g = g_tac_embed[:, None, :].expand(b, cfg.n_candidates, -1)
         feat = torch.cat([feat, g.to(feat.dtype)], dim=-1)         # [B,N,F]
         a_ctl, kappa, wp = self.emission(feat, v0)
-        return {"a": a_ctl, "kappa": kappa,
-                "controls": torch.stack([a_ctl, kappa], dim=-1),
-                "waypoints": wp, "feat": feat}
+        out = {"a": a_ctl, "kappa": kappa,
+               "controls": torch.stack([a_ctl, kappa], dim=-1),
+               "waypoints": wp, "feat": feat}
+        if self.cand_score is not None:
+            # ⚠️ the scorer reads the EMITTED trajectory, i.e. the RANKED
+            # OBJECT itself. E-S1-0's dose-response is the sharpest statement in
+            # the programme on this point — the supervised t=0 confidence
+            # selects at 0.4728 while THE SAME WEIGHTS' unsupervised refined
+            # readout selects at 1.3100, a 2.8x penalty purely for scoring
+            # off-distribution. Reproduced 2026-08-15 on the banked XL fan:
+            # shipped 0.4714 vs refined 1.3901 (2.95x).
+            out |= {f"sel_{k}": v
+                    for k, v in self.cand_score(wp, g_tac_embed).items()}
+        return out
 
     def forward(self, frames: Tensor, actions: Tensor, v0: Tensor, *,
                 own_frames_tac: Tensor | None = None,
@@ -1419,6 +1559,11 @@ class V6Stack(nn.Module):
 
         # ---- the ONE 6 s plan ----------------------------------------------
         plan = self.emit(z_plan, e_g_tac, v0)
+        # The selector is planner-side and MUST be probed by X3 like every other
+        # planner output — a head added without appending to the declaration is
+        # exactly what test_planner_surface_is_total exists to catch.
+        sel_side = [plan[k] for k in ("sel_score", "sel_goal_point")
+                    if k in plan]
 
         return {
             "z_op_win": z_op_win, "z_op": z_op, "z_plan": z_plan,
@@ -1437,6 +1582,7 @@ class V6Stack(nn.Module):
                 a_str["args"], g_tac["logits"], g_tac["args"],
                 a_lat["logits"], a_lon["logits"],
                 plan["feat"], plan["a"], plan["kappa"], plan["waypoints"],
+                *sel_side,
                 # the seam: detached-trunk, goal-conditioned — reaches
                 # intent_proj and nothing in the encoder (X3-safe by the
                 # .detach() above, and the probe now VERIFIES that)

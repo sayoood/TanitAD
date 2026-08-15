@@ -2966,3 +2966,147 @@ head-fit-sensitivity flag for the encoder line, **not** a relitigation of prior 
 **RETRACTION_LOG:** no retraction (fresh pre-registered result, reported plainly per Operating-Standard rule
 5); it re-demonstrates **C5** — cross-rig R² is head-fit-sensitive, so the decision-grade read uses a
 converged head + the paired same-regime contrast, never an under-converged point estimate.
+
+---
+
+## 11. PRODUCED DATASETS — artifacts this programme *created* (not models)
+
+> Why this section exists: the Alpamayo-2 augmentation set was the programme's largest
+> single inference spend (78.4 wall-hours) and **had no registry row for 11 days**, so
+> `Paper/TANITAD_PAPER.md` carried its counts as **INHERITED** with the flag *"pending a
+> registry row"*. Same failure mode as v5f being the headline live run with no row (§1.8).
+> A produced dataset is quotable only from here or from its own parquet.
+
+### 11.1 Alpamayo-2-Super augmentation of PhysicalAI-AV — `Sayood/tanitad-alpamayo2-augmentation` — ✅ **COMPLETE** (produced 2026-08-06 → 2026-08-09)
+
+**Every count below is MEASURED BY ME, 2026-08-15, by direct aggregation over
+`records.parquet`** — not from the dataset card, which disagrees (see the ⛔ block). The
+local copy is proven to BE the published artifact: sha256
+`ecae276db9969de115abb3caa1e87d97eae0535544be8f5edcc33ec45d925ed2` matches the far-side
+LFS oid, and both sides are **25,970,018 B**. Extraction/verification script
+`…/scratchpad/verify_a2_parquet.py`; the earlier read is
+`Project Steering/Reports/2026-08-15-2200-campaign-science-addendum.md` §2.5, which this
+row reproduces independently and then extends.
+
+| Field | Value |
+|---|---|
+| **What it is** | 5-task `nvidia/Alpamayo2-Super` (34.3 B) inference over a stratified selection of PhysicalAI-AV. ⛔ **No raw sensor data** — every row joins back by `clip_id` + `t0_us`. |
+| **Status** | ✅ COMPLETE, on HF, **`error` non-null on 0 of 23,644 rows** |
+| **HF** | `Sayood/tanitad-alpamayo2-augmentation` · 5 files: `records.parquet` (25,970,018 B), `README.md`, `selection_manifest.json` (340,800 B), `vqa_bank_500.json`, `.gitattributes` |
+| **Rows / clips** | **23,644 rows · 4,729 unique `clip_id` · 5 tasks · 12 columns** |
+| **Schema (12 cols)** | `clip_id` · `t0_us` · `task` · `model_id` · `quantisation` · `seed` · `wall_s` · `error` · `vqa_qid` · `vqa_category` · `question` · `raw_json` (all `large_string` except `t0_us`/`seed` int64, `wall_s` double, `error` **null-typed**) |
+| **Determinism** | `seed` = **42** on **23,644/23,644**; `model_id` = `nvidia/Alpamayo2-Super` on **23,644/23,644**; `t0_us` = **5,100,000** on every row (single distinct value — the loader default) |
+| **Parity** | ⛔ **NOT the training-parity corpus.** Selection is its own manifest, not `e438721ae894`/`f09e44db`. Nothing here re-selects training episodes, so §0.1 parity is untouched — but no A2 row may be joined to a parity arm without an explicit clip-level join. |
+| **License** | `nvidia-physicalai-derivative` (card), inheriting `nvidia/PhysicalAI-Autonomous-Vehicles`. ⚠️ Per `DATA_STRATEGY.md`'s license firewall this is **PhysicalAI-derived** and therefore not usable in a public claim/demo/publication built on the comma2k19 + own-data track. |
+
+**Per-task rows and measured cost** (`wall_s`, the throughput record the DESIGN doc said the
+pilot would produce):
+
+| task | rows | mean s/clip | median s/clip |
+|---|---|---|---|
+| `trajectory` | 4,729 | 11.47 | 9.5 |
+| `meta_action` | 4,729 | 11.74 | 10.0 |
+| `auto_labeling` | 4,729 | **17.40** | 18.1 |
+| `vqa` | 4,729 | 8.59 | 8.2 |
+| `grounding_via_vqa` | **4,728** | 10.45 | 10.1 |
+| **total** | **23,644** | **59.65 s/clip** (full 5-task battery) | **78.4 wall-hours** |
+
+⇒ Against the DESIGN doc's **ESTIMATE ~200 s/clip**, the realised pipeline is **~3.4×
+cheaper**; the earlier single-task MEASURED anchor ("meta-action 40 s/clip") was **3.4×
+slower than the batch rate**. This is the cost basis for any future A2 pass.
+
+⭐ **THE QUANTISATION COLUMN — one arm, and it is stamped unvalidated in the data:**
+
+| `quantisation` value | rows |
+|---|---|
+| `NF4-backbone-4bit-UNVALIDATED` | **23,644 (100.0 %)** |
+
+⛔ **There is NO bf16 arm, therefore NO quantized-vs-full comparison inside this dataset.**
+Anyone reaching for one is reaching for a column that does not exist. The only
+quantized-vs-full evidence in the programme is the *indirect* one below, explicitly declared
+non-comparable.
+
+**The quantisation measurement itself (MEASURED, addendum §2.2; INHERITED into this row and
+so marked):** NF4 applied to `vlm.model.language_model.*` only — **448 `Linear4bit`
+modules**, expert and vision tower left BF16 — ran the 34.3 B model at **25.84 GiB peak on a
+46 GB A40** against NVIDIA's published **72,115 MiB on 1 × H100 80 GB** = **2.79×**.
+⚠️ **Not a like-for-like reduction claim**: different GPU, different profile methodology,
+and NVIDIA states other architectures are unvalidated. The `UNVALIDATED` stamp in the data
+is the honest carrier of that.
+
+### ⛔ THE DATASET CARD DISAGREES WITH THE PARQUET, AND IT UNDERSTATES THE HOLE BY 356×
+
+The card (`README.md` on HF) claims *"4,800 clips … 23,999 inference rows"* and, under
+**Known holes**, *"One task row of 24,000 missing (23,999)."* **MEASURED against the
+selection manifest and the parquet:**
+
+| quantity | card | MEASURED | |
+|---|---|---|---|
+| clips | 4,800 | **4,729** | −71 |
+| rows | 23,999 | **23,644** | **−355** |
+| rows missing vs 4,800 × 5 = 24,000 | "one" | **356** (1.48 %) | ⛔ **356× understated** |
+
+**The exact accounting** (it closes to the row):
+
+| effect | clips | rows |
+|---|---|---|
+| selected in `selection_manifest.json` (4,800 unique `clip_id`, all `t0_us` = 5,100,000) | 4,800 | 24,000 |
+| ⛔ **selected but produced ZERO rows** | **−81** | **−405** |
+| ⛔ **present in the parquet but NEVER in the manifest** | **+10** | **+50** |
+| ⚠️ one clip missing its `grounding_via_vqa` row (4,728 clips have 5 tasks, 1 has 4) | — | **−1** |
+| **delivered** | **4,729** | **23,644** ✅ |
+
+⚠️ **The +10 is the more serious of the two.** The delivered set is **not a subset of the
+selected set**, so nothing may be inferred about the delivered 4,729 from the manifest alone.
+
+⭐ **But the stratification SURVIVES INTACT, and this is MEASURED, not assumed.** Joining the
+parquet's own `clip_id` to
+`TanitAD Research Hub/Benchmarks & Eval/Research/2026-08-06-alpamayo-augmentation/aug_road_class.json`
+(3,592 labelled clips; `_rule` = *"ego-derived (labels-may-use-ego); highway frac(v>20)>0.6;
+intersection_rich stop+turn or big turn at low speed; urban vmed>2; else unstructured"*):
+
+| stratum | manifest (4,800) | **delivered (4,729)** |
+|---|---|---|
+| urban | 1,884 | **1,884** |
+| intersection_rich | 1,241 | **1,241** |
+| highway | 384 | **384** |
+| unstructured | 83 | **83** |
+| *(unlabelled remainder)* | 1,208 | **1,137** |
+
+⇒ **Every one of the 81 zero-row clips and all 10 off-manifest clips fall in the UNLABELLED
+remainder** — the four stratified classes are delivered **100 % complete**. The card's
+stratum table is therefore correct for the delivered set as well as the manifest, and the
+1.48 % hole is confined entirely to the unstratified remainder. *(`no_ego` = 0, so the
+ego-derived rule labelled every clip it could.)*
+⚠️ The road-class labels are **ego-derived** — admissible as labels under the binding
+label/inference rule, ⛔ **never as an inference-time input.**
+
+⚠️ **Two provenance fields the card promises are ABSENT from the data.** The card lists
+*"`model_id`, `seed`, `_quantisation` (4-bit bnb load), `_contamination` note, `peak_gib`"*.
+MEASURED, two independent probe shapes (JSON-key parse of every `raw_json`, and a raw
+substring scan of all 23,644 rows): `model_id` ✅ and `seed` ✅ are top-level **columns**;
+the column is `quantisation`, not `_quantisation`; **`_contamination` = 0/23,644** and
+**`peak_gib` = 0/23,644**. ⇒ The per-row contamination note and the memory figure exist only
+in prose, not in the artifact.
+
+**Also MEASURED, and it bounds what the `trajectory` task can be used for:** `raw_json`
+carries `pred_xyz_shape = [1,1,1,64,3]` (**64 waypoints**, `num_trajectory_samples: 1`), and
+**only 255 of 4,729 `trajectory` rows carry `min_ade_m`** — the rest have
+`num_trajectory_samples: None`, i.e. the GT-dependent metric block never ran. On those 255:
+**`min_ade_m` mean 2.3469 m / median 1.5233 m; `min_fde_m` mean 6.8726 m / median 4.6711 m**,
+at Alpamayo's native **6.4 s** horizon and **1 sample**. ⛔ **Not comparable to the published
+minADE₆ 0.911 m** (different horizon, different sample count, different corpus slice).
+
+**Reconstruction risk.** 🟥 The production pods are dead; the run is reproducible only from
+`…/2026-08-06-alpamayo-augmentation/DESIGN.md` plus the manifest. The 81 zero-row clips have
+**no recorded reason** — `error` is null-typed for the whole column, so a clip that failed
+before writing a row is indistinguishable from one never attempted. ⇒ A rebuild must
+re-derive completeness by joining the manifest, exactly as this row does.
+
+**Sources.** `records.parquet` (sha256 verified above) · `selection_manifest.json` ·
+`Project Steering/Reports/2026-08-15-2200-campaign-science-addendum.md` §2.2/§2.5 ·
+`TanitAD Research Hub/Benchmarks & Eval/Research/2026-08-06-alpamayo-augmentation/DESIGN.md` ·
+comparison analysis `…/Research/2026-08-05-alpamayo2-super/ALPAMAYO2_SUPER_ANALYSIS.md`.
+
+⇒ **`Paper/TANITAD_PAPER.md` may now promote its A2 counts from INHERITED to MEASURED,
+citing this row — but it must quote 4,729 / 23,644, NOT the card's 4,800 / 23,999.**

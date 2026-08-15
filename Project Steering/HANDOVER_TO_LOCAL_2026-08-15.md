@@ -42,9 +42,15 @@ are pointed at their own records; D–K were executed and verified by this sessi
 **A. Alpamayo-2 Super: run, quantize, augment** — pod4 was the A2 pod (`a2venv`,
 `models/Alpamayo2-Super`, `alpamayo2_repo`). Products: the augmentation record set above,
 plus pod-side `a2_batch_out/` (alpamayo_gt, meta_action, retime arms, `alpamayo_vs_flagship`
-comparison). → chronicle rows in `PROJECT_STATE.md`; strategy in `DataEng/DATA_STRATEGY.md`;
-weeklies in `Project Steering/Progress Reports/`. The quantisation arms are recorded per-row
-in `records.parquet` itself — quote from there, not from prose.
+comparison). → ⛔ **CORRECTED 2026-08-15: there are NO chronicle rows in `PROJECT_STATE.md`**
+(`grep` for `a2venv` / `4,729` / `23,644` / `alpamayo_vs_flagship` returns zero; the only
+`alpamayo` hits there are three Opponent-Analyzer rows about the 32 B competitor). **The
+authoritative record is now `MODEL_REGISTRY.md` §11.1** (counts, cost, completeness holes,
+license), with the strategy index at `DataEng/DATA_STRATEGY.md` **v2.0** — v1.0 was a month
+stale and carried no Alpamayo content when this handover cited it. Weeklies in
+`Project Steering/Progress Reports/`. The quantisation arms are recorded per-row in
+`records.parquet` itself — quote from there, not from prose ⚠️ **and note the card disagrees
+with the parquet: 4,729 clips / 23,644 rows MEASURED, not the card's 4,800 / 23,999.**
 
 **B. World-model / planner research line** →
 `…/incoming/2026-07-23-frozen-wm-learned-planner/` (frozen-WM planner, amortised-MPC, value

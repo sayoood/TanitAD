@@ -1,0 +1,982 @@
+{
+ "_evidence_class": "MEASURED (ours) — 0 GPU, banked artifacts only",
+ "_question": "does DIR_YAW_RAD 0.15 -> 0.10 move any published VERDICT?",
+ "_verdict_ladder": "four_families.py:888-890 — <0.1 DECORATIVE, <0.4 WEAK, >=0.4 SUBSTANTIAL",
+ "_gate_sensitivity_threshold": 0.2,
+ "gate_independent_fields": [
+  "consistency.commanded_route_vs_maneuver (agreement, kappa, turn subset) — BOTH sides gate-free: route_nav is an argmax, man_dir is MAN2DIR[man_pred] (hierarchy.py:869-870,887). RETRACTION_LOG R-2026-08-06-yawgate lists it in the blast radius; from source it is NOT gate-fed.",
+  "consistency.distributions.route_follow / route_commanded / maneuver_dir"
+ ],
+ "gate_dependent_fields": [
+  "consistency.maneuver_vs_trajectory.{agreement,kappa,agreement_turn_subset,kappa_turn_subset}",
+  "consistency.commanded_route_vs_trajectory.{same four}",
+  "consistency.distributions.{trajectory_dir,gt_dir}",
+  "four_families.tactical.{maneuver_vs_trajectory_kappa,maneuver_vs_trajectory_agreement,maneuver_consistency_verdict}",
+  "legacy_overlapping_holdout_se.consistency.* (deprecated block, same inputs)"
+ ],
+ "instrument_gaps": [
+  "_gate_sensitivity sweeps maneuver_vs_trajectory_kappa and trajectory_vs_gt_kappa ONLY. kappa_turn_subset is gate-dependent and is NOT swept — so the one number sitting ON a boundary (0.2005 on the 880-window panel) cannot be re-read even on the swept panel.",
+  "verdict_stable tests kappa >= 0.2, but the PUBLISHED verdict word uses the 0.1/0.4 ladder. The field named verdict_stable does not test the verdict that is published."
+ ],
+ "n_panels_with_gate_dependent_kappa": 16,
+ "n_swept": 1,
+ "n_unswept_recompute_impossible": 15,
+ "n_verdicts_moved_0.15_to_0.10_hier_panels": 0,
+ "n_verdicts_moved_0.15_to_0.10_alpamayo": 1,
+ "measured_move_band_0.15_to_0.10": [
+  -0.0659,
+  0.241
+ ],
+ "n_measured_series": 6,
+ "panels": [
+  {
+   "path": "TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-23-v4-gate-emitters/artifacts/hierarchy_flagship-30k_v1.json",
+   "n_windows": 265,
+   "n_episodes": null,
+   "kappa_at_0.15": 0.6938,
+   "verdict_at_0.15": "SUBSTANTIAL",
+   "kappa_turn_subset_at_0.15": 0.2701,
+   "n_turn_active": 74,
+   "gate_swept": false,
+   "kappa_at_0.10": null,
+   "recompute_blocked_by": "panel banked only the thresholded traj_dir/gt_dir; the continuous net yaw was discarded at write time (pre-2026-08-06 instrument). A 0.10 read is a GPU RE-RUN, not a recompute."
+  },
+  {
+   "path": "TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-25-v4-gate-dryrun/raw/hierarchy_flagship-30k.json",
+   "n_windows": 881,
+   "n_episodes": null,
+   "kappa_at_0.15": 0.6053,
+   "verdict_at_0.15": "SUBSTANTIAL",
+   "kappa_turn_subset_at_0.15": 0.2074,
+   "n_turn_active": 248,
+   "gate_swept": false,
+   "kappa_at_0.10": null,
+   "recompute_blocked_by": "panel banked only the thresholded traj_dir/gt_dir; the continuous net yaw was discarded at write time (pre-2026-08-06 instrument). A 0.10 read is a GPU RE-RUN, not a recompute."
+  },
+  {
+   "path": "TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-25-v4-gate-dryrun/raw/hierarchy_flagship-v4.2b-dryrun.json",
+   "n_windows": 881,
+   "n_episodes": null,
+   "kappa_at_0.15": 0.5792,
+   "verdict_at_0.15": "SUBSTANTIAL",
+   "kappa_turn_subset_at_0.15": 0.1758,
+   "n_turn_active": 239,
+   "gate_swept": false,
+   "kappa_at_0.10": null,
+   "recompute_blocked_by": "panel banked only the thresholded traj_dir/gt_dir; the continuous net yaw was discarded at write time (pre-2026-08-06 instrument). A 0.10 read is a GPU RE-RUN, not a recompute."
+  },
+  {
+   "path": "TanitAD Research Hub/Evaluation/Implementation/incoming/2026-08-02-four-family-panel/hier_v1-lf19.json",
+   "n_windows": 418,
+   "n_episodes": 19,
+   "kappa_at_0.15": 0.253,
+   "verdict_at_0.15": "WEAK",
+   "kappa_turn_subset_at_0.15": -0.1898,
+   "n_turn_active": 37,
+   "gate_swept": false,
+   "kappa_at_0.10": null,
+   "recompute_blocked_by": "panel banked only the thresholded traj_dir/gt_dir; the continuous net yaw was discarded at write time (pre-2026-08-06 instrument). A 0.10 read is a GPU RE-RUN, not a recompute."
+  },
+  {
+   "path": "TanitAD Research Hub/Evaluation/Implementation/incoming/2026-08-02-four-family-panel/hier_v2corpus-lf19.json",
+   "n_windows": 418,
+   "n_episodes": 19,
+   "kappa_at_0.15": 0.0072,
+   "verdict_at_0.15": "DECORATIVE",
+   "kappa_turn_subset_at_0.15": 0.0056,
+   "n_turn_active": 413,
+   "gate_swept": false,
+   "kappa_at_0.10": null,
+   "recompute_blocked_by": "panel banked only the thresholded traj_dir/gt_dir; the continuous net yaw was discarded at write time (pre-2026-08-06 instrument). A 0.10 read is a GPU RE-RUN, not a recompute."
+  },
+  {
+   "path": "TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-08-06-v1-defect-triage/results/hier_v1arch_gateswept.json.xz",
+   "n_windows": 880,
+   "n_episodes": 40,
+   "kappa_at_0.15": 0.5787,
+   "verdict_at_0.15": "SUBSTANTIAL",
+   "kappa_turn_subset_at_0.15": 0.2005,
+   "n_turn_active": 217,
+   "gate_swept": true,
+   "kappa_at_0.10": 0.5715,
+   "verdict_at_0.10": "SUBSTANTIAL",
+   "traj_vs_gt_kappa_0.15": 0.826,
+   "traj_vs_gt_kappa_0.10": 0.7781,
+   "frac_gt_turning_0.15": 0.1341,
+   "frac_gt_turning_0.10": 0.1875,
+   "verdict_stable_published_ladder": false,
+   "verdicts_across_sweep": [
+    "SUBSTANTIAL",
+    "WEAK"
+   ],
+   "verdict_stable_as_reported": true
+  },
+  {
+   "path": "TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-08-05-v1arch-oodval-four-families/raw/v1arch_oodval_q90_4fam_LEAD.json",
+   "n_windows": 6382,
+   "n_episodes": null,
+   "kappa_at_0.15": 0.6033,
+   "verdict_at_0.15": "SUBSTANTIAL",
+   "kappa_turn_subset_at_0.15": null,
+   "n_turn_active": null,
+   "gate_swept": false,
+   "kappa_at_0.10": null,
+   "recompute_blocked_by": "panel banked only the thresholded traj_dir/gt_dir; the continuous net yaw was discarded at write time (pre-2026-08-06 instrument). A 0.10 read is a GPU RE-RUN, not a recompute."
+  },
+  {
+   "path": "TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-08-05-v1arch-oodval-four-families/raw/v1arch_oodval_raw_4fam.json",
+   "n_windows": 6382,
+   "n_episodes": null,
+   "kappa_at_0.15": 0.6058,
+   "verdict_at_0.15": "SUBSTANTIAL",
+   "kappa_turn_subset_at_0.15": null,
+   "n_turn_active": null,
+   "gate_swept": false,
+   "kappa_at_0.10": null,
+   "recompute_blocked_by": "panel banked only the thresholded traj_dir/gt_dir; the continuous net yaw was discarded at write time (pre-2026-08-06 instrument). A 0.10 read is a GPU RE-RUN, not a recompute."
+  },
+  {
+   "path": "stack/experiments/pod-rescue-20260802/eval/root/taniteval/results/hier_v1-lf19.json",
+   "n_windows": 418,
+   "n_episodes": 19,
+   "kappa_at_0.15": 0.253,
+   "verdict_at_0.15": "WEAK",
+   "kappa_turn_subset_at_0.15": -0.1898,
+   "n_turn_active": 37,
+   "gate_swept": false,
+   "kappa_at_0.10": null,
+   "recompute_blocked_by": "panel banked only the thresholded traj_dir/gt_dir; the continuous net yaw was discarded at write time (pre-2026-08-06 instrument). A 0.10 read is a GPU RE-RUN, not a recompute."
+  },
+  {
+   "path": "stack/experiments/pod-rescue-20260802/eval/root/taniteval/results/hier_v2corpus-lf19.json",
+   "n_windows": 418,
+   "n_episodes": 19,
+   "kappa_at_0.15": 0.0072,
+   "verdict_at_0.15": "DECORATIVE",
+   "kappa_turn_subset_at_0.15": 0.0056,
+   "n_turn_active": 413,
+   "gate_swept": false,
+   "kappa_at_0.10": null,
+   "recompute_blocked_by": "panel banked only the thresholded traj_dir/gt_dir; the continuous net yaw was discarded at write time (pre-2026-08-06 instrument). A 0.10 read is a GPU RE-RUN, not a recompute."
+  },
+  {
+   "path": "stack/experiments/pod-rescue-20260802/pod3/root/taniteval/results/hier_flagship-30k.json",
+   "n_windows": 881,
+   "n_episodes": null,
+   "kappa_at_0.15": 0.6053,
+   "verdict_at_0.15": "SUBSTANTIAL",
+   "kappa_turn_subset_at_0.15": 0.2074,
+   "n_turn_active": 248,
+   "gate_swept": false,
+   "kappa_at_0.10": null,
+   "recompute_blocked_by": "panel banked only the thresholded traj_dir/gt_dir; the continuous net yaw was discarded at write time (pre-2026-08-06 instrument). A 0.10 read is a GPU RE-RUN, not a recompute."
+  },
+  {
+   "path": "stack/experiments/pod-rescue-20260802/pod3/root/taniteval/results/hier_flagship-nospeed.json",
+   "n_windows": 881,
+   "n_episodes": null,
+   "kappa_at_0.15": 0.5827,
+   "verdict_at_0.15": "SUBSTANTIAL",
+   "kappa_turn_subset_at_0.15": 0.223,
+   "n_turn_active": 263,
+   "gate_swept": false,
+   "kappa_at_0.10": null,
+   "recompute_blocked_by": "panel banked only the thresholded traj_dir/gt_dir; the continuous net yaw was discarded at write time (pre-2026-08-06 instrument). A 0.10 read is a GPU RE-RUN, not a recompute."
+  },
+  {
+   "path": "stack/experiments/pod-rescue-20260802/pod3/root/taniteval/results/hier_flagship-speed.json",
+   "n_windows": 881,
+   "n_episodes": null,
+   "kappa_at_0.15": 0.6123,
+   "verdict_at_0.15": "SUBSTANTIAL",
+   "kappa_turn_subset_at_0.15": 0.2164,
+   "n_turn_active": 240,
+   "gate_swept": false,
+   "kappa_at_0.10": null,
+   "recompute_blocked_by": "panel banked only the thresholded traj_dir/gt_dir; the continuous net yaw was discarded at write time (pre-2026-08-06 instrument). A 0.10 read is a GPU RE-RUN, not a recompute."
+  },
+  {
+   "path": "stack/experiments/pod-rescue-20260802/pod3/root/taniteval/results/hier_refa-dinov2.json",
+   "n_windows": 881,
+   "n_episodes": null,
+   "kappa_at_0.15": 0.682,
+   "verdict_at_0.15": "SUBSTANTIAL",
+   "kappa_turn_subset_at_0.15": 0.3659,
+   "n_turn_active": 219,
+   "gate_swept": false,
+   "kappa_at_0.10": null,
+   "recompute_blocked_by": "panel banked only the thresholded traj_dir/gt_dir; the continuous net yaw was discarded at write time (pre-2026-08-06 instrument). A 0.10 read is a GPU RE-RUN, not a recompute."
+  },
+  {
+   "path": "stack/experiments/pod-rescue-20260802/pod3/root/taniteval/results/hier_refa-dynin-30k.json",
+   "n_windows": 881,
+   "n_episodes": null,
+   "kappa_at_0.15": 0.6879,
+   "verdict_at_0.15": "SUBSTANTIAL",
+   "kappa_turn_subset_at_0.15": 0.372,
+   "n_turn_active": 218,
+   "gate_swept": false,
+   "kappa_at_0.10": null,
+   "recompute_blocked_by": "panel banked only the thresholded traj_dir/gt_dir; the continuous net yaw was discarded at write time (pre-2026-08-06 instrument). A 0.10 read is a GPU RE-RUN, not a recompute."
+  },
+  {
+   "path": "stack/experiments/pod-rescue-20260802/pod3/root/taniteval/results/hier_refa-dynin.json",
+   "n_windows": 881,
+   "n_episodes": null,
+   "kappa_at_0.15": 0.0217,
+   "verdict_at_0.15": "DECORATIVE",
+   "kappa_turn_subset_at_0.15": -0.1074,
+   "n_turn_active": 665,
+   "gate_swept": false,
+   "kappa_at_0.10": null,
+   "recompute_blocked_by": "panel banked only the thresholded traj_dir/gt_dir; the continuous net yaw was discarded at write time (pre-2026-08-06 instrument). A 0.10 read is a GPU RE-RUN, not a recompute."
+  }
+ ],
+ "alpamayo_comparison": {
+  "status": "SWEPT",
+  "path": "TanitAD Research Hub/Benchmarks & Eval/Research/2026-08-05-alpamayo2-super/comparison/a2_gate_audit.json",
+  "n_paired_clips": 39,
+  "series": [
+   {
+    "series": "alpamayo_declared_lateral.vs_driven_kappa",
+    "n": 34,
+    "kappa_at_0.15": 0.1961,
+    "kappa_at_0.10": 0.3004,
+    "delta": 0.1043,
+    "verdict_at_0.15": "WEAK",
+    "verdict_at_0.10": "WEAK",
+    "verdict_moved": false,
+    "crosses_gate_sens_0.2_line": true
+   },
+   {
+    "series": "flagship_declared_maneuver.vs_driven_kappa",
+    "n": 39,
+    "kappa_at_0.15": 0.4402,
+    "kappa_at_0.10": 0.3743,
+    "delta": -0.0659,
+    "verdict_at_0.15": "SUBSTANTIAL",
+    "verdict_at_0.10": "WEAK",
+    "verdict_moved": true,
+    "crosses_gate_sens_0.2_line": false
+   },
+   {
+    "series": "flagship_executed_vs_gt.kappa",
+    "n": null,
+    "kappa_at_0.15": 0.6176,
+    "kappa_at_0.10": 0.7263,
+    "delta": 0.1087,
+    "verdict_at_0.15": "SUBSTANTIAL",
+    "verdict_at_0.10": "SUBSTANTIAL",
+    "verdict_moved": false,
+    "crosses_gate_sens_0.2_line": false
+   },
+   {
+    "series": "alpamayo_executed_vs_gt.kappa",
+    "n": null,
+    "kappa_at_0.15": 0.4882,
+    "kappa_at_0.10": 0.7292,
+    "delta": 0.241,
+    "verdict_at_0.15": "SUBSTANTIAL",
+    "verdict_at_0.10": "SUBSTANTIAL",
+    "verdict_moved": false,
+    "crosses_gate_sens_0.2_line": false
+   }
+  ]
+ },
+ "unswept_boundary_risk": [
+  {
+   "path": "TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-23-v4-gate-emitters/artifacts/hierarchy_flagship-30k_v1.json",
+   "kappa_at_0.15": 0.6938,
+   "verdict_at_0.15": "SUBSTANTIAL",
+   "dist_to_next_boundary_up": null,
+   "dist_to_next_boundary_down": 0.2938,
+   "measured_move_band": [
+    -0.0659,
+    0.241
+   ],
+   "verdict_could_move_at_0.10": false
+  },
+  {
+   "path": "TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-25-v4-gate-dryrun/raw/hierarchy_flagship-30k.json",
+   "kappa_at_0.15": 0.6053,
+   "verdict_at_0.15": "SUBSTANTIAL",
+   "dist_to_next_boundary_up": null,
+   "dist_to_next_boundary_down": 0.2053,
+   "measured_move_band": [
+    -0.0659,
+    0.241
+   ],
+   "verdict_could_move_at_0.10": false
+  },
+  {
+   "path": "TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-25-v4-gate-dryrun/raw/hierarchy_flagship-v4.2b-dryrun.json",
+   "kappa_at_0.15": 0.5792,
+   "verdict_at_0.15": "SUBSTANTIAL",
+   "dist_to_next_boundary_up": null,
+   "dist_to_next_boundary_down": 0.1792,
+   "measured_move_band": [
+    -0.0659,
+    0.241
+   ],
+   "verdict_could_move_at_0.10": false
+  },
+  {
+   "path": "TanitAD Research Hub/Evaluation/Implementation/incoming/2026-08-02-four-family-panel/hier_v1-lf19.json",
+   "kappa_at_0.15": 0.253,
+   "verdict_at_0.15": "WEAK",
+   "dist_to_next_boundary_up": 0.147,
+   "dist_to_next_boundary_down": 0.153,
+   "measured_move_band": [
+    -0.0659,
+    0.241
+   ],
+   "verdict_could_move_at_0.10": true
+  },
+  {
+   "path": "TanitAD Research Hub/Evaluation/Implementation/incoming/2026-08-02-four-family-panel/hier_v2corpus-lf19.json",
+   "kappa_at_0.15": 0.0072,
+   "verdict_at_0.15": "DECORATIVE",
+   "dist_to_next_boundary_up": 0.0928,
+   "dist_to_next_boundary_down": null,
+   "measured_move_band": [
+    -0.0659,
+    0.241
+   ],
+   "verdict_could_move_at_0.10": true
+  },
+  {
+   "path": "TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-08-05-v1arch-oodval-four-families/raw/v1arch_oodval_q90_4fam_LEAD.json",
+   "kappa_at_0.15": 0.6033,
+   "verdict_at_0.15": "SUBSTANTIAL",
+   "dist_to_next_boundary_up": null,
+   "dist_to_next_boundary_down": 0.2033,
+   "measured_move_band": [
+    -0.0659,
+    0.241
+   ],
+   "verdict_could_move_at_0.10": false
+  },
+  {
+   "path": "TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-08-05-v1arch-oodval-four-families/raw/v1arch_oodval_raw_4fam.json",
+   "kappa_at_0.15": 0.6058,
+   "verdict_at_0.15": "SUBSTANTIAL",
+   "dist_to_next_boundary_up": null,
+   "dist_to_next_boundary_down": 0.2058,
+   "measured_move_band": [
+    -0.0659,
+    0.241
+   ],
+   "verdict_could_move_at_0.10": false
+  },
+  {
+   "path": "stack/experiments/pod-rescue-20260802/eval/root/taniteval/results/hier_v1-lf19.json",
+   "kappa_at_0.15": 0.253,
+   "verdict_at_0.15": "WEAK",
+   "dist_to_next_boundary_up": 0.147,
+   "dist_to_next_boundary_down": 0.153,
+   "measured_move_band": [
+    -0.0659,
+    0.241
+   ],
+   "verdict_could_move_at_0.10": true
+  },
+  {
+   "path": "stack/experiments/pod-rescue-20260802/eval/root/taniteval/results/hier_v2corpus-lf19.json",
+   "kappa_at_0.15": 0.0072,
+   "verdict_at_0.15": "DECORATIVE",
+   "dist_to_next_boundary_up": 0.0928,
+   "dist_to_next_boundary_down": null,
+   "measured_move_band": [
+    -0.0659,
+    0.241
+   ],
+   "verdict_could_move_at_0.10": true
+  },
+  {
+   "path": "stack/experiments/pod-rescue-20260802/pod3/root/taniteval/results/hier_flagship-30k.json",
+   "kappa_at_0.15": 0.6053,
+   "verdict_at_0.15": "SUBSTANTIAL",
+   "dist_to_next_boundary_up": null,
+   "dist_to_next_boundary_down": 0.2053,
+   "measured_move_band": [
+    -0.0659,
+    0.241
+   ],
+   "verdict_could_move_at_0.10": false
+  },
+  {
+   "path": "stack/experiments/pod-rescue-20260802/pod3/root/taniteval/results/hier_flagship-nospeed.json",
+   "kappa_at_0.15": 0.5827,
+   "verdict_at_0.15": "SUBSTANTIAL",
+   "dist_to_next_boundary_up": null,
+   "dist_to_next_boundary_down": 0.1827,
+   "measured_move_band": [
+    -0.0659,
+    0.241
+   ],
+   "verdict_could_move_at_0.10": false
+  },
+  {
+   "path": "stack/experiments/pod-rescue-20260802/pod3/root/taniteval/results/hier_flagship-speed.json",
+   "kappa_at_0.15": 0.6123,
+   "verdict_at_0.15": "SUBSTANTIAL",
+   "dist_to_next_boundary_up": null,
+   "dist_to_next_boundary_down": 0.2123,
+   "measured_move_band": [
+    -0.0659,
+    0.241
+   ],
+   "verdict_could_move_at_0.10": false
+  },
+  {
+   "path": "stack/experiments/pod-rescue-20260802/pod3/root/taniteval/results/hier_refa-dinov2.json",
+   "kappa_at_0.15": 0.682,
+   "verdict_at_0.15": "SUBSTANTIAL",
+   "dist_to_next_boundary_up": null,
+   "dist_to_next_boundary_down": 0.282,
+   "measured_move_band": [
+    -0.0659,
+    0.241
+   ],
+   "verdict_could_move_at_0.10": false
+  },
+  {
+   "path": "stack/experiments/pod-rescue-20260802/pod3/root/taniteval/results/hier_refa-dynin-30k.json",
+   "kappa_at_0.15": 0.6879,
+   "verdict_at_0.15": "SUBSTANTIAL",
+   "dist_to_next_boundary_up": null,
+   "dist_to_next_boundary_down": 0.2879,
+   "measured_move_band": [
+    -0.0659,
+    0.241
+   ],
+   "verdict_could_move_at_0.10": false
+  },
+  {
+   "path": "stack/experiments/pod-rescue-20260802/pod3/root/taniteval/results/hier_refa-dynin.json",
+   "kappa_at_0.15": 0.0217,
+   "verdict_at_0.15": "DECORATIVE",
+   "dist_to_next_boundary_up": 0.0783,
+   "dist_to_next_boundary_down": null,
+   "measured_move_band": [
+    -0.0659,
+    0.241
+   ],
+   "verdict_could_move_at_0.10": true
+  }
+ ],
+ "n_unswept_whose_verdict_could_move": 5,
+ "gt_turn_magnitude_recomputed": [
+  {
+   "arm": "flagship-30k",
+   "n_windows": 881,
+   "n_episodes": 40,
+   "median_abs_net_yaw_rad": 0.0181,
+   "p90_abs_net_yaw_rad": 0.4611,
+   "max_abs_net_yaw_rad": 1.1843,
+   "frac_turning": {
+    "0.15": 0.2168,
+    "0.10": 0.2565,
+    "0.06": 0.3144,
+    "0.04": 0.3734,
+    "0.02": 0.4813,
+    "0.01": 0.597
+   },
+   "gate_over_median_ratio": 8.3
+  },
+  {
+   "arm": "flagship-nospeed",
+   "n_windows": 881,
+   "n_episodes": 40,
+   "median_abs_net_yaw_rad": 0.0181,
+   "p90_abs_net_yaw_rad": 0.4611,
+   "max_abs_net_yaw_rad": 1.1843,
+   "frac_turning": {
+    "0.15": 0.2168,
+    "0.10": 0.2565,
+    "0.06": 0.3144,
+    "0.04": 0.3734,
+    "0.02": 0.4813,
+    "0.01": 0.597
+   },
+   "gate_over_median_ratio": 8.3
+  },
+  {
+   "arm": "flagship-speed",
+   "n_windows": 881,
+   "n_episodes": 40,
+   "median_abs_net_yaw_rad": 0.0181,
+   "p90_abs_net_yaw_rad": 0.4611,
+   "max_abs_net_yaw_rad": 1.1843,
+   "frac_turning": {
+    "0.15": 0.2168,
+    "0.10": 0.2565,
+    "0.06": 0.3144,
+    "0.04": 0.3734,
+    "0.02": 0.4813,
+    "0.01": 0.597
+   },
+   "gate_over_median_ratio": 8.3
+  },
+  {
+   "arm": "flagship-v16-ab-ft",
+   "n_windows": 881,
+   "n_episodes": 40,
+   "median_abs_net_yaw_rad": 0.0181,
+   "p90_abs_net_yaw_rad": 0.4611,
+   "max_abs_net_yaw_rad": 1.1843,
+   "frac_turning": {
+    "0.15": 0.2168,
+    "0.10": 0.2565,
+    "0.06": 0.3144,
+    "0.04": 0.3734,
+    "0.02": 0.4813,
+    "0.01": 0.597
+   },
+   "gate_over_median_ratio": 8.3
+  },
+  {
+   "arm": "flagship-v2-6k",
+   "n_windows": 881,
+   "n_episodes": 40,
+   "median_abs_net_yaw_rad": 0.0181,
+   "p90_abs_net_yaw_rad": 0.4611,
+   "max_abs_net_yaw_rad": 1.1843,
+   "frac_turning": {
+    "0.15": 0.2168,
+    "0.10": 0.2565,
+    "0.06": 0.3144,
+    "0.04": 0.3734,
+    "0.02": 0.4813,
+    "0.01": 0.597
+   },
+   "gate_over_median_ratio": 8.3
+  },
+  {
+   "arm": "flagship-v3enc-10k",
+   "n_windows": 881,
+   "n_episodes": 40,
+   "median_abs_net_yaw_rad": 0.0181,
+   "p90_abs_net_yaw_rad": 0.4611,
+   "max_abs_net_yaw_rad": 1.1843,
+   "frac_turning": {
+    "0.15": 0.2168,
+    "0.10": 0.2565,
+    "0.06": 0.3144,
+    "0.04": 0.3734,
+    "0.02": 0.4813,
+    "0.01": 0.597
+   },
+   "gate_over_median_ratio": 8.3
+  },
+  {
+   "arm": "flagship-v4.1-10k",
+   "n_windows": 881,
+   "n_episodes": 40,
+   "median_abs_net_yaw_rad": 0.0181,
+   "p90_abs_net_yaw_rad": 0.4611,
+   "max_abs_net_yaw_rad": 1.1843,
+   "frac_turning": {
+    "0.15": 0.2168,
+    "0.10": 0.2565,
+    "0.06": 0.3144,
+    "0.04": 0.3734,
+    "0.02": 0.4813,
+    "0.01": 0.597
+   },
+   "gate_over_median_ratio": 8.3
+  },
+  {
+   "arm": "flagship-v4.2-step4000",
+   "n_windows": 881,
+   "n_episodes": 40,
+   "median_abs_net_yaw_rad": 0.0181,
+   "p90_abs_net_yaw_rad": 0.4611,
+   "max_abs_net_yaw_rad": 1.1843,
+   "frac_turning": {
+    "0.15": 0.2168,
+    "0.10": 0.2565,
+    "0.06": 0.3144,
+    "0.04": 0.3734,
+    "0.02": 0.4813,
+    "0.01": 0.597
+   },
+   "gate_over_median_ratio": 8.3
+  },
+  {
+   "arm": "overfit_refa-dynin-15k",
+   "n_windows": 881,
+   "n_episodes": 40,
+   "median_abs_net_yaw_rad": 0.0181,
+   "p90_abs_net_yaw_rad": 0.4611,
+   "max_abs_net_yaw_rad": 1.1843,
+   "frac_turning": {
+    "0.15": 0.2168,
+    "0.10": 0.2565,
+    "0.06": 0.3144,
+    "0.04": 0.3734,
+    "0.02": 0.4813,
+    "0.01": 0.597
+   },
+   "gate_over_median_ratio": 8.3
+  },
+  {
+   "arm": "overfit_refa-dynin-20k",
+   "n_windows": 881,
+   "n_episodes": 40,
+   "median_abs_net_yaw_rad": 0.0181,
+   "p90_abs_net_yaw_rad": 0.4611,
+   "max_abs_net_yaw_rad": 1.1843,
+   "frac_turning": {
+    "0.15": 0.2168,
+    "0.10": 0.2565,
+    "0.06": 0.3144,
+    "0.04": 0.3734,
+    "0.02": 0.4813,
+    "0.01": 0.597
+   },
+   "gate_over_median_ratio": 8.3
+  },
+  {
+   "arm": "overfit_refa-dynin-30k",
+   "n_windows": 881,
+   "n_episodes": 40,
+   "median_abs_net_yaw_rad": 0.0181,
+   "p90_abs_net_yaw_rad": 0.4611,
+   "max_abs_net_yaw_rad": 1.1843,
+   "frac_turning": {
+    "0.15": 0.2168,
+    "0.10": 0.2565,
+    "0.06": 0.3144,
+    "0.04": 0.3734,
+    "0.02": 0.4813,
+    "0.01": 0.597
+   },
+   "gate_over_median_ratio": 8.3
+  },
+  {
+   "arm": "overfit_refa-dynin-5k",
+   "n_windows": 881,
+   "n_episodes": 40,
+   "median_abs_net_yaw_rad": 0.0181,
+   "p90_abs_net_yaw_rad": 0.4611,
+   "max_abs_net_yaw_rad": 1.1843,
+   "frac_turning": {
+    "0.15": 0.2168,
+    "0.10": 0.2565,
+    "0.06": 0.3144,
+    "0.04": 0.3734,
+    "0.02": 0.4813,
+    "0.01": 0.597
+   },
+   "gate_over_median_ratio": 8.3
+  },
+  {
+   "arm": "refa-dinov2",
+   "n_windows": 881,
+   "n_episodes": 40,
+   "median_abs_net_yaw_rad": 0.0181,
+   "p90_abs_net_yaw_rad": 0.4611,
+   "max_abs_net_yaw_rad": 1.1843,
+   "frac_turning": {
+    "0.15": 0.2168,
+    "0.10": 0.2565,
+    "0.06": 0.3144,
+    "0.04": 0.3734,
+    "0.02": 0.4813,
+    "0.01": 0.597
+   },
+   "gate_over_median_ratio": 8.3
+  },
+  {
+   "arm": "refa-dynin-30k",
+   "n_windows": 881,
+   "n_episodes": 40,
+   "median_abs_net_yaw_rad": 0.0181,
+   "p90_abs_net_yaw_rad": 0.4611,
+   "max_abs_net_yaw_rad": 1.1843,
+   "frac_turning": {
+    "0.15": 0.2168,
+    "0.10": 0.2565,
+    "0.06": 0.3144,
+    "0.04": 0.3734,
+    "0.02": 0.4813,
+    "0.01": 0.597
+   },
+   "gate_over_median_ratio": 8.3
+  },
+  {
+   "arm": "refb-10k",
+   "n_windows": 881,
+   "n_episodes": 40,
+   "median_abs_net_yaw_rad": 0.0181,
+   "p90_abs_net_yaw_rad": 0.4611,
+   "max_abs_net_yaw_rad": 1.1843,
+   "frac_turning": {
+    "0.15": 0.2168,
+    "0.10": 0.2565,
+    "0.06": 0.3144,
+    "0.04": 0.3734,
+    "0.02": 0.4813,
+    "0.01": 0.597
+   },
+   "gate_over_median_ratio": 8.3
+  },
+  {
+   "arm": "refb-v2-20k",
+   "n_windows": 881,
+   "n_episodes": 40,
+   "median_abs_net_yaw_rad": 0.0181,
+   "p90_abs_net_yaw_rad": 0.4611,
+   "max_abs_net_yaw_rad": 1.1843,
+   "frac_turning": {
+    "0.15": 0.2168,
+    "0.10": 0.2565,
+    "0.06": 0.3144,
+    "0.04": 0.3734,
+    "0.02": 0.4813,
+    "0.01": 0.597
+   },
+   "gate_over_median_ratio": 8.3
+  },
+  {
+   "arm": "refb-v2-30k",
+   "n_windows": 881,
+   "n_episodes": 40,
+   "median_abs_net_yaw_rad": 0.0181,
+   "p90_abs_net_yaw_rad": 0.4611,
+   "max_abs_net_yaw_rad": 1.1843,
+   "frac_turning": {
+    "0.15": 0.2168,
+    "0.10": 0.2565,
+    "0.06": 0.3144,
+    "0.04": 0.3734,
+    "0.02": 0.4813,
+    "0.01": 0.597
+   },
+   "gate_over_median_ratio": 8.3
+  },
+  {
+   "arm": "refb",
+   "n_windows": 881,
+   "n_episodes": 40,
+   "median_abs_net_yaw_rad": 0.0181,
+   "p90_abs_net_yaw_rad": 0.4611,
+   "max_abs_net_yaw_rad": 1.1843,
+   "frac_turning": {
+    "0.15": 0.2168,
+    "0.10": 0.2565,
+    "0.06": 0.3144,
+    "0.04": 0.3734,
+    "0.02": 0.4813,
+    "0.01": 0.597
+   },
+   "gate_over_median_ratio": 8.3
+  },
+  {
+   "arm": "refc-base-30k",
+   "n_windows": 881,
+   "n_episodes": 40,
+   "median_abs_net_yaw_rad": 0.0181,
+   "p90_abs_net_yaw_rad": 0.4611,
+   "max_abs_net_yaw_rad": 1.1843,
+   "frac_turning": {
+    "0.15": 0.2168,
+    "0.10": 0.2565,
+    "0.06": 0.3144,
+    "0.04": 0.3734,
+    "0.02": 0.4813,
+    "0.01": 0.597
+   },
+   "gate_over_median_ratio": 8.3
+  },
+  {
+   "arm": "refc-v12-identity",
+   "n_windows": 881,
+   "n_episodes": 40,
+   "median_abs_net_yaw_rad": 0.0181,
+   "p90_abs_net_yaw_rad": 0.4611,
+   "max_abs_net_yaw_rad": 1.1843,
+   "frac_turning": {
+    "0.15": 0.2168,
+    "0.10": 0.2565,
+    "0.06": 0.3144,
+    "0.04": 0.3734,
+    "0.02": 0.4813,
+    "0.01": 0.597
+   },
+   "gate_over_median_ratio": 8.3
+  },
+  {
+   "arm": "refc-v12-k16reg",
+   "n_windows": 881,
+   "n_episodes": 40,
+   "median_abs_net_yaw_rad": 0.0181,
+   "p90_abs_net_yaw_rad": 0.4611,
+   "max_abs_net_yaw_rad": 1.1843,
+   "frac_turning": {
+    "0.15": 0.2168,
+    "0.10": 0.2565,
+    "0.06": 0.3144,
+    "0.04": 0.3734,
+    "0.02": 0.4813,
+    "0.01": 0.597
+   },
+   "gate_over_median_ratio": 8.3
+  },
+  {
+   "arm": "refc-v12-smoke-reg",
+   "n_windows": 88,
+   "n_episodes": 4,
+   "median_abs_net_yaw_rad": 0.0232,
+   "p90_abs_net_yaw_rad": 0.2262,
+   "max_abs_net_yaw_rad": 1.1843,
+   "frac_turning": {
+    "0.15": 0.125,
+    "0.10": 0.1477,
+    "0.06": 0.3182,
+    "0.04": 0.4091,
+    "0.02": 0.5227,
+    "0.01": 0.6591
+   },
+   "gate_over_median_ratio": 6.5
+  },
+  {
+   "arm": "refc-v12-smoke-t0",
+   "n_windows": 88,
+   "n_episodes": 4,
+   "median_abs_net_yaw_rad": 0.0232,
+   "p90_abs_net_yaw_rad": 0.2262,
+   "max_abs_net_yaw_rad": 1.1843,
+   "frac_turning": {
+    "0.15": 0.125,
+    "0.10": 0.1477,
+    "0.06": 0.3182,
+    "0.04": 0.4091,
+    "0.02": 0.5227,
+    "0.01": 0.6591
+   },
+   "gate_over_median_ratio": 6.5
+  },
+  {
+   "arm": "refc-v12",
+   "n_windows": 881,
+   "n_episodes": 40,
+   "median_abs_net_yaw_rad": 0.0181,
+   "p90_abs_net_yaw_rad": 0.4611,
+   "max_abs_net_yaw_rad": 1.1843,
+   "frac_turning": {
+    "0.15": 0.2168,
+    "0.10": 0.2565,
+    "0.06": 0.3144,
+    "0.04": 0.3734,
+    "0.02": 0.4813,
+    "0.01": 0.597
+   },
+   "gate_over_median_ratio": 8.3
+  },
+  {
+   "arm": "refc-xl-30k",
+   "n_windows": 881,
+   "n_episodes": 40,
+   "median_abs_net_yaw_rad": 0.0181,
+   "p90_abs_net_yaw_rad": 0.4611,
+   "max_abs_net_yaw_rad": 1.1843,
+   "frac_turning": {
+    "0.15": 0.2168,
+    "0.10": 0.2565,
+    "0.06": 0.3144,
+    "0.04": 0.3734,
+    "0.02": 0.4813,
+    "0.01": 0.597
+   },
+   "gate_over_median_ratio": 8.3
+  },
+  {
+   "arm": "refc-xl-live",
+   "n_windows": 881,
+   "n_episodes": 40,
+   "median_abs_net_yaw_rad": 0.0181,
+   "p90_abs_net_yaw_rad": 0.4611,
+   "max_abs_net_yaw_rad": 1.1843,
+   "frac_turning": {
+    "0.15": 0.2168,
+    "0.10": 0.2565,
+    "0.06": 0.3144,
+    "0.04": 0.3734,
+    "0.02": 0.4813,
+    "0.01": 0.597
+   },
+   "gate_over_median_ratio": 8.3
+  },
+  {
+   "arm": "refc-xl",
+   "n_windows": 881,
+   "n_episodes": 40,
+   "median_abs_net_yaw_rad": 0.0181,
+   "p90_abs_net_yaw_rad": 0.4611,
+   "max_abs_net_yaw_rad": 1.1843,
+   "frac_turning": {
+    "0.15": 0.2168,
+    "0.10": 0.2565,
+    "0.06": 0.3144,
+    "0.04": 0.3734,
+    "0.02": 0.4813,
+    "0.01": 0.597
+   },
+   "gate_over_median_ratio": 8.3
+  }
+ ],
+ "crosscheck_head_deg_is_the_gate_input": [
+  {
+   "arm": "flagship-30k",
+   "panel": "stack/experiments/pod-rescue-20260802/pod3/root/taniteval/results/hier_flagship-30k.json",
+   "panel_n": 881,
+   "dump_n": 881,
+   "frac_turning_0.15_from_panel_gt_dir": 0.2168,
+   "frac_turning_0.15_from_head_deg": 0.2168,
+   "abs_diff": 0.0,
+   "EXACT": true
+  },
+  {
+   "arm": "flagship-speed",
+   "panel": "stack/experiments/pod-rescue-20260802/pod3/root/taniteval/results/hier_flagship-speed.json",
+   "panel_n": 881,
+   "dump_n": 881,
+   "frac_turning_0.15_from_panel_gt_dir": 0.2168,
+   "frac_turning_0.15_from_head_deg": 0.2168,
+   "abs_diff": 0.0,
+   "EXACT": true
+  },
+  {
+   "arm": "flagship-nospeed",
+   "panel": "stack/experiments/pod-rescue-20260802/pod3/root/taniteval/results/hier_flagship-nospeed.json",
+   "panel_n": 881,
+   "dump_n": 881,
+   "frac_turning_0.15_from_panel_gt_dir": 0.2168,
+   "frac_turning_0.15_from_head_deg": 0.2168,
+   "abs_diff": 0.0,
+   "EXACT": true
+  },
+  {
+   "arm": "refa-dinov2",
+   "panel": "stack/experiments/pod-rescue-20260802/pod3/root/taniteval/results/hier_refa-dinov2.json",
+   "panel_n": 881,
+   "dump_n": 881,
+   "frac_turning_0.15_from_panel_gt_dir": 0.2168,
+   "frac_turning_0.15_from_head_deg": 0.2168,
+   "abs_diff": 0.0,
+   "EXACT": true
+  },
+  {
+   "arm": "refa-dynin-30k",
+   "panel": "stack/experiments/pod-rescue-20260802/pod3/root/taniteval/results/hier_refa-dynin-30k.json",
+   "panel_n": 881,
+   "dump_n": 881,
+   "frac_turning_0.15_from_panel_gt_dir": 0.2168,
+   "frac_turning_0.15_from_head_deg": 0.2168,
+   "abs_diff": 0.0,
+   "EXACT": true
+  }
+ ]
+}
