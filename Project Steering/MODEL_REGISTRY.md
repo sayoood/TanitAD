@@ -990,7 +990,32 @@ Full provenance: `TanitAD Research Hub/Data Engineering/Implementation/incoming/
 
 ---
 
-### 1.8 flagship-v5f — `flagship-v5f-w120-30k` — 🟢 **RUNNING** (step 3,650 @ 2026-08-03T18:57Z)
+### 1.8 flagship-v5f — `flagship-v5f-w120-30k` — ✅ **COMPLETE at 30,000** (2026-08-09T19:23Z)
+
+**FINAL EVAL [TIER T0 — teacher-forced WM; see EVAL_DOCTRINE.md] — MEASURED 2026-08-09,
+`eval_flagship_v4.py` on the full 600-episode w120 val corpus (881 windows, frame parity
+`176x624f305.5775cyl` MATCHES the ckpt config; imagination probes fed via the run's frozen
+`probe_vocab.pt`):**
+
+| metric (dense 1..20 @ 10 Hz) | value |
+|---|---|
+| **ade@2s (selected)** | **0.4011 m** |
+| **oracle_ade@2s (best-in-fan)** | **0.1975 m** |
+| **sel_gap** | **0.2036 m — the selector still leaves ~half** |
+| miss@2m | 0.1487 |
+| 4-wp convention: ade / oracle | 0.5191 / 0.2453 |
+| seam_norm_ratio_max | 0.099 (clamp 1.0 — grafts healthy) |
+| wm_canary_ade@2s | 1.245 *(inert-controller regime, benign by construction)* |
+
+⚠️ **w120 geometry ⇒ NOT comparable to any 256×256-pinhole number** (cross-frame). ⛔ All
+values T0; T1 closed-loop is queued (E1.4). **ckpt frozen `ckpt_30k_final.pt`, HF:
+`Sayood/tanitad-flagship-v5f-w120` (public, gated=auto: ckpt + config + train log + eval
+JSON).** Post-30k queue: T1 eval · fan-feasibility dump · X0 diffusion-MPC re-rank ·
+selector ranking retrofit · w120 E-H1. Eval-harness fixes this required (both committed):
+frame args via the existing shared helper, and `_imagination_inputs` + `probe_vocab.pt`
+threading for cond-imagination heads.
+
+#### (history) run record — was 🟢 RUNNING (step 3,650 @ 2026-08-03T18:57Z)
 
 **The 120° wide-FOV cylindrical arm with conditional imagination.** Added to the registry
 2026-08-03 — it had been the programme's headline live run for days **with no registry row**, so
@@ -1051,6 +1076,727 @@ before. The 5 k gate must be adjudicated on `stack/scripts/run_gate.py`, on the 
 the paired episode-cluster bootstrap.
 
 ---
+
+### 1.9 flagship-**v1arch** — `flagship-v1arch-v2bal-30k` — ✅ **COMPLETE at step 29999** (2026-08-05)
+
+**The v1 ARCHITECTURE on more, better-distributed data.** ⛔ **Every `v2_*` lever in its own
+`config.json` is `false`** — MEASURED off the run's `cfg` block on pod4, 2026-08-05:
+`v2_anchor_tactical`, `v2_ego_to_planners`, `v2_gated_intent`, `v2_goal_decode`, `v2_labels`,
+`v2_route_from_vision`, `v2_encoder_ego_decorr` all `false`; `v2_ego_dropout`, `v2_fa_dropout`,
+`v2_nav_dropout`, `v2_traj_jerk` all `0.0`; `v21_route_labels` `false`. So **architecture is held
+constant and only the data varies** — which is what makes the PI's question (*the effect of more
+and better-distributed data*) attributable. ⚠️ **It is NOT a v2-architecture arm and must never be
+quoted as one.**
+
+| Field | Value |
+|---|---|
+| **Status** | ✅ COMPLETE, clean finish at step **29999**. Supervisor **adopted** it (`trainer ALREADY RUNNING outside this supervisor (pid 9076)`), did not launch it, and exited without relaunching. |
+| **Location** | `tanitad-pod4:/workspace/experiments/flagship-v1arch-v2bal-30k/` (`ckpt.pt`, `ckpt_step5000.pt`, `ckpt_step15000.pt`, `ckpt_step20000.pt`, `config.json`, `train_log.jsonl`) |
+| **Checkpoint shape** | keys `['grounding','model','opt','step']` — **no `head` key**. ⛔ `eval_flagship_v4.py` gates its full metric path on `is_v4 = … and ("head" in ck)`, so on this checkpoint it can ONLY run `MODE_A_canary_only_validation`: it exits 0, prints an ADE, and **emits no per-window `pred`/`gt` at all**. Use `taniteval/tools/eval_four_families.py`. |
+| **Architecture** | `predictor` d_model 768 / depth 10 / heads 12 / window 8 / **action_dim 3** (`speed_input` true) · `tactical_policy` **n_maneuvers 5**, wp horizons [5,10,15,20], cadence 5 · `strategic_policy` n_commands 4, **n_route 3**, d_ctx 256, cadence 20 · `h15` enabled (mask_prob 0.5) · state_dim 2048 |
+| **Corpus** ⛔ | `"v2_parity": {"parity": false, "checked": false, "clips_present": 9000}`, `"require_parity": false`. **This arm is OFF the parity corpus by design** (that was the experiment). ⛔ **21 of the 40 canonical val episodes are INSIDE its 9000-clip training pool** — see `LEAK_v1arch_val_2026-08-05.md`. Canonical-val numbers for this arm are train-contaminated and inadmissible. |
+| **HF** ⭐ | `Sayood/tanitad-flagship-v1arch-v2bal` — **PUBLIC + GATED (`auto`)**, published 2026-08-05. `ckpt.pt` (3,302,203,998 B, the exact evaluated artifact), `config.json`, `summary.json`, `train_log.jsonl`, model card. Verified ANONYMOUSLY: metadata 200, `private False`, `gated auto`, and an unauthenticated `ckpt.pt` fetch returns **401 — the gate is enforced**, while the card (7,439 B) is publicly readable so the caveats reach a reader before the gate does. ⚠️ The milestone checkpoints are NOT published: `ckpt.pt` is the artifact every number below was measured on, and shipping the others invites *"which one produced this?"*. |
+| **The admissible eval corpus** | `physicalai-oodval-6f4b94e4c7ce-q90` — PhysicalAI-AV's **own official eval split** (HF dataset `nvidia/PhysicalAI-Autonomous-Vehicles`, `ood_reasoning.parquet` under its `reasoning` prefix; split sizes `{train 1450, val 290}`), **290 clips, ZERO overlap** with the training pool, JPEG-q90 round-tripped to the training format. 6,382 windows / 290 episode clusters. |
+
+#### Result — the first COMPLETE four-family block in the programme (`_complete: true`)
+
+⛔ **ADE is one row of four.** Estimator: **episode-cluster bootstrap** over the 290 clips,
+n_boot 2000. ⛔ **Not comparable to any canonical-val number** until other arms are scored here.
+
+| family | headline | reading |
+|---|---|---|
+| — (ADE) | `ade_mean_4wp` **0.5752** [0.5370, 0.6142] · `fde_2s` **1.4018** [1.3040, 1.5010] | |
+| **LONGITUDINAL** | `speed_bias` **+0.484 m/s** · `along_final_bias` **+0.943 m** · `ego_progress` **1.0795×** · time-gap at 15+ m/s **1.43 s** | ⛔ systematic **over-speed**, and MEASURED it is **71.95 %** of windows ahead at 2 s and **75.51 %** faster than the human — a **prior**, not a tail |
+| **LATERAL** | `cross_mae` **0.0552 m** [0.0500, 0.0611] · `heading_mae` 0.806° · `curvature_bias` −0.000126 | tight; not where effort belongs |
+| **TACTICAL** | κ **0.6033** (SUBSTANTIAL), agreement 0.8881 [0.8740, 0.9021] · **`seams_beneficial_of_3` = 0** | the manoeuvre label is honest; the **seam is FALSIFIED at this checkpoint** |
+| **STRATEGIC** | `route_acc_follow` **0.8031** == `majority_straight_rate` **0.8031** · `follow_pred_distribution` **{left 0, straight 1737, right 0}** · `route_acc_nav` 1.0000 | ⛔ **no vision-only route skill at all** — a constant predictor. `route_acc_nav` is an **echo** of its own input. Confirmed **off-leak**. |
+
+Distance-keeping (n = 2,846 lead windows): headway **25.53 m**, time-gap **5.76 s**, min-TTC
+**14.73 s** (632 censored at the 30 s cap). Window states LEAD 3,002 / NO_LEAD 2,752 / NO_LABEL 628.
+
+**JPEG-format control:** raw uint8 vs the q90 round-trip on the same 6,382 windows — max |pixel
+delta| **185**, every metric moves **< 0.03** (largest: heading 0.0236°); tactical and strategic
+identical. **q90 is the headline** because it is format-faithful.
+
+⚠️ **Two harnesses disagree 0.8 %** on this corpus: `eval_flagship_v4.py`'s MODE-A canary gives
+**0.5705**, `eval_four_families.py` gives **0.5752**. Recorded, not smoothed over; unresolved.
+
+**Artifacts:** `TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-08-05-v1arch-oodval-four-families/`
+(RESULT.md + raw JSON) · protocol `EVAL_PROTOCOL_OODVAL_2026-08-05.md` · videos
+`TanitAD Research Hub/Evaluation/Videos/v1arch-oodval-openloop-2026-08-05/` · pod4
+`/workspace/evalout/` (windows dumps, lead block).
+
+---
+
+### 1.10 flagship-**v1.6** — `flagship-v16-unicycle` — ✅ **COMPLETE** (2026-08-06) — the unicycle trajectory readout on the FROZEN v1arch trunk
+
+⛔ **NAME DISAMBIGUATION, load-bearing:** "v1.6" ALSO names §1.4b's `flagship-v16-ab-ft`
+(2026-07, the arm behind the retracted "best-in-program" claim). These are **different
+models**. Quote the registry key, never the bare "v1.6".
+
+| | |
+|---|---|
+| **architecture** | `flagship-v1arch-v2bal-30k` trunk (encoder 87.02 M + predictor 91.36 M + policies), **entirely frozen** (md5 `c1157528…` proved identical before/after training) + `UnicycleStepReadout` **2.11 M** trainable — latent transition `(z_prev, z_hat)` → per-step `(accel, yaw_rate)`, integrated non-holonomically (`dy ≡ 0`, `yaw_rate` bounded by `\|v\|·κ_max`, v carried from the TRUE v0). ⛔ `speed_input=False, predict_delta=False` — the head reads ONLY the WM latents; the v0/feedback shortcut surface was REMOVED after run 4 failed the reliance gate at 0.0891 (`…/2026-08-06-v1-defect-triage/results/UNICYCLE_RUN4_RESULT.md`). |
+| **training** | 3,000 steps, batch 32, AdamW lr 3e-4 cosine, 58 min on one A40. Loss = pos-L1 + 0.3·heading + 0.5·net-yaw + 0.05·accel-barrier + 0.05·jerk-barrier (barriers above the TRAIN-corpus human p99; dense 0.1 s grid). Train corpus: 600 eps of `epcache-physicalai-v2bal-4b7eeeac222d` (local copy). Head warm-started from `grounding.step.op`, zero-init output (= constant-velocity start). |
+| **parity** | trunk untouched ⇒ inherits v1arch's parity (skip-hash `f09e44db` lineage). Eval corpus: `physicalai-oodval-6f4b94e4c7ce-q90`, 40 episodes, stride-1 rollout grid, **6,834 windows** — the SAME grid as every banked v1arch temporal/kinematic number. |
+| **ckpt** | `pod4:/workspace/experiments/unicycle-readout-v2-latentsonly/unicycle_readout.pt` · **banked in-repo 2026-08-06**: `TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-08-06-v1-defect-triage/results/unicycle_readout_v16.pt` (8.4 MB, md5 `81f7f3a19ad0da97fb55ed9270f2f884` verified matching the pod copy — single-disk risk closed) |
+
+**RESULTS [TIER T0 — teacher-forced; see EVAL_DOCTRINE.md] — MEASURED 2026-08-06, paired episode-cluster bootstrap over 40 episodes, 2,000
+draws** (`…/2026-08-06-v1-defect-triage/results/v16_full_eval.json.xz`). Δ = v1.6 − v1arch,
+same windows, same frozen-trunk latent rolls (decoder-only contrast by construction):
+
+| metric | v1arch | **v1.6** | Δ [CI95] | separated |
+|---|---|---|---|---|
+| ADE 2 s (m) | 0.3584 | **0.3398** | −0.0186 [−0.0706, +0.0293] | ✗ (parity) |
+| speed bias (m/s) | +0.3793 | **−0.0265** | −0.4058 [−0.5162, −0.3022] | ✅ |
+| along-final bias (m) | +0.7524 | **−0.0511** | −0.8036 [−1.0197, −0.5851] | ✅ |
+| accel RMS (m/s²) | 2.9465 | **0.7172** | −2.2293 [−3.0886, −1.4641] | ✅ (human ≈ 0.91) |
+| accel MAE (m/s²) | 1.8240 | **0.5499** | −1.2741 [−1.6534, −0.9324] | ✅ |
+| jerk RMS (m/s³) | 36.1682 | **1.1334** | −35.0348 [−46.6907, −24.8134] | ✅ (human ≈ 1.71) |
+| **net-yaw err (rad)** | 0.0307 | **0.0108** | −0.0199 [−0.0248, −0.0153] | ✅ (−65 %) |
+| heading MAE (rad/step) | 0.0027 | **0.0015** | −0.0012 [−0.0015, −0.0009] | ✅ |
+| cross-track MAE (m) | 0.0502 | **0.0363** | −0.0139 [−0.0193, −0.0091] | ✅ |
+| replan shift (m, 0.1 s) | 0.0947 | **0.0604** | — | (point est.) |
+| **replan accel jump (m/s²)** | 1.1310 | **0.1016** | — | (point est., **11×** lower) |
+
+**WM-reliance** (canary-grade, 128-window fixed batch): final **0.6233 — gate PASS ≥ 0.5**;
+per-arm decomposition shows real latents ~halve the heading error vs batch-mean latents at
+every canary. Baseline control: the displacement readout scores 8.72 (cannot function without
+latents), and its **frozen-latents arm collapses to the CV floor** — what both decoders consume
+is the **predictor's rolled prediction**.
+
+**DISTANCE-KEEPING — MEASURED 2026-08-06** (`…/2026-08-06-v1-defect-triage/results/v16_distance_keeping.json`,
+built from a fresh 40-episode lead block — `lead_block_40.report.json`: 880 stride-8 windows, LEAD 419 /
+NO_LEAD 329 / NO_LABEL 132; 5 clips lack `obstacle.offline`, 1 stationary clip fails registration — joined
+row-for-row to the stride-8 subset of the SAME scored dump as the table above, no re-inference; paired
+episode-cluster bootstrap, 30 lead-bearing episodes, 2,000 draws; sign below is **v1arch − v1.6** / **GT − v1.6**):
+
+| metric | v1arch | **v1.6** | GT | v1arch−v1.6 [CI95] | GT−v1.6 [CI95] |
+|---|---|---|---|---|---|
+| min headway (m) | 25.23 | **25.52** | 25.39 | −0.238 [−0.385, −0.091] ✅ | −0.026 [−0.225, +0.153] ✗ |
+| min time-gap (s) | 7.71 | **7.98** | 7.98 | −0.138 [−0.252, −0.049] ✅ | −0.010 [−0.064, +0.042] ✗ |
+| min TTC (s) | 14.97 | **17.82** | 17.10 | **−2.818 [−3.892, −1.784] ✅** | −0.597 [−1.393, +0.099] ✗ |
+
+Reading: v1arch is CI-separated **more aggressive** on all three (2.8 s lower min-TTC — the longitudinal
+speed/accel defect showing up against real traffic), while **v1.6 is statistically indistinguishable from
+GT on every distance-keeping metric** at this n. ⚠️ 40-episode subset grid, not the 290-corpus grid the
+v1arch OOD-val LEAD numbers use — compare within this table only.
+
+**⛔ Standing caveats:** (1) all trajectory numbers are **action-conditioned WM rollouts under
+TRUE future actions — NOT closed-loop planning**; applies equally to both arms and to every
+v1arch number banked before. (2) STRATEGIC UNAVAILABLE (no map — unchanged). ~~distance_keeping
+UNAVAILABLE~~ — closed above; the 2026-08-06 claim "lead block not on pod4" was itself a **stale
+absence-claim** (the 290-episode block and v1arch's complete LEAD JSON already existed at
+`pod4:/workspace/evalout/` — `v1arch_oodval_q90_4fam_LEAD.json`, `families_unavailable=[]`).
+(3) TACTICAL **declared-head** metrics are identical to v1arch's (policies untouched — the
+declared dwell 0.55 s toggling defect is NOT fixed by v1.6 and still needs its own lever).
+The **EXECUTED-manoeuvre** side, MEASURED 2026-08-06
+(`…/results/v16_tactical_executed.json`, `classify_maneuver` over each window's 2 s path,
+6,834 stride-1 windows; ⚠️ yaw at horizon from last-segment heading — the dump stores xy only):
+agreement with GT-executed **v1arch 0.5016 → v1.6 0.7694**; executed toggle rate v1arch 0.0620
+→ v1.6 **0.0309** vs GT 0.0318 — paired Δ(v1.6−v1arch) −0.0311 [−0.0462, −0.0177] separated,
+Δ(v1.6−GT) −0.0009 [−0.0066, +0.0055] NOT separated; executed dwell 2.61 s → 4.38 s (GT 3.52 s
+— v1.6 slightly over-steady: it under-executes `accelerate`, 577 vs GT 975, the conservative
+tail of its speed profile). v1arch's executed distribution over-calls `accelerate` 2,668 vs
+GT 975 — the longitudinal defect visible in decision space. (4) reliance CI not computed
+(canary batch); families CI'd as above.
+
+### 1.11 flagship-v1.7 — `flagship-v17-speedloss` — pre-registered run 6, outcome **B**
+
+**MEASURED 2026-08-06** (`…/2026-08-06-v1-defect-triage/PREREG_V161_SPEEDLOSS.md` — gates and
+both outcomes were committed BEFORE launch). v1.6's exact recipe + **one change**:
+`--w-speed 0.5` speed-profile L1. Trunk frozen; head 2.11 M latents-only; 3,000 steps, 55 min.
+**ckpt:** `pod4:/workspace/experiments/unicycle-readout-v3-speedloss/unicycle_readout.pt`, banked
+in-repo as `results/unicycle_readout_run6.pt` (md5 `e389f638cc2e7ac4d67bf57479936b7f`).
+
+**Gates verdict [TIER T0 — teacher-forced; see EVAL_DOCTRINE.md] — the PRIMARY gates FAILED;
+the pre-registered hypothesis is REFUTED:**
+
+| gate | target | measured (eval-grade, same 6,834-window grid) | verdict |
+|---|---|---|---|
+| P1 decel response ratio | ≥ 0.40 | **0.1547** (v1.6: 0.1623 — unchanged) | ❌ |
+| P2 accel lag | ≤ +0.15 s | **+0.173 s** (from +0.28) | ❌ |
+| N1 ADE vs v1.6 | not CI-worse | **−0.0549 [−0.0713, −0.0412] CI-BETTER** (0.2849 vs 0.3398) | ✅ |
+| N2 jerk RMS | ≤ 3.42 | 1.567 (human 1.71) | ✅ |
+| N3 net-yaw | not CI-worse | Δ +0.0001, not separated | ✅ |
+| N4 reliance | ≥ 0.5 | **1.1849** (>1: cannot function without WM) | ✅ |
+| N5 replan accel jump | ≤ 0.30 | 0.125 *(GT-frame approx transform)* | ✅ |
+
+⇒ **Outcome B binds:** the position-loss hypothesis for the decel ramp is refuted for the
+speed-L1 lever — near-term response barely moved while everything global improved. The next
+pre-registered lever is the **event-weighted near-term accel-matching term**, NOT weight tuning.
+v1.7 **is** CI-separated better than v1.6 on ADE (−16 %) and speed MAE (−0.072 [−0.094, −0.051]),
+with every non-regression gate green — registered as the best open-loop head in the lineage,
+**not** as the lag fix. Speed_l1 evidence: `results/run6_train_log.jsonl.xz`; analysis:
+`results/closed_loop_analysis.json`.
+
+### 1.12 CLOSED-LOOP (decoder-conditioned predictor) — MEASURED 2026-08-06 [TIER T1 — the PRIMARY eval per EVAL_DOCTRINE.md]
+
+**The predictor rolled on the DECODER'S OWN actions** (steer = atan(2.9·κ), accel direct — the
+`signals_at` contract), no recorded future anywhere; perception context unchanged (imagination
+closed loop, not re-perception). `tools/closed_loop_dump.py` → `results/closed_loop_analysis.json`;
+grid identical to §1.10 (o16 arm reproduces the banked v1.6 dump **byte-exactly, max |Δ| = 0.0**).
+
+| metric | v1.6 open | v1.6 closed | v1.7 open | v1.7 closed | CV floor |
+|---|---|---|---|---|---|
+| ADE (m) | 0.3398 | **0.4714** (+0.132 [0.112, 0.152]) | 0.2849 | **0.4616** (+0.177 [0.148, 0.208]) | 0.5352 |
+| net-yaw err (rad) | 0.0108 | **0.0725** (×6.7) | 0.0109 | 0.0761 | — |
+| speed MAE (m/s) | 0.441 | 0.606 | 0.369 | 0.598 | — |
+| **S-curve reproduction** | **0.9785** | **0.0538** | 0.9785 | 0.0430 | 0 |
+
+**⛔ The finding that re-frames the open-loop numbers:** the **hold-action arm reproduces 0.0 %
+of S-reversals** (and closed-loop ~5 %) vs 97.9 % open-loop — the counter-steer in the open-loop
+eval came from the TRUE-action conditioning, **not from vision**. Open-loop LATERAL skill is
+largely an action echo; closed-loop the stack drives near-straight with speed control, retaining
+**~33 %** of its open-loop ADE advantage over CV (v1.6: (0.535−0.471)/(0.535−0.340)). The §1.10
+vision-attribution (35 % of the CV gap, swap-latents) still holds at the ADE level — vision
+carries speed/scene content — but the lateral reversal channel specifically is action-driven.
+This is the measured content of the standing "NOT closed-loop planning" caveat, and the
+programme's next lever set (policy-actions closed loop, lateral-capable heads, MPC-style search
+over the predictor) starts from these numbers.
+
+### 1.13 v5.8f wedge ladder — W1/W2/W2b (X0-lite) — MEASURED 2026-08-09 [TIER T0 diagnostic on the v5f 30k fan]
+
+One GPU pass over the exact §1.8 grid (881 windows, oracle goal, `sel_idx` = the head's own
+pick), full 256-candidate `anchor_traj` fan in **float32** (an f16 first pass gave the same
+census to 3 decimals — the jitter is model output, not storage precision). Artifacts:
+`…/incoming/2026-08-07-hierarchical-wm-redesign/{x0_lite_f32.json, tools_x0_lite.py}`.
+Point estimates on the fixed grid; no interval computed (wedge diagnostic, not an eval row).
+
+| quantity | value |
+|---|---|
+| **W1 (PRE-REGISTERED gate: kinematic re-rank of top-8 closes ≥ 30 % of sel_gap)** | **REFUTED: −16.7 %** (re-rank WORSENS: sel ADE 0.4011 → 0.4351; gap 0.2036 → 0.2376) |
+| W2 census: fan steps violating \|a\|≤4 ∨ \|yr\|≤0.33v+0.05 | **97.6 %** of all 256×20×881 steps |
+| W2 census: candidates infeasible (>5 % bad steps) — selected / oracle / all | **100 % / 100 % / 100 %** |
+| W2: mean \|accel\| over ALL candidates | 252.1 m/s² |
+| W2: selected-candidate accel MAE | **8.10 m/s²** — cross-validates §1.8 four-families' 8.11 on an independent code path |
+| W2b (exploratory, NOT pre-registered): 3-tap [.25 .5 .25] smoother | sel ADE 0.4011→**0.3975**, oracle 0.1975→**0.1879**, sel accel MAE 8.10→**3.09**, sel mean \|yaw-rate\| 81.9→49.0 °/s, still 32 % steps infeasible; smoothed-cost re-rank still fails (−17.1 %) |
+
+**Reading.** The fan's step-level jitter is truncated-denoise residue AROUND the true path —
+smoothing improves BOTH ADE numbers, which noise-around-signal predicts and signal-content does
+not. Consequences: (1) any waypoint-space kinematic cost ranks jitter, not manoeuvre quality —
+W1's failure is structural, so **W7 (WM-roll re-rank) must run on a kinematically clean fan**;
+(2) a free smoother is a partial "W4-lite" (accel 3.09, still 2× the W4 gate of 1.5) — worth
+stacking, not a substitute; (3) **W4 (unicycle-anchor emission head) stays the load-bearing
+v5.8f wedge**, launched 2026-08-09 ~22:45Z on pod5 (`train_v58f_unicycle_head.py`, gates
+pre-registered in `w4_gate.json`: selected accel MAE < 1.5 ∧ oracle ADE ≤ 1.10×0.1975).
+
+**W4 RESULT — MEASURED 2026-08-10 [TIER T0 diagnostic, same 881-window grid]: both
+pre-registered gates PASS.** `UnicycleEmission` (109,096 trainable params, 2-layer MLP off the
+offset-head query, a=4·tanh / κ=0.2·tanh, unicycle-integrated; trunk+head frozen, md5-identical
+before/after; 4,000 steps, 5.7 h — two prior attempts died in the 2026-08-10 ~05:00Z MooseFS
+I/O incident, third ran clean). Artifact: `…/2026-08-07-hierarchical-wm-redesign/w4_gate.json`;
+weights: HF `Sayood/tanitad-flagship-v5f-w120` `/w4/`.
+
+| quantity (new unicycle fan vs original, SAME grid) | new | original |
+|---|---|---|
+| oracle ADE | **0.1077 m** | 0.1991 m |
+| selected-candidate accel MAE | **0.774 m/s²** (winner 0.261; census-violation frac **0.0**) | 9.297 m/s² |
+| selected ADE (FROZEN selector's pick) | 0.7933 m | 0.4056 m |
+
+**Reading.** The re-parameterised fan is feasible BY CONSTRUCTION *and* its oracle nearly
+halves — the waypoint jitter was hiding coverage, not providing it. The one regression is the
+**frozen selector**: its scores were learned against the old fan's geometry, so its argmax on
+the new fan is near-uninformed (0.79 ≈ CV-floor territory). That is a selector-calibration
+defect, NOT a fan defect — and it is exactly the seam W7 (MPC re-rank) and an L4-style selector
+re-distill were built for. Next rung: re-rank/retrain the SELECTOR on the frozen new fan
+(cheap, selector-only) — pre-register before running. Estimator note: corpus-grid point
+estimates; the episode-cluster bootstrap runs before any leaderboard/publication claim.
+
+**W4b RESULT (feat variant) — MEASURED 2026-08-10 ~18:20Z, held-out 881 grid, per
+PREREG_W4B_SELECTOR.md: G1 FAILED, G2 engaged, pruner NOT viable.** Selected ADE **0.5600**
+vs gate ≤ 0.45 (frozen-selector reference 0.7933 — the rescorer recovers a large fraction but
+not enough); top-8 oracle **0.3185** vs pruner threshold ≤ 0.15 (full oracle 0.1077 — the
+rescorer's ranking does not concentrate the good candidates). ⚠️ The TRAIN monitor sat at
+0.21–0.33 while held-out is 0.56 — the rescorer memorises train-window selection rather than
+generalising it; the offset-query feature alone does not carry a generalising selection
+signal for the unicycle fan. Per the prereg's bound G2 consequence: **W7 (WM-roll re-rank on
+the clean fan) is now the primary selection mechanism** for v5.8f; the kin variant (adds
+(a,κ) inputs) is running and reported when it lands. Artifact:
+`…/2026-08-07-hierarchical-wm-redesign/w4b_gate_feat.json`.
+
+**W4b kin variant — MEASURED 2026-08-10 ~21:30Z: G1 FAILED IDENTICALLY** (held-out selected
+ADE **0.5637** vs feat's 0.5600; top-8 oracle 0.3155, pruner not viable). Adding the
+candidates' own (a,κ) kinematics to the scorer moved the held-out number by <0.004 —
+**the failure is not the input surface; pooled-feature per-candidate scoring on this trunk
+memorises train-window selection.** Per PREREG_W4C_SPATIAL_SCORING.md this ACTIVATES W4c
+(spatial cross-attention scoring, the REF-C conf mechanism, no grafts/gating) as the last
+fast-selector attempt; its G-null retires fast scoring to a W7-distillation target.
+Artifact: `w4b_gate_kin.json`.
+
+**W4c RESULT — MEASURED 2026-08-11 ~00:50Z: G-NULL ENGAGED — the spatial port ALSO fails**
+(held-out selected ADE **0.6609** vs gate ≤ 0.45; entropy 5.37 — still smeared; final
+train-vs-heldout gap 0.139 — the memorisation signature persists even with spatial
+attention + dropout). **Three independent scoring surfaces (pooled query / +kinematics /
+spatial cross-attention) have now failed the same held-out gate.** Per the bound G-null:
+⛔ **fast per-candidate scoring on this trunk is RETIRED** — no fourth attempt without new
+evidence; selection moves ENTIRELY to **W7 (WM-roll re-rank)**, and a fast selector may
+return only as a DISTILLATION of W7 (L4). Scientifically this is the programme's own thesis
+arriving by elimination: the selection information is not in light readouts of the trunk's
+features — it is in the CONSEQUENCES, i.e. rolling the world model. Artifact:
+`w4c_gate.json`.
+
+### 1.13b E4.4 — tactical stage-0, first trained instance — MEASURED 2026-08-10 ~21:50Z [TIER T0 diagnostic, 881-grid val, n@4s = 761]
+
+**Pre-registered gate (goal FDE@4s < CV-extrapolated): FAILED — but by SELECTION, not
+generation.** Goal FDE of the SELECTED tactical goal: 5.89 / **12.86** / 21.50 m at 2/4/6 s
+vs CV baseline 1.65 / 6.09 / 12.46. The FAN's oracle: 2.38 / **5.28** / **9.92** —
+**the 8-candidate goal fan BEATS CV at 4 s and 6 s; the selector throws the advantage away**
+(sel_gap_tac 8.95 in the mixed-unit ordering quantity). Trainer: `train_tactical_stage0.py`
+(6.39 M trainable on the frozen trunk, 4,000 steps + eval-only gate recovery after the
+reporting-bug fix `0f6367e`). Artifact: `e44_gate.json`.
+
+**Cross-level finding (programme-defining, now measured at BOTH hierarchy levels):**
+operative fan oracle 0.108 vs selected 0.56–0.79; tactical fan oracle 5.28 vs selected
+12.86. **Fans generate adequate hypotheses; learned pooled-feature selectors fail to find
+them.** Convergent suspects: (a) the scoring features (W4c tests the spatial-attention
+alternative), (b) the ranking objective itself (margin at GT-nearest under a MIXED-UNIT
+error for the tactical level — flagged by the artifact's own units_note), (c) selection as
+argmax at all (W7's roll-and-cost is the structural alternative). E5 goal-conditioning
+should train with ORACLE (hindsight) goals and treat predicted-goal selection as the
+separately-gated component it has now proven to be.
+
+### 1.13c STAGE-A POST-TRAINING — MEASURED 2026-08-11 ~07:20Z [TIER T1-diagnostic, 881 grid]: **ALL GATES PASS — the action interface is REPAIRED**
+
+Predictor-only post-training (`train_stage_a.py`, 3,000 steps, L_ctrl response-form vs the
+unicycle analytic + L_factual + L_scene; encoder/head/emission frozen, md5-proof). Before →
+after on the full held-out W3 pack: **lateral gain 0.27 → 0.971/0.966** (gate [0.5, 2.0]);
+**longitudinal sign 0.745/0.787 → 1.0/1.0** (gate ≥0.95); lateral sign stays 1.0;
+longitudinal gain 0.972 (reported); **P6 subspace stays exactly 3-dim**; no-harm passed.
+The single root defect behind the action echo, the three scoring failures and W7's ceiling
+is closed at head-scale cost. Repaired ckpt: `stage-a-predictor/ckpt_stage_a.pt`;
+artifact `stage_a_gate.json`. W7-on-repaired (K=32) ran ~07:35Z: gate FAIL by INSTRUMENT
+COMPOSITION (the frozen-trunk-trained W4 head/selector don't compose with the repaired
+trunk — §1.14), while roll-cost calibration nearly doubled (ρ 0.716) — the repair's
+signal survives; W4r head refit on the stage-A trunk is the queued next pairing.
+
+### 1.14 v5.8f — FIRST ASSEMBLED T0 NUMBERS — MEASURED 2026-08-10 ~22:35Z [TIER T0, 881 grid; families + cluster-CI rescore pending on the banked windows]
+
+Assembly = frozen v5f-30k trunk + W4 UnicycleEmission fan + selector per gate
+(`tanitad/models/v58f.py`, eval `eval_v58f.py`; artifacts HF `/v58f/`, windows banked for
+rescore). Two arms, same 881 windows:
+
+| arm | selected ADE | oracle ADE | sel accel MAE | vs v5f baseline (0.4011 / 0.1975 / 8.10) |
+|---|---|---|---|---|
+| **v58f rescorer-top8-kincost** (gate-decided) | **0.4815** | **0.1077** | **0.515** | ADE +0.08 WORSE · oracle 1.8× BETTER · accel **16× BETTER** |
+| v58f frozen-argmax (control) | 0.7933 | 0.1077 | 0.774 | reproduces the W4 selector-mismatch reference |
+
+**Honest reading.** v5.8f currently trades +0.08 m selected ADE against a 16× kinematic
+improvement (0.515 vs 8.10 m/s², violations ~0) and a fan whose oracle nearly halves. The
+whole deficit is SELECTION (sel_gap 0.374 vs v5f's 0.204) — and unlike v5f's, this gap sits
+over a feasible fan with 0.37 m of recoverable headroom. Selection ladder state: W4b
+feat/kin FAILED (memorisation), W4c (spatial attention) TRAINING, W7 (WM-roll re-rank)
+primary. Notable: top8+kinematic-cost (0.4815) beats the trained rescorer argmax (0.560) —
+on a clean fan the W1-refuted kinematic cost becomes USEFUL as a tie-breaker, exactly as the
+fusion doc predicted. NOT yet a release row: four families + episode-cluster CIs on the
+banked windows, then T1 (E1.4), complete it.
+
+**W7 RESULT + K-SWEEP — MEASURED 2026-08-11 ~02:45Z [T0, 881 grid]: gate FAILED at every K,
+and the failure CONVERGES the night onto one root cause.** K=8: sel 0.5772 (shortlist oracle
+0.4401 — pruner-starved) but the roll-cost is the programme's FIRST CALIBRATED selection
+signal (Spearman ρ 0.399 vs 0.05–0.26 for every learned scorer). K=32/64: shortlist oracle
+improves hugely (0.182 / 0.142) yet selection stalls (0.5173 / 0.5319) and cost-calibration
+COLLAPSES (0.106 / 0.047) — with many similar good candidates, the WM's rolled consequences
+barely differ, so the cost drowns. **Why: W3 measured the WM's action-response gain at ~0.27
+(¼ physical). W4b/W4c's scoring failures, W7's ceiling, and §1.12's action echo are ONE
+DEFECT: the trunk under-weights actions in its rollout.** ⇒ **Stage-A post-training
+(V18 E3.4: L_ctrl gain repair, targets measured by W3 — lateral gain into [0.5, 2],
+longitudinal sign ≥95 %, preserve the 3-dim action subspace) is THE critical path** for
+selection AND closed-loop capability; W7 re-runs after it. Artifacts: `w7_gate_k{8,32,64}.json`.
+
+**W7-ON-REPAIRED (stage-A trunk, K=32) — MEASURED 2026-08-11 ~07:35Z [T0, 881 grid]: gate
+FAIL (selected 2.3468 vs thr 0.4505; frac closed −2.27) — but the failure is INSTRUMENT
+COMPOSITION, not a repair verdict.** Mechanism inside the same artifact: the in-run FROZEN
+selector on the recomputed fan reads **3.448** (banked 0.7933 on the frozen trunk) and the
+fan oracle degrades **0.289** (banked 0.1077) — stage-A necessarily moved the trunk's
+feature/state distribution, and the W4 emission head + frozen selector, both trained on
+FROZEN-trunk features (`w4_meta.w4_base_ckpt = ckpt_30k_final.pt`), no longer compose with
+it; winner-in-shortlist only 19.6 %. Evidence FOR the repair in the same run: across-window
+roll-cost calibration **ρ 0.7164 [0.5847, 0.7696]** (episode-cluster bootstrap, n=881; P7
+gate PASS — ~1.8× the frozen trunk's 0.399, the strongest calibration measured in the
+programme), and W7's pick ≤ the in-run frozen pick on **71.1 %** of windows. Families
+stated per the 2026-08-02 rule: LON speed MAE 0.989 m/s, accel MAE 1.067; LAT heading MAE
+0.173 rad, curvature MAE 6.05 pm, yaw-rate MAE 0.250; TACTICAL winner-hit 0.9 %, sel-rank
+29.9 %; STRATEGIC n/a (no route label — settled). ⇒ **W4r: refit the 4000-step unicycle
+emission head on the stage-A trunk (cheap), then W7 re-runs — that pairing is the selection
+verdict.** Artifact `w7_gate_repaired_k32.json`; per-window arrays `w7_eval_windows.pt`
+(pod5, `w7-repaired-k32/`).
+
+**P1/P2 (decodability battery) — MEASURED 2026-08-11 ~02:30Z [T0-diagnostic]:** driving-state
+decodability from the PREDICTED latent EXCEEDS the encoded one (speed R² 0.99 vs 0.73,
+curvature 0.84 vs 0.51, yaw-rate 0.86 vs 0.80 at k=5) — the rollout carries the
+action-implied state strongly (caveat stamped: partly the action conditioning itself, the
+P5/T1 lens applies). Lead-gap probe NOT JUDGEABLE (negative R² both sides — the
+class-agnostic join needs the vehicle-class filter; instrument fix queued, not a model
+verdict). Artifact: `p12_gate.json`.
+
+**W7-FULL (selector-free, all 256 candidates) — MEASURED 2026-08-12 ~00:15Z [T0, 881
+grid, pod4]: GATE FAIL 3.3348 vs 0.4505 — and it closes the selection question with a
+MECHANISM, not another confound.** This run removed every stale component at once: the
+repaired stage-A trunk, the W4r head refit on it, NO shortlist (topk = 256, so
+`winner_in_shortlist_frac` = 1.0 — the true best candidate is always available), selection
+= argmin of roll-cost + kinematic cost. Result: fan **oracle 0.1273** (excellent) but
+**selected 3.3348**, sel_gap 3.207; the frozen selector on the same fan reads 4.4159, so
+W7 beats it on 67.5 % of windows and still fails absolutely.
+**The diagnostic pair that explains it:** the cost's *within-window* rank correlation over
+the 256 candidates is **ρ_mean 0.445 / ρ_median 0.497** (it ranks broadly correctly) while
+*across-window* calibration is ρ 0.3185 [0.2064, 0.4086] — yet the **argmin** is 26× the
+oracle. That combination is the **winner's curse**: with a noisily-correlated cost over 256
+candidates, the minimiser selects for cost UNDER-estimation, not for quality, and enlarging
+the candidate set makes argmin worse — the same direction as the earlier frozen-trunk
+K-sweep (0.577 → 0.517 → 0.532 at K = 8/32/64). ⇒ **Two consequences, both load-bearing:**
+(1) **v5.8f ships the FROZEN-trunk assembly** (rescorer-top8+kincost, selected 0.4815
+[0.393, 0.577], §1.14 above) — the stage-A trunk's physics is better but every frozen
+consumer trained on the old features mis-ranks on it (frozen selector 0.7933 → 4.4159),
+and **you cannot repair a trunk and keep its planner**; (2) that sentence IS the staged-
+training argument for v6 — consumers must be (re)trained ON the trunk they consume
+(S-W → S-T → S-S), and argmin-over-a-large-fan must be replaced by a
+noise-robust rule (top-m aggregation / sharpened cost), pre-registered before it is used.
+Artifact: `w7_full_gate.json`; per-window arrays `w7-full-roll/w7_eval_windows.pt`.
+
+**P8 BEV-OCCUPANCY READOUT (attempt 2) — MEASURED 2026-08-12 ~00:05Z [T0-diagnostic,
+881 grid, pod4]: GATE PASS — the PREDICTED latent retains the environment.** Attempt 1's
+all-empty collapse was an instrument failure (unweighted BCE on overwhelmingly empty
+rasters, IoU 2.7e-4 — see `p8_gate_attempt1.json`); attempt 2 (measured `pos_weight`
+79.7 from 1.239 % positive cells, + soft-Dice, + a 9-point threshold sweep with τ* chosen
+on the ENCODED arm — the conservative side) lifts the readout **74×** and makes the gate
+computable: at k=10, **IoU(decode(ẑ)) 0.01869 vs IoU(decode(z_enc)) 0.02005 → retention
+ratio 0.932** (gate ≥0.80) at **τ* = 0.7** (interior maximum of the sweep;
+0.0149→0.0191→0.0180 across 0.05→0.7→0.8). ⇒ **rolling the predictor forward loses only
+~7 % of the scene the encoder itself exposes** — the environment survives prediction, which
+is the property P8 exists to test. **Object permanence (P4's gate, now VISUALISED):
+occluded-agent recall is NOT worse than visible — enc 0.2178 occluded vs 0.1881 visible;
+pred 0.1743 vs 0.1717 at k=10** (n 194/548), i.e. the latent carries agents the camera
+cannot see. ⚠️ Honest limitation stamped: the ABSOLUTE IoU is low (~0.02) — a 1 M-param
+readout on frozen latents against sparse rasters — so the admissible claim is the
+RETENTION RATIO (one instrument, two inputs), not the absolute occupancy quality; and the
+occluded≥visible parity must be re-checked against a diffuseness control before it is
+quoted as permanence on its own. Artifacts: `p8_gate_attempt2.json`; reel
+`p8-occupancy-c/reel/` (camera | decode(ẑ) | belief∩truth at the same τ*).
+
+**I4a IMAGINATION ABLATION — MEASURED 2026-08-11 ~19:40Z [T0, 881 grid]: the imagination
+channel is LOAD-BEARING, not decorative.** Three arms, same checkpoint, same grid, only the
+imagination input changed (`eval_flagship_v4 --imagination-ablate`): **intact ADE 0.4011**
+(byte-matches the banked v5f baseline — an in-run instrument-parity proof), oracle 0.1975,
+miss@2m 0.149; **zeroed 7.6493** (19× collapse; oracle 1.457, miss@2m 0.805); **shuffled
+1.2492** (3.1×; oracle 0.426). The ordering zero ≫ shuffle ≫ intact is the discriminating
+result: shuffling preserves the marginal statistics and destroys only the
+window↔consequence correspondence, so the planner is reading imagination as CONTENT, not
+as a bias term. ⚠️ Caveat stamped: the head was TRAINED with imagination present, so this
+measures the dependence of THIS architecture, not the value of retraining without it;
+I4b (occluded-split stratification) is the next refinement. Artifacts:
+`i4a/flagship-v5f-w120-30k-i4a-{none,zero,shuffle}.json` (pod5).
+
+**W4r + W7-w4r — MEASURED 2026-08-11 ~19:10Z [T0, 881 grid]: the repair arc closes on ONE
+remaining stale part.** W4r (unicycle head refit ON the stage-A trunk, 4000 steps, trunk
+md5-frozen): **GATE PASS — fan oracle 0.1273** (cap 0.2173 vs the 0.1975 reference ✓),
+winner accel MAE 0.276, selected-accel 0.697, violations 0.0. The fan on the repaired
+trunk is HEALTHY. Same fan through the FROZEN selector: selected **4.416** — and W7-w4r
+(K=32, frozen-selector shortlist) FAILS at **3.614** (thr 0.4505) because the shortlist
+itself is poisoned: fan oracle 0.127 vs shortlist ceiling set by a selector still trained
+on frozen-trunk features. Chain of eliminations now complete: trunk repaired (§1.13c),
+head refit PASS, roll-cost calibrated (ρ 0.716) — **the frozen selector is the last stale
+component, and it sits in W7's PRUNER, not its cost.** ⇒ **W7-FULL queued (topk 256 = no
+shortlist, selector-free): roll-cost + kinematic cost over the whole healthy fan — the
+first selection read of the fully-repaired pipeline with NO stale part anywhere** (pod4,
+behind p8c; W4r head relayed via HF /battery/). Artifacts: `w4r_gate.json`,
+`w7-repaired-w4r-k32/w7_gate.json` (pod5).
+
+**P1 LEAD-GAP RESOLUTION — MEASURED 2026-08-11 ~17:20Z (two runs, pod4): the instrument
+was fixed AND the failure survived it — MODEL VERDICT "missing state variable".**
+Run 1 (class filter applied, provenance in-artifact, n=266 vehicle-lead windows): still
+R²(enc) ≤ 0; P1's other 3 targets PASS their retention gates (speed pred 0.993/enc 0.744).
+Run 2 (transform + capability-ceiling probes, episode-disjoint OOF, CPU off the banked
+arrays): log1p/inverse/TTC-proxy linear ALL fail and the 2-layer MLP ceiling reads
+**−0.334** — the latent lacks a readable lead-distance variable in any parameterization
+tested (small-n caveat stamped in the battery doc). Load-bearing consequence: 88.7 % of
+the oracle gap is longitudinal, and this is the missing longitudinal state variable.
+⚠️ **The aux-label-loss lever originally proposed here was RETRACTED the same day by the
+PI (labels into the trunk break the JEPA self-supervised thesis); the response is the
+LABEL-FREE lever program in `JEPA_PHYSICS_SURVEY.md`** — LF0 (locate: probe PRE-POOL
+spatial tokens + P8 decoded-BEV read-off; probe-only, admissible) then
+interaction-weighted sampling / masked-latent objectives / dense near-field loss shaping,
+each gated on the SAME frozen P1 lead battery. Headway/TTC stay GT-join instruments.
+Artifacts: `p12_gate_clsfilter.json`, `p1_lead_transforms.json` (+ HF /battery/ arrays).
+
+**⭐ T1 PSEUDO-CLOSED-LOOP — MEASURED 2026-08-11 ~23:27Z, analysed 2026-08-12 ~00:10Z
+[TIER T1 = PRIMARY; 6 844 windows / 40 val episodes, stride 1; episode-cluster bootstrap;
+pod5]. THE HEADLINE MEASUREMENT OF THE v5.8f CAMPAIGN, and it is two findings, not one.**
+
+Instrument `taniteval/tools/t1_eval.py` (`--v2-val-cache --grounding-readout`), three
+surfaces per arm: **`cl`** = action-closed loop (the model conditioned on its OWN actions,
+**T1**), **`ol`** = teacher-forced (**T0**, a WM diagnostic and never driving performance),
+**`ha`** = hold-action control (**T1**). Point estimates are `full_set` pooled means;
+intervals are the episode-cluster bootstrap and cross-arm deltas the **paired** version on
+the same windows — `overlapping_holdout_se` is used nowhere.
+
+| arm | surface | tier | ADE dense (m) | FDE last (m) | LON speed MAE (m/s) | LON along MAE (m) | LAT cross MAE (m) | LAT heading MAE (°) |
+|---|---|---|---|---|---|---|---|---|
+| `v5f-30k` | `cl` | **T1** | **23.9837** [21.442, 26.347] | 53.4756 | 26.9356 | 23.8965 | 0.9993 | 3.6204 |
+| `v5f-30k` | `ol` | T0 | 0.9397 [0.8162, 1.0679] | 2.8003 | 1.4431 | 0.8762 | 0.1947 | 3.3483 |
+| `v5f-30k` | `ha` | **T1** | 0.9597 [0.8361, 1.0879] | 2.8631 | 1.4531 | 0.8901 | 0.2072 | 4.5954 |
+| `stage-a-repaired` | `cl` | **T1** | **9.3697** [6.6822, 12.2576] | 19.5256 | 9.7291 | 9.2655 | 0.7446 | 5.3945 |
+| `stage-a-repaired` | `ol` | T0 | 0.3659 [0.2926, 0.4521] | 1.0231 | 0.5113 | 0.2990 | 0.1534 | 1.8351 |
+| `stage-a-repaired` | `ha` | **T1** | 0.4246 [0.3500, 0.5132] | 1.2242 | 0.5671 | 0.3487 | 0.1689 | 3.9859 |
+
+**FINDING 1 — the stage-A repair wins on every surface, decisively and separated.**
+Paired `stage-a-repaired − v5f-30k`, same windows: `cl` ADE **−14.6139 [−16.9319, −12.2010]**
+(`p_delta_gt0` 0.0, ✅ separated) with `cl` LON speed MAE **−17.2064 [−19.7815, −14.4927]`;
+`ol` ADE −0.5739 [−0.7002, −0.4570]; `ha` ADE −0.5351 [−0.6644, −0.4181]. The repair was
+designed to restore action-response gain (0.27 → 0.971/0.966, longitudinal sign 1.0, §1.13c)
+and it improves **exactly the axis it targeted** — a clean confirmation, not a coincidence.
+
+**FINDING 2 — ⛔ THE CLOSED LOOP DIVERGES, AND THE HOLD-ACTION CONTROL BEATS IT BY 22×.**
+For the repaired arm `ha` **0.4246** vs `cl` **9.3697**; for v5f `ha` 0.9597 vs `cl` 23.9837.
+A control that simply holds the last action is an order of magnitude better than the model
+driving itself. Within-arm paired `cl − ol`: **+9.0039 [6.3659, 11.8487]** (repaired) and
+**+23.0439 [20.5613, 25.3884]** (v5f), both separated at `p_delta_gt0` 1.0. ⇒ **No
+closed-loop driving competence may be claimed for either arm.** The T0 number (0.3659) and
+the T1 number (9.3697) differ by **25×** on the same checkpoint and the same windows — this
+row is the strongest evidence yet for the tier doctrine, and it is exactly the failure
+`EVAL_DOCTRINE.md` was written to expose.
+
+**⭐ THE DIVERGENCE IS ~99 % LONGITUDINAL — visible ONLY because the four families are
+reported.** Of the repaired arm's `cl` ADE 9.3697, **LON along-track MAE is 9.2655** while
+**LAT cross-track MAE is 0.7446**; for v5f, 23.8965 of 23.9837 against 0.9993 lateral. The
+car holds its lane and its SPEED integrates away (LON speed MAE 9.73 and 26.94 m/s — both
+physically implausible, i.e. a true blow-up rather than a graceful degradation). This
+sharpens the standing "88.7 % of the oracle gap is longitudinal" (§1.14, T0) to **~99 % at
+T1**, and it converges with the P1 verdict that the latent lacks a readable lead-distance
+variable. ⚠️ A scalar ADE would have shown a 25× gap and NOT shown that it is one axis —
+this is the four-family rule earning its cost in a single row.
+
+**Consequences for v6, all load-bearing.** (1) The staged ladder is now empirically, not
+just architecturally, motivated: **S-W must produce a world model stable under its OWN
+actions before any planner is attached** — that is precisely the quantity `cl − ol` measures,
+and it is the natural S-W gate. (2) The longitudinal channel is the design target, not the
+lateral one. (3) `ha` is the floor any closed-loop claim must clear first; clearing `ol` is
+not evidence of anything driving-related.
+
+⚠️ Scope stamped honestly: `ha` is a strong baseline partly *because* the corpus is
+short-horizon and near-constant-speed — that is what makes it the right "do nothing clever"
+floor, not a reason to discount it. TACTICAL/STRATEGIC were `UNAVAILABLE` in this run
+(`_families_unavailable`); TACTICAL has since been closed at source for all future T1 runs
+(`t1_eval.py` now passes `tactical_from_traj=True, tier=t` — at T1 the driven path IS the
+manoeuvre decision), and STRATEGIC stays `n/a` with reason + n because PhysicalAI-AV carries
+no map, lane graph or route signal. Distance-keeping remains UNAVAILABLE pending a lead
+block on this dense grid (`tools/build_lead_block.py`) — a WORK ITEM, not a pass.
+
+⚠️ Instrument note for anyone reproducing: both arms rolled all 40 episodes and then died in
+`analyze()` on `from taniteval import selgap` (pod5's package predates the module). The
+dumps survived, so the numbers above come from `--analyze-only` over them with **zero GPU
+recompute** — but an analysis-time import that fails after 11 minutes of rollout is a
+standing hazard, and the same class as the `UnicycleStepReadout` failure earlier the same
+night. Artifacts: `t1_v58f_summary.json` (banked in
+`…/incoming/2026-08-07-hierarchical-wm-redesign/`), per-arm `t1_v5f_30k.json` /
+`t1_stage_a_repaired.json` and the 80 episode dumps (pod5:`/workspace/experiments/t1-v58f/`).
+
+**⭐ T1 FOUR-FAMILY RESCORE — MEASURED 2026-08-12 ~00:55Z [6 arms, 15 paired contrasts,
+`FF_EXIT=0`, same 6 844-window grid; `taniteval/tools/ff_rescore.py`]. THE MECHANISM BEHIND
+THE DIVERGENCE, AND IT IS DIRECTIONAL, NOT NOISE.** The binding rule is now satisfied on
+these rows (`rule_satisfied: true`, `_families_unavailable: ['strategic']` only).
+
+**LONGITUDINAL — the closed loop ACCELERATES AWAY.** `stage-a-repaired · cl`: speed MAE
+**9.7291** m/s with **speed BIAS +9.3892** — the bias is ~96 % of the error, so this is a
+systematic over-speed, not scatter. Along-track MAE 9.2655 with **bias +9.0407** and final
+bias **+18.5801 m**; accel MAE **19.0948 m/s²** (>1.9 g — physically impossible, i.e. a true
+blow-up); **ego progress ratio 1.7279** (median 1.0994), so the arm drives **1.73× the
+distance the human did**. Target-speed accuracy: **0.3398 / 0.5069 / 0.6564** within
+0.5 / 1.0 / 2.0 m/s. ⇒ **the v6 longitudinal work item is a runaway-acceleration failure with
+a known sign** — far more actionable than "ADE 9.37".
+
+**LATERAL — healthy, and NOT the problem.** heading MAE **3.8776°**, yaw-rate MAE
+**4.9188 °/s**, curvature MAE **0.0186 1/m** (bias −0.0024), cross-track MAE **0.7446 m**
+(final 2.1565). n_steps 128 988 heading / 122 151 curvature, 7 892 steps excluded below
+`min_ds` 0.05 m. All four LATERAL members the rule names are present — heading, curvature,
+yaw-rate and cross-track — and none of them is where the failure lives.
+
+**TACTICAL — the factored view shows longitudinal decision-making is AT CHANCE.**
+
+| decision axis | accuracy | Cohen's κ |
+|---|---|---|
+| lateral (`stage-a-repaired · cl`) | 0.7515 | **0.3795** |
+| **longitudinal** (`stage-a-repaired · cl`) | 0.3327 | ⛔ **0.0405** |
+| collapsed 5-way | 0.3036 | 0.1404 |
+| lateral — **hold-action control** | 0.8675 | 0.6427 |
+| longitudinal — **hold-action control** | 0.5586 | 0.2072 |
+
+κ 0.0405 is chance agreement. The collapsed 5-way (κ 0.1404) sits *between* the two axes and
+reports neither — **the direct measurement of the lat/lon-mixing softmax defect CLAUDE.md
+names as our largest known architectural problem**, and it is only visible because the family
+is reported factored. Per-class lateral: `lane_keep` recall 0.8092 / precision 0.8747;
+`turn_left` 0.4994 / 0.6627; `turn_right` recall 0.6003 / **precision 0.2879** (1 195
+predicted against 573 true — right turns over-predicted 2.1×). ⚠️ The hold-action control
+beats the model on BOTH axes, which is the tactical restatement of Finding 2 above.
+
+**TACTICAL goal-setting — the DIRECTION is right and the DISTANCE is wrong.** Goal bearing
+MAE **4.8098°** (bias −1.8323°, n 6 603, 241 windows excluded below 0.5 m) against goal range
+ratio **1.7584** and long-bias **+18.5801 m** vs lat-bias **−1.2061 m**. ⇒ **the model knows
+WHERE to go and not HOW FAR** — one clean sentence that ADE, and even ADE-plus-FDE, cannot
+express. (`goal_point_error_m` 19.5256 is FDE under another name and is labelled as such in
+the artifact, not sold as a new metric.)
+
+**STRATEGIC — `n/a` with reason and n = 6 844**, per clause 5 of the binding rule:
+PhysicalAI-AV carries no map, no lane graph, no junction/roundabout label, no traffic-light
+feature and no route/goal signal (the dataset card says verbatim *"we do not include open
+maps data"*). No rescore can close this; the programme's instrument is the VLM pipeline
+PH0→PH1→PH2. Distance-keeping (the other half of LONGITUDINAL) also remains UNAVAILABLE
+pending a lead block on this dense grid (`tools/build_lead_block.py`) — a WORK ITEM, not a
+pass, and the half where 88.7 % of the T0 oracle gap was measured to live.
+
+**⭐ PH0 v2 VLM EXTRACTION — GATE PASS — MEASURED 2026-08-12 [8-clip smoke, pod4,
+`Qwen/Qwen3.5-9B` via `AutoModelForImageTextToText`, grammar-constrained].** The PI's
+decided stack (engine B Qwen3.5-9B · engine C SAM3 · engine A algorithmic integrated ego
+path) against the pre-registered v2 gate in `PH0_TARGET_STRUCTURE_v2.md` §5:
+
+| criterion | v0.1 MEASURED | v2 threshold | v2 MEASURED | |
+|---|---|---|---|---|
+| clips with ALL calls valid | 1 / 8 | ≥ 6 / 8 | **8 / 8** | ✅ |
+| hard `no parseable JSON` failures | 3 / 8 | 0 / 8 | **0 / 8** | ✅ |
+| B1 scene valid | — | ≥ 7 / 8 | **8 / 8** | ✅ |
+| B4 goal ∈ vocabulary | — | ≥ 7 / 8 | **8 / 8** | ✅ |
+
+`retried = 0` — every call was valid on its first attempt; the retry path never fired.
+Extracted symbols are coherent: `urban/day` 3 signs → `follow_main_road`+`hold_corridor`;
+`urban/night` → `turn_left`+[`prepare_lane_change`,`reduce_to`]; `highway/snow` 0 signs →
+abstained to `follow_main_road`; one `route_to` carrying its required `goal_evidence_sign`.
+
+**What made it solvable** (all four are mechanisms, not tuning): the single 5-section /
+4-level / ~30-field object split into **four flat calls**; grammar-constrained decoding, so
+an unparseable output is impossible by construction; `max_consecutive_whitespaces=1`, since
+the default 12 let the model burn its budget on tabs and truncate mid-object; and
+`force_json_field_order=True`, which makes `n_signs` genuinely precede `signs[]` rather than
+by luck. ⭐ **The organising principle is the load-bearing part: the VLM chooses SYMBOLS, the
+algorithm supplies NUMBERS, SAM3 supplies PIXELS.** Every metric slot (`within_m`,
+`by_time_s`, `at_arc_m`, `hold_for_s`, `v_target_ms`) was REMOVED from the VLM's job —
+Engine A measures them — and a test fails if any reappears.
+
+⚠️ **Two of the defects on the way were OURS, and both had misled a report.** (1) The arm was
+called "unusable / text-only" for a day; it was a `[swscaler]` EAGAIN (ffmpeg sizing its pool
+to the HOST's 96 CPUs) plus loading a VLM through the **text-only** `AutoModelForCausalLM`,
+which loads fine and then rejects the vision kwargs at `generate()`. (2) `bbox
+[952,100,975,160]` was read as an out-of-frame hallucination against a 448 px maximum —
+Qwen-VL emits **normalized 0–1000** coordinates, its own trained convention, so the model was
+self-consistent and the check was wrong twice over (frames are 179×448, so y never reaches
+448 either). Also retracted: duplicate actions are a padding artifact, not a content error,
+and rejecting the record for them discarded a good `goal_kind`.
+
+⚠️ **Scope stamp: n = 8 is a SMOKE, not a measurement.** The prereg is explicit that PH1's
+50 clips produce quotable rates; this gate exists to decide whether PH1 is worth launching,
+and it says yes. Still open: the processor reports `fps=24` for a 2 fps sample (a temporal
+mismatch that B4's hindsight premise depends on), `alpamayo_rows = 0` on every clip (engine D
+contributed nothing), and SAM3's real API is installed but not yet wired.
+Artifacts: `ph0_mini/v2/ph0_v2.json` (every prompt + raw model output banked per call),
+`ph0_mini/v2/viz/` (overlay MP4 + stills); instruments `stack/scripts/ph0_v2.py`,
+`ph0_v2_chain.sh`, `ph0_v2_overlay.py`, 44 CPU tests.
+
+**⛔ LF0 — MEASURED 2026-08-12 ~08:30Z [T0 diagnostic, 900 windows scanned / 129 labelled,
+pod4]: THE DECODED BEV DOES NOT READ THE LEAD GAP. RC1 IS NOT SUPPORTED — there is no
+zero-training fix.** `scripts/lf0_bev_lead.py`, a **zero-parameter geometric read**: walk the
+decoded occupancy raster forward along the ego corridor, return the range of the first cell
+≥ τ. τ = 0.7 **inherited** from the P8 gate, never re-tuned. Nothing is fitted, so a spatial
+arm cannot win by having more capacity than P1's pooled probe — which is why this and not a
+spatial-token probe is the admissible first test.
+
+**Reader sanity gate: PASSED**, and it is a precondition, not a formality. GT reads at other
+corridor widths rank-agree with the headline: `gt@1.0` ρ **1.0** (R² 0.9998, MAE 0.0144 m),
+`gt@2.0` ρ **0.9596** (R² 0.8904, MAE 0.2829 m). The corridor geometry is right and the reader
+recovers the labelled scene essentially exactly.
+
+| arm (corridor 1.5 m) | R² | ρ | MAE (m) | n paired | **censored on labelled** |
+|---|---|---|---|---|---|
+| `gt@1.5` (= truth, by construction) | 1.0 | 1.0 | 0.0 | 129 | 0 % |
+| **`enc@1.5`** (decoded ENCODED latent) | **−21.00** | 0.3826 | **26.85** | 24 | ⛔ **81.4 %** |
+| **`pred@1.5`** (decoded PREDICTED latent) | **−16.12** | −0.7091 | **42.65** | 10 | ⛔ **92.3 %** |
+
+**⭐ THE FINDING IS THE CENSORING RATE, not the R².** In **81.4 %** (encoded) and **92.3 %**
+(predicted) of the windows where the ground truth has a lead vehicle in the ego corridor, the
+decoded BEV has **no occupied cell there at all** — it shows an empty lane. That statistic rests
+on all **129** labelled windows and is decision-grade. When the decode does fire, the read is
+wrong by **26.85 m / 42.65 m** on a grid only 60 m deep. ⚠️ The R² and ρ values sit on n = 24 and
+n = 10 (the latter exactly at the pre-declared floor) and are **NOT decision-grade** — in
+particular `pred`'s ρ = −0.71 on n = 10 is noise, not an inverted signal, and must not be quoted
+as one.
+
+**This is the concrete consequence of P8's own stamped limitation, not a contradiction of it.**
+§1.14 already records that P8's absolute IoU is ~0.02 and that "the admissible claim is the
+RETENTION RATIO, not the absolute occupancy quality". LF0 is what that caveat means in practice:
+the decode preserves enough *relative* structure to score retention 0.932, and is far too diffuse
+to support the statement *"there is a vehicle at 18 m in my lane"*. Both results stand together.
+
+**⭐ REFINEMENT (2026-08-12, from the rendered panels — `Paper/figures/lf0_bev_panels.svg`):
+"the decode shows an empty lane" UNDERSTATES it. The decode is NOT blank.** In the three
+inspected windows it puts **40 / 43 / 45** (encoded) and **68 / 43 / 35** (predicted) cells
+above τ — *comparable to the ground truth's 33 / 31 / 31* — but essentially none inside the
+ego band. The failure is **confident MISLOCATION, not absence of output**, which is exactly
+what IoU ≈ 0.02 beside a retention ratio of 0.932 means: the relative structure survives
+prediction, the absolute placement does not.
+
+**⚠️ A "small lateral offset" hypothesis was raised from eyeballing those panels (the decoded
+mass sits just outside the band) and TESTED — it is NOT SUPPORTED.** Corridor-width sweep on
+the same run:
+
+| width | `enc` censored | `enc` n | `enc` R² | `enc` MAE | `pred` censored | `pred` n |
+|---|---|---|---|---|---|---|
+| ±1.0 m | 82.17 % | 23 | −21.31 | 27.93 | 92.25 % | 10 |
+| ±1.5 m | 81.40 % | 24 | −21.00 | 26.85 | 92.25 % | 10 |
+| ±2.0 m | **68.22 %** | 41 | **−28.66** | **30.71** | 92.25 % | 10 |
+
+Widening to ±2.0 m recovers 14 points of encoded censoring but makes **R² and MAE WORSE**, so
+the extra detections are **other traffic at wrong distances**, not a laterally-displaced lead —
+a genuine offset would have recovered the lead at the *right* range and improved the fit. The
+predicted arm is **completely flat across all three widths** (identical censoring, n, R² and
+MAE), i.e. widening the band adds nothing whatsoever. ⇒ the failure is not a calibration or
+band-geometry artefact.
+
+**⇒ Consequences, and they are load-bearing.** (1) **The survey's RC1 is REFUTED**: exposing an
+existing read-off does not close the lead gap, so there is **no zero-training fix** and the
+longitudinal lever must be training-side. (2) This is the **second independent test**, with a
+different instrument class — a zero-parameter geometric read versus P1's fitted probe (linear
+R²(enc) ≤ 0, every transform failed, 2-layer MLP ceiling **−0.334**) — reaching the same verdict:
+**the lead gap is not readable from this latent in any form yet probed**. (3) It converges with
+the T1 result above: the closed loop is ~99 % longitudinal and over-accelerates (progress ratio
+1.7279, speed bias +9.3892 m/s), and the model cannot see the vehicle in front of it. Artifacts:
+`lf0-bev-lead/lf0_gate.json` (pod4); instrument `stack/scripts/lf0_bev_lead.py` + `lf0_chain.sh`,
+21 CPU tests.
+
+**W7-PROG — MEASURED 2026-08-12 ~05:40Z [EXPLORATORY, 881 grid, pod4]: PRE-REGISTERED
+OUTCOME = PARTIAL. The anti-degeneracy term is REAL, MONOTONE, and FAR TOO SMALL.**
+Pre-registration `PREREG_W7_PROG.md` (written before the run, all three outcomes bound). Only
+`--w-prog` changes against the W7-FULL control, so the contrast is attributable. PRIMARY endpoint
+was declared to be the **argmin's mean ERROR-RANK over the 256-candidate fan**, not ADE, because
+the mechanism under test is a ranking claim.
+
+| arm | `--w-prog` | **error-rank of argmin** /256 | gate `w7_selected_ade` |
+|---|---|---|---|
+| control (= W7-FULL) | 0.0 | **132.3** | 3.3348 |
+| `w7-prog-01` | 0.1 | **130.31** | 3.4360 |
+| `w7-prog-05` | 0.5 | **126.69** | 3.7398 |
+
+The rank falls **monotonically** with the weight (132.3 → 130.31 → 126.69) — so the degenerate-
+minimiser account is **not** wrong: switching on the progress term does move the argmin toward
+better candidates, exactly as predicted. But the whole effect is **5.6 rank positions of 256
+(2.2 % of the fan)**, the argmin still sits essentially at the median, and the gate ADE gets
+**monotonically worse** (3.3348 → 3.4360 → 3.7398). ⇒ **PARTIAL**, by the pre-registered rule
+(`w7-prog-05` clears the <128 clause; neither arm approaches the <100 CONFIRM threshold and
+neither improves ADE). Per the pre-registration's own PARTIAL branch, the consequence is binding
+and was fixed in advance: **the cost needs a goal-conditioned component, not a larger
+anti-degeneracy weight, and W7-style self-consistency selection is retired as a headline route**
+(the V-JEPA-2-AC / DINO-WM goal-cost contrast in the paper is the next lever).
+
+⚠️ Also measured and worth its own line: with the progress term the across-window calibration
+**flips sign** — Spearman(cost, realised error) goes **+0.3185 (control) → −0.4244 (w-prog 0.1)**.
+A cost that is *negatively* calibrated across windows is worse than an uninformative one, which is
+the mechanism behind the ADE regression and independent evidence that this cost family is not
+merely under-tuned. ⚠️ EXPLORATORY stamp holds: this re-uses the W7 scoring windows, so no arm
+here is quotable as a v5.8f number. Artifacts: `w7-prog-{01,05}/w7_gate.json` + `rules.json` (pod4).
+
+Instrument change that made this possible: `t1_eval.py` now calls
+`all_families(win, tactical_from_traj=True, tier=t)`. At T1 nothing steers the rollout but the
+arm's own actions, so the driven path IS its manoeuvre decision; at T0 the same block is
+stamped as substantially an ACTION ECHO so a teacher-forced tactical number can never be read
+as skill. Artifacts: `four_families/ff_{stageA,v5f30k}_{cl,ol,ha}.json` + `ff_comparison.json`
+(pod5:`/workspace/experiments/t1-v58f/four_families/`).
 
 ## 2. REF-A — the frozen-encoder arm (H4)
 

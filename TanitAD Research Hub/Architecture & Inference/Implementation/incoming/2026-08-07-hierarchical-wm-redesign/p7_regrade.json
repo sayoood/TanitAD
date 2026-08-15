@@ -1,0 +1,89 @@
+{
+ "probe": "P7 registry-grade (v58f fan windows, eid-clustered)",
+ "gate": "PRE-REGISTERED: rho >= 0.3 with CI excluding 0",
+ "_evidence_class": "MEASURED (ours; artifact = this JSON)",
+ "arms": {
+  "v58f-rescorer-top8-kincost": {
+   "n": 881,
+   "entropy_mean": 5.414,
+   "spearman_rho": 0.0542,
+   "rho_ci_cluster": [
+    -0.1395,
+    0.2387
+   ],
+   "gate_pass": false,
+   "selgap": {
+    "block": "taniteval.selgap",
+    "version": "1.0.0",
+    "level": null,
+    "selected": 0.4815,
+    "oracle": 0.1077,
+    "gap": 0.3739,
+    "gap_frac": 0.7764,
+    "topk_ranking": "selector_scores",
+    "sel_rank_mean": 30.6107,
+    "sel_rank_pct_mean": 0.12,
+    "sel_rank_pct_median": 0.0706,
+    "gap_ci": {
+     "mean": 0.3739,
+     "lo": 0.3014,
+     "hi": 0.4489,
+     "ci95": 0.0737,
+     "se": 0.0383,
+     "reducer": "mean",
+     "n_windows": 881,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "n_windows": 881,
+    "n_candidates": 256,
+    "n_episodes": 40,
+    "oracle_top4": 0.3913,
+    "oracle_top8": 0.3185,
+    "oracle_top16": 0.245
+   }
+  },
+  "v58f-frozen-argmax": {
+   "n": 881,
+   "entropy_mean": 2.247,
+   "spearman_rho": 0.2622,
+   "rho_ci_cluster": [
+    0.0909,
+    0.4098
+   ],
+   "gate_pass": false,
+   "selgap": {
+    "block": "taniteval.selgap",
+    "version": "1.0.0",
+    "level": null,
+    "selected": 0.7933,
+    "oracle": 0.1077,
+    "gap": 0.6856,
+    "gap_frac": 0.8643,
+    "topk_ranking": "selector_scores",
+    "sel_rank_mean": 66.1146,
+    "sel_rank_pct_mean": 0.2593,
+    "sel_rank_pct_median": 0.1569,
+    "gap_ci": {
+     "mean": 0.6856,
+     "lo": 0.5456,
+     "hi": 0.8542,
+     "ci95": 0.1543,
+     "se": 0.0783,
+     "reducer": "mean",
+     "n_windows": 881,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap"
+    },
+    "n_windows": 881,
+    "n_candidates": 256,
+    "n_episodes": 40,
+    "oracle_top4": 0.5938,
+    "oracle_top8": 0.4401,
+    "oracle_top16": 0.2799
+   }
+  }
+ }
+}

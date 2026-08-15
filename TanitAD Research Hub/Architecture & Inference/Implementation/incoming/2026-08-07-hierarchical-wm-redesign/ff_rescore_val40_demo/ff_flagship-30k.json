@@ -1,0 +1,903 @@
+{
+ "tool": "taniteval/tools/ff_rescore.py",
+ "arm": "flagship-30k",
+ "arm_key": "flagship-30k",
+ "tier": "T0",
+ "tier_note": "TEACHER-FORCED \u2014 the predictor consumes the RECORDED future actions. A WM/prediction diagnostic ONLY; \u26d4 NEVER quotable as driving performance (EVAL_DOCTRINE.md).",
+ "n_windows": 881,
+ "n_episodes": 40,
+ "horizon_steps": 4,
+ "dt_s": 0.5,
+ "four_families": {
+  "longitudinal": {
+   "speed_mae_mps": 0.471,
+   "speed_bias_mps": 0.1911,
+   "speed_rmse_mps": 0.6755,
+   "target_speed_acc": {
+    "within_0.5_mps": 0.639,
+    "within_1.0_mps": 0.8573,
+    "within_2.0_mps": 0.9901
+   },
+   "target_speed_acc_note": "fraction of the 3524 horizon STEPS (not windows) whose |speed error| is within the band. Bands are PROPOSED reporting tolerances, not a gate.",
+   "along_mae_m": 0.3936,
+   "along_bias_m": 0.1294,
+   "along_final_bias_m": 0.3375,
+   "accel_mae_mps2": 0.7717,
+   "ego_progress": {
+    "status": "OK",
+    "convention": "human_dir",
+    "progress_ratio_mean": 0.997,
+    "progress_ratio_median": 1.0182,
+    "progress_error_mean": 0.0663,
+    "under_progress_rate": 0.2929,
+    "gt_progress_mean_m": 26.4324,
+    "n": 850,
+    "n_windows": 881,
+    "n_excluded_low_gt_progress": 31,
+    "min_progress_m": 0.5,
+    "t0_axis_gt_self_ratio": 0.9919,
+    "t0_axis_gt_self_ratio_note": "what the GROUND TRUTH scores under pseudosim's published t0-axis reading. 1.0 means the windows are straight; below 1.0 is the CURVATURE CONFOUND \u2014 the human charged for under-progress it did not commit, and an arm that drives straighter than the human rewarded for it.",
+    "definition": "along-track distance covered / the human's, both projected on the human's own final-displacement direction; dt-invariant; <1 = under-drives, >1 = over-drives; GT scores exactly 1.0 by construction",
+    "published_motivation": "arXiv 2605.00066 \u2014 Ego Progress alone rho=0.83 vs closed-loop Driving Score while traditional L2 gives rho=-0.36 (p=0.43, n=8, NO CI). Direction only; those magnitudes are NOT a target."
+   },
+   "dt_s": 0.5,
+   "rate_scaling_note": "speed ~ 1/dt, accel ~ 1/dt^2. Numbers computed with a wrong dt are off by those powers; along_* are dt-invariant.",
+   "distance_keeping": {
+    "n": 228,
+    "n_windows": 881,
+    "dt_s": 0.5,
+    "gap_convention": "rig-origin to lead rear face (along - size_x/2); NOT bumper-to-bumper",
+    "ttc_cap_s": 30.0,
+    "status": "OK",
+    "mean_headway_min_m": 30.5717,
+    "mean_time_gap_min_s": 3.1299,
+    "n_time_gap": 223,
+    "mean_min_ttc_s": 24.7384,
+    "n_closing": 115,
+    "censoring_note": "113 of 228 windows never close on the lead and are censored at TTC_CAP_S=30.0s. The mean is over censored data \u2014 quote n_closing beside it, never the mean alone.",
+    "_per_window": {
+     "headway_min_m": "[        nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan 34.07920186 35.80136778 39.9746415          nan\n 41.8032591  44.96152065 46.47551037         nan         nan 48.49452422\n 49.54121042 49.71022461 49.70177466 49.37432571 49.91938908 50.70275205\n 50.65427709         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan 71.41605845         nan         nan\n         nan         nan 68.15474206 68.68768841         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan 60.73713052 61.5602591  62.3579793  63.11642141\n 64.00603114 64.66564303 65.2866809  68.45426475 68.81630934 69.25802189\n 69.48720212 69.84256935 70.12170386 69.9340441  70.09157054 69.68916144\n 69.3784586  69.27295942 68.82299408 68.11363039 67.83910425 67.75454859\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan  8.95553582  9.54278413\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan 15.6127631\n 14.5339408  16.04307688 15.57508609 14.84055697 14.74438965 15.52117505\n 16.39562882 17.26043636 14.04436463         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n 76.82772888         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan  8.73118103  9.68161227 10.6172442  11.5039547  12.61050424\n 13.22011655 13.26117549 13.42932205 13.95566967 14.9653433  16.17970681\n 17.18449658 16.45299136 16.19826213 16.23796456 16.58824018 16.9407945\n 17.93510013 19.33557025 20.48351647 21.15490604 21.21721228         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan 16.8044485  18.18689618\n 19.1500466  20.29896702 21.24928781 22.42961354 23.65251037 25.11802965\n 26.62582247 28.31167414 29.97342727 31.88057753 35.85184659 37.97988938\n 39.99215339 41.51713277 42.9034739  44.01232829 44.78474889 45.72083213\n 45.87399457 15.42826836 16.0645202  15.42992959 14.78419687 13.85545049\n 13.37078223 13.24253948 13.18393302 13.93060824 15.21917479         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan 56.06639458         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan 28.11589043 26.01677802         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan  7.39068891  8.74337193         nan         nan         nan\n 18.61480473 24.024307   25.05746881         nan         nan 28.26661852\n 29.43935768 30.33704015 30.95382966 30.94997033 31.23747917 31.60780638\n 32.20852758 33.05838449 32.99414124 32.38187153 32.23814055 32.67518566\n 32.7197493          nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan 54.7908021\n 51.2163692  41.8368973  37.86746254 33.7574872  30.12432497 26.25033084\n 22.41616337 19.37222635 20.42655497 13.25079796         nan 37.53981762\n 32.70119574 27.59096489 22.73726593 18.57851657 14.45782038 11.24483395\n  8.93718306  6.74599833  6.0300358   5.88363471  5.56593495  6.1496667\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan 21.47131247 21.66692157 22.05128532\n 22.0812057  21.40111454 23.42270562 23.63814273 22.68133981 22.32629612\n 22.6881404  23.12850215 23.53650973 24.12282295 25.30844665 26.54171411\n 27.77351438 28.83257421 28.94333967 28.47467377 26.7633869  26.06262326\n 25.9789067          nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan  3.62879292\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan 19.69731743         nan         nan 56.56135613\n 59.35573302 62.27193411 68.96589236 71.4951459  74.05446498 76.29335281\n 80.44655249         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan 13.66518797 12.44795306 11.70503936 11.30295983 11.13977404\n 10.89026061 10.87836079 10.82712456 10.90190019 11.37323087 12.42463704\n 13.87070307 13.75561709  5.93171687  6.85726693  7.71297289  8.45731136\n  9.31093776  9.93751686 10.23961275 10.58225788 11.18273837         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan 41.35749339 51.99297108 59.02026782\n 65.89856173  7.05790732  8.14942741  8.22981568  8.76569868 10.0304857\n 11.78778043 14.11361718 15.37695321         nan 19.79449363 16.99926072\n 19.25873274         nan         nan 24.87842713         nan 45.64989702\n 32.7451166  34.36905431         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n 64.14387286         nan 61.84170871 28.87712369         nan         nan\n         nan         nan         nan         nan 59.70903223]",
+     "time_gap_min_s": "[        nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan  3.84274406  3.9731861   4.36031343         nan\n  4.36677937  4.59034904  4.66708021         nan         nan  4.64245471\n  4.68707991  4.65886445  4.5867712   4.5235703   4.59840656  4.75723851\n  4.88542218         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan 10.99736201         nan         nan\n         nan         nan 13.00562705 15.31921734         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan  2.42208581  2.45894818  2.49410341  2.52594248\n  2.558456    2.57447774  2.5871888   2.69987225  2.70352655  2.71261281\n  2.71476743  2.7255538   2.73115968  2.71988452  2.71743029  2.69496449\n  2.68018528  2.67609687  2.66295639  2.64247429  2.64090663  2.65035891\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan  7.97724158         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan  7.76038981  3.79716653  2.623402    2.47682814  2.51364379\n  2.44030096  2.36563564  1.75704877         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n  7.84155121         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan 11.48727953  9.0142533   5.56983424  4.13914304  3.58895396\n  3.05452353  2.67685385  2.54287077  2.737553    2.90340403  2.89509832\n  2.81104006  2.39256379  2.10421837  2.07121064  2.21244334  2.39314426\n  2.66071746  2.85754004  2.73782323  2.59354288  2.38757236         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan  0.91777147  0.99860757\n  1.04329491  1.09744593  1.14371786  1.20996901  1.29016919  1.3800625\n  1.47562867  1.58622548  1.69261967  1.81412454  2.07104161  2.20947979\n  2.30676121  2.3907351   2.46205861  2.51829585  2.58751488  2.65007036\n  2.65838975  2.93948244  2.80778954  2.56706413  2.48808497  2.37105003\n  2.36461638  2.40711176  2.4763681   2.74319211  3.57416197         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan  6.74752298         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan  4.49820541  3.99879341         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan  2.22032722  2.09281961         nan         nan         nan\n  2.42567236  3.15906401  3.32416628         nan         nan  3.688409\n  3.815453    3.73545725  3.58673773  3.36165724  3.40689862  3.52640544\n  3.71200721  3.91726508  3.84582533  3.57687283  3.57422446  3.66279293\n  3.74105167         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan  1.9455541\n  1.81678584  1.48349864  1.34353419  1.19693959  1.06884024  0.93173304\n  0.79573066  0.69112483  0.72901695  0.47327748         nan  5.63094368\n  5.00555569  4.22080327  3.61699118  3.08523534  2.5095045   2.09611742\n  1.95303287  1.7538808   2.0629431   3.08327334  5.10547932         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan  1.05050914  1.07067416  1.10067179\n  1.11230783  1.08342883  1.18502619  1.1984096   1.15089866  1.13392567\n  1.15038015  1.17697665  1.20425476  1.24123411  1.30574035  1.35707598\n  1.40155448  1.41714927  1.38196038  1.31990358  1.2084675   1.16281934\n  1.16572264         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan  3.5780989          nan         nan  1.54775365\n  1.62547896  1.70502183  1.88699521  1.9577148   2.02669127  2.0903734\n  2.20715736         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan  2.24536049  2.14206227  2.1364211   2.1680842   2.31516789\n  2.68228458  2.87333828  3.01093635  3.23327545  3.48651798  3.94758431\n  4.35989337  2.80429749  0.97667698  1.18349265  1.35976958  1.4237724\n  1.51002549  1.56818021  1.57517662  1.62215836  1.75397373         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan  1.57047233  1.97603618  2.24129992\n  2.49628401  1.46135113  2.94319769  6.32837548 16.77713273 16.85376577\n 10.34912867  5.62426846  3.74524907         nan  2.76140815  1.98161215\n  2.17329237         nan         nan  2.90963854         nan  5.66195617\n  3.89283026  3.78071187         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n  9.76090846         nan  8.33657762  3.83011446         nan         nan\n         nan         nan         nan         nan  8.63023494]",
+     "min_ttc_s": "[        nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan 30.         30.         30.                 nan\n 30.         30.         30.                 nan         nan 30.\n 30.         30.         30.         30.         30.         30.\n 30.                 nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan 30.                 nan         nan\n         nan         nan 16.33780351 30.                 nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan 30.         30.         30.         30.\n 30.         30.         14.70588184 30.         30.         30.\n 30.         30.         30.         30.         30.         30.\n 30.         30.         30.         30.         30.         30.\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan 13.15028796 30.\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan 30.\n 30.         30.         26.04906375 22.96224551 30.         30.\n 30.         30.          2.52583343         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n 30.                 nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan 30.         30.         30.         30.         30.\n 30.         30.         30.         30.         30.         30.\n 30.          7.21971725 14.35659479 18.41605098 30.         30.\n 30.         30.         30.         30.         30.                 nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan 30.         30.\n 30.         30.         30.         30.         30.         30.\n 30.         30.         30.         30.         30.         30.\n 30.         30.         30.         30.         30.         30.\n 30.         30.         30.         30.         22.89124473 16.65117074\n 17.94030824 19.95830166 30.         30.         30.                 nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan 10.15564775         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan  4.80702899 30.                 nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan 30.         30.                 nan         nan         nan\n  2.84889224 30.         30.                 nan         nan 30.\n 30.         30.         30.         30.         30.         30.\n 30.         30.         30.         30.         30.         30.\n 30.                 nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan 10.33049476\n  9.01835435  5.07588171  5.95351083  6.87507175  6.17289268  5.39669039\n  4.38694761  3.83123186  5.1809035   4.44991545         nan  6.59765301\n  6.06610614  5.20082353  4.41523276  4.03716131  3.47419919  3.23245113\n  3.34278241  3.07681188  3.81350743  5.73804158  7.10342468 24.38343849\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan 24.07143521 30.         25.33179129\n 21.15803892 17.1011134  15.87747704 30.         30.         23.63623937\n 30.         30.         30.         30.         30.         30.\n 30.         30.         30.         21.84421659 18.33279916 18.22951162\n 21.43217074         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan 30.\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan 30.                 nan         nan 30.\n 30.         30.         30.         30.         30.         30.\n 30.                 nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan  6.70304242  7.55141149  8.0338553  14.51717639 28.53733997\n 23.15155178 26.36787351 30.         30.         30.         30.\n 30.         30.          6.80070489 30.         30.         30.\n 30.         30.         30.         30.         30.                 nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan 30.         30.         30.\n 30.          3.36748657  9.02168327 30.         30.         30.\n 30.         30.         30.                 nan  9.64804794  6.02891284\n 30.                 nan         nan 30.                 nan  5.72582896\n  4.64430144 30.                 nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n         nan         nan         nan         nan         nan         nan\n 30.                 nan 30.          5.1020215          nan         nan\n         nan         nan         nan         nan 30.        ]",
+     "n_steps_in_corridor": "[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n 0 0 0 0 0 0 0 4 3 1 0 3 1 1 0 0 4 4 4 4 4 4 3 2 0 0 0 0 0 0 0 0 0 0 0 0 0\n 0 1 0 0 0 0 3 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4 4 4 4 4 4 4 4 4\n 4 4 4 4 4 4 4 4 3 3 4 4 4 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4 1\n 0 0 0 0 0 0 0 0 0 0 0 2 4 4 4 4 4 4 4 4 4 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n 0 0 0 0 0 4 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4 4\n 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n 0 0 0 0 0 0 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 3 2\n 0 0 0 0 0 0 0 0 0 0 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n 1 1 0 0 0 4 2 3 0 0 4 4 4 4 4 4 4 4 4 4 4 4 2 1 0 0 0 0 0 0 0 0 0 0 0 0 0\n 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 3 3 4 4 4 4 4 4 4 2 2 0 4 4 4 4\n 4 4 4 4 4 4 4 4 4 0 0 0 0 0 0 0 0 0 2 2 3 3 4 3 1 1 4 4 4 4 4 4 3 4 4 3 2\n 3 4 4 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1\n 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 4 4 4 3 4 4 4 2 0 0 0 0 0 0 0 0 0 0 0 0\n 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4 4 4 4 4 4 4 4 4 4 4 3 1\n 4 4 4 4 4 4 4 4 4 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n 0 0 0 0 0 0 0 0 0 0 0 0 4 3 3 4 4 4 4 4 4 4 4 2 0 4 4 1 0 0 1 0 3 2 1 0 0\n 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 1 2 0 0 0 0 0 0 1]"
+    },
+    "by_speed": {
+     "_what": "LONGITUDINAL distance-keeping, per speed band. NEVER pool these.",
+     "_binding": "Sayed 2026-08-02 clause 5: where a family cannot be computed, say so PER STRATUM with the reason and the n, rather than silently dropping it.",
+     "bands_mps": [
+      "0-1",
+      "1-3",
+      "3-6",
+      "6-10",
+      "10-15",
+      "15+"
+     ],
+     "min_stratum_n": 30,
+     "estimator": "episode_cluster_bootstrap (taniteval.ci) \u2014 NEVER overlapping_holdout_se",
+     "n_windows_total": 881,
+     "strata": {
+      "0-1": {
+       "speed_mps": [
+        0.0,
+        1.0
+       ],
+       "n_windows": 50,
+       "window_states": {
+        "LEAD": 32,
+        "NO_LEAD": 18
+       },
+       "n_with_lead": 8,
+       "lead_rate": 0.16,
+       "status": "UNPOWERED",
+       "reason": "8 lead-bearing windows < min_stratum_n 30; an episode-cluster bootstrap over this few is noise. Reported, not quoted."
+      },
+      "1-3": {
+       "speed_mps": [
+        1.0,
+        3.0
+       ],
+       "n_windows": 52,
+       "window_states": {
+        "LEAD": 13,
+        "NO_LEAD": 39
+       },
+       "n_with_lead": 12,
+       "lead_rate": 0.2308,
+       "status": "UNPOWERED",
+       "reason": "12 lead-bearing windows < min_stratum_n 30; an episode-cluster bootstrap over this few is noise. Reported, not quoted."
+      },
+      "3-6": {
+       "speed_mps": [
+        3.0,
+        6.0
+       ],
+       "n_windows": 127,
+       "window_states": {
+        "LEAD": 51,
+        "NO_LEAD": 76
+       },
+       "n_with_lead": 45,
+       "lead_rate": 0.3543,
+       "status": "OK",
+       "headway_min_m": {
+        "mean": 14.9534,
+        "lo": 11.4617,
+        "hi": 24.1441,
+        "ci95": 6.3412,
+        "se": 3.4056,
+        "reducer": "mean",
+        "n_windows": 45,
+        "n_episodes": 9,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap",
+        "n": 45,
+        "n_total": 127
+       },
+       "time_gap_min_s": {
+        "mean": 3.1629,
+        "lo": 2.5359,
+        "hi": 4.9665,
+        "ci95": 1.2153,
+        "se": 0.678,
+        "reducer": "mean",
+        "n_windows": 45,
+        "n_episodes": 9,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap",
+        "n": 45,
+        "n_total": 127
+       },
+       "min_ttc_s": {
+        "mean": 23.9432,
+        "lo": 17.929,
+        "hi": 27.4286,
+        "ci95": 4.7498,
+        "se": 2.4629,
+        "reducer": "mean",
+        "n_windows": 45,
+        "n_episodes": 9,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap",
+        "n": 45,
+        "n_total": 127
+       }
+      },
+      "6-10": {
+       "speed_mps": [
+        6.0,
+        10.0
+       ],
+       "n_windows": 203,
+       "window_states": {
+        "LEAD": 74,
+        "NO_LABEL": 19,
+        "NO_LEAD": 110
+       },
+       "n_with_lead": 67,
+       "lead_rate": 0.33,
+       "status": "OK",
+       "headway_min_m": {
+        "mean": 28.4619,
+        "lo": 21.7549,
+        "hi": 36.348,
+        "ci95": 7.2965,
+        "se": 3.6837,
+        "reducer": "mean",
+        "n_windows": 67,
+        "n_episodes": 12,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap",
+        "n": 67,
+        "n_total": 203
+       },
+       "time_gap_min_s": {
+        "mean": 3.6618,
+        "lo": 2.9368,
+        "hi": 4.7689,
+        "ci95": 0.916,
+        "se": 0.4647,
+        "reducer": "mean",
+        "n_windows": 67,
+        "n_episodes": 12,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap",
+        "n": 67,
+        "n_total": 203
+       },
+       "min_ttc_s": {
+        "mean": 23.4522,
+        "lo": 18.3056,
+        "hi": 26.739,
+        "ci95": 4.2167,
+        "se": 2.154,
+        "reducer": "mean",
+        "n_windows": 67,
+        "n_episodes": 12,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap",
+        "n": 67,
+        "n_total": 203
+       }
+      },
+      "10-15": {
+       "speed_mps": [
+        10.0,
+        15.0
+       ],
+       "n_windows": 179,
+       "window_states": {
+        "LEAD": 12,
+        "NO_LABEL": 12,
+        "NO_LEAD": 155
+       },
+       "n_with_lead": 8,
+       "lead_rate": 0.0447,
+       "status": "UNPOWERED",
+       "reason": "8 lead-bearing windows < min_stratum_n 30; an episode-cluster bootstrap over this few is noise. Reported, not quoted."
+      },
+      "15+": {
+       "speed_mps": [
+        15.0,
+        null
+       ],
+       "n_windows": 270,
+       "window_states": {
+        "LEAD": 88,
+        "NO_LABEL": 29,
+        "NO_LEAD": 153
+       },
+       "n_with_lead": 88,
+       "lead_rate": 0.3259,
+       "status": "OK",
+       "headway_min_m": {
+        "mean": 43.1687,
+        "lo": 29.2417,
+        "hi": 60.5987,
+        "ci95": 15.6785,
+        "se": 8.2879,
+        "reducer": "mean",
+        "n_windows": 88,
+        "n_episodes": 6,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap",
+        "n": 88,
+        "n_total": 270
+       },
+       "time_gap_min_s": {
+        "mean": 1.7941,
+        "lo": 1.3151,
+        "hi": 2.3181,
+        "ci95": 0.5015,
+        "se": 0.2616,
+        "reducer": "mean",
+        "n_windows": 88,
+        "n_episodes": 6,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap",
+        "n": 88,
+        "n_total": 270
+       },
+       "min_ttc_s": {
+        "mean": 25.7772,
+        "lo": 17.9512,
+        "hi": 29.8179,
+        "ci95": 5.9334,
+        "se": 3.1587,
+        "reducer": "mean",
+        "n_windows": 88,
+        "n_episodes": 6,
+        "n_boot": 2000,
+        "estimator": "episode_cluster_bootstrap",
+        "n": 88,
+        "n_total": 270
+       }
+      }
+     },
+     "window_states_total": {
+      "LEAD": 270,
+      "NO_LABEL": 60,
+      "NO_LEAD": 551
+     }
+    },
+    "admitted_by": "D-LEAD-1 discrimination control, 2026-08-03 \u2014 GT vs hold-v0 CV, PASS on all three metrics, paired episode-cluster bootstrap, 14,027 windows / 1,431 clusters"
+   },
+   "n_windows": 881,
+   "tier": "T0"
+  },
+  "lateral": {
+   "heading_mae_deg": 0.8065,
+   "yaw_rate_mae_degps": 1.4525,
+   "curvature_mae_1pm": 0.003289,
+   "curvature_bias_1pm": 0.001348,
+   "cross_mae_m": 0.1152,
+   "cross_bias_m": -0.0057,
+   "cross_final_mae_m": 0.2742,
+   "n_steps_heading": 3353,
+   "n_steps_curvature": 2505,
+   "excluded_below_min_ds": 171,
+   "min_ds_m": 0.25,
+   "min_ds_mps": 0.5,
+   "dt_s": 0.5,
+   "dt_invariant": [
+    "heading_mae_deg",
+    "curvature_*",
+    "cross_*"
+   ],
+   "n_windows": 881,
+   "tier": "T0"
+  },
+  "tactical": {
+   "status": "OK",
+   "source": "trajectory-derived (four_families.tactical_from_trajectory)",
+   "n": 881,
+   "n_windows": 881,
+   "labeller": "tanitad.refs.refc_tactical.factor_from_kinematics \u2014 the programme's OWN canonical gate (v1 branch, kappa=None); no thresholds are defined in this module",
+   "lateral_decision": {
+    "status": "OK",
+    "n": 881,
+    "n_windows": 881,
+    "classes": [
+     "lane_keep",
+     "turn_left",
+     "turn_right"
+    ],
+    "_kappa_note": "accuracy on this corpus is dominated by the majority class; kappa is the agreement above chance and is the readable number",
+    "tier": "T0",
+    "per_class": {
+     "lane_keep": {
+      "n_true": 702,
+      "n_pred": 695,
+      "recall": 0.9758,
+      "precision": 0.9856
+     },
+     "turn_left": {
+      "n_true": 107,
+      "n_pred": 122,
+      "recall": 0.9907,
+      "precision": 0.8689
+     },
+     "turn_right": {
+      "n_true": 72,
+      "n_pred": 64,
+      "recall": 0.875,
+      "precision": 0.9844
+     }
+    },
+    "confusion_gt_rows_pred_cols": [
+     [
+      685,
+      16,
+      1
+     ],
+     [
+      1,
+      106,
+      0
+     ],
+     [
+      9,
+      0,
+      63
+     ]
+    ],
+    "class_order": [
+     "lane_keep",
+     "turn_left",
+     "turn_right"
+    ],
+    "never_predicted": [],
+    "accuracy": 0.9694,
+    "kappa": 0.9121,
+    "kappa_undefined_reason": null,
+    "ci": {
+     "accuracy": {
+      "mean": 0.9694,
+      "lo": 0.9523,
+      "hi": 0.9841,
+      "ci95": 0.0159,
+      "se": 0.0082,
+      "reducer": "_acc",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "kappa": {
+      "mean": 0.9121,
+      "lo": 0.8606,
+      "hi": 0.9497,
+      "ci95": 0.0446,
+      "se": 0.0227,
+      "reducer": "_kap",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     }
+    }
+   },
+   "longitudinal_decision": {
+    "status": "OK",
+    "n": 881,
+    "n_windows": 881,
+    "classes": [
+     "brake_stop",
+     "steady",
+     "accelerate"
+    ],
+    "_kappa_note": "accuracy on this corpus is dominated by the majority class; kappa is the agreement above chance and is the readable number",
+    "tier": "T0",
+    "per_class": {
+     "brake_stop": {
+      "n_true": 86,
+      "n_pred": 43,
+      "recall": 0.407,
+      "precision": 0.814
+     },
+     "steady": {
+      "n_true": 663,
+      "n_pred": 583,
+      "recall": 0.7179,
+      "precision": 0.8165
+     },
+     "accelerate": {
+      "n_true": 132,
+      "n_pred": 255,
+      "recall": 0.5606,
+      "precision": 0.2902
+     }
+    },
+    "confusion_gt_rows_pred_cols": [
+     [
+      35,
+      50,
+      1
+     ],
+     [
+      7,
+      476,
+      180
+     ],
+     [
+      1,
+      57,
+      74
+     ]
+    ],
+    "class_order": [
+     "brake_stop",
+     "steady",
+     "accelerate"
+    ],
+    "never_predicted": [],
+    "accuracy": 0.664,
+    "kappa": 0.2597,
+    "kappa_undefined_reason": null,
+    "ci": {
+     "accuracy": {
+      "mean": 0.664,
+      "lo": 0.5839,
+      "hi": 0.7423,
+      "ci95": 0.0792,
+      "se": 0.0405,
+      "reducer": "_acc",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "kappa": {
+      "mean": 0.2597,
+      "lo": 0.119,
+      "hi": 0.3953,
+      "ci95": 0.1382,
+      "se": 0.0708,
+      "reducer": "_kap",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     }
+    }
+   },
+   "maneuver_5way_collapsed": {
+    "status": "OK",
+    "n": 881,
+    "n_windows": 881,
+    "classes": [
+     "lane_keep",
+     "turn_left",
+     "turn_right",
+     "accelerate",
+     "brake_stop"
+    ],
+    "_kappa_note": "accuracy on this corpus is dominated by the majority class; kappa is the agreement above chance and is the readable number",
+    "tier": "T0",
+    "per_class": {
+     "lane_keep": {
+      "n_true": 555,
+      "n_pred": 481,
+      "recall": 0.7261,
+      "precision": 0.8378
+     },
+     "turn_left": {
+      "n_true": 107,
+      "n_pred": 122,
+      "recall": 0.9907,
+      "precision": 0.8689
+     },
+     "turn_right": {
+      "n_true": 72,
+      "n_pred": 64,
+      "recall": 0.875,
+      "precision": 0.9844
+     },
+     "accelerate": {
+      "n_true": 75,
+      "n_pred": 182,
+      "recall": 0.5733,
+      "precision": 0.2363
+     },
+     "brake_stop": {
+      "n_true": 72,
+      "n_pred": 32,
+      "recall": 0.3889,
+      "precision": 0.875
+     }
+    },
+    "confusion_gt_rows_pred_cols": [
+     [
+      403,
+      13,
+      0,
+      136,
+      3
+     ],
+     [
+      1,
+      106,
+      0,
+      0,
+      0
+     ],
+     [
+      6,
+      0,
+      63,
+      3,
+      0
+     ],
+     [
+      30,
+      1,
+      0,
+      43,
+      1
+     ],
+     [
+      41,
+      2,
+      1,
+      0,
+      28
+     ]
+    ],
+    "class_order": [
+     "lane_keep",
+     "turn_left",
+     "turn_right",
+     "accelerate",
+     "brake_stop"
+    ],
+    "never_predicted": [],
+    "accuracy": 0.7299,
+    "kappa": 0.5591,
+    "kappa_undefined_reason": null,
+    "ci": {
+     "accuracy": {
+      "mean": 0.7299,
+      "lo": 0.658,
+      "hi": 0.7989,
+      "ci95": 0.0705,
+      "se": 0.0363,
+      "reducer": "_acc",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "kappa": {
+      "mean": 0.5591,
+      "lo": 0.4392,
+      "hi": 0.6641,
+      "ci95": 0.1124,
+      "se": 0.058,
+      "reducer": "_kap",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     }
+    }
+   },
+   "goal_setting": {
+    "status": "OK",
+    "n": 881,
+    "n_windows": 881,
+    "goal_point_error_m": 0.9075,
+    "_goal_point_error_is": "the final-displacement error (FDE) at the tactical horizon \u2014 reported for continuity, NOT offered as a new metric",
+    "goal_bearing_mae_deg": 1.323,
+    "goal_bearing_bias_deg": 0.8092,
+    "n_bearing": 850,
+    "n_excluded_goal_below_0.5m": 31,
+    "goal_range_ratio": 1.0054,
+    "goal_long_bias_m": 0.3375,
+    "goal_lat_bias_m": -0.0134,
+    "sign_conventions": {
+     "goal_long_bias_m": "+ = commits FURTHER ahead than the human",
+     "goal_lat_bias_m": "+ = commits LEFT of the human",
+     "goal_range_ratio": "1.0 = correct reach; <1 under-commits"
+    },
+    "anchor_selection": {
+     "status": "UNAVAILABLE",
+     "reason": "this dump's arm commits to ONE path per window, so there is no candidate fan and no selection to score. Closing it needs a fan+selector surface (<arm>_fan_err / <arm>_sel_idx), which taniteval.selgap then scores. A WORK ITEM, not a pass.",
+     "n": 881
+    },
+    "tier": "T0",
+    "ci": {
+     "goal_point_error_m": {
+      "mean": 0.9075,
+      "lo": 0.7851,
+      "hi": 1.0306,
+      "ci95": 0.1227,
+      "se": 0.0625,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "goal_long_bias_m": {
+      "mean": 0.3375,
+      "lo": 0.1286,
+      "hi": 0.532,
+      "ci95": 0.2017,
+      "se": 0.104,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "goal_lat_bias_m": {
+      "mean": -0.0134,
+      "lo": -0.0946,
+      "hi": 0.0659,
+      "ci95": 0.0803,
+      "se": 0.0412,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "goal_bearing_mae_deg": {
+      "mean": 1.323,
+      "lo": 0.6016,
+      "hi": 2.3447,
+      "ci95": 0.8715,
+      "se": 0.4699,
+      "reducer": "mean",
+      "n_windows": 850,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     }
+    }
+   },
+   "kinematics_provenance": {
+    "pred": {
+     "n_windows": 881,
+     "n_heading_held_from_last_moving_step": 5,
+     "n_never_moved": 30,
+     "min_ds_m": 0.25,
+     "dt_s": 0.5,
+     "caveats": [
+      "dyaw is the PATH TANGENT at the horizon, not the vehicle yaw",
+      "v0/v1 are one-step CHORD speeds, not the recorded poses[:,3]",
+      "heading is HELD at the last moving step when the window ends stationary \u2014 dropping those windows would delete brake_stop from the denominator"
+     ]
+    },
+    "gt": {
+     "n_windows": 881,
+     "n_heading_held_from_last_moving_step": 7,
+     "n_never_moved": 30,
+     "min_ds_m": 0.25,
+     "dt_s": 0.5,
+     "caveats": [
+      "dyaw is the PATH TANGENT at the horizon, not the vehicle yaw",
+      "v0/v1 are one-step CHORD speeds, not the recorded poses[:,3]",
+      "heading is HELD at the last moving step when the window ends stationary \u2014 dropping those windows would delete brake_stop from the denominator"
+     ]
+    }
+   },
+   "_factored_before_collapsed": "\u2b50 Read LAT and LON first. CLAUDE.md names the 5-way softmax that MIXES lateral and longitudinal decisions as the programme's single largest known architectural defect; the collapsed row cannot show it, and a turn absorbs the longitudinal decision entirely (refc_tactical.COLLAPSE_TABLE).",
+   "_is_not": "\u26d4 NOT 'selected vs executed'. Both label streams are EXECUTED manoeuvres \u2014 the arm's own and the human's. Scoring a DECLARED decision against the driven path needs a tactical head (hierarchy.run's maneuver_vs_trajectory kappa) and stays unavailable on a trajectory dump.",
+   "_estimator": "full_set point estimate; episode-cluster bootstrap intervals (taniteval.ci). \u26d4 overlapping_holdout_se is NOT used \u2014 it biases the POINT ESTIMATE.",
+   "tier": "T0",
+   "\u26d4_tier_warning": "TIER T0 \u2014 this path is TEACHER-FORCED by the RECORDED actions, so a trajectory-derived manoeuvre is substantially an ECHO of the label's own source (\u00a71.12: open-loop lateral skill was an action echo, 97.9 % open-loop vs ~5 % closed-loop). Read this block as a WM diagnostic ONLY. The tactical capability claim requires T1."
+  },
+  "strategic": {
+   "status": "UNAVAILABLE",
+   "n": 881,
+   "n_windows_it_would_have_had": 881,
+   "reason": "PhysicalAI-AV carries NO map, NO lane graph, NO junction/roundabout label, NO traffic-light feature and NO route/goal signal \u2014 the dataset card says verbatim 'we do not include open maps data', and obstacle.offline's enum over 87,481 cuboids is 10 classes, ALL DYNAMIC AGENTS. `egomotion` carries no lat/lon/GNSS either (clip-local metres), so OSM map-matching on our traces is impossible. \u21d2 there is no admissible strategic LABEL on this split, and therefore no strategic decision or route/goal quality to score. \u26d4 The two label sources that DO exist are both inadmissible, for stated reasons and not for want of effort: (a) a route class read off the ego's OWN FUTURE yaw cannot tell whether the map admitted a choice at all \u2014 that is how the closed-loop harness once published route_head_eq_logged = 1.0000 on a clip where every junction had exactly ONE continuation, and GATE_PROTOCOL \u00a70.7 declares nonav_route_beats_majority VOID BY CONSTRUCTION; (b) a supplied route is optimistic by construction here because our only route supplier is the ego's own future path.",
+   "instrument_that_would_close_it": "the VLM strategic-labelling pipeline PH0 -> PH1 -> PH2 (`\u2026/incoming/2026-08-07-hierarchical-wm-redesign/VLM_STRATEGIC_LABELING.md`, pre-registered in PREREG_PH0_VLM.md; PH2 is the g_str supervision stream, V6_TRAINING_MEASURES.md S2). It derives strategic goals from hindsight geometry + signage evidence with an honest abstain, which is the only route to a strategic label that does not read the ego's own future. V6_TRAINER_DESIGN.md:519 already states the consequence: until it lands the STRATEGIC family is n/a WITH ITS REASON AND n.",
+   "_is_a_work_item": "\u26d4 A family reported UNAVAILABLE is a WORK ITEM, not a pass. This one is blocked on a CORPUS fact, not on eval engineering \u2014 no rescore of these windows can produce it.",
+   "_settled": "CLAUDE.md operating standard rule 2 \u2014 settled at five independent probes. Do not re-ask; the strategic topology must come from AlpaSim or an external corpus.",
+   "tier": "T0"
+  },
+  "_grid": {
+   "used": "dense",
+   "dt_s": 0.5,
+   "horizon_steps": 4,
+   "provenance": "DENSE path ((881, 4, 2)) at dt_s 0.5 \u2014 the grid the derivatives are defined on",
+   "\u26d4_history": "BEFORE 2026-08-03 this module hard-coded dt=0.1 s while reading the SPARSE 4-waypoint view (0.5 s spacing), so EVERY published speed_* was x5, EVERY accel_* x25 and EVERY yaw_rate_* x5. Positions, heading and curvature were unaffected. Cross-arm comparisons stay valid (common factor); ABSOLUTE quotations and any comparison to a physical bar do not. MEASURED negative control: GT ego speed 12.4565 m/s vs _seq_geometry 62.9789 m/s = 5.0559x, on 859 real held-out windows."
+  },
+  "_binding_rule": "Sayed 2026-08-02: every eval reports LONGITUDINAL + LATERAL + TACTICAL + STRATEGIC in ADDITION to ADE. Per-family, never pooled. A family reported UNAVAILABLE is a WORK ITEM, not a pass.",
+  "_families_unavailable": [
+   "strategic"
+  ],
+  "_complete": false,
+  "_rule_satisfied": true,
+  "_rule_satisfied_note": "clause 5: a family that genuinely cannot be computed satisfies the rule by stating its REASON and its n. `_complete` is the stricter question \u2014 whether all four carry numbers \u2014 and stays False while STRATEGIC is n/a.",
+  "_tier": "T0"
+ },
+ "intervals": {
+  "tier": "T0",
+  "estimator": "episode_cluster_bootstrap",
+  "n_windows": 881,
+  "point_estimate": "full_set pooled mean over windows",
+  "metrics": {
+   "ade_dense_m": {
+    "mean": 0.4271,
+    "lo": 0.3675,
+    "hi": 0.4871,
+    "ci95": 0.0598,
+    "se": 0.0305,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "tier": "T0"
+   },
+   "fde_last_m": {
+    "mean": 0.9075,
+    "lo": 0.7851,
+    "hi": 1.0306,
+    "ci95": 0.1227,
+    "se": 0.0625,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "tier": "T0"
+   },
+   "LON_speed_mae_mps": {
+    "mean": 0.471,
+    "lo": 0.4156,
+    "hi": 0.5276,
+    "ci95": 0.056,
+    "se": 0.0286,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "tier": "T0"
+   },
+   "LON_along_mae_m": {
+    "mean": 0.3936,
+    "lo": 0.3382,
+    "hi": 0.4503,
+    "ci95": 0.056,
+    "se": 0.0283,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "tier": "T0"
+   },
+   "LAT_cross_mae_m": {
+    "mean": 0.1152,
+    "lo": 0.0936,
+    "hi": 0.139,
+    "ci95": 0.0227,
+    "se": 0.0119,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "tier": "T0"
+   },
+   "TAC_goal_point_error_m": {
+    "mean": 0.9075,
+    "lo": 0.7851,
+    "hi": 1.0306,
+    "ci95": 0.1227,
+    "se": 0.0625,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "tier": "T0"
+   },
+   "TAC_lat_decision_correct": {
+    "mean": 0.9694,
+    "lo": 0.9523,
+    "hi": 0.9841,
+    "ci95": 0.0159,
+    "se": 0.0082,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "tier": "T0"
+   },
+   "TAC_lon_decision_correct": {
+    "mean": 0.664,
+    "lo": 0.5839,
+    "hi": 0.7423,
+    "ci95": 0.0792,
+    "se": 0.0405,
+    "reducer": "mean",
+    "n_windows": 881,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "tier": "T0"
+   },
+   "LAT_heading_mae_deg": {
+    "mean": 0.9692,
+    "lo": 0.636,
+    "hi": 1.4862,
+    "ci95": 0.4251,
+    "se": 0.2267,
+    "reducer": "mean",
+    "n_windows": 848,
+    "n_episodes": 40,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n_windows_dropped_no_valid_step": 33,
+    "tier": "T0"
+   }
+  }
+ },
+ "_estimator": "point estimates are FULL_SET pooled means; intervals are the episode-cluster bootstrap (taniteval.ci). \u26d4 overlapping_holdout_se is NOT used anywhere: it biases the POINT ESTIMATE, not only the interval (MEASURED \u22126.67 % to +11.69 % on headline ade_0_2s across 27 arms, bidirectional; up to \u00d7\u22124.15 with a SIGN FLIP on paired deltas).",
+ "_tier_doctrine": "EVAL_DOCTRINE.md \u2014 T1 (action-closed) is the PRIMARY tier for any capability claim; T0 (teacher-forced) is a WM diagnostic and is \u26d4 NEVER quotable as driving performance. Comparisons across tiers are invalid.",
+ "_binding": "Sayed 2026-08-02 \u2014 LONGITUDINAL + LATERAL + TACTICAL + STRATEGIC in ADDITION to ADE, per-family, never pooled. A family reported UNAVAILABLE is a WORK ITEM, not a pass; one that genuinely cannot be computed states its REASON and its n.",
+ "source": "taniteval/results/windows_flagship-30k.pt",
+ "dump_kind": "rollout_windows_sparse",
+ "dt_provenance": "derived from wp_steps [5, 10, 15, 20] x dt_s 0.1 -> 0.5s grid",
+ "grid_fingerprint": {
+  "n_windows": 881,
+  "horizon_steps": 4,
+  "dt_s": 0.5,
+  "wp_steps": [
+   5,
+   10,
+   15,
+   20
+  ],
+  "n_episodes": 40,
+  "eid_sha1": "6b5b086136e7fdef",
+  "gt_sha1": "16d4588e72ccbe21"
+ },
+ "lead_block": "TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-08-04-distance-keeping-arms/raw/val40_lead_block.npz"
+}

@@ -46,6 +46,7 @@ from __future__ import annotations
 
 import sys
 
+import numpy as np
 import torch
 
 # ⛔ was: sys.path.insert(0, "/root/TanitAD/stack"[/scripts]) — that put a
@@ -97,10 +98,30 @@ def append_ego(aw, fa, poses, last, speed_input, yaw_input, dyn_input, device):
     return aw, fa
 
 
+def _man_gt(poses, last, horizon: int = None):
+    """GT manoeuvre class for each window, from the ego's OWN FUTURE poses.
+
+    ⚠️ LABELS MAY USE EGO; INFERENCE IS VISION-ONLY (binding, 2026-08-03). This
+    is a LABEL, computed offline from future kinematics, so privileged signals
+    are fine here — the guard applies to what the model is FED, not to how the
+    target is derived. It re-uses ``refb_labels.classify_maneuver`` rather than
+    re-deriving the rule, so the eval label and the training label cannot drift.
+
+    ``poses`` [T, 4] (x, y, yaw, v) · ``last`` [B] index of each window's final
+    frame. The label compares frame ``last`` with ``last + horizon``; windows
+    whose future is short are clamped to the last available frame, which is the
+    same degradation ``maneuver_labels`` applies at the tail of an episode.
+    """
+    h = int(getattr(rl, "LABEL_HORIZON", 20) if horizon is None else horizon)
+    t1 = torch.clamp(last + h, max=poses.shape[0] - 1)
+    p0, p1 = poses[last], poses[t1]
+    return rl.classify_maneuver(p0[:, 2], p1[:, 2], p0[:, 3], p1[:, 3]).cpu()
+
+
 @torch.no_grad()
 def collect(model, step_readout, episodes, device, window=8, fwd_k=K_MAX,
             stride=8, batch=8, speed_input=False, yaw_input=False,
-            dyn_input=False):
+            dyn_input=False, decision_fn=None):
     """Predict WP_STEPS waypoints for every window of every episode.
 
     Returns dict of tensors: pred/gt/cv [N, 4, 2] + eid/speed/head_deg [N],
@@ -123,6 +144,7 @@ def collect(model, step_readout, episodes, device, window=8, fwd_k=K_MAX,
     from taniteval import hierarchy_guard as _hg
     _trace = _hg.HierarchyTrace(model)
     S_wp, GT, CV, CT, EID, SPD, HDG = [], [], [], [], [], [], []
+    MAN_P, MAN_G, RTE_P = [], [], []       # decision capture (optional)
     S_dense, GT_dense = [], []
     dense_steps = tuple(range(1, fwd_k + 1))     # every 0.1 s tick, 1..fwd_k
     wp_idx = torch.tensor([k - 1 for k in WP_STEPS])
@@ -170,6 +192,29 @@ def collect(model, step_readout, episodes, device, window=8, fwd_k=K_MAX,
                 EID.extend([ep.episode_id] * len(ch))
                 SPD.append(ep.poses[last, 3])
                 HDG.append(net_heading_change_deg(ep.poses, last))
+                # --- TACTICAL/STRATEGIC decision capture (optional) --------- #
+                # ⛔ THE FOUR-FAMILY HOLE THIS CLOSES. `four_families.tactical`
+                # /`strategic` return status UNAVAILABLE unless the window dict
+                # carries the model's DECODED DECISIONS, and this rollout is a
+                # world-model FIDELITY pass that never traverses the decision
+                # heads — so an eval built on it comes back TWO FAMILIES SHORT
+                # and is inadmissible under the binding rule.
+                # `decision_fn` is the seam: a loader that can expose its
+                # maneuver/route heads supplies one, everything else is
+                # unchanged and still reports UNAVAILABLE *with its reason*.
+                if decision_fn is not None:
+                    dec = decision_fn(fw, aw, ep, last) or {}
+                    if "maneuver_pred" in dec:
+                        MAN_P.append(torch.as_tensor(
+                            dec["maneuver_pred"]).reshape(-1).cpu())
+                    if "route_pred" in dec:
+                        RTE_P.append(torch.as_tensor(
+                            dec["route_pred"]).reshape(-1).cpu())
+                    # GT from the ego's own future kinematics — a pure function
+                    # of the trajectory (labels MAY use ego; only INFERENCE is
+                    # vision-only), computed here so pred and label are on
+                    # EXACTLY the same windows and cannot drift apart.
+                    MAN_G.append(_man_gt(ep.poses, last))
     # PC2 record. NON-strict: this block is a legitimate WM-fidelity diagnostic
     # and must stay runnable — what it may not do is be quoted as a hierarchy
     # (or a driving) number. `pc2_pass` will be False here BY CONSTRUCTION.
@@ -192,7 +237,13 @@ def collect(model, step_readout, episodes, device, window=8, fwd_k=K_MAX,
             # --- dense 10 Hz path (tier-1 behavioural metrics) -------------- #
             "pred_dense": torch.cat(S_dense).float(),
             "gt_dense": torch.cat(GT_dense).float(),
-            "dense_steps": list(dense_steps), "dt_s": DT}
+            "dense_steps": list(dense_steps), "dt_s": DT,
+            # TACTICAL/STRATEGIC: present ONLY when a decision_fn was supplied.
+            # Absent keys make four_families report UNAVAILABLE *with a reason*,
+            # which is the contract — never a silent omission.
+            **({"maneuver_pred": torch.cat(MAN_P)} if MAN_P else {}),
+            **({"maneuver_gt": torch.cat(MAN_G)} if MAN_G else {}),
+            **({"route_pred": torch.cat(RTE_P)} if RTE_P else {})}
 
 
 def dense_speed_profile(path_dense, dt: float = DT):
@@ -216,13 +267,97 @@ def dense_speed_profile(path_dense, dt: float = DT):
     return torch.linalg.norm(d, dim=-1) / dt
 
 
+# --- eid normalisation ------------------------------------------------- #
+# THE DEFECT. `collect` stores `ep.episode_id` verbatim. Most episode builders
+# hand it the val-list INDEX (0..39), but three arms were evaluated through a
+# builder that hands it the true PhysicalAI episode id as a 4-char hex STRING
+# ('0002', '0084', ...), and that string reached the dump reinterpreted as a
+# big-endian ASCII byte-packing: `windows_flagship-v4.1-10k.pt`,
+# `-v4.2-step4000.pt` and `-v16-ab-ft.pt` carry `eid` 808464434 (== b'0002')
+# where every other dump carries 0. Any cross-arm join keyed on `eid`
+# therefore mis-joins exactly those three, silently — they do not error, they
+# match nothing.
+#
+# MEASURED here 2026-08-04 over all 27 committed dumps (3 affected, 24 clean):
+# each affected dump's `gt` is BIT-IDENTICAL to the canonical
+# `windows_flagship-30k.pt` (max |Δ| = 0.0), so row i is the same window in
+# both; the packed ids form a clean 40-way bijection with the canonical ids;
+# and first-appearance rank reproduces the canonical 0..39 EXACTLY on all
+# three. That is what licenses the repair below — it is a proven relabelling,
+# not an inferred one.
+_ASCII = frozenset(range(0x20, 0x7F))
+
+
+def _unpack_ascii(v: int) -> str | None:
+    """Decode ONE big-endian ASCII byte-packing, or None if it is not one.
+
+    The guard is deliberately narrow. A genuine episode index is small, so
+    anything below 2**24 is left alone unconditionally — this can never touch
+    a real 0..39 id, and a dump whose ids are a non-contiguous integer SUBSET
+    (say {0, 5, 9}) keeps them, because rank-remapping those would invent a
+    new join key rather than repair one.
+    """
+    if not isinstance(v, (int, np.integer)) or int(v) < (1 << 24):
+        return None
+    b = int(v).to_bytes(8, "big").lstrip(b"\x00")
+    if not b or any(c not in _ASCII for c in b):
+        return None
+    return b.decode("ascii")
+
+
+def normalise_eid(eid):
+    """Canonicalise a dump's ``eid`` to the join key the programme uses.
+
+    Returns ``(eid_canonical, eid_raw)``. ``eid_raw`` is None when nothing was
+    changed — which is the case for every clean dump, so this is the identity
+    on 24 of the 27 committed fixtures and cannot perturb a banked number.
+
+    When the ids ARE a packed-ASCII run, the canonical id becomes the episode's
+    index in FIRST-APPEARANCE order (``collect`` iterates episodes in val-list
+    order, so that index is the val-list index by construction) and the decoded
+    true ids are preserved in ``eid_raw`` — the provenance is normalised, not
+    discarded.
+    """
+    vals = list(np.asarray(eid).tolist())
+    if not vals:
+        return eid, None
+    decoded = [_unpack_ascii(v) for v in vals]
+    if any(d is None for d in decoded):
+        return eid, None                      # not a packed run — leave it be
+    order: dict[str, int] = {}
+    for d in decoded:
+        order.setdefault(d, len(order))
+    return [order[d] for d in decoded], decoded
+
+
 def save_windows(data, path):
-    """Persist a collect() window dict (dense keys included when present)."""
-    torch.save({k: v for k, v in data.items()}, path)
+    """Persist a collect() window dict (dense keys included when present).
+
+    ``eid`` is canonicalised on the way out (see :func:`normalise_eid`) so the
+    packed-ASCII defect cannot be written again. This is the identity for a
+    dump whose ids are already episode indices.
+    """
+    out = {k: v for k, v in data.items()}
+    if "eid" in out:
+        canon, raw = normalise_eid(out["eid"])
+        if raw is not None:
+            out["eid"], out["eid_raw"] = canon, raw
+    torch.save(out, path)
 
 
 def load_windows(path):
     """Load a window dump. Dumps written before 2026-07-25, and those from
     ``refb_eval`` / ``refc_eval``, carry NO dense keys — read them with
-    ``win.get("pred_dense")`` and degrade, never assume."""
-    return torch.load(path, map_location="cpu", weights_only=False)
+    ``win.get("pred_dense")`` and degrade, never assume.
+
+    The three packed-``eid`` dumps are ALSO repaired here, not only at write
+    time: they are already committed, they cannot be regenerated without the
+    checkpoints, and a write-time-only fix would leave every existing join
+    against them wrong. ``eid_raw`` carries the decoded true ids.
+    """
+    win = torch.load(path, map_location="cpu", weights_only=False)
+    if isinstance(win, dict) and "eid" in win and "eid_raw" not in win:
+        canon, raw = normalise_eid(win["eid"])
+        if raw is not None:
+            win["eid"], win["eid_raw"] = canon, raw
+    return win

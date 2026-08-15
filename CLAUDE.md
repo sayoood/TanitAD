@@ -59,6 +59,17 @@ Every subagent brief MUST carry the preamble in
 
 ## Traps preflight (each of these has cost hours more than once)
 
+- ⛔ **A POLLING MONITOR WHOSE FILTER CONTAINS THE PATTERN IT SEARCHES FOR WILL MATCH ITS OWN
+  ECHOED COMMAND — and report a failure that never happened.** MEASURED THREE TIMES this session,
+  most recently 2026-08-12: a monitor grepping a pod log for `"Traceback|CUDA out of memory"` fired
+  `W7PROG: Traceback CUDA out of memory` while the run was **healthy and 3 minutes in** (8 930 MiB
+  GPU, progressing) — the interactive PTY **echoes the command line back**, so the literal pattern
+  text appears in the output stream and the client-side filter matches it. This is the same family
+  as the `pgrep -f` trap below, in a monitoring costume, and it is worse because it invents a
+  **false failure** rather than a false absence. ⇒ **Make the emitted token disjoint from the
+  searched token**: compute counts pod-side and emit an opaque marker
+  (`echo "ZZ${done}-${errs}-${arms}ZZ"`), then parse `ZZ…ZZ` client-side. Never grep the raw
+  stream for the same words your command contains.
 - **`pgrep -f <trainer>` / `pkill -f <trainer>` self-matches your own ssh command** and kills your
   session — returns empty output and looks like nothing happened. Kill by **explicit PID**.
 - **`PYTHONPATH=/workspace/TanitAD/stack` is REQUIRED** on pods or trainers die with
@@ -76,6 +87,13 @@ Every subagent brief MUST carry the preamble in
      (⛔ never copy a private key — that is correctly classifier-blocked, and you never need to);
   3. connect to the source's **direct** mapping — `$RUNPOD_PUBLIC_IP:$RUNPOD_TCP_PORT_22`, read
      from the source's own env.
+  ⚠️ **The env-advertised direct mapping can be DEAD while the pod is healthy.** MEASURED
+  2026-08-11: BOTH pod4 and pod5 refuse connections on their own `$RUNPOD_PUBLIC_IP:
+  $RUNPOD_TCP_PORT_22` (Connection refused; sshd up and listening on :22; both directions
+  tried) — stale mappings after migrations/restarts, and no `.runpod.internal` DNS on this
+  account. ⇒ **Probe with `ssh -n ... 'echo OK'` BEFORE building a transfer on the direct
+  path, and fall back to the HF relay (shard tar + MANIFEST-last protocol, ~118 MB/s) when
+  it refuses.** The C56 42 MB/s measurement was on a different pod pair.
   ⚠️ **Use the DIRECT port, not the `ssh.runpod.io` proxy.** The proxy genuinely cannot move files
   (sftp → `subsystem request failed on channel 0`; `scp -O` → exit 2); it serves an interactive
   shell only. *That* is the true limitation the old rule had generalised into "pods cannot SSH".
@@ -95,6 +113,15 @@ Every subagent brief MUST carry the preamble in
   **fresh inode from Bash** did. ⛔ **`git add` exit codes are not evidence. Verify with
   `git ls-files --cached <path>`** — and note the sibling rule that `git status --short` scoped to a
   path can also mislead, so `git ls-files --stage` is the check for what is really in the index.
+- ⛔ **PODS HAVE NO GIT CREDENTIALS — `git fetch` on a pod HANGS (not fails), and the checkout's
+  HEAD is ancient.** MEASURED 2026-08-11: pod5 HEAD sat at `6d714ad` (weeks old) while its working
+  tree was fully current — every pod-side script this campaign arrived by md5-verified FILE-SHIP,
+  never by git. A chain step doing `git fetch && git checkout -B <branch> origin/<branch>` on a pod
+  therefore (a) hangs on the fetch, and (b) if the fetch fails but the checkout runs, RESETS the
+  tree to the ancient commit, destroying the shipped files. ⇒ **Never put git sync in a pod chain.
+  Ship files (xz+b64 PTY push, per-file md5) or the HF stack-tar relay, and grep-verify the
+  specific fix is present before any launch.** (The verify-gates caught this: three chains
+  refused to run stale code rather than running it.)
 - **A pod's `stack/` checkout drifts silently and a launch from it resurrects fixed bugs.** MEASURED
   2026-07-27: pod2 sat at `0f93b98` while the v5 gate fix was at HEAD — **a v5 launch from that pod
   would have restored the crash the fix removed.** ⇒ **syncing the pod and verifying with a real
@@ -126,11 +153,58 @@ Every subagent brief MUST carry the preamble in
   change a supervised run: edit the manifest → kill the SUPERVISOR first → kill the trainer →
   start a fresh supervisor.** Killing the trainer first just makes the supervisor restore the stale
   command. **Verify by grepping the flags out of the RUNNING process**, never by reading the manifest.
+- ⚠️ **A supervisor whose run never wrote its DONE-MARKER will RESURRECT the finished run the
+  moment whatever made its relaunches crash gets fixed.** MEASURED 2026-08-11: the v5f run finished
+  2026-08-09 but `summary.json` was never written; its supervisor kept relaunching for 2 days, each
+  attempt insta-crashing on the `kin_weights` NameError — until the fix was synced to the pod, at
+  which point a relaunch SUCCEEDED, resumed from a stale `ckpt.pt`, and started overwriting
+  `config.json`/`metrics.json`/`ckpt.pt` in the canonical run directory while burning GPU next to a
+  live eval. ⇒ **When a supervised run completes, write the done-marker (`summary.json` with
+  `"done": true`) in the SAME turn** — it is also the correct remote off-switch: writing it made the
+  supervisor exit cleanly ~20 min later with no kill needed. Backups live in
+  `/workspace/experiments/v5f-30k-SAFE/` (md5-verified `ckpt_30k_final.pt`). A silent-crashing fix
+  landing IS the trigger, so audit `ps` for supervisors after shipping any trainer fix.
 - ⚠️ **Restarting a supervisor immediately after killing the old one RACES ITS `flock`** — the new
   one prints *"another supervisor holds …lock — exiting"* and dies, leaving **nothing running** while
   the log looks like a normal startup. Wait until the old supervisor **and** trainer are actually
   gone (poll `ps`), then start. If a lock is left behind with no holder (scan `/proc/*/fd`), it is
   debris — `rm` it. Same shape as the stale `.git/index.lock` rule below.
+- ⛔ **`uv pip install <anything>` CAN SILENTLY REPLACE TORCH WITH A WHEEL THE DRIVER CANNOT RUN.**
+  MEASURED TWICE on pod4 2026-08-11/12: `uv pip install -U accelerate` and then, 20 minutes later,
+  `uv pip install "compressed-tensors>=0.15.0"` each resolved **torch from the default PyPI index**
+  and landed **torch 2.13.0+cu130** on a **CUDA-12.8 driver (570.195.03)**. Result:
+  `torch.cuda.is_available()` **False**, and every GPU job on the pod dies. Neither command names
+  torch — it arrives through the dependency closure (`accelerate`, `compressed-tensors` both
+  require it). ⇒ **Install torch-dependent packages with `--no-deps`, and (re)install torch from
+  the pinned index LAST so nothing can drag it forward again**:
+  `uv pip install --python $PY --index-url https://download.pytorch.org/whl/cu128 "torch==2.8.0"
+  "torchvision==0.23.0"`. **Verify with a real `conv2d` on CUDA, not with `import torch`** —
+  cuBLAS/matmul can succeed while cuDNN/conv is broken.
+- ⚠️ **`CUDNN_STATUS_NOT_INITIALIZED` on a healthy pod usually means CUDA NEVER INITIALISED —
+  it is NOT evidence of a cuDNN version conflict.** MEASURED 2026-08-12: I read that error as
+  `nvidia-cudnn-cu13` shadowing `-cu12`, purged the cu13 wheels, and **removed the cuDNN torch
+  actually needed** (`ImportError: libcudnn.so.9`) — turning a one-command fix into three rounds.
+  The real cause was the cu130 torch above. ⇒ **Fix the torch/driver pair first and purge nothing;**
+  if a reinstall is needed use `--reinstall` from the pinned index, which restores the whole
+  `nvidia-*-cu12` set. *(Same class as the `df` / Thor `free` / cgroup `usage_in_bytes` traps: a
+  symptom read as its own root cause.)*
+- ⛔ **AN ANALYSIS-TIME IMPORT THAT FAILS AFTER THE ROLLOUT DESTROYS THE RUN'S OUTPUT WHILE THE
+  COMPUTE IS ALREADY PAID FOR.** MEASURED 2026-08-11: `t1_eval.py` rolled **both arms, all 40
+  episodes, 6 844 windows each (~11 min/arm)** and then died in `analyze()` on
+  `from taniteval import selgap` — pod5's package predates the module. `T1_EXIT=NO_ARMS_PRODUCED`
+  reads like a total failure; it was a **100 %-complete run with a missing last step**. Same class
+  as the `UnicycleStepReadout` failure earlier the same night. ⇒ **Check for `--analyze-only` (or
+  the dump dir) BEFORE re-running anything** — re-analysing the banked dumps recovered every number
+  with **zero GPU**. The durable fix is a **preflight import probe at startup**, so a missing
+  optional module fails in 2 seconds instead of after the expensive part.
+- ⚠️ **THE GOTTY PTY DROPS OUTPUT IN A SYSTEMATIC PATTERN, AND A PLAIN `base64` PULL GOES SILENTLY
+  CORRUPT.** MEASURED 2026-08-12 pulling a 24 KB JSON: **5 of every 14 lines dropped** (lines
+  11–15, 25–29, 39–43, 53–57 of 62) — the blob still looks like base64 and fails only at
+  `binascii` with a padding error, i.e. it can also decode to *garbage* rather than erroring.
+  Widening to `-w 200` made it worse, not better. ⇒ **Frame every line with its number
+  (`awk '{printf "@%04d@%s#\n", NR, $0}'`), emit the expected line count, then refetch exactly the
+  missing/short lines with `awk 'NR==n'` and reassemble.** Verify the reassembled bytes by md5 or
+  by parsing the JSON — never by eye.
 - **Verify before alarming.** Check the metric's definition and take multiple samples first;
   several "outages" were measurement artifacts.
 
@@ -376,6 +450,16 @@ fewer than five live streams and unexhausted backlog is not finished.
 *(Root cause: the orchestrator repeatedly ran ONE agent and then reported. Sequential delegation is
 still sequential. The programme's throughput is set by how many independent questions are being
 answered at once, not by how carefully one is.)*
+
+## ⛔ BINDING — EVERY NUMBER CARRIES ITS EVAL TIER (EVAL_DOCTRINE.md, 2026-08-06)
+
+**T0** (teacher-forced / true-future-conditioned) is a **WM diagnostic — NEVER "driving
+performance"**. **T1** (action-closed loop: the model conditioned on its OWN actions) is the
+**PRIMARY tier for any capability claim**. **T2** (re-perception sim) is not provisioned.
+*Why this exists (MEASURED, §1.12): open-loop lateral skill was an ACTION ECHO — S-curve
+reproduction 97.9 % open-loop, 0.0 % hold-action, ~5 % closed-loop.* A registry row or report
+quoting a number without its tier stamp is incomplete; comparisons across tiers are invalid.
+Instrument: `taniteval/tools/t1_eval.py` (E1.2).
 
 ## ⛔ BINDING — EVERY EVAL REPORTS FOUR METRIC FAMILIES, NOT ADE (Sayed, 2026-08-02)
 

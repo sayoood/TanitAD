@@ -57,3 +57,51 @@ Strike items through when done, with the commit.
 | D3 | **H26 hierarchical cross-alignment proof** (task #15, core goal) |
 | D4 | **Own dataset / lake v0** — ingest at scale + HF push (task #5) |
 | D5 | **flagship-v2 10k gate** mechanism diagnostic (task #28) |
+
+---
+
+## E. 2026-08-11 NIGHT — the live pull-list (supersedes A/B where they conflict)
+
+**Running (do not duplicate):** pod4 p8c4 BEV → W7-FULL → belief reel → PH0 smoke → PH0
+mini-pilot+videos · pod5 H-COTRAIN milestones → T1 rows → four-families.
+
+| # | item | GPU? | unblocks on |
+|---|---|---|---|
+| E1 | **Four-families rescore on the banked v5.8f windows** → completes registry §1.14 | 0-GPU (banked windows) | nothing — runnable the moment T1 lands |
+| E2 | **HF release of the v5.8f artifact set** (ckpts, gates, windows, figures) | 0-GPU | the release row existing |
+| E3 | **W5 / E-H1 6 s baseline for v5.8f** — REQUIRED precursor now that 6 s is the v6 spec | 1 GPU | pod5 after T1 |
+| E4 | **I4b** — imagination ablation stratified by the P4/P8 occluded split | 1 GPU | p8c gate + the banked I4a arms |
+| E5 | **LF0** — probe PRE-POOL spatial tokens + BEV lead read-off (routing vs learning) | ~0.5 GPU-h | p8c head existing |
+| E6 | **PERCEPTION-AGENTS head** (slot decoder on frozen latents: bbox+state+class) | ~1 GPU-day | prereg + v6 GO |
+| E7 | **Alpamayo meta-action → vocabulary mapping table + coverage measurement** | 0-GPU | records.parquet (present on pod4) |
+| E8 | **E-ENC arm prereg** (shared encoder + adapters vs per-layer) incl. B5's frozen V-JEPA-2 control | 0-GPU to write | v6 GO |
+| E9 | **Spectrum finding follow-up**: participation ratio ≈ 4.5 of 2048 dims at 5k (top-8 = 99 % of variance) — is this SIGReg working as designed or an anisotropy finding? | 0-GPU analysis | the full H-COTRAIN curve |
+| E10 | **Registry hygiene**: give the Alpamayo augmentation counts their own registry row (the paper carries them INHERITED) | 0-GPU | nothing |
+
+---
+
+## F — 2026-08-12 v6 launch pull-list
+
+**Why this section exists:** S-W is **GO on code** and blocked only on two PI decisions (D1 cost,
+D2 pod) — `…/incoming/2026-08-07-hierarchical-wm-redesign/PI_DECISIONS_2026-08-12.md`. Per
+`CLAUDE.md`, *a blocked PI decision blocks ONE item, not the programme*: **every item below is
+0-GPU and executable while the PI sleeps and while S-W trains.**
+
+**Collision rule:** each item names its **owner-file(s)**. Two agents must not hold the same
+owner-file. Items with different owner-files are independent streams and may run concurrently.
+
+| # | item | size | GPU? | owner-file(s) — do not overlap | unblocks on | why it matters |
+|---|---|---|---|---|---|---|
+| **F1** | ⭐ **S-S gate amendment (D6)** — promote `S1_ade_8_30s` from `reported` to `required` for the PH2-pending case, keeping STRATEGIC `n/a` **with its reason and its n**. Pre-register **before** S-S runs, never after seeing S1's number | ~1 h | **0-GPU** | `stack/scripts/train_v6_staged.py` (`STAGE_GATE_SPEC["S-S"]`) + `stack/tests/test_v6_staged.py` | nothing | **MEASURED:** S-S's only REQUIRED probe is `STRATEGIC_family` and its supervision (S2) is unwired until PH2 ⇒ the stage terminates at `pass: null` and **S-J refuses to launch**. Fixing it after S-S runs means an override instead of a gate |
+| **F2** | **S-W supervisor manifest** — write `runs.d/v6-SW-30k.env` with the §2.1 `TRAIN_CMD` verbatim, plus the R7/R8 discipline in the header (done-marker = off-switch; manifest sourced ONCE at supervisor startup) | ~1 h | **0-GPU** | `stack/ops/runs.d/v6-SW-30k.env` (new) | D2 (pod name) | a 7–12-day run left unattended without a supervisor is one crash from a lost GPU-week; and a manifest written *after* the supervisor boots changes nothing |
+| **F3** | ⭐ **Noise-robust selection rule prereg (R2)** — sweep top-m rules and the **`--w-prog`** anti-degeneracy term off the **already-banked** `w7_eval_windows.pt`. Pre-register the rule **before** S-T launches | ~3 h | **0-GPU** (banked windows) | `stack/scripts/w7_selection_rules.py` + a new `PREREG_SELECTION_RULE.md` in the incoming dir | nothing | **MEASURED:** the roll-cost argmin sits at error-rank **132.32 of 256** — the median (`w7_selection_rules.json`) — while top-m **ceilings do fall** (0.356 at m=32). `--w-prog` has been **weight 0.0 in every W7 run to date**. This is the one open risk with no built-in defence, and it is the S-T gate |
+| **F4** | **Correct the cost basis name in `V6_TRAINER_DESIGN §5`** — "v4.2" → **`flagship-v4-fromscratch`** (registry §1.5.5). `flagship-v4.2-30k` (§1.5.3) is a different arm, killed at ~step 5 k | ~10 min | **0-GPU** | `…/incoming/2026-08-07-hierarchical-wm-redesign/V6_TRAINER_DESIGN.md` | nothing | registry-vs-doc conflict; the registry wins and the doc gets fixed. The *estimate* is unaffected (same two MEASURED runs) — the *name* is what would propagate |
+| **F5** | **The 23 standing `pytest` failures** — `onnx` absent (1), a Windows-basename assert in `test_resim.py` (2), a suite-order polluter in `test_rig_clean_fix.py` (20, all pass in isolation) | ~2 h | **0-GPU** | `stack/tests/test_resim.py` + bisect for the `rig_clean` polluter | nothing | **none of them are v6**, but they stand against the *"`pytest -q` must stay green before any commit"* invariant, so every future commit inherits a red suite |
+| **F6** | **E-ENC short-arm prereg (D5)** — the matched pair at a **reduced, equal step count**: `--per-layer-encoders` (120 743 881) vs shared `--pred-dim 960` (118 105 417), **gap 2.19 %** quoted. Decision metric: per-layer P-battery pass rate; **tie → shared** | ~2 h | **0-GPU to write** | a new `PREREG_E_ENC.md` in the incoming dir | nothing | stops E-ENC turning into a second 175–290 A40-hour S-W. Param counts **MEASURED (mine 2026-08-12)** by re-instantiation |
+| **F7** | **Pod-side ship + STEP-ZERO runbook as a script** — md5 + `grep -c assert_isolation` + cache `ls` + `dd` write test + `--dry-run`, one command, refusing loudly on any mismatch | ~1 h | **0-GPU** | `stack/scripts/v6_preflight.sh` (new) | D2 (pod name) | ⛔ pods have **no git credentials** (`git fetch` HANGS; a failed-fetch `checkout -B` **RESETS the tree**) and **both pod4/pod5 direct SSH mappings were measured dead 2026-08-11**. The preflight is what stopped three chains running stale code |
+| **F8** | **Verify `F` (frames per episode) on the pod** and record the realised window count per stage from the trainer's own `[v6] windowing:` line | ~15 min | **0-GPU** (rides F7) | `…/incoming/2026-08-07-hierarchical-wm-redesign/V6_GO_PACKAGE.md` §1 | D2 | the −42.6 % window figure assumes **F = 120**, which is **INHERITED** (cache name `…-w120-…`), not measured. General form `(F−66)/(F−26)`. D4's magnitude depends on it |
+| **F9** | **Registry row skeleton for S-W** — pre-write the §1.15 row with every field the run must fill (parity key, skip-hash, derived `max_horizon`, realised window count, `step_s` MEASURED, gate verdict, tier stamp, estimator) | ~1 h | **0-GPU** | `Project Steering/MODEL_REGISTRY.md` §1.15 (new row) — ⛔ **registry-owner only** | nothing | *"an artifact on one disk is NOT done"*; a row written **before** the run cannot be back-filled from prose later |
+
+⚠️ **Not in this list on purpose:** anything needing a GPU, and anything needing the PI's spend
+decision. Those are D1/D2 in the decision sheet. **Gated ≠ idle** — F1–F9 are ~12 h of 0-GPU work
+that all lands before S-W's first gate.

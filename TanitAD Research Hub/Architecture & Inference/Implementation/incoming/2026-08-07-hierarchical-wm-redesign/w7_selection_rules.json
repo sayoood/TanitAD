@@ -1,0 +1,31 @@
+{
+ "item": "W7 selection-rule sweep over the banked W7-FULL windows",
+ "_class": "EXPLORATORY (re-uses the W7 scoring windows; a winning rule must be re-measured on a fresh grid)",
+ "_evidence_class": "MEASURED (ours; pod4 w7-full-roll/selection_rules.json)",
+ "n_windows": 881,
+ "n_candidates": 256,
+ "oracle_ade": 0.1273,
+ "argmin_on_roll_cost_alone_ade": 5.2898,
+ "w7_deployed_combined_cost_ade": 3.3348,
+ "mean_error_rank_of_cost_argmin": 132.32,
+ "median_rank_would_be": 128,
+ "top_m_ceiling_ade": {
+  "2": 3.3799,
+  "3": 2.3842,
+  "5": 1.5606,
+  "8": 1.067,
+  "16": 0.5976,
+  "32": 0.356
+ },
+ "top_m_mean_error_ade": {
+  "2": 5.4084,
+  "3": 5.3274,
+  "5": 5.3126,
+  "8": 5.3211,
+  "16": 5.3207,
+  "32": 5.3208
+ },
+ "rank_blend_ade": 5.4615,
+ "read": "The roll-consistency cost's argmin sits at error-rank 132 of 256 - the MEDIAN, i.e. no better than chance at the extreme - and the mean error inside its top-m is flat at ~5.32 for every m, the fan's own mean. The cost does not identify good candidates over the full fan on the repaired trunk; W7's deployed 3.3348 comes from the KINEMATIC term (weight 0.2), not from roll consistency. The top-m CEILINGS do fall (0.356 at m=32), so a better rule inside a top-m set is possible - but not by argmin.",
+ "actionable": "w7_roll_rerank's anti-degeneracy PROGRESS term (--w-prog, 'MINUS candidate arc length') has been weight 0.0 in EVERY W7 run to date. A roll-consistency cost is trivially minimised by a degenerate near-stationary candidate, which is exactly the failure shape; enabling and sweeping w_prog is the first cheap test."
+}

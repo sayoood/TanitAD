@@ -130,7 +130,8 @@ import torch
 import torch.nn.functional as F
 from torch import Tensor
 
-__all__ = ["assert_candidate_axis", "reachability_mask", "SeamState",
+__all__ = ["assert_candidate_axis", "reachability_mask",
+           "anchor_reachability_mask", "anchor_prefilter_report", "SeamState",
            "apply_seam_clamp", "consequence_scores", "NoCandidateAxis"]
 
 
@@ -185,6 +186,81 @@ def reachability_mask(fan: Tensor, v0: Tensor, *, accel_max: float = 2.5,
     """
     return _v15().reachability_mask(fan, v0, accel_max=accel_max,
                                     horizon_s=horizon_s)
+
+
+def anchor_reachability_mask(anchors: Tensor, v0: Tensor, *,
+                             accel_max: float = 2.5,
+                             horizon_s: float = 2.0) -> Tensor:
+    """[B, N] bool — THE SAME BAND, applied to the RAW ANCHORS *before* decoding.
+
+    WHY THIS IS NOT A SECOND IMPLEMENTATION. It calls :func:`reachability_mask`
+    on the anchors themselves, so the geometry is the one function the 72.08 %
+    was measured with. Only the *stage* differs, and that is the whole point:
+    ``v0`` is known PRE-decode, so the band can be evaluated on ``anchors``
+    while ``anchors + offset`` does not exist yet. S2 (``refc.py``) filters the
+    DECODED fan and therefore saves nothing — it can only narrow an argmax that
+    has already cost N decodes.
+
+    MEASURED (2026-08-04, `be2da04`): filtering anchors and decoding only the
+    survivors leaves the **selection index identical on 881/881 windows** —
+    the same integer, not a tolerance — so all four metric families and
+    distance-keeping move by exactly 0.0, at 2.78x fewer decodes
+    (small 64->23, base 128->46, XL 256->92).
+
+    ⚠️ **Reachability is a property of the anchor set and ``v0``, not of the
+    model.** A rebuilt or re-fit anchor set changes the survivor counts, so the
+    2.78x is a property of *those* anchors and must be re-measured, never
+    inherited, when the anchors change.
+
+    ⚠️ **``ego_keep`` still binds.** ``v0`` is the speed BEFORE ego-dropout;
+    filtering a sample whose speed was withheld from the conditioning would leak
+    the channel back in through the candidate set — an even more direct leak
+    than the ranking one S2 guards, because here the withheld channel decides
+    which candidates *exist*. Callers must OR in ``~ego_keep`` exactly as
+    ``refc.py`` does for S2.
+    """
+    if anchors.dim() == 3:                       # [N, S, 2] -> [B, N, S, 2]
+        anchors = anchors[None].expand(v0.shape[0], *anchors.shape)
+    return reachability_mask(anchors, v0, accel_max=accel_max,
+                             horizon_s=horizon_s)
+
+
+def anchor_prefilter_report(anchor_keep: Tensor, sel_idx: Tensor) -> dict:
+    """THE RUNTIME GUARD `be2da04` says to ship with the fixed-budget policy.
+
+    ``anchor_keep`` [B, N] from :func:`anchor_reachability_mask`; ``sel_idx``
+    [B] the argmax the FULL fan produced. Returns per-batch telemetry and,
+    crucially, ``winner_survives_frac`` — the fraction of rows whose full-fan
+    winner is inside the pre-decode band.
+
+    **Why a guard and not a proof.** `be2da04` separates two claims that are
+    easy to merge and must not be: the VARIABLE-width policy (decode every
+    survivor) is structurally exact, while a FIXED ``N_suff`` budget is an
+    EMPIRICAL CALIBRATION — XL's worst window had **102** survivors against a
+    budget of 92, and it only held because the winner's rank never exceeded 92
+    *on that corpus*. A budget calibrated on one corpus is not a guarantee on
+    the next, so the equivalence is asserted per-run, not assumed.
+
+    ``winner_survives_frac < 1.0`` means the prefilter would have CHANGED the
+    emitted trajectory. That is a correctness failure, not a speed regression.
+    """
+    if anchor_keep.dim() != 2:
+        raise ValueError(f"anchor_keep must be [B, N], got {tuple(anchor_keep.shape)}")
+    b, n = anchor_keep.shape
+    if sel_idx.shape[0] != b:
+        raise ValueError(f"sel_idx batch {sel_idx.shape[0]} != anchor_keep batch {b}")
+    survivors = anchor_keep.sum(dim=1)
+    won = anchor_keep.gather(1, sel_idx.reshape(b, 1).long()).squeeze(1)
+    return {
+        "n_candidates": int(n),
+        "survivors_mean": float(survivors.to(torch.float64).mean()),
+        "survivors_max": int(survivors.max()),
+        "decode_speedup": (float(n) / float(survivors.to(torch.float64).mean())
+                           if float(survivors.to(torch.float64).mean()) > 0
+                           else float("inf")),
+        "winner_survives_frac": float(won.to(torch.float64).mean()),
+        "rows_empty": int((survivors == 0).sum()),
+    }
 
 
 # ============================================================================
