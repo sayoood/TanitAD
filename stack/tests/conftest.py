@@ -28,6 +28,8 @@ os.environ.setdefault("PYTHONIOENCODING", "utf-8")
 # ⚠️ One test also DECODES a child's output in the parent (``text=True`` uses
 # the locale codec, fixed at interpreter start — too late to change here). On
 # Windows, run the suite as:  PYTHONUTF8=1 python -m pytest
-# MEASURED 2026-08-15 with both set: the 4 previously-failing files give
-# 141 passed / 2 honest skips / 0 failed on this box.
+# MEASURED 2026-08-15 with both set, FULL suite on this box:
+# 2,810 passed / 0 failed / 17 skipped / 2 xfailed — matching the campaign's
+# Linux certification (2,804/0 at stop; the delta is the locally-banked tests
+# plus the one win32 platform skip).
 os.environ.setdefault("PYTHONUTF8", "1")   # for grandchildren, at minimum
