@@ -520,7 +520,10 @@ class TestLazyImports:
             assert mod not in sys.modules, f"{mod} imported at module scope"
 
     def test_resolve_clip_forms(self):
-        assert pp._resolve_clip("abc", "/root") == ("abc", "/root/abc.mp4")
+        # os.path.join uses the native separator; normalise so the assertion
+        # tests the LOGIC (id -> <root>/<id>.mp4) rather than the platform.
+        cid, path = pp._resolve_clip("abc", "/root")
+        assert (cid, path.replace("\\", "/")) == ("abc", "/root/abc.mp4")
         assert pp._resolve_clip("/x/y/v123.mp4", None) == \
             ("v123", "/x/y/v123.mp4")
         assert pp._resolve_clip({"clip_id": "c9", "video": "/v/c9.mp4"},
