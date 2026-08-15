@@ -3147,3 +3147,48 @@ independent try blocks, +2 regression tests.
 ⇒ **RULE: one `try` around several probes converts a failure in the first into silence from all of
 them.** Same family as the bare `except` that hid the `min_steps` TypeError and made a nav fallback
 that had never once executed look like a working default.
+
+---
+
+## R-2026-08-04-vt — ⛔ A MEASURED ABSENCE THAT WENT STALE IN ONE DAY, and a caveat that was already retracted and reached me anyway
+
+**Stream:** Architecture & Inference / D-VT1 (leak-guarded target speed).
+**Artifacts:** `TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-08-04-target-speed/`.
+
+### 1. *"The parity train cache is not reachable from any non-training host"* — FALSE by 2026-08-04
+
+I wrote this into an escalation, inheriting `PREREG_D-TAC1B_TAU_SELECTION_AND_F1_ARM.md` §1.1, which
+had established it on **2026-08-03 with five probes at four paths** — correctly, at the time.
+
+**MEASURED 2026-08-04:** `tanitad-thor` holds
+`/home/nvidia/epcache/epcache-256px-phase0/physicalai-train-e438721ae894`, **2376 episodes**,
+file-list sha256 `9877bef6…7386` — matching the parity-verified corpus uid. The guarded target-speed
+labels for the whole train corpus were minted from it in **22 s**
+(`raw/train_vtarget_guarded.npz`, 472 627 pose indices).
+
+**Root-cause class: NEW — C2-adjacent but distinct. Call it C2b, a STALE ABSENCE.**
+C2 is *"absence from a single probe"*. This was the opposite failure: a **thorough, multi-probe,
+correctly-measured absence** that was re-quoted **one day later** without re-probing. The corpus
+moved; the finding did not. A five-probe absence is *more* dangerous than a one-probe absence,
+because its rigour makes re-checking feel unnecessary.
+⇒ **RULE: an absence claim carries a TIMESTAMP as well as a probe count, and a claim that a
+*resource* is missing expires the moment anything could have moved it.** Absence of a fact is
+durable; absence of a *file on a machine* is a snapshot. Re-probe before quoting, however good the
+original measurement was.
+⇒ **What it would have cost:** the escalation would have told the REF-C DATA stream that the
+train-corpus mint was still blocked. It was 22 seconds of work.
+
+### 2. The 0–1 m/s / n=2 lead-window caveat reached a third document — the log did not stop it
+
+`R-2026-08-04-briefs` §2 already retracted *"20.7 % of lead windows sit at 0–1 m/s … the 15+ band is
+UNPOWERED at n=2"*. It arrived in my brief anyway and I copied it into a JSON before catching it.
+
+**RE-MEASURED** directly from `val40_lead_block.npz` (`state` × `speeds`, 270 LEAD windows):
+0–1 m/s = **32 (11.85 %)**; 15+ = **88 (32.59 %), the LARGEST lead-bearing band**. ⚠️ The genuinely
+low-powered band is **10–15 m/s at n = 12**, which no document had flagged.
+
+**Root-cause class: C4 with a twist — a RETRACTED claim propagating through briefs.**
+The log recorded the retraction; the brief did not read the log. ⇒ **RULE: retraction is not
+complete until the claim is removed from the briefs that carry it.** An append-only log corrects the
+record but does not corrupt the copies already in flight — the entry needs a blast radius, like the
+`overlapping_holdout_se` entry has.

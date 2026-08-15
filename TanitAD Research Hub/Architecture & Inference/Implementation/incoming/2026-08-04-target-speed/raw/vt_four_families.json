@@ -7,6 +7,12 @@
  "LONGITUDINAL": {
   "target_speed": {
    "_target": "vtarget_guarded (leak-guarded label); windows with valid==False are EXCLUDED, not filled",
+   "band_classifier": {
+    "band_top1_argmax": 0.2465,
+    "n_bands_present": 20,
+    "_what": "a CE classifier over the 23 VTARGET bands on the same causal-past features \u2014 the parameterisation `refc1`'s speed_cls actually uses. `band_top1` under `arms` for this row is the EXPECTED-VALUE decode re-banded; `band_top1_argmax` is the classifier's own argmax, which is the one a banded conditioning input would consume.",
+    "_majority_class_baseline": 0.1586
+   },
    "n_windows_scored": 637,
    "n_windows_total": 881,
    "n_excluded_no_valid_label": 244,
@@ -29,6 +35,16 @@
      "bias_mps": -0.028,
      "r2": 0.8603,
      "band_top1": 0.3673,
+     "_band_top1": "23-band VTARGET token agreement = goal-SETTING quality"
+    },
+    "past_band_clf_ev": {
+     "n": 637,
+     "n_episodes": 40,
+     "mae_mps": 2.2313,
+     "rmse_mps": 3.2935,
+     "bias_mps": 0.1512,
+     "r2": 0.8523,
+     "band_top1": 0.3407,
      "_band_top1": "23-band VTARGET token agreement = goal-SETTING quality"
     }
    },
@@ -70,6 +86,16 @@
        "r2": 0.8872,
        "band_top1": 0.2995,
        "_band_top1": "23-band VTARGET token agreement = goal-SETTING quality"
+      },
+      "past_band_clf_ev": {
+       "n": 197,
+       "n_episodes": 20,
+       "mae_mps": 2.0521,
+       "rmse_mps": 2.8507,
+       "bias_mps": 0.1278,
+       "r2": 0.8906,
+       "band_top1": 0.3452,
+       "_band_top1": "23-band VTARGET token agreement = goal-SETTING quality"
       }
      }
     },
@@ -94,6 +120,16 @@
        "r2": 0.8606,
        "band_top1": 0.3949,
        "_band_top1": "23-band VTARGET token agreement = goal-SETTING quality"
+      },
+      "past_band_clf_ev": {
+       "n": 395,
+       "n_episodes": 32,
+       "mae_mps": 2.2578,
+       "rmse_mps": 3.3798,
+       "bias_mps": 0.0848,
+       "r2": 0.8551,
+       "band_top1": 0.3316,
+       "_band_top1": "23-band VTARGET token agreement = goal-SETTING quality"
       }
      }
     },
@@ -117,6 +153,16 @@
        "bias_mps": 1.4222,
        "r2": 0.0767,
        "band_top1": 0.4222,
+       "_band_top1": "23-band VTARGET token agreement = goal-SETTING quality"
+      },
+      "past_band_clf_ev": {
+       "n": 45,
+       "n_episodes": 5,
+       "mae_mps": 2.783,
+       "rmse_mps": 4.207,
+       "bias_mps": 0.8369,
+       "r2": -0.3546,
+       "band_top1": 0.4,
        "_band_top1": "23-band VTARGET token agreement = goal-SETTING quality"
       }
      }
@@ -144,6 +190,16 @@
        "r2": -1.463,
        "band_top1": 0.0256,
        "_band_top1": "23-band VTARGET token agreement = goal-SETTING quality"
+      },
+      "past_band_clf_ev": {
+       "n": 39,
+       "n_episodes": 8,
+       "mae_mps": 3.8749,
+       "rmse_mps": 4.8021,
+       "bias_mps": -2.5179,
+       "r2": -0.5399,
+       "band_top1": 0.0513,
+       "_band_top1": "23-band VTARGET token agreement = goal-SETTING quality"
       }
      }
     },
@@ -167,6 +223,16 @@
        "bias_mps": -1.3462,
        "r2": -0.0632,
        "band_top1": 0.0476,
+       "_band_top1": "23-band VTARGET token agreement = goal-SETTING quality"
+      },
+      "past_band_clf_ev": {
+       "n": 42,
+       "n_episodes": 13,
+       "mae_mps": 3.9249,
+       "rmse_mps": 5.3497,
+       "bias_mps": -0.0351,
+       "r2": -0.0956,
+       "band_top1": 0.1905,
        "_band_top1": "23-band VTARGET token agreement = goal-SETTING quality"
       }
      }
@@ -192,6 +258,16 @@
        "r2": -0.279,
        "band_top1": 0.1562,
        "_band_top1": "23-band VTARGET token agreement = goal-SETTING quality"
+      },
+      "past_band_clf_ev": {
+       "n": 96,
+       "n_episodes": 15,
+       "mae_mps": 2.5649,
+       "rmse_mps": 3.8602,
+       "bias_mps": 0.9941,
+       "r2": -0.51,
+       "band_top1": 0.1875,
+       "_band_top1": "23-band VTARGET token agreement = goal-SETTING quality"
       }
      }
     },
@@ -214,6 +290,16 @@
        "rmse_mps": 3.0105,
        "bias_mps": 0.9761,
        "r2": 0.1748,
+       "band_top1": 0.292,
+       "_band_top1": "23-band VTARGET token agreement = goal-SETTING quality"
+      },
+      "past_band_clf_ev": {
+       "n": 137,
+       "n_episodes": 19,
+       "mae_mps": 2.3832,
+       "rmse_mps": 3.4258,
+       "bias_mps": 0.7379,
+       "r2": -0.0686,
        "band_top1": 0.292,
        "_band_top1": "23-band VTARGET token agreement = goal-SETTING quality"
       }
@@ -240,6 +326,16 @@
        "r2": 0.1869,
        "band_top1": 0.4766,
        "_band_top1": "23-band VTARGET token agreement = goal-SETTING quality"
+      },
+      "past_band_clf_ev": {
+       "n": 128,
+       "n_episodes": 13,
+       "mae_mps": 1.5667,
+       "rmse_mps": 2.2209,
+       "bias_mps": -0.0249,
+       "r2": 0.1294,
+       "band_top1": 0.5234,
+       "_band_top1": "23-band VTARGET token agreement = goal-SETTING quality"
       }
      }
     },
@@ -264,6 +360,16 @@
        "r2": 0.9078,
        "band_top1": 0.5897,
        "_band_top1": "23-band VTARGET token agreement = goal-SETTING quality"
+      },
+      "past_band_clf_ev": {
+       "n": 195,
+       "n_episodes": 15,
+       "mae_mps": 1.7032,
+       "rmse_mps": 2.4163,
+       "bias_mps": 0.0137,
+       "r2": 0.8814,
+       "band_top1": 0.4205,
+       "_band_top1": "23-band VTARGET token agreement = goal-SETTING quality"
       }
      }
     }
@@ -283,7 +389,15 @@
     "cv",
     "gt_oracle"
    ],
-   "_note": "~270 of 881 windows carry a lead; 20.7 % of those sit at 0-1 m/s where a stopped ego and a stopped CV path are identical and the metric cannot discriminate; the 15+ band is UNPOWERED at n=2"
+   "_note": "270 of 881 windows carry a lead. \u26d4 THE STANDING CAVEAT IS FALSE ON THIS SURFACE \u2014 see lead_speed_distribution below, MEASURED here.",
+   "lead_speed_distribution": {
+    "_measured": "directly from val40_lead_block.npz `state` and `speeds`, 2026-08-04",
+    "n_lead": 270,
+    "share_0_1_mps": 0.1185,
+    "n_0_1_mps": 32,
+    "n_15_plus_mps": 88,
+    "\u26d4_retracted_caveat": "the caveat '20.7 % of lead windows sit at 0-1 m/s and the 15+ band is UNPOWERED at n=2' does NOT hold on the canonical val40: 0-1 m/s is 11.85 % (32/270) and 15+ is the LARGEST lead-bearing band at n=88. RETRACTION_LOG already flagged this class \u2014 a stratification caveat measured on ONE corpus surface, quoted as a property of the metric. Re-measured here rather than inherited."
+   }
   }
  },
  "LATERAL": {

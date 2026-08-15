@@ -135,34 +135,70 @@ def _standardize(Xtr, Xte):
     return A * keep, B * keep
 
 
-def _ridge_dual_predict(Xtr, ytr, Xte, alphas):
-    """-> (n_alpha, n_test) predictions. Centered y, no penalised intercept."""
-    n = len(ytr)
-    if Xtr.shape[1] == 0:                       # F0_const: the training mean
-        return np.repeat(ytr.mean(), len(Xte))[None].repeat(len(alphas), 0)
-    A, B = _standardize(Xtr, Xte)
-    ym = ytr.mean()
-    yc = ytr - ym
-    G = A @ A.T
+def _ridge_from_gram(G, K, Y, alphas):
+    """Dual ridge from a PRE-COMPUTED Gram. -> (n_alpha, n_test, n_target).
+
+    ⭐ ONE eigendecomposition serves every α AND every target column. The naive version
+    (one call per α per target) recomputed it 5x for the ADE-surface rule and dominated the
+    runtime; this is the same estimator, not an approximation.
+    """
+    Y = np.atleast_2d(Y.T).T if Y.ndim > 1 else Y[:, None]
+    ym = Y.mean(0)
     w, V = np.linalg.eigh(G)
     w = np.maximum(w, 0.0)
-    Vty = V.T @ yc
-    KteV = (B @ A.T) @ V                        # (n_test, n)
-    out = np.empty((len(alphas), len(B)))
+    VtY = V.T @ (Y - ym)                        # (n, k)
+    KV = K @ V                                  # (n_test, n)
+    out = np.empty((len(alphas), K.shape[0], Y.shape[1]))
     for i, al in enumerate(alphas):
-        out[i] = KteV @ (Vty / (w + al)) + ym
+        out[i] = KV @ (VtY / (w + al)[:, None]) + ym
     return out
 
 
-def _knn_predict(Xtr, ytr, Xte, ks):
-    if Xtr.shape[1] == 0:
-        return np.repeat(ytr.mean(), len(Xte))[None].repeat(len(ks), 0)
-    A, B = _standardize(Xtr, Xte)
-    A = A / np.sqrt(max(A.shape[1], 1))
-    B = B / np.sqrt(max(B.shape[1], 1))
-    d = ((B ** 2).sum(1)[:, None] + (A ** 2).sum(1)[None] - 2 * B @ A.T)
-    order = np.argsort(d, axis=1)
-    return np.stack([ytr[order[:, :k]].mean(1) for k in ks])
+class _FoldEngine:
+    """Standardise ONCE on the outer-training episodes and build its Gram ONCE; every
+    inner fold is then a submatrix of it.
+
+    ⛔ Why this is not a leak: the standardisation and the Gram are built from the OUTER
+    TRAINING SET, which excludes the held-out episode entirely. Only the inner α/k selection
+    sees the (still test-free) outer-train scaling. Nothing about the held-out episode enters
+    its own fit.
+    """
+
+    def __init__(self, X, tr_mask, te_mask):
+        self.p = X.shape[1]
+        self.n_te = int(te_mask.sum())
+        if self.p == 0:
+            self.G = self.K = None
+            return
+        A, B = _standardize(X[tr_mask], X[te_mask])
+        self.A = A
+        self.G = A @ A.T
+        self.K = B @ A.T
+        self.sq = (A ** 2).sum(1)
+        self.sq_te = (B ** 2).sum(1)
+
+    def ridge(self, it, iv, Y, alphas):
+        """it/iv: index arrays LOCAL to the outer-training block; iv=None -> the test set."""
+        if self.p == 0:
+            Y2 = Y[it] if Y.ndim > 1 else Y[it][:, None]
+            m = Y2.mean(0)
+            n = self.n_te if iv is None else len(iv)
+            return np.repeat(m[None, None], len(alphas), 0).repeat(n, 1)
+        G = self.G[np.ix_(it, it)]
+        K = self.K[:, it] if iv is None else self.G[np.ix_(iv, it)]
+        return _ridge_from_gram(G, K, Y[it], alphas)
+
+    def knn(self, it, iv, y, ks):
+        if self.p == 0:
+            n = self.n_te if iv is None else len(iv)
+            return np.repeat(y[it].mean(), n)[None].repeat(len(ks), 0)
+        if iv is None:
+            d = self.sq_te[:, None] + self.sq[None, it] - 2 * self.K[:, it]
+        else:
+            d = self.sq[iv][:, None] + self.sq[None, it] - 2 * self.G[np.ix_(iv, it)]
+        order = np.argsort(d, axis=1)
+        yt = y[it]
+        return np.stack([yt[order[:, :k]].mean(1) for k in ks])
 
 
 def _realized(lam, fsel, gt, idx):
@@ -176,69 +212,66 @@ def _group_folds(eps_tr, n_folds, seed=SEED):
     return [set(x.tolist()) for x in np.array_split(e, n_folds)]
 
 
-def loeo(X, y, fsel, gt, eids, mode="ridge"):
-    """-> (lam_hat [W], chosen hyper-parameter per outer fold)."""
-    eids = np.asarray(eids)
-    W = len(y)
-    lam = np.empty(W)
-    picked = {}
-    hyper = ALPHAS if mode == "ridge" else np.asarray(KNN_KS, dtype=float)
-    pred_fn = _ridge_dual_predict if mode == "ridge" else \
-        (lambda a, b, c, h: _knn_predict(a, b, c, [int(k) for k in h]))
-    for ep in sorted(set(eids.tolist())):
-        te = eids == ep
-        tr = ~te
-        eps_tr = sorted(set(eids[tr].tolist()))
-        # --- inner CV over episodes picks the hyper-parameter by REALISED ADE ---
-        cost = np.zeros(len(hyper))
-        for fold in _group_folds(eps_tr, N_INNER):
-            iv = tr & np.isin(eids, list(fold))
-            it = tr & ~np.isin(eids, list(fold))
-            if iv.sum() == 0 or it.sum() == 0:
-                continue
-            P = pred_fn(X[it], y[it], X[iv], hyper)
-            iv_idx = np.flatnonzero(iv)
-            for i in range(len(hyper)):
-                cost[i] += _realized(P[i], fsel, gt, iv_idx).sum()
-        h = hyper[int(cost.argmin())]
-        picked[str(ep)] = float(h)
-        P = pred_fn(X[tr], y[tr], X[te], np.array([h]))
-        lam[te] = P[0]
-    return np.clip(lam, LAM_LO, LAM_HI), picked
+def loeo_all(X, y, err, fsel, gt, eids):
+    """Every rule in ONE leave-one-episode-out sweep, sharing the fold engine.
 
-
-def loeo_ade_surface(X, err, fsel, gt, eids):
-    """⚠️ POST-HOC / EXPLORATORY, NOT pre-registered — decides nothing.
-
-    A strictly more powerful decision rule than regressing λ: regress the WHOLE ADE(λ)
-    surface (one ridge per grid λ, sharing the eigendecomposition) and take the argmin.
-    Included so a DEAD verdict is not an artefact of a weak read. ⛔ If this passed while
-    the pre-registered primary failed, the correct action is a FRESH pre-registration —
-    never a changed verdict.
+    -> dict with `ridge` / `knn` (both predict λ_ls, the pre-registered PRIMARY class) and
+    `surface` (⚠️ POST-HOC: regress the whole ADE(λ) surface and take the argmin — a
+    strictly more powerful rule, included so a DEAD verdict is not an artefact of a weak
+    read. ⛔ A pass there with a failing primary requires a FRESH pre-registration, never a
+    changed verdict.)
     """
     eids = np.asarray(eids)
-    W = err.shape[1]
-    lam = np.empty(W)
+    W = len(y)
+    out = {k: np.empty(W) for k in ("ridge", "knn", "surface")}
+    picked = {"ridge": {}, "knn": {}, "surface": {}}
+    KS = np.asarray(KNN_KS, dtype=float)
     for ep in sorted(set(eids.tolist())):
         te = eids == ep
         tr = ~te
+        tr_idx = np.flatnonzero(tr)
+        te_idx = np.flatnonzero(te)
+        eng = _FoldEngine(X, tr, te)
+        y_tr = y[tr]
+        err_tr = err[:, tr].T                        # (n_tr, 5) target matrix
         eps_tr = sorted(set(eids[tr].tolist()))
-        cost = np.zeros(len(ALPHAS))
+        c_r = np.zeros(len(ALPHAS))
+        c_k = np.zeros(len(KS))
+        c_s = np.zeros(len(ALPHAS))
         for fold in _group_folds(eps_tr, N_INNER):
-            iv = tr & np.isin(eids, list(fold))
-            it = tr & ~np.isin(eids, list(fold))
-            if iv.sum() == 0 or it.sum() == 0:
+            loc_v = np.flatnonzero(np.isin(eids[tr], list(fold)))
+            loc_t = np.flatnonzero(~np.isin(eids[tr], list(fold)))
+            if not len(loc_v) or not len(loc_t):
                 continue
-            S = np.stack([_ridge_dual_predict(X[it], err[k][it], X[iv], ALPHAS)
-                          for k in range(len(LAMBDAS))])          # (5, nA, n_iv)
-            iv_idx = np.flatnonzero(iv)
+            g_v = tr_idx[loc_v]
+            P = eng.ridge(loc_t, loc_v, y_tr, ALPHAS)[:, :, 0]
+            S = eng.ridge(loc_t, loc_v, err_tr, ALPHAS)          # (nA, n_v, 5)
+            Q = eng.knn(loc_t, loc_v, y_tr, [int(k) for k in KS])
             for i in range(len(ALPHAS)):
-                cost[i] += err[S[:, i].argmin(0), iv_idx].sum()
-        al = ALPHAS[int(cost.argmin())]
-        S = np.stack([_ridge_dual_predict(X[tr], err[k][tr], X[te], np.array([al]))[0]
-                      for k in range(len(LAMBDAS))])
-        lam[te] = LAMBDAS[S.argmin(0)]
-    return lam
+                c_r[i] += _realized(P[i], fsel, gt, g_v).sum()
+                c_s[i] += err[S[i].argmin(1), g_v].sum()
+            for i in range(len(KS)):
+                c_k[i] += _realized(Q[i], fsel, gt, g_v).sum()
+        al_r, al_s = ALPHAS[int(c_r.argmin())], ALPHAS[int(c_s.argmin())]
+        kk = int(KS[int(c_k.argmin())])
+        picked["ridge"][str(ep)] = float(al_r)
+        picked["surface"][str(ep)] = float(al_s)
+        picked["knn"][str(ep)] = float(kk)
+        loc_all = np.arange(len(tr_idx))
+        out["ridge"][te] = eng.ridge(loc_all, None, y_tr, np.array([al_r]))[0, :, 0]
+        out["knn"][te] = eng.knn(loc_all, None, y_tr, [kk])[0]
+        S = eng.ridge(loc_all, None, err_tr, np.array([al_s]))[0]   # (n_te, 5)
+        out["surface"][te] = LAMBDAS[S.argmin(1)]
+        del te_idx
+    for k in ("ridge", "knn"):
+        out[k] = np.clip(out[k], LAM_LO, LAM_HI)
+    return out, picked
+
+
+def loeo(X, y, fsel, gt, eids, mode="ridge"):
+    """Single-rule wrapper — used by the P2 four-families pass, which needs only λ̂."""
+    o, p = loeo_all(X, y, np.stack([ade(fsel * l, gt) for l in LAMBDAS]), fsel, gt, eids)
+    return o[mode], p[mode]
 
 
 # ---------------------------------------------------------------------------
@@ -306,16 +339,16 @@ def run(fan_path, lat_path):
     }
     out["point"]["ceiling_ci"] = B(ade_sel, ceiling)
 
-    realized = {}
+    realized, lamhat = {}, {}
+    allw = np.arange(W)
     for name, X in feats.items():
         row = {"n_features": int(X.shape[1])}
+        pred, picked = loeo_all(X, lam_ls, err, fsel, gt, eids)
         for mode in ("ridge", "knn"):
-            if mode == "knn" and name in ("F0_const",):
-                continue
-            lam, picked = loeo(X, lam_ls, fsel, gt, eids, mode=mode)
-            r_cont = _realized(lam, fsel, gt, np.arange(W))
+            lam = pred[mode]
+            r_cont = _realized(lam, fsel, gt, allw)
             snap = LAMBDAS[np.abs(lam[:, None] - LAMBDAS[None]).argmin(1)]
-            r_snap = _realized(snap, fsel, gt, np.arange(W))
+            r_snap = _realized(snap, fsel, gt, allw)
             row[mode] = {
                 "ade_continuous": float(r_cont.mean()),
                 "recovery_continuous": B(ade_sel, r_cont),
@@ -324,21 +357,26 @@ def run(fan_path, lat_path):
                 "acc_vs_lambda_star": float((snap == lam_star).mean()),
                 "lambda_hat_mean": float(lam.mean()),
                 "lambda_hat_std": float(lam.std()),
-                "hyper_by_fold": picked,
+                "hyper_by_fold": picked[mode],
             }
             if mode == "ridge":
                 realized[name] = r_cont
+                lamhat[name] = lam
         # ⚠️ POST-HOC, labelled: the strictly more powerful ADE-surface rule
-        lam_s = loeo_ade_surface(X, err, fsel, gt, eids)
-        r_s = _realized(lam_s, fsel, gt, np.arange(W))
+        r_s = _realized(pred["surface"], fsel, gt, allw)
         row["POSTHOC_ade_surface"] = {
             "ade": float(r_s.mean()), "recovery": B(ade_sel, r_s),
-            "acc_vs_lambda_star": float((lam_s == lam_star).mean()),
+            "acc_vs_lambda_star": float((pred["surface"] == lam_star).mean()),
+            "alpha_by_fold": picked["surface"],
             "NOT_PREREGISTERED": ("decides nothing; a pass here with a failing primary "
                                   "requires a FRESH pre-registration, not a changed "
                                   "verdict"),
         }
         out["arms"][name] = row
+        print(f"    [{out['arm'][:28]}] {name:<16} ridge "
+              f"{row['ridge']['recovery_continuous']['delta']:+.4f} | knn "
+              f"{row['knn']['recovery_continuous']['delta']:+.4f} | surface "
+              f"{row['POSTHOC_ade_surface']['recovery']['delta']:+.4f}", flush=True)
 
     # ---- the two PRIMARY contrasts --------------------------------------
     out["PRIMARY"] = {
@@ -363,7 +401,7 @@ def run(fan_path, lat_path):
         "C_shuf": out["arms"]["C_shuf"]["ridge"]["recovery_continuous"],
         "C_shuf_ep": out["arms"]["C_shuf_ep"]["ridge"]["recovery_continuous"],
     }
-    return out, realized, ade_sel, lam_star, err, eids
+    return out, realized, lamhat, ade_sel, lam_star, err, eids
 
 
 def verdict(o):
@@ -398,7 +436,7 @@ if __name__ == "__main__":
     res = []
     for pair in a.pairs:
         fp, lp = pair.split("::")
-        o, realized, ade_sel, lam_star, err, eids = run(fp, lp)
+        o, realized, lamhat, ade_sel, lam_star, err, eids = run(fp, lp)
         o["VERDICT"], o["VERDICT_WHY"] = verdict(o)
         res.append(o)
         if a.dump_prefix:
@@ -406,7 +444,8 @@ if __name__ == "__main__":
             np.savez(f"{a.dump_prefix}{stem}.npz",
                      ade_sel=ade_sel, lam_star=lam_star, err=err,
                      eid=np.array(eids, dtype=object).astype(str),
-                     **{f"realized_{k}": v for k, v in realized.items()})
+                     **{f"realized_{k}": v for k, v in realized.items()},
+                     **{f"lamhat_{k}": v for k, v in lamhat.items()})
         print(f"\n=== {o['arm']}  N={o['n_anchors']}  "
               f"fail={o['instrument_fail'] or 'none'}")
         p = o["point"]

@@ -29,13 +29,14 @@ episode, B = 2000. ⛔ `overlapping_holdout_se` is never called.
 3. ⇒ **The deployable form of this lever is a PREDICTED target speed, not a supplied one.** That is
    the PI's own preference (*"prefer a predicted goal"*) and it is now backed by a number rather than
    by an analogy to the nav echo.
-4. ⚠️ **And the lever is narrower than "88.7 % of the oracle gap is longitudinal" makes it sound.**
-   The **magnitude of the 0–2 s along-track displacement** is already **99.86 %** explained by the
-   strictly causal ego past (R², out-of-fold). ⚠️ That is the *endpoint chord*, not ADE — it says
-   nothing about the lateral half or the intermediate profile — but within its scope the information
-   is not missing, so a target-speed *input* is not what is short. Where the signal genuinely has
-   headroom is the **low-speed regime**, and there neither `v0` nor the causal past can predict it
-   (§7.1: 5–8 m/s error, negative R², both arms).
+4. ⚠️ **Read the RESIDUAL, not the R².** The 0–2 s along-track displacement scores R² **0.9986** from
+   the causal ego past — a number that flatters, because that displacement ranges 0–40 m and its
+   variance is enormous. The decision-grade quantity is what is left over: **RMSE 0.7065 m**, which
+   is *larger than flagship-v1's whole 0.452 m ADE*. A guarded target speed removes **0.0700 m** of it
+   (to 0.6365 m, ~10 %) — real, separated, **and a leak**. ⚠️ It is also the endpoint chord, not ADE:
+   it says nothing about the lateral half or the intermediate profile. Where the signal has the most
+   headroom is the **low-speed regime**, and there neither `v0` nor the causal past can predict it at
+   all (§7.1: 5–8 m/s error, negative R², both arms).
 
 ---
 
@@ -86,7 +87,18 @@ strictly causal ego speed over [t − 0.7 s, t] — everything the model legally
 | target | R² PAST | R² +GUARD | R² +ORACLE | **ΔR² GUARD** | **ΔR² ORACLE** |
 |---|---|---|---|---|---|
 | `dv_2s` = v(t+2 s) − v(t) — *the manoeuvre head's own label* | 0.6202 | 0.7198 | 0.7131 | **+0.0996** | **+0.0929** |
-| `along_2s` — the 0–2 s displacement ADE mostly measures | 0.9986 | 0.9989 | 0.9988 | +0.0003 | +0.0002 |
+| `along_2s` — the 0–2 s along-track endpoint chord | 0.9986 | 0.9989 | 0.9988 | +0.0003 | +0.0002 |
+
+⚠️ **`along_2s`'s R² is not the quotable statistic and the ΔR² of +0.0003 is not "nothing".** That
+target ranges 0–40 m, so its variance is enormous and R² saturates. The residuals are what matter:
+
+| target | RMSE PAST | RMSE +GUARD | RMSE +ORACLE |
+|---|---|---|---|
+| `dv_2s` (m/s) | 0.8475 | **0.7279** | 0.7366 |
+| `along_2s` (m) | 0.7065 | **0.6365** | 0.6407 |
+
+**0.7065 m of 2 s along-track error survives the causal past** — larger than flagship-v1's entire
+0.452 m ADE — and the guarded label removes **0.0700 m** of it, ~10 %. Real, separated, and a leak.
 
 Paired episode-cluster bootstrap on per-window squared error, `PAST` minus arm (positive = the label
 helps), 637 windows / 40 episodes:
@@ -169,6 +181,18 @@ stride-8 and any future grid index straight in, and removes the whole class of b
 table built on one grid is silently read on another.
 
 ⛔ Parity untouched: read-only, only `poses` touched, nothing selected, deselected or reordered.
+
+### 3.2 Cross-machine reproducibility of the mint
+
+**MEASURED** (`raw/vt_cross_machine_check.json`). The same 881 canonical val windows, minted twice:
+on the **dev box** (x86 Windows, numpy, from the poses-only view) and on **`tanitad-thor`**
+(aarch64 Linux, `tanitad-train` venv, straight from the val epcache).
+
+* max |Δ `vt_guarded`| = **1.86 × 10⁻⁶ m/s** — float32 storage on the Thor side, nothing else
+* **0** validity-flag mismatches out of 881
+
+A real code divergence would be O(0.1) m/s, not O(10⁻⁶). The label is machine-independent, and every
+number in this document is reproducible on the box that holds the corpus.
 
 ⚠️ **`heldout_gate`'s `band0` trap applies to those windows.** `VTARGET_TOKENS[0] == "v_stop"`, so
 routing an invalid window to band 0 is not a neutral zero — it commands a STOP. The DROPPED token is
@@ -257,15 +281,25 @@ episodes. Both arms are **inference-legal**: neither reads anything past `t`.
 | arm | MAE m/s | RMSE m/s | R² | **band top-1** (23-token goal-setting) |
 |---|---|---|---|---|
 | `hold_v0` (free, 0 params) | 2.4484 | 3.8970 | 0.7931 | **0.4066** |
-| `past_ridge` (LOEO, causal past) | 2.2188 | 3.2024 | 0.8603 | **0.3673** |
+| `past_ridge` (LOEO ridge, causal past) | 2.2188 | 3.2024 | 0.8603 | 0.3673 |
+| `past_band_clf` (LOEO CE classifier over the 23 bands, EV decode) | 2.2313 | 3.2935 | 0.8523 | 0.3407 |
+| ↳ the same classifier's **argmax band** — what a banded input would consume | — | — | — | **0.2465** |
+| *(reference)* majority-class band | — | — | — | 0.1586 |
 
 Paired episode-cluster bootstrap, mean |error|, `hold_v0` − `past_ridge` =
 **+0.2296 [−0.2622, +0.7154] — NOT separated.**
 
-⇒ **A causal-past predictor does not beat repeating the current speed**, and on the metric that
-matters at the conditioning interface — the 23-band token — it is **worse** (0.3673 vs 0.4066),
-because a ridge regresses to the mean and lands in the neighbouring band. ⚠️ MAE and band top-1
-disagree in sign here; for a *banded* input, band top-1 is the one to read.
+⇒ **Nothing built on ego state beats repeating the current speed.** The ridge does not separate on
+MAE, and on the metric that matters at the conditioning interface — the 23-band token — **both
+learned arms are worse than the free baseline**: 0.3673 (ridge), 0.2465 (classifier argmax), against
+**0.4066** for literally repeating `v0`'s band. ⚠️ MAE and band top-1 disagree in *sign* here, because
+a squared-error fit regresses to the mean and lands in the neighbouring band; for a banded input,
+band top-1 is the one to read.
+
+⭐ **This is the sharpest negative result in the package, and it is about the head, not the label.**
+`refc1`'s `speed_cls` is exactly this parameterisation — `Linear(..., speed_bins)` under CE — and on
+ego-only inputs it is a **dead parameter**: 0.2465 against a free 0.4066. Whether *vision* rescues it
+is the only open question, and §5's `vt_pred_quality` prices it. (20 of the 23 bands occur at all.)
 
 **Stratified — this is where the lever is, and is not:**
 
@@ -292,8 +326,24 @@ actually fails.
 **Distance-keeping** — ⚠️ **INHERITED, not recomputed here.**
 `…/2026-08-04-distance-keeping-arms/raw/four_family_panel_val40.json`; window states
 LEAD 270 / NO_LEAD 551 / NO_LABEL 60; arms `refc-base-30k`, `flagship-30k`, `cv`, `gt_oracle`.
-Caveats travel with it: 20.7 % of lead windows are at 0–1 m/s where a stopped ego and a stopped CV
-path are identical and the metric cannot discriminate, and the 15+ band is **UNPOWERED (n = 2)**.
+
+⛔ **RETRACTED — the caveat my own brief handed me is FALSE on this surface, and I re-measured it
+rather than repeating it.** The standing caveat reads *"20.7 % of lead windows sit at 0–1 m/s … and
+the 15+ band is UNPOWERED (n = 2)"*. **MEASURED** directly from `val40_lead_block.npz` (`state` ×
+`speeds`, 270 LEAD windows):
+
+| ego speed | n LEAD | share of LEAD |
+|---|---|---|
+| 0–1 m/s | **32** | **0.1185** — not 0.207 |
+| 1–3 | 13 | 0.0481 |
+| 3–6 | 51 | 0.1889 |
+| 6–10 | 74 | 0.2741 |
+| 10–15 | 12 | 0.0444 |
+| **15+** | **88** | **0.3259 — the LARGEST band, not n = 2** |
+
+`RETRACTION_LOG.md` already logs this class: *a stratification caveat measured on ONE corpus surface,
+quoted as a property of the metric.* I nearly propagated it into a third document. ⚠️ The genuinely
+low-powered band here is **10–15 m/s at n = 12**, which nobody had flagged.
 
 ### 7.2 LATERAL — the CONTROL, and it is untouched by construction
 

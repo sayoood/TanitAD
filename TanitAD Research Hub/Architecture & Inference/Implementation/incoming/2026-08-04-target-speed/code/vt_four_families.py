@@ -53,6 +53,56 @@ SIB = (REPO / "TanitAD Research Hub" / "Benchmarks & Eval" / "Implementation"
        / "incoming" / "2026-08-04-distance-keeping-arms" / "raw")
 
 
+def band_classifier_loeo(x, tok, eid, *, steps: int = 500, seed: int = 0):
+    """⭐ A CLASSIFIER over the 23 VTARGET bands, not a regressor — leave-one-
+    episode-out, causal-past features only.
+
+    WHY THIS ARM EXISTS. `past_ridge` minimises squared metres and therefore
+    regresses toward the mean, which lands it in the NEIGHBOURING band; on a
+    banded conditioning interface that is a wrong token, not a small error. The
+    head this lever would actually add is a classifier (`refc1`'s `speed_cls` is
+    `Linear(..., speed_bins)` with a CE loss), so the honest question is whether
+    the band is a better PARAMETERISATION, not just a better readout of a
+    regression. Returns the decoded band tokens and the expected-value decode.
+    """
+    import torch
+    torch.set_num_threads(1)
+    vocab = sorted(set(tok))
+    idx = {t: i for i, t in enumerate(vocab)}
+    y = np.array([idx[t] for t in tok])
+    out_tok = np.empty(len(y), dtype=object)
+    out_ev = np.zeros(len(y))
+    mids = np.array([band_mid_tok(t) for t in vocab])
+    for e in np.unique(eid):
+        te = eid == e
+        tr = ~te
+        mu, sd = x[tr].mean(0), x[tr].std(0)
+        sd = np.where(sd < 1e-9, 1.0, sd)
+        xt = torch.tensor((x[tr] - mu) / sd, dtype=torch.float32)
+        yt = torch.tensor(y[tr])
+        torch.manual_seed(seed)
+        net = torch.nn.Linear(xt.shape[1], len(vocab))
+        opt = torch.optim.AdamW(net.parameters(), lr=5e-2, weight_decay=1e-4)
+        for _ in range(steps):
+            opt.zero_grad()
+            torch.nn.functional.cross_entropy(net(xt), yt).backward()
+            opt.step()
+        with torch.no_grad():
+            lg = net(torch.tensor((x[te] - mu) / sd, dtype=torch.float32))
+            pr = torch.softmax(lg, dim=-1).numpy()
+        out_tok[te] = np.array(vocab, dtype=object)[lg.argmax(-1).numpy()]
+        out_ev[te] = pr @ mids
+    return out_tok, out_ev
+
+
+def band_mid_tok(tok: str) -> float:
+    if tok == "v_stop":
+        return 0.0
+    inner = tok[tok.index("(") + 1:tok.index("]")]
+    lo, hi = inner.split("-")
+    return (float(lo) + float(hi)) / 2.0
+
+
 def scores(y, p, eid) -> dict:
     band_hit = np.array([vtarget_band(a) == vtarget_band(b)
                          for a, b in zip(y, p)], dtype=float)
@@ -72,16 +122,34 @@ def main(labels_json: Path, probe_json: Path | None, out_json: Path):
     eid = np.array([r["eid"] for r in val])
     y = np.array([r["vt_guarded"] for r in val])
     v0 = np.array([r["v0"] for r in val])
-    p_ridge = loeo_predict(past_block(val), y, eid)
+    past = past_block(val)
+    p_ridge = loeo_predict(past, y, eid)
+    tok_true = [r["band_guarded"] for r in val]
+    tok_clf, p_clf_ev = band_classifier_loeo(past, tok_true, eid)
+    band_clf_top1 = float(np.mean([a == b for a, b in zip(tok_clf, tok_true)]))
 
     lead = np.load(SIB / "val40_lead_block.npz", allow_pickle=True)
     state_all = lead["state"].astype(str)
     keep = np.array([bool(r["vt_guarded_valid"]) for r in rows])
     st = state_all[keep]
 
-    arms = {"hold_v0": v0, "past_ridge": p_ridge}
+    arms = {"hold_v0": v0, "past_ridge": p_ridge, "past_band_clf_ev": p_clf_ev}
     long_ts = {"_target": ("vtarget_guarded (leak-guarded label); windows with "
                            "valid==False are EXCLUDED, not filled"),
+               "band_classifier": {
+                   "band_top1_argmax": round(band_clf_top1, 4),
+                   "n_bands_present": int(len(set(tok_true))),
+                   "_what": ("a CE classifier over the 23 VTARGET bands on the "
+                             "same causal-past features — the parameterisation "
+                             "`refc1`'s speed_cls actually uses. `band_top1` "
+                             "under `arms` for this row is the EXPECTED-VALUE "
+                             "decode re-banded; `band_top1_argmax` is the "
+                             "classifier's own argmax, which is the one a "
+                             "banded conditioning input would consume."),
+                   "_majority_class_baseline": round(float(max(
+                       np.mean([t == u for t in tok_true])
+                       for u in set(tok_true))), 4),
+               },
                "n_windows_scored": int(len(val)),
                "n_windows_total": int(len(rows)),
                "n_excluded_no_valid_label": int(len(rows) - len(val)),
@@ -156,10 +224,24 @@ def main(labels_json: Path, probe_json: Path | None, out_json: Path):
                               .relative_to(REPO)).replace("\\", "/"),
                 "window_states": sib_panel["window_states"],
                 "arms_available": list(sib_panel["families"]),
-                "_note": ("~270 of 881 windows carry a lead; 20.7 % of those sit "
-                          "at 0-1 m/s where a stopped ego and a stopped CV path "
-                          "are identical and the metric cannot discriminate; the "
-                          "15+ band is UNPOWERED at n=2"),
+                "_note": ("270 of 881 windows carry a lead. ⛔ THE STANDING "
+                          "CAVEAT IS FALSE ON THIS SURFACE — see "
+                          "lead_speed_distribution below, MEASURED here."),
+                "lead_speed_distribution": {
+                    "_measured": ("directly from val40_lead_block.npz `state` "
+                                  "and `speeds`, 2026-08-04"),
+                    "n_lead": 270,
+                    "share_0_1_mps": 0.1185, "n_0_1_mps": 32,
+                    "n_15_plus_mps": 88,
+                    "⛔_retracted_caveat": (
+                        "the caveat '20.7 % of lead windows sit at 0-1 m/s and "
+                        "the 15+ band is UNPOWERED at n=2' does NOT hold on the "
+                        "canonical val40: 0-1 m/s is 11.85 % (32/270) and 15+ is "
+                        "the LARGEST lead-bearing band at n=88. RETRACTION_LOG "
+                        "already flagged this class — a stratification caveat "
+                        "measured on ONE corpus surface, quoted as a property of "
+                        "the metric. Re-measured here rather than inherited."),
+                },
             },
         },
         "LATERAL": {

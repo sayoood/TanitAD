@@ -817,7 +817,7 @@ def train(args) -> dict:
         # softening the TARGET is +0.0909 m WORSE than the incumbent one-hot CE and
         # +0.1883 m worse than the metric-aware objective, separated, at every tau
         # in {0.1, 0.25, 0.5}.
-        print("[e-obj] ⚠️ --sel-ce-objective softce is the CONTROL arm, not the "
+        print("[e-obj] !! --sel-ce-objective softce is the CONTROL arm, not the "
               "candidate. MEASURED at frozen 30 k weights it is +0.0909 m WORSE "
               "than the incumbent CE and +0.1883 m worse than `softade`, "
               "separated, at every tau tested. It exists so a `softade` arm can "
@@ -827,7 +827,7 @@ def train(args) -> dict:
         # from NATS to METRES and REFINED_CLS_WEIGHT (1.0) was calibrated for the
         # former. This is not a detail: it silently re-weights the whole selection
         # term against LAW, maneuver and trajectory losses.
-        print(f"[e-obj] ⚠️ --sel-ce-objective softade changes `loss_rcls` from a "
+        print(f"[e-obj] !! --sel-ce-objective softade changes `loss_rcls` from a "
               f"cross-entropy in NATS to an expected error in METRES. "
               f"REFINED_CLS_WEIGHT is {REFINED_CLS_WEIGHT} and was calibrated for "
               f"the CE scale, so --sel-ce-weight (now "
