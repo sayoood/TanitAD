@@ -79,16 +79,21 @@ on ρ — because ρ is a bulk statistic and argmax is an extreme one.
 2. ⛔ **The W7 per-window arrays are stranded.** `w7_eval_windows.pt` / `w7-full-roll/` lived on
    pod4/pod5, which are gone, so W7's own top-m medoid can never be computed. §3 substitutes an
    independent surface; it is not the same fan.
-3. ⚠️ **A consumer-invalidation risk INSIDE the ladder, newly identified and unmeasured** — see §4.3.
-   S-S retrains `goal_head_str`, which moves `e_g_str` → `g_tac` → the goal the S-T-frozen selector
-   consumes. That is registry §1.14's mechanism one level up and it has no gate today.
+3. ✅ **RESOLVED 2026-08-16 — the consumer-invalidation risk INSIDE the ladder now has a gate**
+   (§4.3). S-S retrains `goal_head_str`, which moves `e_g_str` → `g_tac` → the goal the S-T-frozen
+   selector consumes; that is registry §1.14's mechanism one level up. `STAGE_INVALIDATES` +
+   `sel_gap_revalidated` / `TACTICAL_revalidated` in S-S's **required** list now make an S-S gate
+   that skips the re-measurement read **INCONCLUSIVE**, and a measured regression read **FAIL**.
+   ⚠️ Still **unmeasured** — the gate forces the measurement, it does not substitute for it.
 4. ⚠️ **Where the goal's supervision comes from is not solved by this document.** `PH0_COVERAGE_AUDIT`
    measures that **PH0 emits none of the nine `g_tac` tokens** and that five need agent slots we do
    not extract. Without `ANCHOR_GOAL` supervision the goal head is trained only by the plan loss
    flowing back through the scorer, which is a much weaker signal than the design assumes.
-5. ⚠️ The `"mlp"` **capacity control is specified but not implemented** (§5.3). Until it exists a
-   `"goal"` win is not attributable between mechanism and capacity — `V6Config` refuses `"mlp"` today
-   with exactly that message rather than silently allowing an unattributable arm.
+5. ✅ **RESOLVED 2026-08-16 — the `"mlp"` capacity control is IMPLEMENTED** (§5.3):
+   `MLPCandidateScorer`, **+33,801 MEASURED** (126.6× the goal head), information-MATCHED to the goal
+   rule and pinned by 8 tests. `V6Config(selector="mlp")` is now accepted; only unknown names are
+   refused. ⚠️ It is implemented, **not run** — a `"goal"` arm still must not be judged until the
+   control has actually been trained beside it.
 
 ---
 
@@ -357,7 +362,7 @@ good scorer cannot be improved by a weak goal.
 | **SEL-3** | `plan_wta_eps` — ε-relaxed winner-take-all | **0** | **the CANDIDATE DISTRIBUTION**: bounds the fan mean, which pure WTA does not |
 | **SEL-4** | admissibility prefilter (reachability + feasibility), scoring restricted to survivors | **0** | **the SET**: rank statistics over reachable candidates only |
 | **SEL-5** | `n_candidates` as a declared ARM (8 vs 32) | **+6,144** (8→32) **+24** on `cand_bias` | **the SIZE**: measured, not assumed |
-| **SEL-6** | `selector="mlp"` — the **capacity control** | **+41,089** (arithmetic; **not implemented**) | makes a SEL-1 win attributable to mechanism rather than capacity |
+| **SEL-6** | `selector="mlp"` — the **capacity control** | **+33,801** (MEASURED 2026-08-16; **IMPLEMENTED**) | makes a SEL-1 win attributable to mechanism rather than capacity |
 
 **Why this is a different quantity, not a noisier estimate of the same one — four independent reasons:**
 
@@ -438,7 +443,7 @@ shape, independently re-derived by our own consumer-invalidation result.
 | `--w-select` | **0** | a loss term |
 | `--n-candidates 32` | **+6,144** | `cand_queries` Embedding(N, 256) |
 | both, at N=32 | **+6,435** | |
-| *(control)* `selector="mlp"` | **+41,089** | **154× the goal head** — the point of the control |
+| *(control)* `selector="mlp"` | **+33,801** (MEASURED) | **126.6× the goal head** — the point of the control |
 
 ⇒ within the programme's accepted band (**+897 / +385 / +128 / 0**), and **1/1,019** of the
 **+272,001** an earlier two-MLP tactical head cost before its own capacity control caught it.
@@ -564,7 +569,7 @@ In between ⇒ inconclusive; run the capacity control first.
 |---|---|
 | S-T's `sel_norm_err_rank` ≥ 0.25 or p10 ≤ 0.15 at T1 | SEL-1/2 — the goal-conditioned score is in the roll-cost's family after all |
 | the **goal-echo** arm scores within CI of the live goal | the goal carries no per-window information; the "hierarchy" is a per-candidate bias |
-| `selector="mlp"` (+41,089) matches or beats `"goal"` (+267) | the win is **capacity**, not mechanism — SEL-1's story is wrong |
+| `selector="mlp"` (+33,801 MEASURED) matches or beats `"goal"` (+267) | the win is **capacity**, not mechanism — SEL-1's story is wrong |
 | ε-relaxed WTA does not reduce the fan mean, or reduces the oracle | the fan-distribution account (SEL-3) is wrong; the diversity guard fires |
 | N=32 does not beat N=8 on selected ADE at equal rank | the N-law does not transfer from REF-C's fan to a learned 8-query fan — a real possibility, which is why N is an arm |
 | S-T improves selected ADE while `cl − ol` does not improve | the planner is papering over an unstable world model; **stop and fix S-W** |
@@ -654,8 +659,17 @@ not merely a count.
    this design gives it authority through.
 3. ⚠️ **E-WC2 (§5.2) should run before S-T is launched** — it can refuse SEL-1 for 0 GPU, and refusing
    before a launch is 10 k steps cheaper than refusing after one.
-4. ⚠️ **`selector="mlp"` (+41,089) must be implemented before a `"goal"` arm is judged.** `V6Config`
-   refuses it today with that message rather than allowing an unattributable arm.
+4. ✅ **CLOSED 2026-08-16 — `selector="mlp"` is implemented.** `MLPCandidateScorer`
+   (`stack/tanitad/models/v6.py`) reads exactly the goal rule's inputs — the candidate ENDPOINT and
+   `e_g_tac` — with no distance prior. **MEASURED param delta +33,801** on a full `V6Stack`
+   (87,893,449 → 87,927,250; one new `state_dict` key), i.e. **126.6× the goal head's +267**.
+   ⚠️ **The "+41,089" this document carried was a DESIGN-TIME ESTIMATE that was never realised in
+   code, and the "154×" derived from it was wrong** — both are corrected here to the measured values.
+   Pinned by `stack/tests/test_v6_selector_capacity_control.py` (8 tests), including one that proves
+   the control is **information-MATCHED**: perturbing every waypoint EXCEPT the endpoint leaves the
+   score bit-identical, so it is a capacity control and not an information control. `"none"` remains
+   byte-identical (`test_all_off_is_byte_identical_to_head` still passes) ⇒ **the live S-W resume is
+   unaffected.**
 5. ⚠️ **The W7 per-window arrays are lost with pod4/pod5.** Any future fan dump should be banked in
    the repo at emission time, not after the verdict — the same rule that made today's re-analysis
    possible at all.

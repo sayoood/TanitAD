@@ -1,0 +1,182 @@
+{
+ "mode": "dry-run",
+ "device": "cpu",
+ "steps": [
+  {
+   "stage": "S-T",
+   "seam_op": 0.9734392166137695,
+   "t1_latent": 0.9808197021484375,
+   "fan_mean_ade": 32.460445404052734,
+   "fan_oracle_ade": 32.46044158935547,
+   "plan_wta": 32.46044158935547,
+   "plan_ade_0_2s": 11.437341690063477,
+   "plan_ade_2_6s": 42.97199249267578,
+   "sel_softade": 32.46044158935547,
+   "sel_ade": 32.46044158935547,
+   "sel_norm_err_rank": 0.0,
+   "sel_gap": 0.0,
+   "loss": 66.87513732910156,
+   "terms": [
+    "plan",
+    "seam",
+    "select",
+    "t1"
+   ],
+   "step": 1,
+   "gnorm": 3.9354
+  },
+  {
+   "stage": "S-T",
+   "seam_op": 0.9840193390846252,
+   "t1_latent": 0.8683573603630066,
+   "fan_mean_ade": 45.39910125732422,
+   "fan_oracle_ade": 45.398468017578125,
+   "plan_wta": 45.398468017578125,
+   "plan_ade_0_2s": 15.609972953796387,
+   "plan_ade_2_6s": 60.2927131652832,
+   "sel_softade": 45.39910125732422,
+   "sel_ade": 45.398468017578125,
+   "sel_norm_err_rank": 0.0,
+   "sel_gap": 0.0,
+   "loss": 92.64994812011719,
+   "terms": [
+    "plan",
+    "seam",
+    "select",
+    "t1"
+   ],
+   "step": 2,
+   "gnorm": 23.2392
+  }
+ ],
+ "elapsed_s": 0.28,
+ "freeze": {
+  "stage": "S-T",
+  "trainable_groups": [
+   "layer_tac",
+   "planner"
+  ],
+  "per_group": {
+   "encoder": {
+    "trainable": 0,
+    "frozen": 448224
+   },
+   "readout": {
+    "trainable": 0,
+    "frozen": 12416
+   },
+   "predictor_op": {
+    "trainable": 0,
+    "frozen": 3905155
+   },
+   "layer_tac": {
+    "trainable": 1467181,
+    "frozen": 0
+   },
+   "layer_str": {
+    "trainable": 0,
+    "frozen": 294177
+   },
+   "planner": {
+    "trainable": 673027,
+    "frozen": 0
+   },
+   "aux": {
+    "trainable": 0,
+    "frozen": 1649792
+   }
+  },
+  "n_trainable": 2140208,
+  "n_frozen": 6309764,
+  "shared_goal_tables": {
+   "vocab_tac": {
+    "table": "vocab_tac.table.weight",
+    "emitted_by": "goal_head_tac (layer_tac)",
+    "consumed_by": "cond_op (planner)",
+    "group": "layer_tac"
+   },
+   "vocab_str": {
+    "table": "vocab_str.table.weight",
+    "emitted_by": "goal_head_str (layer_str)",
+    "consumed_by": "cond_tac (layer_tac)",
+    "group": "layer_str"
+   }
+  },
+  "_note": "a shared goal table moves whenever EITHER of its two views is trainable (HIERARCHY_VOCABULARY \u00a75)"
+ },
+ "isolation": {
+  "matrix": {
+   "predictor_op": [
+    "encoder",
+    "readout",
+    "predictor_op"
+   ],
+   "aux": [
+    "encoder",
+    "readout",
+    "aux"
+   ],
+   "layer_tac": [
+    "layer_tac"
+   ],
+   "layer_str": [
+    "layer_str"
+   ],
+   "planner": [
+    "planner"
+   ]
+  },
+  "config": {
+   "isolate_planner_from_encoder": true,
+   "isolate_uplink": true,
+   "uplink": "stopgrad",
+   "shared_encoder": true
+  },
+  "violations": {},
+  "n_violations": {
+   "planner_to_encoder": 0,
+   "tactical_to_below": 0,
+   "strategic_to_below": 0
+  },
+  "n_probed": {
+   "planner_to_encoder": 31,
+   "tactical_to_below": 82,
+   "strategic_to_below": 137
+  },
+  "pass": true,
+  "_evidence_class": "MEASURED (ours; autograd probe on this graph)"
+ },
+ "spectrum_smoke": {
+  "n": 64,
+  "d": 64,
+  "top_k": 8,
+  "participation_ratio": 31.068847947383315,
+  "effective_rank": 50.57308735021884,
+  "top_k_share": 0.38629234496967246
+ },
+ "param_report": {
+  "total": 8449972,
+  "budget": 350000000,
+  "within_budget": true,
+  "headroom": 341550028,
+  "per_group": {
+   "encoder": 448224,
+   "readout": 12416,
+   "predictor_op": 3905155,
+   "layer_tac": 1467181,
+   "layer_str": 294177,
+   "planner": 673027,
+   "aux": 1649792
+  },
+  "trainable": 2140208,
+  "arm": "shared-encoder+adapters",
+  "d_op": 2048,
+  "d_tac": 96,
+  "d_str": 64,
+  "_note": "E-ENC decides at MATCHED TOTAL PARAMS \u2014 compare arms on this number, not on per-layer widths",
+  "_evidence_class": "MEASURED (ours; count at instantiation)"
+ },
+ "n_trainable_tensors": 68,
+ "_read": "synthetic tensors \u2014 NO corpus, NO checkpoint. This proves the launch assembles and steps; it proves NOTHING about driving. No number here is quotable.",
+ "_evidence_class": "MEASURED (ours; synthetic smoke)"
+}

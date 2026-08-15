@@ -96,7 +96,8 @@ __all__ = [
     "GOAL_ARG_SLOTS", "GOAL_ARG_NAMES",
     # config + stack
     "V6Config", "V6Stack", "GoalVocabulary", "GoalHead", "GoalConditioner",
-    "GoalDistanceScorer", "IsolationViolation", "PARAM_BUDGET",
+    "GoalDistanceScorer", "MLPCandidateScorer",
+    "IsolationViolation", "PARAM_BUDGET",
     # horizon (§4b)
     "PLAN_STEPS", "DT", "HORIZON_S", "OP_BAND_S", "TAC_BAND_S",
     # staging (X5)
@@ -689,6 +690,79 @@ class GoalDistanceScorer(nn.Module):
                 "goal_point": g, "goal_dist": d}
 
 
+class MLPCandidateScorer(nn.Module):
+    """⭐ THE CAPACITY CONTROL for :class:`GoalDistanceScorer`. Same inputs,
+    far more parameters, and **no distance prior whatsoever**.
+
+    ⛔ WHY THIS MODULE HAS TO EXIST BEFORE A ``"goal"`` ARM IS JUDGED.
+    ``GoalDistanceScorer`` wins with **+267** parameters and a hard-wired
+    ``−‖endpoint − ĝ‖`` rule. If that arm beats the incumbent, exactly two
+    stories fit the observation:
+
+      1. **MECHANISM** — a candidate-INDEPENDENT reference has no degenerate
+         minimiser, which is why its normalised error-rank FALLS with N while
+         the roll-consistency score's RISES (0.241 → 0.286 at N=256);
+      2. **CAPACITY** — the selector head was simply underpowered, and any
+         extra parameters on the same inputs would have done as well.
+
+    A ``"goal"``-only experiment cannot separate them, and reading (2) as (1)
+    is the **C6 confound** verbatim — a decoder compared on its marginal —
+    which this programme has already been burned by once. §5.3 of
+    ``V6F_PLANNER_DESIGN.md`` pre-registers the refutation: *if ``"mlp"``
+    matches or beats ``"goal"``, SEL-1's story is wrong.*
+
+    ⚠️ **INFORMATION-MATCHED ON PURPOSE, NOT INFORMATION-ENRICHED.** The inputs
+    are exactly what the goal rule reads — the candidate ENDPOINT
+    (``waypoints[:, :, -1]``) and ``e_g_tac`` — and nothing else. Handing the
+    control the full 60x2 path would make it a *different experiment* (an
+    information control), and its result would no longer speak to capacity.
+
+    ⚠️ **THE CONTROL IS DELIBERATELY GENEROUS.** It gets ~127x the goal rule's
+    parameters. That is the conservative direction for the conclusion we most
+    want to avoid over-claiming: if a control this large still loses, "capacity"
+    is a weak explanation; if it wins, SEL-1 is refuted and we want to know.
+
+    ⛔ ADMISSIBILITY (PI 2026-08-03) is inherited unchanged: the only inputs are
+    the emitted trajectory and ``e_g_tac``, which comes from
+    ``goal_head_tac(z_tac_p, cond=e_g_str)``. No situation-classifier output in
+    any form, no ego state at inference.
+
+    ⚠️ It emits **no** ``goal_point`` / ``goal_dist``. It has no goal point, and
+    a zero-filled field would be a fabricated number that later reads as a
+    measurement. ``mechanism="mlp"`` is emitted instead so a dump is
+    self-identifying.
+    """
+
+    def __init__(self, d_goal_embed: int, n_candidates: int, *,
+                 hidden: int = 256):
+        super().__init__()
+        self.d_in = 2 + int(d_goal_embed)
+        self.fc1 = nn.Linear(self.d_in, int(hidden))
+        self.fc2 = nn.Linear(int(hidden), 1)
+        # Zero-init the OUTPUT layer, mirroring GoalDistanceScorer's zero-init
+        # discipline: the control starts as a flat score over the fan, so any
+        # ranking it acquires is visible as something it LEARNED rather than
+        # something its initialisation handed it.
+        nn.init.zeros_(self.fc2.weight)
+        nn.init.zeros_(self.fc2.bias)
+        self.cand_bias = nn.Parameter(torch.zeros(int(n_candidates)))
+
+    def forward(self, waypoints: Tensor, g_embed: Tensor) -> dict:
+        """``waypoints`` [B, N, T, 2] · ``g_embed`` [B, d_goal_embed] ->
+        ``{"score" [B, N], "mechanism": "mlp"}``. Higher score == better, the
+        same convention as :class:`GoalDistanceScorer`, so the two are drop-in
+        comparable and ``sel_*`` logging is unchanged."""
+        if waypoints.ndim != 4 or waypoints.shape[-1] != 2:
+            raise ValueError(f"waypoints must be [B, N, T, 2], got "
+                             f"{tuple(waypoints.shape)}")
+        end = waypoints[:, :, -1]                                  # [B, N, 2]
+        b, n = end.shape[0], end.shape[1]
+        g = g_embed.to(end.dtype)[:, None].expand(b, n, -1)
+        h = torch.nn.functional.gelu(self.fc1(torch.cat([end, g], dim=-1)))
+        return {"score": self.fc2(h).squeeze(-1) + self.cand_bias.to(h.dtype),
+                "mechanism": "mlp"}
+
+
 # ============================================================================
 # X3 — the gradient-isolation matrix, as a config + a MEASURED check
 # ============================================================================
@@ -788,10 +862,17 @@ class V6Config:
     #: ⚠️ NEVER judge a ``"goal"`` arm without the ``"mlp"`` capacity control
     #: (V6F_PLANNER_DESIGN §5) — an arm that wins on capacity read as winning on
     #: mechanism is the C6 confound.
+    #: ``"mlp"`` builds :class:`MLPCandidateScorer` — the CAPACITY CONTROL. It
+    #: reads exactly the same inputs (candidate endpoint + ``e_g_tac``) with no
+    #: distance prior, so a ``"goal"`` win that is really a capacity win shows
+    #: up as ``"mlp"`` matching it (``V6F_PLANNER_DESIGN.md`` §5.3).
     selector: str = "none"
     #: Selection temperature (metres) for the goal-distance logit. Only read
     #: when ``selector != "none"``.
     selector_tau_m: float = 1.0
+    #: Hidden width of the ``"mlp"`` capacity control. Only read when
+    #: ``selector == "mlp"``; holds no parameters otherwise.
+    selector_mlp_hidden: int = 256
     #: epsilon-RELAXED winner-take-all for the plan loss. ⛔ DEFAULT 0.0 = the
     #: incumbent PURE WTA, bit-identical. MEASURED consequence of pure WTA: the
     #: N−1 losing candidates receive EXACTLY ZERO gradient, so nothing bounds
@@ -863,16 +944,19 @@ class V6Config:
                 f"the tactical band must end at the plan horizon "
                 f"{self.horizon_s} s (plan_steps {self.plan_steps} x dt "
                 f"{self.dt}), got {self.tac_band_s[1]}")
-        if self.selector not in ("none", "goal"):
+        if self.selector not in ("none", "goal", "mlp"):
             raise ValueError(
-                f"selector must be none|goal, got {self.selector!r}. "
-                f"'mlp' is the pre-registered CAPACITY CONTROL and is not "
-                f"implemented yet — running 'goal' without it would make a win "
-                f"unattributable between mechanism and capacity "
-                f"(V6F_PLANNER_DESIGN.md §5).")
+                f"selector must be none|goal|mlp, got {self.selector!r}. "
+                f"'mlp' is the pre-registered CAPACITY CONTROL for 'goal' "
+                f"(V6F_PLANNER_DESIGN.md §5.3): same inputs, no distance "
+                f"prior, ~127x the parameters. A 'goal' win judged without it "
+                f"is unattributable between mechanism and capacity.")
         if self.selector_tau_m <= 0.0:
             raise ValueError(f"selector_tau_m must be > 0, got "
                              f"{self.selector_tau_m}")
+        if self.selector_mlp_hidden <= 0:
+            raise ValueError(f"selector_mlp_hidden must be > 0, got "
+                             f"{self.selector_mlp_hidden}")
         if not 0.0 <= self.plan_wta_eps <= 1.0:
             raise ValueError(f"plan_wta_eps must be in [0, 1], got "
                              f"{self.plan_wta_eps}")
@@ -1255,6 +1339,10 @@ class V6Stack(nn.Module):
         if cfg.selector == "goal":
             self.cand_score = GoalDistanceScorer(
                 cfg.d_goal_embed, cfg.n_candidates, tau_m=cfg.selector_tau_m)
+        elif cfg.selector == "mlp":
+            self.cand_score = MLPCandidateScorer(
+                cfg.d_goal_embed, cfg.n_candidates,
+                hidden=cfg.selector_mlp_hidden)
 
     # -- grouping ------------------------------------------------------------
     #: prefix -> group. Longest matching prefix wins, so ``predictor_tac``

@@ -978,6 +978,7 @@ def build_stack_from_args(a) -> V6Stack:
         f_hidden_tac=a.f_hidden_tac, f_hidden_str=a.f_hidden_str,
         f_blocks=a.f_blocks,
         selector=a.selector, selector_tau_m=a.selector_tau_m,
+        selector_mlp_hidden=getattr(a, "selector_mlp_hidden", 256),
         plan_wta_eps=a.plan_wta_eps,
         vit5_encoder=bool(a.vit5_encoder), n_registers=a.n_registers)
     stack = V6Stack(cfg)
@@ -1693,12 +1694,20 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--n-candidates", type=int, default=8)
     ap.add_argument("--param-budget", type=int, default=300_000_000)
     # ---- SELECTION (V6F_PLANNER_DESIGN.md) — ALL DEFAULT-OFF ---------------
-    ap.add_argument("--selector", choices=("none", "goal"), default="none",
+    ap.add_argument("--selector", choices=("none", "goal", "mlp"),
+                    default="none",
                     help="'none' (default) builds NO scorer and leaves the "
                          "state_dict byte-identical. 'goal' builds the +267 "
-                         "GoalDistanceScorer — the mechanism E-WC measured.")
+                         "GoalDistanceScorer — the mechanism E-WC measured. "
+                         "'mlp' builds the CAPACITY CONTROL: identical inputs, "
+                         "no distance prior, ~127x the parameters. Judging a "
+                         "'goal' arm without it cannot separate mechanism from "
+                         "capacity (V6F_PLANNER_DESIGN.md §5.3).")
     ap.add_argument("--selector-tau-m", type=float, default=1.0,
                     help="selection temperature in metres (goal scorer only)")
+    ap.add_argument("--selector-mlp-hidden", type=int, default=256,
+                    help="hidden width of the 'mlp' capacity control "
+                         "(ignored for every other --selector)")
     ap.add_argument("--plan-wta-eps", type=float, default=0.0,
                     help="epsilon-relaxed WTA: weight on the LOSING candidates' "
                          "mean error. 0.0 (default) is the incumbent pure WTA, "

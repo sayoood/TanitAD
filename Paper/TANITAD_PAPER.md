@@ -2340,12 +2340,30 @@ runs on existing corpora, and in its first two days it changed the programme's d
 
 ### 7.15 Data and instruments shipped this round (2026-08-10 → 08-11)
 
-- **Alpamayo-2-Super augmentation dataset** — completed: 4,800/4,800 clips, 23,999 rows across
-  5 tasks, published as an HF public gated dataset with a road-class-coverage and provenance
-  card *(counts INHERITED from the session report `MORNING_REPORT_2026-08-11.md`; not yet
-  registry-anchored — flagged rather than silently promoted)*. Its meta-actions (3-axis, with
-  severity) and reasoning traces are exactly tactical-level auxiliary supervision — a second,
-  independent teacher for the hierarchy's stage 0, with the contamination caveat carried.
+- **Alpamayo-2-Super augmentation dataset** — completed: **4,729 clips · 23,644 rows across 5
+  tasks** (`trajectory` / `meta_action` / `auto_labeling` / `vqa` 4,729 each, `grounding_via_vqa`
+  4,728), published as an HF public gated dataset with a road-class-coverage and provenance card.
+  **Counts MEASURED and registry-anchored** — `Project Steering/MODEL_REGISTRY.md` §11.1, derived
+  by direct aggregation over `records.parquet` (sha256-matched to the published artifact) and
+  independently re-verified 2026-08-16. ⛔ **The earlier "4,800/4,800 clips, 23,999 rows" was
+  INHERITED from `MORNING_REPORT_2026-08-11.md`, which repeated the dataset card; both are wrong.**
+  The card understates the completeness hole by **356×** — it reports "one" missing row of 24,000,
+  where **356 are missing (1.48 %)**: 81 selected clips produced zero rows (−405), 10 delivered
+  clips were never in the manifest (+50), and one clip is missing its `grounding_via_vqa` row (−1).
+  ⭐ The **stratification survives intact** — urban 1,884 / intersection-rich 1,241 / highway 384 /
+  unstructured 83 are delivered 100 % complete, and the entire hole falls in the unstratified
+  remainder. Its meta-actions (3-axis, with severity) and reasoning traces are exactly
+  tactical-level auxiliary supervision — a second, independent teacher for the hierarchy's stage 0,
+  with the contamination caveat carried. 🟥 **Public use of this dataset is an OPEN PI DECISION**
+  (two in-repo documents disagree on whether a PhysicalAI-AV derivative may leave the firewall —
+  recorded in registry §11.1, deliberately unresolved).
+- **PH1-fused hierarchy label layer over the aug120 slice** — **201/201 clips fused**, Alpamayo
+  layer on 201/201, ⛔ **but the SAM3 perception leg covers only 86/201 (42.8 %)**: 115 clips carry
+  a named `AUG120_SAM3_STAGE_GAP` marker rather than a silent empty layer. The gap was first
+  recorded as "8 clips" and is **14.4× larger** than that; root cause is a `--n` flag omitted for
+  the SAM3 stage (default 4), so every batch got SAM3 on its first 4 clips **while printing
+  `SAM3_RC=0`**. MEASURED, registry §11.2. *(Root-cause class C18: a listing probe sees a MISSING
+  file, never a SHORT one.)*
 - **The `obstacle.offline` join** — 3D agent tracks (97.44 % of the corpus) joined to the eval
   grid: 26,084 records over 137 clips **with occlusion flags** (`p8_gate_attempt1.json`
   `raster_source`; MEASURED), feeding P4/P8, the lead-gap battery, and the distance-keeping
@@ -2882,13 +2900,15 @@ the targeted longitudinal fix (§7.5). The v0.6 round re-orders what comes first
    S-S trains: **PH0** (three VLM arms — Qwen3.5-9B / 27B-FP8 / Gemma-4-31B-QAT — on 50
    stratified clips, gates G1 sign-OCR ≥ 0.9 and G2 schema ≥ 0.9 bound in advance, plus an
    optional Engine-C/SAM column decided on measured mask-vs-join agreement), then **PH1** (the
-   full ~4.8 k-clip run, spend decided from PH0's measured s/clip), then **PH2** (the g_str
+   full **4,729**-clip run — the delivered A2 population, MEASURED, `MODEL_REGISTRY.md` §11.1, not
+   the card's 4,800 — spend decided from PH0's measured s/clip), then **PH2** (the g_str
    supervision stream, the nuisance/domain strata for P2, and domain-stratified four-family
    evals). Every semantic claim any engine emits must carry its **image-space grounding**
    (bounding box, and a mask/contour reference where available, with a frame index); ungrounded
-   claims are `disputed` by default. The Alpamayo-2-Super meta-action distribution (4,800 clips)
-   supplies the empirical phrase distribution the token set must cover, and **vocabulary
-   coverage is measured**, with unmappable phrases logged rather than silently dropped.
+   claims are `disputed` by default. The Alpamayo-2-Super meta-action distribution (**4,729
+   clips** — MEASURED, `MODEL_REGISTRY.md` §11.1, **not** the card's 4,800) supplies the empirical
+   phrase distribution the token set must cover, and **vocabulary coverage is measured**, with
+   unmappable phrases logged rather than silently dropped.
 10. **The label-free lever program LF0–LF4 for the missing lead variable** (§7.14): LF0 first —
    probe pre-pool spatial tokens and the P8 attempt-2 decoded-BEV read-off (~0.5 GPU-h, decides
    whether the defect is routing or learning) — then LF1–LF4 in cost order, each gated on the
@@ -3204,7 +3224,10 @@ arXiv:2607.04500.)
   fail), P5 instrument byte-close, and the P8 attempt-1 instrument lesson (unweighted BCE on
   overwhelmingly-empty rasters collapses to all-empty; IoU-at-0.5 on a collapsed readout is a
   ratio of noise; fix = auto pos-weight + soft-Dice + τ\* swept on the encoded arm). **New
-  §7.15** — Alpamayo-2-Super augmentation (INHERITED counts, flagged), the obstacle.offline join
+  §7.15** — Alpamayo-2-Super augmentation (**counts now MEASURED and registry-anchored at
+  `MODEL_REGISTRY.md` §11.1 — 4,729 clips / 23,644 rows, correcting the card-derived 4,800 /
+  23,999 that stood here as INHERITED**; plus the PH1-fused layer at §11.2 with its named 57.2 %
+  SAM3 hole), the obstacle.offline join
   (26,084 records / 137 clips, occlusion flags), and the VLM strategic-labeling design + PH0
   three-arm prereg with its admissibility rules. §7.11(f) status-noted; §10 extended with the
   W7-FULL/T1/release-row ladder, the v6 staged direction (S-W/S-P/S-J), LF0–LF4, and the S1–S4

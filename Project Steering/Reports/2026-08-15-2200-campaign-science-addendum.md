@@ -455,6 +455,36 @@ block is absent). On those **255**: **min_ade_m mean 2.3469 m / median 1.5233 m*
 6.8726 m / median 4.6711 m** — at Alpamayo's **native 6.4 s horizon**, and at **1 sample**, so these
 are ⛔ **not comparable to the published minADE₆ 0.911 m** for the same three reasons in §2.2.
 
+> ### ⛔ CORRECTION STAMPED 2026-08-16 — the paragraph immediately above is WRONG on the 4,474
+>
+> **Superseded by `Project Steering/MODEL_REGISTRY.md` §11.1**, which is now the quotable source
+> for this dataset. The original text is left standing above (retractions are the learning
+> mechanism, not an erasure); **do not quote it**.
+>
+> **What was claimed:** *"the rest have `num_trajectory_samples: None`, i.e. the GT-dependent
+> metric block is absent."*
+> **What is MEASURED** (independent re-derivation from the same parquet,
+> `…/scratchpad/reverify_a2_counts.py` → `a2_reverify.json`): `raw_json` has **two disjoint schema
+> variants**. The **4,474** rows without `min_ade_m` are **not** metric-free — they carry
+> `cot` · `pred_xyz` · `pred_rot` · `logprob` · **`ade_vs_gt_m`**, with **`ade_vs_gt_m` on
+> 4,474/4,474 (0 null)** and **`pred_xyz` = 64 waypoints on 4,474/4,474**. The key
+> `num_trajectory_samples` is **absent entirely** on those rows (255 hits over the whole column),
+> and the 255 metric-block rows carry **no `pred_xyz` at all** — so waypoints and metric block
+> **never co-occur**, and 4,474 + 255 = 4,729 = one row per clip.
+>
+> `ade_vs_gt_m`: **n 4,474 · mean 2.2584 m · median 1.5245 m · p10 0.4061 · p90 5.0252** — it
+> *corroborates* the 255-row `min_ade_m` (2.3469 / 1.5233) at **17.5× the n**. ⚠️ Whether the two
+> are the **same estimator** is 🟥 UNVERIFIED (different code paths, different names) — ⛔ do not
+> pool them. Both remain non-comparable to minADE₆ 0.911 m for the §2.2 reasons.
+>
+> ⇒ **The conclusion inverts:** predicted waypoints exist for **4,474 of 4,729** clips, not 255,
+> and a GT-referenced error exists for **4,729 of 4,729**. The `trajectory` task is far more usable
+> than this section recorded.
+>
+> **Root-cause class:** C18-family — a **key-presence probe over a heterogeneous JSON column**. It
+> can see a key MISSING but cannot see *a differently-named key answering the same question*. The
+> same shape as the aug120 SAM3 gap, where a listing saw a missing file but never a short one.
+
 ### 2.6 ⚠️ Where the handover's pointers do not land
 
 - The handover (§1.A) says the A2 phase's record is in **"chronicle rows in `PROJECT_STATE.md`"**.
@@ -1395,9 +1425,9 @@ hazard."*
    cannot drift"* — a figure that cannot disagree with the registry.
 8. ⚠️ **Three numbers are flagged INHERITED in-text rather than silently promoted** (commit `0aeee08`):
    *"Alpamayo counts pending a registry row; P8 positives fraction pending tonight's banked gate; one
-   truncated digit described qualitatively."* ⇒ **The Alpamayo augmentation counts still have no
-   registry row** — §2.5 of this addendum supplies the measured values (23,644 / 4,729 / one
-   quantisation arm) that would close that flag.
+   truncated digit described qualitatively."* ⇒ ✅ **CLOSED 2026-08-16: the Alpamayo augmentation
+   counts now have a registry row** (`MODEL_REGISTRY.md` §11.1/§11.2) and the paper's flag was
+   promoted from INHERITED to MEASURED, with 4,800 / 23,999 corrected to **4,729 / 23,644**.
 
 ---
 
@@ -1602,8 +1632,9 @@ block says: **`cl − ol` is the quantity that matters, `ha` is the floor to cle
 ~99 % longitudinal.** ⇒ **S-W's own gate should be `cl − ol` stability under the model's own actions**,
 exactly as the registry states, and the 10 k P-battery should be read with that framing.
 ⚠️ **Two paper-maintenance items fall out of this addendum:** the headline parameter count is still
-**263.4 M** (one generation behind config E's 336.5 M), and the **Alpamayo counts are still flagged
-INHERITED "pending a registry row"** — §2.5 supplies the measured values to close that flag.
+**263.4 M** (one generation behind config E's 336.5 M) — still open; and the **Alpamayo counts were
+flagged INHERITED "pending a registry row"** — ✅ **closed 2026-08-16** by `MODEL_REGISTRY.md`
+§11.1/§11.2, with the paper re-pointed and the counts corrected to **4,729 / 23,644**.
 
 **From §7 (the sweep) — three unrun items with outsized leverage.** (1) **`PREREG_SCALING_LADDER.md`**
 is the only pre-registered test of the hierarchy's data-efficiency claim, costs ~6 GPU-hours on a frozen
@@ -1628,11 +1659,14 @@ the TACTICAL family's history.
 
 ## Escalations
 
-1. ⭐ **The A2 augmentation set has no registry row, and the paper carries its counts as INHERITED.**
-   §2.5 measures them (23,644 rows / 4,729 clips / 5 tasks / **one** quantisation arm,
-   `NF4-backbone-4bit-UNVALIDATED` / 78.4 wall-hours / zero errors). **This wants a `MODEL_REGISTRY.md`
-   row so the paper can promote the flag** — that is a registry edit and belongs to whoever owns it,
-   not to this report.
+1. ✅ **CLOSED 2026-08-16.** ~~The A2 augmentation set has no registry row, and the paper carries its
+   counts as INHERITED.~~ §2.5 measured them (23,644 rows / 4,729 clips / 5 tasks / **one**
+   quantisation arm, `NF4-backbone-4bit-UNVALIDATED` / 78.4 wall-hours / zero errors) and they are
+   now the registry's: **`MODEL_REGISTRY.md` §11.1** (the A2 set, all counts re-verified by a second
+   independent probe) and **§11.2** (the PH1-fused aug120 layer). `Paper/TANITAD_PAPER.md` §7.15,
+   §8-item-9 and the changelog were re-pointed at those sections and the card-derived
+   **4,800 / 23,999 corrected to 4,729 / 23,644**. ⛔ **One §2.5 paragraph did not survive
+   re-verification** — the `trajectory` metric-block claim; see the correction stamp in §2.5.
 2. ⚠️ **`DataEng/DATA_STRATEGY.md` is a month stale** (v1.0, 2026-07-06) and is still cited by the
    handover as the augmentation strategy's owner. Either it gets a v2.0 that points at the four real
    documents, or the handover's pointer should be corrected. **A stale pointer in a handover is how the

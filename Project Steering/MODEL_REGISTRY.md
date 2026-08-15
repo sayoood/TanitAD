@@ -2976,6 +2976,14 @@ converged head + the paired same-regime contrast, never an under-converged point
 > `Paper/TANITAD_PAPER.md` carried its counts as **INHERITED** with the flag *"pending a
 > registry row"*. Same failure mode as v5f being the headline live run with no row (§1.8).
 > A produced dataset is quotable only from here or from its own parquet.
+>
+> **Rows: §11.1** the A2 augmentation set · **§11.2** the PH1-fused hierarchy layer derived from it.
+>
+> ⛔ **The counting rule for this section, learned twice the hard way: COUNT RECORDS, NEVER FILES.**
+> A listing probe sees a **missing** file but never a **short** one — that is how an 8-clip gap was
+> really 115 (§11.2), and how a 1-row hole was really 356 (§11.1). Every count here is a row tally,
+> a per-clip task tally, or a per-record key census, and each states its **n**. Where a stage's
+> coverage is not conserved (`n_out != n_in`), the row says so with the number.
 
 ### 11.1 Alpamayo-2-Super augmentation of PhysicalAI-AV — `Sayood/tanitad-alpamayo2-augmentation` — ✅ **COMPLETE** (produced 2026-08-06 → 2026-08-09)
 
@@ -2984,20 +2992,34 @@ converged head + the paired same-regime contrast, never an under-converged point
 local copy is proven to BE the published artifact: sha256
 `ecae276db9969de115abb3caa1e87d97eae0535544be8f5edcc33ec45d925ed2` matches the far-side
 LFS oid, and both sides are **25,970,018 B**. Extraction/verification script
-`…/scratchpad/verify_a2_parquet.py`; the earlier read is
+`…/2026-08-06-alpamayo-augmentation/tools/verify_a2_parquet.py`; the earlier read is
 `Project Steering/Reports/2026-08-15-2200-campaign-science-addendum.md` §2.5, which this
 row reproduces independently and then extends.
+
+✅ **RE-VERIFIED 2026-08-16 by a second, independently written probe**
+(`…/2026-08-06-alpamayo-augmentation/tools/reverify_a2_counts.py` → `…/tools/a2_reverify_2026-08-16.json`), which recomputed every
+count from the parquet rather than re-running the first script. **All headline counts below
+reproduced exactly** (23,644 / 4,729 / per-task / 78.36 h / 59.65 s per clip / one quantisation
+arm / 0 errors), the far-side sha256 + byte-size match was re-confirmed, and the manifest
+accounting was re-derived from a fresh pull of `selection_manifest.json`. **One paragraph did
+NOT survive** — the `trajectory`-task claim, corrected in its own block below. Counts are
+**RECORD counts** throughout: rows and per-clip task-row tallies, never a file listing.
 
 | Field | Value |
 |---|---|
 | **What it is** | 5-task `nvidia/Alpamayo2-Super` (34.3 B) inference over a stratified selection of PhysicalAI-AV. ⛔ **No raw sensor data** — every row joins back by `clip_id` + `t0_us`. |
+| **Source corpus** | `nvidia/PhysicalAI-Autonomous-Vehicles` — **306,152 clips ≈ 1,701 h** (MEASURED, `data_collection.parquet` row count 2026-08-06, `…/2026-08-06-alpamayo-augmentation/DESIGN.md`). |
+| **Coverage of source** | **4,729 / 306,152 clips = 1.54 %** of the corpus by clip. ⚠️ The PI brief targeted **100 h ≈ 18,000 clips (5.9 %)**; delivered is **26.3 % of that target** — a scope fact, not a failure, and it is the number a "scale the augmentation" decision starts from. |
+| **Delivery vs selection** | **4,729 delivered / 4,800 selected = 98.52 % of the manifest**; **23,644 / 24,000 rows = 98.52 %**. |
+| **Pipeline entry point** | `TanitAD Research Hub/Benchmarks & Eval/Research/2026-08-06-alpamayo-augmentation/tools/a2_alltasks.py` (the 5-task battery), driven per batch by `…/2026-08-05-alpamayo2-super/tools/a2_batch.py`; the single-clip quantised runner is `…/2026-08-05-alpamayo2-super/tools/a2_quant_run.py` (+ its `run_4bit_a40/` copy). Design + stage plan: `…/2026-08-06-alpamayo-augmentation/DESIGN.md`. ⚠️ **The orchestration ran pod-side and the pods are dead** — §2.6 of the addendum records that `a2_batch_out/` did not reach the repo, so the *driver invocation* is 🟥 UNVERIFIED even though the entry points are in-repo. |
+| **Artifacts live** | HF `Sayood/tanitad-alpamayo2-augmentation` (5 files, far-side listing MEASURED 2026-08-16) · in-repo tooling + road-class labels under `…/2026-08-06-alpamayo-augmentation/` (`aug_road_class.json`, `a2_records_stats.json`, `tools/`, `pilot_rows_10clips.jsonl`, `aug_candidates_phase1.json.xz`) · local verified copy of the parquet in the session scratchpad (not committed — 25.97 MB). |
 | **Status** | ✅ COMPLETE, on HF, **`error` non-null on 0 of 23,644 rows** |
 | **HF** | `Sayood/tanitad-alpamayo2-augmentation` · 5 files: `records.parquet` (25,970,018 B), `README.md`, `selection_manifest.json` (340,800 B), `vqa_bank_500.json`, `.gitattributes` |
 | **Rows / clips** | **23,644 rows · 4,729 unique `clip_id` · 5 tasks · 12 columns** |
 | **Schema (12 cols)** | `clip_id` · `t0_us` · `task` · `model_id` · `quantisation` · `seed` · `wall_s` · `error` · `vqa_qid` · `vqa_category` · `question` · `raw_json` (all `large_string` except `t0_us`/`seed` int64, `wall_s` double, `error` **null-typed**) |
 | **Determinism** | `seed` = **42** on **23,644/23,644**; `model_id` = `nvidia/Alpamayo2-Super` on **23,644/23,644**; `t0_us` = **5,100,000** on every row (single distinct value — the loader default) |
 | **Parity** | ⛔ **NOT the training-parity corpus.** Selection is its own manifest, not `e438721ae894`/`f09e44db`. Nothing here re-selects training episodes, so §0.1 parity is untouched — but no A2 row may be joined to a parity arm without an explicit clip-level join. |
-| **License** | `nvidia-physicalai-derivative` (card), inheriting `nvidia/PhysicalAI-Autonomous-Vehicles`. ⚠️ Per `DATA_STRATEGY.md`'s license firewall this is **PhysicalAI-derived** and therefore not usable in a public claim/demo/publication built on the comma2k19 + own-data track. |
+| **License** | `nvidia-physicalai-derivative` (card), inheriting `nvidia/PhysicalAI-Autonomous-Vehicles`. 🟥 **OPEN PI DECISION — two in-repo documents disagree and this row does NOT pick a side.** See the ⚖️ block below. |
 
 **Per-task rows and measured cost** (`wall_s`, the throughput record the DESIGN doc said the
 pilot would produce):
@@ -3081,6 +3103,37 @@ ego-derived rule labelled every clip it could.)*
 ⚠️ The road-class labels are **ego-derived** — admissible as labels under the binding
 label/inference rule, ⛔ **never as an inference-time input.**
 
+✅ **The stratum table above was RE-DERIVED INDEPENDENTLY 2026-08-16** (fresh manifest pull +
+fresh parquet join, `…/2026-08-06-alpamayo-augmentation/tools/reverify_a2_counts.py`): manifest 4,800 → urban 1,884 ·
+intersection_rich 1,241 · highway 384 · unstructured 83 · unlabelled 1,208; delivered 4,729 →
+identical on all four labelled strata, unlabelled **1,137**; and the **81 zero-row clips are
+81/81 unlabelled** and the **10 off-manifest clips 10/10 unlabelled**. `aug_road_class.json`
+carries `counts` + `classes` (**3,592 labelled clip_ids**) and is git-tracked at
+`TanitAD Research Hub/Benchmarks & Eval/Research/2026-08-06-alpamayo-augmentation/aug_road_class.json`.
+*(An earlier draft of this row asserted that file "IS NOT THERE" — that absence-claim was wrong
+and is retracted; it is present and tracked. Operating-Standard rule 2: absence at one probe is
+not absence.)*
+
+### ⚖️ OPEN PI DECISION — MAY THIS DATASET BE USED IN A PUBLIC CLAIM? TWO DOCS DISAGREE
+
+**Recorded, not resolved. This row takes no side; the PI decides.** The two documents are not
+obviously talking about the same object, which is exactly why it needs a decision rather than a
+reading:
+
+| document | claim | scope it names |
+|---|---|---|
+| `TanitAD Research Hub/Data Engineering/TANITDATASET_V1_STRATEGY.md:61` | **"PhysicalAI-AV/Alpamayo … commercial-OK for internal AV dev but no-derivatives → firewalled, `recipe-only`"**; `:42` `firewalled` = *"never enters the lake — recipe-only"*; `:35` `assemble_lake_record` **raises `PermissionError`** if PhysicalAI-AV is fed to the lake | the **source dataset** |
+| `…/Research/2026-08-05-alpamayo2-super/ALPAMAYO2_SUPER_ANALYSIS.md:24, :162, :229` | **"OpenMDW-1.1 … fine-tuning, derivatives, commercial redistribution"**, and **"OpenMDW-1.1 permits derivative use"** cited as the licence basis for auto-labelling | the **model weights** |
+
+⚠️ **This dataset is precisely the object the two scopes collide on:** it is a **derivative of
+the restricted DATASET, produced by the permissive MODEL**, and it is **already published on
+HF**. Under the strategy doc's reading it is `firewalled`/`recipe-only`; under the analysis
+doc's reading the derivative is permitted.
+⛔ **Until the PI rules, no public claim, demo, paper figure or external release may rest on
+this dataset**, and no agent may cite either document as having settled it. Internal
+programme use (auto-labelling, distillation targets, the PH0/PH1 fusion in §11.2) is unaffected
+by the dispute as framed — both readings permit internal AV development.
+
 ⚠️ **Two provenance fields the card promises are ABSENT from the data.** The card lists
 *"`model_id`, `seed`, `_quantisation` (4-bit bnb load), `_contamination` note, `peak_gib`"*.
 MEASURED, two independent probe shapes (JSON-key parse of every `raw_json`, and a raw
@@ -3089,19 +3142,74 @@ the column is `quantisation`, not `_quantisation`; **`_contamination` = 0/23,644
 **`peak_gib` = 0/23,644**. ⇒ The per-row contamination note and the memory figure exist only
 in prose, not in the artifact.
 
-**Also MEASURED, and it bounds what the `trajectory` task can be used for:** `raw_json`
-carries `pred_xyz_shape = [1,1,1,64,3]` (**64 waypoints**, `num_trajectory_samples: 1`), and
-**only 255 of 4,729 `trajectory` rows carry `min_ade_m`** — the rest have
-`num_trajectory_samples: None`, i.e. the GT-dependent metric block never ran. On those 255:
-**`min_ade_m` mean 2.3469 m / median 1.5233 m; `min_fde_m` mean 6.8726 m / median 4.6711 m**,
-at Alpamayo's native **6.4 s** horizon and **1 sample**. ⛔ **Not comparable to the published
-minADE₆ 0.911 m** (different horizon, different sample count, different corpus slice).
+### ⛔ CORRECTED 2026-08-16 — THE `trajectory` TASK IS NOT 94 % EMPTY; IT HAS TWO SCHEMA VARIANTS
+
+**The first read of this paragraph was wrong and is retracted here.** It said *"only 255 of
+4,729 `trajectory` rows carry `min_ade_m` — the rest have `num_trajectory_samples: None`,
+i.e. the GT-dependent metric block never ran."* **MEASURED on re-verification** (independent
+re-derivation from the same parquet, `…/2026-08-06-alpamayo-augmentation/tools/reverify_a2_counts.py` →
+`…/tools/a2_reverify_2026-08-16.json`): `raw_json` holds **two disjoint schema variants**, and a
+key-presence probe over a heterogeneous column mistook the minority variant's vocabulary for
+the whole task's completeness.
+
+| variant | rows | keys present | GT-referenced error | waypoints |
+|---|---|---|---|---|
+| **A — waypoints** | **4,474** (94.61 %) | `cot` · `pred_xyz` · `pred_rot` · `logprob` · `ade_vs_gt_m` (all 5 on 4,474/4,474) | **`ade_vs_gt_m` on 4,474/4,474, 0 null** | **`pred_xyz` = 64 points on 4,474/4,474** |
+| **B — metric block** | **255** (5.39 %) | 15+, incl. `figure_style` · `clip_id` · `t0_us` · `camera_indices` · `input_profile` · `coc_label` · `cots` · `pred_xyz_shape` · `num_trajectory_samples` · `min_ade_m` · `min_fde_m` | `min_ade_m` / `min_fde_m` on 255/255 | `pred_xyz_shape` = `[1,1,1,64,3]`; ⛔ **no `pred_xyz` on any of the 255** |
+
+⛔ **No row carries both.** `pred_xyz` = 4,474 rows, `pred_xyz_shape` = 255 rows, disjoint;
+`4,474 + 255 = 4,729` = one trajectory row per clip. ⛔ **The key `num_trajectory_samples` is
+ABSENT ENTIRELY** on the 4,474 variant-A rows — 255 substring hits over the whole column — so
+*"the rest have `num_trajectory_samples: None`"* is false, and so is the inference drawn from
+it.
+
+**The better-powered read is variant A, and it corroborates variant B at 17.5× the n:**
+
+| statistic | variant A `ade_vs_gt_m` | variant B `min_ade_m` |
+|---|---|---|
+| **n** | **4,474** | 255 |
+| mean (m) | **2.2584** | 2.3469 |
+| median (m) | **1.5245** | 1.5233 |
+| p10 / p90 (m) | 0.4061 / 5.0252 | — |
+| nulls | **0** | 0 |
+| (`min_fde_m`, variant B only) | — | mean 6.8726 / median 4.6711 |
+
+⇒ **What the `trajectory` task can be used for is BROADER than previously recorded:** predicted
+waypoints exist for **4,474 of 4,729 clips** (not 255), and a GT-referenced along-path error
+exists for **4,729 of 4,729** (4,474 `ade_vs_gt_m` + 255 `min_ade_m`).
+
+⚠️ **Whether `ade_vs_gt_m` and `min_ade_m` are the SAME estimator is 🟥 UNVERIFIED** — they come
+from different code paths and are differently named. Their agreement (2.2584 vs 2.3469 mean;
+1.5245 vs 1.5233 median) is *consistent with* identity but does not prove it. ⛔ **Do not pool
+the two columns into one distribution** without settling that first.
+⛔ **Neither is comparable to the published minADE₆ 0.911 m** — both are **1 sample** at
+Alpamayo's native **6.4 s** horizon on a different corpus slice (the §2.2 three-reasons rule).
+
+**Root-cause class:** the same family as **C18** (a defect scoped by the probe that found it) —
+here a key-presence probe over a **heterogeneous** JSON column, which can see a key MISSING but
+cannot see that a *different key answering the same question* is present. Logged in
+`RETRACTION_LOG.md`.
 
 **Reconstruction risk.** 🟥 The production pods are dead; the run is reproducible only from
 `…/2026-08-06-alpamayo-augmentation/DESIGN.md` plus the manifest. The 81 zero-row clips have
-**no recorded reason** — `error` is null-typed for the whole column, so a clip that failed
-before writing a row is indistinguishable from one never attempted. ⇒ A rebuild must
+**no PER-CLIP recorded reason** — `error` is null-typed for the whole column, so a clip that
+failed before writing a row is indistinguishable from one never attempted. ⇒ A rebuild must
 re-derive completeness by joining the manifest, exactly as this row does.
+⚠️ **Corrected 2026-08-16 — a RUN-LEVEL cause *is* recorded, and an earlier draft of this row
+said there was none.** The card's *Known holes* section names it verbatim: the missing rows
+occurred **"after two MooseFS I/O incidents during"** the run (card text re-read directly from
+HF, 1,746 B, this session). ⇒ The gap is **not** unexplained: it is attributed to storage I/O,
+which is consistent with the losses falling in an unstratified, non-systematic pattern (§ the
+stratum table above). What is missing is only the **per-clip** attribution.
+*(Operating-Standard rule 2 again: "no recorded reason" was an absence-claim made without
+reading the one document that records it.)*
+
+**Card text verified verbatim 2026-08-16** (direct fetch, not inherited): *"**4,800 clips
+(~26.7 h of driving), 23,999 inference rows, 5 tasks per clip**"*; *"One task row of 24,000
+missing (23,999)"*; `license_name: nvidia-physicalai-derivative`; and the card's pointer to
+*"per-clip road classes: `aug_road_class.json` in the TanitAD repo"* — **which resolves
+correctly** (git-tracked, 3,592 labelled clips). ⇒ **Delivered scale: 4,729 clips ≈ 26.3 h**
+by the card's own per-clip rate.
 
 **Sources.** `records.parquet` (sha256 verified above) · `selection_manifest.json` ·
 `Project Steering/Reports/2026-08-15-2200-campaign-science-addendum.md` §2.2/§2.5 ·
@@ -3110,3 +3218,85 @@ comparison analysis `…/Research/2026-08-05-alpamayo2-super/ALPAMAYO2_SUPER_ANA
 
 ⇒ **`Paper/TANITAD_PAPER.md` may now promote its A2 counts from INHERITED to MEASURED,
 citing this row — but it must quote 4,729 / 23,644, NOT the card's 4,800 / 23,999.**
+*(Done 2026-08-16 at `TANITAD_PAPER.md` §7.15 and §8-item-9.)*
+
+---
+
+### 11.2 PH1-fused hierarchical label layer over the aug120 slice — `Sayood/tanitad-ph0-aug120/fused_aug120/` — ✅ **COMPLETE, with a NAMED 57.2 % perception hole** (produced 2026-08-15)
+
+**Why it is a registry row:** it is the first **derived** product of §11.1 — the layer that turns
+A2 rows into v6 hierarchy tokens — and its headline coverage number was **understated 14×** in the
+document that first reported it. A produced dataset with a hole that large is quotable only from
+here or from its own summary JSON.
+
+**Evidence classes, stated per group rather than blanket-stamped:**
+
+- ⭐ **MEASURED BY ME 2026-08-16, re-derived from the artifacts** (`…/2026-08-06-alpamayo-augmentation/tools/reverify_a2_counts.py`
+  P3 over the in-repo raw JSONs, **plus a direct re-read of all 201 fused records**): the record
+  count, the SAM3 coverage, corroborations/conflicts, the per-batch conservation columns, **every
+  vocabulary tally**, the voter-majority counts, the winning-vote tally, `sign_text_status`,
+  `inference_admissible`, the `goal_evidence` verdict split, and the A2 join. **All reproduced the
+  owning document EXACTLY** — 8/8 aggregate columns and 100 % of the token counts.
+  ⭐ The strongest of these is a **cross-artifact join**: the 201 aug120 `clip_id`s are **201/201
+  present in §11.1's `records.parquet`** and pull **exactly 1,005 rows = 201 × 5, 201 per task** —
+  so §11.1 and §11.2 are joined by measurement, not by assertion.
+- **MEASURED by the owning run, INHERITED into this row and so marked:** the far-side verification
+  (204/204 files, 6/6 md5 byte round-trip), the test counts, **G1 CLOSED at 0/31**, and the SAM3
+  sign-class reliability note (⅔ of best crops had no sign). *(Locally I confirm 204 files = **201
+  records + 3 meta** — `_summary.json`, `_batch_accounting.json`, `_label_sources.json` — which is
+  the very "count records, not files" distinction this row exists to make.)*
+
+| Field | Value |
+|---|---|
+| **What it is** | Adversarially-fused per-clip hierarchy labels (`schema ph1-fused-v1`): ego geometry + VLM (PH0 Engine B) + SAM3 perception + **the §11.1 Alpamayo layer**, voted 2-of-3 into v6 `g_str` / `g_tac_lat` / `g_tac_lon` tokens. |
+| **Source population** | The aug120 slice = `records.parquet` clips (§11.1) ∩ w120 corpus − the 600 already-fused val clips. Reconstructed from primary sources as **201 clips**, matching the pipeline's own `todo=201` log line. |
+| **Records** | **201 fused records** (201/201 of the population; `n_v2` 201, `no_v2` 0, `no_ego` 0). |
+| **Alpamayo coverage** | **201/201 (100 %)** — the slice is *defined* by carrying an A2 record; **1,005 A2 rows = 201 × 5 tasks**, all five task keys present on all 201. |
+| ⛔ **SAM3 (perception) coverage** | **86 / 201 = 42.8 %.** **115 clips (57.2 %) carry NO SAM3 record**, stamped `perception.absent = "AUG120_SAM3_STAGE_GAP"` per record. |
+| **Corroborations / conflicts** | **88 / 10** — ⚠️ a **floor, not a rate**: with SAM3 absent on 115 clips, 2 of the 6 checks cannot fire at all. |
+| **Artifacts live** | HF `Sayood/tanitad-ph0-aug120/fused_aug120/` (204 files, far-side verified 204/204 + a 6/6 md5 byte round-trip) · in-repo raw + code at `TanitAD Research Hub/Data Engineering/Implementation/incoming/2026-08-15-aug120-fusion/` (`raw/fused_aug120_summary.json`, `raw/fused_aug120_batch_accounting.json`, `raw/fused_aug120_label_sources.json`, `raw/aug120_coverage.json`). |
+| **Pipeline entry point** | `stack/scripts/ph1_fuse.py` (fuser) · `stack/scripts/aug120_pipeline.py` (label production) · `stack/scripts/ph0_sam3.py` (perception stage) · run driver `…/2026-08-15-aug120-fusion/code/aug120_fuse_run.py`. Strategy: `…/2026-08-07-hierarchical-wm-redesign/PH1_FUSION_STRATEGY.md`. |
+| **Parity** | ⛔ **NOT the training-parity corpus** (inherits §11.1's position). Disjoint by construction from the val-600 fused set. |
+| **License** | Inherits §11.1's 🟥 **OPEN PI DECISION** verbatim — it is a derivative of a derivative. |
+
+**Vocabulary emitted (MEASURED, tokens imported from `tanitad.models.v6`, not re-declared):**
+`g_str` FOLLOW_MAIN_ROAD 151 · ROUTE_TO 31 · TURN_LEFT 17 · TURN_RIGHT 2 · `g_tac_lat` LANE_KEEP
+186 · LANE_CHANGE_L 7 · LANE_CHANGE_R 7 · null 1 · `g_tac_lon` CRUISE 112 · BRAKE_TO 52 · HOLD 36
+· YIELD_MERGE 1. True 2-of-3 majority backs **178/201 lateral** and **61/201 longitudinal**;
+winning-vote sources ego 316 · alpamayo 245 · vlm 211.
+
+⛔ **THE 14× UNDERSTATEMENT, AND ITS ROOT CAUSE (both MEASURED).** `STOP_2026-08-15_RESUME_RUNBOOK.md`
+§6.11 recorded the SAM3 gap as **`batch_00184`, 8 clips**. The true gap is **115 of 201 (57.2 %)**,
+spread across *every* batch — **14.4× larger**.
+
+| | runbook §6.11 | **MEASURED** | |
+|---|---|---|---|
+| clips missing SAM3 | 8 (one batch) | **115** (every batch) | ⛔ **14.4×** |
+| SAM3 files present | 25 of 26 prefixes | 25 — *all present* | the listing looked fine |
+| **SAM3 RECORDS inside them** | not counted | **93** (25 files × exactly 4), **86 distinct clips** | the hole was *inside* the files |
+
+- **Mechanism:** `stack/scripts/aug120_pipeline.py` passed `--n` to the bridge and to the VLM and
+  **omitted it for SAM3**, whose default is **4** (`ph0_sam3.py:387`, consumed at `:411` `[:a.n]`).
+  Every batch got SAM3 on its first 4 clips **and printed `SAM3_RC=0`**. Fixed in place
+  (`--n str(len(batch))`); ⚠️ **the fix does not retro-fill** — the 115 need a GPU re-run.
+- **Root-cause class C18** (`RETRACTION_LOG.md`): *a defect found by a structural listing probe is
+  bounded by that probe's granularity* — **a listing sees a MISSING file, never a SHORT one.**
+  ⇒ **The standing check is a conservation count `n_out == n_in` per stage per batch.**
+
+**Known gaps, each with its n — none silently dropped:**
+1. 🟥 **115/201 clips have no perception layer.** Needs ~30 min GPU + a re-fuse; the fuser resumes,
+   so only new records are written. **This is the only thing between this row and a complete layer.**
+2. ⚠️ **`scene_vs_situations` fired 0/201** — the frozen situation detectors never ran on these
+   batches and the v2 records carry no `situations` key. *Absence of an instrument, recorded as
+   absence*, not a zero.
+3. ⚠️ **`fused_w120val/` (the 600-clip baseline, NOT this row) still carries 4 records fused with a
+   silently empty perception layer.** Correcting them would re-baseline the published 175/41/56 →
+   flagged as a PI call, not silently redone.
+4. ⚠️ `sign_text_status == pending_g1_gate` on **201/201** — **G1 is CLOSED at 0/31**, so sign text
+   stays extraction-only and never reaches a goal token.
+5. 🟥 **15 `goal_evidence: grounded` verdicts** rest on SAM3 sign tracks whose class reliability is
+   flagged (⅔ of best crops had no sign) — a threshold study is scoped but not run.
+
+**Owning document.** `TanitAD Research Hub/Data Engineering/Implementation/incoming/2026-08-15-aug120-fusion/AUG120_FUSION_RESULT.md`
+(+ `MANIFEST.md`, `NEXT_4472_BUILD_INPUTS.md` for the follow-on build). Tests:
+`stack/tests/test_ph1_fuse.py` 14 passed; full suite 2,812 passed / 0 failed / 17 skipped / 2 xfailed.

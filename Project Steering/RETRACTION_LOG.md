@@ -3354,3 +3354,92 @@ it (`--missing-sam3-ok REASON`) and stamps `perception.absent` per record; the S
 return `not_computable` instead of a fabricated verdict. **`fused_w120val/` on HF still carries the
 4 unmarked records** — correcting them would re-baseline the published 175/41/56, so it is flagged,
 not silently redone.
+
+---
+
+## 2026-08-16 — ⛔ NEW CLASS C68: A SHARED APPEND-ONLY ARTIFACT DOES NOT IDENTIFY ITS PRODUCER
+
+Three errors in one hour, all mine, all while trying to answer the PI's simplest question of the
+night — *"measure the speed of training on the Thor and compare it to the A40"*. One was asserted
+and retracted; two were caught before they were quoted. They share a single root cause, and it is
+not any of C2 / C18 / the `df` family.
+
+| # | what I did | why it was wrong |
+|---|---|---|
+| 1 | claimed two `V6Stack` state_dicts were identical from the **md5 of `torch.save` output** | `torch.save` writes a zip container whose bytes are **not canonical**; a mismatch would have been a false alarm and a match proves the container, not the tensors. Correct method, then run: iterate keys and `torch.equal` — **405 keys, 0 differing**. |
+| 2 | wrote a waiter filtering the resumed run's rows with `step > 6250` | `train_log.jsonl` is **APPENDED ACROSS PROCESSES**. The banked A40 run ends at step **6300** and the Thor resume starts at **6250**, so that filter admits a banked row and the "marginal s/step" becomes a delta **between two machines**. |
+| 3 | wrote a measurement script that labelled the last log segment `THOR` | with the resume not yet having logged, the *only* segment present was the **A40's own**, and the script printed `THOR MARGINAL 17.45 s/step` — the A40's rate, under Thor's name. |
+
+⇒ **C68 — the artifact you sampled does not carry the identity of the thing you are claiming about.**
+
+| # | class | recognition signal |
+|---|---|---|
+| **C68** | **Shared artifact, unstated producer** | a rate, delta or identity computed across a file that **survives restarts** (`*.jsonl`, `metrics.json`, a serialized container), filtered by a key that **resets or overlaps** on resume — `step`, `epoch`, `idx` — rather than by something that identifies the *process* |
+
+**The check that settles it is a producer discriminator, not a value filter.** Here it was already in
+the file: `train_v6_staged.py:1406-1411` logs `step_s` as `(now − t0) / (step − start_step)` and
+writes a `step_s_note` naming its own divisor. Segmenting on that divisor **resetting** separates the
+two processes exactly; segmenting on `step` cannot, because step numbers legitimately repeat.
+
+⚠️ **Sibling but distinct.** C2 is absence found at one location. C18 is the right scope at the wrong
+resolution. The `df` / `tegrastats` / `memory.usage_in_bytes` family is the wrong *scope*. **C68 is
+the right scope, the right resolution, and the wrong PRODUCER** — which is the hardest of the four to
+see, because every value you read is real and internally consistent.
+
+⭐ **AND IT ALREADY HAD A NEAR-MISS IN THIS PROGRAMME.** `step_s` was itself the subject of the
+standing "÷ `--log-every`" trap in `CLAUDE.md` — the trainer author foresaw the *arithmetic* misread
+and wrote a self-describing note against it, but not the *cross-process* one. A note that documents
+its own divisor is exactly what made the fix one line; **the general rule is that any metric written
+by a restartable process should record the identity of the process that wrote it.**
+
+⇒ **RULE: never compute a delta across a restartable log without first segmenting on a producer
+discriminator, and never quote a rate from a single process segment without saying which one.**
+Applied here: the corrected instrument (`~/thor_measure_sstep.py`) refuses outright — exit 1, quoting
+nothing — until a **second** segment exists, and reports marginal-vs-marginal rather than
+marginal-vs-cumulative, because the A40's own end-of-run marginal (**19.68 s/step** over its last 300
+steps) is **13 % above its lifetime mean (17.46)** and comparing across those two is a third way to
+get a real number that answers a different question.
+
+---
+
+## 2026-08-16 — "the Alpamayo `trajectory` task's metric block never ran on 4,474 of 4,729 rows" — RETRACTED, they carry a differently-named metric
+
+**Claim (`2026-08-15-2200-campaign-science-addendum.md` §2.5, and copied from it into the first
+draft of `MODEL_REGISTRY.md` §11.1):** *"Only 255 of 4,729 trajectory rows carry `min_ade_m` (the
+rest have `num_trajectory_samples: None`, i.e. the GT-dependent metric block is absent)."*
+
+**MEASURED on re-verification** (`…/scratchpad/reverify_a2_counts.py` → `a2_reverify.json`, an
+independently written probe over the same sha256-verified `records.parquet`): the `raw_json` column
+holds **two disjoint schema variants**, and the 4,474 rows are **not** metric-free.
+
+| variant | rows | GT-referenced error | waypoints |
+|---|---|---|---|
+| A | **4,474** (94.61 %) | **`ade_vs_gt_m` on 4,474/4,474, 0 null** | **`pred_xyz` = 64 points on 4,474/4,474** |
+| B | **255** (5.39 %) | `min_ade_m` / `min_fde_m` on 255/255 | `pred_xyz_shape` only — ⛔ **no `pred_xyz`** |
+
+`num_trajectory_samples` is **absent entirely** from variant A (255 hits over the whole column), so
+*"the rest have `num_trajectory_samples: None`"* is false as stated. `ade_vs_gt_m`: **n 4,474 ·
+mean 2.2584 m · median 1.5245 m**, corroborating variant B's `min_ade_m` (2.3469 / 1.5233) at
+**17.5× the n**. ⚠️ Whether the two are the **same estimator** is 🟥 UNVERIFIED — do not pool them.
+
+**What it cost / would have cost:** the claim **understated the usable trajectory data by 17.5×**
+and was about to be published in the paper as a bound on what the augmentation set supports. Any
+future A2 trajectory analysis would have been scoped to 255 clips when **4,729** are available
+(4,474 with waypoints + 255 with the metric block).
+
+**Root-cause class — C18-family, and worth naming as its own recognition signal:** a
+**key-presence probe over a HETEROGENEOUS column**. The probe asked *"does `min_ade_m` /
+`num_trajectory_samples` appear?"* and read *no* as *"the computation never ran."* A key-presence
+probe can see a key MISSING; it **cannot see a differently-named key answering the same question**.
+This is the same defect as `batch_00184` (a listing sees a missing file, never a short one) at the
+level of JSON keys instead of files — the probe was operating at the right scope and the right
+resolution, but over a column it wrongly assumed was **homogeneous**.
+
+⇒ **RULE: before reading a key's absence as a fact about the world, census the SCHEMA VARIANTS of
+the column.** One line — `Counter(frozenset(json.loads(x)) for x in col)` — separates "the value is
+missing" from "this row is a different record shape." Sibling of **C2** (absence from a single
+probe): here the second probe is not a second *location* but a second *shape*.
+
+*(Same pass also confirmed, not retracted: 23,644 rows / 4,729 clips / one `NF4-…-UNVALIDATED`
+quantisation arm / 78.36 wall-hours / 0 errors, the 356× dataset-card understatement, and the
+stratification being delivered 100 % complete on all four labelled classes.)*

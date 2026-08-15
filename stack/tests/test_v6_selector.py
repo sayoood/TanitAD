@@ -204,9 +204,18 @@ def test_selection_loss_refuses_without_a_scorer():
         T.v6_loss_step(stack, batch, stage="S-J", weights=w, o1_k=1, o5_k=1)
 
 
-def test_config_refuses_unimplemented_capacity_control():
-    with pytest.raises(ValueError, match="mlp"):
-        V6Config(selector="mlp")
+def test_capacity_control_is_now_IMPLEMENTED_and_unknown_names_still_refused():
+    """SUPERSEDED 2026-08-16. This used to assert that ``"mlp"`` was REFUSED
+    because it did not exist — escalation #4 of V6F_PLANNER_DESIGN.md. It now
+    exists (``MLPCandidateScorer``, +33,801 MEASURED), so the assertion that
+    keeps its value is the one that still holds: an UNKNOWN selector is
+    refused, and the refusal names why the control matters.
+
+    Its properties are pinned in tests/test_v6_selector_capacity_control.py.
+    """
+    assert V6Config(selector="mlp").selector == "mlp"
+    with pytest.raises(ValueError, match="none|goal|mlp"):
+        V6Config(selector="learned-cost")
 
 
 def test_preflight_refuses_selector_in_sw():
