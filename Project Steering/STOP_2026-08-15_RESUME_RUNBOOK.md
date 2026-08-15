@@ -116,3 +116,10 @@ print({s.rfilename: s.size for s in m.siblings if "v6F-SW-30k/" in s.rfilename})
 9. **`ph0_ood/` on pod4 is invalid data** — superseded; do not archive or reuse (§4.3d).
 10. The **sitclf label-provenance probe** (the `head_img` leak question) remains open from
     the earlier campaign.
+11. **`batch_00184` (8 clips) has v2 labels but NO SAM3 output** — its SAM3 stage never
+    produced a directory (`B184_SAM3_ABSENT` at archive time). Fully re-derivable: the
+    8 `<clip_id>.v2ep.pt` shards are in the w120 corpus on HF; re-bridge and run
+    `ph0_sam3.py` on a fresh pod (~3 min of GPU).
+12. **`ckpt_final_stop.pt` == `ckpt.pt`** (md5-verified at stop). It exists as a separate
+    name so that a future resumed run overwriting `ckpt.pt` on HF can never destroy the
+    step-6250 stop point. Resume from either; they are the same bytes today.
