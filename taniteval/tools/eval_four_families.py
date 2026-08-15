@@ -44,6 +44,45 @@ def _p(*a):
     print(*a, flush=True)
 
 
+#: fields the lead block may declare to TIME-JOIN a coarse lead track onto a dense
+#: path. `four_families._distance_keeping` reads them; dropping them silently
+#: reverts the join to a shape match, which only works while the two grids happen
+#: to agree. See that function's ⛔ comment for why truncation is not the fallback.
+_LEAD_JOIN_KEYS = ("path_steps", "dt_s")
+_LEAD_REQUIRED = ("leads", "lead_lens", "speeds", "state", "eid")
+
+
+def load_lead_block(path: str) -> dict:
+    """Load a lead block from EITHER container the programme has actually written.
+
+    ⛔ WHY THIS IS NOT JUST ``torch.load``. Two builders emit lead blocks and they
+    do not agree on the container: ``taniteval/tools/build_lead_block.py`` ends in
+    ``torch.save`` (a ``.pt`` zip), while the only lead block banked IN THIS REPO —
+    ``…/2026-08-04-distance-keeping-arms/raw/val40_lead_block.npz`` (881 rows,
+    LEAD 270 / NO_LEAD 551 / NO_LABEL 60) — was written with ``np.savez``.
+    ``torch.load`` on the ``.npz`` does not degrade, it raises
+    ``RuntimeError: file in archive is not in a subdirectory: leads.npy``, so the
+    banked artifact could not be fed to this tool at all and the distance-keeping
+    half stayed UNAVAILABLE **despite the data being present and correct**.
+    MEASURED 2026-08-16.
+
+    Returns a plain dict so the caller cannot depend on the container. ``NpzFile``
+    is lazy and its ``.get`` semantics differ from ``dict``'s, which is exactly how
+    an optional join key would go missing without an error.
+    """
+    if str(path).endswith(".npz"):
+        with np.load(path, allow_pickle=True) as z:
+            block = {k: z[k] for k in z.files}
+    else:
+        block = torch.load(path, map_location="cpu", weights_only=False)
+        block = dict(block)
+    missing = [k for k in _LEAD_REQUIRED if k not in block]
+    if missing:
+        sys.exit(f"lead block {path} is missing {missing} — it cannot score "
+                 f"distance-keeping. Rebuild it with tools/build_lead_block.py.")
+    return block
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--corpus", required=True, help="dir of ep_*.pt episodes")
@@ -151,7 +190,7 @@ def main():
 
     # ---- the lead block: the distance-keeping half of LONGITUDINAL ---------- #
     if a.lead:
-        lead = torch.load(a.lead, map_location="cpu", weights_only=False)
+        lead = load_lead_block(a.lead)
         n_lead = int(np.asarray(lead["leads"]).shape[0])
         n_win = int(win["pred"].shape[0])
         # ⛔ POSITIONAL JOIN. A length mismatch means the block was built on a
@@ -167,7 +206,19 @@ def main():
                        "speeds": np.asarray(lead["speeds"]),
                        "state": np.asarray(lead["state"]),
                        "eid": list(lead["eid"]), "n_boot": a.n_boot}
-        _p(f"[lead] attached {n_lead} rows  counts={lead.get('counts')}")
+        # ⛔ CARRY THE TIME-JOIN THROUGH. A block built on the lead's own coarse
+        # samples must tell the scorer WHICH path steps it is defined on; without
+        # these keys `_distance_keeping` falls back to a bare shape match, which
+        # silently works only while the grids coincide and refuses (or worse,
+        # mis-joins) the moment a dense path is scored.
+        for k in _LEAD_JOIN_KEYS:
+            if k in lead and lead[k] is not None:
+                v = lead[k]
+                win["lead"][k] = (v.tolist() if isinstance(v, np.ndarray)
+                                  else v)
+        states, counts = np.unique(np.asarray(lead["state"]), return_counts=True)
+        _p(f"[lead] attached {n_lead} rows  "
+           f"states={dict(zip(states.tolist(), counts.tolist()))}")
 
     fam = ff.all_families(win, hier=hier)
 

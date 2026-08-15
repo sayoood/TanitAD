@@ -164,3 +164,88 @@ def test_cli_help_works_without_a_gpu():
                        capture_output=True, text=True, timeout=120)
     assert r.returncode == 0, r.stderr[-800:]
     assert "--corpus" in r.stdout and "--skip-hierarchy" in r.stdout
+
+
+# --------------------------------------------------------------------------- #
+# THE LEAD-BLOCK LOADER — `obstacle.offline` reachability, last mile           #
+#                                                                              #
+# ⛔ THE DEFECT THESE PIN (MEASURED 2026-08-16). The distance-keeping half of   #
+# LONGITUDINAL was reported UNAVAILABLE while the data was present, correct and #
+# banked, because the tool loaded `--lead` with `torch.load` and the only lead  #
+# block in this repo is an `.npz`. `torch.load` on it raises RuntimeError       #
+# ("file in archive is not in a subdirectory: leads.npy") — a hard stop, not a  #
+# degraded read. Same family as every other trap here: the artifact existed and #
+# the reader could not see it.                                                  #
+# --------------------------------------------------------------------------- #
+def _load_tool():
+    """Import the CLI script as a module (it is a script, not a package member)."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("_eff_tool", TOOL)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def _block(n=6, k=4):
+    import numpy as np
+    return {"leads": np.zeros((n, k, 2), dtype=np.float64),
+            "lead_lens": np.full(n, 4.4), "speeds": np.full(n, 12.0),
+            "state": np.array(["LEAD"] * n, dtype="<U8"),
+            "eid": np.array([f"e{i:03d}" for i in range(n)], dtype="<U8")}
+
+
+def test_lead_block_loads_from_npz_the_banked_container(tmp_path):
+    """The banked val40 block is `np.savez`. It must load."""
+    import numpy as np
+    p = tmp_path / "lead.npz"
+    np.savez(p, **_block())
+    got = _load_tool().load_lead_block(str(p))
+    assert isinstance(got, dict), "must not leak a lazy NpzFile to the caller"
+    assert got["leads"].shape == (6, 4, 2)
+    assert len(got["eid"]) == 6
+
+
+def test_lead_block_loads_from_pt_the_builder_container(tmp_path):
+    """tools/build_lead_block.py ends in torch.save — that path must keep working."""
+    p = tmp_path / "lead.pt"
+    torch.save(_block(), p)
+    got = _load_tool().load_lead_block(str(p))
+    assert isinstance(got, dict)
+    assert got["leads"].shape == (6, 4, 2)
+
+
+def test_torch_load_really_cannot_read_the_npz_container(tmp_path):
+    """Pins the ROOT CAUSE, so nobody 'simplifies' the loader back to torch.load.
+    If this ever stops raising, the two-container branch may be revisited."""
+    import numpy as np
+    p = tmp_path / "lead.npz"
+    np.savez(p, **_block())
+    with pytest.raises(Exception):
+        torch.load(str(p), map_location="cpu", weights_only=False)
+
+
+def test_lead_block_missing_a_required_field_exits_loudly(tmp_path):
+    """A block without `speeds` cannot form a time-gap. Refuse; never score a
+    partial block and emit a plausible number."""
+    import numpy as np
+    b = _block()
+    b.pop("speeds")
+    p = tmp_path / "lead.npz"
+    np.savez(p, **b)
+    with pytest.raises(SystemExit):
+        _load_tool().load_lead_block(str(p))
+
+
+def test_time_join_keys_are_carried_when_the_block_declares_them(tmp_path):
+    """`path_steps`/`dt_s` decide WHICH path steps a coarse lead track scores
+    against. Dropping them reverts to a bare shape match — the exact silent
+    mis-join `_distance_keeping` documents."""
+    import numpy as np
+    b = _block()
+    b["path_steps"] = np.array([5, 10, 15, 20])
+    b["dt_s"] = 0.5
+    p = tmp_path / "lead.npz"
+    np.savez(p, **b)
+    got = _load_tool().load_lead_block(str(p))
+    assert [int(s) for s in got["path_steps"]] == [5, 10, 15, 20]
+    assert float(got["dt_s"]) == 0.5

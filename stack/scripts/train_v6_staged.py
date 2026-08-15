@@ -202,6 +202,33 @@ STAGE_PRECONDITION: dict[str, str | None] = {
     "S-W": None, "S-T": "S-W", "S-S": "S-T", "S-J": "S-S",
 }
 
+#: ⛔ THE ONLY MODULES A STAGE MAY INTRODUCE on top of the stage below it.
+#:
+#: MEASURED 2026-08-16, and it would have killed the S-T launch on its first
+#: command: :func:`load_stage_init` loaded with ``strict=True``, so a stage that
+#: legitimately ADDS a module was refused —
+#:
+#:     S-T selector="goal" -> RuntimeError: Missing key(s): cand_score.cand_bias,
+#:                            cand_score.log_tau, cand_score.goal_point.weight...
+#:     S-T selector="mlp"  -> RuntimeError: Missing key(s): cand_score.fc1.weight...
+#:
+#: The guard was right in spirit and blind in practice: it could not tell "the
+#: TRUNK is missing" (fatal — the stage would train on a random encoder while
+#: its log looked healthy, exactly what the docstring warns about) from "the
+#: PLANNER'S NEW HEAD is missing" (expected — S-T is where the selector is
+#: built). ⇒ the allowance is an EXPLICIT, per-stage ALLOWLIST rather than a
+#: relaxed ``strict``, because ``strict=False`` would also wave through a
+#: missing ``emission.*`` and silently random-init the whole emission head.
+#:
+#: ⚠️ An allowed prefix must be WHOLLY absent from the checkpoint. A PARTIALLY
+#: present module is a geometry mismatch, not an introduction, and stays fatal.
+STAGE_MAY_INTRODUCE: dict[str, tuple[str, ...]] = {
+    "S-W": (),                  # starts the ladder; there is nothing to inherit
+    "S-T": ("cand_score.",),    # the selector is built HERE, by design
+    "S-S": (),                  # trains layer_str, which S-T already carried
+    "S-J": (),                  # joint polish introduces nothing
+}
+
 #: ⛔ THE LADDER RUNS BACKWARDS TOO. :data:`STAGE_PRECONDITION` is the FORWARD
 #: check — "the stage below passed". It cannot see the other direction: a stage
 #: that trains an UPPER layer can invalidate the certificate a LOWER layer
@@ -1212,7 +1239,7 @@ def train(a) -> dict:
     stack = build_stack_from_args(a)
     init_report: dict = {"init_from": None}
     if a.init_from:
-        init_report = load_stage_init(stack, a.init_from)
+        init_report = load_stage_init(stack, a.init_from, stage=a.stage)
         print(f"[v6] initialised from {json.dumps(init_report)}", flush=True)
     stack = stack.to(device)
     freeze = apply_stage_freeze(stack, a.stage)
@@ -1583,7 +1610,8 @@ def load_resume(stack: V6Stack, opt, ckpt_path) -> int:
     return int(ck.get("step", 0))
 
 
-def load_stage_init(stack: V6Stack, ckpt_path, *, strict: bool = True) -> dict:
+def load_stage_init(stack: V6Stack, ckpt_path, *, strict: bool = True,
+                    stage: str | None = None) -> dict:
     """Initialise stage N+1 from stage N's checkpoint — the OTHER half of X5.
 
     A gate that says "S-W passed" is worthless if S-T then starts from random
@@ -1602,7 +1630,38 @@ def load_stage_init(stack: V6Stack, ckpt_path, *, strict: bool = True) -> dict:
         raise SystemExit(f"[v6] ⛔ --init-from {p} does not exist")
     ck = torch.load(p, map_location="cpu", weights_only=False)
     sd = ck.get("stack", ck)
-    missing, unexpected = stack.load_state_dict(sd, strict=strict)
+
+    # ⚠️ ALWAYS load non-strict, then adjudicate. Under torch's ``strict=True``
+    # a mismatch RAISES, so the ``missing_keys`` / ``unexpected_keys`` this
+    # function reported could only ever be empty — the report was structurally
+    # incapable of describing the thing it was named for.
+    allowed = STAGE_MAY_INTRODUCE.get(stage, ()) if stage else ()
+    missing, unexpected = stack.load_state_dict(sd, strict=False)
+    introduced = [k for k in missing
+                  if any(k.startswith(a) for a in allowed)]
+    fatal = [k for k in missing if k not in set(introduced)]
+
+    # ⛔ An introduction must be WHOLE. If the checkpoint already carries part
+    # of an allowed module, the rest going missing is a geometry mismatch
+    # wearing an allowance's clothes.
+    for a in allowed:
+        if any(k.startswith(a) for k in introduced) and \
+                any(k.startswith(a) for k in sd):
+            fatal += [k for k in introduced if k.startswith(a)]
+            introduced = [k for k in introduced if not k.startswith(a)]
+
+    if strict and (fatal or unexpected):
+        raise SystemExit(
+            f"[v6] ⛔ --init-from {p} is not a valid predecessor for stage "
+            f"{stage!r}.\n"
+            f"  missing (NOT introducible at this stage): {sorted(fatal)[:8]}\n"
+            f"  unexpected (the ckpt has keys this stack does not): "
+            f"{sorted(unexpected)[:8]}\n"
+            f"  A stage may introduce only {allowed or '()'} — anything else "
+            f"missing means the two stages were built with DIFFERENT geometry, "
+            f"and loading anyway is how a stage ends up training on a "
+            f"randomly-initialised trunk while its log looks healthy.")
+
     import hashlib
     h = hashlib.md5()
     for n, prm in sorted(stack.named_parameters()):
@@ -1610,7 +1669,11 @@ def load_stage_init(stack: V6Stack, ckpt_path, *, strict: bool = True) -> dict:
             h.update(n.encode())
             h.update(prm.detach().cpu().numpy().tobytes())
     return {"init_from": str(p), "init_step": int(ck.get("step", -1)),
-            "missing_keys": list(missing), "unexpected_keys": list(unexpected),
+            "missing_keys": sorted(fatal), "unexpected_keys": sorted(unexpected),
+            # ⭐ named separately so a run row can never confuse "this stage
+            # BUILT a new head" with "this stage failed to load one".
+            "introduced_keys": sorted(introduced),
+            "introduced_allowance": list(allowed),
             "trunk_md5_after_load": h.hexdigest(),
             "prev_stage": (ck.get("config") or {}).get("stage"),
             "_evidence_class": "MEASURED (ours; md5 over the loaded trunk)"}

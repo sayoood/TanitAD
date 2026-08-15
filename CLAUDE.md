@@ -263,11 +263,16 @@ path, a second name, and the tool that owns the fact. *(Cost this session: the V
 `/etc/vulkan/icd.d/`, not `/usr/share/` → "our pods cannot render" stood for **12 days** and blocked
 AlpaSim + CARLA. `ps -C python3` returns EMPTY for a healthy job because pods run
 `/workspace/venv/bin/python` → a near-miss "the VLM job is dead". `obstacle.offline` — 3D agent tracks
-on **97.44 %** of the corpus — was declared non-existent for days; our ingest reads **4** of 36 features.)*
-⚠️ **The "2 of 36" in this very sentence was ITSELF stale — corrected 2026-07-26 to 4.** True of
-`physicalai_r0.py` alone, but the episode build also reads `camera_intrinsics` and `sensor_extrinsics`
-(`physicalai.py:153-154`) since D-016 R1. It had propagated into **≥7 documents including this one** —
-a stale absence-claim living inside the rule that warns about stale absence-claims.
+on **97.44 %** of the corpus — was declared non-existent for days; our ingest reads **5** of 36 features.)*
+⚠️ **This count has now gone stale THREE TIMES in this very sentence: "2 of 36" → 4 (2026-07-26) →
+5 (2026-08-16).** The constants are at `stack/tanitad/data/physicalai.py:233-235` — `physicalai_r0.py`
+alone reads 2, the episode build adds `camera_intrinsics` + `sensor_extrinsics` (D-016 R1), and
+`vehicle_dimensions` is a real fifth read (consumed at `physicalai.py:359-386` for per-clip
+wheelbase). The "4" propagated into **≥7 documents including this one** — a stale absence-claim
+living inside the rule that warns about stale absence-claims, and then doing it again.
+⇒ **ROOT CAUSE: a count embedded in PROSE with no test pinning it to source.** Do not hand-edit this
+number a fourth time; pin it (`len(READ_FEATURES)` asserted in `stack/tests/`) so the suite fails
+instead of a document rotting.
 **And the answer to what is in the other 32 is now settled, at five independent probes:** there is
 **no map, lane graph, junction annotation, roundabout label, traffic-light feature or route/goal signal**
 in PhysicalAI-AV — the card says verbatim *"we do not include open maps data"*, and `obstacle.offline`'s

@@ -1864,9 +1864,18 @@ fail in **opposite directions** — v1's signed speed bias is **+1.465 m/s** (ru
 human), v2corpus's is **−1.260 m/s** (lags). An absolute-distance scalar cannot represent a sign
 flip. Lateral: v2corpus is uniformly ≈2× worse (heading 0.529° → 1.072°; curvature 0.00168 →
 0.00313 m⁻¹; yaw-rate 4.99 → 7.88 °/s; cross-track 0.114 → 0.197 m). Tactical: the
-manoeuvre-vs-trajectory agreement collapses from κ = **0.253** (v1, weak) to κ = **0.0072**
-(v2corpus) — the declared manoeuvre is unrelated to the driven path; the `--v2` pack's tactical
-machinery is **decorative**. Strategic: under nav-dropout 0.5 the arm *learned the dropout* —
+manoeuvre-vs-trajectory agreement collapses from κ = **0.253** (v1) to κ = **0.0072**
+(v2corpus), both at the published direction gate `DIR_YAW_RAD = 0.15` — the declared manoeuvre is
+unrelated to the driven path; the `--v2` pack's tactical machinery is **decorative**. ⚠️ Re-read at a
+**0.10** gate (0 GPU; exact envelope over the banked marginals, which reproduce both published κ to
+4 dp): the word **decorative holds unconditionally** — v2corpus's κ stays within [−0.040, +0.057]
+for *any* crossing rate up to 33 % of windows and never reaches the 0.1 line, because the manoeuvre
+head is degenerate (404/418 windows one class) and that degeneracy is **gate-free**. The **collapse
+itself also holds**: it could only fail at a 14.6 % crossing rate, ~3× the largest band mass ever
+measured here (3.97 % canonical val, 5.34 % OOD-val). ⛔ What does *not* survive is v1's own verdict
+word: at 0.10 a crossing rate of just 0.96 % already admits **SUBSTANTIAL**, so v1 is quoted here
+without one — it is bounded away from DECORATIVE (which needs 7.4 %), and nothing more is
+established. Strategic: under nav-dropout 0.5 the arm *learned the dropout* —
 route-following under a given command fell 1.0 → **0.5351**. And a correction to our own instrument,
 logged before any number shipped: `route_acc_nav` feeds the model the command, so its 1.0 for v1
 measures **copying, not route skill**; the honest test is vision-only route accuracy against the
@@ -3144,7 +3153,9 @@ arXiv:2607.04500.)
   0.575 [0.429, 0.752], paired ΔCI [−0.221, −0.145]) with the C64 leak (21/40) and the
   `--v2-cache`/`--v2` conflation making it a corpus+architecture+rollout_k change, hence not a
   corpus result; the longitudinal **sign flip** (+1.465 vs −1.260 m/s) that ADE cannot represent;
-  tactical κ 0.253 → 0.0072 (decorative) and the `route_acc_nav`-is-copying correction (vision
+  tactical κ 0.253 → 0.0072 @ `DIR_YAW_RAD` 0.15 (**decorative** — the word and the collapse both
+  survive a 0.10 re-read; v1's own word does not, and is not quoted) and the
+  `route_acc_nav`-is-copying correction (vision
   route = exactly the majority-straight rate; 0/3 hierarchy seams on both arms); **H-COMPOUND**
   (CR 3.50 → 80.77, teacher-forced flat; C61 resolved) and E-DPSI null < 12°; rollout recovery
   RR-20 vs RR-CTL (ADE 0.424 → 0.348, ΔCI [0.0613, 0.0906]; speed bias erased +0.9397 → −0.0092;
