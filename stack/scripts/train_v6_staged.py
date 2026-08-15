@@ -118,6 +118,7 @@ from stage_a_probes import DACCEL_DEFAULT, DKAPPA_DEFAULT  # noqa: E402
 
 __all__ = [
     "V6LossWeights", "STAGE_PRECONDITION", "STAGE_GATE_SPEC",
+    "STAGE_INVALIDATES", "STAGE_INVALIDATION_MECHANISM",
     "o2_near_field_loss", "o3_masked_cell_loss", "o5_rollout_consistency_loss",
     "o6_sigreg_loss", "rollout_step_weights", "build_o4_weights",
     "v6_loss_step", "stage_gate_dict", "write_stage_gate",
@@ -201,6 +202,43 @@ STAGE_PRECONDITION: dict[str, str | None] = {
     "S-W": None, "S-T": "S-W", "S-S": "S-T", "S-J": "S-S",
 }
 
+#: ⛔ THE LADDER RUNS BACKWARDS TOO. :data:`STAGE_PRECONDITION` is the FORWARD
+#: check — "the stage below passed". It cannot see the other direction: a stage
+#: that trains an UPPER layer can invalidate the certificate a LOWER layer
+#: already earned, because the lower layer is frozen while its INPUT moves.
+#:
+#: This is registry §1.14's consumer-invalidation one level up, and it lives
+#: inside the ladder where it is easy to miss: S-T's gate certifies ``sel_gap``
+#: and the TACTICAL family, then S-S changes the very thing they were measured
+#: on and no gate re-checks them. Without this, an S-S gate could read PASS on
+#: ``STRATEGIC_family`` alone and S-J would launch on an uncertified selector.
+#:
+#: Each entry names the stage whose certificate is invalidated and the exact
+#: seam that does it, so the mechanism cannot be lost the way the "please merge"
+#: requests were. ``()`` = trains nothing that any frozen consumer reads.
+STAGE_INVALIDATES: dict[str, tuple[str, ...]] = {
+    "S-W": (),      # starts the ladder; nothing below it exists yet
+    "S-T": (),      # trains layer_tac + planner on a FROZEN S-W trunk; the
+                    # trunk's inputs (pixels) are unmoved, so S-W's certificate
+                    # still applies verbatim
+    "S-S": ("S-T",),
+    "S-J": (),      # everything trains jointly and the S-J gate's own `no_harm`
+                    # probe IS the revalidation (battery FLAT across the phase)
+}
+
+#: The seam behind each :data:`STAGE_INVALIDATES` entry, quoted from source so
+#: an override is a conscious act rather than a shrug at an unexplained key.
+STAGE_INVALIDATION_MECHANISM: dict[str, str] = {
+    "S-S": ("S-S trains `layer_str` ONLY (v6.py:995). Its output flows "
+            "`goal_head_str -> e_g_str -> goal_head_tac(cond=e_g_str) -> "
+            "e_g_tac` (v6.py:1520-1528), and `e_g_tac` is the SELECTOR'S ONLY "
+            "INPUT (v6.py:655; score_i = -||endpoint_i - g_hat||/tau + b_i "
+            "with g_hat = W.e_g_tac + c, v6.py:619). `goal_head_tac` and the "
+            "selector are FROZEN in S-S — but their input distribution moves. "
+            "S-T certified `sel_gap` against the S-T-era e_g_tac; that "
+            "certificate does not survive S-S. Re-measure, do not assume."),
+}
+
 #: Per-stage ``λ_plan`` default, resolved when ``--lambda-plan`` is not given.
 #: S-W is 0 BY CONSTRUCTION (the planner is absent — that is what makes the
 #: world stage attributable); S-T is where the planner is post-trained on the
@@ -247,14 +285,32 @@ STAGE_GATE_SPEC: dict[str, dict] = {
             "P7_rho": ">= 0.3 with CI excluding 0, per stratum"},
     },
     "S-S": {
-        "required": ("STRATEGIC_family",),
+        # ⛔ THE LAST TWO ARE REVALIDATIONS, NOT NEW MEASURES. See
+        # :data:`STAGE_INVALIDATES` — S-S retrains the goal that S-T's FROZEN
+        # selector consumes, so S-T's certificate stops applying the moment
+        # S-S starts. They are ``required`` (not ``reported``) because an S-S
+        # gate that omits them must read INCONCLUSIVE, never PASS.
+        "required": ("STRATEGIC_family",
+                     "sel_gap_revalidated", "TACTICAL_revalidated"),
         "reported": ("S1_ade_8_30s", "X2_seam"),
         "owners": {"STRATEGIC_family": "taniteval/tools/eval_four_families.py",
                    "S1_ade_8_30s": "taniteval/tools/t1_eval.py",
-                   "X2_seam": "taniteval/ci.py (PAIRED bootstrap only)"},
+                   "X2_seam": "taniteval/ci.py (PAIRED bootstrap only)",
+                   "sel_gap_revalidated": "tanitad.models.tactical.sel_gap_tac "
+                                          "(RE-RUN under the post-S-S g_tac)",
+                   "TACTICAL_revalidated":
+                       "taniteval/tools/eval_four_families.py "
+                       "(RE-RUN under the post-S-S g_tac)"},
         "criteria": {
             "STRATEGIC_family": "computable at all (measured vs n/a today)",
-            "S1_ade_8_30s": "beats CV/corridor baselines at T1"},
+            "S1_ade_8_30s": "beats CV/corridor baselines at T1",
+            "sel_gap_revalidated":
+                "still <= 0.5x the fan oracle AFTER S-S moved e_g_tac — the "
+                "same bar S-T passed, re-measured on the new input "
+                "distribution. PAIRED bootstrap vs the S-T reading.",
+            "TACTICAL_revalidated":
+                "TACTICAL family does not regress vs its S-T reading "
+                "(paired episode-cluster bootstrap, same windows)"},
     },
     "S-J": {
         "required": ("X3_isolation", "no_harm"),
@@ -741,6 +797,13 @@ def stage_gate_dict(stage: str, probes: dict, *, run: dict | None = None
         "failed_required": failed,
         "next_stage": next((s for s, p in STAGE_PRECONDITION.items()
                             if p == stage), None),
+        "revalidates": {
+            "stages": list(STAGE_INVALIDATES.get(stage, ())),
+            "mechanism": STAGE_INVALIDATION_MECHANISM.get(stage),
+            "note": "certificates this stage INVALIDATES by construction. The "
+                    "re-measurements are in `required` above, so omitting them "
+                    "reads INCONCLUSIVE, never PASS.",
+        } if STAGE_INVALIDATES.get(stage) else None,
         "bound_outcomes": {
             "PASS": f"{stage} propagates upward; the next stage may launch",
             "FAIL": "the next stage MUST NOT launch (X5). Diagnose at THIS "

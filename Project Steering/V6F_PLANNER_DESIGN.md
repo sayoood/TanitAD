@@ -490,6 +490,27 @@ probes with a pre-registered **no-harm bar** (`sel_gap` not CI-worse than at the
 the same windows). If it degrades, the committed response is a **planner refit micro-stage (S-S′)**,
 not a silent carry-forward. **0 parameters.**
 
+> ⭐ **IMPLEMENTED 2026-08-16 — and deliberately STRONGER than the line above.**
+> `stack/scripts/train_v6_staged.py` now carries `STAGE_INVALIDATES` (`S-S → ("S-T",)`, every other
+> stage `()`) and `STAGE_INVALIDATION_MECHANISM`, which quotes the seam from source
+> (`v6.py:995` · `v6.py:1520-1528` · `v6.py:655` · `v6.py:619`) so the rationale cannot be lost.
+> `sel_gap_revalidated` and `TACTICAL_revalidated` were added to S-S's **`required`** list, **not**
+> its `reported`, and the assembled gate now carries a `revalidates` block naming the mechanism.
+>
+> **Why `required` rather than `reported-only`, against the paragraph above.** A reported-only probe
+> is exactly what a *silent carry-forward* looks like: the gate reads PASS on `STRATEGIC_family`
+> alone, the S-T certificate is never re-earned, and S-J launches on an uncertified selector — the
+> outcome this section exists to prevent. Under `required`:
+> * omitting the re-measurement ⇒ **INCONCLUSIVE**, never PASS (overridable only with
+>   `--allow-inconclusive-gate` + a recorded `--gate-off-reason`, so a waiver is a conscious act);
+> * running it and **regressing** ⇒ **FAIL**, which X5 gives *no* override — and a FAIL here is
+>   precisely the trigger for the **S-S′ planner refit micro-stage** this section commits to.
+>
+> Cost as promised: **0 parameters, 0 GPU.** Pinned by `stack/tests/test_v6_stage_revalidation.py`
+> (9 tests, incl. one asserting that `STRATEGIC_family` alone is INCONCLUSIVE — the defect itself).
+> Evidence class: MEASURED (ours) — `PYTHONUTF8=1 python -m pytest tests/test_v6_stage_revalidation.py
+> tests/test_v6_staged.py -q` → **93 passed**.
+
 ### 4.4 S-J — optional joint polish (3,000 steps, lr 3e-5, isolation ON)
 
 Run **only if S-T/S-S plateau**. Gate: the frozen battery **FLAT** across the joint phase (H-COTRAIN),
