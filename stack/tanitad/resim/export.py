@@ -187,6 +187,29 @@ def _ade(wp: np.ndarray, gt: np.ndarray) -> float:
     return float(np.linalg.norm(np.asarray(wp) - gt, axis=-1).mean())
 
 
+def portable_basename(p) -> str | None:
+    """Last path component of ``p``, whichever platform WROTE it.
+
+    ⛔ MEASURED 2026-08-13: a bundle recorded on Windows exported
+    ``"ckpt": "C:\\ckpts\\refb.pt"``. ``pathlib.Path(...).name`` is
+    PLATFORM-RELATIVE — on POSIX a backslash is an ordinary filename character,
+    so a Windows absolute path passes through whole and lands in a bundle whose
+    entire promise is that it is PORTABLE and contains no absolute paths. The
+    same call is correct on Windows and wrong on Linux, which is why it survived
+    review: it reads like it strips directories, and on the author's machine it
+    did.
+
+    Splitting on BOTH separators is platform-independent and cannot regress in
+    the other direction — no legal POSIX basename produced by this program
+    contains a backslash, and treating one as a separator is the desired
+    behaviour for exactly the Windows-recorded case."""
+    if p is None:
+        return None
+    s = str(p).replace("\\", "/")
+    s = s.rstrip("/")
+    return s.rsplit("/", 1)[-1] if s else None
+
+
 def export_bundle(records: Iterable[TimestepRecord], out_dir: str | Path,
                   session_name: str, *,
                   corpora: Sequence[str] | None = None,
@@ -401,7 +424,7 @@ def export_bundle(records: Iterable[TimestepRecord], out_dir: str | Path,
     arms_meta = [{
         "name": n,
         "color": resim_color(n),
-        "ckpt": (Path(arm_ckpts[n]).name
+        "ckpt": (portable_basename(arm_ckpts[n])
                  if arm_ckpts and n in arm_ckpts else None),
         "ade": round(float(np.mean(arm_ade[n])), 4) if arm_ade[n] else None,
         "fde": round(float(np.mean(arm_fde[n])), 4) if arm_fde[n] else None,

@@ -1,0 +1,61 @@
+{
+ "_evidence_class": "MEASURED (ours)",
+ "_corpus": "/workspace/rescue/data/physicalai_v2/epcache-physicalai-v2bal-4b7eeeac222d",
+ "n_episodes": 1500,
+ "n_windows": 33004,
+ "n_samples": 660080,
+ "k": 20,
+ "dt": 0.1,
+ "_grid": "window origins on the trainer's own stride-8 grid, so these describe the distribution the head actually sees",
+ "accel": {
+  "std": 0.883613,
+  "mean": 0.016282,
+  "p99_abs": 2.784729,
+  "p999_abs": 4.178134,
+  "kurtosis": 5.699,
+  "delta_std": 0.165366,
+  "delta_over_abs": 0.1871,
+  "lag1_autocorr": 0.9825
+ },
+ "curvature": {
+  "std": 0.032069,
+  "mean": 0.000574,
+  "p99_abs": 0.153284,
+  "p999_abs": 0.261298,
+  "kurtosis": 25.92,
+  "delta_std": 0.008934,
+  "delta_over_abs": 0.2786,
+  "lag1_autocorr": 0.9612
+ },
+ "yaw_rate": {
+  "std": 0.130914,
+  "mean": 0.002943,
+  "p99_abs": 0.506083,
+  "p999_abs": 0.69765,
+  "kurtosis": 9.564,
+  "delta_std": 0.025484,
+  "delta_over_abs": 0.1947,
+  "lag1_autocorr": 0.981
+ },
+ "speed": {
+  "std": 6.789071,
+  "mean": 10.079573,
+  "p99_abs": 30.221671,
+  "p999_abs": 35.09007,
+  "kurtosis": 3.546,
+  "delta_std": 0.08836,
+  "delta_over_abs": 0.013,
+  "lag1_autocorr": 0.9999
+ },
+ "conditioning": {
+  "curvature_p99_slow_v_lt_3": 0.243048,
+  "curvature_p99_fast_v_gt_8": 0.034107,
+  "yaw_rate_p99_slow": 0.476647,
+  "yaw_rate_p99_fast": 0.327045,
+  "n_slow": 105602,
+  "n_fast": 389187,
+  "_read": "the low/high-speed tail RATIO is the conditioning argument for predicting yaw rate instead of curvature",
+  "curvature_tail_ratio": 7.13,
+  "yaw_rate_tail_ratio": 1.46
+ }
+}

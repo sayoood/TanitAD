@@ -8,6 +8,30 @@ Pulled from `tanitad-pod3:/workspace/idmretrain/taniteval/results/videos` on **2
 
 ---
 
+## ⭐ REAL-FOOTAGE open-loop overlays — `v1arch-oodval-openloop-2026-08-05/` (NEWEST)
+
+[`v1arch-oodval-openloop-2026-08-05/`](v1arch-oodval-openloop-2026-08-05/README.md) — **the first
+long reels on PhysicalAI's OWN official eval split** (290 clips, **zero overlap** with the arm's
+9000-clip training pool). Real rig footage, not a NuRec reconstruction, so the 3.21× sim-OOD caveat
+below does **not** apply to these.
+
+| file | selection | duration | mean ADE over rendered eps |
+|---|---|---|---|
+| `v1arch_oodval_openloop_representative.mp4` | `spread` (30 eps, evenly spaced) | **8 min 33 s** | 0.6284 m |
+| `v1arch_oodval_openloop_worst12.mp4` | worst 12 by ADE | 3 min 25 s | 1.4626 m |
+| `v1arch_oodval_openloop_best12.mp4` | best 12 — **CHERRY-PICKED, and the banner says so** | 3 min 26 s | 0.1701 m |
+
+962 × 654 @ 10 fps: camera + a **full-height calibration-independent metric BEV** + tactical/
+strategic HUD + a scrolling 24 s ADE trace. Corpus-wide mean is **0.5752 m**, median episode
+**0.4702 m** — quote those for the corpus, not a reel's mean.
+
+⛔ **These are WORLD-MODEL FIDELITY, not driving.** The rollout decodes the **expert's true future
+actions** (`pc2_pass = False` by construction) and the ego follows the log. Both facts are burned
+into every frame. Companion result: the complete four-family block at
+[`Benchmarks & Eval/…/2026-08-05-v1arch-oodval-four-families/`](../../Benchmarks%20&%20Eval/Implementation/incoming/2026-08-05-v1arch-oodval-four-families/RESULT.md).
+
+---
+
 ## ⭐ AlpaSim / NuRec sim videos — OPEN loop and CLOSED loop are SEPARATE folders
 
 ⛔ **They answer different questions and must never be confused.** The mode is burned into

@@ -56,6 +56,12 @@ class PredictorConfig:
     action_dim: int = 2           # (steer, accel) continuous, FiLM-conditioned
     residual: bool = True         # A4: residual/delta prediction
     change_weighted: bool = True  # A4: change-weighted latent loss
+    #: ⭐ ViT-5-recipe blocks for the PREDICTOR (PI 2026-08-13): RMSNorm +
+    #: QK-Norm + LayerScale + bias-free attention, GeLU MLP kept (ViT-5
+    #: REJECTS SwiGLU for compact models). Default False: turning it on
+    #: CHANGES THE STATE-DICT KEYS, so it is a declared arm that cannot
+    #: silently resume an old checkpoint — strict load enforces that.
+    modern: bool = False
 
 
 @dataclass

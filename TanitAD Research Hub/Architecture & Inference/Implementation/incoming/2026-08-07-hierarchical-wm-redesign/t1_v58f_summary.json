@@ -1,0 +1,882 @@
+{
+ "tool": "taniteval/tools/t1_summary.py",
+ "inputs": {
+  "v5f-30k": {
+   "json": "/workspace/experiments/t1-v58f/t1_v5f_30k.json",
+   "ckpt": null,
+   "dump_dir": "/workspace/experiments/t1-v58f/dump_v5f_30k",
+   "corpus_key": null,
+   "decoder": null,
+   "rollout_path": "n/a \u2014 analyze-only (no roll in this invocation)",
+   "n_episodes": 40,
+   "n_windows": 6844,
+   "grid": null
+  },
+  "stage-a-repaired": {
+   "json": "/workspace/experiments/t1-v58f/t1_stage_a_repaired.json",
+   "ckpt": null,
+   "dump_dir": "/workspace/experiments/t1-v58f/dump_stage_a_repaired",
+   "corpus_key": null,
+   "decoder": null,
+   "rollout_path": "n/a \u2014 analyze-only (no roll in this invocation)",
+   "n_episodes": 40,
+   "n_windows": 6844,
+   "grid": null
+  }
+ },
+ "arm_keys_present": [
+  "cl",
+  "ha",
+  "ol"
+ ],
+ "_tier_doctrine": "EVAL_DOCTRINE.md \u2014 T1 (action-closed loop, 'cl'/'ha') is the PRIMARY tier; T0 ('ol', teacher-forced) supports prediction/attribution claims ONLY and is NEVER quotable as driving performance.",
+ "_estimator": "point estimates are the arm records' FULL-SET pooled means; intervals are the episode-cluster bootstrap (taniteval/ci.py) and cross-arm deltas the PAIRED version on the same windows. \u26d4 overlapping_holdout_se is used nowhere \u2014 it biases the POINT ESTIMATE, not only the interval.",
+ "_binding_four_families": "Sayed 2026-08-02 \u2014 LONGITUDINAL + LATERAL + TACTICAL + STRATEGIC in ADDITION to ADE, per-family. A T1 dump traverses no decision heads, so TACTICAL/STRATEGIC report UNAVAILABLE with their reason and n: a WORK ITEM, not a pass. Distance-keeping needs a lead block (tools/build_lead_block.py) attached at t1_eval time.",
+ "_evidence_class": "MEASURED (ours; artifacts = the input JSONs+dumps)",
+ "arms": {
+  "v5f-30k": {
+   "cl": {
+    "tier": "T1",
+    "tier_note": "action-closed loop (imagination) \u2014 the PRIMARY offline tier",
+    "metrics": {
+     "ade_dense_m": {
+      "mean": 23.9837,
+      "lo": 21.442,
+      "hi": 26.347,
+      "ci95": 2.4525,
+      "se": 1.266,
+      "reducer": "mean",
+      "n_windows": 6844,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "fde_last_m": {
+      "mean": 53.4756,
+      "lo": 49.2043,
+      "hi": 57.489,
+      "ci95": 4.1423,
+      "se": 2.0864,
+      "reducer": "mean",
+      "n_windows": 6844,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "LON_speed_mae_mps": {
+      "mean": 26.9356,
+      "lo": 24.828,
+      "hi": 28.89,
+      "ci95": 2.031,
+      "se": 1.0347,
+      "reducer": "mean",
+      "n_windows": 6844,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "LON_along_mae_m": {
+      "mean": 23.8965,
+      "lo": 21.3555,
+      "hi": 26.2788,
+      "ci95": 2.4617,
+      "se": 1.2682,
+      "reducer": "mean",
+      "n_windows": 6844,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "LAT_cross_mae_m": {
+      "mean": 0.9993,
+      "lo": 0.7595,
+      "hi": 1.2875,
+      "ci95": 0.264,
+      "se": 0.1329,
+      "reducer": "mean",
+      "n_windows": 6844,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "LAT_heading_mae_deg": {
+      "mean": 3.6204,
+      "lo": 2.2465,
+      "hi": 5.511,
+      "ci95": 1.6323,
+      "se": 0.8249,
+      "reducer": "mean",
+      "n_windows": 6601,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap",
+      "n_windows_dropped_no_valid_step": 243
+     }
+    },
+    "estimator": "episode_cluster_bootstrap",
+    "n_windows": 6844,
+    "s_curve_masked": {
+     "rate": 0.2456,
+     "n_s": 57,
+     "ci": {
+      "mean": 0.2456,
+      "lo": 0.0444,
+      "hi": 0.4028,
+      "ci95": 0.1792,
+      "se": 0.092,
+      "reducer": "mean",
+      "n_windows": 57,
+      "n_episodes": 6,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     }
+    },
+    "lag_accel_s": -0.2455,
+    "response_ratio": {
+     "decel": -35.0878,
+     "accel": 33.5874
+    },
+    "families_unavailable": [
+     "tactical",
+     "strategic"
+    ],
+    "families_unavailable_reasons": {
+     "tactical": "tactical decisions not present in the scored pass (missing ['maneuver_pred', 'maneuver_gt']). A world-model FIDELITY pass does not traverse the hierarchy \u2014 run_one prints this explicitly. Producing this family needs a hierarchy-traversing eval, which is a WORK ITEM.",
+     "strategic": "strategic decisions not present in the scored pass (missing ['route_pred', 'route_gt']). A world-model FIDELITY pass does not traverse the hierarchy \u2014 run_one prints this explicitly. Producing this family needs a hierarchy-traversing eval, which is a WORK ITEM."
+    },
+    "sel_gap": "UNAVAILABLE"
+   },
+   "ol": {
+    "tier": "T0",
+    "tier_note": "teacher-forced \u2014 prediction quality only, NEVER driving performance",
+    "metrics": {
+     "ade_dense_m": {
+      "mean": 0.9397,
+      "lo": 0.8162,
+      "hi": 1.0679,
+      "ci95": 0.1258,
+      "se": 0.064,
+      "reducer": "mean",
+      "n_windows": 6844,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "fde_last_m": {
+      "mean": 2.8003,
+      "lo": 2.4179,
+      "hi": 3.1854,
+      "ci95": 0.3838,
+      "se": 0.1915,
+      "reducer": "mean",
+      "n_windows": 6844,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "LON_speed_mae_mps": {
+      "mean": 1.4431,
+      "lo": 1.2735,
+      "hi": 1.616,
+      "ci95": 0.1713,
+      "se": 0.0879,
+      "reducer": "mean",
+      "n_windows": 6844,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "LON_along_mae_m": {
+      "mean": 0.8762,
+      "lo": 0.7603,
+      "hi": 0.995,
+      "ci95": 0.1174,
+      "se": 0.0602,
+      "reducer": "mean",
+      "n_windows": 6844,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "LAT_cross_mae_m": {
+      "mean": 0.1947,
+      "lo": 0.1333,
+      "hi": 0.2713,
+      "ci95": 0.069,
+      "se": 0.0353,
+      "reducer": "mean",
+      "n_windows": 6844,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "LAT_heading_mae_deg": {
+      "mean": 3.3483,
+      "lo": 2.1298,
+      "hi": 4.7859,
+      "ci95": 1.3281,
+      "se": 0.686,
+      "reducer": "mean",
+      "n_windows": 6591,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap",
+      "n_windows_dropped_no_valid_step": 253
+     }
+    },
+    "estimator": "episode_cluster_bootstrap",
+    "n_windows": 6844,
+    "s_curve_masked": {
+     "rate": 0.614,
+     "n_s": 57,
+     "ci": {
+      "mean": 0.614,
+      "lo": 0.3912,
+      "hi": 0.84,
+      "ci95": 0.2244,
+      "se": 0.1103,
+      "reducer": "mean",
+      "n_windows": 57,
+      "n_episodes": 6,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     }
+    },
+    "lag_accel_s": 0.0609,
+    "response_ratio": {
+     "decel": 2.2372,
+     "accel": -0.5643
+    },
+    "families_unavailable": [
+     "tactical",
+     "strategic"
+    ],
+    "families_unavailable_reasons": {
+     "tactical": "tactical decisions not present in the scored pass (missing ['maneuver_pred', 'maneuver_gt']). A world-model FIDELITY pass does not traverse the hierarchy \u2014 run_one prints this explicitly. Producing this family needs a hierarchy-traversing eval, which is a WORK ITEM.",
+     "strategic": "strategic decisions not present in the scored pass (missing ['route_pred', 'route_gt']). A world-model FIDELITY pass does not traverse the hierarchy \u2014 run_one prints this explicitly. Producing this family needs a hierarchy-traversing eval, which is a WORK ITEM."
+    },
+    "sel_gap": "UNAVAILABLE"
+   },
+   "ha": {
+    "tier": "T1",
+    "tier_note": "action-closed loop (imagination) \u2014 the PRIMARY offline tier \u2014 hold-action control baseline",
+    "metrics": {
+     "ade_dense_m": {
+      "mean": 0.9597,
+      "lo": 0.8361,
+      "hi": 1.0879,
+      "ci95": 0.1259,
+      "se": 0.0633,
+      "reducer": "mean",
+      "n_windows": 6844,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "fde_last_m": {
+      "mean": 2.8631,
+      "lo": 2.4851,
+      "hi": 3.2396,
+      "ci95": 0.3773,
+      "se": 0.1893,
+      "reducer": "mean",
+      "n_windows": 6844,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "LON_speed_mae_mps": {
+      "mean": 1.4531,
+      "lo": 1.2837,
+      "hi": 1.6287,
+      "ci95": 0.1725,
+      "se": 0.0875,
+      "reducer": "mean",
+      "n_windows": 6844,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "LON_along_mae_m": {
+      "mean": 0.8901,
+      "lo": 0.7758,
+      "hi": 1.0098,
+      "ci95": 0.117,
+      "se": 0.06,
+      "reducer": "mean",
+      "n_windows": 6844,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "LAT_cross_mae_m": {
+      "mean": 0.2072,
+      "lo": 0.1444,
+      "hi": 0.2856,
+      "ci95": 0.0706,
+      "se": 0.0367,
+      "reducer": "mean",
+      "n_windows": 6844,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "LAT_heading_mae_deg": {
+      "mean": 4.5954,
+      "lo": 2.7428,
+      "hi": 6.7966,
+      "ci95": 2.0269,
+      "se": 1.039,
+      "reducer": "mean",
+      "n_windows": 6610,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap",
+      "n_windows_dropped_no_valid_step": 234
+     }
+    },
+    "estimator": "episode_cluster_bootstrap",
+    "n_windows": 6844,
+    "s_curve_masked": {
+     "rate": 0.2982,
+     "n_s": 57,
+     "ci": {
+      "mean": 0.2982,
+      "lo": 0.0784,
+      "hi": 0.5333,
+      "ci95": 0.2275,
+      "se": 0.1216,
+      "reducer": "mean",
+      "n_windows": 57,
+      "n_episodes": 6,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     }
+    },
+    "lag_accel_s": 0.0,
+    "response_ratio": {
+     "decel": 2.2147,
+     "accel": -0.6789
+    },
+    "families_unavailable": [
+     "tactical",
+     "strategic"
+    ],
+    "families_unavailable_reasons": {
+     "tactical": "tactical decisions not present in the scored pass (missing ['maneuver_pred', 'maneuver_gt']). A world-model FIDELITY pass does not traverse the hierarchy \u2014 run_one prints this explicitly. Producing this family needs a hierarchy-traversing eval, which is a WORK ITEM.",
+     "strategic": "strategic decisions not present in the scored pass (missing ['route_pred', 'route_gt']). A world-model FIDELITY pass does not traverse the hierarchy \u2014 run_one prints this explicitly. Producing this family needs a hierarchy-traversing eval, which is a WORK ITEM."
+    },
+    "sel_gap": "UNAVAILABLE"
+   }
+  },
+  "stage-a-repaired": {
+   "cl": {
+    "tier": "T1",
+    "tier_note": "action-closed loop (imagination) \u2014 the PRIMARY offline tier",
+    "metrics": {
+     "ade_dense_m": {
+      "mean": 9.3697,
+      "lo": 6.6822,
+      "hi": 12.2576,
+      "ci95": 2.7877,
+      "se": 1.4396,
+      "reducer": "mean",
+      "n_windows": 6844,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "fde_last_m": {
+      "mean": 19.5256,
+      "lo": 14.3127,
+      "hi": 25.3014,
+      "ci95": 5.4943,
+      "se": 2.8194,
+      "reducer": "mean",
+      "n_windows": 6844,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "LON_speed_mae_mps": {
+      "mean": 9.7291,
+      "lo": 7.1431,
+      "hi": 12.5948,
+      "ci95": 2.7259,
+      "se": 1.4043,
+      "reducer": "mean",
+      "n_windows": 6844,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "LON_along_mae_m": {
+      "mean": 9.2655,
+      "lo": 6.5869,
+      "hi": 12.1362,
+      "ci95": 2.7747,
+      "se": 1.4352,
+      "reducer": "mean",
+      "n_windows": 6844,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "LAT_cross_mae_m": {
+      "mean": 0.7446,
+      "lo": 0.5436,
+      "hi": 0.9794,
+      "ci95": 0.2179,
+      "se": 0.112,
+      "reducer": "mean",
+      "n_windows": 6844,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "LAT_heading_mae_deg": {
+      "mean": 5.3945,
+      "lo": 3.6203,
+      "hi": 7.5348,
+      "ci95": 1.9572,
+      "se": 1.0045,
+      "reducer": "mean",
+      "n_windows": 6618,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap",
+      "n_windows_dropped_no_valid_step": 226
+     }
+    },
+    "estimator": "episode_cluster_bootstrap",
+    "n_windows": 6844,
+    "s_curve_masked": {
+     "rate": 0.2982,
+     "n_s": 57,
+     "ci": {
+      "mean": 0.2982,
+      "lo": 0.0377,
+      "hi": 0.5741,
+      "ci95": 0.2682,
+      "se": 0.1362,
+      "reducer": "mean",
+      "n_windows": 57,
+      "n_episodes": 6,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     }
+    },
+    "lag_accel_s": 0.1045,
+    "response_ratio": {
+     "decel": -18.1976,
+     "accel": 10.2344
+    },
+    "families_unavailable": [
+     "tactical",
+     "strategic"
+    ],
+    "families_unavailable_reasons": {
+     "tactical": "tactical decisions not present in the scored pass (missing ['maneuver_pred', 'maneuver_gt']). A world-model FIDELITY pass does not traverse the hierarchy \u2014 run_one prints this explicitly. Producing this family needs a hierarchy-traversing eval, which is a WORK ITEM.",
+     "strategic": "strategic decisions not present in the scored pass (missing ['route_pred', 'route_gt']). A world-model FIDELITY pass does not traverse the hierarchy \u2014 run_one prints this explicitly. Producing this family needs a hierarchy-traversing eval, which is a WORK ITEM."
+    },
+    "sel_gap": "UNAVAILABLE"
+   },
+   "ol": {
+    "tier": "T0",
+    "tier_note": "teacher-forced \u2014 prediction quality only, NEVER driving performance",
+    "metrics": {
+     "ade_dense_m": {
+      "mean": 0.3659,
+      "lo": 0.2926,
+      "hi": 0.4521,
+      "ci95": 0.0798,
+      "se": 0.0402,
+      "reducer": "mean",
+      "n_windows": 6844,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "fde_last_m": {
+      "mean": 1.0231,
+      "lo": 0.8105,
+      "hi": 1.2639,
+      "ci95": 0.2267,
+      "se": 0.1154,
+      "reducer": "mean",
+      "n_windows": 6844,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "LON_speed_mae_mps": {
+      "mean": 0.5113,
+      "lo": 0.418,
+      "hi": 0.6149,
+      "ci95": 0.0984,
+      "se": 0.0506,
+      "reducer": "mean",
+      "n_windows": 6844,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "LON_along_mae_m": {
+      "mean": 0.299,
+      "lo": 0.2377,
+      "hi": 0.3735,
+      "ci95": 0.0679,
+      "se": 0.0347,
+      "reducer": "mean",
+      "n_windows": 6844,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "LAT_cross_mae_m": {
+      "mean": 0.1534,
+      "lo": 0.1152,
+      "hi": 0.1951,
+      "ci95": 0.04,
+      "se": 0.0202,
+      "reducer": "mean",
+      "n_windows": 6844,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "LAT_heading_mae_deg": {
+      "mean": 1.8351,
+      "lo": 1.1537,
+      "hi": 2.8377,
+      "ci95": 0.842,
+      "se": 0.4552,
+      "reducer": "mean",
+      "n_windows": 6605,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap",
+      "n_windows_dropped_no_valid_step": 239
+     }
+    },
+    "estimator": "episode_cluster_bootstrap",
+    "n_windows": 6844,
+    "s_curve_masked": {
+     "rate": 0.5965,
+     "n_s": 57,
+     "ci": {
+      "mean": 0.5965,
+      "lo": 0.3091,
+      "hi": 0.8281,
+      "ci95": 0.2595,
+      "se": 0.1369,
+      "reducer": "mean",
+      "n_windows": 57,
+      "n_episodes": 6,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     }
+    },
+    "lag_accel_s": -0.0433,
+    "response_ratio": {
+     "decel": 1.9733,
+     "accel": 0.1756
+    },
+    "families_unavailable": [
+     "tactical",
+     "strategic"
+    ],
+    "families_unavailable_reasons": {
+     "tactical": "tactical decisions not present in the scored pass (missing ['maneuver_pred', 'maneuver_gt']). A world-model FIDELITY pass does not traverse the hierarchy \u2014 run_one prints this explicitly. Producing this family needs a hierarchy-traversing eval, which is a WORK ITEM.",
+     "strategic": "strategic decisions not present in the scored pass (missing ['route_pred', 'route_gt']). A world-model FIDELITY pass does not traverse the hierarchy \u2014 run_one prints this explicitly. Producing this family needs a hierarchy-traversing eval, which is a WORK ITEM."
+    },
+    "sel_gap": "UNAVAILABLE"
+   },
+   "ha": {
+    "tier": "T1",
+    "tier_note": "action-closed loop (imagination) \u2014 the PRIMARY offline tier \u2014 hold-action control baseline",
+    "metrics": {
+     "ade_dense_m": {
+      "mean": 0.4246,
+      "lo": 0.35,
+      "hi": 0.5132,
+      "ci95": 0.0816,
+      "se": 0.0411,
+      "reducer": "mean",
+      "n_windows": 6844,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "fde_last_m": {
+      "mean": 1.2242,
+      "lo": 1.0052,
+      "hi": 1.4802,
+      "ci95": 0.2375,
+      "se": 0.1213,
+      "reducer": "mean",
+      "n_windows": 6844,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "LON_speed_mae_mps": {
+      "mean": 0.5671,
+      "lo": 0.4815,
+      "hi": 0.6615,
+      "ci95": 0.09,
+      "se": 0.0462,
+      "reducer": "mean",
+      "n_windows": 6844,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "LON_along_mae_m": {
+      "mean": 0.3487,
+      "lo": 0.2865,
+      "hi": 0.421,
+      "ci95": 0.0672,
+      "se": 0.0346,
+      "reducer": "mean",
+      "n_windows": 6844,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "LAT_cross_mae_m": {
+      "mean": 0.1689,
+      "lo": 0.1281,
+      "hi": 0.2192,
+      "ci95": 0.0455,
+      "se": 0.0229,
+      "reducer": "mean",
+      "n_windows": 6844,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     },
+     "LAT_heading_mae_deg": {
+      "mean": 3.9859,
+      "lo": 2.2402,
+      "hi": 6.0477,
+      "ci95": 1.9037,
+      "se": 0.973,
+      "reducer": "mean",
+      "n_windows": 6610,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap",
+      "n_windows_dropped_no_valid_step": 234
+     }
+    },
+    "estimator": "episode_cluster_bootstrap",
+    "n_windows": 6844,
+    "s_curve_masked": {
+     "rate": 0.0,
+     "n_s": 57,
+     "ci": {
+      "mean": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "ci95": 0.0,
+      "se": 0.0,
+      "reducer": "mean",
+      "n_windows": 57,
+      "n_episodes": 6,
+      "n_boot": 2000,
+      "estimator": "episode_cluster_bootstrap"
+     }
+    },
+    "lag_accel_s": -0.0182,
+    "response_ratio": {
+     "decel": 1.967,
+     "accel": 0.127
+    },
+    "families_unavailable": [
+     "tactical",
+     "strategic"
+    ],
+    "families_unavailable_reasons": {
+     "tactical": "tactical decisions not present in the scored pass (missing ['maneuver_pred', 'maneuver_gt']). A world-model FIDELITY pass does not traverse the hierarchy \u2014 run_one prints this explicitly. Producing this family needs a hierarchy-traversing eval, which is a WORK ITEM.",
+     "strategic": "strategic decisions not present in the scored pass (missing ['route_pred', 'route_gt']). A world-model FIDELITY pass does not traverse the hierarchy \u2014 run_one prints this explicitly. Producing this family needs a hierarchy-traversing eval, which is a WORK ITEM."
+    },
+    "sel_gap": "UNAVAILABLE"
+   }
+  }
+ },
+ "within_arm_T0_vs_T1": {
+  "v5f-30k": {
+   "paired_closed_minus_open": {
+    "tier": "T1 minus T0",
+    "n": 6844,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "direction": "cl - ol",
+    "ade_m": {
+     "delta": 23.0439,
+     "lo": 20.5613,
+     "hi": 25.3884,
+     "ci95": 2.4135,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 6844,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "speed_mae_mps": {
+     "delta": 25.4925,
+     "lo": 23.455,
+     "hi": 27.4222,
+     "ci95": 1.9836,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 6844,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   }
+  },
+  "stage-a-repaired": {
+   "paired_closed_minus_open": {
+    "tier": "T1 minus T0",
+    "n": 6844,
+    "estimator": "paired_episode_cluster_bootstrap",
+    "direction": "cl - ol",
+    "ade_m": {
+     "delta": 9.0039,
+     "lo": 6.3659,
+     "hi": 11.8487,
+     "ci95": 2.7414,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 6844,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "speed_mae_mps": {
+     "delta": 9.2178,
+     "lo": 6.6738,
+     "hi": 12.039,
+     "ci95": 2.6826,
+     "p_delta_gt0": 1.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 6844,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    }
+   }
+  }
+ },
+ "cross_arm_paired": {
+  "stage-a-repaired_minus_v5f-30k": {
+   "direction": "stage-a-repaired - v5f-30k",
+   "estimator": "paired_episode_cluster_bootstrap",
+   "n_boot": 2000,
+   "seed": 0,
+   "cl": {
+    "tier": "T1",
+    "n_windows": 6844,
+    "n_episodes": 40,
+    "ade_dense_m": {
+     "delta": -14.6139,
+     "lo": -16.9319,
+     "hi": -12.201,
+     "ci95": 2.3654,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 6844,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "LON_speed_mae_mps": {
+     "delta": -17.2064,
+     "lo": -19.7815,
+     "hi": -14.4927,
+     "ci95": 2.6444,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 6844,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "_read": "negative delta = the FIRST-named arm is better (lower error) on these windows"
+   },
+   "ol": {
+    "tier": "T0",
+    "n_windows": 6844,
+    "n_episodes": 40,
+    "ade_dense_m": {
+     "delta": -0.5739,
+     "lo": -0.7002,
+     "hi": -0.457,
+     "ci95": 0.1216,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 6844,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "LON_speed_mae_mps": {
+     "delta": -0.9318,
+     "lo": -1.1164,
+     "hi": -0.7646,
+     "ci95": 0.1759,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 6844,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "_read": "negative delta = the FIRST-named arm is better (lower error) on these windows"
+   },
+   "ha": {
+    "tier": "T1",
+    "n_windows": 6844,
+    "n_episodes": 40,
+    "ade_dense_m": {
+     "delta": -0.5351,
+     "lo": -0.6644,
+     "hi": -0.4181,
+     "ci95": 0.1231,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 6844,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "LON_speed_mae_mps": {
+     "delta": -0.8861,
+     "lo": -1.0713,
+     "hi": -0.7095,
+     "ci95": 0.1809,
+     "p_delta_gt0": 0.0,
+     "separated": true,
+     "reducer": "mean",
+     "n_windows": 6844,
+     "n_episodes": 40,
+     "n_boot": 2000,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "_read": "negative delta = the FIRST-named arm is better (lower error) on these windows"
+   }
+  }
+ }
+}

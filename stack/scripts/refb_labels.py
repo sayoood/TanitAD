@@ -1502,3 +1502,472 @@ def route_target_v22(poses: Tensor, t: int,
     whenever ``valid`` is False)."""
     r = route_from_future_v22(poses, t, horizon_steps, **kw)
     return int(r["route"]), bool(r["valid"])
+
+
+# ============================================================================
+# E4.1 (2026-08-09): tactical hindsight goals + 3-axis severity manoeuvres
+# ----------------------------------------------------------------------------
+# WHY. Two gaps this section closes, both on the TACTICAL metric family the
+# 2026-08-02 binding rule requires and the 5-way head cannot serve:
+#
+#  G1  HINDSIGHT GOALS. The literature's working goal lever is a GEOMETRIC goal
+#      point (categorical command +0.2 PDMS; goal point +4.7 — see the
+#      2026-08-03 goal-input ruling). The hindsight label for it is simply
+#      "where the ego actually WAS tau seconds later", in the ego frame of now:
+#      (x, y, heading, speed) at t+tau for tau in {2, 4, 6} s. That is a pure
+#      function of future poses — admissible as a LABEL under the PI rule
+#      (labels may use ego/future freely; inference stays vision-only: a head
+#      trained on these PREDICTS the goal, it is never fed one). It also passes
+#      the 2026-08-03 admissibility check by construction: no situation-
+#      classifier output is anywhere in the derivation — poses in, goal out.
+#
+#  G2  SEVERITY. Every tactical labeler above is either a priority collapse
+#      (the 5-way) or token-valued (v3 factorized). Neither grades HOW HARD:
+#      "brake" and "emergency stop" are one class, a gentle highway sweep and a
+#      junction turn are separable only by the route labeler. The 3-axis split
+#      mints LATERAL x LONGITUDINAL x LANE independently (the DEFECT-2 lesson:
+#      axes must not compete in one softmax) and adds a severity rung per axis.
+#
+# HONEST CEILING, stated once for the whole section: everything here is derived
+# from ego poses alone. The goal is where the ego WENT, not where it SHOULD
+# have gone — on a window where the driver erred, the label teaches the error
+# (hindsight, not oracle). The lane axis has no map and no lane geometry: it is
+# a displacement heuristic (see :func:`maneuver3_labels`) and cannot tell a
+# lane change from an obstacle swerve or a widening road. The severity rungs
+# are kinematic thresholds, not comfort/limit measurements.
+#
+# ADDITIVE: nothing above this header is touched; all names are new.
+# ----------------------------------------------------------------------------
+
+GOAL_TAC_TAUS_STEPS = (20, 40, 60)   # 2 / 4 / 6 s @ 10 Hz — tactical horizons
+
+MAN3_HORIZON_STEPS = 40              # 4 s @ 10 Hz — long enough for a full lane
+                                     # change (~3-5 s), short enough to stay
+                                     # tactical (route scale starts ~15 s)
+
+# LON severity rungs (m/s^2), documented: 0.5 m/s^2 is the deliberate-action
+# floor already implied by v1's DV_ACCEL_MS/DV_BRAKE_MS (+-1 m/s over 2 s);
+# 2.0 m/s^2 is a firmly-uncomfortable rate (~0.2 g) — above it the driver is
+# reacting to something, not modulating speed. Both are MEAN rates over the
+# horizon, so a brief spike inside an otherwise steady window does not fire.
+A_SOFT_MS2 = 0.5
+A_HARD_MS2 = 2.0
+
+# LANE displacement band (metres of net ego-frame lateral offset at the
+# horizon): >= ~half a lane crossed but <= ~1.5 lanes — beyond 6 m the ego is
+# doing something bigger than a lane change (exit/fork/turn geometry).
+LANE_CHANGE_MIN_M = 2.0
+LANE_CHANGE_MAX_M = 6.0
+
+# ---- integer classes + name tuples, one pair per axis ------------------------
+LAT3_STRAIGHT, LAT3_GENTLE_LEFT, LAT3_GENTLE_RIGHT, LAT3_SHARP_LEFT, \
+    LAT3_SHARP_RIGHT = range(5)
+LAT3_NAMES = ("straight", "gentle_left", "gentle_right", "sharp_left",
+              "sharp_right")
+
+LON3_HARD_BRAKE, LON3_BRAKE, LON3_KEEP, LON3_ACCEL, LON3_HARD_ACCEL = range(5)
+LON3_NAMES = ("hard_brake", "brake", "keep", "accel", "hard_accel")
+
+LANE3_KEEP, LANE3_CHANGE_LEFT, LANE3_CHANGE_RIGHT = range(3)
+LANE3_NAMES = ("keep", "change_left", "change_right")
+
+
+def _speed_series(poses: Tensor) -> Tensor:
+    """Per-step ego speed [T] from poses [T, 3] or [T, 4].
+
+    The episode contract carries speed as poses[:, 3] (v — the same channel
+    eval scripts read as ``pose_last[:, 3]`` for v0), and that is used when
+    present. A 3-column (x, y, yaw) input falls back to the realized
+    displacement norm / DT, with the last step repeated so the length stays T
+    (never NaN at the episode end)."""
+    if poses.shape[1] >= 4:
+        return poses[:, 3]
+    ds = (poses[1:, :2] - poses[:-1, :2]).norm(dim=-1) / DT_DEFAULT
+    if ds.numel() == 0:
+        return poses.new_zeros(1)
+    return torch.cat([ds, ds[-1:]])
+
+
+def _check_goal_poses(poses: Tensor, taus_steps) -> None:
+    if poses.ndim != 2 or poses.shape[1] not in (3, 4):
+        raise ValueError(f"poses must be [T, 3|4], got {tuple(poses.shape)}")
+    if poses.shape[0] < 1:
+        raise ValueError("poses must have at least one row")
+    if len(taus_steps) == 0 or any(int(k) < 1 for k in taus_steps):
+        raise ValueError(f"taus_steps must be positive ints, got {taus_steps}")
+
+
+def goal_tac_targets(poses: Tensor, t: int,
+                     taus_steps: tuple[int, ...] = GOAL_TAC_TAUS_STEPS
+                     ) -> tuple[Tensor, Tensor]:
+    """Hindsight tactical goals at timestep ``t``: ``([K, 4], [K] bool)``.
+
+    Row k is g_tac(t, tau_k) = (x, y, heading, speed) of the ego at t+tau_k in
+    the ego frame of t: x, y via the repo ``_ego`` rotation (+x forward,
+    +y left, rotate by -yaw(t)), heading = wrap_to_pi(yaw[t+tau] - yaw[t]),
+    speed from the pose speed channel (poses[:, 3]) or, on 3-column input,
+    from the displacement norm / DT (:func:`_speed_series`).
+
+    A tau beyond the episode end returns valid=False and the row CLAMPS to the
+    last available pose — a real, finite goal (the farthest thing the episode
+    can attest), never NaN, so an unmasked consumer degrades gracefully
+    instead of poisoning a loss. Mask on ``valid`` for training.
+
+    Labels-may-use-ego (PI rule 2026-08-03): future poses are fine HERE; the
+    head these supervise predicts the goal from vision at inference and is
+    never fed one. Honest ceiling: hindsight, not oracle — the goal is where
+    the driver went, including when the driver was wrong."""
+    _check_goal_poses(poses, taus_steps)
+    T = poses.shape[0]
+    if not 0 <= t < T:
+        raise ValueError(f"t={t} out of range for T={T}")
+    taus = torch.as_tensor([int(k) for k in taus_steps], dtype=torch.long,
+                           device=poses.device)
+    tgt = (t + taus).clamp(max=T - 1)                      # [K] clamped index
+    valid = (t + taus) <= (T - 1)                          # [K] bool
+    v = _speed_series(poses)
+    yaw0 = poses[t, 2]
+    dxy = poses[tgt, :2] - poses[t, :2]                    # [K, 2] world
+    exy = ego_frame(dxy, yaw0.expand(taus.shape[0]))       # [K, 2] ego of t
+    heading = wrap_to_pi(poses[tgt, 2] - yaw0)             # [K]
+    g = torch.stack([exy[:, 0], exy[:, 1], heading, v[tgt]], dim=-1)
+    return g.to(poses.dtype), valid
+
+
+def goal_tac_labels(poses: Tensor,
+                    taus_steps: tuple[int, ...] = GOAL_TAC_TAUS_STEPS
+                    ) -> tuple[Tensor, Tensor]:
+    """Vectorised :func:`goal_tac_targets` over every t: ``([T, K, 4],
+    [T, K] bool)``.
+
+    Same derivation and the same clamp-to-last-pose semantics row for row
+    (pinned by tests/test_goal_tac.py), computed with tensor indexing over all
+    t at once — no Python loop over the episode, matching the
+    :func:`maneuver_labels_v2` style."""
+    _check_goal_poses(poses, taus_steps)
+    T = poses.shape[0]
+    taus = torch.as_tensor([int(k) for k in taus_steps], dtype=torch.long,
+                           device=poses.device)                 # [K]
+    idx = torch.arange(T, device=poses.device)[:, None]         # [T, 1]
+    tgt = (idx + taus[None, :]).clamp(max=T - 1)                # [T, K]
+    valid = (idx + taus[None, :]) <= (T - 1)                    # [T, K] bool
+    v = _speed_series(poses)
+    yaw0 = poses[:, 2][:, None]                                 # [T, 1]
+    dxy = poses[tgt, :2] - poses[:, None, :2]                   # [T, K, 2]
+    exy = ego_frame(dxy, yaw0)                                  # [T, K, 2]
+    heading = wrap_to_pi(poses[tgt, 2] - yaw0)                  # [T, K]
+    g = torch.stack([exy[..., 0], exy[..., 1], heading, v[tgt]], dim=-1)
+    return g.to(poses.dtype), valid
+
+
+def maneuver3_labels(poses: Tensor,
+                     horizon: int = MAN3_HORIZON_STEPS) -> Tensor:
+    """3-axis severity manoeuvre labels over a horizon: poses -> [T, 3] long,
+    columns (LAT, LON, LANE), minted INDEPENDENTLY (the v3 factorization
+    lesson: axes in one softmax destroy each other by priority).
+
+    LAT (5-way, LAT3_NAMES): peak smoothed |kappa| over the horizon (reusing
+    :func:`path_curvature` + the arc smoothing constant CURV_SMOOTH_STEPS —
+    the same signed, +left convention as everywhere in this file):
+        peak >= CURV_TURN_PER_M                    -> SHARP  (junction-scale)
+        CURV_ROAD_PER_M <= peak < CURV_TURN_PER_M  -> GENTLE (marked road curve)
+        else                                       -> STRAIGHT
+    side = sign of the smoothed kappa AT the peak (+left). Curvature is
+    speed-invariant (kappa = 1/R), so a highway sweep at speed stays
+    gentle/straight — the exact failure the v2 header documents for
+    net-heading-over-time labels.
+
+    LON (5-way, LON3_NAMES): mean accel a = (v(t+h) - v(t)) / (h * DT):
+        a <= -A_HARD_MS2 -> HARD_BRAKE   a <= -A_SOFT_MS2 -> BRAKE
+        a >= +A_HARD_MS2 -> HARD_ACCEL   a >= +A_SOFT_MS2 -> ACCEL
+        else KEEP. (Rungs documented at the constants.)
+
+    LANE (3-way, LANE3_NAMES): net ego-frame lateral offset y at the horizon
+    in [LANE_CHANGE_MIN_M, LANE_CHANGE_MAX_M] AND the LAT axis is NOT sharp
+    (a junction turn also displaces laterally but is not a lane change)
+    -> change toward sign(y) (+y = left); else keep.
+
+    HONEST CEILING (lane axis especially): there is no map and no lane
+    geometry here — LANE is a displacement heuristic. It cannot separate a
+    lane change from an obstacle swerve, a road-width change, or a gentle
+    fork, and the [2, 6] m band assumes ~3.5 m lanes. It is a label for
+    "the ego moved about one lane sideways while the path stayed sub-
+    junction", nothing stronger.
+
+    Windows at the episode tail clamp to the last pose: the shrunken future
+    is judged as-is (an empty future reads STRAIGHT/KEEP/KEEP), never NaN."""
+    if poses.ndim != 2 or poses.shape[1] not in (3, 4):
+        raise ValueError(f"poses must be [T, 3|4], got {tuple(poses.shape)}")
+    if horizon < 1:
+        raise ValueError(f"horizon must be >= 1, got {horizon}")
+    T = poses.shape[0]
+    out = torch.full((T, 3), 0, dtype=torch.long, device=poses.device)
+    out[:, 0] = LAT3_STRAIGHT
+    out[:, 1] = LON3_KEEP
+    out[:, 2] = LANE3_KEEP
+    if T < 2:
+        return out
+
+    # ---- LAT: peak smoothed |kappa| in [t, t+horizon) ------------------------
+    if poses.shape[1] == 4:
+        kposes = poses
+    else:  # path_curvature validates [T, 4]; pad a zero speed column
+        kposes = torch.cat([poses, poses.new_zeros(T, 1)], dim=1)
+    ks = _moving_avg(path_curvature(kposes), CURV_SMOOTH_STEPS)     # [T-1]
+    ksp = torch.cat([ks, ks.new_zeros(horizon)])        # zero-pad the tail:
+    win = ksp.unfold(0, horizon, 1)[:T]                 # [T, horizon]; padded
+    peak_i = win.abs().argmax(dim=1)                    # steps never win a peak
+    signed = win.gather(1, peak_i[:, None]).squeeze(1)  # kappa AT the peak
+    peak = signed.abs()
+    sharp = peak >= CURV_TURN_PER_M
+    gentle = (peak >= CURV_ROAD_PER_M) & ~sharp
+    left = signed > 0
+    out[gentle & left, 0] = LAT3_GENTLE_LEFT
+    out[gentle & ~left, 0] = LAT3_GENTLE_RIGHT
+    out[sharp & left, 0] = LAT3_SHARP_LEFT
+    out[sharp & ~left, 0] = LAT3_SHARP_RIGHT
+
+    # ---- LON: mean accel over the (clamped) horizon --------------------------
+    idx = torch.arange(T, device=poses.device)
+    tgt = (idx + horizon).clamp(max=T - 1)
+    n = (tgt - idx).clamp(min=1)                        # actual steps judged
+    v = _speed_series(poses)
+    a = (v[tgt] - v[idx]) / (n.to(v.dtype) * DT_DEFAULT)
+    out[a >= A_SOFT_MS2, 1] = LON3_ACCEL
+    out[a >= A_HARD_MS2, 1] = LON3_HARD_ACCEL
+    out[a <= -A_SOFT_MS2, 1] = LON3_BRAKE
+    out[a <= -A_HARD_MS2, 1] = LON3_HARD_BRAKE
+
+    # ---- LANE: net lateral displacement, gated on LAT not sharp --------------
+    dxy = poses[tgt, :2] - poses[:, :2]                 # [T, 2] world
+    ey = ego_frame(dxy, poses[:, 2])[:, 1]              # [T] ego +y = left
+    change = (ey.abs() >= LANE_CHANGE_MIN_M) & \
+             (ey.abs() <= LANE_CHANGE_MAX_M) & ~sharp
+    out[change & (ey > 0), 2] = LANE3_CHANGE_LEFT
+    out[change & (ey < 0), 2] = LANE3_CHANGE_RIGHT
+    return out
+
+
+# ============================================================================
+# E7.1 (2026-08-10): strategic corridor labels
+# ----------------------------------------------------------------------------
+# WHY. V18_BACKLOG E7 (strategic layer scaffold): the strategic goal g_str is
+# "goal point + corridor (left/straight/right at route scale) at tau in
+# [6, 15] s" (HIERARCHICAL_WM_REDESIGN.md §3.2). This section mints the
+# CORRIDOR half's hindsight label: per window, the route-scale corridor the ego
+# actually took over the NEXT 25 s — the supervision stream the 0.2 Hz
+# strategic head (E7.2) trains on, and the STRATEGIC-family label E7.3 scores
+# against.
+#
+# ⚠️ INTENTIONAL DEVIATION FROM THE REDESIGN DOC'S PARENTHETICAL. §3.4 says
+# "Strategic corridor: net-heading over 25 s (`nav_command` exists in
+# refb_labels)". `nav_command` (v1, top of this file) thresholds NET HEADING
+# OVER TIME, and the v2 header above documents with numbers why that is
+# degenerate at exactly this horizon: dyaw = kappa * v * t, so a gentle R=300 m
+# highway sweep at 30 m/s nets 143 deg over 25 s (pure lane-keeping) while the
+# same 45 deg threshold is meant to catch an R=15 m junction turn. The corridor
+# label therefore uses the v2 CURVATURE-RELATIVE machinery
+# (:func:`route_from_future`): a corridor turn must be TIGHT (junction-scale
+# radius) AND TRANSIENT (heading concentrated in one junction-length
+# sub-window); a road-following sweep of any net heading is CORRIDOR_FOLLOW;
+# the gray-zone radius band (gentle fork / exit ramp, not separable from a road
+# curve without a map) is valid=False exactly as v2 flags it. The v1-vs-v2
+# disagreement on the sweep case is pinned by tests/test_corridor.py.
+#
+# STRATIFICATION (the second half of E7.1). PhysicalAI has no maps (settled
+# 5-probe fact), so corridor DIVERSITY is measured, not assumed: the aug road
+# classifier ("TanitAD Research Hub/Benchmarks & Eval/Research/
+# 2026-08-06-alpamayo-augmentation/aug_road_class.json") assigns each clip one
+# of highway / urban / intersection_rich / unstructured. MEASURED 2026-08-10
+# (read from that JSON): 3592 clips = highway 384 / urban 1884 /
+# intersection_rich 1241 / unstructured 83. :func:`stratified_corridor_report`
+# is the instrument that shows whether the intersection_rich class actually
+# carries more CORRIDOR_LEFT/RIGHT mass — the fact the strategic train/val
+# stratification (§3.7) depends on.
+#
+# ADMISSIBILITY, stated once. The corridor label and the road classes are both
+# ego-derived: fine as LABELS (labels-may-use-ego rule, 2026-08-03), never as
+# inference inputs (vision-only rule — the strategic head PREDICTS the corridor
+# from vision, it is never fed one). Neither derivation touches the situation
+# classifier's output in any form: poses in, corridor out (goal-input
+# admissibility check, 2026-08-03, passes by construction).
+#
+# THE D2 LESSON, APPLIED. CORRIDOR_FOLLOW with valid=False means "cannot judge
+# at route scale" (too little future, or gray-zone radius) — NOT "the road goes
+# straight". The label deliberately stays inside the 3-class range (no
+# out-of-range UNKNOWN sentinel here, unlike route_target_v21) because the [T]
+# long tensor is meant to feed a masked 3-way CE directly; the MASK is the
+# contract, and :func:`stratified_corridor_report` counts valid separately so a
+# confession is never pooled with a judgement. Consumers that drop the mask
+# recreate the v2.1-D2 bug — do not.
+#
+# COVERAGE CAVEAT (the D1 lesson, not silently fixed): with the v2 defaults
+# (min_steps=150 = 15 s) a ~20 s PhysicalAI clip is judgeable only over its
+# first ~5 s. That is v2's honest route-scale gate, kept here on purpose — a
+# corridor claimed from 3 s of future is not a strategic label. Callers that
+# need coverage may lower ``min_steps`` explicitly; the default does not lie.
+#
+# ADDITIVE: nothing above this header is touched; all names are new.
+# ----------------------------------------------------------------------------
+
+# Corridor classes — order mirrors NAV_COMMANDS (follow, left, right) so a
+# 3-way CE head and the nav-input embedding share one index convention.
+CORRIDOR_FOLLOW, CORRIDOR_LEFT, CORRIDOR_RIGHT = range(3)
+CORRIDOR_NAMES = ("follow", "left", "right")
+_ROUTE_TO_CORRIDOR = {ROUTE_STRAIGHT: CORRIDOR_FOLLOW, ROUTE_LEFT: CORRIDOR_LEFT,
+                      ROUTE_RIGHT: CORRIDOR_RIGHT}
+
+CORRIDOR_STRIDE_STEPS = 10     # 1 Hz sampling of the corridor stream — the
+                               # strategic clock is 0.2 Hz (§3.1) but the label
+                               # is minted denser so E7.2 can pool/subsample
+                               # without re-running the labeler.
+
+
+def _corridor_at(poses: Tensor, t: int,
+                 horizon_steps: int = NAV_HORIZON_STEPS,
+                 min_steps: int = NAV_MIN_STEPS) -> tuple[int, bool]:
+    """Corridor class + validity at one timestep — a thin, total map over the
+    v2 curvature-relative decision (:func:`route_from_future`). v2 only ever
+    emits the three ROUTE CE classes, so the mapping needs no UNKNOWN branch;
+    'cannot judge' arrives as valid=False (short future OR gray-zone), exactly
+    v2's semantics."""
+    r = route_from_future(poses, t, horizon_steps, min_steps)
+    return _ROUTE_TO_CORRIDOR[r["route"]], bool(r["valid"])
+
+
+def corridor_labels(poses: Tensor, horizon_steps: int = NAV_HORIZON_STEPS,
+                    min_steps: int = NAV_MIN_STEPS) -> tuple[Tensor, Tensor]:
+    """Per-timestep strategic corridor labels: poses [T, 4] ->
+    ``(labels [T] long, valid [T] bool)``.
+
+    ``labels[t]`` is the corridor the ego actually took over the next
+    ``min(horizon_steps, available)`` steps (25 s @ 10 Hz at the default):
+
+        CORRIDOR_LEFT / CORRIDOR_RIGHT   a junction-scale turn — TIGHT
+            (peak smoothed |kappa| >= CURV_TURN_PER_M, i.e. R <= 60 m) AND
+            TRANSIENT (>= CONCENTRATION_MIN of the net heading inside one
+            CONC_WIN_STEPS sub-window); side from the signed peak curvature
+            (+left, wrap-robust — see route_from_future).
+        CORRIDOR_FOLLOW                  road-following (peak |kappa| <=
+            CURV_ROAD_PER_M), HOWEVER much net heading the road sweeps — the
+            v1 net-heading rule would call a gentle R=300 sweep a turn; this
+            labeler does not (the whole point, pinned in tests).
+
+    ``valid[t]`` is False when the window cannot be judged at route scale:
+    fewer than ``min_steps`` of future, OR the gray-zone radius band between
+    CURV_ROAD_PER_M and the turn gate (unknowable without a map) — both carry
+    CORRIDOR_FOLLOW as a masked placeholder, never as a judgement (D2 lesson;
+    mask before any CE / any statistic).
+
+    Derivation is v2's :func:`route_from_future` verbatim per t — nothing is
+    re-derived here, so corridor and route labels can never drift apart."""
+    if poses.ndim != 2 or poses.shape[1] != 4:
+        raise ValueError(f"poses must be [T, 4], got {tuple(poses.shape)}")
+    T = poses.shape[0]
+    labels = torch.full((T,), CORRIDOR_FOLLOW, dtype=torch.long,
+                        device=poses.device)
+    valid = torch.zeros(T, dtype=torch.bool, device=poses.device)
+    for t in range(T):
+        c, ok = _corridor_at(poses, t, horizon_steps, min_steps)
+        labels[t] = c
+        valid[t] = ok
+    return labels, valid
+
+
+def corridor_sequence(poses: Tensor, stride: int = CORRIDOR_STRIDE_STEPS,
+                      **kw) -> tuple[Tensor, Tensor, Tensor]:
+    """Strided corridor stream for a whole episode: ``(labels [S] long,
+    valid [S] bool, t_idx [S] long)`` with ``t_idx = arange(0, T, stride)``.
+
+    ``stride=10`` @ 10 Hz = one corridor label per second — the supervision
+    stream the 0.2 Hz strategic head (E7.2) pools/subsamples from. Row i is
+    EXACTLY ``corridor_labels(poses, ...)[t_idx[i]]`` (pinned by tests), but
+    only the strided timesteps are computed — an episode-length labeler is not
+    paid for a per-second stream. ``**kw`` forwards ``horizon_steps`` /
+    ``min_steps`` to :func:`route_from_future` unchanged."""
+    if poses.ndim != 2 or poses.shape[1] != 4:
+        raise ValueError(f"poses must be [T, 4], got {tuple(poses.shape)}")
+    if int(stride) < 1:
+        raise ValueError(f"stride must be >= 1, got {stride}")
+    T = poses.shape[0]
+    t_idx = torch.arange(0, T, int(stride), dtype=torch.long,
+                         device=poses.device)
+    labels = torch.full((t_idx.shape[0],), CORRIDOR_FOLLOW, dtype=torch.long,
+                        device=poses.device)
+    valid = torch.zeros(t_idx.shape[0], dtype=torch.bool, device=poses.device)
+    for i, t in enumerate(t_idx.tolist()):
+        c, ok = _corridor_at(poses, t, **kw)
+        labels[i] = c
+        valid[i] = ok
+    return labels, valid, t_idx
+
+
+def stratified_corridor_report(labels_by_clip: dict,
+                               road_classes: dict) -> dict:
+    """Corridor distribution per aug road class — the stratification
+    instrument of E7.1. Pure python (no I/O; tensors/arrays/lists all accepted
+    element-wise).
+
+    ``labels_by_clip``: {clip_id: (labels, valid)} as produced by
+    :func:`corridor_labels` or :func:`corridor_sequence` (any 1-D int/bool
+    sequences of equal length). ``road_classes``: {clip_id: class_name}, the
+    ``classes`` map of aug_road_class.json. Clips absent from ``road_classes``
+    are bucketed under ``"unmapped"`` and listed in ``unmapped_clips`` —
+    reported, never silently dropped (absence-at-one-location rule).
+
+    Returns::
+
+        {"per_class": {cls: {n_clips, n_windows, n_valid, valid_frac,
+                             counts: {follow/left/right},   # valid only
+                             fracs:  {follow/left/right},   # of n_valid
+                             turn_frac}},                   # left + right
+         "overall": <same shape>,
+         "unmapped_clips": [...]}
+
+    ``counts``/``fracs`` are over VALID windows only — an invalid window is a
+    confession, not a follow (D2) — while ``valid_frac`` reports how much of
+    each stratum was judgeable at all. ``turn_frac`` is the headline: the
+    stratification earns its keep iff intersection_rich carries visibly more
+    of it than highway."""
+    def _bucket() -> dict:
+        return {"n_clips": 0, "n_windows": 0, "n_valid": 0,
+                "counts": {n: 0 for n in CORRIDOR_NAMES}}
+
+    per: dict = {}
+    overall = _bucket()
+    unmapped: list = []
+    for clip_id, (labels, valid) in labels_by_clip.items():
+        lab = [int(x) for x in labels]
+        val = [bool(x) for x in valid]
+        if len(lab) != len(val):
+            raise ValueError(f"clip {clip_id!r}: labels ({len(lab)}) and "
+                             f"valid ({len(val)}) lengths differ")
+        cls = road_classes.get(clip_id)
+        if cls is None:
+            unmapped.append(clip_id)
+            cls = "unmapped"
+        b = per.setdefault(cls, _bucket())
+        for tgt in (b, overall):
+            tgt["n_clips"] += 1
+            tgt["n_windows"] += len(lab)
+        for c, ok in zip(lab, val):
+            if not ok:
+                continue
+            if not 0 <= c < len(CORRIDOR_NAMES):
+                raise ValueError(f"clip {clip_id!r}: corridor class {c} out "
+                                 f"of range [0, {len(CORRIDOR_NAMES)})")
+            for tgt in (b, overall):
+                tgt["n_valid"] += 1
+                tgt["counts"][CORRIDOR_NAMES[c]] += 1
+
+    def _finish(b: dict) -> dict:
+        nw, nv = b["n_windows"], b["n_valid"]
+        b["valid_frac"] = nv / nw if nw else 0.0
+        b["fracs"] = {k: (c / nv if nv else 0.0)
+                      for k, c in b["counts"].items()}
+        b["turn_frac"] = b["fracs"]["left"] + b["fracs"]["right"]
+        return b
+
+    return {"per_class": {k: _finish(b) for k, b in sorted(per.items())},
+            "overall": _finish(overall),
+            "unmapped_clips": sorted(unmapped)}

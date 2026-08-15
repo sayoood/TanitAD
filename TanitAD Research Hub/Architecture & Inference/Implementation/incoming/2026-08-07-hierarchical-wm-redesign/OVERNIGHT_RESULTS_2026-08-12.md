@@ -1,0 +1,248 @@
+# Overnight results — 2026-08-11 → 2026-08-12
+
+**For:** Sayed · **Evidence class:** every number below is **MEASURED (ours)** with its artifact
+path, unless stamped otherwise. **Source of truth:** `Project Steering/MODEL_REGISTRY.md` §1.14.
+
+---
+
+## The one thing to read first
+
+**We now have T1 pseudo-closed-loop numbers, and they change the story.**
+
+The stage-A repair wins decisively — closed-loop ADE **23.98 → 9.37 m**, paired
+**−14.61 [−16.93, −12.20]**, separated. But a **hold-action control beats the repaired model
+by 22×** (0.42 vs 9.37 m), and the divergence is **~99 % longitudinal**: the car holds its lane
+while its speed integrates away.
+
+**We cannot claim closed-loop driving competence for either arm.** That is not a setback — it is
+the measurement the programme was missing, and it makes the v6 staged ladder empirically
+motivated rather than merely architecturally argued.
+
+---
+
+## 1. T1 pseudo-closed-loop — the headline
+
+TIER **T1 = PRIMARY**. 6 844 windows / 40 val episodes, stride 1, episode-cluster bootstrap.
+`ol` = teacher-forced (**T0**, a WM diagnostic, never driving performance); `cl` = action-closed;
+`ha` = hold-action control.
+
+| arm | surface | tier | ADE (m) | FDE (m) | LON speed MAE (m/s) | LON along (m) | LAT cross (m) |
+|---|---|---|---|---|---|---|---|
+| `v5f-30k` | `cl` | **T1** | **23.9837** [21.44, 26.35] | 53.4756 | 26.9356 | 23.8965 | 0.9993 |
+| `v5f-30k` | `ol` | T0 | 0.9397 [0.82, 1.07] | 2.8003 | 1.4431 | 0.8762 | 0.1947 |
+| `v5f-30k` | `ha` | **T1** | 0.9597 [0.84, 1.09] | 2.8631 | 1.4531 | 0.8901 | 0.2072 |
+| `stage-a-repaired` | `cl` | **T1** | **9.3697** [6.68, 12.26] | 19.5256 | 9.7291 | 9.2655 | 0.7446 |
+| `stage-a-repaired` | `ol` | T0 | 0.3659 [0.29, 0.45] | 1.0231 | 0.5113 | 0.2990 | 0.1534 |
+| `stage-a-repaired` | `ha` | **T1** | 0.4246 [0.35, 0.51] | 1.2242 | 0.5671 | 0.3487 | 0.1689 |
+
+**Finding 1 — the repair works, on exactly the axis it targeted.** Paired
+`stage-a-repaired − v5f-30k`: `cl` ADE **−14.6139 [−16.9319, −12.2010]**, `cl` LON speed MAE
+**−17.2064 [−19.7815, −14.4927]**, `ol` −0.5739, `ha` −0.5351 — all separated, `p_delta_gt0` 0.0.
+Stage-A restored action-response gain 0.27 → 0.971/0.966 with longitudinal sign 1.0, and the
+closed loop improves 2.6×. That is a clean confirmation of the repair's mechanism.
+
+**Finding 2 — the closed loop diverges.** Within-arm `cl − ol`: **+9.0039 [6.37, 11.85]**
+(repaired), **+23.0439 [20.56, 25.39]** (v5f), both separated. T0 **0.3659** vs T1 **9.3697** on
+the *same checkpoint and the same windows* is a **25× gap**. This is the strongest evidence yet
+for the tier doctrine, and precisely the failure it exists to expose.
+
+⚠️ Honest scope: `ha` is a strong baseline partly *because* the corpus is short-horizon and
+near-constant-speed. That is what makes it the right "do nothing clever" floor — not a reason to
+discount it.
+
+---
+
+## 2. The four families — the mechanism, and why the rule earned its cost
+
+Rescored on the same grid (`FF_EXIT=0`, 6 arms, 15 paired contrasts). The binding rule is now
+satisfied on these rows: `rule_satisfied: true`, only STRATEGIC unavailable.
+
+### LONGITUDINAL — a runaway acceleration with a known sign
+
+| | `stage-a-repaired · cl` |
+|---|---|
+| speed MAE / **bias** | 9.7291 / **+9.3892** (bias ≈ 96 % of the error) |
+| along-track MAE / bias / final bias | 9.2655 / +9.0407 / **+18.5801** |
+| accel MAE | **19.0948 m/s²** (> 1.9 g — physically impossible) |
+| **ego progress ratio** | **1.7279** (median 1.0994) — drives 1.73× the human's distance |
+| target-speed accuracy @ 0.5 / 1.0 / 2.0 m/s | 0.3398 / 0.5069 / 0.6564 |
+
+⇒ The v6 longitudinal work item is **a systematic over-acceleration**, not scatter. That is far
+more actionable than "ADE is 9.37".
+
+### LATERAL — healthy, and not the problem
+
+heading MAE **3.8776°** · yaw-rate MAE **4.9188 °/s** · curvature MAE **0.0186 1/m** ·
+cross-track MAE **0.7446 m** (final 2.1565). All four members the rule names are present.
+
+### TACTICAL — longitudinal decision-making is at chance
+
+| decision axis | accuracy | Cohen's κ |
+|---|---|---|
+| lateral | 0.7515 | 0.3795 |
+| **longitudinal** | 0.3327 | ⛔ **0.0405** |
+| collapsed 5-way | 0.3036 | 0.1404 |
+| lateral — hold-action | 0.8675 | 0.6427 |
+| longitudinal — hold-action | 0.5586 | 0.2072 |
+
+**κ 0.0405 is chance agreement.** And the collapsed 5-way sits *between* the two axes, reporting
+neither — this is **the direct measurement of the lat/lon-mixing softmax defect**, visible only
+because the family is reported factored. Per-class lateral: `lane_keep` 0.8092 / 0.8747;
+`turn_left` 0.4994 / 0.6627; `turn_right` recall 0.6003 but **precision 0.2879** (1 195 predicted
+against 573 true).
+
+### TACTICAL goal-setting — the direction is right, the distance is wrong
+
+Goal bearing MAE **4.8098°** (bias −1.83°) against goal range ratio **1.7584**, long-bias
+**+18.58 m** vs lat-bias **−1.21 m**. ⇒ **the model knows WHERE to go and not HOW FAR** — a
+sentence that ADE, and even ADE-plus-FDE, cannot express.
+
+### STRATEGIC — `n/a` with reason and n = 6 844
+
+PhysicalAI-AV has no map, no lane graph, no junction label, no traffic-light feature and no
+route signal (the dataset card says verbatim *"we do not include open maps data"*). No rescore
+can close this; the instrument is the VLM pipeline PH0→PH1→PH2. Distance-keeping is likewise
+UNAVAILABLE pending a lead block on this dense grid — **a work item, not a pass**, and the half
+where 88.7 % of the T0 oracle gap was measured to live.
+
+---
+
+## 3. The other verdicts banked overnight
+
+| result | verdict |
+|---|---|
+| **W7-FULL** (selector-free planner, 256/256 candidates, oracle 0.1273) | ⛔ **FAIL 3.3348** vs gate 0.4505 — **winner's curse**: the argmin's error-rank is **132 of 256, the median**; top-m mean error flat at ~5.32 (the fan's own mean). A cheap untried fix exists: the anti-degeneracy progress term `--w-prog` has been **weight 0.0 in every W7 run**. |
+| **H-COTRAIN** | **REJECTED within range** — neither pre-registered CONFIRM condition fired. Every probed physical variable became *more* decodable (curvature 0.213→0.513 enc, 0.225→0.704 pred; yaw 0.583→0.869), participation ratio **expanded 53 %** (4.53→6.94), P1 went FAIL→PASS at 20 k. The standing hypothesis that planner co-training crushes physical representation is **refuted within the measured range**. Scope: lowest available λ is 0.5, not 0. |
+| **SIGReg** | ✅ **VALIDATED** — retention **1.53×** against a ≥0.8× gate (you asked for this explicitly). |
+| **P8 BEV occupancy** (attempt 2) | ✅ **GATE PASS** — retention **0.932** at k=10 (IoU 0.01869 pred / 0.02005 enc, τ*=0.7 chosen on the *encoded* arm so the gate can only get harder), a **74× lift**. P4 permanence rides it: occluded recall ≥ visible. ⚠️ absolute IoU ~0.02 — the **ratio** is the quotable claim. |
+| **I4a imagination ablation** | Imagination is **load-bearing**: intact 0.4011 / shuffled 1.2492 / zeroed 7.6493. |
+| **Consumer invalidation** | Repairing a trunk invalidates every frozen consumer (frozen selector 0.7933 → **4.4159**). ⇒ v5.8f ships the **frozen-trunk assembly (0.4815)**, and this *is* the staged-training argument for v6. |
+
+---
+
+## 4. v6 — ready to start
+
+**S-W is GO on code, blocked only on provisioning.** Trainer built and committed:
+`stack/tanitad/models/v6.py` + `stack/scripts/train_v6_staged.py` + 80 CPU tests green.
+Shared-encoder arm **87.89 M**; per-layer **120.74 M**; the E-ENC matched pair is 118.11 M
+(2.2 % gap, so a real matched comparison). S-T is gated on S-W's gate JSON; **S-S is
+structurally blocked until PH2** wires `g_str`.
+
+**Good news on the 6 s horizon:** v6 derives `max_horizon` **per stage**, so S-W and S-S keep
+94 windows/episode — the −42.6 % window loss hits **only S-T/S-J**. It is not a launch blocker.
+
+**Decisions waiting for you** — full sheet in `PI_DECISIONS_2026-08-12.md`:
+
+1. **S-W A40-hours before the first gate.** ESTIMATED 175–290 h / 30 k steps; recommendation is
+   to authorise **≤12 A40-h to a step-500 re-cost**, with all four branches pre-registered.
+2. **Which pod** — a dedicated A40 is recommended; both current pods have tracks.
+3. E-ENC (recommend shared for the first S-W), W5/E-H1 in parallel, and an S-S gate amendment.
+
+---
+
+## 5. Artifacts and images
+
+- **BEV belief reel** (camera │ what the WM believes │ belief ∩ truth):
+  `p8_belief_reel.mp4`, `p8_belief_still.png`, `p8_belief_sheet.png` —
+  on pod4 at `experiments/p8-occupancy-c/reel/` and on HF at `release/v58f/media/`.
+- **Figures**: `Paper/figures/v6_architecture.png` (the v6 diagram you asked for),
+  `v58f_results.png`, `winners_curse.png` (new).
+- **Paper**: `Paper/TANITAD_PAPER.md` at **v1.0** (+882 lines) — the four verdicts with their
+  mathematics, the winner's-curse formalism, the tier and four-family doctrines as method
+  sections, and the v6 roadmap.
+
+---
+
+## 6. What is still open
+
+| item | state |
+|---|---|
+| **VLM pilot (PH0)** | ⚠️ **Pipeline VALIDATED 8/8; engine B (the VLM) is the one open blocker — and it needs your call.** See §7. |
+| **Distance-keeping / headway** | Needs a lead block on the T1 dense grid (`tools/build_lead_block.py`). This is the other half of LONGITUDINAL and, given tonight's finding, the highest-value missing instrument. |
+| **STRATEGIC family** | Blocked on the corpus; PH2 is the instrument. |
+| **HF release bundle** | ✅ **PUBLISHED** — `RELEASE_DONE`, 20 artifacts + media + the 18 pilot files, MANIFEST last. |
+| **W7-PROG** | ✅ **Ran and returned a pre-registered PARTIAL** — see below. |
+
+### W7-PROG — the anti-degeneracy term is real, monotone, and far too small
+
+Pre-registered before the run (`PREREG_W7_PROG.md`), all three outcomes bound. Only `--w-prog`
+changed against the W7-FULL control. The primary endpoint was declared in advance to be the
+**argmin's error-rank**, not ADE, because the mechanism under test is a ranking claim.
+
+| arm | `--w-prog` | error-rank /256 | gate ADE | across-window Spearman |
+|---|---|---|---|---|
+| control (= W7-FULL) | 0.0 | **132.3** | 3.3348 | **+0.3185** |
+| `w7-prog-01` | 0.1 | **130.31** | 3.4360 | **−0.4244** |
+| `w7-prog-05` | 0.5 | **126.69** | 3.7398 | — |
+
+The rank falls **monotonically** with the weight, so my degenerate-minimiser account is supported
+in *direction* — and refuted in *magnitude*. The entire effect is **5.6 rank positions of 256, 2.2 %
+of the fan**; the argmin still sits essentially at the median, and gate ADE gets monotonically
+worse. **PARTIAL**, and its consequence was fixed in advance and is now in force: **the cost needs
+a goal-conditioned component, not a bigger anti-degeneracy weight, and W7-style self-consistency
+selection is retired as a headline route.**
+
+One finding beyond the pre-registration, recorded separately rather than folded into the verdict:
+enabling the term **flips the across-window calibration sign** (+0.3185 → −0.4244). A cost that is
+*negatively* calibrated across windows is worse than an uninformative one — independent evidence
+that this cost family is mis-specified for selection, not merely under-tuned.
+
+### One durable fix while chasing the lead block
+
+The distance-keeping instrument could not be built tonight, and the reason is worth stating: the
+obstacle and egomotion labels **are** staged on pod5, so the ingest half is unblocked — but the T1
+dumps carried only `['cl','g','ha','ol','ws']`, so the only way to say which clip `ep037.npz` holds
+was to re-derive the provider order and assume it matched. That is precisely the positional join
+`build_lead_block.py` warns *"silently puts another clip's traffic on every window"*. Rather than
+produce a headway number I could not defend, I made the dump carry `eid` and `clip_index`, so a
+downstream join can now **verify** identity instead of trusting sort order. Distance-keeping is a
+clean, unblocked work item for the next session.
+
+---
+
+## 7. The VLM pilot — what works, and the one decision you need to make
+
+**The pipeline is validated.** With engine B disabled the pilot ran **8/8 clips ok**, produced 8
+overlay videos (40 frames each) and the records behind them. The three-pane renderer works:
+camera overlay, BEV, and text. Engine A (ego-algorithmic) produced the path, the route-merge
+label, v0 63 km/h and the `lc_left` anchor; engine D joined 5 Alpamayo record rows; the fusion
+gate reported cleanly. Two real bugs were found and fixed getting here:
+
+1. **The bridge was silently skipping every clip** — it looked for a `frames` key the compressed
+   v2 cache does not have, printed `BRIDGE_DONE n=0`, and **exited 0**, so the chain read it as
+   success and launched a 9 B VLM against an empty directory. It now uses the canonical
+   `decode_full_episode` and yields 8 clips × 199 frames, 0 failures. A zero-clip bridge is now a
+   non-zero exit, and the channel slice is pose-aligned (`[-3:]`, not `[:3]`).
+2. **`--no-vlm` added** so engine B's availability can never again masquerade as a pipeline
+   failure. Records carry `engine_b_disabled: true` and empty scenario/domain/signs/strategic
+   blocks — a validation artifact, never a vocabulary result. 40 tests green.
+
+**⛔ The blocker: all three candidate arms are unusable on pod4 as configured.**
+
+| arm | what happened |
+|---|---|
+| `Qwen/Qwen3.5-9B` | **TEXT-only.** Loads fine, then rejects every clip: `model_kwargs not used: ['pixel_values_videos', 'video_grid_thw']`. It was only ever the chain's *fallback*. |
+| `Qwen/Qwen3.5-27B-FP8` | **OOM** — needs **43.23 GiB** of a **44.43 GiB** card. No headroom for video activations. |
+| `google/gemma-4-31B-it-qat-w4a16-ct` | **The 4-bit path is broken**: loaded **unquantised** (38.83 GiB allocated) and then `KeyError: 'weight_packed'` under transformers 5.15 + compressed-tensors 0.18. |
+
+**Your decision (D7).** Three options, my recommendation first:
+
+1. ⭐ **Fetch a VL model sized for a 44 GB card** (~7–12 B vision-language, bf16). Cheapest, most
+   likely to work, and PH1 can start the same day. Needs you to name the checkpoint — I did not
+   want to guess a repo ID and burn download time and disk on a wrong one.
+2. **Fix the w4a16 path** — pin a transformers/compressed-tensors pair known to work with
+   gemma-4-qat. Keeps the 31 B quality but is open-ended debugging.
+3. **Provision a bigger card** (80 GB) and use `Qwen3.5-27B-FP8` as intended.
+
+Until one of these lands, PH1 and the vocabulary mapping stay blocked — but nothing else does:
+engines A, C and D, the fusion gate, the bridge and the renderer are all proven.
+
+### Two things that cost time overnight, now written into `CLAUDE.md`
+
+- **`uv pip install <anything>` can silently replace torch with a wheel the driver cannot run.**
+  Measured twice on pod4: `-U accelerate`, then `compressed-tensors`, each pulled
+  torch 2.13+cu130 onto a CUDA-12.8 driver and took the GPU offline. Neither command names torch.
+- **An analysis-time import that fails after the rollout destroys the output while the compute is
+  already paid for.** Both T1 arms rolled all 40 episodes (~11 min each) and died on
+  `from taniteval import selgap`. `--analyze-only` over the banked dumps recovered every number
+  with **zero GPU**.

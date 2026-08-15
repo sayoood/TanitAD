@@ -1,0 +1,155 @@
+{
+ "item": "W4c \u2014 spatial cross-attention scoring port, REF-C conf-pass style (PREREG_W4C_SPATIAL_SCORING.md, registered 2026-08-10 pre-launch; activated by W4b feat+kin G1 failures)",
+ "gate_G1c_port_works": {
+  "rule": "held-out selected ADE <= 0.45 on the 881 grid (same as W4b's G1)",
+  "selected_ade": 0.66087,
+  "threshold_m": 0.45,
+  "pass": false
+ },
+ "gate_Gmode_mechanism_check": {
+  "rule": "selection entropy on held-out windows <= 1.5 (toward REF-C's 0.97 from v5f's 2.22) \u2014 passes only WITH G1-c; entropy alone proves nothing",
+  "entropy_mean": 5.370906,
+  "threshold_nats": 1.5,
+  "entropy_le_threshold": false,
+  "pass": false,
+  "note": "secondary mechanism check \u2014 coupled to G1-c by the prereg; a low entropy without G1-c is concentration on the WRONG candidates, not the REF-C mechanism"
+ },
+ "gate_Gnull": {
+  "rule": "selected ADE > 0.45 => per-candidate scoring on this trunk's features does not generalise regardless of input surface; selection moves ENTIRELY to W7 WM-roll re-rank (already primary per W4b's G2), and the fast selector is retired to a W7-distillation target (L4) \u2014 no third scoring attempt without new evidence",
+  "engaged": true
+ },
+ "reference": {
+  "w4b_feat_selected_ade": 0.56,
+  "w4b_kin_selected_ade": 0.5637,
+  "frozen_selector_selected_ade_new_fan": 0.7933,
+  "w4_oracle_ade_new_fan": 0.1077,
+  "refc_conf_pass_entropy": 0.97,
+  "v5f_sel_score_entropy": 2.22
+ },
+ "train_vs_heldout": {
+  "final_train_selected_ade": 0.55054,
+  "final_heldout_probe_selected_ade": 0.68913,
+  "final_gap": 0.13859,
+  "history": [
+   {
+    "step": 500,
+    "train_selected_ade": 0.93092,
+    "heldout_selected_ade": 1.04065,
+    "gap": 0.10974
+   },
+   {
+    "step": 1000,
+    "train_selected_ade": 0.76463,
+    "heldout_selected_ade": 0.88267,
+    "gap": 0.11804
+   },
+   {
+    "step": 1500,
+    "train_selected_ade": 0.61952,
+    "heldout_selected_ade": 0.66474,
+    "gap": 0.04522
+   },
+   {
+    "step": 2000,
+    "train_selected_ade": 0.55054,
+    "heldout_selected_ade": 0.68913,
+    "gap": 0.13859
+   }
+  ],
+  "probe_n_windows": 64,
+  "note": "the memorisation diagnostic the prereg demands explicitly \u2014 W4b failed with train monitor 0.21\u20130.33 vs held-out 0.56"
+ },
+ "mini_eval": {
+  "n_windows": 881,
+  "n_candidates": 256,
+  "grid": {
+   "episodes": 40,
+   "stride": 8,
+   "batch": 16,
+   "expected_n": 881,
+   "matches_banked_grid": true
+  },
+  "selected_ade": 0.66087,
+  "oracle_ade": 0.107688,
+  "sel_gap": 0.553182,
+  "oracle_topk": {
+   "4": 0.477713,
+   "8": 0.378993,
+   "16": 0.286036
+  },
+  "frozen_selected_ade": 0.793318,
+  "winner_hit_frac": 0.059024,
+  "sel_rank_pct_mean": 0.206214,
+  "entropy": {
+   "mean": 5.370906,
+   "median": 5.445683,
+   "p90": 5.525429,
+   "n_eff_mean": 217.955231,
+   "top1_prob_mean": 0.008379,
+   "note": "softmax over the 256 spatial logits, nats; REF-C conf pass 0.97, v5f sel_score 2.22 (prereg reference points)"
+  },
+  "families": {
+   "LONGITUDINAL": {
+    "speed_mae_ms": 0.709198,
+    "accel_mae_ms2": 0.735559,
+    "headway_ttc": "not computable here: no lead-agent channel in this instrument \u2014 pod-side taniteval harness item, stated per the 2026-08-02 rule"
+   },
+   "LATERAL": {
+    "heading_mae_rad": 0.045143,
+    "yaw_rate_mae_rads": 0.121528,
+    "curvature_mae_1pm": 6.078043,
+    "note": "waypoint-derived adjuncts (atan2 of finite differences; noisy near standstill)"
+   },
+   "TACTICAL": {
+    "note": "selector rank quality IS this instrument's family",
+    "winner_hit_frac": 0.059024,
+    "sel_rank_pct_mean": 0.206214
+   },
+   "STRATEGIC": "n/a: no route/goal label exists on PhysicalAI-AV (settled, five probes \u2014 CLAUDE.md rule 2); stated per the 2026-08-02 rule"
+  },
+  "selgap_ci": "taniteval unavailable here (ModuleNotFoundError: No module named 'taniteval.selgap') \u2014 rescore pod-side from w4c_eval_windows.pt",
+  "wallclock_s": 194.9
+ },
+ "tier": "T0",
+ "_tier_note": "T0 teacher-forced diagnostic \u2014 conditioned on logged frames; NEVER quotable as driving performance (EVAL_DOCTRINE.md)",
+ "_estimator_note": "POINT ESTIMATES over the eval grid (episodes<40, stride 8). The decision-grade interval for any registry claim is the EPISODE-CLUSTER BOOTSTRAP (taniteval.selgap / taniteval/ci.py) on the banked per-window arrays (w4c_eval_windows.pt) \u2014 run it before publishing; never overlapping_holdout_se.",
+ "_evidence_class": "MEASURED (ours; artifact = this JSON)",
+ "steps": 2000,
+ "base_ckpt": "/workspace/experiments/flagship-v5f-w120-30k/ckpt_30k_final.pt",
+ "base_step": 29999,
+ "w4_ckpt": "/workspace/experiments/w4-unicycle-head-c/unicycle_emission.pt",
+ "w4_meta": {
+  "w4_step": 4000,
+  "w4_base_ckpt": "/workspace/experiments/flagship-v5f-w120-30k/ckpt_30k_final.pt",
+  "w4_base_step": 29999,
+  "cond_mode": "feature",
+  "feat_dim": 384,
+  "k": 20
+ },
+ "n_trainable": 1064705,
+ "param_band": [
+  1000000,
+  2000000
+ ],
+ "in_dim": 44,
+ "margin": 0.1,
+ "dropout": 0.1,
+ "scorer_cfg": {
+  "d_model": 256,
+  "n_heads": 8,
+  "ff_mult": 4
+ },
+ "spatial_tap": {
+  "module": "world.encoder (ViTEncoder post-norm, encoder.py:161-172; hook, not recompute)",
+  "n_tokens": 429,
+  "d": 768,
+  "frame_rule": "last frame of the window (refc.py:1165-1167 convention)"
+ },
+ "frozen_proof": {
+  "md5_before": "623218cf88e9e4d6c6f7e91b468a239c",
+  "md5_after": "623218cf88e9e4d6c6f7e91b468a239c",
+  "identical": true,
+  "modules": "world + head + W4 emission"
+ },
+ "wall_s": 10951.3
+}

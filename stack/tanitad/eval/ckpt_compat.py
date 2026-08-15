@@ -47,8 +47,19 @@ _ACT_KEY = "predictor.act_emb.0.weight"
 
 
 def state_dict_of(ck) -> dict:
-    """The model state_dict of a raw or wrapped (``{"model": ...}``) ckpt."""
-    return ck["model"] if isinstance(ck, dict) and "model" in ck else ck
+    """The model state_dict of a raw or wrapped ckpt.
+
+    Recognises the v5 wrapper ``{"model": sd, ...}`` and the **v6** staged
+    wrapper ``{"stack": sd, "opt": …, "step": …, "config": …}``. MEASURED
+    2026-08-14: without the ``"stack"`` branch a v6 checkpoint falls through to
+    the bare-state-dict path and the whole wrapper is treated as parameters,
+    so ``opt``/``step``/``config`` masquerade as tensors instead of failing.
+    """
+    if isinstance(ck, dict):
+        for key in ("model", "stack"):
+            if key in ck:
+                return ck[key]
+    return ck
 
 
 def _action_dim_from_config_json(ckpt_path) -> int | None:

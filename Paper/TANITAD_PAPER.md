@@ -1,11 +1,19 @@
 # TanitAD: A Data-Efficient, Hierarchically-Imagining, Self-Supervised Driving Stack with Built-In Self-Knowledge
 
-**Status:** living paper, v0.6 (2026-07-25). Maintained per D-020: every gate evaluation appends
+**Status:** living paper, **v1.0 (2026-08-12)**. Maintained per D-020: every gate evaluation appends
 results; every accepted decision that changes the method updates §3–§5. Source of truth is this
 Markdown; LaTeX export is a release step. Honesty rule (P8): no number appears here without its
 instrument rows in the referenced experiment record. *(Version note: the status line was left at
-v0.4 while the §9 design round was already logged as v0.5 in the changelog; this results round is
-therefore v0.6, and the numbering is not silently reused.)*
+v0.4 while the §9 design round was already logged as v0.5 in the changelog; that results round was
+therefore v0.6. The same drift then recurred: the status line sat at v0.6 while the changelog
+already carried v0.7 (2026-08-02) and v0.8 (2026-08-03). This round was requested as "v0.7" but
+that number is taken — it is therefore v0.9, and the numbering is again not silently reused.
+**v1.0 (2026-08-12)** lands the four verdicts of the night of 08-11/08-12 — W7-FULL, H-COTRAIN,
+P8 attempt-2 and I4a — with their mathematics (§3.10–§3.13), the tier and four-family doctrines
+promoted to named methodological sections (§5.4–§5.5), and the v6 future-work ladder with its
+open, costed decisions (§10). It is v1.0 rather than v0.10 because it is the first version in
+which a hypothesis this paper itself carried is **retracted by our own measurement** in the
+paper's own voice, §7.17.)*
 
 **Authors:** Sayed Bouzouraa; TanitAD autonomous research system.
 
@@ -87,6 +95,60 @@ describe the architecture, its mathematical grounding, an
 instrument doctrine for honest measurement that caught three silent measurement hazards in its first
 week and has since been extended by three more failure classes it learned the hard way, and the
 falsifiable gate program by which every claimed edge will stand or fall.
+*Fifth-round update (v0.9, 2026-08-11):* the round is dominated by two methodology corrections now
+binding on every number — an **eval-tier doctrine** (T0 teacher-forced = WM diagnostic only, T1
+action-closed loop = the primary capability tier), forced by the measured **action echo**: the
+open-loop lateral "skill" of the best decoder heads is 97.9 % S-curve reproduction under the true
+action transcript and **~5 % closed-loop / 0.0 % hold-action** (`MODEL_REGISTRY §1.12`, T1) — and the
+completed retirement of the historical `overlapping_holdout_se` estimator, which biased *point
+estimates* (−6.67 % to +11.69 %, sign-flips on paired deltas) and not only intervals (§5). On the
+science: the co-trained **v5f** flagship (from-scratch joint WM+planner, conditional imagination,
+120° cylindrical) completed 30 k with T0 selected ADE@2s 0.4011 m over a fan whose oracle is
+0.1975 m (`MODEL_REGISTRY §1.8`); a physics-proof battery (§7.14) then located **one root defect
+under four separate failures** — the trunk responds to counterfactual actions with the right sign
+(99.5 % lateral) inside a 3-dimensional action subspace but at **~¼ the physical gain** (0.27,
+`w3_gate.json`, T1-diagnostic) — and a predictor-only **stage-A post-training** with a
+control-response loss repaired it (gain 0.27 → 0.97, longitudinal sign 0.74–0.79 → 1.0,
+subspace preserved, `stage_a_gate.json`), after which the world-model-roll selection cost became
+the programme's best-calibrated selection signal (Spearman ρ 0.716 [0.585, 0.770] vs ≤ 0.26 for
+every learned scorer; `w7_gate_repaired_k32.json`, `p7_regrade.json`). Three learned fast-selector
+surfaces failed one after another by pre-registration and were retired — the selection information
+is in rolled consequences, not in light readouts of the trunk — which is the programme's own thesis
+arriving by elimination. A P1 probe battery also measured the latent's sharpest absence: **no
+readable lead-vehicle distance at any probe capacity** (`p1_lead_transforms.json`), answered by a
+label-free lever program rather than label injection, per the PI's standing rule that labels into
+the trunk would break the self-supervised thesis.
+*Sixth-round update (v1.0, 2026-08-12):* four measured verdicts, two of them negative and both
+reported as results. **(1) The selector-free planner fails, and the mechanism is the winner's
+curse.** With every stale component removed — repaired trunk, head refit on it, and **no
+shortlist at all** (256 of 256 candidates, so the true best is always available) — selection by
+argmin of a world-model roll-consistency cost plus a kinematic cost scores **3.3348 m against a
+0.4505 m gate over a fan whose oracle is 0.1273 m** (`w7_full_gate.json`, T0). The cost's
+*within-window* rank correlation is 0.445/0.497 and its across-window calibration ρ 0.3185
+[0.2064, 0.4086] — yet **the argmin's error-rank is 132 of 256, the median**, and the mean error
+inside its top-m set is flat at the fan's own mean for every m. Rank correlation is a bulk
+statistic; argmin is an extreme one, and the quantity that governs selection is lower-tail
+dependence, which is zero here (§3.12). A self-consistency cost has a **degenerate minimiser** —
+a near-stationary candidate — so deepening the fan makes a minimiser monotonically worse while
+the oracle improves; the published loops we copied (V-JEPA 2-AC, DINO-WM) minimise distance to a
+*goal*, which inaction cannot minimise, and we had dropped that term. **(2) The standing
+hypothesis that planner co-training erodes physical representation is REJECTED within the
+measured range and retracted in this paper's own voice**: across the λ_plan ramp every probed
+physical variable became *more* decodable (curvature 0.213 → 0.551 encoded, yaw-rate
+0.583 → 0.869), the latent's participation ratio *expanded* 53 % (4.53 → 6.94 of 2048) and the
+P1 battery went FAIL → PASS — which also **validates SIGReg** under a full planner gradient
+(retention 1.53× against a ≥ 0.8× gate), with three scope bounds stated rather than buried
+(§7.17). **(3) The predicted latent retains the environment**: a frozen-latent BEV occupancy
+readout gives **retention 0.932 at k = 10** (gate ≥ 0.80, τ\* chosen on the encoded arm so the
+gate can only harden), and occluded-agent recall is **not worse** than visible — the latent
+carries agents the camera cannot see (§7.18; absolute IoU ≈ 0.02, so the ratio is the quotable
+claim). **(4) Imagination is load-bearing**: zeroing it collapses selected ADE 0.4011 → 7.6493 m
+and shuffling it — which preserves marginals and destroys only correspondence — gives 1.2492 m,
+so the planner reads imagination as content, not as a bias term. Together with the measured
+**consumer-invalidation** result (repairing a trunk moves the frozen selector 0.7933 → 4.4159 m,
+which is why the shipped assembly is the frozen-trunk one at 0.4815 m [0.3928, 0.5771]), these
+define the programme's next generation as a **staged** ladder in which every consumer is trained
+on the trunk it consumes (§10).
 
 ---
 
@@ -150,6 +212,14 @@ data, ~10⁸ parameters, zero labels, hierarchical latent planning, calibrated f
 OOD self-monitoring.
 
 ## 3. The 4B architecture
+
+> **Figure 1 — `Paper/figures/v6_architecture.svg`** (also rendered as `.png`): the v6
+> instantiation of the 4B architecture — the four layers with their own predictors and
+> action spaces, goals conditioning downward, latents flowing upward through tested
+> gradient-isolation barriers, the single 6 s trajectory spanning the operative and
+> tactical bands, the frozen-latent interpretation heads, and the staged S-W → S-T →
+> S-S → (optional) S-J training protocol with its per-stage gates. §3.9 gives the
+> formal objects; §10 gives the staging rationale and its evidence.
 
 ### 3.1 Overview and notation
 
@@ -408,6 +478,342 @@ conflation: v1 **mislabels 24.5 % of road curves as route-turns**. The v2 deriva
 **0.0 %** on the known-semantics corpus and explicitly flags ambiguous junctions/forks rather than
 forcing a binary — a prerequisite for any honest maneuver-accuracy or route claim.
 
+### 3.9 The v5f generation: the objective family stated, hierarchy as per-layer predictors, and control-response post-training (added v0.9)
+
+**The JEPA objective, general form.** The family this architecture instantiates is: an encoder
+f_θ, a predictor P_φ, and a (possibly EMA) target encoder f_θ̄, trained on
+
+L_JEPA = ‖ P_φ( f_θ(x_t), a_t ) − sg[ f_θ̄(x_{t+k}) ] ‖ ,
+
+where sg[·] is a stop-gradient and the EMA/stop-gradient pair is the usual anti-collapse
+mechanism (V-JEPA 2, arXiv 2506.09985; I-JEPA lineage). **Our instantiation removes both**: no
+EMA, no stop-gradient, no teacher network (A1, §3.2) — collapse is prevented *provably* by
+SIGReg alone, driving every 1-D projection of both encoder outputs and predictions toward N(0,1)
+(Cramér–Wold ⇒ joint isotropic Gaussian, the LeJEPA-optimal embedding law). The deployed v4/v5
+trainer uses the **`full_relaxed` SIGReg variant** — the sliced Epps–Pulley statistic of §3.2
+applied to the full state with a configured number of *free dimensions* exempted from the
+normality pressure (`train_flagship_v4.py:101`, `sigreg_variant="full_relaxed"`), so a small
+subspace may carry non-Gaussian task structure while the bulk is regularised. The residual
+multi-horizon form ẑ_{t+k} = z_t + Δ_k(z_{t−W+1:t}, a_{t−W+1:t}) of §3.2 is the concrete P_φ.
+
+**The hierarchical 4B formulation as per-layer predictors (design of record 2026-08-07,
+`incoming/2026-08-07-hierarchical-wm-redesign/HIERARCHICAL_WM_REDESIGN.md`).** Each level ℓ ∈
+{op, tac, str} owns a state space, a clock, and its **own predictor in its own space**, with
+temporal down-sampling as the abstraction mechanism (slow features; dimensionality decreases
+upward by design so the level is *forced* to abstract):
+
+| level | state | clock | horizon | "action" |
+|---|---|---|---|---|
+| operative | z_op ∈ ℝ^2048 | 10 Hz | 0–2 s dense | continuous (a, κ) controls |
+| tactical | z_tac ∈ ℝ^{d_t}, d_t ≈ 512 = φ_tac(z_op(t−3..t)) | 1 Hz | 2–6 s | the tactical **goal** g_tac |
+| strategic | z_str ∈ ℝ^{d_s}, d_s ≈ 256 = φ_str(z_tac window) | 0.2 Hz | 6–15 s | the strategic goal g_str |
+
+Level dynamics: ẑ_ℓ(t+τ_ℓ) = f_ℓ(z_ℓ(t), g_ℓ) — **the upper levels' action *is* the goal**, and
+each level proposes a fan of N candidate goals, rolls *its own* predictor (cheap: small state,
+slow clock — a 15 s strategic roll is 3 steps of a 256-d model), and scores with a selector.
+Goals condition downward: the operative decode consumes the selected g\*_tac as an input token,
+the tactical consumes g\*_str. g_tac is a predicted ego-frame goal point + heading + target speed
+at τ ∈ [2, 6] s plus a manoeuvre class on **three independent axes with severity** (the measured
+5-way lat/lon-mixing defect is the reason for the factorisation); g_str is a goal point +
+corridor at route scale. ⛔ Neither goal may carry the situation classifier's output (the
+2026-08-03 admissibility rule), and both are geometric, predicted from vision. `sel_gap` —
+oracle-vs-selected error at each level — is a first-class metric of the hierarchy, which §7.13
+shows was prescient: at both levels measured so far, the fans are adequate and the *selectors*
+are the defect.
+
+**Control-response post-training (stage A), the mathematics.** Logged data supplies triples
+(o_t, a^human_t, o_{t+1}) only on the human action manifold; under a counterfactual action ã
+there is no logged future, so any loss ‖f(z, ã) − z'_logged‖ teaches the predictor that the
+world ignores actions. What *is* supervisable off-policy is the ego-motion component, which is
+fully determined by the commanded actions. Stage A therefore trains **the predictor only**
+(encoder, readout and heads frozen, md5-proved) on three losses (`train_stage_a.py`,
+`stage_a_gate.json`): for a counterfactual perturbation δa of the logged actions a (channels:
+δκ = ±0.02 m⁻¹ through the steer encoding, δa = ±2 m/s²; plus random draws within an
+a_max = 4 m/s², κ_max = 0.2 m⁻¹ envelope), define the decoded **response**
+
+Δ_probe = decode(roll(z₀, a+δa)) − decode(roll(z₀, a)),  Δ_analytic = U(a+δa, v₀) − U(a, v₀),
+
+with U(·, v₀) the unicycle integral of the action sequence from the observed speed v₀ and
+decode(·) the *frozen* step-readout (so the gradient cannot cheat by re-learning the decode).
+Then, in **response form** (`ctrl_form: "response"`):
+
+L = L_ctrl + L_factual + 0.3·L_scene,  L_ctrl = ‖Δ_probe − Δ_analytic‖₁,
+
+whose gated summary statistic is the **response gain g = ‖Δ_probe‖ / ‖Δ_analytic‖ at 1 s**,
+required in [0.5, 2.0] per channel with sign-correctness ≥ 0.95; L_factual is the ordinary
+teacher-forced roll on the human actions (the catastrophic-forgetting anchor, gated at ≤ +10 %
+ADE); and L_scene penalises latent change in the subspace **orthogonal** to the measured
+action-response subspace (batch-local top-8 uncentered PCA approximating W3's corpus-level
+3-dim subspace) — actions must move the ego *through* the world, not repaint the world. The
+measured result of this loss is §7.13's repair. Its theoretical significance: it is a
+*self-supervised* grounding of the action interface — the analytic target is geometry, not a
+label — so it composes with the label-free thesis.
+
+**The H-COTRAIN hypothesis and its curriculum-based test (pre-registered 2026-08-11,
+`PREREG_H_COTRAIN.md`).** PI hypothesis: joint WM+planner training forces the trunk toward an
+ego-action/trajectory feature extractor rather than a physical-world model. It is testable at
+~0 marginal cost because v5f's planner coupling followed a measured **λ_plan curriculum — 0
+until step 2,000, linear ramp to 8,000, then 1.0 to 29,999** (`--lambda-plan sched
+--phase-a-steps 2000 --phase-b-steps 8000`, `MODEL_REGISTRY §1.5/§1.8`) — and milestone
+checkpoints (5 k/10 k/15 k/20 k/30 k) sample the trunk along the ramp. The frozen probe battery
+runs per milestone; outcomes bound in advance: a scene variable readable at 5 k (R²(enc) > 0.15)
+that declines ≥ 0.15 absolute by 30 k while ego-dynamics probes hold ⇒ CONFIRMED (consequence:
+gradient isolation / λ ceiling becomes a named v6 lever); lead-gap unreadable at *every*
+milestone including 5 k ⇒ REJECTED for that variable (it never formed — joint training cannot
+have destroyed it; the cause reverts to objective/data pressure and the label-free levers keep
+priority). An independent SIGReg verdict rides the same runs: effective rank of z_enc at 30 k
+≥ 0.8× its 5 k value validates the anti-collapse mechanism under a full planner gradient.
+Evidence already in hand cuts both ways and is stated with the prereg: FOR — the predicted
+latent decodes ego state *better* than the encoded one (speed R² 0.99 vs 0.74, §7.14) and
+the action interface is 3-dimensional; AGAINST sufficiency — PUBLISHED, pure-SSL video models
+without any planner also fail to form dense spatial features reliably (V-JEPA 2.1,
+arXiv 2603.14482), so a missing lead variable does not *require* a planner-gradient explanation.
+
+⚠️ **OUTCOME (2026-08-11): H-COTRAIN is REJECTED within the measured range, and the SIGReg
+verdict is VALIDATED.** Neither CONFIRM condition fired: every probed physical variable became
+*more* decodable along the ramp (curvature 0.213 → 0.551 encoded; yaw-rate 0.583 → 0.869) and
+the latent's participation ratio *expanded* 4.53 → 6.94 of 2048 (+53 %, retention 1.53× against
+a ≥ 0.8× gate). §7.17 carries the full curve, the three scope bounds that limit the claim (the
+lowest available λ is 0.5, not 0; the spectrum series ends at 20 k, not 30 k; a real transient
+dips the predicted-latent readouts at 10 k before they recover and overshoot), and the retraction
+of the erosion premise this paper previously carried. **The staged v6 recipe below is unaffected,
+because it never rested on erosion** — it rests on the field's convergent staging evidence and on
+the measured consumer-invalidation result (§7.16).
+
+**The staged-training evidence (PUBLISHED + our own gates).** The frontier systems separate
+representation learning from planning: V-JEPA 2 → 2-AC pretrains on ~10⁶ h then post-trains an
+action-conditioned predictor on 62 h of *unlabeled* robot video for zero-shot latent MPC
+(arXiv 2506.09985); DINO-WM learns dynamics over frozen DINOv2 **patch** features — never a
+pooled global vector — and plans by MPC with a latent goal cost (arXiv 2411.04983); Drive-JEPA
+V-JEPA-pretrains a driving encoder and post-trains a proposal-centric planner over the frozen
+predictive features, reaching NAVSIM v1 93.7 PDMS / v2 87.8 EPDMS / Bench2Drive 64.52
+(arXiv 2601.22032); AD-L-JEPA shows occupancy forecasting *emerging* from self-supervised BEV
+latent prediction, read out by light decoders (arXiv 2501.04969) — the P8 pattern; and
+V-JEPA 2.1 treats missing dense spatial features with **loss shaping, not labels**
+(arXiv 2603.14482) — the LF-program pattern. Our own gate history is consistent: every *staged*
+component passed its gates (W4 head retrofit, stage-A repair, W4r refit), while the co-trained
+path produced the muffled action interface, three selector failures and the missing lead
+variable (§7.13–§7.14). **Nobody at the frontier co-trains the planning gradient into the
+encoder from step 0** — the v6 staged recipe (§10) is the programme's response, with H-COTRAIN
+as its cheapest discriminating measurement *(and it has since returned: erosion is rejected in
+range, §7.17 — the staging argument stands on the field evidence and on consumer invalidation,
+§7.16, not on erosion)*.
+
+### 3.10 The label-free commitment, stated as an admissibility algebra (added v1.0)
+
+The programme's binding design commitment is not "we use few labels" but a statement about
+*where in the computational graph a label may appear*. Making it formal removes the recurring
+argument about whether a given lever is admissible.
+
+Let 𝒮 = {x (frames), a (CAN/ego actions), p (odometry poses)} be the **self-supervised** signal
+set — every element is a sensor reading generated for free on every driven metre — and let
+ℒ = {obstacle cuboids, VLM fields, SAM masks, scenario tags, hindsight route geometry} be the
+**label** set, produced offline by an external annotator, engine, or privileged hindsight. Write
+θ_trunk for the parameters of the encoder f_θ, the readout r and every level predictor P_ℓ, and
+θ_read for the parameters of any frozen-latent readout, probe, or goal head. The commitment is:
+
+> **(L1) No element of ℒ may enter any loss whose gradient reaches θ_trunk.**
+> **(L2) No element of ℒ may be an input at inference, at any level.**
+> **(L3) Elements of ℒ *are* admissible as (a) targets of readouts trained with
+> ∂/∂θ_trunk ≡ 0 (frozen probes, the P1/P4/P8 battery), (b) evaluation strata, and
+> (c) supervision of the strategic *goal head*, which is a planner-side output and never a
+> trunk loss.**
+
+Three consequences we have had to enforce in practice. **(i)** The auxiliary lead-readout loss
+proposed when P1 found no lead-distance variable was inadmissible under (L1) and was retracted
+the day it was proposed; the replacement is the label-free lever program LF0–LF4, which shapes
+the *objective* (masking, sampling, near-field weighting) rather than adding a target (§7.14,
+`JEPA_PHYSICS_SURVEY.md`). **(ii)** The P8 occupancy decoder trains on label rasters and is
+admissible **only** because the trunk's md5 is proved identical before and after (§7.18) — the
+freeze is the admissibility certificate, not a courtesy. **(iii)** Under (L2), the deployable
+scenario classifier is the image-only arm, even though the ego-conditioned arm scores better —
+because the situation labels are themselves derived from ego dynamics, so an ego input at
+inference is partly reading the label's own source. That is the general test this algebra
+encodes and which we now run on every head: **does an input at inference contain something the
+label was derived from?** It is the same test that caught the nav-echo (a route head scoring
+1.0000 as an exact bijection of its own input) and the ~80 % train/val leak in the REF-A I-JEPA
+arm.
+
+### 3.11 The 4-brain hierarchy, formally: per-layer predictors, goal conditioning, and the gradient-isolation matrix (added v1.0)
+
+Let ℓ ∈ {O, T, S} index the operative, tactical and strategic levels (the fallback brain C is
+out-of-gradient monitoring logic and carries no predictor). Each level owns a state space, a
+clock, a horizon, an action space, and **its own predictor in its own space**:
+
+| ℓ | state | adapter | clock | horizon | action a^ℓ |
+|---|---|---|---|---|---|
+| O | z_O ∈ ℝ^{2048} = r(f_θ(x)) | — | 10 Hz | 0–2 s | continuous controls (a, κ) |
+| T | z_T ∈ ℝ^{d_T}, d_T ≈ 512 | z_T = φ_T(sg[z_O(t−3..t)]) | ≈ 1–2 Hz | 2–6 s | tactical goal token g_tac |
+| S | z_S ∈ ℝ^{d_S}, d_S ≈ 256 | z_S = φ_S(sg[z_T window]) | ≈ 0.2–0.5 Hz | 6–30 s | strategic goal token g_str |
+
+with dynamics, **goals conditioning strictly downward**:
+
+  ẑ_S(t+K) = P_S( z_S(t), a_S(t) )
+  ẑ_T(t+k) = P_T( z_T(t), a_T(t) │ g_str )
+  ẑ_O(t+j) = P_O( z_O(t), (a, κ)_t │ g_tac )
+
+Two structural properties are asserted by construction and then *checked*, not assumed.
+
+**(1) Abstraction by temporal down-sampling under a shrinking state.** d_S < d_T < d_O and
+τ_S > τ_T > τ_O, so an upper level cannot represent the lower level's detail even if the
+objective would reward it: the level is *forced* to abstract. A strategic roll over 15 s is
+three steps of a 256-dimensional model — the hierarchy is an efficiency device as much as a
+semantic one, since only the operative path runs at full rate.
+
+**(2) The gradient-isolation matrix G.** Let 𝒫 be the set of planner/goal-head parameters and
+ℰ the set of encoder parameters. Define G[u, v] = 1 iff a gradient path from module u to module
+v is *permitted*. The v6 contract is
+
+  G[𝒫, ℰ] = 0  (no planner or goal head may backpropagate into any encoder)
+  G[ℓ', ℓ] = 0 for ℓ' above ℓ  (upward latents pass through sg[·] or an EMA-slow copy)
+  G[ℓ, ℓ] = 1  (each level trains its own predictor)
+
+Uplinks are `sg[·]` or an EMA target with decay 0.996 (the V-JEPA teacher pattern) — a choice,
+not a default, and it is an arm. The contract is enforced by an **autograd probe** rather than a
+comment: `V6Stack.assert_isolation()` backprops the module's declared planner-side surface and
+reads which parameters actually received gradient via `torch.autograd.grad(..., allow_unused=True)`
+(it never touches `.grad`, so it is safe mid-training), probing the three edges planner→encoder,
+tactical→below, strategic→below. Two traps the check itself must avoid, both of which we hit in
+design: a **frozen** parameter records no autograd edge, so a check run mid-stage would report
+"isolated" vacuously — the probe therefore makes every parameter temporarily differentiable,
+because isolation is an *architecture* property, not a training-state property; and a zero-init
+head produces a zero gradient that also looks like isolation, which a dedicated test pins.
+
+**Why goals, not latents, are the downward interface.** A goal token is a *finite discrete type
+with typed continuous slots* — `(TYPE, args)` in physical units — so the seam is inspectable,
+loggable, and testable for the disjointness rule (§3.10, (L2)): no goal token may be derivable
+from the situation classifier's output, and every supervised instance carries its derivation
+source (`path | signage | vlm-fused`). A latent seam would be none of those things. The
+vocabulary itself (strategic `KEEP_CORRIDOR`/`LANE_TARGET`/`EXIT_*`/`TURN_*`/`ROUTE_TO`/`STOP_AT`
+with `FOLLOW_MAIN_ROAD` as the no-route default; tactical `ANCHOR_GOAL`/`CORRIDOR_OFFSET`/
+`GAP_TARGET`/`SPEED_BAND`/`YIELD_AT`/`STOP_POINT`/`WAIT_FOR_ONCOMING`/`EVADE_IN_CORRIDOR`/
+`TRAFFIC_LIGHT_REACT`, each with optional `within_m`/`by_time_s`/`at_arc_m`/`hold_for_s`
+constraint slots) is specified in `HIERARCHY_VOCABULARY.md` and is a v6 deliverable, not a claim
+of this paper.
+
+**The horizon spec, and why it is one trajectory and not two.** A plan is a **single 60-step
+(a, κ) control sequence at 10 Hz integrated through one unicycle rollout, 0 → 6 s**. The 0–2 s
+band carries operative control authority and the 2–6 s band is shaped by g_tac conditioning, but
+they share one integrator, so the 2 s seam is **discontinuity-free by construction** and the seam
+metrics verify rather than repair it. Stitching two trajectories would introduce exactly the
+artefact the hierarchy is supposed to avoid. The eval consequence is binding: four families and
+oracle/selected are reported at **both** 0–2 s and 0–6 s.
+
+### 3.12 Selection under a surrogate cost: the winner's curse, formally (added v1.0)
+
+Imagine-and-select is `argmin` over a candidate set. §7.16 measures that this fails badly at
+N = 256 candidates even when the true best candidate is guaranteed present. The mathematics
+below is what makes that a *result* rather than a disappointment, and it discriminates between
+two hypotheses using our own numbers.
+
+**Setup.** Fix a window. Let candidates i = 1…N have realised errors e_i (the quantity we would
+minimise if we could see the future) and surrogate costs c_i (the quantity we can compute).
+Write e_{(1)} = min_i e_i for the **oracle**, and i\* = argmin_i c_i for the **realised choice**.
+The object of interest is E[e_{i\*}] as a function of N and of the dependence between e and c.
+
+**Model A — the honest-but-noisy cost (Gaussian copula).** Suppose, after marginal
+standardisation, (e_i, c_i) are i.i.d. across i with
+
+  c_i = ρ·e_i + √(1 − ρ²)·ξ_i,  e_i, ξ_i ~ 𝒩(0, 1) independent.
+
+Each c_i is standard normal, (e_i, c_i) is bivariate normal with correlation ρ, and i\* is a
+function of c alone — so E[e_{i\*}] = E[ E[e_{i\*} │ c] ] = ρ·E[min_i c_i], giving the **exact**
+identities
+
+  E[e_{i\*}] = −ρ · a_N,  E[e_{(1)}] = −a_N,  E[e_{random}] = 0,
+  with a_N = E[max of N i.i.d. 𝒩(0,1)] ≍ √(2 ln N).
+
+Two readings. First, since (random − selected)/(random − oracle) = ρ exactly,
+**the fraction of the oracle's advantage a minimiser captures is exactly ρ**
+— a cost with ρ = 0.45 buys 45 % of the available gain, no matter how good the fan is; this alone
+is a strong argument against argmin as an architecture. Second, and decisively for us,
+E[e_{i\*}] under Model A **improves** with N like −ρ√(2 ln N): a noisy-but-honest cost gets
+*better* on a deeper fan. **Our measurement therefore refutes Model A.** Selection degrades as
+the fan deepens (frozen trunk K = 8/32/64 → 0.5772/0.5173/0.5319; repaired trunk N = 256 →
+3.3348; different trunks, same direction, §7.16), and the argmin's mean error-rank is 132.3 of
+256 against 128 expected under *independence* — that is not a ρ = 0.45 signal in the tail, it is
+no signal at all in the tail.
+
+**The reconciliation, and the statistic that matters.** Spearman's ρ is a **bulk** functional: it
+constrains average pairwise concordance and places no constraint on the joint law in the lower
+tail of c. The quantity selection actually depends on is the **lower-tail dependence
+coefficient**
+
+  λ_L = lim_{u↓0} P( F_e(e) < u │ F_c(c) < u ),
+
+i.e. "given the cost is in its lowest quantile, how likely is the error to be too". A cost can
+have ρ = 0.45 and λ_L = 0. Our measurement estimates the **finite-m analogue** of λ_L — the
+empirical low-cost stratum at m/N between 0.008 and 0.125 — and finds it indistinguishable from
+zero across that whole range: conditioning on the m lowest-cost candidates leaves the mean error
+at the fan's own mean (5.408/5.327/5.313/5.321/5.321/5.321 for m = 2…32 against a fan mean
+≈ 5.32), i.e. **the low-cost stratum is distributed like a random m-subset**. The falling
+best-in-top-m *ceiling* (3.380 → 0.356 m over the same m) is consistent with the same reading —
+it is what the minimum of a *random* subset does — but the flat conditional mean is the direct
+evidence, and the ceiling on its own would not distinguish the two models. **ρ is not a
+sufficient statistic for a selection rule; report λ_L (or its finite-m analogue, or the argmin's
+error-rank), or do not claim a cost selects.**
+
+**Model B — the degenerate minimiser, which the data supports.** Let the cost decompose as
+c(u) = c_roll(u) + λ c_kin(u) over control sequences u. Both terms are *self-consistency /
+smoothness* functionals: c_roll(u) = ‖waypoints(u) − decode(roll(z₀, u))‖ measures agreement
+between a candidate and the world model's imagination *of that same candidate*, and c_kin
+penalises |a| and |jerk|. Let 𝒟_δ = {u : ‖displacement(u)‖ < δ} be the near-stationary set. Both
+terms → 0 on 𝒟_δ as δ → 0 (nothing moves, so nothing can disagree and nothing accelerates),
+while the realised error is bounded **away** from zero there, because the ego does move:
+E[e │ u ∈ 𝒟_δ] → ‖true displacement‖ > 0. Hence if fan candidates are drawn i.i.d. from a law
+with positive mass near 𝒟_δ,
+
+  P( i\* ∈ 𝒟_δ ) → 1 as N → ∞,   so  E[e_{i\*}] → E[e │ 𝒟_δ] ≫ E[e_{(1)}] → 0.
+
+**The minimiser converges to the degenerate set while the oracle converges to zero.** This is the
+predicted monotone divergence, and it is what we observe. It also predicts the deployed
+decomposition exactly: argmin on c_roll **alone** scores 5.2898 m ≈ the fan mean (pure
+degeneracy), and the whole of W7-FULL's 3.3348 m comes from the λ = 0.2 kinematic term partially
+opposing it.
+
+**The remedy the formalism prescribes.** A selection cost must contain a term that **inaction
+cannot minimise**. V-JEPA 2-AC minimises latent distance to a *goal* state and DINO-WM minimises
+a latent goal cost — standing still leaves you far from the goal, so 𝒟_δ is not a minimiser
+there. We copied the planning loop and dropped the goal term; W7's own anti-degeneracy progress
+term (minus arc length) has been at weight 0.0 in every run to date. Beyond adding it, the
+formalism points at two structural alternatives, both pre-registrable: **top-m aggregation**
+(average or median over a low-cost set rather than its argmin — an M-estimator instead of an
+extremum, which is exactly the classical remedy for a winner's curse) and **sharpening**
+(learning a monotone recalibration of c against realised error on held-out windows, which raises
+λ_L directly and is measurable as such). Both must be pre-registered before use; neither may be
+selected on the same windows that measured the failure.
+
+**Why this generalises past our stack.** Every "generate a fan, score it, take the best" planner
+— anchored-diffusion decoders, MPC over learned dynamics, best-of-N sampling from a generative
+policy — is an argmin over a surrogate. The scaling instinct in that family is to *widen the
+fan*, and widening is exactly what makes a degenerate or tail-uninformative cost worse while the
+reported oracle improves. **Publishing a fan's oracle alongside its argmin is therefore not a
+courtesy; it is the diagnostic**, and the gap between them is the quantity a selection paper owes
+its reader.
+
+### 3.13 SIGReg, effective rank, and what "retention" measures (added v1.0)
+
+The anti-collapse mechanism (§3.2) is a distributional constraint, so the honest way to audit it
+is a spectral statistic of the representation, tracked as a **series**. Let Z ∈ ℝ^{n×D} be a
+batch of encoder states (D = 2048) and Σ = Cov(Z) with eigenvalues λ₁ ≥ … ≥ λ_D ≥ 0. Define
+
+  **participation ratio**  PR(Σ) = (Σ_i λ_i)² / Σ_i λ_i² ∈ [1, D],
+  **effective rank**  erank(Σ) = exp( −Σ_i p_i ln p_i ),  p_i = λ_i / Σ_j λ_j,
+  **top-k share**  s_k = Σ_{i≤k} λ_i / Σ_i λ_i.
+
+PR = 1 for a rank-one (fully collapsed) representation and D for an isotropic one — which is the
+distribution LeJEPA proves optimal and which SIGReg drives toward by forcing every 1-D projection
+to 𝒩(0,1) (Cramér–Wold). **"Retention" is a ratio, never a level**: retention(t₁ : t₀) =
+PR(Σ_{t₁}) / PR(Σ_{t₀}), gated at ≥ 0.8 across any curriculum phase. Stating it as a ratio is
+deliberate — PR's absolute value depends on batch size, centring convention and the free-dimension
+count of the `full_relaxed` variant, so a level is not comparable across arms while a
+within-arm ratio is. Measured on v5f's own λ_plan ramp: PR 4.53 → 6.94 of 2048 with s₈ falling
+0.9903 → 0.9232, retention **1.532** over 5 k → 20 k — expansion, not collapse (§7.17). ⚠️ Two
+disciplines travel with it: the ratio's **endpoints must be named** (this one is 20 k over 5 k,
+not the 30 k the pre-registration wrote), and the same code must compute the training-time
+monitor and the offline instrument, or the monitor and the audit will drift apart — in v6 both
+call `tanitad/eval/spectral.py`.
+
 ## 4. Why less data suffices: theoretical grounding
 
 Three independent arguments, one measured corroboration.
@@ -434,6 +840,11 @@ dimensional. The gap between those two numbers is the sample-efficiency budget t
 
 ## 5. The instrument doctrine
 
+*(Structured into named subsections at v1.0; the content of §5.1–§5.2 and §5.6–§5.7 is unchanged
+from v0.9, §5.3–§5.4 were added at v0.9, and §5.5 is new.)*
+
+### 5.1 Instrument rows (I1–I7)
+
 Every result in this paper ships with instrument rows assembled *before* the claim, and a gate whose
 instruments fail is BLOCKED — reported as unmeasurable, never as a model failure. The rows: I1
 oracle decode (the harness must rank real futures ~perfectly before imagination is graded); I2
@@ -447,6 +858,8 @@ mechanically — camera intrinsics canonicalized to a common effective focal len
 §6.1). In the program's first week the doctrine caught three silent hazards (numerics, collapse
 masked by a falling loss, a data-selection bug that chose parked cars) — each invisible in the
 happy-path training curves.
+
+### 5.2 The estimator correction, and its measured blast radius
 
 **The estimator correction (2026-07-20), and what it does and does not invalidate.** Every `± CI95`
 in §7.1–§7.5 above — and in v0.1–v0.4 of this paper — was produced by a block historically labelled
@@ -483,6 +896,124 @@ A second consequence, which the correction above generalises: the split-*mean* c
 gaps (a two-arm difference read 0.006 m under the split-mean and 0.044 m on the full set), so ranking
 claims must come from the paired test, not from comparing two split-means.
 
+### 5.3 The decision-grade estimator, stated mathematically
+
+**The decision-grade estimator, stated mathematically (added v0.9).** Windows are not independent —
+they are strided samples of episodes, and the correlation lives at the episode level. Let the
+validation set be episodes E = {e₁…e_M} (M = 40 on the canonical split), episode e contributing
+windows W_e, and let T({w}) be the statistic of interest (a mean error, a paired delta, a rank
+correlation). The **episode-cluster bootstrap** draws, for b = 1…B (B = 2000),
+M episodes *with replacement* from E, recomputes T on the union of the drawn episodes' windows
+(an episode drawn twice contributes its windows twice), and reports the percentile interval
+[T*₍.025₎, T*₍.975₎] of {T^(b)}. The point estimate is always the **full-set** T over all windows,
+never a mean of split-means. For two arms scored on the same windows the statistic is the
+**paired** per-window difference resampled by the same episode draws — never two marginal
+intervals combined in quadrature (quadrature assumes independence the pairing exists to exploit).
+Implementation: `taniteval/ci.py`; every artifact JSON cited in §7.13–§7.15 stamps
+`estimator: episode_cluster_bootstrap` or states explicitly that it is a corpus-grid point
+estimate pending the pod-side rescore. The deprecated block is not merely a wrong width: because
+its central value is a mean of overlapping split-means, **it moves the point estimate too** —
+the correction box above carries the measured blast radius.
+
+**Why the deprecated block biases the *point estimate*, algebraically (added v1.0).** Let the
+statistic be a mean error over windows and let split s ∈ {1…8} hold out a random 20 % subset
+H_s ⊂ W of the same window pool, with |H_s| = h. The deprecated block reports
+
+  T_heldout = (1/8) Σ_s ( (1/h) Σ_{w ∈ H_s} e_w )   versus   T_full = (1/|W|) Σ_{w ∈ W} e_w.
+
+If every window were drawn into the same number of splits, the two would coincide; they do not,
+because the eight holdouts are drawn **independently and therefore overlap unevenly**. Write
+m_w = #{s : w ∈ H_s} for the multiplicity of window w. Then
+
+  T_heldout = Σ_w (m_w / 8h) · e_w = Σ_w ω_w e_w  with  Σ_w ω_w = 1, ω_w ∝ m_w,
+
+i.e. **T_heldout is a *randomly re-weighted* mean whose weights are the sampling multiplicities**,
+and it equals T_full only if m_w is constant. Its bias is therefore Cov_w(ω_w, e_w)·|W|, which is
+zero in expectation over draws but **not** for the single realised draw a published number comes
+from — and the realised draw is fixed, so the error does not average away over arms, it varies
+per arm. That is exactly the measured signature: headline `ade_0_2s` shifts **−6.67 % to
++11.69 %** across 27 arms, **bidirectional** (11 inflated, 16 deflated, none unchanged), up to
+**×3.3** on hierarchy seams and **×−4.15 including a sign flip** on paired deltas, with widths
+1.107–3.100× too narrow (median 1.499×). Two rules follow and are enforced: the point estimate is
+**always** the full-set mean, and any pre-2026-07-25 number must be checked for which of the two
+it is (`MODEL_REGISTRY` publishes both, and they differ).
+
+### 5.4 The eval-tier doctrine (T0 / T1 / T2)
+
+**The eval-tier doctrine (BINDING 2026-08-09; `Project Steering/EVAL_DOCTRINE.md`).** The PI's
+critique — *"if the model is consuming at eval the future gt data, then it's not really an eval"* —
+was measured before it was adopted, and the measurement re-frames every open-loop number in this
+paper. Three tiers:
+
+| tier | condition | may be quoted as |
+|---|---|---|
+| **T0** | teacher-forced: the predictor consumes the *recorded future actions* | "prediction quality" / WM diagnostic — ⛔ **never "driving performance"** |
+| **T1** | action-closed loop: the predictor consumes the decoder/planner's **own** actions; perception context fixed at t₀ | "closed-loop (imagination) driving" — **the primary capability tier** |
+| **T2** | perception-closed loop (re-render what the ego would now see) | "closed-loop driving" — **not provisioned** |
+
+The measured basis (`MODEL_REGISTRY §1.12`, T1, 6,834-window grid): removing the recorded future
+actions degrades the v1.6/v1.7 unicycle readouts from ADE 0.340/0.285 to 0.471/0.462 (still under
+the 0.535 CV floor), net-yaw error ×6.7 — and **S-curve reproduction collapses 0.9785 → 0.0538
+(v1.6) / 0.0430 (v1.7), with the hold-action control at 0.0 %**. The open-loop counter-steer was an
+**action echo**: the eval fed the model the answer's own action transcript and scored it on
+reproducing the answer. Consequences, binding: every registry results block and every number in
+this paper from §7.13 on carries its tier stamp; pre-doctrine blocks are stamped retroactively
+(§1.10/§1.11 = T0, §1.12 = T1); a capability claim requires T1 or better; T0 keeps its role as the
+attribution instrument (it is how the decel-ramp defect was assigned to the readout rather than
+the roll). Cross-tier comparisons are invalid. The four-metric-families rule (§5.5) applies at
+every tier.
+
+### 5.5 The four metric families: the evaluation contract (added v1.0)
+
+**ADE is one row of four, and an evaluation that reports it alone is incomplete.** This is a
+binding contract in this programme (PI, 2026-08-02, after three reports went out with ADE-only
+tables), and it is stated here as method because the reason is structural rather than
+stylistic: **ADE is the cheapest number to produce and the easiest to compare, so it crowds out
+the metrics that decide whether the car drives well.** An arm can win ADE while setting the
+wrong speed, and a scalar path error cannot see a decision error at all.
+
+| family | what must be reported | why it is not optional, measured |
+|---|---|---|
+| **LONGITUDINAL** | target-speed accuracy **and distance-keeping** (headway / time-gap / TTC to the lead agent) | **88.7 % of our oracle gap is longitudinal**; and the state variable longitudinal control most needs — lead distance — is the one the latent provably does not carry (§7.14) |
+| **LATERAL** | heading error, **curvature error, yaw-rate error**, cross-track | "lateral is fine" has been asserted from cross-track alone; curvature and yaw are where a smooth-but-wrong path shows up — and where the action echo hid (§5.4) |
+| **TACTICAL** | manoeuvre-decision quality **and tactical goal-setting** (selected vs executed manoeuvre, class confusion, goal/anchor selection) | the 5-way softmax that **mixes lateral and longitudinal** is our largest known head defect; and selection, not generation, is where both measured hierarchy levels fail (§7.13, §7.16) |
+| **STRATEGIC** | strategic decision + goal/route setting quality | the hierarchy is this programme's thesis; if the strategic level is never measured, it cannot be claimed to work |
+
+**Five rules travel with the families.** (1) **Per-family, never pooled** — a single composite
+hides exactly the trade-off the decomposition exists to expose; v5.8f's headline trade (+0.08 m
+selected ADE for a 16× kinematic improvement, §7.13) is invisible in any pooled score.
+(2) Each family carries its **estimator** (paired episode-cluster bootstrap, §5.3) and its CI, on
+the *same* windows as the ADE it accompanies. (3) **A missing metric is a work item, not an
+excuse** — if a family has no instrument, the instrument is built. (4) A horizon sweep of ADE is
+never "the result". (5) Where a family genuinely cannot be computed, it is reported **per family
+with its reason and its n**, never silently dropped.
+
+**Where we stand against our own contract, stated honestly.** LONGITUDINAL and LATERAL are
+computed on every arm from §7.11 onward. TACTICAL is computed where a fan and a selector exist
+(shortlist coverage, winner-hit fraction, selected-rank percentile — e.g. W7-FULL's
+winner-hit 3.2 % at sel-rank 34.6 %, §7.16). **STRATEGIC is currently uncomputable on our corpus,
+and the reason is a property of the dataset, not of the model**: PhysicalAI-AV contains **no map,
+no lane graph, no junction annotation, no traffic-light feature and no route or goal signal** —
+its card says verbatim *"we do not include open maps data"* — and its `obstacle.offline` enum
+over 87,481 cuboids is 10 classes, **all dynamic agents**; the `egomotion` stream carries no
+lat/lon/GNSS (coordinates are clip-local metres), so external map-matching on our traces is not
+possible either. This was established at five independent probes and is settled. Every artifact
+therefore stamps `STRATEGIC: n/a — no route/goal label exists on PhysicalAI-AV`, with the
+`n` it would have had.
+
+**What would close it**, in the order it is planned (§10): a strategic goal-label stream produced
+offline by the two-engine labeling pipeline — Engine A (deterministic hindsight geometry over
+integrated ego trajectories: corridor continuation, lane-displacement events, junction turns),
+Engine B (a VLM reading past+future clips for scenario/domain/signage fields under a strict
+schema with OCR evidence required for any `route_to`), and Engine C (SAM-family video
+segmentation supplying drivable-surface and instance masks — the closest admissible substitute
+for the missing map), fused adversarially with disagreements banked as `disputed`. Under §3.10
+those labels supervise the **strategic goal head only**, and are never inputs at inference and
+never trunk losses. Until that stream exists, "the hierarchy works" remains an unmeasured claim
+at its top level, and we say so rather than substituting a proxy.
+
+### 5.6 Three failure classes added by measurement
+
 **Three failure classes added by measurement, 2026-07-21 → 07-24.** Each is a rule we now run
 *before* a claim, and each was earned by a wrong claim that a cheap check would have caught. They are
 reported here as method, not as errata, because each generalizes beyond the experiment that produced it.
@@ -508,6 +1039,8 @@ reported here as method, not as errata, because each generalizes beyond the expe
   equally the presence of a problem, must be established with the tool that owns the fact — `git
   ls-files` over a listing, a real write test over a filesystem report, the process table's owner over a
   name match.
+
+### 5.7 Two instrument definitions pinned down
 
 **Two instrument definitions this round pinned down, because both had already produced a wrong number.**
 (i) **A latency figure without its definition, hardware, checkpoint and corpus is not a figure.** Two
@@ -1391,7 +1924,9 @@ measured. Goal-dropout 0.5 was therefore *kept* (the v2corpus collapse was the `
 dropout per se). Measured relaunch cost of imagination: **≈1.01×** step time (12.10–12.16 s/step vs
 12.0 baseline) — the no-grad rolls hide inside data loading; the 1.2–1.5× estimate is retired.
 `flagship-v5f` trains from scratch on the parity corpus with this configuration; the v2bal corpus
-is deferred until a leak-free v2-line validation split exists (C64, option B).
+is deferred until a leak-free v2-line validation split exists (C64, option B). *(Status update
+v0.9: v5f completed its 30 k on 2026-08-09 — its final numbers, the wedge ladder built on it,
+and the stage-A repair arc are §7.13.)*
 
 **Retraction discipline, this round (C61–C67, by root-cause class):** C61 — a mechanism claimed
 where only a magnitude was measured (resolved by the teacher-forced control). C62 — fleet state
@@ -1506,6 +2041,621 @@ plain NCC are **inadmissible on this clip** — a *wrong* reference frame outran
 under both, because every frame is a dark night street. **On low-dynamic-range corpora the negative
 control must choose the metric before the metric is quoted.**
 
+### 7.12b The v1arch/v1.6/v1.7 line: the first complete four-family block, a latents-only unicycle readout, and the action-echo measurement that forced the tier doctrine (2026-08-05 → 08-06)
+
+**v1arch — the data axis, isolated for once (`MODEL_REGISTRY §1.9`).** `flagship-v1arch-v2bal-30k`
+trains the *v1 architecture unchanged* (every `v2_*` lever measured `false` in its own
+`config.json`) on the 9,000-clip balanced corpus — so, unlike the falsified §7.11(a) arm, the
+data axis is attributable. Its corpus breaks canonical-val disjointness (21/40 episodes inside
+the training pool — canonical-val numbers inadmissible for it), so evaluation moved to
+PhysicalAI-AV's **own official eval split** (`physicalai-oodval-6f4b94e4c7ce-q90`: 290 clips,
+zero overlap, 6,382 windows / 290 episode clusters). There it produced **the programme's first
+complete four-family block** (`_complete: true`; T0, retroactively stamped; episode-cluster
+bootstrap): ADE(4wp) 0.5752 [0.5370, 0.6142]; LONGITUDINAL — a systematic **over-speed prior,
+not a tail** (speed bias +0.484 m/s; 71.95 % of windows ahead at 2 s, 75.51 % faster than the
+human); LATERAL tight (cross-track MAE 0.0552 m [0.0500, 0.0611]) — not where effort belongs;
+TACTICAL — κ 0.6033 (substantial; the manoeuvre label is honest) but **`seams_beneficial` = 0 of
+3, the hierarchy seam falsified at this checkpoint**; STRATEGIC — `route_acc_follow` 0.8031 ==
+the majority-straight rate with a follow-prediction distribution of {left 0, straight 1737,
+right 0}: **a constant predictor, confirmed off-leak**, and `route_acc_nav` 1.0000 is an echo of
+its own input. Two harnesses disagree by 0.8 % on this corpus (0.5705 vs 0.5752) — recorded, not
+smoothed over, unresolved.
+
+**v1.6 — the unicycle step-readout: what a control parameterisation alone buys
+(`MODEL_REGISTRY §1.10`, T0, paired episode-cluster bootstrap over 40 episodes, 6,834 windows).**
+A **2.11 M** trainable `UnicycleStepReadout` on the *entirely frozen* v1arch trunk (md5-proved)
+maps latent transitions to per-step (accel, yaw-rate), integrated non-holonomically — and,
+crucially, **latents-only**: the v₀/feedback shortcut surface was removed after run 4 failed the
+WM-reliance gate at 0.0891. Against the trunk's own displacement readout on identical latent
+rolls (a decoder-only contrast by construction): ADE parity (0.3398 vs 0.3584, not separated) —
+but **speed bias +0.3793 → −0.0265 m/s, accel RMS 2.9465 → 0.7172 m/s² (human ≈ 0.91), jerk RMS
+36.17 → 1.13 m/s³ (human ≈ 1.71), net-yaw error −65 %, cross-track −28 %, all CI-separated**, and
+replan accel-jump 11× lower. WM-reliance 0.6233 (gate ≥ 0.5 PASS; the frozen-latents control
+collapses to the CV floor — what the decoder consumes is the predictor's rolled prediction).
+Against real traffic (paired lead-block join): v1arch is CI-separated *more aggressive* on all
+three distance-keeping metrics (min-TTC 2.8 s lower), while **v1.6 is statistically
+indistinguishable from ground truth on every distance-keeping metric** at this n; its
+executed-manoeuvre agreement with GT rises 0.5016 → 0.7694 and its toggle rate matches GT
+(0.0309 vs 0.0318, Δ not separated). A physically-parameterised emission surface, at 0.8 % of
+the trunk's size, removed most of the longitudinal-defect *expression* — the lesson W4 (§7.13)
+carries into v5.8f. **v1.7** (run 6, one change: a speed-profile L1) is the discipline example:
+its pre-registered decel-lag hypothesis was **refuted — outcome B binds** (P1 response ratio
+0.1547 vs ≥ 0.40, P2 lag +0.173 s vs ≤ +0.15; `MODEL_REGISTRY §1.11`), even though the arm is
+CI-better on ADE (0.2849 vs 0.3398, −16 %) with every non-regression gate green — registered as
+the best open-loop head in the lineage, **not** as the lag fix.
+
+**§1.12 — the measurement that re-framed every open-loop number in this paper
+(`MODEL_REGISTRY §1.12`, T1).** Rolling the predictor on the *decoder's own* actions (no recorded
+future anywhere; perception context fixed — imagination-closed loop): v1.6 ADE 0.3398 → 0.4714
+(+0.132 [0.112, 0.152]), v1.7 0.2849 → 0.4616 — both still under the 0.5352 CV floor, retaining
+~33 % of the open-loop advantage — but net-yaw error ×6.7 and **S-curve reproduction 0.9785 →
+0.0538/0.0430, with the hold-action arm at 0.0 %**. The open-loop counter-steer came from the
+true-action conditioning, not from vision: **open-loop lateral "skill" was an action echo.** The
+consequence is the binding tier doctrine of §5; the numbers are repeated here because this is
+the experiment that produced it.
+
+### 7.13 The v5f flagship and the repair arc: one measured defect under four failures, and its predictor-scale repair (2026-08-09 → 08-11)
+
+
+> **Figure 2 — `Paper/figures/v58f_results.svg`** (generated by
+> `Paper/figures/make_v58f_results.py` directly from the registry literals, so the plot
+> cannot drift from the source of truth): the repair arc in five measured panels —
+> action-response gain against its pre-registered band, fan oracle ADE, selected-trajectory
+> acceleration MAE, selector calibration against the P7 gate, and the imagination ablation.
+> The figure's footer carries the open item: selection over a frozen-selector shortlist
+> still fails its gate.
+
+This is the round in which the programme's diagnostic machinery earned its cost: a ladder of
+pre-registered wedges converged four independent failures onto **one measured root defect in the
+action interface**, a predictor-only post-training repaired it, and a chain of eliminations then
+isolated the last stale component of the selection pipeline. Every number carries its tier; unless
+an interval is printed, values are corpus-grid point estimates over the fixed 881-window /
+40-episode held-out grid with the episode-cluster bootstrap named as the decision-grade rescore in
+the artifact itself.
+
+**The arm.** `flagship-v5f-w120-30k` (`MODEL_REGISTRY §1.8`) is the §7.11(f) relaunch completed:
+from-scratch **joint WM+planner co-training** (v1's own co-evolution recipe, §7.6) under the
+measured λ_plan curriculum (0 → ramp(2 k..8 k) → 1.0, §3.9), with conditional imagination live
+(the §3.4 mechanism, restored in §7.11(f)), on the 120° cylindrical wide-FOV geometry (256×640,
+f_ref 305.5775, subframe 176×624) over the w120 sibling of the parity corpus (2,400 clips,
+sha-verified against the committed manifest, skip-hash lineage `f09e44db`). Completed at step
+30,000 on 2026-08-09. Final eval **[T0 — teacher-forced WM diagnostic, never driving
+performance]** on the full 600-episode w120 val corpus, 881 windows (`MODEL_REGISTRY §1.8`):
+**selected ADE@2s 0.4011 m** against a 256-candidate fan whose **oracle (best-in-fan) is
+0.1975 m** — a selection gap of 0.2036 m, i.e. *the arm would be ~2× better if it merely chose
+correctly among candidates it already generates*; miss@2 m 0.1487. ⚠️ w120 geometry ⇒ **not
+comparable to any 256²-pinhole number** in §7.1–§7.8 (cross-frame). The four families
+(`v5f_four_families_30k.json`, T0, episode-cluster bootstrap): LONGITUDINAL speed MAE 0.7024 m/s
+[0.6311, 0.7829], bias +0.1009 — and **accel MAE 8.1075 m/s²**, the number that names the
+disease; LATERAL heading MAE 4.08°, yaw-rate MAE 49.7 °/s, cross-track MAE 0.1819 m
+[0.1274, 0.2471]; TACTICAL and STRATEGIC honestly UNAVAILABLE with reasons stamped (a WM-fidelity
+pass does not traverse the hierarchy — recorded as a work item per the binding rule, not a pass).
+
+**The wedge ladder, and what each rung eliminated (`MODEL_REGISTRY §1.13`).** **W1** — the
+pre-registered hypothesis that a kinematic-cost re-rank of the selector's top-8 closes ≥ 30 % of
+the selection gap — was **refuted**: re-ranking *worsens* selection by −16.7 % (0.4011 → 0.4351;
+`x0_lite_f32.json`, T0). **W2**, the fan-feasibility census, explains why: **97.6 % of all
+256×20×881 fan steps violate |a| ≤ 4 m/s² ∨ |yaw-rate| ≤ 0.33·v+0.05, 100 % of candidates are
+infeasible including the oracle**, and mean |accel| over all candidates is 252.1 m/s² — any
+waypoint-space kinematic cost ranks jitter, not manoeuvre quality. **W2b** (exploratory): a free
+3-tap smoother improves *both* selected and oracle ADE (0.4011→0.3975, 0.1975→0.1879) while
+cutting selected accel MAE 8.10→3.09 — the signature of truncated-denoise **noise around signal**,
+not signal content. The waypoint jitter was hiding coverage, not providing it.
+
+**W4 — the unicycle emission head: feasibility by construction.** Instead of emitting waypoints,
+a 109,096-parameter `UnicycleEmission` MLP off the (frozen) offset-head query emits per-step
+controls squashed into the physical envelope — **a = a_max·tanh(·), κ = κ_max·tanh(·)** (a_max =
+4 m/s², κ_max = 0.2 m⁻¹) — integrated non-holonomically to waypoints; trunk and every other head
+frozen (md5-identical before/after). Result (`w4_gate.json`, T0, same grid): both pre-registered
+gates **pass** — selected-candidate accel MAE **9.297 → 0.774 m/s²** (winner candidate 0.261;
+census-violation fraction 0.0) *and* the fan oracle nearly halves, **0.1991 → 0.1077 m** — the
+jitter was masking coverage. The one regression is diagnostic gold: the **frozen selector**,
+trained against the old fan's geometry, is near-uninformed on the new fan (selected 0.7933 ≈
+CV-floor territory) — a selector-calibration defect, not a fan defect.
+
+**The fast-selector elimination chain (three surfaces, one failure mode, retired by
+pre-registration).** **W4b-feat** (rescorer off the offset-head query): held-out selected ADE
+**0.5600** vs gate ≤ 0.45, with the train monitor at 0.21–0.33 — the scorer **memorises
+train-window selection** rather than generalising it (`w4b_gate_feat.json`). **W4b-kin** (adds
+the candidates' own (a, κ) to the input): **0.5637** — a < 0.004 move; the failure is not the
+input surface (`w4b_gate_kin.json`). **W4c** (spatial cross-attention scoring, the REF-C conf
+mechanism): **0.6609**, near-uniform entropy 5.37, the same train-vs-held-out memorisation gap
+0.139 (`w4c_gate.json`). Per the bound G-null, **fast per-candidate scoring on this trunk is
+retired** — no fourth attempt without new evidence; a fast selector may return only as a
+distillation of the roll-based mechanism. The same pattern reproduces **one hierarchy level up**:
+the first trained tactical stage-0 layer (E4.4, 6.39 M on the frozen trunk) fails its goal-FDE
+gate **by selection, not generation** — selected goal FDE@4s 12.86 m vs CV 6.09, while the
+8-candidate goal fan's *oracle* is 5.28 m and beats CV at both 4 s and 6 s (9.92 vs 12.46)
+(`e44_gate.json`, T0). **Fans generate adequate hypotheses at both measured levels; learned
+pooled-feature selectors fail to find them.**
+
+**W7 — selection by rolled consequence, and the convergence.** The world-model-roll re-rank
+(roll the top-K candidates through the WM, score by explicit costs — structurally the V-JEPA-2-AC
+planning loop) failed its gate at every K on the frozen trunk, but the K-sweep is the finding
+(`w7_gate_k{8,32,64}.json`, T0): at K = 8 the roll-cost is the programme's **first calibrated
+selection signal** (Spearman ρ 0.399 against realised error, vs 0.05–0.26 for every learned
+scorer), yet at K = 32/64 the shortlist oracle improves hugely (0.182/0.142) while selection
+stalls and the calibration **collapses** (ρ 0.106/0.047) — with many similar good candidates the
+muffled rolls barely differ, and the cost drowns. **Why muffled: W3.** The counterfactual
+action-response probe pack (`w3_gate.json`, T1-diagnostic — hypothetical actions probe
+controllability, never driving performance) had measured, on the same grid: lateral
+sign-correctness **99.5 %/99.2 %** (left/right, gate ≥ 0.95 ✓) but **median response gain
+0.271/0.233 against the unicycle-analytic reference at 1 s** — the WM turns the right way at
+**~¼ the physical magnitude**; longitudinal sign only 74.5 %/78.7 % ✗; and (P6) the
+action-induced latent change lives in a **3-dimensional subspace** of the 2048-d state (gate
+≤ 32) carrying 0.91–0.94 of the lateral energy. One defect — a correctly-signed, low-rank,
+**muffled** action interface — now explains four separately-observed failures: the §1.12 action
+echo (closed-loop near-straight driving), the W4b/W4c scoring failures (features cannot separate
+candidates whose rolled consequences barely differ), and W7's dense-K collapse.
+
+**Stage-A post-training: the repair (`stage_a_gate.json`, T1-diagnostic, all gates pre-registered
+with both outcomes bound).** Predictor-only training under the §3.9 control-response loss
+(3,000 steps, lr 1e-5, 91.36 M trainable predictor, 185.6 M frozen; ~4 h): **lateral gain
+0.271/0.233 → 0.971/0.966** (gate [0.5, 2.0] ✓✓), lateral sign stays 1.0, **longitudinal sign
+0.745/0.787 → 1.0/1.0** (gate ≥ 0.95 ✓✓, gains 0.972 reported), **the action subspace stays
+exactly 3-dimensional** (factorisation preserved), and the no-harm gate passes with the factual
+roll *improving* (ADE 0.176 → 0.119 vs a ≤ +10 % cap). The single root defect is closed at
+head-scale cost — without touching the encoder and without a label anywhere.
+
+**The elimination chain closes on one stale part.** W7 on the repaired trunk first returned a
+gate FAIL that is an **instrument-composition failure, not a repair verdict**
+(`w7_gate_repaired_k32.json`, T0): stage-A necessarily moved the trunk's feature distribution,
+and the W4 emission head + frozen selector — both trained on frozen-trunk features — no longer
+compose with it (in-run frozen selector 3.448 vs its banked 0.7933; fan oracle degraded to
+0.289). The repair's signal survives inside the same artifact: across-window roll-cost
+calibration **ρ 0.7164 [0.5847, 0.7696]** (episode-cluster bootstrap, n = 881; P7 gate PASS —
+~1.8× the frozen trunk's 0.399, **the strongest calibration measured in the programme**), and
+W7's pick beats or ties the frozen pick on 71.1 % of windows. **W4r** — the cheap refit of the
+unicycle head on the repaired trunk — then **passes** (`w4r_gate.json`, T0): fan oracle
+**0.1273 m** (cap 0.2173 ✓), winner accel MAE **0.276 m/s²**, violations 0.0 — the fan on the
+repaired trunk is healthy — while the same fan through the still-frozen selector reads 4.416,
+and W7-w4r (K = 32) fails at 3.614 **because the shortlist pruner is the frozen selector**
+(`w7-repaired-w4r-k32/w7_gate.json`). Chain of eliminations complete: trunk repaired, head refit
+PASS, roll-cost calibrated — **the frozen selector is the last stale component, and it sits in
+W7's pruner, not its cost**. W7-FULL (top-K = 256, selector-free: roll-cost + kinematic cost over
+the whole healthy fan — the first selection read with no stale part anywhere) **has since run:
+it fails at 3.3348 m against a 0.4505 m gate over a fan whose oracle is 0.1273 m, and the failure
+is diagnosed rather than merely recorded — the argmin's error-rank is the median of the fan. That
+is §7.16, and it closes the selection question with a mechanism (the winner's curse) rather than
+another confound.**
+
+**v5.8f assembled — first T0 numbers, honestly not yet a release row (`MODEL_REGISTRY §1.14`).**
+The assembly (frozen v5f-30k trunk + W4 fan + gate-decided selector), two arms on the same 881
+windows, episode-cluster bootstrap (`v58f_rescore_ci.json`, T0): **rescorer-top8-kincost 0.4815 m
+[0.3928, 0.5771]** vs frozen-argmax control 0.7933 [0.6414, 0.9757] (CI-separated), selected
+accel MAE **0.515 vs the v5f baseline's 8.10 m/s² (16×)**, oracle 0.1077 (1.8× better than
+v5f's 0.1975). The honest reading: v5.8f currently trades **+0.08 m selected ADE for a 16×
+kinematic improvement and a fan whose oracle nearly halves**; the whole deficit is selection
+(sel_gap 0.374 [0.3014, 0.4489], `p7_regrade.json`) — and unlike v5f's, this gap sits over a
+*feasible* fan with 0.37 m of recoverable headroom. Notably, on the clean fan the W1-refuted
+kinematic cost becomes *useful* as a tie-breaker (top8+kincost 0.4815 beats the trained
+rescorer's argmax 0.560) — exactly as the fusion design predicted. **Missing before any release
+row or capability claim: the four families + cluster CIs on the banked windows, and the T1
+(action-closed-loop) rows** — T0 supports none of the above as driving performance.
+
+**What §7.13 establishes, stated precisely.** (i) The failure of imagine-and-select in this
+generation was never the imagination: fans are adequate at both hierarchy levels (oracle 0.108 m
+operative, 5.28 m tactical goals) and the fan's uncertainty is calibrated (§7.14 P7). (ii) Three
+learned per-candidate scoring surfaces fail identically by memorisation, and selection by
+**rolled consequence** is the only mechanism whose score correlates with realised error — the
+programme's central thesis (plan by imagining consequences) arriving **by elimination**.
+(iii) The action interface of a jointly co-trained trunk was correctly signed, low-rank, and
+muffled at ~¼ gain — and this is *post-trainable at predictor scale* with a self-supervised
+geometric loss, without labels and without touching the encoder. (iv) A repair that moves a
+trunk's feature distribution silently invalidates every consumer trained on the old features —
+instrument-composition is a failure class of its own, distinct from model failure, and the gate
+that "failed" is the instrument saying so.
+
+### 7.14 The WM-physics proof battery: P1–P9 + I4 (2026-08-10 → 08-11)
+
+The PI's question — *"how can [we] prove that the WM, encoder and predictor, is learning
+correctly the physical world and predicting the right relevant part of it?"* — was answered with
+a battery of pre-registered probes rather than a narrative
+(`incoming/2026-08-07-hierarchical-wm-redesign/WM_PHYSICS_PROOF.md`). It decomposes the question
+into three falsifiable properties: **(A) physical correctness** (predicted futures obey the
+physics that generated the data), **(B) relevance** (the latent carries the variables driving
+needs and *not* nuisance detail — the information-bottleneck signature: driving-state
+decodability up, clip-identity decodability down with horizon), and **(C) causal grounding**
+(the prediction responds to actions the way the physical system would — the property T0 evals
+are structurally blind to, and §1.12 measured how expensive that blindness is). Nine probes plus
+an imagination-validation triplet, each with its gate fixed before running; every probe stamps
+its tier (P1/P2/P4/P6/P7 are T0-diagnostic by design — they interrogate representations; P3/P5
+are T1), and a probe that cannot run reports its reason per-probe rather than being dropped. The
+battery is offered as a methods contribution: it is cheap (largely 0-GPU off banked dumps), it
+runs on existing corpora, and in its first two days it changed the programme's direction twice.
+
+- **P1 — decodability curves (A).** Linear probes on the *predicted* latent ẑ_{t+k} vs the same
+  probe on the *encoded* true frame z_{t+k}. Result (`p12_gate_clsfilter.json`, T0-diagnostic,
+  episode-disjoint out-of-fold): gate **PASS on all three computable driving targets** — at
+  k = 10, speed R² **0.9934 (pred) vs 0.7441 (enc)**, curvature **0.7595 vs 0.5512**, yaw-rate
+  similar, no cliffs. The predicted latent decodes driving state *better* than the encoded one —
+  the rollout carries the action-implied state strongly (caveat stamped in-artifact: partly the
+  action conditioning itself; the T1 lens applies).
+- **P1 lead-gap — the battery's sharpest negative, and an instrument-first resolution.** The
+  lead-vehicle gap probe first failed uninterpretably (R²(enc) ≤ 0 — "fix the probe before
+  gating the predictor", stamped in-artifact). The class-agnostic label join was a real defect;
+  fixing it (vehicle-only lead candidates, n = 266 lead windows per horizon) **did not dissolve
+  the failure**. The pre-registered follow-up then excluded parameterization and probe capacity:
+  linear probes on log1p-gap, inverse-gap and a TTC proxy all fail (R² −5.7 to −154, overfit
+  symptoms at this n, direction unambiguous), and the **2-layer-MLP capability ceiling reads
+  R² −0.334** on the encoded latent (`p1_lead_transforms.json`; small-n caveat stamped). Verdict,
+  model-class: **v5f's latent does not carry a readable lead-distance variable, in any
+  parameterization, at any probe capacity tested** — load-bearing because 88.7 % of the oracle
+  gap is longitudinal, and this is the missing longitudinal state variable. The label-free
+  interpretation (§3.9, PUBLISHED anchors): JEPA risk behaves like a low-rank factorization of
+  the action-conditioned co-occurrence operator, and **rare-event variables are exactly what a
+  fixed-rank latent sacrifices first** — a free-flow-dominated corpus makes lead distance a
+  rare-event variable, so the objective *can* be minimised while ignoring it. ⚠️ The aux
+  lead-readout loss originally proposed as the fix was **retracted the same day by the PI**
+  (labels into the trunk break the self-supervised thesis); the response is the pre-registered
+  **label-free lever program** (`JEPA_PHYSICS_SURVEY.md`): LF0 *locate first* — probe the
+  pre-pool spatial tokens and the P8 decoded-BEV read-off (pooling is where geometry goes to
+  die, the DINO-WM lesson; probe-only, admissible) — then LF1 interaction-weighted sampling
+  (ego-kinematic saliency, from actions alone), LF2 masked-latent prediction over the readout
+  grid (I-JEPA pattern), LF3 dense distance-weighted near-field loss (V-JEPA 2.1 pattern), LF4
+  longer-horizon rollout targets — each gated on the *same frozen* P1 lead battery.
+  Headway/TTC remain GT-join instruments, never latent probes.
+- **P3/P6 — counterfactual sign/gain maps and ego/scene factorisation (C).** Reported in §7.13
+  (they are the W3 pack): sign right, gain ~¼, subspace 3-dim; P6 gate PASS decisively, P3 FAIL
+  with the load-bearing structure that stage-A then repaired. A WM failing P3 does not model the
+  world — it replays it.
+- **P7 — uncertainty calibration of the fan (B).** On the v5f fan+selector pairing: endpoint
+  dispersion **Spearman ρ 0.4915**, selector entropy 0.3954 (gate ≥ 0.3; permutation p ≈ 0,
+  n = 881; `p7_calibration.json`) — where the fan spreads, it errs; the model knows what it
+  cannot predict. The registry-grade eid-clustered rerun on the v5.8f arms **fails both**:
+  frozen-argmax 0.2622 [0.0909, 0.4098] (miscalibrated by the re-parameterisation, not dead),
+  the W4b rescorer **0.0542 [−0.1395, 0.2387]** at near-uniform entropy 5.41 — no uncertainty
+  information at all, consistent with the memorisation verdict (`p7_regrade.json`). Calibration
+  is restored by W7's roll-cost on the repaired trunk (ρ 0.716, §7.13).
+- **P5 — compounding-error boundedness (A, T1).** The T1 instrument itself was validated by a
+  byte-close control: the E1.4 pipeline reproduces the banked §1.12 dump byte-exactly
+  (max |Δ| = 0.0; `e14_t1_v16_bytecheck.json`). The v5.8f T1 rows ride it next.
+- **P8 — BEV occupancy readout, attempt 1: an instrument lesson worth keeping (B).** A ~1 M-param
+  frozen-latent decoder z → ego-frame BEV occupancy (60×32 m, agents rasterised from the
+  `obstacle.offline` join — 26,084 records / 137 clips, occlusion flags) was trained with plain
+  BCE and **collapsed to the all-empty prediction**: occupancy rasters are overwhelmingly empty,
+  so unweighted BCE *rewards* the collapse, and measuring IoU only at sigmoid 0.5 on a collapsed
+  readout produced 0.0003 vs 0.0001 — "a ratio of noise" (gate ratio 0.412 vs ≥ 0.8, recorded as
+  FAIL; `p8_gate_attempt1.json`, T0-diagnostic). The attempt-2 fix is in code and pre-registered
+  (`stack/scripts/train_p8_occupancy.py`): **auto pos-weight** (neg/pos ratio measured on a
+  sample of training rasters, capped at 200), a **soft-Dice term** (an all-empty prediction
+  scores ~1.0 loss there regardless of class rarity — exactly the collapse BCE rewarded), and a
+  **τ\* operating-point sweep chosen on the encoded arm** — which makes the pred/enc retention
+  gate strictly *harder*, never easier. P8 matters beyond itself: its decoded-BEV lead read-off
+  is the convergent test for the P1 lead absence (if the occupancy decode shows the lead
+  vehicle, the information enters the latent and dies in the pooled readout — localising the
+  defect to routing, LF0's RC1). **Attempt 2 has since run and PASSES its gate (retention 0.932
+  at k = 10, a 74× lift over attempt 1) — reported in full, with its limitations, in §7.18.**
+  The instrument lesson is kept here rather than deleted: the fix was entirely in the *readout's*
+  loss, and attempt 1 would have been reportable as "the predicted latent has lost the scene" by
+  anyone who did not check whether the instrument could see a scene at all.
+- **P4 (occlusion permanence)** — **measured on the attempt-2 run: occluded-agent recall ≥
+  visible at every k** (§7.18), reported as *consistent with* permanence pending a diffuseness
+  control. **I4a (imagination attribution)** — **measured: the channel is load-bearing, zeroing
+  it collapses selected ADE 19× and shuffling it 3.1×** (§7.18). **P2 (nuisance non-retention)**
+  — **FAILS at every milestone of the H-COTRAIN curve** (§7.17) and is a standing open defect.
+  **P9 (probe-gradient saliency)** and **I4b–c** (the occluded-split stratification and the
+  occlusion-stress windows) remain built and pre-registered with bound outcomes (P4's obstacle
+  join: 39/40 episodes, 195,805 boxes); no claim is made for them here.
+
+### 7.15 Data and instruments shipped this round (2026-08-10 → 08-11)
+
+- **Alpamayo-2-Super augmentation dataset** — completed: 4,800/4,800 clips, 23,999 rows across
+  5 tasks, published as an HF public gated dataset with a road-class-coverage and provenance
+  card *(counts INHERITED from the session report `MORNING_REPORT_2026-08-11.md`; not yet
+  registry-anchored — flagged rather than silently promoted)*. Its meta-actions (3-axis, with
+  severity) and reasoning traces are exactly tactical-level auxiliary supervision — a second,
+  independent teacher for the hierarchy's stage 0, with the contamination caveat carried.
+- **The `obstacle.offline` join** — 3D agent tracks (97.44 % of the corpus) joined to the eval
+  grid: 26,084 records over 137 clips **with occlusion flags** (`p8_gate_attempt1.json`
+  `raster_source`; MEASURED), feeding P4/P8, the lead-gap battery, and the distance-keeping
+  family. Labels from it are admissible as frozen probe targets and eval strata only — never
+  trunk losses, never inputs (§3.9 standing rule).
+- **VLM strategic labeling — design + PH0 pre-registration (future work, 0-GPU so far).** The
+  strategic layer's missing goal supervision (g_str) is designed as a two-engine, adversarially
+  fused pipeline (`VLM_STRATEGIC_LABELING.md`): Engine A, a deterministic geometric analysis of
+  long-horizon integrated ego trajectories (hindsight); Engine B, a VLM fed past+future clips
+  that extracts scenario/domain/sign (incl. OCR of navigation signage) and proposed strategic
+  goals/actions under a strict schema with a two-pass extract-then-self-verify protocol; a
+  deterministic fusion gate emits a strategic action only when the VLM's claim is consistent
+  with the hindsight geometry, banking disagreements as `disputed`. The PH0 pilot
+  (`PREREG_PH0_VLM.md`) binds three arms (Qwen3.5-9B bf16; Qwen3.5-27B-FP8;
+  Gemma-4-31B QAT-w4a16) on the same 50 stratified clips with gates fixed in advance —
+  **G1 sign-OCR precision ≥ 0.9** on a human-checked sample (fail ⇒ that arm's signage text and
+  every signage-derived `route_to` goal is excluded; all-fail ⇒ the strategic goal degrades
+  honestly to hindsight-geometry corridor intent), G2 schema compliance ≥ 0.9, G3 geometric
+  consistency reported with CI as a baseline. The admissibility rules travel into the schema:
+  **labels may use ego/future** (offline hindsight is the design), **inference stays
+  vision-only** (nothing from this pipeline is ever an inference-time input), and **goal/
+  situation disjointness** is enforced at label time — every strategic field carries its
+  derivation source (`path|signage|vlm-fused`), and any field derivable only from the scenario
+  classification is inadmissible as goal supervision. **Sequencing (revised by the PI
+  2026-08-11, `HIERARCHY_VOCABULARY.md` preamble): the VLM/algorithmic labeling pipeline moves
+  *ahead of* v6 training rather than behind the v5.8f release row** — it is the supervision
+  source for v6's strategic goal head and for the hierarchy vocabulary (§10), so it must
+  produce labels before the stage that consumes them, and it costs no flagship GPU (a separate
+  pod). *(This paragraph previously read "PH0 runs only after the v5.8f release row, T1 rows and
+  P8/P9 close"; that ordering is superseded.)*
+
+### 7.16 Selection settled: a selector-free planner over a healthy fan fails, and the mechanism is the winner's curse (2026-08-12)
+
+> **Figure 3 — `Paper/figures/winners_curse.svg`** (also rendered as `.png`; generated by
+> `Paper/figures/make_winners_curse.py`, which **reads the gate JSONs at generation time and
+> exits if one is missing** — the figure has no hand-typed fallback by design, and a
+> cross-artifact tripwire refuses to draw if the fan oracle disagrees between `w4r_gate.json`
+> and `w7_selection_rules.json`): the mechanism in three panels — the realised error inside the
+> cost's own top-m (flat at the fan's mean while the top-m *ceiling* falls, i.e. the low-cost
+> stratum is a random subset), the rank ruler showing the argmin landing at 132.3 of 256 against
+> a chance rank of 128, and what each selection rule scores on the same fan.
+
+This is the round's headline negative result, and it is reported as a result rather than as a
+setback because its mechanism is general: **a plan chosen as the argmin of a noisily-correlated
+surrogate cost over a large candidate set is not a good plan, and gets worse as the candidate set
+grows — while the oracle over the same set gets better.** We measured this in a configuration
+built specifically to have no alibi left.
+
+**The run, and why it has no confound (`MODEL_REGISTRY §1.14`, artifact `w7_full_gate.json`,
+[T0 — WM diagnostic, 881-window / 40-episode held-out grid, MEASURED]).** Every previously
+implicated stale component was removed at once: the **repaired stage-A trunk** (§7.13; the
+action-response gain in band, `frozen_proof.identical: true`, md5 `06019658…`), the **W4r
+unicycle emission head refit on that trunk** (`w4r_gate.json`, gate PASS: fan oracle 0.1273 m
+against a 0.2173 m cap, winner accel MAE 0.276 m/s², census violations 0.0), and **no shortlist
+at all** — `topk = 256`, so `winner_in_shortlist_frac = 1.0` and the true best candidate is
+available in *every* window by construction. Selection is `argmin_i [ 1.0·c_roll(i) +
+0.2·c_kin(i) ]` with `c_roll` = ADE between the candidate's own unicycle waypoints and the
+world-model's imagination-closed roll of that candidate decoded to waypoints (k = 10, 1.0 s),
+and `c_kin` = mean|a| + 0.5·mean|jerk| from the controls. W7 trains nothing: it is a re-rank
+instrument over frozen artifacts (`n_trainable: 0`).
+
+| quantity | value | note |
+|---|---|---|
+| fan **oracle** ADE | **0.1273 m** | healthy fan; the answer is always in the set |
+| **W7-FULL selected** ADE | **3.3348 m** | pre-registered gate ≤ **0.4505 m** (= 50 % of the frozen-argmax sel_gap) — **FAIL**, `frac_selgap_closed` −3.71 |
+| frozen selector on the *same* fan (in-run) | 4.4159 m | W7's pick beats **or ties** it on **67.5 %** of windows (`w7_pick_le_frozen_pick_frac`) and still fails absolutely |
+| sel_gap | 3.2075 m | 26× the oracle |
+| within-window rank corr. (cost vs realised error, over the 256 candidates) | ρ_mean **0.4453** / ρ_median **0.4969** | the cost ranks *broadly* correctly |
+| across-window calibration (P7 analogue) | ρ **0.3185** [0.2064, 0.4086] | **episode-cluster bootstrap**, n = 881 windows / 40 episodes, B = 2000 |
+| **error-rank of the argmin** | **132.3 of 256** | the median rank is 128 — *the winner is a coin flip* |
+
+**The four families, per the §5.5 contract** (same run, same windows; the artifact's own
+`mini_eval.families` block):
+
+| family | measured | note |
+|---|---|---|
+| **LONGITUDINAL** | speed MAE **0.4739 m/s**, accel MAE **0.5105 m/s²** | headway / time-gap / TTC **not computable in this instrument** — it has no lead-agent channel; they remain GT-join instruments on the pod-side harness (stated rather than dropped) |
+| **LATERAL** | heading MAE **0.2908 rad**, yaw-rate MAE **0.3677 rad/s**, curvature MAE 6.06 (artifact field `curvature_mae_1pm`) | waypoint-derived adjuncts — finite-difference `atan2`, noisy near standstill; stamped as such in-artifact |
+| **TACTICAL** | winner-hit **3.2 %**, selected-rank percentile **34.6 %**, winner-in-shortlist **100 %** | for a re-rank instrument, decision quality *is* the tactical family: the true winner is always available and is found 3 % of the time |
+| **STRATEGIC** | **n/a** | no route/goal label exists on PhysicalAI-AV (§5.5; settled at five probes). Stated per family with its reason, never silently dropped |
+
+Note that the LONGITUDINAL and LATERAL numbers look *reasonable* while the arm's selected ADE is
+3.33 m — a direct demonstration of why the families are reported per-family and never pooled: the
+chosen trajectory is smooth and plausibly-paced, and it is the wrong one.
+
+**The diagnostic that names the mechanism (0-GPU follow-up sweep over the banked scoring
+windows, `w7_selection_rules.json`, EXPLORATORY class — a winning rule must be re-measured on a
+fresh grid).** Two facts, taken together, are the whole finding:
+
+1. **Inside the cost's own top-m set, the mean realised error is *flat at the fan's own mean*.**
+   `top_m_mean_error_ade` = 5.408 / 5.327 / 5.313 / 5.321 / 5.321 / 5.321 for m = 2/3/5/8/16/32,
+   against a fan-wide mean of ≈ 5.32 m. Conditioning on "the cost likes this candidate" changes
+   the error distribution by nothing measurable. Equivalently: **the top-m set is statistically
+   indistinguishable from a random m-subset of the fan.**
+2. **The top-m *ceilings* do fall**: the best-in-top-m error is 3.380 / 2.384 / 1.561 / 1.067 /
+   0.598 / 0.356 m for the same m — which is exactly what random m-subsets of a fan whose full
+   oracle is 0.127 m would give. So *headroom* exists inside a shortlist; it is not the argmin
+   that will find it.
+
+And the decomposition of the deployed number: **argmin on the roll-consistency term alone scores
+5.2898 m** — the fan's mean, i.e. *nothing* — so the entire difference between 5.29 and the
+deployed 3.3348 comes from the **kinematic term at weight 0.2**, not from world-model roll
+consistency. A rank-blend of the two terms scores 5.4615 m, no better.
+
+**Why the fan gets *worse* to minimise over as it deepens, and the model this refutes.** §3.12
+gives the formalism; the empirical shape is: on the frozen trunk the K-sweep read 0.5772 /
+0.5173 / 0.5319 m at K = 8/32/64 (`w7_gate_k{8,32,64}.json`, T0) and W7-FULL reads 3.3348 at
+K = 256 on the **repaired** trunk. ⚠️ Those are two different trunks and therefore **not one
+curve** — the direction agrees, the series does not, and we do not draw it as one. What the
+numbers *do* settle is a model comparison stated in §3.12: under a homoscedastic Gaussian-copula
+model of a noisy-but-honest cost, deepening the fan would make the argmin *better*
+(E[error | argmin] scales with −ρ·√(2 ln N)); the measured degradation therefore **refutes that
+model** and requires the alternative — a cost with a **degenerate minimiser**. The
+roll-consistency term is a *self-consistency* functional: it is minimised by a candidate the
+world model can trivially reproduce, and a near-stationary candidate is exactly that. As the fan
+deepens, the probability that it contains such a candidate goes to one, so the argmin converges
+onto the degenerate set while the oracle keeps improving. The artifact names the untried
+antidote itself: W7's anti-degeneracy **progress term** (`--w-prog`, minus candidate arc length)
+has been at **weight 0.0 in every W7 run to date**.
+
+**The published contrast this exposes, and it is the reusable lesson.** V-JEPA 2-AC plans by
+minimising **latent distance to a goal state** (arXiv 2506.09985); DINO-WM likewise uses a latent
+*goal* cost (arXiv 2411.04983). A goal-distance cost is not minimised by inaction — standing
+still leaves you far from the goal. Our roll cost measured **agreement between a candidate and
+the world model's own imagination of it**, which is minimised by inaction. Structurally we
+copied the planning *loop* and dropped the term that makes it a proper score. **A selection cost
+for MPC over a learned world model must contain a term that inaction cannot minimise.**
+
+**The second load-bearing consequence: repairing a trunk invalidates every frozen consumer.**
+The same artifact measures it directly: the frozen selector reads **0.7933 m** on the frozen
+trunk's W4 fan and **4.4159 m** on the repaired trunk's W4r fan — a 5.6× degradation from
+changing *nothing but the features it scores*, with `winner_in_shortlist` for the earlier
+shortlisted variant at 19.6 % (`w7_gate_repaired_k32.json`). The head refit (W4r) recovered the
+fan; the selector was never refit, and it cannot be, because it was trained against a feature
+distribution that no longer exists. **You cannot repair a trunk and keep its planner.** Two
+things follow, and both are decisions rather than observations:
+
+- **v5.8f ships the FROZEN-trunk assembly** — `rescorer-top8-kincost`, selected ADE **0.4815 m
+  [0.3928, 0.5771]** (episode-cluster bootstrap, `v58f_rescore_ci.json`, T0), selected accel MAE
+  0.515 m/s², oracle 0.1077 m (`MODEL_REGISTRY §1.14`). The stage-A trunk has demonstrably
+  better physics (§7.13) and the assembly built on it is worse, because its consumers are stale.
+  This is instrument composition deciding a release, and we state it that way.
+- **That sentence *is* the staged-training argument for v6** (§10), and it is stronger than the
+  argument from the literature because it is ours and it is measured: consumers must be trained
+  **on the trunk they consume**, which is what a staged ladder (S-W → S-T → S-S) enforces and
+  what co-training cannot guarantee across a repair.
+
+**Honest scope.** (i) T0 throughout: none of these numbers is driving performance, and the T1
+confirmation of the shipped assembly is still open (§10 item 7). (ii) The gate threshold
+0.4505 m is a *pre-registered function of the frozen-argmax reference*, not the deployed arm's
+score; the deployed v5.8f interim arm is 0.4815 m and the deployed flagship v1 is 0.452 m
+(`MODEL_REGISTRY §1.2`) on a different, non-comparable geometry — cross-frame, never compared.
+(iii) The point estimates are corpus-grid means over the fixed 881-window grid; only the two
+correlations carry the episode-cluster bootstrap, as their artifact states. (iv) The selection-
+rule sweep re-uses the W7 scoring windows and is stamped EXPLORATORY by its own artifact: any
+rule chosen from it must be re-measured on a fresh grid before it is quoted.
+
+### 7.17 Does the planner gradient erode the world model? H-COTRAIN measured, the hypothesis rejected within range, and SIGReg validated (2026-08-11)
+
+**A standing hypothesis of this programme — carried in §3.9 of the previous version of this
+paper — is now measured false in the range we can measure, and we retract it in our own voice.**
+
+**The hypothesis (PI, pre-registered before any number was seen, `PREREG_H_COTRAIN.md`).** Joint
+world-model + planner training forces the trunk to become an ego-action/trajectory feature
+extractor rather than a model of the physical world. It was cheap to test because v5f's coupling
+followed a *measured curriculum* — λ_plan = 0 until step 2,000, linear ramp to 8,000, then 1.0 to
+29,999 — and restored milestone checkpoints (5 k/10 k/15 k/20 k, plus the banked 30 k row) sample
+the trunk at increasing planner-gradient exposure. The same frozen probe battery runs at every
+milestone: a **within-run dose–response curve** with the instrument held fixed.
+
+**Bound outcomes, fixed in advance.** CONFIRM required either (a) a scene variable reading
+R²(enc) > 0.15 at 5 k that **declines by ≥ 0.15 absolute** by 30 k while ego-dynamics probes
+hold, or (b) the latent spectrum's effective rank shrinking **> 20 %** across the ramp while ego
+probes hold. REJECT-for-the-lead-variable required lead-gap to be unreadable at *every*
+milestone including 5 k. A separate, independent SIGReg verdict rode the same runs: participation
+ratio retention ≥ 0.8× validates the anti-collapse mechanism under a full planner gradient.
+
+**Result: neither CONFIRM condition fired, in the opposite direction
+(`h_cotrain_curve.json`, MEASURED, [T0-diagnostic — representation interrogation], pooled
+out-of-fold R² per milestone, episode-disjoint folds).** Every probed physical variable became
+**more** decodable as planner exposure increased:
+
+| probe (R² at k = 10) | 5 k | 10 k | 15 k | 20 k | 30 k |
+|---|---|---|---|---|---|
+| speed — **encoded** latent | 0.649 | 0.654 | 0.688 | 0.717 | **0.744** |
+| yaw-rate — encoded | 0.583 | 0.670 | 0.734 | **0.869** | — |
+| curvature — encoded | 0.213 | 0.173 | 0.371 | 0.513 | **0.551** |
+| speed — **predicted** latent | 0.993 | 0.994 | 0.995 | 0.995 | — |
+| yaw-rate — predicted | 0.370 | **0.177** | 0.572 | 0.758 | — |
+| curvature — predicted | 0.225 | **0.050** | 0.485 | 0.704 | — |
+| P1 battery gate | FAIL | FAIL | FAIL | **PASS** | — |
+
+and the latent spectrum **expanded**: participation ratio of z_enc 4.53 → 4.96 → 5.96 → **6.94**
+(of 2048 dimensions), a **+53 %** increase, with the top-8 eigenvalue share *falling* 0.9903 →
+0.9232 — energy spreading out of the leading directions, which is the opposite of collapse.
+
+**Three things must be said plainly about scope, because they bound the claim.**
+
+1. **The lowest available reference is λ = 0.5, not 0.** All four milestones sit **at or past**
+   the ramp (λ ≈ 0.5 already at 5 k, 1.0 from 8 k). The measurement therefore rejects **erosion
+   *under* joint training within 0.5 ≤ λ ≤ 1.0**; it does *not* establish that joint training is
+   optimal, and it cannot, because the clean λ = 0 control was never run. That control is not
+   hypothetical — it is **v6's S-W stage** (§10), and it is the confirmatory arm the
+   pre-registration already named (mode-0 vs scheduled at matched steps, both probed with the
+   same frozen battery).
+2. **The SIGReg retention gate is evaluated at 20 k, not 30 k.** The pre-registration wrote the
+   gate as "participation ratio at 30 k ≥ 0.8× its 5 k value"; the spectrum series in the
+   artifact stops at 20 k, so the **measured retention 1.532** is 6.94/4.53 = 20 k over 5 k.
+   The verdict — **SIGReg VALIDATED, no progressive collapse under a full planner gradient,
+   effective rank expands 53 %** — is stated on that window and on no other. Closing the 30 k
+   spectrum row is a ~0-GPU item.
+3. **There is a real transient, and it is not noise.** Predicted-latent yaw-rate and curvature
+   **dip sharply at 10 k** (0.370 → 0.177 and 0.225 → 0.050) — immediately after λ reaches 1.0 at
+   step 8,000 — then recover and *overshoot* by 20 k. The planner gradient visibly **disturbs**
+   the predictive readout when it arrives; the system re-organises rather than degrading. A run
+   stopped at 10 k would have produced the CONFIRM verdict. That is a methodological point about
+   dose–response curves in general: **a single post-intervention checkpoint cannot distinguish
+   damage from transient re-organisation.**
+
+**What we retract, and what replaces it.** The previous version of this paper carried the
+erosion hypothesis as a live explanation for the muffled action interface and the missing lead
+variable, and §10 listed gradient isolation as a lever motivated by it. **The erosion premise is
+withdrawn within the measured range** (root-cause class: *a mechanism inferred from a coincidence
+of symptoms, never dose-tested*). The staged v6 recipe **does not lose its justification** — it
+never rested on erosion. It rests on (i) the field's convergent recipe (V-JEPA 2 → 2-AC,
+DINO-WM, Drive-JEPA all post-train consumers on a representation trained without them; §3.9),
+and (ii) the **consumer-invalidation** result of §7.16, which is ours and is measured: a repaired
+trunk breaks every consumer trained on the old features. Gradient isolation survives as a
+**preventive design property** with an autograd-level check (§3.11), not as a treatment for a
+disease we have now failed to find. One defect *does* survive the milestone curve untouched:
+**P2 (nuisance non-retention) fails at every milestone** and remains a standing open item.
+
+### 7.18 The environment survives prediction: occupancy retention, occlusion permanence, and a load-bearing imagination channel (2026-08-11 → 08-12)
+
+Three probes of the physics battery (§7.14) closed this round, and together they answer the half
+of the PI's question that the ego-dynamics probes cannot reach: **does the predicted latent still
+contain the *world*, or only the ego?**
+
+**P8 — BEV occupancy retention: GATE PASS (`p8_gate_attempt2.json`, MEASURED,
+[T0-diagnostic — a representation probe, never a driving number], 881-window grid).** A
+984,817-parameter readout `z → ego-frame BEV occupancy` (120×64 grid, agents rasterised from the
+`obstacle.offline` join: 26,084 records / 137 clips with occlusion flags) is trained **on encoded
+latents only**, with the trunk md5-frozen before and after; the predicted-latent path is
+**eval-only by design**, so the readout never sees the arm it is used to grade. Attempt 1's
+all-empty collapse was diagnosed as an instrument failure — unweighted BCE on rasters that are
+98.76 % empty *rewards* the collapse (§7.14). Attempt 2 fixes the instrument and nothing else:
+measured `pos_weight` **79.7** (from **1.239 %** positive cells), a soft-Dice term (an all-empty
+prediction scores ≈ 1.0 loss there regardless of class rarity), and a **9-point threshold sweep
+whose τ\* is chosen on the ENCODED arm** — the conservative side, since the gate is a
+predicted-over-encoded ratio and optimising the denominator can only make it harder.
+
+| k = 10, τ\* = 0.7 | value |
+|---|---|
+| IoU, decode(**encoded** z_{t+10}) | 0.02005 (n = 797) |
+| IoU, decode(**predicted** ẑ_{t+10}) | 0.01869 (n = 823) |
+| **retention ratio** | **0.932** — gate ≥ 0.80 **PASS** |
+| lift vs attempt 1 | **74×** (attempt 1: IoU 2.7 × 10⁻⁴) |
+| τ\* sweep (encoded, pooled over k) | 0.0149 → 0.0191 → 0.0180 across τ = 0.05 → 0.7 → 0.8 — an interior maximum, not an edge artifact |
+
+⇒ **rolling the predictor a full second forward loses only ≈ 7 % of the scene content the encoder
+itself exposes.** That is the property P8 exists to test, and it is the first direct evidence in
+this programme that the predicted latent is a model of the *world* and not merely an ego
+integrator — which matters precisely because the ego-state probes (P1: speed R² 0.993 predicted
+vs 0.744 encoded) are the ones that could be read as an ego-only story.
+
+⚠️ **The limitation travels with the number, in the same breath.** The **absolute** IoU is low
+(≈ 0.02) — a 1 M-parameter readout on frozen latents against sparse rasters — so the admissible
+claim is the **retention ratio** (one instrument, two inputs, everything else held fixed), never
+the absolute occupancy quality. Anyone quoting 0.02 as "the model's occupancy accuracy" would be
+quoting the readout's capacity, not the latent's content.
+
+**P4 — object permanence, now visualised on the same run.** Occluded-agent cell recall is **not
+worse** than visible-agent recall at k = 10: **encoded 0.2178 occluded vs 0.1881 visible**
+(n = 194 / 548), **predicted 0.1743 vs 0.1717** — and the ordering holds at k = 5/15/20. The
+latent carries agents the camera cannot see, which is the sharpest available test that the model
+predicts the world rather than the image. ⚠️ **This needs a diffuseness control before it stands
+alone**: a decoder that paints broad blobs would score occluded and visible cells alike, so
+occluded ≥ visible is consistent with permanence *and* with an uninformative readout. That
+control is the next cheap probe and is named as such; until it runs, P4 is reported as
+*consistent with* permanence, not as proof of it.
+
+**I4a — the imagination channel is load-bearing, not decorative (`MODEL_REGISTRY §1.14`;
+artifacts `i4a/flagship-v5f-w120-30k-i4a-{none,zero,shuffle}.json`, MEASURED, T0, same 881
+grid, same checkpoint, only the imagination input changed).**
+
+| arm | selected ADE | fan oracle | miss@2 m |
+|---|---|---|---|
+| intact | **0.4011 m** (byte-matches the banked v5f baseline — an in-run instrument-parity proof) | 0.1975 | 0.149 |
+| **shuffled** across windows | **1.2492 m** (3.1×) | 0.426 | — |
+| **zeroed** | **7.6493 m** (19×) | 1.457 | 0.805 |
+
+*Four-family status for this triplet, per §5.5 rule 5:* the banked I4a artifacts and the
+registry row carry selected/oracle ADE and miss@2 m; the **per-family stratification of the
+ablation is not yet computed** — it is a rescore off the same banked runs (~0 GPU) and is a work
+item, not an omission. It is named here rather than left implicit.
+
+The **ordering** is the result, not the magnitudes: shuffling preserves the imagination input's
+marginal statistics and destroys only the window↔consequence correspondence, so
+`zero ≫ shuffle ≫ intact` shows the planner reads imagination as **content**, not as a bias term
+or a magnitude cue. (A channel used as a bias would be indifferent to shuffling; a dead channel
+would be indifferent to both.) ⚠️ Caveat stamped in the artifact and repeated here: the head was
+**trained with imagination present**, so this measures the dependence of *this* architecture, not
+the value of retraining without it. I4b — the same triplet stratified on the P4/P8 occluded
+split, where imagination should matter most — is the next refinement and costs no extra GPU.
+
+**Taken together with §7.16**, these three results locate the generation's failure precisely: the
+world model carries the scene (P8 0.932 retention), carries hidden agents (P4), responds to
+actions correctly after repair (§7.13), and supplies a fan containing 0.127 m answers — and the
+programme still cannot *choose*. Every remaining metre is in selection.
+
 ## 8. Discussion: self-supervision, the two-stage question, and what the honest results demand
 
 **What the 30 k results jointly say.** The causal panel (§7.3) and the OOD gap (§7.4) are not in
@@ -1563,6 +2713,28 @@ as a **warm-start** pathology specifically, and the escape it recommends (stage,
 of two escapes — the other is never to converge the stages separately in the first place. Which of the
 two wins on out-of-distribution transfer is the open question, and the OOD panel of §7.4 is its
 pre-registered arbiter.
+
+**Where the two-stage question stands after v1.0's measurements, and what actually decided it.**
+Three results this round move the argument, and the honest accounting is that **the one we
+expected to decide it did not**. (a) **The erosion account is dead in range.** We had a standing
+hypothesis that the planner gradient was overwriting physical state — the natural mechanistic
+story for why a jointly-trained trunk has a muffled action interface and no lead variable. The
+dose–response curve says the opposite: physical decodability *rises* monotonically with planner
+exposure and the latent's effective rank *expands* (§7.17). Anyone building a staged pipeline
+because "co-training erodes the representation" is, on this evidence, building it for a reason
+that is not there — within 0.5 ≤ λ_plan ≤ 1.0, which is the range we can speak about. (b) **What
+does decide it is composition, not erosion.** Repairing the trunk improved its physics and
+simultaneously destroyed every consumer trained on the old features (frozen selector
+0.7933 → 4.4159 m, §7.16). That is a *compositional* property of any pipeline whose stages are
+trained against each other's outputs, and it is precisely what a staged ladder makes explicit and
+gateable: each consumer is trained on the trunk it consumes, and the frozen battery says whether
+the trunk moved. It also reframes LP-FT: the literature's "fine-tuning distorts features" is a
+statement about the *representation*; ours is a statement about the *consumers*, and the second
+bites even when the first does not. (c) **A transient is not damage.** The predicted-latent
+readouts dip hard at 10 k and recover by 20 k (§7.17). A programme that had probed once, shortly
+after coupling, would have concluded erosion and restarted. That is a general hazard for anyone
+evaluating an intervention at a single post-intervention checkpoint, and it is an argument for
+dose–response curves as a standard instrument rather than a luxury.
 
 ## 9. v3 design: hierarchical goal-vocabulary planning over the world model
 
@@ -1667,6 +2839,126 @@ the targeted longitudinal fix (§7.5). The v0.6 round re-orders what comes first
 6. **Retire the deprecated interval estimator from the historical tables** and re-publish §7.1–§7.5's
    widths under the episode-cluster bootstrap (§5), so the paper carries one estimator throughout.
 
+**The v0.9 round re-orders again; the near-term ladder is now (in priority order):**
+
+7. **Close the v5.8f repair arc and mint its first quotable rows.** ~~W7-FULL~~ **done — it
+   failed, with a mechanism (§7.16), and the release arm is consequently the FROZEN-trunk
+   assembly at 0.4815 m [0.3928, 0.5771].** What remains for a release row: the **four families
+   + episode-cluster CIs on the banked windows and the T1 (action-closed-loop) rows** — the row
+   exists only when both do, and no capability claim is made from T0 (§5.4). Add to it the two
+   selection rules the winner's-curse formalism prescribes (§3.12), **pre-registered before use
+   and measured on a fresh grid**: enabling W7's dormant anti-degeneracy progress term
+   (`--w-prog`, at weight 0.0 in every run to date), and replacing argmin with a **top-m
+   aggregate** or a **monotone cost recalibration** whose success criterion is a rise in
+   lower-tail dependence λ_L (or equivalently a fall in the argmin's error-rank from 132/256),
+   not a fall in ADE alone.
+8. **The v6 staged-training direction, decided by measurement, not fashion.** The staged ladder
+   is now the programme's main line, and its justification is explicitly *not* the erosion
+   hypothesis (rejected in range, §7.17) but (a) the field's convergent recipe and (b) the
+   measured **consumer-invalidation** result: a repaired trunk breaks every consumer trained on
+   its old features (§7.16), so consumers must be trained **on the trunk they consume**.
+
+   | stage | what trains | what is frozen | gate before the next stage begins |
+   |---|---|---|---|
+   | **S-W** (world) | encoder + operative predictor, WM-only, λ_plan ≡ 0, planner absent | — | **P1** retention ≥ 0.85× R²(z) at k = 10 per target · **P3** sign ≥ 0.95 both channels **and** gain median ∈ [0.5, 2.0] **without post-training** · **P6** action subspace ≤ 32 dims (reported: P2, P5, P8, O6 spectrum) |
+   | **S-T** (tactical) | tactical layer + goal head + selector, on the frozen S-W trunk | trunk | TACTICAL family · `sel_gap` ≤ 0.5× the fan oracle **at T1** · confusion improves on the E4.1 strata (reported: P7 per stratum, LATERAL, X2 seam) |
+   | **S-S** (strategic) | strategic layer + g_str goal head | trunk + tactical | **STRATEGIC family computable at all** (measured vs today's `n/a`) · ADE(8–30 s) beats CV/corridor at T1 |
+   | **S-J** (optional) | brief joint polish, **isolation still on** | nothing | zero live forbidden edges (X3 autograd probe) · the frozen battery **FLAT** across the joint phase |
+
+   The stage-0 measures are the already-gated parts promoted from retrofit to design: **O1** =
+   stage-A's response-form `L_ctrl` **from step 0** rather than as a post-hoc repair (§3.9);
+   **O2** a near-field distance-weighted latent loss, *time*-scaled not metre-scaled (a fixed
+   40 m band cannot cover 6 s — 180 m at 30 m/s); **O3** contiguous masked spatial-latent
+   prediction (scattered per-cell dropout is trivially inpainted and teaches nothing about
+   permanence); **O4** interaction-weighted sampling from **actions only** (|jerk|, |decel|,
+   steering reversals — label-free, and it *reweights the draw, never removes a window*, so
+   parity holds and α = 0 reproduces uniform exactly); **O5** rollout consistency at **every**
+   step, not endpoint-only; **O6** per-layer SIGReg with the spectrum monitor of §3.13 as a
+   standing training-time gate. The emission head is W4's unicycle parameterisation, feasible by
+   construction, scaled k = 20 → **60** for the 6 s horizon.
+9. **The vocabulary and labeling pipeline, which is now a PRECURSOR to v6 rather than a
+   successor to the release row.** v6's strategic stage cannot be gated at all until the
+   STRATEGIC family is computable (§5.5), and that requires the label stream to exist *before*
+   S-S trains: **PH0** (three VLM arms — Qwen3.5-9B / 27B-FP8 / Gemma-4-31B-QAT — on 50
+   stratified clips, gates G1 sign-OCR ≥ 0.9 and G2 schema ≥ 0.9 bound in advance, plus an
+   optional Engine-C/SAM column decided on measured mask-vs-join agreement), then **PH1** (the
+   full ~4.8 k-clip run, spend decided from PH0's measured s/clip), then **PH2** (the g_str
+   supervision stream, the nuisance/domain strata for P2, and domain-stratified four-family
+   evals). Every semantic claim any engine emits must carry its **image-space grounding**
+   (bounding box, and a mask/contour reference where available, with a frame index); ungrounded
+   claims are `disputed` by default. The Alpamayo-2-Super meta-action distribution (4,800 clips)
+   supplies the empirical phrase distribution the token set must cover, and **vocabulary
+   coverage is measured**, with unmappable phrases logged rather than silently dropped.
+10. **The label-free lever program LF0–LF4 for the missing lead variable** (§7.14): LF0 first —
+   probe pre-pool spatial tokens and the P8 attempt-2 decoded-BEV read-off (~0.5 GPU-h, decides
+   whether the defect is routing or learning) — then LF1–LF4 in cost order, each gated on the
+   same frozen P1 lead battery. Labels stay probes and strata, never trunk losses.
+11. **The scaling ladder S1–S4** (`PREREG_SCALING_LADDER.md`): S1 data volume ({1×, 3×, 10×} the
+   13 h canonical corpus — the programme currently consumes < 1 % of PhysicalAI-AV's ~1,701 h;
+   the "build the 30× corpus" decision binds to the measured 1×→10× T1 slope, with the
+   learning-curve window/R² rules applying to data curves too, and additive supersets only so
+   parity is never re-selected); S2 distribution at matched hours (tail metrics per family, not
+   means); S3 resolution/context; S4 encoder capacity within the binding **sub-300 M envelope**
+   — "dominance of 4-brain TanitAD" is defined as beating bigger published baselines at ≤ 300 M
+   total, and needs curves, not points. S1 runs only after the v5.8f release row exists as the
+   fixed yardstick.
+12. **Complete the physics battery.** P8 attempt-2, P4 permanence and I4a **have landed**
+   (§7.18); what remains is the **P4 diffuseness control** (without which occluded ≥ visible is
+   consistent with permanence but does not prove it), **P2 nuisance non-retention** — which
+   *fails at every milestone* of the H-COTRAIN curve (§7.17) and is the battery's one
+   unaddressed standing defect — **P9** probe-gradient saliency, **I4b/I4c** (the occluded-split
+   stratification and occlusion-stress windows, both ~0 extra GPU off the banked runs), and the
+   **30 k spectrum row** that would let the SIGReg retention gate be quoted at its
+   pre-registered endpoint rather than at 20 k (§3.13).
+
+### 10.1 Open decisions this paper cannot close (they are the PI's, and they are costed)
+
+These are stated with their measured or estimated inputs so the decision is made against
+numbers, not against a narrative. None of them is an experiment we can run around.
+
+1. **S-W's cost is the ladder's decision.** **ESTIMATED 175–290 A40-hours** for 30 k steps
+   (7–12 A40-days), against a full ladder of **≈ 220–370 A40-hours** (S-T 17–28, S-S 11–20,
+   S-J 18–29). The estimate is anchored on two MEASURED baselines — flagship v1
+   `flagship4b-speedjerk-30k` at **6.374 s/step** (`wallclock_s` 191,206.2 for 30 k,
+   `MODEL_REGISTRY §1.2`) and **`flagship-v4-fromscratch`** at **7.085 s/step** (`wallclock_s`
+   212,544.6 = 59.04 h, `MODEL_REGISTRY §1.5.5`) — inflated because S-W encodes 26 frames per
+   sample (window 6 + 20 futures, in one batched pass) and rolls the 60.3 M predictor ~80 times
+   per sample. ⚠️ *Attribution corrected at v1.0: this 59.04 h basis was carried in the design
+   note as "v4.2". The registry says it belongs to `flagship-v4-fromscratch` (§1.5.5);
+   `flagship-v4.2-30k` (§1.5.3) is a different arm, killed at ~step 5 k, and has no 30 k cost.
+   The registry wins; the estimate itself is unaffected because the s/step basis is the same two
+   measured runs.* It is an **ESTIMATE and must not be spent as if it were measured** — and this
+   programme has the receipt: the same §1.5.5 row's superseded estimate of "~53 h" was **~11 %
+   low**, understating the real spend by **≈ 2.5 GPU-days**. The honest move is to launch, read
+   the trainer's own already-divided `step_s` at step 500 (the divisor is named in
+   `step_s_note` precisely so nobody re-derives the false "430 s/step" alarm from an accumulated
+   counter), and re-cost before committing the ladder.
+2. **The 6 s horizon costs ≈ 43 % of the training windows.** MEASURED: the horizon plan every
+   existing flagship trainer inherits returns `max_horizon = 20` (2 s of future per window), so
+   a v6 trainer that inherited it would make the 6 s spec **structurally untrainable** while
+   failing in a way that looks like a corpus limitation. `max_horizon` is a *windowing*
+   parameter, not a property of the cache, so v6 derives its own — but a 120-frame episode then
+   yields `120 − 6 − 60 = 54` windows instead of `120 − 6 − 20 = 94`. **Parity is untouched**
+   (parity is *episode* selection: `physicalai-train-e438721ae894`, 2,376 episodes, skip-hash
+   `f09e44db`), but the window distribution genuinely changes versus v5f and that belongs in the
+   run row. The decision: accept the change, or rebuild the cache with longer episodes.
+3. **E-ENC — one encoder or one per layer — decided at MATCHED TOTAL PARAMS.** MEASURED at
+   instantiation: shared encoder + per-layer adapters **87.89 M**; per-layer encoders
+   **120.74 M**; the matched-parameter counterpart of the latter is the shared arm at
+   `--pred-dim 960` = **118.11 M**, a **2.2 % residual gap** that is quoted rather than rounded
+   away. Both sit inside the sub-300 M invariant, which the builder refuses to violate before
+   any GPU time is spent. Deciding at matched *per-layer widths* instead would let an arm win on
+   capacity and be read as winning on architecture — the same confound class as comparing a
+   decoder on its marginal. Prior from the field: every frontier system (V-JEPA 2, DINO-WM,
+   Drive-JEPA) uses **one** encoder with downstream consumers, so separate encoders must earn
+   their parameters and a tie goes to the shared arm.
+4. **W5/E-H1 is a REQUIRED precursor, not a queued nicety**: v5.8f must be baselined at 6 s
+   (gate ADE(6 s) ≤ 3× ADE(2 s)) *before* v6 trains against it, or the thing v6 changes has no
+   yardstick.
+5. **S2 (`g_str` supervision) is not wired and must not be improvised.** It comes from
+   PH0 → PH1 → PH2 (item 9). Until it exists, the STRATEGIC family stays `n/a` **with its reason
+   and its n** (§5.5) — an honest absence, never a proxy.
+
 ## References
 
 (Formal bibliography at LaTeX export; the working citations live in
@@ -1677,7 +2969,10 @@ distorts features / LP-FT (Kumar et al., ICLR 2022) arXiv:2202.10054; DiffusionD
 arXiv:2411.15139; LAW arXiv:2406.08481; World4Drive arXiv:2507.00603; HiT-JEPA arXiv:2507.00028;
 GAIA-2 arXiv:2503.20523; Drive-JEPA arXiv:2601.22032; ego-status open-loop shortcut (AD-MLP /
 BEV-Planner) arXiv:2312.03031; open-loop⊥closed-loop arXiv:2605.00066; ALPS-4B transfer study
-`Ressources/AD_TRANSFER_RESEARCH.md` v1.1.)
+`Ressources/AD_TRANSFER_RESEARCH.md` v1.1. Added v0.9 (all PUBLISHED, §3.9/§7.14): AD-L-JEPA
+arXiv:2501.04969; V-JEPA 2.1 dense features arXiv:2603.14482; JEPA LiDAR occupancy WM
+arXiv:2602.12540; geographic diversity vs data volume for zero-label JEPA driving WMs
+arXiv:2607.04500.)
 
 ---
 
@@ -1862,4 +3157,119 @@ BEV-Planner) arXiv:2312.03031; open-loop⊥closed-loop arXiv:2605.00066; ALPS-4B
   the correct one under both). Scope stated: renderer **wire contract**, not `alpasim_runtime`, so no
   AlpaSim collision/offroad score; strategic family degenerate on a junction-free 20 s clip; rates
   are within-sim relative (3.21x OOD).
+
+- v0.9 (2026-08-11): the eval-tier and repair round. *(Version note: the status line had again
+  drifted — it read v0.6 while the changelog carried v0.7 and v0.8; this round was requested as
+  "v0.7" but that number is taken, so it is v0.9 — numbering not silently reused, twice.)*
+  **§5 extended** with (i) the episode-cluster bootstrap stated mathematically (cluster resample
+  over the 40 val episodes, statistic recomputed per draw, percentile interval, paired form for
+  two arms; full-set point estimate, never a mean of split-means) and (ii) the **binding
+  T0/T1/T2 eval-tier doctrine** with its measured basis — the §1.12 action echo: S-curve
+  reproduction 0.9785 open-loop vs 0.0538/0.0430 closed-loop and **0.0 % hold-action**; T0 is a
+  WM diagnostic, never driving performance; T1 (action-closed loop) is the primary capability
+  tier; cross-tier comparison invalid. **New §3.9** (theory): the JEPA objective in
+  predictor/target-encoder form with our no-EMA/no-stop-gradient SIGReg-only instantiation and
+  the deployed `full_relaxed` variant; the hierarchical 4B formulation as per-layer predictors at
+  separated clocks with goals as upper-level actions conditioning downward; the stage-A
+  control-response loss written out (counterfactual δa, response gain g = ‖Δ_probe‖/‖Δ_analytic‖
+  gated into [0.5, 2], L_factual anchor, L_scene complement-subspace stability); H-COTRAIN
+  pre-registered on the λ_plan curriculum milestones with both outcomes bound; the
+  staged-training evidence (Drive-JEPA 2601.22032, V-JEPA 2 2506.09985, DINO-WM 2411.04983,
+  AD-L-JEPA 2501.04969, V-JEPA 2.1 2603.14482 — all PUBLISHED). **New §7.12b** — the
+  v1arch/v1.6/v1.7 line: v1arch as the attributable data-axis arm with the programme's first
+  complete four-family block on the leak-free official OOD-val split (over-speed is a prior:
+  71.95 % ahead; seams 0/3 falsified; route head a constant predictor confirmed off-leak); the
+  v1.6 latents-only unicycle readout (jerk 36.17 → 1.13, distance-keeping indistinguishable from
+  GT, reliance-gated); v1.7's pre-registered refutation (outcome B) despite a −16 % ADE win; and
+  the §1.12 T1 action-echo measurement restated as the experiment that produced the tier
+  doctrine. **New §7.13** — v5f completed
+  30 k (T0 selected 0.4011 / fan oracle 0.1975 / accel MAE 8.11, four families with
+  TAC/STR honestly UNAVAILABLE); the wedge ladder (W1 refuted −16.7 %; W2 97.6 % of fan steps
+  infeasible; W2b smoother ⇒ jitter is denoise residue); **W4 unicycle emission head**
+  (a = a_max·tanh, κ = κ_max·tanh; accel MAE → 0.774, oracle 0.1991 → 0.1077, violations 0.0);
+  the three-surface fast-selector elimination (W4b feat 0.5600 / kin 0.5637 / W4c 0.6609, all
+  memorisation — retired by pre-registration) reproduced at the tactical level (E4.4: goal fan
+  beats CV at 4/6 s, selector throws it away); W7 K-sweep (roll-cost the first calibrated
+  selector, ρ 0.399, collapsing at dense K); **W3's unifying defect** (lateral sign 99.5 % at
+  gain 0.27, 3-dim action subspace) and the **stage-A predictor-only repair — all gates PASS**
+  (gain → 0.971/0.966, lon sign → 1.0, subspace preserved, factual roll improves); W7-on-repaired
+  = instrument-composition failure with ρ 0.716 [0.585, 0.770] calibration; W4r PASS (oracle
+  0.1273, winner accel 0.276) isolating the frozen selector as the last stale part; v5.8f
+  assembled T0 rows (0.4815 [0.393, 0.577] vs 0.7933 [0.641, 0.976]; +0.08 m ADE traded for 16×
+  kinematics; NOT a release row — families + T1 pending). **New §7.14** — the WM-physics proof
+  battery P1–P9 + I4 as a methods contribution: P1 decodability PASS (pred > enc), the P1
+  lead-gap resolution (class-filter fix did not dissolve it; transforms + MLP ceiling −0.334 ⇒
+  **the latent lacks a readable lead-distance variable**; aux-label lever retracted by the PI;
+  label-free LF0–LF4 program instead), P7 calibration (v5f ρ 0.49 pass; both v5.8f learned arms
+  fail), P5 instrument byte-close, and the P8 attempt-1 instrument lesson (unweighted BCE on
+  overwhelmingly-empty rasters collapses to all-empty; IoU-at-0.5 on a collapsed readout is a
+  ratio of noise; fix = auto pos-weight + soft-Dice + τ\* swept on the encoded arm). **New
+  §7.15** — Alpamayo-2-Super augmentation (INHERITED counts, flagged), the obstacle.offline join
+  (26,084 records / 137 clips, occlusion flags), and the VLM strategic-labeling design + PH0
+  three-arm prereg with its admissibility rules. §7.11(f) status-noted; §10 extended with the
+  W7-FULL/T1/release-row ladder, the v6 staged direction (S-W/S-P/S-J), LF0–LF4, and the S1–S4
+  scaling ladder; references extended. Every §7.13–§7.15 number is MEASURED with artifact
+  filename or registry section inline, tier-stamped, with corpus-grid point estimates named as
+  such where the cluster-CI rescore is still pending.
+- **v1.0 (2026-08-12): the four verdicts, their mathematics, the doctrines as method, and the v6
+  ladder.** **New §7.16** — W7-FULL, the selector-free planner: gate FAIL 3.3348 m vs 0.4505 m
+  over a 0.1273 m-oracle fan with **no shortlist** (256/256, `winner_in_shortlist_frac` 1.0) on
+  the repaired trunk with a refit head; within-window rank correlation 0.445/0.497, across-window
+  ρ 0.3185 [0.2064, 0.4086] (episode-cluster bootstrap), **argmin error-rank 132 of 256**, top-m
+  mean error flat at the fan mean (~5.32) for every m while top-m ceilings fall (0.356 at m = 32),
+  roll-cost alone 5.2898 ⇒ the deployed number comes from the kinematic term; plus the
+  **consumer-invalidation** result (frozen selector 0.7933 → 4.4159 on repaired features) and the
+  consequent decision that v5.8f ships the **frozen-trunk** assembly at 0.4815 [0.3928, 0.5771].
+  **New §7.17** — H-COTRAIN **REJECTED within the measured range** on the λ_plan dose–response
+  curve (curvature 0.213 → 0.551 enc / 0.225 → 0.704 pred; yaw 0.583 → 0.869; P1 FAIL → PASS at
+  20 k) and **SIGReg VALIDATED** (participation ratio 4.53 → 6.94 of 2048, +53 %, retention 1.532
+  vs a ≥ 0.8× gate; top-8 share 0.9903 → 0.9232), with three scope bounds stated in the section
+  rather than buried — lowest available λ is 0.5 not 0, the spectrum series ends at 20 k not the
+  pre-registered 30 k, and a **real transient** dips the predicted-latent readouts at 10 k right
+  after λ hits 1.0 before they recover and overshoot — and the **retraction** of the erosion
+  premise this paper carried at v0.9 (root-cause class: a mechanism inferred from a coincidence
+  of symptoms, never dose-tested). **New §7.18** — P8 attempt-2 **GATE PASS** (retention 0.932 at
+  k = 10; IoU 0.01869 pred / 0.02005 enc; τ\* = 0.7 chosen on the *encoded* arm; 74× lift over
+  attempt 1; pos_weight 79.7 from 1.239 % positive cells), P4 permanence (occluded recall ≥
+  visible: enc 0.2178 vs 0.1881, pred 0.1743 vs 0.1717, n 194/548) with the **diffuseness
+  control** named as required before it stands alone, and **I4a** (intact 0.4011 / shuffled
+  1.2492 / zeroed 7.6493 — the ordering, not the magnitudes, is the result). **New mathematics:**
+  §3.10 the label-free commitment as an admissibility algebra (L1–L3); §3.11 the 4-brain
+  hierarchy formally — per-layer predictors, goal-token conditioning downward, latents upward
+  through sg/EMA, and the **gradient-isolation matrix** with its autograd probe and the two
+  vacuous-pass traps; §3.12 **the winner's curse** — the Gaussian-copula model (capture fraction
+  = ρ; E[error│argmin] ≍ −ρ√(2 ln N), which our data *refutes*), lower-tail dependence λ_L as the
+  statistic that actually governs selection, and the **degenerate-minimiser** model that the data
+  supports, with its prescribed remedies (a term inaction cannot minimise; top-m aggregation;
+  monotone recalibration); §3.13 SIGReg, participation ratio / effective rank, and what
+  "retention" measures (a ratio, with named endpoints). **Doctrine promoted to method:** §5 is
+  now sectioned, with **§5.4 the eval-tier doctrine** (T0 WM-diagnostic / T1 primary / T2 not
+  provisioned, on the measured action-echo basis) and **§5.5 the four metric families** as the
+  evaluation contract — including the honest statement that **STRATEGIC is uncomputable on
+  PhysicalAI-AV** (no map, no lane graph, no route signal; the card's verbatim "we do not include
+  open maps data"; `obstacle.offline`'s 87,481 cuboids are 10 all-dynamic classes; `egomotion`
+  has no GNSS) and exactly what would close it; §5.3 gains the **algebraic** account of why
+  `overlapping_holdout_se` moves the point estimate (a multiplicity-weighted mean, bias
+  Cov(ω, e)). **§10 rewritten as future work:** the v6 staged ladder S-W → S-T → S-S → (optional)
+  S-J with each stage's pre-registered gate and the O1–O6 measures; the VLM/SAM/Alpamayo
+  vocabulary pipeline **promoted to a precursor** of v6 (PH0 → PH1 → PH2) because S-S cannot be
+  gated until STRATEGIC is computable; the 6 s single-rollout horizon; and **§10.1, the open PI
+  decisions with their costed inputs** — S-W ESTIMATED 175–290 A40-hours (ladder ≈ 220–370), the
+  6 s windowing's MEASURED ≈ 43 % window loss at untouched parity, and the E-ENC matched pair
+  (per-layer 120.74 M vs shared `--pred-dim 960` 118.11 M, 2.2 % residual gap). **New Figure 3**
+  (winner's curse), generated by a script that reads the gate JSONs at generation time and
+  refuses to draw if one is missing or if two artifacts disagree on the fan oracle — palette
+  re-validated (`#2a78d6,#eb6834,#4a3aa7`, all pairs, light: ALL CHECKS PASS). **Figure 2
+  re-rendered**: its bar-value labels were *invisible in the PNG* because
+  `paint-order="stroke"` is not honoured by the rasteriser, so every label was erased by its own
+  white halo — present in the file, absent from the render; the halo is now a separate underlay
+  element, the takeaway cell no longer overflows into the footer, and its footer (written while
+  W7-FULL was queued) now states the outcome. Corrections: the PH0 sequencing sentence in §7.15
+  (the pipeline now runs *ahead of* v6, per the PI's 2026-08-11 resequencing) and the
+  clarification that 0.4505 m is the pre-registered **gate threshold**, not a deployed arm's
+  score. A third correction is registry-vs-doc: §10.1's S-W cost basis had inherited the design
+  note's attribution of the MEASURED 59.04 h / 7.085 s-per-step row to **"v4.2"**; the registry
+  assigns it to **`flagship-v4-fromscratch` (§1.5.5)**, while `flagship-v4.2-30k` (§1.5.3) was
+  killed at ~step 5 k and has no 30 k cost. The registry wins and the paper now names the right
+  arm; the estimate is unaffected because the basis runs are the same two.
 

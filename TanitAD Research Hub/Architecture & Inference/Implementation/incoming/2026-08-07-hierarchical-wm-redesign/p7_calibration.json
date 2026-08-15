@@ -1,0 +1,26 @@
+{
+ "probe": "P7 fan uncertainty calibration (WM_PHYSICS_PROOF)",
+ "arm": "v5f-30k ORIGINAL fan (x0_fan_dump)",
+ "tier": "T0-diagnostic",
+ "gate": "PRE-REGISTERED: Spearman rho >= 0.3 with interval excluding 0",
+ "results": {
+  "selector_entropy": {
+   "spearman_rho": 0.3954,
+   "perm_p_two_sided": 0.0,
+   "n": 881
+  },
+  "endpoint_dispersion_m": {
+   "spearman_rho": 0.4915,
+   "perm_p_two_sided": 0.0,
+   "n": 881
+  }
+ },
+ "spread_stats": {
+  "entropy_mean": 2.2202165126800537,
+  "dispersion_m_mean": 0.9455398917198181,
+  "err_m_mean": 0.4012223482131958
+ },
+ "_caveat": "dump carries no episode ids -> permutation p only, NOT the episode-cluster CI; registry-grade P7 reruns on the v5.8f eval windows which persist eid",
+ "_provenance": "authoritative copy pod5:/workspace/p7_calibration.json; this file transcribed from the run's full stdout (PTY), tool banked as tools_p7_calibration.py",
+ "_evidence_class": "MEASURED (ours; artifact = pod5 JSON + this transcription)"
+}
