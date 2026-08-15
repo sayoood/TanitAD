@@ -155,15 +155,50 @@ class UnicycleEmission(nn.Module):
     at step 0 ``a = kappa = 0`` and the emitted fan is the constant-velocity
     straight rollout — a defined, feasible warm start (the CV baseline), not
     noise. Bounded activations make every emitted candidate feasible by
-    construction: ``a = A_MAX*tanh``, ``kappa = KAPPA_MAX*tanh``.
+    construction.
+
+    ⛔ **THE BOUNDING FUNCTION IS A GATED CHOICE, and ``tanh`` is the LEGACY one.**
+    ``squash="tanh"`` (the default) reproduces the W4/v5.8f emission BIT-EXACTLY —
+    every banked v5.8f number was measured under it, so the default may not move.
+    ``squash="squash"`` uses :func:`tanitad.models.kinematic._squash`, which is what
+    the same programme MEASURED to be correct and already ships in the kinematic
+    module.
+
+    Why the legacy default is a trap for any head that TRAINS here — MEASURED
+    2026-08-15 on this box, float32:
+
+    * ``d/draw tanh(raw)`` is **EXACTLY 0.0 from raw ≥ 10**, because ``tanh``
+      rounds to exactly ``1.0f`` there and ``1 - 1*1`` is exactly zero. The
+      ``kinematic._squash`` docstring cites ``tanh(51)`` for this; **the true
+      cliff is 5× closer than that example suggests**, and ``raw ≥ 10`` is an
+      ordinary pre-activation — v6's own S-W run logged two gradient-spike
+      episodes, one peaking at ``gnorm 354 076``, which is exactly what pushes a
+      pre-activation there. Past that point the head is DEAD and cannot learn back.
+    * ``_squash`` is the IDENTITY inside the range (grad exactly 1.0 at 0.5× and
+      0.9× the limit) and still carries gradient at 100× the limit (1.016e-06),
+      so it has neither the dead-head cliff nor the shrink that ruled out plain
+      softsign (which returns 0.0333 for a 0.04 curvature — a 16.7 % error on a
+      control nowhere near its bound, and the reason a decode could not reproduce
+      its own anchor).
+
+    ⇒ **New arms should pass ``squash="squash"``.** v6 does (`V6Config.emission_squash`),
+    and it costs nothing there because ``emission.`` sits in the ``planner`` group,
+    which S-W does not train — so the choice lands before the head is ever fitted.
+    The activation holds no parameters, so this changes no ``state_dict`` key or
+    shape and cannot affect a strict resume.
     """
 
     def __init__(self, feat_dim: int, k: int = 20, hidden: int = 256,
                  a_max: float = A_MAX, kappa_max: float = KAPPA_MAX,
-                 dt: float = DT):
+                 dt: float = DT, squash: str = "tanh"):
         super().__init__()
+        if squash not in ("tanh", "squash"):
+            raise ValueError(
+                f"squash must be 'tanh' (legacy, bit-exact v5.8f) or 'squash' "
+                f"(measured-correct, kinematic._squash), got {squash!r}")
         self.feat_dim, self.k, self.dt = int(feat_dim), int(k), float(dt)
         self.a_max, self.kappa_max = float(a_max), float(kappa_max)
+        self.squash = squash
         self.net = nn.Sequential(
             nn.Linear(feat_dim + 1, hidden), nn.GELU(),
             nn.Linear(hidden, k * 2))
@@ -176,8 +211,13 @@ class UnicycleEmission(nn.Module):
         b, n, _ = feat.shape
         vcol = (v0.to(feat.dtype) / SPEED_SCALE)[:, None, None].expand(b, n, 1)
         raw = self.net(torch.cat([feat, vcol], dim=-1)).reshape(b, n, self.k, 2)
-        a_ctl = self.a_max * torch.tanh(raw[..., 0])
-        kappa = self.kappa_max * torch.tanh(raw[..., 1])
+        if self.squash == "tanh":                      # legacy: bit-exact v5.8f
+            a_ctl = self.a_max * torch.tanh(raw[..., 0])
+            kappa = self.kappa_max * torch.tanh(raw[..., 1])
+        else:                                          # measured-correct
+            from tanitad.models.kinematic import _squash  # noqa: PLC0415
+            a_ctl = _squash(raw[..., 0], self.a_max)
+            kappa = _squash(raw[..., 1], self.kappa_max)
         wp, _ = unicycle_rollout(a_ctl, kappa, v0, dt=self.dt)
         return a_ctl, kappa, wp
 

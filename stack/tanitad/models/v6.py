@@ -686,6 +686,18 @@ class V6Config:
     a_max: float = 4.0             # W4 census bound — feasible by construction
     kappa_max: float = 0.2
     emission_hidden: int = 256
+    #: Bounding function for the emission's (a, kappa). ``"squash"`` is
+    #: :func:`tanitad.models.kinematic._squash` — identity inside the range, C1
+    #: rational tail, gradient alive at 100x the limit. ``"tanh"`` is the LEGACY
+    #: v5.8f/W4 form, kept only for bit-exact reproduction of banked v5.8f rows:
+    #: MEASURED 2026-08-15 float32, ``d/draw tanh(raw)`` is EXACTLY 0.0 from
+    #: ``raw >= 10`` (the kinematic docstring's ``tanh(51)`` example understates
+    #: the cliff 5x), and this run's own S-W history logged a gnorm-354,076 spike
+    #: — the regime that pushes a pre-activation there and kills the head.
+    #: Free to set here: ``emission.`` is in the ``planner`` group, which S-W does
+    #: not train, and an activation holds no parameters, so no state_dict key or
+    #: shape moves and a strict resume is unaffected.
+    emission_squash: str = "squash"
     d_plan_feat: int = 256         # z_op -> emission feature projection
 
     # ---- vocabulary --------------------------------------------------------
@@ -1108,7 +1120,8 @@ class V6Stack(nn.Module):
         self.emission = UnicycleEmission(
             feat_dim=cfg.d_plan_feat + cfg.d_goal_embed, k=cfg.plan_steps,
             hidden=cfg.emission_hidden, a_max=cfg.a_max,
-            kappa_max=cfg.kappa_max, dt=cfg.dt)
+            kappa_max=cfg.kappa_max, dt=cfg.dt,
+            squash=cfg.emission_squash)
 
         # ---- O3 aux + O6 ---------------------------------------------------
         self.masked_cells = MaskedCellPredictor(

@@ -113,6 +113,13 @@ def _squash(x: Tensor, limit: float, knee: float = SQUASH_KNEE) -> Tensor:
     evaluates to **exactly 0.0** in float32, so a control 500 m/s² against a 9.8 limit
     lands in a region where the gradient has UNDERFLOWED to zero. tanh does not remove
     the cliff, it moves it out to where nobody tests.
+    ⚠️ **RE-MEASURED 2026-08-15 — and the ``tanh(51)`` example UNDERSTATES the cliff by
+    5×.** The gradient is exactly ``0.0`` from **``raw ≥ 10``**, because ``tanh`` rounds
+    to exactly ``1.0f`` there and ``1 - 1*1`` is exactly zero; ``raw = 9`` still carries
+    ``1.19e-07``. So this is a genuine cliff at an ORDINARY pre-activation, not a far-field
+    curiosity — v6's S-W run logged a ``gnorm 354 076`` spike, which is exactly the regime
+    that pushes a pre-activation past 10 and leaves the head unable to learn back.
+    Pinned by ``tests/test_emission_squash.py::test_tanh_gradient_is_EXACTLY_zero_from_raw_10_not_51``.
     Plain softsign ``x / (1 + |x|/limit)`` keeps the gradient — but it is NOT the
     identity inside the range: MEASURED 2026-08-06, a curvature of 0.04 against the
     0.33 limit came back as 0.0357, an 11 % shrink on a control that was never near
