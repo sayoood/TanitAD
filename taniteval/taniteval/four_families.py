@@ -58,6 +58,73 @@ TARGET_SPEED_BANDS_MPS = (0.5, 1.0, 2.0)
 DT_S = 0.1               # 10 Hz waypoint cadence — the DENSE grid's spacing
 MIN_DS_MPS = 0.5         # below this SPEED a step carries no reliable heading/curvature
 MIN_DS_M = MIN_DS_MPS * DT_S    # 0.05 m at 10 Hz — kept as a name for back-compat
+
+# --------------------------------------------------------------------------- #
+# ⛔ THE COHERENCE-VERDICT LADDER — ONE DEFINITION, BECAUSE IT IS PUBLISHED     #
+# --------------------------------------------------------------------------- #
+#: Cohen's-κ bands for the manoeuvre-coherence verdict WORD. This ladder is the
+#: PUBLISHED one: it is the source of every coherence adjective the programme
+#: has quoted.
+#:
+#:   ``MODEL_REGISTRY.md:1111``  — "κ **0.6033** (SUBSTANTIAL)" (the v1arch row)
+#:   ``Paper/TANITAD_PAPER.md``  — "TACTICAL — κ 0.6033 (substantial …)"
+#:   ``V5_FLAGSHIP_DEEP_REVIEW.md:74`` — "0.253 WEAK | 0.0072 DECORATIVE"
+#:   ``stack/scripts/v5_guard.py:216-217`` — the v5 GPU-spend guard, same bands
+#:
+#: ⛔ IT MUST NOT BE RESTATED. It was restated once — ``hierarchy._gate_sensitivity``
+#: tested ``verdict_stable`` against a bare ``κ >= 0.2`` that appears in NO
+#: published ladder — and the two drifted into contradicting each other on real
+#: artifacts: ``hier_v1-lf19.json`` emitted κ 0.253 as *"SUPPORTED … cohere"*
+#: while ``V5_FLAGSHIP_DEEP_REVIEW.md:74`` published the SAME κ 0.253 as
+#: **WEAK**. A field named for a verdict must test the verdict that ships, or it
+#: is an instrument that cannot fail when the published claim is wrong.
+#: (Found 2026-08-15, `…/2026-08-15-dir-yaw-gate-reread/`; fixed 2026-08-16,
+#: `…/2026-08-16-verdict-stable-kappa/`.)
+#:
+#: Read as "the first band whose upper bound the κ falls under".
+KAPPA_VERDICT_LADDER = ((0.1, "DECORATIVE"), (0.4, "WEAK"),
+                        (float("inf"), "SUBSTANTIAL"))
+
+#: The long published gloss, kept byte-identical to what banked artifacts carry.
+_KAPPA_BAND_GLOSS = {
+    "DECORATIVE": "DECORATIVE — declared manoeuvre is ~unrelated to the driven path",
+}
+
+
+def kappa_band(k):
+    """Short band NAME for a Cohen's κ — ``DECORATIVE`` / ``WEAK`` / ``SUBSTANTIAL``.
+
+    ``None`` for a κ that is not computable (undefined kappa, NaN), so a caller
+    cannot mistake "not measurable" for "no agreement" — the same distinction
+    ``hierarchy._kappa`` makes by returning ``None`` when ``pe == 1``.
+
+    This is the comparison key for verdict STABILITY: two κ values agree iff
+    they land in the same band. Comparing raw κ against a single cut answers a
+    different question than the ladder does, which is exactly the defect this
+    module-level constant exists to prevent.
+    """
+    if k is None:
+        return None
+    try:
+        k = float(k)
+    except (TypeError, ValueError):
+        return None
+    if math.isnan(k):
+        return None
+    for hi, name in KAPPA_VERDICT_LADDER:
+        if k < hi:
+            return name
+    return KAPPA_VERDICT_LADDER[-1][1]
+
+
+def kappa_verdict(k):
+    """The PUBLISHED verdict STRING for a κ (band name, plus its gloss if any).
+
+    ``kappa_band`` is what you compare; this is what you print. Byte-identical
+    to the string this module has published since the four-family panel landed,
+    so banked artifacts stay comparable."""
+    band = kappa_band(k)
+    return None if band is None else _KAPPA_BAND_GLOSS.get(band, band)
 _EPS = 1e-8
 
 #: ⛔ THE DEFECT THIS CONSTANT EXISTS TO PREVENT (MEASURED 2026-08-03, Thor, real weights).
@@ -885,9 +952,11 @@ def tactical(win: dict, hier: dict | None = None, traj: dict | None = None) -> d
         # error a scalar ADE cannot see. Surface it as a verdict, not a bare number.
         k = mvt.get("kappa")
         if isinstance(k, (int, float)):
-            out["maneuver_consistency_verdict"] = (
-                "DECORATIVE — declared manoeuvre is ~unrelated to the driven path" if k < 0.1
-                else "WEAK" if k < 0.4 else "SUBSTANTIAL")
+            # ⛔ via KAPPA_VERDICT_LADDER — never a restated 0.1/0.4 here. The
+            # band NAME travels alongside so a consumer (and `hierarchy`'s gate
+            # sweep) can compare verdicts without re-parsing the gloss.
+            out["maneuver_consistency_verdict"] = kappa_verdict(k)
+            out["maneuver_consistency_band"] = kappa_band(k)
         return out
     if traj is not None:
         return tactical_from_trajectory(

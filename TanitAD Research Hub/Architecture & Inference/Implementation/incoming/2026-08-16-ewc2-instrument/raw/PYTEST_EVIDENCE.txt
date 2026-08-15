@@ -1,0 +1,17 @@
+# E-WC2 instrument — test evidence, MEASURED 2026-08-16 on the Windows dev box
+# venv: C:/Users/Admin/venvs/tanitad  ·  cmd: cd stack && PYTHONUTF8=1 PYTHONIOENCODING=utf-8 python -m pytest -q
+
+## FULL SUITE
+1 failed, 2918 passed, 17 skipped, 2 xfailed, 10 warnings in 329.60s (0:05:29)
+
+## THE ONE FAILURE IS A CONCURRENT-EDIT RACE IN ANOTHER AGENT'S UNSTAGED FILE, NOT THIS WORK
+tests/test_p8.py::test_pos_weight_default_is_auto asserts on inspect.getsource(build_args).
+stack/scripts/train_p8_occupancy.py is ' M' (unstaged, +408/-57) and its mtime was 2026-08-16 01:56:21 local
+= the instant the suite was running: the module compiled from version A, the file was rewritten to
+version B mid-run, so getsource read version B at version A's line numbers. It passes in isolation:
+  tests/test_p8.py alone            -> 30 passed, 1 skipped
+  e_wc2 + probe_latent + p8 together -> 119 passed, 1 skipped
+This work touches neither train_p8_occupancy.py nor test_p8.py.
+
+## THE E-WC2 FILE ALONE
+tests/test_e_wc2_sigma_star.py -> 62 passed

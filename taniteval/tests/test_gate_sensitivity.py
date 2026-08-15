@@ -14,8 +14,8 @@ verdict.
 """
 import numpy as np
 
-from taniteval.hierarchy import (DIR_YAW_RAD, GATE_SWEEP, R_LEFT, R_RIGHT,
-                                 R_STRAIGHT, _gate_sensitivity)
+from taniteval.hierarchy import (DIR_YAW_RAD, GATE_SWEEP, KAPPA_VERDICT_LADDER,
+                                 R_LEFT, R_RIGHT, R_STRAIGHT, _gate_sensitivity)
 
 
 def _cls(v, g):
@@ -57,13 +57,20 @@ def test_verdict_instability_is_reported():
 
 def test_stable_agreement_reports_stable():
     """The negative control: a declaration that genuinely matches the driven path at
-    every scale must NOT be flagged unstable, or the flag means nothing."""
+    every scale must NOT be flagged unstable, or the flag means nothing.
+
+    ⚠️ Asserts the PUBLISHED band, not a bare number. This test used to read
+    ``min(kappa_range) >= 0.2`` — a threshold in no published ladder, and the same
+    private cut that made ``verdict_stable`` untrustworthy (see
+    ``test_kappa_ladder_single_source.py``). Every swept gate must land in the
+    SAME band, and here that band is the top one."""
     rng = np.random.default_rng(2)
     traj = rng.normal(0.0, 0.4, 600)           # big, unambiguous turns
     out = _gate_sensitivity(traj.tolist(), traj.tolist(),
                             _cls(traj, DIR_YAW_RAD).tolist())
     assert out["verdict_stable"] is True
-    assert min(out["kappa_range"]) >= 0.2, out["kappa_range"]
+    assert out["verdicts_across_sweep"] == ["SUBSTANTIAL"], out["kappa_range"]
+    assert min(out["kappa_range"]) >= KAPPA_VERDICT_LADDER[1][0], out["kappa_range"]
 
 
 def test_every_swept_gate_is_present_and_ordered():

@@ -100,6 +100,11 @@ from tanitad.refs.refb import MANEUVER_CLASSES, ROUTE_CLASSES  # noqa: E402
 
 from taniteval import ci as _ci  # noqa: E402
 from taniteval import driving as _drv  # noqa: E402
+# ⛔ The coherence-verdict ladder is IMPORTED, never restated — see
+# four_families.KAPPA_VERDICT_LADDER for the published sources and for the
+# defect (a bare `κ >= 0.2` here) that this import closes.
+from taniteval.four_families import (KAPPA_VERDICT_LADDER,  # noqa: E402
+                                     kappa_band, kappa_verdict)
 
 SPEED_SCALE = 10.0
 DT = 0.1                              # 10 Hz
@@ -232,6 +237,13 @@ def _gate_sensitivity(traj_net, gt_net, man_dir):
     flips inside the swept range there is NO verdict, and quoting the 0.15 value
     would be quoting a threshold as if it were a measurement.
 
+    ⛔ AND IT MUST TEST THE VERDICT THAT SHIPS. ``verdict_stable`` is evaluated
+    on :data:`~taniteval.four_families.KAPPA_VERDICT_LADDER` — the ladder that
+    produces ``maneuver_consistency_verdict`` and the adjective quoted in
+    ``MODEL_REGISTRY.md`` / the paper. It previously tested a private
+    ``kappa >= 0.2``, a boundary in no published ladder, which made it an
+    instrument that could not fail when the published claim was wrong.
+
     ⚠️ Free to compute — it reads the RAW net yaw banked alongside the classes,
     so it never costs a model re-run. That is the entire reason the raw value is
     banked.
@@ -251,15 +263,31 @@ def _gate_sensitivity(traj_net, gt_net, man_dir):
         pe = sum((x == c).mean() * (y == c).mean() for c in labs)
         return None if abs(1.0 - pe) < 1e-9 else round((po - pe) / (1.0 - pe), 4)
 
-    per_gate = {f"{g:.2f}": {
-        "maneuver_vs_trajectory_kappa": _k(md, _cls(tn, g)),
-        "trajectory_vs_gt_kappa": _k(_cls(tn, g), _cls(gn, g)),
-        "frac_gt_turning": round(float((_np.abs(gn) > g).mean()), 4),
-    } for g in GATE_SWEEP}
+    def _row(g):
+        k = _k(md, _cls(tn, g))
+        return {
+            "maneuver_vs_trajectory_kappa": k,
+            # the PUBLISHED word at this gate, so the flip is visible in the
+            # artifact instead of having to be recomputed by a reader
+            "maneuver_consistency_band": kappa_band(k),
+            "maneuver_consistency_verdict": kappa_verdict(k),
+            "trajectory_vs_gt_kappa": _k(_cls(tn, g), _cls(gn, g)),
+            "frac_gt_turning": round(float((_np.abs(gn) > g).mean()), 4),
+        }
+    per_gate = {f"{g:.2f}": _row(g) for g in GATE_SWEEP}
 
     ks = [v["maneuver_vs_trajectory_kappa"] for v in per_gate.values()
           if v["maneuver_vs_trajectory_kappa"] is not None]
-    verdicts = {bool(k >= 0.2) for k in ks}
+    # ⛔ STABILITY IS TESTED ON THE PUBLISHED LADDER, NOT ON A PRIVATE CUT.
+    # Until 2026-08-16 this line read `{bool(k >= 0.2) for k in ks}` — a
+    # threshold that appears in no published ladder — so `verdict_stable` could
+    # report "stable" while the word the programme actually prints changed
+    # inside the sweep. MEASURED on the one swept panel
+    # (`hier_v1arch_gateswept.json.xz`, 880 windows / 40 episodes): κ runs
+    # 0.5787 -> 0.2038 across the sweep, which is SUBSTANTIAL at 0.15/0.10/
+    # 0.06/0.04 and WEAK at 0.02/0.01 -> the published verdict DOES flip, while
+    # the old predicate said `verdict_stable = true` because every κ cleared 0.2.
+    verdicts = {kappa_band(k) for k in ks}
     return {
         "published_gate_rad": DIR_YAW_RAD,
         "gates": list(GATE_SWEEP),
@@ -275,11 +303,21 @@ def _gate_sensitivity(traj_net, gt_net, man_dir):
         },
         "kappa_range": [min(ks), max(ks)] if ks else None,
         "verdict_stable": len(verdicts) == 1,
-        "_verdict_note": ("verdict = kappa >= 0.2 (the coherence threshold this "
-                          "panel uses). verdict_stable False means the coherence "
-                          "call FLIPS inside the swept gate range -> there is no "
-                          "verdict, and the published-gate value must not be "
-                          "quoted alone."),
+        "verdicts_across_sweep": sorted(v for v in verdicts if v is not None),
+        "verdict_ladder": [[hi, name] for hi, name in KAPPA_VERDICT_LADDER],
+        "_verdict_note": ("verdict = the PUBLISHED coherence ladder "
+                          "(four_families.KAPPA_VERDICT_LADDER: <0.1 "
+                          "DECORATIVE, <0.4 WEAK, >=0.4 SUBSTANTIAL) — the same "
+                          "ladder that produces `maneuver_consistency_verdict` "
+                          "and the adjective in MODEL_REGISTRY.md / the paper. "
+                          "verdict_stable False means the coherence call FLIPS "
+                          "inside the swept gate range -> there is no verdict, "
+                          "and the published-gate value must not be quoted "
+                          "alone. ⚠️ BEFORE 2026-08-16 this field tested a bare "
+                          "`kappa >= 0.2`, which is NOT a published boundary; a "
+                          "pre-2026-08-16 `verdict_stable` is therefore not a "
+                          "statement about the published verdict — recompute it "
+                          "from `per_gate` before quoting."),
         "_provenance": ("R-2026-08-06-yawgate. Computed from the RAW net yaw "
                         "banked per window, so it costs no GPU."),
         "n_windows": n,
@@ -1137,7 +1175,15 @@ def _thesis(o):
     int_beneficial = bool(itn["load_bearing"] and not itn["harmful_if_engaged"])
     n_help = sum((nav_beneficial, ctx_beneficial, int_beneficial))
     mt = con["maneuver_vs_trajectory"]
-    coherent = bool(mt["kappa"] is not None and mt["kappa"] >= 0.2)
+    # ⛔ SAME LADDER AS THE PUBLISHED WORD. This line also read a bare
+    # `kappa >= 0.2` until 2026-08-16, and it had already produced a CONTRADICTION
+    # on a real artifact: `hier_v1-lf19.json` emits κ 0.253 as
+    # "SUPPORTED — … cohere" while `V5_FLAGSHIP_DEEP_REVIEW.md:74` publishes the
+    # SAME κ 0.253 as **WEAK**. On the ladder 0.253 is WEAK, so routing this
+    # through `kappa_band` makes the emitted field AGREE with the published doc
+    # rather than contradict it. `SUPPORTED` == the top band only.
+    mt_band = kappa_band(mt["kappa"])
+    coherent = bool(mt_band == KAPPA_VERDICT_LADDER[-1][1])
     goal_d = ctx["goal_latent_cos"]["delta_real_vs_mean"]["mean"]
     return {
         "claim": ("operative->tactical->strategic hierarchy with cross-layer "
@@ -1182,10 +1228,15 @@ def _thesis(o):
         },
         "B_layers_mutually_consistent": {
             "maneuver_vs_trajectory_kappa": mt["kappa"],
+            # the published band NAME travels with the sentence, so this block
+            # can never again print a word that disagrees with the registry's
+            # adjective for the very same kappa
+            "maneuver_vs_trajectory_kappa_band": mt_band,
             "verdict": (("SUPPORTED" if coherent else "WEAK")
                         + " — same-timescale tactical maneuver & operative "
                         + ("trajectory cohere" if coherent
-                           else "trajectory do not clearly cohere")),
+                           else "trajectory do not clearly cohere")
+                        + f" (kappa band {mt_band} on the published ladder)"),
         },
         "C_grounding_dominant_H18": {
             "grounded_ade_2s": h18["grounded_op_rollout_ade_2s"],
