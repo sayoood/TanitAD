@@ -1,6 +1,6 @@
 {
  "PASS": false,
- "_estimator_note": "plain corpus-grid means over the eval-default window grid; the DECISION-grade interval for any registry claim is the episode-cluster bootstrap (taniteval/ci.py) \u2014 run it before publishing",
+ "_estimator_note": "plain corpus-grid means over the eval-default window grid; the DECISION-grade interval for any registry claim is the episode-cluster bootstrap (taniteval/ci.py) — run it before publishing",
  "_evidence_class": "MEASURED (ours; artifact = this JSON)",
  "base_ckpt": "/workspace/experiments/flagship-v5f-w120-30k/ckpt_30k_final.pt",
  "base_step": 29999,
@@ -111,7 +111,7 @@
     "recall_visible_pred": 0.00014191701264529348
    },
    "available": true,
-   "metric": "cell recall vs subset raster (IoU vs a subset is confounded \u2014 the decoder legitimately predicts the complement subset's cells)"
+   "metric": "cell recall vs subset raster (IoU vs a subset is confounded — the decoder legitimately predicts the complement subset's cells)"
   },
   "wallclock_s": 233.7
  },
@@ -124,12 +124,71 @@
   "path": "/workspace/data/p8_join/combined140.jsonl"
  },
  "steps": 3000,
- "tier": "T0-diagnostic (representation probe \u2014 NEVER a driving-performance number; one row of the WM-physics battery, not a standalone driving eval)",
- "training_target": "BCE on decode(z_t) vs GT raster at t \u2014 ENCODED latents only; predicted path eval-only by design",
+ "tier": "T0-diagnostic (representation probe — NEVER a driving-performance number; one row of the WM-physics battery, not a standalone driving eval)",
+ "training_target": "BCE on decode(z_t) vs GT raster at t — ENCODED latents only; predicted path eval-only by design",
  "trunk_frozen_proof": {
   "identical": true,
   "md5_after": "49bb5b81d4b8b59c8a5193c5b26fb60f",
   "md5_before": "49bb5b81d4b8b59c8a5193c5b26fb60f"
  },
- "wall_s": 21099.5
+ "wall_s": 21099.5,
+ "_p4_predicate_identity_2026_08_16": {
+  "stamp": "P4_OCCLUDED_IS_THE_FOV_MASK_COMPLEMENT",
+  "_what": "THE `visible_occluded_split` IN THIS FILE IS SCORED ON ALL CELLS, AND IT MUST STAY THAT WAY. Its `occluded` arm is the complement of the camera field-of-view mask that every OTHER bev_raster consumer was twinned against on 2026-08-16 — the join's `occ` flag (build_obstacle_join.visibility_occ) and bev_raster.fov_mask are THE SAME PREDICATE. Adding an `_infov` twin to this split would not correct it; it would EMPTY it.",
+  "_evidence_class": "MEASURED (ours) — pure geometry, no re-run",
+  "identity": {
+   "cells_disagreeing": 0,
+   "of_cells": 7680,
+   "half_angles_tested_deg": [
+    30,
+    60,
+    90,
+    117,
+    120,
+    150,
+    179
+   ],
+   "defaults_bit_identical": true,
+   "default_half_angle_hex": "0x1.0c152382d7365p+0",
+   "granularity": "occ grades the AGENT CENTRE; fov_mask grades the CELL CENTRE — the only difference"
+  },
+  "what_a_twin_would_do": {
+   "point_agent_cells_kept_frac": 0.0,
+   "automobile_4p5x2p0_cells_kept_frac": 0.1164,
+   "automobile_agents_emptied_frac": 0.5836,
+   "heavy_truck_12x2p6_cells_kept_frac": 0.2666,
+   "_read": "the survivors are footprint slivers straddling the +-hfov/2 ray — a population ordered by VEHICLE LENGTH, not by visibility. cell_recall returns NaN on an emptied subset and _mean_n drops it, so the arm would lose its n silently."
+  },
+  "the_real_weakness_of_this_split": {
+   "issue": "the occluded arm is scored ENTIRELY inside the out-of-field wedge (590 cells, 7.68 % of the grid, all at x < 9.2376 m) while the visible arm ranges over the other 92 %. The two arms differ in POSITION as well as in visibility, so a decoder with a near-shoulder firing prior earns the gap while carrying no agent.",
+   "remedy": "--p4-region-control (train_p8_occupancy.py), which adds visible_near / visible_far at the same range boundary and reports occluded_over_visible_near. ~1.0 => REGIONAL (not permanence); > 1.0 => survives it. Pre-registered 2026-08-16 with both outcomes committed. Costs no forward pass.",
+   "status": "NOT RUN — needs p8_head.pt + the join file on a pod."
+  },
+  "k_fragility_of_the_PUBLISHED_sentence": {
+   "_what": "the registry quotes k=10 for both arms. Re-read of THIS artifact across all four banked k:",
+   "enc_occluded_gt_visible": "at k = 5, 10, 15, 20 (all four)",
+   "pred_occluded_gt_visible": "at k = 10 ONLY; reverses at 5, 15, 20",
+   "enc_occluded_recall_by_k": {
+    "5": 0.19914,
+    "10": 0.21778,
+    "15": 0.20174,
+    "20": 0.2001
+   },
+   "_read": "k=10 is the PRE-REGISTERED gate k, so the choice is principled, not selected after the fact. But the PREDICTED half of the published sentence does not replicate at the other three k, and the occluded recall does not decay with k — which is what a memory claim predicts and a fixed regional prior does not."
+  },
+  "hfov_used_by_the_join_vs_the_encoder": {
+   "join_flagged_at_deg": 120.0,
+   "encoder_actually_saw_deg": 117.0,
+   "source_for_117": "_geometry_recovered_2026_08_16 in p8_gate_attempt2.json (176x624 centred sub-frame of from_hfov(120, 256, 640, cyl))",
+   "cells_disagreeing": 36,
+   "frac_of_grid": 0.004687,
+   "⚠️": "the CELL count is the wrong denominator for the join, which flags AGENT CENTRES. The join-side n is the number of agent rows with |azimuth| in [58.5, 60.0] deg and is NOT derivable from the grid — it needs the pod-side join file.",
+   "direction": "those agents are labelled VISIBLE though the encoder never saw them, i.e. occluded-like rows in the visible bucket. That can only RAISE recall_visible and SHRINK the published gap => the banked number is CONSERVATIVE, not inflated."
+  },
+  "artifacts": [
+   "TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-08-16-p4-fov-predicate/P4_FOV_PREDICATE.md",
+   "TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-08-16-p4-fov-predicate/raw/p4_predicate_identity.json",
+   "stack/tests/test_p4_fov_predicate.py"
+  ]
+ }
 }

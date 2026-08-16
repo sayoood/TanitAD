@@ -435,8 +435,42 @@ DRY_OFF_REASON = ("CPU DRY LADDER — no corpus, no battery, synthetic tensors. 
                   "end-to-end execution of the real gate machinery.")
 
 
+def assert_no_tilde(cfg: ChainConfig) -> dict:
+    """⛔ A `~` in any path makes the emitted launch line silently WRONG.
+
+    MEASURED 2026-08-16 while generating the Thor commands: every path in a
+    launch line is `shlex.quote`d (correctly — `--gate-off-reason 'PI directive:
+    …'` is exactly why), and quoting SUPPRESSES tilde expansion. `mkdir -p
+    '~/experiments/v6F-ST-10k'` creates a DIRECTORY LITERALLY NAMED `~`, the
+    trainer writes into it, and `--init-from '~/experiments/v6F-SW-30k/ckpt.pt'`
+    then does not exist — a launch that fails in a way that looks like a missing
+    checkpoint.
+
+    ⛔ And the chain must NOT expand it: `~` on the dev box that generates the
+    command is not `~` on the pod that runs it. Refuse and make the operator
+    paste what `echo $HOME` prints ON THE POD.
+    """
+    bad = {name: v for name, v in
+           (("--root", cfg.root), ("--workdir", cfg.workdir),
+            ("--train-cache", cfg.train_cache), ("--val-cache", cfg.val_cache))
+           if "~" in str(v)}
+    if bad:
+        raise ChainRefusal(
+            f"[chain] ⛔ these paths contain '~': {bad}.\n"
+            f"  Every path in an emitted launch line is shell-quoted (which it "
+            f"must be — `--gate-off-reason 'PI directive: …'` is why), and "
+            f"quoting SUPPRESSES tilde expansion: `mkdir -p '~/experiments/…'` "
+            f"creates a directory literally named `~`, and the next stage's "
+            f"--init-from then points at a file that does not exist.\n"
+            f"  ⚠️ The chain will not expand it for you: `~` on the box that "
+            f"GENERATES the command is not `~` on the pod that RUNS it. Paste "
+            f"what `echo $HOME` prints ON THE POD (e.g. /root/experiments).")
+    return {"ok": True}
+
+
 def build_plan(cfg: ChainConfig) -> tuple[ChainStep, ...]:
     """Resolve the ladder. Pure — no filesystem, no torch."""
+    assert_no_tilde(cfg)
     for arm in cfg.st_arms:
         if arm not in ("goal", "mlp"):
             raise ChainRefusal(
@@ -709,7 +743,86 @@ def assert_geometry_carry(step, plan) -> dict:
 
 
 # ============================================================================
-# refusal 4 — the out directory must not already belong to something else
+# refusal 4 — S-S INVALIDATES S-T's certificate, and the re-measurement is
+# REQUIRED, not reported
+# ============================================================================
+
+#: The two probes `STAGE_GATE_SPEC["S-S"]["required"]` adds for exactly one
+#: reason: S-S trains `layer_str`, whose output flows
+#: `goal_head_str -> e_g_str -> goal_head_tac(cond=e_g_str) -> e_g_tac`, and
+#: `e_g_tac` is the SELECTOR'S ONLY INPUT. The selector is FROZEN in S-S — but
+#: its input distribution MOVES. S-T certified `sel_gap` and the TACTICAL family
+#: against the S-T-era `e_g_tac`; that certificate does not survive S-S.
+S_S_REVALIDATIONS: tuple[str, ...] = ("sel_gap_revalidated",
+                                      "TACTICAL_revalidated")
+
+
+def assert_revalidations_present(step, plan, *, allow_inconclusive=False,
+                                 off_reason: str = "") -> dict:
+    """⛔ Nothing may consume S-S's checkpoint on a gate that skipped the
+    re-measurement.
+
+    The generic gate rule already refuses an INCONCLUSIVE verdict, and a gate
+    missing these probes IS inconclusive — but a chain that only says
+    "INCONCLUSIVE" sends the operator to look for any missing probe. This names
+    the two and the seam, so the fix is obvious and the override is a conscious
+    act rather than a shrug at an unexplained key.
+
+    ⚠️ The waiver is the SAME one the design commits to and no wider: omitting
+    the re-measurement is overridable by `--allow-inconclusive-gate` WITH a
+    recorded reason. Running it and REGRESSING is a FAIL, and a FAIL has no
+    override anywhere in this ladder — it is the trigger for the S-S' planner
+    refit.
+    """
+    if step.prev_gate_key is None:
+        return {"applies": False}
+    prev = step_by_key(plan, step.prev_gate_key)
+    if prev.stage != "S-S":
+        return {"applies": False, "reason": f"{prev.key} is not S-S"}
+    p = Path(prev.gate)
+    if not p.exists():
+        return {"applies": True, "ok": None,
+                "_read": "S-S has no gate yet; the generic precondition check "
+                         "owns that refusal."}
+    try:
+        probes = (json.loads(p.read_text()).get("probes") or {})
+    except Exception as e:
+        return {"applies": True, "ok": None,
+                "error": f"{type(e).__name__}: {e}"}
+    absent = [k for k in S_S_REVALIDATIONS
+              if probes.get(k, {}).get("pass") is None]
+    if not absent:
+        return {"applies": True, "ok": True,
+                "revalidated": list(S_S_REVALIDATIONS)}
+    if allow_inconclusive and off_reason.strip():
+        return {"applies": True, "ok": True, "override": "allow-inconclusive-gate",
+                "off_reason": off_reason, "not_revalidated": absent,
+                "_read": "⚠️ RECORDED WAIVER: S-J is launching on a selector "
+                         "certificate that S-S invalidated and nobody "
+                         "re-earned. Any sel_gap / TACTICAL number carried "
+                         "forward from S-T is stale."}
+    raise ChainRefusal(
+        f"[chain] ⛔ {step.key} would consume S-S's checkpoint, but S-S's gate "
+        f"never re-measured {absent}.\n"
+        f"  S-S trains `layer_str`, and its output flows goal_head_str -> "
+        f"e_g_str -> goal_head_tac(cond=e_g_str) -> e_g_tac, which is the "
+        f"SELECTOR'S ONLY INPUT. The selector and goal_head_tac are FROZEN in "
+        f"S-S — but their INPUT DISTRIBUTION MOVES. S-T certified sel_gap and "
+        f"the TACTICAL family against the S-T-era e_g_tac, and that "
+        f"certificate does not survive S-S. This is registry §1.14's "
+        f"consumer-invalidation one level up: you cannot repair a trunk and "
+        f"keep its planner.\n"
+        f"  ⚠️ They are `required`, not `reported`, precisely so that omitting "
+        f"them reads INCONCLUSIVE and never PASS — a reported-only probe is "
+        f"what a silent carry-forward looks like.\n"
+        f"  ⇒ re-run the two probes under the POST-S-S g_tac (paired "
+        f"episode-cluster bootstrap, same windows) and re-gate. A measured "
+        f"REGRESSION is a FAIL, and a FAIL here is the trigger for the S-S' "
+        f"planner-refit micro-stage — not a carry-forward.")
+
+
+# ============================================================================
+# refusal 5 — the out directory must not already belong to something else
 # ============================================================================
 
 def out_dir_state(step) -> dict:
@@ -808,6 +921,9 @@ def assert_may_launch(step, plan, cfg: "ChainConfig | None" = None, *,
     report["arm_pair"] = assert_arm_pair(
         step, plan, unpaired_arm_reason=unpaired_arm_reason)
     report["geometry"] = assert_geometry_carry(step, plan)
+    report["revalidations"] = assert_revalidations_present(
+        step, plan, allow_inconclusive=allow_inconclusive,
+        off_reason=off_reason)
 
     # ⛔ THE CERTIFICATE BEFORE THE WEIGHTS. When the stage below never ran,
     # both its gate and its checkpoint are missing — and "the stage below did

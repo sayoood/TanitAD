@@ -317,14 +317,14 @@
         "ci_excludes_threshold": true
       }
     },
-    "paired_verdict": {
+    "paired_block": {
       "_what": "planner closed-loop MINUS head-baseline closed-loop on GT-VERIFIED aligned windows \u2014 the first PAIRED G4 test",
       "n_windows": 221,
       "n_episodes": 20,
       "alignment_check": "GT waypoints equal to atol=1e-5 window-for-window",
       "planner_mean_full_set": 0.9799,
       "head_mean_full_set": 1.7174,
-      "banned_paired": {
+      "banned_paired_LEGACY": {
         "mean": -0.6873,
         "ci95": 0.2191,
         "separated": true,
@@ -345,10 +345,23 @@
         "estimator": "paired_episode_cluster_bootstrap"
       },
       "G4_pass_paired_corrected": true,
-      "G4_pass_paired_banned": true
+      "G4_pass_paired_LEGACY": true
+    },
+    "legacy_weighting_defect": {
+      "n_episodes": 20,
+      "n_zero_weight_episodes": 2,
+      "zero_weight_episodes": [
+        16,
+        18
+      ],
+      "zero_weight_frac": 0.1,
+      "max_episode_weight": 0.1,
+      "uniform_episode_weight": 0.05,
+      "weight_sum": 1.0
     }
   },
-  "VERDICT": {
+  "FLIP_CHECK_LEGACY": {
+    "_what": "does the verdict change when the BANNED estimator is replaced by the decision-grade one? This is the whole question.",
     "G4_flips": false,
     "G4_paired_flips": false,
     "G1_flips": false,

@@ -3722,3 +3722,62 @@ read.** Our banked `.pt` files are zips; a member-level range read is often thre
 cheaper than the pull, and it leaves a training machine untouched. This is the *cheap-input* half of
 C69's own lesson — I re-priced the expensive input twice and never asked how the cheap one was
 stored.
+
+---
+
+## 2026-08-16 — G1/G4 were decided by a statistic that NEVER LOOKED AT 7 OF THE 40 VAL EPISODES
+
+*(Next free number re-grepped immediately before appending — C70/C71 collided earlier today.)*
+
+`taniteval/taniteval/planner_p2.py` computed `g1_delta` with `_jack_paired` — the banned
+`overlapping_holdout_se` family — **and that decided `G1_pass`.** CLAUDE.md's own measurement says
+that estimator distorts paired deltas by up to **×−4.15 including a SIGN FLIP**, so the gate could
+have carried the wrong sign for 21 days.
+
+✅ **IT DID NOT. NEITHER VERDICT FLIPS**, and that is MEASURED on banked per-window data, CPU-only:
+
+| gate | banned estimator | decision-grade bootstrap | flips? |
+|---|---|---|---|
+| **G1** head − planner ADE@2 s | +2.2572 ± 0.3292 → PASS | PASS (3/4 arms exact) | **no** |
+| **G4** planner closed-loop | 1.0375 < 1.6852 → PASS | **0.9799 [0.7456, 1.2312] < 1.7318** → PASS | **no** |
+| **G4 paired** *(new — first ever computed)* | −0.6873 ± 0.2191 | **−0.7375 [−0.9362, −0.5295]**, p(δ>0)=0.0000 | **no** |
+
+**The comparison is against what actually ran:** recomputing the *banned* estimator from the banked
+windows reproduces the published numbers **bit-exactly at 4 dp** (3.1501±0.3472 / 0.4522±0.0312 /
+0.8248±0.1035), so this is not a re-derivation that happens to agree.
+
+⇒ **NEW CLASS C73: A WEIGHTED MEAN THAT SILENTLY DROPS PART OF THE POPULATION.**
+The banned estimator is not merely a bad *variance* estimator — it is a weighted mean that assigns
+**7 of the 40 val episodes weight EXACTLY 0** (17.5 %; ids 1, 9, 22, 23, 27, 28, 34) while
+over-weighting its most-drawn episode **2.60×**. **G1 was decided by a statistic that never looked at
+seven episodes.**
+
+| # | class | recognition signal |
+|---|---|---|
+| **C73** | **Weighted mean silently drops part of the population** | an estimator built from overlapping splits/folds/bootstrap draws where **no one has printed the per-unit weight vector**. Signal: `n` is quoted but the *effective* n is not; some units appear in no split |
+
+⚠️ **This is a WRONG-POPULATION problem, not a precision problem**, which is why "the interval is a
+bit narrow" was always the wrong summary of it. ⇒ **RULE: for any weighted or resampled estimator,
+print the per-unit weight vector once and check for zeros before it decides anything.**
+
+**What the correction DOES move, even though no verdict does:** point estimates **−6.9 % to +6.8 %,
+bidirectional within a single artifact**; intervals **1.17×–2.17× too narrow**; the divergence rate —
+the *safety-shaped* number — by **+20.3 %** (8.7 % → 7.2 %); and ⭐ **the G4 THRESHOLD ITSELF was a
+legacy heldout mean, 2.69 % low (1.6852 vs 1.7318) — the old gate was HARDER than the honest one.**
+
+⚠️ **G1's re-decision is PARTIAL and is stated as such:** `plan_wp` (the open-loop CEM arm) was never
+dumped per-window (three probes). A flip would require a **−73.6 %** error on that one arm against a
+measured envelope of **−6.9 % to +5.9 %** on identical windows and split structure. ~400 s of GPU
+closes it; the script needs no changes.
+
+⭐ **AND THE GUARD HAD TO BE AN AST WALK, QUANTIFIED:** of 228 Python files whose *text* mentions the
+banned family, **176 name it only in prose declaring they do NOT use it** (e.g. `h2c_stats.py:1`
+*"never overlapping_holdout_se"*). A regex guard would have fired **≥176 false positives on its own
+documentation** — the `pgrep -f` self-match trap in a third costume, at a ratio of **176 : 0**. The
+shipped guard is an AST taint-propagation walk with six negative controls (including an inlined
+`bool(_jack_paired(...)["mean"] >= 0.2)`, a 3-variable laundering chain, an import alias, and a
+not-yet-invented `_jack_*` sibling) and three false-positive controls.
+
+**Also found, unquantified and owed:** `planner_p2.py`'s CEM is **unseeded**, so every P2 number
+carries a sampling component nobody has bounded (measured drift 0.019 % — small, but *measured* is
+not the same as *bounded*).

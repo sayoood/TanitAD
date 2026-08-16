@@ -63,6 +63,13 @@ def write_gate(step, *, stage, verdict, dry=True, **extra):
     return g
 
 
+def touch_ancestor(step):
+    """The `--init-from` FILE only. The chain checks the certificate first and
+    the weights second, so a gate test still needs the ancestor to exist."""
+    Path(step.out).mkdir(parents=True, exist_ok=True)
+    (Path(step.out) / "dry_ckpt.pt").write_bytes(b"")
+
+
 def write_admission(c, sigma):
     p = Path(C.admission_path(c))
     p.parent.mkdir(parents=True, exist_ok=True)
@@ -207,6 +214,34 @@ def test_the_out_dir_refusal_names_the_measured_tensor_counts(tmp_path):
         assert n in msg
 
 
+def test_a_tilde_in_any_path_is_REFUSED(tmp_path):
+    """⛔ MEASURED 2026-08-16 while generating the Thor commands: shell-quoting
+    (which the emitter must do) SUPPRESSES tilde expansion, so `mkdir -p
+    '~/experiments/…'` creates a directory literally named `~` and the next
+    stage's --init-from points at nothing. The chain refuses rather than
+    expanding — `~` on the box that GENERATES the line is not `~` on the pod
+    that RUNS it."""
+    for field in ("root", "workdir", "train_cache", "val_cache"):
+        c = cfg(tmp_path)
+        setattr(c, field, "~/somewhere")
+        with pytest.raises(SystemExit, match="contain '~'"):
+            C.build_plan(c)
+
+
+def test_the_emitted_launch_line_quotes_paths_and_reasons(tmp_path):
+    """Quoting is REQUIRED — `--gate-off-reason 'PI directive: …'` is a
+    documented companion flag whose value contains spaces, and retyping a
+    manifest has lost exactly that argument before."""
+    c = cfg("/workspace/experiments", dry=False)
+    plan = C.build_plan(c)
+    line = C.launch_line(C.step_by_key(plan, "S-T"), c,
+                         plan, allow_inconclusive=True,
+                         off_reason="PI directive: no battery yet")
+    assert "'PI directive: no battery yet'" in line
+    assert "PYTHONPATH=" in line and "OMP_NUM_THREADS=6" in line
+    assert "< /dev/null" in line          # or a nested ssh eats the rest
+
+
 def test_launching_into_another_stages_directory_is_REFUSED(tmp_path):
     c = cfg(tmp_path)
     plan = C.build_plan(c)
@@ -308,8 +343,10 @@ def test_a_PASS_gate_advances(tmp_path):
     c = cfg(tmp_path)
     plan = C.build_plan(c)
     write_gate(C.step_by_key(plan, "S-W"), stage="S-W", verdict="PASS")
+    touch_ancestor(C.step_by_key(plan, "S-W"))
     r = C.assert_may_launch(C.step_by_key(plan, "S-T"), plan, c, dry=True)
     assert r["precondition"]["prev_verdict"] == "PASS"
+    assert r["init_from"].endswith("dry_ckpt.pt")
 
 
 def test_an_INCONCLUSIVE_gate_REFUSES(tmp_path):
@@ -325,6 +362,7 @@ def test_an_INCONCLUSIVE_override_needs_a_RECORDED_reason(tmp_path):
     c = cfg(tmp_path)
     plan = C.build_plan(c)
     write_gate(C.step_by_key(plan, "S-W"), stage="S-W", verdict="INCONCLUSIVE")
+    touch_ancestor(C.step_by_key(plan, "S-W"))
     with pytest.raises(SystemExit):
         C.assert_may_launch(C.step_by_key(plan, "S-T"), plan, c,
                             allow_inconclusive=True, off_reason="  ", dry=True)
@@ -374,6 +412,85 @@ def test_there_is_exactly_ONE_gate_adjudicator(tmp_path):
     assert "from train_v6_staged import assert_stage_precondition" in src
     for forbidden in ('"pass") is False', "gate.get('pass')", 'gate["pass"]'):
         assert forbidden not in src, forbidden
+
+
+def test_S_J_is_REFUSED_when_S_S_never_revalidated_the_selector(tmp_path):
+    """⛔ S-S trains layer_str -> e_g_str -> e_g_tac, and e_g_tac is the frozen
+    selector's ONLY input. S-T's certificate does not survive S-S."""
+    c = cfg(tmp_path)
+    plan = C.build_plan(c)
+    ss = C.step_by_key(plan, "S-S")
+    write_gate(ss, stage="S-S", verdict="PASS",
+               probes={"STRATEGIC_family": {"pass": True},
+                       "sel_gap_revalidated": {"pass": None,
+                                               "status": "not-run"},
+                       "TACTICAL_revalidated": {"pass": None,
+                                                "status": "not-run"}})
+    touch_ancestor(ss)
+    with pytest.raises(SystemExit, match="never re-measured"):
+        C.assert_may_launch(C.step_by_key(plan, "S-J"), plan, c, dry=True)
+
+
+def test_the_revalidation_refusal_names_the_seam_and_the_committed_response(
+        tmp_path):
+    c = cfg(tmp_path)
+    plan = C.build_plan(c)
+    ss = C.step_by_key(plan, "S-S")
+    write_gate(ss, stage="S-S", verdict="PASS",
+               probes={"sel_gap_revalidated": {"pass": None},
+                       "TACTICAL_revalidated": {"pass": None}})
+    touch_ancestor(ss)
+    try:
+        C.assert_may_launch(C.step_by_key(plan, "S-J"), plan, c, dry=True)
+    except SystemExit as e:
+        msg = str(e)
+    assert "e_g_tac" in msg and "goal_head_str" in msg
+    assert "§1.14" in msg
+    assert "S-S'" in msg               # the committed response, not a shrug
+
+
+def test_the_revalidation_waiver_is_the_SAME_recorded_override(tmp_path):
+    """No wider than the design commits to: omitting the re-measurement is
+    waivable with a recorded reason; a measured REGRESSION is a FAIL and has
+    no override at all."""
+    c = cfg(tmp_path)
+    plan = C.build_plan(c)
+    ss = C.step_by_key(plan, "S-S")
+    write_gate(ss, stage="S-S", verdict="INCONCLUSIVE",
+               probes={"sel_gap_revalidated": {"pass": None},
+                       "TACTICAL_revalidated": {"pass": None}})
+    touch_ancestor(ss)
+    r = C.assert_may_launch(C.step_by_key(plan, "S-J"), plan, c,
+                            allow_inconclusive=True, off_reason="stated why",
+                            dry=True)
+    assert r["revalidations"]["override"] == "allow-inconclusive-gate"
+    assert "stale" in r["revalidations"]["_read"]
+    # ...and a FAIL is still refused with every flag set
+    write_gate(ss, stage="S-S", verdict="FAIL",
+               probes={"sel_gap_revalidated": {"pass": False},
+                       "TACTICAL_revalidated": {"pass": True}})
+    with pytest.raises(SystemExit, match="no override for a FAIL"):
+        C.assert_may_launch(C.step_by_key(plan, "S-J"), plan, c,
+                            allow_inconclusive=True, off_reason="stated why",
+                            dry=True)
+
+
+def test_a_missing_gate_probes_file_is_refused_BEFORE_the_run(tmp_path):
+    """⛔ MEASURED 2026-08-16: `--gate-probes <missing>` was only read at the
+    END of `train()`. On a 10,000-step S-T that is ~3.1 GPU-days paid for, then
+    death before `stage_gate.json` AND before `summary.json` — leaving a
+    supervisor with no done-marker. Same class as `t1_eval.py` rolling both
+    arms and dying on an import in `analyze()`."""
+    import train_v6_staged as T
+    ap = T.build_parser()
+    ap.add_argument("--i-know-this-is-the-control-arm", action="store_true",
+                    dest="control_arm_ack")
+    a = ap.parse_args(["--stage", "S-W", "--out", str(tmp_path), "--dry-run",
+                       "--gate-probes", str(tmp_path / "nope.json")])
+    assert any("--gate-probes" in p and "AFTER the training loop" in p
+               for p in T.preflight(a))
+    (tmp_path / "nope.json").write_text("{}")
+    assert not [p for p in T.preflight(a) if "--gate-probes" in p]
 
 
 # ============================================================================

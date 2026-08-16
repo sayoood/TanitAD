@@ -1,5 +1,25 @@
 """TanitEval — NO-RENDERER closed-loop evaluation (imagination-in-the-loop).
 
+⛔⛔ SUPERSEDED ARTIFACT — EVERY NUMBER THIS FILE EMITS IS `overlapping_holdout_se`.
+(marked 2026-08-16, JACK_IN_GATES.md)
+
+This is the 2026-07-19 predecessor of `taniteval/taniteval/closedloop.py`. Its
+`_jack` (:312) and its `heldout` block (:379) are 8 OVERLAPPING random 20 %
+episode holdouts — NOT a jackknife, NOT a valid SE, and the central value is a
+**mean-of-split-means**, so the POINT ESTIMATES are biased too (measured
+-6.67 % to +11.69 % across 27 arms, bidirectional).
+
+* It **decides nothing** — the AST gate guard (`taniteval/tests/
+  test_no_jack_in_gates.py`) finds no verdict-carrying key downstream of it, so
+  it is REPORTS-only and is left frozen rather than rewritten.
+* ⛔ **Do NOT promote any number from here into a decision, a registry row or a
+  report.** The live successor was migrated to `ci.episode_cluster_bootstrap`
+  on 2026-07-25, and every number this file published was re-driven on the
+  decision-grade estimator in `…/incoming/2026-07-26-closedloop-artifact-rerun/
+  closedloop_flagship-30k.CORRECTED.json`. **Quote that, not this.**
+  (Example of the size of the gap: `closed_bike ade@2s` 1.6852 here vs **1.7318**
+  corrected — and 1.6852 is the number that was serving as the G4 threshold.)
+
 WHY THIS EXISTS
 ---------------
 AlpaSim's NuRec renderer is unrunnable on this eval pod (unprivileged container,

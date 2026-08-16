@@ -1,0 +1,140 @@
+{
+ "1_inconclusive_gate_without_override": {
+  "verdict": "REFUSED",
+  "message": "[v6] \u26d4 stage S-W's gate is INCONCLUSIVE (missing=[], inconclusive=['P1', 'P3', 'P6']). INCONCLUSIVE IS NOT A PASS. Run the missing probes, or pass --allow-inconclusive-gate --gate-off-reason '<why>'."
+ },
+ "2_override_without_a_recorded_reason": {
+  "verdict": "REFUSED",
+  "message": "[v6] \u26d4 stage S-W's gate is INCONCLUSIVE (missing=[], inconclusive=['P1', 'P3', 'P6']). INCONCLUSIVE IS NOT A PASS. Run the missing probes, or pass --allow-inconclusive-gate --gate-off-reason '<why>'."
+ },
+ "3_FAIL_gate_with_every_override_flag_set": {
+  "verdict": "REFUSED",
+  "message": "[v6] \u26d4 stage S-W FAILED its gate (failed_required=['P3']) \u2014 S-T MUST NOT launch. X5: a failed stage never propagates upward. There is no override for a FAIL; fix the layer below."
+ },
+ "4_dry_gate_cannot_license_a_real_launch": {
+  "verdict": "REFUSED",
+  "message": "[v6] \u26d4 C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD\\8fc25020-a1d5-4e1b-a9e2-aeccf845c5a2\\scratchpad\\chain\\ladder\\v6F-SW-30k\\stage_gate.json was written by a --dry-run (\"_dry_run\": true) and this is a REAL launch. A dry-run's gate is a smoke artifact: no frozen-battery probe ran, and every number behind it came from synthetic tensors. Re-run stage S-W for real, or point --prev-gate at the real run's stage_gate.json."
+ },
+ "5_two_steps_sharing_one_out_dir": {
+  "verdict": "REFUSED",
+  "message": "[chain] \u26d4 steps 'S-T:goal' and 'S-T:mlp' share --out C:/Users/Admin/AppData/Local/Temp/claude/G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD/8fc25020-a1d5-4e1b-a9e2-aeccf845c5a2/scratchpad/chain/ladder/v6F-ST-goal-10k.\n  Each stage AND each arm gets its own directory. A shared --out plus `--resume auto` is how a stage silently resumes another stage's checkpoint: every stage saves the WHOLE V6Stack, so the state_dict load succeeds key-for-key and the only accidental barrier (the optimiser's param-group size) holds ONLY because the stages happen to train different tensor counts \u2014 S-W 240 / S-T 80 / S-S 54 / S-J 374, MEASURED. One STAGE_GROUPS edit and it passes silently."
+ },
+ "6_out_dir_already_holds_another_stages_ckpt": {
+  "verdict": "REFUSED",
+  "message": "[chain] \u26d4 S-S would write to C:/Users/Admin/AppData/Local/Temp/claude/G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD/8fc25020-a1d5-4e1b-a9e2-aeccf845c5a2/scratchpad/chain/ladder/v6F-SS-8k, which already holds a ckpt.pt written by stage 'S-T' at step 10000.\n  `--resume auto` would find it, and the trainer would refuse \u2014 but the fix is not to rely on that refusal. Give this step its own directory. A resume that adopted the other stage's step would replay the LR schedule to the wrong point."
+ },
+ "7_selector_arm_while_SEL1_is_REFUSED": {
+  "verdict": "REFUSED",
+  "message": "[chain] \u26d4 S-T:goal would launch with --selector 'goal', and SEL-1 is REFUSED.\n  E-WC2 fired 2026-08-16 against a threshold pre-registered in Project Steering/V6F_PLANNER_DESIGN.md \u00a75.2 with BOTH outcomes committed in advance: \u03c3/ADE \u2265 3.0 \u21d2 refuse before launch. MEASURED \u03c3/ADE = 9.9915 (7.4492, 13.5119) \u2014 the interval's LOWER bound is still 2.48x the refusal threshold, and REF-C-base agrees (9.6337).\n  \u2b50 The reading is NOT 'a 6 s goal is unpredictable': a 0-parameter constant-yaw-rate goal reaches \u03c3(2 s) = 1.1888 m, 3.96x BETTER than the ridge. THESE LATENTS ARE THE WRONG SURFACE. The estimand survives; its input does not. \u26a0\ufe0f And that floor is itself only \u03c3/ADE 2.52 \u2014 not funded either.\n  \u26a0\ufe0f SCOPE: measured on the REF-C surface (T0-DIAGNOSTIC), not on frozen S-W latents, which have never been dumped. The RATIOS transfer; the metres are REF-C's.\n  \u21d2 The committed next step is the pre-registered fallback: ANCHOR_GOAL supervision (PH0 + obstacle.offline agent slots), NOT another cost. A goal-distance selector whose goal is unsupervised is being asked to invent its own reference.\n  \u21d2 To reopen a selector arm, take the E-WC2-SW dump at the S-W\u2192S-T boundary (~10-25 GPU-min at the S-W -> S-T boundary) and write C:/Users/Admin/AppData/Local/Temp/claude/G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD/8fc25020-a1d5-4e1b-a9e2-aeccf845c5a2/scratchpad/chain/arms/v6F-SW-30k/ewc2_sw_latents.json with 'sigma_2s_m'. PRE-REGISTERED 2026-08-16, BEFORE the dump was taken: \u03c3 \u2264 0.8 m FUNDED \u00b7 \u03c3 > 1.41 m REFUSED stands. Current state: the E-WC2-SW dump has not been taken. Absence of the probe is NOT an admission."
+ },
+ "8_selector_arm_on_an_INCONCLUSIVE_sw_surface": {
+  "verdict": "REFUSED",
+  "message": "[chain] \u26d4 S-T:goal would launch with --selector 'goal', and SEL-1 is REFUSED.\n  E-WC2 fired 2026-08-16 against a threshold pre-registered in Project Steering/V6F_PLANNER_DESIGN.md \u00a75.2 with BOTH outcomes committed in advance: \u03c3/ADE \u2265 3.0 \u21d2 refuse before launch. MEASURED \u03c3/ADE = 9.9915 (7.4492, 13.5119) \u2014 the interval's LOWER bound is still 2.48x the refusal threshold, and REF-C-base agrees (9.6337).\n  \u2b50 The reading is NOT 'a 6 s goal is unpredictable': a 0-parameter constant-yaw-rate goal reaches \u03c3(2 s) = 1.1888 m, 3.96x BETTER than the ridge. THESE LATENTS ARE THE WRONG SURFACE. The estimand survives; its input does not. \u26a0\ufe0f And that floor is itself only \u03c3/ADE 2.52 \u2014 not funded either.\n  \u26a0\ufe0f SCOPE: measured on the REF-C surface (T0-DIAGNOSTIC), not on frozen S-W latents, which have never been dumped. The RATIOS transfer; the metres are REF-C's.\n  \u21d2 The committed next step is the pre-registered fallback: ANCHOR_GOAL supervision (PH0 + obstacle.offline agent slots), NOT another cost. A goal-distance selector whose goal is unsupervised is being asked to invent its own reference.\n  \u21d2 To reopen a selector arm, take the E-WC2-SW dump at the S-W\u2192S-T boundary (~10-25 GPU-min at the S-W -> S-T boundary) and write C:/Users/Admin/AppData/Local/Temp/claude/G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD/8fc25020-a1d5-4e1b-a9e2-aeccf845c5a2/scratchpad/chain/arms/v6F-SW-30k/ewc2_sw_latents.json with 'sigma_2s_m'. PRE-REGISTERED 2026-08-16, BEFORE the dump was taken: \u03c3 \u2264 0.8 m FUNDED \u00b7 \u03c3 > 1.41 m REFUSED stands. Current state: INCONCLUSIVE"
+ },
+ "9_the_pre_registered_threshold_table": {
+  "verdict": "ALLOWED",
+  "detail": {
+   "sigma=0.5": "FUNDED",
+   "sigma=0.7999": "FUNDED",
+   "sigma=0.8": "FUNDED",
+   "sigma=0.8001": "INCONCLUSIVE",
+   "sigma=1.41": "INCONCLUSIVE",
+   "sigma=1.4101": "REFUSED",
+   "sigma=4.7104": "REFUSED"
+  }
+ },
+ "10_selector_arm_on_a_FUNDED_sw_surface": {
+  "verdict": "ALLOWED",
+  "detail": {
+   "applies": true,
+   "ok": true,
+   "admission": {
+    "present": true,
+    "path": "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD\\8fc25020-a1d5-4e1b-a9e2-aeccf845c5a2\\scratchpad\\chain\\arms\\v6F-SW-30k\\ewc2_sw_latents.json",
+    "sigma_2s_m": 0.75,
+    "verdict": "FUNDED",
+    "thresholds": {
+     "funded_at_or_below_m": 0.8,
+     "refused_above_m": 1.41
+    },
+    "pre_registered": "2026-08-16, BEFORE the dump was taken",
+    "admits_a_selector_arm": true,
+    "raw": {
+     "sigma_2s_m": 0.75,
+     "_read": "\u26a0\ufe0f SYNTHETIC hypothetical FUNDED surface. Exists ONLY to keep the opt-in selector arms executable and test-pinned after E-WC2 fired REFUSED. It is NOT a measurement and no claim may cite it.",
+     "_evidence_class": "HYPOTHESIS"
+    }
+   }
+  }
+ },
+ "11_S_S_while_the_capacity_control_has_no_gate": {
+  "verdict": "REFUSED",
+  "message": "[chain] \u26d4 S-S consumes an S-T checkpoint, but these S-T arms have no stage_gate.json yet: ['S-T:mlp'].\n  \u2b50 'goal' (+267 params) and 'mlp' (+33,801, 126.6x, information-MATCHED to the goal rule's inputs) are an ARM PAIR. A 'goal' win judged without the capacity control cannot be attributed between MECHANISM and CAPACITY \u2014 that is the C6 confound, and this programme has already designed a hierarchy away on one.\n  \u26a0\ufe0f It cannot be fixed later: after S-S the S-T GPU-days are spent and the two arms can no longer be compared on the same trunk.\n  \u21d2 run the missing arm(s), or make it a RECORDED decision with --unpaired-arm-reason '<why>'."
+ },
+ "12_unpaired_arm_WITH_a_recorded_reason": {
+  "verdict": "ALLOWED",
+  "detail": {
+   "applies": true,
+   "ok": true,
+   "override": "unpaired-arm-reason",
+   "reason": "PI: the second GPU was not funded; the goal arm is EXPLORATORY until mlp runs",
+   "arms_without_a_gate": [
+    "S-T:mlp"
+   ],
+   "_read": "\u26a0\ufe0f RECORDED DECISION: this ladder advanced past S-T without the full arm pair. Any 'goal' result from it is NOT attributable between mechanism and capacity."
+  }
+ },
+ "13_S_S_without_a_declared_arm_winner": {
+  "verdict": "REFUSED",
+  "message": "[chain] \u26d4 S-S continues ONE of the two S-T arms, and no --st-winner was declared.\n  The ladder forks at S-T: 'goal' (the mechanism) and 'mlp' (the capacity control) produce two different checkpoints, and which lineage the strategic stage continues is a DECISION about what v6f IS \u2014 not a default a chain may pick. It also fixes the scorer GEOMETRY every stage above must build.\n  \u21d2 read both arms' gates, then pass --st-winner goal|mlp."
+ },
+ "14_selector_geometry_not_carried_forward": {
+  "verdict": "REFUSED",
+  "message": "[chain] \u26d4 S-S would launch with --selector 'goal' but its ancestor S-T:mlp ran with --selector 'mlp'.\n  Every stage saves the WHOLE V6Stack, so the scorer's parameters are IN the checkpoint. A stack built without it makes them UNEXPECTED keys and `load_stage_init` is fatal (MEASURED: 4 cand_score.* keys); a stack built with a DIFFERENT scorer is a mis-specified arm, not an introduction.\n  \u21d2 carry the winning arm forward: --st-winner mlp"
+ },
+ "17_S_J_on_an_S_S_gate_that_never_revalidated": {
+  "verdict": "REFUSED",
+  "message": "[chain] \u26d4 S-J would consume S-S's checkpoint, but S-S's gate never re-measured ['sel_gap_revalidated', 'TACTICAL_revalidated'].\n  S-S trains `layer_str`, and its output flows goal_head_str -> e_g_str -> goal_head_tac(cond=e_g_str) -> e_g_tac, which is the SELECTOR'S ONLY INPUT. The selector and goal_head_tac are FROZEN in S-S \u2014 but their INPUT DISTRIBUTION MOVES. S-T certified sel_gap and the TACTICAL family against the S-T-era e_g_tac, and that certificate does not survive S-S. This is registry \u00a71.14's consumer-invalidation one level up: you cannot repair a trunk and keep its planner.\n  \u26a0\ufe0f They are `required`, not `reported`, precisely so that omitting them reads INCONCLUSIVE and never PASS \u2014 a reported-only probe is what a silent carry-forward looks like.\n  \u21d2 re-run the two probes under the POST-S-S g_tac (paired episode-cluster bootstrap, same windows) and re-gate. A measured REGRESSION is a FAIL, and a FAIL here is the trigger for the S-S' planner-refit micro-stage \u2014 not a carry-forward."
+ },
+ "18_missing_gate_probes_is_now_refused_at_preflight": {
+  "verdict": "ALLOWED",
+  "detail": {
+   "preflight_refusals": [
+    "--gate-probes C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD\\8fc25020-a1d5-4e1b-a9e2-aeccf845c5a2\\scratchpad\\chain\\ladder\\_gp\\nope.json does not exist. It is not read until AFTER the training loop, so without this refusal the run would spend its entire budget and then die before writing stage_gate.json or summary.json \u2014 leaving a supervisor with no done-marker to stop on. Create the probe artifact first, or drop the flag and supply the probes on a re-gate."
+   ]
+  }
+ },
+ "15_verify_probe_cannot_self_match": {
+  "verdict": "ALLOWED",
+  "detail": {
+   "contains_pgrep_f": false,
+   "contains_ps_grep": false,
+   "searched_token_never_appears_literally": true,
+   "emits_an_opaque_marker": true,
+   "probe": "python3 - <<'PROBE'\nimport glob, os\nwant_a, want_b = 'train_v6_staged' '.py', 'C:/Users/Admin/AppData/Local/Temp/claude/G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD/8fc25020-a1d5-4e1b-a9e2-aeccf845c5a2/scratchpad/chain/ladder/v6F-ST-10k'\nhits = []\nfor c in glob.glob('/proc/[0-9]*/cmdline'):\n    try:\n        parts = open(c, 'rb').read().decode('utf-8', 'replace')\\\n                    .split('\\x00')\n    except Exception:\n        continue\n    if any(want_a in p for p in parts) and want_b in parts:\n        hits.append((os.path.basename(os.path.dirname(c)),\n                     ' '.join(p for p in parts if p)))\nprint('ZZ%dZZ' % len(hits))\nfor pid, cmd in hits:\n    print('ZZPID%sZZ %s' % (pid, cmd))\nPROBE"
+  }
+ },
+ "16_manifests_never_supervise_the_chain": {
+  "verdict": "ALLOWED",
+  "detail": {
+   "S-T": {
+    "TRAIN_CMD_names_the_chain": false,
+    "TRAIN_CMD_names_the_trainer": true,
+    "TRAIN_MATCH_is_run_scoped": true,
+    "comment_warns_about_the_chain": true
+   },
+   "S-S": {
+    "TRAIN_CMD_names_the_chain": false,
+    "TRAIN_CMD_names_the_trainer": true,
+    "TRAIN_MATCH_is_run_scoped": true,
+    "comment_warns_about_the_chain": true
+   },
+   "S-J": {
+    "TRAIN_CMD_names_the_chain": false,
+    "TRAIN_CMD_names_the_trainer": true,
+    "TRAIN_MATCH_is_run_scoped": true,
+    "comment_warns_about_the_chain": true
+   }
+  }
+ }
+}

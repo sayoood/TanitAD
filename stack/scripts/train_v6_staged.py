@@ -2308,6 +2308,23 @@ def preflight(a) -> list[str]:
             f"--selector {a.selector} for the GEOMETRY: S-S must carry the "
             f"S-T arm's scorer forward or --init-from fails on unexpected "
             f"cand_score.* keys.")
+    # ⛔ AN ANALYSIS-TIME REFUSAL AFTER THE COMPUTE IS PAID FOR. MEASURED
+    # 2026-08-16: `--gate-probes <missing file>` is only read by
+    # `_load_gate_probes` at the very END of `train()` — the whole run executes,
+    # then dies with "does not exist" before writing `stage_gate.json` AND
+    # before writing `summary.json`, which is the done-marker. On a 10,000-step
+    # S-T that is ~3.1 GPU-days paid for, no gate produced, and a supervisor
+    # left with no done-marker — the exact resurrection trap. Same class as
+    # `t1_eval.py` rolling both arms and then dying on an import in `analyze()`.
+    # ⇒ preflight the optional input at startup, so it fails in milliseconds.
+    if a.gate_probes and not Path(a.gate_probes).exists():
+        problems.append(
+            f"--gate-probes {a.gate_probes} does not exist. It is not read "
+            f"until AFTER the training loop, so without this refusal the run "
+            f"would spend its entire budget and then die before writing "
+            f"stage_gate.json or summary.json — leaving a supervisor with no "
+            f"done-marker to stop on. Create the probe artifact first, or drop "
+            f"the flag and supply the probes on a re-gate.")
     if a.allow_inconclusive_gate and not a.gate_off_reason.strip():
         problems.append("--allow-inconclusive-gate needs --gate-off-reason "
                         "(an override with no stated reason is an "

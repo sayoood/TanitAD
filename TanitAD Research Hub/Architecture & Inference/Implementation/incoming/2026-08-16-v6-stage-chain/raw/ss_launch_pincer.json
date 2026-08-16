@@ -1,0 +1,52 @@
+{
+ "st_ckpt_keys": 253,
+ "st_ckpt_has_cand_score": [
+  "cand_score.cand_bias",
+  "cand_score.goal_point.bias",
+  "cand_score.goal_point.weight",
+  "cand_score.log_tau"
+ ],
+ "c_selector_none": {
+  "verdict": "FATAL",
+  "message": "[v6] \u26d4 --init-from C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD\\8fc25020-a1d5-4e1b-a9e2-aeccf845c5a2\\scratchpad\\chain\\out\\st_goal_ckpt.pt is not a valid predecessor for stage 'S-S'.\n  missing (NOT introducible at this stage): []\n  unexpected (the ckpt has keys this stack does not): ['cand_score.cand_bias', 'cand_score.goal_point.bias', 'cand_score.goal_point.weight', 'cand_score.log_tau']\n  A stage may introduce only () \u2014 anything else missing means the two stages were built with DIFFERENT geometry, and loading anyway is how a stage ends up training on a randomly-initialised trunk while its log looks healthy."
+ },
+ "c_nonstrict_keys": {
+  "missing": [],
+  "unexpected": [
+   "cand_score.cand_bias",
+   "cand_score.goal_point.bias",
+   "cand_score.goal_point.weight",
+   "cand_score.log_tau"
+  ]
+ },
+ "a_selector_goal": {
+  "refusals": [
+   "--selector goal with --w-select 0: the scorer would be built, consume its parameters and never receive a gradient. If an inert-scorer control is what you want, say so explicitly by passing --w-select 0 AND --i-know-this-is-the-control-arm."
+  ],
+  "w_select_requested": 0.0,
+  "w_select_in_force": 0.0,
+  "control_arm_ack": false
+ },
+ "b_selector_goal_wselect1": {
+  "refusals": [],
+  "w_select_requested": 1.0,
+  "w_select_in_force": 0.0,
+  "control_arm_ack": false
+ },
+ "d_control_arm_ack": {
+  "refusals": [
+   "--selector goal with --w-select 0: the scorer would be built, consume its parameters and never receive a gradient. If an inert-scorer control is what you want, say so explicitly by passing --w-select 0 AND --i-know-this-is-the-control-arm."
+  ],
+  "w_select_requested": 0.0,
+  "w_select_in_force": 0.0,
+  "control_arm_ack": true
+ },
+ "st_goal_w1": {
+  "refusals": [],
+  "w_select_in_force": 1.0
+ },
+ "sj_goal_w1": {
+  "refusals": [],
+  "w_select_in_force": 1.0
+ }
+}

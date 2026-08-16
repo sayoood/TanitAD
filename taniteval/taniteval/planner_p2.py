@@ -22,8 +22,13 @@ WHAT IS FROZEN / REUSED (never reinvented)
     swapped: tactical head -> CEM).
   * pathspeed.{step_speed,metric_block} -> planned-speed profile for the cost +
     the honest longitudinal/lateral decomposition of the planner's error.
-  * gates.split_by_episode + bench DEPRECATED CI protocol (8 overlapping
-    random holdouts; NOT a jackknife — see taniteval/ci.py).
+  * ci.episode_cluster_bootstrap / ci.paired_episode_cluster_bootstrap — the
+    program's ONE decision-grade estimator. ⛔ MIGRATED 2026-08-16: G1_pass and
+    G4_pass were adjudicated by `_jack_paired` / `_jack_scalar`
+    (`overlapping_holdout_se`) until then. Those two functions survive for
+    REPRODUCTION ONLY and their output is quarantined under
+    `legacy_overlapping_holdout_se`; gates.split_by_episode is now used only to
+    rebuild that legacy block.
 
 THE COST  J(plan) = w_v·(v̂ − v_target)²                 [track the minted target]
                   + w_c·(accel² + jerk²) + w_s·steer_rate²  [comfort / smoothness]
@@ -68,8 +73,25 @@ from driving_diagnostic import (WP_STEPS, baseline_waypoints,  # noqa: E402
                                 gt_ego_waypoints, net_heading_change_deg)
 from tanitad.eval.gates import split_by_episode  # noqa: E402
 from tanitad.models.metric_dynamics import rollout_decode  # noqa: E402
+from taniteval import ci as _ci  # noqa: E402
 from taniteval import closedloop as cl  # noqa: E402
+from taniteval import driving as _drv  # noqa: E402
 from taniteval import pathspeed as ps  # noqa: E402
+
+# --- estimator policy — IMPORTED from driving.py, never restated ------------ #
+# ⛔ MIGRATED 2026-08-16. Until then G1_pass (:458 -> :468) and G4_pass
+# (:586 -> :595) were adjudicated by `_jack_paired` / `_jack_scalar`, i.e.
+# `overlapping_holdout_se` — the estimator CLAUDE.md bans, which BIASES THE
+# POINT ESTIMATE (mean-of-split-means, not full_set) and was measured on paired
+# deltas at up to x-4.15 INCLUDING A SIGN FLIP. `g1_delta` is exactly a paired
+# delta, so the gate could have read the wrong sign. See
+# `…/incoming/2026-08-16-jack-in-gates/JACK_IN_GATES.md` for the re-decision on
+# banked data (neither verdict flips) and for the measured per-arm corrections.
+N_BOOT = _ci.DEFAULT_N_BOOT                        # 2000
+DECISION_ESTIMATORS = _drv.DECISION_ESTIMATORS
+DEPRECATED_ESTIMATOR = _drv.DEPRECATED_ESTIMATOR   # overlapping_holdout_se
+ESTIMATOR_NOTE = _drv.ESTIMATOR_NOTE
+LEGACY_BLOCK = cl.LEGACY_BLOCK                     # legacy_overlapping_holdout_se
 
 # --- protocol constants (parity with rollout.py / closedloop.py) ------------ #
 DT = 0.1
@@ -90,6 +112,22 @@ CEM = dict(N=64, iters=3, elite=8, K=K_MAX,
 CEM_CL = dict(N=48, iters=2, elite=8, K=K_MAX,       # lighter budget for the loop
               sig_steer=0.006, sig_accel=0.5,
               min_steer=0.0008, min_accel=0.05)
+
+# --- G4 threshold: the v1 tactical head driving the SAME closed loop -------- #
+# ⛔ The historical threshold 1.6852 is itself an `overlapping_holdout_se`
+# heldout mean (`closedloop_flagship-30k.json`) — so the pre-2026-08-16 G4 gate
+# compared a biased point estimate against a biased threshold and called the
+# result a verdict. The decision-grade value is the FULL-SET mean of the same
+# banked windows: 1.7318 (`closedloop_flagship-30k.CORRECTED.json`, reproduced
+# bit-exactly from `raw_windows/clwin_flagship-30k.pt` in JACK_IN_GATES.md).
+# Both are carried: the gate uses the corrected one, the legacy one stays
+# quotable for reproduction and is never the decision.
+G4_HEAD_BASELINE_ADE2S = 1.7318
+G4_HEAD_BASELINE_ADE2S_LEGACY = 1.6852
+G4_HEAD_BASELINE_SOURCE = (
+    "closedloop_flagship-30k.CORRECTED.json closed_bike ade@2s, full_set mean "
+    "over 881 windows / 40 episodes (episode_cluster_bootstrap); the legacy "
+    "1.6852 is the same quantity under overlapping_holdout_se")
 
 # --- v_target minting (spec §3(1) / V3_GOAL_VOCABULARY_V1 label minting) ----- #
 VT_LOOK_LO = 100               # 10 s  (min lookahead for a valid free-flow read)
@@ -379,39 +417,124 @@ def collect_openloop(model, step_readout, episodes, device, w=W, cfg=CEM,
 
 
 # ======================================================================== #
-# Open-loop aggregation (8 overlapping random holdouts, DEPRECATED)         #
+# Aggregation                                                               #
+#                                                                           #
+# ⛔ MIGRATED 2026-08-16. Every DECIDING number below is the episode-cluster #
+# bootstrap over the val EPISODES (taniteval/ci.py); every arm-vs-arm delta  #
+# on shared windows is the PAIRED form. The `_jack_*` pair is retained under #
+# its true name for REPRODUCTION ONLY and its output is quarantined under    #
+# `LEGACY_BLOCK`, never read by a verdict.                                   #
+#                                                                           #
+# The bug this closes: `G1_pass` was decided on `_jack_paired`, which is a   #
+# PAIRED DELTA under `overlapping_holdout_se` — the exact statistic measured #
+# on 2026-07-25 at up to x-4.15 INCLUDING A SIGN FLIP. `G4_pass` compared a  #
+# mean-of-split-means against a threshold that was itself a mean-of-split-   #
+# means. Re-decided on banked per-window data 2026-08-16: NEITHER FLIPS      #
+# (JACK_IN_GATES.md), but the point estimates move -6.9 % to +5.9 % and the  #
+# intervals were 1.20-2.17x too narrow.                                      #
 # ======================================================================== #
 def _ade2(pred, gt):
     """[N,4,2] pred vs GT -> [N] ADE over the 4 waypoints (to 2 s)."""
     return torch.linalg.norm(pred - gt, dim=-1).mean(dim=1)
 
 
+def _eid_s(eids):
+    """Episode ids as the strings ``ci.episode_index`` clusters on."""
+    return [str(x) for x in eids]
+
+
+def _interval(vals, eids, n_boot=None, seed=0):
+    """Decision-grade single-arm interval: episode-cluster bootstrap.
+
+    The point estimate is the **full_set** mean — the bootstrap supplies the
+    interval and never moves the mean. That is the half of the correction that
+    matters most here: `_jack_scalar`'s central value was a mean-of-SPLIT-means,
+    so it was biased before any interval was drawn."""
+    return _ci.episode_cluster_bootstrap(
+        np.asarray(vals, dtype=float), _eid_s(eids),
+        n_boot=N_BOOT if n_boot is None else n_boot, seed=seed)
+
+
+def _paired(a, b, eids, n_boot=None, seed=0):
+    """Decision-grade paired delta: `reduce(a) - reduce(b)` on the SAME episodes.
+
+    ``mean`` is an ALIAS of ``delta`` (the delta IS a difference of means), kept
+    so any consumer that printed the legacy ``d['mean'] ± d['ci95']`` reads the
+    migrated block unchanged — the same aliasing `closedloop._paired` uses."""
+    d = dict(_ci.paired_episode_cluster_bootstrap(
+        np.asarray(a, dtype=float), np.asarray(b, dtype=float), _eid_s(eids),
+        n_boot=N_BOOT if n_boot is None else n_boot, seed=seed))
+    d["mean"] = d["delta"]
+    return d
+
+
+def _width_ratio(new, old):
+    """new ci95 / legacy ci95 — the narrowing, RE-MEASURED in every artifact."""
+    o = float(old.get("ci95", 0.0) or 0.0)
+    n = float(new.get("ci95", 0.0) or 0.0)
+    return round(n / o, 3) if o > 0 else None
+
+
+def _point_shift_pct(new, old):
+    """(legacy - corrected)/|corrected| in %, i.e. how wrong the legacy POINT
+    estimate was. Signed, because the bias is bidirectional (11 arms inflated,
+    16 deflated across the 27-arm blast radius) and a magnitude would hide that."""
+    c = float(new.get("mean", new.get("delta", 0.0)))
+    o = float(old.get("mean", 0.0))
+    return round(100.0 * (o - c) / max(1e-12, abs(c)), 3) if c else None
+
+
 def _jack_scalar(vals, eids, splits):
+    """**DEPRECATED — `overlapping_holdout_se`. REPRODUCTION ONLY.**
+
+    Mean-of-split-means over 8 OVERLAPPING random 20 % episode holdouts. Not a
+    jackknife, not a valid SE, and it BIASES THE POINT ESTIMATE. ⛔ Never let
+    this decide anything — `_interval` is the replacement. Output is self-
+    labelling so a consumer that copies a number also copies its estimator."""
     v = np.asarray(vals, dtype=float)
     sm = np.asarray([float(np.nanmean(v[va])) for _t, va in splits if len(va)])
     mean = float(np.mean(sm))
-    ci = float(1.96 * np.std(sm) / max(1, len(sm)) ** 0.5)
-    return {"mean": round(mean, 4), "ci95": round(ci, 4), "n": int(v.size)}
+    ci = float(_ci.overlapping_holdout_se(sm))
+    return {"mean": round(mean, 4), "ci95": round(ci, 4), "n": int(v.size),
+            "estimator": DEPRECATED_ESTIMATOR, "deprecated": True}
 
 
 def _jack_paired(a, b, eids, splits):
-    """Overlapping-holdout mean of (a-b) per window + CI-separation from 0.
+    """**DEPRECATED — `overlapping_holdout_se` on a paired delta. REPRODUCTION
+    ONLY.**
 
-    DEPRECATED estimator (not a jackknife). Prefer
-    ci.paired_episode_cluster_bootstrap — these arms share windows."""
+    ⛔ This is the single most dangerous form of the deprecated estimator: on
+    paired deltas the 2026-07-25 blast radius measured errors up to **x-4.15,
+    INCLUDING A SIGN FLIP**. It decided `G1_pass` until 2026-08-16. `_paired`
+    is the replacement."""
     d = np.asarray(a, dtype=float) - np.asarray(b, dtype=float)
     sm = np.asarray([float(np.nanmean(d[va])) for _t, va in splits if len(va)])
     mean = float(np.mean(sm))
-    ci = float(1.96 * np.std(sm) / max(1, len(sm)) ** 0.5)
+    ci = float(_ci.overlapping_holdout_se(sm))
     return {"mean": round(mean, 4), "ci95": round(ci, 4),
-            "separated": bool(abs(mean) - ci > 0)}
+            "separated": bool(abs(mean) - ci > 0),
+            "estimator": DEPRECATED_ESTIMATOR, "deprecated": True}
 
 
-def analyze_openloop(col, n_splits=8, val_frac=0.2):
+def assert_no_deprecated_estimator(res):
+    """Refuse to return a planner block whose DECIDING numbers are deprecated.
+
+    Run before ``LEGACY_BLOCK`` is attached — that block exists precisely to
+    carry the deprecated numbers and is the one documented exemption. Same
+    single policy implementation as `driving`/`closedloop`, so a third copy of
+    the rule cannot drift from the first two."""
+    return _drv.assert_no_deprecated_estimator(
+        {k: v for k, v in res.items() if k != LEGACY_BLOCK}, _path="planner_p2")
+
+
+def analyze_openloop(col, n_splits=8, val_frac=0.2, n_boot=None, seed=0):
     eids = col["eid"]
     splits = [split_by_episode(eids, val_frac, s) for s in range(n_splits)]
     ade = {k: _ade2(col[f"{k}_wp"], col["gt_wp"]).numpy()
            for k in ("plan", "open", "cv", "head")}
+    # DECIDING: full_set point estimate + episode-cluster bootstrap interval.
+    boot = {k: _interval(ade[k], eids, n_boot, seed) for k in ade}
+    # REPRODUCTION ONLY, quarantined under LEGACY_BLOCK at the bottom.
     heldout = {k: _jack_scalar(ade[k], eids, splits) for k in ade}
 
     # decoupled longitudinal / lateral of the planner path (pathspeed verbatim)
@@ -455,20 +578,24 @@ def analyze_openloop(col, n_splits=8, val_frac=0.2):
         "gt_vs_target_abs_mps": round(float((v_gt - vt).abs().mean()), 4),
     }
 
-    g1_delta = _jack_paired(ade["head"], ade["plan"], eids, splits)   # head - plan
-    return {
+    # ⛔ THE GATE. head - plan on the SAME windows -> PAIRED episode-cluster
+    # bootstrap. Until 2026-08-16 this line was `_jack_paired`, whose measured
+    # error on paired deltas reaches x-4.15 with sign flips.
+    g1_delta = _paired(ade["head"], ade["plan"], eids, n_boot, seed)
+    g1_legacy = _jack_paired(ade["head"], ade["plan"], eids, splits)
+    res = {
         "n_windows": len(eids), "n_episodes": len(set(eids)),
         "ade2s": {
-            "planner": heldout["plan"],
-            "operative_rollout_trueA": heldout["open"],
-            "constant_velocity": heldout["cv"],
-            "tactical_head": heldout["head"],
+            "planner": boot["plan"],
+            "operative_rollout_trueA": boot["open"],
+            "constant_velocity": boot["cv"],
+            "tactical_head": boot["head"],
         },
         "G1_head_minus_planner_ade2s": g1_delta,
-        "G1_pass": bool(g1_delta["mean"] > 0 and g1_delta["separated"]),
-        "planner_beats_cv": bool(heldout["plan"]["mean"] < heldout["cv"]["mean"]),
+        "G1_pass": bool(g1_delta["delta"] > 0 and g1_delta["separated"]),
+        "planner_beats_cv": bool(boot["plan"]["mean"] < boot["cv"]["mean"]),
         "planner_vs_operative_gap_m": round(
-            heldout["plan"]["mean"] - heldout["open"]["mean"], 4),
+            boot["plan"]["mean"] - boot["open"]["mean"], 4),
         "longitudinal_lateral": {
             "plan_long_rmse_2s_m": mb_plan["per_horizon"]["2s"]["long_rmse_m"],
             "plan_lat_rmse_2s_m": mb_plan["per_horizon"]["2s"]["lat_rmse_m"],
@@ -481,7 +608,54 @@ def analyze_openloop(col, n_splits=8, val_frac=0.2):
         "straight_vs_curved": strat,
         "vtarget": vt_block,
         "cost_weights": dict(W),
+        "estimator": {
+            "interval": "episode_cluster_bootstrap",
+            "delta": "paired_episode_cluster_bootstrap",
+            "n_boot": N_BOOT if n_boot is None else int(n_boot),
+            "seed": int(seed), "resampling_unit": "val episode",
+            "deprecated_and_refused": DEPRECATED_ESTIMATOR,
+            "legacy_block": LEGACY_BLOCK,
+            "estimator_note": ESTIMATOR_NOTE},
     }
+    assert_no_deprecated_estimator(res)
+    # ---- QUARANTINE: the banned estimator, under its true name ------------- #
+    #   Kept so every pre-2026-08-16 P2 number stays reproducible AND so the
+    #   correction is RE-MEASURED in every artifact instead of cited from a doc.
+    #   Never the headline; never read by G1_pass. The one guard exemption.
+    res[LEGACY_BLOCK] = {
+        "_what": "the pre-2026-08-16 open-loop numbers: mean-of-split-means "
+                 "+- 1.96*std/sqrt(8) over 8 OVERLAPPING random 20% episode "
+                 "holdouts (`overlapping_holdout_se`).",
+        "_why_kept": "reproduction ONLY. ⛔ NOT admissible for any decision — "
+                     "it biases the POINT ESTIMATE as well as the interval.",
+        "_estimator": DEPRECATED_ESTIMATOR,
+        "n_splits": n_splits, "val_frac": val_frac,
+        "ade2s": {"planner": heldout["plan"],
+                  "operative_rollout_trueA": heldout["open"],
+                  "constant_velocity": heldout["cv"],
+                  "tactical_head": heldout["head"]},
+        "G1_head_minus_planner_ade2s": g1_legacy,
+        "G1_pass_LEGACY": bool(g1_legacy["mean"] > 0 and g1_legacy["separated"]),
+        "G1_verdict_flip_vs_decision_grade_LEGACY": bool(
+            (g1_legacy["mean"] > 0 and g1_legacy["separated"])
+            != res["G1_pass"]),
+        "ci_width_ratio_new_over_legacy": {
+            "_read": ">1 = the banned interval was too narrow BY THAT FACTOR",
+            "planner": _width_ratio(boot["plan"], heldout["plan"]),
+            "operative_rollout_trueA": _width_ratio(boot["open"], heldout["open"]),
+            "constant_velocity": _width_ratio(boot["cv"], heldout["cv"]),
+            "tactical_head": _width_ratio(boot["head"], heldout["head"]),
+            "G1_delta": _width_ratio(g1_delta, g1_legacy)},
+        "point_estimate_shift_pct_legacy_vs_corrected": {
+            "_read": "(legacy - corrected)/|corrected| in %. Signed: the bias "
+                     "is BIDIRECTIONAL, so a magnitude would hide the sign.",
+            "planner": _point_shift_pct(boot["plan"], heldout["plan"]),
+            "operative_rollout_trueA": _point_shift_pct(boot["open"], heldout["open"]),
+            "constant_velocity": _point_shift_pct(boot["cv"], heldout["cv"]),
+            "tactical_head": _point_shift_pct(boot["head"], heldout["head"]),
+            "G1_delta": _point_shift_pct(g1_delta, g1_legacy)},
+    }
+    return res
 
 
 # ======================================================================== #
@@ -575,25 +749,71 @@ def collect_closedloop(model, step_readout, episodes, device, w=W, cfg=CEM_CL,
     return out
 
 
-def analyze_closedloop(col, n_splits=8, val_frac=0.2):
+def analyze_closedloop(col, n_splits=8, val_frac=0.2, n_boot=None, seed=0):
     eids = col["eid"]
     splits = [split_by_episode(eids, val_frac, s) for s in range(n_splits)]
     gt = col["gt"]
     de = lambda k: torch.linalg.norm(col[k] - gt, dim=-1)     # [N,4]
     ade = {k: de(k).mean(dim=1).numpy() for k in ("closed_bike", "open_grnd", "cv")}
-    fde = de("closed_bike")[:, -1]
-    diverged = (fde > cl.DIVERGENCE_M).float().numpy()
-    heldout = {k: _jack_scalar(ade[k], eids, splits) for k in ade}
-    return {
+    fde = de("closed_bike")[:, -1].numpy()
+    diverged = (de("closed_bike")[:, -1] > cl.DIVERGENCE_M).float().numpy()
+    per_window = dict(ade, closed_bike_fde2s=fde, divergence_rate_gt5m=diverged)
+    boot = {k: _interval(v, eids, n_boot, seed) for k, v in per_window.items()}
+    heldout = {k: _jack_scalar(v, eids, splits) for k, v in per_window.items()}
+    cb = boot["closed_bike"]
+    res = {
         "n_windows": len(eids), "n_episodes": len(set(eids)),
+        "closed_bike_ade2s": cb,
+        "closed_bike_fde2s": boot["closed_bike_fde2s"],
+        "open_grnd_ade2s": boot["open_grnd"],
+        "cv_ade2s": boot["cv"],
+        "divergence_rate_gt5m": boot["divergence_rate_gt5m"],
+        "G4_head_baseline_ade2s": G4_HEAD_BASELINE_ADE2S,
+        "G4_head_baseline_source": G4_HEAD_BASELINE_SOURCE,
+        # ⛔ THE GATE, on the full_set point estimate vs the full_set threshold.
+        "G4_pass": bool(cb["mean"] < G4_HEAD_BASELINE_ADE2S),
+        # STRICTER, and the one to quote: the whole interval clears the bar.
+        "G4_pass_ci_separated": bool(cb["hi"] < G4_HEAD_BASELINE_ADE2S),
+        "_unpaired_warning":
+            "the planner (stride 16, cl_episodes) and the head baseline "
+            "(stride 8, 40 episodes) are DIFFERENT window sets, so this is an "
+            "unpaired two-interval comparison. The planner's windows are the "
+            "stride-16 subset of the baseline's; a PAIRED G4 on the aligned "
+            "windows is in JACK_IN_GATES.md (delta -0.7375 [-0.9362, -0.5295], "
+            "separated, n=221/20ep) and agrees.",
+        "estimator": {
+            "interval": "episode_cluster_bootstrap",
+            "n_boot": N_BOOT if n_boot is None else int(n_boot),
+            "seed": int(seed), "resampling_unit": "val episode",
+            "deprecated_and_refused": DEPRECATED_ESTIMATOR,
+            "legacy_block": LEGACY_BLOCK,
+            "estimator_note": ESTIMATOR_NOTE},
+    }
+    assert_no_deprecated_estimator(res)
+    res[LEGACY_BLOCK] = {
+        "_what": "the pre-2026-08-16 closed-loop numbers under "
+                 "`overlapping_holdout_se`, incl. the legacy G4 threshold "
+                 "1.6852 which was ITSELF a mean-of-split-means.",
+        "_why_kept": "reproduction ONLY. ⛔ NOT admissible for any decision.",
+        "_estimator": DEPRECATED_ESTIMATOR,
+        "n_splits": n_splits, "val_frac": val_frac,
         "closed_bike_ade2s": heldout["closed_bike"],
-        "closed_bike_fde2s": _jack_scalar(fde.numpy(), eids, splits),
+        "closed_bike_fde2s": heldout["closed_bike_fde2s"],
         "open_grnd_ade2s": heldout["open_grnd"],
         "cv_ade2s": heldout["cv"],
-        "divergence_rate_gt5m": _jack_scalar(diverged, eids, splits),
-        "G4_head_baseline_ade2s": 1.6852,
-        "G4_pass": bool(heldout["closed_bike"]["mean"] < 1.6852),
+        "divergence_rate_gt5m": heldout["divergence_rate_gt5m"],
+        "G4_head_baseline_ade2s_LEGACY": G4_HEAD_BASELINE_ADE2S_LEGACY,
+        "G4_pass_LEGACY": bool(heldout["closed_bike"]["mean"]
+                               < G4_HEAD_BASELINE_ADE2S_LEGACY),
+        "G4_verdict_flip_vs_decision_grade_LEGACY": bool(
+            (heldout["closed_bike"]["mean"] < G4_HEAD_BASELINE_ADE2S_LEGACY)
+            != res["G4_pass"]),
+        "ci_width_ratio_new_over_legacy": {
+            k: _width_ratio(boot[k], heldout[k]) for k in boot},
+        "point_estimate_shift_pct_legacy_vs_corrected": {
+            k: _point_shift_pct(boot[k], heldout[k]) for k in boot},
     }
+    return res
 
 
 # ======================================================================== #
@@ -637,8 +857,10 @@ def run_and_save(arm="flagship-30k", device="cuda", episodes=40, cl_episodes=16,
     res = {"arm": arm, "ckpt_step": L["step"],
            "protocol": {"episodes": episodes, "window": WINDOW, "stride": STRIDE,
                         "K": K_MAX, "hz": 10, "cem": CEM,
-                        "ci": "overlapping_holdout_se, 8 random 20% holdouts "
-                              "(DEPRECATED, not a jackknife)",
+                        "ci": "episode_cluster_bootstrap over the val EPISODES "
+                              "(paired form for the G1 delta) — taniteval/ci.py. "
+                              "The legacy overlapping_holdout_se numbers are "
+                              f"quarantined under `{LEGACY_BLOCK}`.",
                         "baselines_source": "closedloop_flagship-30k.json + "
                         "plan_flagship-30k.json (same harness)"},
         "open_loop": ol}
@@ -660,7 +882,8 @@ def run_and_save(arm="flagship-30k", device="cuda", episodes=40, cl_episodes=16,
         res["closed_loop"] = clr
         print(f"[p2] {arm}: closed_bike ade@2s="
               f"{clr['closed_bike_ade2s']['mean']:.3f}"
-              f"±{clr['closed_bike_ade2s']['ci95']:.3f} | head_baseline=1.685 "
+              f"±{clr['closed_bike_ade2s']['ci95']:.3f} | head_baseline="
+              f"{G4_HEAD_BASELINE_ADE2S} "
               f"| G4_pass={clr['G4_pass']} diverge="
               f"{clr['divergence_rate_gt5m']['mean']:.1%} "
               f"({round(time.time()-t1,1)}s)", flush=True)
