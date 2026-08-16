@@ -42,25 +42,20 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+import s2_derive  # noqa: E402  — the ONE home of the S2 strategic mapping
+from s2_derive import GOAL_TO_GSTR  # noqa: E402  (moved there; re-exported)
 from tanitad.models.v6 import (STRATEGIC_GOAL_TOKENS,  # noqa: E402
                                TACTICAL_LAT_ACTIONS, TACTICAL_LON_ACTIONS)
+
+# the pins in s2_derive must equal the real v6 lists — loudly, at import
+assert s2_derive.check_vocab_drift() == "checked"
 
 SCHEMA = "ph1-fused-v1"
 IOU_TRACK = 0.3          # greedy same-concept association across frames
 SPEED_TOL = 0.15         # speed-sign corroboration margin
 STOP_V = 0.5             # m/s — "stopped" threshold
-
-# VLM goal_kind -> g_str token (closed list on both sides; identity-ish map,
-# versioned here so a rename on either side breaks loudly, not silently).
-GOAL_TO_GSTR = {
-    "follow_main_road": "FOLLOW_MAIN_ROAD", "route_to": "ROUTE_TO",
-    "keep_corridor": "KEEP_CORRIDOR", "lane_target": "LANE_TARGET",
-    "exit_right": "EXIT_RIGHT", "exit_left": "EXIT_LEFT",
-    "turn_left": "TURN_LEFT", "turn_right": "TURN_RIGHT",
-    "straight_through": "STRAIGHT_THROUGH", "stop_at": "STOP_AT",
-    "none": "NONE_ABSTAIN",
-}
 # substring rules mapping free-ish action text onto the FACTORED axes
 LAT_RULES = (("lane_change_l", "LANE_CHANGE_L"), ("left_lane", "LANE_CHANGE_L"),
              ("lane_change_r", "LANE_CHANGE_R"), ("right_lane", "LANE_CHANGE_R"),
@@ -271,21 +266,43 @@ def corroborate(v2: dict, sam3: dict, tracks: list[dict],
     return cor, conflicts
 
 
-def emit_vocab(v2: dict, alp: dict | None) -> tuple[dict, list]:
-    """g_str + factored g_tac by 2-of-3 across ego / VLM / Alpamayo."""
+# ⚠️ ego_past_state emits turning ∈ {turning_left, turning_right, straight}
+# (ph0_v2.py:400-401). The first vote map keyed on {left, right} and the ego
+# lateral vote was DEAD on every turning clip — MEASURED: null on 36/36
+# turning clips, LANE_KEEP on 165/165 straight (S2_STRATEGIC_GAP §6 item 6).
+_EGO_TURN_VOTE = {"turning_left": "NUDGE_L", "turning_right": "NUDGE_R",
+                  "left": "NUDGE_L", "right": "NUDGE_R",
+                  "straight": "LANE_KEEP"}
+
+
+def emit_vocab(v2: dict, alp: dict | None,
+               engine_a: dict | None = None) -> tuple[dict, list]:
+    """g_str/a_str GEOMETRY-PRIMARY via s2_derive (VLM demoted to recorded
+    corroboration; ROUTE_TO gated); factored g_tac by 2-of-3 votes.
+
+    With ``engine_a`` absent (legacy inputs) the strategic tokens fall back
+    to VLM-primary, tagged ``vlm-fused`` — stated, never silent. The old
+    ``corroborated_by_route`` field (structurally dead: it read a key the
+    production records never carry, False on 801/801) is DELETED — the g_str
+    block's ``sources``/``corroboration`` supersede it.
+    """
     conflicts = []
     sym = v2.get("symbols") or {}
-    g_str = GOAL_TO_GSTR.get(str(sym.get("goal_kind", "none")).lower())
-    if g_str is None:
-        g_str = "NONE_ABSTAIN"
+    if str(sym.get("goal_kind", "none")).lower() not in GOAL_TO_GSTR:
         conflicts.append({"check": "goal_kind_unmapped",
                           "value": sym.get("goal_kind")})
-    assert g_str in STRATEGIC_GOAL_TOKENS
-    # votes per axis: (source, token|None)
+
+    # ---- strategic layer: geometry decides, the VLM corroborates ----------
+    g_str = s2_derive.derive_g_str(engine_a, sym)
+    a_str = s2_derive.derive_a_str(engine_a, sym)
+    for blk in (g_str, a_str):
+        blk["src"] = "engine_a" if blk["provenance"] == "path" else "vlm"
+    assert g_str["token"] in STRATEGIC_GOAL_TOKENS
+
+    # ---- tactical votes (unchanged jurisdiction: 2-of-3) ------------------
     ego = v2.get("ego_state") or {}
     turning = str(ego.get("turning", ""))
-    lat_votes = [("ego", {"left": "NUDGE_L", "right": "NUDGE_R",
-                          "straight": "LANE_KEEP"}.get(turning))]
+    lat_votes = [("ego", _EGO_TURN_VOTE.get(turning))]
     lon_ego = None
     sp = v2.get("speed_profile") or {}
     if (sp.get("stops") or 0) > 0:
@@ -314,9 +331,8 @@ def emit_vocab(v2: dict, alp: dict | None) -> tuple[dict, list]:
 
     lat, lat_src, lat_all = majority(lat_votes, TACTICAL_LAT_ACTIONS)
     lon, lon_src, lon_all = majority(lon_votes, TACTICAL_LON_ACTIONS)
-    vocab = {"g_str": {"token": g_str, "src": "vlm",
-                       "corroborated_by_route": v2.get("route", {}).get("token")
-                       is not None},
+    vocab = {"g_str": g_str,
+             "a_str": a_str,
              "g_tac_lat": {"token": lat, "voters": lat_src,
                            "votes": [[s, t] for s, t in lat_all]},
              "g_tac_lon": {"token": lon, "voters": lon_src,
@@ -355,6 +371,11 @@ def main(argv=None) -> int:
     ap.add_argument("--ego-root", required=True)
     ap.add_argument("--records", default=None,
                     help="Alpamayo records.parquet (optional layer)")
+    ap.add_argument("--engine-a", default=None,
+                    help="optional Engine A sidecar: JSONL rows "
+                         '{"clip_id", "engine_a"} (e.g. the S2 v1 recompute '
+                         "from the bridged npz). A v2 record's own persisted "
+                         "engine_a field wins over the sidecar.")
     ap.add_argument("--missing-sam3-ok", default=None, metavar="REASON",
                     help="permit clips present in --v2-json but absent from "
                          "the SAM3 output: fuse their other layers, stamp "
@@ -410,6 +431,16 @@ def main(argv=None) -> int:
             alp_by[cid] = {row["task"]: row.get("raw_json")
                            for _, row in g.iterrows()}
 
+    ea_by: dict[str, dict] = {}
+    if a.engine_a:
+        with open(a.engine_a, encoding="utf-8") as fh:
+            for line in fh:
+                if line.strip():
+                    row = json.loads(line)
+                    if row.get("clip_id") and row.get("engine_a"):
+                        ea_by[row["clip_id"]] = row["engine_a"]
+        print(f"[fuse] engine A sidecar: {len(ea_by)} clips", flush=True)
+
     n, summ = 0, {"corroborated": 0, "conflicts": 0, "with_alpamayo": 0,
                   "sam3_missing": 0}
     for cid, r in sorted(v2_by.items()):
@@ -428,16 +459,29 @@ def main(argv=None) -> int:
         cor, conf = corroborate(r, s3, tracks,
                                 sam3_absent=absent_reason is not None)
         alp = alp_by.get(cid)
-        vocab, vconf = emit_vocab(r, alp)
+        engine_a = r.get("engine_a") or ea_by.get(cid)
+        vocab, vconf = emit_vocab(r, alp, engine_a=engine_a)
         conf += vconf
+        # ⛔ the provenance lie fix (S2_STRATEGIC_GAP §5): the v2.2 records
+        # were produced with ego-past kinematics AND the Engine A hindsight
+        # block in the prompt — the VLM layer is NOT pure vision, and the
+        # tag must say it. `semantics` is then also removed from the
+        # inference whitelist: labels may use ego, INFERENCE IS VISION-ONLY.
+        ego_mode = r.get("_ego_prompt_mode") or "none"
+        vlm_prov = ("vision" if ego_mode == "none" else
+                    f"vision+ego-{ego_mode}-prompt+engineA-prompt")
+        admissible = (["perception", "semantics"] if ego_mode == "none"
+                      else ["perception"])
         fused = {
             "schema_version": SCHEMA, "clip_id": cid,
             "geometry": {"frame_wh": r.get("_frame_wh"),
                          "note": "w120 cylindrical vs 256px pinhole batches "
                                  "must not be pooled"},
-            "ego": {k: r.get(k) for k in
-                    ("ego_state", "route", "speed_profile", "speed_events",
-                     "lane_change_events", "situations") if k in r},
+            "ego": {k: v for k, v in
+                    [(k, r.get(k)) for k in
+                     ("ego_state", "route", "speed_profile", "speed_events",
+                      "lane_change_events", "situations")] +
+                    [("engine_a", engine_a)] if v is not None or k in r},
             "perception": {"tracks": tracks,
                            "per_concept_hits": s3.get("per_concept_hits"),
                            "src": "sam3",
@@ -450,10 +494,17 @@ def main(argv=None) -> int:
             "corroboration": cor, "vocab": vocab,
             "scenario_description": scenario_line(r, tracks),
             "_conflicts": conf,
-            "inference_admissible": ["perception", "semantics"],
+            "inference_admissible": admissible,
+            **({"_inference_admissible_note":
+                f"semantics EXCLUDED: VLM ran with ego in the prompt "
+                f"(mode={ego_mode!r}) — its outputs are ego-touched"}
+               if ego_mode != "none" else {}),
             "_provenance": {"ego": "privileged-labels-only",
-                            "sam3": "vision", "vlm": "vision",
-                            "alpamayo": "external-labels-only"},
+                            "sam3": "vision", "vlm": vlm_prov,
+                            "alpamayo": "external-labels-only",
+                            **({"engine_a": "privileged-labels-only "
+                                            "(hindsight ego path)"}
+                               if engine_a else {})},
         }
         json.dump(fused, open(dst, "w"), indent=1)
         n += 1

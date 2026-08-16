@@ -251,7 +251,15 @@ STAGE_PRECONDITION: dict[str, str | None] = {
 #: present module is a geometry mismatch, not an introduction, and stays fatal.
 STAGE_MAY_INTRODUCE: dict[str, tuple[str, ...]] = {
     "S-W": (),                  # starts the ladder; there is nothing to inherit
-    "S-T": ("cand_score.",),    # the selector is built HERE, by design
+    # S-T introduces, by design: the selector (when an arm is opted into), and
+    # the g_str->P_T conditioning port `cond_tac_dyn.` (F-1,
+    # DIAGRAM_CONFORMANCE.md 2026-08-16 — the diagram/§5-spec'd tactical-
+    # dynamics downlink the code never built; zero-init, so the introduction is
+    # loss-continuous). Both are NEW MODULES rather than widened shapes, on
+    # purpose: this allowance adjudicates KEYS, and a shape change bypasses it
+    # entirely (`load_state_dict(strict=False)` still RAISES on shapes —
+    # measured, see `trainer_argv`'s --n-candidates note).
+    "S-T": ("cand_score.", "cond_tac_dyn."),
     "S-S": (),                  # trains layer_str, which S-T already carried
     "S-J": (),                  # joint polish introduces nothing
 }
@@ -1485,6 +1493,9 @@ def build_stack_from_args(a) -> V6Stack:
         goal_factored=bool(getattr(a, "goal_factored", False)),
         goal_multilabel=bool(getattr(a, "goal_multilabel", False)),
         goal_cat_args=bool(getattr(a, "goal_cat_args", False)),
+        # F-1: the g_str->P_T port. Default False = the incumbent build,
+        # byte-identical; the chain's S-T command surface turns it on.
+        tac_goal_cond=bool(getattr(a, "tac_goal_cond", False)),
         anchor_goal=getattr(a, "anchor_goal", "none"),
         n_anchors=int(getattr(a, "n_anchors", 256)),
         n_lat_bins=int(getattr(a, "n_lat_bins", 16)),
@@ -2603,6 +2614,22 @@ def build_parser() -> argparse.ArgumentParser:
                     help="the TYPED categorical arg channel. Without it 7 of "
                          "the 9 g_tac tokens are inexpressible even given "
                          "perfect labels. REQUIRED by --anchor-goal.")
+    ap.add_argument("--tac-goal-cond", action="store_true",
+                    help="⭐ build the g_str->P_T conditioning port (F-1, "
+                         "DIAGRAM_CONFORMANCE.md 2026-08-16): a ZERO-INIT "
+                         "cond_tac_dyn Linear whose output is added to the "
+                         "tactical action-pair conditioning, so the strategic "
+                         "goal conditions the tactical DYNAMICS — "
+                         "P_T(z_tac, a_tac | g_str), which the diagram, "
+                         "HIERARCHY_VOCABULARY §5 and V6Stack's own docstring "
+                         "spec and the code did not build. Default OFF = "
+                         "byte-identical state_dict (the live S-W resume). "
+                         "An S-T stage may INTRODUCE it "
+                         "(STAGE_MAY_INTRODUCE); S-S/S-J must CARRY it "
+                         "forward once S-T trained with it, exactly like "
+                         "--selector. ⛔ REFUSED in S-W: layer_tac is frozen "
+                         "there and the new keys would break the live run's "
+                         "strict resume.")
     ap.add_argument("--anchor-goal",
                     choices=("none", "snap_lat", "snap_xy", "onehot"),
                     default="none",
@@ -2814,6 +2841,15 @@ def preflight(a) -> list[str]:
             f"FROZEN in S-W, so a scorer built here would be untrainable dead "
             f"weight AND would change the state_dict — which breaks a strict "
             f"resume of the live S-W run. Selection is an S-T lever.")
+    tgc = bool(getattr(a, "tac_goal_cond", False))
+    if a.stage == "S-W" and tgc:
+        problems.append(
+            "--stage S-W with --tac-goal-cond: layer_tac is FROZEN in S-W, so "
+            "the g_str->P_T port would be untrainable dead weight AND would "
+            "add cond_tac_dyn.* keys to the state_dict — which breaks a "
+            "strict resume of the LIVE S-W run. The port is an S-T lever "
+            "(F-1): S-T may INTRODUCE it (STAGE_MAY_INTRODUCE['S-T']) over an "
+            "S-W checkpoint that never carried it.")
     if a.w_select and a.selector == "none":
         problems.append(
             f"--w-select {a.w_select} with --selector none: a selection loss "
@@ -2847,6 +2883,24 @@ def preflight(a) -> list[str]:
             f"consume its parameters and never receive a gradient. If an "
             f"inert-scorer control is what you want, say so explicitly by "
             f"passing --w-select 0 AND --i-know-this-is-the-control-arm.")
+    # ⛔ THE SAME INERT-MODULE FAMILY, for the g_str->P_T port: its ONLY
+    # gradient source is t1 through zh_tac (v6_loss_step wires no other loss
+    # through the tactical prediction), so building it in a stage that TRAINS
+    # layer_tac while --w-t1 is 0 advertises a port that never trains — the
+    # `intent_proj` dead-weight defect, re-created by launch line. S-S is
+    # deliberately NOT refused: layer_tac is frozen there and the flag must be
+    # CARRIED for geometry, exactly like --selector (a flagless S-S against an
+    # S-T ckpt that trained the port dies on unexpected cond_tac_dyn.* keys).
+    if tgc and "layer_tac" in stage_trainable_groups(a.stage) \
+            and not a.w_t1 and not ack:
+        problems.append(
+            f"--tac-goal-cond with --w-t1 0 in stage {a.stage}, which TRAINS "
+            f"layer_tac: t1 is the ONLY loss that flows through the "
+            f"g_str-conditioned tactical prediction, so the port would be "
+            f"built, consume its parameters and never receive a gradient — "
+            f"the intent_proj dead-weight defect F-1 exists to close. If an "
+            f"inert-port control is what you want, say so with "
+            f"--i-know-this-is-the-control-arm.")
     # ---- ANCHOR_GOAL: every refusal fires in MILLISECONDS, not after a run --
     anchor_goal = getattr(a, "anchor_goal", "none")
     w_anchor = float(getattr(a, "w_anchor", 0.0))

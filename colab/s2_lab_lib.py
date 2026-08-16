@@ -849,16 +849,25 @@ def review_sheet_html(entries: list[dict], title: str = "S2 label lab") -> str:
           font-style:italic}
     </style>"""
     head = (f"<h2>{title}</h2><p><b>schema:</b> {s2_schema.SCHEMA_VERSION} "
-            f"(PROVISIONAL — authoritative doc: "
+            f"(authoritative — spec: "
             f"<code>{s2_schema.AUTHORITATIVE_DOC}</code>)</p>")
     parts = [css, head]
 
     def tok_html(t, cls):
         if not t:
             return ""
-        args = ", ".join(f"{k}={v}" for k, v in (t.get("args") or {}).items())
-        prov = "+".join(t.get("provenance") or []) or \
-            "+".join(t.get("voters") or []) or "?"
+        raw = t.get("args")
+        if isinstance(raw, list):        # s2-strategic-v1: [8] slots + mask
+            mask = t.get("arg_mask") or [0] * len(raw)
+            args = ", ".join(
+                f"{s2_schema.GOAL_ARG_NAMES[i]}={raw[i]}"
+                for i in range(len(raw)) if i < len(mask) and mask[i])
+        else:                            # legacy dict args / g_tac votes
+            args = ", ".join(f"{k}={v}" for k, v in (raw or {}).items())
+        prov = t.get("provenance")
+        if not isinstance(prov, str):
+            prov = "+".join(prov or []) or \
+                "+".join(t.get("voters") or []) or "?"
         return (f"<span class='tok {cls}'>{t.get('token')}"
                 f"{'(' + args + ')' if args else ''} "
                 f"<span class='prov'>[{prov} · "
@@ -876,9 +885,11 @@ def review_sheet_html(entries: list[dict], title: str = "S2 label lab") -> str:
             imgs = "".join(f"<img src='data:image/png;base64,{_b64_png(frames[i])}' "
                            f"title='frame {i}'>" for i in sorted(set(idx)))
             parts.append(f"<div class='frames'>{imgs}</div>")
+        a_str = s2.get("a_str")
+        a_str = [a_str] if isinstance(a_str, dict) else (a_str or [])
         parts.append("<div><b>g_str</b> " + tok_html(s2.get("g_str"), "g")
                      + " <b>a_str</b> "
-                     + ("".join(tok_html(a, "a") for a in s2.get("a_str"))
+                     + ("".join(tok_html(a, "a") for a in a_str)
                         or "<i>none</i>")
                      + " <b>g_tac</b> "
                      + tok_html((s2.get("g_tac") or {}).get("lat"), "t")

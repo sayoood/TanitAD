@@ -346,6 +346,10 @@ class ChainStep:
     pair_with: tuple[str, ...] = ()
     extra: tuple[str, ...] = ()
     note: str = ""
+    #: ⭐ the g_str->P_T port (F-1). GEOMETRY, exactly like ``selector``: once
+    #: S-T trains with it, every consumer of that lineage must build it or
+    #: `load_stage_init` dies on unexpected `cond_tac_dyn.*` keys.
+    tac_goal_cond: bool = False
     #: ⛔ Set when this step consumes an S-T checkpoint and no ``--st-winner``
     #: was declared. The ladder is NOT a straight line at S-T — it forks into
     #: the arm pair — so "which arm does S-S continue" is a DECISION, and a
@@ -395,6 +399,16 @@ class ChainConfig:
     #: second, so "not in the default plan" is never the only barrier.
     st_arms: tuple[str, ...] = ()
     st_winner: str | None = None          # declared, never guessed
+    #: ⛔ ON BY DEFAULT — F-1 (DIAGRAM_CONFORMANCE.md 2026-08-16, the top 🟥):
+    #: the binding diagram, HIERARCHY_VOCABULARY §5 and V6Stack's own docstring
+    #: all spec `P_T(z_tac, a_tac | g_str)`, and an S-T launched without the
+    #: port would never train the strategic->tactical DYNAMICS downlink in its
+    #: own stage — the `intent_proj` defect one level up. The port is
+    #: ZERO-INIT (+33,024 params, MEASURED at the production d_goal_embed=128)
+    #: and S-T's `STAGE_MAY_INTRODUCE` admits its fresh keys, so turning it on
+    #: over the S-W checkpoint is loss-continuous. `--no-tac-goal-cond`
+    #: reproduces the pre-F-1 ladder as a declared decision, never a default.
+    tac_goal_cond: bool = True
     w_select: float = 1.0
     n_candidates: int = 8
     selector_tau_m: float = 1.0
@@ -499,6 +513,7 @@ def build_plan(cfg: ChainConfig) -> tuple[ChainStep, ...]:
             out=cfg.path(f"v6F-ST-{cfg.st_steps // 1000}k"),
             steps=cfg.st_steps, lr=cfg.lr, selector="none", w_select=0.0,
             init_from_key="S-W", prev_gate_key="S-W", max_horizon=60,
+            tac_goal_cond=cfg.tac_goal_cond,
             extra=("--plan-wta-eps", str(cfg.plan_wta_eps), "--w-t1", "1.0"),
             note="THE PLANNER STAGE, WITHOUT A SELECTOR. ⛔ SEL-1 is REFUSED: "
                  "E-WC2 measured σ/ADE 9.9915 [7.4492, 13.5119] against a "
@@ -527,6 +542,7 @@ def build_plan(cfg: ChainConfig) -> tuple[ChainStep, ...]:
                 steps=cfg.st_steps, lr=cfg.lr, selector=arm,
                 w_select=cfg.w_select,
                 init_from_key="S-W", prev_gate_key="S-W", max_horizon=60,
+                tac_goal_cond=cfg.tac_goal_cond,
                 pair_with=tuple(k for k in arm_keys if k != key),
                 extra=tuple(extra),
                 note=("⚠️ OPT-IN ARM while SEL-1 stands REFUSED. MECHANISM "
@@ -554,6 +570,10 @@ def build_plan(cfg: ChainConfig) -> tuple[ChainStep, ...]:
         steps=cfg.ss_steps, lr=cfg.lr, selector=carried,
         w_select=0.0,                     # for_stage('S-S') zeroes it anyway
         init_from_key=winner_key, prev_gate_key=winner_key, max_horizon=None,
+        # the port GEOMETRY is carried exactly like the selector's: S-S
+        # freezes layer_tac, but its stack must still BUILD cond_tac_dyn or
+        # the S-T checkpoint's keys become unexpected and --init-from is fatal.
+        tac_goal_cond=cfg.tac_goal_cond,
         needs_st_winner=winner_key is None, extra=tuple(ss_extra),
         note="Trains layer_str ONLY; the planner is FROZEN and w_select is 0 "
              "(for_stage('S-S') zeroes it, so a non-zero flag would advertise "
@@ -575,6 +595,7 @@ def build_plan(cfg: ChainConfig) -> tuple[ChainStep, ...]:
         steps=cfg.sj_steps, lr=cfg.sj_lr, selector=carried,
         w_select=cfg.w_select if carried not in ("none", "?") else 0.0,
         init_from_key="S-S", prev_gate_key="S-S", max_horizon=60,
+        tac_goal_cond=cfg.tac_goal_cond,
         needs_st_winner=winner_key is None, extra=tuple(sj_extra),
         note="OPTIONAL. Run only if S-T/S-S plateau. Trains everything with "
              "isolation still ON; the gate is the frozen battery FLAT across "
@@ -723,14 +744,50 @@ def assert_geometry_carry(step, plan) -> dict:
                          f"load_stage_init will still refuse a mismatch, but "
                          f"only after the stack is built."}
     prev_sel = args.get("selector", "none")
+    # ---- F-1: the g_str->P_T port carries EXACTLY like the selector --------
+    # Checked first-class rather than folded into `extra`: the failure mode is
+    # identical (the S-T checkpoint carries cond_tac_dyn.* keys; a flagless
+    # successor makes them UNEXPECTED and `load_stage_init` is fatal), and it
+    # must be caught from a JSON read before anything is built.
+    prev_tgc = bool(args.get("tac_goal_cond", False))
+    port: dict = {"tac_goal_cond": step.tac_goal_cond}
+    if prev_tgc != step.tac_goal_cond:
+        if not prev_tgc and step.stage == "S-T":
+            port |= {"introduces_port": "cond_tac_dyn.",
+                     "_read_port": "S-T is where the g_str->P_T port is BUILT "
+                                   "(STAGE_MAY_INTRODUCE['S-T'] admits "
+                                   "'cond_tac_dyn.'), so the predecessor not "
+                                   "carrying it is the design (F-1)."}
+        elif prev_tgc:
+            raise ChainRefusal(
+                f"[chain] ⛔ {step.key} would launch WITHOUT --tac-goal-cond, "
+                f"but its ancestor {prev.key} trained WITH the g_str->P_T "
+                f"port (config.json args.tac_goal_cond = true).\n"
+                f"  Every stage saves the WHOLE V6Stack, so cond_tac_dyn.* is "
+                f"IN the checkpoint; a stack built without it makes those "
+                f"keys UNEXPECTED and `load_stage_init` is fatal — the same "
+                f"carry rule as --selector.\n"
+                f"  ⇒ carry the port geometry forward: launch {step.key} with "
+                f"--tac-goal-cond (the chain does this by default; "
+                f"--no-tac-goal-cond only reproduces a pre-F-1 lineage).")
+        else:
+            raise ChainRefusal(
+                f"[chain] ⛔ {step.key} ({step.stage}) would launch with "
+                f"--tac-goal-cond, but its ancestor {prev.key} never built "
+                f"the port and {step.stage} may introduce nothing "
+                f"(STAGE_MAY_INTRODUCE[{step.stage!r}] == ()). The g_str->P_T "
+                f"port is introduced at S-T (F-1) — arriving above S-T "
+                f"without it means S-T never trained the downlink, which is a "
+                f"mis-ordered ladder, not an introduction.")
     if prev_sel == step.selector:
-        return {"applies": True, "ok": True, "selector": step.selector}
+        return {"applies": True, "ok": True, "selector": step.selector} | port
     if prev_sel == "none" and step.stage == "S-T":
         return {"applies": True, "ok": True, "selector": step.selector,
                 "introduces": "cand_score.",
                 "_read": "S-T is where the selector is BUILT "
-                         "(STAGE_MAY_INTRODUCE['S-T'] == ('cand_score.',)), so "
-                         "the predecessor having none is the design."}
+                         "(STAGE_MAY_INTRODUCE['S-T'] includes "
+                         "'cand_score.'), so "
+                         "the predecessor having none is the design."} | port
     raise ChainRefusal(
         f"[chain] ⛔ {step.key} would launch with --selector {step.selector!r} "
         f"but its ancestor {prev.key} ran with --selector {prev_sel!r}.\n"
@@ -996,6 +1053,12 @@ def trainer_argv(step, cfg: ChainConfig, plan, *, allow_inconclusive=False,
         av += ["--max-horizon", str(step.max_horizon)]
     if step.w_select:
         av += ["--w-select", str(step.w_select)]
+    # ⭐ F-1: the g_str->P_T port, on every stage after S-W (S-T builds and
+    # TRAINS it; S-S/S-J carry the GEOMETRY, or the S-T checkpoint's
+    # cond_tac_dyn.* keys become unexpected and --init-from is fatal — the
+    # same carry rule as --selector, enforced by assert_geometry_carry).
+    if step.tac_goal_cond:
+        av += ["--tac-goal-cond"]
     av += list(step.extra)
     if cfg.dry:
         av += ["--dry-run", "--device", "cpu", "--dry-steps", str(cfg.dry_steps),
@@ -1156,7 +1219,8 @@ def write_dry_predecessor(step, cfg: ChainConfig, plan, **kw) -> str:
     dest = Path(step.out) / "dry_ckpt.pt"
     _save_ckpt(dest, stack=stack, opt=opt, step=step.steps, cfg_json={
         "stage": step.stage, "run": f"v6-staged-{step.stage}", "_dry_run": True,
-        "args": {"selector": step.selector},
+        "args": {"selector": step.selector,
+                 "tac_goal_cond": step.tac_goal_cond},
         "_read": "DRY-LADDER ancestor. Synthetic weights, written by "
                  "v6_chain.py so --init-from can be EXECUTED on CPU. Named "
                  "dry_ckpt.pt, never ckpt.pt, so --resume auto can never find "
@@ -1290,6 +1354,8 @@ def _cfg_from_args(a) -> ChainConfig:
             setattr(cfg, f, v)
     if getattr(a, "st_arms", None):
         cfg.st_arms = tuple(a.st_arms)
+    if getattr(a, "no_tac_goal_cond", False):
+        cfg.tac_goal_cond = False
     cfg.dry = bool(getattr(a, "dry", False))
     cfg.tiny = bool(getattr(a, "tiny", False)) or cfg.dry
     if cfg.dry and getattr(a, "n_candidates", None) is None:
@@ -1333,6 +1399,13 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--st-winner", choices=("goal", "mlp"), default=None,
                     help="required before S-S/S-J: which arm's lineage the "
                          "strategic stage continues. Never guessed.")
+    ap.add_argument("--no-tac-goal-cond", action="store_true",
+                    help="⛔ drop the g_str->P_T port from the ladder (F-1 "
+                         "says S-T must NOT launch without it — this exists "
+                         "only to reproduce a pre-F-1 lineage as a DECLARED "
+                         "decision). Default: every stage after S-W carries "
+                         "--tac-goal-cond; S-T introduces the zero-init "
+                         "cond_tac_dyn keys, S-S/S-J carry the geometry.")
     ap.add_argument("--w-select", type=float, default=None)
     ap.add_argument("--n-candidates", type=int, default=None)
     ap.add_argument("--selector-tau-m", type=float, default=None)

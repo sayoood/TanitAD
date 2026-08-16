@@ -1747,6 +1747,33 @@ class V6Config:
     #: `obstacle.offline` — 10 dynamic classes, zero infrastructure.
     n_agent_slots: int = 8
 
+    # ---- THE g_str -> P_T CONDITIONING PORT (F-1, 2026-08-16) --------------
+    #: ⛔ DEFAULT OFF, byte-identity preserved (proved per tensor in
+    #: ``tests/test_v6_gstr_port.py`` against a CONTENT-anchored pre-change
+    #: revision — the live v6F S-W resume is 87,893,449 params / 405 keys and a
+    #: broken strict resume kills it). ON builds :attr:`V6Stack.cond_tac_dyn`,
+    #: a ZERO-INIT ``Linear(d_goal_embed -> 2*d_goal_embed)`` whose output is
+    #: ADDED to the tactical action pair ``e_a_tac`` before ``predictor_tac``
+    #: consumes it — i.e. the spec'd ``P_T(z_tac, a_tac | g_str)``
+    #: (HIERARCHY_VOCABULARY §5; the binding diagram; this class's own
+    #: docstring), which the code did NOT implement until the 2026-08-16
+    #: conformance audit found it (DIAGRAM_CONFORMANCE.md F-1, the top 🟥):
+    #: ``FTac``'s one conditioning input was fully consumed by the LAT×LON
+    #: action embeddings, and ``e_g_str`` reached only ``goal_head_tac``. An
+    #: S-T launched without this port would never train the strategic→tactical
+    #: DYNAMICS downlink in its own stage — the ``intent_proj`` defect one
+    #: level up, and precisely the fake-hierarchy failure the PI's remarks
+    #: guard against.
+    #: ⚠️ The port is the SAME construction as the accepted g_tac→P_O seam one
+    #: level down (``cond = act_emb(actions) + intent_proj(intent)``): additive
+    #: into the predictor's existing conditioning pathway, no ``FTac`` shape
+    #: change (a shape change bypasses ``STAGE_MAY_INTRODUCE``'s adjudication,
+    #: which is checked by KEYS — ``load_state_dict(strict=False)`` still
+    #: RAISES on shapes, measured). Zero-init makes S-T's t1 loss continuous
+    #: at introduction; ``e_g_str`` enters DETACHED under the planner cut, so
+    #: the tactical WM loss cannot train ``layer_str`` backwards through it.
+    tac_goal_cond: bool = False
+
     # ---- vocabulary --------------------------------------------------------
     d_goal_embed: int = 128
 
@@ -2099,6 +2126,11 @@ class V6Stack(nn.Module):
       ``z_tac_{t+k} = P_T(z_tac_t, a_tac_t | g_str)``
       ``z_op_{t+j}  = P_O(z_op_t, (a, κ)_t | g_tac)``
     Goals flow DOWN only; latents flow UP through stop-grad / EMA.
+    ⚠️ The ``| g_str`` conditioning of P_T is the :attr:`cond_tac_dyn` port
+    (F-1, DIAGRAM_CONFORMANCE.md 2026-08-16 — spec'd here all along, not built
+    until then), gated by ``cfg.tac_goal_cond``: DEFAULT OFF so the live S-W
+    resume stays byte-identical, and turned ON at S-T, whose
+    ``STAGE_MAY_INTRODUCE`` allowance admits the fresh zero-init keys.
 
     THE PLANNER-SIDE SURFACE IS DECLARED, NOT INFERRED. ``forward`` returns
     ``planner_side`` — the list of tensors that must carry NO gradient into any
@@ -2280,6 +2312,29 @@ class V6Stack(nn.Module):
                 cfg.d_goal_embed, cfg.n_anchors, mode=cfg.anchor_goal,
                 plan_horizon_s=cfg.horizon_s, n_lat_bins=cfg.n_lat_bins)
 
+        # ---- THE g_str -> P_T PORT (F-1) — built LAST, only when asked ------
+        # ⛔ Same rule as ``cand_score`` and the goal-structure levers, same
+        # reason: constructed at the very END of __init__ and ONLY under its
+        # flag, so the default path draws NO RNG, creates NO state_dict key,
+        # and every earlier module's initialisation is bit-for-bit what it was.
+        # ZERO-INIT is load-bearing twice over: (1) at introduction the port is
+        # an exact no-op, so S-T's t1 loss is CONTINUOUS when the flag first
+        # turns on over an S-W checkpoint (`STAGE_MAY_INTRODUCE["S-T"]` admits
+        # the fresh keys); (2) it is the same discipline every scorer here
+        # follows (GoalDistanceScorer.goal_point, MLPCandidateScorer.fc2, the
+        # emission head) — anything the port later does is LEARNED, never
+        # handed to it by init. The aliveness-at-zero concern the GoalHead
+        # docstring warns about does not bite here: the port's INPUT is
+        # detached BY DESIGN (its upstream gradient is meant to be zero), and
+        # its own parameters still receive gradient at zero weights, which
+        # ``tests/test_v6_gstr_port.py`` measures rather than assumes.
+        self.cond_tac_dyn = None
+        if cfg.tac_goal_cond:
+            self.cond_tac_dyn = nn.Linear(cfg.d_goal_embed,
+                                          2 * cfg.d_goal_embed)
+            nn.init.zeros_(self.cond_tac_dyn.weight)
+            nn.init.zeros_(self.cond_tac_dyn.bias)
+
     # -- grouping ------------------------------------------------------------
     #: prefix -> group. Longest matching prefix wins, so ``predictor_tac``
     #: cannot be swallowed by ``predictor_op``'s entry.
@@ -2312,6 +2367,20 @@ class V6Stack(nn.Module):
         # head that trained in a different stage would not be its control.
         ("goal_head_tac_lat.", "layer_tac"), ("goal_head_tac_lon.", "layer_tac"),
         ("vocab_tac_lat.", "layer_tac"), ("vocab_tac_lon.", "layer_tac"),
+        # ⭐ THE g_str->P_T PORT (F-1) IS `layer_tac`, NOT `planner` — and the
+        # asymmetry with `intent_proj` (grouped planner) is deliberate, not
+        # drift. intent_proj lives inside predictor_op, whose group trains in
+        # S-W while intent=None (the measured dead-weight defect) — regrouping
+        # it to planner made it train exactly when g_tac first flows. THIS port
+        # conditions predictor_tac, which is ALREADY layer_tac and ALREADY
+        # trains in S-T, the stage whose t1 loss flows through the conditioned
+        # prediction — so grouping it with the dynamics it conditions gives the
+        # same train-when-live property with no regrouping. It must NOT be
+        # `planner`: its output feeds `zh_tac` (WM-side, declared uplink_side),
+        # not the plan, and a planner-group parameter unreachable from the
+        # declared planner_side surface would fail
+        # test_planner_surface_is_total by construction.
+        ("cond_tac_dyn.", "layer_tac"),
         ("adapter_str.", "layer_str"), ("predictor_str.", "layer_str"),
         ("goal_head_str.", "layer_str"), ("act_head_str.", "layer_str"),
         ("vocab_str.", "layer_str"), ("vocab_a_str.", "layer_str"),
@@ -2622,7 +2691,24 @@ class V6Stack(nn.Module):
 
         # ---- each layer's predictor rolls under its OWN action --------------
         zh_str = self.predictor_str(z_str, e_a_str)
-        zh_tac = self.predictor_tac(z_tac, e_a_tac)
+        # ⭐ THE g_str -> P_T PORT (F-1): `z_tac_{t+k} = P_T(z_tac, a_tac |
+        # g_str)` — the spec'd but previously unbuilt fifth downward port. The
+        # strategic goal is projected (zero-init) and ADDED to the action-pair
+        # conditioning, exactly the idiom the g_tac->P_O seam uses one level
+        # down (`cond = act_emb(actions) + intent_proj(intent)`). Default OFF
+        # keeps `g_cond_tac` the SAME tensor object as `e_a_tac` — bit-for-bit
+        # the pre-F-1 forward.
+        # ⚠️ e_g_str enters DETACHED under the planner cut, the same downward-
+        # port rule as the intent port below: the goal STEERS the tactical
+        # dynamics, but the tactical WM loss (t1) must not train the strategic
+        # goal path (`goal_head_str`/`vocab_str`/`cond_tac`, all above this
+        # seam) backwards through it — gradients reach the port's OWN
+        # parameters only. Goals flow down BY DESIGN; gradient does not flow
+        # back up except into the port itself.
+        g_cond_tac = e_a_tac
+        if self.cond_tac_dyn is not None:
+            g_cond_tac = e_a_tac + self.cond_tac_dyn(self._cut(e_g_str, cut))
+        zh_tac = self.predictor_tac(z_tac, g_cond_tac)
         # ⚠️ the g_tac conditioning enters the OPERATIVE predictor detached
         # under isolation: the goal STEERS the operative dynamics, but the
         # operative WM loss must not train the goal head backwards through it

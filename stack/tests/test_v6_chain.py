@@ -316,8 +316,10 @@ def test_the_geometry_carry_forward_is_REFUSED_when_it_breaks(tmp_path):
     plan[plan.index(ss)] = replace(ss, selector="goal")
     Path(C.step_by_key(tuple(plan), "S-T:mlp").out).mkdir(parents=True,
                                                           exist_ok=True)
+    # tac_goal_cond matches (a real post-F-1 S-T records True) so exactly ONE
+    # geometry — the selector — drifts, which is what this test is about.
     Path(C.step_by_key(tuple(plan), "S-T:mlp").out + "/config.json").write_text(
-        json.dumps({"args": {"selector": "mlp"}}))
+        json.dumps({"args": {"selector": "mlp", "tac_goal_cond": True}}))
     with pytest.raises(SystemExit, match="carry the winning arm forward"):
         C.assert_geometry_carry(plan[plan.index(
             [p for p in plan if p.key == "S-S"][0])], tuple(plan))

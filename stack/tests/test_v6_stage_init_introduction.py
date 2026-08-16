@@ -56,8 +56,12 @@ def sw_ckpt(tmp_path_factory):
 
 # ----------------------------------------------------------------- the data --
 
-def test_only_s_t_may_introduce_and_only_the_selector():
-    assert STAGE_MAY_INTRODUCE["S-T"] == ("cand_score.",)
+def test_only_s_t_may_introduce_and_only_its_declared_modules():
+    """S-T introduces the selector (by design) and, since F-1
+    (DIAGRAM_CONFORMANCE.md 2026-08-16), the zero-init g_str->P_T port
+    `cond_tac_dyn.` — the spec'd tactical-dynamics downlink the code never
+    built. Every other stage still introduces nothing."""
+    assert STAGE_MAY_INTRODUCE["S-T"] == ("cand_score.", "cond_tac_dyn.")
     assert STAGE_MAY_INTRODUCE["S-W"] == ()
     assert STAGE_MAY_INTRODUCE["S-S"] == ()
     assert STAGE_MAY_INTRODUCE["S-J"] == ()
@@ -74,7 +78,7 @@ def test_s_t_can_now_init_from_an_s_w_ckpt_with_a_selector(sw_ckpt, selector):
     assert rep["unexpected_keys"] == []
     assert rep["introduced_keys"]             # ...and the head is NAMED
     assert all(k.startswith("cand_score.") for k in rep["introduced_keys"])
-    assert rep["introduced_allowance"] == ["cand_score."]
+    assert rep["introduced_allowance"] == ["cand_score.", "cond_tac_dyn."]
     assert rep["init_step"] == 30000
 
 

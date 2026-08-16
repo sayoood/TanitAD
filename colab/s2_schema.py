@@ -1,114 +1,94 @@
-"""S2 strategic-vocabulary schema for the Colab label lab — ONE swap point.
+"""S2 strategic-vocabulary schema — AUTHORITATIVE `s2-strategic-v1`.
 
-⚠️ =========================== PROVISIONAL ================================ ⚠️
-This module carries a PROVISIONAL schema matching the architecture diagram's
-strategic vocabulary. The AUTHORITATIVE schema is owned by the S2-gap agent
-and will land at:
+This file replaces the PROVISIONAL v0.1 diagram schema, exactly as promised
+there: *"When it lands, THIS FILE is the only thing that changes."* Both
+notebooks keep importing vocabulary, argument spec, mapping and validation
+from here and only here.
 
-    TanitAD Research Hub/Data Engineering/Implementation/incoming/
-        2026-08-16-s2-strategic-gap/S2_STRATEGIC_GAP.md
+Authoritative spec: `TanitAD Research Hub/Data Engineering/Implementation/
+incoming/2026-08-16-s2-strategic-gap/S2_STRATEGIC_GAP.md` §1.2, executed by
+`…/2026-08-16-s2-v1-labels/`. The format is THE CODE-SIDE CONTRACT: the full
+v6 vocabularies (11 `g_str` / 6 `a_str` tokens), 8 float arg slots in
+physical units + an arg mask (IGNORE discipline: slot unset ⇒ zero
+gradient), per-instance PROVENANCE ∈ {path, signage, vlm-fused}, a validity
+band around t0, and an asserted goal/situation-disjointness stamp.
 
-(not yet present as of 2026-08-16 — checked). When it lands, THIS FILE is the
-only thing that changes: both notebooks import their vocabulary, argument
-enums, mapping and validation from here and only here. Do not inline tokens
-in a notebook cell.
-⚠️ ======================================================================== ⚠️
+The DERIVATION (geometry-primary: Engine A decides, VLM corroborates,
+ROUTE_TO gated) lives in `stack/scripts/s2_derive.py` — one home, three
+consumers (ph1_fuse, this module's `from_fused`, the S2 v1 builder).
+`s2_derive` is stdlib-only; this module lazily adds `stack/scripts` to the
+path when `from_fused` is first called, so bare-Colab import of THIS module
+still needs nothing installed.
 
-Diagram vocabulary this provisional version encodes:
-  g_str : FOLLOW_MAIN_ROAD (the default) · ROUTE_TO · LANE_TARGET · TURN
-  a_str : PREPARE_LANE_CHANGE · REDUCE_TO · PREPARE_EXIT · PREPARE_STOP
-  args  : CATEGORICAL only (closed enums below) — no free text, no floats.
+⛔ GOAL/SITUATION DISJOINTNESS (BINDING, Sayed 2026-08-03): labels here are
+built from ego geometry / VLM / SAM3 / Alpamayo, NEVER from a situation
+classifier; `assert_disjoint()` scans the goal payload (and ONLY the goal
+payload — the first version matched its own explanatory note, the
+polling-monitor trap in miniature; MEASURED 2026-08-16) and `s2_derive`
+reads Engine A through an allowlist that cannot see `situations`.
 
-Relation to the production v6 vocabulary (`stack/tanitad/models/v6.py`):
-the fuser (`stack/scripts/ph1_fuse.py`) emits v6 tokens; `from_fused()` maps
-them onto the S2 diagram vocabulary. Every lossy edge of that mapping is
-recorded on the record (`_mapping_lossy`), never silently collapsed. The v6
-token lists are pinned VERBATIM below and drift-checked against the real
-module whenever it is importable (emitter and consumer cannot drift silently
-— same rule ph1_fuse.py applies).
-
-⛔ GOAL/SITUATION DISJOINTNESS (BINDING, Sayed 2026-08-03, CLAUDE.md):
-a goal input is admissible, but it must NOT carry the situation classifier's
-output in any form — class posterior, argmax, embedding, or any feature
-derived from them. Labels here are built from ego / VLM / SAM3 / Alpamayo,
-NEVER from a situation classifier; `assert_disjoint()` enforces the textual
-invariant on every record and `validate()` enforces that every provenance
-source is in the closed allowed set. If a future leg wants to add a source,
-it must extend ALLOWED_SOURCES here, in review, not inline.
+⛔ ROUTE_TO IS GATED: G1 CLOSED at 0/31 (sign text unverifiable at 448 px)
+AND its `text_token_id` arg is categorical with no categorical channel on
+`vocab_str` (v6.py:2265-2274). `validate()` REFUSES a ROUTE_TO label —
+re-opening it is a deliberate edit here, in review, never a drive-by.
 
 Labels MAY use ego / privileged signals (labels-may-use-ego rule) — which is
-why every token carries per-token PROVENANCE, so the S-S gate's
-goal-provenance audit can separate privileged-label evidence from
-vision-only evidence without re-running anything.
-
-This module is dependency-free (stdlib json only) on purpose: it must import
-in bare Colab before any pip install, and on the dev box without torch.
+why every token carries per-instance PROVENANCE, so the S-S gate's
+goal-provenance audit separates privileged-label evidence from vision-only
+evidence without re-running anything.
 """
 from __future__ import annotations
 
 import json
+import sys
+from pathlib import Path
 
-SCHEMA_VERSION = "s2-lab-provisional-v0.1"
+SCHEMA_VERSION = "s2-strategic-v1"
 AUTHORITATIVE_DOC = ("TanitAD Research Hub/Data Engineering/Implementation/"
                      "incoming/2026-08-16-s2-strategic-gap/"
                      "S2_STRATEGIC_GAP.md")
 
 # --------------------------------------------------------------------------- #
-# The S2 diagram vocabulary (PROVISIONAL)                                      #
+# The vocabularies (VERBATIM v6 pins; drift-checked against the real module)    #
 # --------------------------------------------------------------------------- #
-#: FOLLOW_MAIN_ROAD is THE DEFAULT whenever no navigation route is set up
-#: (PI 2026-08-11, mirrored from v6.py). NONE_ABSTAIN survives only for
-#: genuinely ambiguous geometry — same rule as v6.
-G_STR_TOKENS = ("FOLLOW_MAIN_ROAD", "ROUTE_TO", "LANE_TARGET", "TURN",
-                "NONE_ABSTAIN")
-G_STR_DEFAULT = "FOLLOW_MAIN_ROAD"
-
-A_STR_TOKENS = ("PREPARE_LANE_CHANGE", "REDUCE_TO", "PREPARE_EXIT",
-                "PREPARE_STOP")
-
-#: Per-token CATEGORICAL argument enums. A token may only carry the args
-#: named here, each from its closed list. (v6 carries numeric constraint
-#: slots in physical units; the S2 diagram asks for categorical args — the
-#: numeric spine stays available in the fused record's ego layer, so nothing
-#: is lost, only not duplicated into the goal token.)
-G_STR_ARGS: dict[str, dict[str, tuple]] = {
-    "FOLLOW_MAIN_ROAD": {},
-    "ROUTE_TO": {"via": ("nav_sign", "route_input", "none")},
-    "LANE_TARGET": {"lane_index": tuple(range(7))},          # 0..6, from-right
-    "TURN": {"direction": ("left", "right"),
-             "kind": ("turn", "exit", "uturn")},
-    "NONE_ABSTAIN": {},
-}
-#: REDUCE_TO band cutpoints are PROVISIONAL (m/s, from the ego spine's
-#: v_min_future): crawl <2 · slow <6 · urban <15 · rural <25 · highway >=25.
-A_STR_ARGS: dict[str, dict[str, tuple]] = {
-    "PREPARE_LANE_CHANGE": {"direction": ("left", "right")},
-    "REDUCE_TO": {"band": ("crawl", "slow", "urban", "rural", "highway")},
-    "PREPARE_EXIT": {"side": ("left", "right")},
-    "PREPARE_STOP": {"cause": ("signal", "sign", "traffic", "hazard",
-                               "unknown")},
-}
-REDUCE_TO_BANDS_MS = (("crawl", 2.0), ("slow", 6.0), ("urban", 15.0),
-                      ("rural", 25.0), ("highway", float("inf")))
-
-#: Closed provenance set. "map" is reserved for xodr-derived option-set labels
-#: (strategic_gt.py — NuRec scenes only); "fusion_default" marks the
-#: FOLLOW_MAIN_ROAD default when no source voted.
-ALLOWED_SOURCES = ("ego", "vlm", "sam3", "alpamayo", "map", "fusion_default")
-CONFIDENCE = ("low", "med", "high")
-
-# --------------------------------------------------------------------------- #
-# v6 pins (VERBATIM from stack/tanitad/models/v6.py @ a84a1a0) + drift check   #
-# --------------------------------------------------------------------------- #
-V6_STRATEGIC_GOAL_TOKENS = (
+G_STR_TOKENS = (
     "KEEP_CORRIDOR", "LANE_TARGET", "EXIT_RIGHT", "EXIT_LEFT",
     "TURN_LEFT", "TURN_RIGHT", "STRAIGHT_THROUGH", "ROUTE_TO", "STOP_AT",
     "FOLLOW_MAIN_ROAD", "NONE_ABSTAIN",
 )
-V6_STRATEGIC_ACTION_TOKENS = (
+G_STR_DEFAULT = "FOLLOW_MAIN_ROAD"      # THE DEFAULT with no route set up
+A_STR_TOKENS = (
     "PREPARE_LANE_CHANGE", "HOLD_CORRIDOR", "REDUCE_TO", "PREPARE_EXIT",
     "PREPARE_STOP", "RESUME_CRUISE",
 )
+GOAL_ARG_NAMES = ("arg0", "arg1", "arg2", "arg3",
+                  "within_m", "by_time_s", "at_arc_m", "hold_for_s")
+GOAL_ARG_SLOTS = len(GOAL_ARG_NAMES)                                       # 8
+PROVENANCE_CLASSES = ("path", "signage", "vlm-fused")
+T0_S_DEFAULT = 8.0                       # ph0_v2 decision time (t0_idx=80)
+VALID_WINDOW_S_DEFAULT = (-2.0, 2.0)     # §1.2 validity band around t0
+
+#: Which arg slots a token MAY set (physical units; §1.2 conventions table).
+#: Sign convention for ±1 direction args: +1 = left, −1 = right (declared in
+#: s2_derive — matches the ego frame's +y = left).
+ARG_SLOT_SPEC: dict[str, tuple[str, ...]] = {
+    "KEEP_CORRIDOR": ("arg0",),                    # target_arc_m
+    "LANE_TARGET": ("arg0", "arg1"),               # lane_offset_idx, deadline_m
+    "EXIT_RIGHT": ("arg0",), "EXIT_LEFT": ("arg0",),          # distance_m
+    "TURN_LEFT": ("arg0",), "TURN_RIGHT": ("arg0",),          # junction arc m
+    "STRAIGHT_THROUGH": ("arg0",),
+    "ROUTE_TO": (),                                # ⛔ unfillable (gated)
+    "STOP_AT": ("arg0",),                          # distance_m
+    "FOLLOW_MAIN_ROAD": (), "NONE_ABSTAIN": (),
+    "PREPARE_LANE_CHANGE": ("arg0", "within_m"),   # dir ±1, envelope
+    "HOLD_CORRIDOR": ("at_arc_m",),
+    "REDUCE_TO": ("arg0", "within_m"),             # v_target_ms, envelope
+    "PREPARE_EXIT": ("arg0", "within_m"),          # dir ±1, envelope
+    "PREPARE_STOP": ("within_m",),
+    "RESUME_CRUISE": ("arg0",),                    # v_target_ms
+}
+
+# v6 tactical pins kept for the drift check (the lab shows g_tac beside g_str)
 V6_TACTICAL_LAT_ACTIONS = (
     "LANE_KEEP", "LANE_CHANGE_L", "LANE_CHANGE_R", "ABORT_LC", "NUDGE_L",
     "NUDGE_R",
@@ -127,10 +107,12 @@ def check_v6_drift() -> str:
         from tanitad.models import v6
     except Exception:                                        # noqa: BLE001
         return "v6 not importable (pins used)"
-    assert tuple(v6.STRATEGIC_GOAL_TOKENS) == V6_STRATEGIC_GOAL_TOKENS, \
+    assert tuple(v6.STRATEGIC_GOAL_TOKENS) == G_STR_TOKENS, \
         "v6 STRATEGIC_GOAL_TOKENS drifted — update s2_schema.py pins"
-    assert tuple(v6.STRATEGIC_ACTION_TOKENS) == V6_STRATEGIC_ACTION_TOKENS, \
+    assert tuple(v6.STRATEGIC_ACTION_TOKENS) == A_STR_TOKENS, \
         "v6 STRATEGIC_ACTION_TOKENS drifted — update s2_schema.py pins"
+    assert tuple(v6.GOAL_ARG_NAMES) == GOAL_ARG_NAMES, \
+        "v6 GOAL_ARG_NAMES drifted — update s2_schema.py pins"
     assert tuple(v6.TACTICAL_LAT_ACTIONS) == V6_TACTICAL_LAT_ACTIONS, \
         "v6 TACTICAL_LAT_ACTIONS drifted — update s2_schema.py pins"
     assert tuple(v6.TACTICAL_LON_ACTIONS) == V6_TACTICAL_LON_ACTIONS, \
@@ -138,187 +120,91 @@ def check_v6_drift() -> str:
     return "checked"
 
 
-#: v6 g_str token -> (s2 token, args, lossy). Lossy edges are DECISIONS the
-#: authoritative schema must confirm or replace — they are flagged on every
-#: record they touch, so the review sheet shows them.
-V6_TO_S2_GSTR: dict[str, tuple[str, dict, bool]] = {
-    "FOLLOW_MAIN_ROAD": ("FOLLOW_MAIN_ROAD", {}, False),
-    "ROUTE_TO": ("ROUTE_TO", {"via": "nav_sign"}, False),
-    "LANE_TARGET": ("LANE_TARGET", {}, False),
-    "TURN_LEFT": ("TURN", {"direction": "left", "kind": "turn"}, False),
-    "TURN_RIGHT": ("TURN", {"direction": "right", "kind": "turn"}, False),
-    "EXIT_LEFT": ("TURN", {"direction": "left", "kind": "exit"}, True),
-    "EXIT_RIGHT": ("TURN", {"direction": "right", "kind": "exit"}, True),
-    "KEEP_CORRIDOR": ("FOLLOW_MAIN_ROAD", {}, True),
-    "STRAIGHT_THROUGH": ("FOLLOW_MAIN_ROAD", {}, True),
-    # STOP_AT is a goal in v6; the S2 diagram carries stopping as the
-    # strategic ACTION PREPARE_STOP. from_fused() emits that action when it
-    # maps this token — the goal itself degrades to the default.
-    "STOP_AT": ("FOLLOW_MAIN_ROAD", {}, True),
-    "NONE_ABSTAIN": ("NONE_ABSTAIN", {}, False),
-}
-
-#: ph0_v2 B4 action verbs (schema `ph0-v2.2`) are ALREADY the strategic
-#: action vocabulary, lowercased — v6's STRATEGIC_ACTION_TOKENS minus none.
-#: HOLD_CORRIDOR / RESUME_CRUISE have no S2 diagram slot: dropped, flagged.
-VERB_TO_A_STR: dict[str, str | None] = {
-    "prepare_lane_change": "PREPARE_LANE_CHANGE",
-    "reduce_to": "REDUCE_TO",
-    "prepare_exit": "PREPARE_EXIT",
-    "prepare_stop": "PREPARE_STOP",
-    "hold_corridor": None,
-    "resume_cruise": None,
-}
-
-
-def reduce_band(v_ms: float) -> str:
-    for name, hi in REDUCE_TO_BANDS_MS:
-        if v_ms < hi:
-            return name
-    return "highway"
+def _s2_derive():
+    """Lazy import of the derivation core (stack/scripts/s2_derive.py)."""
+    try:
+        import s2_derive
+        return s2_derive
+    except ImportError:
+        pass
+    scripts = Path(__file__).resolve().parents[1] / "stack" / "scripts"
+    if scripts.is_dir():
+        sys.path.insert(0, str(scripts))
+        import s2_derive
+        return s2_derive
+    raise ImportError(
+        "s2_derive not importable — the derivation core lives at "
+        "stack/scripts/s2_derive.py; clone/mount the repo so it is on the "
+        "path (RUNNER.md §1)")
 
 
 # --------------------------------------------------------------------------- #
 # record construction                                                          #
 # --------------------------------------------------------------------------- #
-def _tok(token: str, args: dict, provenance: list[str], confidence: str,
-         **extra) -> dict:
-    return {"token": token, "args": args,
-            "provenance": sorted(set(provenance)), "confidence": confidence,
-            **extra}
+def build_record(clip_id: str, g_str: dict, a_str: dict, *,
+                 t0_s: float = T0_S_DEFAULT,
+                 valid_window_s=VALID_WINDOW_S_DEFAULT,
+                 provenance_notes: dict | None = None,
+                 extra: dict | None = None) -> dict:
+    """One `s2-strategic-v1` record from derived g_str/a_str blocks.
 
-
-def from_fused(fused: dict, ego_extra: dict | None = None) -> dict:
-    """PH1 fused record (+ optional ego-geometry extras) -> one S2 lab record.
-
-    ``fused`` is the `ph1-fused-v1` shape produced by ph1_fuse / the lab's
-    fuse_one(). ``ego_extra`` may carry the ego-yaw g_str vote
-    (s2_lab_lib.ego_leg output) so the fusion default has a second opinion.
-    Per-token provenance is REQUIRED output — the S-S gate's goal-provenance
-    audit reads it."""
-    vocab = fused.get("vocab") or {}
-    sym = ((fused.get("semantics") or {}).get("symbols")) or {}
-    ego = fused.get("ego") or {}
-    sp = ego.get("speed_profile") or {}
-    lossy: list[str] = []
-
-    # ---- g_str: the v6 token the fuser emitted, mapped ---------------------
-    v6_tok = (vocab.get("g_str") or {}).get("token") or "NONE_ABSTAIN"
-    s2_tok, args, is_lossy = V6_TO_S2_GSTR.get(
-        v6_tok, ("NONE_ABSTAIN", {}, True))
-    if is_lossy:
-        lossy.append(f"g_str {v6_tok} -> {s2_tok}")
-    prov = ["vlm"]                       # ph1_fuse g_str src is the VLM B4
-    conf = str(sym.get("conf") or "low")
-    # ego-yaw second opinion (labels may use ego): corroborate or record
-    ego_vote = (ego_extra or {}).get("g_str_vote")
-    ego_agrees = None
-    if ego_vote:
-        ego_agrees = (ego_vote.get("token") == s2_tok
-                      and all(args.get(k) == v
-                              for k, v in (ego_vote.get("args") or {}).items()
-                              if k in args))
-        if ego_agrees:
-            prov.append("ego")
-    if v6_tok == "NONE_ABSTAIN" and ego_vote and ego_vote.get("token"):
-        # VLM abstained but ego geometry votes: take the ego vote, said so.
-        s2_tok, args = ego_vote["token"], dict(ego_vote.get("args") or {})
-        prov, conf = ["ego"], "low"
-    if s2_tok == "NONE_ABSTAIN":
-        # the diagram default applies when nothing voted at all
-        s2_tok, args, prov, conf = G_STR_DEFAULT, {}, ["fusion_default"], "low"
-    if s2_tok == "LANE_TARGET" and "lane_index" not in args:
-        lane = ((fused.get("semantics") or {}).get("scene") or {}).get(
-            "lane_ego")
-        if isinstance(lane, int) and 0 <= lane <= 6:
-            args["lane_index"] = lane
-    g_str = _tok(s2_tok, args, prov, conf,
-                 v6_token=v6_tok,
-                 ego_vote=(ego_vote or None),
-                 ego_agrees=ego_agrees)
-
-    # ---- a_str: B4 verbs (vlm) + ego-spine corroboration -------------------
-    a_str: list[dict] = []
-    seen: set[tuple] = set()
-
-    def _add(token, args_, prov_, conf_, **extra):
-        key = (token, tuple(sorted(args_.items())))
-        if key in seen:
-            for a in a_str:                    # merge provenance, keep first
-                if a["token"] == token and a["args"] == args_:
-                    a["provenance"] = sorted(set(a["provenance"]) | set(prov_))
-            return
-        seen.add(key)
-        a_str.append(_tok(token, args_, prov_, conf_, **extra))
-
-    for act in (sym.get("actions") or []):
-        verb = str(act.get("verb") or "").lower()
-        tok = VERB_TO_A_STR.get(verb)
-        if tok is None:
-            if verb in VERB_TO_A_STR:
-                lossy.append(f"a_str verb {verb} dropped (no S2 slot)")
-            continue
-        args_: dict = {}
-        if tok == "PREPARE_LANE_CHANGE":
-            d = str(act.get("direction") or "none")
-            if d not in ("left", "right"):
-                lossy.append("PREPARE_LANE_CHANGE without direction dropped")
-                continue
-            args_["direction"] = d
-        elif tok == "PREPARE_EXIT":
-            args_["side"] = (act.get("direction")
-                             if act.get("direction") in ("left", "right")
-                             else "right")
-        elif tok == "REDUCE_TO":
-            vmin = sp.get("v_min_future")
-            args_["band"] = (reduce_band(float(vmin)) if vmin is not None
-                             else "urban")
-        elif tok == "PREPARE_STOP":
-            reds = [s for s in (((fused.get("semantics") or {}).get("signs")
-                                 or {}).get("signs") or [])
-                    if s.get("state") == "red"]
-            args_["cause"] = "signal" if reds else "unknown"
-        _add(tok, args_, ["vlm"], str(sym.get("conf") or "low"))
-
-    # ego corroboration / ego-only votes (labels may use ego)
-    lon = (vocab.get("g_tac_lon") or {})
-    if lon.get("token") == "BRAKE_TO" and (sp.get("stops") or 0) > 0:
-        _add("PREPARE_STOP", {"cause": "unknown"},
-             ["ego"] + (["vlm"] if "vlm" in (lon.get("voters") or []) else []),
-             "med", derived_from="g_tac_lon=BRAKE_TO + ego stops>0")
-    lat = (vocab.get("g_tac_lat") or {})
-    if lat.get("token") in ("LANE_CHANGE_L", "LANE_CHANGE_R"):
-        _add("PREPARE_LANE_CHANGE",
-             {"direction": "left" if lat["token"].endswith("_L") else "right"},
-             list(lat.get("voters") or ["ego"]), "med",
-             derived_from=f"g_tac_lat={lat['token']}")
-    if (sp.get("net_dv") is not None and float(sp["net_dv"]) < -3.0
-            and (sp.get("stops") or 0) == 0):
-        _add("REDUCE_TO", {"band": reduce_band(float(sp["v_min_future"]))},
-             ["ego"], "med", derived_from="ego net_dv < -3 m/s, no stop")
-    if v6_tok == "STOP_AT":
-        _add("PREPARE_STOP", {"cause": "unknown"}, ["vlm"], conf,
-             derived_from="v6 g_str STOP_AT (mapped to action)")
-
+    ``g_str``/``a_str`` are `s2_derive.derive_*` outputs (token, token_id,
+    args, arg_mask, provenance, sources, confidence, corroboration, …).
+    Validates + asserts disjointness before returning — an invalid record is
+    an exception, never a silently-written file."""
     rec = {
         "schema_version": SCHEMA_VERSION,
-        "authoritative_doc": AUTHORITATIVE_DOC,
-        "clip_id": fused.get("clip_id"),
+        "clip_id": clip_id,
+        "t0_s": float(t0_s),
         "g_str": g_str,
         "a_str": a_str,
-        "g_tac": {"lat": vocab.get("g_tac_lat"),
-                  "lon": vocab.get("g_tac_lon")},
-        "_mapping_lossy": lossy,
-        "_provisional": True,
+        "valid_window_s": [float(valid_window_s[0]), float(valid_window_s[1])],
+        "disjointness": {"situation_classifier_output_used": False},
     }
+    if provenance_notes:
+        rec["_provenance"] = provenance_notes
+    if extra:
+        rec.update(extra)
     assert_disjoint(rec)
     errs = validate(rec)
     if errs:
-        raise ValueError(f"s2 record invalid for {rec['clip_id']}: {errs}")
-    # the prose note is attached AFTER the assert — see assert_disjoint's
-    # docstring for why it must never be part of the scanned payload
-    rec["_disjointness"] = ("goal payload information-disjoint from the "
-                            "sit. classifier: asserted on g_str/a_str/g_tac")
+        raise ValueError(f"s2 record invalid for {clip_id}: {errs}")
+    return rec
+
+
+def from_fused(fused: dict, ego_extra: dict | None = None,
+               engine_a: dict | None = None) -> dict:
+    """PH1 fused record (+ optional structured Engine A) -> one v1 record.
+
+    Engine A resolution order: the ``engine_a`` argument, then the fused
+    record's banked ``ego.engine_a`` (ph1_fuse ≥ this change persists it).
+    With neither present the derivation falls back to VLM-primary, tagged
+    ``vlm-fused`` — stated on the record, never silent.
+
+    ``ego_extra`` (the lab's ego-yaw vote) is recorded for audit only — the
+    structured Engine A supersedes it as the geometric authority."""
+    sd = _s2_derive()
+    ego = fused.get("ego") or {}
+    ea = engine_a or ego.get("engine_a")
+    sym = ((fused.get("semantics") or {}).get("symbols")) or {}
+    g_str = sd.derive_g_str(ea, sym)
+    a_str = sd.derive_a_str(ea, sym)
+    if ego_extra and ego_extra.get("g_str_vote"):
+        g_str.setdefault("corroboration", {})["ego_yaw_vote"] = \
+            ego_extra["g_str_vote"]
+
+    prov = dict((fused.get("_provenance") or {}))
+    prov.setdefault("engine_a", "privileged-labels-only (hindsight ego path)"
+                    if ea else "absent — vlm-primary fallback")
+    vocab = fused.get("vocab") or {}
+    rec = build_record(
+        fused.get("clip_id"), g_str, a_str,
+        provenance_notes=prov,
+        extra={"_v6_drift_check": check_v6_drift(),
+               # audit passthrough for the lab's review sheet — NOT part of
+               # the trainer contract (unknown keys are ignored there)
+               "g_tac": {"lat": vocab.get("g_tac_lat"),
+                         "lon": vocab.get("g_tac_lon")}})
     return rec
 
 
@@ -326,16 +212,16 @@ def from_fused(fused: dict, ego_extra: dict | None = None) -> dict:
 # validation                                                                   #
 # --------------------------------------------------------------------------- #
 def assert_disjoint(rec: dict) -> None:
-    """The ph1_fuse rule: no situation-classifier output may reach a
+    """The binding rule: no situation-classifier output may reach a
     goal/action field, in any spelling.
 
-    ⚠️ Scans ONLY the goal-payload fields (g_str / a_str / g_tac), never the
-    record's prose/meta fields — the first version scanned the whole record
-    and matched its OWN `_disjointness` explanatory note, which contains the
-    word it searches for. That is CLAUDE.md's polling-monitor trap in
-    miniature (the emitted marker must be disjoint from the searched token);
-    MEASURED here on the first smoke run, 2026-08-16."""
-    payload = {k: rec.get(k) for k in ("g_str", "a_str", "g_tac")}
+    ⚠️ Scans ONLY the goal-payload fields (g_str / a_str), never the record's
+    prose/meta fields — the first version scanned the whole record and
+    matched its OWN explanatory note, which contains the word it searches
+    for. That is CLAUDE.md's polling-monitor trap in miniature (the emitted
+    marker must be disjoint from the searched token); MEASURED here on the
+    first smoke run, 2026-08-16."""
+    payload = {k: rec.get(k) for k in ("g_str", "a_str")}
     blob = json.dumps(payload).lower()
     for needle in ("situation", "sitclf"):
         assert needle not in blob, (
@@ -344,26 +230,41 @@ def assert_disjoint(rec: dict) -> None:
             "classifier's output (BINDING, Sayed 2026-08-03)")
 
 
-def _check_tok(t: dict, valid_tokens, arg_spec, where: str) -> list[str]:
-    errs = []
-    if t.get("token") not in valid_tokens:
-        errs.append(f"{where}: token {t.get('token')!r} not in {valid_tokens}")
+def _check_tok(t: dict, tokens: tuple, where: str) -> list[str]:
+    errs: list[str] = []
+    tok = t.get("token")
+    if tok not in tokens:
+        errs.append(f"{where}: token {tok!r} not in vocabulary")
         return errs
-    spec = arg_spec.get(t["token"], {})
-    for k, v in (t.get("args") or {}).items():
-        if k not in spec:
-            errs.append(f"{where}: arg {k!r} not allowed for {t['token']}")
-        elif v not in spec[k]:
-            errs.append(f"{where}: arg {k}={v!r} not in {spec[k]}")
-    prov = t.get("provenance")
-    if not prov:
-        errs.append(f"{where}: provenance MISSING (required per token)")
-    else:
-        bad = [p for p in prov if p not in ALLOWED_SOURCES]
-        if bad:
-            errs.append(f"{where}: provenance {bad} not in ALLOWED_SOURCES")
-    if t.get("confidence") not in CONFIDENCE:
-        errs.append(f"{where}: confidence {t.get('confidence')!r} invalid")
+    if tok == "ROUTE_TO":
+        errs.append(f"{where}: ROUTE_TO is GATED (G1 closed 0/31; no "
+                    "categorical arg channel) — emit the geometry token or "
+                    "NONE_ABSTAIN with a reason, never ROUTE_TO")
+    if t.get("token_id") != tokens.index(tok):
+        errs.append(f"{where}: token_id {t.get('token_id')} != "
+                    f"{tokens.index(tok)} for {tok}")
+    args, mask = t.get("args"), t.get("arg_mask")
+    if not (isinstance(args, list) and len(args) == GOAL_ARG_SLOTS):
+        errs.append(f"{where}: args must be [{GOAL_ARG_SLOTS}] floats")
+        return errs
+    if not (isinstance(mask, list) and len(mask) == GOAL_ARG_SLOTS
+            and all(m in (0, 1) for m in mask)):
+        errs.append(f"{where}: arg_mask must be [{GOAL_ARG_SLOTS}] of 0/1")
+        return errs
+    allowed = ARG_SLOT_SPEC.get(tok, ())
+    for i, m in enumerate(mask):
+        if m and GOAL_ARG_NAMES[i] not in allowed:
+            errs.append(f"{where}: slot {GOAL_ARG_NAMES[i]!r} set but not "
+                        f"allowed for {tok} (allowed: {allowed})")
+        if not m and args[i] not in (0, 0.0):
+            errs.append(f"{where}: slot {GOAL_ARG_NAMES[i]!r} unset but "
+                        f"carries {args[i]} — an unset slot is 0.0 by "
+                        "convention (nothing may read it)")
+    if t.get("provenance") not in PROVENANCE_CLASSES:
+        errs.append(f"{where}: provenance {t.get('provenance')!r} not in "
+                    f"{PROVENANCE_CLASSES} (REQUIRED per instance)")
+    if not t.get("sources"):
+        errs.append(f"{where}: sources MISSING (auditable producers required)")
     return errs
 
 
@@ -375,19 +276,32 @@ def validate(rec: dict) -> list[str]:
                     f"{SCHEMA_VERSION}")
     if not rec.get("clip_id"):
         errs.append("clip_id missing")
+    if not isinstance(rec.get("t0_s"), (int, float)):
+        errs.append("t0_s missing")
+    vw = rec.get("valid_window_s")
+    if not (isinstance(vw, list) and len(vw) == 2 and vw[0] <= 0.0 <= vw[1]):
+        errs.append(f"valid_window_s {vw!r} must be [lo, hi] with lo<=0<=hi")
+    dj = rec.get("disjointness")
+    if not (isinstance(dj, dict)
+            and dj.get("situation_classifier_output_used") is False):
+        errs.append("disjointness stamp missing or not asserted False")
     g = rec.get("g_str")
     if not isinstance(g, dict):
         errs.append("g_str missing")
     else:
-        errs += _check_tok(g, G_STR_TOKENS, G_STR_ARGS, "g_str")
-    for i, a in enumerate(rec.get("a_str") or []):
-        errs += _check_tok(a, A_STR_TOKENS, A_STR_ARGS, f"a_str[{i}]")
+        errs += _check_tok(g, G_STR_TOKENS, "g_str")
+    a = rec.get("a_str")
+    if not isinstance(a, dict):
+        errs.append("a_str missing")
+    else:
+        errs += _check_tok(a, A_STR_TOKENS, "a_str")
     return errs
 
 
 if __name__ == "__main__":
-    print(f"s2_schema {SCHEMA_VERSION} (PROVISIONAL — authoritative: "
+    print(f"s2_schema {SCHEMA_VERSION} (authoritative; spec: "
           f"{AUTHORITATIVE_DOC})")
     print(f"g_str: {G_STR_TOKENS}")
     print(f"a_str: {A_STR_TOKENS}")
+    print(f"args:  {GOAL_ARG_NAMES}")
     print(f"v6 drift check: {check_v6_drift()}")

@@ -679,6 +679,14 @@ def run_clip(vlm, frames, n_past, engine_a, *, px=448, dump=None,
     # the speedometer?") is computable from the artifact alone, with no re-run
     rec["ego_state"] = ego_state
     rec["_ego_prompt_mode"] = ego_mode if ego_state else "none"
+    # ⭐ S2 fix 1 (S2_STRATEGIC_GAP §6): persist Engine A as a STRUCTURED
+    # field — before this it survived only inside the B4 prompt text, and the
+    # 801-clip recovery had to parse it back out of `_calls`. `situations` is
+    # stripped: the same load-bearing omission `_fmt_engine_a` makes, so no
+    # goal/action consumer can ever read situation-detector output from here
+    # (goal/situation disjointness, BINDING 2026-08-03).
+    rec["engine_a"] = ({k: v for k, v in engine_a.items()
+                        if k != "situations"} if engine_a else None)
     rec["_calls"] = calls
     rec["_all_valid"] = all(c["valid"] for c in calls)
     rec["_n_parse_fail"] = sum(1 for c in calls if not c["parsed_ok"])
