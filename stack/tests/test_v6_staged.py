@@ -248,7 +248,8 @@ def test_isolation_survives_a_stage_freeze(stack):
         p.requires_grad_(rg)
 
 
-def test_planner_surface_is_total():
+@pytest.mark.parametrize("selector", ["none", "goal", "mlp"])
+def test_planner_surface_is_total(selector):
     """Every planner-group parameter must be REACHABLE from the DECLARED
     planner-side surface. A head added without appending to the declaration
     would silently escape the isolation probe — this is the guard.
@@ -258,8 +259,29 @@ def test_planner_surface_is_total():
     gradient through the emitted controls (``dL/dW0 ∝ W_last = 0``), so
     "reachable" is not measurable there — which is itself the reason the
     declared surface carries the pre-emission ``feat`` tensor as well.
+
+    ⛔ AND IT MUST RUN ON EVERY SELECTOR ARM, NOT ONLY THE DEFAULT. Until
+    2026-08-16 this ran on ``tiny_cfg()`` alone, i.e. with NO scorer built — so
+    the ``"goal"`` and ``"mlp"`` arms' parameters were never probed at all, and
+    with ``selector="mlp"`` ``cand_score.fc1.{weight,bias}`` are additionally
+    INVISIBLE at init for the same zero-init reason as the emission and the
+    FiLM (``fc2`` is zero-init BY DESIGN so the capacity control starts FLAT
+    over the fan, hence ``dL/dfc1 ∝ W_fc2 = 0`` EXACTLY). A mis-wire in
+    ``MLPCandidateScorer.fc1`` would not have been caught — in the arm whose
+    whole job is to be the CONTROL that decides whether SEL-1 is mechanism or
+    capacity.
+
+    ⭐ THE FIX IS A TEST-LOCAL PERTURBATION, NOT A CHANGED INITIALISATION.
+    ``MLPCandidateScorer.__init__`` is untouched, so the TRAINED arm still
+    starts flat over the fan and any ranking it acquires is still visibly
+    LEARNED. Reachability is an ARCHITECTURE property (the X3 probe's own
+    philosophy), so the probe — and only the probe — runs off the zero init, on
+    a stack built for the probe and discarded after it. Sensitivity is proved
+    separately: ``tests/test_v6_anchor_loss.py`` shows the hole EXISTS at zero
+    init, CLOSES under this perturbation, and that a genuinely disconnected
+    ``fc1`` is still reported MISSING.
     """
-    s = V6Stack(tiny_cfg())
+    s = V6Stack(tiny_cfg(selector=selector))
     with torch.no_grad():                     # off the CV warm start
         s.emission.net[-1].weight.normal_(0.0, 0.1)
         s.emission.net[-1].bias.normal_(0.0, 0.1)
@@ -274,8 +296,19 @@ def test_planner_surface_is_total():
         # FiLM carries the action conditioning that S-W trains.
         for blk in s.predictor_op.blocks:
             blk.film.to_scale_shift.weight.normal_(0.0, 0.1)
+        # ⛔ THE THIRD ZERO-INIT, and the one that hid a whole module. Every
+        # scorer's OUTPUT layer starts at zero on the same discipline; probe
+        # off it or the layer BEFORE it reads as unreachable.
+        for name in ("fc2", "goal_point"):
+            head = getattr(s.cand_score, name, None)
+            if head is not None:
+                head.weight.normal_(0.0, 0.1)
+                head.bias.normal_(0.0, 0.1)
     out = s.forward(**s.synthetic_batch(2))
     planner = list(s.group_parameters("planner"))
+    assert planner, "nothing probed — a probe over an empty set proves nothing"
+    if selector == "mlp":                     # the arm this guard was blind to
+        assert any(n.startswith("cand_score.fc1") for n, _ in planner)
     live = V6Stack._live_edges(V6Stack._probe_scalar(out["planner_side"]),
                               planner)
     missing = {n for n, _ in planner} - set(live)

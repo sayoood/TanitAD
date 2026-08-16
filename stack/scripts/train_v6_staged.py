@@ -122,6 +122,8 @@ __all__ = [
     "STAGE_MAY_INTRODUCE", "RESUME_CONTRACT",
     "o2_near_field_loss", "o3_masked_cell_loss", "o5_rollout_consistency_loss",
     "o6_sigreg_loss", "rollout_step_weights", "build_o4_weights",
+    "ANCHOR_OBJECTIVES", "ANCHOR_OBJ_MODES", "ANCHOR_AXIS_W_DEFAULT",
+    "anchor_goal_loss",
     "v6_loss_step", "stage_gate_dict", "write_stage_gate",
     "assert_stage_precondition", "GatePreconditionError",
     "ResumeLineageError", "read_ckpt_provenance", "assert_resume_lineage",
@@ -175,6 +177,19 @@ class V6LossWeights:
     #: helps; target-softness hurts. ⚠️ Units: this term is in METRES while every
     #: other term is not, so its weight is a declared decision, never a default.
     w_select: float = 0.0
+    #: THE ``ANCHOR_GOAL`` OBJECTIVE (2026-08-16). DEFAULT 0.0 = OFF everywhere,
+    #: so the incumbent loss is bit-identical and the live v6F S-W resume is
+    #: untouched. Needs ``cfg.anchor_goal != "none"`` AND an anchor table AT THE
+    #: PLAN HORIZON -- and no such table exists (every banked vocabulary stops
+    #: at 2.0 s), which is why this ships OFF and REFUSING rather than merely
+    #: unused. The objective is :data:`ANCHOR_OBJECTIVES`: the DEFAULT is
+    #: METRIC-AWARE and the one-hot CE is reachable only as the named,
+    #: acknowledged CONTROL, because E-AG2 measured that CE +4.7502
+    #: [+3.0514, +6.3981] WORSE than a ridge that was ALREADY refused.
+    #: Units: METRES for ``metric``/``softanchor`` (as for ``w_select``), NATS
+    #: for ``ce`` -- one more reason the two are not interchangeable and the
+    #: weight is a declared decision, never a default.
+    w_anchor: float = 0.0
 
     def for_stage(self, stage: str) -> "V6LossWeights":
         """The weights actually in force for ``stage``.
@@ -186,16 +201,22 @@ class V6LossWeights:
         """
         if stage == "S-W":
             return replace(self, t1_latent=0.0, s1_latent=0.0,
-                           lambda_plan=0.0, seam_op=0.0, w_select=0.0)
+                           lambda_plan=0.0, seam_op=0.0, w_select=0.0,
+                           w_anchor=0.0)
         if stage == "S-T":
             return replace(self, o1_ctrl=0.0, o1_fact=0.0, o1_scene=0.0,
                            o2_nearfield=0.0, o3_masked=0.0, o5_rollout=0.0,
                            o6_sigreg=0.0, s1_latent=0.0)
         if stage == "S-S":
+            # w_anchor joins w_select here for the SAME reason: the anchor head
+            # is planner-group (v6.py MODULE_GROUPS: ("anchor_head.",
+            # "planner")) and S-S trains ``layer_str`` ONLY, so an anchor loss
+            # in force here would be a term advertised in the launch line that
+            # trains nothing.
             return replace(self, o1_ctrl=0.0, o1_fact=0.0, o1_scene=0.0,
                            o2_nearfield=0.0, o3_masked=0.0, o5_rollout=0.0,
                            o6_sigreg=0.0, t1_latent=0.0, lambda_plan=0.0,
-                           seam_op=0.0, w_select=0.0)
+                           seam_op=0.0, w_select=0.0, w_anchor=0.0)
         if stage == "S-J":
             return self
         raise ValueError(f"unknown stage {stage!r}; expected one of {STAGES}")
@@ -573,6 +594,215 @@ def build_o4_weights(actions_per_window, *, dt: float = 0.1,
 
 
 # ============================================================================
+# THE ``ANCHOR_GOAL`` OBJECTIVE -- metric-aware by DEFAULT, CE as the CONTROL
+# ============================================================================
+
+#: The three objectives that can train :class:`~tanitad.models.v6.AnchorGoalHead`,
+#: with the measurement that put each where it is. INHERITED from
+#: `.../incoming/2026-08-16-anchor-goal-supervision/ANCHOR_GOAL_SUPERVISION.md`
+#: (881 windows / 40 episodes, LOEO, paired episode-cluster bootstrap) and
+#: `E-OBJ-1`; re-quoted with its stamp, never re-derived here.
+#:
+#: WHY A DEFAULT AND A CONTROL, RATHER THAN A CHOICE. E-AG2 held the ESTIMATOR
+#: fixed and varied only the ESTIMAND: ``snap`` -- the same ridge, rounded to
+#: the nearest anchor -- is NOT separated from the free ridge
+#: (-0.0002 [-0.1031, +0.0703] at K=256; +0.0383 [-0.2125, +0.2338] in the much
+#: stronger ``v0`` regime), while a K-way one-hot CLASSIFIER on the same
+#: features costs +4.7502 [+3.0514, +6.3981] WORSE, separated at every K from 8
+#: to 256, under BOTH vocabulary constructions, and replicating on REF-C-base
+#: (+5.4570 [+3.8345, +7.1073]).
+#: => QUANTISATION IS FREE; THE ONE-HOT TARGET IS WHAT COSTS +4.75 m.
+#: A ``--anchor-objective ce`` DEFAULT would therefore ship a refuted objective;
+#: it is reachable only behind ``--i-know-this-is-the-control-arm``, exactly as
+#: ``--no-isolate-planner`` is.
+ANCHOR_OBJECTIVES: dict[str, str] = {
+    "metric": (
+        "DEFAULT. Endpoint distance ||g_hat - g*|| in METRES on the EMITTED "
+        "goal point. The emission is straight-through "
+        "(`raw + (snapped - raw).detach()`), so the estimand is quantised "
+        "while the gradient reaches the CONTINUOUS regression -- which is the "
+        "half E-AG2 EXONERATED. This is 'regress-then-snap' as a TRAINED "
+        "object rather than a post-hoc rounding."),
+    "softanchor": (
+        "The metric-aware DISTANCE-WEIGHTED target over anchors, for the K-way "
+        "head: L = sum_k p_k * d_k with d_k = ||anchor_k - g*|| and p the "
+        "head's own softmax. It is E-OBJ-1's `softade` one level up -- the "
+        "EXPECTED anchor error under the model's own distribution, whose "
+        "optimum is still all mass on the nearest anchor. "
+        "Chosen over a SOFTENED CE target on evidence, not taste: E-OBJ-1 "
+        "measured metric-awareness recovering -0.0974 m (base) / -0.1670 m "
+        "(XL) separated, while SOFTENING the CE target was separated WORSE "
+        "(+0.0909 m) at EVERY tau. Metric-awareness helps; target-softness "
+        "hurts, so the softened-CE form is deliberately NOT offered."),
+    "ce": (
+        "CONTROL ONLY -- the pre-registered, MEASURED-REFUTED arm. One-hot "
+        "cross-entropy on argmin_k ||anchor_k - g*||: metric-BLIND by "
+        "construction (it scores 'picked the adjacent anchor' and 'picked one "
+        "40 m away' identically), which is the property being controlled for. "
+        "E-AG2: +4.7502 [+3.0514, +6.3981] WORSE than an already-refused "
+        "ridge. Requires an explicit control-arm acknowledgement."),
+}
+
+#: Which :class:`~tanitad.models.v6.AnchorGoalHead` MODES each objective can
+#: train, and it is a HARD coupling rather than a hint. Both directions of the
+#: mismatch produce a NUMBER instead of an error, which is the failure class
+#: this programme keeps paying for:
+#:   * ``metric`` on ``"onehot"`` -- that head's emitted point is a HARD table
+#:     lookup carrying NO gradient at all (by design, v6.py: "no straight-
+#:     through path is offered"). The loss would fall to a constant and the
+#:     optimiser would train NOTHING while the log showed a metre-scale term.
+#:   * ``softanchor`` / ``ce`` on a snap mode -- there are no ``cls_logits``,
+#:     so there is nothing to put a distribution on.
+ANCHOR_OBJ_MODES: dict[str, tuple[str, ...]] = {
+    "metric": ("snap_lat", "snap_xy"),
+    "softanchor": ("onehot",),
+    "ce": ("onehot",),
+}
+
+#: (LONGITUDINAL, LATERAL) axis weights. THE DEFAULT IS RAW METRES, AND THAT IS
+#: THE EVIDENCE-WEIGHTED CHOICE RATHER THAN THE SYMMETRIC ONE.
+#:
+#: MEASURED (INHERITED, ANCHOR_GOAL_SUPERVISION.md 6.4, 2 s, 881 windows):
+#: the goal's corpus variance is 98.8 % LONGITUDINAL (sigma_long 19.0578 vs
+#: sigma_lat 2.0723 -- 9.2x in sigma, 84x in variance); every arm's RESIDUAL is
+#: longitudinal too (ridge 6.6132 / 1.0667, i.e. 97.4 % of squared error), and
+#: the HEADROOM is where the loss should spend: the classifier sits 1.96x above
+#: the floor laterally (1.3310 vs 0.6802) against 14.9x longitudinally
+#: (13.3502 vs 0.8954).
+#:
+#: A raw-metre loss is therefore ALREADY strongly anisotropic in effect -- it
+#: allocates ~97 % of its squared-error gradient longitudinally, purely because
+#: that is where the metres are. WHITENING (dividing each axis by its corpus
+#: sigma) would UNDO exactly that, spending half the gradient on the axis
+#: carrying 1.2 % of the variance -- which is 6.4's own diagnosis of what the
+#: isotropic FPS vocabulary does wrong, repeated in the objective. Raw metres is
+#: also METRIC-CONSISTENT WITH THE EVAL: ADE and the four families are scored in
+#: metres, not in corpus sigmas.
+#:
+#: EVIDENCE CLASS of the weights themselves: DECLARED. They are exposed as two
+#: floats so an arm can vary them, and the realised per-axis split is LOGGED
+#: EVERY STEP (`anchor_err_lon_m` / `anchor_err_lat_m`, never pooled -- the
+#: four-metric-families rule) so the allocation is MEASURED at run time instead
+#: of assumed from a 2 s corpus statistic that has no 6 s counterpart.
+ANCHOR_AXIS_W_DEFAULT: tuple[float, float] = (1.0, 1.0)
+
+
+def anchor_goal_loss(head_out: dict, target_xy: Tensor, anchors: Tensor, *,
+                     objective: str = "metric",
+                     axis_w: tuple[float, float] = ANCHOR_AXIS_W_DEFAULT
+                     ) -> tuple[Tensor, dict]:
+    """The ``ANCHOR_GOAL`` supervision. Returns ``(loss, log)``.
+
+    ``head_out``  the ``AnchorGoalHead.forward`` dict (UNPREFIXED keys);
+    ``target_xy`` ``[B, 2]`` the TRUE ego-frame displacement at the plan
+                  horizon, x forward / y left, metres -- the same convention
+                  ``tanitad.data.anchor_goal`` and ``driving_diagnostic.
+                  gt_ego_waypoints`` use, and the same endpoint the v6f
+                  selector scores;
+    ``anchors``   ``[K, 2]`` the FROZEN table (``AnchorGoalHead.anchors``).
+
+    ADMISSIBILITY (PI 2026-08-03). ``target_xy`` is a LABEL built from FUTURE
+    ego poses -- labels may use ego, inference may not. Nothing here enters the
+    head: its only input is ``e_g_tac``, which is vision-derived
+    (``goal_head_tac(z_tac_p, cond=e_g_str)``). The goal path stays
+    information-disjoint from the situation classifier -- this function reads
+    no situation, no ego state and no ``v0``, and ``d_k`` depends only on a
+    frozen buffer and the label, so it is a CONSTANT w.r.t. every parameter
+    (which is why, unlike ``w_select``'s ``err.detach()``, no detach is needed
+    to keep the gradient where it is intended).
+
+    THE LOG IS PER-AXIS, NEVER POOLED. LONGITUDINAL and LATERAL are separate
+    families (PI 2026-08-02) and 98.8 % of this quantity's variance is
+    longitudinal, so a single scalar would hide the axis that IS the problem.
+    """
+    if objective not in ANCHOR_OBJECTIVES:
+        raise ValueError(
+            f"anchor objective must be one of {tuple(ANCHOR_OBJECTIVES)}, got "
+            f"{objective!r}. 'metric' is the DEFAULT the measurement "
+            f"prescribes; 'ce' is the CONTROL E-AG2 measured +4.7502 "
+            f"[+3.0514, +6.3981] WORSE.")
+    mode = head_out.get("mode")
+    if mode is not None and mode not in ANCHOR_OBJ_MODES[objective]:
+        raise ValueError(
+            f"objective {objective!r} needs an anchor_goal mode in "
+            f"{ANCHOR_OBJ_MODES[objective]}, got {mode!r}. "
+            f"{ANCHOR_OBJECTIVES[objective]}")
+    if target_xy.ndim != 2 or target_xy.shape[-1] != 2:
+        raise ValueError(f"target_xy must be [B, 2], got "
+                         f"{tuple(target_xy.shape)}")
+    if anchors.ndim != 2 or anchors.shape[-1] != 2:
+        raise ValueError(f"anchors must be [K, 2], got {tuple(anchors.shape)}")
+    tgt = target_xy.float()
+    w = torch.as_tensor(axis_w, dtype=torch.float32,
+                        device=tgt.device).reshape(1, 2)
+    if float(w.min()) < 0.0:
+        raise ValueError(f"axis_w must be non-negative, got {tuple(axis_w)}")
+    log: dict = {"anchor_objective": objective, "anchor_mode": mode,
+                 "anchor_axis_w": [float(x) for x in axis_w]}
+
+    # the label side, shared by all three objectives: the nearest anchor under
+    # the SAME axis weighting the loss uses, so the CONTROL and the DEFAULT are
+    # scored against one geometry rather than two.
+    d_k = ((anchors.float()[None] - tgt[:, None]) * w[None]).norm(dim=-1)
+    k_star = d_k.argmin(dim=-1)                                       # [B]
+
+    if objective == "metric":
+        g = head_out["goal_point"].float()                            # [B, 2]
+        resid = (g - tgt) * w
+        loss = resid.norm(dim=-1).mean()
+        raw = head_out.get("goal_point_raw")
+        if raw is not None:
+            # the QUANTISATION COST, readable rather than inferred: E-AG2 says
+            # it should be ~free, and an arm that finds otherwise has said
+            # something.
+            log["anchor_free_err_m"] = float(
+                ((raw.float() - tgt) * w).norm(dim=-1).mean().detach())
+    else:
+        logits = head_out.get("cls_logits")
+        if logits is None:
+            raise ValueError(
+                f"objective {objective!r} needs `cls_logits`, which only the "
+                f"'onehot' mode emits. A distribution over anchors cannot be "
+                f"put on a head that emits none.")
+        logits = logits.float()
+        if logits.shape[-1] != anchors.shape[0]:
+            raise ValueError(f"cls_logits K={logits.shape[-1]} != anchor table "
+                             f"K={anchors.shape[0]}")
+        if objective == "softanchor":
+            loss = (logits.softmax(dim=-1) * d_k).sum(dim=-1).mean()
+        else:                                     # the refuted CE control
+            loss = torch.nn.functional.cross_entropy(logits, k_star)
+        p = logits.detach().softmax(dim=-1)
+        top1 = logits.detach().argmax(dim=-1)
+        log |= {"anchor_top1_acc": float((top1 == k_star).float().mean()),
+                "anchor_chance": 1.0 / float(anchors.shape[0]),
+                # what the emitted point actually costs, in METRES, whatever
+                # the objective's units -- so the CE control is comparable with
+                # the default on the quantity that matters.
+                "anchor_expected_err_m": float((p * d_k).sum(dim=-1).mean()),
+                "anchor_argmax_err_m": float(
+                    d_k.gather(1, top1[:, None])[:, 0].mean())}
+
+    # per-family, on the EMITTED point, for every objective.
+    emitted = head_out.get("goal_point")
+    if emitted is not None:
+        e = (emitted.float() - tgt).abs().detach()
+        log |= {"anchor_err_lon_m": float(e[:, 0].mean()),
+                "anchor_err_lat_m": float(e[:, 1].mean()),
+                # the realised allocation of squared error between the axes --
+                # the number that says whether the DECLARED axis weights put the
+                # gradient where the 98.8 %-longitudinal measurement says it
+                # belongs, MEASURED per step instead of assumed.
+                "anchor_lon_share_sq": float(
+                    (e[:, 0] * w[0, 0]).pow(2).sum()
+                    / ((e * w).pow(2).sum() + 1e-12))}
+    log |= {"anchor_floor_m": float(d_k.gather(1, k_star[:, None])[:, 0]
+                                    .mean()),
+            "anchor_loss": float(loss.detach())}
+    return loss, log
+
+
+# ============================================================================
 # the per-batch loss assembly
 # ============================================================================
 
@@ -586,7 +816,10 @@ def v6_loss_step(stack: V6Stack, batch: dict, *, stage: str,
                  rand_dk: Tensor | None = None,
                  rand_da: Tensor | None = None,
                  generator: torch.Generator | None = None,
-                 rollout_grad_checkpoint: bool | None = None) -> dict:
+                 rollout_grad_checkpoint: bool | None = None,
+                 anchor_objective: str = "metric",
+                 anchor_axis_w: tuple[float, float] = ANCHOR_AXIS_W_DEFAULT
+                 ) -> dict:
     """One batch of the v6 staged objective.
 
     BATCH CONTRACT (all tensors on one device):
@@ -817,6 +1050,32 @@ def v6_loss_step(stack: V6Stack, batch: dict, *, stage: str,
                         / max(err.shape[1] - 1, 1)),
                     "sel_gap": float((err[ar, sel_idx]
                                       - err.min(dim=1).values).mean().detach())}
+
+    # ---- ANCHOR_GOAL supervision (w_anchor, default 0.0 == absent) ----------
+    # NOT nested under lambda_plan: the goal head is trainable with the planner
+    # loss OFF (that is the attributable arm -- a goal that moves must be
+    # attributable to its OWN objective, not to a WTA fan gradient arriving
+    # through the same seam), so this reads ``plan_target`` directly.
+    if w.w_anchor:
+        if stack.anchor_head is None:
+            raise ValueError(
+                "w_anchor > 0 with cfg.anchor_goal='none' -- an anchor loss "
+                "with no anchor head is how a head silently never trains. "
+                "Build the stack with --anchor-goal snap_lat (and its table).")
+        tgt = batch.get("plan_target")
+        if tgt is None:
+            raise ValueError(
+                "w_anchor > 0 needs batch['plan_target'] [B, plan_steps, 2] -- "
+                "the ANCHOR_GOAL label is the TRUE ego-frame displacement at "
+                "the plan horizon, and a goal objective with no goal is how "
+                "w_anchor silently becomes 0")
+        head_out = {k[len("anchor_"):]: v for k, v in out["plan"].items()
+                    if k.startswith("anchor_")}
+        la, lga = anchor_goal_loss(
+            head_out, tgt.float()[:, -1], stack.anchor_head.anchors,
+            objective=anchor_objective, axis_w=anchor_axis_w)
+        terms["anchor"] = w.w_anchor * la
+        log |= lga
 
     if not terms:
         raise RuntimeError(f"stage {stage} produced NO loss terms — every "
@@ -1058,6 +1317,34 @@ def resolve_gc(a, field: str) -> bool:
     return v == "on"
 
 
+def _read_anchor_table(path) -> tuple[Tensor, list | None]:
+    """Read a ``build_refc_anchors.py`` artifact -> ``(anchors, horizons)``.
+
+    The shipped format is ``{"anchors": [K, S, 2], "horizons": [...], ...}``
+    (``build_refc_anchors.main``); a bare ``[K, S, 2]`` / ``[K, 2]`` tensor is
+    also accepted. ``horizons`` is returned UNCHANGED, including ``None`` --
+    :meth:`AnchorGoalHead.load_anchor_table` REFUSES a ``[K, S, 2]`` table with
+    no horizons rather than reading ``anchors[:, -1]``, because that index
+    silently means "2.0 s" for both a 4-point and a 20-point vocabulary.
+    """
+    p = Path(path)
+    if not p.exists():
+        raise SystemExit(f"[v6] anchor table {p} does not exist")
+    obj = torch.load(p, map_location="cpu", weights_only=False)
+    if isinstance(obj, dict):
+        if "anchors" not in obj:
+            raise SystemExit(
+                f"[v6] {p} has no 'anchors' key (found {sorted(obj)[:8]}) -- "
+                f"this is not a build_refc_anchors.py artifact")
+        return torch.as_tensor(obj["anchors"]).float(), obj.get("horizons")
+    # A BARE [K, S, 2] tensor carries no horizons, and INVENTING them (1..S) is
+    # exactly the "a number rather than an error" failure the refusal exists to
+    # prevent -- the two real shipped shapes are [5,10,15,20] and [1..20], and
+    # guessing between them mislabels the whole corpus. ``horizons=None`` is
+    # passed through so ``load_anchor_table`` refuses it by name.
+    return torch.as_tensor(obj).float(), None
+
+
 def build_stack_from_args(a) -> V6Stack:
     """Instantiate :class:`V6Stack` from the CLI, enforcing the sub-300M
     invariant AND the X3 matrix BEFORE any GPU time is spent. Both refusals are
@@ -1090,8 +1377,33 @@ def build_stack_from_args(a) -> V6Stack:
         selector=a.selector, selector_tau_m=a.selector_tau_m,
         selector_mlp_hidden=getattr(a, "selector_mlp_hidden", 256),
         plan_wta_eps=a.plan_wta_eps,
+        # ---- GOAL-HEAD STRUCTURE, ALL DEFAULT-OFF ---------------------------
+        # These V6Config levers existed with NO CLI path to them, which is the
+        # `intent_proj` defect in the launch surface: a lever present in the
+        # architecture and absent from every command that can build it. Every
+        # default below reproduces the incumbent build EXACTLY -- proved per
+        # tensor against the pre-change revision of v6.py in
+        # tests/test_v6_anchor_loss.py, not by reading these lines.
+        goal_factored=bool(getattr(a, "goal_factored", False)),
+        goal_multilabel=bool(getattr(a, "goal_multilabel", False)),
+        goal_cat_args=bool(getattr(a, "goal_cat_args", False)),
+        anchor_goal=getattr(a, "anchor_goal", "none"),
+        n_anchors=int(getattr(a, "n_anchors", 256)),
+        n_lat_bins=int(getattr(a, "n_lat_bins", 16)),
+        n_agent_slots=int(getattr(a, "n_agent_slots", 8)),
         vit5_encoder=bool(a.vit5_encoder), n_registers=a.n_registers)
     stack = V6Stack(cfg)
+    # ---- the anchor table, installed BEFORE the first forward ---------------
+    # The head REFUSES to run without one (a zero table would snap every goal
+    # to the origin and still return a number), so this must land before
+    # ``assert_isolation`` below -- and it must land at BUILD time, not at
+    # first-batch time, so a wrong-horizon vocabulary costs milliseconds
+    # instead of a GPU-day. Same discipline as the --gate-probes preflight.
+    if getattr(a, "anchor_table", None):
+        prov = stack.anchor_head.load_anchor_table(
+            *_read_anchor_table(a.anchor_table), dt=cfg.dt)
+        print(f"[v6] anchor table {a.anchor_table} -> {json.dumps(prov)}",
+              flush=True)
     rep = stack.assert_param_budget()
     print(f"[v6] params {rep['total']/1e6:.2f} M / budget "
           f"{rep['budget']/1e6:.0f} M · arm {rep['arm']} · per-group "
@@ -1225,7 +1537,11 @@ def dry_run(a, stack: V6Stack | None = None) -> dict:
                          o3_block_hw=(a.o3_block_h, a.o3_block_w),
                          o3_band_rows=a.o3_band_rows, o2_tau_s=a.o2_tau_s,
                          dkappa=a.dkappa, daccel=a.daccel, rand_dk=dk,
-                         rand_da=da, generator=gen)
+                         rand_da=da, generator=gen,
+                         anchor_objective=getattr(a, "anchor_objective",
+                                                  "metric"),
+                         anchor_axis_w=tuple(getattr(
+                             a, "anchor_axis_w", ANCHOR_AXIS_W_DEFAULT)))
         if opt is not None:
             opt.zero_grad(set_to_none=True)
             L["loss"].backward()
@@ -1286,7 +1602,7 @@ def _weights_from_args(a) -> V6LossWeights:
         o1_ctrl=a.w_o1_ctrl, o1_fact=a.w_o1_fact, o1_scene=a.w_o1_scene,
         o2_nearfield=a.w_o2, o3_masked=a.w_o3, o5_rollout=a.w_o5,
         o6_sigreg=a.w_o6, t1_latent=a.w_t1, s1_latent=a.w_s1,
-        w_select=a.w_select,
+        w_select=a.w_select, w_anchor=float(getattr(a, "w_anchor", 0.0)),
         lambda_plan=resolve_lambda_plan(a))
 
 
@@ -1618,7 +1934,12 @@ def train(a) -> dict:
                     tgt = stack.layer_targets(zf, o_t, o_s)
                     batch[key] = tgt["z_tac" if key.startswith("z_tac")
                                      else "z_str"]
-        if w_stage.lambda_plan:
+        # ⛔ `or w_stage.w_anchor`: the ANCHOR_GOAL label is the SAME tensor's
+        # endpoint, and the anchor objective is deliberately runnable with
+        # λ_plan OFF (that is the attributable arm). Without this the target
+        # would be absent exactly when the anchor loss is the only planner
+        # term, and `v6_loss_step` would refuse mid-run instead of training.
+        if w_stage.lambda_plan or w_stage.w_anchor:
             batch["plan_target"] = gt_ego_waypoints(
                 b["pose_last"].float(), b["future_poses"].float(),
                 tuple(range(1, stack.cfg.plan_steps + 1)))
@@ -1633,7 +1954,11 @@ def train(a) -> dict:
                              daccel=a.daccel, rand_dk=dk.to(device),
                              rand_da=da.to(device), generator=gen,
                              rollout_grad_checkpoint=resolve_gc(
-                                 a, "rollout_grad_checkpoint"))
+                                 a, "rollout_grad_checkpoint"),
+                             anchor_objective=getattr(a, "anchor_objective",
+                                                      "metric"),
+                             anchor_axis_w=tuple(getattr(
+                                 a, "anchor_axis_w", ANCHOR_AXIS_W_DEFAULT)))
         opt.zero_grad(set_to_none=True)
         L["loss"].backward()
         gn = torch.nn.utils.clip_grad_norm_(trainable, a.clip)
@@ -2125,6 +2450,72 @@ def build_parser() -> argparse.ArgumentParser:
                          "mean error. 0.0 (default) is the incumbent pure WTA, "
                          "under which N-1 candidates get ZERO gradient and "
                          "nothing bounds the fan mean.")
+    # ---- GOAL-HEAD STRUCTURE + ANCHOR_GOAL — ALL DEFAULT-OFF ---------------
+    # These V6Config levers shipped with NO command that could build them.
+    # Every default here reproduces the incumbent state_dict EXACTLY.
+    ap.add_argument("--goal-factored", action="store_true",
+                    help="factor g_tac LAT x LON (the same factoring a_tac "
+                         "already carries). The MIXED head is KEPT and still "
+                         "emitted -- it is this arm's CONTROL. +470,939 params "
+                         "MEASURED at the production geometry.")
+    ap.add_argument("--goal-multilabel", action="store_true",
+                    help="independent per-token gates on the UN-factored head "
+                         "(0 params, 0 keys). The factored pair is the "
+                         "structured form of the same fix and is strictly "
+                         "better attributable.")
+    ap.add_argument("--goal-cat-args", action="store_true",
+                    help="the TYPED categorical arg channel. Without it 7 of "
+                         "the 9 g_tac tokens are inexpressible even given "
+                         "perfect labels. REQUIRED by --anchor-goal.")
+    ap.add_argument("--anchor-goal",
+                    choices=("none", "snap_lat", "snap_xy", "onehot"),
+                    default="none",
+                    help="'none' (default) builds NO anchor head and leaves "
+                         "the state_dict byte-identical. 'snap_lat' is the "
+                         "FACTORED regress-then-snap default the measurement "
+                         "prescribes (quantise LATERAL only; 98.8 % of the "
+                         "variance is LONGITUDINAL). 'snap_xy' is the arm "
+                         "E-AG2 measured FREE. ⛔ 'onehot' is the metric-blind "
+                         "CONTROL, MEASURED +4.7502 [+3.0514, +6.3981] WORSE.")
+    ap.add_argument("--anchor-table", default=None,
+                    help="a build_refc_anchors.py .pt. ⛔ REQUIRED by "
+                         "--anchor-goal: the head refuses to run without one, "
+                         "because a zero table would snap every goal to the "
+                         "origin and still return a number. ⚠️ It must be AT "
+                         "THE PLAN HORIZON and no such vocabulary exists -- "
+                         "all five banked tables stop at 2.0 s against "
+                         "PLAN_STEPS=60, and load_anchor_table refuses them.")
+    ap.add_argument("--n-anchors", type=int, default=256,
+                    help="K of the anchor vocabulary (the shipped "
+                         "refc_anchors_full_REBUILD.pt is 256)")
+    ap.add_argument("--n-lat-bins", type=int, default=16,
+                    help="resolution of the FACTORED lateral sub-vocabulary "
+                         "('snap_lat' only)")
+    ap.add_argument("--n-agent-slots", type=int, default=8)
+    ap.add_argument("--w-anchor", type=float, default=0.0,
+                    help="weight on the ANCHOR_GOAL objective. 0.0 = the term "
+                         "is absent. ⚠️ in METRES for metric/softanchor (NATS "
+                         "for the ce control) while the other terms are not, "
+                         "so it is a declared decision, never a default.")
+    ap.add_argument("--anchor-objective",
+                    choices=tuple(ANCHOR_OBJECTIVES), default="metric",
+                    help="'metric' (DEFAULT) = endpoint distance on the "
+                         "straight-through emitted point -- the half E-AG2 "
+                         "EXONERATED (snap is NOT separated from the ridge: "
+                         "-0.0002 [-0.1031, +0.0703]). 'softanchor' = the "
+                         "distance-weighted target over anchors (E-OBJ-1's "
+                         "softade one level up). ⛔ 'ce' is the REFUTED "
+                         "one-hot control and needs "
+                         "--i-know-this-is-the-control-arm.")
+    ap.add_argument("--anchor-axis-w", type=float, nargs=2,
+                    metavar=("LON", "LAT"),
+                    default=list(ANCHOR_AXIS_W_DEFAULT),
+                    help="per-axis weights. Default 1 1 = RAW METRES, which is "
+                         "the EVIDENCE-weighted choice, not the symmetric one: "
+                         "the residual is 97.4 % longitudinal in squared error, "
+                         "so raw metres already spend the gradient there, while "
+                         "whitening would move half of it onto the axis "
+                         "carrying 1.2 % of the variance.")
     ap.add_argument("--w-select", type=float, default=0.0,
                     help="weight on the softade selection loss. 0.0 = the term "
                          "is absent. ⚠️ in METRES while the other terms are "
@@ -2299,6 +2690,69 @@ def preflight(a) -> list[str]:
             f"consume its parameters and never receive a gradient. If an "
             f"inert-scorer control is what you want, say so explicitly by "
             f"passing --w-select 0 AND --i-know-this-is-the-control-arm.")
+    # ---- ANCHOR_GOAL: every refusal fires in MILLISECONDS, not after a run --
+    anchor_goal = getattr(a, "anchor_goal", "none")
+    w_anchor = float(getattr(a, "w_anchor", 0.0))
+    anchor_obj = getattr(a, "anchor_objective", "metric")
+    if a.stage == "S-W" and anchor_goal != "none":
+        problems.append(
+            f"--stage S-W with --anchor-goal {anchor_goal}: the planner group "
+            f"is FROZEN in S-W, so the anchor head would be untrainable dead "
+            f"weight AND would change the state_dict -- which breaks a strict "
+            f"resume of the LIVE S-W run. ANCHOR_GOAL is an S-T lever.")
+    if w_anchor and anchor_goal == "none":
+        problems.append(
+            f"--w-anchor {w_anchor} with --anchor-goal none: an anchor "
+            f"objective with no anchor head is how a head silently never "
+            f"trains -- the same defect --w-select/--selector already guards.")
+    if anchor_goal != "none" and not getattr(a, "anchor_table", None):
+        problems.append(
+            f"--anchor-goal {anchor_goal} without --anchor-table: the head "
+            f"REFUSES to run without one (a zero table snaps every goal to the "
+            f"origin and still returns a number). ⛔ AND NO ADMISSIBLE TABLE "
+            f"EXISTS TODAY: all five banked vocabularies stop at step 20 = "
+            f"2.0 s while --plan-steps is {a.plan_steps} "
+            f"({a.plan_steps * a.dt:g} s), and load_anchor_table refuses the "
+            f"mismatch. Build one first: build_refc_anchors.py --horizons "
+            f"5,10,...,{a.plan_steps} (CPU-only, needs the TRAIN epcache).")
+    if anchor_goal != "none" and not getattr(a, "goal_cat_args", False):
+        problems.append(
+            f"--anchor-goal {anchor_goal} without --goal-cat-args: V6Config "
+            f"refuses this pairing (an emitted id that reaches nothing "
+            f"downstream is a head wearing an emission's name). Pass "
+            f"--goal-cat-args.")
+    if w_anchor and anchor_goal not in ("none",) \
+            and anchor_goal not in ANCHOR_OBJ_MODES.get(anchor_obj, ()):
+        problems.append(
+            f"--anchor-objective {anchor_obj} needs --anchor-goal in "
+            f"{ANCHOR_OBJ_MODES[anchor_obj]}, got {anchor_goal}. "
+            f"{ANCHOR_OBJECTIVES[anchor_obj]}")
+    # ⛔ THE CONTROL GATE. `ce` is the objective E-AG2 MEASURED +4.7502
+    # [+3.0514, +6.3981] WORSE than a ridge that was ALREADY refused, and
+    # E-OBJ-1 measured the same axis independently. It stays BUILDABLE because
+    # a comparison with no control is unattributable (C6) -- and it stays
+    # behind the same acknowledgement `--no-isolate-planner` uses, so a refuted
+    # objective can never arrive by defaulting into it.
+    if w_anchor and anchor_obj == "ce" and not ack:
+        problems.append(
+            "--anchor-objective ce is the pre-registered, MEASURED-REFUTED "
+            "CONTROL: a one-hot anchor_id target is metric-BLIND and E-AG2 "
+            "measured it +4.7502 [+3.0514, +6.3981] WORSE than the free ridge "
+            "(separated at every K from 8 to 256, under both vocabulary "
+            "constructions, replicated on REF-C-base at +5.4570). The DEFAULT "
+            "is --anchor-objective metric. If the control arm is what you "
+            "want, say so with --i-know-this-is-the-control-arm.")
+    if w_anchor and a.stage == "S-S":
+        problems.append(
+            f"--w-anchor {w_anchor} in S-S: the planner is FROZEN here and "
+            f"`V6LossWeights.for_stage('S-S')` zeroes w_anchor, so the launch "
+            f"line would advertise an objective that is not in force. Keep "
+            f"--anchor-goal {anchor_goal} for the GEOMETRY and pass "
+            f"--w-anchor 0.")
+    if any(float(x) < 0.0 for x in getattr(a, "anchor_axis_w",
+                                           ANCHOR_AXIS_W_DEFAULT)):
+        problems.append(f"--anchor-axis-w must be non-negative, got "
+                        f"{list(a.anchor_axis_w)}")
     if a.stage == "S-S" and a.w_select:
         problems.append(
             f"--w-select {a.w_select} in S-S: the planner is FROZEN here and "
