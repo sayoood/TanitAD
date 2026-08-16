@@ -3606,3 +3606,62 @@ CLEARED would have been a stale "it works now", which is the same defect pointed
 ~507 `incoming/**` docs · **67 claims adjudicated, 30+ CLEARED and annotated in place, 8 still-open
 integration requests surfaced** (oldest **24 days**, one of which had its gating condition — "the next
 v4.x launch" — voided by the programme reaching v6).
+
+---
+
+## 2026-08-16 — ⛔ NEW CLASS C70: A GUARD THAT FIRES FOR A REASON UNRELATED TO WHAT IT CHECKS
+
+Executing the five v6 ladder edges surfaced **three defects on the resume path**, and the priority
+one is a guard that had been "working" for reasons that have nothing to do with the thing it
+appeared to protect.
+
+**What appeared to be true.** A cross-stage `--resume auto` was impossible: point S-T at an S-W
+checkpoint and it errors out. **What was actually true:** `load_resume` did a strict load and adopted
+`ck["step"]` with **no stage check at all**. The load *succeeds* — every stage saves the whole
+`V6Stack` — and the stage label was **already in the file** (`_run_config` writes it) and simply
+never read. The error came from `torch.optim` complaining about param-group sizes, which is worthless
+three ways:
+
+1. it names nothing actionable — the operator is sent to the optimiser for a lineage problem;
+2. it holds **solely because trainable-tensor counts happen to differ** (MEASURED: S-W **240** ·
+   S-T **80** · S-S **54** · S-J **374**), so **one `STAGE_GROUPS` edit makes it pass silently**;
+3. it is **SKIPPED ENTIRELY when the checkpoint has no `opt` key** — which is exactly the shape of
+   `ops/ckpt_fp16_snapshot.py`, the documented pod-handover artifact. On the handover path the guard
+   did not exist at all.
+
+And it fired **after** the corpus build and the O4 saliency pass over every window.
+
+| # | class | recognition signal |
+|---|---|---|
+| **C70** | **Guard fires for an unrelated reason** | a check believed to protect X, whose actual trigger is Y — where Y merely *correlates* with X today. Signals: the error message names a subsystem the operator did not ask about; the guard's mechanism is never stated anywhere; nobody has tested it with X true and Y false |
+
+⇒ **The test that separates them is the one the fix now carries:** construct the case where the
+*incidental* trigger is DEFEATED but the real condition still holds. Here that is a checkpoint
+labelled S-T whose optimiser was built over S-S's trainable set — the shapes collide, the accidental
+barrier is gone, and the new stage check refuses anyway **because it never looks at an optimiser**.
+
+⚠️ **Family, and it is a large one:** `df` reporting the cluster instead of the pod quota; Thor's
+`free`/`tegrastats` moving 596 MB for 60 GB of unified allocation; cgroup `usage_in_bytes` counting
+reclaimable page cache. All are signals that track the quantity of interest **until they don't**.
+C70's variant is nastier because it is a *guard*: the others merely misinform, this one manufactures
+confidence that a dangerous path is closed.
+
+⚠️ **Distinct from C13** (*a guard that cannot fail*). C13's estimator saturates below its own
+threshold and can never fire. **C70 fires reliably — for the wrong reason** — so it looks like
+positive evidence the check works. C13 produces confident silence; C70 produces confident noise.
+
+**Two silent siblings found in the same pass, both now fixed:**
+- **A provenance lie.** `train()` loads `--init-from` then `--resume`, so the resume overwrites
+  everything while `config.json` kept the *init's* md5 — MEASURED `fbce009a…` recorded against
+  `326034884…` actually in the model, **with no warning**. Refusing the flag pair would be wrong
+  (`supervise_run.sh` replays its captured command, so a resuming relaunch necessarily still carries
+  `--init-from`), so the report is **demoted**, not deleted.
+- **An error message pointing at the wrong subsystem.** `--init-from` on an fp16 snapshot refused
+  with a **400-key geometry mismatch** — sending the operator to the *architecture* for a container
+  that was simply never opened (state under `"model"`, reader looking for `"stack"`). ⇒ **RULE: when
+  a load fails, distinguish "I could not READ this container" from "the CONTENTS disagree" before
+  the message names a cause.**
+
+⇒ **RULE: for any guard that matters, write down its MECHANISM, then test it with the real condition
+true and the incidental trigger removed.** A guard nobody has seen fire for the stated reason is a
+hypothesis, not a protection.
