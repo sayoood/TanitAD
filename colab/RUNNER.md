@@ -13,6 +13,27 @@ Run the **backfill first**: it is small and known-shape, and it validates the
 whole loop (auth → pull → GPU → bank → far-side verify → resume) before the
 lab spends GPU time on open-ended review.
 
+> ⛔ **SUPERSEDED FOR THE SAM3 LEG, 2026-08-16 — `SAM3_BACKFILL_115.ipynb` IS v1.**
+> The SAM3 extraction is now **schema v2** (contours + oriented extents + a
+> separate scene-concept channel + a derived ego lane) at
+> `confidence_threshold=0.25`, and it banks to **`sam3_backfill_v2/`**, a
+> different prefix, so the two detection floors are never mixed in one corpus.
+> **The v2 path is SCRIPT-driven, not notebook-driven** — a headless CLI session
+> has no Drive mount, so the notebook's first cell never applies there anyway:
+> `…/incoming/2026-08-16-sam3-extraction-v2/code/{ship,bootstrap_v2,p1…p4}.py`,
+> operated exactly as §8 of `SAM3_EXTRACTION_V2.md` describes.
+> This notebook is left at v1 **deliberately and is NOT the way to (re)produce the
+> corpus** — rewriting it to v2 without re-running its own smoke would have made
+> two divergent entry points, and the scripts are the ones that were MEASURED.
+> Two facts from that work bind anything run through this file:
+> * ⚠️ **`PYTHONUTF8=1` on every `colab` invocation.** colab-cli 0.6.0 opens the
+>   script with the locale codec (cp1252 on the dev box) and any file carrying a
+>   ⛔/⚠️ dies with `UnicodeDecodeError … byte 0x8f` before a line reaches the VM.
+> * ⚠️ **A re-ship is a NO-OP without a `sys.modules` purge.** The kernel persists
+>   across `colab exec`, so extracting a newer file over an already-imported
+>   module changes nothing — `import ph0_sam3` returns the cached one and any
+>   verify-gate passes on the OLD code. Pod-checkout drift with a Colab accent.
+
 ## 1. Opening the notebooks (the repo IS on the PI's Drive)
 
 This repo lives at `My Drive/SayBouBase/raw/Projects/TanitAD`, so the
@@ -128,6 +149,9 @@ Two things changed and both are now in the notebook, not in an operator's head:
 | SAM3 image model, **weights loaded** | **3.58 GB** | ⭐ **MEASURED** on the T4, 2026-08-16 fixed re-run (`gpu_mem_report('sam3 load')` = `torch.cuda.max_memory_allocated`) |
 | SAM3 image model, **inference peak (weights + activations)** | **4.01 GB** | ⭐ **MEASURED** after `reset_peak_memory_stats()`, one clip, 6 frames × 7 concepts (`raw/encode_once_equivalence.json`) |
 | SAM3 image leg, **wall-clock** | **~21 s / 6-frame clip** | ⭐ MEASURED; it was 97–98 s before the encode-once fix (`raw/eq3_whole_clip.json`) |
+| SAM3 image leg, **schema v2**, wall-clock | **29.8 s / clip** (v1 at the same conf: 24.0 s; v1 at conf 0.5: **23.0 s**) | ⭐ MEASURED 3-arm pilot, one session, five clips — `…/2026-08-16-sam3-extraction-v2/raw/p2_pilot_size.json` |
+| SAM3 image leg, **schema v2**, peak | **4.241 GB** (v1: 4.231 GB) | ⭐ MEASURED after `reset_peak_memory_stats()` per arm — the schema costs **+10 MB**, memory is not the constraint |
+| SAM3 **record size**, schema v2 | **120 005 B/clip compact** (317 109 B at `indent=1`; v1 as banked 49 257 B) | ⭐ MEASURED — **64 % of an `indent=1` v2 record is whitespace**, so `bank_json(..., indent=None)` is what the v2 run uses |
 | the **bridge** (12-clip batch: shard pull + mp4 re-encode) | **~165 s** (first batch ~890 s: cold caches + `records.parquet`) | ⭐ MEASURED from far-side commit timestamps — the bridge, not the GPU, is now the backfill's bottleneck |
 | ego leg | 0 (CPU) | by construction |
 

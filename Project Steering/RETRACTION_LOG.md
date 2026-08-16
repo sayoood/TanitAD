@@ -4291,3 +4291,86 @@ question. **A disagreement with a banked artifact is EVIDENCE, not noise to be r
 *(Companion to C82, which is the same disease in the orchestrator's direction: there, an inherited number was
 trusted over artifacts; here, a self-measured number was trusted over artifacts. **Measuring it yourself is
 necessary and NOT sufficient — the apparatus is part of the claim.**)*
+
+---
+
+## C85 — THE WHOLE SAM3 CORPUS'S `rle_rows` IS FLATTENED AND CANNOT REDRAW ITS OWN MASK — AND EVERY CHECK WE RAN AGREED IT WAS FINE (2026-08-16, arch-inf agent)
+
+**What was banked.** 2 496 detections across 115 clips, each carrying `rle_rows` documented as
+per-row `[row, start, end)` runs — *"enough to redraw the mask exactly"*. It is not. Every run in the
+v1 corpus reads `[0, flat_start, flat_end)`.
+
+**MEASURED**, clip `0089a096`, a `car` at `box_xyxy [54.4, 82.1, 66.0, 94.1]` on a **448**-wide frame:
+
+```
+banked : [[0, 36794, 36800], [0, 37240, 37250], [0, 37688, 37698], …]   12 runs, ALL on row 0
+correct: [[82, 58, 64],      [83, 56, 66],      [84, 56, 66],      …]
+```
+
+**Root cause.** `Sam3Processor.set_text_prompt` returns `masks` of shape **`[N, 1, H, W]`**, not
+`[N, H, W]` — MEASURED on a live T4, never asserted anywhere in our code. `_rows_rle` did
+`for r, row in enumerate(np.asarray(mask))`, which on a `(1, H, W)` array yields **one** item whose
+`row` is the entire `(H, W)` plane, so `np.flatnonzero` returned **flattened** indices.
+
+⇒ **ROOT-CAUSE CLASS: A SERIALISER THAT ACCEPTED A SHAPE IT NEVER ASSERTED, SITTING NEXT TO A REDUCER
+THAT WAS SHAPE-AGNOSTIC AND THEREFORE AGREED WITH IT.** `mask_area_px` is `m.sum()` — correct on any
+shape. So the two derivations of the same object *corroborated each other* while one of them was
+wrong: **the run lengths summed to exactly `mask_area_px`**, which is the check a careful reviewer
+would run, and it passes.
+
+⇒ ⛔ **WHY NOTHING CAUGHT IT, spelled out, because the list is the lesson.** The JSON was well-formed.
+The field was present and non-empty. The count was right. The lengths summed to the banked area. The
+liveness control was live. The error census was empty. C77's own fix — *"a perception backfill is
+complete when detections exist and are visible on video"* — was satisfied on the first half and
+**never actually exercised on the second**: the overlays were rendered, banked, and looked plausible
+because `draw_masks` does `over[r, a:b]` with `a` ≈ 36 794 on a 448-wide array, and **numpy silently
+clips an out-of-range slice to nothing**. ⇒ *"visible on video"* degraded to *"the boxes are visible
+on video"*, and nobody noticed the fill was missing. **A renderer that draws nothing looks like a
+sparse scene.**
+
+⇒ ⭐ **AND THAT LAST SENTENCE IS MEASURED, NOT REASONED** (`…/2026-08-16-sam3-extraction-v2/`
+`raw/c85_overlay_proof.json`, produced by `code/c85_overlay_proof.py`). Banked v1 record
+`sam3_backfill/0089a096…json`, frame 448×179, 60 detections, **962 RLE runs — every one on row 0,
+maximum column index 63 539, and only 2 of 962 landing inside the frame**. Rendering those exact
+detections through the real `ph0_rich_overlay.draw_camera` twice — once as banked, once with
+`rle_rows` deleted — the two images differ by **0 pixels**. The mask layer contributed **nothing**.
+*(Proving it against the same function with the field removed, rather than against a hand-rolled
+expectation, is what makes the 0 mean "the mask layer drew nothing" instead of "my reimplementation
+agreed with itself" — boxes, labels and scaling are identical on both sides and cancel.)*
+
+⇒ ⭐ **WHAT DID CATCH IT, and this is the transferable part: THE STRICT READER FOUND THE PERMISSIVE
+ONE'S BUG.** Adding contours introduced `crack_loops`, which begins `if m.ndim != 2: return []`. It
+produced **no contour at all** on real masks while producing a perfect contour on a synthetic 2-D
+test — a loud, immediate, unmissable disagreement. `_rows_rle`, handed the same input, produced
+plausible garbage without complaint. ⇒ **When two derivations of the same object differ in
+strictness, believe the strict one. Prefer a function that RAISES to one that COPES** — a permissive
+reader does not remove the defect, it removes the evidence.
+
+⇒ **THE DATA IS RECOVERABLE; THE SCHEMA WAS THE LIE, NOT THE PIXELS.** A v1 run decodes as
+`row = start // W`, `col = start % W` (a run never straddles a row boundary). **No re-detection is
+needed** to rescue v1's masks — which also means the cost of this retraction is a decoder, not a
+GPU day.
+
+⇒ **BLAST RADIUS, stated per claim rather than per document:** `mask_area_px`, `box_xyxy`, `score`,
+`per_concept_hits`, `n_det_total` and the road/sky liveness control are **unaffected** — every number
+in `SAM3_CONCEPT_RELIABILITY.md` and `SAM3_DTYPE_FIX.md` stands. What is void is (a) `rle_rows` read
+as documented, and (b) **every `*_rich.mp4` overlay rendered from a v1 record, which shows boxes and
+NO mask fill**. ⚠️ Anyone comparing a v1 overlay against a v2 one will read that as a regression in
+the wrong direction.
+
+⇒ **THE RULE.**
+1. **Assert the shape you are about to iterate.** `as_2d_mask()` now squeezes leading singleton axes
+   and **raises** on anything it cannot interpret; `_rows_rle` and `read_outputs` go through it.
+2. **Bank the frame the encoding refers to.** Every detection now carries `mask_hw`, which makes the
+   encoding self-checking — 36 794 is a legal column index in *some* frame, and is obviously not one
+   in a 448-wide frame.
+3. **A round-trip is the only real test of a serialiser.** *Rebuild the object from the record and
+   compare it to the original* — `code/v2_integration_check.py` does exactly that (163/163 exact) and
+   would have failed on day one against v1. Summing the lengths is not a round-trip; it is a checksum
+   that both the correct and the broken encoding satisfy.
+4. ⚠️ **"Visible on video" is only a completion criterion if someone LOOKS at the layer in question.**
+   A silent-clip renderer turns a data defect into a plausible picture.
+
+*(Same family as C77 — a well-formed artifact whose content is wrong — and C18 — a check scoped to
+the container. The new half is that here the container check was **quantitative and passed**: this
+is the first one where the wrong data satisfied a numeric invariant.)*

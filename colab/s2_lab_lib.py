@@ -56,6 +56,19 @@ FUSED_PREFIX = "fused_aug120/"
 EGO_PREFIX = "bridged_w120train_2400/ego/"
 SAM3_ABSENT_REASON = "AUG120_SAM3_STAGE_GAP"
 BACKFILL_PREFIX = "sam3_backfill/"                 # in DS_LABELS (real runs)
+#: ⛔ SCHEMA v2 GETS ITS OWN ADDRESS, AND THAT IS THE POINT — NOT TIDINESS.
+#: The v1 prefix holds 83 records detected at `confidence_threshold=0.5` (the
+#: vendor default nobody chose) plus 32 still carrying the C77 payload. v2 is
+#: detected at **0.25** with contours and the scene channel. Writing v2 records
+#: over v1 ones would make the corpus MIXED for the whole length of a run — and
+#: free-Colab reclaimed the T4 three times during the last pass, so "the whole
+#: length of a run" is not hypothetical. Every per-concept number computed over
+#: a half-rewritten prefix would silently span two detection floors and be
+#: unattributable, with nothing in the data to reveal it.
+#: ⇒ v2 fills its own prefix; the v1 corpus stays intact and quotable (it is the
+#: primary source of the concept-reliability study); consumers move when v2 is
+#: complete, which is one decision at one moment instead of a race.
+BACKFILL_V2_PREFIX = "sam3_backfill_v2/"           # in DS_LABELS (schema v2)
 LAB_PREFIX = "lab_v0/"                             # in DS_LAB (real runs)
 SMOKE_PREFIX = "smoke/"                            # in DS_LAB (smoke runs)
 
@@ -230,12 +243,22 @@ def hf_download(repo: str, rf: str, repo_type: str = "dataset",
 # banking + resume — the loop everything else hangs off                        #
 # --------------------------------------------------------------------------- #
 def bank_json(api, repo: str, rf: str, obj: dict,
-              verify: bool = True) -> int:
+              verify: bool = True, indent: int | None = 1) -> int:
     """Upload one JSON object and FAR-SIDE verify it by byte round-trip.
 
     The push log is never trusted (silent-push-failure class): on verify the
-    file is re-downloaded with force_download=True and byte-compared."""
-    payload = json.dumps(obj, indent=1).encode("utf-8")
+    file is re-downloaded with force_download=True and byte-compared.
+
+    ⚠️ `indent=None` writes COMPACT JSON. That is not a style choice: with
+    `indent=1` every element of every nested list gets its own line, and a
+    schema-v2 record is mostly nested lists (RLE runs, contour points). MEASURED
+    on the 5-clip pilot: 317 109 B/clip at `indent=1` against 120 005 B compact
+    — **64 % of the file is whitespace**, and the 6.44x growth over the banked
+    v1 records collapses to 2.44x for the SAME information. Compactness is the
+    lossless lever; dropping detections would be the lossy one."""
+    payload = json.dumps(obj, indent=indent,
+                         separators=None if indent else (",", ":")
+                         ).encode("utf-8")
     api.upload_file(path_or_fileobj=io.BytesIO(payload), path_in_repo=rf,
                     repo_id=repo, repo_type="dataset")
     if verify:
@@ -290,7 +313,9 @@ def done_set(api, repo: str, prefix: str, suffix: str = ".json",
 
 
 def content_census(api, repo: str, prefix: str,
-                   want: set[str] | None = None) -> dict:
+                   want: set[str] | None = None,
+                   require_schema: int | None = None,
+                   require_conf: float | None = None) -> dict:
     """⛔ THE COMPLETION CRITERION, AND IT IS NOT A FILE COUNT (C77).
 
     `done_set` answers *"does a non-empty file exist?"*. On 2026-08-16 the
@@ -305,13 +330,24 @@ def content_census(api, repo: str, prefix: str,
     road/sky LIVENESS control also read zero (a dead engine) or only the agent
     concepts did (a legitimately empty scene).
 
-    A run is complete when `pass_` is True. Nothing else is."""
+    A run is complete when `pass_` is True. Nothing else is.
+
+    ⭐ `require_schema` / `require_conf` (2026-08-16) extend the SAME idea one
+    step: a record can be present, non-empty, error-free, live — and still be
+    the WRONG record, because it was detected at a different confidence floor
+    or under an older schema. That difference is invisible in the payload (a
+    lower floor shows up only as rows that are not there), so it has to be
+    checked against the stamped `engine` block or not at all. A record that
+    fails either requirement is counted in `wrong_schema` / `wrong_conf`, is
+    NOT complete, and will be re-run."""
     import collections
     far = list_far(api, repo, prefix)
     rfs = sorted(rf for rf in far
                  if rf.endswith(".json") and "/_runs/" not in rf)
-    per, errs = collections.Counter(), collections.Counter()
+    per, sper, errs = (collections.Counter(), collections.Counter(),
+                       collections.Counter())
     n_det = n_live = n_dead = n_nocontrol = 0
+    n_scene = n_wrong_schema = n_wrong_conf = 0
     zero, seen, complete = [], set(), []
     for rf in rfs:
         cid = rf[len(prefix):-len(".json")]
@@ -321,8 +357,20 @@ def content_census(api, repo: str, prefix: str,
         seen.add(cid)
         nd = int(rec.get("n_det_total") or 0)
         n_det += nd
+        n_scene += int(rec.get("n_scene_det_total") or 0)
         for k, v in (rec.get("per_concept_hits") or {}).items():
             per[k] += int(v)
+        for k, v in (rec.get("per_scene_hits") or {}).items():
+            sper[k] += int(v)
+        eng = rec.get("engine") or {}
+        bad_schema = (require_schema is not None
+                      and int(rec.get("schema_version") or 0) < require_schema)
+        got_conf = eng.get("confidence_threshold")
+        bad_conf = (require_conf is not None
+                    and (got_conf is None
+                         or abs(float(got_conf) - float(require_conf)) > 1e-9))
+        n_wrong_schema += int(bad_schema)
+        n_wrong_conf += int(bad_conf)
         clip_err = 0
         if rec.get("err_kinds"):
             errs.update({k: int(v) for k, v in rec["err_kinds"].items()})
@@ -356,22 +404,27 @@ def content_census(api, repo: str, prefix: str,
         # instead would re-run a LEGITIMATELY EMPTY scene forever (its zero is
         # the right answer), and keying on file presence would skip the stale
         # BFloat16 records forever, which is C77 in the resume path.
-        if lv is not None and clip_err == 0:
+        if lv is not None and clip_err == 0 and not bad_schema and not bad_conf:
             complete.append(cid)
     out = {"n_records": len(rfs), "n_det_total": n_det,
+           "n_scene_det_total": n_scene,
            "complete_clips": sorted(complete),
            "n_complete": len(complete),
            "per_concept_totals": dict(per.most_common()),
+           "per_scene_totals": dict(sper.most_common()),
            "error_census": dict(errs.most_common()),
            "clips_with_zero_det": len(zero), "zero_det_clips": zero,
            "liveness_live": n_live, "liveness_dead": n_dead,
-           "records_without_control": n_nocontrol}
+           "records_without_control": n_nocontrol,
+           "require_schema": require_schema, "require_conf": require_conf,
+           "wrong_schema": n_wrong_schema, "wrong_conf": n_wrong_conf}
     if want is not None:
         out["coverage"] = f"{len(seen & want)}/{len(want)}"
         out["missing"] = sorted(want - seen)
         out["extra"] = sorted(seen - want)
     out["pass_"] = bool(n_det > 0 and not errs and n_dead == 0
                         and n_nocontrol == 0
+                        and n_wrong_schema == 0 and n_wrong_conf == 0
                         and (want is None or not out["missing"]))
     return out
 
@@ -703,13 +756,22 @@ def load_sam3():
 
 
 def sam3_leg(proc, frames, v2rec: dict, *, frame_stride: int = 8,
-             min_score: float = 0.0) -> dict:
+             min_score: float = 0.0, scene_concepts=None,
+             scene_min_score: float | None = None, contours: bool = True,
+             contour_tol_px: float | None = None,
+             contour_max_pts: int | None = None,
+             meta: dict | None = None) -> dict:
     """Per-clip block of ph0_sam3.main(), with the count ALWAYS explicit.
 
     Mirrors ph0_sam3.py:411-439 (B3 boxes -> vlm_boxes; run_clip_frames;
     record shape) so the processor is loaded once per session instead of once
     per invocation. Output shape == a `sam3.json` clips[] row, so ph1_fuse
-    consumes it unchanged."""
+    consumes it unchanged.
+
+    ⚠️ `scene_concepts=None` means NO scene channel and a v1-shaped record —
+    the default is deliberately the old behaviour, so a caller that has not
+    been updated cannot silently start producing a different schema. Schema v2
+    is something a caller ASKS for (pass `ph0_sam3.SCENE_CONCEPTS`)."""
     import ph0_sam3
     from ph0_v2 import norm_to_px
     fh, fw = int(frames[0].shape[0]), int(frames[0].shape[1])
@@ -726,11 +788,34 @@ def sam3_leg(proc, frames, v2rec: dict, *, frame_stride: int = 8,
     # ⭐ liveness=True is EXPLICIT here, not inherited: the road/sky positive
     # control is what distinguishes an empty scene from a dead engine, and
     # C77 is what a run without it banks.
+    kw = {}
+    if contour_tol_px is not None:
+        kw["contour_tol_px"] = contour_tol_px
+    if contour_max_pts is not None:
+        kw["contour_max_pts"] = contour_max_pts
     out = ph0_sam3.run_clip_frames(proc, frames, ph0_sam3.AGENT_CONCEPTS,
                                    vlm_boxes, frame_stride=frame_stride,
-                                   min_score=min_score, liveness=True)
+                                   min_score=min_score, liveness=True,
+                                   scene_concepts=scene_concepts,
+                                   scene_min_score=scene_min_score,
+                                   contours=contours, **kw)
     out.update({"clip_id": v2rec.get("clip_id"), "frame_wh": [fw, fh],
                 "wall_s": round(time.time() - t0, 1)})
+    if meta:
+        # ⛔ THE DETECTION FLOOR TRAVELS WITH THE RECORD, OR IT IS UNRECOVERABLE.
+        # `confidence_threshold` filters INSIDE the vendor's forward pass, so a
+        # record detected at 0.5 and one at 0.25 are structurally identical —
+        # the difference is only in what is ABSENT, which nothing downstream can
+        # see. Stamping it here is what lets `content_census` refuse to call a
+        # 0.5 record part of a 0.25 corpus.
+        out["engine"] = {
+            "confidence_threshold": meta.get("confidence_threshold"),
+            "confidence_threshold_set_via":
+                meta.get("confidence_threshold_set_via"),
+            "schema_version": meta.get("schema_version"),
+            "weights": meta.get("weights"),
+            "dtype_fix_applied": bool((meta.get("dtype_fix") or {})
+                                      .get("applied"))}
     return out
 
 

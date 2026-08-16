@@ -1,0 +1,191 @@
+{
+ "run_stamp": "RANDOM-LATENT-NULL@na",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "_evidence_class": "MEASURED (ours)",
+ "estimator": "taniteval.ci.paired_episode_cluster_bootstrap",
+ "n_boot": 2000,
+ "forbidden": "overlapping_holdout_se",
+ "n_eval_episodes": 20,
+ "n_eval_windows": 1919,
+ "n_train_windows": 1725,
+ "c_shuf_fixed_points": 0,
+ "c_const_m": 20.77120018005371,
+ "gt_lead_rate": 0.25586242834809797,
+ "n_queries": 32,
+ "cache_meta": {
+  "step": -1,
+  "step_source": "n/a \u2014 synthetic",
+  "n_frames": 3644,
+  "stride": 2,
+  "n_cells": 16,
+  "d_readout": 128,
+  "token_grid": null,
+  "cuda_max_mem_gb": null
+ },
+ "arms": {
+  "cells": {
+   "status": "TRAINED",
+   "n_params": 3211541,
+   "param_band_ok": true,
+   "memory_shape": [
+    16,
+    128
+   ],
+   "train": {
+    "history": [
+     {
+      "step": 0,
+      "loss_presence": 0.297,
+      "loss_cls": 2.543,
+      "loss_centre": 57.428,
+      "loss_size": 3.2351,
+      "loss_yaw": 1.1321,
+      "loss_rates": 7.1507,
+      "loss_occ": 0.8231,
+      "total": 68.6221,
+      "n_matched": 111,
+      "n_dropped": 0
+     },
+     {
+      "step": 200,
+      "loss_presence": 0.1378,
+      "loss_cls": 0.5864,
+      "loss_centre": 5.8666,
+      "loss_size": 1.0248,
+      "loss_yaw": 0.8192,
+      "loss_rates": 4.866,
+      "loss_occ": 0.3112,
+      "total": 11.0235,
+      "n_matched": 111,
+      "n_dropped": 0
+     },
+     {
+      "step": 399,
+      "loss_presence": 0.1451,
+      "loss_cls": 0.8386,
+      "loss_centre": 4.5,
+      "loss_size": 1.5708,
+      "loss_yaw": 1.0389,
+      "loss_rates": 5.4358,
+      "loss_occ": 0.1982,
+      "total": 10.9104,
+      "n_matched": 131,
+      "n_dropped": 0
+     }
+    ],
+    "wall_s": 43.8
+   },
+   "cuda_max_mem_gb": 0.148714496,
+   "mean_presence_at_lead": 0.5978617072105408
+  }
+ },
+ "n_scored_windows": 491,
+ "abstentions": {
+  "cells": 0,
+  "cells__C-SHUF": 0,
+  "C-CONST": 0
+ },
+ "per_arm": {
+  "cells": {
+   "lead_gap_abs_err_m": {
+    "mean": 10.5484,
+    "lo": 9.0921,
+    "hi": 12.1972,
+    "ci95": 1.5526,
+    "se": 0.8061,
+    "reducer": "mean",
+    "n_windows": 491,
+    "n_episodes": 14,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "median_abs_err_m": 8.788139343261719,
+   "mean_pred_gap_m": 22.589994430541992
+  },
+  "cells__C-SHUF": {
+   "lead_gap_abs_err_m": {
+    "mean": 11.1696,
+    "lo": 10.0125,
+    "hi": 12.4737,
+    "ci95": 1.2306,
+    "se": 0.6282,
+    "reducer": "mean",
+    "n_windows": 491,
+    "n_episodes": 14,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "median_abs_err_m": 9.040061950683594,
+   "mean_pred_gap_m": 23.08602523803711
+  },
+  "C-CONST": {
+   "lead_gap_abs_err_m": {
+    "mean": 7.0626,
+    "lo": 5.8836,
+    "hi": 8.0734,
+    "ci95": 1.0949,
+    "se": 0.5622,
+    "reducer": "mean",
+    "n_windows": 491,
+    "n_episodes": 14,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "median_abs_err_m": 7.287099838256836,
+   "mean_pred_gap_m": 20.77120018005371
+  }
+ },
+ "paired": {
+  "cells vs C-CONST": {
+   "delta": 3.4858,
+   "lo": 2.4232,
+   "hi": 4.5787,
+   "ci95": 1.0778,
+   "p_delta_gt0": 1.0,
+   "separated": true,
+   "reducer": "mean",
+   "n_windows": 491,
+   "n_episodes": 14,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap"
+  },
+  "cells vs cells__C-SHUF": {
+   "delta": -0.6212,
+   "lo": -1.1824,
+   "hi": -0.108,
+   "ci95": 0.5372,
+   "p_delta_gt0": 0.009,
+   "separated": true,
+   "reducer": "mean",
+   "n_windows": 491,
+   "n_episodes": 14,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap"
+  }
+ },
+ "recall": {
+  "tau_star": 0.5,
+  "tau_source": "fixed 0.5; the ENCODED (cells) arm sets it and every arm reuses it",
+  "cells": {
+   "lead_presence_recall": 1.0,
+   "n_gt_lead_windows": 491
+  },
+  "cells__C-SHUF": {
+   "lead_presence_recall": 1.0,
+   "n_gt_lead_windows": 491
+  }
+ },
+ "verdict": {
+  "cells": {
+   "K1_better_than_C-CONST": false,
+   "K2_better_than_C-SHUF": true,
+   "K3_recall_ge_0.50": true,
+   "K3_recall": 1.0,
+   "K4_median_err_lt_0.9769m": false,
+   "median_abs_err_m": 8.788139343261719,
+   "KEEP": false,
+   "admissible_as": "DROP/RE-SCOPE"
+  }
+ },
+ "d_rule": null
+}
