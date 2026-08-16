@@ -63,12 +63,203 @@ def test_red_light_with_stop_corroborates():
 
 
 def test_vocab_tokens_come_from_the_real_lists():
+    """⛔ THIS PIN WAS INVERTED 2026-08-16, and the old form is kept below as
+    the negative control it now needs.
+
+    It used to assert `vocab["g_tac_lat"]["token"] in TACTICAL_LAT_ACTIONS` —
+    i.e. it PINNED a field named for the **`g_tac` GOAL** vocabulary while
+    holding a member of the **`a_tac` ACTION** vocabulary. The two are
+    DISJOINT: `TACTICAL_GOAL_TOKENS_LAT` is
+    (ANCHOR_GOAL, CORRIDOR_OFFSET, EVADE_IN_CORRIDOR, LAT_UNCONSTRAINED) and
+    contains no `LANE_KEEP`. So the assertion passed forever while any
+    consumer joining `g_tac_lat` to a goal head silently received actions —
+    the S2 `"no agents"` class, *a shape that reads like the thing it is not*
+    (`TACTICAL_LABEL_VALIDATION.md` §1.3, third defect).
+
+    The pin changed because the FIELD was renamed to what it holds. It is not
+    deleted: the same content is now pinned under `a_tac_*`, and the goal keys
+    are pinned EMPTY-WITH-A-REASON, because nothing in this fuse derives them.
+    """
     from tanitad.models.v6 import (STRATEGIC_GOAL_TOKENS,
+                                   TACTICAL_GOAL_TOKENS_LAT,
+                                   TACTICAL_GOAL_TOKENS_LON,
                                    TACTICAL_LAT_ACTIONS, TACTICAL_LON_ACTIONS)
     vocab, _ = emit_vocab(V2, None)
     assert vocab["g_str"]["token"] in STRATEGIC_GOAL_TOKENS
-    assert vocab["g_tac_lat"]["token"] in TACTICAL_LAT_ACTIONS
-    assert vocab["g_tac_lon"]["token"] in TACTICAL_LON_ACTIONS
+    # the ACTION content, under the ACTION name
+    assert vocab["a_tac_lat"]["token"] in TACTICAL_LAT_ACTIONS
+    assert vocab["a_tac_lon"]["token"] in TACTICAL_LON_ACTIONS
+    # ⛔ the negative control: the emitted action token is NOT a goal token,
+    # which is exactly why the old assertion was a mismatch and not a typo
+    assert vocab["a_tac_lat"]["token"] not in TACTICAL_GOAL_TOKENS_LAT
+    # the goal axes: declared unavailable, never silently filled or dropped
+    for k, valid in (("g_tac_lat", TACTICAL_GOAL_TOKENS_LAT),
+                     ("g_tac_lon", TACTICAL_GOAL_TOKENS_LON)):
+        assert vocab[k]["token"] is None
+        assert vocab[k]["unavailable_reason"]
+        assert vocab[k]["token"] not in valid          # None is not a token
+
+
+def test_no_known_verb_maps_to_nothing_and_unknown_ones_raise():
+    """⛔ THE DEFECT THAT MADE ALL THREE POSSIBLE: a verb could map to NOTHING
+    by falling off the end of a substring list, and a silent None is
+    indistinguishable from a verb that was never spoken (the C77 family).
+
+    MEASURED pre-fix (`TACTICAL_LABEL_VALIDATION.md` §1.3, 270 emissions):
+    `reduce_to` — the VLM's ONLY deceleration verb — matched nothing on either
+    axis, dropping 49/270 = 18.1 % of all emissions.
+    """
+    import ph1_fuse
+    from ph0_v2 import ACTION_VERBS
+    # (a) the table is TOTAL over the real closed vocabulary — not a subset
+    assert set(ph1_fuse.VLM_VERB_TO_A_TAC) == set(ACTION_VERBS)
+    # (b) no verb is silent on BOTH axes except the one that DECLARES it
+    silent = {v for v in ACTION_VERBS
+              if ph1_fuse.map_vlm_action(v, "left")[:2] == (None, None)}
+    assert silent == {"prepare_exit"}, silent
+    # (c) an unknown verb RAISES — it can never again become a silent None
+    with pytest.raises(ph1_fuse.UnmappedActionVerb):
+        ph1_fuse.map_vlm_action("teleport_home", "none")
+    with pytest.raises(ph1_fuse.UnmappedActionVerb):
+        ph1_fuse.map_vlm_action("prepare_lane_change", "sideways")
+
+
+def test_reduce_to_the_only_deceleration_verb_now_lands():
+    """Defect 1 pinned by outcome, with the pre-fix mechanism as the negative
+    control: the old LON substring list really did miss `reduce_to`."""
+    import ph1_fuse
+    old_lon_rules = (("brake", "BRAKE_TO"), ("stop", "BRAKE_TO"),
+                     ("decel", "BRAKE_TO"), ("yield", "YIELD_MERGE"),
+                     ("merge", "YIELD_MERGE"), ("creep", "CREEP"),
+                     ("hold", "HOLD"), ("wait", "HOLD"), ("follow", "FOLLOW"),
+                     ("cruise", "CRUISE"), ("accel", "CRUISE"))
+    for d in ("none", "left", "right"):
+        txt = f"reduce_to_{d}"
+        assert not any(s in txt for s, _ in old_lon_rules), "control broken"
+        assert ph1_fuse.map_vlm_action("reduce_to", d)[1] == "BRAKE_TO"
+    v2 = json.loads(json.dumps(V2))
+    v2["symbols"]["actions"] = [{"verb": "reduce_to", "direction": "none"}]
+    del v2["signs"]
+    vocab, _ = emit_vocab(v2, None)
+    assert ["vlm", "BRAKE_TO"] in vocab["a_tac_lon"]["votes"]
+
+
+def test_hold_corridor_is_lateral_and_makes_no_longitudinal_claim():
+    """Defect 2. `hold_corridor` matched the LON substring `"hold"` → the
+    LONGITUDINAL token `HOLD` on 159/270 = 58.9 % of emissions, which (with
+    defect 1) made the VLM's longitudinal leg a CONSTANT: κ exactly 0.0000
+    against BOTH other legs, n=162. A constant is not a weak signal — it is
+    no signal, and it was counted as a vote."""
+    import ph1_fuse
+    for d in ("none", "left", "right"):
+        lat, lon, _ = ph1_fuse.map_vlm_action("hold_corridor", d)
+        assert lat == "LANE_KEEP"
+        assert lon is None, "a LATERAL verb must cast no LONGITUDINAL vote"
+    v2 = json.loads(json.dumps(V2))          # V2's action IS hold_corridor
+    del v2["signs"]
+    vocab, _ = emit_vocab(v2, None)
+    assert ["vlm", "LANE_KEEP"] in vocab["a_tac_lat"]["votes"]
+    assert ["vlm", None] in vocab["a_tac_lon"]["votes"]
+    assert not any(t == "HOLD" for s, t in vocab["a_tac_lon"]["votes"])
+
+
+def test_alpamayo_axes_are_parsed_and_the_reasoning_cannot_vote():
+    """Defect 3: the Alpamayo leg ran the SAME substrings over
+    `json.dumps(meta_action)[:400]` — a blob containing the free-text `cot`.
+    A rationale could out-vote the axis it was meant to explain.
+
+    The adversarial case below is real in shape: `cot` strings like *"Keep
+    distance to the lead vehicle…"* (n=282) and *"Slow down for the roundabout
+    because of the yield sign ahead"* (n=61) are top-of-table in
+    `raw/a1_alpamayo_taxonomy.json`.
+    """
+    import ph1_fuse
+    raw = json.dumps({
+        "raw_outputs": ["Longitudinal: Maintain Speed. Lateral: Go Straight. "
+                        "Lane: Lane Keep."],
+        "cot": ["Stop and yield to the merging vehicle, then follow it"]})
+    axes = ph1_fuse.parse_alpamayo_axes(raw)
+    assert axes["longitudinal"] == "Maintain Speed"
+    assert axes["lane"] == "Lane Keep"
+    lat, lon, notes = ph1_fuse.map_alpamayo_axes(axes)
+    assert lat == "LANE_KEEP"
+    # ⛔ the cot says stop/yield/follow; NONE of them may become a vote
+    assert lon is None and "reason" in notes["lon"]
+    # and the axis itself is what abstained, not a parse failure
+    assert "magnitude-typed" in notes["lon"]
+
+
+def test_alpamayo_turn_has_no_v6_token_and_is_never_bent_into_a_neighbour():
+    """⚠️ `Turn Left`/`Turn Right` are 186 of 4,729 clips (3.94 %) and
+    `TACTICAL_LAT_ACTIONS` has NO `TURN_*` member. The honest emission is an
+    abstain with a named reason — `NUDGE_L` would be a fabrication. The
+    vocabulary is REPORTED, never edited (the tuples size embedding tables)."""
+    import ph1_fuse
+    from tanitad.models.v6 import TACTICAL_LAT_ACTIONS
+    assert not any(t.startswith("TURN") for t in TACTICAL_LAT_ACTIONS)
+    for v in ("Turn Left", "Turn Right"):
+        lat, _, notes = ph1_fuse.map_alpamayo_axes({"lane": v})
+        assert lat is None and "no v6 token" in notes["lat"]
+    # a value outside the observed taxonomy is a FINDING, not a coercion
+    with pytest.raises(ph1_fuse.UnmappedActionVerb):
+        ph1_fuse.map_alpamayo_axes({"lane": "Pirouette Left"})
+
+
+def test_ego_and_vlm_are_ONE_block_and_can_never_corroborate_each_other():
+    """⛔ PRIORITY-2 PIN. MEASURED (`TACTICAL_LABEL_VALIDATION.md` §1.4):
+    `_ego_prompt_mode == 'past'` on 201/201, and the block printed into the
+    VLM's prompt carries `motion` and `turning` — EXACTLY the two fields the
+    ego voter reads. Signature: VLM↔ego LAT κ 0.7608 vs Alpamayo↔VLM 0.1717.
+
+    ⇒ A 2-of-3 majority could be carried by ONE SOURCE COUNTED TWICE. This
+    pins that it no longer can: agreement between ego and the VLM is ONE
+    vote, and `corroborated` stays False without an INDEPENDENT block.
+    """
+    import ph1_fuse
+    # ego and vlm agreeing perfectly: one block, one vote, NOT corroborated
+    out = ph1_fuse.block_vote([("ego", "LANE_KEEP"), ("vlm", "LANE_KEEP")],
+                              ("LANE_KEEP", "NUDGE_L"))
+    assert out["token"] == "LANE_KEEP"
+    assert out["n_blocks_speaking"] == 1
+    assert out["corroborated"] is False, "a source and its own echo"
+    assert out["blocks"]["ego+vlm"]["members"] == ["ego", "vlm"]
+    # the old 2-of-3 helper is GONE, not renamed
+    assert not hasattr(ph1_fuse, "majority")
+    # an INDEPENDENT third leg agreeing is what corroboration means
+    out = ph1_fuse.block_vote(
+        [("ego", "LANE_KEEP"), ("vlm", "LANE_KEEP"),
+         ("alpamayo", "LANE_KEEP")], ("LANE_KEEP", "NUDGE_L"))
+    assert out["corroborated"] is True and out["n_blocks_speaking"] == 2
+    # blocks disagreeing: Alpamayo decides (full camera rig, external) and the
+    # disagreement is RECORDED, never averaged
+    out = ph1_fuse.block_vote(
+        [("ego", "LANE_KEEP"), ("vlm", "LANE_KEEP"),
+         ("alpamayo", "NUDGE_L")], ("LANE_KEEP", "NUDGE_L"))
+    assert out["token"] == "NUDGE_L" and out["provenance"] == "alpamayo"
+    assert out["corroborated"] is False
+    assert out["blocks"]["ego+vlm"]["token"] == "LANE_KEEP"
+    # ⛔ two ego+vlm members disagreeing is a FINDING (the VLM departing from
+    # its own prompt), so the block abstains rather than picking one
+    out = ph1_fuse.block_vote([("ego", "LANE_KEEP"), ("vlm", "NUDGE_L")],
+                              ("LANE_KEEP", "NUDGE_L"))
+    assert out["token"] is None and out["n_blocks_speaking"] == 0
+    assert out["blocks"]["ego+vlm"]["internal_disagreement"] is True
+
+
+def test_two_of_three_can_no_longer_be_satisfied_by_ego_plus_vlm():
+    """The end-to-end half of the pin, through `emit_vocab`: ego and the VLM
+    both say LANE_KEEP and Alpamayo says otherwise. Under the retired
+    majority that was 2 votes to 1 and LANE_KEEP won."""
+    v2 = json.loads(json.dumps(V2))
+    del v2["signs"]
+    alp = {"meta_action": json.dumps({
+        "raw_outputs": ["Longitudinal: Maintain Speed. Lateral: Steer Left. "
+                        "Lane: Left Lane Change."], "cot": ["Move over"]})}
+    vocab, _ = emit_vocab(v2, alp)
+    lat = vocab["a_tac_lat"]
+    assert [s for s, t in lat["votes"] if t == "LANE_KEEP"] == ["ego", "vlm"]
+    assert lat["token"] == "LANE_CHANGE_L"       # NOT the 2-vote echo
+    assert lat["provenance"] == "alpamayo" and lat["corroborated"] is False
 
 
 def test_unmapped_goal_becomes_abstain_plus_conflict():
@@ -255,15 +446,15 @@ def test_dead_ego_lateral_vote_now_lands():
     del v2["signs"]                     # no red light: lat vote is the point
     vocab, _ = emit_vocab(v2, None)
     votes = dict((s, t) for s, t in
-                 [tuple(v) for v in vocab["g_tac_lat"]["votes"]]
+                 [tuple(v) for v in vocab["a_tac_lat"]["votes"]]
                  if s == "ego")
     assert votes["ego"] == "NUDGE_L"    # the vote LANDS now
     v2["ego_state"]["turning"] = "turning_right"
     vocab, _ = emit_vocab(v2, None)
-    assert ["ego", "NUDGE_R"] in vocab["g_tac_lat"]["votes"]
+    assert ["ego", "NUDGE_R"] in vocab["a_tac_lat"]["votes"]
     v2["ego_state"]["turning"] = "straight"             # unchanged behavior
     vocab, _ = emit_vocab(v2, None)
-    assert ["ego", "LANE_KEEP"] in vocab["g_tac_lat"]["votes"]
+    assert ["ego", "LANE_KEEP"] in vocab["a_tac_lat"]["votes"]
 
 
 def test_geometry_primary_turn_beats_vlm_follow():

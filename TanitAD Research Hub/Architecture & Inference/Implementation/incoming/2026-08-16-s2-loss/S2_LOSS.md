@@ -143,8 +143,29 @@ lives on the RAW clip timeline and a v2ep provider drops the first
 `n_stack−1` frames (`_scan_meta` `poses[k:]`), read per episode off its own
 channel count. At W=6, 9-channel stack, 10 Hz: provider `t ∈ [53, 93]`.
 
-**The real artifact through the real code** (MEASURED): `load_s2_labels`
-on `…/2026-08-16-s2-v1-labels/labels/` → **797 records**, g_str census
+⛔ **SUPERSEDED 2026-08-16 (commit `06b8782`) — THE CENSUS BELOW WAS THE v1
+DELIVERY, AND `…/labels/` IS NO LONGER LOADABLE.** The PI adjudicated the
+geometric lane-change derivation ~78 % wrong (14/18 with an opinion) and it was
+REMOVED; the canonical artifact is now
+`…/2026-08-16-s2-v1-labels/review/labels_v2/`
+(`s2_labels.S2_CANONICAL_LABELS_REL`), and the old directory carries a
+`SUPERSEDED.json` marker that `load_s2_labels` **refuses by name**.
+**Corrected census, MEASURED through this same loader:** 797 records, g_str
+`FOLLOW 474 · TURN_L 137 · TURN_R 113 · STOP_AT 59 · NONE_ABSTAIN 14`, a_str
+`HOLD 597 · REDUCE_TO 94 · P_STOP 88 · RESUME 18` — `LANE_TARGET` and
+`PREPARE_LANE_CHANGE` are **ABSENT (0)**. The 80 affected clips are confirmed
+ROUTE-FOLLOWING: `engine_a.route.token == "follow"` with `token_valid: true`
+for **80/80**, and their `a_str` split (71 HOLD / 9 REDUCE_TO) is derived from
+the longitudinal engine the lane-change branch had been shadowing (median
+`net_dv` +0.27 vs −3.35 m/s). Pinned by
+`test_v6_s2_loss.py::test_the_CANONICAL_label_set_is_the_CORRECTED_one_not_the_v1_delivery`
+and `…::test_the_SUPERSEDED_v1_labels_are_REFUSED_and_name_their_replacement`.
+*(Evidence class: MEASURED, ours, 2026-08-16. What would change it: a rebuilt
+label artifact — the tests name themselves as the thing to update.)*
+
+**The v1 artifact through the real code** (MEASURED, HISTORICAL — do not quote
+as current): `load_s2_labels` on `…/2026-08-16-s2-v1-labels/labels/` →
+**797 records**, g_str census
 `FOLLOW 395 · TURN_L 137 · TURN_R 113 · LANE_TARGET 80 · STOP_AT 59 ·
 NONE_ABSTAIN 13`, a_str `HOLD 526 · P_STOP 88 · REDUCE_TO 85 · P_LC 80 ·
 RESUME 18`, provenance `path` 797/797, 801 index clips / 4 excluded —
@@ -164,8 +185,13 @@ after the corpus build) · negative weight · **`--no-isolate-planner`
 combination, unconditionally**. The production S-S line adds exactly:
 
 ```
---w-s2-goal 1.0 --s2-labels <…/2026-08-16-s2-v1-labels/labels>
+--w-s2-goal 1.0 --s2-labels <…/2026-08-16-s2-v1-labels/review/labels_v2>
 ```
+
+⛔ **The path changed on 2026-08-16 and the old one now FAILS FAST** — `…/labels`
+is superseded and `load_s2_labels` refuses it, naming this replacement. Do not
+retype the path from an older doc; the canonical string is
+`s2_labels.S2_CANONICAL_LABELS_REL`, which `--s2-labels`' own `--help` prints.
 
 ⚠️ **Expected supervision density on the real corpus (ESTIMATED, stated so
 nobody reads the log wrong):** only the **201 aug120 labels sit in the

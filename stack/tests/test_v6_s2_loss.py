@@ -477,7 +477,7 @@ def _rec(cid, g_tok="TURN_LEFT", a_tok="HOLD_CORRIDOR", **over):
 
 def _write(tmp_path, records, index=None, name="s2_labels_test.jsonl"):
     d = tmp_path / "labels"
-    d.mkdir(exist_ok=True)
+    d.mkdir(parents=True, exist_ok=True)
     if index is not None:
         (d / "clip_index.json").write_text(json.dumps(index))
     (d / name).write_text("\n".join(json.dumps(r) for r in records))
@@ -582,6 +582,159 @@ def test_mask_and_arg_discipline_violations_REFUSE(tmp_path):
         load_s2_labels(d)
 
 
+# =========================================================================== #
+# 4b. ABSTENTION — a per-family mask, default-off and provably inert
+# =========================================================================== #
+
+def _abstain_block(provenance="review"):
+    """An abstaining family block: NO token, nothing constrained."""
+    return {"abstain": True, "args": [0.0] * GOAL_ARG_SLOTS,
+            "arg_mask": [0] * GOAL_ARG_SLOTS, "provenance": provenance,
+            "sources": ["review.pi_verdicts"]}
+
+
+def test_an_abstaining_family_loads_unsupervised_and_is_COUNTED(tmp_path):
+    """⛔ THE POINT OF THE CHANNEL. `a_str` has no abstain TOKEN — asserted
+    here against the real vocabulary, because the whole design follows from
+    it — so "we do not know the action" can only be said with a mask."""
+    assert "NONE_ABSTAIN" not in STRATEGIC_ACTION_TOKENS
+    assert "NONE_ABSTAIN" in STRATEGIC_GOAL_TOKENS      # g_str CAN say it
+    r = _rec(_CID_A)
+    r["a_str"] = _abstain_block()
+    d = _write(tmp_path, [r, _rec(_CID_B)], _index({_CID_A: {}, _CID_B: {}}))
+    ls = load_s2_labels(d)
+    assert ls.has_abstain is True
+    assert ls.abstain_census() == {"g_str": 0, "a_str": 1}
+    # the declined family is COUNTED, not dropped: the census still sums to n
+    cens = ls.token_census()
+    assert cens["a_str"][SL.NO_LABEL] == 1
+    assert sum(cens["a_str"].values()) == len(ls) == 2
+    assert SL.NO_LABEL not in cens["g_str"]
+    row = ls.rows_by_stable[stable_episode_id(_CID_A)]
+    assert row.a_sup is False and row.g_sup is True
+    assert row.a_id == IGNORE_ID
+
+
+def test_an_abstaining_block_carrying_a_token_or_an_arg_REFUSES(tmp_path):
+    """A declined family that still names a manoeuvre is the exact ambiguity
+    the channel exists to remove, so it is refused rather than laundered."""
+    for mutate, pat in (
+            (lambda b: b.update(token="HOLD_CORRIDOR"), "abstain:true AND"),
+            (lambda b: b.update(token_id=1), "abstain:true AND"),
+            (lambda b: b["arg_mask"].__setitem__(6, 1), "abstains but"),
+            (lambda b: b["args"].__setitem__(6, 3.0), "abstains but"),
+            (lambda b: b.update(abstain="yes"), "must be true or absent")):
+        r = _rec(_CID_A)
+        r["a_str"] = _abstain_block()
+        mutate(r["a_str"])
+        d = _write(tmp_path, [r], _index({_CID_A: {}}))
+        with pytest.raises(S2LabelError, match=pat):
+            load_s2_labels(d)
+
+
+def test_abstaining_on_BOTH_families_REFUSES(tmp_path):
+    """A record that supervises nothing is an ABSENT label wearing an
+    abstention's clothes — omit the clip instead."""
+    r = _rec(_CID_A)
+    r["g_str"], r["a_str"] = _abstain_block(), _abstain_block()
+    d = _write(tmp_path, [r], _index({_CID_A: {}}))
+    with pytest.raises(S2LabelError, match="BOTH families"):
+        load_s2_labels(d)
+
+
+def _sup_for(ls, eids=(_CID_A, _CID_B)):
+    eps = [_Ep(stable_episode_id(c)) for c in eids]
+    return ls.supervision(eps, window=6, dt=0.1,
+                          index=[(i, 80) for i in range(len(eps))])
+
+
+def test_the_batch_omits_the_family_keys_UNLESS_a_record_abstains(tmp_path):
+    """⛔ THE INERTNESS CONTRACT, both branches. No abstention anywhere =>
+    the incumbent SEVEN-key batch, byte-for-byte. One abstention => exactly
+    two extra bool keys and nothing else moves."""
+    plain = _loaded(tmp_path / "plain")
+    b0 = _sup_for(plain).batch([0, 1])
+    assert set(b0) == {"g_str_id", "g_str_args", "g_str_arg_mask", "a_str_id",
+                       "a_str_args", "a_str_arg_mask", "s2_valid"}
+    r = _rec(_CID_A)
+    r["a_str"] = _abstain_block()
+    d = _write(tmp_path / "abst", [r, _rec(_CID_B)],
+               _index({_CID_A: {}, _CID_B: {}}))
+    sup = _sup_for(load_s2_labels(d))
+    b1 = sup.batch([0, 1])
+    assert set(b1) - set(b0) == {"g_str_valid", "a_str_valid"}
+    assert b1["s2_valid"].tolist() == [True, True]      # BOTH still in band
+    assert b1["a_str_valid"].tolist() == [False, True]
+    assert b1["g_str_valid"].tolist() == [True, True]
+    assert sup.n_windows_in_band == 2
+    assert sup.n_windows_supervised == {"g_str": 2, "a_str": 1}
+    assert sup.emits_family_masks is True
+
+
+def test_an_abstained_family_sends_EXACTLY_ZERO_gradient_to_its_head():
+    """The measured half: with `a_str_valid` all-False, the S2 TERM reaches
+    the goal head and NOT ONE action-head tensor. Isolated on ``L["s2"]``, the
+    same way `test_s2_gradient_reaches_EXACTLY_the_two_heads` is — the total
+    S-S loss has other terms that legitimately reach `act_head_str`, so
+    backprop through `L["loss"]` would measure those and prove nothing about
+    the mask (a probe answering the wrong question looks exactly like an
+    answer)."""
+    s = _stack()
+    for p in s.parameters():
+        p.requires_grad_(True)
+    b = _loss_batch(s)
+    b["s2_valid"] = torch.ones_like(b["s2_valid"])
+    b["a_str_valid"] = torch.zeros_like(b["s2_valid"])
+    b["g_str_valid"] = torch.ones_like(b["s2_valid"])
+    L = v6_loss_step(s, b, stage="S-S",
+                     weights=V6LossWeights(w_s2_goal=1.0), o1_k=10, o5_k=12)
+    names = [n for n, _ in s.named_parameters()]
+    grads = torch.autograd.grad(L["s2"], [p for _, p in s.named_parameters()],
+                                allow_unused=True)
+    live = {n for n, g in zip(names, grads)
+            if g is not None and float(g.abs().max()) > 0}
+    assert not any(n.startswith("act_head_str.") for n in live), \
+        f"an abstained family still trained: {sorted(live)}"
+    assert any(n.startswith("goal_head_str.") for n in live)
+    assert L["log"]["s2_a_n_abstained"] == int(b["s2_valid"].sum())
+    assert L["log"]["s2_g_n_abstained"] == 0
+    assert L["log"]["s2_a_n_valid"] == 0
+
+
+def test_the_family_masks_are_ABSENT_by_default_and_only_ever_REMOVE():
+    """Absent => identical to the incumbent, bit-for-bit. Present-and-all-True
+    => also identical (the AND is a no-op). And the mask cannot ADD a window
+    the band excluded: all-True over an all-False `s2_valid` stays empty."""
+    s = _stack()
+    base = v6_loss_step(s, _loss_batch(s), stage="S-S",
+                        weights=V6LossWeights(w_s2_goal=1.0),
+                        o1_k=10, o5_k=12)
+    b = _loss_batch(s)
+    b["g_str_valid"] = torch.ones_like(b["s2_valid"])
+    b["a_str_valid"] = torch.ones_like(b["s2_valid"])
+    same = v6_loss_step(s, b, stage="S-S",
+                        weights=V6LossWeights(w_s2_goal=1.0),
+                        o1_k=10, o5_k=12)
+    assert float(same["loss"]) == float(base["loss"])
+    assert same["log"]["s2_g_n_abstained"] == 0
+    b2 = _loss_batch(s)
+    b2["s2_valid"] = torch.zeros_like(b2["s2_valid"])
+    b2["g_str_valid"] = torch.ones_like(b2["s2_valid"])
+    b2["a_str_valid"] = torch.ones_like(b2["s2_valid"])
+    off = v6_loss_step(s, b2, stage="S-S",
+                       weights=V6LossWeights(w_s2_goal=1.0), o1_k=10, o5_k=12)
+    assert off["log"]["s2_g_n_valid"] == 0 and off["log"]["s2_a_n_valid"] == 0
+
+
+def test_a_misshaped_family_mask_REFUSES():
+    s = _stack()
+    b = _loss_batch(s)
+    b["a_str_valid"] = torch.ones(len(b["s2_valid"]) + 1, dtype=torch.bool)
+    with pytest.raises(ValueError, match="a_str_valid must be"):
+        v6_loss_step(s, b, stage="S-S", weights=V6LossWeights(w_s2_goal=1.0),
+                     o1_k=10, o5_k=12)
+
+
 def test_stable_episode_id_fallback_matches_the_canonical_one():
     """The p8 pattern's pin, applied to this loader: whenever the canonical
     v2_dataset implementation is importable, the loader's function IS it (or
@@ -594,30 +747,171 @@ def test_stable_episode_id_fallback_matches_the_canonical_one():
         assert stable_episode_id(cid) == canon(cid)
 
 
-_REAL = _ROOT / "TanitAD Research Hub" / "Data Engineering" / \
+#: The SUPERSEDED v1 delivery. Kept as a NAME in this test file for exactly one
+#: reason: to prove the loader refuses it. Never as a load target.
+_SUPERSEDED = _ROOT / "TanitAD Research Hub" / "Data Engineering" / \
     "Implementation" / "incoming" / "2026-08-16-s2-v1-labels" / "labels"
+#: The CANONICAL set, resolved through the code constant rather than retyped —
+#: if the constant moves, this test follows it instead of silently testing a
+#: path nothing uses.
+_REAL = SL.s2_canonical_labels_dir(_ROOT)
 
 
-def test_the_REAL_797_record_artifact_loads_with_the_published_census():
-    """The shipped v1 labels through this exact loader: 797 records, and the
-    per-token censuses equal S2_V1_LABELS.md §3 (aug120 + val summed). A
-    loader that validates a synthetic fixture but chokes on — or silently
-    reshapes — the real artifact would be C13 in a test's clothing."""
+def test_the_CANONICAL_label_set_is_the_CORRECTED_one_not_the_v1_delivery():
+    """⛔ WHICH LABELS `--s2-labels` MUST POINT AT.
+
+    The v1 delivery's lane-change rows were adjudicated ~78 % WRONG by the PI
+    and the geometric derivation was removed (06b8782). Pinned here because
+    the failure mode is INVISIBLE: the superseded set has the same 797
+    records, the same index, the same band, and passes every other guard in
+    the loader identically — it is simply wrong in 80 rows. So the test
+    asserts the corrected census, and that the two tokens the review deleted
+    are ABSENT rather than merely rarer."""
     if not _REAL.is_dir():
-        pytest.skip("the S2 v1 label delivery is not present in this checkout")
+        pytest.skip("the S2 label delivery is not present in this checkout")
     ls = load_s2_labels(_REAL)
     assert len(ls) == 797
-    assert ls.token_census()["g_str"] == {
-        "FOLLOW_MAIN_ROAD": 395, "LANE_TARGET": 80, "NONE_ABSTAIN": 13,
-        "STOP_AT": 59, "TURN_LEFT": 137, "TURN_RIGHT": 113}
-    assert ls.token_census()["a_str"] == {
-        "HOLD_CORRIDOR": 526, "PREPARE_LANE_CHANGE": 80, "PREPARE_STOP": 88,
-        "REDUCE_TO": 85, "RESUME_CRUISE": 18}
+    g, a = ls.token_census()["g_str"], ls.token_census()["a_str"]
+    assert g == {"FOLLOW_MAIN_ROAD": 474, "NONE_ABSTAIN": 14, "STOP_AT": 59,
+                 "TURN_LEFT": 137, "TURN_RIGHT": 113}
+    assert a == {"HOLD_CORRIDOR": 597, "PREPARE_STOP": 88, "REDUCE_TO": 94,
+                 "RESUME_CRUISE": 18}
+    assert "LANE_TARGET" not in g and "PREPARE_LANE_CHANGE" not in a
+    assert sum(g.values()) == sum(a.values()) == 797
     assert ls.provenance_census() == {"g_str": {"path": 797},
                                       "a_str": {"path": 797}}
     assert ls.t0_s == 8.0 and ls.band == (-2.0, 2.0)
     assert ls.source["n_index_clips"] == 801
     assert ls.source["n_index_excluded"] == 4
+
+
+def test_the_SUPERSEDED_v1_labels_are_REFUSED_and_name_their_replacement():
+    """Pointing `--s2-labels` at the old delivery must FAIL, not train.
+
+    ⛔ The negative half of the test above, and the load-bearing one: the
+    superseded directory is still on disk (it is the review's own evidence),
+    so nothing but this refusal stops a launch line copied from an older doc
+    from supervising the strategic head with the 80 wrong targets."""
+    if not _SUPERSEDED.is_dir():
+        pytest.skip("the S2 v1 label delivery is not present in this checkout")
+    assert (_SUPERSEDED / SL.SUPERSEDED_NAME).is_file()
+    with pytest.raises(S2LabelError) as e:
+        load_s2_labels(_SUPERSEDED)
+    msg = str(e.value)
+    assert "SUPERSEDED" in msg and "labels_v2" in msg
+    # a single .jsonl inside a superseded dir is refused too — the marker
+    # guards the DIRECTORY, not just the directory-shaped invocation.
+    one = next(_SUPERSEDED.glob("s2_labels_*.jsonl"))
+    with pytest.raises(S2LabelError, match="SUPERSEDED"):
+        load_s2_labels(one)
+
+
+def test_the_trainers_help_copy_of_the_canonical_path_CANNOT_drift():
+    """`train_v6_staged` keeps its OWN literal of the canonical label path
+    rather than importing it.
+
+    ⛔ That is deliberate and was MEASURED: the module-level import added
+    `s2_labels` to the trainer's IMPORT-TIME CLOSURE, which
+    `test_runbook_commands.py` pins because the closure is the set of files
+    that must be FILE-SHIPPED to a pod — importing a module to print a help
+    string would have made it mandatory for every launch. The cost of the
+    literal is a second copy, so the copies are audited against each other
+    here (C81), and the help text is checked to actually carry it."""
+    import train_v6_staged as T
+    assert T.S2_CANONICAL_LABELS_REL == SL.S2_CANONICAL_LABELS_REL
+    helps = " ".join(
+        a.help or "" for a in build_parser()._actions
+        if "--s2-labels" in (a.option_strings or []))
+    assert SL.S2_CANONICAL_LABELS_REL in helps, \
+        "--s2-labels' help must name the canonical set, not just imply it"
+    assert "SUPERSEDED" in helps
+
+
+def test_the_marker_and_the_code_constant_CANNOT_silently_disagree():
+    """The canonical path is written in TWO places — `SUPERSEDED.json`'s
+    `superseded_by` and `s2_labels.S2_CANONICAL_LABELS_REL`. C81's rule for a
+    fact written twice is to audit the copies AGAINST each other, because the
+    stale one is the one that gets read. They must resolve to one directory."""
+    if not _SUPERSEDED.is_dir():
+        pytest.skip("the S2 v1 label delivery is not present in this checkout")
+    m = json.loads((_SUPERSEDED / SL.SUPERSEDED_NAME)
+                   .read_text(encoding="utf-8"))
+    assert (_SUPERSEDED / m["superseded_by"]).resolve() == _REAL.resolve()
+    assert _REAL.is_dir(), "the constant names a directory that must exist"
+
+
+def test_the_80_ex_lane_change_rows_are_RESOLVED_not_declined():
+    """⛔ THE PI'S QUESTION, ANSWERED ON THE SHIPPED ARTIFACT (2026-08-16):
+    *"investigate what these labels are … and give them one by adjusting the
+    approach or confirm their cases for follow route"*.
+
+    They are ROUTE-FOLLOWING cases, and the answer is a derivation, not a
+    reassignment: `engine_a.route.token == "follow"` with `token_valid: true`
+    for **80/80** (MEASURED, `labels/engine_a_*.jsonl`), so the route engine
+    had already called them follow and the removed geometric gate was
+    OVERRIDING its own route token. The `a_str` split is likewise derived —
+    from the LONGITUDINAL engine the lane-change branch had been shadowing
+    (median `net_dv` +0.27 m/s for the 71 HOLD_CORRIDOR vs −3.35 m/s for the
+    9 REDUCE_TO).
+
+    ⇒ **the abstain residual is ZERO for `a_str`.** The machinery exists
+    (`abstain: true`) for a future source that can decide the goal but not the
+    action; this corpus never needs it, and that is asserted rather than
+    assumed. `has_abstain False` is what keeps the batch schema byte-identical
+    for the live run."""
+    if not _REAL.is_dir():
+        pytest.skip("the S2 label delivery is not present in this checkout")
+    ls = load_s2_labels(_REAL)
+    a = ls.token_census()["a_str"]
+    assert a["HOLD_CORRIDOR"] == 526 + 71 and a["REDUCE_TO"] == 85 + 9, (
+        "the ex-lane-change rows moved: re-derive them from engine_a, do not "
+        "adjust this number to match")
+    assert ls.abstain_census() == {"g_str": 0, "a_str": 0}, (
+        "an abstaining record appeared in the shipped labels. The PI's "
+        "ruling is that these clips are RESOLVED as route-following, so an "
+        "abstention here needs a stated reason: record it in "
+        "INTEGRATION_CLOSE.md and update this test — do not delete it")
+    assert ls.has_abstain is False
+    assert SL.NO_LABEL not in a and SL.NO_LABEL not in ls.token_census()[
+        "g_str"]
+
+
+def test_the_ex_lane_change_clips_are_route_FOLLOW_in_the_route_engine():
+    """The evidence behind the test above, read from the PRIMARY artifact
+    (`engine_a_*.jsonl`) rather than inherited from the label census.
+
+    ⛔ WHY IT IS A SEPARATE TEST. "these 80 are route-following" is the claim
+    the whole relabel rests on; asserting it only through the labels would be
+    circular — the labels are the thing being justified. This reads the route
+    engine's own token."""
+    d = _SUPERSEDED           # engine_a_*.jsonl ship beside the v1 labels
+    if not d.is_dir():
+        pytest.skip("the S2 label delivery is not present in this checkout")
+    ea = {}
+    for f in sorted(d.glob("engine_a_*.jsonl")):
+        for line in f.read_text(encoding="utf-8").splitlines():
+            if line.strip():
+                r = json.loads(line)
+                ea[r["clip_id"]] = r["engine_a"]
+    assert len(ea) == 801
+    changed = json.loads((_SUPERSEDED.parent / "review" / "raw" /
+                          "lc_emit.json").read_text(encoding="utf-8"))
+    ex = [row[0] for row in changed["changed"]]
+    assert len(ex) == 80
+    bad = [c for c in ex if not (ea[c]["route"]["token"] == "follow"
+                                 and ea[c]["route"]["token_valid"])]
+    assert not bad, (
+        f"{len(bad)} of the ex-LANE_TARGET clips whose route engine does NOT "
+        f"say follow: {bad[:5]} — the relabel's justification fails for them")
+    # ⚠️ SCOPE, stated because the wider claim is FALSE and I measured it:
+    # FOLLOW_MAIN_ROAD corpus-wide is NOT co-extensive with route==follow. Of
+    # its 474 records, 98 carry route ('unknown', token_valid=False) and 3
+    # carry a valid 'merge' — FOLLOW_MAIN_ROAD is the DECLARED DEFAULT when no
+    # route is set (v6.py:148, HIERARCHY_VOCABULARY §3), so those are correct
+    # and not evidence for the relabel. The 80 are.
+    ls = load_s2_labels(_REAL)
+    assert sum(1 for r in ls.rows_by_stable.values()
+               if r.g_token == "FOLLOW_MAIN_ROAD") == 474
 
 
 # =========================================================================== #

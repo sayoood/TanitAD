@@ -121,6 +121,22 @@ from train_stage_a import (TRAIN_ARMS, sample_random_deltas,  # noqa: E402
 from train_v58f_unicycle_head import A_MAX, KAPPA_MAX  # noqa: E402
 from stage_a_probes import DACCEL_DEFAULT, DKAPPA_DEFAULT  # noqa: E402
 
+#: The canonical `s2-strategic-v1` label artifact, for `--s2-labels`' help.
+#: ⛔ A LITERAL, NOT `from s2_labels import S2_CANONICAL_LABELS_REL`. MEASURED
+#: 2026-08-16: the module-level import added `s2_labels` to this trainer's
+#: IMPORT-TIME CLOSURE, which `tests/test_runbook_commands.py` pins because the
+#: closure is exactly the set of files that must be FILE-SHIPPED to a pod
+#: (pods have no git credentials). Importing a module to print a help string
+#: would have made `s2_labels` mandatory for EVERY launch and given a pod
+#: missing it a `ModuleNotFound` at startup — a real operational cost for a
+#: cosmetic gain. `s2_labels` stays a LAZY import on the paths that use it.
+#: ⚠️ The two copies cannot drift: `test_v6_s2_loss.py` asserts this string
+#: equals `s2_labels.S2_CANONICAL_LABELS_REL` (C81 — audit the copies against
+#: each other where a fact is written twice).
+S2_CANONICAL_LABELS_REL = (
+    "TanitAD Research Hub/Data Engineering/Implementation/incoming/"
+    "2026-08-16-s2-v1-labels/review/labels_v2")
+
 __all__ = [
     "V6LossWeights", "STAGE_PRECONDITION", "STAGE_GATE_SPEC",
     "STAGE_INVALIDATES", "STAGE_INVALIDATION_MECHANISM",
@@ -968,6 +984,19 @@ S2_IGNORE_ID = -100
 _S2_ROUTE_TO_ID = STRATEGIC_GOAL_TOKENS.index("ROUTE_TO")
 _S2_BATCH_KEYS = ("g_str_id", "g_str_args", "g_str_arg_mask",
                   "a_str_id", "a_str_args", "a_str_arg_mask", "s2_valid")
+#: OPTIONAL per-family abstention masks (`s2_labels.S2WindowSupervision.batch`
+#: emits them only for a label set that contains an abstaining record).
+#: ⛔ WHY THEY EXIST. `a_str`'s vocabulary is six POSITIVE manoeuvres — there is
+#: no `NONE_ABSTAIN` in `STRATEGIC_ACTION_TOKENS` (MEASURED, v6.py:157), so a
+#: builder that removes a wrong action label has nowhere to put "unknown" and
+#: the row falls through to `HOLD_CORRIDOR`/`REDUCE_TO` — MEASURED on the
+#: v1→v2 relabel: 80 removed `PREPARE_LANE_CHANGE` became 71 + 9 of those two.
+#: Deleting a wrong label MANUFACTURED a different confident label. The mask is
+#: the honest alternative; an abstain TOKEN was refused because `GoalVocabulary`
+#: sizes its embedding from the tuple and the live S-W run resumes tensor-level.
+#: ABSENT => the family's validity is exactly `s2_valid` (the incumbent), so
+#: every pre-abstain artifact keeps a bit-identical loss.
+_S2_FAMILY_MASK_KEYS = ("g_str_valid", "a_str_valid")
 
 
 def _s2_family(head_out: dict, ids: Tensor, args: Tensor, mask: Tensor,
@@ -1005,6 +1034,7 @@ def _s2_family(head_out: dict, ids: Tensor, args: Tensor, mask: Tensor,
         # drops the term from the log.
         z = logits.sum() * 0.0 + pred_args.sum() * 0.0
         return z, z, {f"s2_{where}_ce": None, f"s2_{where}_acc": None,
+                      f"s2_{where}_n_valid": 0,
                       f"s2_{where}_arg_l1": None, f"s2_{where}_arg_slots": 0,
                       f"s2_{where}_tok_counts": {}}
     ce = torch.nn.functional.cross_entropy(logits, tgt,
@@ -1019,11 +1049,31 @@ def _s2_family(head_out: dict, ids: Tensor, args: Tensor, mask: Tensor,
         counts[tokens[t]] = counts.get(tokens[t], 0) + 1
     return ce, arg_l1, {
         f"s2_{where}_ce": float(ce.detach()),
+        f"s2_{where}_n_valid": n_valid,
         f"s2_{where}_acc": float((top1[valid] == on).float().mean()),
         f"s2_{where}_arg_l1": (float(arg_l1.detach()) if float(n_slots) > 0
                                else None),
         f"s2_{where}_arg_slots": int(n_slots),
         f"s2_{where}_tok_counts": dict(sorted(counts.items()))}
+
+
+def _s2_family_valid(batch: dict, key: str, valid: Tensor) -> Tensor:
+    """``s2_valid & batch[key]`` when the optional per-family mask is present.
+
+    ⛔ ABSENT IS THE DEFAULT AND IT RETURNS ``valid`` ITSELF — not a copy, not
+    an all-True AND — so a batch built by any pre-abstain producer takes a code
+    path identical to the incumbent one. The mask can only ever REMOVE
+    supervision (it is ANDed, never ORed): a label file cannot use it to
+    supervise a window the band excluded."""
+    m = batch.get(key)
+    if m is None:
+        return valid
+    if m.shape != valid.shape:
+        raise ValueError(
+            f"{key} must be {tuple(valid.shape)} like s2_valid, got "
+            f"{tuple(m.shape)} — a per-family abstention mask that does not "
+            f"align with the window axis would silently mask the wrong rows.")
+    return valid & m.bool()
 
 
 def s2_goal_loss(g_out: dict, a_out: dict, batch: dict) -> tuple[Tensor, dict]:
@@ -1033,7 +1083,9 @@ def s2_goal_loss(g_out: dict, a_out: dict, batch: dict) -> tuple[Tensor, dict]:
              + |g_str.args − g_str_args|·g_str_arg_mask   (mean over set slots)
              + |a_str.args − a_str_args|·a_str_arg_mask
 
-    all masked by ``s2_valid``. ``g_out``/``a_out`` are the forward's
+    all masked by ``s2_valid``, and — where the label set abstains — by the
+    OPTIONAL per-family masks ``g_str_valid`` / ``a_str_valid``
+    (:data:`_S2_FAMILY_MASK_KEYS`). ``g_out``/``a_out`` are the forward's
     ``out["g_str"]`` / ``out["a_str"]`` dicts; the batch keys are the
     ``s2_labels.S2WindowSupervision.batch`` contract.
 
@@ -1057,8 +1109,10 @@ def s2_goal_loss(g_out: dict, a_out: dict, batch: dict) -> tuple[Tensor, dict]:
             f"without its labels is how a supervision weight silently "
             f"becomes 0. Pass --s2-labels (the loader builds these keys).")
     valid = batch["s2_valid"].bool()
-    if valid.any() and bool((batch["g_str_id"][valid]
-                             == _S2_ROUTE_TO_ID).any()):
+    g_valid = _s2_family_valid(batch, "g_str_valid", valid)
+    a_valid = _s2_family_valid(batch, "a_str_valid", valid)
+    if g_valid.any() and bool((batch["g_str_id"][g_valid]
+                               == _S2_ROUTE_TO_ID).any()):
         raise ValueError(
             "a valid S2 window carries g_str_id == ROUTE_TO, which is GATED "
             "(G1 CLOSED 0/31; no categorical arg channel on vocab_str). The "
@@ -1066,12 +1120,18 @@ def s2_goal_loss(g_out: dict, a_out: dict, batch: dict) -> tuple[Tensor, dict]:
             "batch cannot reach the head with it.")
     g_ce, g_l1, g_log = _s2_family(
         g_out, batch["g_str_id"], batch["g_str_args"], batch["g_str_arg_mask"],
-        valid, STRATEGIC_GOAL_TOKENS, "g")
+        g_valid, STRATEGIC_GOAL_TOKENS, "g")
     a_ce, a_l1, a_log = _s2_family(
         a_out, batch["a_str_id"], batch["a_str_args"], batch["a_str_arg_mask"],
-        valid, STRATEGIC_ACTION_TOKENS, "a")
+        a_valid, STRATEGIC_ACTION_TOKENS, "a")
     loss = g_ce + a_ce + g_l1 + a_l1
     log = {"s2_n_valid": int(valid.sum()), "s2_n_windows": int(valid.numel()),
+           # ⚠️ PER FAMILY. `s2_n_valid` is the WINDOW count; these are the
+           # windows that were in band and whose record still DECLINED that
+           # family. Both 0 on every artifact without abstention, so the
+           # incumbent log reads exactly as before plus two zeros.
+           "s2_g_n_abstained": int((valid & ~g_valid).sum()),
+           "s2_a_n_abstained": int((valid & ~a_valid).sum()),
            **g_log, **a_log,
            "s2_loss": float(loss.detach())}
     return loss, log
@@ -1112,6 +1172,9 @@ def v6_loss_step(stack: V6Stack, batch: dict, *, stage: str,
                           S2 label keys (``s2_labels.S2WindowSupervision.
                           batch``) — REQUIRED iff ``w_s2_goal`` is in force,
                           ignored otherwise
+      ``g_str_valid`` / ``a_str_valid``   [B] bool — OPTIONAL per-family
+                          abstention masks; absent = the incumbent behaviour
+                          (both families follow ``s2_valid``)
 
     Returns ``{"loss": Tensor, **components, "log": dict}``. Terms whose weight
     is 0 for this stage are SKIPPED, not multiplied by zero — a skipped term
@@ -2676,6 +2739,45 @@ def train(a) -> dict:
             fh.flush()
             print(f"[{step}] {json.dumps(rec)}", flush=True)
         if step % a.save_every == 0 or step == a.steps:
+            # ⛔ X2 SEAM DUMP — DEFAULT-OFF, and the ONLY thing that banks the
+            # 60-step plan. F-16's probe (taniteval/tools/seam_probe.py) is
+            # built, self-tested and has produced ZERO real-arm numbers
+            # because `emit()`'s output lived only inside the forward.
+            # ⚠️ ZERO EXTRA GPU: `L["out"]["plan"]` is ALREADY COMPUTED for
+            # this step's loss — this copies it to CPU at the checkpoint
+            # boundary, never per step, and never re-runs the emission.
+            # ⚠️ S-W BANKS NOTHING: the emission head is at its zero-init, so
+            # the plan is all-zero and the probe would (correctly) return
+            # DEGENERATE. `seam_dump_from_plan` refuses it by default, which
+            # is why this is a NOTE and not a crash — the dump is for S-T and
+            # later. The live v6F S-W run is exactly the refused case.
+            if getattr(a, "dump_seam_plan", None):
+                try:
+                    from taniteval.seam_dump import (
+                        SeamDumpError, save_seam_dump, seam_dump_from_plan)
+                    d = seam_dump_from_plan(
+                        L["out"]["plan"],
+                        eids=b["episode_id"] if "episode_id" in b
+                        else range(len(v0)),
+                        tier="T1", arm=f"{out_dir.name}@{step}",
+                        gt=batch.get("plan_target"),
+                        dt=1.0 / float(getattr(a, "fps", 10) or 10),
+                        allow_degenerate=bool(
+                            getattr(a, "dump_seam_plan_degenerate", False)))
+                    p = save_seam_dump(
+                        d, Path(a.dump_seam_plan) / f"seam_{step:06d}.pt")
+                    print(f"[v6 seam] banked {p}", flush=True)
+                except SeamDumpError as e:
+                    print(f"[v6 seam] NOT banked at {step}: {e}", flush=True)
+                except Exception as e:                        # noqa: BLE001
+                    # ⛔ A DIAGNOSTIC MUST NEVER KILL A RUN. This is the
+                    # analysis-time-refusal trap inverted: there, an optional
+                    # import destroyed a finished run's output; here the whole
+                    # block is optional and the training is the thing that
+                    # matters. It says so loudly and continues.
+                    print(f"[v6 seam] dump FAILED at {step} "
+                          f"({type(e).__name__}: {e}) — training continues",
+                          flush=True)
             _save_ckpt(out_dir / "ckpt.pt", stack=stack, opt=opt, step=step,
                        cfg_json=cfg_json)
             (out_dir / "metrics.json").write_text(json.dumps(
@@ -3437,11 +3539,33 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--s2-labels", default=None,
                     help="s2-strategic-v1 label artifact: the labels DIR "
                          "(clip_index.json + s2_labels_*.jsonl) or one "
-                         ".jsonl with clip_index.json beside it. The join is "
-                         "by tanitad.data.v2_dataset.stable_episode_id ONLY "
+                         ".jsonl with clip_index.json beside it. ⛔ THE "
+                         "CANONICAL SET IS s2_labels.S2_CANONICAL_LABELS_REL "
+                         f"({S2_CANONICAL_LABELS_REL}) — the ORIGINAL "
+                         "…/2026-08-16-s2-v1-labels/labels/ delivery is "
+                         "SUPERSEDED (the PI adjudicated its lane-change rows "
+                         "~78% wrong, 06b8782) and the loader REFUSES it by "
+                         "its SUPERSEDED.json marker. The join is by "
+                         "tanitad.data.v2_dataset.stable_episode_id ONLY "
                          "— the legacy 16-bit id collides (69/2400 + 7/600) "
                          "and is refused. ROUTE_TO records are refused "
                          "(G1 gated), mirroring s2_schema.validate().")
+    # ---- X2 seam dump: bank the 60-step plan — DEFAULT OFF ----------------
+    ap.add_argument("--dump-seam-plan", default=None,
+                    help="DIR to bank the emitted 60-step plan into, one "
+                         "seam_<step>.pt per checkpoint save, for "
+                         "taniteval/tools/seam_probe.py. Unset = nothing is "
+                         "banked and the module is never imported. ZERO extra "
+                         "GPU: the plan is already computed for the step's "
+                         "loss. ⚠️ S-W BANKS NOTHING — the emission head is "
+                         "zero-init there, so the plan is all-zero and the "
+                         "probe correctly returns DEGENERATE; this is an S-T"
+                         "-and-later instrument.")
+    ap.add_argument("--dump-seam-plan-degenerate", action="store_true",
+                    help="bank the plan even when every control is exactly "
+                         "zero (the S-W zero-init case). Only for keeping the "
+                         "degenerate artifact deliberately — a dump banked "
+                         "this way CANNOT answer the seam question.")
     ap.add_argument("--lambda-plan", type=float, default=None,
                     help="planner gradient scale; unset = the STAGE default "
                          f"({STAGE_LAMBDA_PLAN}). 0 in S-W BY CONSTRUCTION.")

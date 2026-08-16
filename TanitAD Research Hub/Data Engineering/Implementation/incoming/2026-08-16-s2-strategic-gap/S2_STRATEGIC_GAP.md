@@ -123,7 +123,7 @@ slot indices 0-3 = `arg0..arg3`, 4-7 = `within_m, by_time_s, at_arc_m, hold_for_
 | token | set slots | source of the value |
 |---|---|---|
 | KEEP_CORRIDOR | arg0=target_arc_m | route_v3 `arc_m` |
-| LANE_TARGET | arg0=lane_offset_idx (±1/±2, ordinal-metric), arg1=deadline_m | E4.1 LAT events |
+| ~~LANE_TARGET~~ ⛔ **NOT EMITTED** (2026-08-16, `06b8782`) | arg0=lane_offset_idx (±1/±2, ordinal-metric), arg1=deadline_m | ~~E4.1 LAT events~~ — **the geometric derivation is REMOVED, not retuned.** The PI adjudicated the labels it produced ~78 % wrong (14/18 with an opinion) and ruled the gate out; `s2_derive.py` §LC emits the token from NO path (`test_ph1_fuse.py::test_lane_target_is_never_emitted_by_any_path`). Observed lateral displacement is CORROBORATION, never the source — 45.4 % of clips (364/801) carry an `lc_*` ego-geometry event against Alpamayo's 2.35 % corpus lane-change rate (104/4 425), i.e. the geometric detector over-called ~19×. MEASURED, ours, 2026-08-16. The **token stays in the vocabulary** (it sizes an embedding table; the live v6F run resumes strictly) — zero support is safe, a changed shape is not. Re-opening it needs a LANE CONTEXT the corpus does not have (`s2_derive.LANE_CONTEXT_INPUTS`; `required=None` for 801/801 today) |
 | EXIT_L/R | arg0=distance_m | route_v3 `dist_m` |
 | TURN_L/R, STRAIGHT_THROUGH | arg0=intersection arc (m) | route_v3 `dist_m` |
 | ROUTE_TO | ⛔ unfillable (categorical `text_token_id`; no cat channel on `vocab_str`, G1 closed) | — |

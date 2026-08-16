@@ -229,7 +229,8 @@ def install_dtype_agreement() -> dict:
                       "(C77); casts removed, fused kernel kept, trunk fp32"}
 
 
-def build_processor(bpe_path: str | None = None):
+def build_processor(bpe_path: str | None = None,
+                    conf_threshold: float | None = None):
     """The OFFICIAL image path, verbatim from facebookresearch/sam3's README:
 
         model = build_sam3_image_model()
@@ -259,14 +260,43 @@ def build_processor(bpe_path: str | None = None):
     if bpe is None:
         raise SystemExit("[sam3] CLIP BPE vocab not found — install "
                          "open_clip_torch (--no-deps) or pass --bpe-path")
+    # resolved HERE, not as a default arg, so the module-level constant may sit
+    # beside its own reasoning below rather than being forced above this function
+    if conf_threshold is None:
+        conf_threshold = CONF_THRESHOLD_DEFAULT
     dtype_fix = install_dtype_agreement()          # ⛔ BEFORE any forward (C77)
     model = build_sam3_image_model(bpe_path=bpe, load_from_HF=True)
-    return Sam3Processor(model), {
+    return Sam3Processor(model, confidence_threshold=conf_threshold), {
         "api": "build_sam3_image_model + Sam3Processor "
                "(facebookresearch/sam3 README)",
         "weights": "facebook/sam3 (load_from_HF=True)",
         "bpe_path": bpe,
+        "confidence_threshold": conf_threshold,
         "dtype_fix": dtype_fix}
+
+
+#: ⛔ THE DETECTION FLOOR, AND IT IS DESTRUCTIVE AT WRITE TIME (PI, 2026-08-16).
+#:
+#: `Sam3Processor` applies `keep = out_probs > confidence_threshold` INSIDE
+#: `_forward_grounding` (`sam3/model/sam3_image_processor.py`), so anything below
+#: it never reaches our record. MEASURED two ways: that source line, and the
+#: **minimum banked score across all 2,496 detections is exactly 0.5000** — the
+#: vendor default, printed on every record we own.
+#:
+#: ⚠️ THE ASYMMETRY IS THE WHOLE POINT. Lowering the floor LATER cannot recover
+#: the tail — it requires re-detecting every clip (~26 GPU-hours for the 4,472
+#: build). Lowering it BEFORE costs nothing: same forward pass, same wall-clock,
+#: only more rows survive. `detect(min_score=...)` sits DOWNSTREAM of this and can
+#: always filter back UP for free, so a low floor here is strictly more
+#: information and never less.
+#:
+#: ⇒ 0.25 is a DECISION (PI, 2026-08-16), not a default anyone inherited — which
+#: is what 0.5 was. The reliability study that motivated it also found the
+#: dominant `traffic sign` failure is sign-SHAPED objects (a pharmacy cross at
+#: 0.807, a hoarding, a green light) — those are ABOVE 0.5, so no floor removes
+#: them and none of this claims otherwise; that needs a KIND check.
+#: Provenance: `…/incoming/2026-08-16-sam3-concept-reliability/`.
+CONF_THRESHOLD_DEFAULT = 0.25
 
 
 def _arr(x):

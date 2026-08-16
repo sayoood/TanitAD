@@ -1,0 +1,260 @@
+{
+ "_evidence_class": "MEASURED (ours; replay over the banked aug120 fused corpus + its own v2 source)",
+ "_what_this_is_not": "NOT a re-fuse. Counts only; no record rewritten.",
+ "n_fused_records": 201,
+ "n_v2_records": 201,
+ "n_clips_replayed": 201,
+ "vlm_emissions": {
+  "_note": "one row per (verb, direction) EMISSION, not per clip",
+  "n_emissions": 270,
+  "table": {
+   "hold_corridor_none": {
+    "n": 136,
+    "old_lat": "LANE_KEEP",
+    "old_lon": "HOLD",
+    "new_lat": "LANE_KEEP",
+    "new_lon": null
+   },
+   "reduce_to_none": {
+    "n": 31,
+    "old_lat": null,
+    "old_lon": null,
+    "new_lat": null,
+    "new_lon": "BRAKE_TO"
+   },
+   "prepare_lane_change_left": {
+    "n": 28,
+    "old_lat": "LANE_CHANGE_L",
+    "old_lon": null,
+    "new_lat": "LANE_CHANGE_L",
+    "new_lon": null
+   },
+   "prepare_lane_change_right": {
+    "n": 26,
+    "old_lat": "LANE_CHANGE_R",
+    "old_lon": null,
+    "new_lat": "LANE_CHANGE_R",
+    "new_lon": null
+   },
+   "hold_corridor_right": {
+    "n": 17,
+    "old_lat": "LANE_KEEP",
+    "old_lon": "HOLD",
+    "new_lat": "LANE_KEEP",
+    "new_lon": null
+   },
+   "reduce_to_left": {
+    "n": 10,
+    "old_lat": null,
+    "old_lon": null,
+    "new_lat": null,
+    "new_lon": "BRAKE_TO"
+   },
+   "reduce_to_right": {
+    "n": 8,
+    "old_lat": null,
+    "old_lon": null,
+    "new_lat": null,
+    "new_lon": "BRAKE_TO"
+   },
+   "prepare_stop_none": {
+    "n": 6,
+    "old_lat": null,
+    "old_lon": "BRAKE_TO",
+    "new_lat": null,
+    "new_lon": "BRAKE_TO"
+   },
+   "hold_corridor_left": {
+    "n": 6,
+    "old_lat": "LANE_KEEP",
+    "old_lon": "HOLD",
+    "new_lat": "LANE_KEEP",
+    "new_lon": null
+   },
+   "prepare_exit_left": {
+    "n": 1,
+    "old_lat": null,
+    "old_lon": null,
+    "new_lat": null,
+    "new_lon": null
+   },
+   "resume_cruise_none": {
+    "n": 1,
+    "old_lat": null,
+    "old_lon": "CRUISE",
+    "new_lat": null,
+    "new_lon": "CRUISE"
+   }
+  }
+ },
+ "defect_1_reduce_to_dropped": {
+  "n_emissions_silent_on_BOTH_axes_before": 50,
+  "pct": 18.52,
+  "n_after": 1
+ },
+ "defect_2_hold_corridor_lon": {
+  "n_hold_corridor_emissions": 159,
+  "pct": 58.89,
+  "old_lon_token": "HOLD",
+  "new_lon_token": null
+ },
+ "defect_3_alpamayo_substring_over_the_blob": {
+  "_question": "did the OLD Alpamayo longitudinal vote come from text that is NOT the Longitudinal axis line (i.e. the `cot` rationale or another axis)?",
+  "n_clips_old_alp_lon_spoke": 145,
+  "n_decided_off_axis": 5,
+  "pct_off_axis": 3.45,
+  "examples": [
+   {
+    "clip_id": "0089a096-68be-40df-8097-780bf1ae1c19",
+    "axis_longitudinal": "Gentle Acceleration",
+    "old_vote_from_blob": "YIELD_MERGE",
+    "old_vote_from_axis_alone": "CRUISE",
+    "cot": "Yield to the pedestrians crossing the road ahead because they occupy the path of the right turn."
+   },
+   {
+    "clip_id": "079707d3-c6ac-4b41-9b61-1b98b298ecc9",
+    "axis_longitudinal": "Maintain Speed",
+    "old_vote_from_blob": "YIELD_MERGE",
+    "old_vote_from_axis_alone": null,
+    "cot": "Yield to the pedestrian crossing the crosswalk ahead."
+   },
+   {
+    "clip_id": "57c7fcf2-e9c3-48d4-92a0-1800b0559ec8",
+    "axis_longitudinal": "Maintain Speed",
+    "old_vote_from_blob": "YIELD_MERGE",
+    "old_vote_from_axis_alone": null,
+    "cot": "Slow down due to the upcoming yield-controlled intersection"
+   },
+   {
+    "clip_id": "bf9bc0e3-96bb-4a7c-b111-d54859b7b8a2",
+    "axis_longitudinal": "Gentle Acceleration",
+    "old_vote_from_blob": "BRAKE_TO",
+    "old_vote_from_axis_alone": "CRUISE",
+    "cot": "Stop to yield to the cross-traffic bus crossing ahead."
+   },
+   {
+    "clip_id": "cf1d8f9e-02f8-4925-ba26-711e454c2479",
+    "axis_longitudinal": "Gentle Acceleration",
+    "old_vote_from_blob": "BRAKE_TO",
+    "old_vote_from_axis_alone": "CRUISE",
+    "cot": "Resume speed from stop since the traffic light turns green."
+   }
+  ],
+  "n_clips_alp_LAT_changed_by_the_fix": 18
+ },
+ "priority_2_echo": {
+  "_question": "how often did the retired 2-of-3 majority get decided by >=2 voters ALL inside the {ego, vlm} block?",
+  "lat_n": 6,
+  "lat_pct": 2.99,
+  "lon_n": 1,
+  "lon_pct": 0.5,
+  "lat_examples": [
+   {
+    "clip_id": "08fc0af2-ffeb-4a7c-9166-8f052f1a9b94",
+    "token": "LANE_KEEP",
+    "voters": [
+     "ego",
+     "vlm"
+    ]
+   },
+   {
+    "clip_id": "12bb97af-e850-4ecb-86a9-6e6d0e517ae9",
+    "token": "LANE_KEEP",
+    "voters": [
+     "ego",
+     "vlm"
+    ]
+   },
+   {
+    "clip_id": "66e4d574-2b35-4b55-a13d-905d9b6ecc2b",
+    "token": "LANE_KEEP",
+    "voters": [
+     "ego",
+     "vlm"
+    ]
+   },
+   {
+    "clip_id": "bdfecdb4-4f93-4cde-b0f0-ec8a76e071b4",
+    "token": "LANE_KEEP",
+    "voters": [
+     "ego",
+     "vlm"
+    ]
+   },
+   {
+    "clip_id": "ca470933-8cb5-4623-85eb-86fe21028ed9",
+    "token": "LANE_KEEP",
+    "voters": [
+     "ego",
+     "vlm"
+    ]
+   },
+   {
+    "clip_id": "d89a01eb-73d2-4e20-b435-d41800b98ecf",
+    "token": "LANE_KEEP",
+    "voters": [
+     "ego",
+     "vlm"
+    ]
+   }
+  ],
+  "lon_examples": [
+   {
+    "clip_id": "08fc0af2-ffeb-4a7c-9166-8f052f1a9b94",
+    "token": "CRUISE",
+    "voters": [
+     "ego",
+     "vlm"
+    ]
+   }
+  ],
+  "after_n_corroborated_lat": 115,
+  "after_n_corroborated_lon": 0,
+  "_corroborated_means": ">=2 INDEPENDENT blocks spoke and agreed; {ego,vlm} is ONE block and can never satisfy it"
+ },
+ "token_distribution": {
+  "lat_before": {
+   "NUDGE_L": 6,
+   "NUDGE_R": 12,
+   "LANE_KEEP": 183
+  },
+  "lat_after": {
+   "null": 13,
+   "LANE_KEEP": 171,
+   "NUDGE_L": 7,
+   "LANE_CHANGE_R": 7,
+   "LANE_CHANGE_L": 2,
+   "NUDGE_R": 1
+  },
+  "lon_before": {
+   "YIELD_MERGE": 1,
+   "BRAKE_TO": 15,
+   "CRUISE": 130,
+   "HOLD": 55
+  },
+  "lon_after": {
+   "null": 80,
+   "BRAKE_TO": 21,
+   "CRUISE": 100
+  }
+ },
+ "_vocabulary_unchanged": {
+  "TACTICAL_LAT_ACTIONS": [
+   "LANE_KEEP",
+   "LANE_CHANGE_L",
+   "LANE_CHANGE_R",
+   "ABORT_LC",
+   "NUDGE_L",
+   "NUDGE_R"
+  ],
+  "TACTICAL_LON_ACTIONS": [
+   "FOLLOW",
+   "CRUISE",
+   "YIELD_MERGE",
+   "BRAKE_TO",
+   "CREEP",
+   "HOLD"
+  ],
+  "_note": "REPORTED, never edited \u2014 the tuples size embedding tables (v6.py:3297-3298) and a shape change breaks the live 30k v6F strict resume."
+ }
+}

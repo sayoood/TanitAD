@@ -155,6 +155,34 @@ in these cells and dies in aggregation"*), not about the world model. Without th
 failure is unattributable between "cannot see agents" and "the 4×4 grid cannot carry them" —
 the C6 confound one floor down.
 
+#### ⛔ 1.4b THE CHECKPOINT IS PART OF THE ARM, AND THIS PRE-REGISTRATION OMITTED IT (PI, 2026-08-16)
+
+The PI's question — *"are you aiming to train the two arms on the latent of one of the
+checkpoints?"* — exposes a gap: §1.4 pins WHAT each arm reads and says nothing about **WHICH
+TRAINED STATE it reads from**. A frozen-trunk probe measures *that checkpoint's* latent, not "the
+architecture", so an unstamped result is unattributable in a second dimension the control above
+does not cover.
+
+⛔ **THE BINDING ADDITION: no slot-probe number is admissible without its trunk checkpoint and
+step.** Quote it as *"cells R = x at `<run>`@`<step>`"* or do not quote it.
+
+⚠️ **AND THE OBVIOUS CHECKPOINT IS THE WRONG ONE.** The only v6 trunk in existence is the LIVE
+`v6F-SW-30k` run, currently ~step 8,900 of 30,000 — a **world model that is 30 % trained**. A null
+`cells` result there would confound the pre-registered claim *"the LATENT does not carry agents"*
+with *"the latent has not finished learning"*. That is the same shape as the C6 confound this
+section already guards against, displaced from the READ SURFACE onto the TRAINING STATE.
+
+⇒ **The primary read is the FINAL S-W checkpoint (30 k)**, which is also the natural point
+because `STAGE_MAY_INTRODUCE["S-T"]` exists precisely to carry this head over an S-W checkpoint at
+the S-W→S-T boundary.
+
+⭐ **AND THE CHEAP UPGRADE: run it at SEVERAL S-W checkpoints, not one.** The trunk is frozen and
+the probe is small, so each extra point costs a probe fit and no trunk compute. A single point can
+only say *"agents are/are not decodable at 30 k"*; a trajectory says whether agent structure
+**emerges, plateaus, or is progressively discarded** as the world model trains — which is the
+actually interesting question, and it converts a possible null into a measurement either way. Any
+checkpoint before 30 k is stamped **EARLY-READ** and may not be quoted as the headline.
+
 ### 1.5 The label path — ⛔ the existing one, not a second one
 
 Every target comes from the join `build_obstacle_join.py` writes and

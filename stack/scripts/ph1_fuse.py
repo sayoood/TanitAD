@@ -56,25 +56,246 @@ SCHEMA = "ph1-fused-v1"
 IOU_TRACK = 0.3          # greedy same-concept association across frames
 SPEED_TOL = 0.15         # speed-sign corroboration margin
 STOP_V = 0.5             # m/s — "stopped" threshold
-# substring rules mapping free-ish action text onto the FACTORED axes
-LAT_RULES = (("lane_change_l", "LANE_CHANGE_L"), ("left_lane", "LANE_CHANGE_L"),
-             ("lane_change_r", "LANE_CHANGE_R"), ("right_lane", "LANE_CHANGE_R"),
-             ("change_left", "LANE_CHANGE_L"), ("change_right", "LANE_CHANGE_R"),
-             ("nudge_l", "NUDGE_L"), ("nudge_r", "NUDGE_R"),
-             ("keep", "LANE_KEEP"), ("hold_corridor", "LANE_KEEP"),
-             ("straight", "LANE_KEEP"))
-LON_RULES = (("brake", "BRAKE_TO"), ("stop", "BRAKE_TO"), ("decel", "BRAKE_TO"),
-             ("yield", "YIELD_MERGE"), ("merge", "YIELD_MERGE"),
-             ("creep", "CREEP"), ("hold", "HOLD"), ("wait", "HOLD"),
-             ("follow", "FOLLOW"), ("cruise", "CRUISE"), ("accel", "CRUISE"))
+
+# =========================================================================== #
+# ⛔ THE TACTICAL MAPPING — AN EXPLICIT TOTAL FUNCTION, NOT SUBSTRING MATCHING #
+# =========================================================================== #
+# What this replaces: two ordered tuples of (substring, token) scanned with
+# `sub in text.lower()`. THE MECHANISM produced three defects at once
+# (`…/incoming/2026-08-16-tactical-labels/TACTICAL_LABEL_VALIDATION.md` §1.3,
+# MEASURED over 270 action emissions on the 201-clip aug120 cohort):
+#
+#   1. ⛔ `reduce_to` — the VLM's ONLY deceleration verb — matched NOTHING on
+#      either axis: 49/270 = 18.1 % of emissions SILENTLY DROPPED. A verb
+#      mapping to nothing is indistinguishable from a verb never spoken. That
+#      is the C77 family (an absence rendered as a result), in a mapping.
+#   2. ⛔ `hold_corridor` is a LATERAL verb, and it matched the LON_RULES
+#      substring `"hold"` → the LONGITUDINAL token `HOLD` on 159/270 = 58.9 %
+#      of emissions. (1)+(2) made the VLM's tactical longitudinal output a
+#      CONSTANT — Cohen's κ **exactly 0.0000** against BOTH other legs, n=162.
+#   3. ⛔ The Alpamayo leg ran the same substrings over
+#      `json.dumps(meta_action)[:400]` — a blob that CONTAINS THE FREE-TEXT
+#      `cot` RATIONALE. A reason reading *"Stop for the red light"* cast a
+#      longitudinal vote regardless of what the Longitudinal AXIS said, and
+#      the axis value itself could fall outside the 400-char truncation.
+#
+# ⇒ ROOT CAUSE, fixed at the mechanism: substring matching cannot tell a verb
+# from a verb that CONTAINS it, nor a token from a token MENTIONED IN PROSE.
+# Both source vocabularies are CLOSED, so each mapping below is a TOTAL dict
+# over its closed key set and the lookups RAISE on an unknown key. A new verb
+# is then a loud failure; it can never again be a silent `None`.
+
+#: `None` as a VALUE in these tables means **the source makes no claim on this
+#: axis** — a DECLARED entry, which is precisely what the old silent
+#: fall-through was not. Totality is pinned by `tests/test_ph1_fuse.py`.
+NO_CLAIM = None
+#: the lateral token depends on the emitted `direction`, not the verb alone
+BY_DIRECTION = "__by_direction__"
+#: the axis SPOKE, but v6's longitudinal vocabulary is REASON-typed while this
+#: source's axis is MAGNITUDE-typed — several tokens are compatible and the
+#: REASON decides. ⚠️ Distinct from `NO_CLAIM` (the source said nothing): the
+#: record must be able to tell "silent" from "spoke, but untypeable".
+REASON_REQUIRED = "__reason_required__"
+#: the source spoke and v6 HAS NO TOKEN for what it said. Reported, never
+#: bent into a neighbour — `NUDGE_L` for a left TURN would be a fabrication.
+NO_V6_TOKEN = "__no_v6_token__"
+
+_SENTINELS = (BY_DIRECTION, REASON_REQUIRED, NO_V6_TOKEN)
 
 
-def _map_rules(text: str, rules) -> str | None:
-    t = (text or "").lower()
-    for sub, tok in rules:
-        if sub in t:
-            return tok
-    return None
+class UnmappedActionVerb(KeyError):
+    """A key outside the closed source vocabulary reached a tactical mapping.
+
+    Raised, never returned as `None` — the whole point of the rewrite. The
+    fuser catches it and records a NAMED CONFLICT (see `emit_vocab`), exactly
+    as `goal_kind_unmapped` already did, so one rogue verb cannot destroy a
+    4,729-clip fuse while still being impossible to miss.
+    """
+
+
+#: VLM action verb → (`a_tac` LATERAL, `a_tac` LONGITUDINAL).
+#: ⚠️ The keys are `ph0_v2.ACTION_VERBS`, which are `v6.STRATEGIC_ACTION_TOKENS`
+#: lowercased — **the VLM speaks at the STRATEGIC layer**, so this table is an
+#: explicit CROSS-LAYER projection down to `a_tac`. The substring rules did
+#: that projection by accident and nobody could see they had.
+#: ⭐ The VLM's verbs are REASON-typed (`prepare_stop`, `resume_cruise`), which
+#: is the same type as `TACTICAL_LON_ACTIONS` — that is why this leg maps at
+#: all and the magnitude-typed Alpamayo axis below does not.
+VLM_VERB_TO_A_TAC: dict[str, tuple[str | None, str | None]] = {
+    # a LATERAL verb. ⛔ IT MAKES NO LONGITUDINAL CLAIM — defect (2), fixed.
+    "hold_corridor":       ("LANE_KEEP",  NO_CLAIM),
+    "prepare_lane_change": (BY_DIRECTION, NO_CLAIM),
+    # ⛔ defect (1), fixed: the VLM's only deceleration verb now lands.
+    # ⚠️ RECORDED COLLAPSE: `TACTICAL_LON_ACTIONS` carries ONE deceleration
+    # token, so `reduce_to` and `prepare_stop` both land on `BRAKE_TO` and are
+    # no longer distinguishable downstream. REPORTED, not fixed by editing the
+    # vocabulary — the tuples size embedding tables (`v6.py:3297-3298`) and a
+    # shape change breaks the live 30k v6F strict resume.
+    "reduce_to":           (NO_CLAIM,     "BRAKE_TO"),
+    "prepare_stop":        (NO_CLAIM,     "BRAKE_TO"),
+    "resume_cruise":       (NO_CLAIM,     "CRUISE"),
+    # ⚠️ an exit needs LANE CONTEXT (which lane serves the exit) before it can
+    # say a lateral action is required — the same gap the §LC ruling names,
+    # and `lane_context` is None on every clip today. Emitting LANE_CHANGE_R
+    # here would swap an unidentifiable label for a confidently wrong one, so
+    # BOTH axes abstain, BY DECLARATION rather than by falling off the end.
+    "prepare_exit":        (NO_CLAIM,     NO_CLAIM),
+}
+#: `ph0_v2.py:272-274` already rejects a sideless lane change, so `"none"` is
+#: a malformed record here: it abstains and never picks a side.
+_LC_DIRECTION_TO_LAT = {"left": "LANE_CHANGE_L", "right": "LANE_CHANGE_R",
+                        "none": NO_CLAIM}
+
+#: Alpamayo declares THREE INDEPENDENT AXES on labelled lines of one
+#: generation. Parsed, never substring-sniffed out of the serialised blob.
+ALPAMAYO_AXES = ("Longitudinal", "Lateral", "Lane")
+
+#: Alpamayo LANE axis → `a_tac` LATERAL. Total over the 7 observed values
+#: (MEASURED n=4,729, `…/2026-08-16-tactical-labels/raw/a1_alpamayo_taxonomy.json`).
+ALPAMAYO_LANE_TO_A_TAC_LAT: dict[str, str | None] = {
+    "lane keep":            "LANE_KEEP",
+    "left lane change":     "LANE_CHANGE_L",
+    "right lane change":    "LANE_CHANGE_R",
+    "slightly shift left":  "NUDGE_L",
+    "slightly shift right": "NUDGE_R",
+    # ⛔ 186 of 4,729 clips (3.94 %) are UNREPRESENTABLE: `TACTICAL_LAT_ACTIONS`
+    # has no TURN_* member. Declared, reported, never coerced.
+    "turn left":            NO_V6_TOKEN,
+    "turn right":           NO_V6_TOKEN,
+}
+
+#: Alpamayo LONGITUDINAL axis → `a_tac` LONGITUDINAL. ⛔ **IT DOES NOT MAP**,
+#: and that is a TYPE fact, not a coverage gap (`TACTICAL_LABEL_VALIDATION.md`
+#: §4.2): `TACTICAL_LON_ACTIONS` is REASON-typed (`FOLLOW`, `YIELD_MERGE`,
+#: `BRAKE_TO`, `CREEP`, `HOLD`, `CRUISE`) while this axis is MAGNITUDE-typed
+#: (`Gentle Deceleration`, `Strong Acceleration`). *"Gentle Deceleration"*
+#: cannot say whether the ego is FOLLOWing a lead or BRAKE_TO a stop line —
+#: **the reason decides, and the reason lives in `cot`**, which this table
+#: deliberately cannot see. Every value is therefore `REASON_REQUIRED`: the
+#: leg casts NO longitudinal vote, and the axis value + reason are RECORDED
+#: for the (separately escalated) meta-action × reason label builder.
+#: ⚠️ The old substring path DID cast a vote here, from a lottery over the
+#: truncated `cot` text. Removing it is the honest correction, not a regression.
+ALPAMAYO_LON_TO_A_TAC_LON: dict[str, str | None] = {
+    "gentle deceleration": REASON_REQUIRED,
+    "maintain speed":      REASON_REQUIRED,
+    "gentle acceleration": REASON_REQUIRED,
+    "stop":                REASON_REQUIRED,
+    "strong deceleration": REASON_REQUIRED,
+    "strong acceleration": REASON_REQUIRED,
+    "reverse":             NO_V6_TOKEN,
+}
+
+
+#: Why `g_tac_lat`/`g_tac_lon` are emitted EMPTY rather than filled or dropped.
+#: ⚠️ Must not contain the word this file asserts out of the vocab block.
+_G_TAC_GAP = (
+    "goal-token axes are REASON-typed (TACTICAL_GOAL_TOKENS_LAT/LON, "
+    "v6.py:217-223) and NOTHING in this fuse derives them — they need the "
+    "Alpamayo reason field (reachability 82.77 % of 4,729, correctness "
+    "UNMEASURED). The ACTION tokens live in a_tac_lat/a_tac_lon; this key "
+    "used to carry them under a goal's name and any consumer joining it to a "
+    "goal head silently received actions. See TACTICAL_LABEL_VALIDATION.md "
+    "§1.3/§4.3.")
+
+
+def parse_alpamayo_axes(raw: object) -> dict:
+    """Split one Alpamayo `meta_action` generation into its labelled axes.
+
+    Mirrors `…/2026-08-16-tactical-labels/code/tac_a1_alpamayo_taxonomy.py`
+    (itself mirroring `a2_parse_meta_action.py:53`) so the readings of this
+    field cannot drift. Accepts the raw JSON string the fuser holds, an
+    already-parsed dict, or the bare generation text.
+
+    ⛔ The axes are READ FROM THEIR OWN LINES. The defect this replaces
+    matched substrings against the whole serialised blob, so the free-text
+    `cot` could out-vote the axis it was supposed to explain.
+    """
+    import re
+
+    txt = raw
+    if isinstance(raw, (bytes, bytearray)):
+        txt = raw.decode("utf-8", "replace")
+    if isinstance(txt, str):
+        try:
+            txt = json.loads(txt)
+        except Exception:                                        # noqa: BLE001
+            pass
+    cot = None
+    if isinstance(txt, dict):
+        def _one(k):
+            v = txt.get(k)
+            return (v[0] if v else None) if isinstance(v, list) else v
+        cot = _one("cot")
+        txt = _one("raw_outputs") or _one("meta_action") or ""
+    txt = txt if isinstance(txt, str) else str(txt or "")
+    out: dict = {"cot": cot, "_raw_len": len(txt)}
+    for axis in ALPAMAYO_AXES:
+        m = re.search(rf"{axis}:\s*([^.\n<]+)", txt)
+        out[axis.lower()] = m.group(1).strip() if m else None
+    return out
+
+
+def map_vlm_action(verb: object, direction: object) -> tuple:
+    """(verb, direction) → (lat, lon, note). RAISES on an unknown verb.
+
+    `note` is ``None`` when both axes resolved to a real token or to a
+    DECLARED no-claim; otherwise it names why an axis is empty, so the record
+    can distinguish "made no claim" from "could not be typed".
+    """
+    key = str(verb or "").strip().lower()
+    if key not in VLM_VERB_TO_A_TAC:
+        raise UnmappedActionVerb(
+            f"VLM action verb {verb!r} is not in VLM_VERB_TO_A_TAC "
+            f"(known: {sorted(VLM_VERB_TO_A_TAC)}). Add it explicitly — a "
+            "verb must never map to nothing by falling off the end.")
+    lat, lon = VLM_VERB_TO_A_TAC[key]
+    note = None
+    if lat == BY_DIRECTION:
+        d = str(direction or "none").strip().lower()
+        if d not in _LC_DIRECTION_TO_LAT:
+            raise UnmappedActionVerb(
+                f"lane-change direction {direction!r} is outside "
+                f"{sorted(_LC_DIRECTION_TO_LAT)} for verb {key!r}")
+        lat = _LC_DIRECTION_TO_LAT[d]
+        if lat is NO_CLAIM:
+            note = "lane change emitted without a side — abstained"
+    return lat, lon, note
+
+
+def map_alpamayo_axes(axes: dict) -> tuple:
+    """Parsed Alpamayo axes → (a_tac lat, a_tac lon, notes). RAISES on an
+    unknown axis value, so a taxonomy change is loud instead of silent."""
+    notes: dict[str, str] = {}
+    out: list[str | None] = []
+    for name, table, field in (("lat", ALPAMAYO_LANE_TO_A_TAC_LAT, "lane"),
+                               ("lon", ALPAMAYO_LON_TO_A_TAC_LON,
+                                "longitudinal")):
+        val = axes.get(field)
+        if not val:
+            out.append(NO_CLAIM)
+            # ⚠️ NOT a parse failure: a STOPPED vehicle emits one axis only,
+            # and the 304 null lateral/lane rows are exactly the 304 `Stop`
+            # rows (MEASURED, n=4,729). Not-applicable, never imputed.
+            notes[name] = "axis absent in the generation"
+            continue
+        k = str(val).strip().lower()
+        if k not in table:
+            raise UnmappedActionVerb(
+                f"Alpamayo {field} value {val!r} is outside the observed "
+                f"taxonomy {sorted(table)} — a NEW value is a FINDING about "
+                "the taxonomy, not something to coerce into a neighbour.")
+        tok = table[k]
+        if tok == REASON_REQUIRED:
+            out.append(NO_CLAIM)
+            notes[name] = ("magnitude-typed axis, reason-typed vocabulary — "
+                           "the reason decides (see ALPAMAYO_LON_TO_A_TAC_LON)")
+        elif tok == NO_V6_TOKEN:
+            out.append(NO_CLAIM)
+            notes[name] = f"no v6 token exists for {val!r}"
+        else:
+            out.append(tok)
+    return out[0], out[1], notes
 
 
 def _iou(a, b) -> float:
@@ -280,6 +501,95 @@ _EGO_TURN_VOTE = {"turning_left": "NUDGE_L", "turning_right": "NUDGE_R",
                   "left": "NUDGE_L", "right": "NUDGE_R",
                   "straight": "LANE_KEEP"}
 
+# =========================================================================== #
+# ⛔ THE TACTICAL VOTE — `ego` AND `vlm` ARE **NOT** INDEPENDENT VOTERS        #
+# =========================================================================== #
+# MEASURED (`TACTICAL_LABEL_VALIDATION.md` §1.4): `_ego_prompt_mode == 'past'`
+# on **201/201** v2 records, and the ego block printed into the VLM's prompt
+# contains `motion` and `turning` — **exactly and only** the two fields the ego
+# voter below reads. The signature is unmistakable:
+#
+#     VLM ↔ ego        (LAT)  κ = 0.7608     ← the leg PRINTED IN ITS PROMPT
+#     Alpamayo ↔ VLM   (LAT)  κ = 0.1717     ← the leg that saw the camera rig
+#     Alpamayo ↔ ego   (LAT)  κ = 0.2089
+#
+# ⇒ **A 2-of-3 majority over {ego, vlm, alpamayo} can be carried by ONE SOURCE
+# COUNTED TWICE.** That is the action-echo defect (`EVAL_DOCTRINE` §1.12) and
+# the nav-echo defect wearing a labelling costume, and the old `majority()`
+# helper — which counted voters, not sources — is DELETED, not reweighted.
+#
+# THE REPLACEMENT: voters are partitioned into INDEPENDENCE BLOCKS and the
+# BLOCKS vote. `ego` and `vlm` are ONE block; it casts at most ONE vote, and
+# only when its members AGREE (a disagreement inside the block is itself a
+# finding — the VLM departing from its own prompt — so it is recorded, not
+# averaged). With two blocks there is no "2 of 3" left to be satisfied.
+#
+# ⚠️ SCOPE, stated honestly: the κ above is LATERAL. The longitudinal κ was
+# 0.0000 only because the VLM's LON leg was the CONSTANT the mapping bugs
+# above created; **post-fix the LON dependence is UNMEASURED** and needs the
+# re-fuse. The block grouping does not rest on κ in any case — it rests on the
+# STRUCTURAL fact that the two voters share their input, MEASURED 201/201.
+VOTER_BLOCKS = {"ego": "ego+vlm", "vlm": "ego+vlm", "alpamayo": "alpamayo"}
+#: Which block decides when the blocks disagree. Alpamayo, because it is the
+#: only leg that saw the FULL CAMERA RIG and the only one external to this
+#: pipeline — `TACTICAL_LABEL_VALIDATION.md` §5.3 ("Source of truth: Alpamayo.
+#: Ego = corroboration."). ⚠️ Alpamayo is a TEACHER (PhysicalAI-AV is listed as
+#: its training data, overlap UNRESOLVED), never ground truth.
+PRIMARY_BLOCK = "alpamayo"
+
+
+def block_vote(votes: list[tuple[str, str | None]], valid: tuple) -> dict:
+    """Decide over INDEPENDENCE BLOCKS, never over raw voters.
+
+    Returns a block ready to embed, carrying enough provenance that a
+    downstream label builder can require independent corroboration:
+
+      ``token``                 the emitted token (or None)
+      ``provenance``            which BLOCK it came from
+      ``corroborated``          ⇒ **≥2 INDEPENDENT blocks spoke and agreed**
+      ``n_blocks_speaking``     how many blocks cast a vote at all
+      ``blocks``                per-block token / members / internal conflict
+
+    ⛔ `corroborated` can NEVER be True from {ego, vlm} alone — they are one
+    block. That is the property the old 2-of-3 majority could not offer and
+    the reason this function exists.
+    """
+    per: dict[str, dict] = {}
+    for src, tok in votes:
+        blk = VOTER_BLOCKS.get(src, src)
+        b = per.setdefault(blk, {"token": None, "members": [],
+                                 "internal_disagreement": False,
+                                 "member_tokens": []})
+        b["members"].append(src)
+        if tok in valid:
+            b["member_tokens"].append(tok)
+    for blk, b in per.items():
+        toks = set(b["member_tokens"])
+        if len(toks) == 1:
+            b["token"] = b["member_tokens"][0]
+        elif len(toks) > 1:
+            # ⚠️ a REAL finding on the ego+vlm block: the VLM departed from
+            # the ego numbers it was shown. Recorded, never averaged away.
+            b["internal_disagreement"] = True
+    speaking = {k: v for k, v in per.items() if v["token"] is not None}
+    agreed = {v["token"] for v in speaking.values()}
+    if not speaking:
+        tok, prov = None, None
+    elif PRIMARY_BLOCK in speaking:
+        tok, prov = speaking[PRIMARY_BLOCK]["token"], PRIMARY_BLOCK
+    else:
+        prov = sorted(speaking)[0]
+        tok = speaking[prov]["token"]
+    return {"token": tok, "provenance": prov,
+            "corroborated": len(speaking) >= 2 and len(agreed) == 1,
+            "n_blocks_speaking": len(speaking),
+            "blocks": {k: {kk: vv for kk, vv in v.items()
+                           if kk != "member_tokens"} for k, v in per.items()},
+            "votes": [[s, t] for s, t in votes],
+            "independence": "ego+vlm share their input (MEASURED 201/201: "
+                            "the VLM prompt carries the ego motion/turning "
+                            "fields the ego voter reads) — they are ONE block"}
+
 
 def emit_vocab(v2: dict, alp: dict | None,
                engine_a: dict | None = None) -> tuple[dict, list]:
@@ -313,7 +623,7 @@ def emit_vocab(v2: dict, alp: dict | None,
         blk["src"] = "engine_a" if blk["provenance"] == "path" else "vlm"
     assert g_str["token"] in STRATEGIC_GOAL_TOKENS
 
-    # ---- tactical votes (unchanged jurisdiction: 2-of-3) ------------------
+    # ---- tactical votes: OVER INDEPENDENCE BLOCKS, never 2-of-3 -----------
     ego = v2.get("ego_state") or {}
     turning = str(ego.get("turning", ""))
     lat_votes = [("ego", _EGO_TURN_VOTE.get(turning))]
@@ -324,33 +634,63 @@ def emit_vocab(v2: dict, alp: dict | None,
     elif str(ego.get("motion")) == "steady":
         lon_ego = "CRUISE"
     lon_votes = [("ego", lon_ego)]
+    notes: dict = {}
     for a in (sym.get("actions") or []):
-        txt = f"{a.get('verb', '')}_{a.get('direction', '')}"
-        lat_votes.append(("vlm", _map_rules(txt, LAT_RULES)))
-        lon_votes.append(("vlm", _map_rules(txt, LON_RULES)))
+        try:
+            lat_t, lon_t, note = map_vlm_action(a.get("verb"),
+                                                a.get("direction"))
+        except UnmappedActionVerb as e:
+            # the `goal_kind_unmapped` precedent: a NAMED, COUNTED conflict.
+            # The mapping itself refuses to guess; the fuse survives one bad
+            # verb instead of losing a 4,729-clip run to it.
+            conflicts.append({"check": "action_verb_unmapped",
+                              "verb": a.get("verb"),
+                              "direction": a.get("direction"),
+                              "detail": str(e)})
+            continue
+        if note:
+            notes.setdefault("vlm", []).append(note)
+        lat_votes.append(("vlm", lat_t))
+        lon_votes.append(("vlm", lon_t))
     if alp and alp.get("meta_action"):
-        t = json.dumps(alp["meta_action"])[:400]
-        lat_votes.append(("alpamayo", _map_rules(t, LAT_RULES)))
-        lon_votes.append(("alpamayo", _map_rules(t, LON_RULES)))
+        axes = parse_alpamayo_axes(alp["meta_action"])
+        try:
+            alp_lat, alp_lon, alp_notes = map_alpamayo_axes(axes)
+        except UnmappedActionVerb as e:
+            conflicts.append({"check": "alpamayo_axis_unmapped",
+                              "detail": str(e)})
+        else:
+            if alp_notes:
+                notes["alpamayo"] = alp_notes
+            lat_votes.append(("alpamayo", alp_lat))
+            lon_votes.append(("alpamayo", alp_lon))
+            notes["alpamayo_axes"] = {k: axes.get(k) for k in
+                                      ("longitudinal", "lateral", "lane")}
 
-    def majority(votes, valid):
-        counts: dict[str, list] = {}
-        for src, tok in votes:
-            if tok in valid:
-                counts.setdefault(tok, []).append(src)
-        if not counts:
-            return None, [], votes
-        tok = max(counts, key=lambda k: len(counts[k]))
-        return tok, counts[tok], votes
-
-    lat, lat_src, lat_all = majority(lat_votes, TACTICAL_LAT_ACTIONS)
-    lon, lon_src, lon_all = majority(lon_votes, TACTICAL_LON_ACTIONS)
-    vocab = {"g_str": g_str,
-             "a_str": a_str,
-             "g_tac_lat": {"token": lat, "voters": lat_src,
-                           "votes": [[s, t] for s, t in lat_all]},
-             "g_tac_lon": {"token": lon, "voters": lon_src,
-                           "votes": [[s, t] for s, t in lon_all]}}
+    a_tac_lat = block_vote(lat_votes, TACTICAL_LAT_ACTIONS)
+    a_tac_lon = block_vote(lon_votes, TACTICAL_LON_ACTIONS)
+    if notes:
+        a_tac_lat["notes"] = notes
+        a_tac_lon["notes"] = notes
+    # ⛔ THE FIELD NAMED WHAT IT IS NOT. The block below used to be emitted as
+    # `g_tac_lat`/`g_tac_lon` while being filled from `TACTICAL_LAT_ACTIONS` /
+    # `TACTICAL_LON_ACTIONS` — the **`a_tac` ACTION** vocabulary. The two are
+    # DISJOINT: `LANE_KEEP` is not a member of `TACTICAL_GOAL_TOKENS_LAT`
+    # (`ANCHOR_GOAL`, `CORRIDOR_OFFSET`, `EVADE_IN_CORRIDOR`,
+    # `LAT_UNCONSTRAINED`). Any consumer joining `g_tac_lat` to a goal head
+    # silently received ACTION tokens — the S2 `"no agents"` class again, *a
+    # shape that reads like the thing it is not*. `test_ph1_fuse.py:70-71`
+    # PINNED the mismatch; that pin is inverted now.
+    vocab = {"g_str": g_str, "a_str": a_str,
+             "a_tac_lat": a_tac_lat, "a_tac_lon": a_tac_lon,
+             # ⚠️ NOT DROPPED, DECLARED. The goal-token axes are REASON-typed
+             # and NOTHING in this fuse derives them (they need the Alpamayo
+             # `cot`; reachability 82.77 %, correctness UNMEASURED — see
+             # TACTICAL_LABEL_VALIDATION.md §4.3). Emitting the key with a
+             # null token and a reason is loud; omitting it would send the
+             # next consumer looking for the action field by mistake.
+             "g_tac_lat": {"token": None, "unavailable_reason": _G_TAC_GAP},
+             "g_tac_lon": {"token": None, "unavailable_reason": _G_TAC_GAP}}
     # ⛔ the disjointness rule: no situation-classifier output inside vocab
     assert "situation" not in json.dumps(vocab).lower()
     return vocab, conflicts

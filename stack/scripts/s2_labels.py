@@ -41,6 +41,37 @@ that offset per episode, read off the episode's own channel count — a window's
 "now" is its LAST frame (`pose_last`), the same instant every other label in
 the batch is anchored to.
 
+⛔ WHICH LABEL SET IS CANONICAL — :data:`S2_CANONICAL_LABELS_REL`, and the
+SUPERSEDED marker that makes the wrong answer a REFUSAL rather than a silent
+mistrain. The v1 delivery's `LANE_TARGET` / `PREPARE_LANE_CHANGE` rows were
+adjudicated ~78 % WRONG by the PI (`…/2026-08-16-s2-v1-labels/review/
+PI_VERDICTS_2026-08-16.json`), the geometric lane-change derivation was removed
+(commit `06b8782`), and the corrected set is `review/labels_v2/`. Pointing
+`--s2-labels` at the old directory is not a tidiness question — it is 80 wrong
+CE targets. So the OLD directory carries `SUPERSEDED.json` and this loader refuses
+it by name, quoting the replacement. ⚠️ The marker's ``superseded_by`` and the
+constant below are CROSS-CHECKED against each other by
+`tests/test_v6_s2_loss.py` — two pointers that cannot silently disagree (C81:
+where a fact is written twice, audit the copies AGAINST each other, or the
+stale one is the one that gets read).
+
+⛔ ABSTENTION IS A MASK, NOT A TOKEN — and the two are DIFFERENT CLAIMS.
+``g_str``'s ``NONE_ABSTAIN`` is a SUPERVISED TARGET: "the correct strategic
+goal is: none applies", trained toward. A record that instead says *"we do not
+know what the label is"* must send NO gradient at all, and ``a_str`` has no
+abstain token to reach for anyway (`STRATEGIC_ACTION_TOKENS` is six positive
+manoeuvres — MEASURED, v6.py:157). Without a mask, dropping a wrong label just
+re-assigns it: the v1→v2 relabel moved 80 ``PREPARE_LANE_CHANGE`` rows to
+**71 HOLD_CORRIDOR + 9 REDUCE_TO** (MEASURED, this loader, both sets), i.e. it
+manufactured a different confident claim. ⇒ a block may carry ``"abstain":
+true`` (and then NO token), which yields ``s2_valid`` unchanged but that ONE
+family unsupervised, via the optional batch keys ``g_str_valid`` /
+``a_str_valid``. **DEFAULT-OFF AND PROVABLY INERT**: a label file with no
+abstaining record emits neither key and the batch is byte-identical, so the
+incumbent loss is bit-identical. Adding an abstain TOKEN was refused
+deliberately — `GoalVocabulary` sizes its embedding table from the tuple, and
+the live v6F S-W run resumes tensor-level.
+
 Validation scope: shape/type/vocabulary/id-consistency/mask discipline/
 disjointness/ROUTE_TO are enforced here (the trainer's contract). The
 per-token ALLOWED-SLOT table (`ARG_SLOT_SPEC`) is the BUILDER's law and stays
@@ -83,11 +114,30 @@ except ImportError:                                       # pragma: no cover
 __all__ = [
     "SCHEMA_VERSION", "IGNORE_ID", "ROUTE_TO_ID", "S2LabelError",
     "S2Row", "S2LabelSet", "S2WindowSupervision", "load_s2_labels",
-    "assert_payload_disjoint",
+    "assert_payload_disjoint", "SUPERSEDED_NAME", "NO_LABEL",
+    "S2_CANONICAL_LABELS_REL", "s2_canonical_labels_dir",
 ]
 
 SCHEMA_VERSION = "s2-strategic-v1"
 INDEX_NAME = "clip_index.json"
+#: A label directory that has been REPLACED carries this marker, and
+#: :func:`load_s2_labels` refuses it by name. ⛔ The marker lives in the
+#: SUPERSEDED directory, never in the canonical one — a "this is current" flag
+#: would be a stored verdict that rots the moment it stops being current (C81);
+#: "this one is dead, use that one" only ever becomes MORE true.
+SUPERSEDED_NAME = "SUPERSEDED.json"
+#: THE CANONICAL `s2-strategic-v1` LABEL ARTIFACT, repo-relative. This is the
+#: ONE name; the trainer's `--s2-labels` help, `S2_LOSS.md`'s launch line and
+#: the test all quote it rather than re-deriving a path. Corrected set after
+#: the PI's 2026-08-16 adjudication (commit `06b8782`).
+S2_CANONICAL_LABELS_REL = (
+    "TanitAD Research Hub/Data Engineering/Implementation/incoming/"
+    "2026-08-16-s2-v1-labels/review/labels_v2")
+#: The census key for a family a record DECLINED to label. ⛔ NOT a token —
+#: `g_str`'s `NONE_ABSTAIN` is a supervised target ("no goal applies"), this is
+#: the ABSENCE of a target. Leading underscore, so it can never be mistaken for
+#: a member of either vocabulary.
+NO_LABEL = "_NO_LABEL"
 #: torch's ``cross_entropy`` default ``ignore_index`` — a window outside the
 #: validity band (or in an unlabeled clip) contributes NOTHING, by the same
 #: IGNORE discipline the arg mask uses one level down.
@@ -99,6 +149,18 @@ ROUTE_TO_ID = STRATEGIC_GOAL_TOKENS.index("ROUTE_TO")
 #: index's own maps, which is what the join actually consults.
 _LEGACY_ID_BOUND = 1 << 32
 _DISJOINT_NEEDLES = ("situation", "sitclf")
+
+
+def s2_canonical_labels_dir(repo_root=None) -> Path:
+    """Absolute path of :data:`S2_CANONICAL_LABELS_REL`.
+
+    ``repo_root`` defaults to this file's repo (``stack/scripts`` -> up two).
+    Returns the path whether or not it exists — the CALLER decides whether an
+    absent artifact is a skip (a pod checkout carries no Research Hub) or a
+    refusal (`--s2-labels` already refuses a missing path in milliseconds)."""
+    root = Path(repo_root) if repo_root is not None \
+        else Path(__file__).resolve().parents[2]
+    return root.joinpath(*S2_CANONICAL_LABELS_REL.split("/"))
 
 
 class S2LabelError(SystemExit):
@@ -130,10 +192,44 @@ def assert_payload_disjoint(rec: dict) -> None:
 
 
 def _check_block(blk, tokens: tuple, where: str, clip: str
-                 ) -> tuple[int, list[float], list[float]]:
-    """One g_str/a_str block -> ``(token_id, args[8], mask[8])`` or a refusal."""
+                 ) -> tuple[int, list[float], list[float], bool]:
+    """One g_str/a_str block -> ``(token_id, args[8], mask[8], supervised)``.
+
+    ⛔ ``"abstain": true`` means THIS FAMILY HAS NO TARGET for this clip — the
+    builder declines to claim one. It is NOT ``NONE_ABSTAIN`` (a supervised
+    target meaning "no goal applies"), and for ``a_str`` there is no such token
+    to confuse it with. An abstaining block must carry NO ``token`` and NO
+    ``token_id``: a declined family that still names a manoeuvre is exactly the
+    silent-fallthrough this channel exists to prevent, so it is refused rather
+    than laundered. ``token_id`` comes back as :data:`IGNORE_ID` and
+    ``supervised`` False; the join then clears that family's validity bit."""
     if not isinstance(blk, dict):
         raise S2LabelError(f"[s2] ⛔ {clip}: {where} is not a dict")
+    abst = blk.get("abstain", False)
+    if abst is not False:
+        if abst is not True:
+            raise S2LabelError(
+                f"[s2] ⛔ {clip}: {where}.abstain must be true or absent, got "
+                f"{abst!r} — a truthy-but-not-True value is how a typo "
+                f"becomes a silent supervision change.")
+        if blk.get("token") is not None or blk.get("token_id") is not None:
+            raise S2LabelError(
+                f"[s2] ⛔ {clip}: {where} declares abstain:true AND carries "
+                f"token={blk.get('token')!r}/token_id={blk.get('token_id')!r}."
+                f" An abstaining family has NO target — a token beside the "
+                f"abstain is precisely the ambiguity that lets a consumer "
+                f"train on it anyway. Emit one or the other, never both.")
+        args = blk.get("args", [0.0] * GOAL_ARG_SLOTS)
+        mask = blk.get("arg_mask", [0] * GOAL_ARG_SLOTS)
+        if list(mask) != [0] * GOAL_ARG_SLOTS \
+                or [float(x) for x in args] != [0.0] * GOAL_ARG_SLOTS:
+            raise S2LabelError(
+                f"[s2] ⛔ {clip}: {where} abstains but carries args={args!r} "
+                f"arg_mask={mask!r} — an abstaining family constrains "
+                f"nothing, so every slot is 0.0/unset. A set slot under an "
+                f"abstain would send arg-L1 gradient from a record that "
+                f"declined to make a claim.")
+        return IGNORE_ID, [0.0] * GOAL_ARG_SLOTS, [0.0] * GOAL_ARG_SLOTS, False
     tok = blk.get("token")
     if tok not in tokens:
         raise S2LabelError(
@@ -173,7 +269,7 @@ def _check_block(blk, tokens: tuple, where: str, clip: str
                 f"L1 would ignore it, but a value smuggled into an unset slot "
                 f"is a schema violation upstream and is refused, not "
                 f"laundered).")
-    return int(tid), [float(x) for x in args], [float(m) for m in mask]
+    return int(tid), [float(x) for x in args], [float(m) for m in mask], True
 
 
 @dataclass(frozen=True)
@@ -193,6 +289,11 @@ class S2Row:
     a_token: str
     g_provenance: str
     a_provenance: str
+    #: PER-FAMILY supervision. False = this record DECLINED to label that
+    #: family; its id is IGNORE_ID and the join clears its validity bit. Both
+    #: default True, so every pre-abstain artifact loads unchanged.
+    g_sup: bool = True
+    a_sup: bool = True
 
 
 class S2LabelSet:
@@ -211,14 +312,37 @@ class S2LabelSet:
     def __len__(self) -> int:
         return len(self.rows_by_stable)
 
+    @property
+    def has_abstain(self) -> bool:
+        """Does ANY record decline a family? DERIVED at read time from the
+        rows, never stored — a cached "this set uses abstention" flag is the
+        C81 trap (a verdict beside its own inputs). It decides only whether
+        ``batch()`` emits the optional per-family keys at all, so a set with
+        no abstentions produces the byte-identical incumbent batch."""
+        return any((not r.g_sup) or (not r.a_sup)
+                   for r in self.rows_by_stable.values())
+
+    def abstain_census(self) -> dict:
+        """Per-family count of DECLINED records. Reported next to the token
+        census so an abstention can never hide as a missing token."""
+        return {"g_str": sum(not r.g_sup for r in self.rows_by_stable.values()),
+                "a_str": sum(not r.a_sup
+                             for r in self.rows_by_stable.values())}
+
     def token_census(self) -> dict:
         """Per-token record counts — PER FAMILY, NEVER POOLED (the
-        four-metric-families discipline applied to labels)."""
+        four-metric-families discipline applied to labels).
+
+        A DECLINED family is counted under :data:`NO_LABEL`, not dropped: a
+        census whose totals silently stop summing to ``len(self)`` is how an
+        abstention gets read as a vanished record."""
         g: dict[str, int] = {}
         a: dict[str, int] = {}
         for r in self.rows_by_stable.values():
-            g[r.g_token] = g.get(r.g_token, 0) + 1
-            a[r.a_token] = a.get(r.a_token, 0) + 1
+            gk = r.g_token if r.g_sup else NO_LABEL
+            ak = r.a_token if r.a_sup else NO_LABEL
+            g[gk] = g.get(gk, 0) + 1
+            a[ak] = a.get(ak, 0) + 1
         return {"g_str": dict(sorted(g.items())),
                 "a_str": dict(sorted(a.items()))}
 
@@ -238,6 +362,8 @@ class S2LabelSet:
             "n_records": len(self.rows_by_stable),
             "t0_s": self.t0_s, "valid_window_s": list(self.band),
             "token_census_records": self.token_census(),
+            "abstain_census_records": self.abstain_census(),
+            "has_abstain": self.has_abstain,
             "provenance_census_records": self.provenance_census(),
             "join": "stable_episode_id (blake2b>>1) ONLY — legacy 16-bit ids "
                     "are refused (69/2400 + 7/600 collide)",
@@ -253,6 +379,40 @@ class S2LabelSet:
                                    index=index)
 
 
+def _refuse_if_superseded(p: Path) -> None:
+    """Refuse a label directory that has been REPLACED, naming the successor.
+
+    ⛔ WHY THIS IS A REFUSAL AND NOT A WARNING. The superseded v1 set differs
+    from the canonical one in exactly the rows the PI adjudicated ~78 % wrong;
+    loading it trains the strategic head on 80 wrong CE targets and NOTHING
+    downstream would look abnormal — the record count, the join, the band and
+    every guard in this file pass identically. A wrong-but-well-formed artifact
+    that passes every structural check is C77's shape, so the only defence is
+    to make the artifact itself say it is dead and to fail on reading it."""
+    d = p if p.is_dir() else p.parent
+    marker = d / SUPERSEDED_NAME
+    if not marker.exists():
+        return
+    try:
+        m = json.loads(marker.read_text(encoding="utf-8"))
+    except Exception as e:                                    # noqa: BLE001
+        raise S2LabelError(f"[s2] ⛔ {marker} is present but unreadable "
+                           f"({type(e).__name__}: {e}) — a superseded marker "
+                           f"that cannot be parsed is still a refusal.")
+    repl = m.get("superseded_by")
+    where = str((d / repl).resolve()) if repl else "(marker names no successor)"
+    raise S2LabelError(
+        f"[s2] ⛔ {d} is SUPERSEDED and refused.\n"
+        f"      reason : {m.get('reason', '(none recorded)')}\n"
+        f"      since  : {m.get('superseded_on', '?')} "
+        f"(commit {m.get('commit', '?')})\n"
+        f"      USE    : {where}\n"
+        f"      This is not a warning: the superseded set differs precisely "
+        f"in the rows that were adjudicated wrong, and every other guard in "
+        f"this loader passes on it identically. Point --s2-labels at the "
+        f"path above (s2_labels.S2_CANONICAL_LABELS_REL).")
+
+
 def load_s2_labels(path) -> S2LabelSet:
     """Load + validate `s2-strategic-v1` labels and their join index.
 
@@ -263,6 +423,7 @@ def load_s2_labels(path) -> S2LabelSet:
     p = Path(path)
     if not p.exists():
         raise S2LabelError(f"[s2] ⛔ --s2-labels {p} does not exist")
+    _refuse_if_superseded(p)
     if p.is_dir():
         idx_path = p / INDEX_NAME
         files = sorted(p.glob("s2_labels_*.jsonl"))
@@ -362,10 +523,17 @@ def load_s2_labels(path) -> S2LabelSet:
                     f"situation_classifier_output_used: false per record "
                     f"(BINDING).")
             assert_payload_disjoint(rec)
-            g_id, g_args, g_mask = _check_block(
+            g_id, g_args, g_mask, g_sup = _check_block(
                 rec.get("g_str"), STRATEGIC_GOAL_TOKENS, "g_str", cid)
-            a_id, a_args, a_mask = _check_block(
+            a_id, a_args, a_mask, a_sup = _check_block(
                 rec.get("a_str"), STRATEGIC_ACTION_TOKENS, "a_str", cid)
+            if not (g_sup or a_sup):
+                raise S2LabelError(
+                    f"[s2] ⛔ {f.name}:{ln}: {cid} abstains on BOTH families "
+                    f"— that is a record that supervises nothing, which is an "
+                    f"ABSENT label, not an abstaining one. Omit the clip (and "
+                    f"mark it excluded in {INDEX_NAME} if the omission is "
+                    f"deliberate) rather than shipping an empty target.")
             r_t0 = float(rec.get("t0_s", t0_s))
             r_band = tuple(rec.get("valid_window_s", band))
             if not (r_band[0] <= 0.0 <= r_band[1]):
@@ -380,10 +548,11 @@ def load_s2_labels(path) -> S2LabelSet:
                 a_args=torch.tensor(a_args, dtype=torch.float32),
                 a_mask=torch.tensor(a_mask, dtype=torch.float32),
                 t0_s=r_t0, band=(float(r_band[0]), float(r_band[1])),
-                g_token=STRATEGIC_GOAL_TOKENS[g_id],
-                a_token=STRATEGIC_ACTION_TOKENS[a_id],
+                g_token=STRATEGIC_GOAL_TOKENS[g_id] if g_sup else NO_LABEL,
+                a_token=STRATEGIC_ACTION_TOKENS[a_id] if a_sup else NO_LABEL,
                 g_provenance=str(rec["g_str"].get("provenance")),
-                a_provenance=str(rec["a_str"].get("provenance")))
+                a_provenance=str(rec["a_str"].get("provenance")),
+                g_sup=g_sup, a_sup=a_sup)
     if not rows:
         raise S2LabelError(f"[s2] ⛔ {files}: zero records loaded")
     return S2LabelSet(rows, {k: tuple(v) for k, v in legacy_ids.items()},
@@ -440,9 +609,14 @@ class S2WindowSupervision:
                 f"through the legacy id.")
         self.n_episodes = len(self._rows)
         self.n_matched_episodes = sum(r is not None for r in self._rows)
+        #: whether ``batch()`` emits the optional per-family validity keys —
+        #: read off the LABEL SET, so a corpus with no abstaining record keeps
+        #: the incumbent seven-key batch byte-identical.
+        self.emits_family_masks = labels.has_abstain
         # window-level accounting, per token, NEVER pooled — one pass, once.
         self.n_windows = len(self._index)
         self.n_windows_in_band = 0
+        self.n_windows_supervised = {"g_str": 0, "a_str": 0}
         g_w: dict[str, int] = {}
         a_w: dict[str, int] = {}
         for e_i, t in self._index:
@@ -450,6 +624,8 @@ class S2WindowSupervision:
             if row is None or not self._in_band(row, e_i, t):
                 continue
             self.n_windows_in_band += 1
+            self.n_windows_supervised["g_str"] += int(row.g_sup)
+            self.n_windows_supervised["a_str"] += int(row.a_sup)
             g_w[row.g_token] = g_w.get(row.g_token, 0) + 1
             a_w[row.a_token] = a_w.get(row.a_token, 0) + 1
         self.window_token_census = {"g_str": dict(sorted(g_w.items())),
@@ -466,6 +642,12 @@ class S2WindowSupervision:
             "n_matched_episodes": self.n_matched_episodes,
             "n_windows": self.n_windows,
             "n_windows_in_band": self.n_windows_in_band,
+            # ⚠️ PER FAMILY, and it can be LOWER than n_windows_in_band: a
+            # window whose record declined that family is in band and still
+            # unsupervised there. Reported so an abstention is visible as a
+            # number, not inferred from a missing census key.
+            "n_windows_supervised": self.n_windows_supervised,
+            "emits_family_masks": self.emits_family_masks,
             "window_token_census": self.window_token_census,
             "window": self._window, "dt": self._dt,
             "raw_offset_note": "raw = provider + (n_stack-1); t0/band are on "
@@ -474,7 +656,15 @@ class S2WindowSupervision:
         }
 
     def batch(self, idx) -> dict[str, Tensor]:
-        """Batch keys for ``v6_loss_step`` (CPU; caller moves to device)."""
+        """Batch keys for ``v6_loss_step`` (CPU; caller moves to device).
+
+        ⛔ THE OPTIONAL EIGHTH/NINTH KEYS. ``g_str_valid`` / ``a_str_valid``
+        are emitted ONLY when the label set actually contains an abstaining
+        record (:attr:`emits_family_masks`). ``v6_loss_step`` reads them as
+        ``s2_valid & <family>_valid`` when present and falls back to
+        ``s2_valid`` when absent, so a pre-abstain artifact produces the
+        identical seven-key dict and a bit-identical loss. That is the whole
+        inertness argument, and it is pinned by a test on both branches."""
         n = len(idx)
         out = {
             "g_str_id": torch.full((n,), IGNORE_ID, dtype=torch.long),
@@ -485,6 +675,10 @@ class S2WindowSupervision:
             "a_str_arg_mask": torch.zeros(n, GOAL_ARG_SLOTS),
             "s2_valid": torch.zeros(n, dtype=torch.bool),
         }
+        fam = self.emits_family_masks
+        if fam:
+            out["g_str_valid"] = torch.zeros(n, dtype=torch.bool)
+            out["a_str_valid"] = torch.zeros(n, dtype=torch.bool)
         for j, i in enumerate(idx):
             e_i, t = self._index[int(i)]
             row = self._rows[e_i]
@@ -497,4 +691,7 @@ class S2WindowSupervision:
             out["a_str_id"][j] = row.a_id
             out["a_str_args"][j] = row.a_args
             out["a_str_arg_mask"][j] = row.a_mask
+            if fam:
+                out["g_str_valid"][j] = row.g_sup
+                out["a_str_valid"][j] = row.a_sup
         return out
