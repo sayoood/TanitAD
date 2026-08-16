@@ -137,6 +137,57 @@ itself; it is corrected here rather than quietly.)* Highest-value, in order:
 *Three parallel streams swept the corpus (48 `INTAKE.md`, 121 `Project Steering/*.md`, ~507
 non-INTAKE `incoming/**` docs). Their verdict tables are consolidated below.*
 
+### 3.A — the 48 `INTAKE.md` files
+
+**22 claims across 17 INTAKEs annotated in place.** Verdicts: **9 CLEARED · 9 STILL TRUE · 2
+SUPERSEDED · 2 PARTIAL/UNVERIFIABLE.**
+
+⭐ **A FOURTH independent confirmation of §1 arrived from inside the corpus.** A sibling package filed
+the same day, `…/incoming/2026-08-16-obstacle-offline-sidecar/OBSTACLE_OFFLINE_SIDECAR.md` §0, opens
+with **"The briefed task was already built."** ⇒ **The stale distance-keeping blocker mis-commissioned
+work at least twice on 2026-08-16 alone**, in two different streams that did not know about each
+other. That is the cost of C70 measured directly, on one day.
+
+⛔ **A CITED BAR THAT NO COMMITTED INSTRUMENT COMPUTES.** `MODEL_REGISTRY.md:100,219` quote a
+**"best-of-3 kinematic floor 0.5005"** as a live bar. `baselines.py` and `skill_score` **never
+landed** (0 hits), and the originating package's own risk note says its denominators are
+**comma-hwy-corpus-specific — "do not treat as universal."** ⇒ Same family as the CTRV-0.523
+inheritance already caught, and it is **in the registry**, the one quotable source. **Escalated, not
+edited** (Project-Steering-owned).
+
+⚠️ **A dangling logging key survived its instrument.** `H15Meter`, `h15_fire_frac`, `h15_fired` →
+**0 hits repo-wide**, yet `stack/scripts/train_flagship4b.py:658` still executes
+`log["h15"] = float(loss_h15.item())`. Blast radius is now v1-line only (v4/v16 use different
+imagination surfaces), which is *why* nobody noticed.
+
+**CLEARED (9):** *"video-only **until an IDM head lands**"* → the head landed (`stack/scripts/idm_head.py`,
+`models/dynamics_encoder.py:44,299`, weights v1/v3/v4 banked; ⚠️ carry its caveat — comma yaw R²
+**−0.746**, PhysicalAI +0.9035) · CTRV *"the driving block is missing"* → `driving.py:313`
+`FLOORS=("cv","holdv0","ctrv")` · the atomic-milestone ops bug → `stack/tanitad/train/ckpt_io.py:23`,
+swapped into **5** trainers (⚠️ deviation: the `archive_milestones()` wrapper was **not** adopted) ·
+AlpaSim adapter **5 of 6** TODOs → `stack/experiments/alpasim-driver/tanitad_model.py` has **0
+TODOs** · pandaset *"blocked until D-016 R1"* → R1 landed 2026-07-17 (466.97 → **266.0**) ·
+instrument-durability triage → consumed by `670f614` (27 arms, 270 LEAD windows) · Cosmos stub
+latency/params → **0.2628 B / 14.331 ms** MEASURED (⚠️ RTX 4060 — must **not** be swapped into A40
+rows) · D2's *"BLOCKED on I4"* → **SUPERSEDED**, `run_d2` rows are `[I1,I2,I3(,I7)]`, I4 is
+diagnostic (D-017) · ZOD-as-P0 → **SUPERSEDED**, AV2 landed instead (`6016736`; ZOD has no lane
+graph, 3 probes).
+
+⚠️ **STILL TRUE, and these are the ones that should become work items:**
+
+| item | evidence | age |
+|---|---|---|
+| ⛔ **`rrd` dual-sink guard — 2 lines, guarding a SILENT 3,314× data loss** | 0 hits for `allow_stub_rrd`/`check_sinks`; `replay_app.py:277,279` still accepts `--rrd`+`--serve` unguarded | **26 d** |
+| ⛔ **`train_strat.jsonl` is STRANDED — documented in an INTAKE's file table, never banked** | 3 probes: `find` 0 hits, `git ls-files` has only `train_strat_windows.json`, **not gitignored**. Inputs survive; the records do not | — |
+| **pandaset loader: unblocked-and-unintegrated** | `stack/tanitad/data/pandaset.py` absent ~30 d after its blocker cleared | **~30 d** |
+| **3 opponent scenarios un-adjudicated** (SC-04, SC-13, SC-06) | `SCENARIO_REGISTRY` has 3 entries; both siblings' verdict templates unfilled. Fix = one verdict pass + 3 `ScenarioEntry` rows | 9–23 d |
+| `baselines.py` / `skill_score` never landed | see the cited-bar finding above | — |
+| H15 logging fidelity; `worldmodel_synth.py` never committed; ZOD dataset access (human application); LAL/OKRI/LOPS renderer-gated | per stream manifest | — |
+
+⚠️ **`ROADMAP.md:79` still names CARLA-on-pod as the closed-loop substrate** while marking it *"not
+fired yet"* — and the live line is AlpaSim/NuRec + T1. **Two INTAKEs remain gated on a harness nobody
+is building.** *(A gate pointing at an abandoned substrate is a stale blocker that can never clear.)*
+
 ### 3.B — `Project Steering/` (the highest blast radius, because these steer work)
 
 **21 claims across 9 steering docs: 13 CLEARED, 3 PARTIAL, 2 UNVERIFIABLE, 3 STILL TRUE.**
@@ -253,6 +304,15 @@ mode that produced this list.**
 
 ## 4. ⚠️ ESCALATION — things this sweep could NOT fix itself
 
+0. ⛔ **REGISTRY INTEGRITY — three items, all Project-Steering-owned, none edited by this sweep:**
+   - **`MODEL_REGISTRY.md:100,219`** quote a *"best-of-3 kinematic floor 0.5005"* that **no committed
+     instrument computes** (`baselines.py` / `skill_score` never landed), and whose denominators the
+     source package calls corpus-specific — *"do not treat as universal."*
+   - **`MODEL_REGISTRY.md:1583,1644`** cite `tools/build_lead_block.py`; the real path is
+     `taniteval/tools/build_lead_block.py`. **A built instrument reads as unbuilt.**
+   - **`MODEL_REGISTRY.md` §1.7 / `BACKLOG` C2 / `BOOST` S-3** carry v2corpus as **"🟢 RUNNING"** with
+     an ETA **18 days expired** and no completion row. Needs a fleet probe, then a completion row or a
+     LOST record — as does `flagship-v16-ab-ft` (§3.C, no `Location` row, pod2 gone).
 1. ⛔ **`stack/tanitad/data/bev_raster.py:12` carries the stale "4 of 36" inside a module docstring.**
    That file is owned by a live agent this session, so it was **not edited**. It needs the one-word
    fix (`4` → the layer-qualified count) by whoever owns it next. **A stale count in code outlives a
@@ -293,8 +353,29 @@ mode that produced this list.**
 | Flagship blocker closed in place | `TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-08-03-longitudinal-distance-keeping/INTAKE.md` |
 
 **Suite:** `PYTHONUTF8=1 python -m pytest -q -p no:cacheprovider` from `stack/`.
-Baseline at HEAD `8e215b3`: 2919 passed / 0 failed / 17 skipped / 2 xfailed.
-<!-- SUITE RESULT: filled in below -->
+Baseline at HEAD `8e215b3`: **2919 passed / 0 failed / 17 skipped / 2 xfailed**.
+✅ **After this package: 2996 passed / 0 failed / 17 skipped / 2 xfailed** (473.7 s). GREEN.
+*(The +77 spans this package's 9 tests and four sibling streams committing concurrently; 0 failed is
+the load-bearing number.)*
+
+⚠️ **Staging note.** All deliverables were verified by **blob comparison** (`git ls-files --stage`
+vs `git hash-object`), not by `git ls-files --cached` — the orchestrator sharpened that rule into
+`CLAUDE.md` mid-sweep and it applies here. Four orchestrator commits (`296139f`, `5725d95`, `7f5dd6b`)
+swept this package's files while it was being written; all content verified present in HEAD
+afterwards, nothing lost, **and this agent made no commits and no pushes.**
+
+## 6. Sweep totals
+
+| | |
+|---|---|
+| streams | 3 parallel + lead |
+| corpus | 48 `INTAKE.md` · 121 `Project Steering/*.md` · ~507 `incoming/**` docs |
+| claims adjudicated | **67+** |
+| CLEARED and annotated in place | **30+** |
+| docs annotated | **41** (17 INTAKEs · 9 steering · 12 incoming · CLAUDE.md · this package's 2) |
+| still-open integration requests surfaced | **8**, oldest **24 days** |
+| new root-cause class | **C70** + five sub-classes (`RETRACTION_LOG.md`) |
+| GPU used | **none** (Thor training untouched) |
 
 ## ORCHESTRATOR VERDICT (filled by the MVP stream — do not pre-fill)
 

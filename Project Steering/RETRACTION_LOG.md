@@ -3609,7 +3609,14 @@ v4.x launch" — voided by the programme reaching v6).
 
 ---
 
-## 2026-08-16 — ⛔ NEW CLASS C70: A GUARD THAT FIRES FOR A REASON UNRELATED TO WHAT IT CHECKS
+## 2026-08-16 — ⛔ NEW CLASS C71: A GUARD THAT FIRES FOR A REASON UNRELATED TO WHAT IT CHECKS
+
+> ⚠️ **RENUMBERED C70 → C71, same day.** Two agents appended a "new class C70" within minutes of
+> each other — this one and the **stale-blocker** class above, which had already lettered five
+> sub-classes (C70a–e). Renumbering the un-lettered one was the smaller edit. The commit that
+> introduced it (`545c98d`) still says "C70" in its message; **this header is the authority.**
+> ⇒ *The append-only log has no allocator, so concurrent classes can collide. Grep the file for the
+> next free number immediately before appending, and re-grep if the append is not immediate.*
 
 Executing the five v6 ladder edges surfaced **three defects on the resume path**, and the priority
 one is a guard that had been "working" for reasons that have nothing to do with the thing it
@@ -3633,7 +3640,7 @@ And it fired **after** the corpus build and the O4 saliency pass over every wind
 
 | # | class | recognition signal |
 |---|---|---|
-| **C70** | **Guard fires for an unrelated reason** | a check believed to protect X, whose actual trigger is Y — where Y merely *correlates* with X today. Signals: the error message names a subsystem the operator did not ask about; the guard's mechanism is never stated anywhere; nobody has tested it with X true and Y false |
+| **C71** | **Guard fires for an unrelated reason** | a check believed to protect X, whose actual trigger is Y — where Y merely *correlates* with X today. Signals: the error message names a subsystem the operator did not ask about; the guard's mechanism is never stated anywhere; nobody has tested it with X true and Y false |
 
 ⇒ **The test that separates them is the one the fix now carries:** construct the case where the
 *incidental* trigger is DEFEATED but the real condition still holds. Here that is a checkpoint
@@ -3643,12 +3650,12 @@ barrier is gone, and the new stage check refuses anyway **because it never looks
 ⚠️ **Family, and it is a large one:** `df` reporting the cluster instead of the pod quota; Thor's
 `free`/`tegrastats` moving 596 MB for 60 GB of unified allocation; cgroup `usage_in_bytes` counting
 reclaimable page cache. All are signals that track the quantity of interest **until they don't**.
-C70's variant is nastier because it is a *guard*: the others merely misinform, this one manufactures
+C71's variant is nastier because it is a *guard*: the others merely misinform, this one manufactures
 confidence that a dangerous path is closed.
 
 ⚠️ **Distinct from C13** (*a guard that cannot fail*). C13's estimator saturates below its own
-threshold and can never fire. **C70 fires reliably — for the wrong reason** — so it looks like
-positive evidence the check works. C13 produces confident silence; C70 produces confident noise.
+threshold and can never fire. **C71 fires reliably — for the wrong reason** — so it looks like
+positive evidence the check works. C13 produces confident silence; C71 produces confident noise.
 
 **Two silent siblings found in the same pass, both now fixed:**
 - **A provenance lie.** `train()` loads `--init-from` then `--resume`, so the resume overwrites
