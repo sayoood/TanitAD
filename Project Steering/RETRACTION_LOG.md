@@ -3672,3 +3672,53 @@ positive evidence the check works. C13 produces confident silence; C71 produces 
 ⇒ **RULE: for any guard that matters, write down its MECHANISM, then test it with the real condition
 true and the incidental trigger removed.** A guard nobody has seen fire for the stated reason is a
 hypothesis, not a protection.
+
+---
+
+## 2026-08-16 — ⛔ NEW CLASS C72: AN EXACTNESS CHECK WHOSE EXACTNESS IS A PROPERTY OF THE MACHINE, NOT OF THE CLAIM
+
+*(Next free number re-grepped immediately before appending — C70/C71 collided earlier today.)*
+
+The E-WC2 endpoint backfill carries a gate that refuses unless the recomputed 2 s endpoint is
+**bit-identical** to the banked one, because without it every latent would regress onto a
+*neighbour's* endpoint and return an inflated σ that looks like a measurement. Correct instinct.
+**The gate then refused a CORRECT backfill.**
+
+The dumps were produced on **Thor (aarch64)**; the backfill ran on **x86**. `cos`/`sin` differ in the
+last bit. MEASURED: **825/881 rows bit-identical**, max disagreement **7.63e-06 m = 1.118 ULPs** —
+while the failure the gate exists to catch, a **±1-row shift, is 0.5123 m ≈ 4e5 ULPs**. The two are
+separated by **67,139×**. `torch.equal` cannot see that gap; it sees only "not equal".
+
+| # | class | recognition signal |
+|---|---|---|
+| **C72** | **Exactness that belongs to the machine, not the claim** | a `torch.equal` / `==` / md5 gate on **recomputed floating point**, especially across architectures, compilers, or BLAS builds. Signal: the check's tolerance is 0 while the defect it guards against is orders of magnitude larger |
+
+⇒ **The fix is NOT a loosened tolerance.** A bare bit-identity check also passes **VACUOUSLY** on a
+degenerate block where every shift happens to match — so relaxing it would trade one blind spot for
+two. The replacement is **last-bit agreement PLUS a ±1-row POSITIVE CONTROL that did not exist
+before**: the gate must demonstrate it can still *detect* the misalignment it was built for. That
+control is the part worth copying; the tolerance is incidental.
+
+⚠️ Sibling of **C13** (a guard that cannot fail) and **C71** (a guard that fires for an unrelated
+reason). C72 completes the set: **a guard that fires for the RIGHT reason, at the WRONG resolution.**
+All three are fixed the same way — state the mechanism, then test the guard with the real condition
+true and false.
+
+---
+
+## 2026-08-16 — ⚠️ C69 AMENDED: the val40 cache is NOT single-copy-on-Thor
+
+C69 (above) withdrew a cost verdict after `find -maxdepth 4` missed files at depth 6. Its **residual
+claim** — that reaching the val40 poses required either a Thor-side read or a multi-GB pull — is now
+**also corrected, and by measurement**:
+
+**A `torch.save` file is an uncompressed zip.** Range-reading only the `poses` member of the 256 px
+val40 cache mirrored on HuggingFace moved **18.4 MB instead of 4.70 GB — 255× less — in 81 s**, with
+**40/40 sha256 bit-identical** to the committed `manifest_EVALPOD_val40.json`. **Thor was never
+contacted.**
+
+⇒ **RULE: before pricing a remote artifact by its total size, ask what the container format lets you
+read.** Our banked `.pt` files are zips; a member-level range read is often three orders of magnitude
+cheaper than the pull, and it leaves a training machine untouched. This is the *cheap-input* half of
+C69's own lesson — I re-priced the expensive input twice and never asked how the cheap one was
+stored.

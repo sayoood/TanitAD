@@ -597,6 +597,82 @@ def test_backfill_no_strict_records_the_failure_instead_of_raising():
     # to re-litigate — a caller must not be able to launder a failed alignment.
 
 
+def test_backfill_tolerates_a_last_bit_libm_difference():
+    """⭐ The dumps were produced on Thor (aarch64) and the backfill runs on x86;
+    `cos/sin` disagree in the LAST BIT, so a literal `torch.equal` refuses a
+    CORRECT backfill. One ULP of jitter on the banked column must still pass."""
+    import refc_dump_latents as R
+    eps = _synth_episodes()
+    banked = _banked_from(eps)
+    gt = banked["gt"].clone()
+    col = gt[:, 3].clone().reshape(-1)               # the 2 s waypoint column
+    mask = torch.zeros_like(col, dtype=torch.bool)
+    mask[::7] = True                                 # perturb ~1/7 of the entries
+    nudged = torch.nextafter(col, torch.full_like(col, float("inf")))
+    col[mask] = nudged[mask]
+    gt[:, 3] = col.reshape(gt[:, 3].shape)
+    banked["gt"] = gt
+    out = R.backfill_endpoints(banked, eps, [20, 60])          # must NOT raise
+    agr = out["endpoint_backfill_controls"]["endpoint_20_agreement"]
+    assert agr["ok"] is True
+    assert agr["bit_identical"] is False              # it really was perturbed
+    assert agr["max_row_ulps"] <= R.ENDPOINT_ULP_TOL
+    assert agr["separation_factor"] >= R.ENDPOINT_SHIFT_MARGIN
+
+
+def test_backfill_still_refuses_a_one_row_shift():
+    """⛔ The failure the gate exists for, stated as the thing the tolerance must
+    NOT admit: a single-row roll of the banked column is ~1e5 ULPs, five orders
+    of magnitude above the libm noise the tolerance allows."""
+    import refc_dump_latents as R
+    eps = _synth_episodes()
+    banked = _banked_from(eps)
+    banked["gt"] = torch.roll(banked["gt"], shifts=1, dims=0)
+    with pytest.raises(AssertionError, match="not bit-identical"):
+        R.backfill_endpoints(banked, eps, [20, 60])
+
+
+def test_endpoint_agreement_reports_the_shift_control_not_just_a_boolean():
+    """The gate publishes its evidence: a bare `ok` cannot be audited, and the
+    ±1-row control is the half that a `torch.equal` never had."""
+    import refc_dump_latents as R
+    a = torch.stack([torch.arange(1.0, 51.0), torch.zeros(50)], dim=-1)
+    same = R.endpoint_agreement(a, a.clone())
+    assert same["ok"] and same["bit_identical"]
+    assert same["separation_factor"] == float("inf")
+    assert same["rows_bit_identical"] == same["n_rows"] == 50
+    off = R.endpoint_agreement(a, torch.roll(a, 1, 0))
+    assert off["ok"] is False
+    assert off["max_row_ulps"] > R.ENDPOINT_ULP_TOL
+
+
+def test_endpoint_agreement_row_ulp_is_not_per_component():
+    """⚠️ A rotation spreads the LONGITUDINAL magnitude's last bit into the tiny
+    LATERAL component. MEASURED on the real dumps: per-component ULPs read 256,
+    row-magnitude ULPs read 1.118 — the per-component reading would refuse a
+    correct backfill."""
+    import refc_dump_latents as R
+    a = torch.tensor([[71.826546, 0.51576555]])
+    b = torch.tensor([[71.82655, 0.51576567]])
+    err, ulps = R._row_ulps(a, b)
+    assert float(ulps.max()) < 4.0
+    per_component = (a - b).abs() / torch.finfo(torch.float32).eps / a.abs().min()
+    assert float(per_component.max()) > 4.0          # the reading that misleads
+
+
+def test_backfill_gate_is_not_vacuous_on_a_degenerate_block():
+    """⛔ The check a bare `torch.equal` could never make: on an all-zero (parked
+    ego) block every ±1-row shift ALSO matches bit-for-bit, so bit-identity is
+    satisfied while carrying no evidence about alignment at all. The shift
+    control refuses it."""
+    import refc_dump_latents as R
+    z = torch.zeros(50, 2)
+    agr = R.endpoint_agreement(z, z.clone())
+    assert agr["bit_identical"] is True              # vacuously
+    assert agr["shift1_median_abs_m"] == 0.0
+    assert agr["ok"] is False                        # …and refused anyway
+
+
 def test_backfill_grid_is_the_producers_grid():
     import driving_diagnostic as dd
     import refc_dump_latents as R

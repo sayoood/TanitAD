@@ -8,9 +8,21 @@ WHAT THE CORPUS ACTUALLY CARRIES (all MEASURED, none inherited)
 * **Episodes do NOT carry agent tracks.** The episode contract is
   ``frames/actions/poses/episode_id/maneuvers`` only (``tanitad/data/_contract.py:8-12``,
   ``physicalai.build_episode`` -> ``ToyEpisode``, ``physicalai.py:742-746``; the v2 lazy
-  provider mirrors the same surface, ``v2_dataset.LazyV2Episode.__slots__``). The corpus
-  build reads 4 of `obstacle.offline`'s 36 sibling features and `obstacle.offline` is not
-  among them.
+  provider mirrors the same surface, ``v2_dataset.LazyV2Episode.__slots__``).
+  **The EPISODE BUILD** (``tanitad/data/physicalai.py``) reads **5** of the corpus's
+  36 features and `obstacle.offline` is **not** among them; **PROGRAM-WIDE** the count
+  is **6**, and the sixth IS `obstacle.offline` — read by the pod-side side-car join
+  (``scripts/build_obstacle_join.py``) that hands this module its rows.
+
+  ⚠️ NAME THE LAYER, NEVER WRITE A BARE COUNT. This sentence previously said "4",
+  and that number has now gone stale FOUR times (2 -> 4 -> 5 -> 6) in the programme's
+  prose. The root cause was never carelessness: the subject *"our ingest"* was
+  undefined, and three legitimate read-sets exist —
+  ``scripts/physicalai_r0.py`` (clip selection) **2**, the episode build **5**,
+  program-wide **6**. All three, their exact feature names and the 36 denominator are
+  now pinned to source in ``stack/tests/test_physicalai_feature_readset.py``; read
+  that, not this paragraph, if the numbers matter. A count that lives only in prose —
+  or, as here, only in a docstring nobody re-reads — rots silently.
 * Therefore **the raster is built from the RAW `obstacle.offline` records, and the JOIN
   to episodes is a POD-SIDE step keyed by (clip_id, episode frame index)** — the dataset
   zips live only on hosts holding the gated corpus, and mapping an episode frame index to
@@ -341,6 +353,36 @@ def fov_mask(grid: BEVGrid = GRID_DEFAULT,
         raise ValueError(f"half_angle_rad must be in (0, pi), got "
                          f"{half_angle_rad}")
     return np.abs(cell_azimuth_rad(grid)) <= float(half_angle_rad)
+
+
+def fov_row_floor(grid: BEVGrid = GRID_DEFAULT,
+                  half_angle_rad: float = math.radians(60.0),
+                  cols: np.ndarray | None = None) -> int | None:
+    """First row from which EVERY cell of ``cols`` is inside the field.
+
+    ``None`` when no such row exists. ``cols`` defaults to the whole width, in
+    which case this is :func:`fov_census`'s ``first_fully_visible_row``.
+
+    ⭐ WHY A COLUMN SUBSET. A consumer that scans a NARROW band — LF0 walks a
+    ±1.0/1.5/2.0 m ego corridor, not the grid — has a far smaller exposure than
+    the grid-wide census, because a cell at lateral ``|y|`` only leaves a
+    half-angle ``th`` field below ``x = |y| / tan(th)``. Quoting the grid-wide
+    fraction against a corridor consumer OVERSTATES it by more than an order of
+    magnitude (MEASURED 2026-08-16: 8.151 % grid-wide vs 0.833 % over LF0's
+    ±1.5 m corridor at the same 117° frame, and 0.000 % once LF0's own
+    ``--min-row 2`` is applied). This returns the floor so a caller can state
+    the exposure of the set it actually reads.
+
+    ⚠️ Same NECESSARY-not-sufficient bound as :func:`fov_mask`: horizontal
+    field only.
+    """
+    m = fov_mask(grid, half_angle_rad)
+    if cols is not None:
+        m = m[:, np.asarray(cols, dtype=np.int64)]
+    for i in range(m.shape[0]):
+        if bool(m[i:].all()):
+            return int(i)
+    return None
 
 
 def readout_column_index(grid: BEVGrid = GRID_DEFAULT,

@@ -63,9 +63,12 @@ can be added with **NO model and NO GPU** — only the 40 val episodes' pose arr
         --out .../raw/latents_refc-xl-30k-ep.pt
 
 ⛔ The backfill REFUSES unless the rebuilt per-window `eid` matches the banked `eid`
-element-for-element AND the recomputed 2 s endpoint is bit-identical to the banked `gt`
-column — otherwise every latent would be regressed onto a NEIGHBOUR's endpoint and σ
-would come back inflated, i.e. a wrong answer that looks like a measurement.
+element-for-element AND the recomputed 2 s endpoint agrees with the banked `gt` column
+to the LAST BIT *and* beats a ±1-row shift control by ≥1000× — otherwise every latent
+would be regressed onto a NEIGHBOUR's endpoint and σ would come back inflated, i.e. a
+wrong answer that looks like a measurement. (The dumps were made on Thor/aarch64 and the
+backfill runs on x86; see `ENDPOINT_ULP_TOL` for why a literal `torch.equal` refuses a
+CORRECT backfill, and why the replacement is stronger rather than weaker.)
 
 Then, 0 GPU, anywhere:
     python scripts/e_wc2_sigma_star.py --dump latents_refc-base-30k.pt \
@@ -91,6 +94,91 @@ NAV_MODE = "follow_constant"
 #: against `dd.WP_STEPS` in `main` (module-level so the endpoint backfill, which
 #: never imports the model stack, uses the identical grid).
 K_MAX_GRID = 20
+
+#: ⛔ Endpoint-vs-fan agreement tolerance for the BACKFILL, in float32 ULPs of the
+#: row's own magnitude. **This is not a loosening of the alignment gate — read on.**
+#:
+#: MEASURED 2026-08-16 (`…/incoming/2026-08-16-ewc2-result/raw/endpoint_backfill_controls_*.json`):
+#: the banked dumps were produced on **Thor (aarch64)** and the 0-GPU backfill runs on
+#: the **x86 dev box**. `gt_ego_waypoints` rotates by `cos(-yaw)/sin(-yaw)`, and the two
+#: libms disagree in the LAST BIT: **825 of 881 rows are bit-identical** and the other 56
+#: differ by **7.63e-06 m — 1.118 ULPs** of the row magnitude (~71.8 m). A literal
+#: `torch.equal` therefore refuses a CORRECT backfill for a reason that has nothing to do
+#: with alignment, which would have cost a GPU pass to work around.
+#:
+#: ⭐ The failure this gate exists to catch is a ROW SHIFT, and it is nowhere near this
+#: scale: at stride 8 and ~14 m/s a one-window shift moves the 2 s endpoint by a **median
+#: 0.5123 m = ~4e5 ULPs**, i.e. **5.6 orders of magnitude** above the libm noise. So the
+#: gate now requires BOTH (a) agreement within :data:`ENDPOINT_ULP_TOL` ULPs AND (b) a
+#: POSITIVE CONTROL — the ±1-row shifted alignments must be at least
+#: :data:`ENDPOINT_SHIFT_MARGIN`× worse. (b) did not exist before; a bit-identity check
+#: passes vacuously on a degenerate block (all-zero poses, a stationary ego) where every
+#: shift also matches, and this one does not. **Strictly stronger against the failure
+#: mode, tolerant only of the last bit.**
+ENDPOINT_ULP_TOL = 4.0
+#: Required separation between the aligned error and the ±1-row shifted error. Measured
+#: separation on the real REF-C dumps is **27 766×**; this demands 1000×.
+ENDPOINT_SHIFT_MARGIN = 1e3
+
+
+def _row_ulps(a, b):
+    """Per-row ``(error_m, error_in_ULPs)`` for two ``[n, 2]`` endpoint blocks.
+
+    ⚠️ The ULP is taken on the ROW'S MAGNITUDE, not per component. A rotation
+    spreads the longitudinal magnitude's last-bit error into the lateral
+    component, where a per-component ULP count reads a 1-ULP rotation error at
+    |x| ≈ 72 m as **256 ULPs** of a ~0.005 m lateral value and refuses a correct
+    backfill. The physically meaningful quantity is the displacement error
+    relative to the displacement.
+    """
+    err = (a - b).norm(dim=-1)
+    mag = torch.maximum(a.norm(dim=-1), b.norm(dim=-1))
+    u = torch.nextafter(mag, torch.full_like(mag, float("inf"))) - mag
+    u = torch.where(u > 0, u, torch.full_like(u, torch.finfo(torch.float32).tiny))
+    return err, err / u
+
+
+def endpoint_agreement(a, b, *, ulp_tol=ENDPOINT_ULP_TOL,
+                       margin=ENDPOINT_SHIFT_MARGIN) -> dict:
+    """Does endpoint block ``a`` sit on the SAME ROWS as banked column ``b``?
+
+    Returns the full evidence, never a bare boolean: the aligned error in metres
+    and in ULPs, how many rows are bit-identical, and the ±1-row shift control.
+    ``ok`` is True only when the aligned error is last-bit AND the shifted
+    alignments are dramatically worse — see :data:`ENDPOINT_ULP_TOL`.
+    """
+    a, b = a.float(), b.float()
+    fin = torch.isfinite(a).all(dim=-1) & torch.isfinite(b).all(dim=-1)
+    a, b = a[fin], b[fin]
+    n = int(a.shape[0])
+    exact = bool(torch.equal(a, b))
+    err, ulps = _row_ulps(a, b)
+    rec = {"n_rows": n, "bit_identical": exact,
+           "rows_bit_identical": int((err == 0).sum()) if n else 0,
+           "max_abs_diff_m": float(err.max()) if n else 0.0,
+           "max_row_ulps": float(ulps.max()) if n else 0.0,
+           "ulp_tol": float(ulp_tol)}
+    shifts = []
+    for s in (1, -1):
+        aa, bb = (a[s:], b[:-s]) if s > 0 else (a[:s], b[-s:])
+        if aa.shape[0]:
+            shifts.append(float((aa - bb).norm(dim=-1).median()))
+    rec["shift1_median_abs_m"] = min(shifts) if shifts else 0.0
+    if rec["shift1_median_abs_m"] == 0.0:
+        # ⛔ A block on which a ±1-row shift is ALSO a perfect match (a parked
+        # ego, an all-zero stand-in) carries NO evidence about alignment — a
+        # bare bit-identity check passes it vacuously. Score the separation as
+        # zero so the gate refuses rather than congratulating itself.
+        rec["separation_factor"] = 0.0
+    elif rec["max_abs_diff_m"] == 0.0:
+        rec["separation_factor"] = float("inf")
+    else:
+        rec["separation_factor"] = (rec["shift1_median_abs_m"]
+                                    / rec["max_abs_diff_m"])
+    rec["shift_margin"] = float(margin)
+    rec["ok"] = bool(n and rec["max_row_ulps"] <= ulp_tol
+                     and rec["separation_factor"] >= margin)
+    return rec
 
 
 def build_model(ckpt: str, preset: str):
@@ -158,9 +246,12 @@ def backfill_endpoints(banked: dict, eps, steps, *, strict: bool = True) -> dict
       1. the rebuilt per-window ``eid`` equals the banked ``eid``, element for
          element;
       2. wherever an endpoint horizon COINCIDES with one of the banked fan's
-         waypoints, the recomputed endpoint is **bit-identical** to the banked
-         ``gt`` column. That is a per-row fingerprint of `last`, the ego-frame
-         transform and the pose source all at once.
+         waypoints, the recomputed endpoint matches the banked ``gt`` column to
+         the last bit (:func:`endpoint_agreement`) AND beats a ±1-row shift
+         control by ≥1000×. That is a per-row fingerprint of `last`, the
+         ego-frame transform and the pose source all at once — and, unlike a
+         bare `torch.equal`, it cannot pass vacuously on a degenerate block
+         where every shift also matches.
     """
     import driving_diagnostic as dd
     eid_bank = [int(x) for x in banked["eid"]]
@@ -195,13 +286,19 @@ def backfill_endpoints(banked: dict, eps, steps, *, strict: bool = True) -> dict
     wps = [int(x) for x in banked.get("wp_steps", [])]
     for i, k in enumerate(out["endpoint_steps"]):
         if k in wps and ctl["eid_match"]:
-            same = bool(torch.equal(out["gt_endpoint"][:, i],
-                                    banked["gt"].float()[:, wps.index(k)]))
-            ctl[f"endpoint_{k}_matches_gt"] = same
-            if not same:
-                fails.append(f"recomputed endpoint at step {k} is not "
-                             f"bit-identical to the banked gt column — the pose "
-                             f"source, `last`, or the ego frame differs")
+            agr = endpoint_agreement(out["gt_endpoint"][:, i],
+                                     banked["gt"].float()[:, wps.index(k)])
+            ctl[f"endpoint_{k}_matches_gt"] = agr["ok"]
+            ctl[f"endpoint_{k}_agreement"] = agr
+            if not agr["ok"]:
+                fails.append(
+                    f"recomputed endpoint at step {k} is not bit-identical to "
+                    f"the banked gt column and is outside the last-bit "
+                    f"tolerance ({agr['max_row_ulps']:.3g} ULPs > "
+                    f"{agr['ulp_tol']:g}, aligned {agr['max_abs_diff_m']:.4g} m "
+                    f"vs ±1-row {agr['shift1_median_abs_m']:.4g} m, separation "
+                    f"{agr['separation_factor']:.4g}× < {agr['shift_margin']:g}×)"
+                    f" — the pose source, `last`, or the ego frame differs")
     ctl["valid_frac"] = {str(k): round(float(out["endpoint_valid"][:, i]
                                              .float().mean()), 4)
                          for i, k in enumerate(out["endpoint_steps"])}

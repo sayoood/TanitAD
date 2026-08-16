@@ -913,18 +913,25 @@ def write_stage_gate(out_dir, gate: dict) -> Path:
 
 def assert_stage_precondition(stage: str, prev_gate_path=None, *,
                               allow_inconclusive: bool = False,
-                              off_reason: str = "") -> dict:
+                              off_reason: str = "",
+                              dry_run: bool = False) -> dict:
     """REFUSE to start ``stage`` unless the stage below it PASSED (X5).
 
     Returns the precondition report on success; raises
-    :class:`GatePreconditionError` otherwise. Three refusals, all deliberate:
+    :class:`GatePreconditionError` otherwise. Four refusals, all deliberate:
       * the previous gate file is MISSING -> refuse (a stage that never ran a
         gate did not pass one);
       * ``pass: false`` -> refuse, and no flag overrides it. A FAIL is a
         finding about the layer below; propagating it upward is how a defect
         gets attributed to the wrong layer three stages later;
       * ``pass: null`` (INCONCLUSIVE) -> refuse UNLESS
-        ``allow_inconclusive`` AND a non-empty ``off_reason``.
+        ``allow_inconclusive`` AND a non-empty ``off_reason``;
+      * ⛔ the gate was written by a ``--dry-run`` -> refuse a REAL launch. A
+        dry-run's gate is a SMOKE artifact: no battery ran, its numbers come
+        from synthetic tensors, and it exists only so the chain's own advance
+        logic can be executed end-to-end on CPU. ``dry_run=True`` (set by
+        :func:`dry_run`) is the only thing that accepts one, so a dry ladder
+        can never license a real launch — the default is the strict one.
     """
     prev = STAGE_PRECONDITION.get(stage)
     if prev is None:
@@ -946,6 +953,13 @@ def assert_stage_precondition(stage: str, prev_gate_path=None, *,
             f"[v6] ⛔ {p} is the gate for stage {gate.get('stage')!r}, but "
             f"{stage} requires {prev!r}. Pointing a stage at the wrong gate "
             f"file is not a pass.")
+    if gate.get("_dry_run") and not dry_run:
+        raise GatePreconditionError(
+            f"[v6] ⛔ {p} was written by a --dry-run (\"_dry_run\": true) and "
+            f"this is a REAL launch. A dry-run's gate is a smoke artifact: no "
+            f"frozen-battery probe ran, and every number behind it came from "
+            f"synthetic tensors. Re-run stage {prev} for real, or point "
+            f"--prev-gate at the real run's stage_gate.json.")
     verdict = gate.get("pass")
     if verdict is False:
         raise GatePreconditionError(
@@ -971,7 +985,8 @@ def assert_stage_precondition(stage: str, prev_gate_path=None, *,
 
 def run_stage_gate(stack: V6Stack, stage: str, *, out_dir,
                    spectrum: dict | None = None,
-                   extra_probes: dict | None = None) -> dict:
+                   extra_probes: dict | None = None,
+                   dry_run: bool = False) -> dict:
     """Run whatever frozen-battery entry points are IMPORTABLE here, assemble
     the gate, and write it.
 
@@ -1012,6 +1027,15 @@ def run_stage_gate(stack: V6Stack, stage: str, *, out_dir,
                                            "reading cannot pass or fail it"}
     gate = stage_gate_dict(stage, probes)
     gate["param_report"] = stack.param_report()
+    if dry_run:
+        # ⛔ STAMPED, so it can never be mistaken for — or used as — a real
+        # certificate. `assert_stage_precondition` refuses it for a real launch.
+        gate["_dry_run"] = True
+        gate["_read"] = ("SMOKE ARTIFACT. Written by --dry-run over SYNTHETIC "
+                         "tensors: no corpus, no frozen-battery probe, no "
+                         "eval. It exists so a chain's advance logic can be "
+                         "EXECUTED end-to-end on CPU. No number here is "
+                         "quotable and it licenses no real launch.")
     path = write_stage_gate(out_dir, gate)
     print(f"[v6] stage gate {gate['verdict']} -> {path}", flush=True)
     return gate
@@ -1128,12 +1152,57 @@ def dry_run(a, stack: V6Stack | None = None) -> dict:
     stale ``stack/`` resurrects fixed bugs — so the runbook step is *ship the
     files, then run this, then launch*, and this must exercise the real loss
     assembly, not just an import.
+
+    ⛔ AND IT MUST EXERCISE THE LADDER SEAMS, WHICH IT DID NOT. Until
+    2026-08-16 this function ignored ``--prev-gate`` and ``--init-from``
+    entirely: a dry-run of S-T printed "dry-run OK" while the real launch of the
+    same command died on ``Missing key(s): cand_score.*`` (the init-from launch
+    blocker). A pre-launch verifier that skips the two flags the staged protocol
+    is MADE of is structurally incapable of catching the class of failure it
+    exists to catch — C13, in the instrument that is supposed to be the guard.
+    Now, when either flag is supplied it is REALLY exercised: the X5
+    precondition is adjudicated by :func:`assert_stage_precondition` and the
+    predecessor is REALLY loaded by :func:`load_stage_init`. When a flag is
+    absent, ``dry_run.json`` says so in its own report rather than leaving the
+    reader to assume it was checked.
     """
     stack = stack or build_stack_from_args(a)
     out_dir = Path(a.out)
+    # ⛔ A dry-run must never share a directory with a real run: it writes
+    # config.json and a stage_gate.json, and clobbering a live run's records
+    # with synthetic ones is the shared---out defect in miniature.
+    if (out_dir / "ckpt.pt").exists():
+        raise SystemExit(
+            f"[v6] ⛔ --dry-run --out {out_dir} already contains ckpt.pt, i.e. "
+            f"a REAL run lives there. A dry-run writes config.json and a "
+            f"stage_gate.json and would overwrite that run's records with "
+            f"synthetic ones. Point --out at a scratch directory.")
     out_dir.mkdir(parents=True, exist_ok=True)
+    # ---- the ladder seams, REALLY exercised ---------------------------------
+    pre = {"exercised": False,
+           "_read": "--prev-gate was NOT supplied, so the X5 precondition was "
+                    "NOT exercised by this dry-run."}
+    if getattr(a, "prev_gate", None):
+        pre = assert_stage_precondition(
+            a.stage, a.prev_gate,
+            allow_inconclusive=bool(getattr(a, "allow_inconclusive_gate",
+                                            False)),
+            off_reason=getattr(a, "gate_off_reason", "") or "",
+            dry_run=True)
+        pre["exercised"] = True
+        print(f"[v6 dry] precondition OK · {json.dumps(pre)}", flush=True)
     device = "cpu"
     stack = stack.to(device)
+    init_report = {"exercised": False,
+                   "_read": "--init-from was NOT supplied, so this dry-run "
+                            "stepped RANDOM weights. It proves the launch "
+                            "assembles; it proves nothing about the lineage."}
+    if getattr(a, "init_from", None):
+        init_report = load_stage_init(stack, a.init_from, stage=a.stage)
+        init_report["exercised"] = True
+        print(f"[v6 dry] init-from OK · introduced="
+              f"{init_report['introduced_keys']} · trunk_md5="
+              f"{init_report['trunk_md5_after_load'][:12]}", flush=True)
     freeze = apply_stage_freeze(stack, a.stage)
     weights = _weights_from_args(a)
     o1_k = min(a.o1_k, a.dry_k)
@@ -1171,21 +1240,36 @@ def dry_run(a, stack: V6Stack | None = None) -> dict:
     spec = spectrum_report(torch.randn(64, min(stack.cfg.d_op, 64)))
     iso = stack.assert_isolation(batch_size=1, strict=False)
     cfg_json = _run_config(a, stack, freeze)
+    if init_report.get("exercised"):
+        cfg_json["init"] = init_report
     (out_dir / "config.json").write_text(json.dumps(cfg_json, indent=1))
+    # The gate this dry stage hands to the next one. It is assembled by the
+    # REAL `run_stage_gate`, so it comes out INCONCLUSIVE exactly as a real
+    # gate would with no battery artifact — the dry ladder therefore advances
+    # only through the RECORDED --allow-inconclusive-gate override, never
+    # through a fabricated PASS.
+    gate = run_stage_gate(stack, a.stage, out_dir=out_dir, spectrum=spec,
+                          extra_probes=_load_gate_probes(
+                              getattr(a, "gate_probes", None)),
+                          dry_run=True)
     result = {
         "mode": "dry-run", "device": device, "steps": rows,
         "elapsed_s": round(time.time() - t0, 2),
         "freeze": freeze, "isolation": iso, "spectrum_smoke": spec,
         "param_report": stack.param_report(),
         "n_trainable_tensors": len(trainable),
-        "_read": "synthetic tensors — NO corpus, NO checkpoint. This proves "
-                 "the launch assembles and steps; it proves NOTHING about "
-                 "driving. No number here is quotable.",
+        "precondition": pre,
+        "init": init_report,
+        "gate_verdict": gate["verdict"],
+        "_read": "synthetic tensors — NO corpus. This proves the launch "
+                 "assembles and steps, and (when --prev-gate/--init-from were "
+                 "supplied) that the ladder seams adjudicate and load; it "
+                 "proves NOTHING about driving. No number here is quotable.",
         "_evidence_class": "MEASURED (ours; synthetic smoke)",
     }
     (out_dir / "dry_run.json").write_text(json.dumps(result, indent=1))
-    print(f"[v6] dry-run OK -> {out_dir}/dry_run.json + config.json",
-          flush=True)
+    print(f"[v6] dry-run OK -> {out_dir}/dry_run.json + config.json "
+          f"+ stage_gate.json ({gate['verdict']}, _dry_run)", flush=True)
     return result
 
 
@@ -1579,7 +1663,23 @@ def train(a) -> dict:
                 "step_s_note": f"elapsed/step over the "
                                f"{step - start_step} steps THIS process ran "
                                f"(NOT accumulated over --log-every, and NOT "
-                               f"divided by the resumed step number)"}
+                               f"divided by the resumed step number)",
+                # ⛔ THE ONLY ADMISSIBLE MEMORY PROBE ON THE JETSON THOR.
+                # MEASURED 2026-08-03: on unified memory `mem_get_info` read
+                # 3.4 GB free with 60 GB allocated AND written, `free` /
+                # `tegrastats` showed 106 GB "used" on an idle box, and
+                # VmRSS read 0.62 GB against 24 GB — wrong in BOTH directions.
+                # An in-process counter is the only one that answers the
+                # question, so the trainer logs it rather than leaving an
+                # operator to reach for a probe that reports the wrong scope.
+                "cuda_max_mem_gb": (
+                    round(torch.cuda.max_memory_allocated() / 2 ** 30, 3)
+                    if dev_type == "cuda" else None),
+                "cuda_max_mem_note":
+                    "torch.cuda.max_memory_allocated(), peak since process "
+                    "start. ⛔ On Thor do NOT cross-check it against "
+                    "mem_get_info/free/tegrastats/VmRSS — all four misreport "
+                    "on unified memory (CLAUDE.md, MEASURED 2026-08-03)"}
             history.append(rec)
             fh.write(json.dumps(rec) + "\n")
             fh.flush()
@@ -2170,13 +2270,44 @@ def preflight(a) -> list[str]:
         problems.append(
             f"--w-select {a.w_select} with --selector none: a selection loss "
             f"with no scorer is how a selector silently never trains.")
-    if (a.selector != "none" and not a.w_select
-            and not getattr(a, "i_know_this_is_the_control_arm", False)):
+    # ⛔ THE ACK FLAG'S DEST. ``--i-know-this-is-the-control-arm`` is registered
+    # in ``main`` with ``dest="control_arm_ack"``, so the namespace NEVER has an
+    # attribute named ``i_know_this_is_the_control_arm`` — the original getattr
+    # here could only ever return False. MEASURED 2026-08-16: passing the flag
+    # the refusal below NAMES did not clear that refusal, so the pre-registered
+    # inert-scorer control arm (V6F_PLANNER_DESIGN §4.1) was unlaunchable. Both
+    # spellings are accepted so a hand-built namespace still works.
+    ack = bool(getattr(a, "control_arm_ack", False)
+               or getattr(a, "i_know_this_is_the_control_arm", False))
+    # ⛔ AND THE REFUSAL WAS STAGE-BLIND. "the scorer never receives a gradient"
+    # is a defect only where the planner group TRAINS. In S-S the planner is
+    # frozen BY DESIGN (STAGE_GROUPS["S-S"] == ("layer_str",)) and
+    # ``V6LossWeights.for_stage("S-S")`` zeroes ``w_select`` regardless — yet
+    # S-S MUST still carry ``--selector <the S-T arm>`` forward, because the
+    # S-T checkpoint contains ``cand_score.*`` and a selector-less S-S stack
+    # makes those UNEXPECTED keys, which ``load_stage_init`` correctly treats as
+    # fatal. MEASURED 2026-08-16: every available S-S command was refused —
+    # ``--selector goal`` here, ``--selector none`` at the init load, and
+    # ``--w-select 1.0`` only got through by advertising a weight that is not in
+    # force. Same family as the ``strict=True`` init blocker: right in spirit,
+    # blind in practice.
+    planner_trains = "planner" in stage_trainable_groups(a.stage)
+    if a.selector != "none" and not a.w_select and planner_trains and not ack:
         problems.append(
-            f"--selector {a.selector} with --w-select 0: the scorer would be "
-            f"built, consume its parameters and never receive a gradient. If "
-            f"an inert-scorer control is what you want, say so explicitly by "
+            f"--selector {a.selector} with --w-select 0 in stage {a.stage}, "
+            f"which TRAINS the planner group: the scorer would be built, "
+            f"consume its parameters and never receive a gradient. If an "
+            f"inert-scorer control is what you want, say so explicitly by "
             f"passing --w-select 0 AND --i-know-this-is-the-control-arm.")
+    if a.stage == "S-S" and a.w_select:
+        problems.append(
+            f"--w-select {a.w_select} in S-S: the planner is FROZEN here and "
+            f"`V6LossWeights.for_stage('S-S')` zeroes w_select, so the launch "
+            f"line would advertise a selection loss that is not in force — a "
+            f"run row that lies about what moved. Pass --w-select 0 and keep "
+            f"--selector {a.selector} for the GEOMETRY: S-S must carry the "
+            f"S-T arm's scorer forward or --init-from fails on unexpected "
+            f"cand_score.* keys.")
     if a.allow_inconclusive_gate and not a.gate_off_reason.strip():
         problems.append("--allow-inconclusive-gate needs --gate-off-reason "
                         "(an override with no stated reason is an "

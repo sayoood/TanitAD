@@ -152,5 +152,42 @@
   "md5_after": "49bb5b81d4b8b59c8a5193c5b26fb60f",
   "md5_before": "49bb5b81d4b8b59c8a5193c5b26fb60f"
  },
- "wall_s": 23508.4
+ "wall_s": 23508.4,
+ "_geometry_recovered_2026_08_16": {
+  "_what": "THE FRAME THIS RUN WAS SCORED ON \u2014 RECOVERED. This JSON records no frame/HFOV/projection, so the P8 v6 port (escalation #2) called its out-of-field fraction unrecoverable from the artifact. It is recoverable \u2014 not from the run's train_log.jsonl (that host is gone and no p8-occupancy-c artifact is in the repo; 3 probes) but from the LAUNCH CHAINS banked in this repo, which name the exact flags.",
+  "_evidence_class": "MEASURED (ours) \u2014 the launch command itself, not a reconstruction. Two independent in-repo copies agree.",
+  "provenance": [
+   "TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-08-11-ops-bundle/p8c_chain.sh  (pod5; header names it 'P8 attempt-2 (p8c)')",
+   "TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-08-11-ops-bundle/p4p8c_chain.sh  (pod4; 'Same command as pod5's queued p8c')"
+  ],
+  "binding_evidence": {
+   "base_ckpt": "matches this JSON's base_ckpt exactly",
+   "out_dir": "/workspace/experiments/p8-occupancy-c",
+   "join_file": "matches this JSON's raster_source.path exactly"
+  },
+  "flags": "--frame-h 256 --frame-w 640 --frame-hfov 120 --projection cylindrical --v2-subframe 176x624",
+  "model_frame": {
+   "height": 176,
+   "width": 624,
+   "hfov_deg": 117.0,
+   "vfov_deg": 32.130614,
+   "projection": "cylindrical",
+   "f_ref": 305.577491,
+   "_derivation": "centred_subframe(CanonicalFrame.from_hfov(120, 256, 640, cylindrical), 176, 624) \u2014 the same resolve_v2_frames seam the run used"
+  },
+  "out_of_field": {
+   "in_fov_cells": 7054,
+   "out_of_fov_cells": 626,
+   "total_cells": 7680,
+   "in_fov_frac": 0.91849,
+   "out_of_fov_frac": 0.08151,
+   "first_fully_visible_row": 19,
+   "first_fully_visible_row_x_m": 9.75,
+   "out_of_fov_max_x_m": 9.25
+  },
+  "_ruled_out": "NOT the legacy 256x256 pinhole frame (27.682 % out-of-field) \u2014 the chain's explicit flags settle it; the arm's 'w120' naming was only ever suggestive.",
+  "_how_to_read_this": "8.151 % of the pre-registered target grid was outside the camera entirely, ALL of it at x < 9.25 m. gate_a's RATIO (0.93191) is fairly insensitive \u2014 out-of-field cells depress numerator and denominator alike. The ABSOLUTE iou_enc 0.020052 is NOT: it has no in-field twin in this run and one cannot be recomputed without re-running, so the absolute number here stays UNRECOVERABLE-as-in-field.",
+  "_warning": "A HIGH RATIO OVER A TINY DENOMINATOR IS UNINFORMATIVE. iou_enc 0.020052 means masking is a CORRECTNESS fix, never an explanation of quality: removing ~8 % of cells cannot turn 0.02 into a healthy IoU. Quote iou_*_infov for absolute claims \u2014 train_p8_occupancy.py now emits it.",
+  "_annotated_by": "TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-08-16-bev-consumer-audit/BEV_CONSUMER_AUDIT.md"
+ }
 }

@@ -574,6 +574,49 @@ python stack/scripts/sel_winners_curse_law.py \
 
 ### 5.2 E-WC2 — the next 0-GPU step, **before S-T is launched**
 
+> ⛔⛔ **FIRED 2026-08-16 — SEL-1 IS REFUSED. S-T MUST NOT LAUNCH WITH IT.**
+>
+> | | value | 95 % CI | n |
+> |---|---|---|---|
+> | σ(2 s) per-axis | **4.7104 m** | [3.8087, 5.6860] | 881 windows / 40 episodes |
+> | σ(6 s) per-axis | **18.3519 m** | [15.8621, 20.9608] | 681 / 40 |
+> | **σ/ADE** | **9.9915** | **[7.4492, 13.5119]** | vs incumbent ADE 0.4714 |
+> | σ/oracle | **28.7307** | — | vs oracle 0.1639 |
+>
+> REF-C-base agrees (σ/ADE **9.6337**). Estimator: point estimates **full-set**; intervals
+> **episode-cluster bootstrap** (`taniteval/ci.py`), 2000 draws, ratio CI from one shared episode
+> draw. `overlapping_holdout_se` used nowhere.
+>
+> This section's own pre-registration — **σ/ADE ≥ 3.0 ⇒ REFUSED before launch** — is met by a wide
+> margin: **the CI's LOWER bound (7.4492) is still 2.48× the refusal threshold.** INCONCLUSIVE was
+> never entered, ⇒ **the `"mlp"` capacity control is not needed to decide this.**
+>
+> **§5.3 also fires: REDERIVE.** σ(6 s) = **3.7481×** σ(2 s) (base 3.7241) on matched 681 windows,
+> past the 3× line ⇒ the ratio form does not transfer and **no scaled 6 s threshold may be emitted**
+> (`threshold_6s: null`).
+>
+> ⭐ **BUT THE ESTIMAND SURVIVES — IT IS THE INPUT THAT FAILS.** A **0-parameter constant-yaw-rate**
+> goal reaches σ(2 s) = **1.1888 m**, **3.96× better than the ridge on frozen REF-C latents**. So the
+> finding is *not* "a 6 s goal is unpredictable"; it is **"these latents are the wrong surface"**.
+> That is why the committed fallback (**`ANCHOR_GOAL` supervision**) is the correct branch rather
+> than a consolation. ⚠️ And the other half, stated: even that 0-param floor sits at **σ/ADE 2.52 —
+> still not FUNDED.**
+>
+> ⚠️ **SCOPE.** This is the **REF-C** surface, **not** the frozen S-W latents this section nominally
+> names — those have **never been dumped**. The *ratios* transfer (REF-C is the arm the 1.7/3.0
+> thresholds were derived on, and the denominators are §3.1's own published fan references,
+> unaltered); the absolute metres are REF-C's. Evidence class **EXPLORATORY** for absolutes, tier
+> **T0-DIAGNOSTIC** — **no T1 claim may cite it.**
+>
+> ⇒ **PRE-REGISTERED NOW, BEFORE THE PAUSE IS SPENT** (so the S-W decision is not made after seeing
+> the number): on frozen S-W latents, **σ ≤ 0.80 m ⇒ FUNDED** (5.89× better than REF-C, and 1.49×
+> better than the kinematic floor, **from vision alone**); **σ ≤ 1.41 m** merely to leave REFUSED;
+> **σ > 1.41 m ⇒ REFUSED again and `ANCHOR_GOAL` is the line.** The instrument, the endpoint backfill
+> and the val40 poses are all in place — one **~10–25 GPU-min** dump at the S-W→S-T boundary is the
+> only remaining input.
+>
+> Package: `…/incoming/2026-08-16-ewc2-result/EWC2_RESULT.md`.
+
 **Question:** can the *tactical goal head* reach σ\* on our corpus at all?
 **Method:** fit the smallest admissible predictor of the 6 s endpoint from **frozen S-W latents only**
 (a ridge, the P1/P2 battery's method) on the 40 val episodes, LOEO; report its 1σ endpoint error at

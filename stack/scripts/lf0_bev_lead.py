@@ -32,6 +32,34 @@ one-parameter model and calling it geometry.
 ⚠️ Windows with no occupied cell in the corridor are **CENSORED and reported**,
 never coded as max-range — coding them as "60 m" manufactures correlation out of
 missing data, which is exactly the NO_LABEL-is-not-free-flow rule.
+
+⭐ CAMERA-FIELD GEOMETRY (added 2026-08-16, the audit the P8 v6 port deferred).
+The P8 grid is a CARTESIAN 60 m x ±16 m raster; a monocular camera sees an
+azimuth WEDGE, so part of that grid is unanswerable from a vision-only latent.
+The port MEASURED the grid-wide exposure (626 / 7 680 = 8.151 % at the v5
+sub-frame this probe ran on; 2 126 / 7 680 = 27.682 % on the legacy square
+frame). **LF0's exposure is NOT that number** — it never scores the grid, it
+walks a ±1.0/1.5/2.0 m corridor, and a cell at lateral ``|y|`` only leaves a
+half-angle ``th`` field below ``x = |y| / tan(th)``.
+
+MEASURED 2026-08-16 (`…/incoming/2026-08-16-bev-consumer-audit/raw/
+bev_consumer_geometry.json`, reproduced by `code/bev_consumer_census.py`):
+
+  | frame | corridor ±1.5 m, ``--min-row 2`` | ``--min-row 0`` |
+  |---|---|---|
+  | v5 sub-frame 176x624 (**this probe's run frame**) | **0 / 708** | 6 / 720 |
+  | v6F 256x640 cyl 120° | **0 / 708** | 4 / 720 |
+  | legacy 256x256 pinhole | **8 / 708 (1.130 %)** | 18 / 720 |
+
+⇒ ⭐ **At the frame LF0 actually ran on the corridor is ENTIRELY inside the
+field, so the banked 2026-08-12 verdict CANNOT move.** That is not luck, and it
+is not free either: ``--min-row 2`` — introduced to skip the ego's own
+footprint, for an unrelated reason — is exactly the guard that buys it. On a
+LEGACY pinhole frame the same default leaves 8 corridor cells (out to x =
+2.25 m) unanswerable, and a spurious hit there reads as *"lead at 1.25 m"*.
+So the field mask is computed and reported here rather than left implicit, and
+every arm gets an ``_infov`` twin. **The incumbent arms are byte-identical with
+``fov=None``; the verdict reads the incumbent unless ``--fov-read in-fov``.**
 """
 from __future__ import annotations
 
@@ -57,16 +85,75 @@ def corridor_cols(ny: int, y_half_m: float, cell_m: float,
     return np.nonzero(np.abs(yc) <= half_width_m)[0]
 
 
+def corridor_fov_census(fov: np.ndarray, cols_by_width: dict, cell_m: float,
+                        min_row: int) -> dict:
+    """How much of the set LF0 ACTUALLY SCANS the camera cannot observe.
+
+    ⛔ THE DENOMINATOR IS THE POINT. The grid-wide out-of-field fraction is the
+    wrong number to quote against this probe by more than an order of magnitude
+    (MEASURED 2026-08-16: 8.151 % grid-wide vs 0.833 % over the ±1.5 m corridor
+    at the same frame, and 0.000 % once ``--min-row 2`` is applied). Reporting
+    the grid number here would manufacture an exposure LF0 does not have —
+    the mirror of the error this audit exists to catch.
+
+    ``read_can_change`` is the operative field: ``False`` means the masked and
+    unmasked reads are identical **by construction**, so a banked verdict from
+    this configuration cannot move.
+    """
+    out = {}
+    for w, cols in cols_by_width.items():
+        scanned = fov[min_row:, cols]
+        n_out = int((~scanned).sum())
+        rows_out = np.nonzero(~scanned.any(axis=1) | ~scanned.all(axis=1))[0]
+        out[str(w)] = {
+            "n_cols": int(len(cols)),
+            "scanned_cells": int(scanned.size),
+            "out_of_fov_cells": n_out,
+            "out_of_fov_frac": round(n_out / max(scanned.size, 1), 6),
+            "out_of_fov_max_x_m": (
+                float((int(rows_out.max()) + min_row + 0.5) * cell_m)
+                if n_out and rows_out.size else None),
+            "read_can_change": bool(n_out),
+        }
+    return out
+
+
 def read_lead_range(raster: np.ndarray, *, tau: float, cols: np.ndarray,
-                    cell_m: float, min_row: int = 0) -> float:
+                    cell_m: float, min_row: int = 0,
+                    fov: np.ndarray | None = None) -> float:
     """Range (m) of the nearest occupied cell ahead inside the corridor.
 
     ``raster`` is [nx, ny] with nx = forward. Returns ``np.nan`` when the
-    corridor is empty — CENSORED, never max-range."""
+    corridor is empty — CENSORED, never max-range.
+
+    ``fov`` (optional, bool ``[nx, ny]``, ``True`` == inside the camera's
+    horizontal field, from ``bev_raster.fov_mask``) EXCLUDES cells the camera
+    cannot observe from the walk. A decoder's output on such a cell is not a
+    detection, and because this reader returns the NEAREST hit, one spurious
+    out-of-field cell does not merely add noise — it *shortens* the read, and
+    every out-of-field cell is near (MEASURED: out to x = 2.25 m inside the
+    ±1.5 m corridor on a legacy pinhole frame). ``None`` = the incumbent,
+    byte-identical.
+
+    ⚠️ Masking here is a CORRECTNESS fix, never an explanation of quality — the
+    same caveat P8 carries for ``iou_*_infov``. If the incumbent and masked
+    reads agree, the mask has ruled a confound out; it has not made the readout
+    better.
+    """
     if raster.ndim != 2:
         raise ValueError(f"expected [nx, ny], got {raster.shape}")
+    if fov is not None:
+        fov = np.asarray(fov)
+        if fov.shape != raster.shape:
+            raise ValueError(
+                f"FOV mask {fov.shape} != raster {raster.shape} — refusing to "
+                f"mask the wrong cells (a broadcastable-but-wrong mask would "
+                f"silently score a grid nobody specified)")
     band = raster[min_row:, cols]                       # [nx-min_row, |cols|]
-    hit = np.nonzero((band >= tau).any(axis=1))[0]
+    ok = band >= tau
+    if fov is not None:
+        ok = ok & fov[min_row:, cols]
+    hit = np.nonzero(ok.any(axis=1))[0]
     if hit.size == 0:
         return float("nan")
     return float((hit[0] + min_row + 0.5) * cell_m)
@@ -134,12 +221,17 @@ def main(argv=None) -> int:
     ap.add_argument("--save-panels", type=int, default=0,
                     help="save N GT|enc|pred panels for windows where the GT "
                          "HAS a lead in the corridor (the interesting case)")
+    ap.add_argument("--fov-read", choices=("all", "in-fov"), default="all",
+                    help="which cell set the VERDICT reads. Both are always "
+                         "computed and written. Defaults to 'all' so no banked "
+                         "verdict moves; 'in-fov' excludes cells outside the "
+                         "camera's horizontal field")
     a, rest = ap.parse_known_args(argv)
 
     import torch
 
     from tanitad.data.bev_raster import ALL_CLASSES as RASTER_CLASSES
-    from tanitad.data.bev_raster import GRID_DEFAULT
+    from tanitad.data.bev_raster import GRID_DEFAULT, fov_mask, fov_row_floor
     from train_p8_occupancy import (BEVOccupancyHead, batch_rasters,
                                     build_args, build_raster_source,
                                     p8_latents)
@@ -207,10 +299,37 @@ def main(argv=None) -> int:
     print(f"[lf0] head {os.path.basename(hp)} · world step {base_step}",
           flush=True)
 
+    # ⭐ THE CAMERA FIELD, from the frame the ENCODER was actually fed. Not from
+    # the CLI and not from the cache — `model_frame` is what `resolve_eval_frames`
+    # resolved, so a sub-frame is honoured and a contradiction cannot creep in.
+    # The census is written into lf0_gate.json unconditionally: the P8 port's
+    # escalation #2 was a banked PASS whose frame was NOT RECOVERABLE from the
+    # artifact, and that class of gap is fixed by writing the geometry, not by
+    # remembering it.
+    fov_np = fov_mask(GRID_DEFAULT, model_frame.half_angle_x_rad())
+    #: cell sets scored side by side. "" == all cells (incumbent, byte-identical);
+    #: "_infov" == the camera-field subset. One loop, two masks — never two paths.
+    cell_sets = (("", None), ("_infov", fov_np))
+    corridor_census = corridor_fov_census(fov_np, cols, GRID_DEFAULT.cell_m,
+                                          a.min_row)
+    print(f"[lf0] geometry: {model_frame.height}x{model_frame.width} "
+          f"HFOV {model_frame.hfov_deg:.3f} deg {model_frame.projection} · "
+          + " ".join(
+              f"corridor {w}m {c['out_of_fov_cells']}/{c['scanned_cells']} "
+              f"out-of-field" for w, c in corridor_census.items())
+          + f" · verdict reads {a.fov_read!r}", flush=True)
+
     n = min(a.n_windows, len(ds_val))
-    reads = {f"{src}@{w}": np.full(n, np.nan)
-             for src in ("gt", "enc", "pred") for w in CORRIDOR_M}
-    truth = np.full(n, np.nan)
+    reads = {f"{src}@{w}{s}": np.full(n, np.nan)
+             for src in ("gt", "enc", "pred") for w in CORRIDOR_M
+             for s, _m in cell_sets}
+    # ⛔ ONE TRUTH PER CELL SET. The in-field arms are scored against the GT read
+    # ON THE SAME CELLS: asking a vision-only decoder to report a lead the camera
+    # cannot see is not a measurement of the decoder. Scoring the masked arm
+    # against the unmasked truth would import exactly the confound the mask
+    # removes.
+    truths = {s: np.full(n, np.nan) for s, _m in cell_sets}
+    truth = truths[""]                                   # the incumbent
 
     source = build_raster_source(args, val_eps)
     panels: list[dict] = []
@@ -235,15 +354,17 @@ def main(argv=None) -> int:
             pp = torch.sigmoid(head(z_hat[a.k])).float().cpu().numpy()[0]
             g = np.asarray(rk).reshape(-1, nx, ny)[0]
             for w, cc in cols.items():
-                kw = dict(tau=a.tau, cols=cc, cell_m=GRID_DEFAULT.cell_m,
-                          min_row=a.min_row)
-                if g is not None:
-                    reads[f"gt@{w}"][i] = read_lead_range(g, **kw)
-                reads[f"enc@{w}"][i] = read_lead_range(pe, **kw)
-                reads[f"pred@{w}"][i] = read_lead_range(pp, **kw)
+                for s, msk in cell_sets:
+                    kw = dict(tau=a.tau, cols=cc, cell_m=GRID_DEFAULT.cell_m,
+                              min_row=a.min_row, fov=msk)
+                    if g is not None:
+                        reads[f"gt@{w}{s}"][i] = read_lead_range(g, **kw)
+                    reads[f"enc@{w}{s}"][i] = read_lead_range(pe, **kw)
+                    reads[f"pred@{w}{s}"][i] = read_lead_range(pp, **kw)
             # the TRUE gap is the GT raster's own read at the headline corridor:
             # it is a geometric fact about the labelled scene, not a model output
-            truth[i] = reads[f"gt@{HEADLINE_CORRIDOR}"][i]
+            for s, _m in cell_sets:
+                truths[s][i] = reads[f"gt@{HEADLINE_CORRIDOR}{s}"][i]
             # Panels are saved ONLY where the GT has a lead in the corridor —
             # that is the case the whole probe is about, and sampling windows
             # with no lead would make the decode look better than it is.
@@ -271,38 +392,82 @@ def main(argv=None) -> int:
         "k": a.k, "min_row": a.min_row, "n_requested": n,
         "grid": {"nx": nx, "ny": ny, "cell_m": GRID_DEFAULT.cell_m},
         "gate_r2": GATE_R2, "headline_corridor_m": HEADLINE_CORRIDOR,
+        # ⭐ THE FRAME TRAVELS WITH THE NUMBER. A banked artifact that records no
+        # frame has an unrecoverable out-of-field fraction (the P8 attempt-2
+        # gate is exactly that). This block makes that impossible here.
+        "geometry": {
+            "model_frame": {
+                "height": model_frame.height, "width": model_frame.width,
+                "hfov_deg": round(model_frame.hfov_deg, 6),
+                "vfov_deg": round(model_frame.vfov_deg, 6),
+                "projection": model_frame.projection,
+                "f_ref": round(model_frame.f_ref, 6)},
+            "cache_frame": {"height": cache_frame.height,
+                            "width": cache_frame.width,
+                            "hfov_deg": round(cache_frame.hfov_deg, 6),
+                            "projection": cache_frame.projection},
+            "corridor_out_of_fov": corridor_census,
+            "corridor_fov_row_floor": {
+                str(w): fov_row_floor(GRID_DEFAULT,
+                                      model_frame.half_angle_x_rad(), cc)
+                for w, cc in cols.items()},
+            "whole_grid_out_of_fov_cells": int((~fov_np).sum()),
+            "whole_grid_cells": int(fov_np.size),
+            "_bound": ("HORIZONTAL field only — a NECESSARY, not sufficient, "
+                       "visibility condition (bev_raster.fov_mask); vertical "
+                       "field, hood occlusion and inter-agent occlusion are "
+                       "NOT modelled, so an in-field cell may still be "
+                       "unobservable"),
+            "_denominator": ("LF0 scores the CORRIDOR, never the grid — quoting "
+                             "whole_grid_out_of_fov_cells against this probe "
+                             "overstates its exposure by >10x"),
+            "_evidence_class": "MEASURED (ours; pure geometry)",
+        },
+        "fov_read": a.fov_read,
+        "cell_sets": ["all" if not s else "in-fov" for s, _m in cell_sets],
         "arms": {},
     }
     for key, v in reads.items():
-        res["arms"][key] = score_arm(v, truth)
+        suffix = "_infov" if key.endswith("_infov") else ""
+        res["arms"][key] = score_arm(v, truths[suffix])
 
     # ⛔ THE READER SANITY GATE. gt@headline is read from the SAME raster that
     # defines `truth`, so it is self-consistent by construction — the real check
     # is that the OTHER corridors' GT reads agree with it. If they do not, the
     # corridor geometry is wrong and nothing downstream is admissible.
-    gt_alt = [k for k in reads if k.startswith("gt@")
-              and k != f"gt@{HEADLINE_CORRIDOR}"]
-    agree = all(res["arms"][k].get("status") == "OK"
-                and res["arms"][k].get("spearman", 0) >= 0.8 for k in gt_alt)
-    res["reader_sanity"] = {
-        "checked": gt_alt, "passed": bool(agree),
-        "rule": "GT reads at other corridor widths must rank-agree (rho>=0.8) "
-                "with the headline GT read; a reader that disagrees with itself "
-                "cannot be used to conclude anything about the latent",
-    }
+    # ⛔ ONE SANITY GATE PER CELL SET, and they must not be pooled: `gt@1.0_infov`
+    # is not an alternative width of `gt@1.5`, it is a different cell set, and
+    # letting it into the incumbent's check would silently change a banked gate.
+    def _sanity(suffix: str) -> tuple[list, bool]:
+        alt = [k for k in reads
+               if k.startswith("gt@")
+               and (k.endswith("_infov") if suffix else not k.endswith("_infov"))
+               and k != f"gt@{HEADLINE_CORRIDOR}{suffix}"]
+        return alt, all(res["arms"][k].get("status") == "OK"
+                        and res["arms"][k].get("spearman", 0) >= 0.8
+                        for k in alt)
 
-    hp = res["arms"].get(f"pred@{HEADLINE_CORRIDOR}", {})
-    he = res["arms"].get(f"enc@{HEADLINE_CORRIDOR}", {})
-    if not agree:
-        res["verdict"] = ("INADMISSIBLE — the reader failed its own sanity "
-                          "check; fix the corridor geometry before reading "
-                          "anything into the latent arms")
-    elif hp.get("status") != "OK" or he.get("status") != "OK":
-        res["verdict"] = ("UNAVAILABLE — too few paired windows at the "
-                          "headline corridor; report the n, not a correlation")
-    else:
+    _RULE = ("GT reads at other corridor widths must rank-agree (rho>=0.8) "
+             "with the headline GT read; a reader that disagrees with itself "
+             "cannot be used to conclude anything about the latent")
+    gt_alt, agree_all = _sanity("")
+    gt_alt_f, agree_f = _sanity("_infov")
+    res["reader_sanity"] = {"checked": gt_alt, "passed": bool(agree_all),
+                            "rule": _RULE}
+    res["reader_sanity_infov"] = {"checked": gt_alt_f, "passed": bool(agree_f),
+                                  "rule": _RULE}
+    def _verdict(suffix: str, ok_sanity: bool) -> str:
+        hp = res["arms"].get(f"pred@{HEADLINE_CORRIDOR}{suffix}", {})
+        he = res["arms"].get(f"enc@{HEADLINE_CORRIDOR}{suffix}", {})
+        if not ok_sanity:
+            return ("INADMISSIBLE — the reader failed its own sanity "
+                    "check; fix the corridor geometry before reading "
+                    "anything into the latent arms")
+        if hp.get("status") != "OK" or he.get("status") != "OK":
+            return ("UNAVAILABLE — too few paired windows at the "
+                    "headline corridor; report the n, not a correlation")
         pr2, er2 = hp["r2"], he["r2"]
-        res["verdict"] = (
+        return (
             f"LF0 PASS — the decoded BEV reads the lead gap (pred R2 {pr2}, "
             f"enc R2 {er2} >= {GATE_R2}); RC1 CONFIRMED, the fix is exposing "
             f"this read-off, ZERO new training"
@@ -311,6 +476,21 @@ def main(argv=None) -> int:
             f"{pr2}, enc R2 {er2} < {GATE_R2}). With P1's pooled MLP ceiling at "
             f"-0.334 and the reader sanity-checked, 'missing state variable' "
             f"survives its second independent test")
+
+    #: which cell set the verdict reads. Both are always written, so a verdict
+    #: that WOULD flip on the other cell set is visible here as a fact rather
+    #: than discovered later — the P8 port's `gate_a_other_cell_set` pattern.
+    sfx = "_infov" if a.fov_read == "in-fov" else ""
+    res["verdict"] = _verdict(sfx, agree_f if sfx else agree_all)
+    other = "_infov" if not sfx else ""
+    res["verdict_other_cell_set"] = {
+        "cell_set": "in-fov" if other else "all",
+        "verdict": _verdict(other, agree_f if other else agree_all),
+        "_read": ("identical to the headline verdict IFF "
+                  "geometry.corridor_out_of_fov[headline].read_can_change is "
+                  "false — in that case the two cell sets are the SAME cells "
+                  "and agreement is arithmetic, not evidence"),
+    }
     if panels:
         np.savez_compressed(
             os.path.join(a.out, "lf0_panels.npz"),
@@ -325,6 +505,17 @@ def main(argv=None) -> int:
             cell_m=np.array([GRID_DEFAULT.cell_m]),
             y_half_m=np.array([GRID_DEFAULT.y_half_m]),
             tau=np.array([a.tau]),
+            # the camera field, so a RENDERER of these panels can shade the
+            # cells no camera observed instead of drawing decoder output on
+            # them as if it were scene (Paper/figures/make_lf0_bev_panels.py)
+            fov=fov_np,
+            _fov=np.array([f"cells outside the {model_frame.hfov_deg:.3f} deg "
+                           f"horizontal field of the "
+                           f"{model_frame.height}x{model_frame.width} "
+                           f"{model_frame.projection} model frame are "
+                           f"UNANSWERABLE from a vision-only latent; "
+                           f"{int((~fov_np).sum())}/{fov_np.size} of the grid. "
+                           f"HORIZONTAL field only — necessary, not sufficient."]),
             # ⛔ what the raster DOES and DOES NOT contain, travelling with the
             # data so a viewer cannot mistake the corridor band for perception
             _classes=np.array(list(RASTER_CLASSES)),
@@ -334,9 +525,17 @@ def main(argv=None) -> int:
                               "band is a HAND-DEFINED +/-1.5 m geometric "
                               "assumption, not a perceived lane."]))
         print(f"[lf0] saved {len(panels)} panels", flush=True)
-    json.dump(res, open(os.path.join(a.out, "lf0_gate.json"), "w"), indent=1)
-    print(json.dumps({k: res[k] for k in ("verdict", "reader_sanity")},
-                     indent=1), flush=True)
+    # encoding pinned: the geometry block carries non-ASCII and a cp1252 default
+    # would make this die on a dev box AFTER the expensive part (the
+    # analysis-time-failure class the T1 run was lost to)
+    with open(os.path.join(a.out, "lf0_gate.json"), "w",
+              encoding="utf-8") as fh:
+        json.dump(res, fh, indent=1)
+    print(json.dumps({k: res[k] for k in
+                      ("verdict", "verdict_other_cell_set", "reader_sanity",
+                       "fov_read")}
+                     | {"corridor_out_of_fov": corridor_census}, indent=1),
+          flush=True)
     print("LF0_DONE", flush=True)
     return 0
 

@@ -1,0 +1,357 @@
+{
+  "_what": "G1_pass / G4_pass re-decided under BOTH estimators on banked per-window data (CPU-only, no model touched)",
+  "_deciding_sites": {
+    "G1": "taniteval/taniteval/planner_p2.py:458 (_jack_paired) -> :468",
+    "G4": "taniteval/taniteval/planner_p2.py:586 (_jack_scalar) -> :595"
+  },
+  "_estimators": {
+    "banned": "overlapping_holdout_se (8 OVERLAPPING random 20% episode holdouts; mislabelled '8-split episode-disjoint jackknife')",
+    "decision_grade": "episode_cluster_bootstrap / paired_episode_cluster_bootstrap (taniteval/ci.py), B=2000, seed=0, unit = val EPISODE"
+  },
+  "_banked_inputs": {
+    "open_loop": {
+      "clwin": "TanitAD Research Hub\\Benchmarks & Eval\\Implementation\\incoming\\2026-07-26-closedloop-artifact-rerun\\raw_windows\\clwin_flagship-30k.pt",
+      "windows_dump": "taniteval/results/windows_flagship-30k.pt",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "identical_gt_and_eid": true
+    },
+    "closed_loop": {
+      "p2win": "TanitAD Research Hub\\Benchmarks & Eval\\Implementation\\incoming\\2026-07-26-closedloop-artifact-rerun\\raw_windows\\p2win_flagship-30k.pt",
+      "n_windows": 221,
+      "n_episodes": 20,
+      "provenance": "seeded re-drive 2026-07-26; CEM sampling drift vs the 2026-07-19 published run measured at 0.019 % (planner_p2_G4.CORRECTED.json)"
+    }
+  },
+  "legacy_reproduction_gate": {
+    "open_loop_arms": {
+      "tactical_head": {
+        "published_legacy": [
+          3.1501,
+          0.3472
+        ],
+        "recomputed_legacy": [
+          3.1501,
+          0.3472
+        ],
+        "bit_exact_4dp": true
+      },
+      "operative_rollout_trueA": {
+        "published_legacy": [
+          0.4522,
+          0.0312
+        ],
+        "recomputed_legacy": [
+          0.4522,
+          0.0312
+        ],
+        "bit_exact_4dp": true
+      },
+      "constant_velocity": {
+        "published_legacy": [
+          0.8248,
+          0.1035
+        ],
+        "recomputed_legacy": [
+          0.8248,
+          0.1035
+        ],
+        "bit_exact_4dp": true
+      }
+    },
+    "closed_loop_arms": {
+      "closed_bike_ade2s": {
+        "published_legacy": [
+          1.0377,
+          0.2022
+        ],
+        "recomputed_legacy": [
+          1.0375,
+          0.2023
+        ],
+        "bit_exact_4dp": false
+      },
+      "closed_bike_fde2s": {
+        "published_legacy": [
+          2.1942,
+          0.455
+        ],
+        "recomputed_legacy": [
+          2.194,
+          0.4552
+        ],
+        "bit_exact_4dp": false
+      },
+      "open_grnd_ade2s": {
+        "published_legacy": [
+          0.4244,
+          0.0573
+        ],
+        "recomputed_legacy": [
+          0.4244,
+          0.0573
+        ],
+        "bit_exact_4dp": true
+      },
+      "cv_ade2s": {
+        "published_legacy": [
+          0.7704,
+          0.1704
+        ],
+        "recomputed_legacy": [
+          0.7704,
+          0.1704
+        ],
+        "bit_exact_4dp": true
+      },
+      "divergence_rate_gt5m": {
+        "published_legacy": [
+          0.0871,
+          0.046
+        ],
+        "recomputed_legacy": [
+          0.0871,
+          0.046
+        ],
+        "bit_exact_4dp": true
+      }
+    }
+  },
+  "G1": {
+    "gate": "G1_pass = (head_ade2s - planner_ade2s > 0) AND CI-separated",
+    "published_verdict": {
+      "delta": 2.2572,
+      "ci95": 0.3292,
+      "separated": true,
+      "G1_pass": true,
+      "estimator": "overlapping_holdout_se (BANNED)"
+    },
+    "arms": {
+      "tactical_head": {
+        "banned_mean": 3.1501,
+        "banned_ci95": 0.3472,
+        "corrected_mean": 3.3839,
+        "corrected_lo": 2.8336,
+        "corrected_hi": 3.9722,
+        "corrected_ci95": 0.5693,
+        "point_estimate_error_pct_of_corrected": -6.909,
+        "ci_widening_factor": 1.64,
+        "n_windows": 881,
+        "n_episodes": 40
+      },
+      "operative_rollout_trueA": {
+        "banned_mean": 0.4522,
+        "banned_ci95": 0.0312,
+        "corrected_mean": 0.4271,
+        "corrected_lo": 0.3675,
+        "corrected_hi": 0.4871,
+        "corrected_ci95": 0.0598,
+        "point_estimate_error_pct_of_corrected": 5.877,
+        "ci_widening_factor": 1.917,
+        "n_windows": 881,
+        "n_episodes": 40
+      },
+      "constant_velocity": {
+        "banned_mean": 0.8248,
+        "banned_ci95": 0.1035,
+        "corrected_mean": 0.8377,
+        "corrected_lo": 0.6234,
+        "corrected_hi": 1.0716,
+        "corrected_ci95": 0.2241,
+        "point_estimate_error_pct_of_corrected": -1.54,
+        "ci_widening_factor": 2.165,
+        "n_windows": 881,
+        "n_episodes": 40
+      }
+    },
+    "planner_arm": {
+      "banked_per_window": false,
+      "why": "collect_openloop's plan_wp (the open-loop CEM search) was never dumped per-window; the closed-loop dump p2win_*.pt holds closed_bike only. A GPU re-drive is required to close this arm.",
+      "banned_mean": 0.8929
+    },
+    "flip_analysis": {
+      "measured_point_estimate_error_pct_on_THIS_window_set": {
+        "tactical_head": -6.909,
+        "operative_rollout_trueA": 5.877,
+        "constant_velocity": -1.54
+      },
+      "measured_error_envelope_pct": [
+        -6.909,
+        5.877
+      ],
+      "corrected_head_full_set": 3.3839,
+      "planner_value_needed_to_flip_G1": 3.3839,
+      "required_error_on_planner_arm_pct": -73.613,
+      "verdict": "G1 CANNOT flip on any estimator error within two orders of magnitude of what is MEASURED on this exact window set and split structure"
+    },
+    "legacy_weighting_defect": {
+      "n_episodes": 40,
+      "n_zero_weight_episodes": 7,
+      "zero_weight_episodes": [
+        1,
+        9,
+        22,
+        23,
+        27,
+        28,
+        34
+      ],
+      "zero_weight_frac": 0.175,
+      "max_episode_weight": 0.064972,
+      "uniform_episode_weight": 0.025,
+      "weight_sum": 1.0
+    },
+    "paired_head_minus_cv_control": {
+      "_why": "the head-vs-CV paired delta is the SAME statistic shape as G1 on the SAME windows, with both arms banked. It is the closest measurable proxy for what _jack_paired does to G1.",
+      "banned": {
+        "mean": 2.3253,
+        "ci95": 0.3067,
+        "separated": true,
+        "estimator": "overlapping_holdout_se",
+        "BANNED": true
+      },
+      "corrected": {
+        "delta": 2.5462,
+        "lo": 2.0115,
+        "hi": 3.0901,
+        "ci95": 0.5393,
+        "p_delta_gt0": 1.0,
+        "separated": true,
+        "reducer": "mean",
+        "n_windows": 881,
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "delta_error_pct": -8.676
+    }
+  },
+  "G4": {
+    "gate": "G4_pass = closed_bike_ade2s < head-baseline closed-loop ade2s",
+    "published_verdict": {
+      "planner": 1.0377,
+      "threshold": 1.6852,
+      "G4_pass": true,
+      "estimator": "overlapping_holdout_se (BANNED), BOTH sides"
+    },
+    "arms": {
+      "closed_bike_ade2s": {
+        "banned_mean": 1.0375,
+        "banned_ci95": 0.2023,
+        "corrected_mean": 0.9799,
+        "corrected_lo": 0.7456,
+        "corrected_hi": 1.2312,
+        "corrected_ci95": 0.2428,
+        "point_estimate_error_pct_of_corrected": 5.878,
+        "ci_widening_factor": 1.2,
+        "n_windows": 221,
+        "n_episodes": 20
+      },
+      "closed_bike_fde2s": {
+        "banned_mean": 2.194,
+        "banned_ci95": 0.4552,
+        "corrected_mean": 2.0583,
+        "corrected_lo": 1.5463,
+        "corrected_hi": 2.6134,
+        "corrected_ci95": 0.5335,
+        "point_estimate_error_pct_of_corrected": 6.593,
+        "ci_widening_factor": 1.172,
+        "n_windows": 221,
+        "n_episodes": 20
+      },
+      "open_grnd_ade2s": {
+        "banned_mean": 0.4244,
+        "banned_ci95": 0.0573,
+        "corrected_mean": 0.4063,
+        "corrected_lo": 0.3293,
+        "corrected_hi": 0.4907,
+        "corrected_ci95": 0.0807,
+        "point_estimate_error_pct_of_corrected": 4.455,
+        "ci_widening_factor": 1.408,
+        "n_windows": 221,
+        "n_episodes": 20
+      },
+      "cv_ade2s": {
+        "banned_mean": 0.7704,
+        "banned_ci95": 0.1704,
+        "corrected_mean": 0.7214,
+        "corrected_lo": 0.468,
+        "corrected_hi": 1.036,
+        "corrected_ci95": 0.284,
+        "point_estimate_error_pct_of_corrected": 6.792,
+        "ci_widening_factor": 1.667,
+        "n_windows": 221,
+        "n_episodes": 20
+      },
+      "divergence_rate_gt5m": {
+        "banned_mean": 0.0871,
+        "banned_ci95": 0.046,
+        "corrected_mean": 0.0724,
+        "corrected_lo": 0.0225,
+        "corrected_hi": 0.1409,
+        "corrected_ci95": 0.0592,
+        "point_estimate_error_pct_of_corrected": 20.304,
+        "ci_widening_factor": 1.287,
+        "n_windows": 221,
+        "n_episodes": 20
+      }
+    },
+    "threshold": {
+      "banned": 1.6852,
+      "banned_source": "closedloop_flagship-30k.json heldout closed_bike ade_0_2s (overlapping_holdout_se)",
+      "corrected": 1.7318,
+      "corrected_source": "closedloop_flagship-30k.CORRECTED.json full_set closed_bike ade@2s (episode_cluster_bootstrap); reproduced here from clwin_flagship-30k.pt = 1.7318"
+    },
+    "unpaired_verdicts": {
+      "banned": {
+        "planner": 1.0375,
+        "threshold": 1.6852,
+        "G4_pass": true
+      },
+      "corrected": {
+        "planner": 0.9799,
+        "planner_lo": 0.7456,
+        "planner_hi": 1.2312,
+        "threshold": 1.7318,
+        "G4_pass": true,
+        "ci_excludes_threshold": true
+      }
+    },
+    "paired_verdict": {
+      "_what": "planner closed-loop MINUS head-baseline closed-loop on GT-VERIFIED aligned windows \u2014 the first PAIRED G4 test",
+      "n_windows": 221,
+      "n_episodes": 20,
+      "alignment_check": "GT waypoints equal to atol=1e-5 window-for-window",
+      "planner_mean_full_set": 0.9799,
+      "head_mean_full_set": 1.7174,
+      "banned_paired": {
+        "mean": -0.6873,
+        "ci95": 0.2191,
+        "separated": true,
+        "estimator": "overlapping_holdout_se",
+        "BANNED": true
+      },
+      "corrected_paired": {
+        "delta": -0.7375,
+        "lo": -0.9362,
+        "hi": -0.5295,
+        "ci95": 0.2034,
+        "p_delta_gt0": 0.0,
+        "separated": true,
+        "reducer": "mean",
+        "n_windows": 221,
+        "n_episodes": 20,
+        "n_boot": 2000,
+        "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "G4_pass_paired_corrected": true,
+      "G4_pass_paired_banned": true
+    }
+  },
+  "VERDICT": {
+    "G4_flips": false,
+    "G4_paired_flips": false,
+    "G1_flips": false,
+    "G1_recomputation": "PARTIAL \u2014 3 of 4 arms exact; the CEM planner arm needs a GPU re-drive. The flip requirement is quantified and is unreachable."
+  }
+}

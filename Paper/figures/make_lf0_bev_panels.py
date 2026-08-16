@@ -23,11 +23,37 @@ absence of output. That is what an IoU of ~0.02 alongside a retention ratio of
 Data: ``panels_compact.json``, extracted from ``lf0_panels.npz`` on pod4 (the
 raster cells ≥ τ, plus a 12×8 mean-pooled density map per raster). Nothing here
 is hand-entered; every number is read from that file at render time.
+
+⛔ TWO CAVEATS ON THE CELL COUNTS, added 2026-08-16 by the `bev_raster` consumer
+audit (`…/incoming/2026-08-16-bev-consumer-audit/BEV_CONSUMER_AUDIT.md`).
+
+1. **The counts are WHOLE-GRID and this figure draws every cell, unmasked.** The
+   BEV panel is a Cartesian 60 m × ±16 m raster, but the camera sees an azimuth
+   WEDGE: at the 117° sub-frame LF0 ran on, **626 of 7 680 cells (8.151 %) lie
+   outside the camera's horizontal field entirely** and are unanswerable from a
+   vision-only latent. So an unknown share of the "35–68 cells ≥ τ" the caption
+   quotes sits on cells no camera observed. ⚠️ That share is **NOT RECOVERABLE**:
+   `panels_compact.json` and `lf0_panels.npz` are pod4 scratch artifacts and are
+   in neither the repo nor any banked bundle (3 probes). Re-rendering with the
+   mask needs a re-run of `lf0_bev_lead.py`, which now writes the field mask into
+   `lf0_panels.npz` (key ``fov``) precisely so this cannot recur.
+   ⭐ **The figure's LOAD-BEARING claim survives regardless**: "essentially none
+   of them land in the ego band" is a statement about the **corridor**, and the
+   corridor is **entirely inside the field** (0 of 708 scanned cells) at the
+   frame this ran on. The mask can only *remove* decoded cells from outside the
+   band — it can never move one into it. So the mislocation finding stands and
+   masking would, if anything, sharpen it.
+2. **The grid shape is imported, not typed.** It used to be a bare
+   ``NX, NY = 120, 64`` literal beside a live ``GRID_DEFAULT``; a geometry fact
+   restated inline is the same rot class as the "N of 36" count that went stale
+   four times. Values are unchanged (``GRID_DEFAULT.shape == (120, 64)``), so
+   the rendered figure is byte-identical — it simply can no longer drift.
 """
 from __future__ import annotations
 
 import json
 import os
+import sys
 
 # categorical pair, validated (light + dark) earlier in this programme
 C_TRUTH = "#2a78d6"      # ground truth agents
@@ -36,9 +62,57 @@ C_INK = "#1a1a1a"
 C_MUTE = "#6b6b6b"
 C_RULE = "#d4d4d4"
 C_BAND = "#b8b8b8"       # the ASSUMED corridor — neutral, never a series colour
+C_NOFOV = "#e8e4de"      # OUTSIDE the camera field — unobservable, not a series
 
 CELL_W, CELL_H = 2.0, 1.15          # px per grid cell (64 wide, 120 forward)
-NX, NY = 120, 64
+
+# ⛔ IMPORTED, NOT TYPED. `stack/` is a sibling of `Paper/`; locate it explicitly
+# (the `p8_geometry_census.py` precedent) so the panel geometry is the SAME
+# object the probe rasterised against. A bare literal here would be a geometry
+# fact restated inline — the rot class this file's docstring §2 describes.
+_STACK = os.path.join(os.path.dirname(os.path.dirname(
+    os.path.dirname(os.path.abspath(__file__)))), "stack")
+if _STACK not in sys.path:
+    sys.path.insert(0, _STACK)
+from tanitad.data.bev_raster import GRID_DEFAULT  # noqa: E402
+
+NX, NY = GRID_DEFAULT.shape         # (120, 64) — asserted in tests, not typed
+
+
+def nofov_spans(hfov_deg):
+    """Per-row ``(r0, r1, c0, c1)`` rectangles covering the OUT-OF-FIELD cells.
+
+    ``()`` when ``hfov_deg`` is ``None`` — the honest answer when the source
+    file does not record the frame, which is the state the 2026-08-12 figure was
+    published in. Never guess a frame: at 117° the out-of-field region is 8.151 %
+    of the grid and at the legacy 51.4° pinhole it is 27.682 %, so a wrong guess
+    would shade a region three times too large and read as a measurement.
+
+    The mask is contiguous per row (it is ``|atan2(y, x)| > half_angle`` on a
+    Cartesian grid, so each row's out-of-field cells form a left block and a
+    right block), which is why row spans suffice and no per-cell rects are
+    emitted.
+    """
+    if hfov_deg is None:
+        return ()
+    import math
+
+    from tanitad.data.bev_raster import fov_mask
+    m = fov_mask(GRID_DEFAULT, math.radians(float(hfov_deg) / 2.0))
+    spans = []
+    for r in range(NX):
+        out = [c for c in range(NY) if not m[r, c]]
+        if not out:
+            continue
+        run = [out[0], out[0]]
+        for c in out[1:]:
+            if c == run[1] + 1:
+                run[1] = c
+            else:
+                spans.append((r, r, run[0], run[1]))
+                run = [c, c]
+        spans.append((r, r, run[0], run[1]))
+    return tuple(spans)
 
 
 def panel(px, py, p, key, meta, idx, *, title, show_truth_line):
@@ -49,6 +123,17 @@ def panel(px, py, p, key, meta, idx, *, title, show_truth_line):
              f'font-weight="600" fill="{C_INK}">{title}</text>')
     o.append(f'<rect x="0" y="0" width="{w}" height="{h}" fill="#fbfbfb" '
              f'stroke="{C_RULE}" stroke-width="1"/>')
+
+    # ⛔ cells OUTSIDE the camera's horizontal field — unanswerable from a
+    # vision-only latent, so decoded mass there is not a detection. Drawn only
+    # when the source file records the frame; see main()'s caveat line when it
+    # does not. `hfov_deg` is what `lf0_gate.json`'s `geometry` block now carries.
+    for r0_, r1_, c0_, c1_ in meta.get("nofov_spans", ()):
+        o.append(f'<rect x="{c0_ * CELL_W:.1f}" '
+                 f'y="{h - (r1_ + 1) * CELL_H:.1f}" '
+                 f'width="{(c1_ - c0_ + 1) * CELL_W:.1f}" '
+                 f'height="{(r1_ - r0_ + 1) * CELL_H:.1f}" '
+                 f'fill="{C_NOFOV}" fill-opacity="0.5"/>')
 
     # the ASSUMED corridor band (dashed => not a measured lane)
     c0, c1 = min(meta["cols"]), max(meta["cols"])
@@ -91,6 +176,12 @@ def main() -> int:
         raise SystemExit(f"[lf0-fig] missing {src} — pull it from the pod first")
     d = json.load(open(src))
     meta = {"cols": d["cols"], "cell_m": d["cell_m"], "true_m": d["true_m"]}
+    # ⭐ THE FRAME, IF THE SOURCE RECORDS IT. It did not in 2026-08-12 — which is
+    # exactly why the published figure's cell counts are unrecoverable. LF0 now
+    # writes `geometry.model_frame.hfov_deg` into lf0_gate.json and the field
+    # mask into lf0_panels.npz, so an extractor can carry it forward.
+    meta["nofov_spans"] = nofov_spans(d.get("hfov_deg"))
+    meta["hfov_deg"] = d.get("hfov_deg")
 
     pw, ph = NY * CELL_W, NX * CELL_H
     gx, gy = pw + 96, ph + 46
@@ -138,6 +229,14 @@ def main() -> int:
          "empty in the decode for 81.4 % (encoded) and 92.3 % (predicted) of them.", False),
         ("τ = 0.7 is INHERITED from the P8 gate and never re-tuned here. "
          "Panels show cells ≥ τ, not the full-resolution probability field.", False),
+        ((f"Cells outside the {meta['hfov_deg']:.0f}° camera field are shaded — "
+          f"a vision-only latent cannot answer them, so decoded mass there is "
+          f"not a detection."
+          if meta.get("hfov_deg") else
+          "⚠ The source file records NO camera frame, so the out-of-field cells "
+          "(8.151 % of the grid at LF0's 117° sub-frame, ALL at x < 9.3 m) are "
+          "NOT shaded and are counted in the totals above. The corridor itself "
+          "is fully in-field, so the mislocation finding is unaffected."), False),
     ]
     for i, (t, bold) in enumerate(lines):
         o.append(f'<text x="{left}" y="{fy + 8 + i*15}" font-size="10.5" '
@@ -158,7 +257,12 @@ def main() -> int:
              f'ASSUMED ±1.5 m ego band (not perceived)</text>')
     o.append("</svg>")
 
-    out = os.path.join(here, "lf0_bev_panels.svg")
+    # ⛔ OUTPUT DIR IS OVERRIDABLE, and it must be. `main()` writes straight over
+    # a PUBLISHED, git-tracked figure; a test (or a dry run) that calls it with
+    # synthetic data silently destroys the real one. MEASURED the hard way while
+    # writing this audit — the file was recovered with `git checkout` and
+    # verified byte-identical, but only because it happened to be committed.
+    out = os.path.join(os.environ.get("LF0_FIG_OUT", here), "lf0_bev_panels.svg")
     open(out, "w").write("\n".join(o))
     print(f"[lf0-fig] wrote {out}")
     return 0
