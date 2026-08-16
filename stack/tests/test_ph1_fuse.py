@@ -847,3 +847,158 @@ def test_legacy_two_arg_scenario_line_still_reports_agents_it_has():
     # an EXPLICIT zero frame count keeps its own, more specific reason
     assert census_state([], n_frames=0)["reason"] == \
         "no frames processed by the detector"
+
+
+# ===========================================================================
+# ⛔ `goal_evidence: grounded` IS RETIRED — the pins that keep it retired
+# ===========================================================================
+# WHY (MEASURED, `…/2026-08-16-sam3-concept-reliability/SAM3_CONCEPT_RELIABILITY
+# .md`): the retired predicate grounded a NAVIGATION claim on the presence of
+# ANY `traffic sign` track, anywhere in the clip, of any KIND, at any score.
+# Its inputs are ~88 % real signs (precision 0.880 [0.795, 0.958], n=64) — the
+# defect was never detector quality, it was that the NAME asserted a verified
+# navigation sign while the predicate measured "a sign-like object exists".
+# The dominant FP mode is a sign-SHAPED non-sign (pharmacy cross at 0.807),
+# which NO score threshold separates, and the sign-TEXT gate is CLOSED at 0/31.
+
+def _route_to_v2(*, sign_kind: str | None = "nav", ev=0):
+    v2 = json.loads(json.dumps(V2))
+    v2["symbols"] = {"goal_kind": "route_to", "goal_evidence_sign": ev,
+                     "actions": []}
+    if sign_kind is None:
+        v2.pop("signs", None)
+    else:
+        v2["signs"] = {"n_signs": 1, "signs": [
+            {"kind": sign_kind, "text": "Ville", "state": "none",
+             "applies_to_ego": True}]}
+    return v2
+
+
+def _sign_tracks(n: int):
+    return [{"concept": "traffic sign", "n_frames": 1, "src": "sam3"}
+            for _ in range(n)]
+
+
+@pytest.mark.parametrize("n_tracks", [0, 1, 7])
+@pytest.mark.parametrize("ev", [None, 0])
+@pytest.mark.parametrize("kind", ["nav", "speed", "yield", None])
+def test_the_retired_goal_evidence_tokens_are_GONE(n_tracks, ev, kind):
+    """⛔ NO input may produce `grounded` or `provisional` any more.
+
+    Swept rather than sampled, because the retired predicate was a CONJUNCTION
+    (`ev is not None and n_sign_frames > 0`) and a single-case test would leave
+    three of its four corners unpinned.
+    """
+    from ph1_fuse import GOAL_EVIDENCE_RETIRED
+    cor, conflicts = corroborate(_route_to_v2(sign_kind=kind, ev=ev),
+                                 SAM3, _sign_tracks(n_tracks))
+    ge = cor["goal_evidence"]
+    assert ge["verdict"] == "not_computable", ge
+    assert ge["verdict"] not in GOAL_EVIDENCE_RETIRED
+    assert GOAL_EVIDENCE_RETIRED == ("grounded", "provisional")
+    # ⚠️ and it must not have leaked into the conflict stream either — a
+    # retirement that turns a false positive into a false conflict is not a fix
+    assert not any(c.get("check") == "goal_evidence" for c in conflicts)
+
+
+def test_the_retired_tokens_cannot_be_re_emitted_from_the_SOURCE():
+    """A behavioural sweep only covers the inputs it thought of. This reads the
+    emitter itself: outside the retirement block, neither token may appear as
+    an emittable string anywhere in `ph1_fuse.py`.
+
+    (Same idiom as the vocab-drift assert at import: the emitter and the rule
+    cannot be allowed to drift apart silently.)"""
+    import ast
+    from ph1_fuse import GOAL_EVIDENCE_RETIRED
+    src = (Path(__file__).resolve().parents[1] / "scripts"
+           / "ph1_fuse.py").read_text(encoding="utf-8")
+    tree = ast.parse(src)
+    # the ONE declaration that is allowed to name them; everything inside it
+    # is exempt, everything else in the module is not
+    decl = [n for n in ast.walk(tree) if isinstance(n, ast.Assign)
+            and any(isinstance(t, ast.Name)
+                    and t.id == "GOAL_EVIDENCE_RETIRED" for t in n.targets)]
+    assert len(decl) == 1, "the retirement declaration moved or was duplicated"
+    exempt = {id(n) for n in ast.walk(decl[0])}
+    # ⚠️ a STRING LITERAL EQUAL TO the token — prose that merely mentions
+    # `grounded` in the retirement note is not an emission and must not trip
+    offenders = [(n.lineno, n.value) for n in ast.walk(tree)
+                 if isinstance(n, ast.Constant) and isinstance(n.value, str)
+                 and n.value in GOAL_EVIDENCE_RETIRED and id(n) not in exempt]
+    assert not offenders, (
+        f"a retired goal_evidence verdict is emittable again in "
+        f"ph1_fuse.py at {offenders}")
+
+
+def test_the_PRESENCE_fact_survives_under_an_honest_name():
+    """Nothing is lost by the retirement: the one thing SAM3 actually measures
+    is still in the record, named for what it is. A consumer that wants sign
+    PRESENCE still has it — and can no longer read it as goal corroboration."""
+    for n in (0, 1, 5):
+        ge = corroborate(_route_to_v2(), SAM3, _sign_tracks(n))[0][
+            "goal_evidence"]
+        assert ge["sam3_sign_tracks"] == n
+        assert ge["sign_like_object_present"] is (n > 0)
+        assert ge["src"] == ["vlm", "sam3"]
+        assert "unverifiable" in ge["reason"].lower() or \
+               "NOT verifiable" in ge["reason"]
+
+
+def test_the_cited_sign_KIND_is_recorded_as_a_VLM_SELF_REPORT():
+    """The 24/31 non-nav gap (aug120: speed 15 · other 6 · yield 2 · stop 1 vs
+    nav 7) must be auditable per clip, not only in a study. It is DATA with
+    `src: vlm` — never a verdict, and never fabricated when unknown."""
+    from ph1_fuse import evidence_sign_kind
+    for kind in ("nav", "speed", "yield", "stop", "other"):
+        ge = corroborate(_route_to_v2(sign_kind=kind), SAM3,
+                         _sign_tracks(2))[0]["goal_evidence"]
+        assert ge["evidence_sign_kind"] == kind
+    # unknown must read as unknown — an out-of-range index, a dropped `signs`
+    # block, a null index and a non-int index are all "we do not know"
+    assert evidence_sign_kind(_route_to_v2(), 99) is None
+    assert evidence_sign_kind(_route_to_v2(sign_kind=None), 0) is None
+    assert evidence_sign_kind(_route_to_v2(), None) is None
+    assert evidence_sign_kind(_route_to_v2(), True) is None      # bool is int
+    assert corroborate(_route_to_v2(sign_kind=None, ev=0), SAM3,
+                       _sign_tracks(1))[0]["goal_evidence"][
+                           "evidence_sign_kind"] is None
+    # ⚠️ and on the SAM3-ABSENT branch too — the KIND is a VLM-side fact, so
+    # gating it on SAM3 coverage would make the non-nav gap measurable only on
+    # the clips the detector happened to reach (15 of 31 on aug120)
+    absent = corroborate(_route_to_v2(sign_kind="speed"), SAM3, [],
+                         sam3_absent=True)[0]["goal_evidence"]
+    assert absent["verdict"] == "not_computable"
+    assert absent["evidence_sign_kind"] == "speed"
+    # ...but NOT the SAM3-side facts, which a detector that never ran cannot
+    # supply — the C77 rule
+    assert "sign_like_object_present" not in absent
+    assert "sam3_sign_tracks" not in absent
+
+
+def test_the_retirement_does_not_move_the_corroborated_TALLY(tmp_path):
+    """⚠️ The summary counts ONLY `verdict == "corroborated"`, so `grounded`
+    was never in it — the retirement must not silently re-baseline anyone's
+    published corroboration number. Pinned because "it does not count" is
+    exactly the kind of claim that rots."""
+    (tmp_path / "ego").mkdir()
+    v2b = _route_to_v2()
+    v2b["clip_id"] = "c2"
+    sam3b = json.loads(json.dumps(SAM3))
+    sam3b["clip_id"] = "c2"
+    sam3b["frames"]["0"]["det"].append(
+        {"concept": "traffic sign", "score": 0.81,
+         "box_xyxy": [200, 20, 214, 34], "mask_area_px": 70})
+    (tmp_path / "v2.json").write_text(json.dumps([V2, v2b]))
+    (tmp_path / "s.json").write_text(json.dumps([SAM3, sam3b]))
+    out = tmp_path / "fused"
+    assert main(["--v2-json", str(tmp_path / "v2.json"), "--sam3",
+                 str(tmp_path / "s.json"), "--ego-root", str(tmp_path / "ego"),
+                 "--out", str(out)]) == 0
+    rec = json.loads((out / "c2.json").read_text())["corroboration"]
+    assert rec["goal_evidence"]["verdict"] == "not_computable"
+    assert rec["goal_evidence"]["sign_like_object_present"] is True
+    summ = json.loads((out / "_summary.json").read_text())
+    # c1's red_light_vs_stop is the only corroborated check in this pair, and
+    # the route_to clip contributes ZERO either way
+    assert summ["corroborated"] == 0            # c1 red-light is a CONFLICT
+    assert summ["conflicts"] == 1

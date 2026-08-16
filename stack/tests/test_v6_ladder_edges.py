@@ -47,7 +47,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "ops"))
 
 from tanitad.config import EncoderConfig, PredictorConfig, ReadoutConfig  # noqa: E402
 from tanitad.models.v6 import (  # noqa: E402
-    STAGES, V6Config, V6Stack, apply_stage_freeze, stage_trainable_groups)
+    MODULE_GROUPS, STAGES, V6Config, V6Stack, apply_stage_freeze,
+    stage_trainable_groups)
 from train_v6_staged import (  # noqa: E402
     RESUME_CONTRACT, STAGE_MAY_INTRODUCE, ResumeLineageError, V6LossWeights,
     _save_ckpt, assert_resume_lineage, load_resume, load_stage_init,
@@ -392,12 +393,49 @@ def _stage_batch(stack: V6Stack):
 
 
 def _grad_census(stack: V6Stack) -> dict:
-    got: dict[str, dict] = {}
+    """`.grad` presence per group — **TOTAL over ``MODULE_GROUPS``**.
+
+    ⛔ THE INTERMITTENT FAILURE THIS FIXES (MEASURED 2026-08-16, 3/25 runs of
+    this file, all `KeyError: 'interp'` at the last assertion of the [S-J]
+    parametrization; **DETERMINISTIC** at `PYTHONHASHSEED=3` / `12`, PASS at
+    `0` / `5`):
+
+    the census used ``setdefault``, so a group that owns **zero parameters**
+    was simply ABSENT from the result. ``STAGE_GROUPS["S-J"] is
+    MODULE_GROUPS``, which since `06b8782` includes ``interp`` — a group that
+    is **empty at the default build** (`V6Config.agent_slots` is False; v6.py
+    says so verbatim). The final assertion is
+    ``any(census[g]["grad"] for g in want)`` over a ``set`` of ``str``, and
+    ⭐ **`set` iteration order for strings is randomised per process by
+    PYTHONHASHSEED**, while ``any`` SHORT-CIRCUITS at the first truthy element.
+    So ``census['interp']`` was evaluated **only when `interp` happened to sort
+    first** — 43/400 hash seeds = **10.75 %**, against 3/25 = 12.0 % measured.
+
+    ⚠️ **It was never an RNG problem.** The plausible-looking hypothesis (the
+    test seeds the model but draws `gt_wp` from the global RNG) is REFUTED:
+    ``mk()`` calls ``torch.manual_seed`` and nothing between it and the draw
+    touches the global stream, and the failure is a KeyError on a *structural*
+    lookup, which no data value can reach.
+
+    ⚠️ And the bug SUPPRESSED THE ASSERTION IT LIVED IN: a genuine "this stage
+    trained nothing" would have surfaced as a bare ``KeyError`` with no
+    message instead of the diagnosis below. A census is a TOTAL function over
+    the partition — an empty group reads ``0/0``, it does not vanish.
+    """
+    got: dict[str, dict] = {g: {"grad": 0, "none": 0} for g in MODULE_GROUPS}
     for n, p in stack.named_parameters():
-        g = stack.group_of(n)
-        got.setdefault(g, {"grad": 0, "none": 0})
-        got[g]["grad" if p.grad is not None else "none"] += 1
+        got[stack.group_of(n)]["grad" if p.grad is not None else "none"] += 1
     return got
+
+
+def _built(census: dict) -> set[str]:
+    """Groups that own ≥1 parameter AT THIS BUILD.
+
+    ⛔ "declared in MODULE_GROUPS" and "built by this config" are DIFFERENT
+    SETS, and conflating them is what produced the flake above. Freeze and
+    reachability statements are only meaningful about BUILT groups.
+    """
+    return {g for g, v in census.items() if v["grad"] + v["none"]}
 
 
 @pytest.fixture(scope="module")
@@ -412,8 +450,15 @@ def reachable_groups() -> set[str]:
 
     MEASURED: with every parameter trainable and the S-J loss, the reachable
     fraction per group is encoder 17/17, readout 2/2, predictor_op 31/35,
-    aux 30/30, layer_tac 54/67, layer_str 41/54, planner 2/13 — so every group
-    has live parameters and every "no grad" below is a real statement.
+    aux 30/30, layer_tac 54/67, layer_str 41/54, planner 2/13 — so every BUILT
+    group has live parameters and every "no grad" below is a real statement.
+
+    ⛔ ``interp`` is DECLARED in ``MODULE_GROUPS`` but **NOT BUILT** at this
+    config (`V6Config.agent_slots` defaults to False → 0 parameters, v6.py's
+    own note). It is named here rather than skipped, so that a future build
+    which silently empties a DIFFERENT group is a FAILURE and not a shrug —
+    that is the same "absence found at one location is not absence" discipline
+    the census itself enforces.
     """
     s = mk("goal", seed=60)
     for p in s.parameters():
@@ -421,10 +466,16 @@ def reachable_groups() -> set[str]:
     v6_loss_step(s, _stage_batch(s), stage="S-J", weights=V6LossWeights(),
                  o1_k=10, o5_k=10)["loss"].backward()
     census = _grad_census(s)
+    built = _built(census)
+    assert set(MODULE_GROUPS) - built == {"interp"}, (
+        f"the set of DECLARED-but-UNBUILT groups moved: "
+        f"{sorted(set(MODULE_GROUPS) - built)}. Only `interp` is expected to "
+        f"be empty at the default build (agent_slots=False). Any other empty "
+        f"group means a module stopped being constructed.")
     reach = {g for g, v in census.items() if v["grad"] > 0}
-    assert reach == set(census), \
-        f"a group is unreachable by the S-J loss; the freeze test would be " \
-        f"vacuous for it: {census}"
+    assert reach == built, \
+        f"a BUILT group is unreachable by the S-J loss; the freeze test " \
+        f"would be vacuous for it: {census}"
     return reach
 
 
@@ -449,15 +500,89 @@ def test_after_init_from_exactly_the_intended_groups_train(st_ckpt,
     v6_loss_step(s, _stage_batch(s), stage=stage, weights=V6LossWeights(),
                  o1_k=10, o5_k=10)["loss"].backward()
     census = _grad_census(s)
+    built = _built(census)
     leaked = {g: v for g, v in census.items() if g not in want and v["grad"]}
     assert not leaked, (
         f"stage {stage} put gradient in groups it must not train: {leaked}. "
         f"Every one of these was reachable in the control, so this is a real "
         f"leak, not an artifact of an unreachable loss.")
-    assert reachable_groups >= (set(census) - want), \
+    assert reachable_groups >= (built - want), \
         "the control does not cover every group this stage freezes"
-    assert any(census[g]["grad"] for g in want), \
+    # ⛔ intersect with BUILT: a stage may DECLARE a group this config does not
+    # construct (S-J declares `interp`, empty unless agent_slots=True). The old
+    # `for g in want` indexed the census directly and raised a bare KeyError on
+    # ~10.75 % of processes — see `_grad_census`. Assert the intersection is
+    # non-empty FIRST, so "the stage declares only unbuilt groups" reports
+    # itself instead of hiding inside a vacuously-false `any`.
+    trainable_here = want & built
+    assert trainable_here, (
+        f"stage {stage} declares trainable groups {sorted(want)} and NONE of "
+        f"them is built at this config (built={sorted(built)})")
+    assert any(census[g]["grad"] for g in trainable_here), \
         f"stage {stage} trained NOTHING — the freeze map and the loss disagree"
+
+
+# ============================================================================
+# EDGE 4b — THE FLAKE ITSELF, PINNED. ⛔ a test that passes on retry is not
+# fixed, so the MECHANISM is pinned, not the symptom.
+# ============================================================================
+
+def test_the_grad_census_is_TOTAL_over_the_group_partition():
+    """⛔ THE ANTI-FLAKE PIN. Every group `apply_stage_freeze` partitions over
+    must have a census entry, INCLUDING one that owns zero parameters.
+
+    Without this, `census[g]` for `g` in a stage's declared groups is a
+    conditional KeyError whose firing depends on `set` iteration order, i.e.
+    on `PYTHONHASHSEED` — MEASURED 3/25 runs, deterministic at seeds 3 and 12.
+    A rate of ~10 % is exactly the regime that reads as "flaky, re-run it".
+    """
+    s = mk("goal", seed=63)
+    census = _grad_census(s)
+    assert set(census) == set(MODULE_GROUPS), \
+        "the census is not total over MODULE_GROUPS — the KeyError is back"
+    assert census["interp"] == {"grad": 0, "none": 0}, \
+        "`interp` must be present-and-empty, not missing"
+    # ...and the property that actually matters: for EVERY stage, the declared
+    # trainable groups are indexable in the census. This is the exact
+    # expression that raised, made total and hash-order independent.
+    for stage in STAGES:
+        want = set(stage_trainable_groups(stage))
+        assert want <= set(census), \
+            f"stage {stage} declares {sorted(want - set(census))}, which the " \
+            f"census cannot index — the intermittent KeyError is reachable"
+        assert all(isinstance(census[g]["grad"], int) for g in want)
+
+
+@pytest.mark.xfail(strict=True, reason=(
+    "⛔ MEASURED DEFECT, NOT A TEST BUG (2026-08-16). `STAGE_GROUPS['S-J'] is "
+    "MODULE_GROUPS`, which includes `interp`. At the DEFAULT build that is "
+    "harmless because `interp` owns 0 parameters — but with agent_slots=True "
+    "it owns 62, `apply_stage_freeze(stack, 'S-J')` marks all 62 TRAINABLE, "
+    "and the S-J loss reaches EXACTLY 0 of them. That is the lie v6.py's own "
+    "STAGE_GROUPS docstring says it avoids ('would make the freeze audit "
+    "report a module as training while it receives exactly zero gradient'). "
+    "Latent today only because agent_slots defaults False, and the agent-slot "
+    "decoder is an ACTIVE workstream. FIX IN v6.py (not owned by this file): "
+    "give S-J an explicit tuple without `interp`, or a loss that reaches it. "
+    "strict=True — when the model is fixed this XPASSes, which FAILS, and the "
+    "marker must then be deleted."))
+def test_S_J_must_not_declare_trainable_a_group_its_loss_never_reaches():
+    torch.manual_seed(64)
+    s = V6Stack(tiny_cfg(agent_slots=True))
+    apply_stage_freeze(s, "S-J")
+    want = set(stage_trainable_groups("S-J"))
+    assert "interp" in want                       # the precondition, not the claim
+    v6_loss_step(s, _stage_batch(s), stage="S-J", weights=V6LossWeights(),
+                 o1_k=10, o5_k=10)["loss"].backward()
+    census = _grad_census(s)
+    assert census["interp"]["grad"] + census["interp"]["none"] > 0, \
+        "agent_slots=True did not build the interp head — precondition gone"
+    dead = [g for g in want
+            if census[g]["grad"] == 0 and census[g]["none"] > 0]
+    assert not dead, (
+        f"stage S-J marks these groups trainable but its loss reaches NONE of "
+        f"their parameters: {dead} "
+        f"(interp: {census['interp']}) — the freeze audit overstates")
 
 
 # ============================================================================

@@ -58,6 +58,69 @@ SPEED_TOL = 0.15         # speed-sign corroboration margin
 STOP_V = 0.5             # m/s — "stopped" threshold
 
 # =========================================================================== #
+# ⛔ `goal_evidence: grounded` IS RETIRED (2026-08-16) — THE NAME ASSERTED     #
+#    FAR MORE THAN THE PREDICATE MEASURED                                     #
+# =========================================================================== #
+# What it used to do: emit `"grounded"` for a `route_to` goal whenever the VLM
+# had cited SOME sign index AND SAM3 had ≥1 `traffic sign` track ANYWHERE in
+# the clip. The predicate is KIND-blind, FRAME-blind, THRESHOLD-blind and
+# applies-to-ego-blind, so `grounded` was reachable by "a sign-like object
+# exists in this clip" — while the word claims the NAVIGATION sign the VLM says
+# it read has been confirmed.
+#
+# ⛔ THE INPUTS ARE FINE; THE NAME IS NOT. This is not a detector-quality
+# problem and no score threshold repairs it (MEASURED, `…/incoming/
+# 2026-08-16-sam3-concept-reliability/SAM3_CONCEPT_RELIABILITY.md`):
+#
+#   * SAM3 `traffic sign` precision is **0.880 [0.795, 0.958]**, n=64 over 33
+#     clips, episode-cluster bootstrap — i.e. ~88 % REAL SIGNS. The predicate's
+#     inputs were never the defect.
+#   * The dominant false-positive mode is a SIGN-SHAPED NON-SIGN — a pharmacy
+#     cross at **0.807** (the HIGHEST-scoring of the six sign FPs), an
+#     advertising hoarding, a green traffic light. ⇒ **no score cut separates
+#     them**; a KIND check would, and there is none.
+#   * The sign TEXT was never read: the G1 gate is **CLOSED at 0/31**
+#     (`Project Steering/G1_RESULT.md`) — the claim `grounded` made is about a
+#     text nobody can verify at 448 px.
+#   * The cited sign is not even a NAV sign on **24/31** aug120 `route_to`
+#     clips (speed 15 · other 6 · yield 2 · stop 1 · nav 7 — MEASURED,
+#     `…/2026-08-16-s2-strategic-gap/raw/aug120_analysis.json`
+#     `route_to_sign_kinds`). A give-way triangle was grounding `route_to`.
+#
+# ⇒ THE FIX, and why it is a RETIREMENT rather than a rename in place:
+#   1. the VERDICT collapses to `not_computable` with the reason NAMED — the
+#      same rule the fuser already applies to `scene_vs_situations` and to an
+#      absent SAM3 leg: an instrument that cannot answer must not emit a
+#      verdict, in EITHER direction. (`PI_REVIEW_FINDINGS.md` removed
+#      `LANE_TARGET` for the mirror-image defect — an absent measurement
+#      rendered as a confident NEGATIVE; `grounded` was a weak measurement
+#      rendered as a confident POSITIVE.)
+#   2. the one thing SAM3 really measures SURVIVES, under its own name:
+#      `sign_like_object_present` (+ the raw `sam3_sign_tracks` count). Nothing
+#      is lost — a consumer that wants sign PRESENCE still has it, and can no
+#      longer mistake it for goal corroboration.
+#   3. `provisional` goes too. It read as "SAM3 looked and found no sign", but
+#      this study measures **NO RECALL for any concept** — zero sign tracks is
+#      not evidence of no sign. It was the same overstatement with the sign
+#      flipped.
+#
+# ⚠️ WHAT WOULD MAKE THIS COMPUTABLE AGAIN (a refusal with no mechanism teaches
+# nobody): a per-detection KIND check on the cited sign, on the FRAME the VLM
+# grounded on, at the ≥0.70 operating point the study recommends for
+# per-detection supervision — plus an open G1 text gate. Until all of those
+# exist, this check is a RECORD OF A GAP, not a corroboration.
+#: ⛔ Tokens `goal_evidence` may never emit again. Pinned by
+#: `tests/test_ph1_fuse.py::test_the_retired_goal_evidence_tokens_are_GONE`.
+GOAL_EVIDENCE_RETIRED = ("grounded", "provisional")
+#: The reason stamped into every `route_to` record whose SAM3 leg DID run.
+GOAL_EVIDENCE_UNVERIFIABLE = (
+    "route_to evidence is NOT verifiable: SAM3's `traffic sign` class is "
+    "KIND-blind, FRAME-blind and applies-to-ego-blind (precision 0.880 "
+    "[0.795, 0.958], but the dominant FP mode is sign-SHAPED non-signs that no "
+    "score threshold separates), and the sign-TEXT gate is CLOSED at 0/31 "
+    "(G1_RESULT.md). `sign_like_object_present` is the only measured fact here")
+
+# =========================================================================== #
 # ⛔ THE TACTICAL MAPPING — AN EXPLICIT TOTAL FUNCTION, NOT SUBSTRING MATCHING #
 # =========================================================================== #
 # What this replaces: two ordered tuples of (substring, token) scanned with
@@ -397,6 +460,27 @@ def ego_from_npz(path: str) -> dict:
             "net_dyaw_rad": net_dyaw}
 
 
+def evidence_sign_kind(v2: dict, idx) -> str | None:
+    """The KIND the **VLM ITSELF** recorded for the sign it cited, or None.
+
+    ⚠️ This is a VLM SELF-REPORT read back out of the same record — it is NOT
+    corroboration and must never be presented as one. It exists so the
+    "`route_to` cites a speed sign" gap (24/31 on aug120) is visible per clip.
+
+    Returns None — never a fabricated kind — when the index is absent, is not
+    an int, or points outside `signs[]`. A `route_to` record whose `signs`
+    block was dropped is exactly that case and must read as unknown, not as a
+    kind we invented.
+    """
+    if idx is None or isinstance(idx, bool) or not isinstance(idx, int):
+        return None
+    signs = ((v2.get("signs") or {}).get("signs") or [])
+    if idx < 0 or idx >= len(signs):
+        return None
+    kind = (signs[idx] or {}).get("kind")
+    return kind if isinstance(kind, str) else None
+
+
 def corroborate(v2: dict, sam3: dict, tracks: list[dict],
                 sam3_absent: bool = False) -> tuple[dict, list]:
     cor, conflicts = {}, []
@@ -454,24 +538,42 @@ def corroborate(v2: dict, sam3: dict, tracks: list[dict],
                 "src": ["vlm", "ego"]}
             if not ok:
                 conflicts.append({"check": "scene_vs_situations"})
-    # --- goal evidence grounded by SAM3 ----------------------------------- #
+    # --- goal evidence — `grounded` RETIRED, see the block at the top ------ #
     sym = v2.get("symbols") or {}
     if sym.get("goal_kind") == "route_to":
         ev = sym.get("goal_evidence_sign")
         if sam3_absent:
             # ⚠️ same rule as the situations fix: an absent detector must not
-            # manufacture a "provisional/ungrounded" verdict — it saw nothing.
+            # manufacture a verdict in EITHER direction — it saw nothing.
+            # ⚠️ the cited KIND is a VLM-side fact and does NOT depend on the
+            # SAM3 leg — record it here too, or the 24/31 non-nav gap would be
+            # auditable only on the clips SAM3 happened to cover (15 of 31 on
+            # aug120), which is a coverage artifact masquerading as a rate.
             cor["goal_evidence"] = {"evidence_sign_idx": ev,
+                                    "evidence_sign_kind":
+                                        evidence_sign_kind(v2, ev),
                                     "verdict": "not_computable",
                                     "reason": "sam3 absent for this clip",
                                     "src": ["vlm"]}
         else:
-            n_sign_frames = sum(1 for t in tracks
+            n_sign_tracks = sum(1 for t in tracks
                                 if t["concept"] == "traffic sign")
             cor["goal_evidence"] = {
-                "evidence_sign_idx": ev, "sam3_sign_tracks": n_sign_frames,
-                "verdict": ("grounded" if ev is not None and n_sign_frames > 0
-                            else "provisional"), "src": ["vlm", "sam3"]}
+                "evidence_sign_idx": ev,
+                # ⚠️ VLM SELF-REPORT, never corroboration — recorded because it
+                # is exactly the field a future KIND check needs, and because
+                # it makes the 24/31 non-nav gap auditable PER CLIP instead of
+                # only in a study.
+                "evidence_sign_kind": evidence_sign_kind(v2, ev),
+                "sam3_sign_tracks": n_sign_tracks,
+                # ⭐ THE ONLY MEASURED FACT, UNDER ITS OWN NAME. It says a
+                # sign-LIKE object was detected somewhere in this clip. It does
+                # NOT say the cited sign exists, is a navigation sign, is on
+                # the grounded frame, or applies to ego.
+                "sign_like_object_present": n_sign_tracks > 0,
+                "verdict": "not_computable",
+                "reason": GOAL_EVIDENCE_UNVERIFIABLE,
+                "src": ["vlm", "sam3"]}
     # --- census vs scene --------------------------------------------------- #
     if scene.get("road_type") == "urban":
         n_agents = sum(1 for t in tracks

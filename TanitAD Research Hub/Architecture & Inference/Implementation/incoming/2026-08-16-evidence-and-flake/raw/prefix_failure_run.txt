@@ -1,0 +1,54 @@
+......................F...                                               [100%]
+================================== FAILURES ===================================
+_________ test_after_init_from_exactly_the_intended_groups_train[S-J] _________
+
+st_ckpt = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-475/st0/ckpt.pt')
+reachable_groups = {'aux', 'encoder', 'layer_str', 'layer_tac', 'planner', 'predictor_op', ...}
+stage = 'S-J'
+
+    @pytest.mark.parametrize("stage", list(STAGES))
+    def test_after_init_from_exactly_the_intended_groups_train(st_ckpt,
+                                                               reachable_groups,
+                                                               stage):
+        """MEASUREMENT, not a reading of the freeze map: initialise stage N+1 from
+        a real predecessor checkpoint, apply the stage freeze, run the REAL stage
+        loss, and census `.grad` — every out-of-stage group must be `None`, and the
+        control above proves each of them was reachable."""
+        s = mk("goal", seed=61)
+        if stage in ("S-S", "S-J"):
+            load_stage_init(s, st_ckpt, stage=stage)
+        apply_stage_freeze(s, stage)
+    
+        want = set(stage_trainable_groups(stage))
+        wrong = [(n, s.group_of(n)) for n, p in s.named_parameters()
+                 if p.requires_grad != (s.group_of(n) in want)]
+        assert not wrong, f"requires_grad disagrees with the stage: {wrong[:5]}"
+    
+        v6_loss_step(s, _stage_batch(s), stage=stage, weights=V6LossWeights(),
+                     o1_k=10, o5_k=10)["loss"].backward()
+        census = _grad_census(s)
+        leaked = {g: v for g, v in census.items() if g not in want and v["grad"]}
+        assert not leaked, (
+            f"stage {stage} put gradient in groups it must not train: {leaked}. "
+            f"Every one of these was reachable in the control, so this is a real "
+            f"leak, not an artifact of an unreachable loss.")
+        assert reachable_groups >= (set(census) - want), \
+            "the control does not cover every group this stage freezes"
+>       assert any(census[g]["grad"] for g in want), \
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            f"stage {stage} trained NOTHING — the freeze map and the loss disagree"
+
+tests\test_v6_ladder_edges.py:459: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+.0 = <set_iterator object at 0x000001B9D9DD5400>
+
+>   assert any(census[g]["grad"] for g in want), \
+               ^^^^^^^^^
+        f"stage {stage} trained NOTHING — the freeze map and the loss disagree"
+E   KeyError: 'interp'
+
+tests\test_v6_ladder_edges.py:459: KeyError
+=========================== short test summary info ===========================
+FAILED tests/test_v6_ladder_edges.py::test_after_init_from_exactly_the_intended_groups_train[S-J]
+1 failed, 25 passed in 15.51s

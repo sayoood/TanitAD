@@ -4374,3 +4374,54 @@ the wrong direction.
 *(Same family as C77 — a well-formed artifact whose content is wrong — and C18 — a check scoped to
 the container. The new half is that here the container check was **quantitative and passed**: this
 is the first one where the wrong data satisfied a numeric invariant.)*
+
+---
+
+## C85 — I HANDED AN AGENT A MECHANISM THAT WAS ADJACENT TO THE FAILURE, AND IT WAS WRONG (2026-08-16, orchestrator)
+
+**RETRACTED:** my briefed diagnosis of `test_v6_ladder_edges.py::…[S-J]` — *"it seeds the model
+but draws its batch from global RNG, which is a plausible mechanism"* — and the framing that went
+with it, *"intermittent"*.
+
+**WHAT IT ACTUALLY IS — `KeyError: 'interp'`, and nothing to do with randomness of data:**
+`_grad_census` built its dict with `setdefault`, so a **zero-parameter group vanished from the
+census entirely**; `STAGE_GROUPS["S-J"] is MODULE_GROUPS` includes `interp`, which is empty at the
+default build; and the assertion `any(census[g] … for g in want)` iterates a **hash-randomised
+`set`** and **short-circuits** — so the missing key is only ever reached when `interp` happens to
+sort first.
+
+⇒ **Not flaky. DETERMINISTIC, keyed on `PYTHONHASHSEED`:** seeds 3 and 12 FAIL, seeds 0 and 5 PASS.
+Rate **3/25 = 12.0 %** measured over separate processes, against **43/400 = 10.75 %** predicted
+from a hash-seed sweep. *(And `mk()` calls `torch.manual_seed` — a `KeyError` on a STRUCTURAL
+lookup is unreachable by any data value, so my mechanism could not have produced this failure at
+all.)*
+
+⇒ **AND IT DID NOT PRE-DATE THE CHANGE, which I had marked UNVERIFIED and was the useful question.**
+The test file is byte-identical at `ee02ff7` and HEAD, and at `ee02ff7` it PASSES at the exact seeds
+that deterministically fail at HEAD. `interp` entered `MODULE_GROUPS` in `06b8782` at 20:57 —
+**18.5 h after the test was written**. The test was correct when written and was broken by a model
+change.
+
+⇒ **ROOT-CAUSE CLASS: A MECHANISM ADJACENT TO THE FAILURE, ADOPTED BEFORE IT WAS TESTED AGAINST THE
+FAILURE'S OWN SHAPE.** "Seeded model, unseeded batch" is a real property of that test and a real
+cause of real flakes — it simply was not THIS one, and I never checked it against the actual
+symptom. A `KeyError` naming a specific group is a **structural** signature; nondeterministic DATA
+cannot produce it. **The error message contained the refutation and I did not read it before
+theorising.** Sibling of C84 (*a probe reported my apparatus, and I read it as the subject*).
+
+⇒ **THE CHEAP DISCRIMINATOR, and the standing rule (the agent's own words, adopted):
+MAKE THE MECHANISM PREDICT A RATE, THEN MEASURE THE RATE.** A hypothesis that cannot name a
+number is not yet a hypothesis. Here the real mechanism predicted 10.75 % and delivered 12.0 %;
+mine predicted nothing and would have been "confirmed" by any retry that happened to pass.
+
+⚠️ **AND THE BUG WAS HIDING A SECOND, WORSE ONE** — which is why "retry until green" would have
+been expensive. With `agent_slots=True`, `interp` owns **62 params**,
+`apply_stage_freeze(·, "S-J")` marks **all 62 trainable**, and the S-J loss reaches **0**: verbatim
+the failure mode `v6.py`'s own docstring claims to prevent — a module advertised as training while
+nothing trains it. Pinned `xfail(strict=True)`; **the `v6.py` S-J group tuple must be fixed before
+the first `agent_slots=True` run.**
+
+⚠️ **One more instance of the self-matching-filter trap, same night:** `grep -l failed` over the
+post-fix logs matched **35 of 35** runs — because pytest prints `xfailed`. The opaque `ZZ…ZZ`
+marker is what kept the 40/40 figure honest. **Never grep an output stream for a word that is a
+substring of the stream's own vocabulary.**
