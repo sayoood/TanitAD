@@ -158,7 +158,7 @@ structurally blocked until PH2** wires `g_str`.
 | item | state |
 |---|---|
 | **VLM pilot (PH0)** | ⚠️ **Pipeline VALIDATED 8/8; engine B (the VLM) is the one open blocker — and it needs your call.** See §7. |
-| **Distance-keeping / headway** | Needs a lead block on the T1 dense grid (`tools/build_lead_block.py`). This is the other half of LONGITUDINAL and, given tonight's finding, the highest-value missing instrument. |
+| **Distance-keeping / headway** | ⚠️ **SUPERSEDED 2026-08-16 — this line is STALE and it MIS-COMMISSIONED WORK.** It was true when written; the instrument **landed 2026-08-03** (`taniteval/tools/build_lead_block.py` — note the path: the bare `tools/…` cited here **does not exist**, and a wrong path makes a built instrument look unbuilt) and was **measured 2026-08-14**: headway **30.5717 m**, time-gap **3.1299 s** (n=223), min-TTC **24.7384 s** (n_closing=115), n **228/881**, states {LEAD 270, NO_LABEL 60, NO_LEAD 551}. On 2026-08-16 this sentence and its sibling INTAKE caused an agent to be commissioned to rebuild it. **Do not read the phrase "highest-value missing instrument" as current.** Root-cause classes: **C70** (a stale blocker never revisited when the blocker cleared) and **C70b** (a wrong path). The genuine remaining gap is narrower: the T1 **dense-grid** lead block, not the instrument. |
 | **STRATEGIC family** | Blocked on the corpus; PH2 is the instrument. |
 | **HF release bundle** | ✅ **PUBLISHED** — `RELEASE_DONE`, 20 artifacts + media + the 18 pilot files, MANIFEST last. |
 | **W7-PROG** | ✅ **Ran and returned a pre-registered PARTIAL** — see below. |
