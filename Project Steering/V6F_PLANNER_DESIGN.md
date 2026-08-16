@@ -162,7 +162,46 @@ random until S-J. The dynamics stay trunk-frozen in S-T; only the goal-injection
 
 ### 1.4 The admissibility audit, applied to every planner input (PI 2026-08-03)
 
-> 🟥 **OPEN PI DECISION 2026-08-16 — `v0` IS CLASSED BOTH WAYS AT HEAD, AND IT IS WORTH 2.85×.**
+> ⛔ **RESOLVED BY THE PI 2026-08-16 — `v0` IS ADMISSIBLE, WITH A BINDING ANTI-ECHO CONDITION.**
+>
+> **Sayed, verbatim:** *"We can use v0 as input since it is measured and is not the future, but we
+> should assure that the model/planner later is not cheating by just outputting v0 as longitudinal
+> plan."*
+>
+> **The ruling and its reasoning.** `v0` is **measured present state**, not a future quantity. That
+> is the line: the vision-only rule exists to keep the model from reading *the answer*, and ego speed
+> at t0 is an observation available to any real vehicle at inference. It is therefore **admissible as
+> a planner input**, and `e_wc2_sigma_star.py:188`'s `"v0": "ECHO"` classification is **SUPERSEDED**
+> — it must be corrected to admissible so the two artifacts stop contradicting each other.
+>
+> ⛔ **THE CONDITION IS BINDING AND IT IS NOT SATISFIED BY THE RULING.** Admitting `v0` as an INPUT
+> creates a new way to fake competence: a planner can emit **"keep doing v0"** as its longitudinal
+> plan and score well, because holding the current speed is a strong baseline on most windows. That
+> would be **skill attributed to a copy**. ⇒ **No longitudinal claim is admissible until the planner
+> is shown to BEAT a hold-v0 baseline, separated, on the LONGITUDINAL family.**
+>
+> ⚠️ **This is the third instance of one failure mode, and the programme has been fooled by all
+> three:** the **nav-echo** (flagship-v1's route head scored 1.0000 as an exact bijection of the nav
+> it was fed), the **T1 action echo** (S-curve reproduction 97.9 % open-loop, **0.0 % hold-action**,
+> ~5 % closed-loop), and the **P1 speed echo** (R² 0.995 collapsing to **−0.72** under the v0
+> shuffle). Each looked like capability until a control was run.
+>
+> ⇒ **REQUIRED CONTROLS, both, reported beside every longitudinal number:**
+> 1. **HOLD-v0 baseline** — longitudinal plan = sustain `v0` (zero commanded accel). The planner must
+>    beat it with a **separated** paired episode-cluster CI. Not beating it is not a small miss; it
+>    means the longitudinal head has learned nothing beyond the input.
+> 2. **v0-SHUFFLE control** — permute `v0` across windows. A planner genuinely *using* speed degrades
+>    sharply; one merely *echoing* it degrades in lockstep with the shuffled value. The existing
+>    `--speed-echo-control` machinery already implements this shape and should be reused, not
+>    reinvented.
+>
+> ⚠️ **And the sobering context that survives the ruling:** even vision **+ `v0`** sat at σ/ADE
+> **3.527** on the REF-C surface — still worse than a **0-parameter constant-yaw-rate rule at
+> 1.1888**. Admitting `v0` does not make the goal head fundable; it removes an *argument*, not a
+> *deficit*.
+>
+> *(Superseded record of the contradiction that prompted the ruling:)*
+> 🟥 ~~**OPEN PI DECISION 2026-08-16 — `v0` IS CLASSED BOTH WAYS AT HEAD, AND IT IS WORTH 2.85×.**~~
 >
 > | artifact (both at HEAD) | verdict on `v0` |
 > |---|---|
