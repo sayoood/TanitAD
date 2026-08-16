@@ -20,6 +20,7 @@ road curbs…"*
 | bytes/clip | 49 257 B | **120 005 B compact — 2.44×** (317 109 B at `indent=1` — 6.44×) |
 | peak GPU | 4.231 GB | **4.241 GB** — +10 MB |
 | record address | `sam3_backfill/` | `sam3_backfill_v2/` — the floors are never mixed |
+| **the run** | 83 of 115 usable, 32 still C77 | ✅ **115 / 115, PASS** — 9 505 agent + 23 116 scene detections, **32 619 contours**, error census **EMPTY**, control live **115/115**, zero-det clips **1 (empty scene) / 0 (dead control)** |
 
 ⛔ **THE BIGGEST RESULT IS NOT ON THAT TABLE, AND IT IS A RETRACTION.** Building the contour
 exposed that **`rle_rows` in the entire v1 corpus is FLATTENED and cannot redraw its own mask** —
@@ -35,10 +36,20 @@ large, plausible, unfalsifiable region, six of them, for a thing there is exactl
 
 ## 1. What changed in the engine
 
-All of it is in `stack/scripts/ph0_sam3.py`, pinned by 25 new tests in
-`stack/tests/test_ph0_sam3.py`. Suite: **3710 passed / 0 failed / 7 skipped / 2 xfailed**
-(`cd stack && PYTHONUTF8=1 OMP_NUM_THREADS=6 pytest -q`; baseline 3689 + 21 net new at the time of
-that run, 25 after the RLE fix).
+All of it is in `stack/scripts/ph0_sam3.py`, pinned by **26 new tests** in
+`stack/tests/test_ph0_sam3.py` (33 → 59). Suite:
+**3715 passed / 0 failed / 7 skipped / 2 xfailed** in 434 s
+(`cd stack && PYTHONUTF8=1 OMP_NUM_THREADS=6 pytest -q`) — the brief's baseline
+**3689 / 0 / 7 / 2** plus exactly the 26.
+
+⚠️ **A LATER RUN OF THE SAME COMMAND REPORTS 3750 / 0 / 7 / 2, AND THAT IS NOT MY DELTA.** Four
+agents are live in this tree and 35 tests landed between the two runs. Quoting the 3750 as
+"3689 + 61" would attribute other people's work to this package. **The attributable number is the
+paired one — 3689 → 3715 across my edit and nothing else's** — and the only claim that survives
+either way is *0 failed*.
+
+⚠️ Without `PYTHONUTF8=1` this shell reports four failures that do not exist (C84); the invocation is
+quoted because the number is meaningless without it.
 
 ### 1.1 Contours — and why they are traced on the pixel-CORNER lattice
 
@@ -63,24 +74,40 @@ centres. That is not a refinement, it is the difference between a usable number 
 On the corner lattice the enclosed area equals the pixel count **exactly**, so the only area error is
 the one the RDP tolerance buys — which is the number the brief asks for:
 
-**MEASURED, 1 143 contours over the 5 pilot clips (`raw/p2_pilot_size.json`), tol = 1.0 px:**
+**MEASURED over the WHOLE v2 corpus — 32 619 contours, tol = 1.0 px** (`raw/contour_fidelity.json`,
+`code/c_contour_fidelity.py`). Corpus-wide: median **−1.28 %**, p90 **+6.25 %**, mean |err| 9.09 %.
 
-| quantity | value |
-|---|---|
-| median signed area error | **−1.5 % to −2.9 %** per clip (−0.0149, −0.0219, −0.0292, 0.0000, −0.0196) |
-| p90 signed area error | +2.9 % to +6.7 % |
-| max abs error | 0.13 – 0.66 |
-| contours with >1 loop | **118 / 1 143 = 10.3 %** |
+⛔ **AND THE AGGREGATE LIES, SO IT IS NOT REPORTED ALONE.** A fixed 1.0 px tolerance is a rounding
+error on a 7 000 px² curb and a large fraction of a 30 px² traffic light — and the corpus's **median
+mask is 52 px²**, so half of it is in the regime where the tolerance dominates:
 
-⚠️ **The error is SIGNED and both signs mean different things.** RDP can only *lose* detail, so it
-biases small and negative — that is the median. The positive tail is a different mechanism:
-`contour_of_mask` keeps the **largest outer loop only**, so a detection with a hole comes out
-*larger* than its mask, and a fragmented detection loses its other pieces. The large max values are
-that, not simplification. ⇒ **The contour is a lossy summary and the RLE stays the primitive.** Both
-are banked; `contour_area_px` vs `mask_area_px` audits every detection without a re-run.
+| mask area px² | n | p10 | **median** | p90 | mean abs | within ±5 % | median pts |
+|---|---|---|---|---|---|---|---|
+| 0–50 | **15 937** | −33.3 % | **−4.6 %** | +7.1 % | 11.0 % | **38 %** | 4 |
+| 50–200 | 8 596 | −13.2 % | −1.1 % | +7.8 % | 7.4 % | 54 % | 7 |
+| 200–1 000 | 6 668 | −27.4 % | −0.9 % | +3.5 % | 7.9 % | 70 % | 17 |
+| 1 000–5 000 | 1 019 | −8.4 % | −0.1 % | +1.8 % | 4.3 % | 84 % | 24 |
+| ≥ 5 000 | 399 | −1.6 % | **+0.4 %** | +2.4 % | 2.4 % | **95 %** | 29 |
 
-The point cap is real and self-reporting: when 48 points is not enough, the tolerance doubles until
-it is, and the record carries the tolerance that was actually used, not the one requested.
+⇒ **The contour is faithful exactly where an oriented extent is worth having** (95 % of ≥5 000 px²
+detections within ±5 %) **and lossy on sub-50 px² blobs, which come out as bare quadrilaterals** — and
+those are precisely the objects the reliability study already found operate *below the resolution at
+which their own output can be audited* (`traffic light` median box 34 px²). Nothing is claimed for
+them here either.
+
+⚠️ **The error is SIGNED and the two signs are two different mechanisms.** RDP can only *lose* detail
+⇒ negative, and that is the median. The positive side is `contour_of_mask` keeping the **largest
+outer loop only**: a holed detection comes out *larger* than its mask. Splitting on that separates
+them cleanly — single-loop (n=28 318) median **−0.6 %**, multi-loop (n=**4 301 = 13.2 %**) median
+**−8.3 %**, p10 **−45.8 %**. ⇒ **`contour_n_loops > 1` is the flag to filter on** if a consumer needs
+area fidelity; it is banked per detection for exactly that.
+
+⇒ **The contour is a lossy summary and the RLE stays the primitive.** Both are banked, and
+`contour_area_px` vs `mask_area_px` audits every detection without a re-run.
+
+**The point cap almost never binds, and says so when it does:** the tolerance actually used was
+1.0 px on **32 145 / 32 619 (98.5 %)**, 2.0 on 414, 4.0 on 59, 8.0 on 1. The record carries the
+tolerance that was used, not the one requested.
 
 ### 1.2 The oriented extent — the reason a contour was worth adding
 
@@ -350,6 +377,13 @@ artifact whose content is wrong* — and C18's — *a check scoped to the contai
 `row = start // W`, `col = start % W` (a run never straddles a row boundary, because a mask row's
 run ends at the row's end). **No re-detection is required to rescue v1's masks.**
 
+⛔ **AND I DELIBERATELY DID NOT REWRITE THE v1 CORPUS IN PLACE, though it would have taken minutes.**
+Those 115 records are the **primary source** `SAM3_CONCEPT_RELIABILITY.md` cites for 2 496
+detections and a 244-detection adjudication. Silently changing a document's primary source under it
+— even to something more correct — makes every number in it unreproducible against the artifact it
+names. The decode rule above is published instead, and it lives in `as_2d_mask`'s own docstring where
+the next reader of that field will hit it. **If the v1 masks are needed, decode; do not mutate.**
+
 **Fix:** `ph0_sam3.as_2d_mask()` squeezes leading singleton axes and **raises** on a shape it cannot
 interpret; `_rows_rle` and `read_outputs` go through it; every detection now also banks `mask_hw`,
 which makes the encoding self-checking (36 794 is a legal column index in *some* frame size — it is
@@ -386,7 +420,96 @@ The last two are the new half: a v1 record is present, non-empty, error-free **a
 being the wrong record. `engine.confidence_threshold` is stamped into every record by `sam3_leg`
 precisely so this is checkable.
 
-### 6.1 Result
+### 6.1 Result — ✅ 115 / 115, PASS
+
+Run 2026-08-16, Colab T4, one session, banked per clip and far-side byte-verified per clip. Log:
+`raw/p3_run115.log`. Run manifest (far side + `raw/p3_run_manifest.json`):
+`sam3_backfill_v2/_runs/20260816-223213-sam3-v2.json`.
+
+⭐ **The census below is the INDEPENDENT one** — `code/hf_v2_census.py`, run from the dev box against
+the far side, by something that did not produce the data (`raw/v2_census.json`). It agrees exactly
+with the run's own census, which is the point of running both. *(C77 was banked by an agent that
+reported "the main exec has completed"; the corpus held zero detections.)*
+
+| | |
+|---|---|
+| records / coverage | **115 / 115**, zero-byte **0**, run frames **658** |
+| **agent detections** | **9 505** (v1: 2 496 over 83 clips at conf 0.5) |
+| **scene detections** | **23 116** |
+| **contours** | **32 619**, and **32 619 with an oriented extent** — 100 % |
+| **error census** | **EMPTY** |
+| **liveness control** | live **115 / 115** · dead **0** · missing **0** |
+| schema / floor | wrong schema **0** · wrong `confidence_threshold` **0** |
+| **PASS** | **true** |
+
+**Per concept — AGENT channel** (the contract; `n_det_total`):
+
+| car | traffic sign | traffic light | pedestrian | truck | bus | cyclist |
+|---|---|---|---|---|---|---|
+| 4 269 | 2 496 | 1 444 | 738 | 430 | 90 | 38 |
+
+**Per concept — SCENE channel** (⚠️ counts of STUFF, not object counts — §1.3):
+
+| road marking | lane marking | road curb | guardrail |
+|---|---|---|---|
+| 10 084 | 8 776 | 3 140 | 1 116 |
+
+⭐ **THE ZERO-SPLIT, which is the number C77 exists to make readable.** **One** clip has zero AGENT
+detections — `566a3afd`, and its liveness control reads `road 1 · sky 2` with **72 scene
+detections**. ⇒ **empty scene: 1 · dead control: 0.** A single number ("1 clip with no detections")
+would have been indistinguishable from the failure that produced 115 empty records; the split says
+the engine was working and the road was empty.
+
+⚠️ **v1 had 38 zero-detection clips of 115; v2 has 1.** Most of that is the floor (0.25 vs 0.5,
+MEASURED 2.63× the detections in the pilot) and the rest is that 32 of v1's 115 were never repaired
+after C77. This is **not** a like-for-like quality comparison and must not be quoted as one.
+
+**Ego lane** (after the `p5` re-derivation, §3): bounded on both sides on **447 / 658 run frames =
+67.9 %**; the remainder carry an explicit `reason`, never a number.
+
+### 6.2 Two operational facts this run measured
+
+⚠️ **The HF commit rate limit is 128/hour, and a 115-clip per-clip bank spends 116 of them.** The
+follow-up re-derivation died at `429 … exceeded the rate limit for repository commits`. Per-file
+pushes also leave a corpus **half-converted** when they fail — which is the state the script existed
+to remove. ⇒ `p5_rederive_lane.py` now writes **one `create_commit` with N operations**: atomic,
+unaffected by the limit, and idempotent because the target state is a pure function of banked data.
+
+⚠️ **A killed `colab exec` client does NOT kill the kernel.** The local streamer was stopped at clip
+~78 of 115; the VM ran on and completed, banking the manifest. ⇒ **judge by the far side, never by
+the client's exit** — and bank the exec log as you go, because the previous run's log was lost and
+the C77 root cause had to be re-derived on a fresh T4 (`raw/p3_run115.log` is this run's, kept).
+
+### 6.3 See it — `video/`
+
+`code/p4_render_v2.py`, the two richest banked clips (`aa291a17` 899 detections, `e084c7c3` 823):
+
+| artifact | what it shows |
+|---|---|
+| `video/v2_<clip8>_sheet.png` | the 6 run frames as one contact sheet — **the artifact to look at** |
+| `video/v2_<clip8>.mp4` | the same frames at 1 fps |
+
+Agent masks are filled and outlined with their **contour**, with the **oriented extent** drawn in
+white over each; scene classes are contour outlines — **cyan/teal lane + road markings**, **orange
+curbs**, **magenta guardrails**; the ego-lane derivation draws its near-field band, its clustered
+boundaries in green, and either its verdict (*"DERIVED · ego lane idx 0 · width 152.0 px"*) or its
+reason. Header: `frame N · agents · scene · contours`.
+
+⛔ **ONLY THE FRAMES THE ENGINE ACTUALLY RAN.** Detections exist on the strided frames; painting
+them onto the frames in between by holding the nearest one is the SNAPPING confound this engine
+already retracted once (a 0/8 "agreement" that was a property of the snapping). So it is 6 frames at
+1 fps, each labelled with its own index — the contact sheet is the artifact that reads well, and the
+video exists because the PI asked for video.
+
+⚠️ **What the picture also shows, unflatteringly:** a thicket of `traffic sign` boxes at 0.27–0.42
+across the skyline. That is the 0.25 floor exposing the failure mode
+`SAM3_CONCEPT_RELIABILITY.md` §0 already named — sign-SHAPED objects — now with more of them. The
+floor is still right (filtering up is free, re-detecting is not), and **the fix is a KIND check, not
+a threshold**.
+
+⚠️ Rendered on the DEV BOX, not the VM: free-Colab reclaimed the T4 the moment the run finished. The
+renderer needs no GPU, which is why that cost nothing — but a `*.mp4` is git-ignored here and these
+two are committed with `git add -f`.
 
 <!-- CENSUS -->
 
@@ -406,18 +529,56 @@ precisely so this is checkable.
    README went unread for 10 days.
 4. ⚠️ **The v1 `sam3_backfill/` corpus still holds 32 C77 records.** v2 supersedes it wholesale; the
    v1 prefix should be marked superseded rather than repaired.
+5. ⚠️ **`SAM3_CONCEPT_RELIABILITY.md`'s precision study was done on the v1 corpus at floor 0.5.**
+   v2 is a **different population** — 2.63× the detections, with the new mass concentrated near the
+   floor. Its precision figures (`traffic sign` 0.88 uniform / 0.93 max-area) **do not transfer to
+   v2 and must not be quoted against it**; the overlays already show more sign-shaped false
+   positives at 0.27–0.42. Re-adjudicating on the v2 corpus is the follow-on, and it is now cheap:
+   every detection carries a contour and an oriented extent, so a crop-and-adjudicate pass has more
+   to work with than a box.
+
+---
+
+## 9. Deliverable manifest
+
+Everything below is **in the repo and staged** on `agent/arch-inf-20260803`, except the two rows
+explicitly marked far-side.
+
+| artifact | where |
+|---|---|
+| the engine | `stack/scripts/ph0_sam3.py` |
+| tests (33 → 59) | `stack/tests/test_ph0_sam3.py` |
+| lab library | `colab/s2_lab_lib.py` |
+| operator guide | `colab/RUNNER.md` |
+| retraction C85 | `Project Steering/RETRACTION_LOG.md` |
+| this report | `…/incoming/2026-08-16-sam3-extraction-v2/SAM3_EXTRACTION_V2.md` |
+| kernel bring-up + verify-gate | `code/ship.py`, `code/bootstrap_v2.py` |
+| the four run steps | `code/p1_prompt_probe.py`, `code/p2_pilot_size.py`, `code/p3_run115_v2.py`, `code/p5_rederive_lane.py` |
+| the five checks | `code/hf_v2_census.py`, `code/c_contour_fidelity.py`, `code/v2_integration_check.py`, `code/c85_overlay_proof.py`, `code/p4_render_v2.py` |
+| measurements | `raw/{p1_prompt_probe,p2_pilot_size,p2_sample_0089a096,v2_census,contour_fidelity,v2_integration_check,c85_overlay_proof,p5_rederive_lane,p3_run_manifest}.json` |
+| the run log | `raw/p3_run115.log` — ⚠️ **kept on purpose**: the previous run's log was lost and C77's root cause had to be re-derived on a fresh T4 |
+| overlays | `video/v2_{aa291a17,e084c7c3}{.mp4,_sheet.png}` (mp4s via `git add -f`) |
+| **the corpus** | ⚠️ **FAR SIDE ONLY** — HF `Sayood/tanitad-ph0-aug120` → `sam3_backfill_v2/*.json`, 115 records ≈ 13.8 MB. Not in git (it is data, and the v1 corpus is not in git either). Reproducible from §8; independently verifiable by `code/hf_v2_census.py` |
+| **the run manifest** | far side `sam3_backfill_v2/_runs/20260816-223213-sam3-v2.json` — **and copied into `raw/p3_run_manifest.json`**, because the far side is one disk |
 
 ---
 
 ## 8. Reproduce
 
 ```
-# dev box, one session, in order
-python code/ship.py tanitad-sam3v2                     # closure + token + kernel bring-up
-colab exec -s tanitad-sam3v2 -f code/p1_prompt_probe.py --timeout 2300
-colab exec -s tanitad-sam3v2 -f code/p2_pilot_size.py   --timeout 2900
-colab exec -s tanitad-sam3v2 -f code/p3_run115_v2.py    --timeout 9000
-python code/hf_v2_census.py --out raw/v2_census.json    # INDEPENDENT far-side check
+colab new -s tanitad-sam3v2 --gpu T4                    # spell T4 EXACTLY (else it falls back to A100)
+python code/ship.py tanitad-sam3v2                      # closure + token + kernel bring-up + verify-gate
+colab exec -s tanitad-sam3v2 -f code/p1_prompt_probe.py --timeout 2300   # vocabulary, by measurement
+colab exec -s tanitad-sam3v2 -f code/p2_pilot_size.py   --timeout 2900   # 3-arm sizing
+colab exec -s tanitad-sam3v2 -f code/p3_run115_v2.py    --timeout 9000   # the 115, ~57 GPU-min
+colab stop -s tanitad-sam3v2                            # an unstopped session burns units for 24 h
+# --- all of the below is dev box, ZERO GPU ---
+python code/p5_rederive_lane.py                         # re-derive ego_lane from banked primitives
+python code/hf_v2_census.py --out raw/v2_census.json    # INDEPENDENT far-side content census
+python code/c_contour_fidelity.py                       # contour error, stratified by object size
+python code/v2_integration_check.py                     # ph1_fuse + RLE round-trip on a real record
+python code/p4_render_v2.py                             # overlays (host-agnostic, no GPU)
+python code/c85_overlay_proof.py                        # the v1 no-mask-fill measurement
 ```
 
 ⚠️ **`PYTHONUTF8=1` is required for every `colab` invocation** — colab-cli 0.6.0 opens the script

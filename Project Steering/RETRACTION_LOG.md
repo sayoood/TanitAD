@@ -4377,7 +4377,15 @@ is the first one where the wrong data satisfied a numeric invariant.)*
 
 ---
 
-## C85 — I HANDED AN AGENT A MECHANISM THAT WAS ADJACENT TO THE FAILURE, AND IT WAS WRONG (2026-08-16, orchestrator)
+## C86 — I HANDED AN AGENT A MECHANISM THAT WAS ADJACENT TO THE FAILURE, AND IT WAS WRONG (2026-08-16, orchestrator)
+
+> ⚠️ **RENUMBERED C85 → C86 on 2026-08-17: this entry COLLIDED with another C85.** Two agents
+> appended to this append-only file within the same hour and both claimed `C85` — mine (this one)
+> and the SAM3 `rle_rows` finding above. Neither was wrong to append; **nothing allocated the
+> identifier**. ⇒ *An append-only log shared by concurrent writers needs the NEXT NUMBER to be read
+> and claimed atomically, or it silently produces two records with one name and every later citation
+> becomes ambiguous.* Caught by `grep -n "^## C8[0-9]"` before either was cited anywhere; the
+> content of both entries is unchanged.
 
 **RETRACTED:** my briefed diagnosis of `test_v6_ladder_edges.py::…[S-J]` — *"it seeds the model
 but draws its batch from global RNG, which is a plausible mechanism"* — and the framing that went

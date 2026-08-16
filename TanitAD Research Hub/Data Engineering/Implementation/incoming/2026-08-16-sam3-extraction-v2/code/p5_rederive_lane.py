@@ -18,6 +18,18 @@ changed) and the same rule that put the RLE mask next to the lossy contour.
 schema or detection floor is not the one it was told to expect — a re-derivation
 that silently touched a v1 record would mix the corpus it exists to keep clean.
 
+⛔ ONE COMMIT FOR THE WHOLE CORPUS, NOT ONE PER RECORD. MEASURED 2026-08-16:
+the first version pushed per file and died at
+`429 … you have exceeded the rate limit for repository commits (128 per hour)`
+— the 115-clip run had already spent 116 of them. A per-file loop is also what
+leaves a corpus HALF-CONVERTED when it fails, which is the exact state this
+script exists to eliminate. `create_commit` with N `CommitOperationAdd`s is one
+commit, atomic, and unaffected by the limit.
+
+⚠️ **Idempotent by construction**: the target state is a pure function of each
+record's own banked scene detections, so a record already in the target state
+compares equal and is skipped. Re-running after ANY partial failure converges.
+
 usage:  python p5_rederive_lane.py [--dry-run] [--prefix sam3_backfill_v2/]
 """
 from __future__ import annotations
@@ -72,6 +84,7 @@ def main(argv=None) -> int:
     stat = {"n": len(far), "rewritten": 0, "unchanged": 0, "skipped": 0,
             "bounded_before": 0, "bounded_after": 0, "frames": 0,
             "skipped_clips": []}
+    pending: list[tuple[str, bytes]] = []
     for i, rf in enumerate(sorted(far)):
         rec = json.load(open(hf_hub_download(DS, rf, repo_type="dataset",
                                              token=tok, force_download=True),
@@ -98,19 +111,34 @@ def main(argv=None) -> int:
         rec["ego_lane"] = {"frames": new,
                            "note": "DERIVED, never prompted — see "
                                    "ph0_sam3.derive_ego_lane"}
-        if not a.dry_run:
-            payload = json.dumps(rec, separators=(",", ":")).encode("utf-8")
-            api.upload_file(path_or_fileobj=io.BytesIO(payload),
-                            path_in_repo=rf, repo_id=DS, repo_type="dataset")
+        pending.append((rf, json.dumps(rec, separators=(",", ":"))
+                        .encode("utf-8")))
+        stat["rewritten"] += 1
+        if (i + 1) % 25 == 0:
+            print(f"[p5] {i+1}/{len(far)} read · pending "
+                  f"{len(pending)}", flush=True)
+
+    if pending and not a.dry_run:
+        from huggingface_hub import CommitOperationAdd
+        api.create_commit(
+            repo_id=DS, repo_type="dataset",
+            operations=[CommitOperationAdd(path_in_repo=rf,
+                                           path_or_fileobj=io.BytesIO(p))
+                        for rf, p in pending],
+            commit_message=f"p5: re-derive ego_lane on {len(pending)} v2 "
+                           "records (lane_idx_est 0-based FROM THE RIGHT, "
+                           "matching s2_derive.LANE_CONTEXT_INPUTS)")
+        # ⛔ FAR-SIDE VERIFY BY BYTES — never the push log. A sample, because a
+        # single commit either landed whole or not at all.
+        import random
+        for rf, payload in random.Random(0).sample(pending,
+                                                   min(5, len(pending))):
             back = open(hf_hub_download(DS, rf, repo_type="dataset",
                                         token=tok, force_download=True),
                         "rb").read()
-            if back != payload:                 # never trust the push log
+            if back != payload:
                 raise SystemExit(f"FARSIDE VERIFY FAILED for {rf}")
-        stat["rewritten"] += 1
-        if (i + 1) % 25 == 0:
-            print(f"[p5] {i+1}/{len(far)} · rewritten {stat['rewritten']}",
-                  flush=True)
+            stat["verified"] = stat.get("verified", 0) + 1
 
     stat["class"] = "MEASURED"
     stat["dry_run"] = a.dry_run

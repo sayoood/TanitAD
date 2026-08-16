@@ -16,15 +16,37 @@ nearest one — is the SNAPPING confound this engine already retracted once
 the video is one second per RUN frame and says which frame it is, and the
 contact sheet is the artifact that actually reads well.
 
-Writes /content/out/v2_<clip8>.mp4 and /content/out/v2_<clip8>_sheet.png.
+⚠️ HOST-AGNOSTIC ON PURPOSE. It needs NO GPU — only banked records, the video
+bridge and PIL — so it runs on the dev box as happily as on the VM, and it had
+to: free-Colab reclaimed the T4 the moment the 115-clip run finished, and a
+renderer that could only run beside the model would have been dead with it.
+
+Writes <out>/v2_<clip8>.mp4 and <out>/v2_<clip8>_sheet.png.
 """
 import json
 import os
 import sys
 
-os.chdir("/content")
-for p in ("/content/repo/colab", "/content/repo/stack",
-          "/content/repo/stack/scripts"):
+_COLAB = os.path.isdir("/content/repo")
+if _COLAB:
+    os.chdir("/content")
+    _ROOTS = ("/content/repo/colab", "/content/repo/stack",
+              "/content/repo/stack/scripts")
+    _OUT, _WORK = "/content/out", "/content/p4work"
+else:                                   # dev box: the repo is right here
+    _HERE = os.path.dirname(os.path.abspath(__file__))
+    _PKG = os.path.dirname(_HERE)
+    _REPO = os.path.abspath(os.path.join(_PKG, "..", "..", "..", "..", ".."))
+    _ROOTS = (os.path.join(_REPO, "colab"), os.path.join(_REPO, "stack"),
+              os.path.join(_REPO, "stack", "scripts"))
+    _OUT = os.path.join(_PKG, "video")
+    _WORK = os.path.join(os.environ.get("TEMP", "."), "tanitad-p4work")
+    try:
+        import truststore
+        truststore.inject_into_ssl()    # the dev box sits behind a TLS proxy
+    except Exception:
+        pass
+for p in _ROOTS:
     if p not in sys.path:
         sys.path.insert(0, p)
 from pathlib import Path                                         # noqa: E402
@@ -32,10 +54,10 @@ import s2_lab_lib as L                                           # noqa: E402
 import ph0_sam3                                                  # noqa: E402
 
 SCALE = 3
-OUT = Path("/content/out")
-OUT.mkdir(exist_ok=True)
-WORK = Path("/content/p4work")
-WORK.mkdir(exist_ok=True)
+OUT = Path(_OUT)
+OUT.mkdir(parents=True, exist_ok=True)
+WORK = Path(_WORK)
+WORK.mkdir(parents=True, exist_ok=True)
 
 AGENT_COL = {"car": (86, 156, 255), "truck": (255, 149, 61),
              "bus": (255, 196, 61), "pedestrian": (255, 92, 138),
@@ -48,9 +70,16 @@ INK = (232, 236, 244)
 
 
 def font(sz):
+    """⚠️ The Windows roots are not padding. `ImageFont.load_default()` is a
+    bitmap font with no `·`, and this overlay's header is full of them — on the
+    dev box every separator would render as a tofu box (the same trap
+    `ph0_rich_overlay._font` documents)."""
     from PIL import ImageFont
     for p in ("/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf",
-              "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"):
+              "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+              r"C:\Windows\Fonts\consola.ttf",
+              r"C:\Windows\Fonts\DejaVuSansMono.ttf",
+              r"C:\Windows\Fonts\segoeui.ttf"):
         if os.path.exists(p):
             try:
                 return ImageFont.truetype(p, sz)
@@ -160,12 +189,21 @@ def main():
     print(f"[p4] {len(stems)} banked · rendering richest: "
           + ", ".join(f"{c[:8]}({n})" for n, c, _ in best[:2]))
 
-    loc = L.w120_locations(api)
-    REC_PQ = str(WORK / "records.parquet")
-    if not Path(REC_PQ).exists():
-        import shutil
-        shutil.copyfile(L.hf_download(L.DS_ALP, "records.parquet"), REC_PQ)
-    L.bridge_batch(picks, loc, REC_PQ, WORK)
+    # ⚠️ Re-bridging is the expensive AND fragile half (shard pull + a torch
+    # load per clip; MEASURED segfaulting under MSYS on a repeat run), and it
+    # is pure waste when the bytes are already on disk. Skip it when every
+    # picked clip already has its bridged mp4 — the frames are identical by
+    # construction, which is the C79 requirement.
+    have = all((WORK / "videos" / f"{c}.mp4").exists() for c in picks)
+    if have:
+        print("[p4] bridged mp4s already present — reusing the SAME bytes")
+    else:
+        loc = L.w120_locations(api)
+        REC_PQ = str(WORK / "records.parquet")
+        if not Path(REC_PQ).exists():
+            import shutil
+            shutil.copyfile(L.hf_download(L.DS_ALP, "records.parquet"), REC_PQ)
+        L.bridge_batch(picks, loc, REC_PQ, WORK)
 
     import imageio.v2 as imageio
     import numpy as np
@@ -177,10 +215,26 @@ def main():
         fis = sorted(int(k) for k in rec["frames"])
         imgs = [render_frame(frames[fi], rec, fi) for fi in fis]
         mp4 = OUT / f"v2_{cid[:8]}.mp4"
+        # ⚠️ libx264 REFUSES an odd height and imageio reports it only as a
+        # wall of ffmpeg stderr while still creating a 0-byte file — MEASURED
+        # here at 1344x537 (179 px frame x SCALE 3). `macro_block_size=1` does
+        # NOT cover this. Pad to even and check the size afterwards, because a
+        # 0-byte mp4 beside a healthy PNG is exactly the kind of "it ran" that
+        # this package keeps finding.
+        def _even(im):
+            W2, H2 = im.width + im.width % 2, im.height + im.height % 2
+            if (W2, H2) == (im.width, im.height):
+                return np.asarray(im)
+            pad = Image.new("RGB", (W2, H2), (10, 12, 16))
+            pad.paste(im, (0, 0))
+            return np.asarray(pad)
+
         w = imageio.get_writer(str(mp4), fps=1, macro_block_size=1)
         for im in imgs:
-            w.append_data(np.asarray(im))
+            w.append_data(_even(im))
         w.close()
+        if mp4.stat().st_size == 0:
+            raise SystemExit(f"{mp4} is ZERO BYTES — the encoder refused it")
         cols = 2
         rows = (len(imgs) + cols - 1) // cols
         W, H = imgs[0].width, imgs[0].height
