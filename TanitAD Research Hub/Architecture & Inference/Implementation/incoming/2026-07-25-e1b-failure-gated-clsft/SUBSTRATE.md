@@ -64,3 +64,16 @@ Checked at two locations (operating standard: absence at one location is not abs
 - **Rescued by E1b:** `e1a_horizon.py` is now staged at `scripts/e1a_horizon.py` (E1b reuses it).
   **`e2a_localize.py` still lives only on `tanitad-pod3:/workspace/e1a_e2a/`** — needs homing into
   the E1a results dir by Sayed / the E1a author.
+
+> ⏹ **CLOSED 2026-08-16** — blocker CLEARED. `e2a_localize.py` is **no longer pod3-only**; it was homed
+> into the repo (not into the E1a results dir this doc named, but into the closedloop-horizon bundle),
+> together with its result JSON. E1a/E2a are reproducible from the repo.
+> Evidence (MEASURED, two probes): `git ls-files --cached` returns
+> `TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-07-25-closedloop-horizon-and-shift/e2a_localize.py`
+> (sibling `e2a_localize_heldout44.json` alongside it); a second probe by filename pattern (`*localiz*`
+> across all tracked files) returns those two paths and nothing pod-only.
+> ⚠️ **`e1a_horizon.py` now exists in TWO tracked copies** — `…/2026-07-25-e1b-failure-gated-clsft/scripts/e1a_horizon.py`
+> and `…/2026-07-25-closedloop-horizon-and-shift/e1a_horizon.py` — plus a re-render driver at
+> `…/2026-07-27-registry-repair/code/rerender_e1a_horizon.py`. De-stranded, but now duplicated; anyone
+> re-running E1a should establish which copy is canonical before quoting a number from it.
+> Swept by the 2026-08-16 stale-blocker sweep.

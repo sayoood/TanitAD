@@ -81,3 +81,30 @@ programme work — and the commit message must say the siblings' deliverables ar
 3. ⛔ **`MODEL_REGISTRY.md` §8.1 #6 (line 1852) still publishes the withdrawn 77.5 %-leaked "held-out speed R² 0.930"**, and the leaky-cache audit's own fix-table does not list it as corrected.
 4. ⚠️ **`head_img_ego` is the deployed sitclf arm and it is separated-worse than its own ego ablation.** The fix is a config change, not a retrain — but it is a change to a shipped component and belongs to the PI.
 5. ⚠️ **A sitclf → `four_families.py` adapter still does not exist.** `ap_ci.stat_episode_cluster_bootstrap` was the missing piece; the adapter itself is an open work item.
+
+> **⏹ Stale-blocker re-sweep 2026-08-16** (13 days on) — escalations 2, 3 and 5 re-probed at HEAD, CPU-only.
+> Two probes each; nothing here was cleared by assumption.
+>
+> - **#2 — ✅ RE-CONFIRMED STILL TRUE.** `Project Steering/MODEL_REGISTRY.md` still has **0 matches for
+>   `idm_head`** and **0 for `head_img`**. `sitclf` has moved 0 → **1**, but it is prose
+>   (`MODEL_REGISTRY.md:1069`, *"…and of the sitclf work — three instruments now point at…"*), **not a
+>   registry row**. The source-of-truth consequence is unchanged: both streams remain admissible as raw
+>   eval JSON only. The PI ruling this item asks for has not been made. (MEASURED)
+> - **#3 — ⚠️ STILL TRUE, but re-locate it before acting: the line has MOVED 1852 → `MODEL_REGISTRY.md:2714`.**
+>   The withdrawn *"held-out speed R² **0.930**"* is still published there. A correction **was** added
+>   beneath it (`:2718-2724`, *"⛔ CORRECTED 2026-08-03 — do NOT quote '0.930 → −2.465' as the cross-rig
+>   drop"*, establishing the honest pair **+0.7863 → −2.4654** and the one-experiment rule) — **but that
+>   correction fixes the PAIRING defect, not the LEAK defect this item raised.** Nothing at that location
+>   says the 0.930 is 77.5 %-leak-withdrawn, so a reader still takes it as a valid held-out number.
+>   ⇒ item **not** closed; it is now a narrower, better-specified edit. (MEASURED)
+>   *(Sibling note: `…/2026-08-03-appearance-shortcut-audit/MANIFEST.md` escalation #2 — "every doc
+>   quoting +0.930 → −2.465 must be corrected" — **is** satisfied for the registry by this same block.)*
+> - **#5 — ✅ RE-CONFIRMED STILL TRUE, and partly overtaken.** `grep -n "sitclf" taniteval/taniteval/four_families.py`
+>   → **zero hits**; the sitclf modules exist only on the other side of the seam
+>   (`stack/tanitad/eval/sitclf.py`, `sitclf_deploy.py`, `ap_ci.py`). ⚠️ **Do not read "TACTICAL is
+>   UNAVAILABLE" from this item any more**: `four_families.tactical_from_trajectory` (`:740`, added
+>   2026-08-11, header at `:431-437`) closed the TACTICAL n=0 hole from trajectory dumps alone — by a
+>   different route than the adapter. The adapter remains unwritten; the family it was meant to unblock
+>   is no longer blocked. (MEASURED)
+>
+> Swept by the 2026-08-16 stale-blocker sweep.

@@ -140,10 +140,52 @@ not the files.** A whole-file diff over-reports (comments, unrelated helpers) an
 | family | status | note |
 |---|---|---|
 | LONGITUDINAL — speed / along-track / accel / ego-progress | **OK** | on the dense 10 Hz path |
-| LONGITUDINAL — distance-keeping (headway / time-gap / TTC) | ⛔ **UNAVAILABLE** | our ingest reads 4 of 36 PhysicalAI features and `obstacle.offline` is not among them. **A WORK ITEM, not a pass** — the reader exists (`build_lead_tracks.py`); the corpus build must be extended. |
+| LONGITUDINAL — distance-keeping (headway / time-gap / TTC) | ~~⛔ **UNAVAILABLE**~~ → ⏹ **OK — CLOSED** | ~~our ingest reads 4 of 36 PhysicalAI features and `obstacle.offline` is not among them. **A WORK ITEM, not a pass** — the reader exists (`build_lead_tracks.py`); the corpus build must be extended.~~ ⏹ **CLOSED 2026-08-16 — blocker CLEARED, and distance-keeping HAS BEEN MEASURED ON THIS EXACT CORPUS.** See the note below the table. |
 | LATERAL — heading / curvature / yaw-rate / cross-track | **OK** | |
 | TACTICAL — 5-way manoeuvre, per-class + `never_predicted` | **OK** | via `hierarchy.run`; GT from `refb_labels.classify_maneuver` (labels may use ego) |
 | STRATEGIC — route/goal setting | **OK, legacy path only** | ⛔ the **option-set** path is impossible here: PhysicalAI ships **no map** — the card says verbatim *"we do not include open maps data"*. So the route label is read off the ego's own future yaw and **cannot tell whether a branch existed**. `GATE_PROTOCOL §0.7`'s `nonav_route_beats_majority` is **VOID BY CONSTRUCTION** and the flag travels in the output. |
+
+> ⏹ **CLOSED 2026-08-16 — distance-keeping is NOT unavailable on this corpus; it was MEASURED, and
+> the raw JSON is in the repo.** This protocol is the doc that steers every future OOD-val eval, so a
+> stale ⛔ here makes real numbers get skipped. **Both halves of the original reason are wrong.**
+>
+> **1. It has been measured on THIS corpus (MEASURED).**
+> `TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-08-05-v1arch-oodval-four-families/raw/v1arch_oodval_q90_4fam_LEAD.json`
+> — arm `flagship-v1arch-v2bal-30k`, corpus **`physicalai-oodval-6f4b94e4c7ce-q90`** (the corpus this
+> protocol governs), `n_windows` **6382**. Inside it:
+> `four_families._families_unavailable` = **`[]`**, and
+> `four_families.longitudinal.distance_keeping.status` = **`"OK"`** with **n = 2846**:
+> mean min-headway **25.5263 m**, mean min-time-gap **5.7552 s** (n 2517), mean min-TTC **14.731 s**
+> (n_closing 2214). ⚠️ **Quote `n_closing` beside the TTC mean, never the mean alone** — the artifact's
+> own `censoring_note` records that **632 of 2846** windows never close on the lead and are censored at
+> `TTC_CAP_S = 30.0 s`. Gap convention is **rig-origin to lead rear face**, *not* bumper-to-bumper.
+> Corroborated in `Project Steering/MODEL_REGISTRY.md:1187-1190`, which strikes
+> ~~`distance_keeping UNAVAILABLE`~~ and records that the 2026-08-06 claim *"lead block not on pod4"*
+> was **itself a stale absence-claim**.
+>
+> **2. "The corpus build must be extended" is DONE.** The ingest half shipped as
+> `taniteval/tools/build_lead_block.py`, the pure join as `taniteval/taniteval/lead_source.py`, and the
+> metric as `taniteval/taniteval/lead_metrics.py` (+ `taniteval/tests/test_lead_metrics.py`,
+> `test_lead_source.py`, `test_lead_strata.py`). Durability run:
+> `TanitAD Research Hub/Data Engineering/Implementation/incoming/2026-08-04-instrument-durability/raw/val40_lead_report.json`
+> — `n_episodes 40`, `canonical_881 true`, registration `n_ok 40 / n_failed 0`, counts
+> **LEAD 270 / NO_LEAD 551 / NO_LABEL 60**. ⚠️ `build_lead_tracks.py` (the reader this row names)
+> hardcodes a Windows data root and **cannot run on a pod** — `build_lead_block.py` is the pod-side
+> sibling and is the one to reach for.
+>
+> **3. The "4 of 36" figure is wrong, and the subject was never defined.** MEASURED from source
+> 2026-08-16 — state the **layer** with the number, never the bare phrase "our ingest":
+> **r0 selection** (`stack/scripts/physicalai_r0.py:36-38`) = **2** (`egomotion`,
+> `camera_front_wide_120fov`) · **episode build** (`stack/tanitad/data/physicalai.py:232-235`) = **5**
+> (+`camera_intrinsics`, `sensor_extrinsics`, `vehicle_dimensions`) · **program-wide incl. the pod-side
+> obstacle join** = **6** (+`obstacle.offline`). Pinned by `stack/tests/test_physicalai_feature_readset.py`.
+> ⇒ `obstacle.offline` **is** read by the program, which is the specific premise this row denied.
+>
+> ⚠️ **Still genuinely limited:** distance-keeping is defined only where a lead exists — report
+> **n and the per-state coverage** (LEAD / NO_LEAD / NO_LABEL), and **NO_LABEL is never free flow**
+> (counting it as an empty road manufactures a safe-looking headway out of missing data). Clause 5 of
+> §6 below still governs: an UNAVAILABLE family is a work item, not a pass.
+> Swept by the 2026-08-16 stale-blocker sweep.
 
 ---
 

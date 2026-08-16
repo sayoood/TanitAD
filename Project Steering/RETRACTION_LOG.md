@@ -3495,3 +3495,71 @@ free, enumerate EVERY input it consumes and locate each one, not just the one th
 ⇒ **RULE: never write "X does not exist" from an enumeration whose bound you have not stated.**
 Quote the exact command, and prefer an unbounded search on a distinctive name over a bounded one on
 a generic pattern.
+
+## R-2026-08-16-stale-blockers — "our ingest reads 5 of 36 features" — RETRACTED, it is 6; and a whole agent was commissioned against a blocker that cleared 13 days earlier
+
+**Retracted (two claims, one root cause):**
+1. `CLAUDE.md` — *"our ingest reads **5** of 36 features"*. **It is 6.**
+2. `…/incoming/2026-08-03-longitudinal-distance-keeping/INTAKE.md:73-76` — *"Until that lands, **arm
+   evals will still report the family UNAVAILABLE**"*. **It landed 2026-08-03, the day the package was
+   filed**, and has been measured through 2026-08-14.
+
+**MEASURED 2026-08-16, from source and raw artifacts in this repo:**
+`obstacle.offline` is a real read — `stack/scripts/build_obstacle_join.py:148`,
+`stack/scripts/lead_state_gate.py:308-338`, `stack/tanitad/data/bev_raster.py`. The eval-path wiring
+is `taniteval/taniteval/lead_source.py` + `taniteval/tools/build_lead_block.py`, and it was fed on
+exactly the 40 val episodes the INTAKE named:
+`…/incoming/2026-08-04-instrument-durability/raw/val40_lead_report.json` — **`n_episodes: 40`,
+`canonical_881: true`, registration `n_ok: 40 / n_failed: 0`, `LEAD 270 / NO_LEAD 551 / NO_LABEL 60`**.
+`Project Steering/MODEL_REGISTRY.md:1187-1190` had already struck ~~`distance_keeping` UNAVAILABLE~~.
+
+⭐ **The two retractions are ONE event.** `obstacle.offline` becoming a read on 2026-08-03
+invalidated both statements simultaneously. Neither was revisited. **What it cost:** a whole agent
+commissioned on 2026-08-16 to build an instrument that had existed for 13 days.
+
+**Root-cause class: NEW — C70, a STALE BLOCKER.**
+C2 is *absence from a single probe*; C2b is *a correctly-measured absence re-quoted after the world
+moved*. **C70 is the forward-looking sibling: a statement of the form "blocked on X" / "until X
+lands" / "not yet fed", which is a claim with an EXPIRY DATE and no alarm attached.**
+
+⚠️ **The mechanism is a ONE-DIRECTIONAL REFERENCE, and this is the reusable half.** The closing work
+*did* cite the blocker — `lead_source.py`'s docstring names this INTAKE's open work item as its
+reason for existing. **The successor knows about the predecessor; the predecessor never learns it has
+been superseded.** So the corpus accumulates confident, well-evidenced, obsolete instructions. The
+2026-07 orthogonality instrument (10 days unmerged, its merge request in a README nobody re-read) is
+the same shape.
+
+| # | class | recognition signal |
+|---|---|---|
+| **C70** | **A stale BLOCKER — a "blocked on X / until X lands / not yet" line never revisited when X landed** | any doc sentence whose truth depends on a *future* event, with no artifact named whose existence would falsify it. Danger scales with the doc's authority: an INTAKE or a protocol misdirects work; a dated report is only history. |
+
+⇒ **RULE: a "blocked on X" line MUST NAME THE ARTIFACT whose existence clears it** — a path, not a
+prose description. Then the check is `test -f`, and a sweep is mechanical rather than a re-reading.
+⇒ **RULE: before commissioning work against a blocker statement, re-probe the blocker.** The
+statement's own rigour is not evidence it is still true — that is exactly C2b's lesson pointed
+forwards.
+⇒ **RULE: an empty ORCHESTRATOR VERDICT block is NOT a rejection.** The distance-keeping package
+landed and is in production use with its verdict block still blank; reading blank as "not accepted"
+is a second way this class misdirects.
+
+**A fourth-order twist worth recording.** The feature count had *already* been retracted twice
+("2 of 36" → 4 on 2026-07-26 → 5 on 2026-08-16) **inside the rule that warns about stale
+absence-claims**, and the 2026-08-16 entry itself prescribed the fix — *"pin it so the suite fails
+instead of a document rotting"* — and then did not do it. ⇒ **A retraction that names its own remedy
+and stops short of implementing it will be re-retracted.** The remedy now exists:
+`stack/tests/test_physicalai_feature_readset.py` (9 tests, green) asserts the counts, the exact
+feature names, the 36 denominator (from the MEASURED `pai_features.csv` probe), and carries a
+drift detector *proved able to fail*. Its failure messages name the documents to update.
+
+⚠️ **And the number was ambiguous, not merely wrong — which is why hand-editing kept failing.**
+"Our ingest" was never defined. It is **2** for `physicalai_r0.py` (clip selection), **5** for
+`physicalai.py` (the episode build), **6** program-wide including the pod-side join. ⇒ **RULE: state
+the LAYER with the count, never the bare phrase "our ingest".**
+
+**Blast radius (this entry needs one, per the R-2026-08-04 rule):** the stale "4 of 36" reached **17
+documents plus a code docstring** (`stack/tanitad/data/bev_raster.py:12` — *a stale count in code
+outlives one in prose, because nobody greps docstrings*). Highest-authority carriers:
+`Project Steering/EVAL_PROTOCOL_OODVAL_2026-08-05.md:143` (a **protocol**, and doubly stale — wrong
+count *and* cleared blocker), `Project Steering/V6F_PLANNER_DESIGN.md:536`,
+`Project Steering/Gates/flagship-v5-retrain.PREP.md:58` ("32-of-36" → 30-of-36).
+Full sweep + verdict tables: `…/incoming/2026-08-16-stale-blocker-sweep/STALE_BLOCKER_SWEEP.md`.

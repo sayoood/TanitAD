@@ -259,6 +259,50 @@ def test_no_undeclared_feature_path_in_episode_build() -> None:
     assert found, "drift detector matched nothing — the regexes have gone stale."
 
 
+# --------------------------------------------------------------------------- #
+# 3. The DENOMINATOR. "N of 36" has two halves and only one of them was ever     #
+#    checked. 36 is MEASURED in-repo, not merely published.                      #
+# --------------------------------------------------------------------------- #
+#: MEASURED enumeration of every PhysicalAI-AV feature (2026-07-26 probe package).
+_FEATURES_CSV = (
+    _REPO / "TanitAD Research Hub" / "Data Engineering" / "Implementation" /
+    "incoming" / "2026-07-26-physicalai-feature-probe" / "pai_features.csv"
+)
+
+
+def _published_feature_names() -> set[str]:
+    rows = _FEATURES_CSV.read_text(encoding="utf-8").splitlines()
+    return {ln.split(",", 1)[0].strip() for ln in rows[1:] if ln.strip()}
+
+
+def test_denominator_is_36_and_every_feature_we_read_is_real() -> None:
+    """The "36" is MEASURED, and our 6 names are genuinely among those 36.
+
+    Pins the *other* half of "N of 36" — the denominator — and catches a typo'd
+    feature name, which would otherwise silently shrink the read-set.
+
+    Skips (loudly) on a partial checkout: pods receive ``stack/`` by file-ship and
+    may not carry the Research Hub tree. The numerator assertions above still run.
+    """
+    if not _FEATURES_CSV.is_file():
+        pytest.skip(
+            f"denominator UNPINNED on this checkout — {_FEATURES_CSV.name} absent. "
+            f"The read-set counts above are still asserted; only the '36' is unchecked."
+        )
+    published = _published_feature_names()
+    assert len(published) == PHYSICALAI_TOTAL_FEATURES, _fix_the_docs(
+        f"PhysicalAI-AV now publishes {len(published)} features, not "
+        f"{PHYSICALAI_TOTAL_FEATURES}. EVERY 'N of 36' statement in the programme "
+        f"has the wrong denominator (and 'the other 32' becomes "
+        f"{len(published) - len(PROGRAM_WIDE_FEATURES)})."
+    )
+    bogus = PROGRAM_WIDE_FEATURES - published
+    assert not bogus, _fix_the_docs(
+        f"we claim to read feature(s) that PhysicalAI-AV does not publish: "
+        f"{sorted(bogus)}. Either a name is misspelled here or the dataset changed."
+    )
+
+
 def test_drift_detector_actually_fires() -> None:
     """The guard must be able to FAIL, or it is decoration.
 

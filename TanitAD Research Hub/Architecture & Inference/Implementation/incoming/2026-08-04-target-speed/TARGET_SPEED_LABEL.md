@@ -439,6 +439,18 @@ most important fact about a signal go unstated.
 3. **→ eval/tools stream: `taniteval` should call `goal_admissibility` before publishing any
    goal-conditioned number.** The nav echo published 1.0000 for weeks. The instrument exists now; it
    is not wired into any eval path.
+
+> ✅ **RE-CONFIRMED STILL TRUE 2026-08-16 — 12 days open, STILL ZERO CALL SITES.**
+> Probed at HEAD, two ways: (1) the instrument is real —
+> `stack/tanitad/eval/goal_admissibility.py` (11.8 KB, `audit_goal_signal` :205, `ECHO_FLAG_RATE` :58,
+> `situation_disjoint`) with `stack/tests/test_goal_admissibility.py` beside it; (2)
+> `grep -rn "audit_goal_signal\|ECHO_FLAG_RATE\|import goal_admissibility" --include="*.py" stack/ taniteval/`
+> returns hits **only inside the module itself and its own test** — **no `taniteval` module, no eval
+> script, and no gate emitter imports it.** The leak guard that exists to stop another 1.0000 nav echo
+> from being published is still not on the path that publishes.
+> This is the shape the operating standard names: a tested instrument sitting one import away from the
+> thing it protects, with the request living in a doc. Escalated in-channel by the sweep rather than
+> left here. Swept by the 2026-08-16 stale-blocker sweep.
 4. **→ orchestrator: the "38.2 % at 1–3 m/s" figure (§6) does not reproduce** on the decision-grade
    1364-window substrate. It is load-bearing for "the tactical defect is speed-dependent" and should
    be re-derived or retracted.

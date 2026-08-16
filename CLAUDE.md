@@ -113,6 +113,16 @@ Every subagent brief MUST carry the preamble in
   **fresh inode from Bash** did. ⛔ **`git add` exit codes are not evidence. Verify with
   `git ls-files --cached <path>`** — and note the sibling rule that `git status --short` scoped to a
   path can also mislead, so `git ls-files --stage` is the check for what is really in the index.
+  ⚠️ **SHARPENED 2026-08-16 — `--cached` is NOT sufficient for a file that was ALREADY TRACKED and
+  then MODIFIED.** It answers *"is this path in the index?"*, which is **yes** for any tracked file,
+  **including one whose index blob is still the PRE-EDIT version**. MEASURED: an agent's edit read as
+  "staged" while the index held the old content. ⇒ For a modified tracked file the check is a **BLOB
+  COMPARISON** — `git ls-files --stage <path>` (index blob) against `git hash-object <path>`
+  (worktree blob); equal means the edit is really staged. `--cached` remains the right check only
+  for a NEW file, where presence and content coincide.
+  ⚠️ **And with several agents live, RE-VERIFY AT THE END OF THE TURN.** MEASURED 2026-08-16: five
+  files were staged and verified, three orchestrator commits then landed, and the same check
+  afterwards reported them `??`. Staging is not a latch — the index moves under you.
 - ⛔ **PODS HAVE NO GIT CREDENTIALS — `git fetch` on a pod HANGS (not fails), and the checkout's
   HEAD is ancient.** MEASURED 2026-08-11: pod5 HEAD sat at `6d714ad` (weeks old) while its working
   tree was fully current — every pod-side script this campaign arrived by md5-verified FILE-SHIP,
@@ -263,17 +273,31 @@ path, a second name, and the tool that owns the fact. *(Cost this session: the V
 `/etc/vulkan/icd.d/`, not `/usr/share/` → "our pods cannot render" stood for **12 days** and blocked
 AlpaSim + CARLA. `ps -C python3` returns EMPTY for a healthy job because pods run
 `/workspace/venv/bin/python` → a near-miss "the VLM job is dead". `obstacle.offline` — 3D agent tracks
-on **97.44 %** of the corpus — was declared non-existent for days; our ingest reads **5** of 36 features.)*
-⚠️ **This count has now gone stale THREE TIMES in this very sentence: "2 of 36" → 4 (2026-07-26) →
-5 (2026-08-16).** The constants are at `stack/tanitad/data/physicalai.py:233-235` — `physicalai_r0.py`
-alone reads 2, the episode build adds `camera_intrinsics` + `sensor_extrinsics` (D-016 R1), and
-`vehicle_dimensions` is a real fifth read (consumed at `physicalai.py:359-386` for per-clip
-wheelbase). The "4" propagated into **≥7 documents including this one** — a stale absence-claim
-living inside the rule that warns about stale absence-claims, and then doing it again.
-⇒ **ROOT CAUSE: a count embedded in PROSE with no test pinning it to source.** Do not hand-edit this
-number a fourth time; pin it (`len(READ_FEATURES)` asserted in `stack/tests/`) so the suite fails
-instead of a document rotting.
-**And the answer to what is in the other 32 is now settled, at five independent probes:** there is
+on **97.44 %** of the corpus — was declared non-existent for days, and **IS NOW READ**, so the
+programme reads **6** of 36 features.)*
+⚠️ **This count went stale FOUR TIMES in this very sentence: "2 of 36" → 4 (2026-07-26) → 5 → 6
+(both 2026-08-16).** ⛔ **It is now PINNED — do not hand-edit it. `stack/tests/test_physicalai_feature_readset.py`
+asserts the counts AND the exact feature names against source, and its failure message names the
+documents to update.** The stale count had reached **14 documents (17 sites) plus a code docstring**
+(`stack/tanitad/data/bev_raster.py:12`) — a stale absence-claim living inside the rule that warns
+about stale absence-claims, four times over.
+⇒ **ROOT CAUSE (both the rot AND why 5 was wrong): "our ingest" was never DEFINED.** There are three
+legitimate read-sets, so **always state the layer, never the bare phrase "our ingest"**:
+
+| layer | count | features |
+|---|---|---|
+| `physicalai_r0.py` (r0 clip selection) | **2** | `egomotion`, `camera_front_wide_120fov` |
+| `physicalai.py` (the **episode build**) | **5** | + `camera_intrinsics`, `sensor_extrinsics`, `vehicle_dimensions` |
+| **program-wide** (incl. the pod-side join) | **6** | + `obstacle.offline` |
+
+`obstacle.offline` is deliberately OUTSIDE the episode build — the join is a pod-side step
+(`stack/scripts/build_obstacle_join.py`), which is why `grep obstacle stack/tanitad/data/physicalai.py`
+still returns zero. ⚠️ **The fourth rot and the 2026-08-03 stale-blocker case have the SAME trigger:**
+`obstacle.offline` landing, and neither the prose count nor the "UNAVAILABLE" blocker lines being
+revisited. Sweep: `…/incoming/2026-08-16-stale-blocker-sweep/STALE_BLOCKER_SWEEP.md`.
+**And the answer to what is in the other 30 is now settled, at five independent probes** *(it read
+"the other 32" until 2026-08-16 — the complement rots in lockstep with the count, so the pinning test
+covers the denominator too)***:** there is
 **no map, lane graph, junction annotation, roundabout label, traffic-light feature or route/goal signal**
 in PhysicalAI-AV — the card says verbatim *"we do not include open maps data"*, and `obstacle.offline`'s
 enum over **87,481 cuboids is 10 classes, all dynamic agents**. Stop re-asking; the strategic-brain

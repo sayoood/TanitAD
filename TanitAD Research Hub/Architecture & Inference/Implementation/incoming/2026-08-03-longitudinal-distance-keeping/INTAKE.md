@@ -1,7 +1,16 @@
 # INTAKE — LONGITUDINAL distance-keeping: headway / time-gap / min-TTC
 
-- **Date:** 2026-08-03 · **Discipline:** Architecture & Inference · **Status:** PENDING orchestrator triage
+- **Date:** 2026-08-03 · **Discipline:** Architecture & Inference · **Status:** ~~PENDING orchestrator
+  triage~~ → ⏹ **LANDED & IN PRODUCTION USE** (see the CLOSED block in §Risk/rollback; the
+  ORCHESTRATOR VERDICT block at the bottom was never filled in, which is a **bookkeeping gap, not a
+  rejection**). Re-stamped by the 2026-08-16 stale-blocker sweep.
 - **Evidence class:** MEASURED (ours) — `raw/dlead1_discrimination.json`, dev-box CPU, 125.3 s, $0.
+
+> ⚠️ **READ THIS BEFORE ACTING ON ANYTHING BELOW.** Every "not yet"/"UNAVAILABLE" statement in this
+> package describes the world **as of 2026-08-03**. The family was turned on the same day and has
+> been measured since (val40 lead block: 40/40 episodes, 881 canonical windows). The line at
+> §Risk/rollback that says arm evals *"will still report the family UNAVAILABLE"* is **STALE** and is
+> annotated in place.
 
 ## What
 
@@ -74,6 +83,33 @@ are not part of the eval runtime): `build_lead_tracks.py`, `run_discrimination_c
   `obstacle.offline` chunks for the 40 val episodes on the eval host. Until that lands, **arm evals
   will still report the family UNAVAILABLE** — the instrument exists and is admitted, but it is not
   yet fed. See `raw/dlead1_discrimination.json` for the surface it *has* been measured on.
+
+> ⏹ **CLOSED 2026-08-16 — THIS BLOCKER CLEARED 2026-08-03; THE LINE ABOVE IS STALE.** The eval-path
+> wiring landed the same day this package was filed and was measured through 2026-08-14. Do NOT
+> commission work against the paragraph above — **reading it on 2026-08-16 caused an agent to be
+> commissioned to build an instrument that already existed.**
+>
+> Clearing evidence (all MEASURED, three independent probes):
+> 1. `taniteval/taniteval/lead_source.py` (2026-08-03) — *"Turn `obstacle.offline` into the
+>    `win["lead"]` block `four_families` consumes"*. Its own docstring **cites this INTAKE's open
+>    work item as its reason for existing**, plus `taniteval/tools/build_lead_block.py` for the
+>    corpus build.
+> 2. `…/Data Engineering/…/incoming/2026-08-04-instrument-durability/raw/val40_lead_report.json` —
+>    the exact artifact this paragraph says is missing: **`n_episodes: 40`, `canonical_881: true`,
+>    registration `n_ok: 40 / n_failed: 0`, counts `LEAD 270 / NO_LEAD 551 / NO_LABEL 60`.**
+> 3. `Project Steering/MODEL_REGISTRY.md:1187-1190` — ~~`distance_keeping` UNAVAILABLE~~ struck and
+>    closed, raw `pod4:/workspace/evalout/v1arch_oodval_q90_4fam_LEAD.json`,
+>    `families_unavailable=[]`. ⚠️ The registry also records that the **2026-08-06 "lead block not
+>    on pod4" claim was ITSELF a stale absence-claim** — i.e. this blocker has now generated *two*
+>    stale statements, which is why the sweep below exists.
+>
+> ⚠️ **ROOT-CAUSE CLASS (logged): "an INTAKE that states a blocker is never revisited when the
+> blocker clears."** The closing work referenced the blocker, but the reference is **one-directional**
+> — `lead_source.py` points here; nothing pointed back. Swept by the 2026-08-16 stale-blocker sweep,
+> `…/incoming/2026-08-16-stale-blocker-sweep/STALE_BLOCKER_SWEEP.md`.
+>
+> ⚠️ Also note the **ORCHESTRATOR VERDICT block below was never filled in** even though the work
+> landed and is in production use — an empty verdict is not evidence that a package was rejected.
 
 ## ORCHESTRATOR VERDICT (filled by the MVP stream — do not pre-fill)
 

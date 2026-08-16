@@ -5,6 +5,29 @@
 - **Slug:** `2026-07-15-h15-logging-fidelity`
 - **Status:** PENDING orchestrator triage
 
+> ✅ **RE-CONFIRMED STILL TRUE 2026-08-16 — never integrated, and the defect line is STILL THERE
+> verbatim.** Three probes:
+> 1. `grep -rn "H15Meter" --include="*.py"` over the whole repo (excluding this package and stale
+>    worktrees) → **zero hits**. The module lives only at
+>    `…/incoming/2026-07-15-h15-logging-fidelity/h15_meter.py`; it never reached
+>    `stack/tanitad/train/h15_meter.py`.
+> 2. `grep -rn "h15_fire_frac\|h15_fired"` over `stack/` + `taniteval/` → **zero hits**. The two
+>    additive log fields were never emitted by anything.
+> 3. **The exact line this package replaces is unchanged on the tip:**
+>    `stack/scripts/train_flagship4b.py:658` still reads `log["h15"] = float(loss_h15.item())`,
+>    inside the `for _micro in range(accum)` loop at `:655-656`. So the measured **46.3 % of log rows
+>    falsely reading `h15=0.0`** is still the behaviour of that trainer today.
+>
+> ⚠️ **BUT the blast radius has shrunk, and that changes the priority, not the verdict.**
+> `train_flagship4b.py` is the **v1-era** trainer and is the ONLY file in `stack/` that emits
+> `log["h15"]` at all (probe 2 above, repo-wide). The successor line moved to a different imagination
+> surface — `train_flagship_v16.py` gates on `cfg.cond_imagination` (`:347`, `:589`) and
+> `train_flagship_v4.py` on `_imagination_inputs` (`:113`, `:235`) — neither of which carries the
+> stochastic `mask_prob` H15 loss this meter measures. ⇒ Integrating this now repairs **historical /
+> v1-line** logging fidelity; it does **not** instrument the current v6 line. Whoever triages should
+> decide on that basis rather than on the original "the live flagship run" framing (that run is long
+> finished). Swept by the 2026-08-16 stale-blocker sweep.
+
 ## What
 A tiny pure-Python `H15Meter` (`h15_meter.py`) that accumulates the stochastic H15 imagination loss
 over one optimizer step's accumulation window and emits three log fields —

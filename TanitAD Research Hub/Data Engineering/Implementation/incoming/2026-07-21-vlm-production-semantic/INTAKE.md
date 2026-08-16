@@ -4,6 +4,25 @@
 **Harness:** `stack/scripts/vlm_semantic_labels.py` (prompt v2) · **Scorer:** `stack/scripts/vlm_semantic_score.py` (no pod, no GPU)
 **Lake converter:** `stack/scripts/vlm_labels_to_lake.py` — per-window rows for the TanitEval scenario strata **and** the episode-level `vlm_pending_*` sidecars `stack/tanitad/lake/enrich.py` has been stubbing.
 **Tests:** `stack/tests/test_vlm_semantic.py` — **26 tests**, the suite's first VLM coverage (full suite 637 passed / 2 skipped).
+
+> ⏹ **CLOSED (for the val corpus) 2026-08-16 — the sidecars are NO LONGER a to-do; DO NOT commission
+> a "fill the VLM sidecars" task without reading this first.** The converter landed and the fill is
+> real: `stack/scripts/vlm_labels_to_lake.py` writes `_pending = False` into all four skeletons
+> (`:329` scene_tags, `:351` lead_state, `:365` sign_reads, `:378` language), and
+> `stack/tests/test_vlm_semantic.py:295` asserts `ls["_pending"] is False` — so it is guarded, not
+> just written once. **24 filled sidecars** are banked at `…/2026-07-21-vlm-production-semantic/sidecars_val/`
+> (`ep_*.goal.vlm.json`) alongside `scenario_strata_val.jsonl`.
+> ✅ **STILL TRUE as stated, and deliberately so:** `stack/tanitad/lake/enrich.py:49-82` **still
+> defines** `vlm_pending_scene_tags / _lead_state / _sign_reads / _language` and still wires them as
+> the `EpisodeEnrichment` **default factories** (`:113-116`), and its module docstring (`:17`) still
+> reads *"The VLM augmentation is the ONLY stubbed step"*. That is correct behaviour — the skeleton is
+> the default for an **unlabelled** episode; the converter overwrites it for a labelled one. There is
+> **no** merge-back path in `enrich.py` itself (probed: no `merge_vlm` / `apply_vlm` / `from_vlm`
+> symbol anywhere under `stack/`), so the fill is applied by running the converter, not automatically.
+> ⚠️ **Scope limit, MEASURED:** 24 sidecars, not 80 — the fill covers a subset of the pod3 val build,
+> and `val_build_episode_map.json` already records that only **8 of 40** canonical val episodes are
+> reachable from pod3. "Filled" ≠ "complete".
+> Swept by the 2026-08-16 stale-blocker sweep.
 **Pod:** `tanitad-pod3` (A40 46 GB), GPU lock held as `vlm-production` for the whole campaign.
 
 ## What is in this directory
@@ -29,6 +48,18 @@
 | `ab_base_randenum.jsonl` | The **enum-order sensitivity** arm on `road_geometry`: same windows and plan as `ab_base`, every enum permuted per window. |
 | `val_full.jsonl` | Production labels, pod3 val build, all 80 episodes. **The manifest is t-major**, so a partial file covers every episode at a coarser time stride. |
 | `train_strat.jsonl` | Production labels, rare-event-weighted sample of the canonical 2376-episode train build. Manifest **shuffled**, so any prefix is a uniform subsample. |
+
+> ⛔ **STRANDED ARTIFACT FOUND 2026-08-16 — `train_strat.jsonl` DOES NOT EXIST in this package.**
+> This table row documents a file that is not here. Three probes: (1) `find . -name "train_strat*.jsonl"`
+> over the whole repo → **zero hits**; (2) `git ls-files | grep train_strat` → only
+> **`train_strat_windows.json`** (the manifest), never the records; (3) `git check-ignore` → **not
+> gitignored**, so it is genuinely absent rather than hidden. The manifest and the
+> `train_candidate_census.json` (21,393 candidate windows) ARE both present, so the *inputs* survived
+> and the train draw is re-runnable — but the **production train labels themselves were never banked
+> in the repo** and, if they were ever produced, they existed only on `tanitad-pod3` (which the
+> package's own §last row notes is now unreachable). This is the "an artifact on one disk is NOT done"
+> class. ⇒ Either re-run the train draw from `train_strat_windows.json`, or strike this row.
+> Swept by the 2026-08-16 stale-blocker sweep.
 | `train_strat_windows.json` | The stratified manifest (600 windows, equal quota per stratum) + the candidate-stratum census summary. |
 | `train_candidate_census.json` | **All 21,393 candidate windows** over the canonical 2,376-episode train corpus with their kinematic v2.1 route labels and stratum tags (~8 MB). This is what makes re-sampling the train draw a pod-free operation. |
 | `prompt_A_v1.txt`, `prompt_A_v2b.txt` | The exact Pass-A prompt text of each version — the scorer's evidence-contamination detector n-grams against these, and they are the authoritative record of what was asked. |

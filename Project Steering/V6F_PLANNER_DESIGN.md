@@ -535,6 +535,27 @@ slots PH0 does not extract**, and that is also why the binding LONGITUDINAL fami
 cannot be computed. **Wiring `obstacle.offline` (87,481 cuboids, 10 dynamic classes, 97.44 % of the
 corpus; we read 4 of 36 features) is the highest-value 0-GPU prerequisite of this design.**
 
+> ⏹ **CLOSED 2026-08-16 — `obstacle.offline` IS WIRED, and distance-keeping HAS been computed.**
+> The "highest-value 0-GPU prerequisite" named here is **done**: ingest `taniteval/tools/build_lead_block.py`,
+> pure join `taniteval/taniteval/lead_source.py`, metric `taniteval/taniteval/lead_metrics.py`
+> (+ three test modules under `taniteval/tests/`).
+> Measured through it (MEASURED): `TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-08-05-v1arch-oodval-four-families/raw/v1arch_oodval_q90_4fam_LEAD.json`
+> — `distance_keeping.status "OK"`, **n 2846** of 6382 windows, `_families_unavailable []`; and the
+> durability run `TanitAD Research Hub/Data Engineering/Implementation/incoming/2026-08-04-instrument-durability/raw/val40_lead_report.json`
+> — `n_episodes 40`, `canonical_881 true`, registration `n_ok 40 / n_failed 0`, counts
+> **LEAD 270 / NO_LEAD 551 / NO_LABEL 60**.
+> ⚠️ **"we read 4 of 36 features" is wrong, and the subject "we" was never defined** — that ambiguity
+> is the root cause of the count going stale four times. State the **layer** with the number
+> (MEASURED from source 2026-08-16): **r0 selection** `stack/scripts/physicalai_r0.py:36-38` = **2**
+> (`egomotion`, `camera_front_wide_120fov`) · **episode build** `stack/tanitad/data/physicalai.py:232-235`
+> = **5** (+`camera_intrinsics`, `sensor_extrinsics`, `vehicle_dimensions`) · **program-wide incl. the
+> pod-side obstacle join** = **6** (+`obstacle.offline`). Pinned by
+> `stack/tests/test_physicalai_feature_readset.py`.
+> ⚠️ **What is NOT cleared:** the five *strategic option* slots (`GAP_TARGET`, `YIELD_AT`,
+> `STOP_POINT`, `WAIT_FOR_ONCOMING`, `EVADE_IN_CORRIDOR`) still need PH0 extraction — that half of
+> the sentence stands. Only the distance-keeping half is closed.
+> Swept by the 2026-08-16 stale-blocker sweep.
+
 ---
 
 ## 5. THE CHEAPEST DISCRIMINATING EXPERIMENT
@@ -585,7 +606,7 @@ Every family is reported at **both 0–2 s and 0–6 s** (§4b's eval consequenc
 
 | family | what the planner reports | instrument | status |
 |---|---|---|---|
-| **LONGITUDINAL** | target-speed accuracy, speed MAE/bias, **accel MAE**, and **distance-keeping** (headway / time-gap / TTC) | `taniteval.four_families`, `lead_metrics` | ⛔ distance-keeping **blocked on agent slots** — a WORK ITEM, not a pass. Report `n/a` **with reason and n** |
+| **LONGITUDINAL** | target-speed accuracy, speed MAE/bias, **accel MAE**, and **distance-keeping** (headway / time-gap / TTC) | `taniteval.four_families`, `lead_metrics` | ~~⛔ distance-keeping **blocked on agent slots** — a WORK ITEM, not a pass. Report `n/a` **with reason and n**~~ → ⏹ **CLOSED 2026-08-16 — AVAILABLE.** `obstacle.offline` is wired (`taniteval/tools/build_lead_block.py` + `taniteval/taniteval/lead_source.py`); measured `status "OK"`, n 2846, `_families_unavailable []` in `…/incoming/2026-08-05-v1arch-oodval-four-families/raw/v1arch_oodval_q90_4fam_LEAD.json`. ⚠️ Still report **n and per-state coverage** (LEAD/NO_LEAD/NO_LABEL) — **NO_LABEL is never free flow** — and quote `n_closing` beside any mean TTC (censored at 30 s). Swept by the 2026-08-16 stale-blocker sweep |
 | **LATERAL** | heading, **curvature**, **yaw-rate**, cross-track | `taniteval.lateral` | available |
 | **TACTICAL** | selected vs executed manoeuvre, confusion over LAT × LON, **goal/anchor selection** (`sel_norm_err_rank`, p10, `sel_gap`) | `taniteval.hierarchy`, `selgap` | available. ⚠️ re-read at `DIR_YAW_RAD` **0.10**, not 0.15 — the A2 correction showed 0.15 is ~6.5× the typical 2 s turn and it touches every published manoeuvre-coherence κ |
 | **STRATEGIC** | strategic decision + route/goal quality | — | **`n/a` with reason and n** until S2 lands. Settled: PhysicalAI-AV ships no map, lane graph, junction annotation or route signal |
@@ -653,10 +674,29 @@ not merely a count.
    runs.** It is 0 parameters and 0 GPU, and without it a strategic-stage regression in selection
    would be discovered as a mystery three stages later. **This is the highest-priority item in this
    document.**
+   > ⏹ **CLOSED 2026-08-16 — IT EXISTS.** Implemented as `STAGE_INVALIDATES` in
+   > `stack/scripts/train_v6_staged.py:250-259`, which names exactly the seam described here:
+   > **`"S-S": ("S-T",)`** — S-S invalidates S-T's certificate because S-T's `sel_gap`/TACTICAL
+   > numbers were measured on an input that S-S then moves. Its own comment calls it "registry
+   > §1.14's consumer-invalidation one level up". Pinned by `stack/tests/test_v6_stage_revalidation.py`
+   > (9 tests). Evidence (MEASURED, two probes): `git grep -l consumer.?invalidat -- "*.py"` and a
+   > direct read of the `STAGE_INVALIDATES` table. **This escalation is no longer the
+   > highest-priority item in this document.** Swept by the 2026-08-16 stale-blocker sweep.
 2. ⭐ **`obstacle.offline` → agent slots is the prerequisite for half of the binding LONGITUDINAL
    family and five of the nine `g_tac` tokens.** 0 GPU, no PI decision. Until it lands, the family
    that owns ~99 % of the T1 divergence cannot be scored, and the tactical layer cannot emit the goals
    this design gives it authority through.
+   > ⏹ **PARTIALLY CLOSED 2026-08-16 — the LONGITUDINAL half HAS landed; the `g_tac` half has not.**
+   > **Landed:** `obstacle.offline` is wired end-to-end (`taniteval/tools/build_lead_block.py`,
+   > `taniteval/taniteval/lead_source.py`, `taniteval/taniteval/lead_metrics.py`) and distance-keeping
+   > is MEASURED — `status "OK"`, n 2846, `_families_unavailable []` in
+   > `…/incoming/2026-08-05-v1arch-oodval-four-families/raw/v1arch_oodval_q90_4fam_LEAD.json`;
+   > durability `n_ok 40 / n_failed 0`, LEAD 270 / NO_LEAD 551 / NO_LABEL 60 in
+   > `…/incoming/2026-08-04-instrument-durability/raw/val40_lead_report.json`. ⇒ **"the family that
+   > owns ~99 % of the T1 divergence cannot be scored" is FALSE as of 2026-08-05.**
+   > **Still true:** the five strategic-option `g_tac` tokens (`GAP_TARGET`, `YIELD_AT`, `STOP_POINT`,
+   > `WAIT_FOR_ONCOMING`, `EVADE_IN_CORRIDOR`) still need PH0 agent-slot extraction.
+   > Swept by the 2026-08-16 stale-blocker sweep.
 3. ⚠️ **E-WC2 (§5.2) should run before S-T is launched** — it can refuse SEL-1 for 0 GPU, and refusing
    before a launch is 10 k steps cheaper than refusing after one.
 4. ✅ **CLOSED 2026-08-16 — `selector="mlp"` is implemented.** `MLPCandidateScorer`

@@ -526,6 +526,28 @@ absence, the cheapest metric-or-power check *before* declaring closure.
   renderer; we do **not** have `alpasim_runtime`, so there is **no collision / offroad / scene
   score**. That is bounded work (`cargo` present), not a blocker — but nothing safety-grade may be
   claimed until it lands.
+
+  > ⚠️ **RE-CONFIRMED-WITH-A-CORRECTION 2026-08-16 — the bullet is TRUE ONLY FOR THOR, and as written
+  > it is a C2 single-host absence-claim.** Probed two hosts, not one.
+  > **STILL TRUE on Thor (aarch64):** `alpasim_runtime`, `alpasim_controller`, `alpasim_physics` and
+  > `utils_rs` do not import there and `uv` is absent — §5.0.3 above, which *is* correctly
+  > host-stamped. The Thor closed-loop panels therefore genuinely carry no AlpaSim safety score.
+  > ⏹ **BUT "we do not have `alpasim_runtime`" is FALSE program-wide, and AlpaSim safety scores
+  > ALREADY EXIST in this repo (MEASURED).** On the **x86 A40 eval pod**, 2026-07-22, all of
+  > `alpasim_runtime`, `alpasim_controller`, `alpasim_physics` imported and a full bare topology ran
+  > (renderer :6011 · physics :6006 · controller-MPC :6007 · driver :6789 · runtime) —
+  > `TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-22-alpasim-closedloop-evalpod/RUN_RECIPE.md`.
+  > The banked result summaries in that same directory carry **`scene_score_enabled: true`** and real
+  > safety fields: `M2_results-summary.json` → `collision_any 0.0`, `collision_at_fault 0.0`,
+  > `offroad 0.0`, `offroad_or_collision 0.0`, `min_distance_to_obstacle_m 1.4279`,
+  > `img_is_black 0.0` (real frames), `dist_traveled_m 39.17` of `gt_dist_traveled_m 73.77`, scene
+  > `score_criteria = {collision_at_fault == 0, offroad == 0, progress_score …}`; likewise
+  > `REFC_base_results-summary.json` and `Flagship_v1_results-summary.json`.
+  > ⇒ **The honest statement is: the safety half is missing ON THE CURRENT FLEET** (Thor + dev box)
+  > **because the host that had `alpasim_runtime` — the eval pod — is terminated**, not because the
+  > program never had it. ⚠️ Those banked scores are **n=1 scene, DIRECTIONAL only**; they do not
+  > license a safety-grade claim, which is the bullet's actual point and it stands.
+  > Swept by the 2026-08-16 stale-blocker sweep.
 - ⛔ **New binding doctrine (PI, 2026-08-03): LABELS MAY USE EGO; INFERENCE IS VISION-ONLY.** Label
   derivation may use ego state, other agents, maps, future poses — anything, offline. **Inference may
   use vision only.** It supersedes both sitclf candidates (ego-only swap *and* score-level fusion)

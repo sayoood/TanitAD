@@ -42,8 +42,8 @@ Strike items through when done, with the commit.
 | # | item | blocked on |
 |---|---|---|
 | C1 | **Rollout-recovery at scale / 8-GPU work** | ⛔ **pod1 console stop/start (PI)** — `/dev/nvidia*` empty, not fixable over SSH |
-| C2 | **C64 option A** — score both arms on the 19 leak-free episodes, **v1 re-scored there** | v2corpus reaching 30 k (~17:00 UTC 2026-07-29) |
-| C3 | **v5 gate verdict** | v5 reaching step 2000; ⚠️ first probe is the INCUMBENT and cannot stop the run |
+| C2 | **C64 option A** — score both arms on the 19 leak-free episodes, **v1 re-scored there** | ~~v2corpus reaching 30 k (~17:00 UTC 2026-07-29)~~ ⚠️ **RE-PROBE 2026-08-16 — the gating DATE passed 18 days ago and the gating FACT is unverified.** `MODEL_REGISTRY.md:953` §1.7 still reads 🟢 **RUNNING** with ETA **2026-07-29T01:10Z**, and no completion row was found for `flagship-v2corpus-30k`; meanwhile C1 below records pod1's `/dev/nvidia*` as empty. A 30 k arm on that corpus **has** been trained and evaluated (`flagship-v1arch-v2bal-30k`, OOD-val four-family run 2026-08-05), but that is the **v1-architecture / levers-false** arm, **not** §1.7's run. ⇒ **UNVERIFIABLE, not cleared — probe the run before waiting on it.** Swept by the 2026-08-16 stale-blocker sweep |
+| C3 | **v5 gate verdict** | ~~v5 reaching step 2000; ⚠️ first probe is the INCUMBENT and cannot stop the run~~ ⏹ **CLOSED 2026-08-16 — blocker CLEARED 2026-08-09.** `flagship-v5f-w120-30k` is ✅ **COMPLETE at 30,000** (2026-08-09T19:23Z). Evidence (MEASURED): `Project Steering/MODEL_REGISTRY.md:993` §1.8. Swept by the 2026-08-16 stale-blocker sweep |
 | C4 | **Old CPU pod release** (task #40) | ⛔ deletion needs the PI |
 | C5 | **X2 verdict run (30 pod-days)** | ⛔ NOT AUTHORISED without the PI |
 | C6 | **Wheelbase fix** | ⛔ PI chose C = measure first; decision pending |

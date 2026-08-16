@@ -344,3 +344,26 @@ stream held it modified at session start. It is ~10 lines: a flag onto the confi
 **Decision the PI owns:** whether to run a matched-capacity A/B with
 `nav_known_channel=True`. The pre-registration is trivial because the cost is +128 params
 and the control is the same corpus, same seed, same steps.
+
+> ⚠️ **HALF-CLEARED 2026-08-16 — and the half that landed is a TRAP. Do not read this as done.**
+> Of the two things this escalation asked for, the **flag** landed and the **data path did not**.
+> - ✅ Landed (in HEAD): `stack/scripts/refc_train.py:1221` defines `--nav-known-channel` and `:726`
+>   sets `cfg.nav_known_channel`. The architecture side is complete and tested
+>   (`stack/tanitad/refs/refc.py:594,1644-1652,1994-2013`; `stack/tests/test_nav_known_channel.py`,
+>   including "E1 must be OFF by default").
+> - ⛔ **NOT landed:** the `known` scalar is still **never carried into the model**. `refc_train.py:402`
+>   calls `model(frames, nav_cmd=nav_cmd, v0=v0, steps=steps, lan=lan)` — **no `nav_known=` argument**,
+>   and `nav_known` appears exactly once in the whole trainer (`:726`, the config assignment).
+>   `refb_labels.nav_input_v22` (`stack/scripts/refb_labels.py:1415`) is not read by the trainer.
+> - 🔴 **Consequence — the flag is worse than absent, because it looks available.** `refc.py:2005-2011`
+>   fails loud by design: with `nav_known_channel` on and a `nav_cmd` supplied but no `nav_known`, it
+>   raises *"nav_known must be supplied too … Defaulting it to 1.0 would assert a judgement the
+>   labeller never made."* The trainer always supplies `nav_cmd` (`:393`) and never supplies
+>   `nav_known` ⇒ **`refc_train.py --nav-known-channel` raises on the first forward pass.** Anyone
+>   pre-registering the A/B above would burn a launch discovering this.
+> ⇒ The measurement this doc says is blocked is **still blocked**, for a narrower reason than 08-03.
+> Remaining work is the ~2 lines this section already specified: read `nav_input_v22`'s second element
+> into the window batch and pass it as `nav_known=` at `refc_train.py:402`.
+> Evidence (MEASURED, HEAD + `git show HEAD:stack/scripts/refc_train.py`). ⚠️ `stack/scripts/refc_train.py`
+> was **modified in the working tree by a concurrent stream** during this sweep — re-probe before editing.
+> Swept by the 2026-08-16 stale-blocker sweep.

@@ -1,5 +1,24 @@
 # flagship v4.1 — G1 (10k) KILL-gate: **BLOCKED / INCOMPLETE — escalated, NOT decided**
 
+> ⏹ **CLOSED 2026-08-16 — the headline blocker CLEARED on 2026-07-23, the same day this was written.**
+> **Read the banner before the table below**: the row *"PRIMARY `ade_0_2s` — ❌ NO — no v4 eval driver"*
+> is **no longer true**, and neither is the headline sentence *"the v4 held-out eval harness … [was]
+> never built."*
+> Evidence (MEASURED, two probes): (1) the harness exists — `stack/scripts/eval_flagship_v4.py`, built
+> and O-03-validated by the sibling stream and written up at
+> `…/Benchmarks & Eval/…/incoming/2026-07-23-v4-eval-harness/STATUS.md` (MODE A canary / MODE B planner
+> path); (2) it was **used to render a real gate verdict** — `…/incoming/2026-07-26-v4-30k-gate/raw/`
+> holds `GATE_30K_verdict_A_no_coprimary.json`, `GATE_30K_verdict_B_coprimary_registered.json`,
+> `flagship-v4-30k.card.json` and both produced/oracle result JSONs, written up in `GATE_30K_RESULTS.md`.
+> The three `run_gate.py` instrument defects this doc's §3 depends on were also fixed (commit `3f5c0ee`;
+> see `…/2026-07-26-program-harvest/H3_STRANDED_INTEGRATIONS.md` row D-03).
+> ⚠️ **What did NOT happen: the 10k gate itself was never rendered.** It was overtaken by the 30k gate,
+> not passed. Do not read this closure as "v4.1 passed G1" — read it as "the instrument gap that made
+> G1 unrenderable is gone, and the decision moved to 30k."
+> ⚠️ Standing caveat: the whole v4 line is superseded (v5f → v6). Treat this file as a record of a
+> resolved instrument gap, not as a live gate.
+> Swept by the 2026-08-16 stale-blocker sweep.
+
 `2026-07-23 (00:5x local / 22:5x UTC)` · eval host intended: pod1 (`tanitad-pod`, idle). **No eval was run on pod2** (v4.1 is training there). Evidence class on every claim: **MEASURED** (ours + artifact) · **INHERITED** · **HYPOTHESIS**.
 
 ## Headline

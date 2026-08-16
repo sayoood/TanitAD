@@ -80,9 +80,42 @@ The full list with evidence is `APPEARANCE_SHORTCUT.md` §5. The two that block 
 3. ⭐ **`GATE_PROTOCOL.md`: adopt `tanitad.eval.latent_screen` as a pre-flight gate.** Now a repo
    instrument with tests, so this is a protocol edit, not an implementation task. **Second stream to
    ask.**
+
+> ✅ **RE-CONFIRMED STILL TRUE 2026-08-16 — 13 days, and this was the SECOND ask.**
+> `grep -cin "latent_screen" "Project Steering/GATE_PROTOCOL.md"` → **0**. The instrument exists
+> (`stack/tanitad/eval/latent_screen.py`, `stack/tests/test_latent_screen.py`) and has **zero call
+> sites outside its own test**. The first ask was `…/incoming/2026-08-03-latent-bottleneck/MANIFEST.md`
+> escalation #1 (same day, same instrument). **Two independent streams asked in two docs and the
+> protocol edit did not happen** — which is precisely the "a README is not a channel" failure both
+> manifests name in their own headers. Escalated in-channel by the sweep.
+> Swept by the 2026-08-16 stale-blocker sweep.
+
+> ⏹ **Re item 2 — CLOSED for the registry (2026-08-16).** `Project Steering/MODEL_REGISTRY.md:2718-2724`
+> now carries *"⛔ CORRECTED 2026-08-03 — do NOT quote '0.930 → −2.465' as the cross-rig drop"*, states
+> the honest pair **+0.7863 → −2.4654**, and generalises it (*"a 'X → Y' degradation pair must come
+> from ONE experiment"*). ⚠️ The line moved: it is at **`:2714`**, not the `:1852` older docs cite.
+> ⚠️ **A separate defect at the same location is NOT closed** — the `0.930` there is also the
+> 77.5 %-leak-withdrawn number, and nothing at that site says so (see
+> `…/2026-08-03-sitclf-optimisation/MANIFEST.md` escalation #3, re-confirmed by the same sweep).
 4. ⛔ **LONGITUDINAL distance-keeping / TTC has no instrument on PhysicalAI** because no lead-agent
    channel reaches the episode cache, while `obstacle.offline` exists on 97.44 % of clips.
    **Owner: the data/ingest stream.**
+
+> ⏹ **CLOSED 2026-08-16** — blocker CLEARED on **2026-08-03, the same day this manifest was written**.
+> The lead-agent channel was built and the four-family `n = 0` hole closed; this item never needed the
+> owner it was assigned. ⚠️ Anyone who read this line after 08-03 would have commissioned an instrument
+> that already existed — that is exactly the failure this sweep looks for.
+> Evidence (MEASURED, two probes): (1) commit **`49e2229`** — *"LONGITUDINAL distance-keeping is
+> COMPUTABLE — the four-family n=0 hole is closed"*; (2) the instrument itself at
+> `taniteval/taniteval/lead_metrics.py` (`distance_keeping` :125, `distance_keeping_by_speed`) with
+> `taniteval/taniteval/lead_source.py` beside it, wired into
+> `taniteval/taniteval/four_families.py:238-247,289,307-369` — which documents the `lead` track landing
+> **2026-08-03** and carries its GT-vs-CV control **D-LEAD-1** (Δ min-TTC **+1.7474 s [1.5813, 1.9218]**).
+> The `obstacle.offline` reader this item said was missing is `stack/scripts/lead_state_gate.py`
+> (strictly causal, per `lead_metrics.py:14`). Source bundle:
+> `…/incoming/2026-08-03-longitudinal-distance-keeping/` (`build_lead_tracks.py`, `lead_metrics.py`,
+> `run_discrimination_control.py`, `tests/`, `raw/`).
+> Swept by the 2026-08-16 stale-blocker sweep.
 
 ## What is NOT done
 

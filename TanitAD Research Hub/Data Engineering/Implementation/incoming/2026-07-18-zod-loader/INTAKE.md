@@ -8,6 +8,19 @@
   P0 #1 (corpus diversity — the pending data-side gap) / H4 arm-B (EU/night/winter) /
   H7 (data flywheel, real-CAN anchor #2)
 
+> ⏹ **PARTIALLY CLOSED 2026-08-16 — the "P0 #1 / pending data-side gap" framing is SUPERSEDED.**
+> ZOD is no longer the #1 owned real-urban unlock. **Argoverse 2 landed instead** and its adapter is
+> integrated: `stack/tanitad/data/argoverse2.py` (MEASURED — file present in the tip working tree;
+> registered in `stack/tanitad/lake/schema.py`). The re-scope was decided by the 2026-07-26 ingest
+> package, whose commit reads verbatim *"⛔ ZOD HAS NO LANE GRAPH — my recommendation was wrong and
+> the PI approved on it. AV2 1000/1000 DECISION-GRADE. Overture is the real answer."*
+> Evidence (MEASURED): commit `6016736`; `…/Data Engineering/…/incoming/2026-07-26-av2-zod-ingest/AV2_ZOD_INGEST.md`
+> §4a (three independent probes: the ZOD devkit's `zod/anno/lane.py` has **no successor / predecessor /
+> neighbour / topology field on any class**, and no map or graph module at all).
+> ⚠️ **This does NOT retract the loader.** ZOD stays valuable in the §5c role (ZOD imagery + Overture's
+> routable graph, both `owned-safe` share-alike). It is the *priority* that moved, not the geometry.
+> Swept by the 2026-08-16 stale-blocker sweep.
+
 ## What & why (≤10 lines)
 
 A contract-clean loader for **ZOD** (Zenseact Open Dataset) — the FLEET_REVIEW #1
@@ -43,6 +56,24 @@ Note: `Research/2026-07-18-zod-loader-and-geometry-falsifier.md`.
 - **Runnable real-bytes job card** (`zod_pilot_jobcard.md`, M-1.3/M-3): access request →
   5-drive ZOD-mini fetch → real KB from `calibration.json` → `verify_real_clip` +
   epcache precompute → push. Blocked only on dataset ACCESS (escalated).
+
+> ✅ **RE-CONFIRMED STILL TRUE 2026-08-16 — ZOD access is STILL not granted, and the loader is STILL
+> not integrated.** Probed three ways: (1) `stack/tanitad/data/zod.py` is **absent** from the tip
+> working tree (`stack/tanitad/data/` holds `argoverse2 / calib / comma2k19 / cosmos_drive / l2d /
+> nuscenes / pandaset-less …`, no `zod.py`); (2) `git log --all -- stack/tanitad/data/zod.py` returns
+> **nothing** — it was never committed on any branch; (3) `grep -ri zod` over `stack/` hits only the
+> *license registry* (`lake/schema.py:108` `SourceLicense("owned-safe","CC-BY-SA-4.0",share_alike=True)`,
+> `lake/license_guard.py:30`, `data/calib.py:702`) — the licence row exists, the loader does not.
+> The ACCESS step itself was **independently re-probed on 2026-07-26** and remains a human application:
+> `…/incoming/2026-07-26-av2-zod-ingest/AV2_ZOD_INGEST.md` §4c — *"The download URL is the credential"*,
+> obtained by submitting the request form, and §5b still records *"it still requires the ZOD access
+> step (§4c)"*. That probe explicitly refuses form submission / account creation / Terms acceptance
+> (`evidence/access_probes_2026-07-26.json` → `hard_constraint`), so the three HTTP-200 probes there
+> read the licence and README **only** — they are **not** an access grant.
+> ⚠️ §4d flags one unresolved lead a PI could still take: a **second official ZOD channel** that may
+> need no human application (evidence class **PUBLISHED, not MEASURED**). Until someone probes it, the
+> escalation stands.
+> Swept by the 2026-08-16 stale-blocker sweep.
 
 ## Risk & rollback
 

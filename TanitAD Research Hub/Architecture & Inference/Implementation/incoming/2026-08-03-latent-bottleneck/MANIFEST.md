@@ -68,6 +68,38 @@ OMP_NUM_THREADS=2 python analyze_temporal_kv_cost.py --out raw/temporal_kv_cost.
    (`in_channels=9`, D-015 3-frame sliding stack). Root-cause class: *an architectural claim
    inherited from a code READING rather than from a shape MEASUREMENT.*
 
+> **⏹ Stale-blocker re-sweep 2026-08-16** (13 days on) — all six escalations re-probed at HEAD, CPU-only.
+> **2 CLOSED · 4 STILL OPEN.**
+>
+> - **#1 — ✅ RE-CONFIRMED STILL TRUE.** `grep -cin "latent_screen" Project Steering/GATE_PROTOCOL.md`
+>   → **0**. The instrument is real (`stack/tanitad/eval/latent_screen.py` + `stack/tests/test_latent_screen.py`)
+>   but has **zero call sites outside its own test** — it is neither a protocol step nor wired into any
+>   runnable path. The `dynenc-branchB` 40 k-step lesson this item cites is therefore still un-banked as
+>   a gate. *(Same request, independently raised, at `…/2026-08-03-appearance-shortcut-audit/MANIFEST.md`
+>   escalation #3 — two streams asked, nobody acted. That is the signature of a doc-buried merge request.)*
+> - **#2 — ⚠️ STILL TRUE as written.** `Project Steering/BACKLOG.md:35` (B5, frozen V-JEPA 2) is unchanged
+>   and carries **no "run the screen first" re-scope**. Partial credit only: `BACKLOG.md:77` (E8) now folds
+>   "B5's frozen V-JEPA-2 control" into the E-ENC prereg — a different vehicle, not the requested re-scope.
+> - **#3 — ✅ RE-CONFIRMED STILL TRUE.** `stack/scripts/idm_head.py:124-126` still states **"σ ≲ 0.1 m/s"**
+>   and **"~47×"**; no Savitzky-Golay figure (σ ≲ 0.28 m/s, ~21×) appears anywhere in the file. A live
+>   docstring still over-states the precision bar by ~2.2×.
+> - **#4 — ⚠️ STILL TRUE.** `Project Steering/BACKLOG.md:22` (A7, Delta-JEPA) still reads as a live
+>   *"HYPOTHESIS-class lead"* with no refutation note, despite two independent refutations.
+> - **#5 — ⏹ SUBSTANTIALLY CLOSED, and the answer is the opposite of the fear.** The audit was run the
+>   same day: `…/incoming/2026-08-03-appearance-shortcut-audit/APPEARANCE_SHORTCUT.md` §0.1 —
+>   pre-registered **OUTCOME C (CORPUS-SPECIFIC)**: *"the still frame reads speed at the NULL on
+>   PhysicalAI-AV"*, i.e. the shortcut is **true of comma2k19 highway and false of PhysicalAI-AV**, with
+>   `results_p1_physicalai.json` as the artifact and thresholds fixed before any PhysicalAI number
+>   existed. ⇒ it does **not** re-explain the longitudinal story off-highway. **Residual still open:**
+>   that audit's own manifest records v5f and REF-C's ResNet trunk as *neither probed nor screened*, and
+>   the cross-rig −2.4654 as *not attributed* — those need a GPU pass and still have no owner.
+> - **#6 — ⏹ CLOSED.** The retraction was logged: `Project Steering/RETRACTION_LOG.md:2374`,
+>   entry **`R-2026-08-03-latent`** — *"the PREMISE is FALSE, and the CONCLUSION it supported is
+>   separately refuted"* — citing `refc.py:241 in_channels: int = 9` (:2389) and restated at :2420 and
+>   :2500. Root-cause class recorded as asked.
+>
+> All verdicts MEASURED at HEAD. Swept by the 2026-08-16 stale-blocker sweep.
+
 ## What is NOT done
 
 * ✅ **DONE** — the pre-registered D probe ran to a verdict: **OUTCOME V (VIDEO-LIMITED)**, with the

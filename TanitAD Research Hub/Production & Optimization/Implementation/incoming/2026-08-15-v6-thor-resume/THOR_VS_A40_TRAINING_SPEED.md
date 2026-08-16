@@ -9,11 +9,16 @@ Arm: `v6F-SW-30k`, config E, **336,542,025 params**, strict resume from step 6,2
 
 | | marginal s/step | window | evidence |
 |---|---|---|---|
-| **Thor** (Jetson Thor, `tanitad-thor-wifi`) | **27.21** | 50 steps, 6300 → 6350 | MEASURED — `~/experiments/v6F-SW-30k/train_log.jsonl` |
-| **A40** (the machine that trained 0 → 6300) | **20.20** | its last 50 steps, **matched width** | MEASURED — same file, earlier process segment |
-| **ratio** | **1.347× — Thor is 34.7 % SLOWER** | | |
+| **Thor** (Jetson Thor, `tanitad-thor-wifi`) | **27.18** | 100 steps, 6300 → 6400 (3 rows) | MEASURED — `~/experiments/v6F-SW-30k/train_log.jsonl` |
+| **A40** (the machine that trained 0 → 6300) | **20.46** | its last 100 steps, **matched width** | MEASURED — same file, earlier process segment |
+| **ratio** | **1.329× — Thor is 32.9 % SLOWER** | | |
 
-**Projected remainder (23,650 steps): Thor 7.45 days · the A40 would have needed 5.53 days.**
+**Projected remainder (23,600 steps): Thor 7.42 days · the A40 would have needed 5.59 days.**
+
+⭐ **The rate is stable, and that is measured rather than hoped.** Three statistics with different
+startup exposure and different window widths agree to **0.5 %**: marginal over 50 steps **27.21**,
+marginal over 100 steps **27.18**, cumulative including startup **27.32**. The first reading was
+taken at 2 rows and reported as provisional; the 3-row reading moved it by **0.03 s/step**.
 
 ### Why these are the right two numbers, and not the obvious ones
 
@@ -31,8 +36,8 @@ marginal[S1,S2] = (T(S2) − T(S1)) / (S2 − S1)
 **17.46 s/step**, but its marginal over its last 300 steps is **19.68** and over its last 50 is
 **20.20** — the A40 was **13 % slower at the end than its own average**, because the `o5` rollout
 grows during training. Comparing Thor's marginal to the A40's *cumulative* would have reported a
-**1.56×** deficit instead of the true **1.35×**. Thor's first rows sit at steps 6300–6350, so the
-A40's matched band is its own 6250–6350 — same steps, same loss schedule, same `o5_k`.
+**1.56×** deficit instead of the true **1.33×**. Thor's rows sit at steps 6300–6400, so the A40's
+matched band is its own 6300–6400 — same steps, same loss schedule, same `o5_k`.
 
 ⛔ **The step numbers OVERLAP and cannot be used to separate the machines.** `train_log.jsonl` is
 appended across processes: the banked A40 log ends at **6300** and the Thor resume starts at
@@ -75,9 +80,9 @@ binds, because gradient checkpointing trades compute for *more* memory traffic (
 re-read of activations).
 
 ⚠️ **This is C14's family and it must be labelled.** C14's lesson is *"before recording a limit, ask
-whether the instrument could have reported a LARGER value."* Quoting **27.21 s/step as "Thor's
+whether the instrument could have reported a LARGER value."* Quoting **27.18 s/step as "Thor's
 speed"** would record **our own power configuration as the hardware's capability**. Until the lever
-below is tried, the honest statement is: *Thor is 34.7 % slower than the A40 **in nvpmodel 1 with
+below is tried, the honest statement is: *Thor is 32.9 % slower than the A40 **in nvpmodel 1 with
 EMC at 3200/4266**.*
 
 ### 🟥 BLOCKED ON THE PI — one command
@@ -99,17 +104,19 @@ Expected: `cur_freq` goes **3200000000 → 4266000000**. Revert with
 a reboot, and a reboot kills a 336 M training run. That stays a deliberate PI decision.
 
 ⚠️ **The experiment must not average through the change.** The clean "before" window is already
-banked (6300 → 6350, 27.21 s/step). The interval containing the change **must be DISCARDED**, and
+banked (6300 → 6400, 27.18 s/step over 100 steps). The interval containing the change **must be
+DISCARDED**, and
 the first admissible "after" interval is the one whose *both* endpoints are logged after it — the
 same C68 discipline as the machine boundary. A ready-to-run script that records the exact step and
 both `/sys` snapshots is at `code/thor_clocks_experiment.sh`.
 
 ## 4. Caveats stated rather than buried
 
-1. **One interval.** The 27.21 figure rests on a single 50-step marginal. Corroboration: the
-   cumulative including startup is **27.40**, i.e. **0.7 % away** — two statistics with different
-   startup exposure agreeing that closely is decent evidence the rate is flat, but it is not three
-   points. A second interval lands ~00:10 UTC.
+1. ~~One interval.~~ **RESOLVED** — now two intervals / three logged points, agreeing to 0.5 %
+   (see §1). The A40 side moved slightly too (20.20 → **20.46** on the matched 100-step window),
+   which is why the ratio settled at 1.329× rather than 1.347×: **both sides must be re-cut to the
+   same width when the width changes**, and the estimator does that rather than holding one side
+   fixed.
 2. **Batch and workers are already right for Thor** and were not the lever: CLAUDE.md records that
    Thor saturates at **batch 8** (throughput flat across a 6× batch range) and that each dataloader
    worker costs **~8.6 GB host RAM**. The live command runs `--batch 8`.

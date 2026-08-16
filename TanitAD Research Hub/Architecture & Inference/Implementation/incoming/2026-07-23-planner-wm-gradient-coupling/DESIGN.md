@@ -316,3 +316,17 @@ this stream is cut short: (1) the design + failure analysis (§3, §7) is the du
 tested `deconflict` math; (3) the trainer splice.
 
 **Nothing in this deliverable was launched, and no training pod was touched.**
+
+> ⚠️ ✅ **RE-CONFIRMED STILL TRUE 2026-08-16 — THE MERGE NEVER HAPPENED. 24 DAYS OPEN.**
+> Probed at HEAD, twice: (1) `stack/tanitad/train/` contains `__init__.py, ckpt_io.py, decorr.py,
+> flagship_losses.py, heldout_gate.py, heldout_goal.py, train_worldmodel.py, v4_curriculum.py` —
+> **no `grad_surgery.py`**; (2) by symbol rather than filename, `grep -rn "seam_project\|deconflict\|
+> grad_surgery" stack/ --include="*.py"` returns **zero files**. The tested implementation and its
+> 9 green tests are still only in this `incoming/` folder.
+> **The gating condition this doc names is also void**: the merge was queued for *"the next v4.x launch
+> Sayed approves"*, and the programme has since moved past v4 entirely (v5f → v6). Waiting for a v4.x
+> launch that will not come is what turns a queued merge into the 10-day-orthogonality-instrument
+> failure — so this is escalated in-channel, not left here.
+> Code involved: `…/2026-07-23-planner-wm-gradient-coupling/grad_surgery.py` (+ `tests/test_grad_surgery.py`)
+> → intended destinations `stack/tanitad/train/grad_surgery.py` and `stack/tests/`.
+> Swept by the 2026-08-16 stale-blocker sweep.

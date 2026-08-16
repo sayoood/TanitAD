@@ -46,7 +46,9 @@ SEAMS (imported, never re-implemented):
   * corpus/parity/geometry: ``train_v58f_unicycle_head.build_train_episodes`` +
     ``eval_flagship_v4.build_v2_val_episodes`` / ``resolve_eval_frames`` / ``_eval_cfg``
     / ``_plan`` (the W4-family loader seams, byte-identical guards);
-  * frozen trunk: ``eval_flagship_v4.load_v1_from_ck`` (MODE A: model + grounding, no
+  * frozen trunk: ``tanitad.eval.v6_probe_trunk.load_trunk_auto``, which routes a v6
+    ``{"stack": …}`` checkpoint to ``V6ProbeTrunk`` and everything else to
+    ``eval_flagship_v4.load_v1_from_ck`` (MODE A: model + grounding, no
     planner head needed for a WM readout);
   * predictor roll: ``tanitad.models.metric_dynamics.rollout_transitions``
     (metric_dynamics.py:247-266) — the SAME roll the imagination/canary family uses

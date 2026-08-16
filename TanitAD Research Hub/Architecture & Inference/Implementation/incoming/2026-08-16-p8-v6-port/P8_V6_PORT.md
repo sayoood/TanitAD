@@ -201,7 +201,7 @@ visible as a fact rather than discovered later.
 
 ## 4. Tests
 
-`stack/tests/test_p8_v6.py` — **41 tests, CPU, no corpus / checkpoint / GPU / join file.**
+`stack/tests/test_p8_v6.py` — **42 tests, CPU, no corpus / checkpoint / GPU / join file.**
 
 - field mask vs an **independent analytic loop** (not the vectorised function under test);
 - the 590 / 7 680 census, the near-band concentration (51.2 %), the legacy-frame 2 126 / 7 680;
@@ -220,7 +220,10 @@ visible as a fact rather than discovered later.
   already held;
 - `BEVOccupancyHead` in-band at v6's `d_op = 2048`, refusing another width.
 
-**Suite:** `PYTHONUTF8=1 …/python.exe -m pytest` from `stack/` — see §7 for the run.
+**Suite:** `PYTHONUTF8=1 …/python.exe -m pytest` from `stack/` →
+**2961 passed · 0 failed · 17 skipped · 2 xfailed** (382 s). Brief baseline was 2810/0/17/2;
+the delta is this file's 42 plus a concurrent stream's additions (`test_v6_ladder_edges.py` and
+siblings). **Zero failures, zero regressions.**
 
 ---
 
@@ -327,8 +330,19 @@ anything. It does not wait on a GPU.
 | v6 trunk adapter (extended) | `stack/tanitad/eval/v6_probe_trunk.py` |
 | tests | `stack/tests/test_p8_v6.py` |
 
-All staged in the working tree (`git add`), **never committed, never pushed** — per
-`AGENT_OPERATING_STANDARD.md`. Nothing lives only on a pod or a worktree.
+All staged in the working tree (`git add`), **never committed and never pushed by this agent** —
+per `AGENT_OPERATING_STANDARD.md`. Nothing lives only on a pod or a worktree.
+
+⚠️ **A concurrent sweep committed the index mid-session.** HEAD moved to `41057e5` while this
+work was in progress and now contains six of the seven artifacts; the seventh (a docstring edit
+to `train_p8_occupancy.py`) is staged against it. Verified file-by-file that nothing was lost:
+`git ls-tree -r HEAD` lists the new files and HEAD's `bev_raster.py` carries `fov_census`.
+
+⛔ **A verification note worth keeping.** `git ls-files --cached <path>` — the check CLAUDE.md
+prescribes for the silent-`add`-no-op trap — is **not sufficient for a MODIFIED tracked file**:
+it proves the path is in the index, not that *your* version is. It reported "staged" for a file
+whose index blob was the pre-edit one. The check that actually settles it is
+`git ls-files --stage <path>` vs `git hash-object <path>` — **compare the blob hashes.**
 
 ---
 

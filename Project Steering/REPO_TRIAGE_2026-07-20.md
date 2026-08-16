@@ -64,7 +64,7 @@ plus `git branch -r`.
 
 | # | Branch | n | What the work IS | Why MERGE |
 |---|---|---|---|---|
-| 1 | `agent/tools-devenv-20260720` | 2 | `tools/` — `ci_gate.py` v2 (suite manifest), `gpu_tripwire.py` (CUDA device-parity), `session_guard.py` (D-026 stranded-work session-end gate), `ci.ps1`, `session_guard.ps1`, `README.md` + 585 lines of tests. +2641/−444. | **`tools/` does not exist in HEAD at all** (`git ls-tree HEAD -- tools/` is empty). Newest of the whole ci-gate lineage and strictly supersedes branches #19–#22. Highest single-branch value. |
+| 1 | `agent/tools-devenv-20260720` | 2 | `tools/` — `ci_gate.py` v2 (suite manifest), `gpu_tripwire.py` (CUDA device-parity), `session_guard.py` (D-026 stranded-work session-end gate), `ci.ps1`, `session_guard.ps1`, `README.md` + 585 lines of tests. +2641/−444. | ~~**`tools/` does not exist in HEAD at all** (`git ls-tree HEAD -- tools/` is empty).~~ ⏹ **CLOSED 2026-08-16 — MERGED; this row is DONE.** `tools/` is in HEAD with **16 files + 10 test files**, including all six named here (`ci_gate.py`, `gpu_tripwire.py`, `session_guard.py`, `ci.ps1`, `session_guard.ps1`, `README.md`, `tools/tests/`). Landed `c4d8451` (2026-07-18, `session_guard`) and `1e13e3a` (2026-07-20, ci_gate v2 + CUDA device-parity tripwire) — i.e. **the same day this triage was written**; the directory has since grown `registry_lint.py`, `registry_paths.py`, `safe_commit.py`, `repo_janitor.py`, `corpus_census.py`, `fleet_probe.py`, `index_span_check.py`. Evidence (MEASURED, three probes): `git ls-tree HEAD -- tools/`, `git ls-files -- tools/`, filesystem `tools/`. Swept by the 2026-08-16 stale-blocker sweep. Newest of the whole ci-gate lineage and strictly supersedes branches #19–#22. Highest single-branch value. |
 | 2 | `agent/prod-opt-20260718` | 2 | Combined deploy-tick harness (**11.16 ms / 89.6 Hz measured**, 1.59×), predictor CUDA-graph attack (2.57×), **atomic milestone-archive fix (`ckpt_io.py`)**, numerics-safety sweep + tests, VRAM fp16/fp32 json. +2010/−52. | Contains the **live bug fix** described in the headline. All 12 Implementation files absent from HEAD; HEAD only has the derived `Research/2026-07-18-nan-class-sweep.md`. |
 | 3 | `agent/phase0-supervised-hardening` | 7 | Pod ops bundle: `supervise_run.sh` (boot-persistent auto-resume + heartbeat + flock, incl. the fd-close restart fix), `pod_boot_hook.sh`, `install_pre_start_hook.sh`, `pod2_ops_daemon.sh` (memory-relief + disk monitor), `parity_skipset.sh` (reap-independent skip-set → clip_ids + sha256), `reap_built_mp4s.sh`, `flagship_phase0.run.env`, `pai_build.run.env`, LF `.gitattributes`. +400/−0. | **All 9 files ABSENT-IN-HEAD** and the branch is **local-only, never pushed**. This is the documented pod2 recovery path. Merge *and* push — single point of failure today. |
 | 4 | `agent/data-engineering-20260718` | 4 | ZOD loader (`zod.py` 407 L + 245 L tests, geometry falsifier PASS), curve-rebalance measured on real bytes (243 L + 145 L tests, refutes "74 % straight" as a comma/highway property), ZOD-access escalation to §4 blocked-items. +1771/−14. | HEAD name-drops ZOD in `OWN_DATASET_PLAN.md` / sensor survey / BACKLOG but ships **no loader**. Both Implementation packages and both research notes are absent from HEAD. (Loader is gated on ZOD access — merge the code, keep the blocker flagged.) |
@@ -284,7 +284,7 @@ Ranked by what it costs you to keep losing it.
 |---|---|---|---|
 | 1 | **`ckpt_io.py::atomic_archive`** — fixes silent gate-milestone corruption | `agent/prod-opt-20260718` | **BUG STILL LIVE** in all 3 trainers |
 | 2 | **Pod ops bundle** (`supervise_run.sh` + boot hook + ops daemon + parity skip-set) | `agent/phase0-supervised-hardening` | ABSENT — and **local-only, unpushed** |
-| 3 | **`tools/`** — ci_gate v2, gpu_tripwire (CUDA device-parity), session_guard (D-026) | `agent/tools-devenv-20260720` | Directory does not exist |
+| 3 | **`tools/`** — ci_gate v2, gpu_tripwire (CUDA device-parity), session_guard (D-026) | `agent/tools-devenv-20260720` | ~~Directory does not exist~~ ⏹ **CLOSED 2026-08-16 — IN HEAD** (16 files + 10 tests; `c4d8451` 07-18, `1e13e3a` 07-20) |
 | 4 | **Orthogonality/isotropy admissibility instrument** | `worktree-agent-arch-inf-20260710` | ABSENT; **HEAD's own README asks for it** |
 | 5 | **TanitResim maneuver-strip** (~486 L, uncommitted) | worktree `agent-a5ab55fd6191cb521` | ABSENT; not committed anywhere |
 | 6 | **D1 ADE statistical-power / bootstrap audit** | `worktree-agent+bench-eval-20260711` | No bootstrap machinery in HEAD |
@@ -292,6 +292,28 @@ Ranked by what it costs you to keep losing it.
 | 8 | **Flagship-operative blind-rollout + orthogonality** (drops the pre-reset caveat) | `agent/arch-inf-20260718` | Only the base250cam run is in HEAD |
 | 9 | **PhysicalAI decode hardening** (12× build-memory cut, PyAV thread cap) | `agent/phase0-highway-dataset` | ABSENT |
 | 10 | **0.68 m from-scratch oracle ceiling** | `worktree-agent-a1d4c9c7201f6aacb` | Number appears nowhere in HEAD |
+
+> ⏹ **STALE-BLOCKER SWEEP 2026-08-16 — MOST OF THIS TABLE HAS LANDED. Do not re-commission any row
+> below without re-probing it first.** The "Status in HEAD" column above is a **2026-07-20 snapshot**
+> and was never revisited; six of the ten rows are now merged. Verdicts (each MEASURED via
+> `git ls-files` / `git ls-tree HEAD` plus a second probe):
+>
+> | # | 2026-07-20 status | verdict 2026-08-16 | evidence in HEAD |
+> |---|---|---|---|
+> | 1 | "BUG STILL LIVE in all 3 trainers" | ⏹ **CLEARED** | `stack/tanitad/train/ckpt_io.py` + `stack/tests/test_ckpt_io.py`; `atomic_archive` referenced by **all four** trainers (`train_flagship4b.py`, `refb_train.py`, `refc_train.py`, `reset-speed4b/refa_train_plus.py`) |
+> | 2 | "ABSENT — and local-only, unpushed" | ⏹ **CLEARED** | `stack/scripts/supervise_run.sh` is in HEAD (its live behaviour is now documented in `CLAUDE.md`'s traps) |
+> | 3 | "Directory does not exist" | ⏹ **CLEARED** | `tools/` — 16 files + 10 tests |
+> | 4 | "ABSENT; HEAD's own README asks for it" | ⏹ **CLEARED** | `stack/tanitad/eval/spectral.py` now defines `isotropy_ratio` **and** `participation_ratio`; plus `stack/scripts/run_orthogonality.py`, `stack/tests/test_spectral_orthogonality.py`. ⚠️ This is the instrument `CLAUDE.md` cites as having sat unmerged **10 days** — it is merged |
+> | 5 | "ABSENT; not committed anywhere" | ⚠️ **PARTIAL / UNVERIFIABLE** | `stack/tanitad/resim/` **is** in HEAD (`export.py`, `sample.py`, `static/`), so the module is not absent — but the specific ~486 L **maneuver-strip** could not be confirmed as the same artifact. Re-probe before re-doing |
+> | 6 | "No bootstrap machinery in HEAD" | ⏹ **CLEARED** | `taniteval/taniteval/ci.py` — the **episode-cluster bootstrap** that `CLAUDE.md` names as the program's decision-grade estimator — plus `taniteval/paired_gate_ci.py` |
+> | 7 | "Docs reference ZOD; no loader" | ⚠️ **PARTIAL** | `zod.py` + `tests/test_zod.py` **are in the repo** at `TanitAD Research Hub/Data Engineering/Implementation/incoming/2026-07-18-zod-loader/` (no longer stranded on an unmerged branch), but **not** integrated into `stack/` — there is no `stack/tanitad/data/zod.py`, and access is still gated |
+> | 8 | "Only the base250cam run is in HEAD" | ⏹ **CLEARED** | `…/Implementation/belief_rollout_diagnostic/blind_rollout_flagship.py` + both flagship-speed seed JSONs (`2026-07-18-blind_rollout-flagship-speed-seed{0,1}.json`) |
+> | 9 | "ABSENT" | ❓ **NOT PROBED** in this sweep — treat as unverified, not as absent |
+> | 10 | "Number appears nowhere in HEAD" | ❓ **NOT PROBED** in this sweep — treat as unverified, not as absent |
+>
+> ⚠️ Rows 9 and 10 carry **no clearing evidence**, so per the sweep rule their verdict is
+> **UNVERIFIABLE, not CLEARED** — probe before acting either way.
+> Swept by the 2026-08-16 stale-blocker sweep.
 
 **Eval harnesses:** the good news is that the big ones *did* land — `2026-07-19-alpasim-closedloop-v1`,
 `2026-07-16-eval-metric-suite`, `2026-07-17-openloop-l2-egostatus-shortcut`, `2026-07-15-baseline-floor`,

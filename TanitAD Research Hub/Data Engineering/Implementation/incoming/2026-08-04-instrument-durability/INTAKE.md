@@ -1,6 +1,18 @@
 # INTAKE — instrument durability: distance-keeping off-Drive, REF-C anchors rebuilt, §6 latency
 
 - **Date:** 2026-08-04 · **Discipline:** Data Engineering · **Status:** PENDING orchestrator triage
+
+> ⏹ **CLOSED 2026-08-16 — the "PENDING triage" label is stale; this package's P1 was CONSUMED and
+> shipped.** The distance-keeping instrument it hardened went on to produce the programme's first
+> real cross-arm numbers in commit **`670f614`** — *"FIRST REAL DISTANCE-KEEPING NUMBERS - and the
+> arms SPLIT the four families"* — which touches this very directory.
+> Evidence (MEASURED): `…/Benchmarks & Eval/…/incoming/2026-08-04-distance-keeping-arms/raw/crossarm_distance_keeping.json`
+> — **27 arms** scored on the canonical **270 LEAD** windows, `_estimator` =
+> *"episode-cluster bootstrap (point), paired vs the CV floor. B=2000 seed 0."*, `_admission` =
+> *"gt bit-identical to `windows_refc-base-30k.pt`; 881 rows"*. The 881 / 270 / 247 figures below
+> reproduce exactly. Also carried onto OOD val:
+> `…/2026-08-05-v1arch-oodval-four-families/raw/v1arch_oodval_q90_4fam_LEAD.json` (290 episodes, 6 382 windows).
+> Swept by the 2026-08-16 stale-blocker sweep.
 - **Branch:** `agent/arch-inf-20260803` · **Hosts:** dev box + `tanitad-thor` (idle, aarch64 NVIDIA Thor)
 - ⛔ No training pod was touched. `tanitad-new` (v5f) and `tanitad-pod4` (v1arch) were never contacted.
 
@@ -103,6 +115,20 @@ banked episode dump to `obstacle.offline` / `egomotion` without a clip list.
 ⇒ **That last row is the proof.** The identical call without a lead block still reports
 `UNAVAILABLE`; with it, real headway / time-gap / min-TTC come back. The family is fed, not merely
 importable.
+
+> ✅ **RE-CONFIRMED STILL TRUE 2026-08-16 — and read the `UNAVAILABLE`s here CORRECTLY, because a
+> misreading of this exact word has already cost a whole commissioned agent.** The `UNAVAILABLE` in
+> the `lead=None` control row (and in §HEADLINE 1) is a **deliberate negative control**, NOT a
+> statement that the family is broken or blocked. `four_families.longitudinal(..., lead=None)`
+> reporting `UNAVAILABLE` is the *correct* behaviour — a missing lead track must never be scored as
+> free flow. Confirmed still by design in `taniteval/taniteval/four_families.py::_distance_keeping`
+> and `taniteval/tools/build_lead_block.py`, whose docstring opens: *"`four_families.longitudinal`
+> reports its **distance-keeping half UNAVAILABLE** without a lead track."*
+> ⇒ **With a lead block the family HAS been running routinely since 2026-08-04.** Anyone reading
+> "UNAVAILABLE" on this page and concluding the instrument needs building should stop and read
+> `…/Architecture & Inference/…/incoming/2026-08-16-obstacle-offline-sidecar/OBSTACLE_OFFLINE_SIDECAR.md`
+> §0 first, whose headline is verbatim *"The briefed task was already built."*
+> Swept by the 2026-08-16 stale-blocker sweep.
 
 **D-LEAD-1 sign reproduction — 2 of 3, and I am not calling that a pass.**
 
@@ -442,3 +468,16 @@ in this report, and I am stating it rather than quoting a stale number.**
 5. ⚠️ **Past `.CONTAMINATED-*` efficiency artifacts from Thor may be clean** — re-check, don't discard.
 6. ⚠️ **Open work item:** paired episode-cluster bootstrap for the val40 GT-vs-CV distance-keeping
    deltas (§1.5), to settle the time-gap sign flip properly.
+
+> ### ⏹ ESCALATION SWEEP 2026-08-16 — 3 of these 6 have CLEARED. Verify before re-escalating.
+>
+> | # | 2026-08-16 verdict | evidence (MEASURED unless noted) |
+> |---|---|---|
+> | 1 · anchor rename | ✅ **STILL TRUE** | Two probes: `find . -name "refc_anchors_full*.pt"` returns **only** `…/2026-08-04-instrument-durability/refc_anchors_full_REBUILD.pt`; no `refc_anchors_full.pt` exists anywhere in the repo, so nothing was silently renamed. (The sibling anchor files that DO exist: `…/2026-07-22-refc-small-30k/refc_anchors_small64.pt`, `…/2026-07-28-pod-migration-rescue/flagship_v4_anchors_dense.pt`.) The `torch.equal` nesting check is unchanged. **PI/orchestrator decision still owed.** |
+> | 2 · duplicate val40-lead builder | ⏹ **CLEARED** | One canonical builder now lives **inside the suite**: `taniteval/tools/build_lead_block.py`. Its docstring designates the split explicitly — *"This is the INGEST half. `taniteval.lead_source` is the pure join … and `taniteval.lead_metrics` is the pure metric"* — and names the dev-box sibling `…/2026-08-03-longitudinal-distance-keeping/build_lead_tracks.py` as the one that *"hardcodes a Windows data root and so cannot run on a pod"*. Its rule 1 states the reason in the escalation's own terms: *"Recomputing the grid by hand here would be a second implementation that can drift."* |
+> | 3 · two "CV floors" | ⏹ **CLEARED — both are now NAMED, and a third floor was added** | `taniteval/taniteval/driving.py:313` `FLOORS = ("cv", "holdv0", "ctrv")` with `FLOOR_DESC` distinguishing them verbatim: `cv` = *"constant velocity (persisted by `rollout.collect`)"* vs `holdv0` = *"hold-v0: go straight at the observed entry speed"*. They are no longer two unlabelled rivals for one name — they are two named members of one family. Landed via `…/Benchmarks & Eval/…/incoming/2026-08-02-ctrv-floor` (orchestrator verdict **integrate-with-changes**, 2026-08-03). |
+> | 4 · §6 latency UNRESOLVED | ✅ **STILL TRUE (UNVERIFIED here)** | Not re-probed — this sweep is CPU-only and must not contact a pod, and the recommendation was explicitly *"re-run the moment its training finishes"*. Treat as open. |
+> | 5 · past `.CONTAMINATED-*` Thor artifacts may be clean | ✅ **STILL TRUE** | The `efficiency.py` fix is in the tip, but no re-adjudication of historical artifacts is recorded. Open. |
+> | 6 · paired bootstrap for the GT-vs-CV time-gap sign flip | ⏹ **CLEARED** | `…/Benchmarks & Eval/…/incoming/2026-08-04-distance-keeping-arms/raw/crossarm_distance_keeping.json` carries `_estimator` = *"episode-cluster bootstrap (point), **paired vs the CV floor**. B=2000 seed 0."* over **27 arms** / 270 LEAD windows, with `GT_oracle` (n_kept 247) and `CV_floor` (n_kept 236) as explicit rows — i.e. the paired estimator §1.5 asked for was run. ⚠️ §1.5's own table remains NOT decision-grade and must still not be cited; cite the paired JSON instead. |
+>
+> Swept by the 2026-08-16 stale-blocker sweep.
