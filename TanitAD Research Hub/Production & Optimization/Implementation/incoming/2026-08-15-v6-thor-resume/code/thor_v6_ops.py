@@ -44,9 +44,27 @@ OUT = os.path.expanduser("~/experiments/v6F-SW-30k")
 LOG = os.path.expanduser("~/logs/v6_ops.log")
 TARGET = int(os.environ.get("TARGET_STEP", "10000"))
 CYCLE = int(os.environ.get("CYCLE_S", "5400"))          # 90 min
+#: Push the 3.5 GB checkpoint every N steps of PROGRESS — a monotone difference,
+#: not a modular window (see the fix note in the loop). 1000 steps at the
+#: MEASURED 27.18 s/step is ~7.6 h, which is the durability exposure we accept.
+PUSH_EVERY = int(os.environ.get("PUSH_EVERY_STEPS", "1000"))
+MARKER = os.path.expanduser("~/experiments/v6F-SW-30k/.last_ckpt_push")
 SMALL = ("config.json", "metrics.json", "train_log.jsonl", "train.out")
 
 api = HfApi()
+#: set by push_and_verify(); the marker only advances when the FAR SIDE agreed.
+_last_verify_ok = False
+
+
+def _read_marker():
+    """Survive a restart of this loop. Without it, every restart re-pushes 3.5 GB
+    — which on this household line is ~50 min of the link the trainer does not
+    need but the household does."""
+    try:
+        with open(MARKER) as fh:
+            return int(fh.read().strip())
+    except (OSError, ValueError):
+        return None
 
 
 def say(msg: str) -> None:
@@ -77,6 +95,9 @@ def local_step() -> int:
 
 
 def push_and_verify(names) -> None:
+    global _last_verify_ok
+    _last_verify_ok = False
+    ok_all = True
     for f in names:
         src = os.path.join(OUT, f)
         if not os.path.exists(src):
@@ -86,6 +107,7 @@ def push_and_verify(names) -> None:
             api.upload_file(path_or_fileobj=src, path_in_repo=PREFIX + f,
                             repo_id=REPO, repo_type="model")
         except Exception as e:                              # noqa: BLE001
+            ok_all = False
             say(f"PUSH_FAIL {f}: {type(e).__name__}")
             continue
         # ⛔ Far-side listing, never the push log.
@@ -93,12 +115,18 @@ def push_and_verify(names) -> None:
             info = api.model_info(REPO, files_metadata=True)
             got = {s.rfilename: s.size for s in info.siblings}.get(PREFIX + f)
             ok = (got == want)
+            ok_all = ok_all and ok
             say(f"{'VERIFIED' if ok else 'MISMATCH'} {f}: far {got} vs local {want}")
         except Exception as e:                              # noqa: BLE001
+            ok_all = False
             say(f"VERIFY_UNKNOWN {f}: {type(e).__name__} — not claiming success")
+    _last_verify_ok = ok_all
 
 
-say(f"ops loop up · TARGET_STEP={TARGET} · cycle={CYCLE}s · out={OUT}")
+say(f"ops loop up · TARGET_STEP={TARGET} · cycle={CYCLE}s · "
+    f"push_every={PUSH_EVERY} steps · out={OUT}")
+last_pushed = _read_marker()
+say(f"last confirmed ckpt push: step {last_pushed}")
 marked = os.path.exists(os.path.join(OUT, f"MILESTONE_{TARGET}"))
 
 while True:
@@ -123,7 +151,33 @@ while True:
             push_and_verify([f"ckpt_step{TARGET}.pt"])
 
     push_and_verify(SMALL)
-    if step and step % 1000 < 60:          # roughly hourly at ~17 s/step
+
+    # ⛔ FIXED 2026-08-16 — THE OLD CONDITION WAS `step % 1000 < 60`, AND IT
+    # STRUCTURALLY ALMOST NEVER FIRED. That window is 60 steps wide; at the
+    # MEASURED 27.18 s/step it is open for ~27 minutes, and this loop samples
+    # every 90. So it had roughly a 30 % chance of ever catching it, and the
+    # 3.5 GB checkpoint — the ONLY artifact that matters here — sat on one disk.
+    #
+    # Same family as C13 (a guard that cannot fail): a condition whose firing
+    # WINDOW IS NARROWER THAN ITS SAMPLING PERIOD is not a schedule, it is a
+    # lottery. ⇒ Track the last pushed step and compare a MONOTONE difference,
+    # which cannot be missed by sampling — a late cycle pushes late, never never.
+    if step and (last_pushed is None or step - last_pushed >= PUSH_EVERY):
+        say(f"ckpt push due: step {step} vs last_pushed {last_pushed} "
+            f"(interval {PUSH_EVERY})")
+        before = os.path.getmtime(os.path.join(OUT, "ckpt.pt")) \
+            if os.path.exists(os.path.join(OUT, "ckpt.pt")) else None
         push_and_verify(["ckpt.pt"])
+        # ⚠️ Only advance the marker if the far side actually agreed. A push
+        # that silently failed must be RETRIED next cycle, not recorded as done
+        # — the silent-push-failure class (a loop reporting success while 100 %
+        # of a 3.5 GB payload failed) is why this loop verifies at all.
+        if _last_verify_ok:
+            last_pushed = step
+            with open(MARKER, "w") as fh:
+                fh.write(str(step))
+        else:
+            say(f"ckpt push NOT confirmed at step {step} — marker NOT advanced, "
+                f"will retry next cycle (mtime was {before})")
 
     time.sleep(CYCLE)
