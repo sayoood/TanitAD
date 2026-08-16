@@ -174,8 +174,18 @@ or this audit is void and must be re-run.
 | `colab/s2_lab_lib.py` | render-compat only: token HTML handles `args[8]+mask` + string provenance; single-dict `a_str`; stale "PROVISIONAL" header line |
 | `stack/tests/test_ph1_fuse.py` | **13 new tests** incl. the item-6 negative control, geometry-beats-VLM, ROUTE_TO remap/abstain/never-emitted, null-dist-never-fabricates-arg, LC gate, u-turn confound abstain, RESUME_CRUISE, provenance honesty, sidecar path, poisoned-situations invariance |
 
-`tests/test_ph1_fuse.py`: **26/26 pass**. Full stack suite: green (count in the manifest below —
-run finishing as this report is written; any failure would have blocked staging).
+`tests/test_ph1_fuse.py`: **26/26 pass**. Full stack suite: **3396 passed, 17 skipped, 2 xfailed
+(6:54)** — green above the 3346 baseline, the +13 included. taniteval (untouched by this stream):
+**1092 passed (1:55)**. `colab/s2_schema.py` smoke: bare stdlib import, `from_fused` on a real
+fused record with and without Engine A (path vs vlm-fused provenance), and the ROUTE_TO refusal —
+all pass.
+
+⚠️ **Provenance note on the branch history:** this package + the six pipeline/schema/test files
+were staged per the operating standard and were **swept into commit `793df46`** ("F-1 CLOSED…")
+by a concurrent stream's commit — the known whole-index behavior (CLAUDE.md git hygiene). The
+content is byte-identical to this stream's staged deliverables; only the commit message
+attribution is foreign. This file's final revision (adding the suite counts) is the one remaining
+staged-not-committed delta.
 
 ## 8. Escalations (named owners, unchanged from the gap report)
 
