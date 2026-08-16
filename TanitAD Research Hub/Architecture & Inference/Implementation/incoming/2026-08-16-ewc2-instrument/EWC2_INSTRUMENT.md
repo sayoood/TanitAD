@@ -366,6 +366,27 @@ Run: `cd stack && PYTHONUTF8=1 PYTHONIOENCODING=utf-8 python -m pytest`.
 5. ⚠️ **§3.1's σ unit should be stated explicitly in the design doc.** It is currently recoverable
    only by reading `sel_winners_curse_law.py:221`. A reader who assumes radial RMS is off by 1.414 on
    the number that decides SEL-1.
+6. ⚠️ **Two concurrency hazards fired during this turn — both cost real time, both are cheap to
+   avoid, and neither is specific to this work.**
+   - **The index was reset under a running agent.** Five deliverables were `git add`ed and
+     **verified present** with `git ls-files --cached`; three commits then landed
+     (`dc50dbc`, `b12c190`, `8e215b3`) and the same check later reported them **untracked (`??`)**.
+     Re-staging fixed it. ⇒ **Verify staging again at the END of a turn, not only at the moment you
+     stage** — the existing rule ("`git add` exit codes are not evidence") is necessary but not
+     sufficient; a *later* index reset defeats an earlier verification.
+   - **A `file:line` citation drifted between reading a file and citing it.** Those same commits
+     edited `probe_latent_state.py` and `sel_winners_curse_law.py`, and the σ-injection line moved
+     `222 → 221`. Caught by re-verifying every cited line against the current files; 6 references
+     across 3 files were corrected. ⇒ **Re-verify `file:line` citations against HEAD before filing**,
+     and prefer citing a line *together with its verbatim text* so drift is detectable rather than
+     silent. Root-cause class: **a citation is a claim, and it can go stale without anyone touching
+     the document that makes it.**
+   - Separately, one full-suite failure (`tests/test_p8.py::test_pos_weight_default_is_auto`) was a
+     **concurrent-edit race**, not a defect: `train_p8_occupancy.py` is another agent's unstaged
+     `+408/−57` diff and its mtime was *the second the suite was running*, so the module compiled
+     from version A while `inspect.getsource` read version B. It passes in isolation
+     (30 passed / 1 skipped) and with this work's tests alongside it (119 passed / 1 skipped).
+     Evidence: `raw/PYTEST_EVIDENCE.txt`.
 
 ---
 

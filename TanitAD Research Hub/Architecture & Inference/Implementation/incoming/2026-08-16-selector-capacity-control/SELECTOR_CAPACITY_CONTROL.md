@@ -94,11 +94,21 @@ T1 tier, per family, with the paired episode-cluster bootstrap.
 1. ⛔ **Implemented is not run.** A `"goal"` arm must still not be judged until `"mlp"` has actually
    been *trained beside it* on the same windows. The control's value is the comparison, not its
    existence.
-2. ⚠️ **E-WC2 (§5.2) should still refuse-or-fund SEL-1 before S-T launches**, and its stated "0 GPU,
-   banked latents" premise is now **STALE** — two independent probes (dev box + Thor) find only
-   REF-C latent dumps (`latents_refc-xl-30k.pt`, `latents_refc-base-30k.pt`); **no frozen S-W latents
-   exist anywhere**, because the eval pod that held them is gone. E-WC2 now needs a GPU pass at a
-   deliberate training pause.
+2. ⚠️ **E-WC2 (§5.2) should still refuse-or-fund SEL-1 before S-T launches.**
+   ⛔ **CORRECTED 2026-08-16 — the first version of this bullet was wrong, and the error was in MY
+   PROBE, not in the world.** I wrote that "two independent probes (dev box + Thor)" found no banked
+   latents in the repo and concluded E-WC2 "now needs a GPU pass". The dev-box probe was
+   `find . -maxdepth 4 -iname "*latent*"`, and the files live **six directories deep** at
+   `…/incoming/2026-08-04-lambda-findability/raw/latents_refc-{base,xl}-30k.pt` (39.5 MB / 26.7 MB).
+   **The search could not have reached them.** Calling it an independent probe made a
+   configuration limit look like a corroborated absence.
+   What actually stands: the REF-C latents **are** in the repo and load on CPU at exactly the
+   pre-registered surface (`pooled [881, 992]`, 40 episodes, `instrument_fail: []`,
+   `fan_bit_identical: True`); **no frozen S-W latents have ever been dumped**, so the surface §5.2
+   *names* does still need ~10–25 GPU-min at a deliberate pause. But the REF-C route — the arm the
+   1.7/3.0 thresholds were derived on — needs **no GPU at all**. Its single missing input is the
+   **val40 pose arrays** for the 6 s ground-truth endpoint. Root-cause class: *a cost estimate that
+   priced the expensive input and not the cheap one.*
 3. ⚠️ `hidden` is a free knob. 256 was chosen as a natural width, not tuned. If the control LOSES, a
    width sweep is the honest follow-up before concluding "mechanism" — a control that loses because
    it was mis-sized is not a control.

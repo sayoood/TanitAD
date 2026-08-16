@@ -3443,3 +3443,55 @@ probe): here the second probe is not a second *location* but a second *shape*.
 *(Same pass also confirmed, not retracted: 23,644 rows / 4,729 clips / one `NF4-…-UNVALIDATED`
 quantisation arm / 78.36 wall-hours / 0 errors, the 356× dataset-card understatement, and the
 stratification being delivered 100 % complete on all four labelled classes.)*
+
+---
+
+## 2026-08-16 — "no banked latents exist in the repo" — RETRACTED. `find -maxdepth 4`, files at depth 6
+
+**What I asserted**, in `…/incoming/2026-08-16-selector-capacity-control/SELECTOR_CAPACITY_CONTROL.md`
+and in an agent brief that then shaped a whole task: *"two independent probes (dev box + Thor) find
+only REF-C latent dumps … E-WC2 now needs a GPU pass at a deliberate training pause."*
+
+**What is true.** The REF-C latents are **in this repo**, at
+
+```
+TanitAD Research Hub/Architecture & Inference/Implementation/incoming/
+    2026-08-04-lambda-findability/raw/latents_refc-{base,xl}-30k.pt     39.5 MB / 26.7 MB
+```
+
+— **six directories deep.** My dev-box probe was `find . -maxdepth 4 -iname "*latent*"`. It returned
+three unrelated hits and **could not have reached the files at all**. I then described it as one of
+"two independent probes", which is how a *configuration limit* got promoted to a *corroborated
+absence*.
+
+⇒ **This is C14 in a search command.** C14's binding lesson is *"before recording a limit, ask
+whether the instrument could have reported a LARGER value"* — there it was a sweep whose grid string
+ended at 12°, here it is a search whose depth bound ended at 4. Both report the shape of the probe
+and get read as the shape of the world.
+
+⚠️ **And it defeats C2 while appearing to satisfy it.** C2 says *absence at one location is not
+absence — use a second probe*. I ran a second probe (on Thor), it agreed, and **both were wrong in
+the same direction for different reasons**: the dev-box one was depth-bounded, and the Thor one was
+looking at a machine that legitimately has no repo checkout of that directory. **Two probes that
+share a blind spot are one probe.** The check that would have caught it is trivial: an unbounded
+`find` on a distinctive filename.
+
+| # | class | recognition signal |
+|---|---|---|
+| **C69** | **A search whose own bound excluded the answer** | `find -maxdepth N`, `head -n`, `grep -m`, a glob that stops at one directory level, an API `limit=` — any enumeration reported as "not present" without first asking whether the enumerator could have reached it |
+
+**What survives, and it is most of it:** *no frozen S-W latents have ever been dumped* is **still
+true** — the S-W surface §5.2 names does need ~10–25 GPU-min at a deliberate pause. **What is
+withdrawn is the cost verdict**: the REF-C route, which is the arm the 1.7/3.0 thresholds were
+derived on, needs **no GPU whatsoever**. Its one missing input is the **val40 pose arrays** for the
+6 s ground-truth endpoint — a pose-only backfill.
+
+⇒ **The deeper root cause, and it is the reusable half:** §5.2 priced *"0 GPU, banked latents"* by
+costing the **expensive** input (latents, a GPU dump) and never costing the **cheap** one (poses, a
+file read). My retraction repeated the same shape from the other side — I re-priced the expensive
+input and still never asked what else the estimator needed. ⇒ **RULE: when a plan says a step is
+free, enumerate EVERY input it consumes and locate each one, not just the one that sounds costly.**
+
+⇒ **RULE: never write "X does not exist" from an enumeration whose bound you have not stated.**
+Quote the exact command, and prefer an unbounded search on a distinctive name over a bounded one on
+a generic pattern.
