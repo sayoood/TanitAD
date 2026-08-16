@@ -106,7 +106,8 @@ from tanitad.models.v6 import (  # noqa: E402
     HORIZON_S, MODULE_GROUPS, PLAN_STEPS, STAGES, InteractionSampler,
     V6Config, V6Stack, apply_stage_freeze, kinematic_saliency,
     near_field_band_mask, sample_cell_block_mask, saliency_weights,
-    spectrum_report, stage_trainable_groups, time_to_reach_weights)
+    SpectrumAccumulator, o6_rank_verdict, spectrum_report,
+    stage_trainable_groups, time_to_reach_weights)
 from tanitad.models.sigreg import position_relaxed  # noqa: E402
 
 # O1 — IMPORTED, never re-implemented: the response-form L_ctrl and its
@@ -126,6 +127,7 @@ __all__ = [
     "anchor_goal_loss",
     "v6_loss_step", "stage_gate_dict", "write_stage_gate",
     "assert_stage_precondition", "GatePreconditionError",
+    "in_spectrum_window",
     "ResumeLineageError", "read_ckpt_provenance", "assert_resume_lineage",
     "resume_guard", "load_resume", "load_stage_init",
     "supersede_init_on_resume",
@@ -367,7 +369,22 @@ STAGE_GATE_SPEC: dict[str, dict] = {
             "P3_sign": ">= 0.95 per channel, BOTH lat and lon",
             "P3_gain": "median gain in [0.5, 2.0], WITHOUT post-training",
             "P6_dims": "action-subspace dims (80 % var) <= 32",
-            "O6_rank_retention": ">= 0.8x effective rank across phases"},
+            # ⛔ RE-DERIVED 2026-08-16 (SIGREG_GATE_POWER.md). The old text was
+            # ">= 0.8x effective rank across phases" and named no estimator, no
+            # n and no interval. MEASURED at the live run's n=48 it fires when
+            # NOTHING changed between 9 % (model null) and 38 % (the run's own
+            # banked spread), with power 0.11 against a 1.43x true collapse —
+            # a guard that goes off when nothing happened. The replacement is
+            # owned by tanitad.models.v6.o6_rank_verdict and can say
+            # INCONCLUSIVE, which the old one could not.
+            "O6_rank_retention":
+                "o6_rank_verdict: (1) ADMISSIBLE only at rank_ceiling >= 1024 "
+                "-- a single 48-row batch is INCONCLUSIVE by construction, "
+                "pool with --spectrum-accum; (2) RETENTION fails only when the "
+                "cluster-JACKKNIFE interval on ER_cur/ER_ref lies WHOLLY below "
+                "0.8x, passes only when it lies wholly at/above, else "
+                "INCONCLUSIVE; (3) FLOOR: pooled effective_rank >= 64 "
+                "regardless of retention"},
     },
     "S-T": {
         "required": ("TACTICAL_family", "sel_gap"),
@@ -1268,6 +1285,24 @@ def assert_stage_precondition(stage: str, prev_gate_path=None, *,
             "prev_verdict": "PASS", "prev_gate": str(p)}
 
 
+def in_spectrum_window(step: int, every: int, accum: int) -> bool:
+    """Is ``step`` inside the ``accum``-step block that ENDS at the next
+    emission?
+
+    Extracted from the loop so the arithmetic is testable: the block is the
+    ``accum-1`` steps preceding an emission PLUS the emission step itself, i.e.
+    ``step % every`` in ``{every-accum+1, …, every-1, 0}``. Off-by-one here
+    silently changes what the pooled spectrum is measured over, and the record
+    would still look well-formed.
+
+    ``accum <= 1`` is the incumbent path and never pools.
+    """
+    if accum <= 1 or every <= 0:
+        return False
+    r = step % every
+    return r == 0 or r > every - accum
+
+
 def run_stage_gate(stack: V6Stack, stage: str, *, out_dir,
                    spectrum: dict | None = None,
                    extra_probes: dict | None = None,
@@ -1304,12 +1339,20 @@ def run_stage_gate(stack: V6Stack, stage: str, *, out_dir,
         probes["X3_isolation"] = {"pass": None, "status": "error",
                                   "reason": f"{type(exc).__name__}: {exc}"}
     if spectrum is not None:
+        # ⛔ The verdict travels WITH the reading, so a gate artifact can never
+        # again carry an effective_rank without the ceiling that bounds it.
+        # ``o6_rank_verdict`` returns INCONCLUSIVE for any reading below
+        # O6_ADMISSIBLE_CEILING, which every single-batch reading is.
         probes["O6_spectrum"] = {"pass": None, "status": "reported",
                                  "owner": "tanitad.models.v6.spectrum_report",
                                  **spectrum,
-                                 "reason": "rank RETENTION needs a series "
-                                           "(>= 0.8x across phases); a single "
-                                           "reading cannot pass or fail it"}
+                                 "verdict": o6_rank_verdict(spectrum),
+                                 "reason": "rank RETENTION needs a series AND "
+                                           "an admissible rank ceiling; see "
+                                           "SIGREG_GATE_POWER.md — at n=48 the "
+                                           "reading is bounded by 47 and the "
+                                           ">= 0.8x criterion fires on noise "
+                                           "9-38 % of the time"}
     gate = stage_gate_dict(stage, probes)
     gate["param_report"] = stack.param_report()
     if dry_run:
@@ -1899,6 +1942,18 @@ def train(a) -> dict:
 
     history: list[dict] = []
     spectrum_last: dict | None = None
+    spectrum_ref: dict | None = None
+    # ⚠️ OPT-IN, and deliberately so: --spectrum-accum defaults to 1, which
+    # leaves ``spec_acc`` None and the emission path exactly what it was. The
+    # live v6F S-W run resumes from an argv that carries neither flag.
+    spec_acc = (SpectrumAccumulator(capacity=a.spectrum_accum,
+                                    block=stack.cfg.predictor.window)
+                if a.spectrum_accum > 1 else None)
+    # A DEDICATED generator for the bootstrap, so switching the CI on cannot
+    # consume the global stream and move the run's loss (the exact failure the
+    # loss-determinism stream just fixed on the SigReg side).
+    spec_gen = (torch.Generator().manual_seed(a.seed + 7)
+                if a.spectrum_ci_reps else None)
     t0 = time.time()
     steps_g = tuple(range(1, a.o1_k + 1))
     dev_type = "cuda" if device == "cuda" else "cpu"
@@ -1992,16 +2047,42 @@ def train(a) -> dict:
         sched.step()
         stack.ema_update()
 
+        # ---- O6's standing spectrum monitor ---------------------------------
+        # ⛔ THE PER-BATCH READING CANNOT RESOLVE RANK, and the record now says
+        # so itself. The tensor is [B*W, d_op] = 48 x 2048 on the live run, so
+        # a centred covariance built from it has rank <= 47: "15 of 2048" is
+        # 15 of 47. MEASURED (SIGREG_GATE_POWER.md): at n=48 an isotropic
+        # d=2048 population reads 46.86 and a 7.3x-collapsed one still reads
+        # 22.6, and the >= 0.8x criterion fires on NOTHING between 9 % and 38 %
+        # of the time. --spectrum-accum pools consecutive steps to lift the
+        # ceiling; it defaults to 1, which is byte-for-byte the incumbent path.
+        if spec_acc is not None and in_spectrum_window(
+                step, a.spectrum_every, a.spectrum_accum):
+            spec_acc.push(L["out"]["z_op_win"])
         if step % a.spectrum_every == 0:
-            # O6's standing monitor — a SERIES, because retention is a RATIO
-            # and a single reading can neither pass nor fail it. Measured on
-            # the SAME tensor SIGReg acts on ([B*W, d_op], not just the last
-            # frame): B rows would estimate a 2048-dim spectrum from 16
-            # samples, which is a number, not a measurement.
             zw = L["out"]["z_op_win"].detach().float()
-            spectrum_last = spectrum_report(zw.reshape(-1, zw.shape[-1]))
-            fh.write(json.dumps({"step": step,
-                                 "spectrum": spectrum_last}) + "\n")
+            spectrum_last = spectrum_report(
+                zw.reshape(-1, zw.shape[-1]), ci_reps=a.spectrum_ci_reps,
+                block=(stack.cfg.predictor.window if a.spectrum_ci_reps else 1),
+                generator=spec_gen)
+            rec_s = {"step": step, "spectrum": spectrum_last}
+            if spec_acc is not None and len(spec_acc):
+                rec_s["spectrum_pooled"] = spec_acc.report(
+                    ci_reps=a.spectrum_ci_reps, generator=spec_gen)
+                rec_s["o6_verdict"] = o6_rank_verdict(
+                    rec_s["spectrum_pooled"], spectrum_ref)
+                if spectrum_ref is None and rec_s["spectrum_pooled"][
+                        "rank_admissible"]:
+                    # the phase-start reference for clause 2, taken at the
+                    # first ADMISSIBLE pooled reading of the phase.
+                    # ⚠️ NOT carried across a resume: a restarted process takes
+                    # a fresh reference, so its retention is measured from the
+                    # restart, not from the phase start. The verdict says which
+                    # step the reference came from via the record it embeds —
+                    # read it, do not assume the phase start.
+                    spectrum_ref = dict(rec_s["spectrum_pooled"],
+                                        ref_step=step)
+            fh.write(json.dumps(rec_s) + "\n")
         if step % a.log_every == 0:
             rec = L["log"] | {
                 "step": step, "gnorm": round(float(gn), 3),
@@ -2616,6 +2697,27 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--sigreg-slices", type=int, default=512)
     ap.add_argument("--sigreg-free-dims", type=int, default=0)
     ap.add_argument("--spectrum-every", type=int, default=200)
+    # ⛔ THE POWER FIX (SIGREG_GATE_POWER.md, 2026-08-16). One batch is 48 rows
+    # over 4 episodes, so rank_ceiling = 47 and the >= 0.8x criterion fires on
+    # noise 9-38 % of the time with power 0.11 against a 1.43x true collapse.
+    # Pooling N CONSECUTIVE steps raises the ceiling to min(N*48-1, d_op) AND
+    # the cluster count to ~4N. 32 is the recommended setting: ceiling 1535,
+    # ~14 min of Thor wall-clock, ~12.6 MB of CPU ring buffer.
+    # DEFAULT 1 = no accumulator, byte-for-byte the incumbent emission.
+    ap.add_argument("--spectrum-accum", type=int, default=1,
+                    help="pool this many CONSECUTIVE steps into the O6 "
+                         "spectrum reading (1 = off, the incumbent path)")
+    # >0 turns ON the interval: a leave-one-CLUSTER-out jackknife (the only
+    # candidate MEASURED to cover — 0.85/0.867 vs the bootstrap's 0.25/0.00),
+    # plus this many bootstrap reps kept as a labelled diagnostic. A verdict
+    # REFUSES to fire without an interval, so this is required for a real gate.
+    # ⚠️ COST, MEASURED on the dev box (6 threads, may differ on Thor's CPU):
+    # 1536 rows x 2048 -> plain 0.291 s, with interval 28.28 s = 0.54 % of a
+    # 200-step interval at 26.35 s/step. 384 rows -> 0.39 s (0.007 %).
+    ap.add_argument("--spectrum-ci-reps", type=int, default=0,
+                    help="0 = no interval. >0 emits the cluster JACKKNIFE "
+                         "interval on effective_rank plus this many bootstrap "
+                         "reps as a diagnostic; blocks are --window rows")
     ap.add_argument("--w-t1", type=float, default=1.0)
     ap.add_argument("--w-s1", type=float, default=1.0)
     ap.add_argument("--lambda-plan", type=float, default=None,

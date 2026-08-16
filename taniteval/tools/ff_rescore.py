@@ -217,6 +217,15 @@ def load_dump(label: str, path: str, gt_key: str = "g", dt: float = 0.1) -> dict
             "dt_s": dt_s, "dt_provenance": dt_prov,
             "wp_steps": list(win.get("wp_steps") or []) if not dense else None,
             "source": path, "n_episodes": len(set(eid)),
+            # ⭐ v0 CARRIED THROUGH (2026-08-16). `rollout.collect` publishes
+            # `speed` = ego speed at t0 (ep.poses[last, 3]) and this loader used
+            # to drop it. Without it the PI's anti-echo controls report
+            # UNAVAILABLE on every rollout dump we have already banked — a WORK
+            # ITEM manufactured by a discarded column, not by missing data.
+            # ⛔ NEVER derived from gt/pred: the first GT step is a FUTURE
+            # displacement (see v0_antiecho.resolve_v0).
+            "v0": (np.asarray(win["speed"], dtype=np.float64).reshape(-1)
+                   if win.get("speed") is not None else None),
             "arms": {label: (label, pred.numpy().astype(np.float64))}}
 
 
@@ -372,7 +381,7 @@ def load_lead(path: str, n_windows: int, horizon: int, dt: float,
 def score_arm(name: str, arm_key: str, pred: np.ndarray, gt: np.ndarray,
               eid, dt: float, tier: str, *, wp_steps=None, lead=None,
               lead_steps=None, strategic_no_label: bool = False,
-              n_boot: int = 2000, seed: int = 0) -> tuple[dict, dict]:
+              v0=None, n_boot: int = 2000, seed: int = 0) -> tuple[dict, dict]:
     """-> (the arm's record, its per-window components for the paired test)."""
     import torch
 
@@ -395,6 +404,11 @@ def score_arm(name: str, arm_key: str, pred: np.ndarray, gt: np.ndarray,
     win = {"pred_dense": pred_t, "gt_dense": gt_t,
            "pred": pred_t[:, idx], "gt": gt_t[:, idx],
            "wp_steps": contract, "dt_s": dt, "eid": list(eid)}
+    # ⭐ v0 for the PI's anti-echo controls (2026-08-16). Absent => they report
+    # UNAVAILABLE with reason + n; a lead block also supplies it via
+    # lead['speeds'], which four_families._anti_echo folds in automatically.
+    if v0 is not None:
+        win["v0"] = np.asarray(v0, dtype=np.float64).reshape(-1)
     if lead is not None:
         lb = dict(lead)
         lb["n_boot"] = n_boot
@@ -576,7 +590,7 @@ def main(argv=None):
         rec, comps = score_arm(
             name, key, pred, d["gt"], d["eid"], d["dt_s"], tier,
             wp_steps=d["wp_steps"], lead=lead, lead_steps=lead_steps,
-            strategic_no_label=a.strategic_no_label,
+            strategic_no_label=a.strategic_no_label, v0=d.get("v0"),
             n_boot=a.n_boot, seed=a.seed)
         rec["source"] = d["source"]
         rec["dump_kind"] = d["kind"]

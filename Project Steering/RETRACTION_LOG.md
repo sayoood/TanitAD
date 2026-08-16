@@ -3868,3 +3868,60 @@ and here **silently disarmed the strongest guard in the programme**. ⇒ **RULE:
 banned while any agent is live. Stage only paths a completed agent has named in its manifest**, and
 if a live agent's file is already in the index, **wait** — the index is not a queue and a commit is
 not a checkpoint.
+
+---
+
+## 2026-08-16 — ⛔ NEW CLASS C76: A GATE THRESHOLD NOBODY CHOSE, ON AN ESTIMATOR NOBODY SIZED
+
+*(Next free number re-grepped immediately before appending: C75 was the highest.)*
+
+The S-W gate's O6 row read `"O6_rank_retention": ">= 0.8x effective rank across phases"`. The
+number it compares is `spectrum_report(...)["effective_rank"]` from ONE training batch — on the
+live v6F S-W run **48 rows of d=2048**, because `--batch 8 --window 6` and `--eps-per-batch 4`.
+
+⛔ **A centred covariance from 48 rows has rank ≤ 47.** The banked mean of **15.13 is 15 of 47**,
+not 15 of 2048 — and that misreading was available because **the emitted record did not carry
+its own ceiling**.
+
+MEASURED (`…/incoming/2026-08-16-sigreg-gate-power/`, CPU, seeded):
+
+- at n=48 an **isotropic** d=2048 population (true effective rank 2048) reads **46.86**; one
+  collapsed **7.3× to true rank 281** still reads **22.76**;
+- pooling the **same healthy population** to 1536 rows moves the reading **14.02 → 121.57** —
+  ⇒ **~15 was a CEILING ARTIFACT, not collapse**;
+- the `>= 0.8x` criterion fires when NOTHING changed between **11 %** (model null) and **38 %**
+  (the run's own banked spread), with **power 0.145** against a 1.43× true collapse. Likelihood
+  ratio **1.32** — very nearly no test at all.
+
+| # | class | recognition signal |
+|---|---|---|
+| **C76** | **Threshold nobody chose, on an estimator nobody sized** | a gate constant with no stated false-positive rate on the estimator that will actually be used, and no stated `n`. Signal: **the number is inherited, so it cannot be wrong — and therefore never gets checked** |
+
+⇒ **RULE: any gate threshold ships with the false-positive rate it achieves on the estimator that
+will actually be used, and the estimator ships with its own ceiling stamped in the record.**
+
+⭐ **THIS IS C13's FAMILY INVERTED.** C13/C14 are instruments structurally unable to report the
+answer they are cited for — a guard that **cannot fail**. This is a guard that **fires when
+nothing happened**. Both are unfalsifiable in practice; only the direction differs.
+
+⚠️ **AND THE MECHANISM WAS AN INHERITED TRADE, NOT A COINCIDENCE.** Both samplers group few
+episodes × many windows on purpose — `train_v58f_unicycle_head.py:353` says verbatim *"The mild
+within-batch correlation is an accepted, stated trade"*, taken to cut MooseFS cold loads ~8×.
+That is fine for a **loss** (it only needs an unbiased gradient) and fatal for a **rank
+estimator** (it needs independent directions). ⇒ **When an I/O or batching trade is accepted for
+one consumer, list the OTHER consumers of the same tensor before inheriting it.**
+
+⭐ **A ZERO NEEDS A COMPANION ROW OR IT SHOULD NOT BE BELIEVED.** A sibling stream hypothesised
+that SigReg's slice resampling caused part of the spread. Refuted: varying only the SigReg
+generator moves `effective_rank` by **sd 0.000000** — but that alone is indistinguishable from
+*"the knob was never connected"*. The **same contrast moves the `o6` loss** (sd 0.019896, range
+0.083679), which converts a suspicious zero into a demonstrated one. ⇒ **Every null result
+carries the positive control that proves the manipulation was live.**
+
+⚠️ **A CI NOBODY CHECKED IS A DECORATION — and the house estimator was the wrong one here.**
+Coverage of the finite-n estimand, 60 datasets, nominal 0.95: percentile cluster bootstrap
+**0.250 / 0.000**, pivotal cluster bootstrap **0.300 / 0.000**, leave-one-cluster-out jackknife
+**0.850 / 0.867**. Bootstrap-with-replacement duplicates blocks and duplicated rows are exactly
+rank-deficient, so it is biased **down** for a RANK functional. ⇒ **Narrow, evidence-backed
+carve-out from the paired episode-cluster-bootstrap rule FOR RANK ESTIMANDS ONLY — it does not
+generalise, and any other estimand needs its own coverage check first.**

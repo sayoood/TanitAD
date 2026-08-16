@@ -318,7 +318,11 @@ The 3 uncovered tests passed standalone.
 that file went 58 → 63 `def test_` between `HEAD` and the worktree). The two "5"s are
 unrelated — the sibling's 5 new tests passed; 5 *different* tests hit the torn import.
 
-**Run 3** (settled tree): _launched; result appended below._
+**Run 3 — ⭐ 3343 passed / 0 FAILED / 17 skipped / 2 xfailed** (565.04 s, exit 0), on a settled
+tree with the final 40-test file. `skipped` and `xfailed` are **identical to baseline**; the
+growth over 3282 is entirely tests added by concurrent streams during the session (the
+SigReg-gate-power agent's new `stack/tests/test_o6_spectrum_power.py` alone contributes 17) plus
+this file's 40. **This is the green run against the final state, in a single measurement.**
 
 ⭐ All of this is recorded rather than quietly re-run, because "+40" was the number I would
 have **predicted** for run 1 and **3319** is what was measured. Writing a predicted suite total
@@ -335,17 +339,30 @@ down as if measured is exactly the failure class this programme logs.
 | `stack/tests/test_loss_determinism.py` | 40 tests: bit-exactness (total, per term, gradients, both builds), 4 negative controls, the dynamic RNG enumerator, the RNG-state watcher, 2 content-anchored no-change guards | **staged** |
 | this document + `raw/{repro_before,after_fix}.json` + `code/{repro_nondet,repro_maximal,after_fix}.py` | `.../incoming/2026-08-16-loss-determinism/` | **staged** |
 
-### ⚠️ ESCALATION — `train_v6_staged.py` is `MM` (staged AND further modified)
+### ✅ RESOLVED — committed as `142ce34`, and HEAD is self-consistent
 
-`git status` reports **`MM stack/scripts/train_v6_staged.py`**. The index holds
-`HEAD + my 4 hunks`; the **worktree** holds that *plus* the SigReg-gate-power agent's
-in-flight spectrum work (`SpectrumAccumulator`, `o6_rank_verdict`, `--spectrum-accum`,
-`--spectrum-ci-reps`). **The two changes do not collide** — different regions, and my four
-hunks are all still present in the worktree (`grep -c sigreg_generator` → 4).
+The orchestrator committed this work while run 3 was in flight:
+**`142ce34` "Loss determinism: ONE un-seeded draw made every in-process ablation unmeasurable —
+`sigreg.py:70`"**. Verified after the fact, because a partial landing here would have been
+worse than none — `test_loss_determinism.py` calls `v6_loss_step(..., sigreg_generator=...)`,
+so committing the tests **without** the trainer hunk would have left HEAD broken:
 
-⇒ **Whoever commits must not stage the worktree copy on my behalf**, because that would sweep
-their unfinished work under my message — the failure CLAUDE.md logs twice. Commit the index as
-it stands (a coherent `HEAD + my hunks`), and let that stream stage its own.
+| check | result |
+|---|---|
+| `sigreg_generator` in `HEAD:stack/scripts/train_v6_staged.py` | **4** ✅ |
+| `sample_directions` in `HEAD:stack/tanitad/models/sigreg.py` | **2** ✅ |
+| `HEAD:stack/scripts/train_v6_staged.py` blob | **`1a30bdc`** — byte-identical to the blob I staged ✅ |
+
+⚠️ That commit was a **whole-index** commit and therefore also carries a sibling stream's work
+(`e_ag1_anchor_floor`, `e_wc2_sigma_star`, `taniteval/v0_antiecho`, `V0_ANTIECHO.md`). Recorded
+here so the provenance is not mysterious later; it is the pattern CLAUDE.md permits only after
+listing the index, and the result is coherent.
+
+The index and worktree have since moved **past** HEAD for `train_v6_staged.py`
+(`1a30bdc` → `2b0e2af` → `267bd28`) as the SigReg-gate-power agent layers its spectrum work
+(`SpectrumAccumulator`, `o6_rank_verdict`, `--spectrum-accum`, `--spectrum-ci-reps`) on top.
+**The two changes do not collide** — different regions, and all four of my hunks survive in the
+worktree. Nothing further is needed from this stream.
 
 ⭐ Worth noting for the record: their new code already cites this one — it gives the spectrum
 bootstrap *"a DEDICATED generator … so switching the CI on cannot consume the global stream and

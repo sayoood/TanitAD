@@ -112,7 +112,8 @@ __all__ = [
     "time_to_reach", "time_to_reach_weights", "half_weight_distance_m",
     "readout_grid_ranges", "sample_cell_block_mask", "near_field_band_mask",
     "kinematic_saliency", "saliency_weights", "InteractionSampler",
-    "spectrum_report",
+    "spectrum_report", "SpectrumAccumulator", "o6_rank_verdict",
+    "O6_ADMISSIBLE_CEILING", "O6_RANK_FLOOR",
 ]
 
 # ============================================================================
@@ -540,10 +541,33 @@ class InteractionSampler:
 # O6 — the standing SPECTRUM monitor (participation ratio, effective rank)
 # ============================================================================
 
-def spectrum_report(z: Tensor, *, top_k: int = 8) -> dict:
+#: The reading is ADMISSIBLE for a rank verdict only above this ceiling.
+#: ⛔ WHY A CEILING EXISTS AT ALL: a centred covariance built from ``n`` rows has
+#: rank ≤ n-1, so ``effective_rank`` cannot exceed n-1 however healthy ``d``
+#: dimensions are. The live v6F S-W run measures n=48 rows of d=2048 — the
+#: reading is bounded by **47**, and "15 of 2048" is a category error: it is
+#: 15 of 47. MEASURED (`SIGREG_GATE_POWER.md`, 2026-08-16): at n=48 an
+#: isotropic d=2048 population (true effective rank 2048) reads **46.86**, and
+#: a population whose true rank has collapsed 7.3× to 281 still reads 22.6 —
+#: the estimator saturates and stops carrying the information the gate needs.
+#: 1024 is the smallest power of two that clears the pre-registered absolute
+#: floor (:data:`O6_RANK_FLOOR`) by 16×.
+O6_ADMISSIBLE_CEILING = 1024
+
+#: Pre-registered absolute floor on a POOLED ``effective_rank`` (see
+#: ``SIGREG_GATE_POWER.md`` §5 for the both-outcomes registration). MEASURED in
+#: that document at pool 32 (ceiling 1535): a healthy α=2 power-law population
+#: reads **122.4**, the same population collapsed to 16 retained directions
+#: reads **19.4**. 64 sits between them with ~2× margin either way, and is 8×
+#: the ``top_k`` the energy share is taken over.
+O6_RANK_FLOOR = 64.0
+
+
+def spectrum_report(z: Tensor, *, top_k: int = 8, ci_reps: int = 0,
+                    block: int = 1, generator=None) -> dict:
     """Collapse diagnostics for a latent batch ``[n, d]`` (leading dims are
     flattened): participation ratio, entropy effective rank, top-k energy
-    share, and the raw n/d so a report can say what it was measured on.
+    share, the raw n/d, **and the rank ceiling the reading is bounded by**.
 
     Both statistics are IMPORTED from ``tanitad.eval.spectral`` — the same
     functions the orthogonality/spectral instruments use, so the O6 training
@@ -552,9 +576,41 @@ def spectrum_report(z: Tensor, *, top_k: int = 8) -> dict:
     batch): collapse is a statement about VARIANCE directions, and an
     uncentred spectrum would be dominated by the mean vector.
 
-    O6's gate is "effective rank retention ≥ 0.8× across any curriculum phase",
-    so what matters is that this is measured EVERY N steps and logged — a
-    ratio needs a series, not a single reading.
+    ⛔ ``rank_ceiling`` AND ``effective_rank_frac`` ARE NOT DECORATION. Without
+    them the number is routinely read against ``d``, which is wrong by
+    construction (see :data:`O6_ADMISSIBLE_CEILING`). They are emitted
+    unconditionally so no record can be quoted without its own ceiling.
+
+    ``ci_reps > 0`` adds an interval on the reading, with the CLUSTER as the
+    resampling unit (``block`` consecutive rows) — the correct unit when the
+    rows are ``W`` consecutive frames of the same window rather than
+    independent draws.
+
+    ⛔ THE INTERVAL IS A **LEAVE-ONE-CLUSTER-OUT JACKKNIFE**, NOT A BOOTSTRAP,
+    AND THAT IS A MEASURED CHOICE. Bootstrap-with-replacement DUPLICATES
+    blocks, and duplicated rows are exactly rank-deficient — for a RANK
+    functional that is a systematic downward bias, not noise. MEASURED coverage
+    of the finite-n estimand (``SIGREG_GATE_POWER.md`` §4, 60 datasets):
+
+    ======================  =========  =========
+    interval                 48 rows    384 rows
+    ======================  =========  =========
+    percentile bootstrap        0.250      0.000
+    pivotal bootstrap           0.300      0.000
+    **cluster jackknife**   **0.850**  **0.867**
+    ======================  =========  =========
+
+    ⚠️ This is a deliberate, evidence-backed carve-out from the programme rule
+    that decision-grade intervals are the episode-cluster BOOTSTRAP. That rule
+    is right for mean-like eval metrics; it fails here because the estimand is
+    a rank. The bootstrap bounds are still emitted, LABELLED as diagnostics
+    with their measured coverage, so the carve-out is visible in every record.
+    ⚠️ 0.85-0.87 against a nominal 0.95 is mildly ANTI-CONSERVATIVE: treat the
+    interval as a working uncertainty, not an exact guarantee.
+
+    Defaults (``ci_reps=0, block=1``) leave the computation bit-for-bit what
+    it was, and draw NOTHING from the global RNG — the live v6F S-W run is
+    training from this file.
     """
     z2 = z.detach().float().reshape(-1, z.shape[-1])
     n, d = z2.shape
@@ -565,10 +621,251 @@ def spectrum_report(z: Tensor, *, top_k: int = 8) -> dict:
     eig = sv ** 2
     k = min(int(top_k), int(eig.numel()))
     share = float(eig[:k].sum() / eig.sum().clamp_min(1e-30))
-    return {"n": int(n), "d": int(d), "top_k": k,
-            "participation_ratio": participation_ratio(eig),
-            "effective_rank": effective_rank(sv),
-            "top_k_share": share}
+    ceiling = min(n - 1, d)
+    er = effective_rank(sv)
+    out = {"n": int(n), "d": int(d), "top_k": k,
+           "participation_ratio": participation_ratio(eig),
+           "effective_rank": er,
+           "top_k_share": share,
+           # ---- the ceiling, stamped in the record itself ------------------
+           "rank_ceiling": int(ceiling),
+           "effective_rank_frac": float(er / max(ceiling, 1)),
+           "rank_admissible": bool(ceiling >= O6_ADMISSIBLE_CEILING),
+           "ceiling_note": f"a centred covariance from n={n} rows has rank "
+                           f"<= {ceiling}; effective_rank is bounded by that, "
+                           f"NOT by d={d}"}
+    if int(ci_reps) > 0:
+        out["effective_rank_ci95"] = _cluster_interval_er(
+            zc, int(block), int(ci_reps), er, generator)
+    return out
+
+
+def _er_from_gram(g: Tensor) -> float:
+    """``effective_rank`` of a row set given its (uncentred) Gram matrix.
+
+    Double-centring the Gram is equivalent to centring the rows, and the
+    singular values of the centred rows are the square roots of the centred
+    Gram's eigenvalues — so ``d`` is paid once and every resample costs
+    ``O(n^3)`` instead of ``O(n^2 d)``.
+    """
+    m = g.mean(0, keepdim=True)
+    gc = g - m - m.T + g.mean()
+    return effective_rank(torch.linalg.eigvalsh(gc).clamp_min(0).flip(0).sqrt())
+
+
+def _cluster_interval_er(zc: Tensor, block: int, reps: int, theta: float,
+                         generator=None) -> dict:
+    """95 % interval for ``effective_rank`` with the CLUSTER as the unit.
+
+    Primary: **leave-one-cluster-out jackknife** — no duplicated blocks, so no
+    manufactured rank deficiency, and the only one of the three candidates that
+    covers (see :func:`spectrum_report`). The bootstrap bounds are computed
+    alongside and returned as LABELLED DIAGNOSTICS, never as the interval.
+    """
+    zd = zc.double()
+    g_full = zd @ zd.T
+    block = max(1, int(block))
+    nb = zd.shape[0] // block
+    if nb < 4:
+        return {"status": "n/a",
+                "reason": f"only {nb} blocks of {block} rows — a 4-block "
+                          f"interval is noise"}
+    # ---- the interval: leave-one-cluster-out jackknife ---------------------
+    jk = []
+    for b in range(nb):
+        keep = torch.cat([torch.arange(b * block),
+                          torch.arange((b + 1) * block, nb * block)])
+        jk.append(_er_from_gram(g_full[keep][:, keep]))
+    j = torch.tensor(jk, dtype=torch.float64)
+    se = float(((nb - 1) / nb * ((j - j.mean()) ** 2).sum()).sqrt())
+    out = {"lo": theta - 1.96 * se, "hi": theta + 1.96 * se,
+           "kind": "leave-one-cluster-out jackknife", "se": se,
+           "block_rows": block, "n_blocks": int(nb),
+           "measured_coverage": "0.85 (48 rows) / 0.867 (384 rows) vs nominal "
+                                "0.95 — SIGREG_GATE_POWER.md §4"}
+    # ---- diagnostics only: the bootstrap that does NOT cover ---------------
+    if int(reps) > 0:
+        vals = []
+        off = torch.arange(block)
+        for _ in range(int(reps)):
+            idx = torch.randint(0, nb, (nb,), generator=generator)
+            rows = (idx[:, None] * block + off).reshape(-1)
+            vals.append(_er_from_gram(g_full[rows][:, rows]))
+        v = torch.tensor(vals, dtype=torch.float64)
+        out["bootstrap_DIAGNOSTIC_do_not_quote"] = {
+            "percentile_lo": float(torch.quantile(v, 0.025)),
+            "percentile_hi": float(torch.quantile(v, 0.975)),
+            "reps": int(reps),
+            "why_not_used": "resampling blocks WITH replacement duplicates "
+                            "them; duplicated rows are exactly rank-deficient, "
+                            "so this is biased DOWN for a rank functional. "
+                            "MEASURED coverage 0.25 / 0.00."}
+    return out
+
+
+class SpectrumAccumulator:
+    """A bounded ring of raw latent rows, so the spectrum can be estimated from
+    MANY consecutive steps instead of one batch.
+
+    ⛔ THE PROBLEM IT SOLVES. One spectrum call sees ``B*W`` rows — on the live
+    run 48, which are 8 windows × 6 CONSECUTIVE frames drawn from only 4
+    episodes (``--eps-per-batch 4``). That is not 48 independent samples of the
+    representation; it is ~4 scenes. The rank ceiling is 47 and the estimator's
+    variance is set by the cluster count, not the row count. Pooling ``capacity``
+    consecutive steps raises BOTH: rows ``capacity*48`` and distinct episodes
+    ``~capacity*4``.
+
+    ⚠️ WHY CONSECUTIVE STEPS AND NOT CONSECUTIVE SPECTRUM CALLS. Pooling 32
+    calls at ``--spectrum-every 200`` would span 6 400 steps, over which the
+    representation genuinely moves — the pooled spectrum would then measure the
+    UNION over training and read high for the wrong reason. 32 consecutive
+    steps span 32 steps (~14 min of Thor wall-clock at 26.35 s/step), where
+    drift is negligible.
+
+    Rows are stored on CPU in ``float32``: ``capacity=32`` costs
+    32 × 48 × 2048 × 4 B ≈ **12.6 MB**, and the per-step cost is one detach and
+    one D2H copy of 393 KB against a 26 s step.
+    """
+
+    def __init__(self, capacity: int = 32, block: int = 1):
+        if capacity < 1:
+            raise ValueError(f"capacity must be >= 1, got {capacity}")
+        self.capacity = int(capacity)
+        self.block = max(1, int(block))
+        self._buf: list[Tensor] = []
+
+    def __len__(self) -> int:
+        return len(self._buf)
+
+    @property
+    def n_rows(self) -> int:
+        return sum(int(t.shape[0]) for t in self._buf)
+
+    def push(self, z: Tensor) -> None:
+        """Bank one step's ``[..., d]`` latent (flattened to rows)."""
+        r = z.detach().float().reshape(-1, z.shape[-1]).cpu()
+        self._buf.append(r)
+        if len(self._buf) > self.capacity:
+            del self._buf[0]
+
+    def clear(self) -> None:
+        self._buf.clear()
+
+    def report(self, *, top_k: int = 8, ci_reps: int = 0,
+               generator=None) -> dict:
+        """The pooled reading, stamped with how it was pooled."""
+        if not self._buf:
+            raise ValueError("SpectrumAccumulator is empty — nothing pushed")
+        z = torch.cat(self._buf, dim=0)
+        rep = spectrum_report(z, top_k=top_k, ci_reps=ci_reps,
+                              block=self.block, generator=generator)
+        rep["pooled_steps"] = len(self._buf)
+        rep["pool_capacity"] = self.capacity
+        rep["pool_block_rows"] = self.block
+        return rep
+
+
+def o6_rank_verdict(cur: dict, ref: dict | None = None, *,
+                    retention: float = 0.8,
+                    floor: float = O6_RANK_FLOOR,
+                    ceiling_min: int = O6_ADMISSIBLE_CEILING) -> dict:
+    """The RE-DERIVED O6 gate criterion — see ``SIGREG_GATE_POWER.md`` §5.
+
+    The criterion it replaces (*"≥ 0.8× effective rank across phases"*) named no
+    estimator, no ``n`` and no interval, and MEASURED at the live run's n=48 it
+    fires on nothing at between **9 %** (model-based null) and **38 %** (the
+    run's own banked spread) — a guard that goes off when nothing happened. Its
+    power against a 1.43× true collapse was **0.11** at that false-positive
+    rate, i.e. very nearly uninformative.
+
+    The replacement has three clauses and can return INCONCLUSIVE, which the old
+    one could not:
+
+    1. **ADMISSIBILITY.** A reading whose ``rank_ceiling`` is below
+       :data:`O6_ADMISSIBLE_CEILING` is INCONCLUSIVE — never PASS, never FAIL.
+       A single 48-row batch is exactly this case, and saying so is the honest
+       reading of the whole banked series.
+    2. **RETENTION (relative), CI-based.** FAIL when the retention interval lies
+       WHOLLY BELOW ``retention``; PASS when it lies wholly at or above it;
+       INCONCLUSIVE when it straddles. Firing therefore requires the interval to
+       exclude the threshold, so noise alone cannot trip it.
+    3. **FLOOR (absolute).** FAIL when the pooled ``effective_rank`` is below
+       ``floor`` regardless of retention — retention alone cannot see a
+       representation that was ALREADY collapsed when the reference was taken.
+
+    ``ref=None`` evaluates clauses 1 and 3 only — the first admissible reading
+    of a phase has nothing to retain against — and returns INCONCLUSIVE saying
+    so, never PASS.
+    """
+    ceiling = int(cur.get("rank_ceiling", min(int(cur.get("n", 2)) - 1,
+                                              int(cur.get("d", 1)))))
+    er = float(cur["effective_rank"])
+    out: dict = {"criterion": "O6_rank_retention v2 (SIGREG_GATE_POWER.md)",
+                 "effective_rank": er, "rank_ceiling": ceiling,
+                 "effective_rank_frac": er / max(ceiling, 1),
+                 "retention_threshold": float(retention),
+                 "absolute_floor": float(floor)}
+    out["ceiling_min"] = int(ceiling_min)
+    if ceiling < ceiling_min:
+        out |= {"pass": None, "status": "INCONCLUSIVE",
+                "reason": f"rank_ceiling {ceiling} < {ceiling_min}: "
+                          f"a centred covariance from n={cur.get('n')} rows "
+                          f"cannot resolve rank. Pool more steps "
+                          f"(SpectrumAccumulator) before asking this question."}
+        return out
+    if er < floor:
+        out |= {"pass": False, "status": "FAIL",
+                "reason": f"effective_rank {er:.3f} < the pre-registered "
+                          f"absolute floor {floor} at an ADMISSIBLE ceiling "
+                          f"{ceiling} — clause 3."}
+        return out
+    if ref is None:
+        out |= {"pass": None, "status": "INCONCLUSIVE",
+                "reason": "no reference reading — clause 2 (retention) needs a "
+                          "phase-start reading at the SAME pooling. Clauses 1 "
+                          "and 3 passed."}
+        return out
+    er0 = float(ref["effective_rank"])
+    if er0 <= 0:
+        out |= {"pass": None, "status": "INCONCLUSIVE",
+                "reason": "reference effective_rank is non-positive"}
+        return out
+    out["reference_effective_rank"] = er0
+    out["retention"] = er / er0
+    ci_c, ci_r = cur.get("effective_rank_ci95"), ref.get("effective_rank_ci95")
+    if not (isinstance(ci_c, dict) and "lo" in ci_c
+            and isinstance(ci_r, dict) and "lo" in ci_r):
+        out |= {"pass": None, "status": "INCONCLUSIVE",
+                "reason": "both readings must carry effective_rank_ci95 "
+                          "(spectrum_report(..., ci_reps=N)). A point ratio "
+                          "with no interval is the defect this replaces."}
+        return out
+    # Conservative interval on the RATIO from the two marginal intervals:
+    # widest possible, so it can only ever be too wide. Both bounds are
+    # clamped at 0 first — a normal-approximation jackknife bound can go
+    # negative when the SE is large, and a negative effective rank is not a
+    # thing. Every failure mode of these clamps widens the interval, which
+    # makes the verdict INCONCLUSIVE rather than firing.
+    lo = max(ci_c["lo"], 0.0) / max(ci_r["hi"], 1e-12)
+    hi = max(ci_c["hi"], 0.0) / max(ci_r["lo"], 1e-12)
+    out["retention_ci95"] = {"lo": lo, "hi": hi,
+                             "kind": "ratio of cluster-JACKKNIFE bounds "
+                                     "(conservative: lo/hi and hi/lo)"}
+    if hi < retention:
+        out |= {"pass": False, "status": "FAIL",
+                "reason": f"retention interval [{lo:.3f}, {hi:.3f}] lies wholly "
+                          f"below {retention} — clause 2."}
+    elif lo >= retention:
+        out |= {"pass": True, "status": "PASS",
+                "reason": f"retention interval [{lo:.3f}, {hi:.3f}] lies wholly "
+                          f"at/above {retention}, and effective_rank {er:.3f} "
+                          f">= floor {floor} at ceiling {ceiling}."}
+    else:
+        out |= {"pass": None, "status": "INCONCLUSIVE",
+                "reason": f"retention interval [{lo:.3f}, {hi:.3f}] straddles "
+                          f"{retention} — the reading cannot decide. Pool more "
+                          f"steps or take more reference readings."}
+    return out
 
 
 # ============================================================================

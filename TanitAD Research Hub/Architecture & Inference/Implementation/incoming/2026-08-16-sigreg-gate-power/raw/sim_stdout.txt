@@ -1,0 +1,128 @@
+{
+ "meta": {
+  "live_geometry": {
+   "batch": 8,
+   "window": 6,
+   "eps_per_batch": 4,
+   "n_rows": 48,
+   "d_op": 2048,
+   "rank_ceiling": 47,
+   "source": "RESTART_v6F_SW.sh (argv of the RUNNING pid 25477)"
+  },
+  "banked_records_INHERITED": {
+   "n": 48,
+   "d": 2048,
+   "top_k": 8,
+   "records": 38,
+   "effective_rank_mean": 15.13,
+   "effective_rank_min": 3.37,
+   "effective_rank_max": 30.06,
+   "top_k_share_min": 0.8615,
+   "top_k_share_max": 0.9998,
+   "step_200": 16.75,
+   "step_4000": 12.1,
+   "step_7600": 17.59
+  },
+  "trials": 600,
+  "seed": 0,
+  "torch": "2.11.0+cu128",
+  "fast_path_verification": {
+   "checks": [
+    {
+     "n": 48,
+     "d": 2048,
+     "svdvals": 46.859042227,
+     "gram": 46.859042227,
+     "abs_diff": 0.0,
+     "rel_diff": 0.0
+    },
+    {
+     "n": 384,
+     "d": 2048,
+     "svdvals": 373.534158786,
+     "gram": 373.534159564,
+     "abs_diff": 7.779251518513774e-07,
+     "rel_diff": 2.0826077978506566e-09
+    },
+    {
+     "n": 1536,
+     "d": 2048,
+     "svdvals": 1344.681657501,
+     "gram": 1344.681657501,
+     "abs_diff": 2.2737367544323206e-12,
+     "rel_diff": 1.6909108127929661e-15
+    }
+   ],
+   "max_rel_diff": 2.0826077978506566e-09
+  },
+  "calibrated_regime": {
+   "rho_ep": 0.5,
+   "rho_win": 0.4,
+   "alpha": 2.0,
+   "abs_err_vs_banked_mean": 1.151,
+   "covers_banked_range": false
+  },
+  "seconds": 196.1
+ },
+ "null_iid_rows": {
+  "true_effective_rank": 1587.4508,
+  "rank_ceiling": 47,
+  "reading": {
+   "n_trials": 600,
+   "mean": 43.9907,
+   "sd": 0.2604,
+   "cv": 0.0059,
+   "min": 43.1127,
+   "p05": 43.5358,
+   "p50": 44.0096,
+   "p95": 44.3962,
+   "max": 44.6937,
+   "ratio_max_min": 1.037
+  },
+  "ratio_null": {
+   "n_trials": 600,
+   "mean": 0.9999,
+   "sd": 0.0078,
+   "cv": 0.0078,
+   "min": 0.9809,
+   "p05": 0.9875,
+   "p50": 0.9993,
+   "p95": 1.0125,
+   "max": 1.0311,
+   "ratio_max_min": 1.051
+  },
+  "false_positive_rate_at_0.8": 0.0,
+  "threshold_for_5pct_FP": 0.9875
+ },
+ "null_calibrated": {
+  "true_effective_rank": 281.3626,
+  "rank_ceiling": 47,
+  "reading": {
+   "n_trials": 600,
+   "mean": 14.0088,
+   "sd": 1.6691,
+   "cv": 0.1191,
+   "min": 8.6746,
+   "p05": 11.2712,
+   "p50": 14.0083,
+   "p95": 16.782,
+   "max": 19.7422,
+   "ratio_max_min": 2.276
+  },
+  "ratio_null": {
+   "n_trials": 600,
+   "mean": 1.0107,
+   "sd": 0.1769,
+   "cv": 0.175,
+   "min": 0.5068,
+   "p05": 0.7419,
+   "p50": 1.0056,
+   "p95": 1.3139,
+   "max": 1.7411,
+   "ratio_max_min": 3.436
+  },
+  "false_positive_rate_at_0.8": 0.11,
+  "threshold_for_5pct_FP": 0.7419
+ }
+}
+wrote raw\sigreg_gate_power.json

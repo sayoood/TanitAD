@@ -240,15 +240,54 @@ status string carries the ruling, the three controls and the 3.527/1.1888 contex
 
 ---
 
-## 6. Tests
+## 6. Tests — both suites GREEN
 
-| suite | baseline | now | delta |
-|---|---|---|---|
-| `taniteval/` | 1058 / 0 | **1090 / 0** | **+32** (all `test_v0_antiecho.py`) |
-| `stack/` | 3282 / 0 / 17 skipped / 2 xfailed | see §8 | **+5 new**, **2 rewritten** |
+| suite | baseline (brief) | measured baseline | final | delta |
+|---|---|---|---|---|
+| `taniteval/` | 1058 / 0 | 1058 / 0 | **1092 / 0** | **+34** |
+| `stack/` | 3282 / 0 / 17 sk / 2 xf | **3322** / 0 / 17 sk / 2 xf | **3343 / 0 / 17 sk / 2 xf** | **+21** |
 
-New: `taniteval/tests/test_v0_antiecho.py` (32) · 5 added to
-`stack/tests/test_e_wc2_sigma_star.py` · 2 rewritten in `stack/tests/test_e_ag1_anchor_floor.py`.
+⚠️ **The brief's `stack` baseline of 3282 was stale by +40.** A clean pre-change run measured
+**3322** — concurrent agents had landed tests during the turn. Flagged rather than reported as a
+discrepancy.
+
+⚠️ A mid-turn full run showed 3 failures in `stack/tests/test_v6_selector.py`
+(`test_wta_eps_off_is_bitwise_identical`, `test_selection_loss_refuses_without_a_scorer`,
+`test_preflight_refuses_selector_in_sw`). **Not mine** — they were a live sibling agent's in-flight
+edits to `train_v6_staged.py` / `v6.py`, caught mid-write; the file passes 10/10 in isolation and the
+final full run is clean.
+
+New: `taniteval/tests/test_v0_antiecho.py` (34) · +5 in `stack/tests/test_e_wc2_sigma_star.py` ·
+2 **superseded** in `stack/tests/test_e_ag1_anchor_floor.py`.
+
+### 6.1 ⛔ Two tests were SUPERSEDED, not loosened — and the difference is pinned in the file
+
+`test_e_ag1_anchor_floor.py` contained two tests asserting that `v0` is **refused** and stamped
+`PENDING_PI_ADJUDICATION`. Correcting `e_wc2` made them fail. **"Do not weaken a test to make it
+pass" is binding**, and this is the narrow exception:
+
+* ⛔ **forbidden** — deleting or weakening an assertion because it is inconvenient;
+* ✅ **correct here** — a test whose *premise* was changed by an explicit, recorded PI ruling. The
+  premise *"`v0` is inadmissible pending adjudication"* is now false **by decision**, not by
+  convenience.
+
+Neither test was deleted. Both were rewritten to be **strictly stronger**, and the file carries a
+banner block stating the rule, the exception, its conditions and the verbatim ruling, so a future
+reader can tell this apart from a loosened test at a glance:
+
+| | old pair | new pair |
+|---|---|---|
+| `v0` accepted with **no override flag** | — | ✅ |
+| the retired `ECHO` classification **cannot creep back** | — | ✅ |
+| ⭐ **the ECHO refusal machinery is STILL ARMED** — `measurement` (ego+**nav**) still raises | — | ✅ **this is what makes it not a blanket loosening: the ruling moved exactly one block, and the test pins that it moved exactly one** |
+| the refusal is replaced by a **non-optional OBLIGATION** naming its instrument | "pending" stamp only | ✅ |
+| the obligation is stamped **only** when `v0` is in the design matrix | — | ✅ |
+| ⭐ the guard it points at **FIRES** on a synthetic pure-echo planner | — | ✅ `echo_index` 1.0, `cmd_accel` 0.0, `NOT_SEPARATED`, inadmissible |
+| ⭐ the **NEGATIVE CONTROL** — genuine accel structure is **not** flagged | — | ✅ `CLEAN`, `BEATS_HOLDV0`, separated |
+
+**A prohibition tested nothing about the cheat. These do.** The stack-side tests reach the detector
+through `e_wc2._load_ci()`'s own sibling-package loader, which additionally pins that the cited
+instrument really is reachable from `stack/`.
 
 ---
 
@@ -301,7 +340,8 @@ All paths relative to the repo root, all **staged in the working tree, NOT commi
 | `stack/scripts/e_wc2_sigma_star.py` | modified | `v0` → `MEASURED_PRESENT`; `ADMISSIBILITY_CLASSES`; `ANTIECHO_OBLIGATION` stamped at top level |
 | `stack/tests/test_e_wc2_sigma_star.py` | modified | +5 tests pinning the corrected classification and the obligation |
 | `stack/scripts/e_ag1_anchor_floor.py` | modified | E-AG3 `PENDING_PI_ADJUDICATION` → `ADJUDICATED`; keys on `any_measured_present` |
-| `stack/tests/test_e_ag1_anchor_floor.py` | modified | 2 tests rewritten for the resolved ruling |
+| `stack/tests/test_e_ag1_anchor_floor.py` | modified | 2 tests **superseded** (§6.1) + the supersession-discipline banner |
+| `taniteval/tools/ff_rescore.py` | modified | carries `v0` (`rollout.collect`'s `speed`) through `load_dump` → `score_arm` → the win dict, so the controls fire on **already-banked** dumps |
 | `TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-08-16-v0-antiecho/V0_ANTIECHO.md` | **NEW** | this document |
 
 **Nothing is stranded**: no pod, no worktree, no agent context. Every artifact is in the repo.

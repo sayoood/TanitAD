@@ -469,6 +469,50 @@ def test_the_ruling_and_the_measured_context_travel_with_the_block():
     assert ae["version"] == AE.VERSION
 
 
+def test_ff_rescore_carries_v0_so_banked_rollout_dumps_can_run_the_controls():
+    """⛔ The controls are useless if the loader drops the column they need.
+
+    ``rollout.collect`` publishes ``speed`` (ego speed at t0) and ``ff_rescore``
+    used to discard it — which would have made the anti-echo block report
+    UNAVAILABLE on every dump the programme has already banked: a WORK ITEM
+    manufactured by a dropped column, not by missing data."""
+    import sys as _sys
+    from pathlib import Path as _P
+    _sys.path.insert(0, str(_P(__file__).resolve().parents[1] / "tools"))
+    import ff_rescore as FR
+    c = _corpus(n=120, n_ep=6)
+    rec, _ = FR.score_arm("echo", "echo", _echo_arm(c["v0"]).numpy(),
+                          c["gt"].numpy(), c["eid"], DT, "T1",
+                          wp_steps=[1, 2, 3, 4], v0=c["v0"].numpy(), n_boot=100)
+    ae = rec["four_families"]["longitudinal"]["anti_echo"]
+    assert ae["status"] == "OK"
+    assert ae["longitudinal_claim_admissible"] is False
+    assert ae["copy_detector"]["verdict"] == "ECHO"
+    # ...and without it the branch is honest rather than silently absent
+    plain, _ = FR.score_arm("echo", "echo", _echo_arm(c["v0"]).numpy(),
+                            c["gt"].numpy(), c["eid"], DT, "T1",
+                            wp_steps=[1, 2, 3, 4], n_boot=100)
+    pae = plain["four_families"]["longitudinal"]["anti_echo"]
+    assert pae["status"] == "UNAVAILABLE" and pae["n"] == 0
+
+
+def test_a_lead_block_alone_is_enough_to_run_the_controls():
+    """A caller who supplied a lead block already supplied v0 without knowing:
+    ``lead['speeds']`` IS the ego speed at t0. The control must not report
+    UNAVAILABLE beside a dict that contains exactly what it needs."""
+    c = _corpus(n=60, n_ep=6)
+    k = H
+    win = {"pred": _echo_arm(c["v0"]), "gt": c["gt"], "eid": c["eid"],
+           "wp_steps": [1, 2, 3, 4], "dt_s": DT,
+           "lead": {"leads": np.full((c["n"], k, 2), np.nan),
+                    "lead_lens": np.full(c["n"], 4.0),
+                    "speeds": c["v0"].numpy()}}
+    ae = FF.all_families(win, n_boot=100)["longitudinal"]["anti_echo"]
+    assert ae["status"] == "OK"
+    assert "lead" in ae["v0_provenance"]
+    assert ae["copy_detector"]["verdict"] == "ECHO"
+
+
 # ============================================================================ #
 # 7. clause 5 — an unavailable branch states its REASON and its n              #
 # ============================================================================ #

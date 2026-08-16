@@ -272,43 +272,142 @@ def test_no_situation_classifier_path():
     assert "CLEAN" in r.stdout, r.stdout + r.stderr[-2000:]
 
 
-def test_v0_is_ADMITTED_without_the_echo_flag_after_the_PI_ruling():
-    """⭐ SUPERSEDED 2026-08-16, and the supersession is the test.
-
-    This used to assert ``pytest.raises(PermissionError, match="ECHO")`` — v0 was
-    refused as an inference-time echo. Sayed ruled otherwise: *"We can use v0 as
-    input since it is measured and is not the future…"* v0 is measured PRESENT
-    state, so the refusal is gone and no flag is needed."""
+# ============================================================================ #
+# ⭐ THESE TWO TESTS SUPERSEDE A PROHIBITION. THEY ARE NOT LOOSENED TESTS.      #
+#                                                                              #
+# ⛔ READ THIS BEFORE CITING THEM AS PRECEDENT. "Do not weaken a test to make   #
+# it pass" is binding here and these are the NARROW exception, which has        #
+# conditions:                                                                  #
+#                                                                              #
+#   FORBIDDEN — deleting or weakening an assertion because it is inconvenient.  #
+#   CORRECT   — a test whose PREMISE was changed by an explicit, recorded PI    #
+#               ruling. The premise "v0 is inadmissible pending adjudication"   #
+#               is now false BY DECISION, not by convenience.                   #
+#                                                                              #
+# The ruling (verbatim, `Project Steering/V6F_PLANNER_DESIGN.md` §1.4, search   #
+# "RESOLVED BY THE PI 2026-08-16"):                                            #
+#                                                                              #
+#     "We can use v0 as input since it is measured and is not the future, but   #
+#      we should assure that the model/planner later is not cheating by just    #
+#      outputting v0 as longitudinal plan."                                     #
+#                                                                              #
+# ⭐ WHAT REPLACED THEM IS STRICTLY STRONGER, and that is checkable:            #
+#   * the old pair asserted ONE thing — a refusal, and a "pending" stamp;       #
+#   * the new pair asserts that the refusal machinery STILL WORKS on a real     #
+#     ECHO block (so the exception is narrow, not a blanket loosening), that    #
+#     the refusal is replaced by a NON-OPTIONAL OBLIGATION rather than by       #
+#     nothing, and that the detector guarding that obligation FIRES on a        #
+#     synthetic pure-echo planner and does NOT on one with genuine acceleration #
+#     structure. A prohibition tested nothing about the cheat; these do.        #
+# ============================================================================ #
+def _v0_dump():
     d = _synthetic_dump()
     d["v0"] = torch.tensor(np.linspace(4.0, 16.0, len(d["eid"])),
                            dtype=torch.float32)
-    rep = AG.run(d, features=["pooled", "v0"],
-                 declared={"pooled": "VISION_ONLY"},
-                 ks=(4,), methods=("fps",), steps=(20,), n_boot=20)
+    return d
+
+
+def _run_v0(d=None):
+    return AG.run(d if d is not None else _v0_dump(), features=["pooled", "v0"],
+                  declared={"pooled": "VISION_ONLY"},
+                  ks=(4,), methods=("fps",), steps=(20,), n_boot=20)
+
+
+def test_v0_is_ADMITTED_without_any_override_flag_and_the_refusal_cannot_return():
+    """⭐ SUPERSESSION (see the banner above). Was:
+    ``pytest.raises(PermissionError, match="ECHO")``.
+
+    ⭐ **Why this is STRONGER than what it replaces.** The old test proved a
+    refusal fired. This one proves three things: v0 is accepted with **no
+    override flag**, the retired classification **cannot creep back**, and —
+    the part that makes it not a loosening — the ECHO refusal machinery is
+    **still armed** and still refuses a genuine echo block (`measurement`, the
+    ego+**NAV** embedding, which IS derived from the ego's own future). The
+    ruling moved exactly one block; this pins that it moved exactly one."""
+    # 1. accepted, no flag
+    rep = _run_v0()
     assert rep["_admissibility"]["features"]["any_echo"] is False
     assert rep["_admissibility"]["features"]["any_measured_present"] is True
+    # 2. the retired classification cannot come back
+    assert E.FEATURE_ADMISSIBILITY["v0"] == "MEASURED_PRESENT"
+    assert E.FEATURE_ADMISSIBILITY["v0"] != "ECHO"
+    # 3. ⛔ THE NARROWNESS CHECK — the refusal still works on a REAL echo block.
+    #    Without this, the change would be indistinguishable from disabling the
+    #    admissibility gate altogether.
+    d = _v0_dump()
+    d["measurement"] = torch.zeros(len(d["eid"]), 4)
+    with pytest.raises(PermissionError, match="ECHO"):
+        AG.run(d, features=["pooled", "measurement"],
+               declared={"pooled": "VISION_ONLY"},
+               ks=(4,), methods=("fps",), steps=(20,), n_boot=20)
 
 
-def test_admitting_v0_stamps_the_ANTI_ECHO_OBLIGATION_not_an_adjudication():
-    """⛔ …but the refusal is replaced by an OBLIGATION, not by nothing. "…we
-    should assure that the model/planner later is not cheating by just outputting
-    v0 as longitudinal plan." """
-    d = _synthetic_dump()
-    d["v0"] = torch.tensor(np.linspace(4.0, 16.0, len(d["eid"])),
-                           dtype=torch.float32)
-    rep = AG.run(d, features=["pooled", "v0"],
-                 declared={"pooled": "VISION_ONLY"},
-                 ks=(4,), methods=("fps",), steps=(20,), n_boot=20)
-    st = rep["_admissibility"]["v0_status"]
-    assert "PENDING_PI_ADJUDICATION" not in st          # the contradiction is gone
+def test_admitting_v0_OBLIGES_the_holdv0_baseline_and_the_DETECTOR_FIRES():
+    """⭐ SUPERSESSION (see the banner above). Was:
+    ``assert "PENDING_PI_ADJUDICATION" in …["v0_status"]``.
+
+    ⭐ **Why this is STRONGER.** The old test asserted a *waiting* state. The
+    ruling replaced the refusal with an **OBLIGATION**, so this asserts the
+    obligation exists, names its instrument, is stamped only when v0 is actually
+    in the design matrix — and then **exercises the guard it points at**, in
+    both directions.
+
+    ⛔ A guard nobody has watched fail is a hypothesis. The negative control (a
+    planner with real acceleration structure must NOT be flagged) is the
+    load-bearing half: a detector that fires on everything is a constant, not a
+    guard."""
+    st = _run_v0()["_admissibility"]["v0_status"]
+    # 1. the contradiction is gone and the ruling is recorded
+    assert "PENDING_PI_ADJUDICATION" not in st
     assert "ADJUDICATED" in st and "2026-08-16" in st
+    # 2. the obligation names its instrument and the reused shuffle machinery
     assert "v0_antiecho" in st and "--speed-echo-control" in st
-    assert "3.527" in st and "1.1888" in st             # the deficit that remains
-    # and nothing is stamped when v0 is not in the design matrix
+    assert "hold-v0" in st and "separated" in st
+    # ⚠️ admitting v0 removed an ARGUMENT, not a DEFICIT — it travels with it
+    assert "3.527" in st and "1.1888" in st
+    # 3. stamped ONLY when v0 is in the design matrix (not unconditionally)
     plain = AG.run(_synthetic_dump(), features=["pooled"],
                    declared={"pooled": "VISION_ONLY"},
                    ks=(4,), methods=("fps",), steps=(20,), n_boot=20)
     assert plain["_admissibility"]["v0_status"] is None
+
+    # 4. ⭐ THE GUARD THE OBLIGATION POINTS AT, EXERCISED — fires on the cheat,
+    #    silent on genuine structure. Resolved through e_wc2's own sibling-package
+    #    loader, so this pins that the cited instrument really is reachable.
+    E._load_ci()                       # puts ../taniteval on sys.path
+    from taniteval import v0_antiecho as AE
+
+    rng = np.random.default_rng(0)
+    n, k, dt = 240, 4, 0.5
+    v0 = torch.as_tensor(rng.uniform(3.0, 16.0, size=n).astype(np.float32))
+    a = torch.as_tensor(rng.normal(0.0, 1.6, size=n).astype(np.float32))
+    a[rng.uniform(size=n) > 0.7] = 0.0
+    t = torch.arange(1, k + 1, dtype=torch.float32) * dt
+
+    def path(acc):
+        al = v0[:, None] * t[None, :] + 0.5 * acc[:, None] * t[None, :] ** 2
+        return torch.stack([al, torch.zeros_like(al)], -1)
+
+    gt = path(a)
+    eid = [f"ep{i % 12:02d}" for i in range(n)]
+
+    # (a) a PURE ECHO — the longitudinal plan IS hold-v0
+    echo = AE.hold_v0_path(v0, k, dt)
+    det = AE.copy_detector(echo, gt, v0, dt)
+    assert det["verdict"] == "ECHO"
+    assert det["echo_index"] == 1.0 and det["cmd_accel_mae_mps2"] == 0.0
+    base = AE.holdv0_baseline(echo, gt, v0, dt, eid, n_boot=200)
+    # ⛔ a copy can never be SEPARATED from the thing it copies -> inadmissible
+    assert base["verdict"] == "NOT_SEPARATED" and base["admissible"] is False
+
+    # (b) the NEGATIVE CONTROL — genuine acceleration structure must NOT flag
+    real = path(a + torch.as_tensor(
+        rng.normal(0.0, 0.30, size=n).astype(np.float32)))
+    det_r = AE.copy_detector(real, gt, v0, dt)
+    assert det_r["verdict"] == "CLEAN"
+    base_r = AE.holdv0_baseline(real, gt, v0, dt, eid, n_boot=200)
+    assert base_r["verdict"] == "BEATS_HOLDV0" and base_r["admissible"] is True
+    assert base_r["metrics"]["speed_mae_mps"]["separated"] is True
 
 
 # --------------------------------------------------------------------------- #
