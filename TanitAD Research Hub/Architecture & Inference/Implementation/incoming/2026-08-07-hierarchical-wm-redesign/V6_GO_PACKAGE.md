@@ -1,18 +1,30 @@
-# V6 GO PACKAGE — can v6 training start tomorrow, and what exactly runs?
-### ten minutes, no code. Decisions live in `PI_DECISIONS_2026-08-12.md`.
+# V6 GO PACKAGE — the v6 ladder's OPERATOR RUNBOOK
+### §2 is the part you paste at 3 a.m. It is generated, not written. Decisions: `PI_DECISIONS_2026-08-12.md`.
 
-**Verdict in one line:**
-> ⭐ **S-W (the world stage) is GO on code and BLOCKED only on provisioning** (D1 cost, D2 pod).
-> **S-T is NO-GO** until S-W's gate exists — that is X5 working, not a defect.
-> **S-S is NO-GO structurally**: its only REQUIRED gate probe cannot be computed before the VLM
-> pipeline's PH2, so it needs the pre-registered amendment in D6 before it runs.
+> ## ⛔ STATUS — 2026-08-16. §2 WAS REWRITTEN; §1's "BLOCKED" VERDICT IS SUPERSEDED.
+>
+> **S-W IS LIVE.** It is training on **Thor**, not on a provisioned A40 pod — step ~6,400 of
+> 30,000 at a **MEASURED 27.18 s/step**, trainer **pid 25477**, ops loop **pid 29587**, run dir
+> **`~/experiments/v6F-SW-30k`**. *(INHERITED from the coordinator's fleet read, 2026-08-16; not
+> re-probed here — Thor holds the only GPU and this turn was CPU-only by instruction.)*
+> ⇒ **Do not follow §2.1 to "start S-W". It started.** The next launch is **S-T**, and it launches
+> from `v6_chain.py`.
+>
+> **⛔ THE LAUNCH LINES IN THIS DOCUMENT ARE NO LONGER HAND-WRITTEN.** They are the output of
+> **`stack/scripts/v6_chain.py commands`**, and `stack/tests/test_runbook_commands.py` FAILS THE
+> SUITE if this file and that generator disagree. If you are reading a line here, it parsed
+> against the trainer's real `build_parser()` the last time `pytest` ran.
+>
+> **SEL-1 is REFUSED** (E-WC2, 2026-08-16). S-T's default is `--selector none`, `--w-select 0`,
+> and a selector arm is **refused at launch**, not merely left out of the plan. §2.6.
 
 **Tier stamp.** Nothing produced by this trainer is quotable as driving performance. Capability
 claims are **T1** (`taniteval/tools/t1_eval.py`) with the **four metric families** and the
 **paired episode-cluster bootstrap** (`taniteval/ci.py`). `EVAL_DOCTRINE.md`.
 
 **Sources.** Model facts cite `Project Steering/MODEL_REGISTRY.md §x` or a raw gate JSON.
-Rows marked *(mine 2026-08-12)* were re-measured on the dev box by this agent tonight.
+Rows marked *(mine 2026-08-12)* were measured by this doc's original author; rows marked
+*(mine 2026-08-16)* were re-measured on the dev box during the §2 rewrite.
 
 ---
 

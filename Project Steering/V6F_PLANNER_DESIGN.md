@@ -162,6 +162,35 @@ random until S-J. The dynamics stay trunk-frozen in S-T; only the goal-injection
 
 ### 1.4 The admissibility audit, applied to every planner input (PI 2026-08-03)
 
+> 🟥 **OPEN PI DECISION 2026-08-16 — `v0` IS CLASSED BOTH WAYS AT HEAD, AND IT IS WORTH 2.85×.**
+>
+> | artifact (both at HEAD) | verdict on `v0` |
+> |---|---|
+> | `stack/scripts/e_wc2_sigma_star.py:188` | `"v0": "ECHO"` — **inadmissible** |
+> | this document, the table below | **✅ admissible** — *"`v0` is ego speed, an input the programme has always fed; it is not a classifier output"* |
+>
+> **MEASURED stake** (`…/incoming/2026-08-16-anchor-goal-supervision/raw/e_ag3_v0_contradiction_refc-xl-30k.json`):
+> appending ego speed to the ridge (1088 → 1089 dims) moves σ(2 s) **4.7367 → 1.6626 m — 2.85×**.
+> The effect is **one-sided**: σ_long **6.6132 → 2.0917 (3.16×)**, σ_lat unchanged (+0.7 %). So this is
+> not a marginal knob; it is most of the longitudinal signal, in the family that owns ~99 % of the
+> measured T1 divergence.
+>
+> ⚠️ **Why it is genuinely arguable rather than an oversight.** The PI's binding rule of 2026-08-03
+> is *"for ground truth data of scenario classification you can use both ego and other label, for
+> inference only vision"* — scoped, on its face, to the **scenario classifier**. Whether it extends
+> to the **planner's** `v0` input is exactly what is unresolved. Against admitting it: `v0` is ego
+> state at inference, and the vision-only rule's stated generalisation is *"for ANY head, ask whether
+> its inputs at inference include something the label was derived from"* — and the 2 s endpoint is
+> integrated from ego motion, of which `v0` is the first term. For admitting it: `v0` is fed to every
+> deployed arm today, and the speed channel is the programme's own validated fix (REF-A 3.73 → 0.83 m).
+>
+> ⛔ **I am not resolving this.** Until the PI does, no σ figure computed **with** `v0` may be quoted
+> as the goal head's accuracy, and the E-WC2/E-AG numbers on record are the **vision-only** ones.
+>
+> ⚠️ **Sobering either way, and it should temper the decision:** even vision **+ `v0`** sits at
+> σ/ADE **3.527** — still worse than a **0-parameter constant-yaw-rate rule at 1.1888**. Admitting
+> `v0` does not by itself make the goal head fundable.
+
 | signal at inference | computed from | situation-classifier path? | verdict |
 |---|---|---|---|
 | `g_str`, `a_str` | `z_str_p` ← `adapter_str(z_tac)` ← vision | none exists in `GoalHead` | ✅ |

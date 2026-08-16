@@ -622,12 +622,18 @@ left mutated (index blob == disk hash after every round).
 
 **Baseline, briefed at HEAD `6c27b38`: 3036 passed / 0 failed / 17 skipped / 2 xfailed.**
 
-*(final full-suite log: `raw/stack_pytest.txt`)*
+`PYTHONUTF8=1 python -m pytest -q -p no:cacheprovider` from `stack/` →
+⭐ **3154 passed, 17 skipped, 2 xfailed, 0 FAILED**, exit 0, 378 s. Log: `raw/stack_pytest.txt`.
 
 ⚠️ **The count is well above the briefed baseline and MOST OF THE EXCESS IS NOT MINE** — the same
 caveat E-WC2 recorded this morning. **My contribution is +38 tests**: `test_e_ag1_anchor_floor.py`
-(**22**) and `test_anchor_goal_labels.py` (**16**), both new files. The remainder is concurrent
-sibling work landing in the same tree. **0 failures, 0 errors** ⇒ nothing here regressed anything.
+(**22**) and `test_anchor_goal_labels.py` (**16**), both new files. 3036 + 38 = 3074, so **~80 are
+concurrent sibling work** landing in the same tree. **0 failures, 0 errors** ⇒ nothing here
+regressed anything.
+
+⚠️ **An intermediate run of this suite read `1 failed, 3137 passed`** — that failure was §10.1's
+defect **1**, in my own test, and it is fixed and negative-controlled. It is recorded rather than
+quietly overwritten because the suite catching it is the point.
 
 ---
 

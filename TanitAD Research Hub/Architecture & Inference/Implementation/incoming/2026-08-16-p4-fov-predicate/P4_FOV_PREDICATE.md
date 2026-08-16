@@ -397,8 +397,25 @@ it.
 - the 120/117 pair (590/626/36), the annulus bounds, and **0 disagreeing cells in LF0's corridor**.
 
 **Suite:** `PYTHONUTF8=1 …/python.exe -m pytest -q -p no:cacheprovider` from `stack/` →
-**3 067 passed · 0 failed · 17 skipped · 2 xfailed**, banked at `raw/stack_pytest.txt`.
-Brief baseline was **3 036 / 0 / 17 / 2**; the +31 is this file. **Zero failures, zero regressions.**
+**3 154 passed · 0 failed · 17 skipped · 2 xfailed** (365.7 s), banked at `raw/stack_pytest.txt`.
+Brief baseline was **3 036 / 0 / 17 / 2** at `b65b3ab`; HEAD has since moved to `efd49f5` and
+concurrent streams added ~87 tests, so the arithmetic that closes is **3 123 (same tree, this file
+ignored) + 31 = 3 154**. **Zero failures, zero regressions.**
+
+⚠️ **One transient failure, chased to ground rather than waved off — and it was not mine.** An
+earlier full run showed `test_e_ag1_anchor_floor.py::test_no_situation_classifier_path` FAILED on
+`assert "tanitad.data.situations" not in sys.modules`. That file was `AM` in `git status` — staged
+*and* being edited by a live concurrent stream mid-run. Attribution took four measurements
+(isolation: pass; my file + that test: pass; suite without my file: pass; suite with: fail), and
+the answer arrived from the owner's own repair: they replaced the in-process assertion with a
+**subprocess** check whose new comment states the diagnosis verbatim — *"`sys.modules` in a
+full-suite run is polluted by every other test that legitimately imports the situation detectors.
+An in-process check would pass alone and fail in the suite."* ⇒ **a process-global assertion in
+someone else's in-flight test, since fixed.** Nothing in this work touches
+`tanitad.data.situations`; MEASURED, importing `build_obstacle_join` + `train_p8_occupancy` leaves
+it out of `sys.modules`. *(Recording it because the trap generalises: a suite-wide `sys.modules`
+assertion reports the SESSION's imports, not the module's — the same class as CLAUDE.md's
+"a probe that reports the wrong scope is worse than no probe".)*
 
 ---
 
@@ -452,6 +469,20 @@ All **staged in the working tree (`git add`), never committed and never pushed**
 `AGENT_OPERATING_STANDARD.md`. Nothing lives only on a pod or a worktree.
 
 **Staging verified by BLOB, not by `--cached`** — `git ls-files --stage <path>` compared against
-`git hash-object <path>` for every artifact, and re-verified at end of turn (§11 of the run log
-below), because `--cached` answers *"is this path in the index?"* and says yes for a tracked file
-whose index blob is the pre-edit version.
+`git hash-object <path>` for every artifact, and **re-verified at end of turn**, because
+`--cached` answers *"is this path in the index?"* and says yes for a tracked file whose index blob
+is the pre-edit version.
+
+⚠️ **HEAD moved twice under this work** — `b65b3ab` → `efd49f5` → `eca7106`, concurrent
+orchestrator sweeps. The second sweep **committed 11 of the 13 artifacts**; verified file-by-file
+that nothing was lost or altered (`git rev-parse HEAD:<path>` == `git hash-object <path>` for all
+11, and the stamp tokens grep out of HEAD's copies: 1 hit in `build_obstacle_join.py`, 15 in
+`train_p8_occupancy.py`). The remaining two — this writeup and `raw/stack_pytest.txt`, both edited
+after the sweep — are **staged and blob-verified**. **This agent committed nothing and pushed
+nothing.** Three of the files moving in the same window (`test_e_ag1_anchor_floor.py`,
+`test_anchor_goal_labels.py`, `anchor_goal.py`) belong to a sibling stream, not to me.
+
+**Integrity check worth recording:** `raw/p4_predicate_identity.json` **reproduces
+bit-identically** from `code/p4_predicate_census.py` — md5 `8dcf419dc19af734b2dceae8e0a309d6`
+before and after a re-run — and its 590 / 626 whole-grid figures reproduce the bev-consumer
+audit's and the P8 v6 port's independently, from a different code path.
