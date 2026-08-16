@@ -365,6 +365,32 @@ up what runs today, and the runbook's 100 ms pricing is for the fan path.
 
 ## 4. DEPLOYMENT PROCEDURE ON THOR
 
+> ## ⛔ STOP — THOR IS TRAINING. CHECK BEFORE YOU BUILD. (added 2026-08-16)
+>
+> **`thor6` is the fleet's ONLY GPU, and as of 2026-08-16 it is running the v6F S-W trainer**
+> (pid 25477, ~7.4 days remaining at a MEASURED 27.18 s/step, `~/experiments/v6F-SW-30k`).
+> ⛔ **`CLAUDE.md`: never add GPU/RAM load to a box that is training.** A TensorRT build is not a
+> read — it allocates, it compiles, and on Thor **host RAM IS device memory**.
+>
+> ⚠️ **This runbook is the only one in the set that fails LOUD AND EXPENSIVE.** Every other stale
+> runbook here points at a released RunPod host and fails safe, because nothing answers. This one's
+> host answers. *(That asymmetry is the finding: a runbook's danger is not how stale it is, it is
+> whether its host is alive.)*
+>
+> **Precondition, every time, before §4's build block:**
+> ```bash
+> nvidia-smi --query-compute-apps=pid,used_memory --format=csv
+> ls -l /proc/25477/cmdline 2>/dev/null && echo "⛔ v6F S-W TRAINER IS ALIVE — DO NOT BUILD"
+> ```
+> ⚠️ **Do not verify with `pgrep -f` or `ps | grep`** — both put the searched token into the
+> searching process's own command line and match themselves (measured three times in this
+> programme). Read `/proc/<pid>/cmdline`, or use `scripts/v6_chain.py verify`.
+> ⛔ **And `free` / `tegrastats` / `mem_get_info` are all inadmissible on Thor's unified memory**
+> (MEASURED 2026-08-03: 106 GB "used" on a completely idle box). The trainer's own
+> `cuda_max_mem_gb` log field is the number.
+>
+> ⇒ If the trainer is alive, this procedure waits. Nothing in §4 is time-critical; the training is.
+
 **Environment** (PI rule — two venvs, never mixed):
 * `~/venvs/tanitad-edge` — inference / optimisation / AlpaSim closed-loop
 * `~/venvs/tanitad-train` — training

@@ -40,6 +40,23 @@ not the push log (§5 has the command). Everything else is small and was verifie
 
 ## 3. How to resume TRAINING on a fresh pod
 
+> ### ⛔ SUPERSEDED 2026-08-16 — THE RESUME ALREADY HAPPENED. DO NOT FOLLOW §3.
+> Training was resumed **on Thor**, not on a fresh pod: v6F S-W is **live** at step ~6,400 of
+> 30,000, trainer **pid 25477**, `~/experiments/v6F-SW-30k`, MEASURED **27.18 s/step** (~7.4 days
+> remaining). **Following §3 now starts a SECOND trainer on the fleet's only GPU.**
+> ⇒ The current procedure is `…/incoming/2026-08-07-hierarchical-wm-redesign/V6_GO_PACKAGE.md` §2,
+> and the next launch is **S-T**, from `scripts/v6_chain.py`.
+>
+> ⚠️ **§3.6's two watchers carry dead `/workspace` paths and will not work on Thor as written:**
+> `stack/ops/hf_push_loop.py:8` hardcodes `D = "/workspace/experiments/v6F-SW-30k/"` with no env
+> override (re-armed as instructed it emits `FileNotFoundError` every 1200 s forever), and
+> `stack/ops/pbattery_watcher.py` hardcodes `/workspace/TanitAD/stack`, `/workspace/a2venv/bin/python`
+> and a `/workspace/data/...` val cache. ⚠️ Its GPU-exclusion guard also tests `"aug120.py" in cmd`,
+> which is **not a substring of `aug120_pipeline.py`** — so the pause never fires for a
+> repo-launched pipeline. **Do not re-arm either without fixing the paths.**
+>
+> §3.5's trainer flags and §4's tools were re-verified 2026-08-16 and are **CURRENT**.
+
 1. **Clone the branch** → all code including `train_v6_staged.py` with the gc-split flags.
 2. **Venv, in this exact order** (the twice-measured torch trap):
    pipeline extras `--no-deps` first, then **torch pinned LAST**:

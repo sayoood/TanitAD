@@ -3781,3 +3781,46 @@ not-yet-invented `_jack_*` sibling) and three false-positive controls.
 **Also found, unquantified and owed:** `planner_p2.py`'s CEM is **unseeded**, so every P2 number
 carries a sampling component nobody has bounded (measured drift 0.019 % — small, but *measured* is
 not the same as *bounded*).
+
+---
+
+## 2026-08-16 — ⛔ NEW CLASS C74: PRESENCE FOUND AT ONE LOCATION, READ AS THE WHOLE SET
+
+**C2 is *"absence at one location is not absence"*. It has a MIRROR, and until today the log had no
+rule for it.** Two instances, hours apart, both in operator-facing material:
+
+1. ⛔ **The launch-fatal one.** `V6_GO_PACKAGE.md` §2.0(a) lists the md5s an operator must verify
+   before shipping files to a pod. It names **three** `scripts/` files. The trainer's **import-time
+   closure is four** — `train_stage_a` and `stage_a_probes` are module-level imports at
+   `train_v6_staged.py:114` / `:117`. A file-ship following that list dies with
+   `ModuleNotFound: train_stage_a`. ⭐ MEASURED two independent ways (a clean-child `sys.modules`
+   probe and a module-level AST walk) — **and `git show 2b8d09e:…` proves the list was WRONG THE DAY
+   IT WAS WRITTEN.** It is not staleness. **One dependency was measured; the CLOSURE was assumed.**
+2. **The inherited one.** The chain stream reported §2 as *"stale in five ways"*. A direct
+   re-derivation against the code found **eleven**. The five were all real — that is exactly what
+   made the count persuasive. The author had been reading the *chain*, not the *runbook*, so the six
+   they never looked at were invisible.
+
+| # | class | recognition signal |
+|---|---|---|
+| **C74** | **Presence at one location read as the whole set** | a LIST asserted complete — dependencies, call sites, consumers, defects, affected docs — where each entry was verified but **the enumeration itself never was**. Signal: nobody can say what procedure would have found a *missing* entry |
+
+⇒ **The check is the CLOSURE, not the members.** For a dependency list, walk the import graph. For a
+consumer list, sweep by every exported symbol *and* by artifact, not just by module name — the
+`bev_raster` audit found **9** consumers where the brief said 2, and its third sweep caught the one
+that **imports nothing and restates the geometry inline**, which no import search could ever reach.
+
+⚠️ **And a verified list is more dangerous than an unverified one**, because each entry survives
+spot-checking. C2's fix is a second probe *at another location*; **C74's fix is a probe of a
+different KIND** — the second location shares the first one's blind spot (see **C69**: two probes,
+one bounded by depth and one on a machine with no checkout, agreeing and both wrong).
+
+⭐ **The sweep's own reframing, which generalises past lists:** across 11 runbooks, *"how stale is
+it"* turned out to be the wrong question — **a runbook's danger is whether its host is still alive.**
+Nine pointed at released pods and therefore fail safe. `THOR_DEPLOYMENT_RUNBOOK.md` was **the least
+stale by flag count and the most dangerous**: its §4 TensorRT build targets the box that is training
+right now, with no precondition. ⇒ **Rank operational docs by BLAST RADIUS ON A LIVE HOST, not by
+edit age.** Ten of §2's defects make a command *fail*; the eleventh — *"S-W is the only stage that
+can start tomorrow"*, written before S-W was live — makes it **SUCCEED**, starting a second trainer
+on the fleet's only GPU. **A stale instruction that fails is an inconvenience; one that succeeds is
+an incident.**

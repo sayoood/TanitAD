@@ -94,9 +94,14 @@ __all__ = [
     "STRATEGIC_GOAL_TOKENS", "STRATEGIC_ACTION_TOKENS", "TACTICAL_GOAL_TOKENS",
     "TACTICAL_LAT_ACTIONS", "TACTICAL_LON_ACTIONS", "CONSTRAINT_SLOTS",
     "GOAL_ARG_SLOTS", "GOAL_ARG_NAMES",
+    # ⭐ g_tac factored LAT x LON + the typed categorical arg channel
+    "TACTICAL_GOAL_TOKENS_LAT", "TACTICAL_GOAL_TOKENS_LON",
+    "GOAL_AXIS_ABSTAIN", "goal_token_axis",
+    "GOAL_CAT_ARG_NAMES", "GOAL_CAT_ARG_TOKENS", "STOP_REASONS",
+    "LIGHT_STATES",
     # config + stack
     "V6Config", "V6Stack", "GoalVocabulary", "GoalHead", "GoalConditioner",
-    "GoalDistanceScorer", "MLPCandidateScorer",
+    "GoalDistanceScorer", "MLPCandidateScorer", "AnchorGoalHead",
     "IsolationViolation", "PARAM_BUDGET",
     # horizon (§4b)
     "PLAN_STEPS", "DT", "HORIZON_S", "OP_BAND_S", "TAC_BAND_S",
@@ -169,6 +174,98 @@ GOAL_ARG_NAMES: tuple[str, ...] = (
     "arg0", "arg1", "arg2", "arg3", *CONSTRAINT_SLOTS,
 )
 GOAL_ARG_SLOTS = len(GOAL_ARG_NAMES)          # 8
+
+# ----------------------------------------------------------------------------
+# ⭐ g_tac FACTORED LAT × LON — the SAME factoring `a_tac` already carries
+# ----------------------------------------------------------------------------
+# ⛔ WHY. MEASURED 2026-08-16 (`…/incoming/2026-08-16-anchor-goal-supervision/`,
+# E-AG1/E-AG2, 881 windows / 40 episodes, LOEO, episode-cluster bootstrap):
+#   * the 2 s goal point's corpus variance is **98.8 % LONGITUDINAL** — the
+#     zero-information null splits sigma_long 19.0578 vs sigma_lat 2.0723
+#     (9.2x in sigma, 84x in variance);
+#   * a K-way `anchor_id` classifier is **near-adequate laterally** (1.3310
+#     against a 0.6802 floor, 1.96x) and **hopeless longitudinally** (13.3502
+#     against a 0.8954 floor, 14.9x);
+#   * the quantisation itself is ISOTROPIC (0.5674 long / 0.5599 lat) — the
+#     shipped FPS vocabulary spends half its resolution on the axis carrying
+#     1.2 % of the variance.
+# ⇒ ONE K-way `anchor_id` forces ONE categorical decision to carry BOTH axes.
+# That is the 5-way manoeuvre softmax defect — "the programme's single largest
+# known defect" — surviving one level up into the goal vocabulary, AFTER
+# `a_tac` was explicitly factored LAT x LON to retire it. These two tuples are
+# that same retirement applied to `g_tac`.
+#
+# ⚠️ THE PARTITION IS BY WHICH AXIS THE TOKEN CONSTRAINS, and it is TOTAL:
+# LAT + LON reproduce TACTICAL_GOAL_TOKENS exactly (pinned by
+# ``tests/test_v6_factored_goal.py::test_the_partition_is_total_and_disjoint``).
+# Each side carries its own ABSTAIN, because a factored head that cannot say
+# "this axis is unconstrained" must invent a constraint on every window (§2:
+# "Unset = unconstrained").
+TACTICAL_GOAL_TOKENS_LAT: tuple[str, ...] = (
+    "ANCHOR_GOAL", "CORRIDOR_OFFSET", "EVADE_IN_CORRIDOR", "LAT_UNCONSTRAINED",
+)
+TACTICAL_GOAL_TOKENS_LON: tuple[str, ...] = (
+    "SPEED_BAND", "GAP_TARGET", "YIELD_AT", "STOP_POINT", "WAIT_FOR_ONCOMING",
+    "TRAFFIC_LIGHT_REACT", "LON_UNCONSTRAINED",
+)
+#: the two abstains are NOT part of the §4 nine — they are the factoring's own.
+GOAL_AXIS_ABSTAIN: tuple[str, str] = ("LAT_UNCONSTRAINED", "LON_UNCONSTRAINED")
+
+# ----------------------------------------------------------------------------
+# ⭐ THE CATEGORICAL ARG CHANNEL — the arg-TYPE gap, MEASURED 2026-08-16 §2.3
+# ----------------------------------------------------------------------------
+# ⛔ THE GAP. `GOAL_ARG_NAMES` is eight slots of PHYSICAL UNITS (m, s, m/s);
+# both ends are continuous — ``GoalHead.arg_head`` emits 8 floats and
+# ``GoalVocabulary.arg_proj`` consumes 8 floats. But **SEVEN of the nine
+# `g_tac` tokens carry at least one CATEGORICAL arg** (`anchor_id`,
+# `agent_slot_id`, `gap_slot`, `reason`, `oncoming_slot`, `obstacle_slot`,
+# `light_slot_id`, `state`). An index is not a physical quantity: with an
+# FPS-ordered vocabulary anchor 5 is not "between" anchors 4 and 6 in any
+# geometry, so regressing it is a TYPE ERROR. ⇒ before this channel existed,
+# **`goal_head_tac` could express exactly 2 of the 9 tokens** even with perfect
+# labels — a CODE gap, not a data gap.
+#
+# ⚠️ THE FIVE SLOT-VALUED ARGS ARE ONE KIND, NOT FIVE. `agent_slot_id`,
+# `gap_slot`, `oncoming_slot`, `obstacle_slot` and `light_slot_id` are all "an
+# id into the window's agent-slot vocabulary", and no token needs two of them
+# at once (checked token by token against HIERARCHY_VOCABULARY.md:84-92), so
+# ONE `agent_slot` channel serves all five.
+#: The typed categorical slots. ``anchor_id`` indexes the FULL 2-D anchor
+#: table; ``lat_bin`` indexes the FACTORED lateral sub-vocabulary — they are
+#: DIFFERENT vocabularies and a token uses one or the other, never both.
+#: Conflating them would be the very type error this channel exists to remove.
+GOAL_CAT_ARG_NAMES: tuple[str, ...] = (
+    "anchor_id", "lat_bin", "agent_slot", "reason", "state",
+)
+#: `STOP_POINT(position_arc_m, reason)` — HIERARCHY_VOCABULARY.md:89.
+STOP_REASONS: tuple[str, ...] = ("sign", "light", "queue", "hazard")
+#: `TRAFFIC_LIGHT_REACT(light_slot_id, state, stopline_arc_m)` — :92. The B2
+#: VLM schema emits exactly these four.
+LIGHT_STATES: tuple[str, ...] = ("red", "amber", "green", "none")
+#: §2.2's per-token table, turned from prose into a tested artefact: which
+#: categorical slot(s) each `g_tac` token needs. A token absent here needs
+#: none (`CORRIDOR_OFFSET` and `SPEED_BAND` — the only two that were
+#: expressible before this channel). ``ANCHOR_GOAL`` is listed with BOTH ids
+#: because the joint and the factored formulations are separate arms.
+GOAL_CAT_ARG_TOKENS: dict[str, tuple[str, ...]] = {
+    "ANCHOR_GOAL": ("anchor_id", "lat_bin"),
+    "GAP_TARGET": ("agent_slot",),
+    "YIELD_AT": ("agent_slot",),
+    "STOP_POINT": ("reason",),
+    "WAIT_FOR_ONCOMING": ("agent_slot",),
+    "EVADE_IN_CORRIDOR": ("agent_slot",),
+    "TRAFFIC_LIGHT_REACT": ("agent_slot", "state"),
+}
+
+
+def goal_token_axis(token: str) -> str:
+    """``"lat"`` / ``"lon"`` for a `g_tac` token — the ONE place the partition
+    is read, so the programme has one convention and not two."""
+    if token in TACTICAL_GOAL_TOKENS_LAT:
+        return "lat"
+    if token in TACTICAL_GOAL_TOKENS_LON:
+        return "lon"
+    raise KeyError(f"{token!r} is in neither factored g_tac axis")
 
 
 def _ensure_scripts() -> None:
@@ -507,10 +604,108 @@ class GoalVocabulary(nn.Module):
         nn.init.trunc_normal_(self.table.weight, std=0.02)
         self.arg_proj = nn.Linear(self.n_args, self.d_embed)
         self.norm = nn.LayerNorm(self.d_embed)
+        # ⛔ THE CATEGORICAL CHANNEL IS NOT BUILT HERE, ON PURPOSE. Building it
+        # in __init__ would draw RNG in the MIDDLE of V6Stack's construction
+        # order and shift every module initialised after this vocabulary — so
+        # merely turning the flag on would perturb pre-existing weights and the
+        # live S-W resume's byte-identity argument would be gone. It is
+        # attached at the END of V6Stack.__init__ instead (attach_cat_channel).
+        self.cat_names: tuple[str, ...] | None = None
+        self.cat_cards: tuple[int, ...] | None = None
+        self.cat_emb: nn.Linear | None = None
 
     @property
     def n_tokens(self) -> int:
         return len(self.tokens)
+
+    # -- the categorical arg channel (§2.3 of ANCHOR_GOAL_SUPERVISION) --------
+    @property
+    def n_cat(self) -> int:
+        """Total width of the concatenated categorical block (0 when off)."""
+        return 0 if self.cat_cards is None else sum(self.cat_cards)
+
+    def attach_cat_channel(self, cards, names=GOAL_CAT_ARG_NAMES,
+                           usage: dict[str, tuple[str, ...]] | None = None
+                           ) -> None:
+        """⭐ Give this vocabulary a TYPED CATEGORICAL arg channel.
+
+        ``cards`` is one cardinality per name in ``names``. The consuming side
+        is ONE ``nn.Linear(sum(cards), d_embed, bias=False)`` — i.e. the
+        concatenated per-slot embedding tables expressed as a matmul, exactly
+        the trick :meth:`embed_tokens` already uses so a HARD one-hot and a SOFT
+        posterior travel the SAME code path (a second, "soft-only" path is how
+        two conventions get invented).
+
+        ``usage`` maps token -> the slots that token actually uses; it becomes
+        the ``cat_usage`` buffer, and it is what lets an UNSET slot contribute
+        exactly zero (§2: "Unset = unconstrained"; the IGNORE discipline — a
+        slot no label can fill must not be regressed against a fabricated 0).
+        Non-persistent: it is derived from module constants, so shipping it in
+        the checkpoint would be shipping a copy of the source.
+        """
+        if self.cat_cards is not None:
+            raise RuntimeError("this vocabulary already has a categorical "
+                               "channel — attaching twice would leave two "
+                               "tables wearing one name (§5)")
+        cards, names = tuple(int(c) for c in cards), tuple(names)
+        if len(cards) != len(names):
+            raise ValueError(f"{len(cards)} cardinalities for {len(names)} "
+                             f"categorical slots {names}")
+        if any(c < 1 for c in cards):
+            raise ValueError(f"every categorical cardinality must be >= 1, "
+                             f"got {cards}")
+        self.cat_names, self.cat_cards = names, cards
+        self.cat_emb = nn.Linear(sum(cards), self.d_embed, bias=False)
+        nn.init.trunc_normal_(self.cat_emb.weight, std=0.02)
+        use = torch.zeros(self.n_tokens, len(names))
+        for tok, slots in (usage or GOAL_CAT_ARG_TOKENS).items():
+            if tok not in self.index:
+                continue                      # a token of a DIFFERENT axis
+            for s in slots:
+                if s not in names:
+                    raise KeyError(f"{tok} needs categorical slot {s!r}, which "
+                                   f"this channel does not have: {names}")
+                use[self.index[tok], names.index(s)] = 1.0
+        self.register_buffer("cat_usage", use, persistent=False)
+
+    def cat_slice(self, name: str) -> slice:
+        """The slice of the concatenated categorical block owned by ``name``."""
+        if self.cat_cards is None:
+            raise RuntimeError("this vocabulary has no categorical channel")
+        i = self.cat_names.index(name)
+        lo = sum(self.cat_cards[:i])
+        return slice(lo, lo + self.cat_cards[i])
+
+    def cat_mask_from_tokens(self, ids_or_probs: Tensor) -> Tensor:
+        """[B, n_cat_slots] — the SOFT probability that the emitted token uses
+        each categorical slot.
+
+        Under a hard id this is the token's own usage row; under a soft
+        posterior it is ``probs @ cat_usage``, which is the differentiable
+        generalisation and NOT a second convention: at a one-hot posterior the
+        two coincide exactly (pinned by a test).
+        """
+        if self.cat_cards is None:
+            raise RuntimeError("this vocabulary has no categorical channel")
+        u = self.cat_usage.to(self.table.weight.dtype)
+        if ids_or_probs.dtype in (torch.long, torch.int32, torch.int64):
+            return u[ids_or_probs.long()]
+        # ⚠️ clamped because MULTI-LABEL gates are not a simplex: two emitted
+        # tokens that both use `agent_slot` would otherwise give that slot a
+        # mask of 2 and silently AMPLIFY its embedding. A mask says whether a
+        # slot is set; it is not a weight.
+        return (ids_or_probs.to(u.dtype) @ u).clamp(0.0, 1.0)
+
+    def expand_cat_mask(self, cat_mask: Tensor) -> Tensor:
+        """[B, n_cat_slots] -> [B, sum(cards)], each slot's mask broadcast over
+        its own block."""
+        if self.cat_cards is None:
+            raise RuntimeError("this vocabulary has no categorical channel")
+        if cat_mask.shape[-1] != len(self.cat_cards):
+            raise ValueError(f"cat_mask must be [B, {len(self.cat_cards)}], "
+                             f"got {tuple(cat_mask.shape)}")
+        reps = torch.as_tensor(self.cat_cards, device=cat_mask.device)
+        return torch.repeat_interleave(cat_mask, reps, dim=-1)
 
     def id_of(self, token: str) -> int:
         if token not in self.index:
@@ -528,7 +723,8 @@ class GoalVocabulary(nn.Module):
         return ids_or_probs.to(self.table.weight.dtype) @ self.table.weight
 
     def encode(self, ids_or_probs: Tensor, args: Tensor | None = None,
-               arg_mask: Tensor | None = None) -> Tensor:
+               arg_mask: Tensor | None = None, cat: Tensor | None = None,
+               cat_mask: Tensor | None = None) -> Tensor:
         e = self.embed_tokens(ids_or_probs)
         if args is not None:
             if args.shape[-1] != self.n_args:
@@ -538,6 +734,22 @@ class GoalVocabulary(nn.Module):
             if arg_mask is not None:
                 a = a * arg_mask.to(e.dtype)
             e = e + self.arg_proj(a)
+        if cat is not None:
+            if self.cat_emb is None:
+                raise ValueError(
+                    "this vocabulary has NO categorical arg channel but was "
+                    "handed one — an undeclared conditioning path is exactly "
+                    "what the disjointness audit (X1) forbids. Build the stack "
+                    "with goal_cat_args=True.")
+            if cat.shape[-1] != self.n_cat:
+                raise ValueError(f"cat must be [B, {self.n_cat}] (the "
+                                 f"concatenated slots {self.cat_names} with "
+                                 f"cards {self.cat_cards}), got "
+                                 f"{tuple(cat.shape)}")
+            c = cat.to(e.dtype)
+            if cat_mask is not None:
+                c = c * self.expand_cat_mask(cat_mask).to(e.dtype)
+            e = e + self.cat_emb(c)
         return self.norm(e)
 
 
@@ -572,6 +784,49 @@ class GoalHead(nn.Module):
             nn.Linear(hidden, hidden), nn.GELU())
         self.type_head = nn.Linear(hidden, vocab.n_tokens)
         self.arg_head = nn.Linear(hidden, vocab.n_args)
+        self.hidden = int(hidden)
+        # ⛔ Both extensions are attached LATE and only when asked, for the same
+        # reason the vocabulary's channel is (see GoalVocabulary.__init__):
+        # drawing RNG here would move every module built after this head.
+        # ``multilabel`` holds NO parameters — it is a second READING of the
+        # same ``type_head`` logits — so it can be switched at any time.
+        self.cat_head: nn.Linear | None = None
+        self.multilabel = False
+
+    def attach_cat_head(self) -> None:
+        """⭐ The EMITTING half of the categorical arg channel: one linear over
+        the concatenated per-slot blocks, read back as per-slot softmaxes.
+
+        Refuses when the vocabulary has no channel — a head that emitted
+        categorical logits into a conditioner that cannot read them would be a
+        capability on paper only, which is the exact shape of the gap this
+        closes (§2.3: 2 of 9 tokens expressible).
+        """
+        if self.vocab.cat_cards is None:
+            raise RuntimeError("attach the vocabulary's categorical channel "
+                               "first — an emitter with no consumer is not a "
+                               "channel")
+        if self.cat_head is not None:
+            raise RuntimeError("categorical head already attached")
+        self.cat_head = nn.Linear(self.hidden, self.vocab.n_cat)
+
+    def enable_multilabel(self, on: bool = True) -> None:
+        """⭐ MULTI-LABEL EMISSION. A single 9-way softmax can emit exactly ONE
+        `g_tac` token per step, and §6.4's measurement says the tactical goal
+        must be **`ANCHOR_GOAL` (lateral) AND `SPEED_BAND` (longitudinal)** at
+        the same time — a PAIR, which a simplex cannot represent.
+
+        ``gates = logits.sigmoid()`` are INDEPENDENT per-token, so a set is
+        expressible; ``probs`` stays in the output unchanged so the
+        single-choice reading and every existing consumer are untouched. Holds
+        no parameters: it is the same ``type_head``, read a second way.
+
+        ⚠️ The FACTORED heads are the STRUCTURED form of the same fix and are
+        strictly better attributable — one token per AXIS, so the pair is
+        emitted by construction and each half is separately scoreable. This
+        flag is the unstructured fallback for the un-factored head.
+        """
+        self.multilabel = bool(on)
 
     def forward(self, z: Tensor, cond: Tensor | None = None) -> dict:
         if z.ndim != 2 or z.shape[-1] != self.d_in:
@@ -588,8 +843,21 @@ class GoalHead(nn.Module):
                                  "what the disjointness audit (X1) forbids")
             h = self.trunk(z)
         logits = self.type_head(h)
-        return {"logits": logits, "args": self.arg_head(h),
-                "probs": logits.softmax(dim=-1)}
+        out = {"logits": logits, "args": self.arg_head(h),
+               "probs": logits.softmax(dim=-1)}
+        if self.multilabel:
+            out["gates"] = logits.sigmoid()
+        if self.cat_head is not None:
+            cl = self.cat_head(h)
+            out["cat_logits"] = cl
+            # per-slot softmax: each typed slot is its OWN categorical variable,
+            # so ONE softmax over the concatenation would make picking an
+            # `anchor_id` compete with picking a `reason` — a different (and
+            # wrong) model.
+            out["cat_probs"] = torch.cat(
+                [cl[..., self.vocab.cat_slice(n)].softmax(dim=-1)
+                 for n in self.vocab.cat_names], dim=-1)
+        return out
 
 
 class GoalConditioner(nn.Module):
@@ -610,8 +878,10 @@ class GoalConditioner(nn.Module):
         self.d_out = d_out
 
     def forward(self, ids_or_probs: Tensor, args: Tensor | None = None,
-                arg_mask: Tensor | None = None) -> Tensor:
-        return self.proj(self.vocab.encode(ids_or_probs, args, arg_mask))
+                arg_mask: Tensor | None = None, cat: Tensor | None = None,
+                cat_mask: Tensor | None = None) -> Tensor:
+        return self.proj(self.vocab.encode(ids_or_probs, args, arg_mask,
+                                           cat, cat_mask))
 
 
 class GoalDistanceScorer(nn.Module):
@@ -673,21 +943,44 @@ class GoalDistanceScorer(nn.Module):
         self.cand_bias = nn.Parameter(torch.zeros(int(n_candidates)))
         self.log_tau = nn.Parameter(torch.tensor(float(math.log(tau_m))))
 
-    def forward(self, waypoints: Tensor, g_embed: Tensor) -> dict:
+    def forward(self, waypoints: Tensor, g_embed: Tensor,
+                goal_point: Tensor | None = None) -> dict:
         """``waypoints`` [B, N, T, 2] · ``g_embed`` [B, d_goal_embed] ->
         ``{"score" [B, N], "goal_point" [B, 2], "goal_dist" [B, N]}``.
 
         Higher score == better, so ``score.argmax(-1)`` is the incumbent rule
         and any noise-robust aggregator is a strictly later decision.
+
+        ``goal_point`` [B, 2] OVERRIDES the internal free decode — this is the
+        seam :class:`AnchorGoalHead` plugs into, so a STRUCTURED goal (snapped
+        laterally, continuous longitudinally) can be scored by the identical
+        rule. Default ``None`` keeps the incumbent behaviour bit-for-bit.
+
+        ⭐ When it IS overridden the free decode is still computed and returned
+        as ``goal_point_free``. Two reasons, both load-bearing: (1) a parameter
+        that no declared output reaches is invisible to the X3 probe — the
+        ``intent_proj`` defect, where a path present in the diagram was absent
+        from the optimisation; (2) it hands E-AG2's paired comparison — the FREE
+        decode against the STRUCTURED one — on the same window in one forward,
+        at zero extra parameters. It is zero-init, so an unfitted free decode
+        reads as exactly that rather than as noise.
         """
         if waypoints.ndim != 4 or waypoints.shape[-1] != 2:
             raise ValueError(f"waypoints must be [B, N, T, 2], got "
                              f"{tuple(waypoints.shape)}")
-        g = self.goal_point(g_embed.to(waypoints.dtype))          # [B, 2]
+        free = self.goal_point(g_embed.to(waypoints.dtype))       # [B, 2]
+        extra = {}
+        if goal_point is not None:
+            if goal_point.shape != (waypoints.shape[0], 2):
+                raise ValueError(f"goal_point must be [B, 2], got "
+                                 f"{tuple(goal_point.shape)}")
+            g, extra = goal_point.to(waypoints.dtype), {"goal_point_free": free}
+        else:
+            g = free
         d = (waypoints[:, :, -1] - g[:, None]).norm(dim=-1)       # [B, N]
         tau = self.log_tau.exp().clamp_min(1e-3).to(d.dtype)
         return {"score": -d / tau + self.cand_bias.to(d.dtype)[None],
-                "goal_point": g, "goal_dist": d}
+                "goal_point": g, "goal_dist": d} | extra
 
 
 class MLPCandidateScorer(nn.Module):
@@ -761,6 +1054,238 @@ class MLPCandidateScorer(nn.Module):
         h = torch.nn.functional.gelu(self.fc1(torch.cat([end, g], dim=-1)))
         return {"score": self.fc2(h).squeeze(-1) + self.cand_bias.to(h.dtype),
                 "mechanism": "mlp"}
+
+
+class AnchorGoalHead(nn.Module):
+    """⭐ ``ANCHOR_GOAL``, emitted as REGRESS-THEN-SNAP — with the one-hot K-way
+    classifier kept reachable as the CONTROL.
+
+    ⛔ WHY THIS SHAPE, MEASURED — the failure is the ESTIMATOR, not the
+    ESTIMAND (`…/2026-08-16-anchor-goal-supervision/` §6.2, 881 windows /
+    40 episodes, LOEO, paired episode-cluster bootstrap):
+
+      * ``snap`` — the SAME ridge prediction, rounded to the nearest anchor —
+        is **NOT separated** from the free ridge: Δ **−0.0002 [−0.1031,
+        +0.0703]** at K=256, and **+0.0383 [−0.2125, +0.2338]** even in the
+        much stronger ``v0`` regime. ⇒ **quantising onto the shipped vocabulary
+        is FREE.**
+      * a K-way one-hot classifier on the same features costs **+4.7502
+        [+3.0514, +6.3981] WORSE**, separated at every K from 8 to 256 and
+        under BOTH vocabulary constructions (FPS and k-means), and it
+        replicates on REF-C-base (**+5.4570 [+3.8345, +7.1073]**).
+      * and that failure mode was already measured on an INDEPENDENT surface:
+        a one-hot target is metric-BLIND — it scores "picked the adjacent
+        anchor" and "picked one 40 m away" identically — and **E-OBJ-1**
+        measured swapping one-hot CE for ``softade`` recovering **−0.0974 m
+        (base) / −0.1670 m (XL), separated**, with the recovery LONGITUDINAL.
+
+    ⇒ ``"snap_lat"`` / ``"snap_xy"`` are the DEFAULT and ``"onehot"`` is the
+    pre-registered CONTROL. A comparison with no control is unattributable
+    (the C6 confound), which is why the refuted arm stays buildable.
+
+    ⭐ ``"snap_lat"`` IS THE FACTORED FORM, and it is the mode the measurement
+    actually prescribes. The regression is 2-D; only the **LATERAL** coordinate
+    is quantised, onto a lateral sub-vocabulary; the **LONGITUDINAL** coordinate
+    stays a continuous progress arg. §6.4: the goal's variance is 98.8 %
+    longitudinal while the FPS quantisation is isotropic (0.5674 / 0.5599), so
+    a joint K-way index spends half its resolution on the axis carrying 1.2 %
+    of the variance — and the classifier's own residual is 1.96x the floor
+    laterally against **14.9x** longitudinally.
+
+    ⚠️ THE SNAP IS STRAIGHT-THROUGH, and that is what makes "regress-then-snap"
+    a trainable object rather than a post-hoc rounding: the emitted point is
+    quantised while the gradient reaches the CONTINUOUS regression, so the loss
+    can stay metric-aware (an endpoint distance) instead of becoming the
+    metric-blind CE the measurement refuses.
+
+    ⛔ THE 6 s BLOCKER, ENFORCED RATHER THAN DOCUMENTED. Every anchor vocabulary
+    the programme owns stops at **step 20 = 2.0 s** (MEASURED 2026-08-16 over
+    all five banked tables: `refc_anchors_full_REBUILD.pt` and
+    `refc_anchors_small64.pt` horizons ``[5,10,15,20]``; `anchors_dev256.pt`
+    and `flagship_v4_anchors_dense.pt` ``[1..20]``), while ``PLAN_STEPS`` is 60
+    and the v6f selector scores the **6 s** endpoint. Scoring a 6 s ground
+    truth against a 2 s anchor would produce a NUMBER rather than an error, so
+    :meth:`load_anchor_table` **REFUSES** any table whose requested step is not
+    the plan horizon — the same refusal
+    ``e_ag1_anchor_floor.shipped_vocab_arm`` makes, and the same one
+    ``tanitad.data.anchor_goal.anchor_endpoints`` makes on the label side.
+    ⇒ **this head cannot be run at 6 s today, and it says so instead of
+    inventing a number.**
+
+    ⛔ ADMISSIBILITY (PI 2026-08-03) is inherited unchanged from
+    :class:`GoalDistanceScorer`: the only input is ``e_g_tac``, which comes from
+    ``goal_head_tac(z_tac_p, cond=e_g_str)`` — vision-derived latents and the
+    strategic goal. No situation-classifier output in any form, no ego state at
+    inference. The anchor table is a FROZEN buffer, identical for every window,
+    so it carries zero per-window information by construction — the quantity
+    the goal-echo control (goal <- the vocabulary's centroid, MEASURED
+    13.5553 m against live arms at 0.79–9.49) exists to bound.
+    ⚠️ ``v0`` is NOT read here and nothing here depends on ``v0`` being
+    admissible — that is an OPEN PI DECISION (`V6F_PLANNER_DESIGN.md` §1.4 vs
+    `e_wc2_sigma_star.py:188`), worth a MEASURED 2.85x on this very quantity.
+    """
+
+    MODES: tuple[str, ...] = ("snap_lat", "snap_xy", "onehot")
+
+    def __init__(self, d_goal_embed: int, n_anchors: int, *,
+                 mode: str = "snap_lat", plan_horizon_s: float = HORIZON_S,
+                 n_lat_bins: int = 16):
+        super().__init__()
+        if mode not in self.MODES:
+            raise ValueError(
+                f"anchor_goal mode must be one of {self.MODES}, got {mode!r}. "
+                f"'snap_lat' is the FACTORED default the measurement "
+                f"prescribes; 'onehot' is the metric-blind CONTROL that "
+                f"E-AG2 measured +4.7502 [+3.0514, +6.3981] WORSE.")
+        if int(n_anchors) < 2:
+            raise ValueError(f"n_anchors must be >= 2, got {n_anchors}")
+        if int(n_lat_bins) < 2:
+            raise ValueError(f"n_lat_bins must be >= 2, got {n_lat_bins}")
+        self.mode = mode
+        self.n_anchors, self.n_lat_bins = int(n_anchors), int(n_lat_bins)
+        self.plan_horizon_s = float(plan_horizon_s)
+        # the free regression — the metric-aware half. Zero-init on the same
+        # discipline as GoalDistanceScorer.goal_point: the head starts at the
+        # origin so any goal it acquires is LEARNED, not handed to it by init.
+        # ⚠️ Built ONLY in the snap modes, and the classifier ONLY in "onehot":
+        # the two arms are DIFFERENT ESTIMATORS and giving each the other's
+        # parameters would leave dead weight at random init in both — the
+        # `intent_proj` defect. They are matched where it matters (identical
+        # input, ``e_g_tac``, and nothing else), which is what makes the
+        # comparison a comparison.
+        self.goal_point = (nn.Linear(int(d_goal_embed), 2)
+                           if mode != "onehot" else None)
+        if self.goal_point is not None:
+            nn.init.zeros_(self.goal_point.weight)
+            nn.init.zeros_(self.goal_point.bias)
+        self.cls = (nn.Linear(int(d_goal_embed), self.n_anchors)
+                    if mode == "onehot" else None)
+        # FROZEN GEOMETRY. Persistent: `anchor_id` is meaningless without the
+        # exact table, and a rebuilt table silently re-labels the whole corpus
+        # (§1 field 3) — so the table SHIPS WITH THE CHECKPOINT.
+        self.register_buffer("anchors", torch.zeros(self.n_anchors, 2))
+        self.register_buffer("lat_bins", torch.zeros(self.n_lat_bins))
+        self.register_buffer("table_ready", torch.zeros((), dtype=torch.bool))
+        self.register_buffer("table_horizon_s", torch.zeros(()))
+
+    # ---- the table ---------------------------------------------------------
+    @torch.no_grad()
+    def load_anchor_table(self, anchors: Tensor, horizons=None,
+                          dt: float = DT, *, step: int | None = None) -> dict:
+        """Install the frozen anchor endpoints and derive the lateral bins.
+
+        ``anchors`` is either ``[K, S, 2]`` **with** its ``horizons`` (the
+        shipped `build_refc_anchors.py` format) or a pre-reduced ``[K, 2]``
+        endpoint table, in which case ``horizons`` must be ``None`` and the
+        caller is asserting the endpoints are already at the plan horizon.
+
+        ⛔ REFUSES a horizon mismatch. Returns the provenance dict a report can
+        quote.
+        """
+        a = torch.as_tensor(anchors).float()
+        if a.ndim == 3:
+            if horizons is None:
+                raise ValueError("a [K, S, 2] table needs its `horizons` — "
+                                 "`anchors[:, -1]` silently means '2.0 s' for "
+                                 "both a 4-point and a 20-point vocabulary")
+            want = int(round(self.plan_horizon_s / float(dt))) \
+                if step is None else int(step)
+            from tanitad.data.anchor_goal import anchor_endpoints  # lazy: the
+            # tanitad.data package init pulls the corpus adapters, and this
+            # module is imported by every trainer. Same precedent as
+            # `_ensure_scripts`. Imported rather than re-implemented so the
+            # horizon refusal has ONE definition in the programme.
+            ends = anchor_endpoints(a, horizons, want, dt=float(dt))
+            got_h = want * float(dt)
+        elif a.ndim == 2 and a.shape[-1] == 2:
+            if horizons is not None:
+                raise ValueError("a [K, 2] endpoint table takes no `horizons`")
+            ends, got_h = a, self.plan_horizon_s
+        else:
+            raise ValueError(f"anchors must be [K, S, 2] or [K, 2], got "
+                             f"{tuple(a.shape)}")
+        if abs(got_h - self.plan_horizon_s) > 1e-6:
+            raise ValueError(
+                f"REFUSING an anchor table at {got_h} s against a "
+                f"{self.plan_horizon_s} s plan horizon. Every anchor "
+                f"vocabulary the programme owns stops at 2.0 s (MEASURED over "
+                f"all five banked tables) while the v6f selector scores the 6 s "
+                f"endpoint — scoring one against the other would produce a "
+                f"number rather than an error.")
+        if ends.shape[0] != self.n_anchors:
+            raise ValueError(f"this head was built for K={self.n_anchors}, the "
+                             f"table has {ends.shape[0]}")
+        self.anchors.copy_(ends)
+        # ⚠️ EVIDENCE CLASS: ESTIMATED — a DECLARED construction, not a measured
+        # optimum. The lateral bins are EQUAL-MASS quantiles of the anchor
+        # table's own lateral marginal, i.e. resolution allocated by the
+        # vocabulary's lateral density. §7.1 pre-registers E-AG4, which is the
+        # experiment that would settle whether an anisotropic construction beats
+        # the isotropic FPS one; until it runs, this is a construction and is
+        # labelled as one.
+        q = torch.linspace(0.0, 1.0, self.n_lat_bins + 1)[:-1] \
+            + 0.5 / self.n_lat_bins
+        self.lat_bins.copy_(torch.quantile(ends[:, 1], q.to(ends.dtype)))
+        self.table_ready.fill_(True)
+        self.table_horizon_s.fill_(float(got_h))
+        return {"n_anchors": int(ends.shape[0]),
+                "horizon_s": float(got_h), "n_lat_bins": self.n_lat_bins,
+                "lat_bin_centres": [float(x) for x in self.lat_bins]}
+
+    # ---- emission ----------------------------------------------------------
+    @staticmethod
+    def _straight_through(raw: Tensor, snapped: Tensor) -> Tensor:
+        """``snapped`` forward, ``raw``'s gradient backward — the whole point of
+        regress-then-snap: the estimand is quantised, the ESTIMATOR stays a
+        metric-aware regression (the half E-AG2 exonerated)."""
+        return raw + (snapped - raw).detach()
+
+    def forward(self, g_embed: Tensor) -> dict:
+        """``g_embed`` [B, d_goal_embed] -> the emitted ``ANCHOR_GOAL``.
+
+        Always: ``goal_point`` [B, 2] (the EMITTED, possibly quantised goal) and
+        ``goal_point_raw`` [B, 2] (the free regression, so the quantisation cost
+        is readable rather than inferred).
+        ``snap_lat`` adds ``lat_bin`` [B]; ``snap_xy`` and ``onehot`` add
+        ``anchor_id`` [B]; ``onehot`` adds ``cls_logits`` [B, K].
+        """
+        if g_embed.ndim != 2:
+            raise ValueError(f"g_embed must be [B, d], got "
+                             f"{tuple(g_embed.shape)}")
+        if not bool(self.table_ready):
+            raise RuntimeError(
+                "no anchor table is loaded — call load_anchor_table(). A "
+                "zero table would snap every goal to the origin and still "
+                "return a number, which is the failure mode this refusal "
+                "exists to make impossible.")
+        if self.mode == "onehot":
+            # ⛔ THE CONTROL. Its target is a one-hot `anchor_id` and its
+            # emitted point is a HARD table lookup — metric-blind by
+            # construction, which is the property being controlled for. No
+            # straight-through path is offered: adding one would quietly turn
+            # the control into a third arm.
+            logits = self.cls(g_embed.to(self.anchors.dtype))
+            k = logits.argmax(dim=-1)
+            return {"mode": self.mode, "cls_logits": logits, "anchor_id": k,
+                    "goal_point": self.anchors[k]}
+        raw = self.goal_point(g_embed.to(self.anchors.dtype))        # [B, 2]
+        out = {"goal_point_raw": raw, "mode": self.mode}
+        if self.mode == "snap_xy":
+            d = (raw[:, None, :] - self.anchors[None]).norm(dim=-1)  # [B, K]
+            k = d.argmin(dim=-1)
+            out |= {"anchor_id": k, "quant_err_m": d.gather(1, k[:, None])[:, 0],
+                    "goal_point": self._straight_through(raw, self.anchors[k])}
+            return out
+        # ⭐ snap_lat — the FACTORED default: the LATERAL axis is the only one
+        # quantised; the LONGITUDINAL axis stays a continuous progress arg.
+        j = (raw[:, 1:2] - self.lat_bins[None]).abs().argmin(dim=-1)  # [B]
+        y_q = self.lat_bins[j]
+        out |= {"lat_bin": j,
+                "quant_err_m": (raw[:, 1] - y_q).abs(),
+                "goal_point": torch.stack(
+                    [raw[:, 0], self._straight_through(raw[:, 1], y_q)],
+                    dim=-1)}
+        return out
 
 
 # ============================================================================
@@ -882,6 +1407,49 @@ class V6Config:
     #: Consumed by ``scripts/train_v6_staged.py``; holds no parameters.
     plan_wta_eps: float = 0.0
 
+    # ---- GOAL-HEAD STRUCTURE (2026-08-16, E-AG1/E-AG2 §6.4) ----------------
+    # ⛔ ALL FOUR DEFAULT OFF, and the default build's state_dict is proved
+    # BYTE-IDENTICAL to the pre-change one, per tensor with ``torch.equal``,
+    # in ``tests/test_v6_factored_goal.py``. v6F S-W is training from a
+    # checkpoint of exactly this architecture; a broken strict resume kills it.
+    #: ⭐ FACTOR `g_tac` LAT x LON, the same factoring `a_tac` already carries.
+    #: Builds ``goal_head_tac_lat`` / ``goal_head_tac_lon`` over the two
+    #: partitioned vocabularies and composes ``e_g_tac`` from the PAIR — so
+    #: `ANCHOR_GOAL` (lateral) AND `SPEED_BAND` (longitudinal) are emitted
+    #: together by construction, which one 9-way softmax cannot do.
+    #: ⚠️ The MIXED ``goal_head_tac`` is KEPT and still emitted: it is the
+    #: CONTROL for the factored arm, and removing it would break the live
+    #: resume. Only the DOWNLINK moves to the factored pair.
+    goal_factored: bool = False
+    #: Independent per-token gates on the UN-factored head (§2.3's second
+    #: representational limit). Holds no parameters — the same ``type_head``
+    #: logits read through a sigmoid instead of a softmax.
+    goal_multilabel: bool = False
+    #: ⭐ The TYPED CATEGORICAL arg channel. Without it 7 of the 9 `g_tac`
+    #: tokens are inexpressible even given perfect labels, because their args
+    #: are indices and both ends of the implemented path are PHYSICAL UNITS.
+    goal_cat_args: bool = False
+    #: ⭐ ``ANCHOR_GOAL`` emission. ``"none"`` builds nothing.
+    #: ``"snap_lat"`` = REGRESS-THEN-SNAP, factored — quantise the LATERAL axis
+    #: only, keep the LONGITUDINAL continuous (the §6.4 prescription).
+    #: ``"snap_xy"`` = regress then snap to the nearest 2-D anchor (MEASURED
+    #: FREE: Δ −0.0002 [−0.1031, +0.0703] vs the free ridge).
+    #: ⛔ ``"onehot"`` = the K-way one-hot CLASSIFIER — the metric-blind CONTROL
+    #: E-AG2 measured **+4.7502 [+3.0514, +6.3981] WORSE**, kept reachable
+    #: because a comparison with no control is unattributable (C6).
+    #: ⚠️ It REFUSES to run until an anchor table at the PLAN HORIZON is
+    #: loaded, and no such table exists: every banked vocabulary stops at 2.0 s.
+    anchor_goal: str = "none"
+    #: K of the anchor vocabulary (the shipped `refc_anchors_full_REBUILD.pt`).
+    n_anchors: int = 256
+    #: resolution of the FACTORED lateral sub-vocabulary (``"snap_lat"``).
+    n_lat_bins: int = 16
+    #: size of the per-window agent-slot vocabulary the four agent-referencing
+    #: tokens index (`GAP_TARGET`, `YIELD_AT`, `WAIT_FOR_ONCOMING`,
+    #: `EVADE_IN_CORRIDOR`). ⚠️ `TRAFFIC_LIGHT_REACT`'s slot can NEVER come from
+    #: `obstacle.offline` — 10 dynamic classes, zero infrastructure.
+    n_agent_slots: int = 8
+
     # ---- vocabulary --------------------------------------------------------
     d_goal_embed: int = 128
 
@@ -960,6 +1528,26 @@ class V6Config:
         if not 0.0 <= self.plan_wta_eps <= 1.0:
             raise ValueError(f"plan_wta_eps must be in [0, 1], got "
                              f"{self.plan_wta_eps}")
+        if self.anchor_goal not in ("none", *AnchorGoalHead.MODES):
+            raise ValueError(
+                f"anchor_goal must be none|{'|'.join(AnchorGoalHead.MODES)}, "
+                f"got {self.anchor_goal!r}. 'snap_lat' is the FACTORED default "
+                f"the measurement prescribes (quantisation is FREE: Δ −0.0002 "
+                f"[−0.1031, +0.0703]); 'onehot' is the metric-blind CONTROL "
+                f"E-AG2 measured +4.7502 [+3.0514, +6.3981] WORSE.")
+        if self.anchor_goal != "none" and not self.goal_cat_args:
+            raise ValueError(
+                "anchor_goal needs goal_cat_args=True. `anchor_id` / `lat_bin` "
+                "are CATEGORICAL and the physical-units arg slots cannot hold "
+                "them (§2.3's arg-TYPE gap) — an emitted id that reaches "
+                "nothing downstream is a head wearing an emission's name, and "
+                "writing it into a metres slot is the type error this channel "
+                "exists to remove.")
+        for nm, v in (("n_anchors", self.n_anchors),
+                      ("n_lat_bins", self.n_lat_bins),
+                      ("n_agent_slots", self.n_agent_slots)):
+            if int(v) < 2:
+                raise ValueError(f"{nm} must be >= 2, got {v}")
         if self.uplink not in ("stopgrad", "ema"):
             raise ValueError(f"uplink must be stopgrad|ema, got {self.uplink!r}")
         if not 0.0 < self.ema_decay < 1.0:
@@ -1344,6 +1932,57 @@ class V6Stack(nn.Module):
                 cfg.d_goal_embed, cfg.n_candidates,
                 hidden=cfg.selector_mlp_hidden)
 
+        # ---- GOAL-HEAD STRUCTURE (2026-08-16) — built LAST, only when asked --
+        # ⛔ EVERYTHING BELOW OBEYS THE SAME RULE AS ``cand_score`` AND FOR THE
+        # SAME REASON: it is constructed at the very END of __init__ and ONLY
+        # when its flag is set, so the DEFAULT path draws NO random numbers,
+        # creates NO state_dict key, and every earlier module's initialisation
+        # is bit-for-bit what it was before these flags existed. That is what
+        # makes the byte-identity proof in tests/test_v6_factored_goal.py TOTAL
+        # rather than approximate — and v6F S-W is resuming from a checkpoint of
+        # exactly this architecture RIGHT NOW.
+        self.goal_head_tac_lat = self.goal_head_tac_lon = None
+        self.vocab_tac_lat = self.vocab_tac_lon = None
+        self.cond_op_lat = self.cond_op_lon = None
+        self.anchor_head = None
+        if cfg.goal_factored:
+            # ⭐ the SAME idiom `a_tac` already uses (``act_head_lat`` /
+            # ``act_head_lon``): two partitioned vocabularies, two heads, one
+            # per axis — not a second idiom for the same job.
+            self.vocab_tac_lat = GoalVocabulary(TACTICAL_GOAL_TOKENS_LAT,
+                                                cfg.d_goal_embed)
+            self.vocab_tac_lon = GoalVocabulary(TACTICAL_GOAL_TOKENS_LON,
+                                                cfg.d_goal_embed)
+            self.goal_head_tac_lat = GoalHead(self.vocab_tac_lat, cfg.d_tac,
+                                              d_cond=cfg.d_goal_embed)
+            self.goal_head_tac_lon = GoalHead(self.vocab_tac_lon, cfg.d_tac,
+                                              d_cond=cfg.d_goal_embed)
+            # ONE vocabulary, two views (§5): the conditioners below hold the
+            # SAME objects the heads above hold. Both are Identity projections
+            # (d_out == d_embed), so the factoring's parameter cost is the two
+            # heads and the two tables and NOTHING hidden in the seam.
+            self.cond_op_lat = GoalConditioner(self.vocab_tac_lat,
+                                               cfg.d_goal_embed)
+            self.cond_op_lon = GoalConditioner(self.vocab_tac_lon,
+                                               cfg.d_goal_embed)
+        if cfg.goal_cat_args:
+            cards = (cfg.n_anchors, cfg.n_lat_bins, cfg.n_agent_slots,
+                     len(STOP_REASONS), len(LIGHT_STATES))
+            for v in (self.vocab_tac, self.vocab_tac_lat, self.vocab_tac_lon):
+                if v is not None:
+                    v.attach_cat_channel(cards)
+            for h in (self.goal_head_tac, self.goal_head_tac_lat,
+                      self.goal_head_tac_lon):
+                if h is not None:
+                    h.attach_cat_head()
+        if cfg.goal_multilabel:
+            # holds no parameters — the same logits, read a second way
+            self.goal_head_tac.enable_multilabel(True)
+        if cfg.anchor_goal != "none":
+            self.anchor_head = AnchorGoalHead(
+                cfg.d_goal_embed, cfg.n_anchors, mode=cfg.anchor_goal,
+                plan_horizon_s=cfg.horizon_s, n_lat_bins=cfg.n_lat_bins)
+
     # -- grouping ------------------------------------------------------------
     #: prefix -> group. Longest matching prefix wins, so ``predictor_tac``
     #: cannot be swallowed by ``predictor_op``'s entry.
@@ -1371,12 +2010,23 @@ class V6Stack(nn.Module):
         ("act_head_lat.", "layer_tac"), ("act_head_lon.", "layer_tac"),
         ("vocab_tac.", "layer_tac"), ("vocab_a_lat.", "layer_tac"),
         ("vocab_a_lon.", "layer_tac"), ("ema_adapter_tac.", "layer_tac"),
+        # the FACTORED g_tac pair sits in the SAME group as the mixed head it
+        # replaces — the factoring is a shape change, not a stage change, and a
+        # head that trained in a different stage would not be its control.
+        ("goal_head_tac_lat.", "layer_tac"), ("goal_head_tac_lon.", "layer_tac"),
+        ("vocab_tac_lat.", "layer_tac"), ("vocab_tac_lon.", "layer_tac"),
         ("adapter_str.", "layer_str"), ("predictor_str.", "layer_str"),
         ("goal_head_str.", "layer_str"), ("act_head_str.", "layer_str"),
         ("vocab_str.", "layer_str"), ("vocab_a_str.", "layer_str"),
         ("ema_adapter_str.", "layer_str"),
         ("cond_op.", "planner"), ("plan_proj.", "planner"),
+        ("cond_op_lat.", "planner"), ("cond_op_lon.", "planner"),
         ("cand_queries.", "planner"), ("emission.", "planner"),
+        # ⭐ ANCHOR_GOAL is a PLANNER module for the same reason the selector is:
+        # it reads e_g_tac and decodes the goal POINT the selection consumes, so
+        # it must be retrained on the trunk it consumes (registry §1.14 — the
+        # frozen selector read 0.7933 -> 4.4159 when the trunk moved under it).
+        ("anchor_head.", "planner"),
         # SELECTION is a PLANNER module: it is trained in S-T on the trunk it
         # consumes, never in S-W. "You cannot repair a trunk and keep its
         # planner" (registry §1.14) applies to the selector first of all — the
@@ -1516,6 +2166,30 @@ class V6Stack(nn.Module):
         if self.ema_adapter_str is not None:
             self.ema_adapter_str.update(self.adapter_str)
 
+    @staticmethod
+    def _encode_goal(cond: GoalConditioner, head: dict) -> Tensor:
+        """Turn a :class:`GoalHead` output into the embedding the layer below
+        consumes — the ONE place the token view and the arg channels are
+        selected, so a new channel cannot reach one seam and miss another.
+
+        * MULTI-LABEL: ``gates`` (independent per-token) when the head emits
+          them, otherwise ``probs``. Both are ``[B, n_tokens]`` floats and
+          travel the SAME ``probs @ table.weight`` path, so a SET of goals is a
+          sum of token embeddings and needs no second convention.
+        * CATEGORICAL args: passed with the mask implied by WHICH token was
+          emitted, so a slot the emitted token does not use contributes exactly
+          zero (§2: "Unset = unconstrained").
+
+        ⚠️ With neither channel on this is exactly ``cond(probs, args)`` — the
+        pre-2026-08-16 call, unchanged, which is what keeps the default build's
+        forward bit-for-bit what it was.
+        """
+        tok = head.get("gates", head["probs"])
+        if "cat_probs" not in head:
+            return cond(tok, head["args"])
+        return cond(tok, head["args"], cat=head["cat_probs"],
+                    cat_mask=cond.vocab.cat_mask_from_tokens(tok))
+
     def emit(self, z_op: Tensor, g_tac_embed: Tensor, v0: Tensor) -> dict:
         """THE 6 s EMISSION (§4b). ``z_op`` [B, d_op], ``g_tac_embed``
         [B, d_goal_embed], ``v0`` [B] ->
@@ -1547,6 +2221,12 @@ class V6Stack(nn.Module):
         out = {"a": a_ctl, "kappa": kappa,
                "controls": torch.stack([a_ctl, kappa], dim=-1),
                "waypoints": wp, "feat": feat}
+        if self.anchor_head is not None:
+            # ⭐ the STRUCTURED goal point. Emitted BEFORE selection because the
+            # selection consumes it — and computed from ``g_tac_embed`` alone,
+            # the identical input the free decode reads, so the two are matched.
+            out |= {f"anchor_{k}": v
+                    for k, v in self.anchor_head(g_tac_embed).items()}
         if self.cand_score is not None:
             # ⚠️ the scorer reads the EMITTED trajectory, i.e. the RANKED
             # OBJECT itself. E-S1-0's dose-response is the sharpest statement in
@@ -1555,8 +2235,17 @@ class V6Stack(nn.Module):
             # readout selects at 1.3100, a 2.8x penalty purely for scoring
             # off-distribution. Reproduced 2026-08-15 on the banked XL fan:
             # shipped 0.4714 vs refined 1.3901 (2.95x).
+            # ⚠️ the ANCHOR goal point overrides the selector's own free decode
+            # ONLY for the distance rule — the "mlp" CAPACITY CONTROL is left
+            # information-MATCHED on ``e_g_tac`` and NOT handed a ready-made
+            # goal point, because handing it one would make it an information
+            # control and its result would stop speaking to capacity (§5.3).
+            kw = {}
+            if isinstance(self.cand_score, GoalDistanceScorer) \
+                    and "anchor_goal_point" in out:
+                kw["goal_point"] = out["anchor_goal_point"]
             out |= {f"sel_{k}": v
-                    for k, v in self.cand_score(wp, g_tac_embed).items()}
+                    for k, v in self.cand_score(wp, g_tac_embed, **kw).items()}
         return out
 
     def forward(self, frames: Tensor, actions: Tensor, v0: Tensor, *,
@@ -1613,7 +2302,23 @@ class V6Stack(nn.Module):
         g_tac = self.goal_head_tac(z_tac_p, cond=e_g_str)
         a_lat = self.act_head_lat(z_tac_p)
         a_lon = self.act_head_lon(z_tac_p)
-        e_g_tac = self.cond_op(g_tac["probs"], g_tac["args"])
+        # ⭐ THE FACTORED g_tac PAIR. Both halves read exactly what the mixed
+        # head reads (``z_tac_p`` and ``e_g_str``) — the factoring changes the
+        # DECISION's shape, not its information, so a difference cannot be an
+        # information effect. The mixed head is still emitted: it is this arm's
+        # CONTROL, and a comparison with no control is unattributable (C6).
+        g_tac_lat = g_tac_lon = None
+        if self.goal_head_tac_lat is not None:
+            g_tac_lat = self.goal_head_tac_lat(z_tac_p, cond=e_g_str)
+            g_tac_lon = self.goal_head_tac_lon(z_tac_p, cond=e_g_str)
+            # the MEAN, not the sum: a factored embedding twice the mixed one's
+            # scale would change the conditioning magnitude the operative FiLM
+            # sees, and a scale change between an arm and its control is a
+            # confound wearing an architecture's name.
+            e_g_tac = 0.5 * (self._encode_goal(self.cond_op_lat, g_tac_lat)
+                             + self._encode_goal(self.cond_op_lon, g_tac_lon))
+        else:
+            e_g_tac = self._encode_goal(self.cond_op, g_tac)
         e_a_tac = torch.cat(
             [self.vocab_a_lat.encode(a_lat["probs"], a_lat["args"]),
              self.vocab_a_lon.encode(a_lon["probs"], a_lon["args"])], dim=-1)
@@ -1650,14 +2355,33 @@ class V6Stack(nn.Module):
         # The selector is planner-side and MUST be probed by X3 like every other
         # planner output — a head added without appending to the declaration is
         # exactly what test_planner_surface_is_total exists to catch.
-        sel_side = [plan[k] for k in ("sel_score", "sel_goal_point")
+        sel_side = [plan[k] for k in
+                    ("sel_score", "sel_goal_point", "sel_goal_point_free",
+                     # ⭐ the ANCHOR_GOAL head is planner-group, so every one of
+                     # its parameters must be REACHABLE from this declaration or
+                     # test_planner_surface_is_total fails — which is exactly
+                     # the guard that catches a head added without declaring it.
+                     # ``anchor_cls_logits`` is what makes the one-hot CONTROL
+                     # reachable: its emitted point is a HARD table lookup and
+                     # carries no gradient at all, by design.
+                     "anchor_goal_point", "anchor_goal_point_raw",
+                     "anchor_cls_logits")
                     if k in plan]
+        # the FACTORED pair is planner-side for the same reason the mixed head
+        # is: it is a goal head, and X3 forbids any goal head reaching an
+        # encoder.
+        fact_side = [t for h in (g_tac_lat, g_tac_lon) if h is not None
+                     for t in (h["logits"], h["args"])]
+        cat_side = [h["cat_logits"] for h in (g_str, a_str, g_tac, g_tac_lat,
+                                              g_tac_lon, a_lat, a_lon)
+                    if h is not None and "cat_logits" in h]
 
         return {
             "z_op_win": z_op_win, "z_op": z_op, "z_plan": z_plan,
             "z_tac": z_tac, "z_tac_target": z_tac_tgt,
             "z_str": z_str, "z_str_target": z_str_tgt,
             "g_str": g_str, "a_str": a_str, "g_tac": g_tac,
+            "g_tac_lat": g_tac_lat, "g_tac_lon": g_tac_lon,
             "a_lat": a_lat, "a_lon": a_lon,
             "e_g_str": e_g_str, "e_g_tac": e_g_tac,
             "zhat_op": zh_op, "zhat_op_seam": zh_op_seam,
@@ -1670,7 +2394,7 @@ class V6Stack(nn.Module):
                 a_str["args"], g_tac["logits"], g_tac["args"],
                 a_lat["logits"], a_lon["logits"],
                 plan["feat"], plan["a"], plan["kappa"], plan["waypoints"],
-                *sel_side,
+                *sel_side, *fact_side, *cat_side,
                 # the seam: detached-trunk, goal-conditioned — reaches
                 # intent_proj and nothing in the encoder (X3-safe by the
                 # .detach() above, and the probe now VERIFIES that)

@@ -1,5 +1,20 @@
 # Pod migration runbook — moving off the faulty pod2
 
+> ## ⛔ HISTORICAL — EVERY HOST IN THIS DOCUMENT IS RELEASED. (banner added 2026-08-16)
+> pod2 (`1qkb7dfkjvxg0h`, `69.30.85.123:22091`) and pod4 (`v9ni8rpan3qyn3`, `69.30.85.48:22192`)
+> were both released 2026-08-15, along with the rest of the RunPod fleet. **The `rsync -e "ssh -p
+> 22091" root@69.30.85.123:…` lines in §4 point at a machine that no longer answers**, and the
+> ⛔ block below about *"pod4 … the PI is keeping it, do not touch it"* is an instruction about a
+> host that is gone. The run it protects (`flagship-v1arch-v2bal-30k`) is two model generations back.
+> ⇒ The live fleet is **Thor + the dev box**; the current runbook is
+> `…/incoming/2026-08-07-hierarchical-wm-redesign/V6_GO_PACKAGE.md` §2.
+>
+> ⚠️ **Keep §3 and §5.** §3's `pgrep -f` self-match warning and §5's *verify by actually loading*
+> rule are doctrine, not host facts, and both were re-confirmed 2026-08-16. Every trainer flag in
+> §6.4 was also re-verified and is **CURRENT** — the geometry flags live in
+> `stack/tanitad/geometry.py::add_geometry_args`, not in the trainer's own `add_argument` calls, so
+> a single-location grep reports them missing. *(Absence found at one location is not absence.)*
+
 **Why now:** RunPod flags *"a critical error on this machine"* on pod2 (`pretty_white_lark-migration`,
 `1qkb7dfkjvxg0h`, 69.30.85.123:22091) and schedules **maintenance 2026-08-06 21:00 → 2026-08-08 21:00
 MESZ** with the server down. pod2 also has **`oom_kill 6`** on its 50 GB container cap.

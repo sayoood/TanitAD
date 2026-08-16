@@ -1,5 +1,22 @@
 # Pod access from a cloud session — what is actually blocked, and what to do
 
+> ## ⛔ THE PODS ARE GONE — but read the ⚠️ key note before filing this away. (2026-08-16)
+> Both endpoint rows are dead machines: pod4 `69.30.85.48:22192` and tanitad-new
+> `69.30.85.106:22039`, with their `POD4_PORT` / `PODNEW_PORT` overrides. The copy-paste Option-A
+> block still names `RUN_DIR=/workspace/experiments/flagship-v1arch-v2bal-30k`, two model
+> generations back. The whole RunPod fleet was released 2026-08-15; the live fleet is
+> **Thor + the dev box**.
+>
+> ⭐ **Keep the MEASURED core.** *"All non-443 TCP silently dropped, with `github.com:22` as the
+> control"* is doctrine about the cloud-session gateway, not about any particular pod, and it is
+> still the reason a cloud session cannot reach a training box directly.
+>
+> ⚠️ **OPEN, and a PI call: `TANITAD_POD_SSH_KEY`.** This document instructs installing a live SSH
+> **private key** as a repo secret behind a `pods` environment, and `.github/workflows/pod-exec.yml`
+> is still checked in. The hosts it unlocks no longer exist, so the secret now protects nothing and
+> only carries risk. ⇒ **Rotate/remove the secret and retire `pod-exec.yml`** — flagged here rather
+> than done, because credentials and workflow retirement are the PI's.
+
 **MEASURED 2026-08-04 from the Claude Code cloud session** (probes run in-session;
 the gateway's own `__agentproxy/status` failure log is quoted where it recorded one).
 Evidence class: **MEASURED**. Supersedes the INHERITED claim in the resumption handoff.
