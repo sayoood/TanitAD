@@ -3925,3 +3925,48 @@ Coverage of the finite-n estimand, 60 datasets, nominal 0.95: percentile cluster
 rank-deficient, so it is biased **down** for a RANK functional. ⇒ **Narrow, evidence-backed
 carve-out from the paired episode-cluster-bootstrap rule FOR RANK ESTIMANDS ONLY — it does not
 generalise, and any other estimand needs its own coverage check first.**
+
+---
+
+## 2026-08-16 — "the 115-clip SAM3 gap is CLOSED" — RETRACTED. 115 records, ZERO detections
+
+*(Next free number re-grepped immediately before appending.)*
+
+I verified the first headless Colab production run far-side and reported the gap closed. **It is not
+closed.** MEASURED over 25 randomly sampled clips (seed 0): **total detections 0, clips with zero
+25/25**, every concept zero. Each record carries its own cause, per concept, per frame:
+`RuntimeError: mat1 and mat2 must have the same dtype, but got BFloat16 and Float`.
+
+SAM3 ran, raised on every concept, and the pipeline **faithfully recorded the failure**. Files real,
+schema valid, `n_frames_run` 5–7 exactly as claimed, counts exactly matching the fixture — and the
+content is 115 clips of nothing.
+
+**What I checked, and why it all passed:** record count vs fixture (115/115) · zero-byte scan (0) ·
+3-clip round-trip asserting `clip_id == filename` and that `frames` was populated. **I never asked
+whether a single detection existed.** The probe needed was one expression, `n_det_total > 0`, and the
+error string was inside the payload I had already downloaded and printed the *keys* of.
+
+| # | class | recognition signal |
+|---|---|---|
+| **C77** | **A pipeline that records its own failure faithfully passes every structural check** | the artifact is well-formed, complete, correctly named, correctly counted — and its payload is an error census. Signal: verification enumerated *containers and identity* but never evaluated the *quantity the artifact exists to produce* |
+
+⇒ **This is C18 in the reviewer's seat.** C18 is "a defect found by a probe is bounded by that
+probe's granularity". Here the probe was at the right scope (far side, records not files — I even
+said so) and the wrong RESOLUTION (existence, not content).
+
+⚠️ **And it is the aug120 gap itself, repeated one layer up, by me, on the run that was fixing it.**
+That gap was *"25 sam3 files were all PRESENT but each held exactly 4 records"*. I then verified its
+repair by counting files and identities. **The failure mode I was correcting is the one I used to
+declare it corrected.**
+
+⇒ **RULE: for any artifact that exists to PRODUCE something, the completion criterion is a
+non-trivial count of the produced thing — never the presence, naming, or size of the container.**
+For perception: `n_det_total > 0`, per-concept totals, and an **error-string census** (an `error` key
+inside a payload is a first-class signal, not decoration). For labels: non-default token counts. For
+evals: n per family. Concretely, the perception criterion is now *"detections exist AND are visible
+on video"* — a renderer that draws nothing is itself the failing test.
+
+⚠️ **Second, smaller retraction inside the same report:** I read `n_frames_run` 5–7 as evidence the
+re-run "filled the hole with the coverage the stage should have produced" — a satisfying inversion of
+the original `--n`-defaults-to-4 defect. It shows only how many frames were **ATTEMPTED**.
+**Attempts are not coverage**, and a number that flatters the story deserves more scrutiny, not less.

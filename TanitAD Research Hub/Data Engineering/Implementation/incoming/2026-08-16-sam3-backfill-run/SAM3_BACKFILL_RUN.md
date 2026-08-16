@@ -1,8 +1,53 @@
 # SAM3 115-clip backfill — first headless Colab CLI production run
 
-**Status: ✅ COMPLETE — far-side verified 2026-08-16 by the orchestrator after the
-run agent hit a session limit mid-write. §3b/§4/§5 below are MEASURED from the
-far side and the live CLI, not from the agent's report.**
+**Status: ⛔ RETRACTED 2026-08-16 — THE RECORDS ARE EMPTY. The run banked 115
+well-formed records containing ZERO detections; SAM3 threw a dtype error on every
+concept of every frame. The "gap closed" verdict below (§4) is WITHDRAWN. See §0.**
+
+## 0. ⛔ RETRACTION — I verified the container, not the content
+
+MEASURED over 25 randomly sampled backfilled clips (seed 0):
+
+```
+total detections   0
+clips with ZERO   25 / 25
+per-concept       car 0 · truck 0 · bus 0 · pedestrian 0 · cyclist 0
+                  · traffic light 0 · traffic sign 0
+```
+
+and every record carries its own cause, per concept, per frame:
+
+```
+det: [{"concept": "car",
+       "error": "RuntimeError: mat1 and mat2 must have the same dtype,
+                 but got BFloat16 and Float"}, ...]
+```
+
+⇒ **SAM3 ran, raised on every concept, and the pipeline faithfully recorded the
+failure.** The files are real, the schema is valid, `n_frames_run` is 5–7 as
+claimed, the counts are right — and the content is 115 clips of nothing.
+
+⚠️ **WHAT I DID WRONG, precisely.** I checked: record count vs fixture (115/115),
+zero-byte scan (0), and a 3-clip round-trip asserting `clip_id == filename` and
+that `frames` was populated. All passed. **I never checked whether a single
+detection existed.** The needed probe was one expression — `n_det_total > 0` —
+and the error string was sitting in the payload I had already downloaded.
+
+⇒ This is **C18** (a defect scoped by the probe that found it) in the reviewer's
+seat rather than the pipeline's: right scope, wrong resolution. It is also
+exactly the failure the aug120 gap itself was made of — *"25 sam3 files were all
+PRESENT but each held exactly 4 records"* — repeated one layer up, by me, on the
+very run that was fixing it.
+
+⇒ **THE COMPLETION CRITERION IS CHANGED** and this is the durable fix: a
+perception backfill is complete when **detections exist and are visible on
+video**, never when files exist. `n_det_total`, per-concept totals, and an
+error-string census are now mandatory in §4 of any future run report.
+
+⚠️ **AND THE `--n` INFERENCE IN §3b IS VOID**: I read `n_frames_run` 5–7 as
+evidence the re-run "filled the hole with the coverage the stage should have
+produced". It only ever showed how many frames were ATTEMPTED. Attempts are not
+coverage.
 
 | | |
 |---|---|
