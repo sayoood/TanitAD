@@ -98,30 +98,40 @@ def append_ego(aw, fa, poses, last, speed_input, yaw_input, dyn_input, device):
     return aw, fa
 
 
-def _man_gt(poses, last, horizon: int = None):
+def _man_gt(poses, last, horizon: int = None, labels_v2: bool = False):
     """GT manoeuvre class for each window, from the ego's OWN FUTURE poses.
 
     ⚠️ LABELS MAY USE EGO; INFERENCE IS VISION-ONLY (binding, 2026-08-03). This
     is a LABEL, computed offline from future kinematics, so privileged signals
     are fine here — the guard applies to what the model is FED, not to how the
-    target is derived. It re-uses ``refb_labels.classify_maneuver`` rather than
-    re-deriving the rule, so the eval label and the training label cannot drift.
+    target is derived. It re-uses ``refb_labels`` rather than re-deriving the
+    rule, so the eval label and the training label cannot drift.
+
+    ⛔ ``labels_v2`` MUST be the arm's own ``cfg.v2_labels``
+    (:func:`taniteval.loaders.resolve_labels_v2`). Until 2026-08-17 this
+    hardcoded the v1 net-yaw classifier, exactly as ``hierarchy.py:592`` did, so
+    a ``--v2`` arm's TACTICAL family would have been scored against labels its
+    head never saw. It stays defaulted to v1 only because every arm scored
+    through this path so far is v1-labelled — a v2 arm MUST pass the flag.
 
     ``poses`` [T, 4] (x, y, yaw, v) · ``last`` [B] index of each window's final
-    frame. The label compares frame ``last`` with ``last + horizon``; windows
+    frame. The label reads frame ``last`` through ``last + horizon``; windows
     whose future is short are clamped to the last available frame, which is the
     same degradation ``maneuver_labels`` applies at the tail of an episode.
     """
     h = int(getattr(rl, "LABEL_HORIZON", 20) if horizon is None else horizon)
-    t1 = torch.clamp(last + h, max=poses.shape[0] - 1)
-    p0, p1 = poses[last], poses[t1]
-    return rl.classify_maneuver(p0[:, 2], p1[:, 2], p0[:, 3], p1[:, 3]).cpu()
+    last = torch.as_tensor(last).to(poses.device).long()
+    idx = torch.clamp(last[:, None] + torch.arange(1, h + 1, device=poses.device
+                                                   )[None, :],
+                      max=poses.shape[0] - 1)                    # [B, h]
+    return rl.window_maneuver_labels_for(poses[last], poses[idx], horizon=h,
+                                         v2=bool(labels_v2)).cpu()
 
 
 @torch.no_grad()
 def collect(model, step_readout, episodes, device, window=8, fwd_k=K_MAX,
             stride=8, batch=8, speed_input=False, yaw_input=False,
-            dyn_input=False, decision_fn=None):
+            dyn_input=False, decision_fn=None, labels_v2=False):
     """Predict WP_STEPS waypoints for every window of every episode.
 
     Returns dict of tensors: pred/gt/cv [N, 4, 2] + eid/speed/head_deg [N],
@@ -214,7 +224,7 @@ def collect(model, step_readout, episodes, device, window=8, fwd_k=K_MAX,
                     # of the trajectory (labels MAY use ego; only INFERENCE is
                     # vision-only), computed here so pred and label are on
                     # EXACTLY the same windows and cannot drift apart.
-                    MAN_G.append(_man_gt(ep.poses, last))
+                    MAN_G.append(_man_gt(ep.poses, last, labels_v2=labels_v2))
     # PC2 record. NON-strict: this block is a legitimate WM-fidelity diagnostic
     # and must stay runnable — what it may not do is be quoted as a hierarchy
     # (or a driving) number. `pc2_pass` will be False here BY CONSTRUCTION.

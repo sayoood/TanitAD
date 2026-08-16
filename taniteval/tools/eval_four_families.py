@@ -172,7 +172,10 @@ def main():
         t0 = time.time()
         win = rollout.collect(model, step_readout, eps, a.device,
                               stride=a.stride, batch=a.batch,
-                              speed_input=a.speed_input)
+                              speed_input=a.speed_input,
+                              # inert without a decision_fn, but the arm's label
+                              # family must never be inherited from a default
+                              labels_v2=bool(h["labels_v2"]))
         _p(f"[collect] {win['pred'].shape[0]} windows in {time.time()-t0:.0f}s")
         if a.windows_out:
             rollout.save_windows(win, a.windows_out)
@@ -184,9 +187,16 @@ def main():
             hier = hierarchy.run(model, step_readout, eps, a.device,
                                  speed_input=a.speed_input, max_eps=len(eps),
                                  stride=a.stride, batch=max(a.batch, 16),
-                                 n_boot=a.n_boot)
+                                 n_boot=a.n_boot,
+                                 # ⛔ the arm's OWN cfg.v2_labels, read from the
+                                 # run config the loader already rebuilt from.
+                                 # Without --run-config a `--v2` arm resolves to
+                                 # v1 and its maneuver_acc is scored against
+                                 # labels the head never saw (fixed 2026-08-17).
+                                 labels_v2=bool(h["labels_v2"]))
             _p(f"[hierarchy] {hier.get('n_windows')} windows in "
-               f"{time.time()-t0:.0f}s  skipped={hier.get('skipped')}")
+               f"{time.time()-t0:.0f}s  skipped={hier.get('skipped')}  "
+               f"maneuver_labels={'v2' if h['labels_v2'] else 'v1'}")
 
     # ---- the lead block: the distance-keeping half of LONGITUDINAL ---------- #
     if a.lead:

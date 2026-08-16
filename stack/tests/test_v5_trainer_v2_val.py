@@ -822,11 +822,27 @@ def test_train_flagship4b_is_untouched_by_this_change():
     behind v1, v2corpus, RR-20/RR-CTL and v1arch — arms whose weights are published and whose
     numbers are quoted in ``MODEL_REGISTRY.md``. A silent edit here changes what those names mean.
 
-    **Why the hash moved:** ``_preflight_banner`` was added — the DATA-vs-ARCHITECTURE launch
-    banner. It is the fix for the mistake that produced ``flagship-v2corpus-30k``: ``--v2-cache``
-    (a DATA flag) and ``--v2`` (a ten-lever ARCHITECTURE pack that also forces ``rollout_k=12``)
-    were both passed to a run intended as a corpus experiment. The banner is **print + record
-    only** — it mutates no config, and it appends ``launch_axes`` to ``config.json``.
+    **Why the hash moved (2026-08-02):** ``_preflight_banner`` was added — the DATA-vs-ARCHITECTURE
+    launch banner. It is the fix for the mistake that produced ``flagship-v2corpus-30k``:
+    ``--v2-cache`` (a DATA flag) and ``--v2`` (a ten-lever ARCHITECTURE pack that also forces
+    ``rollout_k=12``) were both passed to a run intended as a corpus experiment. The banner is
+    **print + record only** — it mutates no config, and it appends ``launch_axes`` to
+    ``config.json``.
+
+    **Why the hash moved again (2026-08-17) — DELIBERATE, AND BEHAVIOUR-PRESERVING.**
+    ``FlagshipWindowDataset.__getitem__``'s ``if self.labels_v2: … else: …`` manoeuvre-label
+    branch was replaced by the single call ``refb_labels.window_maneuver_labels_for(…,
+    v2=self.labels_v2)``. Nothing about WHICH labeler runs changed — what changed is that the
+    mapping now exists in ONE place. It had to, because ``taniteval/hierarchy.py:592`` carried the
+    second, WRONG copy: it called ``classify_maneuver`` unconditionally, so every ``--v2`` arm's
+    ``seam_ctx_to_tactical.maneuver_acc`` was scored against v1 labels its head never saw.
+
+    ⭐ **The edit is proven inert for training**, so no published arm's weights or targets can
+    move: over 2000 random (pose_last, future_poses, horizon) draws the new call is
+    **bit-identical** to the old expression on BOTH branches (0/2000 mismatches each), and
+    ``tests/test_labels_v2_wiring.py`` — which asserts the emitted ``maneuver_label`` against
+    direct ``refb_labels`` calls on both settings — is unchanged and green. No arm was mid-run on
+    this trainer (the live 30k is ``train_v6_staged.py``).
 
     ⇒ When this fails again: confirm the edit is intended, confirm no arm is mid-run on this
     trainer, then update the pin **deliberately** — do not silently re-baseline it.
@@ -847,7 +863,7 @@ def test_train_flagship4b_is_untouched_by_this_change():
     # now means the same thing on every platform.
     src = p.read_bytes().replace(b"\r\n", b"\n")
     assert hashlib.sha256(src).hexdigest() == \
-        "702a683bb21dee3eb319d1f4869aac36bd333266612c442d074565a60d9cd4b3", (
+        "371d878622f74a79e8bf62c5896f0acdaf41ff8c259e82e505983ac69b8f1df1", (
             "train_flagship4b.py changed. This trainer produced v1, v2corpus, RR-20/RR-CTL "
             "and v1arch — published weights and registry numbers depend on it. Confirm the "
             "edit is intended AND that no arm is mid-run on it, then update this pin "

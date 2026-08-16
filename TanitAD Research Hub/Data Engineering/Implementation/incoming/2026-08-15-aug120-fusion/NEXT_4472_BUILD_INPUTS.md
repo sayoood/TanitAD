@@ -58,15 +58,44 @@ that would repeat 22× and be 22× more expensive to redo. *(MEASURED counts; sc
   | `traffic sign` precision, uniform draw | **0.880** [0.795, 0.958] · n=64 over 33 clips · episode-cluster bootstrap | **`aug120`** (83 records, 538 sign detections) |
   | same, ❓-counted-wrong (the pessimistic bracket — **both are reported on purpose**) | **0.688** [0.552, 0.800] | **`aug120`** |
   | G1's own max-area rule, reproduced on this corpus | **0.926** [0.815, 1.000] · n=32 · **ZERO** empty boxes | **`aug120`** |
-  | G1's *"no sign visible at all"* — ~22 of 31 crops (~⅔) | ⛔ **does not transfer, in either direction** | **`w120val`** (600 clips, 4,048 sign detections) |
+  | G1's *"no sign visible at all"* — ~22 of 31 crops (~⅔) | ⛔ **RESOLVED 2026-08-17 — an INSTRUMENT defect, see below** | **G1's pilot-50**, which is a **strict SUBSET** of `w120val` (596 clips) |
 
-  ⚠️ **The reconciliation is PARTIAL and the study says so.** G1's two candidate mechanisms were
-  both tested and both REFUTED — the **selection** (max-area concentrates FPs: refuted; sign FPs
-  here are *smaller*, median 35.6 px² vs 74.8 px² for true ones) and the **rendering** (G1's tight
-  4× LANCZOS crop is harder to read: refuted, and on one detection strictly better). What remains
-  uncontrolled is the **corpus**, so the honest statement is *"not on aug120"*, **not** *"G1 was
-  wrong"*. **Open work item, 0 GPU, ~2 h: run the same adjudication on the `w120val` sign leg**
-  before any val-side sign label is trusted.
+  ⛔ **RESOLVED 2026-08-17 (C87) — AND THIS IS THE THIRD CORRECTION OF THIS PARAGRAPH.** It first
+  said G1's ⅔ was a property of SAM3's sign class; then that it was *"not on aug120"*. **Both
+  located the disagreement in the CORPUS. It was never in the corpus.**
+
+  **MEASURED, three blind arms, identical detections:** `w120val` uniform draw with the box
+  **outlined** → *"no sign"* **9.4 %** [3.0, 17.4], precision **0.852** [0.759, 0.927] (n=64/56
+  clips); G1's own clips under G1's own max-area rule, box **outlined** → **2.7 %** (n=37);
+  **G1's own banked tiles re-read blind → 88.9 %** [77.6, 98.2] (n=54).
+  ⇒ **2.7 % vs 88.9 % ON THE SAME DETECTIONS — the only difference is whether the box is drawn.**
+
+  ⭐ **G1's CROPPER was the variable, and G1 read its crops correctly.** Of its 54 tiles: **0** are a
+  tight crop of the box they are attributed to, **45** are padded to a ~96 px floor, **5 are the
+  ENTIRE 640×256 frame**, median tile **4.05×** the tight-crop area, and **none carries a box
+  outline**. A human shown a wide street scene and asked *"is there a sign here?"* answers about the
+  **scene**, not the **detection**. A blind re-read reproduces G1 and is *more* severe — the
+  **adjudicator was never the variable**.
+
+  ⚠️ **AND THE EARLIER "RENDERING REFUTED" ABOVE WAS SCOPED WRONG.** It tested a
+  **REIMPLEMENTATION** (`r7` crops exactly the box, so the sign fills the tile). **The defect lives
+  in the difference between that rebuild and the original.** ⇒ *Re-implementing a step and finding
+  it sound tests your version, not the step that ran.* Only reading **the bytes G1 produced**
+  settled it.
+
+  ⚠️ **The corpora were never two corpora.** G1's pilot-50 ⊂ the `w120val` leg (**overlap 50/50**);
+  box geometry and score distributions are indistinguishable across all three legs (median sign box
+  68.9 / 70.9 / 70.9 px²). The *"600 clips"* attribution in this doc and in the study is wrong on
+  both counts: it was the **50-clip pilot**, and the corpus is **596**. ⇒ **A corpus difference was
+  invented to explain a number, then cited as the reason the two could not be compared.**
+
+  ✅ **The ~2 h open work item is CLOSED.** Package:
+  `…/incoming/2026-08-17-w120val-sign-adjudication/` (PREREG banked before any crop was rendered;
+  155 human calls across 3 verdict files; 24 crops as the durable evidence).
+  ⚠️ Two of its raw files are **non-citable** and say so: `raw/g1_headtohead_B.json` carries
+  hardcoded `aug120` prose and `raw/precision_A_w120val.json` an empty cyclist block — both because
+  the study's scripts were reused unchanged, which was the right call for comparability and the
+  wrong one for those two fields.
 - ⚠️ **The operating point that follows** (same study, §5/§6): `traffic sign` is 🟨 **PRESENCE ONLY
   at the 0.5 default** — adequate for a presence flag, and ⛔ **never admissible as evidence of a
   sign's KIND or TEXT** (the G1 text gate is CLOSED at 0/31, `Project Steering/G1_RESULT.md`).

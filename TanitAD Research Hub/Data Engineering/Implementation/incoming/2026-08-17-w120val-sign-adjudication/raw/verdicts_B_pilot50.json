@@ -1,0 +1,52 @@
+{
+ "arm": "B",
+ "corpus": "pilot-50 (Sayood/tanitad-ph0 :: ph0_pilot50/sam3/sam3.json) — G1's OWN 50 clips, a strict SUBSET of the 596-clip w120val leg (overlap 50/50, pilot-only 0). 292 `traffic sign` detections over 37 clips.",
+ "selection": "G1's OWN rule, `G1_RESULT.md:6-7` — the LARGEST-AREA `traffic sign` detection per clip. CENSUS: all 37 clips that carry one.",
+ "adjudicator": "arch-inf agent (Claude), 2026-08-17",
+ "evidence_class": "MEASURED (human visual adjudication of rendered crops).",
+ "what_this_arm_is_for": "⭐ It holds the CORPUS and the SELECTION fixed at G1's own values and changes ONLY the rendering. Arm C re-read G1's actual tiles and reproduced G1's ~⅔-empty reading (48/54). If this arm — same clips, same rule, box OUTLINED in a context window — does not reproduce it, the difference is the RENDERING and not the detector, the corpus or the selection.",
+ "adjudication_basis": "BOTH renderings of every detection were viewed before the verdict was fixed — G1's tight 4x LANCZOS from the 448-px bridge, and the study's 6x context window with the box outlined in gold. That is the practice `…/2026-08-16-sam3-concept-reliability/raw/g1_reconcile_verdicts.json` states verbatim.",
+ "blinding": "the cells carried ONLY their index; score, clip, frame and box were withheld in `adjudication_sample_B_pilot50.json` and joined afterwards.",
+ "verdicts": {
+  "2000": "correct", "2001": "correct", "2002": "correct", "2003": "correct",
+  "2004": "unclear", "2005": "unclear", "2006": "correct", "2007": "wrong",
+  "2008": "correct", "2009": "correct", "2010": "correct", "2011": "unclear",
+  "2012": "correct", "2013": "correct", "2014": "unclear", "2015": "correct",
+  "2016": "correct", "2017": "correct", "2018": "correct", "2019": "correct",
+  "2020": "correct", "2021": "unclear", "2022": "correct", "2023": "wrong",
+  "2024": "correct", "2025": "correct", "2026": "unclear", "2027": "correct",
+  "2028": "correct", "2029": "wrong", "2030": "unclear", "2031": "correct",
+  "2032": "correct", "2033": "correct", "2034": "wrong", "2035": "correct",
+  "2036": "correct"
+ },
+ "g1_subclass_1_empty_box": {
+  "definition": "`G1_RESULT.md:17` — `no sign visible in the crop at all: sky, foliage, building walls, clouds`. Scored separately from `wrong`, because a `wrong` cell holding a real salient object of another class is NOT what G1's ~two-thirds figure counted.",
+  "indices": [2034],
+  "n": 1,
+  "of": 37,
+  "rate": 0.027,
+  "note": "⛔ ONE empty box in a 37-clip CENSUS under G1's own selection rule, on G1's own clips — against 48 of 54 on G1's own rendered tiles (arm C). The three other `wrong` calls all contain a real, salient object."
+ },
+ "notes_on_the_wrong_calls": {
+  "2007": "⭐ A GREEK PHARMACY SHOP SIGN — the tight 4x crop resolves `ΦΑΡΜΑΚΕΙΟ` down a vertical green fascia. Sign-shaped, sign-mounted, illuminated, and not traffic signage. ⚠️ Note the coincidence worth naming: `G1_SIGN_OCR_GRADING_SHEET.md` row 22 is `ΦΑΡΜΑΚΕΙΟ` on clip `15958430-1119` — the VLM read this same shop sign, and G1 correctly refused it as unverifiable. Same class as the reliability study's #207 (a pharmacy cross on a wall).",
+  "2023": "a large black X over dark text on a green-illuminated office building at night — commercial building signage, not a level-crossing cross (which is white with red arms and stands at a rail crossing, not on a facade). ⚠️ Recorded as the less certain of the four calls.",
+  "2029": "⭐ A TRAFFIC LIGHT, not a sign: an orange directional arrow inside a dark oval signal housing. Genuine cross-class confusion INSIDE the traffic-infrastructure family — the study's #1001 in the opposite direction. This is the failure that matters for a KIND-blind consumer.",
+  "2034": "EMPTY — a featureless dark horizontal band above the road at night. The only empty box in the arm."
+ },
+ "borderline_calls_and_why": {
+  "2002": "a white disc bearing a single black diagonal stripe — the END-OF-RESTRICTION sign. `correct`. On the contact sheet it read as a stick or a branch; the tight 4x crop resolved it, and this is a case where G1's own rendering was the BETTER of the two (the study saw the same on its #1000).",
+  "2019": "a triangular warning sign only ~6 px across. Scored `correct` because the triangular outline with a lighter interior is unambiguous even at that size — not because it is legible.",
+  "2016_2022_2031": "black/yellow and red/white marker boards. `correct`: regulatory marker boards. Consistent with the study's #177 and with arm A's #7/#52.",
+  "2008": "an overhead gantry VMS panel showing coloured text. `correct`, consistent with the study's #165.",
+  "2005": "a large light slatted panel high on a mast. A louvre and the braced BACK of a large road sign look the same at this fidelity. `unclear`, deliberately not resolved in either direction.",
+  "2004_2014_2021_2026": "thin illuminated or pale boards carrying text at fidelity where street-name sign, commercial fascia and information board cannot be separated. `unclear`.",
+  "2011_2030": "a narrow vertical strip and a small dark rectangle with faint banding: structure present, class not resolvable. `unclear`."
+ },
+ "the_measurement": {
+  "n": 37, "n_correct": 26, "n_wrong": 4, "n_unclear": 7,
+  "precision_resolvable_point": 0.8667,
+  "unclear_rate": 0.1892,
+  "no_sign_at_all_rate": 0.027,
+  "note": "point estimates only — the decision-grade interval is the episode-cluster bootstrap over clips, computed by the study's own `r8_g1_verdict_join.py`."
+ }
+}

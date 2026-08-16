@@ -1,0 +1,64 @@
+{
+ "arm": "A",
+ "corpus": "w120val (Sayood/tanitad-ph0 :: ph0_prod4/sam3/sam3.json) — 596 clips, 4 048 `traffic sign` detections over 440 clips",
+ "adjudicator": "arch-inf agent (Claude), 2026-08-17",
+ "evidence_class": "MEASURED (human visual adjudication of rendered crops). Not INHERITED, not inferred from scores.",
+ "protocol": "BLIND — every rendered cell carried ONLY its index. Score, clip, frame and box geometry were withheld in `adjudication_sample_A_w120val.json` and joined afterwards by the reliability study's own `r5_precision.py`. Rendering is that study's `crop_cell()` imported unchanged: 6x-box context window from the native 640-px frame, box outlined in gold, 320-px cell.",
+ "frame_source": "the PIPELINE'S OWN BRIDGE — `v2_to_pilot.decode_full_episode/stacked_to_rgb/write_mp4` on the w120 val v2 episode caches, then `ph0_pilot.sample_clip_frames(t0_s=8.0)`, the same call `ph0_sam3.py:1472` makes. PREREG.md §2 delta 1.",
+ "measures": "PRECISION ONLY. `wrong` = the box does not contain an instance of `traffic sign`. ⛔ RECALL IS NOT MEASURED AND CANNOT BE from this data.",
+ "verdict_scheme": {
+  "correct": "the boxed region contains a discrete, planar, mounted board / plate / disc of sign-like proportions in a sign-like position (roadside post, gantry, facade at sign height), with nothing indicating a different object class",
+  "wrong": "the boxed region contains no such instance — either an EMPTY region (sky, wall, foliage, plain surface) or a real object of another class",
+  "unclear": "structure is present but cannot be resolved as sign-or-not at this pixel scale. ⚠️ NOT a soft `wrong`; reported as its own arm and the headline is given BOTH ways."
+ },
+ "escalation_note": "⭐ Every cell not resolvable in the 320-px contact-sheet cell — 30 of 64 — was RE-RENDERED at a 600-px cell in BOTH sanctioned renderings (the 6x context window with the gold box, and G1's tight 4x LANCZOS crop) and looked at again: `crops/zoomA1..zoomA4_{context,g1tight}.jpg`. This is the practice `…/2026-08-16-sam3-concept-reliability/raw/g1_reconcile_verdicts.json` already states verbatim. ⚠️ It can only move a verdict toward `correct` or leave it `unclear` — more pixels never manufacture a false positive — and 20 of the 30 escalated cells resolved. Reporting it is what makes the 15.6 % `unclear` rate a property of the INPUT rather than of how hard I looked.",
+ "verdicts": {
+  "0": "correct", "1": "wrong", "2": "correct", "3": "wrong",
+  "4": "unclear", "5": "correct", "6": "wrong", "7": "correct",
+  "8": "wrong", "9": "unclear", "10": "correct", "11": "correct",
+  "12": "correct", "13": "unclear", "14": "correct", "15": "unclear",
+  "16": "correct", "17": "correct", "18": "wrong", "19": "unclear",
+  "20": "correct", "21": "correct", "22": "correct", "23": "correct",
+  "24": "correct", "25": "wrong", "26": "correct", "27": "correct",
+  "28": "correct", "29": "correct", "30": "correct", "31": "correct",
+  "32": "correct", "33": "correct", "34": "correct", "35": "correct",
+  "36": "correct", "37": "correct", "38": "unclear", "39": "correct",
+  "40": "correct", "41": "unclear", "42": "correct", "43": "correct",
+  "44": "correct", "45": "correct", "46": "wrong", "47": "correct",
+  "48": "correct", "49": "correct", "50": "correct", "51": "correct",
+  "52": "correct", "53": "wrong", "54": "correct", "55": "correct",
+  "56": "correct", "57": "correct", "58": "correct", "59": "correct",
+  "60": "correct", "61": "unclear", "62": "unclear", "63": "unclear"
+ },
+ "g1_subclass_1_empty_box": {
+  "definition": "`Project Steering/G1_RESULT.md:17`'s own first subclass — `no sign visible in the crop at all: sky, foliage, building walls, clouds`. This is the quantity its ~two-thirds figure counts, so it is scored SEPARATELY here and NOT merged into `wrong`. A `wrong` cell holding a real, salient, non-traffic-sign object is deliberately NOT in this subclass — that distinction is the whole disagreement.",
+  "indices": [1, 3, 8, 18, 25, 53],
+  "n": 6,
+  "of": 64,
+  "rate": 0.0938
+ },
+ "notes_on_the_wrong_calls": {
+  "1": "EMPTY — a plain beige building wall. ⚠️ A real blue `P` parking sign is in the frame and the box is NOT on it; the box sits on blank render to its right. A near-miss, not a hallucination on emptiness.",
+  "3": "EMPTY — blank building facade. Same shape as #1: a real blue sign is present in the frame, outside the box.",
+  "8": "EMPTY — uniform grey with no internal structure, mid-scene in fog at night, no mount of any kind.",
+  "18": "EMPTY — a featureless grey patch in front of foliage/building. No border, no plate, no post.",
+  "25": "EMPTY — bare ground/hedge between two poles at dusk. Nothing in the box.",
+  "53": "EMPTY — the uniform red-lit underside of an overpass.",
+  "6": "⭐ NOT EMPTY, AND ITS OWN FAILURE MODE. A large, perfectly legible `30` speed-limit roundel — sitting on the ego vehicle's own hood/dash band at the bottom of the cylindrical frame, on a MOTORWAY behind a truck, where a 30 limit is impossible. ⇒ an in-cabin speed display or a burned-in overlay, detected as a scene sign. Scored `wrong` because a supervision channel asking `is there a traffic sign in this scene` would be corrupted by it. ⚠️ The opposite reading (it IS a sign face, so `correct`) is defensible and is recorded here so the call is auditable rather than silent.",
+  "46": "NOT EMPTY — a commercial retail-park hoarding reading `SANT BOI - PARC COMERCIAL` with a direction arrow, over a `149,-` price panel. Sign-shaped, sign-mounted, carries a directional arrow, and is still advertising rather than traffic signage. Same class as the study's #210 (advertising hoarding) and #207 (pharmacy cross). ⚠️ Genuinely borderline — a retail-park direction board is roadside guidance in some jurisdictions — and recorded as borderline rather than hidden."
+ },
+ "borderline_calls_scored_correct_and_why": {
+  "5": "a blank overhead gantry VMS/matrix panel. `correct`: a variable-message sign is traffic signage even when displaying nothing. Consistent with the study's #165.",
+  "7_52": "red/white chevron and hatched obstacle-marker boards. `correct`: regulatory marker boards, not decoration. Consistent with the study's #177.",
+  "42": "a white supplementary plate mounted under a round prohibition sign. `correct`: part of the sign assembly, carries the qualifying instruction. Consistent with the study's #166/#176/#204/#205.",
+  "47": "a dark roadside board beside a highway embankment; the tight 4x view resolves faint text on its face. `correct` as a discrete mounted sign board.",
+  "29_34_37_49_59": "small pole-mounted plates resolved only by the ESCALATION render. Each shows a discrete planar plate on a slim post at sign height with internal contrast. `correct` under the stated rule; each would have been `unclear` on the contact sheet alone."
+ },
+ "the_measurement": {
+  "n": 64, "n_correct": 46, "n_wrong": 8, "n_unclear": 10,
+  "precision_resolvable_point": 0.8519,
+  "unclear_rate": 0.1563,
+  "no_sign_at_all_rate": 0.0938,
+  "note": "point estimates only — the decision-grade interval is the episode-cluster bootstrap over clips computed by `r5_precision.py`, in `raw/precision_A_w120val.json`."
+ }
+}

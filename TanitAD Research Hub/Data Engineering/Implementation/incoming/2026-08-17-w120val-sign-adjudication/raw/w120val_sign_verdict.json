@@ -1,0 +1,242 @@
+{
+ "evidence_class": "MEASURED (blind human adjudication of rendered crops + the reliability study's own estimator code)",
+ "estimator": "episode-cluster bootstrap over CLIPS (taniteval.ci), 2000 draws \u2014 never overlapping_holdout_se",
+ "reference_numbers": {
+  "aug120_reliability_study": {
+   "precision_resolvable": 0.88,
+   "lo": 0.795,
+   "hi": 0.958,
+   "n": 64,
+   "empty_box_rate": 0.041666666666666664,
+   "source": "\u2026/2026-08-16-sam3-concept-reliability/raw/precision.json + its \u00a74.1 (MEASURED, corpus aug120)"
+  },
+  "G1": {
+   "empty_box_rate": 0.7096774193548387,
+   "n": 31,
+   "source": "Project Steering/G1_RESULT.md (MEASURED 2026-08-14), rows of the 50-clip pilot"
+  }
+ },
+ "arms": {
+  "A_w120val_uniform": {
+   "corpus": "w120val (ph0_prod4) \u2014 596 clips, 4 048 `traffic sign` detections over 440 clips",
+   "selection": "uniform at random within `traffic sign`",
+   "rendering": "6x-box context window from native 640, WITH the box outlined in gold",
+   "n": 64,
+   "n_correct": 46,
+   "n_wrong": 8,
+   "n_unclear": 10,
+   "unclear_rate": 0.1562,
+   "precision_resolvable_only": {
+    "point": 0.8519,
+    "lo": 0.7593,
+    "hi": 0.9273,
+    "n_detections": 54,
+    "n_clips": 51,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "precision_unclear_as_wrong": {
+    "point": 0.7188,
+    "lo": 0.6119,
+    "hi": 0.8254,
+    "n_detections": 64,
+    "n_clips": 56,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "g1_subclass_no_sign_at_all": {
+    "n": 6,
+    "of": 64,
+    "rate": 0.0938,
+    "ci": {
+     "point": 0.0938,
+     "lo": 0.0303,
+     "hi": 0.1739,
+     "n_cells": 64,
+     "n_clips": 56,
+     "estimator": "episode_cluster_bootstrap"
+    }
+   },
+   "scores_of_false_positives": [
+    0.5318,
+    0.5385,
+    0.6254,
+    0.6285,
+    0.6296,
+    0.668,
+    0.7778,
+    0.9273
+   ],
+   "bands": {
+    "0.50-0.60": {
+     "n_resolvable": 10,
+     "precision": 0.8,
+     "n_all": 17,
+     "n_unclear": 7
+    },
+    "0.60-0.70": {
+     "n_resolvable": 19,
+     "precision": 0.7895,
+     "n_all": 22,
+     "n_unclear": 3
+    },
+    "0.70-0.80": {
+     "n_resolvable": 13,
+     "precision": 0.9231,
+     "n_all": 13,
+     "n_unclear": 0
+    },
+    "0.80-0.90": {
+     "n_resolvable": 7,
+     "precision": 1.0,
+     "n_all": 7,
+     "n_unclear": 0
+    },
+    "0.90-1.01": {
+     "n_resolvable": 5,
+     "precision": 0.8,
+     "n_all": 5,
+     "n_unclear": 0
+    }
+   },
+   "threshold_sweep": {
+    "0.50": {
+     "n_sample_resolvable": 54,
+     "precision_resolvable": 0.8519,
+     "n_sample_all": 64,
+     "precision_unclear_as_wrong": 0.7188,
+     "corpus_retained": 4048,
+     "corpus_retained_frac": 1.0
+    },
+    "0.55": {
+     "n_sample_resolvable": 46,
+     "precision_resolvable": 0.8696,
+     "n_sample_all": 53,
+     "precision_unclear_as_wrong": 0.7547,
+     "corpus_retained": 3378,
+     "corpus_retained_frac": 0.8345
+    },
+    "0.60": {
+     "n_sample_resolvable": 44,
+     "precision_resolvable": 0.8636,
+     "n_sample_all": 47,
+     "precision_unclear_as_wrong": 0.8085,
+     "corpus_retained": 2806,
+     "corpus_retained_frac": 0.6932
+    },
+    "0.65": {
+     "n_sample_resolvable": 32,
+     "precision_resolvable": 0.9062,
+     "n_sample_all": 34,
+     "precision_unclear_as_wrong": 0.8529,
+     "corpus_retained": 2325,
+     "corpus_retained_frac": 0.5744
+    },
+    "0.70": {
+     "n_sample_resolvable": 25,
+     "precision_resolvable": 0.92,
+     "n_sample_all": 25,
+     "precision_unclear_as_wrong": 0.92,
+     "corpus_retained": 1878,
+     "corpus_retained_frac": 0.4639
+    },
+    "0.75": {
+     "n_sample_resolvable": 19,
+     "precision_resolvable": 0.8947,
+     "n_sample_all": 19,
+     "precision_unclear_as_wrong": 0.8947,
+     "corpus_retained": 1442,
+     "corpus_retained_frac": 0.3562
+    },
+    "0.80": {
+     "n_sample_resolvable": 12,
+     "precision_resolvable": 0.9167,
+     "n_sample_all": 12,
+     "precision_unclear_as_wrong": 0.9167,
+     "corpus_retained": 1038,
+     "corpus_retained_frac": 0.2564
+    },
+    "0.85": {
+     "n_sample_resolvable": 9,
+     "precision_resolvable": 0.8889,
+     "n_sample_all": 9,
+     "precision_unclear_as_wrong": 0.8889,
+     "corpus_retained": 601,
+     "corpus_retained_frac": 0.1485
+    },
+    "0.90": {
+     "n_sample_resolvable": 5,
+     "precision_resolvable": 0.8,
+     "n_sample_all": 5,
+     "precision_unclear_as_wrong": 0.8,
+     "corpus_retained": 188,
+     "corpus_retained_frac": 0.0464
+    }
+   }
+  },
+  "B_pilot50_g1_maxarea": {
+   "corpus": "pilot-50 \u2014 G1's OWN clips, a strict subset of w120val",
+   "selection": "G1's: largest-area `traffic sign` per clip, CENSUS",
+   "rendering": "BOTH \u2014 G1's tight 4x LANCZOS and the 6x context window WITH a gold box outline",
+   "n": 37,
+   "n_correct": 26,
+   "n_wrong": 4,
+   "n_unclear": 7,
+   "precision_resolvable": {
+    "point": 0.8667,
+    "lo": 0.7333,
+    "hi": 0.9667,
+    "n_detections": 30,
+    "n_clips": 30,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "median_box_area_px": 331.6,
+   "g1_subclass_no_sign_at_all": {
+    "n": 1,
+    "of": 37,
+    "rate": 0.027,
+    "ci": {
+     "point": 0.027,
+     "lo": 0.0,
+     "hi": 0.0811,
+     "n_cells": 37,
+     "n_clips": 37,
+     "estimator": "episode_cluster_bootstrap"
+    }
+   },
+   "head_to_head_file": "g1_headtohead_B.json"
+  },
+  "C_g1_own_tiles_reread": {
+   "corpus": "G1's exact banked crops (g1_evidence/crops/*.jpg)",
+   "selection": "G1's",
+   "rendering": "G1's \u2014 the identical JPEG bytes",
+   "n": 54,
+   "n_correct": 1,
+   "n_wrong": 48,
+   "n_unclear": 5,
+   "no_sign_at_all_rate": 0.8889,
+   "ci_clustered_by_row": {
+    "point": 0.8889,
+    "lo": 0.7755,
+    "hi": 0.9818,
+    "n_cells": 54,
+    "n_clips": 31,
+    "estimator": "episode_cluster_bootstrap"
+   },
+   "what_it_isolates": "the ADJUDICATOR, and nothing else"
+  }
+ },
+ "prereg_decision": {
+  "rule": "PREREG.md \u00a73, evaluated mechanically",
+  "E_val_no_sign_at_all_rate": 0.0938,
+  "P_val": {
+   "point": 0.8519,
+   "lo": 0.7593,
+   "hi": 0.9273
+  },
+  "outcome_1_corpora_differ_triggered": false,
+  "outcome_2_g1_does_not_generalise_triggered": true,
+  "outcome": "2 \u2014 G1's READING DOES NOT GENERALISE TO A UNIFORM DRAW",
+  "note": "\u26a0\ufe0f PREREG.md \u00a73 also binds: if the arms disagree with each other, outcome 3 is the answer regardless of arm A alone. That check is a JUDGEMENT and is made in the report, not here."
+ }
+}

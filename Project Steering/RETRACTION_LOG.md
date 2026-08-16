@@ -4433,3 +4433,68 @@ the first `agent_slots=True` run.**
 post-fix logs matched **35 of 35** runs — because pytest prints `xfailed`. The opaque `ZZ…ZZ`
 marker is what kept the 40/40 figure honest. **Never grep an output stream for a word that is a
 substring of the stream's own vocabulary.**
+
+---
+
+## C87 — AN INSTRUMENT DEFECT READ AS A PROPERTY OF THE THING MEASURED, TWICE, IN OPPOSITE DIRECTIONS (2026-08-17, arch-inf agent + orchestrator)
+
+**RETRACTED:** the standing framing that SAM3's `traffic sign` class *"is ~⅔ garbage on `w120val`
+but ~88 % precise on `aug120`"*, and every version of the sentence *"neither number transfers"*
+— including the careful one I wrote into `NEXT_4472_BUILD_INPUTS.md` yesterday, which said
+**"not on aug120"** rather than "G1 was wrong". **All of them located the disagreement in the
+CORPUS. It was never in the corpus.**
+
+**WHAT SETTLED IT — three arms, blind, on identical detections:**
+
+| arm | what changed | "no sign at all" |
+|---|---|---|
+| **A** `w120val`, uniform draw, box **outlined** | — | **9.4 %** [3.0, 17.4], precision 0.852 |
+| **B** G1's own clips, G1's max-area rule, box **outlined** | selection | **2.7 %** |
+| **C** G1's own banked tiles, re-read blind | **nothing — the same JPEG bytes** | **88.9 %** [77.6, 98.2] |
+
+⇒ **2.7 % vs 88.9 % ON THE SAME DETECTIONS. The only difference is whether the box is drawn.**
+
+⭐ **THE CROPPER WAS THE VARIABLE.** Of G1's 54 tiles: **0** are a tight crop of the box they are
+attributed to, **45** are padded to a ~96 px floor, **5 are the ENTIRE 640×256 native frame**, the
+median tile is **4.05×** the tight-crop area, and **none carries a box outline**. A human shown a
+wide street scene and asked *"is there a sign here?"* answers about the scene, not about the
+detection. **G1's crops were unreadable by construction** — and G1 read them correctly. A blind
+re-read reproduces its verdict and is *more* severe. **The adjudicator was never the variable.**
+
+⚠️ **AND THE EARLIER "REFUTATION" OF THIS VERY HYPOTHESIS WAS ITSELF SCOPED WRONG.** The 2026-08-16
+reliability study reported rendering **REFUTED** — but it tested a **REIMPLEMENTATION** (`r7` crops
+exactly the box, so the sign fills the tile). **The defect lives precisely in the difference between
+the reimplementation and the original.** ⇒ *Re-implementing a step and finding it sound does not
+test the step that ran; it tests your version of it.* To refute a rendering hypothesis you must read
+**the bytes the original produced**, which is what arm C finally did.
+
+⚠️ **A SECOND, QUIETER ERROR RODE ALONG: the corpora were never two corpora.** G1's pilot-50 is a
+**strict subset** of the `w120val` leg (overlap **50/50**), and box geometry and score
+distributions are indistinguishable across all three legs (median sign box 68.9 / 70.9 / 70.9 px²).
+Both the study and `NEXT_4472_BUILD_INPUTS.md` attribute G1 to *"w120val, 600 clips"*; the primary
+sources say **the 50-clip pilot** — and the corpus is **596**, not 600. ⇒ **A "corpus difference"
+was invented to explain a number, then cited as the reason the two could not be compared.** The
+comparison was available the whole time.
+
+⇒ **ROOT-CAUSE CLASS: AN INSTRUMENT DEFECT ATTRIBUTED TO THE SUBJECT.** The same family as reading
+`df` on a pod, `free` on Thor, `memory.usage_in_bytes` under a cgroup, and C85's flattened RLE that
+summed to the right total — but inverted: here the broken instrument made the subject look **worse**,
+and the correction makes a channel usable that had been written off. **Both directions cost the same
+amount of truth.**
+
+⇒ **RULES THIS EARNS:**
+1. **When two measurements of the same thing disagree, suspect the two INSTRUMENTS before you
+   suspect two populations** — a population difference is the more interesting story and therefore
+   the more seductive one.
+2. **Adjudicate on the artifact the original produced, never on a faithful-looking rebuild.**
+3. **A human-adjudication protocol must show WHAT WAS DETECTED, not the region around it.** An
+   outline is not cosmetic; it is the difference between asking about a detection and asking about
+   a scene.
+
+⇒ **CONSEQUENCE — the sign channel is RELEASED, with limits stated:** admissible as a **per-clip
+presence flag at 0.5** on the val side; **≥0.70 if per-detection** (precision 0.920, retains 46.4 %)
+but **NOT tuned** — 8 FPs, non-monotone bands. ⛔ **KIND and TEXT stay forbidden**, and the reason is
+sharper than a rate: the two highest-scoring false positives are a **dashboard `30` roundel
+(0.927)** and a **commercial hoarding (0.778)**. ⇒ **A threshold removes the harmless errors and
+keeps the harmful ones** — the very failures that would corrupt a navigation claim score ABOVE the
+true signs.

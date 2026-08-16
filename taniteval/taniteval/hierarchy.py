@@ -541,7 +541,10 @@ def _hist(vals):
 @torch.no_grad()
 def run(model, step_readout, episodes, device, speed_input=False, max_eps=40,
         stride=8, batch=16, yaw_input=False, dyn_input=False,
-        n_boot=N_BOOT, seed=0):
+        n_boot=N_BOOT, seed=0, labels_v2=False):
+    """``labels_v2`` MUST be the arm's OWN ``cfg.v2_labels`` — the same field the
+    trainer read when it built the manoeuvre targets this panel scores against.
+    Resolve it with :func:`taniteval.loaders.resolve_labels_v2`; never guess."""
     if getattr(model, "tactical_policy", None) is None or \
        getattr(model, "strategic_policy", None) is None:
         return {"skipped": "no trained tactical/strategic policy brains"}
@@ -589,8 +592,25 @@ def run(model, step_readout, episodes, device, speed_input=False, max_eps=40,
             fut = torch.stack([torch.as_tensor(ep.poses[t + WIN:t + WIN + GOAL_H])
                                for t in ch]).to(device).float()   # [b,GOAL_H,4]
             pl = ep.poses[last].to(device).float()                # [b,4]
-            man_tgt = rl.classify_maneuver(pl[:, 2], fut[:, GOAL_H - 1, 2],
-                                           pl[:, 3], fut[:, GOAL_H - 1, 3]).long()
+            # ⛔ THE LABEL FAMILY FOLLOWS THE ARM, and used not to. This line
+            # was `rl.classify_maneuver(...)` UNCONDITIONALLY — the v1 net-yaw
+            # classifier — so every `--v2` arm (which implies `--labels-v2`) had
+            # `seam_ctx_to_tactical.maneuver_acc` scored against labels its head
+            # was never trained to produce. v1 gates net yaw (rad), v2 gates path
+            # curvature (1/m): different physical quantities, so this was not a
+            # threshold disagreement and no gate choice could repair it. The
+            # flag->labeler mapping is NOT restated here — it is the trainer's
+            # own, via `refb_labels.window_maneuver_labels_for`.
+            man_tgt = rl.window_maneuver_labels_for(
+                pl, fut, horizon=GOAL_H, v2=bool(labels_v2)).long()
+            # ⛔ AND the OTHER family, banked beside it. MEASURED 2026-08-17:
+            # when this defect was found, correcting the one affected panel was
+            # IMPOSSIBLE from anything on disk — `man_pred` is banked nowhere and
+            # the val poses live on another machine, so a GPU re-run was the only
+            # path to a number we already had the ingredients for. One extra
+            # labeler call on tensors already in hand ends that permanently.
+            man_tgt_alt = rl.window_maneuver_labels_for(
+                pl, fut, horizon=GOAL_H, v2=not bool(labels_v2)).long()
             gtwp = gt_ego_waypoints(ep.poses.float(), last).to(device)  # [b,4,2]
             gt_net = rl.wrap_to_pi(fut[:, GOAL_H - 1, 2] - pl[:, 2])     # signed
 
@@ -635,8 +655,11 @@ def run(model, step_readout, episodes, device, speed_input=False, max_eps=40,
 
             rec["eid"] += [ep.episode_id] * b
             rec["man_tgt"] += man_tgt.tolist()
+            rec["man_tgt_alt"] += man_tgt_alt.tolist()
             rec["man_pred"] += man_pred.tolist()
             rec["man_corr_real"] += (man_pred == man_tgt).float().cpu().tolist()
+            rec["man_corr_real_alt"] += (
+                man_pred == man_tgt_alt).float().cpu().tolist()
             rec["route_tgt"] += rts
             rec["valid"] += valids
             rec["route_nav"] += sn["route_logits"].argmax(-1).tolist()
@@ -660,6 +683,7 @@ def run(model, step_readout, episodes, device, speed_input=False, max_eps=40,
             cache.append(dict(states=states.half().cpu(), aw=aw.cpu(),
                               fa=fa.cpu(), gtwp=gtwp.cpu(), z_goal=z_goal.cpu(),
                               man_tgt=man_tgt.cpu(),
+                              man_tgt_alt=man_tgt_alt.cpu(),
                               intent_real=intent_real.cpu(),
                               ztrue={h: ztrue_h[h].cpu() for h in OP_HORIZONS},
                               b=b))
@@ -676,14 +700,18 @@ def run(model, step_readout, episodes, device, speed_input=False, max_eps=40,
         aw, fa = c["aw"].to(device), c["fa"].to(device)
         gtwp, z_goal = c["gtwp"].to(device), c["z_goal"].to(device)
         man_tgt = c["man_tgt"].to(device)
+        man_tgt_alt = c["man_tgt_alt"].to(device)
         b = c["b"]
 
         # strategic ctx -> tactical ablation (mean / zero ctx)
         for tag, ctx in (("mean", mean_ctx), ("zero", zero_ctx)):
             ta = tac_pol(states, ctx[None].expand(b, -1))
             wp = torch.stack([ta["waypoints"][k] for k in WP_STEPS], 1)
-            rec[f"man_corr_{tag}ctx"] += (
-                ta["maneuver_logits"].argmax(-1) == man_tgt).float().cpu().tolist()
+            _mp = ta["maneuver_logits"].argmax(-1)
+            rec[f"man_pred_{tag}ctx"] += _mp.cpu().tolist()
+            rec[f"man_corr_{tag}ctx"] += (_mp == man_tgt).float().cpu().tolist()
+            rec[f"man_corr_{tag}ctx_alt"] += (
+                _mp == man_tgt_alt).float().cpu().tolist()
             rec[f"wp_ade_head_{tag}ctx"] += torch.linalg.norm(
                 wp - gtwp, dim=-1).mean(1).cpu().tolist()
             rec[f"goal_cos_{tag}ctx"] += F.cosine_similarity(
@@ -737,12 +765,63 @@ def run(model, step_readout, episodes, device, speed_input=False, max_eps=40,
     pc2 = _hg.assert_hierarchy_traversed(
         _trace, block="taniteval.hierarchy/run",
         claim="H26 seam ablations + H18 grounding dominance")
-    out = _assemble(rec, n_boot=n_boot, seed=seed)
+    out = _assemble(rec, n_boot=n_boot, seed=seed, labels_v2=bool(labels_v2))
     out["pc2"] = pc2
     return out
 
 
-def _assemble(rec, n_boot=N_BOOT, seed=0):
+#: The manoeuvre-label family this panel scored the tactical head against.
+#: ⛔ EVERY panel must carry it. A bare `maneuver_acc` is not interpretable
+#: without it: from 2026-07-24 to 2026-08-17 the panel hardcoded v1 while `--v2`
+#: arms were trained on v2, and nothing in the JSON said so.
+MANEUVER_LABEL_KEY = "maneuver_label_version"
+
+
+#: Per-window arrays the panel MUST persist. ⛔ THE INSTRUMENT GAP THIS CLOSES,
+#: MEASURED TWICE. (a) 2026-08-17: `hierarchy.py:592` scored every `--v2` arm
+#: against v1 labels, and the correction could not be computed from ANY banked
+#: artifact — `man_pred` was on disk nowhere across 1,929 JSONs and 60 window
+#: dumps, and the val poses were on another machine. (b) `DIRYAW_REREAD.md` §3.4:
+#: `gt_net_yaw`/`traj_net_yaw` were built in memory and dropped at write time, so
+#: **no Δκ in this programme has ever carried an interval**. Both were the same
+#: omission — the panel computing decision-grade arrays and persisting only their
+#: means. Cost of the fix: ~60 KB of JSON per panel. Cost of NOT having it,
+#: measured: one GPU re-run per question, plus every Δκ published bare.
+PER_WINDOW_KEYS = ("eid", "man_tgt", "man_tgt_alt", "man_pred",
+                   "man_pred_meanctx", "man_pred_zeroctx",
+                   "gt_dir", "traj_dir", "gt_net_yaw", "traj_net_yaw", "valid")
+
+
+def _per_window(A, eids, labels_v2):
+    """The arrays a future re-read needs, and the note that makes them usable.
+
+    ⚠️ ``man_tgt`` is the family the arm was TRAINED on; ``man_tgt_alt`` is the
+    other one. Which is which is stated in the block, never inferred."""
+    out = {"_note": (
+        "per-window arrays, aligned row-for-row, resampling unit = `eid`. "
+        "They exist so a label-family re-score, a direction-gate sweep and a "
+        "PAIRED episode-cluster bootstrap on any of them cost ZERO GPU. "
+        f"`man_tgt` is the arm's own family ({'v2' if labels_v2 else 'v1'}); "
+        f"`man_tgt_alt` is {'v1' if labels_v2 else 'v2'}."),
+        MANEUVER_LABEL_KEY: "v2" if labels_v2 else "v1"}
+    for k in PER_WINDOW_KEYS:
+        v = A.get(k)
+        if v is None or len(v) == 0:
+            continue
+        out[k] = [x.item() if hasattr(x, "item") else x for x in v]
+    missing = [k for k in PER_WINDOW_KEYS if k not in out]
+    # ⛔ SAY SO. A short block that looks complete is how a re-read discovers,
+    # months later, that the array it needs was never there.
+    out["complete"] = not missing
+    if missing:
+        out["missing_keys"] = missing
+        out["_warning"] = (
+            "⛔ INCOMPLETE — " + ", ".join(missing) + " were not recorded, so "
+            "any re-read needing them still costs a GPU pass.")
+    return out
+
+
+def _assemble(rec, n_boot=N_BOOT, seed=0, labels_v2=False):
     eids = rec["eid"]
     N = len(eids)
     A = {k: np.asarray(v) for k, v in rec.items()}
@@ -831,6 +910,61 @@ def _assemble(rec, n_boot=N_BOOT, seed=0):
         or _meaningful(seam_ctx["wp_ade_2s"]["delta_real_vs_mean"], MIN_ADE_M)
         or _meaningful(seam_ctx["goal_latent_cos"]["delta_real_vs_mean"], MIN_COS))
     seam_ctx["content_matters"] = seam_ctx["load_bearing"]
+    # ⛔ `maneuver_acc` is meaningless without the label family it was scored
+    # against, and every panel written before 2026-08-17 silently used v1. The
+    # stamp travels WITH the number, not in a sibling doc.
+    # ⛔ AND THE SAME NUMBER UNDER THE OTHER LABEL FAMILY, FOR FREE. When the
+    # 2026-08-17 hardcode was found, the ONE affected banked panel could not be
+    # corrected from anything on disk: `man_pred` was banked nowhere and the val
+    # poses were on another machine, so a metric we had every ingredient for
+    # needed a GPU re-run. Emitting both families here means the question
+    # "how much did the label definition move this?" is answered IN the artifact,
+    # by arithmetic, and never needs a second pass again.
+    _other = "v1" if labels_v2 else "v2"
+    _alt = ("man_corr_real_alt", "man_corr_meanctx_alt", "man_corr_zeroctx_alt",
+            "man_tgt", "man_tgt_alt")
+    if all(len(A.get(k, ())) for k in _alt):
+        seam_ctx["maneuver_acc_under_other_label_family"] = {
+            "label_version": _other,
+            "real": _mean(A["man_corr_real_alt"]),
+            "mean_ctx": _mean(A["man_corr_meanctx_alt"]),
+            "zero_ctx": _mean(A["man_corr_zeroctx_alt"]),
+            "delta_real_vs_mean": _paired(B, A["man_corr_real_alt"],
+                                          A["man_corr_meanctx_alt"]),
+            "label_disagreement_rate": _mean(
+                (np.asarray(A["man_tgt"]) != np.asarray(A["man_tgt_alt"])
+                 ).astype(float)),
+            "_note": ("the SAME predictions scored against the other family's "
+                      "targets. It is a DIAGNOSTIC, not the arm's number — the "
+                      "quotable one is the family the arm was TRAINED on "
+                      f"({'v2' if labels_v2 else 'v1'}). "
+                      "`label_disagreement_rate` is the share of windows on "
+                      "which the two families disagree AT ALL, and it bounds "
+                      "how far this arm's maneuver_acc could ever move with "
+                      "the family."),
+        }
+    else:
+        # ⛔ UNAVAILABLE, never silently absent — the same contract
+        # `gate_sensitivity` uses below, and for the same reason: a number that
+        # quietly vanishes reads as a number that was never needed.
+        seam_ctx["maneuver_acc_under_other_label_family"] = {
+            "status": "UNAVAILABLE", "label_version": _other,
+            "reason": ("this panel predates the 2026-08-17 dual-family banking "
+                       "(or was assembled from a partial record), so the other "
+                       "family's targets were never derived. ⛔ Its "
+                       "maneuver_acc therefore cannot be re-read under the "
+                       "other label family without re-running the model."),
+            "n": 0}
+    seam_ctx[MANEUVER_LABEL_KEY] = "v2" if labels_v2 else "v1"
+    _lab = ("window_maneuver_labels_v2 (curvature-gated, "
+            "|kappa| >= CURV_TURN_MAN_PER_M = 1/60 per m)" if labels_v2 else
+            "window_maneuver_labels (v1 net-yaw, |dyaw| > YAW_TURN_RAD = "
+            "0.15 rad)")
+    seam_ctx["_maneuver_label_note"] = (
+        "maneuver_acc scores the tactical head against refb_labels." + _lab
+        + ", selected by the ARM'S OWN cfg.v2_labels. ⛔ A panel with no such "
+        "stamp predates the 2026-08-17 fix and used v1 REGARDLESS of how the "
+        "arm was trained — for a --v2 arm that number is not admissible.")
 
     # ---- SEAM 3: tactical intent -> operative (IN-REGIME latent fidelity) ---
     # intent conditions the multi-horizon JEPA latent prediction (horizons
@@ -974,6 +1108,7 @@ def _assemble(rec, n_boot=N_BOOT, seed=0):
     out = {
         "n_windows": N,
         "n_episodes": B.full.n_episodes if B.full is not None else len(set(B.eids)),
+        MANEUVER_LABEL_KEY: "v2" if labels_v2 else "v1",
         "protocol": {
             "cond_replaced": "FiLM conditioning tensor only; weights fixed",
             "ci": ("episode_cluster_bootstrap over the val EPISODES "
@@ -1005,6 +1140,7 @@ def _assemble(rec, n_boot=N_BOOT, seed=0):
         "seam_intent_to_operative": seam_int,
         "consistency": consistency,
         "h18_grounded_vs_ungrounded": h18,
+        "per_window": _per_window(A, eids, labels_v2),
     }
     out["verdict"] = _verdict(out)
     out["thesis_read"] = _thesis(out)
@@ -1300,7 +1436,8 @@ def main():
     res = run(L["model"], L["step_readout"], eps, "cuda",
               speed_input=bool(e.get("speed_input")), max_eps=a.episodes,
               stride=a.stride, yaw_input=bool(e.get("yaw_input")),
-              dyn_input=bool(e.get("dyn_input")))
+              dyn_input=bool(e.get("dyn_input")),
+              labels_v2=bool(L["labels_v2"]))
     print(json.dumps(res, indent=2, default=str))
 
 

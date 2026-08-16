@@ -373,6 +373,34 @@ def window_maneuver_labels_v2(pose_last: Tensor, future_poses: Tensor,
     return classify_maneuver_v2(sub)
 
 
+def window_maneuver_labels_for(pose_last: Tensor, future_poses: Tensor,
+                               horizon: int = LABEL_HORIZON, *,
+                               v2: bool) -> Tensor:
+    """Select the v1 or the v2 window manoeuvre labeler by an arm's own
+    ``cfg.v2_labels``. ``v2=False`` -> :func:`window_maneuver_labels`,
+    ``v2=True`` -> :func:`window_maneuver_labels_v2`; the two have identical
+    signatures, so this dispatch adds nothing but the decision.
+
+    ⛔ **THIS IS THE ONLY PLACE THE FLAG -> LABELER MAPPING IS WRITTEN DOWN, and
+    the defect that earned it.** The trainer branched on ``self.labels_v2``
+    (``train_flagship4b.FlagshipWindowDataset.__getitem__``) while the eval's
+    hierarchy panel called :func:`classify_maneuver` **unconditionally**
+    (``taniteval/hierarchy.py:592``), so every ``--v2`` arm's
+    ``seam_ctx_to_tactical.maneuver_acc`` was scored against v1 labels its head
+    was never trained to produce. That is not a threshold disagreement: v1 gates
+    **net yaw in rad** (``YAW_TURN_RAD``) and v2 gates **path curvature in 1/m**
+    (``CURV_TURN_MAN_PER_M``) — different physical quantities, so NO choice of
+    threshold makes the two commensurable.
+
+    ``v2`` is **keyword-only and REQUIRED**: a caller that has not decided which
+    label family the arm was trained on must fail at the call site rather than
+    inherit a plausible default. Two definitions of this mapping is exactly how
+    the eval and the trainer drifted apart in the first place.
+    """
+    fn = window_maneuver_labels_v2 if v2 else window_maneuver_labels
+    return fn(pose_last, future_poses, horizon)
+
+
 def route_from_future(poses: Tensor, t: int,
                       horizon_steps: int = NAV_HORIZON_STEPS,
                       min_steps: int = NAV_MIN_STEPS) -> dict:

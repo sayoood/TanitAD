@@ -122,18 +122,20 @@ class FlagshipWindowDataset(FailLoudWindowDataset):
     def __getitem__(self, i: int):
         item = super().__getitem__(i)
         p_last = item["pose_last"]
-        if self.labels_v2:
-            # v2 curvature-gated 2 s maneuver: a gentle highway curve (large R)
-            # that v1 calls a turn stays lane_keep; tight junction turns still
-            # turn; accel/brake/stop is preserved. classify_maneuver_v2 reads the
-            # whole sub-path arc, so feed pose_last + future_poses[:maneuver_h].
-            item["maneuver_label"] = refb_labels.window_maneuver_labels_v2(
-                p_last[None], item["future_poses"][None],
-                horizon=self.maneuver_h)[0].long()
-        else:                                  # v1 path (byte-identical)
-            p1 = item["future_poses"][self.maneuver_h - 1]
-            item["maneuver_label"] = refb_labels.classify_maneuver(
-                p_last[2], p1[2], p_last[3], p1[3]).long()
+        # v2 curvature-gated 2 s maneuver: a gentle highway curve (large R) that
+        # v1 calls a turn stays lane_keep; tight junction turns still turn;
+        # accel/brake/stop is preserved. classify_maneuver_v2 reads the whole
+        # sub-path arc, so the labeler is fed pose_last + future_poses.
+        # ⛔ The flag->labeler mapping is NOT re-stated here. It lives in
+        # `refb_labels.window_maneuver_labels_for`, which the eval's hierarchy
+        # panel also calls — a SECOND copy of this branch is precisely how the
+        # eval came to score every `--v2` arm against v1 labels.
+        # (Deliberately no eval-package name in this file: a guard pins that
+        # this trainer's source never mentions it, so it cannot drift into its
+        # import graph.)
+        item["maneuver_label"] = refb_labels.window_maneuver_labels_for(
+            p_last[None], item["future_poses"][None], horizon=self.maneuver_h,
+            v2=self.labels_v2)[0].long()
         # v2 lever 1: pose at t-1 (OBSERVED) so the loss can build yr0 = the
         # wrapped yaw delta / dt without touching the future. window >= 2 always.
         e_i, t = self.index[i]

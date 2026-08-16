@@ -355,7 +355,10 @@ def run_hierarchy(key, episodes=40, device="cuda", stride=8):
     res = hierarchy.run(L["model"], L["step_readout"], eps, device,
                         speed_input=bool(e.get("speed_input")), max_eps=episodes,
                         stride=stride, yaw_input=bool(e.get("yaw_input")),
-                        dyn_input=bool(e.get("dyn_input")))
+                        dyn_input=bool(e.get("dyn_input")),
+                        # the ARM'S OWN cfg.v2_labels — without this every --v2
+                        # arm's maneuver_acc is scored on v1 labels it never saw
+                        labels_v2=bool(L["labels_v2"]))
     res["model"] = {k: e.get(k) for k in ("key", "name", "arch", "encoder")}
     res["ckpt_step"] = L["step"]
     RES.mkdir(parents=True, exist_ok=True)

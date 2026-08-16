@@ -45,9 +45,39 @@ def _apply_overrides(cfg_obj, d: dict):
     return cfg_obj
 
 
+def resolve_labels_v2(entry, cfg) -> bool:
+    """Which manoeuvre-label family was this arm TRAINED on? ``cfg.v2_labels``.
+
+    ⛔ ONE definition, and the defect that earned it. The trainer's label family
+    is ``cfg.v2_labels`` (``StackConfig``; set by ``--v2``, overridden by
+    ``--labels-v2`` / ``--no-labels-v2`` — ``train_flagship4b.main``), and the
+    loader already rebuilds each arm's ``cfg`` from its OWN ``config.json``. It
+    simply never handed it to the eval, so ``taniteval.hierarchy`` hardcoded the
+    v1 labeler and mis-scored every ``--v2`` arm's ``maneuver_acc``. This reads
+    the arm's own field — it does NOT re-derive the rule.
+
+    A registry entry MAY declare ``labels_v2`` (for arms whose ``cfg`` the
+    loader cannot reconstruct, e.g. ``refa-plus``). When it declares one AND the
+    rebuilt cfg has one, they must AGREE: a silent disagreement here is the exact
+    failure mode this function exists to end, so it raises instead.
+    """
+    from_cfg = getattr(cfg, "v2_labels", None)
+    declared = entry.get("labels_v2")
+    if declared is not None and from_cfg is not None \
+       and bool(declared) != bool(from_cfg):
+        raise ValueError(
+            f"labels_v2 disagreement for arm {entry.get('key')!r}: registry "
+            f"entry says {bool(declared)}, the run's own config.json says "
+            f"{bool(from_cfg)}. Fix the registry — the run config wins on "
+            "facts, and a maneuver_acc scored under the wrong family is not a "
+            "measurement.")
+    return bool(from_cfg if declared is None else declared)
+
+
 def load(entry, device="cuda"):
     ck = torch.load(entry["ckpt"], map_location="cpu", weights_only=False)
     arch, grounding, step_readout, feed = entry["arch"], None, None, "frames"
+    cfg = None
 
     if arch == "flagship-worldmodel":
         from tanitad.models.fourbrain import WorldModel
@@ -155,4 +185,7 @@ def load(entry, device="cuda"):
     return dict(model=model, grounding=grounding, step_readout=step_readout,
                 feed=feed, step=ck.get("step"),
                 state_dim=getattr(model, "state_dim", None),
-                traj_capable=step_readout is not None)
+                traj_capable=step_readout is not None,
+                # The arm's OWN label family, for every panel that scores a
+                # manoeuvre head against a derived label (hierarchy.run).
+                cfg=cfg, labels_v2=resolve_labels_v2(entry, cfg))
