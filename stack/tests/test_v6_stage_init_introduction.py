@@ -59,16 +59,31 @@ def sw_ckpt(tmp_path_factory):
 def test_only_s_t_may_introduce_and_only_its_declared_modules():
     """S-T introduces the selector (by design), since F-1
     (DIAGRAM_CONFORMANCE.md 2026-08-16) the zero-init g_str->P_T port
-    `cond_tac_dyn.`, and since the diffusion/MPC/fallback build (same day) the
+    `cond_tac_dyn.`, since the diffusion/MPC/fallback build (same day) the
     diffusion proposal generator `prop_diffusion.` (F-15, +437,954 params
     MEASURED at production geometry) and the fallback trigger's calibration
-    buffers `fallback.` (F-17, 8 keys, 0 params). The MPC refiner needs no
-    entry — it holds no parameter and no buffer. Every other stage still
-    introduces nothing. ⚠️ This pin is EXACT on purpose: growing the
-    allowance must fail here first and be extended consciously, which is what
-    happened for each entry after `cand_score.`."""
+    buffers `fallback.` (F-17, 8 keys, 0 params), and since F-18 (same day)
+    the PERCEPTION AGENT-SLOT DECODER `agent_slots.` (+3,207,445 params
+    MEASURED at the §6 production geometry, inside its pre-registered 2-4 M
+    band). The MPC refiner needs no entry — it holds no parameter and no
+    buffer. Every other stage still introduces nothing.
+
+    ⚠️ THE F-18 ENTRY SHARPENS WHAT AN ENTRY MEANS, so the reasoning is
+    recorded here rather than rediscovered: an allowance is about KEYS
+    ARRIVING, **not** about the stage optimising the module. No ladder stage
+    trains `agent_slots.` — the v6 batch carries frames/actions/poses/future_*
+    and no agent labels, so `interp` appears in no `STAGE_GROUPS` entry but
+    S-J's (which is MODULE_GROUPS by definition), and a frozen-trunk probe in
+    the P8 idiom is what optimises it. `fallback.` (0 trainable params) was
+    already this shape; F-18 makes it the second case, which is when a pattern
+    should be written down.
+
+    ⚠️ This pin is EXACT on purpose: growing the allowance must fail here
+    first and be extended consciously, which is what happened for each entry
+    after `cand_score.`."""
     assert STAGE_MAY_INTRODUCE["S-T"] == (
-        "cand_score.", "cond_tac_dyn.", "prop_diffusion.", "fallback.")
+        "cand_score.", "cond_tac_dyn.", "prop_diffusion.", "fallback.",
+        "agent_slots.")
     assert STAGE_MAY_INTRODUCE["S-W"] == ()
     assert STAGE_MAY_INTRODUCE["S-S"] == ()
     assert STAGE_MAY_INTRODUCE["S-J"] == ()
@@ -86,7 +101,8 @@ def test_s_t_can_now_init_from_an_s_w_ckpt_with_a_selector(sw_ckpt, selector):
     assert rep["introduced_keys"]             # ...and the head is NAMED
     assert all(k.startswith("cand_score.") for k in rep["introduced_keys"])
     assert rep["introduced_allowance"] == [
-        "cand_score.", "cond_tac_dyn.", "prop_diffusion.", "fallback."]
+        "cand_score.", "cond_tac_dyn.", "prop_diffusion.", "fallback.",
+        "agent_slots."]
     assert rep["init_step"] == 30000
 
 

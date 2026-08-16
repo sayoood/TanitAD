@@ -303,9 +303,14 @@ def draw_panel(size, rec, sam_clip, engine_a, frame_i, s2=None):
     if lv:
         nd = lv.get("n_det") or {}
         cnt = " ".join(f"{k} {v}" for k, v in nd.items())
-        # ⛔ RECOMPUTED, not read off `live`: that flag is derived and its rule
-        # changed once (all -> any, after an underpass gave `road 2 · sky 0`).
-        alive = any(int(v) > 0 for v in nd.values())
+        # ⛔ RECOMPUTED through the ONE derivation. The `live` boolean was
+        # deleted from the schema on 2026-08-16 after a record was found on
+        # disk whose stored `live: False` contradicted its own `road 2`.
+        try:
+            from ph0_sam3 import is_live
+            alive = is_live(lv)
+        except Exception:                       # ph0_sam3 not importable here
+            alive = any(int(v) > 0 for v in nd.values())
         note = ("LIVE" if alive else "ALARM: ENGINE PRODUCED NOTHING")
         if alive and not all(int(v) > 0 for v in nd.values()):
             note += " (one control occluded — not an alarm)"
@@ -503,11 +508,12 @@ def main(argv=None) -> int:
         made.append(out)
         sc = sam_by_clip.get(cid, {})
         nd = sum(f.get("n_det", 0) for f in (sc.get("frames") or {}).values())
-        lv = sc.get("liveness") or {}
+        lv = sc.get("liveness")
+        from ph0_sam3 import is_live          # never the stored flag (C81)
         print(f"[rich] {str(cid)[:8]} -> {os.path.basename(out)} "
               f"({len(frames)} frames, {nd} sam3 det, "
-              f"live={lv.get('live')}, s2={bool(s2_by_clip.get(cid))})",
-              flush=True)
+              f"live={is_live(lv) if lv else 'NO-CONTROL'}, "
+              f"s2={bool(s2_by_clip.get(cid))})", flush=True)
 
     print(f"[rich] {len(made)} clips rendered", flush=True)
     print("RICH_DONE", flush=True)

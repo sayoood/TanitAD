@@ -256,9 +256,15 @@ def corroborate(v2: dict, sam3: dict, tracks: list[dict],
         n_agents = sum(1 for t in tracks
                        if t["concept"] in ("car", "truck", "bus", "pedestrian",
                                            "cyclist"))
-        if sam3_absent:
+        # ⛔ C77: the same rule as the prose — an absent detector may not
+        # produce a "flagged_empty" FINDING. Zero PROCESSED FRAMES is
+        # unavailability too, not a measured empty scene.
+        cen = census_state(tracks, absent_reason=(
+            "sam3 absent for this clip" if sam3_absent else None),
+            n_frames=len((sam3 or {}).get("frames") or {}))
+        if cen["state"] == CENSUS_UNAVAILABLE:
             cor["census_vs_scene"] = {"verdict": "not_computable",
-                                      "reason": "sam3 absent for this clip",
+                                      "reason": cen["reason"],
                                       "src": ["vlm"]}
         elif n_agents == 0:
             cor["census_vs_scene"] = {"verdict": "flagged_empty_urban",
@@ -293,8 +299,16 @@ def emit_vocab(v2: dict, alp: dict | None,
                           "value": sym.get("goal_kind")})
 
     # ---- strategic layer: geometry decides, the VLM corroborates ----------
-    g_str = s2_derive.derive_g_str(engine_a, sym)
-    a_str = s2_derive.derive_a_str(engine_a, sym)
+    # ⛔ §LC (PI 2026-08-16): PREPARE_LANE_CHANGE needs LANE CONTEXT, not
+    # observed displacement. `lane_context=None` is the HONEST state of every
+    # clip today — B1's `lanes_visible`/`lane_ego` are NOT wired in on
+    # purpose: the PI's own review calls the count wrong, its `conf` is
+    # degenerate ("high" on 201/201) and it never uses its 0=unclear escape
+    # (0/201). Wiring an unreliable signal in would replace an unidentifiable
+    # label with a confidently wrong one. See LANE_CHANGE_DEEP_REVIEW.md.
+    lane_context = None
+    g_str = s2_derive.derive_g_str(engine_a, sym, lane_context=lane_context)
+    a_str = s2_derive.derive_a_str(engine_a, sym, lane_context=lane_context)
     for blk in (g_str, a_str):
         blk["src"] = "engine_a" if blk["provenance"] == "path" else "vlm"
     assert g_str["token"] in STRATEGIC_GOAL_TOKENS
@@ -342,19 +356,103 @@ def emit_vocab(v2: dict, alp: dict | None,
     return vocab, conflicts
 
 
-def scenario_line(v2: dict, tracks: list[dict]) -> str:
+# --------------------------------------------------------------------------- #
+# ⛔ C77 FAMILY — AN ABSENT MEASUREMENT MUST NEVER RENDER AS A CONFIDENT        #
+# NEGATIVE. `"no agents"` and `"perception unavailable"` are DIFFERENT CLAIMS.  #
+# --------------------------------------------------------------------------- #
+# The defect this replaces (PI review 2026-08-16, `03ba450b`: *"not agent said
+# by the pipeline. In the picture of frame 9 there is clear a car as incoming
+# traffic"*) was a one-token `or` fallback:
+#     ", ".join(...) or "no agents"
+# An EMPTY census is falsy, so absence of evidence was rendered as evidence of
+# absence. MEASURED on the fused aug120 corpus: `"no agents"` appeared on
+# 119/201 records, and 115 of those 119 (96.6 %) ALREADY carried
+# `perception.absent` in the structured layer — the record knew, and the prose
+# said otherwise.
+#: The three states a census can be in. `UNAVAILABLE` may never be phrased as
+#: a quantity, and a measured zero is phrased as a COUNT ("0 agents
+#: detected" — a fact about the detector), never as a claim about the world.
+CENSUS_MEASURED = "measured"
+CENSUS_UNAVAILABLE = "unavailable"
+
+
+def census_state(tracks: list[dict], *, absent_reason: str | None = None,
+                 n_frames: int | None = None) -> dict:
+    """Three-state agent census: MEASURED(counts) vs UNAVAILABLE(reason).
+
+    Structurally unable to report a measured zero when perception did not
+    run: the `absent_reason` / zero-frames branches return UNAVAILABLE before
+    the counts are ever consulted.
+
+    ⚠️ `n_frames=None` means **NOT SUPPLIED**, which is NOT the same as zero —
+    `colab/s2_lab_lib.py:832` calls `scenario_line(r, tracks)` positionally and
+    cannot pass it. Tracks are themselves proof the detector ran, so a
+    non-empty census stays MEASURED; an empty one with an unknown frame count
+    is honestly UNAVAILABLE, because that is exactly the case we cannot tell
+    apart. (Collapsing None into 0 would have made every legacy caller report
+    "unavailable" even with agents in frame — the C77 defect inverted.)
+    """
+    if absent_reason:
+        return {"state": CENSUS_UNAVAILABLE, "reason": absent_reason,
+                "counts": None, "n_agents": None}
+    if n_frames == 0:
+        return {"state": CENSUS_UNAVAILABLE,
+                "reason": "no frames processed by the detector",
+                "counts": None, "n_agents": None}
+    if n_frames is None and not tracks:
+        return {"state": CENSUS_UNAVAILABLE,
+                "reason": "frame count not supplied and census empty — a "
+                          "measured zero and an absent detector are "
+                          "indistinguishable here",
+                "counts": None, "n_agents": None}
+    counts: dict[str, int] = {}
+    for t in tracks:
+        counts[t["concept"]] = counts.get(t["concept"], 0) + 1
+    return {"state": CENSUS_MEASURED, "reason": None, "counts": counts,
+            "n_agents": len(tracks)}
+
+
+def census_phrase(cen: dict) -> str:
+    """The prose rendering — the ONLY place a census becomes English."""
+    if cen["state"] == CENSUS_UNAVAILABLE:
+        return f"agent census UNAVAILABLE ({cen['reason']})"
+    if not cen["counts"]:
+        # a COUNT, not a claim about the world: the detector ran and returned
+        # nothing, which is a measurement of the detector's output.
+        return "0 agents detected"
+    return ", ".join(f"{v} {k}" for k, v in sorted(cen["counts"].items()))
+
+
+def lane_phrase(sc: dict) -> str:
+    """⚠️ `lanes_visible` is B1-DEFINED as *"lanes you can count on the ego's
+    carriageway"* (`ph0_v2.py:140`) — it EXCLUDES the oncoming carriageway.
+    Rendered as `"rural 1-lane"` it reads as "a one-lane road", which is what
+    the PI (correctly) objected to on `03ba450b`: *"the pipeline is saying
+    there is one lane, better: there are two lanes, one ego lane and one for
+    oncoming traffic"*. The count was right by its own definition and the
+    PHRASE was wrong. Name the scope in the prose so the two readings cannot
+    be confused again."""
+    n = sc.get("lanes_visible")
+    road = sc.get("road_type", "?")
+    if not isinstance(n, int) or n <= 0:
+        # B1's documented escape (0 = unclear) — an absent count, not "0 lanes"
+        return f"{road}, lane count UNCLEAR (B1 returned {n!r})"
+    return f"{road} {n}-lane-ego-carriageway"
+
+
+def scenario_line(v2: dict, tracks: list[dict], *,
+                  absent_reason: str | None = None,
+                  n_frames: int | None = None) -> str:
     sc = v2.get("scene") or {}
     ego = v2.get("ego_state") or {}
     sit = v2.get("situations") or {}
-    census: dict[str, int] = {}
-    for t in tracks:
-        census[t["concept"]] = census.get(t["concept"], 0) + 1
+    cen = census_state(tracks, absent_reason=absent_reason, n_frames=n_frames)
     parts = [
         f"{sc.get('illumination', '?')}, {sc.get('weather', '?')}, "
-        f"{sc.get('road_type', '?')} {sc.get('lanes_visible', '?')}-lane",
+        f"{lane_phrase(sc)}",
         f"ego {ego.get('v_now_ms', float('nan')):.1f} m/s {ego.get('motion', '?')}"
         f"/{ego.get('turning', '?')}",
-        ", ".join(f"{v} {k}" for k, v in sorted(census.items())) or "no agents",
+        census_phrase(cen),
     ]
     flags = [k for k in ("lane_change", "intersection", "roundabout")
              if sit.get(k)]
@@ -449,7 +547,10 @@ def main(argv=None) -> int:
             continue
         absent_reason = a.missing_sam3_ok if cid not in sam3_by else None
         s3 = sam3_by.get(cid) or {}
-        tracks = build_tracks(s3.get("frames") or {})
+        frames = s3.get("frames") or {}
+        tracks = build_tracks(frames)
+        census = census_state(tracks, absent_reason=absent_reason,
+                              n_frames=len(frames))
         # engine-A spine: recompute from the bridged npz when the v2 record
         # does not carry it (the production records do not — MEASURED)
         if "speed_profile" not in r:
@@ -485,6 +586,9 @@ def main(argv=None) -> int:
             "perception": {"tracks": tracks,
                            "per_concept_hits": s3.get("per_concept_hits"),
                            "src": "sam3",
+                           # ⛔ the machine-readable census — read THIS, never
+                           # parse `scenario_description` (C77 fix)
+                           "census": census,
                            **({"absent": absent_reason}
                               if absent_reason else {})},
             "semantics": {"scene": r.get("scene"), "signs": r.get("signs"),
@@ -492,7 +596,8 @@ def main(argv=None) -> int:
                           "sign_text_status": "pending_g1_gate"},
             "alpamayo": alp,
             "corroboration": cor, "vocab": vocab,
-            "scenario_description": scenario_line(r, tracks),
+            "scenario_description": scenario_line(
+                r, tracks, absent_reason=absent_reason, n_frames=len(frames)),
             "_conflicts": conf,
             "inference_admissible": admissible,
             **({"_inference_admissible_note":

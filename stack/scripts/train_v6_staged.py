@@ -293,7 +293,31 @@ STAGE_MAY_INTRODUCE: dict[str, tuple[str, ...]] = {
     # the P7 band ships with the checkpoint like the anchor table). The MPC
     # refiner needs NO entry: it holds no parameters and no buffers, so
     # flipping it changes no state_dict key at all.
-    "S-T": ("cand_score.", "cond_tac_dyn.", "prop_diffusion.", "fallback."),
+    # ⭐ 2026-08-16, F-18: S-T may also introduce the PERCEPTION AGENT-SLOT
+    # DECODER (`agent_slots.`, +3,207,445 params MEASURED at the §6 production
+    # geometry — d_model 256 x depth 3 x 16 queries over the 16 readout cells,
+    # inside the pre-registered 2-4 M band).
+    # ⚠️ IT IS AN INTRODUCTION-ONLY ENTRY, AND THAT DISTINCTION MATTERS: no
+    # ladder stage TRAINS it. The v6 batch carries frames/actions/poses/future_*
+    # and no agent labels (see the `interp` note on STAGE_GROUPS in v6.py), so
+    # this allowance exists so a run can CARRY the interpretation head forward
+    # from an S-W checkpoint that never had it, while a frozen-trunk probe in
+    # the P8 idiom is what optimises it. An entry here has never MEANT "this
+    # stage optimises the module" — `fallback.` (0 trainable params) was
+    # already the counter-example.
+    # ⚠️ CARRY RULE, recorded HERE because it is NOT chain-enforced: if an S-T
+    # run is ever launched WITH `--agent-slots`, its checkpoint carries
+    # `agent_slots.*` and S-S/S-J must be launched with the flag too, or those
+    # keys become UNEXPECTED and `load_stage_init` is fatal — exactly the
+    # `--selector` / `--tac-goal-cond` failure `v6_chain.assert_geometry_carry`
+    # catches from a JSON read BEFORE the corpus mounts. It does NOT catch this
+    # one: that check enumerates its levers first-class and there is no
+    # `Step.agent_slots`, because no chain step sets the flag (no ladder stage
+    # trains the head). ⇒ plumbing it into the chain is the follow-on the moment
+    # a chain step wants the head; until then `load_stage_init` still refuses
+    # correctly, only later and with a less specific message.
+    "S-T": ("cand_score.", "cond_tac_dyn.", "prop_diffusion.", "fallback.",
+            "agent_slots."),
     "S-S": (),                  # trains layer_str, which S-T already carried
     "S-J": (),                  # joint polish introduces nothing
 }
@@ -466,9 +490,26 @@ STAGE_GATE_SPEC: dict[str, dict] = {
                    "STRATEGIC_family": "taniteval/tools/eval_four_families.py",
                    "sel_gap": "tanitad.models.tactical.sel_gap_tac",
                    "P7": "scripts/w7_roll_rerank.py",
-                   "X2_seam": "taniteval/ci.py (PAIRED bootstrap only)"},
+                   # ⭐ 2026-08-16 (F-16): the owner was a bare estimator name,
+                   # which is not an owner — the instrument did not exist. It
+                   # does now: taniteval/tools/seam_probe.py (+ taniteval.seam),
+                   # which delegates its intervals to ci.py's PAIRED bootstrap.
+                   "X2_seam": "taniteval/tools/seam_probe.py "
+                              "(taniteval.seam; PAIRED bootstrap from "
+                              "taniteval/ci.py only)"},
         "criteria": {
             "sel_gap": "<= 0.5x the fan oracle at T1 tier",
+            # X2 is "seam metrics VERIFY, never repair" (the binding diagram).
+            # A seam finding is a REPORT, never a licence for a repair term.
+            "X2_seam":
+                "no CONFIRMED seam row at the 2 s band edge (boundary 20) on "
+                "the emitted winner: the paired episode-cluster CI on the "
+                "seam-vs-within-band excess must NOT lie wholly above the "
+                "materiality floor (1x the within-band step) under BOTH the "
+                "global and the local null. A null counts only when it is "
+                "WELL-POWERED (MDE@80% <= the floor, >= 8 episode clusters); "
+                "otherwise the probe returns INCONCLUSIVE, which is not a "
+                "pass. VERIFY, NEVER REPAIR",
             "TACTICAL_family": "confusion improves on E4.1-derived strata",
             "four_families_horizons":
                 "every family reported at BOTH 0-2 s AND 0-6 s "
@@ -496,7 +537,9 @@ STAGE_GATE_SPEC: dict[str, dict] = {
         "reported": ("S1_ade_8_30s", "X2_seam", "goal_provenance"),
         "owners": {"STRATEGIC_family": "taniteval/tools/eval_four_families.py",
                    "S1_ade_8_30s": "taniteval/tools/t1_eval.py",
-                   "X2_seam": "taniteval/ci.py (PAIRED bootstrap only)",
+                   "X2_seam": "taniteval/tools/seam_probe.py "
+                              "(taniteval.seam; PAIRED bootstrap from "
+                              "taniteval/ci.py only) — F-16, 2026-08-16",
                    "goal_provenance":
                        "config-audit over the S-S run config + S2 label "
                        "artifacts (instrument to build — see "
@@ -1810,6 +1853,19 @@ def build_stack_from_args(a) -> V6Stack:
         mpc_w_consist=float(getattr(a, "mpc_w_consist", 0.0)),
         fallback_trigger=bool(getattr(a, "fallback_trigger", False)),
         fallback_roll_k=int(getattr(a, "fallback_roll_k", 10)),
+        # ---- F-18 PERCEPTION AGENT SLOTS, DEFAULT-OFF ----------------------
+        # Default False reproduces the incumbent build EXACTLY (per-tensor
+        # C75 proof in tests/test_v6_agent_slots.py). ⛔ The head trains in NO
+        # ladder stage; the flag exists so a checkpoint can CARRY it and a
+        # frozen-trunk probe can read it.
+        agent_slots=bool(getattr(a, "agent_slots", False)),
+        n_slot_queries=int(getattr(a, "n_slot_queries", 16)),
+        slot_hidden=int(getattr(a, "slot_hidden", 256)),
+        slot_depth=int(getattr(a, "slot_depth", 3)),
+        slot_heads=int(getattr(a, "slot_heads", 8)),
+        slot_src=getattr(a, "slot_src", "cells"),
+        isolate_interp_from_encoder=not bool(
+            getattr(a, "no_isolate_interp", False)),
         vit5_encoder=bool(a.vit5_encoder), n_registers=a.n_registers)
     stack = V6Stack(cfg)
     # ---- the P7 fallback calibration, installed BEFORE the first forward ----
@@ -1841,7 +1897,12 @@ def build_stack_from_args(a) -> V6Stack:
           flush=True)
     iso = stack.assert_isolation(batch_size=1,
                                  strict=not a.no_isolate_planner
-                                 and not a.no_isolate_uplink)
+                                 and not a.no_isolate_uplink
+                                 # F-18's mis-wired arm belongs on the SAME
+                                 # list: a declared control must be buildable,
+                                 # or it is not a control.
+                                 and not bool(getattr(a, "no_isolate_interp",
+                                                      False)))
     print(f"[v6] X3 isolation pass={iso['pass']} "
           f"violations={iso['n_violations']}", flush=True)
     return stack
@@ -3136,6 +3197,42 @@ def build_parser() -> argparse.ArgumentParser:
                          "a CI including 0 (P7's pre-registered gate). "
                          "Without it the comparator emits fired=None and "
                          "says why — it never invents a boolean.")
+    # ---- F-18 — THE PERCEPTION AGENT-SLOT DECODER, DEFAULT-OFF -------------
+    ap.add_argument("--agent-slots", action="store_true",
+                    help="⭐ build the DETR-style perception agent-slot "
+                         "decoder (F-18, DIAGRAM_CONFORMANCE.md §4.2 — the "
+                         "LAST unbuilt PERCEPTION cell): bbox cx,cy,yaw,l,w · "
+                         "state v_rel,yaw-rate,occluded · class, over the "
+                         "spatial tokens. +3,207,445 params MEASURED at the "
+                         "§6 2-4 M band. ⛔ VISION-ONLY at inference (its "
+                         "forward takes ONE tensor). ⛔ NO ladder stage "
+                         "trains it — the v6 batch has no agent labels; a "
+                         "frozen-trunk probe does. S-T may INTRODUCE it; "
+                         "⛔ REFUSED in S-W (strict-resume break).")
+    ap.add_argument("--n-slot-queries", type=int, default=16,
+                    help="slot count. ⚠️ A DECLARED PLACEHOLDER — the right "
+                         "value is the join's measured per-frame agent-count "
+                         "distribution, which is UNMEASURED. Over-full frames "
+                         "drop their FARTHEST targets and COUNT the drop.")
+    ap.add_argument("--slot-hidden", type=int, default=256)
+    ap.add_argument("--slot-depth", type=int, default=3)
+    ap.add_argument("--slot-heads", type=int, default=8)
+    ap.add_argument("--slot-src", choices=("cells", "tokens"), default="cells",
+                    help="the memory the slots cross-attend into. 'cells' = "
+                         "the readout's spatial latent (the surface whose "
+                         "content is the open question, RC1); 'tokens' = the "
+                         "encoder's raw patches, the INFORMATION CONTROL that "
+                         "separates 'the encoder cannot see agents' from 'the "
+                         "readout grid cannot carry them'.")
+    ap.add_argument("--no-isolate-interp", action="store_true",
+                    help="⛔ THE DELIBERATELY MIS-WIRED ARM. Lets the slot "
+                         "decoder's PERCEPTION-LABEL gradient reach the "
+                         "encoder — which the diagram's header row forbids in "
+                         "any trunk loss, and which also destroys the head's "
+                         "own meaning (a readout that trained its input can no "
+                         "longer say what the latent already carried). It "
+                         "exists so assert_isolation's perception_to_trunk "
+                         "edge can FAIL, i.e. so it is a check.")
     # ---- GOAL-HEAD STRUCTURE + ANCHOR_GOAL — ALL DEFAULT-OFF ---------------
     # These V6Config levers shipped with NO command that could build them.
     # Every default here reproduces the incumbent state_dict EXACTLY.
@@ -3435,6 +3532,32 @@ def preflight(a) -> list[str]:
             "strict resume of the LIVE S-W run. It is introducible at S-T "
             "(STAGE_MAY_INTRODUCE['S-T']) and holds no trainable parameter "
             "in any stage.")
+    # ---- F-18 PERCEPTION AGENT SLOTS ---------------------------------------
+    if a.stage == "S-W" and bool(getattr(a, "agent_slots", False)):
+        problems.append(
+            "--stage S-W with --agent-slots: the slot decoder adds "
+            "agent_slots.* keys to the state_dict — which breaks a strict "
+            "resume of the LIVE S-W run. It is introducible at S-T "
+            "(STAGE_MAY_INTRODUCE['S-T']). ⚠️ And note what the introduction "
+            "does NOT mean: no ladder stage TRAINS this head — the v6 batch "
+            "carries no agent labels — so it is carried, and a frozen-trunk "
+            "probe (the P8 idiom) is what optimises it.")
+    if bool(getattr(a, "no_isolate_interp", False)) \
+            and not bool(getattr(a, "agent_slots", False)):
+        problems.append(
+            "--no-isolate-interp without --agent-slots: a mis-wiring flag for "
+            "a module that is not built is a lever that silently does nothing "
+            "(the --fallback-calibration lesson). ⚠️ And when it IS built the "
+            "flag is the DELIBERATELY MIS-WIRED control arm: it lets a "
+            "PERCEPTION LABEL train the encoder, which the binding diagram "
+            "header forbids in any trunk loss, and assert_isolation's "
+            "perception_to_trunk edge then FAILS by construction — which is "
+            "the point of it, not a bug.")
+    if getattr(a, "slot_src", "cells") != "cells" \
+            and not bool(getattr(a, "agent_slots", False)):
+        problems.append(
+            f"--slot-src {a.slot_src} without --agent-slots: the memory arm of "
+            f"a decoder that is not built reaches nothing.")
     if bool(getattr(a, "mpc_refine", False)) and a.selector != "goal":
         problems.append(
             f"--mpc-refine with --selector {a.selector}: the refinement's "

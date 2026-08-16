@@ -143,13 +143,13 @@ else:
             sz = L.bank_json(api, BANK_REPO, f"{BANK_PREFIX}{cid}.json", rec)
             n_banked += 1
             lv = rec.get("liveness") or {}
-            n_live += int(bool(lv.get("live")))
+            n_live += int(ph0_sam3.is_live(lv))   # never the stored flag
             n_det_run += int(rec.get("n_det_total") or 0)
             hits = ",".join(f"{k}:{v}"
                             for k, v in rec["per_concept_hits"].items() if v)
             print(f"[bank] {n_banked}/{len(todo)} {cid[:8]} {sz}B "
                   f"det={rec['n_det_total']} err={rec.get('n_err_total')} "
-                  f"live={lv.get('live')}{lv.get('n_det')} [{hits or 'none'}]",
+                  f"live={ph0_sam3.is_live(lv)}{lv.get('n_det')} [{hits or 'none'}]",
                   flush=True)
         L.gpu_mem_report(f"after batch b{b0:05d}")
         shutil.rmtree(bwork, ignore_errors=True)

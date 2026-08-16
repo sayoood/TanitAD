@@ -1,0 +1,156 @@
+{
+ "_evidence_class": "MEASURED (ours; records.parquet)",
+ "auto_labeling_leg": {
+  "n_rows": 4729,
+  "n_rows_without_parsable_json": 0,
+  "_sub_field_table": [
+   {
+    "sub_field": "chain_of_causation",
+    "n_declared": 4729,
+    "n_non_null": 4729,
+    "non_null_pct": 100.0
+   },
+   {
+    "sub_field": "critical_components_analysis",
+    "n_declared": 4729,
+    "n_non_null": 3140,
+    "non_null_pct": 66.4
+   },
+   {
+    "sub_field": "ego_vehicle_motion_analysis",
+    "n_declared": 4729,
+    "n_non_null": 2943,
+    "non_null_pct": 62.23
+   },
+   {
+    "sub_field": "trajectory_analysis",
+    "n_declared": 4729,
+    "n_non_null": 133,
+    "non_null_pct": 2.81
+   }
+  ],
+  "_rule": "a declared sub-field that is always null is NOT a source; read n_non_null, never the schema."
+ },
+ "two_reason_legs_are_independent": {
+  "_question": "is auto_labeling.chain_of_causation a SECOND source, or a duplicate of meta_action.cot? Quoting a duplicate as corroboration would be double-counting.",
+  "n_clips_with_both": 4729,
+  "n_exact_string_match": 1049,
+  "exact_match_pct": 22.18,
+  "token_jaccard_mean": 0.5613,
+  "token_jaccard_median": 0.5714
+ },
+ "meta_action_cot_reason_content": {
+  "n_clips": 4729,
+  "probes": {
+   "lead_vehicle": {
+    "n": 1002,
+    "pct": 21.19
+   },
+   "traffic_light": {
+    "n": 650,
+    "pct": 13.74
+   },
+   "sign": {
+    "n": 219,
+    "pct": 4.63
+   },
+   "curve": {
+    "n": 378,
+    "pct": 7.99
+   },
+   "intersection": {
+    "n": 403,
+    "pct": 8.52
+   },
+   "roundabout": {
+    "n": 140,
+    "pct": 2.96
+   },
+   "pedestrian": {
+    "n": 291,
+    "pct": 6.15
+   },
+   "parked_obstacle": {
+    "n": 459,
+    "pct": 9.71
+   },
+   "lane_structure": {
+    "n": 1549,
+    "pct": 32.76
+   },
+   "speed_bump": {
+    "n": 270,
+    "pct": 5.71
+   },
+   "merge": {
+    "n": 73,
+    "pct": 1.54
+   },
+   "clear_road": {
+    "n": 640,
+    "pct": 13.53
+   }
+  },
+  "n_matching_no_probe": 405,
+  "pct_matching_no_probe": 8.56,
+  "_note": "DIAGNOSTIC BUCKETS over the reason text — what the field talks about. NOT a label mapping; buckets overlap and do not sum to 100 %."
+ },
+ "auto_labeling_coc_reason_content": {
+  "n_clips": 4729,
+  "probes": {
+   "lead_vehicle": {
+    "n": 1131,
+    "pct": 23.92
+   },
+   "traffic_light": {
+    "n": 515,
+    "pct": 10.89
+   },
+   "sign": {
+    "n": 154,
+    "pct": 3.26
+   },
+   "curve": {
+    "n": 227,
+    "pct": 4.8
+   },
+   "intersection": {
+    "n": 451,
+    "pct": 9.54
+   },
+   "roundabout": {
+    "n": 163,
+    "pct": 3.45
+   },
+   "pedestrian": {
+    "n": 274,
+    "pct": 5.79
+   },
+   "parked_obstacle": {
+    "n": 526,
+    "pct": 11.12
+   },
+   "lane_structure": {
+    "n": 2018,
+    "pct": 42.67
+   },
+   "speed_bump": {
+    "n": 163,
+    "pct": 3.45
+   },
+   "merge": {
+    "n": 92,
+    "pct": 1.95
+   },
+   "clear_road": {
+    "n": 652,
+    "pct": 13.79
+   }
+  },
+  "n_matching_no_probe": 420,
+  "pct_matching_no_probe": 8.88,
+  "_note": "DIAGNOSTIC BUCKETS over the reason text — what the field talks about. NOT a label mapping; buckets overlap and do not sum to 100 %."
+ },
+ "auto_labeling_coc_distinct": 1685,
+ "meta_action_cot_distinct": 1103
+}

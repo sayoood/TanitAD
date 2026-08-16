@@ -82,6 +82,8 @@ from torch import Tensor, nn
 
 from tanitad.config import EncoderConfig, PredictorConfig, ReadoutConfig
 from tanitad.eval.spectral import effective_rank, participation_ratio
+from tanitad.models.agent_slots import (N_QUERIES_DEFAULT, AgentSlotDecoder,
+                                        SlotDecodeRanges)
 from tanitad.models.encoder import ViT5Encoder, ViTEncoder
 from tanitad.models.metric_dynamics import StepDisplacementReadout
 from tanitad.models.predictor import OperativePredictor
@@ -105,6 +107,10 @@ __all__ = [
     # ⭐ the three gated diagram cells (2026-08-16): proposals / MPC / fallback
     "DiffusionProposalGenerator", "MpcRefiner", "FallbackTrigger",
     "P7_GATE_RHO",
+    # ⭐ F-18 — the PERCEPTION agent-slot decoder (re-exported from its own
+    # module so `from tanitad.models.v6 import ...` reaches the whole v6
+    # surface; the implementation lives in tanitad/models/agent_slots.py)
+    "AgentSlotDecoder",
     "IsolationViolation", "PARAM_BUDGET",
     # horizon (§4b)
     "PLAN_STEPS", "DT", "HORIZON_S", "OP_BAND_S", "TAC_BAND_S",
@@ -2456,6 +2462,18 @@ ISOLATION_MATRIX: dict[str, tuple[str, ...]] = {
     "layer_str": ("layer_str",),
     # Planner/goal heads NEVER into any encoder.
     "planner": ("planner",),
+    # ⭐ INTERPRETATION HEADS (F-18's agent-slot decoder today) reach NOTHING
+    # but themselves — a STRICTER row than `planner`'s in consequence, because
+    # what it protects the trunk from is not a planning gradient but a
+    # PERCEPTION LABEL. The diagram's header row is binding: *"no perception
+    # label, map or reward in any trunk loss"*. A slot decoder whose gradient
+    # reached the encoder would make `obstacle.offline` cuboids a trunk
+    # supervisor, i.e. exactly the thing the whole label-free O1–O6 programme
+    # is constructed to avoid — and it would also destroy the head's own
+    # meaning: a readout that TRAINED its input can no longer answer "what does
+    # the latent already carry" (the §1.10 latents-only discipline P8 states).
+    # Measured by the `perception_to_trunk` edge in :meth:`V6Stack.assert_isolation`.
+    "interp": ("interp",),
 }
 
 
@@ -2680,6 +2698,59 @@ class V6Config:
     #: 0 = spread-only (the signal says so: ``fb_signal_includes_rollvar``).
     fallback_roll_k: int = 10
 
+    # ---- THE PERCEPTION AGENT-SLOT DECODER (F-18, 2026-08-16) --------------
+    # ⛔ DEFAULT OFF, built at the very END of ``__init__``, and the default
+    # build's state_dict is proved BYTE-IDENTICAL per tensor against a
+    # CONTENT-anchored pre-change revision (C75) in
+    # ``tests/test_v6_agent_slots.py`` — the live resumes are 87,893,449/405
+    # (default) and 336,542,025/573 (config E) and a broken strict resume kills
+    # them.
+    #: ⭐ build :class:`~tanitad.models.agent_slots.AgentSlotDecoder` — §4.2's
+    #: first interpretation-head row and the LAST unbuilt PERCEPTION cell of
+    #: the diagram (DIAGRAM_CONFORMANCE.md F-18: *"NEW — design here;
+    #: DETR-style slot decoder ~2–4 M params on spatial tokens"*).
+    #: ⛔ VISION-ONLY AT INFERENCE (PI 2026-08-03): its ONLY input is the
+    #: spatial memory computed from ``frames``. The decoder's ``forward`` takes
+    #: one tensor and has no keyword through which ego, actions, goals or a
+    #: situation channel could arrive — the signature IS the audit.
+    #: ⚠️ It trains in NO ladder stage (see ``STAGE_GROUPS``' note): its
+    #: targets are agent cuboids and the v6 batch has none. S-T may INTRODUCE
+    #: it (``STAGE_MAY_INTRODUCE``) so a checkpoint can CARRY it.
+    agent_slots: bool = False
+    #: number of slot queries. ⚠️ A DECLARED PLACEHOLDER, not a fitted value —
+    #: the right number is the join's measured per-frame agent-count
+    #: distribution and that is UNMEASURED (no join file lives in the repo).
+    #: Under-sizing it does not corrupt the loss (the farthest targets are
+    #: dropped and COUNTED, ``slot_set_loss``'s ``n["dropped"]``) but it does
+    #: cap what the head can express on crowded frames.
+    n_slot_queries: int = N_QUERIES_DEFAULT
+    slot_hidden: int = 256
+    slot_depth: int = 3
+    slot_heads: int = 8
+    #: ⭐ THE MEMORY THE SLOTS CROSS-ATTEND INTO — a DECLARED ARM, with its
+    #: control, because a null result is otherwise unattributable.
+    #: ``"cells"`` (default) = the readout's spatial CELL tokens, i.e. the
+    #: latent surface every other v6 probe reads (``V6Stack.cells``; O2/O3 act
+    #: on exactly these). That is the surface whose CONTENT is the open
+    #: question — RC1's *"lead geometry lives in these cells and dies in
+    #: aggregation"*, and §4.2's "lead state absent in v5f (measured)".
+    #: ``"tokens"`` = the encoder's raw patch tokens — the INFORMATION CONTROL.
+    #: If ``cells`` fails and ``tokens`` succeeds, the agents ARE visible to the
+    #: encoder and the READOUT is what destroys them, which is a finding about
+    #: the geometry firewall and not about the world model. Without the control
+    #: a failure is unattributable between "the encoder cannot see agents" and
+    #: "the 4x4 grid cannot carry them" — the C6 confound, one floor down.
+    slot_src: str = "cells"
+    #: ⛔ X3 for the interpretation head. True (default) = the slot decoder's
+    #: memory is DETACHED, so its perception-label gradient cannot reach the
+    #: encoder/readout — the binding *"no perception label in any trunk loss"*
+    #: header row. Setting it False is the deliberately MIS-WIRED control arm,
+    #: and :meth:`V6Stack.assert_isolation`'s ``perception_to_trunk`` edge then
+    #: FAILS — which is precisely what makes that edge a check rather than a
+    #: comment (a guard that cannot fail is the C13 family). It exists for the
+    #: probe's negative control and for NO training use.
+    isolate_interp_from_encoder: bool = True
+
     # ---- vocabulary --------------------------------------------------------
     d_goal_embed: int = 128
 
@@ -2840,6 +2911,45 @@ class V6Config:
             raise ValueError(f"roll depths must be >= 0, got mpc_roll_k="
                              f"{self.mpc_roll_k}, fallback_roll_k="
                              f"{self.fallback_roll_k}")
+        # ---- THE PERCEPTION AGENT-SLOT DECODER (F-18) ----------------------
+        if self.slot_src not in ("cells", "tokens"):
+            raise ValueError(
+                f"slot_src must be cells|tokens, got {self.slot_src!r}. "
+                f"'cells' is the readout's spatial latent — the surface whose "
+                f"content is the open question (RC1); 'tokens' is the "
+                f"encoder's raw patches, the INFORMATION CONTROL that "
+                f"separates 'the encoder cannot see agents' from 'the readout "
+                f"grid cannot carry them'.")
+        if self.agent_slots:
+            for nm, v in (("n_slot_queries", self.n_slot_queries),
+                          ("slot_hidden", self.slot_hidden),
+                          ("slot_depth", self.slot_depth),
+                          ("slot_heads", self.slot_heads)):
+                if int(v) < 1:
+                    raise ValueError(f"{nm} must be >= 1, got {v}")
+            if int(self.slot_hidden) % int(self.slot_heads):
+                raise ValueError(
+                    f"slot_hidden {self.slot_hidden} must divide by "
+                    f"slot_heads {self.slot_heads}")
+            # ⛔ THE TWO "AGENT SLOT" COUNTS ARE ONE SET OR THEY ARE A TYPE
+            # ERROR. `n_agent_slots` is the CARDINALITY of the categorical
+            # `agent_slot` arg that four g_tac tokens index (`GAP_TARGET`,
+            # `YIELD_AT`, `WAIT_FOR_ONCOMING`, `EVADE_IN_CORRIDOR`); this
+            # decoder is the thing that would POPULATE that set. If the head
+            # emits 16 slots and the vocabulary can only index 8, an emitted
+            # `agent_slot=12` refers to nothing — which is exactly the class of
+            # type error the categorical channel was built to remove
+            # ("writing it into a metres slot is the type error this channel
+            # exists to remove"). Refuse at build time, before the GPU.
+            if self.goal_cat_args and \
+                    int(self.n_agent_slots) != int(self.n_slot_queries):
+                raise ValueError(
+                    f"n_agent_slots {self.n_agent_slots} != n_slot_queries "
+                    f"{self.n_slot_queries} with goal_cat_args=True: the "
+                    f"categorical `agent_slot` arg INDEXES the slots this "
+                    f"decoder emits, so two different cardinalities make an "
+                    f"emitted index that refers to nothing. Set them equal, or "
+                    f"turn one of the two levers off.")
         if self.uplink not in ("stopgrad", "ema"):
             raise ValueError(f"uplink must be stopgrad|ema, got {self.uplink!r}")
         if not 0.0 < self.ema_decay < 1.0:
@@ -2945,6 +3055,16 @@ STAGES: tuple[str, ...] = ("S-W", "S-T", "S-S", "S-J")
 MODULE_GROUPS: tuple[str, ...] = (
     "encoder", "readout", "predictor_op", "layer_tac", "layer_str",
     "planner", "aux",
+    # ⭐ INTERPRETATION HEADS (F-18). A group of its own, and NOT `aux`, because
+    # `aux` MAY train the encoder by the X3 matrix (O3/O6 are label-free trunk
+    # losses and that is their job) while an interpretation head may NOT — its
+    # supervision is a PERCEPTION LABEL. Putting the slot decoder in `aux`
+    # would have opened that door silently and the isolation probe would have
+    # reported a pass, because the matrix would have permitted the edge.
+    # ⚠️ EMPTY at the default build: `V6Config.agent_slots` is False, so this
+    # group holds ZERO parameters and every per-group report gains a `0` entry
+    # and nothing else.
+    "interp",
 )
 
 #: What each stage TRAINS. Everything else is frozen.
@@ -2953,6 +3073,22 @@ MODULE_GROUPS: tuple[str, ...] = (
 #:        S-W trunk (the Drive-JEPA "planner is a post-trained consumer" shape).
 #:   S-S  strategic layer on the FROZEN S-T stack.
 #:   S-J  optional brief joint polish — isolation still ON.
+#:
+#: ⛔ ``interp`` APPEARS IN NO STAGE BUT S-J (which is ``MODULE_GROUPS`` by
+#: definition), AND THAT IS DELIBERATE. The v6 ladder cannot train the
+#: agent-slot decoder: its targets are agent cuboids, and the v6 training batch
+#: carries frames/actions/poses/future_* only — the episode contract has no
+#: agent tracks (``tanitad/data/_contract.py``; ``grep obstacle
+#: tanitad/data/physicalai.py`` -> zero). Listing ``interp`` as trainable in a
+#: stage whose loss never reaches it would make the freeze audit report a
+#: module as "training" while it receives exactly zero gradient — the same lie
+#: ``V6LossWeights.for_stage`` zeroes its planner terms to avoid. The head is
+#: trained by a FROZEN-TRUNK PROBE in the P8 idiom
+#: (``scripts/train_p8_occupancy.py``), which is also what the §6 status table
+#: means by "interpretation heads on frozen latents"; it lives in the
+#: state_dict so the checkpoint ships the interpretation head with the model,
+#: and ``STAGE_MAY_INTRODUCE["S-T"]`` is what lets a later stage carry it in
+#: over an S-W checkpoint that never had it.
 STAGE_GROUPS: dict[str, tuple[str, ...]] = {
     "S-W": ("encoder", "readout", "predictor_op", "aux"),
     "S-T": ("layer_tac", "planner"),
@@ -3105,6 +3241,16 @@ class V6Stack(nn.Module):
     encoder. :meth:`assert_isolation` backprops exactly that list. Declaring it
     is what makes the check total: a new head added without appending to the
     declaration is caught by ``tests/test_v6_staged.py::test_planner_surface_is_total``.
+
+    ⭐ AND SINCE F-18 THERE IS A SECOND DECLARED SURFACE, ``interp_side`` — the
+    PERCEPTION agent-slot decoder (``cfg.agent_slots``, default OFF). It is
+    separate from ``planner_side`` because it is a stricter obligation: what
+    flows through it is a PERCEPTION LABEL, which the binding diagram's header
+    row forbids in ANY trunk loss, so it may reach nothing outside its own
+    ``interp`` group — not merely nothing in an encoder. Its edge
+    (``perception_to_trunk``) appears in :meth:`assert_isolation` only when the
+    head is built, and ``isolate_interp_from_encoder=False`` is the mis-wired
+    arm that makes that edge FAIL, which is what keeps it a check.
     """
 
     def __init__(self, cfg: V6Config | None = None):
@@ -3340,6 +3486,31 @@ class V6Stack(nn.Module):
                 a_max=cfg.a_max, kappa_max=cfg.kappa_max, dt=cfg.dt,
                 plan_steps=cfg.plan_steps)
 
+        # ---- THE PERCEPTION AGENT-SLOT DECODER (F-18) — built LAST, only
+        # when asked. ⛔ Same rule as every gated lever above, same reason: the
+        # default path draws NO RNG, creates NO state_dict key, and every
+        # earlier module's initialisation is bit-for-bit what it was — proved
+        # per tensor against a CONTENT-anchored pre-change revision in
+        # tests/test_v6_agent_slots.py.
+        # ⚠️ ``enforce_band=False`` HERE and only here: V6Stack is instantiated
+        # at toy geometries by dozens of tests, where a §6 2–4 M band would
+        # refuse every one of them. The band is NOT thereby unenforced — it is
+        # the module's own default (a frozen-trunk probe script gets it for
+        # free) and the PRODUCTION geometry is pinned against it by
+        # test_production_geometry_is_inside_the_preregistered_band, with a
+        # companion test that the band check still FIRES when asked.
+        self.agent_slots = None
+        if cfg.agent_slots:
+            d_mem, n_mem = ((int(cfg.readout.d_readout), int(cfg.n_cells))
+                            if cfg.slot_src == "cells"
+                            else (int(cfg.encoder.d_model),
+                                  int(self.encoder.n_tokens)))
+            self.agent_slots = AgentSlotDecoder(
+                d_mem, n_mem, n_queries=cfg.n_slot_queries,
+                d_model=cfg.slot_hidden, depth=cfg.slot_depth,
+                n_heads=cfg.slot_heads, ranges=SlotDecodeRanges(),
+                enforce_band=False)
+
     # -- grouping ------------------------------------------------------------
     #: prefix -> group. Longest matching prefix wins, so ``predictor_tac``
     #: cannot be swallowed by ``predictor_op``'s entry.
@@ -3411,6 +3582,14 @@ class V6Stack(nn.Module):
         # nothing of theirs for a stage to train or freeze.)
         ("prop_diffusion.", "planner"),
         ("masked_cells.", "aux"), ("sigreg.", "aux"),
+        # ⭐ THE AGENT-SLOT DECODER IS `interp`, NOT `aux` — and the distinction
+        # is the whole X3 argument, not tidiness. `aux` MAY backprop into the
+        # encoder (ISOLATION_MATRIX: O3/O6 are label-free trunk losses and that
+        # is their job); this head's supervision is a PERCEPTION LABEL, which
+        # the diagram's header row forbids in any trunk loss. Filed under `aux`
+        # the matrix would PERMIT the edge and `assert_isolation` would report a
+        # pass over a real violation.
+        ("agent_slots.", "interp"),
     )
 
     def group_of(self, param_name: str) -> str:
@@ -3445,11 +3624,24 @@ class V6Stack(nn.Module):
     # ---------------------------------------------------------------------- #
     # forward pieces                                                          #
     # ---------------------------------------------------------------------- #
-    def encode_window(self, frames: Tensor) -> Tensor:
-        """``frames`` [B, W, C, H, W'] -> operative states [B, W, d_op]."""
+    def encode_window(self, frames: Tensor, *, return_tokens: bool = False):
+        """``frames`` [B, W, C, H, W'] -> operative states [B, W, d_op].
+
+        ``return_tokens=True`` additionally returns the encoder's PATCH TOKENS
+        [B, W, n_tokens, d_model] — the ``slot_src="tokens"`` arm's memory
+        (F-18). ⚠️ The default path is untouched: same call, same tensors, same
+        RNG; the tokens were always computed and simply discarded by the
+        readout. Keeping them is opt-in because at the full geometry they are
+        B x W x 640 x 768 floats, which is not a cost to pay for every forward
+        that does not want them.
+        """
         b, w = frames.shape[:2]
         flat = frames.reshape(b * w, *frames.shape[2:])
-        return self.readout(self.encoder(flat)).reshape(b, w, -1)
+        tok = self.encoder(flat)
+        z = self.readout(tok).reshape(b, w, -1)
+        if return_tokens:
+            return z, tok.reshape(b, w, *tok.shape[1:])
+        return z
 
     def cells(self, z_op: Tensor) -> Tensor:
         """Compact state [B, d_op] -> readout CELL tokens [B, C, d_readout].
@@ -3785,7 +3977,14 @@ class V6Stack(nn.Module):
         ``planner_side`` — the DECLARED surface :meth:`assert_isolation` probes.
         """
         cfg = self.cfg
-        z_op_win = self.encode_window(frames)                      # [B,W,d_op]
+        # ⚠️ The token branch runs ONLY for the F-18 `slot_src="tokens"` arm.
+        # With the slot decoder off (the default) this is the pre-F-18 call,
+        # byte-for-byte — same tensors, same RNG, no extra allocation.
+        tok_win = None
+        if self.agent_slots is not None and cfg.slot_src == "tokens":
+            z_op_win, tok_win = self.encode_window(frames, return_tokens=True)
+        else:
+            z_op_win = self.encode_window(frames)                  # [B,W,d_op]
         z_op = z_op_win[:, -1]
 
         own_tac = own_str = None
@@ -3937,7 +4136,27 @@ class V6Stack(nn.Module):
                                               g_tac_lon, a_lat, a_lon)
                     if h is not None and "cat_logits" in h]
 
-        return {
+        # ---- F-18: THE PERCEPTION AGENT-SLOT DECODER ------------------------
+        # ⛔ VISION-ONLY: the memory below is a function of ``frames`` and of
+        # nothing else. No v0, no actions, no goal embedding, no pose — and the
+        # decoder's signature takes one positional tensor, so there is no door
+        # for one to arrive through later either.
+        # ⛔ X3: the memory is CUT (``_cut``) under
+        # ``isolate_interp_from_encoder``, so the PERCEPTION-LABEL gradient
+        # stops at the head. This is the SAME construction as ``zh_op_seam``'s
+        # detached-trunk forward — a head that is admissible in a declared
+        # isolation surface BY CONSTRUCTION rather than by hope — and the
+        # ``perception_to_trunk`` probe in ``assert_isolation`` measures it on
+        # the real graph. Setting the flag False is the mis-wired control arm
+        # that makes that probe able to FAIL.
+        slots = None
+        if self.agent_slots is not None:
+            icut = cfg.isolate_interp_from_encoder
+            mem = (self._cut(tok_win[:, -1], icut) if tok_win is not None
+                   else self._cut(self.cells(z_op), icut))
+            slots = self.agent_slots(mem)
+
+        out = {
             "z_op_win": z_op_win, "z_op": z_op, "z_plan": z_plan,
             "z_tac": z_tac, "z_tac_target": z_tac_tgt,
             "z_str": z_str, "z_str_target": z_str_tgt,
@@ -3965,6 +4184,29 @@ class V6Stack(nn.Module):
             # BELOW them (stop-grad / EMA uplink).
             "uplink_side": {"tac": [z_tac, zh_tac], "str": [z_str, zh_str]},
         }
+        # ⭐ THE DECLARED INTERPRETATION SURFACE (F-18). Every tensor here must
+        # carry ZERO gradient into ANY parameter outside the `interp` group — a
+        # stricter target than `planner_side`'s, because what flows through
+        # these tensors is a PERCEPTION LABEL.
+        # ⛔ THE KEYS ARE ADDED ONLY WHEN THE HEAD EXISTS, and that is not
+        # tidiness — it was CAUGHT. Returning them unconditionally (even as
+        # ``None``) broke `test_v6_gstr_port.py::
+        # test_default_forward_is_bit_identical_and_emits_no_new_key`, whose
+        # whole job is that the DEFAULT forward's key set is part of the
+        # inertness contract the live S-W resume stands on. It also keeps
+        # ``assert_isolation`` honest: with no head there is no
+        # ``perception_to_trunk`` key at all, rather than a probe over an
+        # absent module reporting zero violations and establishing nothing.
+        # ⚠️ Every emitted field is listed, not a representative one: the
+        # `intent_proj` defect was a path present in the design and absent from
+        # the optimisation, and an under-declared surface is the same defect
+        # moved into the audit.
+        if slots is not None:
+            out["agent_slots"] = slots
+            out["interp_side"] = [
+                slots["presence_logit"], slots["cls_logits"], slots["box"],
+                slots["yaw_vec"], slots["rates"], slots["occ_logit"]]
+        return out
 
     # ---------------------------------------------------------------------- #
     # X3 — the MEASURED isolation check                                       #
@@ -4041,6 +4283,15 @@ class V6Stack(nn.Module):
           2. **tactical → below** — the tactical layer may not reach the
              operative predictor or any encoder (the uplink is stop-grad/EMA);
           3. **strategic → below** — likewise for the strategic layer.
+          4. **perception → trunk** (F-18, present ONLY when the agent-slot
+             decoder is built) — the interpretation head may reach NOTHING but
+             its own ``interp`` group. This edge is stricter than 1: it
+             protects the trunk not from a planning gradient but from a
+             PERCEPTION LABEL, which the diagram's header row forbids in any
+             trunk loss. ⚠️ The key is ABSENT when the head is absent, on
+             purpose — a probe over a module that does not exist reports zero
+             violations and has established nothing, which is the vacuous pass
+             this method's own ``requires_grad_(True)`` dance exists to avoid.
 
         Returns the report; raises :class:`IsolationViolation` under ``strict``
         naming the live parameters. ⚠️ This is a MEASUREMENT, not a proof over
@@ -4077,6 +4328,15 @@ class V6Stack(nn.Module):
                 "strategic_to_below": self._live_edges(
                     self._probe_scalar(out["uplink_side"]["str"]), below_str),
             }
+            # ⭐ F-18's edge — added ONLY when the head exists (see the
+            # docstring). The forbidden set is EVERYTHING that is not `interp`,
+            # which is the ISOLATION_MATRIX row written out: "interp": ("interp",).
+            not_interp: list = []
+            if out.get("interp_side") is not None:
+                not_interp = [(n, p) for n, p in self.named_parameters()
+                              if self.group_of(n) != "interp"]
+                checks["perception_to_trunk"] = self._live_edges(
+                    self._probe_scalar(out["interp_side"]), not_interp)
         finally:
             for p, rg in saved:
                 p.requires_grad_(rg)
@@ -4088,12 +4348,18 @@ class V6Stack(nn.Module):
                     self.cfg.isolate_planner_from_encoder,
                 "isolate_uplink": self.cfg.isolate_uplink,
                 "uplink": self.cfg.uplink,
-                "shared_encoder": self.cfg.shared_encoder},
+                "shared_encoder": self.cfg.shared_encoder,
+                "isolate_interp_from_encoder":
+                    self.cfg.isolate_interp_from_encoder,
+                "agent_slots": self.agent_slots is not None,
+                "slot_src": self.cfg.slot_src},
             "violations": {k: v[:12] for k, v in checks.items() if v},
             "n_violations": {k: len(v) for k, v in checks.items()},
             "n_probed": {"planner_to_encoder": len(enc),
                          "tactical_to_below": len(below_tac),
-                         "strategic_to_below": len(below_str)},
+                         "strategic_to_below": len(below_str),
+                         **({"perception_to_trunk": len(not_interp)}
+                            if "perception_to_trunk" in checks else {})},
             "pass": not any(checks.values()),
             "_evidence_class": "MEASURED (ours; autograd probe on this graph)",
         }

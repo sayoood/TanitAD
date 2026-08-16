@@ -4106,3 +4106,188 @@ for.** A skipped test is a guard that cannot fail, and a skip count is exactly t
 that looks like accounting while hiding the thing being accounted for. Same shape as C77 one level
 down: the container (a green run) was checked; the content (which assertions actually executed) was
 not.
+
+---
+
+## 2026-08-16 — a banked record whose `live: False` contradicted its own counts
+
+*(Next free number re-grepped immediately before appending: C80 was the highest.)*
+
+The C77 liveness control stored a derived verdict, `liveness.live`, beside the counts it was derived
+from. Its rule changed **mid-corpus** — `all(control > 0)` → `any(control > 0)`, after clip
+`24b6948f` returned `road 2 · sky 0` under an underpass and was flagged dead while carrying **22
+real detections**. Every reader was updated to recompute, so no reported number was ever wrong.
+
+**The artifact was not updated, and that is the defect.** MEASURED over all 115 far-side records
+(`…/2026-08-16-sam3-dtype-fix/raw/strip_stale_live_flag.json`):
+
+```
+carried the derived field   81
+DISAGREED with own counts    1   24b6948f  stored live=False · recomputed True · {road: 2, sky: 0}
+```
+
+One record sat on disk asserting the opposite of the data next to it. Any consumer reading the flag
+rather than the counts — the `aug120_pipeline` batch gate, the overlay's liveness row, a future
+re-fuse, a human six months out — would have scored a healthy clip as **the one dead-engine failure
+that blocks a PASS**.
+
+| # | class | recognition signal |
+|---|---|---|
+| **C81** | **A derived field written down beside its own inputs** | a stored verdict (`is_valid`, `passed`, `live`, `status`) whose inputs are banked in the same record. Signal: **the rule that produces it has changed at least once**, and nothing rewrites the artifacts when it does — so the field and the data can disagree, and the field is what gets read |
+
+⇒ **RULE: where the inputs are banked, do not store the verdict.** Compute it at read time, in ONE
+named function, and let every consumer call that. **A field that cannot be stale beats a field that
+must be kept in sync.**
+
+⇒ **FIXED BY DELETION, NOT CORRECTION** — correcting the one wrong flag would have left the same
+trap armed for the next rule change. `live`/`all_fired` are gone from the schema
+(`ph0_sam3.liveness_probe`), `ph0_sam3.is_live()` is the only derivation, and every banked record was
+rewritten to drop the field — **no GPU, no re-detection**, per-file far-side verified.
+`is_live()` also IGNORES the field on any older record it meets.
+
+⚠️ **AND NOTE WHERE IT WAS CAUGHT.** Not by the code — my readers already recomputed and were right.
+It surfaced only because an independent census **compared the stored flag against a fresh
+recomputation** instead of reading one or the other. ⇒ **When a record carries both a derivation and
+its inputs, audit them AGAINST EACH OTHER at least once; agreement is the only evidence that the
+cache is not rotten.**
+
+⭐ **SAME FAMILY AS C77, INVERTED ONE MORE TIME.** C77: the artifact was well-formed and its payload
+empty. C78: the manifest was well-formed and its referents absent. **C81: the record is well-formed
+and internally CONTRADICTORY.** Each time, the thing that looked authoritative was a summary of
+something nobody re-derived.
+
+
+---
+
+## C82 — I RETRACTED A **CORRECT** CLAIM, ON ONE AGENT'S UNCORROBORATED REPORT, INSIDE A RETRACTION ABOUT DOING EXACTLY THAT (2026-08-16, orchestrator)
+
+**RETRACTED: the first draft of C82 itself.** It declared *"Suite 3572 passed / 0 failed"* to be a
+false, INHERITED claim, credited a subagent with catching it, and told two live agents their baseline
+was wrong. **All of that was mistaken. The suite was green.**
+
+**WHAT SETTLED IT — three independent BANKED full-suite artifacts, none of which I had read when I
+wrote the retraction:**
+
+| artifact | result |
+|---|---|
+| `…/2026-08-16-seam-instrument/raw/pytest_baseline_pre_edit.txt` | `3574 passed, 7 skipped, 2 xfailed` — **exit 0** |
+| `…/2026-08-16-sam3-dtype-fix/raw/pytest_full_suite.txt` (different stream, minutes later) | `3574 passed, 7 skipped, 2 xfailed` — **exit 0** |
+| `…/2026-08-16-seam-instrument/raw/pytest_after_final.txt` | `3658 passed, 7 skipped, 2 xfailed` — **exit 0** |
+
+The contradicting figure — *"9 failed / 3563 passed / 7 skipped / 2 xfailed, 3572 collected"* — is
+corroborated by **no artifact**, and **does not close arithmetically**: 3563 + 9 + 7 + 2 = **3581**,
+not the 3572 it called the collected total. The inconsistency was visible in the report itself and I
+did not check it.
+
+⇒ **ROOT-CAUSE CLASS: INHERITED-QUOTED-AS-MEASURED — the SAME class the first draft was written to
+log, applied to the CORRECTION rather than to the original.** A retraction is a claim. It carries the
+identical evidence bar as the thing it retracts, and I gave it a *lower* one: I demanded artifacts of
+myself, then overturned my own verified position on a single unverified sentence because it was
+phrased as a correction. **A report that says "you were wrong" is not self-authenticating.**
+
+⚠️ **AND IT WAS ASYMMETRIC IN THE DANGEROUS DIRECTION.** I applied more scepticism to the claim that
+things were FINE than to the claim that things were BROKEN. Alarm feels like diligence, so it gets
+waved through; that is how a healthy system gets "fixed" into a broken one. **Bad news requires
+exactly as much evidence as good news** — the pod-monitor trap in this same file is the same shape:
+a false failure invented by a filter, acted on as real.
+
+⇒ **RULE: before retracting, READ THE PRIMARY ARTIFACT.** Banked suite output, raw JSON, the log
+itself. Three such artifacts existed in the repo the whole time and answered it in one command. And
+⇒ **when two agents disagree, do not adjudicate between their SUMMARIES — go to what each measured**,
+then say which is corroborated.
+
+⭐ **WHAT SURVIVES, and it is worth keeping.** The observation that provoked all this is still true:
+**a suite count is only admissible against a QUIESCED tree or a NAMED COMMIT.** With ≥4 agents
+editing, counts genuinely drift (3574 → 3658 here, purely from tests being ADDED), an 8-minute run
+samples a moving tree, and my own mid-run "1 failed" was a file edited at 20:26:26 *during* the run —
+that test passes in isolation. ⇒ Quote it as **"N passed at `<sha>`"**, and gate per agent on
+**"my change adds N passing tests and introduces zero NEW failures"**, never on a global total.
+
+⇒ **THE CORRECTED FACTS:** the suite is green and has been throughout. `fa5c73b`'s commit message
+(*"3572 passed / 0 failed"*) is accurate to within the ±2-test drift of concurrent test additions and
+**needs no correction**. The two agents I told otherwise have been told again.
+
+### ⭐ THE MECHANISM, MEASURED — the phantom failures were the APPARATUS, not the code
+
+Run on the same tree, minutes apart, differing in **one environment variable**:
+
+```
+PYTHONUTF8=1  python -m pytest -q   ->  3658 passed, 0 failed, 7 skipped, 2 xfailed
+              python -m pytest -q   ->  3656 passed, 4 FAILED, 7 skipped, 2 xfailed
+```
+
+The four are encoding-sensitive and nothing else:
+`test_bev_consumer_fov.py::test_figure_main_never_writes_outside_its_output_dir` ·
+`test_bev_consumer_fov.py::test_figure_caveats_the_missing_frame_when_none_is_recorded` ·
+`test_e_wc2_sigma_star.py::test_cli_print_contract` (TypeError) ·
+`test_ff_v58f.py::test_tool_REFUSES_the_biased_estimator_by_name`.
+
+⇒ **On Windows this suite requires `PYTHONUTF8=1`, and without it reports failures that are
+properties of the SHELL, not of the code.** An agent reporting "N failed" without stating its
+invocation is reporting its own environment. *(Independently discovered the same day by the
+lane-change stream, logged as **C84**: it filed four failures as "pre-existing, not mine", then found
+they were its own apparatus — its words, and they are the right words: **"a probe reported my
+apparatus, and I read it as the subject"**.)*
+
+⚠️ **This is what makes the asymmetry above concrete.** The uncorroborated "9 failed" was almost
+certainly this — a run without the variable. I did not ask *"what command produced that number?"*,
+which is one question and would have ended it. ⇒ **A test result is not a number; it is a number PLUS
+its invocation.** Quote the command or the count means nothing — the same discipline this file already
+demands for an exponent (fit window, R², n) and for an interval (its estimator).
+
+⭐ Note which test is among the four: **`test_tool_REFUSES_the_biased_estimator_by_name`** — the guard
+against `overlapping_holdout_se`. A false red on the very test that enforces our estimator rule is the
+strongest possible argument for stating invocations: an apparatus artefact landing on a load-bearing
+guard is exactly how a real guard gets waved away as "known flaky".
+
+---
+
+## C84 — I REPORTED FOUR TEST FAILURES THAT WERE MY SHELL'S ENCODING, AND BUILT A THEORY ON TOP OF THEM (2026-08-16, arch-inf agent)
+
+**What I claimed.** *"The suite is NOT green. I measured the tree myself before my first edit:
+**4 failed · 3570 passed**. The four failures are pre-existing, in files I did not touch, and are another
+agent's blast radius."* Named: `test_bev_consumer_fov.py` (×2), `test_e_wc2_sigma_star.py::test_cli_print_contract`,
+`test_ff_v58f.py::test_tool_REFUSES_the_biased_estimator_by_name`.
+
+**What is true.** ⛔ **ALL FOUR WERE MINE — an artifact of MY SHELL.** MEASURED:
+
+| invocation | result |
+|---|---|
+| `pytest -q <the 4 tests>` | **4 failed** — `UnicodeDecodeError: 'charmap' codec can't decode byte 0x8f` |
+| `PYTHONUTF8=1 pytest -q <the same 4>` | **4 passed** |
+
+They read UTF-8 fixtures; without `PYTHONUTF8=1` this Windows shell decodes cp1252 and dies on the first
+non-ASCII byte. The suite IS green — matching the banked artifacts (`…/2026-08-16-seam-instrument/raw/
+pytest_baseline_pre_edit.txt`, `…/2026-08-16-sam3-dtype-fix/raw/pytest_full_suite.txt`, both **3574 passed,
+0 failed**) and the orchestrator's original figure.
+
+⇒ **ROOT-CAUSE CLASS: A PROBE REPORTED A PROPERTY OF THE MEASURING APPARATUS AND I READ IT AS A PROPERTY OF
+THE SUBJECT.** This is the `df`-on-a-pod family that opens CLAUDE.md — `df` reporting the cluster instead of
+the pod quota, `free`/`tegrastats` on Thor, `memory.usage_in_bytes` counting page cache: *"a probe that
+reports the wrong scope is worse than no probe, because it looks like an answer."* Test **runs** join test
+**counters** in that family. I verified I had run the command; I never verified the command measured the tree.
+
+⇒ ⛔ **THE AGGRAVATING HALF, and the part worth keeping: I EXPLAINED THE DISCREPANCY AWAY INSTEAD OF
+INVESTIGATING IT.** My number disagreed with the brief's, so I wrote a confident narrative — *"three
+incompatible baselines in one session; four agents are live; the tree moves under every measurement"* — which
+was plausible, partly true in general, and **false here**. It converted a signal into a story and closed the
+question. **A disagreement with a banked artifact is EVIDENCE, not noise to be rationalised.**
+
+⇒ **TWO TELLS I IGNORED**, both cheap:
+1. the four failures sat in files with **no plausible relationship to each other** — a real regression has a
+   mechanism, and "four unrelated files" is a signature of an *environmental* cause;
+2. `UnicodeDecodeError: 'charmap'` is an **encoding** symptom, not a logic one. The traceback named the class.
+
+⇒ **THE RULE.**
+1. **When your measurement disagrees with a banked artifact, suspect YOUR APPARATUS FIRST.** Re-run one
+   failing case under a different environment before concluding anything about the subject. Cost: ~10 s.
+2. **A failure set with no common mechanism is an environment hypothesis until disproved.**
+3. **On Windows, `pytest` in `stack/` REQUIRES `PYTHONUTF8=1`** or it reports four failures that do not exist.
+   Quote a suite result with the invocation that produced it, not just the number.
+4. ⚠️ **This was load-bearing, not cosmetic.** Under my wrong baseline I would have shipped with *"4 failures,
+   not mine"* as an accepted state — i.e. I had **disabled the green-suite gate for myself** and would have
+   waved through any genuine regression that landed in those files.
+
+*(Companion to C82, which is the same disease in the orchestrator's direction: there, an inherited number was
+trusted over artifacts; here, a self-measured number was trusted over artifacts. **Measuring it yourself is
+necessary and NOT sufficient — the apparatus is part of the claim.**)*

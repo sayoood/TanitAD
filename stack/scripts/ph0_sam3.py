@@ -467,13 +467,40 @@ def box_mask_agreement(mask, box_xyxy) -> dict:
             "frac_box_covered": round(inter / barea, 4) if barea else 0.0}
 
 
+def is_live(liveness: dict | None) -> bool:
+    """⛔ THE ONE DERIVATION — and it is NOT STORED, on purpose.
+
+    A record banks the CONTROL COUNTS (`liveness.n_det`) and nothing else. The
+    verdict is computed here, by every consumer, at read time.
+
+    WHY THE BOOLEAN WAS DELETED FROM THE SCHEMA (2026-08-16). It existed for
+    half a corpus and its rule changed mid-corpus — `all(...)` → `any(...)`,
+    after clip `24b6948f` returned `road 2 · sky 0` under an underpass and was
+    flagged dead while carrying 22 real detections. MEASURED consequence: that
+    record sat on disk with `live: False` **contradicting its own `n_det`**, so
+    any consumer reading the flag — the `aug120_pipeline` batch gate, the
+    overlay's liveness row, a future re-fuse, a human six months out — would
+    classify a healthy clip as the one failure that blocks a PASS.
+
+    ⇒ **The counts are the primitive; the verdict is a cache; a cache of a rule
+    that changed is a trap with a long fuse.** A field that cannot be stale
+    beats a field that must be kept in sync, so the field is gone and this
+    function is the only place the rule lives.
+
+    ⚠️ Reads defensively: pre-2026-08-16 records may still carry `live` /
+    `all_fired`. They are IGNORED — `n_det` is the authority."""
+    nd = (liveness or {}).get("n_det") or {}
+    return any(int(v) > 0 for v in nd.values())
+
+
 def liveness_probe(processor, image, *, concepts=None,
                    min_score: float = 0.0) -> dict:
     """⭐ THE POSITIVE CONTROL FOR C77 — is this engine PRODUCING anything?
 
     Runs `LIVENESS_CONCEPTS` on ONE frame and reports their counts.
-    `live = ANY control concept fired`; `all_fired` is the stricter scene
-    reading. `live == False` is an ALARM: the engine returned nothing at all on
+    The record holds only `n_det` (and any per-concept `errors`); the verdict
+    is `is_live()`, computed at read time and never stored. Not live is an
+    ALARM: the engine returned nothing at all on
     concepts that a forward-facing driving frame is full of — the C77 dtype
     crash reads exactly like this. Contrast with `AGENT_CONCEPTS`, every one of
     which may correctly be zero, which is what made 115 empty clips look
@@ -489,20 +516,11 @@ def liveness_probe(processor, image, *, concepts=None,
             err[d["concept"]] = d["error"]
         else:
             out[d["concept"]] = out.get(d["concept"], 0) + 1
-    # ⛔ `live` IS `any`, NOT `all` — CORRECTED 2026-08-16 BY THE DATA. The
-    # first version required every control concept to fire, and clip
-    # `24b6948f` promptly returned `road 2 · sky 0` and was flagged dead while
-    # the engine was plainly working (22 detections on that clip: 8 car, 4
-    # traffic light, 10 traffic sign). `sky` CAN legitimately be zero — an
-    # underpass, a tunnel, a wall of buildings. The question this control
-    # exists to answer is *"is the engine producing at all?"*, and ONE control
-    # detection answers it; requiring all of them re-imports the very
-    # scene-dependence the control was chosen to escape.
-    # `all_fired` is kept as the stricter scene reading, and `n_det` is banked
-    # per concept so any downstream rule can be recomputed without a re-run.
-    rec = {"concepts": cs, "n_det": out,
-           "live": bool(out) and any(v > 0 for v in out.values()),
-           "all_fired": bool(out) and all(v > 0 for v in out.values())}
+    # ⛔ NO `live` BOOLEAN IS STORED. See `is_live` — the counts are the
+    # primitive, the verdict is derived at read time, and a derived field that
+    # is written down is a cache of a rule that has already changed once
+    # mid-corpus.
+    rec = {"concepts": cs, "n_det": out}
     if err:
         rec["errors"] = err
     return rec
@@ -709,7 +727,8 @@ def main(argv=None) -> int:
                          if v)
         n_match = sum(1 for c in out["vlm_cross_check"] if c["matched"])
         lv = out.get("liveness")
-        lvs = ("live " + ",".join(f"{k}:{v}" for k, v in lv["n_det"].items())
+        lvs = (("LIVE " if is_live(lv) else "DEAD ")
+               + ",".join(f"{k}:{v}" for k, v in lv["n_det"].items())
                if lv else "liveness OFF")
         print(f"[sam3] {str(cid)[:8]} {out['n_frames_run']}f · "
               f"{out['n_det_total']} det · {out['n_err_total']} err · "
@@ -727,9 +746,10 @@ def main(argv=None) -> int:
         "err_kinds": {},
         "clips_with_zero_det": sum(1 for r in results
                                    if not r["n_det_total"]),
+        # recomputed via is_live(); the boolean is not stored (see is_live)
         "clips_not_live": sum(1 for r in results
                               if r.get("liveness")
-                              and not r["liveness"]["live"]),
+                              and not is_live(r["liveness"])),
         "liveness_concepts": ([] if a.no_liveness else LIVENESS_CONCEPTS)}
     for r in results:
         for k, v in (r.get("err_kinds") or {}).items():

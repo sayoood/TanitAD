@@ -1,0 +1,643 @@
+{
+ "_evidence_class": "MEASURED (ours; primary artifacts, this directory)",
+ "_two_n_rule": {
+  "label_side_n_alpamayo_only": 4729,
+  "agreement_side_n_clips_with_our_video": 201,
+  "_note": "these are DIFFERENT quantities and must never be conflated. The agreement n is bounded by OUR w120 video cache, not by Alpamayo label availability."
+ },
+ "leg_independence": {
+  "_question": "ph1_fuse.emit_vocab counts `ego` and `vlm` as two independent votes. Are they?",
+  "v2_ego_prompt_mode_tally": {
+   "past": 201
+  },
+  "_what_the_vlm_was_shown": [
+   "accel_1s_ms2",
+   "accel_3s_ms2",
+   "dist_travelled_m",
+   "motion",
+   "net_dyaw_rad",
+   "turning",
+   "v_max_ms",
+   "v_mean_ms",
+   "v_min_ms",
+   "v_now_kmh",
+   "v_now_ms",
+   "window_s",
+   "yaw_rate_rad_s"
+  ],
+  "_what_the_ego_voter_reads": [
+   "turning",
+   "motion"
+  ],
+  "_overlap": "`turning` and `motion` are BOTH in the VLM's prompt AND are the ONLY fields the ph1 ego voter reads (ph1_fuse.py:318-325). The two voters share their input.",
+  "n_fused_stamped_vlm_vision": 201,
+  "n_provenance_stamp_contradicted_by_source": 201,
+  "_stamp_finding": "a fused record stamped `_provenance.vlm == 'vision'` whose v2 source says `_ego_prompt_mode != 'none'` is a FALSE stamp. ph1_fuse.py:556-561 at HEAD computes this correctly; the banked corpus predates the fix and has not been re-fused."
+ },
+ "n_rows": 4729,
+ "leg_presence": {
+  "alpamayo_only": 4528,
+  "all_three": 201,
+  "at_least_two": 201,
+  "has_alpamayo": 4729,
+  "has_vlm": 201,
+  "has_engine_a": 201
+ },
+ "_agreement_cohort_n": 201,
+ "_ego_dyaw_sign_calibration": {
+  "_why": "the sign convention of maneuver_dyaw_rad is READ from clips whose engine-A route token already says which way they turned, rather than assumed. If turn_left maps to 'right' the axis is flipped and every lateral number below is void.",
+  "table": [
+   {
+    "route_token": "turn_left",
+    "derived_lat3": "left",
+    "n": 26
+   },
+   {
+    "route_token": "turn_right",
+    "derived_lat3": "right",
+    "n": 24
+   },
+   {
+    "route_token": "turn_left",
+    "derived_lat3": "straight",
+    "n": 5
+   },
+   {
+    "route_token": "turn_right",
+    "derived_lat3": "straight",
+    "n": 5
+   },
+   {
+    "route_token": "turn_left",
+    "derived_lat3": "right",
+    "n": 2
+   }
+  ]
+ },
+ "confusions": {
+  "LAT3__alpamayo_vs_egogeom": {
+   "n_both_speak": 193,
+   "n_a_silent": 8,
+   "n_b_silent": 0,
+   "n_both_silent": 0,
+   "agreement": 0.6166,
+   "disagreement": 0.3834,
+   "cohens_kappa": 0.2089,
+   "chance_agreement": 0.5153,
+   "confusion": [
+    {
+     "a": "straight",
+     "b": "straight",
+     "n": 101
+    },
+    {
+     "a": "right",
+     "b": "straight",
+     "n": 25
+    },
+    {
+     "a": "left",
+     "b": "straight",
+     "n": 18
+    },
+    {
+     "a": "right",
+     "b": "right",
+     "n": 12
+    },
+    {
+     "a": "straight",
+     "b": "left",
+     "n": 11
+    },
+    {
+     "a": "straight",
+     "b": "right",
+     "n": 9
+    },
+    {
+     "a": "right",
+     "b": "left",
+     "n": 7
+    },
+    {
+     "a": "left",
+     "b": "left",
+     "n": 6
+    },
+    {
+     "a": "left",
+     "b": "right",
+     "n": 4
+    }
+   ]
+  },
+  "LON3__alpamayo_vs_egogeom": {
+   "n_both_speak": 201,
+   "n_a_silent": 0,
+   "n_b_silent": 0,
+   "n_both_silent": 0,
+   "agreement": 0.4527,
+   "disagreement": 0.5473,
+   "cohens_kappa": 0.1871,
+   "chance_agreement": 0.3268,
+   "confusion": [
+    {
+     "a": "decelerate",
+     "b": "accelerate",
+     "n": 43
+    },
+    {
+     "a": "decelerate",
+     "b": "decelerate",
+     "n": 36
+    },
+    {
+     "a": "maintain",
+     "b": "maintain",
+     "n": 28
+    },
+    {
+     "a": "accelerate",
+     "b": "accelerate",
+     "n": 27
+    },
+    {
+     "a": "maintain",
+     "b": "accelerate",
+     "n": 19
+    },
+    {
+     "a": "accelerate",
+     "b": "decelerate",
+     "n": 16
+    },
+    {
+     "a": "decelerate",
+     "b": "maintain",
+     "n": 12
+    },
+    {
+     "a": "maintain",
+     "b": "decelerate",
+     "n": 11
+    },
+    {
+     "a": "accelerate",
+     "b": "maintain",
+     "n": 9
+    }
+   ]
+  },
+  "LAT3__alpamayo_vs_vlm": {
+   "n_both_speak": 185,
+   "n_a_silent": 8,
+   "n_b_silent": 8,
+   "n_both_silent": 0,
+   "agreement": 0.5946,
+   "disagreement": 0.4054,
+   "cohens_kappa": 0.1717,
+   "chance_agreement": 0.5106,
+   "confusion": [
+    {
+     "a": "straight",
+     "b": "straight",
+     "n": 93
+    },
+    {
+     "a": "right",
+     "b": "straight",
+     "n": 26
+    },
+    {
+     "a": "left",
+     "b": "straight",
+     "n": 17
+    },
+    {
+     "a": "straight",
+     "b": "right",
+     "n": 12
+    },
+    {
+     "a": "straight",
+     "b": "left",
+     "n": 11
+    },
+    {
+     "a": "right",
+     "b": "right",
+     "n": 10
+    },
+    {
+     "a": "left",
+     "b": "left",
+     "n": 7
+    },
+    {
+     "a": "right",
+     "b": "left",
+     "n": 6
+    },
+    {
+     "a": "left",
+     "b": "right",
+     "n": 3
+    }
+   ]
+  },
+  "LON3__alpamayo_vs_vlm": {
+   "n_both_speak": 162,
+   "n_a_silent": 0,
+   "n_b_silent": 39,
+   "n_both_silent": 0,
+   "agreement": 0.4321,
+   "disagreement": 0.5679,
+   "cohens_kappa": 0.0,
+   "chance_agreement": 0.4321,
+   "confusion": [
+    {
+     "a": "decelerate",
+     "b": "decelerate",
+     "n": 70
+    },
+    {
+     "a": "maintain",
+     "b": "decelerate",
+     "n": 51
+    },
+    {
+     "a": "accelerate",
+     "b": "decelerate",
+     "n": 41
+    }
+   ]
+  },
+  "LAT3__vlm_vs_egogeom": {
+   "n_both_speak": 193,
+   "n_a_silent": 8,
+   "n_b_silent": 0,
+   "n_both_silent": 0,
+   "agreement": 0.8964,
+   "disagreement": 0.1036,
+   "cohens_kappa": 0.7608,
+   "chance_agreement": 0.5668,
+   "confusion": [
+    {
+     "a": "straight",
+     "b": "straight",
+     "n": 132
+    },
+    {
+     "a": "left",
+     "b": "left",
+     "n": 21
+    },
+    {
+     "a": "right",
+     "b": "right",
+     "n": 20
+    },
+    {
+     "a": "straight",
+     "b": "right",
+     "n": 6
+    },
+    {
+     "a": "left",
+     "b": "straight",
+     "n": 6
+    },
+    {
+     "a": "right",
+     "b": "straight",
+     "n": 4
+    },
+    {
+     "a": "right",
+     "b": "left",
+     "n": 2
+    },
+    {
+     "a": "left",
+     "b": "right",
+     "n": 1
+    },
+    {
+     "a": "straight",
+     "b": "left",
+     "n": 1
+    }
+   ]
+  },
+  "LON3__vlm_vs_egogeom": {
+   "n_both_speak": 162,
+   "n_a_silent": 39,
+   "n_b_silent": 0,
+   "n_both_silent": 0,
+   "agreement": 0.3272,
+   "disagreement": 0.6728,
+   "cohens_kappa": 0.0,
+   "chance_agreement": 0.3272,
+   "confusion": [
+    {
+     "a": "decelerate",
+     "b": "accelerate",
+     "n": 65
+    },
+    {
+     "a": "decelerate",
+     "b": "decelerate",
+     "n": 53
+    },
+    {
+     "a": "decelerate",
+     "b": "maintain",
+     "n": 44
+    }
+   ]
+  },
+  "LAT_V6__vlm_vs_egopromptvote": {
+   "n_both_speak": 193,
+   "n_a_silent": 8,
+   "n_b_silent": 0,
+   "n_both_silent": 0,
+   "agreement": 0.6477,
+   "disagreement": 0.3523,
+   "cohens_kappa": 0.1336,
+   "chance_agreement": 0.5933,
+   "confusion": [
+    {
+     "a": "LANE_KEEP",
+     "b": "LANE_KEEP",
+     "n": 125
+    },
+    {
+     "a": "LANE_CHANGE_L",
+     "b": "LANE_KEEP",
+     "n": 19
+    },
+    {
+     "a": "LANE_CHANGE_R",
+     "b": "LANE_KEEP",
+     "n": 15
+    },
+    {
+     "a": "LANE_CHANGE_R",
+     "b": "NUDGE_R",
+     "n": 11
+    },
+    {
+     "a": "LANE_KEEP",
+     "b": "NUDGE_R",
+     "n": 11
+    },
+    {
+     "a": "LANE_CHANGE_L",
+     "b": "NUDGE_L",
+     "n": 6
+    },
+    {
+     "a": "LANE_CHANGE_L",
+     "b": "NUDGE_R",
+     "n": 3
+    },
+    {
+     "a": "LANE_KEEP",
+     "b": "NUDGE_L",
+     "n": 3
+    }
+   ]
+  },
+  "LATV6__alpamayo_lane_vs_vlm": {
+   "n_both_speak": 176,
+   "n_a_silent": 17,
+   "n_b_silent": 7,
+   "n_both_silent": 1,
+   "agreement": 0.7045,
+   "disagreement": 0.2955,
+   "cohens_kappa": 0.0139,
+   "chance_agreement": 0.7004,
+   "confusion": [
+    {
+     "a": "LANE_KEEP",
+     "b": "LANE_KEEP",
+     "n": 123
+    },
+    {
+     "a": "LANE_KEEP",
+     "b": "LANE_CHANGE_L",
+     "n": 20
+    },
+    {
+     "a": "LANE_KEEP",
+     "b": "LANE_CHANGE_R",
+     "n": 19
+    },
+    {
+     "a": "NUDGE_L",
+     "b": "LANE_KEEP",
+     "n": 4
+    },
+    {
+     "a": "LANE_CHANGE_R",
+     "b": "LANE_KEEP",
+     "n": 3
+    },
+    {
+     "a": "LANE_CHANGE_L",
+     "b": "LANE_KEEP",
+     "n": 2
+    },
+    {
+     "a": "NUDGE_L",
+     "b": "LANE_CHANGE_L",
+     "n": 1
+    },
+    {
+     "a": "NUDGE_L",
+     "b": "LANE_CHANGE_R",
+     "n": 1
+    },
+    {
+     "a": "LANE_CHANGE_R",
+     "b": "LANE_CHANGE_R",
+     "n": 1
+    },
+    {
+     "a": "LANE_CHANGE_R",
+     "b": "LANE_CHANGE_L",
+     "n": 1
+    },
+    {
+     "a": "NUDGE_R",
+     "b": "LANE_KEEP",
+     "n": 1
+    }
+   ]
+  },
+  "LATV6__alpamayo_lane_vs_egogeom": {
+   "n_both_speak": 153,
+   "n_a_silent": 15,
+   "n_b_silent": 30,
+   "n_both_silent": 3,
+   "agreement": 0.4314,
+   "disagreement": 0.5686,
+   "cohens_kappa": -0.024,
+   "chance_agreement": 0.4447,
+   "confusion": [
+    {
+     "a": "LANE_KEEP",
+     "b": "LANE_KEEP",
+     "n": 64
+    },
+    {
+     "a": "LANE_KEEP",
+     "b": "LANE_CHANGE_R",
+     "n": 45
+    },
+    {
+     "a": "LANE_KEEP",
+     "b": "LANE_CHANGE_L",
+     "n": 32
+    },
+    {
+     "a": "NUDGE_L",
+     "b": "LANE_KEEP",
+     "n": 3
+    },
+    {
+     "a": "LANE_CHANGE_R",
+     "b": "LANE_KEEP",
+     "n": 3
+    },
+    {
+     "a": "NUDGE_L",
+     "b": "LANE_CHANGE_R",
+     "n": 2
+    },
+    {
+     "a": "LANE_CHANGE_L",
+     "b": "LANE_CHANGE_L",
+     "n": 1
+    },
+    {
+     "a": "LANE_CHANGE_L",
+     "b": "LANE_KEEP",
+     "n": 1
+    },
+    {
+     "a": "LANE_CHANGE_R",
+     "b": "LANE_CHANGE_R",
+     "n": 1
+    },
+    {
+     "a": "NUDGE_R",
+     "b": "LANE_KEEP",
+     "n": 1
+    }
+   ]
+  }
+ },
+ "three_way_LAT3": {
+  "n_all_three_speak": 185,
+  "n_at_least_one_silent": 16,
+  "n_unanimous": 104,
+  "unanimous_pct": 56.22,
+  "n_two_of_three": 79,
+  "n_all_three_differ": 2,
+  "_silence_by_leg": {
+   "alp_lat3": 8,
+   "vlm_lat3": 8,
+   "egogeom_lat3": 0
+  }
+ },
+ "three_way_LON3": {
+  "n_all_three_speak": 162,
+  "n_at_least_one_silent": 39,
+  "n_unanimous": 31,
+  "unanimous_pct": 19.14,
+  "n_two_of_three": 109,
+  "n_all_three_differ": 22,
+  "_silence_by_leg": {
+   "alp_lon3": 0,
+   "vlm_lon3": 39,
+   "egogeom_lon3": 0
+  }
+ },
+ "vlm_verb_mapping_coverage": {
+  "_question": "does ph1_fuse's substring mapping actually cover the VLM's emitted vocabulary? An unmapped verb is a SILENT DROP — the leg looks silent when it in fact spoke.",
+  "table": [
+   {
+    "verb_direction": "hold_corridor_none",
+    "n": 136,
+    "lat_token": "LANE_KEEP",
+    "lon_token": "HOLD"
+   },
+   {
+    "verb_direction": "reduce_to_none",
+    "n": 31,
+    "lat_token": null,
+    "lon_token": null
+   },
+   {
+    "verb_direction": "prepare_lane_change_left",
+    "n": 28,
+    "lat_token": "LANE_CHANGE_L",
+    "lon_token": null
+   },
+   {
+    "verb_direction": "prepare_lane_change_right",
+    "n": 26,
+    "lat_token": "LANE_CHANGE_R",
+    "lon_token": null
+   },
+   {
+    "verb_direction": "hold_corridor_right",
+    "n": 17,
+    "lat_token": "LANE_KEEP",
+    "lon_token": "HOLD"
+   },
+   {
+    "verb_direction": "reduce_to_left",
+    "n": 10,
+    "lat_token": null,
+    "lon_token": null
+   },
+   {
+    "verb_direction": "reduce_to_right",
+    "n": 8,
+    "lat_token": null,
+    "lon_token": null
+   },
+   {
+    "verb_direction": "prepare_stop_none",
+    "n": 6,
+    "lat_token": null,
+    "lon_token": "BRAKE_TO"
+   },
+   {
+    "verb_direction": "hold_corridor_left",
+    "n": 6,
+    "lat_token": "LANE_KEEP",
+    "lon_token": "HOLD"
+   },
+   {
+    "verb_direction": "prepare_exit_left",
+    "n": 1,
+    "lat_token": null,
+    "lon_token": null
+   },
+   {
+    "verb_direction": "resume_cruise_none",
+    "n": 1,
+    "lat_token": null,
+    "lon_token": "CRUISE"
+   }
+  ],
+  "n_emissions_with_no_lon_token": 104,
+  "n_emissions_with_no_lat_token": 57,
+  "n_emissions_total": 270
+ },
+ "_per_clip_path": "raw/a3_three_leg_agreement_per_clip.jsonl"
+}

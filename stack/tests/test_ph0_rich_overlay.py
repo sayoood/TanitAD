@@ -248,7 +248,8 @@ def test_the_figure_recomputes_liveness_instead_of_trusting_the_flag():
     from ph0_rich_overlay import draw_panel
     src = inspect.getsource(draw_panel)
     assert "one control occluded" in src
-    assert 'alive = any(int(v) > 0' in src
+    assert "from ph0_sam3 import is_live" in src, (
+        "the figure must use the ONE derivation, not its own copy of the rule")
     occluded = dict(_sam(),
                     liveness={"n_det": {"road": 2, "sky": 0}, "live": False})
     dead = dict(_sam(), liveness={"n_det": {"road": 0, "sky": 0},

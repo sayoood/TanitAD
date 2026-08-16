@@ -7,13 +7,17 @@
 
 ## 0. TL;DR
 
-| | before (C77) | after |
+| | before (C77) | after (83 of 115 re-run) |
 |---|---|---|
-| detections, corpus-wide | **0** | *(§4)* |
-| clips with zero detections | **115 / 115** | *(§4)* |
-| error strings in the payload | **4 053 over 101 clips** (mean **40.1**/clip = `n_frames_run` × 7 concepts) | *(§4)* |
-| positive control | **did not exist** | `road`/`sky` per clip, banked, and drawn on the figure |
-| cost per clip | 97–98 s (44 redundant ViT passes) | **~21 s** (§3b) |
+| detections, corpus-wide | **0** | **2 496** |
+| clips with zero detections | **115 / 115** | **38** — of which **6** empty scene, **0** engine failure, **32** not yet re-run |
+| error strings in the payload | **4 053 over 101 clips** (mean **40.1**/clip) | **0** in every record the fixed engine produced |
+| positive control | **did not exist** | `road`/`sky` per clip, banked, recomputed at read time, drawn on the figure |
+| cost per clip | 97–98 s (44 redundant ViT passes) | **~21 s** (4.21×, §3b) |
+
+⛔ **NOT FINISHED: 32 of 115 clips still carry the C77 payload.** Free-Colab
+reclaimed the T4 three times and the daily GPU budget is spent. The residual is
+named (`raw/residual_32_clips.json`) and resumes with one command (§4.1).
 
 ⚠️ **On the before-column's `n`:** the run overwrites records in place, so a full-115 before-census
 is not recoverable. **101 of 115 were captured mid-repair** and are banked verbatim in
@@ -236,6 +240,52 @@ from a stale one — MEASURED on the far side mid-repair over a 20-clip sample
 engine alive?"* also answers *"which records came from the fixed engine?"*,
 without a version stamp anyone had to remember to write.
 
+### 3.2 ⛔ THE `live` BOOLEAN IS DELETED FROM THE SCHEMA — the counts are the primitive
+
+The independent far-side census found the corollary of §3's own correction:
+**one banked record carried `live: False` while its own counts read
+`{road: 2, sky: 0}`.** `road 2` means the engine ran and detected — under the
+corrected rule that clip (`24b6948f`, a healthy underpass, 22 real detections) is
+ALIVE. Its flag had been written under the OLD `all(...)` semantics and was now
+**stale on disk**.
+
+My readers already recomputed, so no number here was wrong. **The defect was the
+artifact, not the code** — and every future consumer that reads the flag (the
+`aug120_pipeline` batch gate, the overlay's liveness row, a re-fuse, a human six
+months out) would have scored a healthy clip as the one dead-engine failure that
+blocks a PASS.
+
+⇒ **The field is REMOVED, not corrected.** Correcting it leaves the same trap
+armed for the next rule change — and the rule already changed once, mid-corpus.
+
+| | |
+|---|---|
+| stored | `liveness.n_det` (per-concept counts), `concepts`, `frame_idx`, per-concept `errors` |
+| **not stored** | `live`, `all_fired` |
+| the one derivation | `ph0_sam3.is_live(liveness)` — `any(n_det > 0)`, at read time |
+| consumers rewired | `run_clip_frames` alarm · `main()` census · `content_census` · `hf_census` · the overlay panel |
+| pinned by | `test_no_derived_boolean_is_stored_in_the_record`, `test_is_live_ignores_a_stale_stored_flag_and_trusts_the_counts` |
+
+**MEASURED sweep before rewriting (`raw/strip_stale_live_flag.json`), over all
+115 far-side records:**
+
+```
+carried the derived field   81
+DISAGREED with own counts    1   24b6948f  stored live=False  recomputed True  {road: 2, sky: 0}
+records without control     34   (still-stale C77 records, being re-run)
+```
+
+`strip_stale_live_flag.py` then removes the field from every record, per file,
+far-side verified by byte round-trip — **no GPU, no re-detection**. So the
+schema change and the on-disk cleanup both land, rather than the schema moving
+and 81 stale fields being left behind.
+
+⭐ **The generalisation, and it is the reusable half:** *a derived field that is
+written down is a cache, and a cache of a rule that has changed is a trap with a
+long fuse.* Where the inputs are banked, **do not store the verdict** — a field
+that cannot be stale beats a field that must be kept in sync. Logged as
+`RETRACTION_LOG.md` **C81**.
+
 **Three companions ship with it, because a control alone is not the census:**
 
 1. `n_err_total` + `err_kinds` **in every clip record and in the run summary** —
@@ -312,9 +362,93 @@ different RUN*.
 
 ---
 
-## 4. The 115-clip re-run — verified BY CONTENT
+## 4. The re-run — verified BY CONTENT, and INCOMPLETE at 83/115
 
-*(filled from the run; see `raw/backfill_run.log` and `raw/census_after.json`)*
+⛔ **STATE, STATED FIRST: 83 of 115 clips are repaired; 32 still carry the C77
+payload.** Free-Colab reclaimed the T4 **three times** (at 35 %, at 70 %, and the
+third session after only 2 clips — the daily GPU budget is spent). The engine
+fix, the census and the videos are done; the corpus is not, and the residual is
+named, not estimated.
+
+**Far-side census, all 115 records read, liveness RECOMPUTED from counts
+(`raw/census_after.json`, `code/hf_census.py`):**
+
+```
+records                115 / 115 vs fixture · missing 0 · extra 0
+n_frames_run_total     658
+DETECTIONS             2 496          (was 0)
+per concept            car 1260 · traffic sign 538 · traffic light 385
+                       · pedestrian 180 · truck 97 · bus 26 · cyclist 10
+error census           1 295 × "mat1 and mat2 must have the same dtype"
+                       — ALL of them in the 32 not-yet-re-run records; ZERO in
+                       any record the fixed engine produced
+liveness  live 83 · NOT-LIVE 0 · no control (still stale) 32
+clips with zero detections  38  =  32 stale  +  6 legitimately empty
+PASS  False            (correctly — 32 records remain stale)
+```
+
+| the split the zero-count needs | n |
+|---|---|
+| zero detections, control **ALIVE** → a genuinely empty scene, correct answer | **6** |
+| zero detections, control **DEAD** → a real engine failure | **0** |
+| zero detections, **no control** → not yet re-run (C77 records) | **32** |
+
+⭐ **That middle row is the whole point of the package.** Before this work every
+one of those 38 zeros was indistinguishable; now 6 are provably scene, 32 are
+provably unprocessed, and **0 are engine failures**.
+
+⚠️ **Two clips fired only one control** — `24b6948f` `{road: 2, sky: 0}` and
+`a6b2719b` `{road: 1, sky: 0}`, both underpasses. Both are LIVE under the `any`
+rule and both carry real detections. They are reported, not hidden, because they
+are the cases that set the rule (§3).
+
+### 4.1 Resuming the last 32 — one command, no state to reconstruct
+
+The residual is banked as `raw/residual_32_clips.json`. Anyone with a T4 runs
+`code/backfill2.py` unchanged: its resume reads the far side, finds 83 complete,
+and does exactly the 32. Three reclaims cost **zero** redundant GPU, which is the
+predicate in §3.1 doing its job.
+
+---
+
+## 5. Overlay videos — 8 clips, `video/`
+
+Rendered on the dev box (no GPU) by `code/s3_render_overlays.py` →
+`stack/scripts/ph0_rich_overlay.py`. Each frame carries the PI's standing viz
+standard **in one figure**: camera 2× with SAM3 masks/boxes + concept + score,
+the **metric BEV** of the integrated ego path with a scale bar and extent, the
+**S2 strategic label** (`g_str`/`a_str` with live arguments and provenance), and
+the **liveness control**. 4.54 MiB total, CRF 23, 4 fps.
+
+⛔ **Bridged locally, not pulled** — the frames are the bytes SAM3 scored (C79,
+§3b.2). `0089a096` re-bridged here to md5 `10c9b723…`, identical to the earlier
+independent bridge.
+
+| clip | det | why it is in the set |
+|---|---|---|
+| `814c2f74` | **113** | busiest, and the most `pedestrian` (41) |
+| `0089a096` | 60 | most `bus` (7) |
+| `8f5df500` | 50 | **most `cyclist` (2)** — the thinnest tail |
+| `15a65b76` | 36 | most `truck` (17) |
+| `42745b48` | 23 | the median |
+| `093bfa29` | 7 | sparse but non-empty |
+| `38aac500` | **0** | zero detections, **control ALIVE** — a genuinely empty scene |
+| `bb41e3b8` | **0** | **a still-stale C77 record** — the contrast |
+
+⭐ **The last two rows are the figure worth looking at.** `bb41e3b8` is a street
+full of parked and moving cars with **zero** boxes and an orange banner reading
+*"liveness control ABSENT from this record — a zero here cannot be told from a
+dead engine (C77)"*. `38aac500` is also zero, and its panel reads
+`liveness road 1 sky 1 -> LIVE`. **Two identical-looking zeros, told apart on
+the figure, without opening a single JSON file.**
+
+⚠️ **One observation from the thin tail, evidence class VISUAL / SINGLE FRAME —
+not a measurement.** On `8f5df500` frame 12 a cyclist is prominent mid-road and
+the boxes over that region are labelled `car 0.72 / 0.83`; the clip's whole-clip
+`cyclist` count is 2. That is consistent with `car`↔`cyclist` concept confusion,
+and `cyclist 10` across 83 clips is thin enough that it matters. **It is not
+established here** — it needs the score distribution and a labelled check, which
+is a work item, not a finding.
 
 ---
 
@@ -384,7 +518,10 @@ different RUN*.
 | equivalence experiments | `…/code/encode_once_check.py`, `…/code/eq3_whole_clip.py` |
 | frame-source check | `…/code/mp4_source_check.py` |
 | overlay renderer (dev box) | `…/code/s3_render_overlays.py` |
-| overlay videos + selection | `…/video/*.mp4` (**`git add -f`** — `*.mp4` is ignored at `.gitignore:24`), `…/video/_selection.json` |
+| overlay videos + selection | `…/video/*.mp4` (**`git add -f`** — `*.mp4` is ignored at `.gitignore:24`), `…/video/_selection.json` — 8 clips, 4.54 MiB |
+| the residual 32 clips, by id | `…/raw/residual_32_clips.json` |
+| stale-flag sweep + what it changed | `…/raw/strip_stale_live_flag.json`, `…/code/strip_stale_live_flag.py` |
+| render log | `…/raw/render.log` |
 
 ### Far side
 
@@ -399,11 +536,16 @@ different RUN*.
 `stack/`:
 
 ```
-3572 passed, 7 skipped, 2 xfailed, 10 warnings in 398.54s
+3658 passed, 7 skipped, 2 xfailed, 10 warnings in 436.46s
 ```
 
-against the brief's baseline of **3532 / 0 / 17 / 2**. +40 passing (**+23 new tests** here, **+17**
-that were previously skipped for missing optional deps), **−10 skipped**, **0 failed**.
+against the brief's baseline of **3532 / 0 / 17 / 2**: **−10 skipped, 0 failed.**
+
+⚠️ **Attribution, because the headline number is not all mine.** This package adds **25 tests**;
+another **17** began executing when the optional deps landed (C80). The remainder of the +126 is
+**sibling agents' work committed concurrently** (`agent-slot-decoder`, `seam-instrument`) — the
+suite is shared, so the total is a fleet number, not a package number. My package's own contribution
+is the 25 + the 17 unmasked.
 
 **All 7 remaining skips, enumerated — none is a missing-dependency accident:**
 

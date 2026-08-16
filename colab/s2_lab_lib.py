@@ -916,9 +916,10 @@ def stub_sam3_record(clip_id: str, frame_wh=(160, 64)) -> dict:
             # exercises a record shape the completion check would REJECT —
             # and the plumbing test would stop testing the plumbing.
             "n_err_total": 0, "err_kinds": {},
+            # no `live` boolean: the counts are the primitive and the
+            # verdict is ph0_sam3.is_live(), computed at read time
             "liveness": {"concepts": ["road", "sky"],
-                         "n_det": {"road": 1, "sky": 1}, "live": True,
-                         "all_fired": True, "frame_idx": 8},
+                         "n_det": {"road": 1, "sky": 1}, "frame_idx": 8},
             "vlm_cross_check": [], "wall_s": 0.0, "_smoke_stub": True}
 
 

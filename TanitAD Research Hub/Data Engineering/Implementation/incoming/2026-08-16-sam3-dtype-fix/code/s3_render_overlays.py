@@ -52,6 +52,7 @@ sys.path.insert(0, os.path.join(REPO, "stack", "scripts"))
 # first is stable. Same family as the repo's `git commit -- <pathspec>` crash:
 # do not re-derive a theory, just keep the working order.
 import v2_to_pilot                                               # noqa: E402
+from ph0_sam3 import is_live                                     # noqa: E402
 import ph0_rich_overlay                                          # noqa: E402
 
 
@@ -95,28 +96,59 @@ def main(argv=None) -> int:
     if a.clips:
         pick = [c.strip() for c in a.clips.split(",") if c.strip()]
     else:
+        # ⛔ The density spread is taken over COMPLETE records only. Mixing in
+        # the not-yet-re-run C77 records would put 32 zeros at the bottom of
+        # the distribution and make "sparsest" mean "not processed yet".
+        done = {c: r for c, r in recs.items() if r.get("liveness")}
+        stale = sorted(c for c in recs if c not in done)
+        print(f"[sel] complete {len(done)} · still-stale (pre-fix) "
+              f"{len(stale)}")
         dens = sorted((int(r.get("n_det_total") or 0), c)
-                      for c, r in recs.items())
+                      for c, r in done.items())
         n = len(dens)
-        bad = sorted(c for c, r in recs.items()
-                     if not int(r.get("n_det_total") or 0)
-                     or not (r.get("liveness") or {}).get("live"))
-        idx = [0, n // 4, n // 2, (3 * n) // 4, n - 1, n - 2, n // 3,
-               (2 * n) // 3]
+        recs_all, recs = recs, done
+        # ⛔ THE ALARM CASES GO FIRST — a reviewer must see the failures, and a
+        # dead control is not the same thing as an empty scene.
+        dead = sorted(c for c, r in recs.items()
+                      if r.get("liveness") and not is_live(r["liveness"]))
+        empty = sorted(c for c, r in recs.items()
+                       if not int(r.get("n_det_total") or 0))
+        # ⭐ RARE-CONCEPT COVERAGE. A selection spread on DENSITY alone shows
+        # the corpus at its most flattering: the busiest clips are wall-to-wall
+        # cars. The thin tail (`cyclist`, `bus`) is exactly where a false
+        # positive would hide, so the clip with the most of each rare concept
+        # is pinned into the set regardless of how dense it is.
+        RARE = ("cyclist", "bus", "truck", "pedestrian")
+        rare_pick = []
+        for k in RARE:
+            best = max(((r.get("per_concept_hits") or {}).get(k, 0), c)
+                       for c, r in recs.items())
+            if best[0] > 0:
+                rare_pick.append(best[1])
+                print(f"[sel] rare '{k}': best clip {best[1][:8]} "
+                      f"with {best[0]}")
+        idx = [0, n // 2, n - 1, (3 * n) // 4, n // 4]
         pick, seen = [], set()
-        for c in bad[:3] + [dens[i][1] for i in idx if 0 <= i < n]:
+        # one STILL-STALE clip is included on purpose: its panel prints
+        # "liveness control ABSENT" in orange, which is what the C77 state
+        # looks like on the figure — the contrast is the point.
+        for c in (dead[:2] + empty[:1] + rare_pick
+                  + [dens[i][1] for i in idx if 0 <= i < n]
+                  + stale[:1]):
             if c not in seen:
                 seen.add(c)
                 pick.append(c)
         pick = pick[:a.n]
         print(f"[sel] density min {dens[0][0]} · median {dens[n // 2][0]} · "
-              f"max {dens[-1][0]} | empty-or-dead {len(bad)}")
+              f"max {dens[-1][0]} | dead-control {len(dead)} · "
+              f"zero-detection {len(empty)}")
+    recs = recs_all if "recs_all" in dir() else recs
     for c in pick:
         r = recs[c]
         hits = {k: v for k, v in (r.get("per_concept_hits") or {}).items()
                 if v}
         print(f"    {c[:8]} det={r.get('n_det_total')} "
-              f"live={(r.get('liveness') or {}).get('live')} {hits}")
+              f"live={is_live(r.get('liveness'))} {hits}")
 
     # ⛔ THE FRAMES MUST BE THE ONES SAM3 SCORED (RETRACTION_LOG C79). The
     # pipeline re-bridges every clip from its w120 shard; the pre-bridged
@@ -203,7 +235,7 @@ def main(argv=None) -> int:
         per.update({k: v for k, v in recs[c]["per_concept_hits"].items()})
     json.dump({"picked": pick,
                "n_det": {c: recs[c].get("n_det_total") for c in pick},
-               "liveness": {c: (recs[c].get("liveness") or {}).get("live")
+               "liveness": {c: is_live(recs[c].get("liveness"))
                             for c in pick},
                "per_concept_over_selection": dict(per.most_common()),
                "fps": a.fps, "crf": a.crf},

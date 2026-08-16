@@ -1,0 +1,727 @@
+{
+ "_evidence_class": "MEASURED (ours; primary artifact records.parquet)",
+ "_sampling_caveat": "temperature 0.6, seed 42, ONE draw per clip. One draw is not the model's mode; cross-draw stability is UNMEASURED.",
+ "_contamination_caveat": "clips are PhysicalAI-AV, which Alpamayo lists as TRAINING data; overlap UNRESOLVED. Alpamayo is a TEACHER, not ground truth.",
+ "n_meta_action_rows": 4729,
+ "n_unique_clips": 4729,
+ "n_bad_json": 0,
+ "raw_json_keysets": {
+  "answer|box|cot|cot_auto_labeling|meta_action|raw_outputs": 4729
+ },
+ "reasoning_field": {
+  "_question": "the PI names 'reasoning' — does it exist as data?",
+  "field_name": "raw_json.cot (Alpamayo's 'Chain-of-Causation')",
+  "n_rows": 4729,
+  "n_non_empty": 4729,
+  "coverage_pct": 100.0,
+  "n_distinct_strings": 1103,
+  "distinct_pct_of_rows": 23.32,
+  "len_chars_median": 49,
+  "len_chars_p05": 37,
+  "len_chars_p95": 85,
+  "top_50_strings": [
+   [
+    "Keep lane because the road ahead is clear.",
+    404
+   ],
+   [
+    "Keep distance to the lead vehicle because it is directly ahead in the same lane.",
+    282
+   ],
+   [
+    "Slow down due to the speed bump ahead",
+    219
+   ],
+   [
+    "Adapt speed for the right curve ahead.",
+    169
+   ],
+   [
+    "Keep speed through the intersection since the traffic light is green.",
+    114
+   ],
+   [
+    "Nudge left to pass the parked car on the right",
+    111
+   ],
+   [
+    "Keep lane because the lane ahead is clear.",
+    102
+   ],
+   [
+    "Keep distance to the lead vehicle because it is ahead in the same lane.",
+    96
+   ],
+   [
+    "Resume speed from stop since the traffic light turns green.",
+    90
+   ],
+   [
+    "Slow down due to the lead vehicle ahead.",
+    87
+   ],
+   [
+    "Adapt speed for the left curve ahead.",
+    79
+   ],
+   [
+    "Decelerate to maintain a safe distance from the lead vehicle.",
+    65
+   ],
+   [
+    "Stop to keep distance to the lead vehicle.",
+    61
+   ],
+   [
+    "Slow down for the roundabout because of the yield sign ahead.",
+    61
+   ],
+   [
+    "Adapt speed for the right-hand curve ahead",
+    53
+   ],
+   [
+    "Keep lane since the road ahead is clear.",
+    41
+   ],
+   [
+    "Nudge left to increase clearance to the parked car on the right.",
+    40
+   ],
+   [
+    "Nudge left to increase clearance to the parked vehicle on the right.",
+    40
+   ],
+   [
+    "Stop due to red traffic light",
+    39
+   ],
+   [
+    "Stop for the red traffic light.",
+    37
+   ],
+   [
+    "Keep distance to the lead vehicle because it is directly ahead controlling our speed.",
+    36
+   ],
+   [
+    "Accelerate to proceed through the intersection since the traffic light turns green.",
+    34
+   ],
+   [
+    "Nudge left to pass the cyclist in the same lane",
+    34
+   ],
+   [
+    "Keep lane since the lane ahead is clear.",
+    33
+   ],
+   [
+    "Yield due to pedestrians in the crosswalk",
+    32
+   ],
+   [
+    "Accelerate to proceed through the intersection since the traffic light is green.",
+    32
+   ],
+   [
+    "Nudge right due to an oncoming vehicle",
+    31
+   ],
+   [
+    "Nudge left due to the parked car on the right.",
+    31
+   ],
+   [
+    "Keep distance to the lead vehicle because traffic ahead is slowing.",
+    27
+   ],
+   [
+    "Accelerate due to green traffic light",
+    27
+   ],
+   [
+    "Stop due to the red traffic light.",
+    26
+   ],
+   [
+    "Keep lane due to clear path ahead.",
+    24
+   ],
+   [
+    "Turn right at the intersection since the traffic light is green.",
+    24
+   ],
+   [
+    "Accelerate to proceed through the intersection since the straight traffic light is green.",
+    22
+   ],
+   [
+    "Slow down for the roundabout because a yield sign controls the entry.",
+    22
+   ],
+   [
+    "Slow down because of yellow traffic light ahead.",
+    22
+   ],
+   [
+    "Nudge left to pass the parked van on the right",
+    21
+   ],
+   [
+    "Nudge left to increase clearance to the parked van on the right.",
+    21
+   ],
+   [
+    "Yield due to a pedestrian in the crosswalk",
+    21
+   ],
+   [
+    "Adapt speed due to the road curvature.",
+    21
+   ],
+   [
+    "Keep distance to the lead vehicle because it is moving slowly ahead.",
+    21
+   ],
+   [
+    "Accelerate due to green traffic light.",
+    20
+   ],
+   [
+    "Nudge left due to the parked vehicle on the right.",
+    19
+   ],
+   [
+    "Slow down due to the lead vehicle reducing speed",
+    19
+   ],
+   [
+    "Nudge left to pass the parked vehicle on the right",
+    18
+   ],
+   [
+    "Keep lane because an oncoming vehicle is approaching in the opposite lane.",
+    18
+   ],
+   [
+    "Yield due to pedestrians crossing the crosswalk",
+    17
+   ],
+   [
+    "Slow down to yield to the cut-in vehicle from the left.",
+    17
+   ],
+   [
+    "Keep distance to the lead vehicle because traffic ahead is slower.",
+    15
+   ],
+   [
+    "Stop at the stop line because the traffic light is red.",
+    15
+   ]
+  ],
+  "_sibling_fields": {
+   "cot_auto_labeling_non_empty": 0,
+   "box_non_empty": 0
+  },
+  "answer_equals_cot_rows": 4729,
+  "answer_equals_cot_pct": 100.0
+ },
+ "taxonomy": {
+  "longitudinal": {
+   "n_distinct_values": 7,
+   "n_null_unparsed": 0,
+   "values": [
+    {
+     "value": "Gentle Deceleration",
+     "n": 1594,
+     "pct": 33.707
+    },
+    {
+     "value": "Maintain Speed",
+     "n": 1225,
+     "pct": 25.904
+    },
+    {
+     "value": "Gentle Acceleration",
+     "n": 1151,
+     "pct": 24.339
+    },
+    {
+     "value": "Stop",
+     "n": 304,
+     "pct": 6.428
+    },
+    {
+     "value": "Strong Deceleration",
+     "n": 267,
+     "pct": 5.646
+    },
+    {
+     "value": "Strong Acceleration",
+     "n": 182,
+     "pct": 3.849
+    },
+    {
+     "value": "Reverse",
+     "n": 6,
+     "pct": 0.127
+    }
+   ]
+  },
+  "lateral": {
+   "n_distinct_values": 7,
+   "n_null_unparsed": 304,
+   "values": [
+    {
+     "value": "Go Straight",
+     "n": 2504,
+     "pct": 52.95
+    },
+    {
+     "value": "Steer Right",
+     "n": 1020,
+     "pct": 21.569
+    },
+    {
+     "value": "Steer Left",
+     "n": 649,
+     "pct": 13.724
+    },
+    {
+     "value": "Sharp Steer Right",
+     "n": 135,
+     "pct": 2.855
+    },
+    {
+     "value": "Sharp Steer Left",
+     "n": 115,
+     "pct": 2.432
+    },
+    {
+     "value": "Reverse Right",
+     "n": 1,
+     "pct": 0.021
+    },
+    {
+     "value": "Reverse Left",
+     "n": 1,
+     "pct": 0.021
+    }
+   ]
+  },
+  "lane": {
+   "n_distinct_values": 7,
+   "n_null_unparsed": 304,
+   "values": [
+    {
+     "value": "Lane Keep",
+     "n": 4035,
+     "pct": 85.325
+    },
+    {
+     "value": "Turn Right",
+     "n": 101,
+     "pct": 2.136
+    },
+    {
+     "value": "Turn Left",
+     "n": 85,
+     "pct": 1.797
+    },
+    {
+     "value": "Right Lane Change",
+     "n": 82,
+     "pct": 1.734
+    },
+    {
+     "value": "Slightly Shift Left",
+     "n": 69,
+     "pct": 1.459
+    },
+    {
+     "value": "Slightly Shift Right",
+     "n": 31,
+     "pct": 0.656
+    },
+    {
+     "value": "Left Lane Change",
+     "n": 22,
+     "pct": 0.465
+    }
+   ]
+  }
+ },
+ "_taxonomy_kind": "STRUCTURED-ENUM-IN-TEXT: a fixed small vocabulary emitted as free text on three labelled lines. It is not a typed enum field (no schema enforces it) and it is not open free text (the observed value set is small and closed). It must be PARSED, and an unparsed row must be counted, never coerced.",
+ "joint_lon_lat_lane": [
+  {
+   "longitudinal": "Gentle Deceleration",
+   "lateral": "Go Straight",
+   "lane": "Lane Keep",
+   "n": 891
+  },
+  {
+   "longitudinal": "Maintain Speed",
+   "lateral": "Go Straight",
+   "lane": "Lane Keep",
+   "n": 727
+  },
+  {
+   "longitudinal": "Gentle Acceleration",
+   "lateral": "Go Straight",
+   "lane": "Lane Keep",
+   "n": 534
+  },
+  {
+   "longitudinal": "Gentle Deceleration",
+   "lateral": "Steer Right",
+   "lane": "Lane Keep",
+   "n": 353
+  },
+  {
+   "longitudinal": "Stop",
+   "lateral": null,
+   "lane": null,
+   "n": 304
+  },
+  {
+   "longitudinal": "Maintain Speed",
+   "lateral": "Steer Right",
+   "lane": "Lane Keep",
+   "n": 255
+  },
+  {
+   "longitudinal": "Gentle Acceleration",
+   "lateral": "Steer Right",
+   "lane": "Lane Keep",
+   "n": 235
+  },
+  {
+   "longitudinal": "Gentle Deceleration",
+   "lateral": "Steer Left",
+   "lane": "Lane Keep",
+   "n": 204
+  },
+  {
+   "longitudinal": "Gentle Acceleration",
+   "lateral": "Steer Left",
+   "lane": "Lane Keep",
+   "n": 195
+  },
+  {
+   "longitudinal": "Maintain Speed",
+   "lateral": "Steer Left",
+   "lane": "Lane Keep",
+   "n": 165
+  },
+  {
+   "longitudinal": "Strong Deceleration",
+   "lateral": "Go Straight",
+   "lane": "Lane Keep",
+   "n": 151
+  },
+  {
+   "longitudinal": "Strong Acceleration",
+   "lateral": "Go Straight",
+   "lane": "Lane Keep",
+   "n": 80
+  },
+  {
+   "longitudinal": "Strong Deceleration",
+   "lateral": "Steer Right",
+   "lane": "Lane Keep",
+   "n": 68
+  },
+  {
+   "longitudinal": "Gentle Acceleration",
+   "lateral": "Sharp Steer Right",
+   "lane": "Turn Right",
+   "n": 50
+  },
+  {
+   "longitudinal": "Strong Acceleration",
+   "lateral": "Steer Right",
+   "lane": "Lane Keep",
+   "n": 48
+  },
+  {
+   "longitudinal": "Gentle Acceleration",
+   "lateral": "Sharp Steer Left",
+   "lane": "Turn Left",
+   "n": 31
+  },
+  {
+   "longitudinal": "Strong Deceleration",
+   "lateral": "Steer Left",
+   "lane": "Lane Keep",
+   "n": 31
+  },
+  {
+   "longitudinal": "Gentle Acceleration",
+   "lateral": "Sharp Steer Right",
+   "lane": "Lane Keep",
+   "n": 27
+  },
+  {
+   "longitudinal": "Maintain Speed",
+   "lateral": "Go Straight",
+   "lane": "Right Lane Change",
+   "n": 24
+  },
+  {
+   "longitudinal": "Gentle Deceleration",
+   "lateral": "Go Straight",
+   "lane": "Slightly Shift Left",
+   "n": 23
+  },
+  {
+   "longitudinal": "Gentle Deceleration",
+   "lateral": "Go Straight",
+   "lane": "Right Lane Change",
+   "n": 23
+  },
+  {
+   "longitudinal": "Gentle Deceleration",
+   "lateral": "Sharp Steer Right",
+   "lane": "Turn Right",
+   "n": 22
+  },
+  {
+   "longitudinal": "Gentle Acceleration",
+   "lateral": "Sharp Steer Left",
+   "lane": "Lane Keep",
+   "n": 22
+  },
+  {
+   "longitudinal": "Strong Acceleration",
+   "lateral": "Steer Left",
+   "lane": "Lane Keep",
+   "n": 20
+  },
+  {
+   "longitudinal": "Gentle Deceleration",
+   "lateral": "Sharp Steer Left",
+   "lane": "Turn Left",
+   "n": 18
+  },
+  {
+   "longitudinal": "Gentle Acceleration",
+   "lateral": "Steer Right",
+   "lane": "Turn Right",
+   "n": 11
+  },
+  {
+   "longitudinal": "Maintain Speed",
+   "lateral": "Sharp Steer Left",
+   "lane": "Turn Left",
+   "n": 10
+  },
+  {
+   "longitudinal": "Strong Acceleration",
+   "lateral": "Sharp Steer Left",
+   "lane": "Turn Left",
+   "n": 10
+  },
+  {
+   "longitudinal": "Gentle Acceleration",
+   "lateral": "Steer Left",
+   "lane": "Turn Left",
+   "n": 9
+  },
+  {
+   "longitudinal": "Gentle Deceleration",
+   "lateral": "Sharp Steer Right",
+   "lane": "Lane Keep",
+   "n": 9
+  },
+  {
+   "longitudinal": "Gentle Deceleration",
+   "lateral": "Go Straight",
+   "lane": "Slightly Shift Right",
+   "n": 9
+  },
+  {
+   "longitudinal": "Maintain Speed",
+   "lateral": "Steer Right",
+   "lane": "Right Lane Change",
+   "n": 8
+  },
+  {
+   "longitudinal": "Maintain Speed",
+   "lateral": "Go Straight",
+   "lane": "Slightly Shift Left",
+   "n": 8
+  },
+  {
+   "longitudinal": "Strong Deceleration",
+   "lateral": "Go Straight",
+   "lane": "Slightly Shift Left",
+   "n": 7
+  },
+  {
+   "longitudinal": "Gentle Deceleration",
+   "lateral": "Sharp Steer Left",
+   "lane": "Lane Keep",
+   "n": 7
+  },
+  {
+   "longitudinal": "Gentle Deceleration",
+   "lateral": "Steer Right",
+   "lane": "Turn Right",
+   "n": 7
+  },
+  {
+   "longitudinal": "Gentle Deceleration",
+   "lateral": "Steer Right",
+   "lane": "Right Lane Change",
+   "n": 6
+  },
+  {
+   "longitudinal": "Maintain Speed",
+   "lateral": "Sharp Steer Right",
+   "lane": "Turn Right",
+   "n": 5
+  },
+  {
+   "longitudinal": "Gentle Acceleration",
+   "lateral": "Sharp Steer Left",
+   "lane": "Slightly Shift Right",
+   "n": 5
+  },
+  {
+   "longitudinal": "Gentle Acceleration",
+   "lateral": "Go Straight",
+   "lane": "Slightly Shift Left",
+   "n": 5
+  },
+  {
+   "longitudinal": "Strong Acceleration",
+   "lateral": "Sharp Steer Right",
+   "lane": "Turn Right",
+   "n": 4
+  },
+  {
+   "longitudinal": "Gentle Deceleration",
+   "lateral": "Steer Left",
+   "lane": "Left Lane Change",
+   "n": 4
+  },
+  {
+   "longitudinal": "Gentle Acceleration",
+   "lateral": "Steer Left",
+   "lane": "Left Lane Change",
+   "n": 4
+  },
+  {
+   "longitudinal": "Maintain Speed",
+   "lateral": "Go Straight",
+   "lane": "Slightly Shift Right",
+   "n": 4
+  },
+  {
+   "longitudinal": "Gentle Acceleration",
+   "lateral": "Go Straight",
+   "lane": "Left Lane Change",
+   "n": 4
+  },
+  {
+   "longitudinal": "Gentle Deceleration",
+   "lateral": "Go Straight",
+   "lane": "Left Lane Change",
+   "n": 4
+  },
+  {
+   "longitudinal": "Maintain Speed",
+   "lateral": "Sharp Steer Right",
+   "lane": "Lane Keep",
+   "n": 4
+  },
+  {
+   "longitudinal": "Gentle Deceleration",
+   "lateral": "Steer Left",
+   "lane": "Turn Left",
+   "n": 3
+  },
+  {
+   "longitudinal": "Gentle Acceleration",
+   "lateral": "Go Straight",
+   "lane": "Right Lane Change",
+   "n": 3
+  },
+  {
+   "longitudinal": "Maintain Speed",
+   "lateral": "Sharp Steer Left",
+   "lane": "Lane Keep",
+   "n": 3
+  },
+  {
+   "longitudinal": "Gentle Acceleration",
+   "lateral": "Steer Right",
+   "lane": "Slightly Shift Left",
+   "n": 3
+  },
+  {
+   "longitudinal": "Strong Acceleration",
+   "lateral": "Steer Left",
+   "lane": "Turn Left",
+   "n": 3
+  },
+  {
+   "longitudinal": "Maintain Speed",
+   "lateral": "Steer Right",
+   "lane": "Slightly Shift Left",
+   "n": 3
+  },
+  {
+   "longitudinal": "Gentle Deceleration",
+   "lateral": "Sharp Steer Right",
+   "lane": "Right Lane Change",
+   "n": 3
+  },
+  {
+   "longitudinal": "Gentle Acceleration",
+   "lateral": "Steer Left",
+   "lane": "Slightly Shift Left",
+   "n": 3
+  },
+  {
+   "longitudinal": "Strong Acceleration",
+   "lateral": "Steer Right",
+   "lane": "Slightly Shift Left",
+   "n": 3
+  },
+  {
+   "longitudinal": "Gentle Deceleration",
+   "lateral": "Steer Right",
+   "lane": "Slightly Shift Left",
+   "n": 3
+  },
+  {
+   "longitudinal": "Gentle Acceleration",
+   "lateral": "Steer Right",
+   "lane": "Right Lane Change",
+   "n": 3
+  },
+  {
+   "longitudinal": "Strong Deceleration",
+   "lateral": "Go Straight",
+   "lane": "Right Lane Change",
+   "n": 2
+  },
+  {
+   "longitudinal": "Maintain Speed",
+   "lateral": "Steer Right",
+   "lane": "Left Lane Change",
+   "n": 2
+  }
+ ],
+ "n_distinct_joint_cells": 98,
+ "simultaneous_lon_and_lat": {
+  "_definition": "longitudinal not in {null, 'Constant Speed'} AND lateral not in {null, 'Go Straight'} — i.e. the vehicle is declared to be doing something on BOTH axes at once, which a single 5-way softmax over [lane_keep, turn_left, turn_right, accelerate, brake_stop] cannot represent.",
+  "n": 1921,
+  "n_total": 4729,
+  "pct": 40.62
+ },
+ "_per_clip_path": "raw/a1_alpamayo_taxonomy_per_clip.jsonl"
+}

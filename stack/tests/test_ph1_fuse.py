@@ -15,7 +15,10 @@ import pytest
 # when an alphabetically-earlier test had already done the insert
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
-from ph1_fuse import build_tracks, corroborate, emit_vocab, main  # noqa: E402
+import s2_derive  # noqa: E402
+from ph1_fuse import (build_tracks, census_phrase, census_state,  # noqa: E402
+                      corroborate, emit_vocab, lane_phrase, main,
+                      scenario_line)
 
 V2 = {
     "clip_id": "c1", "_frame_wh": [448, 179],
@@ -325,27 +328,122 @@ def test_a_str_prepare_stop_from_lonmode_event():
     assert a["corroboration"]["agrees"] is True
 
 
-def test_lane_change_gate_requires_displacement_and_valid_follow():
-    """§4.2: latmaneuver fires on 120/201 clips — implausible. LANE_TARGET /
-    PREPARE_LANE_CHANGE require route follow+valid AND >= 3.0 m displacement."""
-    ea = json.loads(json.dumps(EA_FOLLOW))
-    ea["lane_change_events"] = [{"token": "lc_left", "t_start_s": 1.0,
-                                 "t_end_s": 2.0, "lat_m": 1.2,
-                                 "arc_from_t0_m": 15.0}]
+def test_geometric_gate_can_no_longer_produce_either_lane_change_token():
+    """⛔ THE §LC PIN (PI ruling 2026-08-16, verbatim: "stop emitting
+    lane_target/Prepare Lane change from geometric gate").
+
+    The PI adjudicated 18 of the 19 LANE_TARGET labels this path emitted on
+    aug120 and called 14 wrong. NO amount of observed lateral displacement,
+    at any magnitude, may mint either token — this is removal, not retuning,
+    so the test sweeps a range that brackets and far exceeds the old 3.0 m
+    gate. The clip falls through to its ROUTE token instead.
+    """
+    for lat in (1.2, 3.4, 7.0, 25.0):
+        ea = json.loads(json.dumps(EA_FOLLOW))
+        ea["lane_change_events"] = [{"token": "lc_left", "t_start_s": 1.0,
+                                     "t_end_s": 2.0, "lat_m": lat,
+                                     "arc_from_t0_m": 15.0}]
+        vocab, _ = emit_vocab(V2, None, engine_a=ea)
+        assert vocab["g_str"]["token"] == "FOLLOW_MAIN_ROAD", lat
+        assert vocab["a_str"]["token"] != "PREPARE_LANE_CHANGE", lat
+    # ... and the same on a right-hand event and on turn geometry
+    ea["lane_change_events"][0]["token"] = "lc_right"
     vocab, _ = emit_vocab(V2, None, engine_a=ea)
-    assert vocab["g_str"]["token"] == "FOLLOW_MAIN_ROAD"   # 1.2 m: gated out
-    ea["lane_change_events"][0]["lat_m"] = 3.4
-    vocab, _ = emit_vocab(V2, None, engine_a=ea)
-    g = vocab["g_str"]
-    assert g["token"] == "LANE_TARGET"
-    assert g["args"][0] == 1.0 and g["arg_mask"][0] == 1   # +1 = left
-    assert g["args"][1] == 15.0 and g["arg_mask"][1] == 1  # deadline arc
-    assert vocab["a_str"]["token"] == "PREPARE_LANE_CHANGE"
-    # on turn geometry the same event must NOT mint a lane change
+    assert vocab["g_str"]["token"] == "FOLLOW_MAIN_ROAD"
     ea2 = json.loads(json.dumps(EA_TURN_LEFT))
     ea2["lane_change_events"] = [dict(ea["lane_change_events"][0])]
     vocab, _ = emit_vocab(V2, None, engine_a=ea2)
     assert vocab["g_str"]["token"] == "TURN_LEFT"
+
+
+def test_lane_target_is_never_emitted_by_any_path():
+    """§LC: `LANE_TARGET` left g_str emission ENTIRELY — a lane change is a
+    MEANS (a_str), not a GOAL. Geometry, VLM-primary fallback and the
+    ROUTE_TO remap set are all checked. ⚠️ The token STAYS in the v6
+    vocabulary (the tuples size embedding tables, v6.py:3281) — this pins
+    EMISSION, and the vocabulary assert below pins that it is still there."""
+    from tanitad.models.v6 import STRATEGIC_GOAL_TOKENS as V6G
+    assert "LANE_TARGET" in V6G, "vocabulary must NOT lose the token"
+    ea = json.loads(json.dumps(EA_FOLLOW))
+    ea["lane_change_events"] = [{"token": "lc_left", "t_start_s": 1.0,
+                                 "t_end_s": 2.0, "lat_m": 9.9,
+                                 "arc_from_t0_m": 15.0}]
+    v2 = json.loads(json.dumps(V2))
+    for goal_kind in ("lane_target", "follow_main_road", "route_to"):
+        v2["symbols"]["goal_kind"] = goal_kind
+        for engine_a in (ea, None):
+            vocab, _ = emit_vocab(v2, None, engine_a=engine_a)
+            assert vocab["g_str"]["token"] != "LANE_TARGET", \
+                (goal_kind, engine_a is not None)
+    # the VLM claiming it outright abstains WITH A REASON, never silently
+    v2["symbols"]["goal_kind"] = "lane_target"
+    vocab, _ = emit_vocab(v2, None, engine_a=None)
+    assert vocab["g_str"]["token"] == "NONE_ABSTAIN"
+    assert "LANE_TARGET" in vocab["g_str"]["reason"]
+
+
+def test_observed_lane_change_is_recorded_as_corroboration_not_source():
+    """§LC: observed-but-unrequired is a REAL category. The observation must
+    survive in the record — dropping it would trade one silent failure for
+    another — but flagged `is_label_source: False`."""
+    ea = json.loads(json.dumps(EA_FOLLOW))
+    ea["lane_change_events"] = [{"token": "lc_right", "t_start_s": 1.0,
+                                 "t_end_s": 2.0, "lat_m": -4.4,
+                                 "arc_from_t0_m": 15.0}]
+    vocab, _ = emit_vocab(V2, None, engine_a=ea)
+    for blk in (vocab["g_str"], vocab["a_str"]):
+        obs = blk["corroboration"]["observed_lane_change"]
+        assert obs["token"] == "lc_right" and obs["lat_m"] == -4.4
+        assert obs["is_label_source"] is False
+    req = vocab["a_str"]["corroboration"]["lane_change_requirement"]
+    assert req["required"] is None            # UNKNOWN, never False-by-default
+    assert set(req["missing"]) == set(s2_derive.LANE_CONTEXT_INPUTS)
+    assert "lane context unavailable" in vocab["a_str"]["reason"]
+
+
+def test_prepare_lane_change_needs_a_ROUTE_SERVING_requirement():
+    """§LC part 2: the token is admissible ONLY when the route (or the main
+    road, no route set) demands a lane the ego is not in — and then its
+    direction/deadline come from the ROUTE, never from the observation."""
+    ea = json.loads(json.dumps(EA_FOLLOW))                # NO lateral event
+    ctx = {"n_lanes_same_direction": 3, "ego_lane_idx": 0,
+           "route_lane_idx": 2, "lane_continues": True}
+    a = s2_derive.derive_a_str(ea, None, lane_context=ctx)
+    assert a["token"] == "PREPARE_LANE_CHANGE"
+    assert a["args"][0] == 1.0                            # +1 = left (0 -> 2)
+    assert a["sources"] == ["lane_context.route_serving:follow_main_road"]
+    # the ego already in the serving lane => NOT required, even with a big
+    # observed displacement present
+    ea2 = json.loads(json.dumps(EA_FOLLOW))
+    ea2["lane_change_events"] = [{"token": "lc_left", "t_start_s": 1.0,
+                                  "t_end_s": 2.0, "lat_m": 8.0,
+                                  "arc_from_t0_m": 15.0}]
+    ok = {**ctx, "ego_lane_idx": 2}
+    a2 = s2_derive.derive_a_str(ea2, None, lane_context=ok)
+    assert a2["token"] != "PREPARE_LANE_CHANGE"
+    assert a2["corroboration"]["lane_change_requirement"]["required"] is False
+
+
+def test_lane_change_requirement_cannot_read_the_observation():
+    """⛔ The structural half: `lane_change_requirement()` must be UNABLE to
+    reach `lane_change_events`. Same discipline as the situations allowlist —
+    a rule that only holds by habit has already failed here once."""
+    bare = json.loads(json.dumps(EA_FOLLOW))
+    ctx = {"n_lanes_same_direction": 2, "ego_lane_idx": 0,
+           "route_lane_idx": 0, "lane_continues": True}
+    for lat in (-99.0, -4.0, 0.0, 4.0, 99.0):
+        for tok in ("lc_left", "lc_right"):
+            ea = json.loads(json.dumps(EA_FOLLOW))
+            ea["lane_change_events"] = [{"token": tok, "t_start_s": 1.0,
+                                         "t_end_s": 2.0, "lat_m": lat,
+                                         "arc_from_t0_m": 15.0}]
+            for c in (None, ctx):
+                assert s2_derive.lane_change_requirement(ea, c) == \
+                    s2_derive.lane_change_requirement(bare, c), \
+                    f"requirement moved when only the OBSERVATION did ({tok} {lat})"
+                assert (s2_derive.derive_a_str(ea, None, lane_context=c)["token"]
+                        == s2_derive.derive_a_str(bare, None,
+                                                  lane_context=c)["token"])
 
 
 def test_vlm_primary_fallback_without_engine_a_is_tagged():
@@ -436,3 +534,125 @@ def test_derive_never_reads_situations():
     poisoned = s2_derive.derive_g_str(poisoned_ea, {})
     assert clean == poisoned
     assert "situation" not in json.dumps(poisoned).lower()
+
+
+# =========================================================================== #
+# ⛔ C77 — AN ABSENT MEASUREMENT MUST NEVER RENDER AS A CONFIDENT NEGATIVE     #
+# =========================================================================== #
+def test_absent_perception_never_renders_as_a_finding_about_the_world():
+    """The PI's `03ba450b` note: *"not agent said by the pipeline. In the
+    picture of frame 9 there is clear a car as incoming traffic"*.
+
+    `", ".join(census) or "no agents"` turned an EMPTY census into a positive
+    claim. MEASURED on fused aug120: "no agents" on 119/201 records, of which
+    115 (96.6 %) ALREADY carried `perception.absent` — the structured layer
+    knew and the prose contradicted it. Absence and a measured zero are
+    different claims and must render differently.
+    """
+    # (a) detector never ran for this clip
+    cen = census_state([], absent_reason="sam3 absent for this clip")
+    assert cen["state"] == "unavailable" and cen["counts"] is None
+    assert cen["n_agents"] is None       # ⛔ never 0 — that would be a count
+    assert "UNAVAILABLE" in census_phrase(cen)
+    # (b) detector ran but processed no frames — also unavailability
+    assert census_state([], n_frames=0)["state"] == "unavailable"
+    # (c) detector ran and returned nothing — a MEASUREMENT of the detector
+    cen = census_state([], n_frames=8)
+    assert cen["state"] == "measured" and cen["n_agents"] == 0
+    assert census_phrase(cen) == "0 agents detected"
+    # ⛔ the regression that started this: the old literal must be gone from
+    # every branch, so it can never be read as a claim about the world again
+    for c in (census_state([], absent_reason="x"), census_state([], n_frames=0),
+              census_state([], n_frames=8)):
+        assert census_phrase(c) != "no agents"
+
+
+def test_scenario_line_carries_the_census_state_not_a_bare_negative():
+    tracks = build_tracks(SAM3["frames"])
+    line = scenario_line(V2, tracks, n_frames=len(SAM3["frames"]))
+    assert "1 car" in line
+    absent = scenario_line(V2, [], absent_reason="sam3 absent for this clip")
+    assert "UNAVAILABLE" in absent and "no agents" not in absent
+    empty = scenario_line(V2, [], n_frames=8)
+    assert "0 agents detected" in empty
+
+
+def test_empty_census_cannot_produce_a_flagged_empty_verdict():
+    """The corroboration leg of the same rule: `flagged_empty_urban` is a
+    FINDING and an absent detector may not produce one."""
+    cor, _ = corroborate(V2, {}, [], sam3_absent=True)
+    assert cor["census_vs_scene"]["verdict"] == "not_computable"
+    # SAM3 present but zero frames processed: still not a finding
+    cor, _ = corroborate(V2, {"frames": {}}, [], sam3_absent=False)
+    assert cor["census_vs_scene"]["verdict"] == "not_computable"
+    # SAM3 ran with frames and found no agents: NOW it is a measured flag
+    cor, _ = corroborate(V2, SAM3, [], sam3_absent=False)
+    assert cor["census_vs_scene"]["verdict"] == "flagged_empty_urban"
+
+
+def test_lane_count_phrase_names_its_scope():
+    """⚠️ `lanes_visible` is B1-defined as the EGO'S CARRIAGEWAY only
+    (ph0_v2.py:140). The PI read `"rural 1-lane"` as "a one-lane road" and
+    objected — correctly, of the phrase. The count was right by its own
+    definition; the RENDERING hid the scope. It must not be ambiguous."""
+    assert lane_phrase({"road_type": "rural", "lanes_visible": 1}) == \
+        "rural 1-lane-ego-carriageway"
+    # B1's documented 0 = "unclear" escape is an ABSENT count, not "0 lanes"
+    out = lane_phrase({"road_type": "urban", "lanes_visible": 0})
+    assert "UNCLEAR" in out and "0-lane" not in out
+    assert "UNCLEAR" in lane_phrase({"road_type": "urban"})
+
+
+def test_lane_ends_requires_a_change_but_never_invents_a_direction():
+    """§LC edge: the ego lane IS the serving lane but does not continue (lane
+    ends / forced merge). A change IS required; WHICH WAY is not derivable
+    from these inputs, so the direction slot stays UNSET — the same args
+    discipline as the `8dc5d14d…` null-dist_m row, never a fabricated ±1."""
+    ctx = {"n_lanes_same_direction": 2, "ego_lane_idx": 1,
+           "route_lane_idx": 1, "lane_continues": False}
+    req = s2_derive.lane_change_requirement(EA_FOLLOW, ctx)
+    assert req["required"] is True and req["direction"] is None
+    a = s2_derive.derive_a_str(EA_FOLLOW, None, lane_context=ctx)
+    assert a["token"] == "PREPARE_LANE_CHANGE"
+    assert a["arg_mask"][0] == 0 and a["args"][0] == 0.0   # UNSET, not 0.0-meant
+
+
+def test_fused_record_carries_the_machine_readable_census(tmp_path):
+    """The census must reach the RECORD, not only the prose — downstream
+    should read a field, never parse `scenario_description`. Both states are
+    exercised end-to-end through `main()`."""
+    (tmp_path / "ego").mkdir()
+    (tmp_path / "v2.json").write_text(json.dumps([V2, _v2_second_clip()]))
+    (tmp_path / "s.json").write_text(json.dumps({"engine": "sam3",
+                                                 "clips": [SAM3]}))
+    out = tmp_path / "fused"
+    assert main(["--v2-json", str(tmp_path / "v2.json"), "--sam3",
+                 str(tmp_path / "s.json"), "--ego-root", str(tmp_path / "ego"),
+                 "--out", str(out), "--missing-sam3-ok", "no sam3 for c2"]) == 0
+    c1 = json.loads((out / "c1.json").read_text())["perception"]["census"]
+    assert c1["state"] == "measured" and c1["counts"] == {"car": 1}
+    c2 = json.loads((out / "c2.json").read_text())["perception"]["census"]
+    assert c2["state"] == "unavailable"
+    assert c2["counts"] is None and c2["n_agents"] is None
+    # and the prose agrees with the field on BOTH clips
+    assert "no agents" not in json.loads(
+        (out / "c2.json").read_text())["scenario_description"]
+
+
+def test_legacy_two_arg_scenario_line_still_reports_agents_it_has():
+    """⚠️ `colab/s2_lab_lib.py:832` calls `scenario_line(r, tracks)` with two
+    positional args and CANNOT pass `n_frames`. Collapsing `None` into 0 would
+    make that caller say "unavailable" with agents plainly in the census — the
+    C77 defect inverted. Tracks are proof the detector ran."""
+    tracks = build_tracks(SAM3["frames"])
+    line = scenario_line(V2, tracks)                    # no n_frames, as legacy
+    assert "1 car" in line and "UNAVAILABLE" not in line
+    cen = census_state(tracks)
+    assert cen["state"] == "measured" and cen["n_agents"] == 1
+    # empty census + unknown frame count is genuinely undecidable -> unavailable
+    cen0 = census_state([])
+    assert cen0["state"] == "unavailable" and cen0["n_agents"] is None
+    assert "indistinguishable" in cen0["reason"]
+    # an EXPLICIT zero frame count keeps its own, more specific reason
+    assert census_state([], n_frames=0)["reason"] == \
+        "no frames processed by the detector"

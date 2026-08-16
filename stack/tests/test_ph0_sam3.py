@@ -294,13 +294,14 @@ def test_liveness_probe_calls_a_dead_engine_dead():
     forward-facing driving frame ⇒ their zero is an ALARM, and the cause is
     recorded next to it."""
     from ph0_sam3 import liveness_probe
+    from ph0_sam3 import is_live
     dead = liveness_probe(_RaisingProc(), object())
-    assert dead["live"] is False
+    assert is_live(dead) is False
     assert dead["n_det"] == {"road": 0, "sky": 0}
     assert "BFloat16" in dead["errors"]["road"]
 
     live = liveness_probe(_LiveProc(), object())
-    assert live["live"] is True and live["n_det"]["road"] == 1
+    assert is_live(live) is True and live["n_det"]["road"] == 1
     assert "errors" not in live
 
 
@@ -316,7 +317,8 @@ def test_run_clip_frames_banks_the_alarm_a_structural_check_would_miss():
     assert out["n_det_total"] == 0                # ... and it is empty
     assert out["n_err_total"] == 6                # 3 frames x 2 concepts
     assert out["err_kinds"] == {"RuntimeError": 6}
-    assert out["liveness"]["live"] is False
+    from ph0_sam3 import is_live
+    assert is_live(out["liveness"]) is False
 
 
 def test_run_clip_frames_distinguishes_an_empty_scene_from_a_dead_engine():
@@ -327,7 +329,8 @@ def test_run_clip_frames_distinguishes_an_empty_scene_from_a_dead_engine():
     out = run_clip_frames(_LiveProc(), _frames(), ["car", "pedestrian"], [],
                           frame_stride=4)
     assert out["n_det_total"] == 0 and out["n_err_total"] == 0
-    assert out["liveness"]["live"] is True
+    from ph0_sam3 import is_live
+    assert is_live(out["liveness"]) is True
     assert out["per_concept_hits"] == {"car": 0, "pedestrian": 0}
     # the control stays OUT of the measured vocabulary
     assert "road" not in out["per_concept_hits"]
@@ -510,16 +513,16 @@ def test_live_is_ANY_control_not_ALL_because_sky_can_be_occluded():
             return {"scores": np.array([]), "boxes": np.array([]),
                     "masks": None}
 
+    from ph0_sam3 import is_live
     r = liveness_probe(_SkyOccluded(), object())
     assert r["n_det"] == {"road": 2, "sky": 0}
-    assert r["live"] is True, "an occluded sky is not a dead engine"
-    assert r["all_fired"] is False, "the stricter scene reading stays available"
+    assert is_live(r) is True, "an occluded sky is not a dead engine"
 
 
 def test_a_dead_engine_is_still_dead_under_the_any_rule():
-    from ph0_sam3 import liveness_probe
+    from ph0_sam3 import is_live, liveness_probe
     r = liveness_probe(_RaisingProc(), object())
-    assert r["live"] is False and r["all_fired"] is False
+    assert is_live(r) is False
 
 
 def test_aug120_pipeline_reads_the_census_not_the_return_code():
@@ -541,3 +544,35 @@ def test_aug120_pipeline_reads_the_census_not_the_return_code():
     assert src.index("SAM3_CENSUS") < src.index("upload_folder")
     # and --n must still be explicit (the original 115-clip gap)
     assert '"--n", str(len(batch))' in src
+
+
+def test_no_derived_boolean_is_stored_in_the_record():
+    """⛔ THE FIELD IS DELETED, NOT JUST RECOMPUTED. A `live` boolean lived in
+    the schema for half a corpus and its rule changed mid-corpus (all -> any).
+    MEASURED consequence, found on disk by the far-side census: clip
+    `24b6948f` carried `live: False` **contradicting its own `n_det`
+    {road: 2, sky: 0}** — a healthy underpass scene that every consumer
+    reading the flag would score as the one dead-engine failure.
+
+    The counts are the primitive; the verdict is a cache; a cache of a rule
+    that changed is a trap with a long fuse. A field that cannot be stale
+    beats a field that must be kept in sync."""
+    from ph0_sam3 import liveness_probe, run_clip_frames
+    r = liveness_probe(_LiveProc(), object())
+    assert "live" not in r and "all_fired" not in r
+    assert set(r) <= {"concepts", "n_det", "errors"}
+    out = run_clip_frames(_LiveProc(), _frames(), ["car"], [], frame_stride=4)
+    assert "live" not in out["liveness"]
+    assert "all_fired" not in out["liveness"]
+
+
+def test_is_live_ignores_a_stale_stored_flag_and_trusts_the_counts():
+    """Pre-2026-08-16 records still carry the boolean. It must be IGNORED —
+    including when it lies in the dangerous direction (a healthy clip stored
+    as dead), which is the exact record the census found."""
+    from ph0_sam3 import is_live
+    stale_false = {"n_det": {"road": 2, "sky": 0}, "live": False}
+    stale_true = {"n_det": {"road": 0, "sky": 0}, "live": True}
+    assert is_live(stale_false) is True, "road 2 means the engine ran"
+    assert is_live(stale_true) is False, "all-zero counts mean it did not"
+    assert is_live(None) is False and is_live({}) is False
