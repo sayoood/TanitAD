@@ -120,6 +120,12 @@ def pip_install_colab(smoke: bool) -> None:
         ["lm-format-enforcer"],
         ["qwen-vl-utils"],
         ["--no-deps", "git+https://github.com/facebookresearch/sam3.git"],
+        # sam3 arrives --no-deps (torch protection) so its torch-free runtime
+        # deps come explicitly — MEASURED missing on the Colab T4 2026-08-16
+        # (run 1: build_processor died ModuleNotFoundError iopath; timm/tqdm/
+        # regex/typing_extensions/huggingface_hub were already present):
+        ["iopath"],                              # pure-python dep closure
+        ["--no-deps", "ftfy==6.1.1", "wcwidth"],  # sam3's CLIP text path
         ["--no-deps", "open_clip_torch"],       # ships the CLIP BPE vocab
         ["imageio", "imageio-ffmpeg"],
     ]

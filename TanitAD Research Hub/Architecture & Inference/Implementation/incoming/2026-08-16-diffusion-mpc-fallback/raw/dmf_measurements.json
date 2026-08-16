@@ -1,0 +1,165 @@
+{
+ "_evidence_class": "MEASURED (ours; this box, torch CPU, seed 0, 2026-08-16)",
+ "_instrument": "scratchpad/measure_dmf.py (this file's content is reproduced in the writeup's appendix commands)",
+ "identity": {
+  "default_full": {
+   "params": 87893449,
+   "keys": 405,
+   "must_equal": [
+    87893449,
+    405
+   ]
+  },
+  "config_E": {
+   "params": 336542025,
+   "keys": 573,
+   "must_equal": [
+    336542025,
+    573
+   ]
+  },
+  "per_tensor_c75_proof": "tests/test_v6_diffusion_mpc_fallback.py::test_default_is_byte_identical_to_the_PRE_CHANGE_architecture (torch.equal per tensor + RNG stream, vs the newest git revision of v6.py without the 'prop_diffusion' marker)"
+ },
+ "param_deltas": {
+  "diffusion_production": {
+   "params": 437954,
+   "new_keys": 8
+  },
+  "mpc": {
+   "params": 0,
+   "new_keys": 0
+  },
+  "fallback": {
+   "params": 0,
+   "new_keys": 8,
+   "keys": [
+    "fallback.calib_intercept",
+    "fallback.calib_ready",
+    "fallback.calib_rho",
+    "fallback.calib_rho_ci_lo",
+    "fallback.calib_slope",
+    "fallback.calib_threshold",
+    "fallback.w_rollvar",
+    "fallback.w_spread"
+   ]
+  }
+ },
+ "ou_autocorr": {
+  "rows": [
+   {
+    "rho_target": 0.0,
+    "T": 60,
+    "n_series": 64,
+    "lag1_measured": 0.0076,
+    "lag2_measured": -0.0443,
+    "lag1_kendall_expected": 0.0,
+    "lag2_ar1_theory_rho_sq": 0.0
+   },
+   {
+    "rho_target": 0.5,
+    "T": 60,
+    "n_series": 64,
+    "lag1_measured": 0.4686,
+    "lag2_measured": 0.175,
+    "lag1_kendall_expected": 0.4583,
+    "lag2_ar1_theory_rho_sq": 0.25
+   },
+   {
+    "rho_target": 0.9,
+    "T": 60,
+    "n_series": 64,
+    "lag1_measured": 0.8331,
+    "lag2_measured": 0.6786,
+    "lag1_kendall_expected": 0.8383,
+    "lag2_ar1_theory_rho_sq": 0.81
+   },
+   {
+    "rho_target": 0.9,
+    "T": 600,
+    "n_series": 1024,
+    "lag1_measured": 0.8952,
+    "lag1_kendall_expected": 0.8938,
+    "_read": "the estimator CONVERGES on rho as T grows \u2014 the T=60 shortfall is the estimator's Kendall bias, not the process's"
+   }
+  ],
+  "estimator": "pooled per-series mean-subtracted lag correlation (DiffusionProposalGenerator.measured_lag_autocorr)",
+  "bias_note": "per-series mean subtraction gives the Kendall bias E[r1] ~ rho - (1+3rho)/T; the T=60 rows sit on it and the T=600 row closes it"
+ },
+ "x3": {
+  "diffusion_alone": {
+   "pass": true,
+   "n_violations": {
+    "planner_to_encoder": 0,
+    "tactical_to_below": 0,
+    "strategic_to_below": 0
+   }
+  },
+  "mpc_alone": {
+   "pass": true,
+   "n_violations": {
+    "planner_to_encoder": 0,
+    "tactical_to_below": 0,
+    "strategic_to_below": 0
+   }
+  },
+  "fallback_alone": {
+   "pass": true,
+   "n_violations": {
+    "planner_to_encoder": 0,
+    "tactical_to_below": 0,
+    "strategic_to_below": 0
+   }
+  },
+  "all_three_combined": {
+   "pass": true,
+   "n_violations": {
+    "planner_to_encoder": 0,
+    "tactical_to_below": 0,
+    "strategic_to_below": 0
+   }
+  }
+ },
+ "dry_st_step": {
+  "loss": 17.1561,
+  "terms": [
+   "plan",
+   "seam",
+   "select",
+   "t1"
+  ],
+  "sel_norm_err_rank": 0.0,
+  "prop_noise_lag1_autocorr_this_fan": 0.8661,
+  "mpc_cost_pre_mean": 30.6739,
+  "mpc_cost_post_mean": 18.958,
+  "mpc_goal_pre_mean": 30.1205,
+  "mpc_goal_post_mean": 18.4257,
+  "mpc_consist_pre_mean": 2.5714,
+  "mpc_consist_post_mean": 2.4949,
+  "fb_status": "UNCALIBRATED \u2014 the com",
+  "denoiser_param_tensors_with_grad": 8,
+  "denoiser_max_abs_grad": 25.745279,
+  "encoder_params_reached_by_ST_loss": [],
+  "_read": "the diffusion generator TRAINS through the same plan loss the query fan uses; MPC descends its composed cost and re-scores by goal distance only; the fallback refuses to fire uncalibrated; the S-T objective reaches zero encoder/readout parameters even before apply_stage_freeze"
+ },
+ "fallback": {
+  "uncalibrated_fired": null,
+  "calibrated_no_fire_on_tight_fan": [
+   false,
+   false
+  ],
+  "calibrated_fire_on_wide_fan": [
+   true,
+   true
+  ],
+  "permutation_invariance_max_abs_delta": 0.0,
+  "refusals_proven_to_fire": [
+   "rho<0.3",
+   "CI includes 0",
+   "rho_ci None",
+   "threshold<=0",
+   "both weights 0",
+   "missing keys"
+  ],
+  "gate": "P7 pre-registered rho >= 0.3 with CI excluding 0 (P7_GATE_RHO pinned equal to w7_roll_rerank's)"
+ }
+}

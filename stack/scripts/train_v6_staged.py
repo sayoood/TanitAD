@@ -92,6 +92,7 @@ import os
 import random
 import sys
 import time
+from collections import deque
 from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 
@@ -103,10 +104,13 @@ sys.path.insert(1, str(Path(__file__).resolve().parents[1]))      # stack root
 
 from tanitad.config import EncoderConfig, PredictorConfig, ReadoutConfig  # noqa: E402
 from tanitad.models.v6 import (  # noqa: E402
-    HORIZON_S, MODULE_GROUPS, PLAN_STEPS, STAGES, InteractionSampler,
-    V6Config, V6Stack, apply_stage_freeze, kinematic_saliency,
+    GOAL_ARG_SLOTS, HORIZON_S, MODULE_GROUPS, PLAN_STEPS, STAGES,
+    STRATEGIC_ACTION_TOKENS, STRATEGIC_GOAL_TOKENS, InteractionSampler,
+    LayerSpectrumMonitor, V6Config, V6Stack, apply_stage_freeze,
+    kinematic_saliency,
     near_field_band_mask, sample_cell_block_mask, saliency_weights,
-    SpectrumAccumulator, o6_rank_verdict, spectrum_report,
+    SpectrumAccumulator, o6_rank_verdict, sigreg_trend_verdict,
+    spectrum_report,
     stage_trainable_groups, time_to_reach_weights)
 from tanitad.models.sigreg import position_relaxed  # noqa: E402
 
@@ -125,9 +129,12 @@ __all__ = [
     "o6_sigreg_loss", "rollout_step_weights", "build_o4_weights",
     "ANCHOR_OBJECTIVES", "ANCHOR_OBJ_MODES", "ANCHOR_AXIS_W_DEFAULT",
     "anchor_goal_loss",
+    "S2_IGNORE_ID", "s2_goal_loss", "synthetic_s2_batch",
     "v6_loss_step", "stage_gate_dict", "write_stage_gate",
     "assert_stage_precondition", "GatePreconditionError",
     "in_spectrum_window",
+    "x4_monitor_from_args", "x4_trend_record",
+    "X4_TREND_BASELINE_STEPS", "X4_TREND_CURRENT_STEPS",
     "ResumeLineageError", "read_ckpt_provenance", "assert_resume_lineage",
     "resume_guard", "load_resume", "load_stage_init",
     "supersede_init_on_resume",
@@ -192,6 +199,22 @@ class V6LossWeights:
     #: for ``ce`` -- one more reason the two are not interchangeable and the
     #: weight is a declared decision, never a default.
     w_anchor: float = 0.0
+    #: S2 — STRATEGIC GOAL SUPERVISION (2026-08-16). DEFAULT 0.0 = OFF
+    #: everywhere, so the incumbent loss is bit-identical and the live resume
+    #: is untouched. CE on ``g_str``/``a_str`` logits + masked L1 on their
+    #: args against `s2-strategic-v1` labels (S2_STRATEGIC_GAP.md §1.2,
+    #: produced by the 2026-08-16 label build), joined per clip and masked to
+    #: the ``s2_valid`` band. ⛔ GOAL HEADS ONLY, NEVER A TRUNK LOSS (the
+    #: binding diagram rule): the term reads the heads' emitted logits/args,
+    #: whose input ``z_str_p`` is detached under the planner cut — gradient
+    #: reach is MEASURED in tests/test_v6_s2_loss.py as exactly
+    #: goal_head_str.* + act_head_str.* and nothing else (the vocab tables
+    #: are NOT touched: the heads' logits/args come from their own
+    #: trunk/type_head/arg_head, and ``vocab_str.encode`` sits only on the
+    #: downstream conditioning path this loss never reads). In force only in
+    #: S-S/S-J — the stages that train ``layer_str``; zeroed elsewhere so the
+    #: launch line cannot advertise a term that trains nothing.
+    w_s2_goal: float = 0.0
 
     def for_stage(self, stage: str) -> "V6LossWeights":
         """The weights actually in force for ``stage``.
@@ -204,11 +227,15 @@ class V6LossWeights:
         if stage == "S-W":
             return replace(self, t1_latent=0.0, s1_latent=0.0,
                            lambda_plan=0.0, seam_op=0.0, w_select=0.0,
-                           w_anchor=0.0)
+                           w_anchor=0.0, w_s2_goal=0.0)
         if stage == "S-T":
+            # w_s2_goal is zeroed here for the layer_str reason w_anchor is
+            # zeroed in S-S: the strategic goal heads are FROZEN in S-T
+            # (STAGE_GROUPS["S-T"] has no layer_str), so an S2 term in force
+            # would be advertised in the launch line and train nothing.
             return replace(self, o1_ctrl=0.0, o1_fact=0.0, o1_scene=0.0,
                            o2_nearfield=0.0, o3_masked=0.0, o5_rollout=0.0,
-                           o6_sigreg=0.0, s1_latent=0.0)
+                           o6_sigreg=0.0, s1_latent=0.0, w_s2_goal=0.0)
         if stage == "S-S":
             # w_anchor joins w_select here for the SAME reason: the anchor head
             # is planner-group (v6.py MODULE_GROUPS: ("anchor_head.",
@@ -259,7 +286,14 @@ STAGE_MAY_INTRODUCE: dict[str, tuple[str, ...]] = {
     # purpose: this allowance adjudicates KEYS, and a shape change bypasses it
     # entirely (`load_state_dict(strict=False)` still RAISES on shapes —
     # measured, see `trainer_argv`'s --n-candidates note).
-    "S-T": ("cand_score.", "cond_tac_dyn."),
+    # ⭐ 2026-08-16, the diffusion/MPC/fallback build: S-T may also introduce
+    # the diffusion proposal generator (`prop_diffusion.`, +437,954 params
+    # MEASURED at production geometry — a declared fan-generator ARM) and the
+    # fallback trigger's calibration buffers (`fallback.`, 8 keys, 0 params —
+    # the P7 band ships with the checkpoint like the anchor table). The MPC
+    # refiner needs NO entry: it holds no parameters and no buffers, so
+    # flipping it changes no state_dict key at all.
+    "S-T": ("cand_score.", "cond_tac_dyn.", "prop_diffusion.", "fallback."),
     "S-S": (),                  # trains layer_str, which S-T already carried
     "S-J": (),                  # joint polish introduces nothing
 }
@@ -364,14 +398,20 @@ STAGE_LAMBDA_PLAN: dict[str, float] = {
 STAGE_GATE_SPEC: dict[str, dict] = {
     "S-W": {
         "required": ("P1", "P3", "P6"),
-        "reported": ("P2", "P5", "P8", "O6_spectrum"),
+        # X4_spectrum_layers is REPORTED, not required: the per-layer records
+        # exist from step 0 but their verdicts are INCONCLUSIVE until pooled
+        # (per-layer clause 1), and a required probe that is structurally
+        # INCONCLUSIVE at the incumbent flags would be noise wearing a gate.
+        "reported": ("P2", "P5", "P8", "O6_spectrum", "X4_spectrum_layers"),
         "owners": {"P1": "scripts/probe_latent_state.py",
                    "P2": "scripts/probe_latent_state.py",
                    "P3": "scripts/stage_a_probes.py",
                    "P6": "scripts/stage_a_probes.py",
                    "P5": "taniteval/tools/t1_eval.py",
                    "P8": "scripts/train_p8_occupancy.py",
-                   "O6_spectrum": "tanitad.models.v6.spectrum_report"},
+                   "O6_spectrum": "tanitad.models.v6.spectrum_report",
+                   "X4_spectrum_layers":
+                       "tanitad.models.v6.LayerSpectrumMonitor"},
         "criteria": {
             "P1_retention": ">= 0.85x R2(z) at k=10 per driving target",
             "P3_sign": ">= 0.95 per channel, BOTH lat and lon",
@@ -392,7 +432,20 @@ STAGE_GATE_SPEC: dict[str, dict] = {
                 "cluster-JACKKNIFE interval on ER_cur/ER_ref lies WHOLLY below "
                 "0.8x, passes only when it lies wholly at/above, else "
                 "INCONCLUSIVE; (3) FLOOR: pooled effective_rank >= 64 "
-                "regardless of retention"},
+                "regardless of retention",
+            # X4 (2026-08-16): the SAME three clauses per layer, under EACH
+            # LAYER'S measured (ceiling_min, floor) — tac 256/32, str 128/32
+            # (x4_layer_power.json; z_op's 1024/64 re-derived as the anchor).
+            # ⚠️ at 8 rows/step, --spectrum-accum 32 reaches ceiling 255 — ONE
+            # ROW short of tac's 256; 33 is the accum that makes all three
+            # layers adjudicable. REPORTED, never required (see above).
+            "X4_rank_retention":
+                "x4_rank_verdict per layer {tac, str}: clause 1 at the "
+                "LAYER'S ceiling_min (tac 256, str 128 -- NOT z_op's 1024, "
+                "which d_str=256 can never reach), clause 2 identical, "
+                "clause 3 at the layer's measured floor (32). "
+                "--spectrum-accum 33 recommended (32 leaves tac one row "
+                "short); INCONCLUSIVE is not a pass"},
     },
     "S-T": {
         "required": ("TACTICAL_family", "sel_gap"),
@@ -862,6 +915,126 @@ def anchor_goal_loss(head_out: dict, target_xy: Tensor, anchors: Tensor, *,
 
 
 # ============================================================================
+# S2 — strategic goal supervision (GOAL HEADS ONLY, never a trunk loss)
+# ============================================================================
+
+#: The ``ignore_index`` the S2 CE uses. A window outside the label's validity
+#: band — or in a clip no label joined — contributes NOTHING: same IGNORE
+#: discipline as the arg mask, one level up.
+S2_IGNORE_ID = -100
+_S2_ROUTE_TO_ID = STRATEGIC_GOAL_TOKENS.index("ROUTE_TO")
+_S2_BATCH_KEYS = ("g_str_id", "g_str_args", "g_str_arg_mask",
+                  "a_str_id", "a_str_args", "a_str_arg_mask", "s2_valid")
+
+
+def _s2_family(head_out: dict, ids: Tensor, args: Tensor, mask: Tensor,
+               valid: Tensor, tokens: tuple, where: str
+               ) -> tuple[Tensor, Tensor, dict]:
+    """One family (g_str or a_str): ``(ce, arg_l1, log)`` on VALID windows.
+
+    CE via ``ignore_index`` (invalid rows carry :data:`S2_IGNORE_ID`); the arg
+    L1 is ``|pred − label| · arg_mask`` averaged over SET slots of VALID
+    windows only — a slot the label leaves unconstrained sends exactly zero
+    gradient (the §1.2 IGNORE discipline), and so does a window outside the
+    band. The log is PER FAMILY and carries per-token counts, never a pooled
+    scalar (the four-metric-families rule applied to the term's own
+    telemetry)."""
+    logits = head_out["logits"].float()                        # [B, V]
+    pred_args = head_out["args"].float()                       # [B, 8]
+    b, v = logits.shape
+    if ids.shape != (b,) or ids.dtype != torch.long:
+        raise ValueError(f"{where}_id must be [{b}] long, got "
+                         f"{tuple(ids.shape)} {ids.dtype}")
+    if args.shape != (b, GOAL_ARG_SLOTS) or mask.shape != (b, GOAL_ARG_SLOTS):
+        raise ValueError(f"{where}_args/{where}_arg_mask must be "
+                         f"[{b}, {GOAL_ARG_SLOTS}], got {tuple(args.shape)} / "
+                         f"{tuple(mask.shape)}")
+    tgt = torch.where(valid, ids, torch.full_like(ids, S2_IGNORE_ID))
+    on = tgt[valid]
+    if on.numel() and (int(on.min()) < 0 or int(on.max()) >= v):
+        raise ValueError(f"{where}_id out of range [0, {v}) on a valid "
+                         f"window — the labels and the head disagree on the "
+                         f"vocabulary size")
+    n_valid = int(valid.sum())
+    if n_valid == 0:
+        # in the graph, contributes nothing (the o3 n_masked==0 idiom) — so a
+        # batch that happens to sample no in-band window neither crashes nor
+        # drops the term from the log.
+        z = logits.sum() * 0.0 + pred_args.sum() * 0.0
+        return z, z, {f"s2_{where}_ce": None, f"s2_{where}_acc": None,
+                      f"s2_{where}_arg_l1": None, f"s2_{where}_arg_slots": 0,
+                      f"s2_{where}_tok_counts": {}}
+    ce = torch.nn.functional.cross_entropy(logits, tgt,
+                                           ignore_index=S2_IGNORE_ID)
+    m = mask.float() * valid.float()[:, None]                  # [B, 8]
+    n_slots = m.sum()
+    arg_l1 = ((pred_args - args.float()).abs() * m).sum() \
+        / n_slots.clamp_min(1.0)
+    top1 = logits.detach().argmax(dim=-1)
+    counts: dict[str, int] = {}
+    for t in on.tolist():
+        counts[tokens[t]] = counts.get(tokens[t], 0) + 1
+    return ce, arg_l1, {
+        f"s2_{where}_ce": float(ce.detach()),
+        f"s2_{where}_acc": float((top1[valid] == on).float().mean()),
+        f"s2_{where}_arg_l1": (float(arg_l1.detach()) if float(n_slots) > 0
+                               else None),
+        f"s2_{where}_arg_slots": int(n_slots),
+        f"s2_{where}_tok_counts": dict(sorted(counts.items()))}
+
+
+def s2_goal_loss(g_out: dict, a_out: dict, batch: dict) -> tuple[Tensor, dict]:
+    """The S2 term (S2_STRATEGIC_GAP.md §1.2)::
+
+        L_s2 = CE(g_str.logits, g_str_id) + CE(a_str.logits, a_str_id)
+             + |g_str.args − g_str_args|·g_str_arg_mask   (mean over set slots)
+             + |a_str.args − a_str_args|·a_str_arg_mask
+
+    all masked by ``s2_valid``. ``g_out``/``a_out`` are the forward's
+    ``out["g_str"]`` / ``out["a_str"]`` dicts; the batch keys are the
+    ``s2_labels.S2WindowSupervision.batch`` contract.
+
+    ⛔ ADMISSIBILITY. The labels are hindsight ego geometry (labels may use
+    ego); at inference the heads consume only ``z_str`` — vision-derived,
+    ``d_cond=0``, no situation channel (`v6.py` GoalHead). The gradient of
+    this loss reaches ONLY the two heads' own parameters because their input
+    ``z_str_p`` enters DETACHED under the planner cut — which is why
+    ``v6_loss_step`` REFUSES this term when that cut is off: without it the
+    label loss would be a TRUNK loss, and "labels supervise GOAL/
+    INTERPRETATION HEADS only, never any WM trunk loss" is BINDING
+    (HIERARCHY_VOCABULARY §2), with no control arm.
+
+    ⛔ ROUTE_TO is refused HERE too (defence in depth behind the loader's
+    mirror of ``s2_schema.validate()``): a hand-built batch cannot smuggle
+    the gated token to the head."""
+    missing = [k for k in _S2_BATCH_KEYS if k not in batch]
+    if missing:
+        raise ValueError(
+            f"w_s2_goal > 0 but the batch is missing {missing} — an S2 term "
+            f"without its labels is how a supervision weight silently "
+            f"becomes 0. Pass --s2-labels (the loader builds these keys).")
+    valid = batch["s2_valid"].bool()
+    if valid.any() and bool((batch["g_str_id"][valid]
+                             == _S2_ROUTE_TO_ID).any()):
+        raise ValueError(
+            "a valid S2 window carries g_str_id == ROUTE_TO, which is GATED "
+            "(G1 CLOSED 0/31; no categorical arg channel on vocab_str). The "
+            "loader refuses it at load; refusing here too so a hand-built "
+            "batch cannot reach the head with it.")
+    g_ce, g_l1, g_log = _s2_family(
+        g_out, batch["g_str_id"], batch["g_str_args"], batch["g_str_arg_mask"],
+        valid, STRATEGIC_GOAL_TOKENS, "g")
+    a_ce, a_l1, a_log = _s2_family(
+        a_out, batch["a_str_id"], batch["a_str_args"], batch["a_str_arg_mask"],
+        valid, STRATEGIC_ACTION_TOKENS, "a")
+    loss = g_ce + a_ce + g_l1 + a_l1
+    log = {"s2_n_valid": int(valid.sum()), "s2_n_windows": int(valid.numel()),
+           **g_log, **a_log,
+           "s2_loss": float(loss.detach())}
+    return loss, log
+
+
+# ============================================================================
 # the per-batch loss assembly
 # ============================================================================
 
@@ -891,6 +1064,11 @@ def v6_loss_step(stack: V6Stack, batch: dict, *, stage: str,
       ``z_true_steps``    list[k] of [B, d_op] ENCODED true future latents
                           (k >= max(o1_k, o5_k)), detached by the caller
       ``own_frames_tac`` / ``own_frames_str``  E-ENC arm (b) only
+      ``g_str_id``/``g_str_args``/``g_str_arg_mask`` · ``a_str_id``/
+      ``a_str_args``/``a_str_arg_mask`` · ``s2_valid``
+                          S2 label keys (``s2_labels.S2WindowSupervision.
+                          batch``) — REQUIRED iff ``w_s2_goal`` is in force,
+                          ignored otherwise
 
     Returns ``{"loss": Tensor, **components, "log": dict}``. Terms whose weight
     is 0 for this stage are SKIPPED, not multiplied by zero — a skipped term
@@ -1157,6 +1335,25 @@ def v6_loss_step(stack: V6Stack, batch: dict, *, stage: str,
         terms["anchor"] = w.w_anchor * la
         log |= lga
 
+    # ---- S2: strategic goal supervision (w_s2_goal, default 0.0 == absent) --
+    # In force only where for_stage keeps it (S-S / S-J — the stages that
+    # train layer_str). Reads the heads' emitted logits/args straight off the
+    # shared forward: no second head pass, no RNG, no new module.
+    if w.w_s2_goal:
+        if not cfg.isolate_planner_from_encoder:
+            raise ValueError(
+                "w_s2_goal > 0 with isolate_planner_from_encoder=False: the "
+                "S2 CE/L1 reads g_str/a_str, whose input z_str_p is detached "
+                "ONLY by the planner cut (v6.py `_cut`) — without it the "
+                "label loss reaches adapters/encoder and becomes a TRUNK "
+                "loss. 'Labels supervise GOAL/INTERPRETATION HEADS only, "
+                "never any WM trunk loss' is BINDING (HIERARCHY_VOCABULARY "
+                "§2); unlike --no-isolate-planner's other consumers there is "
+                "NO control arm for a binding rule.")
+        ls2, lg_s2 = s2_goal_loss(out["g_str"], out["a_str"], batch)
+        terms["s2"] = w.w_s2_goal * ls2
+        log |= lg_s2
+
     if not terms:
         raise RuntimeError(f"stage {stage} produced NO loss terms — every "
                            f"weight is zero, which would train nothing while "
@@ -1340,8 +1537,85 @@ def in_spectrum_window(step: int, every: int, accum: int) -> bool:
     return r == 0 or r > every - accum
 
 
+# ============================================================================
+# X4 — per-layer spectrum monitoring (tac / str) + the o6 loss-trend guard
+# ============================================================================
+
+#: The o6 TREND baseline is the first N per-step ``o6_sigreg`` values of THIS
+#: process (2 spectrum intervals at the default --spectrum-every 200), and the
+#: comparison window is the most recent N. Robust medians over hundreds of
+#: points, so single-step spikes cannot fire the guard. Same resume caveat as
+#: the spectrum reference: a restarted process re-baselines from its restart.
+X4_TREND_BASELINE_STEPS = 400
+X4_TREND_CURRENT_STEPS = 100
+
+#: The layers ``--x4-spectrum-layers`` may name. ``op`` is deliberately NOT
+#: acceptable: z_op's monitor is the incumbent O6 block, is not governed by
+#: the X4 flag, and cannot be turned off.
+X4_ALLOWED_LAYERS = ("tac", "str")
+
+
+def x4_monitor_from_args(a, cfg) -> "LayerSpectrumMonitor | None":
+    """Build the per-layer monitor from the CLI, or ``None`` when disabled.
+
+    ⚠️ RNG ISOLATION: the monitor gets its OWN generator (seed+11), not the
+    O6 path's ``spec_gen`` — sharing one stream would shift the z_op bootstrap
+    DIAGNOSTIC sequence whenever X4 runs first, i.e. a monitoring addition
+    changing another monitor's numbers under identical flags.
+    """
+    raw = [s.strip() for s in str(getattr(a, "x4_spectrum_layers", "")
+                                  ).split(",") if s.strip()]
+    if not raw or raw == ["none"]:
+        return None
+    bad = [s for s in raw if s not in X4_ALLOWED_LAYERS]
+    if bad:
+        raise SystemExit(
+            f"[v6] ⛔ --x4-spectrum-layers {bad}: only {X4_ALLOWED_LAYERS} "
+            f"are X4 layers ('op' is the incumbent O6 monitor and cannot be "
+            f"moved under this flag; 'none' disables)")
+    dims = {"tac": cfg.d_tac, "str": cfg.d_str}
+    return LayerSpectrumMonitor(
+        {k: dims[k] for k in raw},
+        accum=a.spectrum_accum,
+        # z_tac/z_str contribute one row per WINDOW, i.e. --batch rows/step
+        rows_per_step={k: int(a.batch) for k in raw},
+        ci_reps=a.spectrum_ci_reps,
+        generator=(torch.Generator().manual_seed(a.seed + 11)
+                   if a.spectrum_ci_reps else None))
+
+
+def x4_trend_record(o6_baseline: "list[float]",
+                    o6_current: "list[float]") -> dict:
+    """The per-layer SIGReg trend block for the X4 record.
+
+    ``op`` carries the real verdict (:func:`sigreg_trend_verdict` over the
+    per-step ``o6_sigreg`` series). ``tac`` / ``str`` carry an EXPLICIT
+    not-applicable: **no per-layer SIGReg loss exists** — ``v6_loss_step``
+    applies ``stack.sigreg`` to z_op only, so X4's "per-layer SIGReg" half is
+    unimplemented in this trainer, and a trend guard without a loss series
+    would be an invented instrument (stated per the four-families rule:
+    a missing metric is declared with its reason, never silently dropped).
+    """
+    na = {"applicable": False,
+          "reason": "no per-layer SIGReg loss exists: v6_loss_step applies "
+                    "SigReg to z_op only (X4's per-layer-SIGReg half is "
+                    "unimplemented in the trainer). A trend guard without a "
+                    "loss series would be an invented instrument."}
+    if not o6_baseline and not o6_current:
+        op = {"applicable": False,
+              "reason": "no o6_sigreg values this stage (w_o6 == 0 or the "
+                        "term is skipped) — nothing to baseline"}
+    else:
+        op = dict(sigreg_trend_verdict(o6_baseline, o6_current),
+                  applicable=True,
+                  scope="REPORTED monitor only; gate promotion is a PI "
+                        "decision (O6_ABLATION_AND_MASK_PROBE.md esc. 2)")
+    return {"op": op, "tac": dict(na), "str": dict(na)}
+
+
 def run_stage_gate(stack: V6Stack, stage: str, *, out_dir,
                    spectrum: dict | None = None,
+                   x4_spectra: dict | None = None,
                    extra_probes: dict | None = None,
                    dry_run: bool = False) -> dict:
     """Run whatever frozen-battery entry points are IMPORTABLE here, assemble
@@ -1390,6 +1664,20 @@ def run_stage_gate(stack: V6Stack, stage: str, *, out_dir,
                                            "reading is bounded by 47 and the "
                                            ">= 0.8x criterion fires on noise "
                                            "9-38 % of the time"}
+    if x4_spectra is not None:
+        # X4: the per-layer records travel with THEIR OWN verdicts (already
+        # embedded per layer by LayerSpectrumMonitor.emit), each under the
+        # layer's measured ceiling/floor — never z_op's. Reported, never
+        # adjudicated; INCONCLUSIVE is the expected reading until pooled.
+        probes["X4_spectrum_layers"] = {
+            "pass": None, "status": "reported",
+            "owner": "tanitad.models.v6.LayerSpectrumMonitor",
+            "layers": x4_spectra,
+            "reason": "per-layer rank retention (tac ceiling_min 256 / "
+                      "floor 32, str 128 / 32 — x4_layer_power.json); "
+                      "verdicts are INCONCLUSIVE until pooled to the "
+                      "layer's own ceiling (--spectrum-accum 33 recommended: "
+                      "32 leaves tac ONE ROW short at 8 rows/step)"}
     gate = stage_gate_dict(stage, probes)
     gate["param_report"] = stack.param_report()
     if dry_run:
@@ -1500,8 +1788,41 @@ def build_stack_from_args(a) -> V6Stack:
         n_anchors=int(getattr(a, "n_anchors", 256)),
         n_lat_bins=int(getattr(a, "n_lat_bins", 16)),
         n_agent_slots=int(getattr(a, "n_agent_slots", 8)),
+        # ---- PROPOSALS / MPC / FALLBACK (2026-08-16), ALL DEFAULT-OFF -------
+        # Every default reproduces the incumbent build EXACTLY (per-tensor
+        # C75 proof in tests/test_v6_diffusion_mpc_fallback.py). The MPC path
+        # is additionally gated by V6Config itself: it refuses to build
+        # without selector='goal', so it stays INERT while SEL-1 is refused
+        # (assert_selector_admissible gates every selector launch).
+        proposals=getattr(a, "proposals", "query"),
+        diffusion_steps=int(getattr(a, "diffusion_steps", 4)),
+        diffusion_noise_rho=float(getattr(a, "diffusion_noise_rho", 0.9)),
+        diffusion_hidden=int(getattr(a, "diffusion_hidden", 256)),
+        diffusion_sigma_a=float(getattr(a, "diffusion_sigma_a", 2.0)),
+        diffusion_sigma_k=float(getattr(a, "diffusion_sigma_k", 0.1)),
+        mpc_refine=bool(getattr(a, "mpc_refine", False)),
+        mpc_topk=int(getattr(a, "mpc_topk", 2)),
+        mpc_steps=int(getattr(a, "mpc_steps", 3)),
+        mpc_lr=float(getattr(a, "mpc_lr", 0.05)),
+        mpc_roll_k=int(getattr(a, "mpc_roll_k", 0)),
+        mpc_w_goal=float(getattr(a, "mpc_w_goal", 1.0)),
+        mpc_w_kin=float(getattr(a, "mpc_w_kin", 0.1)),
+        mpc_w_consist=float(getattr(a, "mpc_w_consist", 0.0)),
+        fallback_trigger=bool(getattr(a, "fallback_trigger", False)),
+        fallback_roll_k=int(getattr(a, "fallback_roll_k", 10)),
         vit5_encoder=bool(a.vit5_encoder), n_registers=a.n_registers)
     stack = V6Stack(cfg)
+    # ---- the P7 fallback calibration, installed BEFORE the first forward ----
+    # Same discipline as the anchor table below: the comparator refuses to
+    # fire uncalibrated, and an inadmissible band (rho below P7's gate) must
+    # cost milliseconds, not a GPU-day. load_calibration REFUSES rho < 0.3 or
+    # a CI including 0.
+    if getattr(a, "fallback_calibration", None):
+        with open(a.fallback_calibration, encoding="utf-8") as fh:
+            calib = json.load(fh)
+        prov = stack.fallback.load_calibration(calib)
+        print(f"[v6] fallback calibration {a.fallback_calibration} -> "
+              f"{json.dumps(prov)}", flush=True)
     # ---- the anchor table, installed BEFORE the first forward ---------------
     # The head REFUSES to run without one (a zero table would snap every goal
     # to the origin and still return a number), so this must land before
@@ -1561,6 +1882,47 @@ def synthetic_train_batch(stack: V6Stack, *, batch: int = 2, k: int = 12,
     if device is not None:
         out = {kk: ([t.to(device) for t in v] if isinstance(v, list)
                     else v.to(device)) for kk, v in out.items()}
+    return out
+
+
+def synthetic_s2_batch(batch: int = 2, *, seed: int = 0,
+                       valid_frac: float = 0.75, device=None) -> dict:
+    """Synthetic S2 label keys — the ``--dry-run`` stand-in for the real join.
+
+    Shapes and dtypes are EXACTLY ``s2_labels.S2WindowSupervision.batch``'s,
+    including invalid rows (id ``S2_IGNORE_ID``, zero args/mask), so a dry-run
+    of an S-S launch with ``--w-s2-goal`` exercises the same loss path the pod
+    will — masking included. Draws only VALID token ids and never ROUTE_TO
+    (the gated token would trip the loss's own refusal, correctly)."""
+    g = torch.Generator().manual_seed(seed)
+    b = int(batch)
+    n_g, n_a = len(STRATEGIC_GOAL_TOKENS), len(STRATEGIC_ACTION_TOKENS)
+    valid = torch.rand(b, generator=g) < float(valid_frac)
+    if b and not bool(valid.any()):
+        valid[0] = True                    # a dry step should exercise n>0
+    g_id = torch.randint(n_g - 1, (b,), generator=g)
+    g_id = g_id + (g_id >= _S2_ROUTE_TO_ID).long()      # skip the gated token
+    g_mask = (torch.rand(b, GOAL_ARG_SLOTS, generator=g) < 0.25).float() \
+        * valid[:, None]
+    a_mask = (torch.rand(b, GOAL_ARG_SLOTS, generator=g) < 0.25).float() \
+        * valid[:, None]
+    out = {
+        "g_str_id": torch.where(valid, g_id,
+                                torch.full_like(g_id, S2_IGNORE_ID)),
+        # unset slots carry 0.0 — the loader-enforced record convention, kept
+        # here so the stand-in matches the real contract byte for byte.
+        "g_str_args": torch.randn(b, GOAL_ARG_SLOTS, generator=g) * g_mask,
+        "g_str_arg_mask": g_mask,
+        "a_str_id": torch.where(valid,
+                                torch.randint(n_a, (b,), generator=g),
+                                torch.full((b,), S2_IGNORE_ID,
+                                           dtype=torch.long)),
+        "a_str_args": torch.randn(b, GOAL_ARG_SLOTS, generator=g) * a_mask,
+        "a_str_arg_mask": a_mask,
+        "s2_valid": valid,
+    }
+    if device is not None:
+        out = {k: v.to(device) for k, v in out.items()}
     return out
 
 
@@ -1626,6 +1988,25 @@ def dry_run(a, stack: V6Stack | None = None) -> dict:
               f"{init_report['trunk_md5_after_load'][:12]}", flush=True)
     freeze = apply_stage_freeze(stack, a.stage)
     weights = _weights_from_args(a)
+    w_stage_dry = weights.for_stage(a.stage)
+    # ---- the S2 label artifact, REALLY exercised when supplied --------------
+    # Same rule as --prev-gate/--init-from above: a pre-launch verifier that
+    # skips a flag the launch carries is structurally incapable of catching
+    # that flag's failure class. The join needs a corpus and is NOT exercised
+    # here — dry_run.json says so instead of leaving it to be assumed.
+    s2_report = {"exercised": False,
+                 "_read": "--s2-labels was NOT supplied; the S2 loss path "
+                          "runs on synthetic keys when w_s2_goal is in "
+                          "force, and the loader was NOT exercised."}
+    if getattr(a, "s2_labels", None):
+        from s2_labels import load_s2_labels
+        s2_report = load_s2_labels(a.s2_labels).report() | {
+            "exercised": True,
+            "join": "NOT exercised (dry-run has no corpus) — load + "
+                    "validation only"}
+        print(f"[v6 dry] s2-labels OK · {s2_report['n_records']} records · "
+              f"g_str census {s2_report['token_census_records']['g_str']}",
+              flush=True)
     o1_k = min(a.o1_k, a.dry_k)
     o5_k = min(a.o5_k, a.dry_k)
     trainable = [p for p in stack.parameters() if p.requires_grad]
@@ -1638,6 +2019,9 @@ def dry_run(a, stack: V6Stack | None = None) -> dict:
         b = synthetic_train_batch(stack, batch=a.dry_batch, k=a.dry_k,
                                   seed=a.seed + step, device=device)
         b["gt_wp"] = torch.randn(a.dry_batch, o1_k, 2, generator=gen)
+        if w_stage_dry.w_s2_goal:
+            b |= synthetic_s2_batch(a.dry_batch, seed=a.seed + step,
+                                    device=device)
         dk, da = sample_random_deltas(a.dry_batch, gen, a.rand_dkappa_max,
                                       a.rand_daccel_max)
         L = v6_loss_step(stack, b, stage=a.stage, weights=weights, o1_k=o1_k,
@@ -1685,6 +2069,7 @@ def dry_run(a, stack: V6Stack | None = None) -> dict:
         "n_trainable_tensors": len(trainable),
         "precondition": pre,
         "init": init_report,
+        "s2_labels": s2_report,
         "gate_verdict": gate["verdict"],
         "_read": "synthetic tensors — NO corpus. This proves the launch "
                  "assembles and steps, and (when --prev-gate/--init-from were "
@@ -1712,6 +2097,7 @@ def _weights_from_args(a) -> V6LossWeights:
         o2_nearfield=a.w_o2, o3_masked=a.w_o3, o5_rollout=a.w_o5,
         o6_sigreg=a.w_o6, t1_latent=a.w_t1, s1_latent=a.w_s1,
         w_select=a.w_select, w_anchor=float(getattr(a, "w_anchor", 0.0)),
+        w_s2_goal=float(getattr(a, "w_s2_goal", 0.0)),
         lambda_plan=resolve_lambda_plan(a))
 
 
@@ -1898,6 +2284,40 @@ def train(a) -> dict:
         print(f"[v6] val {len(val_eps)} eps / {len(ds_val)} windows",
               flush=True)
 
+    # ---- S2: the strategic-goal label join (S-S/S-J; default absent) --------
+    # Loaded AFTER the corpus so the join is over the REAL episode ids, and
+    # BEFORE the optimiser so a dead join refuses in seconds, not after the
+    # O4 pass over every window. The report lands in config.json — it is the
+    # raw material of the S-S gate's goal-provenance audit (label provenance
+    # census + the disjointness verdict, per this run's own load).
+    s2_sup = None
+    s2_cfg: dict | None = None
+    if a.s2_labels and w_stage.w_s2_goal:
+        from s2_labels import load_s2_labels
+        s2_set = load_s2_labels(a.s2_labels)
+        s2_sup = s2_set.supervision(train_eps,
+                                    window=stack.cfg.predictor.window,
+                                    dt=a.dt, index=ds_train.index)
+        s2_cfg = {"labels": s2_set.report(), "join": s2_sup.report(),
+                  "w_s2_goal_in_force": w_stage.w_s2_goal}
+        print(f"[v6] S2 {json.dumps(s2_cfg['join'])}", flush=True)
+        if s2_sup.n_matched_episodes == 0:
+            raise SystemExit(
+                f"[v6] ⛔ --s2-labels {a.s2_labels} joined ZERO of "
+                f"{s2_sup.n_episodes} training episodes — with --w-s2-goal "
+                f"{w_stage.w_s2_goal} the term would be advertised in every "
+                f"log row and never fire (the exact silent-never-fires "
+                f"failure the clip index exists to prevent). Wrong corpus "
+                f"for these labels, or a stale manifest without stable ids.")
+        if s2_sup.n_windows_in_band == 0:
+            raise SystemExit(
+                f"[v6] ⛔ --s2-labels joined {s2_sup.n_matched_episodes} "
+                f"episodes but ZERO windows fall inside the validity band "
+                f"(t0={s2_set.t0_s}s ± {s2_set.band}) — the windowing "
+                f"(window={stack.cfg.predictor.window}, max_horizon={max_h}) "
+                f"never reaches the label's decision time. The term would "
+                f"never fire; refusing instead.")
+
     # ---- O4: interaction-weighted sampling (ACTIONS ONLY) ------------------
     if a.o4_alpha > 0:
         print(f"[v6] O4: scoring {len(ds_train)} windows by ego-kinematic "
@@ -1974,6 +2394,8 @@ def train(a) -> dict:
                                                 "init": init_report,
                                                 "max_horizon": max_h,
                                                 "launch_mode": rg}
+    if s2_cfg is not None:
+        cfg_json["s2"] = s2_cfg
     (out_dir / "config.json").write_text(json.dumps(cfg_json, indent=1))
     log_path = out_dir / "train_log.jsonl"
     fh = open(log_path, "a")
@@ -1994,6 +2416,15 @@ def train(a) -> dict:
     # loss-determinism stream just fixed on the SigReg side).
     spec_gen = (torch.Generator().manual_seed(a.seed + 7)
                 if a.spectrum_ci_reps else None)
+    # ---- X4: per-layer (tac/str) spectrum monitor + the o6 trend series ----
+    # ADDITIVE ONLY: new record keys in train_log.jsonl; no tensor, no loss,
+    # no state_dict, no RNG on the default path (its generator exists only
+    # when the CI is on, and is its OWN stream — see x4_monitor_from_args).
+    # z_op's O6 block below is untouched and not governed by the X4 flag.
+    x4_mon = x4_monitor_from_args(a, stack.cfg)
+    x4_last: dict | None = None
+    o6_trend_base: list[float] = []
+    o6_trend_cur: deque = deque(maxlen=X4_TREND_CURRENT_STEPS)
     t0 = time.time()
     steps_g = tuple(range(1, a.o1_k + 1))
     dev_type = "cuda" if device == "cuda" else "cpu"
@@ -2064,6 +2495,11 @@ def train(a) -> dict:
             batch["plan_target"] = gt_ego_waypoints(
                 b["pose_last"].float(), b["future_poses"].float(),
                 tuple(range(1, stack.cfg.plan_steps + 1)))
+        if s2_sup is not None:
+            # the S2 label keys ride the SAME sampled indices as the frames —
+            # the join was precomputed per episode, so this is O(batch).
+            batch |= {kk: v.to(device)
+                      for kk, v in s2_sup.batch(idx).items()}
         with torch.autocast(dev_type, dtype=torch.bfloat16,
                             enabled=amp_on and dev_type == "cuda"):
             L = v6_loss_step(stack, batch, stage=a.stage, weights=weights,
@@ -2099,6 +2535,18 @@ def train(a) -> dict:
         if spec_acc is not None and in_spectrum_window(
                 step, a.spectrum_every, a.spectrum_accum):
             spec_acc.push(L["out"]["z_op_win"])
+        # ---- X4: the SAME pooling window, per layer -------------------------
+        # o6 trend series: two bounded float lists, appended per step — the
+        # loss value is already computed, so the guard costs one append.
+        _o6v = L["log"].get("o6_sigreg")
+        if _o6v is not None:
+            if len(o6_trend_base) < X4_TREND_BASELINE_STEPS:
+                o6_trend_base.append(float(_o6v))
+            o6_trend_cur.append(float(_o6v))
+        if x4_mon is not None and in_spectrum_window(
+                step, a.spectrum_every, a.spectrum_accum):
+            x4_mon.push({"tac": L["out"]["z_tac"],
+                         "str": L["out"]["z_str"]})
         if step % a.spectrum_every == 0:
             zw = L["out"]["z_op_win"].detach().float()
             spectrum_last = spectrum_report(
@@ -2122,6 +2570,16 @@ def train(a) -> dict:
                     # read it, do not assume the phase start.
                     spectrum_ref = dict(rec_s["spectrum_pooled"],
                                         ref_step=step)
+            # ---- X4: per-layer records + the o6 trend guard -----------------
+            # ADDITIVE KEY ("x4") in the same emission record. Each layer's
+            # verdict runs under ITS OWN measured ceiling/floor (tac 256/32,
+            # str 128/32) — z_op's 1024/64 stays on the incumbent keys above.
+            if x4_mon is not None:
+                x4_last = x4_mon.emit({"tac": L["out"]["z_tac"],
+                                       "str": L["out"]["z_str"]}, step=step)
+                rec_s["x4"] = {"layers": x4_last,
+                               "sigreg_trend": x4_trend_record(
+                                   o6_trend_base, list(o6_trend_cur))}
             fh.write(json.dumps(rec_s) + "\n")
         if step % a.log_every == 0:
             rec = L["log"] | {
@@ -2169,6 +2627,7 @@ def train(a) -> dict:
 
     gate = run_stage_gate(stack, a.stage, out_dir=out_dir,
                           spectrum=spectrum_last,
+                          x4_spectra=x4_last,
                           extra_probes=_load_gate_probes(a.gate_probes))
     # ⛔ DONE-MARKER, written in the SAME turn the run finishes. A supervised
     # run whose summary.json never appeared kept being RESURRECTED for two
@@ -2597,6 +3056,86 @@ def build_parser() -> argparse.ArgumentParser:
                          "mean error. 0.0 (default) is the incumbent pure WTA, "
                          "under which N-1 candidates get ZERO gradient and "
                          "nothing bounds the fan mean.")
+    # ---- PROPOSALS / MPC / FALLBACK (2026-08-16) — ALL DEFAULT-OFF ---------
+    # The three remaining diagram cells on the planner surface
+    # (DIAGRAM_CONFORMANCE.md F-15 / §3-D-1 / F-17). Defaults reproduce the
+    # incumbent state_dict EXACTLY (per-tensor C75 proof in
+    # tests/test_v6_diffusion_mpc_fallback.py).
+    ap.add_argument("--proposals", choices=("query", "diffusion"),
+                    default="query",
+                    help="⭐ candidate-fan GENERATOR. 'diffusion' = F-15: "
+                         "diffuse the full 6 s CONTROL sequence (60 x (a,κ)) "
+                         "with temporally correlated OU noise, truncated-DDIM "
+                         "denoised; +437,954 params MEASURED at production "
+                         "geometry; the query/CV fan is still emitted beside "
+                         "it (qfan_*) as the paired on-window reference. New "
+                         "keys => S-T may INTRODUCE it (STAGE_MAY_INTRODUCE); "
+                         "⛔ REFUSED in S-W (planner frozen + strict-resume "
+                         "break, exactly like --selector).")
+    ap.add_argument("--diffusion-steps", type=int, default=4,
+                    help="truncated denoise steps (DiffusionDrive's regime)")
+    ap.add_argument("--diffusion-noise-rho", type=float, default=0.9,
+                    help="lag-1 autocorrelation of the OU control-noise. The "
+                         "DRAWN noise's autocorrelation is MEASURED per "
+                         "forward and logged (prop_noise_lag1_autocorr) — "
+                         "never asserted from this flag.")
+    ap.add_argument("--diffusion-hidden", type=int, default=256)
+    ap.add_argument("--diffusion-sigma-a", type=float, default=2.0,
+                    help="raw-space noise scale, accel channel (a_max 4.0)")
+    ap.add_argument("--diffusion-sigma-k", type=float, default=0.1,
+                    help="raw-space noise scale, kappa channel (kappa_max 0.2)")
+    ap.add_argument("--mpc-refine", action="store_true",
+                    help="⭐ MPC top-K refinement (selection cell, per the D-1 "
+                         "re-read): the trained selector's scores warm-start "
+                         "the top-K, cost descent refines the CONTROLS on a "
+                         "COMPOSED cost — goal-conditioned PRIMARY + "
+                         "kinematic/imagined-consistency REGULARIZERS — and "
+                         "the re-score is GOAL DISTANCE ONLY (roll-cost argmin "
+                         "REFUTED +5.9787 m; refined-readout rescoring "
+                         "2.8-2.95x worse, E-S1-0). 0 params, 0 keys. "
+                         "⛔ REQUIRES --selector goal (V6Config refuses "
+                         "otherwise), so it is INERT while SEL-1 stands "
+                         "REFUSED — assert_selector_admissible gates every "
+                         "selector launch.")
+    ap.add_argument("--mpc-topk", type=int, default=2)
+    ap.add_argument("--mpc-steps", type=int, default=3,
+                    help="cost-descent iterations (CEM is a possible later arm)")
+    ap.add_argument("--mpc-lr", type=float, default=0.05)
+    ap.add_argument("--mpc-roll-k", type=int, default=0,
+                    help="P_O roll depth for the imagined-consistency "
+                         "REGULARIZER; 0 = no roll (and --mpc-w-consist must "
+                         "be 0)")
+    ap.add_argument("--mpc-w-goal", type=float, default=1.0,
+                    help="PRIMARY term weight; must stay > 0 — a "
+                         "regularizer-led refinement is the refuted roll-cost "
+                         "rule wearing MPC's name")
+    ap.add_argument("--mpc-w-kin", type=float, default=0.1,
+                    help="kinematic smoothness REGULARIZER (the §1.14 "
+                         "tie-breaker); zero-weight ablation always available")
+    ap.add_argument("--mpc-w-consist", type=float, default=0.0,
+                    help="imagined-consistency REGULARIZER — the ONE place "
+                         "roll-consistency may enter a cost, never the "
+                         "primary and never the re-score")
+    ap.add_argument("--fallback-trigger", action="store_true",
+                    help="⭐ context-brain fallback cell (F-17): fan spread + "
+                         "roll-cost VARIANCE -> P7-calibrated uncertainty; "
+                         "fires when the band is exceeded; fallback action = "
+                         "hold-v0/CV emission. The roll-cost here is the "
+                         "UNCERTAINTY signal (P7 rho 0.7164, its validated "
+                         "use), NEVER a selector — the module is permutation-"
+                         "invariant over candidates by construction. 0 "
+                         "params, 8 buffer keys => S-T may INTRODUCE it; "
+                         "⛔ REFUSED in S-W (strict-resume break).")
+    ap.add_argument("--fallback-roll-k", type=int, default=10,
+                    help="P_O roll depth for the roll-cost-variance half of "
+                         "the signal; 0 = spread-only (logged as such)")
+    ap.add_argument("--fallback-calibration", default=None,
+                    help="P7 calibration artifact (JSON: spearman_rho, "
+                         "rho_ci, slope, intercept, threshold, w_spread, "
+                         "w_rollvar). load_calibration REFUSES rho < 0.3 or "
+                         "a CI including 0 (P7's pre-registered gate). "
+                         "Without it the comparator emits fired=None and "
+                         "says why — it never invents a boolean.")
     # ---- GOAL-HEAD STRUCTURE + ANCHOR_GOAL — ALL DEFAULT-OFF ---------------
     # These V6Config levers shipped with NO command that could build them.
     # Every default here reproduces the incumbent state_dict EXACTLY.
@@ -2774,8 +3313,38 @@ def build_parser() -> argparse.ArgumentParser:
                     help="0 = no interval. >0 emits the cluster JACKKNIFE "
                          "interval on effective_rank plus this many bootstrap "
                          "reps as a diagnostic; blocks are --window rows")
+    # ---- X4: per-layer spectrum records (2026-08-16) -----------------------
+    # ⚠️ z_tac/z_str contribute ONE row per window (the uplink reads only the
+    # window's last frame), so their per-batch ceiling is B-1 = 7 on the live
+    # geometry and their verdicts are INCONCLUSIVE until pooled to the
+    # LAYER'S OWN ceiling (tac 256, str 128 — x4_layer_power.json; NOT z_op's
+    # 1024, which d_str=256 can never reach). --spectrum-accum 33 is the
+    # smallest accum that makes ALL layers adjudicable (32 leaves tac ONE ROW
+    # short: 32*8-1 = 255 < 256). ADDITIVE: a new "x4" key in the emission
+    # record; the z_op/O6 path is not governed by this flag.
+    ap.add_argument("--x4-spectrum-layers", default="tac,str",
+                    help="comma list from {tac,str} for the X4 per-layer "
+                         "spectrum records, or 'none' to disable. 'op' is "
+                         "refused: the O6 z_op monitor is the incumbent "
+                         "block and cannot be moved under this flag.")
     ap.add_argument("--w-t1", type=float, default=1.0)
     ap.add_argument("--w-s1", type=float, default=1.0)
+    # ---- S2: strategic goal supervision (S-S/S-J) — DEFAULT OFF ------------
+    ap.add_argument("--w-s2-goal", type=float, default=0.0,
+                    help="weight on the S2 strategic-goal supervision (CE on "
+                         "g_str/a_str + masked arg L1 vs s2-strategic-v1 "
+                         "labels). 0.0 = the term is absent and the loss is "
+                         "bit-identical. GOAL HEADS ONLY, never a trunk loss "
+                         "(binding); in force only in S-S/S-J, where "
+                         "layer_str trains. Needs --s2-labels.")
+    ap.add_argument("--s2-labels", default=None,
+                    help="s2-strategic-v1 label artifact: the labels DIR "
+                         "(clip_index.json + s2_labels_*.jsonl) or one "
+                         ".jsonl with clip_index.json beside it. The join is "
+                         "by tanitad.data.v2_dataset.stable_episode_id ONLY "
+                         "— the legacy 16-bit id collides (69/2400 + 7/600) "
+                         "and is refused. ROUTE_TO records are refused "
+                         "(G1 gated), mirroring s2_schema.validate().")
     ap.add_argument("--lambda-plan", type=float, default=None,
                     help="planner gradient scale; unset = the STAGE default "
                          f"({STAGE_LAMBDA_PLAN}). 0 in S-W BY CONSTRUCTION.")
@@ -2850,6 +3419,44 @@ def preflight(a) -> list[str]:
             "strict resume of the LIVE S-W run. The port is an S-T lever "
             "(F-1): S-T may INTRODUCE it (STAGE_MAY_INTRODUCE['S-T']) over an "
             "S-W checkpoint that never carried it.")
+    # ---- PROPOSALS / MPC / FALLBACK (2026-08-16) ---------------------------
+    if a.stage == "S-W" and getattr(a, "proposals", "query") != "query":
+        problems.append(
+            f"--stage S-W with --proposals {a.proposals}: the planner group "
+            f"is FROZEN in S-W, so the diffusion generator would be "
+            f"untrainable dead weight AND would add prop_diffusion.* keys to "
+            f"the state_dict — which breaks a strict resume of the live S-W "
+            f"run. The fan generator is an S-T lever "
+            f"(STAGE_MAY_INTRODUCE['S-T']).")
+    if a.stage == "S-W" and bool(getattr(a, "fallback_trigger", False)):
+        problems.append(
+            "--stage S-W with --fallback-trigger: the trigger's calibration "
+            "buffers add fallback.* keys to the state_dict — which breaks a "
+            "strict resume of the LIVE S-W run. It is introducible at S-T "
+            "(STAGE_MAY_INTRODUCE['S-T']) and holds no trainable parameter "
+            "in any stage.")
+    if bool(getattr(a, "mpc_refine", False)) and a.selector != "goal":
+        problems.append(
+            f"--mpc-refine with --selector {a.selector}: the refinement's "
+            f"PRIMARY cost is the distance to the selector's candidate-"
+            f"INDEPENDENT goal point (W7-PROG: any selection cost NEEDS a "
+            f"goal-conditioned component). 'none' has no selector and 'mlp' "
+            f"emits no goal point — descending on its score would be "
+            f"candidate-DEPENDENT, the REFUTED roll-cost family (+5.9787 m, "
+            f"error-rank RISING with N). The MPC path stays INERT unless a "
+            f"selector is admissible.")
+    if getattr(a, "fallback_calibration", None) \
+            and not bool(getattr(a, "fallback_trigger", False)):
+        problems.append(
+            f"--fallback-calibration {a.fallback_calibration} without "
+            f"--fallback-trigger: a calibration that reaches no comparator "
+            f"is an input that silently does nothing.")
+    if getattr(a, "fallback_calibration", None) \
+            and not Path(a.fallback_calibration).exists():
+        problems.append(
+            f"--fallback-calibration {a.fallback_calibration} does not "
+            f"exist. Fail in milliseconds, not after the run — the "
+            f"--gate-probes lesson.")
     if a.w_select and a.selector == "none":
         problems.append(
             f"--w-select {a.w_select} with --selector none: a selection loss "
@@ -2973,6 +3580,51 @@ def preflight(a) -> list[str]:
             f"--selector {a.selector} for the GEOMETRY: S-S must carry the "
             f"S-T arm's scorer forward or --init-from fails on unexpected "
             f"cand_score.* keys.")
+    # ---- S2: every incoherent combination refused in MILLISECONDS ----------
+    w_s2 = float(getattr(a, "w_s2_goal", 0.0))
+    s2p = getattr(a, "s2_labels", None)
+    if w_s2 < 0.0:
+        problems.append(f"--w-s2-goal must be non-negative, got {w_s2}")
+    if w_s2 and a.stage in ("S-W", "S-T"):
+        problems.append(
+            f"--w-s2-goal {w_s2} in {a.stage}: the strategic goal heads "
+            f"(layer_str) are FROZEN here and `V6LossWeights.for_stage"
+            f"('{a.stage}')` zeroes w_s2_goal, so the launch line would "
+            f"advertise a supervision that is not in force — the same "
+            f"advertised-but-inert lie --w-select/--w-anchor already refuse "
+            f"in S-S. S2 is an S-S/S-J lever (the stages that train "
+            f"layer_str). It adds NO state_dict key, so unlike --selector "
+            f"there is no geometry to carry: just drop the flag.")
+    if w_s2 and not s2p and not a.dry_run:
+        problems.append(
+            f"--w-s2-goal {w_s2} without --s2-labels: an S2 term with no "
+            f"labels is how a supervision weight silently becomes 0 — the "
+            f"loss would refuse at step 1 anyway (missing batch keys), but "
+            f"that is after the corpus build; this fails in milliseconds. "
+            f"Point --s2-labels at the s2-strategic-v1 artifact "
+            f"(labels dir with clip_index.json).")
+    if s2p and not w_s2 and not ack:
+        problems.append(
+            f"--s2-labels {s2p} with --w-s2-goal 0: the labels would be "
+            f"loaded and joined for a term that is not in force — a launch "
+            f"line advertising supervision that trains nothing (the inert-"
+            f"module family). If a load-only rehearsal is what you want, say "
+            f"so with --i-know-this-is-the-control-arm.")
+    if s2p and not Path(s2p).exists():
+        problems.append(
+            f"--s2-labels {s2p} does not exist. Same class as the "
+            f"--gate-probes refusal: fail before the corpus build, not "
+            f"after it.")
+    if w_s2 and a.no_isolate_planner:
+        problems.append(
+            f"--w-s2-goal {w_s2} with --no-isolate-planner: the S2 CE/L1 "
+            f"reads g_str/a_str, whose input z_str_p is detached ONLY by the "
+            f"planner cut — without it the label loss reaches the adapters "
+            f"and encoder and becomes a TRUNK loss. 'Labels supervise "
+            f"GOAL/INTERPRETATION HEADS only, never any WM trunk loss' is "
+            f"BINDING (HIERARCHY_VOCABULARY §2): there is NO control arm and "
+            f"no acknowledgement flag for a binding rule — run the isolation "
+            f"control without S2, or S2 without the control.")
     # ⛔ AN ANALYSIS-TIME REFUSAL AFTER THE COMPUTE IS PAID FOR. MEASURED
     # 2026-08-16: `--gate-probes <missing file>` is only read by
     # `_load_gate_probes` at the very END of `train()` — the whole run executes,

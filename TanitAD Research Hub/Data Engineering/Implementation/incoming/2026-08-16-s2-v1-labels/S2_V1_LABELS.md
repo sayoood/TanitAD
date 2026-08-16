@@ -127,9 +127,10 @@ while **5/19 carry an Alpamayo "lane change" phrase** (Alpamayo is absent on mos
 the VLM's 54 `prepare_lane_change` claims from the 19 geometry-passed events means **either the VLM
 misses realized lane changes (its turn recall was 2/29, so plausible) or gentle-curve drift
 survives the `follow`+valid gate**. This cannot be settled without video, which is outside this
-CPU-only run. ⇒ the review sheet shows 4 of them with the measured displacement; **if the PI's
-video check refutes them, the fix is one line** (raise `LC_MIN_LAT_M`, or require VLM/Alpamayo
-corroboration for LANE_TARGET) and a 7-minute re-emit. Until then LANE_TARGET is the family to
+CPU-only run. ⇒ **`review/VISUAL_REVIEW.html` now shows ALL 19 with camera frames + a
+lane-grid BEV zoom** (the frames are the bridged mp4s the VLM itself saw, pose-aligned by
+construction); **if the PI's video check refutes them, the fix is one line** (raise
+`LC_MIN_LAT_M`, or require VLM/Alpamayo corroboration for LANE_TARGET) and a 7-minute re-emit. Until then LANE_TARGET is the family to
 treat as provisional; every instance is identifiable by `sources: engine_a.latmaneuver=…`.
 
 ## 6. Provenance + the two binding checks, re-verified ON THIS OUTPUT
@@ -212,6 +213,7 @@ staged-not-committed delta.
 | Recompute cross-check (201/201 exact) | — | `…/raw/engineA_recompute_check.json` |
 | Censuses + analysis (route×g_str, transitions, ROUTE_TO disposition, LT audit, stop accounting) | — | `…/raw/build_censuses.json`, `…/raw/label_analysis.json`, `…/raw/review_rows_aug120.json` |
 | Review sheet (25 clips + 4 exclusions) | — | `…/review/REVIEW_SHEET.md` |
+| ⭐ **VISUAL review sheet** (43 clips: all 19 LANE_TARGET · 5 TURN · 5 STOP_AT · ROUTE_TO disposition incl. the u-turn + abstain · the 4 excluded val records · 4 FOLLOW controls; camera frames + speed-colored BEV with the goal drawn + verdict widgets w/ JSON export; self-contained 6.2 MB, open locally) | 43 | `…/review/VISUAL_REVIEW.html` (+ `…/code/s2_visual_review.py`, selection in `…/code/s2rev_pull.py`) |
 | Build/analysis code (reproducible; token read in place) | — | `…/code/s2_pull_ego.py`, `…/code/s2_build_labels.py`, `…/code/s2_analyze_labels.py`, `…/code/s2_review_sheet.py` |
 | Pipeline + schema changes | — | `stack/scripts/{s2_derive,ph1_fuse,ph0_v2}.py`, `colab/{s2_schema,s2_lab_lib}.py`, `stack/tests/test_ph1_fuse.py` |
 | Pulled npz corpus (801 + 2 clips.json) | — | session scratchpad `…/scratchpad/s2_ego/` (NOT committed; HF is the durable copy, md5-equal by hf_hub download) |

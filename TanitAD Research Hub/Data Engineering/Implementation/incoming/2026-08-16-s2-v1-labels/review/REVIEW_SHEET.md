@@ -1,5 +1,11 @@
 # S2 v1 label review sheet — aug120 sample (n=25 of 201)
 
+> ⭐ **REVIEW IN `VISUAL_REVIEW.html` (same directory) INSTEAD** — the visual sheet (2026-08-16)
+> renders 43 clips with camera frames + BEV + the emitted goal drawn, and carries verdict
+> widgets with JSON export. This text sheet is kept as the original row dump; the visual sheet
+> covers all 19 LANE_TARGET (this one shows 4) plus the ROUTE_TO disposition and the 4
+> excluded val records. Renderer: `code/s2_visual_review.py`.
+
 Every row: what the geometry measured, what the VLM said, what the label became, and what the video should show if the label is right. Labels: `labels/s2_labels_aug120.jsonl`; per-clip Engine A: `labels/engine_a_aug120.jsonl`; selection is deterministic (stratified over decision classes, edge cases by name).
 
 Sample composition: TURN_LEFT 9, STOP_AT 4, LANE_TARGET 4, FOLLOW_MAIN_ROAD 4, TURN_RIGHT 3, NONE_ABSTAIN 1.

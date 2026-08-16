@@ -102,6 +102,9 @@ __all__ = [
     # config + stack
     "V6Config", "V6Stack", "GoalVocabulary", "GoalHead", "GoalConditioner",
     "GoalDistanceScorer", "MLPCandidateScorer", "AnchorGoalHead",
+    # ⭐ the three gated diagram cells (2026-08-16): proposals / MPC / fallback
+    "DiffusionProposalGenerator", "MpcRefiner", "FallbackTrigger",
+    "P7_GATE_RHO",
     "IsolationViolation", "PARAM_BUDGET",
     # horizon (§4b)
     "PLAN_STEPS", "DT", "HORIZON_S", "OP_BAND_S", "TAC_BAND_S",
@@ -114,6 +117,9 @@ __all__ = [
     "kinematic_saliency", "saliency_weights", "InteractionSampler",
     "spectrum_report", "SpectrumAccumulator", "o6_rank_verdict",
     "O6_ADMISSIBLE_CEILING", "O6_RANK_FLOOR",
+    # X4 — the O6 spectrum pattern applied PER LAYER (op / tac / str)
+    "X4_LAYER_POLICY", "layer_spectrum_policy", "x4_rank_verdict",
+    "LayerSpectrumMonitor", "sigreg_trend_verdict",
 ]
 
 # ============================================================================
@@ -869,6 +875,329 @@ def o6_rank_verdict(cur: dict, ref: dict | None = None, *,
 
 
 # ============================================================================
+# X4 — the O6 spectrum pattern applied PER LAYER (op / tac / str)
+# ============================================================================
+# The diagram's X4 row is "per-layer SIGReg + per-layer spectrum monitors (O6
+# pattern at T/S scale) | rank retention per layer" (V6_TRAINING_MEASURES.md).
+# Until 2026-08-16 only z_op was monitored. The machinery below extends the
+# SPECTRUM half to z_tac / z_str; the per-layer SIGREG half remains
+# unimplemented in the trainer (SigReg is applied to z_op only) and the records
+# SAY SO rather than inventing a loss series — see :func:`sigreg_trend_verdict`.
+#
+# ⛔ THE ONE THING THAT MUST NOT BE COPIED FROM z_op IS ITS CONSTANTS. The
+# higher layers uplink ONLY the window's LAST frame (`V6Stack.forward`:
+# ``z_op = z_op_win[:, -1]``), so one step contributes B rows (8 on the live
+# geometry), not B*W (48) — the per-batch rank ceiling is **7**, not 47 — and
+# their d is 4x / 8x smaller, so z_op's ceiling_min = 1024 EXCEEDS what a
+# centred covariance over z_str (d=256) can EVER reach. Copying it would make
+# the strategic layer INCONCLUSIVE FOREVER by construction. Each layer carries
+# its own measured pair below.
+
+#: Per-layer admissibility ceiling + absolute floor for the X4 rank verdict.
+#: MEASURED (ours) — `…/incoming/2026-08-16-x4-p9/code/x4_layer_power.py`,
+#: artifact `raw/x4_layer_power.json`, CPU, seeded, through the REAL
+#: `spectrum_report`/`o6_rank_verdict`; generative model inherited from
+#: SIGREG_GATE_POWER.md's calibrated regime (power-law alpha=2, rho_ep=0.5).
+#: Selection rules were PRE-COMMITTED in that script before any number:
+#:
+#:   ceiling_min = largest power of two <= d/2 (cap 1024), raised while the
+#:                 measured pair-FP of the 0.8x point criterion is > 0 or the
+#:                 healthy/collapsed separation is < 3x at the first reachable
+#:                 pool;
+#:   floor       = smallest power of two >= geomean(healthy, collapsed) at the
+#:                 recommended pool.
+#:
+#: ANCHOR CHECK: both rules REPRODUCE z_op's shipped pair exactly (1024 / 64,
+#: with healthy@pool32 = 121.4 vs the banked 121.57 and pair-FP@48rows = 10.7 %
+#: vs SIGREG_GATE_POWER's 11.0 % lower bound), so the new layers extend the
+#: O6 derivation rather than forking it. Measured selection rows:
+#:
+#:   tac (d=512): ceiling_min 256 — healthy 65.98 vs collapsed 11.19 at
+#:                ceiling 263 (separation 5.89x, FP 0.000); floor 32
+#:                (margins: healthy/floor 2.06x, floor/collapsed 2.86x)
+#:   str (d=256): ceiling_min 128 — healthy 59.49 vs collapsed 11.03 at
+#:                ceiling 256 (separation 5.40x, FP 0.000); floor 32
+#:                (margins: 1.86x / 2.90x)
+#:
+#: ⚠️ ACHIEVABILITY: at 8 rows/step, ``--spectrum-accum 32`` reaches ceiling
+#: 255 — ONE ROW SHORT of tac's 256. **The recommended accum is therefore 33**
+#: (33*8-1 = 263; also lifts z_op's pooled ceiling 1535 -> 1583). 32 leaves
+#: tac INCONCLUSIVE on clause 1, which is correct and is not a pass.
+X4_LAYER_POLICY: dict[str, dict] = {
+    "op": {"d": 2048, "ceiling_min": O6_ADMISSIBLE_CEILING,
+           "floor": O6_RANK_FLOOR,
+           "basis": "SIGREG_GATE_POWER.md §5 (pre-registered; unchanged — "
+                    "x4_layer_power.py reproduces both numbers)"},
+    "tac": {"d": 512, "ceiling_min": 256, "floor": 32.0,
+            "basis": "MEASURED x4_layer_power.json (sep 5.89x, FP 0.000 at "
+                     "ceiling 263; floor margins 2.06x/2.86x)"},
+    "str": {"d": 256, "ceiling_min": 128, "floor": 32.0,
+            "basis": "MEASURED x4_layer_power.json (sep 5.40x, FP 0.000 at "
+                     "ceiling 256; floor margins 1.86x/2.90x)"},
+}
+
+#: The accum that makes ALL THREE layers' clause-1 admissibility reachable
+#: (see the achievability note above): min over layers of the smallest N with
+#: N*rows_per_step - 1 >= ceiling_min, at the live 8-rows/step geometry.
+X4_RECOMMENDED_ACCUM = 33
+
+
+def layer_spectrum_policy(layer: str, d: int) -> dict:
+    """The (ceiling_min, floor) pair for ``layer`` at runtime dimension ``d``.
+
+    Returns the MEASURED constants when ``d`` matches the dimension they were
+    sized at. For any other ``d`` (a re-configured stack) it returns the RULE
+    ceiling (largest power of two <= d/2, cap 1024) and **no floor** — a floor
+    nobody measured must not fail a gate, so ``floor=None`` disables clause 3
+    and the verdict stamps that the number is missing rather than inventing
+    one (the C76 rule: a threshold ships with the FP rate it achieves, or it
+    does not ship).
+    """
+    pol = X4_LAYER_POLICY.get(layer)
+    if pol is not None and int(d) == pol["d"]:
+        return dict(pol)
+    return {"d": int(d),
+            "ceiling_min": min(2 ** int(math.floor(math.log2(max(d / 2, 2)))),
+                               O6_ADMISSIBLE_CEILING),
+            "floor": None,
+            "basis": f"RULE ONLY — d={d} does not match the measured "
+                     f"dimension for layer {layer!r} "
+                     f"({pol['d'] if pol else 'none on record'}); run "
+                     f"x4_layer_power.py at this d before gating on a floor"}
+
+
+def x4_rank_verdict(layer: str, d: int, cur: dict,
+                    ref: dict | None = None, *,
+                    retention: float = 0.8) -> dict:
+    """Per-layer rank verdict — :func:`o6_rank_verdict` under the LAYER'S OWN
+    measured policy, stamped with the layer and the policy's basis.
+
+    Same three clauses, same INCONCLUSIVE capability. When the policy carries
+    no measured floor (non-shipped ``d``), clause 3 is DISABLED and the record
+    says so — an unmeasured floor that can fail a run is worse than no floor.
+    """
+    pol = layer_spectrum_policy(layer, d)
+    floor_missing = pol["floor"] is None
+    v = o6_rank_verdict(cur, ref, retention=retention,
+                        floor=(0.0 if floor_missing else float(pol["floor"])),
+                        ceiling_min=int(pol["ceiling_min"]))
+    v["criterion"] = "X4_rank_retention v1 (per-layer; o6_rank_verdict under " \
+                     "the layer's measured policy — X4_P9.md)"
+    v["layer"] = str(layer)
+    v["d"] = int(d)
+    v["policy_basis"] = pol["basis"]
+    if floor_missing:
+        v["absolute_floor"] = None
+        v["floor_note"] = ("clause 3 DISABLED: no measured floor for this "
+                           "(layer, d); the verdict can still FAIL on "
+                           "retention (clause 2) but never on the floor")
+    return v
+
+
+def sigreg_trend_verdict(baseline: "list[float]", current: "list[float]", *,
+                         z_fire: float = 8.0, min_baseline: int = 64,
+                         min_current: int = 16) -> dict:
+    """The BASELINED ``o6`` LOSS-TREND guard — the collapse alarm that is
+    already in every log at zero cost.
+
+    ⭐ WHY THE LOSS AND NOT THE RANK, at small n. MEASURED
+    (O6_ABLATION_AND_MASK_PROBE.md §4.1, `raw/sigreg_response.json`): on the
+    SAME 48-row batch a 2x collapse (2048 -> 1024 retained dims) moves
+    ``effective_rank`` **0.3 %** (46.86 -> 46.73, buried in its own noise) and
+    moves the ``o6_sigreg`` loss **3.05x — 42.4 sigma** (0.4023 +- 0.0195 ->
+    1.2283). The monitor is nearly blind exactly where the loss term is
+    exquisitely sensitive, so between pooled spectrum readings the loss trend
+    is the higher-power guard.
+
+    Direction: collapse RAISES ``o6`` (the latent moves away from the
+    isotropic-Gaussian target), so the guard fires on a sustained RISE only —
+    a falling ``o6`` is the regulariser being optimised, never an alarm.
+
+    Robust statistics (median / MAD), so single-step spikes cannot fire it;
+    ``z_fire=8`` sits far above healthy noise and far below the measured
+    42.4-sigma collapse response. INCONCLUSIVE below the sample minima, and
+    the scale is floored at 2 % of |median| (stamped when it binds) so a
+    degenerate zero-variance baseline cannot manufacture an infinite z —
+    at the floor the guard needs a >= 16 % rise to fire, against the
+    measured +205 % collapse response (0.4023 -> 1.2283).
+
+    ⚠️ SCOPE, stated to keep this honest: this is a REPORTED training-time
+    monitor. Promoting it into a stage-gate criterion is a PI decision
+    (O6_ABLATION_AND_MASK_PROBE.md escalation 2), and its false-positive rate
+    on the REAL run's series is unmeasured until the Thor records are banked
+    (SIGREG_GATE_POWER.md escalation 1). Per-layer versions for z_tac / z_str
+    are NOT emitted anywhere because no per-layer SIGReg loss exists — a trend
+    guard without a loss series would be an invented instrument.
+    """
+    nb, nc = len(baseline), len(current)
+    out: dict = {"criterion": f"o6 trend guard: median(current {nc}) vs "
+                              f"median(baseline {nb}) + {z_fire} x robust_sd",
+                 "n_baseline": nb, "n_current": nc, "z_fire": float(z_fire)}
+    if nb < min_baseline or nc < min_current:
+        out |= {"pass": None, "status": "INCONCLUSIVE",
+                "reason": f"needs >= {min_baseline} baseline and >= "
+                          f"{min_current} current samples, got {nb}/{nc}"}
+        return out
+    b = torch.tensor(baseline, dtype=torch.float64)
+    c = torch.tensor(current, dtype=torch.float64)
+    med = float(b.median())
+    mad = float((b - med).abs().median())
+    sd = 1.4826 * mad
+    sd_floor = max(2e-2 * abs(med), 1e-12)
+    scale = max(sd, sd_floor)
+    cur_med = float(c.median())
+    z = (cur_med - med) / scale
+    out |= {"baseline_median": med, "baseline_robust_sd": sd,
+            "scale": scale, "scale_floored": bool(sd < sd_floor),
+            "current_median": cur_med, "z": z}
+    if z >= z_fire:
+        out |= {"pass": False, "status": "FAIL",
+                "reason": f"o6 median rose {z:.1f} robust-sd above the "
+                          f"phase-start baseline ({med:.4f} -> {cur_med:.4f})"
+                          f" — the measured signature of collapse is a rise "
+                          f"of this shape (42.4 sigma at a 2x collapse)"}
+    else:
+        out |= {"pass": True, "status": "PASS",
+                "reason": f"no collapse-shaped rise: z {z:+.1f} < {z_fire} "
+                          f"(falls are the regulariser training and never "
+                          f"fire)"}
+    return out
+
+
+class LayerSpectrumMonitor:
+    """X4: per-layer spectrum records with per-layer pooling, references and
+    verdicts — the O6 machinery applied to ``{"tac": z_tac, "str": z_str}``
+    (and to any latent dict; the trainer keeps z_op on its incumbent path so
+    the live run's records stay byte-identical).
+
+    Owns, PER LAYER: a :class:`SpectrumAccumulator` ring (when ``accum > 1``),
+    the phase-start reference (taken at the first reading whose ceiling clears
+    the LAYER'S OWN ``ceiling_min``), and the :func:`x4_rank_verdict`.
+
+    ⚠️ CLUSTER UNIT, stated. z_tac / z_str rows are one-per-window and the
+    live sampler INTERLEAVES episodes across the batch ([e0,e1,e2,e3,e0,...]),
+    so contiguous-row blocks cannot express the episode grouping. The pooled
+    jackknife therefore uses THE STEP as the cluster (``block = rows_per_
+    step``) — every row in a block genuinely shares the step's 4 episodes, so
+    the clustering is conservative (over-grouped), which for a guard that
+    fires only when the interval EXCLUDES the threshold is the safe direction.
+    The per-batch (unpooled) reading has only one step and falls back to
+    ``block=1``, stamped, which UNDERSTATES episode correlation — one more
+    reason the per-batch reading is INCONCLUSIVE-only under clause 1.
+
+    ⚠️ RNG: the jackknife draws nothing; only the labelled bootstrap
+    diagnostic draws, and only from the ``generator`` handed in. Default
+    ``ci_reps=0`` draws NOTHING — same contract as :func:`spectrum_report`,
+    pinned by the same style of test.
+    """
+
+    def __init__(self, layers: dict[str, int], *, accum: int = 1,
+                 rows_per_step: dict[str, int] | None = None,
+                 ci_reps: int = 0, generator=None):
+        if not layers:
+            raise ValueError("LayerSpectrumMonitor needs at least one layer")
+        self.layers = {str(k): int(v) for k, v in layers.items()}
+        self.accum = int(accum)
+        self.ci_reps = int(ci_reps)
+        self.generator = generator
+        self.rows_per_step = {k: int((rows_per_step or {}).get(k, 1))
+                              for k in self.layers}
+        self._acc: dict[str, SpectrumAccumulator] = (
+            {k: SpectrumAccumulator(capacity=self.accum,
+                                    block=max(1, self.rows_per_step[k]))
+             for k in self.layers} if self.accum > 1 else {})
+        self._ref: dict[str, dict] = {}
+
+    def __len__(self) -> int:
+        return len(self.layers)
+
+    @property
+    def references(self) -> dict:
+        return dict(self._ref)
+
+    @staticmethod
+    def _get(latents: dict, k: str):
+        """Accept BOTH the layer name and the forward-output key (``tac`` or
+        ``z_tac``). The failure class this closes: a caller handing the raw
+        ``V6Stack.forward`` dict would otherwise get silent per-layer n/a
+        records — visible, but a monitor that no-ops on a plausible input
+        shape is a trap."""
+        z = latents.get(k)
+        return latents.get(f"z_{k}") if z is None else z
+
+    def push(self, latents: dict) -> None:
+        """Bank one step's latents into the per-layer rings (accum > 1 only)."""
+        for k, acc in self._acc.items():
+            z = self._get(latents, k)
+            if z is not None:
+                acc.push(z)
+
+    def _annotate(self, rep: dict, pol: dict) -> dict:
+        """Overlay the LAYER'S admissibility next to the O6-global one.
+
+        ``spectrum_report`` stamps ``rank_admissible`` against the z_op/O6
+        constant (1024) unconditionally — correct for z_op, and a misreading
+        trap for a d=256 layer that can never reach it. The layer records
+        therefore carry BOTH, labelled, so neither can be quoted as the other.
+        """
+        rep = dict(rep)
+        rep["rank_admissible_layer"] = bool(
+            rep["rank_ceiling"] >= int(pol["ceiling_min"]))
+        rep["admissibility_note"] = (
+            f"rank_admissible tests the O6/z_op constant "
+            f"({O6_ADMISSIBLE_CEILING}); THE BINDING ADMISSIBILITY FOR THIS "
+            f"LAYER is rank_admissible_layer (ceiling >= "
+            f"{int(pol['ceiling_min'])}, {pol['basis'].split('(')[0].strip()})")
+        return rep
+
+    def emit(self, latents: dict, *, step: int | None = None) -> dict:
+        """One per-layer record set: per-batch reading, pooled reading (when
+        the ring has content), the layer verdict against the layer reference,
+        and the reference bookkeeping. Layers absent from ``latents`` yield an
+        explicit n/a record, never silence (rule 2)."""
+        out: dict = {}
+        for k, d in self.layers.items():
+            pol = layer_spectrum_policy(k, d)
+            z = self._get(latents, k)
+            if z is None:
+                out[k] = {"status": "n/a",
+                          "reason": f"latent {k!r} (or 'z_{k}') not present "
+                                    f"in the outputs handed to emit()"}
+                continue
+            rec: dict = {"spectrum": self._annotate(
+                spectrum_report(z.reshape(-1, z.shape[-1]),
+                                ci_reps=self.ci_reps, block=1,
+                                generator=self.generator), pol)}
+            if self.ci_reps:
+                rec["spectrum"]["cluster_unit_note"] = (
+                    "per-batch interval uses block=1 (rows are windows; the "
+                    "sampler interleaves episodes so contiguous blocks cannot "
+                    "group them) — episode correlation UNDERSTATED; the "
+                    "pooled reading is the quotable one")
+            basis = rec["spectrum"]
+            acc = self._acc.get(k)
+            if acc is not None and len(acc):
+                pooled = self._annotate(
+                    acc.report(ci_reps=self.ci_reps,
+                               generator=self.generator), pol)
+                pooled["cluster_unit"] = (
+                    f"STEP ({max(1, self.rows_per_step[k])} rows) — "
+                    f"conservative over-grouping; see class docstring")
+                rec["spectrum_pooled"] = pooled
+                basis = pooled
+            rec["verdict"] = x4_rank_verdict(k, d, basis, self._ref.get(k))
+            if (self._ref.get(k) is None and "spectrum_pooled" in rec
+                    and rec["spectrum_pooled"]["rank_admissible_layer"]):
+                # the phase-start reference for clause 2 — first reading that
+                # clears the LAYER's ceiling. Same resume caveat as the O6
+                # path: a restarted process takes a fresh reference.
+                self._ref[k] = dict(rec["spectrum_pooled"], ref_step=step)
+                rec["reference_taken_at_step"] = step
+            out[k] = rec
+        return out
+
+
+# ============================================================================
 # THE GOAL-TOKEN VOCABULARY — one table, two views (§5)
 # ============================================================================
 
@@ -1586,6 +1915,527 @@ class AnchorGoalHead(nn.Module):
 
 
 # ============================================================================
+# DIFFUSION PROPOSALS · MPC TOP-K REFINEMENT · FALLBACK TRIGGER (2026-08-16)
+# — the three remaining diagram cells on the planner/selection surface, ALL
+#   gated DEFAULT-OFF (DIAGRAM_CONFORMANCE.md F-15 / §3 / F-17)
+# ============================================================================
+
+#: P7's pre-registered calibration gate: Spearman rho >= 0.3 with the CI
+#: excluding 0. DUPLICATED AS DATA from ``scripts/w7_roll_rerank.py`` (its
+#: ``P7_GATE_RHO``) so the fallback trigger is buildable without importing an
+#: instrument script's dependency chain into a model module; equality with the
+#: instrument's constant is pinned by
+#: ``tests/test_v6_diffusion_mpc_fallback.py`` so the two cannot drift apart.
+P7_GATE_RHO = 0.3
+
+
+class DiffusionProposalGenerator(nn.Module):
+    """⭐ THE DIAGRAM'S OPERATIVE-BRAIN PROPOSAL CELL (F-15): diffuse the FULL
+    6 s CONTROL sequence — 60 x (a, kappa) — with TEMPORALLY CORRELATED noise,
+    as the candidate-fan generator. Default OFF; a declared ARM against the
+    incumbent query fan, never a silent replacement.
+
+    WHY CONTROLS AND NOT WAYPOINTS. H1 (`DIFFUSION_PLANNER_COMPARISON`)
+    measured a per-waypoint offset head amplifying the same epsilon by **25x**
+    in acceleration at dt 0.1, and the v5f dense fan measured **97.6 %**
+    infeasible steps / **100 %** infeasible candidates. Candidates are
+    CONTROLS, always: every sample here passes the same bounding function the
+    emission uses and integrates through the same ``unicycle_rollout``, so the
+    fan is feasible BY CONSTRUCTION (W4's property, inherited).
+
+    WHY TEMPORALLY CORRELATED NOISE. White noise on a 60-step control sequence
+    integrates to near-cancelling jitter — the fan's endpoints collapse toward
+    the CV point and the diversity the selector needs never exists. An OU
+    (AR(1)) draw — ``e_t = rho * e_{t-1} + sqrt(1 - rho^2) * w_t``, stationary
+    unit marginal variance, lag-1 autocorrelation exactly ``rho`` — puts the
+    noise energy at manoeuvre timescales. ⚠️ The autocorrelation of every draw
+    is MEASURED (:meth:`measured_lag_autocorr`) and returned beside the fan
+    (``noise_lag1_autocorr``), never asserted from the formula — the same rule
+    as every other number in the programme.
+
+    THE DENOISE LOOP is DDIM-style and TRUNCATED (DiffusionDrive's regime, the
+    programme's own REF-C ``AnchoredDiffusionDecoder`` precedent — but over
+    CONTROLS, not trajectories): ``diffusion_steps`` deterministic x0-prediction
+    steps from a pure correlated-noise start. The denoiser predicts x0 as a
+    RESIDUAL (``x0_hat = x_k + net(x_k, cond, t)``) with a ZERO-INIT output
+    layer, so at initialisation the "denoised" fan IS the squashed correlated-
+    noise prior — maximally diverse, feasible, and anything the module later
+    does to it is LEARNED, never handed to it by init (the same discipline as
+    ``GoalDistanceScorer.goal_point`` / ``MLPCandidateScorer.fc2`` / the
+    emission head).
+
+    HOW IT TRAINS. Through the SAME plan loss as the query fan (WTA +
+    eps-relaxed WTA + ``w_select``'s softade, all reading ``plan["waypoints"]``
+    generator-agnostically) — so an arm comparison is attributable to the
+    GENERATOR, not to a different objective. A dedicated denoising-score-
+    matching loss is a possible later lever and would be a trainer-side term;
+    it is NOT built here.
+
+    ⚠️ SEQUENCED BEHIND THE SELECTION QUESTION (F-15's own caveat): *"do not
+    build before the selection question settles — proposals and selection are
+    one experiment surface"*. Built now as gated-off machinery; TRAINING it is
+    an S-T decision that rides the same admission the selector does.
+
+    ⛔ ADMISSIBILITY (PI 2026-08-03 / 2026-08-16). Inputs: ``plan_proj(z_op)``
+    (vision-derived, planner-cut), ``e_g_tac`` (the goal path), and ``v0``
+    (measured present state — PI 2026-08-16: admissible, with the hold-v0
+    anti-echo controls living eval-side). No situation-classifier output in
+    any form. The noise is sampled fresh per forward and carries no
+    per-window information by construction.
+    """
+
+    def __init__(self, d_cond: int, n_candidates: int, plan_steps: int, *,
+                 hidden: int = 256, n_steps: int = 4, rho: float = 0.9,
+                 sigma_a: float = 2.0, sigma_k: float = 0.1,
+                 a_max: float = 4.0, kappa_max: float = 0.2, dt: float = DT,
+                 squash: str = "squash", alpha_bar_min: float = 0.05):
+        super().__init__()
+        if squash not in ("tanh", "squash"):
+            raise ValueError(f"squash must be tanh|squash, got {squash!r}")
+        self.d_cond = int(d_cond)
+        self.n_candidates = int(n_candidates)
+        self.plan_steps = int(plan_steps)
+        self.n_steps = int(n_steps)
+        self.rho = float(rho)
+        self.sigma_a, self.sigma_k = float(sigma_a), float(sigma_k)
+        self.a_max, self.kappa_max = float(a_max), float(kappa_max)
+        self.dt, self.squash = float(dt), squash
+        self.alpha_bar_min = float(alpha_bar_min)
+        cc = max(hidden // 4, 8)
+        # cond + the scalar diffusion time t = k/K; v0/SPEED_SCALE is appended
+        # by the caller-facing forward (the trunk's own speed-channel column).
+        self.cond_proj = nn.Linear(self.d_cond + 2, cc)
+        self.conv_in = nn.Conv1d(2 + cc, hidden, kernel_size=5, padding=2)
+        self.conv_mid = nn.Conv1d(hidden, hidden, kernel_size=5, padding=2)
+        self.conv_out = nn.Conv1d(hidden, 2, kernel_size=1)
+        # ZERO-INIT: at init the residual x0-prediction is exactly the noisy
+        # input, so the fan is the correlated-noise prior — see class docstring.
+        nn.init.zeros_(self.conv_out.weight)
+        nn.init.zeros_(self.conv_out.bias)
+
+    # ---- the noise ---------------------------------------------------------
+    def sample_ou_noise(self, b: int, generator: torch.Generator | None = None,
+                        device=None) -> Tensor:
+        """[B, N, K, 2] stationary AR(1)/OU noise along the TIME axis: unit
+        marginal variance, lag-1 autocorrelation ``self.rho`` — by
+        construction; the MEASURED value ships with every forward."""
+        n, k = self.n_candidates, self.plan_steps
+        w = torch.randn(b, n, k, 2, generator=generator, device=device)
+        if self.rho == 0.0:
+            return w
+        e = torch.empty_like(w)
+        e[..., 0, :] = w[..., 0, :]
+        c = math.sqrt(1.0 - self.rho * self.rho)
+        for t in range(1, k):
+            e[..., t, :] = self.rho * e[..., t - 1, :] + c * w[..., t, :]
+        return e
+
+    @staticmethod
+    def measured_lag_autocorr(eps: Tensor, lag: int = 1) -> float:
+        """EMPIRICAL lag-``lag`` autocorrelation of a [..., K, C] noise draw,
+        pooled over every leading dim and channel. This is the MEASUREMENT the
+        binding constraint asks for — reported beside every fan, never
+        asserted from the generating formula."""
+        if eps.shape[-2] <= lag:
+            raise ValueError(f"need > {lag} steps, got {eps.shape[-2]}")
+        x = eps.transpose(-2, -1).reshape(-1, eps.shape[-2]).float()
+        x = x - x.mean(dim=-1, keepdim=True)
+        num = (x[:, :-lag] * x[:, lag:]).sum()
+        den = (x * x).sum().clamp_min(1e-12)
+        return float(num / den)
+
+    def _alpha_bar(self, k: int) -> float:
+        """Linear truncated schedule: ᾱ(0)=1 (clean) → ᾱ(K)=alpha_bar_min."""
+        return 1.0 - (k / self.n_steps) * (1.0 - self.alpha_bar_min)
+
+    def _net(self, x: Tensor, cond: Tensor, t: float) -> Tensor:
+        """Residual x0-prediction. ``x`` [B, N, K, 2] · ``cond`` [B, C]."""
+        b, n, k, _ = x.shape
+        tcol = torch.full((b, 1), float(t), dtype=cond.dtype,
+                          device=cond.device)
+        hc = torch.nn.functional.gelu(
+            self.cond_proj(torch.cat([cond, tcol], dim=-1)))       # [B, cc]
+        hc = hc[:, None, :].expand(b, n, -1).reshape(b * n, -1)
+        xin = x.reshape(b * n, k, 2).transpose(1, 2)               # [BN, 2, K]
+        h = torch.cat([xin, hc[:, :, None].expand(-1, -1, k)], dim=1)
+        h = torch.nn.functional.gelu(self.conv_in(h))
+        h = torch.nn.functional.gelu(self.conv_mid(h))
+        out = self.conv_out(h).transpose(1, 2).reshape(b, n, k, 2)
+        return x + out
+
+    def forward(self, plan_feat: Tensor, g_embed: Tensor, v0: Tensor, *,
+                generator: torch.Generator | None = None) -> dict:
+        """``plan_feat`` [B, F0] (= plan_proj(z_plan)) · ``g_embed``
+        [B, d_goal_embed] · ``v0`` [B] -> the diffusion fan:
+        ``{"a" [B,N,K], "kappa" [B,N,K], "waypoints" [B,N,K,2],
+        "raw" [B,N,K,2], "noise_lag1_autocorr" float (MEASURED),
+        "n_denoise_steps" int}``. Same output contract as
+        ``UnicycleEmission.forward`` plus the measurement."""
+        if plan_feat.ndim != 2 or g_embed.ndim != 2 or v0.ndim != 1:
+            raise ValueError(
+                f"plan_feat [B,F0], g_embed [B,G], v0 [B] expected; got "
+                f"{tuple(plan_feat.shape)}, {tuple(g_embed.shape)}, "
+                f"{tuple(v0.shape)}")
+        _ensure_scripts()
+        from train_v58f_unicycle_head import (  # noqa: E402
+            SPEED_SCALE, unicycle_rollout)
+        b = plan_feat.shape[0]
+        vcol = (v0.to(plan_feat.dtype) / SPEED_SCALE)[:, None]
+        cond = torch.cat([plan_feat, g_embed.to(plan_feat.dtype), vcol],
+                         dim=-1)
+        if cond.shape[-1] != self.d_cond + 1:
+            raise ValueError(f"cond dim {cond.shape[-1]} != d_cond+1 = "
+                             f"{self.d_cond + 1}")
+        eps = self.sample_ou_noise(b, generator, device=plan_feat.device)
+        lag1 = self.measured_lag_autocorr(eps.detach())
+        x = eps.to(plan_feat.dtype)
+        x0_hat = x
+        for k in range(self.n_steps, 0, -1):
+            ab_k = self._alpha_bar(k)
+            x0_hat = self._net(x, cond, k / self.n_steps)
+            if k > 1:
+                ab_p = self._alpha_bar(k - 1)
+                eps_hat = (x - math.sqrt(ab_k) * x0_hat) \
+                    / math.sqrt(max(1.0 - ab_k, 1e-8))
+                x = math.sqrt(ab_p) * x0_hat \
+                    + math.sqrt(max(1.0 - ab_p, 0.0)) * eps_hat
+        raw = torch.stack([x0_hat[..., 0] * self.sigma_a,
+                           x0_hat[..., 1] * self.sigma_k], dim=-1)
+        if self.squash == "tanh":                     # legacy, bit-exact v5.8f
+            a_ctl = self.a_max * torch.tanh(raw[..., 0])
+            kappa = self.kappa_max * torch.tanh(raw[..., 1])
+        else:
+            from tanitad.models.kinematic import _squash
+            a_ctl = _squash(raw[..., 0], self.a_max)
+            kappa = _squash(raw[..., 1], self.kappa_max)
+        wp, _ = unicycle_rollout(a_ctl, kappa, v0, dt=self.dt)
+        return {"a": a_ctl, "kappa": kappa, "waypoints": wp, "raw": raw,
+                "noise_lag1_autocorr": lag1,
+                "n_denoise_steps": self.n_steps}
+
+
+class MpcRefiner(nn.Module):
+    """⭐ THE SELECTION CELL'S "MPC refines the top-K" — built the way §3 of
+    DIAGRAM_CONFORMANCE.md says it MUST be built, which is NOT as drawn (D-1).
+
+    HOLDS NO PARAMETERS AND NO BUFFERS: turning it on changes no state_dict
+    key, so it can be flipped over any checkpoint without touching a strict
+    resume. It is a PROCEDURE, not a head.
+
+    ⛔ THE MEASUREMENTS THAT BIND THIS DESIGN (all INHERITED here from their
+    artifacts, quoted where they constrain code):
+
+    1. **The pure roll-consistency argmin is REFUTED — winner's curse.**
+       W7-FULL selected 3.3348 m over a 0.1273 m-oracle fan; on the banked
+       REF-C-XL fan the roll score is **+5.9787 [+5.3217, +6.7625] WORSE**
+       than the shipped selector and its error-rank RISES with N
+       (0.241 → 0.286) while the goal rule's FALLS. ⇒ imagined-consistency may
+       appear in the refinement cost ONLY as a REGULARIZER (``w_consist``,
+       default 0), NEVER as the primary term, and NEVER in the re-score.
+    2. **W7-PROG: any selection cost NEEDS a goal-conditioned
+       (candidate-independent) component.** ⇒ the PRIMARY term is the distance
+       to the selector's goal point ``ĝ`` — which is why this module REFUSES
+       to exist without the ``"goal"`` selector (``V6Config.__post_init__``):
+       the ``"mlp"`` capacity control has no goal point, and descending on its
+       score would be candidate-DEPENDENT — the refuted family.
+    3. **E-S1-0's dose-response** (2.8–2.95x worse purely for scoring
+       off-distribution) is the standing warning for any refine-then-rescore
+       loop. ⇒ after refinement the candidates are re-scored by the
+       GOAL-CONDITIONED cost ONLY (``mpc_score = −goal_dist_post``), never by
+       roll-consistency and never by a learned score evaluated off its
+       training distribution.
+    4. **Kinematic cost survives as a tie-breaker on a feasible fan**
+       (§1.14: top8+kincost 0.4815 vs 0.560) ⇒ ``w_kin`` is a low-weight
+       smoothness REGULARIZER with a zero-weight ablation always available.
+
+    ⛔ INERT UNLESS A SELECTOR IS ADMISSIBLE. Structurally: the config refuses
+    ``mpc_refine`` without ``selector="goal"``, and the chain-side
+    ``assert_selector_admissible`` (v6_chain.py) refuses ANY selector launch
+    while SEL-1 stands REFUSED (E-WC2 fired 2026-08-16: sigma/ADE 9.9915
+    [7.4492, 13.5119] against the 3.0 refusal line) — so the MPC path cannot
+    reach a launch command before the E-WC2-SW dump admits a selector. Warm
+    start = the distilled/trained selector's scores pick the top-K; that is
+    the one surviving sense of "distilled selector warm-starts".
+
+    MECHANISM: ``mpc_steps`` iterations of plain gradient descent on a raw
+    control DELTA (a CEM loop is a possible later arm; descent is the
+    deterministic, testable form). The iterate is re-bounded through
+    ``kinematic._squash`` every step, so EVERY iterate is feasible by
+    construction (identity below 0.9x the bound — where the census says
+    emitted controls live). All model inputs are DETACHED at entry and every
+    output is DETACHED at exit: the refinement trains NOTHING and the training
+    loss cannot backprop through the inner loop — it is an inference-time
+    procedure, exactly like the fallback comparator.
+    """
+
+    def __init__(self, *, topk: int = 2, steps: int = 3, lr: float = 0.05,
+                 w_goal: float = 1.0, w_kin: float = 0.1,
+                 w_consist: float = 0.0, a_max: float = 4.0,
+                 kappa_max: float = 0.2, dt: float = DT):
+        super().__init__()
+        if w_goal <= 0.0:
+            raise ValueError(
+                f"w_goal must be > 0, got {w_goal}: a refinement whose primary "
+                f"(goal-conditioned) term is absent optimises the regularizers "
+                f"alone — and an imagined-consistency-led refinement is the "
+                f"REFUTED roll-cost selection rule wearing MPC's name "
+                f"(W7-PROG; +5.9787 m).")
+        self.topk, self.steps, self.lr = int(topk), int(steps), float(lr)
+        self.w_goal, self.w_kin = float(w_goal), float(w_kin)
+        self.w_consist = float(w_consist)
+        self.a_max, self.kappa_max, self.dt = float(a_max), float(kappa_max), \
+            float(dt)
+
+    def _cost(self, a_ref: Tensor, k_ref: Tensor, wp: Tensor,
+              goal_point: Tensor, roll_fn) -> tuple[Tensor, dict]:
+        """The COMPOSED cost [B, K]: goal (primary) + kin + consist
+        (regularizers). Per-term breakdown returned for the run row — an
+        unattributable composite is the `--v2` conflation."""
+        goal = (wp[:, :, -1] - goal_point[:, None]).norm(dim=-1)
+        kin = ((a_ref[..., 1:] - a_ref[..., :-1]).abs().mean(dim=-1)
+               / self.a_max
+               + (k_ref[..., 1:] - k_ref[..., :-1]).abs().mean(dim=-1)
+               / self.kappa_max)
+        total = self.w_goal * goal + self.w_kin * kin
+        parts = {"goal": goal, "kin": kin}
+        if self.w_consist > 0.0 and roll_fn is not None:
+            consist = roll_fn(a_ref, k_ref)
+            total = total + self.w_consist * consist
+            parts["consist"] = consist
+        return total, parts
+
+    def refine(self, a_ctl: Tensor, kappa: Tensor, v0: Tensor, *,
+               sel_score: Tensor, goal_point: Tensor,
+               roll_fn=None) -> dict:
+        """``a_ctl``/``kappa`` [B, N, T] (the emitted fan) · ``v0`` [B] ·
+        ``sel_score`` [B, N] (the trained selector's warm start) ·
+        ``goal_point`` [B, 2] (``ĝ`` — candidate-INDEPENDENT) ->
+        the refined top-K and its audit trail. Every output DETACHED."""
+        _ensure_scripts()
+        from train_v58f_unicycle_head import unicycle_rollout  # noqa: E402
+        from tanitad.models.kinematic import _squash
+        b, n, t = a_ctl.shape
+        k = min(self.topk, n)
+        idx = sel_score.detach().topk(k, dim=-1).indices           # [B, K]
+        ar = torch.arange(b, device=a_ctl.device)[:, None]
+        a0 = a_ctl.detach()[ar, idx]                               # [B, K, T]
+        k0 = kappa.detach()[ar, idx]
+        gp = goal_point.detach()
+        v0d = v0.detach()
+        with torch.enable_grad():
+            delta = torch.zeros(b, k, t, 2, device=a_ctl.device,
+                                dtype=a_ctl.dtype, requires_grad=True)
+            pre = None
+            for _ in range(self.steps):
+                a_ref = _squash(a0 + delta[..., 0], self.a_max)
+                k_ref = _squash(k0 + delta[..., 1], self.kappa_max)
+                wp, _ = unicycle_rollout(a_ref, k_ref, v0d, dt=self.dt)
+                cost, parts = self._cost(a_ref, k_ref, wp, gp, roll_fn)
+                if pre is None:
+                    pre = {kk: vv.detach() for kk, vv in parts.items()}
+                    pre["total"] = cost.detach()
+                g, = torch.autograd.grad(cost.sum(), delta)
+                delta = (delta - self.lr * g).detach().requires_grad_(True)
+            # final evaluation on the last iterate
+            a_ref = _squash(a0 + delta[..., 0], self.a_max)
+            k_ref = _squash(k0 + delta[..., 1], self.kappa_max)
+            wp, _ = unicycle_rollout(a_ref, k_ref, v0d, dt=self.dt)
+            cost, parts = self._cost(a_ref, k_ref, wp, gp, roll_fn)
+        post = {kk: vv.detach() for kk, vv in parts.items()}
+        post["total"] = cost.detach()
+        # ⛔ THE RE-SCORE IS GOAL-CONDITIONED ONLY (D-1 / E-S1-0): the selected
+        # refined candidate is the argmin of the CANDIDATE-INDEPENDENT goal
+        # distance — never roll-consistency, never a score off-distribution.
+        goal_post = post["goal"]
+        sel_local = goal_post.argmin(dim=-1)                       # [B]
+        arb = torch.arange(b, device=a_ctl.device)
+        return {
+            "controls": torch.stack([a_ref, k_ref], dim=-1).detach(),
+            "waypoints": wp.detach(),
+            "topk_idx": idx,
+            "cost_pre": pre["total"], "cost_post": post["total"],
+            "goal_dist_pre": pre["goal"], "goal_dist_post": goal_post,
+            "kin_pre": pre["kin"], "kin_post": post["kin"],
+            **({"consist_pre": pre["consist"],
+                "consist_post": post["consist"]} if "consist" in pre else {}),
+            "selected_local": sel_local,
+            "selected": idx[arb, sel_local],
+            "rescore": "goal_distance_only (D-1: roll-consistency argmin "
+                       "REFUTED +5.9787 m; refined-readout rescoring "
+                       "2.8-2.95x worse, E-S1-0)",
+        }
+
+
+class FallbackTrigger(nn.Module):
+    """⭐ THE CONTEXT-BRAIN FALLBACK CELL (F-17): fires when imagined
+    consequences disagree beyond the P7-CALIBRATED band.
+
+    Signal = ``w_spread * fan_endpoint_spread + w_rollvar * roll_cost_var`` —
+    exactly the diagram's context-row quantity (*"fan spread + roll-cost
+    variance → calibrated uncertainty"*), the ONE place the roll-cost
+    SURVIVES its refutation: P7 measured its calibration at **rho 0.7164
+    [0.5847, 0.7696]** on the stage-A-repaired trunk (INHERITED;
+    ``w7_roll_rerank.py`` owns the instrument).
+
+    ⛔ AN UNCERTAINTY SIGNAL, NEVER A SELECTOR — kept distinct in CODE, not
+    only in prose:
+      1. every statistic here is PERMUTATION-INVARIANT over the candidate
+         axis (std / variance over N) and NO per-candidate output exists, so
+         this module CANNOT reorder or choose among candidates even in
+         principle (pinned by
+         ``test_fallback_is_permutation_invariant_hence_not_a_selector``);
+      2. the whole computation runs under ``no_grad`` at the call site: the
+         signal is MONITORED, never optimised — a trigger whose signal the
+         training loss could reduce is a trigger the model learns to blind
+         (the same "monitored, never optimised" rule as P2's nuisance
+         non-retention).
+    The roll-cost's SELECTION use stays refuted (+5.9787 m, error-rank RISES
+    with N); its VARIANCE as an uncertainty input is P7's validated use.
+
+    ⛔ THE CALIBRATED BAND IS LOADED, NEVER INVENTED. :meth:`load_calibration`
+    installs the P7-fit spread→error mapping and its threshold as PERSISTENT
+    buffers (they ship with the checkpoint — the anchor-table discipline) and
+    REFUSES any calibration that fails P7's pre-registered gate
+    (rho >= 0.3 with CI excluding 0): *a trigger calibrated on an
+    uncalibrated signal is a random brake.* Until a calibration is loaded the
+    comparator returns ``fired: None`` with the reason — it says so instead
+    of inventing a boolean (the ``AnchorGoalHead.table_ready`` refusal
+    pattern).
+
+    THE DEFINED FALLBACK ACTION is the hold-v0 / CV baseline emission: zero
+    commanded accel, zero curvature, integrated through the same
+    ``unicycle_rollout`` from the true ``v0`` — feasible by construction, and
+    exactly the warm start the zero-init emission head defines. It is emitted
+    beside the plan on every forward (cheap, analytic) so a consumer can
+    switch per-window on ``fired`` without a second pass.
+
+    HOLDS NO TRAINABLE PARAMETERS — the calibration is an OFFLINE artifact
+    from the P7 instrument, not a trained head; nothing here can be sculpted
+    by any loss. (Buffers still create state_dict keys, so the flag rides
+    ``STAGE_MAY_INTRODUCE`` like every other introduction.)
+    """
+
+    #: what :meth:`load_calibration` requires of the P7 artifact.
+    CALIB_KEYS: tuple[str, ...] = (
+        "spearman_rho", "rho_ci", "slope", "intercept", "threshold",
+        "w_spread", "w_rollvar")
+
+    def __init__(self, *, a_max: float = 4.0, kappa_max: float = 0.2,
+                 dt: float = DT, plan_steps: int = PLAN_STEPS):
+        super().__init__()
+        self.a_max, self.kappa_max = float(a_max), float(kappa_max)
+        self.dt, self.plan_steps = float(dt), int(plan_steps)
+        # PERSISTENT: the band ships with the checkpoint (anchor-table rule).
+        self.register_buffer("calib_ready",
+                             torch.zeros((), dtype=torch.bool))
+        self.register_buffer("calib_rho", torch.zeros(()))
+        self.register_buffer("calib_rho_ci_lo", torch.zeros(()))
+        self.register_buffer("calib_slope", torch.zeros(()))
+        self.register_buffer("calib_intercept", torch.zeros(()))
+        self.register_buffer("calib_threshold", torch.zeros(()))
+        self.register_buffer("w_spread", torch.ones(()))
+        self.register_buffer("w_rollvar", torch.ones(()))
+
+    @torch.no_grad()
+    def load_calibration(self, calib: dict) -> dict:
+        """Install a P7 calibration artifact. REFUSES one that fails the
+        pre-registered P7 gate. Returns the provenance dict a run row quotes."""
+        missing = [k for k in self.CALIB_KEYS if k not in calib]
+        if missing:
+            raise ValueError(
+                f"calibration is missing {missing}; required: "
+                f"{self.CALIB_KEYS}. The artifact comes from the P7 "
+                f"instrument (w7_roll_rerank.py's calibration block + the "
+                f"spread->error band fit), never hand-written.")
+        rho = float(calib["spearman_rho"])
+        ci = calib["rho_ci"]
+        if ci is None or len(ci) != 2:
+            raise ValueError("rho_ci must be [lo, hi] — an interval-free rho "
+                             "is not admissible (estimator rule)")
+        ci_lo = float(ci[0])
+        if rho < P7_GATE_RHO or ci_lo <= 0.0:
+            raise ValueError(
+                f"REFUSING calibration: rho {rho} (CI lo {ci_lo}) fails P7's "
+                f"pre-registered gate rho >= {P7_GATE_RHO} with CI excluding "
+                f"0. A trigger calibrated on an uncalibrated signal is a "
+                f"random brake. (The repaired-trunk reference is rho 0.7164 "
+                f"[0.5847, 0.7696] — P7 PASS.)")
+        thr = float(calib["threshold"])
+        if thr <= 0.0:
+            raise ValueError(f"threshold must be > 0 (got {thr}): a "
+                             f"non-positive band fires on every window, which "
+                             f"is a disabled planner wearing a safety net")
+        ws, wr = float(calib["w_spread"]), float(calib["w_rollvar"])
+        if ws < 0.0 or wr < 0.0 or (ws == 0.0 and wr == 0.0):
+            raise ValueError(f"w_spread/w_rollvar must be >= 0 and not both "
+                             f"0, got {ws}/{wr}")
+        self.calib_rho.fill_(rho)
+        self.calib_rho_ci_lo.fill_(ci_lo)
+        self.calib_slope.fill_(float(calib["slope"]))
+        self.calib_intercept.fill_(float(calib["intercept"]))
+        self.calib_threshold.fill_(thr)
+        self.w_spread.fill_(ws)
+        self.w_rollvar.fill_(wr)
+        self.calib_ready.fill_(True)
+        return {"rho": rho, "rho_ci": [ci_lo, float(ci[1])],
+                "threshold": thr, "w_spread": ws, "w_rollvar": wr,
+                "provenance": str(calib.get("provenance", "UNSTATED")),
+                "gate": f"P7 rho >= {P7_GATE_RHO}, CI excluding 0 — PASSED"}
+
+    def forward(self, waypoints: Tensor, v0: Tensor, *,
+                roll_cost: Tensor | None = None) -> dict:
+        """``waypoints`` [B, N, T, 2] (the LIVE fan) · ``v0`` [B] ·
+        ``roll_cost`` [B, N] per-candidate roll-consistency costs (optional —
+        without it the signal is spread-only and says so).
+
+        Returns the signals, the comparator verdict (``fired`` [B] bool, or
+        ``None`` + reason when uncalibrated), and the fallback emission."""
+        if waypoints.ndim != 4 or waypoints.shape[-1] != 2:
+            raise ValueError(f"waypoints must be [B, N, T, 2], got "
+                             f"{tuple(waypoints.shape)}")
+        _ensure_scripts()
+        from train_v58f_unicycle_head import unicycle_rollout  # noqa: E402
+        b, n = waypoints.shape[:2]
+        # permutation-invariant BY CONSTRUCTION: std/var over the N axis.
+        spread = waypoints[:, :, -1, :].std(dim=1, unbiased=False) \
+            .norm(dim=-1)                                          # [B]
+        if roll_cost is not None:
+            if roll_cost.shape != (b, n):
+                raise ValueError(f"roll_cost must be [B={b}, N={n}], got "
+                                 f"{tuple(roll_cost.shape)}")
+            rollvar = roll_cost.float().var(dim=1, unbiased=False)
+        else:
+            rollvar = torch.zeros_like(spread)
+        signal = (self.w_spread.to(spread.dtype) * spread
+                  + self.w_rollvar.to(spread.dtype) * rollvar)
+        out = {"spread": spread, "roll_cost_var": rollvar, "signal": signal,
+               "signal_includes_rollvar": roll_cost is not None}
+        if bool(self.calib_ready):
+            pred_err = self.calib_slope.to(signal.dtype) * signal \
+                + self.calib_intercept.to(signal.dtype)
+            out |= {"pred_err": pred_err,
+                    "fired": pred_err > self.calib_threshold.to(signal.dtype),
+                    "status": "CALIBRATED",
+                    "calib_rho": float(self.calib_rho)}
+        else:
+            out |= {"pred_err": None, "fired": None,
+                    "status": "UNCALIBRATED — the comparator refuses to fire "
+                              "(no P7 band loaded; load_calibration() is the "
+                              "only way in)"}
+        # the DEFINED fallback action: hold-v0 / CV, feasible by construction.
+        z = torch.zeros(b, 1, self.plan_steps, dtype=waypoints.dtype,
+                        device=waypoints.device)
+        fb_wp, _ = unicycle_rollout(z, z, v0, dt=self.dt)
+        out |= {"controls": torch.zeros(b, self.plan_steps, 2,
+                                        dtype=waypoints.dtype,
+                                        device=waypoints.device),
+                "waypoints": fb_wp[:, 0],
+                "action": "hold_v0_straight (zero accel, zero curvature — "
+                          "the CV baseline emission)"}
+        return out
+
+
+# ============================================================================
 # X3 — the gradient-isolation matrix, as a config + a MEASURED check
 # ============================================================================
 
@@ -1774,6 +2624,62 @@ class V6Config:
     #: the tactical WM loss cannot train ``layer_str`` backwards through it.
     tac_goal_cond: bool = False
 
+    # ---- PROPOSALS · MPC · FALLBACK (2026-08-16, DIAGRAM cells) ------------
+    # ⛔ ALL DEFAULT OFF, built at the very END of __init__, and the default
+    # build's state_dict is proved BYTE-IDENTICAL per tensor against a
+    # CONTENT-anchored pre-change revision (C75) in
+    # ``tests/test_v6_diffusion_mpc_fallback.py`` — the live resumes are
+    # 87,893,449/405 (default) and 336,542,025/573 (config E) and a broken
+    # strict resume kills them.
+    #: ⭐ the candidate-fan GENERATOR. ``"query"`` = the incumbent learned-query
+    #: emission (cand_queries + UnicycleEmission). ``"diffusion"`` = the
+    #: diagram's operative-brain proposal cell (F-15): diffuse the full 6 s
+    #: CONTROL sequence with temporally correlated (OU) noise through
+    #: :class:`DiffusionProposalGenerator`. A DECLARED ARM (new state_dict
+    #: keys ⇒ introduced post-S-W via ``STAGE_MAY_INTRODUCE``), pre-registered
+    #: against the query fan — with it ON the query/CV fan is STILL emitted
+    #: beside it (``qfan_*``) as the paired reference on the same window.
+    proposals: str = "query"
+    #: truncated DDIM denoise steps (DiffusionDrive's regime; REF-C precedent).
+    diffusion_steps: int = 4
+    #: lag-1 autocorrelation of the OU noise along the 60-step axis. The DRAWN
+    #: noise's autocorrelation is MEASURED per forward and reported
+    #: (``prop_noise_lag1_autocorr``), never asserted from this number.
+    diffusion_noise_rho: float = 0.9
+    diffusion_hidden: int = 256
+    #: raw-space (pre-squash) noise scales per channel — they set the prior
+    #: fan's diversity. Declared knobs, not magic: a=2.0 against a_max 4.0,
+    #: kappa=0.1 against kappa_max 0.2.
+    diffusion_sigma_a: float = 2.0
+    diffusion_sigma_k: float = 0.1
+    #: ⭐ MPC top-K refinement (the selection cell's "MPC refines the top-K",
+    #: built per the D-1 re-read: goal-conditioned PRIMARY cost + kinematic and
+    #: imagined-consistency REGULARIZERS; re-score by goal distance ONLY).
+    #: ⛔ REQUIRES ``selector="goal"`` — refused otherwise in __post_init__ —
+    #: and therefore cannot reach a launch while SEL-1 stands REFUSED
+    #: (``assert_selector_admissible`` gates every selector arm). Holds NO
+    #: parameters and NO buffers: flipping it changes no state_dict key.
+    mpc_refine: bool = False
+    mpc_topk: int = 2
+    mpc_steps: int = 3
+    mpc_lr: float = 0.05
+    #: P_O roll depth (10 Hz steps) for the imagined-consistency REGULARIZER.
+    #: 0 = the roll never runs (and ``mpc_w_consist`` must then be 0).
+    mpc_roll_k: int = 0
+    mpc_w_goal: float = 1.0
+    mpc_w_kin: float = 0.1
+    mpc_w_consist: float = 0.0
+    #: ⭐ the context-brain fallback trigger (F-17): fan spread + roll-cost
+    #: variance -> P7-calibrated uncertainty; fires when the band is exceeded.
+    #: The roll-cost appears here as an UNCERTAINTY SIGNAL (P7 rho 0.7164,
+    #: its validated use), NEVER as a selector — the module is permutation-
+    #: invariant over candidates by construction. Holds calibration BUFFERS
+    #: only (no trainable parameters); ON adds keys ⇒ ``STAGE_MAY_INTRODUCE``.
+    fallback_trigger: bool = False
+    #: P_O roll depth for the roll-cost-variance half of the signal.
+    #: 0 = spread-only (the signal says so: ``fb_signal_includes_rollvar``).
+    fallback_roll_k: int = 10
+
     # ---- vocabulary --------------------------------------------------------
     d_goal_embed: int = 128
 
@@ -1872,6 +2778,68 @@ class V6Config:
                       ("n_agent_slots", self.n_agent_slots)):
             if int(v) < 2:
                 raise ValueError(f"{nm} must be >= 2, got {v}")
+        # ---- PROPOSALS · MPC · FALLBACK ------------------------------------
+        if self.proposals not in ("query", "diffusion"):
+            raise ValueError(
+                f"proposals must be query|diffusion, got {self.proposals!r}. "
+                f"'diffusion' is the F-15 arm (control-sequence denoiser with "
+                f"temporally correlated noise); 'query' is the incumbent "
+                f"learned-query fan and the arm's control.")
+        if self.diffusion_steps < 1:
+            raise ValueError(f"diffusion_steps must be >= 1, got "
+                             f"{self.diffusion_steps}")
+        if not 0.0 <= self.diffusion_noise_rho < 1.0:
+            raise ValueError(
+                f"diffusion_noise_rho must be in [0, 1), got "
+                f"{self.diffusion_noise_rho}: rho >= 1 is not a stationary "
+                f"AR(1) process and its 'autocorrelation' would be a number "
+                f"rather than a property")
+        for nm, v in (("diffusion_hidden", self.diffusion_hidden),
+                      ("diffusion_sigma_a", self.diffusion_sigma_a),
+                      ("diffusion_sigma_k", self.diffusion_sigma_k)):
+            if float(v) <= 0.0:
+                raise ValueError(f"{nm} must be > 0, got {v}")
+        if self.mpc_refine and self.selector != "goal":
+            raise ValueError(
+                f"mpc_refine requires selector='goal', got "
+                f"{self.selector!r}. The refinement's PRIMARY cost is the "
+                f"distance to the selector's candidate-INDEPENDENT goal point "
+                f"ĝ (W7-PROG: any selection cost NEEDS a goal-conditioned "
+                f"component); 'none' has no selector at all and 'mlp' — the "
+                f"capacity control — emits no goal point, so descending on "
+                f"its score would be candidate-DEPENDENT, i.e. the REFUTED "
+                f"roll-cost family (+5.9787 m, error-rank RISING with N). "
+                f"The MPC path stays INERT unless a selector is admissible "
+                f"(assert_selector_admissible gates every selector launch).")
+        if self.mpc_refine:
+            if self.mpc_topk < 1 or self.mpc_topk > self.n_candidates:
+                raise ValueError(f"mpc_topk must be in [1, n_candidates="
+                                 f"{self.n_candidates}], got {self.mpc_topk}")
+            if self.mpc_steps < 1:
+                raise ValueError(f"mpc_steps must be >= 1, got "
+                                 f"{self.mpc_steps}")
+            if self.mpc_lr <= 0.0:
+                raise ValueError(f"mpc_lr must be > 0, got {self.mpc_lr}")
+            if self.mpc_w_goal <= 0.0:
+                raise ValueError(
+                    f"mpc_w_goal must be > 0, got {self.mpc_w_goal}: a "
+                    f"refinement whose primary (goal-conditioned) term is "
+                    f"absent optimises the regularizers alone — an "
+                    f"imagined-consistency-led refinement is the REFUTED "
+                    f"roll-cost selection rule wearing MPC's name.")
+            if self.mpc_w_kin < 0.0 or self.mpc_w_consist < 0.0:
+                raise ValueError(f"mpc_w_kin/mpc_w_consist must be >= 0, got "
+                                 f"{self.mpc_w_kin}/{self.mpc_w_consist}")
+            if self.mpc_w_consist > 0.0 and self.mpc_roll_k < 1:
+                raise ValueError(
+                    f"mpc_w_consist {self.mpc_w_consist} with mpc_roll_k "
+                    f"{self.mpc_roll_k}: a consistency regularizer with no "
+                    f"roll is a term that silently never computes — the same "
+                    f"defect family as w_select with selector='none'.")
+        if self.mpc_roll_k < 0 or self.fallback_roll_k < 0:
+            raise ValueError(f"roll depths must be >= 0, got mpc_roll_k="
+                             f"{self.mpc_roll_k}, fallback_roll_k="
+                             f"{self.fallback_roll_k}")
         if self.uplink not in ("stopgrad", "ema"):
             raise ValueError(f"uplink must be stopgrad|ema, got {self.uplink!r}")
         if not 0.0 < self.ema_decay < 1.0:
@@ -2335,6 +3303,43 @@ class V6Stack(nn.Module):
             nn.init.zeros_(self.cond_tac_dyn.weight)
             nn.init.zeros_(self.cond_tac_dyn.bias)
 
+        # ---- PROPOSALS · MPC · FALLBACK (2026-08-16) — built LAST, only when
+        # asked. ⛔ Same rule as every gated lever above, same reason: the
+        # default path draws NO RNG, creates NO state_dict key, and every
+        # earlier module's initialisation is bit-for-bit what it was — proved
+        # per tensor against a CONTENT-anchored pre-change revision (C75) in
+        # tests/test_v6_diffusion_mpc_fallback.py. The live resumes
+        # (87,893,449/405 default · 336,542,025/573 config E) depend on it.
+        self.prop_diffusion = None
+        if cfg.proposals == "diffusion":
+            # conditioned on [plan_proj(z_plan) ‖ e_g_tac] (+ the v0 column it
+            # appends itself) — the SAME information surface the query fan
+            # reads; per-candidate diversity comes from the OU noise, not from
+            # learned queries.
+            self.prop_diffusion = DiffusionProposalGenerator(
+                cfg.d_plan_feat + cfg.d_goal_embed, cfg.n_candidates,
+                cfg.plan_steps, hidden=cfg.diffusion_hidden,
+                n_steps=cfg.diffusion_steps, rho=cfg.diffusion_noise_rho,
+                sigma_a=cfg.diffusion_sigma_a, sigma_k=cfg.diffusion_sigma_k,
+                a_max=cfg.a_max, kappa_max=cfg.kappa_max, dt=cfg.dt,
+                squash=cfg.emission_squash)
+        self.mpc = None
+        if cfg.mpc_refine:
+            # parameter-free and buffer-free: no state_dict key moves. The
+            # selector="goal" requirement is enforced by V6Config.__post_init__.
+            self.mpc = MpcRefiner(
+                topk=cfg.mpc_topk, steps=cfg.mpc_steps, lr=cfg.mpc_lr,
+                w_goal=cfg.mpc_w_goal, w_kin=cfg.mpc_w_kin,
+                w_consist=cfg.mpc_w_consist, a_max=cfg.a_max,
+                kappa_max=cfg.kappa_max, dt=cfg.dt)
+        self.fallback = None
+        if cfg.fallback_trigger:
+            # buffers only (the P7 band ships with the checkpoint); no
+            # trainable parameter — the trigger is CALIBRATED, never trained.
+            self.fallback = FallbackTrigger(
+                a_max=cfg.a_max, kappa_max=cfg.kappa_max, dt=cfg.dt,
+                plan_steps=cfg.plan_steps)
+
     # -- grouping ------------------------------------------------------------
     #: prefix -> group. Longest matching prefix wins, so ``predictor_tac``
     #: cannot be swallowed by ``predictor_op``'s entry.
@@ -2398,6 +3403,13 @@ class V6Stack(nn.Module):
         # planner" (registry §1.14) applies to the selector first of all — the
         # frozen selector read 0.7933 -> 4.4159 when the trunk moved under it.
         ("cand_score.", "planner"),
+        # ⭐ the DIFFUSION PROPOSAL GENERATOR is a PLANNER module for the same
+        # reason the emission is: it IS the fan generator, trained by the plan
+        # loss in S-T on the trunk it consumes. (MpcRefiner and FallbackTrigger
+        # hold NO parameters — a procedure and a calibrated comparator — so
+        # they need no group: group_of partitions parameters, and there is
+        # nothing of theirs for a stage to train or freeze.)
+        ("prop_diffusion.", "planner"),
         ("masked_cells.", "aux"), ("sigreg.", "aux"),
     )
 
@@ -2556,7 +3568,84 @@ class V6Stack(nn.Module):
         return cond(tok, head["args"], cat=head["cat_probs"],
                     cat_mask=cond.vocab.cat_mask_from_tokens(tok))
 
-    def emit(self, z_op: Tensor, g_tac_embed: Tensor, v0: Tensor) -> dict:
+    def roll_consistency(self, states: Tensor, actions: Tensor,
+                         a_ctl: Tensor, kappa: Tensor, v0: Tensor, *,
+                         intent: Tensor | None = None, k: int) -> Tensor:
+        """Per-candidate IMAGINED-vs-CANDIDATE consistency cost [B, N]: roll
+        ``predictor_op`` ``k`` steps under each candidate's OWN controls,
+        decode the imagined per-step Δpose through ``step_readout_op``,
+        accumulate SE(2), and return the mean distance to the candidate's own
+        unicycle waypoints over those steps — the W7 quantity, computed on the
+        v6 stack.
+
+        ⛔ TWO USES SURVIVE ITS REFUTATION AS A SELECTOR, AND ONLY TWO:
+          1. the CONTEXT BRAIN's uncertainty signal — its VARIANCE across the
+             fan feeds the P7-calibrated fallback band (P7 rho 0.7164
+             [0.5847, 0.7696], the validated use);
+          2. a REGULARIZER inside the MPC refinement's composed cost
+             (``mpc_w_consist``, default 0), behind the goal-conditioned
+             primary term.
+        ⛔ NEVER a selector: as a selection rule this exact quantity is
+        MEASURED +5.9787 [+5.3217, +6.7625] WORSE than the trained selector,
+        with error-rank RISING in N (0.241 → 0.286) — the winner's curse. No
+        argmin/argmax over this tensor may pick a candidate.
+
+        Trunk inputs (``states``, ``actions``, ``intent``) are DETACHED HERE,
+        unconditionally: the roll is an INSTRUMENT — it must never train the
+        trunk or the goal path (the ``zh_op_seam`` discipline, applied to a
+        measurement). Gradient still flows to ``a_ctl``/``kappa`` so the MPC
+        inner descent can differentiate w.r.t. the CONTROLS.
+
+        Candidate controls enter the predictor in the RECORDED action format:
+        channel 0 = steer_road_rad (``steer_of_kappa``, the corpus encoding),
+        channel 1 = accel, channel 2 = ``v0/SPEED_SCALE`` held constant — the
+        ``_lift3`` convention the trainer itself uses, mirrored, not improved.
+        """
+        if k < 1:
+            raise ValueError(f"k must be >= 1, got {k}")
+        _ensure_scripts()
+        from stage_a_probes import steer_of_kappa          # noqa: E402
+        from train_v58f_unicycle_head import (             # noqa: E402
+            SPEED_SCALE, unicycle_rollout)
+        b, n, t = a_ctl.shape
+        if k > t:
+            raise ValueError(f"k={k} exceeds the plan horizon {t}")
+        st = states.detach()
+        aw = actions.detach()
+        w = st.shape[1]
+        # expand the shared window per candidate: [B*N, W, ·]
+        st = st[:, None].expand(b, n, w, st.shape[-1]).reshape(b * n, w, -1)
+        aw = aw[:, None].expand(b, n, w, aw.shape[-1]).reshape(b * n, w, -1)
+        it = None
+        if intent is not None:
+            it = intent.detach()[:, None].expand(b, n, -1).reshape(b * n, -1)
+        # candidate controls -> recorded-format future actions [B*N, k, 3]
+        steer = steer_of_kappa(kappa)
+        vcol = (v0.detach().to(a_ctl.dtype) / SPEED_SCALE)[:, None, None] \
+            .expand(b, n, t)
+        fa = torch.stack([steer, a_ctl, vcol], dim=-1) \
+            .reshape(b * n, t, 3)[:, :k]
+        # the same window-shift roll as metric_dynamics.rollout_transitions,
+        # with the intent port added (that helper has none — stated, not
+        # silently diverged: same 1-step head, same shift).
+        dposes = []
+        win_s, win_a = st, aw
+        for j in range(k):
+            z_hat = self.predictor_op(win_s, win_a, intent=it)[1]
+            dposes.append(self.step_readout_op(win_s[:, -1], z_hat))
+            if j < k - 1:
+                win_s = torch.cat([win_s[:, 1:], z_hat.unsqueeze(1)], dim=1)
+                win_a = torch.cat([win_a[:, 1:], fa[:, j].unsqueeze(1)],
+                                  dim=1)
+        from tanitad.models.metric_dynamics import accumulate_se2
+        roll_wp = accumulate_se2(torch.stack(dposes, dim=1))   # [B*N, k, 2]
+        uni_wp, _ = unicycle_rollout(a_ctl, kappa, v0.detach(), dt=self.cfg.dt)
+        return (roll_wp.reshape(b, n, k, 2)
+                - uni_wp[:, :, :k]).norm(dim=-1).mean(dim=-1)
+
+    def emit(self, z_op: Tensor, g_tac_embed: Tensor, v0: Tensor, *,
+             roll_ctx: dict | None = None,
+             generator: torch.Generator | None = None) -> dict:
         """THE 6 s EMISSION (§4b). ``z_op`` [B, d_op], ``g_tac_embed``
         [B, d_goal_embed], ``v0`` [B] ->
 
@@ -2570,6 +3659,18 @@ class V6Stack(nn.Module):
                         report "no gradient" for a live mis-wire).
 
         ``N == cfg.n_candidates``; ``squeeze_candidates`` collapses N=1.
+
+        ⭐ Under ``cfg.proposals == "diffusion"`` the LIVE fan (``a``/``kappa``/
+        ``controls``/``waypoints``) comes from :class:`DiffusionProposalGenerator`
+        and the query fan is STILL emitted beside it as ``qfan_*`` — the
+        paired on-window reference of the pre-registered arm comparison, and
+        what keeps ``emission.*``/``cand_queries`` reachable by the X3
+        totality probe. ``generator`` seeds the noise draw (None = global RNG).
+
+        ``roll_ctx`` (``{"states", "actions", "intent"}``, all DETACHED by
+        the caller) enables the P_O rolls the MPC consistency regularizer and
+        the fallback's roll-cost-variance signal need; without it those two
+        halves are skipped and say so.
         """
         cfg = self.cfg
         if z_op.ndim != 2 or z_op.shape[-1] != cfg.d_op:
@@ -2583,10 +3684,25 @@ class V6Stack(nn.Module):
         feat = base + self.cand_queries.weight[None]               # [B,N,F0]
         g = g_tac_embed[:, None, :].expand(b, cfg.n_candidates, -1)
         feat = torch.cat([feat, g.to(feat.dtype)], dim=-1)         # [B,N,F]
-        a_ctl, kappa, wp = self.emission(feat, v0)
+        if self.prop_diffusion is None:
+            a_ctl, kappa, wp = self.emission(feat, v0)
+            extra_fan = {}
+        else:
+            # the query/CV fan first — the paired reference, same window
+            q_a, q_k, q_wp = self.emission(feat, v0)
+            d = self.prop_diffusion(base[:, 0], g_tac_embed, v0,
+                                    generator=generator)
+            a_ctl, kappa, wp = d["a"], d["kappa"], d["waypoints"]
+            extra_fan = {
+                "prop_mechanism": "diffusion",
+                # ⚠️ MEASURED on the actual draw, never asserted from cfg
+                "prop_noise_lag1_autocorr": d["noise_lag1_autocorr"],
+                "prop_noise_rho_target": cfg.diffusion_noise_rho,
+                "prop_n_denoise_steps": d["n_denoise_steps"],
+                "qfan_a": q_a, "qfan_kappa": q_k, "qfan_waypoints": q_wp}
         out = {"a": a_ctl, "kappa": kappa,
                "controls": torch.stack([a_ctl, kappa], dim=-1),
-               "waypoints": wp, "feat": feat}
+               "waypoints": wp, "feat": feat} | extra_fan
         if self.anchor_head is not None:
             # ⭐ the STRUCTURED goal point. Emitted BEFORE selection because the
             # selection consumes it — and computed from ``g_tac_embed`` alone,
@@ -2612,6 +3728,46 @@ class V6Stack(nn.Module):
                 kw["goal_point"] = out["anchor_goal_point"]
             out |= {f"sel_{k}": v
                     for k, v in self.cand_score(wp, g_tac_embed, **kw).items()}
+        if self.mpc is not None:
+            # ⭐ MPC TOP-K REFINEMENT — warm-started by the trained selector's
+            # scores, refined by cost descent on a composed cost (goal PRIMARY;
+            # kin + imagined-consistency REGULARIZERS), re-scored by GOAL
+            # DISTANCE ONLY (D-1). Config guarantees selector == "goal" here,
+            # so `sel_score` and `sel_goal_point` exist. Every input is
+            # detached and every output is detached: the refinement trains
+            # NOTHING and nothing trains through it.
+            roll_fn = None
+            if cfg.mpc_w_consist > 0.0 and cfg.mpc_roll_k > 0:
+                if roll_ctx is not None:
+                    roll_fn = (lambda aa, kk: self.roll_consistency(
+                        roll_ctx["states"], roll_ctx["actions"], aa, kk, v0,
+                        intent=roll_ctx.get("intent"), k=cfg.mpc_roll_k))
+                else:
+                    out["mpc_consist_skipped"] = ("no roll_ctx — the "
+                                                  "consistency regularizer "
+                                                  "needs the window states/"
+                                                  "actions")
+            out |= {f"mpc_{k}": v for k, v in self.mpc.refine(
+                out["a"], out["kappa"], v0, sel_score=out["sel_score"],
+                goal_point=out["sel_goal_point"], roll_fn=roll_fn).items()}
+        if self.fallback is not None:
+            # ⭐ THE CONTEXT-BRAIN FALLBACK TRIGGER — under no_grad in FULL:
+            # the uncertainty signal is MONITORED, never optimised (a signal
+            # the training loss could reduce is a trigger the model learns to
+            # blind). Roll-cost VARIANCE is the P7-validated use of the roll
+            # quantity; its selection use stays refuted, and the module is
+            # permutation-invariant over candidates so it CANNOT select.
+            with torch.no_grad():
+                roll_cost = None
+                if cfg.fallback_roll_k > 0 and roll_ctx is not None:
+                    roll_cost = self.roll_consistency(
+                        roll_ctx["states"], roll_ctx["actions"],
+                        out["a"], out["kappa"], v0,
+                        intent=roll_ctx.get("intent"),
+                        k=cfg.fallback_roll_k)
+                out |= {f"fb_{k}": v for k, v in
+                        self.fallback(out["waypoints"], v0,
+                                      roll_cost=roll_cost).items()}
         return out
 
     def forward(self, frames: Tensor, actions: Tensor, v0: Tensor, *,
@@ -2734,7 +3890,18 @@ class V6Stack(nn.Module):
                                        intent=self._cut(e_g_tac, cut))
 
         # ---- the ONE 6 s plan ----------------------------------------------
-        plan = self.emit(z_plan, e_g_tac, v0)
+        # roll context for the MPC consistency regularizer and the fallback's
+        # roll-cost-variance signal — DETACHED AT CONSTRUCTION (the zh_op_seam
+        # discipline): the rolls are instruments/regularizers over a frozen
+        # view of the trunk, never a third gradient path into it.
+        roll_ctx = None
+        if (self.fallback is not None and cfg.fallback_roll_k > 0) or \
+                (self.mpc is not None and cfg.mpc_w_consist > 0.0
+                 and cfg.mpc_roll_k > 0):
+            roll_ctx = {"states": z_op_win.detach(),
+                        "actions": actions.detach(),
+                        "intent": self._cut(e_g_tac, cut).detach()}
+        plan = self.emit(z_plan, e_g_tac, v0, roll_ctx=roll_ctx)
         # The selector is planner-side and MUST be probed by X3 like every other
         # planner output — a head added without appending to the declaration is
         # exactly what test_planner_surface_is_total exists to catch.
@@ -2748,7 +3915,18 @@ class V6Stack(nn.Module):
                      # reachable: its emitted point is a HARD table lookup and
                      # carries no gradient at all, by design.
                      "anchor_goal_point", "anchor_goal_point_raw",
-                     "anchor_cls_logits")
+                     "anchor_cls_logits",
+                     # ⭐ the DIFFUSION arm's paired query/CV reference fan —
+                     # planner-side because it flows through emission/
+                     # cand_queries, and it is exactly what keeps those
+                     # parameters REACHABLE by the totality probe when the
+                     # live fan comes from the denoiser. (The live fan's
+                     # a/kappa/waypoints below then reach prop_diffusion.)
+                     # MPC outputs are DETACHED by construction and the
+                     # fallback runs under no_grad — both are graph-free, so
+                     # declaring them here would probe nothing; their
+                     # isolation is structural, not measured-by-backprop.
+                     "qfan_a", "qfan_kappa", "qfan_waypoints")
                     if k in plan]
         # the FACTORED pair is planner-side for the same reason the mixed head
         # is: it is a goal head, and X3 forbids any goal head reaching an
