@@ -388,15 +388,33 @@ STAGE_GATE_SPEC: dict[str, dict] = {
     },
     "S-T": {
         "required": ("TACTICAL_family", "sel_gap"),
-        "reported": ("P7", "LATERAL_family", "X2_seam"),
+        # ⚠️ ALL FOUR families are listed, not two. The binding diagram's S-T
+        # gate row is "four families at 0-2 s AND 0-6 s, T1 tier"
+        # (HIERARCHY_VOCABULARY §4b eval consequence + the 2026-08-02 binding
+        # rule: an eval missing a family is INCOMPLETE). LONGITUDINAL is the
+        # family S-T's own thesis moves — the tactical layer OWNS target speed
+        # — so omitting it here was an audited gap (DIAGRAM_CONFORMANCE.md,
+        # 2026-08-16). Reported-not-required: `reported` probes are stubbed and
+        # never adjudicated, so this is visibility, not a new refusal.
+        "reported": ("P7", "LATERAL_family", "LONGITUDINAL_family",
+                     "STRATEGIC_family", "X2_seam"),
         "owners": {"TACTICAL_family": "taniteval/tools/eval_four_families.py",
                    "LATERAL_family": "taniteval/tools/eval_four_families.py",
+                   "LONGITUDINAL_family":
+                       "taniteval/tools/eval_four_families.py",
+                   "STRATEGIC_family": "taniteval/tools/eval_four_families.py",
                    "sel_gap": "tanitad.models.tactical.sel_gap_tac",
                    "P7": "scripts/w7_roll_rerank.py",
                    "X2_seam": "taniteval/ci.py (PAIRED bootstrap only)"},
         "criteria": {
             "sel_gap": "<= 0.5x the fan oracle at T1 tier",
             "TACTICAL_family": "confusion improves on E4.1-derived strata",
+            "four_families_horizons":
+                "every family reported at BOTH 0-2 s AND 0-6 s "
+                "(HIERARCHY_VOCABULARY §4b: 'four families + oracle/selected "
+                "reported at BOTH 0-2 s and 0-6 s'). A family that cannot be "
+                "computed is declared per family with the reason and the n — "
+                "never silently dropped (PI 2026-08-02, binding)",
             "P7_rho": ">= 0.3 with CI excluding 0, per stratum"},
     },
     "S-S": {
@@ -407,10 +425,21 @@ STAGE_GATE_SPEC: dict[str, dict] = {
         # gate that omits them must read INCONCLUSIVE, never PASS.
         "required": ("STRATEGIC_family",
                      "sel_gap_revalidated", "TACTICAL_revalidated"),
-        "reported": ("S1_ade_8_30s", "X2_seam"),
+        # ⚠️ `goal_provenance` is the BINDING diagram's second S-S gate element
+        # ("gate: STRATEGIC family + goal-provenance audit"). Reported-not-
+        # required for now: S2 (g_str supervision) is deliberately not wired
+        # (V6_TRAINER_DESIGN §"S2 is not wired here and must not be faked"), so
+        # pre-S2 the audit has nothing to audit and a required probe would be
+        # vacuous. The moment S2 lands, promote it to `required` — the audited
+        # gap and the promotion trigger are recorded in DIAGRAM_CONFORMANCE.md.
+        "reported": ("S1_ade_8_30s", "X2_seam", "goal_provenance"),
         "owners": {"STRATEGIC_family": "taniteval/tools/eval_four_families.py",
                    "S1_ade_8_30s": "taniteval/tools/t1_eval.py",
                    "X2_seam": "taniteval/ci.py (PAIRED bootstrap only)",
+                   "goal_provenance":
+                       "config-audit over the S-S run config + S2 label "
+                       "artifacts (instrument to build — see "
+                       "DIAGRAM_CONFORMANCE.md, 2026-08-16)",
                    "sel_gap_revalidated": "tanitad.models.tactical.sel_gap_tac "
                                           "(RE-RUN under the post-S-S g_tac)",
                    "TACTICAL_revalidated":
