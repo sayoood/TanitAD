@@ -39,10 +39,41 @@ that would repeat 22× and be 22× more expensive to redo. *(MEASURED counts; sc
   records carry no `situations` key, so `scene_vs_situations` is structurally dead — 0/201 here.
   If the strategic/tactical supervision wants that check, the detectors must be wired into the
   bridge stage, not the fuser. *(MEASURED: 0 of 201 fired, and the reason is in the record.)*
-- **`goal_evidence: grounded` rests on SAM3's `traffic sign` class**, which G1 flagged as
-  unreliable (~⅔ of best sign crops contained no sign). 15/201 here. At 4,472 this becomes a
-  meaningful supervision channel built on a suspect detector — **the threshold study should land
-  before the big build, not after.**
+- ⛔ **`goal_evidence: grounded` NO LONGER EXISTS — RETIRED 2026-08-16, and so is `provisional`.**
+  *(Primary: `stack/scripts/ph1_fuse.py`, `GOAL_EVIDENCE_RETIRED = ("grounded", "provisional")`.)*
+  The verdict is now always `not_computable` with the gap NAMED, and the one measured fact survives
+  under an honest name — **`sign_like_object_present`**, plus the raw `sam3_sign_tracks` count and
+  `evidence_sign_kind` (⚠️ a **VLM self-report**, never corroboration). Emission over **aug120**:
+  `grounded` **15/201 → 0/201**. ⇒ **the 4,472 build has no `grounded` supervision channel to plan
+  around**; it has a per-clip presence flag. *(MEASURED —
+  `…/Architecture & Inference/…/incoming/2026-08-16-evidence-and-flake/` §1.4.)*
+- ⚠️ **AND THE DETECTOR IS NOT "~⅔ GARBAGE" — that figure was a DIFFERENT CORPUS, and this bullet
+  used to quote it as a property of SAM3's `traffic sign` class.** The threshold study asked for
+  above **has now landed** (`…/Data Engineering/…/incoming/2026-08-16-sam3-concept-reliability/`),
+  and it names this paragraph as the misread. Every number below carries its corpus, because the
+  corpus is the whole disagreement:
+
+  | number | value | **corpus** |
+  |---|---|---|
+  | `traffic sign` precision, uniform draw | **0.880** [0.795, 0.958] · n=64 over 33 clips · episode-cluster bootstrap | **`aug120`** (83 records, 538 sign detections) |
+  | same, ❓-counted-wrong (the pessimistic bracket — **both are reported on purpose**) | **0.688** [0.552, 0.800] | **`aug120`** |
+  | G1's own max-area rule, reproduced on this corpus | **0.926** [0.815, 1.000] · n=32 · **ZERO** empty boxes | **`aug120`** |
+  | G1's *"no sign visible at all"* — ~22 of 31 crops (~⅔) | ⛔ **does not transfer, in either direction** | **`w120val`** (600 clips, 4,048 sign detections) |
+
+  ⚠️ **The reconciliation is PARTIAL and the study says so.** G1's two candidate mechanisms were
+  both tested and both REFUTED — the **selection** (max-area concentrates FPs: refuted; sign FPs
+  here are *smaller*, median 35.6 px² vs 74.8 px² for true ones) and the **rendering** (G1's tight
+  4× LANCZOS crop is harder to read: refuted, and on one detection strictly better). What remains
+  uncontrolled is the **corpus**, so the honest statement is *"not on aug120"*, **not** *"G1 was
+  wrong"*. **Open work item, 0 GPU, ~2 h: run the same adjudication on the `w120val` sign leg**
+  before any val-side sign label is trusted.
+- ⚠️ **The operating point that follows** (same study, §5/§6): `traffic sign` is 🟨 **PRESENCE ONLY
+  at the 0.5 default** — adequate for a presence flag, and ⛔ **never admissible as evidence of a
+  sign's KIND or TEXT** (the G1 text gate is CLOSED at 0/31, `Project Steering/G1_RESULT.md`).
+  Raising to **≥0.70** lifts sample precision to 0.967 but retains only **274/538 (50.9 %)** of the
+  class, so it is worth paying **only if the 4,472 build makes signs PER-DETECTION supervision**
+  rather than a presence flag. Decide which, in writing, before the build — the threshold is a
+  consumer decision, not a corpus property.
 - **No metric 3D** (strategy doc §7) — track dynamics stay ordinal. Unchanged.
 
 ## 4. Cost shape to expect (ESTIMATED, from this pass's measured rates)

@@ -119,8 +119,37 @@ loss"*. Two independent reasons, either sufficient:
 
 ### 1.3 Which stage trains it — ⛔ none of them, and that is deliberate
 
-`interp` appears in **no `STAGE_GROUPS` entry** except S-J's (which is `MODULE_GROUPS` by
-definition). The v6 training batch carries `frames/actions/poses/future_*` and **no agent
+⛔ **CORRECTED 2026-08-17 — the sentence that stood here was FALSE, and it is what made a real
+defect look deliberate.** It read: *"`interp` appears in no `STAGE_GROUPS` entry except S-J's
+(which is `MODULE_GROUPS` by definition)"* — treating S-J's inclusion of `interp` as a harmless
+consequence of an alias. It was not harmless. MEASURED at production geometry with
+`agent_slots=True`: `apply_stage_freeze(·, "S-J")` marked **all 62 tensors / 3,207,445 parameters
+trainable while the S-J loss reached exactly 0** — i.e. precisely the lie this very paragraph goes
+on to say the design avoids, sitting inside the paragraph disclaiming it.
+
+⚠️ **"By definition" was a RESTATEMENT OF THE ALIAS, NOT A REASON**, and two tests had hardened it
+into an assertion (`test_v6_staged.py` pinned `set(STAGE_GROUPS["S-J"]) == set(MODULE_GROUPS)`;
+`test_v6_agent_slots.py` asserted `requires_grad is True` at S-J and excused it as *"the sole
+exception BY DEFINITION"*). A defect defended by its own tests is the hardest kind to see.
+
+⚠️ **HOW IT ARRIVED — a ONE-WAY INVISIBLE COUPLING, worth generalising.** `STAGE_GROUPS["S-J"] is
+MODULE_GROUPS` (verified, identical `id`), and because `MODULE_GROUPS` is a **tuple** no edit could
+ever *mutate* one through the other — so the alias looked safe. But commit `06b8782` appended
+`interp` to `MODULE_GROUPS` and thereby **changed what S-J trains without touching the line that
+declares S-J**. ⇒ *An alias makes one edit silently rewrite a declaration somewhere else; tuple
+immutability protects against mutation, not against meaning.*
+
+⇒ **NOW TRUE, and derived rather than asserted:** `LADDER_UNTRAINED_GROUPS = {"interp"}` and
+`"S-J": tuple(g for g in MODULE_GROUPS if g not in LADDER_UNTRAINED_GROUPS)`, with
+`stage_trainable_groups()` raising on violation. Derived, so a future group flows into S-J
+automatically — hand-spelling the seven names would have fixed today's bug and installed
+tomorrow's. MEASURED after the fix: `interp` trainable = **0 in all four stages**, every other
+group bit-identical, default build unchanged at 87,893,449 params / 405 keys.
+
+The reasoning below stands and is why the fix takes the shape it does:
+
+`interp` must appear in **no stage's trainable set**. The v6 training batch carries
+`frames/actions/poses/future_*` and **no agent
 labels** — the episode contract has no agent tracks (`tanitad/data/_contract.py`; `grep obstacle
 tanitad/data/physicalai.py` → zero). Listing it as trainable in a stage whose loss never reaches
 it would report a module as "training" while it receives exactly zero gradient — the same lie

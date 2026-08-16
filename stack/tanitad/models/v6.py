@@ -115,8 +115,8 @@ __all__ = [
     # horizon (§4b)
     "PLAN_STEPS", "DT", "HORIZON_S", "OP_BAND_S", "TAC_BAND_S",
     # staging (X5)
-    "STAGES", "STAGE_GROUPS", "MODULE_GROUPS", "stage_trainable_groups",
-    "apply_stage_freeze",
+    "STAGES", "STAGE_GROUPS", "MODULE_GROUPS", "LADDER_UNTRAINED_GROUPS",
+    "stage_trainable_groups", "apply_stage_freeze",
     # measure primitives (O2/O3/O4/O6)
     "time_to_reach", "time_to_reach_weights", "half_weight_distance_m",
     "readout_grid_ranges", "sample_cell_block_mask", "near_field_band_mask",
@@ -2713,9 +2713,13 @@ class V6Config:
     #: spatial memory computed from ``frames``. The decoder's ``forward`` takes
     #: one tensor and has no keyword through which ego, actions, goals or a
     #: situation channel could arrive — the signature IS the audit.
-    #: ⚠️ It trains in NO ladder stage (see ``STAGE_GROUPS``' note): its
-    #: targets are agent cuboids and the v6 batch has none. S-T may INTRODUCE
-    #: it (``STAGE_MAY_INTRODUCE``) so a checkpoint can CARRY it.
+    #: ⚠️ It trains in NO ladder stage — its group is in
+    #: :data:`LADDER_UNTRAINED_GROUPS`, so no ``STAGE_GROUPS`` entry (S-J
+    #: included) may declare it and :func:`stage_trainable_groups` RAISES if one
+    #: does: its targets are agent cuboids and the v6 batch has none. S-T may
+    #: INTRODUCE it (``STAGE_MAY_INTRODUCE``) so a checkpoint can CARRY it —
+    #: carrying is not training, and until 2026-08-16 the freeze map said
+    #: otherwise whenever ``agent_slots=True``.
     agent_slots: bool = False
     #: number of slot queries. ⚠️ A DECLARED PLACEHOLDER, not a fitted value —
     #: the right number is the join's measured per-frame agent-count
@@ -3064,8 +3068,41 @@ MODULE_GROUPS: tuple[str, ...] = (
     # ⚠️ EMPTY at the default build: `V6Config.agent_slots` is False, so this
     # group holds ZERO parameters and every per-group report gains a `0` entry
     # and nothing else.
+    # ⛔ AND IT IS IN `LADDER_UNTRAINED_GROUPS` (below), so it is in NO stage's
+    # trainable set — being a MODULE_GROUPS member means "apply_stage_freeze
+    # partitions over it", NEVER "some stage trains it". Those two were
+    # conflated by the `"S-J": MODULE_GROUPS` alias and it was a real defect;
+    # the note on STAGE_GROUPS carries the measurement.
     "interp",
 )
+
+#: ⛔ THE GROUPS NO LADDER STAGE MAY TRAIN — as DATA, because this is an
+#: invariant and the previous version of it was a comment.
+#:
+#: The v6 ladder has no loss that reaches these groups. Declaring one trainable
+#: makes the freeze audit report a module as "training" while it receives
+#: exactly zero gradient — the same lie ``V6LossWeights.for_stage`` zeroes its
+#: planner terms to avoid (it drops ``w_anchor`` in S-S and ``w_s2_goal`` in
+#: S-T for precisely this reason: a term advertised in the launch line that
+#: trains nothing).
+#:
+#: ``interp`` — the interpretation heads (F-18's agent-slot decoder) — is the
+#: sole member. Its targets are agent cuboids and the v6 training batch carries
+#: frames/actions/poses/future_* only (``tanitad/data/_contract.py``; ``grep
+#: obstacle tanitad/data/physicalai.py`` -> zero), so no stage CAN train it.
+#: It is trained by a FROZEN-TRUNK PROBE in the P8 idiom
+#: (``scripts/train_p8_occupancy.py``), which is also what the §6 status table
+#: means by "interpretation heads on frozen latents"; it lives in the
+#: state_dict so the checkpoint ships the interpretation head with the model,
+#: and ``STAGE_MAY_INTRODUCE["S-T"]`` is what lets a later stage carry it in
+#: over an S-W checkpoint that never had it. **Carrying a module is not
+#: training it, and the freeze map must say so.**
+#:
+#: ⚠️ TO GIVE A LADDER STAGE A LOSS THAT REACHES ONE OF THESE, REMOVE THE NAME
+#: HERE IN THE SAME EDIT — :func:`stage_trainable_groups` RAISES if a stage
+#: declares a member, so the loss and the freeze map cannot drift apart
+#: silently in either direction.
+LADDER_UNTRAINED_GROUPS: frozenset[str] = frozenset({"interp"})
 
 #: What each stage TRAINS. Everything else is frozen.
 #:   S-W  world stage: WM only, λ_plan ≡ 0, planner ABSENT.
@@ -3074,33 +3111,60 @@ MODULE_GROUPS: tuple[str, ...] = (
 #:   S-S  strategic layer on the FROZEN S-T stack.
 #:   S-J  optional brief joint polish — isolation still ON.
 #:
-#: ⛔ ``interp`` APPEARS IN NO STAGE BUT S-J (which is ``MODULE_GROUPS`` by
-#: definition), AND THAT IS DELIBERATE. The v6 ladder cannot train the
-#: agent-slot decoder: its targets are agent cuboids, and the v6 training batch
-#: carries frames/actions/poses/future_* only — the episode contract has no
-#: agent tracks (``tanitad/data/_contract.py``; ``grep obstacle
-#: tanitad/data/physicalai.py`` -> zero). Listing ``interp`` as trainable in a
-#: stage whose loss never reaches it would make the freeze audit report a
-#: module as "training" while it receives exactly zero gradient — the same lie
-#: ``V6LossWeights.for_stage`` zeroes its planner terms to avoid. The head is
-#: trained by a FROZEN-TRUNK PROBE in the P8 idiom
-#: (``scripts/train_p8_occupancy.py``), which is also what the §6 status table
-#: means by "interpretation heads on frozen latents"; it lives in the
-#: state_dict so the checkpoint ships the interpretation head with the model,
-#: and ``STAGE_MAY_INTRODUCE["S-T"]`` is what lets a later stage carry it in
-#: over an S-W checkpoint that never had it.
+#: ⛔ S-J IS ``MODULE_GROUPS`` MINUS :data:`LADDER_UNTRAINED_GROUPS`, DERIVED
+#: RATHER THAN SPELLED OUT. Both halves are load-bearing and each answers a
+#: real failure:
+#:
+#:   * **derived** — a NEW group appended to ``MODULE_GROUPS`` is joint-polished
+#:     automatically, instead of being silently absent from the one stage whose
+#:     job is to train everything. A hand-written seven-name tuple would rot the
+#:     other way.
+#:   * **minus** — the bare alias ``"S-J": MODULE_GROUPS`` was a DEFECT,
+#:     MEASURED 2026-08-16 (``…/2026-08-16-evidence-and-flake/``): with
+#:     ``agent_slots=True`` it marked ``interp``'s **62 tensors / 3,207,445
+#:     parameters** (production geometry) TRAINABLE in S-J while the S-J loss
+#:     reached **exactly 0** of them. Latent only because the flag defaults
+#:     False and the group is then empty — and the alias is precisely HOW the
+#:     defect arrived: appending ``interp`` to ``MODULE_GROUPS`` (`06b8782`)
+#:     changed what S-J trains without touching the line that declares S-J.
+#:     ⚠️ ``STAGE_GROUPS["S-J"] is MODULE_GROUPS`` was an IDENTITY ALIAS
+#:     (same ``id``, MEASURED). Tuples are immutable so nothing could mutate
+#:     across it, but the coupling was total in one direction, which is worse
+#:     than a mutation bug because it is invisible at the edit site.
 STAGE_GROUPS: dict[str, tuple[str, ...]] = {
     "S-W": ("encoder", "readout", "predictor_op", "aux"),
     "S-T": ("layer_tac", "planner"),
     "S-S": ("layer_str",),
-    "S-J": MODULE_GROUPS,
+    "S-J": tuple(g for g in MODULE_GROUPS
+                 if g not in LADDER_UNTRAINED_GROUPS),
 }
 
 
 def stage_trainable_groups(stage: str) -> tuple[str, ...]:
+    """The groups ``stage`` trains — the ONE funnel every consumer reads.
+
+    ⛔ RAISES if a stage declares a :data:`LADDER_UNTRAINED_GROUPS` member. The
+    guard lives here rather than in :func:`apply_stage_freeze` because the
+    declaration is not private plumbing: ``train_v6_staged.py`` writes it into
+    the run's ``config.json`` as ``trainable_groups``, so a stale entry does not
+    merely mislead the freeze audit — it SHIPS in the artifact the run is later
+    quoted from. Guarding the funnel covers every consumer of the declaration,
+    not only the one that flips ``requires_grad``.
+    """
     if stage not in STAGE_GROUPS:
         raise ValueError(f"unknown stage {stage!r}; expected one of {STAGES}")
-    return STAGE_GROUPS[stage]
+    groups = STAGE_GROUPS[stage]
+    overstated = tuple(g for g in groups if g in LADDER_UNTRAINED_GROUPS)
+    if overstated:
+        raise RuntimeError(
+            f"stage {stage!r} declares {list(overstated)} trainable, but no "
+            f"ladder loss reaches those groups (LADDER_UNTRAINED_GROUPS). The "
+            f"freeze audit would report them as TRAINING while they receive "
+            f"exactly zero gradient, and `trainable_groups` in the run's "
+            f"config.json would ship that overstatement. If a stage has GAINED "
+            f"a loss that reaches one, drop it from LADDER_UNTRAINED_GROUPS in "
+            f"the same edit.")
+    return groups
 
 
 def apply_stage_freeze(stack: "V6Stack", stage: str) -> dict:

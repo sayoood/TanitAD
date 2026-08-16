@@ -76,8 +76,8 @@ from tanitad.models.agent_slots import (  # noqa: E402
     SLOT_WIDTH, AgentSlotDecoder, hungarian, match_slots, slot_set_loss,
     targets_from_join, track_rates_from_join)
 from tanitad.models.v6 import (  # noqa: E402
-    ISOLATION_MATRIX, MODULE_GROUPS, STAGE_GROUPS, IsolationViolation,
-    V6Config, V6Stack, apply_stage_freeze)
+    ISOLATION_MATRIX, LADDER_UNTRAINED_GROUPS, MODULE_GROUPS, STAGE_GROUPS,
+    STAGES, IsolationViolation, V6Config, V6Stack, apply_stage_freeze)
 from train_v6_staged import STAGE_MAY_INTRODUCE, load_stage_init  # noqa: E402
 
 #: MEASURED before this turn's edits (carried from `test_v6_gstr_port.py`'s
@@ -333,17 +333,34 @@ def test_no_ladder_stage_TRAINS_it_and_that_is_deliberate():
     """⛔ The v6 batch carries frames/actions/poses/future_* and NO agent
     labels (the episode contract), so a stage that listed `interp` as trainable
     would report a module as training while it receives exactly zero gradient —
-    the lie ``V6LossWeights.for_stage`` zeroes its planner terms to avoid. S-J
-    is the sole exception BY DEFINITION (it is ``MODULE_GROUPS``)."""
-    assert "interp" not in STAGE_GROUPS["S-W"]
-    assert "interp" not in STAGE_GROUPS["S-T"]
-    assert "interp" not in STAGE_GROUPS["S-S"]
-    assert "interp" in STAGE_GROUPS["S-J"]
+    the lie ``V6LossWeights.for_stage`` zeroes its planner terms to avoid.
+
+    ⛔ **CORRECTED 2026-08-16 — S-J WAS NOT AN EXCEPTION, IT WAS THE DEFECT.**
+    This test used to assert ``"interp" in STAGE_GROUPS["S-J"]`` and
+    ``requires_grad is True`` at S-J, excused as "the sole exception BY
+    DEFINITION (it is ``MODULE_GROUPS``)". That excuse only held while the group
+    was EMPTY. With ``agent_slots=True`` — the build this very file exercises —
+    ``apply_stage_freeze(s, "S-J")`` unfroze **62 tensors / 3,207,445 parameters
+    at the production geometry** that the S-J loss reaches **exactly 0** of
+    (MEASURED, ``…/2026-08-16-evidence-and-flake/``). "By definition" was a
+    restatement of the alias, not a reason. v6.py now declares
+    ``LADDER_UNTRAINED_GROUPS`` and derives S-J as ``MODULE_GROUPS`` minus it,
+    so the answer is **False at all four stages** — which is what the file title
+    ("no ladder stage TRAINS it") always claimed.
+    """
+    for stage in STAGES:
+        assert "interp" not in STAGE_GROUPS[stage], stage
+    assert "interp" in LADDER_UNTRAINED_GROUPS
+    assert "interp" in MODULE_GROUPS, \
+        "it must still be a GROUP — apply_stage_freeze partitions over it"
     s = _build(_small(**_SLOT_SMALL))
-    for stage, trains in (("S-W", False), ("S-T", False),
-                          ("S-S", False), ("S-J", True)):
-        apply_stage_freeze(s, stage)
-        assert s.agent_slots.head.weight.requires_grad is trains, stage
+    for stage in STAGES:
+        rep = apply_stage_freeze(s, stage)
+        assert s.agent_slots.head.weight.requires_grad is False, stage
+        assert rep["per_group"]["interp"]["trainable"] == 0, stage
+        # non-vacuity: the head IS built here, so "0 trainable" is a statement
+        # about real parameters and not about an empty group.
+        assert rep["per_group"]["interp"]["frozen"] == s.agent_slots.n_params
 
 
 def test_S_T_may_INTRODUCE_it_over_an_S_W_checkpoint(tmp_path):

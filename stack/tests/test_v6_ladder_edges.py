@@ -47,8 +47,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "ops"))
 
 from tanitad.config import EncoderConfig, PredictorConfig, ReadoutConfig  # noqa: E402
 from tanitad.models.v6 import (  # noqa: E402
-    MODULE_GROUPS, STAGES, V6Config, V6Stack, apply_stage_freeze,
-    stage_trainable_groups)
+    LADDER_UNTRAINED_GROUPS, MODULE_GROUPS, STAGES, V6Config, V6Stack,
+    apply_stage_freeze, stage_trainable_groups)
 from train_v6_staged import (  # noqa: E402
     RESUME_CONTRACT, STAGE_MAY_INTRODUCE, ResumeLineageError, V6LossWeights,
     _save_ckpt, assert_resume_lineage, load_resume, load_stage_init,
@@ -509,11 +509,14 @@ def test_after_init_from_exactly_the_intended_groups_train(st_ckpt,
     assert reachable_groups >= (built - want), \
         "the control does not cover every group this stage freezes"
     # ⛔ intersect with BUILT: a stage may DECLARE a group this config does not
-    # construct (S-J declares `interp`, empty unless agent_slots=True). The old
-    # `for g in want` indexed the census directly and raised a bare KeyError on
-    # ~10.75 % of processes — see `_grad_census`. Assert the intersection is
-    # non-empty FIRST, so "the stage declares only unbuilt groups" reports
-    # itself instead of hiding inside a vacuously-false `any`.
+    # construct. The old `for g in want` indexed the census directly and raised
+    # a bare KeyError on ~10.75 % of processes — see `_grad_census`. Assert the
+    # intersection is non-empty FIRST, so "the stage declares only unbuilt
+    # groups" reports itself instead of hiding inside a vacuously-false `any`.
+    # ⚠️ KEPT after the v6.py fix removed `interp` from S-J: the intersection is
+    # the STRUCTURALLY correct expression regardless of which groups a config
+    # happens to build, and reverting it would re-arm the hash-order KeyError
+    # the day any other group is declared-but-unbuilt.
     trainable_here = want & built
     assert trainable_here, (
         f"stage {stage} declares trainable groups {sorted(want)} and NONE of "
@@ -553,36 +556,109 @@ def test_the_grad_census_is_TOTAL_over_the_group_partition():
         assert all(isinstance(census[g]["grad"], int) for g in want)
 
 
-@pytest.mark.xfail(strict=True, reason=(
-    "⛔ MEASURED DEFECT, NOT A TEST BUG (2026-08-16). `STAGE_GROUPS['S-J'] is "
-    "MODULE_GROUPS`, which includes `interp`. At the DEFAULT build that is "
-    "harmless because `interp` owns 0 parameters — but with agent_slots=True "
-    "it owns 62, `apply_stage_freeze(stack, 'S-J')` marks all 62 TRAINABLE, "
-    "and the S-J loss reaches EXACTLY 0 of them. That is the lie v6.py's own "
-    "STAGE_GROUPS docstring says it avoids ('would make the freeze audit "
-    "report a module as training while it receives exactly zero gradient'). "
-    "Latent today only because agent_slots defaults False, and the agent-slot "
-    "decoder is an ACTIVE workstream. FIX IN v6.py (not owned by this file): "
-    "give S-J an explicit tuple without `interp`, or a loss that reaches it. "
-    "strict=True — when the model is fixed this XPASSes, which FAILS, and the "
-    "marker must then be deleted."))
 def test_S_J_must_not_declare_trainable_a_group_its_loss_never_reaches():
+    """⛔ WAS `xfail(strict=True)` — a MEASURED MODEL DEFECT, FIXED IN `v6.py`
+    2026-08-16. The marker is gone; the pin is not, because a pin that vanishes
+    with the bug proves nothing about the bug staying gone.
+
+    **The defect.** ``STAGE_GROUPS["S-J"] is MODULE_GROUPS`` was an IDENTITY
+    ALIAS (same ``id``, MEASURED), so S-J's trainable set contained ``interp``.
+    At the DEFAULT build that is invisible — ``V6Config.agent_slots`` is False
+    and the group owns 0 parameters. With ``agent_slots=True`` it owns **62
+    tensors / 3,207,445 parameters** at the production geometry, and
+    ``apply_stage_freeze(stack, "S-J")`` marked **every one of them TRAINABLE
+    while the S-J loss reached EXACTLY 0**. That is verbatim the lie v6.py's own
+    STAGE_GROUPS docstring said it avoids (*"would make the freeze audit report
+    a module as training while it receives exactly zero gradient"*), and it is
+    the same class as `w_anchor`/`w_s2_goal` — a term advertised in the launch
+    line that trains nothing.
+
+    ⚠️ **The alias is also HOW the defect arrived**: appending ``interp`` to
+    ``MODULE_GROUPS`` (`06b8782`) changed what S-J trains without touching the
+    line that declares S-J.
+
+    **The fix** (v6.py): ``LADDER_UNTRAINED_GROUPS`` as data, S-J DERIVED as
+    ``MODULE_GROUPS`` minus it, and ``stage_trainable_groups`` RAISES if any
+    stage declares a member — so the loss and the freeze map cannot drift apart
+    in either direction.
+
+    ⚠️ This test is only meaningful because the head is really BUILT here; the
+    "precondition gone" assertion below is what stops it decaying into a
+    vacuous pass the day ``agent_slots=True`` stops constructing anything.
+    """
     torch.manual_seed(64)
     s = V6Stack(tiny_cfg(agent_slots=True))
     apply_stage_freeze(s, "S-J")
     want = set(stage_trainable_groups("S-J"))
-    assert "interp" in want                       # the precondition, not the claim
+    # ⭐ THE CLAIM (this line read `assert "interp" in want` while the defect
+    # stood — it was the defect's PRECONDITION, and it is now its refutation).
+    assert "interp" not in want, \
+        "S-J declares `interp` trainable again — no ladder loss reaches it"
+    assert not s.agent_slots.head.weight.requires_grad, \
+        "the interp head is unfrozen at S-J — the freeze audit overstates"
+
     v6_loss_step(s, _stage_batch(s), stage="S-J", weights=V6LossWeights(),
                  o1_k=10, o5_k=10)["loss"].backward()
     census = _grad_census(s)
+    # non-vacuity: agent_slots=True must actually have BUILT the head, or the
+    # assertion above is a statement about an empty set.
     assert census["interp"]["grad"] + census["interp"]["none"] > 0, \
         "agent_slots=True did not build the interp head — precondition gone"
+    assert census["interp"]["grad"] == 0, \
+        "the S-J loss reached `interp`; if that is now intended, drop it from " \
+        "LADDER_UNTRAINED_GROUPS instead of leaving the two out of step"
     dead = [g for g in want
             if census[g]["grad"] == 0 and census[g]["none"] > 0]
     assert not dead, (
         f"stage S-J marks these groups trainable but its loss reaches NONE of "
         f"their parameters: {dead} "
         f"(interp: {census['interp']}) — the freeze audit overstates")
+
+
+@pytest.mark.parametrize("stage", list(STAGES))
+def test_NO_stage_declares_a_group_the_ladder_cannot_train(stage):
+    """The generalisation of the pin above, with the interpretation head ON.
+
+    ⛔ The S-J-only version would pass while a future edit put `interp` into
+    S-T (the stage `STAGE_MAY_INTRODUCE` lets it arrive in) — "absence found at
+    one location is not absence". So this asserts the invariant at EVERY stage,
+    and asserts the two halves separately: the DECLARATION
+    (`stage_trainable_groups`, which ships in the run's config.json) and the
+    EXECUTION (`requires_grad` after `apply_stage_freeze`), because fixing only
+    the second would move the overstatement one layer down rather than remove
+    it.
+    """
+    torch.manual_seed(65)
+    s = V6Stack(tiny_cfg(agent_slots=True))
+    rep = apply_stage_freeze(s, stage)
+
+    assert LADDER_UNTRAINED_GROUPS & set(stage_trainable_groups(stage)) == \
+        set(), f"stage {stage} DECLARES a group no ladder loss reaches"
+    assert LADDER_UNTRAINED_GROUPS & set(rep["trainable_groups"]) == set(), \
+        f"the {stage} freeze AUDIT advertises a group no ladder loss reaches"
+    for g in LADDER_UNTRAINED_GROUPS:
+        assert rep["per_group"][g]["trainable"] == 0, \
+            f"{g} has trainable parameters at {stage}: {rep['per_group'][g]}"
+    # non-vacuity, twice over: the head is built (so `interp` is a real group
+    # here, not an empty one), and the stage still trains SOMETHING.
+    assert rep["per_group"]["interp"]["frozen"] > 0, \
+        "agent_slots=True built no interp parameters — the check is vacuous"
+    assert rep["n_trainable"] > 0, f"stage {stage} trains nothing at all"
+
+
+def test_the_ladder_untrained_invariant_REFUSES_a_bad_STAGE_GROUPS(monkeypatch):
+    """⚠️ NON-VACUITY CONTROL for the guard itself. A guard that cannot fire is
+    the C13 family — an instrument structurally unable to report the answer it
+    is cited for. Re-introduce the exact pre-fix declaration and
+    `stage_trainable_groups` must REFUSE it, naming the mechanism.
+    """
+    import tanitad.models.v6 as v6mod
+    monkeypatch.setitem(v6mod.STAGE_GROUPS, "S-J", v6mod.MODULE_GROUPS)
+    with pytest.raises(RuntimeError, match="zero gradient"):
+        v6mod.stage_trainable_groups("S-J")
+    # ...and the freeze call that produced the overstating audit now cannot run
+    with pytest.raises(RuntimeError, match="LADDER_UNTRAINED_GROUPS"):
+        v6mod.apply_stage_freeze(V6Stack(tiny_cfg()), "S-J")
 
 
 # ============================================================================

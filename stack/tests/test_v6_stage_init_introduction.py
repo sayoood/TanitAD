@@ -72,9 +72,16 @@ def test_only_s_t_may_introduce_and_only_its_declared_modules():
     recorded here rather than rediscovered: an allowance is about KEYS
     ARRIVING, **not** about the stage optimising the module. No ladder stage
     trains `agent_slots.` — the v6 batch carries frames/actions/poses/future_*
-    and no agent labels, so `interp` appears in no `STAGE_GROUPS` entry but
-    S-J's (which is MODULE_GROUPS by definition), and a frozen-trunk probe in
-    the P8 idiom is what optimises it. `fallback.` (0 trainable params) was
+    and no agent labels, so `interp` appears in NO `STAGE_GROUPS` entry AT ALL
+    (it is in `LADDER_UNTRAINED_GROUPS`, and `stage_trainable_groups` raises if
+    a stage declares it), and a frozen-trunk probe in the P8 idiom is what
+    optimises it.
+    ⛔ CORRECTED 2026-08-16: this read "`interp` appears in no `STAGE_GROUPS`
+    entry but S-J's (which is MODULE_GROUPS by definition)". S-J was NOT an
+    exception — it was a DEFECT, and "by definition" was a restatement of the
+    `STAGE_GROUPS["S-J"] is MODULE_GROUPS` alias rather than a reason. With
+    `agent_slots=True` it marked 3,207,445 parameters trainable under a loss
+    that reaches 0 of them. `fallback.` (0 trainable params) was
     already this shape; F-18 makes it the second case, which is when a pattern
     should be written down.
 

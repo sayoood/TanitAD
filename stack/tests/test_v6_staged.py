@@ -37,7 +37,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
 from tanitad.config import EncoderConfig, PredictorConfig, ReadoutConfig  # noqa: E402
 from tanitad.models.v6 import (  # noqa: E402
-    CONSTRAINT_SLOTS, GOAL_ARG_SLOTS, HORIZON_S, MODULE_GROUPS, PARAM_BUDGET,
+    CONSTRAINT_SLOTS, GOAL_ARG_SLOTS, HORIZON_S, LADDER_UNTRAINED_GROUPS,
+    MODULE_GROUPS, PARAM_BUDGET,
     PLAN_STEPS, STAGE_GROUPS, STAGES, STRATEGIC_GOAL_TOKENS,
     TACTICAL_GOAL_TOKENS, GoalVocabulary, InteractionSampler,
     IsolationViolation, V6Config, V6Stack, apply_stage_freeze,
@@ -709,7 +710,16 @@ def test_stage_groups_partition_the_model(stack):
     assert set(STAGES) == set(STAGE_GROUPS)
     for st in STAGES:
         assert set(stage_trainable_groups(st)) <= set(MODULE_GROUPS)
-    assert set(STAGE_GROUPS["S-J"]) == set(MODULE_GROUPS)
+    # ⛔ CORRECTED 2026-08-16: this read `== set(MODULE_GROUPS)` and was pinning
+    # a DEFECT. S-J is MODULE_GROUPS minus LADDER_UNTRAINED_GROUPS — the groups
+    # no ladder loss reaches (`interp`). The old identity held only while that
+    # group was empty; with agent_slots=True it made apply_stage_freeze report
+    # 3,207,445 parameters as TRAINING under a loss that reaches 0 of them.
+    assert set(STAGE_GROUPS["S-J"]) == \
+        set(MODULE_GROUPS) - LADDER_UNTRAINED_GROUPS
+    assert LADDER_UNTRAINED_GROUPS <= set(MODULE_GROUPS)
+    for st in STAGES:                      # the invariant, not just the S-J case
+        assert not (LADDER_UNTRAINED_GROUPS & set(stage_trainable_groups(st)))
     for n, _ in stack.named_parameters():
         assert stack.group_of(n) in MODULE_GROUPS
     with pytest.raises(KeyError, match="belongs to no group"):
