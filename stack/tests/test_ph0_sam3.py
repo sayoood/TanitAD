@@ -241,3 +241,303 @@ def test_cross_check_records_enough_to_audit_a_zero():
     src = inspect.getsource(run_clip_frames)
     for k in ("n_sam3_signs_on_frame", "sam3_frame_idx", "frame_aligned"):
         assert k in src
+
+
+# =========================================================================== #
+# C77 — the dtype fix and the LIVENESS positive control                       #
+# =========================================================================== #
+class _RaisingProc:
+    """A processor in exactly the C77 state: it runs, and raises on every
+    concept. The 115 backfilled clips of 2026-08-16 were made of this."""
+
+    def set_image(self, img):
+        return {}
+
+    def set_text_prompt(self, state, prompt):
+        raise RuntimeError("mat1 and mat2 must have the same dtype, "
+                           "but got BFloat16 and Float")
+
+
+class _LiveProc:
+    """A working processor: `road`/`sky` hit, and the agent concepts are
+    legitimately empty on this frame (an open road)."""
+
+    def set_image(self, img):
+        return {}
+
+    def set_text_prompt(self, state, prompt):
+        import numpy as np
+        if prompt in ("road", "sky"):
+            return {"scores": np.array([0.94]),
+                    "boxes": np.array([[0.0, 0.0, 10.0, 10.0]]),
+                    "masks": None}
+        return {"scores": np.array([]), "boxes": np.array([]), "masks": None}
+
+
+def _frames(n=9, h=8, w=12):
+    import numpy as np
+    return [np.zeros((h, w, 3), dtype=np.uint8) for _ in range(n)]
+
+
+def test_liveness_concepts_are_disjoint_from_the_measured_vocabulary():
+    """⛔ A positive control that is also one of the quantities being measured
+    is circular — it would make the run's own output its own proof. road/sky
+    are deliberately NOT agent slots and never enter `per_concept_hits`."""
+    from ph0_sam3 import AGENT_CONCEPTS, LIVENESS_CONCEPTS
+    assert LIVENESS_CONCEPTS, "the control may not be empty"
+    assert not (set(LIVENESS_CONCEPTS) & set(AGENT_CONCEPTS))
+
+
+def test_liveness_probe_calls_a_dead_engine_dead():
+    """⭐ THE C77 FIX. Every AGENT concept may legitimately be 0, so all-zero
+    agent counts prove nothing. road and sky cannot BOTH be 0 on a
+    forward-facing driving frame ⇒ their zero is an ALARM, and the cause is
+    recorded next to it."""
+    from ph0_sam3 import liveness_probe
+    dead = liveness_probe(_RaisingProc(), object())
+    assert dead["live"] is False
+    assert dead["n_det"] == {"road": 0, "sky": 0}
+    assert "BFloat16" in dead["errors"]["road"]
+
+    live = liveness_probe(_LiveProc(), object())
+    assert live["live"] is True and live["n_det"]["road"] == 1
+    assert "errors" not in live
+
+
+def test_run_clip_frames_banks_the_alarm_a_structural_check_would_miss():
+    """⛔ THE EXACT C77 ARTIFACT: 5-7 frames run, schema valid, clip_id right,
+    `frames` populated — and zero detections. The record must now carry, in
+    its own summary keys, the three quantities that settle it: how many
+    detections, how many ERRORS, and whether the positive control fired."""
+    from ph0_sam3 import run_clip_frames
+    out = run_clip_frames(_RaisingProc(), _frames(), ["car", "pedestrian"],
+                          [], frame_stride=4)
+    assert out["n_frames_run"] == 3               # the container looks fine
+    assert out["n_det_total"] == 0                # ... and it is empty
+    assert out["n_err_total"] == 6                # 3 frames x 2 concepts
+    assert out["err_kinds"] == {"RuntimeError": 6}
+    assert out["liveness"]["live"] is False
+
+
+def test_run_clip_frames_distinguishes_an_empty_scene_from_a_dead_engine():
+    """The other half of the same test: agent concepts all zero, engine FINE.
+    Before the control these two records were indistinguishable — which is
+    precisely how 115 clips of nothing passed review."""
+    from ph0_sam3 import run_clip_frames
+    out = run_clip_frames(_LiveProc(), _frames(), ["car", "pedestrian"], [],
+                          frame_stride=4)
+    assert out["n_det_total"] == 0 and out["n_err_total"] == 0
+    assert out["liveness"]["live"] is True
+    assert out["per_concept_hits"] == {"car": 0, "pedestrian": 0}
+    # the control stays OUT of the measured vocabulary
+    assert "road" not in out["per_concept_hits"]
+
+
+def test_liveness_probe_can_be_turned_off_only_explicitly():
+    from ph0_sam3 import run_clip_frames
+    out = run_clip_frames(_LiveProc(), _frames(), ["car"], [],
+                          frame_stride=4, liveness=False)
+    assert out["liveness"] is None
+
+
+def test_dtype_agreement_patch_targets_vitdet_and_keeps_the_input_dtype():
+    """⛔ THE ROOT CAUSE, pinned. `perflib/fused.py::addmm_act` casts bias,
+    input AND weight to bfloat16; `vitdet.py:74`'s fc2 stays fp32 ⇒
+    `mat1 and mat2 must have the same dtype`. The replacement keeps the fused
+    kernel and drops the casts.
+
+    ⚠️ It must rebind the name in `sam3.model.vitdet`, NOT in
+    `sam3.perflib.fused` — vitdet does `from ... import addmm_act` at import
+    time, so patching the source module is a silent no-op."""
+    import sys
+    import types
+    import torch
+    from ph0_sam3 import install_dtype_agreement
+
+    def vendor(activation, linear, mat1):            # the real one, in spirit
+        return mat1.to(torch.bfloat16)
+
+    saved = {k: sys.modules.get(k)
+             for k in ("sam3", "sam3.model", "sam3.model.vitdet")}
+    try:
+        sam3 = sys.modules.setdefault("sam3", types.ModuleType("sam3"))
+        mdl = sys.modules.setdefault("sam3.model",
+                                     types.ModuleType("sam3.model"))
+        vit = types.ModuleType("sam3.model.vitdet")
+        vit.addmm_act = vendor
+        sys.modules["sam3.model.vitdet"] = vit
+        sam3.model, mdl.vitdet = mdl, vit
+
+        info = install_dtype_agreement()
+        assert info["applied"] is True
+        assert info["target"] == "sam3.model.vitdet.addmm_act"
+        assert vit.addmm_act is not vendor
+        assert getattr(vit.addmm_act, "_tanitad_dtype_safe", False)
+
+        lin = torch.nn.Linear(4, 3)
+        x = torch.randn(2, 5, 4)
+        y = vit.addmm_act(torch.nn.GELU, lin, x)
+        assert y.dtype == torch.float32, "no silent precision downgrade"
+        assert y.shape == (2, 5, 3), "the [..., F] shape must survive"
+        ref = torch.nn.functional.gelu(lin(x), approximate="tanh")
+        assert torch.allclose(y, ref, atol=2e-3)
+
+        # idempotent: a second install must not wrap the wrapper
+        again = install_dtype_agreement()
+        assert again["applied"] is True and "already" in again["reason"]
+        assert vit.addmm_act._vendor is vendor
+    finally:
+        for k, v in saved.items():
+            if v is None:
+                sys.modules.pop(k, None)
+            else:
+                sys.modules[k] = v
+
+
+def test_build_processor_installs_the_fix_before_the_weights_load():
+    """A fix applied after the first forward is no fix. Pinned by source: the
+    install call precedes `build_sam3_image_model` and its provenance is
+    banked into the meta dict every run report quotes."""
+    import inspect
+    from ph0_sam3 import build_processor
+    # the docstring quotes the README call, so compare positions in the BODY
+    body = inspect.getsource(build_processor).split('"""')[-1]
+    assert body.index("install_dtype_agreement()") < body.index(
+        "build_sam3_image_model(")
+    assert '"dtype_fix": dtype_fix' in body
+
+
+# =========================================================================== #
+# encode-once: the 4.4x, and the guarantee that it stays a refactor           #
+# =========================================================================== #
+class _CountingProc:
+    """Counts image encodes and prompt evaluations separately."""
+
+    def __init__(self, raise_on=()):
+        self.n_encode = 0
+        self.n_prompt = 0
+        self.raise_on = set(raise_on)
+
+    def set_image(self, img):
+        self.n_encode += 1
+        if "__image__" in self.raise_on:
+            raise RuntimeError("encode blew up")
+        return {"enc": self.n_encode}
+
+    def set_text_prompt(self, state, prompt):
+        import numpy as np
+        self.n_prompt += 1
+        assert "enc" in state, "the prompt must be scored against a state"
+        if prompt in self.raise_on:
+            raise RuntimeError("mat1 and mat2 must have the same dtype")
+        return {"scores": np.array([0.9]),
+                "boxes": np.array([[1.0, 2.0, 3.0, 4.0]]), "masks": None}
+
+
+def test_detect_many_encodes_the_frame_once_not_once_per_concept():
+    """⛔ THE 4.4x. `run_clip_frames` used to call `detect` per concept, and
+    `detect` encodes; a 7-concept vocabulary therefore ran the ViT trunk SEVEN
+    times on the identical frame. MEASURED banked `wall_s` 97-98 s for a
+    6-frame clip; one encode per frame makes the same clip ~22 s."""
+    from ph0_sam3 import detect_many
+    p = _CountingProc()
+    dets = detect_many(p, object(), ["car", "bus", "pedestrian"])
+    assert p.n_encode == 1 and p.n_prompt == 3
+    assert [d["concept"] for d in dets] == ["car", "bus", "pedestrian"]
+
+
+def test_run_clip_frames_encodes_once_per_frame():
+    from ph0_sam3 import run_clip_frames
+    p = _CountingProc()
+    out = run_clip_frames(p, _frames(n=9), ["car", "bus", "pedestrian"], [],
+                          frame_stride=4, liveness=False)
+    assert out["n_frames_run"] == 3
+    assert p.n_encode == 3, "one encode per RUN FRAME, not per concept"
+    assert p.n_prompt == 9
+
+
+def test_a_failed_encode_is_recorded_once_per_concept():
+    """⚠️ The C77 census must stay complete whichever half broke: if the shared
+    encode dies, every concept on that frame still gets its own error row —
+    otherwise one frame's crash would look like one crash instead of seven."""
+    from ph0_sam3 import detect_many
+    p = _CountingProc(raise_on=("__image__",))
+    dets = detect_many(p, object(), ["car", "bus"])
+    assert len(dets) == 2
+    assert all("error" in d for d in dets)
+    assert {d["concept"] for d in dets} == {"car", "bus"}
+
+
+def test_one_bad_concept_does_not_lose_the_others():
+    from ph0_sam3 import detect_many
+    p = _CountingProc(raise_on=("bus",))
+    dets = detect_many(p, object(), ["car", "bus", "pedestrian"])
+    assert p.n_encode == 1
+    ok = [d for d in dets if "score" in d]
+    bad = [d for d in dets if "error" in d]
+    assert [d["concept"] for d in ok] == ["car", "pedestrian"]
+    assert [d["concept"] for d in bad] == ["bus"]
+
+
+def test_detect_and_detect_many_agree_on_the_same_state():
+    """`detect_many` must be a REFACTOR, not a new scoring path: one concept
+    through either entry point yields the identical record."""
+    from ph0_sam3 import detect, detect_many
+    a = detect(_CountingProc(), object(), "car")
+    b = detect_many(_CountingProc(), object(), ["car"])
+    assert a == b
+
+
+def test_live_is_ANY_control_not_ALL_because_sky_can_be_occluded():
+    """⛔ CORRECTED BY THE DATA, 2026-08-16. The first version required EVERY
+    control concept to fire; clip `24b6948f` returned `road 2 · sky 0` under an
+    underpass and was flagged dead while the engine was plainly working (22
+    detections on that clip). The control's question is *"is the engine
+    producing at all?"* — one control detection answers it. Requiring all of
+    them re-imports the scene-dependence the control exists to escape."""
+    from ph0_sam3 import liveness_probe
+
+    class _SkyOccluded:
+        def set_image(self, img):
+            return {}
+
+        def set_text_prompt(self, state, prompt):
+            import numpy as np
+            if prompt == "road":
+                return {"scores": np.array([0.9, 0.8]),
+                        "boxes": np.array([[0, 0, 1, 1], [1, 1, 2, 2]]),
+                        "masks": None}
+            return {"scores": np.array([]), "boxes": np.array([]),
+                    "masks": None}
+
+    r = liveness_probe(_SkyOccluded(), object())
+    assert r["n_det"] == {"road": 2, "sky": 0}
+    assert r["live"] is True, "an occluded sky is not a dead engine"
+    assert r["all_fired"] is False, "the stricter scene reading stays available"
+
+
+def test_a_dead_engine_is_still_dead_under_the_any_rule():
+    from ph0_sam3 import liveness_probe
+    r = liveness_probe(_RaisingProc(), object())
+    assert r["live"] is False and r["all_fired"] is False
+
+
+def test_aug120_pipeline_reads_the_census_not_the_return_code():
+    """⛔ C77's first half: `SAM3_RC=0` was read as full coverage. The second
+    half is worse — a run that raised on every concept of every frame ALSO
+    returns 0-shaped success with well-formed records. The batch driver must
+    print the census and say so when the liveness control did not fire.
+
+    Source-level by necessity: `aug120_pipeline.py` runs its batch loop at
+    import time, so it cannot be imported in a test."""
+    import os
+    p = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(
+        __file__))), "scripts", "aug120_pipeline.py")
+    src = open(p, encoding="utf-8").read()
+    assert "SAM3_CENSUS" in src and "SAM3_CENSUS_FAIL" in src
+    assert "SAM3_CENSUS_MISSING" in src, (
+        "a pre-census sam3.json must be called out, not silently accepted")
+    # the census must be read BEFORE the folder is pushed as coverage
+    assert src.index("SAM3_CENSUS") < src.index("upload_folder")
+    # and --n must still be explicit (the original 115-clip gap)
+    assert '"--n", str(len(batch))' in src

@@ -3970,3 +3970,139 @@ on video"* — a renderer that draws nothing is itself the failing test.
 re-run "filled the hole with the coverage the stage should have produced" — a satisfying inversion of
 the original `--n`-defaults-to-4 defect. It shows only how many frames were **ATTEMPTED**.
 **Attempts are not coverage**, and a number that flatters the story deserves more scrutiny, not less.
+
+---
+
+## 2026-08-16 — the SAM3 backfill's DELIVERABLE MANIFEST — 4 of 6 rows point at nothing
+
+*(Next free number re-grepped immediately before appending: C77 was the highest.)*
+
+Landing the C77 fix, I went to read the retracted run's own evidence and **four of its six
+manifest rows name files that do not exist** —
+`…/2026-08-16-sam3-backfill-run/raw/{exec_run1.log, SAM3_BACKFILL_115_output.ipynb, hf_count.py,
+bootstrap.py}`. MEASURED: `raw/` is an EMPTY directory (`ls -la` → `total 0`), and
+`git ls-files <pkg>` returns **exactly one path**, the report itself. The commit that added the
+package (`ee7795c`) staged the `.md` and nothing else.
+
+⇒ **The exec log that would have shown the dtype traceback in real time, the executed notebook,
+and the far-side verifier are all gone** — the C77 root cause had to be re-derived from scratch on a
+fresh T4 rather than read off the banked log.
+
+⚠️ **The manifest is the artifact whose whole job is to make stranding visible**
+(`AGENT_OPERATING_STANDARD.md` rule 2, *"every artifact and where it lives"*). Here it did the
+opposite: it **certified** four locations nobody looked at. A row asserting a path is a CLAIM, and
+`git ls-files <path>` is a one-command falsifier that was never run.
+
+| # | class | recognition signal |
+|---|---|---|
+| **C78** | **A manifest row asserted, never resolved** | any "artifact → where it lives" table published without `git ls-files` (or an equivalent existence probe) run against **every** row. Signal: the row's path was *typed from intent* — the file the agent meant to save — rather than *read back from the index* |
+
+⇒ **RULE: a deliverable manifest is verified by resolving every row before the report is filed, and
+the verification command is stated in the report.** `git add` exit codes are already inadmissible
+here (CLAUDE.md's silent-no-op trap); an unresolved manifest row is the same failure one level up.
+
+⭐ **THIS IS C77's OWN SHAPE, ONE LAYER OUT.** C77 = an artifact that passes every *structural*
+check while its payload is empty. C78 = a *manifest* that passes every *editorial* check while its
+referents are empty. Both are documents that describe containers and are believed about contents.
+The same sentence fixes both: **resolve the thing the row is about, not the row.**
+
+
+---
+
+## 2026-08-16 — "encode-once changed the detections", then "SAM3 is not reproducible across VMs" — BOTH RETRACTED. I enumerated two of three variables
+
+*(Next free number re-grepped immediately before appending: C78 was the highest.)*
+
+Fixing C77 I found the SAM3 engine encoding each frame **once per concept** — 44 ViT-trunk passes
+per clip where 7 were needed (banked `wall_s` 97–98 s for a 6-frame clip). I made it one encode per
+frame, then checked the re-run against the record the previous VM had banked: **60 vs 64**
+detections, `pedestrian` 4→7, `traffic light` **0→2**.
+
+**Wrong reading #1 — "the optimisation changed the science."** I was one edit from reverting a
+correct fix. Refuted by a same-session control (`…/2026-08-16-sam3-dtype-fix/raw/eq3_whole_clip.json`,
+clip `0089a096`, all six run frames):
+
+```
+A   per-concept encode   89.3 s   tot=64   per-frame {0:10, 8:11, 16:6, 19:5, 24:13, 32:19}
+B   encode-once          21.2 s   tot=64   per-frame {0:10, 8:11, 16:6, 19:5, 24:13, 32:19}
+A2  per-concept again    89.8 s   tot=64   identical to A
+```
+
+**A == B on every per-concept AND per-frame count**, A == A2 ⇒ the optimisation is a pure refactor
+worth **4.21×**, and the 60↔64 gap lives somewhere else.
+
+**Wrong reading #2 — "SAM3's detection count is not reproducible across Colab T4 VMs."** I wrote
+that entry, with a rule attached ("bank a corpus in ONE session"), and it was refuted **twenty
+minutes later by my own re-run**: the fixed pipeline on VM #2 reproduced VM #1's record for that
+clip **exactly** — `det=60`, `car:38 bus:7 pedestrian:4 traffic sign:11`, byte length 64 081 both
+times. SAM3 *is* reproducible across VMs.
+
+⇒ **THE ACTUAL THIRD VARIABLE: THE VIDEO FILE.** The pipeline re-bridges each clip from its w120
+shard (`bridge_batch` → `v2_to_pilot`) into a scratch mp4 it then deletes; my experiment pulled the
+**pre-bridged** `bridged_w120train_2400/videos/<cid>.mp4` from HF instead. Same clip, same frame
+indices, different bytes — and ~7 % of detections sit close enough to
+`Sam3Processor(confidence_threshold=0.5)` to flip on re-encode noise.
+
+| # | class | recognition signal |
+|---|---|---|
+| **C79** | **The control arm differed in MORE ways than were enumerated** | an A/B whose baseline is an artifact produced *earlier or elsewhere*. Signal: the diff list was written from the change the author was thinking about (here: the code path), and the arms were never run back-to-back with **every** input pinned — data included |
+
+⇒ **RULE: an optimisation is validated against the SAME arm re-run in the SAME session on the SAME
+INPUT BYTES, and the baseline re-run against itself (A vs A2) is part of the evidence.** Where the
+baseline can only be a banked artifact, the difference bounds *code + machine + data* together and
+may not be attributed to any one of them.
+
+⚠️ **AND NOTE HOW THE FIRST RETRACTION HID THE SECOND.** Retracting "the code changed it" felt like
+the end of the investigation — I had a same-session control, a clean 4.21×, and a satisfying
+"nondeterminism" story that explained the leftovers. **A residual that a plausible story absorbs is
+still a residual.** What settled it was a measurement I was already running for another reason.
+
+⭐ **CONSEQUENCE THAT STANDS, AND IT IS THE USEFUL ONE: A PERCEPTION OVERLAY MUST BE DRAWN ON THE
+BYTES THE MODEL SAW.** ~7 % of detections flip on re-encode alone, so a video rendered from a
+different copy of "the same" clip is showing boxes computed on frames that are not the ones on
+screen. Any renderer that pulls its own copy of the video states that, or re-derives the frames the
+way the pipeline did.
+
+⚠️ **The liveness control is unaffected and that is not luck** — `road`/`sky` score far from 0.5, so
+they do not flip on re-encode noise while the agent concepts near the threshold do. **A control is
+only a control if it sits far from the decision boundary.**
+
+---
+
+## 2026-08-16 — "the suite is green at 3532/0/17/2" — the 17 SKIPS were 10 tests that could not fail
+
+*(Next free number re-grepped immediately before appending: C79 was the highest.)*
+
+The dev box lacked `torchvision`, `av` and `imageio`, so several test modules were
+`pytest.importorskip`-ed at import. Installing those three (needed for this package's video work,
+`--no-deps`, torch verified untouched) moved the suite from **17 skipped to 7** — **10 tests started
+executing for the first time in months** — and exactly one of them failed:
+
+```
+tests/test_v2_dataset.py::test_manifest_is_cached_and_reused
+    assert m2["version"] == 2      # v2_dataset.MANIFEST_VERSION has been 3 since v3
+E   assert (3 == 2)                # added per-clip image_h/image_w
+```
+
+The manifest format was bumped 2 → 3 and its own regression test **could not object**, because the
+whole module was skipped on the only box that runs the suite.
+
+| # | class | recognition signal |
+|---|---|---|
+| **C80** | **A green suite whose skips were never counted** | a pass/skip line quoted as health where nobody has asked WHICH tests skipped, on WHICH box, and for how long. Signal: the skip count is stable release after release — i.e. the same guards have been inert the whole time |
+
+⇒ **RULE: a suite headline carries its skip list, not just its skip count**, and any test skipped
+for a MISSING OPTIONAL DEPENDENCY on the box that runs CI is treated as *not covered* rather than
+*passing*. Where the dependency is installable, install it.
+
+⇒ **Fixed at the root, not at the symptom:** the assertion now reads
+`m2["version"] == MANIFEST_VERSION` — **a version literal in a test is a stale claim waiting to
+happen**, and the constant cannot drift from itself. *(Suite after the fix: recorded in
+`TanitAD Research Hub/Data Engineering/Implementation/incoming/2026-08-16-sam3-dtype-fix/SAM3_DTYPE_FIX.md`
+§7 — measured, not projected.)*
+
+⭐ **THIS IS C13/C14's FAMILY — an instrument structurally unable to report the answer it is cited
+for.** A skipped test is a guard that cannot fail, and a skip count is exactly the kind of number
+that looks like accounting while hiding the thing being accounted for. Same shape as C77 one level
+down: the container (a green run) was checked; the content (which assertions actually executed) was
+not.

@@ -133,3 +133,126 @@ def test_bev_reports_absence_instead_of_drawing_an_empty_box():
     from ph0_rich_overlay import draw_bev
     img = draw_bev((300, 120), {"polyline_xy": []}, 0, 1)
     assert img.size == (300, 120)          # renders a stated "no ego poses"
+
+
+# =========================================================================== #
+# The PI's viz standard: perception AND the strategic label it feeds, in one   #
+# frame — plus the C77 liveness control ON the figure                          #
+# =========================================================================== #
+def _s2():
+    return {"clip_id": "c0", "g_str": {
+        "token": "TURN_LEFT", "args": [49.997, 0, 0, 0, 0, 0, 0, 0],
+        "arg_mask": [1, 0, 0, 0, 0, 0, 0, 0], "provenance": "path",
+        "sources": ["engine_a.route_v3=turn_left"], "confidence": 0.9},
+        "a_str": {"token": "HOLD_CORRIDOR",
+                  "args": [0, 0, 0, 0, 0, 0, 67.9, 0],
+                  "arg_mask": [0, 0, 0, 0, 0, 0, 1, 0],
+                  "provenance": "path", "confidence": 0.7},
+        "disjointness": {"situation_classifier_output_used": False}}
+
+
+def test_masked_off_arguments_are_not_printed_as_decisions():
+    """⛔ An arg slot with `arg_mask == 0` carries a filler 0.0. Printing it
+    would read as 'stop in 0 m' — a decision the label never took."""
+    from ph0_rich_overlay import _tok_args
+    assert _tok_args(_s2()["g_str"]) == "TURN_LEFT(a0=49.997)"
+    assert _tok_args({"token": "FOLLOW_MAIN_ROAD", "args": [0.0] * 8,
+                      "arg_mask": [0] * 8}) == "FOLLOW_MAIN_ROAD"
+    assert _tok_args(None) == "—"
+
+
+def test_strategic_label_is_drawn_beside_the_perception_that_feeds_it():
+    """The PI's standing viz standard: camera + metric BEV + the decoded
+    strategic goal in ONE frame, so perception and the label it produces are
+    judged together rather than in two documents."""
+    from ph0_rich_overlay import draw_panel
+    import numpy as np
+    with_s2 = np.asarray(draw_panel((470, 600), _rec(), _sam(), _ea(), 0,
+                                    _s2()))
+    without = np.asarray(draw_panel((470, 600), _rec(), _sam(), _ea(), 0,
+                                    None))
+    assert with_s2.shape == without.shape
+    assert not np.array_equal(with_s2, without), "the S2 block must render"
+
+
+def test_the_liveness_alarm_reaches_the_figure():
+    """⛔ C77 ON THE FIGURE. A viewer looking at an all-zero clip must be able
+    to tell an empty scene from a dead engine WITHOUT opening the JSON."""
+    from ph0_rich_overlay import draw_panel
+    import numpy as np
+    dead = dict(_sam(), per_concept_hits={"car": 0}, n_err_total=42,
+                err_kinds={"RuntimeError": 42},
+                liveness={"n_det": {"road": 0, "sky": 0}, "live": False})
+    alive = dict(_sam(),
+                 liveness={"n_det": {"road": 2, "sky": 1}, "live": True})
+    a = np.asarray(draw_panel((470, 600), _rec(), alive, _ea(), 0))
+    d = np.asarray(draw_panel((470, 600), _rec(), dead, _ea(), 0))
+    assert not np.array_equal(a, d)
+
+
+def test_the_alignment_warning_is_read_off_the_record_not_hard_coded():
+    """⚠️ The banner was hard-coded while the frame-snapping bug existed.
+    `run_clip_frames` now runs every grounded frame exactly and stamps
+    `frame_aligned`, so a fixed banner would print a stale claim onto every
+    future figure."""
+    import inspect
+    from ph0_rich_overlay import draw_panel
+    src = inspect.getsource(draw_panel)
+    assert 'c.get("frame_aligned")' in src
+    assert src.index("ALIGNMENT UNVERIFIED") > src.index('frame_aligned')
+
+
+def test_render_clip_still_composes_with_a_strategic_label(tmp_path):
+    from ph0_rich_overlay import clip_layout, compose_frame
+    fr = _frames()
+    lay = clip_layout(_rec(), _sam(), fr)
+    img = compose_frame(_rec(), _sam(), fr, _ea(), lay, 0, _s2())
+    assert img.size == (lay["W"], lay["H"])
+
+
+def test_bev_carries_a_metric_scale_bar():
+    """⭐ The PI's standard asks for a METRIC BEV. Equal-aspect axes plus one
+    scale bar state the whole mapping; without it a 20 m lane change and a
+    200 m sweep draw the same squiggle and the panel is decoration."""
+    import inspect
+    from ph0_rich_overlay import draw_bev
+    src = inspect.getsource(draw_bev)
+    assert "m fwd" in src and "{target:g} m" in src
+    import numpy as np
+    near = np.asarray(draw_bev((400, 210), _ea(), 0, 6))
+    ea_far = dict(_ea(), polyline_xy=[[i * 5.0, 0.0] for i in range(200)])
+    far = np.asarray(draw_bev((400, 210), ea_far, 0, 6))
+    assert not np.array_equal(near, far), "the scale must react to extent"
+
+
+def test_font_fallback_reaches_a_real_ttf_when_one_exists():
+    """⚠️ `ImageFont.load_default()` has no em dash, arrow or warning glyph —
+    on a host without DejaVu the panel's load-bearing clauses became tofu
+    boxes. MEASURED on the Windows dev box 2026-08-16."""
+    import inspect
+    from ph0_rich_overlay import _font
+    src = inspect.getsource(_font)
+    assert "C:\\Windows\\Fonts" in src or r"C:\Windows\Fonts" in src
+    f = _font(12)
+    assert f is not None
+
+
+def test_the_figure_recomputes_liveness_instead_of_trusting_the_flag():
+    """⛔ `live` is a DERIVED field whose rule already changed once (all -> any,
+    after an underpass returned `road 2 · sky 0` on a working engine). The
+    counts are banked, so the figure recomputes — and it distinguishes an
+    occluded control from a dead engine rather than printing one alarm for
+    both."""
+    import inspect
+    import numpy as np
+    from ph0_rich_overlay import draw_panel
+    src = inspect.getsource(draw_panel)
+    assert "one control occluded" in src
+    assert 'alive = any(int(v) > 0' in src
+    occluded = dict(_sam(),
+                    liveness={"n_det": {"road": 2, "sky": 0}, "live": False})
+    dead = dict(_sam(), liveness={"n_det": {"road": 0, "sky": 0},
+                                  "live": True})   # a LYING stored flag
+    a = np.asarray(draw_panel((470, 600), _rec(), occluded, _ea(), 0))
+    d = np.asarray(draw_panel((470, 600), _rec(), dead, _ea(), 0))
+    assert not np.array_equal(a, d), "the stored flag must not drive the panel"

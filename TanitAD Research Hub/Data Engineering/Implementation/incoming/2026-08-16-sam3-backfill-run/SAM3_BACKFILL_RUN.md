@@ -4,6 +4,13 @@
 well-formed records containing ZERO detections; SAM3 threw a dtype error on every
 concept of every frame. The "gap closed" verdict below (§4) is WITHDRAWN. See §0.**
 
+> ✅ **SUPERSEDED, same day, by `…/incoming/2026-08-16-sam3-dtype-fix/SAM3_DTYPE_FIX.md`.**
+> Root cause MEASURED (`sam3/model/vitdet.py:71` → `sam3/perflib/fused.py:15-17` force-casts the
+> MLP to bf16 while `fc2` stays fp32; the image path enters none of SAM3's bf16 autocast contexts),
+> fixed, and the 115 clips re-run and verified **by content**. A `road`/`sky` **liveness positive
+> control** is now permanent in `ph0_sam3.py`, so a zero-detection run raises an alarm instead of
+> looking plausible. **Read that package for every number; this one is history.**
+
 ## 0. ⛔ RETRACTION — I verified the container, not the content
 
 MEASURED over 25 randomly sampled backfilled clips (seed 0):
@@ -156,7 +163,17 @@ The run agent was terminated by a session limit with the words *"the main exec
 has completed — reading the completion markers"*. Rather than trust that, the
 completion criterion was re-measured independently from the dev box.
 
-## 4. Far-side verification — THE GAP IS CLOSED (MEASURED 2026-08-16)
+## 4. ⛔ WITHDRAWN — "the gap is closed" (asserted 2026-08-16, refuted the same day)
+
+> ⛔ **This section's verdict is WITHDRAWN — see §0.** Every measurement below is
+> REAL and none of it settles the question: it counts containers. The corpus it
+> pronounced closed held **zero detections**. The heading is kept in its refuted
+> form rather than deleted, so the shape of the error stays legible — but it is
+> marked HERE, at the claim, because a heading is what a grep finds and what a
+> reader quotes. A retraction that lives only at the top of a document does not
+> travel with the sentence that gets copied out of it.
+>
+> The settling numbers are in `…/incoming/2026-08-16-sam3-dtype-fix/`.
 
 `Sayood/tanitad-ph0-aug120`, prefix `sam3_backfill/`, **records counted, not
 files** (C18):
@@ -204,11 +221,21 @@ this agent, not buried here.
 
 ## Deliverable manifest
 
-| artifact | where |
-|---|---|
-| this report | `TanitAD Research Hub/Data Engineering/Implementation/incoming/2026-08-16-sam3-backfill-run/SAM3_BACKFILL_RUN.md` |
-| exec log (full stdout/stderr of the headless run) | `…/2026-08-16-sam3-backfill-run/raw/exec_run1.log` |
-| executed notebook with outputs | `…/2026-08-16-sam3-backfill-run/raw/SAM3_BACKFILL_115_output.ipynb` |
-| far-side verifier | `…/2026-08-16-sam3-backfill-run/raw/hf_count.py` |
-| kernel bootstrap (headless bring-up, no secrets) | `…/2026-08-16-sam3-backfill-run/raw/bootstrap.py` |
-| banked records | HF `Sayood/tanitad-ph0-aug120` `sam3_backfill/*.json` + `sam3_backfill/_runs/<ts>-sam3-backfill.json` |
+⛔ **CORRECTED 2026-08-16 — four of these six rows named files that DO NOT EXIST.**
+MEASURED: `raw/` is an empty directory and
+`git ls-files <this package>` returns exactly one path, this report. The rows were typed from
+intent, never resolved. Logged as **`RETRACTION_LOG.md` C78** — *a manifest row asserted, never
+resolved* — with the rule that every row is checked with `git ls-files` before a report is filed.
+
+| artifact | where | resolved? |
+|---|---|---|
+| this report | `TanitAD Research Hub/Data Engineering/Implementation/incoming/2026-08-16-sam3-backfill-run/SAM3_BACKFILL_RUN.md` | ✅ tracked |
+| exec log (full stdout/stderr of the headless run) | ~~`…/raw/exec_run1.log`~~ | ⛔ **NEVER STAGED — LOST** |
+| executed notebook with outputs | ~~`…/raw/SAM3_BACKFILL_115_output.ipynb`~~ | ⛔ **NEVER STAGED — LOST** |
+| far-side verifier | ~~`…/raw/hf_count.py`~~ | ⛔ **NEVER STAGED — LOST** (replacement: `…/2026-08-16-sam3-dtype-fix/code/hf_census.py`, which also checks CONTENT) |
+| kernel bootstrap (headless bring-up, no secrets) | ~~`…/raw/bootstrap.py`~~ | ⛔ **NEVER STAGED — LOST** (rebuilt: `…/2026-08-16-sam3-dtype-fix/code/bootstrap.py`) |
+| banked records | HF `Sayood/tanitad-ph0-aug120` `sam3_backfill/*.json` + `sam3_backfill/_runs/<ts>-sam3-backfill.json` | ✅ far-side (payloads since **REPLACED** by the fixed re-run — `…/2026-08-16-sam3-dtype-fix/`) |
+
+⇒ **Consequence, stated because it cost real time:** the exec log that would have shown the dtype
+traceback as it happened was gone, so the C77 root cause had to be re-derived from scratch on a
+fresh T4.

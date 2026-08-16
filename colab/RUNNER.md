@@ -87,6 +87,31 @@ verifies torch with a **real conv2d on CUDA**, not `import torch`.
 A run manifest is banked under `…/_runs/<ts>-<tag>.json` at the end of every
 (re)start, so partial sessions stay accountable.
 
+### 3b. ⛔ THE COMPLETION CRITERION IS THE CENSUS, NOT THE FILE COUNT (C77, 2026-08-16)
+
+The first production run banked **115 well-formed records containing ZERO
+detections** — SAM3 raised `RuntimeError: mat1 and mat2 must have the same
+dtype, but got BFloat16 and Float` on every concept of every frame and the
+pipeline faithfully recorded it. Record count, zero-byte scan, and a 3-clip
+`clip_id == filename` round-trip **all passed**. Root cause + fix:
+`…/incoming/2026-08-16-sam3-dtype-fix/SAM3_DTYPE_FIX.md`.
+
+Two things changed and both are now in the notebook, not in an operator's head:
+
+* **`L.content_census(api, repo, prefix, want=…)`** reads every banked RECORD
+  and returns `n_det_total · per_concept_totals · error_census ·
+  clips_with_zero_det · liveness_live/dead · pass_`. Cell 9 refuses to print
+  `BACKFILL_DONE` on a real run unless `pass_` is True; the **resume** in cell 5
+  uses the same criterion, because a stem-based resume would have skipped all
+  115 empty records as "done".
+* **The liveness positive control.** Every AGENT concept (`car`, `pedestrian`,
+  …) may legitimately be zero on a frame, which is why 115 empty clips looked
+  plausible. `road` and `sky` cannot, so `ph0_sam3` runs them **once per clip**
+  and banks `liveness.live`; a zero there is an ALARM
+  (`SAM3_LIVENESS_ALARM`, exit 1), and `--no-liveness` is the only way off.
+  ⇒ **The fix for a perception outage is proven by a NON-ZERO detection on the
+  control, never by the absence of a traceback.**
+
 ## 4. Where things bank
 
 | mode | repo | prefix |
@@ -100,8 +125,19 @@ A run manifest is banked under `…/_runs/<ts>-<tag>.json` at the end of every
 | leg | expected peak | basis |
 |---|---|---|
 | Qwen3.5-9B, unsloth `load_in_4bit` | ~7–8 GB | ESTIMATED from 4-bit weight math (9B × 0.5 B/param + activations); **unmeasured on T4 until the first real run prints it** |
-| SAM3 image model | ~3 GB | ESTIMATED (task brief); unmeasured on T4 |
+| SAM3 image model, **weights loaded** | **3.58 GB** | ⭐ **MEASURED** on the T4, 2026-08-16 fixed re-run (`gpu_mem_report('sam3 load')` = `torch.cuda.max_memory_allocated`) |
+| SAM3 image model, **inference peak (weights + activations)** | **4.01 GB** | ⭐ **MEASURED** after `reset_peak_memory_stats()`, one clip, 6 frames × 7 concepts (`raw/encode_once_equivalence.json`) |
+| SAM3 image leg, **wall-clock** | **~21 s / 6-frame clip** | ⭐ MEASURED; it was 97–98 s before the encode-once fix (`raw/eq3_whole_clip.json`) |
+| the **bridge** (12-clip batch: shard pull + mp4 re-encode) | **~165 s** (first batch ~890 s: cold caches + `records.parquet`) | ⭐ MEASURED from far-side commit timestamps — the bridge, not the GPU, is now the backfill's bottleneck |
 | ego leg | 0 (CPU) | by construction |
+
+⚠️ **The pre-2026-08-16 peaks in any report are contaminated and must not be
+quoted.** `max_memory_allocated` is a **process-global** counter: the diagnosis
+session built several processors in one kernel, so its "14.2 GB peak for one
+`set_image`" was the sum of everything resident, not the leg's cost. It is also
+how the first production attempt OOM'd at model load with 14.5 / 14.6 GiB in
+use. ⇒ **one processor per kernel, `reset_peak_memory_stats()` before the leg
+you are measuring, and a `free_leg()` between legs.**
 
 The notebooks enforce the discipline rather than hoping: each leg ends with
 `gpu_mem_report(tag)` printing `torch.cuda.max_memory_allocated()` (the only

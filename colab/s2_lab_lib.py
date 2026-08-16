@@ -289,6 +289,93 @@ def done_set(api, repo: str, prefix: str, suffix: str = ".json",
     return set(stems)
 
 
+def content_census(api, repo: str, prefix: str,
+                   want: set[str] | None = None) -> dict:
+    """⛔ THE COMPLETION CRITERION, AND IT IS NOT A FILE COUNT (C77).
+
+    `done_set` answers *"does a non-empty file exist?"*. On 2026-08-16 the
+    answer was yes for 115/115 clips whose entire payload was
+    `RuntimeError: mat1 and mat2 must have the same dtype` — well-formed,
+    correctly named, correctly counted, and empty. The verification enumerated
+    CONTAINERS and never evaluated the quantity the artifact exists to produce.
+
+    This reads every banked RECORD and returns what settles it: total
+    detections, per-concept totals, the ERROR-STRING census, the clips with
+    zero detections, and — the piece that makes a zero readable — whether the
+    road/sky LIVENESS control also read zero (a dead engine) or only the agent
+    concepts did (a legitimately empty scene).
+
+    A run is complete when `pass_` is True. Nothing else is."""
+    import collections
+    far = list_far(api, repo, prefix)
+    rfs = sorted(rf for rf in far
+                 if rf.endswith(".json") and "/_runs/" not in rf)
+    per, errs = collections.Counter(), collections.Counter()
+    n_det = n_live = n_dead = n_nocontrol = 0
+    zero, seen, complete = [], set(), []
+    for rf in rfs:
+        cid = rf[len(prefix):-len(".json")]
+        rec = json.load(open(hf_download(repo, rf, force=True)))
+        if rec.get("clip_id") != cid:
+            raise RuntimeError(f"{rf} carries clip_id={rec.get('clip_id')!r}")
+        seen.add(cid)
+        nd = int(rec.get("n_det_total") or 0)
+        n_det += nd
+        for k, v in (rec.get("per_concept_hits") or {}).items():
+            per[k] += int(v)
+        clip_err = 0
+        if rec.get("err_kinds"):
+            errs.update({k: int(v) for k, v in rec["err_kinds"].items()})
+            clip_err = sum(int(v) for v in rec["err_kinds"].values())
+        else:                                   # pre-census records
+            for f in (rec.get("frames") or {}).values():
+                for d in f.get("det", []):
+                    if "error" in d:
+                        errs[str(d["error"])[:60]] += 1
+                        clip_err += 1
+        # ⛔ RECOMPUTED FROM `n_det`, NOT READ FROM `live`. The stored boolean
+        # is a DERIVED field and its rule changed once already (all -> any,
+        # after an underpass gave `road 2 · sky 0` and was called dead). When
+        # the inputs are banked, trusting the derivation is a needless
+        # dependency on which version wrote the record.
+        lv = rec.get("liveness")
+        counts = (lv or {}).get("n_det") or {}
+        if lv is None:
+            n_nocontrol += 1
+            alive = False
+        else:
+            alive = any(int(v) > 0 for v in counts.values())
+            n_live += int(alive)
+            n_dead += int(not alive)
+        if nd == 0:
+            zero.append({"clip_id": cid, "liveness_live": alive,
+                         "liveness_n_det": counts})
+        # ⛔ THE RESUME PREDICATE, AND IT IS NOT `n_det_total > 0`. A clip is
+        # COMPLETE when the fixed engine produced it — i.e. the record carries
+        # the liveness control AND holds no error entries. Keying on detections
+        # instead would re-run a LEGITIMATELY EMPTY scene forever (its zero is
+        # the right answer), and keying on file presence would skip the stale
+        # BFloat16 records forever, which is C77 in the resume path.
+        if lv is not None and clip_err == 0:
+            complete.append(cid)
+    out = {"n_records": len(rfs), "n_det_total": n_det,
+           "complete_clips": sorted(complete),
+           "n_complete": len(complete),
+           "per_concept_totals": dict(per.most_common()),
+           "error_census": dict(errs.most_common()),
+           "clips_with_zero_det": len(zero), "zero_det_clips": zero,
+           "liveness_live": n_live, "liveness_dead": n_dead,
+           "records_without_control": n_nocontrol}
+    if want is not None:
+        out["coverage"] = f"{len(seen & want)}/{len(want)}"
+        out["missing"] = sorted(want - seen)
+        out["extra"] = sorted(seen - want)
+    out["pass_"] = bool(n_det > 0 and not errs and n_dead == 0
+                        and n_nocontrol == 0
+                        and (want is None or not out["missing"]))
+    return out
+
+
 def run_manifest(api, repo: str, prefix: str, tag: str, extra: dict) -> str:
     """Bank a run manifest beside the outputs. One per (re)start."""
     ts = time.strftime("%Y%m%d-%H%M%S")
@@ -601,10 +688,17 @@ def vlm_leg(vlm, frames, n_past: int, engine_a, ego_state,
 # --------------------------------------------------------------------------- #
 def load_sam3():
     """Processor once per session (facebook/sam3, gate GRANTED for this token
-    — MEASURED config.json download 2026-08-16)."""
+    — MEASURED config.json download 2026-08-16).
+
+    ⛔ `build_processor` installs the C77 dtype fix
+    (`ph0_sam3.install_dtype_agreement`) BEFORE the weights load. It is printed
+    here because a run whose fix silently failed to apply is exactly the run
+    that banks 115 records of `RuntimeError: mat1 and mat2 must have the same
+    dtype`."""
     import ph0_sam3
     proc, meta = ph0_sam3.build_processor(None)
-    print(f"[sam3] processor up · {meta['weights']}")
+    print(f"[sam3] processor up · {meta['weights']} · "
+          f"dtype_fix={meta.get('dtype_fix')}")
     return proc, meta
 
 
@@ -629,9 +723,12 @@ def sam3_leg(proc, frames, v2rec: dict, *, frame_stride: int = 8,
                           "label": signs[i].get("kind", "sign")
                           if i < len(signs) else "sign"})
     t0 = time.time()
+    # ⭐ liveness=True is EXPLICIT here, not inherited: the road/sky positive
+    # control is what distinguishes an empty scene from a dead engine, and
+    # C77 is what a run without it banks.
     out = ph0_sam3.run_clip_frames(proc, frames, ph0_sam3.AGENT_CONCEPTS,
                                    vlm_boxes, frame_stride=frame_stride,
-                                   min_score=min_score)
+                                   min_score=min_score, liveness=True)
     out.update({"clip_id": v2rec.get("clip_id"), "frame_wh": [fw, fh],
                 "wall_s": round(time.time() - t0, 1)})
     return out
@@ -815,6 +912,13 @@ def stub_sam3_record(clip_id: str, frame_wh=(160, 64)) -> dict:
                 "16": {"n_det": 1, "det": [det("car", 80.0, 0.88)]}},
             "per_concept_hits": {"car": 3, "traffic sign": 2},
             "n_frames_run": 3, "n_det_total": 5,
+            # ⛔ the stub must carry the C77 census keys, or the smoke path
+            # exercises a record shape the completion check would REJECT —
+            # and the plumbing test would stop testing the plumbing.
+            "n_err_total": 0, "err_kinds": {},
+            "liveness": {"concepts": ["road", "sky"],
+                         "n_det": {"road": 1, "sky": 1}, "live": True,
+                         "all_fired": True, "frame_idx": 8},
             "vlm_cross_check": [], "wall_s": 0.0, "_smoke_stub": True}
 
 

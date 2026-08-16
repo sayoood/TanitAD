@@ -107,6 +107,30 @@ for b0 in range(0, len(todo), BATCH):
               "--out", f"{out}/sam3"], f"{out}/sam3.log")
     print(f"{tag} SAM3_RC={rc}", flush=True)
 
+    # ⛔ READ THE CENSUS, NOT THE RETURN CODE (RETRACTION_LOG C77). `SAM3_RC=0`
+    # read as full coverage once already — and on 2026-08-16 a run that raised
+    # on EVERY concept of EVERY frame still produced well-formed records, right
+    # counts, right names, and zero detections. `ph0_sam3.main` now emits a
+    # `census` block and returns 1 when the road/sky liveness control did not
+    # fire; the artifact is still pushed (it carries its own diagnosis) but the
+    # batch says so loudly instead of printing a zero nobody reads.
+    try:
+        _c = json.load(open(f"{out}/sam3/sam3.json")).get("census") or {}
+        print(f"{tag} SAM3_CENSUS det={_c.get('n_det_total')} "
+              f"err={_c.get('n_err_total')} zero_clips="
+              f"{_c.get('clips_with_zero_det')} not_live="
+              f"{_c.get('clips_not_live')} {_c.get('err_kinds')}", flush=True)
+        if not _c:
+            print(f"{tag} SAM3_CENSUS_MISSING — this sam3.json predates the "
+                  "census; its zeros are NOT quotable", flush=True)
+        elif _c.get("clips_not_live") or not _c.get("n_det_total"):
+            print(f"{tag} SAM3_CENSUS_FAIL — the engine produced nothing on "
+                  "the liveness control; do NOT treat this batch as covered",
+                  flush=True)
+    except Exception as e:                                   # noqa: BLE001
+        print(f"{tag} SAM3_CENSUS_UNREADABLE {type(e).__name__}: {e}",
+              flush=True)
+
     for sub in ("v2", "sam3"):
         p = f"{out}/{sub}"
         if os.path.isdir(p):

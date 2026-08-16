@@ -65,6 +65,31 @@ MASK_COLOURS = [(42, 120, 214), (235, 104, 52), (74, 58, 167),
 AGENT_CONCEPTS = ["car", "truck", "bus", "pedestrian", "cyclist",
                   "traffic light", "traffic sign"]
 
+# ⭐ THE LIVENESS CONTROL — the fix for retraction class C77.
+#
+# Every concept in AGENT_CONCEPTS can LEGITIMATELY be 0 on a given frame (an
+# empty road has no car and no pedestrian), so a run of all-zero records is
+# indistinguishable from a run where the model never produced a single
+# detection. That is exactly how 115 backfilled clips of pure
+# `RuntimeError: mat1 and mat2 must have the same dtype` passed every
+# structural check on 2026-08-16 (RETRACTION_LOG C77).
+#
+# `road` and `sky` are run once per clip as a POSITIVE CONTROL: a
+# forward-facing driving frame cannot return zero for BOTH unless the engine
+# itself is producing nothing. They are kept OUT of `per_concept_hits` and out
+# of `n_det_total` so the fused record's agent-slot contract is unchanged — the
+# control lives in its own `liveness` block.
+#
+# ⚠️ TWO PROPERTIES MAKE THEM THE RIGHT CONTROL, and both were tested rather
+# than assumed:
+#   1. they are DISJOINT from the measured vocabulary (a control drawn from the
+#      quantity under test is circular);
+#   2. they score FAR FROM the processor's 0.5 confidence threshold, so they do
+#      not flicker on re-encode noise the way the agent concepts do — MEASURED,
+#      `raw/mp4_source_check.json` (C79): a different encode of the same clip
+#      moves `traffic light` 0→2 while road/sky hold.
+LIVENESS_CONCEPTS = ["road", "sky"]
+
 
 def find_bpe() -> str | None:
     """SAM3's text encoder needs the CLIP BPE vocab, and the sam3 wheel does NOT
@@ -74,6 +99,31 @@ def find_bpe() -> str | None:
     HF-format tokenizer files (vocab.json + merges.txt), not the CLIP .gz.
     `open_clip` ships the canonical file, so we locate it there."""
     import glob
+    # ⛔ THE INTERPRETER'S OWN site-packages FIRST. The absolute roots below are
+    # pod4's and cover NOTHING on Colab (`/usr/local/lib/python3.12/
+    # dist-packages`), and the `**/` globs are cwd-relative, so on 2026-08-16
+    # the headless Colab run had to copy the vocab to `/content` by hand as
+    # session bring-up. Asking the interpreter where its packages are removes
+    # that bring-up step on every host at once.
+    try:
+        import site
+        roots = list(site.getsitepackages() or [])
+        usr = site.getusersitepackages()
+        if isinstance(usr, str):
+            roots.append(usr)
+    except Exception:                                   # frozen / venv-less
+        roots = []
+    try:
+        import open_clip
+        roots.insert(0, os.path.dirname(os.path.abspath(open_clip.__file__)))
+    except Exception:                                   # not installed
+        pass
+    for r in roots:
+        for cand in (os.path.join(r, "bpe_simple_vocab_16e6.txt.gz"),
+                     os.path.join(r, "open_clip",
+                                  "bpe_simple_vocab_16e6.txt.gz")):
+            if os.path.exists(cand):
+                return cand
     for pat in ("/workspace/a2venv/lib/python3.12/site-packages/open_clip/"
                 "bpe_simple_vocab_16e6.txt.gz",
                 "**/open_clip/bpe_simple_vocab_16e6.txt.gz",
@@ -88,6 +138,95 @@ def find_bpe() -> str | None:
             if "bpe_simple_vocab_16e6.txt.gz" in fn:
                 return os.path.join(dp, "bpe_simple_vocab_16e6.txt.gz")
     return None
+
+
+def install_dtype_agreement() -> dict:
+    """⛔ THE C77 FIX. Make SAM3's fused MLP kernel keep the dtype it was given.
+
+    THE DEFECT, MEASURED on a Colab T4 (torch 2.11.0+cu128, sam3 @ HEAD,
+    2026-08-16). `sam3/model/vitdet.py:71` is
+
+        x = addmm_act(type(self.act), self.fc1, x)      # Mlp.forward
+
+    and `sam3/perflib/fused.py:15-17` force-casts bias, input and weight to
+    **bfloat16** before `torch.ops.aten._addmm_activation`. The very next line,
+    `vitdet.py:74`, is a plain `nn.Linear` whose weights are **fp32** ⇒
+
+        RuntimeError: mat1 and mat2 must have the same dtype,
+                      but got BFloat16 and Float
+
+    on EVERY concept of EVERY frame — the payload of the 115 empty backfill
+    records (RETRACTION_LOG C77).
+
+    ⚠️ WHY IT ONLY BITES THE IMAGE PATH. Every SAM3 *video* entry point enters
+    a process-wide bf16 autocast at construction
+    (`sam3_multiplex_base.py:170-172`, `sam3_tracking_predictor.py:50`,
+    `sam3_multiplex_video_predictor.py:51` — "use bfloat16 inference for Flash
+    Attention kernel"), which casts fc2's weight to bf16 too and hides the
+    split. `Sam3Processor` — the documented IMAGE path, and the one this engine
+    uses — enters no such context. MEASURED: `torch.is_autocast_enabled("cuda")`
+    is **False** both after `build_sam3_image_model` and at the failing Linear.
+
+    ⚠️ `USE_PERFLIB=0` DOES NOT HELP — MEASURED, do not reach for it:
+    `perflib.is_enabled` goes False but `Mlp.forward` calls `addmm_act`
+    **unconditionally**; the flag gates other call sites, not this one.
+
+    ⚠️ AND IT MUST BE PATCHED IN `vitdet`'s NAMESPACE, not in `perflib.fused`:
+    `vitdet.py:31` does `from sam3.perflib.fused import addmm_act`, so the name
+    is already bound and patching the source module is a no-op.
+
+    THE CHOICE, MEASURED head-to-head on one real clip frame, same processor,
+    concepts road/sky/car/truck/bus/pedestrian/cyclist/traffic light/traffic
+    sign/tree:
+
+      A  scoped `torch.autocast(cuda, bfloat16)`  10.5 s · peak 14 236 MiB
+      B  plain fp32 fc1+act (fused kernel dropped)  4.5 s · peak 14 367 MiB
+      C  THIS — fused kernel kept, bf16 casts removed  4.6 s · peak 14 367 MiB
+
+    All three are LIVE (road 2, sky 1, car 8, tree 5 — identical counts on all
+    ten concepts). A vs B scores differ by up to 5.9e-3, C vs B by up to
+    1.3e-3. ⇒ **C is chosen and NOTHING IS DOWNGRADED: the trunk stays fp32**,
+    which (a) is the precision of the pod4 2026-08-12 reference, (b) is
+    device-independent — A costs 2.3× wall-clock here only because bf16 is
+    EMULATED on this T4 (`is_bf16_supported(including_emulation=False)` is
+    False, capability 7.5), so A's numerics would differ between the T4 and an
+    A40 and break cross-arm comparability, and (c) is one rebound name rather
+    than a replaced vendor method. Repeat passes are bit-identical.
+
+    Idempotent; returns the provenance dict that `build_processor` banks."""
+    import torch
+    try:
+        import sam3.model.vitdet as vitdet
+    except Exception as e:                              # sam3 not installed
+        return {"applied": False, "reason": f"{type(e).__name__}: {e}"[:80]}
+    if getattr(vitdet.addmm_act, "_tanitad_dtype_safe", False):
+        return {"applied": True, "reason": "already installed"}
+
+    act_op = torch.ops.aten._addmm_activation
+    vendor = vitdet.addmm_act
+
+    def addmm_act_same_dtype(activation, linear, mat1):
+        """`perflib/fused.py::addmm_act` verbatim MINUS its three
+        `.to(torch.bfloat16)` casts — the fused addmm+activation kernel is
+        kept, it just runs in the dtype the caller handed it."""
+        bias = linear.bias.detach().to(mat1.dtype)
+        w = linear.weight.detach().to(mat1.dtype)
+        flat = mat1.reshape(-1, mat1.shape[-1])
+        if activation in (torch.nn.functional.relu, torch.nn.ReLU):
+            y = act_op(bias, flat, w.t(), beta=1, alpha=1, use_gelu=False)
+        elif activation in (torch.nn.functional.gelu, torch.nn.GELU):
+            y = act_op(bias, flat, w.t(), beta=1, alpha=1, use_gelu=True)
+        else:                                  # vendor raises here too
+            raise ValueError(f"Unexpected activation {activation}")
+        return y.view(mat1.shape[:-1] + (y.shape[-1],))
+
+    addmm_act_same_dtype._tanitad_dtype_safe = True
+    addmm_act_same_dtype._vendor = vendor
+    vitdet.addmm_act = addmm_act_same_dtype
+    return {"applied": True,
+            "target": "sam3.model.vitdet.addmm_act",
+            "reason": "perflib fused MLP casts to bf16 while fc2 stays fp32 "
+                      "(C77); casts removed, fused kernel kept, trunk fp32"}
 
 
 def build_processor(bpe_path: str | None = None):
@@ -120,12 +259,14 @@ def build_processor(bpe_path: str | None = None):
     if bpe is None:
         raise SystemExit("[sam3] CLIP BPE vocab not found — install "
                          "open_clip_torch (--no-deps) or pass --bpe-path")
+    dtype_fix = install_dtype_agreement()          # ⛔ BEFORE any forward (C77)
     model = build_sam3_image_model(bpe_path=bpe, load_from_HF=True)
     return Sam3Processor(model), {
         "api": "build_sam3_image_model + Sam3Processor "
                "(facebookresearch/sam3 README)",
         "weights": "facebook/sam3 (load_from_HF=True)",
-        "bpe_path": bpe}
+        "bpe_path": bpe,
+        "dtype_fix": dtype_fix}
 
 
 def _arr(x):
@@ -142,8 +283,64 @@ def detect(processor, image, prompt: str, *, min_score: float = 0.0) -> list[dic
 
     ⚠️ `min_score` defaults to 0.0 — nothing is filtered by default, because a
     threshold chosen before we have seen the score distribution is a decision
-    dressed as a default. Filter downstream, on banked numbers."""
-    state = processor.set_image(image)
+    dressed as a default. Filter downstream, on banked numbers.
+
+    ⚠️ This encodes the image. For SEVERAL concepts on the same frame use
+    `detect_many`, which encodes once — see its docstring for the 4.4×."""
+    return _score(processor, processor.set_image(image), prompt,
+                  min_score=min_score)
+
+
+def detect_many(processor, image, prompts, *, min_score: float = 0.0
+                ) -> list[dict]:
+    """Several concepts on ONE image — the image encoded ONCE.
+
+    THE DEFECT. `detect` calls `processor.set_image(image)` on every call, and
+    `run_clip_frames` called it once per CONCEPT — so a 7-concept vocabulary
+    ran the ViT trunk **7 times on the identical frame**: 44 encodes per clip
+    where 7 were needed.
+
+    ⭐ MEASURED EQUIVALENT AND 4.21× (T4, 2026-08-16, clip `0089a096`, all six
+    run frames, one session): per-concept encode **89.3 s**, encode-once
+    **21.2 s**, and the two agree on **every** per-concept count AND every
+    per-frame count. A repeat of the per-concept path in the same session
+    reproduces itself exactly. Artifacts:
+    `…/2026-08-16-sam3-dtype-fix/raw/{encode_once_equivalence,eq3_whole_clip}.json`.
+
+    ⛔ **AND THE COMPARISON THAT SAID OTHERWISE WAS CONFOUNDED — read this
+    before "fixing" a difference you see here (RETRACTION_LOG C79).** Diffing a
+    re-run against the record banked by an earlier VM showed 60 vs 64
+    detections, which reads as *"the optimisation changed the science"*. It did
+    not, and it was not machine nondeterminism either: the fixed pipeline on a
+    second VM reproduced the first VM's record **exactly**. The real variable
+    was **the video file** — the pipeline re-bridges each clip from its w120
+    shard, while the experiment pulled the pre-bridged
+    `bridged_w120train_2400/videos/<cid>.mp4`. ⇒ **~7 % of detections sit close
+    enough to `Sam3Processor(confidence_threshold=0.5)` to flip on re-encode
+    noise alone** (`pedestrian` 4→7, `traffic light` 0→2). Compare counts only
+    across identical input BYTES — and draw overlays on the bytes the model saw.
+
+    ⚠️ Errors are recorded PER CONCEPT, and a failure of the shared encode is
+    recorded once per concept too — so the C77 error census stays complete
+    whichever half broke."""
+    try:
+        state = processor.set_image(image)
+    except Exception as e:                      # the encode itself failed
+        err = f"{type(e).__name__}: {e}"[:140]
+        return [{"concept": p, "error": err} for p in prompts]
+    dets = []
+    for p in prompts:
+        try:
+            dets.extend(_score(processor, state, p, min_score=min_score))
+        except Exception as e:
+            dets.append({"concept": p,
+                         "error": f"{type(e).__name__}: {e}"[:140]})
+    return dets
+
+
+def _score(processor, state, prompt: str, *, min_score: float = 0.0
+           ) -> list[dict]:
+    """Score ONE concept against an already-encoded image state."""
     out = processor.set_text_prompt(state=state, prompt=prompt)
     scores, boxes = _arr(out.get("scores")), _arr(out.get("boxes"))
     masks = _arr(out.get("masks"))
@@ -270,8 +467,50 @@ def box_mask_agreement(mask, box_xyxy) -> dict:
             "frac_box_covered": round(inter / barea, 4) if barea else 0.0}
 
 
+def liveness_probe(processor, image, *, concepts=None,
+                   min_score: float = 0.0) -> dict:
+    """⭐ THE POSITIVE CONTROL FOR C77 — is this engine PRODUCING anything?
+
+    Runs `LIVENESS_CONCEPTS` on ONE frame and reports their counts.
+    `live = ANY control concept fired`; `all_fired` is the stricter scene
+    reading. `live == False` is an ALARM: the engine returned nothing at all on
+    concepts that a forward-facing driving frame is full of — the C77 dtype
+    crash reads exactly like this. Contrast with `AGENT_CONCEPTS`, every one of
+    which may correctly be zero, which is what made 115 empty clips look
+    plausible.
+
+    ⚠️ Errors are recorded per concept, exactly like `detect`'s callers do, so
+    a crash census is readable from the artifact without a re-run."""
+    cs = list(concepts or LIVENESS_CONCEPTS)
+    out = {c: 0 for c in cs}
+    err = {}
+    for d in detect_many(processor, image, cs, min_score=min_score):
+        if "error" in d:
+            err[d["concept"]] = d["error"]
+        else:
+            out[d["concept"]] = out.get(d["concept"], 0) + 1
+    # ⛔ `live` IS `any`, NOT `all` — CORRECTED 2026-08-16 BY THE DATA. The
+    # first version required every control concept to fire, and clip
+    # `24b6948f` promptly returned `road 2 · sky 0` and was flagged dead while
+    # the engine was plainly working (22 detections on that clip: 8 car, 4
+    # traffic light, 10 traffic sign). `sky` CAN legitimately be zero — an
+    # underpass, a tunnel, a wall of buildings. The question this control
+    # exists to answer is *"is the engine producing at all?"*, and ONE control
+    # detection answers it; requiring all of them re-imports the very
+    # scene-dependence the control was chosen to escape.
+    # `all_fired` is kept as the stricter scene reading, and `n_det` is banked
+    # per concept so any downstream rule can be recomputed without a re-run.
+    rec = {"concepts": cs, "n_det": out,
+           "live": bool(out) and any(v > 0 for v in out.values()),
+           "all_fired": bool(out) and all(v > 0 for v in out.values())}
+    if err:
+        rec["errors"] = err
+    return rec
+
+
 def run_clip_frames(processor, frames, concepts, vlm_boxes, *,
-                    frame_stride: int = 8, min_score: float = 0.0) -> dict:
+                    frame_stride: int = 8, min_score: float = 0.0,
+                    liveness: bool = True) -> dict:
     """One clip -> SAM3's own detections on a strided set of frames, plus the
     cross-engine check against the VLM's B3 sign boxes.
 
@@ -291,15 +530,22 @@ def run_clip_frames(processor, frames, concepts, vlm_boxes, *,
     todo = sorted(set(range(0, len(frames), max(1, frame_stride)))
                   | {int(v.get("frame_idx", 0)) for v in vlm_boxes
                      if 0 <= int(v.get("frame_idx", 0)) < len(frames)})
+    # ⭐ ONE liveness probe per clip, on the middle frame of the set actually
+    # run. One frame (not all) keeps the cost at ~2 extra concept passes per
+    # clip; the middle frame rather than the first because clip starts are the
+    # most likely to be atypical.
+    live = None
+    if liveness and todo:
+        live = liveness_probe(processor,
+                              Image.fromarray(frames[todo[len(todo) // 2]]),
+                              min_score=min_score)
+        live["frame_idx"] = int(todo[len(todo) // 2])
     for fi in todo:
         img = Image.fromarray(frames[fi])
-        dets = []
-        for c in concepts:
-            try:
-                dets.extend(detect(processor, img, c, min_score=min_score))
-            except Exception as e:                            # per concept
-                dets.append({"concept": c,
-                             "error": f"{type(e).__name__}: {e}"[:140]})
+        # ⛔ ONE ENCODE PER FRAME, not one per concept — see detect_many. The
+        # per-concept loop that used to live here re-ran the ViT trunk 7x on
+        # the identical frame (MEASURED banked wall_s 97-98 s per 6-frame clip).
+        dets = detect_many(processor, img, concepts, min_score=min_score)
         for d in dets:
             if "score" in d:
                 per_concept[d["concept"]] = per_concept.get(d["concept"], 0) + 1
@@ -328,9 +574,24 @@ def run_clip_frames(processor, frames, concepts, vlm_boxes, *,
                           if d.get("concept") == "traffic sign"),
                       "best_sam3_sign": best,
                       "matched": bool(best and best["iou"] > 0.0)})
+    # ⛔ THE ERROR CENSUS IS PART OF THE RECORD, NOT A LOG LINE. C77's 115
+    # clips carried their own cause per concept per frame and nobody counted
+    # it, because the summary keys only described CONTAINERS. `n_err_total`
+    # and `err_kinds` put the failure count next to the detection count, where
+    # a completeness check cannot miss it.
+    errs: dict[str, int] = {}
+    n_err = 0
+    for f in out_frames.values():
+        for d in f["det"]:
+            if "error" in d:
+                n_err += 1
+                k = str(d["error"]).split(":")[0]
+                errs[k] = errs.get(k, 0) + 1
     return {"frames": out_frames, "per_concept_hits": per_concept,
             "n_frames_run": len(out_frames),
             "n_det_total": sum(f["n_det"] for f in out_frames.values()),
+            "n_err_total": n_err, "err_kinds": errs,
+            "liveness": live,
             "vlm_cross_check": agree}
 
 
@@ -392,6 +653,12 @@ def main(argv=None) -> int:
                          "the score distribution is known is a decision dressed "
                          "as a default. Filter downstream on banked numbers.")
     ap.add_argument("--bpe-path", default=None)
+    ap.add_argument("--no-liveness", action="store_true",
+                    help="⛔ turn the C77 positive control OFF. Only for a run "
+                         "on frames where road/sky genuinely may be absent "
+                         "(indoor, night-blind, synthetic). A production "
+                         "backfill without it cannot tell an empty scene from "
+                         "a dead engine — that is what C77 was.")
     a = ap.parse_args(argv)
 
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -433,32 +700,60 @@ def main(argv=None) -> int:
         t1 = time.time()
         out = run_clip_frames(proc, frames, concepts, vlm_boxes,
                               frame_stride=a.frame_stride,
-                              min_score=a.min_score)
+                              min_score=a.min_score,
+                              liveness=not a.no_liveness)
         out.update({"clip_id": cid, "frame_wh": [fw, fh],
                     "wall_s": round(time.time() - t1, 1)})
         results.append(out)
         hits = ", ".join(f"{k}:{v}" for k, v in out["per_concept_hits"].items()
                          if v)
         n_match = sum(1 for c in out["vlm_cross_check"] if c["matched"])
+        lv = out.get("liveness")
+        lvs = ("live " + ",".join(f"{k}:{v}" for k, v in lv["n_det"].items())
+               if lv else "liveness OFF")
         print(f"[sam3] {str(cid)[:8]} {out['n_frames_run']}f · "
-              f"{out['n_det_total']} det · [{hits or 'none'}] · "
+              f"{out['n_det_total']} det · {out['n_err_total']} err · "
+              f"[{hits or 'none'}] · {lvs} · "
               f"vlm-sign match {n_match}/{len(vlm_boxes)}", flush=True)
 
     tot = {c: sum(r["per_concept_hits"].get(c, 0) for r in results)
            for c in concepts}
+    # ⛔ THE COMPLETION CENSUS (C77). A run is complete when DETECTIONS EXIST,
+    # never when files exist — so the summary carries the quantity the artifact
+    # exists to produce, the error census beside it, and the positive control.
+    census = {
+        "n_det_total": sum(r["n_det_total"] for r in results),
+        "n_err_total": sum(r.get("n_err_total", 0) for r in results),
+        "err_kinds": {},
+        "clips_with_zero_det": sum(1 for r in results
+                                   if not r["n_det_total"]),
+        "clips_not_live": sum(1 for r in results
+                              if r.get("liveness")
+                              and not r["liveness"]["live"]),
+        "liveness_concepts": ([] if a.no_liveness else LIVENESS_CONCEPTS)}
+    for r in results:
+        for k, v in (r.get("err_kinds") or {}).items():
+            census["err_kinds"][k] = census["err_kinds"].get(k, 0) + v
     json.dump({"engine": "C_sam3", "api": meta, "concepts": concepts,
                "frame_stride": a.frame_stride, "min_score": a.min_score,
                "n_clips": len(results), "per_concept_hits_total": tot,
+               "census": census,
                "_note": "SAM3 detects INDEPENDENTLY of the VLM; "
                         "vlm_cross_check is the agreement between engine B's "
                         "B3 sign box and engine C's own 'traffic sign' "
-                        "detection. Zero detections for a concept is a valid "
-                        "ABSTENTION, not a failure — see per_concept_hits.",
+                        "detection. Zero detections for an AGENT concept is a "
+                        "valid ABSTENTION — but zero on the LIVENESS concepts "
+                        "(road/sky) is an ALARM, and `census` is the thing to "
+                        "read before calling a run complete (C77).",
                "clips": results},
               open(os.path.join(a.out, "sam3.json"), "w"), indent=1)
     print(f"[sam3] totals: {tot}", flush=True)
+    print(f"[sam3] census: {census}", flush=True)
+    bad = census["clips_not_live"] or (results and not census["n_det_total"])
+    if bad:
+        print("SAM3_LIVENESS_ALARM", flush=True)
     print("SAM3_DONE", flush=True)
-    return 0
+    return 1 if bad else 0
 
 
 if __name__ == "__main__":
