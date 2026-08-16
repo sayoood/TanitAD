@@ -1,0 +1,303 @@
+{
+ "schema_version": "ph1-fused-v1",
+ "clip_id": "3df2205f-c400-4604-afc1-59ca7f21903d",
+ "geometry": {
+  "frame_wh": [
+   448,
+   179
+  ],
+  "note": "w120 cylindrical vs 256px pinhole batches must not be pooled"
+ },
+ "ego": {
+  "ego_state": {
+   "window_s": 8.0,
+   "v_now_ms": 11.37,
+   "v_now_kmh": 40.9,
+   "v_mean_ms": 10.73,
+   "v_min_ms": 10.02,
+   "v_max_ms": 11.67,
+   "accel_1s_ms2": -0.3,
+   "accel_3s_ms2": 0.13,
+   "yaw_rate_rad_s": -0.095,
+   "net_dyaw_rad": -0.484,
+   "dist_travelled_m": 86.4,
+   "motion": "steady",
+   "turning": "turning_right"
+  },
+  "speed_profile": {
+   "v_t0": 10.110300064086914,
+   "v_min_future": 2.107811689376831,
+   "v_max_future": 11.672300338745117,
+   "net_dv": -3.6166014671325684,
+   "stops": 0,
+   "src": "ego_npz"
+  }
+ },
+ "perception": {
+  "tracks": [
+   {
+    "track_id": 0,
+    "concept": "truck",
+    "n_frames": 1,
+    "frame_span": [
+     0,
+     0
+    ],
+    "mean_score": 0.765,
+    "boxes": [
+     [
+      0,
+      [
+       242.1,
+       81.4,
+       279.2,
+       105.9
+      ]
+     ]
+    ],
+    "dynamics": "single_frame",
+    "src": "sam3"
+   },
+   {
+    "track_id": 1,
+    "concept": "traffic sign",
+    "n_frames": 1,
+    "frame_span": [
+     24,
+     24
+    ],
+    "mean_score": 0.53,
+    "boxes": [
+     [
+      24,
+      [
+       299.1,
+       54.9,
+       313.9,
+       102.6
+      ]
+     ]
+    ],
+    "dynamics": "single_frame",
+    "src": "sam3"
+   },
+   {
+    "track_id": 2,
+    "concept": "traffic sign",
+    "n_frames": 1,
+    "frame_span": [
+     24,
+     24
+    ],
+    "mean_score": 0.502,
+    "boxes": [
+     [
+      24,
+      [
+       179.5,
+       83.8,
+       184.0,
+       87.4
+      ]
+     ]
+    ],
+    "dynamics": "single_frame",
+    "src": "sam3"
+   },
+   {
+    "track_id": 3,
+    "concept": "traffic sign",
+    "n_frames": 1,
+    "frame_span": [
+     24,
+     24
+    ],
+    "mean_score": 0.817,
+    "boxes": [
+     [
+      24,
+      [
+       299.4,
+       55.3,
+       313.8,
+       69.1
+      ]
+     ]
+    ],
+    "dynamics": "single_frame",
+    "src": "sam3"
+   },
+   {
+    "track_id": 4,
+    "concept": "traffic sign",
+    "n_frames": 1,
+    "frame_span": [
+     32,
+     32
+    ],
+    "mean_score": 0.519,
+    "boxes": [
+     [
+      32,
+      [
+       130.5,
+       83.3,
+       137.1,
+       89.6
+      ]
+     ]
+    ],
+    "dynamics": "single_frame",
+    "src": "sam3"
+   },
+   {
+    "track_id": 5,
+    "concept": "traffic sign",
+    "n_frames": 1,
+    "frame_span": [
+     32,
+     32
+    ],
+    "mean_score": 0.512,
+    "boxes": [
+     [
+      32,
+      [
+       36.9,
+       75.0,
+       46.8,
+       78.6
+      ]
+     ]
+    ],
+    "dynamics": "single_frame",
+    "src": "sam3"
+   }
+  ],
+  "per_concept_hits": {
+   "car": 0,
+   "truck": 1,
+   "bus": 0,
+   "pedestrian": 0,
+   "cyclist": 0,
+   "traffic light": 0,
+   "traffic sign": 5
+  },
+  "src": "sam3"
+ },
+ "semantics": {
+  "scene": {
+   "lanes_visible": 1,
+   "lane_ego": 0,
+   "conf": "high",
+   "road_type": "rural",
+   "weather": "snow",
+   "illumination": "day",
+   "domain": "urban"
+  },
+  "signs": {
+   "n_signs": 1,
+   "signs": [
+    {
+     "text": "",
+     "state": "none",
+     "applies_to_ego": true,
+     "kind": "yield"
+    }
+   ]
+  },
+  "symbols": {
+   "goal_kind": "turn_left",
+   "actions": [
+    {
+     "verb": "reduce_to",
+     "direction": "none"
+    },
+    {
+     "verb": "prepare_stop",
+     "direction": "none"
+    }
+   ],
+   "goal_evidence_sign": 0,
+   "conf": "high"
+  },
+  "src": "vlm",
+  "sign_text_status": "pending_g1_gate"
+ },
+ "alpamayo": {
+  "trajectory": "{\"figure_style\": \"blog_6cam_task_native\", \"clip_id\": \"3df2205f-c400-4604-afc1-59ca7f21903d\", \"t0_us\": 5100000, \"camera_tmin\": 4766667, \"camera_indices\": [0, 1, 2, 3, 5, 6], \"input_profile\": {\"source_camera_ids\": [0, 1, 2, 3, 4, 5, 6], \"source_camera_names\": [\"camera_cross_left_120fov\", \"camera_front_wide_120fov\", \"camera_cross_right_120fov\", \"camera_rear_left_70fov\", \"camera_rear_tele_30fov\", \"camera_rear_right_70fov\", \"camera_front_tele_30fov\"], \"camera_ids\": [0, 1, 2, 3, 5, 6], \"camera_names\": [\"camera_cross_left_120fov\", \"camera_front_wide_120fov\", \"camera_cross_right_120fov\", \"camera_rear_left_70fov\", \"camera_rear_right_70fov\", \"camera_front_tele_30fov\"], \"frame_indices\": [0, 1, 2, 3], \"num_cameras\": 6, \"num_frames_per_camera\": 4}, \"camera_grid_camera_ids\": [0, 1, 2, 3, 6, 5], \"camera_titles\": [\"cross left\", \"front wide\", \"cross right\", \"rear left\", \"front tele\", \"rear right\"], \"coc_label\": \"Predicted CoC\", \"model_id\": \"nvidia/Alpamayo2-Super\", \"seed\": 42, \"cot\": \"Adapt speed for the right curve ahead.\", \"cots\": [\"Adapt speed for the right curve ahead.\"], \"projection_available\": true, \"projected_camera_ids\": [1, 2, 6], \"camera_ribbon_width_m\": 2.0, \"camera_ribbon_semantics\": \"approximate vehicle-width corridor\", \"prediction_layer\": \"above_ground_truth\", \"trajectory_palette\": {\"prediction\": \"#76B900\", \"ground_truth\": \"#EE3377\", \"history\": \"#0077BB\", \"ego\": \"#EE7733\"}, \"num_trajectory_samples\": 1, \"pred_xyz_shape\": [1, 1, 1, 64, 3], \"image_frames_shape\": [6, 4, 3, 1080, 1920], \"absolute_timestamps_shape\": [6, 4], \"relative_timestamps_shape\": [6, 4], \"ego_history_xyz_shape\": [1, 1, 16, 3], \"ego_future_xyz_shape\": [1, 1, 64, 3], \"bev_legend_fontsize\": 18, \"ade_m\": [1.3060388565063477], \"fde_m\": [1.7257583141326904], \"min_ade_m\": 1.3060388565063477, \"min_fde_m\": 1.7257583141326904, \"fde_at_min_ade_m\": 1.7257583141326904, \"best_ade_sample_index\": 0, \"best_fde_sample_index\": 0}",
+  "meta_action": "{\"raw_outputs\": [\"Adapt speed for the right curve ahead.Longitudinal: Gentle Deceleration.\\nLateral: Steer Right.\\nLane: Lane Keep.<|traj_future_start|><|endoftext|>\"], \"cot\": [\"Adapt speed for the right curve ahead.\"], \"meta_action\": [\"Longitudinal: Gentle Deceleration.\\nLateral: Steer Right.\\nLane: Lane Keep.\"], \"answer\": [\"Adapt speed for the right curve ahead.\"], \"box\": [\"\"], \"cot_auto_labeling\": [\"\"]}",
+  "auto_labeling": "{\"raw_outputs\": [\"{\\\"critical_components_analysis\\\": \\\"Type: right-hand road curvature,\\\\nWhy it is critical: The road bends right immediately ahead within the first seconds requiring speed adjustment and precise lane keeping.\\\", \\\"ego_vehicle_motion_analysis\\\": \\\"1. Type: keep lane,\\\\n   Duration: 0-4 seconds,\\\\n   Motion: keep lane along a gentle right-hand curve with slight speed modulation and no lane change.\\\\n2. Type: keep lane,\\\\n   Duration: 4-8 seconds,\\\\n   Motion: continue in the same lane past roadside parking that is outside the travel lane with no nudge needed.\\\", \\\"trajectory_analysis\\\": null, \\\"chain_of_causation\\\": \\\"Adapt speed for the right-hand curve ahead.\\\"}<|im_end|>\"], \"cot\": [\"{\\\"critical_components_analysis\\\": \\\"Type: right-hand road curvature,\\\\nWhy it is critical: The road bends right immediately ahead within the first seconds requiring speed adjustment and precise lane keeping.\\\", \\\"ego_vehicle_motion_analysis\\\": \\\"1. Type: keep lane,\\\\n   Duration: 0-4 seconds,\\\\n   Motion: keep lane along a gentle right-hand curve with slight speed modulation and no lane change.\\\\n2. Type: keep lane,\\\\n   Duration: 4-8 seconds,\\\\n   Motion: continue in the same lane past roadside parking that is outside the travel lane with no nudge needed.\\\", \\\"trajectory_analysis\\\": null, \\\"chain_of_causation\\\": \\\"Adapt speed for the right-hand curve ahead.\\\"}\"], \"meta_action\": [\"\"], \"answer\": [\"{\\\"critical_components_analysis\\\": \\\"Type: right-hand road curvature,\\\\nWhy it is critical: The road bends right immediately ahead within the first seconds requiring speed adjustment and precise lane keeping.\\\", \\\"ego_vehicle_motion_analysis\\\": \\\"1. Type: keep lane,\\\\n   Duration: 0-4 seconds,\\\\n   Motion: keep lane along a gentle right-hand curve with slight speed modulation and no lane change.\\\\n2. Type: keep lane,\\\\n   Duration: 4-8 seconds,\\\\n   Motion: continue in the same lane past roadside parking that is outside the travel lane with no nudge needed.\\\", \\\"trajectory_analysis\\\": null, \\\"chain_of_causation\\\": \\\"Adapt speed for the right-hand curve ahead.\\\"}\"], \"box\": [\"\"], \"cot_auto_labeling\": [\"{\\\"critical_components_analysis\\\": \\\"Type: right-hand road curvature,\\\\nWhy it is critical: The road bends right immediately ahead within the first seconds requiring speed adjustment and precise lane keeping.\\\", \\\"ego_vehicle_motion_analysis\\\": \\\"1. Type: keep lane,\\\\n   Duration: 0-4 seconds,\\\\n   Motion: keep lane along a gentle right-hand curve with slight speed modulation and no lane change.\\\\n2. Type: keep lane,\\\\n   Duration: 4-8 seconds,\\\\n   Motion: continue in the same lane past roadside parking that is outside the travel lane with no nudge needed.\\\", \\\"trajectory_analysis\\\": null, \\\"chain_of_causation\\\": \\\"Adapt speed for the right-hand curve ahead.\\\"}\"], \"cot_auto_labeling_json\": [{\"critical_components_analysis\": \"Type: right-hand road curvature,\\nWhy it is critical: The road bends right immediately ahead within the first seconds requiring speed adjustment and precise lane keeping.\", \"ego_vehicle_motion_analysis\": \"1. Type: keep lane,\\n   Duration: 0-4 seconds,\\n   Motion: keep lane along a gentle right-hand curve with slight speed modulation and no lane change.\\n2. Type: keep lane,\\n   Duration: 4-8 seconds,\\n   Motion: continue in the same lane past roadside parking that is outside the travel lane with no nudge needed.\", \"trajectory_analysis\": null, \"chain_of_causation\": \"Adapt speed for the right-hand curve ahead.\"}]}",
+  "vqa": "{\"raw_outputs\": [\"No cyclist is observed ahead of the ego vehicle<|im_end|>\"], \"cot\": [\"No cyclist is observed ahead of the ego vehicle\"], \"meta_action\": [\"\"], \"answer\": [\"No cyclist is observed ahead of the ego vehicle\"], \"box\": [\"\"], \"cot_auto_labeling\": [\"\"]}",
+  "grounding_via_vqa": "{\"raw_outputs\": [\"[{\\\"bbox_2d\\\": [670, 692, 682, 728], \\\"label\\\": \\\"Pedestrian\\\"}]<|im_end|>\"], \"cot\": [\"[{\\\"bbox_2d\\\": [670, 692, 682, 728], \\\"label\\\": \\\"Pedestrian\\\"}]\"], \"meta_action\": [\"\"], \"answer\": [\"[{\\\"bbox_2d\\\": [670, 692, 682, 728], \\\"label\\\": \\\"Pedestrian\\\"}]\"], \"box\": [\"[{\\\"bbox_2d\\\": [670, 692, 682, 728], \\\"label\\\": \\\"Pedestrian\\\"}]\"], \"cot_auto_labeling\": [\"\"]}"
+ },
+ "corroboration": {},
+ "vocab": {
+  "g_str": {
+   "token": "TURN_LEFT",
+   "src": "vlm",
+   "corroborated_by_route": false
+  },
+  "g_tac_lat": {
+   "token": "LANE_KEEP",
+   "voters": [
+    "alpamayo"
+   ],
+   "votes": [
+    [
+     "ego",
+     null
+    ],
+    [
+     "vlm",
+     null
+    ],
+    [
+     "vlm",
+     null
+    ],
+    [
+     "alpamayo",
+     "LANE_KEEP"
+    ]
+   ]
+  },
+  "g_tac_lon": {
+   "token": "BRAKE_TO",
+   "voters": [
+    "vlm",
+    "alpamayo"
+   ],
+   "votes": [
+    [
+     "ego",
+     "CRUISE"
+    ],
+    [
+     "vlm",
+     null
+    ],
+    [
+     "vlm",
+     "BRAKE_TO"
+    ],
+    [
+     "alpamayo",
+     "BRAKE_TO"
+    ]
+   ]
+  }
+ },
+ "scenario_description": "day, snow, rural 1-lane; ego 11.4 m/s steady/turning_right; 5 traffic sign, 1 truck",
+ "_conflicts": [],
+ "inference_admissible": [
+  "perception",
+  "semantics"
+ ],
+ "_provenance": {
+  "ego": "privileged-labels-only",
+  "sam3": "vision",
+  "vlm": "vision",
+  "alpamayo": "external-labels-only"
+ }
+}

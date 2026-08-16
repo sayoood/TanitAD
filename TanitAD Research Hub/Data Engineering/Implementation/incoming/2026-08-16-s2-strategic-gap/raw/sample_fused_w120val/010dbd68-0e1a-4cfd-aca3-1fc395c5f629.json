@@ -1,0 +1,138 @@
+{
+ "schema_version": "ph1-fused-v1",
+ "clip_id": "010dbd68-0e1a-4cfd-aca3-1fc395c5f629",
+ "geometry": {
+  "frame_wh": [
+   448,
+   179
+  ],
+  "note": "w120 cylindrical vs 256px pinhole batches must not be pooled"
+ },
+ "ego": {
+  "ego_state": {
+   "window_s": 8.0,
+   "v_now_ms": 23.11,
+   "v_now_kmh": 83.2,
+   "v_mean_ms": 23.0,
+   "v_min_ms": 22.8,
+   "v_max_ms": 23.21,
+   "accel_1s_ms2": -0.05,
+   "accel_3s_ms2": 0.04,
+   "yaw_rate_rad_s": -0.004,
+   "net_dyaw_rad": 0.005,
+   "dist_travelled_m": 185.2,
+   "motion": "steady",
+   "turning": "straight"
+  },
+  "speed_profile": {
+   "v_t0": 22.79999351501465,
+   "v_min_future": 22.79999351501465,
+   "v_max_future": 23.860107421875,
+   "net_dv": 1.0601139068603516,
+   "stops": 0,
+   "src": "ego_npz"
+  }
+ },
+ "perception": {
+  "tracks": [],
+  "per_concept_hits": {
+   "car": 0,
+   "truck": 0,
+   "bus": 0,
+   "pedestrian": 0,
+   "cyclist": 0,
+   "traffic light": 0,
+   "traffic sign": 0
+  },
+  "src": "sam3"
+ },
+ "semantics": {
+  "scene": {
+   "lanes_visible": 3,
+   "lane_ego": 1,
+   "conf": "high",
+   "road_type": "highway",
+   "weather": "clear",
+   "illumination": "night",
+   "domain": "highway"
+  },
+  "signs": {
+   "n_signs": 1,
+   "signs": [
+    {
+     "text": "12",
+     "state": "none",
+     "applies_to_ego": true,
+     "kind": "other"
+    }
+   ]
+  },
+  "symbols": {
+   "goal_kind": "follow_main_road",
+   "actions": [
+    {
+     "verb": "hold_corridor",
+     "direction": "none"
+    }
+   ],
+   "goal_evidence_sign": null,
+   "conf": "high"
+  },
+  "src": "vlm",
+  "sign_text_status": "pending_g1_gate"
+ },
+ "alpamayo": null,
+ "corroboration": {},
+ "vocab": {
+  "g_str": {
+   "token": "FOLLOW_MAIN_ROAD",
+   "src": "vlm",
+   "corroborated_by_route": false
+  },
+  "g_tac_lat": {
+   "token": "LANE_KEEP",
+   "voters": [
+    "ego",
+    "vlm"
+   ],
+   "votes": [
+    [
+     "ego",
+     "LANE_KEEP"
+    ],
+    [
+     "vlm",
+     "LANE_KEEP"
+    ]
+   ]
+  },
+  "g_tac_lon": {
+   "token": "CRUISE",
+   "voters": [
+    "ego"
+   ],
+   "votes": [
+    [
+     "ego",
+     "CRUISE"
+    ],
+    [
+     "vlm",
+     "HOLD"
+    ]
+   ]
+  }
+ },
+ "scenario_description": "night, clear, highway 3-lane; ego 23.1 m/s steady/straight; no agents",
+ "_conflicts": [],
+ "inference_admissible": [
+  "perception",
+  "semantics"
+ ],
+ "_provenance": {
+  "ego": "privileged-labels-only",
+  "sam3": "vision",
+  "vlm": "vision",
+  "alpamayo": "external-labels-only"
+ }
+}

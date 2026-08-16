@@ -1,0 +1,135 @@
+{
+ "schema_version": "ph1-fused-v1",
+ "clip_id": "075e5dd5-210f-4a1f-a26b-99623f05a5e6",
+ "geometry": {
+  "frame_wh": [
+   448,
+   179
+  ],
+  "note": "w120 cylindrical vs 256px pinhole batches must not be pooled"
+ },
+ "ego": {
+  "ego_state": {
+   "window_s": 8.0,
+   "v_now_ms": 8.1,
+   "v_now_kmh": 29.1,
+   "v_mean_ms": 3.22,
+   "v_min_ms": 0.76,
+   "v_max_ms": 8.1,
+   "accel_1s_ms2": 2.03,
+   "accel_3s_ms2": 2.07,
+   "yaw_rate_rad_s": -0.217,
+   "net_dyaw_rad": -1.46,
+   "dist_travelled_m": 25.7,
+   "motion": "accelerating",
+   "turning": "turning_right"
+  },
+  "speed_profile": {
+   "v_t0": 4.583856582641602,
+   "v_min_future": 0.7613989114761353,
+   "v_max_future": 19.824460983276367,
+   "net_dv": 14.462154388427734,
+   "stops": 0,
+   "src": "ego_npz"
+  }
+ },
+ "perception": {
+  "tracks": [],
+  "per_concept_hits": {
+   "car": 0,
+   "truck": 0,
+   "bus": 0,
+   "pedestrian": 0,
+   "cyclist": 0,
+   "traffic light": 0,
+   "traffic sign": 0
+  },
+  "src": "sam3"
+ },
+ "semantics": {
+  "scene": {
+   "lanes_visible": 2,
+   "lane_ego": 1,
+   "conf": "high",
+   "road_type": "rural",
+   "weather": "fog",
+   "illumination": "dusk",
+   "domain": "highway"
+  },
+  "signs": {
+   "n_signs": 1,
+   "signs": [
+    {
+     "text": "",
+     "state": "none",
+     "applies_to_ego": true,
+     "kind": "other"
+    }
+   ]
+  },
+  "symbols": {
+   "goal_kind": "follow_main_road",
+   "actions": [
+    {
+     "direction": "right",
+     "verb": "prepare_lane_change"
+    }
+   ],
+   "goal_evidence_sign": null,
+   "conf": "high"
+  },
+  "src": "vlm",
+  "sign_text_status": "pending_g1_gate"
+ },
+ "alpamayo": null,
+ "corroboration": {},
+ "vocab": {
+  "g_str": {
+   "token": "FOLLOW_MAIN_ROAD",
+   "src": "vlm",
+   "corroborated_by_route": false
+  },
+  "g_tac_lat": {
+   "token": "LANE_CHANGE_R",
+   "voters": [
+    "vlm"
+   ],
+   "votes": [
+    [
+     "ego",
+     null
+    ],
+    [
+     "vlm",
+     "LANE_CHANGE_R"
+    ]
+   ]
+  },
+  "g_tac_lon": {
+   "token": null,
+   "voters": [],
+   "votes": [
+    [
+     "ego",
+     null
+    ],
+    [
+     "vlm",
+     null
+    ]
+   ]
+  }
+ },
+ "scenario_description": "dusk, fog, rural 2-lane; ego 8.1 m/s accelerating/turning_right; no agents",
+ "_conflicts": [],
+ "inference_admissible": [
+  "perception",
+  "semantics"
+ ],
+ "_provenance": {
+  "ego": "privileged-labels-only",
+  "sam3": "vision",
+  "vlm": "vision",
+  "alpamayo": "external-labels-only"
+ }
+}
