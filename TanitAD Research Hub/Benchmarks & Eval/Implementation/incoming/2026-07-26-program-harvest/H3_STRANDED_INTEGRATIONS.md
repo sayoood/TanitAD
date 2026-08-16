@@ -66,6 +66,56 @@ verdict.
 
 ---
 
+## ⏹ STALE-BLOCKER RE-SWEEP 2026-08-16 (21 days later) — all 12 STILL-OPEN rows re-probed against HEAD
+
+> Swept by the 2026-08-16 stale-blocker sweep. **This block annotates; it deletes nothing above.**
+> Method: for every `S-*` row, re-read the named file:line at HEAD (CPU-only, no pod, no GPU) and — for
+> every "X does not exist" claim — a **second probe under a different name/path**, per the operating
+> standard. Evidence class `MEASURED` unless stamped otherwise. Line numbers below are HEAD's, and
+> several have **moved** since 07-26 (the bug is the same, the line is not).
+>
+> **Headline: 9 of 12 are STILL TRUE after 21 days. 3 CLEARED.** The 07-26 report's optimistic closing
+> note — *"most of today's stranding is same-day"* — **did not hold**: what did not clear that day has
+> mostly not cleared at all. The two items it named as the genuinely multi-day risks (**S-04** and
+> **S-12**) are both still open, now at **27 and 21 days**, and S-12 has got **worse**, not stale.
+
+| # | 2026-08-16 verdict | What I probed at HEAD |
+|---|---|---|
+| **S-01** | ⚠️ **STILL TRUE — 21 d** | `taniteval/taniteval/clhorizon.py:928` still calls `_data.load_frames(...)`; `_default_frames` (now `clhorizon.py:765-766`) still does `fr = ep.frames[a:b]`; `RawEp` (`taniteval/taniteval/data.py:220-228`) still defines **only** `.feats/.actions/.poses/.episode_id` — **no `.frames`**. `load_raw` (`data.py:135`) still exists as the working alternative. Two commits have touched the file since (`3f5c0ee`, `8e3491f`); **neither fixed this line.** The one-line fix named in the row above is still the fix. |
+| **S-02a** | ✅ **CLEARED — comma2k19 yaw** | The yaw/standstill guard **landed**. `stack/tanitad/data/comma2k19.py` now carries `HEADING_MODE_LEGACY` (:120), `yaw_rate_from_heading` (:339), and a hard `assert_yaw_rate_admissible` (:385-404) that refuses inadmissible labels, plus a 90-line provenance header (:51-82) quantifying the 15.53 rad/s impossibility and the R² −0.746 consequence. Landed via `8ab5327` *"comma yaw_rate re-issued across 75 locations"*; the head card gained `label_protocol_reissue_2026_07_27`. ⚠️ Read the **later** commits too before quoting any comma-yaw number: `84028f4` (anchor does not reproduce) and `a186204` (**anchor CONTAMINATED, C43**) both post-date the fix. |
+| **S-02b** | ⚠️ **STILL TRUE — 21 d** | `stack/scripts/idm_head.py:37` still reads `SCALAR_NAMES = ("speed","yaw_rate","steer","long_accel")`, and `long_accel` is still indexed at :271/:318. The **card-side** half was done (`idm_head_v1_card.json` says *"steer and long_accel are DROPPED as unusable"*), so the doc and the code now disagree — the worse of the two states. `…/Research/2026-07-27-latent-action-models/LATENT_ACTION_RESEARCH.md:346` re-affirms the drop *"stands unmodified"*. Still the 1-line, 0-GPU fix. |
+| **S-03** | ⚠️ **STILL TRUE — 21 d** | `taniteval/taniteval/planner_p2.py:389,397` — `_jack_scalar`/`_jack_paired` are **still the only estimator in the file** (grep for `episode_cluster_bootstrap` → **zero call sites**; it appears only inside `_jack_paired`'s own *"DEPRECATED … Prefer ci.paired_episode_cluster_bootstrap"* docstring at :399-401). Still adjudicating at :415, :458, :586, :590, :593 — i.e. `G1_pass`/`G4_pass` still ride the estimator CLAUDE.md measures at up to **×−4.15 including sign flips** on paired deltas. **Highest-severity survivor in this table**, because it can be wrong in *sign*. |
+| **S-04** | ⚠️ **STILL TRUE, all 3 — now 27 d** | `stack/tanitad/models/metric_dynamics.py:241-242` — both allocating in-loop `torch.cat`s present verbatim (**and two more sites the 07-26 sweep missed: `:285-286` and `:693`**). `stack/tanitad/models/predictor.py:165` — `mask = torch.triu(torch.ones(w, w, …))` still rebuilt per call, no `register_buffer` anywhere in the file. `predictor.py:172` — `for k in self.cfg.horizons` still computes every horizon head per tick. Named 07-26 as one of the two genuine multi-day items; it has since aged **21 more days**. |
+| **S-05** | ⚠️ **STILL TRUE — 21 d** (2 probes) | Probe 1: `stack/scripts/` contains `ingest_nuscenes.py` and `lake_ingest.py` — **no `ingest_argoverse2.py` and no AV2-named sibling**. Probe 2 (different path/name): `stack/tanitad/data/argoverse2.py` still has **no `main`, no `__main__`, no `ingest`/`build` entry point** — it remains a pure adapter. The AV2 lane graph still has no path from disk into the training pipeline. |
+| **S-06** | ⚠️ **STILL TRUE — 21 d, and still a DECISION not an engineering task** (2 probes) | Probe 1: no `overture` key in `stack/tanitad/lake/schema.py`. Probe 2 (wider scope): `grep -rni overture stack/ taniteval/ tools/` → **zero hits anywhere in code**. The ODbL derivative-database question the row names is still unanswered; the paste-in text is still sitting in `AV2_ZOD_INGEST.md:423-425`. |
+| **S-07** | ⚠️ **STILL TRUE — 21 d** | `taniteval/taniteval/driving.py::tier0()` (now `:547`) still contains **no** `lateral.block` and **no** `corridor.from_windows` call; the surface note at `:577` still reads *"UNIMPLEMENTED, no longer tier-1 BLOCKED (suite E2)"*. Still the 2-line, CPU-only fix. The row's own prediction — *"or it becomes the next orphan"* — has now come true for 3 weeks. |
+| **S-08** | ✅ **CLEARED** | `Benchmarks & Eval/GEOMETRY_INTEGRITY_AUDIT.md:40` and `:77-82` now carry **"⚠️ CORRECTED 2026-07-26"** in place, with the five-wheelbase distribution (2.730 47.0 % · 2.850 **1.8 %** · 3.135 13.9 % · 3.165 25.5 % · 3.216 11.8 %), the corrected **+6.23 % to −9.83 %** error, the sign-inversion note, the *"98.2 % of clips carry a >5 % error"* line, the C2 `RETRACTION_LOG` pointer and a citation to `…/2026-07-26-wheelbase-impact/`. ⚠️ Note for future sweeps: the file is at repo-root `Benchmarks & Eval/`, **not** under `TanitAD Research Hub/` — the 07-26 row's path is wrong and a one-location probe returns "no such file". |
+| **S-09** | ✅ **CLEARED — by the row's own second option** | The row offered *"align to 2.9 **or** add a one-line comment documenting the deliberate skew and its measured cost"*. The comment option landed and then some: `taniteval/taniteval/closedloop.py:103-117` now carries a 15-line **"⚠️ KNOWN TRAIN/SERVE SKEW — documented, deliberately NOT silently changed"** block stating the wheelbase-invariance of the closed-loop path, the **+7.41 %** action skew, the measured open-loop cost **ΔADE +0.0026 [−0.0006, +0.0062] — NOT separated**, and an explicit *"ESCALATED as a PI decision rather than changed unilaterally"*. `WHEELBASE = 2.7` remains at `:118` **on purpose**, to preserve comparability with the published n=12 suites. ⇒ closed as *documented*, not as *changed*. |
+| **S-10** | ⚠️ **STILL TRUE — 21 d, re-confirmed by PARSING the artifact** | I loaded `…/2026-07-26-v4-30k-gate/coprimary/corridor_v4_30k_K185.json` and walked both nodes. `paired_common_start["185"]["ood"]` has keys `[_envelope, overall, junction, longitudinal, other]`, **no `_corrected_by`**, and still emits `"EXTRAPOLATION_VERDICT": "within the measured envelope on average"`. Its sibling `all_windows["185"]["ood"]` **is** corrected and reads `"EXTRAPOLATION — NOT a measurement at this horizon"`. `fix_ood_verdict.py:124,130` still reads/writes `all_windows` only. **A committed artifact still contains a false safety-relevant verdict string, next to a corrected copy of the same string.** |
+| **S-11** | ⚠️ **STILL TRUE (the second echo) — 21 d** | The loud `⛔⛔ RETRACTED` block is still in place at `…/2026-07-25-youtube-idm-scaleup/NOTE.md:~153` (hazard neutralised, as the row said). The **un-caveated second echo is unchanged**: `NOTE.md:211-212` still reads *"Needs an IP cooldown (hours) OR a different egress, then the gentle re-run above."* Low severity, 1-line fix, still nobody's. |
+| **S-12** | 🔴 **STILL TRUE AND NOW WORSE — 21 d** | `Project Steering/MODEL_REGISTRY.md:599-600` still carries the stranding warning **verbatim**: *"v1.6's ckpt exists on exactly ONE disk (pod2 …); `Sayood/flagship-v16-ab-ft` holds NO weights and §1.4b has no `Location` row."* §1.4b (`:584-604`) still has **no `Location` row**. The 07-26 row assumed the blocker was *"pod2 is busy training v4"* — a temporary state. **That premise is dead**: pod2 is no longer a live fleet member. ⇒ this is no longer "push it when the pod frees", it is *"is the weight file still reachable at all?"* — see the escalation below. **INHERITED·PROVISIONAL** on the disk state (no pod access from this sweep, by brief); **MEASURED** on the registry text. |
+
+### 🔴 Escalations raised by this re-sweep (not left as "please merge" in a doc)
+
+1. **S-12 — v1.6 (`flagship-v16-ab-ft`) weights may now be unrecoverable.** The registry's own mitigation
+   ("push once pod2 frees") is void because the pod is gone. Someone with fleet access must establish
+   whether the checkpoint survives **anywhere** (HF `Sayood/flagship-v16-ab-ft`, a pod backup, `_pod_backup/`)
+   and then either add the `Location` row or convert the warning into a **LOST** record. Until then the
+   registry's §1.4b promises a recoverable artifact it may no longer have.
+   ⚠️ Disambiguate before acting: **`flagship-v16-ab-ft` (§1.4b) is a different model from
+   `flagship-v16-unicycle` (§1.10)**, and only the *latter* was banked in-repo (2026-08-06, md5-verified).
+   §1.10's successful banking does **not** close §1.4b.
+2. **S-03 — `planner_p2.py` is the last un-migrated estimator site** and it decides `G1_pass`/`G4_pass`
+   (CEM-planner-vs-supervised-head). Its three siblings were migrated 21 days ago (row D-06). Because the
+   deprecated estimator biases the **point estimate** with documented sign flips on paired deltas, every
+   P2 verdict is provisional until this is re-run — CPU-only, the window dumps exist.
+3. **S-10 — a false verdict string is live in a committed artifact.** Any reader of the
+   `paired_common_start` block gets "within the measured envelope" where 82-100 % of windows are outside it.
+
+*(Where the row's "Age (d)" column above is now wrong, read it as **age at 2026-07-26 + 21**.)*
+
+---
+
 ## Tally
 
 - **STILL OPEN: 12** (S-01…S-12; one of those, S-12, is UNVERIFIABLE-leaning-open — no pod/HF access — the

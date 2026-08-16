@@ -86,6 +86,26 @@ def _run_args(ck, ckpt_path=None) -> dict:
     return dict(cfg["args"])
 
 
+def run_frame_of(ck, ckpt_path=None):
+    """The :class:`CanonicalFrame` the trained stack was actually FED.
+
+    ⛔ NOT RE-DERIVED. It replays the run's own args through
+    ``eval_flagship_v4.resolve_eval_frames`` — the SAME seam
+    ``train_v6_staged`` itself calls (train_v6_staged.py:1252) — so the frame a
+    probe assumes and the frame the trainer applied cannot be spelled two
+    different ways. Returns the MODEL frame (the centred sub-frame when
+    ``--v2-subframe`` was passed, whose retained HFOV is smaller than the
+    cache's), because that is the field the encoder saw.
+    """
+    _ensure_scripts()
+    from eval_flagship_v4 import _eval_cfg, resolve_eval_frames  # noqa: PLC0415
+
+    args = _run_args(ck, ckpt_path)
+    _cache, model_frame = resolve_eval_frames(
+        Namespace(**args), _eval_cfg(), label="v6_probe_trunk")
+    return model_frame
+
+
 class V6ProbeTrunk:
     """Adapter presenting a :class:`V6Stack` through the v5 trunk interface.
 
@@ -94,7 +114,7 @@ class V6ProbeTrunk:
     the wrapped stack's own parameters, unchanged.
     """
 
-    def __init__(self, stack):
+    def __init__(self, stack, frame=None):
         self.stack = stack
         #: `rollout_transitions(predictor, …)` calls `predictor(s, a)[1]`.
         self.predictor = stack.predictor_op
@@ -107,6 +127,31 @@ class V6ProbeTrunk:
         #: probes read `getattr(world, "window", cfg.predictor.window)`, so a v5
         #: trunk (no such attribute) keeps the old behaviour exactly.
         self.window = int(stack.cfg.predictor.window)
+        # ---- geometry surface (added 2026-08-16 for the P8 port) ------------
+        #: ⭐ A SPATIAL probe cannot be ported on ``state_dim`` alone. P8 decodes
+        #: a METRIC ego-frame raster, and whether that is admissible depends on
+        #: the readout's cell layout and on the camera field — neither of which
+        #: the v5 trunk interface has a place for, because v5 probes never asked.
+        #: Exposing them here (rather than each probe reaching into ``.stack.cfg``)
+        #: keeps ONE spelling of the v6 geometry for the whole P-battery.
+        self.grid_shape = tuple(int(v) for v in stack.cfg.grid_shape)
+        self.d_readout = int(stack.cfg.readout.d_readout)
+        self.n_cells = int(stack.cfg.n_cells)
+        self.token_grid = tuple(int(v) for v in stack.encoder.grid_shape)
+        self.in_channels = int(stack.cfg.encoder.in_channels)
+        #: the frame the encoder was fed (``None`` when the caller did not
+        #: resolve one — probes must then say so rather than assume a default).
+        self.frame = frame
+        self.is_v6 = True
+
+    def cells(self, z_op: Tensor) -> Tensor:
+        """``[…, d_op] -> […, n_cells, d_readout]`` — v6's own de-flattening.
+
+        Delegates to :meth:`V6Stack.cells`; exposed so a spatial probe can read
+        the readout LAYOUT instead of treating the state as an unstructured
+        vector ("pooling is where geometry goes to die", v6.py:1426-1434).
+        """
+        return self.stack.cells(z_op)
 
     def encode_window(self, frames: Tensor) -> Tensor:
         return self.stack.encode_window(frames)
@@ -149,11 +194,15 @@ class V6Grounding:
         return self.stack.step_readout_op.named_parameters(*a, **kw)
 
 
-def load_v6_from_ck(ck, device, *, ckpt_path=None) -> tuple[V6ProbeTrunk, int]:
+def load_v6_from_ck(ck, device, *, ckpt_path=None,
+                    with_frame: bool = True) -> tuple[V6ProbeTrunk, int]:
     """Rebuild the exact trained :class:`V6Stack`, freeze it, wrap it.
 
     Returns ``(trunk, step)`` — the same shape as the v5
     ``load_v1_from_ck(...)[0], [2]`` pair the probes already consume.
+    ``with_frame`` resolves the run's own model frame onto the trunk
+    (:func:`run_frame_of`); pass ``False`` only where the geometry seam is
+    unavailable and the caller has said so.
     """
     _ensure_scripts()
     from train_v6_staged import build_stack_from_args  # noqa: PLC0415
@@ -164,7 +213,8 @@ def load_v6_from_ck(ck, device, *, ckpt_path=None) -> tuple[V6ProbeTrunk, int]:
     stack.to(device).eval()
     for p in stack.parameters():
         p.requires_grad_(False)
-    return V6ProbeTrunk(stack), int(ck.get("step", -1))
+    frame = run_frame_of(ck, ckpt_path) if with_frame else None
+    return V6ProbeTrunk(stack, frame=frame), int(ck.get("step", -1))
 
 
 def load_trunk_auto(ck, device, *, ckpt_path=None, frame=None):

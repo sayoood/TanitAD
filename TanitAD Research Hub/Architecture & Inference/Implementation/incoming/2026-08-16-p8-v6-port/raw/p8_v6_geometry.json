@@ -1,0 +1,272 @@
+{
+ "_what": "P8's Cartesian BEV target grid vs the trunk's camera field and v6's image-plane readout cells",
+ "_evidence_class": "MEASURED (ours; pure geometry \u2014 no corpus, no checkpoint, no GPU)",
+ "_generated_by": "code/p8_geometry_census.py",
+ "target_grid": {
+  "x_fwd_m": 60.0,
+  "y_half_m": 16.0,
+  "cell_m": 0.5,
+  "shape": [
+   120,
+   64
+  ],
+  "frame": "ego, +x forward, +y LEFT",
+  "row0": "ego origin (NEAREST)"
+ },
+ "arms": {
+  "v6f_256x640_cyl120": {
+   "bev_grid": {
+    "x_fwd_m": 60.0,
+    "y_half_m": 16.0,
+    "cell_m": 0.5,
+    "shape": [
+     120,
+     64
+    ],
+    "row0_is": "ego origin (NEAREST)"
+   },
+   "camera_field": {
+    "half_angle_deg": 60.0,
+    "hfov_deg": 120.0,
+    "projection": "cylindrical"
+   },
+   "in_fov_cells": 7090,
+   "out_of_fov_cells": 590,
+   "total_cells": 7680,
+   "in_fov_frac": 0.923177,
+   "out_of_fov_frac": 0.076823,
+   "first_fully_visible_row": 18,
+   "first_fully_visible_row_x_m": 9.25,
+   "out_of_fov_max_x_m": 8.75,
+   "_bound": "HORIZONTAL field only \u2014 a necessary, not sufficient, visibility condition (see fov_mask)",
+   "_evidence_class": "MEASURED (ours; pure geometry, no corpus needed)",
+   "readout_columns": {
+    "exact": true,
+    "n_cols": 4,
+    "token_w": 40,
+    "per_column": {
+     "0": {
+      "cells": 593,
+      "frac_of_grid": 0.077214,
+      "x_min_m": 0.25,
+      "x_max_m": 27.25
+     },
+     "1": {
+      "cells": 2952,
+      "frac_of_grid": 0.384375,
+      "x_min_m": 0.75,
+      "x_max_m": 59.75
+     },
+     "2": {
+      "cells": 2952,
+      "frac_of_grid": 0.384375,
+      "x_min_m": 0.75,
+      "x_max_m": 59.75
+     },
+     "3": {
+      "cells": 593,
+      "frac_of_grid": 0.077214,
+      "x_min_m": 0.25,
+      "x_max_m": 27.25
+     }
+    },
+    "far_half_columns": [
+     1,
+     2
+    ],
+    "_read": "a readout COLUMN is an image-column block; under cylindrical that is an equal-azimuth wedge"
+   },
+   "readout_rows": {
+    "n_rows": 4,
+    "nominal_range_m": [
+     80.0,
+     26.7773,
+     8.9628,
+     3.0
+    ],
+    "row0_is": "image TOP == FARTHEST (opposite of the BEV row order)",
+    "cells_nearer_than_near_m": 384,
+    "frac_nearer_than_near_m": 0.05,
+    "prior_far_m_beyond_grid": true,
+    "_evidence_class": "ESTIMATED (v6's declared image-row prior \u2014 NOT calibrated depth; v6.py:247-273)"
+   },
+   "arm": {
+    "name": "v6f_256x640_cyl120",
+    "h": 256,
+    "w": 640,
+    "hfov_deg": 120.0,
+    "projection": "cylindrical",
+    "patch": 16,
+    "readout": [
+     4,
+     4
+    ],
+    "note": "the v6 catalog frame (train_v6_staged defaults)",
+    "token_grid": [
+     16,
+     40
+    ]
+   }
+  },
+  "v5_subframe_176x624_cyl117": {
+   "bev_grid": {
+    "x_fwd_m": 60.0,
+    "y_half_m": 16.0,
+    "cell_m": 0.5,
+    "shape": [
+     120,
+     64
+    ],
+    "row0_is": "ego origin (NEAREST)"
+   },
+   "camera_field": {
+    "half_angle_deg": 58.5,
+    "hfov_deg": 117.0,
+    "projection": "cylindrical"
+   },
+   "in_fov_cells": 7054,
+   "out_of_fov_cells": 626,
+   "total_cells": 7680,
+   "in_fov_frac": 0.91849,
+   "out_of_fov_frac": 0.08151,
+   "first_fully_visible_row": 19,
+   "first_fully_visible_row_x_m": 9.75,
+   "out_of_fov_max_x_m": 9.25,
+   "_bound": "HORIZONTAL field only \u2014 a necessary, not sufficient, visibility condition (see fov_mask)",
+   "_evidence_class": "MEASURED (ours; pure geometry, no corpus needed)",
+   "readout_columns": {
+    "exact": false,
+    "reason": "readout column mapping is NOT EXACT for token_w=39 onto 4 readout columns (39 % 4 != 0). SpatialGridReadout then uses AdaptiveAvgPool2d, whose bins OVERLAP, so a BEV cell belongs to more than one readout column and a single index would be fiction. Report the refusal instead of an index \u2014 the FOV mask itself is unaffected and stays valid."
+   },
+   "readout_rows": {
+    "n_rows": 4,
+    "nominal_range_m": [
+     80.0,
+     26.7773,
+     8.9628,
+     3.0
+    ],
+    "row0_is": "image TOP == FARTHEST (opposite of the BEV row order)",
+    "cells_nearer_than_near_m": 384,
+    "frac_nearer_than_near_m": 0.05,
+    "prior_far_m_beyond_grid": true,
+    "_evidence_class": "ESTIMATED (v6's declared image-row prior \u2014 NOT calibrated depth; v6.py:247-273)"
+   },
+   "arm": {
+    "name": "v5_subframe_176x624_cyl117",
+    "h": 176,
+    "w": 624,
+    "hfov_deg": 117.0,
+    "projection": "cylindrical",
+    "patch": 16,
+    "readout": [
+     4,
+     4
+    ],
+    "note": "the rig-clean centred sub-frame; 39 token cols onto 4 readout cols does NOT tile, so the column mapping must refuse",
+    "token_grid": [
+     11,
+     39
+    ]
+   }
+  },
+  "legacy_256x256_pinhole": {
+   "bev_grid": {
+    "x_fwd_m": 60.0,
+    "y_half_m": 16.0,
+    "cell_m": 0.5,
+    "shape": [
+     120,
+     64
+    ],
+    "row0_is": "ego origin (NEAREST)"
+   },
+   "camera_field": {
+    "half_angle_deg": 25.697,
+    "hfov_deg": 51.393999,
+    "projection": "pinhole"
+   },
+   "in_fov_cells": 5554,
+   "out_of_fov_cells": 2126,
+   "total_cells": 7680,
+   "in_fov_frac": 0.723177,
+   "out_of_fov_frac": 0.276823,
+   "first_fully_visible_row": 65,
+   "first_fully_visible_row_x_m": 32.75,
+   "out_of_fov_max_x_m": 32.25,
+   "_bound": "HORIZONTAL field only \u2014 a necessary, not sufficient, visibility condition (see fov_mask)",
+   "_evidence_class": "MEASURED (ours; pure geometry, no corpus needed)",
+   "readout_columns": {
+    "exact": true,
+    "n_cols": 4,
+    "token_w": 16,
+    "per_column": {
+     "0": {
+      "cells": 1044,
+      "frac_of_grid": 0.135937,
+      "x_min_m": 0.75,
+      "x_max_m": 59.75
+     },
+     "1": {
+      "cells": 1733,
+      "frac_of_grid": 0.225651,
+      "x_min_m": 1.25,
+      "x_max_m": 59.75
+     },
+     "2": {
+      "cells": 1733,
+      "frac_of_grid": 0.225651,
+      "x_min_m": 1.25,
+      "x_max_m": 59.75
+     },
+     "3": {
+      "cells": 1044,
+      "frac_of_grid": 0.135937,
+      "x_min_m": 0.75,
+      "x_max_m": 59.75
+     }
+    },
+    "far_half_columns": [
+     -1,
+     0,
+     1,
+     2,
+     3
+    ],
+    "_read": "a readout COLUMN is an image-column block; under cylindrical that is an equal-azimuth wedge"
+   },
+   "readout_rows": {
+    "n_rows": 4,
+    "nominal_range_m": [
+     80.0,
+     26.7773,
+     8.9628,
+     3.0
+    ],
+    "row0_is": "image TOP == FARTHEST (opposite of the BEV row order)",
+    "cells_nearer_than_near_m": 384,
+    "frac_nearer_than_near_m": 0.05,
+    "prior_far_m_beyond_grid": true,
+    "_evidence_class": "ESTIMATED (v6's declared image-row prior \u2014 NOT calibrated depth; v6.py:247-273)"
+   },
+   "arm": {
+    "name": "legacy_256x256_pinhole",
+    "h": 256,
+    "w": 256,
+    "hfov_deg": null,
+    "f_ref": 266.0,
+    "projection": "pinhole",
+    "patch": 16,
+    "readout": [
+     4,
+     4
+    ],
+    "note": "CANONICAL_256 \u2014 every pre-2026-07-27 published number",
+    "token_grid": [
+     16,
+     16
+    ]
+   }
+  }
+ }
+}
