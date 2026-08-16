@@ -4498,3 +4498,53 @@ sharper than a rate: the two highest-scoring false positives are a **dashboard `
 (0.927)** and a **commercial hoarding (0.778)**. ⇒ **A threshold removes the harmless errors and
 keeps the harmful ones** — the very failures that would corrupt a navigation claim score ABOVE the
 true signs.
+
+---
+
+## C88 — OUR TWO GIT RULES CONTRADICT EACH OTHER UNDER CONCURRENCY, AND THE "SAFE" ONE IS THE ONE THAT SWEEPS (2026-08-17, orchestrator)
+
+**NOT a retraction of a claim — a retraction of a PROCEDURE.** `CLAUDE.md` says two things that
+cannot both be followed while agents are live:
+
+1. *"when the index contains other agents' work, commit with an explicit pathspec"* — because
+   `git commit` takes the **whole index**, and this has swallowed siblings' work twice (`60265d3`,
+   `3d41bd0`);
+2. *"⚠️ `git commit -- <pathspec>` SEGFAULTS on this repo and is NOT usable as the default … prefer
+   a pathspec-free `git commit -F <msgfile>`"*.
+
+⇒ **The only commit form that works is the only commit form that sweeps.** It happened a **third**
+time tonight: `c98aadb` — titled *"The SAM3 sign confound closes on the INSTRUMENT…"* — also
+contains **12 files of an unrelated manoeuvre-label fix** (and, earlier, `06b8782` carried 12
+tactical-label files under a lane-change title, and `b2f8bc9` carried 10 sign-adjudication files
+under a `DIR_YAW` title).
+
+⚠️ **AND "CHECK THE INDEX FIRST" DOES NOT FIX IT.** I checked, and printed, the index immediately
+before every one of those commits. **Listing is not excluding.** Worse, the index moves *between*
+the listing and the commit — agents bank incrementally by design, which is behaviour we asked for.
+
+⇒ **ROOT CAUSE: a rule written for a SEQUENTIAL repo, kept unchanged after the programme went
+CONCURRENT.** With N agents staging continuously there is no moment at which the index contains
+only one stream's work; "commit your own files" stopped being an available action, and the rule
+never noticed.
+
+⇒ **THE PROCEDURE THAT ACTUALLY HOLDS, replacing the contradiction:**
+1. ⛔ **The commit MESSAGE must enumerate every stream the commit contains**, not just the one that
+   motivated it. A sweep that is *named* costs a reader nothing; a sweep that is *silent* makes the
+   swept work unfindable — which is the real damage, not the mixing.
+2. **Commit at the MOMENT a stream lands**, not in batches. The sweep window is the time since the
+   last commit; shrinking it is the only lever that does not fight the tooling.
+3. **A swept-in stream must be cross-referenced from its own package** — the manoeuvre-label fix
+   lives in `c98aadb` and its report must SAY SO, or `git log --grep` for it returns nothing.
+4. ⚠️ **Never "fix" a sweep by rewriting pushed history.** Splitting a pushed commit is the PI's
+   call, and the cure is worse than a mis-titled commit.
+
+⭐ **CREDIT: the swept agent caught this, verified nothing was lost** (all 12 files
+`HEAD:<path> == git hash-object <worktree>`), **and escalated instead of quietly re-staging** — which
+is exactly why the damage is bounded to a title rather than to the work.
+
+⚠️ **A second measurement defect surfaced in the same report, and it is mine:** the baseline I have
+quoted in every brief tonight — *"3750 passed"* — is **`stack/` only**. There is a **second suite,
+`taniteval`, 1092 tests**, which no brief of mine mentioned and which caught a **real back-compat
+break** in this work. ⇒ **A suite total that silently omits a suite is the C82 family again:** a
+number whose SCOPE is narrower than the claim it is used to support. Health claims must name which
+suites ran.

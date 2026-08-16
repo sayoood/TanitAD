@@ -368,5 +368,32 @@ banking tests were added afterwards and also fail pre-fix (`PER_WINDOW_KEYS` did
 | the pin (15 tests) | `stack/tests/test_maneuver_label_family.py` | staged |
 | trainer hash pin, deliberately updated + reason recorded | `stack/tests/test_v5_trainer_v2_val.py` | staged |
 
-**Nothing committed, nothing pushed, no branch switched. No GPU used, no pod contacted.
+**I committed nothing, pushed nothing, switched no branch. No GPU used, no pod contacted.
 `MODEL_REGISTRY.md`, `TANITAD_PAPER.md` and `…/2026-08-17-w120val-sign-adjudication/` untouched.**
+
+---
+
+## ⛔ POST-STAGING INCIDENT — this change was SWEPT INTO SOMEONE ELSE'S COMMIT, AND PUSHED
+
+**MEASURED at end of turn.** All 12 files were staged and verified (`git ls-files --cached` for the
+3 new, index-blob-vs-worktree-blob for the 9 modified). A concurrent agent then ran a
+**pathspec-free commit**, which takes the **whole index** — so every file above landed in
+
+> **`c98aadb`** — *"The SAM3 sign confound closes on the INSTRUMENT, not the corpus…"*
+
+**and `HEAD == origin/agent/arch-inf-20260803`, i.e. it is already pushed.**
+
+* ✅ **Nothing is lost or corrupted.** All 12 paths verified `HEAD:<path> == git hash-object
+  <worktree>` — byte-identical, in the repo, complete.
+* ⛔ **But the commit message describes none of it.** Nobody searching the log for the manoeuvre
+  label fix, the `per_window` banking, or the trainer-pin update will find them under a SAM3 title.
+  ⇒ **`MODEL_REGISTRY.md` / `RETRACTION_LOG.md` entries for §6 must cite `c98aadb` explicitly**, or
+  the provenance of this fix is unfindable.
+* This is `CLAUDE.md`'s *"Git hygiene — the mistake that has now happened twice"* recorded a
+  **third** time (`60265d3`, `3d41bd0`, now `c98aadb`), from the swept side. ⚠️ **The rule as
+  written does not prevent it**: it tells the *committer* to check `git status --short` for foreign
+  staged entries first, and offers pathspec-free `git commit -F` as the SAFE default precisely
+  because the pathspec form segfaults on this repo. With ≥5 concurrent agents mandated, the safe
+  default and the correct behaviour are in direct conflict, and the safe default wins by construction.
+* ⚠️ **I did not attempt to undo it.** Splitting a pushed commit is a rewrite of shared history and
+  is the PI's call, not mine — and `--amend` here is exactly what `CLAUDE.md` forbids.
