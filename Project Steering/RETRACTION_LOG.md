@@ -3824,3 +3824,47 @@ edit age.** Ten of §2's defects make a command *fail*; the eleventh — *"S-W i
 can start tomorrow"*, written before S-W was live — makes it **SUCCEED**, starting a second trainer
 on the fleet's only GPU. **A stale instruction that fails is an inconvenience; one that succeeds is
 an incident.**
+
+---
+
+## 2026-08-16 — ⛔ NEW CLASS C75: A GUARD WHOSE REFERENCE IS A MOVING POINTER BECOMES A SELF-COMPARISON
+
+*(Next free number re-grepped immediately before appending.)*
+
+The v6 factored-goal work needed the strongest guard in the programme: **the default build's
+`state_dict` must stay bit-identical to the architecture the LIVE S-W checkpoint was built from**,
+because a broken strict resume kills a 7-day run. The test compared against **`git show HEAD:…v6.py`**.
+
+**Then I committed.** `a558b79` — a whole-index commit for an unrelated runbook fix — **swept the
+agent's in-progress `v6.py` into HEAD**. From that moment `git show HEAD:…v6.py` returned **the
+agent's own file**, the test found them identical, and it **skipped itself** with *"matches HEAD
+byte-for-byte."*
+
+⇒ **IT WOULD HAVE PASSED FOREVER, AND IT WOULD HAVE PASSED LOUDEST EXACTLY WHEN THE ARCHITECTURE HAD
+DRIFTED MOST** — because the more of the change that reached HEAD, the more perfectly the comparison
+matched.
+
+| # | class | recognition signal |
+|---|---|---|
+| **C75** | **Guard referenced to a moving pointer** | a check whose baseline is `HEAD`, `latest`, `main`, "the current file", `newest mtime`, or any symbol that the act of working advances. Signal: **the guard gets quieter as the change gets bigger** |
+
+⇒ **THE FIX IS TO RESOLVE THE REFERENCE BY CONTENT, NOT BY POSITION.** The guard now walks
+`v6.py`'s own history for the newest revision **lacking the change marker** — which resolves to
+`b12c190`, and that is *also* the architecture the live S-W checkpoint was built from. A content
+anchor cannot be advanced by committing.
+
+⭐ **AND THE NEGATIVE CONTROL EARNED ITS KEEP AGAIN, in a way worth copying.** Two controls were
+run: a *registered* stray `Linear` fires every check — unsurprising. But a **DISCARDED** `Linear`
+(one RNG draw, no `state_dict` key, no parameter) **passes the param-count check AND the flag-flip
+check**, and is caught **only** by the per-tensor `torch.equal` comparison. ⇒ **The cheap checks are
+not substitutes for the expensive one**, and that is now demonstrated rather than asserted — the
+same reason a file-level md5 of `torch.save` output is inadmissible (**C72**).
+
+⚠️ **MY PROCESS ERROR, STATED PLAINLY, BECAUSE IT FIRED FOUR TIMES TONIGHT.** `git commit` takes the
+whole index and `git commit -- <pathspec>` segfaults on this repo, so I have been running
+`git add -A <dir>` and committing. That sweeps **live agents' in-progress files**, and tonight it:
+swept a writeup mid-edit, swept an unverified test file, unstaged-then-re-swept another agent's work,
+and here **silently disarmed the strongest guard in the programme**. ⇒ **RULE: `git add -A` is
+banned while any agent is live. Stage only paths a completed agent has named in its manifest**, and
+if a live agent's file is already in the index, **wait** — the index is not a queue and a commit is
+not a checkpoint.
