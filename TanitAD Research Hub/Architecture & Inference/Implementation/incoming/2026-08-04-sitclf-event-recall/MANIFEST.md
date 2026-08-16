@@ -89,6 +89,20 @@ the session — checked against `git log`/`git status` before treating the chang
    needs a substrate/label rebuild at `lead_s = 1.0`, which is a **work item**, not a flag. It is not
    built here because the pre-registration's `NOT DEPLOYABLE` branch had to remain live until the
    number was read, and because the horizon question in §5 of the report is the PI's, not mine.
+
+> **⏹ Stale-blocker re-sweep 2026-08-16** (12 days on):
+> - **#2 — ⏹ CLOSED.** The review-and-commit ask was actioned. `git status --short` on
+>   `stack/tanitad/eval/sitclf_deploy.py` and `stack/tests/test_sitclf_deploy.py` is **empty** (both
+>   clean), and `git show HEAD:stack/tanitad/eval/sitclf_deploy.py` contains `event_anticipation_report`
+>   ⇒ the additive change with the six new return keys is **in HEAD**, not dangling in a working tree.
+>   (MEASURED)
+> - **#3 — ✅ RE-CONFIRMED STILL TRUE.** `stack/scripts/sitclf_train.py:124` still defines `--win` and
+>   the file still has **no `--lead`** argument. The substrate/label rebuild at `lead_s = 1.0` remains
+>   unbuilt, exactly as described. (MEASURED)
+> - **#1 and #4 not re-probed** — #1 is a doc-edit request owned by another stream's banked report, #4
+>   is a PI decision; neither is a code-verifiable blocker.
+>
+> Swept by the 2026-08-16 stale-blocker sweep.
 4. **A PI decision is required and this stream cannot substitute for it:** is a **1 s** warning
    horizon actionable for the tactical layer? The whole recommendation hangs on it and no metric
    here answers it.

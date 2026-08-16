@@ -3,6 +3,26 @@
 **From:** Benchmarks & Eval agent · **Date:** 2026-08-02 · **Readiness: VALIDATED** (D-029)
 **Branch:** `agent/benchmarks-eval-20260802`
 
+> ⏹ **CLOSED 2026-08-16 — THE TITLE IS NOW STALE. The driving block is NOT missing CTRV; it landed
+> 2026-08-03 and is in the tip.** Read the title as history, not as a to-do.
+> Evidence (MEASURED, tip working tree — all four pieces of the proposal are present):
+> - `taniteval/taniteval/driving.py:313` → `FLOORS = ("cv", "holdv0", "ctrv")` (was the two-member
+>   family), with a `FLOOR_DESC` table naming each floor and a block comment recording the defect and
+>   its size (*"adding CTRV moves 16 of 25 banked arms' headline verdicts and shrinks flagship-v1's
+>   sustained-turn margin 5.3x"*).
+> - `taniteval/taniteval/rollout.py:233` → persists `"ctrv": torch.cat(CT).float()` beside `cv`
+>   (hunk 1 applied).
+> - `taniteval/taniteval/ctrv_backfill.py` → present, as proposed.
+> - `taniteval/tests/test_ctrv_backfill.py` → present, i.e. the backfill is inside the suite that must
+>   stay green rather than only in this package.
+> This matches the ORCHESTRATOR VERDICT below (**integrate-with-changes**, 2026-08-03) exactly, so the
+> verdict is corroborated by the code and not merely asserted.
+> ⚠️ **Escalation #1 in the block below is NOT closed by this.** `Project Steering/MODEL_REGISTRY.md:219`
+> still reads *"Clears every trivial bar on the same 881 windows: … CTRV oracle 0.523"* — a
+> point-estimate claim, while the package's paired estimator gives **+0.0993 [−0.026, +0.220] NOT
+> separated**. ⛔ Registry text is Project-Steering-owned and was deliberately not edited by this
+> sweep; the restatement is still owed. Swept by the 2026-08-16 stale-blocker sweep.
+
 ## What
 
 Add **CTRV** (constant turn rate + constant velocity) to `taniteval/driving.py`'s trivial-floor

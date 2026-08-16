@@ -46,6 +46,31 @@ loud rather than shipping mis-scaled frames. Note:
   existing `cosmos_drive`/`calib`/`comma2k19`/`_contract`; no change to any existing module. Because it fails
   loud on real front frames, integrating it does **not** risk silent bad data — worst case it is a
   ready-but-blocked loader until D-016 R1.
+
+> ⏹ **CLOSED 2026-08-16 — "until D-016 R1" CLEARED. D-016 R1 LANDED ON 2026-07-17, TWO DAYS AFTER
+> THIS WAS WRITTEN. PandaSet's geometry is no longer blocked.**
+> Evidence (MEASURED): the R1 package `…/Data Engineering/…/incoming/2026-07-17-d016-r1-pinhole-rectify/INTAKE.md:49`
+> states it as its headline — *"**PandaSet is unblocked**: 467 → 266.0 exact, at a measured cost of
+> 37.7 %"* — and its table at `:46` shows the PandaSet front row moving **466.97 (BLOCKED) → 266.0**.
+> The R1 code is in the tip and is **guarded by a PandaSet-specific test**:
+> `stack/tests/test_calib_r1.py:65` `test_pandaset_rectify_lands_canonical()`, with
+> `:57 test_pandaset_naive_crop_is_height_bound()` pinning the old failure so it cannot silently
+> return. `stack/tanitad/data/calib.py` carries the rectify path (`PROJECTIONS`, `:75`; canonical
+> 256/266/pinhole check, `:121-127`).
+>
+> ⛔ **BUT THE FLIP THIS SENTENCE PROMISES WAS NEVER PERFORMED — and that is the live work item.**
+> Two probes: `stack/tanitad/data/pandaset.py` is **absent** from the tip, and
+> `grep -rn "pandaset" --include="*.py" stack` finds it only in the **licence registry**
+> (`lake/schema.py:77` `SourceLicense("owned-safe","CC-BY-4.0", share_alike=False, …)`) and in the R1
+> **tests** — never as a loader. So PandaSet has been *geometrically unblocked and un-integrated for
+> ~30 days*, and its own INTAKE still reads as though the geometry is the reason.
+> ⇒ The remaining work is the flip this bullet describes (switch `strict` / use the pad-crop) plus the
+> deferred real-bytes `verify_real_clip` below — **not** another geometry investigation.
+> ⚠️ Note the same bullet's wider claim also aged: it calls R1 *"a prerequisite for the whole owned
+> real-urban tier (ZOD fisheye, Udacity narrow-FOV …)"*. ZOD's own package
+> (`…/incoming/2026-07-18-zod-loader/`) later MEASURED ZOD as geometrically unblocked **independently**
+> of this (f_eff 266.0, observed_frac 1.00), so R1 was not on ZOD's critical path.
+> Swept by the 2026-08-16 stale-blocker sweep.
 - Deferred real-bytes verification (`verify_real_clip`, documented, not in CI — the Cosmos precedent): confirm
   PandaSet's world-frame planarity/axis order and the camera↔pose timestamp alignment; and recover the constant
   camera-yaw offset (motion-heading vs `heading` quaternion) that would justify switching to quaternion+offset.

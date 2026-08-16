@@ -51,6 +51,45 @@ Wednesday `tanitad_gates.run_d1` (see below). The five headline metrics operate 
   it consumes `ScenarioTelemetry` columns, not any simulator API, so D-014 does not touch this package.
   **No metric is claimed on a real TanitAD run here** — only synthetic fixtures with known answers.
 
+> ⏹ **PARTIALLY CLOSED 2026-08-16 — 2 of the 5 metrics HAVE since been measured for real; 3 are
+> still renderer-gated; and the named substrate has moved on. Check this before commissioning any
+> "measure the custom suite" work.**
+>
+> **CLEARED — TMS and CNCE are no longer synthetic-only.** Evidence (MEASURED):
+> `…/Benchmarks & Eval/…/incoming/2026-07-24-traffic-light-scenario-metric/real_tms_cnce.json`,
+> `evidence_class: "MEASURED (real comma2k19 val telemetry + real base250cam architecture)"`,
+> 30 episodes, `params_billions 0.2628`, `decision_tick_p50_ms 14.331` → `TMS_expert_log` median
+> **0.0435** and `CNCE` median **210 551**. ⚠️ Read its own two caveats with the numbers: TMS there
+> scores the **expert log's** smoothness (a reference band, P8 — not our policy), and CNCE's
+> `collisions = 0` holds **by log-replay construction**, so it is an *architecture* efficiency number,
+> not a driving one.
+>
+> ✅ **STILL TRUE — LAL / OKRI / LOPS remain un-measured and renderer-gated.** The same artifact says
+> it verbatim: *"LAL/OKRI/LOPS/TLC need rendered occlusion/signal geometry … renderer-gated, NOT
+> computed here (no telemetry, no number)."* Independently corroborated by the scenario side: the only
+> runner is still `stack/scripts/scenario_suite_dryrun.py` (a **dryrun**), and
+> `stack/tanitad/eval/scenarios/registry.py` registers only `work_zone_phantom` +
+> `traffic_light_red/green`.
+>
+> ⚠️ **SUPERSEDED — "the closed-loop substrate is now CARLA-on-pod (W31–32)" is no longer the whole
+> picture, and CARLA-on-pod was never fired.** What actually exists today:
+> - **T1, the action-closed-loop tier, IS provisioned and is now the PRIMARY tier for any capability
+>   claim** — `taniteval/tools/t1_eval.py`, per `Project Steering/EVAL_DOCTRINE.md` (**BINDING
+>   2026-08-09**). It needs no simulator: the predictor consumes the planner's **own** actions with
+>   perception fixed at t0.
+> - **Re-perception (T2) moved from CARLA to AlpaSim/NuRec.**
+>   `…/Architecture & Inference/…/incoming/2026-08-06-mpc-planner-design/MPC_WM_DESIGN.md:99` —
+>   *"re-perception closed loop remains the AlpaSim/NuRec work item"* — and AlpaSim has real banked
+>   output at `stack/experiments/alpasim-gsplat/results/` (`closedloop-hq-render`, `cutin`,
+>   `2026-08-03-rolling-shutter`, `metrics_flagship_obj_vs_empty.json`).
+> - `Project Steering/ROADMAP.md:79` still names CARLA-on-pod as X4's substrate and marks it
+>   *"Prototype … camera-driven ego needs the graphics-pod recipe, **not fired yet**"*. ⛔ Roadmap text
+>   is Project-Steering-owned and was deliberately not edited by this sweep — flagged, not resolved.
+>
+> ⇒ The package's own design claim survives all of this untouched: the suite is **sim-agnostic**
+> (it consumes `ScenarioTelemetry` columns, not a simulator API), so the substrate churn costs it
+> nothing. Swept by the 2026-08-16 stale-blocker sweep.
+
 ## Risk & rollback
 
 - Blast radius if integrated: additive only — one module + one test file in the `eval/` package. No

@@ -955,6 +955,19 @@ Per the pre-registered rule this **confirms "floor too high"** → v4.2b (floor 
 **The corpus experiment: §1.3's recipe, unchanged, on 3.8× the data.** Every lever
 matches `flagship4b-v2-30k`; the **corpus is the only differing variable**.
 
+> ⚠️ **STATUS ANNOTATION APPENDED 2026-08-16 by the stale-blocker sweep — nothing below is changed,
+> corrected or restated; this note adds only a re-probe flag.** This row's status reads
+> **🟢 RUNNING** with **ETA 2026-07-29T01:10Z**, which is **18 days in the past**, and no completion
+> row, final-step row or final-eval row for `flagship-v2corpus-30k` was found anywhere in this
+> registry. Meanwhile `Project Steering/BACKLOG.md` C1 records pod1 — this run's host — as having
+> `/dev/nvidia*` **empty**. ⇒ **Treat the 🟢 RUNNING status as UNVERIFIED, not as a live run.**
+> ⛔ **This annotation does NOT assert that the run finished, and does NOT assert that it died** —
+> neither was probed (this sweep is CPU-only and does not touch pods). It asserts only that the
+> status is stale on its face and must be re-probed before anything waits on it or quotes it.
+> Downstream: `BACKLOG.md` C2 is gated on this run and has been marked UNVERIFIABLE for the same
+> reason. ⚠️ Do not confuse this arm with `flagship-v1arch-v2bal-30k`, which shares the **v2bal
+> corpus** but is the **v1-architecture / every-v2-lever-false** arm.
+
 | Field | Value |
 |---|---|
 | **Status** | 🟢 RUNNING on `tanitad-pod` (pod1, RTX A6000). Trainer PID **699286** (parent `bash -c` wrapper 699284). ETA **≈2026-07-29T01:10Z** (30,000 × MEASURED 11.3 s/step ≈ 94 h). |
@@ -1582,6 +1595,23 @@ manoeuvre decision), and STRATEGIC stays `n/a` with reason + n because PhysicalA
 no map, lane graph or route signal. Distance-keeping remains UNAVAILABLE pending a lead
 block on this dense grid (`tools/build_lead_block.py`) — a WORK ITEM, not a pass.
 
+> ⚠️ **PATH ANNOTATION APPENDED 2026-08-16 by the stale-blocker sweep — the numbers and the verdict
+> above are untouched; only the citation is corrected.** **`tools/build_lead_block.py` does not
+> exist.** The repo-root `tools/` holds 16 files and none of them is `build_lead_block.py` (probed
+> three ways: `git ls-tree HEAD -- tools/`, `git ls-files -- tools/`, filesystem). The instrument
+> **does exist**, at **`taniteval/tools/build_lead_block.py`**, with its pure-join sibling
+> `taniteval/taniteval/lead_source.py` and metric `taniteval/taniteval/lead_metrics.py`.
+> ⇒ **This is exactly the defect §4.2 of this registry names — "it sends the next reader to a path
+> that does not exist" — and here it is worse than a dead link: it makes a BUILT instrument look
+> UNBUILT, which invites re-commissioning work that is already done.**
+> ⛔ **The WORK ITEM itself STANDS and is NOT closed:** the lead block has not been built *for this
+> dense 6 844-window T1 grid*, so distance-keeping is genuinely UNAVAILABLE **on these rows**. What
+> is wrong is only the path — and the implication that the tool is missing.
+> ⚠️ **Scope note, because these two facts are easy to read as a contradiction:** distance-keeping
+> **is** closed on the **OOD-val 290/40-episode grid** (§ above, `families_unavailable=[]`,
+> `v1arch_oodval_q90_4fam_LEAD.json`) and **not** closed on **this T1 dense grid**. Both are true;
+> they are different grids and different arms. Always carry the grid with the availability claim.
+
 ⚠️ Instrument note for anyone reproducing: both arms rolled all 40 episodes and then died in
 `analyze()` on `from taniteval import selgap` (pod5's package predates the module). The
 dumps survived, so the numbers above come from `--analyze-only` over them with **zero GPU
@@ -1643,6 +1673,12 @@ maps data"*). No rescore can close this; the programme's instrument is the VLM p
 PH0→PH1→PH2. Distance-keeping (the other half of LONGITUDINAL) also remains UNAVAILABLE
 pending a lead block on this dense grid (`tools/build_lead_block.py`) — a WORK ITEM, not a
 pass, and the half where 88.7 % of the T0 oracle gap was measured to live.
+
+> ⚠️ **PATH ANNOTATION APPENDED 2026-08-16 (same correction as §1.13's, repeated here because this
+> line is quoted independently).** The instrument is **`taniteval/tools/build_lead_block.py`**, not
+> `tools/build_lead_block.py` — the latter does not exist. The **WORK ITEM stands** for this dense
+> grid; only the citation and the "tool is missing" implication are wrong. Distance-keeping **is**
+> closed on the OOD-val grid (`families_unavailable=[]`) — carry the grid with the claim.
 
 **⭐ PH0 v2 VLM EXTRACTION — GATE PASS — MEASURED 2026-08-12 [8-clip smoke, pod4,
 `Qwen/Qwen3.5-9B` via `AutoModelForImageTextToText`, grammar-constrained].** The PI's

@@ -119,6 +119,33 @@ Path: `taniteval/taniteval/refc_eval.py` (`collect`, **line 109**) → `taniteva
 
 ⚠️ Two caveats the original report omitted: (a) `collect` does not retain `poses`/`last` per window, so the GT labels must be minted **inside** the batch loop where `ep.poses` and `last` are live; (b) `all_families` requires pred `[n,H,2]` and the current dump is the sparse 4-waypoint 0.5 s surface — the panel must carry the cadence stamp or it is not comparable to a dense run.
 
+> **⏹ Stale-blocker re-sweep 2026-08-16** (14 days on) — the family table above re-probed at HEAD, CPU-only.
+>
+> - **LONGITUDINAL row — ⏹ CLOSED. `distance_keeping` is NO LONGER "hardcoded UNAVAILABLE".** The blocker
+>   cleared **2026-08-03, one day after this doc was written**, and the "corpus-wide ingest work item"
+>   it assigns has been done. `four_families.py:120-126` no longer contains that branch at all (those
+>   lines now hold `kappa_verdict`); the family is computed by `_distance_keeping` (`four_families.py:307-369`)
+>   via `taniteval/taniteval/lead_metrics.py` (`distance_keeping` :125) with `lead_source.py` supplying
+>   the track, landed in commit **`49e2229`** *"LONGITUDINAL distance-keeping is COMPUTABLE — the
+>   four-family n=0 hole is closed"*, carrying its GT-vs-CV control **D-LEAD-1** (Δ min-TTC **+1.7474 s
+>   [1.5813, 1.9218]**). The `obstacle.offline` reader is `stack/scripts/lead_state_gate.py`.
+>   ⚠️ **The precise residue:** `UNAVAILABLE` is now a **conditional** branch (`four_families.py:245,315`)
+>   that fires only when the caller passes no `lead`. So the correct 2026-08-16 statement is *"the
+>   instrument exists; REF-C's eval does not yet supply `lead`"* — a caller-side wiring line, **not** a
+>   corpus-wide ingest project. Anyone re-reading the row above would have scoped this ~10× too large.
+> - **TACTICAL / STRATEGIC rows — ✅ RE-CONFIRMED STILL TRUE.** `taniteval/taniteval/refc_eval.py::collect`
+>   (still at `:109`, return still at `:172-194` — the doc's line cites are all still exact) returns
+>   `pred/gt/cv/eid/speed/head_deg/wp_steps/nav_provenance/method` and **none of
+>   `maneuver_pred`, `maneuver_gt`, `route_pred`, `route_gt`**. `route_logits` is still read and
+>   discarded at `:96`. ⇒ **RANK 1 / R1a below — flagged "0 GPU, EXECUTABLE NOW … pure plumbing" —
+>   has not been done in 14 days.** It is still executable now and still 0-GPU; only R1b (the
+>   re-collect) needs hardware. Escalated in-channel by the sweep.
+> - ⚠️ **Path note for whoever picks this up:** the module is `taniteval/taniteval/refc_eval.py`. There is
+>   **no** `stack/scripts/refc_eval.py`; the similarly named `stack/scripts/refc_v12_eval.py` and
+>   `stack/scripts/refc_tactical_probe.py` each define their own `collect` and are NOT this one.
+>
+> All verdicts MEASURED at HEAD. Swept by the 2026-08-16 stale-blocker sweep.
+
 ## 3. Thor runbook O1–O14 vs REF-C
 
 **Per-stage precision, MEASURED on REF-C-base** (`eff_refc-base-30k.json`, A40, p50 ms):

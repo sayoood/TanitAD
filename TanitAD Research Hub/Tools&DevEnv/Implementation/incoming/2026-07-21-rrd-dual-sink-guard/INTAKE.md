@@ -68,6 +68,21 @@ next week, sees an empty timeline, and debugs the model instead of the sink.
 `stack/scripts/replay_app.py` should surface `--allow-stub-rrd` so the opt-out
 is reachable from the CLI.
 
+> ✅ **RE-CONFIRMED STILL TRUE 2026-08-16 — NOT integrated, and the 3 314× data-loss stub is still
+> reachable.** Three probes:
+> 1. `grep -rn "allow_stub_rrd\|check_sinks\|allow-stub-rrd" --include="*.py" stack` → **zero hits**.
+>    Neither the parameter, the guard function, nor the CLI flag exists anywhere under `stack/`.
+> 2. `stack/scripts/replay_app.py` still accepts `--rrd` (`:277`) and `--serve` (`:279`)
+>    **independently, with no mutual guard** — the exact both-sinks call that MEASURED 16 rows instead
+>    of 3 196. Its only related flag is `--grpc-only` (`:283`), which is about proxied ports, not sink
+>    conflict.
+> 3. `rr_dual_sink_guard.py` exists only in this package; there is no
+>    `stack/tanitad/replay/rr_dual_sink_guard.py`.
+> ⇒ The proposal is a **two-line change that has now sat unintegrated for 26 days**, and the failure
+> it prevents is silent (a researcher opens a `.rrd` that looks fine and is 3 314× short).
+> ⛔ **Escalated as an integration item**, per the standing rule that "please merge" must not live only
+> in a package. Swept by the 2026-08-16 stale-blocker sweep.
+
 ## Risk / rollback
 
 Low, but **behaviour-changing**: any caller passing both `--rrd` and `--serve`

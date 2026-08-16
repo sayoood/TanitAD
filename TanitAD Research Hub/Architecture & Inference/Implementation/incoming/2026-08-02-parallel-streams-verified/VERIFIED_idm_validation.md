@@ -114,7 +114,22 @@ Scale ambiguity — ⚠️ **REWRITTEN per R2.** Physics stays **PUBLISHED** (Ni
 
 ## 4. FOUR-FAMILY RULE — VIOLATED (upheld in full)
 
-**No IDM script imports `four_families`** — two independent probes, both empty; every consumer is world-model side. LONGITUDINAL **PARTIAL** (distance-keeping absent; `four_families.py:97-128` marks it UNAVAILABLE — ingest does not read `obstacle.offline`). LATERAL **PARTIAL** (no curvature/heading/cross-track bias; exactly what `lateral():131-164` emits). TACTICAL ⛔ **ABSENT** — the IDM emits no manoeuvre class (`idm3_arms.py:46` is prose only); the only manoeuvre HUD comes from flagship-v1's policy brains (`VALIDATION.md:110-111`). STRATEGIC ⛔ **ABSENT**.
+**No IDM script imports `four_families`** — two independent probes, both empty; every consumer is world-model side. LONGITUDINAL **PARTIAL** (distance-keeping absent; `four_families.py:97-128` marks it UNAVAILABLE — ingest does not read `obstacle.offline`). LATERAL **PARTIAL**
+
+> ⏹ **PARTIALLY CLOSED 2026-08-16 — the parenthetical about distance-keeping is STALE; the headline is not.**
+> **Still true:** no IDM script imports `four_families` (re-probed at HEAD).
+> **No longer true:** *"`four_families.py:97-128` marks it UNAVAILABLE — ingest does not read
+> `obstacle.offline`."* Both halves cleared on **2026-08-03, one day after this doc**: `obstacle.offline`
+> IS read (`stack/scripts/lead_state_gate.py`, strictly causal), the metric is computed by
+> `taniteval/taniteval/lead_metrics.py::distance_keeping` (:125) through `four_families._distance_keeping`
+> (:307-369), and `UNAVAILABLE` survives only as a **conditional** branch (`four_families.py:245,315`)
+> for callers that pass no `lead`. Landed in commit **`49e2229`** *"LONGITUDINAL distance-keeping is
+> COMPUTABLE — the four-family n=0 hole is closed"*; source bundle
+> `…/incoming/2026-08-03-longitudinal-distance-keeping/`.
+> ⚠️ ⇒ **the remaining LONGITUDINAL gap for the IDM is a caller-side wiring line, NOT the corpus-wide
+> ingest project this sentence implies.** Do not commission an ingest stream off this line.
+> Sibling with the same stale claim, annotated by the same sweep: `VERIFIED_refc_optimisation.md:114`.
+> Evidence (MEASURED, HEAD). Swept by the 2026-08-16 stale-blocker sweep. (no curvature/heading/cross-track bias; exactly what `lateral():131-164` emits). TACTICAL ⛔ **ABSENT** — the IDM emits no manoeuvre class (`idm3_arms.py:46` is prose only); the only manoeuvre HUD comes from flagship-v1's policy brains (`VALIDATION.md:110-111`). STRATEGIC ⛔ **ABSENT**.
 
 **The hazard stands and is now sharper.** ⚠️ Per R2 the honest framing is *not* "strong on speed because rotation is scale-free" — on A0, **speed beats yaw on every slice**, and the cross-domain rotation number on content-clean comma is **+0.3038**. A pseudo-label set whose rotation channel reads +0.30 out-of-corpus while its only YouTube-side check is a speed histogram is exactly "speed right, manoeuvre wrong", undetectable. The 07-24 parity validation already shows yaw at **71 % of ceiling vs 109 % speed**.
 

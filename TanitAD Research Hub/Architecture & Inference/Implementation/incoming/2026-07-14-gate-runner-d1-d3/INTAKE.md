@@ -32,6 +32,21 @@ success → D1–D3 are labelled **necessary-not-sufficient**; closed-loop D4–
     D3 imagined/oracle ADE@2s ratio ≈ 1.0 ≤ 1.5.
   - BLOCKED path — a batch-dependent `encode_fn` (the ALPS-4B BatchNorm incident) fails I2 → gate BLOCKED;
     missing I2 → BLOCKED; a garbage predictor (imag-rel ≫ 0.8) → D2 BLOCKED on I4.
+
+> ⏹ **CLOSED 2026-08-16 — this Evidence line describes the PRE-INTEGRATION package and is
+> SUPERSEDED BY THIS DOCUMENT'S OWN VERDICT below.** "imag-rel ≫ 0.8 → **D2 BLOCKED on I4**" is no
+> longer how the integrated gate behaves: the ORCHESTRATOR VERDICT (2026-07-08) records change (2),
+> **imag-rel demoted from the D2 admissibility row to a diagnostic metric (A13/D-017)**, and the
+> shipped code matches.
+> Evidence (MEASURED, tip working tree): `stack/tanitad/eval/gates.py` — `run_d2` builds
+> `rows = [_i1_row, _i2_row, _i3_row]` (+ optional `_i7_row`) at `:332-335` with **no I4 row at all**;
+> `i4_imag_relative` survives only as `metrics["imag_rel_diagnostic"]` (`:348`) and the verdict string
+> at `:358` states it in words: *"imag-rel={…} is diagnostic (D-017)."*
+> ✅ **The other three branches on this line ARE still true**, and D3 is unchanged: `run_d3` still
+> carries `_i4_row(z_imag_future, z_true_future, z_prev, ceil=I4_FLOOR)` at `:396-397`, exactly as
+> the verdict says (*"D3 keeps its I4 row — multi-step decode is a different claim"*).
+> ⇒ Anyone citing this package's D2 test coverage must read to the VERDICT block; the Evidence
+> section alone will mis-state the gate. Swept by the 2026-08-16 stale-blocker sweep.
   - Assembly: `gates_metrics_json` emits `instruments` before `gates` (protocol §6) and a PASS/FAIL/BLOCKED
     summary; `extra_metrics` hook merges.
   - End-to-end: a real `WorldModel(smoke_config)` runs through `run_d1`; its batch-free-norm encoder

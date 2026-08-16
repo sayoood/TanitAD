@@ -186,6 +186,32 @@ Model load reuses `stack/tanitad/eval/ckpt_compat.build_world_from_ckpt`.
 - `TODO(sim)` resample the frame buffer to an exact 100 ms grid once real frame timing
   is known; per-session buffers for multi-rollout batching (topology>1).
 
+> ⏹ **CLOSED 2026-08-16 — THE ADAPTER IS NO LONGER A STUB AND THE `TODO(ours)` LIST IS EMPTY.**
+> The real adapter lives at `stack/experiments/alpasim-driver/tanitad_model.py` (plus
+> `drive_smoke.py` and `models__init__.py` beside it). Evidence (MEASURED, tip working tree):
+> `grep -c TODO stack/experiments/alpasim-driver/tanitad_model.py` → **0**, and each listed TODO has
+> a named resolution in the shipped file:
+> - crop/resize + normalisation → `_resize_and_center_crop(img, self.H, self.W)` (`:167`);
+> - `wp` layout → `wp = accumulate_se2(dpose)[0]` giving `[T, 2]` **in the ego frame** (`:212`), fed to
+>   `ModelPrediction(trajectory_xy=…)` (`:219`);
+> - heading / y-sign → `_compute_headings_from_trajectory(wp)` (`:216`);
+> - `nav_cmd` index alignment → **asserted at import time**, not assumed: the module docstring pins
+>   *"`alpasim_driver.models.base.DriveCommand` is `LEFT=0, STRAIGHT=1, RIGHT=2, UNKNOWN=3`"* (`:30`)
+>   and `:57-59` raises if the enum ever drifts from TanitAD's route class.
+> **AlpaSim also produced real closed-loop output**, so this is not a paper integration:
+> `stack/experiments/alpasim-gsplat/results/` holds `closedloop-hq-render/`, `cutin/`,
+> `2026-08-03-rolling-shutter/`, `2026-08-03-rolling-shutter-adversarial/` and
+> `metrics_flagship_obj_vs_empty.json`.
+> ⚠️ **Do NOT read this as "closed loop is solved."** Per `Project Steering/EVAL_DOCTRINE.md`
+> (BINDING 2026-08-09) the primary offline tier is **T1** (`taniteval/tools/t1_eval.py`), and **T2
+> re-perception sim is still not provisioned** —
+> `…/Architecture & Inference/…/2026-08-06-mpc-planner-design/MPC_WM_DESIGN.md:99` still records
+> *"re-perception closed loop remains the AlpaSim/NuRec work item."*
+> ⚠️ **UNVERIFIABLE from this box:** §5's `TODO(sim)` 100 ms-grid resample and the multi-rollout
+> per-session buffers are properties of a live sim session; this CPU-only sweep could not exercise
+> them. Absence of a TODO comment is not proof the resample was done — treat that one as open.
+> Swept by the 2026-08-16 stale-blocker sweep.
+
 ---
 
 ## 6. Disk / GPU footprint (for a real host)

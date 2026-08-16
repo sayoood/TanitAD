@@ -50,6 +50,26 @@ seam (Architecture 2026-07-14) — the D1 gate divides model_ADE by the per-stra
 best-of-3 floor instead of a single CV scalar. If a tests home is wanted, the analytic
 tests port as-is (no fixtures / no real bytes required).
 
+> ⚠️ **RE-CONFIRMED STILL PENDING 2026-08-16 — and this one is the WORST shape of stale: THE MODULE
+> NEVER LANDED, BUT ITS NUMBER IS BEING QUOTED AS AN AUTHORITATIVE FLOOR.**
+> - **The code is absent.** Two probes: `stack/tanitad/eval/baselines.py` does not exist, and
+>   `grep -rn "skill_score" --include="*.py" stack` → **zero hits**. `skill_score` was never wired into
+>   the gate runner's `extra_metrics` seam, so **no D1 gate has ever divided by the per-stratum
+>   best-of-3 floor** — D1 still uses its own `D1_ADE_MAX` threshold (`stack/tanitad/eval/gates.py`).
+> - **The number, however, is live in the quotable source.** `Project Steering/MODEL_REGISTRY.md:100`
+>   lists *"best-of-3 kinematic floor 0.5005"* in the Trivial-floor row, and `:219` uses it in a
+>   headline claim: *"Clears every trivial bar on the same 881 windows: best-of-3 kinematic floor
+>   0.5005 · CTRV oracle 0.523 · …"*.
+> ⛔ **ESCALATION — a floor is being cited that no committed instrument computes.** Two things must be
+> checked by someone who can edit Project Steering (this sweep deliberately did not): (a) that the
+> registry's 0.5005 was recomputed on the **canonical 881-window val40** rather than inherited from
+> this package's **comma-hwy** strata, and (b) this package's own Risk line, which is explicit that
+> *"the hardcoded per-stratum denominators (straight 0.056 / gentle 0.059 / sharp 0.164 @1s,
+> comma-hwy) are corpus-specific — recompute per eval corpus, do not treat as universal."*
+> ⚠️ Same family as the CTRV escalation next door, where an *"INHERITED CTRV 0.523 from another corpus
+> with no interval"* was already caught in `…/incoming/2026-08-02-ctrv-floor/INTAKE.md`.
+> Swept by the 2026-08-16 stale-blocker sweep.
+
 ## Risk / rollback
 
 - **Risk:** low. Read-only consumer; no metric/gate/training change until the

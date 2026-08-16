@@ -3556,10 +3556,53 @@ drift detector *proved able to fail*. Its failure messages name the documents to
 `physicalai.py` (the episode build), **6** program-wide including the pod-side join. ⇒ **RULE: state
 the LAYER with the count, never the bare phrase "our ingest".**
 
-**Blast radius (this entry needs one, per the R-2026-08-04 rule):** the stale "4 of 36" reached **17
-documents plus a code docstring** (`stack/tanitad/data/bev_raster.py:12` — *a stale count in code
-outlives one in prose, because nobody greps docstrings*). Highest-authority carriers:
+**Blast radius (this entry needs one, per the R-2026-08-04 rule):** the stale count reached **14
+documents (17 sites) plus a code docstring** (`stack/tanitad/data/bev_raster.py:12` — *a stale count
+in code outlives one in prose, because nobody greps docstrings*). Highest-authority carriers:
 `Project Steering/EVAL_PROTOCOL_OODVAL_2026-08-05.md:143` (a **protocol**, and doubly stale — wrong
 count *and* cleared blocker), `Project Steering/V6F_PLANNER_DESIGN.md:536`,
 `Project Steering/Gates/flagship-v5-retrain.PREP.md:58` ("32-of-36" → 30-of-36).
 Full sweep + verdict tables: `…/incoming/2026-08-16-stale-blocker-sweep/STALE_BLOCKER_SWEEP.md`.
+
+### C70 — what the full-corpus sweep added (same day, 3 parallel streams, 67 claims verified)
+
+**C70a — A STALE POSITIVE STATUS. The inverse failure, and it is worse.** `BACKLOG.md` C2 /
+`BOOST_PROGRAM.md` S-3 / `MODEL_REGISTRY.md` §1.7 all carry v2corpus as **"🟢 RUNNING"** with an ETA
+of **2026-07-29 — 18 days past** — and no completion row. **A stale blocker makes you rebuild
+something; a stale "running" makes you WAIT FOREVER**, and it never trips the "is this still true?"
+instinct because it reads like good news. ⇒ **RULE: a status of RUNNING carries an ETA, and an
+expired ETA is a DEFECT, not a delay. Probe or downgrade it.**
+
+**C70b — A WRONG PATH MAKES A BUILT INSTRUMENT LOOK UNBUILT.** `MODEL_REGISTRY.md:1583,1644` cite the
+distance-keeping instrument as `tools/build_lead_block.py`. That path does not exist (three probes);
+the file is `taniteval/tools/build_lead_block.py`. ⇒ **This is a SECOND, INDEPENDENT mechanism aimed
+at the SAME instrument as the stale blocker above.** Today's wasted commission had two sufficient
+causes, either of which alone would have produced it. ⇒ **RULE: a citation is a claim. `test -f` it.**
+
+**C70c — A BLOCKER CAN BE STALE THE DAY IT IS WRITTEN.** Two cases, both **same-day**:
+`ROADMAP.md:68,112,297` said `stack/tanitad/scena/` *"does not exist"* — it was committed the same
+day (`9ebfb09`); `REPO_TRIAGE_2026-07-20.md:67,287` said *"`tools/` does not exist in HEAD at all"* —
+16 files + 10 tests landed the same day (`c4d8451`, `1e13e3a`). ⇒ **Expiry is not proportional to
+age. Never treat a recent doc as safe.**
+
+**C70d — the survival curve is BIMODAL, which refutes a prior conclusion.** The 2026-07-26 program
+harvest concluded *"most of today's stranding is same-day"*. **REFUTED: 9 of its 12 open items are
+still open 21 days later.** ⇒ **What clears, clears fast; what does not clear that day tends never to
+clear.** So the triage question is not *"how old is it?"* but *"has anything touched it since day
+one?"* ⇒ **RULE: an item still open at day 2 needs an OWNER, not a re-read — it will not self-clear.**
+
+**C70e — a HALF-MERGE defeats the existence probe.** `--nav-known-channel` parses at
+`stack/scripts/refc_train.py:1221,726` but `:402` never passes `nav_known=`, so
+`stack/tanitad/refs/refc.py:2005` raises on the first forward pass. *"Does the flag exist?"* returns
+**yes**; the thing is broken. ⇒ **RULE: verify a merge by RUNNING the path, not by finding the symbol.**
+*(Same family as the sibling lesson that green-by-import is not green-by-execute.)*
+
+⚠️ **And a refuted PREMISE does not clear the CLAIM it supported.** `ROADMAP.md:104` blocks a CARLA
+dry-run on "a graphics-capable pod"; the Vulkan premise died with C2 and AlpaSim ran bare on an A40 —
+but **no CARLA run exists**, so the blocker stands. Verdict **PARTIAL**, not CLEARED. Recording it as
+CLEARED would have been a stale "it works now", which is the same defect pointed the other way.
+
+**Sweep totals (MEASURED 2026-08-16):** 3 streams · 48 `INTAKE.md` + 121 `Project Steering/*.md` +
+~507 `incoming/**` docs · **67 claims adjudicated, 30+ CLEARED and annotated in place, 8 still-open
+integration requests surfaced** (oldest **24 days**, one of which had its gating condition — "the next
+v4.x launch" — voided by the programme reaching v6).

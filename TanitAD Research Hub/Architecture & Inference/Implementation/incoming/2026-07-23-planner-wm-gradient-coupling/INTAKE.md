@@ -60,5 +60,18 @@ restart.
 ## Verdict (orchestrator writes here)
 
 - **Verdict:** _pending_
+
+> ⚠️ **RE-CONFIRMED STILL PENDING 2026-08-16 — but the trainer moved underneath it, so re-verify the
+> splice before integrating.** The proposed module never landed: `stack/tanitad/train/grad_surgery.py`
+> and `stack/tests/test_grad_surgery.py` are both **absent**, and `grep -rn "seam_project\|_SeamProject"
+> --include="*.py" stack` → **zero hits** (two probes: path + symbol).
+> ⚠️ **`train_flagship_v4.py` DOES now carry a trunk→planner gradient seam — just not this one.** It
+> has the **scalar** λ_plan seam (`:13` *"GRADIENT scale at the trunk→planner seam (O-20), applied
+> inside the head"*; `:104` *"the planner, under the λ_plan gradient seam"*) and already logs seam
+> diagnostics (`:1145` `seam_norm_ratio_preclamp_max`). ⇒ The package's `--coupling scalar` default is
+> effectively what shipped; **`seam` and `seam+floor` are the untried arms**. The splice points named
+> in §"Proposed target" (`v4_loss_step`, `_training_loop`, `build_parser`) should be re-read against
+> the current file before anyone applies an 8-line patch written on 2026-07-23.
+> Swept by the 2026-08-16 stale-blocker sweep.
 - **Date / by:** —
 - **Reason:** —

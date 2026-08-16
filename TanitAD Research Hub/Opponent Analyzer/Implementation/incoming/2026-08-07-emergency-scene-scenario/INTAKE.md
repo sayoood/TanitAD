@@ -7,6 +7,27 @@
   `work_zone_phantom` + the pending `stop_arm_gate` / `stationary_lead` scenarios; Thursday
   Benchmarks & Eval wires the blockage-duration + incursion-rate reducers and reuses LAL-v2 over
   `_extra.detect_lead_time_s`).
+
+> ✅ **RE-CONFIRMED STILL TRUE 2026-08-16 — both named siblings are STILL pending, and so is this
+> one. The scenario queue is now THREE deep.** Three probes:
+> 1. `stack/tanitad/eval/scenarios/` holds exactly `__init__.py`, `registry.py`, `traffic_light.py`,
+>    `work_zone_phantom.py` — **no `stop_arm_gate.py`, no `stationary_lead.py`, no `emergency_scene.py`**.
+> 2. `SCENARIO_REGISTRY` in `stack/tanitad/eval/scenarios/registry.py` registers **three entries over
+>    two scenarios**: `work_zone_phantom` (`:59`), `traffic_light_red` (`:67`), `traffic_light_green`
+>    (`:75`). The registry is the seam every runner iterates, so an unregistered scenario is scored by
+>    nothing.
+> 3. Both sibling packages still carry an **unfilled** ORCHESTRATOR VERDICT template
+>    (`…/2026-07-24-stop-arm-gate-scenario/INTAKE.md:47`, `…/2026-07-31-stationary-lead-scenario/INTAKE.md:69`
+>    — both still read the literal `integrate / integrate-with-changes / defer / reject` placeholder),
+>    and their code lives only in those packages (`stop_arm_gate.py`, `stationary_lead.py`).
+> ⛔ **ESCALATION, not a note:** three fully-tested opponent scenarios (SC-04 stop-arm, SC-13
+> stationary-lead, SC-06 emergency-scene) have been sitting un-adjudicated for **9 to 23 days**. This
+> is the "an artifact in one directory is NOT done" class; the fix is one adjudication pass plus three
+> `ScenarioEntry` rows in `registry.py`, not more scenarios.
+> ⚠️ **Unchanged and still binding:** this package's own pre-registered falsifier — SC-06 must **not**
+> be scored as an excellence row until the SC-05 D8 detector clears its own bar. Integration into the
+> registry does not lift that.
+> Swept by the 2026-08-16 stale-blocker sweep.
 - **Hypothesis / WP served:** **H11** (self-monitoring flags the non-nominal scene as OOD at
   *scene* level) primary; **H15** (imagine the scene actors/hazard field before classification) and
   **A9** (fallback yields / holds the corridor clear) secondary; **H9** rule-exception handling.

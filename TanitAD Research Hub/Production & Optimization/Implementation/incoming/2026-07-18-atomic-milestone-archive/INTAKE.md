@@ -21,6 +21,30 @@ the atomic *resume* write (`tmp.replace(ckpt)`) already guards — the archive p
 kill mid-copy leaves only `.partial`, the final path never appears half-written, and the
 `not arch.exists()` guard self-heals on the next save. `archive_milestones()` is the drop-in.
 
+> ⏹ **CLOSED 2026-08-16 — THE BUG IS FIXED. The "live ops-fragility bug" framing above is HISTORY;
+> do not re-open it.** The ORCHESTRATOR VERDICT block below was never filled in, which is the only
+> reason this reads as outstanding — the code landed regardless.
+> Evidence (MEASURED, tip working tree):
+> - `stack/tanitad/train/ckpt_io.py:23` → `def atomic_archive(src, dst) -> Path` — the module was
+>   created at the proposed path.
+> - **All three named call sites were swapped**, and each carries a comment naming the failure mode:
+>   `stack/scripts/train_flagship4b.py:619-620`, `stack/scripts/refb_train.py:426-427`,
+>   `stack/experiments/reset-speed4b/refa_train_plus.py:541-542`. A repo-wide grep finds **no
+>   surviving bare `shutil.copy2` milestone archive** in any trainer.
+> - **The Risk section's open question is ANSWERED: `refc_train.py` does archive, and it was swapped
+>   too** — `stack/scripts/refc_train.py:678-679`. So was a trainer that did not exist when this was
+>   written: `stack/scripts/train_flagship_v4.py:669-673`.
+> - `stack/tests/test_ckpt_io.py` is in the suite that must stay green (it exercises `atomic_archive`
+>   at `:23`, `:43`, `:70`, `:73` — including the crash-then-reheal sequence).
+>
+> ⚠️ **One deviation from the proposal, stated so nobody hunts for it:** the integration adopted
+> `atomic_archive` **directly** at each call site, keeping each trainer's own
+> `for m in MILESTONES: if step >= m and not arch.exists():` loop. The proposed
+> **`archive_milestones()` wrapper was NOT adopted** — `grep -rn "archive_milestones" stack/` returns
+> zero hits. Behaviourally equivalent (the atomic write is the fix), but the milestone loop is still
+> duplicated across five trainers, so a future milestone-policy change must touch five files.
+> Swept by the 2026-08-16 stale-blocker sweep.
+
 ## Evidence & tests
 
 - Tests: `tests/test_atomic_milestone_archive.py` — **4 passed in 1.58 s** (CPU torch, no GPU).

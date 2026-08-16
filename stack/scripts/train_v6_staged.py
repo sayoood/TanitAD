@@ -119,10 +119,14 @@ from stage_a_probes import DACCEL_DEFAULT, DKAPPA_DEFAULT  # noqa: E402
 __all__ = [
     "V6LossWeights", "STAGE_PRECONDITION", "STAGE_GATE_SPEC",
     "STAGE_INVALIDATES", "STAGE_INVALIDATION_MECHANISM",
+    "STAGE_MAY_INTRODUCE", "RESUME_CONTRACT",
     "o2_near_field_loss", "o3_masked_cell_loss", "o5_rollout_consistency_loss",
     "o6_sigreg_loss", "rollout_step_weights", "build_o4_weights",
     "v6_loss_step", "stage_gate_dict", "write_stage_gate",
     "assert_stage_precondition", "GatePreconditionError",
+    "ResumeLineageError", "read_ckpt_provenance", "assert_resume_lineage",
+    "resume_guard", "load_resume", "load_stage_init",
+    "supersede_init_on_resume",
     "build_stack_from_args", "synthetic_train_batch", "dry_run",
     "build_parser", "main",
 ]
@@ -253,6 +257,52 @@ STAGE_INVALIDATES: dict[str, tuple[str, ...]] = {
                     # probe IS the revalidation (battery FLAT across the phase)
 }
 
+#: ⛔ WHAT A ``--resume auto`` REQUIRES OF THE CHECKPOINT IT FINDS, as data.
+#:
+#: MEASURED 2026-08-16 by EXECUTING the transition, not by reading it. Before
+#: this, ``load_resume`` did a strict state-dict load and adopted ``ck["step"]``
+#: with **no stage check at all** — every stage saves the WHOLE stack, so a
+#: checkpoint written by S-T is key-for-key loadable into an S-S run.
+#:
+#: Cross-stage resume was stopped only INCIDENTALLY, by ``torch.optim``'s
+#: param-group size check, and only because the per-stage trainable-TENSOR
+#: counts happen to be distinct (MEASURED at the production geometry:
+#: S-W 240 · S-T 80 · S-S 54 · S-J 374). That guard is worthless as a guard:
+#:
+#:   * it names nothing — the operator sees ``ValueError: loaded state dict
+#:     contains a parameter group that doesn't match the size of optimizer's
+#:     group``, which points at the optimiser, not at the ladder;
+#:   * it is one :data:`~tanitad.models.v6.STAGE_GROUPS` edit away from two
+#:     stages sharing a count, at which point it passes SILENTLY; and
+#:   * ⛔ it is skipped entirely when the checkpoint carries no ``opt`` key —
+#:     which is exactly the shape of ``ops/ckpt_fp16_snapshot.py``, the
+#:     documented pod-handover artifact.
+#:
+#: A wrong-stage resume is a multi-GPU-day error that surfaces as "the model
+#: got worse": the run adopts the OTHER stage's step (so the cosine schedule is
+#: replayed to the wrong point), and if the counts ever collide it adopts the
+#: other stage's optimiser moments — S-T's ``exp_avg`` for ``layer_tac`` landing
+#: on ``layer_str`` by list position. ⇒ an EXPLICIT refusal, checked BEFORE the
+#: corpus build rather than 130 lines later where ``load_resume`` sits.
+RESUME_CONTRACT: dict[str, str] = {
+    "same_stage": "the checkpoint's `config.stage` must EQUAL the stage being "
+                  "launched. Every stage saves the whole V6Stack, so the "
+                  "state_dict load cannot tell them apart — the stage label is "
+                  "the only thing that can, and `_save_ckpt` has always "
+                  "written it (`_run_config`: 'stage': a.stage).",
+    "labelled": "an UNLABELLED checkpoint is one whose lineage cannot be "
+                "verified. Every checkpoint this trainer writes carries its "
+                "stage; one that does not came from somewhere else, and "
+                "resuming it is an assumption wearing a resume's clothes. Use "
+                "--init-from, which needs no label because it starts a NEW run "
+                "at step 0 instead of inheriting a step and a schedule.",
+    "has_optimiser": "a resume without optimiser moments is not a resume — it "
+                     "is an --init-from that also silently inherits a step. "
+                     "`ops/ckpt_fp16_snapshot.py` drops `opt` BY DESIGN (2/3 "
+                     "of the bytes) and says so; it is an --init-from artifact "
+                     "and must be refused here rather than half-honoured.",
+}
+
 #: The seam behind each :data:`STAGE_INVALIDATES` entry, quoted from source so
 #: an override is a conscious act rather than a shrug at an unexplained key.
 STAGE_INVALIDATION_MECHANISM: dict[str, str] = {
@@ -353,6 +403,15 @@ STAGE_GATE_SPEC: dict[str, dict] = {
 
 class GatePreconditionError(SystemExit):
     """A stage refused to start because the stage below it did not pass."""
+
+
+class ResumeLineageError(SystemExit):
+    """``--resume auto`` found a checkpoint that is not this run's own.
+
+    Its own subclass so a chain script can tell "the ladder is mis-wired"
+    (recoverable: point ``--out`` elsewhere, or use ``--init-from``) apart from
+    the generic ``SystemExit`` every other refusal in this file raises.
+    """
 
 
 # ============================================================================
@@ -1221,6 +1280,12 @@ def train(a) -> dict:
 
     # ---- resume / done-marker discipline BEFORE anything expensive --------
     rg = resume_guard(out_dir, resume=a.resume, force_rerun=a.force_rerun)
+    # ⛔ ...and the LINEAGE of whatever it found, also before anything
+    # expensive. `load_resume` sits after episode selection, dataset windowing
+    # and the O4 saliency pass over every window in the corpus; a wrong-stage
+    # resume discovered there has already paid for all of it.
+    if rg["mode"] == "resume":
+        rg["ckpt"] = assert_resume_lineage(rg["from"], stage=a.stage)
     print(f"[v6] launch mode: {json.dumps(rg)}", flush=True)
 
     # ---- the val corpus is for probing, never training ---------------------
@@ -1369,9 +1434,24 @@ def train(a) -> dict:
     sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=a.steps)
     start_step = 0
     if rg["mode"] == "resume":
-        start_step = load_resume(stack, opt, rg["from"])
+        start_step = load_resume(stack, opt, rg["from"], stage=a.stage)
         for _ in range(start_step):
             sched.step()                       # replay the LR schedule
+        # ⛔ A RESUME OVERWRITES EVERY WEIGHT --init-from JUST LOADED, and both
+        # flags are legal together — `supervise_run.sh` replays the command it
+        # captured at startup, so the relaunch that RESUMES still carries the
+        # --init-from that seeded the run. MEASURED 2026-08-16: config.json
+        # recorded `init.trunk_md5_after_load = fbce009a…` while the trunk
+        # actually in the model was `326034884…`, and nothing warned. That is a
+        # run row naming an ancestor the run is not standing on — the exact
+        # failure MODEL_REGISTRY.md exists to prevent. The init report is
+        # therefore SUPERSEDED here, in place, with the truth.
+        if init_report.get("init_from"):
+            print(f"[v6] ⚠️  --init-from {init_report['init_from']} was "
+                  f"SUPERSEDED by the resume — every weight it loaded has been "
+                  f"overwritten from {rg['from']}. The lineage of this run is "
+                  f"the checkpoint, not the init.", flush=True)
+        init_report = supersede_init_on_resume(init_report, rg["from"])
         print(f"[v6] RESUMED at step {start_step} from {rg['from']} — "
               f"{a.steps - start_step} steps remain", flush=True)
         if start_step >= a.steps:
@@ -1600,14 +1680,161 @@ def resume_guard(out_dir, *, resume: str, force_rerun: bool) -> dict:
     return {"mode": "fresh", "from": None}
 
 
-def load_resume(stack: V6Stack, opt, ckpt_path) -> int:
+def read_ckpt_provenance(ckpt_path) -> dict:
+    """Read a checkpoint's LINEAGE without materialising its tensors.
+
+    ``mmap=True`` maps the storages instead of reading them, so this costs
+    milliseconds on a 3.5 GB ``ckpt.pt`` (MEASURED: 0.005 s vs 0.024 s on a
+    52 MB file, and the difference is the tensor bytes, which are never
+    touched). That matters because this runs on pod2, which is RAM-bound
+    (~54/55 GB cgroup) — a metadata read that transiently allocates the whole
+    checkpoint would be a memory-pressure event to answer a one-word question.
+
+    Never raises on a bad file: an unreadable checkpoint is REPORTED as such
+    (``readable: False``) so the caller can refuse with a diagnosis instead of
+    an opaque pickle traceback.
+    """
+    p = Path(ckpt_path)
+    out = {"path": str(p), "readable": False, "stage": None, "step": None,
+           "has_opt": False, "weights_only_snapshot": False, "error": None}
+    if not p.exists():
+        out["error"] = "does not exist"
+        return out
+    try:
+        try:
+            ck = torch.load(p, map_location="cpu", weights_only=False,
+                            mmap=True)
+        except (RuntimeError, ValueError, TypeError):
+            # legacy (non-zip) serialisation cannot be mmapped
+            ck = torch.load(p, map_location="cpu", weights_only=False)
+    except Exception as e:                       # corrupt, truncated, not a ckpt
+        out["error"] = f"{type(e).__name__}: {e}"
+        return out
+    if not isinstance(ck, dict):
+        out["error"] = f"top level is {type(ck).__name__}, not a dict"
+        return out
+    # ⚠️ the fp16 snapshot is a DIFFERENT shape: {"model", "_meta",
+    # "_fp16_weights_only"} — its state lives under "model" and its step/config
+    # under "_meta". Reading it as a ckpt.pt is how `--init-from <snapshot>`
+    # came back as "not a valid predecessor: geometry mismatch", blaming the
+    # architecture for a container it simply did not unwrap.
+    snap = bool(ck.get("_fp16_weights_only")) or (
+        "model" in ck and "stack" not in ck and "_meta" in ck)
+    meta = (ck.get("_meta") or {}) if snap else ck
+    cfg = meta.get("config") or {}
+    out.update(readable=True, weights_only_snapshot=snap,
+               has_opt=("opt" in ck),
+               stage=(cfg.get("stage") if isinstance(cfg, dict) else None),
+               step=(int(meta["step"]) if isinstance(meta.get("step"), int)
+                     else None))
+    return out
+
+
+def assert_resume_lineage(ckpt_path, *, stage: str) -> dict:
+    """⛔ Refuse a ``--resume auto`` onto a checkpoint that is not this run's.
+
+    The three requirements are :data:`RESUME_CONTRACT`; each refusal quotes the
+    one it violates, so the message explains the ladder rather than the
+    optimiser. Runs BEFORE the corpus build — a wrong-stage resume used to die
+    at ``load_resume``, which sits after episode selection, dataset windowing
+    and the O4 saliency pass over every window in the corpus.
+    """
+    prov = read_ckpt_provenance(ckpt_path)
+    if not prov["readable"]:
+        raise ResumeLineageError(
+            f"[v6] ⛔ --resume auto found {prov['path']} but could not read it "
+            f"({prov['error']}). Refusing to resume from a checkpoint whose "
+            f"lineage cannot be established. Move it aside, or point --out "
+            f"somewhere else.")
+    if prov["weights_only_snapshot"] or not prov["has_opt"]:
+        raise ResumeLineageError(
+            f"[v6] ⛔ --resume auto found {prov['path']}, which carries NO "
+            f"optimiser state"
+            + (" (it is an fp16 weights-only snapshot)"
+               if prov["weights_only_snapshot"] else "")
+            + f".\n  {RESUME_CONTRACT['has_optimiser']}\n"
+            f"  ⇒ launch this as a FRESH run with --init-from {prov['path']} "
+            f"(and --out somewhere without a ckpt.pt), which starts at step 0 "
+            f"on purpose instead of inheriting a step this file cannot back.")
+    if prov["stage"] is None:
+        raise ResumeLineageError(
+            f"[v6] ⛔ --resume auto found {prov['path']} with no stage label "
+            f"(config.stage is absent).\n  {RESUME_CONTRACT['labelled']}")
+    if prov["stage"] != stage:
+        raise ResumeLineageError(
+            f"[v6] ⛔ --resume auto found {prov['path']} written by stage "
+            f"{prov['stage']!r} at step {prov['step']}, but this run is stage "
+            f"{stage!r}.\n  {RESUME_CONTRACT['same_stage']}\n"
+            f"  ⚠️ Nothing downstream would have caught this reliably: the "
+            f"state_dict load SUCCEEDS across the ladder (every stage saves "
+            f"the whole stack), and the only accidental barrier — the "
+            f"optimiser's param-group size — holds solely because the stages "
+            f"happen to train different numbers of tensors "
+            f"(S-W 240 · S-T 80 · S-S 54 · S-J 374, MEASURED). The run would "
+            f"have adopted step {prov['step']} and replayed the LR schedule to "
+            f"the wrong point.\n"
+            f"  ⇒ this is an --init-from, not a resume. Point --out at a "
+            f"fresh directory and pass --init-from {prov['path']}.")
+    return prov | {"stage_checked": stage,
+                   "_evidence_class": "MEASURED (ours; the ckpt's own config)"}
+
+
+def load_resume(stack: V6Stack, opt, ckpt_path, *, stage: str | None = None
+                ) -> int:
     """Restore stack + optimiser + step from ``ckpt.pt``. Returns the step to
-    continue FROM (0 if nothing to resume)."""
+    continue FROM (0 if nothing to resume).
+
+    ``stage`` is DEFENCE IN DEPTH — :func:`assert_resume_lineage` is the early
+    gate and ``train`` calls it first, but this function is importable and a
+    caller that names its stage gets the same refusal here. A caller that does
+    NOT name one gets the old, unchecked behaviour, exactly as
+    :func:`load_stage_init` treats its allowance: a check must be asked for,
+    never inherited by default and never assumed to have run elsewhere.
+    """
+    if stage is not None:
+        assert_resume_lineage(ckpt_path, stage=stage)
     ck = torch.load(Path(ckpt_path), map_location="cpu", weights_only=False)
+    if "stack" not in ck:
+        raise ResumeLineageError(
+            f"[v6] ⛔ {ckpt_path} has no 'stack' key (found {sorted(ck)[:6]}). "
+            f"A weights-only fp16 snapshot stores its state under 'model' and "
+            f"is an --init-from artifact, not a resume point — see "
+            f"ops/ckpt_fp16_snapshot.py. {RESUME_CONTRACT['has_optimiser']}")
     stack.load_state_dict(ck["stack"], strict=True)
     if opt is not None and "opt" in ck:
         opt.load_state_dict(ck["opt"])
     return int(ck.get("step", 0))
+
+
+def supersede_init_on_resume(init_report: dict, resumed_from) -> dict:
+    """The run's recorded lineage after a resume overrode an ``--init-from``.
+
+    ⛔ MEASURED 2026-08-16, and it was SILENT. ``train`` runs
+    :func:`load_stage_init` first and :func:`load_resume` afterwards, so when
+    both flags are present the resume overwrites every weight the init loaded —
+    while ``config.json`` still carried the init's ``trunk_md5_after_load``.
+    The two hashes measured ``fbce009a…`` (recorded) vs ``326034884…``
+    (actually in the model): the run row named an ancestor the run was not
+    standing on, which is the failure ``MODEL_REGISTRY.md`` exists to prevent.
+
+    ⚠️ Refusing the COMBINATION would be the wrong fix. ``supervise_run.sh``
+    replays the ``TRAIN_CMD`` it captured at supervisor startup, so the
+    relaunch that resumes necessarily still carries the ``--init-from`` that
+    seeded the run. The flag pair is normal operation; the lying record was the
+    defect. ⇒ keep the init report, but demote it to what it is.
+    """
+    if not init_report.get("init_from"):
+        return init_report
+    return {
+        "init_from": None,
+        "superseded_by_resume": init_report | {
+            "_status": "OVERWRITTEN — these weights are NOT in the model; "
+                       "--resume auto ran after --init-from and replaced "
+                       "every one of them. The md5 below describes the INIT, "
+                       "not this run."},
+        "resumed_from": str(resumed_from),
+        "_evidence_class": "MEASURED (ours; this run's launch order)",
+    }
 
 
 def load_stage_init(stack: V6Stack, ckpt_path, *, strict: bool = True,
@@ -1629,7 +1856,23 @@ def load_stage_init(stack: V6Stack, ckpt_path, *, strict: bool = True,
     if not p.exists():
         raise SystemExit(f"[v6] ⛔ --init-from {p} does not exist")
     ck = torch.load(p, map_location="cpu", weights_only=False)
-    sd = ck.get("stack", ck)
+
+    # ⛔ UNWRAP THE fp16 SNAPSHOT. ``ops/ckpt_fp16_snapshot.py`` writes
+    # ``{"model", "_meta", "_fp16_weights_only"}`` and its docstring states the
+    # snapshot "is enough for the P-battery, any eval, and --init-from". It was
+    # NOT: this function looked only for ``"stack"``, fell through to the
+    # wrapper dict, and refused with *"not a valid predecessor ... missing:
+    # act_head_lat.arg_head.bias, ..."* — 400+ keys blamed on a GEOMETRY
+    # MISMATCH when the real cause was an unopened container. MEASURED
+    # 2026-08-16. That message is worse than a crash: it accuses the
+    # architecture, which is where an operator would then go looking.
+    # ⚠️ The snapshot is the artifact that makes a pod handover survivable
+    # (the 3.53 GB ckpt.pt never once pushed to HF), so this is the path a
+    # rebuilt pod actually takes.
+    snap = bool(ck.get("_fp16_weights_only")) or (
+        "model" in ck and "stack" not in ck and "_meta" in ck)
+    meta = (ck.get("_meta") or {}) if snap else ck
+    sd = ck["model"] if snap else ck.get("stack", ck)
 
     # ⚠️ ALWAYS load non-strict, then adjudicate. Under torch's ``strict=True``
     # a mismatch RAISES, so the ``missing_keys`` / ``unexpected_keys`` this
@@ -1668,14 +1911,20 @@ def load_stage_init(stack: V6Stack, ckpt_path, *, strict: bool = True,
         if stack.group_of(n) in ("encoder", "readout", "predictor_op"):
             h.update(n.encode())
             h.update(prm.detach().cpu().numpy().tobytes())
-    return {"init_from": str(p), "init_step": int(ck.get("step", -1)),
+    return {"init_from": str(p), "init_step": int(meta.get("step", -1)),
             "missing_keys": sorted(fatal), "unexpected_keys": sorted(unexpected),
             # ⭐ named separately so a run row can never confuse "this stage
             # BUILT a new head" with "this stage failed to load one".
             "introduced_keys": sorted(introduced),
             "introduced_allowance": list(allowed),
             "trunk_md5_after_load": h.hexdigest(),
-            "prev_stage": (ck.get("config") or {}).get("stage"),
+            "prev_stage": (meta.get("config") or {}).get("stage"),
+            # ⚠️ STATED, never hidden: an fp16 snapshot round-trips the weights
+            # through half precision, so this trunk md5 CANNOT equal the fp32
+            # source's. A run row that does not say which it stands on would
+            # look like a lineage break the next time the md5s are compared.
+            "init_source": "fp16_weights_only_snapshot" if snap else "ckpt",
+            "init_precision": "fp16->fp32 (lossy)" if snap else "fp32",
             "_evidence_class": "MEASURED (ours; md5 over the loaded trunk)"}
 
 

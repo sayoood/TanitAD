@@ -59,6 +59,23 @@ unit-testable without real bytes, like `work_zone_phantom`).
   enough to *exercise* the suite, not a perception-grade occlusion oracle.
 - The `latency_ms` / `params_billions` inputs are a **labelled TanitAD-4B stub** (CNCE only); `LOPS`
   data-only is the honest 0.0 baseline. Neither is a model claim.
+
+> ⏹ **PARTIALLY CLOSED 2026-08-16 — the `latency_ms` / `params_billions` STUB CAN NOW BE REPLACED
+> WITH MEASURED VALUES. Do not re-derive them; they exist.**
+> Evidence (MEASURED): `…/Benchmarks & Eval/…/incoming/2026-07-24-traffic-light-scenario-metric/real_tms_cnce.json`,
+> `evidence_class: "MEASURED (real comma2k19 val telemetry + real base250cam architecture)"` —
+> `params_billions` **0.2628** (not a labelled 4B) and a real decision tick:
+> `encode_1frame_p50_ms` 9.273 + `select_K9_p50_ms` 5.058 → `decision_tick_p50_ms` **14.331**, on an
+> RTX 4060 over 30 episodes. That artifact's own note explains why the pair is admissible here:
+> *"latency+params are weight-independent … -> a real ARCHITECTURE efficiency number."*
+> ⚠️ **Carry the hardware stamp with them.** These are **RTX 4060** numbers; every committed
+> `taniteval.efficiency` artifact records `env.gpu = "NVIDIA A40"`, and a separate NVIDIA Thor row
+> exists. Substituting across hosts is the exact defect
+> `…/Data Engineering/…/2026-08-04-instrument-durability/INTAKE.md` §3.2 refuses to commit.
+> ✅ **STILL TRUE:** `LOPS` remains the honest 0.0 data-only baseline, and the proposed target
+> `stack/scripts/cosmos_telemetry.py` is **ABSENT** (two probes: file not present; `grep -rn
+> "cosmos_telemetry" --include="*.py" stack` → zero hits) — this package is still unintegrated and its
+> ORCHESTRATOR VERDICT is still `_pending_`. Swept by the 2026-08-16 stale-blocker sweep.
 - **Rollback:** delete this folder; nothing depends on it.
 
 ## Verdict (orchestrator writes here)

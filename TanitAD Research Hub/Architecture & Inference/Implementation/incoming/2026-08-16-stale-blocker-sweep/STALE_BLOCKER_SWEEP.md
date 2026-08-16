@@ -114,9 +114,12 @@ punctuation, and the local `calibration/physicalai_*.csv` sidecars, which are no
 **Every failure message names the documents to update**, so the next change is mechanical rather than a
 re-derivation.
 
-### 2.5 Blast radius of the stale "4"
+### 2.5 Blast radius of the stale count
 
-**17 documents + 1 code docstring.** Highest-value, in order:
+**14 documents (17 sites) + 1 code docstring**, MEASURED by ripgrep over `*.md` + `*.py`.
+*(An earlier draft of this very section said "17 documents" — 17 is the SITE count, 14 the FILE
+count. Being imprecise about a count, in the write-up about an imprecise count, is the joke writing
+itself; it is corrected here rather than quietly.)* Highest-value, in order:
 
 | site | why it matters |
 |---|---|
@@ -134,7 +137,117 @@ re-derivation.
 *Three parallel streams swept the corpus (48 `INTAKE.md`, 121 `Project Steering/*.md`, ~507
 non-INTAKE `incoming/**` docs). Their verdict tables are consolidated below.*
 
-<!-- STREAM TABLES: filled in as the streams report -->
+### 3.B — `Project Steering/` (the highest blast radius, because these steer work)
+
+**21 claims across 9 steering docs: 13 CLEARED, 3 PARTIAL, 2 UNVERIFIABLE, 3 STILL TRUE.**
+Annotations are dated and append-only; no registry row was rewritten and no number restated.
+
+⭐⭐ **THE SMOKING GUN FOR TODAY'S FAILURE — `MODEL_REGISTRY.md:1583,1644`.** The registry cites the
+distance-keeping instrument as **`tools/build_lead_block.py`**. That path **does not exist** (three
+probes). The file is at **`taniteval/tools/build_lead_block.py`**.
+
+> ⛔ **A WRONG PATH MAKES A BUILT INSTRUMENT LOOK UNBUILT — and that is precisely how an agent gets
+> commissioned to rebuild it.** This is a *different mechanism* from the stale blocker in §1, with the
+> *same* outcome, pointing at the *same* instrument. Two independent defects aimed at one target.
+
+⛔ **The protocol was telling every future eval to report a family it could already measure.**
+`EVAL_PROTOCOL_OODVAL_2026-08-05.md:143` marked distance-keeping **UNAVAILABLE** — while a complete
+measurement of *exactly that family* on *exactly that corpus* sat in the repo:
+`…/incoming/2026-08-05-v1arch-oodval-four-families/raw/v1arch_oodval_q90_4fam_LEAD.json` —
+**`status "OK"`, n 2846/6382, `_families_unavailable []`, headway 25.5263 m.**
+⇒ **The binding four-family rule was being silently violated by its own protocol document**, on the
+axis carrying **88.7 % of the oracle gap**. **CLEARED.**
+
+⛔ **`V6F_PLANNER_DESIGN.md:673` — the doc's own self-labelled *"highest-priority item in this
+document"* was already shipped.** The S-S consumer-invalidation gate exists as
+`stack/scripts/train_v6_staged.py:250-259` (`STAGE_INVALIDATES = {"S-S": ("S-T",)}`) with
+`stack/tests/test_v6_stage_revalidation.py` (9 tests). **Anyone opening the v6 design doc to pick the
+top item would have rebuilt a shipped, tested gate.** **CLEARED 2026-08-16.**
+
+⚠️ **Two blockers were stale THE DAY THEY WERE WRITTEN** — the shortest possible expiry:
+
+| doc | claim | cleared |
+|---|---|---|
+| `ROADMAP.md:68,112,297` | TanitScena `stack/tanitad/scena/` *"does not exist"* (**3 places**) | **same day, 2026-07-12** — `parse.py`, `vector.py`, `static/`, `scena_app.py`, `test_scena.py`, commit `9ebfb09` |
+| `REPO_TRIAGE_2026-07-20.md:67,287` | *"`tools/` does not exist in HEAD at all"* | **same day** — 16 files + 10 tests, commits `c4d8451`, `1e13e3a` |
+
+**Other CLEARED:** `ROADMAP.md:66` REF-B "blocked on pod3 comma-extraction" (registry §3.5,
+`refb-refbpatch-v2-30k` 0.5921 ± 0.0685 @ 29999, ✅ FINAL) · `ROADMAP.md:69` nuScenes loader ·
+`REPO_TRIAGE` stranded rows 1,2,4,6,8 (**5 of 10**) · `Gates/…PREP.md:17` the 600-clip 120° val split
+(2026-08-09) · `BACKLOG` C3 v5 gate · `BOOST_PROGRAM.md:134,269` closed-loop measurability
+(superseded by the binding T0/T1/T2 doctrine + `taniteval/tools/t1_eval.py`) · `V6F:536,588` ·
+`Gates/…PREP.md:58` ("32-of-36" → **30-of-36**, per §2).
+
+⚠️ **STILL TRUE / PARTIAL, and each for an instructive reason:**
+
+| claim | verdict | why it is instructive |
+|---|---|---|
+| `PROGRAM_OVERVIEW.md:528` — no `alpasim_runtime` ⇒ no collision/offroad/scene score | **TRUE for Thor, FALSE program-wide** | a live instance of **C2**: a single-host absence written as a programme fact. `…/2026-07-22-alpasim-closedloop-evalpod/M2_results-summary.json` has `scene_score_enabled: true`, `collision_at_fault 0.0`, `offroad 0.0` |
+| `ROADMAP.md:104` CARLA "blocked on a graphics-capable pod" | **PARTIAL — premise refuted, conclusion unverifiable** | the *Vulkan* premise died with C2 (`RETRACTION_LOG.md:35`) and AlpaSim ran bare on an A40; but no CARLA run exists, so the blocker is **not** cleared. **A refuted premise does not clear the claim it supported** |
+| `MODEL_REGISTRY.md:2207` `refc-small-30k.json` "DOES NOT EXIST" | **STILL TRUE — already correctly resolved in place** | left unedited: the registry already names the real source |
+| ⚠️ `BACKLOG` C2 / `BOOST` S-3 / registry §1.7 — v2corpus **"🟢 RUNNING"**, ETA 2026-07-29 | **UNVERIFIABLE — stale on its face (18 days past ETA)** | ⭐ **the INVERSE failure: a stale POSITIVE status.** A stale blocker makes you rebuild; **a stale "running" makes you WAIT FOREVER.** Not asserted dead — flagged for a fleet probe |
+
+### 3.C — non-INTAKE `incoming/**` docs (READMEs, MANIFESTs, DESIGNs, STATUS docs)
+
+**28 claims verified; 12 docs annotated in place.** ⭐ **The headline is a refutation of a
+prior conclusion**, not a list:
+
+> ⛔ **The 2026-07-26 program harvest concluded *"most of today's stranding is same-day."* THAT IS
+> REFUTED. Of its 12 open items, 9 are still open 21 days later.**
+> ⇒ **What clears, clears fast; what does not clear that day tends never to clear** — because
+> nobody re-reads the doc. This is C70's survival curve, and it is bimodal, not decaying.
+
+**CLEARED (8):** comma2k19 yaw-at-v≈0 guard (`comma2k19.py:120,339,385-404`, commit `8ab5327`) ·
+geometry-audit wheelbase (`GEOMETRY_INTEGRITY_AUDIT.md:40,77-82`) · `closedloop.py` WHEELBASE skew ·
+`e2a_localize.py` pod3-only (now tracked in-repo) · **distance-keeping/TTC "has no instrument"**
+(commit `49e2229`, `taniteval/taniteval/lead_metrics.py`) · `distance_keeping` hardcoded UNAVAILABLE
+(now conditional, `four_families.py:245,315`) · **"our ingest doesn't read `obstacle.offline`"**
+(`stack/scripts/lead_state_gate.py`) · v4 eval harness "never built"
+(`stack/scripts/eval_flagship_v4.py`) · "0.930 → −2.465" pairing (`MODEL_REGISTRY.md:2718-2724`).
+
+⭐ **Independent corroboration of §1 and §2:** three of those eight are the *same* stale
+`obstacle.offline` blocker, found by a stream that was not told about it. **It had propagated into at
+least three further docs and sat there for two weeks after the instrument landed.**
+
+**STILL TRUE (17), highest-consequence first:**
+
+| finding | evidence | age |
+|---|---|---|
+| ⛔ **`--nav-known-channel` HALF-LANDED — the flag parses, then raises** | `stack/scripts/refc_train.py:1221,726` accept it; `:402` never passes `nav_known=` ⇒ `stack/tanitad/refs/refc.py:2005` fails loud on the first forward | ~13 d |
+| ⛔ **A false safety-relevant verdict is live in a committed artifact** | `…/2026-07-26-v4-30k-gate/coprimary/corridor_v4_30k_K185.json` → `paired_common_start.185.ood` still reads "within the measured envelope" | 21 d |
+| ⛔ **`planner_p2.py` is the last un-migrated estimator — and it decides `G1_pass`/`G4_pass`** | `taniteval/taniteval/planner_p2.py:389,397,415,458,586` still `_jack_*`; **0** `episode_cluster_bootstrap` call sites; siblings migrated 21 d ago | 21 d |
+| ⚠️ **`flagship-v16-ab-ft` weights may be UNRECOVERABLE** | `MODEL_REGISTRY.md:599-600` has no `Location` row; its stated mitigation ("push when pod2 frees") is **void — pod2 is out of the fleet** | 21 d |
+| `clhorizon.run_v4` raises on first step | `clhorizon.py:928`, `:765-766`; `RawEp` (`data.py:220-228`) has only `.feats` | 21 d |
+| 3 CUDA-graph prereq sites | `metric_dynamics.py:241-242,285-286,693`; `predictor.py:165,172` | 27 d |
+| `long_accel` still in `SCALAR_NAMES` | `stack/scripts/idm_head.py:37` — card caveated, code not | — |
+| AV2 has no ingest driver · Overture entry unapplied (PI/legal) · `driving.tier0()` lacks lateral/corridor · un-retracted "different egress" echo · 3 sitclf items · sitclf `--lead` | see stream manifest | — |
+
+**HALF-CLEARED (1):** `--nav-known-channel`, above. ⚠️ **A half-merge is worse than no merge**: the
+"is it done?" probe (does the flag exist?) returns **yes**, and the failure surfaces only at runtime.
+
+---
+
+## 3.X ⛔ STILL-OPEN INTEGRATION REQUESTS — the 10-day class, still running
+
+**Every one of these is tested code that exists and is not wired in.** This is the exact pattern
+`AGENT_OPERATING_STANDARD.md` rule 3 exists to prevent, and it is currently happening **eight times
+at once**. Ordered by consequence:
+
+| # | item | where the code is | why it matters | age |
+|---|---|---|---|---|
+| 1 | ⛔ **`--nav-known-channel` half-merge** | `stack/scripts/refc_train.py:402` (missing `nav_known=`) | **~2 lines.** The flag parses and then raises at `refc.py:2005`. A half-merge defeats the "does it exist?" probe. ⚠️ file touched by a live stream — re-probe first | ~13 d |
+| 2 | ⛔ **`planner_p2.py` estimator migration** | `taniteval/taniteval/planner_p2.py:389,397,415,458,586` | **it decides `G1_pass`/`G4_pass`** on the deprecated `_jack_*` estimator that CLAUDE.md documents as biasing the POINT ESTIMATE with sign flips | 21 d |
+| 3 | **`grad_surgery.py`** | `…/incoming/2026-07-23-planner-wm-gradient-coupling/grad_surgery.py` (+9 green tests) → `stack/tanitad/train/grad_surgery.py` | queued for "the next v4.x launch" — **the programme is on v6, so its gating condition is void**. The 10-day orthogonality case, at 24 | **24 d** |
+| 4 | **`latent_screen` not adopted** | `stack/tanitad/eval/latent_screen.py` (+tests) | **0** mentions in `GATE_PROTOCOL.md`, 0 call sites — **requested independently by two packages** | 13 d |
+| 5 | **`goal_admissibility` has zero call sites** | `stack/tanitad/eval/goal_admissibility.py` (+tests) | the guard that exists to stop **another 1.0000 nav echo** is imported by nothing | 12 d |
+| 6 | **R1a — 4 decision keys** | `taniteval/taniteval/refc_eval.py::collect` return at `:172-194` | flagged *"0 GPU, EXECUTABLE NOW, pure plumbing"*; **TACTICAL/STRATEGIC stay UNAVAILABLE for REF-C until it lands** | 14 d |
+| 7 | ⚠️ **`flagship-v16-ab-ft` may be LOST** | `MODEL_REGISTRY.md:599-600` | no `Location` row; mitigation void (pod2 gone). Needs a fleet probe → `Location` row **or a LOST record**. ⚠️ do not confuse with `flagship-v16-unicycle` (§1.10), which *was* banked | 21 d |
+| 8 | ⛔ **false safety verdict in a committed artifact** | `…/2026-07-26-v4-30k-gate/coprimary/corridor_v4_30k_K185.json` | `paired_common_start.185.ood` still asserts "within the measured envelope" | 21 d |
+
+⚠️ **These are reported, not fixed** — items 1, 2, 6 touch files owned by live streams this session,
+and 3–5 are integration decisions above a sweep's authority. **Per rule 3, they are escalated here
+AND in the agent report, not left as a "please merge" line in a doc — which is precisely the failure
+mode that produced this list.**
 
 ---
 
@@ -151,6 +264,22 @@ non-INTAKE `incoming/**` docs). Their verdict tables are consolidated below.*
 3. **Empty ORCHESTRATOR VERDICT blocks read as "rejected" but mean "nobody filled it in."** At least
    one landed-and-in-production package (`2026-08-03-longitudinal-distance-keeping`) has an empty
    verdict block. Worth a sweep of its own.
+
+### 4.1 Two instrument caveats found in passing (both in the "a probe that reports the wrong scope" family)
+
+1. ⚠️ **`git diff --cached --stat` UNDER-REPORTS a new file's size and is not a staging verifier.**
+   MEASURED: it reported **44 insertions** for `stack/tests/test_physicalai_feature_readset.py`, a
+   **333-line** new file, with rename detection explicitly off (`--numstat --no-renames`) and **no
+   `.gitattributes` / diff driver** in this repo (`git check-attr -a` returns nothing). The index was
+   in fact correct — `git show :<path>` returned all 333 lines and all 8 test functions. ⇒ **Verify
+   staged CONTENT with `git show :<path>`, never with `--stat`'s line count.** Same family as the
+   documented `git add` exit-code trap: a git output read as evidence of something it does not report.
+2. ✅ **`git ls-files --cached` is insufficient for a MODIFIED TRACKED file** — it answers *"is this
+   path in the index?"*, which is `yes` even when the index blob is the pre-edit version. This was
+   sharpened into `CLAUDE.md` by the orchestrator mid-sweep and **applied to this package**: all five
+   deliverables were re-verified by **blob comparison** (`git ls-files --stage` vs
+   `git hash-object`), and again at end of turn, since concurrent commits move the index underneath a
+   staged file.
 
 ---
 

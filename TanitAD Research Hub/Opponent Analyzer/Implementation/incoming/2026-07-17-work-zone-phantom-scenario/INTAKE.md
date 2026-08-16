@@ -33,6 +33,25 @@ Research: `../../Research/2026-07-17-opponent-sweep-w2.md`; catalog entry W-01 i
 - Not validated here: the live CARLA build (`carla_recipe()` → CARLA blueprints/triggers) — the explicit
   next step, gated on the CARLA-on-pod harness (Tools&DevEnv W31–32).
 
+> ⚠️ **RE-CONFIRMED STILL GATED 2026-08-16 — but the GATE ITSELF MOVED, so do not wait on W31–32.**
+> The scenario module IS integrated (`stack/tanitad/eval/scenarios/work_zone_phantom.py`, registered
+> as `SCENARIO_REGISTRY["work_zone_phantom"]` at `registry.py:59`), and it is still the only
+> non-traffic-light scenario in the registry. What has NOT happened is the live render — and the
+> substrate named here was never fired:
+> - `Project Steering/ROADMAP.md:79` still lists CARLA-on-pod as X4's substrate and marks it
+>   *"Prototype … camera-driven ego needs the graphics-pod recipe, **not fired yet**"*.
+> - The re-perception line moved to **AlpaSim/NuRec** —
+>   `…/Architecture & Inference/…/2026-08-06-mpc-planner-design/MPC_WM_DESIGN.md:99`: *"re-perception
+>   closed loop remains the AlpaSim/NuRec work item"* — and AlpaSim has real banked renders at
+>   `stack/experiments/alpasim-gsplat/results/` (`closedloop-hq-render/`, `cutin/`,
+>   `2026-08-03-rolling-shutter/`).
+> - Meanwhile the **action-closed-loop tier T1 became available and BINDING** without any renderer:
+>   `taniteval/tools/t1_eval.py`, `Project Steering/EVAL_DOCTRINE.md` (2026-08-09).
+> ⇒ Anyone picking this up should re-target `carla_recipe()` at the AlpaSim/NuRec path (or score what
+> it can under T1) rather than waiting for a CARLA-on-pod harness that has not been provisioned in
+> ~30 days. ⛔ Roadmap text is Project-Steering-owned and was deliberately not edited by this sweep.
+> Swept by the 2026-08-16 stale-blocker sweep.
+
 ## Risk & rollback
 - Blast radius: additive; a new self-contained scenario module + test. No change to existing stack or
   metric code. When integrated, it imports nothing from the suite — it *produces* telemetry the suite
