@@ -27,7 +27,23 @@ Edits made to `colab/*.py` or `stack/scripts/*.py` from the dev box reach the
 mounted Colab runtime after the usual Drive sync delay (seconds–minutes);
 `importlib.reload(...)` picks them up without a runtime restart.
 
-⚠️ **Honest limitation:** `colab-cli`-style GitHub tools can sync and open
+> **SUPERSEDED 2026-08-16** — the paragraph below is retained for the record
+> (retraction discipline; root-cause class: *stale absence-claim about external
+> tooling — re-probe vendors before repeating*). Google has since shipped an
+> **official Colab CLI** (`google-colab-cli`: headless `colab exec -f nb.ipynb`
+> writes `<basename>_output.ipynb`; `colab run` = provision→exec→teardown; T4
+> selectable) and an **official open-source Colab MCP server**
+> (`googlecolab/colab-mcp`: agent drives the notebook in the PI's signed-in
+> browser tab). Both are installed on the dev box and measured to the auth
+> boundary. Findings + the PI's 2-minute auth sequence:
+> `colab/COLAB_CLI_MCP.md`; ready Claude Code config: `colab/MCP_SETUP.md`.
+> Still true and unchanged: **nothing executes until the PI authenticates**
+> (CLI OAuth paste-code flow, or being signed in to Colab in the browser for
+> MCP pairing), and the CLI is unsupported by Google on native Windows
+> (WSL or shim — see the findings doc).
+
+⚠️ **Honest limitation (pre-2026-08 state, superseded above):** `colab-cli`-style
+GitHub tools can sync and open
 notebooks but do **not** execute them headlessly — free Colab has no official
 headless-execution API. Execution is driven from the Colab UI by the PI, or
 by the orchestrator's browser pane **after the PI has authenticated** in that
