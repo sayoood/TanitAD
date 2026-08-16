@@ -238,7 +238,11 @@ def main():
             k for k, v in fam.items()
             if isinstance(v, dict) and v.get("status") == "UNAVAILABLE"]
         fam["_complete"] = (not fam["_families_unavailable"]
-                            and fam["longitudinal"]["distance_keeping"]["status"] == "OK")
+                            and fam["longitudinal"]["distance_keeping"]["status"] == "OK"
+                            # ⛔ the PI's 2026-08-16 anti-echo condition is part of
+                            # completeness, not an optional diagnostic — a splice
+                            # that dropped it would re-open the hole it closes.
+                            and fam["longitudinal"]["anti_echo"]["status"] == "OK")
         carried = a.carry_hierarchy_from
 
     # ---- ADE + per-family CIs, ONE episode-cluster resampling --------------- #
@@ -328,6 +332,12 @@ def main():
         _p(f"  {k:14s} status={v.get('status', 'OK')}")
     _p(f"  families_unavailable={fam['_families_unavailable']}  "
        f"complete={fam['_complete']}")
+    # ⛔ PRINTED, not merely serialised (PI 2026-08-16). A longitudinal number is
+    # not a longitudinal RESULT until the arm is shown to beat a hold-v0 copy of
+    # its own input, separated — so the operator sees that bit on the console.
+    _p(f"  anti_echo      {fam.get('_anti_echo_summary')}")
+    _p(f"  ⛔ longitudinal_claim_admissible="
+       f"{fam.get('_longitudinal_claim_admissible')}")
 
 
 if __name__ == "__main__":

@@ -272,23 +272,43 @@ def test_no_situation_classifier_path():
     assert "CLEAN" in r.stdout, r.stdout + r.stderr[-2000:]
 
 
-def test_v0_is_refused_without_the_echo_flag():
-    d = _synthetic_dump()
-    d["v0"] = torch.zeros(len(d["eid"]))
-    with pytest.raises(PermissionError, match="ECHO"):
-        AG.run(d, features=["pooled", "v0"], declared={"pooled": "VISION_ONLY"},
-               ks=(4,), methods=("fps",), steps=(20,), n_boot=20)
+def test_v0_is_ADMITTED_without_the_echo_flag_after_the_PI_ruling():
+    """⭐ SUPERSEDED 2026-08-16, and the supersession is the test.
 
-
-def test_echo_arm_is_stamped_pending_adjudication():
+    This used to assert ``pytest.raises(PermissionError, match="ECHO")`` — v0 was
+    refused as an inference-time echo. Sayed ruled otherwise: *"We can use v0 as
+    input since it is measured and is not the future…"* v0 is measured PRESENT
+    state, so the refusal is gone and no flag is needed."""
     d = _synthetic_dump()
     d["v0"] = torch.tensor(np.linspace(4.0, 16.0, len(d["eid"])),
                            dtype=torch.float32)
-    rep = AG.run(d, features=["pooled", "v0"], allow_echo=True,
-                 declared={"pooled": "VISION_ONLY"}, ks=(4,), methods=("fps",),
-                 steps=(20,), n_boot=20)
-    assert "PENDING_PI_ADJUDICATION" in rep["_admissibility"]["v0_status"]
-    assert rep["_admissibility"]["features"]["any_echo"] is True
+    rep = AG.run(d, features=["pooled", "v0"],
+                 declared={"pooled": "VISION_ONLY"},
+                 ks=(4,), methods=("fps",), steps=(20,), n_boot=20)
+    assert rep["_admissibility"]["features"]["any_echo"] is False
+    assert rep["_admissibility"]["features"]["any_measured_present"] is True
+
+
+def test_admitting_v0_stamps_the_ANTI_ECHO_OBLIGATION_not_an_adjudication():
+    """⛔ …but the refusal is replaced by an OBLIGATION, not by nothing. "…we
+    should assure that the model/planner later is not cheating by just outputting
+    v0 as longitudinal plan." """
+    d = _synthetic_dump()
+    d["v0"] = torch.tensor(np.linspace(4.0, 16.0, len(d["eid"])),
+                           dtype=torch.float32)
+    rep = AG.run(d, features=["pooled", "v0"],
+                 declared={"pooled": "VISION_ONLY"},
+                 ks=(4,), methods=("fps",), steps=(20,), n_boot=20)
+    st = rep["_admissibility"]["v0_status"]
+    assert "PENDING_PI_ADJUDICATION" not in st          # the contradiction is gone
+    assert "ADJUDICATED" in st and "2026-08-16" in st
+    assert "v0_antiecho" in st and "--speed-echo-control" in st
+    assert "3.527" in st and "1.1888" in st             # the deficit that remains
+    # and nothing is stamped when v0 is not in the design matrix
+    plain = AG.run(_synthetic_dump(), features=["pooled"],
+                   declared={"pooled": "VISION_ONLY"},
+                   ks=(4,), methods=("fps",), steps=(20,), n_boot=20)
+    assert plain["_admissibility"]["v0_status"] is None
 
 
 # --------------------------------------------------------------------------- #

@@ -37,12 +37,19 @@ THE THREE ARMS
   linear classifier on the identical VISION_ONLY features (`pooled` + `ctx`),
   identical LOEO folds, against the identical E-WC2 ridge re-fit here as a parity
   control. Paired episode-cluster bootstrap.
-* **E-AG3 — the `v0` admissibility contradiction, MEASURED not argued.**
-  ⛔ `e_wc2_sigma_star.FEATURE_ADMISSIBILITY["v0"] = "ECHO"` (inadmissible) while
-  `V6F_PLANNER_DESIGN.md` §1.4 row 3 declares **`true v0` ✅ admissible** for the
-  emitted fan. Both are at HEAD and they disagree. This arm runs ONLY under
-  ``--allow-echo-features`` and is stamped **PENDING_PI_ADJUDICATION** — it is
-  reported as *the magnitude of the contradiction*, never as a funded result.
+* **E-AG3 — what `v0` buys on the goal surface. ⭐ ADJUDICATED 2026-08-16.**
+  This arm existed to measure a CONTRADICTION: `FEATURE_ADMISSIBILITY["v0"]` read
+  `"ECHO"` (inadmissible) while `V6F_PLANNER_DESIGN.md` §1.4 declared **`true v0`
+  ✅ admissible**. The PI settled it — *"We can use v0 as input since it is
+  measured and is not the future, but we should assure that the model/planner
+  later is not cheating by just outputting v0 as longitudinal plan."* `v0` is now
+  classed **`MEASURED_PRESENT`** and this arm runs **without**
+  ``--allow-echo-features``.
+  ⛔ **The refusal is replaced by an OBLIGATION, not by nothing.** Admitting `v0`
+  makes "keep doing v0" a way to score without skill, so any LONGITUDINAL claim
+  from a `v0`-fed arm must carry the three controls in
+  `taniteval/taniteval/v0_antiecho.py`. `_admissibility.v0_status` stamps that on
+  every record whose design matrix contains the block.
 
 ⛔ ADMISSIBILITY, ENFORCED NOT DOCUMENTED
 ----------------------------------------
@@ -147,11 +154,24 @@ PREREG = {
                          "something other than σ (e.g. the tokens it unlocks).",
     },
     "E-AG3": {
-        "question": "How large is the v0 admissibility contradiction?",
-        "status": "⛔ PENDING_PI_ADJUDICATION — reported as the magnitude of a "
-                  "contradiction between two live HEAD documents, NEVER as a "
-                  "funded arm. e_wc2_sigma_star.py:187 classes v0 ECHO; "
-                  "V6F_PLANNER_DESIGN.md §1.4 row 3 declares true v0 ✅.",
+        "question": "What does adding v0 to the goal surface buy, and what does "
+                    "admitting it OBLIGE?",
+        "status": "⭐ ADJUDICATED 2026-08-16 — v0 is ADMISSIBLE. Sayed, verbatim: "
+                  "\"We can use v0 as input since it is measured and is not the "
+                  "future, but we should assure that the model/planner later is "
+                  "not cheating by just outputting v0 as longitudinal plan.\" "
+                  "e_wc2_sigma_star.FEATURE_ADMISSIBILITY['v0'] is now "
+                  "MEASURED_PRESENT and this arm no longer needs "
+                  "--allow-echo-features. ⛔ THE OBLIGATION REPLACES THE "
+                  "REFUSAL: any LONGITUDINAL claim from a v0-fed arm must carry "
+                  "the three controls in taniteval/taniteval/v0_antiecho.py — "
+                  "the hold-v0 baseline (paired episode-cluster bootstrap; not "
+                  "beating it, separated, means the head learned nothing beyond "
+                  "its input), the copy-detector scalar, and the v0-shuffle "
+                  "(stack/scripts/probe_latent_state.py --speed-echo-control). "
+                  "⚠️ Admitting v0 removed an ARGUMENT, not a DEFICIT: MEASURED, "
+                  "vision + v0 sat at σ/ADE 3.527, still worse than a "
+                  "0-parameter constant-yaw-rate rule at 1.1888.",
     },
     "⛔ the 6 s rule": "V6F §5.3's refutation check FIRED on 2026-08-16 "
                       "(σ(6 s) = 3.75 × σ(2 s) > 3 ⇒ REDERIVE). No 6 s "
@@ -516,7 +536,14 @@ def run(d, *, features: list[str], allow_echo: bool = False,
                          "by a vision-derived logit; the label comes from future "
                          "ego poses, which no inference input is derived from. "
                          "The `marginal` arm is the goal-echo null.",
-            "v0_status": PREREG["E-AG3"]["status"] if fmeta["any_echo"] else None,
+            # ⭐ RESOLVED 2026-08-16. This used to key on `any_echo`, because v0
+            # was mis-classified ECHO and the E-AG3 arm existed to MEASURE the
+            # contradiction between that classification and V6F §1.4. The PI
+            # settled it — v0 is MEASURED_PRESENT (admissible) — so the status
+            # now keys on `any_measured_present` and reports the OBLIGATION the
+            # admission created rather than an adjudication that has happened.
+            "v0_status": (PREREG["E-AG3"]["status"]
+                          if fmeta.get("any_measured_present") else None),
         },
         "prereg": PREREG,
         "dump": {"ckpt": d.get("ckpt"), "ckpt_step": d.get("ckpt_step"),
@@ -606,7 +633,11 @@ def main(argv=None) -> int:
     ap.add_argument("--features", default="pooled,ctx")
     ap.add_argument("--declare", action="append", default=[])
     ap.add_argument("--allow-echo-features", action="store_true",
-                    help="⛔ runs the PENDING_PI_ADJUDICATION v0 arm")
+                    help="⛔ runs a LABELLED-INADMISSIBLE ECHO block (e.g. "
+                         "`measurement`, the ego+NAV embedding) as a control. "
+                         "⭐ NO LONGER NEEDED FOR v0 — the PI ruled it "
+                         "admissible (MEASURED_PRESENT) on 2026-08-16; it now "
+                         "carries the anti-echo obligation instead.")
     ap.add_argument("--ks", default=",".join(str(k) for k in PREREG["k_sweep"]))
     ap.add_argument("--methods", default=",".join(PREREG["methods"]))
     ap.add_argument("--steps", default="20,60")

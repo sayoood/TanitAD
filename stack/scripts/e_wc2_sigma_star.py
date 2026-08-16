@@ -177,16 +177,78 @@ VERDICTS = {
 # input must not carry the situation classifier's output". A goal head that reads
 # the ego/nav embedding at inference is NOT deployable, and its σ would be a leak
 # magnitude rather than a capability. Blocks are classified, not assumed.
+#
+# ⭐ SUPERSEDED FOR `v0` BY THE PI, 2026-08-16 — and the correction is recorded
+# here rather than only in the design doc, because this file is what RUNS.
+#
+# **Sayed, verbatim:** *"We can use v0 as input since it is measured and is not
+# the future, but we should assure that the model/planner later is not cheating
+# by just outputting v0 as longitudinal plan."*
+#
+# `v0` used to be classified ECHO here, i.e. inadmissible at inference. That was
+# WRONG, and it contradicted `Project Steering/V6F_PLANNER_DESIGN.md` §1.4. Ego
+# speed at t0 is **measured present state** — an observation available to any
+# real vehicle at inference — not a future quantity and not a label-derived
+# signal. The vision-only rule exists to stop the model reading *the answer*;
+# `v0` is not the answer. It is therefore **MEASURED_PRESENT: admissible**.
+#
+# ⛔ BUT ADMITTING IT CREATES A NEW OBLIGATION, AND THE CLASS CARRIES IT. A
+# planner given `v0` can emit "keep doing v0" as its longitudinal plan and score
+# well, because holding the current speed is a strong baseline on most windows —
+# **skill attributed to a copy**. This programme has been fooled by that exact
+# shape three times (nav-echo 1.0000; T1 action echo 97.9 % open-loop vs 0.0 %
+# hold-action; P1 speed echo R² 0.995 → −0.72 under the v0 shuffle). ⇒ any
+# LONGITUDINAL claim resting on a `v0`-fed arm must be reported beside the three
+# anti-echo controls in `taniteval/taniteval/v0_antiecho.py` (hold-v0 baseline
+# under a paired episode-cluster bootstrap · the copy-detector scalar · the
+# v0-shuffle, whose model-side machinery is
+# `stack/scripts/probe_latent_state.py --speed-echo-control`).
+#
+# ⚠️ **Admitting `v0` removed an ARGUMENT, not a DEFICIT.** MEASURED on this very
+# surface: vision **+ v0** sat at σ/ADE **3.527** — still worse than a
+# 0-parameter constant-yaw-rate rule at **1.1888**.
 FEATURE_ADMISSIBILITY = {
     # VISION ONLY — refc_dump_latents.py:25-27 states this verbatim for all three
     "pooled": "VISION_ONLY",
     "pooled_seq": "VISION_ONLY",
     "ctx": "VISION_ONLY",
     # ⛔ THE ECHO PATH — refc_dump_latents.py:28 labels `measurement` as the
-    # ego+nav embedding "and is the v0-echo path by construction".
+    # ego+nav embedding "and is the v0-echo path by construction". This one is
+    # STILL ECHO: it carries the NAV signal, which IS derived from the ego's own
+    # future, so it is inadmissible for exactly the reason `v0` is not.
     "measurement": "ECHO",
-    "v0": "ECHO",
+    # ⭐ ADMISSIBLE since the PI ruling above — with the anti-echo obligation.
+    "v0": "MEASURED_PRESENT",
 }
+
+#: The classes a feature block may carry, and what each one does to a verdict.
+ADMISSIBILITY_CLASSES = {
+    "VISION_ONLY": "deployable at inference with no privileged channel.",
+    "MEASURED_PRESENT": (
+        "measured present state (ego speed at t0). ADMISSIBLE at inference — "
+        "PI ruling 2026-08-16 — because it is an observation, not the answer. "
+        "⛔ Carries the ANTI-ECHO OBLIGATION: any longitudinal claim from an arm "
+        "fed this block must be reported beside taniteval.v0_antiecho's hold-v0 "
+        "baseline, copy-detector and v0-shuffle. Does NOT block a verdict."),
+    "ECHO": (
+        "ego/nav-at-inference — the block carries something the label was "
+        "derived from. INADMISSIBLE under the vision-only rule (Sayed "
+        "2026-08-03); forces NO_VERDICT even with --allow-echo-features."),
+}
+
+#: Stamped into any record whose design matrix contains a MEASURED_PRESENT block,
+#: so the obligation travels with the number rather than living in a comment.
+ANTIECHO_OBLIGATION = (
+    "⛔ v0 (MEASURED_PRESENT) is in this design matrix. It is ADMISSIBLE (PI "
+    "2026-08-16) but it makes 'keep doing v0' a way to score without skill. Any "
+    "LONGITUDINAL claim citing this record must carry the three controls in "
+    "taniteval/taniteval/v0_antiecho.py: the HOLD-v0 baseline (paired "
+    "episode-cluster bootstrap — not beating it, separated, means the "
+    "longitudinal head learned nothing beyond its input), the COPY-DETECTOR "
+    "scalar (echo_index vs the GT's own), and the v0-SHUFFLE (model-side "
+    "machinery: stack/scripts/probe_latent_state.py --speed-echo-control). "
+    "⚠️ This instrument is an ENDPOINT-CAPACITY probe and does not itself run "
+    "them — it records that they are owed.")
 
 DUMP_CONTRACT = {
     "_what": "the latent dump E-WC2 consumes. One torch.save'd dict.",
@@ -490,11 +552,11 @@ def build_features(d, names: list[str], *, allow_echo: bool,
                            f"(Sayed 2026-08-03). Pass --allow-echo-features to "
                            f"run it as a LABELLED-INADMISSIBLE control.")
             continue
-        if cls == "UNDECLARED":
+        if cls not in ADMISSIBILITY_CLASSES:
             refused.append(f"{nm} has no admissibility class — state it with "
-                           f"--declare {nm}=VISION_ONLY (or =ECHO). A goal "
-                           f"feature whose provenance is unstated cannot be "
-                           f"shown to be vision-only.")
+                           f"--declare {nm}=" + "|".join(ADMISSIBILITY_CLASSES)
+                           + ". A goal feature whose provenance is unstated "
+                           f"cannot be shown to be vision-only.")
             continue
         a = np.asarray(d[nm], dtype=np.float64)
         a = a.reshape(a.shape[0], -1)
@@ -510,11 +572,20 @@ def build_features(d, names: list[str], *, allow_echo: bool,
     if not cols:
         raise ValueError("no usable feature columns after admissibility "
                          "filtering and zero-width drops")
-    return np.concatenate(cols, axis=1), {
+    used = [m for m in meta if m["used"]]
+    out = {
         "blocks": meta,
         "total_dim": int(sum(c.shape[1] for c in cols)),
-        "any_echo": any(m["admissibility"] == "ECHO" for m in meta if m["used"]),
+        "any_echo": any(m["admissibility"] == "ECHO" for m in used),
+        # ⭐ v0 is ADMISSIBLE (PI 2026-08-16) so this does NOT gate the verdict —
+        # unlike `any_echo`. It records an OBLIGATION on whoever quotes the row.
+        "any_measured_present": any(m["admissibility"] == "MEASURED_PRESENT"
+                                    for m in used),
+        "_classes": ADMISSIBILITY_CLASSES,
     }
+    if out["any_measured_present"]:
+        out["anti_echo_obligation"] = ANTIECHO_OBLIGATION
+    return np.concatenate(cols, axis=1), out
 
 
 # --------------------------------------------------------------------------- #
@@ -843,11 +914,20 @@ def run(d, *, features: list[str], allow_echo: bool = False,
         "references_and_ratios": ratios,
         "rederive_check_5_3": rederive,
         "decision": verdict,
+        # ⭐ Surfaced at the TOP level, not only inside `features`, because an
+        # obligation nested three keys deep is one a report loses. Absent when
+        # no MEASURED_PRESENT block is in the design matrix.
+        **({"_anti_echo_obligation": ANTIECHO_OBLIGATION}
+           if feat_meta.get("any_measured_present") else {}),
         "four_families": {
             "LONGITUDINAL": "sigma_long_m per horizon (endpoint along-track 1σ). "
                             "Target-speed / distance-keeping are NOT produced "
                             "here — this is an endpoint-capacity probe, n/a with "
-                            "reason.",
+                            "reason. ⛔ When v0 (MEASURED_PRESENT) is in the "
+                            "design matrix, see _anti_echo_obligation: the "
+                            "hold-v0 baseline, copy-detector and v0-shuffle in "
+                            "taniteval.v0_antiecho are OWED by any longitudinal "
+                            "claim citing this record.",
             "LATERAL": "sigma_lat_m per horizon (endpoint cross-track 1σ). "
                        "Heading / curvature / yaw-rate n/a — no trajectory is "
                        "rolled by this instrument.",
@@ -867,9 +947,9 @@ def _parse_declared(items: list[str]) -> dict[str, str]:
         if "=" not in it:
             raise SystemExit(f"--declare expects NAME=CLASS, got {it!r}")
         k, v = it.split("=", 1)
-        if v not in ("VISION_ONLY", "ECHO"):
-            raise SystemExit(f"--declare class must be VISION_ONLY or ECHO, "
-                             f"got {v!r}")
+        if v not in ADMISSIBILITY_CLASSES:
+            raise SystemExit(f"--declare class must be one of "
+                             f"{'|'.join(ADMISSIBILITY_CLASSES)}, got {v!r}")
         out[k] = v
     return out
 
@@ -884,7 +964,10 @@ def main(argv=None) -> int:
                     help="run an ECHO (ego/nav) block as a LABELLED-INADMISSIBLE "
                          "control; forces NO_VERDICT")
     ap.add_argument("--declare", action="append", default=[],
-                    help="NAME=VISION_ONLY|ECHO for a block with no built-in class")
+                    help="NAME=VISION_ONLY|MEASURED_PRESENT|ECHO for a block "
+                         "with no built-in class. MEASURED_PRESENT (e.g. v0) is "
+                         "ADMISSIBLE per the PI ruling 2026-08-16 and carries "
+                         "the anti-echo obligation instead of a refusal.")
     ap.add_argument("--n-boot", type=int, default=2000)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--min-episodes", type=int, default=PREREG["min_episodes"])

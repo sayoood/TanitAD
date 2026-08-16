@@ -54,7 +54,7 @@ def _eids(n_win=N_WIN, n_ep=N_EP):
 
 def make_dump(*, sigma2=0.8, sigma6=1.6, n_win=N_WIN, n_ep=N_EP, d=8,
               sel_ade=0.4714, oracle_ade=0.1639, seed=0, with_6s=True,
-              valid6=None, echo=False):
+              valid6=None, echo=False, v0=False):
     """A dump conformant with ``DUMP_CONTRACT`` whose σ is PLANTED.
 
     The endpoint at each horizon is an exactly-linear function of ``pooled`` plus
@@ -102,6 +102,9 @@ def make_dump(*, sigma2=0.8, sigma6=1.6, n_win=N_WIN, n_ep=N_EP, d=8,
     if echo:
         d_out["measurement"] = torch.tensor(rng.normal(size=(n, 4)),
                                             dtype=torch.float32)
+    if v0:
+        d_out["v0"] = torch.tensor(rng.uniform(3.0, 16.0, size=(n, 1)),
+                                   dtype=torch.float32)
     return d_out
 
 
@@ -342,6 +345,65 @@ def test_echo_feature_allowed_only_as_a_labelled_control_and_forces_no_verdict()
     assert res["features"]["any_echo"] is True
     assert res["decision"]["verdict"] == "NO_VERDICT"
     assert any("INADMISSIBLE" in r for r in res["decision"]["refusal_reasons"])
+
+
+# ---------------------------------------------------------------------------- #
+# ⭐ v0 IS ADMISSIBLE — the PI ruling of 2026-08-16, pinned                       #
+#                                                                                #
+# `FEATURE_ADMISSIBILITY["v0"]` used to read "ECHO" (inadmissible), which        #
+# CONTRADICTED `Project Steering/V6F_PLANNER_DESIGN.md` §1.4. Sayed resolved it: #
+# *"We can use v0 as input since it is measured and is not the future, but we    #
+# should assure that the model/planner later is not cheating by just outputting  #
+# v0 as longitudinal plan."* v0 is measured PRESENT state, so it is admissible — #
+# and the obligation it creates travels with the record instead of a refusal.    #
+# ---------------------------------------------------------------------------- #
+def test_v0_is_no_longer_classified_as_an_echo_path():
+    """⛔ The superseded prohibition, pinned so it cannot creep back."""
+    assert E.FEATURE_ADMISSIBILITY["v0"] == "MEASURED_PRESENT"
+    assert E.FEATURE_ADMISSIBILITY["v0"] != "ECHO"
+    # `measurement` is STILL ECHO — it carries the NAV signal, which IS derived
+    # from the ego's own future. The ruling moved v0 only.
+    assert E.FEATURE_ADMISSIBILITY["measurement"] == "ECHO"
+
+
+def test_v0_runs_without_allow_echo_and_does_not_block_the_verdict():
+    """The behavioural half: v0 is a normal admissible block now."""
+    res = _run(make_dump(sigma2=0.3, seed=45, v0=True), features=["pooled", "v0"])
+    assert res["features"]["any_echo"] is False
+    assert res["features"]["any_measured_present"] is True
+    assert res["decision"]["verdict"] != "NO_VERDICT"
+    assert any(b["block"] == "v0" and b["used"]
+               and b["admissibility"] == "MEASURED_PRESENT"
+               for b in res["features"]["blocks"])
+
+
+def test_admitting_v0_stamps_the_ANTI_ECHO_OBLIGATION_on_the_record():
+    """⛔ Admitting v0 opens 'keep doing v0' as a way to score without skill. The
+    record must carry that obligation at its TOP level — a note nested three keys
+    deep is a note a report loses."""
+    res = _run(make_dump(sigma2=0.3, seed=47, v0=True), features=["pooled", "v0"])
+    ob = res["_anti_echo_obligation"]
+    assert "hold-v0" in ob.lower() or "HOLD-v0" in ob
+    assert "v0_antiecho" in ob and "--speed-echo-control" in ob
+    assert res["features"]["anti_echo_obligation"] == ob
+    assert "_anti_echo_obligation" in res["four_families"]["LONGITUDINAL"]
+
+
+def test_no_obligation_is_stamped_when_v0_is_not_in_the_design_matrix():
+    """A guard that fires unconditionally is a constant, not a guard."""
+    res = _run(make_dump(sigma2=0.3, seed=49), features=["pooled"])
+    assert res["features"]["any_measured_present"] is False
+    assert "_anti_echo_obligation" not in res
+    assert "anti_echo_obligation" not in res["features"]
+
+
+def test_MEASURED_PRESENT_is_a_declarable_class():
+    d = make_dump(seed=51)
+    d["mystery"] = torch.zeros(len(d["eid"]), 3)
+    res = _run(d, features=["pooled", "mystery"],
+               declared={"mystery": "MEASURED_PRESENT"})
+    assert res["features"]["any_measured_present"] is True
+    assert res["features"]["any_echo"] is False
 
 
 def test_undeclared_feature_block_is_refused_until_declared():

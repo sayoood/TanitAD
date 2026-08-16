@@ -228,7 +228,8 @@ def _masked(x: torch.Tensor, m: torch.Tensor) -> tuple[float, int]:
 
 
 def longitudinal(pred: torch.Tensor, gt: torch.Tensor, dt: float = DT_S,
-                 lead: dict | None = None) -> dict:
+                 lead: dict | None = None, win: dict | None = None,
+                 n_boot: int = 2000, seed: int = 0) -> dict:
     """Is the arm setting the RIGHT SPEED, and does it keep distance?
 
     ⛔ ``dt`` is the spacing between the supplied waypoints. Speed scales as 1/dt and acceleration
@@ -247,6 +248,16 @@ def longitudinal(pred: torch.Tensor, gt: torch.Tensor, dt: float = DT_S,
     GT-vs-CV control **D-LEAD-1** (2026-08-03): Δ min-TTC **+1.7474 s** [1.5813, 1.9218],
     Δ headway **+0.9769 m** [0.883, 1.0758], Δ time-gap **+0.1641 s** [0.1499, 0.1786], paired
     episode-cluster bootstrap over 14,027 windows / 1,431 clip clusters, all separated.
+
+    ⛔ ``win`` (2026-08-16) supplies ``v0``/``eid`` to the **ANTI-ECHO CONTROLS**, which are
+    attached to EVERY longitudinal block rather than requested. **Sayed, verbatim, 2026-08-16:**
+    *"We can use v0 as input since it is measured and is not the future, but we should assure that
+    the model/planner later is not cheating by just outputting v0 as longitudinal plan."* Holding
+    the current speed is a strong baseline on most windows, so a planner can emit "keep doing v0"
+    and score well — **skill attributed to a copy**, the same shape as the nav-echo (1.0000), the
+    T1 action echo (97.9 % open-loop / 0.0 % hold-action) and the P1 speed echo (R² 0.995 → −0.72).
+    ⇒ ``anti_echo`` carries the hold-v0 baseline (paired episode-cluster bootstrap), the copy
+    detector's scalar, and the v0-shuffle control. See :mod:`taniteval.v0_antiecho`.
     """
     P, G = _seq_geometry(pred, dt), _seq_geometry(gt, dt)
     sp_err = P["speed"] - G["speed"]
@@ -287,8 +298,33 @@ def longitudinal(pred: torch.Tensor, gt: torch.Tensor, dt: float = DT_S,
                               "off by those powers; along_* are dt-invariant."),
         # --- distance keeping ---
         "distance_keeping": _distance_keeping(pred, dt, lead),
+        # ⛔ THE ANTI-ECHO CONTROLS (PI 2026-08-16) — ALWAYS ON, never on request.
+        # Every speed number above can be earned by copying v0; these are the
+        # three controls that say whether it was. `longitudinal_claim_admissible`
+        # inside is the bit a report may not lose.
+        "anti_echo": _anti_echo(pred, gt, dt, win, lead, n_boot, seed),
         "n_windows": int(pred.shape[0]),
     }
+
+
+def _anti_echo(pred: torch.Tensor, gt: torch.Tensor, dt: float,
+               win: dict | None, lead: dict | None, n_boot: int, seed: int) -> dict:
+    """:mod:`taniteval.v0_antiecho` over this arm's own plan, or the reason why not.
+
+    Kept out of :func:`longitudinal` for the same reason ``_distance_keeping`` is: the
+    UNAVAILABLE branch must read as ONE thing — a WORK ITEM with a reason and an ``n`` —
+    rather than being mistaken for a pass.
+
+    ⭐ ``lead`` is folded into the lookup because a lead block carries ``speeds`` (the
+    time-gap denominator), which IS the ego speed at t0. A caller who supplied a lead
+    block has therefore already supplied ``v0`` without knowing it, and the control
+    should not report UNAVAILABLE beside a dict that contains exactly what it needs.
+    """
+    from taniteval import v0_antiecho as _ae
+    ctx = dict(win or {})
+    if lead is not None and "lead" not in ctx:
+        ctx["lead"] = lead
+    return _ae.anti_echo(pred, gt, dt, ctx, n_boot=n_boot, seed=seed)
 
 
 def _ego_progress(pred: torch.Tensor, gt: torch.Tensor) -> dict:
@@ -1148,7 +1184,8 @@ def all_families(win: dict, hier: dict | None = None, prefer_dense: bool = True,
         traj = {"pred": pred, "gt": gt, "dt": dt, "eid": win.get("eid"),
                 "tier": tier, "n_boot": n_boot, "seed": seed}
     fam = {
-        "longitudinal": longitudinal(pred, gt, dt, win.get("lead")),
+        "longitudinal": longitudinal(pred, gt, dt, win.get("lead"), win=win,
+                                     n_boot=n_boot, seed=seed),
         "lateral": lateral(pred, gt, dt),
         "tactical": tactical(win, hier, traj),
         "strategic": strategic(win, hier, optionset,
@@ -1175,7 +1212,22 @@ def all_families(win: dict, hier: dict | None = None, prefer_dense: bool = True,
         "ITEM, not a pass.")
     fam["_families_unavailable"] = unavailable
     fam["_complete"] = not unavailable and \
-        fam["longitudinal"]["distance_keeping"]["status"] == "OK"
+        fam["longitudinal"]["distance_keeping"]["status"] == "OK" and \
+        fam["longitudinal"]["anti_echo"]["status"] == "OK"
+    # ⛔ PROMOTED TO THE TOP OF THE BLOCK (2026-08-16), because a bit buried three
+    # levels down is a bit a report loses. The PI's condition is that NO
+    # longitudinal claim is admissible until the arm beats hold-v0, separated —
+    # so the block states, at its own top level, whether that has been discharged.
+    _ae = fam["longitudinal"]["anti_echo"]
+    fam["_longitudinal_claim_admissible"] = bool(
+        _ae.get("longitudinal_claim_admissible", False))
+    fam["_anti_echo_summary"] = _ae.get("summary", _ae.get("reason"))
+    fam["_anti_echo_rule"] = (
+        "Sayed 2026-08-16: v0 is ADMISSIBLE as a planner input, PROVIDED the "
+        "planner is shown not to be 'just outputting v0 as longitudinal plan'. "
+        "⛔ A LONGITUDINAL number emitted while _longitudinal_claim_admissible "
+        "is False is a fidelity diagnostic, NOT a longitudinal capability "
+        "result, and must not be presented as one.")
     # ⛔ TWO DIFFERENT QUESTIONS, and conflating them is how an incomplete block
     # gets presented as a compliant one. `_complete` asks whether all four
     # families carry NUMBERS. `_rule_satisfied` asks whether the block obeys the

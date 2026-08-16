@@ -560,15 +560,20 @@ def o5_rollout_consistency_loss(zhat_steps, z_true_steps, weights: Tensor
                                      .detach())}
 
 
-def o6_sigreg_loss(sigreg, z: Tensor, free_dims: int = 0) -> Tensor:
+def o6_sigreg_loss(sigreg, z: Tensor, free_dims: int = 0, *,
+                   generator: torch.Generator | None = None) -> Tensor:
     """O6 — SIGReg (full_relaxed), KEPT per the PI's 2026-08-11 call.
 
     Delegates to :func:`tanitad.models.sigreg.position_relaxed`, which exempts
     a fixed ego-motion subspace so anti-collapse and metric-position structure
     stop cancelling. ⚠️ Never divide the Epps-Pulley statistic by n — that was
     the ALPS-4B bug that silently disabled the loss, and it is guarded inside
-    ``sigreg.py``; this wrapper exists so nobody re-implements the call."""
-    return position_relaxed(sigreg, z, free_dims)
+    ``sigreg.py``; this wrapper exists so nobody re-implements the call.
+
+    ``generator=None`` (the default, and the live v6F path) draws the slice
+    directions from the GLOBAL RNG exactly as before. See
+    ``v6_loss_step``'s ``sigreg_generator``."""
+    return position_relaxed(sigreg, z, free_dims, generator=generator)
 
 
 def build_o4_weights(actions_per_window, *, dt: float = 0.1,
@@ -816,6 +821,7 @@ def v6_loss_step(stack: V6Stack, batch: dict, *, stage: str,
                  rand_dk: Tensor | None = None,
                  rand_da: Tensor | None = None,
                  generator: torch.Generator | None = None,
+                 sigreg_generator: torch.Generator | None = None,
                  rollout_grad_checkpoint: bool | None = None,
                  anchor_objective: str = "metric",
                  anchor_axis_w: tuple[float, float] = ANCHOR_AXIS_W_DEFAULT
@@ -836,6 +842,26 @@ def v6_loss_step(stack: V6Stack, batch: dict, *, stage: str,
     is 0 for this stage are SKIPPED, not multiplied by zero — a skipped term
     costs no compute and, more importantly, cannot appear in the log looking
     like it trained something.
+
+    ⛔ ``sigreg_generator`` — REPRODUCIBILITY OF ``o6``, OPT-IN (2026-08-16).
+    ``SigReg`` draws its M slice directions freshly per call, and until today it
+    drew them from the GLOBAL RNG, which ``generator`` does not cover. MEASURED
+    (``LOSS_DETERMINISM.md``): two identical calls with the same ``generator``
+    returned S-W 3.9301 vs 3.9227 — the WHOLE discrepancy in ``o6`` (0.046874 vs
+    0.039470, 18.7 %), every other term bit-identical. A globally-seeded full
+    training run is unaffected; every IN-PROCESS A/B was noise-dominated, so no
+    ablation of any term was attributable.
+
+    ``None`` (default) keeps the incumbent global draw BIT-FOR-BIT — v6F S-W is
+    training from this code and its loss values must not move. Pass a generator
+    to make ``o6`` reproducible.
+
+    ⚠️ **Use a SEPARATE generator from ``generator``, not the same object.**
+    ``generator`` also feeds ``sample_random_deltas`` (O1) and
+    ``sample_cell_block_mask`` (O3), so sharing one stream re-couples the terms:
+    switching O3 off changes how many draws precede O6 and ``o6`` then moves for
+    a reason that has nothing to do with the ablation — which is the confound
+    this parameter exists to remove.
     """
     if stage not in STAGES:
         raise ValueError(f"unknown stage {stage!r}")
@@ -951,7 +977,7 @@ def v6_loss_step(stack: V6Stack, batch: dict, *, stage: str,
     # ---- O6: SIGReg on the operative latent --------------------------------
     if w.o6_sigreg:
         l6 = o6_sigreg_loss(stack.sigreg, states.reshape(-1, states.shape[-1]),
-                            cfg.sigreg_free_dims)
+                            cfg.sigreg_free_dims, generator=sigreg_generator)
         terms["o6"] = w.o6_sigreg * l6
         log["o6_sigreg"] = float(l6.detach())
 
