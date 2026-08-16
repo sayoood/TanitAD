@@ -85,7 +85,51 @@ speed"** would record **our own power configuration as the hardware's capability
 below is tried, the honest statement is: *Thor is 32.9 % slower than the A40 **in nvpmodel 1 with
 EMC at 3200/4266**.*
 
-### 🟥 BLOCKED ON THE PI — one command
+### ✅ E-THOR-CLK — RUN 2026-08-16, AND IT SETTLES THE SCOPE QUESTION
+
+The PI ran `jetson_clocks` at **step 7200**. EMC **3200 → 4266 MHz**, held across five samples;
+`gpu-nvd-0` also rose 315 → 1557 MHz. Thermals/power moved as expected and stayed inside envelope:
+**58 → 62 °C**, **33.5 → 37.4 W** of a 120 W budget. Restore point at `~/jetson_clocks.before.conf`.
+
+| window | marginal s/step | delta vs before |
+|---|---|---|
+| **BEFORE** (EMC 3200), 900 steps / 19 points | **27.09** | — |
+| AFTER (EMC 4266), 50 steps / 2 points | 26.37 | −0.73 (−2.7 %) |
+| **AFTER (EMC 4266), 300 steps / 7 points** | **26.35** | **−0.75 (−2.8 %)** |
+
+⛔ **The logging interval 7200 → 7250 straddles the change and was DISCARDED, not averaged** — it
+spans two hardware configurations and is attributable to neither (same discipline as the machine
+boundary, **C68**). Both sides use the identical marginal identity from the trainer's own cumulative
+`step_s`, so this is like-for-like, never marginal-vs-cumulative.
+
+⚠️ **The first reading was reported as PROVISIONAL and the hedge was warranted** — one 50-step
+interval against a 900-step baseline is asymmetric evidence, and a lone 50-step window had already
+been observed sitting ~0.12 s/step off the long run. Widening 6× moved the answer by **0.02 s/step**,
+so the magnitude survived the check.
+
+**Thor/A40 1.324× → 1.288×. Remaining 7.04 → 6.85 days** — ~4.5 h bought for one command.
+
+⭐ **THE SCIENTIFIC CONTENT IS THE NEAR-NULL, NOT THE GAIN.** A **33 % increase in memory bandwidth
+returned 2.8 % in step time** ⇒ **the workload is SM-BOUND, NOT BANDWIDTH-BOUND.** That
+independently confirms the batch-8 saturation note from the other direction: flat throughput across a
+6× batch range, and a flat response to a third more bandwidth, are the same fact measured twice.
+
+⇒ **§3's C14-family caveat is DISCHARGED BY MEASUREMENT.** `26.35 s/step` is now quotable as **Thor's
+capability**, not as an artifact of the power mode it happened to boot in. The question "is this the
+hardware or our configuration?" is closed, and it was closed by trying the configuration rather than
+by arguing about it.
+
+⇒ **It also sharpens the one remaining lever.** `--grad-checkpoint` trades compute for memory
+traffic; traffic is now known NOT to be the binding resource, so removing that trade should return
+real time rather than shuffle it. Needs a restart and a memory-ceiling check (⛔ on Thor only
+`torch.cuda.max_memory_allocated()` is admissible), so it belongs at the **S-W→S-T boundary**
+alongside the E-WC2 dump — not mid-run.
+
+Instrument: `code/thor_clk_ab.py` (refuses to quote until two rows fall entirely past the change).
+
+---
+
+### ~~🟥 BLOCKED ON THE PI — one command~~ (DONE 2026-08-16, see above)
 
 `jetson_clocks` pins clocks to max **within the current nvpmodel**; it signals no process, restarts
 nothing, and is reversible. `/sys/class/devfreq/bwmgr/min_freq` is `root:root rw-r--r--` and a
