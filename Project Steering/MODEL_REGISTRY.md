@@ -1487,6 +1487,37 @@ occluded≥visible parity must be re-checked against a diffuseness control befor
 quoted as permanence on its own. Artifacts: `p8_gate_attempt2.json`; reel
 `p8-occupancy-c/reel/` (camera | decode(ẑ) | belief∩truth at the same τ*).
 
+⛔⭐ **P4 PREDICATE STAMP — MEASURED 2026-08-16, and it changes how this row may be
+read AND how it may be "fixed".** The join's `occ` flag (`build_obstacle_join.
+visibility_occ`) and `bev_raster.fov_mask` are **THE SAME PREDICATE** — 0 of 7 680 cells
+disagree at every half-angle tested (30/60/90/117/120/150/179°), and the two defaults are
+**bit-identical** IEEE doubles (`0x1.0c152382d7365p+0`); they differ only in granularity
+(agent centre vs cell centre). Three consequences:
+(1) ⛔ **The `occluded` arm IS the out-of-field set, so the `_infov` twin that the
+2026-08-16 `bev_raster` consumer audit added everywhere else MUST NOT be added here — it
+would EMPTY the finding, not correct it.** MEASURED over 10 000 occluded agents per
+extent: a sub-cell agent keeps 0.0–1.5 % of its cells, an automobile 10.8 % (60.4 %
+emptied outright), a heavy truck 26.7 % — the survival fraction **rises with vehicle
+length**, i.e. the twin re-selects the population by extent. Guarded by
+`stack/tests/test_p4_fov_predicate.py`, which fails if a twin is ever added.
+(2) ⚠️ **The two arms are DISJOINT REGIONS, not just two visibilities** — the occluded arm
+is scored entirely inside a 590-cell wedge (7.68 % of the grid, all at x < 9.24 m) and the
+visible arm over the other 92 %. That is the concrete form the required diffuseness
+control must take: `--p4-region-control` (`train_p8_occupancy.py`) adds
+`visible_near`/`visible_far` at the same range boundary and reports
+`occluded_over_visible_near` — **≈1.0 ⇒ the gap is REGIONAL, not permanence; >1.0 ⇒ it
+survives.** Pre-registered with both outcomes; NOT YET RUN (needs `p8_head.pt` + the join
+file on a pod; ~5 min GPU).
+(3) ⚠️ **The `pred` half of the sentence above is k=10-only.** Re-read of the banked
+artifact across all four k: the ENC ordering occluded > visible holds at k = 5/10/15/20,
+but the PRED ordering holds at **k = 10 alone** and reverses at 5/15/20 (−0.0035 /
+−0.0034 / −0.0057). k=10 is the pre-registered gate k, so the choice is principled — but
+quote the enc arm, or quote the pred arm *with* this. Also: the join flagged at the
+sensor's 120° while the encoder saw the 117° sub-frame, which puts unseen agents in the
+*visible* bucket and can only SHRINK this gap ⇒ the banked number is **conservative**.
+Artifacts: `…/incoming/2026-08-16-p4-fov-predicate/P4_FOV_PREDICATE.md` +
+`raw/p4_predicate_identity.json`; both `p8_gate_attempt{1,2}.json` annotated in place.
+
 **I4a IMAGINATION ABLATION — MEASURED 2026-08-11 ~19:40Z [T0, 881 grid]: the imagination
 channel is LOAD-BEARING, not decorative.** Three arms, same checkpoint, same grid, only the
 imagination input changed (`eval_flagship_v4 --imagination-ablate`): **intact ADE 0.4011**

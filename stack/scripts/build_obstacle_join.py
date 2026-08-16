@@ -92,6 +92,14 @@ occlusion is modelled — "occluded" here means OUT OF VIEW of the front camera
 the join schema drops z, and the ~45 deg VFOV of the eval frame excludes
 ground-level agent centers only at <~2 m range.
 
+  ⛔⭐ AND THE FACT THAT MUST TRAVEL WITH IT (MEASURED 2026-08-16): that test is
+  ``tanitad.data.bev_raster.fov_mask`` — the SAME PREDICATE, 0/7 680 cells
+  disagreeing at every half-angle tried, defaults bit-identical. So the P4
+  "occluded" population IS the field mask's complement, and the `_infov` twin
+  that is the correct fix for every OTHER `bev_raster` consumer would EMPTY this
+  one. See :data:`P4_PREDICATE_IDENTITY`, :func:`assert_occ_matches_fov_mask`,
+  and ``stack/tests/test_p4_fov_predicate.py``, which fails if a twin is added.
+
 EPISODE <-> CLIP IDENTITY (v2 corpora): each ``*.v2ep.pt`` payload stores the FULL
 ``clip_id`` (v2_dataset._scan_meta:358); the ``_v2manifest.pt`` sidecar (version 3)
 carries ``clip_id`` + ``episode_uid`` per clip (v2_dataset.py:413-416). Provider
@@ -150,7 +158,74 @@ EGOMOTION = "egomotion"
 
 #: the front camera's field: `camera_front_wide_120fov` (physicalai.py:232); the
 #: v5.8f eval frame retains exactly this via from_hfov(120, 256, 640, "cyl").
+#: ⚠️ THE SENSOR FIELD, NOT NECESSARILY THE ENCODER'S — see P4_PREDICATE_IDENTITY
+#: ["encoder_frame_rule"]; a centred sub-frame crop narrows it (v5f: 117.0 deg).
 HFOV_DEG_DEFAULT = 120.0
+
+#: ⛔⭐ THE STAMP. `occ` IS THE FIELD-OF-VIEW MASK, NOT AN INDEPENDENT LABEL.
+#:
+#: MEASURED 2026-08-16 (artifact `…/incoming/2026-08-16-p4-fov-predicate/raw/
+#: p4_predicate_identity.json`, reproducer `code/p4_predicate_census.py`):
+#: :func:`visibility_occ` and ``tanitad.data.bev_raster.fov_mask`` are the SAME
+#: PREDICATE — 0 / 7 680 cells disagree at every half-angle tested
+#: (30/60/90/117/120/150/179 deg), and their DEFAULTS are bit-identical floats
+#: (``math.radians(60.0)`` == ``math.radians(120.0)/2`` == 0x1.0c152382d7365p+0,
+#: ULP gap 0.0). They differ only in GRANULARITY: `occ` grades the AGENT CENTRE,
+#: `fov_mask` grades the CELL CENTRE.
+#:
+#: ⛔ THE CONSEQUENCE THAT MUST TRAVEL WITH THE FLAG. P4's published claim —
+#: "the latent carries agents the camera cannot see" (MODEL_REGISTRY.md, the
+#: P8 BEV-OCCUPANCY READOUT (attempt 2) entry) — is a claim ABOUT THE MASKED-OUT
+#: SET. The `occluded` arm IS ``~fov_mask``. So the fix that is correct for every
+#: OTHER `bev_raster` consumer — add an `_infov` twin — is WRONG HERE: it does not
+#: correct the occluded arm, it DELETES it. MEASURED on the real rasteriser
+#: (10 000 occluded agents per extent, sampled inside the wedge): a sub-cell
+#: agent keeps 0.0-1.5 % of its cells and is emptied outright 98.5-100 % of the
+#: time; an automobile (4.5 x 2.0 m) keeps 10.8 % of cells with 60.4 % of agents
+#: emptied; a heavy truck (12 x 2.6 m) keeps 26.7 % with only 24.2 % emptied.
+#: What survives is the footprint sliver straddling the +-hfov/2 ray, and the
+#: survival fraction RISES MONOTONICALLY WITH VEHICLE LENGTH — i.e. the twin
+#: does not correct the population, it RE-SELECTS it by extent.
+#: ⇒ **THE FIX HERE IS A STAMP, NOT A TWIN.**
+#: Guarded by ``stack/tests/test_p4_fov_predicate.py``.
+P4_PREDICATE_IDENTITY = {
+    "stamp": "P4_OCCLUDED_IS_THE_FOV_MASK_COMPLEMENT",
+    "occ_is_fov_mask": True,
+    "occ_source": "stack/scripts/build_obstacle_join.py visibility_occ "
+                  "(abs(arctan2(cy, cx)) <= radians(hfov_deg)/2)",
+    "fov_source": "stack/tanitad/data/bev_raster.py fov_mask "
+                  "(abs(cell_azimuth_rad) <= half_angle_rad)",
+    "granularity": {"occ": "agent centre", "fov_mask": "cell centre"},
+    "identity_evidence": "MEASURED 2026-08-16: 0/7680 cells disagree at hfov "
+                         "30/60/90/117/120/150/179 deg; defaults bit-identical "
+                         "(ULP gap 0.0). Artifact: TanitAD Research Hub/"
+                         "Architecture & Inference/Implementation/incoming/"
+                         "2026-08-16-p4-fov-predicate/raw/"
+                         "p4_predicate_identity.json",
+    "DO_NOT_ADD_AN_INFOV_TWIN": (
+        "The P4 visible/occluded split must be scored on ALL CELLS. Masking the "
+        "occluded arm to the camera field empties it BY CONSTRUCTION (it is the "
+        "complement of that mask). An `_infov` twin here is not a correctness "
+        "fix, it is the deletion of the finding. This is the one bev_raster "
+        "consumer where the standard `_infov` remedy is wrong."),
+    "what_the_split_still_needs": (
+        "a DIFFUSENESS / region-matched control — the occluded arm is scored "
+        "entirely inside a 590-cell wedge (7.68 % of the grid, all at x < 9.24 "
+        "m) and the visible arm on the other 92 %, so a decoder with a near-"
+        "shoulder firing prior scores the gap without carrying any agent. The "
+        "registry already stamps this as required before the number is quoted "
+        "as permanence."),
+    "encoder_frame_rule": (
+        "`hfov_deg` MUST be the half-angle of the frame THE ENCODER WAS FED, "
+        "not the sensor's. The v5f P4/P8 run encoded the 176x624 centred "
+        "sub-frame = 117.0 deg while this join flagged at the sensor's 120.0 "
+        "deg, so agents at |azimuth| in [58.5, 60.0] deg were flagged VISIBLE "
+        "though the encoder never saw them. Direction: that contamination puts "
+        "occluded-like rows in the visible bucket and can only SHRINK the "
+        "published occluded>visible gap, so the banked number is conservative "
+        "— but the coupling must be recorded, not rediscovered."),
+    "_evidence_class": "MEASURED (ours)",
+}
 
 #: v2 manifest sidecar contract mirrored from v2_dataset.py:60-63 (the module
 #: itself imports torchvision at module level and is absent on some hosts —
@@ -214,6 +289,16 @@ def visibility_occ(agents_ego, hfov_deg: float = HFOV_DEG_DEFAULT) -> np.ndarray
     Azimuth = ``atan2(cy, cx)`` in the +x-fwd/+y-left frame; under the eval's
     cylindrical projection azimuth maps linearly to image columns (calib.py:88-94),
     so this IS the horizontal frustum bound. Closed inequality at the edge.
+
+    ⛔⭐ **THIS IS `bev_raster.fov_mask`, AT AGENT-CENTRE GRANULARITY.** Not
+    "similar to" — the same predicate, MEASURED bit-exact (see
+    :data:`P4_PREDICATE_IDENTITY` and :func:`assert_occ_matches_fov_mask`).
+    Therefore the P4 `occluded` population **IS the field mask's complement**,
+    and masking that arm to the camera field would EMPTY the finding rather than
+    correct it. **THE FIX IS A STAMP, NOT AN `_infov` TWIN.** Do not "tidy" this.
+
+    ⚠️ ``hfov_deg`` must be the ENCODER's frame, not the sensor's — see
+    ``P4_PREDICATE_IDENTITY["encoder_frame_rule"]``.
     """
     ag = np.asarray(agents_ego, dtype=np.float64)
     if ag.size == 0:
@@ -221,6 +306,34 @@ def visibility_occ(agents_ego, hfov_deg: float = HFOV_DEG_DEFAULT) -> np.ndarray
     az = np.arctan2(ag[:, 1], ag[:, 0])
     return np.where(np.abs(az) <= math.radians(float(hfov_deg)) / 2.0, 0, 1
                     ).astype(np.int64)
+
+
+def assert_occ_matches_fov_mask(hfov_deg: float = HFOV_DEG_DEFAULT,
+                                grid=None) -> dict:
+    """MEASURE the identity claimed by :data:`P4_PREDICATE_IDENTITY`, don't assert it.
+
+    Feeds every BEV cell CENTRE to :func:`visibility_occ` as a zero-extent agent
+    row and compares ``occ == 0`` with ``bev_raster.fov_mask`` elementwise.
+    Returns the census; raises ``AssertionError`` if a single cell disagrees —
+    which is the event that would falsify the stamp and re-open the `_infov`
+    question. Pure geometry: no corpus, no torch, no GPU.
+    """
+    from tanitad.data.bev_raster import (GRID_DEFAULT, cell_centers_xy,
+                                         fov_mask)
+    grid = GRID_DEFAULT if grid is None else grid
+    X, Y = cell_centers_xy(grid)
+    pts = np.stack([X.ravel(), Y.ravel()] + [np.zeros(X.size)] * 3, axis=1)
+    occ = visibility_occ(pts, hfov_deg=hfov_deg).reshape(X.shape)
+    msk = fov_mask(grid, math.radians(float(hfov_deg)) / 2.0)
+    n_dis = int(np.count_nonzero((occ == 0) != msk))
+    if n_dis:
+        raise AssertionError(
+            f"`occ` and `fov_mask` disagree on {n_dis}/{X.size} cells at hfov "
+            f"{hfov_deg} — P4_PREDICATE_IDENTITY is FALSIFIED. Re-open the "
+            f"`_infov` question before anything else.")
+    return {"hfov_deg": float(hfov_deg), "n_cells": int(X.size),
+            "n_disagree": 0, "identical": True,
+            "n_out_of_field": int(np.count_nonzero(~msk))}
 
 
 class EgoTrack:
@@ -601,14 +714,33 @@ def build_args(argv=None):
                          "bev_raster.DEFAULT_TOL_S; ego-compensation makes "
                          "widening it unnecessary")
     ap.add_argument("--hfov-deg", type=float, default=HFOV_DEG_DEFAULT,
-                    help="front-camera horizontal FOV for the P4 visibility "
-                         "flag (the sensor field, camera_front_wide_120fov)")
+                    help="horizontal FOV for the P4 visibility flag. Default = "
+                         "the SENSOR field (camera_front_wide_120fov). ⚠️ PASS "
+                         "THE ENCODER'S FRAME INSTEAD when the consumer was fed "
+                         "a centred sub-frame — v5f's 176x624 crop is 117.0 deg, "
+                         "and the 1.5 deg annulus it removes is flagged "
+                         "`visible` here while the encoder never saw it "
+                         "(P4_PREDICATE_IDENTITY['encoder_frame_rule'])")
     return ap.parse_args(argv)
 
 
 def main(argv=None) -> int:
     a = build_args(argv)
     t0 = time.time()
+    # ⛔ MEASURE the `occ` == `fov_mask` identity at THIS run's half-angle before
+    # writing a byte, so the stamp in the sidecar is a measurement of this run
+    # and not a quotation of a doc. Costs ~1 ms; falsification stops the build.
+    identity_check = assert_occ_matches_fov_mask(a.hfov_deg)
+    print(f"[join] P4 predicate self-check: `occ` == ~bev_raster.fov_mask at "
+          f"hfov {a.hfov_deg} deg over {identity_check['n_cells']} cells "
+          f"(0 disagree; {identity_check['n_out_of_field']} out-of-field). "
+          f"THE OCCLUDED ARM IS THE MASKED-OUT SET — never add an `_infov` "
+          f"twin to the P4 split.", flush=True)
+    if a.hfov_deg == HFOV_DEG_DEFAULT:
+        print(f"[join] ⚠️ --hfov-deg is the SENSOR default ({HFOV_DEG_DEFAULT}). "
+              f"If the encoder consuming this join was fed a CENTRED SUB-FRAME "
+              f"(v5f: 176x624 => 117.0 deg), pass that half-angle instead — see "
+              f"P4_PREDICATE_IDENTITY['encoder_frame_rule'].", flush=True)
     hf_cache = Path(a.hf_cache)
     out_p = Path(a.out)
     out_p.parent.mkdir(parents=True, exist_ok=True)
@@ -736,10 +868,12 @@ def main(argv=None) -> int:
             "composition": "rig@sample -> world at the sample's OWN timestamp "
                            "(lead_source.py:308-316) -> ego@frame; the "
                            "bev_raster.py:69-77 ego-compensation",
-            "occ": f"0 = center azimuth within +-{a.hfov_deg / 2:.0f} deg "
+            "occ": f"0 = center azimuth within +-{a.hfov_deg / 2:.1f} deg "
                    f"(front-camera frustum), 1 = out of view while the track "
                    f"continues. NOT object-object occlusion; no vertical bound "
-                   f"(z dropped; rig-origin height not established).",
+                   f"(z dropped; rig-origin height not established). ⛔ THIS IS "
+                   f"bev_raster.fov_mask AT AGENT-CENTRE GRANULARITY — see "
+                   f"p4_predicate_identity below.",
             "NO_LABEL": "absent (clip, frame) line — outside the ~20 s label "
                         "span or clip without obstacle.offline; NEVER emitted "
                         "as empty agents (that means labelled CLEAR)",
@@ -748,8 +882,14 @@ def main(argv=None) -> int:
         },
         "_evidence_class": "MEASURED (ours; artifact = the jsonl + this meta)",
     }
+    # ⛔⭐ the stamp travels WITH the data, not in a doc nobody re-reads.
+    meta["p4_predicate_identity"] = dict(
+        P4_PREDICATE_IDENTITY,
+        hfov_deg_used=float(a.hfov_deg),
+        hfov_is_sensor_default=bool(a.hfov_deg == HFOV_DEG_DEFAULT),
+        self_check=identity_check)
     meta_p = Path(str(out_p) + ".meta.json")
-    meta_p.write_text(json.dumps(meta, indent=1))
+    meta_p.write_text(json.dumps(meta, indent=1), encoding="utf-8")
     print(f"[join] meta sidecar -> {meta_p}", flush=True)
     print(f"JOIN_DONE {json.dumps(summary)}", flush=True)
     return 0

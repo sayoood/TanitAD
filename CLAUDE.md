@@ -147,7 +147,15 @@ Every subagent brief MUST carry the preamble in
   **a probe that reports the wrong scope is worse than no probe, because it looks like an answer.**
 - ⚠️ **Thor inverts both A40 batching instincts.** Throughput is **flat at 12.3–14.1 windows/s across
   a 6× batch range** — the 20 SMs saturate at **batch 8**, so a bigger batch buys nothing and only
-  costs memory. Each dataloader worker costs **~8.6 GB host RAM**. ⇒ **small batches, few workers.**
+  costs memory. ⇒ **small batches** — and the live v6F run uses `--batch 8` for exactly this reason.
+  ⚠️ **CORRECTED 2026-08-16 — the "~8.6 GB per dataloader worker" half DOES NOT BIND on this
+  trainer, and I cited it tonight as though it did.** `train_v6_staged.py` spawns **ZERO** DataLoader
+  workers; the episode cache is read in-process. **The real host-RAM knob is `--v2-lru`** (the live
+  run carries `--v2-lru 64`; the chain uses `6`). The worker figure was MEASURED on a different
+  trainer and is true *there* — it is a **scope** error to quote it here, the same family as reading
+  `df` on a pod. ⇒ **Before citing a per-worker cost, check the trainer actually HAS workers**;
+  `cuda_max_mem_gb` is now logged per step, and on Thor only `torch.cuda.max_memory_allocated()` is
+  admissible for device memory anyway.
 - ⛔ **`memory.usage_in_bytes` (cgroup v1) COUNTS RECLAIMABLE PAGE CACHE — it is NOT memory
   pressure.** MEASURED 2026-08-03 on `tanitad-new` **with nothing running at all**: `usage_in_bytes`
   **37.2 GB of a 50 GB cap (74 %)**, of which `cache` **37.0 GB** and `rss` **0.1 GB**. Under load it

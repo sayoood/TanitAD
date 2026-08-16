@@ -259,43 +259,65 @@ def assign(points: np.ndarray, anchors: np.ndarray) -> dict:
 # --------------------------------------------------------------------------- #
 # the multi-target ridge — one SVD per fold, shared GCV λ                       #
 # --------------------------------------------------------------------------- #
+class FoldSolver:
+    """One economy SVD of a TRAIN fold's standardized design, reused by every
+    target set.
+
+    ⚠️ THE REASON THIS CLASS EXISTS IS CORRECTNESS-PRESERVING SPEED, NOT SPEED.
+    The K sweep re-asks the same regression question with a different one-hot
+    target; factorising once per fold rather than once per (fold, K, method)
+    turns 1,920 SVDs into 40 **of the identical matrix**, so every arm in the
+    sweep is fitted on a bit-identical design. A per-arm re-factorisation would
+    also be correct, only slower — this is not a shortcut that changes an answer,
+    and ``test_fold_solver_matches_ridgesvd`` pins it against the programme's
+    incumbent single-target solver.
+    """
+
+    def __init__(self, Xtr: np.ndarray, Xte: np.ndarray):
+        self.Xtr, self.Xte = _standardize(np.asarray(Xtr, dtype=np.float64),
+                                          np.asarray(Xte, dtype=np.float64))
+        self.n = self.Xtr.shape[0]
+        self.mx = self.Xtr.mean(0)
+        self.U, self.s, self.Vt = np.linalg.svd(self.Xtr - self.mx,
+                                                full_matrices=False)
+
+    def predict(self, Ytr: np.ndarray,
+                lambdas: tuple[float, ...] = RIDGE_LAMBDAS
+                ) -> tuple[np.ndarray, float]:
+        """Closed-form multi-target ridge. ``(Yhat_te [n_te, K], lambda)``.
+
+        Identical algebra to ``probe_latent_state.RidgeSVD``
+        (``w = V diag(s/(s²+λ)) Uᵀ y_c``), extended to K targets so a 256-way
+        one-hot classifier costs ONE factorisation instead of 256. λ is chosen
+        by GCV **summed over the targets, on the TRAIN fold only** — model
+        selection never touches the held-out episode.
+        """
+        Y = np.asarray(Ytr, dtype=np.float64)
+        if Y.ndim == 1:
+            Y = Y[:, None]
+        my = Y.mean(0)
+        Yc = Y - my
+        UtY = self.U.T @ Yc                                         # [r, K]
+        yy = (Yc ** 2).sum(0)                                       # [K]
+        best_lam, best_score = None, np.inf
+        for lam in lambdas:
+            shrink = self.s ** 2 / (self.s ** 2 + lam)
+            resid = yy - ((2 * shrink - shrink ** 2)[:, None] * UtY ** 2).sum(0)
+            df = float(shrink.sum())
+            score = float(self.n * np.maximum(resid, 0.0).sum()
+                          / max(self.n - df, 1e-9) ** 2)
+            if score < best_score:
+                best_lam, best_score = float(lam), score
+        shrink = self.s / (self.s ** 2 + best_lam)
+        W = self.Vt.T @ (shrink[:, None] * UtY)                     # [d, K]
+        return self.Xte @ W + (my - self.mx @ W), float(best_lam)
+
+
 def ridge_multi(Xtr: np.ndarray, Ytr: np.ndarray, Xte: np.ndarray,
                 lambdas: tuple[float, ...] = RIDGE_LAMBDAS
                 ) -> tuple[np.ndarray, float]:
-    """Closed-form multi-target ridge. Returns ``(Yhat_te [n_te, K], lambda)``.
-
-    Identical algebra to ``probe_latent_state.RidgeSVD`` (one economy SVD of the
-    centred design; ``w = V diag(s/(s²+λ)) Uᵀ y_c``), extended to K targets so a
-    256-way one-hot classifier costs ONE factorisation per fold instead of 256.
-    λ is chosen by GCV **summed over the targets, on the TRAIN fold only** —
-    model selection never touches the held-out episode. Pinned equal to
-    ``RidgeSVD`` on a single target by
-    ``tests/test_e_ag1_anchor_floor.py::test_ridge_multi_matches_ridgesvd``.
-    """
-    Xtr_s, Xte_s = _standardize(np.asarray(Xtr, dtype=np.float64),
-                                np.asarray(Xte, dtype=np.float64))
-    Y = np.asarray(Ytr, dtype=np.float64)
-    if Y.ndim == 1:
-        Y = Y[:, None]
-    n = Xtr_s.shape[0]
-    mx = Xtr_s.mean(0)
-    U, s, Vt = np.linalg.svd(Xtr_s - mx, full_matrices=False)
-    my = Y.mean(0)
-    Yc = Y - my
-    UtY = U.T @ Yc                                                  # [r, K]
-    yy = (Yc ** 2).sum(0)                                           # [K]
-    best_lam, best_score = None, np.inf
-    for lam in lambdas:
-        shrink = s ** 2 / (s ** 2 + lam)
-        resid = yy - ((2 * shrink - shrink ** 2)[:, None] * UtY ** 2).sum(0)
-        df = float(shrink.sum())
-        score = float(n * np.maximum(resid, 0.0).sum() / max(n - df, 1e-9) ** 2)
-        if score < best_score:
-            best_lam, best_score = float(lam), score
-    shrink = s / (s ** 2 + best_lam)
-    W = Vt.T @ (shrink[:, None] * UtY)                              # [d, K]
-    b = my - mx @ W
-    return Xte_s @ W + b, float(best_lam)
+    """Convenience wrapper over :class:`FoldSolver` for a one-shot fit."""
+    return FoldSolver(Xtr, Xte).predict(Ytr, lambdas)
 
 
 # --------------------------------------------------------------------------- #
@@ -309,8 +331,22 @@ def build_vocab(pool: np.ndarray, k: int, method: str, seed: int) -> np.ndarray:
     raise ValueError(f"unknown vocabulary method {method!r}")
 
 
+def fold_cache(X: np.ndarray | None, folds: np.ndarray) -> dict:
+    """``{fold: FoldSolver}`` — one factorisation per LOEO fold, shared by the
+    whole K × method sweep. ``{}`` when no features were supplied."""
+    if X is None:
+        return {}
+    out = {}
+    for f in sorted(set(folds.tolist())):
+        te, tr = folds == f, folds != f
+        if te.any() and tr.any():
+            out[f] = FoldSolver(X[tr], X[te])
+    return out
+
+
 def loeo_anchor_arms(gt: np.ndarray, eid, X: np.ndarray | None, k: int,
-                     method: str, seed: int = 0) -> dict:
+                     method: str, seed: int = 0, cache: dict | None = None
+                     ) -> dict:
     """One LOEO pass. The vocabulary is REBUILT from the TRAIN episodes in every
     fold, so no held-out endpoint ever contributed to the anchors it is scored
     against — the anchor-set analogue of the LOEO leak E-WC2 measured at 2.06×.
@@ -339,23 +375,80 @@ def loeo_anchor_arms(gt: np.ndarray, eid, X: np.ndarray | None, k: int,
         out["second"][te] = a_te["resid_second"]
         out["marginal"][te] = gt[te] - A.mean(0)[None, :]
         msq_marg.append(a_te["msq_marginal"])
-        if X is None:
+        solver = (cache or {}).get(f)
+        if X is None and solver is None:
             continue
+        if solver is None:
+            solver = FoldSolver(X[tr], X[te])
         ids_tr = _assign_ids(gt[tr], A)
         Y = np.zeros((int(tr.sum()), A.shape[0]), dtype=np.float64)
         Y[np.arange(Y.shape[0]), ids_tr] = 1.0
-        scores, lam = ridge_multi(X[tr], Y, X[te])
+        scores, lam = solver.predict(Y)
         lam_clf.append(lam)
         pred = scores.argmax(1)
         out["clf"][te] = gt[te] - A[pred]
         top1[te] = (pred == a_te["ids"]).astype(np.float64)
-        yhat, lam2 = ridge_multi(X[tr], gt[tr], X[te])
+        yhat, lam2 = solver.predict(gt[tr])
         lam_ridge.append(lam2)
         out["ridge"][te] = gt[te] - yhat
         out["snap"][te] = gt[te] - A[_assign_ids(yhat, A)]
     return {"resid": out, "top1": top1, "folds": folds,
             "lambda_clf": lam_clf, "lambda_ridge": lam_ridge,
             "msq_marginal": float(np.mean(msq_marg)) if msq_marg else float("nan")}
+
+
+def shipped_vocab_arm(path: str, gt: np.ndarray, eid, step: int,
+                      n_boot: int = 2000, seed: int = 0) -> dict:
+    """⭐ THE HEADLINE E-AG1 ARM — the vocabulary the programme ACTUALLY SHIPS.
+
+    The LOEO arms above rebuild a vocabulary from ~858 held-in val endpoints per
+    fold. That is episode-disjoint and honest, but it is **not** the vocabulary
+    v6f would use: ``refc_anchors_full_REBUILD.pt`` was built by
+    ``build_refc_anchors.py`` with FPS over a **200,000-window pool of the
+    canonical TRAIN corpus** ``physicalai-train-e438721ae894`` — the parity key.
+    Scored on the 881 val windows it is fully out-of-sample **and** it is the
+    real object, so it needs no fold scheme at all: no val endpoint was in its
+    pool, by construction of the split.
+
+    ⚠️ Refuses unless the vocabulary's last horizon matches the requested step,
+    because ``anchors[:, -1]`` silently means "2 s" for a 4-point vocabulary and
+    "2 s" again for a 20-point dense one — reading a 6 s endpoint off either
+    would compare a 6 s ground truth against a 2 s anchor and look like a result.
+    """
+    d = torch.load(path, map_location="cpu", weights_only=False)
+    A_full = d["anchors"] if isinstance(d, dict) and "anchors" in d else d
+    horizons = list(d.get("horizons") or []) if isinstance(d, dict) else []
+    A = np.asarray(A_full, dtype=np.float64)
+    if A.ndim != 3 or A.shape[-1] != 2:
+        raise ValueError(f"anchors must be [K, S, 2], got {A.shape}")
+    if not horizons or int(horizons[-1]) != int(step):
+        raise ValueError(
+            f"⛔ this vocabulary's last horizon is {horizons[-1] if horizons else '?'} "
+            f"steps but the requested endpoint is {step} — refusing rather than "
+            f"scoring a {step * DT:g}s ground truth against a "
+            f"{(horizons[-1] if horizons else 0) * DT:g}s anchor")
+    ends = A[:, -1, :]
+    a = assign(gt, ends)
+    st = E.sigma_from_residuals(a["resid"])
+    sq = (a["resid"] ** 2).sum(1)
+    st["ci95"] = E.sigma_ci(sq, eid, n_boot, seed=seed)
+    st["ratio_vs_ade"] = st["sigma_perax_m"] / PREREG["incumbent_sel_ade_m"]
+    st["msq"] = float(sq.mean())
+    second = E.sigma_from_residuals(a["resid_second"])
+    return {"path": str(path), "k": int(A.shape[0]),
+            "horizons": [int(h) for h in horizons],
+            "method": str(d.get("method")) if isinstance(d, dict) else None,
+            "pool_size": (int(d.get("pool_size")) if isinstance(d, dict)
+                          and d.get("pool_size") else None),
+            "source": str(d.get("source")) if isinstance(d, dict) else None,
+            "oracle": st, "second": second,
+            "required_top1_for_0.80m": required_top1(
+                PREREG["sigma_funded_m"], st["msq"],
+                float((a["resid_second"] ** 2).sum(1).mean())),
+            "required_top1_for_1.41m": required_top1(
+                PREREG["sigma_refused_m"], st["msq"],
+                float((a["resid_second"] ** 2).sum(1).mean())),
+            "verdict": decide_ag1({int(A.shape[0]): st["sigma_perax_m"]})}
 
 
 def required_top1(sigma_target_m: float, msq_hit: float,
@@ -400,7 +493,7 @@ def decide_ag1(sigma_by_k: dict, prereg: dict = PREREG) -> dict:
 def run(d, *, features: list[str], allow_echo: bool = False,
         declared: dict[str, str] | None = None, ks=PREREG["k_sweep"],
         methods=PREREG["methods"], steps=(20, 60), n_boot: int = 2000,
-        seed: int = 0) -> dict:
+        seed: int = 0, shipped_vocab: str | None = None) -> dict:
     problems = E.validate_dump(d)
     X, fmeta = E.build_features(d, features, allow_echo=allow_echo,
                                 declared=declared or {})
@@ -449,10 +542,18 @@ def run(d, *, features: list[str], allow_echo: bool = False,
                  "the horizon runs past the end of the episode "
                  "(endpoint_valid False). Excluded with n reported, NEVER imputed.",
              "vocabularies": {}}
+        if shipped_vocab:
+            try:
+                h["shipped_vocab"] = shipped_vocab_arm(shipped_vocab, gt, eid,
+                                                       int(step), n_boot, seed)
+            except Exception as exc:                       # refuse, never fake
+                h["shipped_vocab"] = {"refused": f"{type(exc).__name__}: {exc}"}
+        cache = fold_cache(Xm, E.loeo_folds(eid))
         for method in methods:
             per_k, sigma_by_k = {}, {}
             for k in ks:
-                arms = loeo_anchor_arms(gt, eid, Xm, int(k), method, seed=seed)
+                arms = loeo_anchor_arms(gt, eid, Xm, int(k), method, seed=seed,
+                                        cache=cache)
                 row = {"k": int(k), "arms": {}}
                 for name, res in arms["resid"].items():
                     if not np.isfinite(res).all():
@@ -511,6 +612,8 @@ def main(argv=None) -> int:
     ap.add_argument("--steps", default="20,60")
     ap.add_argument("--n-boot", type=int, default=2000)
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--shipped-vocab", default=None,
+                    help="a build_refc_anchors.py .pt — the REAL vocabulary")
     a = ap.parse_args(argv)
     d = torch.load(a.dump, map_location="cpu", weights_only=False)
     rep = run(d, features=[s for s in a.features.split(",") if s],
@@ -519,7 +622,7 @@ def main(argv=None) -> int:
               ks=tuple(int(x) for x in a.ks.split(",")),
               methods=tuple(a.methods.split(",")),
               steps=tuple(int(x) for x in a.steps.split(",")),
-              n_boot=a.n_boot, seed=a.seed)
+              n_boot=a.n_boot, seed=a.seed, shipped_vocab=a.shipped_vocab)
     rep["dump"]["path"] = str(a.dump)
     Path(a.out).parent.mkdir(parents=True, exist_ok=True)
     Path(a.out).write_text(json.dumps(rep, indent=1, ensure_ascii=False),

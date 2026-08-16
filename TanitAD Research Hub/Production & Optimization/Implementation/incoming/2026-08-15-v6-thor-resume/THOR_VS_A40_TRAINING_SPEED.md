@@ -117,9 +117,14 @@ both `/sys` snapshots is at `code/thor_clocks_experiment.sh`.
    which is why the ratio settled at 1.329× rather than 1.347×: **both sides must be re-cut to the
    same width when the width changes**, and the estimator does that rather than holding one side
    fixed.
-2. **Batch and workers are already right for Thor** and were not the lever: CLAUDE.md records that
-   Thor saturates at **batch 8** (throughput flat across a 6× batch range) and that each dataloader
-   worker costs **~8.6 GB host RAM**. The live command runs `--batch 8`.
+2. **Batch is already right for Thor** and was not the lever: CLAUDE.md records that Thor saturates
+   at **batch 8** (throughput flat across a 6× batch range), and the live command runs `--batch 8`.
+   ⚠️ **CORRECTED 2026-08-16 — the "workers" half of what I wrote here was a SCOPE ERROR.** I cited
+   *"each dataloader worker costs ~8.6 GB host RAM"* as though it constrained this run. It does not:
+   `train_v6_staged.py` spawns **ZERO** DataLoader workers (MEASURED by the v6-chain stream); the
+   episode cache is read in-process, and the real host-RAM knob is **`--v2-lru`** (live run: 64).
+   The 8.6 GB figure is real on a *different* trainer — quoting it here is the same family as
+   reading `df` on a pod: a true number about the wrong scope.
 3. **`--grad-checkpoint` is a second, larger lever and is NOT tested here.** Turning it off would cut
    memory traffic materially, but it needs a restart and a memory-ceiling check — and on Thor only
    `torch.cuda.max_memory_allocated()` is admissible for that (`mem_get_info`, `free`, `tegrastats`

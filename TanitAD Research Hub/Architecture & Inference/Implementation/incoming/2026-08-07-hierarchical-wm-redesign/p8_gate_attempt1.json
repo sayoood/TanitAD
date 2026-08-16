@@ -153,11 +153,15 @@
    "granularity": "occ grades the AGENT CENTRE; fov_mask grades the CELL CENTRE — the only difference"
   },
   "what_a_twin_would_do": {
-   "point_agent_cells_kept_frac": 0.0,
-   "automobile_4p5x2p0_cells_kept_frac": 0.1164,
-   "automobile_agents_emptied_frac": 0.5836,
-   "heavy_truck_12x2p6_cells_kept_frac": 0.2666,
-   "_read": "the survivors are footprint slivers straddling the +-hfov/2 ray — a population ordered by VEHICLE LENGTH, not by visibility. cell_recall returns NaN on an emptied subset and _mean_n drops it, so the arm would lose its n silently."
+   "_sampling": "10 000 occluded agents per extent, centres uniform inside the out-of-field wedge (MEASURED)",
+   "subcell_0p05_cells_kept_frac": 0.0,
+   "subcell_0p45_cells_kept_frac": 0.014974,
+   "subcell_0p45_agents_emptied_frac": 0.984663,
+   "automobile_4p5x2p0_cells_kept_frac": 0.108154,
+   "automobile_agents_emptied_frac": 0.6038,
+   "heavy_truck_12x2p6_cells_kept_frac": 0.267324,
+   "heavy_truck_agents_emptied_frac": 0.2415,
+   "_read": "the survivors are footprint slivers straddling the +-hfov/2 ray, and the survival fraction RISES MONOTONICALLY WITH VEHICLE LENGTH (0.0 -> 1.5 -> 10.8 -> 26.7 %) — the twin re-selects the population by extent rather than correcting it. cell_recall returns NaN on an emptied subset and _mean_n drops it, so the arm would lose its n silently."
   },
   "the_real_weakness_of_this_split": {
    "issue": "the occluded arm is scored ENTIRELY inside the out-of-field wedge (590 cells, 7.68 % of the grid, all at x < 9.2376 m) while the visible arm ranges over the other 92 %. The two arms differ in POSITION as well as in visibility, so a decoder with a near-shoulder firing prior earns the gap while carrying no agent.",

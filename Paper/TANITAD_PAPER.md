@@ -2646,13 +2646,32 @@ quoting the readout's capacity, not the latent's content.
 
 **P4 — object permanence, now visualised on the same run.** Occluded-agent cell recall is **not
 worse** than visible-agent recall at k = 10: **encoded 0.2178 occluded vs 0.1881 visible**
-(n = 194 / 548), **predicted 0.1743 vs 0.1717** — and the ordering holds at k = 5/15/20. The
-latent carries agents the camera cannot see, which is the sharpest available test that the model
-predicts the world rather than the image. ⚠️ **This needs a diffuseness control before it stands
-alone**: a decoder that paints broad blobs would score occluded and visible cells alike, so
-occluded ≥ visible is consistent with permanence *and* with an uninformative readout. That
-control is the next cheap probe and is named as such; until it runs, P4 is reported as
-*consistent with* permanence, not as proof of it.
+(n = 194 / 548), **predicted 0.1743 vs 0.1717**. For the **encoded** arm the ordering holds at
+k = 5/15/20 as well; ⚠️ **for the predicted arm it does NOT** — corrected 2026-08-16 by re-reading
+the banked artifact, the predicted gap reverses at k = 5 / 15 / 20 (−0.0035 / −0.0034 / −0.0057)
+and is positive at k = 10 alone. k = 10 is the pre-registered gate k, so the quotation is
+principled rather than selected after the fact, but the predicted half of this result is
+k-specific and must not be stated as holding across k. The latent carries agents the camera
+cannot see, which is the sharpest available test that the model predicts the world rather than
+the image. ⚠️ **This needs a diffuseness control before it stands alone**: a decoder that paints
+broad blobs would score occluded and visible cells alike, so occluded ≥ visible is consistent
+with permanence *and* with an uninformative readout. That control is the next cheap probe and is
+named as such; until it runs, P4 is reported as *consistent with* permanence, not as proof of it.
+
+⛔⭐ **And the reason that control is not optional — the P4 label and the camera-field mask are
+the SAME PREDICATE (MEASURED 2026-08-16).** The join's `occ` flag and `bev_raster.fov_mask`
+select identical cell sets (0 / 7 680 disagreeing at every half-angle tested; bit-identical
+defaults), differing only in granularity. So (a) the diffuseness control has a *concrete* form:
+the occluded arm is scored entirely inside a 590-cell near wedge (7.68 % of the grid, all at
+x < 9.24 m) while the visible arm ranges over the other 92 %, so the two arms differ in
+**position** as well as in visibility, and the discriminating comparison is against
+**same-region, same-visibility** agents (`--p4-region-control`: `occluded_over_visible_near`
+≈ 1.0 ⇒ regional, > 1.0 ⇒ survives). And (b) the "obvious" correctness fix applied to every
+other consumer of this raster — masking to the camera field — **would delete this result rather
+than harden it**, because the occluded population *is* the masked-out set; measured, a masked
+occluded arm keeps 0–27 % of its cells with the survival fraction rising with vehicle length.
+That asymmetry is itself a methodological point: a visibility mask is a correction for a metric
+scored *over the field* and a deletion for one scored *about its complement*.
 
 **I4a — the imagination channel is load-bearing, not decorative (`MODEL_REGISTRY §1.14`;
 artifacts `i4a/flagship-v5f-w120-30k-i4a-{none,zero,shuffle}.json`, MEASURED, T0, same 881

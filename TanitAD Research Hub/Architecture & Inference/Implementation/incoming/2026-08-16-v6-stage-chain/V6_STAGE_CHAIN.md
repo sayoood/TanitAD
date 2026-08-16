@@ -5,9 +5,20 @@
 run (step ~6,400 of 30,000, 27.18 s/step) is unaffected: nothing here changes a `state_dict` key, a
 shape, an optimiser group or a schedule.
 
-**Suite:** `3083 passed / 0 failed / 17 skipped / 2 xfailed` (437 s). Baseline at brief time was
-2996; **+49 are this file's** (`tests/test_v6_chain.py`) and the remaining +38 arrived from other
-agents' concurrently staged files. MEASURED.
+**Suite:** `3083 passed / 0 failed / 17 skipped / 2 xfailed` (437 s), MEASURED — baseline at brief
+time was 2996; **+49 are this file's** (`tests/test_v6_chain.py`) and the rest arrived from other
+agents' concurrently staged files.
+
+⚠️ **Two later full-suite runs each showed 1–2 failures, and neither is real or mine.**
+`tests/test_p8.py::test_pos_weight_default_is_auto` and
+`tests/test_e_ag1_anchor_floor.py::test_no_situation_classifier_path` failed against
+`scripts/train_p8_occupancy.py` and `scripts/e_ag1_anchor_floor.py`, whose mtimes (03:25:10 /
+03:16:04) fall **inside those runs** — two other live agents rewriting their own files mid-suite.
+**Both pass in isolation immediately afterwards (`52 passed, 1 skipped`), neither file is in
+anything staged here**, and my own scope is green: the nine v6 test modules together are
+**`215 passed`**. *(Stated rather than reported as a clean number: a suite result taken while
+siblings are writing is a torn read, and calling it a regression would be a false alarm of exactly
+the class this programme logs.)*
 
 ---
 

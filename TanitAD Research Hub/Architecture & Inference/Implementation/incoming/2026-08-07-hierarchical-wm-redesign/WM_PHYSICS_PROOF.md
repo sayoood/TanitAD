@@ -189,6 +189,19 @@ fan+scores+GT for the OLD fan; rerun on the unicycle fan's eval windows). Order:
   diffuseness control (a decoder painting broad blobs would score both alike) before it is
   quoted as permanence standing alone — that control is the next cheap probe.
   Artifacts: `p8_gate_attempt2.json`, reel `p8-occupancy-c/reel/`.
+  ⛔⭐ **P4 PREDICATE STAMP (2026-08-16, MEASURED).** The `occ` flag this split is built on
+  (`build_obstacle_join.visibility_occ`) and `bev_raster.fov_mask` are **the SAME
+  PREDICATE** — 0/7 680 cells disagree at every half-angle tested, defaults bit-identical,
+  granularity (agent centre vs cell centre) the only difference. ⇒ (a) ⛔ **NEVER add an
+  `_infov` twin to this split** — its `occluded` arm IS the masked-out set, so masking
+  empties the finding rather than correcting it (MEASURED: a masked occluded arm keeps
+  0–27 % of its cells, rising with vehicle length — it re-selects by extent). The remedy is
+  `--p4-region-control`, which compares against **same-region, same-visibility** agents;
+  ≈1.0 ⇒ regional, >1.0 ⇒ survives. (b) ⚠️ the **pred** half above holds at **k = 10 only**
+  and reverses at 5/15/20; the enc half holds at all four. (c) ⚠️ the join flagged at the
+  sensor's 120° while the encoder saw 117°, which can only shrink this gap ⇒ conservative.
+  Guard: `stack/tests/test_p4_fov_predicate.py`. Detail:
+  `…/incoming/2026-08-16-p4-fov-predicate/P4_FOV_PREDICATE.md`.
 - [x] P1/P2 harness built (committed 3eed42f; RUNNING on pod5 now) · [x] P4 join built
   (39/40 eps, 195,805 boxes) · [x] P5 instrument validated (E1.4 byte-close PASSED 713b9d1)
 - [x] **P1 LEAD-GAP RERUN WITH THE VEHICLE-CLASS FILTER — MEASURED 2026-08-11 ~16:15Z

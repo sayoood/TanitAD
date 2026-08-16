@@ -21,6 +21,11 @@ PRE-REGISTERED GATE (WM_PHYSICS_PROOF.md P8, committed before any number):
   probe belonging to the P4-join harness; this trainer reports the visible/occluded
   CELL-RECALL split when (and only when) the join file carries occlusion flags, and
   says "n/a + reason" when it does not (`obstacle.offline` has no native flag).
+  ⛔⭐ THAT SPLIT IS SCORED ON ALL CELLS AND MUST STAY THAT WAY. Its `occluded`
+  arm IS the complement of the camera-field mask every other metric here is now
+  twinned against — the join's `occ` flag and `bev_raster.fov_mask` are the SAME
+  PREDICATE (MEASURED bit-exact, 2026-08-16). An `_infov` twin would empty it, not
+  correct it; the real remedy is `--p4-region-control`. See :data:`P4_SPLIT_STAMP`.
 
 DATA PATH — honest note (verified from source, not assumed):
   The episode corpus does NOT carry agent tracks — the episode contract is
@@ -339,7 +344,8 @@ class JoinFileReader:
                grid: BEVGrid = GRID_DEFAULT,
                subset: str = "all") -> np.ndarray | None:
         """Occupancy raster at (episode, frame) or None. ``subset``: ``all`` |
-        ``visible`` (occ==0) | ``occluded`` (occ==1); subsets need flags."""
+        ``visible`` (occ==0) | ``occluded`` (occ==1) | the two REGION-MATCHED
+        controls ``visible_near`` / ``visible_far``; all subsets need flags."""
         ag = self.lookup(episode_id, frame_idx)
         if ag is None:
             return None
@@ -347,9 +353,64 @@ class JoinFileReader:
             if not self.has_occlusion_flags:
                 raise RuntimeError("join file carries no occlusion flags — "
                                    f"subset={subset!r} is not derivable")
-            want = 0.0 if subset == "visible" else 1.0
-            ag = ag[ag[:, 5] == want]
+            ag = select_subset(ag, subset, grid=grid)
         return rasterize(ag, grid=grid)
+
+
+#: the P4 subsets. ``visible``/``occluded`` are the incumbent pair; the two
+#: ``visible_*`` rows are the REGION-MATCHED CONTROL (see :func:`select_subset`).
+P4_SUBSETS = ("visible", "occluded")
+P4_REGION_CONTROL_SUBSETS = ("visible_near", "visible_far")
+
+
+def out_of_field_x_ceiling_m(grid: BEVGrid = GRID_DEFAULT,
+                             half_angle_rad: float = math.radians(60.0)) -> float:
+    """Forward range beyond which NO cell of ``grid`` can be out of field.
+
+    ``|y| > x tan(th)`` is the out-of-field condition, and ``|y| <= y_half_m`` on
+    the grid, so the whole out-of-field wedge lives at ``x < y_half_m / tan(th)``
+    — 9.2376 m at the 120 deg field (MEASURED, `p4_predicate_identity.json`).
+    This number IS the P4 occluded arm's spatial support, which is why it is also
+    the boundary the region-matched control splits the VISIBLE arm on.
+    """
+    return float(grid.y_half_m / math.tan(float(half_angle_rad)))
+
+
+def select_subset(ag: np.ndarray, subset: str,
+                  grid: BEVGrid = GRID_DEFAULT,
+                  half_angle_rad: float = math.radians(60.0)) -> np.ndarray:
+    """Filter join rows ``[A, 6] (cx, cy, yaw, l, w, occ)`` to a P4 subset.
+
+    ``visible`` = occ 0, ``occluded`` = occ 1 — the incumbent split, unchanged.
+
+    ⭐ ``visible_near`` / ``visible_far`` are the REGION-MATCHED CONTROL for the
+    permanence-vs-geometry question. The occluded arm is scored ENTIRELY inside
+    the out-of-field wedge (x < :func:`out_of_field_x_ceiling_m`, 7.68 % of the
+    grid) while the visible arm ranges over the other 92 %, so the two arms
+    differ in POSITION as well as in visibility, and a decoder that merely fires
+    densely on its near shoulders earns the published gap while carrying no
+    agent. Splitting the VISIBLE agents on the SAME range boundary gives a
+    same-region, same-visibility reference:
+
+    * ``recall_occluded ~= recall_visible_near`` (and both > ``visible_far``)
+      => the gap is REGIONAL — geometry, not permanence.
+    * ``recall_occluded >  recall_visible_near`` => it survives the regional
+      explanation and is evidence FOR permanence.
+
+    Both outcomes are committed here, before the number exists.
+    """
+    if subset == "all":
+        return ag
+    if subset in P4_SUBSETS:
+        return ag[ag[:, 5] == (0.0 if subset == "visible" else 1.0)]
+    if subset in P4_REGION_CONTROL_SUBSETS:
+        x_ceil = out_of_field_x_ceiling_m(grid, half_angle_rad)
+        vis = ag[:, 5] == 0.0
+        near = ag[:, 0] < x_ceil
+        return ag[vis & (near if subset == "visible_near" else ~near)]
+    raise ValueError(
+        f"unknown P4 subset {subset!r} — expected 'all', "
+        f"{P4_SUBSETS}, or {P4_REGION_CONTROL_SUBSETS}")
 
 
 class EpisodeCarriedSource:
@@ -520,10 +581,97 @@ def _mean_n(vals: list[float]) -> tuple[float | None, int]:
     return (float(np.mean(v)) if v else None), len(v)
 
 
+def load_head_ckpt(head: nn.Module, path: str, device) -> nn.Module:
+    """Load a banked ``p8_head.pt`` into ``head`` (strict).
+
+    Accepts either the raw ``state_dict`` or the ``{"head": ...}`` wrapper this
+    script writes — the SAME two shapes ``lf0_bev_lead.py:288-295`` already
+    accepts, so a file that works there works here.
+
+    ⭐ WHY THIS EXISTS. Every P8 re-scoring question — a different ``--ks``, a
+    different ``--fov-gate``, the hold-action control, and above all
+    ``--p4-region-control`` — is a 4-minute mini-eval against a head that took
+    6.5 h to train. Until this loader existed the head was written and never
+    read, so each question cost a full retrain. ``--head-ckpt X --steps 0`` is
+    the re-score path.
+    """
+    sd = torch.load(path, map_location=device)
+    if isinstance(sd, dict) and "head" in sd:
+        sd = sd["head"]
+    missing, unexpected = head.load_state_dict(sd, strict=False)
+    if missing or unexpected:
+        raise SystemExit(
+            f"[p8] --head-ckpt {path}: state_dict does not match this head "
+            f"(missing {list(missing)[:4]}, unexpected {list(unexpected)[:4]}). "
+            f"Refusing to re-score with a partially-loaded readout — that would "
+            f"silently score random weights.")
+    return head
+
+
 #: ``--fov-gate`` choices -> the ``per_k`` key suffix the gate reads. ``all`` is
 #: the incumbent, all-cells definition and is the DEFAULT, so adding the mask
 #: cannot move a banked verdict; ``in-fov`` gates on the camera-field subset.
 FOV_GATE_SUFFIX = {"all": "", "in-fov": "_infov"}
+
+#: ⛔⭐ THE ONE CELL SET THAT IS NOT NEGOTIABLE — the P4 visible/occluded split.
+#:
+#: Every OTHER metric in this file gained an ``_infov`` twin (the P8 v6 port and
+#: the bev_raster consumer audit, 2026-08-16), because scoring cells no camera
+#: could observe is a correctness defect. **The P4 split is the exception, and
+#: adding the twin here would destroy the finding rather than fix it.**
+#:
+#: WHY, MEASURED 2026-08-16 (`…/incoming/2026-08-16-p4-fov-predicate/`):
+#: the join's ``occ`` flag (``build_obstacle_join.visibility_occ``) and
+#: ``bev_raster.fov_mask`` are the SAME PREDICATE — 0 / 7 680 cells disagree at
+#: every half-angle tested, and the two defaults are bit-identical floats. They
+#: differ only in granularity (agent centre vs cell centre). So the ``occluded``
+#: subset raster IS (the footprint of) ``~fov_mask``: masking it to the camera
+#: field empties it BY CONSTRUCTION. MEASURED on the real rasteriser (10 000
+#: occluded agents per extent): a sub-cell agent keeps 0.0-1.5 % of its cells
+#: (98.5-100 % emptied outright), an automobile 10.8 % (60.4 % emptied), a heavy
+#: truck 26.7 % (24.2 % emptied). What survives is the boundary sliver, and the
+#: survival fraction RISES WITH VEHICLE LENGTH — the twin re-selects the
+#: population by extent instead of correcting it.
+#:
+#: ⇒ **the P4 split is scored on ALL CELLS, permanently, and the remedy for its
+#: real weakness is a DIFFUSENESS / REGION-MATCHED CONTROL, not a mask.**
+#: ``stack/tests/test_p4_fov_predicate.py`` fails if a twin is ever added.
+P4_SPLIT_CELL_SET = "all"
+P4_SPLIT_STAMP = {
+    "stamp": "P4_OCCLUDED_IS_THE_FOV_MASK_COMPLEMENT",
+    "cell_set": P4_SPLIT_CELL_SET,
+    "cell_set_is_binding": True,
+    "why": "the join's `occ` flag IS bev_raster.fov_mask at agent-centre "
+           "granularity (MEASURED 2026-08-16: 0/7680 cells disagree at hfov "
+           "30/60/90/117/120/150/179 deg; defaults bit-identical, ULP gap 0.0). "
+           "The `occluded` arm therefore IS the masked-out set.",
+    "DO_NOT_ADD_AN_INFOV_TWIN": (
+        "An `_infov` twin of this split does not correct it, it EMPTIES it: "
+        "MEASURED on bev_raster.rasterize over 10 000 occluded agents per "
+        "extent, a sub-cell agent keeps 0.0-1.5 % of its cells (98.5-100 % "
+        "emptied outright), an automobile 10.8 % (60.4 % emptied), a heavy "
+        "truck 26.7 % (24.2 % emptied). The survivors are footprint slivers "
+        "straddling the +-hfov/2 ray, and the survival fraction rises with "
+        "vehicle LENGTH — the twin RE-SELECTS the population by extent rather "
+        "than correcting it. This is the one bev_raster consumer where the "
+        "standard `_infov` remedy is WRONG."),
+    "what_this_split_still_needs": (
+        "a region-matched DIFFUSENESS control. The occluded arm is scored "
+        "entirely inside the out-of-field wedge (590 cells, 7.68 % of the grid, "
+        "all at x < 9.24 m) and the visible arm on the other 92 %, so a decoder "
+        "with a near-shoulder firing prior earns the gap while carrying no "
+        "agent at all. See --p4-region-control."),
+    "encoder_frame_rule": (
+        "the join's --hfov-deg must be the half-angle of the frame THE ENCODER "
+        "WAS FED. The banked v5f run flagged at the sensor's 120.0 deg while "
+        "the encoder saw the 176x624 sub-frame = 117.0 deg; agents in the "
+        "[58.5, 60.0] deg annulus were labelled `visible` though the encoder "
+        "never saw them. That contamination can only RAISE the visible arm, so "
+        "it makes the published occluded>visible gap CONSERVATIVE."),
+    "artifact": "TanitAD Research Hub/Architecture & Inference/Implementation/"
+                "incoming/2026-08-16-p4-fov-predicate/P4_FOV_PREDICATE.md",
+    "_evidence_class": "MEASURED (ours)",
+}
 
 
 def p8_gate_dict(per_k: dict, gate_k: int = GATE_K,
@@ -841,7 +989,8 @@ def make_covered_sampler(ds, covered: list[int], eps_per_batch: int,
 def mini_eval(world, head, ds_val, source, device, *, ks: tuple[int, ...],
               grid: BEVGrid, amp_on: bool, episodes: int = 40, stride: int = 8,
               batch: int = 16, fov: Tensor | None = None,
-              hold_control: bool = False) -> dict:
+              hold_control: bool = False,
+              p4_region_control: bool = False) -> dict:
     """IoU@0.5 of ``decode(z_enc_{t+k})`` and ``decode(z_hat_{t+k})`` vs the GT
     raster at t+k, per k, over the eval-default window grid (e < episodes,
     t % stride == 0 — the same rule as canary_rollout / W4). k=0 row = the
@@ -852,7 +1001,13 @@ def mini_eval(world, head, ds_val, source, device, *, ks: tuple[int, ...],
     field) ADDS the ``*_infov`` twins of every IoU. It never replaces the
     all-cells numbers, and each cell set gets its OWN ``tau*`` — chosen on that
     set's ENCODED arm, so the retention gate stays the harder direction in both.
-    ``None`` reproduces the pre-v6 output exactly."""
+    ``None`` reproduces the pre-v6 output exactly.
+
+    ⛔ ``fov`` DELIBERATELY DOES NOT REACH THE P4 VISIBLE/OCCLUDED SPLIT. That
+    split's ``occluded`` arm IS the complement of this very mask (the join's
+    ``occ`` flag and ``bev_raster.fov_mask`` are the same predicate, MEASURED
+    bit-exact), so masking it would empty the finding rather than correct it.
+    See :data:`P4_SPLIT_STAMP`; the intended remedy is ``p4_region_control``."""
     from torch.utils.data import default_collate
 
     from train_flagship_v4 import _to_device
@@ -878,8 +1033,11 @@ def mini_eval(world, head, ds_val, source, device, *, ks: tuple[int, ...],
     acc = {k: {p: {s: {t: [] for t in TAU_GRID} for s, _m in sets}
                for p in arms} for k in ks_all}
     acc0 = {s: {t: [] for t in TAU_GRID} for s, _m in sets}
-    occ_acc = {k: {p: {s: {t: [] for t in TAU_GRID}
-                       for s in ("visible", "occluded")}
+    #: ⛔ the P4 split's cell set is ALL CELLS and is NOT parameterised by `sets`
+    #: — see P4_SPLIT_STAMP. `p4_sets` varies the AGENT SUBSET (the control),
+    #: never the cell set.
+    p4_sets = P4_SUBSETS + (P4_REGION_CONTROL_SUBSETS if p4_region_control else ())
+    occ_acc = {k: {p: {s: {t: [] for t in TAU_GRID} for s in p4_sets}
                    for p in ("enc", "pred")} for k in ks_all} \
         if source.has_occlusion_flags else None
     n_grid = 0
@@ -918,7 +1076,7 @@ def mini_eval(world, head, ds_val, source, device, *, ks: tuple[int, ...],
                         acc[k][p][s][t].extend(
                             iou_at_tau(logs[p], rk, t, mask=msk).cpu().tolist())
             if occ_acc is not None:
-                for s in ("visible", "occluded"):
+                for s in p4_sets:
                     rs, ks_keep, _m = batch_rasters(ds_val, idx, source, k,
                                                     grid, subset=s)
                     if rs is None:
@@ -978,17 +1136,41 @@ def mini_eval(world, head, ds_val, source, device, *, ks: tuple[int, ...],
         for k in ks_all:
             row = {}
             for p in ("enc", "pred"):
-                for s in ("visible", "occluded"):
+                for s in p4_sets:
                     mv, nv = _mean_n(occ_acc[k][p][s][tau_star[""]])
                     row[f"recall_{s}_{p}"] = mv
                     row[f"n_{s}_{p}"] = nv
+            if p4_region_control:
+                # the pre-registered read: occluded vs a SAME-REGION, SAME-
+                # VISIBILITY reference. > 1 survives the regional explanation.
+                for p in ("enc", "pred"):
+                    o, vn = row.get(f"recall_occluded_{p}"), \
+                        row.get(f"recall_visible_near_{p}")
+                    row[f"occluded_over_visible_near_{p}"] = (
+                        round(float(o) / float(vn), 6)
+                        if o is not None and vn not in (None, 0.0) else None)
             split[str(k)] = row
+        split["subsets"] = list(p4_sets)
+        split["region_control"] = {
+            "ran": bool(p4_region_control),
+            "boundary_x_m": round(out_of_field_x_ceiling_m(grid), 4),
+            "read": "occluded_over_visible_near ~= 1.0 => the published "
+                    "occluded>visible gap is REGIONAL (both arms are near-band "
+                    "cells) and is NOT evidence of permanence; > 1.0 => it "
+                    "survives the regional explanation. Pre-registered "
+                    "2026-08-16 with both outcomes committed.",
+            "reason": (None if p4_region_control else
+                       "not requested (--p4-region-control); the "
+                       "permanence-vs-geometry question is therefore "
+                       "UNANSWERED in this run")}
     else:
         split = {"available": False,
                  "reason": "join file carries no occlusion flags — "
                            "`obstacle.offline` has no native visibility field; "
                            "the flags come from the pod-side P4 join, which was "
                            "not provided here"}
+    # ⛔⭐ the stamp travels with the number, in BOTH branches.
+    split["predicate_identity"] = dict(P4_SPLIT_STAMP)
     return {"iou_k0_readout": m0, "n_k0": n0, "per_k": per_k,
             "iou_k0_readout_infov": m0_fov, "n_k0_infov": n0_fov,
             "tau_star": tau_star[""],
@@ -1100,6 +1282,26 @@ def build_args(argv=None):
                          "vs 0.0 %% hold-action on exactly that confound. "
                          "Costs one extra predictor roll, no extra encode. "
                          "Default OFF so the incumbent output is unchanged.")
+    ap.add_argument("--head-ckpt", default=None,
+                    help="load a banked p8_head.pt instead of starting from "
+                         "scratch. With --steps 0 this is the RE-SCORE path: a "
+                         "4-min mini-eval against a head that cost 6.5 h, which "
+                         "is what makes --p4-region-control / --fov-gate / "
+                         "--hold-action-control cheap to answer. Refuses a "
+                         "state_dict that does not match this head.")
+    ap.add_argument("--p4-region-control", action="store_true",
+                    help="ALSO score the visible arm split at the out-of-field "
+                         "wedge's range boundary (visible_near / visible_far) "
+                         "and report occluded_over_visible_near. THE "
+                         "PERMANENCE-vs-GEOMETRY DISCRIMINATOR: the occluded "
+                         "arm lives entirely inside a 7.68 %% near wedge while "
+                         "the visible arm ranges over the other 92 %%, so a "
+                         "decoder with a near-shoulder firing prior earns the "
+                         "published gap carrying no agent. ~1.0 => regional; "
+                         ">1.0 => survives it. Costs NO forward pass — only "
+                         "extra CPU rasterisation. Default OFF so the incumbent "
+                         "output is unchanged. ⛔ This, NOT an `_infov` twin, is "
+                         "the fix for the P4 split (P4_SPLIT_STAMP).")
     return ap.parse_args(argv)
 
 
@@ -1254,10 +1456,27 @@ def main(argv=None) -> int:
     print(f"[p8] BEVOccupancyHead {tuple(GRID_DEFAULT.shape)} "
           f"({n_par/1e6:.3f} M trainable; band {PARAM_BAND}; frozen everything "
           f"else)", flush=True)
+    if a.head_ckpt:
+        # ⭐ RE-SCORE A BANKED HEAD INSTEAD OF RE-TRAINING ONE. The head is saved
+        # every --save-every step but nothing here could load it back, so every
+        # re-scoring question (a new --ks, --fov-gate, the hold control, and
+        # above all --p4-region-control) cost a 6.5 h retrain instead of the
+        # 4.3 min mini-eval. Load pattern copied from lf0_bev_lead.py:288-295,
+        # which has always consumed this exact file.
+        load_head_ckpt(head, a.head_ckpt, device)
+        print(f"[p8] head LOADED from {a.head_ckpt} — re-score mode. Pair with "
+              f"--steps 0 to skip training entirely.", flush=True)
     opt = torch.optim.AdamW(head.parameters(), lr=a.lr, weight_decay=1e-4)
-    sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=a.steps)
+    sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt,
+                                                      T_max=max(1, a.steps))
     # ---- pos-weight: measured from the data unless overridden ---------------
-    if str(a.pos_weight).lower() == "auto":
+    if a.steps == 0 and str(a.pos_weight).lower() == "auto":
+        # re-score mode: the loss is never evaluated, and the auto-sample is a
+        # few hundred cold MooseFS raster loads. Skip it rather than pay it.
+        pos_weight = 1.0
+        print("[p8] --steps 0: pos-weight auto SKIPPED (no loss is computed in "
+              "re-score mode); reported as 1.0 and unused.", flush=True)
+    elif str(a.pos_weight).lower() == "auto":
         smp = rng.sample(covered, k=min(a.pos_weight_sample, len(covered)))
         n_pos = n_tot = 0
         for j0 in range(0, len(smp), 64):
@@ -1380,7 +1599,8 @@ def main(argv=None) -> int:
     ev = mini_eval(world, head, ds_val, source, device, ks=ks,
                    grid=GRID_DEFAULT, amp_on=amp_on, episodes=a.episodes,
                    stride=a.stride, batch=a.eval_batch, fov=fov_t,
-                   hold_control=bool(a.hold_action_control))
+                   hold_control=bool(a.hold_action_control),
+                   p4_region_control=bool(a.p4_region_control))
     gate = p8_gate_dict(ev["per_k"], metric=a.fov_gate)
     # the NON-gated cell set, reported beside it: a verdict that would flip on
     # the other cell set is a fact about the geometry, not a footnote.
