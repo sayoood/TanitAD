@@ -57,9 +57,22 @@ _last_verify_ok = False
 
 
 def _read_marker():
-    """Survive a restart of this loop. Without it, every restart re-pushes 3.5 GB
-    — which on this household line is ~50 min of the link the trainer does not
-    need but the household does."""
+    """Survive a restart of this loop. Without it, every restart re-pushes 3.5 GB.
+
+    ⚠️ MEASURED 2026-08-16, and it corrects an ESTIMATE I wrote an hour earlier:
+    Thor's uplink is **244 KB/s** (5,011,795 tx bytes over a 20 s sample), so a
+    3.5 GB checkpoint push costs **~3.9 HOURS**, not the "~50 min" I guessed.
+    At 27.16 s/step a PUSH_EVERY of 1000 steps is 7.55 h, so a push occupies
+    **~52 % of every interval** — tolerable, because the upload is concurrent
+    with training and does not block it, but it means the marker is the only
+    thing preventing a restart from re-spending four hours of link.
+
+    ⇒ It also retro-justifies how bad the old `step % 1000 < 60` window was: even
+    on the ~30 % of cycles where it fired, the push it started could not finish
+    before the next sample. The durability exposure at PUSH_EVERY=1000 is one
+    interval = **7.55 h of training**, which is the accepted trade on a 7.4-day
+    run; raising it to 2000 halves the link duty at the cost of doubling that.
+    """
     try:
         with open(MARKER) as fh:
             return int(fh.read().strip())

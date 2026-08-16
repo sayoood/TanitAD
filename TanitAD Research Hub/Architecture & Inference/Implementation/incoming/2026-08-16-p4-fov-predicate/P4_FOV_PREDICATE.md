@@ -398,16 +398,26 @@ it.
 
 **Suite:** `PYTHONUTF8=1 …/python.exe -m pytest -q -p no:cacheprovider` from `stack/` →
 **3 154 passed · 0 failed · 17 skipped · 2 xfailed** (365.7 s), banked at `raw/stack_pytest.txt`.
-Brief baseline was **3 036 / 0 / 17 / 2** at `b65b3ab`; HEAD has since moved to `efd49f5` and
-concurrent streams added ~87 tests, so the arithmetic that closes is **3 123 (same tree, this file
-ignored) + 31 = 3 154**. **Zero failures, zero regressions.**
+Brief baseline was **3 036 / 0 / 17 / 2** at `b65b3ab`; HEAD has since moved twice and concurrent
+streams added ~87 tests, so the count is established by a **PAIRED, SAME-TREE, BACK-TO-BACK run**
+rather than against a stale baseline:
+
+| run (one command, consecutive) | result |
+|---|---|
+| full suite, **with** `test_p4_fov_predicate.py` | **3 154 passed · 0 failed** · 17 skipped · 2 xfailed (365.7 s) |
+| full suite, `--ignore` that file | **3 123 passed · 0 failed** · 17 skipped · 2 xfailed (330.1 s) |
+
+**3 123 + 31 = 3 154 exactly. Zero failures on both sides, zero regressions.** *(The pairing is
+the point: an earlier attribution attempt compared two runs 6 minutes apart and the counts did
+NOT close — 16 tests had moved underneath it — which is why this one is a single command.)*
 
 ⚠️ **One transient failure, chased to ground rather than waved off — and it was not mine.** An
 earlier full run showed `test_e_ag1_anchor_floor.py::test_no_situation_classifier_path` FAILED on
 `assert "tanitad.data.situations" not in sys.modules`. That file was `AM` in `git status` — staged
-*and* being edited by a live concurrent stream mid-run. Attribution took four measurements
-(isolation: pass; my file + that test: pass; suite without my file: pass; suite with: fail), and
-the answer arrived from the owner's own repair: they replaced the in-process assertion with a
+*and* being edited by a live concurrent stream mid-run. Attribution took five measurements
+(isolation: pass; my file + that test: pass; suite without my file: pass; suite with: fail; and
+finally the paired same-tree run above: **both sides pass**), and the answer arrived from the
+owner's own repair: they replaced the in-process assertion with a
 **subprocess** check whose new comment states the diagnosis verbatim — *"`sys.modules` in a
 full-suite run is polluted by every other test that legitimately imports the situation detectors.
 An in-process check would pass alone and fail in the suite."* ⇒ **a process-global assertion in
