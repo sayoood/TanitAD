@@ -9,8 +9,18 @@ only ONE is trustworthy.** Alpamayo (meta-action + reasoning) is a real, complet
 source at n=4,729. The VLM's tactical leg is **information-free on the longitudinal axis** (a
 constant, κ = 0.0000) and its lateral agreement is an **echo of ego**, not vision. The ego leg
 answers a *different question* than the label needs (an 11.9 s net, where the tactical decision is
-2 s). ⇒ **A tactical label set IS buildable — from Alpamayo, at a 2 s horizon, with abstention —
-but NOT by the 2-of-3 majority vote the pipeline currently implements.**
+2 s). ⇒ ~~**A tactical label set IS buildable — from Alpamayo, at a 2 s horizon, with abstention —
+but NOT by the 2-of-3 majority vote the pipeline currently implements.**~~
+
+> ⛔ **CORRECTED 2026-08-17 (retraction C89 + the second defect found rebuilding the sheet).**
+> **"at a 2 s horizon" was the wrong horizon, and every κ in this document that carries it is a
+> SEAM value.** 2.0 s is `OP_BAND_S`'s *end* — the seam — not the tactical band; the binding spec
+> is `TAC_BAND_S = (2.0, 6.0)` at `stack/tanitad/models/v6.py:136-140`. Read over the band the
+> label is **materially weaker**: **LON κ 0.1428** (CI [0.0540, 0.2250], n=201) and
+> **LAT κ 0.1777** (CI [0.0658, 0.2953], n=193), paired-separated from the seam on both axes.
+> ⇒ The one-line answer becomes: **a tactical label set is NOT demonstrated buildable at the
+> horizon the architecture actually uses.** Full restatement in **§3.1**; artifact
+> `…/2026-08-16-tactical-review/raw/b1_band_agreement.json`.
 
 ⭐ **The PI's phrasing "meta actions AND reasoning" is exactly right and is the load-bearing
 insight of this document.** The two fields carry different halves of the v6 vocabulary and neither
@@ -271,15 +281,98 @@ production reading (full window) sits in the **worst** region of the surface.
   **+0.177**. **It roughly doubles either way**, and the conclusion does not depend on which
   baseline is chosen.
 - **Lateral:** κ **0.290 → 0.4694** at **H = 2.0 s, |Δyaw| ≥ 0.05 rad** (agreement 0.7202, n=193).
-- **Both axes peak at 2.0 s** — which is exactly the v6 tactical band (`g_tac` is the 2–6 s layer,
-  `v6.py:161`). The label horizon and the architecture agree.
+- ~~**Both axes peak at 2.0 s** — which is exactly the v6 tactical band (`g_tac` is the 2–6 s layer,
+  `v6.py:161`). The label horizon and the architecture agree.~~
+  ⛔ **RETRACTED — this sentence is the C89 defect.** See §3.1.
 - **Abstaining on the ambiguous middle helps:** dropping Alpamayo's two *"Gentle"* classes lifts
-  κ **0.3655 → 0.4311** (n falls 201 → 85).
+  κ **0.3655 → 0.4311** (n falls 201 → 85). ⚠️ Both figures are **SEAM** values.
 
 ⚠️ Caveats I will not bury: the lateral optimum sits at the **smallest threshold swept** (0.05 rad)
 — a finer grid could move it, though the ridge extends to 0.10 rad at κ 0.40–0.44, so it is not a
 knife-edge. And κ ≈ 0.37–0.47 is *"fair to moderate"* — **improved, but NOT good enough to ship
 without abstention.**
+
+---
+
+## 3.1 ⛔ CORRECTION (2026-08-17) — EVERY κ IN §3 IS A **SEAM** VALUE, NOT A BAND VALUE
+
+⚠️ **The numbers above are not deleted, and must not be.** They are correct measurements of the
+quantity they actually computed. What was wrong is the *name* attached to them, and the sentence
+that let the name pass — so they are kept, relabelled, and the true band values are given beside
+them. **Old numbers stay so the shape of the error stays legible.**
+
+**Defect 1 — the horizon was an argmax, not a spec lookup (C89).** 2.0 s is the **SEAM** at which
+operative authority ends and tactical begins. The binding spec is one grep:
+
+```
+stack/tanitad/models/v6.py:136-140
+PLAN_STEPS = 60 · DT = 0.1 · HORIZON_S = 6.0
+OP_BAND_S  = (0.0, 2.0)   # operative
+TAC_BAND_S = (2.0, 6.0)   # TACTICAL
+```
+
+⛔ **Defect 2 — and the obvious correction was ALSO wrong.** C89 proposed restating at the sweep's
+**6.0 s** row (LON 0.2331 / LAT 0.4040). **Those are not band values either.**
+`code/tac_a4_horizon_sweep.py:140-148` anchors **every** horizon at `t0`:
+
+```python
+k  = min(int(round(t0 + H * POSE_HZ)), poses.shape[0] - 1)
+dv = float(v[k] - v[t0])          # <-- anchored at t0, at EVERY horizon
+```
+
+⇒ the row labelled `2.0` is the net change over **(0.0, 2.0]** — i.e. exactly `OP_BAND_S`, the
+**operative** band — and the row labelled `6.0` is **(0.0, 6.0]**, the **full horizon with the
+operative band inside it**. **No row in the banked sweep is the tactical band.** The band quantity
+had to be computed fresh: anchored at **t0+20** and read across **t0+21 … t0+60**.
+
+**The interval-vs-endpoint choice, stated before any κ was computed.** "At 6.0 s" (one sample) and
+"over (2.0, 6.0]" (the interval the tactical layer owns) are different quantities. The PI:
+*"tactical behavior is evolving until 6s horizon (this is the whole resulting trajectory)"*;
+`v6.py` §4b: *"bands are SLICES of one rollout"*. ⇒ **PRIMARY = `mean_band`**, the mean over the 40
+in-band samples of the deviation from the band start — both ends inside the band (P1), reads the
+whole slice rather than two samples (P2), robust to one bad pose sample (P3).
+
+**⭐ THE RESTATED NUMBERS.** Estimator: **episode-cluster bootstrap** over clips, 2000 draws
+(`taniteval/ci.py`); ⛔ never `overlapping_holdout_se`. Thresholds are the **PRODUCTION** values
+(`code/tac_a3_three_leg_agreement.py:120-121`, Δv 1.0 m/s / Δyaw 0.15 rad) — a spec lookup.
+
+| quantity | window | LON κ [95 % CI] | LAT κ [95 % CI] | n (LON/LAT) |
+|---|---|---|---|---|
+| ⭐ **TACTICAL BAND** `mean_band` | **(2.0, 6.0]** | **0.1428** [0.0540, 0.2250] | **0.1777** [0.0658, 0.2953] | 201 / 193 |
+| band, `net_band` *(sensitivity)* | (2.0, 6.0] | 0.1526 [0.0527, 0.2411] | 0.2196 [0.1043, 0.3422] | 201 / 193 |
+| band, `ext_band` *(sensitivity)* | (2.0, 6.0] | 0.1788 [0.0751, 0.2751] | 0.2301 [0.1145, 0.3477] | 201 / 193 |
+| ⚠️ *seam* — what §3 reports | (0.0, 2.0] = `OP_BAND_S` | 0.3270 [0.2289, 0.4192] | 0.3132 [0.1973, 0.4323] | 201 / 193 |
+| ⚠️ *full horizon* — the sweep's "6.0 s" | (0.0, 6.0] | 0.2210 [0.1165, 0.3167] | 0.3806 [0.2587, 0.4911] | 201 / 193 |
+
+**Paired band − seam** (same clips, same resampled draw, `paired_episode_cluster_bootstrap`):
+**LON Δκ = −0.1843** [−0.2746, −0.0961], **CI-separated**; **LAT Δκ = −0.1354** [−0.2707, −0.0162],
+**CI-separated**. ⇒ **The drop is real, not sampling noise, on both axes.**
+
+⚠️ **It is not a threshold artefact either.** Across the whole swept surface the band's best cell
+is **LON 0.1862** (Δv 0.25) and **LAT 0.3125** (Δyaw 0.05) — *still below* the seam values at every
+comparable threshold. The band is worse under every definition and every threshold tried.
+
+⚠️ **Defect 3, found in passing — §3 also argmax-selected its THRESHOLD.** The headline cells
+(Δv 0.75 / Δyaw 0.05) are the sweep's best-scoring thresholds, not production values. C89 caught
+only the horizon. Both are the same root-cause class: *a measurement window chosen by its result.*
+
+⇒ **WHAT THIS CHANGES.** The §3 verdict *"H-HORIZON SUPPORTED"* stands as a statement about
+**agreement vs horizon** — agreement really does rise as the horizon shortens. What does **not**
+follow, and what §3 wrongly asserted, is that this licenses reading a **tactical** label short.
+**At the architecture's own band the Alpamayo↔ego agreement is κ ≈ 0.14–0.18 — "slight", below the
+0.40 fair-to-moderate line, and not shippable as a label source.**
+
+⭐ **The most probable substantive reading, and it is a work item, not a conclusion:** Alpamayo's
+meta-action is *the decision at t0*, while `TAC_BAND_S` covers **2–6 s**. The band's yaw
+calibration shows exactly this — `Steer Right` clips have mean in-band Δyaw of **−0.0004 rad**
+(n=37) while `Sharp Steer Right` still shows **−0.1565** (n=7): by 2–6 s the ordinary turns are
+already resolved, so the band contains the *aftermath* of the manoeuvre Alpamayo named.
+⇒ **The falling κ may be telling us the LABEL SOURCE is mismatched to the band, not that the band
+is unlabelable.** Discriminating that is the next experiment; it must not be assumed either way.
+
+**Artifacts:** `…/2026-08-16-tactical-review/code/tacrev_band_agreement.py` ·
+`…/2026-08-16-tactical-review/raw/b1_band_agreement.json` (+ `_per_clip.jsonl`).
+**Evidence class: MEASURED (ours), 201 local ego pose tracks, 10 Hz, 0 dropped.**
 
 ---
 
@@ -339,7 +432,15 @@ legs reach a LON token, they reach the **same** one on **2,473/3,168 = 78.06 %**
 
 ### 5.1 Can a trustworthy tactical label set be built today?
 
-> ## ⚠️ **QUALIFIED YES — but only from Alpamayo, only at a 2 s horizon, only with abstention, and NOT by the current 2-of-3 vote.**
+> ## ~~⚠️ **QUALIFIED YES — but only from Alpamayo, only at a 2 s horizon, only with abstention, and NOT by the current 2-of-3 vote.**~~
+>
+> ## ⛔ **DOWNGRADED 2026-08-17 (§3.1): NOT DEMONSTRATED AT THE ARCHITECTURE'S BAND.**
+> The "qualified yes" rested on κ 0.4694 / 0.3655 **at the 2.0 s SEAM**. Over `TAC_BAND_S`
+> **(2.0, 6.0]** the same construction gives **LAT κ 0.1777 / LON κ 0.1428** — *slight* agreement,
+> paired-separated from the seam on both axes. ⇒ The qualified yes holds **only for a ~2 s
+> operative-horizon label**, which is not the label `g_tac` needs. **What is still open — and is
+> the next experiment, not a conclusion — is whether the band is unlabelable or whether Alpamayo's
+> t0 meta-action is simply the wrong SOURCE for a 2–6 s window.**
 
 | | |
 |---|---|
@@ -353,8 +454,9 @@ legs reach a LON token, they reach the **same** one on **2,473/3,168 = 78.06 %**
 | | n | expected error |
 |---|---|---|
 | label-side (Alpamayo, needs no video) | **4,729** | reason-token self-consistency **78.06 %** ⇒ **≈22 % expected label error** |
-| validated against our geometry | **201** | LAT κ 0.4694 / LON κ 0.3655 at H=2 s; **≈30–45 % disagreement** without abstention |
-| after abstaining on Alpamayo's *"Gentle"* classes | **85** of 201 (42 %) | κ 0.4311 |
+| validated against our geometry ⚠️ **SEAM (0.0, 2.0]** | **201** | LAT κ 0.4694 / LON κ 0.3655 at H=2 s; **≈30–45 % disagreement** without abstention |
+| ⭐ validated against our geometry **at `TAC_BAND_S` (2.0, 6.0]** | **201 / 193** | **LAT κ 0.1777 / LON κ 0.1428** (§3.1); **≈36 % / ≈59 % disagreement** |
+| after abstaining on Alpamayo's *"Gentle"* classes ⚠️ SEAM | **85** of 201 (42 %) | κ 0.4311 |
 
 ⇒ **This is materially better than the S2 case** (which was ≈78 % *wrong*, from inputs that
 *could not carry the distinction*). Here the inputs **do** carry the distinction — Alpamayo saw
@@ -387,7 +489,7 @@ majority is **retired** — it cannot count ego and VLM as independent.
 | `a_tac_lat` | Alpamayo LANE axis (§4.1), `NONE_ABSTAIN` for `Turn *` | ✅ label-time only; **inference stays vision-only** |
 | `a_tac_lon` | Alpamayo LONGITUDINAL **×** reason, abstain on `Gentle *` unless the reason disambiguates | ✅ same |
 | `g_tac_lon` | Alpamayo reason → token (§4.3); abstain on multi-hit (**20.03 %**) | ✅ same |
-| `corroboration.ego` | ego pose at **H = 2.0 s** (`|Δv| ≥ 0.75 m/s`, `|Δyaw| ≥ 0.05 rad`) — **recorded, never the source** | privileged-labels-only |
+| `corroboration.ego` | ⛔ **CORRECTED (§3.1):** ego pose **over `TAC_BAND_S` (2.0, 6.0]**, statistic `mean_band`, PRODUCTION thresholds (`|Δv| ≥ 1.0 m/s`, `|Δyaw| ≥ 0.15 rad`) — **recorded, never the source**. ~~ego pose at H = 2.0 s (`|Δv| ≥ 0.75 m/s`, `|Δyaw| ≥ 0.05 rad`)~~ — that was the **seam** at **argmax-selected** thresholds. | privileged-labels-only |
 
 **Binding-constraint compliance, checked explicitly:**
 
@@ -464,7 +566,10 @@ Per the PI's correction, and confirmed by a read-only trace of the pipeline:
 | `_ego_prompt_mode == 'past'` on 201/201; stamp false on 201/201 | **MEASURED** | 201 |
 | three-way LON unanimity 19.14 % | **MEASURED** | 162 |
 | lane-change events: Alpamayo corroborates 2/81 = 2.47 % | **MEASURED** | 81 |
-| H-HORIZON supported; κ 0.1727→0.3655 (LON), 0.290→0.4694 (LAT) at 2 s | **MEASURED** (ridge, 16/72 cells) | 201 |
+| H-HORIZON supported; κ 0.1727→0.3655 (LON), 0.290→0.4694 (LAT) at 2 s ⚠️ **SEAM values — the 2 s row is `OP_BAND_S`, not the tactical band** | **MEASURED** (ridge, 16/72 cells) | 201 |
+| ⭐ at `TAC_BAND_S` **(2.0, 6.0]**: LON κ **0.1428** [0.0540, 0.2250] · LAT κ **0.1777** [0.0658, 0.2953] | **MEASURED** (§3.1; episode-cluster bootstrap) | 201 / 193 |
+| ⭐ paired band−seam Δκ: LON **−0.1843** [−0.2746, −0.0961] · LAT **−0.1354** [−0.2707, −0.0162], both **CI-separated** | **MEASURED** (§3.1; paired episode-cluster bootstrap) | 201 / 193 |
+| ⛔ no row of `a4_horizon_sweep.json` is the tactical band — all are `t0`-anchored | **MEASURED** (read from `tac_a4_horizon_sweep.py:140-148`) | — |
 | reason reaches a LON `g_tac` token on 77.31 % / 82.77 % | **MEASURED** (reachability, **not** correctness) | 4,729 |
 | cross-leg reason-token consistency 78.06 % | **MEASURED** | 3,168 |
 | `V6LossWeights` has no tactical term | **MEASURED** (read from source) | — |

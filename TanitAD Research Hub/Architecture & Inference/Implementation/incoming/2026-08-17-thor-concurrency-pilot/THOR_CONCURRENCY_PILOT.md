@@ -95,7 +95,22 @@ is cited for.*
 
 Armed as a **self-acting Thor-side watchdog** (`pilot_watchdog.sh`), not a client-side poller,
 because the trainer logs once per ~22 min and a laptop-side poller can be asleep when a criterion
-trips. It signals **exactly one PID** — the build's, read from `build.pid`.
+trips. It signals **exactly one PID** — the build's, read from `build.pid`. PIDs 25477 and 42229 are
+only ever read with `kill -0`; no pattern match is used anywhere, because `pkill -f <trainer>`
+self-matches the caller's own ssh command line and has killed sessions on this programme before.
+
+**The abort path was TESTED, not assumed** — an untested safety mechanism is not one:
+
+| fed `r_inst` | trips | note |
+|---|---|---|
+| 26.3606 (live baseline) | — | no false fire |
+| 27.2105 (baseline max) | — | no false fire at the observed extreme |
+| 27.6899 / 27.6901 | — / SLOW2 | boundary is exact |
+| 30.01 | SLOW1 + SLOW2 | fast tripwire fires |
+| −1.0 (sentinel: <2 rows) | — | insufficient data does not spuriously abort |
+
+The build-exit path is proven by real execution: when attempt 1 died, the watchdog detected it within
+60 s, wrote `ZZDONE|build_exited|` and stood down without touching the trainer.
 
 ---
 
@@ -154,15 +169,25 @@ The brief states these clips are **not** in `physicalai-train-e438721ae894`. MEA
 built parity cache on Thor (`~/data/physicalai-train-e438721ae894-w120-256x640cyl`, 2,400
 `.v2ep.pt`): **overlap = 201 clips**, e.g. `0089a096-68be-40df-8097-780bf1ae1c19`.
 
-That 201 is exactly the size of the recently unified aug120 perception corpus, which is very likely
-where the overlap comes from — but the number to act on is that **the sets are not disjoint**.
+**These 201 are genuine parity members, not later contamination of the directory.** Checked by mtime:
+the overlapping files were written **2026-08-15 18:39–22:12** and the other 2,199 **18:38–22:16** —
+one and the same build pass, from `only_clips: parity_train_clips.txt`. So the 201 are in the parity
+train selection itself. (The count coincides with the recently unified 201-clip aug120 perception
+corpus; the mtimes rule out aug120 having been written into this directory afterwards.)
 
-**What this does and does not mean.** It is **not** a parity violation: the pilot writes to a
-separate `--out` and re-selects nothing, so `physicalai-train-e438721ae894` is untouched. It **is** a
-correction that matters downstream, because (a) 201 clips would be built twice, and (b) anyone acting
-on "these clips are not in the parity set" could later merge the new corpus into the parity corpus
-believing it disjoint, which **would** break cross-arm comparability. The new corpus remains a
-**separate labelled corpus, never an extension of the parity set.**
+**What this does and does not mean.**
+
+- It is **not** a parity violation by this pilot. The build writes to a separate `--out` and
+  re-selects nothing, so `physicalai-train-e438721ae894` is untouched. The new corpus stays a
+  **separate labelled corpus, never an extension of the parity set.**
+- ⛔ **The real hazard is evaluation contamination, and it points the other way.** Any model trained
+  on the parity corpus **has already seen those 201 clips**. If the Alpamayo-labelled corpus is later
+  used as a held-out or OOD evaluation set on the strength of "these clips are not in the parity
+  set", **201 of its clips are train-contaminated**. That is the **REF-A I-JEPA leak class** (~80 %
+  of val inside train, which made that arm's val number unusable) at smaller scale — 201/4,729 =
+  4.3 %. ⇒ **Exclude the 201 from any eval split built on this corpus, or report with and without
+  them.** The list is recoverable in one line from `alpamayo_clip_ids.txt` ∩ `parity_ls.txt`.
+- Minor: those 201 clips would also be **built twice**, wasting ~7 GB and ~40 min of extraction.
 
 ---
 
@@ -201,6 +226,40 @@ has previously dropped a GPU to 0–6 % `sm` for 50 minutes looking exactly like
 
 HF token read **in place** from `~/.cache/huggingface/token` into the environment; never printed,
 never passed in argv, never copied into the repo.
+
+### 6.1 ⚠️ A launch-path defect the pilot found (attempt 1 died after paying for the download)
+
+The first launch **downloaded 536 MB and then died with zero clips built**:
+
+```
+FileNotFoundError: [Errno 2] No such file or directory:
+  '/home/nvidia/w120pilot/pai_root/r0/r0_selection.parquet'
+```
+
+`physicalai._chunk_of_clip` (`physicalai.py:282`) reads `<root>/r0/r0_selection.parquet` to map
+`clip_id → chunk`, which is how `intrinsics_for_clip` locates that chunk's `camera_intrinsics`
+parquet. `build()` never creates it, and the failure lands in `_assert_geometry_deliverable` —
+**after** `_ensure_ego` and the ~1.2 GB camera-chunk fetch.
+
+This is the **`t1_eval` class from `CLAUDE.md`**: *an analysis-time dependency that fails after the
+expensive part is already paid for*. The durable fix is a preflight existence check at startup so it
+fails in milliseconds rather than after a chunk download. Worth noting that the builder's *own*
+geometry assert exists for exactly this reason ("ABORT before hours of work, not after") — it just
+sits downstream of a missing input it does not itself check.
+
+⭐ **The crash was also load-bearing for correctness, not merely for liveness.** With no
+`r0_selection.parquet`, `intrinsics_for_clip` warns once and falls back to the corpus median, which
+"reverts the crop to geometric-center → horizon NOT rig-corrected". PhysicalAI front-wide has **two
+rigs** (cy ≈ 543 rig A / ≈ 755 rig B), so a geometric-center crop is **~215 px wrong for rig B**. Had
+the fallback path been reachable here, the pilot would have produced a **silently mis-cropped
+corpus** — the expensive kind of wrong. Fix applied: the selection parquet (which already carries
+exactly the `clip_id` + `chunk` columns required) is copied to `<root>/r0/r0_selection.parquet` by
+the launcher.
+
+Attempt 2 then ran clean, and its geometry check confirms the target frame is actually delivered:
+`achieved_hfov_deg: 120.0`, `f_eff: 305.5775`, `frame_tag: 256x640f305.5775cyl` — byte-identical
+framing to the existing w120 corpus. Rig A (n=56) fully observed; rig B (n=4) 8.9 % masked, which is
+the cylindrical projection **masking rather than fabricating**, as intended.
 
 ---
 

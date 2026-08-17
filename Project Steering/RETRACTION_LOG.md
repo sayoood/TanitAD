@@ -4784,3 +4784,84 @@ misdirects the future.*
 
 ⚠️ Also fixed, and worth naming as its own shape: `MODEL_REGISTRY.md` §1.3 read **"Cite 0.628
 (heldout)"** — **not a stale number but a STANDING INSTRUCTION to prefer the banned statistic**.
+
+---
+
+## C92 — I QUOTED A POSITIVE PROBE WITHOUT A TRIVIAL-PROXY CONTROL (2026-08-18, O2/O3/O4 research)
+
+**RETRACTED — my own claim**, published in `Project Steering/Reports/2026-08-17-2319-program-report.md`
+§3 EFFICIENCY and repeated to the PI: *"the linear-readout finding (**~1.8 m better than the random
+null, r +0.159**) says the information is present and weak."*
+
+**MEASURED:** that margin is an **EGO-SPEED PROXY**. **Ego speed ALONE beats the entire 2048-dim
+latent** (K1 **−1.562 PASS** vs **+1.580 FAIL**), and partialling `v0` out of the latent readout
+leaves **r = +0.052**. The latent was not being read; `v0` was leaking through it.
+
+⇒ **ROOT-CAUSE CLASS: A POSITIVE PROBE QUOTED WITHOUT A TRIVIAL-PROXY CONTROL.** We have an
+elaborate negative-control discipline — C-CONST, C-SHUF, C-EPMEAN, C-SHUF-XEP, random-latent nulls —
+and every one of them asks *"does the instrument cheat on noise?"*. **None asks the opposite
+question: "is a one-number baseline already enough?"** So a real margin over noise was read as
+capability when a scalar the model is HANDED explains it.
+
+⚠️ **This is the SAME SHAPE as C79 (the D1 withdrawal), one week apart and in the opposite
+direction.** There, five negative controls could not see an instrument that failed its **positive**
+control. Here, the negative controls could not see a positive result that failed its **triviality**
+control. ⇒ **RULE: every probe carries BOTH — a positive control (can it read the answer when
+handed the answer?) and a trivial-proxy control (does a scalar already in the input do as well?).
+A margin over a random null is not evidence until both are reported.**
+
+⭐ **AND IT IS THE ECHO TEST AGAIN, IN A THIRD COSTUME.** Flagship v1's route head scored 1.0000 by
+echoing its own nav input; the open-loop lateral skill was an action echo (97.9 % vs 0.0 %
+hold-action); this readout echoed `v0`. **Three times now the programme has measured a model
+returning its own input and called it a capability.**
+
+⚠️ **SEPARATE INSTRUMENT DEFECT, SAME PACKAGE — `pc6_linear_readout.ridge_fit` PENALISES ITS OWN
+INTERCEPT.** A no-signal arm is therefore driven toward **zero**, never toward the **mean** — so it
+scores worse than a constant predictor by construction. **This taints every prior "K1 FAIL" produced
+by that module**, and the repair currently lives in one run's `code/` rather than in the module. ⇒
+Propagate it, then re-read the affected FAILs; a FAIL from a biased floor is not a finding.
+
+---
+
+## C93 — "O2 IS AN INDEPENDENT OBJECTIVE" IS FALSE BY CONSTRUCTION, AND THE CODE SAID SO (2026-08-18)
+
+**RETRACTED:** the standing framing of **O2, O3, O4 as three comparable, independently weightable
+loss directions**, and with it the treatment of the measured **O2↔O5 cos +0.870** as an empirical
+near-collinearity awaiting explanation.
+
+**MEASURED, by derivation from our own source:** `V6Stack.cells()` (`stack/tanitad/models/v6.py:3710`)
+is a **PURE RESHAPE**, so O2 and O5 score the **identical tensor**, and the algebra closes exactly —
+**O2 = O5's step-`j` term + Cov_c(w, err)**. The +0.870 is **forced by the code**. It was never a
+finding; it was a restatement.
+⇒ O2's **unique** content over 7 banked rows is **0.45–3.33 %, median 1.81 %, and sign-unstable
+(4 −, 3 +)**. *(Initialisation-time rows; the live-log read is the zero-GPU instrument `E-O2-A`.)*
+
+⇒ **And O4 is a SAMPLER, not a loss** — `|jerk| + |decel| + steering reversals` **from ego actions
+alone**, with no perception content and no gradient. It cannot distinguish lead-vehicle braking from
+stop-line braking. **`InteractionSampler` is a misnomer**; O4 must stop being described as an
+interaction lever.
+
+⇒ **ROOT-CAUSE CLASS: WE DEBATED THE WEIGHTS OF TERMS WHOSE ALGEBRAIC RELATIONSHIP WE HAD NEVER
+DERIVED.** A weighting question presupposes independent directions. One `reshape` settles it, and
+the trainer had been **logging both halves all along** (`o2_unweighted` *is* O5's step-`j` term).
+⇒ **RULE: before tuning the relative weight of two loss terms, derive their relationship from
+source. If one is a reparameterisation of another, no weight fixes it.**
+
+⭐ **THE FINDING THAT SUBSUMES ALL THREE, AND IT IS NOT A LOSS PROBLEM AT ALL:** every latent
+objective sits behind a **40:1 average pool** — `AvgPool2d((4,10))`, each of 16 cells the mean of
+**40 ViT tokens (64×160 px)**. The median GT lead vehicle is **37.8 px**. ⇒ **An object smaller than
+one cell is averaged away before any objective sees it.** That is an **architectural bottleneck of
+the POOLING kind — which destroys individuation — not of the COMPETITION kind, which no
+re-weighting of O2/O3/O4 can address.**
+⭐ **Two independent methods, one answer:** the linear ladder's rung profile — **agent count highest
+(r² 0.076), relative motion exactly 0.0000** — is precisely what a 40:1 pool predicts, and it was
+derived without reference to the pooling analysis.
+⇒ **This explains D1 without any appeal to the world model's competence.** *(⚠️ It also refutes my
+own earlier "sub-patch resolution limit" hypothesis in its details while vindicating its instinct:
+the lead is LARGE in patches — 2.4 — and small only relative to the POOL.)*
+
+⛔ **"The objectives just need more training" is REFUTED at three independent sources** (a ~8k-step
+plateau; locality DEGRADING with longer training; *"capacity scaling cannot recover the missing
+structure when the objective fails to encode it"*). ⚠️ And the one published case of object structure
+emerging from our objective class **failed on a narrow corpus** — which our 2376 driving episodes
+are. **No weight, term, or architecture change addresses that**; it is a corpus-composition question.

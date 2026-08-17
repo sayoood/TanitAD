@@ -17,7 +17,7 @@ own speed** at **r = +0.247**, MAE **5.526 m/s [4.860, 6.232]** against a consta
 (**K1 +1.429 [+0.636, +2.202], separated — it LOSES to a constant**), i.e. it explains **6.1 % of
 the variance of the quantity the car most certainly knows about itself.** ⭐ **The calibration that
 makes that number mean something:** the *identical* ridge, on the *identical* windows, split, seeds
-and estimator, recovers a **synthetic DISTRIBUTED encoding of that same `v0`** at **r = +1.000**
+and estimator, recovers a **synthetic DISTRIBUTED encoding of that same `v0`** at **r = +0.9999**
 (0.10× noise), **+0.994** (1×), **+0.968** (3×) and still **+0.724** at **10× noise** — so
 ⛔ **THE REAL v6 LATENT CARRIES LESS LINEARLY-READABLE EGO SPEED THAN A RANDOM PROJECTION OF IT
 BURIED UNDER TEN TIMES ITS OWN MAGNITUDE IN NOISE.** The readout is not the limit; the latent is.
@@ -28,7 +28,7 @@ bijective and lossless**, so flattening the cells *is* `z_op`.
 ⭐⭐ **AND THE THREAD THIS RUN WAS OPENED TO FOLLOW COLLAPSES UNDER ITS OWN TRIVIAL-PROXY CHECK.**
 The precedent's sharpest new fact was *"under a linear readout the v6 latents beat the random-latent
 null by ~1.8 m on lead gap, r +0.159 vs −0.018"*. **MEASURED HERE: a ridge on the EGO-SPEED SCALAR
-ALONE — one feature — recovers the lead gap at 3.571 m [3.151, 4.040], r +0.683, R² +0.467,
+ALONE — one feature — recovers the lead gap at 3.571 m [3.151, 4.040], r +0.683, r² 0.467 (R² +0.454),
 K1 −1.562 [−2.023, −1.136] SEPARATED, PASS.** That is **1.9× better than the whole 2 048-dimension
 latent** (6.713 m, r +0.159, K1 **+1.580 FAIL**) and it is **the only non-oracle arm in F-18 or its
 successors ever to pass K1 on lead gap.** ⇒ ⛔ **Lead gap is largely a restatement of ego speed (the
@@ -58,7 +58,7 @@ readout, including the precedent's §2.3 table, carries this caveat.
 
 ⚠️ **WHAT THIS DOES NOT SAY.** It is a **LINEAR** readout: a quantity absent here could still be
 present non-linearly, and this is not a claim that the world model is untrained. It is an
-**EARLY-READ at 41.7 %** of training (11 250 of 30 000). ⚠️ And on **`lead_closing` / `lead_inv_ttc`
+**EARLY-READ at 37.5 %** of training (11 250 of 30 000). ⚠️ And on **`lead_closing` / `lead_inv_ttc`
 the positive control is WEAK by construction** — the oracle memory encodes positions only, no rate
 features (`pc1_oracle_cache.py`: `[cx/60, cy/16, sin yaw, cos yaw, l/10, w/5, 1]`) — so those two
 nulls are **"not linearly present"**, not **"the apparatus could have found it"** (§2.4).
@@ -69,7 +69,7 @@ nulls are **"not linearly present"**, not **"the apparatus could have found it"*
 
 1. **`v6F-SW-30k@11250`** unless another step is named. The checkpoint is part of the arm. The
    checkpoint ladder (§6) additionally reads `@2000 / @9000 / @9250 / @10000` from banked caches.
-2. ⚠️ **EVERY v6 POINT IS AN EARLY-READ at 11 250 / 30 000 = 41.7 %.** 30 000 remains the primary
+2. ⚠️ **EVERY v6 POINT IS AN EARLY-READ at 11 250 / 30 000 = 37.5 %.** 30 000 remains the primary
    read.
 3. ⚠️ **LEAD-ENRICHED, NOT PARITY** — inherited unchanged from the parity run and the positive
    control (`parity: False` in every cache meta). 130 clips, 60 probe-train / **70 eval**, clip-
@@ -94,7 +94,7 @@ nulls are **"not linearly present"**, not **"the apparatus could have found it"*
    this ladder gives `lead_gap` **1.0165 m, r +0.979** against the precedent's **1.016 m, r 0.979**.
 6. **GPU: none. This is a CPU ridge.** ⛔ **Thor was never used for compute** — no checkpoint was
    pulled and nothing was run there. Only banked local artifacts were read. Thor's live 30k run
-   (PID **25477**) was **ALIVE at step 12 500** at the end of this run (§11).
+   (PID **25477**) was **ALIVE and ADVANCING at step 12 650** at the end of this run (§11).
 
 ---
 
@@ -117,7 +117,7 @@ learned latent would carry it. Here no feature is a copy of the label.
 
 | `ego_v0`, n 3023 / 70 | MAE (m/s) | **K1** vs C-CONST 4.097 | **r** | r within-episode | R² |
 |---|---|---|---|---|---|
-| **EGO-ORACLE 0.10× noise** | **0.046** | **−4.051 PASS ✅** | **+1.000** | +1.000 | +1.000 |
+| **EGO-ORACLE 0.10× noise** | **0.046** | **−4.051 PASS ✅** | **+0.9999** | +0.9997 | +0.9999 |
 | **EGO-ORACLE 1.0× noise** | **0.484** | **−3.613 PASS ✅** | **+0.994** | +0.973 | +0.988 |
 | **EGO-ORACLE 3.0× noise** | **1.148** | **−2.949 PASS ✅** | **+0.968** | +0.871 | +0.933 |
 | **EGO-ORACLE 10× noise** | 3.471 | −0.626 [−1.475, +0.130] **ns** | **+0.724** | +0.438 | +0.387 |
@@ -462,7 +462,7 @@ trajectory eval.
    projected scalar). §2.4 is explicit that the two ROTATIONAL rungs currently have **no positive
    control**, which makes them the weakest rows in the ladder despite being the LATERAL family's
    whole basis. **Until this runs, "the latent has no yaw content" is an unverified negative.**
-2. **Re-run the ladder at 30 000** when Thor finishes. Every v6 number here is a 41.7 % early read.
+2. **Re-run the ladder at 30 000** when Thor finishes. Every v6 number here is a 37.5 % early read.
    The chain is one command per arm and costs no GPU.
 3. **An unpooled token probe** (§8) — spatially-structured or patch-subset features rather than a
    mean-pool, so the encoder-vs-`readout` localisation becomes decisive rather than suggestive.
@@ -483,42 +483,68 @@ run** (opaque-marker probe, per the polling-monitor trap):
 
 | | |
 |---|---|
-| trainer PID | **25477 — ALIVE**, uptime **1-22:43:29** |
+| trainer PID | **25477 — ALIVE**, uptime **1-23:05:03** (169 516 s) |
+| process state / CPU | `Ssl`, **302 jiffies of CPU in a 6 s sample** — working, not hung |
 | run | `v6F-SW-30k`, `train_v6_staged.py --stage S-W --steps 30000` |
-| last `metrics.json` record | **step 12 500**, `loss` 1.43387 |
+| ⭐ **live `train_log.jsonl`** | **step 12 650**, written **121 s ago** |
+| `metrics.json` / `ckpt.pt` | step 12 500, both **4 077 s** old |
 
-⇒ **Advancing and healthy** (step 12 500 against ~12 500 expected at handover).
+⇒ ✅ **ALIVE AND ADVANCING**: 12 500 → **12 650** across this run, ~13.4 s/step against the
+169 516 s uptime.
 
-## 11a. SUITES — ⚠️ ONE FAILURE, AND IT IS A CONCURRENT-EDIT RACE, NOT THIS RUN
+⚠️ **AND I NEARLY FILED A FALSE STALL — the near-miss is worth recording.** Reading `metrics.json`
+alone showed **step 12 500 unchanged across 67 minutes**, which looks exactly like a hung trainer.
+It is not: **`metrics.json` and `ckpt.pt` are written on the CHECKPOINT cadence (`--save-every 250`),
+not the log cadence**, and both carried the same 4 077 s age. The live cursor is
+**`train_log.jsonl`**, 121 s fresh at step 12 650. ⇒ **ROOT-CAUSE CLASS: reading one file's write
+cadence as the training cadence** — the same family as judging pod disk with `df` and reading
+`step_s` as per-step. **Verify before alarming: an instantaneous `/proc/<pid>/stat` jiffy delta and
+the live log settled it in one probe.**
+
+## 11a. ⛔ SUITES — `stack` IS RED, THE CAUSE IS ANOTHER AGENT'S UNCOMMITTED EDIT, AND I AM NOT CALLING IT GREEN
 
 | suite | result | baseline | verdict |
 |---|---|---|---|
 | `taniteval` | **1092 passed**, 0 failed, 281 s | 1092 / 0 | ✅ **matches** |
-| `stack` run 1 | ⚠️ **3802 passed, 1 FAILED**, 7 skipped, 2 xfailed, 692 s | 3803 / 0 / 7 / 2 | ⚠️ **one short** |
-| `stack` run 2 | `raw/suite_stack.txt` | 3803 / 0 / 7 / 2 | re-run after the edit settled |
+| `stack` **run 1** (23:40–23:52) | **3802 passed, 1 FAILED**, 7 skipped, 2 xfailed, 692 s | 3803 / 0 / 7 / 2 | ⚠️ transient — see (A) |
+| `stack` **run 2** (23:56–00:04) | ⛔ **3804 passed, 1 FAILED**, 7 skipped, 2 xfailed, 487 s | 3803 / 0 / 7 / 2 | ⛔ **REPRODUCIBLE — see (B)** |
 
-⛔ **THE FAILURE IS NOT MINE, AND I AM NOT ASSERTING THE SUITE IS GREEN ON MY OWN SAY-SO.** The
-failing test is
-`tests/test_v6_anchor_loss.py::test_the_objective_reads_no_situation_classifier_no_ego_no_v0`.
-**Four facts, all MEASURED:**
+⭐ **I MODIFIED NOTHING UNDER `stack/` OR `taniteval/`.** Every artifact of mine is a NEW file under
+this incoming directory. `git status --short -- stack` shows **four files modified by another agent,
+concurrently, and uncommitted**: `scripts/train_v6_staged.py`, `scripts/v6_chain.py`,
+`tests/test_v6_chain.py`, `tests/test_v6_st_launch_fixes.py`. The repo was **clean** at my session
+start (`8bc4b69`). ⚠️ **The passed count ROSE above the 3803 baseline to 3804**, which is itself
+proof the test corpus changed under me.
 
-1. ⭐ **I modified nothing under `stack/` or `taniteval/`.** `git diff --name-only HEAD` shows
-   `stack/scripts/train_v6_staged.py` and `stack/scripts/v6_chain.py` modified — **by another agent,
-   concurrently**; the repo was clean at my session start. Every artifact of mine is a NEW file
-   under this incoming directory.
-2. **The test reads that exact file.** It imports `anchor_goal_loss` **from `train_v6_staged`**
-   (`tests/test_v6_anchor_loss.py:64`) and asserts on `inspect.getsource(anchor_goal_loss)` — so its
-   result is a function of that file's *live* contents.
-3. ⭐ **The file was written DURING my suite run.** `train_v6_staged.py` mtime
-   **2026-08-17 23:47:10**; the run spanned roughly **23:40 → 23:52** (692 s). `v6_chain.py` was
-   written at **23:51:39**, i.e. the tree was still moving as the suite finished.
-4. ✅ **The test PASSES in isolation** once the edit settled: `1 passed in 1.96s`.
+**(A) Run 1's failure WAS a race, and it is gone.**
+`tests/test_v6_anchor_loss.py::test_the_objective_reads_no_situation_classifier_no_ego_no_v0`
+imports `anchor_goal_loss` **from `train_v6_staged`** (`:64`) and asserts on
+`inspect.getsource(...)`, so it reads that file **live**. `train_v6_staged.py` was written at
+**23:47:10**, inside run 1's window; `v6_chain.py` at **23:51:39**. ✅ **It now passes** — the whole
+file: `44 passed in 10.72s`.
 
-⇒ **Root-cause class: a source-inspecting test run against a working tree another agent is editing.**
-Same family as the standing warning that *"with several agents live, the index moves under you"* —
-here it is the **worktree**, not the index, and the victim is a test rather than a `git add`.
-⚠️ **`stack` run 2's number in `raw/suite_stack.txt` is the one to read**, and it carries the same
-caveat: it can only certify the tree as it stood at that moment.
+**(B) ⛔ RUN 2's FAILURE IS REAL AND REPRODUCIBLE — I CHECKED RATHER THAN ASSUMING A SECOND RACE.**
+
+> `tests/test_v6_staged.py::test_the_whole_ladder_hands_off_through_the_WRITTEN_files`
+> `stack/tests/test_v6_staged.py:1157`
+> `> assert g["pass"] is False and g["failed_required"] == ["sel_gap"]`
+> `E  assert (True is False)`
+
+**The mechanism, from the run's own stdout:** the modified trainer now classifies `sel_gap` as
+**NOT APPLICABLE** on a `--selector none` arm — *"there is no `sel_idx` and therefore no `sel_gap`
+to measure — it is UNCOMPUTABLE on this arm"* — so the S-T stage gate now **PASSES** where the test
+still requires it to **FAIL with `failed_required == ["sel_gap"]`**. ⇒ **A deliberate change of
+stage-gate semantics in `scripts/train_v6_staged.py` whose paired update to `tests/test_v6_staged.py`
+has not landed** (that test file is unmodified — mtime 2026-08-17 00:06, and it is not in
+`git status`).
+
+⇒ ⛔ **`stack` is currently RED on `main`'s working tree for a reason that has nothing to do with
+this run, and it will stay red until that agent updates `test_v6_staged.py:1157` or reverts the
+semantics.** This is escalation 6 (§13). ⚠️ **I deliberately did not "fix" it** — it is another
+agent's in-flight change and guessing at their intent would be worse than reporting it.
+⚠️ **Root-cause class for (A): a source-inspecting test run against a worktree another agent is
+editing** — the same family as *"with several agents live, the index moves under you"*, except the
+victim is the **worktree** and a **test** rather than a `git add`.
 
 ---
 
@@ -580,3 +606,14 @@ caveat: it can only certify the tree as it stood at that moment.
 5. ⚠️ **`C-V0` SHOULD BECOME A STANDING COLUMN** on every latent-readout result in this programme
    (§10.4). A privileged scalar out-performing a 2 048-dimension latent is exactly the confound
    class that produced the nav-echo and C6 findings, and it costs one extra fit.
+6. ⛔⛔ **NOT MINE, AND URGENT — `stack`'s SUITE IS RED IN THE SHARED WORKING TREE (§11a-B).**
+   `tests/test_v6_staged.py::test_the_whole_ladder_hands_off_through_the_WRITTEN_files` fails
+   **reproducibly** at `:1157` (`assert g["pass"] is False and g["failed_required"] == ["sel_gap"]`
+   → `assert (True is False)`). The cause is an **uncommitted** change in
+   `stack/scripts/train_v6_staged.py` (mtime 2026-08-17 23:47) that reclassifies `sel_gap` as
+   *not applicable* on `--selector none` arms, so the S-T gate now passes where the test requires a
+   fail. **The paired test update has not landed.** ⚠️ **I did not touch it** — it belongs to the
+   agent holding those four modified files. **Whoever owns that change must either update
+   `test_v6_staged.py:1157` or revert the semantics before anything is committed**, because
+   `CLAUDE.md` requires `pytest -q` green before any commit and the index already contains several
+   agents' staged work.

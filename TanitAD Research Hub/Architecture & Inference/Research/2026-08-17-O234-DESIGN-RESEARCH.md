@@ -63,6 +63,16 @@ or a **source-level derivation**, and is stamped as such.
    quotes *"pooling is where geometry goes to die"* and then exposes **the pooled tensor** — the
    4×4 grid is the *output* of the pooling, not a repair for it.
 
+   ⭐⭐ **AND A SECOND, INDEPENDENT INSTRUMENT MEASURED EXACTLY THIS WHILE I WAS WRITING.**
+   `LATENT_LINEAR_LADDER.md` (landed mid-run) reports the latent's linearly-decodable content as
+   **agent COUNT highest (`n_agents_all` r² 0.076)** and **relative motion at exactly zero**
+   (`lead_closing` **0.0000**, `lead_inv_ttc` 0.0001, `ego_curv` 0.0001, `ego_yawrate` 0.004) —
+   **the precise signature an average pool predicts: aggregate density survives, individuated
+   relative motion cannot.** ⛔ **It also refutes the premise this run was briefed with:** the
+   latent's lead-gap signal is an **ego-speed proxy** — ego speed *alone* beats the whole 2 048-dim
+   latent (**K1 −1.562 PASS vs +1.580 FAIL**), and partialling `v0` out drops `r` from +0.159 to
+   **+0.052** (§3.4a).
+
 5. ⭐ **AND THE LITERATURE SAYS THE SAME THING, INCLUDING THE FIX.** Meta's own V-JEPA 2.1
    ([arXiv:2603.14482](https://arxiv.org/abs/2603.14482)) diagnoses V-JEPA 2's *"fragmented local
    spatial structure"* as caused by supervising **only masked tokens**, which lets context patches
@@ -104,10 +114,10 @@ literally zero-GPU**, with both outcomes pre-committed.
 2. **Source is quoted at `file:line` against the working tree at the time of writing.**
 3. **Re-quoted measurements carry their original artifact path** and are marked `INHERITED` where I
    did not re-run them.
-4. ⚠️ **The `2026-08-17-latent-linear-ladder` stream had NOT landed a report** when this was
-   written — `…/incoming/2026-08-17-latent-linear-ladder/` contained `code/` and `raw/` but **no
-   `.md`**. Its results are therefore **absent from this document** and its arrival should be
-   checked against §6.
+4. ✅ **The `2026-08-17-latent-linear-ladder` report LANDED mid-run and IS incorporated** (§3.4a,
+   §6.3, §8). It was absent when §3.4 was first drafted; §3.4a is the correction, and the ladder —
+   as the newer instrument on the same checkpoint and windows — takes precedence wherever they
+   differ.
 5. ⛔ **`MODEL_REGISTRY.md` was not touched** (held by another agent).
 
 ---
@@ -342,6 +352,47 @@ below may be built on *"the latent does not carry agents"*.
 ⭐ **The real reading:** the v6 latent beats a random-vector null by **1.6–1.8 m with positive
 correlation**, ⛔ **and still loses to a constant predictor.** `r = +0.159` is **weak signal, not
 latent agent geometry**. ⚠️ Single fit each, no seed replicate.
+
+### 3.4a ⛔⛔ **CORRECTION — THE LADDER LANDED DURING THIS RUN AND SUBSTANTIALLY QUALIFIES §3.4**
+
+`…/incoming/2026-08-17-latent-linear-ladder/LATENT_LINEAR_LADDER.md` (same checkpoint, same
+windows, same estimator) landed **after** §3.4 was drafted. ⛔ **It is the newer instrument and it
+wins.** Three findings, all of which change how the above must be read:
+
+1. ⛔⛔ **THE EGO-SPEED CONFOUND IS REAL AND MEASURED — the exact check I had queued as `E-PROBE-A`.**
+   A ridge on the **ego-speed scalar ALONE — one feature** — recovers lead gap at **3.571 m
+   [3.151, 4.040], r +0.683, R² +0.454, K1 −1.562 [−2.023, −1.136] SEPARATED, PASS.** That is
+   **1.9× better than the whole 2 048-dimension latent** (6.713 m, r +0.159, K1 **+1.580 FAIL**),
+   and it is **the only non-oracle arm ever to pass K1 on lead gap.** ⭐ **Partialling `v0` out drops
+   the latent's lead-gap correlation from +0.159 to +0.052.**
+   ⇒ ⛔ **The ~1.8 m advantage over the null is REAL and reproduces — but it is an EGO-SPEED PROXY,
+   NOT evidence that the latent encodes agents.** The brief's premise (*"the information is present
+   and weak"*) is **correct about information and WRONG about which information.**
+2. ⭐⭐ **AND THE RUNG PROFILE IS A DIRECT EMPIRICAL CONFIRMATION OF §2.3.** Against a null at zero on
+   every rung (|r| ≤ 0.030, r² ≤ 0.0009):
+
+   | present (r² of variance) | **absent — indistinguishable from the null** |
+   |---|---|
+   | `n_agents_all` **0.076** · `ego_v0` 0.061 · `nearest_any` 0.048 · `ego_accel` 0.035 · `lead_gap` 0.025 · `n_agents_grid` 0.020 · `lead_present` 0.009 | `ego_yawrate` **0.004** · `ego_curv` **0.0001** · `lead_closing` **0.0000** · `lead_inv_ttc` **0.0001** |
+
+   ⭐ **The highest rung is an AGENT COUNT and the zero rungs are RELATIVE MOTION.** That is exactly
+   the signature an average pool predicts: **aggregate scene density survives averaging; individuated
+   relative motion cannot.** ⇒ ⭐⭐ **§2.3 derived this from the source; the ladder measured it
+   independently. Two different methods, one answer.** In the ladder's own words: *the latent has a
+   weak "how fast and how cluttered is this scene" signal and **no measurable yaw, curvature, or
+   closing-speed content whatsoever***.
+3. ⛔ **AN INSTRUMENT DEFECT THAT TAINTS THE §3.4 TABLE ABOVE.** `pc6_linear_readout.ridge_fit`
+   builds `X.T @ X + alpha*I` on a design matrix whose **last column is the bias**, so as `alpha`
+   grows the prediction collapses toward **ZERO, not toward the mean** — the readout is
+   *structurally unable to express the very constant `K1` scores it against*. ⚠️ **Every
+   pre-existing "K1 fails" from this readout — including `PROBE_POSITIVE_CONTROL.md` §2.3, quoted in
+   §3.4 above — carries this caveat.** The ladder re-ran arm, null and both controls with the repair
+   and reports **the headline survives it**.
+
+⚠️ Still a **LINEAR** readout (absent here ≠ absent non-linearly) and still an **EARLY-READ at
+37.5 %**. ⚠️ And on `lead_closing` / `lead_inv_ttc` the **positive control is weak by construction**
+— the oracle memory encodes positions only, no rate features — so those two zeros mean *"not
+linearly present"*, **not** *"the apparatus could have found it"*.
 
 And at the **repaired** slot operating point (`n_queries 16`, the first configuration that passes on
 the answer and fails on noise), the real arm scored **8.331 m, K1 +3.217 [+2.310, +4.246] FAILS,
@@ -910,7 +961,8 @@ nobody has ever varied it.
 | id | question | method | cost | **outcome A** | **outcome B** |
 |---|---|---|---|---|---|
 | ⭐⭐ **E-O2-A** | Is O2 an independent lever at CONVERGENCE, or still O5's shadow? | Read `o2_loss` and `o2_unweighted` from the **live v6F 30 k log** at ≥3 well-separated steps; compute `\|o2_loss − o2_unweighted\| / o2_unweighted` and its sign. Script banked: `raw/2026-08-17-O234/o2_cov_from_logs.py` | ⭐ **ZERO GPU. Reading a log.** | **< 10 % and/or sign-unstable ⇒ O2 is a re-parameterisation of O5's step-`j` term.** Demote/merge; record that the objective has 3 effective directions, not 5 | **≥ 10 % and sign-stable ⇒ the spatial reallocation IS doing work at convergence**; +0.870 understates its distinctness; O2 stays at 1.0 and §2.1a is superseded |
-| ⭐⭐ **E-PROBE-A** | Is the ridge's lead-gap signal real, or an EGO-SPEED correlate? | On the **banked** @11250 / @9000 / null caches: (i) ridge on `v_ego` alone → lead gap; (ii) ridge on the latent → **residual** after removing the speed prediction; same 70 clusters, same paired episode-cluster bootstrap | ⭐ **ZERO GPU** — closed-form solves on banked tensors | **Latent beats the speed-only baseline on the residual ⇒ genuine (weak) agent information; §3.4 stands** | **It does not ⇒ the +1.6–1.8 m and `r = +0.159` are a SPEED CORRELATE, `PROBE_POSITIVE_CONTROL.md` §2.3's "genuinely new fact" must be retracted, and the programme has NO evidence the latent carries lead geometry** |
+| ⛔ ~~**E-PROBE-A**~~ | ~~Is the ridge's lead-gap signal real, or an EGO-SPEED correlate?~~ | ⭐⭐ **ALREADY ANSWERED — do not run it.** `LATENT_LINEAR_LADDER.md` landed during this run and measured it (§3.4a) | — | — | ⭐ **Outcome B was the measured one: ego speed ALONE beats the whole latent (K1 −1.562 PASS vs +1.580 FAIL); partialling `v0` out drops r from +0.159 to +0.052.** ⇒ **the +1.6–1.8 m is a speed proxy, not agent information** |
+| **E-PROBE-C** *(the question that replaces it)* | Does the latent carry lead geometry **beyond** the speed proxy at ALL, at 30 k rather than 37.5 %? | Re-run the ladder's `v0`-partialled rung on the **30 k** checkpoint, with the intercept repair, ≥3 seeds | low — banked caches, closed-form | **Partialled r rises materially above +0.052 ⇒ agent information is accumulating; the objective works, slowly** | **It stays at ≈+0.05 ⇒ the objective does not install lead geometry even at full training, and R1/R2 become the only paths** |
 | **E-PROBE-B** | Is the linear/slot gap a probe-format artefact? | Re-read the same banked caches with an **attentive** probe (learnable query + cross-attention) beside the ridge and the repaired 16-query slot probe; report all three with the same estimator | low — one head, banked caches | **Attentive ≫ linear ⇒ our latent stores it non-linearly; the linear number was a floor** | **Attentive ≈ linear ⇒ the information really is thin, and the format hypothesis is not what was limiting** |
 | **E-TERM-A** | Does O2 earn its place *at all*? | TAG-style **lookahead** (Fifty et al., [arXiv:2109.04617](https://arxiv.org/abs/2109.04617)): take one optimiser step on O2 alone, read the change in O5's loss, and vice versa; average over a few hundred steps. ⚠️ **Not a gradient cosine** — the affinity literature says cosine is a hypothesis generator, not a verdict | one extra forward per probe step; **no retrain** | **Lookahead affinity ≈ that of doubling `w_o5` ⇒ confirms the LR-multiplier reading (Du et al.)** | **Distinguishable ⇒ O2's row tilt is a real second direction and the collinearity reading is wrong** |
 | **E-FLOW-A** | Is R2 buildable on OUR corpus? | Feasibility only: run an off-the-shelf flow estimator on ~200 sampled windows at 256×640/10 Hz; ego-compensate with `egomotion` + `camera_intrinsics`; measure (i) flow quality, (ii) whether residual flow **separates the known `obstacle.offline` agents** from background, (iii) precompute cost over 2 376 episodes | small, and **it is a perception measurement, not a training run** | **Residual flow separates agents ⇒ R2 is buildable and gets a pre-registration** | **It does not (rolling shutter, 10 Hz too sparse, cylindrical warp) ⇒ R2 is dead on this corpus and the individuation lever must come from AlpaSim/NuRec instead** |
@@ -922,8 +974,11 @@ question directly, and it can only confirm or refute the sharpest claim in this 
 
 ## 7. ⛔ WHAT THIS DOCUMENT DOES NOT COVER — read before acting
 
-1. ⚠️ **The `2026-08-17-latent-linear-ladder` stream had not landed a report** (`code/` and `raw/`
-   present, **no `.md`**). If it contradicts §3.4, **the ladder wins** — it is the newer instrument.
+1. ✅ **RESOLVED DURING THIS RUN — the `latent-linear-ladder` report LANDED and is incorporated at
+   §3.4a.** It **qualifies** §3.4 rather than contradicting it: the ~1.8 m over the null is real but
+   is an **ego-speed proxy**, and it flags an **intercept-penalisation defect in the shared ridge
+   readout** that taints every prior `K1 fails` from that instrument. ⭐ Its rung profile —
+   agent-count present, relative-motion at exactly zero — is an **independent confirmation of §2.3**.
 2. ⚠️ **§2.1a's 0.45–3.33 % is at INITIALISATION, n = 7 dry-ladder rows.** It does not establish
    O2's size at convergence. **E-O2-A is the measurement that does**, and it is a log read.
 3. ⚠️ **The cell→metre table is `ESTIMATED`, by its own docstring.** Every statement in §2.2 about
@@ -958,19 +1013,29 @@ question directly, and it can only confirm or refute the sharpest claim in this 
    and it settles the PI's weighting question directly.** Script banked and tested:
    `raw/2026-08-17-O234/o2_cov_from_logs.py`. If it returns Outcome A, **`--w-o2` is not an
    independent knob and the config should say so.**
-2. ⛔ **`PROBE_POSITIVE_CONTROL.md` §2.3's "genuinely new fact about the v6 latent" (+1.6–1.8 m,
-   r = +0.159) is UNCHECKED AGAINST AN EGO-SPEED CONFOUND** ([arXiv:2207.04153](https://arxiv.org/abs/2207.04153):
-   a positive probe is likely to ride a correlate). **Lead gap correlates with ego speed and our
-   latent is trained with a speed channel.** `E-PROBE-A` is zero-GPU on banked caches. ⚠️ **Until it
-   runs, that sentence should not be re-quoted as evidence the latent carries agents.**
-3. ⚠️ **S6 — the corpus-narrowness risk — belongs to the PI, not to this stream.** If Garrido et
+2. ⛔⛔ **`PROBE_POSITIVE_CONTROL.md` §2.3's "genuinely new fact about the v6 latent" (+1.6–1.8 m,
+   r = +0.159) MUST STOP BEING QUOTED AS EVIDENCE THE LATENT CARRIES AGENTS.** The ladder measured
+   the confound: **ego speed alone beats the entire 2 048-dim latent on the same metric
+   (K1 −1.562 PASS vs +1.580 FAIL)**, and partialling `v0` out leaves **r = +0.052**. The literature
+   predicted exactly this failure mode ([arXiv:2207.04153](https://arxiv.org/abs/2207.04153): a
+   positive probe is likely to ride a correlate) and **two independent streams converged on it
+   within a day.** ⚠️ **The brief for this run stated that fact as something that "DOES stand"; it
+   stands only as a statement about ego speed.** ⭐ **ROOT-CAUSE CLASS for `RETRACTION_LOG.md`: a
+   positive probe result quoted without a trivial-proxy control** — the same family as the nav-echo
+   bijection and the sitclf label-provenance leak.
+3. ⛔ **A SHARED INSTRUMENT DEFECT WITH BLAST RADIUS: `pc6_linear_readout.ridge_fit` penalises its
+   own intercept**, so a no-signal arm is driven toward **zero rather than toward the mean** and can
+   never tie the constant it is scored against. ⚠️ **Every pre-existing `K1 fails` from that readout
+   inherits this**, including the table re-quoted in §3.4. The ladder carries the repair; **it should
+   be propagated to `pc6_linear_readout.py` itself, not kept in one run's `code/`.**
+4. ⚠️ **S6 — the corpus-narrowness risk — belongs to the PI, not to this stream.** If Garrido et
    al.'s data ablation transfers, **no change to O2/O3/O4/O5/O6 fixes it**, and the answer is corpus
    composition (AlpaSim, NuRec, or external video). It is HYPOTHESIS-strength and it is the only
    finding here that could invalidate the whole objective class.
-4. ⚠️ **R1 and R2 add parameters ⇒ they CANNOT enter the live v6F 30 k**, which resumes
+5. ⚠️ **R1 and R2 add parameters ⇒ they CANNOT enter the live v6F 30 k**, which resumes
    tensor-strict. They belong at a stage boundary under `STAGE_MAY_INTRODUCE` or in a fresh arm.
    **This is a scheduling constraint, not a design objection.**
-5. ⚠️ **`DIAGRAM_CONFORMANCE.md` fixes F-7/F-8/F-9 (T2 contrastives, T5 temporal consistency, T3
+6. ⚠️ **`DIAGRAM_CONFORMANCE.md` fixes F-7/F-8/F-9 (T2 contrastives, T5 temporal consistency, T3
    multi-agent curriculum) are all still ⬜ NOT BUILT.** ⭐ **T5 (momentum-aware temporal
    consistency) is the closest existing catalog entry to R2's motion signal, and F-9's own note
    says T3 is gated on P8 occupancy maturity** — i.e. **the programme's own catalog already points
