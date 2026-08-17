@@ -1,5 +1,5 @@
 <!doctype html><html><head><meta charset="utf-8">
-<title>TanitAD — tactical label review (2.0 s horizon)</title>
+<title>[SUPERSEDED · seam 2.0 s] TanitAD — tactical label review</title>
 <style>
 :root{--ok:#1a7f37;--bad:#cf222e;--mid:#9a6700;--line:#d0d7de;--ink:#1f2328}
 *{box-sizing:border-box}
@@ -66,6 +66,30 @@ section.clip h3{margin:0;font:600 13px ui-monospace,Consolas,monospace}
 .vgroup label:has(input[value=unsure]:checked){background:#fff8e5;border-color:var(--mid)}
 .note{flex:1 1 300px;padding:5px 8px;border:1px solid var(--line);border-radius:5px}
 </style></head><body>
+<div data-superseded-banner="c89" style="background:#8b1a1a;color:#fff;padding:12px 16px;
+ border-radius:8px;margin:0 0 16px;font:14.5px/1.55 -apple-system,Segoe UI,
+ Roboto,sans-serif">
+ ⛔ <b>SUPERSEDED — THIS SHEET READS THE WRONG HORIZON (retraction C89).</b><br>
+ Every label below is read at <b>2.0&nbsp;s</b>, which is the <b>SEAM</b> where
+ the operative band ends and the tactical band begins — not the tactical band.
+ The binding spec is
+ <code style="background:rgba(255,255,255,.16);padding:1px 5px;border-radius:3px">
+ TAC_BAND_S = (2.0, 6.0)</code> in
+ <code style="background:rgba(255,255,255,.16);padding:1px 5px;border-radius:3px">
+ stack/tanitad/models/v6.py:136-140</code>. 2.0&nbsp;s was chosen because it was
+ the <b>argmax of κ</b>, then described as "the v6 tactical band", which it is
+ not.<br>
+ ⭐ <b>Do not adjudicate this sheet.</b> The rebuilt one is
+ <b>TACTICAL_VISUAL_REVIEW_BAND_2_6S.html</b>, read over
+ <b>(2.0,&nbsp;6.0]&nbsp;s</b>. Verdicts are stored under a different key, so
+ the two sheets cannot contaminate each other.<br>
+ ⚠️ The κ figures printed below (<b>LON 0.3655 / LAT 0.4694</b>) are
+ <b>SEAM</b> values, and they are also read at the threshold cell that
+ <i>maximised</i> κ. At the true band the agreement is materially
+ <b>worse</b> — see <code>raw/b1_band_agreement.json</code>.<br>
+ <span style="opacity:.85">Kept, not deleted, so the shape of the error stays
+ legible.</span>
+</div>
 <h1>Tactical label review — LAT and LON, read at the 2.0 s horizon</h1>
 <p class="lede"><b>No human has ever reviewed a tactical label.</b> Every
 number in <code>TACTICAL_LABEL_VALIDATION.md</code> is machine-vs-machine

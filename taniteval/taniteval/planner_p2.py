@@ -264,11 +264,34 @@ def build_seeds(v_target, v0, device, K, head_seed=None):
     return _clamp(seeds)
 
 
+CEM_SEED_DEFAULT = 0
+
+
+def cem_generator(device, seed=CEM_SEED_DEFAULT):
+    """One generator per collection run, threaded into every `cem_plan` call.
+
+    Device-matched: a CUDA `torch.randn` will not accept a CPU generator."""
+    g = torch.Generator(device=torch.device(device))
+    g.manual_seed(int(seed))
+    return g
+
+
 @torch.no_grad()
 def cem_plan(model, step_readout, states, aw, v_target, v0, w, cfg,
-             head_seed=None, plan_first=False):
+             head_seed=None, plan_first=False, gen=None):
     """CEM over future action sequences for a chunk of B windows. Returns
-    (best_act [B,K,2], best_traj [B,K,2], best_cost [B])."""
+    (best_act [B,K,2], best_traj [B,K,2], best_cost [B]).
+
+    ⛔ `gen` is NOT optional in practice. The CEM's only stochastic component is
+    the `eps` draw below; with `gen=None` it consumes global RNG state, so two
+    invocations of the same arm on the same windows return DIFFERENT numbers and
+    every verdict computed from them carries an unbounded sampling component.
+    This bit the programme once already: the P2 verdicts were re-decided against
+    an estimator correction while the planner underneath them was unseeded, so
+    "the number moved" and "the sampler moved" were not separable. Callers build
+    ONE generator per collection run and thread it — one generator reused across
+    chunks keeps the draws independent (identical distribution to the unseeded
+    version), while making the whole run reproducible."""
     B = states.shape[0]
     dev = states.device
     K, N, elite = cfg["K"], cfg["N"], cfg["elite"]
@@ -287,7 +310,7 @@ def cem_plan(model, step_readout, states, aw, v_target, v0, w, cfg,
     sig[..., 0] = cfg["sig_steer"]
     sig[..., 1] = cfg["sig_accel"]
     for _ in range(cfg["iters"]):
-        eps = torch.randn(B, N, K, 2, device=dev)
+        eps = torch.randn(B, N, K, 2, device=dev, generator=gen)
         cand = _clamp(mu[:, None] + sig[:, None] * eps)
         cost_c, traj_c = eval_candidates(model, step_readout, states, aw, cand,
                                          v_target, v0, w, K, plan_first)
@@ -336,12 +359,14 @@ def head_action_seed(model, states, v0, K, ego=None):
 # ======================================================================== #
 @torch.no_grad()
 def collect_openloop(model, step_readout, episodes, device, w=W, cfg=CEM,
-                     window=WINDOW, stride=STRIDE, chunk=16, speed_input=True):
+                     window=WINDOW, stride=STRIDE, chunk=16, speed_input=True,
+                     cem_seed=CEM_SEED_DEFAULT):
     """Every stride-window: CEM plan + the three baselines, all apples-to-apples.
 
     Returns dict of [N,K,2] full paths (planner/open_grnd/gt) + [N,4,2] waypoint
     sets (planner/open_grnd/cv/head/gt) + [N] meta (eid/speed/head_deg/v_target/
     vt_valid/plan_cost)."""
+    _gen = cem_generator(device, cem_seed)
     wp_idx = torch.tensor(IDX, device=device)
     acc = {n: [] for n in
            ("plan_wp", "open_wp", "cv_wp", "head_wp", "gt_wp",
@@ -383,7 +408,7 @@ def collect_openloop(model, step_readout, episodes, device, w=W, cfg=CEM,
             hs = head_action_seed(model, states, v0, cfg["K"], ego=ego)
             _, plan_traj, plan_cost = cem_plan(
                 model, step_readout, states, aw, vt, v0, w, cfg,
-                head_seed=hs, plan_first=False)
+                head_seed=hs, plan_first=False, gen=_gen)
             # --- operative rollout under TRUE actions (the gate rollout) -----
             open_traj, _ = rollout_decode(model.predictor, states, aw, fa_true,
                                           step_readout, K_MAX)
@@ -663,7 +688,7 @@ def analyze_openloop(col, n_splits=8, val_frac=0.2, n_boot=None, seed=0):
 # ======================================================================== #
 @torch.no_grad()
 def closed_loop_planner(model, step_readout, states0, aw, v0, v_target,
-                        speed_input, w, cfg, replan_every=1, k=K_MAX):
+                        speed_input, w, cfg, replan_every=1, k=K_MAX, gen=None):
     """Imagination-in-the-loop with a CEM planner. Same loop as
     closedloop.closed_loop_rollout (encode -> plan -> control -> imagine ->
     drive) but the PLAN is a CEM search over the frozen operative WM, executed
@@ -678,7 +703,7 @@ def closed_loop_planner(model, step_readout, states0, aw, v0, v_target,
             hs = head_action_seed(model, win_s, v, cfg["K"])
             plan_act, _, _ = cem_plan(model, step_readout, win_s, win_a,
                                       v_target, v, w, cfg, head_seed=hs,
-                                      plan_first=True)                    # [b,K,2]
+                                      plan_first=True, gen=gen)           # [b,K,2]
             step_in_plan = 0
         a = plan_act[:, step_in_plan]                                    # [b,2]
         step_in_plan += 1
@@ -702,8 +727,9 @@ def closed_loop_planner(model, step_readout, states0, aw, v0, v_target,
 @torch.no_grad()
 def collect_closedloop(model, step_readout, episodes, device, w=W, cfg=CEM_CL,
                        window=WINDOW, stride=16, chunk=16, speed_input=True,
-                       replan_every=1):
+                       replan_every=1, cem_seed=CEM_SEED_DEFAULT):
     """closed_bike (planner) + open_grnd (true actions) + cv + gt per window."""
+    _gen = cem_generator(device, cem_seed)
     wp_idx = torch.tensor(IDX, device=device)
     acc = {n: [] for n in ("closed_bike", "open_grnd", "cv", "gt",
                            "speed", "head_deg")}
@@ -735,7 +761,8 @@ def collect_closedloop(model, step_readout, episodes, device, w=W, cfg=CEM_CL,
             open_wp, _ = rollout_decode(model.predictor, states0, aw, fa,
                                         step_readout, K_MAX)
             clp = closed_loop_planner(model, step_readout, states0, aw, v0, vt,
-                                      speed_input, w, cfg, replan_every)
+                                      speed_input, w, cfg, replan_every,
+                                      gen=_gen)
             acc["closed_bike"].append(clp["closed_bike"][:, wp_idx].cpu())
             acc["open_grnd"].append(open_wp[:, wp_idx].cpu())
             acc["cv"].append(
