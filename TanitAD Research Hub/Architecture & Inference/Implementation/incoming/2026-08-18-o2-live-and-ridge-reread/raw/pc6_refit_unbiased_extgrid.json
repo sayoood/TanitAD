@@ -1,0 +1,760 @@
+{
+ "_evidence_class": "MEASURED (ours; refits of the banked pc6 latent caches on CPU, no GPU, no re-encode)",
+ "eval_tier": "T0-DIAGNOSTIC (WM diagnostic \u2014 never a driving number)",
+ "estimator": "taniteval.ci.paired_episode_cluster_bootstrap (seed 0)",
+ "forbidden": "overlapping_holdout_se",
+ "defect": "C92 \u2014 penalised intercept collapses predictions toward ZERO not the MEAN; biases the FLOOR; taints K1 FAIL verdicts",
+ "all_incumbent_fits_reproduce_banked": true,
+ "arms": {
+  "s11250": {
+   "inner_split_clips": 15,
+   "incumbent": {
+    "alpha_chosen": 10.0,
+    "alpha_inner_mae": {
+     "0.01": 9.0562,
+     "0.1": 7.8344,
+     "1": 6.5033,
+     "10": 5.9377,
+     "100": 7.3567,
+     "1000": 17.0832,
+     "10000": 21.5858,
+     "100000": 19.3999,
+     "1e+06": 17.5349,
+     "1e+07": 16.4679
+    },
+    "ridge_err_m": 6.7128,
+    "ridge_ci": [
+     6.0097,
+     7.4817
+    ],
+    "ridge_median_m": 5.8688,
+    "c_const_err_m": 5.1329,
+    "K1_delta": 1.5799,
+    "K1_lo": 0.7651,
+    "K1_hi": 2.455,
+    "K1_separated": true,
+    "K1_PASSES": false,
+    "K5_delta": 3.5913,
+    "K5_separated": true,
+    "K5_PASSES": false,
+    "corr_pred_gt": 0.1592,
+    "pred_sd_m": 5.781
+   },
+   "repaired_alpha_held": {
+    "alpha_chosen": 10.0,
+    "ridge_err_m": 6.7344,
+    "ridge_ci": [
+     6.0244,
+     7.5126
+    ],
+    "ridge_median_m": 5.8874,
+    "c_const_err_m": 5.1329,
+    "K1_delta": 1.6015,
+    "K1_lo": 0.7802,
+    "K1_hi": 2.48,
+    "K1_separated": true,
+    "K1_PASSES": false,
+    "K5_delta": 3.6129,
+    "K5_separated": true,
+    "K5_PASSES": false,
+    "corr_pred_gt": 0.1592,
+    "pred_sd_m": 5.781
+   },
+   "repaired": {
+    "alpha_chosen": 10000.0,
+    "alpha_inner_mae": {
+     "0.01": 9.0449,
+     "0.1": 7.8486,
+     "1": 6.5791,
+     "10": 6.0282,
+     "100": 5.5532,
+     "1000": 4.9288,
+     "10000": 4.8699,
+     "100000": 5.0595,
+     "1e+06": 5.0544,
+     "1e+07": 5.044
+    },
+    "ridge_err_m": 5.8694,
+    "ridge_ci": [
+     5.0832,
+     6.8056
+    ],
+    "ridge_median_m": 5.2726,
+    "c_const_err_m": 5.1329,
+    "K1_delta": 0.7364,
+    "K1_lo": 0.1297,
+    "K1_hi": 1.4425,
+    "K1_separated": true,
+    "K1_PASSES": false,
+    "K5_delta": 2.7479,
+    "K5_separated": true,
+    "K5_PASSES": false,
+    "corr_pred_gt": 0.0726,
+    "pred_sd_m": 4.052
+   },
+   "banked": {
+    "arm": "v6F-SW-30k@11250",
+    "run_stamp": "v6F-SW-30k@11250",
+    "alpha_chosen": 10.0,
+    "ridge_err_m": 6.7128,
+    "ridge_ci": [
+     6.0097,
+     7.4817
+    ],
+    "K1_delta": 1.5799,
+    "K1_lo": 0.7651,
+    "K1_hi": 2.455,
+    "K1_separated": true,
+    "K1_PASSES": false,
+    "K5_PASSES": false,
+    "corr_pred_gt": 0.1592,
+    "c_const_err_m": 5.1329
+   },
+   "reproduces_banked": true,
+   "reproduction_check": {
+    "alpha_chosen": {
+     "refit": 10.0,
+     "banked": 10.0
+    },
+    "ridge_err_m": {
+     "refit": 6.7128,
+     "banked": 6.7128
+    },
+    "K1_delta": {
+     "refit": 1.5799,
+     "banked": 1.5799
+    },
+    "K1_lo": {
+     "refit": 0.7651,
+     "banked": 0.7651
+    },
+    "K1_hi": {
+     "refit": 2.455,
+     "banked": 2.455
+    },
+    "K1_separated": {
+     "refit": true,
+     "banked": true
+    },
+    "K1_PASSES": {
+     "refit": false,
+     "banked": false
+    },
+    "corr_pred_gt": {
+     "refit": 0.1592,
+     "banked": 0.1592
+    }
+   },
+   "arm": "v6F-SW-30k@11250",
+   "run_stamp": "v6F-SW-30k@11250",
+   "n_eval_windows": 2721,
+   "n_eval_clusters": 70,
+   "n_train_windows": 2231,
+   "memory_shape": [
+    16,
+    128
+   ],
+   "c_const_m_value": 15.0133
+  },
+  "s09000": {
+   "inner_split_clips": 15,
+   "incumbent": {
+    "alpha_chosen": 10.0,
+    "alpha_inner_mae": {
+     "0.01": 8.7299,
+     "0.1": 7.8115,
+     "1": 6.5994,
+     "10": 6.0509,
+     "100": 7.7092,
+     "1000": 16.8772,
+     "10000": 21.5082,
+     "100000": 19.1952,
+     "1e+06": 17.2927,
+     "1e+07": 16.4069
+    },
+    "ridge_err_m": 6.9438,
+    "ridge_ci": [
+     6.1935,
+     7.8157
+    ],
+    "ridge_median_m": 5.8173,
+    "c_const_err_m": 5.1329,
+    "K1_delta": 1.8108,
+    "K1_lo": 1.0445,
+    "K1_hi": 2.6915,
+    "K1_separated": true,
+    "K1_PASSES": false,
+    "K5_delta": 3.8223,
+    "K5_separated": true,
+    "K5_PASSES": false,
+    "corr_pred_gt": 0.1077,
+    "pred_sd_m": 6.214
+   },
+   "repaired_alpha_held": {
+    "alpha_chosen": 10.0,
+    "ridge_err_m": 6.9639,
+    "ridge_ci": [
+     6.2139,
+     7.8385
+    ],
+    "ridge_median_m": 5.8335,
+    "c_const_err_m": 5.1329,
+    "K1_delta": 1.831,
+    "K1_lo": 1.0583,
+    "K1_hi": 2.7182,
+    "K1_separated": true,
+    "K1_PASSES": false,
+    "K5_delta": 3.8424,
+    "K5_separated": true,
+    "K5_PASSES": false,
+    "corr_pred_gt": 0.1077,
+    "pred_sd_m": 6.214
+   },
+   "repaired": {
+    "alpha_chosen": 1000.0,
+    "alpha_inner_mae": {
+     "0.01": 8.7372,
+     "0.1": 7.8164,
+     "1": 6.5571,
+     "10": 5.7297,
+     "100": 5.1375,
+     "1000": 4.705,
+     "10000": 4.7487,
+     "100000": 5.0374,
+     "1e+06": 5.0392,
+     "1e+07": 5.0409
+    },
+    "ridge_err_m": 6.424,
+    "ridge_ci": [
+     5.5733,
+     7.3932
+    ],
+    "ridge_median_m": 5.5679,
+    "c_const_err_m": 5.1329,
+    "K1_delta": 1.2911,
+    "K1_lo": 0.5698,
+    "K1_hi": 2.142,
+    "K1_separated": true,
+    "K1_PASSES": false,
+    "K5_delta": 3.3025,
+    "K5_separated": true,
+    "K5_PASSES": false,
+    "corr_pred_gt": 0.0841,
+    "pred_sd_m": 5.166
+   },
+   "banked": {
+    "arm": "v6F-SW-30k@9000",
+    "run_stamp": "v6F-SW-30k@9000",
+    "alpha_chosen": 10.0,
+    "ridge_err_m": 6.9438,
+    "ridge_ci": [
+     6.1935,
+     7.8157
+    ],
+    "K1_delta": 1.8108,
+    "K1_lo": 1.0445,
+    "K1_hi": 2.6915,
+    "K1_separated": true,
+    "K1_PASSES": false,
+    "K5_PASSES": false,
+    "corr_pred_gt": 0.1077,
+    "c_const_err_m": 5.1329
+   },
+   "reproduces_banked": true,
+   "reproduction_check": {
+    "alpha_chosen": {
+     "refit": 10.0,
+     "banked": 10.0
+    },
+    "ridge_err_m": {
+     "refit": 6.9438,
+     "banked": 6.9438
+    },
+    "K1_delta": {
+     "refit": 1.8108,
+     "banked": 1.8108
+    },
+    "K1_lo": {
+     "refit": 1.0445,
+     "banked": 1.0445
+    },
+    "K1_hi": {
+     "refit": 2.6915,
+     "banked": 2.6915
+    },
+    "K1_separated": {
+     "refit": true,
+     "banked": true
+    },
+    "K1_PASSES": {
+     "refit": false,
+     "banked": false
+    },
+    "corr_pred_gt": {
+     "refit": 0.1077,
+     "banked": 0.1077
+    }
+   },
+   "arm": "v6F-SW-30k@9000",
+   "run_stamp": "v6F-SW-30k@9000",
+   "n_eval_windows": 2721,
+   "n_eval_clusters": 70,
+   "n_train_windows": 2231,
+   "memory_shape": [
+    16,
+    128
+   ],
+   "c_const_m_value": 15.0133
+  },
+  "nullmatched": {
+   "inner_split_clips": 15,
+   "incumbent": {
+    "alpha_chosen": 100.0,
+    "alpha_inner_mae": {
+     "0.01": 13.1412,
+     "0.1": 13.1292,
+     "1": 13.0143,
+     "10": 12.1294,
+     "100": 10.2768,
+     "1000": 12.4939,
+     "10000": 15.8696,
+     "100000": 16.2299,
+     "1e+06": 16.2473,
+     "1e+07": 16.2487
+    },
+    "ridge_err_m": 8.534,
+    "ridge_ci": [
+     8.1484,
+     8.9358
+    ],
+    "ridge_median_m": 7.3019,
+    "c_const_err_m": 5.1329,
+    "K1_delta": 3.4011,
+    "K1_lo": 3.0143,
+    "K1_hi": 3.7659,
+    "K1_separated": true,
+    "K1_PASSES": false,
+    "K5_delta": 5.4125,
+    "K5_separated": true,
+    "K5_PASSES": false,
+    "corr_pred_gt": -0.0185,
+    "pred_sd_m": 8.468
+   },
+   "repaired_alpha_held": {
+    "alpha_chosen": 100.0,
+    "ridge_err_m": 8.5377,
+    "ridge_ci": [
+     8.1522,
+     8.9311
+    ],
+    "ridge_median_m": 7.2893,
+    "c_const_err_m": 5.1329,
+    "K1_delta": 3.4048,
+    "K1_lo": 3.0049,
+    "K1_hi": 3.7823,
+    "K1_separated": true,
+    "K1_PASSES": false,
+    "K5_delta": 5.4163,
+    "K5_separated": true,
+    "K5_PASSES": false,
+    "corr_pred_gt": -0.0185,
+    "pred_sd_m": 8.468
+   },
+   "repaired": {
+    "alpha_chosen": 1000000.0,
+    "alpha_inner_mae": {
+     "0.01": 12.2671,
+     "0.1": 12.2542,
+     "1": 12.1284,
+     "10": 11.1661,
+     "100": 8.2605,
+     "1000": 5.7892,
+     "10000": 5.079,
+     "100000": 5.043,
+     "1e+06": 5.0427,
+     "1e+07": 5.0427
+    },
+    "ridge_err_m": 5.1754,
+    "ridge_ci": [
+     4.6665,
+     5.7643
+    ],
+    "ridge_median_m": 4.9794,
+    "c_const_err_m": 5.1329,
+    "K1_delta": 0.0425,
+    "K1_lo": -0.0935,
+    "K1_hi": 0.1757,
+    "K1_separated": false,
+    "K1_PASSES": false,
+    "K5_delta": 2.054,
+    "K5_separated": true,
+    "K5_PASSES": false,
+    "corr_pred_gt": -0.0108,
+    "pred_sd_m": 0.014
+   },
+   "banked": {
+    "arm": "RANDOM-LATENT-NULL-MATCHED",
+    "run_stamp": "RANDOM-LATENT-NULL-MATCHED@11250",
+    "alpha_chosen": 100.0,
+    "ridge_err_m": 8.534,
+    "ridge_ci": [
+     8.1484,
+     8.9358
+    ],
+    "K1_delta": 3.4011,
+    "K1_lo": 3.0143,
+    "K1_hi": 3.7659,
+    "K1_separated": true,
+    "K1_PASSES": false,
+    "K5_PASSES": false,
+    "corr_pred_gt": -0.0185,
+    "c_const_err_m": 5.1329
+   },
+   "reproduces_banked": true,
+   "reproduction_check": {
+    "alpha_chosen": {
+     "refit": 100.0,
+     "banked": 100.0
+    },
+    "ridge_err_m": {
+     "refit": 8.534,
+     "banked": 8.534
+    },
+    "K1_delta": {
+     "refit": 3.4011,
+     "banked": 3.4011
+    },
+    "K1_lo": {
+     "refit": 3.0143,
+     "banked": 3.0143
+    },
+    "K1_hi": {
+     "refit": 3.7659,
+     "banked": 3.7659
+    },
+    "K1_separated": {
+     "refit": true,
+     "banked": true
+    },
+    "K1_PASSES": {
+     "refit": false,
+     "banked": false
+    },
+    "corr_pred_gt": {
+     "refit": -0.0185,
+     "banked": -0.0185
+    }
+   },
+   "arm": "RANDOM-LATENT-NULL-MATCHED",
+   "run_stamp": "RANDOM-LATENT-NULL-MATCHED@11250",
+   "n_eval_windows": 2721,
+   "n_eval_clusters": 70,
+   "n_train_windows": 2231,
+   "memory_shape": [
+    16,
+    128
+   ],
+   "c_const_m_value": 15.0133
+  },
+  "orc010": {
+   "inner_split_clips": 15,
+   "incumbent": {
+    "alpha_chosen": 100.0,
+    "alpha_inner_mae": {
+     "0.01": 11.2367,
+     "0.1": 10.8357,
+     "1": 8.9904,
+     "10": 6.6246,
+     "100": 5.9392,
+     "1000": 11.1574,
+     "10000": 17.7231,
+     "100000": 16.9633,
+     "1e+06": 16.3444,
+     "1e+07": 16.258
+    },
+    "ridge_err_m": 5.5617,
+    "ridge_ci": [
+     5.0666,
+     6.0992
+    ],
+    "ridge_median_m": 4.6658,
+    "c_const_err_m": 5.1329,
+    "K1_delta": 0.4288,
+    "K1_lo": -0.074,
+    "K1_hi": 0.8946,
+    "K1_separated": false,
+    "K1_PASSES": false,
+    "K5_delta": 2.4402,
+    "K5_separated": true,
+    "K5_PASSES": false,
+    "corr_pred_gt": 0.1775,
+    "pred_sd_m": 4.313
+   },
+   "repaired_alpha_held": {
+    "alpha_chosen": 100.0,
+    "ridge_err_m": 5.7015,
+    "ridge_ci": [
+     5.2076,
+     6.246
+    ],
+    "ridge_median_m": 4.7552,
+    "c_const_err_m": 5.1329,
+    "K1_delta": 0.5686,
+    "K1_lo": 0.0202,
+    "K1_hi": 1.0916,
+    "K1_separated": true,
+    "K1_PASSES": false,
+    "K5_delta": 2.58,
+    "K5_separated": true,
+    "K5_PASSES": false,
+    "corr_pred_gt": 0.1775,
+    "pred_sd_m": 4.313
+   },
+   "repaired": {
+    "alpha_chosen": 10000.0,
+    "alpha_inner_mae": {
+     "0.01": 11.2261,
+     "0.1": 10.8265,
+     "1": 8.9748,
+     "10": 6.6176,
+     "100": 5.4932,
+     "1000": 4.9713,
+     "10000": 4.6089,
+     "100000": 4.7552,
+     "1e+06": 4.9881,
+     "1e+07": 5.0372
+    },
+    "ridge_err_m": 5.2357,
+    "ridge_ci": [
+     4.7319,
+     5.8122
+    ],
+    "ridge_median_m": 4.5829,
+    "c_const_err_m": 5.1329,
+    "K1_delta": 0.1027,
+    "K1_lo": -0.3533,
+    "K1_hi": 0.5226,
+    "K1_separated": false,
+    "K1_PASSES": false,
+    "K5_delta": 2.1142,
+    "K5_separated": true,
+    "K5_PASSES": false,
+    "corr_pred_gt": 0.1935,
+    "pred_sd_m": 2.849
+   },
+   "banked": {
+    "arm": "GT-ORACLE-CELLS-n0.1@11250",
+    "run_stamp": "GT-ORACLE-CELLS-n0.1@11250",
+    "alpha_chosen": 100.0,
+    "ridge_err_m": 5.5617,
+    "ridge_ci": [
+     5.0666,
+     6.0992
+    ],
+    "K1_delta": 0.4288,
+    "K1_lo": -0.074,
+    "K1_hi": 0.8946,
+    "K1_separated": false,
+    "K1_PASSES": false,
+    "K5_PASSES": false,
+    "corr_pred_gt": 0.1775,
+    "c_const_err_m": 5.1329
+   },
+   "reproduces_banked": true,
+   "reproduction_check": {
+    "alpha_chosen": {
+     "refit": 100.0,
+     "banked": 100.0
+    },
+    "ridge_err_m": {
+     "refit": 5.5617,
+     "banked": 5.5617
+    },
+    "K1_delta": {
+     "refit": 0.4288,
+     "banked": 0.4288
+    },
+    "K1_lo": {
+     "refit": -0.074,
+     "banked": -0.074
+    },
+    "K1_hi": {
+     "refit": 0.8946,
+     "banked": 0.8946
+    },
+    "K1_separated": {
+     "refit": false,
+     "banked": false
+    },
+    "K1_PASSES": {
+     "refit": false,
+     "banked": false
+    },
+    "corr_pred_gt": {
+     "refit": 0.1775,
+     "banked": 0.1775
+    }
+   },
+   "arm": "GT-ORACLE-CELLS-n0.1@11250",
+   "run_stamp": "GT-ORACLE-CELLS-n0.1@11250",
+   "n_eval_windows": 2721,
+   "n_eval_clusters": 70,
+   "n_train_windows": 2231,
+   "memory_shape": [
+    16,
+    128
+   ],
+   "c_const_m_value": 15.0133
+  },
+  "orcdir": {
+   "inner_split_clips": 15,
+   "incumbent": {
+    "alpha_chosen": 1.0,
+    "alpha_inner_mae": {
+     "0.01": 1.3711,
+     "0.1": 1.3118,
+     "1": 1.1005,
+     "10": 1.1219,
+     "100": 3.3777,
+     "1000": 12.0032,
+     "10000": 18.1331,
+     "100000": 17.0348,
+     "1e+06": 16.3545,
+     "1e+07": 16.2591
+    },
+    "ridge_err_m": 1.0165,
+    "ridge_ci": [
+     0.9891,
+     1.0443
+    ],
+    "ridge_median_m": 0.8562,
+    "c_const_err_m": 5.1329,
+    "K1_delta": -4.1164,
+    "K1_lo": -4.7263,
+    "K1_hi": -3.6032,
+    "K1_separated": true,
+    "K1_PASSES": true,
+    "K5_delta": -2.105,
+    "K5_separated": true,
+    "K5_PASSES": true,
+    "corr_pred_gt": 0.9789,
+    "pred_sd_m": 6.236
+   },
+   "repaired_alpha_held": {
+    "alpha_chosen": 1.0,
+    "ridge_err_m": 1.0165,
+    "ridge_ci": [
+     0.9889,
+     1.0444
+    ],
+    "ridge_median_m": 0.8582,
+    "c_const_err_m": 5.1329,
+    "K1_delta": -4.1164,
+    "K1_lo": -4.7261,
+    "K1_hi": -3.6029,
+    "K1_separated": true,
+    "K1_PASSES": true,
+    "K5_delta": -2.105,
+    "K5_separated": true,
+    "K5_PASSES": true,
+    "corr_pred_gt": 0.9789,
+    "pred_sd_m": 6.236
+   },
+   "repaired": {
+    "alpha_chosen": 100.0,
+    "alpha_inner_mae": {
+     "0.01": 1.3368,
+     "0.1": 1.2761,
+     "1": 1.0193,
+     "10": 0.7217,
+     "100": 0.612,
+     "1000": 0.7437,
+     "10000": 1.8188,
+     "100000": 4.0302,
+     "1e+06": 4.8942,
+     "1e+07": 5.0273
+    },
+    "ridge_err_m": 0.5798,
+    "ridge_ci": [
+     0.5621,
+     0.5975
+    ],
+    "ridge_median_m": 0.4969,
+    "c_const_err_m": 5.1329,
+    "K1_delta": -4.5531,
+    "K1_lo": -5.1551,
+    "K1_hi": -4.0451,
+    "K1_separated": true,
+    "K1_PASSES": true,
+    "K5_delta": -2.5417,
+    "K5_separated": true,
+    "K5_PASSES": true,
+    "corr_pred_gt": 0.9932,
+    "pred_sd_m": 6.12
+   },
+   "banked": {
+    "arm": "GT-ORACLE-DIRECT-n0.1@11250",
+    "run_stamp": "GT-ORACLE-DIRECT-n0.1@11250",
+    "alpha_chosen": 1.0,
+    "ridge_err_m": 1.0165,
+    "ridge_ci": [
+     0.9891,
+     1.0443
+    ],
+    "K1_delta": -4.1164,
+    "K1_lo": -4.7263,
+    "K1_hi": -3.6032,
+    "K1_separated": true,
+    "K1_PASSES": true,
+    "K5_PASSES": true,
+    "corr_pred_gt": 0.9789,
+    "c_const_err_m": 5.1329
+   },
+   "reproduces_banked": true,
+   "reproduction_check": {
+    "alpha_chosen": {
+     "refit": 1.0,
+     "banked": 1.0
+    },
+    "ridge_err_m": {
+     "refit": 1.0165,
+     "banked": 1.0165
+    },
+    "K1_delta": {
+     "refit": -4.1164,
+     "banked": -4.1164
+    },
+    "K1_lo": {
+     "refit": -4.7263,
+     "banked": -4.7263
+    },
+    "K1_hi": {
+     "refit": -3.6032,
+     "banked": -3.6032
+    },
+    "K1_separated": {
+     "refit": true,
+     "banked": true
+    },
+    "K1_PASSES": {
+     "refit": true,
+     "banked": true
+    },
+    "corr_pred_gt": {
+     "refit": 0.9789,
+     "banked": 0.9789
+    }
+   },
+   "arm": "GT-ORACLE-DIRECT-n0.1@11250",
+   "run_stamp": "GT-ORACLE-DIRECT-n0.1@11250",
+   "n_eval_windows": 2721,
+   "n_eval_clusters": 70,
+   "n_train_windows": 2231,
+   "memory_shape": [
+    16,
+    128
+   ],
+   "c_const_m_value": 15.0133
+  }
+ }
+}

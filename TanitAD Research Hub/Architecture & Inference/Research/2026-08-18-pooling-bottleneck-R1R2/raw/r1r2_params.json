@@ -1,0 +1,154 @@
+{
+  "geometry": {
+    "image": [
+      256,
+      640
+    ],
+    "patch": 16,
+    "d_model": 384,
+    "token_grid": [
+      16,
+      40
+    ],
+    "n_tokens": 640,
+    "readout_grid": [
+      4,
+      4
+    ],
+    "d_readout": 128,
+    "exact_pool": true,
+    "pool_repr": "AvgPool2d(kernel_size=(4, 10), stride=(4, 10), padding=0)",
+    "pool_kernel": [
+      4,
+      10
+    ],
+    "tokens_per_cell": 40,
+    "px_per_cell": [
+      64,
+      160
+    ],
+    "n_cells": 16,
+    "d_op": 2048,
+    "readout_params": 49280,
+    "pool_params": 0,
+    "param_budget": 300000000
+  },
+  "O3_existing_post_pool": {
+    "params": 1649792,
+    "hidden": 256,
+    "n_units": 16,
+    "d_unit": 128
+  },
+  "R1_token_masked_predictor": {
+    "hidden192_depth2": {
+      "total": 1160832,
+      "per_submodule": {
+        "inp": 73920,
+        "pos": 122880,
+        "mask_token": 192,
+        "blocks": 889728,
+        "out": 74112
+      }
+    },
+    "hidden256_depth2": {
+      "total": 1940864,
+      "per_submodule": {
+        "inp": 98560,
+        "pos": 163840,
+        "mask_token": 256,
+        "blocks": 1579520,
+        "out": 98688
+      }
+    },
+    "hidden256_depth3": {
+      "total": 2730624,
+      "per_submodule": {
+        "inp": 98560,
+        "pos": 163840,
+        "mask_token": 256,
+        "blocks": 2369280,
+        "out": 98688
+      }
+    },
+    "hidden384_depth2": {
+      "total": 4090752,
+      "per_submodule": {
+        "inp": 147840,
+        "pos": 245760,
+        "mask_token": 384,
+        "blocks": 3548928,
+        "out": 147840
+      }
+    }
+  },
+  "R1_smoke": {
+    "in": [
+      2,
+      640,
+      384
+    ],
+    "out": [
+      2,
+      640,
+      384
+    ],
+    "ok": true
+  },
+  "R2_residual_flow_head": {
+    "cells_hidden0": 387,
+    "cells_hidden128": 16899,
+    "cells_hidden256": 33795,
+    "tokens_hidden0": 1155,
+    "tokens_hidden128": 49667,
+    "tokens_hidden256": 99331
+  },
+  "R2_smoke": {
+    "out": [
+      2,
+      640,
+      3
+    ],
+    "ok": true
+  },
+  "ladder": {
+    "MODULE_GROUPS": [
+      "encoder",
+      "readout",
+      "predictor_op",
+      "layer_tac",
+      "layer_str",
+      "planner",
+      "aux",
+      "interp"
+    ],
+    "LADDER_UNTRAINED_GROUPS": [
+      "interp"
+    ],
+    "STAGE_GROUPS": {
+      "S-W": [
+        "encoder",
+        "readout",
+        "predictor_op",
+        "aux"
+      ],
+      "S-T": [
+        "layer_tac",
+        "planner"
+      ],
+      "S-S": [
+        "layer_str"
+      ],
+      "S-J": [
+        "encoder",
+        "readout",
+        "predictor_op",
+        "layer_tac",
+        "layer_str",
+        "planner",
+        "aux"
+      ]
+    },
+    "S-J_is_MODULE_GROUPS_identity": false,
+    "S-J_equals_module_groups_by_value": false
+  }
+}

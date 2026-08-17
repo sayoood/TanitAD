@@ -1,5 +1,29 @@
 # O2 / O3 / O4 — DESIGN AND WEIGHTING RESEARCH
 
+> ## ⛔ THREE NUMBERS IN THIS DOCUMENT ARE SUPERSEDED — read this before quoting anything below
+>
+> Corrected 2026-08-18 by the live-log re-measurement and the repaired-ridge re-read. **The
+> DERIVATIONS in §2 stand** — `cells()` is a pure reshape, so O2 = O5's step-`j` term +
+> `Cov_c(w, err)` is algebra, not measurement. **The MEASUREMENTS that were read off a dry ladder
+> do not.**
+>
+> | § | superseded claim | corrected, MEASURED | where |
+> |---|---|---|---|
+> | **§2.1a** | O2's unique content **1.81 %** median, **sign-unstable** (4−/3+), n=7 | ⭐ **34.23 %** median (4.18–60.10), **254 −/0 + — perfectly sign-stable**, rising 16.2 %→46.4 % (**late/early 2.59×**), n=**254** on the live v6F-SW-30k run | **C96** |
+> | **§3.4** | the latent beats a random null by **1.6–1.8 m** | ⛔ **INVERTS** (−1.821 → **+0.691**; −1.590 → **+1.246**). At the *eval-optimal* alpha — cheating in the arm's favour — the true margin is **~0.02–0.07 m: a 25–90× overstatement**, and **no alpha anywhere reaches a PASS.** The arm wins on the inner split and loses on held-out episodes ⇒ **episode-level overfitting, not agent geometry.** | **C92, C97** |
+> | **§4** | *"DAVIS J&F **52.5 → 69.0**"* | ⛔ **The delta is UNSUPPORTED.** 69.0 is V-JEPA 2.1 ViT-G's **absolute** DAVIS-S score (Table 8); **no V-JEPA 2 DAVIS baseline appears in the paper and 52.5 appears nowhere.** | R1/R2 spec §222 |
+>
+> ⚠️ **The banked n=7 was narrower than its own caveat said**: identical `w` extrema across all four
+> files mean **one replayed dummy batch**, 2 windows, `o5_k` 12 against the live 60. ⛔ **And the
+> other leg of "O2 is redundant" — `cos(g_O2, g_O5) = +0.870` — came from a probe whose own metadata
+> reads *"SYNTHETIC CPU build — NOT the live checkpoint"*, at 732,541 params against the live
+> 336,542,025. BOTH LEGS WERE INITIALISATION-TIME.**
+>
+> ⭐ **The conclusion changes shape, and the new one is more actionable.** O2 is **not** a redundant
+> term doing nothing. `Cov < 0` on **all 254 rows** means it **systematically de-emphasises the
+> high-error far field** — a substantial and *growing* fraction of the objective, **aimed away from
+> the agents.** That is a stronger reason to change it than redundancy ever was.
+
 **Date:** 2026-08-17 · **Branch:** `agent/arch-inf-20260803` · **Agent:** o234-design-research
 **PI decision this serves (2026-08-17, verbatim):** *"We will stick to the unsupervised path of the
 wm, we need a research about design and weighting of O2/O3/O4."*

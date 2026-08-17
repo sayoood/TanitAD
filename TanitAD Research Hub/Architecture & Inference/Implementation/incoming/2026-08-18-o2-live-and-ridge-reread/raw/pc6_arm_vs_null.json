@@ -1,0 +1,76 @@
+{
+ "_evidence_class": "MEASURED (ours; paired refits on the banked caches, CPU)",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "estimator": "taniteval.ci.paired_episode_cluster_bootstrap (seed 0)",
+ "forbidden": "overlapping_holdout_se",
+ "claim_under_test": "2026-08-17-O234-DESIGN-RESEARCH.md 3.4: 'the v6 latent beats a random-vector null by 1.6-1.8 m'",
+ "null_construction": "pA_null_matched.py \u2014 the REAL cache with `cells` replaced by torch.randn(seed 0); every window, clip and target preserved",
+ "arms": {
+  "s11250": {
+   "paired_valid": true,
+   "n_eval_windows": 2721,
+   "n_eval_clusters": 70,
+   "incumbent": {
+    "arm_alpha": 10.0,
+    "null_alpha": 100.0,
+    "arm_err_m": 6.7128,
+    "null_err_m": 8.534,
+    "arm_minus_null_m": -1.8212,
+    "lo": -2.5663,
+    "hi": -1.0059,
+    "separated": true,
+    "arm_beats_null": true,
+    "arm_pred_sd": 5.7815,
+    "null_pred_sd": 8.4677,
+    "gt_sd": 6.1999
+   },
+   "repaired": {
+    "arm_alpha": 10000.0,
+    "null_alpha": 100000.0,
+    "arm_err_m": 5.8694,
+    "null_err_m": 5.1781,
+    "arm_minus_null_m": 0.6912,
+    "lo": 0.1021,
+    "hi": 1.3616,
+    "separated": true,
+    "arm_beats_null": false,
+    "arm_pred_sd": 4.0516,
+    "null_pred_sd": 0.1307,
+    "gt_sd": 6.1999
+   }
+  },
+  "s09000": {
+   "paired_valid": true,
+   "n_eval_windows": 2721,
+   "n_eval_clusters": 70,
+   "incumbent": {
+    "arm_alpha": 10.0,
+    "null_alpha": 100.0,
+    "arm_err_m": 6.9438,
+    "null_err_m": 8.534,
+    "arm_minus_null_m": -1.5902,
+    "lo": -2.3406,
+    "hi": -0.7208,
+    "separated": true,
+    "arm_beats_null": true,
+    "arm_pred_sd": 6.2142,
+    "null_pred_sd": 8.4677,
+    "gt_sd": 6.1999
+   },
+   "repaired": {
+    "arm_alpha": 1000.0,
+    "null_alpha": 100000.0,
+    "arm_err_m": 6.424,
+    "null_err_m": 5.1781,
+    "arm_minus_null_m": 1.2459,
+    "lo": 0.5623,
+    "hi": 2.0963,
+    "separated": true,
+    "arm_beats_null": false,
+    "arm_pred_sd": 5.1655,
+    "null_pred_sd": 0.1307,
+    "gt_sd": 6.1999
+   }
+  }
+ }
+}

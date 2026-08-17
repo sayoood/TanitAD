@@ -4987,3 +4987,102 @@ Every loosening is a candidate FAIL-suppressor.*
 `sel_gap` is **not deleted** — it stays `required` and binds on any arm with a scorer (resolved from
 `stack.cand_score`, **not** the flag), so **S-S is solved rather than moved**. Launch line
 **diffed, not asserted**: byte-identical, md5 `5381f2ea…` both sides, `--v2-lru 64` carried.
+
+---
+## C96 — C93's NUMBERS ARE OVERTURNED BY THE LIVE LOG: O2's UNIQUE CONTENT IS **34 %, PERFECTLY SIGN-STABLE, AND GROWING** (2026-08-18)
+
+**RETRACTED — the numeric half of C93, logged by me hours earlier.** I wrote that O2's unique
+content is *"0.45–3.33 %, median 1.81 %, and sign-unstable (4 −, 3 +)"*, and that this made O2 not
+separately weightable.
+
+**MEASURED on the LIVE run** (v6F-SW-30k, steps 50–12 650, **n = 254** training rows, log md5
+`370e778b0b7f79917c94302337f142c1` verified both ends):
+
+| | banked (O234 §2.1a) | **live** |
+|---|---|---|
+| source | dry ladder, **steps 1–2, batch 2** | steps 50–12 650 |
+| n | 7 | **254** |
+| `|Cov|/unweighted` | median **1.81 %** | **median 34.23 %** (4.18–60.10) |
+| sign | unstable, **4 −/3 +** | ⭐ **254 −, 0 + — perfectly stable** |
+| trend | — | 16.2 % → 46.4 %, **late/early 2.59×** |
+
+⇒ **The pre-registered kill criterion — *"if it stays sign-unstable, O2 is not separately
+weightable"* — DOES NOT FIRE.** Cross-checked by running the O234 package's **own unmodified
+instrument** on the live log: identical to every digit.
+
+⚠️ **WHAT SURVIVES AND WHAT DOES NOT.** The **algebraic identity stands** — `cells()` is a pure
+reshape, so O2 = O5's step-`j` term + `Cov_c(w, err)` is a *derivation*, not a measurement. What
+dies is the **conclusion drawn from it**: the covariance term is not a rounding error, it is a
+**third of the objective and rising.**
+
+⇒ **ROOT-CAUSE CLASS: A DECISION-GRADE NUMBER TAKEN FROM A DRY LADDER AND READ AS THE LIVE RUN.**
+The banked n = 7 was narrower even than its own caveat admitted — identical `w` extrema across all
+four files means **one replayed dummy batch, 2 windows, `o5_k` 12 against the live 60.** ⛔ **And the
+other leg of "O2 is redundant" is the same class:** the `cos(g_O2, g_O5) = +0.870` came from a probe
+whose **own metadata reads "SYNTHETIC CPU build — NOT the live checkpoint"**, at **732,541 params
+against the live 336,542,025.** ⇒ **BOTH LEGS WERE INITIALISATION-TIME.** Same family as
+operating-standard rule 1: a claim that decides a GPU-day must be MEASURED on the thing it decides
+about.
+
+⭐ **AND THE SIGN IS THE REAL FINDING, not the magnitude.** `Cov < 0` on **all 254 rows** means O2
+**systematically DE-EMPHASISES the high-error far field.** So O2 is not a redundant term doing
+nothing — it is a **substantial term aimed away from the agents**, and it is doing *more* of that
+as training proceeds. That is a stronger reason to change it than redundancy ever was.
+
+⇒ ⛔ **DO NOT quote the 1.81 % / sign-unstable figures again.** `MODEL_REGISTRY.md` and any O2
+weighting decision use the live-log values.
+
+---
+
+## C97 — THE C92 RIDGE REPAIR OPENED THE MIRROR-IMAGE DEFECT, EXACTLY AS C95 WARNED (2026-08-18)
+
+**MEASURED:** under the repaired ridge (`intercept_col=-1`), a fully-shrunk fit **is** "predict the
+train **mean**" — while `C-CONST` is the train **MEDIAN**. On a skewed target K1 therefore
+degenerates into **mean-vs-median**, and a **pure `torch.randn` null now "PASSES" `n_agents_all`
+at −1.884**, with `pred_sd` **0.715** against `gt_sd` **46.459**.
+
+⇒ **C92 made no-signal arms FAIL by construction. This makes them PASS by construction.** The same
+criterion, biased in the opposite direction, by its own repair.
+
+⇒ ⛔ **A `pred_sd/gt_sd` degeneracy guard is REQUIRED before any repaired PASS is quotable.**
+`lead_gap` is unaffected (its target is not skewed that way), so the re-read verdicts below stand.
+
+⇒ **ROOT-CAUSE CLASS: EXACTLY THE ONE C95 NAMED HOURS EARLIER — *"when you loosen a gate, test the
+direction you were not trying to fix."*** There it was an E4 repair that briefly built a gate which
+could not report FAIL. Here it is a floor repair that lets noise report PASS. **Every correction to
+a criterion is a candidate bias in the opposite direction, and the repair is not finished until both
+directions are tested.**
+
+### What the re-read actually returned (all 5 incumbent refits reproduce banked BIT-EXACTLY, so only the intercept penalty moved)
+
+| arm | before | after | verdict |
+|---|---|---|---|
+| `v6F@11250` | +1.580 | **+0.736** | separated — **FAIL SURVIVES** |
+| `v6F@9000` | +1.811 | **+1.291** | separated — **FAIL SURVIVES** |
+| `RANDOM-NULL` | +3.401 | **+0.043** | **not separated — DIES** |
+| `GT-ORACLE-DIRECT` | 1.016 m | **0.580 m**, r +0.9932 | **PASS survives and STRENGTHENS** |
+
+⇒ **2 of 3 FAILs survive an unbiased floor; the third was 98.7 % instrument.** Mechanism measured:
+with the bias penalised, the noise arm had to **load features** to reach y's 15 m level, giving
+`pred_sd` **8.468** against `gt_sd` 6.200; repaired, it collapses to **0.131** — a constant.
+
+⭐ **AND C92 IS SHARPER THAN I STATED IT.** O234 §3.4's *"the latent beats a random null by
+1.6–1.8 m"* does not merely shrink — **it INVERTS, separated in both directions** (−1.821 → **+0.691**;
+−1.590 → **+1.246**). An alpha sweep bounds the truth: at the **eval-optimal** alpha — cheating in the
+arm's own favour — the latent reaches **5.113 m** against a constant's **5.133** and noise's **5.175**.
+⇒ **~0.02–0.07 m, not 1.6–1.8 m: a 25–90× overstatement, and NO alpha anywhere reaches a PASS.**
+The arm beats the null on the **inner split** and loses on **held-out episodes** ⇒ **episode-level
+overfitting, not agent geometry.**
+
+⚠️ **STILL OUTSTANDING, ZERO-GPU:** enumeration by opening artifacts (C91) found **24 files, 214
+verdict rows, 170 still standing on the biased solve — 90 of them separated FAILs.** The ladder
+shares the same `ridge_fit`. Those 90 are not yet findings.
+
+⭐ **A REASSURING MEASUREMENT, recorded because the alarming version was the natural guess.** A
+repo-wide audit found **15 ridge implementations**, of which 5 use the `np.eye` idiom. **All four
+others already handle the intercept correctly** — each carries `A[-1,-1] -= lam` with a comment
+reading *"do not penalise the intercept"*, several of them weeks OLDER than `pc6`. ⇒ `pc6` was
+**not the norm; it was the sole regression from an idiom the repo had already written down four
+times.** *(And my own "there is exactly ONE copy of the module" was true of the FILENAME and false
+of the DEFECT — I searched for `pc6_linear_readout*` rather than for `ridge_fit`. Absence found by
+one search pattern is not absence.)*
