@@ -131,6 +131,19 @@ Both were found by running the instrument against its own null, and both would h
 
 ## 8. What could NOT be run, and exactly what closes it
 
+> ### ⭐ CORRECTION 2026-08-17 — §8's BLOCKER IS CLOSED IN CODE, AND WAS THEN BLOCKED AGAIN BY A PATH
+>
+> **The six lines below were LANDED (`6a7c006`) and this section is stale as written.** `--dump-seam-plan <dir>` exists in the trainer's CLI and is wired into the training loop at the `--save-every` boundary, delegating to `taniteval.seam_dump.{seam_dump_from_plan, save_seam_dump}`. It re-uses `L["out"]["plan"]`, which is **already computed for the step's loss** — **zero extra GPU** — and passes `eids=b["episode_id"]`, so the episode-cluster bootstrap gets real clusters rather than one window per cluster.
+>
+> ⛔ **But it still banked nothing, for two reasons, and neither was loud** (MEASURED 2026-08-17, `ST_LAUNCH_READINESS.md` §6 · both fixed 2026-08-17, `…/2026-08-17-st-launch-fixes/`):
+>
+> 1. **Nothing turned it on.** `--dump-seam-plan` appeared in no `ChainStep.extra` and in no `trainer_argv` branch, so the module was never even imported. ⇒ `v6_chain` now emits `--dump-seam-plan <out>/seam` on **S-T, S-S and S-J** (and deliberately **not** S-W — see the ⚠️ at the end of this section).
+> 2. **Under the launch's own `PYTHONPATH` the import FAILED.** `taniteval` is a **SIBLING of `stack/`**, not a member of it, so `PYTHONPATH=<repo>/stack` gives `ModuleNotFoundError: No module named 'taniteval'` — MEASURED on Thor **and** the dev box. The trainer's `except Exception` printed *"[v6 seam] dump FAILED … — training continues"* (correct for a diagnostic) and carried on, so the failure lived in a log line at every save boundary while the artifact directory stayed empty. **The first attempt is ~1.8 h in at `--save-every 250`** — the analysis-time-import family. ⇒ `launch_line`/`manifest_text` now emit **both roots**, and `train_v6_staged.preflight` **REFUSES at startup** (exit 2) when `--dump-seam-plan` is set and `taniteval.seam_dump` cannot be imported.
+>
+> ⚠️ **The dry ladder cannot exercise this path** — `--dry-run` returns before the training loop's save boundary — so the wiring had **never been executed by anything**. That is what the startup preflight makes visible before 3.15 GPU-days are spent. Pinned by `stack/tests/test_v6_st_launch_fixes.py` (`test_E5_*`).
+>
+> The rest of this section is kept as the historical record of why the instrument had produced no numbers.
+
 ⛔ **There is no banked v6 60-step plan anywhere in the repo, so the instrument has produced NO real-arm numbers.** Three independent probes:
 
 1. `grep torch.save|np.savez` over `train_v6_staged.py` / `gate_emitters.py` / `run_gate.py` → the only save is the **checkpoint** (`{"stack": …, "opt": …}`). Nothing banks `emit()`'s output.

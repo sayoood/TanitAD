@@ -649,6 +649,24 @@ def _ccfg(root, **kw):
     return c
 
 
+def _seed(plan, c):
+    """Each step's own `config.json`, as the trainer writes it at startup.
+
+    ⚠️ REQUIRED SINCE E1 (2026-08-17): `trainer_argv` now CARRIES the ancestor's
+    model geometry out of that file and REFUSES rather than emit a
+    geometry-free line — MEASURED, the old line built 87.93 M against a
+    336.54 M checkpoint. A fixture with no ancestor record is asking for an
+    argv the chain will not write.
+    """
+    C = _chain()
+    for s in plan:
+        Path(s.out).mkdir(parents=True, exist_ok=True)
+        args = C.parse_argv_geometry(
+            list(C.TINY_GEOMETRY) + ["--n-candidates", str(c.n_candidates)]
+        ) | {"tac_goal_cond": bool(s.tac_goal_cond), "selector": s.selector}
+        (Path(s.out) / "config.json").write_text(json.dumps({"args": args}))
+
+
 def test_the_default_ladder_carries_the_port_on_every_stage_after_S_W(
         tmp_path):
     """F-1's operational half: S-T must not launch without the port, and once
@@ -657,6 +675,7 @@ def test_the_default_ladder_carries_the_port_on_every_stage_after_S_W(
     C = _chain()
     c = _ccfg(tmp_path)
     plan = C.build_plan(c)
+    _seed(plan, c)
     for s in plan:
         av = C.trainer_argv(s, c, plan)
         if s.key == "S-W":
@@ -669,6 +688,7 @@ def test_the_port_can_be_dropped_only_as_a_DECLARED_decision(tmp_path):
     C = _chain()
     c = _ccfg(tmp_path, tac_goal_cond=False)
     plan = C.build_plan(c)
+    _seed(plan, c)
     for s in plan:
         assert "--tac-goal-cond" not in C.trainer_argv(s, c, plan), s.key
     # and the CLI spelling reaches the config
@@ -683,6 +703,7 @@ def test_the_S_T_argv_parses_through_the_trainer_parser(tmp_path):
     C = _chain()
     c = _ccfg(tmp_path)
     plan = C.build_plan(c)
+    _seed(plan, c)
     st = C.step_by_key(plan, "S-T")
     a = _args(*C.trainer_argv(st, c, plan))
     assert a.tac_goal_cond is True and a.stage == "S-T"

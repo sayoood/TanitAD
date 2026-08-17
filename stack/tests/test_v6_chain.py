@@ -63,11 +63,44 @@ def write_gate(step, *, stage, verdict, dry=True, **extra):
     return g
 
 
-def touch_ancestor(step):
-    """The `--init-from` FILE only. The chain checks the certificate first and
-    the weights second, so a gate test still needs the ancestor to exist."""
+def write_ancestor_config(step, argv=()):
+    """The ancestor's OWN `config.json`, as the trainer writes it at startup.
+
+    ⛔ A fixture with a `stage_gate.json` and NO `config.json` is a state that
+    CANNOT EXIST — the trainer writes `config.json` long before any gate. The
+    old fixture omitted it, and that omission is part of why E1 survived: the
+    successor's geometry was never compared against anything, because there was
+    nothing to compare it against.
+
+    Every field is DERIVED — the geometry from an argv through the chain's own
+    parser, and the two INTRODUCIBLE fields off the `ChainStep` itself — so the
+    fixture cannot drift from what the chain would really have launched.
+    """
+    Path(step.out).mkdir(parents=True, exist_ok=True)
+    args = C.parse_argv_geometry(list(argv)) | {
+        "tac_goal_cond": bool(step.tac_goal_cond), "selector": step.selector}
+    (Path(step.out) / "config.json").write_text(json.dumps({"args": args}))
+
+
+def seed_plan(plan, c):
+    """Every step's `config.json`, so any successor's geometry can be carried.
+
+    The dry ladder's steps all build the TINY stack, so TINY_GEOMETRY plus the
+    fan size IS their geometry — the same two things `trainer_argv` emits.
+    """
+    for s in plan:
+        write_ancestor_config(
+            s, list(C.TINY_GEOMETRY) + ["--n-candidates", str(c.n_candidates)]
+            if c.tiny else ["--n-candidates", str(c.n_candidates)])
+
+
+def touch_ancestor(step, argv=None):
+    """The `--init-from` FILE and the ancestor's own record. The chain checks
+    the certificate first and the weights second, so a gate test still needs the
+    ancestor to exist."""
     Path(step.out).mkdir(parents=True, exist_ok=True)
     (Path(step.out) / "dry_ckpt.pt").write_bytes(b"")
+    write_ancestor_config(step, C.TINY_GEOMETRY if argv is None else argv)
 
 
 def write_admission(c, sigma):
@@ -78,6 +111,13 @@ def write_admission(c, sigma):
 
 
 def argv_of(step, c, plan):
+    """⚠️ SEEDS THE ANCESTORS FIRST. Since E1, `trainer_argv` CARRIES the
+    predecessor's geometry out of its `config.json` and REFUSES rather than
+    emit a geometry-free line, so asking for an argv without an ancestor record
+    is now a refusal — pinned on its own in
+    `test_a_launch_line_with_NO_geometry_source_is_REFUSED`. Tests about the
+    argv's SHAPE seed the record and get on with their question."""
+    seed_plan(plan, c)
     return C.trainer_argv(step, c, plan)
 
 
@@ -233,6 +273,12 @@ def test_the_emitted_launch_line_quotes_paths_and_reasons(tmp_path):
     documented companion flag whose value contains spaces, and retyping a
     manifest has lost exactly that argument before."""
     c = cfg("/workspace/experiments", dry=False)
+    # the ancestor's record lives on the pod, not here — this is exactly what
+    # --geometry-from is for (E1: a geometry-free line builds 87.93 M against a
+    # 336.54 M checkpoint, so the chain refuses to emit one)
+    gsrc = tmp_path / "config.json"
+    gsrc.write_text(json.dumps({"args": C.parse_argv_geometry([])}))
+    c.geometry_from = str(gsrc)
     plan = C.build_plan(c)
     line = C.launch_line(C.step_by_key(plan, "S-T"), c,
                          plan, allow_inconclusive=True,
@@ -539,6 +585,7 @@ def test_a_manifest_never_supervises_the_CHAIN(tmp_path):
     supervised chain would replay stage 1 after a mid-ladder crash."""
     c = cfg(tmp_path, dry=False)
     plan = C.build_plan(c)
+    seed_plan(plan, c)
     for s in plan:
         if s.key == "S-W":
             continue
@@ -556,6 +603,7 @@ def test_a_manifest_never_supervises_the_CHAIN(tmp_path):
 def test_the_manifest_says_how_to_change_a_supervised_run(tmp_path):
     c = cfg(tmp_path, dry=False)
     plan = C.build_plan(c)
+    seed_plan(plan, c)
     text = C.manifest_text(C.step_by_key(plan, "S-T"), c, plan)
     assert "SOURCED ONCE" in text
     assert "kill the SUPERVISOR" in text

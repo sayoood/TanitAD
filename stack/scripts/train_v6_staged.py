@@ -87,6 +87,7 @@ shortest useful one needs no corpus and no GPU:
 from __future__ import annotations
 
 import argparse
+import importlib
 import json
 import os
 import random
@@ -2335,6 +2336,26 @@ def train(a) -> dict:
     cfg_eval = _eval_cfg()
     cache_frame, model_frame = resolve_eval_frames(a, cfg_eval,
                                                    label="train_v6_staged")
+    # ⛔ E2, second lock — on the REAL objects, and still BEFORE the corpus.
+    # `_preflight_subframe` answers this from args alone in milliseconds; this
+    # compares the frame the DATA will actually be delivered at against the
+    # frame the ENCODER was actually built for. Two locks because the two are
+    # different objects in this trainer (see `subframe_desync`) and the failure
+    # they prevent otherwise surfaces at the first forward, i.e. after the
+    # corpus has mounted and the O4 saliency pass has run.
+    enc_hw = tuple(int(x) for x in stack.cfg.encoder.image_hw())
+    got_hw = (int(model_frame.height), int(model_frame.width))
+    if got_hw != enc_hw:
+        raise SystemExit(
+            f"[v6] ⛔ the DATA frame {got_hw[0]}x{got_hw[1]} and the ENCODER "
+            f"frame {enc_hw[0]}x{enc_hw[1]} disagree. In this trainer "
+            f"--v2-subframe moves the data (it is applied to the flagship-v4 "
+            f"EVAL config) while the encoder was sized from --frame-h/"
+            f"--frame-w by build_stack_from_args — so the first forward would "
+            f"raise `encoder input is {got_hw} but the config declares "
+            f"{enc_hw}`. ⇒ drop --v2-subframe, or declare --frame-h "
+            f"{got_hw[0]} --frame-w {got_hw[1]} (a DIFFERENT model, which "
+            f"cannot --init-from a {enc_hw[0]}x{enc_hw[1]} checkpoint).")
     plan = _plan(cfg_eval)
     weights = _weights_from_args(a)
     w_stage = weights.for_stage(a.stage)
@@ -3912,7 +3933,120 @@ def preflight(a) -> list[str]:
             f"below passed is worthless if this stage then trains on a "
             f"randomly-initialised trunk — that is not the staged protocol, "
             f"it is four unrelated models with a gate between them.")
+    problems += _preflight_subframe(a)
+    problems += _preflight_seam_dump(a)
     return problems
+
+
+# ---------------------------------------------------------------------------
+# ⛔ E2 — `--v2-subframe` MOVES THE DATA, NOT THE MODEL, **IN THIS TRAINER**
+# ---------------------------------------------------------------------------
+
+def subframe_desync(a) -> tuple[int, int] | None:
+    """The sub-frame this run would train the DATA at, when it disagrees with
+    the frame the ENCODER is built for. ``None`` = consistent.
+
+    ⛔ WHY THIS IS NOT THE SAME FUNCTION AS ``train_flagship_v4``'s.
+    ``resolve_v2_frames``'s docstring says *"The frame is applied to ``cfg``
+    too, so the ENCODER is sized for what it will be fed."* That is TRUE for
+    ``train_flagship_v4``, whose ``cfg`` **is** the model config, and FALSE
+    here: this trainer calls ``resolve_eval_frames(a, cfg_eval)`` where
+    ``cfg_eval`` is a **flagship-v4 eval config** used for the plan and the eval
+    seam, while :func:`build_stack_from_args` has ALREADY sized the encoder from
+    ``a.frame_h``/``a.frame_w``. The two are different objects, so a sub-frame
+    moves one and not the other.
+
+    ⚠️ MEASURED 2026-08-17 on the built production encoder
+    (`…/2026-08-17-st-launch-readiness/raw/subframe_desync.json`): with
+    ``--frame-h 256 --frame-w 640 --v2-subframe 176x624`` the encoder's
+    ``pos`` is ``[1, 640, 768]`` and the first forward raises
+    ``ValueError: encoder input is (176, 624) but the config declares
+    (256, 640)``.
+
+    ⛔ AND THE DANGEROUS PART IS THE **ORDER**. ``--init-from`` SUCCEEDS
+    (checkpoint and stack are both 256x640) and ``assert_v2_geometry_matches``
+    PASSES (it compares the providers against ``model_frame``, which *is*
+    176x624) — so the refusal arrives at the FIRST FORWARD, after the corpus
+    has mounted and the O4 saliency pass has run. A guard existed and it was in
+    the wrong place. This one is args-only, so it fires in milliseconds at
+    startup.
+    """
+    from train_flagship_v4 import parse_subframe
+    hw = parse_subframe(getattr(a, "v2_subframe", None))
+    if hw is None:
+        return None
+    if (int(hw[0]), int(hw[1])) == (int(a.frame_h), int(a.frame_w)):
+        return None                      # a no-op sub-frame is consistent
+    return (int(hw[0]), int(hw[1]))
+
+
+def _preflight_subframe(a) -> list[str]:
+    hw = subframe_desync(a)
+    if hw is None:
+        return []
+    return [f"--v2-subframe {hw[0]}x{hw[1]} with --frame-h {a.frame_h} "
+            f"--frame-w {a.frame_w}: in THIS trainer the sub-frame moves the "
+            f"DATA and NOT the MODEL. build_stack_from_args sizes the encoder "
+            f"from --frame-h/--frame-w; resolve_eval_frames applies the "
+            f"sub-frame to a flagship-v4 EVAL config. So --init-from would "
+            f"succeed, parity would pass, the corpus would mount — and the "
+            f"first forward would raise `encoder input is ({hw[0]}, {hw[1]}) "
+            f"but the config declares ({a.frame_h}, {a.frame_w})`, after the "
+            f"compute is paid for.\n"
+            f"     ⇒ drop --v2-subframe (train at the declared frame), or "
+            f"declare --frame-h {hw[0]} --frame-w {hw[1]} so the encoder is "
+            f"built for what it is fed. ⚠️ The second is a DIFFERENT MODEL and "
+            f"cannot --init-from a {a.frame_h}x{a.frame_w} checkpoint."]
+
+
+# ---------------------------------------------------------------------------
+# ⛔ E5 — the seam dump's import, at STARTUP instead of 1.8 h in
+# ---------------------------------------------------------------------------
+
+def seam_dump_import_error(a) -> str:
+    """``""`` when ``--dump-seam-plan``'s module imports, else the error.
+
+    ⛔ THE ANALYSIS-TIME-IMPORT FAMILY, IN ITS MILDEST COSTUME AND ITS MOST
+    PERSISTENT ONE. ``--dump-seam-plan`` is wired into the training loop at the
+    ``--save-every`` boundary, and its ``except Exception`` prints *"training
+    continues"* — correct for a diagnostic, and it means a `ModuleNotFoundError`
+    banks NOTHING while the run looks healthy. The first attempt is at
+    ``step % save_every == 0``, i.e. **~1.8 h in at --save-every 250**.
+
+    ⚠️ MEASURED 2026-08-17 on Thor **and** the dev box: under the launch's own
+    ``PYTHONPATH=<stack>``, ``import taniteval`` is a `ModuleNotFoundError` —
+    ``taniteval`` is a **SIBLING of ``stack/``** (``TanitAD/taniteval/
+    taniteval/``), not a member of it. F-16's probe has produced zero real-arm
+    numbers three times running, and this is why.
+
+    ⇒ The operator ASKED for the dump, so a dump that cannot happen is a
+    REFUSAL, in 2 seconds, not a log line 1.8 h later. (The in-loop catch stays
+    non-fatal: a diagnostic must never kill a 3-day run mid-flight. This makes
+    that path near-unreachable rather than removing it.)
+    """
+    if not getattr(a, "dump_seam_plan", None):
+        return ""
+    try:
+        importlib.import_module("taniteval.seam_dump")
+        return ""
+    except BaseException as e:                                # noqa: BLE001
+        return f"{type(e).__name__}: {e}"
+
+
+def _preflight_seam_dump(a) -> list[str]:
+    err = seam_dump_import_error(a)
+    if not err:
+        return []
+    return [f"--dump-seam-plan {a.dump_seam_plan} but `import "
+            f"taniteval.seam_dump` FAILS: {err}\n"
+            f"     `taniteval` is a SIBLING of stack/, not a member of it, so "
+            f"a launch line whose PYTHONPATH is only <repo>/stack cannot see "
+            f"it. Without this refusal the run would bank NOTHING while "
+            f"printing '[v6 seam] dump FAILED … — training continues' at every "
+            f"save boundary, the first one ~1.8 h in.\n"
+            f"     ⇒ PYTHONPATH=<repo>/stack:<repo>/taniteval  (v6_chain's "
+            f"launch_line and manifest_text now emit both), or drop "
+            f"--dump-seam-plan and accept that X2_seam reads 'not-run'."]
 
 
 def main(argv=None) -> int:

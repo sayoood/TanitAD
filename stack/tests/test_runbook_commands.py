@@ -74,6 +74,18 @@ RUNBOOK = (_REPO / "TanitAD Research Hub" / "Architecture & Inference"
 
 TRAINER_TOKEN = "scripts/train_v6_staged.py"
 
+#: ⛔ THE ANCESTOR'S OWN RECORD, banked in the repo and md5-identical to the live
+#: run's (`2cb83239cc19d13b9bc7a49a27459b82`, verified on Thor 2026-08-17).
+#: Since E1 the chain CARRIES the model geometry out of this file rather than
+#: emitting a geometry-free line — MEASURED: without it the stack built at the
+#: trainer's defaults, 87.93 M against a 336.54 M checkpoint. On the pod the
+#: real `<root>/v6F-SW-30k/config.json` is found first and wins; off-box (here,
+#: and on the dev box where these commands are generated) this banked copy is
+#: what makes the line reproducible.
+GEOMETRY_FROM = (_REPO / "TanitAD Research Hub" / "Architecture & Inference"
+                 / "Implementation" / "incoming" / "2026-08-17-st-launch-fixes"
+                 / "raw" / "v6F-SW-30k.config.json")
+
 #: ⛔ The config §2.2's block was generated with. It is pinned HERE and quoted in
 #: the runbook's own "regenerate rather than edit" recipe, so the two cannot
 #: drift silently: change one and this test fails.
@@ -82,6 +94,7 @@ THOR_CFG = dict(
     workdir="/root/TanitAD/stack",
     train_cache="/root/data/physicalai-train-e438721ae894-w120-256x640cyl",
     val_cache="/root/data/physicalai-val-0c5f7dac3b11-w120-256x640cyl",
+    geometry_from=str(GEOMETRY_FROM),
 )
 
 
@@ -205,13 +218,44 @@ def test_every_runbook_launch_line_passes_the_trainers_own_preflight(md):
     S-W ``--selector`` refusal, the S-S ``--w-select`` refusal, ``--v2-cache``
     being required for a real run, ``--o5-k <= --plan-steps``, and
     ``--init-from`` being mandatory for every staged stage.
+
+    ⚠️ ``preflight`` is run UNDER THE ENVIRONMENT THE RUNBOOK'S OWN LINE
+    DECLARES, not this process's. Since E5 the seam-dump import is a startup
+    refusal, and the launch line carries `PYTHONPATH=<stack>:<taniteval>` — so
+    evaluating it with only `stack/` on the path would fail a line that is
+    CORRECT. That is a scope error of exactly the kind this file exists to
+    prevent, so the PYTHONPATH is read out of the command instead of assumed,
+    and a `--dump-seam-plan` line that does NOT declare a taniteval root is a
+    failure in its own right.
     """
     ap = _parser_like_main()
-    for argv in _trainer_argvs(md):
+    for cmd_toks in _commands(md):
+        if TRAINER_TOKEN not in cmd_toks:
+            continue
+        i = cmd_toks.index(TRAINER_TOKEN) + 1
+        argv = []
+        for t in cmd_toks[i:]:                  # stop at the shell epilogue
+            if t in (">", ">>", "2>&1", "<", "&", "&&", "|", ";"):
+                break
+            argv.append(t)
         a = ap.parse_args(argv)
         if a.dry_run:
             continue                            # STEP ZERO is executed below
-        problems = T.preflight(a)
+        pp = next((t.split("=", 1)[1] for t in cmd_toks
+                   if t.startswith("PYTHONPATH=")), "")
+        roots = [p for p in pp.split(":") if p]
+        if a.dump_seam_plan:
+            assert any(p.rstrip("/").endswith("taniteval") for p in roots), (
+                f"the line sets --dump-seam-plan but its PYTHONPATH ({pp!r}) "
+                f"names no taniteval root — the dump would bank NOTHING while "
+                f"the run looked healthy, first attempt ~1.8 h in (E5).")
+        added = [p for p in roots if p not in sys.path]
+        sys.path[:0] = [str(_REPO / "taniteval")] if added else []
+        try:
+            problems = T.preflight(a)
+        finally:
+            if added:
+                sys.path.pop(0)
         assert problems == [], (
             f"the runbook tells an operator to run a command the trainer's own "
             f"preflight REFUSES:\n  {' '.join(argv)}\n  " + "\n  ".join(problems))
@@ -278,10 +322,13 @@ def test_the_pinned_thor_config_is_the_chains_own_default_shape(md):
     argv = ["commands",
             "--root", THOR_CFG["root"], "--workdir", THOR_CFG["workdir"],
             "--train-cache", THOR_CFG["train_cache"],
-            "--val-cache", THOR_CFG["val_cache"]]
+            "--val-cache", THOR_CFG["val_cache"],
+            "--geometry-from", THOR_CFG["geometry_from"]]
     a = ap.parse_args(argv)                     # SystemExit here = renamed flag
     assert a.cmd == "commands"
     assert C._cfg_from_args(a).root == THOR_CFG["root"]
+    assert C._cfg_from_args(a).geometry_from == THOR_CFG["geometry_from"]
+    assert GEOMETRY_FROM.exists(), GEOMETRY_FROM
 
 
 def test_thor_constants_in_the_lines_are_the_committed_ones(md):
@@ -555,10 +602,14 @@ def test_the_extractor_cannot_match_its_own_documentation(md):
         assert "--stage" in argv, (
             f"a launch line with no --stage was extracted: {' '.join(argv)}")
 
-    # the prose-only flags must appear in NO extracted command
+    # The prose-only flags must appear in NO extracted command. ⚠️ `--uplink`
+    # LEFT this set on 2026-08-17: since E1 the chain CARRIES the ancestor's
+    # geometry explicitly (defaults included, so the line's meaning cannot move
+    # when a default does), and `--uplink stopgrad` is now genuinely in every
+    # launch line. The four that remain are CONTROL-ARM flags the chain never
+    # emits, which is what makes them a valid leak canary.
     prose_only = {"--per-layer-encoders", "--no-isolate-planner",
-                  "--no-isolate-uplink", "--i-know-this-is-the-control-arm",
-                  "--uplink"}
+                  "--no-isolate-uplink", "--i-know-this-is-the-control-arm"}
     for argv in _trainer_argvs(md):
         leaked = prose_only.intersection(argv)
         assert not leaked, (

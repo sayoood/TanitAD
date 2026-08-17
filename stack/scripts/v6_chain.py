@@ -87,6 +87,7 @@ USAGE
 from __future__ import annotations
 
 import argparse
+import functools
 import json
 import os
 import posixpath
@@ -419,9 +420,38 @@ class ChainConfig:
     dry: bool = False
     dry_steps: int = 2
     extra_common: tuple[str, ...] = ()
+    #: ⭐ E1's escape hatch, and the ONLY one. A banked copy of the ancestor's
+    #: own `config.json` (or its directory), used when the real one is not
+    #: readable from the box generating the command — the normal case, since
+    #: commands are written on the dev box for a pod path. ⛔ It is never a
+    #: place to TYPE a geometry: the fields are read out of a run's record.
+    geometry_from: str | None = None
+    #: ⭐ E5 — bank the 60-step plan at every save boundary (F-16's X2_seam
+    #: instrument, ZERO extra GPU: `L["out"]["plan"]` is already computed for
+    #: the step's loss). ⚠️ NOT emitted for S-W: the emission head is at its
+    #: zero-init there, so the plan is all-zero and `seam_dump_from_plan`
+    #: correctly refuses it as DEGENERATE. A degenerate dump cannot answer the
+    #: seam question and must not be produced to make the row non-empty.
+    dump_seam_plan: bool = True
+    #: the live S-W run's cadence and the validated S-T line's; the trainer's
+    #: own default is 1000, and the seam dump fires at this boundary.
+    save_every: int = 250
 
     def path(self, *parts: str) -> str:
         return posixpath.join(self.root.replace("\\", "/"), *parts)
+
+    @property
+    def pythonpath(self) -> str:
+        """⛔ BOTH ROOTS. `taniteval` is a SIBLING of `stack/`, not a member of
+        it, so `PYTHONPATH=<workdir>` alone makes `import taniteval.seam_dump`
+        a `ModuleNotFoundError` — MEASURED 2026-08-17 on Thor AND the dev box.
+        The trainer caught that broadly and printed *"training continues"*, so
+        `--dump-seam-plan` banked NOTHING, silently, at every save boundary,
+        with the first attempt ~1.8 h in. Derived from `workdir` rather than
+        configured, because the two directories are siblings in the repo by
+        construction and a second knob is a second thing to forget."""
+        parent = posixpath.dirname(self.workdir.replace("\\", "/").rstrip("/"))
+        return f"{self.workdir}:{posixpath.join(parent, 'taniteval')}"
 
 
 #: The tiny geometry the CPU dry ladder builds — the SAME wiring and the SAME
@@ -721,8 +751,367 @@ def _read_run_args(out_dir: str) -> dict:
         return {}
 
 
-def assert_geometry_carry(step, plan) -> dict:
-    """⛔ This step's ``--selector`` must equal its ancestor's.
+# ---------------------------------------------------------------------------
+# ⭐ THE GEOMETRY SET IS **DERIVED FROM THE TRAINER'S OWN SOURCE**, NEVER LISTED
+# ---------------------------------------------------------------------------
+# ⛔ WHY A HAND-LIST WOULD BE THE BUG AGAIN. The version of
+# `assert_geometry_carry` this replaces read the predecessor's `config.json
+# ["args"]` — which contains EVERY geometry field — and compared exactly TWO of
+# them (`selector`, `tac_goal_cond`). It had the data in hand and did not look,
+# so `v6_chain.py commands --step S-T` emitted a line with NO model geometry at
+# all and the stack built at the trainer's defaults: 87.93 M params against a
+# 336.54 M checkpoint, `RuntimeError … size mismatch for encoder.pos: [1, 640,
+# 768] vs [1, 640, 384]` (MEASURED 2026-08-17).
+#
+# Adding the missing fields by hand fixes today's two omissions and installs
+# tomorrow's — which is precisely the `LADDER_UNTRAINED_GROUPS` lesson (718855f:
+# a stage list that had to be edited in lockstep with the architecture and was
+# not). So the set is READ OFF `build_stack_from_args` BY AST: every argparse
+# dest that function consumes IS the model geometry, by construction, and a new
+# `V6Config` lever wired to a new flag joins this check the moment it is wired.
+
+def _trainer_source() -> str:
+    """The trainer's source text. Read, never imported — `import
+    train_v6_staged` pulls torch, and `plan`/`commands`/`status`/`manifests`
+    must keep working on a pod whose torch a `uv pip install` has broken
+    (MEASURED twice on pod4)."""
+    p = _HERE / "train_v6_staged.py"
+    if not p.exists():
+        raise ChainRefusal(
+            f"[chain] ⛔ the trainer source {p} is missing, so the model "
+            f"geometry cannot be derived and no launch line may be emitted. "
+            f"This file must sit beside {TRAINER}.")
+    return p.read_text(encoding="utf-8")
+
+
+def _fn_node(src: str, name: str):
+    import ast
+    for node in ast.walk(ast.parse(src)):
+        if isinstance(node, ast.FunctionDef) and node.name == name:
+            return node
+    raise ChainRefusal(
+        f"[chain] ⛔ `{name}` was not found in {TRAINER}. The chain derives the "
+        f"model geometry from that function's body; a rename means this guard "
+        f"is silently checking nothing, which is the failure it exists to "
+        f"prevent. ⇒ update `_fn_node`'s target, do not delete the check.")
+
+
+@functools.lru_cache(maxsize=1)
+def geometry_dests() -> frozenset[str]:
+    """Every argparse dest ``build_stack_from_args`` reads = the model geometry.
+
+    Three read shapes are collected, all of them present in the real function:
+
+    ==============================  ============================
+    ``a.enc_dim``                   plain attribute
+    ``getattr(a, "mpc_topk", 2)``   the default-tolerant idiom
+    ``resolve_gc(a, "enc_gc")``     ``a`` handed to a helper with the dest name
+    ==============================  ============================
+    """
+    import ast
+    fn = _fn_node(_trainer_source(), "build_stack_from_args")
+    arg0 = fn.args.args[0].arg if fn.args.args else "a"
+    found: set[str] = set()
+    for n in ast.walk(fn):
+        if (isinstance(n, ast.Attribute) and isinstance(n.value, ast.Name)
+                and n.value.id == arg0):
+            found.add(n.attr)
+        elif isinstance(n, ast.Call) and n.args:
+            first = n.args[0]
+            if (isinstance(first, ast.Name) and first.id == arg0
+                    and len(n.args) > 1
+                    and isinstance(n.args[1], ast.Constant)
+                    and isinstance(n.args[1].value, str)):
+                found.add(n.args[1].value)
+    if not found:
+        raise ChainRefusal(
+            "[chain] ⛔ derived ZERO geometry dests from "
+            "build_stack_from_args — the AST shapes changed and this guard is "
+            "now checking nothing. An empty check that returns OK is worse "
+            "than no check.")
+    return frozenset(found)
+
+
+@dataclass(frozen=True)
+class _ArgSpec:
+    """One ``add_argument`` as the trainer declares it."""
+    dest: str
+    opt: str                       # the long option, e.g. "--enc-dim"
+    action: str = ""               # "" | "store_true" | "store_false"
+    nargs: str = ""                # "" | "+" | "*" | "?"
+    default: object = None
+    has_default: bool = False
+
+
+@functools.lru_cache(maxsize=1)
+def trainer_arg_spec() -> dict[str, _ArgSpec]:
+    """dest -> :class:`_ArgSpec`, as the trainer's ``build_parser`` declares it.
+
+    The AST read is the FLOOR (it works on a pod whose torch a `uv pip install`
+    has broken, where `plan`/`commands`/`status` must still run); when the real
+    parser IS importable its defaults win, because ``ast.literal_eval`` cannot
+    evaluate a default that is an imported NAME.
+
+    ⚠️ MEASURED 2026-08-17, by the ladder suite failing: `--a-max`,
+    `--kappa-max` and `--plan-steps` default to imported constants (`A_MAX`,
+    `KAPPA_MAX`), so the AST-only spec read them as *unknown* and the geometry
+    diff then compared an ancestor's real 4.0 against a successor's `None` —
+    a FALSE REFUSAL on the dry ladder. Unknown-default dests are now excluded
+    from the diff unless BOTH sides state a value; a guard that cannot see a
+    field must say so, never invent a mismatch.
+    """
+    spec = dict(_ast_arg_spec())
+    try:                                        # exact, when torch is present
+        from train_v6_staged import build_parser
+        for act in build_parser()._actions:     # noqa: SLF001
+            if act.dest in spec and act.option_strings:
+                spec[act.dest] = _ArgSpec(
+                    dest=act.dest, opt=spec[act.dest].opt,
+                    action=spec[act.dest].action, nargs=spec[act.dest].nargs,
+                    default=act.default, has_default=True)
+    except Exception:                                         # noqa: BLE001
+        pass
+    return spec
+
+
+@functools.lru_cache(maxsize=1)
+def _ast_arg_spec() -> dict[str, _ArgSpec]:
+    """The torch-free floor: ``add_argument`` calls read straight out of source.
+
+    ⚠️ This is a READ of argparse's declaration, not a reimplementation of
+    argparse. `tests/test_v6_chain.py` pins it against the REAL
+    ``build_parser()`` — every dest, option string, action and nargs — so the
+    torch-free path cannot drift from the parser that actually runs.
+    """
+    import ast
+    fn = _fn_node(_trainer_source(), "build_parser")
+    out: dict[str, _ArgSpec] = {}
+    for n in ast.walk(fn):
+        if not (isinstance(n, ast.Call)
+                and isinstance(n.func, ast.Attribute)
+                and n.func.attr == "add_argument"):
+            continue
+        opts = [x.value for x in n.args
+                if isinstance(x, ast.Constant) and isinstance(x.value, str)]
+        longs = [o for o in opts if o.startswith("--")]
+        if not longs:
+            continue
+        kw = {k.arg: k.value for k in n.keywords if k.arg}
+        dest = None
+        if "dest" in kw and isinstance(kw["dest"], ast.Constant):
+            dest = kw["dest"].value
+        else:
+            dest = longs[0][2:].replace("-", "_")
+        action = (kw["action"].value if isinstance(kw.get("action"),
+                                                   ast.Constant) else "")
+        nargs = (str(kw["nargs"].value) if isinstance(kw.get("nargs"),
+                                                      ast.Constant) else "")
+        default, has_default = None, "default" in kw
+        if has_default:
+            try:
+                default = ast.literal_eval(kw["default"])
+            except Exception:                                 # noqa: BLE001
+                has_default = False
+        if not has_default:
+            default = {"store_true": False, "store_false": True}.get(action)
+            has_default = action in ("store_true", "store_false")
+        out[dest] = _ArgSpec(dest=dest, opt=longs[0], action=action,
+                             nargs=nargs, default=default,
+                             has_default=has_default)
+    return out
+
+
+def _norm(v):
+    """Compare JSON round-trips and parsed argv on equal terms."""
+    if isinstance(v, (list, tuple)):
+        return [_norm(x) for x in v]
+    if isinstance(v, bool):
+        return v
+    if isinstance(v, (int, float)):
+        return float(v)
+    return v
+
+
+def _flags_declared(argv) -> set[str]:
+    """The dests an argv EXPLICITLY names — a declared change, not an omission."""
+    by_opt = {s.opt: s.dest for s in trainer_arg_spec().values()}
+    return {by_opt[tok] for tok in argv if tok in by_opt}
+
+
+def parse_argv_geometry(argv) -> dict:
+    """dest -> value for every geometry dest, as the emitted ``argv`` sets it.
+
+    Torch-free, spec-driven, and deliberately narrow: it resolves ONLY the
+    geometry dests, because that is the only question this guard asks.
+    """
+    spec = trainer_arg_spec()
+    by_opt = {s.opt: s for s in spec.values()}
+    vals = {d: spec[d].default for d in geometry_dests() if d in spec}
+    i = 0
+    argv = list(argv)
+    while i < len(argv):
+        tok = argv[i]
+        s = by_opt.get(tok)
+        if s is None:
+            i += 1
+            continue
+        if s.action in ("store_true", "store_false"):
+            if s.dest in vals:
+                vals[s.dest] = s.action == "store_true"
+            i += 1
+            continue
+        j = i + 1
+        got: list[str] = []
+        while j < len(argv) and argv[j] not in by_opt:
+            got.append(argv[j])
+            j += 1
+            if s.nargs not in ("+", "*"):
+                break
+        if s.dest in vals and got:
+            if s.nargs in ("+", "*"):
+                # ⚠️ COERCE THE ELEMENTS. `--horizons 1 2 4` parses to STRINGS
+                # here while the ancestor's config.json holds INTS, so a bare
+                # comparison reports a difference that does not exist — and for
+                # an undeclared dest that is a FALSE REFUSAL. MEASURED
+                # 2026-08-17: `horizons` showed as a changed field on a launch
+                # line that carries the ancestor's own value.
+                like = (s.default[0] if isinstance(s.default, (list, tuple))
+                        and s.default else None)
+                vals[s.dest] = [_coerce(g, like) for g in got]
+            else:
+                vals[s.dest] = _coerce(got[0], s.default)
+        i = max(j, i + 1)
+    return vals
+
+
+def _coerce(text: str, like):
+    if isinstance(like, bool):
+        return text.lower() in ("1", "true", "yes")
+    for cast in ((int, float) if not isinstance(like, str) else ()):
+        try:
+            return cast(text)
+        except ValueError:
+            continue
+    if like is None:
+        for cast in (int, float):
+            try:
+                return cast(text)
+            except ValueError:
+                continue
+    return text
+
+
+def geometry_source(step, cfg, plan) -> tuple[dict, str]:
+    """``(args, where)`` — the record this step's geometry is carried FROM.
+
+    ⛔ The predecessor's own ``config.json`` wins when it is readable: it is the
+    only authority on what shapes its checkpoint actually holds. ``--geometry-
+    from`` is the off-box escape (commands are usually generated on the dev box
+    for a pod path that does not exist there), and it points at a BANKED COPY
+    of exactly that file, never at a hand-written geometry.
+    """
+    prev = step_by_key(plan, step.init_from_key) if step.init_from_key else None
+    if prev is not None:
+        args = _read_run_args(prev.out)
+        if args:
+            return args, f"{prev.out}/config.json"
+    if cfg.geometry_from:
+        p = Path(cfg.geometry_from)
+        if p.is_dir():
+            p = p / "config.json"
+        if p.exists():
+            try:
+                doc = json.loads(p.read_text(encoding="utf-8"))
+            except Exception as e:                            # noqa: BLE001
+                raise ChainRefusal(
+                    f"[chain] ⛔ --geometry-from {p} is not readable JSON "
+                    f"({type(e).__name__}: {e}).")
+            args = doc.get("args") or {}
+            if args:
+                return args, str(p)
+            raise ChainRefusal(
+                f"[chain] ⛔ --geometry-from {p} has no 'args' block. The "
+                f"geometry is carried from a run's OWN config.json, which is "
+                f"the record of what its checkpoint was built as.")
+        raise ChainRefusal(f"[chain] ⛔ --geometry-from {p} does not exist.")
+    raise ChainRefusal(
+        f"[chain] ⛔ {step.key} needs its ancestor's MODEL GEOMETRY and cannot "
+        f"read it.\n"
+        f"  Tried: "
+        f"{prev.out + '/config.json' if prev is not None else '(no ancestor)'}"
+        f" — not readable from here.\n"
+        f"  Emitting the launch anyway is exactly the E1 defect: with no "
+        f"geometry flags the stack builds at the trainer's DEFAULTS (enc 384x8, "
+        f"pred 768x6, d_tac 512, d_str 256) and `--init-from` dies with "
+        f"`size mismatch for encoder.pos: [1, 640, 768] vs [1, 640, 384]` "
+        f"(MEASURED 2026-08-17: 87.93 M built against a 336.54 M checkpoint).\n"
+        f"  ⇒ generate the command ON the pod, or pass --geometry-from "
+        f"<banked config.json> (a copy of the ancestor's own file).")
+
+
+def carried_geometry(step, cfg, plan, *, skip: set[str] = frozenset()
+                     ) -> list[str]:
+    """Everything one non-dry step inherits from its ancestor's own record.
+
+    ``skip`` is the set of dests THIS LAUNCH ALREADY NAMES — derived from the
+    argv being built, never listed — so a per-stage decision (`--max-horizon`,
+    `--w-t1`, `--selector`, the data flags) is never overwritten by the carry.
+    """
+    if not step.init_from_key and not cfg.geometry_from:
+        return []              # S-W starts the ladder; it HAS no ancestor
+    args, _where = geometry_source(step, cfg, plan)
+    return carried_argv(args, skip=set(skip) | set(GEOMETRY_INTRODUCIBLE))
+
+
+def carried_argv(args: dict, *, skip: set[str] = frozenset()) -> list[str]:
+    """The flags that reproduce ``args``' MODEL GEOMETRY, from a predecessor
+    run's own ``config.json["args"]`` — the only authority on what its
+    checkpoint holds.
+
+    ⛔ **THE CARRY IS EXACTLY :func:`geometry_dests`, AND NOTHING ELSE.** A
+    blanket "carry every recorded arg" is tempting and wrong: the ancestor's
+    record also holds RUN CONTROL (`--force-rerun`, `--resume`,
+    `--gate-off-reason`, its own `--out`/`--init-from` paths), and carrying
+    `--force-rerun` forward would let a successor overwrite a DONE run. Every
+    non-geometry knob is a per-stage decision and belongs in the plan, where it
+    is visible and a test can reach it.
+
+    ⛔ **GEOMETRY IS EMITTED EVEN WHEN IT EQUALS TODAY'S DEFAULT.** An "omit the
+    defaults" line means whatever the trainer's defaults happen to be ON THE DAY
+    IT RUNS: change `--enc-dim`'s default from 384 and every banked command
+    silently builds a different model. MEASURED 2026-08-17 while building this:
+    the omit-defaults version dropped `--frame-h/--frame-w/--patch/--window/
+    --horizons/--d-goal-embed/--adapter-hidden/--dt/--uplink/--ema-decay/
+    --sigreg-slices/--n-registers` from the S-T line — all correct that day, all
+    silently wrong after one default moves.
+
+    ``skip`` holds the dests the launch already names, so a per-stage flag
+    always wins; the splice order in :func:`trainer_argv` makes that true for
+    ``step.extra`` too, since argparse takes the last occurrence.
+    """
+    spec = trainer_arg_spec()
+    av: list[str] = []
+    for dest in sorted(geometry_dests()):
+        if dest in skip or dest not in args or dest not in spec:
+            continue
+        s, v = spec[dest], args[dest]
+        if v is None or v == "" or (isinstance(v, (list, tuple)) and not v):
+            continue                       # cannot be expressed as a flag
+        if s.action == "store_true":
+            if v:
+                av.append(s.opt)
+        elif s.action == "store_false":
+            if not v:
+                av.append(s.opt)
+        elif isinstance(v, (list, tuple)):
+            av += [s.opt] + [str(x) for x in v]
+        else:
+            av += [s.opt, str(v)]
+    return av
+
+
+def assert_geometry_carry(step, plan, argv=None, cfg=None) -> dict:
+    """⛔ This step's MODEL GEOMETRY must equal its ancestor's.
 
     MEASURED 2026-08-16, on a real state_dict round-trip: an S-T checkpoint
     carries four `cand_score.*` keys. Launch S-S with the default
@@ -732,17 +1121,46 @@ def assert_geometry_carry(step, plan) -> dict:
     'cand_score.log_tau']``. That refusal is correct; discovering it at 3 a.m.
     after the corpus has mounted is not. The chain checks it from a JSON file
     before anything is built.
+
+    ⭐ WHEN ``argv`` IS GIVEN, THE CHECK IS THE FULL DERIVED DIFF and not the
+    two fields this function used to compare. `selector` and `tac_goal_cond`
+    keep their bespoke refusals below because they carry INTRODUCTION semantics
+    (`STAGE_MAY_INTRODUCE`) that a value diff cannot express; every OTHER dest
+    in :func:`geometry_dests` is compared generically, so a field added to
+    ``build_stack_from_args`` tomorrow is covered without editing this file.
+
+    ⚠️ A dest the step EXPLICITLY NAMES in its own flags is a DECLARED change
+    and is reported, not refused — an operator who writes `--enc-dim 384` has
+    made a visible decision and `load_stage_init` will adjudicate it. What is
+    refused is the SILENT OMISSION, which is what E1 actually was: an argv with
+    no geometry at all, building 87.93 M against a 336.54 M checkpoint.
     """
     if not step.init_from_key:
         return {"applies": False}
     prev = step_by_key(plan, step.init_from_key)
-    args = _read_run_args(prev.out)
+    # ⛔ THE GUARD READS THE SAME SOURCE THE EMITTER CARRIED FROM. MEASURED
+    # 2026-08-17 while building this fix: reading only `<prev.out>/config.json`
+    # made the whole check evaporate to `ok: None` on the dev box — where
+    # commands are generated and where that path does not exist — so the
+    # geometry-free argv passed the guard. `geometry_source` prefers the REAL
+    # predecessor config whenever it is readable (the pod case, where the check
+    # is against the true record) and falls back to `--geometry-from` (the
+    # off-box case) instead of falling back to NOT CHECKING.
+    args, source = {}, f"{prev.out}/config.json"
+    if cfg is not None:
+        try:
+            args, source = geometry_source(step, cfg, plan)
+        except ChainRefusal:
+            args = {}
+    else:
+        args = _read_run_args(prev.out)
     if not args:
         return {"applies": True, "ok": None,
-                "_read": f"{prev.out}/config.json not readable yet — the "
+                "_read": f"{source} not readable and no --geometry-from — the "
                          f"geometry carry-forward could NOT be verified here. "
                          f"load_stage_init will still refuse a mismatch, but "
                          f"only after the stack is built."}
+    full = _assert_geometry_diff(step, prev, args, argv) | {"source": source}
     prev_sel = args.get("selector", "none")
     # ---- F-1: the g_str->P_T port carries EXACTLY like the selector --------
     # Checked first-class rather than folded into `extra`: the failure mode is
@@ -780,14 +1198,16 @@ def assert_geometry_carry(step, plan) -> dict:
                 f"without it means S-T never trained the downlink, which is a "
                 f"mis-ordered ladder, not an introduction.")
     if prev_sel == step.selector:
-        return {"applies": True, "ok": True, "selector": step.selector} | port
+        return {"applies": True, "ok": True,
+                "selector": step.selector} | port | full
     if prev_sel == "none" and step.stage == "S-T":
         return {"applies": True, "ok": True, "selector": step.selector,
                 "introduces": "cand_score.",
                 "_read": "S-T is where the selector is BUILT "
                          "(STAGE_MAY_INTRODUCE['S-T'] includes "
                          "'cand_score.'), so "
-                         "the predecessor having none is the design."} | port
+                         "the predecessor having none is the design."
+                } | port | full
     raise ChainRefusal(
         f"[chain] ⛔ {step.key} would launch with --selector {step.selector!r} "
         f"but its ancestor {prev.key} ran with --selector {prev_sel!r}.\n"
@@ -797,6 +1217,79 @@ def assert_geometry_carry(step, plan) -> dict:
         f"cand_score.* keys); a stack built with a DIFFERENT scorer is a "
         f"mis-specified arm, not an introduction.\n"
         f"  ⇒ carry the winning arm forward: --st-winner {prev_sel}")
+
+
+#: ⛔ The two dests with INTRODUCTION semantics. They are excluded from the
+#: generic value diff because `STAGE_MAY_INTRODUCE` makes "predecessor differs"
+#: legitimate at exactly one stage each — a fact a value comparison cannot
+#: express. They keep their own refusals above; nothing else is exempt.
+GEOMETRY_INTRODUCIBLE: tuple[str, ...] = ("selector", "tac_goal_cond")
+
+
+def _assert_geometry_diff(step, prev, args: dict, argv) -> dict:
+    """The generic half of :func:`assert_geometry_carry`: every derived
+    geometry dest, predecessor vs emitted argv."""
+    if argv is None:
+        return {"full_diff": None,
+                "_read_full": "no argv was supplied, so ONLY the selector and "
+                              "port carry-rules ran. assert_may_launch passes "
+                              "the argv it is about to launch; a direct caller "
+                              "that does not is checking two fields, which is "
+                              "exactly the E1 defect."}
+    spec = trainer_arg_spec()
+    got = parse_argv_geometry(argv)
+    declared = _flags_declared(argv)
+    missing_flag, mismatch, declared_diffs = [], [], {}
+    for dest in sorted(geometry_dests()):
+        if dest in GEOMETRY_INTRODUCIBLE or dest not in spec:
+            continue
+        # ⛔ AN UNKNOWABLE DEFAULT IS NOT A MISMATCH. When `spec[dest]` has no
+        # resolvable default (an imported constant, on a box without torch) the
+        # value a FLAGLESS launch takes is unknown here — so a dest that neither
+        # side states explicitly is SKIPPED rather than compared against None.
+        if not spec[dest].has_default and (dest not in args
+                                           or spec[dest].opt not in argv):
+            continue
+        want = _norm(args[dest]) if dest in args else _norm(spec[dest].default)
+        have = _norm(got.get(dest, spec[dest].default))
+        if want == have:
+            continue
+        if dest in declared:
+            declared_diffs[dest] = {
+                "ancestor": args.get(dest, spec[dest].default),
+                "ancestor_is_default": dest not in args, "this": have}
+        elif dest not in args:
+            continue                   # predecessor predates the flag entirely
+        else:
+            (mismatch if spec[dest].opt in argv else missing_flag).append(
+                {"dest": dest, "flag": spec[dest].opt,
+                 "ancestor": args.get(dest), "this_launch": got.get(dest)})
+    if missing_flag or mismatch:
+        rows = "\n".join(
+            f"    {r['flag']:28s} ancestor {r['ancestor']!r:>22}  "
+            f"this launch {r['this_launch']!r}"
+            for r in (missing_flag + mismatch))
+        raise ChainRefusal(
+            f"[chain] ⛔ {step.key}'s MODEL GEOMETRY does not match its "
+            f"ancestor {prev.key}, on {len(missing_flag) + len(mismatch)} of "
+            f"the {len(geometry_dests())} fields "
+            f"`build_stack_from_args` reads:\n{rows}\n"
+            f"  {len(missing_flag)} of those are flags the launch NEVER "
+            f"EMITS, so the stack silently builds at the TRAINER'S DEFAULTS. "
+            f"MEASURED 2026-08-17: that produced an 87.93 M stack against a "
+            f"336.54 M checkpoint and `RuntimeError … size mismatch for "
+            f"encoder.pos: [1, 640, 768] vs [1, 640, 384]`.\n"
+            f"  ⇒ the geometry is CARRIED from {prev.out}/config.json — make "
+            f"that file readable from here, or point the chain at a banked "
+            f"copy with --geometry-from <path>. Every field above comes from "
+            f"the ancestor's own record; none of it is typed by hand.")
+    return {"full_diff": {"n_checked": len(geometry_dests()),
+                          "declared_changes": declared_diffs},
+            "_read_full": f"every dest build_stack_from_args reads was "
+                          f"compared against {prev.out}/config.json['args']; "
+                          f"{len(declared_diffs)} were changed by an explicit "
+                          f"flag on this step (a declared decision, reported "
+                          f"not refused)."}
 
 
 # ============================================================================
@@ -977,7 +1470,8 @@ def assert_may_launch(step, plan, cfg: "ChainConfig | None" = None, *,
     report["out_dir"] = assert_out_dir_free(step)
     report["arm_pair"] = assert_arm_pair(
         step, plan, unpaired_arm_reason=unpaired_arm_reason)
-    report["geometry"] = assert_geometry_carry(step, plan)
+    # the CHEAP half — a JSON read, the selector and the F-1 port
+    report["geometry"] = assert_geometry_carry(step, plan, None, cfg)
     report["revalidations"] = assert_revalidations_present(
         step, plan, allow_inconclusive=allow_inconclusive,
         off_reason=off_reason)
@@ -1009,6 +1503,19 @@ def assert_may_launch(step, plan, cfg: "ChainConfig | None" = None, *,
         report["init_from"] = init
     else:
         report["init_from"] = None
+
+    # ⭐ LAST, AND ON THE ARGV THAT IS ACTUALLY ABOUT TO BE LAUNCHED. E1 was a
+    # two-field comparison against a config.json holding EVERY geometry field,
+    # so the real check has to see the emitted command, not just the step.
+    # ⛔ It runs AFTER the certificate and the weights on purpose: the chain's
+    # own ordering rule is that "the stage below did not pass a gate" is the
+    # diagnosis an operator needs first, and a geometry refusal on a step whose
+    # gate never passed would send them to the wrong problem.
+    if cfg is not None:
+        report["geometry"] = assert_geometry_carry(
+            step, plan,
+            trainer_argv(step, cfg, plan, allow_inconclusive=allow_inconclusive,
+                         off_reason=off_reason), cfg)
     return report
 
 
@@ -1042,9 +1549,10 @@ def trainer_argv(step, cfg: ChainConfig, plan, *, allow_inconclusive=False,
     # still RAISES on a shape mismatch, so `STAGE_MAY_INTRODUCE` never sees it.
     # The fan size is a ladder-wide constant (SEL-5 makes it a declared ARM, and
     # an arm is declared once for the whole ladder, not per stage).
-    av = ["--stage", step.stage, "--out", step.out,
-          "--steps", str(step.steps), "--batch", str(cfg.batch),
-          "--lr", str(step.lr), "--n-candidates", str(cfg.n_candidates)]
+    head = ["--stage", step.stage, "--out", step.out,
+            "--steps", str(step.steps), "--batch", str(cfg.batch),
+            "--lr", str(step.lr), "--n-candidates", str(cfg.n_candidates)]
+    av: list[str] = []
     if step.init_from_key:
         av += ["--init-from", _init_from_path(step, plan, dry=cfg.dry)]
     if step.prev_gate_key:
@@ -1066,15 +1574,58 @@ def trainer_argv(step, cfg: ChainConfig, plan, *, allow_inconclusive=False,
         if cfg.tiny:
             av += list(TINY_GEOMETRY)
     else:
+        # ⛔ `--v2-subframe` IS DELIBERATELY ABSENT. In `train_v6_staged` the
+        # sub-frame moves the DATA and NOT the MODEL: `build_stack_from_args`
+        # sizes the encoder from `--frame-h/--frame-w`, and `resolve_eval_frames`
+        # applies the sub-frame to a flagship-v4 EVAL config 120 lines later.
+        # MEASURED 2026-08-17: `--v2-subframe 176x624` against a 256x640
+        # encoder lets `--init-from` SUCCEED and parity PASS, then dies at the
+        # first forward with `encoder input is (176, 624) but the config
+        # declares (256, 640)` — after the corpus has mounted. The live S-W run
+        # carries `v2_subframe: null`, and the ladder carries it forward.
+        # (`train_v6_staged.subframe_desync` now refuses this at STARTUP too.)
+        # ⚠️ `--save-every` is EXPLICIT, not left to the trainer's default of
+        # 1000: the live S-W run and the validated S-T line both use 250, and
+        # the SEAM DUMP fires at exactly this boundary — so the default would
+        # quarter the number of banked plans without anyone choosing that.
         av += ["--v2-cache", cfg.train_cache, "--v2-val-cache", cfg.val_cache,
-               "--v2-lru", str(cfg.v2_lru),
-               "--frame-h", "256", "--frame-w", "640", "--frame-hfov", "120",
-               "--projection", "cylindrical", "--v2-subframe", "176x624",
+               "--v2-lru", str(cfg.v2_lru), "--save-every", str(cfg.save_every),
+               "--frame-hfov", "120", "--projection", "cylindrical",
                "--require-parity"]
+    # ⭐ E5 — X2_seam has read "not-run" for three stages running, and the
+    # reason is that NOTHING TURNED THE DUMP ON: `--dump-seam-plan` appeared in
+    # no `ChainStep.extra` and in no `trainer_argv` branch, so the module was
+    # never even imported. Zero extra GPU (the plan is already computed for the
+    # step's loss); S-W is excluded because its emission head is zero-init and
+    # the dump would be DEGENERATE.
+    if not cfg.dry and cfg.dump_seam_plan and step.stage != "S-W":
+        av += ["--dump-seam-plan", seam_dir(step)]
     if allow_inconclusive:
         av += ["--allow-inconclusive-gate", "--gate-off-reason", off_reason]
     av += list(cfg.extra_common)
-    return av
+    # ⭐ E1 — THE ANCESTOR'S BUILD, CARRIED FROM ITS OWN RECORD, SPLICED IN
+    # FIRST. Before this, `trainer_argv` emitted NO geometry flag on a non-dry
+    # step (`TINY_GEOMETRY` was added only under `cfg.dry and cfg.tiny`), so the
+    # stack built at the trainer's DEFAULTS and `--init-from` died with
+    # `size mismatch for encoder.pos: [1, 640, 768] vs [1, 640, 384]` — 87.93 M
+    # built against a 336.54 M checkpoint (MEASURED 2026-08-17).
+    # ⛔ THE SKIP SET IS DERIVED FROM THE ARGV, NOT LISTED. Every flag this
+    # function already decided — the per-stage ones (`--max-horizon`, `--w-t1`,
+    # `--selector`), the data ones, the identity block — is excluded because it
+    # is PRESENT, so a stage decision can never be overwritten by the carry and
+    # a new per-stage flag needs no edit here. Splicing after `head` (rather
+    # than appending) also means `step.extra` wins on any collision, since
+    # argparse takes the LAST occurrence.
+    # ⭐ THE DRY LADDER CARRIES TOO. It exists to be "the SAME wiring and the
+    # SAME seams as production", and E1 lived in a seam no test reached; running
+    # the carry here makes the CPU dry ladder a real rehearsal of it.
+    return head + carried_geometry(
+        step, cfg, plan, skip=_flags_declared(head + av)) + av
+
+
+def seam_dir(step) -> str:
+    """Where this step banks its seam dumps."""
+    return posixpath.join(step.out, "seam")
 
 
 def launch_line(step, cfg: ChainConfig, plan, **kw) -> str:
@@ -1084,8 +1635,9 @@ def launch_line(step, cfg: ChainConfig, plan, **kw) -> str:
     at 0-6 % sm for 50 minutes)."""
     argv = trainer_argv(step, cfg, plan, **kw)
     body = " ".join(shlex.quote(x) for x in argv)
-    return (f"mkdir -p {shlex.quote(step.out)} && cd {shlex.quote(cfg.workdir)} "
-            f"&& PYTHONPATH={cfg.workdir} OMP_NUM_THREADS=6 "
+    mk = seam_dir(step) if "--dump-seam-plan" in argv else step.out
+    return (f"mkdir -p {shlex.quote(mk)} && cd {shlex.quote(cfg.workdir)} "
+            f"&& PYTHONPATH={cfg.pythonpath} OMP_NUM_THREADS=6 "
             f"PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True "
             f"setsid nohup {cfg.python} -u {TRAINER} {body} "
             f"> {shlex.quote(posixpath.join(step.out, 'train.out'))} 2>&1 "
@@ -1127,7 +1679,9 @@ def manifest_text(step, cfg: ChainConfig, plan, **kw) -> str:
         f"OUT={step.out}",
         f"WORKDIR={cfg.workdir}",
         f"TRAIN_MATCH='train_v6_staged\\.py.*{step.run_id}'",
-        f"export PYTHONPATH={cfg.workdir}",
+        # ⛔ BOTH ROOTS — see ChainConfig.pythonpath. A supervisor that
+        # restores this run must restore the seam dump's import too.
+        f"export PYTHONPATH={cfg.pythonpath}",
         "export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True",
         "export OMP_NUM_THREADS=6",
         f"TRAIN_CMD={shlex.quote(cfg.python + ' -u ' + TRAINER + ' ' + body)}",
@@ -1348,10 +1902,12 @@ def _cfg_from_args(a) -> ChainConfig:
               "batch", "v2_lru", "lr", "sj_lr", "sw_steps", "st_steps",
               "ss_steps", "sj_steps", "st_winner", "w_select", "n_candidates",
               "selector_tau_m", "selector_mlp_hidden", "plan_wta_eps",
-              "s_per_step", "dry_steps"):
+              "s_per_step", "dry_steps", "geometry_from"):
         v = getattr(a, f, None)
         if v is not None:
             setattr(cfg, f, v)
+    if getattr(a, "no_seam_dump", False):
+        cfg.dump_seam_plan = False
     if getattr(a, "st_arms", None):
         cfg.st_arms = tuple(a.st_arms)
     if getattr(a, "no_tac_goal_cond", False):
@@ -1412,6 +1968,18 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--selector-mlp-hidden", type=int, default=None)
     ap.add_argument("--plan-wta-eps", type=float, default=None)
     ap.add_argument("--s-per-step", type=float, default=None)
+    ap.add_argument("--geometry-from", default=None,
+                    help="a BANKED COPY of the ancestor run's config.json (or "
+                         "its directory), for generating commands off-pod. ⛔ "
+                         "The real <prev>/config.json ALWAYS wins when it is "
+                         "readable; this is not a place to type a geometry. "
+                         "Without one of the two, a step with --init-from "
+                         "REFUSES to emit — a launch line with no geometry "
+                         "builds 87.93 M against a 336.54 M checkpoint (E1).")
+    ap.add_argument("--no-seam-dump", action="store_true",
+                    help="do NOT emit --dump-seam-plan. The dump costs zero "
+                         "extra GPU and is the only thing that feeds X2_seam, "
+                         "so turning it off is a declared choice.")
     ap.add_argument("--a40", action="store_true",
                     help="A40 constants (batch 16, 20.46 s/step) instead of "
                          "Thor's (batch 8, 27.18 s/step)")
