@@ -5086,3 +5086,57 @@ reading *"do not penalise the intercept"*, several of them weeks OLDER than `pc6
 times.** *(And my own "there is exactly ONE copy of the module" was true of the FILENAME and false
 of the DEFECT — I searched for `pc6_linear_readout*` rather than for `ridge_fit`. Absence found by
 one search pattern is not absence.)*
+
+---
+
+## C98 — C94'S DEFECT HAD A SECOND DOOR, AND THE OBVIOUS READING OF THE TASK WALKS STRAIGHT INTO IT (2026-08-18, S-W latent dumper)
+
+**MEASURED while building step 1 of the selector-admission recipe:** `sigma_perax_2s_m` is written
+**only inside `if refs.available`**, and `fan_references` requires `fan`/`gt`.
+
+⇒ ⛔ **A latent-only dump — which is exactly what *"dump the frozen S-W latents"* sounds like —
+produces an admission artifact with NO σ AT ALL, and the gate stays dead.** Not an error, not a
+crash: a complete-looking artifact missing the one field the whole path exists to carry.
+⚠️ **`DUMP_CONTRACT` filed those keys under `required_for_the_ratios`**, which reads as *optional
+extra precision* rather than *required or the output is empty*. That wording is why it was easy to
+miss. Fixed: executed, pinned, contract text corrected, `fan` made **non-optional**.
+
+⇒ **ROOT-CAUSE CLASS: C94 EXACTLY — a producer→consumer join that no test exercised end-to-end —
+recurring within HOURS of C94 being logged, one door further along the SAME path.** C94 was the
+reader looking at the wrong address; this is the writer conditionally not writing at all. **One
+repair of a broken join does not make the rest of the join sound**, and the second failure is
+harder to see because it produces a *plausible* artifact rather than a missing one.
+⇒ **RULE, strengthened: for any producer→consumer path, enumerate EVERY field the consumer needs
+and prove each one is written under the conditions the caller will actually run in** — not merely
+that the two agree on a schema.
+
+⭐ **THE ROUND TRIP NOW PASSES ON PLANTED VALUES, END TO END** (881 windows / 40 episodes; producer
+→ real estimator → real chain reader → `assert_selector_admissible`):
+
+| planted σ | recovered | error | chain verdict | selector launch |
+|---|---|---|---|---|
+| 0.30 | **0.3046** | +1.53 % | **FUNDED** | **ADMITTED** |
+| 1.10 | **1.1274** | +2.49 % | INCONCLUSIVE | REFUSED |
+| 2.00 | **1.9856** | −0.72 % | REFUSED | REFUSED |
+
+⭐ **And the plant is non-circular by construction**, which is the part that answers C94's class: the
+corpus is built in **two passes** so σ is planted against the **encoder's own latents**, and pass 2's
+latents are asserted **bit-identical** to pass 1's. **No test hand-writes a dump.**
+
+⚠️ **THREE THINGS THAT MUST TRAVEL WITH THIS, or the next reader misdiagnoses a healthy run:**
+1. ⛔ **Expect `NO_VERDICT` from the estimator on the REAL run — that is NOT a failed dump.** The
+   live arm has `selector: null`, so there is no `sel` and σ/ADE is uncomputable; the chain's
+   admission verdict (absolute metres) is still real. ⭐ **Fabricating `sel` was correctly refused** —
+   candidate 0 is arbitrary and argmin is the **oracle**; either manufactures the denominator. *A
+   missing denominator is a fact to report, not a gap to fill.*
+2. ⚠️ **The live run's `--max-horizon 60` must NOT be inherited by the dump grid** — it would
+   re-select windows and **break parity**. The grid stays canonical (WINDOW=8 / K_MAX=20).
+3. ⛔ **The script is NOT on Thor** (MEASURED: `dumper_shipped_to_thor: false`). It needs an
+   md5-verified **file-ship**, never a `git fetch` — on a pod that hangs, and a failed fetch
+   followed by a checkout **resets the tree**.
+
+⭐ **VISION-ONLY IS MEASURED HERE, NOT ASSERTED** — and the control has teeth. The producer re-runs a
+batch with `v0` **and** `actions` permuted and requires the latent blocks **bit-identical**, and a
+test proves the control **reports failure on a `v0`-reading stand-in** rather than passing
+vacuously. That is the standard C92 exists to enforce, applied prospectively for once instead of
+retrospectively.

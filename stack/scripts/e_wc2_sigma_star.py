@@ -30,6 +30,11 @@ banked; the free-to-compute target was therefore never costed, and a genuinely-0
 experiment sat un-runnable for want of a one-minute step.
 ⚠️ **A GPU pass IS still needed for the surface §5.2 NAMES** — *"frozen S-W latents"*.
 S-W latents have never been dumped; that one pass needs the GPU and a deliberate pause.
+⭐ **The PRODUCER for it now exists (2026-08-18): `scripts/v6_dump_sw_latents.py`** —
+`refc_dump_latents.build_model` builds a `RefCModel` and cannot load a v6 checkpoint,
+so the v6 surface needed its own dumper. It is step 1 of `v6_chain.py admission`'s
+recipe, and all four steps are runnable commands now. **The measurement is still
+outstanding** — the script existing is not the dump existing.
 
 THIS FILE IS THE INSTRUMENT ONLY — it runs on CPU against a dump and launches
 nothing. The dump contract is `DUMP_CONTRACT` below; the producer is
@@ -253,6 +258,12 @@ ANTIECHO_OBLIGATION = (
 DUMP_CONTRACT = {
     "_what": "the latent dump E-WC2 consumes. One torch.save'd dict.",
     "_producer": "stack/scripts/refc_dump_latents.py --endpoint-steps 20,60",
+    #: ⭐ THE v6 PRODUCER (2026-08-18). `refc_dump_latents.build_model` builds a
+    #: `RefCModel` and cannot load a v6 checkpoint, so the S-W surface §5.2
+    #: NAMES needed its own producer; `v6_dump_sw_latents.py` is it, and it
+    #: imports this module's grid constants rather than re-deriving them.
+    "_producer_v6": "stack/scripts/v6_dump_sw_latents.py --ckpt <sw>/ckpt.pt "
+                    "--v2-val-cache <val40> --out <sw>/ewc2_sw_dump.pt",
     "_grid": "the canonical val40 eval grid: 40 episodes, WINDOW=8, STRIDE=8, "
              "881 windows. Re-selecting episodes breaks parity and is refused.",
     "required": {
@@ -272,6 +283,20 @@ DUMP_CONTRACT = {
                           "invalid rows are EXCLUDED with n reported.",
     },
     "required_for_the_ratios": {
+        "⛔ NOT ONLY the ratios — READ THIS": (
+            "MEASURED 2026-08-18 while building the v6 producer: `run` writes "
+            "`references_and_ratios.sigma_perax_2s_m` ONLY inside "
+            "`if refs.get('available') and vstep in sig`, and `fan_references` "
+            "returns `available: False` with no `fan`/`gt`. That key is what "
+            "`v6_chain.SW_SIGMA_LOCATIONS` resolves, so a LATENT-ONLY dump "
+            "produces an admission artifact carrying NO sigma at all and the "
+            "S-W admission gate stays DEAD — the exact defect E4 repaired, one "
+            "door along. `max(wp_steps)` must also be 20, or `run` emits "
+            "`MISMATCH` and no sigma. ⇒ `fan`/`gt`/`wp_steps` are required for "
+            "the ADMISSION GATE, not merely for the ratios; only `sel` is "
+            "genuinely ratio-only. Pinned by `tests/test_v6_dump_sw_latents.py"
+            "::test_a_dump_with_no_fan_leaves_the_admission_gate_with_nothing"
+            "_to_read`."),
         "fan": "torch.Tensor [n, C, T, 2] — the candidate fan, ego frame.",
         "gt": "torch.Tensor [n, T, 2] — GT at the FAN's waypoint grid.",
         "sel": "torch.Tensor [n] int — the incumbent selector's chosen index. "

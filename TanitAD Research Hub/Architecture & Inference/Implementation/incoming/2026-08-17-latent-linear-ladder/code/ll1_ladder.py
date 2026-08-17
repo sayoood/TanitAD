@@ -86,6 +86,7 @@ import sp2_probe as SP                                          # noqa: E402
 from pc6_linear_readout import ridge_fit                        # noqa: E402
 from taniteval.ci import (episode_cluster_bootstrap,             # noqa: E402
                           paired_episode_cluster_bootstrap)
+from taniteval.degeneracy import k1_guard                        # noqa: E402
 
 # Below this speed a curvature (yawrate / v) is numerically meaningless: a
 # stationary car with any yaw jitter reads as an infinite radius of curvature.
@@ -321,6 +322,16 @@ def loo_epmean(y: np.ndarray, key: np.ndarray, fallback: float) -> np.ndarray:
 def _solve(Z, y, alpha, mode):
     """``pc6`` — verbatim pc6: the ones-column is INSIDE the penalty.
     ``centred`` — THE REPAIR: y is centred and the intercept is not penalised.
+    ``unpen``   — ⭐ THE SAME REPAIR, taken from the MODULE (C92's
+                  ``ridge_fit(..., intercept_col=-1)``) instead of re-derived
+                  here. On a design whose feature block is z-scored to zero
+                  train mean the two are algebraically IDENTICAL on the full
+                  fit — the normal equations go block-diagonal, giving
+                  ``b = mean(y)`` and the centred slope solve. They can differ
+                  by ~1e-12 on the INNER SPLIT, where the subset's feature mean
+                  is not exactly zero, so ``unpen`` is preferred for any re-read
+                  that must be traceable to the module rather than to a local
+                  copy of its algebra.
 
     ⛔ THE DEFECT THE REPAIR FIXES. pc6's `ridge_fit` builds
     ``X.T @ X + alpha * np.eye(d)`` on a design matrix whose LAST COLUMN IS THE
@@ -338,12 +349,14 @@ def _solve(Z, y, alpha, mode):
     """
     if mode == "pc6":
         return ridge_fit(Z, y, alpha), 0.0
+    if mode == "unpen":
+        return ridge_fit(Z, y, alpha, intercept_col=-1), 0.0
     mu = float(y.mean())
     return ridge_fit(Z[:, :-1], y - mu, alpha), mu
 
 
 def _apply(Z, w, b, mode):
-    return Z @ w if mode == "pc6" else Z[:, :-1] @ w + b
+    return Z @ w if mode in ("pc6", "unpen") else Z[:, :-1] @ w + b
 
 
 def partial_corr(a, b, z):
@@ -421,6 +434,15 @@ def fit_one(Ztr, ytr, ctr, Zev, yev, eev, cev, alphas, inner_frac, seed,
            "r2_ceiling": round(float(corr(pred, yev) ** 2), 4),
            "pred_sd": round(float(pred.std()), 4),
            "gt_sd": round(float(yev.std()), 4)}
+    # ⛔ THE C97 GUARD, on EVERY rung. The ladder's rungs include strongly
+    # SKEWED targets (n_agents_*, lead_inv_ttc), which is exactly where a
+    # repaired ridge's shrinkage target (the train MEAN) beats C-CONST (the
+    # train MEDIAN) with no latent information at all. `K1B` is the part of K1
+    # attributable to the readout's VARIATION and is invariant to C-CONST.
+    out["k1_guard"] = k1_guard(pred, yev, eev, const_v, n_boot=n_boot,
+                               c_mean=float(ytr.mean()))
+    out["K1_PASSES_GUARDED"] = bool(
+        out["K1_PASSES"] and out["k1_guard"]["K1_quotable_as_latent_evidence"])
     if v0ev is not None:
         out["corr_partial_v0"] = round(partial_corr(pred, yev, v0ev), 4)
     if want_auc:
@@ -463,9 +485,13 @@ def main(argv=None) -> int:
                          "with N(mu, sd) per feature, mu/sd from the real "
                          "features. Same construction as pA_null_matched.py. "
                          "The int is the seed.")
-    ap.add_argument("--fit-mode", choices=["pc6", "centred"], default="pc6",
+    ap.add_argument("--fit-mode", choices=["pc6", "centred", "unpen"],
+                    default="pc6",
                     help="pc6 = verbatim incumbent (intercept INSIDE the "
-                         "penalty); centred = THE REPAIR (see _solve)")
+                         "penalty); centred = THE REPAIR re-derived locally; "
+                         "unpen = the SAME repair taken from the module "
+                         "(ridge_fit intercept_col=-1) — preferred for a "
+                         "traceable re-read (see _solve)")
     ap.add_argument("--gate-pc6", default=None,
                     help="path to pc6_ridge_<arm>.json; asserts lead_gap@seed0 "
                          "reproduces it")

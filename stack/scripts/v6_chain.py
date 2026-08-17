@@ -398,15 +398,19 @@ def sw_admission_recipe(cfg: "ChainConfig") -> dict:
     is the "please merge in a README" failure — a request nobody re-reads —
     applied to the programme's own next decision.
 
-    ⚠️ **Step 1 IS NOT BUILT.** MEASURED at three probes 2026-08-17: no script
-    in ``stack/scripts/`` dumps v6 S-W latents in the E-WC2 contract
-    (``e_wc2_sigma_star.DUMP_CONTRACT``). Every ``gt_endpoint`` producer is
-    REF-C-side — ``refc_dump_latents.build_model`` builds a ``RefCModel`` and
-    cannot load a v6 checkpoint. ``e_wc2_sigma_star.py``'s own header says it:
-    *"S-W latents have never been dumped; that one pass needs the GPU and a
-    deliberate pause."* Emitting a command for a script that does not exist
-    would be a fabricated recipe, so it is emitted as a BUILD ITEM with its
-    contract instead. Steps 2–4 are real and runnable today.
+    ⭐ **STEP 1 IS BUILT (2026-08-18) — ``scripts/v6_dump_sw_latents.py``.** It
+    was emitted as ``⛔ NOT BUILT`` from 2026-08-17, when three probes MEASURED
+    that no script dumped v6 S-W latents in ``e_wc2_sigma_star.DUMP_CONTRACT``
+    (``refc_dump_latents.build_model`` builds a ``RefCModel`` and cannot load a
+    v6 checkpoint; ``probe_latent_state.py`` reads v6 checkpoints but emits
+    P1/P2 retention). All four steps are now runnable commands, and the whole
+    path — producer → estimator → this reader → :func:`assert_selector_
+    admissible` — is pinned end-to-end on a PLANTED σ by
+    ``tests/test_v6_dump_sw_latents.py``, never by a hand-written dump.
+
+    ⚠️ **The measurement itself has still NOT been taken.** The commands exist;
+    the S-W → S-T boundary is when they are cheap. Absence of the probe is not
+    an admission, and ``current`` below says which it is.
     """
     sw = cfg.path(cfg.sw_dir)
     art = admission_path(cfg)
@@ -420,20 +424,40 @@ def sw_admission_recipe(cfg: "ChainConfig") -> dict:
                 "ladder and it is the moment S-W reaches 30 000.",
         "cost": SW_LATENT_ADMISSION["cost"],
         "steps": [
-            {"n": 1, "status": "⛔ NOT BUILT — this is the work item",
+            {"n": 1, "status": "✅ built 2026-08-18 — THE GPU STEP",
              "what": "dump the FROZEN S-W latents on the canonical val40 grid "
                      "in the E-WC2 dump contract",
+             "cmd": (f"PYTHONPATH={cfg.pythonpath} OMP_NUM_THREADS=6 "
+                     f"{cfg.python} scripts/v6_dump_sw_latents.py "
+                     f"--ckpt {shlex.quote(posixpath.join(sw, 'ckpt.pt'))} "
+                     f"--v2-val-cache {shlex.quote(cfg.val_cache)} "
+                     f"--v2-lru {cfg.v2_lru} --batch {cfg.batch} "
+                     f"--out {shlex.quote(dump)}"),
              "contract": "scripts/e_wc2_sigma_star.py --print-contract "
                          "(requires: eid [n], >=1 VISION-ONLY feature block "
                          "[n, F], gt_endpoint [n, He, 2] with axis0 = "
-                         "LONGITUDINAL, endpoint_valid)",
+                         "LONGITUDINAL, endpoint_valid) — AND `fan`/`gt`/"
+                         "`wp_steps`, because the estimator writes "
+                         f"{SW_LATENT_ADMISSION['field']} only inside its "
+                         "fan-references branch, so a latent-ONLY dump leaves "
+                         "this gate with nothing to read.",
              "grid": "40 episodes, WINDOW=8, STRIDE=8, 881 windows. "
-                     "Re-selecting episodes breaks parity and is refused.",
+                     "Re-selecting episodes breaks parity and is refused. The "
+                     "grid stays at WINDOW=8 and the model is fed the LAST "
+                     "predictor.window frames — same last frame, same rows.",
              "why_not_reusable": "refc_dump_latents.build_model builds a "
                                  "RefCModel and cannot load a v6 checkpoint; "
                                  "probe_latent_state.py reads v6 checkpoints "
                                  "but emits P1/P2 retention, not an E-WC2 "
-                                 "dump. MEASURED at three probes 2026-08-17.",
+                                 "dump. MEASURED at three probes 2026-08-17 — "
+                                 "which is why v6_dump_sw_latents.py exists "
+                                 "rather than a flag on either of them.",
+             "⚠️ on a --selector none arm": "the dump carries NO `sel` (there "
+                 "is no incumbent selection to record, and fabricating one "
+                 "would manufacture the σ/ADE denominator). e_wc2_sigma_star "
+                 "then emits NO_VERDICT for its OWN §5.2 ratio test and still "
+                 "writes the per-axis σ this gate adjudicates in ABSOLUTE "
+                 "metres. Both are expected; neither is a failed dump.",
              "input": posixpath.join(sw, "ckpt.pt"),
              "output": dump},
             {"n": 2, "status": "✅ built — CPU, no GPU, no model",
@@ -519,8 +543,9 @@ def assert_selector_admissible(step, cfg: "ChainConfig") -> dict:
         f"σ > {SW_LATENT_ADMISSION['refused_above_m']} m REFUSED stands. "
         f"Current state: {adm.get('_read', adm.get('verdict'))}\n"
         f"  ⭐ THE RECIPE IS EMITTED, not described: `v6_chain.py admission` "
-        f"prints all four steps (`recipe`), including the ONE that is not "
-        f"built yet — the v6 S-W latent dump in E-WC2's contract. ⚠️ Until "
+        f"prints all four steps (`recipe`), and since 2026-08-18 ALL FOUR are "
+        f"runnable commands — step 1, the v6 S-W latent dump in E-WC2's "
+        f"contract, is `scripts/v6_dump_sw_latents.py`. ⚠️ Until "
         f"then the S-T certificate carries `sel_gap` as NOT APPLICABLE with "
         f"this same path attached (train_v6_staged.UNMEASURED_BY_CONSTRUCTION), "
         f"so the tactical-selection question is recorded as OPEN, never as "

@@ -45,6 +45,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import sp2_probe as SP                                          # noqa: E402
 from taniteval.ci import (episode_cluster_bootstrap,             # noqa: E402
                           paired_episode_cluster_bootstrap)
+from taniteval.degeneracy import k1_guard                        # noqa: E402
 
 
 def ridge_fit(X, y, alpha, intercept_col=None):
@@ -90,7 +91,18 @@ def main(argv=None) -> int:
                     default=[1e-2, 1e-1, 1.0, 10.0, 100.0, 1e3, 1e4, 1e5])
     ap.add_argument("--inner-frac", type=float, default=0.25)
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--repair-intercept", action="store_true",
+                    help="⭐ THE C92 REPAIR, made available and EXPLICIT rather "
+                         "than switched on by default: exclude the bias column "
+                         "from the ridge penalty (intercept_col=-1). ⛔ OFF by "
+                         "default so every banked pc6_ridge_*.json reproduces "
+                         "BIT-EXACTLY through this script; the honest fix for "
+                         "the banked numbers is to re-read them, never to "
+                         "mutate the code underneath them. ⚠️ Turning this on "
+                         "opens the C97 mirror defect — read the k1_guard "
+                         "block before quoting any PASS it produces.")
     a = ap.parse_args(argv)
+    icol = -1 if a.repair_intercept else None
 
     blob = torch.load(a.cache, map_location="cpu", weights_only=False)
     rows, meta = blob["rows"], blob["meta"]
@@ -131,12 +143,12 @@ def main(argv=None) -> int:
     best, best_mae = None, np.inf
     tried = {}
     for al in a.alphas:
-        w = ridge_fit(Ztr[~m_in], ytr[~m_in], al)
+        w = ridge_fit(Ztr[~m_in], ytr[~m_in], al, intercept_col=icol)
         mae = float(np.abs(Ztr[m_in] @ w - ytr[m_in]).mean())
         tried[f"{al:g}"] = round(mae, 4)
         if mae < best_mae:
             best, best_mae = al, mae
-    w = ridge_fit(Ztr, ytr, best)
+    w = ridge_fit(Ztr, ytr, best, intercept_col=icol)
     pred = Zev @ w
 
     const_m = float(np.median(ytr))
@@ -187,7 +199,22 @@ def main(argv=None) -> int:
            "K5_PASSES": bool(k5["separated"] and k5["delta"] < 0),
            "corr_pred_gt": round(float(np.corrcoef(pred, yev)[0, 1]), 4),
            "pred_sd_m": round(float(pred.std()), 3),
-           "gt_sd_m": round(float(yev.std()), 3)}
+           "gt_sd_m": round(float(yev.std()), 3),
+           "intercept_penalised": bool(icol is None),
+           "fit_path": ("INCUMBENT (C92 defect: bias inside the penalty)"
+                        if icol is None else
+                        "REPAIRED (intercept_col=-1; ⚠️ read k1_guard — C97)")}
+
+    # ⛔ THE C97 GUARD — no K1 verdict from this module is quotable as evidence
+    # about the LATENT until this block has been read. A fully-shrunk repaired
+    # ridge IS "predict the train MEAN" while C-CONST is the train MEDIAN, so on
+    # a skewed target K1 degenerates into a mean-vs-median contest and a pure
+    # torch.randn null can "PASS". `K1B` is the latent-attributable part and is
+    # INVARIANT to the choice of C-CONST, which is what settles it.
+    out["k1_guard"] = k1_guard(pred, yev, eev, const_m, n_boot=a.n_boot,
+                               c_mean=float(ytr.mean()))
+    out["K1_PASSES_GUARDED"] = bool(
+        out["K1_PASSES"] and out["k1_guard"]["K1_quotable_as_latent_evidence"])
     Path(a.out).write_text(json.dumps(out, indent=1), "utf-8")
     print("  %-34s ridge=%7.3f [%.3f,%.3f]  const=%7.3f  K1=%+7.3f "
           "[%+.3f,%+.3f] %-8s K5=%+7.3f %-8s r=%+.3f  (alpha %g, n_ev %d/%d cl)"
@@ -196,6 +223,12 @@ def main(argv=None) -> int:
              "K1 PASS" if out["K1_PASSES"] else "K1 fail", out["K5_delta"],
              "K5 PASS" if out["K5_PASSES"] else "K5 fail", out["corr_pred_gt"],
              best, out["n_eval_windows"], out["n_eval_clusters"]), flush=True)
+    g = out["k1_guard"]
+    print("  %-34s GUARD %-21s K1B=%+7.3f [%+.3f,%+.3f] %-8s "
+          "K1C=%+7.3f  sd_ratio=%.3f" %
+          ("", g["guard_verdict"], g["K1B_delta"], g["K1B_lo"], g["K1B_hi"],
+           "sep" if g["K1B_separated"] else "not-sep", g["K1C_delta"],
+           g["sd_ratio"]), flush=True)
     return 0
 
 

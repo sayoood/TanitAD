@@ -658,11 +658,14 @@ def test_E4_the_reopening_recipe_is_EMITTED_not_described(tmp_path):
     r = C.sw_admission_recipe(c)
     steps = {s["n"]: s for s in r["steps"]}
     assert len(steps) == 4
-    # ⛔ step 1 is NOT BUILT and says so — a fabricated command would be worse
-    assert steps[1]["status"].startswith("⛔ NOT BUILT")
+    # ⭐ UPDATED 2026-08-18: step 1 WAS `⛔ NOT BUILT` (correctly — a fabricated
+    # command would have been worse). `scripts/v6_dump_sw_latents.py` built it,
+    # so the pin now asserts the repaired state. The reason it could not be
+    # reused from the REF-C producer is KEPT, because that is the finding.
     assert "refc_dump_latents" in steps[1]["why_not_reusable"]
-    # steps 2-4 are real commands against real scripts
-    for n in (2, 3, 4):
+    assert "v6_dump_sw_latents.py" in steps[1]["cmd"]
+    # all four are real commands against real scripts
+    for n in (1, 2, 3, 4):
         assert steps[n]["status"].startswith("✅")
         assert "cmd" in steps[n]
     assert "e_wc2_sigma_star.py" in steps[2]["cmd"]
