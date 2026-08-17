@@ -142,6 +142,9 @@ __all__ = [
     "V6LossWeights", "STAGE_PRECONDITION", "STAGE_GATE_SPEC",
     "STAGE_INVALIDATES", "STAGE_INVALIDATION_MECHANISM",
     "STAGE_MAY_INTRODUCE", "RESUME_CONTRACT",
+    # E4 — the arm-conditional gate layer
+    "GATE_APPLICABILITY", "UNMEASURED_BY_CONSTRUCTION", "SEL_GAP_TIER_NOTE",
+    "probe_applies", "arm_record",
     "o2_near_field_loss", "o3_masked_cell_loss", "o5_rollout_consistency_loss",
     "o6_sigreg_loss", "rollout_step_weights", "build_o4_weights",
     "ANCHOR_OBJECTIVES", "ANCHOR_OBJ_MODES", "ANCHOR_AXIS_W_DEFAULT",
@@ -587,6 +590,178 @@ STAGE_GATE_SPEC: dict[str, dict] = {
             "no_harm": "battery FLAT across the joint phase (H-COTRAIN rule)"},
     },
 }
+
+#: ⛔ E4 — THE CRITERIA THAT ONLY EXIST ON AN ARM THAT HAS A SCORER, as data.
+#:
+#: **The defect this closes (E4, `ST_LAUNCH_READINESS.md` §5.2).**
+#: ``STAGE_GATE_SPEC["S-T"]["required"]`` contains ``sel_gap``; the default S-T
+#: arm is ``--selector none`` because SEL-1 fired REFUSED; and on that arm
+#: :class:`~tanitad.models.v6.V6Stack` emits **no ``sel_*`` key at all**
+#: (``v6.py:3968`` — the whole block is under ``if self.cand_score is not
+#: None``). So there is no ``sel_idx``, ``tactical.sel_gap_tac`` has no
+#: argument, and ``taniteval.selgap`` has nothing to score. The verdict was
+#: **INCONCLUSIVE by construction** — a criterion decided by the build, not by
+#: the model. Same class as the three vacuous gates found that week (K3 pinned
+#: at 0.5; the pre-S2 goal-provenance audit; ``_grad_census``'s zero-parameter
+#: group), except this one could not *pass* rather than could not *fail*.
+#:
+#: ⚠️ **AND THE MECHANISM AS FIRST REPORTED WAS MISATTRIBUTED — see
+#: :data:`SEL_GAP_TIER_NOTE`.** The fix is NOT "turn ``--w-select`` on".
+#:
+#: ⭐ **WHY THIS IS A STRENGTHENING AND NOT A LOOPHOLE.** The criterion is not
+#: deleted and not demoted: it stays in ``required`` verbatim, and it stays
+#: BINDING on every arm that has a scorer — which is the only arm it was ever
+#: written for. What changes is that an arm which CANNOT produce the quantity
+#: says so, with its reason, instead of reporting INCONCLUSIVE forever. Before
+#: this, a selector arm and a no-selector arm produced the *same* verdict, so
+#: the gate was equally uninformative about both; now the selector arm is the
+#: only one that can be certified, and it cannot escape certification.
+#:
+#: ⛔ **AND "NOT APPLICABLE" IS NEVER "PASS".** A stage whose ``sel_gap`` did
+#: not apply carries :data:`UNMEASURED_BY_CONSTRUCTION`'s standing record in its
+#: own certificate, naming the artifact and the pre-registered threshold that
+#: would make it applicable. The four-families rule, applied verbatim: *a family
+#: that cannot be computed is declared per family with the reason and the n,
+#: never silently dropped* (PI 2026-08-02, binding).
+#:
+#: Keyed ``stage -> {probe: predicate-name}``. The only predicate today is
+#: ``has_scorer``, resolved from the BUILT STACK (``stack.cand_score is not
+#: None``), never from the flag — a ``--selector goal`` that failed to build a
+#: scorer must not be certified as though it had one.
+GATE_APPLICABILITY: dict[str, dict[str, str]] = {
+    "S-W": {},
+    "S-T": {"sel_gap": "has_scorer"},
+    # the revalidation inherits the dependency exactly: S-S re-measures the
+    # SAME quantity under the post-S-S ``e_g_tac``, so it exists on exactly the
+    # same arms. ⚠️ ``w_select`` is 0 at S-S (``for_stage("S-S")`` zeroes it and
+    # the trainer refuses the flag) — that is irrelevant here, because the gate
+    # probe is an EVAL-time T1 instrument, not the train-time log key. The
+    # FROZEN scorer still runs in the forward pass and still emits ``sel_idx``.
+    "S-S": {"sel_gap_revalidated": "has_scorer"},
+    "S-J": {},
+}
+
+#: ⚠️ **A CORRECTION TO THE TWO REPORTS THAT FOUND E4, kept beside the fix.**
+#:
+#: `ST_LAUNCH_READINESS.md` §5.2 and `ST_LAUNCH_FIXES.md` §6 both name
+#: ``train_v6_staged.py``'s ``if w.w_select:`` block as the reason the S-T gate
+#: cannot read ``sel_gap``. That line is real, and it is **not the emitter the
+#: gate consumes**. MEASURED by reading :func:`run_stage_gate`: the gate's
+#: probes come from exactly four places — ``--gate-probes`` (an external JSON),
+#: ``X3_isolation`` (computed in place), ``spectrum`` and ``x4_spectra``. **No
+#: training-loop log key ever becomes a gate probe.**
+#:
+#: The two same-named quantities live at two tiers and only one is quotable:
+#:
+#:   * the LOG key ``sel_gap`` — a **T0 train-time monitor**, per
+#:     ``tactical.sel_gap_tac``'s own docstring (*"this function is the cheap
+#:     train-time monitor only"*), on the training batch, no interval;
+#:   * the GATE probe ``sel_gap`` — owner ``tanitad.models.tactical.sel_gap_tac``
+#:     re-run at **T1 tier** through ``taniteval.selgap`` (episode-cluster
+#:     bootstrap, per-level never pooled), criterion *"<= 0.5x the fan oracle at
+#:     T1 tier"*, delivered via ``--gate-probes``.
+#:
+#: ⇒ **Turning on ``--selector goal --w-select 1.0`` would make the LOG key
+#: appear and would leave the GATE exactly as INCONCLUSIVE as before.** The
+#: readable-gate requirement is two things, not one: the arm must HAVE a scorer
+#: (so ``sel_idx`` exists at eval time) AND the T1 battery must be run and
+#: folded in with ``--gate-probes``, like every other required probe.
+#:
+#: **Root-cause class: a probe read at the wrong SCOPE** — the ``df``-on-a-pod /
+#: Thor-``free`` / cgroup-``usage_in_bytes`` family, here as two identically
+#: named quantities at two eval tiers, the T0 one read as the T1 one. It is also
+#: the EVAL_DOCTRINE rule biting inside our own source: *a number without its
+#: tier stamp is incomplete*.
+SEL_GAP_TIER_NOTE: str = (
+    "the gate probe `sel_gap` is the T1 instrument (taniteval.selgap, "
+    "episode-cluster bootstrap) supplied through --gate-probes — NOT the T0 "
+    "train-time log key of the same name emitted under `if w.w_select:`. "
+    "Enabling --w-select alone makes the LOG key appear and leaves the GATE "
+    "unchanged; the gate needs an arm that HAS a scorer AND the T1 battery.")
+
+#: ⛔ WHAT A NOT-APPLICABLE CRITERION LEAVES UNMEASURED, and exactly what would
+#: measure it. Stamped into every gate artifact that skips one, so the gap is a
+#: standing, visible work item inside the certificate rather than a silence.
+UNMEASURED_BY_CONSTRUCTION: dict[str, dict[str, str]] = {
+    "has_scorer": {
+        "question": "TACTICAL SELECTION — does the tactical level pick a good "
+                    "candidate out of the fan it proposed? (sel_gap = selected "
+                    "- oracle separates 'the fan cannot propose it' from 'the "
+                    "selector cannot find it'.)",
+        "why_not_measured": "this arm was built with --selector none, so "
+                            "V6Stack emits no sel_* key (v6.py: the block is "
+                            "under `if self.cand_score is not None`). There is "
+                            "no sel_idx and therefore no sel_gap to measure — "
+                            "it is UNCOMPUTABLE on this arm, not merely "
+                            "not-yet-run. No battery run can produce it.",
+        "why_this_arm": "SEL-1 fired REFUSED 2026-08-16 (E-WC2: sigma/ADE "
+                        "9.9915 [7.4492, 13.5119] against a refusal line of "
+                        "3.0 pre-registered with both outcomes committed in "
+                        "advance). v6_chain.assert_selector_admissible REFUSES "
+                        "to launch any selector arm while that stands.",
+        "what_would_make_it_applicable":
+            "the E-WC2-SW measurement at the S-W -> S-T boundary "
+            "(~10-25 GPU-min): dump the FROZEN S-W latents, run "
+            "scripts/e_wc2_sigma_star.py, write <sw_dir>/ewc2_sw_latents.json. "
+            "PRE-REGISTERED 2026-08-16 BEFORE the dump was taken: sigma(2 s) "
+            "<= 0.80 m FUNDED (the arm launches with --selector goal and this "
+            "criterion binds) · 0.80 < sigma <= 1.41 INCONCLUSIVE (REFUSED "
+            "stands) · sigma > 1.41 REFUSED stands. The 0.80 m line is not a "
+            "round number: GoalDistanceScorer's requirement curve measured the "
+            "goal rule BETTER than the trained selector at sigma 0.5 m "
+            "(-0.1591 [-0.2300, -0.0894]) and WORSE at sigma 1.0 m (+0.0943 "
+            "[+0.0241, +0.1650]), both separated.",
+        "_read": "NOT a pass, NOT a failure of the model, and NOT a criterion "
+                 "that was dropped: a question this arm is structurally unable "
+                 "to answer. It stays required on every arm that CAN.",
+    },
+}
+
+
+def probe_applies(stage: str, probe: str, arm: dict | None) -> dict | None:
+    """Is ``probe`` measurable on this arm? ``None`` == yes (the strict default).
+
+    Returns a **reason dict** when the probe is NOT applicable, so a caller can
+    never reduce the answer to a bare boolean and lose the explanation — the
+    thing that made the three vacuous gates possible.
+
+    ``arm`` is the run's own build record, ``{"has_scorer": bool, ...}``, taken
+    from the BUILT STACK. ⛔ ``arm=None`` means *no record was supplied* and
+    resolves to **APPLICABLE** — the strict reading — so no caller can weaken a
+    criterion by forgetting to describe its arm.
+    """
+    pred = GATE_APPLICABILITY.get(stage, {}).get(probe)
+    if pred is None or arm is None:
+        return None
+    if pred == "has_scorer":
+        if arm.get("has_scorer"):
+            return None
+        return {"probe": probe, "predicate": pred,
+                "applicable": False,
+                "selector": arm.get("selector", "none"),
+                **UNMEASURED_BY_CONSTRUCTION["has_scorer"]}
+    raise KeyError(                                          # pragma: no cover
+        f"GATE_APPLICABILITY[{stage!r}][{probe!r}] names predicate {pred!r}, "
+        f"which probe_applies does not implement. A predicate that cannot be "
+        f"resolved must raise, never default to applicable-or-not: both "
+        f"silent answers are wrong verdicts wearing a gate.")
+
+
+def arm_record(stack) -> dict:
+    """The build facts a gate needs, read from the STACK, never from the args.
+
+    ⭐ ``--selector goal`` is an intention; ``stack.cand_score is not None`` is
+    what actually happened. A gate that adjudicated on the flag would certify a
+    selector that failed to build — the ``intent_proj`` defect (a path present
+    in the declaration and absent from the object) in a gate's costume.
+    """
+    scorer = getattr(stack, "cand_score", None)
+    return {
+        "has_scorer": scorer is not None,
+        "scorer_class": type(scorer).__name__ if scorer is not None else None,
+        "selector": getattr(getattr(stack, "cfg", None), "selector", "none"),
+        "_source": "the BUILT stack (stack.cand_score), not the --selector flag",
+    }
 
 
 class GatePreconditionError(SystemExit):
@@ -1486,8 +1661,8 @@ def _lift3(a2: Tensor, v0: Tensor) -> Tensor:
 # X5 — the per-stage gate
 # ============================================================================
 
-def stage_gate_dict(stage: str, probes: dict, *, run: dict | None = None
-                    ) -> dict:
+def stage_gate_dict(stage: str, probes: dict, *, run: dict | None = None,
+                    arm: dict | None = None) -> dict:
     """Assemble ``stage_gate.json`` from whatever probes actually ran.
 
     ``probes`` maps probe name -> ``{"pass": bool|None, ...}``. A required probe
@@ -1497,17 +1672,71 @@ def stage_gate_dict(stage: str, probes: dict, *, run: dict | None = None
     not a gate, and X5's rule — *a failed stage never propagates upward* — is
     only enforceable if "did not run" and "ran and passed" stay different
     words.
+
+    ⭐ **E4 — ``arm`` makes a criterion ARM-CONDITIONAL, and only downward.**
+    ``arm`` is :func:`arm_record`'s build facts. A required probe that
+    :func:`probe_applies` declares NOT APPLICABLE on this arm is excluded from
+    the verdict and listed in ``not_applicable_required`` **with its reason and
+    with what would make it applicable** — it is never silently dropped and
+    never counted as a pass. ⛔ ``arm=None`` (no record supplied) adjudicates
+    EVERY criterion as applicable, which is the strict reading and today's
+    behaviour byte-for-byte: forgetting to describe the arm can only make the
+    gate harder to pass, never easier.
+
+    ⛔ **The one thing this must never do is manufacture a PASS.** A stage whose
+    entire required set became not-applicable would "pass" while measuring
+    nothing, so that case is refused outright: ``required_effective`` empty ⇒
+    **INCONCLUSIVE**, with ``vacuous_gate`` naming it. A gate with nothing left
+    to check is decoration, and this programme has already found three of those.
+
+    ⛔ **AND A SUPPLIED VERDICT ALWAYS WINS OVER THE PREDICATE.** Applicability
+    answers *"can this arm produce the quantity?"* — it does **not** license
+    discarding a quantity somebody actually supplied. MEASURED 2026-08-17: the
+    first version of this function excluded a not-applicable probe
+    unconditionally, and the incumbent
+    ``test_the_whole_ladder_hands_off_through_the_WRITTEN_files`` caught it — a
+    planted ``sel_gap {"pass": false}`` was silently dropped and the gate read
+    **PASS on a rung that had FAILED**. That is the erasure of a FAIL, the worst
+    thing a gate can do, arriving through the very mechanism meant to stop
+    vacuous verdicts. ⇒ a probe present with a non-``None`` ``pass`` is
+    adjudicated **regardless** of the predicate, and the contradiction between
+    *"this arm cannot produce it"* and *"here is a value for it"* is surfaced in
+    ``applicability_conflicts`` rather than resolved silently in either
+    direction.
     """
     spec = STAGE_GATE_SPEC[stage]
     req = spec["required"]
-    missing = [p for p in req if p not in probes]
-    inconclusive = [p for p in req
+    supplied = {p for p in req
+                if p in probes and probes[p].get("pass") is not None}
+    skipped: dict[str, dict] = {}
+    conflicts: list[dict] = []
+    for p in req:
+        r = probe_applies(stage, p, arm)
+        if r is None:
+            continue
+        if p in supplied:
+            conflicts.append({
+                "probe": p, "supplied_pass": probes[p].get("pass"),
+                "predicate": r.get("predicate"),
+                "_read": "this arm was recorded as UNABLE to produce this "
+                         "criterion, yet a verdict was supplied for it. The "
+                         "SUPPLIED verdict is adjudicated — a predicate never "
+                         "discards a measurement — but one of the two is "
+                         "wrong: either the arm record or the probe's "
+                         "provenance. Establish which before quoting this "
+                         "gate."})
+            continue
+        skipped[p] = r
+    eff = [p for p in req if p not in skipped]
+    missing = [p for p in eff if p not in probes]
+    inconclusive = [p for p in eff
                     if p in probes and probes[p].get("pass") is None]
-    failed = [p for p in req
+    failed = [p for p in eff
               if p in probes and probes[p].get("pass") is False]
+    vacuous = bool(req) and not eff
     if failed:
         verdict: bool | None = False
-    elif missing or inconclusive:
+    elif missing or inconclusive or vacuous:
         verdict = None
     else:
         verdict = True
@@ -1516,7 +1745,25 @@ def stage_gate_dict(stage: str, probes: dict, *, run: dict | None = None
         "pass": verdict,
         "verdict": ("PASS" if verdict is True else
                     "FAIL" if verdict is False else "INCONCLUSIVE"),
+        # ⛔ the SPEC, verbatim and unedited — a criterion is never deleted from
+        # the record because one arm could not produce it.
         "required": list(req),
+        "required_effective": eff,
+        "not_applicable_required": list(skipped.values()),
+        # ⛔ never empty-and-silent: a supplied verdict for a criterion the arm
+        # cannot produce is adjudicated, AND reported as the contradiction it is.
+        "applicability_conflicts": conflicts,
+        "arm": arm if arm is not None else {
+            "_read": "no arm record was supplied, so EVERY criterion was "
+                     "adjudicated as APPLICABLE (the strict default). A real "
+                     "trainer-written gate always carries one — see "
+                     "run_stage_gate."},
+        "vacuous_gate": ({
+            "refused": True,
+            "_read": "every required criterion was NOT APPLICABLE on this arm, "
+                     "so a PASS here would certify nothing. Forced to "
+                     "INCONCLUSIVE."} if vacuous else None),
+        "sel_gap_tier": SEL_GAP_TIER_NOTE,
         "reported_only": list(spec["reported"]),
         "criteria": spec["criteria"],
         "owners": spec["owners"],
@@ -1540,10 +1787,19 @@ def stage_gate_dict(stage: str, probes: dict, *, run: dict | None = None
             "INCONCLUSIVE": "treated as NOT-PASS. Run the missing probes, or "
                             "override with --allow-inconclusive-gate AND "
                             "--gate-off-reason (the reason is recorded).",
+            # ⛔ the fourth reading, and it is NOT one of the three verdicts:
+            # a criterion this arm cannot produce. It never contributes a pass.
+            "NOT_APPLICABLE": "a required criterion this ARM cannot produce "
+                              "(see not_applicable_required). It is excluded "
+                              "from the verdict and its question stays "
+                              "UNMEASURED — never counted as satisfied. A "
+                              "PASS here certifies required_effective ONLY.",
         },
         "tier": "gate assembled from frozen-battery probes (T0/T1 per probe)",
         "_evidence_class": "MEASURED (ours) for probes present; probes listed "
-                           "in missing_required were NOT RUN",
+                           "in missing_required were NOT RUN; probes listed in "
+                           "not_applicable_required are UNMEASURABLE on this "
+                           "arm and each names what would change that",
     }
 
 
@@ -1575,6 +1831,14 @@ def assert_stage_precondition(stage: str, prev_gate_path=None, *,
         logic can be executed end-to-end on CPU. ``dry_run=True`` (set by
         :func:`dry_run`) is the only thing that accepts one, so a dry ladder
         can never license a real launch — the default is the strict one.
+
+    ⭐ **E4: a PASS is reported WITH ITS SCOPE.** When the predecessor's
+    certificate skipped a required criterion as NOT APPLICABLE, this is the
+    moment an operator can still act on it, so the report carries
+    ``prev_not_applicable`` and the refusal-free path still PRINTS what the
+    certificate did not cover. A PASS that quietly means "everything except the
+    question you care about" is how a scope error becomes a claim three stages
+    later — the ``heldout``-vs-``full_set`` family, in a gate.
     """
     prev = STAGE_PRECONDITION.get(stage)
     if prev is None:
@@ -1603,6 +1867,17 @@ def assert_stage_precondition(stage: str, prev_gate_path=None, *,
             f"frozen-battery probe ran, and every number behind it came from "
             f"synthetic tensors. Re-run stage {prev} for real, or point "
             f"--prev-gate at the real run's stage_gate.json.")
+    # ⭐ E4 — the predecessor's UNMEASURED questions, surfaced at the only
+    # moment an operator can still act on them. Never a refusal: the criterion
+    # was genuinely unproducible on that arm, and blocking here would re-create
+    # the INCONCLUSIVE-by-construction deadlock one stage higher.
+    na = list(gate.get("not_applicable_required") or [])
+    if na:
+        print(f"[v6] ⚠️ {prev}'s certificate does NOT cover "
+              f"{[x.get('probe') for x in na]} — not applicable on that arm. "
+              + " | ".join(f"{x.get('probe')}: {x.get('why_not_measured','')} "
+                           f"⇒ {x.get('what_would_make_it_applicable','')}"
+                           for x in na), flush=True)
     verdict = gate.get("pass")
     if verdict is False:
         raise GatePreconditionError(
@@ -1621,9 +1896,17 @@ def assert_stage_precondition(stage: str, prev_gate_path=None, *,
         return {"stage": stage, "precondition": prev, "ok": True,
                 "prev_verdict": "INCONCLUSIVE",
                 "override": "allow-inconclusive-gate",
-                "off_reason": off_reason, "prev_gate": str(p)}
+                "off_reason": off_reason, "prev_gate": str(p),
+                "prev_not_applicable": na}
     return {"stage": stage, "precondition": prev, "ok": True,
-            "prev_verdict": "PASS", "prev_gate": str(p)}
+            "prev_verdict": "PASS", "prev_gate": str(p),
+            "prev_not_applicable": na,
+            "prev_pass_scope": (
+                f"{prev} PASSED on {gate.get('required_effective', gate.get('required'))}"
+                + (f"; it did NOT cover "
+                   f"{[x.get('probe') for x in na]} (not applicable on that "
+                   f"arm — see the predecessor's stage_gate.json)"
+                   if na else ""))}
 
 
 def in_spectrum_window(step: int, every: int, accum: int) -> bool:
@@ -1733,19 +2016,34 @@ def run_stage_gate(stack: V6Stack, stage: str, *, out_dir,
     text and the owning path from :data:`STAGE_GATE_SPEC`, so "n/a" always says
     WHAT was not reachable and WHERE it lives. It is never silently dropped,
     and it never counts as a pass.
+
+    ⭐ **E4: the arm record is read off the BUILT STACK here** (:func:`arm_record`)
+    and handed to :func:`stage_gate_dict`, so every trainer-written certificate
+    says which criteria its own build could produce. ⛔ This is also the one
+    place that can tell "not run" from "UNRUNNABLE": a not-applicable criterion
+    gets that status rather than the ``not-run`` boilerplate, which otherwise
+    tells an operator to go and run a battery that cannot produce the number.
     """
     probes: dict[str, dict] = dict(extra_probes or {})
     spec = STAGE_GATE_SPEC[stage]
+    arm = arm_record(stack)
     for name in tuple(spec["required"]) + tuple(spec["reported"]):
         if name in probes:
             continue
         owner = spec["owners"].get(name, "?")
+        na = probe_applies(stage, name, arm)
+        if na is not None:
+            probes[name] = {"pass": None, "status": "not-applicable",
+                            "owner": owner, **na}
+            continue
         probes[name] = {"pass": None, "status": "not-run",
                         "owner": owner,
                         "reason": "no artifact supplied to --gate-probes and "
                                   "this trainer does not run the battery "
                                   "in-loop (it is a separate, frozen "
-                                  "instrument by design)"}
+                                  "instrument by design)",
+                        "tier_note": (SEL_GAP_TIER_NOTE
+                                      if name.startswith("sel_gap") else None)}
     # X3 is the one gate this module CAN measure on its own, always.
     try:
         iso = stack.assert_isolation(batch_size=1, strict=False)
@@ -1785,7 +2083,7 @@ def run_stage_gate(stack: V6Stack, stage: str, *, out_dir,
                       "verdicts are INCONCLUSIVE until pooled to the "
                       "layer's own ceiling (--spectrum-accum 33 recommended: "
                       "32 leaves tac ONE ROW short at 8 rows/step)"}
-    gate = stage_gate_dict(stage, probes)
+    gate = stage_gate_dict(stage, probes, arm=arm)
     gate["param_report"] = stack.param_report()
     if dry_run:
         # ⛔ STAMPED, so it can never be mistaken for — or used as — a real

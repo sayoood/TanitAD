@@ -337,7 +337,12 @@ shown, never what a card claims: every card prints each leg's native opinion.
 | ⭐ `Stop` over the band: v(+2 s) 2.95 → v(+6 s) **5.82**, net **+2.87** | **MEASURED** (ego poses) | 8 |
 | ⛔ `Strong Deceleration` **reverses sign** at the band: seam −1.06 → band net **+1.17** | **MEASURED** (ego poses) | 11 |
 | yaw sign: **positive Δyaw = LEFT** | **MEASURED**, not assumed (Sharp Steer Left +0.1963 / Right −0.5371) | 201 |
-| yaw sign holds **on the band too** (Sharp Steer L +0.1660 / R −0.1565); ⚠️ ordinary `Steer Right` is **−0.0004** in band | **MEASURED**, re-calibrated on the band quantity | 201 |
+| yaw sign holds **on the band too** (Sharp Steer L +0.1660 / R −0.1565) | **MEASURED**, re-calibrated on the band quantity | 201 |
+| ⭐ **seam→band is ASYMMETRIC by turn direction**: LEFT classes **grow** (`Steer Left` +0.0161→**+0.1082**, 6.72×, n=24; `Sharp Steer Left` 1.96×, n=4), RIGHT classes **shrink** (`Steer Right` −0.0569→−0.0125, 0.22×, n=37; `Sharp Steer Right` 0.45×, n=7) | **MEASURED** (`raw/b1_band_agreement_per_clip.jsonl`) | 193 |
+| ⭐ at 0.15 rad, **47 of the 61 ordinary `Steer *` clips (77 %) read `straight`** at the band under the primary `mean_band` (36/61 = 59 % under `net_band`); the two `Sharp` class MEANS clear the threshold but lose 2/4 and 4/7 clips individually | **MEASURED** — this, not "aftermath", is the LAT κ mechanism | 193 |
+| ⛔ *second self-correction:* I first wrote "**all** 61 collapse" — a **class-mean fact stated as a per-clip fact**; the true figure is 47/61 | mean-to-member overreach, caught by per-clip re-check | 61 |
+| ⛔ *self-corrected same day:* my first reading — *"by 2–6 s the ordinary turns are already resolved / aftermath"* — was generalised from the RIGHT classes only and is **refuted** by the LEFT ones | see `TACTICAL_LABEL_VALIDATION.md` §3.1 | — |
+| left turns execute later than right turns (would explain the sign pattern) | ⚠️ **HYPOTHESIS — untested**, must not be quoted as a finding | — |
 | 186 clips have no v6 lateral token for `Turn *` | **MEASURED** (a1 taxonomy) | 4,729 |
 | ~~κ peaks at H = 2.0 s on both axes~~ ⛔ true but **misused** — 2.0 s is `OP_BAND_S`, not the tactical band (C89) | **MEASURED** (INHERITED from a4 sweep, not re-run here) | 201 |
 | ⭐ at `TAC_BAND_S` (2.0, 6.0]: LON κ **0.1428** [0.0540, 0.2250] · LAT κ **0.1777** [0.0658, 0.2953] | **MEASURED** (ours, re-run: `code/tacrev_band_agreement.py`) | 201 / 193 |

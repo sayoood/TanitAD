@@ -20,9 +20,12 @@ must it wait ~5.3 days for the GPU? The extraction needs no GPU, so concurrency 
 > (MEASURED, n=1 sustained 60 s, 707.8 MB). This is the number the brief flagged as most valuable
 > and it changes the extraction plan independently of the concurrency answer.
 
-> ⚠️ **PARITY CLAIM IN THE BRIEF IS WRONG: 201 of the 4,729 Alpamayo clips ARE already built in the
-> parity corpus directory on Thor.** The brief states these clips are *not* in
-> `physicalai-train-e438721ae894`. MEASURED overlap is **201**, not 0.
+> ⚠️ **PARITY CLAIM IN THE BRIEF IS WRONG, AND IT IS AN EVAL-LEAK RISK: 201 of the 4,729 Alpamayo
+> clips are already in the parity TRAIN corpus** — the very cache the live trainer reads
+> (`--v2-cache …physicalai-train-e438721ae894-w120-256x640cyl`, from `/proc/25477/cmdline`). The
+> brief states these clips are *not* in `physicalai-train-e438721ae894`; MEASURED overlap is **201**,
+> not 0. ⇒ Any eval split built from this corpus must exclude them (list banked) or it repeats the
+> REF-A I-JEPA leak at 4.3 % scale.
 
 ---
 
@@ -201,13 +204,18 @@ corpus; the mtimes rule out aug120 having been written into this directory after
 - It is **not** a parity violation by this pilot. The build writes to a separate `--out` and
   re-selects nothing, so `physicalai-train-e438721ae894` is untouched. The new corpus stays a
   **separate labelled corpus, never an extension of the parity set.**
-- ⛔ **The real hazard is evaluation contamination, and it points the other way.** Any model trained
-  on the parity corpus **has already seen those 201 clips**. If the Alpamayo-labelled corpus is later
-  used as a held-out or OOD evaluation set on the strength of "these clips are not in the parity
-  set", **201 of its clips are train-contaminated**. That is the **REF-A I-JEPA leak class** (~80 %
-  of val inside train, which made that arm's val number unusable) at smaller scale — 201/4,729 =
-  4.3 %. ⇒ **Exclude the 201 from any eval split built on this corpus, or report with and without
-  them.** The list is recoverable in one line from `alpamayo_clip_ids.txt` ∩ `parity_ls.txt`.
+- ⛔ **The real hazard is evaluation contamination, and it points the other way.** This is **not
+  hypothetical and not historical — it is the live run**. `v6F-SW-30k` (PID 25477) carries
+  `--v2-cache /home/nvidia/data/physicalai-train-e438721ae894-w120-256x640cyl` (read from
+  `/proc/25477/cmdline`), which is **the exact directory the 201 overlapping clips live in**. The
+  model now training has been seeing those 201 clips for ~5.3 days.
+
+  So if the Alpamayo-labelled corpus is later used as a held-out or OOD evaluation set on the
+  strength of "these clips are not in the parity set", **201 of its clips are train-contaminated for
+  the flagship arm**. That is the **REF-A I-JEPA leak class** (~80 % of val inside train, which made
+  that arm's val number unusable) at smaller scale — 201/4,729 = **4.3 %**. ⇒ **Exclude the 201 from
+  any eval split built on this corpus, or report with and without them.** The ready-to-use list is
+  banked as `alpamayo_IN_parity_train_EXCLUDE_FROM_EVAL.txt` (201 ids).
 - Minor: those 201 clips would also be **built twice**, wasting ~7 GB and ~40 min of extraction.
 
 ---

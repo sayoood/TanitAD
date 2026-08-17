@@ -103,10 +103,30 @@ def touch_ancestor(step, argv=None):
     write_ancestor_config(step, C.TINY_GEOMETRY if argv is None else argv)
 
 
-def write_admission(c, sigma):
+def write_admission(c, sigma, *, shape="instrument"):
+    """⛔ WRITES THE SHAPE THE INSTRUMENT EMITS, not the shape the reader wants.
+
+    This fixture used to write `{"sigma_2s_m": sigma}` — flat, top-level, and a
+    key `scripts/e_wc2_sigma_star.py` NEVER EMITS. Because the fixture modelled
+    the CONSUMER'S EXPECTATION instead of the PRODUCER'S OUTPUT, the join
+    between them was never exercised, and `read_sw_admission` could not resolve
+    a real artifact at all: SEL-1's pre-registered reopening path was DEAD for
+    ANY measurement (MEASURED 2026-08-17 by executing the real estimator on a
+    dump with a planted sigma of 0.30 m — recovered 0.3026, deep inside the
+    FUNDED band, and still refused).
+
+    Same root-cause class as `touch_ancestor` writing a `stage_gate.json` with
+    no `config.json` (ST_LAUNCH_FIXES.md §9): a fixture that constructs a state
+    which cannot exist. ⇒ default is the instrument's real nesting;
+    `shape="legacy"` keeps the flat form reachable, because the resolver still
+    accepts a hand-written artifact and that tolerance must stay pinned.
+    """
     p = Path(C.admission_path(c))
     p.parent.mkdir(parents=True, exist_ok=True)
-    p.write_text(json.dumps({"sigma_2s_m": sigma}))
+    doc = ({"sigma_2s_m": sigma} if shape == "legacy" else
+           {"item": "E-WC2", "surface": {"n_windows": 881, "n_episodes": 40},
+            "references_and_ratios": {"sigma_perax_2s_m": sigma}})
+    p.write_text(json.dumps(doc))
     return p
 
 

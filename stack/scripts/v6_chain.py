@@ -224,7 +224,10 @@ SW_LATENT_ADMISSION: dict = {
     "probe": "E-WC2-SW — ridge on FROZEN S-W latents, LOEO over the 40 val "
              "episodes, 1σ per-axis endpoint error at 2 s",
     "artifact": "ewc2_sw_latents.json",
-    "field": "sigma_2s_m",
+    #: ⛔ CORRECTED 2026-08-17 (E4 stream) — this read `"sigma_2s_m"`, a key the
+    #: instrument DOES NOT EMIT, at a level it does not emit it. See
+    #: :data:`SW_SIGMA_LOCATIONS`. The reopening path could not return FUNDED.
+    "field": "references_and_ratios.sigma_perax_2s_m",
     "funded_at_or_below_m": 0.80,
     "refused_above_m": 1.41,
     "horizon_s": 2.0,
@@ -235,6 +238,105 @@ SW_LATENT_ADMISSION: dict = {
              "= 3.7481 on REF-C, past the 3x line, so the ratio form does not "
              "transfer and a scaled 6 s number would be a fabricated one.",
 }
+
+
+#: ⛔ WHERE THE σ ACTUALLY LIVES IN THE INSTRUMENT'S OWN ARTIFACT, as data.
+#:
+#: **MEASURED 2026-08-17 BY EXECUTION (E4 stream), and this was a DEAD GATE.**
+#: ``SW_LATENT_ADMISSION["field"]`` read ``"sigma_2s_m"`` and
+#: :func:`read_sw_admission` looked for it at the TOP LEVEL of the JSON.
+#: ``scripts/e_wc2_sigma_star.py`` emits neither: its result's top level is
+#: ``{item, _prereg, _evidence_class, _class, _tier, _estimator, _ridge,
+#: surface, features, sigma, references_and_ratios, rederive_check_5_3,
+#: decision, four_families}``, and the per-axis 2 s σ is at
+#: ``references_and_ratios.sigma_perax_2s_m``. **Name AND level both differed.**
+#:
+#: Executed end-to-end on a synthetic dump with a PLANTED σ of **0.30 m** — deep
+#: inside the FUNDED band — through the real estimator and the real reader:
+#: the estimator recovered **0.3026** (0.9 % of planted) and
+#: ``read_sw_admission`` still returned ``verdict: null`` (*"the probe did not
+#: report the quantity the threshold is defined on"*), so
+#: :func:`assert_selector_admissible` **REFUSED the launch**.
+#:
+#: ⇒ **SEL-1's pre-registered reopening path could not return FUNDED for ANY
+#: measurement.** It is the exact mirror of E4 — E4 is a gate that cannot read
+#: PASS; this is an admission gate that cannot read FUNDED — and together they
+#: made "eventually we need a tactical selector" unreachable by construction on
+#: both sides of the same question. *A gate that cannot report PASS and a gate
+#: that cannot report FAIL are the same defect.*
+#:
+#: ⚠️ **ROOT-CAUSE CLASS: A FIXTURE THAT MODELS THE CONSUMER'S EXPECTATION
+#: INSTEAD OF THE PRODUCER'S OUTPUT.** ``test_v6_chain.py`` wrote the artifact by
+#: hand as ``{"sigma_2s_m": sigma}`` — the shape the READER wanted — so the join
+#: between instrument and reader was never exercised. Same family as
+#: ``touch_ancestor`` writing a ``stage_gate.json`` with no ``config.json``
+#: (`ST_LAUNCH_FIXES.md` §9), and as ``assert_geometry_carry`` comparing 2 of
+#: the 76 fields it had in hand. The replacement pin RUNS THE REAL ESTIMATOR and
+#: resolves its real output.
+#:
+#: Searched in order; the FIRST that resolves to a float wins. The legacy
+#: top-level name is kept LAST so a hand-written artifact still reads.
+SW_SIGMA_LOCATIONS: tuple[tuple[str, ...], ...] = (
+    ("references_and_ratios", "sigma_perax_2s_m"),
+    ("references_and_ratios", "sigma_perax_2s_matched_m"),
+    ("sigma_2s_m",),
+)
+
+#: ⛔ THE UNIT TRAP, REFUSED BY NAME. ``sigma_radial_rms_m`` is **√2 × larger**
+#: than the per-axis σ the threshold is defined on (``e_wc2_sigma_star.py``
+#: states this and pins the unit: 0.8 / 0.4714 = 1.70 reproduces §3.1's
+#: published ratio exactly). Reading the radial form against 0.80 m would
+#: **inflate σ by 1.414 and flip FUNDED → INCONCLUSIVE on arithmetic alone** —
+#: a true 0.56 m surface would read 0.79 and squeak in, a true 0.79 would read
+#: 1.12 and be refused. So the resolver refuses these keys explicitly rather
+#: than never happening to look at them.
+SW_SIGMA_FORBIDDEN: dict[str, str] = {
+    "sigma_radial_rms_m": "the RADIAL RMS, sqrt(2)x the per-axis sigma the "
+                          "0.80/1.41 thresholds are defined on",
+    "sigma_6s_m": "the 6 s horizon. There is NO 6 s threshold: "
+                  "sigma(6s)/sigma(2s) = 3.7481 on REF-C is past the 3x line, "
+                  "so the ratio form does not transfer (SEL1_ADMISSION"
+                  "['threshold_6s_reason']) and a scaled 6 s number would be "
+                  "fabricated.",
+}
+
+
+def resolve_sw_sigma(d: dict) -> dict:
+    """Find the PER-AXIS 2 s σ in an E-WC2 artifact, or say exactly what failed.
+
+    Returns ``{"ok": True, "sigma_2s_m": float, "at": "a.b.c"}`` or
+    ``{"ok": False, "searched": [...], "reason": ...}``. ⛔ It never guesses and
+    it never falls back to a differently-scaled quantity — see
+    :data:`SW_SIGMA_FORBIDDEN`. An admission gate that reads the wrong unit is
+    worse than one that reads nothing, because it looks like an answer.
+    """
+    searched = [".".join(p) for p in SW_SIGMA_LOCATIONS]
+    for path in SW_SIGMA_LOCATIONS:
+        node: object = d
+        for k in path:
+            if not isinstance(node, dict) or k not in node:
+                node = None
+                break
+            node = node[k]
+        if isinstance(node, (int, float)) and not isinstance(node, bool):
+            return {"ok": True, "sigma_2s_m": float(node),
+                    "at": ".".join(path),
+                    "unit": "PER-AXIS 1-sigma, metres (NOT the radial RMS, "
+                            "which is sqrt(2)x larger)"}
+    present = sorted(k for k in SW_SIGMA_FORBIDDEN
+                     if k in d or k in (d.get("references_and_ratios") or {}))
+    return {"ok": False, "searched": searched,
+            "top_level_keys": sorted(d) if isinstance(d, dict) else None,
+            "refused_alternatives": {k: SW_SIGMA_FORBIDDEN[k] for k in present},
+            "reason": (
+                f"none of {searched} resolved to a number. The producer is "
+                f"`scripts/e_wc2_sigma_star.py --dump <d> --out <this file>`, "
+                f"which writes the per-axis 2 s sigma at "
+                f"`references_and_ratios.sigma_perax_2s_m`. "
+                + (f"⛔ {sorted(present)} IS present and was REFUSED: "
+                   f"{[SW_SIGMA_FORBIDDEN[k] for k in present]}. "
+                   if present else "")
+                + "Absence of the number is NOT an admission.")}
 
 
 def adjudicate_sw_admission(sigma_2s_m: float) -> dict:
@@ -271,13 +373,105 @@ def read_sw_admission(cfg: "ChainConfig") -> dict:
     except Exception as e:
         return {"present": True, "path": str(p), "verdict": None,
                 "error": f"{type(e).__name__}: {e}"}
-    field = SW_LATENT_ADMISSION["field"]
-    if field not in d:
+    # ⛔ The σ is resolved through :func:`resolve_sw_sigma`, which knows where
+    # the INSTRUMENT actually writes it. This used to be a bare `field not in d`
+    # against a key `e_wc2_sigma_star.py` never emitted — see
+    # :data:`SW_SIGMA_LOCATIONS` for the executed proof that the gate was dead.
+    hit = resolve_sw_sigma(d)
+    if not hit["ok"]:
         return {"present": True, "path": str(p), "verdict": None,
-                "_read": f"{p} has no {field!r}; the probe did not report the "
-                         f"quantity the threshold is defined on."}
+                "resolve": hit,
+                "_read": f"{p} carries no per-axis 2 s sigma. {hit['reason']}"}
     return {"present": True, "path": str(p),
-            **adjudicate_sw_admission(d[field]), "raw": d}
+            **adjudicate_sw_admission(hit["sigma_2s_m"]),
+            "read_at": hit["at"], "unit": hit["unit"], "raw": d}
+
+
+def sw_admission_recipe(cfg: "ChainConfig") -> dict:
+    """⭐ THE EMITTED PATH TO A TACTICAL SELECTOR — the PI's "eventually", as a
+    runnable sequence with its one missing piece NAMED rather than assumed.
+
+    ⛔ **This exists because the reopening path lived only in a docstring.**
+    ``assert_selector_admissible`` tells an operator the arm is refused and
+    names an artifact; nothing anywhere emitted the commands that produce it,
+    and the one step that does not exist yet was recorded nowhere at all. That
+    is the "please merge in a README" failure — a request nobody re-reads —
+    applied to the programme's own next decision.
+
+    ⚠️ **Step 1 IS NOT BUILT.** MEASURED at three probes 2026-08-17: no script
+    in ``stack/scripts/`` dumps v6 S-W latents in the E-WC2 contract
+    (``e_wc2_sigma_star.DUMP_CONTRACT``). Every ``gt_endpoint`` producer is
+    REF-C-side — ``refc_dump_latents.build_model`` builds a ``RefCModel`` and
+    cannot load a v6 checkpoint. ``e_wc2_sigma_star.py``'s own header says it:
+    *"S-W latents have never been dumped; that one pass needs the GPU and a
+    deliberate pause."* Emitting a command for a script that does not exist
+    would be a fabricated recipe, so it is emitted as a BUILD ITEM with its
+    contract instead. Steps 2–4 are real and runnable today.
+    """
+    sw = cfg.path(cfg.sw_dir)
+    art = admission_path(cfg)
+    dump = posixpath.join(sw, "ewc2_sw_dump.pt")
+    return {
+        "why": "SEL-1 is REFUSED; this is the ONLY thing that lifts it, and it "
+               "was PRE-REGISTERED on 2026-08-16 BEFORE the measurement "
+               "existed. It is not a veto on a tactical selector — it is the "
+               "measurement that decides whether this surface can carry one.",
+        "when": "the S-W -> S-T boundary. That is the only cheap pause in the "
+                "ladder and it is the moment S-W reaches 30 000.",
+        "cost": SW_LATENT_ADMISSION["cost"],
+        "steps": [
+            {"n": 1, "status": "⛔ NOT BUILT — this is the work item",
+             "what": "dump the FROZEN S-W latents on the canonical val40 grid "
+                     "in the E-WC2 dump contract",
+             "contract": "scripts/e_wc2_sigma_star.py --print-contract "
+                         "(requires: eid [n], >=1 VISION-ONLY feature block "
+                         "[n, F], gt_endpoint [n, He, 2] with axis0 = "
+                         "LONGITUDINAL, endpoint_valid)",
+             "grid": "40 episodes, WINDOW=8, STRIDE=8, 881 windows. "
+                     "Re-selecting episodes breaks parity and is refused.",
+             "why_not_reusable": "refc_dump_latents.build_model builds a "
+                                 "RefCModel and cannot load a v6 checkpoint; "
+                                 "probe_latent_state.py reads v6 checkpoints "
+                                 "but emits P1/P2 retention, not an E-WC2 "
+                                 "dump. MEASURED at three probes 2026-08-17.",
+             "input": posixpath.join(sw, "ckpt.pt"),
+             "output": dump},
+            {"n": 2, "status": "✅ built — CPU, no GPU, no model",
+             "what": "run the estimator (ridge = the P1/P2 battery's, LOEO "
+                     "over the 40 val episodes)",
+             "cmd": (f"{cfg.python} scripts/e_wc2_sigma_star.py "
+                     f"--dump {shlex.quote(dump)} "
+                     f"--out {shlex.quote(art)} --features pooled,ctx")},
+            {"n": 3, "status": "✅ built",
+             "what": "adjudicate against the PRE-REGISTERED thresholds",
+             "cmd": f"{cfg.python} scripts/v6_chain.py admission "
+                    f"--root {shlex.quote(cfg.root)} "
+                    f"--sw-dir {shlex.quote(cfg.sw_dir)}",
+             "reads": f"{SW_LATENT_ADMISSION['field']} (PER-AXIS metres)",
+             "thresholds": {
+                 "FUNDED": f"sigma <= {SW_LATENT_ADMISSION['funded_at_or_below_m']} m",
+                 "INCONCLUSIVE": f"{SW_LATENT_ADMISSION['funded_at_or_below_m']} "
+                                 f"< sigma <= {SW_LATENT_ADMISSION['refused_above_m']} m "
+                                 f"(REFUSED stands)",
+                 "REFUSED": f"sigma > {SW_LATENT_ADMISSION['refused_above_m']} m"}},
+            {"n": 4, "status": "✅ built — only reachable if step 3 says FUNDED",
+             "what": "schedule the selector arm; sel_gap then BINDS at the "
+                     "S-T gate (train_v6_staged.GATE_APPLICABILITY)",
+             "cmd": f"{cfg.python} scripts/v6_chain.py commands --step S-T:goal "
+                    f"--st-arms goal --root {shlex.quote(cfg.root)}"},
+        ],
+        "current": read_sw_admission(cfg),
+        "what_binds_if_funded": (
+            "GATE_APPLICABILITY['S-T']['sel_gap'] = 'has_scorer'. On a FUNDED "
+            "arm the stack has a cand_score, so sel_gap is REQUIRED at the S-T "
+            "gate and sel_gap_revalidated is REQUIRED at S-S. On the refused "
+            "arm both are NOT APPLICABLE and the certificate says so, with "
+            "this recipe as the way to change it."),
+        "_evidence_class": "PRE-REGISTERED (the thresholds, 2026-08-16) + "
+                           "MEASURED (ours, 2026-08-17: the step-1 absence at "
+                           "three probes; the reader/instrument key mismatch "
+                           "executed end-to-end)",
+    }
 
 
 def assert_selector_admissible(step, cfg: "ChainConfig") -> dict:
@@ -323,7 +517,14 @@ def assert_selector_admissible(step, cfg: "ChainConfig") -> dict:
         f"PRE-REGISTERED {SW_LATENT_ADMISSION['pre_registered']}: "
         f"σ ≤ {SW_LATENT_ADMISSION['funded_at_or_below_m']} m FUNDED · "
         f"σ > {SW_LATENT_ADMISSION['refused_above_m']} m REFUSED stands. "
-        f"Current state: {adm.get('_read', adm.get('verdict'))}")
+        f"Current state: {adm.get('_read', adm.get('verdict'))}\n"
+        f"  ⭐ THE RECIPE IS EMITTED, not described: `v6_chain.py admission` "
+        f"prints all four steps (`recipe`), including the ONE that is not "
+        f"built yet — the v6 S-W latent dump in E-WC2's contract. ⚠️ Until "
+        f"then the S-T certificate carries `sel_gap` as NOT APPLICABLE with "
+        f"this same path attached (train_v6_staged.UNMEASURED_BY_CONSTRUCTION), "
+        f"so the tactical-selection question is recorded as OPEN, never as "
+        f"answered.")
 
 
 # ============================================================================
@@ -2038,6 +2239,9 @@ def main(argv=None) -> int:
                "sw_latent_pre_registration": SW_LATENT_ADMISSION,
                "current": read_sw_admission(cfg),
                "selector_arms_scheduled": list(cfg.st_arms),
+               # ⭐ the emitted path to a tactical selector — a reopening route
+               # that only exists in a docstring is one nobody executes.
+               "recipe": sw_admission_recipe(cfg),
                "_evidence_class":
                    "MEASURED (E-WC2, REF-C surface, T0-DIAGNOSTIC) + "
                    "PRE-REGISTERED (the S-W latent thresholds, committed "

@@ -14,10 +14,12 @@ S-W checkpoint. Its verdict is the brief for this file:
 
 So every test here executes the seam rather than asserting about it.
 
-⚠️ ONE OF THESE PINS A DEFECT THAT IS **NOT FIXED**. `test_E4_*` asserts that
-the S-T gate is INCONCLUSIVE **by construction** on the arm the chain plans to
-run. That is not a bug in the test — it is the defect, held still so it cannot
-be silently "fixed" in a direction nobody chose. See §E4 below.
+⭐ E4 IS NOW RESOLVED (2026-08-17, PI decision: *"solve the s-t gate
+contradiction, eventually we need a tactical selector"*). The `test_E4_*` block
+below used to pin the OPEN defect; it now pins the resolution, the correction to
+its own former statement of the mechanism, and — the requirement that makes any
+of it worth having — that the gate can return **each** of its verdicts on a
+constructed input. See §E4.
 """
 import json
 import subprocess
@@ -329,51 +331,92 @@ def test_E5_the_seam_dump_flag_is_wired_in_the_TRAINER_not_only_the_chain():
 
 
 # ============================================================================
-# E4 — ⛔ PINNED AS AN OPEN DEFECT. NOT FIXED HERE. THE CHOICE IS THE PI'S.
+# E4 — ⭐ RESOLVED 2026-08-17. These three tests were PINS on an open defect;
+#          they now pin the RESOLUTION, and they still name what was chosen.
 # ============================================================================
-# `STAGE_GATE_SPEC["S-T"]["required"]` contains `sel_gap`. `sel_gap` is emitted
-# ONLY inside `if w.w_select:` (train_v6_staged.py, the selection-loss block),
-# and `w_select > 0` REQUIRES `--selector != none` (the trainer refuses
-# otherwise). The chain's DEFAULT S-T step is `selector="none", w_select=0.0`,
-# because SEL-1 fired REFUSED on 2026-08-16 against a pre-registered threshold.
+# ⛔ WHAT THE PINS USED TO ASSERT, and why they were right to exist.
+# `STAGE_GATE_SPEC["S-T"]["required"]` contains `sel_gap`; the chain's DEFAULT
+# S-T step is `selector="none", w_select=0.0` because SEL-1 fired REFUSED on
+# 2026-08-16; and on that arm `V6Stack` emits NO `sel_*` key at all, so there is
+# no `sel_idx`, `sel_gap_tac` has no argument and `taniteval.selgap` has nothing
+# to score. The verdict was INCONCLUSIVE BY CONSTRUCTION — the mirror of the
+# three vacuous gates found that week (K3 pinned at 0.5; the pre-S2
+# goal-provenance audit; `_grad_census`'s zero-parameter group), except this one
+# could not PASS rather than could not FAIL.
 #
-# ⇒ The gate spec and the default plan CONTRADICT each other, and the
-#   contradiction resolves as "INCONCLUSIVE, always". It is the mirror of the
-#   three vacuous gates found that week (K3 pinned at 0.5; the pre-S2
-#   goal-provenance audit; `_grad_census`'s zero-parameter group): a criterion
-#   whose verdict is decided BY CONSTRUCTION rather than by the model. Here it
-#   cannot PASS instead of cannot FAIL — same class, same cause.
+# ⚠️ AND THE MECHANISM AS ORIGINALLY WRITTEN HERE WAS MISATTRIBUTED. The old
+# comment said `sel_gap` "is emitted ONLY inside `if w.w_select:`". That line is
+# real and it is NOT the emitter the gate reads: `run_stage_gate` populates
+# probes from `--gate-probes`, `X3_isolation`, `spectrum` and `x4_spectra` and
+# from NOTHING ELSE — no training-loop log key ever becomes a gate probe. The
+# gate's `sel_gap` is the T1 instrument (`taniteval.selgap`), the log key is a
+# T0 train-time monitor, and turning `--w-select` on would have made the LOG key
+# appear while leaving the GATE exactly as INCONCLUSIVE. Root-cause class: a
+# probe read at the WRONG SCOPE (the `df`-on-a-pod / Thor-`free` / cgroup
+# family), here as two identically named quantities at two eval tiers. Pinned by
+# `test_E4_the_gate_never_reads_the_TRAIN_TIME_log_key`.
 #
-# ⚠️ It propagates: `STAGE_GATE_SPEC["S-S"]["required"]` contains
-#   `sel_gap_revalidated`, with the identical dependency.
+# ⭐ THE RESOLUTION — (c) BOTH, in the only order that is honest.
+#   (c1) The requirement is ARM-CONDITIONAL: `GATE_APPLICABILITY["S-T"]
+#        ["sel_gap"] = "has_scorer"`, resolved from the BUILT STACK. On an arm
+#        with a scorer `sel_gap` stays REQUIRED — a selector can never be
+#        trained without being certified. On an arm without one it is NOT
+#        APPLICABLE, recorded with its reason and with the pre-registered
+#        measurement that would make it applicable. That is a STRENGTHENING:
+#        before, a selector arm and a no-selector arm produced the same verdict,
+#        so the gate was equally uninformative about both.
+#   (c2) The selector is made REAL by REPAIRING ITS REOPENING PATH, not by
+#        overriding the refusal. ⛔ MEASURED 2026-08-17 by execution: the path
+#        was DEAD — `read_sw_admission` looked for a top-level `sigma_2s_m` and
+#        `e_wc2_sigma_star.py` writes `references_and_ratios.sigma_perax_2s_m`,
+#        so a PLANTED sigma of 0.30 m (recovered 0.3026, deep inside the FUNDED
+#        band) still produced `verdict: null` and a refused launch. SEL-1 could
+#        not be reopened by ANY measurement. Fixed in `resolve_sw_sigma`, and
+#        the four-step recipe is now EMITTED by `v6_chain.py admission`.
 #
-# TWO LEGITIMATE FIXES, BOTH THE PI'S CALL (ST_LAUNCH_READINESS.md §5.2):
-#   (a) move `sel_gap` from `required` to `reported` WHEN `selector == "none"`,
-#       and record that the S-T certificate then rests on TACTICAL_family alone;
-#   (b) keep it required and make the refusal EXPLICIT AND EARLY —
-#       `assert_may_launch` refuses an S-T step whose `selector == "none"` while
-#       `sel_gap` is required, naming the contradiction, instead of letting it
-#       surface as an unexplained INCONCLUSIVE 3.15 GPU-days later.
-#
-# This test does not choose. It holds the defect still, so that whichever way it
-# is fixed, the fix is a DECISION someone made and not a quiet edit.
+# ⇒ Why not (a) "just enable a selector by default": it would require deleting a
+#   FIRED pre-registration (`assert_selector_admissible`), spend 3.15 GPU-days
+#   on an arm whose admission criterion is unmeasured, and train a scorer on a
+#   goal input measured at sigma/ADE 9.9915 on the nearest available surface.
+#   CLAUDE.md rule 5 settles conflicts with pre-registered experiments, not with
+#   deference — including deference to a steer we agree with.
+# ⇒ Why not (b) alone: it leaves tactical selection unmeasured with no route
+#   back. (c2) is what supplies the route, and it is now executable.
 # ============================================================================
-def test_E4_PIN_the_S_T_gate_cannot_read_PASS_on_the_arm_the_chain_plans(
-        tmp_path):
+def test_E4_the_S_T_gate_can_read_PASS_on_the_arm_the_chain_plans(tmp_path):
+    """The defect, inverted: the planned arm's gate is now ADJUDICABLE."""
     c = _cfg(tmp_path)
     st = C.step_by_key(C.build_plan(c), "S-T")
     assert (st.selector, st.w_select) == ("none", 0.0)      # SEL-1 REFUSED
+    # ⛔ the criterion is NOT deleted from the spec — that was never the fix.
     assert "sel_gap" in T.STAGE_GATE_SPEC["S-T"]["required"]
 
-    # every OTHER required probe passing is still not a PASS
+    no_scorer = {"has_scorer": False, "selector": "none"}
     probes = {p: {"pass": True} for p in T.STAGE_GATE_SPEC["S-T"]["required"]
               if p != "sel_gap"}
-    g = T.stage_gate_dict("S-T", probes)
-    assert g["verdict"] == "INCONCLUSIVE"
-    assert "sel_gap" in (g["missing_required"] + g["inconclusive_required"])
+    g = T.stage_gate_dict("S-T", probes, arm=no_scorer)
+    assert g["verdict"] == "PASS"                    # <- was INCONCLUSIVE
+    assert g["required_effective"] == ["TACTICAL_family"]
+    # ...and the skipped criterion is RECORDED, never silently dropped
+    na = g["not_applicable_required"]
+    assert [x["probe"] for x in na] == ["sel_gap"]
+    assert "UNCOMPUTABLE" in na[0]["why_not_measured"]
+    assert "e_wc2_sigma_star" in na[0]["what_would_make_it_applicable"]
+    assert str(C.SW_LATENT_ADMISSION["funded_at_or_below_m"]) \
+        in na[0]["what_would_make_it_applicable"]
 
-    # ...and the trainer will not let the arm that COULD emit sel_gap be built
-    # by simply turning the weight on: w_select > 0 requires a scorer.
+    # ⛔ AND IT IS A STRENGTHENING: on an arm that HAS a scorer it still binds.
+    with_scorer = {"has_scorer": True, "selector": "goal"}
+    g2 = T.stage_gate_dict("S-T", probes, arm=with_scorer)
+    assert g2["verdict"] == "INCONCLUSIVE"
+    assert "sel_gap" in g2["missing_required"]
+    assert g2["not_applicable_required"] == []
+
+    # ⛔ and forgetting to describe the arm can only make it HARDER to pass.
+    assert T.stage_gate_dict("S-T", probes)["verdict"] == "INCONCLUSIVE"
+
+    # the trainer still refuses w_select>0 with no scorer — unchanged, and it
+    # is NOT the mechanism this test is about (see the tier test below).
     a = T.build_parser().parse_args(
         ["--stage", "S-T", "--out", str(tmp_path), "--init-from", "x",
          "--v2-cache", "c", "--w-select", "1.0"])
@@ -381,20 +424,254 @@ def test_E4_PIN_the_S_T_gate_cannot_read_PASS_on_the_arm_the_chain_plans(
     assert [p for p in T.preflight(a) if "w-select" in p and "selector" in p]
 
 
-def test_E4_PIN_it_propagates_to_S_S(tmp_path):
+def test_E4_the_gate_never_reads_the_TRAIN_TIME_log_key(tmp_path):
+    """⚠️ The correction to this file's own former claim, pinned.
+
+    `train_v6_staged.py`'s `if w.w_select:` block emits a T0 log key named
+    `sel_gap`. The GATE's `sel_gap` is the T1 instrument supplied through
+    `--gate-probes`. Enabling `--w-select` would make the log key appear and
+    leave the gate unchanged — so "turn the selector loss on" was never a fix.
+    """
+    src = (_REPO / "stack" / "scripts" / "train_v6_staged.py").read_text(
+        encoding="utf-8")
+    body = src.split("def run_stage_gate(")[1].split("\ndef ")[0]
+    # the ONLY probe sources, read out of the function's own body
+    assert "extra_probes" in body and "X3_isolation" in body
+    assert 'probes["O6_spectrum"]' in body and 'probes["X4_spectrum_layers"]' in body
+    # ...and nothing in it reads the training log
+    for forbidden in ("train_log", 'log["sel_gap"]', "metrics.json"):
+        assert forbidden not in body, forbidden
+    assert T.STAGE_GATE_SPEC["S-T"]["owners"]["sel_gap"].startswith(
+        "tanitad.models.tactical.sel_gap_tac")
+    assert "T1 tier" in T.STAGE_GATE_SPEC["S-T"]["criteria"]["sel_gap"]
+    assert "T1" in T.SEL_GAP_TIER_NOTE and "T0" in T.SEL_GAP_TIER_NOTE
+
+
+def test_E4_it_is_resolved_at_S_S_too_not_moved_there(tmp_path):
+    """A fix that frees S-T and leaves S-S deadlocked has moved the problem."""
     assert "sel_gap_revalidated" in T.STAGE_GATE_SPEC["S-S"]["required"]
-    g = T.stage_gate_dict("S-S", {
-        p: {"pass": True} for p in T.STAGE_GATE_SPEC["S-S"]["required"]
-        if p != "sel_gap_revalidated"})
-    assert g["verdict"] == "INCONCLUSIVE"
+    others = {p: {"pass": True} for p in T.STAGE_GATE_SPEC["S-S"]["required"]
+              if p != "sel_gap_revalidated"}
+
+    # no-selector lineage: not applicable, and S-S is adjudicable
+    g = T.stage_gate_dict("S-S", others,
+                          arm={"has_scorer": False, "selector": "none"})
+    assert g["verdict"] == "PASS"
+    assert [x["probe"] for x in g["not_applicable_required"]] \
+        == ["sel_gap_revalidated"]
+
+    # selector lineage: the chain CARRIES `--selector` into S-S for the
+    # geometry, so the frozen scorer is in the stack and the revalidation
+    # BINDS — which is exactly what STAGE_INVALIDATES["S-S"] demands.
+    g2 = T.stage_gate_dict("S-S", others,
+                           arm={"has_scorer": True, "selector": "goal"})
+    assert g2["verdict"] == "INCONCLUSIVE"
+    assert "sel_gap_revalidated" in g2["missing_required"]
+    assert T.STAGE_INVALIDATES["S-S"] == ("S-T",)
 
 
-def test_E4_PIN_the_readiness_finding_is_banked_with_both_options():
-    """The pin is only as good as the record of what it is pinning."""
+def test_E4_a_gate_with_nothing_left_to_check_is_REFUSED(tmp_path):
+    """⛔ The one way arm-conditionality could have become a loophole.
+
+    If every required criterion were skipped, the gate would "pass" while
+    measuring nothing — decoration, which is the defect this whole change
+    exists to remove. It is forced to INCONCLUSIVE instead.
+    """
+    saved = dict(T.GATE_APPLICABILITY["S-T"])
+    try:
+        T.GATE_APPLICABILITY["S-T"] = {p: "has_scorer" for p in
+                                       T.STAGE_GATE_SPEC["S-T"]["required"]}
+        g = T.stage_gate_dict("S-T", {}, arm={"has_scorer": False})
+        assert g["verdict"] == "INCONCLUSIVE"
+        assert g["required_effective"] == []
+        assert g["vacuous_gate"]["refused"] is True
+    finally:
+        T.GATE_APPLICABILITY["S-T"] = saved
+
+
+def test_E4_the_resolution_is_banked_with_its_reasons():
+    """The fix is only as good as the record of WHY it went this way."""
     doc = (_REPO / "TanitAD Research Hub" / "Architecture & Inference"
-           / "Implementation" / "incoming" / "2026-08-17-st-launch-readiness"
-           / "ST_LAUNCH_READINESS.md")
+           / "Implementation" / "incoming" / "2026-08-17-e4-selector-resolution"
+           / "E4_SELECTOR_RESOLUTION.md")
     assert doc.exists(), doc
     text = doc.read_text(encoding="utf-8")
-    assert "it can never read PASS on the planned arm" in text
-    assert "Both outcomes are legitimate and the choice is the PI's" in text
+    # the decision, the rejected alternative, and the executed proof
+    assert "the reopening path was DEAD" in text
+    assert "0.3026" in text                  # the recovered planted sigma
+    assert "has_scorer" in text
+    # the predecessor finding is still reachable, not overwritten
+    old = (_REPO / "TanitAD Research Hub" / "Architecture & Inference"
+           / "Implementation" / "incoming" / "2026-08-17-st-launch-readiness"
+           / "ST_LAUNCH_READINESS.md")
+    assert "it can never read PASS on the planned arm" in old.read_text(
+        encoding="utf-8")
+
+
+# ---------------------------------------------------------------------------
+# ⛔ THE TRILEMMA — a gate that cannot return one of its verdicts is decoration
+# ---------------------------------------------------------------------------
+# "A gate that cannot report PASS and a gate that cannot report FAIL are the
+# same defect" — and this programme found three of the latter in one week, plus
+# (E4) one of the former, plus (below) an ADMISSION gate that could not report
+# FUNDED. So the fix is not allowed to be trusted on inspection: each verdict is
+# produced HERE, on a constructed input, for BOTH arms.
+@pytest.mark.parametrize("has_scorer", [False, True])
+@pytest.mark.parametrize("want", ["PASS", "FAIL", "INCONCLUSIVE"])
+def test_E4_the_S_T_gate_can_return_EVERY_verdict_on_both_arms(want,
+                                                               has_scorer):
+    arm = {"has_scorer": has_scorer,
+           "selector": "goal" if has_scorer else "none"}
+    req = [p for p in T.STAGE_GATE_SPEC["S-T"]["required"]
+           if has_scorer or p != "sel_gap"]
+    assert req, "the arm must have SOMETHING to check"
+    if want == "PASS":
+        probes = {p: {"pass": True} for p in req}
+    elif want == "FAIL":
+        probes = {p: {"pass": True} for p in req} | {req[0]: {"pass": False}}
+    else:                                   # INCONCLUSIVE: one probe not run
+        probes = {p: {"pass": True} for p in req[1:]}
+    g = T.stage_gate_dict("S-T", probes, arm=arm)
+    assert g["verdict"] == want, (want, has_scorer, g["verdict"], g)
+    # ⛔ a FAIL must survive: X5 gives it no override anywhere downstream
+    if want == "FAIL":
+        assert g["pass"] is False and g["failed_required"] == [req[0]]
+
+
+def test_E4_a_FAIL_is_never_softened_into_not_applicable():
+    """⛔ The nightmare version of arm-conditionality: a criterion that FAILED
+    being re-read as 'this arm could not produce it'. Applicability is resolved
+    from the ARM, never from the probe's own verdict, so a failing probe on an
+    applicable arm stays a FAIL."""
+    g = T.stage_gate_dict(
+        "S-T", {"TACTICAL_family": {"pass": False}, "sel_gap": {"pass": False}},
+        arm={"has_scorer": True, "selector": "goal"})
+    assert g["verdict"] == "FAIL"
+    assert g["not_applicable_required"] == []
+    # and on the no-scorer arm the criterion that DID run still fails
+    g2 = T.stage_gate_dict("S-T", {"TACTICAL_family": {"pass": False}},
+                           arm={"has_scorer": False, "selector": "none"})
+    assert g2["verdict"] == "FAIL"
+
+
+def test_E4_a_SUPPLIED_verdict_is_never_discarded_by_the_predicate(tmp_path):
+    """⛔ THE DEFECT THE INCUMBENT SUITE CAUGHT IN MY FIRST VERSION.
+
+    `test_the_whole_ladder_hands_off_through_the_WRITTEN_files` plants a
+    FAILING `sel_gap` through `--gate-probes` on a stack with NO scorer. The
+    first version of `stage_gate_dict` excluded it as not-applicable and read
+    **PASS on a rung that had FAILED** — a FAIL erased by the mechanism meant to
+    stop vacuous verdicts. Applicability answers "can this arm produce it?"; it
+    never licenses discarding a measurement someone supplied.
+    """
+    arm = {"has_scorer": False, "selector": "none"}
+    probes = {"TACTICAL_family": {"pass": True},
+              "sel_gap": {"pass": False, "status": "run", "value": 0.91}}
+    g = T.stage_gate_dict("S-T", probes, arm=arm)
+    assert g["verdict"] == "FAIL"
+    assert g["failed_required"] == ["sel_gap"]
+    assert g["not_applicable_required"] == []      # NOT skipped
+    # ...and the contradiction is REPORTED, not silently resolved either way
+    c = g["applicability_conflicts"]
+    assert [x["probe"] for x in c] == ["sel_gap"]
+    assert c[0]["supplied_pass"] is False and c[0]["predicate"] == "has_scorer"
+
+    # a supplied PASS is honoured the same way (and still flagged)
+    g2 = T.stage_gate_dict("S-T", probes | {"sel_gap": {"pass": True}}, arm=arm)
+    assert g2["verdict"] == "PASS"
+    assert [x["probe"] for x in g2["applicability_conflicts"]] == ["sel_gap"]
+
+    # but a probe with pass:None (the `run_stage_gate` not-applicable stub) is
+    # NOT a supplied verdict, so it is still skipped and does not block.
+    g3 = T.stage_gate_dict(
+        "S-T", {"TACTICAL_family": {"pass": True},
+                "sel_gap": {"pass": None, "status": "not-applicable"}}, arm=arm)
+    assert g3["verdict"] == "PASS"
+    assert [x["probe"] for x in g3["not_applicable_required"]] == ["sel_gap"]
+    assert g3["applicability_conflicts"] == []
+
+
+# ---------------------------------------------------------------------------
+# ⭐ (c2) — SEL-1's REOPENING PATH, executed end-to-end against the REAL
+#          instrument. This is what makes "eventually we need a tactical
+#          selector" reachable instead of a wish.
+# ---------------------------------------------------------------------------
+def test_E4_the_admission_gate_can_return_FUNDED_at_all(tmp_path):
+    """⛔ MEASURED 2026-08-17: IT COULD NOT. `read_sw_admission` looked for a
+    top-level `sigma_2s_m`; `e_wc2_sigma_star.py` writes the per-axis 2 s sigma
+    at `references_and_ratios.sigma_perax_2s_m`. Name AND level both differed,
+    so a planted sigma of 0.30 m (recovered 0.3026 — deep inside the FUNDED
+    band) still read `verdict: null` and the launch was refused. The mirror of
+    E4: an admission gate that cannot report FUNDED.
+
+    ⚠️ THIS TEST RUNS THE REAL ESTIMATOR. Asserting against a hand-written
+    artifact is exactly the fixture defect that let this survive.
+    """
+    sigma_star = __import__("e_wc2_sigma_star")
+    sys.path.insert(0, str(_STACK / "tests"))
+    from test_e_wc2_sigma_star import make_dump                  # noqa: E402
+
+    root = tmp_path / "experiments"
+    c = C.ChainConfig()
+    c.root = str(root).replace("\\", "/")
+    (root / c.sw_dir).mkdir(parents=True)
+
+    for planted, expect in ((0.30, "FUNDED"), (1.10, "INCONCLUSIVE"),
+                            (2.00, "REFUSED")):
+        res = sigma_star.run(make_dump(sigma2=planted, sigma6=2 * planted,
+                                       seed=3),
+                             features=["pooled", "ctx"], n_boot=0)
+        Path(C.admission_path(c)).write_text(
+            json.dumps(res, indent=1, default=float), encoding="utf-8")
+        adm = C.read_sw_admission(c)
+        assert adm["present"] and adm["verdict"] == expect, (planted, adm)
+        assert adm["read_at"] == "references_and_ratios.sigma_perax_2s_m"
+        assert abs(adm["sigma_2s_m"] - planted) / planted < 0.10
+
+        step = C.step_by_key(C.build_plan(C.ChainConfig(
+            root=c.root, st_arms=("goal",))), "S-T:goal")
+        if expect == "FUNDED":
+            assert C.assert_selector_admissible(step, c)["ok"] is True
+        else:
+            with pytest.raises(C.ChainRefusal):
+                C.assert_selector_admissible(step, c)
+
+
+def test_E4_the_admission_reader_REFUSES_the_radial_unit(tmp_path):
+    """⛔ The unit trap, refused by name. `sigma_radial_rms_m` is sqrt(2)x the
+    per-axis sigma the 0.80/1.41 thresholds are defined on, so reading it would
+    flip FUNDED -> INCONCLUSIVE on arithmetic alone."""
+    hit = C.resolve_sw_sigma({"sigma_radial_rms_m": 0.50, "sigma_6s_m": 1.2})
+    assert hit["ok"] is False
+    assert "sigma_radial_rms_m" in hit["refused_alternatives"]
+    assert "sqrt(2)" in hit["refused_alternatives"]["sigma_radial_rms_m"]
+    assert "e_wc2_sigma_star.py" in hit["reason"]
+    # ...and absence is never an admission
+    assert C.resolve_sw_sigma({})["ok"] is False
+
+
+def test_E4_the_reopening_recipe_is_EMITTED_not_described(tmp_path):
+    """A route that lives only in a docstring is one nobody executes — the
+    'please merge in a README' failure, applied to the next decision."""
+    c = C.ChainConfig()
+    c.root = str(tmp_path).replace("\\", "/")
+    r = C.sw_admission_recipe(c)
+    steps = {s["n"]: s for s in r["steps"]}
+    assert len(steps) == 4
+    # ⛔ step 1 is NOT BUILT and says so — a fabricated command would be worse
+    assert steps[1]["status"].startswith("⛔ NOT BUILT")
+    assert "refc_dump_latents" in steps[1]["why_not_reusable"]
+    # steps 2-4 are real commands against real scripts
+    for n in (2, 3, 4):
+        assert steps[n]["status"].startswith("✅")
+        assert "cmd" in steps[n]
+    assert "e_wc2_sigma_star.py" in steps[2]["cmd"]
+    assert C.SW_LATENT_ADMISSION["artifact"] in steps[2]["cmd"]
+    assert "--st-arms goal" in steps[4]["cmd"]
+    assert "has_scorer" in r["what_binds_if_funded"]
+    # and the refusal an operator actually hits points AT the recipe
+    step = C.step_by_key(C.build_plan(C.ChainConfig(
+        root=c.root, st_arms=("goal",))), "S-T:goal")
+    with pytest.raises(C.ChainRefusal) as e:
+        C.assert_selector_admissible(step, c)
+    assert "admission" in str(e.value) and "NOT APPLICABLE" in str(e.value)

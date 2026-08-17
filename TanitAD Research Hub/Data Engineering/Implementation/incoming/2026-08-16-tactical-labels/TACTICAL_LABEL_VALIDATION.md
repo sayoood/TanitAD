@@ -363,12 +363,66 @@ follow, and what §3 wrongly asserted, is that this licenses reading a **tactica
 0.40 fair-to-moderate line, and not shippable as a label source.**
 
 ⭐ **The most probable substantive reading, and it is a work item, not a conclusion:** Alpamayo's
-meta-action is *the decision at t0*, while `TAC_BAND_S` covers **2–6 s**. The band's yaw
-calibration shows exactly this — `Steer Right` clips have mean in-band Δyaw of **−0.0004 rad**
-(n=37) while `Sharp Steer Right` still shows **−0.1565** (n=7): by 2–6 s the ordinary turns are
-already resolved, so the band contains the *aftermath* of the manoeuvre Alpamayo named.
+meta-action is *the decision at t0*, while `TAC_BAND_S` covers **2–6 s**.
+
+> ⛔ **SELF-CORRECTION, same day, before the PI reviewed anything.** I first wrote here that *"by
+> 2–6 s the ordinary turns are already resolved, so the band contains the **aftermath** of the
+> manoeuvre"*, generalising from the two RIGHT-turn classes I happened to inspect. ⛔ **That is
+> false as a general statement, and the per-class table below refutes it.** The seam→band relation
+> is **ASYMMETRIC BY TURN DIRECTION**: right-hand classes shrink toward zero across the band, but
+> **left-hand classes GROW** — the opposite of "aftermath". *Root-cause class: a mechanism inferred
+> from a subset of the classes and stated over all of them — the same shape as the C89 family
+> (a quantity named from what was convenient rather than from what was computed).*
+
+**MEASURED** (ours; 201 clips, artifact
+`…/2026-08-16-tactical-review/raw/b1_band_agreement_per_clip.jsonl`). Mean Δyaw per Alpamayo
+lateral class, seam vs band, positive = LEFT:
+
+| Alpamayo LAT | n | seam Δyaw **(0.0, 2.0]** | band net **(2.0, 6.0]** | band `mean_band` | ratio \|band net\|/\|seam\| | direction |
+|---|---|---|---|---|---|---|
+| `Steer Left` | 24 | +0.0161 | **+0.1082** | +0.0359 | **6.72×** | ⬆ **GROWS** |
+| `Sharp Steer Left` | 4 | +0.1963 | **+0.3844** | +0.1660 | **1.96×** | ⬆ **GROWS** |
+| `Steer Right` | 37 | −0.0569 | −0.0125 | −0.0004 | **0.22×** | ⬇ shrinks |
+| `Sharp Steer Right` | 7 | −0.5371 | −0.2403 | −0.1565 | **0.45×** | ⬇ shrinks |
+| `Go Straight` | 121 | −0.0006 | +0.0085 | +0.0065 | — | ≈0 in both |
+
+⇒ **LEFT classes (n=28) grow into the band; RIGHT classes (n=44) decay toward zero.** ⚠️ The two
+`Sharp` rows rest on **n=4** and **n=7** and are weakly determined — the robust contrast is
+`Steer Left` (n=24, grows 6.72×) against `Steer Right` (n=37, shrinks to 0.22×).
+
+⭐ **AND THIS — not "aftermath" — IS THE LAT κ MECHANISM.** Against the production threshold
+(0.15 rad), the **class means** of `Steer Left` (+0.1082) and `Steer Right` (−0.0125) both fall
+below it, while the two `Sharp` class means still clear it (+0.3844 → `left`, −0.2403 → `right`).
+
+⚠️ **Stated per clip, because a class mean is not a per-clip fact** *(and I first wrote this as
+"all 61 ordinary `Steer *` clips collapse to `straight`", which is a mean-to-member overreach of
+exactly the kind this section is correcting)*:
+
+| at 0.15 rad | n | read `straight` by `mean_band` **(primary)** | by `net_band` |
+|---|---|---|---|
+| `Steer Left` | 24 | **19 (79 %)** | 13 (54 %) |
+| `Steer Right` | 37 | **28 (76 %)** | 23 (62 %) |
+| **ordinary `Steer *` combined** | **61** | **47 (77 %)** | 36 (59 %) |
+| `Sharp Steer Left` | 4 | 2 (50 %) | 2 (50 %) |
+| `Sharp Steer Right` | 7 | 4 (57 %) | 4 (57 %) |
+| `Go Straight` *(reference)* | 121 | 110 (91 %) | 102 (84 %) |
+
+⇒ **47 of the 61 ordinary-turn clips (77 %) read `straight` at the band** under the primary
+statistic — and even the `Sharp` classes lose **half** their clips individually despite their means
+clearing the threshold. The lateral signal does not merely get noisier; for most turning clips it
+drops **under the decision threshold**, in one direction by decaying and in the other by not yet
+having arrived.
+
+⚠️ **HYPOTHESIS (not measured, do not quote as a finding):** left turns are executed *later* than
+right turns — a left turn typically waits for a gap in oncoming traffic while a right turn goes
+promptly — so a t0 label lands *mid-manoeuvre* for right turns and *pre-manoeuvre* for left turns.
+That would predict the exact sign pattern above. It is testable on the same poses and has **not**
+been tested.
+
 ⇒ **The falling κ may be telling us the LABEL SOURCE is mismatched to the band, not that the band
 is unlabelable.** Discriminating that is the next experiment; it must not be assumed either way.
+⚠️ **And the asymmetry means the mismatch is not a single fixable offset** — no one shift of the
+read window can serve both directions at once, because the two move opposite ways across it.
 
 **Artifacts:** `…/2026-08-16-tactical-review/code/tacrev_band_agreement.py` ·
 `…/2026-08-16-tactical-review/raw/b1_band_agreement.json` (+ `_per_clip.jsonl`).

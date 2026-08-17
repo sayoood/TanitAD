@@ -217,6 +217,20 @@ def ego_over_band(poses) -> dict:
     from the 2.0 s calibration: over the 201 clips, mean_band Δyaw is **+0.1660**
     for Alpamayo `Sharp Steer Left` and **−0.1565** for `Sharp Steer Right`
     (`Go Straight` +0.0065). ⇒ POSITIVE Δyaw = LEFT, on the band too.
+
+    ⭐ THE SEAM→BAND CHANGE IS ASYMMETRIC BY TURN DIRECTION, and the sheet says so.
+    MEASURED (net Δyaw, seam (0,2.0] -> band (2.0,6.0]):
+      * `Steer Left`        n=24  +0.0161 -> +0.1082   (6.72x, GROWS)
+      * `Sharp Steer Left`  n= 4  +0.1963 -> +0.3844   (1.96x, GROWS)
+      * `Steer Right`       n=37  -0.0569 -> -0.0125   (0.22x, decays)
+      * `Sharp Steer Right` n= 7  -0.5371 -> -0.2403   (0.45x, decays)
+    ⛔ So "turns are already resolved by 2 s" — which an earlier draft of the
+    analysis asserted — is TRUE ONLY FOR THE RIGHT-HAND CLASSES and false for the
+    left-hand ones. At DYAW_THRESH 0.15 both ordinary `Steer *` CLASS MEANS fall
+    under threshold; per clip it is 47/61 (77%) by `mean_band`, 36/61 by
+    `net_band` — ⚠️ a class mean is NOT a per-clip fact and an earlier draft
+    stated it as one ("all 61"). That is the LAT kappa mechanism, and it is NOT a
+    single fixable window offset because the two directions move OPPOSITE ways.
     """
     import numpy as np
 
@@ -628,6 +642,25 @@ cannot say so.</p>
   that the label is <i>fine for t0</i> and simply does not describe the band.
   A note saying which of the two you mean is the most useful thing you can
   leave.</li>
+<li>⭐ <b>The seam→band change is ASYMMETRIC by turn direction — expect the two
+  sides to fail differently.</b> MEASURED over the 201 clips (mean Δyaw,
+  positive = left): <b>LEFT turns GROW</b> into the band
+  (<code>Steer Left</code> +0.0161 → <b>+0.1082</b>, <b>6.72×</b>, n=24;
+  <code>Sharp Steer Left</code> 1.96×, n=4) while <b>RIGHT turns DECAY</b>
+  toward zero (<code>Steer Right</code> −0.0569 → −0.0125, <b>0.22×</b>, n=37;
+  <code>Sharp Steer Right</code> 0.45×, n=7).
+  ⇒ On a <b>right</b>-turn clip the manoeuvre may be <i>ending</i> as the band
+  opens; on a <b>left</b>-turn clip it may only be <i>starting</i>.
+  ⚠️ At the 0.15 rad threshold this pushes <b>47 of the 61 ordinary
+  <code>Steer *</code> clips (77 %) into <code>straight</code></b> — so where the
+  ego leg says <code>straight</code> on a clip you can plainly see turning, that
+  is the expected failure, not a surprise. Even the <code>Sharp</code> classes
+  lose about half their clips individually (2/4 and 4/7) although their class
+  means clear the threshold. <i>(Two earlier drafts of this analysis were wrong
+  and were corrected before you saw this sheet: one said turns are simply
+  "already resolved" by 2 s — generalised from the right-hand classes and false
+  for the left-hand ones; the other said <b>all</b> 61 collapse, which stated a
+  class-mean as a per-clip fact.)</i></li>
 <li>The VLM tokens here are the <b>POST-FIX</b> mapping. The banked corpus
   still holds the pre-fix ones — it has not been re-fused.</li>
 </ul>
