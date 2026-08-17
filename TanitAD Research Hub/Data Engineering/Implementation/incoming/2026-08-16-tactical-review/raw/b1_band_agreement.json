@@ -1,0 +1,927 @@
+{
+ "_evidence_class": "MEASURED (ours; 201 local ego pose tracks, 10 Hz, this directory)",
+ "_horizon": {
+  "band_s": [
+   2.0,
+   6.0
+  ],
+  "op_band_s": [
+   0.0,
+   2.0
+  ],
+  "_spec_source": "stack/tanitad/models/v6.py:136-140 (TAC_BAND_S)",
+  "band_lo_idx": 100,
+  "band_hi_idx": 140,
+  "t0_idx": 80,
+  "pose_hz": 10.0,
+  "_anchor": "every in-band deviation is taken against the BAND START t0+20 (2.0 s), NOT t0. This is the difference between a tactical quantity and a horizon quantity."
+ },
+ "_primary_definition": {
+  "name": "mean_band",
+  "formula": "mean over k in (t0+20, t0+60] of (x[k] - x[t0+20])",
+  "chosen_by": "P1 both ends in band; P2 reads the slice not two samples; P3 robust to one bad pose sample. Stated before any kappa was computed; NOT chosen by score."
+ },
+ "n_clips": 201,
+ "n_clips_dropped_cannot_reach_band_end": 0,
+ "_yaw_sign_calibration_on_the_BAND": {
+  "_why": "the sign convention was previously calibrated on the 2.0 s SEAM quantity. It is re-read here on the BAND quantity, because a convention verified for one readout is not evidence for another.",
+  "mean_band_dyaw_by_alpamayo_lateral": {
+   "?": {
+    "n": 8,
+    "mean": 0.139
+   },
+   "Go Straight": {
+    "n": 121,
+    "mean": 0.0065
+   },
+   "Sharp Steer Left": {
+    "n": 4,
+    "mean": 0.166
+   },
+   "Sharp Steer Right": {
+    "n": 7,
+    "mean": -0.1565
+   },
+   "Steer Left": {
+    "n": 24,
+    "mean": 0.0359
+   },
+   "Steer Right": {
+    "n": 37,
+    "mean": -0.0004
+   }
+  }
+ },
+ "surface": {
+  "lon": [
+   {
+    "definition": "mean_band",
+    "dv_thresh_ms": 0.25,
+    "n": 201,
+    "agreement": 0.4527,
+    "kappa": 0.1862,
+    "chance": 0.3275,
+    "n_dropped_missing": 0
+   },
+   {
+    "definition": "mean_band",
+    "dv_thresh_ms": 0.5,
+    "n": 201,
+    "agreement": 0.4428,
+    "kappa": 0.1817,
+    "chance": 0.3191,
+    "n_dropped_missing": 0
+   },
+   {
+    "definition": "mean_band",
+    "dv_thresh_ms": 0.75,
+    "n": 201,
+    "agreement": 0.4279,
+    "kappa": 0.1688,
+    "chance": 0.3117,
+    "n_dropped_missing": 0
+   },
+   {
+    "definition": "mean_band",
+    "dv_thresh_ms": 1.0,
+    "n": 201,
+    "agreement": 0.408,
+    "kappa": 0.1428,
+    "chance": 0.3093,
+    "n_dropped_missing": 0
+   },
+   {
+    "definition": "mean_band",
+    "dv_thresh_ms": 1.5,
+    "n": 201,
+    "agreement": 0.3831,
+    "kappa": 0.1131,
+    "chance": 0.3044,
+    "n_dropped_missing": 0
+   },
+   {
+    "definition": "mean_band",
+    "dv_thresh_ms": 2.0,
+    "n": 201,
+    "agreement": 0.3582,
+    "kappa": 0.0817,
+    "chance": 0.3011,
+    "n_dropped_missing": 0
+   },
+   {
+    "definition": "net_band",
+    "dv_thresh_ms": 0.25,
+    "n": 201,
+    "agreement": 0.403,
+    "kappa": 0.1095,
+    "chance": 0.3295,
+    "n_dropped_missing": 0
+   },
+   {
+    "definition": "net_band",
+    "dv_thresh_ms": 0.5,
+    "n": 201,
+    "agreement": 0.4179,
+    "kappa": 0.1359,
+    "chance": 0.3264,
+    "n_dropped_missing": 0
+   },
+   {
+    "definition": "net_band",
+    "dv_thresh_ms": 0.75,
+    "n": 201,
+    "agreement": 0.4129,
+    "kappa": 0.1331,
+    "chance": 0.3228,
+    "n_dropped_missing": 0
+   },
+   {
+    "definition": "net_band",
+    "dv_thresh_ms": 1.0,
+    "n": 201,
+    "agreement": 0.4229,
+    "kappa": 0.1526,
+    "chance": 0.3189,
+    "n_dropped_missing": 0
+   },
+   {
+    "definition": "net_band",
+    "dv_thresh_ms": 1.5,
+    "n": 201,
+    "agreement": 0.403,
+    "kappa": 0.1343,
+    "chance": 0.3104,
+    "n_dropped_missing": 0
+   },
+   {
+    "definition": "net_band",
+    "dv_thresh_ms": 2.0,
+    "n": 201,
+    "agreement": 0.403,
+    "kappa": 0.1352,
+    "chance": 0.3096,
+    "n_dropped_missing": 0
+   },
+   {
+    "definition": "ext_band",
+    "dv_thresh_ms": 0.25,
+    "n": 201,
+    "agreement": 0.4229,
+    "kappa": 0.1324,
+    "chance": 0.3348,
+    "n_dropped_missing": 0
+   },
+   {
+    "definition": "ext_band",
+    "dv_thresh_ms": 0.5,
+    "n": 201,
+    "agreement": 0.4527,
+    "kappa": 0.1843,
+    "chance": 0.3291,
+    "n_dropped_missing": 0
+   },
+   {
+    "definition": "ext_band",
+    "dv_thresh_ms": 0.75,
+    "n": 201,
+    "agreement": 0.4378,
+    "kappa": 0.1679,
+    "chance": 0.3243,
+    "n_dropped_missing": 0
+   },
+   {
+    "definition": "ext_band",
+    "dv_thresh_ms": 1.0,
+    "n": 201,
+    "agreement": 0.4428,
+    "kappa": 0.1788,
+    "chance": 0.3215,
+    "n_dropped_missing": 0
+   },
+   {
+    "definition": "ext_band",
+    "dv_thresh_ms": 1.5,
+    "n": 201,
+    "agreement": 0.4129,
+    "kappa": 0.1486,
+    "chance": 0.3105,
+    "n_dropped_missing": 0
+   },
+   {
+    "definition": "ext_band",
+    "dv_thresh_ms": 2.0,
+    "n": 201,
+    "agreement": 0.403,
+    "kappa": 0.1356,
+    "chance": 0.3093,
+    "n_dropped_missing": 0
+   },
+   {
+    "definition": "seam_op",
+    "dv_thresh_ms": 0.25,
+    "n": 201,
+    "agreement": 0.5672,
+    "kappa": 0.3548,
+    "chance": 0.3292,
+    "n_dropped_missing": 0
+   },
+   {
+    "definition": "seam_op",
+    "dv_thresh_ms": 0.5,
+    "n": 201,
+    "agreement": 0.5622,
+    "kappa": 0.354,
+    "chance": 0.3223,
+    "n_dropped_missing": 0
+   },
+   {
+    "definition": "seam_op",
+    "dv_thresh_ms": 0.75,
+    "n": 201,
+    "agreement": 0.5672,
+    "kappa": 0.3655,
+    "chance": 0.3178,
+    "n_dropped_missing": 0
+   },
+   {
+    "definition": "seam_op",
+    "dv_thresh_ms": 1.0,
+    "n": 201,
+    "agreement": 0.5373,
+    "kappa": 0.327,
+    "chance": 0.3125,
+    "n_dropped_missing": 0
+   },
+   {
+    "definition": "seam_op",
+    "dv_thresh_ms": 1.5,
+    "n": 201,
+    "agreement": 0.4826,
+    "kappa": 0.2552,
+    "chance": 0.3053,
+    "n_dropped_missing": 0
+   },
+   {
+    "definition": "seam_op",
+    "dv_thresh_ms": 2.0,
+    "n": 201,
+    "agreement": 0.408,
+    "kappa": 0.1585,
+    "chance": 0.2964,
+    "n_dropped_missing": 0
+   },
+   {
+    "definition": "full_h6",
+    "dv_thresh_ms": 0.25,
+    "n": 201,
+    "agreement": 0.4776,
+    "kappa": 0.2163,
+    "chance": 0.3334,
+    "n_dropped_missing": 0
+   },
+   {
+    "definition": "full_h6",
+    "dv_thresh_ms": 0.5,
+    "n": 201,
+    "agreement": 0.4826,
+    "kappa": 0.2287,
+    "chance": 0.3292,
+    "n_dropped_missing": 0
+   },
+   {
+    "definition": "full_h6",
+    "dv_thresh_ms": 0.75,
+    "n": 201,
+    "agreement": 0.4826,
+    "kappa": 0.2331,
+    "chance": 0.3253,
+    "n_dropped_missing": 0
+   },
+   {
+    "definition": "full_h6",
+    "dv_thresh_ms": 1.0,
+    "n": 201,
+    "agreement": 0.4726,
+    "kappa": 0.221,
+    "chance": 0.323,
+    "n_dropped_missing": 0
+   },
+   {
+    "definition": "full_h6",
+    "dv_thresh_ms": 1.5,
+    "n": 201,
+    "agreement": 0.4627,
+    "kappa": 0.2156,
+    "chance": 0.315,
+    "n_dropped_missing": 0
+   },
+   {
+    "definition": "full_h6",
+    "dv_thresh_ms": 2.0,
+    "n": 201,
+    "agreement": 0.4428,
+    "kappa": 0.1919,
+    "chance": 0.3105,
+    "n_dropped_missing": 0
+   }
+  ],
+  "lat": [
+   {
+    "definition": "mean_band",
+    "dyaw_thresh_rad": 0.05,
+    "n": 193,
+    "agreement": 0.6528,
+    "kappa": 0.3125,
+    "chance": 0.495,
+    "n_dropped_missing": 8
+   },
+   {
+    "definition": "mean_band",
+    "dyaw_thresh_rad": 0.1,
+    "n": 193,
+    "agreement": 0.6425,
+    "kappa": 0.2252,
+    "chance": 0.5386,
+    "n_dropped_missing": 8
+   },
+   {
+    "definition": "mean_band",
+    "dyaw_thresh_rad": 0.15,
+    "n": 193,
+    "agreement": 0.6373,
+    "kappa": 0.1777,
+    "chance": 0.5589,
+    "n_dropped_missing": 8
+   },
+   {
+    "definition": "mean_band",
+    "dyaw_thresh_rad": 0.25,
+    "n": 193,
+    "agreement": 0.6269,
+    "kappa": 0.1186,
+    "chance": 0.5767,
+    "n_dropped_missing": 8
+   },
+   {
+    "definition": "mean_band",
+    "dyaw_thresh_rad": 0.4,
+    "n": 193,
+    "agreement": 0.6166,
+    "kappa": 0.0495,
+    "chance": 0.5966,
+    "n_dropped_missing": 8
+   },
+   {
+    "definition": "net_band",
+    "dyaw_thresh_rad": 0.05,
+    "n": 193,
+    "agreement": 0.5751,
+    "kappa": 0.2733,
+    "chance": 0.4154,
+    "n_dropped_missing": 8
+   },
+   {
+    "definition": "net_band",
+    "dyaw_thresh_rad": 0.1,
+    "n": 193,
+    "agreement": 0.6373,
+    "kappa": 0.2973,
+    "chance": 0.4838,
+    "n_dropped_missing": 8
+   },
+   {
+    "definition": "net_band",
+    "dyaw_thresh_rad": 0.15,
+    "n": 193,
+    "agreement": 0.6218,
+    "kappa": 0.2196,
+    "chance": 0.5153,
+    "n_dropped_missing": 8
+   },
+   {
+    "definition": "net_band",
+    "dyaw_thresh_rad": 0.25,
+    "n": 193,
+    "agreement": 0.6477,
+    "kappa": 0.2174,
+    "chance": 0.5498,
+    "n_dropped_missing": 8
+   },
+   {
+    "definition": "net_band",
+    "dyaw_thresh_rad": 0.4,
+    "n": 193,
+    "agreement": 0.6166,
+    "kappa": 0.0941,
+    "chance": 0.5767,
+    "n_dropped_missing": 8
+   },
+   {
+    "definition": "ext_band",
+    "dyaw_thresh_rad": 0.05,
+    "n": 193,
+    "agreement": 0.5596,
+    "kappa": 0.2536,
+    "chance": 0.4099,
+    "n_dropped_missing": 8
+   },
+   {
+    "definition": "ext_band",
+    "dyaw_thresh_rad": 0.1,
+    "n": 193,
+    "agreement": 0.6321,
+    "kappa": 0.2879,
+    "chance": 0.4834,
+    "n_dropped_missing": 8
+   },
+   {
+    "definition": "ext_band",
+    "dyaw_thresh_rad": 0.15,
+    "n": 193,
+    "agreement": 0.6218,
+    "kappa": 0.2301,
+    "chance": 0.5087,
+    "n_dropped_missing": 8
+   },
+   {
+    "definition": "ext_band",
+    "dyaw_thresh_rad": 0.25,
+    "n": 193,
+    "agreement": 0.6425,
+    "kappa": 0.2067,
+    "chance": 0.5494,
+    "n_dropped_missing": 8
+   },
+   {
+    "definition": "ext_band",
+    "dyaw_thresh_rad": 0.4,
+    "n": 193,
+    "agreement": 0.6166,
+    "kappa": 0.0994,
+    "chance": 0.5742,
+    "n_dropped_missing": 8
+   },
+   {
+    "definition": "seam_op",
+    "dyaw_thresh_rad": 0.05,
+    "n": 193,
+    "agreement": 0.7202,
+    "kappa": 0.4694,
+    "chance": 0.4727,
+    "n_dropped_missing": 8
+   },
+   {
+    "definition": "seam_op",
+    "dyaw_thresh_rad": 0.1,
+    "n": 193,
+    "agreement": 0.6995,
+    "kappa": 0.3561,
+    "chance": 0.5332,
+    "n_dropped_missing": 8
+   },
+   {
+    "definition": "seam_op",
+    "dyaw_thresh_rad": 0.15,
+    "n": 193,
+    "agreement": 0.6891,
+    "kappa": 0.3132,
+    "chance": 0.5474,
+    "n_dropped_missing": 8
+   },
+   {
+    "definition": "seam_op",
+    "dyaw_thresh_rad": 0.25,
+    "n": 193,
+    "agreement": 0.658,
+    "kappa": 0.206,
+    "chance": 0.5693,
+    "n_dropped_missing": 8
+   },
+   {
+    "definition": "seam_op",
+    "dyaw_thresh_rad": 0.4,
+    "n": 193,
+    "agreement": 0.658,
+    "kappa": 0.1606,
+    "chance": 0.5926,
+    "n_dropped_missing": 8
+   },
+   {
+    "definition": "full_h6",
+    "dyaw_thresh_rad": 0.05,
+    "n": 193,
+    "agreement": 0.6166,
+    "kappa": 0.3675,
+    "chance": 0.3938,
+    "n_dropped_missing": 8
+   },
+   {
+    "definition": "full_h6",
+    "dyaw_thresh_rad": 0.1,
+    "n": 193,
+    "agreement": 0.6684,
+    "kappa": 0.404,
+    "chance": 0.4436,
+    "n_dropped_missing": 8
+   },
+   {
+    "definition": "full_h6",
+    "dyaw_thresh_rad": 0.15,
+    "n": 193,
+    "agreement": 0.6788,
+    "kappa": 0.3806,
+    "chance": 0.4813,
+    "n_dropped_missing": 8
+   },
+   {
+    "definition": "full_h6",
+    "dyaw_thresh_rad": 0.25,
+    "n": 193,
+    "agreement": 0.6684,
+    "kappa": 0.3087,
+    "chance": 0.5203,
+    "n_dropped_missing": 8
+   },
+   {
+    "definition": "full_h6",
+    "dyaw_thresh_rad": 0.4,
+    "n": 193,
+    "agreement": 0.6632,
+    "kappa": 0.2512,
+    "chance": 0.5502,
+    "n_dropped_missing": 8
+   }
+  ]
+ },
+ "headline_BAND_primary": {
+  "_definition": "mean_band",
+  "_band_s": [
+   2.0,
+   6.0
+  ],
+  "_thresholds": {
+   "dv_thresh_ms": 1.0,
+   "dyaw_thresh_rad": 0.15,
+   "_source": "PRODUCTION values, a3:120-121 — spec lookup, not an argmax."
+  },
+  "LON": {
+   "mean": 0.1428,
+   "lo": 0.054,
+   "hi": 0.225,
+   "ci95": 0.0855,
+   "se": 0.0443,
+   "reducer": "cohens_kappa",
+   "n_windows": 201,
+   "n_episodes": 201,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap",
+   "n": 201,
+   "agreement": 0.408,
+   "kappa": 0.1428,
+   "chance": 0.3093,
+   "n_dropped_missing": 0
+  },
+  "LAT": {
+   "mean": 0.1777,
+   "lo": 0.0658,
+   "hi": 0.2953,
+   "ci95": 0.1148,
+   "se": 0.0582,
+   "reducer": "cohens_kappa",
+   "n_windows": 193,
+   "n_episodes": 193,
+   "n_boot": 2000,
+   "estimator": "episode_cluster_bootstrap",
+   "n": 193,
+   "agreement": 0.6373,
+   "kappa": 0.1777,
+   "chance": 0.5589,
+   "n_dropped_missing": 8
+  }
+ },
+ "headline_BAND_sensitivities": {
+  "net_band": {
+   "LON": {
+    "mean": 0.1526,
+    "lo": 0.0527,
+    "hi": 0.2411,
+    "ci95": 0.0942,
+    "se": 0.0488,
+    "reducer": "cohens_kappa",
+    "n_windows": 201,
+    "n_episodes": 201,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n": 201,
+    "agreement": 0.4229,
+    "kappa": 0.1526,
+    "chance": 0.3189,
+    "n_dropped_missing": 0
+   },
+   "LAT": {
+    "mean": 0.2196,
+    "lo": 0.1043,
+    "hi": 0.3422,
+    "ci95": 0.1189,
+    "se": 0.0595,
+    "reducer": "cohens_kappa",
+    "n_windows": 193,
+    "n_episodes": 193,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n": 193,
+    "agreement": 0.6218,
+    "kappa": 0.2196,
+    "chance": 0.5153,
+    "n_dropped_missing": 8
+   }
+  },
+  "ext_band": {
+   "LON": {
+    "mean": 0.1788,
+    "lo": 0.0751,
+    "hi": 0.2751,
+    "ci95": 0.1,
+    "se": 0.0502,
+    "reducer": "cohens_kappa",
+    "n_windows": 201,
+    "n_episodes": 201,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n": 201,
+    "agreement": 0.4428,
+    "kappa": 0.1788,
+    "chance": 0.3215,
+    "n_dropped_missing": 0
+   },
+   "LAT": {
+    "mean": 0.2301,
+    "lo": 0.1145,
+    "hi": 0.3477,
+    "ci95": 0.1166,
+    "se": 0.0591,
+    "reducer": "cohens_kappa",
+    "n_windows": 193,
+    "n_episodes": 193,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n": 193,
+    "agreement": 0.6218,
+    "kappa": 0.2301,
+    "chance": 0.5087,
+    "n_dropped_missing": 8
+   }
+  }
+ },
+ "reference_rows_NOT_the_band": {
+  "seam_op": {
+   "_what_it_is": "the sheet's 2.0 s reading == OP_BAND_S, the OPERATIVE band",
+   "LON": {
+    "mean": 0.327,
+    "lo": 0.2289,
+    "hi": 0.4192,
+    "ci95": 0.0952,
+    "se": 0.0472,
+    "reducer": "cohens_kappa",
+    "n_windows": 201,
+    "n_episodes": 201,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n": 201,
+    "agreement": 0.5373,
+    "kappa": 0.327,
+    "chance": 0.3125,
+    "n_dropped_missing": 0
+   },
+   "LAT": {
+    "mean": 0.3132,
+    "lo": 0.1973,
+    "hi": 0.4323,
+    "ci95": 0.1175,
+    "se": 0.0603,
+    "reducer": "cohens_kappa",
+    "n_windows": 193,
+    "n_episodes": 193,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n": 193,
+    "agreement": 0.6891,
+    "kappa": 0.3132,
+    "chance": 0.5474,
+    "n_dropped_missing": 8
+   }
+  },
+  "full_h6": {
+   "_what_it_is": "the sweep's 6.0 s row == the FULL horizon (0.0, 6.0], operative band included",
+   "LON": {
+    "mean": 0.221,
+    "lo": 0.1165,
+    "hi": 0.3167,
+    "ci95": 0.1001,
+    "se": 0.0516,
+    "reducer": "cohens_kappa",
+    "n_windows": 201,
+    "n_episodes": 201,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n": 201,
+    "agreement": 0.4726,
+    "kappa": 0.221,
+    "chance": 0.323,
+    "n_dropped_missing": 0
+   },
+   "LAT": {
+    "mean": 0.3806,
+    "lo": 0.2587,
+    "hi": 0.4911,
+    "ci95": 0.1162,
+    "se": 0.0598,
+    "reducer": "cohens_kappa",
+    "n_windows": 193,
+    "n_episodes": 193,
+    "n_boot": 2000,
+    "estimator": "episode_cluster_bootstrap",
+    "n": 193,
+    "agreement": 0.6788,
+    "kappa": 0.3806,
+    "chance": 0.4813,
+    "n_dropped_missing": 8
+   }
+  }
+ },
+ "restatement_of_the_quoted_numbers": {
+  "_quoted_all_session": {
+   "LON_kappa": 0.3655,
+   "LAT_kappa": 0.4694,
+   "_what_they_actually_are": "kappa of (0.0, 2.0] == OP_BAND_S, at the argmax threshold cell (dv 0.75 / dyaw 0.05). SEAM/OPERATIVE values."
+  },
+  "_c89_proposed_correction": {
+   "LON_kappa": 0.2331,
+   "LAT_kappa": 0.404,
+   "_what_they_actually_are": "kappa of (0.0, 6.0] — the FULL horizon, still t0-anchored, still at the seam's argmax threshold. NOT the tactical band."
+  },
+  "_at_the_seam_sheet_thresholds_for_a_like_for_like_read": {
+   "seam_op": {
+    "LON": {
+     "mean": 0.3655,
+     "lo": 0.2652,
+     "hi": 0.4599,
+     "ci95": 0.0974,
+     "se": 0.0499,
+     "reducer": "cohens_kappa",
+     "n_windows": 201,
+     "n_episodes": 201,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "n": 201,
+     "agreement": 0.5672,
+     "kappa": 0.3655,
+     "chance": 0.3178,
+     "n_dropped_missing": 0
+    },
+    "LAT": {
+     "mean": 0.4694,
+     "lo": 0.354,
+     "hi": 0.582,
+     "ci95": 0.114,
+     "se": 0.0587,
+     "reducer": "cohens_kappa",
+     "n_windows": 193,
+     "n_episodes": 193,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "n": 193,
+     "agreement": 0.7202,
+     "kappa": 0.4694,
+     "chance": 0.4727,
+     "n_dropped_missing": 8
+    }
+   },
+   "full_h6": {
+    "LON": {
+     "mean": 0.2331,
+     "lo": 0.1292,
+     "hi": 0.3291,
+     "ci95": 0.0999,
+     "se": 0.0515,
+     "reducer": "cohens_kappa",
+     "n_windows": 201,
+     "n_episodes": 201,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "n": 201,
+     "agreement": 0.4826,
+     "kappa": 0.2331,
+     "chance": 0.3253,
+     "n_dropped_missing": 0
+    },
+    "LAT": {
+     "mean": 0.3675,
+     "lo": 0.2564,
+     "hi": 0.4729,
+     "ci95": 0.1083,
+     "se": 0.0543,
+     "reducer": "cohens_kappa",
+     "n_windows": 193,
+     "n_episodes": 193,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "n": 193,
+     "agreement": 0.6166,
+     "kappa": 0.3675,
+     "chance": 0.3938,
+     "n_dropped_missing": 8
+    }
+   },
+   "mean_band": {
+    "LON": {
+     "mean": 0.1688,
+     "lo": 0.0749,
+     "hi": 0.26,
+     "ci95": 0.0926,
+     "se": 0.0468,
+     "reducer": "cohens_kappa",
+     "n_windows": 201,
+     "n_episodes": 201,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "n": 201,
+     "agreement": 0.4279,
+     "kappa": 0.1688,
+     "chance": 0.3117,
+     "n_dropped_missing": 0
+    },
+    "LAT": {
+     "mean": 0.3125,
+     "lo": 0.1925,
+     "hi": 0.431,
+     "ci95": 0.1192,
+     "se": 0.0608,
+     "reducer": "cohens_kappa",
+     "n_windows": 193,
+     "n_episodes": 193,
+     "n_boot": 2000,
+     "estimator": "episode_cluster_bootstrap",
+     "n": 193,
+     "agreement": 0.6528,
+     "kappa": 0.3125,
+     "chance": 0.495,
+     "n_dropped_missing": 8
+    }
+   }
+  }
+ },
+ "paired_BAND_minus_SEAM": {
+  "_what": "kappa(mean_band over (2.0,6.0]) MINUS kappa(seam_op over (0.0,2.0]) at the PRODUCTION thresholds, same clips, same resampled draw. Negative = the correct horizon agrees WORSE.",
+  "_estimator": "paired_episode_cluster_bootstrap (taniteval/ci.py). ⛔ never overlapping_holdout_se.",
+  "LON": {
+   "delta": -0.1843,
+   "lo": -0.2746,
+   "hi": -0.0961,
+   "ci95": 0.0892,
+   "p_delta_gt0": 0.0,
+   "separated": true,
+   "reducer": "cohens_kappa",
+   "n_windows": 201,
+   "n_episodes": 201,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap"
+  },
+  "LAT": {
+   "delta": -0.1354,
+   "lo": -0.2707,
+   "hi": -0.0162,
+   "ci95": 0.1273,
+   "p_delta_gt0": 0.014,
+   "separated": true,
+   "reducer": "cohens_kappa",
+   "n_windows": 193,
+   "n_episodes": 193,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap"
+  }
+ },
+ "_argmax_cells_reported_second_and_labelled": {
+  "lon": {
+   "_warning": "this is the ARGMAX over thresholds for the primary definition. It is reported SECOND and is NOT the headline — C89 rule 2.",
+   "definition": "mean_band",
+   "dv_thresh_ms": 0.25,
+   "n": 201,
+   "agreement": 0.4527,
+   "kappa": 0.1862,
+   "chance": 0.3275,
+   "n_dropped_missing": 0
+  },
+  "lat": {
+   "_warning": "this is the ARGMAX over thresholds for the primary definition. It is reported SECOND and is NOT the headline — C89 rule 2.",
+   "definition": "mean_band",
+   "dyaw_thresh_rad": 0.05,
+   "n": 193,
+   "agreement": 0.6528,
+   "kappa": 0.3125,
+   "chance": 0.495,
+   "n_dropped_missing": 8
+  }
+ },
+ "_per_clip_path": "G:\\Meine Ablage\\SayBouBase\\raw\\Projects\\TanitAD\\TanitAD Research Hub\\Data Engineering\\Implementation\\incoming\\2026-08-16-tactical-review\\raw\\b1_band_agreement_per_clip.jsonl"
+}

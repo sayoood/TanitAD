@@ -4658,3 +4658,129 @@ do not re-threshold it.**
   wide ≈ 2.4 ViT patches**, with only **4.34 %** of scored windows below one patch. The failure is
   worst where the agent is **nearest and biggest**, and the random-latent null reproduces the entire
   stratum profile — so the profile belongs to the label distribution, not to the latent.
+
+---
+
+## C89 — WE READ THE TACTICAL LABELS AT THE HORIZON THAT MAXIMISED AGREEMENT, AND CALLED IT THE ARCHITECTURE'S BAND (2026-08-17, caught by the PI)
+
+**RETRACTED:** *"Both axes peak at 2.0 s — exactly the v6 tactical band"* (tactical-label
+validation), and my own relay of it into the review-sheet brief: *"Read at the 2.0 s horizon …
+2.0 s is the v6 tactical band."* **The whole 40-clip review sheet the PI was asked to adjudicate is
+built at the wrong horizon.**
+
+⛔ **2.0 s IS NOT THE TACTICAL BAND. IT IS THE SEAM.** From `v6.py` §4b, the binding horizon spec:
+
+```
+PLAN_STEPS = 60 · DT = 0.1 · HORIZON_S = 6.0
+OP_BAND_S  = (0.0, 2.0)   # operative
+TAC_BAND_S = (2.0, 6.0)   # TACTICAL
+```
+
+2.0 s is where operative authority **ends** and tactical **begins** — the single least
+representative point in the plan for a tactical claim.
+
+⇒ **AND THE SWEEP HAD THE RIGHT NUMBER ALL ALONG** (`a4_horizon_sweep.json`, 201 clips, MEASURED):
+
+| horizon | LON κ | LAT κ |
+|---|---|---|
+| **2.0 s** (seam, chosen) | **0.3655** | **0.4694** |
+| 3.0 s | 0.3444 | 0.4622 |
+| 4.0 s | 0.2924 | 0.4386 |
+| **6.0 s** (`TAC_BAND_S` end) | **0.2331** | **0.4040** |
+
+**−36 % longitudinal and −14 % lateral** between the horizon we reported and the horizon the
+architecture defines. The better number was not discovered; it was **selected**.
+
+⇒ **ROOT-CAUSE CLASS: A MEASUREMENT WINDOW CHOSEN BY ITS RESULT, THEN JUSTIFIED BY A SPEC IT DOES
+NOT MATCH.** This is the exponent rule (`CLAUDE.md`) in a new costume — *"the same log gives
+−0.387/−0.505/−0.564/−0.621/−0.738 depending on the window"* — but worse, because here a **binding
+constant existed** (`TAC_BAND_S`) that settles the question in one grep, and nobody ran it.
+
+⚠️ **The ridge check was sound and still did not save us.** The report correctly distinguished a
+ridge from a fitted spike (16 of 72 cells within 0.05 κ of the peak) — but the ridge spans
+**0.5–3.0 s**, i.e. the OPERATIVE band plus the seam. ⇒ *A robustness check tells you the peak is
+real; it cannot tell you the peak is in the right place.* Robust and relevant are different
+properties, and we verified only the first.
+
+⚠️ **The pre-registered hypothesis was also confirmed and still misused.** H_HORIZON (*"agreement
+rises as the horizon shortens"*) was upheld — but "agreement peaks short" does **not** license
+reading a TACTICAL label short. The architecture defines the band; the data does not get a vote on
+which quantity we are measuring.
+
+⇒ **RULES THIS EARNS:**
+1. **A horizon, window, or band is a SPEC LOOKUP, never an argmax.** If a binding constant defines
+   it, quote the constant and its file:line beside the number.
+2. **When a sweep is run, report the value AT THE DEFINED POINT first**, and the argmax second and
+   labelled as such. We had 6.0 s in the same JSON and led with 2.0 s.
+3. **State the horizon on every tactical artefact** — the sheet did say "2.0 s", which is why the
+   PI caught it. *Labelling the choice is what made the error findable; the error was making it.*
+
+⇒ **CONSEQUENCE:** the review sheet must be **rebuilt over (2.0, 6.0] s** before the PI's
+adjudication means anything, and every tactical κ quoted this session (0.3655 / 0.4694) must be
+restated at the band — **0.2331 / 0.4040** — or explicitly marked as seam values.
+
+---
+
+## C90 — A CORRECTION WAS WRITTEN INTO A DOCUMENT AND NEVER APPLIED, FOR THREE WEEKS (2026-08-17, registry sweep)
+
+**MEASURED:** `CLOSEDLOOP_RERUN.md:389` states, in its own text, that divergence must go
+**22.2 % → 23.5 %** and that this **"needs edit"**. Dated **2026-07-26**. **It was never done.** The
+banned-estimator value stood in every downstream reader for three weeks while the document that
+knew it was wrong sat beside it.
+
+⇒ **ROOT-CAUSE CLASS: C70 EXACTLY — a correction recorded in a place with no mechanism to apply
+it.** *"Needs edit"* is not a task; it is a note to a reader who never came. This programme has now
+lost an orthogonality instrument for 10 days, a merge request for 12, and a numeric correction for
+21 — all to the same shape: **the fix was known, written down, and had no owner.**
+
+⇒ **RULE: a correction that cannot be applied in the same turn must become a TRACKED ITEM, not a
+sentence.** If it is worth writing *"needs edit"*, it is worth a task chip or a failing test. A
+document is where you record that something WAS fixed, never where you record that it SHOULD be.
+
+⚠️ **And the sweep that found it was unbounded on purpose.** A bare numeric regex over 4,939 files
+returned **229 files** — mostly coincidental floats; context-gating cut it to **76 lines / 23
+files**. *The self-match family again* (`pgrep -f`, `grep failed` matching `xfailed`): a filter
+matched on the shape of the thing rather than its meaning.
+
+---
+
+## C91 — WE TOOK A VERDICT INVENTORY FROM THE HEADLINE INSTEAD OF THE ARTIFACT (2026-08-17, registry sweep)
+
+**RETRACTED:** the standing understanding that the banned estimator put **two** verdicts on the P2
+path (G1, G4) and that both had been re-decided.
+
+**MEASURED:** enumerating **every boolean** in `planner_p2_flagship-30k.json` returns **FIVE**, not
+two. The third that matters is **`planner_beats_cv`**, and unlike G1/G4 **its flip is REACHABLE**:
+it is banned on *both* sides, the corrected CV floor (**0.8377**) is *higher* — moving the
+comparison **toward** the planner — and flipping needs **+6.59 %** against a measured local upper
+edge of **+5.877 %** and a programme-wide **+11.69 %**.
+
+⇒ ⛔ **`planner_beats_cv` is UNDECIDED, not "no flip".** Materially unlike G1's −73.6 % margin. It
+**must not be quoted in either direction** until the re-drive; the same ~400 s GPU job settles it
+and G1 together.
+
+⇒ **ROOT-CAUSE CLASS: an inventory of what a result CLAIMS, taken from what was WRITTEN ABOUT it
+rather than from the artifact.** The two verdicts we knew about were the two the headline mentioned.
+Nobody opened the JSON and counted. ⇒ **RULE: before declaring an artifact's verdicts re-decided,
+ENUMERATE every verdict field in the artifact itself.** A verdict nobody listed cannot be
+re-decided, and its silence reads exactly like agreement.
+
+⚠️ **Two more of the same shape in the same sweep:**
+* **All three** closed-loop baseline numbers were banned, not just the threshold (**FDE 3.5296 →
+  3.6190**, **divergence 0.2216 → 0.2350**). All moved the **same way** — the v1 closed-loop failure
+  was **UNDERSTATED** — so every P2-vs-head margin **widens** (drift reduction 38 % → **42.9 %**;
+  divergence 2.5× → **3.2×**). *A bias that flatters the thing you are arguing against is the last
+  one you notice.*
+* The registry **publishes the same paired delta twice, 800 lines apart**, with intervals differing
+  **3.31×** — REF-A `[2.447, 2.798]` (banned, unlabelled) vs `[2.0945, 3.2570]`. That ratio sits
+  **above the top of the documented 1.107–3.100× narrowing band**, on a paired delta.
+
+⭐ **AND THE MOST CONSEQUENTIAL SITE WAS NOT IN THE REGISTRY AT ALL:** `Paper/TANITAD_PAPER.md:2847`
+carried banned-estimator bars **inside the PRE-REGISTERED GATE LIST** (G4 **1.69 → 1.7318**, G5
+**0.452 → 0.4271**). ⇒ **A defective statistic was defining the bar that FUTURE arms must clear** —
+and the old bar is **HARDER** than justified, so arms were being held to a threshold the estimator
+had inflated. *A wrong number in a results table misreports the past; a wrong number in a gate
+misdirects the future.*
+
+⚠️ Also fixed, and worth naming as its own shape: `MODEL_REGISTRY.md` §1.3 read **"Cite 0.628
+(heldout)"** — **not a stale number but a STANDING INSTRUCTION to prefer the banned statistic**.
