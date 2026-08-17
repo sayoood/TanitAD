@@ -1,0 +1,160 @@
+{
+ "_evidence_class": "MEASURED (ours; banked cache + the checkpoint's own readout weights)",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "spatial_pin": {
+  "p40": {
+   "kernel": [
+    4,
+    10
+   ],
+   "grid": [
+    4,
+    4
+   ],
+   "tokens_per_unit": 40,
+   "px_per_unit": [
+    64,
+    160
+   ],
+   "IMPULSE_PIN_OK": true,
+   "failures": []
+  },
+  "p10": {
+   "kernel": [
+    2,
+    5
+   ],
+   "grid": [
+    8,
+    8
+   ],
+   "tokens_per_unit": 10,
+   "px_per_unit": [
+    32,
+    80
+   ],
+   "IMPULSE_PIN_OK": true,
+   "failures": []
+  },
+  "p4": {
+   "kernel": [
+    2,
+    2
+   ],
+   "grid": [
+    8,
+    20
+   ],
+   "tokens_per_unit": 4,
+   "px_per_unit": [
+    32,
+    32
+   ],
+   "IMPULSE_PIN_OK": true,
+   "failures": []
+  },
+  "p1": {
+   "kernel": [
+    1,
+    1
+   ],
+   "grid": [
+    16,
+    40
+   ],
+   "tokens_per_unit": 1,
+   "px_per_unit": [
+    16,
+    16
+   ],
+   "IMPULSE_PIN_OK": true,
+   "failures": []
+  }
+ },
+ "readout_proj_key": "readout.proj.weight",
+ "readout_proj_shape": [
+  128,
+  768
+ ],
+ "operator_check": {
+  "what": "proj(AvgPool2d((4,10))(banked tokens)) vs banked cells",
+  "why_not_exact": "the producer ran under bf16 autocast and stored fp16; this path is fp32 from fp16 storage, so the residual is ROUNDING and is reported, not asserted to 0",
+  "rows": [
+   {
+    "clip_id": "0045da77-dcdd-46ad-8f97-e94f32c3711c",
+    "frame_idx": 5,
+    "max_abs_diff": 0.004418,
+    "mean_abs_diff": 0.00084,
+    "banked_abs_mean": 0.024968,
+    "rel_mean": 0.033643,
+    "corr": 0.99937997
+   },
+   {
+    "clip_id": "0045da77-dcdd-46ad-8f97-e94f32c3711c",
+    "frame_idx": 13,
+    "max_abs_diff": 0.004418,
+    "mean_abs_diff": 0.000903,
+    "banked_abs_mean": 0.025235,
+    "rel_mean": 0.035791,
+    "corr": 0.99932186
+   },
+   {
+    "clip_id": "0045da77-dcdd-46ad-8f97-e94f32c3711c",
+    "frame_idx": 21,
+    "max_abs_diff": 0.004228,
+    "mean_abs_diff": 0.000904,
+    "banked_abs_mean": 0.025614,
+    "rel_mean": 0.035298,
+    "corr": 0.99934909
+   },
+   {
+    "clip_id": "0045da77-dcdd-46ad-8f97-e94f32c3711c",
+    "frame_idx": 29,
+    "max_abs_diff": 0.004541,
+    "mean_abs_diff": 0.000868,
+    "banked_abs_mean": 0.025682,
+    "rel_mean": 0.03379,
+    "corr": 0.99938566
+   },
+   {
+    "clip_id": "0045da77-dcdd-46ad-8f97-e94f32c3711c",
+    "frame_idx": 37,
+    "max_abs_diff": 0.004279,
+    "mean_abs_diff": 0.000853,
+    "banked_abs_mean": 0.025973,
+    "rel_mean": 0.032828,
+    "corr": 0.99943257
+   },
+   {
+    "clip_id": "0045da77-dcdd-46ad-8f97-e94f32c3711c",
+    "frame_idx": 45,
+    "max_abs_diff": 0.003897,
+    "mean_abs_diff": 0.000869,
+    "banked_abs_mean": 0.02585,
+    "rel_mean": 0.033626,
+    "corr": 0.9994134
+   },
+   {
+    "clip_id": "0045da77-dcdd-46ad-8f97-e94f32c3711c",
+    "frame_idx": 53,
+    "max_abs_diff": 0.004582,
+    "mean_abs_diff": 0.000836,
+    "banked_abs_mean": 0.025811,
+    "rel_mean": 0.03238,
+    "corr": 0.99943199
+   },
+   {
+    "clip_id": "0045da77-dcdd-46ad-8f97-e94f32c3711c",
+    "frame_idx": 61,
+    "max_abs_diff": 0.004134,
+    "mean_abs_diff": 0.000878,
+    "banked_abs_mean": 0.025376,
+    "rel_mean": 0.034603,
+    "corr": 0.99937044
+   }
+  ],
+  "worst_rel_mean": 0.035791,
+  "min_corr": 0.99932186,
+  "AGREES": true
+ }
+}

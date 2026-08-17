@@ -5246,3 +5246,76 @@ agree to *"~1e-12"* on the inner split. The **full fit** agrees to 5e-14; the **
 by up to **0.74 MAE — eleven orders out** — enough to flip near-tied alpha choices (K1 **+0.4274 →
 +0.0317**). ⇒ **The two routes' numbers must never be pooled.** *An agreement measured on one path
 and asserted for another is the scope error again.*
+
+---
+
+## C101 — `planner_beats_cv` IS AN **OPEN-LOOP** VERDICT, THE ZERO-GPU PATH CANNOT REACH IT — AND THE QUESTION IT STOOD FOR IS NOW SETTLED AGAINST THE PLANNER (2026-08-18)
+
+**RETRACTED — my own framing in the re-drive brief.** I wrote that `planner_beats_cv` is the
+closed-loop planner-vs-CV comparison and that the banked `p2win_flagship-30k.pt` should therefore
+settle it with zero GPU.
+
+**MEASURED from source:** `planner_beats_cv` is computed inside **`analyze_openloop`**
+(`planner_p2.py:621`, fn at `:555`) from `collect_openloop`'s `plan_wp`/`cv_wp` — **OPEN LOOP,
+n = 881 windows / 40 episodes, stride 8.** The banked dump is the **CLOSED-loop** collection
+(**221 windows / 20 episodes, stride 16**). ⇒ ⛔ **Different tier, different windows, different
+episode count. The banked path does not reach this verdict.** Absence confirmed at **three probes,
+including an exhaustive walk of every `.pt` in the repo: no open-loop CEM planner arm is banked
+anywhere** — independently confirming `JACK_IN_GATES.md` §3.1.
+
+⇒ **ROOT-CAUSE CLASS: I ASSUMED A VERDICT'S TIER FROM ITS NAME.** *"planner beats CV"* sounds like
+one comparison and is another. **This is C95 again** — two same-named quantities at two eval tiers —
+and it is the reason the tier stamp is binding. ⚠️ **The `--analyze-only` instinct was still right as
+discipline** (it once recovered a complete 2-arm run for free); it was the *premise* that was wrong,
+and **the agent checked rather than assumed**, which is the only reason this cost nothing.
+
+⇒ **THE OPEN-LOOP VERDICT REMAINS UNDECIDED, AND NO ANSWER WAS MANUFACTURED.** Reproduction gate
+passes — `cv` and `open_grnd` **bit-exact**, `closed_bike` drift **0.0193 %** (⭐ *the documented
+unseeded-CEM residual — an independent confirmation that the `cem_seed` fix was addressing a real
+effect*). Corrected arms reproduce `JACK_IN_GATES` to 4 dp: CV **0.8377**, operative **0.4271**,
+head **3.3839**. Flipping needs the planner to drop **6.589 %** against a local envelope of
+**−6.909 %…+5.877 %** and programme-wide **+11.69 %** — above the local edge, inside the
+programme-wide one. ⚠️ **No bound closes it**: the banned estimator gives **7 of 40 episodes weight
+exactly 0**, so those windows are unconstrained by the published mean.
+
+### ⭐ BUT THE QUESTION IT STOOD FOR IS NOW ANSWERED, AT THE PRIMARY TIER
+
+The published G4 compared planner vs **head**, never vs **CV** — so this had **never actually been
+asked**. Computed from banked data, **paired**, **T1**:
+
+> **planner − CV = +0.2585 m [+0.0869, +0.4309], CI-SEPARATED, p(δ>0) = 0.9975**
+> ⇒ **the CEM planner is 35.8 % WORSE than constant velocity, closed-loop.**
+
+⭐⭐ **AND IT LOCALISES THE DEFECT: operative-under-true-actions BEATS CV (−0.3151 m).**
+⇒ **THE LOSS IS IN THE ACTION SEARCH, NOT IN THE WORLD MODEL.** The WM rolls out well when handed
+true actions; the CEM cannot find actions that exploit it.
+
+⛔ **AND THE PLANNER LOSES ON THE FAMILY IT IS DESIGNED FOR.** Per family, never pooled:
+**LONGITUDINAL 1.9062 vs 1.6705 m**, speed error **0.9431 vs 0.7607 m/s**, bias **+0.2737 vs
+−0.0995 m/s**. The **lateral** loss its own scope note predicts; **the longitudinal loss it does
+not.** *(This is exactly why ADE-only reporting is banned: a scalar would have shown "worse" without
+showing that it is worse **where its cost function is aimed**.)*
+**TACTICAL** and **STRATEGIC** are genuine **N/A with reasons and n** — the CEM emits no manoeuvre
+class, and the P2 cost carries **no route/goal term**. Distance-keeping/TTC is uncomputable: no
+lead-agent track.
+
+⚠️ **A real data defect caught in passing:** curvature on **11 stopped-ego windows** gave GT `|κ|`
+**mean 34.83 1/m against a median 0.00081** (max **23,004**). **Masked, not clamped**, with the
+excluded n published — a clamp would have silently kept fabricated geometry in the mean.
+
+### ⚠️ C91's OWN COUNT WAS IMPRECISE — the class it exists to name, applied to itself
+
+C91 says the artifact holds **five** verdicts. Enumerated properly: **14 boolean instances across 6
+distinct names** — C91 **collapsed the 9 `beats_head` grid entries**. The verdict *"enumerate every
+field in the artifact"* stands; **the number in it was itself taken one level too coarse.**
+*(`beats_head` is settled by a **4.686× margin**, ~30× any measured estimator error, so its
+unrecoverable estimator is irrelevant. **No other verdict moves.**)*
+
+### ⏳ BLOCKED ON THE PI, AND CORRECTLY SO
+
+The open-loop re-drive is feasible here — checkpoint **local** (`flagship4b-speedjerk-30k_ckpt.pt`,
+step 29999), harness imports, `cem_seed=0` present, the 4060 free, Thor untouched. The **only**
+missing input is the val cache: **HF `epcache-256px-phase0/physicalai-val-0c5f7dac3b11/`, 40
+episodes, 4.70 GB.** ⭐ **The agent did NOT download it, on the grounds that an agent brief is not
+user consent — which is right, and is the standard.** One job then closes `planner_beats_cv` **and**
+G1's fourth arm; parity is provable afterwards by bit-exact reproduction of the model-free `cv`.
