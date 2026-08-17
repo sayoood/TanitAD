@@ -324,14 +324,32 @@ def _solve(Z, y, alpha, mode):
     ``centred`` — THE REPAIR: y is centred and the intercept is not penalised.
     ``unpen``   — ⭐ THE SAME REPAIR, taken from the MODULE (C92's
                   ``ridge_fit(..., intercept_col=-1)``) instead of re-derived
-                  here. On a design whose feature block is z-scored to zero
-                  train mean the two are algebraically IDENTICAL on the full
-                  fit — the normal equations go block-diagonal, giving
-                  ``b = mean(y)`` and the centred slope solve. They can differ
-                  by ~1e-12 on the INNER SPLIT, where the subset's feature mean
-                  is not exactly zero, so ``unpen`` is preferred for any re-read
-                  that must be traceable to the module rather than to a local
-                  copy of its algebra.
+                  here. Preferred for any re-read that must be traceable to the
+                  module rather than to a local copy of its algebra.
+
+    ⚠️ ``centred`` AND ``unpen`` ARE **NOT** NUMERICALLY INTERCHANGEABLE, AND MY
+    FIRST VERSION OF THIS DOCSTRING SAID THEY WERE (retracted 2026-08-18, in the
+    same package that introduced ``unpen``).
+
+    * **On the FULL fit they ARE identical** — the feature block is z-scored with
+      the PROBE-TRAIN mean, so ``Xc' 1 = 0``, the normal equations go
+      block-diagonal, and the unpenalised-intercept solution is exactly
+      ``b = mean(y)`` with the centred slope solve. **MEASURED: max |Δpred|
+      5e-14 across alpha 1e-2..1e7**, i.e. float64 round-off.
+    * ⛔ **On the INNER SPLIT they are not.** Alpha is chosen by fitting a
+      SUBSET of the train rows, whose feature mean is **not** zero, so the
+      block-diagonal argument does not apply. I originally wrote that the
+      divergence there was "~1e-12". **It is not: MEASURED max |Δpred| 6.3e-2 on
+      a synthetic subset at low alpha (shrinking to 1.8e-6 by alpha 1e7), and on
+      the real ladder caches the two routes' inner-split MAE differs by up to
+      0.74** (`…/2026-08-18-k1-degeneracy-guard/raw/equiv_centred_vs_unpen.json`).
+    * ⇒ **That difference CAN FLIP A NEAR-TIED ALPHA CHOICE, and then the
+      published K1 moves.** MEASURED on `ego_v0` @11250: inner MAE 4.4528
+      (alpha 1e4) vs 4.4622 (alpha 1e5) — a gap of **9.4e-3** — so ``centred``
+      picks 1e4 and ``unpen`` picks 1e5, and **K1 goes +0.4274 → +0.0317**.
+      Across the 4 arms x 11 targets that overlap, **2 of 44 alpha choices
+      differ and 0 of 44 VERDICTS differ**, but the numbers are not the same and
+      must not be pooled as though they were.
 
     ⛔ THE DEFECT THE REPAIR FIXES. pc6's `ridge_fit` builds
     ``X.T @ X + alpha * np.eye(d)`` on a design matrix whose LAST COLUMN IS THE

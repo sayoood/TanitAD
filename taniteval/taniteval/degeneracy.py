@@ -99,6 +99,29 @@ about the latent.** ``k1_guard`` additionally reports what the MEAN constant
 would have scored (``c_mean_*``), so the gap is *visible* instead of being an
 invisible route to a PASS.
 
+===============================================================================
+⚠️ WHAT THE GUARD DOES **NOT** ANSWER — read this before quoting an ``OK``
+===============================================================================
+
+**The guard qualifies ATTRIBUTION, not MAGNITUDE.** ``OK`` means *"this verdict
+is about the readout's variation"*; it does **not** mean the effect is large
+enough to matter.
+
+MEASURED 2026-08-18 (``…/2026-08-18-k1-degeneracy-guard/raw/reread/llR_nullmatched.json``):
+the random-latent null on ``ego_yawrate`` returns ``K1 = +0.0000
+[+0.0000, +0.0000] separated`` with ``K1B`` likewise ``+0.0000`` separated, and
+the guard correctly says ``OK`` — the null's minuscule noise variation really
+does make it very slightly worse than a constant. The verdict is **attributable
+and physically nil** (``pred_sd`` 0.0002 rad/s). ``ci._render_bounds`` catches
+only the float64-resolution case below 1e-12; between that and "meaningful"
+there is a judgement that needs the target's UNITS, and this module does not
+make it.
+
+⇒ **Always read a verdict beside a scale.** ``K1B / gt_sd`` is the scale-free
+form and is derivable from the fields emitted here. ⛔ **No threshold on it is
+defined on purpose** — that would be a tunable nobody registered, which is the
+mistake this module spends its whole design avoiding.
+
 ⛔ **T0-DIAGNOSTIC.** Everything guarded here is a frozen-latent readout — a
 world-model diagnostic, never driving performance (``EVAL_DOCTRINE.md``).
 """

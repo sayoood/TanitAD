@@ -5183,3 +5183,66 @@ whose compute was already paid for. **The gate an agent built caught the orchest
 re-verified: `[swdump] preflight OK`, and `v6_chain.py admission` now emits **zero** `NOT BUILT`
 lines on Thor. **The live run was unaffected — step 12,700 → 12,800 across the operation with
 `step_s` unchanged at 26.474.**
+
+---
+
+## C100 — OF 87 BANKED SEPARATED-FAILs, **ONE** IS A SUBSTANTIVE FINDING (2026-08-18, K1 degeneracy guard + re-read)
+
+**RETRACTED:** the standing body of K1 FAIL verdicts from the linear-readout ladder. Re-read across
+**165 rows** with the C92 intercept repair **and** the new C97 degeneracy guard:
+
+| of 87 banked separated-FAILs | n |
+|---|---|
+| **die at the repair** (C92 — the biased floor made them fail) | **23** |
+| **killed by the guard** (C97 — degenerate, constant-offset) | **42** |
+| **flip to PASS** | **11** |
+| survive both | **11** |
+
+⛔ **And 10 of the 11 survivors are `ego_yawrate` at K1B +0.0000 [+0.0000, +0.0000] — two of them on
+RANDOM-LATENT NULLS.** ⇒ ⭐ **Exactly ONE substantive finding remains: `ll_s09000 lead_gap`, K1B
++0.748 [+0.002, +1.624].** The `@11250` FAIL that the previous stream reported as *surviving* is
+**DOWNGRADED** — K1B **+0.404, not separated.**
+
+⇒ **ROOT-CAUSE CLASS: A BODY OF "FINDINGS" THAT WAS OVERWHELMINGLY INSTRUMENT.** Two defects in
+opposite directions (C92's biased floor, C97's degenerate ceiling) between them account for **65 of
+87**. ⚠️ **`LATENT_LINEAR_LADDER.md` must be re-read before ANY of it is quoted — 93 of its 165 rows
+change.**
+
+⭐ **THE GUARD HAS NO FREE PARAMETER, WHICH IS WHY IT SETTLES THINGS.** With `c_own = mean(pred)`:
+
+> **K1 = [MAE(pred) − MAE(c_own)] + [MAE(c_own) − MAE(C-CONST)] = K1B + K1C**
+
+**K1B is the latent-attributable part and is ALGEBRAICALLY INVARIANT to the choice of C-CONST**
+(pinned); K1C is a pure which-constant contest. And **`|K1B| ≤ pred_mad ≤ pred_sd` is a THEOREM**
+(reverse triangle inequality, then Jensen) — so `pred_sd < |K1|` **proves** a constant-offset
+component **with no refit and no bootstrap, from fields already banked.**
+
+⇒ **THE mean-vs-median QUESTION DISSOLVES RATHER THAN BEING DECIDED, and the median STAYS.** MAE's
+optimal constant **is** the median, so switching would *weaken* the baseline and **manufacture
+PASSes** — C97's own failure mode a third time. The gap is now **reported**
+(`mean_minus_median_const_gap`) instead of being an invisible route to a PASS. **No default flips.**
+
+⚠️ **THE AGENT'S OWN FIRST DRAFT WAS THE REJECTS-EVERYTHING KIND**, and it says so: letting
+`sd_ratio` short-circuit K1B would have **rejected a genuine readout on a heavy-tailed target**
+(`n_agents_all`: gt_sd 46.5, median 34). ⇒ **C95's rule fired correctly for once, prospectively:
+both directions were pinned (29 tests) before the guard shipped** — a degenerate arm is caught, and
+a strong arm, a **weak-but-genuine** arm, and a signal-strength sweep are not.
+
+⛔ **THE TRIVIAL-PROXY CONTROL THEN KILLED THE GUARD'S OWN BEST NEW RESULT — exactly as it should.**
+Under the repair `n_agents_all` PASSes on **all 15 arms**, and the guard rejects **precisely the two
+containing zero information** (SNR sweep monotone in injected noise, −2.219 → −1.044). **But the v6
+arm (K1B −2.785) beats the SINGLE EGO-SPEED SCALAR (−2.243) by 0.012 gt_sd**, and on
+`n_agents_grid` **the scalar PASSES while the 2048-dim latent does not separate.**
+⇒ ⛔ **"The v6 latent reads scene density" is NOT SUPPORTED — it is ~80 % `v0`.** *(C92's discipline
+applied prospectively rather than retrospectively, for the first time.)*
+
+⚠️ **A SEPARATE STALENESS, SAME CLASS AS C99 AND FOUND THE SAME NIGHT:** the **scratch** copy of
+`pc6_linear_readout.py` was **pre-C92 with no `intercept_col` at all** — **a launch from it would
+have silently re-run the defect the repair removed.** Staleness is a property of the *target*; the
+repo being correct proves nothing about the copy the job actually loads.
+
+⚠️ **AND ONE MEASURED-AND-RETRACTED IN THE SAME PACKAGE:** the claim that `ll1`'s two repair routes
+agree to *"~1e-12"* on the inner split. The **full fit** agrees to 5e-14; the **inner split** differs
+by up to **0.74 MAE — eleven orders out** — enough to flip near-tied alpha choices (K1 **+0.4274 →
++0.0317**). ⇒ **The two routes' numbers must never be pooled.** *An agreement measured on one path
+and asserted for another is the scope error again.*

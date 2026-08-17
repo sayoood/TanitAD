@@ -1,5 +1,40 @@
 # ⛔ THE v6 OPERATIVE LATENT CANNOT LINEARLY REPORT THE EGO'S OWN SPEED — and the banked lead-gap signal is mostly an EGO-SPEED PROXY
 
+> ## ⛔ **93 OF THE 165 ROWS BELOW CHANGE. DO NOT QUOTE ANY TABLE IN THIS DOCUMENT WITHOUT THE RE-READ.**
+>
+> Re-read 2026-08-18 with the **C92 intercept repair** and the **C97 degeneracy guard** — two defects
+> in *opposite* directions that between them account for **65 of the 87 banked separated-FAILs**.
+> Full detail: **C100** in `Project Steering/RETRACTION_LOG.md`, artifacts in
+> `…/incoming/2026-08-18-k1-degeneracy-guard/`.
+>
+> | of 87 banked separated-FAILs | n |
+> |---|---|
+> | die at the C92 repair (the biased floor made them fail) | **23** |
+> | killed by the C97 guard (degenerate — a constant-offset component) | **42** |
+> | flip to PASS | **11** |
+> | survive both | **11** |
+>
+> ⛔ **And 10 of the 11 survivors are `ego_yawrate` at K1B +0.0000 [+0.0000, +0.0000] — two of them
+> on RANDOM-LATENT NULLS.** ⇒ ⭐ **Exactly ONE substantive finding survives: `ll_s09000 lead_gap`,
+> K1B +0.748 [+0.002, +1.624].** The `@11250` FAIL reported here as surviving is **DOWNGRADED**:
+> K1B **+0.404, not separated**.
+>
+> ⭐ **THE HEADLINE ABOVE SURVIVES — and is the reason to keep reading this document.** The
+> ego-speed-proxy finding is *strengthened* by the re-read, not weakened. What does **not** survive
+> is the per-row FAIL inventory.
+>
+> ⛔ **ALSO WITHDRAWN: any claim that the v6 latent reads SCENE DENSITY.** Under the repair
+> `n_agents_all` passes on all 15 arms, but the trivial-proxy control kills it — the v6 arm
+> (K1B −2.785) beats a **single ego-speed scalar** (−2.243) by **0.012 gt_sd**, and on
+> `n_agents_grid` **the scalar passes while the 2048-dim latent does not separate.** It is **~80 %
+> `v0`.**
+>
+> ⚠️ **Two numbers in this document's own method notes are wrong.** (1) The two repair routes are
+> said to agree to *"~1e-12"* on the inner split: the **full fit** agrees to 5e-14, but the **inner
+> split** differs by up to **0.74 MAE — eleven orders out**, enough to flip near-tied alpha choices
+> (K1 +0.4274 → +0.0317). ⇒ **The two routes' numbers must never be pooled.** (2) The four banked
+> `ll_rep_*` files were **not** refitted with the guard (~10 min, zero GPU) — treat them as unre-read.
+
 **Date:** 2026-08-17 · **Branch:** `agent/arch-inf-20260803` · **Agent:** latent-linear-ladder
 **Cites, and does not touch:** `…/incoming/2026-08-17-probe-positive-control/PROBE_POSITIVE_CONTROL.md`,
 `…/incoming/2026-08-17-slot-probe-parity/SLOT_PROBE_PARITY.md`.

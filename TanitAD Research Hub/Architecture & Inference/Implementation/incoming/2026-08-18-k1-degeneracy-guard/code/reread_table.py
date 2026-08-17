@@ -93,6 +93,15 @@ def main(argv=None) -> int:
                 "guard_verdict": g["guard_verdict"],
                 "K1B": g["K1B_delta"], "K1B_ci": [g["K1B_lo"], g["K1B_hi"]],
                 "K1B_separated": g["K1B_separated"], "K1C": g["K1C_delta"],
+                # ⚠️ SCALE. The guard answers ATTRIBUTION, not MAGNITUDE: a
+                # separated K1 of +0.0000 rad/s is attributable and physically
+                # nil. `K1B / gt_sd` is the scale-free form — reported, never
+                # gated on (a threshold here would be a tunable nobody
+                # registered).
+                "K1B_rel_gt_sd": (round(g["K1B_delta"] / g["gt_sd"], 6)
+                                  if g["gt_sd"] > 0 else None),
+                "K1_rel_gt_sd": (round(rr["K1_delta"] / g["gt_sd"], 6)
+                                 if g["gt_sd"] > 0 else None),
                 "sd_ratio": g["sd_ratio"], "flat_line": g["flat_line"],
                 "k1_exceeds_own_spread": g["k1_exceeds_own_spread"],
                 "mean_minus_median_const_gap":
@@ -107,14 +116,16 @@ def main(argv=None) -> int:
     if missing:
         print(f"⛔ MISSING re-reads ({len(missing)}): {missing}")
 
-    hdr = (f"{'file':22} {'target':14} {'old K1':>9} {'new K1':>9} "
-           f"{'old verdict':15} {'new verdict':15} {'guard':21} change")
+    hdr = (f"{'file':22} {'target':14} {'old K1':>9} {'new K1':>9} {'K1B':>9} "
+           f"{'K1B/sd':>7} {'old verdict':13} {'new verdict':13} {'guard':21} change")
     print(hdr)
     print("-" * len(hdr))
     for r in rows:
         ch = "—" if not r["verdict_changed"] else f"{r['old_verdict']}→{r['new_verdict']}"
         print(f"{r['file'][:22]:22} {r['target'][:14]:14} {r['old_K1']:+9.3f} "
-              f"{r['new_K1']:+9.3f} {r['old_verdict']:15} {r['new_verdict']:15} "
+              f"{r['new_K1']:+9.3f} {r['K1B']:+9.3f} "
+              f"{(r['K1B_rel_gt_sd'] if r['K1B_rel_gt_sd'] is not None else 0):+7.3f} "
+              f"{r['old_verdict']:13} {r['new_verdict']:13} "
               f"{r['guard_verdict']:21} {ch}")
 
     old_c, new_c = Counter(r["old_verdict"] for r in rows), \

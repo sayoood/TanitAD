@@ -32,6 +32,14 @@ EPS="$S/cache/slotprobe-lead130-w120-256x640cyl"
 JOIN="$S/lead130_agents.jsonl"
 export PYTHONUTF8=1 OMP_NUM_THREADS=4 PYTHONPATH="$ROOT/taniteval"
 A="--alphas 0.01 0.1 1 10 100 1000 10000 100000 1000000 10000000"
+# ⚠️ SEED 0 IS THE VERDICT SEED, and that is why the re-read runs at one seed.
+# `ridge_artifact_audit.py` and `reread_table.py` both read `per_seed["0"]`, and
+# `fit_one` draws its own `default_rng(seed)` per call — so seed 0's row is
+# BIT-IDENTICAL whether or not seeds 1 and 2 also ran. Seed STABILITY under the
+# repair is not skipped, it is already MEASURED on the 4 banked `ll_rep_*` arms
+# (3 seeds each, `seed_K1_range`), so re-paying for it 15 times buys nothing.
+# Override with LLR_SEEDS="0 1 2" if a 3-seed re-read is ever wanted.
+SEEDS="${LLR_SEEDS:-0}"
 mkdir -p "$OUT/reread"
 
 sync_scratch () {
@@ -52,7 +60,7 @@ run () {  # <tag> <cache> <label> [extra...]
   local tag="$1" cache="$2" label="$3"; shift 3
   "$PY" "$W/ll1_ladder.py" --cache "$cache" --split-json "$S/p3_selection.json" \
     --episodes-dir "$EPS" --join-file "$JOIN" --label "$label" \
-    --out "$OUT/reread/llR_$tag.json" --seeds 0 1 2 --fit-mode unpen $A "$@" \
+    --out "$OUT/reread/llR_$tag.json" --seeds $SEEDS --fit-mode unpen $A "$@" \
     > "$OUT/reread/logR_$tag.txt" 2>&1
   echo "LLR $tag rc=$?"
 }
