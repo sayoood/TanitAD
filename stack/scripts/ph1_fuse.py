@@ -817,6 +817,42 @@ def emit_vocab(v2: dict, alp: dict | None,
 CENSUS_MEASURED = "measured"
 CENSUS_UNAVAILABLE = "unavailable"
 
+# --------------------------------------------------------------------------- #
+# ⚠️ AND THE MIRROR-IMAGE DEFECT, FOUND BY THE RE-FUSE THAT FIXED `"no agents"` #
+# --------------------------------------------------------------------------- #
+# `"no agents"` rendered an ABSENT measurement as a confident NEGATIVE. Filling
+# the perception layer in fixes that — and immediately creates its opposite:
+# `census_phrase` renders `{"car": 73}` as **"73 car"**, which reads as
+# SEVENTY-THREE CARS. It is not. It is 73 SAM3 TRACKS, and MEASURED on this
+# corpus a track is very nearly a single detection:
+#
+#   * single-frame tracks: **7 077 / 8 067 = 87.7 %** on the v2 leg (floor 0.25)
+#     and **2 049 / 2 397 = 85.5 %** on the v1 leg (floor 0.5) — the
+#     fragmentation is a property of the STRIDE, not of the floor;
+#   * median tracks/clip **58** (v2) against a median PEAK CONCURRENCY of
+#     **20** — i.e. the count over-states the busiest single frame ~3x;
+#   * mechanism: `build_tracks` associates by `IOU_TRACK = 0.3` across frames
+#     that are STRIDED (6 run frames per clip). At that spacing an object's
+#     boxes rarely overlap at all, so association mostly fails and each
+#     detection becomes its own track.
+#
+# ⇒ This is the SAME CLASS as `per_scene_hits["lane marking"] = 141` not being
+# 141 lane markings, and the same class as `"no agents"` itself: **a shape that
+# reads like the thing it is not.** It is NOT repaired by re-tuning the IoU —
+# a lower threshold on strided frames buys false merges instead of false
+# splits, and neither is an object count. The honest move is to NAME THE UNIT
+# and publish the fragmentation alongside it, which is what `census_state`
+# emits and `census_phrase` says out loud.
+#
+# ⚠️ `peak_concurrent_tracks` is a LOWER BOUND on the number of distinct
+# objects (the busiest processed frame), not an object count either. Both
+# numbers are reported; neither is promoted to "how many cars are there".
+CENSUS_UNIT_NOTE = (
+    "SAM3 TRACK counts, NOT object counts: ~87 % of tracks are single-frame "
+    "because build_tracks associates by IoU across STRIDED frames, so a track "
+    "is ~a detection. peak_concurrent_tracks is a lower bound on distinct "
+    "objects; n_agents is an upper one. Neither answers 'how many cars'")
+
 
 def census_state(tracks: list[dict], *, absent_reason: str | None = None,
                  n_frames: int | None = None) -> dict:
@@ -848,10 +884,126 @@ def census_state(tracks: list[dict], *, absent_reason: str | None = None,
                           "indistinguishable here",
                 "counts": None, "n_agents": None}
     counts: dict[str, int] = {}
+    per_frame: dict[int, int] = {}
+    n_single = 0
     for t in tracks:
         counts[t["concept"]] = counts.get(t["concept"], 0) + 1
+        n_single += int(int(t.get("n_frames") or 1) <= 1)
+        for fi, _ in (t.get("boxes") or []):
+            per_frame[fi] = per_frame.get(fi, 0) + 1
     return {"state": CENSUS_MEASURED, "reason": None, "counts": counts,
-            "n_agents": len(tracks)}
+            "n_agents": len(tracks),
+            # ⛔ THE UNIT, DECLARED — see the note below. `n_agents` is a
+            # TRACK count and a track is not an object at this frame stride.
+            "unit": "sam3_tracks",
+            "n_single_frame_tracks": n_single,
+            "peak_concurrent_tracks": max(per_frame.values(), default=0),
+            "counts_are": CENSUS_UNIT_NOTE}
+
+
+# =========================================================================== #
+# ⛔ A DETECTION FLOOR IS INVISIBLE IN THE PAYLOAD — IT IS ONLY THE ROWS THAT  #
+#    ARE NOT THERE. THE FUSED RECORD MUST CARRY THE ENGINE THAT PRODUCED IT.  #
+# =========================================================================== #
+#: Fields lifted VERBATIM off the SAM3 record's own `engine` block. Never
+#: defaulted: a missing key means the producing run did not stamp it.
+SAM3_ENGINE_FIELDS = ("confidence_threshold", "confidence_threshold_set_via",
+                      "weights", "dtype_fix_applied")
+#: What `perception.engine.stamped` says when the producing run predates the
+#: stamping. ⚠️ NOT the same claim as "the floor is 0.5" — we do not know it
+#: from the record, we know it from the run that made it.
+ENGINE_UNSTAMPED = "unstamped — the producing run did not record its engine"
+
+
+def perception_engine(s3: dict, *, absent_reason: str | None = None) -> dict:
+    """The SAM3 engine identity for ONE clip: schema, detection floor, frames.
+
+    ⛔ WHY THIS IS NOT COSMETIC. The aug120 perception layer is assembled from
+    TWO SAM3 RUNS AT DIFFERENT DETECTION FLOORS — the batch-pipeline leg (86
+    clips, vendor default 0.5, pre-schema: it stamps NEITHER field) and the
+    `sam3_backfill_v2` leg (115 clips, floor 0.25, schema 2). MEASURED, not
+    inferred: the two clip sets are DISJOINT and their union is exactly the
+    201-clip population.
+
+    A floor never appears in a record as a value — it appears as DETECTIONS
+    THAT ARE NOT THERE. So a mixed-floor corpus reads as a homogeneous one, and
+    every per-concept rate computed across it is unattributable while looking
+    like an answer. That is the `df`-reports-the-cluster trap in a detector:
+    *a probe whose scope is wrong is worse than no probe*. Stamping the engine
+    per record makes the mixture something a consumer can FILTER ON, and
+    `_summary.json` carries the census so it is loud instead of discoverable.
+
+    ⚠️ A `None` value here means THE PRODUCING RUN DID NOT STAMP IT. It does
+    not mean "unset", and it must never be coerced to a vendor default the
+    record cannot support — that would manufacture the very fact this block
+    exists to expose. (`SAM3_EXTRACTION_V2.md` §6: *"a floor is visible only as
+    rows that are not there"*.)
+    """
+    if absent_reason:
+        return {"stamped": False, "reason": absent_reason,
+                "schema_version": None, "n_frames_run": None}
+    eng = (s3 or {}).get("engine") or {}
+    out: dict = {
+        "schema_version": (s3 or {}).get("schema_version"),
+        "n_frames_run": (s3 or {}).get("n_frames_run"),
+        **{k: eng.get(k) for k in SAM3_ENGINE_FIELDS},
+    }
+    out["stamped"] = out["schema_version"] is not None or bool(eng)
+    if not out["stamped"]:
+        out["reason"] = ENGINE_UNSTAMPED
+    return out
+
+
+# --------------------------------------------------------------------------- #
+# ⛔ THE SCENE CHANNEL IS COUNTED, NEVER TRACKED — STUFF IS NOT THINGS          #
+# --------------------------------------------------------------------------- #
+#: The v2 keys carried through verbatim. ⚠️ `frames[*].scene` deliberately does
+#: NOT enter `build_tracks`.
+SCENE_PASSTHROUGH = ("per_scene_hits", "n_scene_det_total", "concepts_scene",
+                     "n_err_scene")
+
+
+def scene_channel(s3: dict) -> dict | None:
+    """The schema-v2 SCENE channel, carried VERBATIM. `None` on a v1 record.
+
+    ⛔ IT IS NOT RUN THROUGH `build_tracks`, AND THAT IS THE WHOLE DESIGN.
+    `ph0_sam3` returns a dashed lane line as ONE DETECTION PER DASH and an
+    extended structure chopped by occlusion, so IoU association across frames
+    would mint dozens of meaningless one-frame "tracks" per clip that look
+    exactly like agent tracks. `per_scene_hits["lane marking"] = 141` is **141
+    painted segments separately grounded**, not 141 lane markings — which is
+    why `concept_kinds` (thing / stuff_instanced / stuff_extended /
+    stuff_region) travels with the counts rather than being left for a reader
+    to assume. A count of STUFF is not an object count.
+
+    ⚠️ `ego_lane` is carried as the producer emitted it and is NOT promoted
+    into `lane_context`. It supplies 2 of `s2_derive.LANE_CONTEXT_INPUTS`'
+    four members (`n_lanes_same_direction`, `ego_lane_idx`); `route_lane_idx`
+    and `lane_continues` need lane TOPOLOGY, which no camera frame contains
+    and PhysicalAI-AV does not ship. `lane_change_requirement()` therefore
+    still returns `required=None` and no token moves — promoting a per-frame
+    estimate (null on ~32 % of frames) into a clip-level scalar would bake in
+    an unreviewed aggregation policy for zero label change. Escalated, not
+    half-done. See `SAM3_EXTRACTION_V2.md` §3 and §7.3.
+    """
+    if not s3 or s3.get("schema_version") is None:
+        return None
+    out = {k: s3.get(k) for k in SCENE_PASSTHROUGH if s3.get(k) is not None}
+    if not out:
+        return None
+    kinds = s3.get("concept_kinds") or {}
+    scene_names = set(s3.get("concepts_scene") or ()) | set(
+        (s3.get("per_scene_hits") or {}))
+    out["concept_kinds"] = {k: v for k, v in kinds.items() if k in scene_names}
+    if s3.get("ego_lane") is not None:
+        out["ego_lane"] = s3["ego_lane"]
+    out["src"] = "sam3"
+    out["tracks_note"] = (
+        "counted, never tracked: SAM3 returns a dashed line as one detection "
+        "per dash, so these are SEGMENT counts (see concept_kinds), not "
+        "object counts, and they are deliberately absent from perception."
+        "tracks / per_concept_hits — the agent contract does not move")
+    return out
 
 
 def census_phrase(cen: dict) -> str:
@@ -862,7 +1014,13 @@ def census_phrase(cen: dict) -> str:
         # a COUNT, not a claim about the world: the detector ran and returned
         # nothing, which is a measurement of the detector's output.
         return "0 agents detected"
-    return ", ".join(f"{v} {k}" for k, v in sorted(cen["counts"].items()))
+    body = ", ".join(f"{v} {k}" for k, v in sorted(cen["counts"].items()))
+    # ⛔ the UNIT is in the sentence, not in a schema a reader may not open.
+    # "73 car" reads as seventy-three cars; it is 73 strided-frame TRACKS,
+    # ~88 % of them single-frame. See CENSUS_UNIT_NOTE.
+    peak = cen.get("peak_concurrent_tracks")
+    tail = f"; peak {peak}/frame" if peak else ""
+    return f"sam3 tracks (NOT object counts): {body}{tail}"
 
 
 def lane_phrase(sc: dict) -> str:
@@ -982,7 +1140,8 @@ def main(argv=None) -> int:
         print(f"[fuse] engine A sidecar: {len(ea_by)} clips", flush=True)
 
     n, summ = 0, {"corroborated": 0, "conflicts": 0, "with_alpamayo": 0,
-                  "sam3_missing": 0}
+                  "sam3_missing": 0, "with_scene_channel": 0}
+    engines: dict = {}
     for cid, r in sorted(v2_by.items()):
         dst = os.path.join(a.out, f"{cid}.json")
         if os.path.exists(dst):
@@ -991,6 +1150,15 @@ def main(argv=None) -> int:
         s3 = sam3_by.get(cid) or {}
         frames = s3.get("frames") or {}
         tracks = build_tracks(frames)
+        scene = scene_channel(s3)
+        # ⛔ the mixed-floor census: keyed on (schema, floor) so a corpus
+        # assembled from two SAM3 runs cannot read as a homogeneous one.
+        eng_row = perception_engine(s3, absent_reason=absent_reason)
+        engines[(eng_row.get("schema_version"),
+                 eng_row.get("confidence_threshold"))] = \
+            engines.get((eng_row.get("schema_version"),
+                         eng_row.get("confidence_threshold")), 0) + 1
+        summ["with_scene_channel"] += int(scene is not None)
         census = census_state(tracks, absent_reason=absent_reason,
                               n_frames=len(frames))
         # engine-A spine: recompute from the bridged npz when the v2 record
@@ -1031,6 +1199,11 @@ def main(argv=None) -> int:
                            # ⛔ the machine-readable census — read THIS, never
                            # parse `scenario_description` (C77 fix)
                            "census": census,
+                           # ⛔ the engine that produced this clip's pixels —
+                           # a detection floor is invisible in the payload
+                           "engine": perception_engine(
+                               s3, absent_reason=absent_reason),
+                           **({"scene": scene} if scene else {}),
                            **({"absent": absent_reason}
                               if absent_reason else {})},
             "semantics": {"scene": r.get("scene"), "signs": r.get("signs"),
@@ -1065,6 +1238,18 @@ def main(argv=None) -> int:
     summ["n_fused"] = n
     summ["n_v2"] = len(v2_by)
     summ["n_sam3"] = len(sam3_by)
+    # ⛔ THE MIXED-FLOOR CENSUS, EMITTED WHETHER OR NOT IT IS MIXED. A
+    # homogeneous corpus reports ONE row; a corpus assembled from two SAM3 runs
+    # reports two, and `perception_engine_mixed` says so in one boolean. This
+    # is the fact a per-concept rate needs and the payload cannot otherwise
+    # supply — a detection floor shows up only as rows that are not there.
+    # ⚠️ Scoped to the records THIS invocation wrote (the fuser resumes by
+    # skipping existing outputs), exactly like every other counter here.
+    summ["perception_engines"] = [
+        {"schema_version": k[0], "confidence_threshold": k[1], "n_clips": v}
+        for k, v in sorted(engines.items(),
+                           key=lambda kv: (str(kv[0][0]), str(kv[0][1])))]
+    summ["perception_engine_mixed"] = len(engines) > 1
     if a.missing_sam3_ok:
         summ["missing_sam3_reason"] = a.missing_sam3_ok
     json.dump(summ, open(os.path.join(a.out, "_summary.json"), "w"), indent=1)

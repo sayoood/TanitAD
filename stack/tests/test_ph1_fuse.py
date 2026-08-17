@@ -18,7 +18,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 import s2_derive  # noqa: E402
 from ph1_fuse import (build_tracks, census_phrase, census_state,  # noqa: E402
                       corroborate, emit_vocab, lane_phrase, main,
-                      scenario_line)
+                      perception_engine, scenario_line, scene_channel)
 
 V2 = {
     "clip_id": "c1", "_frame_wh": [448, 179],
@@ -973,6 +973,186 @@ def test_the_cited_sign_KIND_is_recorded_as_a_VLM_SELF_REPORT():
     # supply — the C77 rule
     assert "sign_like_object_present" not in absent
     assert "sam3_sign_tracks" not in absent
+
+
+# ===========================================================================
+# ⛔ A DETECTION FLOOR IS INVISIBLE IN THE PAYLOAD — THE ENGINE MUST BE STAMPED
+# ===========================================================================
+# MEASURED on the aug120 re-fuse: the perception layer is TWO SAM3 runs at two
+# floors — `sam3_backfill_v2` (115 clips, schema 2, 0.25) and the batch
+# pipeline (86 clips, vendor default 0.5, which stamps NEITHER field). The two
+# clip sets are DISJOINT and their union is exactly the 201-clip cohort. A
+# floor shows up only as detections that are NOT THERE, so without this stamp a
+# mixed corpus reads as a homogeneous one and every per-concept rate over it is
+# unattributable while looking like an answer.
+V2_SAM3 = {
+    "clip_id": "c1", "schema_version": 2, "n_frames_run": 6,
+    "engine": {"confidence_threshold": 0.25,
+               "confidence_threshold_set_via": "ctor kwarg",
+               "weights": "facebook/sam3 (load_from_HF=True)",
+               "dtype_fix_applied": True},
+    "concepts_scene": ["lane marking", "road curb"],
+    "concept_kinds": {"car": "thing", "lane marking": "stuff_instanced",
+                      "road curb": "stuff_extended"},
+    "per_scene_hits": {"lane marking": 141, "road curb": 12},
+    "n_scene_det_total": 153, "n_err_scene": 0,
+    "ego_lane": {"index_convention": "0-based from the RIGHT",
+                 "frames": {"0": {"lane_idx_est": None,
+                                  "reason": "no boundary detection"}}},
+    "frames": {"0": {"det": [{"concept": "car", "score": 0.9,
+                              "box_xyxy": [10, 10, 50, 50],
+                              "mask_area_px": 100}],
+                     "scene": [{"concept": "lane marking", "score": 0.3,
+                                "box_xyxy": [0, 90, 40, 100],
+                                "mask_area_px": 30}]}},
+}
+
+
+def test_the_detection_floor_is_stamped_and_an_unstamped_run_says_so():
+    v2 = perception_engine(V2_SAM3)
+    assert v2["schema_version"] == 2 and v2["confidence_threshold"] == 0.25
+    assert v2["stamped"] is True and v2["n_frames_run"] == 6
+    # ⛔ the v1 batch leg stamps NEITHER field. `None` must read as "the
+    # producing run did not record it" — NEVER be coerced to a vendor default
+    # the record cannot support, which would manufacture the very fact this
+    # block exists to expose.
+    v1 = perception_engine(SAM3)
+    assert v1["schema_version"] is None and v1["confidence_threshold"] is None
+    assert v1["stamped"] is False and "unstamped" in v1["reason"]
+    # an absent detector is a third state, not a badly-stamped one
+    absent = perception_engine({}, absent_reason="sam3 absent for this clip")
+    assert absent["stamped"] is False
+    assert absent["reason"] == "sam3 absent for this clip"
+
+
+def test_a_mixed_floor_corpus_is_LOUD_in_the_summary(tmp_path):
+    """Two SAM3 legs at two floors must produce a two-row engine census and
+    `perception_engine_mixed: True` — the fact a per-concept rate needs and
+    the payload cannot otherwise supply."""
+    (tmp_path / "ego").mkdir()
+    v2b = json.loads(json.dumps(V2))
+    v2b["clip_id"] = "c2"
+    s3b = json.loads(json.dumps(V2_SAM3))
+    s3b["clip_id"] = "c2"
+    (tmp_path / "v2.json").write_text(json.dumps([V2, v2b]))
+    (tmp_path / "s.json").write_text(json.dumps([SAM3, s3b]))   # v1 + v2 legs
+    out = tmp_path / "fused"
+    assert main(["--v2-json", str(tmp_path / "v2.json"), "--sam3",
+                 str(tmp_path / "s.json"), "--ego-root", str(tmp_path / "ego"),
+                 "--out", str(out)]) == 0
+    summ = json.loads((out / "_summary.json").read_text())
+    assert summ["perception_engine_mixed"] is True
+    rows = {(r["schema_version"], r["confidence_threshold"]): r["n_clips"]
+            for r in summ["perception_engines"]}
+    assert rows == {(2, 0.25): 1, (None, None): 1}
+    # and each record carries its OWN engine, so a consumer can filter
+    assert json.loads((out / "c2.json").read_text())[
+        "perception"]["engine"]["confidence_threshold"] == 0.25
+    assert json.loads((out / "c1.json").read_text())[
+        "perception"]["engine"]["stamped"] is False
+    # ⚠️ a HOMOGENEOUS corpus must still emit the census — one row, not absent
+    (tmp_path / "s1.json").write_text(json.dumps([SAM3]))
+    (tmp_path / "v1.json").write_text(json.dumps([V2]))
+    out2 = tmp_path / "fused2"
+    main(["--v2-json", str(tmp_path / "v1.json"), "--sam3",
+          str(tmp_path / "s1.json"), "--ego-root", str(tmp_path / "ego"),
+          "--out", str(out2)])
+    s2 = json.loads((out2 / "_summary.json").read_text())
+    assert s2["perception_engine_mixed"] is False
+    assert len(s2["perception_engines"]) == 1
+
+
+# ===========================================================================
+# ⛔ THE SCENE CHANNEL IS COUNTED, NEVER TRACKED — STUFF IS NOT THINGS
+# ===========================================================================
+def test_the_scene_channel_is_carried_but_never_becomes_agent_tracks():
+    """`per_scene_hits["lane marking"] = 141` is 141 painted SEGMENTS, not 141
+    lane markings — SAM3 returns a dashed line as one detection per dash. The
+    counts are carried with their `concept_kinds`; they must NOT enter
+    `perception.tracks` / `per_concept_hits`, because those are the AGENT
+    CONTRACT that `build_tracks` and three reports read."""
+    sc = scene_channel(V2_SAM3)
+    assert sc["per_scene_hits"]["lane marking"] == 141
+    assert sc["concept_kinds"]["lane marking"] == "stuff_instanced"
+    assert "car" not in sc["concept_kinds"], "agent concepts are not scene"
+    assert sc["ego_lane"]["index_convention"].endswith("from the RIGHT")
+    assert "not object counts" in sc["tracks_note"] or \
+           "never tracked" in sc["tracks_note"]
+    # ⛔ the contract does not move: scene detections produce NO tracks
+    tracks = build_tracks(V2_SAM3["frames"])
+    assert [t["concept"] for t in tracks] == ["car"]
+    assert not any(t["concept"] in ("lane marking", "road curb")
+                   for t in tracks)
+    # a v1 record has no scene channel and must not grow an empty one
+    assert scene_channel(SAM3) is None
+    assert scene_channel({}) is None
+
+
+def test_ego_lane_is_carried_but_NOT_promoted_into_lane_context(tmp_path):
+    """⚠️ `ego_lane` supplies 2 of `LANE_CONTEXT_INPUTS`' four members;
+    `route_lane_idx` and `lane_continues` need lane TOPOLOGY, which no camera
+    frame contains. So the requirement stays UNKNOWN and no token may move —
+    promoting a per-frame estimate into a clip-level scalar would bake in an
+    unreviewed aggregation for zero label change."""
+    (tmp_path / "ego").mkdir()
+    (tmp_path / "v2.json").write_text(json.dumps([V2]))
+    (tmp_path / "s.json").write_text(json.dumps([V2_SAM3]))
+    # the SHIPPED configuration: geometry-primary, so the requirement block is
+    # really computed rather than short-circuited by the VLM-primary fallback
+    (tmp_path / "ea.jsonl").write_text(
+        json.dumps({"clip_id": "c1", "engine_a": EA_FOLLOW}) + "\n")
+    out = tmp_path / "fused"
+    assert main(["--v2-json", str(tmp_path / "v2.json"), "--sam3",
+                 str(tmp_path / "s.json"), "--ego-root", str(tmp_path / "ego"),
+                 "--engine-a", str(tmp_path / "ea.jsonl"),
+                 "--out", str(out)]) == 0
+    rec = json.loads((out / "c1.json").read_text())
+    assert rec["perception"]["scene"]["ego_lane"]["frames"]["0"][
+        "lane_idx_est"] is None
+    req = rec["vocab"]["a_str"]["corroboration"]["lane_change_requirement"]
+    assert req["required"] is None
+    assert set(req["missing"]) == set(s2_derive.LANE_CONTEXT_INPUTS)
+    assert rec["vocab"]["a_str"]["token"] != "PREPARE_LANE_CHANGE"
+
+
+# ===========================================================================
+# ⚠️ THE MIRROR IMAGE OF `"no agents"`: A TRACK COUNT IS NOT AN OBJECT COUNT
+# ===========================================================================
+def test_the_census_names_its_unit_so_73_car_cannot_read_as_73_cars():
+    """Filling the perception layer in fixes `"no agents"` and immediately
+    creates its opposite: `{"car": 73}` rendered as `"73 car"` reads as
+    seventy-three cars. MEASURED on the re-fused corpus: **87.7 %** of tracks
+    (v2 leg) and **85.5 %** (v1 leg) are SINGLE-FRAME, because `build_tracks`
+    associates by IoU across STRIDED frames — so a track is ~a detection.
+    Median 58 tracks/clip against a median peak concurrency of 20.
+
+    Same class as `"no agents"` and as `per_scene_hits` — *a shape that reads
+    like the thing it is not*. Pinned by NAMING THE UNIT, not by re-tuning IoU
+    (which would buy false merges instead of false splits).
+    """
+    tracks = build_tracks(SAM3["frames"])                 # one 2-frame car
+    cen = census_state(tracks, n_frames=2)
+    assert cen["unit"] == "sam3_tracks"
+    assert cen["n_agents"] == 1 and cen["n_single_frame_tracks"] == 0
+    assert cen["peak_concurrent_tracks"] == 1
+    assert "NOT object counts" in cen["counts_are"]
+    # the fragmented case: three single-frame cars on three different frames
+    frag = {str(i): {"det": [{"concept": "car", "score": 0.9,
+                              "box_xyxy": [10 + 60 * i, 10, 40 + 60 * i, 40],
+                              "mask_area_px": 100}]} for i in range(3)}
+    cen = census_state(build_tracks(frag), n_frames=3)
+    assert cen["counts"] == {"car": 3} and cen["n_agents"] == 3
+    assert cen["n_single_frame_tracks"] == 3       # ⛔ 3 tracks, ONE car
+    assert cen["peak_concurrent_tracks"] == 1      # the honest lower bound
+    # ⛔ and the PROSE must say the unit — a reader should not have to open a
+    # schema to learn that "3 car" is not three cars
+    line = census_phrase(cen)
+    assert "NOT object counts" in line and "3 car" in line
+    assert "peak 1/frame" in line
+    # the two pinned literals are untouched by the renaming
+    assert census_phrase(census_state([], n_frames=8)) == "0 agents detected"
+    assert "UNAVAILABLE" in census_phrase(
+        census_state([], absent_reason="sam3 absent for this clip"))
 
 
 def test_the_retirement_does_not_move_the_corroborated_TALLY(tmp_path):
