@@ -170,6 +170,32 @@ should be written down.
 
 ### 1.4 The declared arm and its control
 
+⛔ **AMENDMENT ADOPTED 2026-08-17 — THE CONTROL LIST BELOW WAS INCOMPLETE, AND ONE SEED IS NOT A
+MEASUREMENT.** Both were filed by the parity re-run **before any arm on that corpus was fitted**
+(ordering evidence in `…/incoming/2026-08-17-slot-probe-parity/PREREG_AMENDMENT_EPISODE_IDENTITY.md`);
+they are adopted here rather than left in a sibling package.
+
+**1. EPISODE IDENTITY was uncontrolled, and C-SHUF is structurally blind to it.** Within-episode
+gap SD is only **3.9 m**, so a head that merely recognises *which episode it is in* and emits that
+episode's mean could clear C-CONST while perceiving no agent. **C-SHUF permutes WITHIN episode, so
+the episode mean survives it intact** and the control reports "no echo" while an echo is exactly
+what is happening. ⇒ **C-EPMEAN** (beat the episode's own mean) and **C-SHUF-XEP** (permute episode
+identities) are now required.
+⚠️ **This does NOT retroactively threaten the 2026-08-16 D1**, and the re-run checked rather than
+assumed: re-scored against the new control, that head was **+13.224 [8.846, 17.314] WORSE than the
+episode-identity ceiling** — it exploited nothing. The gap only ever bites a POSITIVE result.
+
+**2. ⛔ A SINGLE PROBE FIT IS NOT A MEASUREMENT.** MEASURED: **three seeds on one frozen latent
+cache span 1.826 m of K1 — LARGER than the 1.727 m spanned by five checkpoints across 9,250
+training steps.** ⇒ Every F-18 number published to date, 2026-08-16's included, is single-seed with
+**unmeasured reproducibility**, and the apparent "progressively discarded" trajectory
+(5.98 → 5.44 → 5.58 → 6.15 → 7.17 m) is **flat within fit noise**.
+⭐ **And the estimator cannot catch this**: the episode-cluster bootstrap resamples **eval
+episodes**, not **fits** — so three tight, non-overlapping intervals differed only by seed. *An
+interval quantifies the uncertainty it was built to quantify, and is silent about every other
+one.* ⇒ **≥3 seeds required**, and between-condition differences must be compared against
+**between-seed spread**, not against the bootstrap alone (~13 min/point, no trunk compute).
+
 `slot_src` is a **pre-registered arm with its control**, because a null result is otherwise
 unattributable:
 
@@ -365,7 +391,18 @@ the mean.
 * **K1** `lead_gap_abs_err_m` is **separated-better than C-CONST** (paired CI excludes 0,
   favourable sign).
 * **K2** `lead_gap_abs_err_m` is **separated-better than C-SHUF**.
-* **K3** `lead_presence_recall ≥ 0.50` at the ENCODED-arm operating point.
+* ⛔ **K3 — WITHDRAWN AS SPECIFIED 2026-08-17. IT CANNOT FAIL.** It read
+  *"`lead_presence_recall ≥ 0.50` at the ENCODED-arm operating point"* — but τ\* is the **median**
+  presence score, so recall is pinned at **≈0.50 by construction** and the threshold sits exactly
+  on the value the definition guarantees. **MEASURED: a head trained on PURE NOISE scores 0.5002
+  and PASSES.** ⇒ A criterion that a random head satisfies is not a criterion; it is decoration
+  that makes a gate panel look stricter than it is (the C13 family — a guard structurally unable
+  to report failure). **It must be re-specified before it is quoted again**, and no past K3 pass
+  may be cited as evidence of anything.
+  ⚠️ Note this is the SECOND vacuity found in this same criterion: the 2026-08-16 run already
+  caught it returning **0.998** because the emission ignored τ, fixed it to be τ-gated — and the
+  τ-gated version is the one now shown to be pinned at 0.5. *A metric repaired once is not
+  thereby correct; it was repaired to a different broken state.*
 
 ⚠️ **And a fourth clause that decides what "keep" MEANS**, committed now so the head cannot be
 promoted by momentum:
