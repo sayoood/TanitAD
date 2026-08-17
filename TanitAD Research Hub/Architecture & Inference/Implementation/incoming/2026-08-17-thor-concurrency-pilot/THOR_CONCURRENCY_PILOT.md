@@ -83,6 +83,27 @@ already in `CLAUDE.md`; this is a fifth instance, and the first one **inside the
 It also belongs to the C9/C13/C14 family: *an instrument structurally unable to report the answer it
 is cited for.*
 
+### 1.4a How far it has already propagated — and the honest size of the damage
+
+Swept the repo. `step_s` is quoted as the run's pace in at least three live documents:
+
+| site | text | verdict |
+|---|---|---|
+| `Project Steering/Reports/2026-08-17-2319-program-report.md:21` | `\| marginal pace \| **26.47 s/step** \|` | ⛔ **mislabelled** — 26.47 is the *cumulative* mean; "marginal" is precisely what it is not. True marginal = **26.3672**. |
+| `…/2026-08-17-st-launch-readiness/ST_LAUNCH_READINESS.md:4` | "reaches 30 000 in **5.47 days** (MEASURED: step 12 150, 26.4833 s/step)" | ETA built on the cumulative mean |
+| `…/ST_LAUNCH_READINESS.md:268` | "the trainer's own per-process figure, not the `--log-every`-accumulated one" | half-right — correctly rules out the `--log-every` trap, still treats a per-process cumulative mean as current pace |
+
+⚠️ **Do not overstate this.** For **ETA** purposes the error is small, because the cumulative mean has
+nearly converged to the marginal rate: over the 17,350 steps remaining, 26.4749 vs 26.3672 differ by
+**0.52 h across 5.3 days — 0.41 %**. Every ETA in those documents is therefore *substantially
+correct*, and this is **not** a retraction of the ~5.3-day finish estimate.
+
+⭐ **The damage is confined to one use — and it is exactly the use this pilot needed.** As a slowly-
+moving summary of a whole run, `step_s` is fine. As a **detector of a change happening now** it is
+inert, and that is what an abort criterion is. The lesson generalises past this pilot: *a statistic
+that is adequate for reporting can be useless for control, and the two uses are easy to conflate
+because they quote the same number.*
+
 ### 1.5 Corrected abort criteria actually armed
 
 | trip | threshold | rationale |
@@ -266,6 +287,43 @@ the cylindrical projection **masking rather than fabricating**, as intended.
 ## 7. Results — during and after load
 
 *(pending — filled in when the run completes)*
+
+---
+
+## 8. ⭐ What the full extraction actually costs — and why the tail should be capped
+
+MEASURED inputs: chunk sizes 1.3145 GB (0176) and ~1.166 GB (0170) → **~1.22 GB/chunk**; Thor
+throughput **11.76 MB/s** (trainer-only) / **8.58 MB/s** (trainer + this extraction competing);
+output **~36–40 MB/clip** at PNG/lossless; extraction **~4.3 clips/min** under load.
+
+The corpus is **brutally density-skewed** — 1,418 chunks for 4,729 clips, median **2 clips/chunk**.
+Downloading a 1.22 GB chunk to extract 2 clips is the dominant cost, so *where you stop* matters far
+more than how fast you go:
+
+| chunks (densest-first) | clips | % of corpus | download | at 11.76 MB/s |
+|---|---|---|---|---|
+| 10 (**this pilot**) | 476 | 10.1 % | 12 GB | 0.3 h |
+| 50 | 1,317 | 27.8 % | 61 GB | 1.5 h |
+| **176** | **2,368** | **50.1 %** | **215 GB** | **5.2 h** |
+| 300 | 2,922 | 61.8 % | 366 GB | 8.9 h |
+| 624 | 3,785 | 80.0 % | 761 GB | 18.4 h |
+| 946 | 4,257 | 90.0 % | 1,154 GB | 27.9 h |
+| 1,418 (all) | 4,729 | 100 % | **1,730 GB** | **41.8 h** |
+
+**The last 10 % of clips costs 472 further chunks — 576 GB and ~14 h — for 472 clips.** Half the
+corpus is reachable in 12.4 % of the chunks.
+
+⇒ **Recommendation: cap the extraction by density rather than running all 1,418 chunks.** Stopping at
+~50 % of clips costs 5.2 h of download instead of 41.8 h, and stopping at 80 % costs 18.4 h.
+⚠️ ESTIMATED — extrapolated from two directly-sized chunks; chunk sizes vary and only 0170/0176 were
+measured. Storage at 90 % coverage would be ~162 GB against Thor's 364 GB free, which fits, but a
+full run leaves less headroom than is comfortable on a box also holding a live training run.
+
+⚠️ **Selection caveat:** taking the densest chunks is **not** a random sample of the corpus. Chunks
+are geographic/temporal collection units, so a density cap biases the resulting corpus toward
+whatever the dense chunks contain. If this corpus is to support a distributional claim, the cap must
+be justified or the selection stratified — do not let a download-cost decision silently become a
+dataset-composition decision.
 
 ---
 

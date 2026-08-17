@@ -4717,7 +4717,58 @@ which quantity we are measuring.
 
 ⇒ **CONSEQUENCE:** the review sheet must be **rebuilt over (2.0, 6.0] s** before the PI's
 adjudication means anything, and every tactical κ quoted this session (0.3655 / 0.4694) must be
-restated at the band — **0.2331 / 0.4040** — or explicitly marked as seam values.
+restated at the band — ~~**0.2331 / 0.4040**~~ — or explicitly marked as seam values.
+
+### ⛔ C89b — APPENDED 2026-08-17 BY THE REBUILD AGENT: **THIS RETRACTION'S OWN CORRECTION WAS ALSO WRONG.**
+
+⛔ **`0.2331 / 0.4040` ARE NOT BAND VALUES. Do not quote them as such** — they are what C89 above
+told the next reader to use, so this is the highest-propagation-risk number in the log.
+
+`…/2026-08-16-tactical-labels/code/tac_a4_horizon_sweep.py:140-148` anchors **every** horizon at
+`t0`:
+
+```python
+k  = min(int(round(t0 + H * POSE_HZ)), poses.shape[0] - 1)
+dv = float(v[k] - v[t0])          # <-- anchored at t0, at EVERY horizon
+```
+
+⇒ the row labelled `2.0` is the net change over **(0.0, 2.0]** — i.e. exactly `OP_BAND_S`, the
+**operative** band — and the row labelled `6.0` is **(0.0, 6.0]**, the **full horizon with the
+operative band inside it**. ⇒ **NO ROW OF THAT SWEEP IS THE TACTICAL BAND**, so no restatement was
+available from the banked JSON at all; the band quantity had to be computed fresh (anchored at
+`t0+20`, read across `t0+21 … t0+60`).
+
+⭐ **THE ACTUAL BAND VALUES** — MEASURED, 201 clips, episode-cluster bootstrap (`taniteval/ci.py`),
+PRODUCTION thresholds, statistic `mean_band` (mean in-band deviation from the band start):
+
+| window | LON κ [95 % CI] | LAT κ [95 % CI] | n (LON/LAT) |
+|---|---|---|---|
+| ⭐ **`TAC_BAND_S` (2.0, 6.0]** | **0.1428** [0.0540, 0.2250] | **0.1777** [0.0658, 0.2953] | 201 / 193 |
+| ⚠️ seam (0.0, 2.0] = `OP_BAND_S` | 0.3270 [0.2289, 0.4192] | 0.3132 [0.1973, 0.4323] | 201 / 193 |
+| ⚠️ full horizon (0.0, 6.0] *(the "0.2331/0.4040" row)* | 0.2210 [0.1165, 0.3167] | 0.3806 [0.2587, 0.4911] | 201 / 193 |
+
+Paired band−seam: **LON Δκ −0.1843** [−0.2746, −0.0961] · **LAT Δκ −0.1354** [−0.2707, −0.0162],
+**both CI-separated**. The true band is **worse than either number C89 offered**.
+
+⇒ **ROOT-CAUSE CLASS: A CORRECTION ADOPTED FROM THE NEAREST NUMBER ALREADY IN THE ARTIFACT, WITHOUT
+RE-DERIVING THE QUANTITY THE NEW NAME DEMANDS.** C89 correctly identified that the *name* was wrong,
+then reached for the row whose *label* matched the corrected name — never checking that the row
+computed the corrected quantity. **The sweep's column header said "horizon", and a band is not a
+horizon.** *(Same family as C89 itself, one level down; and a sibling of C91 — a value taken from
+what was written about an artifact rather than from what the artifact computes.)*
+
+⇒ **RULE: when a retraction supplies a replacement number, state the LINE OF CODE that computes it.**
+If the replacement comes from an existing artifact, quote the expression — not the column label.
+A corrected name over an uncorrected quantity is a second error wearing the fix's clothes.
+
+⚠️ **A third argmax was in the same artifact and neither C89 nor the sheet caught it:** the 2.0 s
+sheet's thresholds (`Δv 0.75 / Δyaw 0.05`) were *also* selected as the κ-maximising cell, described
+in its own source as *"the thresholds that maximised κ at this horizon"*. **The horizon and the
+threshold were both argmaxes; C89 caught one.** ⇒ When you find one window chosen by its result,
+**enumerate every other free parameter in the same measurement** before declaring the fix complete.
+
+**Artifacts:** `…/2026-08-16-tactical-review/code/tacrev_band_agreement.py` ·
+`…/raw/b1_band_agreement.json`. Rebuilt sheet: `…/review/TACTICAL_VISUAL_REVIEW_BAND_2_6S.html`.
 
 ---
 

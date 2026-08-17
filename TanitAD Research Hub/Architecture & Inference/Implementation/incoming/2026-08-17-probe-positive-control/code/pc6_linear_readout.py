@@ -47,9 +47,35 @@ from taniteval.ci import (episode_cluster_bootstrap,             # noqa: E402
                           paired_episode_cluster_bootstrap)
 
 
-def ridge_fit(X, y, alpha):
+def ridge_fit(X, y, alpha, intercept_col=None):
+    """Ridge solve. ``intercept_col`` names a column to EXCLUDE from the penalty.
+
+    ⛔ THE DEFECT THIS PARAMETER EXISTS TO FIX (found 2026-08-18, C92). Callers
+    append a ones-column for the bias and pass the whole design matrix here. With
+    ``intercept_col=None`` that bias sits INSIDE ``alpha * np.eye(d)``, so the
+    intercept is shrunk like any other coefficient: as alpha grows, predictions
+    collapse toward **ZERO, not toward the MEAN**. The readout therefore cannot
+    express the constant predictor it is being scored against, and a no-signal
+    arm scores WORSE THAN A CONSTANT BY CONSTRUCTION.
+
+    ⇒ **This biases the FLOOR, so it taints "K1 FAIL" verdicts specifically** —
+    a FAIL against a floor the model was structurally forbidden to reach is not a
+    finding. Any prior FAIL from this module must be re-read before it is quoted.
+
+    ⚠️ **THE DEFAULT IS DELIBERATELY LEFT AT THE INCUMBENT (penalised) BEHAVIOUR.**
+    Not because it is right — it is not — but because banked results reproduce
+    bit-exactly through this path and `ll1_ladder.py` asserts that reproduction to
+    1e-4. Silently changing the default would rewrite the meaning of every
+    committed `pc6_ridge_*.json` while leaving the filenames identical, which is a
+    worse failure than the bug. ⇒ **New callers pass ``intercept_col=-1``.** The
+    honest fix for the banked numbers is to re-read them, not to mutate the code
+    underneath them.
+    """
     d = X.shape[1]
-    A = X.T @ X + alpha * np.eye(d)
+    P = np.eye(d)
+    if intercept_col is not None:
+        P[intercept_col, intercept_col] = 0.0
+    A = X.T @ X + alpha * P
     return np.linalg.solve(A, X.T @ y)
 
 

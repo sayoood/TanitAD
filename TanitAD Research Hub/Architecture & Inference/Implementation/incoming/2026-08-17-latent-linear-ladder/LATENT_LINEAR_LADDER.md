@@ -552,7 +552,27 @@ victim is the **worktree** and a **test** rather than a `git add`.
 
 **All paths relative to the repo root** `G:\Meine Ablage\SayBouBase\raw\Projects\TanitAD\`, under
 `TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-08-17-latent-linear-ladder/`.
-⛔ **Staged into the working tree, NOT committed and NOT pushed.**
+
+⚠️⚠️ **I STAGED ONLY — AND 48 OF THE 49 FILES WERE NEVERTHELESS COMMITTED AND PUSHED BY A SIBLING
+AGENT. THIS IS THE DOCUMENTED WHOLE-INDEX HAZARD, HAPPENING AGAIN.** ⛔ **I never ran `git commit`
+or `git push`** — the reflog shows the commits belong to other agents and carry their subjects.
+**MEASURED:**
+
+| | |
+|---|---|
+| commit that swept my dir in | **`109406c`** *"A defective estimator was setting the PRE-REGISTERED GATE BARS in the paper…"* — a paper/estimator commit that **names none of my files** |
+| my files now in `HEAD` | **48 / 49** |
+| my files now in **`origin/agent/arch-inf-20260803`** | ⚠️ **48 — already PUSHED** |
+| branch vs origin | `0 0` (in sync; a sibling pushed) |
+| still staged, uncommitted | **2** — `LATENT_LINEAR_LADDER.md`, `raw/suite_stack.txt` (edited after `109406c`) |
+
+⇒ **ROOT-CAUSE CLASS (already in `CLAUDE.md`, third and fourth occurrence): `git commit` commits the
+ENTIRE INDEX, not the files just `git add`ed.** `60265d3` swallowed the eval tooling and `3d41bd0`
+swallowed REF-C v1.2's rescorer; tonight `109406c` swallowed this package. ⚠️ **The staging rule as
+written cannot prevent this** — an agent that stages (as instructed) is at the mercy of the next
+sibling's whole-index commit. **Escalation 7.** The practical harm here is low (the work is
+complete, correct and self-describing) but the *provenance* is now wrong: this package is attributed
+to a commit about paper estimators.
 
 | artifact | path | what it is |
 |---|---|---|
@@ -617,3 +637,12 @@ victim is the **worktree** and a **test** rather than a `git add`.
    `test_v6_staged.py:1157` or revert the semantics before anything is committed**, because
    `CLAUDE.md` requires `pytest -q` green before any commit and the index already contains several
    agents' staged work.
+7. ⚠️⚠️ **THE "STAGE, NEVER PUSH" CONTRACT DOES NOT ACTUALLY PROTECT AN AGENT'S WORK (§12).** I
+   staged only; a sibling's whole-index commit `109406c` — whose subject is about paper estimators —
+   **committed 48 of my 49 files, and they are now PUSHED to `origin`**. This is the **third and
+   fourth** occurrence of the hazard `CLAUDE.md` already documents (`60265d3`, `3d41bd0`), and it
+   happened **while `stack`'s suite was RED** (escalation 6), which the same doc forbids committing
+   over. ⇒ **The rule needs a mechanism, not another warning.** Cheapest options: agents stage to a
+   per-agent index/worktree; or the committing agent is required to run
+   `git diff --cached --name-only` and either name foreign entries in the message or unstage them.
+   **Escalating rather than proposing a policy change unilaterally — this is the PI's to decide.**
