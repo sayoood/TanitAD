@@ -320,7 +320,7 @@ positions**, and the two REF-C rows below are swapped relative to the legacy ord
 | Flagship v1, 19 k relay | 19 000 | 263.4 M | 0.6152 · [0.5422, 0.6951] | *0.6277 ± 0.0551* | ✅ |
 | REF-B speed | 10 000 | 262.8 M | 0.8372 · [0.6753, 1.0218] | *0.8255 ± 0.0992* | ⚠️ **TIE** (was ✗ — flipped under the correction, paired test not separated) |
 | **Constant velocity (the floor)** | — | 0 | **0.8377** | *0.8248* | — |
-| P2 CEM planner over frozen v1 | n/a | 0 trained | 🟥 not recomputable (no raw JSON, no windows dump) | *0.893 ± 0.114* | ✗ |
+| P2 CEM planner over frozen v1 | n/a | 0 trained | ⚠️ **no decision-grade point estimate — the open-loop CEM arm was never dumped per-window.** ⛔ *"not recomputable (no raw JSON, no windows dump)"* stood here and is **REFUTED**: both are in-repo at depth 6–8 and the recompute is **CPU-only** (that stale absence claim is why the gate sat un-re-decided for 21 days — classes **C69**/**C70**). ✅ Both gates **re-decided 2026-08-16, NEITHER FLIPS**; ~400 s GPU closes the last arm | *0.893 ± 0.114* | ⚠️ **undecided** — the `✗` here was `planner_beats_cv`, itself an un-re-decided banned verdict whose flip **is** reachable (registry §5) |
 | Flagship **v3enc** 10 k (RESTART) | 10 000 | 272.9 M | 1.9654 · [1.6556, 2.2859] | *2.1072 ± 0.2020* | ✗ |
 | REF-A DINOv2 4B (frozen encoder) | 29 999 | — | 2.1675 · [1.9081, 2.4212] | *2.1322 ± 0.1821* | ✗ |
 | Flagship **no-speed** (ablation control) | ~22 000 | 263.4 M | 3.0175 · [2.5450, 3.5444] | *2.9176 ± 0.3558* | ✗ |
@@ -443,8 +443,13 @@ to the parity decode path. **Breaks parity by design** — the running arm finis
 **(g) Standing findings that still carry the program** — the **speed fix** (v0 as a 3rd action channel:
 REF-A fwd-ADE 3.73 → 0.83, no-speed 2.918 vs speed 0.452 causally, +2.21 m [2.04, 2.39]); **H4 closed
 negative** on a monotone 5 k→30 k curve (3.755 → 2.920, best is last — a capability ceiling, not
-overfitting); and **P2**, the training-free CEM planner over frozen v1 that beats the tactical head by
-+2.257 ± 0.329 m open-loop and drifts 38 % less closed-loop.
+overfitting); and **P2**, the training-free CEM planner over frozen v1 that beats the tactical head
+open-loop and drifts **42.9 % less closed-loop** — the latter now in a **paired** form,
+**−0.7375 m [−0.9362, −0.5295], p(δ>0) = 0.0000**, `n = 221 win / 20 ep`, which is *strictly stronger*
+than the two-interval claim it replaces. ⛔ **The open-loop margin previously printed here
+(*+2.257 ± 0.329 m*) was the BANNED `overlapping_holdout_se` estimator** and is **not** re-quotable:
+its sign and separation are confirmed, but its magnitude waits on the one arm never dumped per-window
+(registry §5). ✅ **Neither gate flips.**
 
 ### 5.3 What was running on 2026-07-25 — ⛔ **SUPERSEDED by §5.0.6, do not read as current**
 | Pod | Run | State |

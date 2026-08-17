@@ -280,8 +280,27 @@ CI [+1.04, +1.64]** (CI-separated). Upcoming-curvature decode R² 0.254 vs 0.031
 **OOD:** physicalai (in-dist) 0.427 vs floor 0.523, win 49.7 % ✅ | comma2k19 0.849 vs floor 0.372, win
 17.5 % ✗ | cosmos 0.583 vs 0.358, win 29.4 % ✗. **Generalization is the open gap.**
 
-**Closed-loop (imagination-in-the-loop, no renderer):** closed_bike ADE@2s **1.685 ± 0.098** ⚠️ **(estimator NOT STATED — flagged 2026-08-03, not guessed.** `±` elsewhere in this document means `overlapping_holdout_se`; if this closed-loop figure is something else, e.g. a spread over rollouts, it must say which), FDE 3.530,
-divergence >5 m 22.2 %. Open-loop 0.452 → closed-loop 1.685: **open-loop does not predict closed-loop.**
+**Closed-loop (imagination-in-the-loop, no renderer):** closed_bike ADE@2s **1.7318** [1.5707, 1.9070]
+(episode-cluster bootstrap, 881 win / 40 ep), FDE **3.6190** [3.2453, 4.0215], divergence >5 m **23.50 %**
+[16.80 %, 30.27 %]. Open-loop **0.4271** → closed-loop **1.7318** (**4.05×**): **open-loop does not
+predict closed-loop.**
+
+> ✅ **THE 2026-08-03 "estimator NOT STATED" FLAG IS ANSWERED AND CLOSED — 2026-08-17.** It was
+> `overlapping_holdout_se`, the banned estimator. This line previously read *"1.685 ± 0.098 … FDE 3.530,
+> divergence >5 m 22.2 %"*; **all three were legacy `heldout` split-means**, and all three are corrected
+> above. MEASURED from `…/incoming/2026-07-26-closedloop-artifact-rerun/closedloop_flagship-30k.CORRECTED.json`
+> (`cluster_bootstrap.model` vs `legacy_overlapping_holdout_se.heldout.closed_bike`):
+>
+> | | superseded `heldout ± overlapping_holdout_se` (BANNED) | **decision-grade full_set [episode-cluster bootstrap]** | point shift | CI too narrow by |
+> |---|---|---|---|---|
+> | ADE@2s | *1.6852 ± 0.0977* | **1.7318** [1.5707, 1.9070] | **−2.69 %** | **1.722×** |
+> | FDE@2s | *3.5296 ± 0.2548* | **3.6190** [3.2453, 4.0215] | **−2.47 %** | **1.523×** |
+> | divergence >5 m | *0.2216 ± 0.0431* | **0.2350** [0.1680, 0.3027] | **−5.70 %** | **1.564×** |
+>
+> ⭐ **All three moved the same direction: the closed-loop failure was UNDERSTATED.** ⚠️ **And 1.6852 is
+> exactly the number that became the `G4_pass` threshold** (§5) — a legacy split-mean promoted to a gate
+> bar, making the old gate 2.69 % *harder* than the honest one. The open-loop→closed-loop degradation
+> ratio also sharpens from 3.73× to **4.05×**.
 
 **Efficiency — TWO DIFFERENT TICKS. Neither may be quoted without its definition.**
 
@@ -379,7 +398,14 @@ ADE@2s **0.6277 ± 0.0551** heldout / **0.6152** full-set · FDE 1.3173 · miss 
 > ⚠️ **Number-hygiene note that resolves a repo-wide conflict.** The 19k relay is quoted in docs as
 > 0.628, 0.615 and 0.640. From the raw JSON: **0.6277 = heldout**, **0.6152 = full-set** (this is the
 > "0.615" in the H26 hierarchy panel — same eval, different statistic), and **0.640 is derived
-> arithmetic** (0.4522 + the paired 0.188 m win-delta), never a measured mean. Cite 0.628 (heldout).
+> arithmetic** (0.4522 + the paired 0.188 m win-delta), never a measured mean.
+> ⛔ **THE CITE INSTRUCTION IS REVERSED — CORRECTED 2026-08-17.** This note ended *"Cite 0.628
+> (heldout)"*, i.e. it **instructed readers to quote the banned split-mean** over the decision-grade
+> full-set value sitting next to it. That is backwards under §0.3's own rule (*"Decision-grade =
+> `full_set` mean + episode-cluster bootstrap … never decide on `heldout`"*). ⇒ **Cite 0.6152
+> [0.5422, 0.6951] (full-set, §6).** The note's actual contribution — that 0.640 is derived arithmetic
+> and never a measured mean — stands and is the reason to keep it. *(This is the sharpest instance of the
+> class in the document: not a stale number, but a **standing instruction to prefer the banned one**.)*
 
 > 🟥 **RECONSTRUCTION RISK — v1 speedjerk.** The committed `stack/scripts/train_flagship4b.py` arg parser
 > has **no `--jerk-weight` and no `--aux-accel`** (verified: `grep add_argument` returns neither), yet the
@@ -1932,16 +1958,30 @@ every post-reset arm**; `--adapter pool|grid|temporal`, `--speed-input`, `--yaw-
 
 **Results — 881 windows** ✅ *(`results/refa-dynin-30k.json`)*
 
-| Metric | heldout | vs flagship-30k |
+| Metric | heldout 🟥 **DEPRECATED — `overlapping_holdout_se`** | vs flagship-30k 🟥 **also heldout** |
 |---|---|---|
 | ADE@0.5s | 1.2680 ± 0.1657 | 0.0762 |
 | ADE@1s | 1.8201 ± 0.2440 | 0.1584 |
 | ADE@1.5s | 2.3650 ± 0.3209 | 0.2883 |
-| **ADE@2s** | **2.9196 ± 0.3937** (full-set 3.047) | 0.4522 |
+| **ADE@2s** | **2.9196 ± 0.3937** (**full-set 3.0471** [2.4984, 3.6878] — decision-grade, §6) | 0.4522 (**full-set 0.4271**) |
 | FDE@2s | 4.5832 | 0.9437 |
 | miss@2m | 0.7246 | 0.0602 |
 
-Paired A/B (881 windows): flagship wins **95.9 %**, Δ **+2.62 m, CI95 [2.447, 2.798]**.
+⚠️ **BOTH COLUMNS ARE `heldout` SPLIT-MEANS, so the right-hand column is a CROSS-ARM COMPARISON OF TWO
+SPLIT-MEANS — which §4.1b of this document explicitly rules invalid** (*"`heldout` means are NOT
+comparable across arms"*). Only the ADE@2s row has both forms; the other five rows have **no
+decision-grade value published anywhere**. Flagged 2026-08-17, not fixed — closing them needs a
+re-emission from `driving_refa-dynin-30k.json` / `driving_flagship-30k.json`, which is a §6 job.
+
+Paired A/B (881 windows): flagship wins **95.9 %**, Δ **+2.62 m**.
+⛔ **INTERVAL CORRECTED 2026-08-17 — this line published `CI95 [2.447, 2.798]`, which is the BANNED
+`overlapping_holdout_se` paired form.** The decision-grade paired episode-cluster bootstrap for the *same
+delta* is already published in §6 of this same document: **[+2.0945, +3.2570]**. ⚠️ **The banned interval
+was 3.31× too narrow** (width 0.351 vs 1.1625) — **above the top of the programme-wide 1.107–3.100×
+band**, and it is a **paired delta**, the exact statistic the 2026-07-25 blast radius measured errors of
+up to **×−4.15 including a sign flip** on. *The same document carried both intervals for the same
+quantity, 800 lines apart, with the narrow one unlabelled.* ✅ **The verdict is untouched** — the delta is
+separated from zero by a wide margin under either estimator. *Superseded, kept visible: [2.447, 2.798].*
 
 **The overfitting question — answered NO** (this is why D-032 milestone archiving matters): the curve is
 **monotonically improving**, 5 k **3.755** → 15 k **3.694** → 20 k **3.016** → 30 k **2.920** (best is
@@ -2507,18 +2547,89 @@ drives from observations via its tactical policy (same reconstruction-OOD caveat
 
 **Results**
 
-| Gate | Metric | Planner | Baseline | Verdict |
-|---|---|---|---|---|
-| **G1** open-loop, 880 windows / 40 eps | ADE@2s | **0.893 ± 0.114** | tactical head **3.150** | **PASS** — Δ **+2.257 ± 0.329 m, CI-separated**; 72 % error reduction |
-| **G4** closed-loop, 221 windows / 20 eps | ADE@2s | **1.038 ± 0.202** | v1 head **1.685 ± 0.098** | **PASS** — 38 % less drift, CI-separated |
-| | FDE@2s | 2.194 ± 0.455 | 3.530 | 38 % closer |
-| | divergence >5 m | **8.7 % ± 4.6** | 22.2 % | **2.5× fewer** |
+> ⛔ **ESTIMATOR — CORRECTED 2026-08-17. Every number this section published on 2026-07-19 was
+> `overlapping_holdout_se`, the BANNED estimator, and it was DECIDING both gates.** The artifact says so
+> in its own protocol field: `planner_p2_flagship-30k.json` → `protocol.ci = "8-split episode jackknife"`,
+> which is the mislabel `taniteval/ci.py:5-27` documents as *neither a jackknife nor a valid SE*.
+> ✅ **NEITHER `G1_pass` NOR `G4_pass` FLIPS** — re-decided CPU-only on banked per-window data
+> (`…/incoming/2026-08-16-jack-in-gates/JACK_IN_GATES.md`, raw `raw/g1_g4_both_estimators.json`).
+> **Both values are printed below. The superseded number is never deleted.** MEASURED.
+>
+> **What the correction moves even though no verdict does** — carry these with the numbers, they are not
+> footnotes: point estimates shift **−6.9 % to +6.8 %, bidirectional *within this single artifact***
+> (head −6.9 %, operative +5.9 %); intervals were **1.17×–2.17× too narrow**; the **divergence rate — the
+> safety-shaped number — was overstated by +20.3 %** (8.7 % → **7.2 %**); and the **G4 threshold itself
+> was a legacy `heldout` mean, 2.69 % LOW** (1.6852 vs **1.7318**) — *i.e. the old gate was HARDER than
+> the honest one, so the correction only strengthens the PASS.* The banned statistic also gave **7 of the
+> 40 val episodes weight exactly 0** (ids 1, 9, 22, 23, 27, 28, 34) — a **wrong-population** defect
+> (class **C73**), not a precision one.
 
-Reference points on the same pass: CV 0.825 · operative rollout with **true** actions (the WM ceiling)
-0.452 open-loop / 0.424 closed-loop.
+| Gate | Metric | Planner — **decision-grade** [episode-cluster bootstrap CI95] | Baseline — **decision-grade** | Verdict | *superseded `± overlapping_holdout_se` (BANNED)* |
+|---|---|---|---|---|---|
+| **G1** open-loop, **881** windows / 40 eps | ADE@2s | ⚠️ **PENDING — arm not banked per-window** (see below) | tactical head **3.3839** [2.8336, 3.9722] | **PASS** — ⚠️ **PARTIAL re-decision**; sign and separation confirmed, magnitude pending | *planner 0.893 ± 0.114 · head 3.150 ± 0.347 · Δ +2.257 ± 0.329, 72 % reduction* |
+| **G4** closed-loop, 221 windows / 20 eps | ADE@2s | **0.9799** [0.7456, 1.2312] | v1 head **1.7318** (881 win/40 ep) | **PASS**, and `hi` **1.2312 < 1.7318** ⇒ **CI-separated** | *1.038 ± 0.202 vs 1.685 ± 0.098, "38 % less drift"* |
+| **G4 — PAIRED** ⭐ *(NEW 2026-08-16, first ever computed)* | ADE@2s δ | **−0.7375** [−0.9362, −0.5295], **p(δ>0) = 0.0000** | head **1.7174** on the *same* 221 windows | **PASS — the strongest form of this claim the programme has** ⇒ **42.9 % less closed-loop drift** | *−0.6873 ± 0.2191 (banned paired)* |
+| | FDE@2s | **2.0583** [1.5463, 2.6134] | **3.6190** [3.2453, 4.0215] ⚠️ unpaired, 881/40 | 43.1 % closer ⚠️ *scope-mismatched* | *2.194 ± 0.455 vs 3.530* |
+| | divergence >5 m | **7.24 %** [2.25 %, 14.09 %] | **23.50 %** [16.80 %, 30.27 %] ⚠️ unpaired, 881/40 | **3.2× fewer** ⚠️ *scope-mismatched* | *8.7 % ± 4.6 vs 22.2 %* |
+
+⭐ **The PAIRED G4 row is strictly stronger than the two-interval claim it replaces.** The published G4
+compared a 221-window/20-episode planner against an 881-window/40-episode baseline and rested its
+"CI-separated" claim on **two independent intervals, both banned**. The planner's windows are the
+**stride-16 subset** of the baseline's stride-8 windows on the same 20 episodes (verified by GT waypoint
+equality to `atol=1e-5`, window-for-window, for all 221), which made a paired test possible for the first
+time. It agrees with the verdict it replaces — at `p(δ>0) = 0.0000`.
+
+⚠️ **All THREE baseline closed-loop numbers were the banned estimator, not just the threshold** — MEASURED
+2026-08-17 from `closedloop_flagship-30k.CORRECTED.json`: ADE 1.6852 → **1.7318** (−2.69 %), FDE 3.5296 →
+**3.6190** (−2.47 %), divergence 0.2216 → **0.2350** (−5.70 %); CI widening **1.722× / 1.523× / 1.564×**.
+**All three moved the same way — the v1 head baseline is WORSE than published**, so every P2-vs-head
+margin in this section widens under correction. The registry previously carried only the threshold
+correction; the FDE and divergence baselines are corrected here for the first time.
+
+⚠️ **`n` was also wrong: G1 is 881 windows, not 880.** `planner_p2_flagship-30k.json` →
+`open_loop.n_windows = 881`. Corrected here.
+
+⚠️ **UNSEEDED CEM — this is a property of every P2 number above, not a note about the code.**
+`planner_p2.py` draws `torch.randn` with **no seed**, so no P2 figure is bit-reproducible and each one
+carries a **sampling component that has been measured but never bounded** (drift **0.019 %** between the
+2026-07-19 published run and the 2026-07-26 re-drive, `planner_p2_G4.CORRECTED.json`). *Measured is not
+bounded*: 0.019 % is one observation of the drift, not a bound on it. Any re-drive of these rows must
+seed first, or state that it did not.
+
+⚠️ **G1's re-decision is PARTIAL, and the cell is marked partial rather than clean.** `collect_openloop`'s
+`plan_wp` — the open-loop CEM arm — **was never dumped per-window** (probed at three locations). What can
+be said rigorously: the corrected head is **3.3839**, so for G1 to flip the planner's corrected mean would
+have to reach **≥ 3.3839**, i.e. the banned estimator would have to have been wrong on that one arm by
+**−73.6 %**, against a MEASURED envelope on this exact window set and split structure of **−6.9 % to
++5.9 %** (and a programme-wide 27-arm envelope of −6.67 % to +11.69 %). **A flip needs an error ~11×
+larger than anything ever measured for this estimator.** G1 does not flip. Closing it properly costs
+**~400 s of GPU** (`wall_s = 400.4` in the artifact) re-running `collect_openloop` **with the `plan_wp`
+dump this time**; `…/2026-08-16-jack-in-gates/code/recompute_g1_g4.py` needs no changes.
+
+> ⛔ **A THIRD VERDICT ON THIS PATH WAS NEVER RE-DECIDED, AND UNLIKE G1/G4 ITS FLIP IS REACHABLE.**
+> MEASURED 2026-08-17 (this pass, not inherited): the published artifact carries **five** boolean
+> verdicts, not two — `G1_pass`, `G1…separated`, `G4_pass`, **`planner_beats_cv = False`**, and
+> `weight_sensitivity.beats_head_all = True`. The jack-in-gates re-decision covered the first three.
+> **`planner_beats_cv` is banned on BOTH sides** (planner 0.8929 vs CV 0.8248) and its corrected CV floor
+> is **0.8377** — *higher*, which moves the comparison toward the planner. For the verdict to flip to
+> "beats CV" the planner's corrected mean must fall below **0.8377**, i.e. the banned estimator must have
+> overstated it by **+6.59 %** — against a measured local upper edge of **+5.877 %** and a programme-wide
+> upper edge of **+11.69 %**. ⇒ **This one is genuinely UNDECIDED, not "no flip"**, and the same ~400 s
+> GPU re-drive settles it. Do not quote `planner_beats_cv` in either direction until then.
+> *(`beats_head_all` is **not** a banned-estimator verdict — it compares raw point values, 0.6476 vs
+> 3.1342 — but see the scope stamp on the Robustness line below.)*
+
+Reference points on the same pass: CV **0.8377** [0.6234, 1.0716] *(legacy 0.825)* · operative rollout with
+**true** actions (the WM ceiling) **0.4271** [0.3675, 0.4871] open-loop *(legacy 0.452)* / **0.4063**
+[0.3293, 0.4907] closed-loop *(legacy 0.424)*.
 
 **Strata:** straight (634 windows, 72 %) planner **0.564** vs true-action 0.393 vs CV 0.439 vs head 3.297.
 Curved (top-10 % curvature, 89) planner **2.114** vs true-action 0.484 vs CV 2.426 vs head 3.344.
+✅ **These are NOT banned-estimator numbers** — MEASURED 2026-08-17 from the artifact: the stratum entries
+carry no `ci95` and no estimator field, i.e. they are plain `.mean()` over the stratum, full-set by
+construction on their own subset (same situation as the `bench.py` trivial bars in §6). They are
+comparable to each other but **not** to the split-mean headline figures they sit beside — which is why
+the stratum head (3.297 / 3.344) does not equal the headline head (3.150).
 
 **The honest signature:** long-RMSE 1.41 / lat-RMSE 1.97 → **only 34 % of the 2 s squared error is
 longitudinal; 66 % is lateral.** Speed-decoupled cross-track 0.445 m; speed bias +0.47 m/s. The planner
@@ -2528,6 +2639,12 @@ residual *is the measurement of what P3/P4 must add.*
 
 **Robustness:** a 3×3 sweep of `w_c ∈ {0.05,0.1,0.2} × w_p ∈ {0.01,0.02,0.04}` (a 4× band) moves planner
 ADE only **0.647 → 0.669 m (3.4 %)** and beats the head in **all 9** configs. G1 is not a tuning artifact.
+⚠️ **SCOPE STAMP, added 2026-08-17 — this sweep is on an 8-EPISODE SUBSET, not the 40-episode val set**
+(`weight_sensitivity.note`: *"8-ep subset; planner ADE@2s vs w_c,w_p; weights NOT selected on GT ADE"*),
+which is why its head reads **3.1342** rather than the headline 3.1501. ✅ Its `beats_head_all` verdict is
+**not** a banned-estimator verdict — it compares raw point values across a 4.8× gap — so it stands as
+written. But the sweep was published without its `n` for three weeks; quote it as *"8 episodes"* or not
+at all.
 
 > 🟥 **RECONSTRUCTION RISK — P2 is uncommitted.** `planner_p2.py` exists only on `tanitad-eval`. It is the
 > single strongest piece of evidence for the v3 direction and it is one pod-loss away from gone.
@@ -2627,13 +2744,13 @@ deleted so every previously published number stays traceable. Sources: the per-r
 | 8 | REF-B speed | `refb-10k` | 10 000 | 262.8 M | 0.8372 [0.6753, 1.0218] <!-- src: taniteval/results/driving_refb-10k.json#headline.ade_0_2s.mean --> | 1.6964 | 0.2679 | ⚠️ **TIE** (flip) | *0.8255 ± 0.0992* |
 | — | **Constant velocity (the floor)** | — | — | 0 | **0.8377** [0.6234, 1.0716] <!-- src: taniteval/results/driving_flagship-30k.json#floor_values.cv.ade_0_2s.value --> | 1.7406 | 0.3042 | — | *0.8248* |
 | 9 | REF-B v1 | `refb` | 6 000 | 262.5 M | 0.8629 [0.6928, 1.0385] <!-- src: taniteval/results/driving_refb.json#headline.ade_0_2s.mean --> | 1.7351 | 0.3178 | ✗ | *0.8682 ± 0.0817* |
-| 10 | **P2 CEM planner** over frozen v1 | `planner_p2` | (n/a) | 0 trained | ⛔ **THIS CELL WAS WRONG — CORRECTED 2026-08-16.** It read *"NOT RECOMPUTABLE — no raw JSON and no `windows_*.pt` in the repo"*. **Both are in-repo, at depth 6–8**, and the recompute is **CPU-only**. That stale absence claim is why this gate sat un-re-decided for **21 days** (classes **C69** — an absence asserted from a depth-bounded search — and **C70** — a blocker never revisited). ✅ **NOW MIGRATED AND RE-DECIDED:** `planner_p2.py` uses `episode_cluster_bootstrap` / `paired_episode_cluster_bootstrap`; the legacy value is kept beside it under `legacy_overlapping_holdout_se` with its `ci_width_ratio` and `point_estimate_shift_pct`. **NEITHER G1 NOR G4 FLIPS** (details in `…/incoming/2026-08-16-jack-in-gates/JACK_IN_GATES.md`) | — | — | ✗ | *0.893 ± 0.114* |
+| 10 | **P2 CEM planner** over frozen v1 | `planner_p2` | (n/a) | 0 trained | ⛔ **THIS CELL WAS WRONG — CORRECTED 2026-08-16.** It read *"NOT RECOMPUTABLE — no raw JSON and no `windows_*.pt` in the repo"*. **Both are in-repo, at depth 6–8**, and the recompute is **CPU-only**. That stale absence claim is why this gate sat un-re-decided for **21 days** (classes **C69** — an absence asserted from a depth-bounded search — and **C70** — a blocker never revisited). ✅ **NOW MIGRATED AND RE-DECIDED:** `planner_p2.py` uses `episode_cluster_bootstrap` / `paired_episode_cluster_bootstrap`; the legacy value is kept beside it under `legacy_overlapping_holdout_se` with its `ci_width_ratio` and `point_estimate_shift_pct`. **NEITHER G1 NOR G4 FLIPS** (details in `…/incoming/2026-08-16-jack-in-gates/JACK_IN_GATES.md`). ⚠️ **THE ADE CELL STAYS BLANK ON PURPOSE — the open-loop CEM arm was never dumped per-window**, so this arm has *no* decision-grade point estimate; §5 states the flip requirement (−73.6 % vs a measured −6.9 %/+5.9 % envelope) and the ~400 s GPU that closes it. ⛔ **The `✗ Beats CV` in this row is ITSELF an un-re-decided banned verdict** (`planner_beats_cv`, banned on both sides) and its flip IS reachable — see §5. Treat it as **UNDECIDED**, not ✗. Every P2 number also carries an **unbounded unseeded-CEM sampling component** | — | — | ⚠️ **undecided** | *0.893 ± 0.114* |
 | 11 | Flagship **v3enc** (RESTART, §1.4) | `flagship-v3enc-10k` | 10 000 | 272.9 M | 1.9654 [1.6556, 2.2859] <!-- src: taniteval/results/driving_flagship-v3enc-10k.json#headline.ade_0_2s.mean --> | 3.6084 | 0.6901 | ✗ | *2.1072 ± 0.2020* |
 | 12 | REF-A DINOv2 4B | `refa-dinov2` | 29 999 | — | 2.1675 [1.9081, 2.4212] <!-- src: taniteval/results/driving_refa-dinov2.json#headline.ade_0_2s.mean --> | 3.2803 | 0.6129 | ✗ | *2.1322 ± 0.1821* |
 | 13 | Flagship **no-speed** (ablation control) | `flagship-nospeed` | ~22 000 | 263.4 M | 3.0175 [2.5450, 3.5444] <!-- src: taniteval/results/driving_flagship-nospeed.json#headline.ade_0_2s.mean --> | 5.0282 | 0.7423 | ✗ | *2.9176 ± 0.3558* |
 | 14 | REF-A dyn-in 4B | `refa-dynin-30k` | 29 999 | — | 3.0471 [2.4984, 3.6878] <!-- src: taniteval/results/driving_refa-dynin-30k.json#headline.ade_0_2s.mean --> | 4.7642 | 0.7412 | ✗ | *2.9196 ± 0.3937* |
 | 15 | Flagship **v2** (killed) | `flagship-v2-6k` | 6 000 | 272.9 M | 5.9396 [4.3273, 7.6249] <!-- src: taniteval/results/driving_flagship-v2-6k.json#headline.ade_0_2s.mean --> | 12.4011 | 0.8524 | ✗ | *6.179 ± 1.2845* |
-| — | Flagship v1 tactical **head** (not rollout) | `plan_flagship-30k` | 29 999 | — | 🟥 no windows dump — legacy only | — | — | ✗ | *3.38 (3.150 in the P2 pass)* |
+| — | Flagship v1 tactical **head** (not rollout) | `plan_flagship-30k` | 29 999 | — | **3.3839** [2.8336, 3.9722] <!-- src: …/2026-08-16-jack-in-gates/raw/g1_g4_both_estimators.json#G1.arms.tactical_head --> ⚠️ **the "🟥 no windows dump — legacy only" that stood here is REFUTED (2026-08-16):** `clwin_flagship-30k.pt`'s `plan_direct` **is** this arm — it reproduces the legacy 3.1501 ± 0.3472 **bit-exactly at 4 dp**, and its `full_set` mean is 3.3839. Same stale-absence class (**C69**/**C70**) as the P2 row above | — | — | ✗ | *3.38 (3.150 ± 0.347 in the P2 pass)* |
 
 *Arms recomputed but not ranked here (same 881 windows; full table in `jack_recompute.json`):*
 **v1.6** `flagship-v16-ab-ft` 0.4375 [0.3423, 0.5501] (legacy 0.4886 — the largest single-arm bias in the
@@ -2646,12 +2763,15 @@ milestone ladder. **Every one of these was previously published as a split-mean.
    and 14** (slots 9 and 11 before the 2026-07-25 re-emission renumbered the table). That is H4, in one
    table — and it **survives the estimator correction**: REF-A's gap to v1 is a paired **+2.6200 m
    [+2.0945, +3.2570]**, separated by ~40× the largest measured bias.
-2. The flagship's supervised **tactical head** (3.38 m) is *worse than CV*, while the same model's
-   operative rollout is **0.4271 m** (legacy split-mean 0.452). **The head is a lossy readout of a good
-   world model** — which is exactly what P2 exploits and what v3 is built on. ⚠️ Both sides of that
-   comparison are still legacy statistics (`plan_flagship-30k` has no windows dump, and P2 is
-   un-recomputable) — the *ratio* is far too large for the ≤ 11.7 % bias to touch, but neither scalar is
-   decision-grade on its own.
+2. The flagship's supervised **tactical head** (**3.3839** [2.8336, 3.9722]) is *worse than CV*
+   (**0.8377**), while the same model's operative rollout is **0.4271 m** [0.3675, 0.4871]. **The head is
+   a lossy readout of a good world model** — which is exactly what P2 exploits and what v3 is built on.
+   ✅ **UPGRADED 2026-08-16/17 — this reading is now decision-grade on BOTH sides.** The caveat that stood
+   here (*"both sides are still legacy statistics … `plan_flagship-30k` has no windows dump, and P2 is
+   un-recomputable"*) was **wrong on both counts**: the head's windows are in `clwin_flagship-30k.pt`
+   (`plan_direct`) and the rollout's are in `taniteval/results/windows_flagship-30k.pt`. The head/rollout
+   ratio is **7.92×** on full-set means (legacy 6.96×) — the correction *widens* it. ⚠️ The one thing here
+   that remains un-recomputable is the **P2 planner arm**, which this reading does not depend on.
 3. **Ranks 1–2 tie on accuracy, so latency is the tiebreaker — and it is not close.** Measured
    2026-07-20 on one A40, batch 1, identical precision flags. ⛔ **UNRESOLVED SOURCE (2026-08-03).** This reading cited a wildcard, which names no file — and the figures below are **not in any committed artifact**, so it cannot simply be repointed. MEASURED 2026-08-03, `plan_step.p50_ms` in the committed files: `taniteval/results/eff_flagship-30k.json` → **97.32 / 97.70 / 123.83** and `taniteval/results/eff_refc-xl-30k.json` → **44.06 / 27.78 / 21.00** (fp32/tf32/amp16). ⇒ **neither** triple below matches its own artifact, which extends **R14** (that row had REF-C's fp32/tf32 as agreeing; amp16 is 26.12 vs **21.00**). ⛔ **Do not re-cite these six figures** — re-measure on an idle A40, or restate from the committed JSONs. The ranking they support is unaffected:
    flagship planning tick **103.42 / 93.76 / 104.49 ms** (fp32/tf32/amp16) vs REF-C **44.28 / 27.84 /
@@ -2737,14 +2857,14 @@ they were made in the operator loop and never got an ADR.
 | **D-A2** | 07-13/14 | **The 3-arm parity design**: flagship / REF-A / REF-B, one pod each, on the *identical* 2,376-ep set | Only strict same-data parity makes the encoder axis (H4) and the hierarchy axis (H1/D4) causally readable. Each arm isolates exactly one thing | parity key `e438721ae894` + skip-hash `f09e44db`; `refb_pipeline.sh` **refuses to launch** unless the build reproduces the key | Every comparison in §6 depends on this |
 | **⭐ D-A3** | **07-14** | **`v0` (current speed) as the 3rd action channel** — and **restart all three arms from scratch** to get it | Actions are *derivatives* `[steer, accel]`; absolute displacement needs `v0`, which a frozen encoder cannot recover from pixels. The models were being asked to integrate without an initial condition | Validated **in isolation before committing the retrain**: REF-A operative fwd-ADE **3.73 → 0.83 m**, speed-decodability **R² 0.61 → 0.965**. Later confirmed causally: flagship no-speed **2.918** vs speed **0.452** on identical data/arch, paired A/B **+2.21 m [2.04, 2.39]**, win-rate 83.8 % | Voided all pre-07-14 REF-A numbers (the 14.2/17.0/20.2/7.6 m spread); created `flagship4b-speedjerk-30k`, `refa-plus-speed-30k`, `refb-speed-30k`; archived to `stack/experiments/reset-speed4b/`. **`SPEED_SCALE = 10.0` is a hard contract** |
 | **D-A4** | 07-14 | REF-A given the **full 4 brains by hand** (`--four-brain`) | Without it, REF-A vs flagship confounds *encoder* with *hierarchy*. With it, the two differ in exactly two things (encoder, SIGReg target) | CPU-smoke-validated before launch; `refa4b_config()` returns the identical `StackConfig` | Makes `refa-*-4brain-*` the only fair REF-A arms |
-| **⭐ D-A5** | 07-17→19 | **REF-A accepted as a frozen-encoder REFERENCE — H4 closes negative** | The ceiling is **capability, not overfitting**: the milestone curve is monotonically *improving* (5 k 3.755 → 15 k 3.694 → 20 k 3.016 → 30 k **2.920**, best is last). Held-out error never rises. Every remedy was tried — speed input, yaw input, dyn-input `[v0,yr0]`, ego-dropout, temporal adapter, 4 brains, I-JEPA features — and it still plateaus above CV | dyn-in 2.9196 ± 0.394 vs flagship 0.4522; paired win-rate 95.9 %, Δ +2.62 m CI [2.447, 2.798]; train fwd-ADE 0.65 → held-out 2.92 (4.5× gap); pre-fix ablation `vision_use` 3.4 % → "a dynamics integrator" | A clean publishable negative. Motivates the trained encoder. Ends the REF-A retrain line; anchored-decoder retrain dropped |
+| **⭐ D-A5** | 07-17→19 | **REF-A accepted as a frozen-encoder REFERENCE — H4 closes negative** | The ceiling is **capability, not overfitting**: the milestone curve is monotonically *improving* (5 k 3.755 → 15 k 3.694 → 20 k 3.016 → 30 k **2.920**, best is last). Held-out error never rises. Every remedy was tried — speed input, yaw input, dyn-input `[v0,yr0]`, ego-dropout, temporal adapter, 4 brains, I-JEPA features — and it still plateaus above CV | dyn-in **3.0471** [2.4984, 3.6878] vs flagship **0.4271** [0.3675, 0.4871] (full-set, decision-grade); paired win-rate 95.9 %, Δ **+2.62 m [+2.0945, +3.2570]** (paired episode-cluster bootstrap, §6); train fwd-ADE 0.65 → held-out 2.92 (4.5× gap); pre-fix ablation `vision_use` 3.4 % → "a dynamics integrator". ⛔ **ESTIMATOR CORRECTED 2026-08-17** — this row published *2.9196 ± 0.394 vs 0.4522* and *CI [2.447, 2.798]*, all `overlapping_holdout_se`; the paired interval was **3.31× too narrow**. ✅ **The H4 verdict is untouched and in fact strengthens** (the gap widens 2.467 → 2.620 m on full-set means). *Superseded, kept visible: 2.9196 ± 0.394 · 0.4522 · [2.447, 2.798].* | A clean publishable negative. Motivates the trained encoder. Ends the REF-A retrain line; anchored-decoder retrain dropped |
 | **D-030** | 07-18 | **REF-C redesigned** to a DiffusionDrive anchored truncated-diffusion decoder + a 3-size scaling study (55/104/252 M) | The 2022-era tiny-TCP GRU was not a fair modern reference. Anchored multimodal decoding is the published standard and directly tests H19 (maneuver→anchor graft). FPS not k-means because ~74 % of the data is straight | REF-C-XL @16 k = **0.5645** — 2nd of the trained-encoder arms, beats CV in all three speed terciles | `6025769`, `36d979f`, `7e9c402`. ⚠️ **The scaling study itself was never run — only XL exists (§4.2, OPEN)** |
 | **D-032** | 07-18 | **Milestone checkpoints at 5 k/15 k/20 k/30 k** instead of overwriting `ckpt.pt` | No earlier checkpoint survived for re-gating, overfitting curves, or lineage forensics | The REF-A overfitting-vs-ceiling verdict (D-A5) is **only possible because of this** | `b298cef`, `6808c2d`. Costs disk — and pod2's 98 %-full overlay is what killed v3enc's first attempt |
 | **D-A6** | 07-17 | **flagship-v2: ten levers at once** (six named in the directive, ten set) | The 30 k flagship had three named weaknesses: high-speed longitudinal overshoot, a command-echo strategic head (`route_skill_vs_chance = 0.0`), and an encoder redundantly re-encoding ego dynamics (`vision_use` ~12 %). Each lever targets one | Every lever individually motivated by an H25/H26 measurement | `f583bb4`, `b8d3fc8`; run `flagship4b-v2-30k` |
 | **⭐ D-031** | **07-19** | **Kill flagship-v2 at 7.8 k; do not grind it to 30 k** | The 6 k number (6.18 m) alone would *not* justify killing — it was correctly diagnosed as **mechanism-A**: the levers removed the kinematic speed shortcut **by design** (encoder speed-probe R² 0.30 vs v1's 0.86). **The decisive read was the rate of learning, not the level:** the same-step v2/v1 forward-consistency ratio *widened* 1.51 → 4.33; the power-law exponent was **−0.50 vs v1's −0.84**; v1 reached v2's 7.5 k value at **step ~250**. Projection to 30 k: 9× worse for the same 4 days of A40 | `flagshipv2-6k-diagnostic.md`; per-lever telemetry otherwise healthy (no NaN, no gnorm spike, anchored decoder converging) → **the failure was simultaneity, not any single lever** | `flagship4b-v3enc-30k` |
 | **D-A7** | 07-19 | **v3enc restart with STAGED levers** | Keep every *decode-side* lever from step 0 (they were healthy); soften and time-stage only the four *encoder-grounding* levers: decorr off until 10 k then 0.02, rollout-k 4→8→12, invdyn_gradscale 0.25→**0.5**, fa_dropout 0.3→**0.15** | The diagnostic isolated the encoder-grounding group as the optimization burden | `a01ad24`; `--staged-levers`. **Pre-registered falsifier:** no improvement in same-step forward-consistency vs v1 at 10 k → restart again |
 | **D-A8** | 07-19 | **Acceptance gate for v3enc should be the OOD panel, not in-distribution** | v1 already passes in-distribution (0.427 vs floor 0.523) but fails OOD (comma 0.849 vs floor 0.372, 17.5 % win-rate). Optimizing the passed gate teaches nothing | the OOD panel | Proposed target: **≥ 35 %** win-rate vs the comma floor |
-| **⭐ D-033** | **07-19** | **v3 pivot: hierarchical world-model PLANNING. Supervised heads demote to proposal priors** | Three measured pathologies all trace to head-supervision: longitudinal mean-regression (REF-A 94 % longitudinal, flagship high-speed the only above-floor stratum), a degenerate strategic seam (`route_skill_vs_chance` 0.0 — pure command echo), and an actively **harmful** intent→operative seam (cos vs-none **−0.238**). Making target-speed and mode-switching a **planning cost** instead of a head fixes all three at once | **P2 passed both decisive gates at zero training cost:** G1 open-loop **0.893 ± 0.114 vs head 3.150** (+2.257 ± 0.329, CI-separated, 72 % error reduction); G4 closed-loop **1.038 ± 0.202 vs 1.685 ± 0.098** (38 % less drift), divergence **8.7 % vs 22.2 %** (2.5× fewer). Weight-sweep robust across a 4× band (0.647→0.669, wins all 9) | `V3_HIERARCHICAL_PLANNING_DESIGN.md` + `V3_GOAL_VOCABULARY_V1.md` (frozen). v1 remains the operative arm. Sayed's framing: v3 = the **original DINO-WM recipe** (frozen encoder + feature-prediction of action-consequences, **no supervised head**) + CEM/diffusion/MPC planner |
+| **⭐ D-033** | **07-19** | **v3 pivot: hierarchical world-model PLANNING. Supervised heads demote to proposal priors** | Three measured pathologies all trace to head-supervision: longitudinal mean-regression (REF-A 94 % longitudinal, flagship high-speed the only above-floor stratum), a degenerate strategic seam (`route_skill_vs_chance` 0.0 — pure command echo), and an actively **harmful** intent→operative seam (cos vs-none **−0.238**). Making target-speed and mode-switching a **planning cost** instead of a head fixes all three at once | **P2 passed both decisive gates at zero training cost — and BOTH VERDICTS SURVIVE the estimator correction (2026-08-16/17).** ⛔ **The numbers this row published were `overlapping_holdout_se`, the BANNED estimator, and it was DECIDING both gates.** ✅ **Neither flips.** Decision-grade (episode-cluster bootstrap; §5 for the full table): **G4 closed-loop 0.9799 [0.7456, 1.2312] vs threshold 1.7318 → PASS, CI-separated**, and ⭐ **the first-ever PAIRED form −0.7375 [−0.9362, −0.5295], p(δ>0) = 0.0000, n = 221 win / 20 ep — strictly stronger than the two-interval claim it replaces**, ⇒ **42.9 % less drift**; **divergence 7.24 % [2.25 %, 14.09 %] vs 23.50 %** ⇒ 3.2× fewer. **G1: head 3.3839 [2.8336, 3.9722]; the planner arm was never dumped per-window ⇒ the re-decision is PARTIAL** — sign and separation hold, magnitude pending ~400 s GPU; a flip would need a **−73.6 %** error against a measured **−6.9 % to +5.9 %** envelope. ⚠️ **Carry with these numbers:** point estimates moved **−6.9 % to +6.8 %, bidirectional within one artifact**; intervals were **1.17×–2.17× too narrow**; the **divergence rate — the safety-shaped number — by +20.3 %**; the **G4 threshold itself was a legacy heldout mean 2.69 % LOW (1.6852 vs 1.7318), so the old gate was HARDER than the honest one**; and the banned statistic gave **7 of 40 val episodes weight exactly 0** (**C73**). ⚠️ **`planner_beats_cv` is a THIRD verdict on this path, still UNDECIDED, and its flip IS reachable** (§5). ⚠️ **Unseeded CEM** ⇒ every P2 figure carries an unbounded sampling component. *Superseded, kept visible: G1 0.893 ± 0.114 vs head 3.150, Δ +2.257 ± 0.329, "72 % reduction"; G4 1.038 ± 0.202 vs 1.685 ± 0.098, "38 % less drift"; divergence 8.7 % vs 22.2 %, "2.5× fewer".* Weight-sweep robust across a 4× band (0.647→0.669, wins all 9) — ⚠️ **on an 8-EPISODE subset**, not banned-estimator-decided | `V3_HIERARCHICAL_PLANNING_DESIGN.md` + `V3_GOAL_VOCABULARY_V1.md` (frozen). v1 remains the operative arm. Sayed's framing: v3 = the **original DINO-WM recipe** (frozen encoder + feature-prediction of action-consequences, **no supervised head**) + CEM/diffusion/MPC planner |
 | **D-A9** | 07-19 | **VTARGET moved strategic → tactical** | P2 measured that the planner tracks its minted `v_target` to **1.03 m/s** — *better than the GT log tracks it (1.54 m/s)*. The longitudinal target is a **control-rate** quantity that must be re-derived faster than the strategic cadence (20 ticks); leaving it at strategic starves the cost function between updates | P2 §2.3 + §5.2; strategic route decode remains at the strategic level | `V3_GOAL_VOCABULARY_V1.md`. ⚠️ The exact vocabulary-level wording should be read from that doc before implementation — this row records *that* it moved and *why* |
 | **D-A10** | 07-19 | **P2's residual is 66 % lateral — that is the P3/P4 scope, not a failure** | P2's cost is longitudinal + comfort + progress **only**; it carries no lateral/route/goal term by design. So it nails longitudinal and defaults laterally to the smoothest option. Curved-window error 2.114 m *is* the measured cost-of-no-lateral-goal | long-RMSE 1.41 / lat-RMSE 1.97; speed-decoupled cross-track 0.445 m; true actions reach 0.484 on the same curved windows | P3 = strategic lateral goal in the cost; P4 = goal-conditioned tactical predictor to lift the WM from imitation-era to planning-grade |
 | **D-A11** | 07-20 | **Cosmos-Reason1-7B chosen as the dataset VLM labeler; Cosmos3 is not a labeler** | Byte-pull gating check (2026-07-20): Cosmos3-Nano/Super (OpenMDW 1.1 omnimodel, commercial-OK), Cosmos-Reason1-7B and Reason2-32B are **ungated**; only Reason2-2B/8B are gated. The pilot verdict then separated *serving* from *labeling*: Cosmos3 needs `vllm-omni`/`sglang` rather than vanilla vLLM and did not behave as a labeler | commit **`547c8ec`** "dataset: VLM pilot verdict — Cosmos-Reason1-7B for labeling, Cosmos3 is not a labeler"; pilot artifacts in `TanitAD Research Hub/Data Engineering/` | ⚠️ Sayed had earlier asked for **Cosmos3 for the dataset**; the pilot changed the answer. Every VLM label maps onto the frozen `V3_GOAL_VOCABULARY_V1` |
@@ -3286,6 +3406,83 @@ comparison analysis `…/Research/2026-08-05-alpamayo2-super/ALPAMAYO2_SUPER_ANA
 ⇒ **`Paper/TANITAD_PAPER.md` may now promote its A2 counts from INHERITED to MEASURED,
 citing this row — but it must quote 4,729 / 23,644, NOT the card's 4,800 / 23,999.**
 *(Done 2026-08-16 at `TANITAD_PAPER.md` §7.15 and §8-item-9.)*
+
+#### 11.1a — What the A2 labels ACTUALLY CONTAIN, and the two limits on using them (added 2026-08-17)
+
+**Why this subsection exists:** §11.1 establishes *how much* A2 there is. It does not say *what the
+labels are* or *what they cannot do* — and both usage limits below are the kind that get discovered by
+a trainer eating the corpus rather than by a reader.
+
+⛔ **PARITY — state this before anything else. These clips are NOT in the canonical train corpus.**
+A2 covers 4,729 clips of `nvidia/PhysicalAI-Autonomous-Vehicles`; the parity set is
+`physicalai-train-e438721ae894` (2,376 episodes, skip-hash `f09e44db`). **A2 is a SEPARATE labelled
+corpus, never an extension of the parity set.** Any trainer that eats it across that boundary breaks
+cross-arm comparability and must be refused — the standing rule in `CLAUDE.md` under *Parity is sacred*.
+
+| Field | Value |
+|---|---|
+| **Identity** | `Sayood/tanitad-alpamayo2-augmentation` → `records.parquet`. **4,729 clips × 5 tasks** (`trajectory`, `meta_action`, `auto_labeling`, `vqa`, `grounding_via_vqa`). ⚠️ **It is LABELS, not video.** |
+| **Label structure** | Three axes — **Longitudinal / Lateral / Lane** — **7 values each**. |
+| **Parse rate** | **Zero unparsable rows.** The 304 apparent "unparsed" are exactly the **304 `Stop` rows**, where a stopped vehicle legitimately emits one axis. |
+| ⭐ **LAT×LON simultaneity** | **40.62 % of clips declare non-trivial action on LON and LAT at the same time** — direct label-side support for v6's LAT×LON factoring, and an argument against any single mixed softmax over the two (the defect named in `longitudinal-blindness-root-cause`). |
+| **Reasoning fields** | `meta_action.cot` at **100 % coverage, 1,103 distinct strings**. `auto_labeling.chain_of_causation` is only **22.18 % string-identical** to it ⇒ semi-independent, usable as a repeat measurement. |
+| ⛔ **`answer` is NOT corroboration** | `answer` is a **BYTE-DUPLICATE of `cot` on 4,729/4,729**. It may **never** be cited as agreement with `cot` — it is the same string. *(Named here because it is exactly the field someone reaches for to "confirm" a finding.)* |
+
+**⛔ TWO USAGE LIMITS — these belong with the labels, not in a footnote.**
+
+1. **`Stop` is a STATE, not an action — a naive `Stop → BRAKE_TO` mapping is wrong on most of them.**
+   MEASURED: on `Stop` rows the ego is at **v(t₀) = 0.51 m/s** and **rising to 2.95 m/s by the 2 s
+   horizon** (Δv **+2.44**), and the `cot` strings say *"Resume speed from stop"*. The label describes
+   the situation the clip **starts in**, not the manoeuvre it executes.
+2. **The LON axis always abstains ⇒ Alpamayo cannot corroborate a longitudinal tactical label.**
+   This is why **`a_tac_lon` is independently corroborated on 0/201** clips of the aug120 fused corpus
+   (§11.2). Any fusion design that assumes A2 votes on longitudinal is assuming a signal that is not
+   in the corpus.
+
+**AGREEMENT — and why the old 2-of-3 vote is retired.**
+
+| pair | κ | reading |
+|---|---|---|
+| Alpamayo ↔ VLM | **0.1717** | low |
+| VLM ↔ ego | **0.7608** | ⛔ **NOT an independent agreement** |
+
+⛔ **The VLM and ego legs are not independent:** `_ego_prompt_mode == 'past'` on **201/201**, i.e. the VLM
+was shown the very fields the ego voter reads. **The old 2-of-3 majority vote was one source counted
+twice**, and it is **retired**. ⇒ **Alpamayo is the only trustworthy leg of the three.**
+
+⚠️ **BUT — aggregate corroboration and per-clip discrimination are DIFFERENT PROPERTIES, and A2 has only
+the first.** MEASURED on the PI's 80 removed lane-change records: A2 covers only **23/80**; its single
+`Left Lane Change` call lands on a clip the PI adjudicated **WRONG**; and **3 of his 4 CORRECT clips read
+`Lane Keep`**. ⇒ **A per-clip rule built on A2 would have promoted a wrong clip and flattened three right
+ones.** Use A2 to corroborate a distribution; do not use it to adjudicate a clip.
+
+**COVERAGE AT OUR GEOMETRY — the operationally important number.**
+
+| slice | clips | note |
+|---|---|---|
+| have w120 video | **257** | |
+| processed (the aug120 corpus, §11.2) | **201** | ⊂ the 257 |
+| **no w120 cache at all** | **4,472** | **94.6 % of the corpus** |
+| | **= 4,729** | ✅ 257 + 4,472 = 4,729 — identity checked by me, 2026-08-17 |
+
+⇒ **Closing it is an EXTRACTION job, not a labelling one — the labels are already valid for all 4,729.**
+Cost: **1,418 of 3,146 camera chunks ≈ 1.84 TB**. **Deferred by PI decision (2026-08-17)** to Thor
+post-30k, **densest-chunks-first** (top 50 chunks ⇒ **1,317 clips / 65 GB**, i.e. 28 % of the remaining
+clips for 3.5 % of the bytes).
+
+**Evidence class.** All figures in 11.1a are **MEASURED** by this session's streams and **INHERITED into
+this row and so marked** — owning packages: `TanitAD Research Hub/Data Engineering/Implementation/incoming/2026-08-16-tactical-labels/TACTICAL_LABEL_VALIDATION.md`,
+`…/incoming/2026-08-17-aug120-refuse/AUG120_REFUSE.md`, `…/incoming/2026-08-15-aug120-fusion/NEXT_4472_BUILD_INPUTS.md`
+(all three paths verified to resolve, 2026-08-17 — note they live under **Data Engineering**, not
+*Benchmarks & Eval*). ⚠️ **The 1.84 TB is MEASURED counts × an ESTIMATED mean chunk size (1.30 GB)** —
+1,418 × 1.30 GB = 1.84 TB, arithmetic checked by me; the *estimate* is the chunk size, not the count.
+⚠️ **I did not re-derive the κ values, the Δv, or the 80-record adjudication from the parquet** — they
+are quoted from the owning packages and are marked INHERITED for that reason.
+
+⚠️ **STALE-TEXT FLAG for §11.2, raised not fixed (2026-08-17):** `goal_evidence: grounded` is
+**retired**, the **geometric lane-change gate is removed**, and the **aug120 corpus was re-fused**. Any
+§11.2 text describing the old label emission or the 2-of-3 vote is therefore stale. Left for the owning
+stream rather than rewritten blind — but it is flagged here so it is corrected rather than re-derived.
 
 ---
 

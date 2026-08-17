@@ -1866,7 +1866,32 @@ flip. Lateral: v2corpus is uniformly ≈2× worse (heading 0.529° → 1.072°; 
 0.00313 m⁻¹; yaw-rate 4.99 → 7.88 °/s; cross-track 0.114 → 0.197 m). Tactical: the
 manoeuvre-vs-trajectory agreement collapses from κ = **0.253** (v1) to κ = **0.0072**
 (v2corpus), both at the published direction gate `DIR_YAW_RAD = 0.15` — the declared manoeuvre is
-unrelated to the driven path; the `--v2` pack's tactical machinery is **decorative**. ⚠️ Re-read at a
+unrelated to the driven path; the `--v2` pack's tactical machinery is **decorative**.
+
+> ⚠️ **ANNOTATION (2026-08-17, PI-directed) — THIS COMPARISON IS CONFOUNDED WITH A LABEL-DEFINITION
+> CHANGE, AND THE TWO CAUSES ARE NOT SEPARABLE FROM BANKED DATA.**
+> `DIR_YAW_RAD` is **not an eval constant**: `hierarchy.py:169` aliases `refb_labels.YAW_TURN_RAD`
+> — the **training-label** threshold, same horizon, same wrap, same number. And for `--v2` arms **no
+> gate value applies at all**, because `classify_maneuver_v2` gates **CURVATURE (1/m)** where v1
+> gates **NET YAW**; the registry (§1.7/§1.6) confirms `--v2` implies `--labels-v2`. ⇒ *"both at the
+> published direction gate 0.15"* describes **two different quantities**, not one quantity measured
+> twice.
+>
+> ⚠️ **The claim is NOT withdrawn**, and the distinction matters: v2corpus's manoeuvre head **is**
+> genuinely degenerate (**404/418 windows one class**, 96.7 %), and that degeneracy is **gate-free**
+> — it survives every re-read below. **What cannot be attributed is the MAGNITUDE of the drop**: how
+> much of 0.253 → 0.0072 is the corpus and how much is the label definition is unrecoverable
+> without a re-score, and `man_pred` is on disk **nowhere** (four independent probes: 1,929 JSONs →
+> 0 hits; all 60 window dumps carry no manoeuvre key). A GPU pass is the only path.
+>
+> ⇒ **Admissible reading:** *"v2corpus's tactical head is degenerate and its manoeuvre declaration
+> is unrelated to the driven path."* ⛔ **Inadmissible:** *"the v2 corpus caused a κ collapse of this
+> size."* A separate, unrelated scoring defect was also found and fixed on this path
+> (`hierarchy.py:592` hardcoded **v1** labels for every `--v2` arm — see `…/incoming/
+> 2026-08-17-maneuver-label-mismatch/`, landed in `c98aadb`); it does **not** clear this confound,
+> which runs through `man_pred` vs `traj_dir` and never touches `man_tgt`. **Keep the two
+> retractions separate.**
+> Provenance: `…/incoming/2026-08-17-diryaw-reread/DIRYAW_REREAD.md`. ⚠️ Re-read at a
 **0.10** gate (0 GPU; exact envelope over the banked marginals, which reproduce both published κ to
 4 dp): the word **decorative holds unconditionally** — v2corpus's κ stays within [−0.040, +0.057]
 for *any* crossing rate up to 33 % of windows and never reaches the 0.1 line, because the manoeuvre
@@ -2844,11 +2869,22 @@ confounded the frozen encoder with supervised-regression heads).
 G1 counterfactual plan-ranking: the chosen plan must beat non-chosen options on realized outcome,
 CI-separated (the direct test of "evaluating alternatives" — replaces head-consistency as the H26
 instrument). G2 goal-causality: swapping a goal token must change the conditioned output (kills echo
-pathologies). G3 |v̂−VTARGET| tracking. G4 closed-loop drift below the 1.69 m head baseline. G5
-open-loop non-regression vs 0.452 m. The staging de-risks the thesis cheaply: the planner (cost+CEM)
+pathologies). G3 |v̂−VTARGET| tracking. G4 closed-loop drift below the **1.7318 m** head baseline. G5
+open-loop non-regression vs **0.4271 m**. The staging de-risks the thesis cheaply: the planner (cost+CEM)
 runs over the **already-trained v1 world model** with offline-minted VTARGET labels — if planning over
-frozen v1 already beats the 3.38 m tactical head and the 1.69 m closed-loop drift, the architecture is
-validated before any v3 training.
+frozen v1 already beats the **3.3839 m** tactical head and the **1.7318 m** closed-loop drift, the
+architecture is validated before any v3 training.
+
+> ⛔ **GATE BARS CORRECTED 2026-08-17 — these were pre-registered against BANNED-ESTIMATOR numbers.**
+> G4's bar read **1.69 m** and G5's **0.452 m**; both were legacy `heldout` split-means
+> (`overlapping_holdout_se`), and the 3.38 m head figure likewise. Decision-grade `full_set` values with
+> episode-cluster bootstrap intervals: head baseline **1.7318** [1.5707, 1.9070], open-loop
+> **0.4271** [0.3675, 0.4871], tactical head **3.3839** [2.8336, 3.9722]. ⚠️ **This matters more for a
+> gate than for a result: the old G4 bar was 2.69 % LOWER than the honest one, i.e. it held every future
+> arm to a bar that is HARDER than the measurement justifies** — a pre-registered gate inheriting a
+> defective statistic. *(Superseded, kept visible: 1.69 · 0.452 · 3.38.)* MEASURED —
+> `…/incoming/2026-07-26-closedloop-artifact-rerun/closedloop_flagship-30k.CORRECTED.json` and
+> `…/incoming/2026-08-16-jack-in-gates/raw/g1_g4_both_estimators.json`; see `MODEL_REGISTRY.md` §5.
 
 ## 10. Roadmap
 

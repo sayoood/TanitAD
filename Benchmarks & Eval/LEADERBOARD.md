@@ -149,8 +149,14 @@ statistic that is not the published one. Work item: a per-window reducer inside 
 
 > ⚠ **Open-loop ⊥ closed-loop (standing footnote, G-B1).** arXiv 2605.00066 (Apr-2026, 15 methods):
 > ADE/FDE have **no reliable correlation** with closed-loop Driving Score. Our own evidence: flagship v1
-> open-loop **0.4522 → closed-loop 1.685**, divergence >5 m on **22.2 %** of windows (MODEL_REGISTRY
-> §1.2). **An external-simulator data point exists (§5.5) but is reconstruction-OOD confounded:** REF-C's
+> open-loop **0.4271** [0.3675, 0.4871] → closed-loop **1.7318** [1.5707, 1.9070] (**4.05×**),
+> divergence >5 m on **23.50 %** [16.80 %, 30.27 %] of windows (MODEL_REGISTRY §1.2).
+> ⛔ **ESTIMATOR CORRECTED 2026-08-17 — this footnote published three BANNED `overlapping_holdout_se`
+> split-means** (*0.4522 → 1.685, 22.2 %*). All three are corrected above from
+> `…/incoming/2026-07-26-closedloop-artifact-rerun/closedloop_flagship-30k.CORRECTED.json`; **all three
+> moved the same way — the closed-loop failure was UNDERSTATED**, so this footnote's own point
+> *strengthens* (degradation ratio 3.73× → **4.05×**). *(Superseded, kept visible: 0.4522 → 1.685,
+> 22.2 %.)* **An external-simulator data point exists (§5.5) but is reconstruction-OOD confounded:** REF-C's
 > open-loop ADE on the AlpaSim NuRec reconstructions is **1.52 (3.21× its real-footage 0.4728)**, so its
 > closed-loop failures measure model × reconstruction-fidelity — **not** a clean open-loop⊥closed-loop
 > demonstration (RETRACTION_LOG C6). **A 2026-07-23 real-footage low-OOD harness (§5.5, both arms 1.02–1.20×
@@ -182,7 +188,7 @@ episode-cluster interval are recomputed from the committed window dumps and **ma
 | 5 | REF-B v2 @20 k milestone | `refb-v2-20k` | 20 000 | 271.6 M | 0.6435 [0.5410, 0.7516] | 1.3218 | 0.216 | ✅ +0.1942 | — | — | *0.6462 ± 0.0548* |
 | 6 | REF-B speed | `refb-10k` | 10 000 | 262.8 M | 0.8372 [0.6753, 1.0218] | 1.6964 | 0.268 | ✗ +0.0005 | 60.5 ms | ✅ | *0.8255 ± 0.0992* |
 | 7 | REF-B v1 | `refb` | 6 000 | 262.5 M | 0.8629 [0.6928, 1.0385] | 1.7351 | 0.318 | ✗ −0.0252 | 59.8 ms | ✅ | *0.8682 ± 0.0817* |
-| 8 | P2 CEM planner over frozen v1 | `planner_p2` | (n/a) | 0 trained | — 🟥 no window dump | — | — | ✗ | — | — | *0.893 ± 0.114* |
+| 8 | P2 CEM planner over frozen v1 | `planner_p2` | (n/a) | 0 trained | — ⚠️ **open-loop CEM arm never dumped per-window** (the *closed-loop* windows ARE banked and both gates were re-decided 2026-08-16 — **neither flips**) | — | — | ⚠️ **undecided** | — | — | *0.893 ± 0.114* |
 | 9 | REF-A DINOv2 4B | `refa-dinov2` | 29 999 | 156.6 M† | 2.1675 [1.9081, 2.4212] | 3.2803 | 0.613 | ✗ −1.3298 | 88.6 ms | ❌ | *2.1322 ± 0.1821* |
 | 10 | Flagship **no-speed** (ablation control) | `flagship-nospeed` | ~22 000 | 263.4 M | 3.0175 [2.5450, 3.5444] | 5.0282 | 0.742 | ✗ | 101.6 ms | ❌ | *2.9176 ± 0.3558* |
 | 11 | REF-A dyn-in 4B | `refa-dynin-30k` | 29 999 | 156.6 M† | 3.0471 [2.4984, 3.6878] | 4.7642 | 0.741 | ✗ | 84.5 ms | ❌ | *2.9196 ± 0.3937* |
@@ -705,6 +711,16 @@ the `refc-small-30k` rows (§1–§5) → `…/incoming/2026-07-22-refc-small-30
 **Known gaps, marked UNVERIFIED:**
 - `planner_p2` and flagship **v3enc** have **no window dump**, so they have no §2 row. P2's ADE
   (0.893 ± 0.114) survives only under the deprecated estimator.
+  ⚠️ **PARTIALLY REFUTED 2026-08-16 — "no window dump" is true of ONE arm, not of P2.** The *closed-loop*
+  windows are banked (`…/2026-07-26-closedloop-artifact-rerun/raw_windows/p2win_flagship-30k.pt`, 221
+  win / 20 ep) and so is the tactical-head arm (`clwin_flagship-30k.pt` → `plan_direct`). Only the
+  **open-loop CEM arm** (`plan_wp`) was never dumped. ⇒ **G4 is fully re-decided and G1 on 3 of 4 arms,
+  CPU-only, and NEITHER FLIPS**: G4 **0.9799 [0.7456, 1.2312] < 1.7318**, plus a first-ever **paired**
+  form **−0.7375 [−0.9362, −0.5295], p(δ>0) = 0.0000**. ~400 s of GPU closes the last arm.
+  ⛔ **And P2's `✗ Beats CV` above is itself an un-re-decided banned verdict** (`planner_beats_cv`,
+  banned on both sides) whose flip **is** reachable — it needs a +6.59 % error against a measured local
+  upper edge of +5.877 % and a programme-wide +11.69 %. Treat it as **undecided**.
+  *(Details: `MODEL_REGISTRY.md` §5 · `…/incoming/2026-08-16-jack-in-gates/JACK_IN_GATES.md`.)*
 - `flagship-v16-ab-ft`, `refb-v2-*` and `flagship-v2-6k` have **no `eff_<key>.json`** → no latency
   column. Nothing blocks it but a run on an idle GPU.
 - **Tier-1 is blocked on one line.** `rollout.collect` computes the dense 20-step path and discards 16
