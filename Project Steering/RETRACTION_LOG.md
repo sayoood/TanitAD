@@ -5140,3 +5140,46 @@ batch with `v0` **and** `actions` permuted and requires the latent blocks **bit-
 test proves the control **reports failure on a `v0`-reading stand-in** rather than passing
 vacuously. That is the standard C92 exists to enforce, applied prospectively for once instead of
 retrospectively.
+
+---
+
+## C99 — I HAND-LISTED A SHIP SET, VERIFIED EVERY md5, AND THE CODE STILL COULD NOT RUN (2026-08-18, dumper ship to Thor)
+
+**MEASURED.** I shipped the three files I had changed — `v6_dump_sw_latents.py`, `v6_chain.py`,
+`e_wc2_sigma_star.py` — to Thor and verified **all three md5s byte-identical on both sides**
+(`4cdc09c2…` / `771b337e…` / `8132c767…`, sizes matching). Then the real-import probe returned:
+
+```
+ImportError: cannot import name 'K_MAX_GRID' from 'refc_dump_latents'
+```
+
+Thor's `refc_dump_latents.py` was **11,629 bytes with ZERO occurrences of `K_MAX_GRID`**; the repo's
+is **30,089 bytes with it at line 96** — a **2.6× smaller, badly stale** dependency that I never
+listed because **I had not changed it.**
+
+⇒ **ROOT-CAUSE CLASS: A SHIP SET DERIVED FROM "WHAT I EDITED" INSTEAD OF FROM THE IMPORT CLOSURE.**
+⛔ **And this lesson was already in the log, from the S-T sync EARLIER THE SAME NIGHT**, in that
+agent's own words: *"the closure was derived by IMPORTING it, not by listing: 76 files, not 13. A
+hand-listed dependency set is a guess about what a launch touches."* **I then hand-listed three.**
+
+⇒ **RULE: the ship set is the IMPORT CLOSURE, computed, never the diff.** A file you did not edit can
+still be the one that is stale on the target — staleness is a property of the *target*, not of your
+*changes*.
+
+⚠️ **AND THE SHARPER HALF: md5 AGREEMENT PROVES TRANSFER, NOT FUNCTION.** All three files were
+present and byte-perfect, which is exactly what a "sync verified" report would have claimed. **A
+green checksum on the wrong file set is a confident wrong answer** — the same shape as the `df`,
+`free`, and cgroup traps: a probe that answers a *different question* than the one asked.
+⇒ **Only a real import (or a real forward) is evidence that a pod can run the code.** Presence,
+md5, and `git log` are all necessary and none is sufficient.
+
+⭐ **WHAT WORKED, AND IT IS WORTH KEEPING:** the failure surfaced in **2 seconds** because the dumper
+carries a **preflight import probe at startup** — required in its brief precisely because an
+analysis-time import that fails *after* the rollout once destroyed a complete 2-arm, 40-episode run
+whose compute was already paid for. **The gate an agent built caught the orchestrator's mistake.**
+
+**Resolution:** Thor's stale copy backed up to `/home/nvidia/_thor_backup_2026-08-18-dumper/`
+(md5 `a2c52bf5…`), the current file shipped (`e6203a4a…`, 30,089 B, `K_MAX_GRID` ×4), and
+re-verified: `[swdump] preflight OK`, and `v6_chain.py admission` now emits **zero** `NOT BUILT`
+lines on Thor. **The live run was unaffected — step 12,700 → 12,800 across the operation with
+`step_s` unchanged at 26.474.**
