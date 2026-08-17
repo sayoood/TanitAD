@@ -1,0 +1,188 @@
+{
+ "class": "MEASURED",
+ "n_clips": 201,
+ "P1_control_115_byte_identical": {
+  "prediction": "the 115 clips' fused records do not move",
+  "n_moved": 0,
+  "moved": [],
+  "HOLDS": true
+ },
+ "P2_label_families_unmoved": {
+  "prediction": "zero token changes on all four families, because emit_vocab does not read SAM3",
+  "tokens_visible_positive_control": {
+   "g_str": 201,
+   "a_str": 201,
+   "a_tac_lat": 188,
+   "a_tac_lon": 147
+  },
+  "families": {
+   "g_str": {
+    "n_changed": 0,
+    "n_changed_in_86": 0,
+    "n_changed_in_115": 0,
+    "examples": [],
+    "hist_after": {
+     "FOLLOW_MAIN_ROAD": 117,
+     "TURN_LEFT": 34,
+     "TURN_RIGHT": 29,
+     "STOP_AT": 20,
+     "NONE_ABSTAIN": 1
+    }
+   },
+   "a_str": {
+    "n_changed": 0,
+    "n_changed_in_86": 0,
+    "n_changed_in_115": 0,
+    "examples": [],
+    "hist_after": {
+     "HOLD_CORRIDOR": 155,
+     "PREPARE_STOP": 22,
+     "REDUCE_TO": 21,
+     "RESUME_CRUISE": 3
+    }
+   },
+   "a_tac_lat": {
+    "n_changed": 0,
+    "n_changed_in_86": 0,
+    "n_changed_in_115": 0,
+    "examples": [],
+    "hist_after": {
+     "LANE_KEEP": 171,
+     "null": 13,
+     "NUDGE_L": 7,
+     "LANE_CHANGE_R": 7,
+     "LANE_CHANGE_L": 2,
+     "NUDGE_R": 1
+    }
+   },
+   "a_tac_lon": {
+    "n_changed": 0,
+    "n_changed_in_86": 0,
+    "n_changed_in_115": 0,
+    "examples": [],
+    "hist_after": {
+     "CRUISE": 92,
+     "BRAKE_TO": 55,
+     "null": 54
+    }
+   }
+  },
+  "HOLDS": true
+ },
+ "n_86_records_that_moved": 86,
+ "before_mixed_floor": {
+  "the86_leg": {
+   "n_clips": 86,
+   "perception_absent": 0,
+   "n_tracks": 2397,
+   "clips_with_scene": 0,
+   "n_scene_det_total": 0,
+   "census_states": {
+    "measured": 86
+   },
+   "engine_floors": {
+    "None": 86
+   },
+   "per_concept_tracks": {
+    "car": 1068,
+    "traffic sign": 665,
+    "traffic light": 386,
+    "pedestrian": 155,
+    "truck": 87,
+    "bus": 34,
+    "cyclist": 2
+   }
+  },
+  "the115_leg": {
+   "n_clips": 115,
+   "perception_absent": 0,
+   "n_tracks": 8067,
+   "clips_with_scene": 115,
+   "n_scene_det_total": 23116,
+   "census_states": {
+    "measured": 115
+   },
+   "engine_floors": {
+    "0.25": 115
+   },
+   "per_concept_tracks": {
+    "car": 3382,
+    "traffic sign": 2266,
+    "traffic light": 1265,
+    "pedestrian": 670,
+    "truck": 369,
+    "bus": 77,
+    "cyclist": 38
+   }
+  }
+ },
+ "after_unified_floor": {
+  "the86_leg": {
+   "n_clips": 86,
+   "perception_absent": 0,
+   "n_tracks": 6268,
+   "clips_with_scene": 86,
+   "n_scene_det_total": 17618,
+   "census_states": {
+    "measured": 86
+   },
+   "engine_floors": {
+    "0.25": 86
+   },
+   "per_concept_tracks": {
+    "car": 2490,
+    "traffic sign": 2091,
+    "traffic light": 894,
+    "pedestrian": 441,
+    "truck": 257,
+    "bus": 92,
+    "cyclist": 3
+   }
+  },
+  "the115_leg": {
+   "n_clips": 115,
+   "perception_absent": 0,
+   "n_tracks": 8067,
+   "clips_with_scene": 115,
+   "n_scene_det_total": 23116,
+   "census_states": {
+    "measured": 115
+   },
+   "engine_floors": {
+    "0.25": 115
+   },
+   "per_concept_tracks": {
+    "car": 3382,
+    "traffic sign": 2266,
+    "traffic light": 1265,
+    "pedestrian": 670,
+    "truck": 369,
+    "bus": 77,
+    "cyclist": 38
+   }
+  },
+  "ALL_201_POOLED": {
+   "n_clips": 201,
+   "perception_absent": 0,
+   "n_tracks": 14335,
+   "clips_with_scene": 201,
+   "n_scene_det_total": 40734,
+   "census_states": {
+    "measured": 201
+   },
+   "engine_floors": {
+    "0.25": 201
+   },
+   "per_concept_tracks": {
+    "car": 5872,
+    "traffic sign": 4357,
+    "traffic light": 2159,
+    "pedestrian": 1111,
+    "truck": 626,
+    "bus": 169,
+    "cyclist": 41
+   }
+  }
+ },
+ "pooling_note": "\u2b50 `after_unified_floor.ALL_201_POOLED` is the first aug120 perception total that is legitimate to quote: before the re-run the 201 spanned two detection floors and no per-concept rate over them meant anything. \u26a0\ufe0f the two `before_mixed_floor` legs are NOT to be differenced against each other."
+}
