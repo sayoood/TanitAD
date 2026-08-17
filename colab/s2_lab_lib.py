@@ -312,8 +312,7 @@ def done_set(api, repo: str, prefix: str, suffix: str = ".json",
     return set(stems)
 
 
-def content_census(api, repo: str, prefix: str,
-                   want: set[str] | None = None,
+def census_records(items, want: set[str] | None = None,
                    require_schema: int | None = None,
                    require_conf: float | None = None) -> dict:
     """⛔ THE COMPLETION CRITERION, AND IT IS NOT A FILE COUNT (C77).
@@ -339,21 +338,29 @@ def content_census(api, repo: str, prefix: str,
     lower floor shows up only as rows that are not there), so it has to be
     checked against the stamped `engine` block or not at all. A record that
     fails either requirement is counted in `wrong_schema` / `wrong_conf`, is
-    NOT complete, and will be re-run."""
+    NOT complete, and will be re-run.
+
+    ⭐ THIS IS THE PREDICATE WITH NO TRANSPORT ATTACHED (2026-08-17), and the
+    split is the point. `items` is any iterable of `(clip_id, record)`, so the
+    SAME rule judges a far-side HF corpus (`content_census`) and a local
+    directory (`content_census_local`). A run whose durable bank is the dev box
+    rather than HF would otherwise need a second completion rule, and two
+    implementations of "is this clip done?" is how a corpus goes mixed while
+    both checks report green — which is this census's own defect, one level up.
+    """
     import collections
-    far = list_far(api, repo, prefix)
-    rfs = sorted(rf for rf in far
-                 if rf.endswith(".json") and "/_runs/" not in rf)
     per, sper, errs = (collections.Counter(), collections.Counter(),
                        collections.Counter())
     n_det = n_live = n_dead = n_nocontrol = 0
     n_scene = n_wrong_schema = n_wrong_conf = 0
     zero, seen, complete = [], set(), []
-    for rf in rfs:
-        cid = rf[len(prefix):-len(".json")]
-        rec = json.load(open(hf_download(repo, rf, force=True)))
+    n_records = 0
+    for cid, rec in items:
+        n_records += 1
         if rec.get("clip_id") != cid:
-            raise RuntimeError(f"{rf} carries clip_id={rec.get('clip_id')!r}")
+            raise RuntimeError(
+                f"record for {cid!r} carries clip_id={rec.get('clip_id')!r} — "
+                "filename and content disagree, the done-set would be a lie")
         seen.add(cid)
         nd = int(rec.get("n_det_total") or 0)
         n_det += nd
@@ -406,7 +413,7 @@ def content_census(api, repo: str, prefix: str,
         # BFloat16 records forever, which is C77 in the resume path.
         if lv is not None and clip_err == 0 and not bad_schema and not bad_conf:
             complete.append(cid)
-    out = {"n_records": len(rfs), "n_det_total": n_det,
+    out = {"n_records": n_records, "n_det_total": n_det,
            "n_scene_det_total": n_scene,
            "complete_clips": sorted(complete),
            "n_complete": len(complete),
@@ -427,6 +434,48 @@ def content_census(api, repo: str, prefix: str,
                         and n_wrong_schema == 0 and n_wrong_conf == 0
                         and (want is None or not out["missing"]))
     return out
+
+
+def content_census(api, repo: str, prefix: str,
+                   want: set[str] | None = None,
+                   require_schema: int | None = None,
+                   require_conf: float | None = None) -> dict:
+    """`census_records` over a far-side HF prefix. Transport only."""
+    far = list_far(api, repo, prefix)
+    rfs = sorted(rf for rf in far
+                 if rf.endswith(".json") and "/_runs/" not in rf)
+
+    def _items():
+        for rf in rfs:
+            yield (rf[len(prefix):-len(".json")],
+                   json.load(open(hf_download(repo, rf, force=True))))
+
+    return census_records(_items(), want, require_schema, require_conf)
+
+
+def content_census_local(dirpath, want: set[str] | None = None,
+                         require_schema: int | None = None,
+                         require_conf: float | None = None) -> dict:
+    """`census_records` over a local directory of `<clip_id>.json`.
+
+    ⛔ THE RESUME AUTHORITY WHEN THE DURABLE BANK IS NOT HF. A Colab VM is
+    reclaimed without warning and its `/content` goes with it, so a run that
+    must not push to a public-facing platform has to keep its done-set on the
+    dev box. This is that done-set — and it is the SAME predicate the far-side
+    census applies, not a lookalike, because `census_records` is shared."""
+    import glob
+    import os as _os
+    paths = sorted(glob.glob(_os.path.join(str(dirpath), "*.json")))
+
+    def _items():
+        for p in paths:
+            stem = _os.path.basename(p)[:-len(".json")]
+            if stem.startswith("_"):
+                continue
+            with open(p, encoding="utf-8") as fh:
+                yield stem, json.load(fh)
+
+    return census_records(_items(), want, require_schema, require_conf)
 
 
 def run_manifest(api, repo: str, prefix: str, tag: str, extra: dict) -> str:
