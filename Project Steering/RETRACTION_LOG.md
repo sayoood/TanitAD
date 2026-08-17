@@ -4548,3 +4548,113 @@ quoted in every brief tonight — *"3750 passed"* — is **`stack/` only**. Ther
 break** in this work. ⇒ **A suite total that silently omits a suite is the C82 family again:** a
 number whose SCOPE is narrower than the claim it is used to support. Health claims must name which
 suites ran.
+
+---
+
+## 2026-08-17 — ⛔ **`D1` IS WITHDRAWN: THE F-18 SLOT PROBE FAILS ITS OWN POSITIVE CONTROL**
+
+**What is retracted.** The pre-registered finding **D1** — *"the encoder does not carry agent
+geometry"* — as reported by `…/incoming/2026-08-16-slot-probe-run/SLOT_PROBE_RUN.md` and hardened by
+`…/incoming/2026-08-17-slot-probe-parity/SLOT_PROBE_PARITY.md`, **together with its two strongest
+derived sentences**: *"the trained v6 latent serves this readout no better than random vectors"* and
+*"640 raw patch tokens at 240× the `cells` surface does not rescue it, so the loss is at the ENCODER,
+not the readout."*
+
+⚠️ **This is NOT a claim that the v6 latent DOES carry agents.** It is the claim that **the
+instrument cannot answer the question**, which is a different and much weaker state than the one the
+programme has been reasoning from. The pre-registered **D1 DROP must not be executed on this
+evidence**, at 30 k or at any step.
+
+**The measurement that forces it** (`…/incoming/2026-08-17-probe-positive-control/`): the *identical*
+probe (`sp2_probe.py`, md5 `aabbee36fce5f164d47a555fad369cbd`, byte-identical), *identical* 2 721
+windows / 70 episode clusters / split / estimator, fed a memory tensor that is **a direct encoding of
+the frame's own GT boxes**, scores **10.175 m [9.182, 11.168]** against a constant's **5.133 m** —
+K1 **+5.042 [+4.080, +6.065]**, separated, FAILED — **at all three seeds** (K1 +5.042 / +4.946 /
++1.946, every one positive and separated). ⇒
+**The apparatus ranks PERFECT INFORMATION (10.18 m) BELOW RANDOM VECTORS (5.95 m).**
+
+⭐ **The sharpest form, and it removes every remaining rejoinder:** on a memory that puts the GT lead
+at a **fixed, known address**, a **ridge regression recovers it at 1.016 m with r = +0.979**
+(K1 −4.116, separated, PASS) while **the identical slot probe on the identical tensor scores
+6.319 m and still LOSES to the constant** (+1.178 [+0.313, +2.131], separated) — **6.2x worse than a
+linear map on the same numbers.** With that perfect representation AND the readout rule repaired,
+the apparatus ceiling is a **TIE** with a constant (+0.522, not separated). ⇒ **This instrument
+cannot emit a K1 PASS at all, so its "K1 fails" verdicts carry no information about the
+representation.** The information is present and even linearly available; what fails is the 74-slot
+decoder plus its `pred_lead` readout.
+
+**⛔ ROOT-CAUSE CLASS — this is the class, not the number.**
+
+> **AN INSTRUMENT VALIDATED ONLY BY NEGATIVE CONTROLS.** Five controls were run across two studies
+> (C-CONST, C-SHUF, C-EPMEAN, C-SHUF-XEP, matched random-latent) and every one is NEGATIVE: they
+> prove the probe is not **cheating**. **Not one proves the probe can SUCCEED.** A null from such an
+> instrument is *unattributable*: "X does not carry the signal" and "this apparatus cannot read the
+> signal from anything" are indistinguishable.
+
+**Why the negative controls were structurally unable to catch it — MEASURED, not argued.** The
+incumbent readout selects `argmax presence` over in-corridor slots **with no range cap**, while the
+GT selects the **nearest** in-corridor agent **within 30 m** (`sp2_probe.py:141` vs `:99`) — and the
+decode runs to 60 m. On the oracle arm **15.98 %** of selected slots are beyond 30 m; on the
+random-latent null **0.00 %** are, because a degenerate head emits ~20 m on every frame. ⇒ **The
+defect is INVISIBLE on a broken arm and only bites on a working one.** No negative control can
+expose a bug that only a functioning representation triggers.
+
+**Sibling instances of the same class already in this log / in `CLAUDE.md`:** C13 — *a guard that
+cannot fail* (K3 pinned at ≈0.50 by construction: a head trained on pure noise "passes"); C9/C14 —
+*instruments structurally unable to report the answer they are cited for*; the `df` / Thor `free` /
+cgroup `usage_in_bytes` family — *a probe that reports the wrong scope is worse than no probe,
+because it looks like an answer.* **This one is the sharpest form yet: the probe reported a
+confident, well-controlled, five-times-replicated answer to a question it could not answer.**
+
+**⭐⭐ AND THE REPAIR IS IDENTIFIED, SO THIS IS NOT A DEAD END.** The same probe on the same oracle
+cache with **`--n-queries 16` instead of 74** scores **2.982 m, median 0.816 m, K1 −2.186
+[−3.165, −1.192] separated — the FIRST K1 PASS ANYWHERE IN F-18** (the constant on the retained
+windows is unchanged, 5.167 vs 5.133, so it is not an abstention artefact). **74 was fitted from the
+in-grid AGENT-COUNT p99 — correct for SET PREDICTION, catastrophic for the LEAD functional the
+metric scores**, because it puts ~13 slots in the 3.5 m corridor for `argmax presence` to choose
+between. ⚠️ One seed; the same run MEASURED 3.096 m of K1 spread across three seeds at 74 queries,
+so this must be replicated at ≥3 seeds before "16 is the fix" is quotable.
+
+⭐ **AND THE REPAIR CARRIES ITS OWN NEGATIVE CONTROL, so it is not this log entry's own error class
+one level up:** the **window-matched random-latent null at the same `n_queries` 16 FAILS K1 by
++4.808 [+4.112, +5.482], separated**, with K2 and C-SHUF-XEP correctly unseparated. ⇒ **At 16
+queries the instrument passes on the answer (−2.186) and fails on noise (+4.808) — a ~7 m
+separation, and the first configuration of this probe that does both.**
+
+⭐⭐ **AND THE REAL ARM AT THAT REPAIRED POINT IS THE FIRST F-18 READING FROM A WORKING INSTRUMENT:**
+`v6F-SW-30k@11250` @ 16 queries scores **8.331 m, K1 +3.217 [+2.310, +4.246] — still FAILS**, with
+**both anti-echo controls UNSEPARATED (K2 +0.205 ns, XEP +1.225 ns), like noise and unlike the
+oracle** (whose K2/XEP separate by 3.1 / 6.1 m). ⇒ **D1 points the same way it always did — but now
+on evidence that can bear it.** ⛔ **IT IS STILL NOT RESTORED, AND MUST NOT BE QUOTED AS RESTORED:**
+one seed against a measured 3.096 m seed spread; arm-vs-arm ordering that is MARGINAL, not paired
+(window sets 2 408 / 2 577 / 2 665, each arm's K1 paired only against its own C-CONST); and an
+early-read at 37.5 % of training. ⭐ **The path to a valid D1 is now short and specified:
+{oracle, latent, null} @ 16 queries × ≥3 seeds, re-run at 30 k — ~9 fits, no trunk compute.**
+
+⛔ **A SECOND CRITERION FALLS WITH IT: `K3` IS ANTI-CORRELATED WITH QUALITY.** The parity run
+escalated K3 as vacuous (a noise head scores 0.5002 and "passes `K3 ≥ 0.50`"). The positive control
+shows worse: the nq-16 arm — **median error 0.816 m, K1 PASS** — scores **0.4432 and "fails"**. ⇒
+**K3 ranks a noise head above the only arm that has ever passed K1. Remove it from the KEEP gate;
+do not re-threshold it.**
+
+**⇒ THE STANDING RULE THIS EARNS.**
+
+> ⛔ **NO FROZEN-LATENT PROBE IN THIS PROGRAMME MAY REPORT A NULL WITHOUT A PASSING POSITIVE
+> CONTROL** — a representation constructed to contain the answer, run through the *identical* fit,
+> windows, split, seeds and estimator. If the positive control fails, the null is **withdrawn**, not
+> softened. The cost is one cache rewrite (seconds) plus one fit (~20 min):
+> `…/2026-08-17-probe-positive-control/code/pc1_oracle_cache.py` + `code/chain_a.sh` do it end to end,
+> and the move generalises — **replace the memory with an encoding of the label, change nothing
+> else.**
+
+**Also corrected in the same package** (details in `PROBE_POSITIVE_CONTROL.md`):
+* ⚠️ **`build_o4_weights` is a SAMPLER, not a loss term** (`stack/scripts/train_v6_staged.py:745`,
+  consumed at `:2470` by `InteractionSampler`). It has no gradient; "the cosine of O4's gradient"
+  is not a quantity that exists. Any brief asking for it must be redirected to a sampler analogue.
+* ⚠️ **`lead130_agents.jsonl` carries NO image-space box** — `{cx, cy, yaw, l, w, occ, track_id,
+  cls}` only. Pixel extents must be DERIVED from `f_ref` and are **ESTIMATED**; height is absent, so
+  pixel AREA is not derivable at all.
+* ⭐ **The "small agents" worry does not apply to this metric:** the GT lead is median **37.8 px
+  wide ≈ 2.4 ViT patches**, with only **4.34 %** of scored windows below one patch. The failure is
+  worst where the agent is **nearest and biggest**, and the random-latent null reproduces the entire
+  stratum profile — so the profile belongs to the label distribution, not to the latent.

@@ -1,0 +1,24 @@
+PCDONE orc010_seed0
+PCDONE orc010_seed1
+PCFAIL orc010_seed2 rc=1
+  File "C:\Users\Admin\AppData\Local\Temp\claude\G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD\8fc25020-a1d5-4e1b-a9e2-aeccf845c5a2\scratchpad\pc\sp2_probe.py", line 731, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "C:\Users\Admin\AppData\Local\Temp\claude\G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD\8fc25020-a1d5-4e1b-a9e2-aeccf845c5a2\scratchpad\pc\sp2_probe.py", line 470, in main
+    tr = train_head(head, rows, tr_idx, key, device, steps=a.steps,
+                    lr=a.lr, batch=a.batch, seed=a.seed)
+  File "C:\Users\Admin\AppData\Local\Temp\claude\G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD\8fc25020-a1d5-4e1b-a9e2-aeccf845c5a2\scratchpad\pc\sp2_probe.py", line 216, in train_head
+    loss = slot_set_loss(out, tgt)
+  File "G:\Meine Ablage\SayBouBase\raw\Projects\TanitAD\stack\tanitad\models\agent_slots.py", line 539, in slot_set_loss
+    m = match or match_slots(pred, tgt)
+                 ~~~~~~~~~~~^^^^^^^^^^^
+  File "G:\Meine Ablage\SayBouBase\raw\Projects\TanitAD\stack\tanitad\models\agent_slots.py", line 488, in match_slots
+    valid = tgt["valid"][b].nonzero(as_tuple=False).flatten()
+            ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+torch.AcceleratorError: CUDA error: an illegal memory access was encountered
+Search for `cudaErrorIllegalAddress' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+CHAIN_A_DONE orc010
