@@ -6104,3 +6104,80 @@ unscanned is not.**
 
 ⭐ **Worth stating plainly: the control that caught this was GitHub's, not ours.** Our own procedure
 staged it, committed it, and would have pushed it. **That is the finding.**
+
+---
+
+## C112 — ⛔ **201 ALPAMAYO CLIPS ARE ALREADY IN THE PARITY TRAIN CORPUS** — any eval split built on it is 4.3 % contaminated (2026-08-18, concurrency pilot)
+
+**RETRACTED:** the standing claim that the Alpamayo augmentation set does **not** overlap the parity
+corpus.
+
+**MEASURED: 201 of the 4,729 Alpamayo clips are already in the parity TRAIN corpus**, and **the live
+trainer is reading exactly that cache** — `--v2-cache …e438721ae894-w120-256x640cyl`, read from
+`/proc/25477/cmdline`, not from a doc. **mtimes prove they are genuine selection members, not later
+contamination.**
+
+⇒ ⛔ **Any eval split built on this corpus is 4.3 % train-contaminated — the REF-A I-JEPA leak class**
+(where ~80 % of val sat inside train and made the number unusable). The **201-id exclusion list is
+banked**; it must be applied **wherever an Alpamayo eval split is defined**, not once.
+
+⇒ **ROOT-CAUSE CLASS: A NON-OVERLAP ASSUMED FROM PROVENANCE ("different source ⇒ disjoint") RATHER
+THAN COMPUTED FROM IDS.** Parity is sacred precisely because it is checkable; **this one was never
+checked.**
+
+### ⛔ AND MY OWN ABORT CRITERION WAS STRUCTURALLY UNABLE TO FIRE
+
+I briefed a **+5 % `step_s` abort**. `train_v6_staged.py`'s `step_s` is a **CUMULATIVE MEAN over
+every step since process start** — its own `step_s_note` says so. ⇒ At the intended trip point
+(27.7 s/step) **the cumulative mean never reaches 28.0 at ANY duration**; even at a catastrophic
+**40 s/step it needs 9 hours**, and the pilot ran ~2 h. **It would have reported "safe" no matter
+what happened.**
+
+⇒ **This is the third gate this week that could not return the answer it existed to give** — E4 could
+not report PASS, SEL-1 could not report FUNDED, and this could not report ABORT. ⭐ **The agent
+first-differenced the series AND UNIT-TESTED THE TRIP LOGIC ACROSS THE BOUNDARY before trusting it** —
+which is the step that turns a written criterion into a working one.
+⚠️ **Corollary: the reference band "26.47–26.66 all day" is NOT variation — it is a CONVERGING MEAN,
+strictly non-increasing over 100 points.** A quantity that cannot rise is not a monitor.
+
+### The answer, with the effect reported honestly rather than rounded away
+
+| phase | n | median s/step | Δ vs BEFORE | p |
+|---|---:|---:|---|---|
+| BEFORE (steady) | 108 | 26.3591 | — | — |
+| **DURING** | 5 | **26.4993** | **+0.532 %** [+0.282, +0.785] | **0.00064** |
+| **AFTER** | 4 | **26.3474** | −0.045 % [−0.095, +0.384] | 0.713 |
+
+⇒ **RUN THE EXTRACTION CONCURRENTLY.** The effect is **real — it must not be rounded to "no
+effect"** — but it is ~6× below the threshold: **40 minutes of training bought against 5.3 days of
+calendar.** ⭐ **The AFTER phase is what makes it causal rather than coincidental** — the slowdown
+appears with the load and disappears with it. *And that mattered: the first clean after-point was
+26.4600 (+0.38 %), which alone would have suggested the effect was not the extraction; three more
+points settled it.* GPU utilisation was indistinguishable (98 % vs 97 %); `gnorm`/`loss` stayed
+inside baseline variation. **All 10 chunks completed, 476/476 clips verified BY CONTENT, no abort,
+trainer and snapshot daemon alive at all 141 polls.**
+
+### Three more findings
+
+⭐ **Thor's own throughput is 11.76 MB/s — 4.7× the 2.5 MB/s dev-box figure** I published as
+*"MEASURED but n=1"* (707.8 MB sustained over 60 s; a second host agrees at ~13.6 MB/s; it self-limits
+to 8.58 MB/s under concurrent extraction). **The w120 sizing was built on the wrong number and was
+4.7× pessimistic.**
+
+⚠️ **A second contaminated baseline, found and excluded:** 18 of 126 pre-load points were a
+**post-resume warm-up transient** (~900 steps at 27.1 s/step), **consecutive rather than periodic** —
+a checkpointing explanation was tested and **refuted**. Excluding it *strengthened* the result;
+leaving it in would have **hidden** the effect. *It also explains the cumulative-mean decay above.*
+
+⛔ **A launch-path defect that would have produced a SILENTLY WRONG CORPUS:** `build()` died **after
+paying for a 536 MB download** because nothing creates `<root>/r0/r0_selection.parquet` — and that
+path also drives **per-clip intrinsics**, so the fallback would have cropped **~215 px wrong for rig
+B**. *The crash was the good outcome.*
+
+⚠️ **Full-extraction cost, since the corpus is brutally density-skewed (median 2 clips/chunk):**
+50 % of clips = **5.2 h** of download; 100 % = **41.8 h and 1.73 TB**. Cap by density — **while
+recording that this is a dataset-composition decision, not merely a cost one.**
+
+⚠️ **The 476-clip pilot corpus (18.33 GB) lives ONLY on Thor** (`/home/nvidia/w120pilot/out/`) — too
+large for the repo, with a fully staged rebuild recipe (2 h 19 m). **A recorded risk, not a stranded
+artifact** — the distinction being that the recipe is banked.

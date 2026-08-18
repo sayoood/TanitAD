@@ -1,7 +1,6 @@
 # Thor concurrency pilot — can the w120 extraction run alongside the live 30k training?
 
-**Date:** 2026-08-17 · **Branch:** `agent/arch-inf-20260803` · **Status:** IN PROGRESS (during/after
-measurement pending)
+**Date:** 2026-08-17/18 · **Branch:** `agent/arch-inf-20260803` · **Status:** COMPLETE
 
 **PI question:** can the w120 Alpamayo extraction run on Thor *concurrently* with `v6F-SW-30k`, or
 must it wait ~5.3 days for the GPU? The extraction needs no GPU, so concurrency recovers five days.
@@ -9,6 +8,13 @@ must it wait ~5.3 days for the GPU? The extraction needs no GPU, so concurrency 
 ---
 
 ## 0. Headline — read this first
+
+> ✅ **ANSWER: YES, RUN IT CONCURRENTLY.** The extraction slows training by a **measured +0.53 %**
+> (95 % CI +0.28 % … +0.79 %) — real and statistically clear (p = 0.00064), and **the effect
+> disappears the moment the load stops** (after vs before: −0.045 %, p = 0.713), which is what makes
+> the attribution causal rather than coincidental. That is **~6× below** the PI's +5 % abort
+> threshold: **40 minutes** of training time bought **5.3 days** of calendar. All 10 chunks completed,
+> **476/476 clips verified by content**, no abort, trainer and snapshot daemon untouched throughout.
 
 > ⛔ **THE ABORT CRITERION IN THE BRIEF IS STRUCTURALLY UNABLE TO FIRE, AND THE PILOT WOULD HAVE
 > REPORTED "SAFE" NO MATTER WHAT HAPPENED.** `train_v6_staged.py`'s `step_s` is a **cumulative mean
@@ -154,6 +160,12 @@ n = 126 instantaneous points spanning ~46 h of training — far beyond the ≥6 
 obtained at **zero waiting cost** because the points were already logged before any load was added.
 Baseline max (27.2105) sits **below** the SLOW2 trip (27.69), so the threshold is above all observed
 pre-load variation.
+
+⚠️ **This table is the baseline as first collected, and it is CONTAMINATED — see §7.2.** 18 of the
+126 points are a post-resume warm-up transient at ~27.1 s/step, which inflates the mean, widens the
+spread and makes the distribution bimodal. The **steady-state** baseline used for every comparison in
+§7 is **n = 108, median 26.3591, IQR [26.3092, 26.3966], max 26.7032**. The armed abort thresholds
+were left as set from this wider table, which only makes them more conservative.
 
 ---
 
@@ -334,75 +346,117 @@ baseline containing a resume transient would have inflated the baseline and *hid
 the opposite error to the one in §1, and just as wrong. Note the direction: the sloppier analysis
 would have made concurrency look *better*, not worse.
 
-### 7.3 Step time — steady-state BEFORE vs DURING
+### 7.3 Step time — BEFORE / DURING / AFTER
 
-Load window **1787003523 → 1787012288** (2 h 26 m, first launch to build exit). A logged point covers
-the 50 steps *before* it, so points whose window straddles a boundary are TRANSITION and excluded
-from both groups.
+Load window **1787003523 → 1787012995** (first launch to the end of the post-build verification —
+the last moment any of my load ran). A logged point covers the 50 steps *before* it, so points whose
+window straddles a boundary are excluded from both groups.
 
-| phase | n | median | IQR | min | max |
-|---|---|---|---|---|---|
-| warm-up (6350–7200) | 18 | 27.1156 | — | — | — | *(excluded)* |
-| **BEFORE, steady state (7250–12600)** | **108** | **26.3591** | [26.3092, 26.3966] | 26.2422 | 26.7032 |
-| **DURING (12700–12900)** | **5** | **26.4993** | [26.4989, 26.5138] | 26.4346 | 26.5652 |
+| phase | steps | n | median | IQR | min | max | Δ vs BEFORE |
+|---|---|---|---|---|---|---|---|
+| warm-up *(excluded)* | 6350–7200 | 18 | 27.1156 | [27.0421, 27.1666] | 26.9035 | 27.2105 | — |
+| **BEFORE** (steady) | 7250–12600 | **108** | **26.3591** | [26.3092, 26.3966] | 26.2422 | 26.7032 | — |
+| **DURING** | 12700–12900 | **5** | **26.4993** | [26.4989, 26.5138] | 26.4346 | 26.5652 | **+0.1402 s (+0.532 %)** |
+| **AFTER** | 13050–13200 | **4** | **26.3474** | [26.3440, 26.3762] | 26.3365 | 26.4600 | **−0.0117 s (−0.045 %)** |
 
-Per-point DURING: 26.4989 · 26.4993 · 26.5652 · 26.5138 · 26.4346.
+DURING: 26.4989 · 26.4993 · 26.5652 · 26.5138 · 26.4346
+AFTER: 26.4600 · 26.3365 · 26.3483 · 26.3465
 
-### 7.4 ⭐ The answer: a REAL effect, and a small one — bounded well below the threshold
+### 7.4 ⭐ The answer: a REAL effect, a small one, and it goes away
 
-**Do not round this to "no effect".** Against the clean baseline the shift is unambiguous:
+**Do not round this to "no effect" — and do not round it up either.** The AFTER phase is what turns
+this from a correlation into an attribution:
 
-| statistic | value |
-|---|---|
-| median shift | **+0.1402 s = +0.532 %** |
-| **bootstrap 95 % CI on the median shift (20,000 resamples)** | **[+0.282 %, +0.785 %]** |
-| Mann-Whitney U, two-sided | **p = 0.00064** (n=108 vs n=5) |
-| DURING points above the steady-state baseline max (26.7032) | **0 / 5** |
-| baseline points reaching the DURING minimum (26.4346) | 15 / 108 |
+| comparison | median shift | bootstrap 95 % CI (20 k resamples) | Mann-Whitney p |
+|---|---|---|---|
+| **DURING vs BEFORE** | **+0.532 %** | **[+0.282 %, +0.785 %]** | **0.00064** |
+| **AFTER vs BEFORE** | **−0.045 %** | [−0.095 %, +0.384 %] | **0.713** |
 
-The sign is consistent across all five points, and the two TRANSITION points sit between the groups
-in exactly the order a real effect predicts. **The extraction does slow the trainer. It slows it by
-about half a percent.**
+**The slowdown appears when the extraction starts and disappears when it stops.** Load removed →
+step time returns to baseline, the CI straddles zero and the test is comfortably null. That before /
+during / after shape is what rules out the obvious alternative explanation — a slow drift in the
+trainer that merely coincided with the pilot. Without the AFTER control the +0.53 % would have been
+suggestive; with it, it is causal.
 
-**And that is decisively below the threshold that was asked about:**
+⚠️ **This mattered, and it nearly went the other way.** The FIRST clean after-point was **26.4600**
+(+0.38 %), which looked as though the elevation had persisted and the effect was *not* the
+extraction. Three further points (26.3365, 26.3483, 26.3465) settled it. **A single after-point
+would have produced the wrong conclusion** — in either direction depending on which one landed.
+
+**And the effect is decisively below the threshold that was asked about:**
 
 | quantity | value |
 |---|---|
 | measured slowdown | **+0.53 %** (95 % CI +0.28 % … +0.79 %) |
 | PI's abort threshold | +5 % |
-| **margin to the trip point** | **the CI's upper bound is 6.4× below it** |
+| **margin** | **the CI's upper bound is 6.4× below the trip point** |
 | cost over the remaining 17,100 steps | **+0.67 h** (~40 min) on a ~5.3-day run |
 | benefit | **~5.3 days** of extraction not spent waiting for the GPU |
 
-Trading **40 minutes** of training time for **five days** of calendar is not a close call.
+Trading **40 minutes** of training for **five days** of calendar is not a close call.
 
-⚠️ **Caveats stated plainly.** n_during = **5**, one short of the 6 the brief asked for: the 10-chunk
-build ran 2 h 19 m and the trainer logs once per ~22 min, so **10 chunks cannot produce 6 clean
-fully-loaded windows** — the brief's two requirements are arithmetically incompatible, and 10 chunks
-was kept as the binding one. All 5 DURING points fall inside the steady baseline's range, so this is
-a shift in central tendency, not an excursion into new territory. With n=5 the CI is the honest
-summary and the p-value should not be over-read.
-⚠️ The effect is measured for **one** extraction process at `nice -19` with 3 threads. It does **not**
-license running several in parallel; the linearity was not tested.
+⚠️ **Caveats stated plainly.**
+- n_during = **5**, one short of the 6 the brief asked for. The 10-chunk build ran 2 h 19 m and the
+  trainer logs once per ~22 min, so **10 chunks cannot yield 6 clean fully-loaded windows** — the
+  brief's two requirements are arithmetically incompatible and "10 chunks" was kept as binding.
+  n_after = 4.
+- All 5 DURING points fall inside the steady baseline's range (max 26.7032): a shift in central
+  tendency, not an excursion into new territory.
+- Measured for **one** extraction process at `nice -19` with 3 threads. It does **not** license
+  running several in parallel — linearity was not tested, and the download rate already showed
+  self-contention (§7.6).
+- The +0.53 % is specific to this workload mix. Notably the post-build **verification** job (18 GB of
+  file reads + PNG decode, 11 min) did **not** visibly slow the trainer, so not all CPU load costs
+  the same; the mp4-decode + `grid_sample` path is the expensive part.
 
-### 7.4 Training quality was not affected
+### 7.4a Training quality was not affected
 
-| metric | BEFORE (n=126) | DURING (n=5) |
-|---|---|---|
-| `gnorm` median | 529.34 (IQR [297.40, 722.56]) | 610.73 (values 702, 841, 153, 611, 512) |
-| `loss` median | 2.4375 (IQR [2.0342, 3.0006]) | 2.0372 (values 1.74, 2.31, 1.48, 2.98, 2.04) |
+| metric | BEFORE (n=108) | DURING (n=5) | AFTER (n=4) |
+|---|---|---|---|
+| `gnorm` median | 567.92 | 610.73 | 241.80 |
+| `loss` median | 2.3772 | 2.0372 | 2.1566 |
 
-Both sit **inside** the baseline IQR. Nothing suggests the extraction perturbed optimisation, only
-that it took a small slice of wall-clock.
+`gnorm`'s baseline IQR is [297.40, 722.56] and per-point values swing 42–1367 across the run, so all
+three medians sit **well inside** ordinary variation — including AFTER's 241.80, which is low but
+unremarkable at n=4 given that spread. Loss likewise. **Nothing suggests the extraction perturbed
+optimisation**; it took a small slice of wall-clock and nothing else.
+⚠️ These are the trainer's own logged optimisation diagnostics, **not** an eval. This pilot makes no
+claim about model quality in the four metric families — no eval was run and none was warranted.
 
-### 7.5 GPU was never starved
+### 7.5 GPU was never starved — with a matched control
 
-`nvidia-smi utilization.gpu` sampled at 1 s under load, n=90: **median 98 %**, mean 84.1 %, 75.6 % of
-samples ≥95 %. A GPU-bound trainer next to a `nice -19` CPU job is the mechanism for why the effect
-is so small — Thor has 14 CPUs and load average only reached ~2.3.
-⚠️ The dips to 0 % in that sample are **not attributed**: without a matched no-load sample they could
-equally be checkpointing or the trainer's own step boundaries. Reported as raw observation only.
-(`clocks.sm` reads `[N/A]` on Thor's tegra driver — another probe that is simply absent here.)
+`nvidia-smi utilization.gpu` sampled at 1 s, n=90 in each condition:
+
+| condition | median | mean | frac ≥95 % | frac = 0 % |
+|---|---|---|---|---|
+| DURING load | 98.0 % | 84.06 % | 0.756 | 0.067 |
+| **AFTER, no load (control)** | 97.0 % | 85.59 % | 0.767 | 0.033 |
+
+**Indistinguishable.** The trainer is GPU-saturated in both conditions, which is the mechanism for
+why the step-time effect is only half a percent: Thor has 14 CPUs, load average peaked at ~2.3, and a
+`nice -19` CPU job cannot take work away from a GPU-bound step.
+
+⭐ **The control also settled a loose end.** The dips to 0 % appear in the *unloaded* sample too
+(3.3 % vs 6.7 %), so they are **intrinsic to the trainer** — step boundaries or checkpoint writes —
+**not** caused by the extraction. Without this matched sample I would have had to leave them
+unattributed, and they were the one observation that looked like starvation.
+(`clocks.sm` reads `[N/A]` on Thor's tegra driver — another probe simply absent here.)
+
+### 7.5a Output verified BY CONTENT (C77), all 476
+
+Not existence — every payload was decoded through the real `load_compressed()`:
+
+| | |
+|---|---|
+| checked / ok / failed | **476 / 476 / 0** |
+| frame shapes | **`9x256x640` uint8 for all 476** (one shape, no drift) |
+| stacked frames | 94,793 total, **199.1 per clip** |
+| size | 18.33 GB, **38.52 MB/clip** |
+| geometry tag | **`256x640f305.5775cyl`**, codec `png`, achieved hfov **120.0°** |
+
+Every clip also passed finite-value checks on poses and actions and T-agreement across
+frames/actions/poses/maneuvers. The geometry tag is **identical to the existing w120 parity corpus**,
+so this cache is schema- and frame-compatible with it (while remaining a separate corpus — §4.1).
 
 ### 7.6 Throughput, and the reverse direction
 
@@ -453,6 +507,72 @@ dataset-composition decision.
 
 ---
 
-## 8. Deliverable manifest
+## 9. Recommendation
 
-*(see report)*
+1. ✅ **Run the w120 extraction concurrently with training.** Measured cost +0.53 % step time
+   (CI +0.28 %…+0.79 %); measured benefit ~5.3 days. Keep the exact conditions that were tested:
+   **one process, `nice -n 19`, `OMP_NUM_THREADS`/`V2_TORCH_THREADS`/`PAI_DECODE_THREADS` = 3.**
+2. ⛔ **Do not parallelise it.** Linearity was not tested and the download already self-contends
+   (11.76 → 8.58 MB/s). A second process is a new experiment, not an extension of this one.
+3. ⭐ **Cap the extraction by density** (§8). Half the corpus costs 5.2 h of download; the full tail
+   costs 41.8 h and 1.73 TB for the last 10 %. Decide the cap deliberately, and record that it is a
+   dataset-composition decision, not just a cost one.
+4. **Re-arm `pilot_watchdog.sh` for the full run.** It is workload-agnostic — it watches the trainer,
+   not the builder — and it proved itself twice tonight (clean stand-down on build exit; boundary-
+   tested trip logic).
+5. ⛔ **Exclude the 201 parity-overlap clips from any eval split** built on this corpus (§4.1).
+6. **Fix the launch path before the full run** (§6.1): `build()` should create or check
+   `<root>/r0/r0_selection.parquet` at startup rather than failing after a 1.2 GB download.
+
+## 10. Deliverable manifest
+
+All paths relative to the repo root, **staged, not committed** (per the operating standard). Nothing
+was pushed; no branch was switched; `MODEL_REGISTRY.md`, `train_v6_staged.py` and `v6_chain.py` were
+not touched.
+
+**Repo — `TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-08-17-thor-concurrency-pilot/`**
+
+| file | what it is |
+|---|---|
+| `THOR_CONCURRENCY_PILOT.md` | this report |
+| `stepwatch.py` | ⭐ the corrected instrument — first-differences the cumulative `step_s` |
+| `analyze_phases.py` | phase classification + Mann-Whitney; recovers wall-clock from `step_s·N` |
+| `verify_out.py` | C77 content verification via real `load_compressed()` |
+| `pilot_run.sh` | the launcher actually used (carries the `r0_selection.parquet` fix) |
+| `pilot_watchdog.sh` | ⭐ self-acting abort watchdog; kills one explicit PID, never a pattern |
+| `pilot_probe.sh` | one-shot opaque-marker status probe |
+| `raw_baseline.txt`, `baseline.jsonl`, `baseline_curproc.jsonl` | pre-load series |
+| `raw_final.txt`, `final.jsonl` | full series through step 13200 (the analysed data) |
+| `load_window.txt` | exact load-window epochs |
+| `trainer_cmdline.txt` | the protected run's full config, from `/proc/25477/cmdline` |
+| `verify_476.json` | **476/476 content verification result** |
+| `gpu_during.txt`, `gpu_after.txt` | matched 1 s GPU utilisation samples (n=90 each) |
+| `alpamayo_clip_ids.txt` | the 4,729 Alpamayo clip ids |
+| `chunk_order_densest_first.json` | all 1,418 chunks, densest-first |
+| `pilot_sel_top10.parquet` | the exact 476-clip selection built (force-added; parquet is gitignored) |
+| `parity_ls.txt`, `parity_mtimes.txt` | parity cache listing + mtimes (the overlap evidence) |
+| **`alpamayo_IN_parity_train_EXCLUDE_FROM_EVAL.txt`** | ⛔ **the 201 leaked clip ids — actionable** |
+| `out_geometry.json` | geometry manifest of the built corpus |
+| `clip_index.parquet`, `alpamayo_sel_full.parquet` | inputs (gitignored, not staged; reproducible) |
+
+**On Thor (`thor6`) — `/home/nvidia/w120pilot/`**
+
+| path | what it is |
+|---|---|
+| `out/` | ⭐ **476 `.v2ep.pt` + `_geometry.json`, 18.33 GB** — the built corpus |
+| `build.log`, `build.attempt1.log` | builder logs (attempt 1 = the `r0_selection` failure) |
+| `watchdog.log`, `watchdog.attempt1.log` | 141 abort-probe records |
+| `verify.json` | the 476/476 verification |
+| `pilot_run.sh`, `pilot_watchdog.sh`, `pilot_probe.sh`, `verify_out.py` | md5-verified copies |
+| `pai_root/` | transient download root (zips deleted per chunk by the builder) |
+
+⚠️ **The 476-clip corpus lives ONLY on Thor** (18.33 GB — too large for the repo). It is **not** yet
+banked elsewhere. If Thor is lost it costs 2 h 19 m to rebuild, and the recipe to do so is fully
+staged (`pilot_run.sh` + `pilot_sel_top10.parquet`), so this is a recorded risk, not a stranded
+artifact.
+
+**Escalations (also filed as background tasks):**
+1. `train_v6_staged.py` should log a true per-window step time — I am forbidden to touch that file.
+2. The 201-clip exclusion must be applied wherever an Alpamayo eval split is defined.
+3. `Project Steering/Reports/2026-08-17-2319-program-report.md:21` mislabels 26.47 as "marginal
+   pace" (true marginal 26.3672). Labelling fix only — the ~5.3-day ETA stands.
