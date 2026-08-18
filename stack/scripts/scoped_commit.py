@@ -123,6 +123,30 @@ def main(argv=None) -> int:
 
         commit = _git("commit-tree", tree, "-p", head, "-F", a.file)
         _git("update-ref", "HEAD", commit)
+
+        # ⛔ REFRESH THE SHARED INDEX FOR THE COMMITTED PATHS — and this is not
+        # cosmetic. MEASURED 2026-08-18: because the commit is built in a TEMP
+        # index, the real `.git/index` is never told those paths now exist at
+        # HEAD. A path this tool CREATED therefore shows up as a **staged
+        # DELETION** (present in HEAD, absent from the index) — and a later
+        # pathspec-free `git commit` WOULD HAVE DELETED IT. `scoped_commit.py`
+        # did exactly this to itself.
+        #
+        # ⇒ The tool built to stop other agents' work being swept away invented
+        # its own way to lose a file. C95/C97: a repair is not finished until the
+        # direction it did NOT set out to fix is tested.
+        #
+        # The fix writes the COMMITTED blob (not the worktree's) into the shared
+        # index, so index == HEAD for exactly these paths and nothing else moves.
+        for line in _git("ls-tree", "-r", "-z", tree).split('\x00'):
+            if not line.strip():
+                continue
+            meta, path = line.split('\t', 1)
+            mode, _kind, sha = meta.split()
+            if path in changed_list:
+                _git("update-index", "--add", "--cacheinfo",
+                     f"{mode},{sha},{path}")
+
         print(f"committed {commit[:9]} on {_git('rev-parse', '--abbrev-ref', 'HEAD')}")
     finally:
         if tmp.exists():
