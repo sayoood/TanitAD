@@ -5847,3 +5847,72 @@ of 176** rows. Until the grid is widened, no ridge result here has a bracketed o
 `n_agents_all` **0.076 → 0.1613**, `lead_closing` **0.0000 → 0.0009**, `r_pv0` **+0.052 → −0.107**.
 *(The citation-sweep hazard from C103, one iteration on: the numbers moved again before the sweep
 was done.)*
+
+---
+
+## C108 — THE DRIFT TOOL COMPARED THE **WORKING TREE, NOT HEAD** — `--ship` WOULD HAVE PUSHED ANOTHER AGENT'S WORK-IN-PROGRESS ONTO A BOX RUNNING A 5-DAY JOB (2026-08-18)
+
+**MEASURED.** `launch_closure_audit.py` reported `stack/tanitad/models/v6.py` as **DRIFT** while
+Thor's copy was **byte-identical to HEAD**. The dev box had moved, not Thor: a sibling agent's
+**uncommitted `FROZEN_EXTERNAL_*` work** was in the working tree.
+
+⇒ ⛔ **`--ship` would have copied that work-in-progress onto the training box.** Every row now
+carries `local_dirty_vs_head` / `remote_matches_head`, and `--ship` **holds dirty files back**
+unless `--ship-dirty`.
+
+⚠️ **I RAN `--ship` ON THIS TOOL TONIGHT.** It was safe only by accident of ordering — I had
+committed the seam fix (`14623d7`) *before* shipping, so the file was clean against HEAD. **Had I
+shipped first and committed after — the more natural order — I would have pushed uncommitted code
+onto a box 43 % through a 30 000-step run.**
+
+⇒ **ROOT-CAUSE CLASS: A SYNC TOOL WHOSE REFERENCE IS THE WORKING TREE ANSWERS "IS THE REMOTE LIKE MY
+DESK?" WHEN THE QUESTION IS "IS THE REMOTE LIKE THE REPO?"** With several agents editing
+concurrently, the desk is *never* the repo. **The reference for a ship must be a COMMIT.** *Same
+family as every scope trap this week — a true answer to the wrong question — and the first one that
+would have written to a live training box.*
+
+### ⭐ The entry points are now DERIVED, and the coverage gap is a NUMBER
+
+Entry points are read out of **launch sources** — files that emit or document launch command lines
+(`v6_chain.py`, `V6_GO_PACKAGE.md`, `GATE_PROTOCOL.md`) — as a **fixed point**, since a script named
+by a launch source is itself one. **That matters concretely: `train_v6_staged.py` SUBPROCESSES
+`eval_four_families.py`, `seam_probe.py` and `t1_eval.py` — argv, not imports, and INVISIBLE to any
+import walk.**
+
+**120 files (7 entries) → 134 (14) → 161 from 52 entries**, a strict superset, pinned by a test
+asserting `ladder7 ⊂ fixed14 ⊂ derived`. Every run now prints its **root set** and a **coverage
+gap** — *"54/158 launchable scripts covered, 104 not"* — with `--entry-mode executable` giving the
+ceiling (298). ⇒ **The assumption the whole audit rests on is now visible in every run.**
+⭐ **And the derivation did not narrow coverage:** four entries no launch source names
+(`watch_gates.py`, `t1_summary.py`, `run_spectral.py`, `v5_guard.py`) are **kept as a FLOOR** and
+printed `FLOOR ONLY`. *A derivation that narrowed coverage would be a regression wearing principle.*
+
+Re-run against Thor: **4 more stale/absent files both hand-lists had missed** — correctly **not
+shipped**, none is on the S-T path and a mid-run ship was not required.
+
+### `pod_git_drift.py` — REPAIRED, not deleted, and the reason matters
+
+⭐ **Deletion would have lost a capability nothing else has.** `launch_closure_audit.py` only
+inspects files **inside the repo's closure**, so a **box-only file** is invisible to it *by
+construction* — and that is exactly the REF-B v2 / TanitEval failure mode. **Two probes found zero
+automated callers: it was doctrine that never ran**, which is why four defects accumulated in it.
+
+A fourth defect the audit had not listed: **the index walked `.claude/worktrees/`** — 14 stale repo
+copies, **8,079 indexed files against the repo's 2,132**, driving ambiguous basenames from **5.6 % →
+89.4 %**. On the live fleet it would have printed **361 DRIFTED of which 293 (81.2 %) are
+artifacts**; on the live checkout alone **227 of 251 (90.4 %)**.
+
+⛔ **AND IT FOUND 45 GENUINELY STRANDED TanitAD FILES ON THOR** — `nurec_work/` 16, `/home/nvidia`
+19, `rq_out/` 4 — **each existing in exactly one place on earth**, unwatched since the RunPod fleet
+was released, because the nightly checker had been pointed at **four dead pods**. Plus **24 DRIFT
+rows** in Thor's live checkout outside the launch closure, **direction unknown**. Filed as
+`BACKLOG.md` **A11–A13**. *This is operating-standard rule 3 — "an artifact on one disk is NOT
+done" — with a measured count at last.*
+
+⚠️ **A sixth instance of the check-that-cannot-fail class, found while testing:** `--hosts` with no
+values **scanned nothing and printed `TOTAL: 0`, exit 0.** Now a hard error.
+
+⚠️ **Suite honesty worth copying:** `stack` **3892 / 0**, and the agent states the delta does **not**
+fully reconcile (+16 its own, +9 a sibling's untracked file, **−1 unexplained against a baseline it
+never measured**) ⇒ **it quotes the absolute, not the delta.** An unexplained −1 against an INHERITED
+baseline is exactly the shape of C82/C86.
