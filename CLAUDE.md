@@ -78,6 +78,14 @@ Every subagent brief MUST carry the preamble in
   quota. Use a real `dd` write test. A full quota killed the flagship mid-checkpoint.
 - **`step_s` in trainer logs is ACCUMULATED over `--log-every`** (÷50), not per-step. This has
   caused false "training is 430 s/step" alarms.
+  ⛔ **BUT THIS RULE IS INVERTED FOR `train_v6_staged.py` — THE LIVE v6 TRAINER — AND APPLYING IT
+  THERE PRODUCES A 50× UNDER-ESTIMATE.** MEASURED 2026-08-18: `train_v6_staged.py:3034` computes
+  `step_s` as `(time.time() - t0) / max(step - start_step, 1)` — **already divided** — and its own
+  comment at `:3032` says it is written that way *precisely to prevent* the 430 s/step alarm. It also
+  emits `step_s_note` naming the divisor. ⇒ Dividing again turns the live run's true **26.47 s/step**
+  into **0.53**. ⇒ **CHECK WHICH TRAINER WROTE THE LOG BEFORE APPLYING EITHER READING** — this is the
+  `df`/`free`/cgroup family in doc form: a rule that is true somewhere, quoted where it does not
+  apply. A per-run fact belongs beside the per-run divisor, and this log carries one.
 - **Moving multi-GB files between pods: POD→POD DIRECT SSH WORKS — the long-standing "pods cannot
   SSH each other" is RETRACTED (C56).** MEASURED 2026-07-28: **42 MB/s cross-datacenter**
   (US-TX-1 → ca-mtl-1), 3,415,808,330 B in 77 s — **42× the ~1 MB/s dev-box relay**, and it does
@@ -264,6 +272,35 @@ procedure below, which is what actually holds.**
    process seems to be running"* — that reads like contention but is debris. Confirm no git
    process is alive, then `rm -f .git/index.lock` (the index survives intact). Clear it between
    attempts or you will chase a phantom error.
+
+⭐ **THERE IS NOW A THIRD ROUTE, AND IT IS THE DEFAULT WHEN AGENTS ARE LIVE:
+`stack/scripts/scoped_commit.py -F <msgfile> -- <path> [<path> …]`.**
+
+```
+python stack/scripts/scoped_commit.py --dry-run -F msg.txt -- <path>   # inspect first
+python stack/scripts/scoped_commit.py         -F msg.txt -- <path>     # then commit
+```
+
+It points `GIT_INDEX_FILE` at a scratch index seeded from HEAD, adds **only** the named paths, and
+creates the commit through **plumbing** (`write-tree` / `commit-tree` / `update-ref`) — so it
+**never enters the porcelain partial-commit code that segfaults**. The real `.git/index` is never
+opened for writing, so **other agents' staged work stays staged**.
+
+Two guards make it worth using rather than merely slower: it **refuses** if the resulting tree
+touches any path you did not name, and it **checks** — rather than assumes — that the shared index
+kept its other entries. *(Verified 2026-08-18 by committing the tool with itself while 55 foreign
+files from four streams sat staged; the shared index went 63 → 64 across the commit, i.e. agents
+kept staging undisturbed.)*
+
+⚠️ **WHY "BE MORE CAREFUL" WAS NEVER THE ANSWER.** The sweep is **two correct rules colliding**: the
+operating standard tells agents to *stage as they go*, and this file tells committers the index is
+*shared and whole*. Obey both and an agent's incremental `git add` is **guaranteed** to be swept by
+the next commit. MEASURED: one agent's 44-file deliverable landed across **three** commits, 41 of
+them under subjects about unrelated work.
+
+⚠️ **This does not replace reading `git diff --cached --name-only` first.** When foreign work
+genuinely belongs in your commit, take it and **name it in the message** — a recorded sweep is
+recoverable, a silent one is not.
 
 ## Operating standard — raised by Sayed 2026-07-21
 

@@ -5628,3 +5628,143 @@ machines, it matches by **basename repo-wide**, and it does **no CRLF normalisat
 report drift on roughly half of what it inspects. ⏳ **`pandas`/`pyarrow` in Thor's `tanitad-train`
 is a PI call**; the safe recipe (`--no-deps`, torch last from the pinned index, verified with a real
 `conv2d`) is in the audit report. **The agent installed nothing** — correct, beside a 5-day run.
+
+===============================================================================
+
+## C106 — ⛔ C104's PHRASING IS TOO WEAK AND MIS-PLACED: OUR ENCODER'S **RANDOM INITIALISATION** BEATS ITS **TRAINED** SELF 3.6× ON C104's OWN METRIC — THE OBJECTIVE IS NOT FAILING TO ADD, IT IS SUBTRACTING (2026-08-18, encoder-experiments falsifier battery)
+
+**AMENDED — C104's conclusion, *"the encoder/objective is the constraint"*.** The direction was
+right and the statement was **too weak, and located one level too high**.
+
+**MEASURED, pre-registered, zero training**, on the **same** frozen `v6F-SW-30k@11250` windows,
+the **same** rows, the **same** deployed `AvgPool2d((4,10))`, the **same** command,
+`--proj-seeds 0 1 2`, `intercept_col=-1`, 1 302 train / 1 507 eval windows in **70 episode
+clusters** — `…/Research/2026-08-18-encoder-experiments/raw/falsifier_summary.json`:
+
+| arm | width | raw feat | `ego_v0` r² | `lead_gap` r² | K1 PASS |
+|---|---:|---:|---:|---:|---:|
+| **ours — trained S-W @11 250** | 768 | 12 288 | 0.05207 | 0.00490 | **0/3** |
+| `dino1f` — DINOv2 **pretrained**, ONE sub-frame | **768** | **12 288** | **0.70593** | **0.42743** | **3/3** |
+| `dinorand` — DINOv2 arch, **untrained**, 3 frames | 2304 | 36 864 | 0.02660 | 0.01843 | 0/3 |
+| **`randenc` — OUR arch, RANDOM INIT (3 seeds)** | 768 | 12 288 | **0.1894** [0.1736, 0.2011] | **0.0176** [0.0160, 0.0203] | 0/9 |
+
+### ⭐ THREE THINGS THIS SETTLES, EACH BY REMOVING ONE VARIABLE
+
+**1. C104's headline was a 4-variable comparison; the two biggest non-encoder variables are now
+MEASURED INERT.** The DINOv2 arm differed from ours in pretraining, architecture, **input
+format** (3 × 3-channel sub-frames vs one 9-channel tensor) and **token width** (2304 vs 768).
+At **identical width and identical feature count**, ONE sub-frame recovers **98.4 %** of the
+3-frame `ego_v0`, **95.0 %** of `lead_gap` and **99.7 %** of `lead_closing`. ⇒ **the
+concatenation and the 3× width explain essentially NONE of the gap.** C104 is *strengthened*.
+
+**2. Pretraining does the work, not architecture.** Removing only the pretrained weights
+collapses the teacher: `ego_v0` **27×**, `lead_gap` **24×**, `lead_closing` **46×**.
+
+**3. ⛔⛔ AND THE ONE THAT AMENDS C104 — OUR TRAINED ENCODER RANKS BELOW ITS OWN RANDOM
+INITIALISATION, ON BOTH RUNGS, ON ALL THREE SEEDS: `ego_v0` 0.05207 vs 0.1894 (3.6×),
+`lead_gap` 0.00490 vs 0.0176 (3.6×).**
+
+⭐ **The mechanism makes this the honest RAW-PIXEL control, which is what gives it force.**
+`ViT5Encoder` uses LayerScale at `ls_init = 1e-5` (`stack/tanitad/models/encoder.py:303`,
+`:307`, `:312`; residual `x + ls * f(x)` at `:315-316`), so at initialisation all 12 blocks
+contribute ~1e-5 and the encoder is approximately `RMSNorm(patch_conv(x) + pos)` — **a fixed
+random LINEAR map of raw patch pixels.** ⇒ the finding in its strongest form: **raw pixels
+through a random linear map read `ego_v0` and `lead_gap` ~3.6× better than our trained
+encoder's tokens.** *(It also explains `dinorand`, which would otherwise look inconsistent:
+vanilla ViT has no LayerScale, so an untrained one is a genuinely deep random net, and deep
+random nets destroy linear readability — 0.027, below even ours. Near-linear random map 0.19,
+deep random net 0.027, pretrained 0.71: the ordering is coherent.)*
+
+### ⚠️ THREE LIMITS, STATED BEFORE THE FINDING TRAVELS
+
+1. ⛔ **NEITHER OF OUR ARMS PASSES K1 — only DINOv2 does** (0/3 ours, 0/9 `randenc`, 0/3
+   `dinorand`, **3/3** `dino1f`). The admissible claim is *"on **r²**, the metric C104 quoted,
+   our trained encoder ranks below its own random init"* — **NOT** *"the random encoder works"*.
+2. ⚠️ **Our arm's readout is itself a flat line.** `pred_sd/gt_sd` **0.0141–0.0222** (vs 0.89–0.92
+   for `randenc`), with the ridge choosing `alpha = 1e7` **at the grid edge**. Under the C97
+   guard's own layer-3 screen (`SD_RATIO_FLAT_FLOOR = 0.05`) our arm is flagged.
+3. ⚠️ **T0-DIAGNOSTIC throughout**, on the **130-episode probe corpus** (2 809 windows, 70
+   clusters) — not the 40-episode val set, and never driving performance.
+
+### The step trend: the deficit is EARLY, not accumulating
+
+A re-encode from the three local checkpoints (**gate first**: `trained@11250` reproduces the
+banked cache to Δ 0.0001 / **0.00000** / 0.00000) gives 9 250 → 10 000 → 11 250:
+`ego_v0` 0.05573 → 0.05453 → 0.05197 (**falling**) while `lead_gap` 0.00470 → 0.00477 → 0.00490
+(**rising**). ⛔ **INCONCLUSIVE as a trajectory and NO exponent was fit** — a 2 000-step window is
+**6.7 %** of the run and the two rungs move in opposite directions. ⇒ **the 3.6× deficit was
+already fully established by step 9 250**: readability is gone **early** and then stable.
+
+⇒ **ROOT-CAUSE CLASS: A COMPARISON THAT DIFFERED IN FOUR WAYS, READ AS EVIDENCE ABOUT ONE OF
+THEM — AND THE MISSING CONTROL WAS THE CHEAPEST ONE IN THE BUILDING: THE MODEL'S OWN
+INITIALISATION.** C104 correctly demanded a positive control and a trivial-proxy control, and
+had both. What it lacked was a **BASELINE-OF-SELF**: *what does this exact architecture read
+before any training?* ⭐ **RULE: whenever an arm is compared to a foreign model, also compare it
+to ITSELF AT INITIALISATION.** It costs one forward pass, it is width- and format-matched by
+construction, and it is the only control that can detect a training objective making a
+representation **worse** — which no external comparison can, because an external model being
+better is equally consistent with ours merely being weaker.
+*(Same family as C104's own lesson — "ablate the mechanism, don't narrate it" — applied one
+level in: **ablate the TRAINING, not only the component.**)*
+
+### ⇒ WHAT THIS CHANGES
+
+**E-XENC-2's cheap path is now the WEAKER arm on mechanistic grounds, not merely the cheaper
+one.** If readability is lost before step 9 250, a distillation term warm-started late repairs
+after the fact instead of preventing. ⇒ the pre-registration records that a failure of the
+short warm-started arm is **NOT** evidence against distillation from step 0. ⏳ The decisive
+missing measurement is a **step-0-to-9 250 sweep**, blocked on checkpoints that are not local —
+an artifact-retrieval item, not a compute one.
+
+⚠️ **A param-count correction that travels with this:** C104 states the live checkpoint is
+**336 559 305**. Two independent sources say **336 542 025** — the checkpoint's own
+`_meta.config.param_report.total`, and a fresh `V6Stack` instantiated from that same
+checkpoint's `v6_config`. **Δ = 17 280.** C104's substantive point is unaffected (336.5 M is
+still 12.2 % over the "Sub-300M" headline); only the digits need fixing.
+
+Full pre-registration, controls, kill criteria and manifest:
+`TanitAD Research Hub/Architecture & Inference/Research/2026-08-18-encoder-experiments/PREREG_ENCODER_EXPERIMENTS.md`
+
+---
+
+## C88 — **RESOLVED 2026-08-18.** The whole-index sweep was two correct rules colliding, and a temporary index routes around the segfault
+
+**Appended to the C88 entry rather than opening a new class, because nothing is retracted here — a
+known defect finally has a mechanism instead of a warning.**
+
+**The diagnosis came from an agent escalating it to me as the committer, and it is right: this was
+never carelessness.** Two rules the programme follows, both correctly, collide —
+`AGENT_OPERATING_STANDARD.md` tells agents to **stage as they go** so nothing is stranded in one
+context; `CLAUDE.md` tells committers `git commit` takes the **entire index**. **Obey both and an
+agent's incremental `git add` is GUARANTEED to be swept by whatever commit lands next.** ⇒ *"Be more
+careful"* could not have worked, and the mitigation we had (enumerate the foreign streams in the
+message) **documents** the sweep without **preventing** it.
+
+**MEASURED tonight:** one agent's **44-file** deliverable landed across **three** commits, **41 of
+them under subjects about unrelated work.** The sweep has now fired **at least five times**.
+*(Both swept commits DID enumerate their foreign streams with exact counts, so provenance is
+recoverable from the bodies — the damage is archaeological, not lost work.)*
+
+⇒ **THE FIX: `stack/scripts/scoped_commit.py`.** `GIT_INDEX_FILE` points git at a scratch index
+seeded from HEAD; only the named paths are added; the commit is created through **plumbing**
+(`write-tree` / `commit-tree` / `update-ref`). ⭐ **That never enters the porcelain partial-commit
+code path — which is the one that SEGFAULTS on this repo** (exit 139 under MSYS git, `0xC0000005`
+under native Windows git, and three separate root-cause theories for it were each falsified). **The
+real `.git/index` is never opened for writing.**
+
+⭐ **Two guards make it worth using rather than merely slower:** it **REFUSES** if the resulting tree
+touches any path that was not named — without that assertion it is just a slow `git commit` — and it
+**CHECKS**, rather than assumes, that the shared index kept its other entries.
+
+⭐ **VERIFIED BY USING IT ON ITSELF**, with **55 foreign files from four live streams staged**: the
+commit changed **exactly one path**, and the shared index went **63 → 64** across it — *agents kept
+staging while the commit landed, and nothing was lost.* Committed as `3a3c26e`.
+
+⇒ **ROOT-CAUSE CLASS, and it is the useful part: WHEN A RULE IS VIOLATED REPEATEDLY BY PEOPLE
+FOLLOWING IT, THE RULE PAIR IS THE DEFECT — NOT THE DISCIPLINE.** Five recurrences and a documented
+warning did not help, because the warning asked for behaviour the other rule forbade. ⇒ **Before
+re-issuing a rule that keeps being broken, check whether obeying a second rule makes breaking the
+first unavoidable.**
+
+⚠️ **It does NOT replace reading `git diff --cached --name-only` first.** When foreign work genuinely
+belongs in a commit, take it and **name it** — a recorded sweep is recoverable, a silent one is not.
