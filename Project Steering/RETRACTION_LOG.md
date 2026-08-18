@@ -5916,3 +5916,75 @@ values **scanned nothing and printed `TOTAL: 0`, exit 0.** Now a hard error.
 fully reconcile (+16 its own, +9 a sibling's untracked file, **−1 unexplained against a baseline it
 never measured**) ⇒ **it quotes the absolute, not the delta.** An unexplained −1 against an INHERITED
 baseline is exactly the shape of C82/C86.
+
+---
+
+## C109 — C106 IS **HALF RIGHT**: the `ego_v0` half strengthens with a real interval, the `lead_gap` half dies, and the "3.6×" must go (2026-08-18, adversarial verification)
+
+**Attacked five ways, with refutation as the default posture. Reporting both directions.**
+
+### ✅ WHAT SURVIVES — and it is now properly estimated
+
+**Random init really does read `ego_v0` better than the trained encoder.**
+⚠️ **C106's bracket `[0.1736, 0.2011]` was the PROJECTION-SEED SPREAD, not an estimator** — a
+dispersion quoted where a confidence interval was implied. The pre-registered **paired
+episode-cluster bootstrap** on Δr²c (eval-window identity **asserted, not assumed**) gives
+**+0.150 [+0.055, +0.226], p(Δ>0) = 1.000** in C106's own cell, and **positive in 27/27 cells**
+across 3 init × 3 projection × 3 ridge seeds.
+
+⭐ **And C106's mechanism is now verified FROM THE WEIGHTS, not only from source.** Random init has
+residual fraction **0.0002**, cos **1.0000** against its own linear path — **it IS the raw-pixel
+linear map.** ⚠️ **C106 asserted that half and never checked the other:** the trained arm **has
+moved** (LayerScale **70× init**, residual **0.38**), which is what makes the comparison the one
+C106 assumed. *An interpretation resting on two premises had verified one.*
+
+### ⛔ WHAT DIES
+
+* **`lead_gap`: 0 of 27 cells CI-separated**, p(Δ>0) only **0.71–0.76**, and **the sign flips in
+  9/27.** ⇒ *"3.6× on both rungs"* becomes *"on `ego_v0`"*.
+* ⛔ **THE RATIO ITSELF.** It compares a **near-constant** predictor (`pred_sd/gt_sd` **0.014**) to a
+  **live** one (**0.89**). And re-drawing the **ridge inner split** — **the seed C106 held fixed,
+  and worth 10× more variance than the projection seed it did vary** — moves it to **2.8× / 2.0×**.
+* **C106's own "our readout is a flat line" caveat is one inner-split draw**: at `ridge_seed=2` the
+  same arm reads `pred_sd/gt_sd` **0.95**.
+* ⭐ **An attack that FAILED, reported because it failed:** widening α to **1e13** changed nothing
+  (≤ 0.0008). **That favours C106**, and closes C107's standing alpha-grid concern for these rows.
+
+### ⭐ THE FINDING THAT REFRAMES BOTH
+
+⛔ **Our trained arm is NOT CI-separated from its own matched-random null** — `lead_gap` **0/9**,
+`ego_v0` **3/9 and not in C106's own cell** — while **the random arm IS (9/9)**.
+⇒ **The honest claim is SIGNAL vs NO-SIGNAL on one rung, not a ratio.** **A ratio whose denominator
+is not separated from noise is not interpretable**, however many seeds it holds up across.
+
+### ⛔ AND IT REACHES BACK INTO C104's EVIDENCE
+
+**`PC-2OBJ` — the positive control C104 and C106 both cite — is INERT AT THE DEPLOYED POOLING RATIO
+BY CONSTRUCTION**: two *opposing* plants inside one cell **cancel**. Run at p40 it **reproduced the
+un-planted arm to 5e-05.** `PC-LOCAL`/`PC-DIST` are the controls that actually fire (our own trained
+tokens through the deployed pool: **0.0596 → 1.0000, K1 9/9**).
+⇒ ⚠️ **C104's "the ladder had full power to see a pooling-destroyed signal" rested on a control that
+is silent at exactly the ratio in question.** *C104's conclusion is not overturned — PC-LOCAL/PC-DIST
+do fire, and the 40:1→1:1 null result stands — but its headline control was the wrong one, which is
+the D1/C79 shape (an instrument validated by a control that could not have failed).*
+
+### ⭐ NEW, AND MONITORABLE FROM STEP 0
+
+**The trained token field is RANK-COLLAPSED** — **97.6 % of token-channel variance in ONE
+direction**, effective rank **1.22 against 67–68**; design-matrix rank **6.7 vs 16.4**. Confirmed on
+the banked cache. PCA-whitening lifts *both* arms ~3× and closes nothing ⇒ **a co-symptom, not the
+explanation** — but unlike *"the objective subtracts geometry"* it is **observable from step 0**, and
+the existing `z_op` spectrum monitor demonstrably does not cover it.
+
+⚠️ **CORRECTION — the step-0→9250 sweep is UNAVAILABLE, not merely unretrieved:** a whole-filesystem
+probe of Thor found **nothing before ≈ step 9100**. But the programme's own `z_op` ladder has a
+**step-2000** point, re-read from raw JSON: `ego_v0` **0.1346 → 0.0801** and `lead_gap` **0.0123 →
+0.0059** by step 9000, **then flat**, while `nearest_any` stays flat throughout. ⇒ **There is a real
+decline over 2000→9000**, so C106's direction has support — on `ego_v0`, over that window, and not
+as a ratio.
+
+⏳ **OPEN:** the frozen-external guard is built and pinned both ways (9 tests; catches the 86.6 M
+un-freeze and **cannot be satisfied by freezing everything**) but is **NOT YET CALLED** by
+`train_v6_staged.py` — deliberately, since the arm it protects does not exist yet. **It must be wired
+in the same change that introduces E-XENC-1**, or it is a guard that never runs, which is the
+`pod_git_drift.py` failure mode (C108) in advance.
