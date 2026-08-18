@@ -6415,3 +6415,64 @@ the only way the result is interpretable either way.
 
 ⏳ **Three rulings owed:** whether "temporal hierarchy" claims the **state** or the **clock**; the
 `TANITAD_PAPER.md:686` correction; and opening the `φ_str` line as its own retraction.
+
+---
+
+## C117 — ⛔ I REPORTED THE UNIFIED PERCEPTION CORPUS AS "PUBLISHED GATED-PUBLIC". IT IS ON ONE DISK. (2026-08-18)
+
+**RETRACTED — my own claim**, in the 2026-08-17 program report (§1 *"Published gated-public
+(`sam3_unified_201_v2/`, `fused_aug120_v3/`) with a 3/3 byte round-trip against md5s committed to
+git"*) and repeated in later summaries.
+
+**MEASURED, by me, after two agents disagreed:** `pushed_to_hf: **false**` in **both**
+`…/2026-08-17-perception-floor-unify/raw/floor_homogeneity_manifest.json` and
+`…/raw/f7_run86_local.json`. A repo-wide sweep of every banked manifest returns exactly **one**
+`hf_repo` — `Sayood/flagship-v4.2b`, **a MODEL repo, not the perception corpus.**
+
+⇒ ⛔ **THE UNIFIED 201-CLIP PERCEPTION CORPUS EXISTS ON ONE DISK ON THE DEV BOX.** Only the **older
+115-clip leg** is on HF, and it is in a **PRIVATE** repo — not gated-public.
+
+⇒ **TWO ERRORS IN ONE SENTENCE, and the second is the dangerous one:** I named the **wrong
+artifact** (the 115 leg's push, reported as the unified 201) **and the wrong visibility** (private,
+reported as gated-public). ⭐ **A push that really happened, attributed to a thing that was not
+pushed, is far harder to catch than an invented one** — every part of the sentence is individually
+true of *something*.
+
+⇒ **ROOT-CAUSE CLASS: "DONE" INHERITED ACROSS A SUPERSEDING ARTIFACT.** The 115-clip leg *was*
+finished and pushed; the 201-clip corpus **superseded** it; the completion status did not get
+re-derived for the new artifact. **This is exactly the failure operating-standard rule 3 exists to
+prevent — *"an artifact on one disk is NOT done"* — and I published it as done.**
+⇒ **RULE: when an artifact supersedes another, its published/banked status is RE-DERIVED, never
+inherited.** The superseding step is precisely where "done" silently detaches from the thing it was
+true of.
+
+⏳ **PI DECISION, and it is the most urgent item in the data layer:** push the unified corpus off one
+disk. *(The programme has already lost REF-B v2's architecture, the TanitEval harness, the pod ops
+bundle and 486 lines of TanitResim to this exact shape.)*
+
+### ⚠️ Two more corrections to briefs I wrote
+
+⛔ **I briefed `DATA_STRATEGY.md` as "a month stale". It was ONE DAY stale** — already at **v3.0
+(2026-08-17)**, not the v1.0 of 2026-07-06. **The "month stale" phrasing is a CORRECT 2026-08-15
+observation that I inherited forward PAST ITS OWN REPAIR.** ⇒ Same class as the above: a true
+statement about a superseded state, carried into the present. *(The refresh was still warranted —
+v3.0 was overtaken inside 24 h — but a reader would have expected a very different starting point.)*
+
+⭐ **The stranded-file counts RECONCILE — all three are correct, for three different quantities:**
+**102** stranded by content hash → **98** pulled (4 left with recorded reasons) **+ 19** gate JSONs
+found beyond the A11 roots = **117** banked. `BACKLOG.md` A11's "98" is a fourth correct number for a
+fourth quantity. *Independently re-counted from the banked tree.* ⇒ **Not a contradiction — four
+denominators.** Which is C110's lesson again: **name the denominator or the number is unquotable.**
+
+### ⛔ C111's RULE IS STATED AND UNIMPLEMENTED
+
+**MEASURED at three probes** (scripts/tests by name; repo-wide grep for `detect-secrets`/`trufflehog`
+and similar; `pre-commit` + `.github/workflows/` + the operating standard): **NO CREDENTIAL SCANNER
+EXISTS.** C111 mandated that any bulk import be scanned **before** staging, and nothing implements
+it. **The token is still plaintext on Thor.** ⇒ *A rule with no mechanism is C108's "doctrine that
+never ran", written yesterday.*
+
+⚠️ **And the space-splitting trap caught ME during this very verification** — an unquoted `for f in
+$(grep -rl …)` tore this repo's `TanitAD Research Hub` paths into fragments and reported
+`No such file or directory` for each. Redone with `-rlZ` + NUL-delimited read. **Third logged
+instance, first one in my own hands.**
