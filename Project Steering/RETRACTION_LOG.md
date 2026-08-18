@@ -6056,3 +6056,51 @@ pods since 2026-08-15, which is why any of it accumulated.
 
 **Trainer advanced across the pull, not merely alive:** step **13,150 → 13,200**, `step_s` **26.4716 →
 26.4707** (−0.003 %), PID 25477 `kill -0` alive at both ends.
+
+---
+
+## C111 — ⛔ **A LIVE HF TOKEN SAT IN A PLAINTEXT LOG ON THOR, AND I ALMOST PUSHED IT TO GITHUB** (2026-08-18)
+
+**MEASURED.** The Thor rescue banked `rescued/rq_out/logs/contention.log`, whose **line 11 contains a
+Hugging Face User Access Token**. I committed it locally. **GitHub push protection rejected the push
+(GH013)** and named the file and line.
+
+⇒ ⛔ **NOTHING WAS PUSHED. The secret never left this machine.** The commit was undone
+(`reset --soft`), the token redacted in place, and **the entire 117-file package re-scanned: exactly
+one file was affected, the other 116 are clean.**
+
+⛔ **THE UNBLOCK URL WAS NOT USED.** GitHub offers a one-click "allow this secret" link. Using it
+would have published a live credential — **the remedy for a blocked secret is to remove it, never to
+authorise it.**
+
+### Why this happened, and it is not the rescue's fault
+
+⚠️ **The invariant we hold is about `Keys.txt` — "read tokens in place; never copy, print, or write
+them to args."** ⛔ **This token was in neither `Keys.txt` nor a script: it was in a RUN LOG, because
+some earlier command carried it on a command line and the log captured stdout.** The invariant
+protects the *source* file and says nothing about the *exhaust*.
+
+⇒ **ROOT-CAUSE CLASS: WE GUARDED THE CREDENTIAL STORE AND NOT THE ARTEFACTS THAT RECORD ITS USE.**
+A token in `Keys.txt` is protected by `.gitignore`; the same token echoed into
+`contention.log` is protected by nothing. ⇒ **RULE: any bulk import from a machine — rescue, pull,
+backup — is SCANNED FOR CREDENTIAL PATTERNS BEFORE IT IS STAGED, not after a remote rejects it.**
+The scan is seconds; it belongs in the rescue procedure.
+
+⚠️ **AND THE RESCUE'S OWN "JUDGE BY CONTENT, NOT EXTENSION" PRINCIPLE IS WHAT EXPOSED IT** — the 17
+run logs were deliberately kept as *"raw measurement transcripts, not noise"*, which was the right
+call for provenance and is exactly why the scan is required. **Keeping logs is correct; keeping them
+unscanned is not.**
+
+### ⏳ TWO PI ACTIONS, and the first is time-sensitive
+
+1. ⛔ **ROTATE THE TOKEN.** It is **still present in plaintext on Thor** at
+   `~/rq_out/logs/contention.log:11` — redacting our copy does nothing to the machine's. Treat it as
+   **exposed**: it sat in a world-readable log on a networked box for an unknown period, and it is
+   the token with **WRITE access to the `Sayood/` HF namespace.**
+2. ⚠️ **The pre-redaction blob still exists in local git objects** (the undone commit
+   `ab77da96`), unreachable and never pushed. It disappears on the next `git gc --prune=now`, which
+   was **not** run now because several agents are live and it is not urgent while the ref is
+   unreachable and the token is being rotated anyway.
+
+⭐ **Worth stating plainly: the control that caught this was GitHub's, not ours.** Our own procedure
+staged it, committed it, and would have pushed it. **That is the finding.**

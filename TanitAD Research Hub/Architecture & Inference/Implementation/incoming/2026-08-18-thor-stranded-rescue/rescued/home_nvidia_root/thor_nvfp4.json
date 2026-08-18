@@ -1,0 +1,44 @@
+{
+ "device": "NVIDIA Thor",
+ "torch": "2.13.0+cu130",
+ "cuda": "13.0",
+ "sm": "sm_110",
+ "has_fp4_dtype": true,
+ "has_fp8_dtype": true,
+ "scaled_mm_present": true,
+ "gemm": {
+  "8x2048x2048": {
+   "tag": "OUR predictor step",
+   "shape": "8x2048x2048",
+   "bf16_ms": 0.0632,
+   "fp8_ms": 0.0524,
+   "fp8_speedup_x": 1.21
+  },
+  "128x2048x2048": {
+   "tag": "our batched",
+   "shape": "128x2048x2048",
+   "bf16_ms": 0.0738,
+   "fp8_ms": 0.0654,
+   "fp8_speedup_x": 1.13
+  },
+  "1024x2048x2048": {
+   "tag": "medium",
+   "shape": "1024x2048x2048",
+   "bf16_ms": 0.2753,
+   "fp8_ms": 0.1645,
+   "fp8_speedup_x": 1.67
+  },
+  "4096x4096x4096": {
+   "tag": "LLM-scale",
+   "shape": "4096x4096x4096",
+   "bf16_ms": 1.0856,
+   "fp8_ms": 0.551,
+   "fp8_speedup_x": 1.97
+  }
+ },
+ "nvfp4_api": "torch.nn.functional.scaled_mm present",
+ "fp4_cast": {
+  "ok": false,
+  "err": "RuntimeError: copy_() does not support casting Float4_e2m1fn_x2 to different types. Source dtype is BFloat16target dtype is Float4_e2m1fn_x2"
+ }
+}
