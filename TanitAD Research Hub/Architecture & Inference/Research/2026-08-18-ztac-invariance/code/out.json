@@ -1,0 +1,102 @@
+{
+  "probes": {
+    "P1_default_config_is_UNINFORMATIVE": {
+      "grad_is_None_because_of_stopgrad": true,
+      "isolate_uplink": true,
+      "why": "v6.py:4114 `src = self._cut(z_op, cfg.isolate_uplink)`; the X3 stop-grad severs the graph, so autograd cannot speak about temporal structure at the default setting. NOT evidence."
+    },
+    "P1_autograd": {
+      "grad_absmax_per_frame_z_tac": [
+        0.0,
+        0.0,
+        0.0,
+        0.06369198113679886
+      ],
+      "grad_absmax_per_frame_z_str": [
+        0.0,
+        0.0,
+        0.0,
+        0.10481225699186325
+      ],
+      "history_frames_are_EXACT_zero_z_tac": true,
+      "last_frame_is_nonzero_z_tac": true,
+      "history_frames_are_EXACT_zero_z_str": true
+    },
+    "P2_history_substitution": {
+      "z_tac_BIT_IDENTICAL_under_different_history": true,
+      "z_tac_maxabsdiff_history_swapped": 0.0,
+      "z_tac_maxabsdiff_last_frame_swapped": 1.8751091957092285,
+      "z_tac_absmax_scale": 2.4067206382751465
+    },
+    "P3_train_mode": {
+      "z_tac_BIT_IDENTICAL_in_train_mode": true,
+      "maxabsdiff": 0.0,
+      "note": "BatchNorm is banned in the inference path (encoder.py:5); this probe is what makes that a MEASURED fact here rather than an INHERITED one."
+    },
+    "P4_TacticalStage0_DOES_integrate": {
+      "z_tac_maxabsdiff_history_swapped": 0.0629686564207077,
+      "z_tac_maxabsdiff_last_slot_swapped": 1.0528850555419922,
+      "grad_absmax_per_slot": [
+        0.059679869562387466,
+        0.07725970447063446,
+        0.07439825683832169,
+        0.739936888217926
+      ],
+      "ALL_history_slots_nonzero": true,
+      "INTEGRATES_THE_WINDOW": true,
+      "note": "SAME probe, SAME scalarise(), opposite result -> the v6 result is a fact about V6Stack, NOT about 'the tactical layer'."
+    }
+  },
+  "controls": {
+    "P1_layernorm_sum_null_is_REAL": {
+      "naive_sum_grad_absmax_last_frame": 0.0,
+      "naive_sum_scalar_value": 4.76837158203125e-07,
+      "inert_as_predicted": true,
+      "why": "adapter_tac ends in nn.LayerNorm (v6.py:3739); at gamma=1/beta=0 the sum over the normalised axis is identically 0, so .sum() has an exactly-zero gradient for ANY input. Kept as a pinned negative control: it is what a careless probe would report."
+    },
+    "P1_positive_zh_op": {
+      "grad_absmax_per_frame_zh_op": [
+        0.047352615743875504,
+        0.02197365090250969,
+        0.02102985791862011,
+        0.13145087659358978
+      ],
+      "ALL_frames_nonzero": true,
+      "fires": true,
+      "note": "operative predictor consumes z_op_win with a causal mask; if this were also zero the probe would be inert (C109)."
+    },
+    "P2_positive_last_frame": {
+      "z_tac_moves_when_last_frame_changes": true,
+      "relative_move": 0.7791137724455987,
+      "fires": true
+    },
+    "P2_positive_zh_op_sees_history": {
+      "zh_op_maxabsdiff_history_swapped": 1.18825364112854,
+      "fires": true
+    },
+    "P2_trivial_proxy_network_is_not_dead": {
+      "z_tac_std_across_batch": 0.3663749396800995,
+      "z_op_win_mean_abs_spread_across_time": 0.2142510861158371,
+      "not_dead": true
+    }
+  },
+  "meta": {
+    "torch": "2.11.0+cu128",
+    "B": 4,
+    "W": 4,
+    "shape": [
+      9,
+      64,
+      64
+    ],
+    "device": "cpu",
+    "v6_py_sha256": "d1cd69d70c678706",
+    "v6_py_lines": 5154,
+    "tactical_py_sha256": "8a17b47d1b0d212c"
+  },
+  "verdict": {
+    "controls_all_fired": true,
+    "C115_REPRODUCED_independently": true,
+    "admissible": true
+  }
+}

@@ -6336,3 +6336,82 @@ at all** and can be enabled over any existing checkpoint.
 ⭐ **The `06b8782` class does not apply:** the entry went into the **existing** `layer_tac` group via
 `_GROUP_PREFIXES`, so `MODULE_GROUPS` is untouched — and `STAGE_GROUPS["S-J"] is MODULE_GROUPS`
 verified **False**.
+
+---
+
+## C116 — C115 IS A **DEFECT, NOT A DESIGN**: the temporal pool the paper mandates ALREADY EXISTS AND IS SIMPLY NOT WIRED — and `φ_str` has the same hole (2026-08-18)
+
+**C115 REPRODUCES INDEPENDENTLY**, by two mechanisms its author did not use: the gradient from
+`z_tac` to history frames is an **exact structural zero** — `[0.0, 0.0, 0.0, 0.0637]` — while the
+**positive control `ẑ_op` on the same graph is nonzero at every frame** (`[0.047, 0.022, 0.021,
+0.131]`). History-splicing leaves `z_tac` bit-identical; swapping the **last** frame moves it **0.779
+of its own scale**. Holds in `train()` mode.
+
+### ⭐⭐ THE UPGRADE: it is a DEFECT, and the proof is POSITIVE rather than an absence
+
+**`PhiTac` — the causal-TCN temporal pool that the design docs, the backlog AND `TANITAD_PAPER.md`
+all mandate — ALREADY EXISTS** (`tactical.py:99`), **is tested, and was trained** (registry §1.13b).
+⛔ **`v6.py` references it ZERO times.** Git provenance verified in-repo: the flattening arrived in
+**`0c30a0f`**, a commit about a **selector verdict** whose message mentions encoder, window and
+temporal extent **zero times**.
+
+⇒ **ROOT-CAUSE CLASS: A CORRECT COMPONENT EXISTS, IS TESTED, AND IS NOT CALLED — and the change that
+orphaned it was about something else entirely.** This is not "we never built it" and not "the spec
+was wrong": **the spec and the implementation agree with each other and disagree with the wiring.**
+⇒ **RULE: a component's tests passing says nothing about whether anything CALLS it.** The
+`pod_git_drift.py` class (C108 — doctrine that never ran) in an architecture costume, and the
+sharpest form yet: **a green test suite over dead code.**
+
+### ⭐ NEW, AND C115 DID NOT MENTION IT: `φ_str` HAS THE SAME DEFECT
+
+`φ_str` is specified as a pool over a **`z_tac` window**; `uplink_str` reads a **single tick**.
+**MEASURED: `∂z_str/∂frames` is also EXACTLY ZERO at every history frame.** ⇒ **A second retraction
+line, on the strategic layer** — and it means the hierarchy is instantaneous at *two* of its three
+levels.
+
+### ⛔ THE PAPER'S FORMAL CONTRACT IS FALSE TODAY
+
+`TANITAD_PAPER.md:686` states **`z_T = φ_T(sg[z_O(t−3..t)])`** — inside a section that calls these
+properties **"checked, not assumed"** — and **`assert_isolation` checks only the OTHER property.**
+34 sites inventoried and split invalidated / needs-ruling / unaffected. **False under either outcome
+of the pending experiment**, so it must be corrected regardless.
+
+### ⭐ THE OVER-CORRECTION GUARD, AND IT IS LOAD-BEARING
+
+**The programme has THREE tactical implementations, and TWO genuinely integrate the window.**
+MEASURED: `TacticalStage0` does so **under the same probe that fails on v6** (nonzero gradient at
+every slot). ⇒ ⛔ **"The tactical layer is fake" is WRONG — this is a fact about `V6Stack` alone.**
+**Untouched:** the operative path (it rolls out explicitly), all four metric families, and every
+v1-flagship tactical result **including the `ctx→tactical` seam**.
+
+### ⚠️ THREE INSTRUMENT HAZARDS — two inside the agent's own probe
+
+⛔ **`z_tac.sum()` IS AN IDENTICALLY-ZERO SCALAR.** `adapter_tac` ends in LayerNorm, so `.sum()` has
+**exactly zero gradient for ANY input**. The first run therefore returned all-zero gradients
+**including the last frame** — *a stronger, FALSE version of C115.* **Caught by its own positive
+control**, fixed with a random projection, and **pinned as a negative control**. ⇒ *An instrument
+that confirms your hypothesis harder than the truth is the most dangerous kind of agreement.*
+⚠️ **At the default config the autograd probe is uninformative** — `isolate_uplink=True` severs the
+graph and **mimics the finding by a different mechanism.**
+⛔ **`v6.py` GREW 4,914 → 5,154 LINES DURING THE READ** (`adapter_tac` moved 3737 → 3977). Every
+citation is now stamped to `sha256 d1cd69d7…` and the probe re-run against that exact state. ⇒
+**C114's torn snapshot IN A CITATION COSTUME — and the more dangerous form, because a stale line
+number still looks authoritative.**
+
+### The fix, and the experiment that decides whether to make it
+
+**Legal insertion is S-T ONLY** (the sole non-empty `STAGE_MAY_INTRODUCE`), as a **new key prefix,
+never a widened shape**, **default-OFF** — `load_resume` is hard `strict=True`, so any default-build
+change **kills the live v6F resume**. ⇒ **No fresh S-W run needed.** *(Fixing it inside
+`encode_window` instead would cost a full S-W run.)*
+
+⚠️ **`PREREG_TEMPORAL_LATENT.md` ALREADY EXISTS AND ALREADY RAN** — it fired **OUTCOME V** for
+`long_accel` (**0 of 35 arms**, including a 9-frame window basis), so *"just give the readout more
+frames"* is **already measured insufficient for that channel**. ⛔ **But it explicitly does NOT
+retire the thesis for the MANOEUVRE DECISION**, which is the target here.
+⭐ **The decisive arm is `A-pad`: `PhiTac` over the last frame repeated W times — identical
+parameters, ZERO temporal information.** That separates **information** from **capacity**, which is
+the only way the result is interpretable either way.
+
+⏳ **Three rulings owed:** whether "temporal hierarchy" claims the **state** or the **clock**; the
+`TANITAD_PAPER.md:686` correction; and opening the `φ_str` line as its own retraction.
