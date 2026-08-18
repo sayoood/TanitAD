@@ -80,6 +80,12 @@ SUITE_MANIFEST: dict[str, int] = {
     "tests/test_comma2k19.py": 7,
     "tests/test_scena.py": 22,
     "tests/test_resim.py": 30,
+    # C111/C117 credential gate. On the manifest because deleting or shrinking
+    # THIS suite is exactly how the guard would quietly stop guarding: it is the
+    # only thing that fails when the pre-commit credential hook is not armed on
+    # a clone, and C111's real root cause was a correct scanner that nothing
+    # called for 24 days. Collected 72 on 2026-08-18; floor set with headroom.
+    "tests/test_secret_scan.py": 60,
 }
 # Whole-suite floor: catches wholesale loss (a broken conftest deselecting half
 # the tree) that a per-module manifest of 16 entries would miss.

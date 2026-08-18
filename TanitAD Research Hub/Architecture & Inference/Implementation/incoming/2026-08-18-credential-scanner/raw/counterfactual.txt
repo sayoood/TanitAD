@@ -1,0 +1,44 @@
+C111 COUNTERFACTUAL — would the EXISTING scanner have caught it?
+MEASURED 2026-08-18, dev box, zero GPU.
+
+Method: 9 planted cases, each in a fresh throwaway git repo, each token ASSEMBLED AT
+RUNTIME from fragments so no credential-shaped literal exists on disk. Compares
+tools/safe_commit.py's scan_secrets() (in repo since 2026-07-25, commit 37158f7)
+against the new tools/secret_scan.py in both --staged and --tree modes.
+Driver: scratchpad/counterfactual2.py
+
+case                       safe_commit(old)  secret_scan --staged  secret_scan --tree  where
+-------------------------------------------------------------------------------------------------------------------
+C111 EXACT SHAPE .log      CAUGHT            CAUGHT                CAUGHT              huggingface @ rescued/rq_out/logs/contention.log:11
+.json                      CAUGHT            CAUGHT                CAUGHT              huggingface @ rescued/meta/run_state.json:11
+.txt                       CAUGHT            CAUGHT                CAUGHT              huggingface @ rescued/notes/handoff.txt:11
+openai sk-                 CAUGHT            CAUGHT                CAUGHT              openai-anthropic @ rescued/logs/openai.log:11
+github ghp_                CAUGHT            CAUGHT                CAUGHT              github-pat @ rescued/logs/gh.log:11
+aws AKIA                   CAUGHT            CAUGHT                CAUGHT              aws-akid @ rescued/logs/aws.log:11
+PEM header                 CAUGHT            CAUGHT                CAUGHT              credential-filename @ rescued/keys/host.pem:0
+generic api_key assign     ** MISS **        CAUGHT                CAUGHT              generic-assignment @ rescued/conf/settings.yaml:11
+BINARY blob .bin           ** MISS **        CAUGHT                CAUGHT              huggingface @ rescued/blob/state.bin:2
+-------------------------------------------------------------------------------------------------------------------
+caught: safe_commit(old)=7/9   secret_scan --staged=9/9   secret_scan --tree=9/9
+
+CONCLUSION
+==========
+Row 1 is the finding: the EXISTING scanner catches the exact C111 shape (an hf_ token
+on line 11 of a rescued *.log). C111 was therefore NOT caused by a missing scanner --
+it was caused by a scanner that NOTHING CALLED. That is C108's class, and the
+2026-07-26 program harvest had already recorded safe_commit.py as
+"imported_by: Nothing" at DECISION-GRADE.
+
+The two genuine gaps in the old scan:
+  (a) generic high-entropy assignment to api_key/token/secret/password -- not covered;
+  (b) BINARY blobs -- `git diff --cached` emits "Binary files ... differ" with NO
+      content lines, so a token inside such a blob was STRUCTURALLY INVISIBLE.
+      The new scanner reads staged BLOBS via `git cat-file --batch` instead.
+
+NOTE ON THE `--tree` COLUMN
+===========================
+An earlier cut of this table showed `--tree` MISSING the binary case while `--staged`
+caught it, because the tree walker's skip list carried `.bin` (chosen for byte volume).
+Those containers are UNCOMPRESSED -- an ASCII token survives verbatim inside them.
+The skip list was narrowed to entropy-coded formats only, where a plaintext pattern
+provably cannot exist. The table above is the post-fix measurement.

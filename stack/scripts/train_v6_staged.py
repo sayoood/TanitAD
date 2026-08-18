@@ -118,6 +118,13 @@ from tanitad.models.v6 import (  # noqa: E402
     # F-9 / catalog T3 — the interaction CURRICULUM (zero parameters)
     T3Curriculum, T3_CONTROL_MIN_N, multi_agent_kinematic_entropy,
     t3_rank_control,
+    # F-10 / catalog S3 — the DOMAIN-STRATIFIED MIX (zero parameters).
+    # ⛔ It acts on the EPISODE draw, NOT on InteractionSampler's per-window
+    # weights: those are consulted only INSIDE an already-chosen episode, so a
+    # domain weight expressed there is EXACTLY a no-op (MEASURED).
+    DomainMix, StratifiedEpisodeSampler, domain_mix_control,
+    DOMAIN_MIX_CONTROL_MIN_N, DOMAIN_MIX_MAX_AMPLIFICATION,
+    DOMAIN_MIX_MIN_STRATUM_EPISODES,
     stage_trainable_groups, time_to_reach_weights)
 from tanitad.models.sigreg import position_relaxed  # noqa: E402
 
@@ -1753,6 +1760,110 @@ def load_t3_scores(path, *, n_windows: int) -> tuple[Tensor, dict]:
             f"`multi_agent_kinematic_entropy` documents: check the occupancy "
             f"rollout was non-degenerate before scoring.")
     return scores, prov
+
+
+#: F-10's artifact schema tag. A file without it is refused: an untagged blob
+#: cannot be checked for the join key it was built against.
+DOMAIN_STRATA_SCHEMA = "domain-strata-v1"
+
+
+def load_domain_strata(path, *, episodes) -> tuple[list, dict]:
+    """Load and VALIDATE F-10's per-EPISODE domain stratum artifact.
+
+    The artifact is a JSON holding
+    ``{"schema": "domain-strata-v1", "provenance": {...},
+    "strata": {"<stable_episode_id>": "<label>", ...}}`` and is joined to the
+    live corpus by ``tanitad.data.v2_dataset.stable_episode_id``.
+
+    Returns ``(labels_aligned_to_episodes, provenance)``.
+
+    ⛔ **THE PROVENANCE STAMP IS MANDATORY — an ADMISSIBILITY rule, not
+    tidiness.** S3's strata come from the VLM/scena pipeline, i.e. a LABEL
+    path, and ``DIAGRAM_CONFORMANCE.md:69`` admits it for exactly one reason:
+    *"which is admissible for the data MIX (it is not a model input) but must
+    be declared"*. Refusing an undeclared artifact is what makes that
+    declaration real instead of aspirational; the stamp is written into
+    ``config.json`` so it survives the console.
+
+    ⛔ **THE JOIN IS STABLE-ID ONLY.** The legacy 16-bit ``episode_id`` (first 4
+    characters of the clip UUID) COLLIDES on **69 of 2400 train clips**
+    (``s2_labels.py:740``), and a silent wrong-clip join would put an episode in
+    another scene's domain — which is worse than no mix at all, because the
+    resulting stratum shares would look correct. Same refusal S2 makes.
+
+    ⛔ **AN UNLABELLED EPISODE IS REFUSED, NEVER DROPPED.** Dropping it is a
+    corpus RE-SELECTION, which parity forbids (canonical train
+    ``physicalai-train-e438721ae894``, skip-hash ``f09e44db``). ⚠️ This is the
+    difference between F-10 and a naive "stratified sampler": the naive one
+    silently trains on the labelled subset and reports a beautiful mix.
+    """
+    p = Path(path)
+    try:
+        blob = json.loads(p.read_text(encoding="utf-8"))
+    except Exception as exc:                              # noqa: BLE001
+        raise SystemExit(
+            f"[v6] ⛔ --domain-strata {path} is not readable JSON: {exc}")
+    if not isinstance(blob, dict) or blob.get("schema") != DOMAIN_STRATA_SCHEMA:
+        raise SystemExit(
+            f"[v6] ⛔ --domain-strata {path} is not a "
+            f"{DOMAIN_STRATA_SCHEMA} artifact (got schema "
+            f"{blob.get('schema') if isinstance(blob, dict) else type(blob)!r}). "
+            f"An untagged blob cannot be checked for the join key it was built "
+            f"against, and the join key is the whole safety of this cell.")
+    prov = blob.get("provenance")
+    if not isinstance(prov, dict) or not prov:
+        raise SystemExit(
+            f"[v6] ⛔ --domain-strata {path} carries NO 'provenance' stamp. "
+            f"S3's strata are derived from the VLM/scena pipeline — a LABEL "
+            f"path. A label-derived SAMPLER input is admissible (it is a data "
+            f"MIX, not a model input) ONLY as a DECLARED one "
+            f"(DIAGRAM_CONFORMANCE.md:69). An undeclared one is refused here "
+            f"rather than discovered in an audit months later.")
+    table = blob.get("strata")
+    if not isinstance(table, dict) or not table:
+        raise SystemExit(
+            f"[v6] ⛔ --domain-strata {path} has no non-empty 'strata' map.")
+    try:
+        by_id = {int(k): v for k, v in table.items()}
+    except (TypeError, ValueError) as exc:
+        raise SystemExit(
+            f"[v6] ⛔ --domain-strata {path} has a non-integer key: {exc}. "
+            f"Keys are stable_episode_id values.")
+    legacy = [k for k in by_id if k < (1 << 32)]
+    if legacy:
+        raise SystemExit(
+            f"[v6] ⛔ --domain-strata {path} has {len(legacy)} key(s) below "
+            f"2**32 (first {legacy[0]}) — these are LEGACY 16-bit episode ids. "
+            f"The legacy id collides on 69 of 2400 train clips, so a join "
+            f"through it would put episodes in ANOTHER SCENE'S DOMAIN while "
+            f"the stratum shares still looked correct. Rebuild the artifact "
+            f"against tanitad.data.v2_dataset.stable_episode_id.")
+    out, missing = [], []
+    for e_i, ep in enumerate(episodes):
+        eid = int(ep.episode_id)
+        if eid < (1 << 32):
+            raise SystemExit(
+                f"[v6] ⛔ episode {e_i} carries a LEGACY 16-bit id ({eid}); "
+                f"the trainer path builds providers with stable_ids=True. "
+                f"Rebuild the cache manifest "
+                f"(load_or_build_manifest(rebuild=True)) instead of joining "
+                f"through the legacy id.")
+        lab = by_id.get(eid)
+        if lab is None:
+            missing.append((e_i, eid))
+        out.append(lab)
+    if missing:
+        raise SystemExit(
+            f"[v6] ⛔ --domain-strata {path} labels "
+            f"{len(episodes) - len(missing)} of {len(episodes)} training "
+            f"episodes; {len(missing)} are UNLABELLED (first: episode "
+            f"{missing[0][0]}, id {missing[0][1]}). ⛔ They are NOT dropped: "
+            f"dropping an episode RE-SELECTS the corpus, which parity forbids "
+            f"(physicalai-train-e438721ae894, skip-hash f09e44db) and which a "
+            f"stratum-share report would not show. Either complete the "
+            f"artifact (an explicit OTHER stratum is a legitimate label) or "
+            f"run without --domain-strata.")
+    return out, prov
 
 
 # ============================================================================
@@ -3643,6 +3754,74 @@ def train(a) -> dict:
                  "score_frac_zero": float((t3_scores <= 0).float().mean())}
         print(f"[v6] T3 {json.dumps(t3log)}", flush=True)
 
+    # ---- F-10 / catalog S3: the DOMAIN-STRATIFIED MIX ----------------------
+    # DIAGRAM_CONFORMANCE.md:69 — *"no domain-stratified sampling in `train()`
+    # (episode draw is uniform / O4-weighted only). Needs the VLM/scena strata
+    # as a SAMPLER input — which is admissible for the data MIX (it is not a
+    # model input) but must be declared."*
+    #
+    # ⛔ IT REPLACES THE EPISODE DRAW, AND IT HAS TO. `InteractionSampler`
+    # draws episodes UNIFORMLY (its own docstring: *"Episodes are drawn
+    # uniformly so no episode is starved"*) and consults `weights` only inside
+    # the drawn episode. A domain label is an EPISODE property, hence constant
+    # within an episode, and a constant through `torch.multinomial` is exactly
+    # uniform. MEASURED: a domain-balanced per-window weight and an all-ones
+    # weight give the BIT-IDENTICAL draw sequence over 4,000 draws, and the
+    # achieved domain share stays at the corpus proportion. Writing F-10 into
+    # `sample.weights` would have been a term over an invariant — a no-op
+    # wearing the name of the lever (the C115 class).
+    #
+    # ⭐ AND IT COMPOSES RATHER THAN CONFLICTS. O4/T3 weight WINDOWS inside an
+    # episode; F-10 weights EPISODES. Different axes, so unlike --t3-scores
+    # against --o4-alpha this is NOT two levers on one axis and is NOT refused
+    # alongside them — the window weights are carried into the stratified
+    # sampler untouched.
+    dmix = None
+    dmixlog: dict = {"domain_mix": "absent"}
+    if a.domain_strata:
+        strata, dprov = load_domain_strata(a.domain_strata, episodes=train_eps)
+        dmix = DomainMix(tau=a.domain_tau,
+                         max_amplification=a.domain_max_amp,
+                         min_stratum_episodes=a.domain_min_stratum)
+        try:
+            ep_w = dmix.episode_weights(strata)
+            rep = dmix.report(strata)
+        except ValueError as exc:
+            raise SystemExit(f"[v6] ⛔ --domain-strata: {exc}")
+        # ds_train.index carries the POSITIONAL episode index, so the weight
+        # map is keyed the same way the sampler groups.
+        ep_weight_map = {i: float(w) for i, w in enumerate(ep_w.tolist())}
+        # ⚠️ `make_sampler` (the --o4-alpha 0 control arm) returns a plain
+        # CLOSURE with no `.weights` attribute — reading it unguarded would
+        # AttributeError on exactly the arm most likely to be run first.
+        # Uniform ones reproduce that closure's within-episode draw.
+        win_w = getattr(sample, "weights", None)
+        if win_w is None:
+            win_w = torch.ones(len(ds_train.index))
+        sample = StratifiedEpisodeSampler(ds_train.index, win_w,
+                                          ep_weight_map,
+                                          eps_per_batch=a.eps_per_batch,
+                                          generator=gen)
+        dmixlog = {"domain_mix": "active", "provenance": dprov, **rep}
+        print(f"[v6] F-10 {json.dumps(dmixlog)}", flush=True)
+        if a.domain_tau == 0.0:
+            # ⚠️ It must be VISIBLE that this is the control, because tau=0 is
+            # INDISTINGUISHABLE from a live mix in every stratum-share report:
+            # both show the drawn share, and at tau=0 it simply equals the
+            # corpus share. The n_eff_frac == 1.0 above is the tell.
+            print("[v6] ⚠️ F-10 CONTROL ARM: --domain-tau 0 is PROPORTIONAL — "
+                  "every episode equally likely, i.e. distributionally the "
+                  "incumbent uniform draw. It is NOT stream-identical to "
+                  "omitting --domain-strata (multinomial vs randint), so the "
+                  "run row must say which control this arm used.", flush=True)
+        # ⚠️ THE VOLUME SIDE OF THE TRADE, PRINTED — never left to be inferred.
+        if rep["n_eff_frac"] < 0.5:
+            print(f"[v6] ⚠️ F-10: tau={a.domain_tau} costs "
+                  f"{100 * (1 - rep['n_eff_frac']):.1f}% of the EFFECTIVE "
+                  f"corpus (n_eff {rep['n_eff_episodes']} of "
+                  f"{rep['n_episodes']} episodes). The catalog row claims "
+                  f"'diversity beats volume'; this is the volume.", flush=True)
+
     # ---- F-8 / T5: the CONSECUTIVE-WINDOW PAIR index -----------------------
     # DIAGRAM_CONFORMANCE.md:58 — *"Needs consecutive-window batches (the
     # current sampler draws windows independently)"*. This is that change, and
@@ -3723,6 +3902,11 @@ def train(a) -> dict:
     # a declaration that lives in a console line nobody re-reads is the
     # "please merge in a README" failure in a different costume.
     cfg_json["t3"] = t3log
+    # ⭐ F-10's provenance stamp AND its price, for the same reason. The mix
+    # report carries `n_eff_episodes` deliberately: a run row that records only
+    # the stratum shares records the diversity and hides the volume it cost,
+    # and the catalog row's whole claim is that the first is worth the second.
+    cfg_json["domain_mix"] = dmixlog
     # ⭐ F-11's reachability census likewise: the window count per episode is
     # what a later reader needs to know this arm was not silently truncated.
     if w_stage.w_s1_multi:
@@ -4862,6 +5046,41 @@ def build_parser() -> argparse.ArgumentParser:
                     help="weight floor; MUST be > 0 (a negative exponent on a "
                          "zero floor is infinite, and floor>0 is what keeps "
                          "every window reachable = the parity invariant)")
+    # ---- F-10 / catalog S3: the DOMAIN-STRATIFIED MIX (DEFAULT OFF) --------
+    ap.add_argument("--domain-strata", type=str, default="",
+                    help=f"path to the per-EPISODE {DOMAIN_STRATA_SCHEMA} "
+                         "artifact (JSON: schema/provenance/strata, keyed by "
+                         "tanitad.data.v2_dataset.stable_episode_id). Unset = "
+                         "the incumbent uniform episode draw, byte-identical. "
+                         "⛔ The provenance stamp is MANDATORY: the strata are "
+                         "label-derived (VLM/scena), and a label-derived "
+                         "SAMPLER input is admissible only as a DECLARED data "
+                         "MIX (DIAGRAM_CONFORMANCE.md:69). ⛔ The join is "
+                         "STABLE-ID ONLY — the legacy 16-bit id collides on "
+                         "69/2400 train clips. ⛔ An UNLABELLED episode is "
+                         "REFUSED, never dropped: dropping re-selects the "
+                         "corpus. ⚠️ This acts on the EPISODE draw; O4/T3 act "
+                         "on WINDOWS inside an episode, so they compose "
+                         "rather than conflate.")
+    ap.add_argument("--domain-tau", type=float, default=1.0,
+                    help="mix temperature. 0 = PROPORTIONAL (every episode "
+                         "equally likely — the matched control, same code "
+                         "path and same RNG as a live mix); 1 = BALANCED "
+                         "(every stratum an equal share of the draw). Stratum "
+                         "mass goes as n_k**(1-tau).")
+    ap.add_argument("--domain-max-amp", type=float,
+                    default=DOMAIN_MIX_MAX_AMPLIFICATION,
+                    help="⛔ ceiling on how much more often the MOST "
+                         "up-weighted episode may be drawn than under a "
+                         "uniform draw. MEASURED at N=2376: a fully balanced "
+                         "6-stratum mix amplifies 11.0x and costs 73% of the "
+                         "effective corpus. Raising this is a DECLARED "
+                         "decision, not a convenience.")
+    ap.add_argument("--domain-min-stratum", type=int,
+                    default=DOMAIN_MIX_MIN_STRATUM_EPISODES,
+                    help="⛔ refuse a stratum holding fewer episodes than "
+                         "this: at tau=1 it still receives 1/S of EVERY "
+                         "batch, which turns it into a memorisation target.")
     # ---- E-ENC arm (§0 Q1) -------------------------------------------------
     ap.add_argument("--f-hidden-tac", type=int, default=512,
                     help="FTac residual-MLP hidden width, tactical layer")
@@ -5253,6 +5472,47 @@ def preflight(a) -> list[str]:
             f"one sampling axis is not attributable to either. O4 is EGO "
             f"kinematics, T3 is MULTI-AGENT interaction. ⚠️ --o4-alpha "
             f"DEFAULTS TO 1.0 — a T3 arm must pass --o4-alpha 0 explicitly.")
+    # ---- F-10 / S3 domain-stratified mix -----------------------------------
+    # ⛔ EVERY REFUSAL HERE IS REACHABLE WITHOUT MOUNTING THE CORPUS. The
+    # artifact-shaped ones (join key, unlabelled episodes, stratum sizes,
+    # amplification) can only fire in `train()` because they need the realised
+    # episode list; these are the ones that do not.
+    _dstrata = str(getattr(a, "domain_strata", "") or "")
+    _dtau = float(getattr(a, "domain_tau", 1.0))
+    _dmax = float(getattr(a, "domain_max_amp", DOMAIN_MIX_MAX_AMPLIFICATION))
+    _dmin = int(getattr(a, "domain_min_stratum",
+                        DOMAIN_MIX_MIN_STRATUM_EPISODES))
+    _d_declared = (_dtau != 1.0 or _dmax != DOMAIN_MIX_MAX_AMPLIFICATION
+                   or _dmin != DOMAIN_MIX_MIN_STRATUM_EPISODES)
+    if _d_declared and not _dstrata:
+        problems.append(
+            "--domain-tau/--domain-max-amp/--domain-min-stratum given without "
+            "--domain-strata: there is nothing to stratify, so the launch line "
+            "would advertise a domain mix the run does not have.")
+    if _dstrata and not (0.0 <= _dtau <= 1.0):
+        problems.append(
+            f"--domain-tau {_dtau} must be in [0, 1]. Below 0 the mix "
+            f"ANTI-balances (it concentrates on the LARGEST stratum — the "
+            f"catalog row reversed); above 1 a small stratum is drawn more in "
+            f"TOTAL than a large one, which is an inversion, not a mix. "
+            f"Either arm must be declared, not reached by passing a number "
+            f"out of range.")
+    # ⚠️ tau == 0 is NOT refused: it is the matched CONTROL arm and a legitimate
+    # launch. The notice that it IS one is printed in `train()` beside the other
+    # F-10 rows — `preflight` returns problems and holds no side effects.
+    if _dstrata and _dmax < 1.0:
+        problems.append(
+            f"--domain-max-amp {_dmax} must be >= 1: below 1 no balancing at "
+            f"all is expressible and the lever is inert by construction.")
+    if _dstrata and _dmin < 1:
+        problems.append(f"--domain-min-stratum {_dmin} must be >= 1.")
+    if _dstrata and not Path(_dstrata).exists():
+        problems.append(
+            f"--domain-strata {_dstrata} does not exist. ⚠️ NO SCORE PRODUCER "
+            f"SHIPS WITH F-10: the artifact contract, its validation, the mix "
+            f"and its control are built, but the script that assigns a domain "
+            f"to each of the 2,376 parity-train episodes is a separate work "
+            f"item (it needs VLM/scena strata joined to the TRAIN corpus).")
     # ⛔ THE ACK FLAG'S DEST. ``--i-know-this-is-the-control-arm`` is registered
     # in ``main`` with ``dest="control_arm_ack"``, so the namespace NEVER has an
     # attribute named ``i_know_this_is_the_control_arm`` — the original getattr

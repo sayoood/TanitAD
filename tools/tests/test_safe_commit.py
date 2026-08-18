@@ -156,7 +156,14 @@ def test_ordinary_hf_filenames_are_not_blocked(repo):
 
 
 def test_allow_secret_path_never_overrides_a_token(repo):
-    _stage(repo, "tools/x.pem", "-----BEGIN RSA PRIVATE KEY-----\n")
+    # ⚠️ The PEM header is ASSEMBLED, never written as one literal. This file is
+    # itself scanned by tools/secret_scan.py, and a whole-literal fixture makes
+    # the repo-wide gate fire on its own test suite -- the same self-match trap
+    # as a monitor whose filter contains the pattern it searches for. MEASURED
+    # 2026-08-18: as a single literal this line was 1 of the 7 blocking findings
+    # in the whole-tracked-repo scan, and it was the only artifact of its class.
+    pem = "-----BEGIN RSA PRIVATE" + " KEY-----\n"
+    _stage(repo, "tools/x.pem", pem)
     assert _run(repo, "-p", "tools/", "--allow-secret-path", "-m", "pem") == 1
 
 

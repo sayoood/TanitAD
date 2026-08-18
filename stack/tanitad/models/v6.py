@@ -132,6 +132,10 @@ __all__ = [
     # ⭐ F-9 / catalog T3 — the interaction CURRICULUM (zero parameters)
     "multi_agent_kinematic_entropy", "T3Curriculum", "t3_rank_control",
     "T3_MASS_SCALE", "T3_CONTROL_MIN_N",
+    # ⭐ F-10 / catalog S3 — the DOMAIN-STRATIFIED MIX (zero parameters)
+    "DomainMix", "StratifiedEpisodeSampler", "domain_mix_control",
+    "DOMAIN_MIX_CONTROL_MIN_N", "DOMAIN_MIX_MAX_AMPLIFICATION",
+    "DOMAIN_MIX_MIN_STRATUM_EPISODES",
     "spectrum_report", "SpectrumAccumulator", "o6_rank_verdict",
     "O6_ADMISSIBLE_CEILING", "O6_RANK_FLOOR",
     # X4 — the O6 spectrum pattern applied PER LAYER (op / tac / str)
@@ -173,6 +177,45 @@ STRATEGIC_ACTION_TOKENS: tuple[str, ...] = (
 #: §4b). ``SPEED_BAND`` is a TACTICAL responsibility (PI decision 2026-08-11):
 #: target speed from sign/OCR + corridor speed priors, with the strategic
 #: ``REDUCE_TO`` acting only as an upper envelope.
+#:
+#: ⛔ **F-14 BLOCKER — BOTH NAMED DERIVATION INPUTS ARE UNAVAILABLE ON THIS
+#: CORPUS, AND ONE OF THEM IS FORBIDDEN RATHER THAN MERELY MISSING.** The
+#: vocabulary above is correct and stays; what follows is what a derivation may
+#: NOT be built from, MEASURED 2026-08-18. ⚠️ Read this before wiring any
+#: SPEED_BAND supervision — the blocker is the thing that rots when nobody
+#: revisits it, so it is recorded where the implementer looks.
+#:
+#: 1. **sign/OCR — FORBIDDEN.** The SAM3/VLM sign channel is released ONLY as a
+#:    presence flag (per-clip at 0.5, per-detection at >=0.70); sign **KIND and
+#:    TEXT stay forbidden** (`RETRACTION_LOG.md` C87; `DATA_STRATEGY_REFRESH.md`
+#:    :134), and the G1 sign-text gate is **CLOSED at 0/31**
+#:    (`MODEL_REGISTRY.md`:3599). A speed-limit prior needs exactly `kind ==
+#:    "speed"` AND `text`, i.e. precisely the two forbidden fields.
+#:    ⭐ AND THE FAILURE MODE IS THIS CELL'S OWN: the two highest-scoring FALSE
+#:    positives are a **dashboard `30` roundel (0.927)** and a hoarding (0.778),
+#:    both ABOVE true signs — so a confidence threshold removes the harmless
+#:    errors and KEEPS the harmful ones. A dashboard roundel is the EGO
+#:    SPEEDOMETER: a sign-derived target speed here would be an **ego echo
+#:    arriving through the vision channel**, which a vision-only admissibility
+#:    audit does not watch.
+#: 2. **corridor speed priors — NO CORRIDOR EXISTS.** PhysicalAI-AV carries no
+#:    map or lane graph (dataset card, verbatim: *"we do not include open maps
+#:    data"*); `taniteval/corridor.py` says the same in code — its strata are
+#:    *"a KINEMATIC signature, never a topology"*.
+#:
+#: ⚠️ **AND THE ADMISSIBLE-LOOKING SUBSTITUTE IS NOT THIS.**
+#: ``tanitad.lake.vtarget.vtarget_guarded`` is a leak-guarded target-speed
+#: label, banked for all 2376 parity-train episodes and MEASURED admissible AS
+#: A LABEL — but it is **hindsight EGO geometry** (the 85th percentile of the
+#: ego's own future free-flow speed), i.e. *"what speed did this driver settle
+#: at"*, not *"what speed is permitted here"*. Substituting it silently turns a
+#: regulatory prior into a behavioural one, and the two differ exactly where
+#: this token matters. It is also measured that on ego inputs NOTHING beats
+#: repeating v0's band (0.4066 free vs 0.2465 for the trained classifier), so
+#: any SPEED_BAND head must clear that bar from VISION or it is a dead
+#: parameter. That measurement (`…/2026-08-04-target-speed/code/
+#: vt_band_from_vision.py`) has NEVER BEEN RUN. See
+#: `…/incoming/2026-08-18-f10-f14-cells/F10_F14_CELLS.md` §2.
 TACTICAL_GOAL_TOKENS: tuple[str, ...] = (
     "ANCHOR_GOAL", "CORRIDOR_OFFSET", "GAP_TARGET", "SPEED_BAND", "YIELD_AT",
     "STOP_POINT", "WAIT_FOR_ONCOMING", "EVADE_IN_CORRIDOR",
@@ -795,6 +838,416 @@ def t3_rank_control(scores: Tensor, dense: Tensor, *,
     else:
         out["verdict"] = "OK"
     return out
+
+
+# ============================================================================
+# F-10 / catalog S3 — the DOMAIN-STRATIFIED TRAINING MIX
+#
+# Spec, two independent locations (established BEFORE a line was written):
+#   * `…/2026-08-07-hierarchical-wm-redesign/V6_TRAINING_MEASURES.md:81` —
+#     *"S3 | domain-stratified training mix (geographic/domain diversity beats
+#     volume — arXiv 2607.04500) | the S1 scaling-ladder data-mix arm folds in
+#     here | cross-domain P-battery deltas reported per stratum"*
+#   * `…/2026-08-16-diagram-conformance/DIAGRAM_CONFORMANCE.md:69` — *"domain-
+#     diverse mix (catalog S3) | NOT BUILT | no domain-stratified sampling in
+#     `train()` (episode draw is uniform / O4-weighted only). Needs the
+#     VLM/scena strata as a SAMPLER input — which is admissible for the data
+#     MIX (it is not a model input) but must be declared. Fix F-10"*, and
+#     `:215` — *"F-10 | P3 | S3 domain-stratified mix — VLM strata as SAMPLER
+#     input (admissible: data mix, not a model input; declare it)."*
+#
+# ⛔ THE ARCHITECTURAL FINDING THAT DETERMINED THIS IMPLEMENTATION — MEASURED,
+# NOT REASONED. F-10 acts on the **EPISODE** axis and it MUST, because
+# :class:`InteractionSampler` draws episodes UNIFORMLY and consults ``weights``
+# only *within* the drawn episode (``__call__``: ``pick = torch.randint(...)``
+# then ``w = self.weights[pool]``). A domain label is an EPISODE property, so
+# expressed as a per-window weight it is CONSTANT inside every episode — and a
+# constant vector through ``torch.multinomial`` is exactly uniform.
+#
+# MEASURED (`test_v6_domain_mix.py::
+# test_a_per_window_domain_weight_is_EXACTLY_a_noop_on_the_episode_mix`): a
+# domain-balanced per-window weight and an all-ones weight produce the
+# **bit-identical draw sequence** over 4,000 draws, and the achieved domain
+# share stays at the corpus proportion (0.675/0.325 against a 0.5/0.5 target).
+# ⇒ **A per-window domain weight is a TERM OVER AN INVARIANT — a no-op wearing
+# the name of the lever.** Same class as C115 (a loss over `z_tac`'s
+# non-existent temporal extent). This is why F-10 introduces its own episode
+# draw instead of reusing O4's weight vector.
+#
+# ⛔ AND THE OBVIOUS "DIVERSITY" OBJECTIVE IS MAXIMAL AT TWO OPPOSITE
+# DEGENERATE INPUTS (the C119 shape). Perfect stratum balance is achieved, at
+# every temperature, BOTH when there is exactly ONE stratum and when EVERY
+# EPISODE IS ITS OWN STRATUM — and both are exactly the uniform draw. A balance
+# metric therefore cannot detect either failure; only
+# :meth:`DomainMix.report`'s amplification and ``n_eff_episodes`` can. Both are
+# refused by :meth:`DomainMix.episode_weights`, not merely documented.
+#
+# ⛔ ZERO PARAMETERS. A sampling mix is a schedule over the data, not a module:
+# nothing here is an ``nn.Module``, nothing enters any ``state_dict``, and the
+# default build stays at 87,893,449 params / 405 keys (MEASURED by BUILDING
+# through ``build_stack_from_args`` — see the test suite).
+# ============================================================================
+
+#: ⛔ Below this many episodes per side :func:`domain_mix_control` REFUSES a
+#: verdict and returns no ratio at all. Same discipline (and the same measured
+#: rationale) as ``T2_CONTROL_MIN_N`` / ``T3_CONTROL_MIN_N``: at n=4 a null
+#: ratio spanned 0.397-3.361, so a verdict there is noise wearing a number's
+#: clothes.
+DOMAIN_MIX_CONTROL_MIN_N: int = 32
+
+#: ⛔ The default ceiling on how much more often the MOST up-weighted episode
+#: may be drawn than under a uniform draw. It is the guard the catalog row's
+#: own headline demands: *"diversity beats volume"* is a TRADE, and balancing a
+#: stratum of 5 episodes against one of 2,000 spends the corpus on those 5.
+#:
+#: **MEASURED on the parity corpus size (N = 2376), at tau = 1 (full balance)**
+#: — the calibration is a measurement, not a guess::
+#:
+#:     shape                  amp@tau=1   n_eff   n_eff_frac   smallest stratum
+#:     6-stratum realistic       11.00    650.6      0.274            36
+#:     3-stratum coarse           4.50   1030.1      0.434           176
+#:     10-stratum fine           14.85    705.6      0.297            16
+#:     long-tail 12              24.75    339.0      0.143             8
+#:
+#: 20x ADMITS full balance on every shape whose smallest stratum holds >= 16
+#: episodes, and REFUSES the long-tail shape whose smallest holds 8 — which is
+#: exactly the case the cap exists for. Raising it is a declared decision.
+DOMAIN_MIX_MAX_AMPLIFICATION: float = 20.0
+
+#: ⛔ A stratum with fewer episodes than this cannot carry an equal share of a
+#: 2,376-episode corpus without becoming a memorisation target: at tau = 1 with
+#: S strata it receives ``1/S`` of EVERY batch however few episodes it holds.
+#: Refused rather than silently amplified. ⚠️ This guard and
+#: :data:`DOMAIN_MIX_MAX_AMPLIFICATION` are NOT redundant — MEASURED above, the
+#: long-tail-12 shape PASSES this one (its smallest stratum is exactly 8) and
+#: is caught only by the amplification ceiling.
+DOMAIN_MIX_MIN_STRATUM_EPISODES: int = 8
+
+
+@dataclass(frozen=True)
+class DomainMix:
+    """Catalog S3's *"domain-stratified training mix"*, as a TEMPERATURE.
+
+    ``tau`` interpolates the episode draw between the two readings the catalog
+    row leaves open:
+
+    * ``tau = 0`` — **PROPORTIONAL**. Stratum mass tracks stratum size, so
+      every episode is equally likely. This is the matched CONTROL arm: it runs
+      the same code path and consumes the same RNG as a live mix, and its draw
+      is distributionally identical to today's uniform episode draw.
+      ⚠️ It is NOT *stream*-identical to the incumbent — the incumbent
+      (``InteractionSampler``, i.e. ``--domain-strata`` absent) draws episodes
+      with ``randint`` and this draws with ``multinomial``. Two different
+      controls, both legitimate, and a run must say which it used.
+    * ``tau = 1`` — **BALANCED**. Every stratum receives an equal share of the
+      draw regardless of how many episodes it holds. This is the literal
+      reading of *"domain diversity beats volume"*.
+
+    Formally: stratum ``k`` of size ``n_k`` receives mass ``q_k`` proportional
+    to ``n_k ** (1 - tau)``; episodes inside a stratum are equiprobable, so an
+    episode's weight is proportional to ``n_k ** (-tau)``.
+
+    ⛔ **WHAT THIS IS NOT: O4 or T3.** Those weight WINDOWS by a saliency score
+    and act *inside* an episode. This weights EPISODES by a stratum label and
+    acts on the episode draw. The two axes are orthogonal by construction and
+    compose without conflation — which is exactly why F-10 is NOT refused
+    alongside ``--o4-alpha`` the way ``--t3-scores`` is (T3 and O4 are two
+    levers on ONE axis; F-10 is a lever on a DIFFERENT axis).
+
+    ⛔ **PARITY.** This REWEIGHTS the episode draw and removes no episode: with
+    ``tau <= 1`` and every stratum non-empty, every episode keeps strictly
+    positive probability, so all 2,376 episodes of
+    ``physicalai-train-e438721ae894`` remain reachable and cross-arm
+    comparability holds. An episode with NO stratum label is REFUSED rather
+    than dropped, because dropping it would be a re-selection.
+    """
+
+    tau: float = 1.0
+    max_amplification: float = DOMAIN_MIX_MAX_AMPLIFICATION
+    min_stratum_episodes: int = DOMAIN_MIX_MIN_STRATUM_EPISODES
+
+    def __post_init__(self) -> None:
+        if not (0.0 <= self.tau <= 1.0):
+            raise ValueError(
+                f"⛔ tau must be in [0, 1], got {self.tau}. Below 0 the mix "
+                f"ANTI-balances (it concentrates on the largest stratum, the "
+                f"catalog row reversed); above 1 a small stratum is drawn MORE "
+                f"often in total than a large one, which is not a mix but an "
+                f"inversion. Either arm must be declared, not reached by "
+                f"passing a number out of range.")
+        if self.max_amplification < 1.0:
+            raise ValueError(
+                f"⛔ max_amplification must be >= 1, got "
+                f"{self.max_amplification}: below 1 no balancing at all is "
+                f"expressible and the lever is inert by construction.")
+        if self.min_stratum_episodes < 1:
+            raise ValueError(
+                f"⛔ min_stratum_episodes must be >= 1, got "
+                f"{self.min_stratum_episodes}.")
+
+    # -- the two degenerate stratifications, named ---------------------------
+    @staticmethod
+    def _refuse_degenerate(n_strata: int, n_episodes: int) -> None:
+        """⛔ Both extremes are EXACTLY the uniform draw at EVERY tau.
+
+        A "balance" reading calls both of them perfect, which is why this is a
+        refusal and not a warning: the score cannot see it.
+        """
+        if n_strata < 2:
+            raise ValueError(
+                f"⛔ {n_strata} distinct stratum over {n_episodes} episodes: a "
+                f"one-stratum mix is EXACTLY the uniform draw at every tau "
+                f"(q_1 = 1, so every episode weight is 1/n). The lever is "
+                f"inert and would be advertised in the launch line while "
+                f"changing nothing — the same silent no-op --domain-strata "
+                f"exists to avoid. ⚠️ A balance metric reads this as PERFECTLY "
+                f"BALANCED; only the fact that it is inert distinguishes it.")
+        if n_strata >= n_episodes:
+            raise ValueError(
+                f"⛔ {n_strata} strata over {n_episodes} episodes — every "
+                f"episode is its own stratum, and every n_k = 1, so "
+                f"n_k ** (-tau) = 1 and the draw is EXACTLY UNIFORM at every "
+                f"tau. ⚠️ This is the OPPOSITE degenerate input to the "
+                f"one-stratum case and a balance metric calls it PERFECTLY "
+                f"BALANCED too. A stratification is a partition into a few "
+                f"domains, not an episode id.")
+
+    def episode_weights(self, strata) -> Tensor:
+        """Per-episode draw weights for ``strata`` (one label per episode).
+
+        ``strata`` is a sequence of hashable labels aligned 1:1 with the
+        episode list. Returns a ``[n_episodes]`` tensor summing to 1.
+
+        Refuses: an unlabelled episode (``None``/empty — a parity break), the
+        two degenerate stratifications above, a stratum below
+        ``min_stratum_episodes``, and an amplification above
+        ``max_amplification``.
+        """
+        labels = list(strata)
+        n = len(labels)
+        if n == 0:
+            raise ValueError("⛔ episode_weights got an EMPTY stratum list.")
+        missing = [i for i, s in enumerate(labels)
+                   if s is None or (isinstance(s, str) and not s.strip())]
+        if missing:
+            raise ValueError(
+                f"⛔ {len(missing)} of {n} episodes carry NO stratum label "
+                f"(first at index {missing[0]}). ⛔ They must NOT be dropped: "
+                f"dropping an episode is a RE-SELECTION of the corpus, which "
+                f"parity forbids (canonical train "
+                f"`physicalai-train-e438721ae894`, skip-hash `f09e44db`). "
+                f"Either label them or run without --domain-strata.")
+        sizes: dict = {}
+        for s in labels:
+            sizes[s] = sizes.get(s, 0) + 1
+        self._refuse_degenerate(len(sizes), n)
+        small = {k: v for k, v in sizes.items()
+                 if v < self.min_stratum_episodes}
+        if small:
+            raise ValueError(
+                f"⛔ {len(small)} stratum/strata hold fewer than "
+                f"{self.min_stratum_episodes} episodes ({small}). Balancing "
+                f"them against the rest spends the corpus on a handful of "
+                f"clips: at tau=1 each such stratum receives "
+                f"1/{len(sizes)} = {1.0 / len(sizes):.4f} of EVERY batch. "
+                f"Merge them into an OTHER stratum, or lower tau, but do not "
+                f"reach a balanced mix by memorising a few episodes.")
+        # q_k proportional to n_k ** (1 - tau); an episode's weight is q_k/n_k.
+        qs = {k: float(v) ** (1.0 - self.tau) for k, v in sizes.items()}
+        z = sum(qs.values())
+        w = torch.tensor([qs[s] / (sizes[s] * z) for s in labels],
+                         dtype=torch.float32)
+        w = w / w.sum().clamp_min(1e-12)
+        amp = float(w.max()) * n
+        if amp > self.max_amplification:
+            raise ValueError(
+                f"⛔ tau={self.tau} amplifies the most up-weighted episode "
+                f"{amp:.2f}x over a uniform draw, above the "
+                f"{self.max_amplification:.2f}x ceiling. Stratum sizes "
+                f"{dict(sorted(sizes.items(), key=lambda kv: kv[1]))}. "
+                f"⚠️ 'diversity beats volume' is a TRADE and this is the price "
+                f"side of it: lower tau, merge the small strata, or raise the "
+                f"ceiling AS A DECLARED DECISION — but the amplification must "
+                f"be a number in the run row, not an accident.")
+        return w
+
+    def report(self, strata) -> dict:
+        """The mix's diagnostic — what it costs as well as what it buys.
+
+        ⭐ ``n_eff_episodes`` (``1 / sum(w**2)``, the inverse participation
+        ratio) is the honest counterpart to the catalog row's *"diversity beats
+        volume"*: it is **the volume you paid**. Under a uniform draw it equals
+        the episode count exactly; a mix that balances hard collapses it, and
+        that collapse is invisible to any stratum-share metric.
+        """
+        labels = list(strata)
+        w = self.episode_weights(labels)
+        sizes: dict = {}
+        for s in labels:
+            sizes[s] = sizes.get(s, 0) + 1
+        share: dict = {}
+        for s, wi in zip(labels, w.tolist()):
+            share[s] = share.get(s, 0.0) + wi
+        n = len(labels)
+        return {
+            "tau": self.tau,
+            "n_episodes": n,
+            "n_strata": len(sizes),
+            "stratum_sizes": {str(k): int(v) for k, v in sizes.items()},
+            "stratum_share_corpus": {str(k): round(v / n, 6)
+                                     for k, v in sizes.items()},
+            "stratum_share_drawn": {str(k): round(v, 6)
+                                    for k, v in share.items()},
+            "max_amplification": round(float(w.max()) * n, 4),
+            "min_amplification": round(float(w.min()) * n, 4),
+            "n_eff_episodes": round(
+                float(1.0 / (w.pow(2).sum().clamp_min(1e-12))), 2),
+            "n_eff_frac": round(
+                float(1.0 / (w.pow(2).sum().clamp_min(1e-12))) / n, 4),
+            "_reads": ("n_eff_episodes is the VOLUME the mix paid for its "
+                       "diversity: it equals n_episodes exactly under a "
+                       "uniform draw and collapses as tau balances. No "
+                       "stratum-share metric can see this number."),
+        }
+
+
+def domain_mix_control(metric_by_episode: Tensor, strata, *,
+                       min_n: int = DOMAIN_MIX_CONTROL_MIN_N) -> dict:
+    """⛔ **The trivial-proxy control for a stratification's INFORMATIVENESS.**
+
+    ``metric_by_episode`` ``[n]`` any per-episode quantity the mix is supposed
+    to diversify over (episode length, mean speed, a P-battery per-episode
+    score); ``strata`` the labels. Returns the between-stratum spread against
+    the within-stratum spread and a ``verdict``.
+
+    ⭐ **Why this control exists.** A stratification that CUTS ACROSS the
+    quantity of interest re-weights the corpus without changing what the model
+    sees — the mix moves the labels around and the distribution of the thing
+    that matters is unmoved. That failure is invisible to every balance metric
+    (the strata ARE balanced; they are just uninformative), and it is the same
+    family as C119: a score that looks healthy on exactly the input that makes
+    it meaningless.
+
+    ⛔ Refuses below ``min_n`` episodes and returns NO ratio, so there is no
+    number to quote out of context.
+    """
+    m = metric_by_episode.detach().float().flatten()
+    labels = list(strata)
+    if m.numel() != len(labels):
+        raise ValueError(f"⛔ metric ({m.numel()}) and strata ({len(labels)}) "
+                         f"must align 1:1")
+    n = int(m.numel())
+    if n < min_n:
+        return {"verdict": "REFUSED_TOO_FEW",
+                "n": n, "min_n": int(min_n), "ratio": None,
+                "_note": (f"⛔ {n} episodes < {min_n}: no ratio is returned at "
+                          f"all, so none can be quoted. A separation ratio "
+                          f"without its n is noise wearing a number's "
+                          f"clothes.")}
+    groups: dict = {}
+    for lab, val in zip(labels, m.tolist()):
+        groups.setdefault(lab, []).append(val)
+    if len(groups) < 2:
+        return {"verdict": "DEGENERATE_ONE_STRATUM", "n": n, "ratio": None,
+                "_note": ("⛔ one stratum: there is no between-group spread to "
+                          "measure, and the mix is the uniform draw.")}
+    means = torch.tensor([sum(v) / len(v) for v in groups.values()])
+    between = float(means.std(unbiased=len(means) > 1))
+    within_parts = [torch.tensor(v).std(unbiased=True).item()
+                    for v in groups.values() if len(v) > 1]
+    within = float(sum(within_parts) / len(within_parts)) if within_parts \
+        else 0.0
+    sem = {str(k): (float(torch.tensor(v).std(unbiased=True)
+                          / math.sqrt(len(v))) if len(v) > 1 else None)
+           for k, v in groups.items()}
+    ratio = None if within <= 1e-12 else between / within
+    out = {"n": n, "n_strata": len(groups),
+           "stratum_n": {str(k): len(v) for k, v in groups.items()},
+           "stratum_mean": {str(k): round(sum(v) / len(v), 6)
+                            for k, v in groups.items()},
+           "stratum_sem": sem,
+           "between_std": round(between, 6), "within_std": round(within, 6),
+           "ratio": None if ratio is None else round(ratio, 6),
+           "min_n": int(min_n)}
+    if any(len(v) < 2 for v in groups.values()):
+        out["verdict"] = "UNDERPOWERED_STRATUM"
+        out["_note"] = ("⚠️ at least one stratum holds a single episode: its "
+                        "within-spread is undefined and its mean is one "
+                        "sample.")
+    elif ratio is None:
+        out["verdict"] = "DEGENERATE_ZERO_WITHIN"
+        out["_note"] = ("⛔ within-stratum spread is zero — the metric is "
+                        "constant inside every stratum, which makes the ratio "
+                        "undefined rather than infinite.")
+    elif ratio < 0.1:
+        out["verdict"] = "UNINFORMATIVE"
+        out["_note"] = ("⛔ the strata barely separate this metric "
+                        "(between/within < 0.1): the mix re-weights the "
+                        "corpus without changing the distribution of the "
+                        "thing it is supposed to diversify. A balance metric "
+                        "cannot see this — the strata ARE balanced.")
+    else:
+        out["verdict"] = "OK"
+    return out
+
+
+class StratifiedEpisodeSampler(InteractionSampler):
+    """F-10's episode draw: strata-weighted episodes, unchanged windows.
+
+    ⛔ **WHY A SUBCLASS AND NOT AN EDIT TO** :class:`InteractionSampler`.
+    O4's contract is *"episodes are drawn uniformly so no episode is
+    starved"* — that is a real guarantee other arms rely on, and F-10 is
+    exactly the arm that must break it. Editing the shared class to make room
+    for a new cell is the mistake F-7 recorded (and T3 avoided by carrying its
+    own weighting). ``InteractionSampler`` is byte-unchanged; only the
+    ``pick`` line is overridden here.
+
+    The **window** draw is inherited untouched, so an F-10 mix composes with
+    O4's or T3's window saliency on a genuinely different axis.
+
+    ⚠️ RNG: this draws episodes with ``multinomial`` where the base class uses
+    ``randint``. At ``tau = 0`` the two are distributionally identical but NOT
+    stream-identical, so the byte-identical control is *"no ``--domain-strata``
+    at all"* and the matched-path control is ``tau = 0``. Both are real; a run
+    must say which it used.
+    """
+
+    def __init__(self, index, weights: Tensor, ep_weights, *,
+                 eps_per_batch: int = 4,
+                 generator: torch.Generator | None = None):
+        super().__init__(index, weights, eps_per_batch=eps_per_batch,
+                         generator=generator)
+        missing = [e for e in self.ep_ids if int(e) not in ep_weights]
+        if missing:
+            raise ValueError(
+                f"⛔ {len(missing)} of {len(self.ep_ids)} episodes in the "
+                f"dataset index have NO mix weight (first: {missing[0]}). An "
+                f"episode with no weight would be unreachable, and an "
+                f"unreachable episode is a corpus RE-SELECTION.")
+        w = torch.tensor([float(ep_weights[int(e)]) for e in self.ep_ids],
+                         dtype=torch.float32)
+        if float(w.min()) <= 0.0:
+            raise ValueError(
+                f"⛔ {int((w <= 0).sum())} episode weight(s) are <= 0. Every "
+                f"episode must stay strictly reachable — parity forbids "
+                f"re-selecting the corpus.")
+        self.ep_weights = w / w.sum().clamp_min(1e-12)
+
+    def __call__(self, bs: int) -> list[int]:
+        n_ep = min(self.eps_per_batch, len(self.ep_ids))
+        pick = torch.multinomial(self.ep_weights, n_ep, replacement=True,
+                                 generator=self.gen)
+        out: list[int] = []
+        gi = 0
+        while len(out) < bs:
+            pool = self.ep2idx[self.ep_ids[int(pick[gi % n_ep])]]
+            w = self.weights[torch.tensor(pool)]
+            if float(w.sum()) <= 0:
+                w = torch.ones_like(w)
+            j = int(torch.multinomial(w, 1, generator=self.gen))
+            out.append(pool[j])
+            gi += 1
+        return out
 
 
 # ============================================================================

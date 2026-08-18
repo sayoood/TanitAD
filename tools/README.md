@@ -13,6 +13,7 @@ to stdlib-only — it needs `torch` and the `stack/` package, by definition.
 | `gpu_tripwire.py` | CUDA device-parity probes on the real model (encode/imagine CPU-vs-GPU, I2 on device, backward-finite) + the batch-1 encode latency (I8 proxy). | Via `ci_gate --gpu-smoke`, or standalone on any GPU box. |
 | `session_guard.py` / `.ps1` | D-026 stranded-work guard: **blocks** on uncommitted hub deliverables; **warns** on uncommitted `stack/`+`tools/` source, unmerged `agent/*` branches vs tip, and stale INTAKE verdicts. | **Session end**, every agent (protocol G-F). |
 | `safe_commit.py` | The **only sanctioned commit path**. Never emits the segfaulting `git commit -- <pathspec>` form; instead makes the whole-index commit safe by declaration, refuses staged secrets, and clears the phantom `index.lock`. | **Every commit.** |
+| `secret_scan.py` | The **credential gate** (C111). Scans staged blobs, an arbitrary imported tree, the tracked worktree, or the whole object database for provider-token shapes, credential-shaped filenames and high-entropy credential assignments. **Never prints a matched value.** Installs itself as a `pre-commit` hook. | **Armed once per clone** (`--install-hook`); `--tree` on every bulk import/rescue **before** staging. |
 | `registry_lint.py` | Keeps `MODEL_REGISTRY.md` honest: **pointer drift** against the raw eval JSON, and a **multiline retracted-claim sweep over section headers**. | Before quoting the registry; after any retraction. |
 | `repo_janitor.py` | Worktree/`incoming/` sprawl report — safe-to-delete worktrees (**report-only** unless `--delete`), a dated incoming ledger, and future-dated items. | Weekly, and whenever a search result looks truncated. |
 | `fleet_probe.py` | Fleet liveness by **discovery**, never by hardcoded log names: finds jobs in `ps`, binds each to its own log via the launcher's stdout redirect, cross-checks the GPU against the process table, catches freezes (`LOG_STALE`, `STEP_NOT_ADVANCING`) and measures disk with a real `dd`. Exit `0`/`1`/`2` = GREEN/AMBER/RED. | Before claiming the fleet is healthy; behind the `fleet-status` skill. |
@@ -125,6 +126,49 @@ The "tip" defaults to `HEAD` (the worktree's current integration point) because
 `origin/main` is intentionally diverged in this repo; pass `--base` to override.
 
 ---
+
+
+## secret_scan — *the credential gate*
+
+```bash
+python tools/secret_scan.py --install-hook     # arm it (once per clone; covers all worktrees)
+python tools/secret_scan.py --check-hook       # is it armed?
+python tools/secret_scan.py --tree <dir>       # C111's rule: scan an import BEFORE staging
+python tools/secret_scan.py --staged           # what the pre-commit hook runs
+python tools/secret_scan.py --tracked          # every tracked file (~29 s, 6.2k files)
+python tools/secret_scan.py --history          # every blob in the object database
+```
+
+It exists because of **C111**: a live Hugging Face token with WRITE access to the
+`Sayood/` namespace sat on line 11 of a rescued plaintext run log, our procedure staged
+it and committed it, and **GitHub's push protection was the only control that fired.**
+
+⚠️ **C117 recorded "no credential scanner exists" at three probes. That was wrong** —
+`safe_commit.py` has scanned staged content since 2026-07-25, and MEASURED it catches the
+exact C111 shape. All three probes searched for a *scanner product* (names, third-party
+tools, hook/workflow files) and none asked whether any code here matches a credential
+pattern. ⇒ **C111's root cause was a scanner that NOTHING CALLED — C108's class.**
+
+**So the binding is the point, not the patterns.** Four things invoke this:
+
+1. `.git/hooks/pre-commit` — every `git commit`, in this repo and all its worktrees.
+   Bypass is `SECRET_SCAN_SKIP=1`, which prints a line telling you to justify it.
+2. `safe_commit.py` inherits it — it does not pass `--no-verify`.
+3. `stack/tests/test_secret_scan.py::test_hook_is_installed_and_current` — the mandated
+   `pytest`/`ci_gate` run goes **red** if the hook is not armed on this clone.
+4. `ci_gate.SUITE_MANIFEST` — the suite cannot be silently deleted or shrunk.
+
+⛔ **It never prints a matched value** — findings are `(path, line, pattern name, redacted
+length)`. `Keys.txt` is scanned like any other file and reported by path alone.
+
+⚠️ **A scan that could not read what it was asked to read reports `SCAN UNUSABLE` and exits
+non-zero**, never "clean". MEASURED 2026-08-18: under a Drive outage the first cut printed
+`files scanned = 0 ... BLOCKING (0) -- clean` and exited 0.
+
+**False-positive budget (MEASURED 2026-08-18):** whole tracked repo = 6,201 files / 662 MB /
+**0 blocking** / 64 advisory. The first run produced 7 blocking findings, all artifacts; each
+was narrowed with its reason (see the report in
+`TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-08-18-credential-scanner/`).
 
 ## safe_commit — *use this instead of `git commit`*
 
