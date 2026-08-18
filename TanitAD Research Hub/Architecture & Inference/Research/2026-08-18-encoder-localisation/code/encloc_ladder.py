@@ -500,13 +500,21 @@ def main(argv=None) -> int:
     rows, meta = blob["rows"], blob["meta"]
     if a.limit_rows:
         rows = rows[::max(1, len(rows) // int(a.limit_rows))]
-    if rows[0].get("tokens") is None:
+    cells_only = all(x == "cells" for x in a.arms)
+    if rows[0].get("tokens") is None and not cells_only:
         raise SystemExit("[er10] ⛔ this cache banked no tokens")
     th, tw = int(meta["token_grid"][0]), int(meta["token_grid"][1])
-    d_model = int(rows[0]["tokens"].shape[-1])
-    n_tok = int(rows[0]["tokens"].shape[0])
-    if th * tw != n_tok:
-        raise SystemExit(f"[er10] ⛔ token_grid {th}x{tw} != n_tokens {n_tok}")
+    if rows[0].get("tokens") is not None:
+        d_model = int(rows[0]["tokens"].shape[-1])
+        n_tok = int(rows[0]["tokens"].shape[0])
+        if th * tw != n_tok:
+            raise SystemExit(f"[er10] ⛔ token_grid {th}x{tw} != n_tokens "
+                             f"{n_tok}")
+    else:
+        # ⭐ Part-2 latent caches (rungs 2-3) bank per-row `cells` ONLY -- a
+        # 2048-d model latent has no token grid to pool. d_model is carried in
+        # the meta for the record; the cells arm never touches it.
+        d_model = int(meta.get("d_model_tokens", 0))
     print(f"[er10] {len(rows)} rows  grid {th}x{tw}  d_model {d_model}  "
           f"{time.time()-t0:.0f} s", flush=True)
 

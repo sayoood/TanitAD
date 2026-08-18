@@ -7011,3 +7011,60 @@ seams (`maneuver_logits`, `target_latent`, `lan`), gateable by adapting the C120
 
 ⏳ **PI item:** the same-window external-encoder discriminator (DINOv2 on these 881 windows) needs
 the 40 canonical val camera chunks (**multi-GB download**) or a post-training Thor pass.
+
+---
+
+## C125 — THE FULL REF-A PIPELINE PRESERVES THE SIGNAL END TO END: five measured stages, nothing lost — and the checkpoint answered its narrow question with NO COLLAPSE (2026-08-18, Part 2)
+
+### The authorized 1.906 GB download answered exactly what it was bought for
+
+⭐ **The trained adapter did NOT collapse — training EXPANDED variance 3.6×.** No `adapter_std`
+history exists in the checkpoint (top-level keys `model/opt/step/heads` only; pod3's `metrics.json`
+remains the only possible archive), so the monitor's quantity was **measured directly on 2,809
+windows: trained per-dim std 0.8011 vs random-init 0.220, zero dead dims.** `refa.py`'s named
+failure mode — collapse-to-easy-targets — **measurably did not happen.**
+
+⚠️ **And the gate size I briefed was wrong — the agent corrected it rather than waiting forever.**
+1,905,666,517 B is the **repo total** (ckpt + config + README + .gitattributes from the metadata
+table); the file itself completes at **1,905,662,297 B**. Gated on the file's own metadata size;
+provenance **sha256 `04cd07da…3846220c`**, embedded verbatim in the HF downloader's `.incomplete`
+filename — complete *and* authentic. Loaded **STRICT** (438 keys), `step` 29999.
+⇒ *A size quoted from a repo listing is a claim about the LISTING — the C110 denominator lesson, in
+a download gate.*
+
+### Rungs 2–3 — verdict `P2-PRESERVED`, pre-registered before any readout ran
+
+`lead_gap` r², same 2,809 windows, **T0-DIAGNOSTIC**:
+
+| stage | r² |
+|---|---|
+| raw frozen features (Part 1) | **0.5285** |
+| **trained** adapter output | 0.4751 [seeds: /0.5262/0.5262] |
+| predictor ẑ₊₀.₁ₛ | 0.4762 [/0.5319/0.5319] |
+| predictor ẑ₊₀.₄ₛ | **0.4863** |
+
+Decision contrasts: trained-vs-raw **not separated on the pre-registered primary** (partial-v0,
+[−0.202, +0.033]); the predictor step loses **+0.0011 [−0.0044, +0.0065] — nothing**;
+trained-vs-random not separated. **All controls fired** (random-init positive control 0.469–0.535
+through the identical probe; C115 sensitivity confirmed — ẑ moves 33–59 % of the latent norm, cos
+0.942/0.875, a real transformation not a copy).
+⭐ **Mechanistic footnote worth keeping: the ONLY place training separably beat random is `ego_v0` —
+exactly where the checkpoint's `aux_speed/yaw/accel` losses pushed.** Supervision put information
+precisely where it aimed, and nowhere else.
+
+### ⇒ What the completed chain establishes
+
+**Every representation stage is now measured** — encoder features, input geometry, adapter
+architecture, **trained** adapter weights, predictor latent at two horizons — **and NONE loses the
+information.** The signal arrives intact at the exact latent the T0 eval decoded (`intent=None`,
+`rollout.py:182`), which produced the programme's worst driving number.
+
+⇒ ⛔ **"Downstream" now means the DECODE SURFACE and the OBJECTIVE — or a deficit linear
+readability cannot see — plus the four structural REF-A/flagship differences, led by the absent
+22.06 M `ImaginationField`.**
+⇒ ⭐ **E-RECON-2 is THE decision experiment.** Readability has failed to discriminate driving at
+**five measured stages across two independent streams**. **Until E-RECON-2 runs, no readout number
+is admissible as a reason to swap, freeze, or distil an encoder.**
+
+⚠️ **Standing dependency, now covering THREE results:** the frame cache, join, and split remain
+**scratchpad-only** (the durable copy holds token caches only). Banking them is the open chip.

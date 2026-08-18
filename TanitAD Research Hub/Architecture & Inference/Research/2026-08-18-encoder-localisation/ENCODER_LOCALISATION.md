@@ -548,3 +548,175 @@ bash code/chain_encloc2.sh    # squash1f control + prediction dumps + summary  (
 `TanitAD Research Hub/Architecture & Inference/Research/2026-08-18-encoder-localisation/`; nothing
 under `stack/` or `taniteval/` was touched (`encloc_ladder.py` is a **copy** of the ER10 script, not
 an edit of it). ⇒ `stack/tests` and `taniteval/tests` are unaffected by this work.
+
+---
+
+# PART 2 — RUNGS 2–3 ON THE TRAINED CHECKPOINT (PI-authorized download, 2026-08-18)
+
+## 7. Provenance, and the free check the download was gated on
+
+**The PI authorized the 1.906 GB download** (relayed by the coordinator; the artifact arrived at
+`C:/Users/Admin/tanitad-caches/refa-dinov2-4b/ckpt.pt`). Gate and provenance, all `MEASURED`:
+
+- ⚠️ **The briefed gate size 1,905,666,517 B is the REPO TOTAL** (ckpt + config + README +
+  .gitattributes, §5.1's table). The file itself completes at **1,905,662,297 B** — gating on the
+  briefed number would have waited forever. Gated on the file's own metadata size instead; matched.
+- **sha256 `04cd07dac74d1193bc8ba0e118a33c39cbb6a9277841c2a80a57cc7b3846220c`** — and this hash is
+  embedded verbatim in the HF downloader's own `.incomplete` filename, i.e. it equals the server's
+  declared content hash. The file is complete **and** authentic.
+- Loaded **STRICT** (438 model keys) via the canonical recipe `taniteval/taniteval/loaders.py:117-134`
+  (`flagship4b_config()`, `action_dim→3`, `adapter_kind="temporal"`, `n_tokens=256`). `step` 29999 —
+  the registry's completion step, re-confirmed from the artifact.
+- ⛔ **The checkpoint banks NO training history** — top-level keys are
+  `model/opt/step/metric_invdyn/step_readout/aux_{speed,yaw,accel}` only. The `adapter_std` LOG the
+  free check hoped for does not exist in the artifact (pod3's `metrics.json` remains the only
+  possible archive of it). ⇒ The collapse question is answered by **direct measurement** below —
+  computing the monitor's own quantity (`adapter_dim_std`, `refa.py:295-300`) on real inputs.
+
+## 8. PRE-REGISTRATION — written after the caches were built, BEFORE any readout ran
+
+The builder banks six latent arms over the SAME 2 809 banked rows (window `[f-7..f]`, actions
+`[steer, accel, v0/10.0]` per `refa_train.py:76-112` + `refa_train_plus.py:63-105`; predictor called
+**exactly as the T0 eval surface calls it** — `intent=None`, `rollout.py:182`):
+
+| arm | what it is |
+|---|---|
+| `rung2_trained` | trained `TemporalGridAdapter` output state s_f |
+| `rung2_rand{0,1,2}` | same class at random init — **the positive control**: it proves the probe sees signal through this exact class+dims, so a trained-arm null would be attributable to the WEIGHTS |
+| `rung3_h1` / `rung3_h4` | the predictor's imagined latent ẑ_{f+1} / ẑ_{f+4} |
+
+Declared residuals: features are the `refa1f` **emulation** (§2.2 — shared by every rung including
+rung 1, so within-input contrasts cancel it); the standardizer sees slightly-off-corpus inputs;
+**131 of 2 809 rows are pad-left** (repeat-earliest; delta-0 at the pad matches the adapter's own
+first-frame convention). Sanity gate: fresh frame-f tokens vs the banked `tok_refa1f` cache — **corr
+≥ 0.999997**, so the transform is byte-equivalent.
+
+**Verdicts committed in advance** (primary read: `lead_gap`, partial-`v0`, vs rung 1's 0.5285 /
+partial r +0.523; paired episode-cluster bootstrap on identical rows):
+
+| | criterion | conclusion it licenses |
+|---|---|---|
+| **P2-PRESERVED** | `rung2_trained` retains ≥ 80 % of rung 1 AND `rung3_h1` retains ≥ 80 % of `rung2_trained` | the ENTIRE REF-A representation path carries the signal ⇒ the loss is in how the driving objective/heads consume it — "readable ≠ usable" in its strongest form |
+| **P2-TRAINING-SUBTRACTED** | `rung2_trained` < `rung2_rand` with the paired CI excluding 0 | training damaged the adapter (C106's pattern at a new site) — the collapse std check must corroborate |
+| **P2-PREDICTOR-LOSS** | rung 2 retains but `rung3_h1` loses ≥ 50 % of it | the predictor destroys the information — the objective/predictor is the component to fix |
+| **P2-MIXED** | anything else | report per-stage decomposition, take no headline |
+
+**Collapse check, already measured during the build (pre-readout):** trained adapter per-dim std
+**≈ 0.79** vs random-init **≈ 0.22**, dead dims **0.0000** on both. ⇒ **The trained adapter did NOT
+collapse** — `refa.py:19-31`'s named failure mode ("collapse-to-easy-targets") did not happen; the
+trained map *expands* variance 3.6× over init. *(This kills the collapse hypothesis regardless of
+which readout verdict fires.)*
+
+## 9. RESULT — the trained checkpoint PRESERVES the signal at every stage
+
+**`MEASURED` 2026-08-18, dev-box RTX 4060, ~2.2 min GPU for all six arms.** Artifacts:
+`raw/encloc_p2_*.json`, `raw/encloc_part2_summary.json`, durable latent caches at
+`C:/Users/Admin/tanitad-caches/encloc-20260818/part2/` (md5 in the manifest). **T0-DIAGNOSTIC.**
+2 809 rows, 33 pad-left; sanity corr ≥ 0.9999973 (n=400).
+
+### 9.1 The rung table — the full pipeline, end to end
+
+r² ceiling on the identical windows (cells probe has no RP-seed axis; the bracketed spread is the
+**ridge seed** — the inner alpha-selection split, seeds 0/1/2, per C103):
+
+| stage | `ego_v0` | `lead_gap` | `lead_gap` partial-v0 r² |
+|---|---|---|---|
+| rung 1 — raw features (Part 1) | 0.67147 | **0.52850** | 0.24767 |
+| ⭐ rung 2 — **TRAINED adapter** s_f | 0.67100 [0.671, 0.671, **0.7034**] | **0.47510** [0.4751, **0.5262**, **0.5262**] | 0.2038 |
+| rung 2 control — random-init ×3 | 0.6211 / 0.6556 / 0.6579 | 0.5286 / 0.4693 / 0.5354 | 0.2303 / 0.1853 / 0.2429 |
+| ⭐ rung 3 — **predictor** ẑ_{f+0.1s} | 0.67420 [0.6742, 0.6742, **0.7068**] | **0.47620** [0.4762, **0.5319**, **0.5319**] | 0.2060 |
+| rung 3 — ẑ_{f+0.4s} | 0.67200 | **0.48630** | 0.2106 |
+
+`lead_closing` (⛔ degenerate on every arm — K1 fails, `pred_sd/gt_sd` ≈ 0.10–0.17, §3.5's rule):
+trained 0.0568, rand ≈ 0.037, h1 0.0555, h4 0.0425 — reported, never quotable bare.
+
+### 9.2 The paired deltas (episode-cluster bootstrap, 2 000 draws, identical rows asserted)
+
+| contrast | `lead_gap` Δr² [CI] | partial-v0 Δ [CI] | separated? |
+|---|---|---|---|
+| trained − rung 1 | −0.0848 [−0.1795, −0.0008] | −0.0694 [−0.2017, +0.0330] | raw: **grazes**; ⭐ **primary (partial): NO** |
+| ẑ_h1 − trained (the predictor step) | **+0.0011 [−0.0044, +0.0065]** | +0.0022 [−0.0034, +0.0077] | **NO — the predictor loses NOTHING** |
+| trained − random-init | −0.0535 [−0.1295, +0.0180] | −0.0265 [−0.1291, +0.0583] | **NO** |
+| trained − rung 1, `ego_v0` | −0.0165 [−0.0556, +0.0166] | — | NO |
+
+⚠️ **Honest reading of the one graze:** the raw-scale trained-vs-rung-1 CI upper edge is −0.0008 at
+ridge seed 0 — and at ridge seeds 1/2 the trained arm reads 0.5262, erasing most of the point
+deficit. The **pre-registered primary read (partial-v0) is not separated**, and the retention is
+**0.899 at the worst seed, ~0.99 at the median across ridge seeds**.
+
+### 9.3 The controls, each doing its job
+
+- **Positive control (random-init, 3 seeds):** the same class+dims reads `lead_gap` 0.469–0.535
+  through the identical probe ⇒ the probe demonstrably sees signal at these dims; a trained-arm null
+  would have been attributable. There is no null to attribute.
+- **Collapse check (the free check, full-run):** trained per-dim std **0.8011** vs random-init
+  **0.2200–0.2254**; dead dims **0.0000** everywhere. ⛔ **`refa.py:19-31`'s named failure mode —
+  "collapse-to-easy-targets" — measurably did NOT happen.** Training *expanded* per-dim variance 3.6×.
+- **C115 sensitivity (is rung 3 a real probe?):** ẑ_h1 moves **|δ|/|z| = 0.328 (cos 0.942)** from
+  s_f; ẑ_h4 moves **0.589 (cos 0.875)**. The predictor genuinely transforms the latent — retention
+  through it is a finding, not an artifact of the residual architecture copying its input.
+  *(Declared anyway: `predictor.py:101` is residual by design — ẑ = z_t + Δ — so "preserves unless
+  the delta corrupts" is the mechanism; the measurement shows the delta does not corrupt, and at
+  h4 — a delta of 59 % of the norm — `lead_gap` reads slightly HIGHER than at h1.)*
+- ⭐ **A mechanistic footnote the aux heads explain:** the ONE place training separably beat random
+  is `ego_v0` (rand0 vs rung 1: −0.0664 [−0.1296, −0.0125], separated; trained: parity, and 0.7034
+  at rs2). The checkpoint carries `aux_speed`/`aux_yaw`/`aux_accel` heads — **the objective's
+  explicit pressure was egomotion, and egomotion is exactly where trained > random.** The objective
+  sculpted what its losses asked for and was neutral on what they did not (the lead).
+
+## 10. VERDICT — `P2-PRESERVED`, and what it does to G-ENCODER and E-RECON-2
+
+Against §8's pre-registered table:
+
+| verdict | criterion | result |
+|---|---|---|
+| ⭐ **P2-PRESERVED** | rung 2 ≥ 80 % of rung 1 AND rung 3 ≥ 80 % of rung 2 | **FIRES: 0.899 (worst ridge seed; ~0.99 median) and 1.002** |
+| P2-TRAINING-SUBTRACTED | trained < random, CI excluding 0 | does not fire (no separated deficit; random spread straddles trained; collapse check refutes collapse) |
+| P2-PREDICTOR-LOSS | rung 3 loses ≥ 50 % of rung 2 | does not fire (loses 0.0 %) |
+
+⇒ ⭐⭐ **EVERY stage of REF-A's representation pipeline is now measured, and NONE of them loses the
+information.** Raw frozen features 0.5285 → trained adapter ~0.51 (ridge-seed median) → one-step
+imagined latent ~0.51 → four-step imagined latent 0.486. `ego_v0` is flat at 0.67 throughout. The
+signal arrives INTACT at the exact latent the T0 eval decoded from (`intent=None`, the
+`rollout.py:182` surface) — **and that decode produced the programme's worst driving number
+(2.1675 [1.9081, 2.4212] vs flagship 0.4271).**
+
+**What this does to the G-ENCODER verdict (Part 1):** it survives and sharpens. Part 1 said "the
+loss is downstream of the features." Part 2 eliminates the remaining representation stages —
+**"downstream" now means the decode surface and the objective** (`step_readout` / grounding heads /
+the driving losses), or a deficit that linear readability cannot see at all. The candidate table in
+§4.3 loses its first two rows (trained adapter: EXONERATED; predictor latent: EXONERATED) and keeps
+the structural differences — the absent 22.06 M `ImaginationField`, the 13.43 M vs 4.48 M grounding
+gap, the SIGReg target, and the encoder's role as a *training participant* (a trained encoder
+co-adapts with its decoder; a frozen one cannot — which no readout of frozen features can measure).
+
+**What it does to E-RECON-2's priority: it becomes the decision experiment for the whole encoder
+question.** Linear readability now fails to discriminate driving at FIVE stages measured across two
+streams. The reconciliation stream's registered E-RECON-2 — the experiment that would make
+readability evidence *about driving* — is the only remaining bridge between C104-style probes and
+any deployment decision; until it runs, **no readout number anywhere in this programme is admissible
+as a reason to swap, freeze, or distil an encoder.**
+
+⚠️ **Limitations, stated:** (1) the features are the §2.2 refa1f EMULATION — the residual is shared
+by every rung, so the contrasts stand, but the trained standardizer/adapter ran slightly
+off-corpus; the ≈parity with random-init makes a large shift-artifact unlikely, and it is the one
+asymmetry between the trained and random arms. (2) These are the lead-enriched, `parity: False`
+probe windows. (3) T0-DIAGNOSTIC throughout — none of this is driving performance.
+
+## 11. DELIVERABLE MANIFEST — PART 2 (adds to §6)
+
+**Staged into the same package, branch `agent/arch-inf-20260803`; STAGE, NEVER PUSH.**
+
+| artifact | what |
+|---|---|
+| `code/encloc_part2_latents.py` | checkpoint→latent builder (STRICT loaders.py recipe, window/action alignment, sanity gate, collapse check) |
+| `code/encloc_part2_summarise.py` · `code/chain_encloc3.sh` | Part-2 summariser + runnable chain |
+| `code/encloc_ladder.py` | + cells-only cache support (Part-2 patch) |
+| `raw/encloc_p2_{6 arms}.json` + `_rs{1,2}` variants | ladder results |
+| `raw/preds_p2_*.pkl` · `raw/encloc_part2_summary.json` · `raw/log_p2_*.txt` · `raw/log_part2_build.txt` | paired-delta inputs, summary, logs |
+| **durable, outside repo:** `C:/Users/Admin/tanitad-caches/encloc-20260818/part2/cells_*.pt` (6 × ~11.5 MB) + `part2_build_meta.json`, md5-appended to `MANIFEST.md5` | the banked latents |
+| **durable, outside repo:** `C:/Users/Admin/tanitad-caches/refa-dinov2-4b/ckpt.pt` — **1 905 662 297 B, sha256 `04cd07dac74d1193bc8ba0e118a33c39cbb6a9277841c2a80a57cc7b3846220c`, step 29999** | the PI-authorized checkpoint |
+
+Evidence ledger: every §7–§10 number is `MEASURED` (artifact paths above). The E-RECON-2 reference
+remains `INHERITED` from the reconciliation stream. Reproduction: `bash code/chain_encloc3.sh`
+(idempotent — skips the build if the durable caches exist).
