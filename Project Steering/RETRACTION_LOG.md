@@ -6955,3 +6955,59 @@ fifth, now measured inert).
 ⚠️ **Reproducibility risk, escalated:** the **4.8 GB frame cache** both C104 and this result depend
 on exists **only in a temporary scratchpad** — the C117 single-disk class, in an instrument's
 dependencies.
+
+---
+
+## C124 — REF-C's ENCODER IS FROM-SCRATCH, NEVER FROZEN, NEVER PRETRAINED — and its "T1 strategic win" carries an UNVERIFIED TIER STAMP (2026-08-18, REF-C architecture review)
+
+### ⭐ The fact nobody had stated: the programme's one vision-grounded arm has NO pretrained encoder
+
+**MEASURED from source:** REF-C's backbone is a **torchvision-free ResNet-34-style trunk**
+(`refc.py:920-981`), 9-ch 3-frame stack @ 256×256, ftheta-crop ≈ **51.4° HFOV**, trained **from
+scratch** — one `Adam(model.parameters())` (`refc_train.py:925`), the only `load_state_dict` is
+self-resume. **Params reproduce registry §4 exactly by building**: small **54,690,001** / base
+**104,191,577** / XL **251,932,584**, encoder share 87.5/86.8/79.2 %.
+
+⇒ **The arm the PI calls "the only model proved to drive on vision" is also the one arm with NO
+pretrained vision anywhere in it.** That inverts the intuition the encoder debate started from.
+
+### ⭐ And its encoder ladder (T0, canonical 881 windows, banked latents, ER10 protocol verbatim) says the same thing C123 said, from a third direction
+
+| rung | REF-C base / XL | context |
+|---|---|---|
+| `ego_v0` r²c | **0.843 / 0.789** | genuine VISUAL speed (pooled input is frames-only) — vs v6's 0.052 |
+| `lead_gap` raw | 0.377 / 0.455 | ⛔ **~⅔ ego-speed echo** — v0-proxy alone reads 0.392 |
+| `lead_gap` v0-partial | **0.056 / 0.131** | **C92's fourth strike** |
+| `lead_closing` v0-partial | **0.158 / 0.194** | ⭐ **the first non-degenerate v0-independent closing readout in the programme** |
+| agent count | ≤ 0.035 | **below the 0.122 v0-proxy — nearly agent-blind** |
+
+⇒ **The vision-driving arm does NOT drive on a rich readable object representation.** Its deployed
+pooled surface is nearly agent-blind, its lead-gap reading is mostly its own speed — and it still
+produced the programme's best vision-grounded behaviour. **"Swap the encoder" remains unsupported,
+now from three independent directions** (C123's E-GEOM, E-RECON-1's lead-window null, and this).
+
+### ⛔ THE TIER CORRECTION — my own framing to the PI
+
+I have repeatedly written *"REF-C won the STRATEGIC family (−0.5000) on 77 **T1** scenes."*
+**MEASURED:** the artifact behind that number is **NOT in this clone** (six probe shapes), and every
+`driving_refc-*.json` **self-declares `taniteval.driving/tier0`, `claim_strength: "open-loop /
+weak"`** — the C122 tier-name collision, **third appearance**. Meanwhile the improvement review
+correctly states REF-C **has no T1 measurement path at all** (no rollable predictor).
+
+⇒ **What SURVIVES:** the vision-grounding itself — `nav_cmd=None` → constant `follow` in every
+published number (`refc.py:343-347`), so the strategic win cannot be a nav echo. **What is
+WITHDRAWN until the raw JSON is banked: the tier stamp.** Do not quote "−0.5000" with a tier.
+⇒ **RULE (third strike makes it binding): a number's tier is read from the artifact's own
+`tier`/`claim_strength` fields, never from a scene-set's name, a block label, or a task title.**
+
+### Also established
+
+**Conditioning today:** strategic ctx→decoder is warp-only zero-init; **H19 manoeuvre→anchor-prior
+is the ONE live tactical→operative wire**; the D-SEL surface (S1–S6) and the factorised D-TAC1 head
+are **built, tested, and default-off / never trained through** (the shipped arms still run the 5-way
+head with `accelerate` recall **0.0000**). **The disjointness ruling is satisfied today** — the
+sitclf output does not exist in REF-C's graph — and the risk surface is exactly the three injectable
+seams (`maneuver_logits`, `target_latent`, `lan`), gateable by adapting the C120 interventional probe.
+
+⏳ **PI item:** the same-window external-encoder discriminator (DINOv2 on these 881 windows) needs
+the 40 canonical val camera chunks (**multi-GB download**) or a post-training Thor pass.
