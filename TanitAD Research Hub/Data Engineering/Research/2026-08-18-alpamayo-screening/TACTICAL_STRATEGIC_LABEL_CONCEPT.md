@@ -1,7 +1,9 @@
 # CONCEPT — tactical & strategic labels from the Alpamayo-augmented corpus
 ### For approval. Binding for **v6F**, **REF-A v1** and **REF-C v3**.
 
-**Date:** 2026-08-18 · **Status:** ⏳ **AWAITING PI APPROVAL** — nothing below is implemented.
+**Date:** 2026-08-18 · **Status:** ✅ **APPROVED by the PI, 2026-08-18** — items 1–4 and 6 as
+written; item 5 **amended**: Qwen3.5-9B **in thinking mode** (no Qwen3-VL A/B). Strategic
+labelling is **combined into the same pass** (§8). Nothing is implemented yet.
 
 **PI direction:** *use the Alpamayo-augmented data for post-training the tactical and strategic
 layers; it also increases data diversity. Priority 1 map Alpamayo's labels to ours; priority 2
@@ -272,3 +274,98 @@ subset **before** committing the full job.
 turn clips and is the thinnest part; the Alpamayo/PhysicalAI training-overlap remains UNRESOLVED, so
 Alpamayo is a teacher and not ground truth; and the whole concept is gated on an extraction cost
 nobody has measured.
+
+---
+
+## 8. ✅ APPROVED, AMENDED, AND COMBINED WITH THE STRATEGIC PIPELINE
+
+### 8.1 The decision
+
+| # | item | verdict |
+|---|---|---|
+| 1 | tactical/strategic post-training on the Alpamayo-augmented corpus, S-W parity untouched | ✅ approved |
+| 2 | composition rule — class / reason+referent / arguments; ego never fires where the VLM abstained | ✅ approved |
+| 3 | the 6-clip val40 exclusion, committed | ✅ approved — artifact banked (`alpamayo_val40_exclusions.json`) |
+| 4 | v6.1 (`TURN_L`/`TURN_R`) at the S-T boundary | ✅ approved |
+| 5 | the labeller | ⚠️ **AMENDED — Qwen3.5-9B in THINKING MODE; the Qwen3-VL-8B A/B is dropped** |
+| 6 | sequencing | ✅ approved, revised by §8.3 |
+
+### 8.2 Thinking mode — verified, with one caveat that matters for our task
+
+`MEASURED` from the model's own card and tokenizer config: **Qwen3.5 runs in thinking mode BY
+DEFAULT** — *"Qwen3.5 models operate in thinking mode by default, generating thinking content
+signified by `<think>…</think>` before producing the final response"*. The chat template carries
+`enable_thinking`, `<think>`, `</think>`. ⇒ The PI was right, and **no A/B is needed**: the thinking
+model *is* the model. Item 5's comparator is dropped, which removes a whole experiment.
+
+⚠️ **But the card's recommended thinking-mode sampling is wrong for THIS task.** It advises
+`temperature=1.0, presence_penalty=1.5` for general tasks. A **presence penalty pushes away from
+tokens already produced** — across a corpus of forced-choice labels drawn from six recurring tokens,
+that biases *against the frequent classes*, which is precisely the distribution we must not distort
+(`LANE_KEEP` is 85 % of the lateral axis). ⇒ **Proposal:**
+
+* **thinking** free-form at the card's *precise* profile — `temperature=0.6, top_p=0.95, top_k=20,
+  presence_penalty=0.0`;
+* **the verdict token constrained by logit masking to the allowed set** (`TACTICAL_LON_ACTIONS` ∪
+  `{ABSTAIN}`), so sampling parameters cannot move the label at all — only the reasoning;
+* context ≥ **128 K**, per the card's own advice for thinking mode.
+
+### 8.3 ⭐ COMBINING WITH THE STRATEGIC PIPELINE — and it INVERTS the tier order
+
+The PI is right that the strategic pipeline is already reviewed and optimised, and reading it
+changes this concept. From `s2_derive.py` and `S2_STRATEGIC_GAP.md`, all `MEASURED` on aug120:
+
+* the VLM's TURN **precision is 100 % (19/19)** but its **recall is 17/33 left and 2/29 right** —
+  badly side-biased;
+* **28 of its 31 `ROUTE_TO` claims sit on plain turn geometry**; G1 is **CLOSED at 0/31**, so
+  `ROUTE_TO` is unsupervisable and is remapped to geometry or abstained, never guessed;
+* the PI adjudicated 18 of 19 `LANE_TARGET` labels and called **14 wrong**;
+* Engine A (`route_from_future_v3` over the hindsight ego path) **covers every clip**;
+* the S2 verdict, verbatim: ***"geometry decides, the VLM corroborates"***.
+
+⇒ ⭐⭐ **The tier order is NOT global. It follows the TYPE of the quantity being labelled:**
+
+| layer | the label IS… | primary | corroborator |
+|---|---|---|---|
+| **TACTICAL lateral** | a lane-topological fact | **Alpamayo** | ego geometry |
+| **TACTICAL longitudinal** | a **semantic reason** (why) | **VLM** | Alpamayo magnitude as an admissible-set prior |
+| **TACTICAL goal args** | a **measurement** | **ego** | — (gated on a VLM referent) |
+| **STRATEGIC `g_str`/`a_str`** | **future-path geometry** | ⭐ **ego geometry (Engine A)** | **VLM**, demoted |
+
+**Geometry is primary where the label IS geometry; the VLM is primary where the label is semantics.**
+That is one principle, it is measured rather than aesthetic, and it explains both layers without a
+special case.
+
+### 8.4 ⭐ The consequence that changes the schedule: STRATEGIC NEEDS NO VIDEO
+
+Engine A derives `g_str`/`a_str` from the **hindsight ego path** — i.e. from **egomotion**, not
+pixels. ⇒ **Strategic labels for all 4,723 clips are derivable without the w120 extraction.** The
+extraction gates the *tactical* reason (VLM needs frames); it does **not** gate the strategic layer.
+
+Two consequences:
+1. **The strategic label build can start immediately**, on CPU, in parallel with everything else —
+   it is not behind the 4,522-clip video job.
+2. **The two passes share one clip list and one provenance schema** but consume different inputs
+   (egomotion vs frames), so "combined" means *one pipeline, two input paths*, not one model doing
+   both. `s2_derive.py` is already the single home of the S2 mapping with three consumers and zero
+   drift — the Alpamayo corpus becomes its fourth.
+
+⛔ **The one measurement this rests on:** egomotion availability for the 4,723. The label chunks are
+**not local** (probed this session), so it is a bounded pull from the dataset's label chunks — far
+smaller than camera chunks. **Run this before anything else**: it decides whether the strategic half
+is CPU-immediate or itself gated on a download.
+
+### 8.5 Revised sequencing
+
+| # | step | gate | needs |
+|---|---|---|---|
+| 1 | egomotion availability for the 4,723 | — | bounded pull |
+| 2 | **strategic labels via `s2_derive.py` (Engine A primary)** | step 1 | CPU only |
+| 3 | adjudicate the 42-clip visual review | — | human, PI |
+| 4 | w120 extraction cost on ~10 episodes | — | CPU |
+| 5 | VLM tactical-reason prototype on the 42 clips, two passes (± ego numbers) | step 3 | 1 GPU |
+| 6 | full w120 extraction (4,522) | step 4 | CPU, Thor post-30k |
+| 7 | tactical labels at corpus scale | steps 5, 6 | GPU |
+| 8 | S-T / S-S post-training, all three models | steps 2, 7 | Thor post-30k |
+
+⇒ Steps 1–3 can start **now** and none of them touches the live 30k run.
