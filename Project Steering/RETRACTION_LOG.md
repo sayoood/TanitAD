@@ -6282,3 +6282,57 @@ imports `T2_AUGMENTATIONS` **3×** while HEAD's `v6.py` has **0** and the worktr
 **unstaged**. ⇒ **One concurrency defect surfaced twice — once as a false test failure, once as a
 would-be broken HEAD** — and both were caught by checking *what the index actually holds* rather than
 what the working tree shows.
+
+---
+
+## C115 — `z_tac` HAS NO TEMPORAL MIXING: IT IS A FUNCTION OF THE LAST FRAME ALONE, SO HALF OF CATALOG T2 IS NOT EXPRESSIBLE (2026-08-18, F-7/F-8 build)
+
+**MEASURED, two independent ways, while building F-7:**
+1. **Freezing every non-last frame leaves `z_tac` BIT-IDENTICAL.**
+2. **`z_tac(time_reverse(x))` equals `z_tac` of a window made entirely of `x[:,0]`.**
+
+**Mechanism:** `encode_window` flattens `[B, W]` into the **batch** axis, so **no frame ever sees
+another**. The tactical latent is a per-frame quantity that happens to be read at the last tick.
+
+⇒ ⛔ **HALF OF CATALOG T2 IS NOT EXPRESSIBLE ON THIS ARCHITECTURE.** A *time-reversal* augmentation
+does not produce "the reversed manoeuvre" — it produces **a frame W ticks earlier**, which is a
+different *sample*, not a different *manoeuvre*. ⇒ **Using it as a hard negative would directly
+OPPOSE T5/F-8**, whose whole content is that consecutive windows should agree. Built, and
+**excluded from the default negative set** — a catalog/diagram decision, escalated rather than taken.
+
+⇒ **ROOT-CAUSE CLASS: A SPEC WRITTEN AGAINST AN ASSUMED REPRESENTATION.** The catalog describes
+manoeuvre contrastives as though `z_tac` integrated a window; it does not, and nothing in the catalog
+is wrong *about the objective* — the mismatch is with the **representation the objective would act
+on**. ⇒ **RULE: before implementing an augmentation, prove the representation is SENSITIVE to the
+thing being augmented.** A contrastive term over an invariant is a no-op wearing a loss function's
+clothes.
+
+⚠️ **This bears on more than F-7.** Any claim that the tactical layer "integrates a window", or that
+its latent carries manoeuvre *dynamics* rather than an instantaneous read, must now be checked
+against this fact rather than assumed. *(It does not touch the operative path, which rolls out
+explicitly, nor the four-family results.)*
+
+### Three more, each caught by a control rather than by a run
+
+⛔ **F-8 is DEGENERATE ALONE:** a flat plan scores **exactly 0**, and the emission is **exactly zero
+at init**, so the term starts **at its own global minimum** and has nothing to descend. Guarded in
+**both** `v6_loss_step` and `preflight` — not one of them.
+⚠️ **A defect in the agent's OWN trivial-proxy control, caught by its own test:** it issued verdicts
+at **any n**, and at **n = 4** the null ratio spans **0.397–3.361**. Now refuses below **n = 32** and
+reports SEM. *(A control that returns a verdict on four samples is C107's "a check that cannot fail",
+inverted — a check that cannot be trusted.)*
+⭐ **The preflight guard itself had an `AttributeError`** — `a.shared_encoder` does not exist; the
+flag is `--per-layer-encoders`. **Found by an assertion, not by running it.**
+
+⛔ **AND THE FULL `stack` RUN FAILED 3 TESTS WHILE EXITING 0** — the allowlist pin firing correctly
+on `t2_head.`. **Had the exit code been trusted, three failures would have shipped.** *(Eighth
+instance this session.)*
+
+**Costs, MEASURED by building, not estimated:** F-7 **+164,225 params / +5 keys**; F-8 **+0 / +0**
+(zero-parameter). **Default build unchanged at 87,893,449 / 405** — verified twice, top and tail.
+**Earliest legal insertion:** F-7 at **S-T** (`STAGE_MAY_INTRODUCE["S-T"] += ("t2_head.",)`) — **no
+fresh S-W run needed**, since S-W does not train `layer_tac` anyway; **F-8 needs no insertion point
+at all** and can be enabled over any existing checkpoint.
+⭐ **The `06b8782` class does not apply:** the entry went into the **existing** `layer_tac` group via
+`_GROUP_PREFIXES`, so `MODULE_GROUPS` is untouched — and `STAGE_GROUPS["S-J"] is MODULE_GROUPS`
+verified **False**.
