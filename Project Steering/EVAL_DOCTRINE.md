@@ -21,3 +21,9 @@ reproduction 97.9 % → ~5 %; hold-action arm 0.0 %).
 4. T0 remains mandatory for attribution (it is how the decel-ramp was assigned to the
    readout, not the roll) — demoted in meaning, not removed.
 5. Model cards and HF pushes carry the tier of every quoted number.
+6. **A census over `windows_*.pt` imports `taniteval.dump_census`; a bare glob is a
+   defect.** *(C126: two double-banked dump pairs made every glob-derived "27 arms"
+   census count 25 distinct models as 27 — the dashboard and LEADERBOARD generator
+   double-counted one model per pair until 2026-08-18. `dump_exclusions.json` is the
+   machine-readable truth; prose corrections cannot reach a glob.)* Pod-side censuses
+   FILE-SHIP `dump_census.py` + `dump_exclusions.json` with the job.

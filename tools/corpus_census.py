@@ -262,7 +262,10 @@ ARTIFACTS: list[Artifact] = [
         key="evaldumps-windows-fan",
         kind="evaldump",
         desc="Banked per-window eval dumps (windows_*.pt / fan_*.pt) — the "
-             "0-GPU re-analysis surface behind the CI recomputes",
+             "0-GPU re-analysis surface behind the CI recomputes. Counts DUMP "
+             "FILES, not distinct arms: two dumps are recorded same-model "
+             "duplicates, and arm-level censuses subtract "
+             "results/dump_exclusions.json via taniteval.dump_census (C126)",
         members=29,
         candidates=[
             ("repo", "taniteval/results"),

@@ -98,6 +98,7 @@ from taniteval.stack_guard import ensure_stack_on_path as _ensure_stack  # noqa:
 _ensure_stack()
 
 from taniteval import ci as _ci  # noqa: E402
+from taniteval import dump_census as _dump_census  # noqa: E402
 
 RES = Path("/root/taniteval/results")
 
@@ -864,13 +865,19 @@ def from_windows(path, n_boot=N_BOOT, arm=None) -> dict:
 
 
 def arms_with_windows(res_dir=RES):
-    """Every arm with a persisted window dump — the tier-0 population.
+    """Every DISTINCT arm with a persisted window dump — the tier-0 population.
 
-    NOT `registry.MODELS`: 9 of the 24 dumps (flagship-v16-ab-ft, flagship-v2-6k,
-    the refc-v12 family, the overfit probes) have no registry entry, and the
-    whole point of tier-0 is that it runs on whatever has been persisted."""
-    return sorted(p.stem[len("windows_"):]
-                  for p in Path(res_dir).glob("windows_*.pt"))
+    NOT `registry.MODELS`: many dumps (flagship-v16-ab-ft, flagship-v2-6k, the
+    refc-v12 family, the overfit probes) have no registry entry, and the whole
+    point of tier-0 is that it runs on whatever has been persisted.
+
+    ⛔ NOT a bare glob either (C126): two banked dumps are the same model as a
+    canonical partner (`results/dump_exclusions.json`), and a census that
+    re-derives its arm list from `glob("windows_*.pt")` re-discovers the
+    duplication forever — "27 arms" was 27 dumps over 25 distinct arms. The
+    list is routed through `dump_census.list_dumps`, which subtracts the
+    exclusions (and FAILS LOUDLY if an excluded file's bytes changed)."""
+    return _dump_census.list_dumps(res_dir).arm_keys
 
 
 def run_and_save(key, res_dir=RES, n_boot=N_BOOT, seed=0) -> dict:
@@ -915,9 +922,13 @@ def run_and_save(key, res_dir=RES, n_boot=N_BOOT, seed=0) -> dict:
 
 
 def run_all(res_dir=RES, n_boot=N_BOOT, seed=0) -> dict:
-    """Backfill every arm that has a `windows_*.pt` (the `eff-all` analogue)."""
+    """Backfill every DISTINCT arm that has a `windows_*.pt` (the `eff-all`
+    analogue). The census line is printed so no run's log can quote a dump
+    count as an arm count (C126)."""
+    census = _dump_census.list_dumps(res_dir)
+    print(f"[driving-all] census: {census.summary()}", flush=True)
     got = {}
-    for key in arms_with_windows(res_dir):
+    for key in census.arm_keys:
         try:
             got[key] = run_and_save(key, res_dir=res_dir, n_boot=n_boot,
                                     seed=seed)
@@ -931,7 +942,14 @@ def run_all(res_dir=RES, n_boot=N_BOOT, seed=0) -> dict:
 # report panel (dashboard 04c) + leaderboard rows                              #
 # ========================================================================== #
 def _load_blocks(res_dir=RES):
-    """Canonical `driving_<key>.json` artifacts only."""
+    """Canonical `driving_<key>.json` artifacts only — deduplicated.
+
+    Both C126 duplicate arms HAVE `driving_*.json` blocks, so the panel and
+    the leaderboard would double-count one model per pair if this read stayed
+    a bare glob. A duplicate row is dropped only when its CANONICAL partner's
+    block is also present (otherwise dropping it would remove the model, not
+    a duplicate), and never silently — the census line is printed."""
+    census = _dump_census.list_dumps(res_dir)
     out = {}
     for f in sorted(Path(res_dir).glob("driving_*.json")):
         try:
@@ -942,6 +960,13 @@ def _load_blocks(res_dir=RES):
         if f.name != f"driving_{key}.json" or d.get("block") != BLOCK:
             continue
         out[key] = d
+    dropped = sorted(k for k, canon in census.pairs_by_key.items()
+                     if k in out and canon in out)
+    for k in dropped:
+        out.pop(k)
+    if dropped:
+        print(f"[driving-census] {census.summary()}; dropped duplicate "
+              f"driving_*.json rows: {dropped}", flush=True)
     return out
 
 

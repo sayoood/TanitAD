@@ -536,6 +536,12 @@ def main(argv=None):
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--estimator", default=ESTIMATOR,
                     help="the ONLY accepted value is episode_cluster_bootstrap")
+    ap.add_argument("--include-excluded", action="store_true",
+                    help="permit scoring BOTH members of a known same-model "
+                         "dump pair (results/dump_exclusions.json) side by "
+                         "side — e.g. to verify the pair is equal. Without "
+                         "this flag such a pair is REFUSED: two names, one "
+                         "model, double-counted (C126).")
     a = ap.parse_args(argv)
 
     if a.estimator != ESTIMATOR:
@@ -557,6 +563,35 @@ def main(argv=None):
         overrides[k.strip()] = v.strip()
 
     os.makedirs(a.out_dir, exist_ok=True)
+
+    # ⛔ Duplicate-VALUE guard (C126). The name-uniqueness check below cannot
+    # see that two DIFFERENT names are one model — exactly how "27 arms" was
+    # 27 dumps over 25 distinct arms. `dump_exclusions.json` beside the dumps
+    # is the machine-readable equality knowledge; consult it BEFORE the
+    # expensive part, and fail loud rather than score one model twice.
+    from taniteval import dump_census as _census  # noqa: E402 — after bootstrap
+    _pt_paths = [s.split("=", 1)[1].strip() for s in a.dump
+                 if "=" in s and s.split("=", 1)[1].strip().endswith(".pt")]
+    if _pt_paths:
+        _findings, _consulted = _census.check_explicit(_pt_paths)
+        if not _consulted:
+            _p("[census] no dump_exclusions.json beside the passed .pt dumps "
+               "-- duplicate-VALUE check unavailable for them")
+        _pairs = [f for f in _findings if f["kind"] == "pair_present"]
+        for f0 in _findings:
+            _p(f"[census] NOTE: {f0['excluded']} is a recorded same-model "
+               f"duplicate of {f0['canonical']} ({f0['exclusions_file']})")
+        if _pairs and not a.include_excluded:
+            _die("the passed dumps include BOTH members of "
+                 + (f"{len(_pairs)} known same-model pair(s): " if len(_pairs) > 1
+                    else "a known same-model pair: ")
+                 + "; ".join(f"{f['excluded']} == {f['canonical']}"
+                             for f in _pairs)
+                 + ". Scoring them side by side double-counts one model "
+                   "(dump_exclusions.json; DUPLICATES.md has the evidence). "
+                   "Drop one, or pass --include-excluded if the point IS the "
+                   "pair (e.g. verifying their equality).")
+
     dumps, arms = [], {}
     for spec in a.dump:
         if "=" not in spec:

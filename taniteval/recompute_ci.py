@@ -34,6 +34,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, "/root/taniteval")
 
 from taniteval import ci as C  # noqa: E402
+from taniteval import dump_census  # noqa: E402
 
 # key -> (label, registry citation for the published number)
 ARMS = [
@@ -99,8 +100,20 @@ def main():
     a = ap.parse_args()
     R = Path(a.results)
 
+    # C126: state the exclusion-aware census out loud (this tool's output gets
+    # quoted), and refuse to treat a known duplicate bank as its own arm
+    # should one ever be added to ARMS. `dump_exclusions.json` beside the
+    # dumps is the machine-readable list; today ARMS contains no excluded key,
+    # so the guard is dormant by construction, not by luck.
+    census = dump_census.list_dumps(R)
+    print(f"[census] {census.summary()}")
+
     rows, loaded = [], {}
     for key, label, cite in ARMS:
+        if key in census.excluded_arm_keys:
+            print(f"[skip] {key}: EXCLUDED same-model duplicate of "
+                  f"{census.pairs_by_key.get(key)} (dump_exclusions.json)")
+            continue
         wp = R / f"windows_{key}.pt"
         if not wp.exists():
             print(f"[skip] {key}: no {wp.name}")
