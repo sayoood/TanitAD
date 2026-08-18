@@ -323,6 +323,19 @@ def attach_lead(win: dict, episodes: dict, joins: dict, *,
     binding rule's per-family absence reporting, at the episode grain. Attach it as
     ``win["lead"] = attach_lead(...)`` and every downstream ``four_families.four_families(win)``
     call scores distance-keeping on exactly the windows it is defensible on.
+
+    ⚠️ KEY-NAME FOOTGUN FOR DENSE DUMPS (documented 2026-08-18; no logic change): this block
+    emits ``wp_steps``/``dt_s``, but ``four_families._distance_keeping`` reads
+    ``lead.get("path_steps")`` — the emitted key is never consumed there. Harmless on the 27
+    banked SPARSE dumps (``pred`` [N,4,2] already matches the 4-tick lead track). Scoring a
+    DENSE path (``pred_dense`` [N,20,2]) against this block REFUSES on shape
+    (``lead_metrics.distance_keeping``: "leads … must match paths") unless the caller sets
+    ``win["lead"]["path_steps"] = [4, 9, 14, 19]`` — the dense TENSOR INDICES of the
+    5/10/15/20 ticks (``pred == pred_dense[:, [4,9,14,19]]``, rollout.py) — so the time join
+    selects those steps and this block's own ``dt_s`` drives the closing rate / TTC. Never
+    "fix" the refusal by truncating the path or by passing the dense 0.1 s dt with a sparse
+    path: both silently mis-scale TTC (∝1/dt). See the matching note in ``rollout.py``'s
+    dense-path docstring.
     """
     eid_list = list(win["eid"])
     w = len(eid_list)

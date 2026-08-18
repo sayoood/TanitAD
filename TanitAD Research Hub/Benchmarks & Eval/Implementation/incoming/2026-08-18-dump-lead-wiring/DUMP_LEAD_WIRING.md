@@ -3,9 +3,22 @@
 The work item `driving.py`'s retired refusal names ("These tier-0 dumps carry no `win['lead']`
 yet, so here it is an unwired WORK ITEM, not an absence") now has its wiring. **The wiring is
 landed, tested on synthetic AND real labels, and MEASURED-validated against two real banked
-dumps. What it cannot yet produce is a distance-keeping number for any banked arm — because no
-obstacle join for the VAL corpus exists anywhere yet (four probes below), and every banked dump
+dumps. What it cannot yet produce is a distance-keeping number for any banked arm — because ~~no
+obstacle join for the VAL corpus exists anywhere yet~~ (four probes below), and every banked dump
 is val40.**
+
+> ⚠️ **CORRECTION 2026-08-18 (results-hygiene pass; original wording kept above, struck).**
+> val40 lead material DID already exist when this was written: the **2026-08-04 npz lead block**
+> `…/incoming/2026-08-04-distance-keeping-arms/raw/val40_lead_block.npz` (per-window lead states
+> 270/551/60 over the canonical 881 windows, built by that package's one-off dev-box pipeline).
+> The four probes below were scoped to **agents-JSONL joins consumable by `attach_lead`** (lead130
+> jsonl on disk, the 2,308-clip train-join census, the id convention, corpus disjointness) — none
+> probed the hub's `incoming/` tree, so the over-broad word was *"anywhere"*. **The conclusion
+> still holds for the jsonl-join form**: nothing `attach_lead` could consume existed, and the
+> wiring genuinely could not attach a lead to any banked dump that day. The jsonl gap was closed
+> 2026-08-18 by `…/incoming/2026-08-18-val40-lead-join/` (its §4 records the npz-vs-jsonl
+> 7/881-window delta and why the new block is the quotable surface). *Absence-claim class: a probe
+> set scoped narrower than the sentence it licensed (operating-standard rule 2).*
 
 ## What landed
 

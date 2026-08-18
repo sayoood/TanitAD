@@ -41,6 +41,13 @@ dense tensor was already being produced and thrown away.
 **Optional, not guaranteed.** ``refb_eval.collect`` and ``refc_eval.collect``
 build their own window dicts for direct-trajectory arms and do not emit the
 dense keys; anything downstream must treat them as ``win.get("pred_dense")``.
+
+⚠️ Scoring the dense path against a ``win["lead"]`` block from
+``taniteval.dump_lead_join.attach_lead``: the block emits ``wp_steps`` but
+``four_families._distance_keeping`` consumes ``path_steps`` — set
+``win["lead"]["path_steps"] = [4, 9, 14, 19]`` (the dense tensor indices of
+the 5/10/15/20 ticks) or the shape join refuses; details and the wrong-"fix"
+warning live in ``attach_lead``'s docstring.
 """
 from __future__ import annotations
 
