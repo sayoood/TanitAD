@@ -2619,6 +2619,46 @@ dump this time**; `…/2026-08-16-jack-in-gates/code/recompute_g1_g4.py` needs n
 > *(`beats_head_all` is **not** a banned-estimator verdict — it compares raw point values, 0.6476 vs
 > 3.1342 — but see the scope stamp on the Robustness line below.)*
 
+> ## ⭐ **UPDATE 2026-08-18 (C101): the QUESTION `planner_beats_cv` stood for is now ANSWERED — against the planner — at the PRIMARY tier, from banked data and with NO GPU.**
+>
+> ⚠️ **First, a scope correction to the block above:** `planner_beats_cv` is computed inside
+> **`analyze_openloop`** (`planner_p2.py:621`, fn at `:555`) from `collect_openloop`'s
+> `plan_wp`/`cv_wp` — **OPEN LOOP, 881 windows / 40 episodes / stride 8.** The banked
+> `p2win_flagship-30k.pt` is the **CLOSED-loop** collection (221 win / 20 ep / stride 16). **Different
+> tier, different windows, different episode count** ⇒ the banked path cannot reach that verdict, and
+> **no open-loop CEM planner arm is banked anywhere** (confirmed at three probes including an
+> exhaustive walk of every `.pt` in the repo — independently reproducing `JACK_IN_GATES.md` §3.1).
+>
+> ⛔ **But the published G4 compared planner vs HEAD, never vs CV — so "does the planner beat CV?" had
+> never actually been asked.** Computed from banked data, **paired**, **[TIER T1 — PRIMARY]**:
+>
+> | | value |
+> |---|---|
+> | **planner − CV** | **+0.2585 m [+0.0869, +0.4309]**, CI-separated, **p(δ>0) = 0.9975** |
+> | ⇒ | **the CEM planner is 35.8 % WORSE than constant velocity, closed-loop** |
+> | **operative under TRUE actions − CV** | **−0.3151 m** ⇒ the WM rolls out *better* than CV when handed true actions |
+>
+> ⇒ ⭐⭐ **THE LOSS IS IN THE ACTION SEARCH, NOT IN THE WORLD MODEL.** The CEM cannot find actions that
+> exploit a predictor that demonstrably works.
+>
+> ⛔ **AND IT LOSES ON THE FAMILY IT IS DESIGNED FOR.** Per family, never pooled:
+> **LONGITUDINAL 1.9062 vs CV 1.6705 m**, speed error **0.9431 vs 0.7607 m/s**, bias **+0.2737 vs
+> −0.0995 m/s**. The *lateral* loss its own scope note predicts; **the longitudinal loss it does not.**
+> **TACTICAL** and **STRATEGIC** are genuine **N/A with reasons**: the CEM emits no manoeuvre class,
+> and the cost carries **no route/goal term**. Distance-keeping/TTC uncomputable — no lead-agent track.
+>
+> ⚠️ **The OPEN-LOOP verdict remains UNDECIDED and still needs the re-drive** — the flip requirement
+> above (−6.589 % against a −6.909 %…+5.877 % local envelope) is reproduced to 4 dp, and **no bound
+> closes it**: the banned estimator gives **7 of 40 episodes weight exactly 0**, leaving those windows
+> unconstrained by the published mean. ⏳ Its only missing input is the **4.70 GB val cache** — a **PI
+> decision**, not an agent's.
+> ⭐ **The CEM is now SEEDED** (`cem_seed`, default 0, `fa4b3d1`, 9 pinning tests), so the re-drive is
+> reproducible; the previously "unbounded sampling component" is measured at **0.0193 % drift** on the
+> closed-loop reproduction gate, with `cv` and `open_grnd` **bit-exact**.
+> ⚠️ **Verdict inventory correction:** the artifact holds **14 boolean instances across 6 distinct
+> names**, not five — the block above collapsed the 9 `beats_head` grid entries.
+> Source: `…/Benchmarks & Eval/Implementation/incoming/2026-08-18-planner-beats-cv-redrive/`.
+
 Reference points on the same pass: CV **0.8377** [0.6234, 1.0716] *(legacy 0.825)* · operative rollout with
 **true** actions (the WM ceiling) **0.4271** [0.3675, 0.4871] open-loop *(legacy 0.452)* / **0.4063**
 [0.3293, 0.4907] closed-loop *(legacy 0.424)*.
