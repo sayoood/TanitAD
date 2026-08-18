@@ -149,9 +149,25 @@ accepted by an agent on the PI's behalf — it is a legal agreement.
 DINOv2-L/14 with zero licence exposure and swap encoders later — the cache contract is the same
 shape, so only the cache is rebuilt, not the model.
 
-**Recommendation:** request DINOv3 access now (free, and it is the better encoder), but **build the
-stage-1 cache against whichever encoder is available on the day**, defaulting to DINOv2-L/14. Do not
-let a manual approval queue sit on the critical path of a 5 k-step arm.
+### ⭐ RESOLVED 2026-08-18 — ACCESS GRANTED, VERIFIED BY BYTES
+
+The PI's request was approved. **Verified, not assumed:** an authenticated byte pull of
+`config.json` from `facebook/dinov3-vitl16-pretrain-lvd1689m` returned **HTTP 200, 745 B**, content
+`{"architectures": ["DINOv3ViTModel"], ..., "hidden_size": 1024, ...}`. The repo still reports
+`gated: manual` — that is the *policy*, and our token now satisfies it.
+
+⇒ **v1 builds on DINOv3 as designed (change #1 stands unchanged).** The DINOv2-L/14 fallback below
+is retained as a documented contingency, not the plan.
+
+⛔ **THREE OBLIGATIONS NOW ACTIVE, and they are ours to honour:**
+1. **Every HF push of a REF-A v1 checkpoint must ship a copy of the DINOv3 licence** in the repo
+   (`LICENSE_DINOv3.md` beside the model card) — the agreement requires it of any redistribution of
+   DINO Materials *or derivatives*, and a trained-on-DINOv3-features checkpoint is a derivative.
+2. **`TANITAD_PAPER.md` must acknowledge DINOv3** — the licence requires acknowledgement in
+   publications.
+3. **The token that holds this grant is the one flagged for rotation** (plaintext on Thor,
+   `~/rq_out/logs/contention.log:11`, plus a Desktop copy). Rotating it may require re-requesting
+   access; sequence the rotation with that in mind rather than discovering it during a cache build.
 
 ## 5. ⛔ WHAT IS DELIBERATELY *NOT* IN v1
 

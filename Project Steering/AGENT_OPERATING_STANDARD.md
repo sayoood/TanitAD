@@ -46,6 +46,13 @@ and reliably stranded the work. This standard replaces it.
    guessing. A flagged gap is far better than a confident wrong answer. If you could not do
    part of the task, say so plainly — do not quietly narrow the scope.
 
+## ⛔ Research banking (binding, 2026-08-18)
+
+**Cite a paper ⇒ bank the paper.** `python tools/kb_add.py <arxiv-id> --tag <topic> --cited-by
+"<your report>"` files the PDF into `TanitAD Research Hub/Library/`, records a sha256, and reindexes.
+A citation you did not bank is `PUBLISHED-SECONDARY` and is **inadmissible for `MODEL_REGISTRY.md`
+or the paper**. Verify with `--verify` (content, not presence). Full rationale in `CLAUDE.md`.
+
 ## Traps preflight (each has cost hours more than once)
 - `pgrep -f`/`pkill -f <trainer>` SELF-MATCHES your ssh command and kills your own session.
   Kill by explicit PID only.

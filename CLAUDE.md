@@ -543,6 +543,34 @@ reproduction 97.9 % open-loop, 0.0 % hold-action, ~5 % closed-loop.* A registry 
 quoting a number without its tier stamp is incomplete; comparisons across tiers are invalid.
 Instrument: `taniteval/tools/t1_eval.py` (E1.2).
 
+## ⛔ BINDING — RESEARCH BANKING: BANK THE PRIMARY, OR THE DELIVERABLE IS INCOMPLETE (Sayed, 2026-08-18)
+
+**A research deliverable that cites a paper it did not bank is incomplete.** Every literature pass
+downloads its primary sources into `TanitAD Research Hub/Library/`, indexes them, and extends the
+knowledge base incrementally.
+
+```bash
+python tools/kb_add.py <arxiv-id-or-url> --tag <topic> --note "<the finding, 1 line>"     --cited-by "<repo path of your report>"
+python tools/kb_add.py --verify     # sha256 every entry against disk
+```
+
+* ⭐ **Why it binds.** The 2026-08-18 frozen-encoder review had to mark **five numeric claims
+  `PUBLISHED-SECONDARY`** — read from aggregator summaries and therefore **inadmissible for the
+  registry or the paper** — purely because the primaries were not to hand. Banking the PDF is what
+  converts SECONDARY into PRIMARY. A URL is a claim about the internet; a banked sha256 is a claim
+  about a file we hold.
+* **The seven `KNOWLEDGE_BASE.md` files stay the FINDINGS layer** (`[YYYY-MM-DD] [source] finding —
+  impact — link`). The Library is the EVIDENCE layer beneath them. A `[PUBLISHED]` entry should cite
+  the **library key**, not only a URL.
+* ⛔ **Never hand-edit `LIBRARY.md`** — it is generated from `library.json` by `--reindex`.
+* ⛔ **Verify by CONTENT, never by presence.** `--verify` re-hashes; a file that exists with changed
+  bytes is worse than a missing one.
+* ⚠️ **The tool banked garbage on its first run and reported success** — arXiv's Atom feed opens with
+  a feed-level `<title>` echoing the query, so an unscoped regex filed all 11 papers under
+  *"arXiv Query: search_query=..."*. Fixed by scoping to `<entry>`, pinned by
+  `tools/tests/test_library.py`. The lesson is the general one: **a tool reporting success is not
+  evidence that its output is right.**
+
 ## ⛔ BINDING — EVERY EVAL REPORTS FOUR METRIC FAMILIES, NOT ADE (Sayed, 2026-08-02)
 
 **Sayed, verbatim, after asking repeatedly:** *"Despite I told you many times, don't consider only

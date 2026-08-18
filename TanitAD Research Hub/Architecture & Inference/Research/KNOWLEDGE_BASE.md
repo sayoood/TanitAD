@@ -3,6 +3,22 @@
 > Curated, deduplicated, newest first. Format:
 > `[YYYY-MM-DD] [source] finding (1-3 lines) — impact: H_x / WP_y — link`
 
+- [2026-08-18] [PUBLISHED/library] ⭐⭐ **FROZEN ENCODERS SUCCEED IN EXACTLY TWO CONFIGURATIONS, AND
+  REF-A WAS IN NEITHER.** (A) huge frozen VLM + wide interface + supervised head — FROST-Drive
+  [`2601.03460`]: frozen 14 B **8.17 RFS / ADE@3s 1.04 m** BEATS the *same encoder fine-tuned*
+  **8.13 / 1.47**, while a frozen **ImageNet** ViT is the WORST arm in the table **7.39 / 2.28** ⇒
+  freezing is a **multiplier on pre-training quality, not an independent good**; interface width is
+  its own lever (5120-d 8.17 vs 256-d 7.68). (B) moderate frozen encoder + **future-feature
+  prediction** + **test-time planning** — DINO-WM [`2411.04983`] (frozen DINOv2 **patch** features,
+  plain latent L2, *no* reconstruction/reward/terminal loss, **no policy head**, CEM+MPC; swapping
+  patch features for global R3M/ResNet18/**CLS** "significantly degrades"), V-JEPA 2-AC
+  [`2506.09985`] (<62 h of robot data), and in DRIVING: DeepSight [`2605.10564`] (frozen encoder +
+  MSE against DINOv3 future BEV features, Bench2Drive DS **86.23**) and LAW [`2406.08481`].
+  ⛔ Full fine-tuning is not the alternative — it DEGRADES pretrained structure (OpenVLA 36.7 % →
+  12.1 % under paraphrase); the winning form is a **DUAL ENCODER** (frozen anchor ‖ trainable),
+  35.03 → 55.55 → **78.46** [`2509.11417`]; CortexBench agrees from the other side [`2303.18240`].
+  ⇒ REF-A had A's consumer on B's encoder class. **This is the evidence base for REF-A v1.**
+  — impact: H4 / the encoder question / REF-A v1 — `Research/2026-08-18-frozen-encoder-literature/FROZEN_ENCODER_LITERATURE.md`, primaries in `Library/`
 - [2026-08-03] [repo/MEASURED] **The LONGITUDINAL family's distance-keeping half is implemented and its
   gauge is ADMITTED.** `four_families.longitudinal` had returned `distance_keeping: UNAVAILABLE` since the
   binding rule landed (2026-08-02) because our ingest never read `obstacle.offline`. Now: `lead_metrics.py`
