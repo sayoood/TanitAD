@@ -230,6 +230,63 @@ TACTICAL_LAT_ACTIONS: tuple[str, ...] = (
 TACTICAL_LON_ACTIONS: tuple[str, ...] = (
     "FOLLOW", "CRUISE", "YIELD_MERGE", "BRAKE_TO", "CREEP", "HOLD",
 )
+
+# ---------------------------------------------------------------------------- #
+# ⭐ v6.1 — TURN_L / TURN_R, APPENDED. Prepared 2026-08-18, NOT the default.
+# ---------------------------------------------------------------------------- #
+#: ⛔ WHY THIS IS A SECOND TUPLE AND NOT AN EDIT TO THE FIRST.
+#: `TACTICAL_LAT_ACTIONS` SIZES LIVE TENSORS: `GoalVocabulary(...).table.weight`
+#: is `(n_tokens, d_goal_embed)` and `GoalHead.type_head` is
+#: `(n_tokens, hidden)`. The v6F S-W 30k run on Thor holds `vocab_a_lat.
+#: table.weight (6, 128)` and `act_head_lat.type_head.weight (6, 256)` in its
+#: checkpoint, under a TENSOR-STRICT resume contract. Editing the tuple in place
+#: would not disturb the RUNNING process — but it would brick its AUTO-RESUME
+#: the moment `supervise_run.sh` restarted it, and that failure would arrive
+#: hours later, silently, as a shape mismatch on a 4.6-day run. ⇒ v6.1 is a
+#: SEPARATE tuple behind a version switch that DEFAULTS TO v6.0.
+#:
+#: ⭐ WHY APPEND AND NEVER INSERT. Indices 0-5 keep their meaning exactly, so
+#: every existing label, dump and artifact stays valid without re-derivation,
+#: and a 6-wide head can be widened to 8 by padding rather than retraining.
+#:
+#: ⚠️ WHAT THESE TWO TOKENS ARE, AND HOW THEY DIFFER FROM THE OTHER SIX.
+#: The other six are LANE-RELATIVE (keep / change / abort / nudge) over a 2-6 s
+#: horizon. `TURN_L`/`TURN_R` are JUNCTION TRAVERSAL, and they are the only
+#: lateral tokens whose meaning is CONDITIONED ON THE STRATEGIC ROUTE being set:
+#: the route says which arm of the junction, this says the ego is traversing it
+#: now. That coupling is declared here because it exists in the world — the
+#: alternative to naming it was `LANE_KEEP` inside a junction, which is false
+#: (there are no lanes to keep), or a permanent abstention on the 186 clips
+#: (3.94 % of 4,729) where Alpamayo says "Turn Left"/"Turn Right".
+#:
+#: ⛔ REPRESENTABLE, NOT SCOREABLE. n = 85 (TURN_L) and 101 (TURN_R) in the
+#: Alpamayo corpus; on a 40-episode val split that is ~2 per class. They may be
+#: emitted and supervised; any PER-CLASS metric on them must be REFUSED for
+#: under-power, exactly as `cost_fidelity` refuses below n = 200. Pinned by
+#: `stack/tests/test_tactical_vocab_v61.py`.
+TACTICAL_LAT_ACTIONS_V61: tuple[str, ...] = TACTICAL_LAT_ACTIONS + (
+    "TURN_L", "TURN_R",
+)
+
+#: Per-class metrics on these are refused below this n (representable ≠ scoreable).
+TACTICAL_LAT_UNDERPOWERED: frozenset[str] = frozenset({"TURN_L", "TURN_R"})
+TACTICAL_LAT_MIN_N_FOR_METRIC: int = 200
+
+TACTICAL_VOCAB_VERSIONS: dict[str, tuple[str, ...]] = {
+    "v6.0": TACTICAL_LAT_ACTIONS,
+    "v6.1": TACTICAL_LAT_ACTIONS_V61,
+}
+
+
+def tactical_lat_actions(version: str = "v6.0") -> tuple[str, ...]:
+    """The lateral action vocabulary for ``version``. Default is v6.0 — the
+    live run's shape — so importing this module changes nothing."""
+    try:
+        return TACTICAL_VOCAB_VERSIONS[version]
+    except KeyError:
+        raise ValueError(
+            f"unknown tactical vocabulary version {version!r}; "
+            f"known: {sorted(TACTICAL_VOCAB_VERSIONS)}") from None
 #: §2 "every goal token carries OPTIONAL temporal and spatial constraint slots
 #: … uniformly typed". Unset = unconstrained (the mask says which are set).
 CONSTRAINT_SLOTS: tuple[str, ...] = (
@@ -3389,6 +3446,11 @@ class V6Config:
     """
 
     # ---- per-layer widths ---------------------------------------------------
+    #: ⭐ Tactical LATERAL vocabulary version. DEFAULT v6.0 = the live
+    #: v6F S-W checkpoint's shape (6 tokens). v6.1 appends TURN_L/TURN_R
+    #: and is intended for the post-30k S-T launch, where
+    #: STAGE_MAY_INTRODUCE legitimises the widened keys.
+    tac_vocab_version: str = "v6.0"
     d_tac: int = 512               # §3.1 of the redesign: information decreases up
     d_str: int = 256
     # ``d_op`` is DERIVED from the readout (grid × grid_w × d_readout) — the
@@ -4410,7 +4472,9 @@ class V6Stack(nn.Module):
         #: predictor). Tactical is FACTORED LAT × LON by design (§4).
         self.vocab_a_str = GoalVocabulary(STRATEGIC_ACTION_TOKENS,
                                           cfg.d_goal_embed)
-        self.vocab_a_lat = GoalVocabulary(TACTICAL_LAT_ACTIONS, cfg.d_goal_embed)
+        self.vocab_a_lat = GoalVocabulary(
+            tactical_lat_actions(getattr(cfg, "tac_vocab_version", "v6.0")),
+            cfg.d_goal_embed)
         self.vocab_a_lon = GoalVocabulary(TACTICAL_LON_ACTIONS, cfg.d_goal_embed)
 
         # ---- layer O: predictor + the g_tac conditioner ---------------------
