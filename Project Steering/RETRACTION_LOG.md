@@ -5446,3 +5446,94 @@ confirming rungs are now `DEGENERATE-CONSTANT` or a verdict the random null earn
 tokens **+0.263**). ⇒ **R1/R2 must be decided on E-R1-0's own evidence, not on this ladder.**
 *(⚠️ A report that E-R1-0 "has since dropped R1" is **INHERITED** from this agent and **NOT verified
 here** — that stream has not yet reported to the orchestrator. Do not act on it until it does.)*
+
+---
+
+## C104 — ⛔ THE 40:1 POOLING BOTTLENECK IS **REFUTED**. THE INFORMATION SURVIVES THE POOL; THE ENCODER IS THE CONSTRAINT (2026-08-18, E-R1-0)
+
+**RETRACTED — the load-bearing claim of C93, which I called *"the finding that subsumes all
+three"*:** that `AvgPool2d((4,10))` averages agents away before any objective can see them, and that
+this explains D1 without appeal to the world model's competence.
+
+**MEASURED, pre-registered, on frozen `v6F-SW-30k@11250`** — 1,302 train / **1,507 eval windows in
+70 episode clusters**, four pooling ratios (40:1 deployed / 10:1 / 4:1 / 1:1) differing **only in the
+kernel**, each forced to exactly 2,048 features by a **fixed random projection**, **5 seeds**,
+`intercept_col=-1` throughout:
+
+> ⛔ **On the four rungs the hypothesis was built to explain, REMOVING THE POOL ENTIRELY moves r² by
+> |Δ| ≤ 0.0002, with the CI containing zero on all five seeds.**
+> (`lead_closing` Δ = **+0.00001 [−0.00597, +0.00504]**.)
+
+⇒ **`R1 IS DROPPED` by its own pre-registered criterion.** No rung meets `R1 PROCEEDS`.
+*(`lead_gap` rises 15× — 0.0050→0.0750 — but collapses to 0.0060→0.0087 once `v0` is partialled out;
+`ego_v0` rises 2.4× and separates on only 2 of 5 seeds.)*
+
+⭐ **THREE CONTROLS MAKE THE NEGATIVE ADMISSIBLE RATHER THAN CONVENIENT** — this is what a negative
+result has to carry, and what D1 lacked when it was withdrawn (C79):
+1. **POSITIVE CONTROL `PC-2OBJ`** — two *opposing* plants inside one deployed cell — is a clean step
+   **0.0000 → 0.9998.** ⇒ **The ladder demonstrably HAS the power to see a pooling-destroyed
+   signal.** It saw nothing because there was nothing.
+2. **NO-PROJECTION SUPPLEMENT** — exact dual ridge on **all 491,520 features** (gated equal to the
+   primal solve to 1.4e-06 of pred sd): `lead_closing` **0.00058 → 0.00045 → 0.00022 → 0.00002**.
+   ⇒ It **FALLS** as the pool is removed. **The random projection was hiding nothing.**
+3. **TRIVIAL-PROXY `C-V0`** — ego speed *alone* beats **all four** arms on `lead_gap` (0.467 vs
+   0.075), `nearest_any`, and `n_agents_grid`.
+
+*(Matched-random null floors at r² ≈ 0.001–0.002; **three of the four rungs sit BELOW their own
+null.**)*
+
+### ⭐⭐ AND THE DISCRIMINATOR RETURNED THE LARGER RESULT
+
+DINOv3 is **gated `manual` and our token gets 403** (three probes; metadata public, weights not).
+Substituted **`facebook/dinov2-base` at 224×560**, which at patch 14 tiles into **exactly our 16×40
+grid at an identical 0.4000 aspect** (asserted at runtime).
+
+**Through the SAME deployed `AvgPool2d((4,10))`, on the SAME windows:**
+
+| rung | DINOv2-B/14 | **ours** |
+|---|---|---|
+| `lead_closing` r² | **0.01713** (partial-`v0` r +0.129) | **0.00000** |
+| `lead_gap` r² | **0.44997** (partial r² 0.120) | **0.00496** |
+| `ego_v0` r² | **0.71733** | **0.05240** |
+
+⛔ **And it is NOT a capacity gap: DINOv2-B/14 is 86 M params against our encoder's 87.3 M.**
+
+⇒ ⭐ **THE INFORMATION IS IN OUR IMAGES, IT SURVIVES THE POOL, AND NEITHER POOLING NOR CORPUS
+NARROWNESS IS THE CONSTRAINT — THE ENCODER/OBJECTIVE IS.** Removing the pool on an encoder that
+*does* carry the signal is worth **+14 % / +30 %**; **the encoder gap is 91×.**
+⇒ And DINOv2's `lead_present` **satisfies §7.1's PROCEED criterion in full** — ⭐ **proving the rule
+is satisfiable and that ours simply fails it**, which is the difference between a hard problem and a
+broken component.
+
+⇒ **ROOT-CAUSE CLASS: A MECHANISM INFERRED FROM AN ARCHITECTURAL DIAGRAM AND A PLAUSIBLE ARITHMETIC
+COINCIDENCE, NEVER TESTED BY REMOVING IT.** *"40 tokens per cell, 64×160 px per cell, 37.8 px median
+vehicle"* is a compelling story and it is **wrong**. ⚠️ **Two independent methods appearing to agree
+did not save it** — the ladder's rung profile was cited as confirmation, but a profile that is
+*consistent with* a mechanism is not evidence *for* it when both are also consistent with a weak
+encoder. ⇒ **RULE: an architectural bottleneck claim is not established until the bottleneck is
+REMOVED and the metric moves.** Ablate the mechanism, don't narrate it.
+
+### Two corrections that travel with this
+
+⛔ **The "68.5 % of the stack sits downstream of the pool" figure — which I repeated — is a SCOPE
+ERROR.** It was computed from `V6Config()` **defaults**; the **live checkpoint** is `d_model 768`,
+**336,559,305 params** ⇒ `predictor_op` **55.9 %** (not 68.5), `encoder` **25.9 %** (not 17.4).
+**The total was understated 3.8×.** *(The `df`/`free` family again: a real number from the wrong
+scope.)*
+
+⚠️ **The live S-W run is 336.6 M — 12.2 % over the programme's "Sub-300M" headline.** **Not a silent
+breach** (launched with `param_budget: 350000000`, so the assert passed by design), but it
+**contradicts `CLAUDE.md`'s opening line.** ⏳ **PI decision: restate the claim or rescope the model.**
+
+⚠️ **The C97 guard has a hole, found by its first external user:** `SD_RATIO_FLAT_FLOOR = 0.05`
+**does not flag C97's own headline case** (null `n_agents_all`, ratio **0.091**). ⇒ Our
+`n_agents_all` K1 PASS is **not quotable as latent-attributable** until layer 2 runs.
+
+### ⇒ WHAT THIS CHANGES
+
+**E-R1-1 is dropped and E-R2-0 promoted** (the 2×2's *placement* axis is now measured inert, leaving
+the *target* axis — R2-cells, 16,899 params). ⭐ **But ENCODER experiments now outrank both**: a
+frozen-external-encoder readout arm, and a **DINOv2 token-distillation `aux` loss** — both cheaper
+than R1, and aimed at the component the evidence actually indicts.
+⏳ **A human must accept the DINOv3 licence** for the stronger arm; the agent correctly did not, and
+did not use a mirror.

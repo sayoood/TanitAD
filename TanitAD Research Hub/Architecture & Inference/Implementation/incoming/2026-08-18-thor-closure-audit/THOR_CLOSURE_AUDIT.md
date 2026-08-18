@@ -16,7 +16,7 @@
 | **Genuinely stale on Thor** | **7 files** — 5 DRIFT, 2 absent entirely (one of them **46,905 B**) |
 | **CRLF artifacts that a naive md5 would have called drift** | **47 of 50** apparent-drift rows in the briefed closure — **94 % false** |
 | **Final state** | **DRIFT 0 · MISSING_REMOTE 0 · 131/134 modules import for real on Thor**, remaining 3 adjudicated below |
-| **Cost to the live run** | **zero** — step 12,800, `step_s` 26.4742 unchanged, PID 25477 never touched |
+| **Cost to the live run** | **zero** — steps **12,750 → 12,800 → 12,850 → 12,900** across the operation, `step_s` **26.4735 / 26.4742 / 26.4745 / 26.4742** (flat), PID 25477 never touched |
 
 ⛔ **The finding that matters most is not the seven files. It is that the briefed entry-point
 list was itself a hand-list, and widening it found three more stale files** — including
@@ -32,25 +32,56 @@ All digests below are **`md5_lf`** — md5 after `\r\n` → `\n` and nothing els
 originals are at **`/home/nvidia/_thor_backup_2026-08-18-closure/`**, verified by md5 before a byte
 of the destination was touched.
 
+⭐ **Cross-checked with an INDEPENDENT digest, on purpose.** The ship path verifies itself with md5
+computed by my own tool on both ends — which would agree with itself even if that plumbing were
+wrong. So the seven landed files were re-verified with **SHA-256, computed on Thor by the
+`sha256sum` binary** and locally by Python `hashlib` over LF-normalised bytes: **7 match, 0 differ**.
+Different algorithm, different implementation, same answer.
+
 | # | file | reach | Thor before | repo | what Thor was MISSING |
 |---|---|---|---|---|---|
 | 1 | `stack/scripts/train_v6_staged.py` | **eager** | 234,845 B (4,076 ln) | 252,691 B (4,374 ln) | `GATE_APPLICABILITY`, `SEL_GAP_TIER_NOTE`, `UNMEASURED_BY_CONSTRUCTION`, `arm_record`, `probe_applies` |
 | 2 | `stack/tanitad/data/anchor_goal.py` | deferred | **absent** | 10,945 B | the whole module |
 | 3 | `taniteval/taniteval/loaders.py` | deferred | 7,972 B (158 ln) | 9,793 B (191 ln) | `resolve_labels_v2` |
-| 4 | `taniteval/taniteval/rollout.py` | deferred | 19,387 B (363 ln) | 20,130 B | *no symbol change* — body-only drift |
+| 4 | `taniteval/taniteval/rollout.py` | deferred | 19,387 B (363 ln) | 20,130 B (373 ln) | *no symbol change* — body-only drift |
 | 5 | `taniteval/taniteval/four_families.py` | deferred | 64,296 B (1,131 ln) | 71,011 B (1,252 ln) | `KAPPA_VERDICT_LADDER`, `_KAPPA_BAND_GLOSS`, `_anti_echo`, `kappa_band`, `kappa_verdict` |
 | 6 | `taniteval/taniteval/hierarchy.py` | deferred | 67,783 B (1,257 ln) | 79,712 B (1,445 ln) | `MANEUVER_LABEL_KEY`, `PER_WINDOW_KEYS`, `_per_window` |
 | 7 | `taniteval/taniteval/v0_antiecho.py` | deferred | **absent** | 46,905 B | the whole module |
 
-⚠️ **Row 4 is the one to remember.** `rollout.py` differed by 1,116 bytes with **zero top-level
+⚠️ **Every "repo" byte-count above is LF-normalised**, i.e. what actually landed on Thor — not the
+CRLF working-tree size. Quoting the raw size would inflate each delta by one byte per line and
+reintroduce the very artifact §2 is about. *(I had `rollout.py` down as a 1,116-byte difference
+before catching this; the true content delta is **743 B**, the other 373 being `\r`.)*
+
+⚠️ **Row 4 is the one to remember.** `rollout.py` differs by those 743 bytes with **zero top-level
 symbol change** — every symbol a hand-check would look for was present. Only the digest saw it.
 **A symbol census explains drift; it cannot detect it.**
 
-⭐ **Row 1 is the S-T launch blocker.** `train_v6_staged.py` is the trainer *and* the module
-`v6_chain.py` imports the S-T adjudicator from (`assert_stage_precondition`, `build_parser`,
-`read_ckpt_provenance`, `_save_ckpt`). Thor's copy predated the five S-T launch-path fixes at HEAD —
-`GATE_APPLICABILITY` and `probe_applies` are exactly that machinery. **An S-T launch from Thor's
-tree would have run a pre-fix ladder**, which is the pod2 `0f93b98` failure verbatim.
+### ⭐ Row 1 is the S-T launch blocker — and it would have failed **silently**
+
+`train_v6_staged.py` is the trainer *and* the module `v6_chain.py` imports the S-T adjudicator from
+(`v6_chain.py:1714`, *"THE adjudicator"*). The natural assumption is that a stale copy announces
+itself with an `ImportError`, the way C99's did. **It does not.** MEASURED by AST over Thor's own
+backed-up original versus the shipped file:
+
+| | Thor's pre-ship copy | shipped |
+|---|---|---|
+| bytes | 234,845 | 252,691 |
+| top-level functions | 45 | 47 |
+| `assert_stage_precondition` **exported** | ✅ **yes** | ✅ yes |
+| references to `probe_applies` | **0** | **6** |
+
+⇒ **`v6_chain.py`'s import of the adjudicator would have SUCCEEDED on the stale file.** No error, no
+warning. `probe_applies` is called from `stage_gate_dict` and `run_stage_gate` — the two functions
+that decide which probes a stage's gate applies — so the S-T gate would have run **with no
+applicability filtering at all**, scoring arms against criteria that `GATE_APPLICABILITY` marks not
+applicable, and reporting a verdict that looked entirely normal.
+
+**This is the pod2 `0f93b98` failure verbatim** (*"a v5 launch from that pod would have restored the
+crash the fix removed"*), and it sharpens C99's lesson one more turn: C99 established that **md5 is
+not evidence of function**. Row 1 establishes that **a successful import is not evidence of currency
+either**, whenever the stale file still exports the names the caller asks for. Only a content
+comparison over the computed closure catches this class.
 
 **⛔ Escalation, not a doc note — row 2 is C99 repeating one level down.** `anchor_goal` is imported
 lazily at `stack/tanitad/models/v6.py:1825`, behind `cfg.anchor_goal != "none"`. The live S-W run
@@ -82,9 +113,9 @@ file is **373 lines**. One `\r` per line, exactly. The `CRLF_ONLY` verdict is no
 
 ---
 
-## 3. ⛔ Two instrument failures I hit, both of which produced clean, plausible, WRONG answers
+## 3. ⛔ Three instrument failures I hit, each of which produced a clean, plausible, WRONG answer
 
-Recording these because each would have shipped as a finding.
+Recording these because every one of them would have shipped as a finding.
 
 ### 3.1 MSYS argument mangling reported **120/120 MISSING_REMOTE**
 
@@ -128,10 +159,15 @@ PYTHONUTF8=1 PYTHONIOENCODING=utf-8 pytest tests/test_e_wc2_sigma_star.py::test_
 ```
 
 **All four pass.** The failures are the shell's encoding, not the code, and not the two files I
-added. ⇒ **A "green suite" claim on this box is only meaningful with the encoding stated.** Banked
-runs here are `PYTHONUTF8=1`: `stack` **3861 passed / 0 failed / 7 skipped / 2 xfailed**
-(`raw/suite_stack.txt`), `taniteval` **1136 passed / 0 failed** (`raw/suite_taniteval.txt`), the
-`stack` figure including my **19** new tests.
+added. ⇒ **A "green suite" claim on this box is only meaningful with the encoding stated.**
+
+| suite | run | result | artifact |
+|---|---|---|---|
+| `stack` | cp1252 (Git Bash default) | 3857 passed, **4 failed**, 7 skipped, 2 xfailed | — |
+| `stack` | **`PYTHONUTF8=1`** | **3861 passed, 0 failed**, 7 skipped, 2 xfailed (503 s) | `raw/suite_stack.txt` |
+| `taniteval` | **`PYTHONUTF8=1`** | **1136 passed, 0 failed** | `raw/suite_taniteval.txt` |
+
+The `stack` totals include my **19** new tests (3842 + 19 = 3861 collected).
 
 *(Fifth instance tonight of the same family: a probe answering a different question than the one
 asked — after the MSYS root, the two `ps` self-matches, and the md5-vs-function gap that opened C99.)*
@@ -172,7 +208,7 @@ The three remaining failures are **environment**, not drift, and each is adjudic
 | module | missing dep | verdict | evidence |
 |---|---|---|---|
 | `lead_state_gate` | `pandas` | **GUARDED — tolerated by design** | its only closure import site, `stack/scripts/probe_latent_state.py:117-124`, is a `try/except ImportError` with documented fallback constants (`LEAD_LAT_M`, `LEAD_MAX_GAP_M`, `VEHICLE_CLASSES`) and the comment *"fallback for hosts without pandas"* |
-| `tanitad.data.physicalai` | `pandas` | **not on the ladder** | reached only from `stack/tanitad/train/train_worldmodel.py:161`, inside `if data == "physicalai"` — the corpus-**build** path. No v6 entry point references `train_worldmodel` at all |
+| `tanitad.data.physicalai` | `pandas` | **not on the ladder** | reached only from `stack/tanitad/train/train_worldmodel.py:161`, inside `if data == "physicalai"` — the corpus-**build** path. Two probes on the absence claim: (a) **none of the 14 entry points** references `train_worldmodel`; (b) it enters the closure solely via `stack/tanitad/train/flagship_losses.py:43`, which imports `_pred_losses` / `_rollout_loss` — a different function, so the `physicalai` branch is never reached |
 | `tanitad.lake.catalog` | `pyarrow` | **not on the ladder** | reached only from `stack/tanitad/lake/enrich.py:377`, the lake-enrichment path |
 
 ⚠️ **I deliberately installed nothing.** `uv pip install <anything>` has twice silently pulled torch
@@ -192,9 +228,9 @@ audit whose entire subject is fabricated findings.**
 
 | | |
 |---|---|
-| PID | **25477**, alive throughout (`kill -0` OK), state `Ssl`, etime 2-00:16 → **2-00:50** |
-| step / `step_s` | **12,750 → 12,800 → 12,850**, `step_s` **26.4735 → 26.4742 → 26.4745** — the run kept advancing across all seven ships at an unchanged rate |
-| log schema | 258 training rows + **64 spectrum rows** — spectrum rows carry no `loss` field, so this parse selects on `"loss" in row` rather than `.get("loss", 0)`, which would manufacture zeros |
+| PID | **25477**, alive throughout, state `Rsl`/`Ssl`, etime 2-00:16 → **2-01:04** |
+| step / `step_s` | **12,750 → 12,800 → 12,850 → 12,900**, `step_s` **26.4735 / 26.4742 / 26.4745 / 26.4742** — the run kept advancing across all seven ships at a rate flat to 4 s.f. |
+| log schema | 259 training rows + **64 spectrum rows** — spectrum rows carry no `loss` field, so this parse selects on `"loss" in row` rather than `.get("loss", 0)`, which would manufacture zeros |
 | supervisors | **0** (disjoint-token probe) — no process could relaunch onto new code |
 | trainer `PYTHONPATH` | `…/stack:…/stack/scripts` — **`taniteval` is NOT on it** |
 | `dump_seam_plan` | **absent from the run's `config.json` args** |
@@ -255,6 +291,18 @@ following function-level imports, CRLF ⇒ `CRLF_ONLY` never `DRIFT`, guard dete
 entry points and roots all exist, and that the v6 ladder closure stays far larger than a hand-list —
 asserting by name that **`refc_dump_latents.py`, the exact file C99 missed, is in the computed
 closure.**
+
+### What this audit does NOT cover — stated so it is not mistaken for coverage
+
+1. **Only the Python import closure.** Shell scripts, `ops/runs.d/*.env` manifests, config JSON and
+   data caches are out of scope. *(Checked: `v6_chain.py` emits only `{python} scripts/*.py` on the
+   S-T path — grep for `scripts/*.sh` in it returns none — so no shell script is on this ladder. That
+   is a measurement, not an assumption, but it is the only shell coverage here.)*
+2. **Dynamic imports that are not a string literal.** `importlib.import_module(f"{x}")` or a name
+   assembled at runtime is invisible to an AST walk. None was found in this closure, but the tool
+   cannot prove their absence.
+3. **The entry-point list is still an input.** That is precisely how the first pass missed three
+   files. ⇒ **Widen it whenever a new instrument joins the ladder**, and re-run.
 
 ### ⛔ Escalations (decisions, not doc notes)
 

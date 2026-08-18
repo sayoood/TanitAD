@@ -323,6 +323,39 @@ built to separate, on this experiment's own data.**
 ⚠️ **`n_agents_grid`'s PASS at 10:1 / 4:1 / 1:1 / cells is `K1_DEGENERATE` (ratios 0.048 – 0.055)
 and is NOT quotable as a pass.** It is reported so it cannot be quietly re-quoted later.
 
+### 6.0 ⭐ INTEGRATION — the SIBLING agent's formal C97 guard landed, and I ran it over EVERY row
+
+The brief said a formal degeneracy guard was being built concurrently and that I should **use it if
+it lands**. **It landed** — `taniteval/taniteval/degeneracy.py` (`k1_guard`, `screen_banked_k1`,
+`SD_RATIO_FLAT_FLOOR`, and an exact `K1 = K1B + K1C` decomposition with a *proved* bound
+`|K1B| ≤ pred_sd`). ⇒ **`code/er10_apply_k1_guard.py` IMPORTS it and re-screens all 674 banked K1
+rows** (`raw/er10_k1_guard_screen.json`); **no second guard was written.**
+
+| module screen verdict | rows |
+|---|---|
+| `not screened out (layer 2 still required)` | 333 |
+| `SUSPECT — constant-offset component proven` | 292 |
+| `SUSPECT — readout is a flat line` | 49 |
+
+⛔ **AND IT SURFACED A RECONCILIATION THAT MATTERS AND THAT I AM ESCALATING (§11.9).** The two floors
+differ — my inline stamp used **0.10**, the module's `SD_RATIO_FLAT_FLOOR` is **0.05** — and they
+disagree on exactly the row C97 was written about:
+
+⚠️ **The matched-random null's `n_agents_all` K1 PASS at seed 0** (`K1 −1.9087`, `pred_sd/gt_sd`
+**0.091**) is **flagged `K1_DEGENERATE` by this deliverable's 0.10 floor** and **NOT screened out by
+the module's layer 1 + 3** — its ratio clears 0.05, and `|K1| = 1.91 < pred_sd = 4.23` so the
+`k1_exceeds_own_spread` theorem does not fire either. *(At seeds 1 and 2 the same arm collapses to
+ratio 0.0001 and IS proven constant-offset.)* ⇒ ⚠️ **a pure-noise arm can still emerge from
+layer 1 + 3 with an un-screened `n_agents_all` PASS. The module says so itself — "passing this screen
+is NOT evidence the verdict is latent-attributable; that needs layer 2".**
+
+⇒ ⛔ **CONSEQUENCE FOR THIS REPORT, applied rather than noted:** `n_agents_all` is the ONE rung where
+our latent passes K1 (§2, §7), **and the matched-random null passes it too**. **Until `k1_guard`'s
+layer 2 is run on the predictions, our `n_agents_all` PASS is NOT quotable as latent-attributable** —
+only the **margin** is (ours **−3.33 … −4.68**, the null's **−1.89**, and ours is non-degenerate at
+ratio 0.19 – 0.26 against the null's 0.0001 – 0.091). **The r²_ceiling comparison in §2 is unaffected
+— that is why it, not K1, is the primary quantity (§0.6).**
+
 ### 6.1 ⛔⛔ THE TRIVIAL-PROXY CONTROL — ONE SCALAR BEATS ALL FOUR ARMS ON FIVE OF ELEVEN RUNGS
 
 **`MEASURED`** · `raw/er10_proxyv0.json` — the identical ridge with the latent replaced by the
@@ -760,6 +793,10 @@ in the repo and **STAGED** (`git add`, never committed, never pushed). Nothing i
 | `code/er10_dino_probe.py` | the §8.1 weight-availability probe (7 candidates × 2 API paths) | no — **staged** |
 | `code/er10_dino_cache.py` | the frozen external encoder over the SAME banked windows, with the aspect-ratio and grid asserts | no — **staged** |
 | `code/er10_summarise.py` | renders every table in this report **from the banked JSONs only** — it computes nothing | no — **staged** |
+| ⭐ `code/er10_apply_k1_guard.py` | **INTEGRATION** — imports the sibling agent's `taniteval.degeneracy.screen_banked_k1` and re-screens all 674 banked K1 rows. **Not a second guard** | no — **staged** |
+| `raw/er10_k1_guard_screen.json` | that screen's output, per row, with both floors recorded | no — **staged** |
+| `raw/suite_stack.txt`, `raw/suite_taniteval.txt` | the two suites re-run **after** the venv change (3842 / 1136 passed, 0 failed) | no — **staged** |
+| `raw/dino_meta.json` | the external-encoder build provenance (patch, input size, aspect assert, window-identity pin, wall 295.4 s) | no — **staged** |
 | `code/chain_er10.sh` | the runbook: `gate → pc → main → null → proxy → pcsweep → full → dino` | no — **staged** |
 | `raw/er10_gate.json` | J5 reproduction gate vs `ll_cells_tokwin.json` (66 checks, PASS) | no — **staged** |
 | `raw/er10_j2_gridcheck.json` | J2 result | no — **staged** |
@@ -780,3 +817,24 @@ external-encoder cache live in the session scratchpad
 NOT in git.** It is regenerable from `sp1_cache_latents.py --want-tokens` + the checkpoint, both of
 which are in the repo, but **if the scratchpad is cleared it costs a ~9-minute GPU rebuild.**
 Flagged, not assumed.
+
+---
+
+## 14. ⛔ TWO LATE ESCALATIONS (numbered to follow §11)
+
+9. ⛔ **TO THE OWNER OF `taniteval/taniteval/degeneracy.py` — `SD_RATIO_FLAT_FLOOR = 0.05` does NOT
+   flag the case C97 was written about.** `MEASURED` (§6.0, `raw/er10_k1_guard_screen.json`): a
+   **matched-random null** PASSes `n_agents_all` at **K1 −1.9087** with `pred_sd/gt_sd` **0.091** —
+   above the 0.05 floor — and `|K1| = 1.91 < pred_sd = 4.23`, so the `k1_exceeds_own_spread` theorem
+   does not fire either. **Layer 1 + 3 therefore lets a pure-noise PASS through on the module's own
+   headline example.** This deliverable's stricter **0.10** floor does flag it. ⇒ **either the floor
+   should move, or layer 2 must be mandatory before any `n_agents_all` PASS is quoted.** Not mine to
+   change in a sibling's module mid-flight; raised because I now depend on it.
+10. ⚠️ **THE INDEX CONTAINS OTHER AGENTS' STAGED WORK — I did not commit and did not `--amend`.**
+   `MEASURED` at end of turn, foreign staged entries: `Project Steering/RETRACTION_LOG.md`,
+   `…/incoming/2026-08-17-latent-linear-ladder/LATENT_LINEAR_LADDER.md`,
+   `…/incoming/2026-08-18-ladder-corrected/raw/suite_stack.txt`,
+   `…/incoming/2026-08-18-thor-closure-audit/THOR_CLOSURE_AUDIT.md`,
+   `stack/scripts/launch_closure_audit.py`, `stack/tests/test_launch_closure_audit.py`.
+   ⛔ **Whoever commits must read `CLAUDE.md`'s git-hygiene rule first** — `git commit` takes the
+   WHOLE index, and this index is shared.

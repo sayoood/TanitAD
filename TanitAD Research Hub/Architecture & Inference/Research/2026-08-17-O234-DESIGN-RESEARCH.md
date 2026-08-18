@@ -23,6 +23,33 @@
 > term doing nothing. `Cov < 0` on **all 254 rows** means it **systematically de-emphasises the
 > high-error far field** — a substantial and *growing* fraction of the objective, **aimed away from
 > the agents.** That is a stronger reason to change it than redundancy ever was.
+>
+> ---
+>
+> ## ⛔ **AND THE §5 "40:1 POOLING BOTTLENECK" CONCLUSION IS NOW REFUTED (C104).**
+>
+> This document's synthesis treats the `AvgPool2d((4,10))` bottleneck as the finding that subsumes
+> O2/O3/O4. **E-R1-0 tested it by REMOVING the pool and it did not survive.** On the four rungs the
+> hypothesis was built to explain, going 40:1 → 1:1 moves r² by **|Δ| ≤ 0.0002 with the CI containing
+> zero on all five seeds**. The positive control (two opposing plants in one deployed cell) steps
+> **0.0000 → 0.9998**, so the instrument had full power to see a pooling-destroyed signal.
+>
+> ⭐⭐ **The discriminator settled where the loss actually is.** Through the **same** deployed pool on
+> the **same** windows, `facebook/dinov2-base` — **86 M params against our encoder's 87.3 M, so not a
+> capacity gap** — reads `lead_closing` **0.01713** vs our **0.00000**, `lead_gap` **0.44997** vs
+> **0.00496**, `ego_v0` **0.71733** vs **0.05240**.
+>
+> ⇒ **The information is in our images, it SURVIVES the pool, and neither pooling nor corpus
+> narrowness is the constraint — the ENCODER/OBJECTIVE is.** The encoder gap is **91×**; removing the
+> pool on an encoder that *does* carry the signal is worth only +14 %/+30 %.
+>
+> ⇒ **This does not weaken §2's algebra or §3's O2 finding — it relocates the target.** Encoder
+> experiments (a frozen-external-encoder readout arm; a DINOv2 token-distillation `aux` loss) now
+> outrank both R1 and any O2/O3/O4 re-weighting, and are cheaper than either.
+>
+> ⚠️ **Also corrected:** the "68.5 % of the stack sits downstream of the pool" figure was computed
+> from `V6Config()` **defaults**. The live checkpoint is `d_model 768`, **336,559,305 params** ⇒
+> `predictor_op` **55.9 %**, `encoder` **25.9 %**; the total was understated **3.8×**.
 
 **Date:** 2026-08-17 · **Branch:** `agent/arch-inf-20260803` · **Agent:** o234-design-research
 **PI decision this serves (2026-08-17, verbatim):** *"We will stick to the unsupervised path of the
