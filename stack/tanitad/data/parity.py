@@ -2211,3 +2211,236 @@ def assert_v2_eval_cache(cache_dirs, *, label: str,
         sanctioned_audit=sanctioned_audit)
     rec["cache_dirs"] = _v2_paths(cache_dirs)
     return rec
+
+
+# --------------------------------------------------------------------------- #
+# 10c. THE INGEST GATE — a corpus may not be BUILT without answering §10/§10b   #
+# --------------------------------------------------------------------------- #
+# ⛔ WHY A THIRD SECTION, when §10 and §10b already hold the two answers.
+#
+# C113's escalation read, verbatim: *"whoever runs that build must call
+# `parity.filter_train_clips()` first."* **That sentence is the defect.** §10 and
+# §10b are *available*; nothing *invokes* them. A rule that depends on the next
+# operator having read a report is doctrine that never runs — the C108 failure
+# mode (a drift tool that compared the wrong thing for weeks because nobody
+# re-read the thing that said so), pre-registered instead of discovered.
+#
+# ⇒ §10c is the one call that the corpus-materialising entry points make, so the
+#   question is asked BY THE BUILD, not by whoever remembered. Its population is
+#   DERIVED from source by ``tests/test_build_parity_guard.py`` — not hand-listed
+#   (C99/C105) — so a NEW build script that writes per-clip artifacts from a
+#   selection turns that suite red until it is either wired or justified.
+#
+# ⭐ THE DESIGN CONSTRAINT THAT SHAPES EVERYTHING BELOW: the gate must be safe to
+# leave ON by default, or it will be turned off. So it refuses **only where an
+# overlap was actually MEASURED**, and it is silent-but-recording where none
+# exists. MEASURED 2026-08-18 on the committed oracles: the parity TRAIN digest
+# set (2 400) and the deployed VAL digest set (40) have **intersection 0**, so
+# the canonical train build passes this gate untouched and unchanged. A guard
+# that fired on the legitimate case would be removed within a week, and a guard
+# that fires unconditionally is not a guard (C107) — it is a wall.
+#
+# THE ROLE TABLE, and why the DEFAULT is the supervision side:
+#
+#   role                     | disqualifying overlap        | rationale
+#   -------------------------|------------------------------|-------------------
+#   "" (undeclared, DEFAULT) | deployed VAL  (§10b)         | a corpus being
+#   "train" / "augmentation" |                              | BUILT is presumed
+#                            |                              | to become
+#                            |                              | supervision
+#   "val" / "eval"           | parity TRAIN  (§10)          | the held-out side
+#   "audit"                  | none — requires a REASON     | a label census over
+#                            | and stamps decision_grade    | train clips is
+#                            | False                        | legitimate; a
+#                            |                              | SILENT one is not
+#
+# ⚠️ The undeclared default deliberately checks the direction that is DANGEROUS
+# rather than the direction that is common. C113: *"the leak I was sent to close
+# is the LESS dangerous of the two directions."* An operator who declares nothing
+# gets the check that protects the 40 episodes behind every published open-loop
+# number.
+#
+# 🔒 Counts only, like §9/§10 — every id in this function was supplied by the
+# caller, and none of them are printed.
+
+
+#: roles whose output becomes SUPERVISION — the deployed val may not be inside
+CORPUS_ROLES_SUPERVISION = ("train", "augmentation")
+#: roles whose output becomes a HELD-OUT split — parity train may not be inside
+CORPUS_ROLES_HELDOUT = ("val", "eval")
+#: every accepted role. "" (undeclared) is also accepted and behaves as
+#: supervision — see the table above.
+CORPUS_ROLES = CORPUS_ROLES_SUPERVISION + CORPUS_ROLES_HELDOUT + ("audit",)
+#: what to do when the disqualifying overlap is non-empty
+CORPUS_GUARD_MODES = ("refuse", "exclude")
+
+
+def guard_corpus_build(clip_ids: Iterable[str], *, label: str,
+                       role: str = "", mode: str = "refuse",
+                       path: str | Path | None = None,
+                       val_path: str | Path | None = None,
+                       sanctioned_audit: str | None = None
+                       ) -> tuple[list[str], dict]:
+    """⭐ THE INGEST GATE. Returns ``(kept_clip_ids, record)``; refuses by default.
+
+    Call it in any entry point that turns a SET OF CLIP IDS into per-clip
+    artifacts — an episode cache, a bridge to a label pipeline, an augmentation
+    corpus, an external join — **before** the first byte is downloaded or
+    written. C112's own launch-path defect died *after* paying for a 536 MB
+    download; a gate that runs late is a gate that costs money to trip.
+
+    ``role`` selects which overlap disqualifies (see the table above);
+    ``mode="exclude"`` filters and reports instead of raising. Both outcomes put
+    BOTH overlap counts into ``record``, whatever the role — the fact a build
+    cannot know it needs is exactly the fact that must ride along uninvited
+    (the ``s2_labels.parity_contamination`` precedent).
+
+    ⚠️ ``record`` is meant to be written into the build's own manifest. A
+    filtered build whose manifest does not say what was filtered reports a clip
+    count that no longer matches the selection it names.
+    """
+    if role not in ("",) + CORPUS_ROLES:
+        raise ParityViolation(
+            f"guard_corpus_build [{label}]: role={role!r} is not one of "
+            f"{('',) + CORPUS_ROLES}. The role decides WHICH overlap is a leak "
+            f"(supervision: the deployed val may not be inside; held-out: the "
+            f"parity train may not be inside), so a typo may not be read as a "
+            f"weaker check.")
+    if mode not in CORPUS_GUARD_MODES:
+        raise ParityViolation(
+            f"guard_corpus_build [{label}]: mode={mode!r} is not one of "
+            f"{CORPUS_GUARD_MODES}.")
+    if role == "audit" and not sanctioned_audit:
+        raise ParityViolation(
+            f"guard_corpus_build [{label}]: role='audit' waives BOTH checks, so "
+            f"it requires sanctioned_audit='<why>'. It is not a boolean on "
+            f"purpose (the note_leaky_audit contract): the reason is printed and "
+            f"the record is stamped decision_grade False, so nothing produced "
+            f"under it can later be quoted as held-out.")
+
+    ids = sorted({str(c) for c in clip_ids})
+    in_train = clips_in_parity_train(ids, path)
+    in_val = clips_in_deployed_val(ids, val_path)
+    n_val_total = len(deployed_val_clip_digests(val_path))
+    heldout = role in CORPUS_ROLES_HELDOUT
+    if role == "audit":
+        hazard, direction = [], "none (sanctioned audit)"
+    elif heldout:
+        hazard, direction = in_train, f"clips inside {PARITY_TRAIN_KEY}"
+    else:
+        hazard = in_val
+        direction = f"clips inside the {n_val_total}-episode val deployment"
+
+    rec = {
+        "label": label,
+        "role": role or "(undeclared -> supervision)",
+        "mode": mode,
+        "n_in": len(ids),
+        "in_parity_train": len(in_train),
+        "in_deployed_val": len(in_val),
+        "deployed_val_episodes": n_val_total,
+        "frac_of_deployed_val": (len(in_val) / n_val_total) if n_val_total else 0.0,
+        "checked_direction": direction,
+        "n_disqualifying": len(hazard),
+        "digest_source": str(Path(path) if path else CLIP_DIGESTS_PATH),
+        "val_digest_source": str(Path(val_path) if val_path
+                                 else DEPLOYED_VAL_DIGESTS_PATH),
+        "decision_grade": True,
+    }
+
+    #: ⚠️ UNCONDITIONAL DISCLOSURE. Both counts are printed on every call, in
+    #: every role, pass or fail. The 201-clip aug120 overlap existed for days
+    #: inside a corpus whose name and provenance both said "independent"; the
+    #: number nobody asked for is the number that would have said otherwise.
+    print(f"[parity] {label}: ingest gate — {len(ids)} clip(s); "
+          f"{len(in_train)} in {PARITY_TRAIN_KEY}; {len(in_val)} of "
+          f"{n_val_total} deployed-val episodes. role={rec['role']} "
+          f"mode={mode} (membership by per-clip sha256, not by provenance).",
+          flush=True)
+
+    # ⚠️ THE WAIVER IS STAMPED BEFORE THE DISJOINTNESS SHORTCUT, NOT AFTER.
+    # MEASURED by tests/test_build_parity_guard.py while writing it: with the
+    # stamp placed after the `if not hazard` return, a sanctioned audit over a
+    # set that HAPPENED to be clean came back `decision_grade: True` — the
+    # waiver silently did not apply, and an artifact built under an explicit
+    # "I am waiving the check" would have been quotable as held-out. A waiver
+    # whose effect depends on the data it waives is not a waiver.
+    if sanctioned_audit is not None:
+        rec["audit_reason"] = sanctioned_audit
+        rec["decision_grade"] = False
+        rec["kept"] = len(ids)
+        rec["disjoint"] = not hazard
+        print(f"[parity] ⚠ {label}: sanctioned audit — {len(hazard)} "
+              f"disqualifying clip(s) ({direction}) KEPT because: "
+              f"{sanctioned_audit}. NOTHING built here is decision-grade.",
+              flush=True)
+        return ids, rec
+
+    if not hazard:
+        rec["kept"] = len(ids)
+        rec["disjoint"] = True
+        return ids, rec
+
+    rec["disjoint"] = False
+
+    if mode == "exclude":
+        drop = set(hazard)
+        kept = [c for c in ids if c not in drop]
+        rec["kept"] = len(kept)
+        rec["n_dropped"] = len(hazard)
+        rec["rule"] = f"excluded because present: {direction}"
+        print(f"[parity] ⚠ {label}: DROPPED {len(hazard)} of {len(ids)} clip(s) "
+              f"— {direction}. The corpus is {len(kept)} clips; quote THAT "
+              f"number, never {len(ids)}.", flush=True)
+        return kept, rec
+
+    raise ParityViolation("\n".join([
+        "",
+        "=" * 78,
+        f"PARITY VIOLATION [{label}] — INGEST GATE REFUSED THIS BUILD",
+        "=" * 78,
+        f"  corpus requested : {len(ids)} clip(s)",
+        f"  role             : {rec['role']}",
+        f"  disqualifying    : {len(hazard)} {direction}   <-- LEAK",
+        f"  (other direction : {len(in_train) if heldout else len(in_val)} "
+        f"{'in the val deployment' if heldout else 'in the parity train split'}"
+        f", recorded, not disqualifying for this role)",
+        "",
+        "  Nothing here crashes on its own and no existing check would notice:",
+        "  §9 proves a cache against ITS OWN corpus digest, so an augmentation",
+        "  corpus — a different corpus by construction — passes §9 while",
+        "  swallowing the episodes every published number is quoted over.",
+        "",
+        "  Choose one, explicitly:",
+        "    * drop the overlap and build the rest:  mode='exclude'",
+        "      (CLI: --exclude-parity-overlap)",
+        "    * this corpus is a HELD-OUT split, not supervision:  role='val'",
+        "      (CLI: --corpus-role val) — then the check flips to §10",
+        "    * reading these clips IS the point (a label census, a coverage",
+        "      audit): sanctioned_audit='<why>' (CLI: --sanctioned-audit),",
+        "      which stamps decision_grade False on everything produced",
+        "",
+        "  🔒 clip ids are gated-confidential and are NOT printed. In-process,",
+        "  parity.clips_in_deployed_val(ids) / parity.clips_in_parity_train(ids)",
+        "  return WHICH.",
+        "=" * 78,
+    ]))
+
+
+def require_ingest_gate(where: str):
+    """Import-side companion for a build script: prove the gate is REACHABLE.
+
+    ⚠️ A guard that no-ops when its oracle is missing is C112 wearing a green
+    suite. A build entry point calls this at start-up so a stripped checkout, a
+    pod that never received ``parity_train_clip_digests.json``, or a partial
+    file-ship FAILS IN SECONDS instead of building an unchecked corpus — the
+    ``t1_eval`` lesson (an import that fails after the rollout destroys the run
+    while the compute is already paid for), applied to the cheap end.
+    """
+    n_train = len(parity_train_clip_digests())
+    n_val = len(deployed_val_clip_digests())
+    if not n_train or not n_val:
+        raise ParityViolation(
+            f"{where}: the parity ingest oracles are EMPTY (train={n_train}, "
+            f"val={n_val}). Refusing to build an unchecked corpus.")
+    return {"parity_train_clips": n_train, "deployed_val_clips": n_val}

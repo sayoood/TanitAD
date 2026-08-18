@@ -59,7 +59,9 @@ def stacked_to_rgb(frames: torch.Tensor) -> np.ndarray:
     return fr.permute(0, 2, 3, 1).contiguous().numpy()
 
 
-def pick_clips(corpus: str, records: str | None, n: int, seed: int) -> list[str]:
+def pick_clips(corpus: str, records: str | None, n: int, seed: int,
+               corpus_role: str = "", exclude_parity_overlap: bool = False,
+               sanctioned_audit: str | None = None) -> list[str]:
     corp = {os.path.basename(p).split(".")[0]: p
             for p in glob.glob(os.path.join(corpus, "*.v2ep.pt"))}
     if not corp:
@@ -78,6 +80,27 @@ def pick_clips(corpus: str, records: str | None, n: int, seed: int) -> list[str]
                              "score")
     else:
         pool = sorted(corp)
+    # ----------------------------------------------------------------- #
+    # ⛔ THE PARITY INGEST GATE (parity.py §10c, RETRACTION_LOG C112/C113)
+    # ----------------------------------------------------------------- #
+    # This bridge is the SECOND ingest door and it is reachable WITHOUT a
+    # cache build: the 201 aug120 clips came through here because their w120
+    # video already existed. Gating only the builder would have missed every
+    # clip that produced the corpus C113 measured.
+    #
+    # It gates the POOL, before the seeded draw — so the drawn n is a sample of
+    # a clean population rather than a clean sample of a dirty one. Gating
+    # after the draw would make the guard's outcome depend on the seed.
+    from tanitad.data import parity                          # noqa: PLC0415
+    parity.require_ingest_gate("v2_to_pilot.pick_clips")
+    pool, _gate = parity.guard_corpus_build(
+        pool, label=f"v2_to_pilot.pick_clips <- {corpus}",
+        role=corpus_role,
+        mode="exclude" if exclude_parity_overlap else "refuse",
+        sanctioned_audit=sanctioned_audit)
+    if not pool:
+        raise SystemExit("[bridge] the parity ingest gate removed every clip — "
+                         "there is nothing left to bridge.")
     rng = np.random.default_rng(seed)
     order = rng.permutation(len(pool))
     return [pool[i] for i in order[:n]], corp
@@ -143,9 +166,21 @@ def main(argv=None) -> int:
     ap.add_argument("--n", type=int, default=8)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--fps", type=int, default=10)
+    ap.add_argument("--corpus-role", default="",
+                    help="what this bridge output IS (parity.py §10c). "
+                         "Undeclared/train/augmentation are checked against the "
+                         "DEPLOYED VAL; val/eval flip the check to parity TRAIN.")
+    ap.add_argument("--exclude-parity-overlap", action="store_true",
+                    help="drop the disqualifying clips instead of refusing")
+    ap.add_argument("--sanctioned-audit", default="",
+                    help="REASON for keeping a disqualifying overlap; stamps "
+                         "decision_grade False")
     a = ap.parse_args(argv)
 
-    pick, corp = pick_clips(a.corpus, a.records, a.n, a.seed)
+    pick, corp = pick_clips(a.corpus, a.records, a.n, a.seed,
+                            corpus_role=a.corpus_role,
+                            exclude_parity_overlap=a.exclude_parity_overlap,
+                            sanctioned_audit=a.sanctioned_audit or None)
     print(f"[bridge] picked {len(pick)} clips (seed {a.seed})", flush=True)
 
     vdir, edir = os.path.join(a.out, "videos"), os.path.join(a.out, "ego")

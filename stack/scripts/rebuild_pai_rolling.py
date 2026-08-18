@@ -73,6 +73,12 @@ def _hf_download(rel: str) -> str:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
+    ap.add_argument("--corpus-role", default="",
+                    help="what this cache IS (parity.py §10c). No exclude mode: "
+                         "this script reproduces a cache_key over the ORDERED "
+                         "clip ids, so a filtered build is a different corpus.")
+    ap.add_argument("--sanctioned-audit", default="",
+                    help="REASON for keeping a disqualifying overlap")
     ap.add_argument("--order", required=True,
                     help="TSV: idx<TAB>clip_id<TAB>chunk (precomputed split order)")
     ap.add_argument("--cache-root", required=True)
@@ -115,6 +121,21 @@ def main() -> None:
 
     # --- DETERMINISM ORACLE: the key is a hash of the ordered clip_ids + params.
     sources = [{"clip_id": cid} for (_i, cid, _c) in order]
+    # ⛔ PARITY INGEST GATE (parity.py §10c). This script writes ep_%05d.pt via
+    # `mixing.save_episode` DIRECTLY — it does NOT go through
+    # `epcache.build_episodes_cached`, so the gate there does not cover it.
+    # MEASURED by the derivation in tests/test_build_parity_guard.py; a
+    # hand-listed set of "the build scripts" would have missed exactly this one.
+    from tanitad.data import parity                          # noqa: PLC0415
+    parity.require_ingest_gate("rebuild_pai_rolling")
+    parity.guard_corpus_build(
+        [cid for (_i, cid, _c) in order],
+        label=f"rebuild_pai_rolling -> {args.tag}", role=args.corpus_role,
+        sanctioned_audit=args.sanctioned_audit or None)
+    # ⚠️ mode is REFUSE-ONLY here on purpose: the cache_key below is a hash of
+    # the ORDERED clip ids, and this script's whole contract is byte-identical
+    # reproduction against --expect-key. Silently dropping a clip would change
+    # the key and abort two lines later with a confusing "order/params drift".
     key = cache_key(sources, params)
     log(f"cache_key={key} expect={args.expect_key} params={params}")
     if key != args.expect_key:

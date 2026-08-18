@@ -6476,3 +6476,81 @@ never ran", written yesterday.*
 $(grep -rl …)` tore this repo's `TanitAD Research Hub` paths into fragments and reported
 `No such file or directory` for each. Redone with `-rlZ` + NUL-delimited read. **Third logged
 instance, first one in my own hands.**
+
+---
+
+## C118 — A DERIVER THAT UNDERCOUNTED THREE TIMES, AND A NEUTER-MATRIX THAT LEFT A FILE BROKEN ON DISK WHEN KILLED (2026-08-18, build parity guard)
+
+### ⭐ The guard now RUNS, and finding its doors required three attempts at the derivation
+
+C113's escalation was a sentence — *"whoever runs that build must call `parity.filter_train_clips()`
+first"* — i.e. **doctrine with no mechanism**, the C108 class. It is now `parity.py` **§10c
+`guard_corpus_build()`**, wired into **six doors** and pinned by **24 tests whose population is
+derived from source rather than hand-listed.**
+
+⛔ **A hand-list would have shipped with TWO HOLES**, and neither appears in any runbook description
+of "the build":
+* **`rebuild_pai_rolling.py`** writes `ep_%05d.pt` through `mixing.save_episode` **directly**,
+  bypassing `epcache.build_episodes_cached` — **gating the obvious writer would have missed it**;
+* **`slice_v2_cache.py`** emits a whole **new** `.v2ep.pt` corpus **from an existing one** — no
+  source video, no HF, no `--sel`.
+
+⚠️ **AND THE DERIVER ITSELF UNDERCOUNTED THREE TIMES IN A ROW — 4 → 3 → 11 modules — as it was
+tightened for precision.** ⇒ **ROOT-CAUSE CLASS: C110 again, one level up. A derivation rule is
+itself a filter, so its output is a claim about the RULE until the rule is shown complete.** ⇒ The
+committed rule therefore **deliberately OVER-reports into a census and justifies each exclusion**,
+rather than narrowing until the list looks clean. *A short list is the shape both a precise rule and
+a broken one produce.*
+
+⭐ **The design hinges on a fact measured FIRST, not assumed:** parity-train digests (2400) ∩
+deployed-val digests (40) = **0**. That is what lets the gate default to the dangerous-direction
+check **while leaving the canonical train build untouched** — ⭐ **a guard that fired on the
+legitimate case would be switched off within a week.** *Designing for the guard's own survival is
+the difference between a control and a nuisance.*
+
+⛔ **Two doors genuinely CANNOT be gated, and saying so is the right answer:** `epcache_to_pilot.py`
+and `lake/view.py` key on **positional `ep_%05d`/`episode_id`, not clip ids**, so a gate there
+**would miss every lookup and print a reassuring `0 contaminated` FOREVER.** Both classified with
+reasons; one now says so at run time. *A guard that cannot see its subject is worse than none — it
+manufactures assurance.*
+⭐ **Gating the WRITER rather than the CALLER means `build_pai_cache.py` is gated without being
+touched.**
+⚠️ **And the test found a defect in the gate itself:** with the audit stamp placed **after** the
+disjointness shortcut, `role="audit"` over a coincidentally-clean set returned
+`decision_grade: True` — **the waiver silently did not apply.** Fixed.
+
+### ⛔ NEW OPS HAZARD: a neuter-matrix killed mid-case LEAVES THE FILE BROKEN ON DISK
+
+The C107 neuter matrix disables each guard in turn and requires the suite to go red — **all 8 went
+red** (12/1/2/3/3/2/2/2 failures). ⚠️ **But the first matrix run was killed by a tool timeout
+mid-case and left a source file NEUTERED ON DISK.** ⛔ **`try/finally` is no defence against
+SIGKILL.**
+
+⇒ **RULE: any test that deliberately damages a tracked file must be recoverable WITHOUT its own
+cleanup path running** — take a pre-run backup and **md5-compare every touched file afterwards**,
+which is what caught it here (**all 7 identical**). *A destructive test whose restore lives only in
+`finally` is one timeout away from committing sabotage.*
+
+### Status
+
+**Suites:** `test_build_parity_guard.py` **24 passed**, `test_eval_contamination.py` **17 passed**
+(both **in isolation** — the attributable evidence); `stack` **4084 passed / 0 failed**, `taniteval`
+**1136 passed** *(full runs are a torn snapshot per C114 — a sibling ran pytest concurrently)*.
+⭐ **No third plaintext copy of the ids: all 13 files scanned against the 4,729-id list, ZERO hits —
+verified, not asserted.** C113's escalation #3 (the 3 `test_v6_stage_init_introduction` failures) is
+**resolved**; that stream landed.
+
+⏳ **Four items for the PI:**
+1. **A re-run of the parity VAL cache build now REFUSES** until passed `--corpus-role val`
+   (`…/2026-07-28-wide-val-build/code/launch_val_build.sh:30`). Intended; the banked launcher was
+   **not** edited.
+2. **The 4,472 build is now one flag** — `--exclude-parity-overlap` drops the 6 deployed-val
+   episodes and records it in `_geometry.json`. **Without it, it refuses: there is no silent path.**
+   ⚠️ The *other* half of `NEXT_4472_BUILD_INPUTS.md` §2 item 4 — **separate corpus vs parity
+   extension** — remains a decision **no guard can make.**
+3. **A bounded gap NAMED rather than closed:** the label stages write `{cid}.json`, too generic a
+   shape to derive on. Safe **by position** (their clip set comes from the now-gated bridge) and
+   `s2_labels` already refuses on `role="eval"`. Residual exposure is a **hand-assembled** label set
+   or epcache; closing it needs records carrying their own provenance — a schema change.
+4. **C113's plaintext id lists are now LOad-BEARING:** this work depends on them as test evidence,
+   so **deleting them breaks the pin.** That raises the cost of the §9 "digests only" decision.

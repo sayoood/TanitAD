@@ -32,6 +32,37 @@ import glob, json, os, sys
 import numpy as np
 import torch
 
+# --------------------------------------------------------------------------- #
+# ⛔ THIS DOOR CANNOT CARRY THE PARITY INGEST GATE, AND THAT IS A FINDING       #
+# --------------------------------------------------------------------------- #
+# `tests/test_build_parity_guard.py` DERIVES the set of corpus writers and
+# requires each to call `parity.guard_corpus_build`. This one is exempt, with a
+# reason that is checkable rather than asserted:
+#
+#   the ids here are POSITIONAL — `ep_00000`, taken from the epcache filename —
+#   and the parity oracle keys on the PhysicalAI **clip id**. `parity.py:101`
+#   states the split verbatim: the v2 cache is `<clip_id>.v2ep.pt`, "a different
+#   uid space from the epcache's positional `ep_%05d.pt`". A gate here would be
+#   asking the oracle a question in the wrong vocabulary: every lookup would MISS
+#   and the guard would print a reassuring "0 contaminated" forever.
+#
+# ⚠️ A guard that cannot fail is not a guard (C107), and one that reports a
+# clean answer because it asked the wrong question is worse than none — it is
+# the `df`-reports-the-cluster trap. So this script REFUSES the pretence and
+# says what is unknown, at run time, in its own output.
+#
+# ⇒ THE REAL FIX IS UPSTREAM AND IS ALREADY IN PLACE: the epcache this reads is
+#   written by `epcache.build_episodes_cached` (or `rebuild_pai_rolling`), and
+#   BOTH are gated on the clip ids while they still have them. The exposure that
+#   remains is a hand-assembled epcache of unknown provenance.
+_PARITY_UID_GAP = (
+    "epcache_to_pilot: ids are positional ep_%05d, NOT PhysicalAI clip ids; "
+    "the parity ingest gate (parity.py §10c) CANNOT be evaluated here. "
+    "Provenance is inherited from whoever built the epcache — which IS gated "
+    "(epcache.build_episodes_cached / rebuild_pai_rolling). If this epcache was "
+    "assembled by hand, its parity status is UNKNOWN.")
+print(f"[parity] ⚠ {_PARITY_UID_GAP}", flush=True)
+
 SRC = sys.argv[1]
 OUT = sys.argv[2]
 LIMIT = int(sys.argv[3]) if len(sys.argv) > 3 else 0

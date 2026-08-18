@@ -37,6 +37,13 @@ STACK = "/workspace/TanitAD_head/stack"
 PY = "/workspace/a2venv/bin/python"
 BATCH = int(os.environ.get("BATCH", "40"))
 
+# ⛔ HARD import of the parity ingest gate. Both paths are tried because this
+# script runs on a pod (STACK) and is source-analysed in the repo (the sibling
+# of scripts/); a gate that is merely *available* is what C113 escalated.
+sys.path.insert(0, STACK)
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from tanitad.data import parity                                    # noqa: E402
+
 api = HfApi()
 os.makedirs(ROOT, exist_ok=True)
 
@@ -51,6 +58,37 @@ done = set(json.load(open("/workspace/ph0_prod4/clips.json")))
 todo = sorted((rec & set(loc)) - done)
 print(f"AUG120 rec={len(rec)} with_w120={len(rec & set(loc))} done={len(rec & done)} "
       f"todo={len(todo)}", flush=True)
+
+# --------------------------------------------------------------------------- #
+# ⛔ THE PARITY INGEST GATE (parity.py §10c, RETRACTION_LOG C112/C113)
+# --------------------------------------------------------------------------- #
+# ⭐ THIS LINE IS WHY THE GATE IS HERE. `todo = (records ∩ w120_corpus) − done`
+# (above) selects the cohort *out of* the w120 corpus, and the w120 corpus is
+# the parity geometry sibling — which is how all 201 aug120 clips turned out to
+# be 201/201 inside `physicalai-train-e438721ae894` while the corpus NAME and
+# its PROVENANCE both said "independent augmentation". Nothing in that line can
+# tell you so; only the ids can.
+#
+# ⚠️ And `loc` spans BOTH the train and the val geometry siblings (SRC carries
+# `TRAIN` and `VAL`), so this intersection can reach deployed-val clips without
+# anything looking unusual. 6 of the 4 729 Alpamayo records ARE canonical val
+# episodes (15 % of the 40 behind every published open-loop number).
+#
+# It runs before `create_repo` and before the first shard is pulled — a refusal
+# costs one second, not one batch of egress.
+parity.require_ingest_gate("aug120_pipeline")
+todo, AUG120_PARITY_GATE = parity.guard_corpus_build(
+    todo, label=f"aug120_pipeline -> {DST}",
+    role=os.environ.get("AUG120_CORPUS_ROLE", "augmentation"),
+    mode="exclude" if os.environ.get("AUG120_EXCLUDE_PARITY_OVERLAP") == "1"
+         else "refuse",
+    sanctioned_audit=os.environ.get("AUG120_SANCTIONED_AUDIT") or None)
+os.makedirs(ROOT, exist_ok=True)
+with open(f"{ROOT}/parity_ingest_gate.json", "w", encoding="utf-8") as fh:
+    json.dump(AUG120_PARITY_GATE, fh, indent=1)
+print(f"AUG120 PARITY_GATE kept={len(todo)} "
+      f"in_deployed_val={AUG120_PARITY_GATE['in_deployed_val']} "
+      f"in_parity_train={AUG120_PARITY_GATE['in_parity_train']}", flush=True)
 
 api.create_repo(DST, repo_type="dataset", private=True, exist_ok=True)
 
