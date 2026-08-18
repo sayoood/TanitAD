@@ -292,9 +292,127 @@ the cylindrical projection **masking rather than fabricating**, as intended.
 
 ---
 
-## 7. Results — during and after load
+## 7. Results
 
-*(pending — filled in when the run completes)*
+### 7.1 The extraction itself — COMPLETED, no abort
+
+| | |
+|---|---|
+| clips built | **476 / 476** (`[build s0/1] DONE built=476`) |
+| chunks | **10 / 10** (170, 175, 176, 178, 179, 180, 181, 182, 185, 295) |
+| failures | **0** (`FAILED` count 0 across the whole log) |
+| wall-clock | **8,348 s = 2 h 19 m** |
+| cache written | **17.07 GB** (~35.9 MB/clip, PNG/lossless) |
+| extraction rate | **3.42 clips/min** under concurrent load |
+| free disk | 366 GB → **347 GB** low-water (abort floor was 300 GB — never approached) |
+| abort | **NONE.** Trainer PID 25477 and snapshot PID 42229 alive at every one of the 141 watchdog polls |
+
+The watchdog stood down cleanly on build exit (`ZZDONE|build_exited|2026-08-18T00:18:08Z`).
+
+### 7.2 ⚠️ A second contaminated baseline, found while analysing — the post-resume WARM-UP
+
+Before the comparison could be trusted, the baseline had to be cleaned a second time. Plotting the
+126 pre-load points shows it is **bimodal**: a bulk at 26.24–26.44 and a distinct cluster at
+27.04–27.21.
+
+My first hypothesis was periodic checkpointing (`--save-every 250` against `--log-every 50` puts a
+save in exactly one window in five). **That is wrong, and the data refutes it outright:** the 18 slow
+points are **consecutive** — steps 6350 … 7200, with no periodicity at all (`step % 250 == 0` holds
+for only 3 of the 18).
+
+They are the **first 18 windows after the process resumed** (this process started at step 6250). The
+run is a warm-up transient of ~900 steps at median **27.1156 s/step**, settling to **26.36** and
+staying there. `--v2-lru 64` filling the episode cache is the obvious candidate, though the pilot did
+not test that.
+
+⭐ **This also explains §1.3.** The cumulative `step_s` decays monotonically precisely *because* this
+900-step warm-up head is being slowly averaged out of it — one mechanism accounts for both the
+decaying mean and the bimodal baseline.
+
+⇒ **The warm-up is excluded from the baseline.** Comparing a steady-state loaded phase against a
+baseline containing a resume transient would have inflated the baseline and *hidden* the effect —
+the opposite error to the one in §1, and just as wrong. Note the direction: the sloppier analysis
+would have made concurrency look *better*, not worse.
+
+### 7.3 Step time — steady-state BEFORE vs DURING
+
+Load window **1787003523 → 1787012288** (2 h 26 m, first launch to build exit). A logged point covers
+the 50 steps *before* it, so points whose window straddles a boundary are TRANSITION and excluded
+from both groups.
+
+| phase | n | median | IQR | min | max |
+|---|---|---|---|---|---|
+| warm-up (6350–7200) | 18 | 27.1156 | — | — | — | *(excluded)* |
+| **BEFORE, steady state (7250–12600)** | **108** | **26.3591** | [26.3092, 26.3966] | 26.2422 | 26.7032 |
+| **DURING (12700–12900)** | **5** | **26.4993** | [26.4989, 26.5138] | 26.4346 | 26.5652 |
+
+Per-point DURING: 26.4989 · 26.4993 · 26.5652 · 26.5138 · 26.4346.
+
+### 7.4 ⭐ The answer: a REAL effect, and a small one — bounded well below the threshold
+
+**Do not round this to "no effect".** Against the clean baseline the shift is unambiguous:
+
+| statistic | value |
+|---|---|
+| median shift | **+0.1402 s = +0.532 %** |
+| **bootstrap 95 % CI on the median shift (20,000 resamples)** | **[+0.282 %, +0.785 %]** |
+| Mann-Whitney U, two-sided | **p = 0.00064** (n=108 vs n=5) |
+| DURING points above the steady-state baseline max (26.7032) | **0 / 5** |
+| baseline points reaching the DURING minimum (26.4346) | 15 / 108 |
+
+The sign is consistent across all five points, and the two TRANSITION points sit between the groups
+in exactly the order a real effect predicts. **The extraction does slow the trainer. It slows it by
+about half a percent.**
+
+**And that is decisively below the threshold that was asked about:**
+
+| quantity | value |
+|---|---|
+| measured slowdown | **+0.53 %** (95 % CI +0.28 % … +0.79 %) |
+| PI's abort threshold | +5 % |
+| **margin to the trip point** | **the CI's upper bound is 6.4× below it** |
+| cost over the remaining 17,100 steps | **+0.67 h** (~40 min) on a ~5.3-day run |
+| benefit | **~5.3 days** of extraction not spent waiting for the GPU |
+
+Trading **40 minutes** of training time for **five days** of calendar is not a close call.
+
+⚠️ **Caveats stated plainly.** n_during = **5**, one short of the 6 the brief asked for: the 10-chunk
+build ran 2 h 19 m and the trainer logs once per ~22 min, so **10 chunks cannot produce 6 clean
+fully-loaded windows** — the brief's two requirements are arithmetically incompatible, and 10 chunks
+was kept as the binding one. All 5 DURING points fall inside the steady baseline's range, so this is
+a shift in central tendency, not an excursion into new territory. With n=5 the CI is the honest
+summary and the p-value should not be over-read.
+⚠️ The effect is measured for **one** extraction process at `nice -19` with 3 threads. It does **not**
+license running several in parallel; the linearity was not tested.
+
+### 7.4 Training quality was not affected
+
+| metric | BEFORE (n=126) | DURING (n=5) |
+|---|---|---|
+| `gnorm` median | 529.34 (IQR [297.40, 722.56]) | 610.73 (values 702, 841, 153, 611, 512) |
+| `loss` median | 2.4375 (IQR [2.0342, 3.0006]) | 2.0372 (values 1.74, 2.31, 1.48, 2.98, 2.04) |
+
+Both sit **inside** the baseline IQR. Nothing suggests the extraction perturbed optimisation, only
+that it took a small slice of wall-clock.
+
+### 7.5 GPU was never starved
+
+`nvidia-smi utilization.gpu` sampled at 1 s under load, n=90: **median 98 %**, mean 84.1 %, 75.6 % of
+samples ≥95 %. A GPU-bound trainer next to a `nice -19` CPU job is the mechanism for why the effect
+is so small — Thor has 14 CPUs and load average only reached ~2.3.
+⚠️ The dips to 0 % in that sample are **not attributed**: without a matched no-load sample they could
+equally be checkpointing or the trainer's own step boundaries. Reported as raw observation only.
+(`clocks.sm` reads `[N/A]` on Thor's tegra driver — another probe that is simply absent here.)
+
+### 7.6 Throughput, and the reverse direction
+
+| condition | rate |
+|---|---|
+| HF → Thor, trainer only | **11.76 MB/s** |
+| HF → Thor, trainer **+ this extraction** | **8.58 MB/s** |
+
+The extraction's own CPU work costs it ~27 % of its download rate. That is the extraction slowing
+*itself*, not the trainer slowing it — and it is the figure to plan the full run with.
 
 ---
 

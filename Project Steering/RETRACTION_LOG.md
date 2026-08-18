@@ -5537,3 +5537,94 @@ frozen-external-encoder readout arm, and a **DINOv2 token-distillation `aux` los
 than R1, and aimed at the component the evidence actually indicts.
 ⏳ **A human must accept the DINOv3 licence** for the stronger arm; the agent correctly did not, and
 did not use a mirror.
+
+---
+
+## C105 — C99 FIXED THE HAND-LISTED **SHIP SET** AND KEPT A HAND-LISTED **ENTRY-POINT SET**; AND A GREEN IMPORT IS NOT EVIDENCE OF CURRENCY (2026-08-18, Thor closure audit)
+
+**MEASURED.** C99's lesson was *"the ship set is the import closure, computed, never the diff"* — and
+I then briefed the audit with a **hand-listed set of 7 entry points**. The computed AST closure of
+the ladder is **120 files**; widening the entry-point list to **14** (adding `t1_eval.py`,
+`eval_four_families.py`, `seam_probe.py`, `t1_summary.py`, `run_spectral.py`,
+`refc_dump_latents.py`, `v5_guard.py`) grew it to **134 and found three MORE stale files.**
+
+⇒ ⛔ **SAME CLASS, ONE LEVEL UP.** C99 computed the closure but hand-listed its **roots**. A closure
+is only as complete as the set it is closed *over*. ⇒ **RULE: derive the entry points too — from
+what the runbook and chain actually invoke — and state the root set, because it is the assumption
+the whole audit rests on.**
+
+**7 files were genuinely stale** — 5 drifted, **2 absent entirely**, including `taniteval/v0_antiecho.py`
+at **46,905 B**.
+
+### ⭐⭐ THE MOST DANGEROUS ONE WOULD NOT HAVE FAILED LOUDLY
+
+Thor's `train_v6_staged.py` (**234,845 B vs 252,691 B**) **still exported `assert_stage_precondition`**
+— so `v6_chain.py`'s import of *"THE adjudicator"* would have **SUCCEEDED** — while containing
+**0 references to `probe_applies`** against the current **6**.
+⇒ ⛔ **The S-T gate would have run with NO applicability filtering and emitted a normal-looking
+verdict.**
+
+⇒ **This is the third rung of one ladder, and each rung looked sufficient at the time:**
+| check | proves | does NOT prove |
+|---|---|---|
+| file **present** | it was transferred | that it is the right bytes |
+| **md5** matches (C99) | the bytes are right | that the code can run |
+| **import** succeeds | the module loads | ⛔ **that it is CURRENT** |
+⇒ **RULE: a stale file that still exports the names its caller asks for passes every structural
+check and is wrong. Verify SYMBOL-LEVEL CURRENCY — the presence of what the caller will actually
+use — not merely that the import returns.**
+
+### ⚠️ CRLF QUANTIFIED, AND IT IS WORSE ON BIGGER SETS
+
+**47 of 50 apparent-drift rows were artifacts — 94 % FALSE**, against **70 %** measured on 08-16.
+**The false-positive rate RISES with the size of the compared set.** Verified arithmetically:
+`rollout.py`'s 373-byte raw delta equals its **373 lines** exactly. ⇒ Normalise before comparing,
+always, and report artifacts as their own category.
+
+### ⚠️ THREE PROBES RETURNED CLEAN, PLAUSIBLE, WRONG ANSWERS — all in one audit
+
+1. **MSYS rewrote `--remote-root`** into `C:/Program Files/Git/home/nvidia/TanitAD` ⇒ the audit
+   reported **120/120 MISSING_REMOTE** *while the trainer was executing a file from that path.*
+2. **A `ps` filter containing `supervise` and `train_v6_staged` matched its own ssh command line**,
+   inventing a supervisor and a second trainer. Re-probed with `chr()`-assembled tokens: **0
+   supervisors, 1 trainer.** *(The self-match trap, for the fourth measured time.)*
+3. **`pytest` reported 4 failures** in untouched files — all `UnicodeDecodeError: 'charmap'` under
+   cp1252, **all passing under `PYTHONUTF8=1`.** *(C82/C86's mechanism, confirmed again.)*
+
+⭐ **And a fourth, caught before it was filed:** `lead_state_gate` appeared to be a blocking import
+failure, but is **guarded by `try/except ImportError` with documented fallbacks**
+(`probe_latent_state.py:117-124`) — the probe had bypassed the guard. The tool now classifies
+**BLOCKING vs GUARDED** rather than counting raw failures.
+
+### FINAL STATE
+
+**DRIFT 0 · MISSING_REMOTE 0 · 131/134 modules import for real** on Thor's train venv, cross-checked
+against an **independent digest** (Thor's `sha256sum` binary vs local `hashlib`): **7 match, 0
+differ.** The 3 remaining failures are environment, not drift, and none blocks S-T.
+**Live run untouched: 12,750 → 12,900, `step_s` 26.4735 / 26.4742 / 26.4745 / 26.4742.**
+
+### ⛔ AND ONE DEFECT THAT WOULD HAVE KILLED S-T — FOUND, FIXED, PINNED
+
+`train_v6_staged.py` imported `SeamDumpError` **inside the `try` whose `except` names it.** If that
+import fails, Python evaluates `except SeamDumpError`, finds it unbound, and **the resulting error
+propagates OUT OF THE WHOLE `try` STATEMENT — the broad `except Exception` below is never reached.**
+**Proven in 6 lines:** it escapes as `UnboundLocalError: cannot access local variable`.
+⇒ The block sits **immediately before `_save_ckpt`**, so it **kills the trainer at a checkpoint
+boundary**, and it fires exactly when `taniteval` is off `PYTHONPATH` — **the live run's own
+configuration.** S-W escaped only because the chain emits `--dump-seam-plan` on **S-T/S-S/S-J and not
+S-W**. ⇒ **S-T would have hit it.** Repaired (guarded import + sentinel) and pinned by **7 tests**,
+the first of which reproduces the language rule directly so it fails against the old shape.
+
+⚠️ **The test's own locator was wrong THREE TIMES before it was right** — first matching the
+enclosing checkpoint block, then the inner sentinel check, then an unrelated guard clause in another
+function — **each returning something plausible instead of failing.** ⇒ **A locator must be pinned by
+a conjunction only the intended node satisfies, and must ASSERT UNIQUENESS rather than take a first
+match.** *The scope error, three times, inside a helper written to catch a scope error.*
+
+### Two standing items
+
+⛔ **`stack/scripts/pod_git_drift.py` is stale doctrine** — all four `DEFAULT_PODS` are dead
+machines, it matches by **basename repo-wide**, and it does **no CRLF normalisation**, so it would
+report drift on roughly half of what it inspects. ⏳ **`pandas`/`pyarrow` in Thor's `tanitad-train`
+is a PI call**; the safe recipe (`--no-deps`, torch last from the pinned index, verified with a real
+`conv2d`) is in the audit report. **The agent installed nothing** — correct, beside a 5-day run.

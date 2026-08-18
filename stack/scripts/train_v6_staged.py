@@ -3071,9 +3071,34 @@ def train(a) -> dict:
             # is why this is a NOTE and not a crash — the dump is for S-T and
             # later. The live v6F S-W run is exactly the refused case.
             if getattr(a, "dump_seam_plan", None):
+                # ⛔ THE IMPORT MUST NOT LIVE INSIDE THE `try` WHOSE `except`
+                # NAMES ITS SYMBOL. Found 2026-08-18 by the Thor closure audit.
+                # If `from taniteval.seam_dump import SeamDumpError, …` raises
+                # ImportError, Python then EVALUATES `except SeamDumpError` —
+                # which is unbound — and the resulting UnboundLocalError
+                # PROPAGATES OUT OF THE WHOLE `try` STATEMENT. The broad
+                # `except Exception` below is NEVER REACHED. Measured: the
+                # exception escapes as `UnboundLocalError: cannot access local
+                # variable 'SeamDumpError'`.
+                # ⇒ This block sits immediately before `_save_ckpt`, so the
+                # failure KILLS THE TRAINER AT A CHECKPOINT BOUNDARY — and it
+                # fires exactly when `taniteval` is off PYTHONPATH, which is the
+                # live run's own configuration. S-W is unaffected only because
+                # the chain emits `--dump-seam-plan` on S-T/S-S/S-J and not on
+                # S-W; S-T would have hit it.
+                # ⇒ The import is now its own guarded step, so a missing
+                # optional module degrades to a printed note, which is what the
+                # comment below always claimed the code did.
                 try:
                     from taniteval.seam_dump import (
                         SeamDumpError, save_seam_dump, seam_dump_from_plan)
+                except Exception as e:                        # noqa: BLE001
+                    print(f"[v6 seam] unavailable at {step} "
+                          f"({type(e).__name__}: {e}) — training continues",
+                          flush=True)
+                    SeamDumpError = seam_dump_from_plan = None  # noqa: N806
+                if seam_dump_from_plan is not None:
+                  try:
                     d = seam_dump_from_plan(
                         L["out"]["plan"],
                         eids=b["episode_id"] if "episode_id" in b
@@ -3086,16 +3111,16 @@ def train(a) -> dict:
                     p = save_seam_dump(
                         d, Path(a.dump_seam_plan) / f"seam_{step:06d}.pt")
                     print(f"[v6 seam] banked {p}", flush=True)
-                except SeamDumpError as e:
+                  except SeamDumpError as e:
                     print(f"[v6 seam] NOT banked at {step}: {e}", flush=True)
-                except Exception as e:                        # noqa: BLE001
+                  except Exception as e:                      # noqa: BLE001
                     # ⛔ A DIAGNOSTIC MUST NEVER KILL A RUN. This is the
                     # analysis-time-refusal trap inverted: there, an optional
                     # import destroyed a finished run's output; here the whole
                     # block is optional and the training is the thing that
                     # matters. It says so loudly and continues.
                     print(f"[v6 seam] dump FAILED at {step} "
-                          f"({type(e).__name__}: {e}) — training continues",
+                          f"({type(e).__name__}: {e}) — continuing",
                           flush=True)
             _save_ckpt(out_dir / "ckpt.pt", stack=stack, opt=opt, step=step,
                        cfg_json=cfg_json)
