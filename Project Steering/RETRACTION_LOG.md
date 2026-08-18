@@ -7097,3 +7097,38 @@ features" count (pinned by test 2026-08-16 after four rots). Fix: `taniteval/res
 dump_exclusions.json` (machine-readable) + `DUPLICATES.md`; census code subtracts the list or
 declares it counts dumps. Nothing consumes the json automatically yet — wiring it into the next
 census tool is a named backlog item.
+
+---
+
+## C127 — "strategic labels are derivable from the ego path" was a GENERALISATION FROM ONE TRUE SENTENCE, and five tokens fall outside it (2026-08-18, PI challenge)
+
+**The claim, as published** in `TACTICAL_STRATEGIC_LABEL_CONCEPT.md` §8.4: *"strategic labels for
+all 4,723 clips are derivable without the w120 extraction."*
+
+**How it was built.** `s2_derive.py` says Engine A *"covers every clip"*, and Engine A reads the
+hindsight ego path. Both true. I turned *"covers every clip"* — a statement about **row coverage** —
+into *"derives every token"*, a statement about **vocabulary coverage**. They are different claims
+and only the first was measured.
+
+**MEASURED correction** (`STRATEGIC_DERIVABILITY_AUDIT.md`): of 17 strategic tokens, ~10 are
+geometry-derivable, 2 are weak proxies, and **5 are structurally unavailable** — `LANE_TARGET`,
+`PREPARE_LANE_CHANGE`, `HOLD_CORRIDOR`, `PREPARE_EXIT`, `ROUTE_TO`. ⛔ **Three had already been
+ruled out or gated by the PI's own prior rulings, in the very file I cited:** `LANE_TARGET` *"leaves
+g_str emission ENTIRELY"* (18 of 19 adjudicated, **14 wrong**); `ROUTE_TO` **G1 CLOSED at 0/31**,
+abstained rather than guessed; `PREPARE_LANE_CHANGE` admissible *"ONLY in service of route"* and
+blocked on lane topology (backlog #75). And the obvious workaround is already dead: the retired
+lateral-offset gate had **15 of 19 firings FULLY EXPLAINED by constant-curvature road following**.
+
+**ROOT-CAUSE CLASS: a coverage statement read as a capability statement.** *"Covers every clip"*
+answers *how many rows does the engine touch*; it says nothing about *how many token types it can
+emit*. This is the same shape as C110's denominator and C125's checkpoint size — **a number that is
+correct about a different quantity than the one it was attached to** — and it is the third time this
+class has fired. ⚠️ It is also a **failure to read the source I was citing**: the disqualifying
+rulings were in the same docstring, above the sentence I quoted.
+
+**Consequence, and it is not only bookkeeping.** The strategic head will carry **dead classes** —
+shaped, resumable, never supervised — because a shape change would break the live v6F strict resume
+(*"zero training support is safe, a changed shape is not"*). ⇒ **Every strategic result must declare
+which tokens were trainable**, or a reader infers 17-way competence where ~10-way was trained. The
+five missing tokens are a **DATA gap (lane topology), not a labelling-strategy gap** — no ordering
+of Alpamayo, VLM and ego produces them from what the corpus contains.

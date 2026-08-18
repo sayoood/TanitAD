@@ -339,8 +339,17 @@ special case.
 ### 8.4 ⭐ The consequence that changes the schedule: STRATEGIC NEEDS NO VIDEO
 
 Engine A derives `g_str`/`a_str` from the **hindsight ego path** — i.e. from **egomotion**, not
-pixels. ⇒ **Strategic labels for all 4,723 clips are derivable without the w120 extraction.** The
-extraction gates the *tactical* reason (VLM needs frames); it does **not** gate the strategic layer.
+pixels. ⇒ **The geometry-derivable SUBSET of the strategic vocabulary is available without the
+w120 extraction.**
+
+⛔ **CORRECTED 2026-08-18 (PI challenge).** An earlier revision of this section said *"strategic
+labels for all 4,723 clips are derivable"*. **That was wrong.** ~10 of the 17 strategic tokens
+are geometry-derivable; **`LANE_TARGET`, `PREPARE_LANE_CHANGE`, `HOLD_CORRIDOR`, `PREPARE_EXIT`
+and `ROUTE_TO` are not** — they need lane topology the corpus does not contain, and three of
+them were already ruled out or gated by the PI's own prior rulings. Full token-by-token audit:
+[`STRATEGIC_DERIVABILITY_AUDIT.md`](STRATEGIC_DERIVABILITY_AUDIT.md). The parallel CPU build
+still stands; it produces ~10 of 17 tokens, and the strategic head carries dead classes that
+must be declared with every strategic result.
 
 Two consequences:
 1. **The strategic label build can start immediately**, on CPU, in parallel with everything else —
