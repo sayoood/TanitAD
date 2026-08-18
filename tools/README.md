@@ -163,7 +163,15 @@ length)`. `Keys.txt` is scanned like any other file and reported by path alone.
 
 ⚠️ **A scan that could not read what it was asked to read reports `SCAN UNUSABLE` and exits
 non-zero**, never "clean". MEASURED 2026-08-18: under a Drive outage the first cut printed
-`files scanned = 0 ... BLOCKING (0) -- clean` and exited 0.
+`files scanned = 0 ... BLOCKING (0) -- clean` and exited 0. The same flap also produced the
+**partial** variant of that failure: `--history` read some objects, printed rc=128 batch
+failures over ~1,200 others, and still summarised `BLOCKING (0) -- clean`, exit 0 — the 0-read
+guard could not see it because *some* objects were read. Now every object-read failure (batch
+rc≠0, an enumerated object coming back `missing`, a short/truncated read, a failed
+enumeration or rev-list) is **counted**, and any nonzero count ends the run
+`SCAN UNUSABLE (partial): read X of Y objects, Z batch failures` with a non-zero exit — a
+`clean` verdict is admissible only when every enumerated object was actually scanned, and the
+failure is carried on the final summary line, never only in scrollback.
 
 **False-positive budget (MEASURED 2026-08-18):** whole tracked repo = 6,201 files / 662 MB /
 **0 blocking** / 64 advisory. The first run produced 7 blocking findings, all artifacts; each

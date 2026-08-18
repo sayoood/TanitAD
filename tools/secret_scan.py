@@ -71,7 +71,7 @@ MODES
     python tools/secret_scan.py --check-hook        # is the gate installed?
     python tools/secret_scan.py --tree X --json out.json
 
-Exit codes: 0 = clean · 1 = BLOCKING findings · 2 = usage error
+Exit codes: 0 = clean · 1 = BLOCKING findings or SCAN UNUSABLE · 2 = usage error
 3 = git unavailable / not a repo.
 
 Stdlib-only, ASCII-clean stdout (the cp1252 console lesson), OS-agnostic.
@@ -474,10 +474,33 @@ class Report:
     findings: list[Finding] = field(default_factory=list)
     filter_rule: dict = field(default_factory=dict)
     errors: list[str] = field(default_factory=list)
+    # ⛔ PARTIAL-failure accounting -- the counterpart of the 0-read guard.
+    # MEASURED 2026-08-18 (the Drive mount flapping): --history read SOME
+    # objects, printed rc=128 batch failures over ~1,200 others, and still
+    # summarised "BLOCKING (0) -- clean", exit 0. The 0-read guard could not
+    # see it because files_scanned was positive. objects_unread counts every
+    # object the scan was ASKED to read and could not (batch rc!=0, an
+    # enumerated object coming back 'missing', a short/truncated read);
+    # batch_failures counts failed git invocations. A POLICY skip (too-large,
+    # compressed-suffix) is never counted here -- those are stated filters.
+    objects_unread: int = 0
+    batch_failures: int = 0
+
+    @property
+    def partial(self) -> bool:
+        """Some of what the scan was asked to read was never read."""
+        return bool(self.objects_unread or self.batch_failures)
+
+    @property
+    def unusable_label(self) -> str:
+        return "SCAN UNUSABLE (partial)" if self.partial else "SCAN UNUSABLE"
 
     @property
     def unusable_reason(self) -> str | None:
         """⛔ Why this report must NOT be read as a pass."""
+        if self.partial:
+            return (f"read {self.files_scanned} of {self.candidates} objects, "
+                    f"{self.batch_failures} batch failures")
         if self.errors:
             return f"{len(self.errors)} read/git error(s) -- the scan is INCOMPLETE"
         if self.candidates and not self.files_scanned:
@@ -504,6 +527,9 @@ class Report:
             "files_scanned": self.files_scanned,
             "unusable": self.unusable,
             "unusable_reason": self.unusable_reason,
+            "partial": self.partial,
+            "objects_unread": self.objects_unread,
+            "batch_failures": self.batch_failures,
             "bytes_scanned": self.bytes_scanned,
             "skipped": self.skipped,
             "skipped_paths": self.skipped_paths,
@@ -596,7 +622,7 @@ def repo_root(start: Path) -> Path:
 
 
 def _cat_file_batch(repo: Path, revs: list[str], max_bytes: int
-                    ) -> tuple[dict[str, bytes], dict[str, int], list[str]]:
+                    ) -> tuple[dict[str, bytes], dict[str, int], list[str], bool]:
     """Read many blobs in ONE git process. Binary-safe: this is what closes the
     'Binary files differ' hole in the old diff-text scan.
 
@@ -606,12 +632,21 @@ def _cat_file_batch(repo: Path, revs: list[str], max_bytes: int
     printed **"files scanned = 0 ... BLOCKING (0) -- clean", exit 0** -- a
     perfect all-clear produced by reading NOTHING. That is the fleet_probe rule
     in its purest form: absence of evidence is an ALARM, not an all-clear, and a
-    guard that cannot see its subject manufactures assurance."""
+    guard that cannot see its subject manufactures assurance.
+
+    Returns ``(got, skipped, errors, batch_failed)``. ``batch_failed`` is True
+    when the git INVOCATION itself failed -- nonzero rc, a short/truncated
+    stream, or an unparseable header (stream desync) -- so callers COUNT failed
+    batches instead of inferring them from error strings. The same 2026-08-18
+    flap also produced the PARTIAL variant of the incident above: some batches
+    read, some failed rc=128, failures printed in scrollback, and the run still
+    ended "BLOCKING (0) -- clean". A short body is never handed back as a
+    scanned blob: the missing half is exactly where a credential could hide."""
     got: dict[str, bytes] = {}
     skipped: dict[str, int] = {}
     errors: list[str] = []
     if not revs:
-        return got, skipped, errors
+        return got, skipped, errors, False
     payload = ("\n".join(revs) + "\n").encode("utf-8")
     proc = git(repo, "cat-file", "--batch", check=False, binary=True, stdin=payload)
     if proc.returncode != 0:
@@ -619,7 +654,8 @@ def _cat_file_batch(repo: Path, revs: list[str], max_bytes: int
             f"git cat-file --batch failed (rc={proc.returncode}) over "
             f"{len(revs)} object(s): "
             f"{proc.stderr.decode('utf-8', 'replace').strip()[:200]}")
-        return got, skipped, errors
+        return got, skipped, errors, True
+    batch_failed = False
     buf = proc.stdout
     pos = 0
     for rev in revs:
@@ -627,22 +663,43 @@ def _cat_file_batch(repo: Path, revs: list[str], max_bytes: int
         if nl < 0:
             errors.append(f"git cat-file output truncated at object {rev} "
                           f"({len(revs)} requested) -- the scan is INCOMPLETE")
+            batch_failed = True
             break
         header = buf[pos:nl].decode("utf-8", "replace")
         pos = nl + 1
         parts = header.rsplit(" ", 2)
-        if len(parts) != 3 or parts[1] != "blob":
-            # "<rev> missing" or a non-blob: nothing to read, no body follows.
+        if len(parts) != 3 or parts[1] not in ("blob", "tree", "commit", "tag"):
+            # "<rev> missing": no body follows. (Anything unrecognisable lands
+            # here too; --history counts every unreturned rev as UNREAD.)
             _bump(skipped, "missing-or-not-blob")
             continue
-        size = int(parts[2])
+        try:
+            size = int(parts[2])
+        except ValueError:
+            errors.append(f"unparseable cat-file header at object {rev} -- "
+                          f"stream desync, the rest of this batch is unreadable")
+            batch_failed = True
+            break
         body = buf[pos:pos + size]
+        if len(body) < size:
+            errors.append(f"git cat-file returned a SHORT body for {rev} "
+                          f"({len(body)} of {size} bytes) -- the scan is "
+                          f"INCOMPLETE")
+            batch_failed = True
+            break
         pos += size + 1                      # git appends a newline after body
+        if parts[1] != "blob":
+            # A tree/commit/tag STREAMS a body in --batch output too -- it must
+            # be consumed (above) or every later header in this batch is read
+            # from inside the previous body: a silent stream desync. The old
+            # parser skipped without consuming.
+            _bump(skipped, "missing-or-not-blob")
+            continue
         if size > max_bytes:
             _bump(skipped, "too-large")
             continue
         got[rev] = body
-    return got, skipped, errors
+    return got, skipped, errors, batch_failed
 
 
 def staged_paths(repo: Path) -> list[str]:
@@ -679,7 +736,12 @@ def scan_staged(repo: Path, max_bytes: int = DEFAULT_MAX_BYTES) -> Report:
                     "staged despite being git-IGNORED (only 'git add -f' does this)"))
 
     revs = [f":{p}" for p in paths]
-    blobs, skipped, errs = _cat_file_batch(repo, revs, max_bytes)
+    # Staged keeps the errors->UNUSABLE path (any errs already invalidate the
+    # verdict, non-zero exit). Strict per-object accounting is history-only:
+    # here 'missing-or-not-blob' is a LEGITIMATE skip -- a staged submodule
+    # gitlink has no blob behind it -- so counting it as a read failure would
+    # turn a normal index into a false alarm.
+    blobs, skipped, errs, _batch_failed = _cat_file_batch(repo, revs, max_bytes)
     rep.skipped.update(skipped)
     rep.errors.extend(errs)
     for p in paths:
@@ -724,11 +786,6 @@ def scan_tracked(repo: Path, max_bytes: int = DEFAULT_MAX_BYTES) -> Report:
     return rep
 
 
-def _reachable_blobs(repo: Path) -> set[str]:
-    out = git(repo, "rev-list", "--objects", "--all", check=False)
-    return {ln.split(" ", 1)[0] for ln in out.splitlines() if ln.strip()}
-
-
 def scan_history(repo: Path, max_bytes: int = 2 * 1024 * 1024,
                  batch: int = 400) -> Report:
     """Every blob in the object database, REACHABLE and UNREACHABLE.
@@ -737,7 +794,17 @@ def scan_history(repo: Path, max_bytes: int = 2 * 1024 * 1024,
     reachable blob means a credential is in committed history and is the PI's
     call (⛔ do NOT rewrite history from an agent). A pattern in an UNREACHABLE
     blob is debris from an undone commit -- C111 records exactly one such blob,
-    from the reset-away commit -- and it disappears on ``git gc --prune=now``."""
+    from the reset-away commit -- and it disappears on ``git gc --prune=now``.
+
+    ⛔ STRICT ACCOUNTING (the 2026-08-18 partial-failure hole). Every sha this
+    function hands a batch was certified ``blob``, within the size cap, by the
+    enumeration moments earlier -- so anything a batch does not hand back is an
+    OBJECT-READ FAILURE (flapping mount, concurrent prune), never a policy
+    skip, and it makes the whole report ``SCAN UNUSABLE (partial)`` with a
+    non-zero exit. 'clean' is admissible ONLY when every enumerated object was
+    actually scanned. The 0-read guard alone could not see this: with SOME
+    objects read, ``files_scanned`` looked healthy while ~1,200 objects went
+    unread behind printed-and-then-ignored rc=128 batch failures."""
     rep = Report(scope="history", filter_rule={
         "max_bytes": max_bytes,
         "objects": "git cat-file --batch-all-objects (reachable AND unreachable)",
@@ -745,8 +812,18 @@ def scan_history(repo: Path, max_bytes: int = 2 * 1024 * 1024,
         "_note": "Tier A shapes only; the generic-assignment rule is not run "
                  "over history (its FP budget is tuned for the live tree).",
     })
-    listing = git(repo, "cat-file", "--batch-all-objects", "--batch-check",
-                  "--buffer", check=False)
+    proc = git(repo, "cat-file", "--batch-all-objects", "--batch-check",
+               "--buffer", check=False, binary=True)
+    if proc.returncode != 0:
+        # The ENUMERATION failed: candidates=0 used to sail past every guard
+        # and report a perfect clean over an object DB it never saw.
+        rep.batch_failures += 1
+        rep.errors.append(
+            f"git cat-file --batch-all-objects --batch-check failed "
+            f"(rc={proc.returncode}): "
+            f"{proc.stderr.decode('utf-8', 'replace').strip()[:200]} -- "
+            f"the object database could not be enumerated")
+    listing = proc.stdout.decode("utf-8", "replace")
     blob_shas: list[str] = []
     for ln in listing.splitlines():
         parts = ln.split()
@@ -756,19 +833,52 @@ def scan_history(repo: Path, max_bytes: int = 2 * 1024 * 1024,
                 continue
             blob_shas.append(parts[0])
     rep.candidates = len(blob_shas)
-    reachable = _reachable_blobs(repo)
-    path_of = {}
-    for ln in git(repo, "rev-list", "--objects", "--all", check=False).splitlines():
+
+    # ONE rev-list pass feeds both the REACHABLE set and the sha->path names.
+    # Its rc is checked because these labels set f.blocking: a failed rev-list
+    # used to silently mark EVERY blob UNREACHABLE, demoting a committed
+    # credential to non-blocking -- exit 0 with the finding buried as advisory.
+    proc = git(repo, "rev-list", "--objects", "--all", check=False, binary=True)
+    if proc.returncode != 0:
+        rep.batch_failures += 1
+        rep.errors.append(
+            f"git rev-list --objects --all failed (rc={proc.returncode}): "
+            f"{proc.stderr.decode('utf-8', 'replace').strip()[:200]} -- "
+            f"REACHABLE/UNREACHABLE labels (which set the blocking flag) "
+            f"cannot be trusted")
+    reachable: set[str] = set()
+    path_of: dict[str, str] = {}
+    for ln in proc.stdout.decode("utf-8", "replace").splitlines():
         bits = ln.split(" ", 1)
-        if len(bits) == 2:
-            path_of.setdefault(bits[0], bits[1])
+        sha = bits[0].strip()
+        if not sha:
+            continue
+        reachable.add(sha)
+        if len(bits) == 2 and bits[1]:
+            path_of.setdefault(sha, bits[1])
 
     for i in range(0, len(blob_shas), batch):
         chunk = blob_shas[i:i + batch]
-        blobs, skipped, errs = _cat_file_batch(repo, chunk, max_bytes)
+        blobs, skipped, errs, batch_failed = _cat_file_batch(repo, chunk, max_bytes)
         rep.errors.extend(errs)
+        if batch_failed:
+            rep.batch_failures += 1
+        # 'missing' for a sha the enumeration JUST certified is a read failure
+        # here, not a skip. (In --staged it stays a legitimate skip: a
+        # submodule gitlink really has no blob behind it.)
+        missing = skipped.pop("missing-or-not-blob", 0)
+        if missing:
+            rep.errors.append(
+                f"{missing} enumerated object(s) came back missing/non-blob "
+                f"from git cat-file --batch -- an object-read failure, not a "
+                f"skip")
         for k, v in skipped.items():
             rep.skipped[k] = rep.skipped.get(k, 0) + v
+        # Requested minus scanned minus stated-policy skips = objects the scan
+        # could not read. Any nonzero count makes the verdict inadmissible.
+        unread = len(chunk) - len(blobs) - skipped.get("too-large", 0)
+        if unread > 0:
+            rep.objects_unread += unread
         for sha, data in blobs.items():
             rep.files_scanned += 1
             rep.bytes_scanned += len(data)
@@ -868,7 +978,7 @@ def render(rep: Report, show_advisory: bool = True) -> str:
              f"files scanned = {rep.files_scanned}  bytes = {rep.bytes_scanned}"]
     if rep.unusable:
         lines.append("[secret_scan] " + "=" * 62)
-        lines.append(f"[secret_scan] *** SCAN UNUSABLE: {rep.unusable_reason}")
+        lines.append(f"[secret_scan] *** {rep.unusable_label}: {rep.unusable_reason}")
         lines.append("[secret_scan] Do NOT read the verdict below as a pass. A "
                      "scan that read nothing")
         lines.append("[secret_scan] reports zero findings for the same reason a "
@@ -890,7 +1000,14 @@ def render(rep: Report, show_advisory: bool = True) -> str:
             loc = f"{f.path}:{f.line}" if f.line else f.path
             lines.append(f"    X [{f.pattern}] {loc}")
             lines.append(f"        {f.detail}")
-    else:
+    if rep.unusable:
+        # ⛔ The verdict line itself carries the failure. MEASURED 2026-08-18:
+        # the partial run printed its batch failures in scrollback and then
+        # summarised "BLOCKING (0) -- clean" anyway -- and the summary is what
+        # got read. An unusable scan may NEVER end on the word 'clean'.
+        lines.append(f"[secret_scan] {rep.unusable_label}: "
+                     f"{rep.unusable_reason} -- NOT clean")
+    elif not blocking:
         lines.append("[secret_scan] BLOCKING (0) -- clean")
     if show_advisory:
         lines.append(f"[secret_scan] advisory ({len(advisory)}) -- not a refusal")

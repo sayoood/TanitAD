@@ -572,3 +572,185 @@ def test_not_a_git_repo_exits_3(tmp_path, capsys):
 def test_clean_tree_exits_0(repo, capsys):
     _stage(repo, "notes/x.md", "ordinary prose")
     assert ss.main(["--repo", str(repo), "--staged"]) == 0
+
+
+# ================================== PARTIAL failure is UNUSABLE, never clean
+#
+# ⛔ THE MEASURED HOLE (2026-08-18, the Google-Drive mount flapping): the
+# history scan's `git cat-file --batch` calls failed rc=128 over ~1,200
+# objects, the failures were PRINTED in scrollback -- and the run still ended
+# "BLOCKING (0) -- clean", exit 0. The 0-read guard above could not see it
+# because SOME objects were read. A clean verdict is admissible ONLY when
+# every enumerated object was actually scanned; anything less is
+# `SCAN UNUSABLE (partial): read X of Y objects, Z batch failures`, non-zero.
+
+
+def _commit_history_files(repo: Path, n: int = 4) -> None:
+    """n distinct committed blobs, so --history has several chunks to read."""
+    for i in range(n):
+        (repo / f"hist{i}.log").write_text(f"[boot] ordinary line {i}\n",
+                                           encoding="utf-8")
+        _git(repo, "add", "--", f"hist{i}.log")
+    _git(repo, "commit", "-m", "history bulk")
+
+
+def _make_flaky_batch(monkeypatch, fail_on_call: int):
+    """The mount flaps on exactly one batch: that call returns rc=128-shaped
+    failure, every other call is the REAL batch runner."""
+    real_batch = ss._cat_file_batch
+    calls = {"n": 0}
+
+    def flaky(r, revs, max_bytes):
+        calls["n"] += 1
+        if calls["n"] == fail_on_call:
+            return {}, {}, [
+                f"git cat-file --batch failed (rc=128) over {len(revs)} "
+                f"object(s): fatal: not a git repository"], True
+        return real_batch(r, revs, max_bytes)
+
+    monkeypatch.setattr(ss, "_cat_file_batch", flaky)
+
+
+def test_history_batch_failure_mid_scan_is_unusable_partial_not_clean(
+        repo, capsys, monkeypatch):
+    """The incident, PARTIAL variant: chunk 2 of 3 dies rc=128, chunks 1 and 3
+    read fine. files_scanned is healthy-looking and nonzero -- and the verdict
+    must still be UNUSABLE with a non-zero exit, never 'clean'."""
+    _commit_history_files(repo, 4)                # + seed.txt = 5 blobs
+    real_scan = ss.scan_history
+    _make_flaky_batch(monkeypatch, fail_on_call=2)
+    monkeypatch.setattr(ss, "scan_history", lambda root: real_scan(root, batch=2))
+
+    rc = ss.main(["--repo", str(repo), "--history"])
+    out = capsys.readouterr().out
+    assert rc != 0, "a scan that lost objects must not exit 0"
+    assert "SCAN UNUSABLE (partial): read 3 of 5 objects, 1 batch failures" in out
+    assert "BLOCKING (0) -- clean" not in out, \
+        "the false all-clear summary line is exactly the measured defect"
+
+
+def test_history_partial_accounting_is_exact_and_travels_in_json(
+        repo, monkeypatch):
+    """read + unread + policy-skips must equal the enumeration, and the
+    accounting must reach the JSON, not just the prose."""
+    _commit_history_files(repo, 4)
+    _make_flaky_batch(monkeypatch, fail_on_call=2)
+
+    rep = ss.scan_history(repo, batch=2)
+    assert rep.partial and rep.unusable
+    assert rep.batch_failures == 1
+    assert rep.objects_unread == 2                # the failed chunk of 2
+    assert rep.candidates == 5 and rep.files_scanned == 3
+    assert rep.files_scanned + rep.objects_unread == rep.candidates
+    doc = rep.to_json()
+    assert doc["unusable"] is True and doc["partial"] is True
+    assert doc["batch_failures"] == 1 and doc["objects_unread"] == 2
+
+
+def test_an_enumerated_object_that_reads_missing_is_a_failure_not_a_skip(
+        repo, monkeypatch):
+    """git itself answers '<sha> missing' for an object the enumeration
+    certified moments earlier: the store lost it mid-scan (flap / concurrent
+    prune). In --history that is an object-read failure. ('missing-or-not-blob'
+    stays a legitimate SKIP only in --staged, where a submodule gitlink really
+    has no blob to read.) Exercised through the REAL git and the REAL parser:
+    one requested sha is swapped for one that does not exist."""
+    real_batch = ss._cat_file_batch
+
+    def vanishing(r, revs, max_bytes):
+        return real_batch(r, ["0" * 40] + list(revs)[1:], max_bytes)
+
+    monkeypatch.setattr(ss, "_cat_file_batch", vanishing)
+    rep = ss.scan_history(repo)
+    assert rep.partial and rep.unusable
+    assert rep.objects_unread == 1
+    assert rep.batch_failures == 0, "no command failed; an OBJECT vanished"
+    assert not rep.skipped.get("missing-or-not-blob"), \
+        "in history this is reclassified as a failure, never a skip"
+    assert any("missing" in e for e in rep.errors), "and it is named loudly"
+
+
+def test_non_blob_bodies_are_consumed_not_desynced(repo):
+    """`git cat-file --batch` STREAMS a body for tree/commit/tag objects too.
+    The old parser skipped a non-blob header without consuming its body, so
+    every later header in the batch was read from inside the previous body --
+    a silent stream desync that dropped real blobs from the scan (and, in
+    --history, would now surface as phantom unread objects)."""
+    head = _git(repo, "rev-parse", "HEAD").stdout.strip()
+    tree = _git(repo, "rev-parse", "HEAD^{tree}").stdout.strip()
+    blob = _git(repo, "rev-parse", "HEAD:seed.txt").stdout.strip()
+    got, skipped, errors, failed = ss._cat_file_batch(
+        repo, [head, tree, blob], ss.DEFAULT_MAX_BYTES)
+    assert blob in got, "the blob AFTER a commit+tree must still be read"
+    assert got[blob] == b"seed\n"
+    assert skipped.get("missing-or-not-blob") == 2, "commit+tree, counted"
+    assert not errors and not failed
+
+
+def test_history_enumeration_failure_is_unusable_not_an_empty_clean(
+        repo, monkeypatch):
+    """rc=128 on the ENUMERATION itself used to yield candidates=0, which
+    sailed past every guard -- a perfect clean over an object DB never seen."""
+    real_git = ss.git
+
+    def flaky_git(r, *args, **kw):
+        if "--batch-all-objects" in args:
+            return subprocess.CompletedProcess(
+                ["git", *args], 128, b"", b"fatal: not a git repository")
+        return real_git(r, *args, **kw)
+
+    monkeypatch.setattr(ss, "git", flaky_git)
+    rep = ss.scan_history(repo)
+    assert rep.unusable and rep.partial
+    assert rep.batch_failures >= 1
+    assert "read 0 of 0 objects" in (rep.unusable_reason or "")
+
+
+def test_history_rev_list_failure_invalidates_the_verdict(repo, monkeypatch):
+    """A failed rev-list silently labelled EVERY blob UNREACHABLE, demoting a
+    committed credential to non-blocking -- exit 0 with the finding buried as
+    advisory. The labels feed the verdict, so their source failing is a scan
+    failure."""
+    real_git = ss.git
+
+    def flaky_git(r, *args, **kw):
+        if args[:2] == ("rev-list", "--objects"):
+            return subprocess.CompletedProcess(
+                ["git", *args], 128, b"", b"fatal: unable to read tree")
+        return real_git(r, *args, **kw)
+
+    monkeypatch.setattr(ss, "git", flaky_git)
+    rep = ss.scan_history(repo)
+    assert rep.unusable and rep.partial
+    assert rep.batch_failures >= 1
+    assert any("rev-list" in e for e in rep.errors)
+
+
+def test_history_happy_path_scans_every_object_and_stays_clean(repo, capsys):
+    """The other half of the pin (C95/C97): the guard must not turn a healthy
+    repo red. Clean is earned by reading EVERYTHING the enumeration listed."""
+    _commit_history_files(repo, 2)
+    rc = ss.main(["--repo", str(repo), "--history"])
+    out = capsys.readouterr().out
+    assert rc == 0
+    assert "BLOCKING (0) -- clean" in out
+    assert "UNUSABLE" not in out
+    rep = ss.scan_history(repo)
+    assert not rep.unusable
+    assert rep.batch_failures == 0 and rep.objects_unread == 0
+    assert rep.candidates == rep.files_scanned > 0, \
+        "clean is admissible ONLY when every enumerated object was scanned"
+
+
+def test_a_committed_token_is_still_caught_by_history(repo, capsys):
+    """Regression guard: the partial-failure guard must not blunt DETECTION.
+    A token committed into history is REACHABLE, blocking, exit 1 -- and the
+    value itself is never printed."""
+    _plant(repo, "rescued/run.log", f"--token {_hf()}")
+    _git(repo, "add", "--", "rescued/run.log")
+    _git(repo, "commit", "-m", "rescued log (oops)")
+    rc = ss.main(["--repo", str(repo), "--history"])
+    out = capsys.readouterr().out
+    assert rc == 1
+    assert "huggingface" in out and "REACHABLE" in out
+    assert _hf() not in out
