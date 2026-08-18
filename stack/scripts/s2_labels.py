@@ -115,8 +115,61 @@ __all__ = [
     "SCHEMA_VERSION", "IGNORE_ID", "ROUTE_TO_ID", "S2LabelError",
     "S2Row", "S2LabelSet", "S2WindowSupervision", "load_s2_labels",
     "assert_payload_disjoint", "SUPERSEDED_NAME", "NO_LABEL",
-    "S2_CANONICAL_LABELS_REL", "s2_canonical_labels_dir",
+    "S2_CANONICAL_LABELS_REL", "s2_canonical_labels_dir", "LABEL_ROLES",
 ]
+
+# --------------------------------------------------------------------------- #
+# the parity bridge — is a labelled clip inside the corpus we TRAIN on?         #
+# --------------------------------------------------------------------------- #
+#: ⛔ DEGRADES TO A REFUSAL, NEVER TO A PASS. ``tanitad.data.parity`` is
+#: stdlib-only, but this module already tolerates a box where ``tanitad`` is not
+#: importable at all (see the ``stable_episode_id`` fallback above). A guard
+#: that silently no-ops when its oracle is missing is the exact defect class
+#: C112 is about — an absent check reading as a clean result — so the census
+#: records ``oracle_unavailable`` and ``role='eval'`` REFUSES rather than
+#: assuming disjointness.
+_PARITY_TRAIN_KEY = "physicalai-train-e438721ae894"
+#: The roles a label leg can be loaded under. ``train`` is the incumbent and is
+#: unchanged; ``eval`` additionally refuses any leg whose clips are in the
+#: parity TRAIN corpus.
+LABEL_ROLES = ("train", "eval")
+
+
+def _parity_module():
+    from tanitad.data import parity                      # noqa: PLC0415
+    return parity
+
+
+def _clips_in_parity_train(clip_ids) -> tuple[list[str] | None, str | None]:
+    """``(offending ids, None)`` — or ``(None, why the oracle is unavailable)``."""
+    try:
+        return _parity_module().clips_in_parity_train(clip_ids), None
+    except Exception as e:                                    # noqa: BLE001
+        return None, f"{type(e).__name__}: {e}"
+
+
+def _assert_disjoint_from_parity_train(clip_ids, *, label: str) -> dict:
+    """Refuse a leg that overlaps the parity TRAIN corpus, or refuse because the
+    oracle could not be consulted. Both are refusals on purpose."""
+    try:
+        parity = _parity_module()
+    except Exception as e:                                    # noqa: BLE001
+        raise S2LabelError(
+            f"[s2] ⛔ {label}: cannot verify the leg is held out — "
+            f"tanitad.data.parity is unimportable here ({type(e).__name__}: "
+            f"{e}). An unverifiable holdout is refused, not assumed: "
+            f"'assumed from provenance' is the failure this check exists for.")
+    try:
+        return parity.assert_eval_clips_disjoint_from_parity_train(
+            clip_ids, label=label)
+    except parity.ParityViolation as e:
+        raise S2LabelError(
+            f"[s2] ⛔ {label} is NOT a held-out set.{e}\n"
+            f"      The label_split name is a PROVENANCE TAG, not a partition "
+            f"— 'aug120' names the corpus a label came from, and every one of "
+            f"its clips is in the corpus the flagship trains on. Load it with "
+            f"role='train' (its correct use), or build an eval leg from clips "
+            f"outside {_PARITY_TRAIN_KEY}.")
 
 SCHEMA_VERSION = "s2-strategic-v1"
 INDEX_NAME = "clip_index.json"
@@ -356,6 +409,64 @@ class S2LabelSet:
         return {"g_str": dict(sorted(g.items())),
                 "a_str": dict(sorted(a.items()))}
 
+    def parity_contamination(self) -> dict:
+        """⛔ PER ``label_split``: how many of its clips are in the parity TRAIN
+        corpus. UNCONDITIONAL — it rides in :meth:`report`, so every v6 run's
+        ``config.json`` records it whether or not anyone asked.
+
+        ⚠️ WHY IT IS NOT OPTIONAL (MEASURED 2026-08-18, C112). ``label_split``
+        is a PROVENANCE TAG, not a partition — ``aug120`` names the corpus a
+        label came from, and it reads like an independent augmentation set. It
+        is not: **201 of 201 aug120 clips are inside
+        ``physicalai-train-e438721ae894``**, the corpus the flagship trains on,
+        while the ``w120val`` leg is 0 of 600. As TRAIN supervision that is
+        exactly right. Scored as a held-out set it is the REF-A I-JEPA leak.
+        Nothing in the name, the file, or the schema says which — so the fact is
+        computed from IDS and written into the run record, because "assumed from
+        provenance" is the root cause the whole retraction is about.
+        """
+        by: dict[str, list[str]] = {}
+        for r in self.rows_by_stable.values():
+            by.setdefault(r.split, []).append(r.clip_id)
+        out: dict = {
+            "corpus": _PARITY_TRAIN_KEY,
+            "_what": ("per label_split, the number of clips that are IN the "
+                      "parity TRAIN corpus — computed from clip ids via "
+                      "tanitad.data.parity §10, never inferred from the split "
+                      "name or the corpus provenance"),
+        }
+        splits: dict[str, dict] = {}
+        for split, cids in sorted(by.items()):
+            n_in, note = _clips_in_parity_train(cids)
+            splits[split] = {
+                "n_clips": len(cids),
+                "n_in_parity_train": (None if n_in is None else len(n_in)),
+                "frac_in_parity_train": (None if n_in is None else
+                                         round(len(n_in) / len(cids), 6)),
+                "usable_as_holdout": (None if n_in is None else not n_in),
+            }
+            if note:
+                splits[split]["oracle_unavailable"] = note
+        out["by_label_split"] = splits
+        return out
+
+    def assert_split_is_holdout(self, split: str, *, label: str | None = None
+                                ) -> dict:
+        """REFUSE if ``split``'s clips are in the parity TRAIN corpus.
+
+        The call an evaluator makes before scoring a checkpoint on one leg of
+        this label set. :func:`load_s2_labels`'s ``role='eval'`` applies it to
+        every loaded leg; this is the per-leg form for a consumer that loads
+        both and scores one."""
+        cids = [r.clip_id for r in self.rows_by_stable.values()
+                if r.split == split]
+        if not cids:
+            raise S2LabelError(
+                f"[s2] ⛔ no records with label_split {split!r} — "
+                f"present: {sorted({r.split for r in self.rows_by_stable.values()})}")
+        return _assert_disjoint_from_parity_train(
+            cids, label=label or f"s2 label_split={split}")
+
     def report(self) -> dict:
         return {
             "schema_version": SCHEMA_VERSION,
@@ -365,6 +476,7 @@ class S2LabelSet:
             "abstain_census_records": self.abstain_census(),
             "has_abstain": self.has_abstain,
             "provenance_census_records": self.provenance_census(),
+            "parity_contamination": self.parity_contamination(),
             "join": "stable_episode_id (blake2b>>1) ONLY — legacy 16-bit ids "
                     "are refused (69/2400 + 7/600 collide)",
             "disjointness": "payload-only scan PASSED on every consumed "
@@ -413,13 +525,32 @@ def _refuse_if_superseded(p: Path) -> None:
         f"path above (s2_labels.S2_CANONICAL_LABELS_REL).")
 
 
-def load_s2_labels(path) -> S2LabelSet:
+def load_s2_labels(path, *, role: str = "train") -> S2LabelSet:
     """Load + validate `s2-strategic-v1` labels and their join index.
 
     ``path`` is either the labels DIRECTORY (containing ``clip_index.json``
     and one or more ``s2_labels_*.jsonl``) or ONE ``.jsonl`` file (the index
     must sit beside it). Every refusal names the record and the rule; a label
-    artifact that half-loads is worse than one that refuses whole."""
+    artifact that half-loads is worse than one that refuses whole.
+
+    ``role`` (2026-08-18, C112) declares what the labels are FOR:
+
+    * ``'train'`` — the incumbent, byte-identical behaviour. The parity-train
+      contamination census still rides in :meth:`S2LabelSet.report` and lands in
+      the run's ``config.json``, because a fact nobody asked for is exactly the
+      fact that goes unnoticed.
+    * ``'eval'`` — every loaded leg must be DISJOINT from the parity TRAIN
+      corpus, or this refuses. ⛔ MEASURED: the ``aug120`` leg is **201 of 201**
+      inside ``physicalai-train-e438721ae894``, so loading the canonical label
+      directory under ``role='eval'`` refuses — which is the correct outcome and
+      the reason the argument exists.
+
+    ⚠️ ``role='eval'`` refuses when the parity oracle cannot be consulted at all.
+    An unverifiable holdout is not a holdout; assuming one is C112 verbatim.
+    """
+    if role not in LABEL_ROLES:
+        raise S2LabelError(f"[s2] ⛔ role={role!r} — expected one of "
+                           f"{LABEL_ROLES}")
     p = Path(path)
     if not p.exists():
         raise S2LabelError(f"[s2] ⛔ --s2-labels {p} does not exist")
@@ -555,12 +686,20 @@ def load_s2_labels(path) -> S2LabelSet:
                 g_sup=g_sup, a_sup=a_sup)
     if not rows:
         raise S2LabelError(f"[s2] ⛔ {files}: zero records loaded")
-    return S2LabelSet(rows, {k: tuple(v) for k, v in legacy_ids.items()},
-                      t0_s, band,
-                      {"labels_files": [str(f) for f in files],
-                       "clip_index": str(idx_path),
-                       "n_index_clips": len(clips),
-                       "n_index_excluded": len(excluded)})
+    out = S2LabelSet(rows, {k: tuple(v) for k, v in legacy_ids.items()},
+                     t0_s, band,
+                     {"labels_files": [str(f) for f in files],
+                      "clip_index": str(idx_path),
+                      "n_index_clips": len(clips),
+                      "n_index_excluded": len(excluded),
+                      "role": role})
+    if role == "eval":
+        # EVERY leg, not the union: a union that is 25 % contaminated and a leg
+        # that is 100 % contaminated are the same overlap count, and only the
+        # per-leg form names which one to stop using.
+        for split in sorted({r.split for r in rows.values()}):
+            out.assert_split_is_holdout(split)
+    return out
 
 
 class S2WindowSupervision:

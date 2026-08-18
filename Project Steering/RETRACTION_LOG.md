@@ -6181,3 +6181,104 @@ recording that this is a dataset-composition decision, not merely a cost one.**
 ⚠️ **The 476-clip pilot corpus (18.33 GB) lives ONLY on Thor** (`/home/nvidia/w120pilot/out/`) — too
 large for the repo, with a fully staged rebuild recipe (2 h 19 m). **A recorded risk, not a stranded
 artifact** — the distinction being that the recipe is banked.
+
+---
+
+## C113 — C112's headline rate was **4.3 %; the buildable rate is 78.2 %** — and the leak I was sent to close is the *less* dangerous of the two directions (2026-08-18, eval-contamination closure)
+
+**CORRECTED, not retracted:** C112 is right that 201 of 4 729 Alpamayo clips are in
+`physicalai-train-e438721ae894`. Three things it could not see:
+
+**1. ⛔ The rate that matters is 78.21 %, not 4.25 %.** A split can only contain clips that EXIST.
+**Only 257 of the 4 729 have w120 video built**, and **201 of those 257 are parity-train** —
+`raw/contamination.json::buildable_eval_split_today`. So the Alpamayo eval split buildable today is
+**REF-A-I-JEPA scale (~80 %)**, not "the same class at smaller scale". ⇒ **ROOT-CAUSE CLASS: A
+CONTAMINATION RATE QUOTED OVER THE CATALOGUE RATHER THAN OVER THE BUILDABLE SET.** The denominator
+that flatters is the one that is easy to count. Same family as `df` reporting the cluster.
+
+**2. ⛔ The 201 do not *coincide with* the aug120 perception corpus — they ARE it, exactly.** C112
+read the matching count as a coincidence. **MEASURED: `fused_aug120_v2_index.jsonl` and
+`fused_aug120_v3_index.jsonl` both hash to `80632f17…`, byte-identical to the exclusion list —
+201/201 = 100 % inside the parity train corpus.** The mechanism is one line,
+`aug120_pipeline.py:53`: `todo = (records ∩ w120_corpus) − done`, and the w120 corpus **is** the
+parity geometry sibling. **The cohort was SELECTED FROM the train corpus.** ⇒ *A matching count
+between two sets is a prompt to test set EQUALITY, not a coincidence to note.*
+
+**3. ⭐ THE OTHER DIRECTION IS WORSE, AND NOBODY WAS LOOKING AT IT: 6 of the 40 canonical val
+episodes (15.0 %) are inside the Alpamayo record set.** Not "an eval split contains train clips"
+but **"a train corpus is about to swallow the deployed val"** — the set behind EVERY published
+open-loop number (881 stride-8 windows). **Blast radius today is ZERO** (nothing trains on those
+labels) and the trigger is already scheduled: the 4 472-clip build. **No existing guard would fire**
+— `parity.py` §9 checks a cache against ITS OWN corpus digest, and an augmentation corpus is a
+different corpus by construction. ⇒ **Whoever runs that build must call
+`parity.filter_train_clips()` first.**
+
+### Why the assumption was made — it was UNANSWERABLE, not lazy
+
+The manifest carries `clip_id_sha256_sorted`: a digest of the **whole sorted list**, which is a set
+IDENTITY and cannot test one element. The ids are gated-confidential and live only on pods. So
+*"is clip X in the parity train split?"* **had no answer on any other host** — and an unanswerable
+question gets answered by provenance. ⇒ **The fix is the missing ORACLE, not a reminder:**
+`parity.py` §10/§10b + a committed per-clip `sha256` set (`parity_train_clip_digests.json`,
+`deployed_val40_clip_digests.json`). Membership is exact, enumeration stays impossible, §9's
+confidentiality rule holds. ⭐ **The mint REFUSES to write unless its source reproduces the
+committed corpus digest** (the `register_v2_geometry_sibling` contract), and the whole chain —
+banked listing → manifest digest → per-clip digests → committed file — re-walks inside the repo on
+every test run, with **no pod access**.
+⚠️ **Derived, never hand-listed** (C99/C105): the question asked is *"is this clip in the parity
+train split?"*, so the next 4 472 clips need no list update.
+
+### ⚠️ A15, settled the same day and the same class
+
+**`thor_profile.py` cannot have produced its co-banked `thor_profile.json`** — and the gap is not
+the missing `out["frame"]` line. As written it builds a **256×256** positional embedding
+(`flagship4b_config()` is `image_width=None`) and feeds it 176×624 → **263.44 M** params vs the
+JSON's **263.58 M**; and only **`action_dim=3`** — the SPEED channel, default 2 — reproduces
+263.58 M at width 624, so **as written it profiles the no-speed variant**. Its docstring also gives
+the sub-frame the PARENT's 120° when the 176×624 slice is **117.0°**. **The JSON is canonical**; the
+script now says so in its own first lines. ⇒ *A banked script that cannot produce its banked result
+is worse than a missing one, because the pair looks like provenance.*
+
+**Package:** `…/incoming/2026-08-18-alpamayo-parity-exclusion/` · pin:
+`stack/tests/test_eval_contamination.py` (17 tests; each guard neutered in turn and required to go
+red — 4, 8 and 1 failures respectively).
+
+---
+
+## C114 — A FULL-SUITE RUN TAKEN WHILE SIBLING AGENTS EDIT THE TREE MEASURES A **TORN SNAPSHOT**, NOT THE CODE (2026-08-18)
+
+**MEASURED.** A full `stack` run returned **`3 failed, 3988 passed, 7 skipped, 2 xfailed`** in 605 s
+— **while reporting exit code 0.** *(The "exit codes are not evidence" trap firing on the very run
+that was meant to verify a fix. Reading the output is the only reason the failures were seen.)*
+
+**All three failures were a sibling stream's mid-edit state, and the mtimes settle it in the OPPOSITE
+direction to the obvious guess:**
+
+| file | mtime | vs the suite window (04:45:12 → 04:55:17) |
+|---|---|---|
+| `scripts/train_v6_staged.py` — holds `STAGE_MAY_INTRODUCE` | 04:44:45 | **BEFORE** — already carried `t2_head.` |
+| `tests/test_v6_stage_init_introduction.py` | **04:58:33** | **AFTER** — still the old 5-tuple during the run |
+
+⇒ **The suite ran a SOURCE file that had already grown the allowance against a TEST not yet updated
+to expect it.** The natural reading — "a test was updated ahead of its source" — is backwards.
+Re-verified three ways: **10 pass in isolation, 51 alongside the new guard files, 62 alongside the
+sibling's own T2/T5 tests.**
+
+⇒ **ROOT-CAUSE CLASS: A NON-ATOMIC READ OF THE WORKING TREE.** This is the *same family* as the
+contention rule (*22 spurious failures from CPU starvation alone*) but a **DISTINCT MECHANISM** —
+pytest walks 223 files over ten minutes while agents rewrite them underneath, so the run reports on a
+state that **never existed as a coherent commit.**
+⇒ ⭐ **RULE: attribute a full-suite failure to FILE MTIMES before attributing it to your own change.**
+A red suite under live concurrency is a claim about *when the reader arrived*, not about the code.
+
+⚠️ **Consequence for the numbers I published this session:** `stack` **3893 / 0** was measured at
+`6784455` and was valid then; the tree has since grown (**3,988 collected**). **A suite count is
+stamped to a commit, not to a session** — quoting last hour's total after five streams have landed is
+the same class as quoting a dry-ladder measurement as the live run (C96).
+
+⭐ **AND IT VALIDATES A DECISION MADE INDEPENDENTLY.** The same unstaged dependency that produced the
+torn snapshot is why `train_v6_staged.py` was **held back** from commit `3f2287b`: its staged form
+imports `T2_AUGMENTATIONS` **3×** while HEAD's `v6.py` has **0** and the worktree's copy is
+**unstaged**. ⇒ **One concurrency defect surfaced twice — once as a false test failure, once as a
+would-be broken HEAD** — and both were caught by checking *what the index actually holds* rather than
+what the working tree shows.

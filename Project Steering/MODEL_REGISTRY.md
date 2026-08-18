@@ -3675,11 +3675,46 @@ paired rows** — and wins **all four** of the latent's only 3-seed-stable guard
 **MEASURED** against `physicalai-train-e438721ae894` — and **the live trainer reads exactly that
 cache** (`--v2-cache …e438721ae894-w120-256x640cyl`, from `/proc/25477/cmdline`, not from a doc).
 mtimes prove genuine selection membership, not later contamination.
-⇒ ⛔ **Any eval split built on this corpus is 4.3 % train-contaminated — the REF-A I-JEPA class.**
-The **201-id exclusion list is banked**; it is a **per-definition obligation**, to be enforced in
-split-construction code rather than remembered by callers.
+
+⛔ **THE 4.3 % FIGURE IS WRONG IN THE FLATTERING DIRECTION — CORRECTED 2026-08-18 (C113). QUOTE
+78.21 %.** 4.3 % is 201 of 4,729 *catalogue records*, but **a split can only contain clips that
+EXIST**: only **257** of the 4,729 have w120 video built, and **201 of those 257 are parity-train**
+⇒ **the Alpamayo eval split buildable today is 78.21 % contaminated — REF-A I-JEPA SCALE (~80 %)**,
+not "the same class at smaller scale". ⇒ **ROOT-CAUSE CLASS: a contamination rate quoted over the
+CATALOGUE rather than over the BUILDABLE SET. The denominator that flatters is the one that is easy
+to count** — the `df`-reports-the-cluster family.
+
+⭐ **And the 201 do not COINCIDE WITH the aug120 perception corpus — they ARE it, exactly.**
+`fused_aug120_v2_index.jsonl` and `v3` both hash to `80632f17…`, **byte-identical to the exclusion
+list, 201/201 = 100 %** inside parity train. Mechanism is one line — `aug120_pipeline.py:53`,
+`todo = (records ∩ w120_corpus) − done`, where the w120 corpus **is** the parity geometry sibling.
+**The cohort was SELECTED FROM the train corpus.** ⇒ *A matching count between two sets is a prompt
+to test set EQUALITY, not a coincidence to note.*
+
+⭐⭐ **THE OTHER DIRECTION IS WORSE AND NOBODY WAS LOOKING AT IT: 6 of the 40 canonical val episodes
+(15.0 %) are inside the Alpamayo record set** — verified two ways, 40/40 `clip_sha8` agreements
+against an independently banked artifact. Not *"an eval split contains train clips"* but ⛔ **"a
+train corpus is about to swallow the deployed val"** — the episode set behind **every published
+open-loop number** (881 stride-8 windows). **Blast radius TODAY is ZERO** (nothing trains on those
+labels) and the **trigger is already scheduled: the 4,472-clip build.** ⛔ **No existing guard
+fires** — `parity.py` §9 checks a cache against *its own* corpus digest, and an augmentation corpus
+is a different corpus by construction. ⇒ **Whoever runs that build MUST call
+`parity.filter_train_clips()` first.**
+
+✅ **BLAST RADIUS ON PUBLISHED NUMBERS: ZERO** — all **73** `taniteval/results/*.json` opened;
+`registry.py:288` lists three eval corpora, **none Alpamayo**; every registry hit sits in §11
+*PRODUCED DATASETS*. The aug120 numbers that exist are **label-quality only**, and the ADE numbers
+near the word "Alpamayo" are the **Alpamayo-2-Super model** on the 290-clip OOD-val corpus — a
+different corpus.
+
 ⚠️ **Root cause: non-overlap was ASSUMED FROM PROVENANCE ("different source ⇒ disjoint") rather than
-COMPUTED FROM IDS.** Parity is sacred *because* it is checkable.
+COMPUTED FROM IDS — but it was UNANSWERABLE, not lazy.** The manifest carries only
+`clip_id_sha256_sorted`, a whole-list digest: a set **identity** that cannot test one element, and
+the ids are pod-only. ⇒ **The fix is the missing ORACLE, not a reminder:** `parity.py` §10/§10b plus
+committed per-clip `sha256` sets — **membership exact, enumeration impossible**, §9's confidentiality
+rule preserved. The mint **refuses to write** unless its source reproduces the committed corpus
+digest, and the chain re-walks inside the repo with **no pod access**. **Derived, never hand-listed**
+(C99/C105) — the next 4,472 clips need no update.
 
 **Owning documents:** `…/incoming/2026-08-18-pooling-ladder-ER10/`, `…/2026-08-18-c106-adversarial/`,
 `…/2026-08-18-ladder-3seed/`, `…/2026-08-17-thor-concurrency-pilot/`; classes **C92, C97, C100,

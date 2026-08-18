@@ -1,5 +1,18 @@
 """Deep deployment profile of the TanitAD stack on Jetson Thor (PI request 2026-08-02).
 
+⛔⛔ THIS FILE DID NOT PRODUCE `thor_profile.json` — see PROVENANCE_CORRECTION.md (2026-08-18,
+    BACKLOG A15). MEASURED, three independent disagreements:
+      1. it never assigns `out["frame"]`, yet the JSON carries `"frame": "176x624 hfov 117.0"`;
+      2. `flagship4b_config()` is `image_size=256, image_width=None`, so as written this builds a
+         **256x256** positional embedding and feeds it 176x624 frames -> **263.44 M** params
+         against the JSON's **263.58 M**. It does not crash; it profiles the wrong model;
+      3. only `action_dim=3` (the SPEED channel; the config default is 2) reproduces 263.58 M at
+         width 624 -> as written this profiles the **no-speed** variant.
+    Line 9 below is also wrong: 120 deg is the PARENT cache's field; the 176x624 sub-frame is
+    **117.0 deg** (624/640 x 120, exact for a cylindrical projection).
+    ⇒ The JSON is canonical. Read this script as a DESCRIPTION of the profile, not a reproduction
+    of it, until the Thor-side copy is re-shipped into this package.
+
 ⛔ METHOD, stated because a latency number without it is worthless:
   * **WARMUP then SYNC.** CUDA is async — timing without `torch.cuda.synchronize()` measures
     kernel LAUNCH, not execution. Every stage below warms up (cuDNN/TF32 autotune picks its

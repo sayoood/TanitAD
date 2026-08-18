@@ -1799,3 +1799,415 @@ def assert_not_parity(*paths: str | Path, label: str) -> None:
                 f"PARITY FIREWALL [{label}]: {p} references the WM parity corpus "
                 f"{key}. This is a SIDE model — it must never read the parity "
                 f"corpus (its own docstring says so). Refusing.")
+
+
+# --------------------------------------------------------------------------- #
+# 10. EVAL-SPLIT CONTAMINATION — a train clip may never be in an eval split     #
+# --------------------------------------------------------------------------- #
+# THE HOLE THIS CLOSES (MEASURED 2026-08-17/18, RETRACTION_LOG C112):
+#
+#   The Alpamayo augmentation corpus was treated as disjoint from the parity
+#   train split because it came from a DIFFERENT SOURCE. Nobody intersected the
+#   ids. 201 of its 4 729 clips are in `physicalai-train-e438721ae894`, and the
+#   live v6F run reads exactly that cache — so an eval split built on the
+#   corpus scores the flagship on its own training data.
+#
+# ⇒ ROOT-CAUSE CLASS: **A NON-OVERLAP ASSUMED FROM PROVENANCE RATHER THAN
+#   COMPUTED FROM IDS.** Everything below exists to make that assumption
+#   unnecessary — and, where it matters, impossible.
+#
+# ⚠️ WHY §9 COULD NOT ALREADY ANSWER THIS, which is the whole reason for a new
+# section. §9 proves a cache's membership against the corpus digest, and
+# :func:`assert_v2_splits_disjoint` compares two supplied cache dirs. NEITHER
+# can answer *"is this ARBITRARY clip id in the parity train split?"*, because
+# the manifest carries only ``clip_id_sha256_sorted`` — a digest of the WHOLE
+# SORTED LIST. A whole-list digest is a set identity, not a membership oracle:
+# you cannot test one element against it. So the question was unanswerable on
+# any host without the gated clip list, and "unanswerable" is exactly the
+# condition under which a provenance assumption gets made instead.
+#
+# 🔒 CONFIDENTIALITY IS PRESERVED. The committed data is
+# ``parity_train_clip_digests.json`` — ``sha256(clip_id)`` per clip, minted by
+# ``scripts/make_parity_clip_digests.py``, which REFUSES to write unless its
+# source reproduces the manifest's committed ``clip_id_sha256_sorted``. It
+# answers membership exactly and enumerates nothing. Every refusal below prints
+# COUNTS ONLY, like §9's.
+#
+# ⛔ WHAT THIS IS *NOT*. It is not a list of "the 201 Alpamayo clips". A
+# hand-listed offender set is the C99/C105 failure — it is right until the
+# corpus grows and then it is silently short. The check is DERIVED: the
+# question asked is always *"is this clip in the parity TRAIN split?"*, so the
+# next 4 472 Alpamayo clips, a new augmentation corpus, or an OOD set are all
+# covered by the same call with no list to update.
+#
+# ⚠️ SCOPE, stated so it is not over-read: this covers the parity TRAIN split
+# only. Overlap with the parity VAL split is NOT a leak (val is held out by
+# construction) but it IS a comparability hazard — the same episodes scored
+# twice under two names. That check needs a val digest set, which is not minted
+# (this host has never held the 600 val clip ids); ``corpus_key=`` is the hook,
+# and its absence is named here rather than left to be discovered.
+
+CLIP_DIGESTS_PATH = Path(__file__).with_name("parity_train_clip_digests.json")
+DEPLOYED_VAL_DIGESTS_PATH = Path(__file__).with_name(
+    "deployed_val40_clip_digests.json")
+CLIP_DIGESTS_SCHEMA = "tanitad.parity_clip_digests/1"
+
+_CLIP_DIGEST_CACHE: dict[str, dict] = {}
+
+
+def clip_digest(clip_id: str) -> str:
+    """``sha256`` of ONE clip id. The membership token used by §10.
+
+    Deliberately NOT :func:`uid_digest` — that hashes a whole sorted SET and is
+    the thing that could not answer a per-id question. Fixed here and nowhere
+    else; changing it invalidates the committed digest file."""
+    return hashlib.sha256(str(clip_id).encode("utf-8")).hexdigest()
+
+
+def load_clip_digests(path: str | Path | None = None) -> dict:
+    """Read (and memoize) the committed per-clip digest set, self-checked.
+
+    The self-check is not ceremony: this file's ONLY job is to decide what gets
+    excluded from an eval set, so a truncated or hand-edited one would silently
+    UNDER-exclude — a leak wearing a working guard as a disguise. ``n_clips``
+    and ``digest_of_digests`` must both agree with the digests actually present.
+    """
+    p = Path(path) if path else CLIP_DIGESTS_PATH
+    k = str(p)
+    if k in _CLIP_DIGEST_CACHE:
+        return _CLIP_DIGEST_CACHE[k]
+    if not p.exists():
+        raise ParityViolation(
+            f"parity clip-digest set missing: {p}\n"
+            f"Without it no host can answer 'is this clip in the parity TRAIN "
+            f"split?', which is the question whose absence produced C112 (a "
+            f"non-overlap ASSUMED from provenance). Mint it with:\n"
+            f"  python scripts/make_parity_clip_digests.py --from-cache <v2 "
+            f"cache> --out {p}\n"
+            f"(it refuses to write unless the source reproduces the committed "
+            f"clip_id_sha256_sorted).")
+    d = json.loads(p.read_text(encoding="utf-8"))
+    if d.get("schema") != CLIP_DIGESTS_SCHEMA:
+        raise ParityViolation(
+            f"{p} has schema {d.get('schema')!r}, expected "
+            f"{CLIP_DIGESTS_SCHEMA!r}")
+    digs = list(d.get("clip_id_digests") or [])
+    problems = []
+    if len(digs) != int(d.get("n_clips", -1)):
+        problems.append(f"n_clips {d.get('n_clips')} != {len(digs)} digests "
+                        f"present")
+    if len(set(digs)) != len(digs):
+        problems.append(f"{len(digs) - len(set(digs))} duplicate digest(s)")
+    if d.get("digest_of_digests") and uid_digest(digs) != d["digest_of_digests"]:
+        problems.append(f"digest_of_digests {d['digest_of_digests']} != "
+                        f"{uid_digest(digs)} recomputed  <-- FILE ALTERED")
+    # ⚠️ ONLY a FULL-corpus set can be compared to the manifest's whole-list
+    # digest. A DEPLOYMENT (the 40-of-600 val) is a subset and cannot reproduce
+    # it — comparing anyway would refuse every valid deployment, and comparing
+    # "when it happens to match" would be a check that never fires. The
+    # deployment's proof is its recorded second-source cross-check instead, and
+    # a deployment file that claims neither is refused below.
+    if d.get("is_full_corpus"):
+        ent = manifest_entry(d.get("corpus_key"), None) or {}
+        cm = ent.get("clip_membership") or {}
+        if cm.get("clip_id_sha256_sorted") and \
+                d.get("clip_id_sha256_sorted") != cm["clip_id_sha256_sorted"]:
+            problems.append(
+                f"clip_id_sha256_sorted {d.get('clip_id_sha256_sorted')} does "
+                f"not match the manifest's {cm['clip_id_sha256_sorted']} for "
+                f"{d.get('corpus_key')!r}  <-- MINTED FROM A DIFFERENT CORPUS")
+    elif not d.get("cross_check_source") or \
+            int(d.get("cross_check_episodes") or 0) != len(digs):
+        problems.append(
+            f"this is a SUBSET set ({d.get('deployment')!r}) and carries no "
+            f"complete second-source cross-check "
+            f"({d.get('cross_check_episodes')} of {len(digs)} episodes) — a "
+            f"subset cannot be proven against the corpus digest, so without "
+            f"the cross-check its membership is UNPROVEN")
+    if problems:
+        raise ParityViolation("\n".join([
+            "",
+            "=" * 78,
+            f"PARITY CLIP-DIGEST SET IS NOT SELF-CONSISTENT — {p}",
+            "=" * 78,
+            *(f"  {x}" for x in problems),
+            "",
+            "  This file decides which clips are EXCLUDED from an eval split. A",
+            "  short or altered one under-excludes SILENTLY, which is a leak",
+            "  wearing a working guard as a disguise. Re-mint it with",
+            "  scripts/make_parity_clip_digests.py (it proves the source against",
+            "  the committed manifest before writing).",
+            "=" * 78,
+        ]))
+    _CLIP_DIGEST_CACHE[k] = d
+    return d
+
+
+def parity_train_clip_digests(path: str | Path | None = None) -> frozenset[str]:
+    """The membership oracle: ``sha256(clip_id)`` for every parity TRAIN clip."""
+    return frozenset(load_clip_digests(path)["clip_id_digests"])
+
+
+def clips_in_parity_train(clip_ids: Iterable[str],
+                          path: str | Path | None = None) -> list[str]:
+    """Which of ``clip_ids`` are in the parity TRAIN split (sorted).
+
+    Returns the IDS — the caller already holds them, so this discloses nothing
+    it did not supply, and a caller that must FIX a split cannot act on a count.
+    Everything this module PRINTS stays counts-only."""
+    digs = parity_train_clip_digests(path)
+    return sorted({str(c) for c in clip_ids if clip_digest(c) in digs})
+
+
+def assert_eval_clips_disjoint_from_parity_train(
+        clip_ids: Iterable[str], *, label: str,
+        corpus_key: str = PARITY_TRAIN_KEY,
+        path: str | Path | None = None,
+        sanctioned_audit: str | None = None) -> dict:
+    """⭐ REFUSE an EVAL split that contains a parity TRAIN clip.
+
+    THE point of §10, and the one call an Alpamayo (or any other) eval split
+    must not be constructible without. Call it with the clip ids destined for
+    the eval/held-out/OOD set, BEFORE any scoring.
+
+    ``sanctioned_audit`` is the ONE way past it, and it is deliberately not a
+    boolean: it takes the REASON, mirrors :func:`note_leaky_audit`, prints the
+    disclosure and stamps ``decision_grade: False`` into the returned record —
+    so an artifact produced under it can never be quoted as a held-out number.
+    A label audit or a coverage census over train clips is legitimate; a
+    silent one is not.
+
+    🔒 Counts only in every message — clip ids are gated-confidential. Use
+    :func:`clips_in_parity_train` in-process when you need to know WHICH.
+    """
+    ids = [str(c) for c in clip_ids]
+    bad = clips_in_parity_train(ids, path)
+    n, nb = len(set(ids)), len(bad)
+    rec = {"label": label, "corpus_key": corpus_key,
+           "eval_clips": n, "in_parity_train": nb,
+           "contaminated_frac": (nb / n) if n else 0.0,
+           "disjoint": nb == 0,
+           "decision_grade": nb == 0 or sanctioned_audit is None,
+           "digest_source": str(Path(path) if path else CLIP_DIGESTS_PATH)}
+    if not nb:
+        print(f"[parity] {label}: eval split is DISJOINT from {corpus_key} — "
+              f"{n} clips, 0 in the train split (checked by per-clip sha256, "
+              f"not by provenance).", flush=True)
+        return rec
+    if sanctioned_audit is not None:
+        rec["audit_reason"] = sanctioned_audit
+        rec["decision_grade"] = False
+        print(f"[parity] ⚠ {label}: {nb} of {n} clips "
+              f"({100 * nb / n:.1f} %) are IN {corpus_key}. Sanctioned here "
+              f"because: {sanctioned_audit}. NOTHING computed over these clips "
+              f"is decision-grade — it is a measurement on training data.",
+              flush=True)
+        return rec
+    raise ParityViolation("\n".join([
+        "",
+        "=" * 78,
+        f"PARITY VIOLATION [{label}] — TRAIN-CONTAMINATED EVAL SPLIT",
+        "=" * 78,
+        f"  eval split : {n} clip(s)",
+        f"  in {corpus_key}:",
+        f"               {nb} clip(s)  ({100 * nb / n:.1f} %)   <-- LEAK",
+        "",
+        "  These clips are in the corpus the parity arms TRAIN on. Scoring a",
+        "  parity-trained checkpoint on them measures memorisation, not skill,",
+        "  and it does not crash: the number is plausible and wrong.",
+        "",
+        "  This is the REF-A I-JEPA class (~80 % of val inside train, which made",
+        "  that arm's val number permanently unusable) — and it is reachable by",
+        "  pure OMISSION, because the two corpora have different NAMES and",
+        "  different SOURCES. Provenance is not disjointness; ids are.",
+        "",
+        "  Fix the SPLIT, not the check:",
+        "    kept, dropped, rec = parity.filter_eval_clips(ids, label=...)",
+        "  or, if reading train clips IS the point (a label audit, a coverage",
+        "  census), say so and accept the stamp:",
+        "    parity.assert_eval_clips_disjoint_from_parity_train(",
+        "        ids, label=..., sanctioned_audit='<why>')",
+        "",
+        "  🔒 clip ids are gated-confidential and are NOT printed. Call",
+        "  parity.clips_in_parity_train(ids) in-process to get them.",
+        "=" * 78,
+    ]))
+
+
+def filter_eval_clips(clip_ids: Iterable[str], *, label: str,
+                      path: str | Path | None = None
+                      ) -> tuple[list[str], list[str], dict]:
+    """The sanctioned REMOVAL path: ``(kept, dropped, record)``.
+
+    ``assert_…`` refuses; this one repairs, loudly. Use it where a split is
+    being CONSTRUCTED (you own the membership) and the assert where a split is
+    being CONSUMED (you must not silently rescore a different set than the
+    caller named).
+
+    ⚠️ The record carries ``n_dropped`` and the post-filter count so a report
+    can never quote the pre-filter n. That is not pedantry: a split silently
+    shrinking under a filter is how a published window count stops matching the
+    set it was computed over."""
+    ids = sorted({str(c) for c in clip_ids})
+    dropped = clips_in_parity_train(ids, path)
+    kept = [c for c in ids if c not in set(dropped)]
+    rec = {"label": label, "n_in": len(ids), "n_dropped": len(dropped),
+           "n_kept": len(kept),
+           "dropped_frac": (len(dropped) / len(ids)) if ids else 0.0,
+           "rule": f"excluded because present in {PARITY_TRAIN_KEY}",
+           "digest_source": str(Path(path) if path else CLIP_DIGESTS_PATH)}
+    if dropped:
+        print(f"[parity] ⚠ {label}: DROPPED {len(dropped)} of {len(ids)} clips "
+              f"({100 * len(dropped) / len(ids):.1f} %) — they are in "
+              f"{PARITY_TRAIN_KEY}. The eval split is {len(kept)} clips; quote "
+              f"THAT number, never {len(ids)}.", flush=True)
+    else:
+        print(f"[parity] {label}: {len(ids)} clips, none in "
+              f"{PARITY_TRAIN_KEY} — nothing dropped.", flush=True)
+    return kept, dropped, rec
+
+
+# --------------------------------------------------------------------------- #
+# 10b. THE OTHER DIRECTION — a TRAIN corpus must not swallow the DEPLOYED VAL   #
+# --------------------------------------------------------------------------- #
+# ⭐ MEASURED 2026-08-18 while closing C112, and it is the more dangerous half:
+#
+#   **6 of the 40 canonical val episodes (15.0 %) are inside the Alpamayo
+#   4 729-clip record set.**
+#
+# §10 above asks "does this EVAL split contain TRAIN clips?" — a hazard for a
+# split that does not exist yet. This asks the converse, "does this TRAIN /
+# augmentation corpus contain the DEPLOYED VAL clips?", and its trigger is
+# already scheduled: the moment the Alpamayo corpus becomes supervision (the
+# 4 472-clip build), 15 % of the episode set behind EVERY published open-loop
+# number — ADE@2s, FDE, miss-rate, the four families, D1/D2/D3 — is inside
+# training. Nothing would crash and no existing guard would notice: `parity.py`
+# §9 checks a cache against ITS OWN corpus digest, and an augmentation corpus is
+# a different corpus by construction.
+#
+# ⚠️ Blast radius TODAY is ZERO — no trainer consumes the Alpamayo labels (grep
+# over `stack/`, `colab/` for a train/loss/dataset path that reads them returns
+# nothing, and `V6LossWeights` has no tactical term). This is a guard placed
+# BEFORE the failure, which is the only time a guard is cheap.
+#
+# The digest set is the DEPLOYED 40, not the 600-episode val build, because the
+# 40 are what every published statistic was computed over (parity_manifest.json
+# `known_deployments`: "canonical TanitEval deployment -> 881 stride-8 windows").
+# ⚠️ Its proof is a SECOND-SOURCE cross-check, not the manifest digest — see
+# `make_parity_clip_digests.build_deployment` for why a subset cannot have the
+# latter, said out loud so the weaker proof is never read as the stronger one.
+
+
+def deployed_val_clip_digests(path: str | Path | None = None) -> frozenset[str]:
+    """``sha256(clip_id)`` for every clip in the canonical 40-episode val
+    deployment — the episode set behind the published open-loop statistic."""
+    return frozenset(load_clip_digests(path or DEPLOYED_VAL_DIGESTS_PATH)
+                     ["clip_id_digests"])
+
+
+def clips_in_deployed_val(clip_ids: Iterable[str],
+                          path: str | Path | None = None) -> list[str]:
+    """Which of ``clip_ids`` are in the canonical val deployment (sorted)."""
+    digs = deployed_val_clip_digests(path)
+    return sorted({str(c) for c in clip_ids if clip_digest(c) in digs})
+
+
+def assert_train_clips_disjoint_from_deployed_val(
+        clip_ids: Iterable[str], *, label: str,
+        path: str | Path | None = None,
+        sanctioned_audit: str | None = None) -> dict:
+    """⭐ REFUSE a TRAIN / augmentation corpus that contains a DEPLOYED VAL clip.
+
+    Call it on the clip ids of anything about to become supervision — a new
+    label corpus, an augmentation set, a re-cache, an external dataset join.
+
+    ⚠️ This is NOT :func:`assert_v2_splits_disjoint`. That one needs both a train
+    dir and a val dir in hand and can only compare what one launch command
+    happened to pass; a label corpus arriving as a parquet, a JSONL or an HF
+    dataset never meets a val dir at all. Here the val side is COMMITTED, so the
+    question is answerable from the new corpus alone — which is the only form
+    that can be asked at ingest time, before anything is built."""
+    ids = [str(c) for c in clip_ids]
+    bad = clips_in_deployed_val(ids, path)
+    n, nb = len(set(ids)), len(bad)
+    n_val = len(deployed_val_clip_digests(path))
+    rec = {"label": label, "train_clips": n, "in_deployed_val": nb,
+           "deployed_val_episodes": n_val,
+           "frac_of_val_swallowed": (nb / n_val) if n_val else 0.0,
+           "disjoint": nb == 0,
+           "decision_grade": nb == 0 or sanctioned_audit is None}
+    if not nb:
+        print(f"[parity] {label}: DISJOINT from the {n_val}-episode val "
+              f"deployment — {n} clips, 0 overlap (checked by per-clip sha256).",
+              flush=True)
+        return rec
+    if sanctioned_audit is not None:
+        rec["audit_reason"] = sanctioned_audit
+        rec["decision_grade"] = False
+        print(f"[parity] ⚠ {label}: {nb} of the {n_val} DEPLOYED VAL episodes "
+              f"are in this corpus. Sanctioned because: {sanctioned_audit}. "
+              f"NOTHING trained on it may be scored on the canonical val split.",
+              flush=True)
+        return rec
+    raise ParityViolation("\n".join([
+        "",
+        "=" * 78,
+        f"PARITY VIOLATION [{label}] — A TRAIN CORPUS SWALLOWS THE DEPLOYED VAL",
+        "=" * 78,
+        f"  corpus     : {n} clip(s)",
+        f"  overlap    : {nb} of the {n_val} canonical val episodes "
+        f"({100 * nb / n_val:.1f} % of the val split)   <-- LEAK",
+        "",
+        "  Those episodes are the set EVERY published open-loop number is quoted",
+        "  over (881 stride-8 windows; parity_manifest known_deployments).",
+        "  Training on them does not crash and does not show up in any existing",
+        "  check: §9 proves a cache against ITS OWN corpus digest, and an",
+        "  augmentation corpus is a different corpus by construction.",
+        "",
+        "  This is the REF-A I-JEPA failure approached from the training side.",
+        "  Exclude the overlap before building:",
+        "    kept, dropped, rec = parity.filter_train_clips(ids, label=...)",
+        "",
+        "  🔒 clip ids are gated-confidential and are NOT printed. Call",
+        "  parity.clips_in_deployed_val(ids) in-process to get them.",
+        "=" * 78,
+    ]))
+
+
+def filter_train_clips(clip_ids: Iterable[str], *, label: str,
+                       path: str | Path | None = None
+                       ) -> tuple[list[str], list[str], dict]:
+    """The removal path for 10b: drop the deployed-val clips from a corpus that
+    is about to become supervision. ``(kept, dropped, record)``."""
+    ids = sorted({str(c) for c in clip_ids})
+    dropped = clips_in_deployed_val(ids, path)
+    kept = [c for c in ids if c not in set(dropped)]
+    rec = {"label": label, "n_in": len(ids), "n_dropped": len(dropped),
+           "n_kept": len(kept),
+           "rule": "excluded because present in the canonical val deployment"}
+    if dropped:
+        print(f"[parity] ⚠ {label}: DROPPED {len(dropped)} of {len(ids)} clips "
+              f"— they are canonical VAL episodes. Training on them would void "
+              f"every number quoted over the val split.", flush=True)
+    else:
+        print(f"[parity] {label}: {len(ids)} clips, none in the val "
+              f"deployment — nothing dropped.", flush=True)
+    return kept, dropped, rec
+
+
+def assert_v2_eval_cache(cache_dirs, *, label: str,
+                         path: str | Path | None = None,
+                         sanctioned_audit: str | None = None) -> dict:
+    """:func:`assert_eval_clips_disjoint_from_parity_train` for a v2 cache DIR.
+
+    The evaluator-facing twin of :func:`assert_v2_parity_cache`, and a different
+    fact from :func:`assert_v2_splits_disjoint`: that one needs BOTH dirs in
+    hand and can only compare what the launch command happened to pass. This one
+    needs only the EVAL dir, because the train membership is committed. An
+    evaluator handed a single ``--v2-cache`` — which is the normal case — could
+    not use the pairwise check at all."""
+    rec = assert_eval_clips_disjoint_from_parity_train(
+        v2_clip_ids(cache_dirs), label=label, path=path,
+        sanctioned_audit=sanctioned_audit)
+    rec["cache_dirs"] = _v2_paths(cache_dirs)
+    return rec
