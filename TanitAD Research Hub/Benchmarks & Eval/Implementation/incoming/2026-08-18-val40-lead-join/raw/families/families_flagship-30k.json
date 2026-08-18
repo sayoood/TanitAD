@@ -1,0 +1,480 @@
+{
+ "longitudinal": {
+  "speed_mae_mps": 0.471,
+  "speed_bias_mps": 0.1911,
+  "speed_rmse_mps": 0.6755,
+  "target_speed_acc": {
+   "within_0.5_mps": 0.639,
+   "within_1.0_mps": 0.8573,
+   "within_2.0_mps": 0.9901
+  },
+  "target_speed_acc_note": "fraction of the 3524 horizon STEPS (not windows) whose |speed error| is within the band. Bands are PROPOSED reporting tolerances, not a gate.",
+  "along_mae_m": 0.3936,
+  "along_bias_m": 0.1294,
+  "along_final_bias_m": 0.3375,
+  "accel_mae_mps2": 0.7717,
+  "ego_progress": {
+   "status": "OK",
+   "convention": "human_dir",
+   "progress_ratio_mean": 0.997,
+   "progress_ratio_median": 1.0182,
+   "progress_error_mean": 0.0663,
+   "under_progress_rate": 0.2929,
+   "gt_progress_mean_m": 26.4324,
+   "n": 850,
+   "n_windows": 881,
+   "n_excluded_low_gt_progress": 31,
+   "min_progress_m": 0.5,
+   "t0_axis_gt_self_ratio": 0.9919,
+   "t0_axis_gt_self_ratio_note": "what the GROUND TRUTH scores under pseudosim's published t0-axis reading. 1.0 means the windows are straight; below 1.0 is the CURVATURE CONFOUND \u2014 the human charged for under-progress it did not commit, and an arm that drives straighter than the human rewarded for it.",
+   "definition": "along-track distance covered / the human's, both projected on the human's own final-displacement direction; dt-invariant; <1 = under-drives, >1 = over-drives; GT scores exactly 1.0 by construction",
+   "published_motivation": "arXiv 2605.00066 \u2014 Ego Progress alone rho=0.83 vs closed-loop Driving Score while traditional L2 gives rho=-0.36 (p=0.43, n=8, NO CI). Direction only; those magnitudes are NOT a target."
+  },
+  "dt_s": 0.5,
+  "rate_scaling_note": "speed ~ 1/dt, accel ~ 1/dt^2. Numbers computed with a wrong dt are off by those powers; along_* are dt-invariant.",
+  "distance_keeping": {
+   "n": 229,
+   "n_windows": 881,
+   "dt_s": 0.5,
+   "gap_convention": "rig-origin to lead rear face (along - size_x/2); NOT bumper-to-bumper",
+   "ttc_cap_s": 30.0,
+   "status": "OK",
+   "mean_headway_min_m": 31.3623,
+   "mean_time_gap_min_s": 3.1642,
+   "n_time_gap": 224,
+   "mean_min_ttc_s": 25.2386,
+   "n_closing": 112,
+   "censoring_note": "117 of 229 windows never close on the lead and are censored at TTC_CAP_S=30.0s. The mean is over censored data \u2014 quote n_closing beside it, never the mean alone.",
+   "by_speed": {
+    "_what": "LONGITUDINAL distance-keeping, per speed band. NEVER pool these.",
+    "_binding": "Sayed 2026-08-02 clause 5: where a family cannot be computed, say so PER STRATUM with the reason and the n, rather than silently dropping it.",
+    "bands_mps": [
+     "0-1",
+     "1-3",
+     "3-6",
+     "6-10",
+     "10-15",
+     "15+"
+    ],
+    "min_stratum_n": 30,
+    "estimator": "episode_cluster_bootstrap (taniteval.ci) \u2014 NEVER overlapping_holdout_se",
+    "n_windows_total": 881,
+    "strata": {
+     "0-1": {
+      "speed_mps": [
+       0.0,
+       1.0
+      ],
+      "n_windows": 50,
+      "window_states": {
+       "LEAD": 32,
+       "NO_LEAD": 18
+      },
+      "n_with_lead": 8,
+      "lead_rate": 0.16,
+      "status": "UNPOWERED",
+      "reason": "8 lead-bearing windows < min_stratum_n 30; an episode-cluster bootstrap over this few is noise. Reported, not quoted."
+     },
+     "1-3": {
+      "speed_mps": [
+       1.0,
+       3.0
+      ],
+      "n_windows": 52,
+      "window_states": {
+       "LEAD": 13,
+       "NO_LEAD": 39
+      },
+      "n_with_lead": 12,
+      "lead_rate": 0.2308,
+      "status": "UNPOWERED",
+      "reason": "12 lead-bearing windows < min_stratum_n 30; an episode-cluster bootstrap over this few is noise. Reported, not quoted."
+     },
+     "3-6": {
+      "speed_mps": [
+       3.0,
+       6.0
+      ],
+      "n_windows": 127,
+      "window_states": {
+       "LEAD": 52,
+       "NO_LEAD": 75
+      },
+      "n_with_lead": 45,
+      "lead_rate": 0.3543,
+      "status": "OK",
+      "headway_min_m": {
+       "mean": 15.2387,
+       "lo": 11.716,
+       "hi": 24.4265,
+       "ci95": 6.3553,
+       "se": 3.3885,
+       "reducer": "mean",
+       "n_windows": 45,
+       "n_episodes": 9,
+       "n_boot": 2000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 45,
+       "n_total": 127
+      },
+      "time_gap_min_s": {
+       "mean": 3.2246,
+       "lo": 2.5842,
+       "hi": 5.0177,
+       "ci95": 1.2167,
+       "se": 0.6736,
+       "reducer": "mean",
+       "n_windows": 45,
+       "n_episodes": 9,
+       "n_boot": 2000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 45,
+       "n_total": 127
+      },
+      "min_ttc_s": {
+       "mean": 24.2222,
+       "lo": 18.0511,
+       "hi": 27.7762,
+       "ci95": 4.8626,
+       "se": 2.4785,
+       "reducer": "mean",
+       "n_windows": 45,
+       "n_episodes": 9,
+       "n_boot": 2000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 45,
+       "n_total": 127
+      }
+     },
+     "6-10": {
+      "speed_mps": [
+       6.0,
+       10.0
+      ],
+      "n_windows": 203,
+      "window_states": {
+       "LEAD": 73,
+       "NO_LABEL": 19,
+       "NO_LEAD": 111
+      },
+      "n_with_lead": 66,
+      "lead_rate": 0.3251,
+      "status": "OK",
+      "headway_min_m": {
+       "mean": 28.4942,
+       "lo": 22.1807,
+       "hi": 36.3493,
+       "ci95": 7.0843,
+       "se": 3.5845,
+       "reducer": "mean",
+       "n_windows": 66,
+       "n_episodes": 13,
+       "n_boot": 2000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 66,
+       "n_total": 203
+      },
+      "time_gap_min_s": {
+       "mean": 3.6829,
+       "lo": 2.9806,
+       "hi": 4.7342,
+       "ci95": 0.8768,
+       "se": 0.4419,
+       "reducer": "mean",
+       "n_windows": 66,
+       "n_episodes": 13,
+       "n_boot": 2000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 66,
+       "n_total": 203
+      },
+      "min_ttc_s": {
+       "mean": 23.854,
+       "lo": 19.2846,
+       "hi": 26.9097,
+       "ci95": 3.8126,
+       "se": 2.0554,
+       "reducer": "mean",
+       "n_windows": 66,
+       "n_episodes": 13,
+       "n_boot": 2000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 66,
+       "n_total": 203
+      }
+     },
+     "10-15": {
+      "speed_mps": [
+       10.0,
+       15.0
+      ],
+      "n_windows": 179,
+      "window_states": {
+       "LEAD": 12,
+       "NO_LABEL": 12,
+       "NO_LEAD": 155
+      },
+      "n_with_lead": 8,
+      "lead_rate": 0.0447,
+      "status": "UNPOWERED",
+      "reason": "8 lead-bearing windows < min_stratum_n 30; an episode-cluster bootstrap over this few is noise. Reported, not quoted."
+     },
+     "15+": {
+      "speed_mps": [
+       15.0,
+       null
+      ],
+      "n_windows": 270,
+      "window_states": {
+       "LEAD": 90,
+       "NO_LABEL": 30,
+       "NO_LEAD": 150
+      },
+      "n_with_lead": 90,
+      "lead_rate": 0.3333,
+      "status": "OK",
+      "headway_min_m": {
+       "mean": 44.6204,
+       "lo": 30.4638,
+       "hi": 63.0029,
+       "ci95": 16.2695,
+       "se": 8.4177,
+       "reducer": "mean",
+       "n_windows": 90,
+       "n_episodes": 6,
+       "n_boot": 2000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 90,
+       "n_total": 270
+      },
+      "time_gap_min_s": {
+       "mean": 1.8446,
+       "lo": 1.3936,
+       "hi": 2.3637,
+       "ci95": 0.4851,
+       "se": 0.2554,
+       "reducer": "mean",
+       "n_windows": 90,
+       "n_episodes": 6,
+       "n_boot": 2000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 90,
+       "n_total": 270
+      },
+      "min_ttc_s": {
+       "mean": 26.5853,
+       "lo": 19.5349,
+       "hi": 30.0,
+       "ci95": 5.2325,
+       "se": 2.7841,
+       "reducer": "mean",
+       "n_windows": 90,
+       "n_episodes": 6,
+       "n_boot": 2000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 90,
+       "n_total": 270
+      }
+     }
+    },
+    "window_states_total": {
+     "LEAD": 272,
+     "NO_LABEL": 61,
+     "NO_LEAD": 548
+    }
+   },
+   "admitted_by": "D-LEAD-1 discrimination control, 2026-08-03 \u2014 GT vs hold-v0 CV, PASS on all three metrics, paired episode-cluster bootstrap, 14,027 windows / 1,431 clusters"
+  },
+  "anti_echo": {
+   "status": "OK",
+   "block": "taniteval.v0_antiecho",
+   "version": "1.0.0",
+   "ruling": "Sayed 2026-08-16: v0 is ADMISSIBLE as a planner input (measured present state, not the future) PROVIDED the planner is shown not to be 'just outputting v0 as longitudinal plan'. See Project Steering/V6F_PLANNER_DESIGN.md \u00a71.4.",
+   "v0_provenance": "win['speed'] \u2014 rollout.collect's ego speed at t0 (ep.poses[last, 3]), the same scalar the --speed-input arms feed the predictor",
+   "longitudinal_claim_admissible": false,
+   "flagged": true,
+   "summary": "holdv0=NOT_SEPARATED \u00b7 copy_detector=CLEAN (echo_index 0.0125 vs GT 0.2611) \u00b7 shuffle=UNAVAILABLE",
+   "holdv0_baseline": {
+    "status": "OK",
+    "verdict": "NOT_SEPARATED",
+    "verdict_reason": "\u26d4 the arm is NOT separated from hold-v0 on speed_mae_mps (delta -0.0108 m/s [-0.1179, 0.0991]). \u26d4 THIS IS NOT A SMALL MISS: it means the longitudinal head has learned nothing beyond its own v0 input. No longitudinal claim is admissible.",
+    "admissible": false,
+    "admissible_def": "\u26d4 Sayed 2026-08-16: no longitudinal claim is admissible until the planner BEATS hold-v0, SEPARATED, on the LONGITUDINAL family. This bit is that condition, evaluated on speed_mae_mps.",
+    "primary_metric": "speed_mae_mps",
+    "metrics": {
+     "speed_mae_mps": {
+      "arm": 0.471,
+      "holdv0": 0.4818,
+      "what": "mean |speed error| over the horizon, m/s (PRIMARY \u2014 the binding rule's target-speed accuracy)",
+      "lower_is_better": true,
+      "delta": -0.0108,
+      "lo": -0.1179,
+      "hi": 0.0991,
+      "ci95": 0.1085,
+      "p_delta_gt0": 0.4165,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "delta_sign_note": "delta = arm - holdv0; NEGATIVE and separated is an arm WIN",
+      "verdict": "NOT_SEPARATED"
+     },
+     "along_abs_m": {
+      "arm": 0.8256,
+      "holdv0": 0.925,
+      "what": "|along-track position error| at the final horizon step, m \u2014 the POSITIONAL consequence of the speed plan; dt-invariant",
+      "lower_is_better": true,
+      "delta": -0.0994,
+      "lo": -0.308,
+      "hi": 0.1132,
+      "ci95": 0.2106,
+      "p_delta_gt0": 0.1675,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "delta_sign_note": "delta = arm - holdv0; NEGATIVE and separated is an arm WIN",
+      "verdict": "NOT_SEPARATED"
+     },
+     "target_speed_miss_1mps": {
+      "arm": 0.1427,
+      "holdv0": 0.1461,
+      "what": "fraction of horizon steps whose |speed error| exceeds 1.0 m/s (1 - target_speed_acc.within_1_mps)",
+      "lower_is_better": true,
+      "delta": -0.0034,
+      "lo": -0.0656,
+      "hi": 0.0622,
+      "ci95": 0.0639,
+      "p_delta_gt0": 0.4465,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap",
+      "delta_sign_note": "delta = arm - holdv0; NEGATIVE and separated is an arm WIN",
+      "verdict": "NOT_SEPARATED"
+     }
+    },
+    "estimator": "paired_episode_cluster_bootstrap (taniteval.ci) \u2014 \u26d4 NOT overlapping_holdout_se, which is anti-conservative AND biases the point estimate",
+    "n_boot": 2000,
+    "seed": 0,
+    "n_windows": 881,
+    "n_episodes": 40,
+    "dt_s": 0.5,
+    "horizon_steps": 4,
+    "baseline": "hold-v0: along = v0 * t, lateral = 0, zero commanded acceleration. 0 parameters, 0 vision, 0 training.",
+    "\u26a0\ufe0f_scope": "hold-v0 is a STRAIGHT line and is the LONGITUDINAL floor ONLY. Beating it says nothing about lateral or tactical quality, and it must never be used to judge a turn \u2014 for that the floor family is driving.FLOORS (cv/holdv0/ctrv)."
+   },
+   "copy_detector": {
+    "status": "OK",
+    "verdict": "CLEAN",
+    "verdict_reason": "echo_index_excess -0.2486 < 0.2: the arm is not measurably flatter than the human on these windows. \u26a0\ufe0f CLEAN here is NOT an admissibility verdict \u2014 that is holdv0_baseline's job. This detector can only refute a copy, never establish skill.",
+    "echo_index": 0.0125,
+    "echo_index_gt": 0.2611,
+    "echo_index_excess": -0.2486,
+    "echo_index_def": "fraction of windows with r(along, hold-v0) >= 0.999 AND mean |commanded accel| <= 0.1 m/s^2, JOINTLY. A pure hold-v0 planner scores exactly 1.0. Reported beside the GT's own value because most of this corpus genuinely is cruising; the EXCESS is the read.",
+    "r_vs_holdv0_mean": 0.9721,
+    "r_vs_holdv0_mean_gt": 0.9951,
+    "r_alone_is_not_the_detector": "\u26d4 both profiles are monotone ramps from the origin, so ANY forward-moving plan correlates ~1 with hold-v0 \u2014 a hard-braking planner still scores r ~0.99. r is a COMPONENT of echo_index, never a verdict on its own.",
+    "cmd_accel_mae_mps2": 0.7861,
+    "cmd_accel_mae_mps2_gt": 0.4573,
+    "speed_dev_rms_mps": 0.6917,
+    "speed_dev_rms_mps_gt": 0.5487,
+    "dev_ratio": 1.2606,
+    "dev_ratio_def": "RMS(speed_arm - v0) / RMS(speed_gt - v0). 0.0 = the arm commands NOTHING while the human did; 1.0 = it commands the same magnitude (says nothing about the sign \u2014 that is dev_r).",
+    "dev_r": 0.6522,
+    "dev_r_degenerate": false,
+    "dev_r_rms_arm_mps": 0.800697,
+    "dev_r_rms_gt_mps": 0.823014,
+    "dev_r_def": "Pearson r between (speed_arm - v0) and (speed_gt - v0) pooled over every (window, step) \u2014 the correlation of the DEPARTURE from the echo. A pure hold-v0 planner has a nil departure, so this is UNDEFINED (dev_r_degenerate=true), which IS the signature. \u26d4 The degeneracy gate is PHYSICAL (RMS <= 0.001 m/s), not `== 0`: the geometry recovers speed from norm(diff(positions))/dt and leaves a ~1.9e-06 m/s float32 residue, which an exact test correlated into a spurious dev_r = -0.0133 for a PURE ECHO.",
+    "echo_frac_where_human_acted": 0.0102,
+    "echo_frac_where_human_acted_def": "of the 295 windows where the human's own speed departed from v0 by >= 0.5 m/s RMS, the fraction on which the arm nevertheless stayed within 0.1 m/s of v0. The discriminating subset: holding was demonstrably the wrong answer and the arm held anyway.",
+    "n_windows_human_acted": 295,
+    "n_windows": 881,
+    "horizon_steps": 4,
+    "dt_s": 0.5,
+    "thresholds": {
+     "ECHO_R_MIN": 0.999,
+     "ECHO_ACCEL_MPS2": 0.1,
+     "ECHO_DEV_MPS": 0.1,
+     "HUMAN_ACTED_DEV_MPS": 0.5,
+     "ECHO_INDEX_ECHO": 0.99,
+     "ECHO_EXCESS_SUSPECT": 0.2,
+     "_class": "ALL PROPOSED, and ALL applied to the arm AND the GT alike so the headline (the excess) is threshold-robust."
+    }
+   },
+   "shuffle_control": {
+    "status": "UNAVAILABLE",
+    "reason": "no shuffled-v0 re-run supplied. This control needs a SECOND forward pass of the model with v0 permuted across windows \u2014 it cannot be computed from a banked dump. stack/scripts/probe_latent_state.py \u2014 collect_grid(..., speed_echo_control=True) at line 578 permutes b['pose_last'][:, 3] across the batch (same frames, same recorded actions, WRONG speed scalar); CLI flag --speed-echo-control at line 775; already wired by stack/ops/pbattery_watcher.py:80. This is the machinery that produced the P1 speed-echo row (R2 0.995 -> -0.72). Re-run the planner under it and pass the resulting waypoints as win['pred_v0shuffled'] (+ win['v0_shuffled']). Not running it is a WORK ITEM, not a pass.",
+    "n": 0,
+    "n_windows_available": 881,
+    "producer": "stack/scripts/probe_latent_state.py \u2014 collect_grid(..., speed_echo_control=True) at line 578 permutes b['pose_last'][:, 3] across the batch (same frames, same recorded actions, WRONG speed scalar); CLI flag --speed-echo-control at line 775; already wired by stack/ops/pbattery_watcher.py:80. This is the machinery that produced the P1 speed-echo row (R2 0.995 -> -0.72). Re-run the planner under it and pass the resulting waypoints as win['pred_v0shuffled'] (+ win['v0_shuffled']).",
+    "how_to_supply": "win['pred_v0shuffled'] [n,H,2] (+ optionally win['v0_shuffled'] [n]; when absent the permutation is regenerated with shuffle_v0(v0, seed) and the seed is stamped)"
+   },
+   "_why_all_three": "holdv0_baseline is the ADMISSIBILITY test (does the arm beat the copy, separated). copy_detector is the cheap always-on SCALAR (is the emitted plan literally the copy). shuffle_control is the FALSIFIER (does the plan follow a v0 we know to be wrong). The first can pass while the arm still copies on the subset that matters, the second cannot establish skill, and the third needs the model \u2014 so none of the three substitutes for another.",
+   "\u26a0\ufe0f_context": "admitting v0 removed an ARGUMENT, not a DEFICIT: MEASURED, vision + v0 sat at sigma/ADE 3.527 on the REF-C surface, still worse than a 0-parameter constant-yaw-rate rule at 1.1888."
+  },
+  "n_windows": 881,
+  "tier": "T0"
+ },
+ "lateral": {
+  "heading_mae_deg": 0.8065,
+  "yaw_rate_mae_degps": 1.4525,
+  "curvature_mae_1pm": 0.003289,
+  "curvature_bias_1pm": 0.001348,
+  "cross_mae_m": 0.1152,
+  "cross_bias_m": -0.0057,
+  "cross_final_mae_m": 0.2742,
+  "n_steps_heading": 3353,
+  "n_steps_curvature": 2505,
+  "excluded_below_min_ds": 171,
+  "min_ds_m": 0.25,
+  "min_ds_mps": 0.5,
+  "dt_s": 0.5,
+  "dt_invariant": [
+   "heading_mae_deg",
+   "curvature_*",
+   "cross_*"
+  ],
+  "n_windows": 881,
+  "tier": "T0"
+ },
+ "tactical": {
+  "status": "UNAVAILABLE",
+  "reason": "tactical decisions not present in the scored pass (missing ['maneuver_pred', 'maneuver_gt']). A world-model FIDELITY pass does not traverse the hierarchy \u2014 run_one prints this explicitly. Producing this family needs a hierarchy-traversing eval, which is a WORK ITEM.",
+  "n": 0,
+  "how_to_populate": "on a TRAJECTORY-ONLY dump (e.g. a T1 action-closed run) pass `traj={'pred':\u2026,'gt':\u2026,'dt':\u2026,'eid':\u2026,'tier':'T1'}` \u2014 or call all_families(win, tactical_from_trajectory=True) \u2014 and the family is computed from the EXECUTED manoeuvres by the programme's own canonical labeller. See four_families.tactical_from_trajectory.",
+  "tier": "T0"
+ },
+ "strategic": {
+  "status": "UNAVAILABLE",
+  "reason": "strategic decisions not present in the scored pass (missing ['route_pred', 'route_gt']). A world-model FIDELITY pass does not traverse the hierarchy \u2014 run_one prints this explicitly. Producing this family needs a hierarchy-traversing eval, which is a WORK ITEM.",
+  "n": 0,
+  "how_to_populate": "supply `optionset` (map-derived option sets from stack/experiments/nurec-gsplat/strategic_gt.py, consumed by taniteval.strategic_optionset). A route label read off the ego's own future yaw is NOT a substitute: it cannot tell whether the map admitted a choice.",
+  "tier": "T0"
+ },
+ "_grid": {
+  "used": "sparse",
+  "dt_s": 0.5,
+  "horizon_steps": 4,
+  "provenance": "SPARSE waypoint view; derived from wp_steps [5, 10, 15, 20] x dt_s 0.1 -> 0.5s grid",
+  "\u26d4_history": "BEFORE 2026-08-03 this module hard-coded dt=0.1 s while reading the SPARSE 4-waypoint view (0.5 s spacing), so EVERY published speed_* was x5, EVERY accel_* x25 and EVERY yaw_rate_* x5. Positions, heading and curvature were unaffected. Cross-arm comparisons stay valid (common factor); ABSOLUTE quotations and any comparison to a physical bar do not. MEASURED negative control: GT ego speed 12.4565 m/s vs _seq_geometry 62.9789 m/s = 5.0559x, on 859 real held-out windows."
+ },
+ "_binding_rule": "Sayed 2026-08-02: every eval reports LONGITUDINAL + LATERAL + TACTICAL + STRATEGIC in ADDITION to ADE. Per-family, never pooled. A family reported UNAVAILABLE is a WORK ITEM, not a pass.",
+ "_families_unavailable": [
+  "tactical",
+  "strategic"
+ ],
+ "_complete": false,
+ "_longitudinal_claim_admissible": false,
+ "_anti_echo_summary": "holdv0=NOT_SEPARATED \u00b7 copy_detector=CLEAN (echo_index 0.0125 vs GT 0.2611) \u00b7 shuffle=UNAVAILABLE",
+ "_anti_echo_rule": "Sayed 2026-08-16: v0 is ADMISSIBLE as a planner input, PROVIDED the planner is shown not to be 'just outputting v0 as longitudinal plan'. \u26d4 A LONGITUDINAL number emitted while _longitudinal_claim_admissible is False is a fidelity diagnostic, NOT a longitudinal capability result, and must not be presented as one.",
+ "_rule_satisfied": true,
+ "_rule_satisfied_note": "clause 5: a family that genuinely cannot be computed satisfies the rule by stating its REASON and its n. `_complete` is the stricter question \u2014 whether all four carry numbers \u2014 and stays False while STRATEGIC is n/a.",
+ "_tier": "T0"
+}
