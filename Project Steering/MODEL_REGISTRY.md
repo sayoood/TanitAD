@@ -150,7 +150,7 @@ Grounding heads live **outside** the model (separate ckpt keys) so a vanilla `Wo
 | Field | Value |
 |---|---|
 | **Status** | **SUPERSEDED** — killed by the 2026-07-14 speed reset at step **22,950**; retained as the causal ablation control |
-| **Location** | 🔴 **`tanitad-pod2` IS TERMINATED.** The run dir `/workspace/experiments/flagship4b-phase0-30k/` went with it, and it is **absent from pod4's rescue dump** (MEASURED 2026-08-03, read-only `ls /workspace/rescue/experiments/`). **Reachable copies — of `ckpt.pt` ONLY:** (a) dev box `_pod_backup/pod2-2026-08-03/ckpts/flagship4b-phase0-30k_ckpt.pt`, **3 302 176 350 B**, md5 `74be81035699c362e2fd0e5197880506` (per `_pod_backup/pod2-2026-08-03/ckpts/BACKUP_LOG.txt`) — ⚠️ **git-ignored by `.gitignore:48`, so it is NOT in the repo and one disk failure ends it**; (b) HF `Sayood/tanitad-flagship-4b-phase0`. ⛔ **`config.json`, `train_log.jsonl` and the per-gate JSONs have no reachable copy.** |
+| **Location** | 🔴 **`tanitad-pod2` IS TERMINATED.** The run dir `/workspace/experiments/flagship4b-phase0-30k/` went with it, and it is **absent from pod4's rescue dump** (MEASURED 2026-08-03, read-only `ls /workspace/rescue/experiments/`). **Reachable copies — of `ckpt.pt` ONLY:** (a) dev box `_pod_backup/pod2-2026-08-03/ckpts/` file `flagship4b-phase0-30k_ckpt.pt`, **3 302 176 350 B**, md5 `74be81035699c362e2fd0e5197880506` (per `_pod_backup/pod2-2026-08-03/ckpts/BACKUP_LOG.txt`) — ⚠️ **git-ignored by `.gitignore:48`, so it is NOT in the repo and one disk failure ends it**; (b) HF `Sayood/tanitad-flagship-4b-phase0`. ⛔ **`config.json`, `train_log.jsonl` and the per-gate JSONs have no reachable copy.** |
 | **⛔ UNRESOLVED citation** | This row used to cite `gate_step{1k,5k,10k}.json`, which is wrong twice over: a **shell brace expansion names no file**, and the stem is wrong as well. MEASURED 2026-08-03 from the emitters — `stack/scripts/watch_gates.py:213` and `stack/scripts/evaluate_checkpoint.py:201` both write `f"gates_step{step}.json"` — so the real name is **gates_step<full-integer>.json** (plural `gates`, no `k` abbreviation), and **no `gate_step*` writer exists anywhere in the tree**. ⛔ **I did not rewrite it to a guess**: the host is terminated and the dir is not in the rescue dump, so neither the filenames nor the gate steps can be verified, and a confidently wrong citation is worse than an obviously broken one. Tracked as the single `unresolved` entry in `tools/registry_paths_allow.json`; resolving it means finding the run dir, then lowering that file's `max_unresolved`. |
 | **Distinguishing flags** | `speed_input=false`, `action_dim=2`, `jerk_weight=0.0`, `aux_accel=false`, `rollout_k=4` |
 | **Params (from run config)** | encoder 87,121,280 · operative 96,607,490 · tactical_pred 26,534,912 · tactical_policy 22,736,141 · strategic_policy 8,385,027 · h15 22,055,683 · grounding_heads 13,432,338 → **total_model 263,440,533 / trainable 276,872,871** ✅ |
@@ -1403,7 +1403,10 @@ after on the full held-out W3 pack: **lateral gain 0.27 → 0.971/0.966** (gate 
 **longitudinal sign 0.745/0.787 → 1.0/1.0** (gate ≥0.95); lateral sign stays 1.0;
 longitudinal gain 0.972 (reported); **P6 subspace stays exactly 3-dim**; no-harm passed.
 The single root defect behind the action echo, the three scoring failures and W7's ceiling
-is closed at head-scale cost. Repaired ckpt: `stage-a-predictor/ckpt_stage_a.pt`;
+is closed at head-scale cost. Repaired ckpt: `/workspace/experiments/stage-a-predictor/ckpt_stage_a.pt`
+(pod copy gone — hosts terminated; durable copy verified 2026-08-18 on HF
+`Sayood/tanitad-flagship-v5f-w120` at `release/v58f/ckpt/` `ckpt_stage_a.pt`, per the
+`stack/scripts/release_v58f.py` manifest + HF tree listing);
 artifact `stage_a_gate.json`. W7-on-repaired (K=32) ran ~07:35Z: gate FAIL by INSTRUMENT
 COMPOSITION (the frozen-trunk-trained W4 head/selector don't compose with the repaired
 trunk — §1.14), while roll-cost calibration nearly doubled (ρ 0.716) — the repair's
@@ -1441,7 +1444,8 @@ barely differ, so the cost drowns. **Why: W3 measured the WM's action-response g
 DEFECT: the trunk under-weights actions in its rollout.** ⇒ **Stage-A post-training
 (V18 E3.4: L_ctrl gain repair, targets measured by W3 — lateral gain into [0.5, 2],
 longitudinal sign ≥95 %, preserve the 3-dim action subspace) is THE critical path** for
-selection AND closed-loop capability; W7 re-runs after it. Artifacts: `w7_gate_k{8,32,64}.json`.
+selection AND closed-loop capability; W7 re-runs after it. Artifacts:
+`…/incoming/2026-08-07-hierarchical-wm-redesign/w7_gate_k8.json` + `w7_gate_k32.json` + `w7_gate_k64.json`.
 
 **W7-ON-REPAIRED (stage-A trunk, K=32) — MEASURED 2026-08-11 ~07:35Z [T0, 881 grid]: gate
 FAIL (selected 2.3468 vs thr 0.4505; frac closed −2.27) — but the failure is INSTRUMENT
@@ -1491,7 +1495,9 @@ and **you cannot repair a trunk and keep its planner**; (2) that sentence IS the
 training argument for v6 — consumers must be (re)trained ON the trunk they consume
 (S-W → S-T → S-S), and argmin-over-a-large-fan must be replaced by a
 noise-robust rule (top-m aggregation / sharpened cost), pre-registered before it is used.
-Artifact: `w7_full_gate.json`; per-window arrays `w7-full-roll/w7_eval_windows.pt`.
+Artifact: `w7_full_gate.json`; per-window arrays `/workspace/experiments/w7-full-roll/w7_eval_windows.pt`
+[⛔ UNBANKED — lived on pod4 (terminated) per this block's header, emitter `stack/scripts/w7_roll_rerank.py:715`;
+never committed, and NOT in the v5.8f HF release (tree listed 2026-08-18)].
 
 **P8 BEV-OCCUPANCY READOUT (attempt 2) — MEASURED 2026-08-12 ~00:05Z [T0-diagnostic,
 881 grid, pod4]: GATE PASS — the PREDICTED latent retains the environment.** Attempt 1's
@@ -1542,7 +1548,7 @@ quote the enc arm, or quote the pred arm *with* this. Also: the join flagged at 
 sensor's 120° while the encoder saw the 117° sub-frame, which puts unseen agents in the
 *visible* bucket and can only SHRINK this gap ⇒ the banked number is **conservative**.
 Artifacts: `…/incoming/2026-08-16-p4-fov-predicate/P4_FOV_PREDICATE.md` +
-`raw/p4_predicate_identity.json`; both `p8_gate_attempt{1,2}.json` annotated in place.
+`raw/p4_predicate_identity.json`; both `p8_gate_attempt1.json` + `p8_gate_attempt2.json` annotated in place.
 
 **I4a IMAGINATION ABLATION — MEASURED 2026-08-11 ~19:40Z [T0, 881 grid]: the imagination
 channel is LOAD-BEARING, not decorative.** Three arms, same checkpoint, same grid, only the
@@ -1554,8 +1560,12 @@ result: shuffling preserves the marginal statistics and destroys only the
 window↔consequence correspondence, so the planner is reading imagination as CONTENT, not
 as a bias term. ⚠️ Caveat stamped: the head was TRAINED with imagination present, so this
 measures the dependence of THIS architecture, not the value of retraining without it;
-I4b (occluded-split stratification) is the next refinement. Artifacts:
-`i4a/flagship-v5f-w120-30k-i4a-{none,zero,shuffle}.json` (pod5).
+I4b (occluded-split stratification) is the next refinement. Artifacts: three JSONs in
+pod5 `/workspace/experiments/i4a/` (local stems flagship-v5f-w120-30k-i4a-none/zero/shuffle;
+pod terminated, never committed) — durable copies verified 2026-08-18 on HF
+`Sayood/tanitad-flagship-v5f-w120` at `release/v58f/gates/` as `i4a_none.json` /
+`i4a_zero.json` / `i4a_shuffle.json`, per the `stack/scripts/release_v58f.py` manifest +
+HF tree listing.
 
 **W4r + W7-w4r — MEASURED 2026-08-11 ~19:10Z [T0, 881 grid]: the repair arc closes on ONE
 remaining stale part.** W4r (unicycle head refit ON the stage-A trunk, 4000 steps, trunk
@@ -1570,7 +1580,9 @@ component, and it sits in W7's PRUNER, not its cost.** ⇒ **W7-FULL queued (top
 shortlist, selector-free): roll-cost + kinematic cost over the whole healthy fan — the
 first selection read of the fully-repaired pipeline with NO stale part anywhere** (pod4,
 behind p8c; W4r head relayed via HF /battery/). Artifacts: `w4r_gate.json`,
-`w7-repaired-w4r-k32/w7_gate.json` (pod5).
+`/workspace/experiments/w7-repaired-w4r-k32/w7_gate.json` (pod5, terminated — durable copy
+verified 2026-08-18 on HF `Sayood/tanitad-flagship-v5f-w120` at `release/v58f/gates/` as
+`w7_w4r_k32_gate.json`, per the `stack/scripts/release_v58f.py` manifest + HF tree listing).
 
 **P1 LEAD-GAP RESOLUTION — MEASURED 2026-08-11 ~17:20Z (two runs, pod4): the instrument
 was fixed AND the failure survived it — MODEL VERDICT "missing state variable".**
@@ -1779,7 +1791,10 @@ and rejecting the record for them discarded a good `goal_kind`.
 and it says yes. Still open: the processor reports `fps=24` for a 2 fps sample (a temporal
 mismatch that B4's hindsight premise depends on), `alpamayo_rows = 0` on every clip (engine D
 contributed nothing), and SAM3's real API is installed but not yet wired.
-Artifacts: `ph0_mini/v2/ph0_v2.json` (every prompt + raw model output banked per call),
+Artifacts: `/workspace/ph0_mini/v2/ph0_v2.json` (every prompt + raw model output banked
+per call) [⛔ UNBANKED — lived on pod4 (terminated) per this block's header, out-dir per
+`stack/scripts/ph0_v2_chain.sh:20`; never committed, and NOT in the v5.8f HF release
+(tree listed 2026-08-18)],
 `ph0_mini/v2/viz/` (overlay MP4 + stills); instruments `stack/scripts/ph0_v2.py`,
 `ph0_v2_chain.sh`, `ph0_v2_overlay.py`, 44 CPU tests.
 
@@ -1850,7 +1865,9 @@ R²(enc) ≤ 0, every transform failed, 2-layer MLP ceiling **−0.334**) — re
 **the lead gap is not readable from this latent in any form yet probed**. (3) It converges with
 the T1 result above: the closed loop is ~99 % longitudinal and over-accelerates (progress ratio
 1.7279, speed bias +9.3892 m/s), and the model cannot see the vehicle in front of it. Artifacts:
-`lf0-bev-lead/lf0_gate.json` (pod4); instrument `stack/scripts/lf0_bev_lead.py` + `lf0_chain.sh`,
+`/workspace/experiments/lf0-bev-lead/lf0_gate.json` (pod4, terminated) [⛔ UNBANKED — out-dir per
+`stack/scripts/lf0_chain.sh:17`; never committed, and NOT in the v5.8f HF release (tree listed
+2026-08-18)]; instrument `stack/scripts/lf0_bev_lead.py` + `lf0_chain.sh`,
 21 CPU tests.
 
 **W7-PROG — MEASURED 2026-08-12 ~05:40Z [EXPLORATORY, 881 grid, pod4]: PRE-REGISTERED
@@ -1882,14 +1899,18 @@ anti-degeneracy weight, and W7-style self-consistency selection is retired as a 
 A cost that is *negatively* calibrated across windows is worse than an uninformative one, which is
 the mechanism behind the ADE regression and independent evidence that this cost family is not
 merely under-tuned. ⚠️ EXPLORATORY stamp holds: this re-uses the W7 scoring windows, so no arm
-here is quotable as a v5.8f number. Artifacts: `w7-prog-{01,05}/w7_gate.json` + `rules.json` (pod4).
+here is quotable as a v5.8f number. Artifacts: `w7_gate.json` + `rules.json` in each arm run dir,
+w7-prog-01/ and w7-prog-05/, on pod4 [⛔ UNBANKED — pod terminated, never committed, and NOT in
+the v5.8f HF release (tree listed 2026-08-18)].
 
 Instrument change that made this possible: `t1_eval.py` now calls
 `all_families(win, tactical_from_traj=True, tier=t)`. At T1 nothing steers the rollout but the
 arm's own actions, so the driven path IS its manoeuvre decision; at T0 the same block is
 stamped as substantially an ACTION ECHO so a teacher-forced tactical number can never be read
-as skill. Artifacts: `four_families/ff_{stageA,v5f30k}_{cl,ol,ha}.json` + `ff_comparison.json`
-(pod5:`/workspace/experiments/t1-v58f/four_families/`).
+as skill. Artifacts: the six per-tier JSONs ff_{stageA,v5f30k}_{cl,ol,ha}.json + `ff_comparison.json`
+(pod5:`/workspace/experiments/t1-v58f/four_families/`, terminated — all seven durable, verified
+2026-08-18 on HF `Sayood/tanitad-flagship-v5f-w120` at `release/v58f/gates/four_families/`, same
+basenames, per the `stack/scripts/release_v58f.py` manifest + HF tree listing).
 
 ## 2. REF-A — the frozen-encoder arm (H4)
 
@@ -2790,7 +2811,7 @@ deleted so every previously published number stays traceable. Sources: the per-r
 | 13 | Flagship **no-speed** (ablation control) | `flagship-nospeed` | ~22 000 | 263.4 M | 3.0175 [2.5450, 3.5444] <!-- src: taniteval/results/driving_flagship-nospeed.json#headline.ade_0_2s.mean --> | 5.0282 | 0.7423 | ✗ | *2.9176 ± 0.3558* |
 | 14 | REF-A dyn-in 4B | `refa-dynin-30k` | 29 999 | — | 3.0471 [2.4984, 3.6878] <!-- src: taniteval/results/driving_refa-dynin-30k.json#headline.ade_0_2s.mean --> | 4.7642 | 0.7412 | ✗ | *2.9196 ± 0.3937* |
 | 15 | Flagship **v2** (killed) | `flagship-v2-6k` | 6 000 | 272.9 M | 5.9396 [4.3273, 7.6249] <!-- src: taniteval/results/driving_flagship-v2-6k.json#headline.ade_0_2s.mean --> | 12.4011 | 0.8524 | ✗ | *6.179 ± 1.2845* |
-| — | Flagship v1 tactical **head** (not rollout) | `plan_flagship-30k` | 29 999 | — | **3.3839** [2.8336, 3.9722] <!-- src: …/2026-08-16-jack-in-gates/raw/g1_g4_both_estimators.json#G1.arms.tactical_head --> ⚠️ **the "🟥 no windows dump — legacy only" that stood here is REFUTED (2026-08-16):** `clwin_flagship-30k.pt`'s `plan_direct` **is** this arm — it reproduces the legacy 3.1501 ± 0.3472 **bit-exactly at 4 dp**, and its `full_set` mean is 3.3839. Same stale-absence class (**C69**/**C70**) as the P2 row above | — | — | ✗ | *3.38 (3.150 ± 0.347 in the P2 pass)* |
+| — | Flagship v1 tactical **head** (not rollout) | `plan_flagship-30k` | 29 999 | — | **3.3839** [2.8336, 3.9722] <!-- src: TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-08-16-jack-in-gates/raw/g1_g4_both_estimators.json#G1.arms.tactical_head.corrected_mean --> ⚠️ **the "🟥 no windows dump — legacy only" that stood here is REFUTED (2026-08-16):** `clwin_flagship-30k.pt`'s `plan_direct` **is** this arm — it reproduces the legacy 3.1501 ± 0.3472 **bit-exactly at 4 dp**, and its `full_set` mean is 3.3839. Same stale-absence class (**C69**/**C70**) as the P2 row above | — | — | ✗ | *3.38 (3.150 ± 0.347 in the P2 pass)* |
 
 *Arms recomputed but not ranked here (same 881 windows; full table in `jack_recompute.json`):*
 **v1.6** `flagship-v16-ab-ft` 0.4375 [0.3423, 0.5501] (legacy 0.4886 — the largest single-arm bias in the
@@ -3615,7 +3636,8 @@ performance.** T1 capability claims live in §1.12, §1.13c and §5.
 **Substrate:** frozen `v6F-SW-30k` snapshots (`/home/nvidia/ckpt_snaps`, fp16 weights-only).
 **Estimator:** paired episode-cluster bootstrap throughout. **Instrument:** `pc6_linear_readout`
 ridge — ⛔ **pass `intercept_col=-1`**; the default is deliberately the incumbent (biased) behaviour
-so banked `pc6_ridge_*.json` reproduce bit-exactly (C92).
+so banked `pc6_ridge_*` JSONs under `…/incoming/2026-08-17-probe-positive-control/raw/`
+reproduce bit-exactly (C92).
 
 ### 12.1 ⛔ The 40:1 pooling bottleneck is REFUTED — the ENCODER is the constraint (C104, 2026-08-18)
 
@@ -3701,7 +3723,7 @@ fires** — `parity.py` §9 checks a cache against *its own* corpus digest, and 
 is a different corpus by construction. ⇒ **Whoever runs that build MUST call
 `parity.filter_train_clips()` first.**
 
-✅ **BLAST RADIUS ON PUBLISHED NUMBERS: ZERO** — all **73** `taniteval/results/*.json` opened;
+✅ **BLAST RADIUS ON PUBLISHED NUMBERS: ZERO** — all **73** JSONs in `taniteval/results/` opened;
 `registry.py:288` lists three eval corpora, **none Alpamayo**; every registry hit sits in §11
 *PRODUCED DATASETS*. The aug120 numbers that exist are **label-quality only**, and the ADE numbers
 near the word "Alpamayo" are the **Alpamayo-2-Super model** on the 290-clip OOD-val corpus — a
