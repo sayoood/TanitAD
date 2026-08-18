@@ -1933,7 +1933,8 @@ class RefCModel(nn.Module):
                 maneuver_logits: Tensor | None = None,
                 target_latent: Tensor | None = None, steps: int = 0,
                 lan: Tensor | None = None,
-                nav_known: Tensor | None = None) -> dict:
+                nav_known: Tensor | None = None,
+                hierarchy_hook=None) -> dict:
         """frames [B, W, C, H, W'], nav_cmd [B] long (None -> `follow`), v0 [B]
         current ego speed (None -> zeros; scaled /10 inside). ``maneuver_logits``
         / ``target_latent`` are OPTIONAL external tactical-brain seams (else the
@@ -1942,6 +1943,19 @@ class RefCModel(nn.Module):
         (``graft_lan``; None -> the seam is skipped entirely, so an unrouted
         window costs nothing). ``steps`` selects the decoder mode: 0 =
         classifier (default), >0 = truncated diffusion.
+
+        ``hierarchy_hook`` (REF-C v3, default ``None`` == byte-identical to the
+        pre-hook forward): an IN-FORWARD supplier for the two external-tactical-
+        brain ports above, so a hierarchy built OUTSIDE this class can read the
+        window it is conditioning on without encoding the frames a second time
+        (the encoder is ~90 % of the tick — a second encode would be the cost,
+        and a cached one would be a stale-latent hazard). Called as
+        ``hook(pooled_seq [B, W, F], ctx [B, d_ctx]) -> dict`` and its
+        ``"maneuver_logits"`` / ``"target_latent"`` entries fill the ports ONLY
+        where the caller passed ``None`` — an explicitly supplied port always
+        wins, so the hook can never silently override an experiment's input.
+        Requires ``cfg.hierarchy`` (``pooled_seq`` exists only on that path).
+        The supplier lives in ``tanitad/refs/refc_v3.py``.
 
         Returns dict: pooled [B, F], traj / wp_seq [B, n_steps, 2], waypoints
         {key: [B, 2]}, anchor_logits [B, N], anchor_traj [B, N, n_steps, 2],
@@ -1964,6 +1978,22 @@ class RefCModel(nn.Module):
         else:                                    # last frame only (same values)
             fmap, pooled = self.encoder(frames[:, -1])
             ctx = None
+
+        # REF-C v3 hierarchy hook (gated by the ARGUMENT, not by a config flag:
+        # with hook=None this block is untouched dead code and the forward is
+        # byte-identical to the pre-hook file — pinned by tests/test_refc_v3.py).
+        if hierarchy_hook is not None:
+            if not self.cfg.hierarchy:
+                raise ValueError(
+                    "hierarchy_hook requires cfg.hierarchy=True — pooled_seq "
+                    "is only computed on that path, and running the hook on a "
+                    "last-frame-only build would hand it a window that does "
+                    "not exist (the C115 defect, manufactured).")
+            hk = hierarchy_hook(pooled_seq, ctx)
+            if maneuver_logits is None:
+                maneuver_logits = hk.get("maneuver_logits")
+            if target_latent is None:
+                target_latent = hk.get("target_latent")
 
         # H15 belief field refines the conv-map tokens before the decoder (gated).
         imag_logvar = None
