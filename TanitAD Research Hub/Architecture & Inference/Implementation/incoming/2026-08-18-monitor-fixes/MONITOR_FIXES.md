@@ -221,12 +221,35 @@ papered over.
 * `--stage S-W --dry-run` completes; X3 isolation `pass=True`.
 * `pytest tests/test_v6_staged.py tests/test_v6_agent_slots.py tests/test_v6_gstr_port.py
   tests/test_pod_git_drift.py` → **177 passed**; my two files → **41 passed**.
-* ⚠️ **The full 223-file suite was launched but is NOT reported here as a gate.** MEASURED while it
-  ran: **four other heavy python processes** (5.5 GB / 2.7 GB / 1.4 GB / 0.5 GB resident) belonging
-  to concurrent agents. `CLAUDE.md` is explicit that gating on a suite under multi-process CPU
-  contention is invalid — *it produced 22 spurious failures from contention alone.* ⇒ The targeted
-  suites above are the evidence offered; **a green full suite under contention would have been the
-  weaker claim, not the stronger one.**
+* ✅ **Full suite (223 files), CLEAN RE-RUN under low contention: `3991 passed, 7 skipped,
+  2 xfailed, 0 failed` in 559 s.** This is the gate.
+
+* ⚠️ **The FIRST full run was `3 failed, 3988 passed` in 605 s — and reported `exit code 0`.**
+  ⛔ *"Exit codes are not evidence"* fired on this very run; reading the output is the only reason
+  the failures were seen at all. The cause is below, and it was **not** my change.
+
+* ⭐ **ALL 3 FAILURES ARE A TORN MID-EDIT SNAPSHOT OF A SIBLING AGENT'S WORK — NOT MINE, AND ALREADY
+  RESOLVED.** All three are in `tests/test_v6_stage_init_introduction.py` and assert that
+  `STAGE_MAY_INTRODUCE["S-T"]` contains **`"t2_head."`** (the sibling's F-7 T2 projector). The
+  mtimes settle it — and in the **opposite** direction to the obvious guess, which is why it was
+  measured rather than assumed:
+
+  | file | mtime | vs the suite window (04:45:12 → 04:55:17) |
+  |---|---|---|
+  | `scripts/train_v6_staged.py` (holds `STAGE_MAY_INTRODUCE`) | 04:44:45 | **before** — already had `t2_head.` |
+  | `tests/test_v6_stage_init_introduction.py` | **04:58:33** | **after** — still the OLD 5-tuple during the run |
+
+  ⇒ The suite ran a source file that had already grown the allowance against a test that had not yet
+  been updated to expect it. The sibling updated the test 3 minutes after the suite ended.
+  **Confirmed four ways:** all 10 pass in isolation · 51 pass alongside my two new files · 62 pass
+  alongside the sibling's own T2/T5 tests · and the **clean full-suite re-run above is 0 failed**.
+
+* ⚠️ **A LESSON WORTH KEEPING: a full-suite run taken while sibling agents are actively editing the
+  tree measures a TORN SNAPSHOT, not the code.** It is the same family as the contention rule
+  (*22 spurious failures from contention alone*) but a distinct mechanism — not CPU starvation, a
+  **non-atomic read of the working tree**. During this run there were also **four other heavy python
+  processes** live (5.5 / 2.7 / 1.4 / 0.5 GB resident). ⇒ **Attribute a full-suite failure to file
+  mtimes before attributing it to your own change.**
 * Thor PID 25477 `kill -0` **alive** at every check, and **advanced across the scans**:
   step **13250 → 13300** (02:40:18 → 02:55:39 UTC). ⚠️ `step_s` reads **26.4694 at both ends** —
   which is not a stall, it is the converging cumulative mean this whole task is about, and it is a
@@ -239,7 +262,34 @@ papered over.
 
 ## 5. ⛔ Escalations — these need a decision, not a README
 
-### 5.0 ⛔ COMMIT-BLOCKING — the staged `train_v6_staged.py` carries a SIBLING AGENT'S work, and the index as it stands does not import
+### 5.0-A ⛔ **HEAD IS HALF-LANDED: JOB 1'S TESTS ARE COMMITTED, ITS TRAINER CHANGE IS NOT**
+
+⚠️ **Updated at end of turn — HEAD moved twice while this task ran and is now `6b33e29`.** The
+orchestrator committed most of this work mid-turn. What landed, MEASURED file by file:
+
+| deliverable | at HEAD `6b33e29` |
+|---|---|
+| `stack/scripts/step_time_guard.py` | ✅ committed, current |
+| `stack/tests/test_step_time_guard.py` | ✅ committed, current |
+| `stack/scripts/pod_git_drift.py` | ✅ committed, current |
+| `stack/tests/test_pod_git_drift.py` | ✅ committed, current |
+| `…/drift_thor_after.json` | ✅ committed, current |
+| ⛔ **`stack/scripts/train_v6_staged.py`** | **an OLDER version — `step_s_interval` occurs 0 times** |
+
+⇒ ⛔ **The committed tests do not match the committed trainer.** `test_step_time_guard.py` is at HEAD
+and its three AST tests assert the emission exists; HEAD's trainer log record is missing
+`step_s_interval` and `steps_this_process`. **Verified by parsing HEAD's own blob:** against a clean
+checkout of `6b33e29` these three COMMITTED tests **FAIL** —
+
+* `test_the_trainer_emits_the_marginal_field_alongside_the_cumulative_one`
+* `test_step_s_keeps_its_cumulative_definition`
+* `test_the_interval_window_is_advanced_inside_the_emission_block`
+
+They pass in the working tree only because the AST tests read the **worktree** file, which does carry
+the change. ⇒ **`stack/scripts/train_v6_staged.py` must be committed** — and it cannot be committed
+alone, for the reason in 5.0-B.
+
+### 5.0-B ⛔ COMMIT-BLOCKING — the staged `train_v6_staged.py` carries a SIBLING AGENT'S work, and the index as it stands does not import
 
 A concurrent agent's **T2 contrastive + T5 temporal-consistency** implementation (**+626 lines**)
 landed in `stack/scripts/train_v6_staged.py` **during** this task. `git add` stages whole files, so
@@ -254,12 +304,17 @@ index**. This is the `CLAUDE.md` concurrent-staging hazard, and it has a hard co
 
 ⇒ ⛔ **Committing the index as it stands produces an `ImportError` on every import of the trainer.**
 
-**The fix is one line for whoever commits — stage the sibling's dependency in the SAME commit:**
+**⇒ THE ONE ACTION THAT CLOSES BOTH 5.0-A AND 5.0-B — commit these together, in one commit:**
 
 ```
-git add -- stack/tanitad/models/v6.py \
+git add -- stack/scripts/train_v6_staged.py stack/tanitad/models/v6.py \
+           stack/tests/test_v6_stage_init_introduction.py \
            stack/tests/test_v6_t2_contrastive.py stack/tests/test_v6_t5_consistency.py
 ```
+
+`train_v6_staged.py` carries **both** my step-time emission (closing 5.0-A) **and** the sibling's T2
+code; `v6.py` supplies the symbols it imports; the three test files are the sibling's matching pins,
+including the one whose mtime caused the torn-snapshot failure in §4.
 
 ⚠️ **I did not stage them myself**: they are another agent's in-progress deliverables, their two test
 files are still untracked, and choosing when their work lands is not my call. **Unstaging
