@@ -12,8 +12,11 @@ import math
 import pytest
 import torch
 
+ROOT_SRC = __import__('pathlib').Path(__file__).resolve().parents[2]
+
 from tanitad.config import StrategicPolicyConfig, TacticalPolicyConfig
-from tanitad.refs.refa_v1 import DINOV3_GEOMETRY, RefAV1, RefAV1Config
+from tanitad.refs.refa_v1 import (DINOV3_GEOMETRY, TACTICAL_LAT_ACTIONS,
+                                  TACTICAL_LON_ACTIONS, RefAV1, RefAV1Config)
 from tanitad.refs.refa_v1_plan import (DINO_WM_DEFAULTS, PlanConfig,
                                        colored_noise, cost_fidelity, icem_plan)
 
@@ -188,11 +191,65 @@ def test_the_tactical_intent_actually_reaches_the_operative_predictor():
     assert not torch.allclose(p0, p1)
 
 
-def test_the_hierarchy_emits_route_and_maneuver_and_conditions_the_chain():
+def test_the_hierarchy_emits_route_and_the_FACTORED_tactical_action():
     m = RefAV1(_brains(_tiny()))
     out = m(torch.randn(2, 4, 8, 32), torch.zeros(2, 30, 2))
-    for k in ("ctx", "intent", "route_logits", "maneuver_logits"):
+    for k in ("ctx", "intent", "route_logits", "lat_logits", "lon_logits"):
         assert out.get(k) is not None, k
+    assert out["lat_logits"].shape == (2, len(TACTICAL_LAT_ACTIONS))
+    assert out["lon_logits"].shape == (2, len(TACTICAL_LON_ACTIONS))
+
+
+def test_the_tactical_vocabulary_IS_v6s_not_a_copy_of_it():
+    """⛔ Identity, not equality-by-value: a second tuple with the same members
+    is a second vocabulary that can drift. v1 must import v6's objects."""
+    from tanitad.models import v6
+    assert TACTICAL_LAT_ACTIONS is v6.TACTICAL_LAT_ACTIONS
+    assert TACTICAL_LON_ACTIONS is v6.TACTICAL_LON_ACTIONS
+    assert TACTICAL_LAT_ACTIONS == ("LANE_KEEP", "LANE_CHANGE_L",
+                                    "LANE_CHANGE_R", "ABORT_LC", "NUDGE_L",
+                                    "NUDGE_R")
+    assert TACTICAL_LON_ACTIONS == ("FOLLOW", "CRUISE", "YIELD_MERGE",
+                                    "BRAKE_TO", "CREEP", "HOLD")
+
+
+def test_the_RETIRED_5_way_mixed_head_is_NOT_consumed():
+    """The defect this fixes: v1 first shipped reading the legacy mixed softmax
+    (lane_keep/turn_L/turn_R/accelerate/brake_stop) because it reused the shared
+    brain's DEFAULT config. Every shape checked out. D-TAC1 measured the mixed
+    form at 0.7581 acc / 0.5313 macro-recall with `accelerate` NEVER predicted,
+    vs 0.9348 / 0.8290 factored, and the label destroying 9.68 % of longitudinal
+    decisions. The passthrough must be named so it cannot be used by accident."""
+    m = RefAV1(_brains(_tiny()))
+    out = m(torch.randn(2, 4, 8, 32), torch.zeros(2, 30, 2))
+    assert "maneuver_logits" not in out, "the mixed head must not be offered"
+    assert "legacy_mixed_maneuver_logits_DO_NOT_USE" in out
+    # ⚠️ Check CODE USE, not text. A first cut asserted the token was absent
+    # from the file and failed on this module's own comment EXPLAINING the
+    # defect — a guard that forbids naming the thing it guards against makes
+    # the code undocumentable. AST: no executable reference may exist.
+    import ast
+    src = (ROOT_SRC / "stack" / "tanitad" / "refs" / "refa_v1.py").read_text(
+        encoding="utf-8")
+    tree = ast.parse(src)
+    used = {n.id for n in ast.walk(tree) if isinstance(n, ast.Name)}
+    used |= {a.attr for a in ast.walk(tree) if isinstance(a, ast.Attribute)}
+    for imp in ast.walk(tree):
+        if isinstance(imp, ast.ImportFrom):
+            used |= {al.asname or al.name for al in imp.names}
+    assert "MANEUVER_CLASSES" not in used,         "v1 must not USE the retired 5-way list (comments about it are fine)"
+
+
+def test_the_two_axes_are_INDEPENDENT_softmaxes():
+    """The mechanism, not just the shape: changing the lateral logits must not
+    move the longitudinal distribution. In a mixed softmax it always does."""
+    m = RefAV1(_brains(_tiny()))
+    out = m(torch.randn(1, 4, 8, 32), torch.zeros(1, 30, 2))
+    lat, lon = out["lat_logits"], out["lon_logits"]
+    assert lat.shape[-1] != 5 and lon.shape[-1] != 5
+    p_lon = torch.softmax(lon, -1)
+    p_lon_after = torch.softmax(lon + 0.0 * lat.sum(), -1)   # lat cannot enter
+    assert torch.allclose(p_lon, p_lon_after)
 
 
 def test_the_strategic_predictor_is_SEPARATE_and_narrower():

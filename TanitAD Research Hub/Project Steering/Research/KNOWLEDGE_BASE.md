@@ -1,7 +1,10 @@
-﻿# KNOWLEDGE_BASE — Project Steering
+# KNOWLEDGE_BASE — Project Steering
 
-> Curated, deduplicated, newest first. Format:
-> `[YYYY-MM-DD] [source] finding (1-3 lines) — impact: H_x / WP_y — link`
-
-- [2026-07-05] [kickoff] Initial research baseline for all hypotheses established; discipline agenda
-  seeds defined — impact: all — see `../../INITIAL_RESEARCH_SYNTHESIS.md`
+> ⛔ **MERGED 2026-08-18.** The seven per-area knowledge bases are now ONE:
+> **[`TanitAD Research Hub/KNOWLEDGE_BASE.md`](../../KNOWLEDGE_BASE.md)**.
+>
+> Entries from this file are there, tagged `[Project Steering]`. Add new findings to the
+> consolidated file — anything written here will not be read.
+>
+> Primary sources live in [`../../Library/`](../../Library/LIBRARY.md); bank them with
+> `python tools/kb_add.py <arxiv-id> --tag <topic> --cited-by <report>`.

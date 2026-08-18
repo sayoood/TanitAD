@@ -3458,6 +3458,277 @@ numbers, not against a narrative. None of them is an experiment we can run aroun
    blocked today; the licence only buys a better teacher for the *positive* arm. ⛔ **No mirror or
    re-upload is an acceptable route around it.**
 
+---
+
+## 11. The frozen-encoder question, resolved into a design: REF-A v1
+
+*Added 2026-08-18. This section supersedes nothing; it records the iteration in which the
+encoder question stopped being an opinion and became a measured configuration argument, and
+derives the resulting architecture. Every number carries its class:* `MEASURED` *(ours),*
+`PUBLISHED` *(a banked primary in* `Library/`*),* `HYPOTHESIS`.
+
+### 11.1 The question, and why the obvious answer was wrong
+
+REF-A — a frozen DINOv2-B/14 encoder feeding a trainable adapter and a supervised
+trajectory head — plateaued at ADE@2s **2.1675 m** (T0). The programme's default reading
+attributed this to the frozen encoder. Two independent lines of work landed on 2026-08-18 and
+jointly refuted that attribution.
+
+**(a) The information is not lost.** A five-stage readout ladder measured lead-gap decodability
+at every point of REF-A's pipeline (`MEASURED`, verdict `P2-PRESERVED`, pre-registered before
+any readout ran):
+
+| stage | lead-gap readout |
+|---|---|
+| raw frozen features | 0.5285 |
+| trained adapter | 0.4751 |
+| predictor latent ẑ(t+0.1 s) | 0.4762 |
+| predictor latent ẑ(t+0.4 s) | 0.4863 |
+
+The trained adapter did **not** collapse — per-dim standard deviation **0.8011** against
+**0.220** at random initialisation, zero dead dimensions, i.e. training *expanded* the
+representation's variance by 3.6×. The predictor step costs **+0.0011 [−0.0044, +0.0065]**:
+nothing. The signal arrives intact at precisely the latent the evaluation decoded — the latent
+that produced the programme's worst driving number.
+
+**(b) Readability does not discriminate driving.** A separate pre-registered test found REF-A's
+readout advantage buys nothing where it should matter most: on lead-present windows the contrast
+is **−0.0146 [−0.5988, +0.5551]**, not separated. And REF-C — whose encoder is trained from
+scratch and is nearly agent-blind — drives best of all arms.
+
+Let ρ denote a linear-probe readout score and D a driving metric. The programme had been
+reasoning as though ρ were a sufficient statistic for D. Five measured stages across two
+independent streams show no such relation. The operative conclusion is a *prohibition*: **no
+readout number is admissible as a reason to swap, freeze, or distil an encoder** until an
+experiment establishes the ρ→D link on our own arms.
+
+### 11.2 The configuration argument
+
+Eleven primary sources were banked (`Library/`) and read for one question: under what conditions
+do frozen encoders succeed? They succeed in exactly two configurations, and REF-A occupied
+neither.
+
+**Configuration A — large frozen encoder, wide interface, supervised head.** `PUBLISHED`
+[`2601.03460`, FROST-Drive], Waymo Open E2E, 5 cameras at 448²:
+
+| arm | RFS ↑ | ADE@3s ↓ |
+|---|---|---|
+| frozen VLM 78 B | 8.24 | 0.95 m |
+| frozen VLM 14 B | 8.17 | 1.04 m |
+| **the same 14 B, fine-tuned** | 8.13 | **1.47 m** |
+| ViT (ImageNet), fully fine-tuned | 7.79 | 1.20 m |
+| **ViT (ImageNet), frozen** | **7.39** | **2.28 m** |
+
+Read the last two rows against the middle one. Freezing *beats* fine-tuning for a strong
+encoder, and *loses* to it for a weak one. Freezing is therefore not an independent good but a
+**multiplier on pre-training quality**:
+
+&nbsp;&nbsp;&nbsp;&nbsp;frozen+strong ≻ tuned+strong ≻ tuned+weak ≻ **frozen+weak**
+
+The same work isolates the *interface width* as its own lever: the identical frozen encoder
+scores RFS 8.17 at a 5120-d output and 7.68 at 256-d.
+
+**Configuration B — moderate frozen encoder, feature prediction, test-time planning.**
+`PUBLISHED` [`2411.04983`, DINO-WM]: frozen DINOv2 **patch** features; only a causal transition
+model and an action MLP train; the loss is a plain latent L2 with *"no auxiliary reconstruction,
+reward, or terminal losses"*; there is **no policy head at all**; behaviour comes from CEM inside
+an MPC loop. Its decisive ablation: replacing patch embeddings with global R3M, ResNet-18, or the
+DINOv2 **CLS** token *"significantly degrades"* performance. The pattern replicates in robotics
+[`2506.09985`, V-JEPA 2-AC: <62 h of robot data] and in driving [`2605.10564`, DeepSight: frozen
+encoder plus an MSE world-state loss against DINOv3 future BEV features, Bench2Drive DS 86.23;
+`2406.08481`, LAW].
+
+**And fine-tuning is not the escape.** `PUBLISHED` [`2509.11417`]: full fine-tuning measurably
+degrades pretrained structure (OpenVLA 36.7 % → 12.1 % under paraphrased instructions). The
+winning form is partial adaptation — a **dual encoder**, frozen anchor concatenated with a
+trainable branch: 35.03 → 55.55, and 78.46 with tokenizer and co-training. `PUBLISHED`
+[`2303.18240`, CortexBench] agrees from the other side: no frozen representation dominates 17
+tasks, but task-specific *adaptation* beats the best known result on every benchmark.
+
+⇒ **REF-A held configuration A's consumer (a supervised head) over configuration B's encoder
+class (86 M, image-only SSL), through a narrow 256-token / 51.39° monocular interface.** That
+combination appears nowhere in the successful literature. The failure was never "frozen"; it was
+this specific *pairing*.
+
+### 11.3 Why the objective matters more than the encoder — a derivation
+
+Let z ∈ ℝ^{N×d} be the frozen feature field (N patch tokens, width d), a_t the action, and let
+g_θ be the trainable module downstream of the frozen encoder.
+
+**Supervised-head recipe (REF-A).** g_θ must learn a map
+
+&nbsp;&nbsp;&nbsp;&nbsp;g_θ : z_{t−W:t} × a_{t:t+K} ↦ y_{t:t+K} ∈ ℝ^{K×2}
+
+from a d·N-dimensional field to a 2K-dimensional trajectory. This is a *contraction* of roughly
+d·N·W → 2K — at v1's geometry, 640·1024·4 ≈ 2.6 × 10⁶ inputs to 40 outputs. Everything not
+needed for the trajectory is free to be discarded, and gradient descent will discard it, because
+nothing in the objective pays for keeping it. The information-theoretic consequence: the
+objective supplies at most 2K real numbers of supervision per window, and the adapter is asked to
+*re-encode* a world into a control manifold using that budget.
+
+The empirical signature of exactly this is in our own logs: the only quantity REF-A's training
+separably improved was ego speed — precisely the target its auxiliary losses named. Supervision
+moved what it pointed at, and nothing else.
+
+**Feature-prediction recipe (v1).** g_θ must instead learn
+
+&nbsp;&nbsp;&nbsp;&nbsp;f_θ : z_t × a_t ↦ ẑ_{t+1},&nbsp;&nbsp; ℒ = 𝔼 ‖ f_θ(z_t, a_t) − z_{t+1} ‖²
+
+The target lives in the *same space as the input*. The supervision budget per window is now
+N·d·K real numbers — at v1's geometry ≈ 1.97 × 10⁷ per 6 s rollout, five orders of magnitude
+richer than 2K — and, critically, the map is close to the identity: writing f_θ(z,a) = z + δ_θ(z,a),
+the module learns only the *action-conditioned change*. Two consequences follow directly:
+
+1. **The demand on the adapter is weaker.** It must *preserve and propagate* a representation,
+   not compress it into a different one. Preservation is exactly what our ladder measured the
+   REF-A adapter already doing (§11.1a) — so this objective asks it for something it demonstrably
+   can do.
+2. **Nothing licenses discarding.** Any dimension of z that the objective drops incurs L2 cost at
+   the next step. The collapse mode that a supervised head permits is penalised here by
+   construction.
+
+This is why v1 changes the objective before it changes the encoder.
+
+### 11.4 The three-rate hierarchy, and why 6 s needs it
+
+The PI's requirement is a predictive horizon of 6 s at the operative and tactical levels, with the
+strategic level predicting on its own subspace. A single-rate rollout cannot serve all three.
+
+Let ε be the per-step latent error of the residual predictor and suppose errors compound
+approximately geometrically with rate λ ≥ 1 over a rollout of K steps:
+
+&nbsp;&nbsp;&nbsp;&nbsp;E(K) ≈ ε · (λ^K − 1)/(λ − 1)
+
+For a fixed horizon T, K = T/Δt, so a *finer* Δt buys resolution and pays compounding. The design
+resolves the tension by giving each level the Δt its decisions actually need:
+
+| level | Δt | K | horizon | tokens | what it must resolve |
+|---|---|---|---|---|---|
+| operative | 0.2 s | 30 | 6.0 s | 640 | vehicle-scale geometry |
+| tactical | 0.6 s | 10 | 6.0 s | 64 | manoeuvre-scale decisions |
+| strategic | 1.5 s | 4 | 6.0 s | 256-d | route-scale hypotheses |
+
+All three reach 6.0 s exactly (pinned by test), but the strategic level pays only K = 4 of
+compounding to get there rather than K = 30. The token counts fall with Δt for the same reason: a
+route hypothesis at 1.5 s cadence has no use for lane-level texture, and carrying it would import
+the operative level's error into a decision that outlives it.
+
+**Conditioning.** The chain is strategic ctx —FiLM→ tactical intent —FiLM→ operative predictor,
+so the operative dynamics are conditioned by the tactical decision rather than merely coexisting
+with it. Formally the operative step becomes f_θ(z, a, i) with the intent i entering additively in
+the action-conditioning channel: a-embedding + W_i·i. A test asserts that varying i changes the
+prediction — a wired-but-ignored intent would satisfy every shape check while deleting the
+hierarchy.
+
+**The tactical action vocabulary is factored, not mixed.** v1 decodes two independent softmaxes
+over the v6 vocabulary — lateral {LANE_KEEP, LANE_CHANGE_L, LANE_CHANGE_R, ABORT_LC, NUDGE_L,
+NUDGE_R} and longitudinal {FOLLOW, CRUISE, YIELD_MERGE, BRAKE_TO, CREEP, HOLD} — imported from
+`v6.py` so exactly one vocabulary exists. The retired 5-way mixed head placed lateral and
+longitudinal classes in one logit space, where a longitudinal decision can be outvoted by a
+lateral one; `MEASURED` (D-TAC1, 2026-08-03): 0.7581 accuracy / 0.5313 macro-recall with
+`accelerate` **never predicted**, against 0.9348 / 0.8290 factored, and the mixed *label* destroys
+9.68 % (132/1364) of longitudinal decisions outright.
+
+### 11.5 Behaviour by search, and the floor theorem
+
+Configuration B produces behaviour by optimising actions at test time against the learned
+dynamics. Our own history makes this the risky half of the recipe: `MEASURED` (C101), the CEM
+planner was **35.8 % worse than constant velocity** at T1 — the loss was in the action *search*,
+not the world model. Adopting the recipe without repairing the search would place our
+worst-measured component on the critical path. Three mechanisms and one theorem.
+
+**(i) Kinematic parameterisation.** The search runs over (a, κ) at 10 Hz through a unicycle,
+rather than over free waypoints. Every sample is dynamically feasible by construction, so the
+optimiser spends no budget discovering that vehicles have a turning circle, and jerk becomes a
+property of the parameterisation rather than a penalty term to be tuned.
+
+**(ii) Coloured noise.** Vanilla CEM samples i.i.d. Gaussian perturbations *per timestep*; the
+resulting control sequence is white noise, whose expected step-to-step change is maximal. iCEM
+instead samples with power spectrum S(f) ∝ f^{−β}. `MEASURED` at β = 2.5 against β = 0: lag-1
+autocorrelation **> 0.60** vs **< 0.15**, and mean |Δu| between consecutive steps **< 0.5×**.
+Since a trajectory is the double integral of the control, white-noise samples concentrate in a
+region of trajectory space no vehicle occupies — the most plausible mechanical cause of C101.
+
+**(iii) Baseline injection, and the theorem.** Let 𝒞 be the CEM's evaluated candidate set at
+termination and ℬ = {constant-velocity, hold-v₀, decel-1.5, imitation proposal} the injected
+baselines, with J the cost. The planner returns
+
+&nbsp;&nbsp;&nbsp;&nbsp;u\* = argmin_{u ∈ 𝒞 ∪ ℬ} J(u)
+
+Then trivially **J(u\*) ≤ min_{b ∈ ℬ} J(b)**. The failure mode C101 measured — the planner losing
+to constant velocity — is therefore *structurally impossible in modelled cost*. This is proven in
+the test suite with an adversarial J that makes the CEM optimum arbitrarily bad, and the guard is
+switchable so its contribution remains a measurable ablation rather than an always-on comfort.
+
+**(iv) ⛔ And the theorem's limit, stated because it is the whole risk.** The bound is on
+*modelled* cost J. If J is miscalibrated with respect to the realised metric D, a planner that
+provably wins on J can still lose on D — which is exactly how C101 happened, and mechanism (iii)
+alone would not have caught it. A separate admission gate therefore measures Spearman ρ(J, D) over
+banked windows and refuses to quote any planner number below ρ ≥ 0.5 on n ≥ 200. **A floor without
+a fidelity check is a false comfort.**
+
+### 11.6 Coarse-to-fine, forced by a measurement
+
+`MEASURED` on an RTX 4060 at the real geometry: one 10-step rollout of the 640 × 1024 operative
+field costs **160 ms per candidate**, scaling linearly (2553 / 5129 / 10519 ms at n = 16 / 32 /
+64 — the GPU is saturated at n = 16). DINO-WM's published configuration (300 samples × 30
+iterations) would therefore cost **325 s per MPC tick**. That is a batch job, not a planner.
+
+The hierarchy already contained the remedy. Searching against the **64-query tactical field**
+costs ≈ 1/10 as much; the winner and the baselines are then re-scored on the full 640-token
+operative field. Formally, the coarse cost J̃ is a surrogate for J, and the fine re-scoring both
+restores the correct objective for the *reported* number and exposes surrogate error as a
+reported rank flip (`coarse_fine_agree = False`) rather than absorbing it silently. `MEASURED`:
+DINO-WM's full published configuration now runs in **21.5 s per tick** on the 4060 (≈ 3.5 s on an
+A40-class card), peak CUDA **0.95 GB**, with the fine re-score agreeing (plan 1.0922 < CV 1.1009).
+
+A second measurement shaped the implementation: the naive rollout stored every intermediate
+field — 300 × 10 × 1.31 MB = **3.93 GB** — for a cost function that reads only the terminal
+field. Terminal-only evaluation with chunked population brings peak memory to the 0.95 GB above.
+
+### 11.7 The resulting architecture, and what it costs
+
+Frozen **DINOv3 ViT-L/16** (303,129,600 parameters, 1.21 GB of weights, patch 16, width 1024, 24
+layers) encodes 256 × 640 crops at 120° into **640 patch tokens × 1024** — 2.5× REF-A's token
+count at 2.33× its field of view, with the CLS token discarded per §11.2. Features are cached
+offline; no encoder parameter enters the graph.
+
+| component | parameters | share |
+|---|---|---|
+| operative field predictor | 80,043,008 | 45.99 % |
+| tactical field predictor | 54,850,560 | 31.52 % |
+| tactical policy brain | 21,684,493 | 12.46 % |
+| strategic policy brain | 7,990,275 | 4.59 % |
+| wide adapter (640×1024 → 640×1024) | 2,762,752 | 1.59 % |
+| strategic subspace predictor | 1,911,040 | 1.10 % |
+| proposal head (auxiliary) | 537,108 | 0.31 % |
+| **total trainable** | **174,043,172** | |
+
+**77.5 % of trainable capacity is the two field predictors** — the world model itself, not heads.
+In REF-A the comparable share sat behind a compact-state adapter feeding a supervised head. This
+is the parameter-level expression of §11.3.
+
+The interface rule `d_state ≥ d_enc` is enforced as a constructor error rather than a convention,
+because FROST-Drive measured 8.17 → 7.68 RFS on exactly that axis. The stage-1 cache is the
+design's largest logistics cost: 1.31 MB per latent field, 262 MB per episode, **≈ 0.62 TB** for
+the 2,376-episode corpus at fp16 — 3.3× REF-A's 0.19 TB, the direct price of the wider interface.
+
+### 11.8 What this section does not claim
+
+v1 changes nine things simultaneously. It is therefore a **recipe test, not an attribution test**:
+a favourable result will not identify which change earned it. Five one-flag ablations are
+pre-registered for that purpose (no-hierarchy; floor off; β = 0; operative-level planning;
+bottlenecked d_state), and the frozen-vs-trainable attribution experiment (E-RECON-2 — freeze the
+flagship's *own* encoder and retrain, holding representation fixed and varying only trainability)
+remains necessary and is **not** replaced by this arm.
+
+Every number in §11.7 is a property of the *built* model, verified by construction and test.
+Nothing here is a driving result: no v1 checkpoint exists. The gates that will decide the arm —
+planner admissibility, floor realisation, the paired comparison against REF-A's banked 5 k
+milestone, coarse/fine agreement, and non-collapse — were written before the first training step.
+
+---
+
 ## References
 
 (Formal bibliography at LaTeX export; the working citations live in

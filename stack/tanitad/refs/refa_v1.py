@@ -54,9 +54,14 @@ from torch import Tensor, nn
 
 from tanitad.config import StrategicPolicyConfig, TacticalPolicyConfig
 from tanitad.models.fourbrain import StrategicPolicy, TacticalPolicy
+# ⛔ ONE VOCABULARY SOURCE. These tuples are IMPORTED, never re-declared — a
+# second copy is a second vocabulary, and the programme has already paid for
+# that once (see the defect note below).
+from tanitad.models.v6 import TACTICAL_LAT_ACTIONS, TACTICAL_LON_ACTIONS
 from tanitad.refs.refa_v1_plan import PlanConfig, icem_plan, unicycle_paths
 
-__all__ = ["RefAV1Config", "RefAV1", "DINOV3_GEOMETRY"]
+__all__ = ["RefAV1Config", "RefAV1", "DINOV3_GEOMETRY",
+           "TACTICAL_LAT_ACTIONS", "TACTICAL_LON_ACTIONS"]
 
 #: The frozen-encoder contract. Cached offline; the encoder never enters the
 #: graph (REF-A stability item 2, preserved verbatim in v1).
@@ -383,6 +388,33 @@ class RefAV1(nn.Module):
                 "without the other is a broken conditioning chain, not a "
                 "smaller model")
 
+        # ⛔ FACTORED LAT × LON TACTICAL HEADS — AND WHY THEY EXIST AT ALL.
+        #
+        # DEFECT FOUND 2026-08-18, after v1 was first committed: the shared
+        # `TacticalPolicy` emits ONE `maneuver_logits [B, 5]` over
+        # `refb.MANEUVER_CLASSES = (lane_keep, turn_left, turn_right,
+        # accelerate, brake_stop)` — a softmax that MIXES the lateral and
+        # longitudinal axes. `v6.py` names that mixing "the programme's single
+        # largest known defect", retired BY DESIGN, and REF-C v3 already reads
+        # `tac.N_LAT` / `tac.N_LON`. v1 silently inherited the retired form
+        # because it reused the legacy brain with its DEFAULT config — every
+        # shape checked out and nothing failed.
+        #
+        # MEASURED consequences of the mixed head (D-TAC1, 2026-08-03): shipped
+        # 5-way decode accuracy 0.7581 / macro-recall 0.5313 with `accelerate`
+        # NEVER PREDICTED, against 0.9348 / 0.8290 factored; and the 5-way label
+        # destroys 9.68 % (132/1364) of the longitudinal decisions outright.
+        #
+        # ⇒ v1 decodes the tactical action on TWO independent heads over the
+        # v6 vocabulary, imported from `v6.py` so there is exactly one source.
+        # The legacy `maneuver_logits` is NOT consumed anywhere in v1.
+        self.n_lat, self.n_lon = len(TACTICAL_LAT_ACTIONS), len(TACTICAL_LON_ACTIONS)
+        d_int = intent_dim or cfg.d_state
+        self.lat_head = nn.Sequential(nn.LayerNorm(d_int),
+                                      nn.Linear(d_int, self.n_lat))
+        self.lon_head = nn.Sequential(nn.LayerNorm(d_int),
+                                      nn.Linear(d_int, self.n_lon))
+
         # ⚠️ AUXILIARY imitation proposal — NOT the behaviour source. It exists
         # only to seed the planner (GPC: "generative control proposes, MPC
         # disposes"). w_aux_head is 0.1 and it never gates a metric.
@@ -436,8 +468,17 @@ class RefAV1(nn.Module):
             tac = self.tactical_policy(pooled_win, strat["ctx"], ego=ego)
             intent = tac["intent"]
             out.update({"ctx": strat["ctx"], "intent": intent,
-                        "route_logits": strat.get("route_logits"),
-                        "maneuver_logits": tac.get("maneuver_logits")})
+                        "route_logits": strat.get("route_logits")})
+            # ⭐ THE FACTORED DECODE — v1's tactical action. Two independent
+            # softmaxes, so a longitudinal decision can never be outvoted by a
+            # lateral one sharing its logit space.
+            out["lat_logits"] = self.lat_head(intent)
+            out["lon_logits"] = self.lon_head(intent)
+            # The legacy mixed head is passed through under a name that says
+            # what it is, so nothing downstream can consume it by accident
+            # while looking like it read a tactical action.
+            out["legacy_mixed_maneuver_logits_DO_NOT_USE"] = \
+                tac.get("maneuver_logits")
 
         out["op_pred"] = self.operative.rollout(last, actions, intent=intent)
         tac_a = actions[:, ::max(1, int(round(self.cfg.tac_dt / self.cfg.op_dt)))]
