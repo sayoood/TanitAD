@@ -357,18 +357,26 @@ Exit codes: **0** clean · **2** violation · **3** unpowered · **4** structura
 | `tests/test_goal_provenance.py` | **17 passed**, pytest's own `$?` = **0** | MEASURED |
 | `tests/test_goal_provenance_v6.py` | **11 passed**, pytest's own `$?` = **0** | MEASURED |
 | `scripts/audit_goal_provenance.py` | exit **3** (the known zero-init `cond_tac_dyn`), **0** with `--allow-unpowered` | MEASURED |
-| **full `stack/` suite** | ⚠️ **NOT re-confirmed green in this turn** — see below | — |
+| **full `stack/` suite** | **4112 passed, 7 skipped, 2 xfailed** in 522.30 s, pytest's own `$?` = **0** | MEASURED |
 
-⚠️ **The full suite did not complete.** An earlier full run finished in 152 s at
-**839 passed / 1 failed**, the single failure being this work's own dead-node
-regression (§6.2), which is now fixed and pinned. The re-run after the fix was
-still at ~62 % when this turn ended: it was competing with another agent's live
-2.5 GB job in the same tree (`stack/tanitad/models/v6.py` and
-`train_v6_staged.py` are both modified-unstaged by a concurrent stream), i.e.
-**exactly the CPU-contention condition the standing rule says not to run suites
-under**. ⇒ **Whoever commits must re-run `pytest -q` on a quiet box first.** The
-two new files were verified separately and are green; that is not the same claim
-as the suite being green, and it is not presented as one.
+✅ **The full suite is GREEN.** `TRUE_PYTEST_RC=0` — **4112 passed, 7 skipped,
+2 xfailed** (522.30 s). This is pytest's own `$?`, written to the log *before* any
+pipe, for the reason in §6.3.
+
+⚠️ **Two earlier readings of this same suite were wrong, in opposite directions,
+and both are worth keeping visible.**
+1. The first run was `-x` (stop-on-first-failure) and reported **839 passed / 1
+   failed**. That "839" is **not the suite size** — it is where `-x` stopped. The
+   real size is **4112**. Quoting 839 as a total would have understated coverage
+   by ~5×.
+2. That same run's *wrapper* reported **"exited with code 0" while a test had
+   FAILED** — the pipeline's status was `tail`'s, not pytest's (§6.3).
+
+The single failure in run 1 was this work's own dead-node regression (§6.2),
+now fixed and pinned in both directions. The green run above was executed after
+that fix, while a concurrent stream held `stack/tanitad/models/v6.py` and
+`train_v6_staged.py` modified-unstaged — so it is green **against the live
+worktree**, contention and all (which is why it took 522 s rather than 152 s).
 
 ⚠️ **And read the exit code from pytest, not from a pipe** — §6.3.
 

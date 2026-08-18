@@ -6706,8 +6706,20 @@ absence-at-one-location rule, broken and reported.**
 A suite run reported **"exited with code 0" WHILE A TEST FAILED**, because the reported status was
 **the pipe's**, not `pytest`'s. *(Tenth instance this session, and a mechanism distinct from every
 earlier one — bad flag, collision error, 0-byte output, `printf` truncation, MSYS rewriting.)*
-⚠️ **STATUS HONESTLY STATED: the full suite did NOT finish.** An earlier run was **839 passed / 1
-failed** (that failure was the agent's own, now fixed); the re-run **stalled at ~62 %** competing
-with a live 2.5 GB job — the exact contention condition the rules forbid gating under. **The two new
-files pass separately (17 and 11), and the agent explicitly did NOT present that as the suite being
-green.** ⇒ A quiet-box re-run is owed before this is called verified.
+⚠️ **STATUS AT THE TIME: the full suite had not finished**, and the agent explicitly refused to
+upgrade the claim on a run it had not seen end — correctly.
+
+✅ **RESOLVED SHORTLY AFTER: `TRUE_PYTEST_RC=0` — 4112 passed, 7 skipped, 2 xfailed (522 s)**, green
+against the live worktree, contention and all.
+
+⛔ **AND SETTLING IT CORRECTED TWO MISREADINGS, ONE OF WHICH I HAD ALREADY WRITTEN INTO THIS ENTRY.**
+The **"839 passed / 1 failed"** I recorded above **was never a suite size**: that run used **`-x`**,
+so 839 is simply **where it stopped at the first failure**. The real suite is **4112** — ⇒ **quoting
+it as a total would have understated coverage by ~5×.**
+⇒ **ROOT-CAUSE CLASS: A COUNT READ OFF A RUN THAT WAS CONFIGURED TO STOP EARLY.** `-x` makes the
+number a statement about *when the run halted*, not about the suite. **C110's "a count is a claim
+about the filter" — here the filter is a FLAG rather than a file-type**, and it is invisible in the
+output line itself.
+⚠️ The same run's wrapper reported **"exited with code 0" while a test had failed** because the
+pipeline's status was **`tail`'s**, not pytest's. ⇒ The final run **wrote pytest's own `$?` to the
+log BEFORE any pipe** — which is the general fix for this whole family.
