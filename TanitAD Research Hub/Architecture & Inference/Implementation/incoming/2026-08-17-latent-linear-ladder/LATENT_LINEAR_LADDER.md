@@ -290,9 +290,16 @@ not merely mostly `v0`, it is **entirely** `v0` plus a residual pointing the wro
 correlation, so its MAE can lose to a constant while `r` is positive and its `R²` is negative.
 `r2_ceiling = r²` is the variance a **perfectly rescaled version of the same readout** would explain.
 Quoting both stops "K1 fails" from being misread as "r is zero", and stops "r is positive" from being
-oversold. ⭐ **`r²` is also the quantity that neither C92 nor C97 can bias** — both act on the fit's
-*dispersion*, not on its correlation — which is why the rung profile survives the re-read while the
-K1 verdicts do not.
+oversold.
+
+⚠️ **`r²` IS THE LESS-BIASED QUANTITY, BUT IT IS NOT UNBIASED — a claim worth stating carefully
+because it is the one the pooling citation rests on (§12).** C92 and C97 both act on the fit's
+**dispersion**, and correlation is scale-invariant, so **at a FIXED alpha neither defect can move
+`r²` at all.** But the defects also **truncated the alpha sweep**, and alpha selection *is* upstream
+of the fit — so `r²` moves anyway. **MEASURED: it moved on 10 of the 11 rungs.** What held is the
+**ordering**: the **top three rungs are the same three**, the **bottom four are the same four**, and
+the only structural change is `lead_gap` falling from 5th to 7th. ⇒ **The rung PROFILE survives the
+re-read; the individual r² values do not, and anyone quoting one must quote the repaired number.**
 
 **`MEASURED` · route A (`unpen`) · seed 0. `old` = the incumbent pc6 solve, shown so the movement is
 visible rather than silently replaced.**
@@ -335,7 +342,7 @@ repair lets the fit shrink properly instead of collapsing toward zero.
 |---|---|---|---|---|---|---|---|---|
 | `ego_v0` | m/s | 4.097 | +0.032 [−0.53, +0.51] **ns** | −0.236 [−0.63, +0.08] ns | +0.005 ns | **−4.186 OK** | −0.898 OK | **+0.708** |
 | `ego_accel` | m/s² | 0.5095 | +0.016 [+0.01, +0.02] FAIL | −0.000 ns **DEGEN** | +0.000 DEGEN | −0.001 DEGEN | +0.000 DEGEN | +0.001 |
-| `ego_yawrate` | rad/s | 0.0285 | +0.0001 FAIL | **+0.0001 sep OK** | **+0.0000 sep OK** | −0.0000 DEGEN | +0.0000 — | +0.002 |
+| `ego_yawrate` | rad/s | 0.0285 | +0.0001 FAIL | **+0.0001 sep OK** | ⛔ **+0.0000 sep OK** | −0.0000 DEGEN | +0.0000 NO-VERD | +0.002 |
 | `ego_curv` | 1/m | 0.0069 | +0.0003 FAIL | +0.0000 ns **DEGEN** | +0.0000 DEGEN | −0.0000 DEGEN | −0.0000 DEGEN | +0.000 |
 | `n_agents_grid` | ct | 9.798 | +0.576 [−0.25, +1.43] **ns** | +0.804 [+0.10, +1.61] sep | +0.000 ns | ⛔ **−0.540 sep OK** | −7.075 OK | **+0.091** |
 | `n_agents_all` | ct | 37.936 | ⭐ **−5.003 [−7.74, −2.17] PASS** | ⭐ **−2.785 [−5.06, −0.64] sep OK** | ⛔ −0.003 **DEGEN** | **−2.243 sep OK** | −9.546 OK | ⚠️ **−0.012** |
@@ -348,7 +355,11 @@ repair lets the fit shrink properly instead of collapsing toward zero.
 ⇒ ⛔ **FOUR READINGS, AND THE FOURTH IS THE VERDICT.**
 
 1. **The v6 latent earns exactly ONE guarded K1 PASS in the entire ladder** — `n_agents_all`.
-   Every other rung is a tie, a `DEGENERATE-CONSTANT`, or a `CONSTANT-OFFSET-ONLY`.
+   Of the other ten: **three are ties** (`ego_v0`, `n_agents_grid`, `nearest_any`), **four are
+   `DEGENERATE-CONSTANT`**, **two are `CONSTANT-OFFSET-ONLY`**, and the eleventh — `ego_yawrate` —
+   is a guard-`OK` **FAIL at K1B +0.0001** ⛔ **which the RANDOM-LATENT NULL earns identically**
+   (+0.0000, also guard `OK`, also separated). A verdict a `torch.randn` cache reproduces is not a
+   finding about a latent.
 2. ⛔ **That one PASS is beaten by a single scalar on the 3-seed mean (§5.3).** At seed 0 the latent
    leads the ego-speed scalar by **0.012 gt_sd**; across three seeds the scalar **wins**.
 3. ⛔ **On `n_agents_grid` the scalar PASSES (K1B −0.540, guard OK) while the 2 048-dimension latent
@@ -358,7 +369,7 @@ repair lets the fit shrink properly instead of collapsing toward zero.
    ego speed does not match or beat** (§5.3 settles the one seed-0 exception). The only unambiguous
    guarded passes in the table belong to the GT oracle and to `C-V0`.
 
-⚠️ **The seven `DEGENERATE-CONSTANT` / `CONSTANT-OFFSET-ONLY` rows are printed rather than filtered.**
+⚠️ **The six `DEGENERATE-CONSTANT` / `CONSTANT-OFFSET-ONLY` rows are printed rather than filtered.**
 Filtering them would be choosing which controls to believe; naming them is what makes the one real
 PASS legible.
 
@@ -505,7 +516,7 @@ longitudinal ego state, weakly, and little else.**
 
 | quantity | linearly present? | evidence |
 |---|---|---|
-| **ego speed** | ⚠️ **weakly — r² 0.103, ties a constant** | genuine within-episode (`r_wep` +0.243), but **12× less readable than a 10×-noise oracle** (r² 0.686) |
+| **ego speed** | ⚠️ **weakly — r² 0.103, ties a constant** | genuine within-episode (`r_wep` +0.243), but it explains **6.7× less variance than a 10×-noise oracle** (0.103 vs 0.686) |
 | **ego acceleration** | ⚠️ **very weakly — r² 0.016** | K1B `DEGENERATE`, and the scalar matches it |
 | **aggregate scene density** | ⛔ **not attributable to the latent** | one guarded PASS at seed 0, **but** ⅘ episode identity, ~80 % `v0`, and the scalar wins on 3 seeds |
 | **nearest-object distance** | ⛔ **not attributable** | `r_wep` +0.060; the scalar's K1B is better on both seed 0 and the mean |
@@ -646,8 +657,10 @@ BOTH routes, seed 0.**
 ⚠️ **This is the corrected form of a claim this document previously made and got wrong.** The earlier
 text said the two routes agree to *"~1e-12"* on the inner split. **The full fit agrees to 5e-14; the
 inner split differs by up to 0.74 MAE — eleven orders out.** ⇒ **The two routes' numbers must never
-be pooled.** Every table in this document names its route in the caption; **§1, §4, §5.1, §5.2, §6,
-§9 and §11 are route A; §5.3 and §8 are route B.**
+be pooled.** Every table in this document names its route in its caption. In summary: **§1, §2, §4,
+§5.1, §5.2, §6, §9, §11 and §12 are route A (`unpen`, seed 0); §5.3 and §8 are route B (`centred`,
+seeds 0–2); §7 is route A except its last column; §10.3 is the only table that places the two side by
+side, which is its entire purpose.**
 
 ---
 
@@ -679,12 +692,16 @@ only marginally more than the operative state"*. **Repaired, the CELLS beat the 
 +0.263.** ⇒ **The learned `readout` is NOT where the ego-speed information is lost — it ADDS
 readable structure over a mean-pool of its own input.**
 
-⭐ **AND THAT CORRECTED DIRECTION IS INDEPENDENTLY CONFIRMED.**
-`…/incoming/2026-08-18-pooling-ladder-ER10/POOLING_LADDER_ER10.md` §2.2 (`INHERITED`, not re-verified
-by me) measures the same contrast on a different harness across 11 rungs: **the learned
-`Linear(768→128)` beats a random projection of the same pooled tokens on 9 of 11 rungs**, by up to
-1.6×, and the paired Δ on `n_agents_all` is the only contrast in that experiment separated on all
-five seeds. ⇒ *"the 49 280-parameter geometry firewall is doing real work."*
+⭐ **AND THAT CORRECTED DIRECTION IS INDEPENDENTLY CORROBORATED — by a CLOSELY RELATED, not identical,
+contrast.** `…/incoming/2026-08-18-pooling-ladder-ER10/POOLING_LADDER_ER10.md` §2.2 (`INHERITED`, not
+re-verified by me) measures **learned `Linear(768→128)` vs a RANDOM projection of the same pooled
+tokens**, across 11 rungs on a different harness: **the learned readout wins on 9 of 11**, by up to
+1.6× (`n_agents_all` 0.167 vs 0.102, `ego_v0` 0.103 vs 0.052), and the paired Δ on `n_agents_all` is
+the only contrast in that entire experiment separated on all five seeds. ⚠️ **Mine is learned-readout
+vs the raw mean-pool; theirs is learned vs random projection of that mean-pool** — different
+baselines, same direction. ⇒ *"the 49 280-parameter geometry firewall is doing real work."*
+⭐ **And note the numerical agreement across the two harnesses:** ER10's DEPLOYED-CELLS `ego_v0`
+r² **0.1026** is the same number as this section's cells row (**0.1026**) — computed independently.
 
 ⚠️ **This is still a WEAK localisation and must not be over-read in either direction.** Mean-pooling
 is **lossy**, so the tokens' +0.263 is a **LOWER bound** on what they hold: this run **cannot**
@@ -697,15 +714,25 @@ the encoder and the corpus.
 ## 12. ⛔ THE POOLING THESIS — what this ladder does and does not license, after the re-read
 
 `…/Research/2026-08-18-pooling-bottleneck-R1R2/POOLING_BOTTLENECK_R1R2.md` §1.5 cites **this
-document's §2.2** as *"the independent confirmation"* of the 40:1 `AvgPool2d((4,10))` bottleneck,
-quoting `n_agents_all` r² **0.076**, `ego_curv` r² **0.0001**, `lead_closing` r² **0.0000**. Because
-that citation may cost a full training run through the R1/R2 decision, it is answered here precisely.
+document's §2.2 — the section this correction renumbered to §4.2** — as *"the independent
+confirmation"* of the 40:1 `AvgPool2d((4,10))` bottleneck, quoting `n_agents_all` r² **0.076**,
+`ego_curv` r² **0.0001**, `lead_closing` r² **0.0000**. Because that citation may cost a full
+training run through the R1/R2 decision, it is answered here precisely.
+
+⚠️ **AND FIRST, A MECHANICAL WARNING THAT APPLIES TO EVERY CITER OF THIS FILE.** The R1R2 spec cites
+this document by **LINE NUMBER** (`:178-194`, `:158-164`, `:234`, `:264`, `:299-316`). ⛔ **An
+in-place correction invalidates every one of them** — the content moved and the section numbers
+changed (§2.1→§4.1, §2.2→§4.2, §2.3→§4.3, §3→§5, §7→§10, §8→§11, §9→§13, §10→§14). ⇒ **Cite this
+file by SECTION HEADING, never by line number.** *(Root-cause class: the same one as a stale
+`v6.py:3729` — a positional citation into a living document, which §0/§11 also had to repair today.)*
 
 **1. ⭐ The rung PROFILE survives the re-read.** `MEASURED` (§4.2): aggregate scene scale and
 longitudinal ego state remain the top three rungs; the four rotational / relative-motion rungs remain
 at the null, and **two of them are now BELOW their own nulls**. The profile is a statement about `r²`,
-and **`r²` is exactly the quantity C92 and C97 cannot bias** — both act on the fit's dispersion. That
-is why the profile is the part that held.
+and `r²` is the quantity **both defects act on least** — they bias the fit's *dispersion*, to which
+correlation is invariant at a fixed alpha (§4.2). ⚠️ **It is not immune**, because the defects also
+truncated the alpha sweep: **the individual r² values moved on 10 of 11 rungs and the ORDERING held**
+— same top three, same bottom four. **The ordering is what survives; the numbers are not.**
 
 **2. ⚠️ But every NUMBER in the citation moves, so §1.5 must be re-quoted, not just re-read.**
 
@@ -720,12 +747,13 @@ it remains at the null. And ⛔ **the `n_agents_all` half of the citation — "a
 survives" — is the half the trivial-proxy control destroys** (§5.2, §5.3): it is ⅘ episode identity,
 ~80 % `v0` at seed 0, and the ego-speed scalar beats it on the 3-seed mean.
 
-**3. ⛔ THE K1-FAIL SIDE OF THE CONFIRMATION IS GONE ENTIRELY.** All four rungs the pooling
-hypothesis was built on carried separated-FAIL verdicts in the incumbent table. After the re-read:
-`ego_curv`, `lead_closing` and `lead_inv_ttc` are **`DEGENERATE-CONSTANT`** — constant contests, not
-facts about a latent — and `ego_yawrate` survives only at **K1B +0.0001**, a verdict the
-**random-latent null earns identically**. ⇒ **Not one of the four rungs contributes a surviving
-verdict.**
+**3. ⛔ THE K1-FAIL SIDE OF THE CONFIRMATION IS GONE ENTIRELY.** Three of the four rungs carried
+separated-FAIL verdicts in the incumbent table (`ego_yawrate` +0.005, `ego_curv` +0.001,
+`lead_closing` +0.029; `lead_inv_ttc` was not separated then and becomes a separated FAIL only under
+the repair). After the re-read **all four are gone as evidence**: `ego_curv`, `lead_closing` and
+`lead_inv_ttc` are **`DEGENERATE-CONSTANT`** — constant contests, not facts about a latent — and
+`ego_yawrate` survives only at **K1B +0.0001**, a verdict the **random-latent null earns
+identically**. ⇒ **Not one of the four rungs contributes a surviving verdict.**
 
 **4. ⭐⭐ AND THE DECISIVE POINT: THIS LADDER NEVER LOCALISED THE LOSS, AND THE EXPERIMENT THAT DID
 HAS DROPPED R1.** A profile showing *"these quantities are not linearly present"* is consistent with
@@ -820,13 +848,22 @@ nothing under `stack/` or `taniteval/`** — every artifact of this correction i
 
 | suite | result | briefed baseline | verdict |
 |---|---|---|---|
-| `taniteval` | see `raw/suite_taniteval.txt` | 1136 / 0 | ✅ **GREEN, matches** |
-| `stack` | see `raw/suite_stack.txt` | 3842 / 0 / 7 / 2 | ✅ **GREEN, matches** |
+| `taniteval` | **1136 passed, 0 failed**, 320 s (`raw/suite_taniteval.txt`) | 1136 / 0 | ✅ **GREEN — exact match** |
+| `stack` | **3861 passed, 0 failed, 7 skipped, 2 xfailed**, 963 s (`raw/suite_stack.txt`) | 3842 / 0 / 7 / 2 | ✅ **GREEN** ⚠️ **but +19 on the baseline — see below** |
+
+⚠️ **THE `stack` COUNT MOVED BY +19 AND NONE OF IT IS MINE — stated rather than quietly absorbed into
+"green", because a suite count that moved for someone else's reason is exactly the kind of number
+this programme has mis-attributed before.** `MEASURED`: `git diff --cached --name-only | grep -E
+'^(stack|taniteval)/'` is **empty**; the working tree carries another agent's **untracked**
+`stack/tests/test_launch_closure_audit.py` (**13 test defs**) and `stack/scripts/launch_closure_audit.py`,
+which accounts for most of the delta. **Zero failures either way, so the gate is satisfied** — but
+the baseline a future agent is briefed with should be **3861**, not 3842.
 
 ✅ **The `stack` RED reported by the original run on 2026-08-17 (`test_v6_staged.py:1157`,
-`sel_gap` stage-gate semantics) is RESOLVED** — that agent's paired test update has landed. **The
-escalation is closed**; it is retained in the escalation list below marked CLOSED rather than
-deleted, because a resolved escalation that vanishes teaches nobody that it was resolved.
+`sel_gap` stage-gate semantics) is RESOLVED** — that agent's paired test update has landed.
+`MEASURED` by running that single test directly: **`1 passed in 12.21s`**. **The escalation is
+closed**; it is retained in the escalation list below marked CLOSED rather than deleted, because a
+resolved escalation that vanishes teaches nobody that it was resolved.
 
 ---
 
@@ -850,6 +887,13 @@ deleted, because a resolved escalation that vanishes teaches nobody that it was 
 | suites (original run) | `raw/suite_*.txt` | including the 2026-08-17 `stack` RED, now resolved (§16) |
 
 ### 17.2 ⭐ This correction — `…/incoming/2026-08-18-ladder-corrected/`
+
+⚠️ **THE WHOLE-INDEX HAZARD FIRED AGAIN DURING THIS CORRECTION, and it is recorded rather than
+discovered later.** `MEASURED`: I staged only. **14 of these 16 files were swept into a sibling's
+commit `ec26ca9`** — *"The CEM planner is 35.8 % WORSE than constant velocity closed-loop…"* — which
+names none of them. This is the **fifth** occurrence of the hazard `CLAUDE.md` documents
+(`60265d3`, `3d41bd0`, `109406c`, and now `ec26ca9`). ⛔ **I never ran `git commit` or `git push`.**
+Escalation 9.
 
 | artifact | path | what it is |
 |---|---|---|
@@ -887,7 +931,7 @@ proves nothing about its sibling.**
 1. ✅ **CLOSED — `pc6_linear_readout.ridge_fit` penalised its own intercept (§10.1).** Adopted:
    `intercept_col` exists in the module, the default stays penalised and the repair is opt-in, and
    the affected rows have been re-read. Logged as **C92**.
-2. ✅ **CLOSED — the precedent's §2.3 sentence.** *"The latent carries some linearly-decodable lead
+2. ✅ **CLOSED — `PROBE_POSITIVE_CONTROL.md`'s §2.3 sentence.** *"The latent carries some linearly-decodable lead
    information"* is **withdrawn**: the same signal is recovered better by the ego-speed scalar alone
    (K1 **−1.562 PASS** vs the latent's **+0.736 FAIL**), the latent is **0.694 m worse than the
    random null**, and partialling `v0` out leaves r **−0.107**. Logged as **C92**.
@@ -898,7 +942,19 @@ proves nothing about its sibling.**
    document** — it is another agent's Research directory. **The request: re-quote §1.5 from §4.2 of
    this file, and demote the ladder from "independent confirmation" to "a consistent profile that
    does not localise", because E-R1-0 has since measured the localisation and dropped R1.** This is
-   the item that can cost a training run.
+   the item that can cost a training run. ⚠️ **Its five LINE-NUMBER citations into this file are also
+   all invalidated by this in-place correction** (§12) — they must become section-heading citations.
+
+   ⚠️ **AND A SECOND CITER WITH THE SAME PROBLEM, found by sweeping for it rather than assuming §1.5
+   was the only one:** `…/Research/2026-08-17-O234-DESIGN-RESEARCH.md` quotes this document at **two**
+   places — its §3.4a (*"ego speed ALONE beats the whole latent (K1 −1.562 PASS vs +1.580 FAIL);
+   partialling `v0` out drops r from +0.159 to +0.052"*) and its E-PROBE-A row. **Both halves move:
+   the latent's `lead_gap` K1 is now +0.736 (not +1.580) and its partial r is −0.107 (not +0.052).**
+   ⇒ **The direction of that finding is unchanged and its magnitude is larger**, but the numbers are
+   stale. It also states *"relative motion at exactly zero (`lead_closing` 0.0000)"* — now **0.0013**
+   (§4.2). ⚠️ **I did not edit it** — same reason.
+   ⭐ **`Project Steering/MODEL_REGISTRY.md` was checked and quotes NO ladder number** — nothing to
+   correct there (`grep` for `lead_gap`/`LATENT_LINEAR`: zero hits).
 4. ⛔ **OPEN — THE 165-ROW RE-READ SHOULD BE RE-RUN AT 3 SEEDS (§5.3, §8, §14.2).** Seed 0 alone
    reported the v6 latent beating the ego-speed scalar on `n_agents_all`; **three seeds reverse the
    sign.** Every other single-seed verdict on a contested rung is exposed to the same. **One flag,
@@ -913,10 +969,27 @@ proves nothing about its sibling.**
    (`test_v6_staged.py:1157`, `sel_gap` stage-gate semantics). The owning agent's paired test update
    has landed; **`stack` is GREEN today** (§16). *Retained rather than deleted so the resolution is
    visible.*
-8. ⚠️⚠️ **OPEN AND UNCHANGED — "STAGE, NEVER PUSH" DOES NOT PROTECT AN AGENT'S WORK.** The original
-   run staged only, and a sibling's whole-index commit `109406c` — whose subject is about paper
-   estimators — committed **48 of its 49 files** and pushed them. This is the third and fourth
-   occurrence of a hazard `CLAUDE.md` already documents (`60265d3`, `3d41bd0`). ⇒ **The rule needs a
+8. ⭐ **PROPOSED `RETRACTION_LOG.md` ENTRY — text ready, DELIBERATELY NOT APPENDED BY ME**, because
+   the log is serialised and other agents are live (the same reason the guard package gave). ⚠️
+   **Number it at write time, not from this text.**
+   > **C1xx — A SEED-0-ONLY RE-READ REPORTED A MARGIN WHOSE SIGN REVERSES ON THREE SEEDS.** The C100
+   > re-read ran one seed, correctly justified (seed 0's row is bit-identical either way). Refitting
+   > the four `ll_rep_*` arms at 3 seeds shows the v6 latent's **only** guarded K1 PASS
+   > (`n_agents_all`, K1B −2.785 vs the ego-speed scalar's −2.243, a 0.012 gt_sd margin) **REVERSES
+   > on the 3-seed mean: −1.477 vs −1.689, the scalar wins.** The arm's own K1B moves **2.516**
+   > across seeds because the C92 repair *un-truncates* the alpha sweep that the defect had frozen —
+   > which also falsifies the ladder's *"8 of 11 rungs have exactly zero seed spread"*. ⇒ **ROOT-CAUSE
+   > CLASS: a defect that suppressed variance made an estimator look stable, and the repair that
+   > removed the defect restored the variance — so a stability claim measured UNDER a defect is not
+   > inherited by the repaired instrument.** *(Sibling: the same refit inverts the ladder's
+   > token-vs-cell localisation — cells +0.320 > tokens +0.263 — in the direction E-R1-0
+   > independently measured.)*
+9. ⚠️⚠️ **OPEN, AND IT HAPPENED AGAIN TODAY — "STAGE, NEVER PUSH" DOES NOT PROTECT AN AGENT'S WORK.**
+   The original run staged only, and a sibling's whole-index commit `109406c` — whose subject is
+   about paper estimators — committed **48 of its 49 files** and pushed them. ⛔ **This correction
+   staged only, and `ec26ca9` — a commit about the CEM planner — swept in 14 of its 16 files
+   (§17.2).** That is the **fifth** occurrence of a hazard `CLAUDE.md` already documents
+   (`60265d3`, `3d41bd0`, `109406c`, `ec26ca9`), and the second in as many days. ⇒ **The rule needs a
    mechanism, not another warning.** Cheapest options: agents stage to a per-agent index/worktree; or
    the committing agent must run `git diff --cached --name-only` and either name foreign entries in
    the message or unstage them. **Escalating rather than proposing a policy change unilaterally —

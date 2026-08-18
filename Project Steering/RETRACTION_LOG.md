@@ -5319,3 +5319,130 @@ missing input is the val cache: **HF `epcache-256px-phase0/physicalai-val-0c5f7d
 episodes, 4.70 GB.** ⭐ **The agent did NOT download it, on the grounds that an agent brief is not
 user consent — which is right, and is the standard.** One job then closes `planner_beats_cv` **and**
 G1's fourth arm; parity is provable afterwards by bit-exact reproduction of the model-free `cv`.
+
+---
+
+## C102 — "THOR IS SYNCED" WAS TRUE OF THE THREE FILES C99 NAMED AND FALSE OF THE LAUNCH (2026-08-18, closure audit)
+
+**RETRACTED — the resolution line of C99 itself.** C99 closed with Thor's stale `refc_dump_latents.py`
+replaced, the dumper's preflight green, and `v6_chain.py admission` emitting zero `NOT BUILT` lines.
+That evidence was real. **The implied claim — that Thor's `stack/` was now in step with the repo —
+was not measured, and is false.**
+
+**MEASURED (`…/incoming/2026-08-18-thor-closure-audit/`, `raw/*.json`).** Import closure computed by
+AST from the v6 entry points: **120 files** where C99 shipped 3. Against Thor:
+**3 DRIFT + 1 absent**, including **`train_v6_staged.py` itself** (234,845 B / 4,076 ln vs the repo's
+252,691 B / 4,374 ln, missing `GATE_APPLICABILITY`, `probe_applies`, `arm_record`,
+`SEL_GAP_TIER_NOTE`, `UNMEASURED_BY_CONSTRUCTION` — precisely the five S-T launch-path fixes), and
+`tanitad/data/anchor_goal.py` **not present at all**.
+
+⇒ **ROOT-CAUSE CLASS: THE SAME ONE C99 NAMED, APPLIED ONE LEVEL UP — I FIXED THE HAND-LISTED SHIP SET
+AND KEPT A HAND-LISTED *ENTRY-POINT* SET.** Widening the entry points from the 7 of the ladder to 14
+(adding `t1_eval.py`, `eval_four_families.py`, `seam_probe.py`, `t1_summary.py`, `run_spectral.py`,
+`refc_dump_latents.py`, `v5_guard.py`) grew the closure to **134** and found **3 MORE stale files** —
+`four_families.py` (missing `kappa_verdict`, `_anti_echo`), `hierarchy.py` (missing `PER_WINDOW_KEYS`),
+and **`v0_antiecho.py`, 46,905 B, absent from Thor entirely**. **7 stale files in total.**
+**A hand-listed set of entry points is a guess in exactly the way a hand-listed ship set is.**
+
+⚠️ **AND THE MEASUREMENT ALMOST LIED THREE TIMES, EACH TIME CLEANLY AND PLAUSIBLY:**
+1. **MSYS argument mangling** rewrote `--remote-root /home/nvidia/TanitAD` into
+   `C:/Program Files/Git/home/nvidia/TanitAD`, and the audit reported **120/120 MISSING_REMOTE**
+   while the trainer was executing a file from that very path. ⇒ `MSYS_NO_PATHCONV=1`, plus a
+   demangler in the tool so it cannot recur silently.
+2. **A `ps` filter containing the words `supervise` and `train_v6_staged` matched my own ssh command
+   line**, inventing a supervisor and a second trainer — the PTY-echo trap in a `ps` costume.
+   ⇒ tokens assembled from `chr()` codes; corrected result **0 supervisors, 1 trainer**.
+3. **`pytest -q` reported 4 failures** in files I never touched; all four are
+   `UnicodeDecodeError: 'charmap'` reading a subprocess's `⛔ ⚠️ ⭐` output under **cp1252**, and all
+   four pass under `PYTHONUTF8=1`. ⇒ **a "green suite" claim on this dev box is meaningless without
+   the encoding stated.**
+
+⭐ **THE ONE THAT WOULD HAVE BEEN A FABRICATED FINDING:** the real-import probe reported
+`lead_state_gate: No module named 'pandas'` as a blocker. **It is not** — its only closure import
+site, `probe_latent_state.py:117-124`, is a `try/except ImportError` with documented fallback
+constants. A direct `import_module()` **bypasses a guard the launch relies on**. The tool now detects
+`try/except ImportError` and classifies failures BLOCKING vs GUARDED, so an audit whose entire
+subject is fabricated findings cannot produce one.
+
+**Resolution:** all 7 shipped LF-normalised, Thor's originals backed up to
+`/home/nvidia/_thor_backup_2026-08-18-closure/`; final state **DRIFT 0 / MISSING_REMOTE 0** and
+**131 of 134 modules import for real** on Thor's train venv — the 3 remaining are absent
+`pandas`/`pyarrow`, one guarded and two on data paths the ladder does not take (nothing installed:
+`uv pip install` has twice replaced torch with a wheel the driver cannot run). The live v6F S-W run
+advanced **12,750 → 12,800 → 12,850** with `step_s` **26.4735 → 26.4745** throughout.
+**The instrument is `stack/scripts/launch_closure_audit.py` with 19 tests in
+`stack/tests/test_launch_closure_audit.py` — the next launch runs it instead of hand-listing.**
+
+⭐ **AND ONE TURN SHARPER THAN C99.** C99's lesson was *md5 agreement proves transfer, not function*
+— it failed loudly, in 2 seconds, on an `ImportError`. **Row 1 would not have failed at all.**
+MEASURED by AST over Thor's own backed-up original: the stale `train_v6_staged.py` **still exported
+`assert_stage_precondition`** (45 top-level functions vs 47), so `v6_chain.py`'s import of *"THE
+adjudicator"* would have **SUCCEEDED** — while containing **0 references to `probe_applies`** against
+the current file's **6**. The S-T gate would have run with **no applicability filtering**, scored arms
+against criteria `GATE_APPLICABILITY` marks not applicable, and emitted a normal-looking verdict.
+⇒ **A SUCCESSFUL IMPORT IS NOT EVIDENCE OF CURRENCY, whenever the stale file still exports the names
+the caller asks for.** Presence, md5, `git log` and *a green import* are each necessary and none is
+sufficient; only a content comparison over the COMPUTED closure catches this.
+
+---
+
+## C103 — C100's SURVIVING v6 PASS REVERSES AT 3 SEEDS, AND THE "ZERO SEED SPREAD" THAT MADE ONE SEED LOOK SUFFICIENT WAS ITSELF A PRODUCT OF THE DEFECT (2026-08-18)
+
+**RETRACTED:** C100's one surviving v6 PASS. On `n_agents_all`, **seed 0** had the latent beating the
+ego-speed scalar by **0.012 gt_sd**. Across **three seeds the SCALAR WINS** — K1B **−1.689 vs
+−1.477**. ⇒ ⛔ **On 10 of 11 rungs the SINGLE EGO-SPEED SCALAR matches or beats the 2 048-dim latent
+on the 3-seed mean;** the 11th favours the latent by **0.00002 gt_sd** on a degenerate rung.
+
+⇒ ⭐ **THE MECHANISM IS THE REPAIR ITSELF, AND IT IS THE GENERALISABLE PART.** The C92 intercept
+defect had **frozen the alpha sweep** — a shrunk-to-zero fit made the inner-split MAE insensitive, so
+alpha selection barely moved. **Repairing it UN-TRUNCATES the sweep**, and the arm's own K1B now
+moves **2.516 across seeds**.
+⇒ ⛔ **This FALSIFIES the ladder's own load-bearing methodological claim — *"seed spread is exactly
+zero on 8 of 11 rungs, so ≥3 seeds supply no uncertainty here"*.** That claim was **measured under
+the defect**, and it is precisely what licensed reading a single seed.
+
+⇒ **ROOT-CAUSE CLASS: A STABILITY CLAIM MEASURED UNDER A DEFECT IS NOT INHERITED BY THE REPAIRED
+INSTRUMENT.** *"This quantity doesn't vary, so one seed is enough"* is a property of the **instrument
+as it was**, not of the question. **Every variance/stability/convergence claim taken before a repair
+must be re-measured after it** — a repair changes the estimator's sensitivity, not only its bias.
+⚠️ **Practical consequence: C100's 165-row inventory rests on seed 0 and MUST be re-run at 3 seeds**
+(one flag, ~45 min CPU, zero GPU). Its *direction* is probably safe — 65 of 87 died to two
+independent mechanisms — but **no individual row is quotable until then**, and at least one row is
+known to reverse.
+
+### What survives, and it is the part that matters
+
+⭐ **THE HEADLINE SURVIVES AND STRENGTHENS.** Repaired, the latent's ego-speed readout **TIES a
+constant** (K1 **+0.032 [−0.532, +0.508]**, not separated) while the **ego-oracle at 10× noise earns
+a guarded PASS** (K1 **−1.604**, r **+0.828**). ⇒ The comparison is now **PASS-vs-TIE**, not
+FAIL-vs-FAIL — a cleaner statement of the same finding.
+⭐ **And lead gap INVERTS rather than shrinking:** the latent is **0.694 m WORSE than the
+random-latent null** (5.869 vs 5.175), and partialling `v0` out flips its correlation to **−0.107**.
+
+### Route non-pooling, now MEASURED rather than argued
+
+44 paired rows: **2 alpha choices differ, 0 verdicts differ** — but `ego_v0`'s K1 differs by
+**0.3957** (A +0.0317 / B +0.4274) and its **K1B by a factor of 8**. ⇒ The verdicts are robust to the
+route; **the numbers are not**. Pooling them remains banned.
+*(The refits used route B deliberately, because §7's table was rendered from it — swapping routes
+mid-document would have been the pooling error itself.)*
+
+### ⚠️ Stale citations created BY this in-place rewrite — the C90 hazard, inverted
+
+Correcting a document in place **invalidates every line-number citation into it**.
+⛔ **`POOLING_BOTTLENECK_R1R2.md` §1.5 and `2026-08-17-O234-DESIGN-RESEARCH.md` §3.4a both now quote
+stale ladder numbers** — all three r² values moved, the `n_agents_all` half is killed by the
+trivial-proxy control, and **"relative motion exactly 0.0000" is now 0.0013** *(a figure I repeated
+in C93 and in three commit messages)*. `MODEL_REGISTRY.md` was checked and quotes no ladder number.
+⇒ **RULE: an in-place correction must be followed by a citation sweep of the documents that cite it.**
+Fixing the source and orphaning its citations trades one stale claim for several.
+
+### On the pooling thesis, stated carefully
+
+The rung **profile** is **not** among the 65 that died — it is an r²-vs-null statement and the
+**ordering held** (same top three, same bottom four). What died is the **K1-FAIL side**: all four
+confirming rungs are now `DEGENERATE-CONSTANT` or a verdict the random null earns identically.
+⚠️ **But the profile never localised the loss**, and §11's localisation **INVERTS** (cells **+0.320** >
+tokens **+0.263**). ⇒ **R1/R2 must be decided on E-R1-0's own evidence, not on this ladder.**
+*(⚠️ A report that E-R1-0 "has since dropped R1" is **INHERITED** from this agent and **NOT verified
+here** — that stream has not yet reported to the orchestrator. Do not act on it until it does.)*
