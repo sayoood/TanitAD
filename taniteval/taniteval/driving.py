@@ -62,8 +62,13 @@ from ``refb_eval`` / ``refc_eval``), so read them with ``win.get``.
 
 REFUSALS HONOURED (suite §6) — deliberately NOT implemented here
 ----------------------------------------------------------------
-headway / distance-keeping / TTC (no lead-agent state exists — ``lead_state``
-is a ``None`` stub) · any VTARGET-referenced 2 s target-speed metric (refuted
+headway / distance-keeping / TTC — **REFUSAL RETIRED 2026-08-18**: the lead
+state now EXISTS (the ``obstacle.offline`` join is read program-wide;
+``taniteval.lead_source`` registers it per window; ``taniteval.lead_metrics``
+was admitted by the pre-registered D-LEAD-1 control) and ``four_families``
+scores the family wherever ``win["lead"]`` is supplied. This module's dumps
+predate that block, so HERE it is an unwired WORK ITEM, never an absence ·
+any VTARGET-referenced 2 s target-speed metric (refuted
 with numbers: 1.65 vs 0.475 MAE against holding v0) · intersection / roundabout
 / merge *capability* at a 2 s horizon (the events are 5–20 s; S1 emits
 **kinematic signatures** which must never be renamed "intersection") ·
@@ -605,7 +610,13 @@ def tier0(win, n_boot=N_BOOT, seed=0, arm=None) -> dict:
         "floors_missing": [f for f in FLOORS if f not in floors],
         "refused": {
             "headway_ttc_distance_keeping":
-                "no lead-agent state exists (lead_state is a None stub)",
+                "REFUSAL RETIRED 2026-08-18 - the old reason ('no lead-agent "
+                "state exists') is a STALE ABSENCE-CLAIM: the state EXISTS "
+                "(obstacle.offline join, lead_source registration, "
+                "lead_metrics admitted by D-LEAD-1) and four_families "
+                "computes the family when win['lead'] is supplied. These "
+                "tier-0 dumps carry no win['lead'] yet, so here it is an "
+                "unwired WORK ITEM, not an absence",
             "vtarget_referenced_speed_at_2s":
                 "refuted: 1.65 vs 0.475 MAE against holding v0 at 2 s",
             "intersection_roundabout_merge_capability":
