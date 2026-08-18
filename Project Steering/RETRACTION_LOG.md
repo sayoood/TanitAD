@@ -5988,3 +5988,71 @@ un-freeze and **cannot be satisfied by freezing everything**) but is **NOT YET C
 `train_v6_staged.py` — deliberately, since the arm it protects does not exist yet. **It must be wired
 in the same change that introduces E-XENC-1**, or it is a guard that never runs, which is the
 `pod_git_drift.py` failure mode (C108) in advance.
+
+---
+
+## C110 — "45 STRANDED FILES" WAS AN UNDERCOUNT PRODUCED BY THE INSTRUMENT'S OWN FILTER — IT IS **102** (2026-08-18)
+
+**RETRACTED — my own figure in C108**, and in `BACKLOG.md` A11: *"45 genuinely stranded TanitAD
+files on Thor."*
+
+**MEASURED.** `pod_git_drift.py:91` is `SUFFIXES = (".py", ".sh")` ⇒ **every stranded result JSON,
+run log, `.md`, `.yaml` and `.bak` was invisible to it BY CONSTRUCTION.** A content-hash sweep over
+the same directories found **102 files present on Thor and absent from the repo by content — the
+tool could see only 47 of them.** *(It also under-reported one directory it could see: A11 records
+`/home/nvidia` root as 19; the tool's own output prints **21**. The other seven counts are exact.)*
+
+⇒ **ROOT-CAUSE CLASS: A COUNT QUOTED AS COMPLETE WHEN IT IS THE INSTRUMENT'S FILTER SPEAKING.** I
+published "45" hours after logging C108's own lesson that a green checksum on the wrong file set is a
+confident wrong answer — **and then took a number from a tool whose scope I had not read.** ⇒ **RULE:
+before quoting a count, read the instrument's inclusion rule. A census is a claim about the FILTER
+until proven otherwise.** *Same family as `df`, `free`, the cgroup counter, and the closure's
+hand-listed roots: a real number answering a narrower question than the one asked.*
+
+### ⭐ AND THE MOST CONSEQUENTIAL FIND IS A **WRONG** FILE, NOT A MISSING ONE
+
+The repo's banked `…/incoming/2026-08-02-thor-deployment-profile/thor_profile.py` **cannot have
+produced its own co-banked `thor_profile.json`**: the JSON carries `"frame": "176x624 hfov 117.0"`
+and **the banked script never assigns `out['frame']`**. Thor's copy adds exactly that, plus
+`speed_input=True` / `action_dim=3` via `resolve_v2_frames` ⇒ **a DIFFERENT MODEL WAS PROFILED than
+the banked script describes.**
+⛔ **And `pod_git_drift.py` saw this file and downgraded it to `NAME_ONLY` — "weak evidence, not
+drift".** That classification is precisely how it escaped. Filed as **A15**; **not acted on** —
+which side is canonical belongs to that package's owner.
+⇒ **A banked script that cannot produce its banked result is worse than a missing one: the pair looks
+like provenance.**
+
+### What was actually rescued
+
+**117 files, 807,347 B, 117/117 sha256-verified on BOTH sides, 0 mismatches**, pulled by
+`ssh -n 'tar -czf - <explicit list>'` streaming to stdout — **nothing written on Thor.**
+
+⭐ Highest-value: `nurec_work/` **37 files** (the msgpack walk, rig/pose derivation, the `.ckpt`
+pickle probe, the whole PPISP/CRF recovery including the quantile-matching method, 11 scoring
+`report.json`) · **`_s1_backup/refc_pre.py`** — 115 KB of REF-C model source **as it stood before the
+S1 patch**, which is the REF-B-v2 failure mode exactly · 28 Thor bring-up/probe scripts ·
+`parity_verify/make_prefix.py`.
+
+⭐ **Deliberately left, with reasons** — `get-pip.py` (third-party), two regenerable NuRec extracts,
+one byte-identical duplicate, and ≈3.7 GB of PNG/npz/pt outputs. **The 17 run logs were KEPT**: raw
+measurement transcripts, not noise. *Judging by content rather than extension is the whole point,
+given that an extension filter is what caused the undercount.*
+
+⚠️ **`*.mp4` resolved rather than skipped:** none in the eight A11 directories; of 26 elsewhere on
+Thor, **18 are already banked byte-identical (md5-checked, not name-checked)** and the other 8 are
+superseded lower-quality render passes ⇒ **no `git add -f` needed.** *(Name-checking would have
+missed the distinction — the same trap as `NAME_ONLY` above.)*
+
+**Beyond A11:** zero `.md`/`.py`/`.sh` stranded in the AlpaSim result directories — **those
+conclusions are safe.** 19 gate/summary JSONs banked; 24 bulk rollout dumps (9.6 MB) recorded with
+sha256 but not pulled, filed as **A14**.
+
+⏳ **Two instrument fixes escalated, correctly not made by the finder** (shared instrument):
+**widen `pod_git_drift.py:91` beyond `.py`/`.sh`** — it missed **46 of 102 (45 %)** — and **raise
+`NAME_ONLY` severity for program-authored basenames.**
+
+⚠️ **This closes the backlog item, not the hole:** the nightly checker had been pointed at four dead
+pods since 2026-08-15, which is why any of it accumulated.
+
+**Trainer advanced across the pull, not merely alive:** step **13,150 → 13,200**, `step_s` **26.4716 →
+26.4707** (−0.003 %), PID 25477 `kill -0` alive at both ends.
