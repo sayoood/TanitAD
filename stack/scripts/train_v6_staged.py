@@ -115,6 +115,9 @@ from tanitad.models.v6 import (  # noqa: E402
     # F-7 / catalog T2 — the augmentations + the manoeuvre-preserving /
     # -reversing partition the loss REFUSES to have swapped
     T2_AUGMENTATIONS, T2_MANOEUVRE_PRESERVING, T2_MANOEUVRE_REVERSING,
+    # F-9 / catalog T3 — the interaction CURRICULUM (zero parameters)
+    T3Curriculum, T3_CONTROL_MIN_N, multi_agent_kinematic_entropy,
+    t3_rank_control,
     stage_trainable_groups, time_to_reach_weights)
 from tanitad.models.sigreg import position_relaxed  # noqa: E402
 
@@ -259,6 +262,17 @@ class V6LossWeights:
     #: Units: m/s^2 and 1/m (a control-space MAE), one more reason it is not
     #: interchangeable with any other weight.
     w_t5_consist: float = 0.0
+    #: ⭐ F-11 / catalog S1 — MULTI-TICK STRATEGIC ROLLOUT. DEFAULT 0.0 = OFF.
+    #: ZERO NEW PARAMETERS: it re-rolls ``predictor_str``/``act_head_str``,
+    #: both already ``layer_str``, so it changes no state_dict key and needs no
+    #: ``STAGE_MAY_INTRODUCE`` entry. In force in S-S/S-J only (the stages that
+    #: train ``layer_str``), for the same reason ``s1_latent`` is.
+    #: Spec: ``V6_TRAINING_MEASURES.md:79`` + ``DIAGRAM_CONFORMANCE.md:70,101``.
+    #: ⛔ Its horizon is CORPUS-LIMITED and the limit is hard — see
+    #: :func:`reachable_strategic_ticks`. Units: same as ``s1_latent`` (latent
+    #: L1), so the two ARE commensurate — deliberately, since ``s1_multi`` at
+    #: K=1 is ``s1_latent`` exactly (pinned).
+    w_s1_multi: float = 0.0
 
     def for_stage(self, stage: str) -> "V6LossWeights":
         """The weights actually in force for ``stage``.
@@ -275,7 +289,8 @@ class V6LossWeights:
             return replace(self, t1_latent=0.0, s1_latent=0.0,
                            lambda_plan=0.0, seam_op=0.0, w_select=0.0,
                            w_anchor=0.0, w_s2_goal=0.0,
-                           w_t2_contrast=0.0, w_t5_consist=0.0)
+                           w_t2_contrast=0.0, w_t5_consist=0.0,
+                           w_s1_multi=0.0)
         if stage == "S-T":
             # w_s2_goal is zeroed here for the layer_str reason w_anchor is
             # zeroed in S-S: the strategic goal heads are FROZEN in S-T
@@ -283,7 +298,11 @@ class V6LossWeights:
             # would be advertised in the launch line and train nothing.
             return replace(self, o1_ctrl=0.0, o1_fact=0.0, o1_scene=0.0,
                            o2_nearfield=0.0, o3_masked=0.0, o5_rollout=0.0,
-                           o6_sigreg=0.0, s1_latent=0.0, w_s2_goal=0.0)
+                           o6_sigreg=0.0, s1_latent=0.0, w_s2_goal=0.0,
+                           # F-11 rides s1_latent exactly: layer_str is frozen
+                           # in S-T, so a multi-tick strategic roll here would
+                           # be advertised in the launch line and train nothing.
+                           w_s1_multi=0.0)
         if stage == "S-S":
             # w_anchor joins w_select here for the SAME reason: the anchor head
             # is planner-group (v6.py MODULE_GROUPS: ("anchor_head.",
@@ -1665,6 +1684,290 @@ def t5_plan_switch_rate(a_lat_logits: Tensor, a_lon_logits: Tensor,
             "t5_switch_n_pairs": int(pairs.shape[0])}
 
 
+def load_t3_scores(path, *, n_windows: int) -> tuple[Tensor, dict]:
+    """Load and VALIDATE F-9's per-window T3 score artifact.
+
+    The artifact is a torch ``.pt`` holding ``{"scores": [n_windows],
+    "provenance": {...}}``, produced by scoring the corpus with the P8
+    occupancy readout (``multi_agent_kinematic_entropy`` over
+    ``sigmoid(decode(ẑ_{t+k}))``).
+
+    ⛔ **THE PROVENANCE STAMP IS MANDATORY, and that is an ADMISSIBILITY rule,
+    not tidiness.** T3's score descends from a decoder trained on the obstacle
+    join — a LABEL path — while O4's own docstring states that *"the obstacle
+    join and the VLM fields are frozen-probe/eval-strata material, never a
+    training-time selector"*. The resolution is the F-10 precedent
+    (``DIAGRAM_CONFORMANCE.md:57``): a label-derived SAMPLER input is admissible
+    **because it is a data mix and not a model input**, but *"must be
+    declared"*. Refusing an undeclared artifact here is what makes the
+    declaration real instead of aspirational — and the stamp is written into
+    ``config.json``, so it survives the console.
+
+    ⚠️ The score file is aligned 1:1 with ``ds_train.index``, whose length
+    depends on ``max_horizon`` — which is derived from the stage's live loss
+    terms. **A score file built for one stage does not transfer to another**,
+    and the length check is what catches that rather than reweighting the wrong
+    windows silently.
+    """
+    blob = torch.load(path, map_location="cpu", weights_only=False)
+    if not isinstance(blob, dict) or "scores" not in blob:
+        raise SystemExit(
+            f"[v6] ⛔ --t3-scores {path} is not a T3 score artifact (expected a "
+            f"dict with a 'scores' key).")
+    prov = blob.get("provenance")
+    if not isinstance(prov, dict) or not prov:
+        raise SystemExit(
+            f"[v6] ⛔ --t3-scores {path} carries NO 'provenance' stamp. T3's "
+            f"score is derived from the P8 occupancy readout, which trains on "
+            f"the obstacle join — a LABEL path. A label-derived SAMPLER input "
+            f"is admissible (it is a data mix, not a model input) ONLY as a "
+            f"DECLARED one (DIAGRAM_CONFORMANCE.md:57, the F-10 precedent). An "
+            f"undeclared one is refused here rather than discovered in an "
+            f"audit months later.")
+    scores = torch.as_tensor(blob["scores"]).float().flatten()
+    if scores.numel() != int(n_windows):
+        raise SystemExit(
+            f"[v6] ⛔ --t3-scores has {scores.numel()} scores for {n_windows} "
+            f"windows. The artifact is aligned 1:1 with the dataset index, and "
+            f"a mismatched one would reweight the WRONG windows silently. "
+            f"⚠️ the window count depends on max_horizon (= this stage's live "
+            f"loss terms), so a score file built for another stage does not "
+            f"transfer.")
+    if not torch.isfinite(scores).all():
+        raise SystemExit(
+            f"[v6] ⛔ --t3-scores {path} contains non-finite scores. A NaN in "
+            f"the weight vector makes `torch.multinomial` draw arbitrarily, "
+            f"which is a corpus re-selection nobody declared.")
+    if float(scores.min()) < 0:
+        raise SystemExit(
+            f"[v6] ⛔ --t3-scores {path} has NEGATIVE scores (min "
+            f"{float(scores.min()):.4g}). `multi_agent_kinematic_entropy` "
+            f"returns [0, 1]; a negative value means this file did not come "
+            f"from it, and with a fractional exponent it would produce NaN "
+            f"weights.")
+    if float(scores.max()) <= 0:
+        raise SystemExit(
+            f"[v6] ⛔ every T3 score in {path} is 0 — the curriculum would be "
+            f"uniform at every alpha and the run would advertise a curriculum "
+            f"it does not have. This is the empty-rollout case "
+            f"`multi_agent_kinematic_entropy` documents: check the occupancy "
+            f"rollout was non-degenerate before scoring.")
+    return scores, prov
+
+
+# ============================================================================
+# F-11 / catalog S1 — MULTI-TICK STRATEGIC ROLLOUT
+#
+# Spec, two independent locations (established BEFORE a line was written):
+#   * `…/2026-08-07-hierarchical-wm-redesign/V6_TRAINING_MEASURES.md:79` —
+#     *"S1 | long-horizon latent prediction (own predictor, Δt ≈ 1 s ticks) on
+#     the T-layer's latent sequence | strategic dynamics = evolution of
+#     manoeuvre context, not pixels | ADE(8-30 s) vs CV/corridor baselines at
+#     T1"*
+#   * `…/2026-08-16-diagram-conformance/DIAGRAM_CONFORMANCE.md:70` — *"training
+#     target is ONE strategic tick ahead (stride_str = 20 steps = 2.0 s …) — a
+#     1-tick loss; the 8-30 s capability appears only as gate-reported
+#     `S1_ade_8_30s`… Multi-tick strategic rollout training is not built.
+#     Fix F-11"*, and `:216` — *"F-11 | P3 | S1 multi-tick strategic rollout
+#     (8-30 s = 4-15 strategic ticks) — currently 1-tick; the gate reports
+#     `S1_ade_8_30s` against a capability the loss never exercises."*
+#
+# ⭐ WHERE THE TEMPORAL STRUCTURE ACTUALLY LIVES — the C115 question, answered
+# before implementing. C115 (MEASURED 2026-08-17) established that `z_tac` — and
+# therefore `z_str`, which is uplinked from it — is a function of the LAST FRAME
+# ALONE: `encode_window` flattens [B, W] into the batch axis, so no frame sees
+# another. **A cell that assumed the strategic LATENT integrates a window would
+# be inexpressible.** This one does not assume that. The temporal structure F-11
+# needs lives in `predictor_str`, which is a genuine map z(t) -> z(t + stride),
+# and a multi-tick rollout is that map composed with itself — exactly the shape
+# `o5_rollout` already uses one layer down. The latents it compares against are
+# per-frame encodes of frames 2 s apart, which is what `s1_latent` already does
+# at k=1. ⇒ **F-11 IS expressible.** Its problem is the CORPUS, not the
+# architecture — see :func:`reachable_strategic_ticks`.
+#
+# ⭐ ZERO NEW PARAMETERS: `predictor_str` and `act_head_str` are both `layer_str`
+# already (v6.py `_GROUP_PREFIXES`). No new key, no `STAGE_MAY_INTRODUCE` entry,
+# no `MODULE_GROUPS` edit — so the `06b8782` class cannot apply.
+# ============================================================================
+
+#: ⛔ Below this many windows :func:`s1_persistence_control` REFUSES a verdict.
+#: Same discipline as ``T2_CONTROL_MIN_N`` / ``T3_CONTROL_MIN_N``.
+S1_CONTROL_MIN_N = 32
+
+
+def reachable_strategic_ticks(episode_frames: int, *, window: int,
+                              stride_str: int) -> dict:
+    """⛔ **How many strategic ticks the CORPUS can actually supply — and it is
+    the binding constraint on F-11, not the architecture.**
+
+    ``EpisodeWindowDataset`` windows as ``t_max = frames - window -
+    max_horizon`` (``tanitad/data/_contract.py:120``) and keeps ``range(t_max)``,
+    so an episode shorter than ``window + max_horizon`` contributes **ZERO**
+    windows. A K-tick strategic roll needs ``max_horizon = K * stride_str``.
+
+    Returns ``max_k`` (the largest K yielding >= 1 window per episode) and the
+    per-K window count, so a launch can be refused with the numbers in hand.
+
+    ⛔ **THE CONSEQUENCE, and it is a SPEC-AMENDMENT finding, not a tuning
+    note.** At the live geometry — ``window=6``, ``stride_str=20``, and a
+    **120-frame** episode cache (``physicalai-train-e438721ae894-w120-…``) — the
+    windows per episode are ``114 - 20K``:
+
+    ======  =========  ====================  =========================
+    K       horizon    windows per episode   vs the 1-tick baseline 94
+    ======  =========  ====================  =========================
+    1        2 s        94                    --
+    2        4 s        74                    -21 %
+    3        6 s        54                    -43 %
+    4        8 s        34                    -64 %
+    5       10 s        14                    -85 %
+    6       12 s         0                    **the corpus is exhausted**
+    ======  =========  ====================  =========================
+
+    The catalog asks for **8-30 s = 4-15 ticks**. Only its bottom edge (K=4,
+    8 s) is reachable, at a 64 % window cost; **K >= 6 yields no windows at
+    all**, and 30 s is longer than a 12 s episode. This is arithmetic on the
+    windowing rule, not an opinion about training.
+
+    ⚠️ Deliberately parameterised on ``episode_frames`` rather than hard-coding
+    120: the 120-frame figure is INHERITED (``V6_TRAINER_DESIGN.md §3.6``,
+    consistent with the ``-w120-`` cache name and with the MEASURED 94
+    windows/episode at ``max_horizon=20`` in ``PI_DECISIONS_2026-08-12.md``
+    §D4). The trainer calls this with the corpus it actually loaded, so a
+    different cache moves the table instead of invalidating the guard.
+
+    ⛔ **AND THE WINDOW LOSS IS NOT A PARITY BREAK ONLY BECAUSE IT STOPS SHORT
+    OF ONE.** PI decision D4 settled that ``max_horizon`` is a windowing choice
+    inside episodes parity already selected. But that reasoning holds *while
+    every episode still contributes*. Past ``max_k`` an episode contributes
+    zero windows, and a corpus of unequal-length episodes would drop its short
+    ones **silently** — an effective re-selection. That is why this returns
+    ``max_k`` per the SHORTEST episode at the call site, and why the trainer
+    reports the drop-out count rather than inferring it.
+    """
+    if window < 1 or stride_str < 1 or episode_frames < 1:
+        raise ValueError(f"episode_frames={episode_frames}, window={window}, "
+                         f"stride_str={stride_str} must all be >= 1")
+    room = episode_frames - window
+    per_k = {k: max(0, room - k * stride_str)
+             for k in range(1, max(2, room // stride_str + 2))}
+    reachable = [k for k, n in per_k.items() if n > 0]
+    return {
+        "episode_frames": int(episode_frames), "window": int(window),
+        "stride_str": int(stride_str),
+        "max_k": int(max(reachable)) if reachable else 0,
+        "windows_per_episode": per_k,
+        "horizon_s_at_max_k": (max(reachable) * stride_str * 0.1
+                               if reachable else 0.0),
+    }
+
+
+def s1_rollout_loss(stack: V6Stack, z_str: Tensor, targets: Tensor
+                    ) -> tuple[Tensor, dict]:
+    """Catalog S1's multi-tick roll: compose ``predictor_str`` with itself K
+    times and score each tick against the encoded strategic latent at that tick.
+
+    ``z_str`` ``[B, d_str]`` — the window's strategic latent (WM-side, exactly
+    the tensor ``forward`` rolls at k=1).
+    ``targets`` ``[B, K, d_str]`` — the encoded strategic latent at
+    ``t + k*stride_str``, one row per tick.
+
+    ⭐ **THE ACTION AT TICK k>1 IS THE MODEL'S OWN.** ``forward`` derives
+    ``e_a_str`` from ``act_head_str(z_str_p)``; there is no ground-truth
+    strategic action anywhere in the batch (``STRATEGIC_ACTION_TOKENS`` is an
+    invented vocabulary with no label source — the S2 pipeline that would
+    supply one is ``NOT BUILT`` by recorded decision). So each tick re-derives
+    its action from the tick's own predicted latent, **through the same planner
+    cut** ``forward`` applies. That makes this a genuine closed rollout and not
+    a teacher-forced one, which matters under EVAL_DOCTRINE: a teacher-forced
+    strategic roll would be a T0 diagnostic, not a capability.
+
+    ⛔ **UNIFORM WEIGHTING ACROSS TICKS, DECLARED.** Late ticks have larger
+    error and therefore dominate a uniform mean. That is the intended reading of
+    *"long-horizon latent prediction"* — the point of the term is the far tick —
+    but it is a choice, so the per-tick losses are returned in the log and a run
+    can see the degradation curve instead of one pooled number.
+
+    ⛔ **REFUSES K < 2.** At K=1 this term IS ``s1_latent`` (pinned by
+    ``test_k1_is_exactly_s1_latent``); a "multi-tick" term with no multi is a
+    weight advertised in the launch line for a loss that already exists.
+    """
+    if z_str.dim() != 2:
+        raise ValueError(f"z_str must be [B, d_str], got {tuple(z_str.shape)}")
+    if targets.dim() != 3:
+        raise ValueError(
+            f"targets must be [B, K, d_str], got {tuple(targets.shape)}")
+    if targets.shape[0] != z_str.shape[0] or targets.shape[2] != z_str.shape[1]:
+        raise ValueError(f"targets {tuple(targets.shape)} does not match z_str "
+                         f"{tuple(z_str.shape)} on B or d_str")
+    k = int(targets.shape[1])
+    if k < 2:
+        raise ValueError(
+            f"⛔ s1_rollout_loss needs K >= 2 ticks, got K={k}. At K=1 this is "
+            f"exactly `s1_latent`, which already exists — a multi-tick term "
+            f"with one tick is a duplicate weight, not a new capability.")
+    cut = stack.cfg.isolate_planner_from_encoder
+    z = z_str
+    per_k: list[Tensor] = []
+    for j in range(k):
+        a = stack.act_head_str(stack._cut(z, cut))
+        e_a = stack.vocab_a_str.encode(a["probs"], a["args"])
+        z = stack.predictor_str(z, e_a)
+        per_k.append((z.float() - targets[:, j].float()).abs().mean())
+    loss = torch.stack(per_k).mean()
+    log = {"s1_multi": float(loss.detach()), "s1_multi_k": k}
+    log |= {f"s1_multi_k{j + 1}": float(v.detach())
+            for j, v in enumerate(per_k)}
+    return loss, log
+
+
+def s1_persistence_control(stack: V6Stack, z_str: Tensor, targets: Tensor, *,
+                           min_n: int = S1_CONTROL_MIN_N) -> dict:
+    """⛔ **The trivial-proxy control for F-11: does the roll beat HOLDING?**
+
+    The degenerate solution to a multi-tick latent rollout is the identity —
+    emit the current latent and never move. If the strategic latent drifts
+    slowly (2 s per tick on a per-frame encode), holding can score well while
+    the predictor has learned nothing about strategic dynamics.
+
+    Returns the model's rollout loss, the HOLD rollout's loss
+    (``ẑ_k := z_str`` for every k), and ``ratio = model / hold``.
+    **ratio >= 1 means the term is being won by doing nothing** and no S1 claim
+    is admissible from that run.
+
+    ⭐ Same idiom as ``train_p8_occupancy.py``'s ``--hold-action-control`` and
+    the §1.12 hold-action measurement that turned open-loop lateral skill into
+    an ACTION ECHO. ⛔ Refuses below ``min_n`` windows: a ratio without its n is
+    not a verdict (MEASURED for the sibling T2 control — at n=4 the null ratio
+    spanned 0.397-3.361).
+    """
+    n = int(z_str.shape[0])
+    out = {"n": n, "min_n": int(min_n)}
+    if n < min_n:
+        out["verdict"] = "REFUSED_TOO_FEW"
+        out["_note"] = (f"⛔ need >= {min_n} windows, have {n}. A hold/model "
+                        f"ratio from a handful of windows is noise.")
+        return out
+    with torch.no_grad():
+        model, _ = s1_rollout_loss(stack, z_str, targets)
+        hold = (z_str.float().unsqueeze(1) - targets.float()).abs().mean()
+    m, h = float(model), float(hold)
+    out |= {"loss_model": m, "loss_hold": h,
+            "ratio": m / h if h > 0 else float("inf")}
+    if h <= 0:
+        out["verdict"] = "DEGENERATE_TARGETS_EQUAL_Z"
+        out["_note"] = ("⛔ the HOLD rollout scores exactly 0 — the strategic "
+                        "targets ARE the current latent. The term has no "
+                        "dynamics to learn on this batch.")
+    elif out["ratio"] >= 1.0:
+        out["verdict"] = "NO_BETTER_THAN_HOLD"
+        out["_note"] = ("⛔ the rolled prediction is no better than holding "
+                        "z_str. No strategic-dynamics claim is admissible.")
+    else:
+        out["verdict"] = "OK"
+    return out
+
+
 # ============================================================================
 # the per-batch loss assembly
 # ============================================================================
@@ -1896,6 +2199,23 @@ def v6_loss_step(stack: V6Stack, batch: dict, *, stage: str,
         ls = (out["zhat_str"].float() - tgt.float()).abs().mean()
         terms["s1"] = w.s1_latent * ls
         log["s1_latent"] = float(ls.detach())
+
+    # ---- F-11 / S1: MULTI-TICK strategic rollout ----------------------------
+    # NOT nested under s1_latent: the two are separable arms (K=1 vs K>1) and
+    # nesting would make the multi-tick result unattributable — the `--v2`
+    # conflation failure. `w_s1_multi` alone is a legal, attributable launch.
+    if w.w_s1_multi:
+        tgt = batch.get("z_str_multi_target")
+        if tgt is None:
+            raise ValueError(
+                "⛔ w_s1_multi > 0 needs batch['z_str_multi_target'] "
+                "[B, K, d_str] — the encoded strategic latent at each of the K "
+                "ticks. Without it the multi-tick roll has nothing to score "
+                "against, and a term that cannot fire is worse than an absent "
+                "one because the launch line advertises it.")
+        lsm, lgm = s1_rollout_loss(stack, out["z_str"], tgt)
+        terms["s1_multi"] = w.w_s1_multi * lsm
+        log |= lgm
 
     # ---- planner (λ_plan) ---------------------------------------------------
     if w.lambda_plan:
@@ -2692,7 +3012,8 @@ def build_stack_from_args(a) -> V6Stack:
 # ============================================================================
 
 def synthetic_train_batch(stack: V6Stack, *, batch: int = 2, k: int = 12,
-                          seed: int = 0, device=None) -> dict:
+                          seed: int = 0, device=None,
+                          s1_multi_k: int = 0) -> dict:
     """A fully-shaped random batch — the ``--dry-run`` corpus stand-in.
 
     Everything the real loader supplies is here with the real shapes, so a
@@ -2716,6 +3037,13 @@ def synthetic_train_batch(stack: V6Stack, *, batch: int = 2, k: int = 12,
         "z_tac_next_target": torch.randn(b, cfg.d_tac, generator=g),
         "z_str_next_target": torch.randn(b, cfg.d_str, generator=g),
     }
+    # ⭐ F-11: present ONLY when the run asks for it, so a --dry-run of an S-S
+    # launch with --w-s1-multi exercises the SAME loss path the pod will, and a
+    # run WITHOUT the flag never carries a key that would mask the refusal in
+    # `v6_loss_step` (a target that is always there cannot prove a guard fires).
+    if int(s1_multi_k) > 0:
+        out["z_str_multi_target"] = torch.randn(
+            b, int(s1_multi_k), cfg.d_str, generator=g)
     if not cfg.shared_encoder:
         out["own_frames_tac"] = torch.randn(b, c, h, w, generator=g)
         out["own_frames_str"] = torch.randn(b, c, h, w, generator=g)
@@ -2856,8 +3184,10 @@ def dry_run(a, stack: V6Stack | None = None) -> dict:
     rows: list[dict] = []
     t0 = time.time()
     for step in range(1, int(a.dry_steps) + 1):
-        b = synthetic_train_batch(stack, batch=a.dry_batch, k=a.dry_k,
-                                  seed=a.seed + step, device=device)
+        b = synthetic_train_batch(
+            stack, batch=a.dry_batch, k=a.dry_k, seed=a.seed + step,
+            device=device,
+            s1_multi_k=int(a.s1_multi_k) if w_stage_dry.w_s1_multi else 0)
         b["gt_wp"] = torch.randn(a.dry_batch, o1_k, 2, generator=gen)
         if w_stage_dry.w_s2_goal:
             b |= synthetic_s2_batch(a.dry_batch, seed=a.seed + step,
@@ -2943,6 +3273,7 @@ def _weights_from_args(a) -> V6LossWeights:
         w_s2_goal=float(getattr(a, "w_s2_goal", 0.0)),
         w_t2_contrast=float(getattr(a, "w_t2_contrast", 0.0)),
         w_t5_consist=float(getattr(a, "w_t5_consist", 0.0)),
+        w_s1_multi=float(getattr(a, "w_s1_multi", 0.0)),
         lambda_plan=resolve_lambda_plan(a))
 
 
@@ -3098,6 +3429,13 @@ def train(a) -> dict:
     need = max(need_k,
                stack.cfg.stride_tac if w_stage.t1_latent else 0,
                stack.cfg.stride_str if w_stage.s1_latent else 0,
+               # ⛔ F-11: a K-tick strategic roll needs K*stride_str
+               # future steps. This is the single largest horizon any
+               # term can ask for, and it is what makes the catalog's
+               # 8-30 s band corpus-limited — see
+               # `reachable_strategic_ticks` and the refusal below.
+               (stack.cfg.stride_str * int(a.s1_multi_k)
+                if w_stage.w_s1_multi else 0),
                stack.cfg.plan_steps if w_stage.lambda_plan else 0,
                1)
     # ⚠️ ``plan.max_horizon`` is the FLAGSHIP-v4 loss's horizon (MEASURED 20 at
@@ -3139,6 +3477,49 @@ def train(a) -> dict:
             f"episodes are shorter than {stack.cfg.predictor.window + max_h} "
             f"frames. Lower the horizons or rebuild the cache with longer "
             f"episodes.")
+
+    # ---- F-11: is the requested strategic roll REACHABLE on this corpus? ----
+    # ⛔ THE CATALOG'S 8-30 s BAND IS NOT REACHABLE ON A 120-FRAME CACHE, and
+    # the failure without this guard is SILENT-ish: `max_h = K*stride_str` walks
+    # `t_max = frames - window - max_horizon` towards zero, so episodes drop out
+    # ONE AT A TIME as K rises. A corpus of unequal-length episodes would
+    # therefore lose its SHORT episodes first — an effective RE-SELECTION of the
+    # corpus, which is the one thing parity forbids (CLAUDE.md invariants; PI
+    # decision D4 permits a horizon change only *because* every episode still
+    # contributes). So this refuses on the SHORTEST episode, not the mean, and
+    # reports the drop-out census rather than inferring it.
+    if w_stage.w_s1_multi:
+        ep_lens = [int(e.frames.shape[0]) for e in train_eps]
+        reach = reachable_strategic_ticks(
+            min(ep_lens), window=stack.cfg.predictor.window,
+            stride_str=stack.cfg.stride_str)
+        n_drop = sum(1 for L in ep_lens
+                     if L - stack.cfg.predictor.window - max_h <= 0)
+        reach |= {"n_episodes": len(ep_lens), "n_episodes_dropped": n_drop,
+                  "requested_k": int(a.s1_multi_k),
+                  "shortest_episode_frames": min(ep_lens),
+                  "longest_episode_frames": max(ep_lens)}
+        print(f"[v6] F-11 reachability {json.dumps(reach)}", flush=True)
+        if int(a.s1_multi_k) > reach["max_k"]:
+            raise SystemExit(
+                f"[v6] ⛔ --s1-multi-k {a.s1_multi_k} is NOT REACHABLE on this "
+                f"corpus. The shortest episode is {min(ep_lens)} frames; with "
+                f"window {stack.cfg.predictor.window} and stride_str "
+                f"{stack.cfg.stride_str} the largest K yielding any window is "
+                f"{reach['max_k']} ({reach['horizon_s_at_max_k']:.1f} s). "
+                f"⚠️ The catalog asks for 8-30 s = 4-15 ticks; that band is a "
+                f"CORPUS limit, not a trainer limit, and it needs a longer "
+                f"re-extraction of the SAME 2376 episodes (admissible per PI "
+                f"decision D4) — never a re-pick of which episodes enter.")
+        if n_drop:
+            raise SystemExit(
+                f"[v6] ⛔ --s1-multi-k {a.s1_multi_k} drops {n_drop} of "
+                f"{len(ep_lens)} episodes to ZERO windows (they are shorter "
+                f"than window {stack.cfg.predictor.window} + max_horizon "
+                f"{max_h}). Training on the surviving episodes is an "
+                f"EFFECTIVE RE-SELECTION of the corpus and breaks cross-arm "
+                f"comparability. Lower K, or re-extract longer clips from the "
+                f"same episode list.")
     if a.v2_val_cache:
         val_eps, _vp = build_v2_val_episodes(a, cache_frame=cache_frame,
                                              train_frame=model_frame)
@@ -3220,6 +3601,48 @@ def train(a) -> dict:
         sample = make_sampler(ds_train, a.eps_per_batch, rng)
         o4log = {"o4_alpha": 0.0, "_note": "uniform sampling (O4 control arm)"}
 
+    # ---- F-9 / catalog T3: the INTERACTION CURRICULUM ----------------------
+    # DIAGRAM_CONFORMANCE.md:59 — *"O4 is the ego-kinematic version only; T3's
+    # multi-agent extension needs the P8 occupancy readout in the loop."*
+    # It is not in the loop and it must not be: scoring the corpus from
+    # predicted occupancy means an encode + a predictor roll + an occupancy
+    # decode PER WINDOW, which is a full forward pass over the corpus before
+    # step 1 — the very cost O4's docstring exists to avoid. So T3's SCORE is a
+    # precomputed artifact and T3's CURRICULUM is what lives here. The split is
+    # also what makes the P8 gating tractable: the schedule half is not gated
+    # on P8 at all, and can be exercised against any per-window score.
+    t3_curr = t3_scores = None
+    t3log: dict = {"t3": "absent"}
+    if a.t3_scores:
+        if a.o4_alpha > 0:
+            raise SystemExit(
+                "[v6] ⛔ --t3-scores with --o4-alpha > 0 puts TWO saliency "
+                "levers on ONE sampling axis, and the resulting arm is not "
+                "attributable to either (the `--v2` conflation failure). O4 is "
+                "EGO-kinematic saliency, T3 is MULTI-AGENT interaction; they "
+                "are different signals and must be run as different arms. "
+                "⚠️ --o4-alpha DEFAULTS TO 1.0, so a T3 run must pass "
+                "--o4-alpha 0 explicitly — which is the declaration.")
+        t3_scores, prov = load_t3_scores(a.t3_scores,
+                                         n_windows=len(ds_train.index))
+        t3_curr = T3Curriculum(alpha_start=a.t3_alpha_start,
+                               alpha_end=a.t3_alpha_end,
+                               warmup_frac=a.t3_warmup_frac,
+                               floor=a.t3_floor)
+        sample = InteractionSampler(ds_train.index,
+                                    t3_curr.weights_at(t3_scores, 0.0),
+                                    eps_per_batch=a.eps_per_batch,
+                                    generator=gen)
+        t3log = {"t3": "active", "provenance": prov,
+                 "alpha_start": t3_curr.alpha_start,
+                 "alpha_end": t3_curr.alpha_end,
+                 "warmup_frac": t3_curr.warmup_frac, "floor": t3_curr.floor,
+                 "n_windows": int(t3_scores.numel()),
+                 "score_mean": float(t3_scores.mean()),
+                 "score_max": float(t3_scores.max()),
+                 "score_frac_zero": float((t3_scores <= 0).float().mean())}
+        print(f"[v6] T3 {json.dumps(t3log)}", flush=True)
+
     # ---- F-8 / T5: the CONSECUTIVE-WINDOW PAIR index -----------------------
     # DIAGRAM_CONFORMANCE.md:58 — *"Needs consecutive-window batches (the
     # current sampler draws windows independently)"*. This is that change, and
@@ -3295,6 +3718,15 @@ def train(a) -> dict:
                                                 "init": init_report,
                                                 "max_horizon": max_h,
                                                 "launch_mode": rg}
+    # ⭐ F-9's provenance stamp travels INTO THE RUN ROW, not just the log.
+    # A label-derived sampler input is admissible only as a DECLARED data mix;
+    # a declaration that lives in a console line nobody re-reads is the
+    # "please merge in a README" failure in a different costume.
+    cfg_json["t3"] = t3log
+    # ⭐ F-11's reachability census likewise: the window count per episode is
+    # what a later reader needs to know this arm was not silently truncated.
+    if w_stage.w_s1_multi:
+        cfg_json["s1_multi"] = reach
     if s2_cfg is not None:
         cfg_json["s2"] = s2_cfg
     (out_dir / "config.json").write_text(json.dumps(cfg_json, indent=1))
@@ -3338,7 +3770,24 @@ def train(a) -> dict:
     last_log_step = start_step
     steps_g = tuple(range(1, a.o1_k + 1))
     dev_type = "cuda" if device == "cuda" else "cpu"
+    t3_alpha_applied = None
     for step in range(start_step + 1, a.steps + 1):
+        # ⛔ F-9's curriculum refresh comes BEFORE the draw, not after. With it
+        # after, every step samples under the PREVIOUS step's exponent and the
+        # final update is never used at all — an off-by-one that would have
+        # been invisible in the logs, because the alpha printed and the alpha
+        # drawn under would still both be "correct" one step apart.
+        # ⭐ Recompute only when the exponent actually MOVES (3 dp): the ramp is
+        # continuous but the weights are a power over every window in the
+        # corpus, so a per-step refresh would recompute an unchanged vector.
+        # `progress` runs over the WHOLE run, not the resumed remainder, so a
+        # resumed run re-enters the curriculum where it left off.
+        if t3_curr is not None:
+            prog = min(1.0, max(0.0, step / max(1, a.steps)))
+            al = round(t3_curr.alpha_at(prog), 3)
+            if al != t3_alpha_applied:
+                sample.weights = t3_curr.weights_at(t3_scores, prog)
+                t3_alpha_applied = al
         if t5_partner:
             # HALF the batch is anchors, half their +lag partners, so total
             # compute and --batch are unchanged; what halves is the number of
@@ -3432,6 +3881,27 @@ def train(a) -> dict:
                     tgt = stack.layer_targets(zf, o_t, o_s)
                     batch[key] = tgt["z_tac" if key.startswith("z_tac")
                                      else "z_str"]
+        # ---- F-11 / S1: the MULTI-TICK strategic targets --------------
+        # One encoded strategic latent per tick, at t + k*stride_str. Built in
+        # ONE encoder pass over the K future frames (the same batching
+        # discipline the `need_k` block above uses — a Python loop over K
+        # encodes would waste the batch dimension the GPU exists for).
+        # ⛔ Under no_grad and via `layer_targets`, exactly like the k=1
+        # target: the strategic TARGET is never a gradient path, or the loss
+        # would train the encoder to make its own target easy.
+        if w_stage.w_s1_multi:
+            kk = int(a.s1_multi_k)
+            stride = stack.cfg.stride_str
+            with torch.no_grad():
+                idx_k = [k * stride - 1 for k in range(1, kk + 1)]
+                ffk = b["future_frames"][:, idx_k]
+                fb, fk = ffk.shape[:2]
+                flat = ffk.reshape(fb * fk, *ffk.shape[2:])
+                zf = stack.readout(stack.encoder(flat))
+                o_t = None if stack.cfg.shared_encoder else                     stack.readout_tac(stack.encoder_tac(flat))
+                o_s = None if stack.cfg.shared_encoder else                     stack.readout_str(stack.encoder_str(flat))
+                zs = stack.layer_targets(zf, o_t, o_s)["z_str"]
+                batch["z_str_multi_target"] = zs.reshape(fb, fk, -1)
         # ⛔ `or w_stage.w_anchor`: the ANCHOR_GOAL label is the SAME tensor's
         # endpoint, and the anchor objective is deliberately runnable with
         # λ_plan OFF (that is the attributable arm). Without this the target
@@ -4353,6 +4823,45 @@ def build_parser() -> argparse.ArgumentParser:
                          "(5 = 0.5 s at the default clocks)")
     ap.add_argument("--t5-w-kappa", type=float, default=1.0,
                     help="relative weight of the curvature half vs accel")
+    # ---- F-11 / catalog S1 — MULTI-TICK STRATEGIC ROLLOUT ------------------
+    ap.add_argument("--w-s1-multi", type=float, default=0.0,
+                    help="weight on the F-11 multi-tick strategic rollout. "
+                         "0.0 = absent. ZERO new parameters (it re-rolls "
+                         "predictor_str/act_head_str, both already layer_str). "
+                         "In force in S-S/S-J only.")
+    ap.add_argument("--s1-multi-k", type=int, default=2,
+                    help="strategic ticks to roll (K). K=1 IS `--w-s1` and is "
+                         "REFUSED. ⛔ CORPUS-LIMITED: a K-tick roll needs "
+                         "max_horizon = K*stride_str, and windows/episode is "
+                         "frames-window-K*stride_str. On the 120-frame cache "
+                         "that is 114-20K, so K<=5 (10 s) and K=4 (8 s) "
+                         "already costs 64%% of the windows. The catalog's "
+                         "8-30 s band is NOT reachable on this corpus — see "
+                         "`reachable_strategic_ticks`.")
+    # ---- F-9 / catalog T3 — THE INTERACTION CURRICULUM ---------------------
+    ap.add_argument("--t3-scores", type=str, default="",
+                    help="path to the per-window T3 score artifact (a torch "
+                         ".pt holding {'scores': [n_windows], 'provenance': "
+                         "{...}}), produced by scoring the corpus with the P8 "
+                         "occupancy readout. ⛔ The provenance stamp is "
+                         "MANDATORY: the score is label-derived (the P8 "
+                         "decoder trains on the obstacle join), and a "
+                         "label-derived SAMPLER input is admissible only as a "
+                         "DECLARED data mix.")
+    ap.add_argument("--t3-alpha-start", type=float, default=-1.0,
+                    help="curriculum exponent at step 0. NEGATIVE = biased "
+                         "towards FREE FLOW, which is what 'free-flow -> "
+                         "dense' means; 0 = uniform.")
+    ap.add_argument("--t3-alpha-end", type=float, default=1.0,
+                    help="curriculum exponent after warmup (biased towards "
+                         "dense interaction). Must be >= --t3-alpha-start.")
+    ap.add_argument("--t3-warmup-frac", type=float, default=0.5,
+                    help="fraction of training over which alpha ramps "
+                         "start -> end; held at end afterwards")
+    ap.add_argument("--t3-floor", type=float, default=0.25,
+                    help="weight floor; MUST be > 0 (a negative exponent on a "
+                         "zero floor is infinite, and floor>0 is what keeps "
+                         "every window reachable = the parity invariant)")
     # ---- E-ENC arm (§0 Q1) -------------------------------------------------
     ap.add_argument("--f-hidden-tac", type=int, default=512,
                     help="FTac residual-MLP hidden width, tactical layer")
@@ -4687,6 +5196,63 @@ def preflight(a) -> list[str]:
     _t5lag = int(getattr(a, "t5_lag", 0))
     if _t5lag < 0:
         problems.append(f"--t5-lag {_t5lag} must be >= 0 (0 = stride_tac)")
+    # ---- F-11 / S1 multi-tick strategic rollout ----------------------------
+    _ws1m = float(getattr(a, "w_s1_multi", 0.0))
+    _k = int(getattr(a, "s1_multi_k", 2))
+    if _ws1m and _k < 2:
+        problems.append(
+            f"--w-s1-multi {_ws1m} with --s1-multi-k {_k}: at K=1 the "
+            f"multi-tick roll IS `--w-s1` (s1_latent) exactly — a second "
+            f"weight on an existing loss, advertised as a new capability. "
+            f"K >= 2 or use --w-s1.")
+    if _ws1m and a.stage in ("S-W", "S-T"):
+        problems.append(
+            f"--w-s1-multi {_ws1m} in {a.stage}: `for_stage({a.stage!r})` "
+            f"zeroes it because layer_str (predictor_str / act_head_str) is "
+            f"FROZEN there — the launch line would advertise a term that "
+            f"trains nothing. F-11 is an S-S (or S-J) measure.")
+    if _ws1m and _k >= 6:
+        # ⛔ NOT a style warning: at stride_str 20 and window 6, K=6 needs 120
+        # future frames and a 120-frame episode yields t_max = 120-6-120 < 0,
+        # i.e. ZERO windows. The corpus-side guard refuses with the realised
+        # numbers; this one refuses before the corpus even mounts.
+        problems.append(
+            f"--s1-multi-k {_k}: at the live geometry (window 6, stride_str "
+            f"20, 120-frame cache) windows/episode is 114-20K, so K>=6 yields "
+            f"ZERO windows and K<=5 (10 s) is the ceiling. ⚠️ The catalog's "
+            f"8-30 s band (4-15 ticks) is NOT reachable on this corpus — only "
+            f"its bottom edge K=4 is, at a 64%% window cost. This needs a "
+            f"longer re-extraction of the SAME episode list (PI decision D4), "
+            f"not a bigger K.")
+    # ---- F-9 / T3 interaction curriculum -----------------------------------
+    _t3 = str(getattr(a, "t3_scores", "") or "")
+    _t3_declared = (float(getattr(a, "t3_alpha_start", -1.0)) != -1.0
+                    or float(getattr(a, "t3_alpha_end", 1.0)) != 1.0
+                    or float(getattr(a, "t3_warmup_frac", 0.5)) != 0.5)
+    if _t3_declared and not _t3:
+        problems.append(
+            "--t3-alpha-*/--t3-warmup-frac given without --t3-scores: the "
+            "curriculum has nothing to rank, so the launch line would "
+            "advertise a curriculum the run does not have.")
+    if _t3 and float(getattr(a, "t3_floor", 0.25)) <= 0:
+        problems.append(
+            f"--t3-floor {a.t3_floor} must be > 0: a negative curriculum "
+            f"exponent on a zero floor makes a zero-score window infinitely "
+            f"likely, and floor>0 is what keeps every window reachable — "
+            f"re-selecting the corpus is the one thing parity forbids.")
+    if _t3 and float(getattr(a, "t3_alpha_end", 1.0)) < float(
+            getattr(a, "t3_alpha_start", -1.0)):
+        problems.append(
+            f"--t3-alpha-end {a.t3_alpha_end} < --t3-alpha-start "
+            f"{a.t3_alpha_start}: that is the catalog row REVERSED (dense -> "
+            f"free flow). If that arm is wanted it must be declared as such, "
+            f"not reached by swapping two numbers.")
+    if _t3 and float(getattr(a, "o4_alpha", 0.0)) > 0:
+        problems.append(
+            f"--t3-scores with --o4-alpha {a.o4_alpha}: two saliency levers on "
+            f"one sampling axis is not attributable to either. O4 is EGO "
+            f"kinematics, T3 is MULTI-AGENT interaction. ⚠️ --o4-alpha "
+            f"DEFAULTS TO 1.0 — a T3 arm must pass --o4-alpha 0 explicitly.")
     # ⛔ THE ACK FLAG'S DEST. ``--i-know-this-is-the-control-arm`` is registered
     # in ``main`` with ``dest="control_arm_ack"``, so the namespace NEVER has an
     # attribute named ``i_know_this_is_the_control_arm`` — the original getattr

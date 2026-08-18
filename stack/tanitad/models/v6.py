@@ -129,6 +129,9 @@ __all__ = [
     "time_to_reach", "time_to_reach_weights", "half_weight_distance_m",
     "readout_grid_ranges", "sample_cell_block_mask", "near_field_band_mask",
     "kinematic_saliency", "saliency_weights", "InteractionSampler",
+    # ⭐ F-9 / catalog T3 — the interaction CURRICULUM (zero parameters)
+    "multi_agent_kinematic_entropy", "T3Curriculum", "t3_rank_control",
+    "T3_MASS_SCALE", "T3_CONTROL_MIN_N",
     "spectrum_report", "SpectrumAccumulator", "o6_rank_verdict",
     "O6_ADMISSIBLE_CEILING", "O6_RANK_FLOOR",
     # X4 — the O6 spectrum pattern applied PER LAYER (op / tac / str)
@@ -555,6 +558,243 @@ class InteractionSampler:
             out.append(pool[j])
             gi += 1
         return out
+
+
+# ============================================================================
+# F-9 / catalog T3 — the INTERACTION CURRICULUM primitives
+#
+# Spec, two independent locations (established BEFORE a line was written):
+#   * `…/2026-08-07-hierarchical-wm-redesign/V6_TRAINING_MEASURES.md:66` —
+#     *"T3 | interaction curriculum: windows ranked by MULTI-AGENT kinematic
+#     entropy measured from the O-layer's own predicted occupancy
+#     (self-supervised, after O2/O3 make it non-degenerate) | curriculum from
+#     free-flow -> dense interaction | P7 calibration rho >=0.3 held on
+#     interaction-rich strata, not just pooled"*
+#   * `…/2026-08-16-diagram-conformance/DIAGRAM_CONFORMANCE.md:59` — *"O4 is
+#     the ego-kinematic version only; T3's multi-agent extension needs the P8
+#     occupancy readout in the loop. Fix F-9 (gated on P8 maturity)"*, and
+#     `:214` — *"F-9 | P3 | T3 interaction curriculum (multi-agent entropy from
+#     the P8 occupancy readout) — gated on P8 maturity."*
+#
+# ⛔ WHAT T3 IS *NOT*: it is not O4. O4 scores EGO kinematics from the action
+# channels; T3 scores OTHER AGENTS' motion from the O-layer's own predicted
+# occupancy, and it is a CURRICULUM (a schedule) where O4 is a static weight.
+# Both halves of that sentence are load-bearing and both are built here.
+#
+# ⭐ ZERO PARAMETERS. Nothing below is an `nn.Module`; the default build is
+# untouched at 87,893,449 params / 405 keys (MEASURED, see the test suite).
+# ============================================================================
+
+#: The occupancy MASS (summed absolute per-cell change over the rollout) at
+#: which the mass gate reaches 1 - 1/e. Units are "raster cells of occupancy
+#: probability changed", so this is a scene-scale constant, not a tuning knob.
+T3_MASS_SCALE: float = 4.0
+
+#: ⛔ Below this many windows :func:`t3_rank_control` REFUSES a verdict.
+#: Same discipline as ``T2_CONTROL_MIN_N``: a separation ratio quoted without
+#: its ``n`` is noise wearing a number's clothes (MEASURED for T2 — at n=4 the
+#: null ratio spanned 0.397-3.361).
+T3_CONTROL_MIN_N: int = 32
+
+
+def multi_agent_kinematic_entropy(occ: Tensor, *,
+                                  mass_scale: float = T3_MASS_SCALE,
+                                  eps: float = 1e-12) -> Tensor:
+    """Catalog T3's ranking signal: **multi-agent kinematic entropy** of an
+    occupancy rollout.
+
+    ``occ`` — ``[B, K, H, W]`` occupancy **probabilities** (not logits) over
+    ``K >= 2`` ticks, i.e. ``sigmoid(decode(z_hat_{t+k}))`` from the P8 readout
+    (``scripts/train_p8_occupancy.py``). Returns ``[B]`` in ``[0, 1]``.
+
+    The definition, and why each piece is there:
+
+    1. **kinematic** — the signal is the per-cell occupancy CHANGE across
+       consecutive ticks, never a static snapshot. A car parked at the kerb is
+       not an interaction; a car crossing the ego's path is.
+    2. **multi-agent** — Shannon entropy over cells of that change mass,
+       normalised by ``log(H*W)``. One agent moving concentrates the mass
+       (low entropy); several agents moving in several places spread it (high).
+    3. ⛔ **the MASS GATE, which is the whole reason this is not a one-liner.**
+
+    ⛔ **THE DEGENERATE READING, MEASURED AND REJECTED.** The obvious
+    implementation — Shannon entropy of the normalised occupancy raster — is
+    **MAXIMAL ON AN EMPTY ROAD**. Normalising a near-zero field divides noise
+    by noise and yields a near-UNIFORM distribution, whose entropy is the
+    maximum the functional can return. A curriculum ranked by it would drive
+    training *towards* empty scenes while its name said the opposite. Pinned by
+    ``test_bare_spatial_entropy_is_maximal_on_an_empty_raster`` — the failure is
+    demonstrated on the bare functional, and then shown to be absent here.
+
+    The gate ``1 - exp(-M / mass_scale)`` is **exactly 0 at zero mass**, so an
+    empty scene scores exactly 0 whatever its entropy is. This is the same
+    discipline as F-8's flat-plan control: know your functional's degenerate
+    input before you rank a corpus with it.
+
+    ⚠️ **This function does NOT decide admissibility.** The occupancy raster it
+    consumes comes from a decoder trained on the obstacle join — a LABEL path.
+    Using it as a training-time SELECTOR is admissible only as a declared data
+    mix (the F-10 precedent: *"admissible for the data MIX (it is not a model
+    input) but must be declared"*, DIAGRAM_CONFORMANCE.md:57). The declaration
+    is enforced trainer-side by the provenance stamp, not here.
+    """
+    if occ.dim() != 4:
+        raise ValueError(
+            f"⛔ occupancy must be [B, K, H, W], got {tuple(occ.shape)}. A "
+            f"[B, H, W] snapshot has no kinematics to measure — T3's signal is "
+            f"the CHANGE across ticks, and a single tick cannot express one.")
+    b, k, h, w = occ.shape
+    if k < 2:
+        raise ValueError(
+            f"⛔ multi-agent KINEMATIC entropy needs K >= 2 ticks, got K={k}. "
+            f"With one tick the change field is empty and the score would be "
+            f"0 for every window — a ranking signal that ranks nothing.")
+    lo, hi = float(occ.min()), float(occ.max())
+    if lo < -1e-4 or hi > 1.0 + 1e-4:
+        raise ValueError(
+            f"⛔ occupancy must be PROBABILITIES in [0, 1], got [{lo:.4g}, "
+            f"{hi:.4g}] — this looks like raw logits. P8 emits logits; apply "
+            f"`sigmoid` at the call site. Entropy of a logit field is not a "
+            f"quantity anyone specified.")
+    if mass_scale <= 0:
+        raise ValueError(f"mass_scale must be > 0, got {mass_scale}")
+    o = occ.float()
+    # 1. kinematics: absolute per-cell change, accumulated over the rollout
+    m = (o[:, 1:] - o[:, :-1]).abs().sum(dim=1).reshape(b, h * w)   # [B, HW]
+    mass = m.sum(dim=-1)                                            # [B]
+    # 2. entropy of WHERE the motion is, in [0, 1]
+    p = m / mass.clamp_min(eps).unsqueeze(-1)
+    ent = -(p * (p + eps).log()).sum(dim=-1) / math.log(h * w)
+    # 3. the mass gate — exactly 0 when nothing moved, so an empty raster
+    #    cannot inherit the maximal entropy of normalised noise
+    gate = 1.0 - torch.exp(-mass / mass_scale)
+    return (gate * ent).clamp(0.0, 1.0)
+
+
+@dataclass(frozen=True)
+class T3Curriculum:
+    """Catalog T3's *"curriculum from free-flow -> dense interaction"*.
+
+    Maps training ``progress`` in ``[0, 1]`` to the exponent of the same
+    ``(floor + s) ** alpha`` weighting O4 uses, ramped linearly from
+    ``alpha_start`` to ``alpha_end`` over the first ``warmup_frac`` of training
+    and held at ``alpha_end`` thereafter.
+
+    ⭐ **WHY A SIGNED EXPONENT, AND WHY THIS IS NOT** :func:`saliency_weights`.
+    Read literally, *"free-flow -> dense"* is the ordinary easy->hard
+    curriculum: **start biased towards free flow**, end biased towards dense
+    interaction. Biasing *towards* the low-score end requires ``alpha < 0``, and
+    :func:`saliency_weights` refuses that. **The O4 guard was NOT weakened to
+    make room for T3** — this is T3's own weighting, so O4's contract is
+    exactly what it was. (F-7's lesson: do not edit a shared module to fit a new
+    cell into it.)
+
+    ``alpha_start = 0`` is *uniform*, not free-flow-biased; the default
+    ``-1.0 -> +1.0`` is the honest reading of the catalog row. A run wanting the
+    "no curriculum" control sets ``alpha_start == alpha_end`` and gets a static
+    weighting — which is O4's shape with T3's score, and is a legitimate arm.
+
+    ⛔ ``floor > 0`` is REQUIRED here, not merely advisable: with ``alpha < 0``
+    a zero floor makes the weight of a zero-score window **infinite**. It is
+    also what keeps every window reachable at every alpha, so the curriculum
+    reweights the draw and never re-selects the corpus (the parity invariant).
+    """
+
+    alpha_start: float = -1.0
+    alpha_end: float = 1.0
+    warmup_frac: float = 0.5
+    floor: float = 0.25
+
+    def __post_init__(self) -> None:
+        if not (0.0 < self.warmup_frac <= 1.0):
+            raise ValueError(
+                f"⛔ warmup_frac must be in (0, 1], got {self.warmup_frac}. At "
+                f"0 the ramp is a step change at step 0, which is not a "
+                f"curriculum; above 1 it never reaches alpha_end at all.")
+        if self.floor <= 0:
+            raise ValueError(
+                f"⛔ floor must be > 0, got {self.floor} — with alpha < 0 a "
+                f"zero floor makes a zero-score window infinitely likely, and "
+                f"a floor of 0 also stops every window being reachable, which "
+                f"is the one thing parity forbids.")
+        if self.alpha_end < self.alpha_start:
+            raise ValueError(
+                f"⛔ alpha_end ({self.alpha_end}) < alpha_start "
+                f"({self.alpha_start}) is the catalog row REVERSED: it "
+                f"curricula from dense interaction towards free flow. If that "
+                f"arm is wanted it must be declared as such, not reached by "
+                f"swapping two numbers.")
+
+    def alpha_at(self, progress: float) -> float:
+        """The exponent in force at ``progress`` (0 = step 0, 1 = last step)."""
+        if not (0.0 <= progress <= 1.0):
+            raise ValueError(f"progress must be in [0, 1], got {progress}")
+        f = min(1.0, progress / self.warmup_frac)
+        return float(self.alpha_start + f * (self.alpha_end - self.alpha_start))
+
+    def weights_at(self, scores: Tensor, progress: float) -> Tensor:
+        """Per-window sampling weights at ``progress``, normalised to sum 1."""
+        s = scores.float().clamp_min(0.0)
+        w = (self.floor + s) ** self.alpha_at(progress)
+        return w / w.sum().clamp_min(1e-12)
+
+
+def t3_rank_control(scores: Tensor, dense: Tensor, *,
+                    min_n: int = T3_CONTROL_MIN_N) -> dict:
+    """⛔ **The trivial-proxy control for T3's ranking signal.**
+
+    ``scores`` ``[n]`` T3 entropies, ``dense`` ``[n]`` bool — the independent
+    "this window really is interaction-rich" judgement (e.g. the obstacle-join
+    agent count above a threshold, held out of the scorer). Returns the mean
+    score on each side, their ratio, both SEMs, and a ``verdict``.
+
+    ⭐ **WHY IT EXISTS.** C92: a headline died because a readout was echoing ego
+    speed. "The curriculum weighted some windows more" is **not** evidence that
+    T3 found interaction — the ratio is. And the specific failure this catches
+    is the one :func:`multi_agent_kinematic_entropy` documents: a functional
+    that is maximal on an empty road would come back with ``ratio < 1`` here,
+    i.e. **inverted**, while every other log line looked healthy.
+
+    ⛔ **REFUSES below ``min_n`` per side.** MEASURED for the sibling T2 control
+    at random init, where the true ratio is 1 by construction: at n=4 the null
+    ratio spanned **0.397-3.361**. A verdict from a handful of windows is noise.
+    """
+    if scores.dim() != 1 or dense.dim() != 1:
+        raise ValueError(f"scores {tuple(scores.shape)} and dense "
+                         f"{tuple(dense.shape)} must both be 1-D")
+    if scores.shape != dense.shape:
+        raise ValueError(f"scores {tuple(scores.shape)} and dense "
+                         f"{tuple(dense.shape)} must align 1:1")
+    d = dense.bool()
+    s = scores.float()
+    n_d, n_f = int(d.sum()), int((~d).sum())
+    out = {"n_dense": n_d, "n_free": n_f, "min_n": int(min_n)}
+    if n_d < min_n or n_f < min_n:
+        out["verdict"] = "REFUSED_TOO_FEW"
+        out["_note"] = (f"⛔ need >= {min_n} windows per side, have "
+                        f"dense={n_d} free={n_f}. A ratio quoted without its n "
+                        f"is not a verdict.")
+        return out
+    sd, sf = s[d], s[~d]
+    m_d, m_f = float(sd.mean()), float(sf.mean())
+    out |= {
+        "mean_dense": m_d, "mean_free": m_f,
+        "sem_dense": float(sd.std(unbiased=True) / math.sqrt(n_d)),
+        "sem_free": float(sf.std(unbiased=True) / math.sqrt(n_f)),
+        "ratio": m_d / m_f if m_f > 0 else float("inf"),
+    }
+    if m_f <= 0 and m_d <= 0:
+        out["verdict"] = "DEGENERATE_ALL_ZERO"
+        out["_note"] = ("⛔ every window scored 0 — the signal ranks nothing. "
+                        "Check the occupancy rollout is not empty.")
+    elif out["ratio"] < 1.0:
+        out["verdict"] = "INVERTED"
+        out["_note"] = ("⛔ free-flow windows score HIGHER than dense ones. "
+                        "This is the empty-road-is-maximal-entropy failure; a "
+                        "curriculum on this signal trains the opposite of T3.")
+    else:
+        out["verdict"] = "OK"
+    return out
 
 
 # ============================================================================

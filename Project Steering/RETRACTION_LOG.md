@@ -6554,3 +6554,85 @@ verified, not asserted.** C113's escalation #3 (the 3 `test_v6_stage_init_introd
    or epcache; closing it needs records carrying their own provenance — a schema change.
 4. **C113's plaintext id lists are now LOad-BEARING:** this work depends on them as test evidence,
    so **deleting them breaks the pin.** That raises the cost of the §9 "digests only" decision.
+
+---
+
+## C119 — "INTERACTION ENTROPY" IS MAXIMAL ON AN EMPTY ROAD, AND F-11's SPECIFIED HORIZON IS ARITHMETICALLY UNREACHABLE (2026-08-18, F-9/F-11)
+
+### ⭐⭐ The curriculum would have driven training BACKWARDS
+
+**MEASURED:** the naive reading of *"multi-agent kinematic entropy"* — bare spatial entropy over the
+agent raster — reads **0.9649 on an EMPTY road against 0.2500 on a DENSE one. Inverted, 3.9×.**
+
+⇒ ⛔ **An interaction curriculum built on it would have up-weighted EMPTY SCENES** — the exact
+opposite of its stated purpose, and **it would have looked like it was working**: the score rises,
+the sampler follows it, and nothing in any log says the scenes are getting emptier.
+
+⇒ **ROOT-CAUSE CLASS: A PROXY WHOSE EXTREME IS THE DEGENERATE CASE.** Entropy is maximal at
+*uniformity*, and an empty raster is perfectly uniform. **The metric was never wrong about entropy —
+it was wrong about which end of it we wanted.** ⇒ **RULE: before a score drives sampling, EVALUATE
+IT AT THE DEGENERATE INPUT.** *(Same family as C115's contrastive-over-an-invariant and F-8's
+zero-at-init: a term that is silently satisfied by the thing you were trying to avoid.)*
+
+The shipped mass-gated functional reads **0.0064 / 0.1863 / 0.4886** (empty / one agent / four
+agents), and **an exactly-empty raster scores exactly 0.**
+
+### ⛔ F-11: the mechanism is expressible; the SPECIFIED HORIZON is not — and this is arithmetic
+
+`t_max = frames − window − max_horizon`, and a K-tick roll needs `max_horizon = K · stride_str`, so
+windows/episode is **114 − 20K** on the 120-frame cache:
+
+| K | horizon | cost |
+|---|---|---|
+| 4 | 8 s | **−64 % of windows** |
+| 5 | 10 s | **−85 %** |
+| **6** | **12 s** | ⛔ **ZERO windows** |
+
+**The catalog asks for 4–15 ticks; only 4 and 5 exist. 30 s is longer than a 12 s episode.**
+⭐ The **K=1 row (94 windows/ep) reproduces an independently MEASURED figure** in
+`PI_DECISIONS_2026-08-12.md` §D4 — the input is corroborated, not assumed.
+⛔ **And past `max_k` this is a PARITY BREAK, not an error:** short episodes drop to **zero windows
+SILENTLY**. The guard therefore refuses on the shortest episode **and** on any non-zero drop-out
+count. ⏳ **Diagram-owner/PI decision: amend the horizon band or change the cache.**
+
+### ⭐ The C115 question was ANSWERED, not assumed
+
+**The invariance is in the LATENT; the temporal structure F-11 needs is in the PREDICTOR.**
+`predictor_str` is a genuine `z(t) → z(t+stride)` map, so a multi-tick roll is that map **composed
+with itself** — the same shape `o5_rollout` already uses one layer down. **Nothing asks a latent to
+integrate a window.** ⇒ Expressible, and built. *(The C115 brief was written expecting F-11 to be
+the casualty; the sensitivity check moved the finding to F-9 instead. That is the check working.)*
+
+### ⛔ F-9's own gate row is not computable today
+
+T3's gate is *"P7 calibration ρ ≥ 0.3 held on **interaction-rich strata**, not just pooled"*. **Two
+probes:** `w7_roll_rerank.py` has **zero** stratification support, and a repo-wide sweep across
+`stack/` and `taniteval/` finds none. ⇒ **A per-stratum P7 is a PREREQUISITE for adjudicating any T3
+arm** — a separate work item, and until it exists the cell cannot be gated even if trained.
+
+### Construction facts
+
+**Default build unchanged: 87,893,449 params / 405 keys** — measured at top and tail, and **by
+building through the real `build_stack_from_args` path four ways** (default / F-9 / F-11 / both):
+**delta (0, 0) every time.** Both cells are **structurally zero-parameter**, so the live
+tensor-strict v6F resume is untouched.
+⭐ **Neither needs an insertion point** — the F-8 case, not the F-7 case: zero keys means nothing for
+`STAGE_MAY_INTRODUCE` to adjudicate, and `test_v6_stage_init_introduction.py` needed **no**
+extending. **The `06b8782` class cannot apply** — neither touches `MODULE_GROUPS` or
+`_GROUP_PREFIXES`, and a zero-parameter loss has no mechanism to move a stage's trainable set.
+
+⚠️ **F-11's degenerate solution is the IDENTITY**, and the control is sharper than a threshold: on
+slow-drift targets the HOLD rollout **beats** the untrained roll, and against **`z + noise` the
+identity is BAYES-OPTIMAL and no predictor can win** ⇒ **the control is only informative once the
+latent has learnable dynamics**, which is stated rather than assumed. Both controls **refuse below
+n = 32.**
+⚠️ **A defect in the agent's own wiring, caught and fixed:** F-9's curriculum refresh was placed
+**after** the draw, so every step sampled under the **previous** step's exponent — **invisible in any
+log.** Pinned against the source.
+⚠️ **The full `stack` run was done TWICE and only the second counts** (4082 → **4084**): the first
+predated the ordering fix. *Reporting the run that preceded your own fix is the torn-snapshot class
+(C114) in a self-inflicted form.*
+
+**Suites:** `stack` **4084 passed / 7 skipped / 2 xfailed**, `taniteval` **1136 passed**, new suites
+**40 (F-9) + 29 (F-11)**. **Neither cell has been trained — no claim is made that either improves
+anything.**
