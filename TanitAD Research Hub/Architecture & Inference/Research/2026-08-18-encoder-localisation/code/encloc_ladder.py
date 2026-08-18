@@ -250,7 +250,7 @@ def pool_tokens(tok: torch.Tensor, kernel, th: int, tw: int) -> torch.Tensor:
 
 # ---------------------------------------------------------------------------
 def build_features(rows, arm, seeds, th, tw, d_model, device, oracle,
-                   oracle_amp, oracle_u, oracle_R, chunk=48):
+                   oracle_amp, oracle_u, oracle_R, chunk=48, block_diag=None):
     """-> {seed: X [n, RP_DIM] float64}. One pooling pass, all seeds."""
     kernel = POOL_ARMS[arm]
     _ARM_NOW[0] = arm
@@ -267,10 +267,20 @@ def build_features(rows, arm, seeds, th, tw, d_model, device, oracle,
     # ⚠️ Seeds are INDEPENDENT BY CONSTRUCTION (`make_projection` is seeded on
     # [BASE, seed, arm]), so this loop order changes SPEED and NOT ONE NUMBER.
     for s in seeds:
-        P = make_projection(n_units, d_model,
-                            [PROJ_SEED_BASE, s, ARM_SEED_IDX[arm]],
-                            device)
-        X = np.empty((len(rows), RP_DIM), dtype=np.float64)
+        if block_diag:
+            # [d_model, D] shared by ALL cells -> effective output n_units*D.
+            rng = np.random.default_rng([PROJ_SEED_BASE, s,
+                                         ARM_SEED_IDX[arm], 977])
+            Pc = torch.from_numpy(rng.standard_normal(
+                (d_model, int(block_diag)), dtype=np.float32)).to(device).half()
+            P = None
+        else:
+            P = make_projection(n_units, d_model,
+                                [PROJ_SEED_BASE, s, ARM_SEED_IDX[arm]],
+                                device)
+        X = np.empty((len(rows),
+                      n_units * int(block_diag) if block_diag else RP_DIM),
+                     dtype=np.float64)
         for s0 in range(0, len(rows), chunk):
             sl = rows[s0:s0 + chunk]
             tk = torch.stack([r["tokens"].float() for r in sl])   # [C,N,D]
@@ -279,10 +289,17 @@ def build_features(rows, arm, seeds, th, tw, d_model, device, oracle,
                     tk[j] = plant_oracle(tk[j], oracle_u[s0 + j], oracle,
                                          oracle_amp, th, tw, oracle_R)
             tk = tk.to(device).half()
-            X[s0:s0 + len(sl)] = (pool_tokens(tk, kernel, th, tw) @ P
-                                  ).float().cpu().numpy()
+            pooled = pool_tokens(tk, kernel, th, tw)
+            if block_diag:
+                # [C, n_units, d_model] @ [d_model, D] -> [C, n_units*D]
+                cellwise = pooled.reshape(pooled.shape[0], n_units, d_model)
+                X[s0:s0 + len(sl)] = (cellwise @ Pc).reshape(
+                    pooled.shape[0], -1).float().cpu().numpy()
+            else:
+                X[s0:s0 + len(sl)] = (pooled @ P).float().cpu().numpy()
         out[s] = X
         del P
+        Pc = None
         if device.type == "cuda":
             torch.cuda.empty_cache()
     return out, n_units
@@ -433,6 +450,26 @@ def main(argv=None) -> int:
     ap.add_argument("--legacy-penalised-intercept", action="store_true",
                     help="⚠️ REPRODUCTION GATE ONLY: run the INCUMBENT biased "
                          "solve (intercept_col=None). Never a finding.")
+    ap.add_argument("--block-diag-proj", type=int, default=None,
+                    metavar="D_READOUT",
+                    help="⭐ E-ADAPT-0. Replace the DENSE random projection with "
+                         "the SHAPE REF-A's adapter actually has: ONE shared "
+                         "random [d_model -> D_READOUT] map applied to EVERY "
+                         "pooled cell, concatenated (block-diagonal, weights "
+                         "TIED across cells). The dense projection is strictly "
+                         "MORE expressive, so the dense result is only an UPPER "
+                         "BOUND on what `SpatialGridReadout`'s per-cell "
+                         "Linear(d_model->d_readout) can preserve. This makes "
+                         "the operator exact up to the weights being random "
+                         "rather than trained.")
+    ap.add_argument("--dump-preds", default=None,
+                    help="⭐ pickle the eval-row PREDICTIONS + targets. The "
+                         "within-run `deltas_vs_p40` cannot compare arms that "
+                         "live in DIFFERENT caches (the geometry arms do), and "
+                         "an unpaired difference of two bootstrap CIs is not a "
+                         "paired test. Dumping predictions lets the paired "
+                         "episode-cluster bootstrap run ACROSS caches, which is "
+                         "the estimator the pre-registration commits to.")
     ap.add_argument("--gate-json", default=None,
                     help="a banked ll_*.json; asserts the `cells` arm at the "
                          "first proj seed reproduces its per-target numbers")
@@ -574,7 +611,8 @@ def main(argv=None) -> int:
         else:
             feats, n_units = build_features(sub, arm, a.proj_seeds, th, tw,
                                             d_model, dev, a.oracle, amp,
-                                            oracle_u, oracle_R)
+                                            oracle_u, oracle_R,
+                                            block_diag=a.block_diag_proj)
             n_raw = n_units * d_model
         if a.randomise_features is not None:
             g = np.random.default_rng(a.randomise_features)
@@ -731,6 +769,16 @@ def main(argv=None) -> int:
               f"{'PASS' if not bad else 'FAIL ' + repr(bad[:6])}", flush=True)
 
     res["wall_s"] = round(time.time() - t0, 1)
+    if a.dump_preds:
+        import pickle
+        Path(a.dump_preds).parent.mkdir(parents=True, exist_ok=True)
+        with open(a.dump_preds, "wb") as _fh:
+            pickle.dump({"preds": preds, "scored": scored,
+                         "label": a.label, "cache": str(a.cache),
+                         "encloc_arm": meta.get("encloc_arm"),
+                         "token_grid": [th, tw], "d_model": d_model,
+                         "proj_seeds": list(a.proj_seeds)}, _fh)
+        print(f"[encloc] dumped predictions -> {a.dump_preds}", flush=True)
     Path(a.out).parent.mkdir(parents=True, exist_ok=True)
     Path(a.out).write_text(json.dumps(res, indent=1), "utf-8")
     print(f"[er10] wrote {a.out}  {res['wall_s']} s", flush=True)

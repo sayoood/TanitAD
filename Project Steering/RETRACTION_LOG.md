@@ -6889,3 +6889,69 @@ is worse than "val-leaked": it NEVER ENTERED THE DRIVING BLOCK AT ALL.**
 single arm that separates **capacity** from **representation**. Three outcomes committed in advance.
 ⭐ **Run at 5 k first**: REF-A's banked 5 k milestone makes it **immediately paired-comparable at
 ~1/6 the cost.** Riders in order: `full_relaxed` SIGReg (cheapest), then h15 + 3-level grounding.
+
+---
+
+## C123 — LINEAR READABILITY OF A FROZEN REPRESENTATION DOES **NOT** PREDICT DRIVING — the information was IN REF-A's features, at ≥C104 quality, and REF-A still drove worst (2026-08-18, E-GEOM/E-ADAPT-0)
+
+**NARROWED — C104's interpretation.** C104's measurement stands (the readout gap is real). **Its
+reading — "the encoder/objective is the constraint" — must be narrowed to a READOUT claim**, because
+the causal chain *"better-reading encoder ⇒ better driving"* is now refuted by our own strongest
+test of it.
+
+### The briefed premise failed its scope check — five ways C104's DINOv2 ≠ REF-A's DINOv2
+
+Same weights, **different tensor**: C104 ran at **224×560, 120°, cylindrical, 3 sub-frames (d 2304),
+16×40 grid, 130 lead-enriched clips, `parity: False`**; REF-A ran at **224×224, 51.39°
+(2·atan(128/266)), f-theta crop, one frame (d 768), 16×16 grid, val40.** Plus three brief
+corrections: **both endpoints are `taniteval.driving/tier0`** (the "5.1× worse at T1" I relayed was
+NOT T1 — the tier name collision again); the deployed adapter was **`TemporalGridAdapter`**, not the
+one the brief named; and `windows_refa-dinov2.pt` holds **trajectories only** — rungs 2–3 were never
+computable from it.
+
+### E-GEOM — geometry varied alone, everything else held; replication gate |d| = 0.000000
+
+| arm | field | frames | `ego_v0` | `lead_gap` | partial-`v0` r |
+|---|---|---|---|---|---|
+| `wide3f` (C104's condition) | 120° | 3 | 0.71733 | 0.44997 | +0.346 |
+| **`refa1f` (REF-A's condition)** | 51.4° | 1 | 0.67147 | **0.52850** | **+0.523** |
+
+⇒ ⭐ **NOTHING COLLAPSES. Under REF-A's own geometry the frozen features read the lead BETTER than
+C104's headline** (retention 0.936 / 1.175 / 2.824; no paired delta separated). The `squash1f`
+control splits field from grid: **the narrow field HELPS on every rung**; only the grid reduction
+costs anything (−9 % `ego_v0`, the one CI-separated negative). PC-LOCAL fires at **0.911** on the
+square arm, so a null could not have been instrument failure.
+
+### E-ADAPT-0 — run rather than left registered
+
+Constraining the projection to **REF-A's exact adapter shape** (one tied `Linear(768→128)` per cell)
+still reads `lead_gap` **0.4888** — above C104's headline. ⇒ **The adapter's ARCHITECTURE is
+exonerated without any checkpoint.** The lead hypothesis of the brief — "the adapter destroys it" —
+is **refuted at the architecture level.** *(What remains checkable is whether TRAINING collapsed the
+adapter — the run's own `adapter_std` monitor (`refa_train4b.py:360`) may answer that from a banked
+`metrics.json` for FREE, before anyone downloads the 1.906 GB checkpoint.)*
+
+### ⇒ THE VERDICT, AND WHAT IT DOES TO THE PROGRAMME'S REASONING
+
+**The information was present in REF-A's real features at ≥ C104 quality — and REF-A is still the
+programme's worst arm.** Converging with E-RECON-1 from the opposite side (the lead-readout
+advantage buys **nothing** on lead windows: contrast −0.0146, not separated):
+
+⇒ ⛔ **"Swap in a stronger encoder" is UNSUPPORTED by our own strongest test of it.** The readout
+ladder measures what a representation CONTAINS; driving depends on what the predictor/action
+interface can USE — and C101 already localised the closed-loop failure to the ACTION SEARCH.
+⇒ **ROOT-CAUSE CLASS: A CAPABILITY METRIC READ AS A CAUSAL LEVER.** The readout gap was real,
+sharp, and repeatedly confirmed — and none of that made it *the reason* driving is limited. Same
+family as the echo test: a number that is true of the representation, quoted as if it were true of
+the system.
+
+⚠️ **Also recorded:** the §2.5 prediction (peripheral-flow loss would hurt `ego_v0`) was
+**falsified** — killed, kept visible, and it removes a candidate explanation for REF-A's speed
+blindness. **`lead_closing` fails K1 on every un-planted arm INCLUDING C104's** — that rung is
+degenerate on both sides and must not be quoted bare. And `MODEL_REGISTRY.md`'s *"differ in exactly
+two things"* has now **misled two briefs in one day** (C122 counted four differences; geometry is a
+fifth, now measured inert).
+
+⚠️ **Reproducibility risk, escalated:** the **4.8 GB frame cache** both C104 and this result depend
+on exists **only in a temporary scratchpad** — the C117 single-disk class, in an instrument's
+dependencies.
