@@ -6636,3 +6636,78 @@ predated the ordering fix. *Reporting the run that preceded your own fix is the 
 **Suites:** `stack` **4084 passed / 7 skipped / 2 xfailed**, `taniteval` **1136 passed**, new suites
 **40 (F-9) + 29 (F-11)**. **Neither cell has been trained — no claim is made that either improves
 anything.**
+
+---
+
+## C120 — `assert_isolation` MEASURES BACKWARD GRADIENTS; ADMISSIBILITY IS A FORWARD QUESTION — AND EVERY GOAL PORT IS `detach()`ed (2026-08-18, goal-provenance audit)
+
+### ⭐⭐ The isolation guarantee is structurally blind to the ruling it is cited for
+
+`V6Stack.assert_isolation` measures **backward gradient edges**. The PI's binding
+goal/situation ruling is a **forward information** question. ⛔ **And `V6Stack.forward` routes EVERY
+downward goal port through `_cut()` = `detach()`** (`v6.py:4341`, applied at `:4698-4700`, `:4750`,
+`:4757`, `:4766`, `:4773`).
+
+⇒ ⛔ **A situation-classifier output spliced in behind any of those leaks COMPLETELY and is
+CERTIFIED CLEAN by the gradient probe.** **Demonstrated on a deliberately-wired arm, not argued:**
+`forward_information_path = True`, `backward_gradient_path = False`.
+
+⇒ **ROOT-CAUSE CLASS: A GUARANTEE STATED IN ONE DIRECTION AND RELIED ON IN THE OTHER.** `detach()`
+is *designed* to sever gradients while passing values — so the very mechanism that makes the
+isolation matrix meaningful is what makes it **blind here**. Nothing was broken; the check answers a
+different question than the one the ruling asks. *Same family as `df` on a pod and `free` on Thor —
+a correct instrument, wrong scope — but this one guards a **binding admissibility rule**.*
+
+⇒ **The repair is an INTERVENTION probe** — replace a node's value mid-forward — which is
+**detach-transparent** and distinguishes **`DIRECT_PATH` from `COMMON_ANCESTOR`**. ⭐ **A
+correlational test cannot make that distinction, and it is exactly the shared-trunk disclosure the
+ruling demands.**
+
+### Measured, per arm (6 `V6Config` arms) — the answers are good
+
+* **Every goal head is a function of `frames` alone.** `actions` reaches **no** goal node; `v0`
+  reaches **exactly one** — the unicycle `emission`. ⭐ **This VERIFIES BY COMPUTATION the prose
+  claim at `v6.py:62`** that `v0` *"enters ONLY the unicycle"*. One allowlisted edge, **pinned
+  against widening**.
+* ⭐ **The REVERSE direction — never checked before — is CLEAN.** The situation classifier's entire
+  input is `sub["img"]` (`sitclf_train.py:160`, re-read first-hand, not inherited). It is an offline
+  scorer with **zero imports** in `models/` or any trainer.
+* **Shared trunk: a shared CLASS, not a shared INSTANCE.** The situation substrate comes from a
+  **frozen v1 checkpoint's** encoder; v6 trains its own. **Common ancestor, no path** — which is the
+  disclosure the ruling asks for, stated rather than assumed.
+* ⚠️ **`tac-goal-cond` is UNPOWERED** — `cond_tac_dyn` is zero-init, so nothing can move it, and
+  **the gate exits 3 rather than calling that clean.** *Refusing to certify an untestable arm is the
+  C79 lesson applied prospectively.*
+
+### ⚠️ THE INSTRUMENT ALREADY EXISTED, WITH ZERO CALL SITES
+
+`stack/tanitad/eval/goal_admissibility.py` — **242 lines, 12 tests, flagged 12 days ago in the
+stale-blocker sweep, never called.** ⛔ **And its provenance clause intersected two HAND-WRITTEN
+LISTS OF SYMBOL NAMES** — the C112/C113 class exactly: **a non-overlap assumed from provenance
+rather than computed.** ⇒ The gap was real; it was **not where the brief placed it**. *C116's shape
+again — a correct component that nothing calls — twice in two days.*
+
+### ⚠️ Two defects in the agent's own probe, both caught and pinned
+
+⛔ **The input probe SHIPPED INERT** — it perturbed the input and then ran the model on the
+**unperturbed** batch. ⭐ **It was caught by an IMPLAUSIBLE READING (a vision-derived goal path that
+did not depend on vision), NOT by the positive control** — which covered only the other code path.
+⇒ **ROOT-CAUSE CLASS: A CONTROL POWERS ONE CODE PATH, NOT THE MODULE.** *C107's per-arm lesson at
+finer grain: a positive control is scoped to the branch it exercises.*
+⚠️ **The dead-node rule called DISJOINTNESS AN ARTEFACT** — in a genuinely disjoint pair neither node
+moves the other **by definition**, so both read as "dead". ⇒ **Deadness must be judged against a
+source that SHOULD move the node.**
+⚠️ And `stack/scripts/goal_provenance.py` **already existed** (a different question — goal *source*).
+The agent probed `tanitad/eval/`, concluded the name was free, **and says so: the
+absence-at-one-location rule, broken and reported.**
+
+### ⛔ A NEW MECHANISM FOR THE EXIT-CODE TRAP — the PIPE's status, not pytest's
+
+A suite run reported **"exited with code 0" WHILE A TEST FAILED**, because the reported status was
+**the pipe's**, not `pytest`'s. *(Tenth instance this session, and a mechanism distinct from every
+earlier one — bad flag, collision error, 0-byte output, `printf` truncation, MSYS rewriting.)*
+⚠️ **STATUS HONESTLY STATED: the full suite did NOT finish.** An earlier run was **839 passed / 1
+failed** (that failure was the agent's own, now fixed); the re-run **stalled at ~62 %** competing
+with a live 2.5 GB job — the exact contention condition the rules forbid gating under. **The two new
+files pass separately (17 and 11), and the agent explicitly did NOT present that as the suite being
+green.** ⇒ A quiet-box re-run is owed before this is called verified.
