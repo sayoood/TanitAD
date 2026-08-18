@@ -33,11 +33,13 @@ never a combination in quadrature.
 
 ⚠️ **It is not only an interval problem — `overlapping_holdout_se` also BIASES THE POINT ESTIMATE**,
 because its central value is a **mean-of-split-means (`heldout`)**, not the **`full_set`** mean.
-*(Measured 2026-07-25 over 27 arms with raw per-window data: headline `ade_0_2s` shifts **−6.67 % to
-+11.69 %**, **bidirectional — 11 arms inflated, 16 deflated, none flat**; on hierarchy seams up to
+*(Measured 2026-07-25 over 27 dumps — **= 25 distinct arms, two double-banked pairs (C126,
+`taniteval/results/dump_exclusions.json`)** — with raw per-window data: headline `ade_0_2s` shifts
+**−6.67 % to +11.69 %**, **bidirectional — 11 inflated / 14 deflated over distinct arms (11/16 over
+dumps), none flat**; on hierarchy seams up to
 **×3.3**, and on paired deltas up to **×−4.15 including a SIGN FLIP**. It manufactured the program's
 one "load-bearing" hierarchy seam: `ctx→tactical` +0.0439 → true **+0.0148**.)* Interval narrowing
-is **1.107–3.100×, median 1.499×** (27 arms; the older "1.28–2.06×" came from only 10 and was
+is **1.107–3.100×, median 1.499×** (27 dumps = 25 distinct arms; the older "1.28–2.06×" came from only 10 and was
 under-sampled). **Before trusting ANY pre-2026-07-25 number, check whether it is the `heldout`
 split-mean or the `full_set` mean — `MODEL_REGISTRY.md` publishes both and they differ.** Blast
 radius + per-arm corrections: `…/incoming/2026-07-25-jack-blast-radius/JACK_BLAST_RADIUS.md`.

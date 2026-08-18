@@ -79,7 +79,8 @@ Alignment verified **bit-exact** (`max_abs_diff_cv = max_abs_diff_gt = 0.0`) on 
 | tie → **LOSES to floor** | 4 | `refb`, `refb-10k`, `flagship-v4.1-10k`, `flagship-v4.2-step4000` |
 | loses → loses | 9 | REF-A family, `flagship-nospeed`, `flagship-v2-6k`, `flagship-v3enc-10k` |
 
-**16 of 25 verdicts move. 12 arms beat the trivial floor under CV; 6 do under CTRV, and the best
+**16 of 25 verdicts move. 12 arms beat the trivial floor under CV; 6 do under CTRV (11 / 5 over
+DISTINCT arms — the census counted a double-banked dump pair, C126 + `taniteval/results/dump_exclusions.json`), and the best
 surviving margin in the whole fleet is +0.0890 m.**
 
 ⭐ **flagship-v1 @30k** — ADE 0.4271, vs CV **+0.4106 separated (favours model)**, vs CTRV

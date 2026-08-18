@@ -96,7 +96,7 @@ aligning it would move every future closed-loop number. **Open PI decision.**
 | Location | `/root/taniteval/` on **`tanitad-eval`** (A40). **NOT in this repo.** ✅ |
 | Val set | `physicalai-val-0c5f7dac3b11` — **40 episodes → 881 windows**, episode-disjoint from train ✅ |
 | Protocol | window 8, stride 8, K = 20 steps @ 10 Hz, waypoints `[5,10,15,20]` = 0.5/1/1.5/2 s, metric-BEV ego frame, `nav=follow`, operative step **intent-free** ✅ |
-| Statistic | 🟥 **`heldout` = `overlapping_holdout_se` — DEPRECATED, and BOTH its mean and its interval are defective.** *(This row read "**8-split episode-disjoint jackknife**" until 2026-07-26 — a **retracted label**, corrected in §6 1,300 lines below but not here, so every reader who stopped at §0.3 inherited it.)* `val_frac 0.2`, 8 **overlapping** random holdouts: the interval is **1.107–3.100× too narrow** and the "mean" is a **mean-of-split-means** that shifts the point estimate **−6.67 % to +11.69 %, bidirectionally** (27 arms). **Decision-grade = `full_set` mean + `taniteval/ci.py` episode-cluster bootstrap; paired for two arms.** Both are published; they differ. **Always name which — and never decide on `heldout`.** |
+| Statistic | 🟥 **`heldout` = `overlapping_holdout_se` — DEPRECATED, and BOTH its mean and its interval are defective.** *(This row read "**8-split episode-disjoint jackknife**" until 2026-07-26 — a **retracted label**, corrected in §6 1,300 lines below but not here, so every reader who stopped at §0.3 inherited it.)* `val_frac 0.2`, 8 **overlapping** random holdouts: the interval is **1.107–3.100× too narrow** and the "mean" is a **mean-of-split-means** that shifts the point estimate **−6.67 % to +11.69 %, bidirectionally** (27 dumps = 25 distinct arms — C126). **Decision-grade = `full_set` mean + `taniteval/ci.py` episode-cluster bootstrap; paired for two arms.** Both are published; they differ. **Always name which — and never decide on `heldout`.** |
 | Trivial floor | **CV ADE@2s = 0.8248 heldout / 0.8377 full-set**; CTRV oracle 0.523; best-of-3 kinematic floor 0.5005; learned ego-status (no-vision) ceiling 0.5735 ✅ |
 | Invocation | `python3 -m taniteval.runner run --model <key> --episodes 40` → `results/<key>.json`; also `ab`, `imagination`, `hierarchy`, `report`; `python3 -m taniteval.closedloop --arm <key>`; `python3 -m taniteval.planner_p2 --arm <key>` ✅ |
 | Model registry | `/root/taniteval/taniteval/registry.py` — the mapping from arm key → checkpoint path → arch flags. **This file is the eval-side twin of this document.** ✅ |
@@ -2728,7 +2728,8 @@ at all.
 > jackknife nor a valid SE**: `bench.py` draws 8 **independent random 20 % holdouts** from the same 40
 > episodes and takes `1.96·std/√8` over overlapping estimates — Monte-Carlo CV, measuring
 > **split-selection noise**, not model uncertainty. Measured **1.107–3.100× too narrow, median 1.499×**
-> across **27 arms** — MEASURED 2026-07-25,
+> across **27 dumps = 25 distinct arms** *(two double-banked pairs — C126,
+> `taniteval/results/dump_exclusions.json`)* — MEASURED 2026-07-25,
 > `TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-25-jack-blast-radius/jack_recompute.json`.
 > *(The older **1.28–2.06×, median 1.51×** band was never wrong, only **under-sampled at 10 arms**: all
 > 10 reproduce bit-for-bit against `Project Steering/CI_RECOMPUTE_2026-07-20.json`.)* Coverage
@@ -2736,7 +2737,7 @@ at all.
 > **The `mean` column is ALSO defective, and that is the newer and larger finding.** It is a
 > mean-of-split-means, so besides **compressing between-arm gaps** (rows 1–2: 0.006 m here vs
 > **0.0443 m** on the full set) it **shifts the single-arm point estimate by −6.67 % to +11.69 %,
-> bidirectionally — 11 of 27 arms inflated, 16 deflated, none flat.** No legacy point estimate may be
+> bidirectionally — 11 inflated / 14 deflated over the 25 distinct arms (11/16 over dumps — C126), none flat.** No legacy point estimate may be
 > assumed conservative, and no ranking may be read off two split-means.
 >
 > **Decision-grade intervals: `taniteval/ci.py` episode-cluster bootstrap** (2000 resamples over the 40
@@ -2763,11 +2764,11 @@ windows, never from differencing two column values. The final column retains the
 explicitly labelled **`legacy_split_mean ± overlapping_holdout_se` (DEPRECATED)** — kept rather than
 deleted so every previously published number stays traceable. Sources: the per-row inline
 `src:` drift pointers below (machine-checked by `tools/registry_lint.py`), cross-validated against
-`…/incoming/2026-07-25-jack-blast-radius/jack_recompute.json` (27 arms recomputed from the raw
+`…/incoming/2026-07-25-jack-blast-radius/jack_recompute.json` (27 dumps = 25 distinct arms recomputed from the raw
 `windows_*.pt` dumps, dev-box CPU, no GPU). MEASURED.
 
 > ⚠️ **THE ROW ORDER CHANGED — the rows were NOT shuffled, the ranking moved.** Recomputing all 27
-> in-repo arms moves **10 of 27 positions** in the cross-arm ranking. Three of those order changes land
+> in-repo arms moves **10 of 27 positions** (dump-level ranking; 27 dumps = 25 distinct arms — C126) in the cross-arm ranking. Three of those order changes land
 > inside *this* table, and each is a finding rather than a re-render:
 > 1. **REF-C-XL and REF-C-base SWAP.** Legacy: base 0.4523 ahead of XL 0.4577. Full-set: **XL 0.4714
 >    ahead of base 0.4728.** The paired delta **flips sign** — legacy `+0.0054` → true **−0.0013,

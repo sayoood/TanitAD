@@ -279,7 +279,7 @@ Full entries and root-cause classes in [`RETRACTION_LOG.md`](RETRACTION_LOG.md).
 | **The ego-only `sitclf` swap** — **and, since 2026-08-03 12:39, score-level image+ego fusion as well** | **The ego-only swap was REJECTED by the PI ("no ego heads") and must not be proposed again.** ⛔ **Then a THIRD PI position superseded BOTH candidates: `LABELS MAY USE EGO; INFERENCE IS VISION-ONLY`** (CLAUDE.md, binding) — verbatim *"for ground truth data of scenario classification you can use both ego and other label, for inference only vision."* **`late_fuse_scores` is therefore ALSO out**, because score-level fusion is still ego-at-inference. **The deployable arm is `head_img` (image-only).** ⚠️ **And the anomaly that started this is now itself suspect:** the situation labels are derived from **ego dynamics** (`stack/tanitad/data/situations.py`), so a classifier *given* ego at inference is partly reading **the label's own source** — the banked ranking `head_ego` 0.0697 > `head_img_ego` 0.0525 > `head_img` 0.0376 may be **LEAK MAGNITUDE, not capability**, and it makes `situations.py:19`'s *"vision adds nothing over ego state"* unfalsifiable as stated. **Flagged to verify from source (two probes, file:line), not assumed.** The `sc_train.py:143` scale bug is real but is no longer the fix. **Guardrail: "vision scores worse" is NEVER a reason to reopen ego at inference.** |
 | **"REF-C's route pathway is INERT"** | **REFUTED** by §5.0.4. Every premise was individually MEASURED; the *conclusion* was an **inference** that travelled through six documents wearing its premises' evidence class. **A chain of MEASURED links does not make the conclusion MEASURED.** |
 | **Every four-family ABSOLUTE RATE published before 2026-08-03** | Wrong by **5×–25×** — `four_families.py` hard-coded `DT_S = 0.1` while its inputs are the sparse 4-waypoint **0.5 s** grid. `speed_*` **/5.00**, `accel_*` **/25.00**, `yaw_rate_*` /6.48, `curvature_*` **/8.36**, `heading_*` /1.90 (the last two via the `MIN_DS` mask alone — dt-invariant and *still* wrong). Ground truth: ego speed 12.4565 m/s vs the instrument's 62.9789. ✅ **Every cross-arm comparison, rank and paired delta SURVIVES** (common factor). **FIXED + tested** (`infer_dt`, `prefer_dense`, `MIN_DS_MPS`, a `_grid` provenance block, 12 tests). |
-| **`overlapping_holdout_se`** (the block once labelled *"8-split episode-disjoint jackknife"*) | Neither a jackknife nor a valid SE, **and it biases the point estimate** (−6.67 % to +11.69 %, bidirectional, 27 arms). It manufactured the programme's one "load-bearing" hierarchy seam: `ctx→tactical` +0.0439 → true **+0.0148**. |
+| **`overlapping_holdout_se`** (the block once labelled *"8-split episode-disjoint jackknife"*) | Neither a jackknife nor a valid SE, **and it biases the point estimate** (−6.67 % to +11.69 %, bidirectional, 27 dumps = 25 distinct arms — C126). It manufactured the programme's one "load-bearing" hierarchy seam: `ctx→tactical` +0.0439 → true **+0.0148**. |
 | **`flagship4b-phase0-30k` as "the deployed v1"** | It is the **no-speed ablation control** (2.918 m). The deployed v1 is **`flagship4b-speedjerk-30k`**. |
 
 ⚠️ **Also standing:** REF-A I-JEPA's val number is **unusable** (~80 % val leakage); **no
@@ -303,11 +303,12 @@ produced a published `speed_mae` of 3.06 m/s for an arm whose registry ADE@2s is
 ### 5.1 The open-loop bake-off (2026-07-25 snapshot) — settled, and the top is a three-way tie
 All numbers: TanitEval, physicalai val (`physicalai-val-0c5f7dac3b11`), **881 windows / 40 episodes**.
 ⚠️ The `±` column is the **deprecated** `overlapping_holdout_se`. Updated 2026-07-26: it is
-**1.107–3.100× too narrow, median 1.499×** over 27 arms (the old "1.28–2.06×" was under-sampled at 10),
+**1.107–3.100× too narrow, median 1.499×** over 27 dumps = 25 distinct arms (the old "1.28–2.06×" was under-sampled at 10),
 **and its `mean` is a split-mean that shifts the point estimate −6.67 % to +11.69 %, bidirectionally.**
 Read the `full-set / bootstrap` column; the `±` column is retained only for traceability. Provenance:
 [`MODEL_REGISTRY.md §6`](MODEL_REGISTRY.md) (re-emitted 2026-07-26 — **the ranking moves in 10 of 27
-positions**, and the two REF-C rows below are swapped relative to the legacy order for that reason).
+positions** (dump-level; 27 dumps = 25 distinct arms, C126), and the two REF-C rows below are swapped
+relative to the legacy order for that reason).
 
 | Arm | Step | Params | full-set mean · [episode-cluster bootstrap] | `legacy_split_mean ±` (DEPRECATED) | Beats CV (full-set 0.8377)? |
 |---|---:|---:|---|---:|:--:|

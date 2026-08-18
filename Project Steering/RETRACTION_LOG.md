@@ -7068,3 +7068,32 @@ is admissible as a reason to swap, freeze, or distil an encoder.**
 
 ⚠️ **Standing dependency, now covering THREE results:** the frame cache, join, and split remain
 **scratchpad-only** (the durable copy holds token caches only). Banking them is the open chip.
+
+---
+
+## C126 — TWO BANKED DUMP PAIRS ARE ONE MODEL EACH: "27 arms" censuses counted 25 distinct arms — and the duplication was documented 23 days before it was institutionalized (2026-08-18, results hygiene)
+
+**MEASURED:** `windows_refa-dynin-30k.pt` ≡ `windows_overfit_refa-dynin-30k.pt` (`torch.equal`
+every key — the overfit driver's 30k point evaluates the canonical arm's own ckpt,
+`refa_overfit_driver.py:31-38` vs `registry.py:110-112`) and `windows_refc-v12-identity.pt` ≈
+`windows_refc-xl-30k.pt` (max|Δpred| 7.6e-06 — the v1.2 zero-init/identity control IS the frozen
+refc-xl-30k selection per its own report). **Neither is a mislabel; no phantom arm; no number under
+any name describes a different model than its label.** Corrections applied 2026-08-18 at every doc
+site (registry §0.3/§6, CLAUDE.md, README, paper, PROGRAM_OVERVIEW, LEADERBOARD §1b): (a) jack sweep
+"over 27 arms" → **27 dumps = 25 distinct arms**; "11 inflated, 16 deflated" → **11 / 14 over
+distinct arms**; bias range −6.67…+11.69 %, narrowing 1.107–3.100×, median 1.499× all UNCHANGED
+(extremes unique, dup rows straddle the median; no paired contrast touched). (b) LEADERBOARD §1b
+"12 beat CV / 6 beat CTRV" → **11 / 5 distinct**. (c) sota-top3 E2c τ_b 0.7991 → **0.7895
+deduplicated** — stays in the pre-registered 0.7–0.9 band, verdict INDETERMINATE unchanged; its
+"26 unique prediction sets" were 26 hashes but 25 models (ε-duplicates evade hashing). **No verdict,
+gate, extreme, or sign changes anywhere.**
+
+**ROOT-CAUSE CLASS: a correction that lives only in prose decays — censuses re-derive their arm
+list from `glob("windows_*.pt")`, so a duplication documented in a report (DOC_CORRECTION_SWEEP
+2026-07-26, verbatim: "the same checkpoint under two keys … likewise duplicates") was re-counted by
+every later census and re-discovered twice (2026-08-03 by hash — which structurally cannot see
+ε-duplicates — and 2026-08-18 by per-window values).** Same decay mechanism as the "2 of 36
+features" count (pinned by test 2026-08-16 after four rots). Fix: `taniteval/results/
+dump_exclusions.json` (machine-readable) + `DUPLICATES.md`; census code subtracts the list or
+declares it counts dumps. Nothing consumes the json automatically yet — wiring it into the next
+census tool is a named backlog item.

@@ -58,7 +58,7 @@ INHERITED.** "X does not exist" needs **two probes at different paths** before i
 
 Decision-grade = **`full_set` mean + episode-cluster bootstrap**, paired for two arms.
 ⛔ **`overlapping_holdout_se` is deprecated and BIASES THE POINT ESTIMATE**, not just the interval
-(27 arms: headline `ade_0_2s` shifts **−6.67 % to +11.69 %, bidirectionally**; intervals
+(27 dumps = 25 distinct arms — C126: headline `ade_0_2s` shifts **−6.67 % to +11.69 %, bidirectionally**; intervals
 1.107–3.100× too narrow, median 1.499×). Before trusting any pre-2026-07-25 number, check whether it
 is the `heldout` split-mean or the `full_set` mean — the registry publishes both and they differ.
 

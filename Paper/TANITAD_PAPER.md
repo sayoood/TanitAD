@@ -916,14 +916,14 @@ onward carry the corrected estimator, named inline.
 > qualitative verdict in §7.1–§7.5 stand; the *widths* quoted there are the deprecated statistic." That
 > assurance is WITHDRAWN: it was wrong, and it was load-bearing.** The deprecated block does not only
 > mis-state widths — **its central value is a mean-of-split-means, so it moves the POINT ESTIMATE too.**
-> Measured 2026-07-25 by recomputing **27 arms** from the raw per-window dumps (`windows_*.pt`, 881
+> Measured 2026-07-25 by recomputing **27 dumps (= 25 distinct arms; two double-banked pairs, C126)** from the raw per-window dumps (`windows_*.pt`, 881
 > windows / 40 episodes; pipeline validated bit-for-bit against `CI_RECOMPUTE_2026-07-20.json`, 10/10
 > arms exact): headline `ade_0_2s` shifts **−6.67 % to +11.69 %**, and the shift is **bidirectional — 11
 > arms inflated, 16 deflated, none unchanged** — so no legacy point estimate may be assumed conservative.
 > On paired deltas the distortion reaches **×−4.15, including a sign flip**, and on hierarchy seams
-> **×3.3**. Widths are **1.107–3.100× too narrow (median 1.499×)** over 27 arms; the "1.28–2.06×" above
+> **×3.3**. Widths are **1.107–3.100× too narrow (median 1.499×)** over 27 dumps (25 distinct arms); the "1.28–2.06×" above
 > came from only ten and was under-sampled. **Under the corrected estimator the cross-arm ranking changes
-> in 10 of 27 positions.** Note the internal tension this correction resolves: the sentence immediately
+> in 10 of 27 positions** (dump-level; 27 dumps = 25 distinct arms, C126). Note the internal tension this correction resolves: the sentence immediately
 > following already conceded that the split-*mean* compresses between-arm gaps — that concession was
 > right, and it was incompatible with "the point estimates stand."
 > **Consequently every `± CI95` *and every central value* in §7.1–§7.5 is provisional pending
@@ -972,7 +972,8 @@ and it equals T_full only if m_w is constant. Its bias is therefore Cov_w(ω_w, 
 zero in expectation over draws but **not** for the single realised draw a published number comes
 from — and the realised draw is fixed, so the error does not average away over arms, it varies
 per arm. That is exactly the measured signature: headline `ade_0_2s` shifts **−6.67 % to
-+11.69 %** across 27 arms, **bidirectional** (11 inflated, 16 deflated, none unchanged), up to
++11.69 %** across 27 dumps = 25 distinct arms (C126), **bidirectional** (11 inflated / 14 deflated
+over distinct arms; 11/16 over dumps, none unchanged), up to
 **×3.3** on hierarchy seams and **×−4.15 including a sign flip** on paired deltas, with widths
 1.107–3.100× too narrow (median 1.499×). Two rules follow and are enforced: the point estimate is
 **always** the full-set mean, and any pre-2026-07-25 number must be checked for which of the two
