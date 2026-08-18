@@ -14,28 +14,68 @@
 > | ⭐ **The lead-gap finding** | **SURVIVES and STRENGTHENS.** The ~1.8 m margin over the null does not merely shrink — it **INVERTS**: the latent is now **0.694 m WORSE than the random-latent null**, and partialling `v0` out flips its correlation to **−0.107**. §5. |
 > | ⭐ **The rung profile** | **SURVIVES.** Aggregate scene scale and longitudinal ego state at the top; everything **rotational** and **relative-motion** at the null across a 40× change in pooling. §4.2, §12. |
 > | ⭐ **The instrument defect** | **SURVIVES** and is now C92 in `RETRACTION_LOG.md`, repaired program-wide. §10. |
-> | ⭐ **NEW, and it is the sharpest statement in the document** | On the **mean of three seeds, 10 of 11 rungs go to a SINGLE SCALAR of ego speed or tie it** — including the one rung where seed 0 alone said the 2 048-dimension latent won. The 11th favours the latent by 0.00002 gt_sd on a degenerate rung. §5.3. |
+> | ⭐ **NEW, and it is the sharpest statement in the document** | On the **mean of three seeds, every rung that carries any signal goes to a SINGLE SCALAR of ego speed or ties it** — including the one rung where seed 0 alone said the 2 048-dimension latent won. *(Route B: 10 of 11, the 11th favouring the latent by 0.00002 gt_sd. Route A: 9 of 11, with two nil-margin exceptions ≤ 2e-5 gt_sd. The routes disagree only about which physically-zero rung is the exception — §5.3b.)* §5.3, §5.3a, §5.3b. |
+| ⭐⭐ **AND IT IS NOT ONE CHECKPOINT** | The `n_agents_all` sign flip holds at **all four late checkpoints** (@9000/@9250/@10000/@11250), and on every one **seed 0 is the only seed that favours the latent** — seeds 1 and 2 favour the scalar by more than seed 0 favours the latent. §5.3a. |
 >
 > ### ⛔ WHAT DOES NOT SURVIVE — the per-row FAIL inventory, and nothing above it
 >
 > | | |
 > |---|---|
-> | ⛔ **The 87 banked separated-FAILs** | **65 of 87 were instrument.** 23 die at the C92 intercept repair, 42 are killed by the C97 degeneracy guard, 11 flip to PASS. Of the 11 that survive both, **10 are `ego_yawrate` at K1B +0.0000** — two of them on random-latent nulls. §2. |
+> | ⛔ **The 87 banked separated-FAILs** | **65 of 87 were instrument at seed 0, and at THREE seeds the last exception is gone too.** ⭐ **RE-RUN 2026-08-18 at seeds 0/1/2 on BOTH repair routes: 12 die at the repair, 33 are killed by the guard, 11 flip to PASS, 9 survive both, and ⛔ 22 have NO STABLE VERDICT AT ALL. Of the 9 survivors, `\|K1B\|/gt_sd ≥ 0.02` on ZERO — C100's single substantive row is a SEED ARTEFACT.** §2. |
 > | ⛔ **"The v6 latent reads scene density"** | **WITHDRAWN.** It is **~80 % `v0`** at seed 0 and the scalar **wins outright** on the 3-seed mean. §5.3. |
 > | ⛔ **§11's "the encoder's tokens carry more than the operative state"** | **INVERTS under the repair** — cells **+0.320** vs tokens **+0.263**. It was labelled a weak localisation and it was; the corrected direction agrees with E-R1-0. §11. |
-> | ⛔ **"8 of 11 rungs have exactly zero seed spread"** | **FALSE under the repair.** pc6's truncation had frozen the alpha choice; unfrozen, the arm's own K1 moves by up to **2.812** across three inner-split seeds. §8. |
+> | ⛔ **"8 of 11 rungs have exactly zero seed spread"** | **FALSE under the repair.** pc6's truncation had frozen the alpha choice; unfrozen, the arm's own K1 moves by up to **2.812** across three inner-split seeds. ⭐ **NOW MEASURED ON ALL 165 ROWS, not 4 arms: the DEFECTIVE instrument picks the same alpha on all 3 seeds for 132 of 165 rows, the REPAIRED one for 42 — a 3.1× drop.** §8. |
+> | ⚠️ **"The two repair routes give 0 differing verdicts"** | **ALSO A ONE-SEED CLAIM, and it does not fully survive.** At 3 seeds over 176 rows: **2 verdicts and 11 guard verdicts differ**, and max \|ΔK1\| grows **0.396 → 0.721**. ⭐ Neither verdict difference is a PASS↔FAIL flip, and **both routes independently return ZERO substantive survivors.** §10.3. |
+> | ⚠️ **§4.2's "the ordering held"** | **TRUE AT SET LEVEL ONLY.** At 3 seeds the top-3 and bottom-4 SETS are unchanged, but `nearest_any`/`ego_v0` swap 2nd/3rd and `ego_yawrate`/`lead_closing` swap 8th/9th; `n_agents_grid` r² swings **0.0200 → 0.0880 → 0.0305** across seeds. **Quote the 3-seed mean, never one seed's r².** §8.1. |
 >
 > ⚠️ **The failure mode to avoid when reading this document is concluding "the whole ladder was
 > wrong".** It was not. What was overwhelmingly instrument is the **per-row FAIL inventory** — a body
 > of verdicts that a biased floor manufactured. Every conclusion this document was written to support
 > is stronger after the re-read than before it.
 >
-> **Sources:** `Project Steering/RETRACTION_LOG.md` **C92 · C97 · C100** ·
+> ### ⛔ CORRECTION 2026-08-18 (citation sweep) — THREE NUMBERS IN THE BANNER ABOVE ARE SEED-0, AND ONE INHERITED THESIS IS REFUTED
+>
+> **Cite this block by its heading, never by line number.** This document's own §8.1 rule —
+> *"quote the 3-seed mean and its seed spread, never one seed's value"* — was **not applied to the
+> banner's own replacement figures.** `MEASURED`, re-derived by opening the banked per-seed JSON:
+>
+> | banner cell | as written | ⭐ **what it is** | ⭐ **3-seed form** |
+> |---|---|---|---|
+> | *"the latent is **0.694 m WORSE** than the random-latent null"* | a fixed effect | **SEED 0** (5.8694 vs 5.1754) | **+0.283 m worse on the 3-seed mean**, per seed **+0.694 / −0.017 / +0.173** m ⚠️ **the sign FLIPS on seed 1** |
+> | *"partialling `v0` out flips its correlation to **−0.107**"* | a fixed effect | **SEED 0** (−0.1065) | **−0.0884**, per seed **−0.1065 / −0.0665 / −0.0922**; ⚠️ `[−0.1065, −0.0665]` is a **SEED SPREAD, NOT a CI** |
+> | *"cannot separate from a constant (K1 **+0.032 [−0.532, +0.508]**)"* | a fixed effect | **ROUTE A, SEED 0** | **+0.0317 [−0.5318, +0.5081]** (not sep) / **+0.1643 [−0.1521, +0.4618]** (not sep) / ⛔ **+0.9870 [+0.2424, +1.6573] — SEPARATED WORSE**, guard `CONSTANT-OFFSET-ONLY`. ⚠️ Route B seed 0 is **+0.4274** — the 0.3957 route gap. |
+>
+> ⭐ **ALL THREE DIRECTIONS SURVIVE; ONLY THEIR FORM WAS WRONG — AND THE TITLE CLAIM GETS STRONGER.**
+> The honest 3-seed statement is **"the latent TIES OR LOSES to a constant on ego speed and never
+> beats it"**, against an **EGO-ORACLE at 10× noise that earns a guarded PASS on all three seeds and
+> both routes** (K1 **−1.6037 [−2.4058, −0.8844]**, r **+0.8280**, guard OK — ✅ **this one IS
+> seed-stable as the banner states**). Likewise **`C-V0`'s K1 −1.5618 [−2.0229, −1.1363] PASS is
+> identical on all three seeds and both routes.**
+>
+> ⛔ **AND ONE THESIS THIS DOCUMENT WAS CITED AS CONFIRMING IS REFUTED (C104).** §4.2/§12's rung
+> profile was quoted elsewhere as *"the independent confirmation of the 40:1 `AvgPool2d((4,10))`
+> bottleneck — two different methods, one answer"*. **E-R1-0 removed the pool: r² moves by `|Δ| ≤
+> 0.0002` with the CI containing zero on all five seeds. `R1 IS DROPPED`.** The constraint is the
+> **encoder/objective** — DINOv2-base (**86 M vs our 87.3 M**) reads `lead_gap` **0.44997 vs our
+> 0.00496** through the *same* deployed pool. ⚠️ **The profile itself is untouched** — it is an
+> r²-vs-null statement and the top-3/bottom-4 sets hold. ⛔ **What is refuted is the INFERENCE that
+> the profile confirms a pooling mechanism**: a profile *consistent with* a mechanism is not evidence
+> *for* it when it is equally consistent with a weak encoder. ⇒ **This document must no longer be
+> cited as confirmation of the pooling thesis.**
+>
+> **Sources:** `Project Steering/RETRACTION_LOG.md` **C104 · C107 · C109** ·
+> `…/Benchmarks & Eval/Implementation/incoming/2026-08-18-citation-sweep/CITATION_SWEEP.md` §1.2 ·
+> re-derivation `…/2026-08-18-citation-sweep/raw/canonical_requote_table.json`.
+>
+> **Sources:** `Project Steering/RETRACTION_LOG.md` **C92 · C97 · C100 · C103** ·
 > `…/incoming/2026-08-18-k1-degeneracy-guard/` (the guard + the 165-row re-read) ·
-> `…/incoming/2026-08-18-ladder-corrected/` (this correction's refits, gate and tables).
+> `…/incoming/2026-08-18-ladder-corrected/` (the first correction's refits, gate and tables) ·
+> ⭐ `…/incoming/2026-08-18-ladder-3seed/` (**the 3-seed re-run of all 165 rows on both routes** —
+> `LADDER_3SEED.md`, `raw/reread3_table.json`).
 
-**Date:** 2026-08-17 · **Corrected:** 2026-08-18 · **Branch:** `agent/arch-inf-20260803`
-**Agents:** latent-linear-ladder (original) · ladder-corrected (this re-read)
+**Date:** 2026-08-17 · **Corrected:** 2026-08-18 (twice — the re-read, then the 3-seed re-run) ·
+**Branch:** `agent/arch-inf-20260803`
+**Agents:** latent-linear-ladder (original) · ladder-corrected (the re-read) · ladder-3seed (3 seeds)
 **Cites, and does not touch:** `…/incoming/2026-08-17-probe-positive-control/PROBE_POSITIVE_CONTROL.md`,
 `…/incoming/2026-08-17-slot-probe-parity/SLOT_PROBE_PARITY.md`.
 **Eval tier:** ⛔ **T0-DIAGNOSTIC.** A frozen-latent readout is a world-model diagnostic and is
@@ -108,8 +148,17 @@ nulls are **"not linearly present"**, not **"the apparatus could have found it"*
 5. ⛔ **EVERY TABLE NAMES ITS REPAIR ROUTE, AND THE TWO ROUTES ARE NEVER POOLED (§10).**
    **Route A = `--fit-mode unpen`** — the repair taken from the module, `ridge_fit(…, intercept_col=-1)`;
    the 15-arm 165-row re-read. **Route B = `--fit-mode centred`** — the locally re-derived repair;
-   the four `ll_rep_*` arms at 3 seeds. **MEASURED here (§10): 44 paired rows, 2 alpha choices
-   differ, 0 verdicts differ, and `ego_v0`'s K1 differs by 0.396.**
+   the four `ll_rep_*` arms at 3 seeds. **MEASURED here (§10.3): 44 paired rows, 2 alpha choices
+   differ, 0 verdicts differ, and `ego_v0`'s K1 differs by 0.396.** ⚠️ **AND THAT WAS A ONE-SEED
+   MEASUREMENT: at 3 seeds over 176 rows, 29 alpha vectors, 2 verdicts and 11 guard verdicts differ,
+   and max |ΔK1| grows to 0.721 (§10.3a). Both routes were therefore run at 3 seeds, and both return
+   the same conclusion.**
+   ⛔ **AND EVERY VERDICT-BEARING TABLE IS NOW A 3-SEED TABLE.** `MEASURED` 2026-08-18
+   (`…/incoming/2026-08-18-ladder-3seed/`): the C92 repair **un-truncates** the alpha sweep the defect
+   had frozen, so **a single seed does not determine a verdict on this instrument** — 22 of the 87
+   rows have no stable one. Any table below stamped *"seed 0"* is retained for traceability to the
+   banked artifacts; **the quotable form of every verdict is the 3-seed one** (§2, §5.3a, §8.0, §8.1,
+   §10.3a).
 6. ⭐ **THE READOUT IS pc6's, AND EQUIVALENCE IS PROVED RATHER THAN ASSERTED.** `ll1_ladder.py`
    IMPORTS `ridge_fit` from `pc6_linear_readout` (no second implementation of the solve) and its
    `--gate-pc6` asserts that target `lead_gap` at seed 0 reproduces the banked
@@ -190,33 +239,68 @@ but **non-linear**. Everything below is a statement about **linear decodability*
 
 ## 2. ⛔ THE 87 BANKED FAILs — WHICH WERE EVER FINDINGS
 
-`MEASURED`, and **recomputed for this correction directly from the 15 incumbent `ll_*.json` and the
-15 re-read `llR_*.json`, not copied from C100's table** (`code/corrected_tables.py` →
-`raw/corrected_tables.json`, table `T1`). **The independent recount reproduces C100 exactly.**
+`MEASURED`, and **recomputed directly from the artifacts, never copied from a headline** (C91). The
+seed-0 column comes from the 15 incumbent `ll_*.json` and the 15 re-read `llR_*.json`
+(`…/2026-08-18-ladder-corrected/code/corrected_tables.py` → `raw/corrected_tables.json`, table `T1`);
+**that independent recount reproduces C100 exactly.** ⭐ **The 3-seed columns come from a full re-run
+of all 165 rows at seeds 0/1/2 on BOTH repair routes**
+(`…/2026-08-18-ladder-3seed/code/reread3_table.py` → `raw/reread3_table.json`), **whose seed-0 rows
+reproduce the banked seed-0 rows on 3 465 of 3 465 field comparisons** — so the 3-seed table is an
+extension of C100's run, not a different one.
 
-| of the 87 banked separated-FAILs | n | what it means |
+| of the 87 banked separated-FAILs | **3-seed unanimous (route A)** | *seed 0 only (C100)* | route B, 3 seeds | what it means |
+|---|---|---|---|---|
+| **die at the C92 repair** | **12** | *23* | 11 | the biased floor made them fail; the CI now spans zero |
+| ⛔ **killed by the C97 guard** | ⛔ **33** | *42* | 33 | the verdict was a contest between two constants, not a fact about a latent |
+| **flip to PASS** | **11** | *11* | 11 | see the note below — this set is entirely the positive controls, and it is **seed-stable** |
+| **survive both** | **9** | *11* | 9 | all `ego_yawrate` — see below |
+| ⛔ **SEED-UNSTABLE — no verdict** | ⛔ **22** | *(not measurable at 1 seed)* | 23 | the bucket differs across seeds; a verdict that flips is not a verdict |
+| ⭐ **of the survivors, SUBSTANTIVE** (`\|K1B\|/gt_sd ≥ 0.02`) | ⛔ **0** | *1* | ⛔ **0** | **nothing in the 87 is a quotable finding about a latent** |
+
+⭐⭐ **AND THE SHARPEST FORM IS NOT THAT TABLE — IT IS THIS, AND IT IS IDENTICAL ON BOTH ROUTES.** A
+row can be `SEED-UNSTABLE` because the **mechanism** that kills it varies while the death does not.
+Separating those (`MEASURED`, 3 seeds):
+
+| of the 87 | route A | route B |
 |---|---|---|
-| **die at the C92 repair** | **23** | the biased floor made them fail; the CI now spans zero |
-| ⛔ **killed by the C97 guard** | ⛔ **42** | the verdict was a contest between two constants, not a fact about a latent |
-| **flip to PASS** | **11** | see the note below — this set is almost entirely the positive controls |
-| **survive both** | **11** | of which **substantive** (`\|K1B\|/gt_sd ≥ 0.02`): ⭐ **1** |
+| ⛔ **DEAD ON ALL THREE SEEDS** (die at the repair OR killed by the guard on every seed; on 13 the mechanism varies, the outcome does not) | ⛔ **58** | ⛔ **58** |
+| ⭐ flip to PASS — the positive controls, **unanimous** | 11 | 11 |
+| survive both on all three seeds — **all `ego_yawrate`**, `\|K1B\|/gt_sd` ≤ 0.013, one on a random-latent null | 9 | 9 |
+| ⚠️ survive on **at least one seed but not all** — includes C100's substantive row | ⚠️ **9** | ⚠️ **9** |
+| ⭐ **SUBSTANTIVE** | ⛔ **0** | ⛔ **0** |
 
-⭐ **THE ONE SUBSTANTIVE SURVIVOR, and it is a NEGATIVE about the latent:**
+⛔⛔ **THE ONE SUBSTANTIVE SURVIVOR IS A SEED ARTEFACT — RETRACTED 2026-08-18 BY THE 3-SEED RE-RUN**
+(`…/incoming/2026-08-18-ladder-3seed/`, `MEASURED`, route A):
 
-> **`ll_s09000` `lead_gap` — K1 +1.811 → +1.291, K1B +0.748 [+0.002, +1.624], guard OK,
-> `|K1B|/gt_sd` 0.121.** At step 9 000 the latent's lead-gap readout is separably **WORSE than its
-> own mean level**: its variation actively hurts.
+| `ll_s09000` `lead_gap` | seed 0 | seed 1 | seed 2 |
+|---|---|---|---|
+| alpha | 1e3 | **1e7** | 1e5 |
+| K1 | +1.291 | +0.022 | +0.301 |
+| **K1B [CI]** | **+0.748 [+0.002, +1.624]** | **−0.022 [−0.048, +0.002]** | **+0.145 [−0.239, +0.602]** |
+| guard | OK | NO-VERDICT-TO-GUARD | NO-VERDICT-TO-GUARD |
+| bucket | `survive_both` | `die_at_repair` | `die_at_repair` |
 
-⚠️ **And it is fragile, which is stated rather than glossed.** Its CI's lower bound is **+0.002** —
+⇒ **It separates on ONE seed of three, its CI covers zero on the other two, and its alpha spans four
+orders of magnitude.** The caveat below was written before the re-run and it called this correctly —
+three seeds converted the warning into a measurement.
+
+⚠️ **The original caveat, retained because it was right.** Its CI's lower bound is **+0.002** —
 it separates by a hair — and **the same row at @11250 does NOT survive**: K1B **+0.404
 [−0.214, +1.101], CONSTANT-OFFSET-ONLY**. The previous stream reported the @11250 FAIL as surviving;
 that is **DOWNGRADED**. One checkpoint separates and its neighbour does not, so **no trend is claimed
 and this survivor should not be built on**.
 
-⛔ **THE OTHER TEN SURVIVORS ARE ARITHMETIC, NOT FINDINGS.** All ten are `ego_yawrate`, at
-**K1B +0.0000 with CI [+0.0000, +0.0000]** and `|K1B|/gt_sd` ≤ 0.0020 — and **two of the ten sit on
-RANDOM-LATENT NULL arms** (`ll_nullmatched`, `ll_tok11250null`). A `torch.randn` cache produces the
-identical verdict, which is the proof that they cannot be findings about any latent.
+⛔ **THE NINE REMAINING SURVIVORS ARE ARITHMETIC, NOT FINDINGS.** All nine are `ego_yawrate`, at
+3-seed-mean **K1B ≤ +0.0009** and `|K1B|/gt_sd` **≤ 0.013** — and **one of them sits on a
+RANDOM-LATENT NULL arm** (`ll_tok11250null`, K1B **+0.000002**). A `torch.randn` cache produces the
+identical verdict, which is the proof that they cannot be findings about any latent. *(At seed 0 there
+were ten, with two nulls; the second null moved into the `SEED-UNSTABLE` bucket.)*
+
+⚠️ **AND WHERE THE INSTABILITY LIVES IS ITSELF INFORMATIVE.** `MEASURED`: the 22 unstable rows fall on
+**`nearest_any` 7 · `lead_gap` 5 · `ego_yawrate` 5 · `ego_v0` 4 · `lead_closing` 1**. `ego_curv`
+(13 rows) and `lead_present` (15 rows) produce **zero** — they are degenerate on every seed and stay
+that way. ⇒ **The instability concentrates on exactly the near-tie rungs where a verdict would have
+been interesting.**
 
 ⭐ **THE 11 FLIPS-TO-PASS ARE THE INSTRUMENT VALIDATING ITSELF, and they are worth reading.**
 `MEASURED`: **9 of the 11 belong to the EGO-ORACLE arms** (`n_agents_grid`, `n_agents_all`,
@@ -224,6 +308,9 @@ identical verdict, which is the proof that they cannot be findings about any lat
 2 are the two NULL arms on `n_agents_all` — and the guard catches BOTH as `DEGENERATE-CONSTANT`.**
 ⇒ **the repair promotes arms that carry signal and the guard rejects the two that carry none.** That
 is the behaviour a working instrument has, and it is why the negatives below are readable.
+⭐⭐ **AND ALL ELEVEN ARE UNANIMOUS ACROSS THREE SEEDS, ON BOTH REPAIR ROUTES** — the only bucket of
+the five that does not lose a single row to seed instability. **The part of this instrument that is
+working is the part that is stable; the part that produced "findings" is the part that is not.**
 
 ---
 
@@ -447,9 +534,15 @@ Under the repair `n_agents_all` PASSes K1 on **all 15 arms**. Read with both con
 
 ### 5.3 ⭐⭐ NEW IN THIS CORRECTION — the 0.012 gt_sd margin does not survive SEEDING, and the scalar wins outright
 
+✅ **UPDATE 2026-08-18 — THIS SECTION IS NO LONGER A 4-ARM RESULT.** The 165-row re-read has been
+**re-run at three seeds on both repair routes** (`…/incoming/2026-08-18-ladder-3seed/`), so the table
+below is now backed by all 15 arms rather than the 4 that happened to carry three seeds — and §5.3a
+adds the checkpoint-by-checkpoint version, on which **seed 0 is the outlier every time**.
+
 The 165-row re-read ran **seed 0 only** (justified: `fit_one` draws its own RNG per call, so seed 0's
-row is bit-identical either way). The four `ll_rep_*` arms refitted here carry **three seeds**, and
-that is what exposes the following.
+row is bit-identical either way — ⭐ **and that justification is now MEASURED, not argued: the 3-seed
+run reproduces the banked seed-0 rows on 3 465 of 3 465 field comparisons**). The four `ll_rep_*` arms
+refitted here carry **three seeds**, and that is what exposed the following.
 
 **`MEASURED` · route B (`centred`) · seeds 0/1/2 · `raw/seed_stability_v6_vs_cv0.json`.**
 K1B is negative-is-better; **margin = v6 − C-V0, so POSITIVE MEANS THE SCALAR WINS.**
@@ -481,6 +574,85 @@ moves with the seed — `n_agents_all` picks 1e5 / 1e7 / 1e6 across seeds 0/1/2,
 **2.516**. ⇒ **The margin is smaller than the arm's own seed noise, in both directions.** This is not
 a reason to prefer one seed; it is a reason to report the mean and to stop treating a 0.012 gt_sd
 margin as evidence at all.
+
+### 5.3a ⭐⭐ THE SIGN FLIP IS NOT ONE CHECKPOINT — IT IS ALL FOUR, AND SEED 0 IS THE OUTLIER ON EVERY ONE
+
+**`MEASURED` 2026-08-18 · route A (`unpen`) · seeds 0/1/2 · all 15 arms ·
+`…/incoming/2026-08-18-ladder-3seed/raw/reread3_table.json` → `R5_quotable_guarded_PASS_3seed`.**
+
+⛔ **The list a positive claim may be taken from, and nothing else: a row qualifies only if it is
+`PASS` on ALL THREE seeds AND `guard OK` on ALL THREE.** 33 rows qualify; **29 are controls** (the GT
+oracle, the four EGO-ORACLE noise levels, and the two C-V0 arms). **Four are on a v6 latent arm — and
+all four are `n_agents_all`:**
+
+| arm | v6 K1B, seeds 0/1/2 | v6 mean | C-V0 K1B, seeds 0/1/2 | C-V0 mean | margin per seed | ⛔ **margin, 3-seed mean** |
+|---|---|---|---|---|---|---|
+| `v6F@9000` | −2.715 / −0.226 / −1.333 | −1.425 | −2.243 / −0.579 / −2.238 | −1.687 | −0.472 / **+0.353** / **+0.905** | ⛔ **+0.262 — scalar wins** |
+| `v6F@9250` | −2.759 / −0.236 / −1.338 | −1.444 | ″ | −1.687 | −0.516 / **+0.344** / **+0.901** | ⛔ **+0.243 — scalar wins** |
+| `v6F@10000` | −2.805 / −0.240 / −1.365 | −1.470 | ″ | −1.687 | −0.561 / **+0.340** / **+0.874** | ⛔ **+0.217 — scalar wins** |
+| ⭐ `v6F@11250` | −2.785 / −0.269 / −1.376 | −1.477 | ″ | −1.687 | −0.541 / **+0.310** / **+0.863** | ⛔ **+0.211 — scalar wins** |
+
+⇒ ⭐⭐ **§5.3 measured this at ONE checkpoint; it holds at FOUR. On every one, seed 0 is the only seed
+that favours the latent, and seeds 1 and 2 favour the scalar by MORE than seed 0 favours the latent.**
+⛔ **There is no rung, and no checkpoint, on which the 2 048-dimension v6 operative latent out-reads a
+single number of ego speed at three seeds.**
+
+⚠️ **Stated with its own instability, because the mean is not the whole story.** The margin's **sign is
+not seed-stable** on those four rows. The honest form is: **the margin is smaller than the arm's own
+seed noise, and the 3-seed mean puts it on the scalar's side** — a reason to stop treating a 0.012
+gt_sd margin as evidence at all, **not** a licence to quote "+0.211" as an effect.
+⚠️ **`v6F@2000` does not reach the list**: its `n_agents_all` guard verdict is itself SEED-UNSTABLE,
+and the scalar beats it on **all three** seeds (+0.677 / +0.326 / +0.742).
+
+### 5.3b ⛔ A CONTROL THAT WAS MISSING AND WHOSE ABSENCE WAS INVISIBLE
+
+`MEASURED` 2026-08-18. The re-read carries **one** `C-V0` arm, fitted on the **cells** cache
+(n_eval 2221–3023). Three of its 15 arms — `tok11250`, `tok11250null`, `cells_tokwin` — are fitted on
+the **TOKENS** cache (n_eval 1103–1507). Comparing those against the cells-window `C-V0` is an
+**UNPAIRED** comparison across different window sets. ⇒ ⛔ **33 of the 165 rows carried no
+trivial-proxy control at all, and nothing in the artifact said so.**
+
+⭐ **Closed:** `proxytok` — the identical ridge, identical split, seeds and estimator, on the **TOKENS**
+windows, features replaced by the single scalar `v0`. **11 additional rows, never folded into the
+165.** With it, all 154 non-control rows have a paired control.
+
+**`MEASURED` · route A · 3-seed mean K1B · margin = arm − C-V0, POSITIVE MEANS THE SCALAR WINS:**
+
+| | |
+|---|---|
+| rows with a paired C-V0 on the same window set | **154** |
+| ⛔ **rows where the SCALAR matches or beats the latent** | ⛔ **120** |
+| rows where the latent beats the scalar | 34 |
+| ⚠️ rows whose margin SIGN flips across seeds | ⚠️ **38** |
+| rows with no paired control | **0** |
+
+**By rung, over the 14 non-C-V0 arms** — and the bottom of this table must be read with the scale
+beside it:
+
+| rung | scalar wins/ties | latent wins | margin sign flips across seeds |
+|---|---|---|---|
+| `ego_v0` | **14 / 14** | 0 | 0 |
+| `lead_gap` · `nearest_any` · `n_agents_grid` · `ego_accel` | **13 / 14** each | 1 each | 0 / 2 / 0 / 1 |
+| `ego_curv` | 11 / 14 | 3 | 5 |
+| `n_agents_all` | 10 / 14 | 4 | ⚠️ 6 |
+| `lead_closing` | 10 / 14 | 4 | 3 |
+| `lead_present` | 8 / 14 | 6 | ⚠️ **11** |
+| `lead_inv_ttc` | 8 / 14 | 6 | 5 |
+| `ego_yawrate` | 7 / 14 | 7 | 5 |
+
+⇒ ⚠️ **The four rungs where the latent "wins" about half the time are the rungs where EVERY arm's K1B
+is ~1e-4 or smaller and the margin's sign flips across seeds on 5–11 of 14 arms.** Those are coin
+flips at physically nil magnitude, not latent wins. **The rungs that carry any signal go to the single
+scalar on 13 or 14 of 14 arms.**
+
+⚠️ **AND THE HEADLINE COUNT IS ROUTE-DEPENDENT AT THE NIL END — stated exactly, because "10 of 11"
+is quoted in the banner.** §5.3's *"10 of 11 rungs go to the scalar or tie it, the 11th favours the
+latent by 0.00002 gt_sd"* is **route B**. On **route A** the same arm (`v6F@11250`, 3-seed mean) gives
+**9 of 11 to the scalar and TWO nil-margin exceptions**: `lead_present` (−0.00001 gt_sd, margin sign
+flips across seeds on 11 of 14 arms) and `lead_inv_ttc` (−0.00002 gt_sd, both arms
+`DEGENERATE-CONSTANT`). ⇒ **The two routes disagree about which of two physically-zero rungs is the
+exception, and about nothing else.** The claim that survives both is: **on every rung that carries any
+signal, the single scalar matches or beats the 2 048-dimension latent.**
 
 ---
 
@@ -556,6 +728,73 @@ mean, not seed 0, is the quotable form of the trivial-proxy comparison. ⚠️ *
 flips across seeds on two rungs** (`n_agents_grid` NO-VERDICT / OK / NO-VERDICT; `nearest_any`
 NO-VERDICT / DEGENERATE / NO-VERDICT), which is a further reason no single-seed guard verdict on a
 contested rung should be quoted alone.
+
+### 8.0 ⭐⭐ THE MECHANISM, NOW MEASURED ON ALL 165 ROWS INSTEAD OF ONE ARM
+
+The claim above rests on *"the defect froze the alpha choice"*. That was inferred from four arms. It
+is now counted over the whole population.
+
+**`MEASURED` 2026-08-18 · the same 165 rows, incumbent (`pc6`, banked, 3 seeds) vs repaired (route A,
+3 seeds) · `…/incoming/2026-08-18-ladder-3seed/raw/reread3_table.json` →
+`R2b_incumbent_vs_repaired_seed_stability`**
+
+| statistic over 165 rows | **incumbent (defective)** | **repaired (route A)** |
+|---|---|---|
+| ⭐ **rows whose alpha is the SAME on all 3 seeds** | ⭐ **132** | ⭐ **42** |
+| rows whose K1 verdict is the same on all 3 seeds | 156 | 142 |
+| max K1 seed spread over the 165 | 4.239 | 2.812 |
+
+⇒ ⭐ **The load-bearing number is the alpha row: the defect froze the choice on 80 % of rows, the
+repair on 25 % — a 3.1× drop in seed-stability caused by a REPAIR.** That is
+*"a stability claim measured under a defect is not inherited by the repaired instrument"* (C103),
+quantified.
+
+⚠️ **AND ONE COLUMN POINTS THE OTHER WAY — reported rather than dropped, because a table where every
+column agrees is the shape a cherry-picked table has.** The **max K1 seed spread is LARGER on the
+incumbent (4.239) than on the repaired solve (2.812)**; its worst row is `proxyv0 n_agents_all`, whose
+incumbent alphas are `1e3 / 1e3 / 1e-2`. ⇒ **The correct claim is "the repair unfroze the alpha choice
+on the MAJORITY of rows", NOT "the incumbent had no seed variance anywhere"** — the second would be
+the same over-generalisation as the original *"exactly zero on 8 of 11"*.
+
+⚠️ **A SEPARATE INSTRUMENT CAVEAT, FOUND BY THE SAME RUN AND REPORTED BECAUSE IT IS CHECKABLE.**
+`MEASURED` over 176 rows: the chosen alpha sits at a **grid edge** on **78 / 94 / 82** rows for seeds
+0 / 1 / 2 — **64 / 80 / 68** of them at the TOP (1e7), and a constant **14** at the bottom (1e-2).
+⇒ **The widened `[1e-2, 1e7]` grid is still binding on roughly half the rows.** For no-signal rows
+that is the *correct* repaired behaviour (shrink to the train mean, which the guard then labels
+degenerate), but it means alpha selection on those rows is a **boundary hit, not an optimum**, and a
+wider grid belongs in any future run. `alpha_at_grid_edge` is emitted per row so this is measurable
+rather than assumed.
+
+### 8.1 ⚠️ THE RUNG PROFILE AT THREE SEEDS — the ordering holds as a SET, not as a RANKING
+
+§4.2 argues `r²` is the least-biased quantity here: C92 and C97 act on the fit's **dispersion**, and
+correlation is scale-invariant, so **at a fixed alpha neither defect can move `r²`**. But they
+truncated the alpha sweep, and **the seed moves alpha** — so `r²` moves with the seed too.
+
+**`MEASURED` · route A · `v6F-SW-30k@11250` · `R6_rung_profile_r2_3seed`**
+
+| rung | r² seed 0 | r² per seed | **r² 3-seed mean** | own null (3-seed mean) |
+|---|---|---|---|---|
+| `n_agents_all` | 0.1519 | 0.1519 / 0.1573 / 0.1746 | **0.1613** | 0.0002 |
+| `nearest_any` | 0.0964 | 0.0964 / 0.1004 / 0.0964 | **0.0977** | 0.0007 |
+| `ego_v0` | 0.1032 | 0.1032 / 0.0913 / 0.0756 | **0.0900** | 0.0007 |
+| `n_agents_grid` | 0.0200 | 0.0200 / **0.0880** / 0.0305 | **0.0462** | 0.0003 |
+| `ego_accel` | 0.0161 | 0.0161 / 0.0350 / 0.0051 | **0.0187** | 0.0001 |
+| `lead_present` | 0.0118 | 0.0118 / 0.0091 / 0.0053 | **0.0088** | 0.0000 |
+| `lead_gap` | 0.0053 | 0.0053 / 0.0097 / 0.0057 | **0.0069** | 0.0001 |
+| `ego_yawrate` | 0.0009 | 0.0009 / 0.0009 / 0.0015 | **0.0011** | 0.0001 |
+| `lead_closing` | 0.0013 | 0.0013 / 0.0000 / 0.0013 | **0.0009** | 0.0000 |
+| `lead_inv_ttc` | 0.0008 | 0.0008 ×3 | **0.0008** | **0.0009** |
+| `ego_curv` | 0.0000 | 0.0000 ×3 | **0.0000** | **0.0005** |
+
+⇒ ⭐ **THE SHAPE SURVIVES: a cliff, not a slope.** The top-3 **set** and the bottom-4 **set** are
+unchanged, and two of the bottom four remain **below their own nulls**.
+⚠️ ⛔ **BUT THE RANKING IS NOT SEED-STABLE, so §4.2's "the ordering held" is TRUE AT SET LEVEL ONLY:**
+`nearest_any` and `ego_v0` **swap** 2nd/3rd, and `ego_yawrate` and `lead_closing` swap 8th/9th,
+between seed 0 and the 3-seed mean. `n_agents_grid` swings **0.0200 → 0.0880 → 0.0305** — 4.4× on one
+rung. ⇒ ⛔ **Any citation quoting an individual `r²` from this ladder must quote the 3-seed mean and
+its seed spread, never one seed's value.** *(That includes §12's own citation table, which is stamped
+seed 0 and is corrected there.)*
 
 ---
 
@@ -659,8 +898,46 @@ text said the two routes agree to *"~1e-12"* on the inner split. **The full fit 
 inner split differs by up to 0.74 MAE — eleven orders out.** ⇒ **The two routes' numbers must never
 be pooled.** Every table in this document names its route in its caption. In summary: **§1, §2, §4,
 §5.1, §5.2, §6, §9, §11 and §12 are route A (`unpen`, seed 0); §5.3 and §8 are route B (`centred`,
-seeds 0–2); §7 is route A except its last column; §10.3 is the only table that places the two side by
-side, which is its entire purpose.**
+seeds 0–2); §5.3a, §5.3b, §8.0 and §8.1 are route A at seeds 0–2; §7 is route A except its last
+column; §10.3 is the only table that places the two side by side, which is its entire purpose.**
+
+#### ⚠️ 10.3a — AND *"0 VERDICTS DIFFER"* WAS **ALSO** A ONE-SEED CLAIM. IT DOES NOT FULLY SURVIVE.
+
+⭐ **This is C103's own root-cause class applied to C103's own reassurance**, and it is why the 3-seed
+re-run was done on **both** routes rather than one. **`MEASURED` 2026-08-18 ·
+`…/incoming/2026-08-18-ladder-3seed/raw/reread3_table.json` → `R4_two_routes_3seed` · 176 paired rows
+(15 arms + `proxytok`) × 11 rungs, 3 seeds, side by side ONLY:**
+
+| | **seed 0, 44 rows (above)** | **3 seeds, 176 rows** |
+|---|---|---|
+| alpha choices / vectors that differ | 2 | **29** |
+| ⚠️ **verdicts that differ** | *0* | ⚠️ **2** |
+| guard verdicts that differ | *0* | ⚠️ **11** |
+| ⛔ **max abs K1 gap** | 0.3957 | ⛔ **0.7212** — `v6F@2000 n_agents_all`: A **−3.032**, B **−2.311** |
+| …and its K1B gap | ×8 on `ego_v0` | **0.7283** on that same row |
+
+⚠️ **What the two verdict differences actually are, because the honest form is narrower than the
+headline** — **neither is a PASS↔FAIL flip; both are "one route reaches a stable verdict where the
+other does not":**
+
+| row | route A (3 seeds) | route B (3 seeds) |
+|---|---|---|
+| `v6F@10000` `ego_v0` | `not-separated` on all 3 | **SEED-UNSTABLE** |
+| `v6F@2000` `n_agents_all` | `PASS` on all 3 | **SEED-UNSTABLE** |
+
+The 11 guard differences have the same shape and **10 of them sit at `|ΔK1B| ≤ 0.0015`** — tie-breaking
+at physically nil magnitude; the exception is `v6F@10000 ego_v0` at `|ΔK1B|` **0.134**.
+
+⭐⭐ **AND THE CONCLUSION IS ROUTE-INVARIANT, WHICH IS WHAT MATTERS.** The 87-FAIL inventory at 3 seeds:
+
+| | die at repair | killed by guard | flip to PASS | survive both | SEED-UNSTABLE | ⭐ **SUBSTANTIVE** |
+|---|---|---|---|---|---|---|
+| **route A** (`unpen`) | 12 | 33 | 11 | 9 | 22 | ⛔ **0** |
+| **route B** (`centred`) | 11 | 33 | 11 | 9 | 23 | ⛔ **0** |
+
+⇒ **Both routes independently return ZERO substantive survivors.** ⛔ **The numbers still must never be
+pooled** — one row differs by 0.72 K1 between them — **but the finding does not depend on the route,
+and that is now measured at three seeds rather than argued from one.**
 
 ---
 
@@ -736,16 +1013,19 @@ truncated the alpha sweep: **the individual r² values moved on 10 of 11 rungs a
 
 **2. ⚠️ But every NUMBER in the citation moves, so §1.5 must be re-quoted, not just re-read.**
 
-| §1.5 quotes | incumbent | **repaired (route A)** | its own null |
-|---|---|---|---|
-| `n_agents_all` r² | 0.076 | **0.1519** | 0.0002 |
-| `ego_curv` r² | 0.0001 | **0.0000** | 0.0005 |
-| `lead_closing` r² | 0.0000 | **0.0013** | 0.0000 |
+| §1.5 quotes | incumbent | repaired, route A **seed 0** | ⭐ **repaired, route A 3-SEED MEAN — the quotable form** | its own null (3-seed) |
+|---|---|---|---|---|
+| `n_agents_all` r² | 0.076 | 0.1519 | ⭐ **0.1613** | 0.0002 |
+| `ego_curv` r² | 0.0001 | 0.0000 | ⭐ **0.0000** | 0.0005 |
+| `lead_closing` r² | 0.0000 | 0.0013 | ⭐ **0.0009** | 0.0000 |
 
-⛔ **"Relative motion is exactly 0.0000" is no longer literally true** (`lead_closing` 0.0013), though
-it remains at the null. And ⛔ **the `n_agents_all` half of the citation — "aggregate scene density
-survives" — is the half the trivial-proxy control destroys** (§5.2, §5.3): it is ⅘ episode identity,
-~80 % `v0` at seed 0, and the ego-speed scalar beats it on the 3-seed mean.
+⛔ **"Relative motion is exactly 0.0000" is no longer literally true** (`lead_closing` **0.0009** on
+the 3-seed mean, 0.0013 at seed 0), though it remains at the null. And ⛔ **the `n_agents_all` half of
+the citation — "aggregate scene density survives" — is the half the trivial-proxy control destroys**
+(§5.2, §5.3, §5.3a): it is ⅘ episode identity, ~80 % `v0` at seed 0, and the ego-speed scalar beats it
+on the 3-seed mean **at all four late checkpoints**.
+⚠️ **AND THE RE-QUOTE MUST BE THE 3-SEED COLUMN, NOT SEED 0** — §8.1 measures the r² ranking moving
+between them (`nearest_any`/`ego_v0` swap; `n_agents_grid` swings 4.4×).
 
 **3. ⛔ THE K1-FAIL SIDE OF THE CONFIRMATION IS GONE ENTIRELY.** Three of the four rungs carried
 separated-FAIL verdicts in the incumbent table (`ego_yawrate` +0.005, `ego_curv` +0.001,
@@ -799,10 +1079,11 @@ trajectory eval. **All numbers route A, seed 0, unless §5.3 is cited.**
    projected scalar). §4.4 is explicit that the two ROTATIONAL rungs have **no positive control**,
    which makes them the weakest rows despite being the LATERAL family's whole basis. **Until this
    runs, "the latent has no yaw content" is an unverified negative.**
-2. ⭐ **RE-RUN THE 165-ROW LADDER AT ≥3 SEEDS.** §5.3 and §8 show the seed spread on the five
-   signal-bearing rungs is the same order as every effect reported. The re-read ran one seed; the
-   correction found the sign flip only because four arms had three. **This is the cheapest change
-   that would raise the whole document's evidence grade**, and it is one flag (`LLR_SEEDS="0 1 2"`).
+2. ✅ **DONE 2026-08-18 — the 165-row ladder has been re-run at 3 seeds on both routes** (§2, §5.3a,
+   §5.3b, §8.0, §8.1, §10.3a; `…/incoming/2026-08-18-ladder-3seed/`). ⚠️ **Its own follow-on:** the
+   repaired alpha lands on a **grid edge** on 78–94 of 176 rows (mostly the top, 1e7), so **a wider
+   alpha grid belongs in the next run** — on those rows the "selected" alpha is a boundary hit, not
+   an optimum (§8.0).
 3. **Re-run the ladder at 30 000** when Thor finishes. Every v6 number here is a 37.5 % early read.
 4. **An unpooled token probe** (§11) — spatially-structured or patch-subset features rather than a
    mean-pool, so the encoder-vs-`readout` localisation becomes decisive rather than suggestive.
@@ -859,6 +1140,20 @@ this programme has mis-attributed before.** `MEASURED`: `git diff --cached --nam
 which accounts for most of the delta. **Zero failures either way, so the gate is satisfied** — but
 the baseline a future agent is briefed with should be **3861**, not 3842.
 
+⭐ **RE-MEASURED 2026-08-18 by the 3-seed run** (`…/incoming/2026-08-18-ladder-3seed/raw/suite_*.txt`):
+`taniteval` **1136 passed, 0 failed** — exact match to the baseline; `stack` **3868 passed, 0 failed,
+7 skipped, 2 xfailed**. ⚠️ **The `stack` count moved 3861 → 3868 and it is attributed rather than
+absorbed:** the working tree carries another agent's `stack/tests/test_seam_dump_import_guard.py`
+with **exactly 7 test defs** — the whole delta. **That run modified nothing under `stack/` or
+`taniteval/` either.** ⇒ **The baseline a future agent is briefed with should be 3868.**
+⛔⛔ **AND A TRAP IT MEASURED, WORTH MORE THAN THE COUNT.** Its **first** `taniteval` run, launched in
+parallel with the 15-arm ladder chains, returned **22 failed / 1114 passed** — with nothing under
+`taniteval/` touched. `MEASURED`: those same test files **alone** give **34 passed**, and the full
+suite alone gives **1136 / 0**. The failing tests spawn subprocesses with timeouts, and 12–16 busy
+ridge processes push them past the deadline. ⇒ ⚠️ **Never run the suite as a gate while a
+multi-process CPU job is live — its FAILs are not about the code.** *(Same family as `df` on a pod: a
+probe answering a different question than the one asked.)*
+
 ✅ **The `stack` RED reported by the original run on 2026-08-17 (`test_v6_staged.py:1157`,
 `sel_gap` stage-gate semantics) is RESOLVED** — that agent's paired test update has landed.
 `MEASURED` by running that single test directly: **`1 passed in 12.21s`**. **The escalation is
@@ -905,6 +1200,19 @@ Escalation 9.
 | ⭐ **the gate result** | `raw/rep_guard_gate.json` | **4 752 / 4 752 fields identical, `GATE: PASS`** |
 | ⭐ **the corrected tables** | `raw/corrected_tables.json` | T1 fail inventory · T2 corrected ladder · T3 rung profile · T4 checkpoint trajectory · T5 the two routes · T6 the guarded rep arms |
 | ⭐ **the seed-stability finding** | `raw/seed_stability_v6_vs_cv0.json` | §5.3 — v6 vs C-V0 K1B per seed, all 11 rungs |
+| suites | `raw/suite_taniteval.txt`, `raw/suite_stack.txt` | §16 |
+
+### 17.2b ⭐ THE 3-SEED RE-RUN — `…/incoming/2026-08-18-ladder-3seed/`
+
+| artifact | path | what it is |
+|---|---|---|
+| **the report** | `LADDER_3SEED.md` | the 3-seed re-derivation, its reproduction gate, and the route comparison |
+| **the chain** | `code/chain_3seed.sh` | derived from (**not editing**) `…/2026-08-18-k1-degeneracy-guard/code/chain_reread.sh`; only OUT, SEEDS and fit MODE parameterised, with an md5 + real-import sync gate |
+| **the missing control** | `code/run_proxytok.sh` | `C-V0` on the **TOKENS** window set — the control 33 of the 165 rows never had |
+| **the table builder** | `code/reread3_table.py` | opens banked JSON and arranges it; the reproduction gate, the 3-seed buckets, the trivial-proxy margins, the route comparison |
+| ⭐ **route A, 3 seeds (16 arms)** | `raw/reread_unpen/ll3_*.json` + `log3_*.txt` | C100's route |
+| ⭐ **route B, 3 seeds (16 arms)** | `raw/reread_centred/ll3_*.json` + `log3_*.txt` | §5.3/§8's route |
+| ⭐ **the 3-seed tables** | `raw/reread3_table.json` | R0 gate · R1 per-row · R2 inventory · R2b seed stability · R3 trivial proxy · R4 routes · R5 quotable PASSes · R6 rung profile |
 | suites | `raw/suite_taniteval.txt`, `raw/suite_stack.txt` | §16 |
 
 ### 17.3 Inputs read and NOT copied (large, already banked by the precedent runs)
@@ -955,16 +1263,43 @@ proves nothing about its sibling.**
    (§4.2). ⚠️ **I did not edit it** — same reason.
    ⭐ **`Project Steering/MODEL_REGISTRY.md` was checked and quotes NO ladder number** — nothing to
    correct there (`grep` for `lead_gap`/`LATENT_LINEAR`: zero hits).
-4. ⛔ **OPEN — THE 165-ROW RE-READ SHOULD BE RE-RUN AT 3 SEEDS (§5.3, §8, §14.2).** Seed 0 alone
-   reported the v6 latent beating the ego-speed scalar on `n_agents_all`; **three seeds reverse the
-   sign.** Every other single-seed verdict on a contested rung is exposed to the same. **One flag,
-   ~45 minutes of CPU, no GPU.** Until it runs, no single-seed guard verdict on a signal-bearing rung
-   should be quoted alone.
+
+   ⚠️ **RE-SWEPT 2026-08-18 by the 3-seed run — BOTH DOCUMENTS ARE STILL STALE, and the replacement
+   values have moved AGAIN** (they must now be re-quoted from the **3-seed mean**, not seed 0):
+   * `…/Research/2026-08-18-pooling-bottleneck-R1R2/POOLING_BOTTLENECK_R1R2.md` **§1.5, lines
+     111–119** (unchanged since commit `87ff185`, i.e. it predates the whole correction). It quotes
+     `n_agents_all` r² **0.076** → now **0.1613**; `ego_curv` **0.0001** → **0.0000**; `lead_closing`
+     **0.0000** → **0.0009**; and *"partialling `v0` out leaves r +0.052, r² 0.0027"* → now
+     **r −0.107**. Its five line-number citations (`:178-194`, `:158-164`, `:234`, `:264`,
+     `:299-316`) are invalid and must become section-heading citations.
+   * `…/Research/2026-08-17-O234-DESIGN-RESEARCH.md` **§3.4a, line 427** (the r² table) and its
+     **E-PROBE-A row, line 1015**. Same three r² values, plus *"K1 −1.562 PASS vs +1.580 FAIL"* →
+     the latent's `lead_gap` K1 is **+0.736** at seed 0 and its 3-seed K1B is **+0.153**.
+     ⚠️ Its own top banner (line 13) already flags §3.4 as inverted; **§3.4a's table was not updated
+     with it.**
+   ⛔ **I did not edit either file** — both live in another stream's `Research/` directory, and the
+   pooling one was touched by commit `280fb9b` (C104) hours ago, i.e. it is live. **This is the
+   escalation, not a note in a README.**
+4. ✅ **CLOSED 2026-08-18 — THE 165-ROW RE-READ HAS BEEN RE-RUN AT 3 SEEDS, ON BOTH REPAIR ROUTES**
+   (`…/incoming/2026-08-18-ladder-3seed/`, agent `ladder-3seed`; ~23 min CPU, no GPU). **It confirms
+   C100's direction and removes its one exception:** the reproduction gate is **3 465 / 3 465 fields
+   identical** to the banked seed-0 rows, **22 of the 87 rows have no stable verdict**, and ⛔ **the
+   substantive count is ZERO on both routes** — C100's `ll_s09000 lead_gap` survivor separates on one
+   seed of three (§2). ⭐ **New:** the frozen-alpha mechanism is now measured on all 165 rows (alpha
+   seed-stable on **132** incumbent rows vs **42** repaired, §8.0); the trivial-proxy control is on
+   **every** row for the first time via the new `proxytok` arm (§5.3b); and *"0 verdicts differ
+   between the routes"* is itself corrected (§10.3a).
 5. ⚠️ **OPEN — THE ROTATIONAL RUNGS STILL HAVE NO POSITIVE CONTROL (§4.4, §14.1).** The LATERAL
    family's entire basis in this ladder rests on two nulls whose apparatus has never been shown able
    to measure them. **One line of `ll2_ego_oracle.py` closes it.**
 6. ⚠️ **OPEN — `C-V0` SHOULD BECOME A STANDING COLUMN** on every latent-readout result in this
    programme (§14.5), **reported at ≥3 seeds**. It has now changed four headlines.
+   ⛔ **SHARPENED 2026-08-18: "carry a C-V0 arm" is not enough — it must be on the SAME WINDOW SET.**
+   `MEASURED`: the re-read's single `C-V0` sits on the cells cache, so **33 of its 165 rows (the three
+   TOKENS-window arms) had no trivial-proxy control at all and nothing said so** (§5.3b). A control
+   fitted on different windows is not a control. ⇒ **The standing requirement is one C-V0 arm PER
+   WINDOW FAMILY, and the row should state which one it is paired against.** The `proxytok` arm
+   added here is the first instance.
 7. ✅ **CLOSED — `stack`'s suite was RED in the shared working tree** on 2026-08-17
    (`test_v6_staged.py:1157`, `sel_gap` stage-gate semantics). The owning agent's paired test update
    has landed; **`stack` is GREEN today** (§16). *Retained rather than deleted so the resolution is
@@ -994,3 +1329,11 @@ proves nothing about its sibling.**
    the committing agent must run `git diff --cached --name-only` and either name foreign entries in
    the message or unstage them. **Escalating rather than proposing a policy change unilaterally —
    this is the PI's to decide.**
+   ⛔⛔ **SIXTH OCCURRENCE, 2026-08-18, during the 3-seed re-run.** `MEASURED`: commit **`14623d7`** —
+   *"C105 — a defect that would have killed S-T at a checkpoint boundary…"*, **66 files, naming none
+   of them** — swept in **5 of the `ladder-3seed` agent's staged files** in a mid-run state
+   (`LADDER_3SEED.md`, `code/chain_3seed.sh`, `code/reread3_table.py`, `code/run_proxytok.sh`,
+   `raw/reread3_table.json`). That agent never ran `git commit` or `git push` either. ⚠️ **A
+   `stack/scripts/scoped_commit.py` has since appeared in the shared index from another stream — if
+   that is the intended mechanism it should be ADOPTED EXPLICITLY, not left as an untracked
+   convention.**

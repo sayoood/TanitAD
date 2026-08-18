@@ -68,9 +68,19 @@ and reliably stranded the work. This standard replaces it.
 - **Weekly audit pair.** Run the *model-registry* and *repo-triage* agents every week. In one
   run they found a live bug, 4 reproducibility gaps, 3 lineage errors and an 80% val leak —
   the highest return of any agents in the program. They are cheap relative to what they catch.
-- **Nightly pod drift check.** `stack/scripts/pod_git_drift.py` reports any code that exists on
-  a pod but not in git. **A pod is not storage:** nothing that took more than an hour to produce
-  may live only on a pod.
+- **Nightly drift check — TWO tools, they are converses and both are required.**
+  - `stack/scripts/pod_git_drift.py` — **box → repo.** Reports code that exists on a box but not
+    in git. **A box is not storage:** nothing that took more than an hour to produce may live only
+    on one. ⚠️ **Repaired 2026-08-18** (defaults named four dead pods; index walked
+    `.claude/worktrees/`; basename-wide matching; no CRLF normalisation). On the live fleet it
+    would have printed **361 DRIFTED of which 293 = 81.2 % were artifacts**.
+  - `stack/scripts/launch_closure_audit.py` — **repo → box.** *Is the box running the repo?*
+    ⛔ **`pod_git_drift.py` cannot answer this, by construction** — a repo file missing or stale on
+    the box is invisible to a box→repo scan. That gap is C99/C102/C105: a 2.6×-stale
+    `refc_dump_latents.py` with three green md5s, and a `train_v6_staged.py` that still exported the
+    symbol its caller imports while missing all six `probe_applies` references.
+  ⚠️ **Do not substitute one for the other**, and note the third rung: presence proves transfer,
+  md5 proves bytes, a successful import proves loading — **none of them proves currency.**
 - **Registry refresh** whenever a model version is created, retired, or re-measured.
 
 ## Reviewing agent output — the checklist

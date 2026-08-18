@@ -9,6 +9,39 @@ about how the car drives.
 **Compute:** dev-box RTX 4060 only. ⛔ **ZERO training. Thor was never touched** — no checkpoint
 pulled, nothing run there. ⛔ **Zero pod.**
 
+> ## ⛔ CORRECTION 2026-08-18 (citation sweep) — **THE VERDICT STANDS. THE HEADLINE POSITIVE CONTROL IS THE WRONG ONE.**
+>
+> **Cite this block by its heading, never by line number.**
+>
+> ⛔ **`PC-2OBJ` IS INERT AT THE DEPLOYED POOLING RATIO BY CONSTRUCTION (C109).** Two *opposing*
+> plants inside one deployed cell **cancel under the mean**. `MEASURED`: run at **p40 — the deployed
+> ratio — it reproduced the un-planted arm to 5e-05.** ⇒ ⛔ **Every sentence in this document that
+> uses `PC-2OBJ` to establish that the ladder had power AT THE DEPLOYED RATIO must be re-anchored** —
+> that includes §4's *"a step exactly at the deployed ratio — the ladder has FULL POWER"*, §5's
+> *"PC-2OBJ closes it"*, and the ⚠️ VOID row of the verdict table.
+>
+> ⭐ **THE CONTROLS THAT ACTUALLY FIRE, AND THEY ARE ALREADY IN THIS RUN'S OWN `raw/`:**
+> **`PC-LOCAL` / `PC-DIST`** — our own **trained tokens** through the **deployed** pool — step
+> **0.0596 → 1.0000, K1 9/9.** Quote those. They are the honest evidence that the instrument can see a
+> pooling-destroyed signal at the ratio in question.
+>
+> ⭐⭐ **THE VERDICT IS *NOT* OVERTURNED, AND THIS MUST BE SAID AS LOUDLY AS THE CORRECTION.**
+> `R1 IS DROPPED` still holds on this run's own evidence: **PC-LOCAL/PC-DIST fire**, the 40:1 → 1:1
+> null result stands (**`|Δr²| ≤ 0.0002`, CI containing zero on all five seeds**), the
+> no-projection supplement **falls** as the pool is removed, and the DINOv2 discriminator (**86 M vs
+> our 87.3 M — not a capacity gap**) reads **`lead_gap` 0.44997 vs 0.00496** through the *same*
+> deployed pool. ⛔ **What was wrong was the choice of headline control, not the conclusion** — and
+> that is the **D1 / C79 shape**: an instrument validated by a control that could not have failed.
+> ⚠️ *This document's §5 explicitly reasoned "PC-2OBJ is the control that settles the verdict, NOT
+> PC-DIST". That preference was exactly backwards, and it is the one thing here worth remembering.*
+>
+> ⚠️ **One number in the evidence this run inherited is also superseded:** the live-checkpoint param
+> total is **336,542,025**, not `336,559,305` (C106; two independent sources, Δ 17,280).
+>
+> **Sources:** `Project Steering/RETRACTION_LOG.md` **C109** ·
+> `…/incoming/2026-08-18-c106-adversarial/C106_ADVERSARIAL.md` ·
+> `…/Benchmarks & Eval/Implementation/incoming/2026-08-18-citation-sweep/CITATION_SWEEP.md`.
+
 > **Evidence classes:** `MEASURED` (ours + artifact path) · `PUBLISHED` · `INHERITED` (another
 > agent/doc, NOT re-verified by me) · `ESTIMATED` · `HYPOTHESIS`.
 
@@ -838,3 +871,37 @@ Flagged, not assumed.
    `stack/scripts/launch_closure_audit.py`, `stack/tests/test_launch_closure_audit.py`.
    ⛔ **Whoever commits must read `CLAUDE.md`'s git-hygiene rule first** — `git commit` takes the
    WHOLE index, and this index is shared.
+
+---
+
+## 15. ⚠️ PROVENANCE NOTE — this deliverable's 44 files landed across THREE commits, two of them about other work
+
+`MEASURED` after the fact (`git show --name-only` per commit). **Nothing is lost — all 44 files are
+tracked in HEAD and every index blob equals its worktree blob** — but the history attributes them
+like this:
+
+| commit | subject | files from THIS deliverable |
+|---|---|---|
+| `ec26ca9` | *"The CEM planner is 35.8 % WORSE than constant velocity closed-loop…"* | **21** |
+| `2ab0be3` | *"C100's surviving v6 PASS reverses at 3 seeds…"* | **23** |
+| `280fb9b` | *"C104 — THE 40:1 POOLING BOTTLENECK IS REFUTED…"* (the one that IS about this work) | **3** |
+
+⛔ **THIS IS `CLAUDE.md`'s GIT-HYGIENE FAILURE CLASS RECURRING** — *"`git commit` commits the ENTIRE
+INDEX, not the files you just `git add`ed … a 'quick commit of my thing' silently sweeps in a
+sibling's half-finished code under the wrong message."* It is logged there as having happened twice;
+**this makes at least four.**
+
+⭐ **AND THE ROOT CAUSE IS A STRUCTURAL COLLISION BETWEEN TWO RULES WE BOTH FOLLOW, WHICH IS WHY
+"be careful" will not fix it.** The operating standard tells agents to **stage as they go** and to
+**bank incrementally**; the git-hygiene rule tells committers the **index is shared**. When both are
+obeyed, an agent's incremental `git add` is *guaranteed* to be swept into whatever commit lands next.
+I staged three times during this session (early, mid, final) — exactly as instructed — and that is
+precisely what exposed 41 of 44 files to two unrelated commits.
+
+⇒ ⛔ **ESCALATION (11th):** the two rules need reconciling, and the cheap fix is on the **committer**
+side, not the agent side — either commit with an explicit pathspec (⚠️ but `git commit -- <pathspec>`
+**SEGFAULTS on this repo**, `CLAUDE.md`), or **read `git diff --cached --name-only` and name the
+foreign directories in the commit message** so provenance survives. **A sweep that is *recorded* is
+recoverable; a sweep that is silent is not.** *(This report's §14.10 flagged the foreign entries in
+the index at end of turn for exactly this reason — that note was written before I could know the
+sweep had already happened in the other direction.)*

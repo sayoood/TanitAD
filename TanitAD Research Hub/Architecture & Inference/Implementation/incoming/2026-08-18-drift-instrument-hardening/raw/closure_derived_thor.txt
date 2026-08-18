@@ -1,0 +1,93 @@
+==========================================================================
+ROOT SET  (mode=derived)  — the assumption this audit rests on
+==========================================================================
+launch sources (3) — entry points are READ from these, not remembered:
+    Project Steering/GATE_PROTOCOL.md
+    TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-08-07-hierarchical-wm-redesign/V6_GO_PACKAGE.md
+    stack/scripts/v6_chain.py
+
+entry points (52):
+    stack/ops/ckpt_fp16_snapshot.py   <- ckpt_fp16_snapshot.py, train_v6_staged.py
+    stack/scripts/build_obstacle_join.py   <- build_obstacle_join.py, probe_latent_state.py
+    stack/scripts/build_pai_cache.py   <- build_pai_cache.py, v2_compressed.py
+    stack/scripts/build_refc_anchors.py   <- build_refc_anchors.py, refc_train.py, train_v6_staged.py, v15_prep.py
+    stack/scripts/d1_probe_capacity.py   <- d1_probe_capacity.py, driving_diagnostic.py, refb_labels.py
+    stack/scripts/driving_diagnostic.py   <- driving_diagnostic.py, eval_flagship_v15.py, eval_flagship_v16.py
+    stack/scripts/e_wc2_sigma_star.py   <- e_wc2_sigma_star.py, refc_dump_latents.py, train_v6_staged.py, v6_chain.py, v6_dump_sw_latents.py
+    stack/scripts/eval_flagship_v15.py   <- GATE_PROTOCOL.md, eval_flagship_v15.py, eval_flagship_v16.py, goal_provenance.py
+    stack/scripts/eval_flagship_v16.py   <- GATE_PROTOCOL.md, eval_flagship_v16.py, eval_flagship_v4.py, goal_provenance.py
+    stack/scripts/eval_flagship_v4.py   <- GATE_PROTOCOL.md, eval_flagship_v4.py, goal_provenance.py, eval_four_families.py, t1_eval.py
+    stack/scripts/evaluate_checkpoint.py   <- driving_diagnostic.py, evaluate_checkpoint.py
+    stack/scripts/gate_emitters.py   <- GATE_PROTOCOL.md, gate_emitters.py
+    stack/scripts/goal_modes.py   <- eval_flagship_v4.py, goal_modes.py
+    stack/scripts/goal_provenance.py   <- GATE_PROTOCOL.md, goal_modes.py
+    stack/scripts/lead_state_gate.py   <- build_obstacle_join.py, lead_state_gate.py, probe_latent_state.py
+    stack/scripts/lf0_bev_lead.py   <- train_p8_occupancy.py
+    stack/scripts/p8_bev_reel.py   <- lf0_bev_lead.py, p8_bev_reel.py
+    stack/scripts/physicalai_r0.py   <- build_pai_cache.py, physicalai_r0.py
+    stack/scripts/probe_latent_state.py   <- V6_GO_PACKAGE.md, e_wc2_sigma_star.py, probe_latent_state.py, train_v6_staged.py, v6_chain.py, v6_dump_sw_latents.py
+    stack/scripts/refb_labels.py   <- build_obstacle_join.py, probe_latent_state.py, refb_train.py, refc_train.py, train_flagship4b.py, train_p8_occupancy.py, validate_refb_labels.py
+    stack/scripts/refb_train.py   <- refb_train.py, refc_train.py
+    stack/scripts/refc_dump_latents.py   <- e_wc2_sigma_star.py, refc_dump_latents.py
+    stack/scripts/refc_train.py   <- build_refc_anchors.py, refc_train.py
+    stack/scripts/rig_band_scan.py   <- v2_compressed.py
+    stack/scripts/route_label_audit.py   <- refb_labels.py, route_label_audit.py
+    stack/scripts/run_gate.py   <- GATE_PROTOCOL.md, eval_flagship_v4.py, gate_emitters.py, run_gate.py, train_flagship_v4.py
+    stack/scripts/run_spectral.py   <- FLOOR ONLY (no launch source names it)
+    stack/scripts/sel_winners_curse_law.py   <- e_wc2_sigma_star.py, sel_winners_curse_law.py
+    stack/scripts/slice_v2_cache.py   <- eval_flagship_v4.py, slice_v2_cache.py
+    stack/scripts/stage_a_probes.py   <- V6_GO_PACKAGE.md, stage_a_probes.py, train_v6_staged.py, w7_roll_rerank.py, t1_eval.py
+    stack/scripts/train_flagship4b.py   <- GATE_PROTOCOL.md, train_flagship4b.py, train_flagship_v4.py
+    stack/scripts/train_flagship_v15.py   <- train_flagship_v15.py, train_flagship_v4.py
+    stack/scripts/train_flagship_v16.py   <- train_flagship_v16.py, train_flagship_v4.py
+    stack/scripts/train_flagship_v4.py   <- goal_modes.py, stage_a_probes.py, train_flagship_v4.py, train_p8_occupancy.py, train_w4c_spatial.py, w7_roll_rerank.py, t1_eval.py
+    stack/scripts/train_p8_occupancy.py   <- build_obstacle_join.py, train_p8_occupancy.py, train_v6_staged.py, w7_roll_rerank.py
+    stack/scripts/train_stage_a.py   <- V6_GO_PACKAGE.md, train_stage_a.py, train_v6_staged.py
+    stack/scripts/train_v58f_unicycle_head.py   <- V6_GO_PACKAGE.md, train_v58f_unicycle_head.py, train_w4c_spatial.py
+    stack/scripts/train_v6_staged.py   <- V6_GO_PACKAGE.md, train_v6_staged.py, v6_chain.py, v6_dump_sw_latents.py
+    stack/scripts/train_w4c_spatial.py   <- train_w4c_spatial.py, w7_roll_rerank.py
+    stack/scripts/v15_prep.py   <- train_flagship_v15.py, v15_prep.py
+    stack/scripts/v2_compressed.py   <- eval_flagship_v4.py
+    stack/scripts/v5_guard.py   <- FLOOR ONLY (no launch source names it)
+    stack/scripts/v6_chain.py   <- V6_GO_PACKAGE.md, e_wc2_sigma_star.py, v6_chain.py, v6_dump_sw_latents.py
+    stack/scripts/v6_dump_sw_latents.py   <- e_wc2_sigma_star.py, v6_chain.py, v6_dump_sw_latents.py
+    stack/scripts/validate_refb_labels.py   <- refb_labels.py, validate_refb_labels.py
+    stack/scripts/w7_roll_rerank.py   <- train_v6_staged.py, w7_roll_rerank.py, t1_eval.py
+    stack/scripts/watch_gates.py   <- FLOOR ONLY (no launch source names it)
+    taniteval/tools/build_lead_block.py   <- eval_four_families.py, t1_eval.py
+    taniteval/tools/eval_four_families.py   <- train_v6_staged.py, t1_eval.py
+    taniteval/tools/seam_probe.py   <- train_v6_staged.py, seam_probe.py
+    taniteval/tools/t1_eval.py   <- V6_GO_PACKAGE.md, train_v6_staged.py, v6_dump_sw_latents.py, w7_roll_rerank.py, t1_eval.py
+    taniteval/tools/t1_summary.py   <- FLOOR ONLY (no launch source names it)
+
+  ⚠️ 4 entry point(s) survive only because the C105 floor carries them — no current launch source names them, so they are audited on INHERITED authority: ['stack/scripts/run_spectral.py', 'stack/scripts/v5_guard.py', 'stack/scripts/watch_gates.py', 'taniteval/tools/t1_summary.py']
+
+sys.path roots: ['stack/scripts', 'stack', 'taniteval']
+executable dirs: ['stack/scripts', 'taniteval/tools', 'stack/ops']
+
+COVERAGE: closure 161 files · 54/158 launchable scripts covered · 104 NOT covered
+  ⚠️ uncovered scripts are launchable and unaudited by this run. They are not on the derived launch path; if one becomes so, add its launch source.  (--show-uncovered to list)
+  ~ 117 script-shaped tokens resolved to nothing (prose / pod-only paths); not guessed at.
+==========================================================================
+
+closure: 161 files from 52 entry points over roots ['stack/scripts', 'stack', 'taniteval']
+  eager (imported at process start): 115   deferred-only (function-level, the C99 risk set): 46
+
+tanitad-thor-wifi:/home/nvidia/TanitAD  SAME=88  CRLF_ONLY=68  DRIFT=4  MISSING_REMOTE=1  MISSING_LOCAL=0
+  compared side: WORKING TREE (each row also checked against HEAD)
+  DRIFT           [eager        ] stack/scripts/lf0_bev_lead.py  local=30106 remote=17979 ratio=1.675
+  DRIFT           [eager        ] stack/scripts/p8_bev_reel.py  local=19317 remote=12562 ratio=1.538
+  DRIFT           [eager        ] stack/scripts/refc_train.py  local=82015 remote=78472 ratio=1.045
+  MISSING_REMOTE  [eager        ] stack/scripts/sel_winners_curse_law.py  local=18266 remote=None
+  DRIFT           [eager        ] stack/tanitad/models/v6.py  local=263615 remote=252018 ratio=1.046  <- ⚠️ LOCAL IS DIRTY vs HEAD; REMOTE == HEAD, so this is YOUR uncommitted edit, NOT box staleness
+
+  ⚠️ 1 of 4 DRIFT rows are explained by UNCOMMITTED local edits, not by the box: ['stack/tanitad/models/v6.py']
+     Shipping these would push work-in-progress onto the box.
+
+what actually differs (top-level symbol census):
+  stack/scripts/lf0_bev_lead.py: lines 345 -> 544, missing on remote (1): ['corridor_fov_census']
+  stack/scripts/p8_bev_reel.py: lines 291 -> 406, missing on remote (3): ['NOFOV', 'NOFOV_HIT', 'iou_pair']
+  stack/scripts/refc_train.py: lines 1339 -> 1373, missing on remote (0): []
+  stack/tanitad/models/v6.py: lines 4533 -> 4675, missing on remote (7): ['FROZEN_EXTERNAL_FLAG', 'FrozenExternalViolation', '_in_declared_subtree', 'assert_frozen_external', 'declare_frozen_external', 'frozen_external_prefixes', 'reassert_frozen_external']
+
+wrote TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-08-18-drift-instrument-hardening/raw/closure_derived_thor.json

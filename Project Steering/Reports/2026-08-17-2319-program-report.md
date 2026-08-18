@@ -113,6 +113,35 @@ encoder.
 ⇒ *Grade: the claim is intact and untested; the ladder now running is the first instrument that
 could grade it.*
 
+> ⛔⛔ **CORRECTION 2026-08-18 (citation sweep) — THE SENTENCE ABOVE IS RETRACTED (C92, C97, C103,
+> C107). It is kept visible because this is a dated report, not a live doc.**
+> **Cite this block by its heading, never by line number.**
+>
+> *"~1.8 m better than the random null, r +0.159 ⇒ the information is present and weak"* was quoted
+> **without a trivial-proxy control**, and the margin is an **EGO-SPEED PROXY**:
+> * ⛔ **It does not shrink — it INVERTS.** At the *eval-optimal* alpha (cheating in the arm's own
+>   favour) the true margin is **~0.02–0.07 m — a 25–90× overstatement — and no alpha anywhere
+>   reaches a PASS.** On the repaired 3-seed read the latent is **+0.283 m WORSE** than the
+>   matched-random null (per seed **+0.694 / −0.017 / +0.173** m — ⚠️ **the sign flips on seed 1**).
+>   The arm wins on the **inner split** and loses on **held-out episodes** ⇒ **episode-level
+>   overfitting, not agent geometry.**
+> * ⛔ **`r +0.159` is a pre-repair value, and partialling ego speed out drives it NEGATIVE**:
+>   **−0.0884** (3-seed mean; per seed −0.1065 / −0.0665 / −0.0922 — a **SPREAD, not a CI**).
+> * ⭐ **Ego speed ALONE — one feature — beats the entire 2 048-dimension latent on lead gap**:
+>   **K1 −1.5618 [−2.0229, −1.1363], separated PASS, guard OK, on all three seeds and both repair
+>   routes** (MAE 3.5712, r² 0.4672) against the latent's **r² 0.0069** and a K1 that never passes.
+>
+> ⇒ ⭐ **The corrected grade is BETTER EVIDENCE, not a worse one.** *"The information is present and
+> weak"* becomes *"the information the readout was finding was the ego-speed scalar the model is
+> handed"* — a **measured, falsifiable statement** where the original was an artifact. **The ladder
+> that was "now running" when this report was written has since reported, twice, and the finding it
+> returned survives at three seeds on both routes.**
+> **Re-quote from** `…/incoming/2026-08-18-ladder-3seed/LADDER_3SEED.md` **§6a** and
+> `…/Benchmarks & Eval/Implementation/incoming/2026-08-18-citation-sweep/CITATION_SWEEP.md` **§1**.
+> ⚠️ **PROVENANCE:** `MEASURED` · `v6F-SW-30k@11250` ⚠️ **early read, 37.5 %** · **T0-DIAGNOSTIC —
+> never driving performance** · 130-clip lead-enriched probe pool, **70 eval clips** ⚠️ **NOT the
+> 40-episode val set** · paired episode-cluster bootstrap, `n_boot 2000` · route A (`unpen`).
+
 ### SAFETY / SELF-KNOWLEDGE — 🟩 **STRONG, and the period's real output**
 **Nine retraction classes** logged (C77, C79–C88), most found by instruments catching instruments:
 a corpus-wide flattened RLE that summed to the right total; a criterion pinned at 0.5 by

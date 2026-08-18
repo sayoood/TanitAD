@@ -50,6 +50,66 @@
 > ⚠️ **Also corrected:** the "68.5 % of the stack sits downstream of the pool" figure was computed
 > from `V6Config()` **defaults**. The live checkpoint is `d_model 768`, **336,559,305 params** ⇒
 > `predictor_op` **55.9 %**, `encoder` **25.9 %**; the total was understated **3.8×**.
+>
+> ---
+>
+> ## ⛔ CORRECTION 2026-08-18 (citation sweep) — THIS BANNER IS ITSELF ONE ROUND BEHIND
+>
+> **Cite this block by its heading, never by line number.** Four amendments to the banner above:
+>
+> **1. ⛔ THE LADDER NUMBERS IN §1 item 4, §3.4, §3.4a, §5 AND THE E-PROBE ROWS MOVED AGAIN, AT THREE
+> SEEDS.** The banner corrects §3.4's *"1.6–1.8 m"* but leaves the **rung profile** as first published:
+>
+> | quantity | as written below | ⭐ **current — 3-seed mean** | per seed (0/1/2) |
+> |---|---|---|---|
+> | `n_agents_all` r² | 0.076 | **0.1613** | 0.1519 / 0.1573 / 0.1745 |
+> | `lead_closing` r² | **0.0000** *("exactly zero")* | **0.0009** | 0.0013 / 0.0000 / 0.0013 |
+> | `ego_curv` r² | 0.0001 | **0.0000** ⚠️ **below its own null (0.0005)** | 0.0000 ×3 |
+> | `ego_yawrate` r² | 0.004 | **0.0011** | 0.0009 / 0.0009 / 0.0015 |
+> | `lead_gap` `r_pv0` | **+0.052** | ⛔ **−0.0884 — the SIGN FLIPS** | −0.1065 / −0.0665 / −0.0922 |
+> | `lead_gap` r² | 0.025 | **0.0069** | 0.0053 / 0.0097 / 0.0057 |
+> | `ego_v0` r² | 0.061 | **0.0900** | 0.1032 / 0.0913 / 0.0756 |
+> | `nearest_any` r² | 0.048 | **0.0977** | 0.0964 / 0.1004 / 0.0964 |
+>
+> ⚠️ **`−0.107`, which circulates as the replacement for `+0.052`, is the SEED-0 value.** Quote
+> **−0.0884**; `[−0.1065, −0.0665]` is a **SEED SPREAD, NOT a confidence interval.**
+> ⛔ **The sentence *"relative motion at EXACTLY zero"* (§1 item 4, §3.4a) is no longer literally true**
+> — `lead_closing` is **0.0009**. ⭐ **The substantive reading is unchanged**: it is still at the
+> resolution of its own null, the top-3 and bottom-4 **sets** are unchanged, and two of the bottom four
+> remain **below** their own nulls. ⚠️ **But the RANKING is not seed-stable** — `nearest_any`/`ego_v0`
+> swap 2nd/3rd — so the profile may be quoted as a **set**, never as an ordering, and never at one seed.
+>
+> **2. ⭐ HALF OF *"K1 −1.562 PASS vs +1.580 FAIL"* IS NOT STALE — do not over-correct it.**
+> `MEASURED`: **`−1.562` is CONFIRMED and seed-stable** — ego speed alone on `lead_gap`, K1 **−1.5618
+> [−2.0229, −1.1363], separated PASS, guard OK, identical on all three seeds and both repair routes**
+> (MAE 3.5712, r +0.6835, r² 0.4672). ⛔ **Only `+1.580` is stale** — a pre-C92 value from the biased
+> floor; repaired it is **+0.7364 [+0.1297, +1.4425] (separated, guard `CONSTANT-OFFSET-ONLY`) /
+> +0.0253 [−0.1124, +0.1632] / +0.2155 [−0.1468, +0.6341]** — separated on one seed of three, **never
+> a PASS.** ⇒ **§3.4a's conclusion — the lead-gap margin is an EGO-SPEED PROXY — is STRONGER now, not
+> weaker.**
+>
+> **3. ⛔ THE `PC-2OBJ` CONTROL THIS BANNER CITES IS INERT AT THE DEPLOYED RATIO (C109).** *"The
+> positive control (two opposing plants in one deployed cell) steps 0.0000 → 0.9998, so the instrument
+> had full power"* — ⛔ **two *opposing* plants inside one cell CANCEL. Run at the deployed p40 it
+> reproduced the un-planted arm to 5e-05.** The controls that actually fire are **`PC-LOCAL` /
+> `PC-DIST`** (our own trained tokens through the deployed pool, **0.0596 → 1.0000, K1 9/9**).
+> ⭐ **C104's conclusion is NOT overturned** — PC-LOCAL/PC-DIST fire and the 40:1→1:1 null stands —
+> **but cite those, never `PC-2OBJ`.**
+>
+> **4. ⚠️ THE PARAM COUNT IN THIS BANNER IS SUPERSEDED.** `336,559,305` → ⭐ **336,542,025** (C106; two
+> independent sources — the checkpoint's own `_meta.config.param_report.total` and a fresh `V6Stack`
+> from that checkpoint's `v6_config`; **Δ = 17,280**). The 3.8×-understatement point is unaffected.
+>
+> **PROVENANCE for every number in this block:** `MEASURED` · arm **`v6F-SW-30k@11250`** ⚠️ **EARLY
+> READ (37.5 %)** · **T0-DIAGNOSTIC** · 130-clip lead-enriched probe pool, **70 eval clips** ⚠️ NOT the
+> 40-episode val set · `intercept_col=-1` + C97 guard · **3 inner-split seeds** · **paired
+> episode-cluster bootstrap**, `n_boot 2000`, 70 clusters · **route A (`unpen`)**; ⚠️ on these `r²`
+> rungs route B is bit-identical except `ego_v0` seed 0 (A 0.1031 / B 0.1034), **but K1 is not
+> (`ego_v0` differs by 0.3957 between routes) — ⛔ the routes are never pooled.**
+> Artifacts: `…/incoming/2026-08-18-ladder-3seed/raw/reread_unpen/ll3_s11250.json` ·
+> `…/raw/reread3_table.json` → `R6_rung_profile_r2_3seed` · re-derivation
+> `…/Benchmarks & Eval/Implementation/incoming/2026-08-18-citation-sweep/raw/canonical_requote_table.json`.
+> **Sources:** `Project Steering/RETRACTION_LOG.md` **C103 · C104 · C106 · C107 · C109**.
 
 **Date:** 2026-08-17 · **Branch:** `agent/arch-inf-20260803` · **Agent:** o234-design-research
 **PI decision this serves (2026-08-17, verbatim):** *"We will stick to the unsupervised path of the
@@ -123,6 +183,16 @@ or a **source-level derivation**, and is stamped as such.
    latent's lead-gap signal is an **ego-speed proxy** — ego speed *alone* beats the whole 2 048-dim
    latent (**K1 −1.562 PASS vs +1.580 FAIL**), and partialling `v0` out drops `r` from +0.159 to
    **+0.052** (§3.4a).
+   > ⛔ **CORRECTION 2026-08-18 (citation sweep) — item 5's NUMBERS ARE STALE AND ITS MECHANISM IS
+   > REFUTED; ITS CONCLUSION SURVIVES.** ⛔ **`n_agents_all` r² 0.076 → 3-seed mean 0.1613**;
+   > *"relative motion at EXACTLY zero"* → `lead_closing` **0.0009**, `lead_inv_ttc` **0.0008**,
+   > `ego_curv` **0.0000**, `ego_yawrate` **0.0011**. ⛔ **`+1.580` is pre-C92** (repaired
+   > **+0.736 / +0.025 / +0.216**, never PASS) and **partialling `v0` out gives −0.0884 (3-seed mean;
+   > seed 0 −0.107) — a SIGN CHANGE, not "+0.052"**. ✅ **`−1.562` is confirmed and seed-stable.**
+   > ⛔ **And *"the precise signature an average pool predicts"* is REFUTED (C104): removing the pool
+   > moved r² by `|Δ| ≤ 0.0002` with the CI containing zero on all five seeds.** ⭐ **The ego-speed-proxy
+   > conclusion — the thing item 5 exists to say — is STRONGER, not weaker.** See the top banner's
+   > correction block.
 
 5. ⭐ **AND THE LITERATURE SAYS THE SAME THING, INCLUDING THE FIX.** Meta's own V-JEPA 2.1
    ([arXiv:2603.14482](https://arxiv.org/abs/2603.14482)) diagnoses V-JEPA 2's *"fragmented local
@@ -404,6 +474,17 @@ below may be built on *"the latent does not carry agents"*.
 correlation**, ⛔ **and still loses to a constant predictor.** `r = +0.159` is **weak signal, not
 latent agent geometry**. ⚠️ Single fit each, no seed replicate.
 
+> ⛔⛔ **CORRECTION 2026-08-18 (citation sweep) — EVERY CELL OF THE §3.4 TABLE ABOVE IS A PRE-C92 FIT
+> FROM A BIASED FLOOR. IT IS KEPT AS THE RECORD; DO NOT QUOTE IT.**
+> ⛔ *"Beats a random-vector null by 1.6–1.8 m"* **does not shrink — it INVERTS.** At the eval-optimal
+> alpha (cheating in the arm's favour) the true margin is **~0.02–0.07 m — a 25–90× overstatement —
+> and no alpha anywhere reaches a PASS.** On the repaired 3-seed read the latent is **+0.283 m WORSE**
+> than the matched-random null (per seed **+0.694 / −0.017 / +0.173** m — ⚠️ **the sign flips on seed
+> 1**; the *"0.694 m worse"* figure in circulation is the **seed-0** value). The arm wins on the
+> **inner split** and loses on **held-out episodes** ⇒ **episode-level overfitting, not agent
+> geometry.** ⭐ **§3.4's own caveat — *"single fit each, no seed replicate"* — was exactly right, and
+> is now the measurement.** Re-quote from the top banner's correction block.
+
 ### 3.4a ⛔⛔ **CORRECTION — THE LADDER LANDED DURING THIS RUN AND SUBSTANTIALLY QUALIFIES §3.4**
 
 `…/incoming/2026-08-17-latent-linear-ladder/LATENT_LINEAR_LADDER.md` (same checkpoint, same
@@ -425,6 +506,20 @@ wins.** Three findings, all of which change how the above must be read:
    | present (r² of variance) | **absent — indistinguishable from the null** |
    |---|---|
    | `n_agents_all` **0.076** · `ego_v0` 0.061 · `nearest_any` 0.048 · `ego_accel` 0.035 · `lead_gap` 0.025 · `n_agents_grid` 0.020 · `lead_present` 0.009 | `ego_yawrate` **0.004** · `ego_curv` **0.0001** · `lead_closing` **0.0000** · `lead_inv_ttc` **0.0001** |
+
+   > ⛔ **CORRECTION 2026-08-18 (citation sweep) — EVERY VALUE IN THE TABLE DIRECTLY ABOVE IS A
+   > SEED-0 READ FROM A DEFECTIVE RIDGE. Use the 3-seed column in the top banner's correction block
+   > instead** (`n_agents_all` **0.1613** · `nearest_any` **0.0977** · `ego_v0` **0.0900** ·
+   > `n_agents_grid` **0.0462** · `ego_accel` **0.0187** · `lead_present` **0.0088** · `lead_gap`
+   > **0.0069** · `ego_yawrate` **0.0011** · `lead_closing` **0.0009** · `lead_inv_ttc` **0.0008** ·
+   > `ego_curv` **0.0000**). ⛔ **And item 2's INFERENCE — *"exactly the signature an average pool
+   > predicts … two different methods, one answer"* — IS REFUTED (C104).** The pool was removed and
+   > r² moved by `|Δ| ≤ 0.0002` with the CI containing zero on all five seeds; the constraint is the
+   > **encoder/objective** (DINOv2-base, 86 M vs our 87.3 M, reads `lead_gap` **0.44997 vs 0.00496**
+   > through the *same* deployed pool). ⚠️ **Two independent methods appearing to agree did not save
+   > it** — a profile *consistent with* a mechanism is not evidence *for* it when it is equally
+   > consistent with a weak encoder. ⭐ **Item 1 — the ego-speed proxy — SURVIVES AND STRENGTHENS;
+   > only its `+1.580` half and the `+0.052` are stale.** See the banner correction block.
 
    ⭐ **The highest rung is an AGENT COUNT and the zero rungs are RELATIVE MOTION.** That is exactly
    the signature an average pool predicts: **aggregate scene density survives averaging; individuated
@@ -1012,8 +1107,9 @@ nobody has ever varied it.
 | id | question | method | cost | **outcome A** | **outcome B** |
 |---|---|---|---|---|---|
 | ⭐⭐ **E-O2-A** | Is O2 an independent lever at CONVERGENCE, or still O5's shadow? | Read `o2_loss` and `o2_unweighted` from the **live v6F 30 k log** at ≥3 well-separated steps; compute `\|o2_loss − o2_unweighted\| / o2_unweighted` and its sign. Script banked: `raw/2026-08-17-O234/o2_cov_from_logs.py` | ⭐ **ZERO GPU. Reading a log.** | **< 10 % and/or sign-unstable ⇒ O2 is a re-parameterisation of O5's step-`j` term.** Demote/merge; record that the objective has 3 effective directions, not 5 | **≥ 10 % and sign-stable ⇒ the spatial reallocation IS doing work at convergence**; +0.870 understates its distinctness; O2 stays at 1.0 and §2.1a is superseded |
-| ⛔ ~~**E-PROBE-A**~~ | ~~Is the ridge's lead-gap signal real, or an EGO-SPEED correlate?~~ | ⭐⭐ **ALREADY ANSWERED — do not run it.** `LATENT_LINEAR_LADDER.md` landed during this run and measured it (§3.4a) | — | — | ⭐ **Outcome B was the measured one: ego speed ALONE beats the whole latent (K1 −1.562 PASS vs +1.580 FAIL); partialling `v0` out drops r from +0.159 to +0.052.** ⇒ **the +1.6–1.8 m is a speed proxy, not agent information** |
-| **E-PROBE-C** *(the question that replaces it)* | Does the latent carry lead geometry **beyond** the speed proxy at ALL, at 30 k rather than 37.5 %? | Re-run the ladder's `v0`-partialled rung on the **30 k** checkpoint, with the intercept repair, ≥3 seeds | low — banked caches, closed-form | **Partialled r rises materially above +0.052 ⇒ agent information is accumulating; the objective works, slowly** | **It stays at ≈+0.05 ⇒ the objective does not install lead geometry even at full training, and R1/R2 become the only paths** |
+| ⛔ ~~**E-PROBE-A**~~ | ~~Is the ridge's lead-gap signal real, or an EGO-SPEED correlate?~~ | ⭐⭐ **ALREADY ANSWERED — do not run it.** `LATENT_LINEAR_LADDER.md` landed during this run and measured it (§3.4a) | — | — | ⭐ **Outcome B was the measured one: ego speed ALONE beats the whole latent.** ⛔ **NUMBERS CORRECTED 2026-08-18 (citation sweep; see the top banner's correction block):** the scalar's **K1 −1.562 is ✅ CONFIRMED and seed-stable** (−1.5618 [−2.0229, −1.1363] PASS, guard OK, 3/3 seeds, both routes); ⛔ **`+1.580` is a PRE-C92 value** — repaired, the latent reads **+0.736 / +0.025 / +0.216, separated on one seed of three, never PASS**; and ⛔ **partialling `v0` out drives r to −0.0884 (3-seed mean; seed 0 −0.107) — it does not "drop to +0.052", it CHANGES SIGN.** ⇒ **the +1.6–1.8 m is a speed proxy, not agent information — and the true margin over the null is ~0.02–0.07 m, not 1.6–1.8 m** |
+| **E-PROBE-C** *(the question that replaces it)* | Does the latent carry lead geometry **beyond** the speed proxy at ALL, at 30 k rather than 37.5 %? | Re-run the ladder's `v0`-partialled rung on the **30 k** checkpoint, with the intercept repair, ≥3 seeds | low — banked caches, closed-form | **Partialled r rises materially above the incumbent ⇒ agent information is accumulating; the objective works, slowly** | **It stays at or below zero ⇒ the objective does not install lead geometry even at full training** |
+| | ⛔ **E-PROBE-C's THRESHOLDS ARE RESTATED 2026-08-18 (citation sweep).** They were written against **`+0.052`**, which is stale and had the **wrong sign**. The incumbent is **`r_pv0` = −0.0884 (3-seed mean; per seed −0.1065 / −0.0665 / −0.0922)**, so *"rises materially above +0.052"* and *"stays at ≈+0.05"* are **both unreachable as written** and would have made the experiment un-decidable in either direction. ⚠️ **Re-register the numeric bar against the −0.0884 incumbent before running it, at ≥3 seeds, naming the repair route.** ⛔ **And its final clause — *"R1/R2 become the only paths"* — is REFUTED: R1 is DROPPED (C104), R2 is promoted, and ENCODER experiments outrank both.** | | | | |
 | **E-PROBE-B** | Is the linear/slot gap a probe-format artefact? | Re-read the same banked caches with an **attentive** probe (learnable query + cross-attention) beside the ridge and the repaired 16-query slot probe; report all three with the same estimator | low — one head, banked caches | **Attentive ≫ linear ⇒ our latent stores it non-linearly; the linear number was a floor** | **Attentive ≈ linear ⇒ the information really is thin, and the format hypothesis is not what was limiting** |
 | **E-TERM-A** | Does O2 earn its place *at all*? | TAG-style **lookahead** (Fifty et al., [arXiv:2109.04617](https://arxiv.org/abs/2109.04617)): take one optimiser step on O2 alone, read the change in O5's loss, and vice versa; average over a few hundred steps. ⚠️ **Not a gradient cosine** — the affinity literature says cosine is a hypothesis generator, not a verdict | one extra forward per probe step; **no retrain** | **Lookahead affinity ≈ that of doubling `w_o5` ⇒ confirms the LR-multiplier reading (Du et al.)** | **Distinguishable ⇒ O2's row tilt is a real second direction and the collinearity reading is wrong** |
 | **E-FLOW-A** | Is R2 buildable on OUR corpus? | Feasibility only: run an off-the-shelf flow estimator on ~200 sampled windows at 256×640/10 Hz; ego-compensate with `egomotion` + `camera_intrinsics`; measure (i) flow quality, (ii) whether residual flow **separates the known `obstacle.offline` agents** from background, (iii) precompute cost over 2 376 episodes | small, and **it is a perception measurement, not a training run** | **Residual flow separates agents ⇒ R2 is buildable and gets a pre-registration** | **It does not (rolling shutter, 10 Hz too sparse, cylindrical warp) ⇒ R2 is dead on this corpus and the individuation lever must come from AlpaSim/NuRec instead** |

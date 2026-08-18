@@ -382,6 +382,19 @@ held-out episodes call noise. That is episode-level overfitting, not agent geome
 consistent with the ladder's independent finding that the lead-gap correlation is an **ego-speed
 proxy** (partialling `v0` out drops r from +0.159 to +0.052).
 
+> ⛔ **CORRECTION 2026-08-18 (citation sweep) — `+0.052` IS STALE AND HAD THE WRONG SIGN.** Under the
+> repaired ridge at three inner-split seeds, `lead_gap`'s partial-`v0` correlation is
+> **−0.0884 (3-seed mean)**, per seed **−0.1065 / −0.0665 / −0.0922** — ⚠️ that bracket is a **SEED
+> SPREAD, NOT a confidence interval**, and the **−0.107** circulating as the replacement is the
+> **seed-0** value. ⭐ **This document's conclusion strengthens**: the correlation does not merely
+> shrink toward zero once `v0` is removed, **it changes sign** — which is exactly the *"the probe-train
+> clips call it signal and the held-out episodes call it noise"* reading above.
+> `MEASURED` · `v6F-SW-30k@11250` ⚠️ **early read, 37.5 %** · **T0-DIAGNOSTIC** · 70 eval clips ·
+> `intercept_col=-1` + C97 guard · route A (`unpen`); **identical on route B for this rung** ⛔ **but
+> the routes are never pooled — `ego_v0`'s K1 differs between them by 0.3957.** Artifact
+> `…/incoming/2026-08-18-ladder-3seed/raw/reread_unpen/ll3_s11250.json`; re-derivation
+> `…/incoming/2026-08-18-citation-sweep/raw/canonical_requote_table.json`. Authority **C103 · C107**.
+
 ### 2.5 ⛔ A SECOND DEFECT FOUND WHILE RE-READING — K1 DEGENERATES INTO MEAN-vs-MEDIAN
 
 The ladder's own 4 repaired arms change **21 of 44** rung-verdicts. ⚠️ **Most of those changes are

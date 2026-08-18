@@ -1,5 +1,33 @@
 # THE K1 DEGENERACY GUARD · AND THE RE-READ OF THE 165 LADDER ROWS
 
+> ## ⛔ CORRECTION 2026-08-18 (citation sweep) — **THE GUARD STANDS; THE RE-READ'S ROW-LEVEL VERDICTS DO NOT. THEY ARE SEED-0.**
+>
+> **Cite this block by its heading, never by line number.**
+>
+> | this document's claim | status | authority |
+> |---|---|---|
+> | ✅ **the guard itself** — `K1 = K1B + K1C`, K1B algebraically invariant to `C-CONST`, `\|K1B\| ≤ pred_mad ≤ pred_sd` a theorem, **no free parameter**, pinned in both directions (29 tests) | ✅ **STANDS, UNCHANGED.** Its first external user then found the one hole it had (`SD_RATIO_FLAT_FLOOR = 0.05` does not flag the null `n_agents_all` case at ratio 0.091) — a known layer-2 item, not a defect in the decomposition | — |
+> | ✅ **the DIRECTION of the 165-row re-read** — *"of 87 banked separated-FAILs, the overwhelming majority were instrument"* | ✅ **CONFIRMED AND STRENGTHENED at three seeds:** **58 dead on all three seeds**, 11 flip-to-PASS (the positive controls, unanimous), 9 `survive_both` (**all `ego_yawrate`**, all at `\|K1B\|/gt_sd ≤ 0.013`, **one on a random-latent null**), 9 seed-dependent. **Identical inventory on BOTH repair routes.** | **C107** |
+> | ⛔ **the ONE substantive survivor — `ll_s09000 lead_gap`, K1B +0.748 [+0.002, +1.624]** | ⛔ **WITHDRAWN — A SEED ARTEFACT.** It separates on **ONE seed of three**: K1B **+0.748 / −0.022 / +0.145**, buckets `survive_both / die_at_repair / die_at_repair`, alpha spanning **1e3 / 1e7 / 1e5**. ⇒ ⛔ **THE SUBSTANTIVE COUNT IS ZERO, ON BOTH ROUTES.** | **C107** |
+> | ⛔ **every per-row verdict in this document** | ⛔ **NOT QUOTABLE — measured at SEED 0 ONLY.** ⚠️ **22 of the 87 rows have no stable verdict at all.** Re-quote from `…/incoming/2026-08-18-ladder-3seed/LADDER_3SEED.md` **§2 / §5.1 / §6a**. | **C103, C107** |
+> | ⛔ **"the v6 latent reads scene density" surviving on `n_agents_all`** | ⛔ **WITHDRAWN.** The latent's only 3-seed-stable guarded PASSes are `n_agents_all` at four checkpoints — **the single ego-speed SCALAR wins all four on the 3-seed mean** (K1B margins **+0.262 / +0.243 / +0.217 / +0.211**, scalar-favouring), and **seed 0 is the outlier on every one.** | **C103, C107** |
+> | ⛔ **the re-read's trivial-proxy coverage** | ⛔ **INCOMPLETE, AND THE GAP WAS INVISIBLE.** Its only `C-V0` sat on the **cells** cache ⇒ **33 of the 165 rows — every tokens-window arm — had NO trivial-proxy control at all**, and nothing reported it. Closed by the `proxytok` arm in the 3-seed run. ⭐ **RULE: a control must be enumerated PER ARM on the arm's own window family, not per study.** | **C107** |
+>
+> ⭐ **THE MECHANISM, and it is the generalisable part.** The C92 intercept defect had **FROZEN the
+> alpha sweep**; repairing it **un-truncates** it. `MEASURED` on all 165 rows: the **defective**
+> instrument picks the same alpha on all 3 seeds for **132 of 165** rows, the **repaired** one for
+> **42** — a **3.1× drop in seed-stability CAUSED BY A REPAIR**. ⚠️ **The counter-column, published
+> because a table where every column agrees is the shape a cherry-picked table has:** max K1 seed
+> spread is *larger* on the **incumbent** (**4.239 vs 2.812**). ⇒ the honest claim is *"the repair
+> unfroze the majority"*, **not** *"the incumbent had no variance"*.
+> ⇒ **ROOT-CAUSE CLASS (C103): a stability claim measured under a defect is not inherited by the
+> repaired instrument.**
+>
+> **Sources:** `Project Steering/RETRACTION_LOG.md` **C103 · C107** ·
+> `…/incoming/2026-08-18-ladder-3seed/LADDER_3SEED.md` (reproduction gate **3 465 / 3 465** fields
+> identical to this document's banked route-A seed-0 rows, so that run is an *extension* of this one) ·
+> `…/Benchmarks & Eval/Implementation/incoming/2026-08-18-citation-sweep/CITATION_SWEEP.md`.
+
 **Date:** 2026-08-18 · **Branch:** `agent/arch-inf-20260803` · **Agent:** k1-degeneracy-guard
 **Eval tier:** ⛔ **T0-DIAGNOSTIC throughout.** A frozen-latent ridge readout is a world-model
 diagnostic. Per `EVAL_DOCTRINE.md` only T1 carries a capability claim; nothing here is a driving

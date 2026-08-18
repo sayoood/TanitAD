@@ -221,6 +221,193 @@ def test_default_entries_and_roots_exist_in_the_repo():
         assert (repo / rel).is_file(), f"missing default entry point: {rel}"
     for rel in LCA.DEFAULT_ROOTS:
         assert (repo / rel).is_dir(), f"missing default sys.path root: {rel}"
+    for rel in LCA.DEFAULT_ENTRY_ROOTS:
+        assert (repo / rel).is_dir(), f"missing executable dir: {rel}"
+
+
+# --------------------------------------------------------------------------
+# 6. ⛔ C105 — the ENTRY-POINT set was itself a hand-list
+# --------------------------------------------------------------------------
+
+
+def test_launch_sources_exist_or_the_whole_audit_silently_narrows():
+    """⛔ The one remaining hand-list is of launch SOURCES. It must be real.
+
+    A moved runbook makes the derivation return fewer entry points, the closure
+    return fewer files, and the audit report DRIFT=0 for a reason that has
+    nothing to do with the box. That is the failure this tool exists to kill,
+    reappearing as its own input.
+    """
+    repo = Path(__file__).resolve().parents[2]
+    for rel in LCA.DEFAULT_LAUNCH_SOURCES:
+        assert (repo / rel).is_file(), (
+            f"launch source moved: {rel}. Repoint DEFAULT_LAUNCH_SOURCES — do "
+            "NOT let the derivation quietly shrink.")
+
+
+def test_derivation_reads_entry_points_out_of_a_launch_source(tmp_path):
+    """The mechanism, in miniature: a runbook names a script, so it is an entry.
+
+    ``run.md`` names ``a.py``; ``a.py`` SUBPROCESSES ``b.py``. An import walk is
+    blind to the second hop (it is argv, not an import) — which is exactly how
+    ``train_v6_staged.py`` reaches ``taniteval/tools/eval_four_families.py``.
+    """
+    (tmp_path / "scripts").mkdir()
+    (tmp_path / "run.md").write_text(
+        "Launch with `python3 scripts/a.py --flag`\n", encoding="utf-8")
+    (tmp_path / "scripts/a.py").write_text(
+        'subprocess.run([sys.executable, "scripts/b.py"])\n', encoding="utf-8")
+    (tmp_path / "scripts/b.py").write_text("X = 1\n", encoding="utf-8")
+
+    got = LCA.derive_entries([tmp_path / "run.md"], tmp_path,
+                             [tmp_path / "scripts"])
+    assert got.entries == ["scripts/a.py", "scripts/b.py"], (
+        "the fixed point must follow a script that launches a script")
+    assert got.named_by["scripts/b.py"] == ["scripts/a.py"]
+
+
+def test_derivation_excludes_tests_and_non_executable_dirs(tmp_path):
+    """Tests are run by pytest, not by a launch line; libraries are imported."""
+    for d in ("scripts", "tests", "lib"):
+        (tmp_path / d).mkdir()
+    (tmp_path / "run.md").write_text(
+        "see scripts/a.py, tests/test_a.py and lib/helper.py\n", encoding="utf-8")
+    for rel in ("scripts/a.py", "tests/test_a.py", "lib/helper.py"):
+        (tmp_path / rel).write_text("X = 1\n", encoding="utf-8")
+
+    got = LCA.derive_entries([tmp_path / "run.md"], tmp_path,
+                             [tmp_path / "scripts"])
+    assert got.entries == ["scripts/a.py"]
+
+
+def test_bare_basename_resolves_inside_an_executable_dir(tmp_path):
+    """``t1_eval.py`` in prose must reach ``taniteval/tools/t1_eval.py``."""
+    (tmp_path / "tools").mkdir()
+    (tmp_path / "tools/t1_eval.py").write_text("X = 1\n", encoding="utf-8")
+    (tmp_path / "run.md").write_text("then run t1_eval.py\n", encoding="utf-8")
+    got = LCA.derive_entries([tmp_path / "run.md"], tmp_path,
+                             [tmp_path / "tools"])
+    assert got.entries == ["tools/t1_eval.py"]
+
+
+def test_an_ambiguous_basename_takes_every_match_and_says_so(tmp_path):
+    """⚠️ C105's locator returned 'something plausible' three times.
+
+    A bare name matching two files must never be silently resolved to one.
+    """
+    for d in ("s1", "s2"):
+        (tmp_path / d).mkdir()
+        (tmp_path / d / "dup.py").write_text(f"X = '{d}'\n", encoding="utf-8")
+    (tmp_path / "run.md").write_text("run dup.py\n", encoding="utf-8")
+    got = LCA.derive_entries([tmp_path / "run.md"], tmp_path,
+                             [tmp_path / "s1", tmp_path / "s2"])
+    assert got.entries == ["s1/dup.py", "s2/dup.py"]
+    assert got.ambiguous["dup.py"] == ["s1/dup.py", "s2/dup.py"]
+
+
+def test_absolute_pod_paths_in_a_runbook_resolve_to_repo_files(tmp_path):
+    """The runbook quotes ``/root/TanitAD/stack/scripts/v6_chain.py`` verbatim."""
+    (tmp_path / "stack").mkdir()
+    (tmp_path / "stack/scripts").mkdir()
+    (tmp_path / "stack/scripts/v6_chain.py").write_text("X = 1\n", encoding="utf-8")
+    (tmp_path / "run.md").write_text(
+        "on the pod: /root/TanitAD/stack/scripts/v6_chain.py plan\n",
+        encoding="utf-8")
+    got = LCA.derive_entries([tmp_path / "run.md"], tmp_path,
+                             [tmp_path / "stack/scripts"])
+    assert got.entries == ["stack/scripts/v6_chain.py"]
+
+
+def test_the_floor_widens_and_is_flagged_never_silently_dropped(tmp_path):
+    """⛔ A derivation that NARROWS coverage is a regression wearing principle.
+
+    MEASURED: the real derivation reaches neither ``watch_gates.py``,
+    ``t1_summary.py``, ``run_spectral.py`` nor ``v5_guard.py`` — four
+    instruments C105's hand-list carried. They are kept AND flagged.
+    """
+    (tmp_path / "scripts").mkdir()
+    (tmp_path / "run.md").write_text("run scripts/a.py\n", encoding="utf-8")
+    for rel in ("scripts/a.py", "scripts/orphan.py"):
+        (tmp_path / rel).write_text("X = 1\n", encoding="utf-8")
+
+    got = LCA.derive_entries([tmp_path / "run.md"], tmp_path,
+                             [tmp_path / "scripts"],
+                             floor=("scripts/orphan.py",))
+    assert got.entries == ["scripts/a.py", "scripts/orphan.py"]
+    assert got.from_floor == ["scripts/orphan.py"], (
+        "an entry no launch source names must be visibly inherited, not passed "
+        "off as derived")
+
+
+def test_the_real_derivation_strictly_widens_both_hand_lists():
+    """⭐ The C105 fix, MEASURED on this repo.
+
+    120 files (7 hand-listed entries) -> 134 (14) -> the derived set. The
+    derived closure must be a strict SUPERSET of both: the whole failure was a
+    root set that was too small, so a fix that trades one file for another is
+    not a fix.
+    """
+    repo = Path(__file__).resolve().parents[2]
+    roots = [repo / r for r in LCA.DEFAULT_ROOTS]
+    entry_roots = [(repo / r).resolve() for r in LCA.DEFAULT_ENTRY_ROOTS]
+
+    eset = LCA.derive_entries([repo / s for s in LCA.DEFAULT_LAUNCH_SOURCES],
+                              repo, entry_roots, floor=LCA.DEFAULT_ENTRIES)
+    derived = LCA.compute_closure([repo / e for e in eset.entries], roots)
+    fixed14 = LCA.compute_closure([repo / e for e in LCA.DEFAULT_ENTRIES], roots)
+    ladder7 = LCA.compute_closure(
+        [repo / e for e in LCA.LEGACY_LADDER_ENTRIES], roots)
+
+    assert set(ladder7.files) < set(fixed14.files) < set(derived.files), (
+        "each widening of the root set must strictly contain the last")
+    assert len(eset.entries) >= len(LCA.DEFAULT_ENTRIES)
+    # the three files C105 found ONLY after widening past the 7
+    for rel in ("taniteval/taniteval/v0_antiecho.py",
+                "taniteval/taniteval/hierarchy.py",
+                "taniteval/taniteval/four_families.py"):
+        assert rel in derived.files, f"{rel} fell out of the derived closure"
+
+
+def test_a_dirty_local_file_is_not_reported_as_box_staleness():
+    """⛔ MEASURED 2026-08-18 — it manufactured a DRIFT row on the model itself.
+
+    ``stack/tanitad/models/v6.py`` came back DRIFT while Thor's copy was
+    **byte-identical to HEAD**: a sibling agent's uncommitted ``FROZEN_EXTERNAL``
+    work had moved the dev box's tree. With several agents live — this
+    programme's normal state — that is a standing false-positive generator, and
+    ``--ship`` would have pushed work-in-progress onto a box running a 5-day job.
+    """
+    closure = LCA.Closure(files=["a.py", "b.py"], eager=["a.py", "b.py"])
+    d_local = LCA._digests(b"local-edit\n")
+    d_head = LCA._digests(b"committed\n")
+    loc = {"a.py": {"present": True, "md5_raw": d_local[0], "md5_lf": d_local[1],
+                    "bytes": 11},
+           "b.py": {"present": True, "md5_raw": d_local[0], "md5_lf": d_local[1],
+                    "bytes": 11}}
+    rem = {"a.py": {"present": True, "md5_raw": d_head[0], "md5_lf": d_head[1],
+                    "bytes": 10},          # the box is simply at HEAD
+           "b.py": {"present": True, "md5_raw": d_head[0], "md5_lf": d_head[1],
+                    "bytes": 10}}
+    # a.py is committed-at-HEAD-equals-local; b.py is not
+    head = {"a.py": d_local[1], "b.py": d_head[1]}
+    rows = {r["path"]: r for r in LCA.build_table(closure, loc, rem, head)}
+
+    assert rows["a.py"]["verdict"] == rows["b.py"]["verdict"] == "DRIFT"
+    assert rows["a.py"]["local_dirty_vs_head"] is False, (
+        "a.py matches HEAD, so this DRIFT really is the box being stale")
+    assert rows["b.py"]["local_dirty_vs_head"] is True
+    assert rows["b.py"]["remote_matches_head"] is True, (
+        "the box is at HEAD — the row is OUR uncommitted edit, not box drift")
+
+
+def test_uncovered_executables_are_measured_not_assumed():
+    """The denominator. A coverage claim with no denominator is not a claim."""
+    repo = Path(__file__).resolve().parents[2]
+    entry_roots = [(repo / r).resolve() for r in LCA.DEFAULT_ENTRY_ROOTS]
+    launchable = LCA.executables_under(entry_roots, repo)
+    assert len(launchable) > 50, "the executable census collapsed"
+    assert "stack/scripts/train_v6_staged.py" in launchable
+    assert not any(Path(p).name.startswith("test_") for p in launchable)
 
 
 def test_the_v6_ladder_closure_is_far_larger_than_a_hand_list():

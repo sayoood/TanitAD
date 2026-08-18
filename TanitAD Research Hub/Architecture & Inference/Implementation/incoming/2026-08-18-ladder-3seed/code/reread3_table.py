@@ -328,6 +328,15 @@ def main(argv=None) -> int:
     per_seed_counts = [Counter(r["bucket_per_seed"][i] for r in sepfail)
                        for i in range(3)]
     subst = [r for r in sepfail if r.get("substantive_3seed")]
+    # ⭐ THE SHARPEST FORM OF THE INVENTORY. A row can be SEED-UNSTABLE because
+    # the MECHANISM that kills it varies while the DEATH does not — those are
+    # not "no verdict about whether it is a finding", they are "dead, by one
+    # route or the other". Separating them is what makes the count quotable.
+    DEAD = ("die_at_repair", "killed_by_guard")
+    dead_all = [r for r in sepfail if all(b in DEAD for b in r["bucket_per_seed"])]
+    sometimes = [r for r in sepfail
+                 if "survive_both" in r["bucket_per_seed"]
+                 and r["bucket_3seed"] == "SEED-UNSTABLE"]
     out["R2_fail_inventory_3seed"] = {
         "route": "A_unpen",
         "population": "the 87 banked separated-FAILs, defined exactly as C100 "
@@ -338,6 +347,20 @@ def main(argv=None) -> int:
         "n_bucket_seed_stable": sum(r["bucket_seed_stable"] for r in sepfail),
         "n_bucket_SEED_UNSTABLE":
             sum(not r["bucket_seed_stable"] for r in sepfail),
+        "SHARPEST_FORM": {
+            "_note": "⭐ the quotable partition: a SEED-UNSTABLE row whose "
+                     "buckets are all deaths is DEAD, only by a varying "
+                     "mechanism. 4 disjoint classes summing to the 87.",
+            "dead_on_all_three_seeds": len(dead_all),
+            "of_which_mechanism_varies":
+                sum(1 for r in dead_all if not r["bucket_seed_stable"]),
+            "flip_to_PASS_unanimous":
+                sum(1 for r in sepfail if r["bucket_3seed"] == "flip_to_PASS"),
+            "survive_both_unanimous":
+                sum(1 for r in sepfail if r["bucket_3seed"] == "survive_both"),
+            "survive_on_some_seeds_not_all": len(sometimes),
+            "substantive": len(subst),
+        },
         "substantive_threshold": f"|K1B_mean|/gt_sd >= {SUBSTANTIVE_REL} "
                                  "(C100's reporting threshold, reported not "
                                  "gated on)",
@@ -400,6 +423,41 @@ def main(argv=None) -> int:
                 "margin_sign_unstable": sum(not r["margin_sign_seed_stable"]
                                             for r in paired if r["arm"] == arm),
             } for arm in sorted({r["arm"] for r in paired})},
+    }
+
+    # ---- R6 the rung PROFILE (r²) at 3 seeds -------------------------------
+    # ⭐ The quantity every downstream citation of this ladder quotes. C92/C97
+    # act on the fit's DISPERSION and correlation is scale-invariant, so at a
+    # FIXED alpha neither defect can move r² — but they truncated the alpha
+    # sweep, and the seed moves alpha, so r² moves with the seed too.
+    by_a = {(r["arm"], r["target"]): r for r in rows_a}
+    prof = []
+    for t in LADDER:
+        v, n = by_a[("s11250", t)], by_a[("nullmatched", t)]
+        r2 = [c * c for c in v["corr_per_seed"]]
+        n2 = [c * c for c in n["corr_per_seed"]]
+        prof.append({
+            "target": t, "rung": v["rung"], "gt_sd": v["gt_sd"],
+            "v6_r_per_seed": v["corr_per_seed"],
+            "v6_r2_per_seed": [round(x, 6) for x in r2],
+            "v6_r2_seed0": round(r2[0], 6),
+            "v6_r2_3seed_mean": round(sum(r2) / 3, 6),
+            "v6_r2_seed_spread": round(max(r2) - min(r2), 6),
+            "null_r2_3seed_mean": round(sum(n2) / 3, 6),
+        })
+    ordered = sorted(prof, key=lambda p: -p["v6_r2_3seed_mean"])
+    out["R6_rung_profile_r2_3seed"] = {
+        "route": "A_unpen", "arm": "v6F-SW-30k@11250",
+        "note": "r² = r_ceiling², the variance an optimally-rescaled version of "
+                "the same readout would explain. Reported at 3 seeds because "
+                "the repaired alpha sweep is seed-sensitive (C103).",
+        "ordering_by_3seed_mean": [p["target"] for p in ordered],
+        "ordering_by_seed0": [p["target"] for p in
+                              sorted(prof, key=lambda q: -q["v6_r2_seed0"])],
+        "ordering_changed_vs_seed0":
+            [p["target"] for p in ordered]
+            != [p["target"] for p in sorted(prof, key=lambda q: -q["v6_r2_seed0"])],
+        "rows": prof,
     }
 
     # ---- R5 what is QUOTABLE: PASS and guard OK on ALL THREE seeds ---------

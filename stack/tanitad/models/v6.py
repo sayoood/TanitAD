@@ -117,6 +117,10 @@ __all__ = [
     # staging (X5)
     "STAGES", "STAGE_GROUPS", "MODULE_GROUPS", "LADDER_UNTRAINED_GROUPS",
     "stage_trainable_groups", "apply_stage_freeze",
+    # ⛔ the frozen-external guard (E-XENC-1's live trap)
+    "FROZEN_EXTERNAL_FLAG", "FrozenExternalViolation",
+    "declare_frozen_external", "frozen_external_prefixes",
+    "reassert_frozen_external", "assert_frozen_external",
     # measure primitives (O2/O3/O4/O6)
     "time_to_reach", "time_to_reach_weights", "half_weight_distance_m",
     "readout_grid_ranges", "sample_cell_block_mask", "near_field_band_mask",
@@ -3208,6 +3212,144 @@ def apply_stage_freeze(stack: "V6Stack", stage: str) -> dict:
             "shared_goal_tables": shared,
             "_note": "a shared goal table moves whenever EITHER of its two "
                      "views is trainable (HIERARCHY_VOCABULARY §5)"}
+
+
+# ---------------------------------------------------------------------------
+# ⛔ THE FROZEN-EXTERNAL GUARD (E-XENC-1's live trap)
+# ---------------------------------------------------------------------------
+#: Attribute name a submodule carries to declare itself a FOREIGN, FROZEN
+#: backbone. Set it with :func:`declare_frozen_external`, never by hand — the
+#: setter is what makes the declaration greppable and the value self-explaining.
+FROZEN_EXTERNAL_FLAG = "_tanitad_frozen_external"
+
+
+class FrozenExternalViolation(RuntimeError):
+    """Raised by :func:`assert_frozen_external` when a submodule DECLARED a
+    frozen external backbone is trainable — or when the stage's declared groups
+    have gone entirely untrainable, which is the same lie in the other
+    direction."""
+
+
+def declare_frozen_external(module: nn.Module, why: str) -> nn.Module:
+    """Mark ``module`` as a foreign backbone that must NEVER train, and freeze
+    it now. Returns the module so it can wrap a constructor call."""
+    setattr(module, FROZEN_EXTERNAL_FLAG, str(why))
+    module.requires_grad_(False)
+    return module
+
+
+def frozen_external_prefixes(stack: nn.Module) -> dict[str, str]:
+    """``{parameter-name prefix: reason}`` for every declared subtree."""
+    out: dict[str, str] = {}
+    for name, mod in stack.named_modules():
+        why = getattr(mod, FROZEN_EXTERNAL_FLAG, None)
+        if why:
+            out[name] = str(why)
+    return out
+
+
+def _in_declared_subtree(param_name: str, prefixes) -> str | None:
+    for pre in prefixes:
+        if pre == "" or param_name == pre or param_name.startswith(pre + "."):
+            return pre
+    return None
+
+
+def reassert_frozen_external(stack: nn.Module) -> dict:
+    """Re-freeze every declared external subtree. ⛔ CALL THIS AFTER
+    :func:`apply_stage_freeze`, not before — the freeze sets ``requires_grad``
+    from the GROUP MAP, and a foreign backbone installed under ``encoder``
+    lands in a group S-W trains."""
+    pres = frozen_external_prefixes(stack)
+    n = 0
+    for name, p in stack.named_parameters():
+        if _in_declared_subtree(name, pres) is not None:
+            p.requires_grad_(False)
+            n += int(p.numel())
+    return {"declared_subtrees": pres, "n_params_refrozen": n}
+
+
+def assert_frozen_external(stack: nn.Module, stage: str,
+                           expect_n_trainable: int | None = None) -> dict:
+    """⛔ THE GUARD, PINNED IN BOTH DIRECTIONS — and it must be, because this
+    programme shipped a rejects-everything guard and a passes-everything guard
+    **within one day** (C95/C97).
+
+    **Direction A — it must CATCH the un-freeze.** :func:`apply_stage_freeze`
+    sets ``requires_grad`` from :data:`MODULE_GROUPS`, so a frozen external
+    encoder installed under the ``encoder`` group is UN-FROZEN by S-W
+    (MEASURED, E-XENC-1 build: **86,580,480 foreign parameters** would have
+    trained while the run called itself *"frozen external encoder"*, and
+    nothing downstream would have said so). Any trainable parameter inside a
+    declared subtree raises.
+
+    **Direction B — it must NOT pass a stack that trains nothing.** A guard
+    that only asserts "the foreign backbone is frozen" is satisfied by freezing
+    the WHOLE model, which is the opposite failure and just as silent. So every
+    group in ``stage_trainable_groups(stage)`` must still hold at least one
+    trainable NATIVE parameter. If a declared subtree has swallowed a group
+    whole, that raises too — with the group named.
+
+    ``expect_n_trainable`` makes the runbook's exact-count assertion a
+    parameter of the guard instead of a number retyped into a launch script.
+
+    Returns the audit; raises :class:`FrozenExternalViolation` on either
+    direction. A stack with NO declared subtree is legal and still gets
+    direction B — which is why this is safe to call unconditionally.
+    """
+    pres = frozen_external_prefixes(stack)
+    groups = set(stage_trainable_groups(stage))
+    leaked: list[tuple[str, str, int]] = []
+    native_trainable = {g: 0 for g in MODULE_GROUPS}
+    external_by_group = {g: 0 for g in MODULE_GROUPS}
+    n_trainable = 0
+    for name, p in stack.named_parameters():
+        g = stack.group_of(name)
+        pre = _in_declared_subtree(name, pres)
+        if p.requires_grad:
+            n_trainable += int(p.numel())
+        if pre is not None:
+            external_by_group[g] += int(p.numel())
+            if p.requires_grad:
+                leaked.append((name, pre, int(p.numel())))
+        elif p.requires_grad:
+            native_trainable[g] += int(p.numel())
+    if leaked:
+        tot = sum(n for _, _, n in leaked)
+        raise FrozenExternalViolation(
+            f"stage {stage!r}: {len(leaked)} parameters ({tot:,}) inside a "
+            f"DECLARED frozen-external subtree are TRAINABLE — "
+            f"`apply_stage_freeze` sets requires_grad from the group map and "
+            f"the subtree sits in a group this stage trains. Call "
+            f"`reassert_frozen_external(stack)` AFTER `apply_stage_freeze`. "
+            f"First offenders: {[n for n, _, _ in leaked[:4]]}")
+    starved = sorted(g for g in groups if native_trainable[g] == 0)
+    if starved:
+        raise FrozenExternalViolation(
+            f"stage {stage!r} declares {sorted(groups)} trainable but "
+            f"{starved} hold ZERO trainable native parameters "
+            f"(external in those groups: "
+            f"{ {g: external_by_group[g] for g in starved} }). A guard that "
+            f"only checked the backbone was frozen would PASS this — and the "
+            f"run would train nothing while reporting a normal freeze.")
+    if expect_n_trainable is not None and n_trainable != int(expect_n_trainable):
+        raise FrozenExternalViolation(
+            f"stage {stage!r}: n_trainable {n_trainable:,} != expected "
+            f"{int(expect_n_trainable):,}. The arm is not the arm it claims "
+            f"to be; do not start step 1.")
+    return {"stage": stage, "declared_subtrees": pres,
+            "n_declared_subtrees": len(pres),
+            "n_trainable": n_trainable,
+            "n_external_params": sum(external_by_group.values()),
+            "native_trainable_per_group": native_trainable,
+            "external_per_group": {g: n for g, n in external_by_group.items()
+                                   if n},
+            "expect_n_trainable": expect_n_trainable,
+            "directions_checked": [
+                "A: no parameter inside a declared frozen-external subtree is "
+                "trainable",
+                "B: every group in stage_trainable_groups() still has a "
+                "trainable NATIVE parameter"]}
 
 
 # ============================================================================

@@ -1,7 +1,69 @@
 # R1 / R2 — pre-registered design spec against the 40:1 pooling bottleneck
 
+> # ⛔⛔ CORRECTION 2026-08-18 (citation sweep) — **THIS DOCUMENT'S PREMISE IS REFUTED. READ THIS BEFORE ANY SECTION BELOW.**
+>
+> **Cite this block by its heading, never by line number** — this document is corrected in place and
+> line-number citations into it do not survive (C90/C103).
+>
+> ## ⛔ 1. THE 40:1 POOLING BOTTLENECK IS **REFUTED** (C104) — `R1 IS DROPPED` by its own criterion
+>
+> **E-R1-0 tested the hypothesis by REMOVING the pool.** `MEASURED`, pre-registered, on frozen
+> `v6F-SW-30k@11250`, 1 302 train / **1 507 eval windows in 70 episode clusters**, four pooling ratios
+> (40:1 deployed / 10:1 / 4:1 / 1:1) differing **only in the kernel**, each forced to 2 048 features by
+> a fixed random projection, **5 seeds**, `intercept_col=-1`:
+> **on the four rungs the hypothesis was built to explain, removing the pool entirely moves r² by
+> `|Δ| ≤ 0.0002`, with the CI containing zero on all five seeds** (`lead_closing`
+> Δ **+0.00001 [−0.00597, +0.00504]**). ⇒ **No rung meets `R1 PROCEEDS`.**
+> Artifact: `…/incoming/2026-08-18-pooling-ladder-ER10/raw/er10_main.json`.
+>
+> ⭐ **The constraint is the ENCODER/OBJECTIVE, not the pool.** Through the **same** deployed
+> `AvgPool2d((4,10))` on the **same** windows, `facebook/dinov2-base` — **86 M params against our
+> encoder's 87.3 M, so NOT a capacity gap** — reads `lead_gap` **0.44997 vs our 0.00496**, `ego_v0`
+> **0.71733 vs 0.05240**, `lead_closing` **0.01713 vs 0.00000**. **The encoder gap is 91×; removing the
+> pool on an encoder that *does* carry the signal is worth only +14 % / +30 %.**
+>
+> ⚠️ **C109 CORRECTS C104's CHOICE OF POSITIVE CONTROL — the conclusion stands, the citation must
+> change.** ⛔ **`PC-2OBJ` is INERT AT THE DEPLOYED POOLING RATIO BY CONSTRUCTION** (two *opposing*
+> plants inside one cell **cancel**; run at p40 it reproduced the un-planted arm to **5e-05**). The
+> controls that actually fire are **`PC-LOCAL` / `PC-DIST`** — our own trained tokens through the
+> deployed pool, **0.0596 → 1.0000, K1 9/9.** ⇒ quote those, **never `PC-2OBJ`**, when asserting the
+> ladder had power to see a pooling-destroyed signal.
+>
+> ⭐ **WHAT IS *NOT* DROPPED:** **E-R1-1 is dropped and E-R2-0 is PROMOTED** — the 2×2's *placement*
+> axis is measured inert, leaving the *target* axis (R2-cells, 16 899 params). ⛔ **ENCODER experiments
+> now outrank both.** ⏳ **The document's STATUS line still reads `DESIGN + PRE-REGISTRATION`. Retiring
+> or rescoping another stream's pre-registration is the PI's call, not this sweep's** — so the status
+> is left as written and flagged here instead.
+>
+> ## ⛔ 2. §1.5's LADDER NUMBERS ARE STALE — see the correction block inside §1.5
+>
+> All four values quoted there moved, and the replacements have **moved a second time**. §1.5 also
+> carries **five line-number citations** into `LATENT_LINEAR_LADDER.md` (`:178-194`, `:158-164`, `:264`,
+> `:299-316`) which were **invalidated by two in-place rewrites of that file** — they are replaced with
+> section-heading citations in the correction block.
+>
+> ## ⚠️ 3. §1.7's PARAMETER SHARES ARE A SCOPE ERROR — see the note inside §1.7
+>
+> `predictor_op` **68.5 %** / `encoder` **17.4 %** were computed from `V6Config()` **defaults**, not the
+> live checkpoint. Corrected values in §1.7's note.
+>
+> ## ✅ 4. WHAT SURVIVES IN THIS DOCUMENT, UNTOUCHED
+>
+> **§1.1–§1.3's source-level derivation is CORRECT and was independently re-verified**: the operator
+> really is `AvgPool2d((4,10))`, 40 tokens per cell, 64×160 px per cell, pool-before-project, and
+> `encode_window(..., return_tokens=True)` really does materialise and discard the tokens R1 wanted.
+> ⛔ **What was wrong was never the geometry — it was the inference that the geometry was the
+> constraint.** C104's own root-cause class: *"an architectural bottleneck claim is not established
+> until the bottleneck is REMOVED and the metric moves. Ablate the mechanism, don't narrate it."*
+>
+> **Sources:** `Project Steering/RETRACTION_LOG.md` **C104 · C106 · C107 · C109** ·
+> `…/incoming/2026-08-18-pooling-ladder-ER10/POOLING_LADDER_ER10.md` ·
+> `…/incoming/2026-08-18-c106-adversarial/C106_ADVERSARIAL.md` ·
+> `…/Benchmarks & Eval/Implementation/incoming/2026-08-18-citation-sweep/CITATION_SWEEP.md`
+
 **Date:** 2026-08-18 · **Branch:** `agent/arch-inf-20260803` · **Tier of every claim below is stamped.**
 **Status:** DESIGN + PRE-REGISTRATION. ⛔ **Zero GPU spent. No training-path change made.**
+⛔ **SUPERSEDED IN ITS CENTRAL PREMISE — see the correction banner above.**
 
 > **Evidence classes used throughout:** `MEASURED` (ours, with artifact path) · `PUBLISHED` (cited) ·
 > `INHERITED` (another agent/doc, NOT re-verified by me) · `ESTIMATED` · `HYPOTHESIS`.
@@ -108,6 +170,60 @@ relative to the POOL.**
 
 ### 1.5 The independent confirmation, located at its artifact
 
+> ### ⛔ CORRECTION 2026-08-18 (citation sweep) — EVERY NUMBER IN §1.5 IS STALE, AND §1.5's INFERENCE IS REFUTED
+>
+> **Cite this block as "§1.5 correction block", not by line number.**
+>
+> ⛔ **FIRST, THE INFERENCE.** §1.5 reads the rung profile as *"the signature an unweighted 40:1 mean
+> predicts"* and calls it an **independent confirmation**. **C104 refuted the mechanism by removing the
+> pool** (banner, §1 of this document). ⚠️ **Two independent methods appearing to agree did not save
+> it** — a profile *consistent with* a mechanism is not evidence *for* it when it is equally consistent
+> with a weak encoder, which is what the DINOv2 discriminator then showed. ⇒ **§1.5 is not a
+> confirmation of anything; it is a rung profile.**
+>
+> ⛔ **SECOND, THE NUMBERS.** All four moved, and the replacements **moved a second time** at three
+> seeds. `MEASURED`, re-derived by opening the banked per-seed JSON (not copied from a summary):
+>
+> | quantity | §1.5 quotes | ⭐ **current — 3-seed mean** | per seed (0 / 1 / 2) |
+> |---|---|---|---|
+> | `n_agents_all` r² | 0.076 | **0.1613** | 0.1519 / 0.1573 / 0.1745 |
+> | `ego_curv` r² | 0.0001 | **0.0000** (5e-06) ⚠️ **BELOW its own null, 0.0005** | 0.0000 ×3 |
+> | `lead_closing` r² | 0.0000 | **0.0009** | 0.0013 / 0.0000 / 0.0013 |
+> | `lead_gap` `r_pv0` (partial-`v0`) | **+0.052** | ⛔ **−0.0884 — the SIGN FLIPS** | −0.1065 / −0.0665 / −0.0922 |
+>
+> ⚠️ **The `−0.107` that circulates as the replacement for `+0.052` is the SEED-0 value.** The 3-seed
+> mean is **−0.0884**; `[−0.1065, −0.0665]` is a **SEED SPREAD, NOT a confidence interval.**
+>
+> ⚠️ **HALF OF ONE STALE PAIR IS NOT STALE — do not over-correct.** `lead_gap` **K1 +1.580** is a
+> pre-C92 value (repaired: **+0.736 / +0.025 / +0.216**, separated on one seed of three, never PASS).
+> But the ego-speed scalar's **K1 −1.562** is **CONFIRMED and seed-stable** — **−1.5618 [−2.0229,
+> −1.1363], separated PASS, guard OK, identical on all three seeds and both repair routes.**
+>
+> ⭐ **THE PART OF §1.5 THAT SURVIVES AND STRENGTHENS.** *"The `lead_gap` signal is an ego-speed
+> proxy"* is **more true, not less**: ego speed alone reads lead gap at **r² 0.4672 / MAE 3.5712 m**
+> against the 2 048-dim latent's **r² 0.0069**, and partialling `v0` out drives the latent's
+> correlation **negative**. ⇒ §6's *"every experiment carries a `v0`-only trivial-proxy arm by
+> construction"* is **RIGHT and should be kept.**
+>
+> **PROVENANCE for every number in this block:** `MEASURED` · arm **`v6F-SW-30k@11250`** ⚠️ **EARLY
+> READ (37.5 %)** · **T0-DIAGNOSTIC** · 130-clip lead-enriched probe pool, **70 eval clips** ⚠️ NOT the
+> 40-episode val set · `intercept_col=-1` + C97 guard · **3 inner-split seeds** · estimator **paired
+> episode-cluster bootstrap**, `n_boot 2000`, 70 clusters · **route A (`unpen`)** — ⚠️ **on these `r²`
+> rungs route B is bit-identical except `ego_v0` seed 0 (A 0.1031 / B 0.1034), but the K1 numbers are
+> NOT (`ego_v0` K1 differs by 0.3957 between routes); ⛔ the routes are never pooled.**
+> Artifacts: `…/incoming/2026-08-18-ladder-3seed/raw/reread_unpen/ll3_s11250.json`,
+> `…/raw/reread3_table.json` → `R6_rung_profile_r2_3seed`; re-derivation
+> `…/incoming/2026-08-18-citation-sweep/raw/canonical_requote_table.json`.
+>
+> ⛔ **AND THE CITATION FORM ITSELF WAS BROKEN.** The five line-number citations below
+> (`:178-194`, `:158-164`, `:264`, `:299-316`) point into `LATENT_LINEAR_LADDER.md`, which has been
+> **rewritten in place twice**. They resolve to unrelated text. ⇒ **cite it by SECTION HEADING** —
+> the rung profile now lives at its **§8.1 3-seed column**, and the 3-seed re-run at
+> `…/incoming/2026-08-18-ladder-3seed/LADDER_3SEED.md` **§6a**.
+
+*(Original §1.5 text, kept visible because the superseded claim must stay readable beside its
+replacement:)*
+
 `…/incoming/2026-08-17-latent-linear-ladder/LATENT_LINEAR_LADDER.md` §2.2 (`INHERITED`, quoted from
 its own table at `:178-194`): `n_agents_all` r² **0.076** (highest rung) · `ego_curv` r² **0.0001** ·
 `lead_closing` r² **0.0000**. §2.1 (`:158-164`) gives the paired nulls. ⇒ aggregate scene density
@@ -129,7 +245,36 @@ which — see the positive controls in §6.
 
 ### 1.7 ⭐ The framing number that fell out of the parameter measurement
 
-`MEASURED` (built `V6Stack(V6Config())` on CPU; raw in `raw/r1r2_params.json`):
+> ### ⚠️ CORRECTION 2026-08-18 (citation sweep) — §1.7's SHARES ARE A SCOPE ERROR (C104), AND THE TOTAL IS 3.8× UNDERSTATED
+>
+> **Cite this block as "§1.7 correction block", not by line number.**
+>
+> The table below was computed from **`V6Config()` DEFAULTS**, not from the live checkpoint. `MEASURED`
+> on the live S-W run (`d_model 768`):
+>
+> | | §1.7 as written (defaults) | ⭐ **live checkpoint** |
+> |---|---|---|
+> | total params | 87,893,449 | ⛔ **336,542,025** — **3.8× understated** |
+> | `predictor_op` share | **68.5 %** | **55.9 %** |
+> | `encoder` share | **17.4 %** | **25.9 %** |
+>
+> ⚠️ **C104 published the total as `336,559,305`; C106 corrected it to `336,542,025`** from two
+> independent sources — the checkpoint's own `_meta.config.param_report.total`, and a fresh `V6Stack`
+> instantiated from that same checkpoint's `v6_config`. **Δ = 17,280.** Use **336,542,025**.
+>
+> ⚠️ **A consequence that travels with it, and it is a PI item, not an editorial one:** the live run is
+> **12.2 % over the programme's "Sub-300M" headline** in `CLAUDE.md`. **Not a silent breach** — it
+> launched with `param_budget: 350000000`, so the assert passed by design — but the headline and the
+> model now disagree. ⏳ **PI decision: restate the claim or rescope the model.**
+>
+> ⭐ **WHAT STILL HOLDS FROM §1.7:** the pooling operator really does hold **0 parameters** and the
+> readout really is one `Linear(384→128)`. ⛔ **But the rhetorical use of the share — "68.5 % of the
+> stack sits downstream of a 40:1 mean, therefore the mean is the constraint" — is exactly the
+> inference C104 refuted by removing the mean.** *(Same family as `df` on a pod: a real number read at
+> the wrong scope, then used as an answer.)*
+
+`MEASURED` (built `V6Stack(V6Config())` on CPU; raw in `raw/r1r2_params.json`) ⚠️ **— on DEFAULTS, not
+the live checkpoint; see the correction block above**:
 
 | group | parameters | share |
 |---|---|---|
@@ -563,7 +708,7 @@ argument must appear in the run's `config.json` and be asserted, not remembered.
 
 | control | what it is | why it is mandatory |
 |---|---|---|
-| **TRIVIAL-PROXY** | a `v0`-only ridge, and the **partial-r after removing `v0`**, on **every arm × every rung** | **C92**: ego speed alone beat the whole 2048-d latent (K1 −1.562 PASS vs +1.580 FAIL); the `lead_gap` signal fell r +0.159 → **+0.052** once `v0` was partialled out. A pooling effect that vanishes under this control is an ego-speed effect. |
+| **TRIVIAL-PROXY** | a `v0`-only ridge, and the **partial-r after removing `v0`**, on **every arm × every rung** | **C92**: ego speed alone beat the whole 2048-d latent. ⛔ **NUMBERS CORRECTED 2026-08-18 (citation sweep, §1.5 correction block):** the scalar's **K1 −1.562** is ✅ confirmed and seed-stable (**−1.5618 [−2.0229, −1.1363] PASS, guard OK, 3/3 seeds, both routes**); the latent's **`+1.580` is a PRE-C92 value** — repaired it is **+0.736 / +0.025 / +0.216, never PASS**; and the `lead_gap` partial-`v0` correlation is **−0.0884 (3-seed mean; seed 0 −0.107), NOT +0.052 — the sign flips.** A pooling effect that vanishes under this control is an ego-speed effect. ⚠️ **And per C107 the control must be enumerated PER ARM on the arm's OWN window family, not once per study** — a `C-V0` fitted on different windows is not a control. |
 | **POSITIVE** | the **geometric ORACLE arm** (`PROBE_POSITIVE_CONTROL.md`: median 0.816 m on `lead_gap`, K1 PASS) must PASS under this harness | **C79**: D1 was withdrawn because a probe failed its positive control. If the oracle does not pass here, no arm's number is readable. |
 | **NEGATIVE** | random-latent null; within-episode label shuffle; constant predictor | the existing C-CONST / C-SHUF-XEP discipline |
 

@@ -48,6 +48,29 @@ be reported as drift:
                      via ``--remote-closure``)
 ===================  ==============================================
 
+⛔ **AND THE SAME CLASS ONE LEVEL UP AGAIN (C105, 2026-08-18).** This tool's own
+entry-point list was a hand-list of **7**. Widening it to **14** grew the closure
+from 120 files to **134 and found three more stale files on Thor**, one of them
+``taniteval/v0_antiecho.py`` at 46,905 B, absent from the box entirely. **A
+closure is only as complete as the set it is closed OVER.**
+
+⇒ The entry points are now **DERIVED** (:func:`derive_entries`) from
+:data:`DEFAULT_LAUNCH_SOURCES` — the ladder launcher, the operator runbook and
+the gate protocol — by reading the ``*.py`` tokens they actually name, then
+following each named script as a launch source in turn (a fixed point, because
+``train_v6_staged.py`` *subprocesses* ``eval_four_families.py``, ``seam_probe.py``
+and ``t1_eval.py``, which no import walk can see). MEASURED on this repo:
+**52 entry points → 161 files**, a strict superset of both hand-lists.
+
+⚠️ **The recursion bottoms out at the launch-source list, and that list is
+PRINTED ON EVERY RUN** (:func:`print_root_set`) together with the coverage gap —
+how many launchable scripts the closure does *not* reach. A root set nobody sees
+is a root set nobody checks; that is precisely how the 7 survived.
+
+⚠️ **A derivation must WIDEN, never NARROW.** Four instruments C105 carried are
+named by no current launch source, so :data:`DEFAULT_ENTRIES` is kept as a
+**floor** and its members are flagged ``FLOOR ONLY`` rather than dropped.
+
 Usage
 -----
 Audit (read-only; zero GPU, one ``ssh -n``)::
@@ -84,6 +107,7 @@ import ast
 import base64
 import hashlib
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -104,9 +128,18 @@ _REPO = _STACK.parent                             # repo root
 #: ``<repo>/taniteval`` before ``from taniteval import ci``.
 DEFAULT_ROOTS = ("stack/scripts", "stack", "taniteval")
 
-#: The real entry points of the v6 ladder. These are what a launch *executes*;
-#: everything else in the closure arrives because one of these imports it.
-DEFAULT_ENTRIES = (
+#: Directories an **executable** lives in. A ``.py`` outside these is a library
+#: module reached by ``import``, never something a launch line *runs*. This is
+#: the filter that keeps the derived entry set to launchable things.
+DEFAULT_ENTRY_ROOTS = ("stack/scripts", "taniteval/tools", "stack/ops")
+
+#: ⛔ **C105's DEFAULT, WHICH IS WHY IT IS NOT THE DEFAULT ANY MORE.** These
+#: seven are the v6 ladder as it was hand-listed on 2026-08-18. Their closure is
+#: **120 files**; widening the hand-list to 14 grew it to **134 and found three
+#: more stale files on Thor** — `four_families.py`, `hierarchy.py`, and
+#: `taniteval/v0_antiecho.py` (46,905 B) which was absent from the box entirely.
+#: Kept only so a prior audit can be reproduced exactly (``--entry-mode ladder``).
+LEGACY_LADDER_ENTRIES = (
     "stack/scripts/train_v6_staged.py",     # the trainer
     "stack/scripts/v6_chain.py",            # the ladder launcher / adjudicator
     "stack/scripts/v6_dump_sw_latents.py",  # S-T step 1 (the S-W latent dump)
@@ -115,6 +148,243 @@ DEFAULT_ENTRIES = (
     "stack/scripts/gate_emitters.py",
     "stack/scripts/watch_gates.py",
 )
+
+#: The measured 14 of C105 — the widened hand-list. This is the **fallback**
+#: when derivation is switched off (``--entry-mode fixed``), and the floor the
+#: derivation is asserted against: a derivation that reaches fewer files than
+#: this is a regression, not a simplification.
+DEFAULT_ENTRIES = LEGACY_LADDER_ENTRIES + (
+    "taniteval/tools/t1_eval.py",
+    "taniteval/tools/eval_four_families.py",
+    "taniteval/tools/seam_probe.py",
+    "taniteval/tools/t1_summary.py",
+    "stack/scripts/run_spectral.py",
+    "stack/scripts/refc_dump_latents.py",
+    "stack/scripts/v5_guard.py",
+)
+
+#: ⭐ **THE HAND-LIST THAT REPLACES THE HAND-LIST — and it is a different KIND of
+#: list, which is the whole point.** These are **LAUNCH SOURCES**: files that
+#: *emit or document* launch command lines. The entry points are then read out of
+#: them (see :func:`derive_entries`) instead of being remembered.
+#:
+#: C99 fixed a hand-listed **ship set** and kept a hand-listed **entry-point
+#: set**; C105 measured the cost. A list of launch *sources* changes when the
+#: launch **mechanism** changes — a new runbook, a new chain — which is rare and
+#: loud. The entry-point list changed every time an instrument joined the ladder,
+#: which is frequent and silent. ⚠️ **The recursion has to bottom out somewhere
+#: and this is where; the tool therefore PRINTS this set on every run**, so the
+#: assumption is visible rather than buried at line 109 of a script.
+DEFAULT_LAUNCH_SOURCES = (
+    # the ladder launcher — every S-* step's command line is emitted from here
+    "stack/scripts/v6_chain.py",
+    # the operator's 3 a.m. document; §2's launch lines are pinned against
+    # `v6_chain.py commands` by stack/tests/test_runbook_commands.py
+    "TanitAD Research Hub/Architecture & Inference/Implementation/incoming/"
+    "2026-08-07-hierarchical-wm-redesign/V6_GO_PACKAGE.md",
+    # the gate battery runbook — where run_gate.py / gate_emitters.py come from
+    "Project Steering/GATE_PROTOCOL.md",
+)
+
+#: A launch source names its scripts in prose, in f-strings, and in shell blocks,
+#: so the scan is over **text**, not over an AST — an AST cannot see
+#: ``f"{cfg.python} scripts/v6_dump_sw_latents.py "`` split across a line, nor a
+#: markdown code fence at all.
+_PY_TOKEN = re.compile(r"[A-Za-z0-9_][A-Za-z0-9_./+-]*\.py\b")
+
+#: Tests are executed by pytest, not by a launch line, and the suite already
+#: guards them. Including them would drag every fixture into the ship set.
+_ENTRY_EXCLUDE = ("__pycache__/", "/tests/", "tests/", "/.git/", ".claude/")
+
+# --------------------------------------------------------------------------
+# entry-point DERIVATION — the C105 fix
+# --------------------------------------------------------------------------
+
+
+@dataclass
+class EntrySet:
+    """A derived set of entry points, with the provenance of every member."""
+
+    entries: list[str] = field(default_factory=list)          # repo-relative
+    sources: list[str] = field(default_factory=list)          # launch sources
+    #: entry -> the launch sources that named it. This is the audit trail: an
+    #: entry point nobody can explain is an entry point nobody should trust.
+    named_by: dict[str, list[str]] = field(default_factory=dict)
+    #: tokens that looked like a script and resolved to nothing. Usually prose
+    #: (``foo.py`` in a sentence) or a pod-only path; recorded, never guessed at.
+    unresolved: list[str] = field(default_factory=list)
+    #: a bare basename that matched more than one file. ⚠️ **Never silently
+    #: pick one** — C105's locator returned "something plausible" three times.
+    #: All matches are taken (over-coverage is cheap in a drift audit) and the
+    #: ambiguity is reported.
+    ambiguous: dict[str, list[str]] = field(default_factory=dict)
+    #: ⚠️ Entry points present ONLY because the floor (:data:`DEFAULT_ENTRIES`)
+    #: carries them — **no current launch source names these.** They are audited
+    #: on inherited authority, not on a derived launch path, and saying so is the
+    #: point: this is the residue of the hand-list, made visible instead of
+    #: pretending the derivation is complete.
+    from_floor: list[str] = field(default_factory=list)
+    mode: str = "derived"
+
+
+def _rel_to_repo(p: Path, repo: Path) -> str:
+    return str(p.relative_to(repo)).replace("\\", "/")
+
+
+def _excluded(rel: str) -> bool:
+    return any(part in rel for part in _ENTRY_EXCLUDE) or \
+        Path(rel).name.startswith("test_")
+
+
+def _resolve_script(token: str, repo: Path, entry_roots: list[Path]) -> list[Path]:
+    """Every repo file a launch-line token could name.
+
+    Tokens arrive in four shapes and all four are real, measured in the runbook
+    and the chain on 2026-08-18::
+
+        stack/scripts/v6_chain.py              repo-relative
+        scripts/train_v6_staged.py             relative to the launch `cd`
+        /root/TanitAD/stack/scripts/v6_chain.py    an absolute POD path
+        t1_eval.py                             a bare basename in prose
+
+    So every **path suffix** of the token is tried against the repo root and
+    against each entry root. A bare basename is deliberately allowed to match
+    inside an entry root — that is how ``t1_eval.py`` reaches
+    ``taniteval/tools/t1_eval.py`` — and it is the only shape that can be
+    ambiguous, which the caller records.
+    """
+    parts = [p for p in token.replace("\\", "/").split("/") if p not in ("", ".", "..")]
+    hits: list[Path] = []
+    seen: set[Path] = set()
+    for i in range(len(parts)):
+        suffix = "/".join(parts[i:])
+        for base in [repo, *entry_roots]:
+            cand = base / suffix
+            try:
+                resolved = cand.resolve()
+            except OSError:
+                continue
+            if not cand.is_file():
+                continue
+            try:
+                rel = _rel_to_repo(resolved, repo)
+            except ValueError:
+                continue                      # outside the repo — not ours
+            if _excluded(rel) or resolved in seen:
+                continue
+            seen.add(resolved)
+            hits.append(resolved)
+    return hits
+
+
+def _under_entry_root(path: Path, entry_roots: list[Path]) -> bool:
+    return any(str(path).startswith(str(r)) for r in entry_roots)
+
+
+def derive_entries(sources: list[Path], repo: Path, entry_roots: list[Path],
+                   floor: tuple[str, ...] | list[str] = ()) -> EntrySet:
+    """Read the entry points out of what the runbook and the chain INVOKE.
+
+    ⛔ **This function is C105's fix.** A closure is only as complete as the set
+    it is closed over, and the entry set had been a hand-list — so the audit
+    inherited exactly the defect it was built to kill, one level up.
+
+    The walk is a **fixed point, not a single pass**: a script named by a launch
+    source is itself a launch source, because it may shell out further. That
+    matters concretely — ``train_v6_staged.py`` subprocesses
+    ``taniteval/tools/eval_four_families.py``, ``seam_probe.py`` and
+    ``t1_eval.py``, none of which any *import* walk can see (they are argv, not
+    imports), and all three were on C105's stale list.
+
+    ⚠️ **Scope, stated because it is the assumption that remains**: this reads
+    text for ``*.py`` tokens. A script invoked through a name assembled at
+    runtime, or through a shell script this never reaches, is invisible — the
+    same blind spot the AST walk has for ``import_module(f"{x}")``. The
+    ``uncovered_executables`` report exists so that gap is measured rather than
+    assumed away.
+
+    ⚠️ **And it is a superset of what the sources INVOKE, not an equal.** The
+    scan reads text, so a script merely *mentioned* in a usage docstring joins
+    the set. That is deliberate: in a drift audit over-coverage costs a few more
+    md5s, and under-coverage is what cost C99 and C105.
+
+    ⛔ **``floor`` exists because a derivation must WIDEN, never NARROW.**
+    MEASURED 2026-08-18: the derivation reaches 44 entry points but **not**
+    ``watch_gates.py``, ``t1_summary.py``, ``run_spectral.py`` or ``v5_guard.py``
+    — four instruments C105's widened hand-list carried that **no current launch
+    source names** (``t1_summary.py`` is invoked from a *shell* chain,
+    ``run_spectral.py`` only from ``run_orthogonality.py``). Silently dropping
+    them would be this tool regressing coverage while looking more principled.
+    They are kept and **flagged** in :attr:`EntrySet.from_floor`.
+    """
+    queue = list(dict.fromkeys(p.resolve() for p in sources if p.is_file()))
+    scanned: set[Path] = set()
+    entries: dict[Path, set[str]] = {}
+    unresolved: set[str] = set()
+    ambiguous: dict[str, list[str]] = {}
+    source_rels = [_rel_to_repo(p, repo) for p in queue]
+
+    while queue:
+        src = queue.pop()
+        if src in scanned:
+            continue
+        scanned.add(src)
+        try:
+            text = src.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+        src_rel = _rel_to_repo(src, repo)
+        for token in dict.fromkeys(_PY_TOKEN.findall(text)):
+            hits = _resolve_script(token, repo, entry_roots)
+            if not hits:
+                unresolved.add(token)
+                continue
+            if len(hits) > 1 and "/" not in token:
+                ambiguous[token] = sorted(_rel_to_repo(h, repo) for h in hits)
+            for hit in hits:
+                if not _under_entry_root(hit, entry_roots):
+                    continue                  # a library module, not a launch
+                entries.setdefault(hit, set()).add(src_rel)
+                if hit not in scanned:
+                    queue.append(hit)         # a script can launch a script
+
+    derived = {_rel_to_repo(p, repo) for p in entries}
+    from_floor = sorted(f for f in floor
+                        if f not in derived and (repo / f).is_file())
+    return EntrySet(
+        entries=sorted(derived | set(from_floor)),
+        sources=sorted(source_rels),
+        named_by={_rel_to_repo(k, repo): sorted(v) for k, v in entries.items()},
+        unresolved=sorted(unresolved),
+        ambiguous=ambiguous,
+        from_floor=from_floor,
+        mode="derived",
+    )
+
+
+def executables_under(entry_roots: list[Path], repo: Path) -> list[str]:
+    """Every ``__main__``-guarded script in the executable directories.
+
+    This is the **denominator**. The closure covers what the derivation reached;
+    this says what could be launched at all, so the difference is a measured
+    coverage gap instead of an unexamined assumption. *(Absence found at one
+    location is not absence — and neither is coverage.)*
+    """
+    out: list[str] = []
+    for root in entry_roots:
+        if not root.is_dir():
+            continue
+        for p in sorted(root.rglob("*.py")):
+            rel = _rel_to_repo(p.resolve(), repo)
+            if _excluded(rel):
+                continue
+            try:
+                if "__main__" in p.read_text(encoding="utf-8", errors="replace"):
+                    out.append(rel)
+            except OSError:
+                continue
+    return sorted(set(out))
+
 
 # --------------------------------------------------------------------------
 # import-closure walk (AST)
@@ -600,7 +870,38 @@ def verdict(loc: dict, rem: dict) -> str:
     return "DRIFT"
 
 
-def build_table(closure: Closure, loc: dict, rem: dict) -> list[dict]:
+def head_lf_digests(rels: list[str]) -> dict[str, str]:
+    """LF-normalised md5 of each path **as committed at HEAD**.
+
+    ⛔ **MEASURED 2026-08-18, and it manufactured a DRIFT row on the model
+    itself.** This tool hashes the **WORKING TREE**, which is correct for
+    shipping (you ship what you have) and wrong for *attribution*: with several
+    agents live — this programme's normal state — a sibling's **uncommitted**
+    edit makes the local file differ from the box and reads as *the box is
+    stale*. ``stack/tanitad/models/v6.py`` came back DRIFT while Thor's copy was
+    **byte-identical to HEAD**; the dev box was simply ahead by an unstaged
+    ``FROZEN_EXTERNAL_*`` change. Reporting that as remote drift would have been
+    a fabricated finding, and shipping "the fix" would have pushed a sibling's
+    half-finished work onto a box running a 5-day job.
+
+    ⇒ Every DRIFT row is now annotated ``local_dirty_vs_head``, so *"the box is
+    behind"* and *"my tree is ahead"* can never again be the same row.
+    """
+    out: dict[str, str] = {}
+    for rel in rels:
+        try:
+            res = subprocess.run(["git", "show", f"HEAD:{rel}"], cwd=str(_REPO),
+                                 capture_output=True, timeout=60)
+        except (OSError, subprocess.SubprocessError):
+            continue
+        if res.returncode == 0:
+            out[rel] = hashlib.md5(res.stdout.replace(b"\r\n", b"\n")).hexdigest()
+    return out
+
+
+def build_table(closure: Closure, loc: dict, rem: dict,
+                head: dict[str, str] | None = None) -> list[dict]:
+    head = head or {}
     rows = []
     for rel in closure.files:
         l, r = loc.get(rel, {}), rem.get(rel, {})
@@ -609,6 +910,10 @@ def build_table(closure: Closure, loc: dict, rem: dict) -> list[dict]:
                "reach": "eager" if rel in set(closure.eager) else "deferred_only",
                "local_bytes": l.get("bytes"), "remote_bytes": r.get("bytes"),
                "local_md5_lf": l.get("md5_lf"), "remote_md5_lf": r.get("md5_lf")}
+        if rel in head:
+            row["head_md5_lf"] = head[rel]
+            row["local_dirty_vs_head"] = l.get("md5_lf") != head[rel]
+            row["remote_matches_head"] = r.get("md5_lf") == head[rel]
         if v == "DRIFT" and l.get("bytes") and r.get("bytes"):
             row["size_ratio_local_over_remote"] = round(l["bytes"] / r["bytes"], 3)
         rows.append(row)
@@ -712,10 +1017,110 @@ def verify_import(host: str, root: str, mods: list[str], ssh_bin: str,
 # --------------------------------------------------------------------------
 
 
+def resolve_entry_set(args, entry_roots: list[Path]) -> EntrySet:
+    """Turn ``--entry`` / ``--entry-mode`` into the concrete root set."""
+    if args.entry:
+        return EntrySet(entries=sorted(args.entry), mode="explicit")
+    if args.entry_mode == "derived":
+        eset = derive_entries([_REPO / s for s in args.launch_source],
+                              _REPO, entry_roots, floor=DEFAULT_ENTRIES)
+        missing_src = [s for s in args.launch_source if not (_REPO / s).is_file()]
+        if missing_src:
+            # ⛔ A launch source that has MOVED silently narrows the whole audit
+            # — the exact failure shape this tool exists to kill. Never quiet.
+            print(f"  !! launch sources not found (the audit is NARROWER than it "
+                  f"looks): {missing_src}", file=sys.stderr)
+        return eset
+    if args.entry_mode == "ladder":
+        return EntrySet(entries=sorted(LEGACY_LADDER_ENTRIES), mode="ladder")
+    if args.entry_mode == "executable":
+        return EntrySet(entries=executables_under(entry_roots, _REPO),
+                        mode="executable")
+    return EntrySet(entries=sorted(DEFAULT_ENTRIES), mode="fixed")
+
+
+def print_root_set(eset: EntrySet, args, closure: Closure,
+                   launchable: list[str], uncovered: list[str]) -> None:
+    """⭐ Print the assumption the whole audit rests on, every single run.
+
+    C105's finding was not the seven stale files — it was that the briefed
+    entry-point set was itself a guess, and that the guess was **invisible**
+    because it lived as a tuple at the top of a script. A root set nobody sees
+    is a root set nobody checks.
+    """
+    bar = "=" * 74
+    print(bar)
+    print(f"ROOT SET  (mode={eset.mode})  — the assumption this audit rests on")
+    print(bar)
+    if eset.mode == "derived":
+        print(f"launch sources ({len(eset.sources)}) — entry points are READ "
+              f"from these, not remembered:")
+        for s in eset.sources:
+            print(f"    {s}")
+    elif eset.mode == "explicit":
+        print("  --entry given explicitly: derivation SKIPPED. Anything the "
+              "launch touches that you did not list is unaudited.")
+    elif eset.mode == "ladder":
+        print("  C105's original 7-entry hand-list, for reproducing that audit "
+              "ONLY. It missed 3 stale files; do not decide on it.")
+    print(f"\nentry points ({len(eset.entries)}):")
+    for e in eset.entries:
+        why = eset.named_by.get(e)
+        if why:
+            tail = f"   <- {', '.join(Path(w).name for w in why)}"
+        elif e in eset.from_floor:
+            tail = "   <- FLOOR ONLY (no launch source names it)"
+        else:
+            tail = ""
+        print(f"    {e}{tail}")
+    if eset.from_floor:
+        print(f"\n  ⚠️ {len(eset.from_floor)} entry point(s) survive only because "
+              f"the C105 floor carries them — no current launch source names "
+              f"them, so they are audited on INHERITED authority: "
+              f"{eset.from_floor}")
+    if eset.ambiguous:
+        print(f"\n  ~ ambiguous bare basenames (ALL matches taken, none "
+              f"silently chosen): {eset.ambiguous}")
+    print(f"\nsys.path roots: {args.roots}")
+    print(f"executable dirs: {args.entry_roots}")
+    print(f"\nCOVERAGE: closure {len(closure.files)} files · "
+          f"{len(launchable) - len(uncovered)}/{len(launchable)} launchable "
+          f"scripts covered · {len(uncovered)} NOT covered")
+    if uncovered:
+        print("  ⚠️ uncovered scripts are launchable and unaudited by this run. "
+              "They are not on the derived launch path; if one becomes so, add "
+              "its launch source." + ("" if args.show_uncovered
+                                      else "  (--show-uncovered to list)"))
+        if args.show_uncovered:
+            for u in uncovered:
+                print(f"    UNCOVERED  {u}")
+    if eset.unresolved:
+        print(f"  ~ {len(eset.unresolved)} script-shaped tokens resolved to "
+              f"nothing (prose / pod-only paths); not guessed at.")
+    print(bar)
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    ap.add_argument("--entry", nargs="*", default=list(DEFAULT_ENTRIES),
-                    help="repo-relative entry points (default: the v6 ladder)")
+    ap.add_argument("--entry", nargs="*", default=None,
+                    help="explicit repo-relative entry points; overrides "
+                         "--entry-mode entirely (and prints that it did)")
+    ap.add_argument("--entry-mode", default="derived",
+                    choices=("derived", "fixed", "ladder", "executable"),
+                    help="derived (DEFAULT): read the entry points out of the "
+                         "launch sources; fixed: the measured 14 of C105; "
+                         "ladder: C105's original 7, to reproduce that audit; "
+                         "executable: EVERY __main__-guarded script under the "
+                         "entry roots — the paranoid superset")
+    ap.add_argument("--launch-source", nargs="*",
+                    default=list(DEFAULT_LAUNCH_SOURCES),
+                    help="files that emit or document launch command lines; "
+                         "the derivation reads entry points out of these")
+    ap.add_argument("--entry-roots", nargs="*", default=list(DEFAULT_ENTRY_ROOTS),
+                    help="directories an executable may live in")
+    ap.add_argument("--show-uncovered", action="store_true",
+                    help="list the launchable scripts this closure does NOT "
+                         "cover (the measured gap; the count always prints)")
     ap.add_argument("--roots", nargs="*", default=list(DEFAULT_ROOTS))
     ap.add_argument("--host", default=None,
                     help="ssh alias of the target box; omit for a local closure")
@@ -733,6 +1138,10 @@ def main(argv: list[str] | None = None) -> int:
                     help="push DRIFT + MISSING_REMOTE rows (LF-normalised)")
     ap.add_argument("--backup-dir", default=None,
                     help="remote dir for the box's originals; required by --ship")
+    ap.add_argument("--ship-dirty", action="store_true",
+                    help="also ship files that are UNCOMMITTED locally. Off by "
+                         "default: a DRIFT row on a dirty file usually means "
+                         "your tree moved, not that the box is stale.")
     ap.add_argument("--verify-import", action="store_true",
                     help="import every closure module on the box for real")
     ap.add_argument("--json", default=None, help="write the full report here")
@@ -747,11 +1156,20 @@ def main(argv: list[str] | None = None) -> int:
     args.backup_dir = _demangle_posix(args.backup_dir)
 
     roots = [_REPO / r for r in args.roots]
-    entries = [_REPO / e for e in args.entry]
+    entry_roots = [(_REPO / r).resolve() for r in args.entry_roots]
+
+    # ---- the root set: derived, not remembered -------------------------
+    eset = resolve_entry_set(args, entry_roots)
+    entries = [_REPO / e for e in eset.entries]
     missing_entries = [str(e) for e in entries if not e.is_file()]
     closure = compute_closure(entries, roots)
 
-    print(f"closure: {len(closure.files)} files from {len(closure.entries)} entry "
+    launchable = executables_under(entry_roots, _REPO)
+    uncovered = sorted(set(launchable) - set(closure.files))
+
+    print_root_set(eset, args, closure, launchable, uncovered)
+
+    print(f"\nclosure: {len(closure.files)} files from {len(closure.entries)} entry "
           f"points over roots {args.roots}")
     print(f"  eager (imported at process start): {len(closure.eager)}   "
           f"deferred-only (function-level, the C99 risk set): "
@@ -762,7 +1180,11 @@ def main(argv: list[str] | None = None) -> int:
         print(f"  !! unparsed: {closure.unparsed}")
 
     report: dict = {"closure": asdict(closure), "roots": args.roots,
-                    "missing_entries": missing_entries}
+                    "missing_entries": missing_entries,
+                    "entry_set": asdict(eset),
+                    "entry_roots": args.entry_roots,
+                    "launchable_scripts": launchable,
+                    "uncovered_executables": uncovered}
 
     if not args.host:
         for f in closure.files:
@@ -774,19 +1196,38 @@ def main(argv: list[str] | None = None) -> int:
     loc = local_hashes(closure.files)
     rem = remote_hashes(args.host, args.remote_root, closure.files,
                         ssh_bin, args.remote_python)
-    rows = build_table(closure, loc, rem)
+    head = head_lf_digests(closure.files)
+    rows = build_table(closure, loc, rem, head)
     counts = {v: sum(1 for r in rows if r["verdict"] == v) for v in VERDICTS}
+    # ⛔ A DRIFT row whose LOCAL file is dirty vs HEAD is not evidence the box is
+    # stale — it is evidence YOUR tree moved. Separate them before anyone reads
+    # a count, and never let --ship push a sibling's uncommitted work.
+    dirty = [r["path"] for r in rows
+             if r["verdict"] == "DRIFT" and r.get("local_dirty_vs_head")]
     report.update({"host": args.host, "remote_root": args.remote_root,
-                   "rows": rows, "counts": counts})
+                   "rows": rows, "counts": counts,
+                   "drift_explained_by_local_uncommitted_edits": dirty,
+                   "compared_side": "WORKING TREE (annotated against HEAD)"})
 
     print(f"\n{args.host}:{args.remote_root}  " +
           "  ".join(f"{k}={counts[k]}" for k in VERDICTS))
+    print("  compared side: WORKING TREE (each row also checked against HEAD)")
     for r in rows:
         if r["verdict"] in ("DRIFT", "MISSING_REMOTE", "MISSING_LOCAL"):
+            tag = ""
+            if r.get("local_dirty_vs_head"):
+                tag = ("  <- ⚠️ LOCAL IS DIRTY vs HEAD"
+                       + ("; REMOTE == HEAD, so this is YOUR uncommitted edit, "
+                          "NOT box staleness" if r.get("remote_matches_head")
+                          else ""))
             print(f"  {r['verdict']:<15} [{r['reach']:<13}] {r['path']}  "
                   f"local={r['local_bytes']} remote={r['remote_bytes']}"
                   + (f" ratio={r['size_ratio_local_over_remote']}"
-                     if "size_ratio_local_over_remote" in r else ""))
+                     if "size_ratio_local_over_remote" in r else "") + tag)
+    if dirty:
+        print(f"\n  ⚠️ {len(dirty)} of {counts['DRIFT']} DRIFT rows are explained "
+              f"by UNCOMMITTED local edits, not by the box: {dirty}")
+        print("     Shipping these would push work-in-progress onto the box.")
 
     why = explain_drift(args.host, args.remote_root, rows, ssh_bin,
                         args.remote_python)
@@ -801,6 +1242,14 @@ def main(argv: list[str] | None = None) -> int:
 
     stale = [r["path"] for r in rows
              if r["verdict"] in ("DRIFT", "MISSING_REMOTE")]
+    if args.ship and dirty and not args.ship_dirty:
+        # ⛔ Refuse by default. The box runs a 5-day job; a sibling agent's
+        # half-written module is the last thing that should land on it.
+        held = [p for p in stale if p in set(dirty)]
+        stale = [p for p in stale if p not in set(dirty)]
+        print(f"\n  ⛔ HOLDING BACK {len(held)} file(s) that are uncommitted "
+              f"locally: {held}\n     (--ship-dirty to override, deliberately)")
+        report["ship_held_back_dirty"] = held
 
     if args.ship and stale:
         if not args.backup_dir:
