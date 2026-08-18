@@ -6803,3 +6803,89 @@ need ≈4× the lead-carrying episodes.**
 ρ is quotable today as though it were the arm's calibration** and on this corpus it is 62.5 %
 free-flow; and rebuild the lead block with `n_ahead_50m` / `n_vru_near` so the stratifier can be
 agent **density** — the cut T3's *"multi-agent kinematic entropy"* actually names.
+
+---
+
+## C122 — THE "91× READS BETTER BUT 5.1× DRIVES WORSE" TENSION IS AN ARTEFACT OF COMPARING THEM — AND THE LEAD-READOUT ADVANTAGE BUYS NOTHING ON LEAD WINDOWS (2026-08-18)
+
+**RETRACTED — my own framing**, given to the PI this morning: *"a pretrained encoder that reads the
+scene 91× better produced a model that drives 5.1× worse."* **Both numbers are real. The comparison
+is not.**
+
+### Three non-comparabilities, each established from a primary source
+
+1. ⛔ **DIFFERENT ARMS.** `MODEL_REGISTRY.md:3615` states C104's substrate verbatim: *"frozen
+   `v6F-SW-30k` snapshots"*. REF-A's opponent is **`flagship4b-speedjerk-30k` (v1)**. ⇒ **The 91×
+   and the 5.1× never shared an arm.**
+2. ⛔ **DIFFERENT QUANTITIES.** Of C104's three rungs, **`ego_v0` is SUPPLIED AS AN INPUT to both
+   driving arms** (the 3rd action channel, `rollout.py:80`), and **`lead_gap`/`lead_closing` sit in a
+   family the driving eval explicitly REFUSES** (`driving.py:608`).
+3. ⛔ **DIFFERENT BUDGETS.** MEASURED: flagship trains **277,404,073** params, REF-A **160,514,460
+   (57.9 %)** — a **116.9 M** gap.
+
+### ⛔ AND MY TIER CLAIM WAS WRONG — IN THE OPPOSITE DIRECTION
+
+I told the PI REF-A's **2.1675** was a **T1** driving number. **It is T0.** `rollout.py:144-153`:
+the predictor **"is fed the expert's true future actions"**. ⇒ **The tier resolution I proposed fails
+in the direction I stated** — both sides are T0, and the doctrine does **not** forbid the comparison.
+⚠️ **The trap: `tier0` in the block name is the METRIC-SUITE tier — a name collision**, and
+**§6's rank table carries no tier stamp at all**, which is how "REF-A ADE is T1" propagated.
+
+### ⭐ AND THE SUBSTANTIVE TEST WAS RUN, NOT LEFT AS A CANDIDATE
+
+*"Readable ≠ usable"* is now **measured**. The `driving.py:608` refusal turned out to be a **STALE
+BLOCKER** — `lead_source.py` and a val40 lead block exist and attach row-for-row (**881 = 881 rows,
+episode partition identical, speed corr 1.0**), and **REF-A had never been scored on it.**
+
+| | |
+|---|---|
+| deficit vs flagship on **LEAD** windows | **+1.7150 m** |
+| deficit on **NO_LEAD** windows | **+1.7295 m** |
+| **contrast** | **−0.0146 [−0.5988, +0.5551] — NOT SEPARATED** |
+
+⇒ ⛔ **The lead-readout advantage buys NOTHING where a lead vehicle is present.** The longitudinal
+members point the **wrong way** for *"the readout helps"*, and it is **not a speed confound** (not
+separated in any of three speed bands). ⭐ **Power stated as a bound rather than assumed:** a
+lead-presence benefit larger than **23–39 %** of the deficit is excluded; smaller ones are not.
+
+⭐ **A new decision-grade LONGITUDINAL result:** on distance-keeping the **flagship is
+indistinguishable from ground truth on all three metrics**, while **both frozen-DINOv2 arms are
+CI-separated from GT on all three, in the UNSAFE direction** — REF-A min-TTC **−5.82 s [−9.34,
+−2.06]** vs flagship **−0.16 s [−1.10, +0.71]**. ⚠️ Flagged by its author as a **consequence**, not an
+independent test — same path as ADE.
+**Four families closed** (reproduction max diff 4.9e-05; the instrument independently reproduces the
+registry's own +2.6200 [+2.0945, +3.2570]). The deficit is **overwhelmingly LONGITUDINAL**; on
+**heading MAE and heading median REF-A and the flagship are NOT separated.** TACTICAL/STRATEGIC
+UNAVAILABLE with reason and n = 0.
+
+### ⛔ "THE FLAGSHIP AND REF-A DIFFER IN EXACTLY TWO THINGS" IS FALSE — THERE ARE AT LEAST FOUR
+
+`MODEL_REGISTRY.md:1899` is the sentence the whole ablation rested on. MEASURED, it omits:
+* the SIGReg target is **two** changes — `full_relaxed` also enables **`free_dims`**, which REF-A
+  never receives;
+* **h15 imagination — 22.06 M params REF-A does not have**;
+* **grounding depth — 13.43 M vs 4.48 M**.
+⇒ ⛔ **And the parity test pins the WRONG TRAINER and omits `imagination` entirely.**
+⇒ **ROOT-CAUSE CLASS: A CLEAN-ABLATION CLAIM ASSERTED IN PROSE AND NEVER COMPUTED.** *"They differ in
+exactly two things"* is precisely the shape of C112's *"different source ⇒ disjoint"* — a
+**set-difference claim taken on provenance.** ⇒ **RULE: an ablation's "everything else is identical"
+must be DERIVED from the two configs, and pinned.**
+
+⭐ **SIGReg is NOT inert under a frozen encoder** — gradient probe: the state term puts **|grad|
+8.93e+01 on the adapter, 0 on the predictor.** Isolable, but via an ~8-line source edit, not a flag.
+
+### Two more corrections
+
+⚠️ **`:1972-1973`'s own estimator warning is PARTLY FALSE** — FDE@2s and miss@2m **do** have
+decision-grade forms, printed **817 lines below in the same document**; `:1927`'s FDE/miss are
+**unlabelled banned split-means** contradicting §6.
+⚠️ **`.CONTAMINATED` is NOT a leak** — it is a **GPU-exclusivity quarantine on the latency panel**
+(`efficiency.py:1730-1741`), and it **flipped `refa-dinov2`'s 10 Hz verdict**. ⛔ **And REF-A I-JEPA
+is worse than "val-leaked": it NEVER ENTERED THE DRIVING BLOCK AT ALL.**
+
+### ⇒ The experiment that would actually settle it
+
+**E-RECON-2: freeze the FLAGSHIP'S OWN encoder and retrain adapter + the full 4-brain** — the only
+single arm that separates **capacity** from **representation**. Three outcomes committed in advance.
+⭐ **Run at 5 k first**: REF-A's banked 5 k milestone makes it **immediately paired-comparable at
+~1/6 the cost.** Riders in order: `full_relaxed` SIGReg (cheapest), then h15 + 3-level grounding.
