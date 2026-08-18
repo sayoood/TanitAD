@@ -1,0 +1,1544 @@
+{
+ "block": "taniteval.p7_strata/report",
+ "version": "1.0.0",
+ "gate": "T3: P7 calibration rho >= 0.3 held on interaction-rich strata, not just pooled",
+ "provenance": {
+  "lead_block": "TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-08-04-distance-keeping-arms/raw/val40_lead_block.npz",
+  "gap_edges_m": [
+   14.0,
+   45.0
+  ],
+  "tier": "T0",
+  "tier_note": "banked fan dumps come from rollout.collect, which is fed the expert's true future actions -- a WM / instrument diagnostic, never a driving claim",
+  "estimator": "episode_cluster_bootstrap (taniteval.ci._draws)",
+  "n_boot": 2000,
+  "seed": 0,
+  "min_n_windows": 32,
+  "min_n_episodes": 8,
+  "evidence_class": "MEASURED (ours; artifact = this JSON)"
+ },
+ "arms": {
+  "refc-xl-30k": {
+   "fan_dump": "taniteval/results/fan_refc-xl-30k.pt",
+   "alignment": {
+    "n_windows": 881,
+    "n_episodes": 40,
+    "join": "positional (rollout.collect window order), eid-verified"
+   },
+   "n_candidates": 256,
+   "err_m_mean_dispersion_not_a_ci": {
+    "mean": 0.4714,
+    "sd": 0.4836,
+    "bracket_kind": "dispersion_not_a_ci"
+   },
+   "reads": {
+    "selector_entropy": {
+     "block": "taniteval.p7_strata",
+     "version": "1.0.0",
+     "tier": "T0",
+     "tier_note": "T0 = teacher-forced / true-future-conditioned. A WM and instrument diagnostic, NEVER a driving claim (EVAL_DOCTRINE).",
+     "gate": "T3: P7 calibration rho >= 0.3 held on interaction-rich strata, not just pooled",
+     "estimator": "episode_cluster_bootstrap",
+     "estimator_note": "overlapping_holdout_se is NEVER used here: it biases the point estimate bidirectionally, up to a sign flip",
+     "stratifier": {
+      "name": "obstacle.offline lead state + lead proximity band",
+      "kind": "external_label",
+      "derived_from": "obstacle.offline 3D agent cuboids (the dataset's own annotation of other traffic), via taniteval.lead_source's causal in-corridor lead rule",
+      "why_admissible": "It is an EXTERNAL annotation of other agents. (a) It is not computed from ego dynamics, so it does not cut on the source the situation labels are derived from (stack/tanitad/data/situations.py) -- the disjointness the 2026-08-03 ruling protects. (b) It is not computed from any model output, so the arm being graded does not choose the strata that grade it; O4's own docstring admits the obstacle join as 'frozen-probe/eval-strata material'. (c) The stratifying quantities are lead PRESENCE and lead GAP -- facts about other traffic. Ego speed travels in the same block and is deliberately NOT used to stratify; it is used only as the trivial-proxy control.",
+      "admissible": true
+     },
+     "stratum_spec": {
+      "stratum_order": [
+       "NO_LABEL",
+       "NO_LEAD",
+       "LEAD_le14m",
+       "LEAD_14_45m",
+       "LEAD_ge45m"
+      ],
+      "inclusion_rule": {
+       "NO_LABEL": "state == NO_LABEL: no obstacle.offline for the clip, or t0 outside the ~20 s labelled span. NOT free-flow.",
+       "NO_LEAD": "state == NO_LEAD: obstacle.offline present AND no causal in-corridor vehicle ahead within 80 m / +-2 m lateral.",
+       "LEAD_le14m": "state == LEAD AND gap_m < 14",
+       "LEAD_14_45m": "state == LEAD AND 14 <= gap_m < 45",
+       "LEAD_ge45m": "state == LEAD AND gap_m >= 45"
+      },
+      "interaction_rich": {
+       "NO_LABEL": null,
+       "NO_LEAD": false,
+       "LEAD_le14m": true,
+       "LEAD_14_45m": true,
+       "LEAD_ge45m": true
+      },
+      "gap_convention": "lead_source: gap = along - size_x/2, rig origin to the lead's REAR face; rig frame x-forward/y-left",
+      "edges_m": [
+       14.0,
+       45.0
+      ]
+     },
+     "min_n_windows": 32,
+     "min_n_episodes": 8,
+     "n_windows_total": 881,
+     "n_episodes_total": 40,
+     "strata": {
+      "NO_LABEL": {
+       "n": 60,
+       "n_episodes": 5,
+       "inclusion_rule": "state == NO_LABEL: no obstacle.offline for the clip, or t0 outside the ~20 s labelled span. NOT free-flow.",
+       "interaction_rich": null,
+       "frac_of_windows": 0.0681,
+       "status": "REFUSED_MIN_N",
+       "reason": "n=60 windows over 5 episode(s) is below the floor (min_n=32, min_episodes=8); a rho here would not be evidence, so none is reported"
+      },
+      "NO_LEAD": {
+       "n": 551,
+       "n_episodes": 33,
+       "inclusion_rule": "state == NO_LEAD: obstacle.offline present AND no causal in-corridor vehicle ahead within 80 m / +-2 m lateral.",
+       "interaction_rich": false,
+       "frac_of_windows": 0.6254,
+       "spearman_rho": 0.5251,
+       "n_boot": 2000,
+       "seed": 0,
+       "estimator": "episode_cluster_bootstrap",
+       "bracket_kind": "episode_cluster_bootstrap_percentile_95",
+       "rank_convention": "tools_p7_calibration.py:15-19 (double argsort, no tie averaging)",
+       "resampler": "taniteval.ci._draws",
+       "rho_ci_cluster": [
+        0.4106,
+        0.5954
+       ],
+       "n_boot_degenerate": 0,
+       "status": "OK",
+       "gate_pass": true,
+       "gate": "P7 rho >= 0.3 with the episode-cluster interval excluding 0"
+      },
+      "LEAD_le14m": {
+       "n": 68,
+       "n_episodes": 9,
+       "inclusion_rule": "state == LEAD AND gap_m < 14",
+       "interaction_rich": true,
+       "frac_of_windows": 0.0772,
+       "spearman_rho": 0.6621,
+       "n_boot": 2000,
+       "seed": 0,
+       "estimator": "episode_cluster_bootstrap",
+       "bracket_kind": "episode_cluster_bootstrap_percentile_95",
+       "rank_convention": "tools_p7_calibration.py:15-19 (double argsort, no tie averaging)",
+       "resampler": "taniteval.ci._draws",
+       "rho_ci_cluster": [
+        0.0403,
+        0.7649
+       ],
+       "n_boot_degenerate": 0,
+       "status": "OK",
+       "gate_pass": true,
+       "gate": "P7 rho >= 0.3 with the episode-cluster interval excluding 0"
+      },
+      "LEAD_14_45m": {
+       "n": 133,
+       "n_episodes": 17,
+       "inclusion_rule": "state == LEAD AND 14 <= gap_m < 45",
+       "interaction_rich": true,
+       "frac_of_windows": 0.151,
+       "spearman_rho": 0.3139,
+       "n_boot": 2000,
+       "seed": 0,
+       "estimator": "episode_cluster_bootstrap",
+       "bracket_kind": "episode_cluster_bootstrap_percentile_95",
+       "rank_convention": "tools_p7_calibration.py:15-19 (double argsort, no tie averaging)",
+       "resampler": "taniteval.ci._draws",
+       "rho_ci_cluster": [
+        0.0575,
+        0.4999
+       ],
+       "n_boot_degenerate": 0,
+       "status": "OK",
+       "gate_pass": true,
+       "gate": "P7 rho >= 0.3 with the episode-cluster interval excluding 0"
+      },
+      "LEAD_ge45m": {
+       "n": 69,
+       "n_episodes": 13,
+       "inclusion_rule": "state == LEAD AND gap_m >= 45",
+       "interaction_rich": true,
+       "frac_of_windows": 0.0783,
+       "spearman_rho": 0.3134,
+       "n_boot": 2000,
+       "seed": 0,
+       "estimator": "episode_cluster_bootstrap",
+       "bracket_kind": "episode_cluster_bootstrap_percentile_95",
+       "rank_convention": "tools_p7_calibration.py:15-19 (double argsort, no tie averaging)",
+       "resampler": "taniteval.ci._draws",
+       "rho_ci_cluster": [
+        -0.0325,
+        0.6154
+       ],
+       "n_boot_degenerate": 0,
+       "status": "OK",
+       "gate_pass": false,
+       "gate": "P7 rho >= 0.3 with the episode-cluster interval excluding 0"
+      }
+     },
+     "pooled": {
+      "spearman_rho": 0.4656,
+      "n": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "seed": 0,
+      "estimator": "episode_cluster_bootstrap",
+      "bracket_kind": "episode_cluster_bootstrap_percentile_95",
+      "rank_convention": "tools_p7_calibration.py:15-19 (double argsort, no tie averaging)",
+      "resampler": "taniteval.ci._draws",
+      "rho_ci_cluster": [
+       0.3663,
+       0.5324
+      ],
+      "n_boot_degenerate": 0,
+      "is_gate_read": false,
+      "note": "POOLED -- reported for contrast only. The T3 row is 'held on interaction-rich strata, NOT just pooled', so this number cannot decide it.",
+      "gate_pass_if_it_were_the_gate": true
+     },
+     "verdict": "FAIL",
+     "verdict_reason": "interaction-rich stratum/strata ['LEAD_ge45m'] do not hold rho >= 0.3 with the interval excluding 0"
+    },
+    "endpoint_dispersion_m": {
+     "block": "taniteval.p7_strata",
+     "version": "1.0.0",
+     "tier": "T0",
+     "tier_note": "T0 = teacher-forced / true-future-conditioned. A WM and instrument diagnostic, NEVER a driving claim (EVAL_DOCTRINE).",
+     "gate": "T3: P7 calibration rho >= 0.3 held on interaction-rich strata, not just pooled",
+     "estimator": "episode_cluster_bootstrap",
+     "estimator_note": "overlapping_holdout_se is NEVER used here: it biases the point estimate bidirectionally, up to a sign flip",
+     "stratifier": {
+      "name": "obstacle.offline lead state + lead proximity band",
+      "kind": "external_label",
+      "derived_from": "obstacle.offline 3D agent cuboids (the dataset's own annotation of other traffic), via taniteval.lead_source's causal in-corridor lead rule",
+      "why_admissible": "It is an EXTERNAL annotation of other agents. (a) It is not computed from ego dynamics, so it does not cut on the source the situation labels are derived from (stack/tanitad/data/situations.py) -- the disjointness the 2026-08-03 ruling protects. (b) It is not computed from any model output, so the arm being graded does not choose the strata that grade it; O4's own docstring admits the obstacle join as 'frozen-probe/eval-strata material'. (c) The stratifying quantities are lead PRESENCE and lead GAP -- facts about other traffic. Ego speed travels in the same block and is deliberately NOT used to stratify; it is used only as the trivial-proxy control.",
+      "admissible": true
+     },
+     "stratum_spec": {
+      "stratum_order": [
+       "NO_LABEL",
+       "NO_LEAD",
+       "LEAD_le14m",
+       "LEAD_14_45m",
+       "LEAD_ge45m"
+      ],
+      "inclusion_rule": {
+       "NO_LABEL": "state == NO_LABEL: no obstacle.offline for the clip, or t0 outside the ~20 s labelled span. NOT free-flow.",
+       "NO_LEAD": "state == NO_LEAD: obstacle.offline present AND no causal in-corridor vehicle ahead within 80 m / +-2 m lateral.",
+       "LEAD_le14m": "state == LEAD AND gap_m < 14",
+       "LEAD_14_45m": "state == LEAD AND 14 <= gap_m < 45",
+       "LEAD_ge45m": "state == LEAD AND gap_m >= 45"
+      },
+      "interaction_rich": {
+       "NO_LABEL": null,
+       "NO_LEAD": false,
+       "LEAD_le14m": true,
+       "LEAD_14_45m": true,
+       "LEAD_ge45m": true
+      },
+      "gap_convention": "lead_source: gap = along - size_x/2, rig origin to the lead's REAR face; rig frame x-forward/y-left",
+      "edges_m": [
+       14.0,
+       45.0
+      ]
+     },
+     "min_n_windows": 32,
+     "min_n_episodes": 8,
+     "n_windows_total": 881,
+     "n_episodes_total": 40,
+     "strata": {
+      "NO_LABEL": {
+       "n": 60,
+       "n_episodes": 5,
+       "inclusion_rule": "state == NO_LABEL: no obstacle.offline for the clip, or t0 outside the ~20 s labelled span. NOT free-flow.",
+       "interaction_rich": null,
+       "frac_of_windows": 0.0681,
+       "status": "REFUSED_MIN_N",
+       "reason": "n=60 windows over 5 episode(s) is below the floor (min_n=32, min_episodes=8); a rho here would not be evidence, so none is reported"
+      },
+      "NO_LEAD": {
+       "n": 551,
+       "n_episodes": 33,
+       "inclusion_rule": "state == NO_LEAD: obstacle.offline present AND no causal in-corridor vehicle ahead within 80 m / +-2 m lateral.",
+       "interaction_rich": false,
+       "frac_of_windows": 0.6254,
+       "spearman_rho": 0.5854,
+       "n_boot": 2000,
+       "seed": 0,
+       "estimator": "episode_cluster_bootstrap",
+       "bracket_kind": "episode_cluster_bootstrap_percentile_95",
+       "rank_convention": "tools_p7_calibration.py:15-19 (double argsort, no tie averaging)",
+       "resampler": "taniteval.ci._draws",
+       "rho_ci_cluster": [
+        0.4573,
+        0.6519
+       ],
+       "n_boot_degenerate": 0,
+       "status": "OK",
+       "gate_pass": true,
+       "gate": "P7 rho >= 0.3 with the episode-cluster interval excluding 0"
+      },
+      "LEAD_le14m": {
+       "n": 68,
+       "n_episodes": 9,
+       "inclusion_rule": "state == LEAD AND gap_m < 14",
+       "interaction_rich": true,
+       "frac_of_windows": 0.0772,
+       "spearman_rho": 0.6699,
+       "n_boot": 2000,
+       "seed": 0,
+       "estimator": "episode_cluster_bootstrap",
+       "bracket_kind": "episode_cluster_bootstrap_percentile_95",
+       "rank_convention": "tools_p7_calibration.py:15-19 (double argsort, no tie averaging)",
+       "resampler": "taniteval.ci._draws",
+       "rho_ci_cluster": [
+        0.1151,
+        0.7674
+       ],
+       "n_boot_degenerate": 0,
+       "status": "OK",
+       "gate_pass": true,
+       "gate": "P7 rho >= 0.3 with the episode-cluster interval excluding 0"
+      },
+      "LEAD_14_45m": {
+       "n": 133,
+       "n_episodes": 17,
+       "inclusion_rule": "state == LEAD AND 14 <= gap_m < 45",
+       "interaction_rich": true,
+       "frac_of_windows": 0.151,
+       "spearman_rho": 0.4077,
+       "n_boot": 2000,
+       "seed": 0,
+       "estimator": "episode_cluster_bootstrap",
+       "bracket_kind": "episode_cluster_bootstrap_percentile_95",
+       "rank_convention": "tools_p7_calibration.py:15-19 (double argsort, no tie averaging)",
+       "resampler": "taniteval.ci._draws",
+       "rho_ci_cluster": [
+        0.1034,
+        0.6059
+       ],
+       "n_boot_degenerate": 0,
+       "status": "OK",
+       "gate_pass": true,
+       "gate": "P7 rho >= 0.3 with the episode-cluster interval excluding 0"
+      },
+      "LEAD_ge45m": {
+       "n": 69,
+       "n_episodes": 13,
+       "inclusion_rule": "state == LEAD AND gap_m >= 45",
+       "interaction_rich": true,
+       "frac_of_windows": 0.0783,
+       "spearman_rho": 0.4383,
+       "n_boot": 2000,
+       "seed": 0,
+       "estimator": "episode_cluster_bootstrap",
+       "bracket_kind": "episode_cluster_bootstrap_percentile_95",
+       "rank_convention": "tools_p7_calibration.py:15-19 (double argsort, no tie averaging)",
+       "resampler": "taniteval.ci._draws",
+       "rho_ci_cluster": [
+        0.0524,
+        0.7115
+       ],
+       "n_boot_degenerate": 0,
+       "status": "OK",
+       "gate_pass": true,
+       "gate": "P7 rho >= 0.3 with the episode-cluster interval excluding 0"
+      }
+     },
+     "pooled": {
+      "spearman_rho": 0.5377,
+      "n": 881,
+      "n_episodes": 40,
+      "n_boot": 2000,
+      "seed": 0,
+      "estimator": "episode_cluster_bootstrap",
+      "bracket_kind": "episode_cluster_bootstrap_percentile_95",
+      "rank_convention": "tools_p7_calibration.py:15-19 (double argsort, no tie averaging)",
+      "resampler": "taniteval.ci._draws",
+      "rho_ci_cluster": [
+       0.4285,
+       0.6011
+      ],
+      "n_boot_degenerate": 0,
+      "is_gate_read": false,
+      "note": "POOLED -- reported for contrast only. The T3 row is 'held on interaction-rich strata, NOT just pooled', so this number cannot decide it.",
+      "gate_pass_if_it_were_the_gate": true
+     },
+     "verdict": "PASS",
+     "verdict_reason": "rho >= 0.3 with the interval excluding 0 in all 3 reportable interaction-rich strata"
+    }
+   },
+   "controls": {
+    "selector_entropy": {
+     "scope": "PER ARM, on these windows (C107: a study-level control leaves rows uncovered)",
+     "positive": {
+      "what": "realised error + N(0, 0.5*sd(err)), seeded",
+      "must": "detect calibration in every stratum reported for this arm",
+      "result": {
+       "block": "taniteval.p7_strata",
+       "version": "1.0.0",
+       "tier": "T0",
+       "tier_note": "T0 = teacher-forced / true-future-conditioned. A WM and instrument diagnostic, NEVER a driving claim (EVAL_DOCTRINE).",
+       "gate": "T3: P7 calibration rho >= 0.3 held on interaction-rich strata, not just pooled",
+       "estimator": "episode_cluster_bootstrap",
+       "estimator_note": "overlapping_holdout_se is NEVER used here: it biases the point estimate bidirectionally, up to a sign flip",
+       "stratifier": {
+        "name": "obstacle.offline lead state + lead proximity band",
+        "kind": "external_label",
+        "derived_from": "obstacle.offline 3D agent cuboids (the dataset's own annotation of other traffic), via taniteval.lead_source's causal in-corridor lead rule",
+        "why_admissible": "It is an EXTERNAL annotation of other agents. (a) It is not computed from ego dynamics, so it does not cut on the source the situation labels are derived from (stack/tanitad/data/situations.py) -- the disjointness the 2026-08-03 ruling protects. (b) It is not computed from any model output, so the arm being graded does not choose the strata that grade it; O4's own docstring admits the obstacle join as 'frozen-probe/eval-strata material'. (c) The stratifying quantities are lead PRESENCE and lead GAP -- facts about other traffic. Ego speed travels in the same block and is deliberately NOT used to stratify; it is used only as the trivial-proxy control.",
+        "admissible": true
+       },
+       "stratum_spec": {
+        "stratum_order": [
+         "NO_LABEL",
+         "NO_LEAD",
+         "LEAD_le14m",
+         "LEAD_14_45m",
+         "LEAD_ge45m"
+        ],
+        "inclusion_rule": {
+         "NO_LABEL": "state == NO_LABEL: no obstacle.offline for the clip, or t0 outside the ~20 s labelled span. NOT free-flow.",
+         "NO_LEAD": "state == NO_LEAD: obstacle.offline present AND no causal in-corridor vehicle ahead within 80 m / +-2 m lateral.",
+         "LEAD_le14m": "state == LEAD AND gap_m < 14",
+         "LEAD_14_45m": "state == LEAD AND 14 <= gap_m < 45",
+         "LEAD_ge45m": "state == LEAD AND gap_m >= 45"
+        },
+        "interaction_rich": {
+         "NO_LABEL": null,
+         "NO_LEAD": false,
+         "LEAD_le14m": true,
+         "LEAD_14_45m": true,
+         "LEAD_ge45m": true
+        },
+        "gap_convention": "lead_source: gap = along - size_x/2, rig origin to the lead's REAR face; rig frame x-forward/y-left",
+        "edges_m": [
+         14.0,
+         45.0
+        ]
+       },
+       "min_n_windows": 32,
+       "min_n_episodes": 8,
+       "n_windows_total": 881,
+       "n_episodes_total": 40,
+       "strata": {
+        "NO_LABEL": {
+         "n": 60,
+         "n_episodes": 5,
+         "inclusion_rule": "state == NO_LABEL: no obstacle.offline for the clip, or t0 outside the ~20 s labelled span. NOT free-flow.",
+         "interaction_rich": null,
+         "frac_of_windows": 0.0681,
+         "status": "REFUSED_MIN_N",
+         "reason": "n=60 windows over 5 episode(s) is below the floor (min_n=32, min_episodes=8); a rho here would not be evidence, so none is reported"
+        },
+        "NO_LEAD": {
+         "n": 551,
+         "n_episodes": 33,
+         "inclusion_rule": "state == NO_LEAD: obstacle.offline present AND no causal in-corridor vehicle ahead within 80 m / +-2 m lateral.",
+         "interaction_rich": false,
+         "frac_of_windows": 0.6254,
+         "spearman_rho": 0.7658,
+         "n_boot": 2000,
+         "seed": 0,
+         "estimator": "episode_cluster_bootstrap",
+         "bracket_kind": "episode_cluster_bootstrap_percentile_95",
+         "rank_convention": "tools_p7_calibration.py:15-19 (double argsort, no tie averaging)",
+         "resampler": "taniteval.ci._draws",
+         "rho_ci_cluster": [
+          0.6398,
+          0.8402
+         ],
+         "n_boot_degenerate": 0,
+         "status": "OK",
+         "gate_pass": true,
+         "gate": "P7 rho >= 0.3 with the episode-cluster interval excluding 0"
+        },
+        "LEAD_le14m": {
+         "n": 68,
+         "n_episodes": 9,
+         "inclusion_rule": "state == LEAD AND gap_m < 14",
+         "interaction_rich": true,
+         "frac_of_windows": 0.0772,
+         "spearman_rho": 0.8148,
+         "n_boot": 2000,
+         "seed": 0,
+         "estimator": "episode_cluster_bootstrap",
+         "bracket_kind": "episode_cluster_bootstrap_percentile_95",
+         "rank_convention": "tools_p7_calibration.py:15-19 (double argsort, no tie averaging)",
+         "resampler": "taniteval.ci._draws",
+         "rho_ci_cluster": [
+          0.6227,
+          0.9045
+         ],
+         "n_boot_degenerate": 0,
+         "status": "OK",
+         "gate_pass": true,
+         "gate": "P7 rho >= 0.3 with the episode-cluster interval excluding 0"
+        },
+        "LEAD_14_45m": {
+         "n": 133,
+         "n_episodes": 17,
+         "inclusion_rule": "state == LEAD AND 14 <= gap_m < 45",
+         "interaction_rich": true,
+         "frac_of_windows": 0.151,
+         "spearman_rho": 0.8066,
+         "n_boot": 2000,
+         "seed": 0,
+         "estimator": "episode_cluster_bootstrap",
+         "bracket_kind": "episode_cluster_bootstrap_percentile_95",
+         "rank_convention": "tools_p7_calibration.py:15-19 (double argsort, no tie averaging)",
+         "resampler": "taniteval.ci._draws",
+         "rho_ci_cluster": [
+          0.7108,
+          0.8812
+         ],
+         "n_boot_degenerate": 0,
+         "status": "OK",
+         "gate_pass": true,
+         "gate": "P7 rho >= 0.3 with the episode-cluster interval excluding 0"
+        },
+        "LEAD_ge45m": {
+         "n": 69,
+         "n_episodes": 13,
+         "inclusion_rule": "state == LEAD AND gap_m >= 45",
+         "interaction_rich": true,
+         "frac_of_windows": 0.0783,
+         "spearman_rho": 0.591,
+         "n_boot": 2000,
+         "seed": 0,
+         "estimator": "episode_cluster_bootstrap",
+         "bracket_kind": "episode_cluster_bootstrap_percentile_95",
+         "rank_convention": "tools_p7_calibration.py:15-19 (double argsort, no tie averaging)",
+         "resampler": "taniteval.ci._draws",
+         "rho_ci_cluster": [
+          0.4152,
+          0.7751
+         ],
+         "n_boot_degenerate": 0,
+         "status": "OK",
+         "gate_pass": true,
+         "gate": "P7 rho >= 0.3 with the episode-cluster interval excluding 0"
+        }
+       },
+       "pooled": {
+        "spearman_rho": 0.7855,
+        "n": 881,
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "seed": 0,
+        "estimator": "episode_cluster_bootstrap",
+        "bracket_kind": "episode_cluster_bootstrap_percentile_95",
+        "rank_convention": "tools_p7_calibration.py:15-19 (double argsort, no tie averaging)",
+        "resampler": "taniteval.ci._draws",
+        "rho_ci_cluster": [
+         0.7022,
+         0.8406
+        ],
+        "n_boot_degenerate": 0,
+        "is_gate_read": false,
+        "note": "POOLED -- reported for contrast only. The T3 row is 'held on interaction-rich strata, NOT just pooled', so this number cannot decide it.",
+        "gate_pass_if_it_were_the_gate": true
+       },
+       "verdict": "PASS",
+       "verdict_reason": "rho >= 0.3 with the interval excluding 0 in all 3 reportable interaction-rich strata"
+      }
+     },
+     "constant": {
+      "what": "a constant spread",
+      "must": "return nan / no gate pass in every stratum",
+      "result": {
+       "block": "taniteval.p7_strata",
+       "version": "1.0.0",
+       "tier": "T0",
+       "tier_note": "T0 = teacher-forced / true-future-conditioned. A WM and instrument diagnostic, NEVER a driving claim (EVAL_DOCTRINE).",
+       "gate": "T3: P7 calibration rho >= 0.3 held on interaction-rich strata, not just pooled",
+       "estimator": "episode_cluster_bootstrap",
+       "estimator_note": "overlapping_holdout_se is NEVER used here: it biases the point estimate bidirectionally, up to a sign flip",
+       "stratifier": {
+        "name": "obstacle.offline lead state + lead proximity band",
+        "kind": "external_label",
+        "derived_from": "obstacle.offline 3D agent cuboids (the dataset's own annotation of other traffic), via taniteval.lead_source's causal in-corridor lead rule",
+        "why_admissible": "It is an EXTERNAL annotation of other agents. (a) It is not computed from ego dynamics, so it does not cut on the source the situation labels are derived from (stack/tanitad/data/situations.py) -- the disjointness the 2026-08-03 ruling protects. (b) It is not computed from any model output, so the arm being graded does not choose the strata that grade it; O4's own docstring admits the obstacle join as 'frozen-probe/eval-strata material'. (c) The stratifying quantities are lead PRESENCE and lead GAP -- facts about other traffic. Ego speed travels in the same block and is deliberately NOT used to stratify; it is used only as the trivial-proxy control.",
+        "admissible": true
+       },
+       "stratum_spec": {
+        "stratum_order": [
+         "NO_LABEL",
+         "NO_LEAD",
+         "LEAD_le14m",
+         "LEAD_14_45m",
+         "LEAD_ge45m"
+        ],
+        "inclusion_rule": {
+         "NO_LABEL": "state == NO_LABEL: no obstacle.offline for the clip, or t0 outside the ~20 s labelled span. NOT free-flow.",
+         "NO_LEAD": "state == NO_LEAD: obstacle.offline present AND no causal in-corridor vehicle ahead within 80 m / +-2 m lateral.",
+         "LEAD_le14m": "state == LEAD AND gap_m < 14",
+         "LEAD_14_45m": "state == LEAD AND 14 <= gap_m < 45",
+         "LEAD_ge45m": "state == LEAD AND gap_m >= 45"
+        },
+        "interaction_rich": {
+         "NO_LABEL": null,
+         "NO_LEAD": false,
+         "LEAD_le14m": true,
+         "LEAD_14_45m": true,
+         "LEAD_ge45m": true
+        },
+        "gap_convention": "lead_source: gap = along - size_x/2, rig origin to the lead's REAR face; rig frame x-forward/y-left",
+        "edges_m": [
+         14.0,
+         45.0
+        ]
+       },
+       "min_n_windows": 32,
+       "min_n_episodes": 8,
+       "n_windows_total": 881,
+       "n_episodes_total": 40,
+       "strata": {
+        "NO_LABEL": {
+         "n": 60,
+         "n_episodes": 5,
+         "inclusion_rule": "state == NO_LABEL: no obstacle.offline for the clip, or t0 outside the ~20 s labelled span. NOT free-flow.",
+         "interaction_rich": null,
+         "frac_of_windows": 0.0681,
+         "status": "REFUSED_MIN_N",
+         "reason": "n=60 windows over 5 episode(s) is below the floor (min_n=32, min_episodes=8); a rho here would not be evidence, so none is reported"
+        },
+        "NO_LEAD": {
+         "n": 551,
+         "n_episodes": 33,
+         "inclusion_rule": "state == NO_LEAD: obstacle.offline present AND no causal in-corridor vehicle ahead within 80 m / +-2 m lateral.",
+         "interaction_rich": false,
+         "frac_of_windows": 0.6254,
+         "spearman_rho": NaN,
+         "n_boot": 2000,
+         "seed": 0,
+         "estimator": "episode_cluster_bootstrap",
+         "bracket_kind": "episode_cluster_bootstrap_percentile_95",
+         "rank_convention": "tools_p7_calibration.py:15-19 (double argsort, no tie averaging)",
+         "resampler": "taniteval.ci._draws",
+         "rho_ci_cluster": null,
+         "ci_note": "every bootstrap replicate degenerate",
+         "n_boot_degenerate": 2000,
+         "status": "OK",
+         "gate_pass": false,
+         "gate": "P7 rho >= 0.3 with the episode-cluster interval excluding 0"
+        },
+        "LEAD_le14m": {
+         "n": 68,
+         "n_episodes": 9,
+         "inclusion_rule": "state == LEAD AND gap_m < 14",
+         "interaction_rich": true,
+         "frac_of_windows": 0.0772,
+         "spearman_rho": NaN,
+         "n_boot": 2000,
+         "seed": 0,
+         "estimator": "episode_cluster_bootstrap",
+         "bracket_kind": "episode_cluster_bootstrap_percentile_95",
+         "rank_convention": "tools_p7_calibration.py:15-19 (double argsort, no tie averaging)",
+         "resampler": "taniteval.ci._draws",
+         "rho_ci_cluster": null,
+         "ci_note": "every bootstrap replicate degenerate",
+         "n_boot_degenerate": 2000,
+         "status": "OK",
+         "gate_pass": false,
+         "gate": "P7 rho >= 0.3 with the episode-cluster interval excluding 0"
+        },
+        "LEAD_14_45m": {
+         "n": 133,
+         "n_episodes": 17,
+         "inclusion_rule": "state == LEAD AND 14 <= gap_m < 45",
+         "interaction_rich": true,
+         "frac_of_windows": 0.151,
+         "spearman_rho": NaN,
+         "n_boot": 2000,
+         "seed": 0,
+         "estimator": "episode_cluster_bootstrap",
+         "bracket_kind": "episode_cluster_bootstrap_percentile_95",
+         "rank_convention": "tools_p7_calibration.py:15-19 (double argsort, no tie averaging)",
+         "resampler": "taniteval.ci._draws",
+         "rho_ci_cluster": null,
+         "ci_note": "every bootstrap replicate degenerate",
+         "n_boot_degenerate": 2000,
+         "status": "OK",
+         "gate_pass": false,
+         "gate": "P7 rho >= 0.3 with the episode-cluster interval excluding 0"
+        },
+        "LEAD_ge45m": {
+         "n": 69,
+         "n_episodes": 13,
+         "inclusion_rule": "state == LEAD AND gap_m >= 45",
+         "interaction_rich": true,
+         "frac_of_windows": 0.0783,
+         "spearman_rho": NaN,
+         "n_boot": 2000,
+         "seed": 0,
+         "estimator": "episode_cluster_bootstrap",
+         "bracket_kind": "episode_cluster_bootstrap_percentile_95",
+         "rank_convention": "tools_p7_calibration.py:15-19 (double argsort, no tie averaging)",
+         "resampler": "taniteval.ci._draws",
+         "rho_ci_cluster": null,
+         "ci_note": "every bootstrap replicate degenerate",
+         "n_boot_degenerate": 2000,
+         "status": "OK",
+         "gate_pass": false,
+         "gate": "P7 rho >= 0.3 with the episode-cluster interval excluding 0"
+        }
+       },
+       "pooled": {
+        "spearman_rho": NaN,
+        "n": 881,
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "seed": 0,
+        "estimator": "episode_cluster_bootstrap",
+        "bracket_kind": "episode_cluster_bootstrap_percentile_95",
+        "rank_convention": "tools_p7_calibration.py:15-19 (double argsort, no tie averaging)",
+        "resampler": "taniteval.ci._draws",
+        "rho_ci_cluster": null,
+        "ci_note": "every bootstrap replicate degenerate",
+        "n_boot_degenerate": 2000,
+        "is_gate_read": false,
+        "note": "POOLED -- reported for contrast only. The T3 row is 'held on interaction-rich strata, NOT just pooled', so this number cannot decide it.",
+        "gate_pass_if_it_were_the_gate": false
+       },
+       "verdict": "FAIL",
+       "verdict_reason": "interaction-rich stratum/strata ['LEAD_14_45m', 'LEAD_ge45m', 'LEAD_le14m'] do not hold rho >= 0.3 with the interval excluding 0"
+      }
+     },
+     "permutation_null": {
+      "what": "the arm's own spread shuffled WITHIN each stratum, n_perm times, against the unshuffled error",
+      "must": "the null is centred on 0 and the observed rho sits in its tail wherever the gate is claimed",
+      "bracket_kind": "permutation_null_dispersion_not_a_ci",
+      "seed": 0,
+      "n_perm": 500,
+      "strata": {
+       "LEAD_14_45m": {
+        "n": 133,
+        "n_episodes": 17,
+        "status": "OK",
+        "rho_observed": 0.3139,
+        "n_perm": 500,
+        "null_median": -0.0009,
+        "null_p2p5_p97p5": [
+         -0.1516,
+         0.1591
+        ],
+        "bracket_kind": "permutation_null_dispersion_not_a_ci",
+        "p_two_sided": 0.0,
+        "null_centred_on_zero": true
+       },
+       "LEAD_ge45m": {
+        "n": 69,
+        "n_episodes": 13,
+        "status": "OK",
+        "rho_observed": 0.3134,
+        "n_perm": 500,
+        "null_median": 0.009,
+        "null_p2p5_p97p5": [
+         -0.2381,
+         0.2223
+        ],
+        "bracket_kind": "permutation_null_dispersion_not_a_ci",
+        "p_two_sided": 0.004,
+        "null_centred_on_zero": true
+       },
+       "LEAD_le14m": {
+        "n": 68,
+        "n_episodes": 9,
+        "status": "OK",
+        "rho_observed": 0.6621,
+        "n_perm": 500,
+        "null_median": -0.0079,
+        "null_p2p5_p97p5": [
+         -0.2195,
+         0.2306
+        ],
+        "bracket_kind": "permutation_null_dispersion_not_a_ci",
+        "p_two_sided": 0.0,
+        "null_centred_on_zero": true
+       },
+       "NO_LABEL": {
+        "n": 60,
+        "n_episodes": 5,
+        "status": "REFUSED_MIN_N"
+       },
+       "NO_LEAD": {
+        "n": 551,
+        "n_episodes": 33,
+        "status": "OK",
+        "rho_observed": 0.5251,
+        "n_perm": 500,
+        "null_median": -0.0034,
+        "null_p2p5_p97p5": [
+         -0.0893,
+         0.0721
+        ],
+        "bracket_kind": "permutation_null_dispersion_not_a_ci",
+        "p_two_sided": 0.0,
+        "null_centred_on_zero": true
+       }
+      }
+     },
+     "trivial_proxy": {
+      "what": "ego speed at t0 (poses[:,3])",
+      "note": "a scalar the arm gets for free and does not have to model. \u26d4 It is a CONTROL, never a stratifier -- stratifying on ego state would cut on the situation labels' own source.",
+      "must": "NOT reach the gate -- if a freely-available scalar ranks the error as well as the fan's spread, the fan's spread is not what is being demonstrated",
+      "result": {
+       "block": "taniteval.p7_strata",
+       "version": "1.0.0",
+       "tier": "T0",
+       "tier_note": "T0 = teacher-forced / true-future-conditioned. A WM and instrument diagnostic, NEVER a driving claim (EVAL_DOCTRINE).",
+       "gate": "T3: P7 calibration rho >= 0.3 held on interaction-rich strata, not just pooled",
+       "estimator": "episode_cluster_bootstrap",
+       "estimator_note": "overlapping_holdout_se is NEVER used here: it biases the point estimate bidirectionally, up to a sign flip",
+       "stratifier": {
+        "name": "obstacle.offline lead state + lead proximity band",
+        "kind": "external_label",
+        "derived_from": "obstacle.offline 3D agent cuboids (the dataset's own annotation of other traffic), via taniteval.lead_source's causal in-corridor lead rule",
+        "why_admissible": "It is an EXTERNAL annotation of other agents. (a) It is not computed from ego dynamics, so it does not cut on the source the situation labels are derived from (stack/tanitad/data/situations.py) -- the disjointness the 2026-08-03 ruling protects. (b) It is not computed from any model output, so the arm being graded does not choose the strata that grade it; O4's own docstring admits the obstacle join as 'frozen-probe/eval-strata material'. (c) The stratifying quantities are lead PRESENCE and lead GAP -- facts about other traffic. Ego speed travels in the same block and is deliberately NOT used to stratify; it is used only as the trivial-proxy control.",
+        "admissible": true
+       },
+       "stratum_spec": {
+        "stratum_order": [
+         "NO_LABEL",
+         "NO_LEAD",
+         "LEAD_le14m",
+         "LEAD_14_45m",
+         "LEAD_ge45m"
+        ],
+        "inclusion_rule": {
+         "NO_LABEL": "state == NO_LABEL: no obstacle.offline for the clip, or t0 outside the ~20 s labelled span. NOT free-flow.",
+         "NO_LEAD": "state == NO_LEAD: obstacle.offline present AND no causal in-corridor vehicle ahead within 80 m / +-2 m lateral.",
+         "LEAD_le14m": "state == LEAD AND gap_m < 14",
+         "LEAD_14_45m": "state == LEAD AND 14 <= gap_m < 45",
+         "LEAD_ge45m": "state == LEAD AND gap_m >= 45"
+        },
+        "interaction_rich": {
+         "NO_LABEL": null,
+         "NO_LEAD": false,
+         "LEAD_le14m": true,
+         "LEAD_14_45m": true,
+         "LEAD_ge45m": true
+        },
+        "gap_convention": "lead_source: gap = along - size_x/2, rig origin to the lead's REAR face; rig frame x-forward/y-left",
+        "edges_m": [
+         14.0,
+         45.0
+        ]
+       },
+       "min_n_windows": 32,
+       "min_n_episodes": 8,
+       "n_windows_total": 881,
+       "n_episodes_total": 40,
+       "strata": {
+        "NO_LABEL": {
+         "n": 60,
+         "n_episodes": 5,
+         "inclusion_rule": "state == NO_LABEL: no obstacle.offline for the clip, or t0 outside the ~20 s labelled span. NOT free-flow.",
+         "interaction_rich": null,
+         "frac_of_windows": 0.0681,
+         "status": "REFUSED_MIN_N",
+         "reason": "n=60 windows over 5 episode(s) is below the floor (min_n=32, min_episodes=8); a rho here would not be evidence, so none is reported"
+        },
+        "NO_LEAD": {
+         "n": 551,
+         "n_episodes": 33,
+         "inclusion_rule": "state == NO_LEAD: obstacle.offline present AND no causal in-corridor vehicle ahead within 80 m / +-2 m lateral.",
+         "interaction_rich": false,
+         "frac_of_windows": 0.6254,
+         "spearman_rho": -0.4039,
+         "n_boot": 2000,
+         "seed": 0,
+         "estimator": "episode_cluster_bootstrap",
+         "bracket_kind": "episode_cluster_bootstrap_percentile_95",
+         "rank_convention": "tools_p7_calibration.py:15-19 (double argsort, no tie averaging)",
+         "resampler": "taniteval.ci._draws",
+         "rho_ci_cluster": [
+          -0.5287,
+          -0.1951
+         ],
+         "n_boot_degenerate": 0,
+         "status": "OK",
+         "gate_pass": false,
+         "gate": "P7 rho >= 0.3 with the episode-cluster interval excluding 0"
+        },
+        "LEAD_le14m": {
+         "n": 68,
+         "n_episodes": 9,
+         "inclusion_rule": "state == LEAD AND gap_m < 14",
+         "interaction_rich": true,
+         "frac_of_windows": 0.0772,
+         "spearman_rho": 0.5969,
+         "n_boot": 2000,
+         "seed": 0,
+         "estimator": "episode_cluster_bootstrap",
+         "bracket_kind": "episode_cluster_bootstrap_percentile_95",
+         "rank_convention": "tools_p7_calibration.py:15-19 (double argsort, no tie averaging)",
+         "resampler": "taniteval.ci._draws",
+         "rho_ci_cluster": [
+          -0.0196,
+          0.765
+         ],
+         "n_boot_degenerate": 0,
+         "status": "OK",
+         "gate_pass": false,
+         "gate": "P7 rho >= 0.3 with the episode-cluster interval excluding 0"
+        },
+        "LEAD_14_45m": {
+         "n": 133,
+         "n_episodes": 17,
+         "inclusion_rule": "state == LEAD AND 14 <= gap_m < 45",
+         "interaction_rich": true,
+         "frac_of_windows": 0.151,
+         "spearman_rho": -0.4413,
+         "n_boot": 2000,
+         "seed": 0,
+         "estimator": "episode_cluster_bootstrap",
+         "bracket_kind": "episode_cluster_bootstrap_percentile_95",
+         "rank_convention": "tools_p7_calibration.py:15-19 (double argsort, no tie averaging)",
+         "resampler": "taniteval.ci._draws",
+         "rho_ci_cluster": [
+          -0.6475,
+          -0.1651
+         ],
+         "n_boot_degenerate": 0,
+         "status": "OK",
+         "gate_pass": false,
+         "gate": "P7 rho >= 0.3 with the episode-cluster interval excluding 0"
+        },
+        "LEAD_ge45m": {
+         "n": 69,
+         "n_episodes": 13,
+         "inclusion_rule": "state == LEAD AND gap_m >= 45",
+         "interaction_rich": true,
+         "frac_of_windows": 0.0783,
+         "spearman_rho": -0.3319,
+         "n_boot": 2000,
+         "seed": 0,
+         "estimator": "episode_cluster_bootstrap",
+         "bracket_kind": "episode_cluster_bootstrap_percentile_95",
+         "rank_convention": "tools_p7_calibration.py:15-19 (double argsort, no tie averaging)",
+         "resampler": "taniteval.ci._draws",
+         "rho_ci_cluster": [
+          -0.6309,
+          0.1781
+         ],
+         "n_boot_degenerate": 0,
+         "status": "OK",
+         "gate_pass": false,
+         "gate": "P7 rho >= 0.3 with the episode-cluster interval excluding 0"
+        }
+       },
+       "pooled": {
+        "spearman_rho": -0.2838,
+        "n": 881,
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "seed": 0,
+        "estimator": "episode_cluster_bootstrap",
+        "bracket_kind": "episode_cluster_bootstrap_percentile_95",
+        "rank_convention": "tools_p7_calibration.py:15-19 (double argsort, no tie averaging)",
+        "resampler": "taniteval.ci._draws",
+        "rho_ci_cluster": [
+         -0.4352,
+         -0.0857
+        ],
+        "n_boot_degenerate": 0,
+        "is_gate_read": false,
+        "note": "POOLED -- reported for contrast only. The T3 row is 'held on interaction-rich strata, NOT just pooled', so this number cannot decide it.",
+        "gate_pass_if_it_were_the_gate": false
+       },
+       "verdict": "FAIL",
+       "verdict_reason": "interaction-rich stratum/strata ['LEAD_14_45m', 'LEAD_ge45m', 'LEAD_le14m'] do not hold rho >= 0.3 with the interval excluding 0"
+      }
+     }
+    },
+    "endpoint_dispersion_m": {
+     "scope": "PER ARM, on these windows (C107: a study-level control leaves rows uncovered)",
+     "positive": {
+      "what": "realised error + N(0, 0.5*sd(err)), seeded",
+      "must": "detect calibration in every stratum reported for this arm",
+      "result": {
+       "block": "taniteval.p7_strata",
+       "version": "1.0.0",
+       "tier": "T0",
+       "tier_note": "T0 = teacher-forced / true-future-conditioned. A WM and instrument diagnostic, NEVER a driving claim (EVAL_DOCTRINE).",
+       "gate": "T3: P7 calibration rho >= 0.3 held on interaction-rich strata, not just pooled",
+       "estimator": "episode_cluster_bootstrap",
+       "estimator_note": "overlapping_holdout_se is NEVER used here: it biases the point estimate bidirectionally, up to a sign flip",
+       "stratifier": {
+        "name": "obstacle.offline lead state + lead proximity band",
+        "kind": "external_label",
+        "derived_from": "obstacle.offline 3D agent cuboids (the dataset's own annotation of other traffic), via taniteval.lead_source's causal in-corridor lead rule",
+        "why_admissible": "It is an EXTERNAL annotation of other agents. (a) It is not computed from ego dynamics, so it does not cut on the source the situation labels are derived from (stack/tanitad/data/situations.py) -- the disjointness the 2026-08-03 ruling protects. (b) It is not computed from any model output, so the arm being graded does not choose the strata that grade it; O4's own docstring admits the obstacle join as 'frozen-probe/eval-strata material'. (c) The stratifying quantities are lead PRESENCE and lead GAP -- facts about other traffic. Ego speed travels in the same block and is deliberately NOT used to stratify; it is used only as the trivial-proxy control.",
+        "admissible": true
+       },
+       "stratum_spec": {
+        "stratum_order": [
+         "NO_LABEL",
+         "NO_LEAD",
+         "LEAD_le14m",
+         "LEAD_14_45m",
+         "LEAD_ge45m"
+        ],
+        "inclusion_rule": {
+         "NO_LABEL": "state == NO_LABEL: no obstacle.offline for the clip, or t0 outside the ~20 s labelled span. NOT free-flow.",
+         "NO_LEAD": "state == NO_LEAD: obstacle.offline present AND no causal in-corridor vehicle ahead within 80 m / +-2 m lateral.",
+         "LEAD_le14m": "state == LEAD AND gap_m < 14",
+         "LEAD_14_45m": "state == LEAD AND 14 <= gap_m < 45",
+         "LEAD_ge45m": "state == LEAD AND gap_m >= 45"
+        },
+        "interaction_rich": {
+         "NO_LABEL": null,
+         "NO_LEAD": false,
+         "LEAD_le14m": true,
+         "LEAD_14_45m": true,
+         "LEAD_ge45m": true
+        },
+        "gap_convention": "lead_source: gap = along - size_x/2, rig origin to the lead's REAR face; rig frame x-forward/y-left",
+        "edges_m": [
+         14.0,
+         45.0
+        ]
+       },
+       "min_n_windows": 32,
+       "min_n_episodes": 8,
+       "n_windows_total": 881,
+       "n_episodes_total": 40,
+       "strata": {
+        "NO_LABEL": {
+         "n": 60,
+         "n_episodes": 5,
+         "inclusion_rule": "state == NO_LABEL: no obstacle.offline for the clip, or t0 outside the ~20 s labelled span. NOT free-flow.",
+         "interaction_rich": null,
+         "frac_of_windows": 0.0681,
+         "status": "REFUSED_MIN_N",
+         "reason": "n=60 windows over 5 episode(s) is below the floor (min_n=32, min_episodes=8); a rho here would not be evidence, so none is reported"
+        },
+        "NO_LEAD": {
+         "n": 551,
+         "n_episodes": 33,
+         "inclusion_rule": "state == NO_LEAD: obstacle.offline present AND no causal in-corridor vehicle ahead within 80 m / +-2 m lateral.",
+         "interaction_rich": false,
+         "frac_of_windows": 0.6254,
+         "spearman_rho": 0.7658,
+         "n_boot": 2000,
+         "seed": 0,
+         "estimator": "episode_cluster_bootstrap",
+         "bracket_kind": "episode_cluster_bootstrap_percentile_95",
+         "rank_convention": "tools_p7_calibration.py:15-19 (double argsort, no tie averaging)",
+         "resampler": "taniteval.ci._draws",
+         "rho_ci_cluster": [
+          0.6398,
+          0.8402
+         ],
+         "n_boot_degenerate": 0,
+         "status": "OK",
+         "gate_pass": true,
+         "gate": "P7 rho >= 0.3 with the episode-cluster interval excluding 0"
+        },
+        "LEAD_le14m": {
+         "n": 68,
+         "n_episodes": 9,
+         "inclusion_rule": "state == LEAD AND gap_m < 14",
+         "interaction_rich": true,
+         "frac_of_windows": 0.0772,
+         "spearman_rho": 0.8148,
+         "n_boot": 2000,
+         "seed": 0,
+         "estimator": "episode_cluster_bootstrap",
+         "bracket_kind": "episode_cluster_bootstrap_percentile_95",
+         "rank_convention": "tools_p7_calibration.py:15-19 (double argsort, no tie averaging)",
+         "resampler": "taniteval.ci._draws",
+         "rho_ci_cluster": [
+          0.6227,
+          0.9045
+         ],
+         "n_boot_degenerate": 0,
+         "status": "OK",
+         "gate_pass": true,
+         "gate": "P7 rho >= 0.3 with the episode-cluster interval excluding 0"
+        },
+        "LEAD_14_45m": {
+         "n": 133,
+         "n_episodes": 17,
+         "inclusion_rule": "state == LEAD AND 14 <= gap_m < 45",
+         "interaction_rich": true,
+         "frac_of_windows": 0.151,
+         "spearman_rho": 0.8066,
+         "n_boot": 2000,
+         "seed": 0,
+         "estimator": "episode_cluster_bootstrap",
+         "bracket_kind": "episode_cluster_bootstrap_percentile_95",
+         "rank_convention": "tools_p7_calibration.py:15-19 (double argsort, no tie averaging)",
+         "resampler": "taniteval.ci._draws",
+         "rho_ci_cluster": [
+          0.7108,
+          0.8812
+         ],
+         "n_boot_degenerate": 0,
+         "status": "OK",
+         "gate_pass": true,
+         "gate": "P7 rho >= 0.3 with the episode-cluster interval excluding 0"
+        },
+        "LEAD_ge45m": {
+         "n": 69,
+         "n_episodes": 13,
+         "inclusion_rule": "state == LEAD AND gap_m >= 45",
+         "interaction_rich": true,
+         "frac_of_windows": 0.0783,
+         "spearman_rho": 0.591,
+         "n_boot": 2000,
+         "seed": 0,
+         "estimator": "episode_cluster_bootstrap",
+         "bracket_kind": "episode_cluster_bootstrap_percentile_95",
+         "rank_convention": "tools_p7_calibration.py:15-19 (double argsort, no tie averaging)",
+         "resampler": "taniteval.ci._draws",
+         "rho_ci_cluster": [
+          0.4152,
+          0.7751
+         ],
+         "n_boot_degenerate": 0,
+         "status": "OK",
+         "gate_pass": true,
+         "gate": "P7 rho >= 0.3 with the episode-cluster interval excluding 0"
+        }
+       },
+       "pooled": {
+        "spearman_rho": 0.7855,
+        "n": 881,
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "seed": 0,
+        "estimator": "episode_cluster_bootstrap",
+        "bracket_kind": "episode_cluster_bootstrap_percentile_95",
+        "rank_convention": "tools_p7_calibration.py:15-19 (double argsort, no tie averaging)",
+        "resampler": "taniteval.ci._draws",
+        "rho_ci_cluster": [
+         0.7022,
+         0.8406
+        ],
+        "n_boot_degenerate": 0,
+        "is_gate_read": false,
+        "note": "POOLED -- reported for contrast only. The T3 row is 'held on interaction-rich strata, NOT just pooled', so this number cannot decide it.",
+        "gate_pass_if_it_were_the_gate": true
+       },
+       "verdict": "PASS",
+       "verdict_reason": "rho >= 0.3 with the interval excluding 0 in all 3 reportable interaction-rich strata"
+      }
+     },
+     "constant": {
+      "what": "a constant spread",
+      "must": "return nan / no gate pass in every stratum",
+      "result": {
+       "block": "taniteval.p7_strata",
+       "version": "1.0.0",
+       "tier": "T0",
+       "tier_note": "T0 = teacher-forced / true-future-conditioned. A WM and instrument diagnostic, NEVER a driving claim (EVAL_DOCTRINE).",
+       "gate": "T3: P7 calibration rho >= 0.3 held on interaction-rich strata, not just pooled",
+       "estimator": "episode_cluster_bootstrap",
+       "estimator_note": "overlapping_holdout_se is NEVER used here: it biases the point estimate bidirectionally, up to a sign flip",
+       "stratifier": {
+        "name": "obstacle.offline lead state + lead proximity band",
+        "kind": "external_label",
+        "derived_from": "obstacle.offline 3D agent cuboids (the dataset's own annotation of other traffic), via taniteval.lead_source's causal in-corridor lead rule",
+        "why_admissible": "It is an EXTERNAL annotation of other agents. (a) It is not computed from ego dynamics, so it does not cut on the source the situation labels are derived from (stack/tanitad/data/situations.py) -- the disjointness the 2026-08-03 ruling protects. (b) It is not computed from any model output, so the arm being graded does not choose the strata that grade it; O4's own docstring admits the obstacle join as 'frozen-probe/eval-strata material'. (c) The stratifying quantities are lead PRESENCE and lead GAP -- facts about other traffic. Ego speed travels in the same block and is deliberately NOT used to stratify; it is used only as the trivial-proxy control.",
+        "admissible": true
+       },
+       "stratum_spec": {
+        "stratum_order": [
+         "NO_LABEL",
+         "NO_LEAD",
+         "LEAD_le14m",
+         "LEAD_14_45m",
+         "LEAD_ge45m"
+        ],
+        "inclusion_rule": {
+         "NO_LABEL": "state == NO_LABEL: no obstacle.offline for the clip, or t0 outside the ~20 s labelled span. NOT free-flow.",
+         "NO_LEAD": "state == NO_LEAD: obstacle.offline present AND no causal in-corridor vehicle ahead within 80 m / +-2 m lateral.",
+         "LEAD_le14m": "state == LEAD AND gap_m < 14",
+         "LEAD_14_45m": "state == LEAD AND 14 <= gap_m < 45",
+         "LEAD_ge45m": "state == LEAD AND gap_m >= 45"
+        },
+        "interaction_rich": {
+         "NO_LABEL": null,
+         "NO_LEAD": false,
+         "LEAD_le14m": true,
+         "LEAD_14_45m": true,
+         "LEAD_ge45m": true
+        },
+        "gap_convention": "lead_source: gap = along - size_x/2, rig origin to the lead's REAR face; rig frame x-forward/y-left",
+        "edges_m": [
+         14.0,
+         45.0
+        ]
+       },
+       "min_n_windows": 32,
+       "min_n_episodes": 8,
+       "n_windows_total": 881,
+       "n_episodes_total": 40,
+       "strata": {
+        "NO_LABEL": {
+         "n": 60,
+         "n_episodes": 5,
+         "inclusion_rule": "state == NO_LABEL: no obstacle.offline for the clip, or t0 outside the ~20 s labelled span. NOT free-flow.",
+         "interaction_rich": null,
+         "frac_of_windows": 0.0681,
+         "status": "REFUSED_MIN_N",
+         "reason": "n=60 windows over 5 episode(s) is below the floor (min_n=32, min_episodes=8); a rho here would not be evidence, so none is reported"
+        },
+        "NO_LEAD": {
+         "n": 551,
+         "n_episodes": 33,
+         "inclusion_rule": "state == NO_LEAD: obstacle.offline present AND no causal in-corridor vehicle ahead within 80 m / +-2 m lateral.",
+         "interaction_rich": false,
+         "frac_of_windows": 0.6254,
+         "spearman_rho": NaN,
+         "n_boot": 2000,
+         "seed": 0,
+         "estimator": "episode_cluster_bootstrap",
+         "bracket_kind": "episode_cluster_bootstrap_percentile_95",
+         "rank_convention": "tools_p7_calibration.py:15-19 (double argsort, no tie averaging)",
+         "resampler": "taniteval.ci._draws",
+         "rho_ci_cluster": null,
+         "ci_note": "every bootstrap replicate degenerate",
+         "n_boot_degenerate": 2000,
+         "status": "OK",
+         "gate_pass": false,
+         "gate": "P7 rho >= 0.3 with the episode-cluster interval excluding 0"
+        },
+        "LEAD_le14m": {
+         "n": 68,
+         "n_episodes": 9,
+         "inclusion_rule": "state == LEAD AND gap_m < 14",
+         "interaction_rich": true,
+         "frac_of_windows": 0.0772,
+         "spearman_rho": NaN,
+         "n_boot": 2000,
+         "seed": 0,
+         "estimator": "episode_cluster_bootstrap",
+         "bracket_kind": "episode_cluster_bootstrap_percentile_95",
+         "rank_convention": "tools_p7_calibration.py:15-19 (double argsort, no tie averaging)",
+         "resampler": "taniteval.ci._draws",
+         "rho_ci_cluster": null,
+         "ci_note": "every bootstrap replicate degenerate",
+         "n_boot_degenerate": 2000,
+         "status": "OK",
+         "gate_pass": false,
+         "gate": "P7 rho >= 0.3 with the episode-cluster interval excluding 0"
+        },
+        "LEAD_14_45m": {
+         "n": 133,
+         "n_episodes": 17,
+         "inclusion_rule": "state == LEAD AND 14 <= gap_m < 45",
+         "interaction_rich": true,
+         "frac_of_windows": 0.151,
+         "spearman_rho": NaN,
+         "n_boot": 2000,
+         "seed": 0,
+         "estimator": "episode_cluster_bootstrap",
+         "bracket_kind": "episode_cluster_bootstrap_percentile_95",
+         "rank_convention": "tools_p7_calibration.py:15-19 (double argsort, no tie averaging)",
+         "resampler": "taniteval.ci._draws",
+         "rho_ci_cluster": null,
+         "ci_note": "every bootstrap replicate degenerate",
+         "n_boot_degenerate": 2000,
+         "status": "OK",
+         "gate_pass": false,
+         "gate": "P7 rho >= 0.3 with the episode-cluster interval excluding 0"
+        },
+        "LEAD_ge45m": {
+         "n": 69,
+         "n_episodes": 13,
+         "inclusion_rule": "state == LEAD AND gap_m >= 45",
+         "interaction_rich": true,
+         "frac_of_windows": 0.0783,
+         "spearman_rho": NaN,
+         "n_boot": 2000,
+         "seed": 0,
+         "estimator": "episode_cluster_bootstrap",
+         "bracket_kind": "episode_cluster_bootstrap_percentile_95",
+         "rank_convention": "tools_p7_calibration.py:15-19 (double argsort, no tie averaging)",
+         "resampler": "taniteval.ci._draws",
+         "rho_ci_cluster": null,
+         "ci_note": "every bootstrap replicate degenerate",
+         "n_boot_degenerate": 2000,
+         "status": "OK",
+         "gate_pass": false,
+         "gate": "P7 rho >= 0.3 with the episode-cluster interval excluding 0"
+        }
+       },
+       "pooled": {
+        "spearman_rho": NaN,
+        "n": 881,
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "seed": 0,
+        "estimator": "episode_cluster_bootstrap",
+        "bracket_kind": "episode_cluster_bootstrap_percentile_95",
+        "rank_convention": "tools_p7_calibration.py:15-19 (double argsort, no tie averaging)",
+        "resampler": "taniteval.ci._draws",
+        "rho_ci_cluster": null,
+        "ci_note": "every bootstrap replicate degenerate",
+        "n_boot_degenerate": 2000,
+        "is_gate_read": false,
+        "note": "POOLED -- reported for contrast only. The T3 row is 'held on interaction-rich strata, NOT just pooled', so this number cannot decide it.",
+        "gate_pass_if_it_were_the_gate": false
+       },
+       "verdict": "FAIL",
+       "verdict_reason": "interaction-rich stratum/strata ['LEAD_14_45m', 'LEAD_ge45m', 'LEAD_le14m'] do not hold rho >= 0.3 with the interval excluding 0"
+      }
+     },
+     "permutation_null": {
+      "what": "the arm's own spread shuffled WITHIN each stratum, n_perm times, against the unshuffled error",
+      "must": "the null is centred on 0 and the observed rho sits in its tail wherever the gate is claimed",
+      "bracket_kind": "permutation_null_dispersion_not_a_ci",
+      "seed": 0,
+      "n_perm": 500,
+      "strata": {
+       "LEAD_14_45m": {
+        "n": 133,
+        "n_episodes": 17,
+        "status": "OK",
+        "rho_observed": 0.4077,
+        "n_perm": 500,
+        "null_median": -0.001,
+        "null_p2p5_p97p5": [
+         -0.1549,
+         0.1676
+        ],
+        "bracket_kind": "permutation_null_dispersion_not_a_ci",
+        "p_two_sided": 0.0,
+        "null_centred_on_zero": true
+       },
+       "LEAD_ge45m": {
+        "n": 69,
+        "n_episodes": 13,
+        "status": "OK",
+        "rho_observed": 0.4383,
+        "n_perm": 500,
+        "null_median": 0.0017,
+        "null_p2p5_p97p5": [
+         -0.2422,
+         0.2196
+        ],
+        "bracket_kind": "permutation_null_dispersion_not_a_ci",
+        "p_two_sided": 0.0,
+        "null_centred_on_zero": true
+       },
+       "LEAD_le14m": {
+        "n": 68,
+        "n_episodes": 9,
+        "status": "OK",
+        "rho_observed": 0.6699,
+        "n_perm": 500,
+        "null_median": -0.0076,
+        "null_p2p5_p97p5": [
+         -0.2413,
+         0.2357
+        ],
+        "bracket_kind": "permutation_null_dispersion_not_a_ci",
+        "p_two_sided": 0.0,
+        "null_centred_on_zero": true
+       },
+       "NO_LABEL": {
+        "n": 60,
+        "n_episodes": 5,
+        "status": "REFUSED_MIN_N"
+       },
+       "NO_LEAD": {
+        "n": 551,
+        "n_episodes": 33,
+        "status": "OK",
+        "rho_observed": 0.5854,
+        "n_perm": 500,
+        "null_median": -0.0014,
+        "null_p2p5_p97p5": [
+         -0.0909,
+         0.0725
+        ],
+        "bracket_kind": "permutation_null_dispersion_not_a_ci",
+        "p_two_sided": 0.0,
+        "null_centred_on_zero": true
+       }
+      }
+     },
+     "trivial_proxy": {
+      "what": "ego speed at t0 (poses[:,3])",
+      "note": "a scalar the arm gets for free and does not have to model. \u26d4 It is a CONTROL, never a stratifier -- stratifying on ego state would cut on the situation labels' own source.",
+      "must": "NOT reach the gate -- if a freely-available scalar ranks the error as well as the fan's spread, the fan's spread is not what is being demonstrated",
+      "result": {
+       "block": "taniteval.p7_strata",
+       "version": "1.0.0",
+       "tier": "T0",
+       "tier_note": "T0 = teacher-forced / true-future-conditioned. A WM and instrument diagnostic, NEVER a driving claim (EVAL_DOCTRINE).",
+       "gate": "T3: P7 calibration rho >= 0.3 held on interaction-rich strata, not just pooled",
+       "estimator": "episode_cluster_bootstrap",
+       "estimator_note": "overlapping_holdout_se is NEVER used here: it biases the point estimate bidirectionally, up to a sign flip",
+       "stratifier": {
+        "name": "obstacle.offline lead state + lead proximity band",
+        "kind": "external_label",
+        "derived_from": "obstacle.offline 3D agent cuboids (the dataset's own annotation of other traffic), via taniteval.lead_source's causal in-corridor lead rule",
+        "why_admissible": "It is an EXTERNAL annotation of other agents. (a) It is not computed from ego dynamics, so it does not cut on the source the situation labels are derived from (stack/tanitad/data/situations.py) -- the disjointness the 2026-08-03 ruling protects. (b) It is not computed from any model output, so the arm being graded does not choose the strata that grade it; O4's own docstring admits the obstacle join as 'frozen-probe/eval-strata material'. (c) The stratifying quantities are lead PRESENCE and lead GAP -- facts about other traffic. Ego speed travels in the same block and is deliberately NOT used to stratify; it is used only as the trivial-proxy control.",
+        "admissible": true
+       },
+       "stratum_spec": {
+        "stratum_order": [
+         "NO_LABEL",
+         "NO_LEAD",
+         "LEAD_le14m",
+         "LEAD_14_45m",
+         "LEAD_ge45m"
+        ],
+        "inclusion_rule": {
+         "NO_LABEL": "state == NO_LABEL: no obstacle.offline for the clip, or t0 outside the ~20 s labelled span. NOT free-flow.",
+         "NO_LEAD": "state == NO_LEAD: obstacle.offline present AND no causal in-corridor vehicle ahead within 80 m / +-2 m lateral.",
+         "LEAD_le14m": "state == LEAD AND gap_m < 14",
+         "LEAD_14_45m": "state == LEAD AND 14 <= gap_m < 45",
+         "LEAD_ge45m": "state == LEAD AND gap_m >= 45"
+        },
+        "interaction_rich": {
+         "NO_LABEL": null,
+         "NO_LEAD": false,
+         "LEAD_le14m": true,
+         "LEAD_14_45m": true,
+         "LEAD_ge45m": true
+        },
+        "gap_convention": "lead_source: gap = along - size_x/2, rig origin to the lead's REAR face; rig frame x-forward/y-left",
+        "edges_m": [
+         14.0,
+         45.0
+        ]
+       },
+       "min_n_windows": 32,
+       "min_n_episodes": 8,
+       "n_windows_total": 881,
+       "n_episodes_total": 40,
+       "strata": {
+        "NO_LABEL": {
+         "n": 60,
+         "n_episodes": 5,
+         "inclusion_rule": "state == NO_LABEL: no obstacle.offline for the clip, or t0 outside the ~20 s labelled span. NOT free-flow.",
+         "interaction_rich": null,
+         "frac_of_windows": 0.0681,
+         "status": "REFUSED_MIN_N",
+         "reason": "n=60 windows over 5 episode(s) is below the floor (min_n=32, min_episodes=8); a rho here would not be evidence, so none is reported"
+        },
+        "NO_LEAD": {
+         "n": 551,
+         "n_episodes": 33,
+         "inclusion_rule": "state == NO_LEAD: obstacle.offline present AND no causal in-corridor vehicle ahead within 80 m / +-2 m lateral.",
+         "interaction_rich": false,
+         "frac_of_windows": 0.6254,
+         "spearman_rho": -0.4039,
+         "n_boot": 2000,
+         "seed": 0,
+         "estimator": "episode_cluster_bootstrap",
+         "bracket_kind": "episode_cluster_bootstrap_percentile_95",
+         "rank_convention": "tools_p7_calibration.py:15-19 (double argsort, no tie averaging)",
+         "resampler": "taniteval.ci._draws",
+         "rho_ci_cluster": [
+          -0.5287,
+          -0.1951
+         ],
+         "n_boot_degenerate": 0,
+         "status": "OK",
+         "gate_pass": false,
+         "gate": "P7 rho >= 0.3 with the episode-cluster interval excluding 0"
+        },
+        "LEAD_le14m": {
+         "n": 68,
+         "n_episodes": 9,
+         "inclusion_rule": "state == LEAD AND gap_m < 14",
+         "interaction_rich": true,
+         "frac_of_windows": 0.0772,
+         "spearman_rho": 0.5969,
+         "n_boot": 2000,
+         "seed": 0,
+         "estimator": "episode_cluster_bootstrap",
+         "bracket_kind": "episode_cluster_bootstrap_percentile_95",
+         "rank_convention": "tools_p7_calibration.py:15-19 (double argsort, no tie averaging)",
+         "resampler": "taniteval.ci._draws",
+         "rho_ci_cluster": [
+          -0.0196,
+          0.765
+         ],
+         "n_boot_degenerate": 0,
+         "status": "OK",
+         "gate_pass": false,
+         "gate": "P7 rho >= 0.3 with the episode-cluster interval excluding 0"
+        },
+        "LEAD_14_45m": {
+         "n": 133,
+         "n_episodes": 17,
+         "inclusion_rule": "state == LEAD AND 14 <= gap_m < 45",
+         "interaction_rich": true,
+         "frac_of_windows": 0.151,
+         "spearman_rho": -0.4413,
+         "n_boot": 2000,
+         "seed": 0,
+         "estimator": "episode_cluster_bootstrap",
+         "bracket_kind": "episode_cluster_bootstrap_percentile_95",
+         "rank_convention": "tools_p7_calibration.py:15-19 (double argsort, no tie averaging)",
+         "resampler": "taniteval.ci._draws",
+         "rho_ci_cluster": [
+          -0.6475,
+          -0.1651
+         ],
+         "n_boot_degenerate": 0,
+         "status": "OK",
+         "gate_pass": false,
+         "gate": "P7 rho >= 0.3 with the episode-cluster interval excluding 0"
+        },
+        "LEAD_ge45m": {
+         "n": 69,
+         "n_episodes": 13,
+         "inclusion_rule": "state == LEAD AND gap_m >= 45",
+         "interaction_rich": true,
+         "frac_of_windows": 0.0783,
+         "spearman_rho": -0.3319,
+         "n_boot": 2000,
+         "seed": 0,
+         "estimator": "episode_cluster_bootstrap",
+         "bracket_kind": "episode_cluster_bootstrap_percentile_95",
+         "rank_convention": "tools_p7_calibration.py:15-19 (double argsort, no tie averaging)",
+         "resampler": "taniteval.ci._draws",
+         "rho_ci_cluster": [
+          -0.6309,
+          0.1781
+         ],
+         "n_boot_degenerate": 0,
+         "status": "OK",
+         "gate_pass": false,
+         "gate": "P7 rho >= 0.3 with the episode-cluster interval excluding 0"
+        }
+       },
+       "pooled": {
+        "spearman_rho": -0.2838,
+        "n": 881,
+        "n_episodes": 40,
+        "n_boot": 2000,
+        "seed": 0,
+        "estimator": "episode_cluster_bootstrap",
+        "bracket_kind": "episode_cluster_bootstrap_percentile_95",
+        "rank_convention": "tools_p7_calibration.py:15-19 (double argsort, no tie averaging)",
+        "resampler": "taniteval.ci._draws",
+        "rho_ci_cluster": [
+         -0.4352,
+         -0.0857
+        ],
+        "n_boot_degenerate": 0,
+        "is_gate_read": false,
+        "note": "POOLED -- reported for contrast only. The T3 row is 'held on interaction-rich strata, NOT just pooled', so this number cannot decide it.",
+        "gate_pass_if_it_were_the_gate": false
+       },
+       "verdict": "FAIL",
+       "verdict_reason": "interaction-rich stratum/strata ['LEAD_14_45m', 'LEAD_ge45m', 'LEAD_le14m'] do not hold rho >= 0.3 with the interval excluding 0"
+      }
+     }
+    }
+   }
+  }
+ }
+}

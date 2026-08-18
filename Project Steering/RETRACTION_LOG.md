@@ -6723,3 +6723,83 @@ output line itself.
 ⚠️ The same run's wrapper reported **"exited with code 0" while a test had failed** because the
 pipeline's status was **`tail`'s**, not pytest's. ⇒ The final run **wrote pytest's own `$?` to the
 log BEFORE any pipe** — which is the general fix for this whole family.
+
+---
+
+## C121 — THE T3 GATE CAN BE MADE TO PASS **OR** FAIL BY CHOOSING WHERE THE STRATUM BANDS SIT (2026-08-18, per-stratum P7)
+
+### ⭐ First, the gate does its job — pooled PASSES while an interaction stratum FAILS
+
+`refc-xl-30k` / selector entropy, 881 windows / 40 episodes, **T0**:
+
+| cut | ρ | interval |
+|---|---|---|
+| **pooled** | **0.4656** | [0.3663, 0.5324] — **passes** |
+| **`LEAD_20_40m`** | **0.0973** | [−0.2664, 0.4400] — **fails** |
+
+⇒ **62.5 % of val40 windows are FREE-FLOW, and they carry the pooled number.** That is precisely
+what *"held on interaction-rich strata, not just pooled"* was written to catch, and it is now
+measurable. **F-9's gate row is computable today.**
+
+### ⭐⭐ AND THE VERDICT MOVES WITH THE BAND EDGES — which matters more than the verdict
+
+Same 881 windows, **five cuts**: **LEAD-vs-NO_LEAD (edge-free) PASSES** for both arms and both
+spread measures; the **3-band splits FAIL at 20/40, 15/35, 14/45 and the median split** for entropy,
+and fail **only at 20/40** for dispersion.
+
+⇒ ⛔ **Until the strata are PRE-REGISTERED, the T3 row can be made to pass or fail by choosing where
+the bands sit.**
+⇒ **ROOT-CAUSE CLASS: EXACTLY THE FIT-WINDOW-DEPENDENT EXPONENT, IN A GATE.** `CLAUDE.md` already
+forbids quoting a learning-curve exponent bare because the same log yields −0.387 to −0.738
+depending on the window. **A stratum boundary is a window.** The rule was written for curve fits and
+never travelled to gates.
+⇒ **PROPOSED PRE-REGISTRATION (PI / gate owner):** primary = **edge-free LEAD vs NO_LEAD**
+(n = 270 / 21 ep); the 3-band split **reported always, gating never.** *An edge-free cut cannot be
+tuned, which is the only property that makes the gate trustworthy.*
+
+### The strata are admissible BY CONSTRUCTION, and it is enforced
+
+Source is **`obstacle.offline`** — the dataset's own 3D agent cuboids — via the banked
+`val40_lead_block.npz`. Stratifying quantities are lead **presence** and lead **gap**: facts about
+**other traffic**.
+⭐ **Not ego-derived**, so it does not cut on the situation labels' own source; **not model-derived**,
+so **the arm being graded cannot pick its own strata.** Ego speed rides in the same block and is used
+**only** as the trivial-proxy control. ⇒ **Enforced, not documented:** `assert_stratifier_admissible`
+**raises** on an ego- or model-derived kind unless an override is passed in writing **and stamped
+into the JSON**. `NO_LABEL` is its own row and never enters an interaction verdict.
+**Join verified before any arithmetic:** `gt`/`cv`/`speed` byte-identical across the window and both
+fan dumps, `eid` identical **881/881**, lead-block speeds matching to **1.8e-3 m/s**.
+
+### ⛔ A CONTROL THAT REPORTED "SIGNIFICANT" FROM PURE NOISE — built, caught, killed
+
+The first permutation control was **one shuffle plus a cluster bootstrap**. It **passed on synthetic
+data**, then on real windows reported **ρ +0.1998, CI [0.0133, 0.4009] — significant, from pure
+noise.**
+⇒ **A NULL IS A DISTRIBUTION OVER SHUFFLES, NOT ONE SHUFFLE PLUS AN INTERVAL.** Replaced by
+`permutation_null` and pinned. ⭐ **It was caught ONLY because a demonstration run on REAL data is
+part of the deliverable** — synthetic validation passed it. *Same shape as C109's `PC-2OBJ`: a
+control that cannot fail where it is actually used.*
+
+### Power, stated rather than assumed
+
+The **positive control fires in EVERY reported stratum, including the failing one** — so the FAIL is
+not *"the instrument sees nothing at n = 84"*. ⚠️ **But the permutation null there spans
+[−0.236, 0.218] at p = 0.376:** at n ≈ 80 the instrument **resolves a strong ρ and cannot separate
+ρ ≈ 0.3 from ρ < 0.3.** Interval half-widths **0.35 / 0.16 / 0.09** at n = **84 / 270 / 551**.
+⇒ **The failing band is under-powered, and that is reported alongside the failure rather than
+buried.** Trivial proxy (ego speed) reaches the gate in **no** stratum for either arm; a constant
+returns `nan` everywhere. Every bracket carries `bracket_kind`, and **only
+`episode_cluster_bootstrap_percentile_95` decides the gate.**
+
+### Not computable, with the arithmetic
+
+`NO_LABEL` gets no ρ — **5 episodes**, below the floor. **Only the canonical val40 has a banked lead
+block**: the local 100-episode val cache is a **DIFFERENT SPLIT** (content-matching ego-speed vectors
+finds **no exact match for any of the 40**; best residual **2.47 m/s**), and
+`lead_gate_windows.parquet` covers a different clip sample (**2 of 100 clips**). **Fine bands would
+need ≈4× the lead-carrying episodes.**
+
+⏳ **Three routed escalations:** pre-register the T3 strata before any T3 arm is graded; **pooled P7
+ρ is quotable today as though it were the arm's calibration** and on this corpus it is 62.5 %
+free-flow; and rebuild the lead block with `n_ahead_50m` / `n_vru_near` so the stratifier can be
+agent **density** — the cut T3's *"multi-agent kinematic entropy"* actually names.
