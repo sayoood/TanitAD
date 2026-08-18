@@ -1,0 +1,323 @@
+{
+  "key": "flagship-v5f-w120-30k-i4a-shuffle",
+  "method": "flagship-v4: joint-trained trunk (re-encoded via world.encode_window) + FlagshipV4Head dense-20-step anchored planner (argmax-conf, lambda_plan=1.0, 256 anchors), 4wp sub-selected at steps (5, 10, 15, 20), goal_mode=oracle [GOAL ORACLE]",
+  "ckpt": "/workspace/experiments/flagship-v5f-w120-30k/ckpt_30k_final.pt",
+  "ckpt_step": 29999,
+  "v4_diagnostics": {
+    "n_windows": 881,
+    "imagination_ablate": "shuffle",
+    "select_rule": "as-trained",
+    "c2_selection": null,
+    "goal_mode": "oracle",
+    "goal_mode_record": {
+      "mode": "oracle",
+      "fallback": null
+    },
+    "goal_agreement_vs_oracle": null,
+    "wallclock_s": 241.2,
+    "dense_headhorizons_ade_2s": 1.2492018063953325,
+    "dense_headhorizons_oracle_ade": 0.42594226878495817,
+    "dense_headhorizons_sel_gap": 0.8232595362403471,
+    "dense_headhorizons_miss_at_2m": 0.2973893303064699,
+    "wp4_oracle_ade_0_2s": 0.5160287534744055,
+    "wp4_ade_0_2s_selfcomputed": 1.5068182707103508,
+    "seam_norm_ratio_max": 0.0985,
+    "n_seam_samples": 56,
+    "horizons_dense": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20
+    ],
+    "wp_steps": [
+      5,
+      10,
+      15,
+      20
+    ]
+  },
+  "corpus": {
+    "corpus_format": "v2 compressed (<clip_id>.v2ep.pt)",
+    "val_cache": [
+      "/workspace/data/physicalai-val-0c5f7dac3b11-w120-256x640cyl"
+    ],
+    "require_parity": false,
+    "eval_frame": {
+      "height": 176,
+      "width": 624,
+      "f_ref": 305.5774907364391,
+      "projection": "cylindrical",
+      "tag": "176x624f305.5775cyl",
+      "hfov_deg": 117.0,
+      "vfov_deg": 32.131,
+      "n_tokens_at_patch16": 429,
+      "is_canonical": false,
+      "comma2k19_hfov_ceiling_deg": 65.203,
+      "exceeds_comma2k19_field": true
+    },
+    "cache_frame": {
+      "height": 256,
+      "width": 640,
+      "f_ref": 305.5774907364391,
+      "projection": "cylindrical",
+      "tag": "256x640f305.5775cyl",
+      "hfov_deg": 120.0,
+      "vfov_deg": 45.456,
+      "n_tokens_at_patch16": 640,
+      "is_canonical": false,
+      "comma2k19_hfov_ceiling_deg": 65.203,
+      "exceeds_comma2k19_field": true
+    },
+    "v2_subframe_arg": "176x624",
+    "frame_matches_checkpoint": {
+      "label": "--ckpt vs eval frame",
+      "checked": true,
+      "eval_frame": {
+        "height": 176,
+        "width": 624,
+        "f_ref": 305.5774907364391,
+        "projection": "cylindrical"
+      },
+      "trained_frame": {
+        "height": 176,
+        "width": 624,
+        "f_ref": 305.5774907364391,
+        "projection": "cylindrical"
+      },
+      "trained_frame_tag": "176x624f305.5775cyl",
+      "trained_cache_frame": {
+        "height": 256,
+        "width": 640,
+        "f_ref": 305.5774907364391,
+        "projection": "cylindrical"
+      },
+      "cache_frame_matches_run": true
+    },
+    "val_parity": {
+      "parity": true,
+      "checked": true,
+      "label": "--v2-val-cache",
+      "cache_dirs": [
+        "/workspace/data/physicalai-val-0c5f7dac3b11-w120-256x640cyl"
+      ],
+      "corpus_key": "physicalai-val-0c5f7dac3b11-w120-256x640cyl",
+      "uid_kind": "v2ep_clipid",
+      "split": "val",
+      "uid_source": "v2 re-cache of physicalai-val-0c5f7dac3b11 at a new geometry",
+      "skip_hash": "f09e44db",
+      "episodes_expected": 600,
+      "episodes_loaded": 600,
+      "episode_uid_sha256": "0b176d2e5cb49667d5009366817f948759724e69642e626a47362b93e31da68e",
+      "episode_uid_sha256_expected": "0b176d2e5cb49667d5009366817f948759724e69642e626a47362b93e31da68e",
+      "derived_from": "physicalai-val-0c5f7dac3b11",
+      "geometry": {
+        "frame": {
+          "height": 256,
+          "width": 640,
+          "f_ref": 305.5774907364391,
+          "projection": "cylindrical"
+        },
+        "frame_tag": "256x640f305.5775cyl",
+        "projection_mode": "cylindrical",
+        "codec": "png",
+        "quality": null,
+        "selection_parquet": "/workspace/data/physicalai_phase0/r0/r0_selection.parquet",
+        "only_clips": "/workspace/wfov/paritysplit/parity_val_clips.txt",
+        "clips_requested": 600,
+        "geometry_check": {
+          "requested_hfov_deg": 120.0,
+          "achieved_hfov_deg": 120.0,
+          "f_eff": 305.5775,
+          "observed_frac": 0.9360899822,
+          "frame_tag": "256x640f305.5775cyl",
+          "observed_frac_superseded": 1.0,
+          "observed_frac_basis": "POPULATION: every clip in this cache (600), each clip's own f-theta intrinsics, calib.observed_report ray map, no decode",
+          "observed_frac_note": "CORRECTED 2026-07-27. The superseded value came from a ONE-CLIP pre-decode probe and is false of this corpus. See corrections[]."
+        },
+        "rig_observability": {
+          "A": {
+            "n": 170,
+            "mean": 0.9999701276,
+            "min": 0.9993652105,
+            "max": 1.0
+          },
+          "B": {
+            "n": 430,
+            "mean": 0.910835041,
+            "min": 0.8947876096,
+            "max": 0.9190063477
+          },
+          "rig_assignment": "native principal-point row cy, boundary 650.872 (MEASURED: largest gap 193.35 px over 3,000 clips; no clip ambiguous)",
+          "fully_observed_by_all": false
+        },
+        "subframe_observability": {
+          "176x624": {
+            "A": {
+              "n": 170,
+              "mean": 1.0,
+              "min": 1.0,
+              "max": 1.0
+            },
+            "B": {
+              "n": 430,
+              "mean": 1.0,
+              "min": 1.0,
+              "max": 1.0
+            }
+          },
+          "128x576": {
+            "A": {
+              "n": 170,
+              "mean": 1.0,
+              "min": 1.0,
+              "max": 1.0
+            },
+            "B": {
+              "n": 430,
+              "mean": 1.0,
+              "min": 1.0,
+              "max": 1.0
+            }
+          },
+          "_": "what a CENTRED sub-frame of this cache would deliver. It is a pure pixel slice \u2014 `v2_dataset.build_v2_providers(frame=\u2026)` / `v2_compressed.load_compressed(path, frame=\u2026)`. Nothing needs rebuilding to reach these numbers."
+        },
+        "corrections": [
+          {
+            "date": "2026-07-27",
+            "field": "geometry_check.observed_frac",
+            "old": 1.0,
+            "new": 0.9360899822,
+            "old_basis": "ONE clip. `v2_compressed._assert_geometry_deliverable` probed clips[0] before the first decode; that clip was rig A, which this frame fully observes.",
+            "new_basis": 600,
+            "new_basis_note": "POPULATION: every clip in this cache (600), each clip's own f-theta intrinsics, calib.observed_report ray map, no decode",
+            "why": "the front-wide camera is TWO RIGS whose principal points differ ~211 px vertically; a 120 deg x 45.456 deg request over-runs rig B's sensor, so the rectifier masks ~8.9 % of every rig-B frame. A single-clip probe cannot see that, and nothing hashes pixels \u2014 this declaration is what a consumer checks, and `register_v2_sibling.py` copies it verbatim into parity_manifest.json.",
+            "changes_no_pixels": true,
+            "backup_of_original": "_geometry.json.orig-2026-07-27",
+            "instrument": "restamp_geometry_manifest.py (rig-fix-wiring stream)",
+            "raw": "restamp_2026-07-27.json"
+          }
+        ]
+      },
+      "content_check": "sha256(sorted clip ids) MATCHES the committed manifest entry"
+    },
+    "geometry_binding": {
+      "label": "--v2-val-cache",
+      "checked_shape": true,
+      "checked_declaration": true,
+      "frame": {
+        "height": 176,
+        "width": 624,
+        "f_ref": 305.5774907364391,
+        "projection": "cylindrical"
+      },
+      "pixels_are_not_hashed": "membership proves WHICH CLIPS, shape proves the RASTER SIZE on disk, the manifest proves what the BUILDER RECORDED. None of the three proves the resampler produced that field.",
+      "sliced_from": {
+        "parent": {
+          "height": 256,
+          "width": 640,
+          "f_ref": 305.5774907364391,
+          "projection": "cylindrical"
+        },
+        "parent_tag": "256x640f305.5775cyl",
+        "sub_tag": "176x624f305.5775cyl",
+        "rows": [
+          40,
+          216
+        ],
+        "cols": [
+          8,
+          632
+        ],
+        "note": "the cache holds the parent; the loader slices it. SHAPE is bound to the SUB-frame (so a slice that was configured but never applied FAILS here), DECLARATION to the PARENT."
+      },
+      "cache_frame_shapes": [
+        [
+          176,
+          624
+        ]
+      ],
+      "registered_geometry": {
+        "height": 256,
+        "width": 640,
+        "f_ref": 305.5774907364391,
+        "projection": "cylindrical"
+      }
+    }
+  },
+  "goal_provenance": {
+    "goal_source": "oracle_gt_future",
+    "goal_fields": [
+      "vt_band",
+      "route",
+      "route_graded"
+    ],
+    "is_oracle": true,
+    "deployable": false,
+    "rule": "V4_FLAGSHIP_DESIGN.md:558-560 \u2014 no leaderboard number may come from a GT-derived plan or a GT-derived goal",
+    "spec": "TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-07-25-hpp0-confound-audit/HPP0_CONFOUND_AUDIT.md \u00a71.4, PC1 item #5",
+    "_read": "the listed fields are minted from the EGO'S OWN FUTURE POSES. The model is told where it ends up, so this is an UPPER BOUND on a deployed number, not the deployed number. It is NOT comparable to an arm evaluated with a constant command (REF-C's historical `nav_cmd=None`) nor to one evaluated with a produced goal.",
+    "affected_published_numbers": [
+      {
+        "arm": "flagship v1.6",
+        "value_m": 0.4375,
+        "metric": "ade@2s",
+        "evaluator": "eval_flagship_v16.py:135-143",
+        "note": "the headline v1.6 number"
+      },
+      {
+        "arm": "flagship v1.5",
+        "value_m": null,
+        "metric": "ade@2s",
+        "evaluator": "eval_flagship_v15.py:92-103",
+        "note": "every v1.5 anchored-fan number"
+      },
+      {
+        "arm": "flagship v4 MODE B",
+        "value_m": null,
+        "metric": "ade@2s",
+        "evaluator": "eval_flagship_v4.py:322 (_goal_inputs)",
+        "note": "every v4 MODE-B number, including the 30k gate's primary"
+      }
+    ],
+    "disclosure_only": "this record changes NO number and NO code path. Removing the oracle requires a produced-goal head (PC1) and a re-run; the registry owner corrects the published values, not this script.",
+    "goal_mode": "oracle",
+    "goal_mode_fallback": null,
+    "oracle_fields_fed": [
+      "vt_band",
+      "route",
+      "route_graded"
+    ],
+    "vt_speed_note": "vt_speed is NOT in the oracle field list: `_goal_inputs` overwrites it with v0 = pose_last[:,3], the LAST OBSERVED speed, in training and in eval alike. GATE_PROTOCOL.md 0.8 and goal_provenance.py list it as an oracle field; that is a documentation error, corrected here against the code (train_flagship_v4.py `_goal_inputs`).",
+    "mode_semantics": {
+      "oracle": "route/route_graded/vt_band minted from the ego's own FUTURE poses. Historical path; upper bound, not deployable.",
+      "produced": "route/route_graded/vt_band derived from the model's own goal_head run on the encoded observation window. No future, no label. THE DEPLOYABLE PATH.",
+      "neutral": "the head's learned no-goal-given rows. The control that makes the oracle-vs-produced gap readable."
+    },
+    "goal_mode_record": {
+      "mode": "oracle",
+      "fallback": null
+    },
+    "goal_agreement_vs_oracle": null
+  },
+  "wm_canary_ade_2s": 1.2450082302093506,
+  "wm_canary_n": 881,
+  "select_rule": "as-trained",
+  "imagination_ablate": "shuffle",
+  "c2_scorer": null
+}

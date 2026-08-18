@@ -1565,7 +1565,9 @@ pod5 `/workspace/experiments/i4a/` (local stems flagship-v5f-w120-30k-i4a-none/z
 pod terminated, never committed) — durable copies verified 2026-08-18 on HF
 `Sayood/tanitad-flagship-v5f-w120` at `release/v58f/gates/` as `i4a_none.json` /
 `i4a_zero.json` / `i4a_shuffle.json`, per the `stack/scripts/release_v58f.py` manifest +
-HF tree listing.
+HF tree listing; banked in-repo (md5-verified against that manifest) at
+`…/incoming/2026-08-18-v58f-artifact-banking/gates/i4a_none.json` + `i4a_zero.json` +
+`i4a_shuffle.json`.
 
 **W4r + W7-w4r — MEASURED 2026-08-11 ~19:10Z [T0, 881 grid]: the repair arc closes on ONE
 remaining stale part.** W4r (unicycle head refit ON the stage-A trunk, 4000 steps, trunk
@@ -1582,7 +1584,9 @@ first selection read of the fully-repaired pipeline with NO stale part anywhere*
 behind p8c; W4r head relayed via HF /battery/). Artifacts: `w4r_gate.json`,
 `/workspace/experiments/w7-repaired-w4r-k32/w7_gate.json` (pod5, terminated — durable copy
 verified 2026-08-18 on HF `Sayood/tanitad-flagship-v5f-w120` at `release/v58f/gates/` as
-`w7_w4r_k32_gate.json`, per the `stack/scripts/release_v58f.py` manifest + HF tree listing).
+`w7_w4r_k32_gate.json`, per the `stack/scripts/release_v58f.py` manifest + HF tree listing;
+banked in-repo, md5-verified against that manifest, at
+`…/incoming/2026-08-18-v58f-artifact-banking/gates/w7_w4r_k32_gate.json`).
 
 **P1 LEAD-GAP RESOLUTION — MEASURED 2026-08-11 ~17:20Z (two runs, pod4): the instrument
 was fixed AND the failure survived it — MODEL VERDICT "missing state variable".**
@@ -1910,7 +1914,12 @@ stamped as substantially an ACTION ECHO so a teacher-forced tactical number can 
 as skill. Artifacts: the six per-tier JSONs ff_{stageA,v5f30k}_{cl,ol,ha}.json + `ff_comparison.json`
 (pod5:`/workspace/experiments/t1-v58f/four_families/`, terminated — all seven durable, verified
 2026-08-18 on HF `Sayood/tanitad-flagship-v5f-w120` at `release/v58f/gates/four_families/`, same
-basenames, per the `stack/scripts/release_v58f.py` manifest + HF tree listing).
+basenames, per the `stack/scripts/release_v58f.py` manifest + HF tree listing; all seven banked
+in-repo, md5-verified against that manifest, at
+`…/incoming/2026-08-18-v58f-artifact-banking/gates/four_families/` — six under the same
+basenames, the full comparison as `ff_comparison.full.json`, basename-disambiguated on purpose
+from the smaller in-repo demo
+`…/incoming/2026-08-07-hierarchical-wm-redesign/ff_rescore_val40_demo/ff_comparison.json`).
 
 ## 2. REF-A — the frozen-encoder arm (H4)
 
