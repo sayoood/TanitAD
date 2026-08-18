@@ -87,10 +87,18 @@ def test_only_s_t_may_introduce_and_only_its_declared_modules():
 
     ⚠️ This pin is EXACT on purpose: growing the allowance must fail here
     first and be extended consciously, which is what happened for each entry
-    after `cand_score.`."""
+    after `cand_score.`.
+
+    ⭐ EXTENDED 2026-08-18 (F-7): ``t2_head.`` — the T2 manoeuvre-contrastive
+    projector, +164,225 params / +5 keys MEASURED. ⚠️ Unlike ``agent_slots.``
+    and ``fallback.`` it is introduced AND TRAINED by S-T (group ``layer_tac``),
+    so this entry means the ordinary thing. F-8 (T5 temporal consistency)
+    deliberately has NO entry: it holds no parameters and no buffers, so like
+    ``MpcRefiner`` it changes no state_dict key and there is nothing to
+    adjudicate."""
     assert STAGE_MAY_INTRODUCE["S-T"] == (
         "cand_score.", "cond_tac_dyn.", "prop_diffusion.", "fallback.",
-        "agent_slots.")
+        "agent_slots.", "t2_head.")
     assert STAGE_MAY_INTRODUCE["S-W"] == ()
     assert STAGE_MAY_INTRODUCE["S-S"] == ()
     assert STAGE_MAY_INTRODUCE["S-J"] == ()
@@ -109,7 +117,7 @@ def test_s_t_can_now_init_from_an_s_w_ckpt_with_a_selector(sw_ckpt, selector):
     assert all(k.startswith("cand_score.") for k in rep["introduced_keys"])
     assert rep["introduced_allowance"] == [
         "cand_score.", "cond_tac_dyn.", "prop_diffusion.", "fallback.",
-        "agent_slots."]
+        "agent_slots.", "t2_head."]
     assert rep["init_step"] == 30000
 
 

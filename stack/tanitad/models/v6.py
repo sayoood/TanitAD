@@ -111,6 +111,10 @@ __all__ = [
     # module so `from tanitad.models.v6 import ...` reaches the whole v6
     # surface; the implementation lives in tanitad/models/agent_slots.py)
     "AgentSlotDecoder",
+    # ⭐ F-7 / catalog T2 — manoeuvre contrastives (label-free)
+    "ManoeuvreContrastiveHead", "lane_mirror_window", "time_reverse_window",
+    "photometric_jitter_window", "T2_AUGMENTATIONS",
+    "T2_MANOEUVRE_PRESERVING", "T2_MANOEUVRE_REVERSING",
     "IsolationViolation", "PARAM_BUDGET",
     # horizon (§4b)
     "PLAN_STEPS", "DT", "HORIZON_S", "OP_BAND_S", "TAC_BAND_S",
@@ -2481,6 +2485,206 @@ ISOLATION_MATRIX: dict[str, tuple[str, ...]] = {
 }
 
 
+# ============================================================================
+# F-7 / catalog T2 — MANOEUVRE CONTRASTIVES (label-free)
+# ============================================================================
+#: ⛔ THE SPEC, and the two places it is written down, because it is quoted
+#: rather than paraphrased:
+#:
+#:   ``V6_TRAINING_MEASURES.md:65`` (the catalog) — *"T2 | **manoeuvre-
+#:   contrastive windows** (label-free): time-reversal and lane-mirror
+#:   augmentations as hard negatives for the tactical predictor | a lane change
+#:   mirrored is the OPPOSITE manoeuvre — the predictor must not be invariant
+#:   to it; teaches manoeuvre identity without manoeuvre labels"*
+#:
+#:   ``DIAGRAM_CONFORMANCE.md:56`` — *"Needs: a T2 loss (label-free
+#:   augmentations of the window + a contrastive head on ``z_tac``) + a weight
+#:   in ``V6LossWeights``"*
+#:
+#: ⚠️ **WHAT THE SPEC DOES NOT SAY, AND THEREFORE WHAT IS ASSUMED HERE.** A
+#: contrastive loss needs a POSITIVE; the catalog names only the negatives.
+#: Supplying one is a necessity of the named construct, but WHICH one is an
+#: assumption and it is declared rather than buried:
+#:
+#:   * the POSITIVE is a manoeuvre-PRESERVING augmentation (default
+#:     ``photometric`` — brightness/contrast, which changes appearance and
+#:     leaves geometry, hence the manoeuvre, untouched). It doubles as C1's
+#:     nuisance-non-retention pressure.
+#:   * the HARD NEGATIVE is the manoeuvre-REVERSING augmentation the catalog
+#:     names (``lane_mirror``).
+#:   * the EASY NEGATIVES are the other windows in the batch (standard
+#:     in-batch InfoNCE).
+#:
+#: ⛔ AND THE OBVIOUS "FREE" POSITIVE IS DEGENERATE — MEASURED, not reasoned.
+#: ``uplink`` defaults to ``"stopgrad"`` (v6.py:2778), so
+#: :meth:`V6Stack.uplink_tac` returns ``target = online.detach()``
+#: (v6.py:3890): ``z_tac_target`` IS ``z_tac`` with the graph cut. Feeding it
+#: to a unit-norm projector as the positive gives cosine similarity **exactly
+#: 1.0** for every window regardless of what the head learned, so the positive
+#: term is a constant and InfoNCE collapses to "push the negatives apart" —
+#: a pure flip-detector objective. Pinned by
+#: ``tests/test_v6_t2_contrastive.py::test_z_tac_target_is_a_degenerate_positive``.
+
+
+def lane_mirror_window(frames: Tensor, actions: Tensor | None = None
+                       ) -> tuple[Tensor, Tensor | None]:
+    """T2's MANOEUVRE-REVERSING augmentation: left <-> right.
+
+    ``frames`` [B, W, C, H, W'] -> horizontal flip (the last axis).
+    ``actions`` [B, W, A] -> the LATERAL channel (index 0, steer/curvature in
+    the lifted 3-channel format) is NEGATED; the longitudinal channel and the
+    speed channel are untouched, because mirroring a scene does not change how
+    fast the ego is going.
+
+    This is the augmentation the catalog's own justification is about: *"a lane
+    change mirrored is the OPPOSITE manoeuvre"*.
+    """
+    if frames.ndim != 5:
+        raise ValueError(f"frames must be [B, W, C, H, W'], got "
+                         f"{tuple(frames.shape)}")
+    fm = torch.flip(frames, dims=(-1,))
+    am = None
+    if actions is not None:
+        if actions.ndim != 3:
+            raise ValueError(f"actions must be [B, W, A], got "
+                             f"{tuple(actions.shape)}")
+        am = actions.clone()
+        am[..., 0] = -am[..., 0]
+    return fm, am
+
+
+def time_reverse_window(frames: Tensor, actions: Tensor | None = None
+                        ) -> tuple[Tensor, Tensor | None]:
+    """T2's TIME-REVERSAL augmentation — built, and NOT in the default
+    negative set. The reason is MEASURED and it is a fact about the
+    architecture, not a preference:
+
+    ⛔ ``z_tac`` HAS NO TEMPORAL EXTENT. :meth:`V6Stack.encode_window`
+    (v6.py:3844-3847) flattens ``[B, W]`` into the batch axis, so the encoder
+    sees every frame INDEPENDENTLY — there is no temporal mixing anywhere on
+    the path to ``z_op``. ``forward`` then takes ``z_op = z_op_win[:, -1]``
+    (v6.py:4197) and ``z_tac, _ = self.uplink_tac(z_op)`` (v6.py:4207).
+    **``z_tac`` is a function of the LAST FRAME ALONE.** Reversing the window
+    therefore does not present the tactical layer with "the manoeuvre played
+    backwards" — it presents it with *the frame from W ticks earlier*, and the
+    contrastive term would be teaching "the tactical latent at t must differ
+    from the tactical latent at t - W".
+
+    ⚠️ That objective is not merely off-spec, it is **the opposite of catalog
+    T5** (F-8, in this same file's sibling change), which penalises the plan
+    for CHANGING between nearby windows. Enabling both would put two terms of
+    the same stage in direct opposition. Pinned by
+    ``tests/test_v6_t2_contrastive.py::test_time_reversal_is_an_earlier_frame_not_a_reversed_manoeuvre``.
+
+    The convention implemented is the straightforward one (reverse the sequence
+    and negate both control channels, since a decelerating trajectory run
+    backwards accelerates) so the arm EXISTS and can be measured the day the
+    tactical path gains real temporal extent.
+    """
+    if frames.ndim != 5:
+        raise ValueError(f"frames must be [B, W, C, H, W'], got "
+                         f"{tuple(frames.shape)}")
+    fr = torch.flip(frames, dims=(1,))
+    ar = None
+    if actions is not None:
+        if actions.ndim != 3:
+            raise ValueError(f"actions must be [B, W, A], got "
+                             f"{tuple(actions.shape)}")
+        ar = torch.flip(actions, dims=(1,)).clone()
+        ar[..., :2] = -ar[..., :2]
+    return fr, ar
+
+
+def photometric_jitter_window(frames: Tensor, actions: Tensor | None = None,
+                              *, brightness: float = 0.25,
+                              contrast: float = 0.25,
+                              generator: torch.Generator | None = None
+                              ) -> tuple[Tensor, Tensor | None]:
+    """T2's MANOEUVRE-PRESERVING augmentation — the assumed POSITIVE view.
+
+    Per-window brightness and contrast jitter. Geometry is untouched, so the
+    manoeuvre is BY CONSTRUCTION identical; only appearance moves. ``actions``
+    are returned unchanged (a brightness change commands no steering).
+
+    ⚠️ DECLARED ASSUMPTION, not a spec item — see the T2 block above.
+    """
+    if frames.ndim != 5:
+        raise ValueError(f"frames must be [B, W, C, H, W'], got "
+                         f"{tuple(frames.shape)}")
+    b = frames.shape[0]
+    shape = (b,) + (1,) * (frames.ndim - 1)
+    kw = {"device": frames.device, "dtype": frames.dtype}
+    if generator is not None:
+        db = torch.empty(shape, **kw).uniform_(-brightness, brightness,
+                                               generator=generator)
+        dc = torch.empty(shape, **kw).uniform_(1.0 - contrast, 1.0 + contrast,
+                                               generator=generator)
+    else:
+        db = torch.empty(shape, **kw).uniform_(-brightness, brightness)
+        dc = torch.empty(shape, **kw).uniform_(1.0 - contrast, 1.0 + contrast)
+    mean = frames.mean(dim=(-3, -2, -1), keepdim=True)
+    return (frames - mean) * dc + mean + db, actions
+
+
+#: name -> the callable, so an arm is named in a launch line and resolved here
+#: rather than by an ``if`` chain that can silently fall through to a no-op.
+T2_AUGMENTATIONS: dict[str, object] = {
+    "lane_mirror": lane_mirror_window,
+    "time_reverse": time_reverse_window,
+    "photometric": photometric_jitter_window,
+}
+
+#: ⛔ MANOEUVRE-PRESERVING augmentations may serve as the POSITIVE; only a
+#: manoeuvre-REVERSING one is a legal HARD NEGATIVE. Stated as data so a
+#: launch line that swaps them is REFUSED rather than silently training the
+#: model to consider a mirrored lane change the same manoeuvre.
+T2_MANOEUVRE_PRESERVING: frozenset[str] = frozenset({"photometric"})
+T2_MANOEUVRE_REVERSING: frozenset[str] = frozenset({"lane_mirror",
+                                                    "time_reverse"})
+
+
+class ManoeuvreContrastiveHead(nn.Module):
+    """F-7 / T2: the projector ``z_tac -> unit-norm embedding``.
+
+    A standard two-layer SimCLR projector plus a learnable temperature. It is
+    ``layer_tac``-grouped (``_GROUP_PREFIXES``), so it trains in S-T alongside
+    the ``adapter_tac`` whose output it reads, and S-W never sees it.
+
+    ⛔ X3 IS SATISFIED BY CONSTRUCTION, not by hope: its only input is
+    ``z_tac``, and ``uplink_tac`` cuts the trunk unconditionally under
+    ``isolate_uplink`` (v6.py:3875), so no T2 gradient can reach the encoder or
+    the readout. The ``layer_tac`` row of :data:`ISOLATION_MATRIX` is
+    ``("layer_tac",)`` and this head does not widen it.
+    """
+
+    def __init__(self, d_tac: int, *, d_proj: int = 128, hidden: int = 256,
+                 tau: float = 0.1, learn_tau: bool = True):
+        super().__init__()
+        if d_proj < 1 or hidden < 1:
+            raise ValueError("d_proj and hidden must be >= 1")
+        if not (0.0 < tau):
+            raise ValueError(f"tau must be > 0, got {tau}")
+        self.net = nn.Sequential(
+            nn.Linear(d_tac, hidden), nn.GELU(), nn.Linear(hidden, d_proj))
+        lt = torch.tensor(float(math.log(tau)))
+        if learn_tau:
+            self.log_tau = nn.Parameter(lt)
+        else:
+            self.register_buffer("log_tau", lt)
+
+    @property
+    def tau(self) -> Tensor:
+        return self.log_tau.exp()
+
+    def forward(self, z_tac: Tensor) -> Tensor:
+        """``z_tac`` [B, d_tac] -> L2-normalised embedding [B, d_proj]."""
+        if z_tac.ndim != 2:
+            raise ValueError(f"z_tac must be [B, d_tac], got "
+                             f"{tuple(z_tac.shape)}")
+        h = self.net(z_tac)
+        return h / h.norm(dim=-1, keepdim=True).clamp_min(1e-12)
+
+
 @dataclass
 class V6Config:
     """Every v6 knob that changes the model, in one serialisable place.
@@ -2725,6 +2929,19 @@ class V6Config:
     #: carrying is not training, and until 2026-08-16 the freeze map said
     #: otherwise whenever ``agent_slots=True``.
     agent_slots: bool = False
+    #: ⭐ F-7 / catalog T2 — the MANOEUVRE-CONTRASTIVE head. DEFAULT OFF, so
+    #: the default build creates NO state_dict key and the live v6F S-W resume
+    #: (87,893,449 params / 405 keys, tensor-strict) is untouched. ON adds keys
+    #: ⇒ ``STAGE_MAY_INTRODUCE["S-T"]`` carries ``"t2_head."``.
+    #: ⛔ It trains in S-T ONLY (group ``layer_tac``); S-W never builds it,
+    #: because the catalog files T2 under LAYER T.
+    t2_contrastive: bool = False
+    d_t2_proj: int = 128
+    d_t2_hidden: int = 256
+    #: InfoNCE temperature at init. Learnable (``log_tau``) — the one extra
+    #: scalar parameter, and it is a parameter rather than a constant because a
+    #: fixed temperature is a hyper-parameter nobody re-tunes.
+    t2_tau: float = 0.1
     #: number of slot queries. ⚠️ A DECLARED PLACEHOLDER, not a fitted value —
     #: the right number is the join's measured per-frame agent-count
     #: distribution and that is UNMEASURED (no join file lives in the repo).
@@ -3717,6 +3934,22 @@ class V6Stack(nn.Module):
                 n_heads=cfg.slot_heads, ranges=SlotDecodeRanges(),
                 enforce_band=False)
 
+        # ---- F-7 / T2: THE MANOEUVRE-CONTRASTIVE HEAD — built LAST for the
+        # same reason as every gated lever above: the default path draws NO
+        # RNG and creates NO state_dict key, so the default build is
+        # bit-identical to the pre-F-7 revision (pinned per tensor in
+        # tests/test_v6_t2_contrastive.py).
+        # ⚠️ It is deliberately NOT referenced anywhere in ``forward``. The T2
+        # loss calls it directly, so ``forward``'s output dict gains no key and
+        # `test_v6_gstr_port.py::
+        # test_default_forward_is_bit_identical_and_emits_no_new_key` — which
+        # already caught one unconditional key — cannot be tripped by this cell.
+        self.t2_head = None
+        if cfg.t2_contrastive:
+            self.t2_head = ManoeuvreContrastiveHead(
+                cfg.d_tac, d_proj=cfg.d_t2_proj, hidden=cfg.d_t2_hidden,
+                tau=cfg.t2_tau)
+
     # -- grouping ------------------------------------------------------------
     #: prefix -> group. Longest matching prefix wins, so ``predictor_tac``
     #: cannot be swallowed by ``predictor_op``'s entry.
@@ -3744,6 +3977,12 @@ class V6Stack(nn.Module):
         ("act_head_lat.", "layer_tac"), ("act_head_lon.", "layer_tac"),
         ("vocab_tac.", "layer_tac"), ("vocab_a_lat.", "layer_tac"),
         ("vocab_a_lon.", "layer_tac"), ("ema_adapter_tac.", "layer_tac"),
+        # ⭐ F-7 / T2: the contrastive projector is `layer_tac` — it reads
+        # `z_tac` and nothing else, and S-T is the stage whose loss flows
+        # through it. Grouping it with the adapter it consumes gives the same
+        # train-when-live property the F-1 `cond_tac_dyn.` port has, with no
+        # regrouping and no widening of ISOLATION_MATRIX["layer_tac"].
+        ("t2_head.", "layer_tac"),
         # the FACTORED g_tac pair sits in the SAME group as the mixed head it
         # replaces — the factoring is a shape change, not a stage change, and a
         # head that trained in a different stage would not be its control.

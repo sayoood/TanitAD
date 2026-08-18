@@ -112,6 +112,9 @@ from tanitad.models.v6 import (  # noqa: E402
     near_field_band_mask, sample_cell_block_mask, saliency_weights,
     SpectrumAccumulator, o6_rank_verdict, sigreg_trend_verdict,
     spectrum_report,
+    # F-7 / catalog T2 — the augmentations + the manoeuvre-preserving /
+    # -reversing partition the loss REFUSES to have swapped
+    T2_AUGMENTATIONS, T2_MANOEUVRE_PRESERVING, T2_MANOEUVRE_REVERSING,
     stage_trainable_groups, time_to_reach_weights)
 from tanitad.models.sigreg import position_relaxed  # noqa: E402
 
@@ -235,6 +238,27 @@ class V6LossWeights:
     #: S-S/S-J — the stages that train ``layer_str``; zeroed elsewhere so the
     #: launch line cannot advertise a term that trains nothing.
     w_s2_goal: float = 0.0
+    #: ⭐ F-7 / catalog T2 — MANOEUVRE CONTRASTIVES. DEFAULT 0.0 = OFF
+    #: everywhere, so the incumbent loss is bit-identical and the live v6F S-W
+    #: resume is untouched. Needs ``cfg.t2_contrastive=True`` (the projector).
+    #: Spec: ``V6_TRAINING_MEASURES.md:65`` + ``DIAGRAM_CONFORMANCE.md:56``.
+    #: In force in S-T/S-J only — the stages that train ``layer_tac``, which is
+    #: the group the projector belongs to; zeroed elsewhere so a launch line
+    #: cannot advertise a term that trains nothing.
+    #: Units: NATS (a cross-entropy), so it is NOT commensurate with
+    #: ``w_select``/``w_anchor``'s metres and the weight is a declared decision.
+    w_t2_contrast: float = 0.0
+    #: ⭐ F-8 / catalog T5 — TEMPORAL-CONSISTENCY SELECTION LOSS. DEFAULT 0.0 =
+    #: OFF everywhere. ZERO NEW PARAMETERS (like ``MpcRefiner``), so it needs no
+    #: ``STAGE_MAY_INTRODUCE`` entry and changes no state_dict key at all.
+    #: Needs the OPT-IN consecutive-window pair batch (``t5_pairs``/``t5_lag``).
+    #: Spec: ``V6_TRAINING_MEASURES.md:68`` + ``DIAGRAM_CONFORMANCE.md:58``.
+    #: ⛔ REFUSED when ``lambda_plan == 0`` — see :func:`t5_consistency_loss`;
+    #: a flat plan scores EXACTLY ZERO on this term, so alone it is a
+    #: degenerate objective and the guard is wired, not documented.
+    #: Units: m/s^2 and 1/m (a control-space MAE), one more reason it is not
+    #: interchangeable with any other weight.
+    w_t5_consist: float = 0.0
 
     def for_stage(self, stage: str) -> "V6LossWeights":
         """The weights actually in force for ``stage``.
@@ -245,9 +269,13 @@ class V6LossWeights:
         something. Zeroing them here keeps the log honest about what moved.
         """
         if stage == "S-W":
+            # w_t2_contrast / w_t5_consist join the list for the same reason as
+            # every other higher-layer term: S-W builds no t2 projector, and
+            # T5 reads a plan the S-W stage does not emit.
             return replace(self, t1_latent=0.0, s1_latent=0.0,
                            lambda_plan=0.0, seam_op=0.0, w_select=0.0,
-                           w_anchor=0.0, w_s2_goal=0.0)
+                           w_anchor=0.0, w_s2_goal=0.0,
+                           w_t2_contrast=0.0, w_t5_consist=0.0)
         if stage == "S-T":
             # w_s2_goal is zeroed here for the layer_str reason w_anchor is
             # zeroed in S-S: the strategic goal heads are FROZEN in S-T
@@ -265,7 +293,11 @@ class V6LossWeights:
             return replace(self, o1_ctrl=0.0, o1_fact=0.0, o1_scene=0.0,
                            o2_nearfield=0.0, o3_masked=0.0, o5_rollout=0.0,
                            o6_sigreg=0.0, t1_latent=0.0, lambda_plan=0.0,
-                           seam_op=0.0, w_select=0.0, w_anchor=0.0)
+                           seam_op=0.0, w_select=0.0, w_anchor=0.0,
+                           # T2's projector is `layer_tac` and T5 needs
+                           # lambda_plan, both FROZEN/zero in S-S: in force
+                           # here they would be advertised and train nothing.
+                           w_t2_contrast=0.0, w_t5_consist=0.0)
         if stage == "S-J":
             return self
         raise ValueError(f"unknown stage {stage!r}; expected one of {STAGES}")
@@ -336,8 +368,21 @@ STAGE_MAY_INTRODUCE: dict[str, tuple[str, ...]] = {
     # trains the head). ⇒ plumbing it into the chain is the follow-on the moment
     # a chain step wants the head; until then `load_stage_init` still refuses
     # correctly, only later and with a less specific message.
+    # ⭐ 2026-08-18, F-7: S-T may also introduce the MANOEUVRE-CONTRASTIVE
+    # projector (`t2_head.`, +164,225 params / +5 keys MEASURED at the default
+    # geometry d_tac=512 -> hidden 256 -> proj 128, plus the learnable
+    # `log_tau`). Unlike `agent_slots.` this IS trained by the stage that
+    # introduces it: `t2_head.` is grouped `layer_tac` and S-T trains
+    # `layer_tac`, so the entry means the ordinary thing.
+    # ⚠️ CARRY RULE, the same one `agent_slots.` records and for the same
+    # reason: an S-T run launched WITH `--t2-contrastive` writes `t2_head.*`
+    # into its checkpoint, so S-S/S-J must be launched with the flag too or
+    # those keys are UNEXPECTED and `load_stage_init` is fatal.
+    # ⛔ F-8 (T5 temporal consistency) deliberately has NO ENTRY HERE: it holds
+    # no parameters and no buffers, so like `MpcRefiner` it changes no
+    # state_dict key and there is nothing for this allowlist to adjudicate.
     "S-T": ("cand_score.", "cond_tac_dyn.", "prop_diffusion.", "fallback.",
-            "agent_slots."),
+            "agent_slots.", "t2_head."),
     "S-S": (),                  # trains layer_str, which S-T already carried
     "S-J": (),                  # joint polish introduces nothing
 }
@@ -1314,6 +1359,313 @@ def s2_goal_loss(g_out: dict, a_out: dict, batch: dict) -> tuple[Tensor, dict]:
 
 
 # ============================================================================
+# F-7 / catalog T2 — MANOEUVRE CONTRASTIVES
+# ============================================================================
+
+def t2_contrastive_loss(stack: V6Stack, z_tac: Tensor, frames: Tensor,
+                        actions2: Tensor, *, positive: str = "photometric",
+                        negative: str = "lane_mirror",
+                        generator: torch.Generator | None = None
+                        ) -> tuple[Tensor, dict]:
+    """Catalog T2: label-free manoeuvre contrastives on ``z_tac``.
+
+    ``V6_TRAINING_MEASURES.md:65`` — *"time-reversal and lane-mirror
+    augmentations as HARD NEGATIVES for the tactical predictor … a lane change
+    mirrored is the OPPOSITE manoeuvre — the predictor must not be invariant to
+    it"*. ``DIAGRAM_CONFORMANCE.md:56`` — *"label-free augmentations of the
+    window + a contrastive head on ``z_tac``"*.
+
+    THE OBJECTIVE, an ordinary InfoNCE with one extra column. For anchor *i*:
+
+      * column *i* — ``positive``, a manoeuvre-PRESERVING view of window *i*.
+      * columns *j != i* — the other windows' positive views (EASY negatives).
+      * column *B* — ``negative``, the manoeuvre-REVERSING view of window *i*
+        itself. This is the catalog's HARD negative and it is the only column
+        that makes the term about manoeuvre identity rather than window
+        identity.
+
+    ⚠️ THE POSITIVE IS AN ASSUMPTION, DECLARED. The catalog names only the
+    negatives, and a contrastive loss cannot be written without a positive; the
+    narrowest choice that keeps the manoeuvre fixed is a photometric one. See
+    the T2 block in ``v6.py`` for why the free-looking alternative
+    (``z_tac_target``) is DEGENERATE under the default ``uplink="stopgrad"``.
+
+    Returns ``(loss_nats, log)``. ``t2_margin`` = ``pos_sim - hard_sim`` is the
+    quantity the spec is actually about: it is > 0 exactly when the tactical
+    latent is NOT invariant to mirroring.
+    """
+    head = getattr(stack, "t2_head", None)
+    if head is None:
+        raise ValueError(
+            "w_t2_contrast > 0 with cfg.t2_contrastive=False — a contrastive "
+            "loss with no projector is how a T2 term silently never trains. "
+            "Build the stack with --t2-contrastive.")
+    if not stack.cfg.shared_encoder:
+        # the E-ENC arm (b) feeds each layer its OWN encoded frames; augmenting
+        # the shared window would leave `own_frames_tac` un-augmented and the
+        # "view" would be half-original. REFUSE rather than train on a
+        # half-augmented pair — that is a confound, not an arm.
+        raise ValueError(
+            "T2 needs shared_encoder=True: under the E-ENC arm (b) the "
+            "tactical layer reads its own frames, which this augmentation "
+            "does not produce, so the contrastive pair would be half-original.")
+    if positive not in T2_MANOEUVRE_PRESERVING:
+        raise ValueError(
+            f"T2 positive must be manoeuvre-PRESERVING, got {positive!r}; "
+            f"legal: {sorted(T2_MANOEUVRE_PRESERVING)}. A manoeuvre-reversing "
+            f"positive would train the model to call a mirrored lane change "
+            f"the SAME manoeuvre — the exact inversion of the catalog row.")
+    if negative not in T2_MANOEUVRE_REVERSING:
+        raise ValueError(
+            f"T2 hard negative must be manoeuvre-REVERSING, got {negative!r}; "
+            f"legal: {sorted(T2_MANOEUVRE_REVERSING)}.")
+
+    def _view(name: str) -> Tensor:
+        aug = T2_AUGMENTATIONS[name]
+        kw = {"generator": generator} if name == "photometric" else {}
+        f_a, _a_a = aug(frames, actions2, **kw)
+        z_op = stack.encode_window(f_a)[:, -1]
+        z, _tgt = stack.uplink_tac(z_op)
+        return head(z)
+
+    q = head(z_tac)                                   # [B, P] unit-norm
+    k_pos = _view(positive)
+    k_neg = _view(negative)
+    tau = head.tau.clamp_min(1e-4)
+    sim = q @ k_pos.t()                               # [B, B]
+    hard = (q * k_neg).sum(dim=-1, keepdim=True)      # [B, 1]
+    logits = torch.cat([sim, hard], dim=-1) / tau     # [B, B+1]
+    tgt = torch.arange(q.shape[0], device=q.device)
+    loss = torch.nn.functional.cross_entropy(logits, tgt)
+
+    with torch.no_grad():
+        b = q.shape[0]
+        eye = torch.eye(b, dtype=torch.bool, device=q.device)
+        pos_sim = sim.diagonal().mean()
+        easy_sim = sim[~eye].mean() if b > 1 else sim.new_zeros(())
+        hard_sim = hard.mean()
+        log = {"t2_loss": float(loss.detach()),
+               "t2_pos_sim": float(pos_sim),
+               "t2_easy_sim": float(easy_sim),
+               "t2_hard_sim": float(hard_sim),
+               # ⭐ THE PRIMARY DIAGNOSTIC. > 0 == the tactical latent is not
+               # invariant to the manoeuvre flip, which is the whole claim.
+               "t2_margin": float(pos_sim - hard_sim),
+               # the failure rate the loss is driving down: how often the
+               # model's OWN mirrored window looks more like it than its
+               # manoeuvre-preserving view does.
+               "t2_hard_beats_pos": float(
+                   (hard.squeeze(-1) > sim.diagonal()).float().mean()),
+               "t2_tau": float(tau.detach()),
+               "t2_positive": positive, "t2_negative": negative}
+    return loss, log
+
+
+#: ⛔ THE CONTROL'S OWN SAMPLE FLOOR. MEASURED 2026-08-18 at random init (where
+#: the true ratio IS 1 by construction — the projector knows nothing), 5 seeds
+#: per cell, uncorrelated frames:
+#:
+#:     n/side     4  -> ratio 0.397 .. 3.361
+#:     n/side    16  -> ratio 0.595 .. 1.471
+#:     n/side    64  -> ratio 0.949 .. 1.281
+#:     n/side   256  -> ratio 0.829 .. 1.036
+#:
+#: A verdict from n=4 is noise wearing a number's clothes, and this control
+#: SHIPPED one until the test caught it. Below this floor it returns
+#: INCONCLUSIVE rather than a ratio-based verdict.
+T2_CONTROL_MIN_N = 32
+
+
+def t2_flip_detection_control(stack: V6Stack, frames: Tensor,
+                              actions2: Tensor, *,
+                              negative: str = "lane_mirror",
+                              quantile: float = 0.5,
+                              min_n: int = T2_CONTROL_MIN_N) -> dict:
+    """⛔ THE TRIVIAL-PROXY CONTROL for T2, and it is not optional.
+
+    A projector can separate a window from its mirror WITHOUT learning anything
+    about manoeuvres — a horizontal flip leaves detectable image evidence (an
+    asymmetric bonnet, vignette or rig offset), and "detect the flip operator"
+    is a far easier function than "identify the manoeuvre". A rising
+    ``t2_margin`` is therefore NOT by itself evidence that T2 did its job. This
+    is the C92 class exactly: a headline that turned out to be a readout
+    echoing ego speed.
+
+    THE DISCRIMINATOR. Mirroring a STRAIGHT window is manoeuvre-PRESERVING (a
+    straight road mirrored is still going straight); mirroring a TURNING window
+    is manoeuvre-REVERSING. So:
+
+      * a genuine manoeuvre discriminator separates TURNING windows from their
+        mirrors much more than STRAIGHT ones -> ``ratio`` >> 1;
+      * a flip detector separates both equally -> ``ratio`` ~ 1.
+
+    Windows are split at the median (``quantile``) of mean ``|steer|`` taken
+    from ``actions2``, which is a MODEL INPUT, not a label — the control stays
+    label-free like the loss it audits.
+
+    Returns the two separations, their ratio, and the n of each side.
+    """
+    head = getattr(stack, "t2_head", None)
+    if head is None:
+        raise ValueError("t2_flip_detection_control needs cfg.t2_contrastive")
+    with torch.no_grad():
+        aug = T2_AUGMENTATIONS[negative]
+        f_a, _ = aug(frames, actions2)
+        q = head(stack.uplink_tac(stack.encode_window(frames)[:, -1])[0])
+        k = head(stack.uplink_tac(stack.encode_window(f_a)[:, -1])[0])
+        sep = 1.0 - (q * k).sum(dim=-1)               # [B] in [0, 2]
+        turn = actions2[..., 0].abs().mean(dim=-1)    # [B] mean |steer|
+        thr = torch.quantile(turn.float(), float(quantile))
+        hi, lo = turn > thr, turn <= thr
+        n_hi, n_lo = int(hi.sum()), int(lo.sum())
+
+        def _m_sem(x):
+            if x.numel() == 0:
+                return float("nan"), float("nan")
+            m = float(x.mean())
+            s = (float(x.std(unbiased=True)) / (x.numel() ** 0.5)
+                 if x.numel() > 1 else float("nan"))
+            return m, s
+
+        s_hi, e_hi = _m_sem(sep[hi])
+        s_lo, e_lo = _m_sem(sep[lo])
+        ratio = (s_hi / s_lo) if (s_lo == s_lo and s_lo != 0.0) \
+            else float("nan")
+    # ⛔ THE VERDICT IS GATED ON n, NOT ONLY ON THE RATIO. See
+    # T2_CONTROL_MIN_N: at n=4 per side the null ratio spans 0.40-3.36.
+    if n_hi < min_n or n_lo < min_n:
+        verdict = (f"INCONCLUSIVE (n_turning={n_hi}, n_straight={n_lo}; "
+                   f"need >= {min_n} per side — below that the NULL ratio "
+                   f"itself spans roughly 0.4-3.4 and any verdict is noise)")
+    elif ratio != ratio:
+        verdict = "INCONCLUSIVE (a side is empty or degenerate)"
+    elif ratio < 1.2:
+        verdict = ("FLIP-DETECTOR (ratio ~ 1): the separation is NOT about "
+                   "manoeuvre — T2's margin is not evidence of manoeuvre "
+                   "identity")
+    else:
+        verdict = "manoeuvre-sensitive (ratio > 1.2)"
+    return {"t2_sep_turning": s_hi, "t2_sep_straight": s_lo,
+            "t2_sep_turning_sem": e_hi, "t2_sep_straight_sem": e_lo,
+            "t2_sep_ratio": ratio, "n_turning": n_hi, "n_straight": n_lo,
+            "turn_threshold": float(thr), "min_n": int(min_n),
+            "verdict": verdict}
+
+
+# ============================================================================
+# F-8 / catalog T5 — MOMENTUM-AWARE TEMPORAL CONSISTENCY
+# ============================================================================
+#: ⛔ WHY THIS TERM IS IN CONTROL SPACE AND NOT IN POSITION SPACE — MEASURED,
+#: and it is this programme's own measurement, not a preference.
+#:
+#: ``…/2026-08-06-v1-defect-triage/results/TEMPORAL_STABILITY_RESULT.md`` (40
+#: OOD-val episodes, 6,794 consecutive pairs, stride-1) reports for flagship v1:
+#:
+#:   | replan shift, mean           | 0.0947 m     | GT floor 0.0     |
+#:   | replan ACCEL JUMP, mean      | 1.1021 m/s^2 | GT floor 0.0001  |
+#:
+#: and concludes verbatim that *"a small position shift hides a large
+#: acceleration change"* — the commanded acceleration at the SAME ABSOLUTE
+#: INSTANT is revised by more than the human's entire acceleration RMS
+#: (0.8048 m/s^2) every 0.1 s. A position-space consistency term is blind to
+#: the defect that actually exists.
+#:
+#: ⭐ AND CONTROLS ARE FRAME-INVARIANT, which is what makes this term cheap and
+#: exact: acceleration and curvature do not depend on which ego frame they are
+#: expressed in, so comparing plan(t) with plan(t+lag) needs NO pose transform,
+#: NO relative-pose label, and introduces no alignment approximation. The GT
+#: floor is EXACTLY zero by construction — the human's controls from t+lag are
+#: a suffix of the human's controls from t.
+
+
+def t5_consistency_loss(a_ctl: Tensor, kappa: Tensor, sel_p: Tensor | None,
+                        pairs: Tensor, lag: int, *, w_kappa: float = 1.0,
+                        v0: Tensor | None = None) -> tuple[Tensor, dict]:
+    """Catalog T5: penalise plan flip-flop across CONSECUTIVE windows.
+
+    ``a_ctl`` / ``kappa`` ``[B, N, K]`` — the fan's control sequences.
+    ``sel_p`` ``[B, N]`` — the selector's softmax, so the term is *"at
+    selection level"* (``V6_TRAINING_MEASURES.md:68``'s gate row) and is
+    differentiable into the scorer. ``None`` = uniform over the fan, the
+    no-selector control arm.
+    ``pairs`` ``[P, 2]`` long — row indices ``(i, j)`` where window ``j``
+    starts ``lag`` operative steps after window ``i`` IN THE SAME EPISODE.
+    ``lag`` — that offset in steps (``cfg.stride_tac`` = 5 = 0.5 s by default).
+
+    The two plans are compared where they describe THE SAME ABSOLUTE INSTANTS:
+    ``plan_i[lag:]`` against ``plan_j[:K-lag]``.
+
+    ⛔ THIS TERM IS DEGENERATE ALONE, and the guard is in the caller, not in a
+    comment: a CONSTANT control plan satisfies it EXACTLY (loss 0), so
+    minimising it without a plan objective in force optimises toward a model
+    that ignores the road. :func:`v6_loss_step` refuses ``w_t5_consist > 0``
+    with ``lambda_plan == 0``, and
+    ``tests/test_v6_t5_consistency.py::test_a_flat_plan_scores_exactly_zero``
+    pins the degeneracy so the guard can never be quietly dropped as paranoia.
+    """
+    if a_ctl.ndim != 3 or kappa.shape != a_ctl.shape:
+        raise ValueError(f"a_ctl and kappa must both be [B, N, K]; got "
+                         f"{tuple(a_ctl.shape)} and {tuple(kappa.shape)}")
+    k = a_ctl.shape[-1]
+    if not (1 <= lag < k):
+        raise ValueError(f"lag must satisfy 1 <= lag < K={k}, got {lag} — a "
+                         f"lag at or beyond the horizon leaves NO overlapping "
+                         f"instants and the term would silently be empty")
+    if pairs.ndim != 2 or pairs.shape[-1] != 2:
+        raise ValueError(f"pairs must be [P, 2], got {tuple(pairs.shape)}")
+    if pairs.shape[0] == 0:
+        raise ValueError("pairs is EMPTY — w_t5_consist > 0 with no "
+                         "consecutive-window pairs is a term that trains "
+                         "nothing; launch with --t5-pairs or set the weight 0")
+    if sel_p is None:
+        sel_p = a_ctl.new_full(a_ctl.shape[:2], 1.0 / a_ctl.shape[1])
+    p = sel_p.unsqueeze(-1)                                   # [B, N, 1]
+    a_bar = (p * a_ctl.float()).sum(dim=1)                    # [B, K]
+    k_bar = (p * kappa.float()).sum(dim=1)                    # [B, K]
+    i, j = pairs[:, 0], pairs[:, 1]
+    da = (a_bar[i][:, lag:] - a_bar[j][:, :k - lag]).abs()
+    dk = (k_bar[i][:, lag:] - k_bar[j][:, :k - lag]).abs()
+    l_a, l_k = da.mean(), dk.mean()
+    loss = l_a + w_kappa * l_k
+    log = {"t5_loss": float(loss.detach()),
+           # the two families the gate row names, reported SEPARATELY (a pooled
+           # number cannot show which axis moved)
+           "t5_accel_jump_mae": float(l_a.detach()),
+           "t5_curvature_mae": float(l_k.detach()),
+           "t5_n_pairs": int(pairs.shape[0]), "t5_lag": int(lag),
+           "t5_overlap_steps": int(k - lag)}
+    if v0 is not None:
+        # LATERAL family asks for YAW-RATE too: yaw_rate = v * kappa.
+        with torch.no_grad():
+            vv = v0.float()[i][:, None]
+            log["t5_yawrate_mae"] = float(
+                (vv * (k_bar[i][:, lag:] - k_bar[j][:, :k - lag])).abs().mean())
+    return loss, log
+
+
+def t5_plan_switch_rate(a_lat_logits: Tensor, a_lon_logits: Tensor,
+                        pairs: Tensor) -> dict:
+    """The *"plan-switch rate reported"* half of T5's gate row.
+
+    The direct successor of ``TEMPORAL_STABILITY_RESULT.md``'s **manoeuvre
+    toggle rate 0.1759 / mean dwell 5.5336 windows (0.55 s)** — measured there
+    on flagship v1's MIXED 5-way head, reported here per AXIS because the
+    factored LAT x LON pair is what replaced it.
+    """
+    with torch.no_grad():
+        i, j = pairs[:, 0], pairs[:, 1]
+        lat = a_lat_logits.argmax(dim=-1)
+        lon = a_lon_logits.argmax(dim=-1)
+        s_lat = (lat[i] != lat[j]).float().mean()
+        s_lon = (lon[i] != lon[j]).float().mean()
+        both = ((lat[i] != lat[j]) | (lon[i] != lon[j])).float().mean()
+    return {"t5_switch_rate_lat": float(s_lat),
+            "t5_switch_rate_lon": float(s_lon),
+            "t5_switch_rate_any": float(both),
+            "t5_switch_n_pairs": int(pairs.shape[0])}
+
+
+# ============================================================================
 # the per-batch loss assembly
 # ============================================================================
 
@@ -1330,7 +1682,10 @@ def v6_loss_step(stack: V6Stack, batch: dict, *, stage: str,
                  sigreg_generator: torch.Generator | None = None,
                  rollout_grad_checkpoint: bool | None = None,
                  anchor_objective: str = "metric",
-                 anchor_axis_w: tuple[float, float] = ANCHOR_AXIS_W_DEFAULT
+                 anchor_axis_w: tuple[float, float] = ANCHOR_AXIS_W_DEFAULT,
+                 t2_positive: str = "photometric",
+                 t2_negative: str = "lane_mirror",
+                 t5_w_kappa: float = 1.0
                  ) -> dict:
     """One batch of the v6 staged objective.
 
@@ -1351,6 +1706,12 @@ def v6_loss_step(stack: V6Stack, batch: dict, *, stage: str,
       ``g_str_valid`` / ``a_str_valid``   [B] bool — OPTIONAL per-family
                           abstention masks; absent = the incumbent behaviour
                           (both families follow ``s2_valid``)
+      ``t5_pairs``        [P, 2] long — row indices ``(i, j)`` where window
+                          ``j`` starts ``t5_lag`` operative steps after window
+                          ``i`` IN THE SAME EPISODE. REQUIRED iff
+                          ``w_t5_consist`` is in force, ignored otherwise
+      ``t5_lag``          int — that offset; absent defaults to
+                          ``cfg.stride_tac``
 
     Returns ``{"loss": Tensor, **components, "log": dict}``. Terms whose weight
     is 0 for this stage are SKIPPED, not multiplied by zero — a skipped term
@@ -1518,6 +1879,17 @@ def v6_loss_step(stack: V6Stack, batch: dict, *, stage: str,
         terms["t1"] = w.t1_latent * lt
         log["t1_latent"] = float(lt.detach())
 
+    # ---- T2: manoeuvre contrastives (w_t2_contrast, default 0.0 == absent) --
+    # NOT nested under t1: the contrastive term shapes `z_tac` itself and is
+    # attributable on its own, exactly as `w_anchor` is not nested under
+    # `lambda_plan`.
+    if w.w_t2_contrast:
+        lt2, lg2 = t2_contrastive_loss(
+            stack, out["z_tac"], batch["frames"], batch["actions2"],
+            positive=t2_positive, negative=t2_negative, generator=generator)
+        terms["t2"] = w.w_t2_contrast * lt2
+        log |= lg2
+
     # ---- S1: long-horizon strategic latent prediction -----------------------
     if w.s1_latent:
         tgt = batch.get("z_str_next_target", out["z_str_target"])
@@ -1616,6 +1988,43 @@ def v6_loss_step(stack: V6Stack, batch: dict, *, stage: str,
             objective=anchor_objective, axis_w=anchor_axis_w)
         terms["anchor"] = w.w_anchor * la
         log |= lga
+
+    # ---- T5: temporal consistency (w_t5_consist, default 0.0 == absent) -----
+    # ⛔ THE DEGENERACY GUARD IS HERE, NOT IN A DOCSTRING. A constant control
+    # plan scores EXACTLY 0 on this term (pinned in tests), so on its own it
+    # optimises toward a model that ignores the road. It is admissible only
+    # alongside a plan objective that makes a flat plan expensive.
+    if w.w_t5_consist and not w.lambda_plan:
+        raise ValueError(
+            f"w_t5_consist={w.w_t5_consist} with lambda_plan=0: the T5 "
+            f"temporal-consistency term is DEGENERATE ALONE — a constant "
+            f"control plan satisfies it exactly (loss 0), so minimising it "
+            f"without a plan objective in force trains the fan toward a flat "
+            f"plan. Launch with --lambda-plan > 0, or set --w-t5-consist 0.")
+    if w.w_t5_consist:
+        pairs = batch.get("t5_pairs")
+        if pairs is None:
+            raise ValueError(
+                "w_t5_consist > 0 needs batch['t5_pairs'] [P, 2] — the row "
+                "indices of CONSECUTIVE-WINDOW pairs. The default sampler "
+                "draws windows independently (DIAGRAM_CONFORMANCE.md:58), so "
+                "without --t5-pairs there are no consecutive windows in the "
+                "batch and a cross-window consistency term would be comparing "
+                "unrelated episodes. Launch with --t5-pairs.")
+        lag = int(batch.get("t5_lag", cfg.stride_tac))
+        plan = out["plan"]
+        sel_p = (plan["sel_score"].float().softmax(dim=-1)
+                 if "sel_score" in plan else None)
+        lt5, lg5 = t5_consistency_loss(
+            plan["a"], plan["kappa"], sel_p, pairs, lag,
+            w_kappa=t5_w_kappa, v0=batch["v0"])
+        terms["t5"] = w.w_t5_consist * lt5
+        log |= lg5
+        log["t5_selection_level"] = sel_p is not None
+        # the gate row's *"plan-switch rate reported"* half
+        if out.get("a_lat") is not None and out.get("a_lon") is not None:
+            log |= t5_plan_switch_rate(
+                out["a_lat"]["logits"], out["a_lon"]["logits"], pairs)
 
     # ---- S2: strategic goal supervision (w_s2_goal, default 0.0 == absent) --
     # In force only where for_stage keeps it (S-S / S-J — the stages that
@@ -2189,6 +2598,14 @@ def build_stack_from_args(a) -> V6Stack:
         # F-1: the g_str->P_T port. Default False = the incumbent build,
         # byte-identical; the chain's S-T command surface turns it on.
         tac_goal_cond=bool(getattr(a, "tac_goal_cond", False)),
+        # F-7 / T2: the manoeuvre-contrastive projector. Default False = the
+        # incumbent build, 87,893,449 params / 405 keys (MEASURED); ON adds
+        # +164,225 params / +5 keys at the default d_tac (also MEASURED, in
+        # tests/test_v6_t2_contrastive.py — never estimated).
+        t2_contrastive=bool(getattr(a, "t2_contrastive", False)),
+        d_t2_proj=int(getattr(a, "d_t2_proj", 128)),
+        d_t2_hidden=int(getattr(a, "d_t2_hidden", 256)),
+        t2_tau=float(getattr(a, "t2_tau", 0.1)),
         anchor_goal=getattr(a, "anchor_goal", "none"),
         n_anchors=int(getattr(a, "n_anchors", 256)),
         n_lat_bins=int(getattr(a, "n_lat_bins", 16)),
@@ -2457,7 +2874,10 @@ def dry_run(a, stack: V6Stack | None = None) -> dict:
                          anchor_objective=getattr(a, "anchor_objective",
                                                   "metric"),
                          anchor_axis_w=tuple(getattr(
-                             a, "anchor_axis_w", ANCHOR_AXIS_W_DEFAULT)))
+                             a, "anchor_axis_w", ANCHOR_AXIS_W_DEFAULT)),
+                         t2_positive=getattr(a, "t2_positive", "photometric"),
+                         t2_negative=getattr(a, "t2_negative", "lane_mirror"),
+                         t5_w_kappa=float(getattr(a, "t5_w_kappa", 1.0)))
         if opt is not None:
             opt.zero_grad(set_to_none=True)
             L["loss"].backward()
@@ -2521,6 +2941,8 @@ def _weights_from_args(a) -> V6LossWeights:
         o6_sigreg=a.w_o6, t1_latent=a.w_t1, s1_latent=a.w_s1,
         w_select=a.w_select, w_anchor=float(getattr(a, "w_anchor", 0.0)),
         w_s2_goal=float(getattr(a, "w_s2_goal", 0.0)),
+        w_t2_contrast=float(getattr(a, "w_t2_contrast", 0.0)),
+        w_t5_consist=float(getattr(a, "w_t5_consist", 0.0)),
         lambda_plan=resolve_lambda_plan(a))
 
 
@@ -2798,6 +3220,42 @@ def train(a) -> dict:
         sample = make_sampler(ds_train, a.eps_per_batch, rng)
         o4log = {"o4_alpha": 0.0, "_note": "uniform sampling (O4 control arm)"}
 
+    # ---- F-8 / T5: the CONSECUTIVE-WINDOW PAIR index -----------------------
+    # DIAGRAM_CONFORMANCE.md:58 — *"Needs consecutive-window batches (the
+    # current sampler draws windows independently)"*. This is that change, and
+    # it is OPT-IN: with --t5-pairs off, NOTHING below runs, the sampler object
+    # is untouched and the RNG stream `gen` is consumed exactly as before —
+    # which matters because `gen` is SHARED with sample_random_deltas and
+    # v6_loss_step, so any extra draw would move every other term bit-for-bit.
+    # Precedent: train_tactical_stage0.py:685-694 builds the same partner map.
+    # ⛔ PARITY IS UNTOUCHED: this re-selects no EPISODE. It pairs windows
+    # WITHIN episodes the parity key already chose, and the tail windows it
+    # excludes are excluded from the ANCHOR draw only — every window remains
+    # reachable as a partner.
+    t5_partner: dict[int, int] = {}
+    t5_lag_steps = int(a.t5_lag) or int(stack.cfg.stride_tac)
+    if a.t5_pairs:
+        pos = {et: i for i, et in enumerate(ds_train.index)}
+        t5_partner = {i: pos[(e, t + t5_lag_steps)]
+                      for i, (e, t) in enumerate(ds_train.index)
+                      if (e, t + t5_lag_steps) in pos}
+        if not t5_partner:
+            raise SystemExit(
+                f"[v6] ⛔ --t5-pairs found NO window with a +{t5_lag_steps}"
+                f"-step same-episode partner over {len(ds_train.index)} "
+                f"windows. A pair loss with no pairs trains nothing.")
+        if a.o4_alpha:
+            # zero the O4 weight of unpartnered (tail) windows so the anchor
+            # draw cannot pick one. Least-invasive form: it leaves
+            # InteractionSampler.__call__ (a SHARED module) untouched.
+            keep = torch.zeros(len(ds_train.index), dtype=torch.bool)
+            keep[list(t5_partner)] = True
+            sample.weights = sample.weights * keep.to(sample.weights.dtype)
+        print(f"[v6] T5 pairs: {len(t5_partner)}/{len(ds_train.index)} windows "
+              f"have a +{t5_lag_steps}-step partner "
+              f"({len(ds_train.index) - len(t5_partner)} tail windows excluded "
+              f"from the ANCHOR draw only)", flush=True)
+
     trainable = [p for p in stack.parameters() if p.requires_grad]
     if not trainable:
         raise SystemExit(f"[v6] ⛔ stage {a.stage} has NO trainable parameters "
@@ -2869,10 +3327,46 @@ def train(a) -> dict:
     o6_trend_base: list[float] = []
     o6_trend_cur: deque = deque(maxlen=X4_TREND_CURRENT_STEPS)
     t0 = time.time()
+    # ⛔ C112: ``step_s`` (below) is a CUMULATIVE MEAN since process start, and a
+    # +5 % abort criterion built on it is STRUCTURALLY UNABLE TO FIRE — at the
+    # 27.7 s/step trip point the mean NEVER reaches 28.0 at any duration, and
+    # even a catastrophic 40 s/step needs 9 hours. These two carry the MARGINAL
+    # rate since the previous logged row, which is the quantity a monitor needs.
+    # ADDITIVE ONLY: ``step_s`` keeps its exact meaning and value (banked logs
+    # and the ~5.3-day ETA arithmetic depend on it).
+    last_log_t = t0
+    last_log_step = start_step
     steps_g = tuple(range(1, a.o1_k + 1))
     dev_type = "cuda" if device == "cuda" else "cpu"
     for step in range(start_step + 1, a.steps + 1):
-        idx = sample(a.batch)
+        if t5_partner:
+            # HALF the batch is anchors, half their +lag partners, so total
+            # compute and --batch are unchanged; what halves is the number of
+            # INDEPENDENT anchors, which is the honest cost of a pair loss.
+            # ⚠️ THE O4 MASK IS NOT SUFFICIENT ON ITS OWN. `InteractionSampler.
+            # __call__` falls back to UNIFORM weights when an episode's weights
+            # sum to zero (v6.py: `if float(w.sum()) <= 0: w = ones_like(w)`),
+            # so an episode ALL of whose windows are unpartnered (any episode
+            # with <= t5_lag windows) can still yield an unpartnered anchor —
+            # which would be a bare KeyError deep in the step loop. Filter with
+            # a BOUNDED retry, then refuse BY NAME.
+            need = a.batch // 2
+            anchors: list[int] = []
+            for _ in range(8):
+                if len(anchors) >= need:
+                    break
+                anchors += [i for i in sample(need) if i in t5_partner]
+            if len(anchors) < need:
+                raise SystemExit(
+                    f"[v6] ⛔ --t5-pairs could not fill a batch: only "
+                    f"{len(anchors)}/{need} partnered anchors in 8 draws. "
+                    f"{len(t5_partner)}/{len(ds_train.index)} windows have a "
+                    f"+{t5_lag_steps}-step partner — the corpus is too short "
+                    f"for this lag.")
+            anchors = anchors[:need]
+            idx = list(anchors) + [t5_partner[i] for i in anchors]
+        else:
+            idx = sample(a.batch)
         b = _to_device(default_collate([ds_train[i] for i in idx]), device)
         aw2 = b["actions"][..., :2].float()
         fa2 = b["future_actions"][..., :2].float()
@@ -2896,6 +3390,15 @@ def train(a) -> dict:
             "frames": b["frames"], "actions2": aw2, "future_actions2": fa2,
             "v0": v0, "z_true_steps": z_true,
         }
+        if t5_partner:
+            # rows [0, n) are the anchors and rows [n, 2n) their +lag partners,
+            # by construction of `idx` above — so the pair index is the
+            # identity shift and needs no lookup.
+            n_pair = len(idx) // 2
+            batch["t5_pairs"] = torch.stack(
+                [torch.arange(n_pair, device=device),
+                 torch.arange(n_pair, 2 * n_pair, device=device)], dim=-1)
+            batch["t5_lag"] = t5_lag_steps
         if needs_ztrue:
             batch["gt_wp"] = gt_ego_waypoints(b["pose_last"].float(),
                                               b["future_poses"].float(),
@@ -2958,7 +3461,12 @@ def train(a) -> dict:
                              anchor_objective=getattr(a, "anchor_objective",
                                                       "metric"),
                              anchor_axis_w=tuple(getattr(
-                                 a, "anchor_axis_w", ANCHOR_AXIS_W_DEFAULT)))
+                                 a, "anchor_axis_w", ANCHOR_AXIS_W_DEFAULT)),
+                             t2_positive=getattr(a, "t2_positive",
+                                                 "photometric"),
+                             t2_negative=getattr(a, "t2_negative",
+                                                 "lane_mirror"),
+                             t5_w_kappa=float(getattr(a, "t5_w_kappa", 1.0)))
         opt.zero_grad(set_to_none=True)
         L["loss"].backward()
         gn = torch.nn.utils.clip_grad_norm_(trainable, a.clip)
@@ -3025,18 +3533,53 @@ def train(a) -> dict:
                                    o6_trend_base, list(o6_trend_cur))}
             fh.write(json.dumps(rec_s) + "\n")
         if step % a.log_every == 0:
+            # ONE clock read for both fields, so first-differencing `step_s`
+            # reconciles EXACTLY with `step_s_interval` instead of drifting by
+            # the microseconds between two `time.time()` calls.
+            now = time.time()
+            n_proc = step - start_step
+            d_step = step - last_log_step
             rec = L["log"] | {
                 "step": step, "gnorm": round(float(gn), 3),
                 "lr": sched.get_last_lr()[0],
                 # ⚠️ ALREADY DIVIDED by --log-every. The trap this avoids:
                 # trainer logs that accumulate step_s over the log interval and
                 # get read as a per-step time (the false "430 s/step" alarm).
-                "step_s": round((time.time() - t0)
-                                / max(step - start_step, 1), 4),
+                # ⛔ BUT IT IS A CUMULATIVE MEAN — see `step_s_interval` below.
+                # UNCHANGED ON PURPOSE: banked logs and the ETA arithmetic key
+                # off this field, so it is never redefined, only supplemented.
+                "step_s": round((now - t0) / max(n_proc, 1), 4),
                 "step_s_note": f"elapsed/step over the "
-                               f"{step - start_step} steps THIS process ran "
+                               f"{n_proc} steps THIS process ran "
                                f"(NOT accumulated over --log-every, and NOT "
-                               f"divided by the resumed step number)",
+                               f"divided by the resumed step number). ⛔ This "
+                               f"is a CUMULATIVE MEAN since process start and "
+                               f"CANNOT be used as a live monitor — it is "
+                               f"strictly converging, so it cannot rise to "
+                               f"meet a threshold. Use step_s_interval.",
+                # ⛔ THE MONITORABLE ONE (C112). Marginal s/step over just the
+                # last `d_step` steps. A +5 % check on THIS fires; the same
+                # check on `step_s` above cannot fire at any duration.
+                # ⚠️ The FIRST row of a process has no previous row, so its
+                # interval is measured from t0 and equals `step_s` — and it
+                # carries the warm-up. MEASURED on the live v6F log: the first
+                # ~900 steps after a resume run +3.229 % over steady state for
+                # 17 CONSECUTIVE logged rows, so a persistence rule does not
+                # exclude it and any guard tighter than +3.23 % fires on every
+                # resume. (Steady variation itself reaches +2.589 %, so +5 % is
+                # the defensible tolerance.) `steps_this_process` is what lets a
+                # reader detect the restart and exclude that window.
+                "step_s_interval": (round((now - last_log_t) / d_step, 4)
+                                    if d_step > 0 else None),
+                "step_s_interval_note": f"marginal elapsed/step over the last "
+                                        f"{d_step} steps only (this row minus "
+                                        f"the previous logged row). THIS is "
+                                        f"the live-monitor field; guard: "
+                                        f"stack/scripts/step_time_guard.py",
+                # First-class, so a reader never has to regex it out of the
+                # prose above. It RESETS on every process restart, which is
+                # exactly how a segment boundary is detected.
+                "steps_this_process": n_proc,
                 # ⛔ THE ONLY ADMISSIBLE MEMORY PROBE ON THE JETSON THOR.
                 # MEASURED 2026-08-03: on unified memory `mem_get_info` read
                 # 3.4 GB free with 60 GB allocated AND written, `free` /
@@ -3057,6 +3600,10 @@ def train(a) -> dict:
             fh.write(json.dumps(rec) + "\n")
             fh.flush()
             print(f"[{step}] {json.dumps(rec)}", flush=True)
+            # advance the interval window ONLY after a successful emission, so
+            # a skipped/failed row widens the next interval rather than
+            # silently losing the time it covered.
+            last_log_t, last_log_step = now, step
         if step % a.save_every == 0 or step == a.steps:
             # ⛔ X2 SEAM DUMP — DEFAULT-OFF, and the ONLY thing that banks the
             # 60-step plan. F-16's probe (taniteval/tools/seam_probe.py) is
@@ -3765,6 +4312,47 @@ def build_parser() -> argparse.ArgumentParser:
                     help="weight on the softade selection loss. 0.0 = the term "
                          "is absent. ⚠️ in METRES while the other terms are "
                          "not — a declared decision, never a default.")
+    # ---- F-7 / catalog T2 — MANOEUVRE CONTRASTIVES -------------------------
+    ap.add_argument("--t2-contrastive", action="store_true",
+                    help="build the T2 manoeuvre-contrastive projector on "
+                         "z_tac (+164,225 params / +5 keys at d_tac=512, "
+                         "MEASURED). Introduced in S-T; OFF = the incumbent "
+                         "build, 87,893,449/405.")
+    ap.add_argument("--d-t2-proj", type=int, default=128)
+    ap.add_argument("--d-t2-hidden", type=int, default=256)
+    ap.add_argument("--t2-tau", type=float, default=0.1,
+                    help="InfoNCE temperature at init (learnable thereafter)")
+    ap.add_argument("--w-t2-contrast", type=float, default=0.0,
+                    help="weight on the T2 contrastive loss. 0.0 = the term is "
+                         "absent. ⚠️ in NATS — not commensurate with "
+                         "--w-select/--w-anchor's metres.")
+    ap.add_argument("--t2-positive", default="photometric",
+                    choices=sorted(T2_MANOEUVRE_PRESERVING),
+                    help="the manoeuvre-PRESERVING view. ⚠️ DECLARED "
+                         "ASSUMPTION: the catalog names only the negatives and "
+                         "a contrastive loss needs a positive.")
+    ap.add_argument("--t2-negative", default="lane_mirror",
+                    choices=sorted(T2_MANOEUVRE_REVERSING),
+                    help="the manoeuvre-REVERSING HARD negative. ⚠️ "
+                         "'time_reverse' is NOT the catalog's manoeuvre "
+                         "reversal on this architecture — z_tac reads the LAST "
+                         "FRAME ONLY, so it is 'an earlier frame' and it "
+                         "OPPOSES T5. See v6.time_reverse_window.")
+    # ---- F-8 / catalog T5 — TEMPORAL CONSISTENCY ---------------------------
+    ap.add_argument("--w-t5-consist", type=float, default=0.0,
+                    help="weight on the T5 temporal-consistency loss. 0.0 = "
+                         "absent. ZERO new parameters. ⛔ REFUSED with "
+                         "--lambda-plan 0: a flat plan scores exactly 0.")
+    ap.add_argument("--t5-pairs", action="store_true",
+                    help="draw CONSECUTIVE-WINDOW pairs (the second half of "
+                         "each batch is the same episode's window --t5-lag "
+                         "steps later). Required by --w-t5-consist; the "
+                         "default sampler draws windows independently.")
+    ap.add_argument("--t5-lag", type=int, default=0,
+                    help="pair offset in OPERATIVE steps; 0 = cfg.stride_tac "
+                         "(5 = 0.5 s at the default clocks)")
+    ap.add_argument("--t5-w-kappa", type=float, default=1.0,
+                    help="relative weight of the curvature half vs accel")
     # ---- E-ENC arm (§0 Q1) -------------------------------------------------
     ap.add_argument("--f-hidden-tac", type=int, default=512,
                     help="FTac residual-MLP hidden width, tactical layer")
@@ -4052,6 +4640,53 @@ def preflight(a) -> list[str]:
         problems.append(
             f"--w-select {a.w_select} with --selector none: a selection loss "
             f"with no scorer is how a selector silently never trains.")
+    # ---- F-7 / T2 -----------------------------------------------------------
+    _wt2 = float(getattr(a, "w_t2_contrast", 0.0))
+    if _wt2 and not getattr(a, "t2_contrastive", False):
+        problems.append(
+            f"--w-t2-contrast {_wt2} without --t2-contrastive: a contrastive "
+            f"loss with no projector is how a T2 term silently never trains.")
+    if _wt2 and a.stage in ("S-W", "S-S"):
+        problems.append(
+            f"--w-t2-contrast {_wt2} in {a.stage}: `t2_head` is grouped "
+            f"`layer_tac`, which {a.stage} FREEZES, and "
+            f"`V6LossWeights.for_stage({a.stage!r})` zeroes the weight — the "
+            f"launch line would advertise a term that trains nothing. T2 is an "
+            f"S-T (or S-J) measure.")
+    # ⚠️ the namespace attribute is `per_layer_encoders` (the E-ENC arm (b)
+    # flag); `shared_encoder` is the CONFIG field, derived at
+    # build_stack_from_args as `not a.per_layer_encoders`. Reading the config
+    # name off the namespace AttributeErrors at launch — caught by
+    # tests/test_v6_t5_consistency.py::
+    # test_preflight_refuses_T2_without_its_projector_and_in_the_wrong_stage.
+    if getattr(a, "t2_contrastive", False) \
+            and getattr(a, "per_layer_encoders", False):
+        problems.append(
+            "--t2-contrastive with the E-ENC arm (b) (--per-layer-encoders): "
+            "the augmentation produces only the SHARED window, so the "
+            "tactical layer's own frames would stay un-augmented and the "
+            "contrastive pair would be half-original — a confound, not an arm.")
+    # ---- F-8 / T5 -----------------------------------------------------------
+    _wt5 = float(getattr(a, "w_t5_consist", 0.0))
+    if _wt5 and not getattr(a, "t5_pairs", False):
+        problems.append(
+            f"--w-t5-consist {_wt5} without --t5-pairs: the default sampler "
+            f"draws windows INDEPENDENTLY (DIAGRAM_CONFORMANCE.md:58), so a "
+            f"cross-window consistency term would compare unrelated episodes.")
+    if _wt5 and not resolve_lambda_plan(a):
+        problems.append(
+            f"--w-t5-consist {_wt5} with lambda_plan 0: T5 is DEGENERATE "
+            f"ALONE — a constant control plan scores EXACTLY 0 (MEASURED: the "
+            f"emission is zero at init, so the term starts at its global "
+            f"minimum). It needs a plan objective that makes a flat plan "
+            f"expensive.")
+    if _wt5 and a.stage in ("S-W", "S-S"):
+        problems.append(
+            f"--w-t5-consist {_wt5} in {a.stage}: `for_stage({a.stage!r})` "
+            f"zeroes both it and lambda_plan — T5 is an S-T (or S-J) measure.")
+    _t5lag = int(getattr(a, "t5_lag", 0))
+    if _t5lag < 0:
+        problems.append(f"--t5-lag {_t5lag} must be >= 0 (0 = stride_tac)")
     # ⛔ THE ACK FLAG'S DEST. ``--i-know-this-is-the-control-arm`` is registered
     # in ``main`` with ``dest="control_arm_ack"``, so the namespace NEVER has an
     # attribute named ``i_know_this_is_the_control_arm`` — the original getattr
