@@ -1,10 +1,17 @@
 # KNOWLEDGE_BASE — Project Steering
 
-> ⛔ **MERGED 2026-08-18.** The seven per-area knowledge bases are now ONE:
-> **[`TanitAD Research Hub/KNOWLEDGE_BASE.md`](../../KNOWLEDGE_BASE.md)**.
+> **Curated, deduplicated, newest first.** Format:
+> `- [YYYY-MM-DD] [source] finding (1-3 lines) — impact: H_x / WP_y — link`
 >
-> Entries from this file are there, tagged `[Project Steering]`. Add new findings to the
-> consolidated file — anything written here will not be read.
+> This is the **Project Steering** agent's findings log. The router across all areas is
+> [`../../KNOWLEDGE_BASE.md`](../../KNOWLEDGE_BASE.md).
 >
-> Primary sources live in [`../../Library/`](../../Library/LIBRARY.md); bank them with
-> `python tools/kb_add.py <arxiv-id> --tag <topic> --cited-by <report>`.
+> ⛔ **Three layers, and they are not interchangeable.**
+> **PAPER** (`Paper/TANITAD_PAPER.md`) = the scientific account of the frontier work — derivations,
+> argument, results in narrative form.
+> **KNOWLEDGE_BASE** (this file) = what we learned, written for an agent about to make a decision.
+> **LIBRARY** (`../../Library/`) = the evidence. Every `[PUBLISHED]` entry cites a **library key**,
+> not only a URL — bank it with `python tools/kb_add.py <arxiv-id> --tag <topic> --cited-by <report>`.
+
+- [2026-07-05] [kickoff] Initial research baseline for all hypotheses established; discipline agenda
+  seeds defined — impact: all — see `../../INITIAL_RESEARCH_SYNTHESIS.md`

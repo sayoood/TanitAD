@@ -1,10 +1,18 @@
 # KNOWLEDGE_BASE — Production & Optimization
 
-> ⛔ **MERGED 2026-08-18.** The seven per-area knowledge bases are now ONE:
-> **[`TanitAD Research Hub/KNOWLEDGE_BASE.md`](../../KNOWLEDGE_BASE.md)**.
+> **Curated, deduplicated, newest first.** Format:
+> `- [YYYY-MM-DD] [source] finding (1-3 lines) — impact: H_x / WP_y — link`
 >
-> Entries from this file are there, tagged `[Production & Optimization]`. Add new findings to the
-> consolidated file — anything written here will not be read.
+> This is the **Production & Optimization** agent's findings log. The router across all areas is
+> [`../../KNOWLEDGE_BASE.md`](../../KNOWLEDGE_BASE.md).
 >
-> Primary sources live in [`../../Library/`](../../Library/LIBRARY.md); bank them with
-> `python tools/kb_add.py <arxiv-id> --tag <topic> --cited-by <report>`.
+> ⛔ **Three layers, and they are not interchangeable.**
+> **PAPER** (`Paper/TANITAD_PAPER.md`) = the scientific account of the frontier work — derivations,
+> argument, results in narrative form.
+> **KNOWLEDGE_BASE** (this file) = what we learned, written for an agent about to make a decision.
+> **LIBRARY** (`../../Library/`) = the evidence. Every `[PUBLISHED]` entry cites a **library key**,
+> not only a URL — bank it with `python tools/kb_add.py <arxiv-id> --tag <topic> --cited-by <report>`.
+
+⚠️ **This area carried no entries through the 2026-08-18 restructure.** That is an emptiness to be
+filled, not a statement that nothing was learned here — deployment, latency and quantisation
+findings have been living inside other areas' reports. File them here.
