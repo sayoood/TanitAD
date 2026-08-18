@@ -5768,3 +5768,82 @@ first unavoidable.**
 
 ⚠️ **It does NOT replace reading `git diff --cached --name-only` first.** When foreign work genuinely
 belongs in a commit, take it and **name it** — a recorded sweep is recoverable, a silent one is not.
+
+---
+
+## C107 — AT THREE SEEDS THE LADDER'S SUBSTANTIVE COUNT IS **ZERO**, ON BOTH ROUTES (2026-08-18)
+
+**RETRACTED:** C100's one substantive survivor. `ll_s09000 lead_gap` (K1B +0.748 [+0.002, +1.624])
+is **SEED-UNSTABLE** — buckets `survive_both / die_at_repair / die_at_repair`, K1B **+0.748 /
+−0.022 / +0.145**, alpha **1e3 / 1e7 / 1e5**. **It separates on one seed of three.**
+
+**Reproduction gate PASS — 3465/3465 fields identical** to the banked route-A seed-0 rows, so this
+is an *extension* of C100's run, not a different one.
+
+| of the 87 banked separated-FAILs | route A | route B |
+|---|---|---|
+| dead on all three seeds | **58** | **58** |
+| flip to PASS (the positive controls, unanimous) | 11 | 11 |
+| survive all 3 seeds — **all `ego_yawrate`**, `\|K1B\|/gt_sd` ≤ 0.013, **one on a random-latent null** | 9 | 9 |
+| survive on some seeds but not all | 9 | 9 |
+| ⭐ **SUBSTANTIVE** | **0** | **0** |
+
+⇒ **C100's DIRECTION is confirmed and its exception is gone.** 22 rows are SEED-UNSTABLE (23 on
+route B). **The two routes return the same inventory.**
+
+### ⭐ The mechanism, now measured on all 165 rows instead of 4 arms
+
+The **defective** instrument picks the same alpha on all 3 seeds for **132 of 165** rows; the
+**repaired** one for **42** — a **3.1× drop in seed-stability CAUSED BY A REPAIR**, confirming
+C103's account at scale.
+⚠️ **And the agent published the counter-column rather than only the supporting one:** max K1 seed
+spread is *larger* on the **incumbent** (4.239 vs 2.812). ⇒ The honest claim is **"the repair unfroze
+the majority"**, not *"the incumbent had no variance"*. *That distinction is the difference between a
+finding and a slogan.*
+
+### ⚠️ MY OWN C103 ROUTE REASSURANCE WAS ALSO A ONE-SEED CLAIM
+
+I wrote in C103: *"44 paired rows, 2 alpha choices differ, **0 verdicts differ**."* At **3 seeds over
+176 rows**: **2 verdicts and 11 guard verdicts differ**, and max `|ΔK1|` grows **0.396 → 0.721**.
+Neither verdict difference is a PASS↔FAIL flip (both are stable-vs-unstable), and both routes still
+return the same inventory — **but the reassurance did not inherit.**
+⇒ **C103's own root-cause class, applied to C103: a stability claim measured at one seed is not
+inherited by the multi-seed result.** I logged the rule and then quoted a single-seed reassurance
+inside the same entry.
+
+### ⭐ A MISSING CONTROL WHOSE ABSENCE WAS INVISIBLE
+
+The re-read's only `C-V0` sat on the **cells** cache ⇒ **33 of the 165 rows — every tokens-window
+arm — had NO trivial-proxy control at all.** Nothing reported a gap; the column simply was not there.
+Added `proxytok`. Result: of **154 paired rows the ego-speed SCALAR matches or beats the latent on
+120**; on the signal-bearing rungs, **13–14 of 14**.
+⛔ **The v6 latent's only 3-seed-stable guarded PASSes are `n_agents_all` at four checkpoints — the
+scalar wins ALL FOUR, and seed 0 is the outlier on every one.**
+⇒ **RULE: a control must be enumerated PER ARM, not per study.** "We ran the trivial-proxy control"
+was true and covered 80 % of the rows.
+
+### ⚠️ A VERIFICATION THAT FALSELY PASSED — and the rule it earns
+
+The agent's first staging check **word-split space-containing paths into 360 fragments and compared
+empty-to-empty**, reporting *"360 files, 0 mismatches"*. Redone with `-z`: **72 files, 0 mismatches.**
+⇒ ⭐ **"A CHECK THAT CANNOT FAIL IS NOT A CHECK."** This repo's paths contain spaces
+(`TanitAD Research Hub`), so any unquoted/word-split verification degenerates to a tautology that
+reports success. **Same family as the pooling story and the fixture-shaped test: a green result whose
+green means nothing.**
+
+### ⚠️ TWO OPERATIONAL FACTS WORTH KEEPING
+
+⛔ **NEVER GATE ON A SUITE WHILE A MULTI-PROCESS CPU JOB IS LIVE.** A `taniteval` run concurrent with
+the ladder chains returned **22 spurious FAILs** (subprocess timeouts under CPU contention); run
+alone, the same files pass **34/34**. *A red suite caused by your own concurrency looks exactly like
+a regression.*
+⚠️ **The alpha grid is still binding** — the chosen alpha sits at a grid **edge** on **78 / 94 / 82
+of 176** rows. Until the grid is widened, no ridge result here has a bracketed optimum.
+
+### ⏳ Still stale, and the replacements have MOVED AGAIN
+
+`POOLING_BOTTLENECK_R1R2.md` §1.5 (lines 111–119) and `2026-08-17-O234-DESIGN-RESEARCH.md` §3.4a
+(line 427) + E-PROBE-A (line 1015) must be re-quoted from the **3-seed** column:
+`n_agents_all` **0.076 → 0.1613**, `lead_closing` **0.0000 → 0.0009**, `r_pv0` **+0.052 → −0.107**.
+*(The citation-sweep hazard from C103, one iteration on: the numbers moved again before the sweep
+was done.)*
