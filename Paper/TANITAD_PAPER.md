@@ -1,6 +1,6 @@
 # TanitAD: A Data-Efficient, Hierarchically-Imagining, Self-Supervised Driving Stack with Built-In Self-Knowledge
 
-**Status:** living paper, **v1.0 (2026-08-12)**. Maintained per D-020: every gate evaluation appends
+**Status:** living paper, **v1.1 (2026-08-18)**. Maintained per D-020: every gate evaluation appends
 results; every accepted decision that changes the method updates §3–§5. Source of truth is this
 Markdown; LaTeX export is a release step. Honesty rule (P8): no number appears here without its
 instrument rows in the referenced experiment record. *(Version note: the status line was left at
@@ -13,7 +13,13 @@ P8 attempt-2 and I4a — with their mathematics (§3.10–§3.13), the tier and 
 promoted to named methodological sections (§5.4–§5.5), and the v6 future-work ladder with its
 open, costed decisions (§10). It is v1.0 rather than v0.10 because it is the first version in
 which a hypothesis this paper itself carried is **retracted by our own measurement** in the
-paper's own voice, §7.17.)*
+paper's own voice, §7.17. **v1.1 (2026-08-18)** adds §7.19 — a round of four negatives and one
+contamination, all zero-training — with the five instrument rules they earned (§5.8), a re-audit of
+every gate bar this paper carries (§9.4), and a roadmap re-ordered by the evidence rather than by
+preference (§10). It is v1.1 rather than v1.0.1 because the *direction of the programme's next
+experiments changes*: the pooling account of the missing lead variable is refuted, the encoder is
+indicted in its place, and a pre-registered future-work item — LF0 — is retired as **already
+executed and negative**.)*
 
 **Authors:** Sayed Bouzouraa; TanitAD autonomous research system.
 
@@ -149,6 +155,38 @@ so the planner reads imagination as content, not as a bias term. Together with t
 which is why the shipped assembly is the frozen-trunk one at 0.4815 m [0.3928, 0.5771]), these
 define the programme's next generation as a **staged** ladder in which every consumer is trained
 on the trunk it consumes (§10).
+*Seventh-round update (v1.1, 2026-08-18):* a round of **four negative results and one contamination**,
+produced with **zero training** by re-reading banked artifacts, and reported here because each is a
+sharpened negative with the controls that make it admissible — not because the programme collapsed.
+**(1) The 40:1 pooling bottleneck, this paper's standing architectural explanation for the missing
+lead-distance variable, is REFUTED.** Running the identical linear readout at four pooling ratios that
+differ in nothing but the kernel, removing the pool entirely moves r² by **|Δ| ≤ 0.0002 with the CI
+containing zero on all five seeds** on the four rungs the hypothesis was built to explain. Through the
+**same** deployed pool on the **same** frames, a frozen `facebook/dinov2-base` — **86 M parameters
+against our encoder's 87.3 M, so not a capacity gap** — reads `lead_gap` at r² **0.44997** where ours
+reads **0.00496**. ⇒ **the information is in our images and survives the pool; the encoder and its
+objective are the constraint**, which relocates the next experiments from routing to representation
+(§7.19a). **(2) Our trained encoder reads ego speed worse than its own random initialisation**
+(paired episode-cluster bootstrap Δr²c **+0.150 [+0.055, +0.226]**, positive in 27/27 seed cells), but
+the same adversarial re-read kills the companion claim on `lead_gap` (**0/27 cells separated**, sign
+flipping in 9/27) and **withdraws the ratio** that had been quoted for both: our trained arm is **not
+CI-separated from its own matched-random null**, and a ratio whose denominator is not separated from
+noise is not interpretable. The admissible claim is **signal vs no-signal on one rung** (§7.19b).
+**(3) At the primary tier the CEM planner is 35.8 % WORSE than constant velocity** — paired
+**+0.2585 m [+0.0869, +0.4309]**, CI-separated, T1 — **and it loses on LONGITUDINAL, the family its
+cost function is aimed at** (along-track RMSE@2 s 1.9062 vs 1.6705 m; speed bias +0.2737 vs
+−0.0995 m/s), while the operative rollout under *true* actions **beats** CV by −0.3151 m ⇒ **the loss
+is in the action search, not in the world model** (§7.19c). **(4)** Re-run at three seeds with a
+repaired ridge and a degeneracy guard, the frozen-latent readout ladder's **substantive count is zero
+on both repair routes**, and the mechanism is generalisable: the repair itself **unfroze** the α sweep,
+so a stability claim measured under a defect does not transfer to the repaired instrument (§7.19d).
+**(5)** **201 of the 4,729 Alpamayo augmentation clips are already inside the parity training corpus**,
+making any evaluation split built on it **4.3 % contaminated** — the same class as the ~80 % REF-A
+I-JEPA leak, at smaller scale, and found the same way it should have been prevented: by computing ids
+rather than assuming disjointness from provenance (§7.19e). Two of these corrections reach into our
+**own controls** — a positive control that was inert at the deployed operating point, and a
+trivial-proxy control that silently covered only 80 % of its rows — and they are stated as method in
+§5.8 alongside the rules they earned.
 
 ---
 
@@ -623,7 +661,9 @@ Three consequences we have had to enforce in practice. **(i)** The auxiliary lea
 proposed when P1 found no lead-distance variable was inadmissible under (L1) and was retracted
 the day it was proposed; the replacement is the label-free lever program LF0–LF4, which shapes
 the *objective* (masking, sampling, near-field weighting) rather than adding a target (§7.14,
-`JEPA_PHYSICS_SURVEY.md`). **(ii)** The P8 occupancy decoder trains on label rasters and is
+`JEPA_PHYSICS_SURVEY.md`). ⚠️ **Status 2026-08-18: LF0, the locate-first diagnostic, has been
+executed and returned negative — the defect is not routing (§7.19a) — so the remaining levers are
+tests of the objective, which is exactly where the admissibility algebra always confined them.** **(ii)** The P8 occupancy decoder trains on label rasters and is
 admissible **only** because the trunk's md5 is proved identical before and after (§7.18) — the
 freeze is the admissibility certificate, not a courtesy. **(iii)** Under (L2), the deployable
 scenario classifier is the image-only arm, even though the ego-conditioned arm scores better —
@@ -1057,6 +1097,55 @@ the band metric alongside the departure rate. **A third, data-side:** the valida
 set**; the evaluation harness now **refuses it in code** rather than documenting the hazard, and points
 the caller at the clean 40-episode split. Instrument rule I7 (task-identity fingerprints) is thereby
 extended from *corpus identity* to *train/eval disjointness*, enforced mechanically.
+
+### 5.8 Five instrument rules the negative round added (added v1.1)
+
+**Each was earned by one of our own claims failing, and each generalizes past the experiment that
+produced it.** They are stated as method because four of the five would have changed a published
+number had they been running earlier — and because, taken together, they are what makes §7.19's
+negatives admissible rather than merely convenient.
+
+- **I11 — an architectural bottleneck claim is not established until the bottleneck is REMOVED and
+  the metric moves. Ablate the mechanism; do not narrate it.** *"40 tokens averaged per cell, 64 × 160
+  px per cell, a 37.8 px median vehicle"* is a compelling story built from an architectural diagram
+  and an arithmetic coincidence, and it is **wrong** (§7.19a). ⚠️ **Two independent methods appearing
+  to agree did not save it:** a rung profile *consistent with* the mechanism was cited as
+  confirmation, but consistency is not evidence when the same profile is equally consistent with a
+  weak encoder. The ablation costs a kernel change; the narrative cost a design programme.
+- **I12 — whenever an arm is compared to a foreign model, also compare it to ITSELF AT
+  INITIALISATION.** The DINOv2 comparison differed from ours in pretraining, architecture, input
+  format and token width; the missing control was the cheapest one in the building. It costs one
+  forward pass, it is width- and format-matched **by construction**, and it is the **only** control
+  that can detect a training objective making a representation *worse* — because an external model
+  being better is equally consistent with ours merely being weaker (§7.19b).
+- **I13 — label every bracket with its estimator, and never quote a ratio whose denominator is not
+  separated from its null.** Two distinct errors, one rule. A **seed-to-seed spread** — a min–max
+  range over three initialisation seeds, each itself already a mean over three projection seeds — was
+  published in bracket notation where an episode-cluster bootstrap was implied. **A dispersion is not
+  a confidence interval**: one describes how the *instrument* wobbles, the other how the *estimate*
+  would move on resampled episodes, and the decision-grade one had simply never been computed. *(It
+  was computable, and computing it strengthened the surviving half rather than weakening it — which is
+  the usual outcome and the reason this is cheap discipline rather than a tax.)* And a **ratio** of a near-constant predictor (`pred_sd/gt_sd`
+  0.014) to a live one (0.89) is not the same quantity measured twice; when the denominator is
+  statistically indistinguishable from noise the ratio has no interpretation, however stable it looks
+  across seeds. The admissible replacement is a **signal / no-signal** statement against a matched
+  null (§7.19b).
+- **I14 — a control must be able to FIRE AT THE DEPLOYED OPERATING POINT, and must be enumerated PER
+  ARM.** `PC-2OBJ` plants two *opposing* signals inside one deployed cell, so at the deployed 40:1
+  ratio they cancel and it reproduces the un-planted arm to 5e-05: a positive control that **could not
+  have failed** where it was cited (§7.19a). Separately, "we ran the trivial-proxy control" was true
+  and covered only 80 % of the rows, because the control sat on one cache and 33 of 165 rows had no
+  such column at all — and **nothing reported the gap; the column simply was not there** (§7.19d).
+  A study-level control statement is not an arm-level one.
+- **I15 — a stability claim measured under a defect is not inherited by the repaired instrument.**
+  *"Seed spread is exactly zero on 8 of 11 rungs, so three seeds add no uncertainty here"* was
+  measured **under** a ridge defect that had frozen the α sweep; repairing the defect dropped
+  same-α-across-seeds from 132/165 rows to 42/165 (§7.19d). A repair changes an estimator's
+  **sensitivity**, not only its bias, so every variance, stability or convergence claim taken before a
+  repair must be re-measured after it. ⚠️ Its sibling, from the same round: **when you loosen a gate,
+  test the direction you were not trying to fix** — every correction to a criterion is a candidate
+  bias in the opposite direction, and a floor repair that stops no-signal arms failing by construction
+  can just as easily let noise pass by construction.
 
 ## 6. Experimental program
 
@@ -2324,7 +2413,10 @@ runs on existing corpora, and in its first two days it changed the programme's d
   (labels into the trunk break the self-supervised thesis); the response is the pre-registered
   **label-free lever program** (`JEPA_PHYSICS_SURVEY.md`): LF0 *locate first* — probe the
   pre-pool spatial tokens and the P8 decoded-BEV read-off (pooling is where geometry goes to
-  die, the DINO-WM lesson; probe-only, admissible) — then LF1 interaction-weighted sampling
+  die, the DINO-WM lesson; probe-only, admissible) ⛔ — **LF0 HAS SINCE BEEN EXECUTED AND RETURNED
+  NEGATIVE: the pre-pool probe moves r² by |Δ| ≤ 0.0002 with the CI containing zero on all five
+  seeds, so the defect is LEARNING, not ROUTING, and the DINO-WM pooling rationale does not hold
+  on our stack (§7.19a, §10 item 10)** — then LF1 interaction-weighted sampling
   (ego-kinematic saliency, from actions alone), LF2 masked-latent prediction over the readout
   grid (I-JEPA pattern), LF3 dense distance-weighted near-field loss (V-JEPA 2.1 pattern), LF4
   longer-horizon rollout targets — each gated on the *same frozen* P1 lead battery.
@@ -2727,6 +2819,235 @@ world model carries the scene (P8 0.932 retention), carries hidden agents (P4), 
 actions correctly after repair (§7.13), and supplies a fan containing 0.127 m answers — and the
 programme still cannot *choose*. Every remaining metre is in selection.
 
+### 7.19 A negative round with strong controls: the pooling bottleneck refuted, the encoder indicted, the planner beaten by constant velocity, and a 4.3 % contamination found (2026-08-18)
+
+Five results, four of them negative, all produced with **zero training** by re-reading banked
+artifacts and frozen checkpoints. Each carries its tier stamp, its estimator and its `n`; the two
+corrections that reach back into our *own* controls are reported in the same breath as the findings
+they qualify, because that is the only order in which either is honest.
+
+**(a) The 40:1 pooling bottleneck is REFUTED — E-R1-0.** *(MEASURED,
+`…/incoming/2026-08-18-pooling-ladder-ER10/raw/er10_main.json`; **T0-DIAGNOSTIC**.)* On the frozen
+`v6F-SW-30k@11250` trunk, over a **130-clip lead-enriched probe pool** — 1,302 probe-train /
+**1,507 eval windows in 70 episode clusters**, clip-disjoint — the identical linear readout was run at
+**four spatial-averaging ratios that differ in nothing but the pooling kernel** over the same 16 × 40
+token grid: **40:1** (the deployed `AvgPool2d((4,10))`), **10:1**, **4:1** and **1:1** (no pooling at
+all). Every arm is forced to exactly 2,048 features by a fixed Gaussian random projection, over
+**5 projection seeds**, with `intercept_col = −1` on every fit; the interval is the **paired
+episode-cluster bootstrap** over the 70 clusters, 2,000 draws.
+
+| rung | 40:1 (deployed) r² | 1:1 (no pool) r² | Δr²(1:1 − 40:1), 5-seed mean | seeds whose CI excludes 0 |
+|---|---:|---:|---:|---:|
+| `lead_closing` | 0.00000 | 0.00002 | **+0.00000** (seed 0: +0.00001 [−0.00597, +0.00504]) | **0 / 5** |
+| `lead_inv_ttc` | 0.00122 | 0.00134 | **+0.00010** | **0 / 5** |
+| `ego_yawrate` | 0.00028 | 0.00014 | **−0.00014** | **0 / 5** |
+| `ego_curv` | 0.00000 | 0.00000 | **+0.00001** | **0 / 5** |
+| `lead_gap` | 0.00496 | 0.07504 | +0.07008 | 0 / 5 |
+| `ego_v0` | 0.05240 | 0.12398 | +0.07157 | 2 / 5 |
+
+⛔ **On the four rungs that read 0.0000 at the deployed ratio — the rungs on which the pooling
+hypothesis makes its sharpest prediction — removing the pool entirely moves r² by |Δ| ≤ 0.0002 with
+the CI containing zero on all five seeds.** The pre-registered `R1 IS DROPPED` branch fires verbatim.
+The two rungs that *do* rise are not a rescue: `lead_gap`'s 15× is C92's **ego-speed proxy** — with
+`v₀` partialled out it collapses to 0.0060 → 0.0087, i.e. 1.4× — and `ego_v0` separates on 2 seeds of 5.
+
+**And the discriminator returned the larger result.** A frozen `facebook/dinov2-base`, which has never
+seen a driving scene, run over the **same 1,507 windows** and pushed through the **same deployed
+`AvgPool2d((4,10))`** (224 × 560 input, patch 14, tiling to an identical 16 × 40 grid at an identical
+0.4000 aspect, asserted at runtime):
+
+| rung, through the SAME deployed pool | DINOv2-B/14 (**86 M**) | **ours** (**87.3 M**) |
+|---|---:|---:|
+| `lead_gap` r² | **0.44997** (partial-`v₀` r² 0.120) | 0.00496 |
+| `ego_v0` r² | **0.71733** | 0.05240 |
+| `lead_closing` r² | **0.01713** (partial-`v₀` r +0.129) | 0.00000 |
+
+⛔ **It is not a capacity gap.** ⇒ **the information is linearly present in our own images, it
+survives the deployed mean, and neither the pool nor corpus narrowness is the binding constraint —
+what is left is the encoder and the objective that trained it.** The arithmetic the hypothesis rested
+on was also quantitatively too strong: a mean attenuates a *localised* linear code's SNR as
+`√(k/K) = √(4/40) ≈ 0.32` — roughly **3×, not 40×** — and what a mean genuinely cannot do is separate
+two objects inside one cell, which is the case the real latent gives no evidence of needing.
+
+⚠️ **A correction that travels with this, and it is about our own control.** The positive control this
+result originally headlined — **`PC-2OBJ`, two *opposing* plants inside one deployed cell — is INERT
+AT THE DEPLOYED RATIO BY CONSTRUCTION**: the opposing plants cancel under the cell mean, and run at
+40:1 it reproduced the un-planted arm to **5e-05**. The controls that actually fire at the deployed
+ratio are **`PC-LOCAL` / `PC-DIST`** — our own trained tokens through the deployed pool, r²
+**0.0596 → 1.0000, K1 9/9** — and they are what establishes that the ladder had the power to see a
+pooling-destroyed signal. **The verdict is not overturned; the headline control was the wrong one.**
+That is the same shape as the D1 withdrawal (an instrument validated by a control that could not have
+failed), which is why it is stated as method in §5.8 rather than as an erratum here.
+
+**(b) Our trained encoder reads ego speed WORSE than its own random initialisation — and the
+admissible form of that claim is signal-vs-no-signal, not a ratio.** *(MEASURED,
+`…/Research/2026-08-18-encoder-experiments/raw/falsifier_summary.json` and
+`…/incoming/2026-08-18-c106-adversarial/raw/delta_randenc_s*_*.json`; **T0-DIAGNOSTIC**, the same
+frozen checkpoint and the same deployed `AvgPool2d((4,10))` as (a), **zero training**, n = 1,120
+probe-train / **1,362 eval windows in 70 episode clusters** — a subset of (a)'s rows, since every arm
+here must be buildable on all four encoders, and the paired deltas assert eval-window identity rather
+than assuming it.)*
+
+| arm | width | raw feat | `ego_v0` r² | `lead_gap` r² | K1 PASS |
+|---|---:|---:|---:|---:|---:|
+| **ours — trained S-W @11,250** | 768 | 12,288 | 0.05207 | 0.00490 | **0/3** |
+| `dino1f` — DINOv2 **pretrained**, ONE sub-frame | 768 | 12,288 | 0.70593 | 0.42743 | **3/3** |
+| `dinorand` — DINOv2 architecture, **untrained** | 2,304 | 36,864 | 0.02660 | 0.01843 | 0/3 |
+| **`randenc` — OUR architecture, RANDOM INIT** (3 seeds) | 768 | 12,288 | 0.1894 | 0.0176 | 0/9 |
+
+Three variables are removed one at a time. **(1)** At *identical* width and feature count, one
+sub-frame recovers **98.4 %** of the three-frame `ego_v0` and **95.0 %** of `lead_gap` ⇒ the input
+format and the 3× token width explain essentially **none** of the DINOv2 gap, which strengthens (a).
+**(2)** Removing only the pretrained weights collapses the teacher — `ego_v0` 0.70593 → 0.02660,
+`lead_gap` 0.42743 → 0.01843, `lead_closing` 0.01707 → 0.00037, i.e. **26× / 23× / 46×** ⇒
+pretraining does the work, not architecture. **(3)** Our trained encoder ranks below its own random
+initialisation. The mechanism is verified **from the weights**, not only from source: `ViT5Encoder`
+uses LayerScale at `ls_init = 1e-5`, and at initialisation the residual fraction is **0.0002** with
+cos(full path, linear path) **1.0000** — the random-init encoder *is* a fixed random **linear** map of
+raw patch pixels — while the trained arm has genuinely moved (LayerScale **70× init**, residual
+**0.38**). *(This also explains `dinorand`: a vanilla ViT has no LayerScale, so an untrained one is a
+genuinely deep random net, and deep random nets destroy linear readability. Near-linear random map
+0.19, deep random net 0.027, pretrained 0.71 — the ordering is coherent.)*
+
+⛔ **What a five-way adversarial re-read, run with refutation as the default posture, then did to it —
+reported with equal weight:**
+
+* ✅ **The `ego_v0` half survives and gains a real estimator.** Paired episode-cluster bootstrap on
+  Δr²c: **+0.150 [+0.055, +0.226], p(Δ>0) = 1.000**, and **positive in 27/27 cells** across 3 init ×
+  3 projection × 3 ridge seeds.
+* ⛔ **The `lead_gap` half dies.** **0 of 27 cells CI-separated**, p(Δ>0) only 0.71–0.76, and the
+  **sign flips in 9/27**.
+* ⛔ **The "3.6×" ratio is withdrawn outright.** It compares a **near-constant** predictor
+  (`pred_sd/gt_sd` 0.014) with a **live** one (0.89), and re-drawing the ridge **inner split** — the
+  seed that had been held fixed, and worth ~10× more variance than the projection seed that was
+  varied — moves it to **2.8× / 2.0×**.
+* ⛔ **The finding that reframes both.** **Our trained arm is not CI-separated from its own
+  matched-random null** — `lead_gap` **0/9**, `ego_v0` **3/9** and *not* in the headline cell
+  (Δ +0.052 [−0.0007, +0.206]) — while the random arm **is** (`ego_v0` **9/9**, Δ +0.164
+  [+0.074, +0.367]). ⇒ the admissible statement is **signal vs no-signal on one rung**. **A ratio
+  whose denominator is not separated from noise is not interpretable**, however many seeds it holds
+  up across.
+* ⭐ **An attack that failed, reported because it failed:** widening the ridge α to **1e13** changed
+  these rows by ≤ 0.0008.
+* ⭐ **New, and monitorable from step 0: the trained token field is RANK-COLLAPSED.** **97.6 % of
+  token-channel variance sits in ONE direction**, effective rank **1.223** against **67.1–68.2** at
+  random init (entropy-based, no threshold, comparable across arms, on 384 real banked frames through
+  the deployed operator); the z-scored design matrix reads **6.73** against **16.0–16.9**. PCA-whitening lifts *both* arms and closes
+  nothing ⇒ **a co-symptom, not the explanation** — but unlike "the objective subtracts geometry" it
+  is observable from step 0, and the existing `z_op` spectrum monitor demonstrably does not cover it.
+* ⚠️ **The trajectory is UNAVAILABLE, not merely unretrieved:** no checkpoint before ≈ step 9,100
+  exists anywhere on the training box. What the programme's own `z_op` ladder does supply is a
+  **step-2,000** point, re-read from raw JSON: `ego_v0` **0.1346 → 0.0801** and `lead_gap`
+  **0.0123 → 0.0059** by step 9,000, **then flat**, while `nearest_any` stays flat throughout. So the
+  decline over 2,000 → 9,000 is real — **on `ego_v0`, over that window, and not as a ratio**. ⛔ No
+  exponent was fit and none would be admissible on a window this short.
+
+**(c) The CEM planner is 35.8 % WORSE than constant velocity at T1 — and it loses on the family it is
+designed for.** *(MEASURED, `MODEL_REGISTRY.md` **§5** and
+`…/incoming/2026-08-18-planner-beats-cv-redrive/raw/planner_beats_cv_banked_analysis.json` — the two
+agree to every digit; **T1 — the primary capability tier**; n = 221 windows / 20 episodes; **paired
+episode-cluster bootstrap**, 2,000 draws.)* This comparison had **never been made**: the published G4 compared the planner against
+the supervised *head*, never against CV. A reproduction gate ran first — the model-free `cv` and the
+deterministic true-action arm reproduce their published values **bit-exactly**, and the closed-loop
+planner arm drifts **0.0193 %**, the documented unseeded-CEM residual.
+
+| arm [T1] | ADE@2s (m), episode-cluster bootstrap |
+|---|---|
+| CEM planner, closed loop | **0.9799** [0.7456, 1.2312] |
+| constant velocity | **0.7214** [0.4680, 1.0360] |
+| operative rollout under **true** actions | **0.4063** [0.3293, 0.4907] |
+
+> **paired planner − CV = +0.2585 m [+0.0869, +0.4309], p(Δ>0) = 0.9975 — CI-SEPARATED.**
+> ⇒ **the planner is 35.8 % worse than constant velocity, closed-loop.**
+> ⭐⭐ **paired operative − CV = −0.3151 m [−0.6277, −0.0602], p(Δ>0) = 0.008 — CI-SEPARATED.**
+> ⇒ **THE LOSS IS IN THE ACTION SEARCH, NOT IN THE WORLD MODEL.** The world model rolls out well
+> when handed true actions; the CEM cannot find actions that exploit it.
+
+The four families, per family and never pooled, on the same windows [T1, n = 221 / 20 episodes]:
+
+| family | CEM planner | constant velocity | reading |
+|---|---:|---:|---|
+| **LONGITUDINAL** — along-track RMSE @2 s | **1.9062 m** | 1.6705 m | ⛔ **the planner loses on the family its cost function is aimed at** |
+| **LONGITUDINAL** — speed error @2 s | **0.9431 m/s** | 0.7607 m/s | |
+| **LONGITUDINAL** — speed bias @2 s | **+0.2737 m/s** | −0.0995 m/s | the planner over-speeds; CV is nearly unbiased |
+| **LONGITUDINAL** — distance-keeping (headway / time-gap / TTC) | **n/a, n = 221** | **n/a, n = 221** | no lead-agent track in this dump; the P2 cost itself omits the gap term for the same reason. `obstacle.offline` is a pod-side join and was not part of this eval |
+| **LATERAL** — cross-track RMSE @2 s | 1.9637 m | 1.7115 m | the loss its own scope note predicts — the cost has no lateral term |
+| **LATERAL** — heading error @2 s | 7.68° | 6.73° | |
+| **LATERAL** — curvature error, mean (moving-only, n = 205, 16 excluded) | 0.0134 1/m | 0.0123 1/m | |
+| **LATERAL** — yaw-rate error, mean (moving-only) | 4.56 °/s | 3.61 °/s | |
+| **TACTICAL** | **n/a, n = 221** | **n/a, n = 221** | the CEM **emits no manoeuvre class** — it searches a continuous action sequence, so there is no discrete decision to score. Scoring it needs a manoeuvre labeller applied to the planned *and* the GT path: a **work item**, not an omission |
+| **STRATEGIC** | **n/a, n = 221** | **n/a, n = 221** | the P2 cost carries **no route or goal term at all**, so there is no strategic output to score — a genuine N/A |
+
+*This is exactly why an ADE-only table is inadmissible in this programme (§5.5): a scalar would have
+shown "worse" without showing that it is worse **where its cost function is aimed**.*
+
+⚠️ **A real data defect caught in passing, and handled by masking rather than clamping.** Curvature
+divides heading change by arc length and is undefined for a stopped ego; unmasked, the GT `|κ|`
+**mean** is 34.82 1/m against a **median** of 0.0008 1/m. The curvature and yaw rows above are
+computed on moving-only windows with the excluded `n` published — a clamp would have kept fabricated
+geometry silently inside the mean.
+
+⚠️ **Scope, stated rather than buried.** The **open-loop** `planner_beats_cv` verdict remains
+**undecided**: the open-loop CEM arm is not banked per window (absence confirmed at three probes,
+including an exhaustive walk of every `.pt` in the repo), and flipping it would require the planner to
+fall **6.589 %** against a local estimator envelope of −6.909 %…+5.877 %. That is one ~400 s GPU job,
+blocked only on retrieving the 40-episode validation cache.
+
+**(d) At three seeds the linear-readout ladder's substantive count is ZERO, on both repair routes.**
+*(MEASURED, `…/incoming/2026-08-18-ladder-3seed/`; **T0-DIAGNOSTIC**.)* Of the 87 banked
+separated-FAIL verdicts: **58 dead on all three seeds**, **11 flip to PASS** (the positive controls,
+unanimous), **9 survive all three** — all `ego_yawrate` at |K1B|/gt_sd ≤ 0.013, one of them on a
+random-latent null — and **9 survive on some seeds and not others**. ⭐ **Substantive: 0.** The two
+routes return the same inventory, and a reproduction gate passed at **3,465/3,465 identical fields**,
+so this extends the earlier run rather than replacing it.
+
+The mechanism generalises, and it is uncomfortable: **repairing the ridge intercept UNFROZE the alpha
+sweep.** The defective instrument picked the same α on all three seeds for **132 of 165** rows; the
+repaired one for **42** — a **3.1× drop in seed-stability *caused by a repair***. ⇒ **a stability
+claim measured under a defect is not inherited by the repaired instrument**; *"this quantity does not
+vary, so one seed is enough"* is a property of the instrument as it was, not of the question.
+⚠️ The counter-column is published too: the maximum K1 seed spread is *larger* on the **incumbent**
+(4.239 vs 2.812), so the honest claim is *"the repair unfroze the majority"*, not *"the incumbent had
+no variance"*.
+
+⛔ **And a missing control whose absence was invisible.** The trivial-proxy control sat on one cache,
+so **33 of 165 rows — every tokens-window arm — had no trivial-proxy column at all**. Nothing
+reported a gap; the column simply was not there. Added, on **154 paired rows the single ego-speed
+scalar matches or beats the 2,048-dimension latent on 120**, and on the signal-bearing rungs on
+**13–14 of 14**.
+
+**(e) 201 of the 4,729 Alpamayo augmentation clips are ALREADY in the parity train corpus.**
+*(MEASURED, `…/incoming/2026-08-17-thor-concurrency-pilot/`; exclusion list banked as
+`alpamayo_IN_parity_train_EXCLUDE_FROM_EVAL.txt`.)* The overlap was computed from clip ids against the
+live trainer's own `--v2-cache` path — read from `/proc/<pid>/cmdline`, not from a document — and
+mtimes prove the 201 are genuine members of the parity **selection**, not later contamination of the
+directory. ⇒ ⛔ **any evaluation split built on the Alpamayo augmentation is 4.3 % train-contaminated**
+— the REF-A I-JEPA leak class (§7.2) at smaller scale, and disqualifying for the same reason. The
+exclusion list must be applied **wherever an Alpamayo eval split is defined**, not once. The root
+cause is the one thing parity exists to prevent: **a non-overlap assumed from provenance ("different
+source ⇒ disjoint") rather than computed from ids.**
+
+**What this round changes, stated without inflation.** Four negatives and a contamination do **not**
+overturn §7.14–§7.18: the predicted latent still retains occupancy (P8 retention 0.932), imagination
+is still load-bearing (I4a), and the world model still rolls out **better than CV** when handed true
+actions (§7.19c). What they do is move the indictment one component to the left. The programme's
+standing account of the missing lead variable was **architectural** — a 40:1 pool destroying
+individuation — and that account is now measured false; the account that survives is that **the
+encoder and its objective do not put the information into linearly readable form**, because a frozen
+general-purpose encoder reads it *through our own pool, from our own frames*, and our trained encoder
+does not read it *with no pool at all*. That relocates the next experiments from **routing** to
+**representation**, which is why §10's ladder is re-ordered.
+
+⚠️ **The honest limit on all of §7.19a–b, repeated because it is easy to drop when a number travels.**
+Every figure in (a), (b) and (d) is **T0-DIAGNOSTIC** — a frozen-latent linear readout, a world-model
+diagnostic and **never driving performance** — measured on a **130-clip lead-enriched probe pool**
+(⚠️ *not* the 40-episode validation split, and `parity: False` in the cache meta, inherited unchanged;
+no episode is selected, added, removed or re-hashed by any of this work) at an **early read of step
+11,250 of 30,000 (37.5 %)**. Step 30,000 remains the primary read. **Four families for (a), (b) and
+(d):** LONGITUDINAL and LATERAL *are* the rungs and are tabulated above; **TACTICAL n/a, n = 0** — the
+ladder is regression-only and no manoeuvre label is banked in these caches, which is a work item, not
+an excuse; **STRATEGIC n/a, n = 0** — no route or goal label exists on this corpus at all (§5.5).
+
 ## 8. Discussion: self-supervision, the two-stage question, and what the honest results demand
 
 **What the 30 k results jointly say.** The causal panel (§7.3) and the OOD gap (§7.4) are not in
@@ -2886,6 +3207,39 @@ architecture is validated before any v3 training.
 > `…/incoming/2026-07-26-closedloop-artifact-rerun/closedloop_flagship-30k.CORRECTED.json` and
 > `…/incoming/2026-08-16-jack-in-gates/raw/g1_g4_both_estimators.json`; see `MODEL_REGISTRY.md` §5.
 
+> ⭐ **RE-AUDITED 2026-08-18 — every gate bar this paper carries was re-checked against the banned
+> estimator, and the result is reported in both directions.** *(MEASURED,
+> `…/incoming/2026-08-18-planner-beats-cv-redrive/raw/planner_beats_cv_banked_analysis.json`;
+> instrument `taniteval/tests/test_no_jack_in_gates.py`, an AST walk rather than a regex — a regex
+> raised ≥ 176 false positives, every one on documentation *declaring* the estimator banned.)*
+>
+> * ✅ **G4 1.7318 · G5 0.4271 · tactical head 3.3839 independently reproduce** from the banked
+>   per-window dumps in a run that had no other contact with the 08-16 audit, matching it to 4 dp;
+>   the reproduction gate for that run had the model-free `cv` arm bit-exact first.
+> * ✅ **The three trivial open-loop floors are `full_set` means by construction** (`bench.py:511`,
+>   `:558`) and were never touched by the correction — best-of-3 0.5005, CTRV 0.523, ego-status
+>   0.5735 (§7.2).
+> * ✅ **Deciding call sites on the banned estimator: 0** across an unbounded repo walk (4,696 files;
+>   37 call sites remain, all REPORTS-only).
+> * ⭐ **One more inherited bar found, and the audit is only sharp because the derivation was written
+>   down.** §7.6's two v4 bars are pre-registered in `V4_FLAGSHIP_DESIGN.md` §17 **with their
+>   derivations stated rather than hidden**, and the two come out differently:
+>   * **`ade_0_2s ≤ 0.60` is CLEAN.** It is anchored *"strictly below hold-v0 0.7876 and CV 0.8377 …
+>     and above v1's 30 k **full-set 0.4271**"* — the honest statistic, not the split-mean.
+>   * ⚠️ **`wm_canary_ade_2s ≤ 0.55` INHERITS THE DEFECT.** Its derivation is *"anchored on MEASURED
+>     values: v1's canary **0.452** … 0.55 is +0.10 on the baseline"* — and **0.452 is the legacy
+>     `heldout` split-mean of exactly the quantity whose `full_set` value is 0.4271.** Applying the
+>     bar's own stated rule to the honest baseline gives **0.53**, so the shipped bar is ~3.8 %
+>     **looser** than its derivation intends. ⛔ **No verdict moves:** v4.1's 0.4599 passes against
+>     either bar, and v4.2's 0.7222, v4.2b's 0.697 and the v4 30 k gate's 1.1409 fail by ≥ 1.3–2.2×.
+>
+>   ⇒ **The transferable point is that this was auditable at all.** The 0.60 bar and the 0.55 bar are
+>   adjacent lines in the same pre-registration; one is clean and one is not, and the *only* reason
+>   either can be checked is that both recorded what they were computed from. A threshold whose
+>   provenance is unwritten cannot be audited for a defect it may have inherited — so every gate bar
+>   minted from here carries its source artifact **and** its estimator, and the §7.6 numbers are left
+>   standing with this note beside them rather than silently restated.
+
 ## 10. Roadmap
 
 The standing programme is unchanged: the full gate ladder; closed-loop evaluation for D4–D6 including
@@ -2972,11 +3326,26 @@ the targeted longitudinal fix (§7.5). The v0.6 round re-orders what comes first
    claims are `disputed` by default. The Alpamayo-2-Super meta-action distribution (**4,729
    clips** — MEASURED, `MODEL_REGISTRY.md` §11.1, **not** the card's 4,800) supplies the empirical
    phrase distribution the token set must cover, and **vocabulary coverage is measured**, with
-   unmappable phrases logged rather than silently dropped.
-10. **The label-free lever program LF0–LF4 for the missing lead variable** (§7.14): LF0 first —
-   probe pre-pool spatial tokens and the P8 attempt-2 decoded-BEV read-off (~0.5 GPU-h, decides
-   whether the defect is routing or learning) — then LF1–LF4 in cost order, each gated on the
-   same frozen P1 lead battery. Labels stay probes and strata, never trunk losses.
+   unmappable phrases logged rather than silently dropped. ⛔ **Added 2026-08-18: 201 of those 4,729
+   clips are already inside the parity TRAIN corpus** (§7.19e), so this pipeline's output is fine as a
+   *label* stream and **disqualifying as an evaluation split** unless the banked 201-id exclusion list
+   is applied where the split is defined.
+10. ⛔ **The label-free lever program LF0–LF4 — RE-ORDERED 2026-08-18, because LF0 HAS BEEN EXECUTED
+   AND RETURNED NEGATIVE.** LF0 was *"locate first: probe the pre-pool spatial tokens, ~0.5 GPU-h,
+   decides whether the defect is routing or learning"*, and its rationale was the PUBLISHED DINO-WM
+   line that pooling is where geometry goes to die. ⭐ **E-R1-0's 1:1 arm *is* that pre-pool probe**,
+   and it returned **|Δr²| ≤ 0.0002 with the CI containing zero on all five seeds** (§7.19a). ⇒ **the
+   defect is LEARNING, not ROUTING; the survey's RC1 (pooling bottleneck) is measured FALSE on our
+   stack; and LF0 as a diagnostic is SPENT — it need not be run.** ⭐ **That is a saving, not a
+   loss:** its budget moves to item 13, the component the evidence actually indicts. ⚠️ **Do not read
+   "RC1 is dead" as "the RC list is dead"** — the other three root-cause hypotheses are **untouched**
+   by this measurement and stay open: **RC2** (the objective never needs it — lead distance is a
+   rare-event variable in a free-flow-dominated corpus, so the risk can be minimised while ignoring
+   it), **RC3** (no spatial masking pressure), **RC4** (at a 2 s horizon lead distance barely changes
+   in free flow). LF1–LF4 therefore stand in cost order — LF1 interaction-weighted sampling, LF2
+   masked-latent prediction, LF3 dense near-field weighting, LF4 longer-horizon targets — each still
+   gated on the *same frozen* P1 lead battery, and each now understood as a test of RC2/RC3/RC4 rather
+   than of RC1. Labels stay probes and strata, never trunk losses (§3.10).
 11. **The scaling ladder S1–S4** (`PREREG_SCALING_LADDER.md`): S1 data volume ({1×, 3×, 10×} the
    13 h canonical corpus — the programme currently consumes < 1 % of PhysicalAI-AV's ~1,701 h;
    the "build the 30× corpus" decision binds to the measured 1×→10× T1 slope, with the
@@ -2985,7 +3354,11 @@ the targeted longitudinal fix (§7.5). The v0.6 round re-orders what comes first
    means); S3 resolution/context; S4 encoder capacity within the binding **sub-300 M envelope**
    — "dominance of 4-brain TanitAD" is defined as beating bigger published baselines at ≤ 300 M
    total, and needs curves, not points. S1 runs only after the v5.8f release row exists as the
-   fixed yardstick.
+   fixed yardstick. ⛔ **Constraint added 2026-08-18: any S1/S2 arm that draws on the Alpamayo
+   augmentation must apply the 201-clip exclusion list at the point the eval split is DEFINED** —
+   4.3 % of that corpus is already inside the parity training selection (§7.19e). The additive-superset
+   rule protects *training* parity; it does not protect an evaluation split, and this is the one that
+   was assumed rather than computed.
 12. **Complete the physics battery.** P8 attempt-2, P4 permanence and I4a **have landed**
    (§7.18); what remains is the **P4 diffuseness control** (without which occluded ≥ visible is
    consistent with permanence but does not prove it), **P2 nuisance non-retention** — which
@@ -2994,6 +3367,26 @@ the targeted longitudinal fix (§7.5). The v0.6 round re-orders what comes first
    stratification and occlusion-stress windows, both ~0 extra GPU off the banked runs), and the
    **30 k spectrum row** that would let the SIGReg retention gate be quoted at its
    pre-registered endpoint rather than at 20 k (§3.13).
+13. ⭐ **ENCODER experiments now outrank both the pooling ladder and the target-placement ladder, on
+   evidence rather than on preference** (§7.19a–b). E-R1-1 is dropped — the 2 × 2's *placement* axis is
+   measured inert — and the *target* axis is what survives of that line; ahead of both sit two arms
+   aimed at the component the evidence indicts: **(i)** a **frozen-external-encoder readout arm**, the
+   cheap and fully specified control, since a frozen general-purpose encoder already reads `lead_gap`
+   at r² 0.45 through *our own deployed pool* on *our own frames*; and **(ii)** a **token-distillation
+   auxiliary loss** from that encoder. Both are cheaper than the pooling ladder they replace.
+   ⚠️ **A mechanistic caveat that must be pre-registered before either runs:** if linear readability is
+   already lost by step 9,250 (§7.19b), a distillation term **warm-started late repairs after the fact
+   instead of preventing** — so a failure of a short warm-started arm is **not** evidence against
+   distillation from step 0, and the pre-registration must bind that in advance rather than after the
+   result. ⏳ **A human must accept the DINOv3 licence** for the stronger teacher (gated `manual`; our
+   token gets 403 at three probes) — no mirror was used and none should be. ⭐ **And one monitor is
+   free and should ship first: token-channel effective rank**, logged per step beside the existing
+   `z_op` spectrum, because the trained token field is rank-1 (97.6 % of variance in one direction)
+   and the current monitor demonstrably does not see it.
+14. ⛔ **Re-measure the whole §7.19a–b block at step 30,000.** Every number in it is an **early read at
+   37.5 %** of the S-W run, on a 130-clip probe pool rather than the validation split. The direction is
+   supported by an independent step-2,000 → 9,000 decline, but the primary read is the endpoint and no
+   claim here is final until it exists.
 
 ### 10.1 Open decisions this paper cannot close (they are the PI's, and they are costed)
 
@@ -3042,6 +3435,27 @@ numbers, not against a narrative. None of them is an experiment we can run aroun
 5. **S2 (`g_str` supervision) is not wired and must not be improvised.** It comes from
    PH0 → PH1 → PH2 (item 9). Until it exists, the STRATEGIC family stays `n/a` **with its reason
    and its n** (§5.5) — an honest absence, never a proxy.
+6. ⛔ **The live successor run is 336.5 M parameters — 12.2 % over this programme's own "sub-300 M"
+   headline, and the paper cannot resolve that itself.** MEASURED at **336,542,025** from two
+   independent sources (the checkpoint's own `_meta.config.param_report.total`, and a fresh model
+   instantiated from that same checkpoint's config; a widely repeated 336,559,305 is wrong by 17,280).
+   ⚠️ **This is not a silent breach** — the run was launched with `param_budget: 350000000`, so its
+   assert passed by design — but it **contradicts the invariant every scaling claim is stated against**
+   (§10 item 11: *"beating bigger published baselines at ≤ 300 M total"*), and this paper's own
+   headline count of 263.4 M describes the v1 flagship, not the arm now training. ⏳ **The PI's call:
+   restate the envelope, or rescope the model.** Whichever is chosen must be applied to §10 item 11's
+   definition of dominance in the same change, or the ladder is measured against a bar the programme
+   no longer holds. *(A related scope error is worth recording beside it: the widely quoted "68.5 % of
+   the stack sits downstream of the pool" was computed from library **defaults**, not from the live
+   checkpoint, where the operative predictor is **55.9 %** and the encoder **25.9 %** — the same class
+   as reading a cluster-wide disk figure for a per-pod quota.)*
+7. ⏳ **Accepting the DINOv3 licence is a human action and was correctly not automated.** The stronger
+   external-teacher arm (§10 item 13) wants a `/16` DINOv3 checkpoint, which reproduces our 16 × 40
+   token grid exactly; the repositories are gated `manual` and our token receives 403 at three probes,
+   with metadata public and weights not. The substitute actually used — `facebook/dinov2-base` at
+   224 × 560 — is ungated and already decisive for the *negative* result (§7.19a), so nothing is
+   blocked today; the licence only buys a better teacher for the *positive* arm. ⛔ **No mirror or
+   re-upload is an acceptable route around it.**
 
 ## References
 
@@ -3361,4 +3775,83 @@ arXiv:2607.04500.)
   assigns it to **`flagship-v4-fromscratch` (§1.5.5)**, while `flagship-v4.2-30k` (§1.5.3) was
   killed at ~step 5 k and has no 30 k cost. The registry wins and the paper now names the right
   arm; the estimate is unaffected because the basis runs are the same two.
+- **v1.1 (2026-08-18): the negative round, the instrument rules it earned, and a roadmap re-ordered
+  by evidence.** **New §7.19**, five results produced with **zero training** from banked artifacts and
+  frozen checkpoints, every one tier-stamped and estimator-stamped. **(a) E-R1-0 — the 40:1 pooling
+  bottleneck REFUTED** (four pooling ratios differing only in the kernel, 5 projection seeds, 1,302
+  train / 1,507 eval windows in 70 episode clusters, `intercept_col = −1`, paired episode-cluster
+  bootstrap: removing the pool moves r² by **|Δ| ≤ 0.0002, CI ∋ 0 on all five seeds** on the four
+  rungs the hypothesis was built to explain; `lead_gap`'s 15× rise is the ego-speed proxy and
+  collapses to 1.4× with `v₀` partialled out), plus the discriminator that settles it — a frozen
+  **`facebook/dinov2-base` (86 M vs our 87.3 M)** through the **same deployed pool** on the **same
+  windows** reads `lead_gap` **0.44997 vs 0.00496**, `ego_v0` **0.71733 vs 0.05240**, `lead_closing`
+  **0.01713 vs 0.00000** ⇒ **the encoder/objective is the constraint, not pooling and not corpus
+  narrowness**; and the correction that travels with it — **`PC-2OBJ` is inert at the deployed ratio
+  by construction** (opposing plants cancel under the cell mean; reproduces the un-planted arm to
+  5e-05), so the power claim is re-anchored on **`PC-LOCAL`/`PC-DIST`** (0.0596 → 1.0000, K1 9/9) and
+  **the verdict is unchanged**. **(b) The encoder falsifier battery and its adversarial re-read** —
+  `ego_v0` random-init-over-trained **survives with a real estimator** (Δr²c **+0.150
+  [+0.055, +0.226]**, p = 1.000, **27/27 cells positive**) and gains a from-the-weights mechanism
+  (LayerScale `ls_init` 1e-5 ⇒ residual fraction 0.0002, cos 1.0000 at init; the trained arm has moved
+  to `ls` 70× init, residual 0.38); `lead_gap` **dies** (0/27 separated, sign flips 9/27); ⛔ **the
+  "3.6×" ratio is WITHDRAWN** (near-constant vs live predictor; 2.8×/2.0× on a re-drawn inner split)
+  because **our trained arm is not CI-separated from its own matched-random null** — the admissible
+  claim is **signal vs no-signal on one rung**; an α-widening attack to 1e13 **failed and is reported
+  because it failed**; and the **rank collapse** is new and monitorable (97.6 % of token-channel
+  variance in one direction, effective rank 1.22 vs 67–68; whitening lifts both arms and closes
+  nothing ⇒ co-symptom). The step-0 → 9,250 sweep is **UNAVAILABLE, not unretrieved**; the `z_op`
+  ladder's step-2,000 point supplies the only real trajectory evidence (`ego_v0` 0.1346 → 0.0801 by
+  step 9,000, then flat) and **no exponent was fit**. **(c) `planner_beats_cv` answered at T1, and
+  answered against the planner** — paired **+0.2585 m [+0.0869, +0.4309]**, p(Δ>0) 0.9975,
+  CI-separated (**35.8 % worse than constant velocity**) with the **full four-family block** showing
+  the loss lands on **LONGITUDINAL**, the family the cost is aimed at, while **operative-under-true-
+  actions BEATS CV** (−0.3151 m [−0.6277, −0.0602]) ⇒ **the loss is in the action search, not the
+  world model**; TACTICAL and STRATEGIC are genuine N/A **with reasons and n** (the CEM emits no
+  manoeuvre class; the P2 cost carries no route/goal term), distance-keeping likewise (no lead-agent
+  track); a curvature artifact on stopped-ego windows (GT `|κ|` mean 34.82 vs median 0.0008 1/m) is
+  **masked with the excluded n published, never clamped**; and the **open-loop** verdict is stated as
+  still undecided. **(d) The linear-readout ladder at three seeds — substantive count ZERO on both
+  repair routes** (58 dead / 11 flip / 9 survive-all, all `ego_yawrate` at |K1B|/gt_sd ≤ 0.013 and one
+  on a random null / 9 unstable; reproduction gate 3,465/3,465), with the generalisable mechanism —
+  **a repair unfroze the α sweep**, 132/165 same-α rows → 42/165 — and the counter-column published
+  (max K1 spread *larger* on the incumbent, 4.239 vs 2.812); plus a **missing control whose absence
+  was invisible** (33 of 165 rows had no trivial-proxy column; added, the single ego-speed scalar
+  matches or beats the 2,048-d latent on 120 of 154 paired rows). **(e) 201 of 4,729 Alpamayo clips
+  are already in the parity TRAIN corpus** ⇒ any eval split on it is **4.3 % contaminated**, the REF-A
+  I-JEPA class; overlap computed from ids against the live trainer's own `--v2-cache` read from
+  `/proc/<pid>/cmdline`, mtimes proving genuine selection membership, exclusion list banked.
+  **New §5.8 — five instrument rules**, each earned by one of our own claims failing: **I11** ablate
+  the mechanism, don't narrate it (and two methods agreeing is not evidence when both are consistent
+  with a weaker cause); **I12** compare every arm to **itself at initialisation** — the only control
+  that can detect an objective making a representation worse; **I13** label every bracket with its
+  estimator (a **dispersion is not a confidence interval**) and never quote a ratio whose denominator
+  is not separated from its null; **I14** a control must be able to **fire at the deployed operating
+  point** and must be enumerated **per arm**; **I15** a stability claim measured under a defect is not
+  inherited by the repaired instrument, and when you loosen a gate you must test the direction you
+  were not trying to fix. **§9.4 re-audited:** G4 1.7318 / G5 0.4271 / head 3.3839 independently
+  reproduce to 4 dp from banked windows; the three trivial floors are `full_set` by construction;
+  deciding call sites on the banned estimator are **0** across an unbounded 4,696-file walk; and
+  **a third inherited bar was found** — §7.6's two v4 bars are pre-registered on adjacent lines with
+  their derivations stated, and `ade_0_2s ≤ 0.60` is anchored on v1's honest **full-set 0.4271**
+  while `wm_canary_ade_2s ≤ 0.55` is anchored on the legacy split-mean **0.452** (its own
+  "+0.10 on the baseline" rule against 0.4271 gives **0.53**, so the shipped bar is ~3.8 % looser than
+  intended). ⛔ **No verdict moves**, and the bars are left standing with the note beside them rather
+  than silently restated — the transferable point being that the audit was only possible because both
+  derivations were written down. **§10 re-ordered:** item 10
+  retires **LF0 as already executed and negative** — E-R1-0's 1:1 arm *is* the pre-pool probe LF0
+  specified, so RC1 is measured false and the budget moves on, while **RC2/RC3/RC4 stay open and must
+  not be read as dead**; new **item 13** promotes the encoder arms (frozen-external readout,
+  token-distillation aux, plus a free per-step token-rank monitor) above the pooling and
+  target-placement ladders, with the *warm-start caveat pre-registered in advance*; new **item 14**
+  binds a re-measurement at step 30,000 because §7.19a–b is a 37.5 % early read on a 130-clip probe
+  pool; items 9 and 11 carry the Alpamayo exclusion-list constraint. **§10.1 gains two open PI
+  decisions:** the live successor run is **336,542,025 parameters — 12.2 % over the sub-300 M
+  envelope** that §10's dominance claim is stated against (not a silent breach — `param_budget`
+  350 M by design — but a contradiction that must be resolved in the envelope or in the model, and a
+  companion scope error corrected: the *live* checkpoint's predictor share is **55.9 %**, not the
+  68.5 % computed from library defaults); and the **DINOv3 licence acceptance**, which is a human
+  action, was correctly not automated, and blocks only the stronger *positive* arm. §3.10 and §7.14
+  updated in place to record LF0's executed-and-negative status. Corrections adopted from the citation
+  sweep: quote by **section heading, never by line number** — two source documents were rewritten in
+  place and every line-number citation into them is void.
 

@@ -3604,3 +3604,83 @@ spread across *every* batch — **14.4× larger**.
 **Owning document.** `TanitAD Research Hub/Data Engineering/Implementation/incoming/2026-08-15-aug120-fusion/AUG120_FUSION_RESULT.md`
 (+ `MANIFEST.md`, `NEXT_4472_BUILD_INPUTS.md` for the follow-on build). Tests:
 `stack/tests/test_ph1_fuse.py` 14 passed; full suite 2,812 passed / 0 failed / 17 skipped / 2 xfailed.
+
+---
+
+## 12. FROZEN-TRUNK READOUT LINE — what the v6 latent does and does not carry [TIER T0-DIAGNOSTIC throughout]
+
+⛔ **Everything in this section is a WORLD-MODEL DIAGNOSTIC and may NEVER be quoted as driving
+performance.** T1 capability claims live in §1.12, §1.13c and §5.
+
+**Substrate:** frozen `v6F-SW-30k` snapshots (`/home/nvidia/ckpt_snaps`, fp16 weights-only).
+**Estimator:** paired episode-cluster bootstrap throughout. **Instrument:** `pc6_linear_readout`
+ridge — ⛔ **pass `intercept_col=-1`**; the default is deliberately the incumbent (biased) behaviour
+so banked `pc6_ridge_*.json` reproduce bit-exactly (C92).
+
+### 12.1 ⛔ The 40:1 pooling bottleneck is REFUTED — the ENCODER is the constraint (C104, 2026-08-18)
+
+| | |
+|---|---|
+| **Design** | pre-registered; 4 pooling ratios (40:1 deployed / 10:1 / 4:1 / 1:1) differing **only in the kernel**, each forced to exactly 2,048 features by a **fixed random projection**, 5 seeds, 1,302 train / 1,507 eval windows in 70 episode clusters |
+| **Result** | on the four rungs the hypothesis was built to explain, **removing the pool entirely moves r² by \|Δ\| ≤ 0.0002, CI containing zero on all five seeds** (`lead_closing` Δ = +0.00001 [−0.00597, +0.00504]) ⇒ **`R1 DROPPED` by its own criterion** |
+| **Discriminator** | through the **same** deployed `AvgPool2d((4,10))` on the **same** windows, `facebook/dinov2-base` reads `lead_gap` **0.44997** vs ours **0.00496**, `ego_v0` **0.71733** vs **0.05240**, `lead_closing` **0.01713** vs **0.00000** |
+| **Not capacity** | DINOv2-B/14 **86 M** params against our encoder's **87.3 M** |
+| ⇒ | **the information is in our images, it SURVIVES the pool, and neither pooling nor corpus narrowness is the constraint. The encoder gap is 91×.** |
+
+⚠️ **CONTROL CORRECTION (C109): `PC-2OBJ` — the positive control this result originally cited — is
+INERT AT 40:1 BY CONSTRUCTION** (two *opposing* plants inside one cell cancel; at p40 it reproduced
+the un-planted arm to 5e-05). **The verdict is unchanged** — `PC-LOCAL`/`PC-DIST` do fire (our own
+trained tokens through the deployed pool: 0.0596 → 1.0000, K1 9/9) — **but PC-2OBJ must not be cited
+as the control.**
+
+### 12.2 ⚠️ Random init vs trained encoder — `ego_v0` only, and NOT as a ratio (C109 supersedes C106)
+
+⛔ **Write this row from C109, never from C106.** C106 published *"random init beats the trained
+encoder 3.6× on both rungs"*; C109 attacked it five ways.
+
+| claim | status |
+|---|---|
+| `ego_v0`: random init reads better | ✅ **SURVIVES, with a real estimator** — paired episode-cluster bootstrap on Δr²c, **+0.150 [+0.055, +0.226], p(Δ>0) = 1.000**, positive in **27/27 cells** (3 init × 3 projection × 3 ridge seeds) |
+| `lead_gap` half | ⛔ **DIES** — 0 of 27 cells CI-separated, p 0.71–0.76, **sign flips in 9/27** |
+| the **3.6× ratio** | ⛔ **WITHDRAWN.** It compares a near-constant predictor (`pred_sd/gt_sd` 0.014) to a live one (0.89), and re-drawing the **ridge inner split** moves it to 2.8×/2.0× |
+| C106's bracket `[0.1736, 0.2011]` | ⚠️ **a projection-seed SPREAD, not a confidence interval** |
+| ⭐ **the reframing** | **our trained arm is NOT CI-separated from its own matched-random null** (`lead_gap` 0/9, `ego_v0` 3/9) while the random arm **is** (9/9) ⇒ **signal vs no-signal on one rung, not a ratio** |
+
+**Mechanism, verified from the weights:** random init has residual fraction **0.0002**, cos **1.0000**
+against its own linear path — it **is** the raw-pixel linear map; the trained arm **has moved**
+(LayerScale **70× init**, residual **0.38**). **Trajectory:** `ego_v0` **0.1346 → 0.0801** and
+`lead_gap` **0.0123 → 0.0059** from step 2000 → 9000, **then flat**. ⚠️ No snapshot exists before
+≈step 9100 (whole-filesystem probe) — the step-0 sweep is **UNAVAILABLE**, not unretrieved.
+⭐ **New and monitorable from step 0:** the trained token field is **rank-collapsed** — **97.6 %** of
+token-channel variance in one direction, effective rank **1.223 vs 67.1–68.2**. A **co-symptom**
+(PCA-whitening lifts both arms ~3× and closes nothing), but observable where the headline is not.
+
+### 12.3 ⛔ At three seeds the linear-readout ladder's substantive count is ZERO (C107)
+
+Of **87** banked separated-FAILs, re-read with the C92 repair **and** the C97 degeneracy guard, on
+**both** repair routes: **58 dead on all three seeds · 11 flip to PASS (the positive controls) · 9
+survive at \|K1B\|/gt_sd ≤ 0.013 — all `ego_yawrate`, one on a random-latent null · 9 seed-unstable ·
+⭐ 0 SUBSTANTIVE.** Reproduction gate **3465/3465** fields identical.
+
+⚠️ **A repair can DESTROY apparent stability:** the defective instrument picked the same α on all 3
+seeds for **132 of 165** rows, the repaired one for **42** — a **3.1× drop caused by the repair**,
+because the biased fit had frozen the α sweep. *(Counter-column, published: max K1 seed spread is
+larger on the incumbent, 4.239 vs 2.812.)*
+⛔ **Trivial-proxy result: the ego-speed SCALAR matches or beats the 2,048-dim latent on 120 of 154
+paired rows** — and wins **all four** of the latent's only 3-seed-stable guarded PASSes.
+⇒ ⛔ **"The v6 latent reads scene density" is WITHDRAWN — it is ~80 % `v0`.**
+
+### 12.4 ⛔ PARITY: 201 of 4,729 Alpamayo clips are ALREADY IN THE TRAIN CORPUS (C112)
+
+**MEASURED** against `physicalai-train-e438721ae894` — and **the live trainer reads exactly that
+cache** (`--v2-cache …e438721ae894-w120-256x640cyl`, from `/proc/25477/cmdline`, not from a doc).
+mtimes prove genuine selection membership, not later contamination.
+⇒ ⛔ **Any eval split built on this corpus is 4.3 % train-contaminated — the REF-A I-JEPA class.**
+The **201-id exclusion list is banked**; it is a **per-definition obligation**, to be enforced in
+split-construction code rather than remembered by callers.
+⚠️ **Root cause: non-overlap was ASSUMED FROM PROVENANCE ("different source ⇒ disjoint") rather than
+COMPUTED FROM IDS.** Parity is sacred *because* it is checkable.
+
+**Owning documents:** `…/incoming/2026-08-18-pooling-ladder-ER10/`, `…/2026-08-18-c106-adversarial/`,
+`…/2026-08-18-ladder-3seed/`, `…/2026-08-17-thor-concurrency-pilot/`; classes **C92, C97, C100,
+C103, C104, C106, C107, C109, C112** in `RETRACTION_LOG.md`.
