@@ -249,5 +249,9 @@ def test_dataset_collates_into_a_batch():
 def test_mintability_report_names_the_gaps():
     r = VL.mintability_report()
     gaps = r["not_mintable_needs_data"]
-    assert any("lead_state" in v for v in gaps.values())
+    # The lead gap's mechanism string was corrected 2026-08-18 (4276613a): the
+    # minter consumes no lead input — "lead_state is a None stub" was the
+    # eval-side stub, misattributed here, and is retired as a stale absence.
+    # Pin the corrected mechanism so a future rewording is a conscious act.
+    assert any("consumes no lead input" in v for v in gaps.values())
     assert any("MAP" in v or "map" in v for v in gaps.values())

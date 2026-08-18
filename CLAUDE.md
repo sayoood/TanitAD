@@ -74,6 +74,12 @@ Every subagent brief MUST carry the preamble in
   session — returns empty output and looks like nothing happened. Kill by **explicit PID**.
 - **`PYTHONPATH=/workspace/TanitAD/stack` is REQUIRED** on pods or trainers die with
   `ModuleNotFound: tanitad`. `cd` alone is not enough.
+  ⚠️ **The same trap wears a dev-box costume: the venv's EDITABLE `tanitad` install points at the
+  G: mount.** MEASURED 2026-08-18 with G: down: any import of `tanitad` from the off-Drive clone
+  dies with `Errno 22` at pytest collection — the suite cannot run in the clone at all without
+  `PYTHONPATH=<clone>/stack`, and the death looks like a broken suite, not a broken mount. Set it
+  for every clone-side suite run and re-check which tree actually got imported
+  (`python -c "import tanitad; print(tanitad.__file__)"`).
 - **Never judge pod disk with `df`.** It reports the 965 TB cluster and hides the per-pod MooseFS
   quota. Use a real `dd` write test. A full quota killed the flagship mid-checkpoint.
 - **`step_s` in trainer logs is ACCUMULATED over `--log-every`** (÷50), not per-step. This has

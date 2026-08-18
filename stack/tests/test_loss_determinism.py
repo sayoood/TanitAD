@@ -169,16 +169,23 @@ _DROPOUTS = ("dropout", "dropout1d", "dropout2d", "dropout3d",
 _INSTRUMENT_FRAMES = {"_site", "inner", "watch_global_rng"}
 
 
+#: ⛔ Anchor on the COMPUTED repo root, never on the name "TanitAD": in the
+#: off-Drive clone (wt-tanitad-local) no path contains that token, so the old
+#: substring filter returned zero frames and the negative control failed in
+#: any clone — measured 2026-08-18 while G: was down and the clone was primary.
+_REPO_ROOT = str(Path(__file__).resolve().parents[2]).replace("\\", "/")
+
+
 def _site() -> str:
     ours = [f for f in traceback.extract_stack()
-            if "TanitAD" in f.filename.replace("\\", "/")
+            if f.filename.replace("\\", "/").startswith(_REPO_ROOT)
             and not (Path(f.filename) == Path(__file__)
                      and f.name in _INSTRUMENT_FRAMES)]
     if not ours:
         return "<outside the repo>"
     f = ours[-1]
-    return (f"{f.filename.replace(chr(92), '/').split('TanitAD/')[-1]}"
-            f":{f.lineno} ({f.name}) | {f.line}")
+    rel = f.filename.replace(chr(92), "/")[len(_REPO_ROOT):].lstrip("/")
+    return f"{rel}:{f.lineno} ({f.name}) | {f.line}"
 
 
 @contextmanager
