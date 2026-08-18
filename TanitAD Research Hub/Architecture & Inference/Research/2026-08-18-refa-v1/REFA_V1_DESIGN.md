@@ -57,7 +57,13 @@ cached DINOv3 fields [T, 640, 1024]      (frozen; 0 trainable encoder params)
          └─ proposal head (AUXILIARY — seeds the planner, never in the loss)
 ```
 
-**MEASURED parameter budget** (real config, `RefAV1Config()` with both brains):
+**MEASURED parameter budget.** ⚠️ Two configurations, two numbers — quoting one for the other
+is the exact class of error this programme keeps retracting:
+
+* `RefAV1Config()` **bare** (both brains `None`, the hierarchy-ablation arm): **143,842,068**
+* `RefAV1Config(strategic_cfg=…, tactical_cfg=…)` (**the launch config**): **174,043,172**
+
+Breakdown of the launch config:
 
 | component | params | share |
 |---|---:|---:|
