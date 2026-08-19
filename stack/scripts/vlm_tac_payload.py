@@ -3,12 +3,15 @@
 ⭐ THE SPLIT THIS FILE EXISTS TO ENFORCE. The remote side (Colab VM, pod, Thor)
 gets frames and prompts ALREADY BUILT and nothing else — no repo checkout, no
 dataset pull, and above all **no credentials**. Everything that needs the repo
-(the prompt text, the Alpamayo taxonomy, the val40 leak exclusions) happens
-here, on a machine that already has them.
+(the prompt text, the Alpamayo taxonomy, the parity gate) happens here, on a
+machine that already has them.
 
-⚠️ THE EXCLUSIONS ARE APPLIED HERE, WHICH IS THE ONLY PLACE THEY CAN BE. A clip
-that leaks into val40 must never reach the extractor at all — filtering
-afterwards would mean the label existed, and a label that exists gets used.
+⚠️ THE PARITY GATE IS APPLIED HERE, WHICH IS THE ONLY PLACE IT CAN BE. A clip
+that leaks into the deployed val must never reach the extractor at all —
+filtering afterwards would mean the label existed, and a label that exists gets
+used. It runs through parity.guard_corpus_build (role="train"), NOT a local
+exclusion list: the gate checks BOTH overlaps and emits a record that is written
+into the payload manifest as `_parity_gate`.
 
 Usage (dev box / Thor / pod — same command, different cache):
     python stack/scripts/vlm_tac_payload.py \
@@ -28,12 +31,11 @@ sys.path.insert(0, str(REPO / "stack"))
 sys.path.insert(0, str(REPO / "stack" / "scripts"))
 
 import vlm_tac_prompts as P  # noqa: E402
+from tanitad.data import parity  # noqa: E402
 
 HUB = REPO / "TanitAD Research Hub" / "Data Engineering"
 TAXONOMY = (HUB / "Implementation/incoming/2026-08-16-tactical-labels/raw"
             / "a1_alpamayo_taxonomy_per_clip.jsonl")
-EXCLUSIONS = (HUB / "Research/2026-08-18-alpamayo-screening"
-              / "alpamayo_val40_exclusions.json")
 
 #: The review sheet's geometry: one frame BEFORE the window opens (so the model
 #: can see what the ego was doing), t0, and the 6 s horizon the tactical and
@@ -89,20 +91,41 @@ def main(argv=None) -> int:
             if line.strip():
                 r = json.loads(line)
                 alp[r["clip_id"]] = r
-    excl = set(json.loads(EXCLUSIONS.read_text(encoding="utf-8"))["excluded_clip_ids"])
-
     cache = Path(args.cache)
     files = sorted(cache.glob("*.v2ep.pt"))
-    payload = {"_what": "self-contained VLM tactical/strategic extraction payload",
+    cand = [f.name.replace(".v2ep.pt", "") for f in files]
+
+    # ⭐ THE INGEST GATE, not a hand-rolled exclusion. These labels become
+    # SUPERVISION for v6.1 / REF-A v1 / REF-C v3, so role="train": the deployed
+    # val may not be inside. An earlier version of this script filtered against
+    # alpamayo_val40_exclusions.json by hand — a second, untested implementation
+    # of a question parity.py already answers, and one that checked only ONE of
+    # the two overlaps. The test suite caught it
+    # (test_build_parity_guard.py::test_every_derived_corpus_writer_is_gated).
+    #
+    # ⚠️ It runs BEFORE a single frame is decoded: C112's defect died AFTER
+    # paying for a 536 MB download, and a gate that runs late costs money to
+    # trip. mode="exclude" filters and reports rather than raising, because a
+    # 130-clip cache legitimately contains val clips and dropping them is the
+    # intended outcome — but the record rides along in the manifest, so the
+    # payload can never report a clip count whose selection it cannot name.
+    parity.require_ingest_gate("vlm_tac_payload")
+    kept, gate = parity.guard_corpus_build(
+        cand, label=f"vlm_tac_payload -> {args.out}", role="train",
+        mode="exclude")
+    keep_ids = set(kept)
+    files = [f for f in files if f.name.replace(".v2ep.pt", "") in keep_ids]
+    print(f"PARITY GATE kept={len(kept)}/{len(cand)} "
+          f"in_deployed_val={gate.get('in_deployed_val')} "
+          f"in_parity_train={gate.get('in_parity_train')}")
+    payload = {"_parity_gate": gate,
+               "_what": "self-contained VLM tactical/strategic extraction payload",
                "_prompts_from": "stack/scripts/vlm_tac_prompts.py",
                "frame_times_s": list(FRAME_TIMES_S), "sampling": P.SAMPLING,
                "clips": []}
-    n_excl = n_notax = 0
+    n_notax = 0
     for pt in files:
         cid = pt.name.replace(".v2ep.pt", "")
-        if cid in excl:
-            n_excl += 1
-            continue
         r = alp.get(cid)
         if r is None:
             n_notax += 1
@@ -131,8 +154,7 @@ def main(argv=None) -> int:
     for c in payload["clips"]:
         k = c["alpamayo"]["lane"] or "(one-axis)"
         lanes[k] = lanes.get(k, 0) + 1
-    print(f"cache files {len(files)} | val40-leak excluded {n_excl} | "
-          f"no taxonomy row {n_notax}")
+    print(f"gate-kept files {len(files)} | no taxonomy row {n_notax}")
     print(f"payload {len(payload['clips'])} clips -> {out} "
           f"({out.stat().st_size/1e6:.1f} MB)")
     for k, v in sorted(lanes.items(), key=lambda x: -x[1]):
