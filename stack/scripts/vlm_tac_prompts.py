@@ -244,17 +244,98 @@ def allowed_verdict_tokens(kind: str) -> tuple[str, ...]:
 _VERDICT_RE = re.compile(r"VERDICT:\s*([A-Z_]+)\s*$", re.M)
 
 
-def parse_verdict(text: str, kind: str) -> tuple[str, str]:
+#: The referent examples the lon prompt itself offers. ⚠️ These are NOT a
+#: blacklist. "nothing - open road" is simultaneously an example AND the correct
+#: answer on an empty road, so banning them would silently delete valid labels —
+#: the opposite failure from the one we are guarding. They are FLAGGED instead,
+#: so a model parroting the prompt is visible to review rather than either
+#: trusted or dropped.
+_LON_PROMPT_EXAMPLES = (
+    "the white van ahead in our lane",
+    "the stop line at the junction",
+    "nothing - open road",
+)
+
+
+def _norm_ref(s: str) -> str:
+    """Fold case, every dash variant (ASCII hyphen included — an en-dash swap
+    would otherwise evade the echo check) and runs of whitespace."""
+    return re.sub(r"[\s\-‐-―]+", " ", s.lower()).strip(" .\"'")
+
+
+def _answer_section(text: str, complete: bool | None = None) -> str | None:
+    """The part of a generation AFTER the thinking block, or None if there
+    isn't one. See parse_verdict for why only the CLOSING tag is reliable."""
+    if "</think>" in text:
+        return text.split("</think>", 1)[1]
+    if complete is False:
+        return None
+    return text
+
+
+def parse_referent(text: str, complete: bool | None = None
+                   ) -> tuple[str | None, bool]:
+    """-> (referent, echoed_a_prompt_example).
+
+    ⭐ The referent is what makes a longitudinal REASON auditable: compose()
+    refuses a reason whose referent cannot be named, because "decelerating"
+    without "for what" is a magnitude, and Alpamayo already supplies magnitudes.
+
+    Reads answer line ``a)``. Returns ``(None, False)`` when the generation was
+    truncated or named nothing — never a guess.
+    """
+    ans = _answer_section(text, complete)
+    if ans is None:
+        return None, False
+    m = re.search(r"^\s*(?:\*\*)?a\)\s*(?:\*\*)?\s*(.+?)\s*$", ans, re.M)
+    if not m:
+        return None, False
+    ref = m.group(1).strip().strip("*").strip()
+    if not ref or ref.upper() == ABSTAIN:
+        return None, False
+    echoed = _norm_ref(ref) in {_norm_ref(e) for e in _LON_PROMPT_EXAMPLES}
+    return ref, echoed
+
+
+def parse_verdict(text: str, kind: str,
+                  complete: bool | None = None) -> tuple[str, str]:
     """-> (verdict, thinking). ⛔ Strict: an unparseable or out-of-vocabulary
     answer becomes ABSTAIN with a reason, NEVER a nearest-match guess — a
     labeller that silently repairs its own output is a labeller you cannot audit.
+
+    ``complete`` is the generation's own report of whether it FINISHED
+    (``not hit_cap``). Pass it whenever it is known.
+
+    ⛔ TWO BUGS FIXED HERE 2026-08-19, BOTH FOUND BY THE FIRST REAL RUN.
+
+    1. The old code matched a ``<think>...</think>`` PAIR. It never matched:
+       the chat template OPENS the block, so ``<think>`` is part of the prompt
+       and is stripped by ``skip_special_tokens=True`` — the model's output
+       carries only the CLOSING tag. MEASURED over 18 generations: ``</think>``
+       present in 5, ``<think>`` in 0. So the thinking trace was never
+       extracted, and — the dangerous half — **never removed before the verdict
+       search**, leaving the whole chain of reasoning in scope for
+       ``_VERDICT_RE``. A model that writes a candidate answer mid-reasoning
+       and then concludes otherwise could have that candidate harvested.
+
+    2. A generation cut off at the token cap has no answer section AT ALL, and
+       must ABSTAIN. Without ``complete`` the parser cannot see this: the
+       opening tag is gone, so truncated reasoning is indistinguishable from a
+       plain answer by text alone. MEASURED: at a 1200 cap 13 of 18 generations
+       were truncated mid-reasoning. Harvesting a verdict from one of those is
+       the failure mode this programme calls an echo of its own input read as
+       skill — the label would look confident and mean nothing.
     """
     allowed = allowed_verdict_tokens(kind)
     think = ""
-    m = re.search(r"<think>(.*?)</think>", text, re.S)
-    if m:
-        think = m.group(1).strip()
-        text = text[m.end():]
+    if "</think>" in text:
+        # normal thinking-mode completion: everything before the closing tag is
+        # reasoning, everything after is the answer
+        think, text = text.split("</think>", 1)
+        think = think.removeprefix("<think>").strip()
+    elif complete is False:
+        # truncated mid-reasoning: there is no answer to parse
+        return ABSTAIN, text.strip()
     hits = _VERDICT_RE.findall(text)
     if not hits:
         return ABSTAIN, think

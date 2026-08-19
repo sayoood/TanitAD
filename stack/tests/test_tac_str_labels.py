@@ -401,3 +401,100 @@ def test_abstained_lane_target_is_not_a_disagreement():
     lab = compose(clip_id="c", alpamayo_lane="Right Lane Change",
                   alpamayo_lon=None, vlm_lane_target_rel=ABSTAIN)
     assert "LAT_LANE_TARGET_DISAGREEMENT" not in lab.to_dict()["flags"]
+
+
+# --------------------------------------------------------------------------- #
+# parse_verdict: the thinking block. Both cases MEASURED 2026-08-19.
+# --------------------------------------------------------------------------- #
+def _pv(*a, **k):
+    import sys as _s
+    from pathlib import Path as _P
+    _s.path.insert(0, str(_P(__file__).resolve().parents[1] / "scripts"))
+    import vlm_tac_prompts as P
+    return P.parse_verdict(*a, **k)
+
+
+def test_closing_tag_alone_splits_thinking_from_answer():
+    """⛔ The OPENING tag never appears: the chat template emits it, so it is
+    stripped as a special token. MEASURED over 18 generations — `</think>` in 5,
+    `<think>` in 0. Matching a PAIR therefore never matched."""
+    raw = "I consider the markings.\nVERDICT: LEFT\n</think>\nVERDICT: CURRENT"
+    v, think = _pv(raw, "lane")
+    assert v == "CURRENT", "the answer is AFTER the closing tag"
+    assert "I consider the markings" in think
+
+
+def test_a_candidate_inside_the_reasoning_is_NOT_harvested():
+    """The dangerous half of the old bug: with the trace left in scope, a
+    verdict written mid-reasoning and then abandoned could become the label."""
+    raw = "Maybe VERDICT: LEFT? No — it stays put.\n</think>\nVERDICT: CURRENT"
+    assert _pv(raw, "lane")[0] == "CURRENT"
+
+
+def test_truncated_generation_abstains_rather_than_guessing():
+    """No closing tag and the generation hit the cap: there is no answer
+    section, so any verdict-shaped text is mid-reasoning. MEASURED: 13 of 18
+    generations were truncated this way at a 1200 cap."""
+    raw = "Thinking... one option is VERDICT: RIGHT but I should check"
+    assert _pv(raw, "lane", complete=False)[0] == ABSTAIN
+
+
+def test_plain_answer_without_any_thinking_still_parses():
+    """Non-thinking output must be unaffected by the fix."""
+    assert _pv("VERDICT: CURRENT", "lane", complete=True)[0] == "CURRENT"
+
+
+def test_out_of_vocabulary_verdict_still_abstains():
+    assert _pv("</think>\nVERDICT: BANANA", "lane")[0] == ABSTAIN
+
+
+# --------------------------------------------------------------------------- #
+# parse_referent — compose() refuses a reason with no named referent, so this
+# parser decides whether a longitudinal label exists at all.
+# --------------------------------------------------------------------------- #
+def _pr(*a, **k):
+    import sys as _s
+    from pathlib import Path as _P
+    _s.path.insert(0, str(_P(__file__).resolve().parents[1] / "scripts"))
+    import vlm_tac_prompts as P
+    return P.parse_referent(*a, **k)
+
+
+def test_referent_is_read_from_the_answer_not_the_reasoning():
+    raw = ("a) the blue lorry (I am unsure)\n</think>\n"
+           "a) the white hatchback braking ahead\nb) its lights\nVERDICT: FOLLOW")
+    ref, echoed = _pr(raw)
+    assert ref == "the white hatchback braking ahead"
+    assert echoed is False
+
+
+def test_truncated_generation_yields_no_referent():
+    assert _pr("a) maybe the van", complete=False) == (None, False)
+
+
+def test_markdown_bold_is_tolerated():
+    assert _pr("</think>\n**a)** the stop line ahead")[0] == "the stop line ahead"
+
+
+def test_parroting_a_prompt_example_is_FLAGGED_not_silently_accepted():
+    raw = "</think>\na) the white van ahead in our lane\nVERDICT: FOLLOW"
+    ref, echoed = _pr(raw)
+    assert ref == "the white van ahead in our lane"
+    assert echoed is True, "a referent copied from the prompt is not evidence"
+
+
+def test_an_en_dash_swap_does_not_evade_the_echo_check():
+    """⚠️ Normalisation must fold the ASCII hyphen too, or 'nothing – open road'
+    slips past a check written against 'nothing - open road'."""
+    assert _pr("</think>\na) Nothing \u2013 open road.")[1] is True
+
+
+def test_open_road_is_still_returned_as_a_real_referent():
+    """⛔ The examples are FLAGGED, never banned: 'nothing - open road' is the
+    correct answer on an empty road, and banning it would delete valid labels."""
+    ref, echoed = _pr("</think>\na) nothing - open road")
+    assert ref and echoed is True   # usable, and visible to review
+
+
+def test_no_referent_line_returns_none():
+    assert _pr("</think>\nVERDICT: FOLLOW") == (None, False)
