@@ -3729,6 +3729,134 @@ milestone, coarse/fine agreement, and non-collapse — were written before the f
 
 ---
 
+## 12. World-Action Models: what SimWAM settles, what it leaves open, and REF-D
+
+### 12.1 The result that matters, and why we had already half-found it
+
+SimWAM [Zhao et al., 2608.07468] reaches **91.5 PDMS** on NAVSIM with a 6 B model
+by *removing* future imagination from the inference loop. Its mechanism is a
+single **isolated attention mask**: current-observation latents, future-frame
+latents and action tokens share one attention stream, but the future tokens and
+the action tokens are **mutually invisible**. Future-video prediction becomes a
+training-time supervision signal, and the video expert is deleted at inference.
+
+Their ablation is the load-bearing evidence (Tab. 3, PDMS): bidirectional
+**90.2**, action→video **90.1**, isolated **90.3**. Exposing the action branch to
+imagined futures buys nothing while costing the whole synthesis latency.
+
+We had reached the same conclusion from the opposite direction and had not
+stated it as a result. Flagship v1 measured open-loop ADE **0.45 m** against
+closed-loop **1.69 m** with imagination in the loop, and `v6.py` refuses an
+imagination-led refinement in its own words — *"the REFUTED roll-cost selection
+rule wearing MPC's name"* — with `mpc_w_consist` defaulting to `0.0`. Two
+programmes, 6 B against 300 M, pixel space against feature space, same answer.
+
+⚠️ **But the discipline is narrower than "no imagination at inference", and the
+narrowing is ours.** F-17 uses roll-cost **variance** as an *uncertainty signal*,
+P7-calibrated at **ρ 0.7164 [0.5847, 0.7696]**, permutation-invariant over
+candidates by construction so it cannot rank them even in principle. Two
+questions must be kept apart:
+
+| question | answer |
+|---|---|
+| may imagined futures *condition the action*? | ⛔ no — SimWAM Tab. 3, and our roll-cost refutation |
+| may *disagreement among* imagined futures signal uncertainty? | ✅ yes — P7 ρ 0.7164 |
+
+**Imagination may never choose; it may warn.**
+
+### 12.2 Action conditioning: a measured result at three orders of magnitude below publication
+
+SimWAM places action tokens in the *same self-attention stream* as the vision
+tokens. Both of our arms instead **condition**: v6 feeds actions into `P_O` as a
+vector, and REF-A v1's `TokenFieldPredictor` broadcasts the action over tokens
+and concatenates-then-projects — DINO-WM's exact scheme. The joint stream had
+never been tested here.
+
+**E-ACTSTREAM-1** tested it on banked v6 cell fields, parameter-matched to
+**576 params (0.04 %)**, three seeds, episode-disjoint split, paired
+episode-cluster bootstrap. A third arm (`add`: broadcast-and-add, no transform on
+the field path) was added specifically to break the confound between
+*tokenisation* and the *projection* that `concat` bundles with it.
+
+| arm | MSE | vs C-PERSIST |
+|---|---|---|
+| *C-PERSIST* (copy last field) | 0.00000728 | — |
+| **token** (joint stream) | **0.00000785** | 1.078× |
+| *C-MEAN* | 0.000017 | 2.3× |
+| concat (broadcast + project) | 0.000046 | 6.3× |
+| add (broadcast + add) | 0.000078 | 10.7× |
+
+`concat` **beats** `add`, so the projection *helps* and is not the source of the
+gap; `token` beats both broadcast forms by **5.9–9.9×**, separated at every width
+(d=32/48/192), both target formulations, both horizons (2.4 s and 6.0 s), both
+data scales (3,277 and 13,108 windows) and all three seeds.
+
+⛔ **And the honest limit travels with it.** Paired `token − C-PERSIST` is
+**+0.00000057 [+0.00000036, +0.00000084]** — token **loses to persistence,
+separated**. So the licensed claim is *"tokenised action conditioning dominates
+broadcast conditioning at equal parameters"*, **not** that either models the
+dynamics. Doubling the data narrowed the gap from 1.4× to 1.078× and did not
+close it; the full corpus is ~18× more episodes, far beyond the 2× this
+programme permits projecting, so the crossing is an open question.
+
+⚠️ A variance decomposition run alongside it may matter more than the headline:
+**between-episode variance 0.000013 against within-episode 0.000003, a ratio of
+4.5×**. The cell field is dominated by *which episode* rather than *when in the
+episode* — a scene fingerprint more than a dynamics state, which bears directly
+on why linear readouts of that field separate nothing.
+
+### 12.3 REF-D: the economics, not the scale
+
+The isolated mask has a consequence for us that is worth more than the PDMS
+number: **the prior is deleted at inference, so its size is a training cost, not
+a deployment cost.** A sub-300 M *deployment* constraint forbids **shipping** a
+large prior; it does not forbid **using** one.
+
+REF-D spends that on the hierarchy instead of on parameters:
+
+* **frozen Cosmos3-Edge (4 B)**, pre-extracted, training-time only, never shipped;
+* **adapter → three-rate goal-conditioned hierarchy with action tokens**, ~**173 M**,
+  which is what ships — **35× smaller than SimWAM's 6 B**;
+* **multi-horizon isolated supervision**, one target per layer. This is the
+  extension SimWAM cannot express: it has one action group and one horizon, and
+  its own Tab. 8 shows *coverage beats density* (4 s/1 Hz **90.2** ≈ 4 s/2 Hz
+  **90.3** ≫ 2 s/2 Hz **89.9**). A hierarchy is a machine for covering several
+  horizons at once.
+
+⭐ **The policy is a generator, not a fan.** v6 diffuses candidates and a selector
+ranks them; `assert_selector_admissible` refuses every selector launch while
+SEL-1 stands refused (E-WC2: σ/ADE **9.9915 [7.4492, 13.5119]** against the 3.0
+line). SimWAM has no selector because its flow model *is* the policy. REF-D
+adopts that — one control sequence, sampled and integrated. This does not repair
+the selector; it removes the need for one.
+
+The parameterisation stays ours: **controls, never waypoints** (a per-waypoint
+head amplified ε **25×** in acceleration; the v5f dense fan measured **97.6 %
+infeasible steps / 100 % infeasible candidates**), with every sample squashed and
+integrated so feasibility holds by construction.
+
+⚠️ **One tension is declared rather than resolved.** Rectified flow assumes an
+isotropic Gaussian base; our OU-correlated noise is not isotropic. Plain flow
+matching tolerates that, but Flow-GRPO's tractable transition likelihoods — the
+machinery SimWAM's RL rests on — do not. Both arms are built and the correlation
+property is measured, not asserted.
+
+### 12.4 What blocks the last +1.2, and it is not compute
+
+SimWAM's reinforcement stage is worth **+1.2 PDMS** (90.3 → 91.5), and its reward
+is the **NAVSIM PDM score**. This programme contains **zero `import navsim`**:
+the benchmark named in Phase 1 was never implemented, so no number we have ever
+produced is comparable to a published one.
+
+⇒ The order is forced: **benchmark → reward → RL.** Building a reward out of our
+own four metric families instead would mean optimising the quantity we also
+report — the "scoring a loop" failure our own goal/situation-disjointness rule
+exists to prevent.
+
+⚠️ And PDMS is a non-reactive score. Our tier doctrine exists because open-loop
+and closed-loop diverged **25×** on one checkpoint and one window set. NAVSIM
+buys *comparability*, not truth, and should be adopted saying so.
+
 ## References
 
 (Formal bibliography at LaTeX export; the working citations live in
