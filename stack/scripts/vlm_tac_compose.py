@@ -113,6 +113,12 @@ def main(argv=None) -> int:
             clip_id=cid,
             alpamayo_lane=clip["alpamayo"]["lane"],
             alpamayo_lon=clip["alpamayo"]["longitudinal"],
+            # ⭐ the two fields the pipeline used to discard entirely. `cot` is
+            # 100 % populated and names the referent on 88.7 % of clips;
+            # `lateral` ("Go Straight", 53 %) is the ROUTE-level signal that
+            # makes FOLLOW_MAIN_ROAD / STRAIGHT_THROUGH reachable.
+            alpamayo_lateral=clip["alpamayo"].get("lateral"),
+            alpamayo_cot=clip["alpamayo"].get("cot"),
             vlm_lon=None if vlon == ABSTAIN else vlon,
             vlm_referent=referent,
             vlm_lane_target_rel=vlane if vlane in LANE_REL else ABSTAIN,
@@ -152,13 +158,30 @@ def main(argv=None) -> int:
     print(f"flags         {cen['flags']}")
     for axis, c in cen["labels"].items():
         print(f"  labels {axis:6s} {c}")
+    # ⛔ THE ABSTAIN DECOMPOSITION. A single ABSTAIN column conflates three
+    # completely different states, and reporting them together made a
+    # half-finished run look like a refusing model (MEASURED 2026-08-19: of six
+    # ABSTAINs, FOUR were generations that had never run and ZERO were genuine
+    # refusals). Never print an abstain total without this breakdown.
     cap = cen["quality"].get("hit_cap", 0)
     tot = sum(v for k, v in cen["generations"].items() if k.endswith("/ok"))
+    absent = sum(v for k, v in cen["generations"].items() if k.endswith("/absent"))
+    err = sum(v for k, v in cen["generations"].items() if k.endswith("/error"))
+    cen["abstain_decomposition"] = {
+        "generation_never_ran": absent, "generation_errored": err,
+        "truncated_at_cap": cap, "ran_to_EOS": max(0, tot - cap),
+        "_read": "only ran_to_EOS abstentions are statements about the MODEL; "
+                 "the rest are statements about the RUN or the operator's cap",
+    }
+    Path(args.census).write_text(json.dumps(cen, indent=1), encoding="utf-8")
+    print(f"\nABSTAIN decomposition — never-ran {absent} · errored {err} · "
+          f"truncated-at-cap {cap} · ran-to-EOS {max(0, tot - cap)}")
+    if absent:
+        print(f"⛔ {absent} generation(s) NEVER RAN. Those are NOT model "
+              f"abstentions and must not be read as capability.")
     if cap:
-        print(f"\n⚠️ {cap}/{tot} generations hit the token cap and were truncated "
-              f"mid-reasoning. Those ABSTAIN by construction — that is a fact "
-              f"about the CAP, not about the model, and any 'the VLM cannot do "
-              f"this' reading of these numbers is invalid.")
+        print(f"⚠️ {cap}/{tot} hit the token cap and were truncated mid-reasoning "
+              f"— a fact about the CAP, not the model.")
     return 0
 
 

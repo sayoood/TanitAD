@@ -41,6 +41,7 @@ a label's clothes.
 """
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
@@ -51,6 +52,9 @@ from tanitad.models.v6 import (STRATEGIC_ACTION_TOKENS, STRATEGIC_GOAL_TOKENS,
 
 __all__ = ["Leg", "LabelField", "TacStrLabel", "ALPAMAYO_LANE_TO_LAT",
            "LON_ADMISSIBLE", "LANE_TARGET_REL", "NOT_APPLICABLE", "ABSTAIN",
+           "ALPAMAYO_COT_REFERENTS", "referents_from_cot", "lon_from_alpamayo",
+           "strategic_from_alpamayo", "JUNCTION_REFERENTS", "STOP_AT_REFERENTS",
+           "lon_from_ego", "EGO_STOP_EPS_MS", "EGO_CREEP_MAX_MS",
            "compose", "lon_is_admissible", "strategic_from_lane_target",
            "lane_target_is_admissible", "LAT_REQUIRES_LANE_TARGET",
            "route_to_from_sign", "ROUTE_BRANCH"]
@@ -175,6 +179,208 @@ def lane_target_is_admissible(lat_token: str | None, rel: str | None) -> bool:
     return required is None or rel == required
 
 
+#: ⭐⭐ THE ALPAMAYO `cot` FIELD — 100 % POPULATED, AND IT NAMES THE REFERENT.
+#: MEASURED over the 4,729-clip taxonomy: **88.7 % of clips name a referent** and
+#: **52.5 % resolve to a SINGLE longitudinal action** from the text alone. We were
+#: paying a 9B VLM ~240 s per generation to produce a referent that ships with the
+#: dataset, free and deterministic, on every clip — while `compose()` declared
+#: *"Alpamayo's magnitude axis is REASON_REQUIRED and casts no longitudinal
+#: vote"* and dropped the whole field. (The PI flagged this repeatedly.)
+#:
+#: Verbatim from the corpus:
+#:   "Slow down due to the lead vehicle ahead."     -> FOLLOW    (lead vehicle)
+#:   "Keep lane because the road ahead is clear."   -> CRUISE    (clear road)
+#:   "Slow down due to the speed bump ahead"        -> BRAKE_TO  (speed bump)
+#:
+#: ⚠️ `implies` is None where the referent genuinely does NOT determine the
+#: longitudinal action — a curve, a parked car, an intersection, or a traffic
+#: light whose COLOUR decides it. Those contribute a REFERENT but never an
+#: action; guessing there is the nearest-token repair this module forbids.
+ALPAMAYO_COT_REFERENTS: tuple[tuple[str, str, str | None], ...] = (
+    ("lead_vehicle", r"\blead(ing)? (vehicle|car)\b|\bvehicle ahead\b|\bcar ahead\b", "FOLLOW"),
+    ("traffic_light", r"\btraffic light\b|\bred light\b|\bgreen light\b|\btraffic signal\b", None),
+    ("stop_sign", r"\bstop sign\b", "BRAKE_TO"),
+    ("pedestrian", r"\bpedestrian|\bcrosswalk\b|\bzebra\b|\bcrossing\b", "YIELD_MERGE"),
+    ("speed_bump", r"\bspeed bump\b|\bspeed hump\b", "BRAKE_TO"),
+    ("curve", r"\bcurve\b|\bcurvature\b|\bbend\b", None),
+    ("parked", r"\bparked (car|vehicle|van|truck)\b", None),
+    ("cyclist", r"\bcyclist\b|\bbicycl", None),
+    ("oncoming", r"\boncoming\b", None),
+    ("clear", r"\b(road|lane|path) ahead is clear\b|\bclear (road|path|lane)\b", "CRUISE"),
+    ("merge_yield", r"\bmerg|\byield", "YIELD_MERGE"),
+    ("queue", r"\bqueue\b|\bstopped traffic\b|\btraffic ahead\b", "FOLLOW"),
+    ("intersection", r"\bintersection\b|\bjunction\b", None),
+    ("roundabout", r"\broundabout\b", None),
+)
+
+
+def referents_from_cot(cot: str | None) -> tuple[tuple[str, ...], tuple[str, ...]]:
+    """-> (referent names found, longitudinal actions they imply).
+
+    Names and actions are returned SEPARATELY because a clip may name a referent
+    that determines nothing (a curve). That still satisfies the referent
+    requirement while casting no longitudinal vote.
+    """
+    if not cot:
+        return (), ()
+    low = cot.lower()
+    names: list[str] = []
+    acts: list[str] = []
+    for name, pat, implies in ALPAMAYO_COT_REFERENTS:
+        if re.search(pat, low):
+            names.append(name)
+            if implies:
+                acts.append(implies)
+    return tuple(names), tuple(dict.fromkeys(acts))
+
+
+def lon_from_alpamayo(alpamayo_lon: str | None, cot: str | None
+                      ) -> tuple[str | None, str | None]:
+    """-> (longitudinal action, referent phrase), or (None, None).
+
+    ⛔ TWO GATES, BOTH REQUIRED — a derivation, never a guess:
+      1. the cot's referents imply EXACTLY ONE action (ambiguity abstains);
+      2. that action is ADMISSIBLE under the magnitude (``LON_ADMISSIBLE``), so
+         the stated reason and the measured magnitude cannot contradict.
+    """
+    _names, acts = referents_from_cot(cot)
+    if len(acts) != 1:
+        return None, None
+    act = acts[0]
+    if not lon_is_admissible(alpamayo_lon, act):
+        return None, None
+    return act, (cot or "").strip()
+
+
+#: ⭐ THE EGO TIER — and the line that makes it admissible.
+#:
+#: The module rule above says *"ego QUANTIFIES what the VLM has NAMED — it may
+#: never fire where the VLM abstained"*. That rule is about **goal ARGUMENTS**:
+#: a NUMBER attached to a scene referent ("stop at 12 m") is the driver's
+#: idiosyncrasy unless something independently asserted the referent exists.
+#:
+#: ⚠️ THE DISTINCTION THIS TIER RESTS ON: ``HOLD`` and ``CREEP`` are not reasons,
+#: they are **ego KINEMATIC STATES**. "The vehicle is stopped and stays stopped"
+#: is a fact about the ego, not a claim about the scene, and it needs no
+#: referent to be true. The reason-typed tokens (FOLLOW, YIELD_MERGE, BRAKE_TO)
+#: remain closed to ego, because each asserts something about an external object.
+#: ⇒ **ego may assert what the ego DID; never why.**
+#:
+#: PI 2026-08-18 tier-3, verbatim: *"use it only in very clear situations
+#: without large interpretation"* — hence the wide dead-band and the refusal to
+#: guess anywhere in between.
+EGO_STOP_EPS_MS: float = 0.5      # at/below this the vehicle is stopped
+EGO_CREEP_MAX_MS: float = 2.0     # ~7 km/h — crawling, not driving
+
+
+def lon_from_ego(alpamayo_lon: str | None, v0_ms: float | None,
+                 v_end_ms: float | None) -> tuple[str | None, str | None]:
+    """-> (longitudinal action, reason) from EGO KINEMATICS alone, or (None, None).
+
+    ⛔ Only the two ego-state tokens are reachable here, and only in the clear
+    cases. Anything requiring an external referent stays with the VLM.
+    """
+    if v0_ms is None or v_end_ms is None:
+        return None, None
+    mag = (alpamayo_lon or "").strip().lower()
+    if v_end_ms <= EGO_STOP_EPS_MS and (mag == "stop" or v0_ms <= EGO_CREEP_MAX_MS):
+        tok, why = "HOLD", (f"ego stopped and stays stopped "
+                            f"(v_end {v_end_ms:.2f} <= {EGO_STOP_EPS_MS} m/s)")
+    elif (EGO_STOP_EPS_MS < v_end_ms <= EGO_CREEP_MAX_MS
+            and v0_ms <= EGO_CREEP_MAX_MS):
+        tok, why = "CREEP", (f"ego crawls throughout (v0 {v0_ms:.2f}, "
+                             f"v_end {v_end_ms:.2f} m/s, both <= "
+                             f"{EGO_CREEP_MAX_MS})")
+    else:
+        return None, None
+    # ⚠️ the magnitude prior still binds: an ego reading that contradicts the
+    # measured magnitude is a disagreement, not a label.
+    if not lon_is_admissible(alpamayo_lon, tok):
+        return None, None
+    return tok, why
+
+
+#: Alpamayo's `lateral` axis. "Go Straight" is 2,504 of 4,729 clips (53 %) — a
+#: ROUTE-level statement the pipeline previously discarded.
+ALPAMAYO_GOES_STRAIGHT: frozenset[str] = frozenset({"go straight"})
+#: cot referents marking a JUNCTION — the discriminator between "proceeding
+#: through a junction" and "continuing along the road".
+JUNCTION_REFERENTS: frozenset[str] = frozenset(
+    {"intersection", "roundabout", "traffic_light", "stop_sign"})
+#: referents that can license STOP_AT — a stop must be AT something.
+STOP_AT_REFERENTS: frozenset[str] = frozenset(
+    {"traffic_light", "stop_sign", "pedestrian"})
+
+
+def strategic_from_alpamayo(alpamayo_lane: str | None,
+                            alpamayo_lateral: str | None,
+                            alpamayo_lon: str | None,
+                            cot: str | None
+                            ) -> tuple[LabelField | None, LabelField | None]:
+    """-> (g_str, a_str) from Alpamayo alone, or (None, None).
+
+    ⭐ WHY THIS EXISTS. Before it the strategic cascade could emit only
+    KEEP_CORRIDOR / LANE_TARGET / TURN_* / ROUTE_TO — **5 of the 11
+    STRATEGIC_GOAL_TOKENS were unreachable by any path** — and, worse, a
+    lane-keep on a main road was labelled ``KEEP_CORRIDOR``, a LANE-level claim
+    standing in for a ROUTE-level one. The strategic layer was emitting a
+    tactical-grade token, which undercuts the hierarchy thesis at exactly the
+    layer meant to demonstrate it.
+
+    This makes STRAIGHT_THROUGH, FOLLOW_MAIN_ROAD and STOP_AT reachable from
+    signal Alpamayo already ships. EXIT_LEFT / EXIT_RIGHT still need the exit
+    predicate and remain the only gap.
+
+    ⚠️ The junction discriminator is the point: "Go Straight" means
+    STRAIGHT_THROUGH only AT a junction; on open road the honest token is
+    FOLLOW_MAIN_ROAD. Collapsing them would stamp half the corpus with a
+    junction claim it cannot support.
+    """
+    names, _acts = referents_from_cot(cot)
+    lat = (alpamayo_lateral or "").strip().lower()
+    lane = (alpamayo_lane or "").strip().lower()
+    lon = (alpamayo_lon or "").strip().lower()
+
+    if lon == "stop" and (set(names) & STOP_AT_REFERENTS):
+        return (LabelField("STOP_AT", Leg.ALPAMAYO,
+                           corroborated_by=(Leg.ALPAMAYO,)),
+                LabelField("PREPARE_STOP", Leg.ALPAMAYO,
+                           corroborated_by=(Leg.ALPAMAYO,)))
+
+    if lane in ("turn left", "turn right"):
+        # ⚠️ CONSOLIDATED HERE 2026-08-20. compose() used to carry a separate
+        # alpamayo-turn branch; once this function became the route-level tier
+        # that branch was SHADOWED and turns silently lost their g_str. All
+        # Alpamayo-derived strategy now lives in one place so a reordering
+        # cannot orphan one of its cases again.
+        side = "TURN_LEFT" if "left" in lane else "TURN_RIGHT"
+        return (LabelField(side, Leg.ALPAMAYO,
+                           corroborated_by=(Leg.ALPAMAYO,)),
+                LabelField(ABSTAIN, Leg.NONE,
+                           "strategic action needs the turn's TIMING, which "
+                           "the clip-level Alpamayo record cannot supply"))
+
+    if lane in ("left lane change", "right lane change"):
+        # the ACTION is stated; the GOAL still needs a target lane
+        return (None,
+                LabelField("PREPARE_LANE_CHANGE", Leg.ALPAMAYO,
+                           corroborated_by=(Leg.ALPAMAYO,)))
+
+    if lat in ALPAMAYO_GOES_STRAIGHT and lane == "lane keep":
+        if set(names) & JUNCTION_REFERENTS:
+            return (LabelField("STRAIGHT_THROUGH", Leg.ALPAMAYO,
+                               corroborated_by=(Leg.ALPAMAYO,)),
+                    LabelField(ABSTAIN, Leg.NONE,
+                               "strategic action needs the junction's TIMING, "
+                               "which the clip-level record cannot supply"))
+        return (LabelField("FOLLOW_MAIN_ROAD", Leg.ALPAMAYO,
+                           corroborated_by=(Leg.ALPAMAYO,)),
+                LabelField(ABSTAIN, Leg.NONE,
+                           "no strategic action implied by continuing along "
+                           "the road"))
+    return None, None
+
+
 def strategic_from_lane_target(rel: str, *, exit_ahead_on_side: bool | None = None
                                ) -> tuple[LabelField, LabelField]:
     """``lane_target_rel`` -> (``g_str``, ``a_str``). The cascade.
@@ -290,6 +496,11 @@ class TacStrLabel:
 def compose(*, clip_id: str,
             alpamayo_lane: str | None,
             alpamayo_lon: str | None,
+            alpamayo_lateral: str | None = None,
+            alpamayo_cot: str | None = None,
+            ego_v0_ms: float | None = None,
+            ego_v_end_ms: float | None = None,
+            allow_ego_lon: bool = False,
             vlm_lon: str | None = None,
             vlm_referent: str | None = None,
             vlm_goal: str | None = None,
@@ -335,9 +546,51 @@ def compose(*, clip_id: str,
 
     # ---- TIER 2: longitudinal reason, constrained by the Tier-1 prior ---- #
     if vlm_lon in (None, ABSTAIN):
-        lon = LabelField(ABSTAIN, Leg.NONE,
-                         "no VLM reason; Alpamayo's magnitude axis is "
-                         "REASON_REQUIRED and casts no longitudinal vote")
+        # ⭐ THE ALPAMAYO REASON TIER. This branch used to refuse outright —
+        # "Alpamayo's magnitude axis is REASON_REQUIRED and casts no
+        # longitudinal vote" — which is true of the MAGNITUDE and threw away the
+        # `cot`, a field that names the referent on 88.7 % of clips and
+        # determines the action outright on 52.5 %. A VLM abstention, or a
+        # generation that never ran, no longer empties a label the dataset
+        # already answered.
+        _alp_act, _alp_ref = lon_from_alpamayo(alpamayo_lon, alpamayo_cot)
+        if _alp_act is not None:
+            lon = LabelField(_alp_act, Leg.ALPAMAYO,
+                             corroborated_by=(Leg.ALPAMAYO,))
+            flags.append("LON_FROM_ALPAMAYO_COT")
+        else:
+            # ⭐ THE EGO TIER, third and last. Only the two ego-STATE tokens are
+            # reachable (HOLD / CREEP) — see lon_from_ego for why that is the
+            # admissible line and the reason-typed tokens are not.
+            # ⛔ OPT-IN, DEFAULT OFF — and the default is not timidity.
+            # `test_ego_never_assigns_a_class_only_arguments` encoded a MEASURED
+            # refusal: `vtarget_guarded` was rejected as "hindsight EGO geometry
+            # — what speed did this driver settle at, not what speed is
+            # permitted here", beating nothing (0.4066 free vs 0.2465 trained).
+            # HOLD/CREEP are a narrower case (ego STATE, not a permitted speed)
+            # and the PI's binding rule explicitly allows ego for LABEL
+            # derivation — but the risk is real and specific:
+            # ⚠️ A HOLD label derived from v_end~0 is often predictable from
+            # v0~0, which the model IS handed as the integrator constant. That
+            # is the ego-speed echo family. ⇒ ANY head trained on
+            # LON_FROM_EGO_KINEMATICS labels MUST be run through the v0-shuffle
+            # echo control before its number is quotable.
+            _ego_act, _ego_why = (lon_from_ego(alpamayo_lon, ego_v0_ms,
+                                               ego_v_end_ms)
+                                  if allow_ego_lon else (None, None))
+            if _ego_act is not None:
+                lon = LabelField(_ego_act, Leg.EGO,
+                                 corroborated_by=(Leg.ALPAMAYO,)
+                                 if alpamayo_lon else ())
+                flags.append("LON_FROM_EGO_KINEMATICS")
+            else:
+                _names, _acts = referents_from_cot(alpamayo_cot)
+                lon = LabelField(
+                    ABSTAIN, Leg.NONE,
+                    f"no VLM reason; Alpamayo cot names {list(_names) or 'nothing'} "
+                    f"implying {list(_acts) or 'no single action'}; ego "
+                    f"(v0={ego_v0_ms}, v_end={ego_v_end_ms}) not a clear "
+                    f"HOLD/CREEP — unresolvable under magnitude {alpamayo_lon!r}")
     elif vlm_lon not in TACTICAL_LON_ACTIONS:
         raise ValueError(f"vlm_lon {vlm_lon!r} is outside TACTICAL_LON_ACTIONS")
     elif not vlm_referent:
@@ -387,6 +640,35 @@ def compose(*, clip_id: str,
                            "sign read does not supply")
         flags.append("ROUTE_TO_FROM_SIGN")
         flags.append("STRATEGIC_TIMING_FROM_GEOMETRY_REQUIRED")
+    elif vlm_lane_target_rel in (None, ABSTAIN) or (
+            vlm_lane_target_rel == "CURRENT"
+            and strategic_from_alpamayo(alpamayo_lane, alpamayo_lateral,
+                                        alpamayo_lon, alpamayo_cot)[0] is not None):
+        # ⭐ ROUTE-LEVEL BEATS LANE-LEVEL, and the ordering is the whole point.
+        # MEASURED 2026-08-20: with the lane-target branch first, this tier was
+        # UNREACHABLE — `vlm_lane_target_rel` is never None (the caller passes
+        # ABSTAIN), so the cascade always fired and `g_str` came out
+        # KEEP_CORRIDOR on every lane-keep clip.
+        #
+        # ⚠️ KEEP_CORRIDOR is a LANE-level claim ("stay in this lane"). On a
+        # lane-keep clip the STRATEGIC fact is the ROUTE one — FOLLOW_MAIN_ROAD
+        # on open road, STRAIGHT_THROUGH at a junction. Emitting the lane token
+        # in the route slot is the hierarchy collapsing by one level, which is
+        # precisely what the strategic layer exists to avoid.
+        #
+        # A NON-CURRENT target still goes to the cascade below: "the target is
+        # the lane to my left" is more specific than "I am following the road",
+        # so LANE_TARGET wins there.
+        _g_alp, _a_alp = strategic_from_alpamayo(
+            alpamayo_lane, alpamayo_lateral, alpamayo_lon, alpamayo_cot)
+        if _g_alp is not None or _a_alp is not None:
+            g_str, a_str = _g_alp, _a_alp
+            flags.append("STRATEGIC_FROM_ALPAMAYO")
+            if _a_alp is not None and "TIMING" in (_a_alp.reason or "").upper():
+                flags.append("STRATEGIC_TIMING_FROM_GEOMETRY_REQUIRED")
+        elif vlm_lane_target_rel is not None:
+            g_str, a_str = strategic_from_lane_target(
+                vlm_lane_target_rel, exit_ahead_on_side=vlm_exit_ahead)
     elif not lane_target_is_admissible(lat.value, vlm_lane_target_rel):
         # ⛔ Refuse rather than compose a self-contradictory record. Same shape
         # as LON_PRIOR_DISAGREEMENT: the two legs disagree, so the STRATEGIC
@@ -414,6 +696,17 @@ def compose(*, clip_id: str,
                            "strategic action needs the turn's TIMING, which the "
                            "clip-level Alpamayo record cannot supply")
         flags.append("STRATEGIC_TIMING_FROM_GEOMETRY_REQUIRED")
+    else:
+        # ⭐ THE ALPAMAYO STRATEGIC TIER — makes STRAIGHT_THROUGH,
+        # FOLLOW_MAIN_ROAD and STOP_AT reachable. Before this, 5 of the 11
+        # STRATEGIC_GOAL_TOKENS could not be emitted by ANY path, and a lane
+        # keep on a main road was labelled KEEP_CORRIDOR — a LANE-level token
+        # standing in for a ROUTE-level one.
+        _g_alp, _a_alp = strategic_from_alpamayo(
+            alpamayo_lane, alpamayo_lateral, alpamayo_lon, alpamayo_cot)
+        if _g_alp is not None or _a_alp is not None:
+            g_str, a_str = _g_alp, _a_alp
+            flags.append("STRATEGIC_FROM_ALPAMAYO")
 
     # ⛔ ROUTE_TO is reachable through EXACTLY ONE audited path: a sign that was
     # READ, verified EXTERIOR, and demonstrably FOLLOWED (route_to_from_sign).

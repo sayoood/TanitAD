@@ -67,12 +67,71 @@ def test_ABORT_LC_has_no_alpamayo_source():
 
 
 # ---------------------------------- TIER 1 as a PRIOR, never a longitudinal label --
-def test_alpamayo_alone_NEVER_produces_a_longitudinal_label():
-    """The type mismatch is structural: magnitude cannot decide a reason."""
+def test_the_MAGNITUDE_alone_never_produces_a_longitudinal_label():
+    """The type mismatch is structural: a magnitude cannot decide a reason.
+
+    ⚠️ RENAMED 2026-08-19. This used to be `test_alpamayo_alone_NEVER_...`,
+    which over-stated the rule: Alpamayo's `cot` DOES name a referent (88.7 % of
+    clips) and does determine the action on 52.5 %. What cannot decide a reason
+    is the MAGNITUDE axis — and that is still enforced, as this test shows by
+    passing no cot at all. The reason string now names what the cot contributed
+    instead of the bare REASON_REQUIRED token."""
     for mag in LON_ADMISSIBLE:
-        out = _c(alpamayo_lon=mag, vlm_lon=None)
+        out = _c(alpamayo_lon=mag, vlm_lon=None, alpamayo_cot=None)
         assert out.a_tac_lon.value == ABSTAIN
-        assert "REASON_REQUIRED" in out.a_tac_lon.reason
+        assert out.a_tac_lon.leg is Leg.NONE
+        assert "nothing" in out.a_tac_lon.reason
+
+
+# --------------------------------------------------------------------------- #
+# ⭐ THE ALPAMAYO `cot` TIER — the PI flagged this repeatedly before it landed.
+# --------------------------------------------------------------------------- #
+def test_the_cot_supplies_the_reason_the_magnitude_cannot():
+    """MEASURED on the 4,729-clip taxonomy: the cot names a referent on 88.7 %
+    of clips and implies exactly one admissible action on 52.5 %. Before this,
+    every one of those was discarded and the label emptied."""
+    out = _c(alpamayo_lon="Gentle Deceleration", vlm_lon=None,
+             alpamayo_cot="Slow down due to the lead vehicle ahead.")
+    assert out.a_tac_lon.value == "FOLLOW"
+    assert out.a_tac_lon.leg is Leg.ALPAMAYO
+    assert "LON_FROM_ALPAMAYO_COT" in out.flags
+
+
+def test_the_cot_must_agree_with_the_MAGNITUDE_or_it_abstains():
+    """⛔ Gate 2. "Road ahead is clear" implies CRUISE, which is inadmissible
+    under a Stop — the reason and the measured magnitude may not contradict."""
+    out = _c(alpamayo_lon="Stop", vlm_lon=None,
+             alpamayo_cot="Keep lane because the road ahead is clear.")
+    assert out.a_tac_lon.value == ABSTAIN
+
+
+def test_an_AMBIGUOUS_cot_abstains_rather_than_picking_one():
+    """⛔ Gate 1. Two referents implying different actions is not a majority
+    vote — it is an abstention. Guessing here is the nearest-token repair this
+    module forbids."""
+    out = _c(alpamayo_lon="Gentle Deceleration", vlm_lon=None,
+             alpamayo_cot="Slow for the lead vehicle ahead and the pedestrian "
+                          "at the crossing.")
+    assert out.a_tac_lon.value == ABSTAIN
+
+
+def test_a_referent_that_determines_NOTHING_still_abstains():
+    """A curve is a real referent but implies no longitudinal action; it must
+    not be promoted to one."""
+    out = _c(alpamayo_lon="Gentle Deceleration", vlm_lon=None,
+             alpamayo_cot="Adapt speed for the right curve ahead.")
+    assert out.a_tac_lon.value == ABSTAIN
+    assert "curve" in out.a_tac_lon.reason
+
+
+def test_the_VLM_still_outranks_the_cot_when_it_answered():
+    """The cot is a FALLBACK, not a replacement — the VLM saw the video."""
+    out = _c(alpamayo_lon="Gentle Deceleration", vlm_lon="YIELD_MERGE",
+             vlm_referent="the cyclist entering from the right",
+             alpamayo_cot="Slow down due to the lead vehicle ahead.")
+    assert out.a_tac_lon.value == "YIELD_MERGE"
+    assert out.a_tac_lon.leg is Leg.VLM
+    assert "LON_FROM_ALPAMAYO_COT" not in out.flags
 
 
 def test_the_prior_REJECTS_an_inadmissible_vlm_answer_and_FLAGS_it():
@@ -124,12 +183,32 @@ def test_ego_args_SURVIVE_when_the_vlm_named_a_referent_and_a_goal():
     assert out.g_tac_args == {"within_m": 23.4, "by_time_s": 3.1}
 
 
-def test_ego_never_assigns_a_class_only_arguments():
-    """There is no parameter by which ego can set a_tac_lon or a_tac_lat."""
-    import inspect
-    sig = inspect.signature(compose).parameters
-    ego_params = [p for p in sig if p.startswith("ego_")]
-    assert ego_params == ["ego_args"], ego_params
+def test_ego_never_assigns_a_class_BY_DEFAULT():
+    """⚠️ NARROWED 2026-08-20, not weakened. The original assertion was
+    structural (only `ego_args` may exist). The PI asked for "quantifications
+    derived from ego integrated data", so ego CAN now set a_tac_lon — but only
+    for the two ego-STATE tokens, and only when explicitly enabled.
+
+    The measured refusal this test protects still stands: `vtarget_guarded` was
+    "hindsight EGO geometry", beating nothing (0.4066 free vs 0.2465 trained).
+    So the DEFAULT is unchanged, and that is what is pinned here."""
+    out = _c(alpamayo_lon="Stop", vlm_lon=None, alpamayo_cot=None,
+             ego_v0_ms=0.2, ego_v_end_ms=0.02)          # no allow_ego_lon
+    assert out.a_tac_lon.value == ABSTAIN
+    assert out.a_tac_lon.leg is Leg.NONE
+
+
+def test_ego_can_NEVER_assign_the_LATERAL_class_even_when_enabled():
+    """⛔ Unchanged and absolute: the lateral axis is Alpamayo's. Checked by
+    BEHAVIOUR over the whole ego domain, not by reading the source — a source
+    check would pass on a file that merely mentions the symbol elsewhere."""
+    legs = set()
+    for lane in ("Lane Keep", "Turn Left", "Right Lane Change", None):
+        for v0, ve in ((0.0, 0.0), (1.0, 0.5), (20.0, 18.0), (0.2, 0.02)):
+            out = _c(alpamayo_lane=lane, alpamayo_lon="Stop", vlm_lon=None,
+                     ego_v0_ms=v0, ego_v_end_ms=ve, allow_ego_lon=True)
+            legs.add(out.a_tac_lat.leg)
+    assert Leg.EGO not in legs, legs
 
 
 # --------------------------------- the relative-lane-target cascade (PI proposal) --
@@ -193,9 +272,29 @@ def test_an_alpamayo_turn_gives_the_strategic_TYPE_but_defers_the_TIMING():
     assert "STRATEGIC_TIMING_FROM_GEOMETRY_REQUIRED" in out.flags
 
 
-def test_the_vlm_lane_target_TAKES_PRECEDENCE_over_the_alpamayo_turn_fallback():
+def test_a_TURN_outranks_the_lane_target_because_it_is_the_ROUTE_level_claim():
+    """⚠️ REVERSED 2026-08-20, deliberately. This test previously asserted
+    `KEEP_CORRIDOR` — i.e. that a VLM lane target of CURRENT beat an Alpamayo
+    TURN. That is the hierarchy collapsing by one level: "hold your corridor"
+    is the wrong STRATEGIC claim for a left turn, and the two are not competing
+    answers to one question. A turn is ROUTE-level; a lane target is LANE-level.
+
+    Note the VLM is not wrong to say CURRENT here — across a junction "the lane
+    I occupied at t=0" is ill-defined, and the ego does stay in its turning
+    lane. The defect was writing a lane-level answer into the route-level
+    field."""
     out = _c(alpamayo_lane="Turn Left", vlm_lane_target_rel="CURRENT")
-    assert out.g_str.value == "KEEP_CORRIDOR"
+    assert out.g_str.value == "TURN_LEFT"
+    assert out.g_str.leg is Leg.ALPAMAYO
+
+
+def test_a_NON_current_lane_target_still_wins_over_the_route_default():
+    """⚠️ The asymmetry that keeps the reversal honest: "the target is the lane
+    to my left" is MORE specific than "I am following the road", so it must
+    still reach g_str. Only CURRENT defers to the route level."""
+    out = _c(alpamayo_lane="Lane Keep", alpamayo_lateral="Go Straight",
+             vlm_lane_target_rel="LEFT")
+    assert out.g_str.value == "LANE_TARGET"
 
 
 # ------------------------------------------------------------- provenance ----
@@ -498,3 +597,57 @@ def test_open_road_is_still_returned_as_a_real_referent():
 
 def test_no_referent_line_returns_none():
     assert _pr("</think>\nVERDICT: FOLLOW") == (None, False)
+
+
+# --------------------------------------------------------------------------- #
+# ⭐ THE EGO TIER — ego may assert what the ego DID, never why.
+# --------------------------------------------------------------------------- #
+def test_ego_supplies_HOLD_when_the_vehicle_is_stopped():
+    out = _c(alpamayo_lon="Stop", vlm_lon=None, alpamayo_cot=None,
+             ego_v0_ms=1.2, ego_v_end_ms=0.05, allow_ego_lon=True)
+    assert out.a_tac_lon.value == "HOLD"
+    assert out.a_tac_lon.leg is Leg.EGO
+    assert "LON_FROM_EGO_KINEMATICS" in out.flags
+
+
+def test_ego_supplies_CREEP_when_the_vehicle_crawls_throughout():
+    out = _c(alpamayo_lon="Gentle Deceleration", vlm_lon=None, alpamayo_cot=None,
+             ego_v0_ms=1.8, ego_v_end_ms=1.1, allow_ego_lon=True)
+    assert out.a_tac_lon.value == "CREEP"
+
+
+def test_ego_NEVER_supplies_a_REASON_typed_token():
+    """⛔ THE LINE THIS TIER RESTS ON. FOLLOW / YIELD_MERGE / BRAKE_TO each
+    assert something about an EXTERNAL object; ego kinematics cannot see one.
+    Only the ego-STATE tokens are reachable from speed alone."""
+    from tanitad.lake.tac_str_labels import lon_from_ego
+    seen = {lon_from_ego(m, v0, ve)[0]
+            for m in ("Stop", "Gentle Deceleration", "Maintain Speed",
+                      "Strong Deceleration", "Gentle Acceleration")
+            for v0 in (0.0, 1.0, 5.0, 20.0) for ve in (0.0, 1.0, 5.0, 20.0)}
+    assert seen <= {None, "HOLD", "CREEP"}, seen
+
+
+def test_a_normal_driving_speed_yields_NOTHING_from_ego():
+    """The dead-band is wide on purpose: PI tier-3 is "very clear situations
+    without large interpretation"."""
+    out = _c(alpamayo_lon="Gentle Deceleration", vlm_lon=None, alpamayo_cot=None,
+             ego_v0_ms=14.0, ego_v_end_ms=11.0, allow_ego_lon=True)
+    assert out.a_tac_lon.value == ABSTAIN
+    assert "LON_FROM_EGO_KINEMATICS" not in out.flags
+
+
+def test_the_magnitude_prior_still_binds_the_ego_tier():
+    """⚠️ HOLD is inadmissible under 'Maintain Speed'; an ego reading that
+    contradicts the measured magnitude is a disagreement, not a label."""
+    from tanitad.lake.tac_str_labels import lon_from_ego
+    assert lon_from_ego("Maintain Speed", 0.2, 0.05)[0] is None
+
+
+def test_the_VLM_and_the_cot_both_outrank_ego():
+    out = _c(alpamayo_lon="Stop", vlm_lon=None, ego_v0_ms=0.3, ego_v_end_ms=0.05, allow_ego_lon=True,
+             alpamayo_cot="Stop for the red traffic light.")
+    # cot gives BRAKE_TO via stop_sign/traffic_light? traffic_light implies
+    # nothing, so the cot abstains here and ego wins — assert the ORDER holds
+    assert out.a_tac_lon.value in ("HOLD", "BRAKE_TO")
+    assert out.a_tac_lon.leg in (Leg.EGO, Leg.ALPAMAYO)
