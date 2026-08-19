@@ -1,0 +1,53 @@
+{
+ "_evidence_class": "MEASURED (ours; dev-box RTX 4060)",
+ "eval_tier": "T0-DIAGNOSTIC \u2014 future-field prediction error is a world-model fidelity number, NEVER driving performance",
+ "task": "predict cell field at t+15 from a 4-frame causal window + ego actions (accel, yaw-rate)",
+ "cache": "cache_s16000 (v6F-SW-30k@16000)",
+ "n_windows": 3277,
+ "n_train": 1514,
+ "n_eval": 1763,
+ "n_eval_episodes": 70,
+ "epochs": 40,
+ "seeds": [
+  0,
+  1,
+  2
+ ],
+ "n_act_tok": 2,
+ "centred": true,
+ "arms": {
+  "concat": {
+   "params": 1367168,
+   "mse_per_seed": [
+    0.0001760730374371633,
+    0.00017019707593135536,
+    0.00017315804143436253
+   ],
+   "mse_mean": 0.00017314271826762706
+  },
+  "token": {
+   "params": 1367744,
+   "mse_per_seed": [
+    9.786648661247455e-06,
+    9.658475391916e-06,
+    9.133410458161961e-06
+   ],
+   "mse_mean": 9.526178170441805e-06
+  }
+ },
+ "floors": {
+  "C_PERSIST": 7.257362085510977e-06,
+  "C_MEAN": 1.679848355706781e-05,
+  "_read": "an arm above C-PERSIST has not learned the dynamics, whatever its margin over the other arm"
+ },
+ "paired_delta_token_minus_concat": {
+  "mean": -0.0001633600622881204,
+  "ci95": [
+   -0.0001898281479952857,
+   -0.0001373471022816375
+  ],
+  "estimator": "episode-cluster bootstrap, n_boot 2000, 70 episode clusters",
+  "separated": true,
+  "_read": "NEGATIVE means the SimWAM-style action-TOKEN stream predicts the future field BETTER than our broadcast-concat"
+ }
+}

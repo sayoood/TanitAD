@@ -106,3 +106,71 @@ built and cheap; it is the data that is short.
 | `e_actstream.py` (the experiment, controls included) | `…/2026-08-19-simwam-analysis/code/` |
 | `e_actstream_resid.json`, `e_act_d48.json`, `e_act_d32.json` | `…/2026-08-19-simwam-analysis/raw/` |
 | this report | `…/2026-08-19-simwam-analysis/E_ACTSTREAM_1.md` |
+
+---
+
+# UPDATE 2026-08-19 (later) — centred, at the 6 s design horizon, with the disambiguating control
+
+Three defects in the first run, all fixed:
+
+1. ⛔ **The field was never centred.** MEASURED: raw `mean(Y²)` 0.000692 against a
+   **centred variance of 0.000016** — **97.7 % of the magnitude is a constant
+   offset**, so both arms were spending capacity reproducing a constant.
+   Centring now uses the **TRAIN** mean field only, applied to both splits.
+2. ⛔ **The horizon was 2.4 s, not our 6 s design point.** Re-run at `horizon=15`
+   (6.0 s), which is what REF-A v1's three rates are built around.
+3. ⛔ **The headline was CONFOUNDED.** `concat` differs from `token` in TWO ways
+   at once — broadcast-vs-tokenised AND a learned `mix` applied to the FIELD
+   tokens. A third arm now separates them.
+
+## Results — centred, 6 s horizon, 3 seeds, parameter-matched
+
+| arm | MSE (3-seed) | params | vs C-PERSIST |
+|---|---|---|---|
+| *C-PERSIST* (copy last field) | **0.000007** | — | — |
+| **`token`** (SimWAM stream) | **0.000010** | 1,367,744 | 1.4× above |
+| *C-MEAN* | 0.000017 | — | — |
+| `concat` (broadcast + mix) | 0.000173 | 1,367,168 | 25× above |
+| `add` (broadcast + add) | 0.000301 | 1,293,248 | 43× above |
+
+paired Δ (token − concat) **−0.000163 [−0.000190, −0.000137]**, separated.
+
+## ⭐ What the control settles
+
+* `concat` **BEATS** `add` (0.000173 vs 0.000301) ⇒ the `mix` bottleneck **helps**;
+  it is not the source of the gap.
+* `token` beats **both** broadcast forms by **17–30×**.
+
+⇒ **The advantage is the TOKENISATION, not the projection.** Putting the action
+into the self-attention stream beats broadcasting it, however the broadcast is
+combined. That is the SimWAM design choice isolated.
+
+⇒ `token` now also **beats C-MEAN** (0.000010 vs 0.000017) where both broadcast
+arms fail it, and sits **1.4× above C-PERSIST** — down from 2.6× before centring.
+
+⛔ **STILL NOT DECISIVE, and the reason is unchanged:** no arm has beaten
+persistence, so *"learns the dynamics"* remains unlicensed. What is now licensed
+is stronger and disambiguated: **tokenised action conditioning dominates
+broadcast conditioning at parameter parity, across widths, horizons, target
+formulations and seeds.**
+
+⏳ **The remaining lever is data.** A stride-1 latent dump (4× the windows,
+~22.5 k frames) was launched for the final run. If `token` crosses C-PERSIST
+there, the experiment becomes decisive; if it does not, the limit is the
+REPRESENTATION, and §"what this measures about our readout" below is the finding.
+
+## ⚠️ An independent finding about our readout, surfaced by the variance decomposition
+
+| | |
+|---|---|
+| BETWEEN-episode variance | 0.000013 |
+| WITHIN-episode variance | 0.000003 |
+| **ratio** | ⛔ **4.5×** |
+
+**The cell field is dominated by which episode you are in, not by when in the
+episode you are** — a scene fingerprint more than a dynamics state. That bears
+directly on the same day's ladder result (`LADDER_S16000.md`): probes were being
+asked to read agent counts from a representation whose variance is mostly scene
+identity, and the episode-cluster bootstrap correctly clusters exactly that
+variance away. Worth its own experiment; recorded here because the decomposition
+fell out of this one.

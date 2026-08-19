@@ -148,6 +148,15 @@ class Predictor(nn.Module):
             # broadcast over tokens, concatenate, project  (DINO-WM)
             self.mix = nn.Linear(2 * d, d)
             self.n_act_tok = 0
+        elif mode == "add":
+            # ⭐ THE DISAMBIGUATING CONTROL. `concat` differs from `token` in TWO
+            # ways at once: the action is broadcast rather than tokenised, AND a
+            # learned `mix` is applied to the FIELD tokens themselves. This arm
+            # broadcasts and ADDS — no transform on the field path — so a
+            # concat-vs-add gap isolates the `mix` bottleneck and an add-vs-token
+            # gap isolates the tokenisation. Without it the headline is
+            # confounded.
+            self.n_act_tok = 0
         elif mode == "token":
             # the action becomes TOKENS in the shared stream  (SimWAM)
             # ⚠️ n_act_tok=2 makes the arms PARAMETER-MATCHED to ~600 params
@@ -167,6 +176,8 @@ class Predictor(nn.Module):
         e = self.act(a.reshape(B, -1))
         if self.mode == "concat":
             t = self.mix(torch.cat([t, e[:, None].expand(-1, t.shape[1], -1)], -1))
+        elif self.mode == "add":
+            t = t + e[:, None]
         else:
             at = self.act_split(e).reshape(B, self.n_act_tok, -1) + self.act_pos
             t = torch.cat([t, at], dim=1)
@@ -221,6 +232,8 @@ def main(argv=None):
     ap.add_argument("--d", type=int, default=192)
     ap.add_argument("--layers", type=int, default=4)
     ap.add_argument("--heads", type=int, default=6)
+    ap.add_argument("--centre", type=int, default=1,
+                    help="subtract the TRAIN mean field (97.7 % of raw magnitude)")
     ap.add_argument("--act-tokens", type=int, default=2,
                     help="2 = parameter-matched to the concat arm; 4 = +5.5%")
     ap.add_argument("--out", default=str(SP / "e_actstream.json"))
@@ -238,8 +251,23 @@ def main(argv=None):
     print(f"windows {X.shape[0]}  train {int(tr_m.sum())}  eval {int(te_m.sum())}  "
           f"episodes {len(set(EP))}  eval-episodes {len(eval_ids & set(EP))}")
     print(f"X {tuple(X.shape)}  A {tuple(A.shape)}  Y {tuple(Y.shape)}  dev {dev}")
+    # ⭐ CENTRE ON THE TRAIN MEAN FIELD, and it is not cosmetic. MEASURED:
+    # raw mean(Y^2) 0.000692 against a CENTRED variance of 0.000016 — 97.7 % of
+    # the field's magnitude is a CONSTANT offset. Uncentred, both arms spend
+    # capacity reproducing that constant instead of the 47.7 % of centred
+    # variance that actually changes over the horizon. The mean is computed on
+    # TRAIN ONLY and applied to both splits, so no eval statistic leaks.
+    mu = Y[tr_m].mean(dim=0, keepdim=True)
+    if a.centre:
+        X, Y = X - mu[:, None], Y - mu
+        print(f"centred on the TRAIN mean field; centred var "
+              f"{(Y[te_m] ** 2).mean():.6f}")
     tr = (X[tr_m], A[tr_m], Y[tr_m])
     te = (X[te_m], A[te_m], Y[te_m])
+    # the floors, always reported with the arms
+    persist = float(((X[te_m][:, -1] - Y[te_m]) ** 2).mean())
+    cmean = float(((Y[tr_m].mean(0, keepdim=True) - Y[te_m]) ** 2).mean())
+    print(f"C-PERSIST {persist:.6f}   C-MEAN {cmean:.6f}")
     ep_te = [e for e, k in zip(EP, te_m.tolist()) if k]
 
     res = {"_evidence_class": "MEASURED (ours; dev-box RTX 4060)",
@@ -251,9 +279,13 @@ def main(argv=None):
            "n_windows": int(X.shape[0]), "n_train": int(tr_m.sum()),
            "n_eval": int(te_m.sum()), "n_eval_episodes": len(set(ep_te)),
            "epochs": a.epochs, "seeds": a.seeds,
-           "n_act_tok": a.act_tokens, "arms": {}}
+           "n_act_tok": a.act_tokens, "centred": bool(a.centre),
+           "arms": {}}
+    res["floors"] = {"C_PERSIST": persist, "C_MEAN": cmean,
+                     "_read": "an arm above C-PERSIST has not learned the "
+                              "dynamics, whatever its margin over the other arm"}
     per_seed = {}
-    for mode in ("concat", "token"):
+    for mode in ("concat", "add", "token"):
         mses, npar = [], None
         for s in a.seeds:
             pw, npar = run(mode, s, tr, te, a.epochs, dev, a.d, a.layers,
@@ -268,6 +300,10 @@ def main(argv=None):
     import collections
     ca = torch.stack(per_seed["concat"]).mean(0)
     cb = torch.stack(per_seed["token"]).mean(0)
+    cc = torch.stack(per_seed["add"]).mean(0)
+    res["arms"]["add"]["_read"] = ("broadcast+ADD: no transform on the field "
+                                   "path. token-minus-add isolates TOKENISATION; "
+                                   "concat-minus-add isolates the mix bottleneck")
     delta = cb - ca                                   # token − concat
     byep = collections.defaultdict(list)
     for e, d_ in zip(ep_te, delta.tolist()):
