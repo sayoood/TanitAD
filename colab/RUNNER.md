@@ -226,3 +226,85 @@ byte verification → resume across two consecutive runs (run 2 skipped run
 and printed if unsloth rejects it), the sam3 wheel install, real per-leg
 peak memory and wall-clock. The first backfill run is the cheapest way to
 confirm all of it.
+
+## 9. ⛔ HEADLESS-CLI OPERATING TRAPS — MEASURED 2026-08-19, four in one session
+
+The VLM tactical/strategic smoke hit five distinct failures before producing a
+single usable generation. **Two of them were already documented above** (§SAM3
+note: `PYTHONUTF8=1`; the `colab run` teardown at the head of this file) and I
+hit them anyway by operating before reading. That is the first lesson and it is
+procedural, not technical: **read this file before driving the CLI.**
+
+The other three were new. All five, in the order they bite:
+
+| # | trap | what it looks like | the fix |
+|---|---|---|---|
+| 1 | `colab exec -f` reads the script with the **locale codec** (cp1252) | `UnicodeDecodeError: 'charmap' codec can't decode byte 0x90` — any file with `⛔`/`→` in a comment | `PYTHONUTF8=1` on every invocation (already §SAM3) |
+| 2 | **`colab run` = provision → exec → RELEASE THE VM** | your results vanish with the VM; using it to *inspect* a live session destroys that session | `colab exec` for a persistent session, or `colab run --keep`. **`colab ls` is the non-destructive lister** |
+| 3 | ⭐ **MSYS mangles the REMOTE path** | `colab ls -s x /content` → `Error: File or directory not found: C:/Program Files/Git/content`. `//content` is passed through literally and the server rejects that too | **drive the CLI from PowerShell, never the Git-Bash tool.** Remote paths are POSIX and MSYS must not see them |
+| 4 | ⭐ **write-once output + client timeout = TOTAL LOSS** | `TimeoutError: Timeout waiting for output` client-side; the kernel is interrupted before the single end-of-run `json.dump`; the VM's output file still holds the PREVIOUS run byte-for-byte | **persist after EVERY unit of work**, tmp+`os.replace`. A run that produced N answers must never be able to yield 0 |
+| 5 | ⭐ **`restart-kernel` does not reap the old kernel** | T4 shows **8,741 MiB used / 6,172 free with nothing running**; the next 4-bit load dies with *"Some modules are dispatched on the CPU or the disk"*, which names the MODEL and reads as "too big" | `colab exec -f colab/reap_gpu.py`. Probe with `nvidia-smi --query-compute-apps`, kill by **explicit PID** |
+
+⚠️ **Traps 3 and 4 compound into a false diagnosis.** Trap 3 produced a
+"file not found", which I read as *"the script never wrote its output"* — an
+absence found at ONE path form, treated as absence. The file was there. Only
+after re-adopting the session and listing from PowerShell did it appear, and its
+**md5 was identical to the previous run's**, which is what actually proved trap 4.
+⇒ **Never conclude "the remote artifact does not exist" from one path form**, and
+never take a destructive step on that conclusion.
+
+### 9b. Recovering an ORPHANED assignment
+
+`colab run` wipes local session state but the **server-side assignment can
+survive**. It then shows in `colab sessions` as `[?] <endpoint>`, is
+unaddressable by name (`stop`/`ls`/`download` all resolve through local state),
+and blocks `colab new` with `TooManyAssignmentsError: Precondition Failed`.
+
+It is recoverable — `ListedAssignment.runtime_proxy_info` carries the `url` and
+`token` that `SessionState` needs, so the orphan can be re-adopted through the
+CLI's own API rather than waited out:
+
+```python
+from colab_cli.common import state
+from colab_cli.state import SessionState
+_, assigns = state.sync_sessions()
+for a in assigns:                      # re-adopt under a name you choose
+    rp = a.runtime_proxy_info
+    state.store.add(SessionState(name="recovered", token=rp.token, url=rp.url,
+                                 endpoint=a.endpoint, variant=str(a.variant),
+                                 accelerator=str(a.accelerator)))
+```
+
+Then `colab ls -s recovered /content` (**from PowerShell**) and download. This
+recovered a VM that had been written off as destroyed. ⚠️ `token_expires_in` was
+**3600 s** — re-adopt and pull promptly.
+
+### 9c. ⭐ THE THINKING-MODE TOKEN CAP IS A SILENT CORRECTNESS BUG
+
+MEASURED on unsloth 4-bit Qwen3.5-9B / T4: **~9.8 tok/s** (derived from the only
+two generations that terminated early, i.e. actually emitted EOS — n=2, thin).
+At `max_new_tokens=1200`, every generation that ran **130–131 s** produced
+**~1,280 tokens against a 1,200 budget** — cut off mid-`<think>`, with **no
+verdict line at all**. Only the two that finished at 96 s / 101 s were complete.
+
+⛔ **A truncated thinking trace parses as ABSTAIN.** A strict parser finds no
+verdict and abstains, correctly — and the resulting "the model abstained on 90 %
+of clips" reads as a statement about the MODEL when it is a statement about the
+CAP. That is a wrong conclusion about capability drawn from an operator setting,
+and it is exactly the class this programme keeps retracting.
+
+⇒ **Every generation records `n_new_tokens` and `hit_cap`.** Truncation must be
+visible in the artifact, never inferred from wall-clock afterwards.
+
+⇒ **Corpus-scale consequence, and it needs a PI decision.** At cap 2600
+(265 s/generation, UPPER bound — many calls EOS earlier, and the running smoke
+measures the real distribution):
+
+| corpus | 3 calls (lon+lane+sign) | 2 calls (drop sign/ROUTE_TO) |
+|---|---|---|
+| 201 (aug120, video local now) | 1.9 T4-days | 1.2 T4-days |
+| **4,522 (w120 extraction target)** | **41.7 T4-days** | 27.8 T4-days |
+
+**A single T4 cannot deliver the 4,522-clip target.** Batch generation is the
+untested lever with the largest expected win — the smoke runs `batch=1` — and
+measuring it is the cheapest discriminating experiment before any scale plan.

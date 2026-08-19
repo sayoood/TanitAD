@@ -13,6 +13,29 @@
 > **LIBRARY** (`../../Library/`) = the evidence. Every `[PUBLISHED]` entry cites a **library key**,
 > not only a URL — bank it with `python tools/kb_add.py <arxiv-id> --tag <topic> --cited-by <report>`.
 
+- [2026-08-19] [MEASURED] **A generation cap is a silent correctness bug, and it lies in the
+  direction of "the model can't do it".** unsloth 4-bit Qwen3.5-9B on a T4 runs **~9.8 tok/s**;
+  at `max_new_tokens=1200` every 130-131 s generation produced **~1,280 tokens against a 1,200
+  budget** — cut off mid-`<think>` with **no verdict line**. A strict parser correctly abstains,
+  and "the VLM abstained on 90 % of clips" then reads as a claim about the MODEL when it is a
+  claim about the OPERATOR SETTING. Fix: record `n_new_tokens` + `hit_cap` per generation so
+  truncation is visible in the artifact, never inferred from wall-clock. **Scale consequence:**
+  at cap 2600 (265 s/gen, upper bound) the 4,522-clip w120 target is **41.7 T4-days** for 3 calls
+  / 27.8 for 2 — **one T4 cannot deliver it**; batch generation is untested (`batch=1` today) and
+  is the cheapest discriminating experiment — impact: label-pipeline scale / v6.1 + REF-A v1 +
+  REF-C v3 post-training — `colab/RUNNER.md` §9c
+- [2026-08-19] [MEASURED] **Five headless-Colab traps in one session; TWO were already documented
+  and I hit them by operating before reading the runbook.** New ones: (a) **MSYS mangles the
+  REMOTE path** — `colab ls -s x /content` becomes `C:/Program Files/Git/content`, and `//content`
+  is rejected too ⇒ **drive the CLI from PowerShell, never Git-Bash**; (b) **write-once output +
+  client `TimeoutError` = total loss** — the kernel is interrupted before the single end-of-run
+  dump and the VM's file still holds the PREVIOUS run **byte-identical** ⇒ persist after every
+  unit of work; (c) **`restart-kernel` does not reap the old kernel** — 8,741 MiB held with
+  nothing running, and the next load dies with *"Some modules are dispatched on the CPU or the
+  disk"*, which names the MODEL and reads as "too big" ⇒ `colab/reap_gpu.py`, kill by explicit PID.
+  ⚠️ (a) and (b) COMPOUND: the mangled path gave a "not found" that I read as "never written" —
+  an absence at ONE path form treated as absence, which then licensed a destructive step —
+  impact: all headless GPU work — `colab/RUNNER.md` §9
 - [2026-07-21] [root-cause] **The fleet monitor's blind spot is structural, not a bug**: every
   check in `.claude/skills/fleet-status/SKILL.md` grepped a **hardcoded** run/log name
   (`p0-sB01-realmix.log`, `arm_base.log`, `arm_kstep.log`, `pgrep -fc train_worldmode[l]`) —
