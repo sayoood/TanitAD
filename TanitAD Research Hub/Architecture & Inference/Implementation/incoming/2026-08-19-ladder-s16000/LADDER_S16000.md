@@ -162,3 +162,66 @@ floor measured here is 4.6× the entire between-checkpoint signal, so the re-run
 would return another unreadable number at full GPU cost. Either raise the power
 first, or replace the trunk-progress question with the §4 metrics, which answer
 it at zero additional cost.
+
+---
+
+# ADDENDUM — step 18,000, and the series closed at 9 points
+
+`MEASURED` · same pool (`n_frames 5617`, `n_episodes 130`,
+`max_in_grid_agents_seen 92`, `cuda_max_mem_gb 1.457058816` — identical to every
+other point) · same split, same 70 clusters, 3 seeds, route A.
+
+| target | s11250 | s12000 | s14000 | s16000 | **s18000** |
+|---|---|---|---|---|---|
+| **n_agents_all** | +0.2105 | +0.4249 | +0.2764 | +0.5102 | **+0.4068** |
+| n_agents_grid | +0.7324 | +0.1781 | +0.1639 | +0.2943 | +0.3079 |
+| nearest_any | +0.1500 | +0.1468 | +0.1289 | +0.1547 | +0.1418 |
+| lead_gap | +1.7408 | +1.8332 | +1.7747 | +1.7364 | +1.7695 |
+| ego_v0 | +4.2254 | +4.3093 | +4.2637 | +4.4413 | +4.1499 |
+
+## The verdict, now on 9 checkpoints
+
+From 11,250 the `n_agents_all` margin runs
+**+0.210 → +0.425 → +0.276 → +0.510 → +0.407** — **up, down, up, down.**
+Non-monotone in both directions, four times. It is a wander, and the four-point
+"decline" that prompted this whole investigation was noise.
+
+⛔ **NO TARGET CROSSES ZERO AT ANY OF THE NINE CHECKPOINTS.** One scalar of ego
+speed still out-reads the 2,048-dimension latent on every rung. The sign pattern
+is `-++` at **all eight** checkpoints from 9,000 on, and **seed 0 never
+separates**.
+
+| over 8 checkpoints (9,000–18,000) | |
+|---|---|
+| between-checkpoint span | 0.2997 |
+| between-checkpoint sd | 0.1124 |
+| **within-checkpoint mean seed spread** | ⛔ **1.3827** |
+| ⇒ noise ÷ between-checkpoint sd | **12.3×** |
+| ⇒ noise ÷ full series span | **4.6×** |
+
+The instrument's noise floor is unchanged by four extra points, which is itself
+the result: **this ladder cannot resolve checkpoint-to-checkpoint differences,
+and adding points measures the instrument rather than the trunk.**
+
+## ⭐ And the same day's DINOv3 experiment explains WHY
+
+`E-ACTSTREAM-2` found that on **DINOv3 ViT-L/16 patch fields** all three
+predictor arms **beat persistence**, where on these v6 cell fields **nothing
+did** across four configurations. Combined with the cell field's measured
+**4.5× between/within-episode variance ratio**, the reading is:
+
+> **The v6 cell readout is largely a scene fingerprint, not a dynamics state.
+> The ladder has been asking probes to read agent geometry out of a
+> representation that barely carries any — and the episode-cluster bootstrap
+> correctly clusters away exactly the variance that dominates it.**
+
+⇒ The constraint was the **representation**, not the probes and not the trunk.
+That is a better explanation for two independent negative results (D1's
+withdrawal and this ladder's non-resolution) than anything about either
+instrument.
+
+⚠️ **Unchanged recommendation, now with more evidence:** re-running D1 at 30k as
+specified would spend GPU on an instrument whose noise is 4.6× the signal it is
+asked to measure. Fix the power, or read trunk progress off the trainer's own
+fixed-difficulty metrics (`o1_factual_ade` −54 % from its 10k peak,
+`o5_growth` 0.807 → 0.198 at `o5_k` pinned to 60).
