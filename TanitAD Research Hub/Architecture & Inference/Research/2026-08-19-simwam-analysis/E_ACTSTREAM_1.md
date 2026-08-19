@@ -174,3 +174,67 @@ asked to read agent counts from a representation whose variance is mostly scene
 identity, and the episode-cluster bootstrap correctly clusters exactly that
 variance away. Worth its own experiment; recorded here because the decomposition
 fell out of this one.
+
+---
+
+# FINAL — 4× data (stride-1 dump), and the verdict on both questions
+
+The last missing lever was data. A **stride-1 latent dump** of the same 130 clips
+and the same checkpoint (`v6F-SW-30k@16000`, 22,468 frames vs 5,617, 47.5 min on
+the dev-box 4060) supplies **13,108 windows** against the previous 3,277.
+⚠️ `STRIDE` stays 4 in the task geometry, so the TASK is unchanged — the stride-1
+cache only supplies 4× more valid START positions.
+
+## Results — 13,108 windows, centred, 6 s horizon, 3 seeds, parameter-matched
+
+| arm | MSE (3-seed) | params | vs C-PERSIST |
+|---|---|---|---|
+| *C-PERSIST* | **0.00000728** | — | — |
+| **`token`** (SimWAM stream) | **0.00000785** | 1,367,744 | **1.078×** |
+| *C-MEAN* | 0.000017 | — | 2.3× |
+| `concat` (broadcast + mix) | 0.000046 | 1,367,168 | 6.3× |
+| `add` (broadcast + add) | 0.000078 | 1,293,248 | 10.7× |
+
+paired Δ (token − concat) **−0.000038 [−0.000046, −0.000031]**, separated.
+
+## ⛔ VERDICT 1 — no arm beats persistence, and now it is settled rather than suspected
+
+paired Δ (**token − C-PERSIST**) = **+0.00000057 [+0.00000036, +0.00000084]**
+⇒ **token LOSES to persistence, SEPARATED.**
+
+The 4× data helped materially — token went 0.0000100 → 0.0000079 (−21 %) and the
+gap to persistence narrowed from 1.4× to **1.078×** — but it did not cross.
+⚠️ **NOT EXTRAPOLATED.** The full parity corpus is ~18× more episodes, far beyond
+the 2× the programme's own rule permits projecting, so whether it crosses there
+is an open question and not a prediction.
+
+⇒ **"The world model learns the dynamics" remains UNLICENSED at this geometry.**
+
+## ⭐ VERDICT 2 — the tokenisation advantage is decisive, large, and disambiguated
+
+| contrast | ratio | reading |
+|---|---|---|
+| token vs concat | **5.9×** | tokenised beats broadcast+project |
+| token vs add | **9.9×** | tokenised beats broadcast+add |
+| concat vs add | 1.7× (concat better) | the `mix` bottleneck **helps** — it is not the cause |
+
+Separated at every width (d=32/48/192), both target formulations (absolute and
+residual), both horizons (2.4 s and 6.0 s), both data scales (3,277 and 13,108
+windows), and all 3 seeds — token's three seeds at the final config are
+0.0000080 / 0.0000080 / 0.0000079, a spread of 1 %.
+
+⇒ **Putting the action into the self-attention stream dominates broadcasting it,
+however the broadcast is combined.** That is SimWAM's design choice, isolated
+from the projection it is bundled with, and reproduced in FEATURE space at
+1.4 M parameters — three orders of magnitude below the 6 B it was published at.
+
+## What this licenses for REF-A v1′
+
+✅ Building and parking `refa_v1p.py` is justified: the conditioning scheme it
+changes is the one the data says matters, and the effect is large enough that it
+should be visible at v1's real geometry.
+⛔ It does **not** license a claim that v1′ will beat v1 on driving, nor any
+transfer of the *magnitude*. Both arms here sit above a trivial floor, and the
+comparison ran on v6 cell fields (16 × 128), **not** on v1's DINOv3 token field
+(640 × 1024). That transfer is the next experiment, and it needs DINOv3 features
+for these clips.

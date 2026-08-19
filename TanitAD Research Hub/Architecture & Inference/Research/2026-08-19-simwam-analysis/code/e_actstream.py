@@ -82,9 +82,13 @@ def ego_actions(clip_id: str) -> torch.Tensor | None:
     return torch.stack([acc, dh], dim=-1)
 
 
-def build(window: int, horizon: int):
+def build(window: int, horizon: int, cache: str = "cache_s16000"):
     """-> (X [N,W,16,128], A [N,H,2], Y [N,16,128], ep [N])."""
-    obj = torch.load(SP / "sp2/cache_s16000/latents.pt", map_location="cpu",
+    # ⚠️ STRIDE stays 4 whatever the CACHE stride is: it is the TEMPORAL
+    # geometry of the task (0.4 s between window frames, horizon x0.4 s). A
+    # stride-1 cache therefore does not change the task — it only supplies 4x
+    # more valid START positions, which is the whole point.
+    obj = torch.load(SP / f"sp2/{cache}/latents.pt", map_location="cpu",
                      weights_only=False)
     by_clip: dict[str, dict[int, torch.Tensor]] = {}
     for r in obj["rows"]:
@@ -232,6 +236,7 @@ def main(argv=None):
     ap.add_argument("--d", type=int, default=192)
     ap.add_argument("--layers", type=int, default=4)
     ap.add_argument("--heads", type=int, default=6)
+    ap.add_argument("--cache", default="cache_s16000")
     ap.add_argument("--centre", type=int, default=1,
                     help="subtract the TRAIN mean field (97.7 % of raw magnitude)")
     ap.add_argument("--act-tokens", type=int, default=2,
@@ -240,7 +245,7 @@ def main(argv=None):
     a = ap.parse_args(argv)
 
     dev = "cuda" if torch.cuda.is_available() else "cpu"
-    X, A, Y, EP = build(a.window, a.horizon)
+    X, A, Y, EP = build(a.window, a.horizon, a.cache)
     sel = json.loads((SP / "sp2/p3_selection.json").read_text(encoding="utf-8"))
     eval_ids = set(sel.get("eval") or sel.get("eval_clips") or [])
     if not eval_ids:                       # fall back: last 30 % of episodes
@@ -275,7 +280,7 @@ def main(argv=None):
                         "world-model fidelity number, NEVER driving performance",
            "task": f"predict cell field at t+{a.horizon} from a {a.window}-frame "
                    f"causal window + ego actions (accel, yaw-rate)",
-           "cache": "cache_s16000 (v6F-SW-30k@16000)",
+           "cache": a.cache,
            "n_windows": int(X.shape[0]), "n_train": int(tr_m.sum()),
            "n_eval": int(te_m.sum()), "n_eval_episodes": len(set(ep_te)),
            "epochs": a.epochs, "seeds": a.seeds,
