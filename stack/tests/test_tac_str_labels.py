@@ -176,8 +176,9 @@ def test_every_emitted_strategic_token_is_in_the_v6_vocabulary():
 
 
 # ------------------------------------------------------------- ROUTE_TO gate --
-def test_ROUTE_TO_can_never_be_emitted_by_any_path():
-    """G1 CLOSED at 0/31 — it names a destination that does not exist here."""
+def test_ROUTE_TO_is_never_emitted_by_the_LANE_TARGET_CASCADE():
+    """The cascade must never reach it: only a READ SIGN may
+    (`route_to_from_sign`). Without one, a destination is a guess."""
     outs = [strategic_from_lane_target(r, exit_ahead_on_side=e)
             for r in ("LEFT", "CURRENT", "RIGHT") for e in (True, False)]
     assert all(g.value != "ROUTE_TO" and a.value != "ROUTE_TO" for g, a in outs)
@@ -265,3 +266,80 @@ def test_an_unparseable_answer_becomes_ABSTAIN_not_a_nearest_match():
 def test_the_last_verdict_wins_so_a_restated_answer_is_not_misread():
     import vlm_tac_prompts as P
     assert P.parse_verdict("VERDICT: CRUISE\nwait\nVERDICT: FOLLOW", "lon")[0] == "FOLLOW"
+
+
+# ============================================================================ #
+#  ROUTE_TO from a READ sign — the PI's mechanism, and its three conditions
+# ============================================================================ #
+def test_route_to_needs_a_legible_sign_at_all():
+    from tanitad.lake.tac_str_labels import route_to_from_sign
+    f = route_to_from_sign(None, sign_is_exterior=True, ego_followed_it=True)
+    assert f.value == ABSTAIN and "G1" in f.reason
+
+
+def test_route_to_REFUSES_an_interior_sign_the_ego_echo_guard():
+    """⛔ MEASURED: the detector's top two were a dashboard 30 roundel (0.927)
+    and a hoarding (0.778), both ABOVE true signs. The roundel is the EGO
+    SPEEDOMETER — an ego echo arriving through the vision channel."""
+    from tanitad.lake.tac_str_labels import route_to_from_sign
+    f = route_to_from_sign("left", sign_is_exterior=False, ego_followed_it=True)
+    assert f.value == ABSTAIN
+    assert "EXTERIOR" in f.reason and "echo" in f.reason
+
+
+def test_route_to_REFUSES_when_the_ego_did_not_follow_the_sign():
+    from tanitad.lake.tac_str_labels import route_to_from_sign
+    f = route_to_from_sign("right", sign_is_exterior=True, ego_followed_it=False)
+    assert f.value == ABSTAIN and "did not follow" in f.reason
+
+
+def test_route_to_IS_emitted_when_all_three_conditions_hold():
+    from tanitad.lake.tac_str_labels import route_to_from_sign
+    f = route_to_from_sign("straight", sign_is_exterior=True, ego_followed_it=True)
+    assert f.value == "ROUTE_TO" and f.leg is Leg.VLM
+    assert Leg.GEOMETRY in f.corroborated_by
+
+
+def test_the_branch_vocabulary_is_BOUNDED_not_a_toponym():
+    """A destination NAME is unbounded and the planner does not need the word
+    'Berlin'; it needs that the turn was route-determined, and which way."""
+    from tanitad.lake.tac_str_labels import ROUTE_BRANCH, route_to_from_sign
+    assert ROUTE_BRANCH == ("left", "straight", "right")
+    with pytest.raises(ValueError, match="sign_branch"):
+        route_to_from_sign("Berlin", sign_is_exterior=True, ego_followed_it=True)
+
+
+def test_compose_emits_ROUTE_TO_through_the_audited_path_and_flags_it():
+    out = _c(vlm_sign_branch="left", vlm_sign_is_exterior=True,
+             vlm_ego_followed_sign=True)
+    assert out.g_str.value == "ROUTE_TO"
+    assert "ROUTE_TO_FROM_SIGN" in out.flags
+    assert out.a_str.value == ABSTAIN and "TIMING" in out.a_str.reason
+
+
+def test_a_read_sign_OUTRANKS_the_lane_target_cascade():
+    out = _c(vlm_lane_target_rel="CURRENT", vlm_sign_branch="right",
+             vlm_sign_is_exterior=True, vlm_ego_followed_sign=True)
+    assert out.g_str.value == "ROUTE_TO"
+
+
+def test_a_FAILED_sign_read_falls_back_to_the_cascade_not_to_a_guess():
+    out = _c(vlm_lane_target_rel="LEFT", vlm_sign_branch="right",
+             vlm_sign_is_exterior=False, vlm_ego_followed_sign=True)
+    assert out.g_str.value == "LANE_TARGET"
+    assert "ROUTE_TO_FROM_SIGN" not in out.flags
+
+
+def test_the_sign_prompt_asks_the_EXTERIOR_question_FIRST():
+    import vlm_tac_prompts as P
+    s = P.build_sign_prompt(P.ClipContext())
+    assert "OUTSIDE the vehicle" in s
+    assert s.index("OUTSIDE the vehicle") < s.index("Read the sign")
+    assert "dashboard" in s and "windscreen" in s
+
+
+def test_the_sign_prompt_forbids_inferring_a_destination_from_geometry():
+    import vlm_tac_prompts as P
+    s = P.build_sign_prompt(P.ClipContext())
+    assert "Do NOT infer a destination from road shape" in s
+    assert P.allowed_verdict_tokens("sign") == ("LEFT", "STRAIGHT", "RIGHT", ABSTAIN)

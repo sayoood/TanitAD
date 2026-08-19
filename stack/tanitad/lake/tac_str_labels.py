@@ -29,8 +29,12 @@ a label's clothes.
 * a longitudinal action from Alpamayo's magnitude axis (a TYPE error: theirs is
   magnitude-typed, ours is reason-typed — *"Gentle Deceleration"* cannot say
   whether the ego FOLLOWs a lead or BRAKE_TOs a stop line);
-* `ROUTE_TO` from anything (G1 CLOSED at 0/31 — it names a navigation
-  destination and no destination exists in the corpus);
+* `ROUTE_TO` from anything EXCEPT one audited path — a direction sign that was
+  READ, verified EXTERIOR to the vehicle, and demonstrably FOLLOWED
+  (:func:`route_to_from_sign`, PI 2026-08-19). G1 closed it at 0/31 because a
+  VLM asked for a destination would INVENT one; a read sign puts the
+  destination in the pixels and the future path says which branch was taken, so
+  the label becomes two observations rather than a fabrication;
 * any label on the 6 clips that leak into val40;
 * an ego argument with no VLM referent;
 * an anonymous label — every field carries the leg that produced it.
@@ -47,7 +51,8 @@ from tanitad.models.v6 import (STRATEGIC_ACTION_TOKENS, STRATEGIC_GOAL_TOKENS,
 
 __all__ = ["Leg", "LabelField", "TacStrLabel", "ALPAMAYO_LANE_TO_LAT",
            "LON_ADMISSIBLE", "LANE_TARGET_REL", "NOT_APPLICABLE", "ABSTAIN",
-           "compose", "lon_is_admissible", "strategic_from_lane_target"]
+           "compose", "lon_is_admissible", "strategic_from_lane_target",
+           "route_to_from_sign", "ROUTE_BRANCH"]
 
 ABSTAIN = "ABSTAIN"
 NOT_APPLICABLE = "NOT_APPLICABLE"
@@ -171,6 +176,53 @@ def strategic_from_lane_target(rel: str, *, exit_ahead_on_side: bool | None = No
 # --------------------------------------------------------------------------- #
 # The record
 # --------------------------------------------------------------------------- #
+#: ⭐ `ROUTE_TO`'s categorical argument — the branch of the SIGNED route the ego
+#: followed. Bounded on purpose: a destination TOPONYM is an unbounded
+#: vocabulary and the planner does not need to know the word "Berlin"; what it
+#: needs is that this turn was ROUTE-DETERMINED rather than opportunistic, and
+#: which way the route went.
+ROUTE_BRANCH: tuple[str, ...] = ("left", "straight", "right")
+
+
+def route_to_from_sign(sign_branch: str | None, *, sign_is_exterior: bool | None,
+                       ego_followed_it: bool | None) -> LabelField:
+    """⭐ THE PI's MECHANISM — `ROUTE_TO` from a READ sign, not an invented one.
+
+    `ROUTE_TO` was gated because it names a navigation destination and *"no
+    destination exists anywhere in the corpus; a VLM asked for one would invent
+    it"* (G1 CLOSED at 0/31). A **direction sign puts the destination in the
+    pixels**, and the future path says which signed branch was taken — so the
+    label becomes two OBSERVATIONS rather than a fabrication.
+
+    ⛔ THREE CONDITIONS, ALL REQUIRED, and the first is not boilerplate.
+    MEASURED in this corpus: the sign detector's two highest-confidence
+    detections were a **dashboard `30` roundel (0.927)** and a **hoarding
+    (0.778)**, both *above* true signs — *"a confidence threshold removes the
+    harmless errors and KEEPS the harmful ones"*. The roundel is the EGO
+    SPEEDOMETER, i.e. **an ego echo arriving through the vision channel**, which
+    a vision-only admissibility audit does not watch. An interior sign is
+    therefore a hard refusal, not a low-confidence one.
+    """
+    if sign_branch in (None, ABSTAIN):
+        return LabelField(ABSTAIN, Leg.NONE,
+                          "no legible direction sign; ROUTE_TO stays gated "
+                          "(G1 closed at 0/31)")
+    if sign_branch not in ROUTE_BRANCH:
+        raise ValueError(f"sign_branch must be one of {ROUTE_BRANCH} or "
+                         f"{ABSTAIN}, got {sign_branch!r}")
+    if not sign_is_exterior:
+        return LabelField(ABSTAIN, Leg.NONE,
+                          "the sign was not verified as EXTERIOR to the vehicle "
+                          "— a dashboard/windscreen read is an ego echo through "
+                          "the vision channel (measured: roundel 0.927 ranked "
+                          "ABOVE true signs)")
+    if not ego_followed_it:
+        return LabelField(ABSTAIN, Leg.NONE,
+                          "a sign was read but the ego did not follow any branch "
+                          "it named — the route is not demonstrated")
+    return LabelField("ROUTE_TO", Leg.VLM, corroborated_by=(Leg.GEOMETRY,))
+
+
 @dataclass
 class TacStrLabel:
     """One clip's tactical + strategic label, every field with its provenance."""
@@ -206,6 +258,9 @@ def compose(*, clip_id: str,
             vlm_goal: str | None = None,
             vlm_lane_target_rel: str | None = None,
             vlm_exit_ahead: bool | None = None,
+            vlm_sign_branch: str | None = None,
+            vlm_sign_is_exterior: bool | None = None,
+            vlm_ego_followed_sign: bool | None = None,
             ego_args: dict[str, float] | None = None,
             vocab_version: str = "v6.1") -> TacStrLabel:
     """Compose one label from the three tiers. Pure — no I/O, no model calls.
@@ -277,7 +332,20 @@ def compose(*, clip_id: str,
 
     # ---- STRATEGIC: the relative-lane-target cascade ---------------------- #
     g_str = a_str = None
-    if vlm_lane_target_rel is not None:
+    # ⭐ A READ SIGN outranks the lane-target cascade: it carries strictly more
+    # information (the turn was ROUTE-DETERMINED, and which way the route went),
+    # and it is only reachable when all three sign conditions held.
+    route_fld = route_to_from_sign(vlm_sign_branch,
+                                   sign_is_exterior=vlm_sign_is_exterior,
+                                   ego_followed_it=vlm_ego_followed_sign)
+    if route_fld.value == "ROUTE_TO":
+        g_str = route_fld
+        a_str = LabelField(ABSTAIN, Leg.NONE,
+                           "strategic action needs the route's TIMING, which the "
+                           "sign read does not supply")
+        flags.append("ROUTE_TO_FROM_SIGN")
+        flags.append("STRATEGIC_TIMING_FROM_GEOMETRY_REQUIRED")
+    elif vlm_lane_target_rel is not None:
         g_str, a_str = strategic_from_lane_target(
             vlm_lane_target_rel, exit_ahead_on_side=vlm_exit_ahead)
     elif alpamayo_lane and alpamayo_lane.strip().lower() in ("turn left", "turn right"):
@@ -292,12 +360,16 @@ def compose(*, clip_id: str,
                            "clip-level Alpamayo record cannot supply")
         flags.append("STRATEGIC_TIMING_FROM_GEOMETRY_REQUIRED")
 
-    # ⛔ ROUTE_TO is never emitted by any path. G1 CLOSED at 0/31.
+    # ⛔ ROUTE_TO is reachable through EXACTLY ONE audited path: a sign that was
+    # READ, verified EXTERIOR, and demonstrably FOLLOWED (route_to_from_sign).
+    # Any other route to it is still the fabrication G1 closed at 0/31.
     for fld in (g_str, a_str):
-        if fld is not None and fld.value == "ROUTE_TO":
-            raise ValueError("ROUTE_TO is GATED (G1 closed at 0/31) — it names a "
-                             "navigation destination that does not exist in this "
-                             "corpus and must never be emitted as a guess")
+        if fld is not None and fld.value == "ROUTE_TO" and \
+                "ROUTE_TO_FROM_SIGN" not in flags:
+            raise ValueError("ROUTE_TO may only be emitted via "
+                             "route_to_from_sign() — it names a navigation "
+                             "destination, and without a read sign that is a "
+                             "guess (G1 closed at 0/31)")
     if g_str is not None and g_str.value not in (ABSTAIN, NOT_APPLICABLE):
         assert g_str.value in STRATEGIC_GOAL_TOKENS, g_str.value
     if a_str is not None and a_str.value not in (ABSTAIN, NOT_APPLICABLE):

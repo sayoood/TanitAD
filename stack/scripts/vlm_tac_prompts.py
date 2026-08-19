@@ -177,12 +177,68 @@ If your answer to (c) is "the road curved", the verdict is CURRENT.
 VERDICT: <one token>"""
 
 
+def build_sign_prompt(ctx: ClipContext, *, with_ego: bool = True) -> str:
+    """CALL C — ⭐ the DIRECTION SIGN, which is what un-gates `ROUTE_TO`.
+
+    ⛔ WHY THIS CALL EXISTS AT ALL. `ROUTE_TO` was gated because it names a
+    navigation DESTINATION and *"no destination exists anywhere in the corpus;
+    a VLM asked for one would invent it"* (G1 CLOSED at 0/31). The PI's
+    observation dissolves that: **a direction sign puts the destination IN THE
+    PIXELS**, and the future path says which of the signed branches the ego
+    actually took. The label is then two observations, not an invention.
+
+    ⛔ AND THE GUARD THAT MUST TRAVEL WITH IT — MEASURED, in this corpus.
+    `v6.py` records that the sign detector's two HIGHEST-confidence detections
+    were a **dashboard `30` roundel (0.927)** and a **hoarding (0.778)**, both
+    *above* true signs — so *"a confidence threshold removes the harmless errors
+    and KEEPS the harmful ones"*. The roundel is the **EGO SPEEDOMETER**: a
+    sign read off the dashboard is *"an ego echo arriving through the vision
+    channel, which a vision-only admissibility audit does not watch"*. ⇒ Q(a)
+    below asks explicitly whether the sign is OUTSIDE the vehicle, and an
+    interior sign is a hard ABSTAIN. This is not defensive boilerplate; it is
+    the one failure mode this corpus has already demonstrated.
+    """
+    return f"""{_COMMON}
+
+CONTEXT
+{ctx.block(with_ego=with_ego)}
+
+QUESTION - is the ego following a signed route, and along which branch?
+
+Allowed verdicts:
+  LEFT      = a direction sign is legible and the ego followed its LEFT branch
+  STRAIGHT  = ... its STRAIGHT-ON branch
+  RIGHT     = ... its RIGHT branch
+  {ABSTAIN}   = no legible direction sign, or the ego did not follow one
+
+EVIDENCE - answer these before the verdict:
+  a) ⛔ FIRST: is the sign OUTSIDE the vehicle, mounted on a post, gantry or
+     wall? Anything on the dashboard, windscreen or inside the cabin is NOT a
+     road sign - if that is all you see, the verdict is {ABSTAIN}.
+  b) Read the sign. Quote the destination text and the arrow direction for each
+     branch it names (e.g. "Zentrum <-, A9 ^").
+  c) Which branch did the ego actually take? Say what in the later frames shows
+     it.
+  d) Does (c) match one of the branches in (b)? If the ego went a way the sign
+     did not name, the verdict is {ABSTAIN}.
+
+⛔ Do NOT infer a destination from road shape, lane markings or traffic. If you
+cannot READ it on a sign, it is not evidence for this question.
+
+VERDICT: <one token>"""
+
+
+SIGN_VERDICTS: tuple[str, ...] = ("LEFT", "STRAIGHT", "RIGHT", ABSTAIN)
+
+
 def allowed_verdict_tokens(kind: str) -> tuple[str, ...]:
     if kind == "lon":
         return LON_VERDICTS
     if kind == "lane":
         return LANE_VERDICTS
-    raise ValueError(f"kind must be 'lon' or 'lane', got {kind!r}")
+    if kind == "sign":
+        return SIGN_VERDICTS
+    raise ValueError(f"kind must be 'lon', 'lane' or 'sign', got {kind!r}")
 
 
 _VERDICT_RE = re.compile(r"VERDICT:\s*([A-Z_]+)\s*$", re.M)
