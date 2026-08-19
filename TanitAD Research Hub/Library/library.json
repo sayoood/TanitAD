@@ -390,6 +390,35 @@
    ],
    "note": "in Ressources/ before the Library existed",
    "cited_by": []
+  },
+  "2608.07468": {
+   "key": "2608.07468",
+   "kind": "arxiv",
+   "title": "SimWAM: A Simple World Action Model for End-to-End Autonomous Driving",
+   "authors": [
+    "Zongchuang Zhao",
+    "Xin Zhou",
+    "Tianyang Xu",
+    "Zhengyang Sun",
+    "Kaixuan Zhou",
+    "Honglin Li",
+    "Dingkang Liang",
+    "Xiang Bai"
+   ],
+   "published": "2026-08-07",
+   "abstract": "World-Action Models (WAMs) improve end-to-end autonomous driving by transferring video dynamics priors to action prediction, but existing methods incur costly test-time future imagination. We present SimWAM, a simple yet effective WAM that leverages future-video prediction as a training-time supervision signal. It co-trains a pretrained video expert and a lightweight action expert with joint flow matching. An isolated attention mask keeps action prediction independent of future frames, allowing trajectory prediction without explicit future-frame generation at inference. Since the two experts share no parameters and interact only through a unified attention interface, the video backbone could be replaced and the action expert scaled independently without modifying the learning objective or inference pipeline. We further apply reinforcement learning to optimize a compositional driving rewa",
+   "url": "https://arxiv.org/abs/2608.07468",
+   "path": "TanitAD Research Hub/Library/papers/2608.07468_SimWAM-A-Simple-World-Action-Model-for-End-to-End-Autonomous.pdf",
+   "bytes": 760201,
+   "sha256": "03ce230505c4fa5e33a6f9fc38c69be4807663b6f639e2ea155e1d86a720253a",
+   "banked": "2026-08-19",
+   "tags": [
+    "world-action-model"
+   ],
+   "note": "Isolated attention mask makes future-video prediction a TRAINING-TIME signal only; imagine-then-act gives no measurable benefit (90.3 isolated vs 90.2 bidirectional). 91.5 PDMS NAVSIM, 6B, 32 GPUs. Evaluates on PhysicalAI-AV: ADE@3s 0.40 (vs Alpamayo-1.5 10B 0.80).",
+   "cited_by": [
+    "TanitAD Research Hub/Architecture & Inference/Research/2026-08-19-simwam-analysis/SIMWAM_VS_TANITAD.md"
+   ]
   }
  }
 }
