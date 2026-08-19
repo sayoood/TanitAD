@@ -56,6 +56,26 @@ def test_rollout_is_INHERITED_not_reimplemented():
     assert ActionStreamPredictor.rollout is TokenFieldPredictor.rollout
 
 
+def test_v1p_is_PARAMETER_MATCHED_to_v1_at_real_geometry():
+    """⛔ THE CONFOUND THIS PINS. `act_split` (Linear(d, 2d)) replaces v1's
+    `mix` (Linear(2d, d)) at almost exactly the same size, so v1' must DELETE
+    mix to stay matched. Keeping it made v1' +4,202,496 params (+2.4 %) of dead
+    weight — a capacity confound in the one arm built to avoid one."""
+    from tanitad.config import StrategicPolicyConfig, TacticalPolicyConfig
+    c = RefAV1Config()
+    c.tactical_cfg, c.strategic_cfg = TacticalPolicyConfig(), StrategicPolicyConfig()
+    cp = RefAV1PrimeConfig()
+    cp.tactical_cfg, cp.strategic_cfg = TacticalPolicyConfig(), StrategicPolicyConfig()
+    n1 = sum(p.numel() for p in RefAV1(c).parameters())
+    n2 = sum(p.numel() for p in RefAV1Prime(cp).parameters())
+    assert abs(n2 - n1) / n1 < 0.001, (n1, n2, n2 - n1)
+
+
+def test_mix_is_DELETED_not_merely_unused():
+    p = ActionStreamPredictor(_small(), 64, 1, 4)
+    assert not hasattr(p, "mix"), "dead 2.1M-param block left in the arm"
+
+
 def test_only_step_is_overridden():
     overridden = {k for k, v in ActionStreamPredictor.__dict__.items()
                   if callable(v) and not k.startswith("_")}

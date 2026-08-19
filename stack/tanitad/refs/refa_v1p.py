@@ -104,11 +104,15 @@ class ActionStreamPredictor(TokenFieldPredictor):
                  intent_dim: int | None = None, n_act_tokens: int = 2):
         super().__init__(cfg, d, layers, heads, intent_dim)
         self.n_act_tokens = int(n_act_tokens)
-        # ⛔ `mix` is inherited from v1 and is DELIBERATELY LEFT UNUSED here.
-        # Deleting it would silently change the parameter count, and a v1/v1′
-        # comparison whose parameter counts differ for a reason unrelated to
-        # the design choice is a capacity comparison in disguise. It is
-        # asserted-unused by the tests instead of removed.
+        # ⛔ `mix` IS DELETED, and getting this backwards cost a 2.4 % capacity
+        # confound that the module-size report caught. v1's `mix` is
+        # Linear(2d, d) = 2,098,176 params at d=1024; this arm's `act_split` is
+        # Linear(d, 2d) = 2,099,200. act_split REPLACES mix at almost exactly
+        # the same size, so DELETING mix is what keeps the arms matched
+        # (+2,048 total, 0.001 %) — KEEPING it made v1′ +4,202,496 (+2.4 %) of
+        # dead weight, which is the capacity confound this arm exists to avoid.
+        # ⚠️ n_act_tokens != 2 breaks that parity by design; see the config.
+        del self.mix
         self.act_split = nn.Linear(d, self.n_act_tokens * d)
         self.act_pos = nn.Parameter(torch.zeros(1, self.n_act_tokens, d))
         nn.init.trunc_normal_(self.act_pos, std=0.02)
