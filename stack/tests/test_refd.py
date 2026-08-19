@@ -105,11 +105,34 @@ def test_ou_noise_is_ACTUALLY_correlated_and_iso_is_not():
     assert abs(lag1(iso)) < 0.1, lag1(iso)
 
 
-def test_the_predictors_are_ACTION_TOKEN_predictors():
-    """E-ACTSTREAM-1: token beats broadcast 5.9-9.9x at parameter parity."""
+def test_the_DEFAULT_is_BROADCAST_not_tokens():
+    """⛔ REVERSED 2026-08-20 by E-ACTSTREAM-2, at REF-D's OWN geometry.
+
+    E-ACTSTREAM-1 measured tokenisation beating broadcast 5.9-9.9x — on
+    **16-token** cell fields. At 640 x 1024 it INVERTS: token-concat
+    +0.000186 [+0.000152, +0.000222] and token-add +0.000409 [+0.000357,
+    +0.000464], both separated, i.e. tokenisation is the WORST of the three.
+    2 action tokens are 11 % of a 16-token stream and 0.3 % of a 640-token one.
+    """
+    from tanitad.refs.refa_v1 import TokenFieldPredictor
     m = RefD(_full())
+    assert isinstance(m.operative, TokenFieldPredictor)
+    assert not isinstance(m.operative, ActionStreamPredictor)
+
+
+def test_the_token_arm_is_still_REACHABLE_as_a_declared_option():
+    """It wins decisively at small token counts, and the TACTICAL predictor
+    runs on tac_queries (64), not 640 — a question to measure, not assume."""
+    m = RefD(_full(action_mode="token"))
     assert isinstance(m.operative, ActionStreamPredictor)
     assert isinstance(m.tactical, ActionStreamPredictor)
+
+
+def test_an_untested_action_mode_is_REFUSED():
+    """`add` was nominally best in E-ACTSTREAM-2 but was never tested against
+    concat directly, and has no predictor class. It may not be selected."""
+    with pytest.raises(ValueError, match="add"):
+        _small(action_mode="add").sanity()
 
 
 def test_the_tactical_heads_are_FACTORED_and_share_v6_tuples_BY_IDENTITY():

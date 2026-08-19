@@ -238,3 +238,71 @@ transfer of the *magnitude*. Both arms here sit above a trivial floor, and the
 comparison ran on v6 cell fields (16 × 128), **not** on v1's DINOv3 token field
 (640 × 1024). That transfer is the next experiment, and it needs DINOv3 features
 for these clips.
+
+---
+
+# E-ACTSTREAM-2 — the transfer test at REF-A v1's REAL geometry, and it INVERTS
+
+`MEASURED (ours; dev-box RTX 4060)` · **T0-DIAGNOSTIC** · frozen **DINOv3
+ViT-L/16** patch fields, **640 × 1024** · same clips, same stride, same frame
+indices and the same episode-disjoint split as the v6-cell run · 3 seeds ·
+paired episode-cluster bootstrap · **no load added to Thor**.
+
+## Why this had to be run rather than assumed
+
+E-ACTSTREAM-1 measured tokenisation beating broadcast by **5.9–9.9×** on v6 cell
+fields — **16 tokens × 128 d**. REF-A v1's real field is **640 × 1024**:
+
+> at **16** vision tokens, 2 action tokens are **11 %** of the stream
+> at **640** vision tokens, 2 action tokens are **0.3 %**
+
+Broadcast reaches every token by construction; tokenisation must win attention
+against 640 competitors. **A result at 11 % says nothing about 0.3 %** — the
+scope-error class this programme keeps retracting.
+
+## Result
+
+| arm | MSE (3 seeds) | params | vs C-PERSIST |
+|---|---|---|---|
+| **`add`** (broadcast + add) | **0.037732** | 3,363,584 | ✅ beats it |
+| `concat` (broadcast + project) | 0.037956 | 3,494,912 | ✅ beats it |
+| `token` (joint stream) | 0.038141 | 3,495,680 | ✅ beats it |
+| *C-PERSIST* | 0.039709 | — | — |
+
+* `token − concat` **+0.000186 [+0.000152, +0.000222]** — SEPARATED
+* `token − add` **+0.000409 [+0.000357, +0.000464]** — SEPARATED
+* `token − C-PERSIST` **−0.001572 [−0.001912, −0.001245]** — SEPARATED
+
+⛔ **THE ORDERING INVERTS.** Tokenisation is now the **worst** of the three, and
+separated from both broadcast forms. The E-ACTSTREAM-1 magnitudes **do not
+transfer** and must not be quoted at this geometry.
+
+## ⭐⭐ The more important finding: all three arms BEAT PERSISTENCE
+
+On v6 cell fields, **nothing** beat C-PERSIST across four configurations and two
+target formulations. On DINOv3 fields, **every arm does**, separated.
+
+⇒ **The binding constraint on every previous readout result was the
+REPRESENTATION, not the predictor.** That is consistent with the v6 cell field's
+measured **4.5× between/within-episode variance ratio** — a scene fingerprint
+rather than a dynamics state — and it reframes the same day's ladder result: the
+probes were being asked to read dynamics from a representation that barely
+carries any.
+
+## Consequences, applied
+
+| | |
+|---|---|
+| REF-D `action_mode` | **default `"concat"`**, `"token"` demoted to a declared arm |
+| REF-D docstring + design doc | corrected; the evidence row now cites E-ACTSTREAM-2 |
+| paper §12.2b | added, stating the inversion and the persistence result |
+| `refa_v1p.py` (v1′) | **kept** — it is the right arm for the small-token regime |
+
+⚠️ **`add` was nominally best and is the smallest arm, but add-vs-concat was
+never tested directly**, so `concat` is the default on the strength of being
+REF-A v1's existing scheme, not on a difference nobody measured.
+
+⭐ **Open, and now worth asking:** the TACTICAL predictor runs on `tac_queries`
+(**64**), not 640 — an order of magnitude closer to the regime where tokenisation
+won. A per-layer action-conditioning choice is a real possibility, and is
+measurable with the instrument already built.

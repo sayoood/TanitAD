@@ -18,12 +18,49 @@ REF-D takes that economics and spends it on our hierarchy instead of on scale:
 | choice | source | evidence |
 |---|---|---|
 | isolated mask — no future token reaches the policy | SimWAM Tab. 3 | isolated 90.3 vs bidirectional 90.2 vs action->video 90.1 |
-| ⭐ **action as TOKENS, not broadcast** | **ours, E-ACTSTREAM-1** | token beats concat **5.9x** and add **9.9x** at parameter parity, separated at 3 widths / 2 horizons / 2 targets / 3 seeds |
+| ⛔ **action conditioning: BROADCAST is the default** | **ours, E-ACTSTREAM-2** | at REF-D's OWN geometry (640 x 1024 DINOv3) tokenisation **LOSES**: token-concat **+0.000186 [+0.000152, +0.000222]**, token-add **+0.000409 [+0.000357, +0.000464]**, both separated. The 5.9-9.9x token advantage measured in E-ACTSTREAM-1 was on **16-token** cell fields and DOES NOT TRANSFER. |
 | **controls, never waypoints** | ours, H1 + v5f | a per-waypoint head amplified eps **25x** in acceleration; the v5f dense fan was **97.6 % infeasible steps / 100 % infeasible candidates** |
 | **OU-correlated noise** | ours, F-15 | white noise on a 60-step control sequence integrates to near-cancelling jitter |
 | feasibility by construction | ours, W4 | every sample is squashed and integrated through ``unicycle_rollout`` |
 | goal conditioning by a **shared vocabulary** | ours, HIERARCHY_VOCABULARY §5 | ``head.vocab is cond.vocab`` — one table, two views |
 | multi-horizon supervision | SimWAM Tab. 8 + ours | 4 s/1 Hz (90.2) ~ 4 s/2 Hz (90.3) >> 2 s/2 Hz (89.9): **coverage beats density** |
+
+## ⛔ THE ACTION-CONDITIONING REVERSAL — read this before citing E-ACTSTREAM-1
+
+E-ACTSTREAM-1 measured tokenised action conditioning beating broadcast by
+**5.9-9.9x** on v6 CELL fields — **16 tokens x 128 d**. REF-D runs at **640 x
+1024**. E-ACTSTREAM-2 tested the transfer and **it inverts**:
+
+| arm | MSE (3 seeds) | vs C-PERSIST |
+|---|---|---|
+| ``add``    (broadcast + add)     | **0.037732** | beats it |
+| ``concat`` (broadcast + project) | 0.037956 | beats it |
+| ``token``  (joint stream)        | 0.038141 | beats it |
+| *C-PERSIST*                      | 0.039709 | — |
+
+``token - concat`` **+0.000186 [+0.000152, +0.000222]** and ``token - add``
+**+0.000409 [+0.000357, +0.000464]**, both SEPARATED — tokenisation is now the
+WORST of the three.
+
+⭐ **The mechanism was predicted before the test and is the reason it was run:**
+2 action tokens are **11 %** of a 16-token stream but **0.3 %** of a 640-token
+one. Broadcast reaches every token by construction; tokenisation must win
+attention against 640 competitors, and does not.
+
+⇒ ``action_mode`` DEFAULTS TO ``"concat"`` — REF-A v1's existing scheme, so v1
+and REF-D differ on one axis fewer. ``"token"`` remains a DECLARED arm because
+it wins decisively at small token counts, and the TACTICAL predictor runs on
+``tac_queries`` (64) rather than 640 — an order of magnitude closer to the
+regime where it won. That is a question to measure, not a rescue to assume.
+
+⚠️ ``add`` was nominally best and is also the SMALLEST arm, but **add-vs-concat
+was not tested directly**, so it is not the default on the strength of a
+difference nobody measured.
+
+⭐ **AND THE RESULT THAT MATTERS MOST IS NOT THE ORDERING: all three arms BEAT
+PERSISTENCE at this geometry**, which nothing did on cell fields. The DINOv3
+field carries dynamics the v6 readout does not — consistent with that readout's
+4.5x between/within-episode variance ratio (a scene fingerprint, not a state).
 
 ## ⛔ THE POLICY IS A GENERATOR, NOT A FAN — and this is the load-bearing change
 
@@ -72,7 +109,7 @@ from torch import Tensor
 from tanitad.config import StrategicPolicyConfig, TacticalPolicyConfig
 from tanitad.models.fourbrain import StrategicPolicy, TacticalPolicy
 from tanitad.models.v6 import TACTICAL_LAT_ACTIONS, TACTICAL_LON_ACTIONS
-from tanitad.refs.refa_v1 import WideAdapter, _Block
+from tanitad.refs.refa_v1 import TokenFieldPredictor, WideAdapter, _Block
 from tanitad.refs.refa_v1p import ActionStreamPredictor
 
 __all__ = ["RefDConfig", "FlowControlPolicy", "RefD", "PRIOR_GEOMETRY"]
@@ -124,8 +161,12 @@ class RefDConfig:
     str_dt: float = 1.5
     str_steps: int = 4
 
-    #: action tokens per predictor. 2 is the PARAMETER-MATCHED value measured in
-    #: E-ACTSTREAM-1; raising it buys capacity as well as structure.
+    #: ⛔ "concat" (default) | "token". See THE ACTION-CONDITIONING REVERSAL.
+    #: Tokenisation LOSES at 640 tokens, separated, so the default is v1's
+    #: broadcast scheme; "token" stays available for the small-token regime.
+    action_mode: str = "concat"
+    #: action tokens per predictor when action_mode="token". 2 is the
+    #: PARAMETER-MATCHED value from E-ACTSTREAM-1.
     n_act_tokens: int = 2
 
     # ---- the policy -------------------------------------------------------- #
@@ -170,6 +211,12 @@ class RefDConfig:
                                  f"got {dt} x {steps} = {dt * steps}")
         if self.noise not in ("ou", "iso"):
             raise ValueError(f"noise must be 'ou' | 'iso', got {self.noise!r}")
+        if self.action_mode not in ("concat", "token"):
+            raise ValueError(
+                f"action_mode must be 'concat' | 'token', got "
+                f"{self.action_mode!r}. 'add' was nominally best in "
+                f"E-ACTSTREAM-2 but has no predictor class and was never "
+                f"tested against concat directly.")
         if self.n_act_tokens < 1:
             raise ValueError("n_act_tokens >= 1: zero action tokens is a "
                              "predictor the action cannot reach")
@@ -272,13 +319,17 @@ class RefD(nn.Module):
         self.adapter = WideAdapter(cfg)
         intent_dim = (cfg.tactical_cfg.d_intent
                       if cfg.tactical_cfg is not None else None)
-        # ⭐ ACTION-AS-TOKENS on both field predictors (E-ACTSTREAM-1)
-        self.operative = ActionStreamPredictor(
-            cfg, cfg.d_state, cfg.op_layers, cfg.op_heads, intent_dim,
-            n_act_tokens=cfg.n_act_tokens)
-        self.tactical = ActionStreamPredictor(
-            cfg, cfg.d_state, cfg.tac_layers, cfg.op_heads, intent_dim,
-            n_act_tokens=cfg.n_act_tokens)
+        # ⛔ DEFAULT = broadcast (TokenFieldPredictor, v1's scheme). See THE
+        # ACTION-CONDITIONING REVERSAL: tokenisation loses at 640 tokens.
+        def _pred(layers):
+            if cfg.action_mode == "token":
+                return ActionStreamPredictor(cfg, cfg.d_state, layers,
+                                             cfg.op_heads, intent_dim,
+                                             n_act_tokens=cfg.n_act_tokens)
+            return TokenFieldPredictor(cfg, cfg.d_state, layers, cfg.op_heads,
+                                       intent_dim)
+        self.operative = _pred(cfg.op_layers)
+        self.tactical = _pred(cfg.tac_layers)
         self.tac_queries = nn.Parameter(torch.zeros(1, cfg.tac_queries, cfg.d_state))
         nn.init.trunc_normal_(self.tac_queries, std=0.02)
         self.tac_pool = nn.MultiheadAttention(cfg.d_state, 8, batch_first=True)

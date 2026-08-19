@@ -3793,11 +3793,38 @@ data scales (3,277 and 13,108 windows) and all three seeds.
 
 ⛔ **And the honest limit travels with it.** Paired `token − C-PERSIST` is
 **+0.00000057 [+0.00000036, +0.00000084]** — token **loses to persistence,
-separated**. So the licensed claim is *"tokenised action conditioning dominates
-broadcast conditioning at equal parameters"*, **not** that either models the
-dynamics. Doubling the data narrowed the gap from 1.4× to 1.078× and did not
-close it; the full corpus is ~18× more episodes, far beyond the 2× this
-programme permits projecting, so the crossing is an open question.
+separated**. So the licensed claim was about the *conditioning scheme*, **not**
+that either arm models the dynamics.
+
+### 12.2b ⛔ The transfer test INVERTS it — and this is the more important result
+
+E-ACTSTREAM-1 ran on **16-token** cell fields. REF-A v1's real field is
+**640 × 1024**. **E-ACTSTREAM-2** re-ran the identical protocol on frozen DINOv3
+ViT-L/16 patch fields over the same clips, stride and split:
+
+| arm | MSE (3 seeds) | vs C-PERSIST |
+|---|---|---|
+| `add` (broadcast + add) | **0.037732** | ✅ beats it |
+| `concat` (broadcast + project) | 0.037956 | ✅ beats it |
+| `token` (joint stream) | 0.038141 | ✅ beats it |
+| *C-PERSIST* | 0.039709 | — |
+
+`token − concat` **+0.000186 [+0.000152, +0.000222]** and `token − add`
+**+0.000409 [+0.000357, +0.000464]**, both separated: **tokenisation is now the
+worst of the three.**
+
+⭐ **The mechanism was predicted before the test, which is why it was run.** Two
+action tokens are **11 %** of a 16-token stream and **0.3 %** of a 640-token one.
+Broadcast reaches every token by construction; tokenisation must win attention
+against 640 competitors, and does not. A 5.9–9.9× advantage measured at 11 % says
+nothing about 0.3 %.
+
+⭐⭐ **And the result that matters most is not the ordering: all three arms beat
+persistence here, which nothing did on cell fields.** The DINOv3 field carries
+dynamics the v6 readout does not — consistent with that readout's **4.5×
+between/within-episode variance ratio**, i.e. a scene fingerprint rather than a
+state. This is the first evidence in the programme that the *representation*,
+not the predictor, was the binding constraint on every readout result.
 
 ⚠️ A variance decomposition run alongside it may matter more than the headline:
 **between-episode variance 0.000013 against within-episode 0.000003, a ratio of
@@ -3815,7 +3842,7 @@ large prior; it does not forbid **using** one.
 REF-D spends that on the hierarchy instead of on parameters:
 
 * **frozen Cosmos3-Edge (4 B)**, pre-extracted, training-time only, never shipped;
-* **adapter → three-rate goal-conditioned hierarchy with action tokens**, ~**173 M**,
+* **adapter → three-rate goal-conditioned hierarchy**, ~**173 M**, with action conditioning by **broadcast** (§12.2b: tokenisation loses at this geometry; the token arm remains declared),
   which is what ships — **35× smaller than SimWAM's 6 B**;
 * **multi-horizon isolated supervision**, one target per layer. This is the
   extension SimWAM cannot express: it has one action group and one horizon, and

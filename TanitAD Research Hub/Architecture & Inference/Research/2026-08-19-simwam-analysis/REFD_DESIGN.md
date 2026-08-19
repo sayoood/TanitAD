@@ -23,7 +23,7 @@ REF-D spends that on our hierarchy instead of on scale.
 | | |
 |---|---|
 | **frozen prior** | Cosmos3-Edge **4 B**, pre-extracted, training-time only, **never shipped** |
-| **ships** | adapter + 3-rate action-token hierarchy + flow policy = **172,539,422 (172.54 M)** |
+| **ships** | adapter + 3-rate hierarchy + flow policy = **172,539,422 (172.54 M)** |
 | **vs SimWAM** | **35× smaller** at inference |
 
 ---
@@ -38,7 +38,7 @@ REF-D spends that on our hierarchy instead of on scale.
    +--------+--------+--------------------+
    |                 |                    |
  operative        tactical            strategic     3 rates, each -> exactly 6.0 s
- (0.2 x 30)       (0.6 x 10)          (1.5 x 4)     ACTION AS TOKENS in-stream
+ (0.2 x 30)       (0.6 x 10)          (1.5 x 4)     action by BROADCAST (§2.1)
    |                 |                    |
    +--------+--------+--------------------+
             |
@@ -51,7 +51,7 @@ REF-D spends that on our hierarchy instead of on scale.
 | choice | source | evidence |
 |---|---|---|
 | isolated mask | SimWAM Tab. 3 | isolated **90.3** vs bidirectional 90.2 vs action→video 90.1 |
-| ⭐ **action as TOKENS** | **ours, E-ACTSTREAM-1** | token beats concat **5.9×**, add **9.9×**, at parameter parity, separated at 3 widths / 2 horizons / 2 targets / 3 seeds |
+| ⛔ **action conditioning = BROADCAST** | **ours, E-ACTSTREAM-2** | at REF-D's OWN geometry (640 × 1024) tokenisation **LOSES**: token−concat **+0.000186 [+0.000152, +0.000222]**, token−add **+0.000409 [+0.000357, +0.000464]**, both separated. E-ACTSTREAM-1's 5.9–9.9× was on 16-token fields and **does not transfer**. |
 | **controls, never waypoints** | ours, H1 + v5f | per-waypoint head amplified ε **25×** in acceleration; v5f dense fan **97.6 % infeasible steps / 100 % infeasible candidates** |
 | OU-correlated noise | ours, F-15 | white noise on 60 steps integrates to near-cancelling jitter |
 | feasible by construction | ours, W4 | every sample squashed + integrated through `unicycle_rollout` |
@@ -201,9 +201,14 @@ layer.
 ## 7. What REF-D is NOT
 
 * ⛔ **Not a replacement.** REF-A v1, v1′ and v6 are untouched.
-* ⛔ **Not evidence that action tokens beat broadcast at real geometry.**
-  E-ACTSTREAM-1 ran on v6 cell fields (16 × 128). The DINOv3 transfer test at
-  640 × 1024 is running; until it reports, the magnitude does not transfer.
+* ⛔ **NOT an action-token arm by default — that choice was REFUTED at its own
+  geometry.** E-ACTSTREAM-2 (DINOv3, 640 × 1024) found tokenisation the WORST
+  of three schemes, separated. `action_mode` defaults to `"concat"`;
+  `"token"` stays declared because it wins at small token counts and the
+  TACTICAL predictor runs on 64 pooled queries, not 640.
+  ⭐ The same experiment produced the programme's first arms to BEAT
+  PERSISTENCE — all three of them — so the DINOv3 field carries dynamics the
+  v6 cell readout does not.
 * ⛔ **Not a claim that Cosmos beats Wan.** SimWAM Tab. 4 is **90.4 vs 90.3 with
   no CI** — a tie. The 1.7-point spread often quoted is LTX (88.7) → Cosmos
   (90.4), contrasting a weak backbone with a strong one. We choose Edge because
