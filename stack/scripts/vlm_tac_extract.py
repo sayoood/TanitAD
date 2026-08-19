@@ -113,6 +113,64 @@ def build_inputs(proc, prompts, imgs_per):
     return proc(text=texts, images=flat, padding=True, return_tensors="pt")
 
 
+def ensure_deps() -> list[str]:
+    """pip-install the 4-bit stack if missing. ⛔ OPT-IN, NEVER THE DEFAULT.
+
+    A fresh Colab VM has neither unsloth nor bitsandbytes, so without this the
+    run dies at load with "no loader succeeded" (MEASURED 2026-08-19 — the
+    previous VM only worked because an earlier smoke script had installed them,
+    which made the extractor look self-sufficient when it was not).
+
+    ⚠️ WHY IT IS NOT AUTOMATIC. `pip install <anything>` can resolve torch from
+    the default index and silently replace a working build with one the driver
+    cannot run. MEASURED TWICE on pod4 (CLAUDE.md): `uv pip install -U
+    accelerate` and `compressed-tensors` each landed torch 2.13.0+cu130 on a
+    CUDA-12.8 driver, after which `torch.cuda.is_available()` was False and
+    every GPU job on the pod died. Neither command names torch; it arrives
+    through the dependency closure. On an EPHEMERAL VM that risk is acceptable
+    and recoverable. On Thor or a pod — where the environment is curated and
+    the two-venv rule applies — it is not, so those hosts must arrive with
+    their env already correct and never pass this flag.
+
+    Guarded accordingly: `--no-deps` so the closure cannot drag torch forward,
+    and a REAL conv2d afterwards, because cuBLAS can work while cuDNN is
+    broken and `import torch` proves neither.
+    """
+    import subprocess
+    notes: list[str] = []
+    for mod, spec in (("unsloth", "unsloth"), ("bitsandbytes", "bitsandbytes")):
+        try:
+            __import__(mod)
+            continue
+        except ImportError:
+            pass
+        log(f"installing {spec} (missing) ...")
+        r = subprocess.run([sys.executable, "-m", "pip", "install", "-q",
+                            "--no-deps", spec], capture_output=True, text=True)
+        notes.append(f"{spec}: rc={r.returncode} {r.stderr[-160:].strip()}")
+    if notes:
+        # unsloth pulls a real dependency set; install it WITHOUT touching torch
+        r = subprocess.run([sys.executable, "-m", "pip", "install", "-q",
+                            "unsloth_zoo", "trl", "peft", "accelerate",
+                            "--no-deps"], capture_output=True, text=True)
+        notes.append(f"unsloth deps: rc={r.returncode}")
+    import torch
+    ok = False
+    try:
+        x = torch.randn(1, 1, 8, 8, device="cuda")
+        w = torch.randn(1, 1, 3, 3, device="cuda")
+        torch.nn.functional.conv2d(x, w)
+        torch.cuda.synchronize()
+        ok = True
+    except Exception as e:                                       # noqa: BLE001
+        notes.append(f"⛔ POST-INSTALL CUDA conv2d FAILED: {type(e).__name__}: {e}")
+    log(f"deps: {notes or 'all present'} | cuda_conv2d_ok={ok} "
+        f"| torch={torch.__version__}")
+    if not ok:
+        raise RuntimeError("post-install CUDA check failed: " + " | ".join(notes))
+    return notes
+
+
 def load_model(model_name: str):
     """The programme's proven ladder (``colab/s2_lab_lib.load_vlm``): unsloth
     4-bit first. ⛔ 4-bit is not an optimisation on a 16 GB T4, it is the FIT —
@@ -163,6 +221,9 @@ def main(argv=None) -> int:
     ap.add_argument("--all-sign", dest="sign_on_turns", action="store_false",
                     help="run the sign call on every clip (see TURN_LANES)")
     ap.add_argument("--limit", type=int, default=0)
+    ap.add_argument("--install-deps", action="store_true",
+                    help="pip-install unsloth/bitsandbytes if missing. "
+                         "EPHEMERAL VMs ONLY — see ensure_deps().")
     # ⛔ NOT parse_args: under `colab exec -f` this runs INSIDE a Jupyter
     # kernel, whose sys.argv is the kernel's own
     # (`-f /root/.../kernel-xxxx.json`). parse_args would abort the whole run on
@@ -200,6 +261,8 @@ def main(argv=None) -> int:
         log("nothing to do — the output is already complete for this payload")
         return 0
 
+    if args.install_deps:
+        ensure_deps()
     model, proc, loader, errs = load_model(args.model)
     model.eval()
     log(f"loader={loader} weights={torch.cuda.max_memory_allocated()/1e9:.2f}GB "

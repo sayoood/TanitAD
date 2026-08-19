@@ -308,3 +308,41 @@ measures the real distribution):
 **A single T4 cannot deliver the 4,522-clip target.** Batch generation is the
 untested lever with the largest expected win — the smoke runs `batch=1` — and
 measuring it is the cheapest discriminating experiment before any scale plan.
+
+### 9d. ⚠️ "Session lost (404/401)" USUALLY MEANS AN EXPIRED TOKEN, NOT A DEAD VM
+
+MEASURED 2026-08-19, and I got this wrong in a report before checking. The
+runtime-proxy token in `SessionState` has `token_expires_in = 3600 s`. When it
+lapses, `ls`/`download`/`upload` fail with **`File or directory not found:
+/content`** and `exec` prints **`Session 'x' appears to be lost (404/401).
+Cleaning up.`** — and the CLI then PRUNES the local entry, which makes the loss
+look confirmed. The VM and the running kernel are usually **fine**.
+
+⇒ **Distinguish them before reacting, because the correct responses are
+opposite:**
+
+| observation | meaning | action |
+|---|---|---|
+| `colab sessions` lists an assignment | token expired, VM alive | re-adopt (§9b) — mints a fresh token, `/content` reappears intact |
+| `colab sessions` shows **no active sessions on server** | genuinely reclaimed | rebuild resume state from the streamed frames and relaunch |
+
+Both happened in one session: a "lost" VM was re-adopted with `/content` and its
+result file intact, and a later one was genuinely gone. Reading the first as the
+second wastes a rebuild; reading the second as the first wastes a wait.
+
+### 9e. THE RUN MUST CARRY ITS OWN DEPENDENCIES — a warm VM hides this
+
+MEASURED 2026-08-19: the extractor ran on a VM where an earlier smoke script had
+`pip install`ed unsloth, so it looked self-sufficient. On the next FRESH VM it
+died instantly with `no loader succeeded: ModuleNotFoundError: No module named
+'unsloth' | ... requires bitsandbytes`. **A dependency satisfied by a previous
+run's side effect is not a dependency you have.**
+
+⛔ The fix is OPT-IN (`--install-deps`), never automatic, and the reason is the
+torch trap in CLAUDE.md: `pip install <anything>` can resolve torch from the
+default index and replace a working build with one the driver cannot run
+(MEASURED twice on pod4 — `accelerate` and `compressed-tensors` each landed
+torch 2.13.0+cu130 on a CUDA-12.8 driver). Ephemeral VMs may take that risk;
+Thor and pods must arrive with a correct env and never pass the flag. The
+install uses `--no-deps` and is followed by a **real CUDA `conv2d`**, because
+cuBLAS can work while cuDNN is broken and `import torch` proves neither.
