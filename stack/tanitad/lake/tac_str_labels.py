@@ -52,6 +52,7 @@ from tanitad.models.v6 import (STRATEGIC_ACTION_TOKENS, STRATEGIC_GOAL_TOKENS,
 __all__ = ["Leg", "LabelField", "TacStrLabel", "ALPAMAYO_LANE_TO_LAT",
            "LON_ADMISSIBLE", "LANE_TARGET_REL", "NOT_APPLICABLE", "ABSTAIN",
            "compose", "lon_is_admissible", "strategic_from_lane_target",
+           "lane_target_is_admissible", "LAT_REQUIRES_LANE_TARGET",
            "route_to_from_sign", "ROUTE_BRANCH"]
 
 ABSTAIN = "ABSTAIN"
@@ -136,6 +137,42 @@ def lon_is_admissible(alpamayo_lon: str | None, tok: str) -> bool:
 #: the left, to the right"*. Sign convention is the programme's existing declared
 #: one (`s2_derive`): **+1 = left, −1 = right** (ego frame +y = left).
 LANE_TARGET_REL: dict[str, int] = {"LEFT": +1, "CURRENT": 0, "RIGHT": -1}
+
+
+#: ⛔ MEASURED 2026-08-19 by the first real VLM smoke — the composition DID
+#: silently emit an internally contradictory record. Clip 8dc5d14d is Alpamayo
+#: `Right Lane Change`; the VLM read the geometry carefully and correctly
+#: ("the ego vehicle stays between the same two markings ... no crossing of a
+#: lane marking") and returned CURRENT. compose() then produced
+#: **a_tac_lat=LANE_CHANGE_R together with g_str=HOLD_CORRIDOR** — "change lane
+#: right" and "the target lane IS the current lane" in one label.
+#:
+#: The docstring claimed the tier refusals meant "the composition needs no
+#: conflict policy". That was true for the LONGITUDINAL axis, which has
+#: LON_ADMISSIBLE, and false for the LATERAL one, which had no counterpart.
+#:
+#: ⚠️ The map is deliberately ASYMMETRIC, and the asymmetry is the design:
+#:   * a DECLARED lane change constrains the target lane — it must be the lane
+#:     being moved into, so CURRENT (or the opposite side) is a contradiction;
+#:   * LANE_KEEP constrains NOTHING — a non-current target under a lane keep is
+#:     exactly PREPARE_LANE_CHANGE, the informative case, not a conflict;
+#:   * turns and the one-axis `Stop` rows are not lane changes and constrain
+#:     nothing.
+#: A symmetric "they must always agree" rule would destroy the one case the
+#: relative encoding was introduced to capture.
+LAT_REQUIRES_LANE_TARGET: dict[str, str] = {
+    "LANE_CHANGE_L": "LEFT",
+    "LANE_CHANGE_R": "RIGHT",
+}
+
+
+def lane_target_is_admissible(lat_token: str | None, rel: str | None) -> bool:
+    """Is ``rel`` consistent with the Alpamayo lateral class? Unconstrained
+    pairs are admissible — see LAT_REQUIRES_LANE_TARGET on the asymmetry."""
+    if lat_token is None or rel is None or rel == ABSTAIN:
+        return True
+    required = LAT_REQUIRES_LANE_TARGET.get(lat_token)
+    return required is None or rel == required
 
 
 def strategic_from_lane_target(rel: str, *, exit_ahead_on_side: bool | None = None
@@ -266,7 +303,12 @@ def compose(*, clip_id: str,
     """Compose one label from the three tiers. Pure — no I/O, no model calls.
 
     Every refusal below is a rule from the approved concept, not a defensive
-    check: they are the reason the composition needs no conflict policy.
+    check. ⚠️ The claim this docstring used to make — that they meant "the
+    composition needs no conflict policy" — was FALSIFIED by the first real VLM
+    smoke (2026-08-19): it held for the longitudinal axis, which has
+    LON_ADMISSIBLE, and not for the lateral one, which had no counterpart and
+    emitted LANE_CHANGE_R together with HOLD_CORRIDOR. The policy is now
+    explicit on BOTH axes; see LAT_REQUIRES_LANE_TARGET.
     """
     lat_vocab = tactical_lat_actions(vocab_version)
     flags: list[str] = []
@@ -345,6 +387,19 @@ def compose(*, clip_id: str,
                            "sign read does not supply")
         flags.append("ROUTE_TO_FROM_SIGN")
         flags.append("STRATEGIC_TIMING_FROM_GEOMETRY_REQUIRED")
+    elif not lane_target_is_admissible(lat.value, vlm_lane_target_rel):
+        # ⛔ Refuse rather than compose a self-contradictory record. Same shape
+        # as LON_PRIOR_DISAGREEMENT: the two legs disagree, so the STRATEGIC
+        # field abstains WITH ITS REASON and the clip is routed to review. The
+        # tactical lateral token is untouched — Alpamayo remains the class
+        # authority; what is refused is the strategic claim built on top of a
+        # target the class contradicts.
+        r = (f"Alpamayo {lat.value} requires lane target "
+             f"{LAT_REQUIRES_LANE_TARGET[lat.value]}, VLM read "
+             f"{vlm_lane_target_rel} — routed to review")
+        g_str = LabelField(ABSTAIN, Leg.NONE, r)
+        a_str = LabelField(ABSTAIN, Leg.NONE, r)
+        flags.append("LAT_LANE_TARGET_DISAGREEMENT")
     elif vlm_lane_target_rel is not None:
         g_str, a_str = strategic_from_lane_target(
             vlm_lane_target_rel, exit_ahead_on_side=vlm_exit_ahead)

@@ -343,3 +343,61 @@ def test_the_sign_prompt_forbids_inferring_a_destination_from_geometry():
     s = P.build_sign_prompt(P.ClipContext())
     assert "Do NOT infer a destination from road shape" in s
     assert P.allowed_verdict_tokens("sign") == ("LEFT", "STRAIGHT", "RIGHT", ABSTAIN)
+
+
+# --------------------------------------------------------------------------- #
+# LAT x LANE-TARGET CONTRADICTION — found by the first real VLM smoke, 2026-08-19
+# --------------------------------------------------------------------------- #
+def test_declared_lane_change_refuses_a_contradicting_lane_target():
+    """The exact record the smoke produced. Clip 8dc5d14d is Alpamayo `Right
+    Lane Change`; the VLM read the geometry correctly ("the ego vehicle stays
+    between the same two markings ... no crossing of a lane marking") and
+    returned CURRENT. Before this guard compose() emitted LANE_CHANGE_R
+    together with HOLD_CORRIDOR — one label saying both "change lane right" and
+    "the target lane IS the current lane"."""
+    lab = compose(clip_id="8dc5d14d", alpamayo_lane="Right Lane Change",
+                  alpamayo_lon=None, vlm_lane_target_rel="CURRENT")
+    d = lab.to_dict()
+    assert d["a_tac_lat"]["value"] == "LANE_CHANGE_R"   # class authority intact
+    assert d["g_str"]["value"] == ABSTAIN               # strategic claim refused
+    assert d["a_str"]["value"] == ABSTAIN
+    assert "LAT_LANE_TARGET_DISAGREEMENT" in d["flags"]
+    assert "RIGHT" in d["g_str"]["reason"] and "CURRENT" in d["g_str"]["reason"]
+    assert d["g_str"]["value"] != "HOLD_CORRIDOR"
+
+
+def test_opposite_side_target_also_refused():
+    lab = compose(clip_id="c", alpamayo_lane="Left Lane Change",
+                  alpamayo_lon=None, vlm_lane_target_rel="RIGHT")
+    assert "LAT_LANE_TARGET_DISAGREEMENT" in lab.to_dict()["flags"]
+
+
+def test_agreeing_lane_change_still_composes():
+    lab = compose(clip_id="c", alpamayo_lane="Right Lane Change",
+                  alpamayo_lon=None, vlm_lane_target_rel="RIGHT")
+    d = lab.to_dict()
+    assert "LAT_LANE_TARGET_DISAGREEMENT" not in d["flags"]
+    assert d["g_str"]["value"] == "LANE_TARGET"
+
+
+def test_lane_keep_with_a_non_current_target_is_NOT_a_conflict():
+    """⛔ The asymmetry IS the design. A lane keep whose target is another lane
+    is PREPARE_LANE_CHANGE — the one case the relative encoding exists to
+    capture. A symmetric "they must agree" rule would delete it."""
+    lab = compose(clip_id="c", alpamayo_lane="Lane Keep",
+                  alpamayo_lon=None, vlm_lane_target_rel="LEFT")
+    d = lab.to_dict()
+    assert "LAT_LANE_TARGET_DISAGREEMENT" not in d["flags"]
+    assert d["g_str"]["value"] == "LANE_TARGET"
+
+
+def test_one_axis_stop_rows_constrain_nothing():
+    lab = compose(clip_id="c", alpamayo_lane=None, alpamayo_lon="Stop",
+                  vlm_lane_target_rel="LEFT")
+    assert "LAT_LANE_TARGET_DISAGREEMENT" not in lab.to_dict()["flags"]
+
+
+def test_abstained_lane_target_is_not_a_disagreement():
+    lab = compose(clip_id="c", alpamayo_lane="Right Lane Change",
+                  alpamayo_lon=None, vlm_lane_target_rel=ABSTAIN)
+    assert "LAT_LANE_TARGET_DISAGREEMENT" not in lab.to_dict()["flags"]
