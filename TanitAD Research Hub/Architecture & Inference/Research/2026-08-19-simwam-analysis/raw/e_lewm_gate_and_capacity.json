@@ -1,0 +1,302 @@
+{
+ "_evidence_class": "MEASURED (ours; dev-box RTX 4060)",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "prereg": "PREREG_E_LEWM_1.md (e4d58be, committed BEFORE any number)",
+ "n_frames": 5617,
+ "n_episodes": 130,
+ "note": "same keys/order/folds as E-TRUNK-2 \u2014 directly comparable to v6_cells, dino_pooled, C-EGO, C-PIXEL",
+ "arms": [
+  {
+   "arm": "lewm",
+   "seed": 0,
+   "n_params": 5440972,
+   "config": {
+    "d_latent": 192,
+    "sigreg_on_z": true,
+    "sigreg_on_zhat": true,
+    "detach": false,
+    "extra_terms": false
+   },
+   "sigreg_final": 1.636,
+   "sigreg_first": 30.514,
+   "sigreg_trajectory": [
+    [
+     0,
+     30.514
+    ],
+    [
+     500,
+     3.465
+    ],
+    [
+     1000,
+     3.688
+    ],
+    [
+     1500,
+     2.504
+    ],
+    [
+     2000,
+     2.392
+    ],
+    [
+     2500,
+     2.33
+    ],
+    [
+     3000,
+     2.246
+    ],
+    [
+     3500,
+     2.159
+    ],
+    [
+     4000,
+     2.433
+    ],
+    [
+     4500,
+     2.047
+    ],
+    [
+     4999,
+     1.636
+    ]
+   ],
+   "pred_final": 0.059777,
+   "sigreg_on_encoded_probe_set": 0.7125,
+   "between_within": 16.246,
+   "targets": {
+    "lead_gap_m": {
+     "metric": "R2",
+     "point": -0.0257,
+     "ci95": [
+      -0.0538,
+      -0.0072
+     ],
+     "n": 5394,
+     "lambda_at_grid_edge": 0
+    },
+    "nearest_any_m": {
+     "metric": "R2",
+     "point": -0.0501,
+     "ci95": [
+      -0.0959,
+      -0.0214
+     ],
+     "n": 5617,
+     "lambda_at_grid_edge": 0
+    },
+    "n_agents_log": {
+     "metric": "R2",
+     "point": 0.0133,
+     "ci95": [
+      -0.144,
+      0.1285
+     ],
+     "n": 5617,
+     "lambda_at_grid_edge": 0
+    },
+    "occluded_frac": {
+     "metric": "R2",
+     "point": -0.2446,
+     "ci95": [
+      -0.4296,
+      -0.1155
+     ],
+     "n": 5617,
+     "lambda_at_grid_edge": 3
+    },
+    "ego_speed": {
+     "metric": "R2",
+     "point": -0.0219,
+     "ci95": [
+      -0.0602,
+      -0.006
+     ],
+     "n": 5617,
+     "lambda_at_grid_edge": 3
+    },
+    "ego_yawrate": {
+     "metric": "R2",
+     "point": -0.005,
+     "ci95": [
+      -0.0165,
+      -0.0012
+     ],
+     "n": 5617,
+     "lambda_at_grid_edge": 5
+    },
+    "ego_accel": {
+     "metric": "R2",
+     "point": -0.0258,
+     "ci95": [
+      -0.0477,
+      -0.0124
+     ],
+     "n": 5617,
+     "lambda_at_grid_edge": 3
+    },
+    "left_occupied": {
+     "metric": "AUC",
+     "point": 0.4803,
+     "ci95": [
+      0.4085,
+      0.5531
+     ],
+     "n": 5617,
+     "lambda_at_grid_edge": 4
+    },
+    "right_occupied": {
+     "metric": "AUC",
+     "point": 0.5385,
+     "ci95": [
+      0.4594,
+      0.6198
+     ],
+     "n": 5617,
+     "lambda_at_grid_edge": 0
+    },
+    "vru_ahead": {
+     "metric": "AUC",
+     "point": 0.4419,
+     "ci95": [
+      0.3553,
+      0.5282
+     ],
+     "n": 5617,
+     "lambda_at_grid_edge": 5
+    }
+   }
+  },
+  {
+   "arm": "supervised-CONTROL",
+   "seed": 0,
+   "n_params": 4979980,
+   "config": {
+    "d_latent": 192,
+    "supervised_on": [
+     "lead_gap_m",
+     "left_occupied",
+     "right_occupied",
+     "ego_speed"
+    ]
+   },
+   "sigreg_final": NaN,
+   "sigreg_first": NaN,
+   "sigreg_trajectory": [
+    [
+     4999,
+     NaN
+    ]
+   ],
+   "pred_final": 0.015651,
+   "sigreg_on_encoded_probe_set": 3.4276,
+   "between_within": 1.577,
+   "targets": {
+    "lead_gap_m": {
+     "metric": "R2",
+     "point": 0.9934,
+     "ci95": [
+      0.9908,
+      0.9952
+     ],
+     "n": 5394,
+     "lambda_at_grid_edge": 2
+    },
+    "nearest_any_m": {
+     "metric": "R2",
+     "point": 0.3966,
+     "ci95": [
+      0.2871,
+      0.4706
+     ],
+     "n": 5617,
+     "lambda_at_grid_edge": 0
+    },
+    "n_agents_log": {
+     "metric": "R2",
+     "point": 0.3676,
+     "ci95": [
+      0.2031,
+      0.4709
+     ],
+     "n": 5617,
+     "lambda_at_grid_edge": 0
+    },
+    "occluded_frac": {
+     "metric": "R2",
+     "point": -0.0263,
+     "ci95": [
+      -0.0805,
+      0.0132
+     ],
+     "n": 5617,
+     "lambda_at_grid_edge": 1
+    },
+    "ego_speed": {
+     "metric": "R2",
+     "point": 0.9758,
+     "ci95": [
+      0.9552,
+      0.9872
+     ],
+     "n": 5617,
+     "lambda_at_grid_edge": 0
+    },
+    "ego_yawrate": {
+     "metric": "R2",
+     "point": -0.0071,
+     "ci95": [
+      -0.0202,
+      -0.0017
+     ],
+     "n": 5617,
+     "lambda_at_grid_edge": 1
+    },
+    "ego_accel": {
+     "metric": "R2",
+     "point": -0.0137,
+     "ci95": [
+      -0.0468,
+      0.0111
+     ],
+     "n": 5617,
+     "lambda_at_grid_edge": 1
+    },
+    "left_occupied": {
+     "metric": "AUC",
+     "point": 0.9941,
+     "ci95": [
+      0.9879,
+      0.9983
+     ],
+     "n": 5617,
+     "lambda_at_grid_edge": 0
+    },
+    "right_occupied": {
+     "metric": "AUC",
+     "point": 0.9958,
+     "ci95": [
+      0.9911,
+      0.9989
+     ],
+     "n": 5617,
+     "lambda_at_grid_edge": 0
+    },
+    "vru_ahead": {
+     "metric": "AUC",
+     "point": 0.6582,
+     "ci95": [
+      0.5806,
+      0.728
+     ],
+     "n": 5617,
+     "lambda_at_grid_edge": 0
+    }
+   }
+  }
+ ]
+}

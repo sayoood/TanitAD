@@ -49,7 +49,7 @@ N_TOK = GRID_H * GRID_W
 
 #: v6's readout shape, mirrored: d_op = n_cells * d_readout, n_cells = 4x4.
 N_CELLS = 16
-ARMS = ("lewm", "d2048", "sigop", "detach", "terms7")
+ARMS = ("lewm", "wsig", "d2048", "sigop", "detach", "terms7")
 
 #: ⛔ THE TICK, AND WHY IT IS NOT 1. MEASURED 2026-08-20 on the first gate run:
 #: at k=1 (0.1 s) the latent moves only **1.12 %** of its own magnitude, so the
@@ -164,8 +164,20 @@ class Predictor(nn.Module):
 def arm_config(arm: str) -> dict:
     """The published LeWM configuration, with exactly ONE axis flipped."""
     cfg = {"d_latent": 192, "sigreg_on_z": True, "sigreg_on_zhat": True,
-           "detach": False, "extra_terms": False}
-    if arm == "d2048":
+           "detach": False, "extra_terms": False, "sigreg_within": False}
+    if arm == "wsig":
+        # ⭐ THE PROPOSED FIX, pre-stated in LEJEPA_VS_OURS §5(1) BEFORE the gate
+        # failures. LeJEPA's optimality is for the marginal over the SAMPLES
+        # SIGReg is computed across, and assumes the downstream task lives at
+        # that granularity. Ours does not: isotropy OVER EPISODES is satisfied by
+        # encoding "which episode", which is trivially predictable forward and
+        # carries no dynamics. MEASURED: the lewm gate reaches between/within
+        # 16.25 while a SUPERVISED control on the same encoder reaches 1.58.
+        # ⇒ apply SIGReg to the WITHIN-EPISODE RESIDUAL so the constraint acts at
+        # the granularity the probe reads. Same Epps-Pulley machinery, same
+        # lambda, no teacher — this stays inside the doctrine.
+        cfg["sigreg_within"] = True
+    elif arm == "d2048":
         cfg["d_latent"] = 2048
     elif arm == "sigop":
         cfg["sigreg_on_z"] = False          # v6: not on the encoder embedding
@@ -192,6 +204,8 @@ def train_arm(arm: str, seed: int, *, steps=3000, batch=32, lam=0.1,
     span = STRIDE * ROLL
     pairs = np.concatenate([np.arange(c["start"], c["start"] + c["n"] - span)
                             for c in clips if c["n"] > span])
+    by_clip = [np.arange(c["start"], c["start"] + c["n"] - span)
+               for c in clips if c["n"] > span]
     # mean action over each tick — the control summary for a STRIDE-long step
     A = actions.numpy()
     cum = np.concatenate([np.zeros((1, 2), np.float64), np.cumsum(A, 0)])
@@ -207,7 +221,20 @@ def train_arm(arm: str, seed: int, *, steps=3000, batch=32, lam=0.1,
     g = torch.Generator().manual_seed(seed)
     hist, t0 = [], time.time()
     for step in range(steps):
-        idx = pairs[torch.randint(0, len(pairs), (batch,), generator=g).numpy()]
+        if cfg["sigreg_within"]:
+            # clip-GROUPED batch so a within-episode mean is estimable: 4 starts
+            # from each of batch//4 clips.
+            per = 4
+            ci = torch.randint(0, len(by_clip), (batch // per,), generator=g)
+            idx = np.concatenate([
+                by_clip[int(c)][torch.randint(0, len(by_clip[int(c)]), (per,),
+                                              generator=g).numpy()]
+                for c in ci])
+            grp = torch.arange(batch // per).repeat_interleave(per).to(dev)
+        else:
+            idx = pairs[torch.randint(0, len(pairs), (batch,),
+                                      generator=g).numpy()]
+            grp = None
         # encode t, t+STRIDE, ..., t+ROLL*STRIDE in ONE forward
         offs = [j * STRIDE for j in range(ROLL + 1)]
         flat = np.concatenate([idx + o for o in offs])
@@ -228,13 +255,23 @@ def train_arm(arm: str, seed: int, *, steps=3000, batch=32, lam=0.1,
             l_pred = l_pred + F.mse_loss(zh, tg.detach() if cfg["detach"] else tg)
         l_pred = l_pred / ROLL
 
+        def _centre(v):
+            """within-episode residual: v minus its own clip's mean."""
+            if grp is None:
+                return v
+            k = int(grp.max()) + 1
+            m = torch.zeros(k, v.shape[-1], device=v.device, dtype=v.dtype)
+            gg = grp.repeat(v.shape[0] // grp.shape[0])
+            m = m.index_add(0, gg, v) / (v.shape[0] / k)
+            return v - m[gg]
+
         l_sig = z_t.new_zeros(())
         n_sig = 0
         if cfg["sigreg_on_z"]:
             # every ENCODED embedding, per LeWM Fig. 1's SIGReg on z
-            l_sig = l_sig + sig(zs.reshape(-1, zs.shape[-1])); n_sig += 1
+            l_sig = l_sig + sig(_centre(zs.reshape(-1, zs.shape[-1]))); n_sig += 1
         if cfg["sigreg_on_zhat"]:
-            l_sig = l_sig + sig(torch.cat(zhats, 0)); n_sig += 1
+            l_sig = l_sig + sig(_centre(torch.cat(zhats, 0))); n_sig += 1
         l_sig = l_sig / max(n_sig, 1)
 
         loss = (1 - lam) * l_pred + lam * l_sig
