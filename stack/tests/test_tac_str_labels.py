@@ -651,3 +651,70 @@ def test_the_VLM_and_the_cot_both_outrank_ego():
     # nothing, so the cot abstains here and ego wins — assert the ORDER holds
     assert out.a_tac_lon.value in ("HOLD", "BRAKE_TO")
     assert out.a_tac_lon.leg in (Leg.EGO, Leg.ALPAMAYO)
+
+
+# --------------------------------------------------------------------------- #
+# The ego-derived magnitude — WINDOW_ALIGNMENT_DEFECT.md §4
+#
+# ⛔ WHY THIS EXISTS. Alpamayo's magnitude is measured over an interval that is
+# NOT the window we label: MEASURED 2026-08-20, three clips sat provably at
+# 0.0 m/s for the whole labelled window while Alpamayo called them Strong or
+# Gentle Deceleration (that deceleration happened BEFORE the window opened), and
+# the gate refused HOLD on all three. These tests pin the escape hatch AND the
+# fact that it changes nothing until it is switched on.
+# --------------------------------------------------------------------------- #
+def test_ego_magnitude_default_is_byte_identical_to_the_alpamayo_gate():
+    """⚠️ The default must not move — every banked label depends on it."""
+    from tanitad.lake.tac_str_labels import lon_from_ego
+    for mag in ("Strong Deceleration", "Gentle Deceleration", "Stop",
+                "Maintain Speed", "Gentle Acceleration", None):
+        for v0, ve in ((0.75, 0.0), (1.26, 0.0), (0.46, 0.0), (12.0, 3.0)):
+            assert (lon_from_ego(mag, v0, ve)
+                    == lon_from_ego(mag, v0, ve, magnitude_source="alpamayo"))
+
+
+@pytest.mark.parametrize("mag, v0, v_end", [("Strong Deceleration", 0.75, 0.0),
+                                            ("Gentle Deceleration", 1.26, 0.0),
+                                            ("Strong Deceleration", 0.46, 0.0)])
+def test_ego_magnitude_unblocks_the_three_clips_the_alpamayo_gate_refused(
+        mag, v0, v_end):
+    """The exact (magnitude, v0, v_end) triples measured on 1f57d8ad, 20070bb6
+    and c568fffd — refused under Alpamayo, emitted under ego."""
+    from tanitad.lake.tac_str_labels import lon_from_ego
+    assert lon_from_ego(mag, v0, v_end)[0] is None          # the defect
+    tok, why = lon_from_ego(mag, v0, v_end, magnitude_source="ego")
+    assert tok == "HOLD"
+    assert "ego-derived magnitude" in why and "stop" in why  # provenance is stated
+
+
+def test_ego_magnitude_still_refuses_when_the_ego_itself_disagrees():
+    """⚠️ A guard that cannot fail is not a guard (the C13 class). Switching the
+    SOURCE must not switch the gate OFF."""
+    from tanitad.lake.tac_str_labels import lon_from_ego, magnitude_from_ego
+    # cruising fast and staying fast: kinematics propose nothing at all
+    assert lon_from_ego("Maintain Speed", 20.0, 20.0,
+                        magnitude_source="ego")[0] is None
+    # crawling but ACCELERATING hard out of the crawl -> ego magnitude is
+    # 'strong acceleration', under which CREEP is inadmissible
+    assert magnitude_from_ego(0.6, 1.9, window_s=0.5) == "strong acceleration"
+    assert lon_from_ego(None, 0.6, 1.9, magnitude_source="ego",
+                        window_s=0.5)[0] is None
+
+
+def test_magnitude_from_ego_bands_and_degenerate_inputs():
+    from tanitad.lake.tac_str_labels import magnitude_from_ego
+    assert magnitude_from_ego(None, 1.0) is None
+    assert magnitude_from_ego(1.0, None) is None
+    assert magnitude_from_ego(1.0, 2.0, window_s=0) is None
+    assert magnitude_from_ego(10.0, 0.0) == "stop"          # v_end at rest wins
+    assert magnitude_from_ego(20.0, 8.0) == "strong deceleration"
+    assert magnitude_from_ego(20.0, 17.0) == "gentle deceleration"
+    assert magnitude_from_ego(20.0, 20.0) == "maintain speed"
+    assert magnitude_from_ego(20.0, 23.0) == "gentle acceleration"
+    assert magnitude_from_ego(20.0, 32.0) == "strong acceleration"
+
+
+def test_magnitude_source_rejects_an_unknown_value():
+    from tanitad.lake.tac_str_labels import lon_from_ego
+    with pytest.raises(ValueError, match="magnitude_source"):
+        lon_from_ego("Stop", 0.4, 0.0, magnitude_source="whatever")

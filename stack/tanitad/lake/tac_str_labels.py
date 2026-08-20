@@ -55,6 +55,7 @@ __all__ = ["Leg", "LabelField", "TacStrLabel", "ALPAMAYO_LANE_TO_LAT",
            "ALPAMAYO_COT_REFERENTS", "referents_from_cot", "lon_from_alpamayo",
            "strategic_from_alpamayo", "JUNCTION_REFERENTS", "STOP_AT_REFERENTS",
            "lon_from_ego", "EGO_STOP_EPS_MS", "EGO_CREEP_MAX_MS",
+           "magnitude_from_ego", "EGO_MAGNITUDE_BANDS",
            "compose", "lon_is_admissible", "strategic_from_lane_target",
            "lane_target_is_admissible", "LAT_REQUIRES_LANE_TARGET",
            "route_to_from_sign", "ROUTE_BRANCH"]
@@ -272,9 +273,47 @@ def lon_from_alpamayo(alpamayo_lon: str | None, cot: str | None
 EGO_STOP_EPS_MS: float = 0.5      # at/below this the vehicle is stopped
 EGO_CREEP_MAX_MS: float = 2.0     # ~7 km/h — crawling, not driving
 
+#: ⚠️ **DECLARED, NOT CALIBRATED.** Alpamayo does not publish the thresholds
+#: behind its magnitude words, so these bands are OURS. They exist so a magnitude
+#: can be measured over **the same window the label describes**, which Alpamayo's
+#: own magnitude is not — see `WINDOW_ALIGNMENT_DEFECT.md` §4. Boundaries are
+#: m/s², upper-exclusive; anything at or above the last band is strong accel.
+EGO_MAGNITUDE_BANDS: tuple[tuple[float, str], ...] = (
+    (-1.5, "strong deceleration"),
+    (-0.3, "gentle deceleration"),
+    (+0.3, "maintain speed"),
+    (+1.5, "gentle acceleration"),
+)
+
+
+def magnitude_from_ego(v0_ms: float | None, v_end_ms: float | None,
+                       window_s: float = 6.0) -> str | None:
+    """-> an Alpamayo-SHAPED magnitude word measured over OUR window, or None.
+
+    ⛔ This is **not** a reproduction of Alpamayo's labelling. It returns a word
+    from the same vocabulary so it can be fed to :func:`lon_is_admissible`, and
+    nothing more. Its value is that its SUPPORT is the labelled window.
+
+    ⚠️ Permitted because **labels may use ego** (PI 2026-08-03); inference stays
+    vision-only. This never runs at inference.
+    """
+    if v0_ms is None or v_end_ms is None or not window_s:
+        return None
+    if v_end_ms <= EGO_STOP_EPS_MS:
+        return "stop"
+    a = (v_end_ms - v0_ms) / window_s
+    for hi, word in EGO_MAGNITUDE_BANDS:
+        if a < hi:
+            return word
+    return "strong acceleration"
+
+
 
 def lon_from_ego(alpamayo_lon: str | None, v0_ms: float | None,
-                 v_end_ms: float | None) -> tuple[str | None, str | None]:
+                 v_end_ms: float | None, *,
+                 magnitude_source: str = "alpamayo",
+                 window_s: float = 6.0
+                 ) -> tuple[str | None, str | None]:
     """-> (longitudinal action, reason) from EGO KINEMATICS alone, or (None, None).
 
     ⛔ Only the two ego-state tokens are reachable here, and only in the clear
@@ -295,8 +334,26 @@ def lon_from_ego(alpamayo_lon: str | None, v0_ms: float | None,
         return None, None
     # ⚠️ the magnitude prior still binds: an ego reading that contradicts the
     # measured magnitude is a disagreement, not a label.
-    if not lon_is_admissible(alpamayo_lon, tok):
+    #
+    # ⛔ WHICH magnitude, though. MEASURED 2026-08-20 (WINDOW_ALIGNMENT_DEFECT.md):
+    # Alpamayo's magnitude is measured over an EARLIER interval than the window
+    # we label, so it vetoed HOLD on 3 of 3 clips that were provably at rest for
+    # the whole window. `magnitude_source="ego"` gates on a magnitude measured
+    # over THIS window instead. ⚠️ It stays OFF by default — switching it is the
+    # PI's call, not the composer's, and the default keeps every banked label
+    # byte-identical.
+    gate_mag, gate_src = alpamayo_lon, "alpamayo"
+    if magnitude_source == "ego":
+        derived = magnitude_from_ego(v0_ms, v_end_ms, window_s)
+        if derived is not None:
+            gate_mag, gate_src = derived, "ego"
+    elif magnitude_source != "alpamayo":
+        raise ValueError(f"magnitude_source must be 'alpamayo' or 'ego', "
+                         f"got {magnitude_source!r}")
+    if not lon_is_admissible(gate_mag, tok):
         return None, None
+    if gate_src == "ego":
+        why = f"{why}; gated on ego-derived magnitude {gate_mag!r} over {window_s}s"
     return tok, why
 
 
