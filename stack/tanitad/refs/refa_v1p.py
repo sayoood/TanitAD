@@ -47,6 +47,37 @@ that either models the dynamics. This arm exists to test whether that relative
 advantage survives at real geometry and real data; it is not evidence that it
 will.
 
+## ⛔ E-ACTSTREAM-2 INVERTS THIS AT v1's REAL GEOMETRY (added 2026-08-20)
+
+The table above is **16-token v6 cell fields**. At v1's ACTUAL field —
+**640 DINOv3 tokens x 1024** — the ordering REVERSES and tokenisation is the
+**worst** of three, separated:
+
+| arm | MSE (3 seeds) | vs C-PERSIST |
+|---|---|---|
+| `add` (broadcast+add) | **0.037732** | beats |
+| `concat` (broadcast+project, = v1) | 0.037956 | beats |
+| **`token`** (this arm) | **0.038141** | beats, but WORST |
+
+`token - concat` **+0.000186 [+0.000152, +0.000222]** - SEPARATED.
+`token - add` **+0.000409 [+0.000357, +0.000464]** - SEPARATED.
+
+The reason is stated in E-ACTSTREAM-2 and it is a scope argument: at 16 vision
+tokens, 2 action tokens are **11 %** of the stream; at 640 they are **0.3 %**.
+Broadcast reaches every token by construction; tokenisation must win attention
+against 640 competitors.
+
+⚠️ **THIS ARM IS THEREFORE PARKED AT THE WRONG GEOMETRY.** E-ACTSTREAM-2 keeps
+v1' deliberately - *"it is the right arm for the SMALL-TOKEN regime"* - and names
+where that regime actually is: the **TACTICAL** predictor runs on **64
+`tac_queries`**, an order of magnitude closer to where tokenisation won. ⇒ The
+defensible v1' is action-tokens on the **64-query tactical** path, NOT on the
+640-token operative field. Applying it at 640 is refuted by our own measurement
+at our own geometry.
+
+⭐ The cost note below is retained because it is arithmetically correct, but it
+describes the cost of a configuration the evidence does not support.
+
 ## What this costs
 
 Attention runs over ``N + n_act_tokens`` instead of ``N``. At v1's real geometry
