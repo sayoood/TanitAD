@@ -65,7 +65,15 @@ CACHE = SP / os.environ.get("TRUNK_CACHE", "sp2/cache_tok20000_s4/latents.pt")
 TARGETS = SP / "sp2/e_trunk2_targets.jsonl"
 EPS = SP / "sp2/cache/slotprobe-lead130-w120-256x640cyl"
 
-REGRESSION = ("lead_gap_m", "nearest_any_m", "n_agents_log", "occluded_frac")
+REGRESSION = ("lead_gap_m", "nearest_any_m", "n_agents_log", "occluded_frac",
+              #: ⭐ EGO targets — the COLLAPSE DIAGNOSTIC, added 2026-08-20.
+              #: An action-conditioned prediction loss PUNISHES encoding other
+              #: agents (stochastic -> unpredictable -> loss) and REWARDS
+              #: encoding ego dynamics (near-deterministic given the action).
+              #: If v6 collapsed onto the ego-predictable subspace, these go
+              #: HIGH while every environment target sits at chance. That is a
+              #: named, fixable failure — not an empty encoder.
+              "ego_speed", "ego_yawrate", "ego_accel")
 BINARY = ("left_occupied", "right_occupied", "vru_ahead")
 #: ⛔ EXCLUDED ON PURPOSE, not silently: 95.8 % positive, so a constant
 #: predictor scores 0.958 and the target cannot separate arms.
@@ -423,6 +431,16 @@ def main() -> None:
             r = json.loads(line)
             tgt[(r["clip_id"], int(r["frame_idx"]))] = r
 
+    # ego targets, read from the SAME poses C-EGO is built from.
+    # ⚠️ C-EGO must therefore be read as a CEILING here, not a control: it is
+    # the identity map on these three. Stated so it cannot be misquoted.
+    eg = ego_features(keys)
+    for i, k in enumerate(keys):
+        row = tgt.setdefault(k, {})
+        row["ego_speed"] = float(eg[i, 0])
+        row["ego_accel"] = float(eg[i, 1])
+        row["ego_yawrate"] = float(eg[i, 2])
+
     folds = episode_folds(ep)
     out = {"_evidence_class": "MEASURED (ours; dev-box RTX 4060 / CPU ridge)",
            "eval_tier": "T0-DIAGNOSTIC",
@@ -450,10 +468,20 @@ def main() -> None:
         gp = FEAT / f"gram_{arm}.npy"
         if gp.exists():
             G = np.load(gp)
-            print(f"  (gram cached {G.shape})", flush=True)
         else:
             G = gram_memmap(p)
             np.save(gp, G)
+        # ⛔ SCALE NORMALISATION — added 2026-08-20, and it is not cosmetic.
+        # v6 cells have centred variance ~1.6e-5 while DINOv3 activations are
+        # O(1), so an ABSOLUTE lambda grid means something completely different
+        # per arm and would handicap whichever arm's optimum falls outside it.
+        # Dividing by the mean diagonal makes lambda DIMENSIONLESS, so the same
+        # grid is the same amount of shrinkage for every arm. Ridge is otherwise
+        # unchanged (scaling G by c and lambda by c is the identical solution).
+        scale = float(np.mean(np.diag(G)))
+        G = G / scale
+        print(f"  (gram {G.shape}, mean-diag {scale:.4g} -> normalised)",
+              flush=True)
         out["arms"][arm] = {"dims": int(np.load(p, mmap_mode="r").shape[1]),
                             "targets": {}}
         for name in REGRESSION + BINARY:

@@ -58,53 +58,81 @@ agents/frame, zero empty frames). ⛔ `lead_present` is **excluded and named**:
 
 ## 3. Result
 
-R² (regression) / AUC (binary), point with the **episode-cluster bootstrap** 95 % CI.
+⚠️ **These are the SCALE-NORMALISED numbers and they supersede the first pass.**
+v6 cells and DINOv3 activations differ by orders of magnitude, so an **absolute**
+λ grid meant a different amount of shrinkage per arm. Each Gram is now divided by
+its mean diagonal, making λ dimensionless. **This was not cosmetic:** `C-EGO`
+→ `ego_yawrate` is an **identity map** and read **−1.81** before normalisation,
+**+0.9845** after. Headline numbers are robust either way (`C-EGO`/`lead_gap_m`
++0.3340 both).
+
+R² (regression) / AUC (binary), **bold = CI excludes the null**.
 
 | target | `C-PIXEL` | `C-EGO` | `v6_cells` | `v6_tok_pooled` | `v6_tokens` | ⭐ `dino_pooled` | ⭐ `dino_tokens` |
 |---|---|---|---|---|---|---|---|
-| **`lead_gap_m`** | +0.0015 | **+0.3340** | −0.0165 | −0.0151 | +0.0181 | **+0.3841** | **+0.4549** |
-| `nearest_any_m` | +0.0134 | +0.1164 | +0.0373 | +0.0260 | +0.0275 | **+0.3529** | **+0.3567** |
-| `n_agents_log` | +0.0793 | +0.1611 | +0.1707 | +0.0749 | +0.0855 | **+0.5767** | **+0.5594** |
-| `occluded_frac` | −0.0052 | −0.0239 | +0.0038 | +0.0008 | +0.0175 | +0.0356 | +0.1231 |
-| `left_occupied` | .4807 | .5055 | .5391 | .4982 | .5032 | **.8303** | **.8462** |
-| `right_occupied` | .4813 | .5390 | **.5987** | .5446 | .5295 | **.8242** | **.8420** |
-| `vru_ahead` | **.6191** | .5630 | .5717 | .5700 | **.5823** | **.7093** | **.7041** |
+| **`lead_gap_m`** | +0.0020 | **+0.3340** | −0.0176 | **−0.0151** | +0.0130 | **+0.3792** | **+0.4531** |
+| `nearest_any_m` | +0.0227 | **+0.1194** | +0.0371 | +0.0260 | +0.0399 | **+0.3465** | **+0.3464** |
+| `n_agents_log` | +0.0661 | **+0.1601** | +0.1700 | +0.0750 | +0.0821 | **+0.5766** | **+0.5646** |
+| `occluded_frac` | −0.0082 | **−0.0081** | +0.0031 | +0.0008 | +0.0035 | +0.0299 | +0.1091 |
+| ⭐ `ego_speed` | **−0.0510** | **+1.0000** | −0.0049 | **−0.0677** | −0.0340 | **+0.6957** | **+0.6872** |
+| `ego_yawrate` | **−0.0546** | **+0.9845** | −0.0125 | −0.0077 | −0.0285 | −0.0084 | +0.0436 |
+| `ego_accel` | −0.0141 | **+1.0000** | **−0.0339** | **−0.0446** | **−0.0270** | −0.0031 | −0.0276 |
+| `left_occupied` | .4672 | .5009 | .5321 | .4982 | .4971 | **.8312** | **.8488** |
+| `right_occupied` | .4703 | .5307 | **.5890** | .5447 | .5150 | **.8236** | **.8480** |
+| `vru_ahead` | **.5967** | .5612 | .5728 | .5699 | .5722 | **.7095** | **.6993** |
 
-Key CIs: `dino_tokens`/`lead_gap_m` **[+0.385, +0.533]**;
-`dino_pooled`/`lead_gap_m` **[+0.320, +0.457]**;
-`C-EGO`/`lead_gap_m` **[+0.254, +0.418]**;
-`v6_tokens`/`lead_gap_m` **[−0.056, +0.076]**;
-`dino_tokens`/`left_occupied` **[.812, .877]**; `v6_tokens`/`left_occupied` **[.430, .576]**.
+⚠️ **`C-EGO` is a CEILING on the three ego targets, not a control** — it is the
+identity map there. Its 1.0000 / 0.9845 / 1.0000 is the harness verifying itself.
 
-### 3.1 The 2×2, read directly
+### 3.1 The 2×2, read directly (`lead_gap_m` R²)
 
-|  | unpooled (640 tokens) | pooled (4×4 cells) | **pool cost** |
+|  | unpooled | pooled (4×4) | **pool cost** |
 |---|---|---|---|
-| **DINOv3** | +0.4549 | +0.3841 | **−0.071 (−16 % rel.)** |
-| **v6** | +0.0181 | −0.0151 | ~0 (nothing to lose) |
-| **encoder gap** | **+0.4368** | **+0.3992** | |
+| **DINOv3** | +0.4531 | +0.3792 | **−0.074 (−16 % rel.)** |
+| **v6** | +0.0130 | −0.0151 | ~0 (nothing to lose) |
 
-⇒ **The pooling is CHEAP and the ENCODER is the defect.** DINOv3 squeezed
-through the very same parameter-free 40× pool keeps **R² +0.384 on headway**
-and **AUC .830 on lane occupancy**; v6 sits at chance on both sides of the pool.
+⇒ **The pool is CHEAP; the ENCODER is the defect.** Lane occupancy costs DINOv3
+only **.8488 → .8312**.
 
-### 3.2 What it says
+### 3.2 ⭐ The spectrum, at ADMISSIBLE n, with a reference
 
-1. ⛔ **No v6 arm decodes lead-vehicle distance.** All three sit at zero while
-   **ego state alone reaches +0.3340** and **DINOv3 reaches +0.4549**. The
-   representation the whole hierarchy consumes carries **less headway
-   information than a speedometer**. 88.7 % of the oracle gap is longitudinal,
-   so this is the programme's largest known defect, measured rather than inferred.
-2. ⭐ **The protocol has ample power — "we cannot detect it" is REFUTED.**
-   DINOv3 in 16 cells reaches AUC **.83** on lane occupancy. Any claim that this
-   battery is too weak to see environment information is now falsified.
-3. ⛔ **v6 is at CHANCE on adjacent-lane occupancy** — the one target where **no
-   ego leak is possible** (C-EGO .5055 / .5390, both spanning .5) — while a
-   generic vision encoder gets **.83**.
-4. **The only target v6 clears chance on is `vru_ahead`, and raw pixels do it
-   better** (.6191 vs .5823). Appearance, not learned scene understanding.
-5. `v6_tokens_pooled` (−0.0151) ≈ `v6_cells` (−0.0165) — the pooling
-   reproduction is faithful, which is what licenses the `dino_pooled` cell.
+⛔ **A rank read off the trainer log is INADMISSIBLE** — it is computed at
+**n = 48** against d = 2048, so it is bounded by **47**, and `o6_rank_verdict`
+returns `INCONCLUSIVE` ("cannot resolve rank"). Quoting `effective_rank 22.93`
+as "2.3 of 2048" is the category error `v6.py` names explicitly, and it is logged
+as **C128**. Computed instead on the **5,617 banked frames** (ceiling 2048/5616,
+far above the 1024 bar):
+
+| arm | participation ratio | effective rank | top-8 share |
+|---|---|---|---|
+| `v6_cells` (deployed, d=2048) | **4.90** | 515.6 | **0.806** |
+| `v6_tokens_pooled` (d=12288) | **3.28** | 78.2 | **0.949** |
+| `dino_pooled` (d=16384) | **40.77** | 2022.3 | **0.348** |
+
+⇒ The defensible claim is **ANISOTROPY AGAINST A REFERENCE — 8.3× in
+participation ratio, 0.806 vs 0.348 in top-8 share** — never "N dimensions".
+⚠️ `o6_rank_verdict` returns `INCONCLUSIVE` for **all three including DINOv3**:
+its criterion is retention-over-training, not a cross-arm comparison. The raw
+statistics are comparable; the verdict machinery is not the instrument here.
+
+### 3.3 What it says
+
+1. ⛔ **No v6 arm decodes lead-vehicle distance.** All three at zero while ego
+   state alone reaches **+0.3340** and DINOv3 **+0.4531**. 88.7 % of the oracle
+   gap is longitudinal, so this is the programme's largest known defect,
+   measured rather than inferred.
+2. ⛔ **v6 cannot decode its OWN SPEED either (−0.0049) while DINOv3 reads it
+   from the same frames through the same pool at +0.6957.** ⚠️ *"v0 is supplied
+   as an action channel so the encoder needn't encode it"* was offered as an
+   innocent explanation and **is refuted by this row**. The honest statement is
+   that the latent is **impoverished on every axis tested** — environment and
+   ego-motion alike — not specialised away from one toward the other.
+3. ⭐ **The protocol has ample power — "we cannot detect it" is REFUTED.**
+   DINOv3 in 16 cells reaches AUC **.83** on lane occupancy.
+4. ⛔ **v6 is at CHANCE on adjacent-lane occupancy** — the one target where **no
+   ego leak is possible** (`C-EGO` .5009 / .5307) — while DINOv3 gets **.83**.
+5. **The only target v6 clears chance on is `right_occupied` (.5890)**, and
+   `C-PIXEL` beats every v6 arm on `vru_ahead`.
 
 ## 4. Estimator — two faults found and fixed mid-run
 
