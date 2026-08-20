@@ -39,7 +39,16 @@ sys.path.insert(0, str(Path.cwd() / "stack"))
 import e_trunk2_probe as P  # noqa: E402
 from tanitad.models.v6 import spectrum_report, o6_rank_verdict  # noqa: E402
 
-STEPS = (2000, 9000, 9250, 10000, 11250, 12000, 14000, 16000, 18000)
+#: ⛔ CORRECTED 2026-08-20. The pre-registration said "nine banked cell caches"
+#: on the strength of a directory listing. FOUR of them hold `latents.pt`; the
+#: other five were pruned to `sp1_meta.json` only. Asserting presence from a
+#: listing without checking CONTENT is the absence-verification failure the
+#: operating standard names. The ladder is therefore 2000 / 16000 / 18000 /
+#: 20000 — a real early anchor and three late rungs, not nine.
+#: (`cache_tok11250` is stride 8 and `cache_s16000_stride1` is 22,468 frames;
+#: both carry DIFFERENT frame sets, so falsifier 1 would refuse them and they
+#: are excluded by construction rather than by choice.)
+STEPS = (2000, 16000, 18000)
 TARGETS = P.REGRESSION + P.BINARY
 
 

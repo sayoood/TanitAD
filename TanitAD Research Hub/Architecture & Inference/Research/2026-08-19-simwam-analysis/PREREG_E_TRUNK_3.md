@@ -23,11 +23,30 @@ and lane occupancy at AUC .83. The spectrum at admissible *n* shows
 
 ## 2. The experiment
 
-**Nine banked cell caches on the IDENTICAL 5,617 frames, stride 4, 130
+⛔ **AMENDED 2026-08-20, BEFORE any ladder number beyond step 2000 was read.**
+This section originally claimed **nine** banked cell caches. It was written from
+a directory listing; **only FOUR hold `latents.pt`** — `cache_s09000`,
+`s09250`, `s10000`, `s11250`, `s12000`, `s14000` were pruned to
+`sp1_meta.json` only. Asserting presence from a listing without checking CONTENT
+is the absence-verification failure the operating standard names, and the
+amendment is recorded rather than quietly edited.
+
+**Four banked cell caches on the IDENTICAL 5,617 frames, stride 4, 130
 episodes — only the checkpoint moves:**
 
-`step 2000, 9000, 9250, 10000, 11250, 12000, 14000, 16000, 18000` (+ the
-`20000` cache already measured).
+`step 2000, 16000, 18000, 20000`.
+
+⚠️ **This weakens the design and the weakening is stated.** The ladder is now one
+EARLY anchor (2000, 6.7 % of S-W) and three LATE rungs (53 %, 60 %, 67 %). A
+monotone decline between 2000 and 16000 cannot be located in time, and any
+non-monotone excursion in 2 k–16 k is invisible. The **LOST vs NEVER-ACQUIRED**
+question still separates — that turns on the early anchor versus the late
+plateau — but "when" does not, and no claim about the shape of the trajectory
+between them is admissible.
+
+⚠️ `cache_tok11250` (stride 8) and `cache_s16000_stride1` (22,468 frames) carry
+DIFFERENT frame sets; falsifier 1 refuses them, so they are excluded by
+construction, not by choice.
 
 For each step, run the **unchanged** E-TRUNK-2 battery on the `cells` arm:
 same targets, same **episode-disjoint** folds, same dual-ridge with
