@@ -7184,3 +7184,58 @@ was a mechanism proposed *before* measuring, then falsified by the measurement �
 working. The rank claim was a number asserted *from* a measurement I had not qualified — which is
 the system being bypassed. ⇒ **Before quoting any spectrum/rank field from a trainer log, read `n`
 and the ceiling in the same breath, and run `o6_rank_verdict` rather than eyeballing the field.**
+
+---
+
+## C129 — "freeze a strong encoder" was recommended against a STANDING PI DECISION and against an ALREADY-MEASURED counterexample, from a T0 probe (2026-08-20, PI challenge)
+
+**The claim.** After E-TRUNK-2/3 measured that the v6 operative latent does not
+linearly expose environment properties while frozen DINOv3 does, I recommended
+**Route 1 — freeze a strong pretrained encoder, train the predictor** — as "the
+primary recommendation", and pre-registered it as the World-B consequence.
+
+**Two refutations, both already in `MODEL_REGISTRY.md` before I wrote it.**
+
+1. ⛔ **`D-003` (2026-07-05) says the opposite, as a PI decision:** *"Main track =
+   from-scratch 4-brain latent world model; **frozen-encoder is a comparison arm,
+   not a hedge to adopt** … the from-scratch arm is what makes the
+   data-efficiency claim disruptive."* A pre-registered consequence does not get
+   to overturn a PI decision, and I did not check the decision table at all.
+2. ⛔ **REF-A already ran the experiment.** `refa-4brain-speed-30k`, frozen
+   DINOv2-B/14: ADE@2s **2.1322 ± 0.1821**, *"does not beat CV"*, 14 k = 2.05 →
+   30 k = 2.14 → **plateaued**, registry reading *"not overfitting — it is at a
+   capability ceiling"*. **flagship > REF-A, paired +2.6200 m [2.0945, 3.2570].**
+
+⭐ **THE LOAD-BEARING ERROR: I crossed a TIER.** A frozen DINOv2 trunk almost
+certainly decodes environment properties far better than v6 does — and it drove
+**2.62 m worse**. ⇒ **Decodability (T0) does not translate into driving (T1).**
+The probe measured a real property; the step from that property to an
+architectural prescription is precisely the tier crossing `EVAL_DOCTRINE`
+forbids, and the programme had already run the discriminating experiment.
+
+**ROOT-CAUSE CLASS: a T0 measurement promoted to a T1 architectural decision,
+without consulting the decision table or the arm that already tested it.** This
+is the `EVAL_DOCTRINE` tier rule and the *"absence found at ONE location is not
+absence"* rule failing together — I searched the *code* for how the encoder is
+trained and never searched the *registry* for whether the alternative had been
+tried. ⚠️ Aggravating: the same investigation also asserted *"no anti-collapse
+machinery"* by implication, while **`w_o6 = 0.1`, `sigreg_slices = 512` and O3
+masking are all ACTIVE in the live run** — and SIGReg is measurably working
+(participation ratio 3.29 → 6.94, top-8 share 0.836 → 0.806). Four claims about
+the programme's own design, none checked against the programme's own record.
+
+**What survives:** the T0 measurement itself — *the v6 operative latent does not
+linearly expose environment properties, at any measured step*. **What is
+withdrawn:** every architectural prescription derived from it.
+
+**The sharper finding that replaces it.** SIGReg is on and working, so this is
+not collapse and not missing machinery: **an anti-collapse regulariser guarantees
+dimensions are USED, never that they are INFORMATIVE — an isotropy constraint can
+be satisfied by noise.** That is a statement about the limits of an unsupervised
+predictive objective plus an isotropy prior, and it is the first framing in this
+investigation that fits every number without contradicting the record.
+
+⇒ **STANDING RULE THIS EARNS: an architectural recommendation must cite (a) the
+`D-` row it is consistent with, and (b) the measured arm that already tested it —
+or state explicitly that neither exists.** A probe result is admissible as
+EVIDENCE toward such a recommendation and is never sufficient for one.
