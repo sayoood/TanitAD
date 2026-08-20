@@ -7132,3 +7132,55 @@ shaped, resumable, never supervised — because a shape change would break the l
 which tokens were trainable**, or a reader infers 17-way competence where ~10-way was trained. The
 five missing tokens are a **DATA gap (lane topology), not a labelling-strategy gap** — no ordering
 of Alpamayo, VLM and ego produces them from what the corpus contains.
+
+---
+
+## C128 — "the latent occupies ~2.3 effective dimensions — representational collapse" QUOTED A RANK BOUNDED BY ITS SAMPLE COUNT, against the ceiling the source states three lines above it (2026-08-20, self-caught after asserting it to the PI)
+
+**The claim, as asserted in chat.** Reading the live v6F S-W trainer log at step 21,400 —
+`participation_ratio 2.32`, `effective_rank 22.93`, `d 2048` — I told the PI *"the 2048-d operative
+latent occupies ~2.3 effective dimensions. That is representational collapse."* I had, one message
+earlier, also asserted a **collapse-onto-ego** hypothesis that my own probe then **refuted**
+(v6_cells → `ego_speed` R² −0.0049). Two overclaims in consecutive messages.
+
+**Why it is wrong.** The same log row carries `n = 48`. A centred covariance built from `n` rows has
+rank ≤ n−1, so the reading is **bounded by 47** — it is *22.93 of 47*, not *of 2048*.
+`o6_rank_verdict` on that exact reading returns **`INCONCLUSIVE`**, with the reason string
+*"rank_ceiling 47 < 1024: a centred covariance from n=48 rows cannot resolve rank."* And
+`SIGREG_GATE_POWER.md` (MEASURED 2026-08-16) says at n=48 an **isotropic d=2048 population — true
+effective rank 2048 — reads 46.86**, while a population collapsed 7.3× to 281 **still reads 22.6**.
+Our 22.93 is indistinguishable from the latter, so it licenses no verdict at all.
+
+⛔ **The disqualifying text was in the source I was reading**, in `v6.py`'s own comment on
+`O6_ADMISSIBLE_CEILING`, which even spells out the error by name: *"'15 of 2048' is a **category
+error**: it is 15 of 47."* I quoted the number and skipped the paragraph that exists to stop exactly
+this.
+
+**ROOT-CAUSE CLASS: a statistic quoted without the CEILING that bounds it — an estimator read
+outside its admissible regime.** Identical in shape to the `df` trap (a counter reporting the wrong
+scope), the Thor `free`/`tegrastats` trap, and the cgroup `usage_in_bytes` trap, and it is the same
+family as C110/C125/C127 (*a number correct about a different quantity than the one it was attached
+to*). ⚠️ The aggravating feature here is that the programme had **already built the guard** —
+an admissibility ceiling, a verdict function that refuses, and a measured power study — and I
+routed around all three by reading the raw field out of the log.
+
+**MEASURED replacement, at admissible n** (`E_TRUNK_2_ENV_DECODABILITY.md`; 5,617 banked frames,
+ceiling 2048/5616 ≫ the 1024 bar, **with a reference arm**):
+
+| arm | participation ratio | effective rank | top-8 share |
+|---|---|---|---|
+| `v6_cells` (deployed, d=2048) | **4.90** | 515.6 | **0.806** |
+| `v6_tokens_pooled` (d=12288) | **3.28** | 78.2 | **0.949** |
+| `dino_pooled` (d=16384) | **40.77** | 2022.3 | **0.348** |
+
+The defensible statement is **anisotropy against a reference — participation ratio 4.90 vs 40.77
+(8.3×), top-8 share 0.806 vs 0.348** — not "2.3 dimensions". ⚠️ `o6_rank_verdict` returns
+`INCONCLUSIVE` for **all three including DINOv3**, because its criterion is retention-over-training,
+not a cross-arm comparison; the raw statistics are comparable, the verdict machinery is not the
+instrument for this question, and saying so is part of the correction.
+
+**Second retraction in the same investigation, same direction.** The collapse-onto-ego hypothesis
+was a mechanism proposed *before* measuring, then falsified by the measurement — which is the system
+working. The rank claim was a number asserted *from* a measurement I had not qualified — which is
+the system being bypassed. ⇒ **Before quoting any spectrum/rank field from a trainer log, read `n`
+and the ceiling in the same breath, and run `o6_rank_verdict` rather than eyeballing the field.**
