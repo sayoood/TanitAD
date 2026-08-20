@@ -320,11 +320,15 @@ if __name__ == "__main__":
         build_frames()
     else:
         dev = "cuda" if torch.cuda.is_available() else "cpu"
-        res = []
+        # ⛔ APPEND. This used to start empty and overwrite, which silently
+        # dropped every previously trained arm from the scoring list.
+        tp = SP / "e_lewm_train.json"
+        res = json.loads(tp.read_text(encoding="utf-8")) if tp.exists() else []
         for arm in a.arms.split(","):
             for s in (int(x) for x in a.seeds.split(",")):
                 print(f"\n=== {arm} seed {s} ===", flush=True)
-                res.append(train_arm(arm, s, steps=a.steps, dev=dev))
-                (SP / "e_lewm_train.json").write_text(
-                    json.dumps(res, indent=1), encoding="utf-8")
+                rec = train_arm(arm, s, steps=a.steps, dev=dev)
+                res = [r for r in res
+                       if not (r["arm"] == arm and r["seed"] == s)] + [rec]
+                tp.write_text(json.dumps(res, indent=1), encoding="utf-8")
         print(f"\n-> {SP / 'e_lewm_train.json'}")
