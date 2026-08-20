@@ -1,5 +1,15 @@
 # E-TRUNK-1 — the v6 READOUT loses the dynamics, not the v6 ENCODER
 
+> ⛔ **SUPERSEDED IN ITS ARCHITECTURAL READING — 2026-08-20.** The title claim
+> and §3/§5's parallel-token-path direction **do not survive E-TRUNK-2**
+> (`E_TRUNK_2_ENV_DECODABILITY.md`). A decodability probe with a DINOv3
+> reference shows the readout's 40× pool costs DINOv3 only **16 %** of its
+> headway R² (+0.4549 → +0.3841) and **0.016** AUC of its lane occupancy
+> (.846 → .830), while **every** v6 arm sits at chance on both sides of the
+> pool. **The pool is not where the information dies; the encoder is.**
+> The *measurements* below stand. The inference from them to "fix the readout"
+> does not, and the 40×-sequence token path must not be funded on it.
+
 `MEASURED (ours; dev-box RTX 4060)` · **T0-DIAGNOSTIC — a future-field prediction
 error is a world-model fidelity number, never driving performance** · one
 checkpoint, one encoder, two granularities · 3 seeds · paired episode-cluster

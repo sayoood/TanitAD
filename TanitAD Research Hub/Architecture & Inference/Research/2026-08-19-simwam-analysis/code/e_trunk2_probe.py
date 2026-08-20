@@ -347,6 +347,44 @@ def export_pixel(side=(16, 40)):
     print(f"C-PIXEL {side} -> {dst.shape[1]} dims (missing frames: {miss})")
 
 
+def export_dino(pool_out=(4, 4)):
+    """⭐ THE DECIDING CONTROL (the PI's suggestion). Same frames, same folds.
+
+    DINOv3 ViT-L/16 on a 256x640 frame yields a 16x40 patch grid — the SAME grid
+    v6 produces — so the readout's parameter-free 40x pool applies identically
+    and `dino_pooled` is a true like-for-like of `v6_tokens_pooled`.
+
+    ⚠️ Row order is VERIFIED, not assumed: meta's clip/frame sequence was checked
+    equal to keys.json as an ordered list before this was written.
+    """
+    md = json.loads((SP / "dinov3_fields/meta.json").read_text(encoding="utf-8"))
+    keys = [tuple(k) for k in
+            json.loads((FEAT / "keys.json").read_text(encoding="utf-8"))]
+    order = [(c, f) for c, v in md["clips"].items() for f in v["frames"]]
+    if order != keys:
+        raise RuntimeError("DINOv3 row order != probe key order — refusing to "
+                           "build a silently misaligned arm")
+    n = len(keys)
+    d_grid, d_emb = md["clips"][order[0][0]]["shape"][1:]
+    tok = np.lib.format.open_memmap(FEAT / "dino_tokens.npy", mode="w+",
+                                    dtype=np.float16, shape=(n, d_grid * d_emb))
+    pol = np.lib.format.open_memmap(FEAT / "dino_pooled.npy", mode="w+",
+                                    dtype=np.float32,
+                                    shape=(n, pool_out[0] * pool_out[1] * d_emb))
+    i = 0
+    for cid in md["clips"]:
+        a = np.load(SP / f"dinov3_fields/{cid}.npy")          # [k, 640, 1024]
+        k = a.shape[0]
+        tok[i:i + k] = a.reshape(k, -1).astype(np.float16)
+        t = torch.from_numpy(a.astype(np.float32)).reshape(k, 16, 40, d_emb)
+        t = t.permute(0, 3, 1, 2)
+        q = torch.nn.functional.adaptive_avg_pool2d(t, pool_out)
+        pol[i:i + k] = q.reshape(k, -1).numpy()
+        i += k
+    tok.flush(); pol.flush()
+    print(f"dino_tokens {tok.shape}  dino_pooled {pol.shape}  (rows {i})")
+
+
 def gram_memmap(path, chunk_cols=49152):
     X = np.load(path, mmap_mode="r")
     n, d = X.shape
@@ -362,7 +400,9 @@ ARMS = (("C-MEAN", None),
         ("C-PIXEL", "c_pixel.npy"),
         ("v6_cells", "v6_cells.npy"),
         ("v6_tokens_pooled", "v6_tokens_pooled.npy"),
-        ("v6_tokens", "v6_tokens.npy"))
+        ("v6_tokens", "v6_tokens.npy"),
+        ("dino_pooled", "dino_pooled.npy"),
+        ("dino_tokens", "dino_tokens.npy"))
 
 
 def main() -> None:
