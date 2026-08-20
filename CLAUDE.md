@@ -239,6 +239,26 @@ Every subagent brief MUST carry the preamble in
   (`awk '{printf "@%04d@%s#\n", NR, $0}'`), emit the expected line count, then refetch exactly the
   missing/short lines with `awk 'NR==n'` and reassemble.** Verify the reassembled bytes by md5 or
   by parsing the JSON — never by eye.
+- ⛔ **A DENSE WINDOWED TENSOR DUPLICATES EVERY FRAME `W` TIMES AND SILENTLY SWAPS — AND THE
+  GPU-UTIL PROBE THEN MISATTRIBUTES IT.** MEASURED 2026-08-19/20: `e_trunk_pooling.py` built
+  `X = [N, W, n_tok, d]` float32 from a 5.6 GB token cache. Consecutive windows overlap by `W-1`
+  frames, so the stack held **~25.6 GB** for 5.5 GB of unique data, and the very next line
+  (`X - mu[:, None]`) allocated a **second** 25.6 GB. On a 34.2 GB box the job paged to disk for
+  **2.5 h at 41 % GPU without finishing**; killing it dropped host RAM 67 % → 25 %.
+  ⚠️ **I read "GPU 41 %" as "PCIe-bound batching" and was wrong** — the GPU was idle because the
+  HOST was thrashing, and `nvidia-smi` cannot see that. ⇒ **Before blaming the accelerator, price
+  the host tensor: `N × W × tokens × d × dtype`, and compare it to FREE RAM, not total.** The fix is
+  never a smaller batch — it is to **bank unique frames once (fp16) and window by INDEX**, centring
+  per batch so no second full copy exists (`e_trunk_pooling2.py`: 25.6 GB → 2.76 GB, 3 seeds in
+  42 s). *Same family as the `df` / Thor `free` / cgroup `usage_in_bytes` traps: a probe that
+  reports the wrong scope, read as an answer.*
+- ⚠️ **A DERIVED CONSTANT SILENTLY CHANGES THE EXPERIMENT WHEN ITS INPUT CHANGES.** Same file:
+  `HORIZON` moved from a hardcoded `7` to `round(6.0 * 10.0 / STRIDE)`. At stride 8 that is **8, not
+  7** — 6.4 s instead of the banked 5.6 s — which cost exactly **one window per clip (1,509 →
+  1,379 over 130 clips)** and makes a "reproduction" run *not* a replay. ⇒ **When a constant becomes
+  derived, re-derive it for EVERY cache it will meet and state the value in the result**, or a
+  refactor validation silently compares two different experiments. *(At stride 4 it lands on 15 × 4
+  = exactly 6.0 s — the true design horizon, and a reason to prefer that cache.)*
 - **Verify before alarming.** Check the metric's definition and take multiple samples first;
   several "outages" were measurement artifacts.
 
