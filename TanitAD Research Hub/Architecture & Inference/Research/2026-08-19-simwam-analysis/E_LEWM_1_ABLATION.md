@@ -37,6 +37,17 @@ The fault is in **what the objective asks for.**
 ⚠️ **This is a CEILING, not an arm.** A supervised encoder is not a world model
 and 0.99 is never a WM result. It bounds what this harness could show.
 
+⚠️ **AND THE 0.9934 IS NOT A GENERALISATION NUMBER.** The control trained on ALL
+130 clips including the episodes the probe holds out — it saw their *labels*. So
+it measures **REPRESENTABILITY** (can this architecture, on these frames, hold a
+linearly-decodable lead-gap at all?) and **not** generalisation to unseen
+episodes. ⭐ **That is still the right control for the question asked**, because
+the WM arms also train on all 130 clips and are probed the same way — the arms
+differ only in whether the training signal *asks* for this content. But the
+number must never be quoted as "0.99 on held-out episodes"; a clean
+generalisation control would train supervised on the train-fold episodes only,
+and has not been run.
+
 ## 3. Two hypotheses tested, both MEASURED, neither sufficient
 
 ### 3.1 The tick — a real defect, and fixing it made things worse
