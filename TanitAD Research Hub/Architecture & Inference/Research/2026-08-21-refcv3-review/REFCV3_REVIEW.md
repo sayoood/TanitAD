@@ -34,7 +34,76 @@ loss step OK: traj cls law route lat lon lat_tac lon_tac goal_tac sel_v3 …
 core** — and `pooled_rel_move 0.0` confirms the zero-init FiLM leaves the cascade
 **bit-inert at init**, so the H arm starts identical to the F arm by construction.
 
-## 2. ⭐ It is NOT blocked on the tactical/strategic label extraction
+## 2. ⛔ CORRECTED (PI challenge, same day) — v3 has the CONCEPT, not the VOCABULARY
+
+I first wrote *"not blocked on the tactical/strategic label extraction"*. **That
+is true for LAUNCHING a run and wrong about the DESIGN TARGET**, and the PI was
+right to push.
+
+**What v3 actually has:** the tactical/strategic **structure** — `PhiTac` window
+pool, zero-init FiLM cascade, factored **lat(3)/lon(3)** heads, `g_str` + `g_tac`
+goals, `GoalDistanceScorer`.
+
+**What supervises it today:** `refc_tactical.window_factored_labels(pose_last,
+future_poses)` — a **kinematic endpoint rule on `dyaw`**, which `refc_train.py`
+itself calls *"kinematic maneuver pseudo-label aux"*. Trajectory and goals
+likewise hindsight-geometric from poses.
+
+⛔ **And `refc_v3.py` does NOT import the programme's shared vocabulary.** Its
+imports are `PhiTac`, `refc`, `refc_select`, `refc_tactical` — no
+`TACTICAL_LAT_ACTIONS` / `TACTICAL_LON_ACTIONS` from `models.v6`. ⚠️ **REF-A v1
+and REF-D both DO import them**, and REF-A v1's source says why: *"ONE VOCABULARY
+SOURCE. These tuples are IMPORTED, never re-declared — a second copy is a second
+vocabulary, and the programme has already paid for that once."*
+
+⇒ ⭐ **v3 implements the same CONCEPT with a DIFFERENT, kinematic vocabulary.**
+To be the multi-hierarchical reference the PI wants, its tactical/strategic heads
+should consume the **semantic** labels — which is exactly what the VLM extraction
+pipeline produces. So:
+
+| | |
+|---|---|
+| can v3 launch **today** on kinematic pseudo-labels? | ✅ yes |
+| is that the **designed** hierarchy? | ⛔ **no** — the classes are `dyaw` bins, not `LANE_KEEP`/`YIELD_MERGE`/`FOLLOW_MAIN_ROAD` |
+| does finishing the extraction upgrade it? | ✅ **yes, and it is the intended target** |
+
+⇒ **The label pipeline is not a launch blocker but IS on the path to the arm the
+programme actually wants.** A first run on kinematic labels is a legitimate
+early read; it must not be reported as "the hierarchy works".
+
+## 2b. ⛔ SIZE — v3 is 4× under a standing PI decision
+
+The PI asked why v3 is so small. **Measured today** by rebuilding it at each rung
+of REF-C's own ladder (only `encoder.base_width`/`blocks` changed):
+
+| rung | `base_width` | core | hierarchy | **TOTAL** |
+|---|---|---|---|---|
+| **small — v3's CURRENT choice** | 64 | 60,882,074 | 2,048,345 | **62,930,419** |
+| base (V2-99 class) | 88 | 104,707,298 | 2,097,497 | 106,804,795 |
+| XL encoder | 124, blocks (3,8,20,6) | 215,589,550 | 2,171,225 | **217,760,775** |
+| *`refc_xl_config` as shipped* | — | — | — | *251,932,584* |
+
+⛔ **`D-008` (2026-07-05, accepted by Sayed): "Model scale ≥ 250 M params."**
+v3 at **62.9 M is 4× below it.**
+
+The design justified `small` on MEASURED grounds — *"small's fan is at least as
+tight as base's at every matched K"*, *"base≈XL tie (Δ +0.0013, NOT separated)"*.
+⚠️ **But those are FAN-QUALITY measurements, and a tie on one metric does not
+retire a scale decision.** `D-008` ties scale to *"a scale where hierarchy is
+expressible"* — which is the very thing v3 exists to test.
+
+⭐ **THE USEFUL PART: the hierarchy cost is essentially CONSTANT across the whole
+ladder — 2.05 M → 2.17 M.** Scaling v3 is a pure core-encoder decision; the
+cascade overhead does not grow. So the D-008 rung is **one config field away**,
+and the pinned arm-delta machinery is unaffected.
+
+⚠️ **This is a PI decision, not mine:** run the registered small arms as
+pre-registered (cheap, fast, comparable to the banked REF-C small results), or
+amend the pre-registration to the D-008 rung and pay ~3.5× the compute. Amending
+a pre-registration after seeing nothing is legitimate; doing it after a read is
+not — so if it is going to change, **it changes now.**
+
+
 
 The PI expected this to be a dependency. **It is not.** v3's supervision is
 **hindsight-geometric from ego poses**:
