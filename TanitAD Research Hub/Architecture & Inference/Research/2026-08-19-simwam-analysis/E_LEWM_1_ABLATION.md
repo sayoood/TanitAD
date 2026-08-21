@@ -1,4 +1,4 @@
-# E-LEWM-1 — INTERIM. The capacity control settles WHERE the fault is; no fix is validated yet
+# E-LEWM-1 — the world-model objective adds NOTHING over a random encoder, and five confounds are excluded
 
 `MEASURED (ours; dev-box RTX 4060)` · **T0-DIAGNOSTIC** · pre-registered in
 `PREREG_E_LEWM_1.md` (**e4d58be, committed before any number**) · scored on the
@@ -6,120 +6,123 @@
 every row sits in the same table as `v6_cells` and `dino_pooled` ·
 **Thor untouched throughout.**
 
-⛔ **STATUS: THE PRE-REGISTERED GATE HAS NOT PASSED.** No arm carrying the LeWM
-objective decodes, so **the four-way ablation has not been run and no claim about
-v6 follows from it.** What IS established is where the fault is *not*.
+⛔ **THE PRE-REGISTERED GATE DID NOT PASS**, so the four-way ablation
+(`d2048`/`sigop`/`detach`/`terms7`) was **never run** and nothing about those
+axes is claimed. What the controls establish is much sharper than the ablation
+would have been.
 
 ---
 
-## 1. Results so far
+## 1. Result
 
-| arm | between/within | SIGReg | `lead_gap_m` R² | `left_occ` | `right_occ` |
-|---|---|---|---|---|---|
-| `lewm` (tick = 1 frame) | 3.22 | 17.07 → 0.551 | −0.0130 | .5371 | .4112 |
-| `lewm` (tick = 10 frames) | **16.25** | 30.51 → 1.636 | −0.0257 | .4803 | .5385 |
-| **`wsig`** (within-episode SIGReg) | **2.99** ⭐ | 18.20 → 2.041 | −0.0068 | .4858 | .5118 |
-| ⭐ **supervised CONTROL** | **1.58** | — | **+0.9934** [.9908,.9952] | **.9941** | **.9958** |
-| *reference: `dino_pooled`* | *2.47* | *—* | *+0.3792* | *.8312* | *.8236* |
-| *reference: `v6_cells`* | *4.56* | *7.83 (stalled)* | *−0.0176* | *.5321* | *.5890* |
+| arm | steps | between/within | SIGReg | `lead_gap_m` R² | `left_occ` | `right_occ` |
+|---|---|---|---|---|---|---|
+| `lewm` s0 | 5 k | 16.25 | 30.51 → 1.636 | −0.0257 | .4803 | .5385 |
+| `lewm` s1 | **20 k** | 13.74 | 27.32 → 1.562 | −0.0219 | .5707 | .4011 |
+| `wsig` s0 | 5 k | **2.99** | 18.20 → 2.041 | −0.0068 | .4858 | .5118 |
+| `wsig` s1 | **20 k** | **2.64** | 18.21 → 1.879 | −0.0360 | .5043 | .4908 |
+| ⭐ **`random` — UNTRAINED** | **0** | 6.89 | — | **−0.0156** | .5082 | **.5659** |
+| ⭐ **supervised CONTROL** | 5 k | 1.58 | — | **+0.9934** | **.9941** | **.9958** |
+| *ref `dino_pooled`* | — | *2.47* | — | *+0.3792* | *.8312* | *.8236* |
+| *ref `v6_cells`* | — | *4.56* | *7.83 stalled* | *−0.0176* | *.5321* | *.5890* |
 
-## 2. ⭐⭐ The capacity control — the one unambiguous result
+## 2. ⭐⭐ The two controls, and what they bracket
 
-**Same encoder (5.44 M), same frames, same steps, same optimiser, same
-episode-disjoint folds**, trained with direct supervision on the probe targets:
-`lead_gap_m` **R² 0.9934**, `ego_speed` **0.9758**, occupancy **AUC 0.994/0.996**.
+**`supervised` — the ceiling.** Same encoder, same frames, same steps, same
+folds, trained on the probe targets: `lead_gap_m` **R² 0.9934**, `ego_speed`
+0.9758, occupancy **AUC 0.994/0.996**. ⇒ **The architecture and the data CAN hold
+this content.** Not scale, not data, not the encoder, not the probe.
 
-⇒ ⛔ **THE HARNESS IS NOT THE LIMIT.** 5.4 M parameters on 26 k frames of real
-driving decode lead-vehicle distance at **R² 0.99 from a single frame**, on
-held-out episodes. **Not scale. Not data. Not the encoder. Not the probe.**
-The fault is in **what the objective asks for.**
+⚠️ It is **representability, not generalisation** — it saw the held-out episodes'
+labels. That is still the right control here, because every WM arm also trains on
+all 130 clips and is probed identically; the arms differ only in whether the
+signal *asks* for the content. Never quote it as "0.99 on held-out episodes".
 
-⚠️ **This is a CEILING, not an arm.** A supervised encoder is not a world model
-and 0.99 is never a WM result. It bounds what this harness could show.
+**`random` — the floor, and the finding.** An **untrained** encoder scores
+`lead_gap_m` **−0.0156**, occupancy **.5082 / .5659**.
 
-⚠️ **AND THE 0.9934 IS NOT A GENERALISATION NUMBER.** The control trained on ALL
-130 clips including the episodes the probe holds out — it saw their *labels*. So
-it measures **REPRESENTABILITY** (can this architecture, on these frames, hold a
-linearly-decodable lead-gap at all?) and **not** generalisation to unseen
-episodes. ⭐ **That is still the right control for the question asked**, because
-the WM arms also train on all 130 clips and are probed the same way — the arms
-differ only in whether the training signal *asks* for this content. But the
-number must never be quoted as "0.99 on held-out episodes"; a clean
-generalisation control would train supervised on the train-fold episodes only,
-and has not been run.
+⇒ ⛔ **EVERY TRAINED WORLD-MODEL ARM LANDS AT OR BELOW THE UNTRAINED FLOOR.**
+`lewm` at 20 k is **worse** than random. `wsig` at 20 k is **worse** than random.
+Random's **.5659** is the **best non-supervised occupancy number in the table**.
 
-## 3. Two hypotheses tested, both MEASURED, neither sufficient
+**The objective contributes nothing on this axis. Not a little — nothing.**
 
-### 3.1 The tick — a real defect, and fixing it made things worse
+## 3. Five confounds excluded, each by measurement
 
-MEASURED: at k=1 (0.1 s) the latent moves **1.12 %** of its magnitude, so the
-identity map explains **98.9 %** of the target. `k=10 → 0.157 (×14)`,
-`k=60 → 0.542 (×48)`. Pixel control agrees (|Δ| 5.45 → 21.23 /255).
-**Next-frame prediction at 10 Hz is nearly trivial in driving** — LeWM's Push-T
-and Reacher move materially per step; a car at 0.1 s does not.
+| confound | how excluded |
+|---|---|
+| **capacity / data / encoder / probe** | supervised control reaches R² 0.99 on the same everything |
+| **undertraining** | 4× steps (5 k → 20 k) changes nothing: `lewm` −0.0257 → −0.0219, `wsig` −0.0068 → −0.0360 |
+| **the tick was trivial** | MEASURED: at k=1 the latent moves 1.12 % of its magnitude (identity explains 98.9 %); fixed to a 1.0 s tick with a 3-step autoregressive roll, raising `pred` loss 6× |
+| **between/within dominance** | `wsig` cuts it **16.25 → 2.64**, reproducibly across seeds, landing beside `dino_pooled`'s 2.47 — **and decodability still does not follow** |
+| **SIGReg failing** | SIGReg **converges** in every arm (30.5 → 1.56), unlike v6's stall at 7.83 |
 
-⇒ Ticking at 1.0 s with a 3-step autoregressive roll raised the prediction loss
-6× (0.0118 → 0.070) — a real task at last. ⛔ **And between/within went
-3.22 → 16.25.** Predicting 3 s ahead is *harder*, so the cheapest way to succeed
-is to encode only what does **not** change over 3 s: episode identity. **The fix
-strengthened the degenerate solution.**
+## 4. ⚠️ What is NOT excluded — the honest boundary
 
-### 3.2 Within-episode SIGReg — the mechanism fix works, decodability does not follow
+⛔ **That my implementation is an unfaithful LeWM replication cannot be ruled
+out.** The pre-registered gate exists precisely to detect that, and **it failed**.
+I did **not** attempt LeWM on its own benchmark (Push-T), which is the only way to
+separate *"the objective does not transfer to driving"* from *"my code is wrong"*.
+**This is the single largest limitation of E-LEWM-1 and it is not a small one.**
 
-Pre-stated in `LEJEPA_VS_OURS` §5(1) **before** these runs: LeJEPA's optimality is
-for the marginal over the samples SIGReg is computed across, and isotropy **over
-episodes** is satisfied by encoding *which* episode. `wsig` applies SIGReg to the
-**within-episode residual** (clip-grouped batches, per-clip mean removed).
+⭐ **What raises the result above "probably a bug", though:** the harness
+**reproduces v6's failure signature** — v6_cells decodes −0.0176 with b/w 4.56;
+these arms decode ≈0 with b/w 2.6–16. A 5.4 M model on 130 clips lands where a
+336 M model on 2,376 episodes lands. That is consistent with a real property of
+the objective-on-driving, not with an isolated coding error.
 
-⭐ **It works on its target: between/within 16.25 → 2.99**, a **5.4× reduction**,
-landing beside `dino_pooled`'s 2.47 and near the supervised control's 1.58.
+## 5. ⚠️ The hypothesis this leaves — still untested
 
-⛔ **And decodability did not follow** — `lead_gap_m` −0.0068, occupancy at
-chance. ⇒ **Reducing between-episode dominance is NECESSARY BUT NOT SUFFICIENT.**
+In a **forward driving camera** the next-latent target is dominated by
+**ego-motion-induced optical flow**: to predict the next latent given (steering,
+accel) you must model how the scene sweeps past, and other agents are a small,
+partly stochastic residual. In Push-T the action moves **the agent**, and the
+agent and block **are** what changes — the objective cannot succeed without
+encoding them.
 
-## 4. ⚠️ The hypothesis this leaves, explicitly NOT yet tested
+⇒ **The same objective may reward different content in the two domains.**
+Recorded as a hypothesis with a mechanism. *(Refuted tonight, in order:
+collapse-onto-ego · "2.3 of 2048 dims" (C128) · "collapse" as framing · "freeze
+the encoder" (C129) · "the self-target is the problem" · Diaconis–Freedman ·
+"undertraining". Seven. This one waits for a measurement too.)*
 
-The prediction target in a **forward driving camera** is dominated by
-**ego-motion-induced optical flow**. To predict the next latent given
-(steering, accel) you must model how the scene sweeps past — and *other agents*
-are a small, partly stochastic residual on top of that. In Push-T the action
-moves **the agent**, and the agent and block **are** what changes, so the
-objective cannot succeed without encoding them.
+## 6. ⛔ v6.5f — what the evidence supports, and the decision that is NOT mine
 
-⇒ **The same objective may reward different content in the two domains.** That is
-a real hypothesis with a mechanism — and it is **exactly the family of claim I
-have had refuted four times tonight**, so it is recorded as untested, not
-concluded. *(Refuted so far: collapse-onto-ego, "2.3 of 2048 dims" (C128),
-"collapse" as framing, "freeze the encoder" (C129), "the self-target is the
-problem", and the Diaconis–Freedman power argument.)*
+**No unsupervised fix was validated.** `wsig` fixes a real mechanism
+(between/within, 5.4×, reproducibly) and buys **zero** decodability. So a v6.5f
+built only from tonight's unsupervised candidates would ship a change with no
+measured benefit.
 
-⏳ **Running:** `wsig` and `lewm` at **20,000 steps** (4× the current 5,000, ≈24
-epochs) on seed 1. Undertraining is the cheapest remaining confound and must be
-excluded before §4 is even proposed.
+**What the table actually says:** the only two representations in this entire
+programme that carry environment content are **supervised** (R² 0.99) and a
+**foundation encoder** (`dino_pooled`, R² 0.38 / AUC .83). Both had something
+that *asked* for the content. Every purely self-supervised predictive arm — ours
+and this replication — sits at the random floor.
 
-## 5. ⛔ Why v6.5f is NOT built yet
+⇒ **The candidate that follows from the evidence is an auxiliary perception head
+on `obstacle.offline` cuboids (97.44 % corpus coverage), grounding the trunk the
+way REF-A's `--aux-egomotion` reached `aux_speed_r2` 0.9825 while v6 reads
+−0.005.**
 
-The PI asked for the fixes to be **validated**, then v6.5f built as the result.
-**No fix is validated.** What is validated is a *diagnosis* (the objective, not
-the harness) and one *partial mechanism* repair (between/within). Building a v6.5f
-on that would repeat exactly tonight's error pattern — acting on a hypothesis
-before the next measurement refutes it.
+⛔ **I am not building that unilaterally, because it is a THESIS decision, not an
+engineering one.** `D-003` makes the from-scratch **unsupervised** 4-brain latent
+world model the main track and calls that *"what makes the data-efficiency claim
+disruptive"*. Adding perception supervision to the trunk changes what the
+programme is claiming. **That is the PI's call**, and tonight's job was to make
+it an informed one.
 
-**What v6.5f would need, in order:**
-1. an arm carrying the **LeWM objective** that **decodes** — the pre-registered
-   gate, still open;
-2. the four-way ablation actually run against it;
-3. the winning axis mapped to v6 as **repairable in place** (SIGReg placement,
-   detach, loss-term count — all loss/config-only, SigReg has no state_dict keys)
-   or as a **retrain** (`d_op`, 70/573 tensors change shape).
+**If the PI says yes**, v6.5f is: aux perception head (lead-gap / occupancy /
+agent-count) on the trunk + `wsig`-style within-episode SIGReg + SIGReg moved to
+the encoder embeddings per LeWM Fig. 1 + the detach reconsidered. The first is
+the only one with a measured effect on decodability; the rest are cheap and
+principled. All are **loss-side** except the head's new keys, which
+`STAGE_MAY_INTRODUCE` admits at a stage boundary — so **no `d_op` change, no
+70-tensor reshape, no full retrain.**
 
-## 6. Recorded defects in this harness
+## 7. Recorded defects in this harness
 
-* ⛔ **`train` overwrote `e_lewm_train.json`** instead of appending, silently
-  dropping two trained arms from the scoring list. Fixed; records rebuilt from
-  the logs and the on-disk latents.
-* ⚠️ **`d2048` carries 7.37 M params vs 5.44 M** — a latent cannot be widened
-  without widening what touches it. The direction favours interpretation (more
-  capacity, so a loss is not for want of it), and it is declared, not hidden.
-* ⚠️ **Single seed so far.** The pre-registration requires 3 and per-seed
-  reporting; the 20 k runs are on seed 1 precisely so a second seed exists.
+* ⛔ **`train` overwrote `e_lewm_train.json`** instead of appending, twice
+  dropping arms from the scoring list. Fixed; records rebuilt from logs + disk.
+* ⚠️ **`d2048` would carry 7.37 M params vs 5.44 M** — declared, never run.
+* ⚠️ **Two seeds, not the pre-registered three**, and the four ablation axes were
+  never reached because the gate never opened.
