@@ -4,8 +4,13 @@
 `PUBLISHED-PRIMARY` (**DiffusionDrive banked today**, `2411.15139`) ·
 **T0 for every number here** · requested by the PI as the next model to train.
 
-⭐ **HEADLINE: v3 is implementation-COMPLETE and its own preflight PASSES. It is
-blocked on COMPUTE, not on code — and NOT on the VLM label pipeline.**
+⭐ **HEADLINE: v3 is implementation-COMPLETE and its own preflight PASSES.**
+
+⛔ **But TWO PI challenges landed and both are corrections to my first pass
+(§2, §2b): v3 has the hierarchy CONCEPT with a KINEMATIC vocabulary rather than
+the programme's semantic one, and at 62.9 M it sits 4× under `D-008`'s
+≥250 M scale decision.** Neither blocks a launch; both change what a first run
+would MEAN.
 
 ---
 
@@ -103,19 +108,10 @@ amend the pre-registration to the D-008 rung and pay ~3.5× the compute. Amendin
 a pre-registration after seeing nothing is legitimate; doing it after a read is
 not — so if it is going to change, **it changes now.**
 
-
-
-The PI expected this to be a dependency. **It is not.** v3's supervision is
-**hindsight-geometric from ego poses**:
-
-* `refb_labels.goal_tac_targets(poses, …)` → `g_tac` **[K, 4] = (x, y, heading,
-  speed)** at {2, 4, 6} s, ego-frame, with a clamp + validity mask;
-* trajectory / maneuver targets via `RouteV21Dataset` (v2.1 labels);
-* `g_str` trained on the **LAN corridor** label.
-
-⇒ **The VLM tact/str pipeline supplies v6's SEMANTIC token vocabulary. v3 needs
-geometric goals, which we already derive.** Finishing the label extraction is
-valuable for v6 and for the paper — **it is not on v3's critical path.**
+⭐ **What IS geometric and therefore already available** (so the launch is not
+gated): `refb_labels.goal_tac_targets(poses, …)` → `g_tac` **[K, 4] = (x, y,
+heading, speed)** at {2, 4, 6} s ego-frame with clamp + validity mask; trajectory
+targets via `RouteV21Dataset`; `g_str` on the **LAN corridor** label.
 
 ⭐ And v3 is correct against the PI's 2026-08-03 goal ruling: the goal is
 **PREDICTED** (a 195-param head off the strategic GRU), the LAN corridor is a
