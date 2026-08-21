@@ -1,4 +1,40 @@
-# E-LEWM-1 — the world-model objective adds NOTHING over a random encoder, and five confounds are excluded
+# E-LEWM-1 — ⛔ VOID AS EVIDENCE ABOUT LeWM. The harness was a different algorithm.
+
+> ⛔ **RETRACTED AS A CLAIM ABOUT LeWM — 2026-08-21, after the PI supplied the
+> reference implementation** (`github.com/lucas-maes/le-wm`). Reading it against
+> my harness found **~14 deviations**, several structural:
+>
+> | | reference | my harness |
+> |---|---|---|
+> | **history_size** | **3** | **1** ⛔ |
+> | **predictor** | `ARPredictor`, **6-layer / 16-head transformer** over the history, mlp_dim 2048 | 3-layer **MLP** on a single latent ⛔ |
+> | **projectors** | `projector` + `pred_proj`, MLP 192→2048→192, **BatchNorm1d** | none ⛔ |
+> | **readout** | **CLS token** | v6-style 4×4 spatial pool ⛔ |
+> | epochs | **100** | ~6–24 |
+> | batch / lr / wd | 128 / **5e-5** / **1e-3** | 32 / 3e-4 / 0.01 |
+> | num_preds | **1** | 3 |
+> | sigreg | weight 0.09, knots 17, **num_proj 1024** | 512 slices |
+> | grad clip | **1.0** | none |
+> | precision / img | bf16 / 224² patch14 | fp32 / 128×320 patch16 |
+> | **detach** | ⭐ **THE CODE DETACHES** the goal embedding | I made it an ablation axis |
+>
+> ⇒ **Nothing here licenses any statement about LeWorldModel.** The
+> pre-registered gate failed, which is the gate doing its job; I then reported
+> the arms anyway in chat as *"the objective adds nothing"*. **That framing is
+> withdrawn.**
+>
+> ⭐ **Two findings survive, because they do not depend on the arms being LeWM:**
+> 1. the **capacity control** (§2) — this encoder and data hold `lead_gap_m` at
+>    **R² 0.99**, so the harness is not the limit;
+> 2. the **random control** (§2) — an untrained encoder matches every arm I
+>    trained, which is a fact about *my* arms.
+>
+> ⭐⭐ **AND ONE FINDING CHANGES v6's STATUS:** the reference implementation
+> **detaches the target**, contradicting the paper's own *"no stop-gradient"*
+> claim. ⇒ **v6's `z_true_steps` detach is FAITHFUL to LeWM as implemented**, and
+> the `detach` axis should be struck from the ablation rather than tested.
+
+# E-LEWM-1 — (superseded framing below) the objective adds nothing over a random encoder
 
 `MEASURED (ours; dev-box RTX 4060)` · **T0-DIAGNOSTIC** · pre-registered in
 `PREREG_E_LEWM_1.md` (**e4d58be, committed before any number**) · scored on the
