@@ -49,7 +49,7 @@ N_TOK = GRID_H * GRID_W
 
 #: v6's readout shape, mirrored: d_op = n_cells * d_readout, n_cells = 4x4.
 N_CELLS = 16
-ARMS = ("lewm", "wsig", "d2048", "sigop", "detach", "terms7")
+ARMS = ("lewm", "wsig", "aux", "d2048", "sigop", "detach", "terms7")
 
 #: ⛔ THE TICK, AND WHY IT IS NOT 1. MEASURED 2026-08-20 on the first gate run:
 #: at k=1 (0.1 s) the latent moves only **1.12 %** of its own magnitude, so the
@@ -164,8 +164,21 @@ class Predictor(nn.Module):
 def arm_config(arm: str) -> dict:
     """The published LeWM configuration, with exactly ONE axis flipped."""
     cfg = {"d_latent": 192, "sigreg_on_z": True, "sigreg_on_zhat": True,
-           "detach": False, "extra_terms": False, "sigreg_within": False}
-    if arm == "wsig":
+           "detach": False, "extra_terms": False, "sigreg_within": False,
+           "aux_perception": False}
+    if arm == "aux":
+        # ⭐ THE ONLY CANDIDATE THE EVIDENCE SUPPORTS, tested before it is
+        # proposed for v6.5f. LeWM objective UNCHANGED, plus a small auxiliary
+        # perception head grounded in obstacle.offline cuboids — the mechanism
+        # REF-A uses (--aux-egomotion reached aux_speed_r2 0.9825 while v6 reads
+        # -0.005).
+        # ⛔ NOT CIRCULAR: the head is supervised on n_agents_log ONLY, and the
+        # probe reads lead_gap_m and lane occupancy — different quantities. If
+        # grounding on ONE perception target transfers to OTHERS, that is a real
+        # result; if the probe only recovers what was supervised, it is not.
+        cfg["aux_perception"] = True
+        cfg["sigreg_within"] = True          # keep the measured b/w repair
+    elif arm == "wsig":
         # ⭐ THE PROPOSED FIX, pre-stated in LEJEPA_VS_OURS §5(1) BEFORE the gate
         # failures. LeJEPA's optimality is for the marginal over the SAMPLES
         # SIGReg is computed across, and assumes the downstream task lives at
@@ -209,13 +222,35 @@ def train_arm(arm: str, seed: int, *, steps=3000, batch=32, lam=0.1,
     # mean action over each tick — the control summary for a STRIDE-long step
     A = actions.numpy()
     cum = np.concatenate([np.zeros((1, 2), np.float64), np.cumsum(A, 0)])
+    aux_y = aux_head = None
+    if cfg["aux_perception"]:
+        import e_trunk2_probe as _P
+        tg = {}
+        for line in _P.TARGETS.open(encoding="utf-8"):
+            if line.strip():
+                r = json.loads(line)
+                tg[(r["clip_id"], int(r["frame_idx"]))] = r.get("n_agents_log")
+        v = np.full(len(frames), np.nan, dtype=np.float32)
+        for c in clips:
+            for f in range(c["n"]):
+                q = tg.get((c["clip_id"], f))
+                if q is not None:
+                    v[c["start"] + f] = q
+        m = np.isfinite(v)
+        v[~m] = float(np.nanmean(v))
+        aux_y = torch.from_numpy((v - v[m].mean()) / (v[m].std() + 1e-6))
+        print(f"    aux perception: n_agents_log on {int(m.sum())} frames",
+              flush=True)
+
     enc = Encoder(cfg["d_latent"]).to(dev)
     pred = Predictor(cfg["d_latent"]).to(dev)
     n_par = sum(p.numel() for p in enc.parameters()) + \
         sum(p.numel() for p in pred.parameters())
     sig = SigReg(n_slices=512)
-    opt = torch.optim.AdamW(list(enc.parameters()) + list(pred.parameters()),
-                            lr=lr, weight_decay=0.01)
+    params = list(enc.parameters()) + list(pred.parameters())
+    if aux_head is not None:
+        params += list(aux_head.parameters())
+    opt = torch.optim.AdamW(params, lr=lr, weight_decay=0.01)
     sch = torch.optim.lr_scheduler.CosineAnnealingLR(opt, steps)
 
     g = torch.Generator().manual_seed(seed)
@@ -283,6 +318,13 @@ def train_arm(arm: str, seed: int, *, steps=3000, batch=32, lam=0.1,
             l_scene = (zhats[0] - z_t).pow(2).mean()
             loss = loss + 1.0 * l_roll + 0.3 * l_scene
             extra = {"roll": float(l_roll), "scene": float(l_scene)}
+
+        if aux_head is not None:
+            ay = aux_y[np.concatenate([idx + o for o in offs])].to(dev)
+            l_aux = F.mse_loss(aux_head(zs.reshape(-1, zs.shape[-1])).squeeze(-1),
+                               ay)
+            loss = loss + 1.0 * l_aux
+            extra = dict(extra, aux=float(l_aux.detach()))
 
         opt.zero_grad(set_to_none=True)
         loss.backward()

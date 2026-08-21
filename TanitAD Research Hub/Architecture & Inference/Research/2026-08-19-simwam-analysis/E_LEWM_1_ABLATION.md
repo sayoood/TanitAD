@@ -21,31 +21,52 @@ would have been.
 | `lewm` s1 | **20 k** | 13.74 | 27.32 → 1.562 | −0.0219 | .5707 | .4011 |
 | `wsig` s0 | 5 k | **2.99** | 18.20 → 2.041 | −0.0068 | .4858 | .5118 |
 | `wsig` s1 | **20 k** | **2.64** | 18.21 → 1.879 | −0.0360 | .5043 | .4908 |
+| **`aux`** s0 | 8 k | **2.80** | 18.20 → 1.387 | −0.0040 | .4822 | .5158 |
+| **`aux`** s1 | 8 k | **2.71** | 18.21 → 1.913 | −0.0094 | .4744 | .5016 |
 | ⭐ **`random` — UNTRAINED** | **0** | 6.89 | — | **−0.0156** | .5082 | **.5659** |
 | ⭐ **supervised CONTROL** | 5 k | 1.58 | — | **+0.9934** | **.9941** | **.9958** |
 | *ref `dino_pooled`* | — | *2.47* | — | *+0.3792* | *.8312* | *.8236* |
 | *ref `v6_cells`* | — | *4.56* | *7.83 stalled* | *−0.0176* | *.5321* | *.5890* |
 
-## 2. ⭐⭐ The two controls, and what they bracket
+## 2. ⭐⭐ The two controls bracket everything, and the bracket is empty
 
-**`supervised` — the ceiling.** Same encoder, same frames, same steps, same
-folds, trained on the probe targets: `lead_gap_m` **R² 0.9934**, `ego_speed`
-0.9758, occupancy **AUC 0.994/0.996**. ⇒ **The architecture and the data CAN hold
-this content.** Not scale, not data, not the encoder, not the probe.
+**`supervised` — the ceiling.** Same encoder, frames, steps, folds; trained on
+the probe targets: `lead_gap_m` **R² 0.9934**, `ego_speed` 0.9758, occupancy
+**AUC 0.994/0.996**. ⇒ **The architecture and data CAN hold this content.**
 
 ⚠️ It is **representability, not generalisation** — it saw the held-out episodes'
-labels. That is still the right control here, because every WM arm also trains on
-all 130 clips and is probed identically; the arms differ only in whether the
-signal *asks* for the content. Never quote it as "0.99 on held-out episodes".
+labels. Still the right control, since every WM arm also trains on all 130 clips
+and is probed identically; the arms differ only in whether the signal *asks*.
+Never quote it as "0.99 on held-out episodes".
 
 **`random` — the floor, and the finding.** An **untrained** encoder scores
 `lead_gap_m` **−0.0156**, occupancy **.5082 / .5659**.
 
-⇒ ⛔ **EVERY TRAINED WORLD-MODEL ARM LANDS AT OR BELOW THE UNTRAINED FLOOR.**
-`lewm` at 20 k is **worse** than random. `wsig` at 20 k is **worse** than random.
-Random's **.5659** is the **best non-supervised occupancy number in the table**.
+⇒ ⛔ **EVERY TRAINED ARM — `lewm`, `wsig`, `aux`, at 5 k, 8 k and 20 k steps, on
+two seeds — LANDS AT THE UNTRAINED FLOOR.** Random's **.5659** is the best
+non-supervised occupancy number in the table. **Training contributes nothing on
+this axis. Not a little — nothing.**
 
-**The objective contributes nothing on this axis. Not a little — nothing.**
+### 2.1 ⛔ And the aux perception head does NOT transfer
+
+`aux` = the LeWM objective plus a head supervised on **`n_agents_log` only**,
+probed for **`lead_gap_m` and occupancy** — deliberately different quantities, so
+the test is not circular.
+
+**It fixes the mechanism** (b/w 2.80 / 2.71, matching `wsig`) **and transfers
+nothing**: −0.0040 / −0.0094, occupancy at chance, both seeds.
+
+⭐⭐ **THIS IS THE RESULT THAT CHANGES THE v6.5f RECOMMENDATION.** Grounding on one
+perception target does **not** induce a generally environment-informative
+representation — it encodes what it is supervised on and no more. The supervised
+control reaches 0.99 **because it was trained on lead-gap directly**. ⇒ *"Add an
+auxiliary perception head to ground the trunk"* — the candidate I proposed hours
+ago, and the mechanism REF-A uses — **does not do what its name suggests.**
+
+⚠️ **Bounded claim:** this refutes **this** aux design — a *linear* head on **one
+scalar**. A richer auxiliary (dense occupancy grid, per-agent positions) is
+untested and may behave differently. What is refuted is the general hope that
+*any* perception grounding pulls the whole representation along with it.
 
 ## 3. Five confounds excluded, each by measurement
 
@@ -53,6 +74,7 @@ Random's **.5659** is the **best non-supervised occupancy number in the table**.
 |---|---|
 | **capacity / data / encoder / probe** | supervised control reaches R² 0.99 on the same everything |
 | **undertraining** | 4× steps (5 k → 20 k) changes nothing: `lewm` −0.0257 → −0.0219, `wsig` −0.0068 → −0.0360 |
+| **missing perception grounding** | `aux` supervises `n_agents_log` and transfers **nothing** to lead-gap or occupancy, on both seeds |
 | **the tick was trivial** | MEASURED: at k=1 the latent moves 1.12 % of its magnitude (identity explains 98.9 %); fixed to a 1.0 s tick with a 3-step autoregressive roll, raising `pred` loss 6× |
 | **between/within dominance** | `wsig` cuts it **16.25 → 2.64**, reproducibly across seeds, landing beside `dino_pooled`'s 2.47 — **and decodability still does not follow** |
 | **SIGReg failing** | SIGReg **converges** in every arm (30.5 → 1.56), unlike v6's stall at 7.83 |
@@ -86,38 +108,46 @@ collapse-onto-ego · "2.3 of 2048 dims" (C128) · "collapse" as framing · "free
 the encoder" (C129) · "the self-target is the problem" · Diaconis–Freedman ·
 "undertraining". Seven. This one waits for a measurement too.)*
 
-## 6. ⛔ v6.5f — what the evidence supports, and the decision that is NOT mine
+## 6. ⛔ v6.5f is NOT built, and the reason changed during the night
 
-**No unsupervised fix was validated.** `wsig` fixes a real mechanism
-(between/within, 5.4×, reproducibly) and buys **zero** decodability. So a v6.5f
-built only from tonight's unsupervised candidates would ship a change with no
-measured benefit.
+**Nothing tested tonight produces environment decodability.** Not the LeWM
+objective, not at 4× training, not with the between/within repair, and **not with
+perception grounding**. Every arm sits at the untrained floor. A v6.5f assembled
+from these candidates would ship changes with **zero measured benefit**.
 
-**What the table actually says:** the only two representations in this entire
-programme that carry environment content are **supervised** (R² 0.99) and a
-**foundation encoder** (`dino_pooled`, R² 0.38 / AUC .83). Both had something
-that *asked* for the content. Every purely self-supervised predictive arm — ours
-and this replication — sits at the random floor.
+⚠️ **And the recommendation I gave the PI hours ago is now refuted by my own
+experiment.** I proposed an auxiliary perception head as *the* candidate, citing
+REF-A's `--aux-egomotion` (`aux_speed_r2` 0.9825). The `aux` arm tests exactly
+that idea and it **transfers nothing** (§2.1). Grounding on one perception target
+encodes that target and nothing else. **The name "grounding" was doing work the
+mechanism does not do.**
 
-⇒ **The candidate that follows from the evidence is an auxiliary perception head
-on `obstacle.offline` cuboids (97.44 % corpus coverage), grounding the trunk the
-way REF-A's `--aux-egomotion` reached `aux_speed_r2` 0.9825 while v6 reads
-−0.005.**
+**What the whole table says, plainly:** the only representations in this
+programme that carry environment content are **(a) directly supervised on the
+quantity being read** (R² 0.99) and **(b) a foundation encoder** (`dino_pooled`
+R² 0.38 / AUC .83). There is no third case. Every purely predictive
+self-supervised arm — ours at 336 M and this replication at 5.4 M — is at the
+random floor.
 
-⛔ **I am not building that unilaterally, because it is a THESIS decision, not an
-engineering one.** `D-003` makes the from-scratch **unsupervised** 4-brain latent
-world model the main track and calls that *"what makes the data-efficiency claim
-disruptive"*. Adding perception supervision to the trunk changes what the
-programme is claiming. **That is the PI's call**, and tonight's job was to make
-it an informed one.
+⇒ ⛔ **The programme's central bet — that an unsupervised predictive objective on
+2,376 driving episodes yields a trunk carrying environment structure — has no
+supporting measurement anywhere in this repository, and now has direct evidence
+against it at small scale.**
 
-**If the PI says yes**, v6.5f is: aux perception head (lead-gap / occupancy /
-agent-count) on the trunk + `wsig`-style within-episode SIGReg + SIGReg moved to
-the encoder embeddings per LeWM Fig. 1 + the detach reconsidered. The first is
-the only one with a measured effect on decodability; the rest are cheap and
-principled. All are **loss-side** except the head's new keys, which
-`STAGE_MAY_INTRODUCE` admits at a stage boundary — so **no `d_op` change, no
-70-tensor reshape, no full retrain.**
+**That is a finding about the THESIS, not an engineering defect, so the next move
+is the PI's.** The three live options, with what each costs:
+
+| option | what it means | evidence |
+|---|---|---|
+| **A — keep the bet, fix the replication** | run LeWM on **Push-T** first to prove the harness, then re-test on driving | ⚠️ §4 — the unfaithful-replication risk is real and unexcluded |
+| **B — supervise the trunk** on the quantities the hierarchy needs (lead-gap, occupancy) from `obstacle.offline` | ✅ the only thing measured to work (0.99), ⛔ **but it changes what `D-003` claims** and §2.1 shows it will only give you what you supervise | measured |
+| **C — foundation encoder** (REF-A v1's route) | ✅ measured to carry the content (.83 AUC), ⛔ `D-003` calls it a comparison arm, and REF-A v1's planner blocker is open | measured |
+
+**No option is free, and I am not choosing between them** — that is exactly the
+tier/decision boundary C129 was logged for.
+
+⚠️ **What I would NOT do:** build a v6.5f now. Every candidate available tonight
+is either refuted (`aux`), null (`wsig`, `lewm`), or a thesis change (B, C).
 
 ## 7. Recorded defects in this harness
 
