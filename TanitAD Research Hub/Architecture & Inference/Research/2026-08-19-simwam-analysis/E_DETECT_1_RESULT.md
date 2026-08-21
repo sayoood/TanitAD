@@ -154,8 +154,37 @@ more decodable vehicle-localisation content than the raw patches it consumes,
 while frozen DINOv3 on the identical instrument carries measurably more; and
 v6's 4×4 readout independently costs 25–34 % of whatever signal reaches it.*
 
+### 5.1 ⛔⛔ THE BOUND THAT MATTERS MOST: decodability is NOT known to predict driving, and the one paired comparison we have runs the OTHER WAY
+
+Everything above is **T0**. Before any of it is allowed to motivate an
+architecture change, the programme's own registry has to be read:
+
+| arm | ADE@2s (full-set) | source |
+|---|---|---|
+| `refa-dinov2` — REF-A DINOv2 4B, **frozen DINO encoder** | **2.1675** [1.9081, 2.4212] | `MODEL_REGISTRY.md` row 12 |
+| flagship v1 | — | — |
+| **paired delta** | **flagship > REF-A by +2.6200 m** [2.0945, 3.2570], winning **95.9 %** of 881 windows | `MODEL_REGISTRY.md` |
+
+⇒ **The trunk that decodes the environment FAR better than v6 is also the trunk
+that drove 2.62 m WORSE.** That is the same fact `C129` was retracted over, and
+it is the reason this document stops at T0.
+
+⚠️ **It is a CONFOUNDED comparison, and that cuts both ways.** REF-A differs from
+the flagship in far more than its encoder — it is a frozen-encoder *plus
+supervised-head* recipe, and its own failure was separately diagnosed as
+speed/scale magnitude (71–83 %), not perception. So this does **not** show that
+decodability *hurts* driving. What it shows is that **the link from decodability
+to driving is UNTESTED in this programme, and the only evidence pointing at it
+points the wrong way.**
+
+⇒ **What E-DENSE-1 can therefore buy, stated honestly:** evidence about whether
+we CAN make a latent decodable. **Whether a decodable latent drives better is a
+SEPARATE, T1 question that needs its own experiment**, and no result in this
+document — however clean — licenses skipping it.
+
 ⛔ **NOT licensed:**
-* any **T1 / driving** claim — this is T0.
+* any **T1 / driving** claim — this is T0, and §5.1 is why that matters here
+  rather than being boilerplate.
 * any claim about **v6 at 336 M on 2,376 episodes**. These features are step
   **20,000 of 30,000** on **130 clips**.
 * any claim that v6's *predictor* fails — **only the encoder was probed here.**
