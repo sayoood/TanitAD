@@ -31,9 +31,40 @@ at intermediate encoder layers.** Measured: ADE20K **24.4 → 47.9 (+96 %)**,
 DAVIS tracking **52.5 → 69.0 (+31 %)**, NYUv2 depth RMSE **0.642 → 0.307
 (+52 %)**, global tasks flat.
 
-⇒ **HYPOTHESIS (ours): v6's latent is undecodable for spatial content because
-its objective applies no pressure at patch granularity. Adding token-level dense
-pressure should make it decodable.**
+⇒ **FIRST HYPOTHESIS (ours): v6's latent is undecodable for spatial content
+because its objective applies no pressure at patch granularity. Adding
+token-level dense pressure should make it decodable.**
+
+## 1b. ⛔⛔ THAT HYPOTHESIS'S STRONG FORM IS ALREADY REFUTED — by our own control, before any arm ran
+
+The granularity story makes a sharp prediction: **v6 should beat raw pixels AT
+CELL GRANULARITY**, because that is precisely where `O3` applies pressure. The
+`pixel_pooled` arm — raw patches through v6's OWN 4×4 pool — tests it:
+
+| granularity | v6 | raw pixels | delta |
+|---|---|---|---|
+| **cell (16)** — O3 operates here | `v6_cells` **0.0888** [0.0788, 0.0990] | `pixel_pooled` **0.0853** [0.0767, 0.0956] | **+0.0035**, CIs OVERLAP |
+| **token (640)** — no pressure | `v6_tokens` **0.0923** [0.0815, 0.1034] | `pixel` **0.0912** [0.0814, 0.1014] | +0.0011 |
+
+⛔ **v6 is indistinguishable from raw pixels at BOTH granularities, INCLUDING ITS
+OWN.** Granularity alone therefore does NOT explain the null: the objective is
+not merely applying its pressure in the wrong place, it is producing nothing
+decodable *even where it applies*.
+
+⚠️ **This is the C130 pattern caught one step earlier.** The mechanism —
+`MaskedCellPredictor` operating on 16 cells and never on 640 tokens — is a FACT
+about our source, and the arithmetic around it is right. But a correct mechanism
+is not thereby the operative one, and the control that could refute it was cheap
+(2 minutes, 16-token arm). It ran BEFORE the GPU was committed, which is the only
+reason this pre-registration is not built on a refuted premise.
+
+⇒ **REVISED HYPOTHESIS, and what the arms below actually test:** the defect is
+not the RESOLUTION of the pressure but its NATURE. V-JEPA 2.1's Dense Predictive
+Loss is not merely "the same loss at finer granularity" — it makes **every token,
+visible and masked alike, carry training signal**, which changes what the
+representation is asked to be, not just where. Arm **B** therefore carries the
+weight of the experiment, and arm **D** carries the weight of interpreting a
+negative.
 
 ## 2. Arms — identical platform, ONE named change each
 
@@ -74,6 +105,8 @@ bootstrap, reported against the established ladder:
 | `dino_tokens` | 0.1884 |
 | `prior` (no features) | 0.1242 |
 | `pixel` (raw patches) | 0.0912 |
+| `pixel_pooled` (raw patches, v6's 4×4 pool) | 0.0853 |
+| `v6_cells` (the deployed latent) | 0.0888 |
 | `v6_tokens` (what we are trying to beat) | 0.0923 |
 
 Secondary, for continuity with the nine earlier nulls: the **E-TRUNK-2 scalar
