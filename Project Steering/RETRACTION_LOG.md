@@ -7239,3 +7239,43 @@ investigation that fits every number without contradicting the record.
 `D-` row it is consistent with, and (b) the measured arm that already tested it —
 or state explicitly that neither exists.** A probe result is admissible as
 EVIDENCE toward such a recommendation and is never sufficient for one.
+
+---
+
+## C130 — the v6 readout's pooling ceiling narrated as the EXPLANATION for v6_cells' null, before the control that refutes it had run (2026-08-21)
+
+**Claimed, mid-session, in chat and in a code docstring:** that v6's operative
+readout — a parameter-free pool of the 16 × 40 token grid to **4 × 4**, i.e. only
+**4 azimuth bins over a 120° FOV (30°/bin)** against a BEV target needing
+14.5°/bin at 10 m and 3.9°/bin at 58 m — was why `v6_cells` could not localise
+vehicles. I wrote that *"`v6_cells`'s null is explained by GEOMETRY and says
+nothing about the encoder's content"*.
+
+**Refuted by `oracle_pooled`, which was ALREADY PRE-REGISTERED for exactly this
+purpose and had simply not run yet.** Perfect perception pushed through v6's own
+4 × 4 pool scores **AP 0.2414 [0.2208, 0.2620]**. `v6_cells` scores **0.0888** —
+**37 % of what its own readout permits**, and below the 0.1242 no-feature prior.
+And at FULL 640-token resolution `v6_tokens` (0.0923) is already
+indistinguishable from raw pixels (0.0912), so the content is absent *before* the
+pool.
+
+**What survives:** the pooling cost is real, reproducible and worth fixing —
+**−34.3 %** on perfect perception (0.3673 → 0.2414) and **−24.8 %** on DINOv3
+(0.1884 → 0.1416); and the lossy step is the POOL, not the learned 768 → 128
+projection (`v6_tokens_pooled` 0.0877 ≈ `v6_cells` 0.0888). **What is withdrawn:**
+that the readout geometry explains v6's null. It does not.
+
+**ROOT-CAUSE CLASS: a mechanism with correct supporting arithmetic promoted from
+CANDIDATE to EXPLANATION while its own refuting control sat unrun in the same
+pre-registration.** The design was right — the control existed, was named, and
+was queued. The failure was narrating a conclusion ahead of it because the
+arithmetic was compelling. ⚠️ Note the arithmetic was *also* right: 30°/bin
+really is 2.1×–7.8× too coarse. **A correct mechanism is not thereby the
+operative one**, and quantitative support makes that error easier to commit, not
+harder — this is the same family as C6's confounded decoder and the `df` /
+`free` / `step_s` scope traps.
+
+⇒ **STANDING RULE THIS EARNS: if a pre-registration contains a control that
+could refute the explanation you are about to give, you may not give the
+explanation until that control has reported.** Naming the mechanism as a
+CANDIDATE is always admissible; stating it as the cause is not.

@@ -1,0 +1,217 @@
+{
+ "_evidence_class": "MEASURED (ours; dev-box RTX 4060)",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "question": "can a spatial head localise VEHICLES in metres from a frozen trunk?",
+ "prereg": "TanitAD Research Hub/Architecture & Inference/Research/2026-08-19-simwam-analysis/PREREG_E_DETECT_1.md",
+ "n_rows": 5617,
+ "n_episodes": 130,
+ "grid": {
+  "x_max_m": 60.0,
+  "y_half_m": 16.0,
+  "x_bins": 15,
+  "y_bins": 8,
+  "n_cell": 120,
+  "cell_m": [
+   4.0,
+   4.0
+  ]
+ },
+ "base_rate": 0.056676,
+ "occupied_cells_per_frame": 6.8011,
+ "head": {
+  "d_model": 192,
+  "layers": 2,
+  "heads": 4,
+  "epochs": 30,
+  "batch": 64,
+  "lr": 0.0003,
+  "pos_weight": 16.644
+ },
+ "protocol": "same 5,617 keys / episode-disjoint 5-fold / episode-cluster bootstrap of the POOLED statistic (never a mean of per-episode scores)",
+ "arms": {
+  "prior": {
+   "n_tok": 0,
+   "d": 0,
+   "params": 0,
+   "ap": 0.1242,
+   "ap_ci95": [
+    0.1123,
+    0.1365
+   ],
+   "auc": 0.6965,
+   "auc_ci95": [
+    0.6805,
+    0.7148
+   ],
+   "topk_loc_err_m": 5.796,
+   "note": "closed form; NO features; the floor"
+  },
+  "v6_cells": {
+   "n_tok": 16,
+   "d": 128,
+   "params": 646529,
+   "ap": 0.0888,
+   "ap_ci95": [
+    0.0788,
+    0.099
+   ],
+   "auc": 0.6246,
+   "auc_ci95": [
+    0.6078,
+    0.6424
+   ],
+   "topk_loc_err_m": 7.821,
+   "train_s": 140.0
+  },
+  "dino_pooled": {
+   "n_tok": 16,
+   "d": 1024,
+   "params": 820353,
+   "ap": 0.1416,
+   "ap_ci95": [
+    0.1275,
+    0.155
+   ],
+   "auc": 0.6861,
+   "auc_ci95": [
+    0.6707,
+    0.7021
+   ],
+   "topk_loc_err_m": 6.884,
+   "train_s": 146.0
+  },
+  "pixel": {
+   "n_tok": 640,
+   "d": 768,
+   "params": 890497,
+   "ap": 0.0912,
+   "ap_ci95": [
+    0.0814,
+    0.1014
+   ],
+   "auc": 0.6262,
+   "auc_ci95": [
+    0.6077,
+    0.6464
+   ],
+   "topk_loc_err_m": 7.626,
+   "train_s": 745.7
+  },
+  "v6_tokens": {
+   "n_tok": 640,
+   "d": 768,
+   "params": 890497,
+   "ap": 0.0923,
+   "ap_ci95": [
+    0.0815,
+    0.1034
+   ],
+   "auc": 0.6195,
+   "auc_ci95": [
+    0.599,
+    0.6391
+   ],
+   "topk_loc_err_m": 7.587,
+   "train_s": 1145.1
+  },
+  "dino_tokens": {
+   "n_tok": 640,
+   "d": 1024,
+   "params": 940161,
+   "ap": 0.1884,
+   "ap_ci95": [
+    0.1702,
+    0.2075
+   ],
+   "auc": 0.74,
+   "auc_ci95": [
+    0.7258,
+    0.7564
+   ],
+   "topk_loc_err_m": 6.38,
+   "train_s": 1337.8
+  },
+  "oracle": {
+   "n_tok": 640,
+   "d": 64,
+   "anchored": false,
+   "params": 753921,
+   "ap": 0.3673,
+   "ap_ci95": [
+    0.3479,
+    0.3867
+   ],
+   "auc": 0.9098,
+   "auc_ci95": [
+    0.9013,
+    0.9185
+   ],
+   "topk_loc_err_m": 3.764,
+   "train_ap_mean": 0.5146,
+   "train_ap_folds": [
+    0.5164,
+    0.522,
+    0.5027,
+    0.5147,
+    0.5171
+   ],
+   "train_ap_note": "DIAGNOSTIC ONLY \u2014 fold-mean on a train subsample, not the pooled cluster-bootstrap statistic",
+   "train_s": 459.0
+  },
+  "oracle_pooled": {
+   "n_tok": 16,
+   "d": 64,
+   "anchored": false,
+   "params": 634113,
+   "ap": 0.2414,
+   "ap_ci95": [
+    0.2208,
+    0.262
+   ],
+   "auc": 0.8333,
+   "auc_ci95": [
+    0.8186,
+    0.847
+   ],
+   "topk_loc_err_m": 4.941,
+   "train_ap_mean": 0.4559,
+   "train_ap_folds": [
+    0.4485,
+    0.4604,
+    0.4458,
+    0.4644,
+    0.4604
+   ],
+   "train_ap_note": "DIAGNOSTIC ONLY \u2014 fold-mean on a train subsample, not the pooled cluster-bootstrap statistic",
+   "train_s": 140.4
+  },
+  "v6_tokens_pooled": {
+   "n_tok": 16,
+   "d": 768,
+   "anchored": false,
+   "params": 770689,
+   "ap": 0.0877,
+   "ap_ci95": [
+    0.0788,
+    0.0979
+   ],
+   "auc": 0.6173,
+   "auc_ci95": [
+    0.602,
+    0.6343
+   ],
+   "topk_loc_err_m": 7.808,
+   "train_ap_mean": 0.6565,
+   "train_ap_folds": [
+    0.6559,
+    0.6641,
+    0.6473,
+    0.6574,
+    0.6579
+   ],
+   "train_ap_note": "DIAGNOSTIC ONLY \u2014 fold-mean on a train subsample, not the pooled cluster-bootstrap statistic",
+   "train_s": 147.1
+  }
+ },
+ "_wall_s": 746.7
+}

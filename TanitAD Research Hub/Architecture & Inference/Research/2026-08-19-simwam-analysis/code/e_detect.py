@@ -76,11 +76,16 @@ ARMS: dict[str, tuple[str, int, int, tuple[int, int]]] = {
     "oracle":      ("detect/oracle.npy",             640, 64,   (16, 40)),
     # ⭐⭐ THE GEOMETRY CEILING. The oracle through v6's OWN parameter-free
     # 40x pool (16x40 -> 4x4). PERFECT perception delivered through the DEPLOYED
-    # readout. Whatever this scores is the BEST any encoder could reach via that
-    # readout — so if it sits at `prior`, `v6_cells`'s null is explained by
-    # GEOMETRY and says nothing about the encoder's content.
-    # MEASURED: 4 azimuth bins over 120 deg = 30 deg/bin, against a target
-    # needing 14.5 deg/bin at 10 m and 3.9 deg/bin at 58 m -> 2.1x-7.8x coarse.
+    # readout, so whatever this scores is the BEST any encoder could reach
+    # via that readout.
+    # MEASURED 2026-08-21 -> AP 0.2414 [0.2208, 0.2620], against `prior` 0.1242.
+    # ⛔ SO THE CEILING DOES **NOT** EXPLAIN v6's NULL, and the hedge above was
+    # the right way to write it: the readout permits 0.2414 and `v6_cells`
+    # reaches 0.0888 — 37% of what its own readout allows. The pooling cost is
+    # real (-34.3% on the oracle, -24.8% on DINOv3) and separately worth fixing,
+    # but the content is already absent BEFORE the pool: `v6_tokens` at full 640
+    # resolution (0.0923) is indistinguishable from raw pixels (0.0912).
+    # Retracted as an explanation in RETRACTION_LOG C130.
     "oracle_pooled": ("detect/oracle_pooled.npy",     16, 64,   (1, 16)),
 }
 
