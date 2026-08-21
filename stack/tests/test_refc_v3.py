@@ -302,3 +302,49 @@ def test_goal_gate_receives_gradient():
         float(m.tac_goal_head.weight.grad.abs().sum()) == 0.0, \
         "selection gradient reached the goal head — the winner's-curse " \
         "firewall (detach) is broken"
+
+
+# --------------------------------------------------------------------------- #
+# The two size rungs (PI 2026-08-21). ⛔ `size` must move the ENCODER ONLY —
+# a size axis that also perturbs the arm delta would make small-vs-XL
+# non-attributable, which is C122's lesson applied to scale.
+# --------------------------------------------------------------------------- #
+def test_the_two_size_rungs_build_and_measure():
+    from tanitad.refs.refc_v3 import (RefCV3Model, param_breakdown_v3,
+                                      refc_v3_small_config, refc_v3_xl_config)
+    small = param_breakdown_v3(RefCV3Model(refc_v3_small_config()))
+    xl = param_breakdown_v3(RefCV3Model(refc_v3_xl_config()))
+    assert small["total"] == 62_930_419
+    assert xl["total"] == 217_760_775
+    # ⭐ the hierarchy cost is essentially CONSTANT across the ladder, which is
+    # why scale and hierarchy are separate decisions.
+    assert abs((xl["total"] - xl["core"]) - (small["total"] - small["core"])) < 200_000
+
+
+def test_the_size_axis_does_NOT_perturb_the_dominance_delta():
+    """⛔ THE LOAD-BEARING GUARD. The registered H-vs-F delta must be identical
+    at every rung, or a small-vs-XL result is a bundle, not a scale result."""
+    from tanitad.refs.refc_v3 import (config_delta, refc_v3_small_config,
+                                      refc_v3_xl_config)
+    d_small = config_delta(refc_v3_small_config(hier=False),
+                           refc_v3_small_config(hier=True))
+    d_xl = config_delta(refc_v3_xl_config(hier=False),
+                        refc_v3_xl_config(hier=True))
+    assert d_small == d_xl
+    assert set(d_small) == {"hier", "core.graft_target_latent"}
+
+
+def test_only_the_encoder_differs_between_the_rungs():
+    import dataclasses
+    from tanitad.refs.refc_v3 import refc_v3_small_config, refc_v3_xl_config
+    s, x = refc_v3_small_config().core, refc_v3_xl_config().core
+    differing = [f.name for f in dataclasses.fields(s)
+                 if getattr(s, f.name) != getattr(x, f.name)]
+    assert differing == ["encoder"], f"size moved more than the encoder: {differing}"
+
+
+def test_an_unknown_size_is_refused():
+    import pytest as _pt
+    from tanitad.refs.refc_v3 import refc_v3_sized_config
+    with _pt.raises(ValueError, match="size must be one of"):
+        refc_v3_sized_config("enormous")

@@ -92,6 +92,8 @@ from tanitad.refs import refc_tactical as tac
 __all__ = [
     "V3_HORIZONS", "SEAM_SLOT", "GOAL_TAU_STEPS", "RefCV3Config",
     "refc_v3_flat_config", "refc_v3_hier_config", "refc_v3_smoke_config",
+    "refc_v3_sized_config", "refc_v3_small_config", "refc_v3_xl_config",
+    "V3_SIZES",
     "RefCV3Model", "config_delta", "param_breakdown_v3",
     "masked_goal_loss", "strategic_goal_loss", "selection_ce",
     "freeze_history_report",
@@ -174,6 +176,67 @@ def _v3_core_base() -> refc.RefCConfig:
     cfg.tactical_speed_input = False  # goal path stays vision-pure (E11)
     cfg.sel_reach_clamp = True        # precondition, measured inert on ADE @2s
     return cfg
+
+
+#: ⭐ THE TWO SIZE RUNGS (PI 2026-08-21: "let have two versions of refcv3 small
+#: and xl"). ONLY ``encoder.base_width``/``blocks`` differ — every other choice
+#: in :func:`_v3_core_base` is shared, so the pair is a clean SCALE axis and not
+#: a bundle of levers.
+#:
+#: ⛔ WHY XL EXISTS. ``D-008`` (2026-07-05, accepted by Sayed) sets model scale
+#: **>= 250 M**, and it ties that to *"a scale where hierarchy is expressible"* —
+#: which is precisely what v3 exists to test. The small rung MEASURES
+#: 62,930,419, i.e. **4x under the decision**. The design justified small on
+#: FAN-QUALITY grounds (*"small's fan is at least as tight as base's at every
+#: matched K"*, *"base≈XL tie"*), and ⚠️ a tie on one metric does not retire a
+#: SCALE decision.
+#:
+#: MEASURED 2026-08-21 by rebuilding at each rung:
+#:     small  bw=64   core  60,882,074   hierarchy 2,048,345   TOTAL  62,930,419
+#:     base   bw=88   core 104,707,298   hierarchy 2,097,497   TOTAL 106,804,795
+#:     XL     bw=124  core 215,589,550   hierarchy 2,171,225   TOTAL 217,760,775
+#: ⭐ The hierarchy cost is essentially CONSTANT across the ladder, so SCALE and
+#: HIERARCHY are independent decisions — which is why they are separate configs.
+V3_SIZES: dict[str, tuple[int, tuple[int, ...]]] = {
+    "small": (64, (3, 6, 16, 6)),
+    "base": (88, (3, 6, 16, 6)),
+    "xl": (124, (3, 8, 20, 6)),
+}
+
+
+def refc_v3_sized_config(size: str = "small", *, hier: bool = True
+                         ) -> RefCV3Config:
+    """v3 at one rung of the REF-C size ladder.
+
+    ⚠️ ``size`` moves the ENCODER ONLY. The decoder, anchors, horizons, tactical
+    factoring and reach clamp are ``_v3_core_base``'s and do not vary — so a
+    small-vs-XL comparison attributes to scale, not to a config bundle. That is
+    the C122 lesson applied to the size axis.
+    """
+    if size not in V3_SIZES:
+        raise ValueError(f"size must be one of {sorted(V3_SIZES)}, got {size!r}")
+    bw, blocks = V3_SIZES[size]
+    cfg = refc_v3_hier_config() if hier else refc_v3_flat_config()
+    cfg.core.encoder = refc.CNNEncoderConfig(
+        in_channels=cfg.core.encoder.in_channels,
+        image_size=cfg.core.encoder.image_size,
+        base_width=bw, blocks=blocks)
+    return cfg
+
+
+def refc_v3_small_config(hier: bool = True) -> RefCV3Config:
+    """v3-small — the AS-REGISTERED rung (`PREREG_REFC_V3.md`). 62,930,419."""
+    return refc_v3_sized_config("small", hier=hier)
+
+
+def refc_v3_xl_config(hier: bool = True) -> RefCV3Config:
+    """⭐ v3-XL — the ``D-008`` rung. 217,760,775 with the current hierarchy.
+
+    ⚠️ Adopting this VOIDS the registered cost line in ``PREREG_REFC_V3.md``
+    (~7-9 h A40/run at small). Amending a pre-registration BEFORE any read is
+    legitimate; after a read it is not.
+    """
+    return refc_v3_sized_config("xl", hier=hier)
 
 
 def refc_v3_flat_config() -> RefCV3Config:
