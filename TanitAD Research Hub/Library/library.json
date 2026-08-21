@@ -500,6 +500,117 @@
    "cited_by": [
     "TanitAD Research Hub/Architecture & Inference/Research/2026-08-21-refcv3-review/REFCV3_REVIEW.md"
    ]
+  },
+  "2603.14482": {
+   "key": "2603.14482",
+   "kind": "arxiv",
+   "title": "V-JEPA 2.1: Unlocking Dense Features in Video Self-Supervised Learning",
+   "authors": [
+    "Lorenzo Mur-Labadia",
+    "Matthew Muckley",
+    "Amir Bar",
+    "Mido Assran",
+    "Koustuv Sinha",
+    "Mike Rabbat",
+    "Yann LeCun",
+    "Nicolas Ballas",
+    "Adrien Bardes"
+   ],
+   "published": "2026-03-15",
+   "abstract": "We present V-JEPA 2.1, a family of self-supervised models that learn dense, high-quality visual representations for both images and videos while retaining strong global scene understanding. The approach combines four key components. First, a dense predictive loss uses a masking-based objective in which both visible and masked tokens contribute to the training signal, encouraging explicit spatial and temporal grounding. Second, deep self-supervision applies the self-supervised objective hierarchically across multiple intermediate encoder layers to improve representation quality. Third, multi-modal tokenizers enable unified training across images and videos. Finally, the model benefits from effective scaling in both model capacity and training data. Together, these design choices produce representations that are spatially structured, semantically coherent, and temporally consistent. Empiri",
+   "url": "https://arxiv.org/abs/2603.14482",
+   "path": "TanitAD Research Hub/Library/papers/2603.14482_V-JEPA-2-1-Unlocking-Dense-Features-in-Video-Self-Supervised.pdf",
+   "bytes": 37389706,
+   "sha256": "b40580916242ade00e2ac177cb01473d511f021d5a25f7552fd17512b3a72bbb",
+   "banked": "2026-08-21",
+   "tags": [
+    "jepa-dense-features"
+   ],
+   "note": "V-JEPA 2.1: JEPA-family dense/patch features are weak; fixes = DENSE predictive loss where BOTH visible and masked tokens carry signal, plus DEEP self-supervision on intermediate encoder layers",
+   "cited_by": [
+    "TanitAD Research Hub/Architecture & Inference/Research/2026-08-19-simwam-analysis/E_DETECT_1_RESULT.md"
+   ]
+  },
+  "2405.17995": {
+   "key": "2405.17995",
+   "kind": "arxiv",
+   "title": "DMT-JEPA: Discriminative Masked Targets for Joint-Embedding Predictive Architecture",
+   "authors": [
+    "Shentong Mo",
+    "Sukmin Yun"
+   ],
+   "published": "2024-05-28",
+   "abstract": "The joint-embedding predictive architecture (JEPA) recently has shown impressive results in extracting visual representations from unlabeled imagery under a masking strategy. However, we reveal its disadvantages, notably its insufficient understanding of local semantics. This deficiency originates from masked modeling in the embedding space, resulting in a reduction of discriminative power and can even lead to the neglect of critical local semantics. To bridge this gap, we introduce DMT-JEPA, a novel masked modeling objective rooted in JEPA, specifically designed to generate discriminative latent targets from neighboring information. Our key idea is simple: we consider a set of semantically similar neighboring patches as a target of a masked patch. To be specific, the proposed DMT-JEPA (a) computes feature similarities between each masked patch and its corresponding neighboring patches t",
+   "url": "https://arxiv.org/abs/2405.17995",
+   "path": "TanitAD Research Hub/Library/papers/2405.17995_DMT-JEPA-Discriminative-Masked-Targets-for-Joint-Embedding-P.pdf",
+   "bytes": 37131956,
+   "sha256": "9cb7b17d64017348a17b6d16077d34f7f56459c0de37b383b378d6607f32e18a",
+   "banked": "2026-08-21",
+   "tags": [
+    "jepa-dense-features"
+   ],
+   "note": "DMT-JEPA: JEPA's masked-target objective yields weak LOCAL semantics; adds discriminative masked targets built from neighbouring-patch similarity",
+   "cited_by": [
+    "TanitAD Research Hub/Architecture & Inference/Research/2026-08-19-simwam-analysis/E_DETECT_1_RESULT.md"
+   ]
+  },
+  "2511.05963": {
+   "key": "2511.05963",
+   "kind": "arxiv",
+   "title": "Next-Latent Prediction Transformers Learn Compact World Models",
+   "authors": [
+    "Jayden Teoh",
+    "Manan Tomar",
+    "Kwangjun Ahn",
+    "Edward S. Hu",
+    "Tim Pearce",
+    "Pratyusha Sharma",
+    "Akshay Krishnamurthy",
+    "Riashat Islam",
+    "Alex Lamb",
+    "John Langford"
+   ],
+   "published": "2025-11-08",
+   "abstract": "Transformers replace recurrence with a memory that grows with sequence length and self-attention that enables ad-hoc lookups over past tokens. Consequently, they lack an inherent incentive to compress history into compact latent states with consistent transition rules. This often leads to learning solutions that generalize poorly. We introduce Next-Latent Prediction (NextLat), which extends standard next-token training with self-supervised predictions in the latent space. Specifically, NextLat trains a transformer to learn latent representations that are predictive of its next latent state given the next token. Theoretically, we show that these latents provably converge towards belief states, compressed information about the history necessary to predict the future. This simple auxiliary objective injects a recurrent inductive bias into transformers while leaving their architecture, paral",
+   "url": "https://arxiv.org/abs/2511.05963",
+   "path": "TanitAD Research Hub/Library/papers/2511.05963_Next-Latent-Prediction-Transformers-Learn-Compact-World-Mode.pdf",
+   "bytes": 8398609,
+   "sha256": "7053798fe919915d0be1f03165f69f96b4e4076114077197c34d99efb767c33f",
+   "banked": "2026-08-21",
+   "tags": [
+    "latent-world-model"
+   ],
+   "note": "NextLat: transformers lack pressure to compress into a compact belief state and instead learn shortcuts off raw tokens; next-LATENT prediction supplies that pressure",
+   "cited_by": [
+    "TanitAD Research Hub/Architecture & Inference/Research/2026-08-19-simwam-analysis/E_DETECT_1_RESULT.md"
+   ]
+  },
+  "2605.31597": {
+   "key": "2605.31597",
+   "kind": "arxiv",
+   "title": "SOCO: Benchmarking Semantic Object Correspondence in Vision Foundation Models",
+   "authors": [
+    "Olaf Dünkel",
+    "Basavaraj Sunagad",
+    "Haoran Wang",
+    "David T. Hoffmann",
+    "Christian Theobalt",
+    "Adam Kortylewski"
+   ],
+   "published": "2026-05-29",
+   "abstract": "Measuring structured object understanding in vision foundation models remains challenging due to inconsistent evaluation protocols and limited part-level supervision. Semantic correspondence (SC) evaluates this capability by testing whether object parts can be matched across instances and categories under large variations in appearance, viewpoint, and geometry. To enable a systematic SC evaluation, we introduce SOCO, a new benchmark for Semantic Object Correspondence that introduces a taxonomy of correspondence types and provides consistent, functionally meaningful keypoint annotations across 100 categories and over 1M correspondence pairs. In addition, SOCO includes keypoint language descriptions, enabling the evaluation of large vision-language models (LVLMs) and their fine-grained part-level understanding. Comprehensive experiments reveal that (i) vision foundation backbones encode st",
+   "url": "https://arxiv.org/abs/2605.31597",
+   "path": "TanitAD Research Hub/Library/papers/2605.31597_SOCO-Benchmarking-Semantic-Object-Correspondence-in-Vision-F.pdf",
+   "bytes": 8548770,
+   "sha256": "3176f39db69571e5db2e8881e76294fd36461f1f80793d122075425357993a3c",
+   "banked": "2026-08-21",
+   "tags": [
+    "representation-eval"
+   ],
+   "note": "SOCO: benchmark for semantic object correspondence across vision foundation models — an external yardstick for trunk quality",
+   "cited_by": [
+    "TanitAD Research Hub/Architecture & Inference/Research/2026-08-19-simwam-analysis/E_DETECT_1_RESULT.md"
+   ]
   }
  }
 }

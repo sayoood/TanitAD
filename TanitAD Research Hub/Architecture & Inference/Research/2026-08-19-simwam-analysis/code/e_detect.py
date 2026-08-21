@@ -72,6 +72,11 @@ ARMS: dict[str, tuple[str, int, int, tuple[int, int]]] = {
     "v6_tokens_pooled": ("e_trunk2_feat/v6_tokens_pooled.npy", 16, 768, (1, 16)),
     "dino_pooled": ("e_trunk2_feat/dino_pooled.npy",  16, 1024, (1, 16)),
     "pixel":       ("detect/pixels.npy",             640, 768,  (16, 40)),
+    # ⭐ raw patches through v6's OWN 4x4 pool. THE MECHANISM CONTROL: v6's only
+    # spatial objective (O3, MaskedCellPredictor) operates on 16 cells and NEVER
+    # on the 640 tokens. If content sits where the pressure is, v6_cells should
+    # beat THIS while v6_tokens merely matches `pixel`.
+    "pixel_pooled": ("detect/pixels_pooled.npy",      16, 768,  (1, 16)),
     # ⛔ instrument-validity control; see e_detect_oracle.py. NOT a trunk.
     "oracle":      ("detect/oracle.npy",             640, 64,   (16, 40)),
     # ⭐⭐ THE GEOMETRY CEILING. The oracle through v6's OWN parameter-free
