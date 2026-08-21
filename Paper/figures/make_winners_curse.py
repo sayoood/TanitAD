@@ -59,7 +59,7 @@ def load(name):
         sys.exit(f"missing source artifact: {p}\n"
                  "This figure is generated FROM the gate JSONs; it has no "
                  "hand-typed fallback by design.")
-    with open(p) as fh:
+    with open(p, encoding="utf-8") as fh:
         return json.load(fh)
 
 
@@ -372,7 +372,7 @@ def main():
     out.append("</svg>")
     svg = "\n".join(out)
     sp = os.path.join(HERE, "winners_curse.svg")
-    with open(sp, "w") as fh:
+    with open(sp, "w", encoding="utf-8") as fh:
         fh.write(svg)
     print("wrote", sp)
     try:

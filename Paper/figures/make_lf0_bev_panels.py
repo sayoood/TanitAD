@@ -174,7 +174,7 @@ def main() -> int:
         "4e3220fa-f478-55f3-ae2e-c2c6898f11c8/scratchpad/panels_compact.json")
     if not os.path.exists(src):
         raise SystemExit(f"[lf0-fig] missing {src} — pull it from the pod first")
-    d = json.load(open(src))
+    d = json.load(open(src, encoding="utf-8"))
     meta = {"cols": d["cols"], "cell_m": d["cell_m"], "true_m": d["true_m"]}
     # ⭐ THE FRAME, IF THE SOURCE RECORDS IT. It did not in 2026-08-12 — which is
     # exactly why the published figure's cell counts are unrecoverable. LF0 now
@@ -263,7 +263,7 @@ def main() -> int:
     # writing this audit — the file was recovered with `git checkout` and
     # verified byte-identical, but only because it happened to be committed.
     out = os.path.join(os.environ.get("LF0_FIG_OUT", here), "lf0_bev_panels.svg")
-    open(out, "w").write("\n".join(o))
+    open(out, "w", encoding="utf-8").write("\n".join(o))
     print(f"[lf0-fig] wrote {out}")
     return 0
 

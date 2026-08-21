@@ -50,7 +50,7 @@ def _env():
 
 def _run(args, expect=0):
     p = subprocess.run([sys.executable, _TOOL] + args, env=_env(),
-                       capture_output=True, text=True, timeout=900)
+                       capture_output=True, text=True, encoding="utf-8", timeout=900)
     out = p.stdout + p.stderr
     assert p.returncode == expect, (
         f"expected exit {expect}, got {p.returncode}\n{out[-3000:]}")
@@ -415,7 +415,7 @@ def test_tool_happy_path_writes_per_arm_and_comparison_json(tmp_path):
     log = _run(["--dump", f"A={d}", "--out-dir", out, "--strategic-no-label",
                 "--n-boot", "40"])
     assert "FF_EXIT=0" in log
-    a = json.load(open(os.path.join(out, "ff_A_cl.json")))
+    a = json.load(open(os.path.join(out, "ff_A_cl.json"), encoding="utf-8"))
     assert a["tier"] == "T1"                        # resolved from the shared table
     assert a["intervals"]["estimator"] == "episode_cluster_bootstrap"
     assert a["intervals"]["point_estimate"] == "full_set pooled mean over windows"
@@ -424,7 +424,7 @@ def test_tool_happy_path_writes_per_arm_and_comparison_json(tmp_path):
         assert k in fam and fam[k].get("tier") == "T1", k
     assert fam["tactical"]["status"] == "OK"
     assert fam["strategic"]["status"] == "UNAVAILABLE" and fam["strategic"]["n"] > 0
-    c = json.load(open(os.path.join(out, "ff_comparison.json")))
+    c = json.load(open(os.path.join(out, "ff_comparison.json"), encoding="utf-8"))
     assert c["status"] == "OK"
     k = "A:ha_minus_A:cl"
     assert k in c["paired"]
@@ -437,7 +437,7 @@ def test_tool_reports_all_four_families_never_ade_alone(tmp_path):
     out = str(tmp_path / "o")
     _run(["--dump", f"A={d}", "--out-dir", out, "--strategic-no-label",
           "--n-boot", "20"])
-    fam = json.load(open(os.path.join(out, "ff_A_cl.json")))["four_families"]
+    fam = json.load(open(os.path.join(out, "ff_A_cl.json"), encoding="utf-8"))["four_families"]
     assert fam["_rule_satisfied"] is True
     # the binding members, per family
     assert {"speed_mae_mps", "target_speed_acc", "distance_keeping"} <= set(
@@ -458,7 +458,7 @@ def test_tool_REFUSES_a_cross_grid_join_and_BANKS_the_refusal(tmp_path):
     log = _run(["--dump", f"A={a}", "--dump", f"B={b}", "--out-dir", out,
                 "--strategic-no-label", "--n-boot", "20"], expect=3)
     assert "CROSS-GRID" in log or "distinct window grids" in log
-    c = json.load(open(os.path.join(out, "ff_comparison.json")))
+    c = json.load(open(os.path.join(out, "ff_comparison.json"), encoding="utf-8"))
     assert c["status"] == "REFUSED"
     assert "paired" not in c
     assert len(c["grid_groups"]) == 2
@@ -480,7 +480,7 @@ def test_tool_accepts_an_explicit_tier_for_an_unknown_arm(tmp_path):
     out = str(tmp_path / "o")
     _run(["--dump", f"C={d}", "--tier", "C:mystery=T0", "--out-dir", out,
           "--strategic-no-label", "--n-boot", "20"])
-    rec = json.load(open(os.path.join(out, "ff_C_mystery.json")))
+    rec = json.load(open(os.path.join(out, "ff_C_mystery.json"), encoding="utf-8"))
     assert rec["tier"] == "T0"
     assert "NEVER quotable as driving performance" in rec["tier_note"]
 
@@ -530,7 +530,7 @@ def test_tool_joins_a_coarser_lead_grid_by_TIME_not_by_truncation(tmp_path):
     log = _run(["--dump", f"A={d}", "--out-dir", out, "--lead", lead,
                 "--strategic-no-label", "--n-boot", "20"])
     assert "scored on steps [4, 9, 14, 19]" in log
-    dk = json.load(open(os.path.join(out, "ff_A_cl.json")))[
+    dk = json.load(open(os.path.join(out, "ff_A_cl.json"), encoding="utf-8"))[
         "four_families"]["longitudinal"]["distance_keeping"]
     assert dk["status"] == "OK"
     assert dk["n"] == 40
@@ -548,7 +548,7 @@ def test_tool_derives_dt_from_wp_steps_and_never_assumes_0_1(tmp_path):
     out = str(tmp_path / "o")
     _run(["--dump", f"W={p}", "--tier", "W=T0", "--out-dir", out,
           "--strategic-no-label", "--n-boot", "20"])
-    rec = json.load(open(os.path.join(out, "ff_W.json")))
+    rec = json.load(open(os.path.join(out, "ff_W.json"), encoding="utf-8"))
     assert rec["dt_s"] == 0.5
     assert "wp_steps" in rec["dt_provenance"]
     assert rec["four_families"]["longitudinal"]["dt_s"] == 0.5
@@ -561,7 +561,7 @@ def test_tool_output_never_carries_the_deprecated_estimator_anywhere(tmp_path):
     _run(["--dump", f"A={d}", "--out-dir", out, "--strategic-no-label",
           "--n-boot", "20"])
     for f in os.listdir(out):
-        blob = json.load(open(os.path.join(out, f)))
+        blob = json.load(open(os.path.join(out, f), encoding="utf-8"))
         for path, val in _walk(blob):
             if not path.endswith("estimator"):
                 continue
@@ -583,7 +583,7 @@ def test_tool_stamps_a_cross_tier_delta_as_not_a_capability_comparison(tmp_path)
     out = str(tmp_path / "o")
     _run(["--dump", f"A={d}", "--out-dir", out, "--strategic-no-label",
           "--n-boot", "20"])
-    c = json.load(open(os.path.join(out, "ff_comparison.json")))
+    c = json.load(open(os.path.join(out, "ff_comparison.json"), encoding="utf-8"))
     blk = list(c["paired"].values())[0]
     assert "minus" in blk["tier"]
     assert "⛔_cross_tier_warning" in blk
@@ -598,7 +598,7 @@ def test_paired_sign_convention_is_per_metric_not_a_blanket_sentence(tmp_path):
     out = str(tmp_path / "o")
     _run(["--dump", f"A={d}", "--out-dir", out, "--strategic-no-label",
           "--n-boot", "20"])
-    c = json.load(open(os.path.join(out, "ff_comparison.json")))
+    c = json.load(open(os.path.join(out, "ff_comparison.json"), encoding="utf-8"))
     sc = list(c["paired"].values())[0]["sign_convention"]
     assert isinstance(sc, dict)
     assert "ACCURACY" in sc["TAC_lat_decision_correct"]

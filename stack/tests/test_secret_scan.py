@@ -83,7 +83,7 @@ def _high_entropy_value() -> str:
 
 def _git(repo: Path, *args: str) -> subprocess.CompletedProcess:
     return subprocess.run(["git", *args], cwd=str(repo), capture_output=True,
-                          text=True, errors="replace")
+                          text=True, encoding="utf-8", errors="replace")
 
 
 @pytest.fixture()

@@ -259,6 +259,25 @@ Every subagent brief MUST carry the preamble in
   derived, re-derive it for EVERY cache it will meet and state the value in the result**, or a
   refactor validation silently compares two different experiments. *(At stride 4 it lands on 15 × 4
   = exactly 6.0 s — the true design horizon, and a reason to prefer that cache.)*
+- ⛔⛔ **A DECODE THAT RAISES INTO A PRE-ALLOCATED MEMMAP LEAVES A FULL-SIZE FILE OF ZEROS —
+  AND THE JOB CAN STILL EXIT 0.** MEASURED 2026-08-21 building E-DETECT-1's raw-patch floor:
+  the episode cache's buffer is named **`jpeg_buf`** but its `codec` field says **`png`**
+  (magic `0x89 0x50`), so `decode_jpeg` raised — after `open_memmap` had already created
+  **2.76 GB**. `ls` showed the expected size and the wrapper reported success.
+  ⚠️ **WHY THIS ONE IS WORSE THAN A CRASH: the poisoned array was the FLOOR ARM.** An
+  all-zero floor scores at chance, so **every trunk would have appeared to beat it** — a
+  silent FALSE-POSITIVE generator, not a missing number. ⇒ **Assert on CONTENT before
+  using any generated bank** (sample rows, require non-zero, print the mean), and **read
+  the codec/dtype field rather than trusting the buffer's NAME**. Same family as the
+  library tool's "reported success while filing 11 papers under the query string".
+- ⚠️ **THE PINHOLE FOV FORMULA IS WRONG ON A CYLINDRICAL PROJECTION.** MEASURED
+  2026-08-21: our corpus is `256x640` **cylindrical**, `f_ref` 305.577, where the column is
+  **LINEAR IN AZIMUTH** (`az_max = (W/2)/f_ref`) giving **120°** — matching the rig's own
+  name `camera_front_wide_120fov`. Applying `2·atan((W/2)/f)` yields **92.6°** and looks
+  entirely plausible. ⇒ **State the projection before using any camera formula**; a correct
+  formula quoted outside its projection is the `df`/`free`/`step_s` scope error in optics
+  costume. *(Caught because the corrected number reproduced the rig's published FOV — an
+  independent cross-check is what makes such a value trustworthy.)*
 - **Verify before alarming.** Check the metric's definition and take multiple samples first;
   several "outages" were measurement artifacts.
 

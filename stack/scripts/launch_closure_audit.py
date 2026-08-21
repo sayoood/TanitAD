@@ -761,7 +761,7 @@ def _ssh(host: str, remote_cmd: str, ssh_bin: str, timeout: int = 180) -> str:
     """Run one remote command. ``-n`` is MANDATORY (stdin-eating trap)."""
     cmd = [ssh_bin, "-n", "-o", "ConnectTimeout=20", "-o", "BatchMode=yes",
            host, remote_cmd]
-    res = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+    res = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", timeout=timeout)
     if res.returncode != 0:
         raise RuntimeError(f"ssh failed rc={res.returncode}: {res.stderr[-800:]}")
     return res.stdout

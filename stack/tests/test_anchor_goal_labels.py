@@ -217,6 +217,6 @@ def test_module_has_no_situation_classifier_path():
             "print('LEAK' if 'tanitad.data.situations' in sys.modules else 'CLEAN')"
             % root)
     r = subprocess.run([sys.executable, "-c", code], capture_output=True,
-                       text=True)
+                       text=True, encoding="utf-8")
     assert r.returncode == 0, r.stderr[-2000:]
     assert "CLEAN" in r.stdout, r.stdout + r.stderr[-2000:]

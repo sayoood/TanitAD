@@ -480,7 +480,7 @@ def scan_host(host: str, roots: list[str] | None = None,
         res = subprocess.run(
             [_ssh_bin(), "-n", "-o", "ConnectTimeout=15", "-o", "BatchMode=yes",
              host, remote],
-            capture_output=True, text=True, timeout=timeout,
+            capture_output=True, text=True, encoding="utf-8", timeout=timeout,
         )
     except (subprocess.TimeoutExpired, OSError) as exc:
         return [], f"unreachable ({type(exc).__name__})", 0

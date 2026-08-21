@@ -195,7 +195,7 @@ SHUFFLE_SEEDS = 24           # empirical self-test beside the closed form
 def _git(*args: str) -> str:
     try:
         return subprocess.run(["git", *args], cwd=_REPO, capture_output=True,
-                              text=True, timeout=60).stdout.strip()
+                              text=True, encoding="utf-8", timeout=60).stdout.strip()
     except Exception as exc:                                   # pragma: no cover
         return f"<git failed: {exc}>"
 

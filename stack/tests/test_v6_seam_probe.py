@@ -597,7 +597,7 @@ def test_candidates_of_one_window_keep_that_windows_episode_id():
 # =========================================================================== #
 def _run(args, cwd=None):
     return subprocess.run([sys.executable, str(TOOL), *args],
-                          capture_output=True, text=True, cwd=cwd)
+                          capture_output=True, text=True, encoding="utf-8", cwd=cwd)
 
 
 def test_cli_self_test_validates_the_instrument_end_to_end():

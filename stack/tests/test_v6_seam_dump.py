@@ -173,7 +173,7 @@ def test_a_REAL_v6_emit_round_trips_into_a_dump_the_PROBE_accepts(tmp_path):
         [sys.executable, str(_ROOT / "taniteval" / "tools" / "seam_probe.py"),
          "--dump", p, "--out", str(out), "--n-boot", "20", "--no-scan",
          "--quiet"],
-        capture_output=True, text=True, timeout=600)
+        capture_output=True, text=True, encoding="utf-8", timeout=600)
     assert out.exists(), (
         f"the probe did not produce a record.\nrc={r.returncode}\n"
         f"stdout={r.stdout[-3000:]}\nstderr={r.stderr[-3000:]}")

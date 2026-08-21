@@ -24,7 +24,7 @@ TEMPLATE_VERDICT = "- **Verdict:** integrate / integrate-with-changes / defer / 
 
 
 def _git(repo: Path, *args: str) -> str:
-    proc = subprocess.run(["git", *args], cwd=str(repo), capture_output=True, text=True)
+    proc = subprocess.run(["git", *args], cwd=str(repo), capture_output=True, text=True, encoding="utf-8")
     assert proc.returncode == 0, f"git {' '.join(args)}: {proc.stderr}"
     return proc.stdout.strip()
 

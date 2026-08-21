@@ -309,7 +309,7 @@ def test_E5_a_seam_dump_that_cannot_import_REFUSES_AT_STARTUP():
            "SYSTEMROOT": __import__("os").environ.get("SYSTEMROOT", "")}
     p = subprocess.run([sys.executable, str(_STACK / "scripts"
                                             / "train_v6_staged.py")] + argv,
-                       capture_output=True, text=True, env=env, cwd=str(_STACK),
+                       capture_output=True, text=True, encoding="utf-8", env=env, cwd=str(_STACK),
                        timeout=900)
     assert p.returncode == 2, p.stdout[-2000:]
     out = p.stdout + p.stderr

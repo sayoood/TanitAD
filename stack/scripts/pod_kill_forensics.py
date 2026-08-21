@@ -397,7 +397,7 @@ def collect_gpu(samples: int = 12, interval: float = 1.0) -> dict:
             out = subprocess.run(
                 ["nvidia-smi", "--query-gpu=utilization.gpu,memory.used,memory.total",
                  "--format=csv,noheader,nounits"],
-                capture_output=True, text=True, timeout=20, check=False).stdout.strip()
+                capture_output=True, text=True, encoding="utf-8", timeout=20, check=False).stdout.strip()
         except (OSError, subprocess.SubprocessError):
             break
         row = out.splitlines()[0].split(",") if out else []
@@ -448,7 +448,7 @@ def collect_kernel_log_access() -> dict:
            "detail": ""}
     if shutil.which("dmesg"):
         try:
-            p = subprocess.run(["dmesg"], capture_output=True, text=True,
+            p = subprocess.run(["dmesg"], capture_output=True, text=True, encoding="utf-8",
                                timeout=15, check=False)
             res["dmesg_readable"] = p.returncode == 0 and bool(p.stdout)
             res["detail"] = (p.stderr or "").strip()[:200]

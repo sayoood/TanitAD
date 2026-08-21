@@ -535,7 +535,7 @@ def test_run_rollout_ext_head_mode_calls_the_legacy_roll_closed(monkeypatch,
 # =========================================================================== #
 def _cli(*args, timeout=300):
     return subprocess.run([sys.executable, str(TOOL), *args],
-                          capture_output=True, text=True, timeout=timeout)
+                          capture_output=True, text=True, encoding="utf-8", timeout=timeout)
 
 
 def test_cli_refuses_two_corpus_formats(tmp_path):

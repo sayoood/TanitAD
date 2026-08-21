@@ -26,7 +26,7 @@ import safe_commit  # noqa: E402
 
 def _git(repo: Path, *args: str) -> str:
     proc = subprocess.run(["git", *args], cwd=str(repo), capture_output=True,
-                          text=True, errors="replace")
+                          text=True, errors="replace", encoding="utf-8")
     assert proc.returncode == 0, f"git {args} -> {proc.stderr}"
     return proc.stdout.strip()
 

@@ -798,7 +798,7 @@ def _py(args, cwd):
     return subprocess.run([sys.executable, str(Path(__file__).resolve()
                                                .parents[1] / "scripts"
                                                / "e_wc2_sigma_star.py")] + args,
-                          capture_output=True, text=True, cwd=str(cwd), env=env)
+                          capture_output=True, text=True, encoding="utf-8", cwd=str(cwd), env=env)
 
 
 def test_cli_print_contract():

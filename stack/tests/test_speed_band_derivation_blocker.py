@@ -219,7 +219,7 @@ def test_the_named_F14_source_IS_tracked_contrary_to_the_row():
     import subprocess
     out = subprocess.run(
         ["git", "ls-files", "--cached", "--", str(_VTB.relative_to(REPO))],
-        cwd=str(REPO), capture_output=True, text=True)
+        cwd=str(REPO), capture_output=True, text=True, encoding="utf-8")
     assert out.stdout.strip(), (
         "vt_band_from_vision.py is NOT tracked — the conformance row's claim "
         "would then be correct and this pin must be retired")

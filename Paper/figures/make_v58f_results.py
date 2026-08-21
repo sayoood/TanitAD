@@ -213,7 +213,7 @@ def main():
     p = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                      "v58f_results.svg")
     svg = "\n".join(out)
-    open(p, "w").write(svg)
+    open(p, "w", encoding="utf-8").write(svg)
     print("wrote", p)
     try:
         import cairosvg

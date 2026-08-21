@@ -125,7 +125,7 @@ def test_end_to_end_writes_video_and_ego(tmp_path):
     assert ego["poses"].shape == (n_rows, 4)
     assert ego["actions"].shape[0] == n_rows
     import json
-    assert json.load(open(out / "clips.json")) == ["clipA"]
+    assert json.load(open(out / "clips.json", encoding="utf-8")) == ["clipA"]
 
 
 def test_zero_written_is_a_nonzero_exit(tmp_path):
@@ -137,7 +137,7 @@ def test_zero_written_is_a_nonzero_exit(tmp_path):
     rc = main(["--corpus", str(corpus), "--out", str(out), "--n", "1"])
     assert rc == 3, "an empty bridge must exit non-zero"
     import json
-    assert json.load(open(out / "clips.json")) == []
+    assert json.load(open(out / "clips.json", encoding="utf-8")) == []
     assert (out / "failures.json").exists(), "failures must be recorded"
 
 
@@ -152,8 +152,8 @@ def test_one_bad_clip_does_not_kill_the_batch(tmp_path):
     rc = main(["--corpus", str(corpus), "--out", str(out), "--n", "2"])
     assert rc == 0
     import json
-    assert json.load(open(out / "clips.json")) == ["good"]
-    assert len(json.load(open(out / "failures.json"))) == 1
+    assert json.load(open(out / "clips.json", encoding="utf-8")) == ["good"]
+    assert len(json.load(open(out / "failures.json", encoding="utf-8"))) == 1
 
 
 # =========================================================================== #

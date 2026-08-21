@@ -52,7 +52,7 @@ _STREAM = re.compile(r"^(?P<root>.*?/incoming/[^/]+)/")
 
 def staged_paths() -> list[str]:
     out = subprocess.run(["git", "diff", "--cached", "--name-only"],
-                         capture_output=True, text=True, check=False).stdout
+                         capture_output=True, text=True, check=False, encoding="utf-8").stdout
     return [ln for ln in out.splitlines() if ln.strip()]
 
 

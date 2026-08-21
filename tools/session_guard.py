@@ -101,7 +101,7 @@ def git(repo: Path, *args: str) -> str:
         cwd=str(repo),
         capture_output=True,
         text=True,
-    )
+    , encoding="utf-8")
     if proc.returncode != 0:
         raise GitError(f"git {' '.join(args)} -> {proc.returncode}: {proc.stderr.strip()}")
     return proc.stdout.rstrip()

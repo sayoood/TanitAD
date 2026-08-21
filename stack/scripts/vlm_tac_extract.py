@@ -146,13 +146,13 @@ def ensure_deps() -> list[str]:
             pass
         log(f"installing {spec} (missing) ...")
         r = subprocess.run([sys.executable, "-m", "pip", "install", "-q",
-                            "--no-deps", spec], capture_output=True, text=True)
+                            "--no-deps", spec], capture_output=True, text=True, encoding="utf-8")
         notes.append(f"{spec}: rc={r.returncode} {r.stderr[-160:].strip()}")
     if notes:
         # unsloth pulls a real dependency set; install it WITHOUT touching torch
         r = subprocess.run([sys.executable, "-m", "pip", "install", "-q",
                             "unsloth_zoo", "trl", "peft", "accelerate",
-                            "--no-deps"], capture_output=True, text=True)
+                            "--no-deps"], capture_output=True, text=True, encoding="utf-8")
         notes.append(f"unsloth deps: rc={r.returncode}")
     import torch
     ok = False
