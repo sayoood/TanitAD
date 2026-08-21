@@ -251,7 +251,8 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
 
 def preflight(args) -> int:
     print("[v3-preflight] building both arms + pinning the delta …")
-    cfg_h, cfg_f = v3.refc_v3_hier_config(), v3.refc_v3_flat_config()
+    cfg_h = v3.refc_v3_sized_config(args.size, hier=True)
+    cfg_f = v3.refc_v3_sized_config(args.size, hier=False)
     if args.smoke:
         cfg_h, cfg_f = (v3.refc_v3_smoke_config(True),
                         v3.refc_v3_smoke_config(False))
@@ -320,9 +321,11 @@ def train(args) -> dict:
         if args.device == "auto" else args.device
     torch.manual_seed(args.seed)
     cfg = (v3.refc_v3_smoke_config(args.arm == "hier") if args.smoke else
-           (v3.refc_v3_hier_config() if args.arm == "hier"
-            else v3.refc_v3_flat_config()))
-    delta = v3.config_delta(v3.refc_v3_hier_config(), v3.refc_v3_flat_config())
+           v3.refc_v3_sized_config(args.size, hier=args.arm == "hier"))
+    # ⛔ The delta is derived AT THE SAME SIZE both arms run at. Deriving it at a
+    # different rung would compare a config pair neither arm uses.
+    delta = v3.config_delta(v3.refc_v3_sized_config(args.size, hier=True),
+                            v3.refc_v3_sized_config(args.size, hier=False))
     if set(delta) != REGISTERED_DELTA_KEYS:
         raise SystemExit(f"[v3] ⛔ config delta {sorted(delta)} != registered "
                          f"{sorted(REGISTERED_DELTA_KEYS)} — amend the prereg "
@@ -432,6 +435,14 @@ def train(args) -> dict:
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    ap.add_argument("--size", choices=tuple(v3.V3_SIZES), default="small",
+                    help="encoder rung. 'small' is the AS-REGISTERED arm "
+                         "(62,930,419); 'xl' is the D-008 >=250M rung "
+                         "(217,760,775). ⛔ The size axis moves the ENCODER "
+                         "ONLY — the H-vs-F delta is identical at every rung "
+                         "(pinned by tests). ⚠️ Anything but 'small' VOIDS the "
+                         "registered cost line in PREREG_REFC_V3.md; amend "
+                         "BEFORE any read, never after.")
     ap.add_argument("--arm", choices=("hier", "flat"), required=True,
                     help="v3-H (goal cascade) or v3-F (flat) — the dominance "
                          "pair; delta pinned to the registered lever set")
