@@ -1,4 +1,13 @@
-# The unified hierarchy — measured across four arms, extracted, and audited against REF-C v3
+# The unified hierarchy — measured, extracted, and ALIGNED across four arms
+
+> ⛔ **CORRECTION 2026-08-21 (same day).** §1 first said REF-A v1 had **no**
+> per-layer predictor. **It does** — `.tactical` is a `TokenFieldPredictor`
+> (54,587,392) and `.strategic` is a `StrategicSubspacePredictor` (1,911,040),
+> which IS the PI's *"strategic gets its OWN predictor on a strategy-only latent
+> subspace"*. They are simply not named `predictor_*`, and I read the module
+> names rather than the classes. **The real gaps are narrower: REF-C v3 has
+> neither predictor, REF-D's strategic layer is never built, and only v6 shares
+> its vocabulary TABLES.** §7 below is the alignment built after that correction.
 
 `MEASURED (ours, 2026-08-21)` — every number below comes from **building the
 arms and counting**, not from a docstring. **T0 throughout.**
@@ -12,35 +21,39 @@ designs"*.
 | component | **v6** | REF-A v1 | REF-D | **REF-C v3** |
 |---|---|---|---|---|
 | **tactical** | **5,767,981** | 54,587,392 (+ pool 4,198,400) | 54,587,392 (+ pool 4,198,400) | **1,980,646** |
-| ↳ its **own predictor** | ⭐ `predictor_tac` **3,809,792** | ⛔ none | ⛔ none | ⛔ none |
+| ↳ its **own predictor** | ✅ `FTac` **3,809,792** @ d=512 | ✅ `TokenFieldPredictor` **54,587,392** @ 64×1024 | ✅ `TokenFieldPredictor` | ⛔ **none** — `PhiTac` is a causal-TCN pool |
 | **strategic** | **4,152,993** | 1,911,040 | ⛔ **NOT BUILT** | **195** (+ cond 66,816) |
-| ↳ its **own predictor** | ⭐ `predictor_str` **3,481,856** | ⛔ none | ⛔ none | ⛔ none |
-| shared vocabulary tables | ⭐ `vocab_tac/str/a_lat/a_lon/a_str` | imports the tuples | imports the tuples | ⛔ **none** |
+| ↳ its **own predictor** | ✅ `FTac` **3,481,856** @ d=256 | ✅ `StrategicSubspacePredictor` **1,911,040** @ 256 | ⛔ none | ⛔ **none** |
+| shared vocabulary **tables** | ⭐ `vocab_tac/str/a_lat/a_lon/a_str` | imports the *tuples* | imports the *tuples* | ⛔ **none** |
 | goal representation | tokens **+** geometric | tokens | tokens | geometric only |
 | arm total | 87,893,449 (default cfg) | 143,858,464 | 142,332,174 | 62,930,419 |
 
-### 1.1 Two findings that are defects, not preferences
+### 1.1 Three findings that are defects, not preferences
+
+⛔ **REF-C v3 has NO predictor at either rung.** `PhiTac` is a causal-TCN window
+pool; its strategic "layer" is a **195-parameter linear head**. It has the
+*shape* of a hierarchy without the *machinery*.
 
 ⛔ **REF-D's strategic layer is configured but never built.** `RefDConfig` carries
 `str_dt`, `str_steps`, `w_future_str`, `strategic_cfg` — and
 `RefD.named_children()` has **no `strategic`**, with **zero state_dict keys
 containing "str"**. Its design doc claims *"3 rates … operative 0.2×30, tactical
-0.6×10, strategic 1.5×4"*. ⚠️ **I wrote that design doc.** The three-rate claim is
-not implemented.
+0.6×10, strategic 1.5×4"*. ⚠️ **I wrote that design doc.**
 
-⛔ **REF-C v3's strategic layer is a 195-parameter linear head.** It has the
-*shape* of a hierarchy without the *machinery*: no predictor at either rung, and
-a strategic "layer" smaller than a single attention head.
+⛔ **Only v6 shares vocabulary TABLES.** REF-A v1 and REF-D import the action
+*tuples*; REF-C v3 declares its own kinematic classes. Three different
+vocabularies wearing one name — the failure REF-A v1's own source warns about.
 
-### 1.2 ⭐ v6 is alone on the axis that matters
+### 1.2 ⭐ Where the arms genuinely differ
 
-**Only v6 gives each layer its OWN predictor** — the PI's three-planner directive
-(*"each predicting via imagination; strategic gets its OWN predictor on a
-strategy-only latent subspace"*). That is 7.29 M of the 9.92 M, and it is the
-whole difference between *a hierarchy that imagines* and *a stack of heads*.
+**v6 and REF-A v1 both give each layer its own predictor** — v6 with `FTac` in
+narrow spaces (512 / 256), REF-A v1 with a `TokenFieldPredictor` on 64 queries ×
+1024 and a `StrategicSubspacePredictor` on 256. Neither is "the" answer on size;
+they are different capacity tiers of the same idea.
 
-⇒ **v6's rung is the reference.** REF-A v1's 54.6 M tactical block is bigger but
-is a plain transformer with no predictor; size is not the axis.
+⇒ **The reference is v6's COMPOSITION** (adapter → own predictor → goal head →
+factored act heads, over shared vocabulary tables), and **REF-A v1's CAPACITY**
+is the tier the PI asked the others to match. §7 builds exactly that pairing.
 
 ## 2. What was BUILT — `tanitad/models/hierarchy.py`
 
@@ -164,3 +177,74 @@ null that says nothing — the arm would be too small for the claim it is testin
   over measured parts, not a built model.
 * **The `refc_xl_config` 251,932,584** figure is quoted from `refc.py`'s
   docstring, not re-measured.
+
+
+---
+
+# 7. ⭐ THE ALIGNMENT — built and verified (PI instruction, 2026-08-21)
+
+*"Align REF-C v3 to REF-A v1 and REF-D tactical size; align REF-A v1, REF-D and
+REF-C v3 to v6's own tactical predictor; same for the strategic layer; use the
+same vocab tables as v6."*
+
+## 7.1 What was built
+
+`HierarchyRungConfig` gained an **optional body** — the REF-A/REF-D capacity tier
+— so one rung expresses both geometries:
+
+```
+adapter → [body: N × RungBlock]  → predictor(FTac) → goal_head + act_heads
+                ↑ capacity                 ↑ v6's OWN predictor, canonical everywhere
+```
+
+Four canonical geometries ship: `V6_TACTICAL`, `V6_STRATEGIC` (`body_layers=0`,
+still pinned identical to v6) and **`ALIGNED_TACTICAL`, `ALIGNED_STRATEGIC`**.
+
+## 7.2 ⭐ The alignment is EXACT, not approximate
+
+| | measured |
+|---|---|
+| `ALIGNED_TACTICAL` body (d=1024 × 4 blocks) | **50,384,896** |
+| REF-A v1 `TokenFieldPredictor.blocks` | **50,384,896** |
+| **delta** | **+0** |
+
+| aligned rung | components | total |
+|---|---|---|
+| **tactical** | adapter 1,576,448 · **body 50,384,896** · **predictor `FTac` 4,334,592** · cond 2,816 · goal_head 367,889 · act_heads 667,932 | **57,334,573** |
+| **strategic** | adapter 656,640 · **predictor `FTac` 3,481,856** · goal_head 139,283 · act_head 137,358 | **4,415,137** |
+| | | ⭐ **61,749,710** |
+
+**13 tests pass**, including `test_aligned_body_EXACTLY_matches_refa_v1_tactical_blocks`,
+`test_the_canonical_v6_geometries_are_UNCHANGED_by_the_body`, and
+`test_aligned_rungs_share_v6s_vocabulary_objects` (`id()` identity on
+`vocab_tac`/`vocab_str`/`vocab_a_lat` — the PI's "same vocab tables as v6").
+
+## 7.3 What each arm becomes
+
+| arm | today | its hierarchy today | core/rest | **aligned total** |
+|---|---|---|---|---|
+| REF-C v3 (small core) | 62,930,419 | 2,048,345 | 60,882,074 | **122,631,784** |
+| ⭐ **REF-C v3 (XL core)** | 217,760,775 | 2,171,225 | 215,589,550 | **277,339,260** ✅ **≥250 M (D-008)** |
+| REF-A v1 | 143,858,464 | 60,696,832 | 83,161,632 | **144,911,342** |
+| REF-D | 142,332,174 | 58,785,792 | 83,546,382 | **145,296,092** |
+
+⭐ **REF-C v3 at the XL core with the aligned hierarchy is 277.3 M — it CLEARS
+`D-008` with margin**, and the hierarchy is now the same one every other arm runs.
+
+⭐ **REF-A v1 and REF-D barely change in SIZE** (+1.05 M, +2.96 M) because they
+already carried the big tactical block. What they GAIN is the alignment itself:
+v6's `FTac` own-predictor, v6's goal/action heads, v6's shared vocabulary
+**tables**, and — for **REF-D** — **the strategic layer it never had.**
+
+## 7.4 ⚠️ Limits
+
+* **Arithmetic over measured parts.** No arm has been rebuilt with the rungs
+  wired in; §7.3 adds measured components, it does not report a built model.
+* **`tac_pool` (4,198,400)** is counted inside REF-A/REF-D's "hierarchy today".
+  Whether the body *replaces* it or sits beside it is a wiring decision, not
+  settled here.
+* **Parameter-count equivalence, not activation equivalence** — still true of
+  `assert_matches_v6`, and now also of the REF-A body match.
+* ⛔ **v6 must NOT adopt this while S-W trains.** `body_layers=0` keeps its
+  geometry identical, but the swap is a real refactor under a tensor-strict
+  resume.

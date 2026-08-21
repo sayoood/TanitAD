@@ -113,3 +113,71 @@ def test_v6_itself_is_UNTOUCHED_by_this_module():
     stack = V.V6Stack(V.V6Config())
     assert sum(p.numel() for p in stack.parameters()) == 87_893_449
     assert len(stack.state_dict()) == 405
+
+
+# --------------------------------------------------------------------------- #
+# The ALIGNED tier (PI 2026-08-21): REF-A v1 / REF-D tactical CAPACITY carrying
+# v6's OWN predictor, heads and vocabulary — in every arm.
+# --------------------------------------------------------------------------- #
+from tanitad.models.hierarchy import (ALIGNED_STRATEGIC, ALIGNED_TACTICAL,  # noqa: E402
+                                      V6_STRATEGIC, V6_TACTICAL,
+                                      aligned_body_matches_refa)
+
+
+@pytest.fixture(scope="module")
+def aligned(built):
+    stack, _, _, _ = built
+    tac = HierarchyRung(ALIGNED_TACTICAL, vocab_goal=stack.vocab_tac,
+                        vocab_actions=(stack.vocab_a_lat, stack.vocab_a_lon),
+                        vocab_above=stack.vocab_str)
+    stg = HierarchyRung(ALIGNED_STRATEGIC, vocab_goal=stack.vocab_str,
+                        vocab_actions=(stack.vocab_a_str,), vocab_above=None)
+    return tac, stg
+
+
+def test_aligned_body_EXACTLY_matches_refa_v1_tactical_blocks(aligned):
+    """⭐ THE ALIGNMENT CLAIM. REF-A v1's TokenFieldPredictor.blocks MEASURE
+    50,384,896 at d_state=1024 / tac_layers=4. The aligned tier must reproduce
+    that number, not approximate it — 'same size' has to mean the same size."""
+    tac, _ = aligned
+    assert aligned_body_matches_refa(tac) == 50_384_896
+
+
+def test_aligned_rungs_still_carry_v6s_OWN_predictor(aligned):
+    """Capacity comes from the body; the PREDICTOR stays v6's FTac in both."""
+    tac, stg = aligned
+    from tanitad.models.tactical import FTac
+    assert isinstance(tac.predictor, FTac) and isinstance(stg.predictor, FTac)
+    assert sum(p.numel() for p in stg.predictor.parameters()) == 3_481_856
+
+
+def test_the_canonical_v6_geometries_are_UNCHANGED_by_the_body(built):
+    """⛔ Adding the body must not redefine v6's rung — body_layers=0 is v6."""
+    stack, _, _, _ = built
+    tac = HierarchyRung(V6_TACTICAL, vocab_goal=stack.vocab_tac,
+                        vocab_actions=(stack.vocab_a_lat, stack.vocab_a_lon),
+                        vocab_above=stack.vocab_str)
+    stg = HierarchyRung(V6_STRATEGIC, vocab_goal=stack.vocab_str,
+                        vocab_actions=(stack.vocab_a_str,), vocab_above=None)
+    assert_matches_v6(stack, tactical=tac, strategic=stg)
+    assert len(tac.body) == 0 and len(stg.body) == 0
+
+
+def test_aligned_rungs_share_v6s_vocabulary_objects(aligned, built):
+    """Same vocab tables as v6 — `id()` identity across ALL arms is the point."""
+    stack, _, _, _ = built
+    tac, stg = aligned
+    assert tac.goal_head.vocab is stack.vocab_tac
+    assert tac.cond.vocab is stack.vocab_str
+    assert stg.goal_head.vocab is stack.vocab_str
+    assert tac.act_heads[0].vocab is stack.vocab_a_lat
+
+
+def test_aligned_cascade_runs_end_to_end(aligned):
+    tac, stg = aligned
+    z_tac = tac.uplink(torch.randn(2, 2048))
+    assert tuple(z_tac.shape) == (2, 1024)
+    z_str = stg.uplink(z_tac)
+    assert tuple(z_str.shape) == (2, 256)
+    assert tuple(stg.imagine(z_str, torch.randn(2, 128)).shape) == (2, 256)
+    assert tuple(tac.imagine(z_tac, torch.randn(2, 256)).shape) == (2, 1024)
