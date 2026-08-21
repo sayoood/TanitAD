@@ -45,6 +45,7 @@ identical across arms bar the input projection width.
 | `v6_tokens` | 640 | 768 | 0.0923 | [0.0815, 0.1034] | 0.6195 | 7.59 m | BELOW |
 | ⛔ **`pixel`** — raw 16×16×3 patches | 640 | 768 | 0.0912 | [0.0814, 0.1014] | 0.6262 | 7.63 m | BELOW |
 | `v6_cells` — **the deployed latent** | 16 | 128 | 0.0888 | [0.0788, 0.0990] | 0.6246 | 7.82 m | BELOW |
+| ⛔ **`pixel_pooled`** — raw patches, v6's 4×4 pool | 16 | 768 | 0.0853 | [0.0767, 0.0956] | 0.6183 | 7.86 m | BELOW |
 | `v6_tokens_pooled` — pool, no projection | 16 | 768 | 0.0877 | [0.0788, 0.0979] | 0.6173 | 7.81 m | BELOW |
 
 ⚠️ `oracle` is not near 1.0 **by construction**: range is withheld (depth must
@@ -91,6 +92,29 @@ resolution is already at pixel level.
 *(Root-cause class: a plausible mechanism quoted as an explanation before the
 control that could refute it had been run. The control was already
 pre-registered; the error was in the narration, not the design.)*
+
+### 3.4 ⛔ AND THE SUCCESSOR EXPLANATION FAILED THE SAME WAY — caught by `pixel_pooled`
+
+Having retired the geometry story, the next candidate was found in our own
+source: v6's only spatial objective is `o3_masked_cell_loss` →
+`MaskedCellPredictor`, which predicts *"MASKED readout-grid cells"*, `[B, C, d_r]`
+with **C = 16** — the pooled cells, **never the 640 patch tokens**. That is a FACT
+about the code, and it predicts something sharp: **v6 should beat raw pixels AT
+CELL GRANULARITY**, where its objective actually applies pressure.
+
+| granularity | v6 | raw pixels | delta |
+|---|---|---|---|
+| **cell (16)** — O3 operates here | `v6_cells` 0.0888 [0.0788, 0.0990] | `pixel_pooled` 0.0853 [0.0767, 0.0956] | **+0.0035**, CIs OVERLAP |
+| **token (640)** — no pressure at all | `v6_tokens` 0.0923 [0.0815, 0.1034] | `pixel` 0.0912 [0.0814, 0.1014] | +0.0011 |
+
+⛔ **v6 is indistinguishable from raw pixels at BOTH granularities, INCLUDING ITS
+OWN.** So the defect is **not** that the pressure is applied at the wrong
+resolution — the objective produces nothing decodable *even where it applies*.
+
+⇒ This is what `PREREG_E_DENSE_1.md` was revised on **before any arm trained**:
+the question is the NATURE of the pressure, not its resolution. Two candidate
+explanations have now died to two cheap controls; the surviving one is being
+tested rather than asserted.
 
 ## 4. The overfitting question, settled rather than left open
 
@@ -154,15 +178,62 @@ v6's 4×4 readout independently costs 25–34 % of whatever signal reaches it.*
    AP exactly 1.0000, random score 0.0086 with 95.2° yaw error (circular
    chance), scrambled scores keep recall 1.0 while AP collapses.
 
-## 7. Still running
+## 7. ⭐ THE BOX HEAD — the PI's actual design, and the "state" half of the question
 
-* **`e_detect_box.py`** — the box head the PI actually asked for (K=40 slots,
-  Hungarian): AP@1/2/4 m, centre, **extent and yaw** error. The grid cannot
-  express object extent, heading or identity, and identity is what a *state*
-  forecast needs. Result appends here.
+`e_detect_box.py`, K = 40 slots (MEASURED to cover 100.00 % of in-grid instances;
+⚠️ the feasibility figure "K=16 covers 100 %" was a 6,000-frame sample — on the
+real probe rows K=16 covers 96.13 %), Hungarian matching, same folds, same
+episode-cluster bootstrap. The metric is validated in
+`e_detect_box_selftest.py`: perfect predictions score **AP exactly 1.0000**,
+random positions **0.0086 with 95.2° yaw error** (the circular chance level), and
+scrambled scores keep recall 1.000 while AP collapses — so AP prices ranking
+independently of boxes.
+
+| arm | AP@1m | AP@2m | AP@4m | recall | ctr | ext | **yaw** |
+|---|---|---|---|---|---|---|---|
+| **`dino_tokens`** | 0.0196 | **0.1259** | 0.3329 | 0.478 | 1.254 m | 0.309 m | 28.4° |
+| `oracle` | 0.0099 | 0.0946 | 0.3286 | 0.534 | 1.259 m | **0.265 m** | **16.1°** |
+| `dino_pooled` | 0.0060 | 0.0701 | 0.2501 | 0.426 | 1.296 m | 0.330 m | 33.0° |
+| `oracle_pooled` | 0.0061 | 0.0674 | 0.2738 | 0.453 | 1.290 m | 0.267 m | **17.5°** |
+| ⛔ **`const`** — trained constant set, THE FLOOR | 0.0079 | 0.0583 | 0.2476 | 0.406 | 1.226 m | 0.320 m | 31.1° |
+| `pixel` | 0.0038 | **0.0401** | 0.1905 | 0.370 | 1.281 m | 0.324 m | 34.8° |
+| `v6_tokens` | 0.0033 | **0.0401** | 0.1917 | 0.370 | 1.296 m | 0.299 m | 35.6° |
+| `v6_cells` | 0.0025 | 0.0323 | 0.1589 | 0.362 | 1.304 m | 0.334 m | 34.3° |
+
+Only `dino_tokens` and `oracle` clear the floor. `v6_tokens`, `v6_cells` and
+`pixel` are all **below** it.
+
+⭐ **`v6_tokens` AND `pixel` AGREE TO FOUR DECIMAL PLACES ON AP@2m (0.0401) AND
+THREE ON RECALL (0.370).** The grid said indistinguishable; the box head, a
+completely different readout with a different matcher and a different metric,
+says the same thing to four digits.
+
+### 7.1 ⛔ The STATE half of the PI's design: heading is not there
+
+The PI asked for a head that "predicts their states". Extent and heading are
+exactly what the grid could not express, and they split the arms cleanly:
+
+* **Only the two ORACLE arms recover heading** — 16.1° and 17.5°, against a
+  90° circular-chance level and the `const` floor's 31.1°.
+* **`dino_tokens` carries a little** — 28.4°, modestly better than the floor.
+* ⛔ **v6 carries none** — 35.6° (tokens) and 34.3° (cells), i.e. **WORSE than a
+  trained constant**. Same for extent: 0.299/0.334 m against the floor's 0.320 m.
+
+⇒ **No trunk in the programme supports a vehicle-STATE forecast today.** DINOv3
+supports position and a trace of heading; v6 supports neither. That is a harder
+result than the occupancy table alone, and it is the one that bears on the
+"predict their states from the predicted latent" half of the design — because a
+state forecast needs per-object identity, which only the slot head can carry.
+
+## 8. Still running
+
 * **paired deltas across all arms**, and the **prior-anchored** grid re-run.
+* **E-DETECT-1T** (`e_detect_traj.py`) — is the encoder improving? v6 @11,250 vs
+  @20,000 on matched rows.
+* ⭐ **E-DENSE-1** (`PREREG_E_DENSE_1.md`) — the fix experiment this result
+  motivated.
 
-## 8. Manifest
+## 9. Manifest
 
 | artifact | where |
 |---|---|
@@ -173,6 +244,7 @@ v6's 4×4 readout independently costs 25–34 % of whatever signal reaches it.*
 | oracle control | `…/simwam-analysis/code/e_detect_oracle.py` |
 | box head | `…/simwam-analysis/code/e_detect_box.py` |
 | box metric self-test | `…/simwam-analysis/code/e_detect_box_selftest.py` |
+| box result | `…/simwam-analysis/raw/e_detect_box.json` |
 | variance decomposition | `…/simwam-analysis/code/e_detect_variance.py` |
 | capacity ladder | `…/simwam-analysis/code/e_detect_capacity.py` |
 | paired deltas | `…/simwam-analysis/code/e_detect_paired.py` |
