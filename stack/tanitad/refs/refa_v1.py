@@ -254,6 +254,26 @@ class TokenFieldPredictor(nn.Module):
         self.mix = nn.Linear(2 * d, d)
         self.blocks = nn.ModuleList([_Block(d, heads) for _ in range(layers)])
         self.head = nn.Sequential(nn.LayerNorm(d), nn.Linear(d, d))
+        # The residual delta head is DOWN-SCALED. `step` returns
+        # `field + self.head(x)` and `self.head` ends in a Linear fed by a
+        # LayerNorm, so a default init emits O(1) per dim regardless of the
+        # field's scale -- and the docstring's "near-identity at init" claim was
+        # simply FALSE. MEASURED 2026-08-22 against the REAL banked DINOv3
+        # field (mean|x| 0.2060, per-frame movement 0.1021):
+        #     zero-action |delta| at init = 0.4497
+        #                                 = 2.2x the field's own magnitude
+        #                                 = 4.4x the movement it must predict
+        # The identical defect in v6's `OperativePredictor` measured 580x,
+        # because v6's operative latent moves only 1.9% of its magnitude per
+        # tick while this field moves 49.5% -- SEVERITY SCALES WITH HOW STATIC
+        # THE BASE IS, which is plausibly why REF-A trained to something and v6
+        # did not.
+        # NOT zero-init: zeroing an OUTPUT head sets dL/dh = W^T . dL/dout = 0
+        # and stalls gradient to the whole body (18 tests caught that on v6).
+        # SCOPE: initialisation only; state_dict shapes unchanged.
+        from tanitad.models.predictor import RESIDUAL_HEAD_INIT_SCALE
+        self.head[-1].weight.data.mul_(RESIDUAL_HEAD_INIT_SCALE)
+        self.head[-1].bias.data.mul_(RESIDUAL_HEAD_INIT_SCALE)
 
     def step(self, field: Tensor, action: Tensor,
              intent: Tensor | None = None) -> Tensor:
@@ -262,6 +282,14 @@ class TokenFieldPredictor(nn.Module):
         Residual by construction (``z_hat = z + delta``): the predictor learns
         the CHANGE, so a zero-action step is near-identity at init and the
         6 s rollout does not drift on the first gradient.
+
+        WARNING -- that identity claim was FALSE until 2026-08-22. With the
+        head at DEFAULT init the zero-action delta MEASURED 0.4497 against a
+        real DINOv3 field of mean|x| 0.2060, i.e. 2.2x the field and 4.4x the
+        movement it predicts. It is true now only because the head is
+        down-scaled by ``RESIDUAL_HEAD_INIT_SCALE`` in ``__init__``. A docstring
+        asserting an initialisation property is not evidence for it; the
+        assertion lives in ``tests/test_residual_init_scale.py``.
         """
         a = self.act(action)
         if intent is not None and self.intent is not None:
@@ -315,8 +343,22 @@ class StrategicSubspacePredictor(nn.Module):
         self.act = nn.Linear(cfg.a_dim, cfg.str_dim)
         self.blocks = nn.ModuleList(
             [_Block(cfg.str_dim, 4) for _ in range(cfg.str_layers)])
+        # The residual delta head is DOWN-SCALED, not zeroed. `rollout` does
+        # `s = s + self.head(x)`, and `self.head` ends in a Linear fed by a
+        # LayerNorm, so a default init emits O(1) per dim regardless of the
+        # state's scale. The identical defect in v6's `OperativePredictor` left
+        # it 535x WORSE than predicting NO CHANGE at step 20,000 (MEASURED
+        # 2026-08-22 at the true dt=0.1s tick), and rescaling the TRAINED heads
+        # could not rescue it -- error fell monotonically to alpha=0.
+        # NOT zero-init: zeroing an OUTPUT head sets dL/dh = W^T . dL/dout = 0
+        # and stalls gradient to the whole body. See predictor.py.
+        # SCOPE: initialisation only; state_dict shapes unchanged, so existing
+        # REF-A v1 checkpoints load byte-identically.
         self.head = nn.Sequential(nn.LayerNorm(cfg.str_dim),
                                   nn.Linear(cfg.str_dim, cfg.str_dim))
+        from tanitad.models.predictor import RESIDUAL_HEAD_INIT_SCALE
+        self.head[-1].weight.data.mul_(RESIDUAL_HEAD_INIT_SCALE)
+        self.head[-1].bias.data.mul_(RESIDUAL_HEAD_INIT_SCALE)
 
     def subspace(self, field: Tensor) -> Tensor:
         return self.read(field.mean(dim=-2))          # pool tokens -> [B, str]

@@ -1,0 +1,47 @@
+{
+ "_evidence_class": "MEASURED (ours; dev-box RTX 4060)",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "question": "can the residual-scale defect be fixed WITHOUT retraining, by rescaling the delta heads?",
+ "ckpt": "v6F_sw_step020000.fp16.pt",
+ "step": 20000,
+ "n_windows": 3850,
+ "tick_s": 0.1,
+ "mae_hold": 0.00029745,
+ "alphas": {
+  "1": {
+   "mae_pred": 0.17267559,
+   "ratio_vs_hold": 580.5292
+  },
+  "0.3": {
+   "mae_pred": 0.05180889,
+   "ratio_vs_hold": 174.1796
+  },
+  "0.1": {
+   "mae_pred": 0.01728723,
+   "ratio_vs_hold": 58.119
+  },
+  "0.03": {
+   "mae_pred": 0.00523737,
+   "ratio_vs_hold": 17.6078
+  },
+  "0.01": {
+   "mae_pred": 0.00184149,
+   "ratio_vs_hold": 6.191
+  },
+  "0.003": {
+   "mae_pred": 0.00069537,
+   "ratio_vs_hold": 2.3378
+  },
+  "0.001": {
+   "mae_pred": 0.00039505,
+   "ratio_vs_hold": 1.3281
+  },
+  "0": {
+   "mae_pred": 0.00029745,
+   "ratio_vs_hold": 1.0
+  }
+ },
+ "best_alpha": "0",
+ "best_ratio": 1.0,
+ "verdict": "NOT RESCUABLE by rescaling alone: even the best alpha fails to beat hold, so the learned delta direction is not usable and a retrain from an identity start is required"
+}

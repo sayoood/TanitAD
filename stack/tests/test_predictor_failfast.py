@@ -68,14 +68,14 @@ def test_survives_python_O_semantics():
     import ast
 
     from tanitad.models import _validate
-    src = Path(_validate.__file__).read_text()
+    src = Path(_validate.__file__).read_text(encoding="utf-8")
     asserts = [n for n in ast.walk(ast.parse(src)) if isinstance(n, ast.Assert)]
     assert asserts == []
 
     # And the call site itself: the bare `assert w == self.cfg.window` it
     # replaced must not come back into OperativePredictor.forward.
     from tanitad.models import predictor as P
-    tree = ast.parse(Path(P.__file__).read_text())
+    tree = ast.parse(Path(P.__file__).read_text(encoding="utf-8"))
     fwd = [n for n in ast.walk(tree)
            if isinstance(n, ast.FunctionDef) and n.name == "forward"]
     assert fwd, "no forward() found in predictor.py"

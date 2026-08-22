@@ -12,6 +12,12 @@ embeddings concatenate here later).
 
 from __future__ import annotations
 
+#: Multiplier applied to the DEFAULT init of the residual delta heads.
+#: Chosen so the initial delta is comparable to the latent's own movement rather
+#: than ~1000x above it, while keeping the head non-zero so gradient still
+#: reaches the predictor body (see OperativePredictor.__init__).
+RESIDUAL_HEAD_INIT_SCALE = 1e-3
+
 import torch
 from torch import Tensor, nn
 
@@ -129,8 +135,36 @@ class OperativePredictor(nn.Module):
             (ModernCausalBlock if cfg.modern else CausalBlock)(
                 d, cfg.n_heads, cond_dim=d) for _ in range(cfg.depth))
         self.norm = nn.LayerNorm(d)
+        # THE RESIDUAL DELTA HEADS ARE DOWN-SCALED, NOT ZEROED.
+        #
+        # `forward` computes `out[k] = z_t + delta`, with `delta` produced from
+        # `self.norm(...)` -- a LayerNorm, so its output is O(1) PER DIM whatever
+        # the latent's scale. v6's operative latent has mean|z| = 0.015581 and
+        # moves 0.000892 per tick (MEASURED 2026-08-22, stride-1 latents at the
+        # true dt=0.1s tick). A default-init head therefore starts emitting a
+        # delta ~1000x LARGER than the movement it must predict, and the run
+        # spends itself shrinking it. v6F-SW-30k's own o5_step1 was still
+        # 535x WORSE than predicting NO CHANGE at step 20,000, and a scalar
+        # rescale of the trained heads could not rescue it -- the error fell
+        # monotonically to alpha=0, i.e. the learned delta carried no signal.
+        #
+        # WHY DOWN-SCALED AND NOT ZERO-INIT. Zeroing the OUTPUT head sets
+        # dL/dh_last = W^T . dL/dout = 0, which stops gradient reaching the
+        # ENTIRE predictor body -- blocks, in_proj, act_emb and intent_proj all
+        # stall until the head leaves zero. `test_v6_staged.py::
+        # test_planner_surface_is_total` caught exactly that: intent_proj went
+        # invisible to the gradient probe. This is why FiLM (an INTERNAL
+        # modulation, main path untouched) is zero-init a few lines above while
+        # an output head must not be.
+        #
+        # SCOPE: initialisation only. state_dict shapes are unchanged, so every
+        # existing checkpoint loads byte-identically.
         self.heads = nn.ModuleDict(
             {str(k): nn.Linear(d, state_dim) for k in cfg.horizons})
+        if cfg.residual:
+            for h in self.heads.values():
+                h.weight.data.mul_(RESIDUAL_HEAD_INIT_SCALE)
+                h.bias.data.mul_(RESIDUAL_HEAD_INIT_SCALE)
         self.out_proj = nn.Linear(state_dim, d)  # reserved: feed predictions back
         # Tactical-intent conditioning (D-030). Projected into the FiLM cond
         # space and added to the action embedding. Non-zero init so a live FiLM
