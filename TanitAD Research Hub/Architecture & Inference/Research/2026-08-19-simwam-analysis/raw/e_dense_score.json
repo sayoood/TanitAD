@@ -1,0 +1,115 @@
+{
+ "_evidence_class": "MEASURED (ours; dev-box RTX 4060)",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "prereg": "\u2026/simwam-analysis/PREREG_E_DENSE_1.md",
+ "warning": "NOT comparable to E_DETECT_1_RESULT.md's table \u2014 that is 640 tok x d1024 at 256x640; this is 160 tok x d192 at 128x320. Compare only within this table.",
+ "n_tok": 160,
+ "grid": [
+  8,
+  20
+ ],
+ "base_rate": 0.056676,
+ "arms": {
+  "prior": {
+   "n_tok": 0,
+   "d": 0,
+   "ap": 0.1242,
+   "ap_ci95": [
+    0.1123,
+    0.1365
+   ],
+   "auc": 0.6965,
+   "auc_ci95": [
+    0.6805,
+    0.7148
+   ],
+   "topk_loc_err_m": 5.796,
+   "note": "closed form; NO features"
+  },
+  "pixel160": {
+   "n_tok": 160,
+   "d": 768,
+   "ap": 0.0909,
+   "ap_ci95": [
+    0.081,
+    0.1018
+   ],
+   "auc": 0.6314,
+   "auc_ci95": [
+    0.6119,
+    0.6507
+   ],
+   "topk_loc_err_m": 7.841,
+   "train_ap_mean": 0.564,
+   "train_s": 274.0
+  },
+  "pooled": {
+   "n_tok": 160,
+   "d": 192,
+   "ap": 0.0897,
+   "ap_ci95": [
+    0.0793,
+    0.1007
+   ],
+   "auc": 0.6246,
+   "auc_ci95": [
+    0.6039,
+    0.6438
+   ],
+   "topk_loc_err_m": 7.485,
+   "train_ap_mean": 0.3881,
+   "train_s": 212.3
+  },
+  "dense": {
+   "n_tok": 160,
+   "d": 192,
+   "ap": 0.0911,
+   "ap_ci95": [
+    0.0817,
+    0.1025
+   ],
+   "auc": 0.6315,
+   "auc_ci95": [
+    0.6107,
+    0.6514
+   ],
+   "topk_loc_err_m": 7.457,
+   "train_ap_mean": 0.3853,
+   "train_s": 213.6
+  },
+  "dense_deep": {
+   "n_tok": 160,
+   "d": 192,
+   "ap": 0.0896,
+   "ap_ci95": [
+    0.0802,
+    0.0998
+   ],
+   "auc": 0.6283,
+   "auc_ci95": [
+    0.6102,
+    0.6466
+   ],
+   "topk_loc_err_m": 7.346,
+   "train_ap_mean": 0.3955,
+   "train_s": 212.3
+  },
+  "distill": {
+   "n_tok": 160,
+   "d": 192,
+   "ap": 0.0991,
+   "ap_ci95": [
+    0.0872,
+    0.1106
+   ],
+   "auc": 0.65,
+   "auc_ci95": [
+    0.6338,
+    0.6677
+   ],
+   "topk_loc_err_m": 6.685,
+   "train_ap_mean": 0.3262,
+   "train_s": 214.5
+  }
+ }
+}
