@@ -69,9 +69,18 @@ def main() -> None:
             r = json.loads(line)
             labels[r["clip_id"]] = r
 
-    have = sorted(c for c in labels
-                  if (MP4 / f"{c}.camera_front_wide_120fov.mp4").exists())
-    print(f"join-free clips available: {len(have)}")
+    # ⛔ EVAL SET = ALPAMAYO-COVERED CLIPS ONLY (PI 2026-08-23: "skip all eval
+    # data which does not include Alpamayo data"). Mixing covered and uncovered
+    # clips makes the evaluation set inhomogeneous: a clip with no VLM row can
+    # never exercise the semantic path, so including it silently dilutes every
+    # rate computed over the set. Coverage is 100 % of aug120 and 9.3 % of
+    # w120val, so this is a real and visible reduction, not a cosmetic one.
+    all_join_free = sorted(c for c in labels
+                           if (MP4 / f"{c}.camera_front_wide_120fov.mp4").exists())
+    have = [c for c in all_join_free if labels[c].get("semantics")]
+    print(f"join-free clips: {len(all_join_free)}  "
+          f"WITH Alpamayo (eval set): {len(have)}  "
+          f"skipped (no Alpamayo): {len(all_join_free) - len(have)}")
 
     out = []
     for c in have:

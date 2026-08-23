@@ -1802,7 +1802,7 @@ increasing order of what they license:
    > ⭐ **Stated against interest:** comma-only, MAE falls **42.5 %** but **medAE moves only −1.1 % and
    > nMedAE gets 8.0 % WORSE** (Spearman ρ flat, +0.001). **The repair fixes the tail and the summary
    > statistic, not typical accuracy.** The three-measurement argument of this paragraph is unchanged —
-   > it never rested on the yaw channel. Inventory: `TanitAD Research Hub/Benchmarks & Eval/
+   > it never rested on the yaw channel. Inventory: `TanitAD Research Lab/Benchmarks & Eval/
    > Implementation/incoming/2026-07-27-comma-yaw-reissue/COMMA_YAW_REISSUE.md`.
    > 🔴 **AMENDED 2026-07-27 (`anchor-settlement`, class C43): `+0.3308` is WITHDRAWN.** *(Block
    > above keeps its text and date.)* Settled BY CONTENT — sha256 of the raw `poses` float32 bytes
@@ -1864,7 +1864,7 @@ simulator needed for rendered occlusion and signal geometry was confirmed absent
 > 🔧 **CONDITIONS, ADDED 2026-07-26 — and a correction to what was measured.** This paragraph previously
 > attributed these numbers to *"the deployed 262.8 M architecture."* **Neither half was right.** Traced
 > to its artifact,
-> `TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-24-traffic-light-scenario-metric/real_tms_cnce.json`
+> `TanitAD Research Lab/Benchmarks & Eval/Implementation/incoming/2026-07-24-traffic-light-scenario-metric/real_tms_cnce.json`
 > (`exp: sc14-P2-real-tms-cnce-log-replay`; generator `real_telemetry_tms_cnce.py:109`), the measurement
 > is on a **`base250cam` WorldModel, `params_billions` 0.2628 → 262.8 M**, instantiated fresh — **not the
 > deployed flagship v1**, which measures **263,442,838 (263.4 M)**. Latency and the CNCE parameter term
@@ -2060,7 +2060,7 @@ C64 — a missing constraint in a build spec (validation exclusion not inherited
 stale tree force-loaded past `PYTHONPATH` by a hard-derived `sys.path` insert, and a fix "verified"
 along a path the failing code never took. C67 — a running job killed before its replacement was
 verified, compounded by a scheduler that silently failed to re-arm. Every number in this section is
-MEASURED, with raw artifacts under `TanitAD Research Hub/Evaluation/Implementation/incoming/`
+MEASURED, with raw artifacts under `TanitAD Research Lab/Evaluation/Implementation/incoming/`
 (2026-08-02 directories) and estimators named inline.
 
 ### 7.12 Closed-loop on a neural reconstruction, on the edge device: REF-C beats the flagship and the whole separation is LATERAL (2026-08-03)
@@ -2108,7 +2108,7 @@ Current panel: `stack/experiments/alpasim-gsplat/results/closedloop-hq-render/`.
 > `7c72937c` n=12 **+4.4 % — NOT SEPARATED** [−0.0097, +0.0521]. Absolutes move too:
 > BEFORE 0.2774 → **0.4228**, AFTER 0.3424 → **0.4800**. The render is still better; the
 > magnitude quoted here is not. Corrected table + estimator:
-> `TanitAD Research Hub/Evaluation/Implementation/incoming/2026-08-03-render-rebaseline/`;
+> `TanitAD Research Lab/Evaluation/Implementation/incoming/2026-08-03-render-rebaseline/`;
 > `RETRACTION_LOG.md` R-2026-08-03-align. ⚠️ No closed-loop conclusion moves — `cl_metrics.py`
 > never opens the reference video.
 
@@ -3884,10 +3884,208 @@ exists to prevent.
 and closed-loop diverged **25×** on one checkpoint and one window set. NAVSIM
 buys *comparability*, not truth, and should be adopted saying so.
 
+## 13. What the representation actually learns: a measurement campaign and four instrument corrections (2026-08-23)
+
+**Tier: T0-DIAGNOSTIC throughout.** Nothing in this section is a driving claim.
+Every arm here is a world-model diagnostic with no planner, no scorer and no
+closed loop.
+
+This section reports a campaign that set out to raise the participation ratio and
+instead established that the objective could not learn the scene at all, that
+four of our own instruments were reporting artefacts, and that the two levers
+which do work are architectural and configural rather than objective-level.
+
+### 13.1 The degeneracy: why a non-collapsed latent can still encode nothing
+
+Let \(E_\theta\) be the encoder, \(P_\phi\) the action-conditioned predictor, and
+\(z_t = E_\theta(o_t)\). Our objective was
+
+$$\mathcal{L}=\underbrace{\big\|P_\phi(z_{t-W:t},a)-z_{t+1}\big\|}_{\text{O5: next-latent}}
++\lambda\underbrace{\mathrm{SIGReg}(z)}_{\text{O6: isotropy}}
+\;(+\;\text{O1 anti-echo},\;\text{O3 masked cells}).$$
+
+**Every term's target is produced by the network being optimised.** O5's target
+is \(z_{t+1}=E_\theta(o_{t+1})\); O3's target is the model's own readout cells;
+O6 constrains only the *shape* of the marginal \(p(z)\); O1 constrains only that
+different actions give different outputs. The minimiser is therefore not unique
+in any way that forces content. Write \(z=(u,\,\eta)\) with \(u\) a
+low-dimensional ego-motion code and \(\eta\) isotropic noise independent of the
+scene. Then:
+
+* O5 is small, because \(u_{t+1}\) is nearly a deterministic smooth function of
+  \(u_{t-W:t}\) and \(a\) (vehicle kinematics), and \(\eta\) contributes a
+  constant irreducible term;
+* O6 is satisfied *exactly*, because \(\eta\) is isotropic by construction;
+* the participation ratio is high, because \(\eta\) occupies the remaining
+  dimensions.
+
+**So \((u,\eta)\) — ego motion plus noise — is a non-collapsed optimum carrying
+no scene information.** This is not a hypothetical: it reproduces every
+measurement we had (healthy rank, decodable ego, absent environment, a predictor
+that works one tick out).
+
+⭐ **Independently corroborated.** PhyLatent (ICLR 2025) states the same
+conclusion from a different direction: *"preventing global latent collapse does
+not ensure that a representation preserves physical states and action
+consequences"*, and reports three named failure modes with an MPC success
+improvement of 81.0 → 98.0 % on TwoRooms once they are addressed. Our result is
+corroboration, not novelty; its value is that it was forced on us by measurement.
+
+**Consequence.** An objective whose targets are all self-generated cannot be
+repaired by adding more self-generated terms. Measured, twice: adding O1 drives
+the predictor's directional accuracy to noise while *maximising* its action
+response; adding O3 drives both ego decodability and the environment below a
+constant predictor.
+
+### 13.2 Estimators, and four corrections that changed conclusions
+
+Four instruments in this programme were reporting artefacts. Each is stated
+because each changed a published conclusion.
+
+**(a) A ratio whose denominator is not held fixed (C137).** Action sensitivity
+was measured as \(\|\hat z(a')-\hat z(a)\|^2/\|z_{t+1}-z_t\|^2\). The denominator
+is a property of the *arm's latent scale*, which spans **0.088 to 41.3** across
+our arms — a factor of **468**. Two predictors with identical action sensitivity
+therefore score up to 468× apart. The scale-free statistic normalises by the
+predictor's own displacement,
+\(\mathrm{rel}=\|\hat z(a')-\hat z(a)\|/\|\hat z(a)-z_t\|\), and gives
+0.54–1.16 for every arm: **none was ever action-blind.**
+
+**(b) Comparing two independent estimates instead of pairing them (C138).** A
+table of deltas against a common baseline licenses statements about each arm
+versus *that baseline* and nothing else. Reading two rows side by side produced a
+claim that our encoder beat frozen DINOv3; the paired test gives
+\(\Delta = -0.1251,\ t=-2.72\) — **we lose.**
+
+**(c) Measuring a component that was never trained (C139).** The rollout is built
+from the \(h{=}1\) head applied autoregressively; with `o5_k = 1` the \(h\ge 2\)
+heads receive no gradient. Their weight norms are **0.02612 / 0.02614 in every
+arm at 2k steps and at 30k** — identical to five significant figures, the
+untouched \(10^{-3}\) initialisation. The reported "identity map beyond one tick"
+was an untrained head. Standing rule: *before concluding a component cannot do
+something, check that it was trained.*
+
+**(d) A scope-bound constant written into code as portable (C135).** The
+participation ratio \(\mathrm{PR}(z)=\big(\sum_i\lambda_i\big)^2/\sum_i\lambda_i^2\)
+is **corpus-dependent**: the *same* frozen DINOv3, the *same* instrument, the
+*same* \(n=1440\) and \(d=1024\), reads **5.756** on 12 val clips and
+**20.228 ± 0.327** on a 130-clip corpus — a **3.51×** spread from episode
+diversity alone. Sample size is *not* the confound (the estimator reads
+0.974–1.002× of closed-form truth at \(n=1440\) for concentrated spectra).
+⇒ a participation value is comparable only at matched **corpus**, **episode
+count** and **ambient dimension**.
+
+**The admissible estimators used below.** For decodability, a *leave-one-episode-
+out paired* design: fit the ridge on \(n-1\) episodes, score the held-out one,
+and pair the two feature columns **on the same episode**, so episode-level
+variance — the dominant term — cancels. The episode *bootstrap* is unusable here:
+at 12 clusters it returns a ±1.6 interval around a 0.2 effect because each
+resample refits \(\lambda\) and the PCA basis. For prediction, mean-centred
+cosine against a ≥100-draw **permutation null**, reported as \(z\). Every panel
+carries a constant control that must read exactly 0.0000 and a raw-pixel floor.
+
+### 13.3 Proven result 1 — the readout, not the encoder, was the ego bottleneck
+
+`z_op` is the operative latent *after* pooling 16×40 patch tokens to a 4×4 grid:
+four azimuth bins over a 120° **cylindrical** field of view, i.e. 30°/bin. (The
+column axis is linear in azimuth under this projection; the pinhole formula does
+not apply.) Giving our own encoder tokens exactly the treatment DINOv3's column
+receives, LOEO-paired, self-pairing control exactly 0.0000:
+
+| target | `enc − z_op` | t | episodes | `enc − pixels` | t |
+|---|---|---|---|---|---|
+| speed | **+0.2117** | 7.86 | **12/12** | +0.2535 | 3.68 |
+| `d_ego` | **+0.1691** | 12.38 | **12/12** | +0.3603 | 4.21 |
+
+**The encoder beats the raw-pixel floor decisively; `z_op` after the pooling does
+not** (`z_op − pixels`, t = 0.71, not separable). Training *with* a wider azimuth
+axis at **identical latent dimension** (4×8×64 = 2048, the incumbent's size)
+recovers it: speed **+0.0374 → +0.2830** (t 5.17, 12/12), `d_ego`
+**+0.1532 → +0.3601** (t 6.12, 12/12).
+
+⚠️ Two negative results that bound the claim. A frozen-encoder re-pooling curve
+put the optimum at 20 azimuth bins; **trained**, 20 bins is worse than 8 — the
+curve was a pointer, not a design. And the widening **reverses on environment
+targets**: it helps agent-count but *hurts* lead-gap and bearing, because a
+scalar that depends on one region ahead is diluted by more bins.
+
+### 13.4 Proven result 2 — an external target is what creates scene content
+
+An encoder of identical architecture trained on **nothing but** distillation into
+frozen DINOv3 cells, LOEO-paired against the two-term arm:
+
+| target | two-term | distilled | Δ | t | episodes |
+|---|---|---|---|---|---|
+| `n_agents` | −1.0407 | **+0.3274** | +1.3681 | **12.63** | **24/24** |
+| `lead_gap_m` | −0.3290 | −0.0330 | +0.2960 | 6.42 | 20/24 |
+| speed (held-out) | +0.2830 | **+0.3940** | +0.1110 | 3.07 | 11/12 |
+
+`n_agents` clears **zero and the raw-pixel floor for the first time in the
+programme** — every prior arm sat *below a constant predictor* — and ego rises at
+the same time. ⚠️ We do **not** claim to beat the teacher (C138): "level with" is
+what the data supports.
+
+⛔ **Externality alone is insufficient — content matters.** The teacher-free
+counterpart, targeting raw pixels, *regresses* ego hard (speed +0.2830 → +0.0560,
+t −4.00, 1/12). Its target is low-pass: pooling averages 8×8 pixel blocks, so
+structure finer than ≈8 px — roughly a distant vehicle — is destroyed.
+
+### 13.5 Proven result 3 — two-stage training preserves what one stage cannot create
+
+Initialising from the distilled encoder and continuing with **O5+O6 only, no
+teacher**:
+
+| target | two-term | **distill → self-supervised** | Δ | t |
+|---|---|---|---|---|
+| `n_agents` | −1.0407 | **+0.1327** | +1.1734 | **12.29** |
+| `lead_gap_m` | −0.3290 | −0.0714 | +0.2576 | 6.30 |
+| `d_ego` | +0.3601 | +0.3122 | −0.0479 | −1.15 (n.s.) |
+
+**The degeneracy erodes the acquired content but does not destroy it**
+(+0.3274 → +0.1327 over 2k steps), and rank is unharmed. ⇒ the external target is
+needed **once, at initialisation**; the subsequent stage is teacher-free.
+
+### 13.6 Proven result 4 — multi-step prediction is a training-depth lever
+
+Rolling the \(h{=}1\) head autoregressively — the quantity O5 actually trains —
+and scoring each rolled step against a permutation null:
+
+| rolled step | k_roll = 1 | k_roll = 4 | k_roll = 8 |
+|---|---|---|---|
+| j=1 | 0.0428 (z 3.5) | 0.1140 (z 7.3) | **0.1198 (z 6.1)** |
+| j=4 | 0.0693 (z 5.6) | 0.1778 (z 10.3) | **0.2051 (z 11.6)** |
+| j=6 | 0.0686 (z 5.7) | 0.1987 (z 10.7) | **0.2468 (z 11.8)** |
+
+Monotone in rollout depth, and **the advantage grows with horizon** (2.80× at
+j=1, **3.60×** at j=6). ⚠️ The absolute level remains low: cos 0.25 is ≈6 % of
+variance explained. *Predicts* is not *predicts well*.
+
+### 13.7 Proven result 5 — rank and prediction scale; decodability does not
+
+A 4× encoder (256×6) at 30k steps on the parity corpus against the 0.97M screen:
+participation **3.80 → 8.54**, predictor cos **0.0541 (z 3.99) → 0.6090 (z
+15.65)**. But ego decodability **falls** (speed +0.2830 → +0.0381). The large arm
+uses the 4×4 readout and reads +0.0381 against the tiny 4×4 arm's +0.0374 —
+**4× encoder, 15× steps, 18× data, no change.**
+
+⇒ **the readout caps decodability irrespective of scale**, and tiny-arm screening
+is valid for *architecture* decisions and invalid for *capability levels*.
+⚠️ Confounded (size, steps and corpus all differ); the matched-readout contrast is
+the clean part, and a parity-scale disambiguating run is in progress.
+
+### 13.8 What this section does not establish
+
+No claim is made about driving. No arm here has a planner or a closed loop, and
+the tier doctrine forbids reading T0 diagnostics as capability. The environment
+result inside the full objective remains **below a constant predictor**; only the
+isolated and two-stage forms clear it. Whether a teacher-free target of sufficient
+*content* exists — masked latent prediction against a slow (EMA) copy of our own
+encoder, with neighbour-aggregated targets — is open and pre-registered.
+
 ## References
 
 (Formal bibliography at LaTeX export; the working citations live in
-`TanitAD Research Hub/INITIAL_RESEARCH_SYNTHESIS.md` and the dated research notes: LeJEPA
+`TanitAD Research Lab/INITIAL_RESEARCH_SYNTHESIS.md` and the dated research notes: LeJEPA
 arXiv:2511.08544; LeJEPA-identifiability (Klindt et al.) arXiv:2605.26379; JEPA generalization theory
 arXiv:2606.27014; V-JEPA-2 / V-JEPA-2-AC arXiv:2506.09985; DINO-WM arXiv:2411.04983; fine-tuning
 distorts features / LP-FT (Kumar et al., ICLR 2022) arXiv:2202.10054; DiffusionDrive

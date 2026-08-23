@@ -45,6 +45,9 @@ STRAT_MIN_S = 8.0        # below this the strategic band is unobserved
 TAC_ACTION_S = 6.0       # a_tac spans the FULL plan rollout (HIERARCHY §4b)
 TAC_VOCAB = "v6.1"       # appends TURN_L/TURN_R -- a junction has no lanes
 STR_VOCAB = "v6.1"       # appends PREPARE_TURN_L/R
+LON_GOAL_VOCAB = "v6.1"  # appends ADAPT_SPEED_FOR_CURVE
+DV_BRAKE_MS = 1.5        # drop from the anchor that counts as braking
+DV_CRUISE_MS = 1.0       # |dv| below this is holding speed
 SCHEMA = "s2-geom-v1"
 
 
@@ -85,14 +88,38 @@ def _tactical_actions(poses, key, hz=HZ, vocab_version=TAC_VOCAB):
     else:
         lat = "LANE_KEEP"
 
-    dv = m.v_end - m.v_at_key
-    lon = ("BRAKE_TO" if (m.stop_type != "NONE" or dv <= -1.5) else
-           "CRUISE" if abs(dv) < 1.0 else
-           "FOLLOW" if dv < 0 else "CRUISE")
+    # ⛔ ENDPOINT-TO-ENDPOINT dv IS THE WRONG STATISTIC OVER A 6 s WINDOW.
+    # MEASURED on `01bee851` (PI): the ego runs 5.9 -> 4.7 -> 5.1 m/s, so
+    # dv = -0.8 and |dv| < 1.0 read as CRUISE — while the frames show it braking
+    # hard through a junction (11.1 m/s four seconds earlier, 1.6 m/s six
+    # seconds later). A dip that partially recovers nets out to nothing.
+    # ⇒ the DEEPEST point of the window decides whether the ego braked, and the
+    # endpoint only decides whether it recovered.
+    dv_end = m.v_end - m.v_at_key
+    dv_min = m.v_min - m.v_at_key
+    braked = dv_min <= -DV_BRAKE_MS
     if m.v_at_key <= 0.5 and m.v_end <= 0.5:
         lon = "HOLD"
+    elif m.stop_type != "NONE" or braked:
+        # braked and stayed slow => BRAKE_TO; braked and recovered => FOLLOW
+        lon = "BRAKE_TO" if dv_end <= -DV_BRAKE_MS / 2 else "FOLLOW"
+    elif abs(dv_end) < DV_CRUISE_MS:
+        lon = "CRUISE"
+    else:
+        lon = "FOLLOW" if dv_end < 0 else "CRUISE"
     assert lat in vocab or lat == "ABSTAIN", lat
+    # ⭐ ACTIONS CARRY THEIR EXTENT TOO (PI 2026-08-23: "lateral tactical
+    # actions have no args"). `within_m` is the arc over which the action
+    # runs, so a nudge and a full junction traversal are distinguishable
+    # without reading the class string.
+    arc_m = round(float(np.sum(np.hypot(
+        np.diff(poses[key:key + n + 1, 0]),
+        np.diff(poses[key:key + n + 1, 1])))), 1)
     return {"lat": lat, "lon": lon, "window_s": [0.0, TAC_ACTION_S],
+            "lat_args": {"within_m": arc_m},
+            "lon_args": {"v_at_key_ms": round(m.v_at_key, 2),
+                         "v_min_ms": round(m.v_min, 2),
+                         "v_end_ms": round(m.v_end, 2)},
             "vocab": vocab_version, "reason": None,
             "lateral_class": m.lateral_class}
 
@@ -185,9 +212,24 @@ def emit_one(clip_id: str, *, sem_row: dict | None = None) -> dict:
         side = "L" if g_str["token"] == "TURN_LEFT" else "R"
         onset_t0 = (round(STRAT_MIN_S + man.yaw_onset_s, 1)
                     if man.yaw_onset_s is not None else None)
+        # ⭐ THE ACTION CARRIES ITS DISTANCE AND ITS DEADLINE (PI 2026-08-23):
+        # "add the arg prepare turn right in x m and y seconds. This will make
+        # clear that this action is NOT AFFECTING THE CURRENT TACTICAL
+        # MANOEUVRE." `within_m` / `by_time_s` are the vocabulary's own uniform
+        # constraint slots (§2), so a reader — and a head — can tell a turn
+        # 60 m away from one being executed now.
+        within_m = None
+        if onset_t0 is not None:
+            j = key + int(round(onset_t0 * HZ))
+            if j < len(poses):
+                seg = poses[key:j + 1]
+                within_m = round(float(np.sum(np.hypot(
+                    np.diff(seg[:, 0]), np.diff(seg[:, 1])))), 1)
         a_str = {"token": f"PREPARE_TURN_{side}", "provenance": "geometry",
-                 "reason": f"a {g_str['token']} still AHEAD at t+{onset_t0}s "
-                           f"(R={man.turn_radius_m} m) — not yet begun"}
+                 "args": {"within_m": within_m, "by_time_s": onset_t0},
+                 "reason": f"a {g_str['token']} still AHEAD — "
+                           f"{within_m} m / {onset_t0}s away, not yet begun "
+                           f"(R={man.turn_radius_m} m)"}
     elif man.stop_type in ("CONTROLLED", "QUEUE"):
         a_str = {"token": "PREPARE_STOP", "provenance": "geometry",
                  "reason": f"stop_type={man.stop_type}"}
@@ -202,9 +244,11 @@ def emit_one(clip_id: str, *, sem_row: dict | None = None) -> dict:
                  "reason": f"follows the road across the strategic band "
                            f"(no junction manoeuvre, no stop)"}
 
-    gt = TG.derive(poses, key=key, hz=HZ, stop_reason=stop_reason)
+    gt = TG.derive(poses, key=key, hz=HZ, stop_reason=stop_reason,
+               lon_vocab=LON_GOAL_VOCAB)
     out = {
-        "schema_version": SCHEMA, "vocab": {"tactical_lat": TAC_VOCAB, "strategic_action": STR_VOCAB}, "clip_id": clip_id, "t0_s": ES.RAW_T0_S,
+        "schema_version": SCHEMA, "vocab": {"tactical_lat": TAC_VOCAB, "strategic_action": STR_VOCAB,
+                  "tactical_lon_goal": LON_GOAL_VOCAB}, "clip_id": clip_id, "t0_s": ES.RAW_T0_S,
         "g_str": g_str, "a_str": a_str,
         "g_tac": gt.as_dict(), "a_tac": _tactical_actions(poses, key),
         "manoeuvre": (man.as_dict() if man else None),

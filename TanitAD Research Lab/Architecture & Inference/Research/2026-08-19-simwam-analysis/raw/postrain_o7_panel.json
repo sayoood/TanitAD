@@ -1,0 +1,323 @@
+{
+ "_evidence_class": "MEASURED (ours; dev-box RTX 4060)",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "arms_missing": [],
+ "arms": {
+  "rdw8": {
+   "participation_val": 3.796,
+   "participation_heldout24": 3.617,
+   "step": 2000,
+   "predictor": {
+    "1": {
+     "cos": 0.0541,
+     "z": 3.99,
+     "n": 108
+    },
+    "2": {
+     "cos": 0.0014,
+     "z": 0.8,
+     "n": 108
+    },
+    "4": {
+     "cos": 0.0014,
+     "z": 0.84,
+     "n": 108
+    }
+   }
+  },
+  "postrain": {
+   "participation_val": 3.354,
+   "participation_heldout24": 3.738,
+   "step": 2000,
+   "predictor": {
+    "1": {
+     "cos": 0.1766,
+     "z": 7.11,
+     "n": 108
+    },
+    "2": {
+     "cos": -0.0003,
+     "z": -0.23,
+     "n": 108
+    },
+    "4": {
+     "cos": -0.0006,
+     "z": -0.32,
+     "n": 108
+    }
+   }
+  },
+  "o7w50": {
+   "participation_val": 2.568,
+   "participation_heldout24": 3.133,
+   "step": 2000,
+   "predictor": {
+    "1": {
+     "cos": 0.1031,
+     "z": 5.03,
+     "n": 108
+    },
+    "2": {
+     "cos": -0.0003,
+     "z": -0.31,
+     "n": 108
+    },
+    "4": {
+     "cos": 0.0004,
+     "z": 0.13,
+     "n": 108
+    }
+   }
+  },
+  "o7w10": {
+   "participation_val": 3.306,
+   "participation_heldout24": 3.592,
+   "step": 2000,
+   "predictor": {
+    "1": {
+     "cos": 0.1091,
+     "z": 5.97,
+     "n": 108
+    },
+    "2": {
+     "cos": 0.001,
+     "z": 0.4,
+     "n": 108
+    },
+    "4": {
+     "cos": 0.0093,
+     "z": 3.96,
+     "n": 108
+    }
+   }
+  }
+ },
+ "blocks": {
+  "EGO (held-out val)": {
+   "speed": {
+    "z_op rdw8": {
+     "r2": 0.283,
+     "delta_vs_base": 0.0,
+     "t": 0.0,
+     "n_favouring": 0,
+     "n": 12
+    },
+    "z_op postrain": {
+     "r2": 0.0084,
+     "delta_vs_base": -0.2746,
+     "t": -1.52,
+     "n_favouring": 2,
+     "n": 12
+    },
+    "z_op o7w50": {
+     "r2": -0.0511,
+     "delta_vs_base": -0.3341,
+     "t": -9.44,
+     "n_favouring": 0,
+     "n": 12
+    },
+    "z_op o7w10": {
+     "r2": 0.2472,
+     "delta_vs_base": -0.0358,
+     "t": -0.69,
+     "n_favouring": 5,
+     "n": 12
+    },
+    "pixel (floor)": {
+     "r2": 0.1156,
+     "delta_vs_base": -0.1673,
+     "t": -2.37,
+     "n_favouring": 2,
+     "n": 12
+    },
+    "frozen DINOv3": {
+     "r2": 0.4081,
+     "delta_vs_base": 0.1251,
+     "t": 2.72,
+     "n_favouring": 11,
+     "n": 12
+    },
+    "constant (control)": {
+     "r2": 0.0,
+     "delta_vs_base": -0.283,
+     "t": -9.36,
+     "n_favouring": 0,
+     "n": 12
+    }
+   },
+   "d_ego": {
+    "z_op rdw8": {
+     "r2": 0.3601,
+     "delta_vs_base": 0.0,
+     "t": 0.0,
+     "n_favouring": 0,
+     "n": 12
+    },
+    "z_op postrain": {
+     "r2": 0.3122,
+     "delta_vs_base": -0.0479,
+     "t": -1.15,
+     "n_favouring": 3,
+     "n": 12
+    },
+    "z_op o7w50": {
+     "r2": -0.3703,
+     "delta_vs_base": -0.7304,
+     "t": -3.44,
+     "n_favouring": 0,
+     "n": 12
+    },
+    "z_op o7w10": {
+     "r2": 0.3021,
+     "delta_vs_base": -0.058,
+     "t": -1.33,
+     "n_favouring": 3,
+     "n": 12
+    },
+    "pixel (floor)": {
+     "r2": -0.0781,
+     "delta_vs_base": -0.4382,
+     "t": -5.26,
+     "n_favouring": 0,
+     "n": 12
+    },
+    "frozen DINOv3": {
+     "r2": 0.3238,
+     "delta_vs_base": -0.0363,
+     "t": -0.64,
+     "n_favouring": 4,
+     "n": 12
+    },
+    "constant (control)": {
+     "r2": 0.0,
+     "delta_vs_base": -0.3601,
+     "t": -8.92,
+     "n_favouring": 0,
+     "n": 12
+    }
+   }
+  },
+  "ENV (in-sample)": {
+   "lead_gap_m": {
+    "z_op rdw8": {
+     "r2": -0.329,
+     "delta_vs_base": 0.0,
+     "t": 0.0,
+     "n_favouring": 0,
+     "n": 24
+    },
+    "z_op postrain": {
+     "r2": -0.0714,
+     "delta_vs_base": 0.2576,
+     "t": 6.3,
+     "n_favouring": 20,
+     "n": 24
+    },
+    "z_op o7w50": {
+     "r2": -0.425,
+     "delta_vs_base": -0.096,
+     "t": -2.42,
+     "n_favouring": 3,
+     "n": 24
+    },
+    "z_op o7w10": {
+     "r2": -0.4003,
+     "delta_vs_base": -0.0713,
+     "t": -1.1,
+     "n_favouring": 15,
+     "n": 24
+    },
+    "pixel (floor)": {
+     "r2": 0.0064,
+     "delta_vs_base": 0.3354,
+     "t": 5.71,
+     "n_favouring": 17,
+     "n": 24
+    },
+    "frozen DINOv3": {
+     "r2": 0.0294,
+     "delta_vs_base": 0.3584,
+     "t": 6.62,
+     "n_favouring": 20,
+     "n": 24
+    },
+    "constant (control)": {
+     "r2": 0.0,
+     "delta_vs_base": 0.329,
+     "t": 5.61,
+     "n_favouring": 17,
+     "n": 24
+    }
+   },
+   "n_agents": {
+    "z_op rdw8": {
+     "r2": -1.0407,
+     "delta_vs_base": 0.0,
+     "t": 0.0,
+     "n_favouring": 0,
+     "n": 24
+    },
+    "z_op postrain": {
+     "r2": 0.1327,
+     "delta_vs_base": 1.1734,
+     "t": 12.29,
+     "n_favouring": 23,
+     "n": 24
+    },
+    "z_op o7w50": {
+     "r2": 0.2214,
+     "delta_vs_base": 1.2621,
+     "t": 10.79,
+     "n_favouring": 24,
+     "n": 24
+    },
+    "z_op o7w10": {
+     "r2": -0.5059,
+     "delta_vs_base": 0.5348,
+     "t": 5.55,
+     "n_favouring": 23,
+     "n": 24
+    },
+    "pixel (floor)": {
+     "r2": -0.2156,
+     "delta_vs_base": 0.825,
+     "t": 8.11,
+     "n_favouring": 24,
+     "n": 24
+    },
+    "frozen DINOv3": {
+     "r2": 0.2754,
+     "delta_vs_base": 1.3161,
+     "t": 12.58,
+     "n_favouring": 24,
+     "n": 24
+    },
+    "constant (control)": {
+     "r2": 0.0,
+     "delta_vs_base": 1.0407,
+     "t": 9.65,
+     "n_favouring": 24,
+     "n": 24
+    }
+   }
+  }
+ },
+ "kill_gate": {
+  "postrain": {
+   "REJECTED_by_kill_gate": false,
+   "reason": "passes the gate",
+   "predicts_beyond_h1": false
+  },
+  "o7w50": {
+   "REJECTED_by_kill_gate": true,
+   "reason": "rank fell on BOTH held-out sets",
+   "predicts_beyond_h1": false
+  },
+  "o7w10": {
+   "REJECTED_by_kill_gate": true,
+   "reason": "rank fell on BOTH held-out sets",
+   "predicts_beyond_h1": false
+  }
+ },
+ "verdict": "postrain: passes gate \u00b7 still identity at h>=2; o7w50: REJECTED \u2014 rank fell on BOTH held-out sets \u00b7 still identity at h>=2; o7w10: REJECTED \u2014 rank fell on BOTH held-out sets \u00b7 still identity at h>=2"
+}

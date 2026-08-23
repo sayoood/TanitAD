@@ -1,0 +1,42 @@
+{
+ "_evidence_class": "MEASURED (ours; CPU weight read on Thor, no GPU load)",
+ "question": "does the v6 FLAGSHIP share the untrained-h>=2-head condition (C139)?",
+ "v6F-SW-30k": {
+  "step": 27500,
+  "enc_dim": 768,
+  "o5_k": 60,
+  "loss_weights": {
+   "o1_ctrl": 1.0,
+   "o1_fact": 1.0,
+   "o2_nearfield": 1.0,
+   "o3_masked": 1.0,
+   "o5": 1.0,
+   "o6": 0.1
+  },
+  "head_norms": {
+   "1": 24.27191,
+   "2": 26.10824,
+   "4": 26.11578
+  },
+  "verdict": "ALL HEADS TRAINED \u2014 no bug"
+ },
+ "scale1": {
+  "step": 30000,
+  "enc_dim": 256,
+  "o5_k": 1,
+  "loss_weights": {
+   "o1": 0,
+   "o2": 0,
+   "o3": 0,
+   "o5": 1.0,
+   "o6": 0.1
+  },
+  "head_norms": {
+   "1": 6.3185,
+   "2": 0.02614,
+   "4": 0.02612
+  },
+  "verdict": "h>=2 UNTRAINED (1e-3 init)"
+ },
+ "conclusion": "The untrained-head condition was INTRODUCED BY THE TWO-TERM SIMPLIFICATION, not inherited from v6. Turning O1/O2/O3 off removed the only consumers of the h>=2 heads; O5 rolls the h=1 head at any k and never touches them."
+}

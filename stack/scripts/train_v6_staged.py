@@ -4149,6 +4149,13 @@ def train(a) -> dict:
               f"({len(ds_train.index) - len(t5_partner)} tail windows excluded "
               f"from the ANCHOR draw only)", flush=True)
 
+    if bool(getattr(a, "freeze_encoder", False)):
+        n_f = 0
+        for _n, _p in stack.encoder.named_parameters():
+            _p.requires_grad_(False)
+            n_f += _p.numel()
+        print(f"[freeze] encoder FROZEN: {n_f/1e6:.2f} M params; readout + "
+              f"predictor remain trainable (E-DEC-14)", flush=True)
     trainable = [p for p in stack.parameters() if p.requires_grad]
     if not trainable:
         raise SystemExit(f"[v6] ⛔ stage {a.stage} has NO trainable parameters "
@@ -5490,6 +5497,15 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--w-o8-pixel", type=float, default=0.0,
                     help="weight for O8 raw-pixel distillation (E-DEC-10); "
                          "0 disables it entirely")
+    # E-DEC-14 (PI's split-encoder idea): freeze the ENCODER only, leaving the
+    # readout and predictor trainable. E-DEC-12 measured that self-supervised
+    # post-training ERODES distilled content (+0.3274 -> +0.1327 over 2k steps);
+    # freezing makes erosion IN THE ENCODER structurally impossible, so if the
+    # content still decays the erosion is happening in the READOUT — which is
+    # exactly what this flag isolates. Default off => nothing changes.
+    ap.add_argument("--freeze-encoder", action="store_true",
+                    help="freeze the encoder; train readout+predictor only "
+                         "(E-DEC-14 split-encoder probe)")
     # H-RANK-22: O1 is the term that both buys action-sensitivity and collapses
     # the rank. This confines its gradient to the PREDICTOR (encoder detached for
     # the O1 term only). Default OFF => incumbent loss bit-identical.

@@ -9,9 +9,7 @@ from pathlib import Path
 V = Path("C:/Users/Admin/tanitad-wt/_s2build/validation")
 OUT = Path("C:/Users/Admin/tanitad-wt/_s2build/label_validation_report.html")
 
-SHOW = ["0e56dae2", "2cf5d4c8", "416601c0", "3a0165bd", "1ad7bf7b", "e850f1fb",
-        "82b8780b", "e084c7c3", "12bb97af", "01b24287", "028eff14", "84f5bb0d",
-        "6c3688c0", "62a7e92a"]
+SHOW = ["01b24287", "01bee851", "0e56dae2", "12bb97af", "34a9dd22", "3a0165bd", "652024fc", "82b8780b", "994f2b5b", "a2524c12", "a5acfb2a", "c84534a9", "e084c7c3"]
 
 JUDGE = {
  "0e56dae2": "The scene we analysed together, now layered the way you described it. The turn begins at t+2.5 s and completes inside the 6 s plan, so it is <b>tactical</b>: <span class='mono'>a_tac.lat = TURN_L</span>. Across the strategic band (8–30 s) the ego simply follows the road, so <span class='mono'>g_str = FOLLOW_MAIN_ROAD</span> and <span class='mono'>a_str = HOLD_CORRIDOR</span> — “follow the road after turning”. Note the VLM does <i>not</i> corroborate a junction manoeuvre here: its CoT says “keep speed through the intersection”, a junction referent with no turn verb. Geometry says turn; the disagreement is recorded, not hidden.",
@@ -108,8 +106,12 @@ def card(r):
                  f'<figcaption>{cap}</figcaption></figure>')
 
     rows = [
-        ("STRATEGIC", "goal", g["token"], {}, g.get("provenance"), g.get("reason")),
-        ("STRATEGIC", "action", a["token"], {}, a.get("provenance"), a.get("reason")),
+        ("STRATEGIC", "goal", g["token"], g.get("args") or {},
+         g.get("provenance"), g.get("reason")),
+        # ⭐ the strategic ACTION carries its distance and deadline (PI): a
+        # PREPARE_TURN 60 m away must not read like one being executed now.
+        ("STRATEGIC", "action", a["token"], a.get("args") or {},
+         a.get("provenance"), a.get("reason")),
         ("TACTICAL", "goal · lat", gt["lat_token"], gt["lat_args"],
          gt["lat_provenance"], None),
         ("TACTICAL", "goal · lon", gt["lon_token"], gt["lon_args"],
@@ -371,7 +373,7 @@ footer{margin-top:50px;padding-top:22px;border-top:1px solid var(--line);
   <span class="mtag mono">801/801 labels re-emitted</span>
   <span class="mtag good">guard REFUSE 7.7% → 0.00%</span>
   <span class="mtag good">strategic band 94.5% full</span>
-  <span class="mtag mono">33 join-free clips</span>
+  <span class="mtag mono">eval set: Alpamayo-covered only</span>
   <span class="mtag warn">NON-PARITY</span>
  </div>
 </header>
@@ -402,6 +404,52 @@ footer{margin-top:50px;padding-top:22px;border-top:1px solid var(--line);
     short to see the band, when the ego is near-stationary so a goal point would land on the
     car, or when the band constrains nothing nameable from ego alone.</p>
    <p>Abstains are <b>24 lateral</b> and <b>172 longitudinal</b> of 801 — visible, not hidden.</p>
+  </div>
+ </div>
+</section>
+
+<section>
+ <div class="sechead"><p class="eyebrow">Reading the tactical goal</p>
+  <h2>What <span class="mono">ANCHOR_GOAL</span> means</h2></div>
+ <div class="grid3">
+  <div class="box" style="border-left:3px solid var(--band)">
+   <h3>The goal POINT, not a category</h3>
+   <p><span class="mono">ANCHOR_GOAL</span> is the <b>position the ego actually reaches at the
+    end of the tactical band</b>, expressed in the ego frame at the anchor:
+    <span class="mono">goal_x_m</span> forward, <span class="mono">goal_y_m</span> left,
+    <span class="mono">t_reach_s</span> when.</p>
+   <p>So <span class="mono">goal_x 14.8 / goal_y −25.0 / t_reach 6.0</span> reads: “in 6 s the
+    car is 14.8 m ahead and 25 m to the right” — a right turn, stated as a point rather than a
+    word.</p>
+   <p>The name comes from the fan/anchor vocabulary: it is the <b>geometric goal-point lever</b>,
+    the one the literature shows actually works (+4.7 PDMS, versus +0.2 for a categorical
+    command). It is also the one tactical signal that is <b>always derivable</b>, which is why
+    it is the default rather than an abstention.</p>
+  </div>
+  <div class="box"><h3>⚠️ Where we deviate from the spec</h3>
+   <p>The vocabulary defines its args as <span class="mono">anchor_id ∈ fan vocab</span> — an
+    <i>index</i> into a discrete fan. We emit <b>raw metric x/y instead</b>.</p>
+   <p>Deliberate: the banked E-AG1 measurement found a K-way <span class="mono">anchor_id</span>
+    classifier <b>near-adequate laterally but hopeless longitudinally</b> (13.35 against a
+    0.895 floor, 14.9×), because the 2 s goal point's variance is <b>98.8 % longitudinal</b>.
+    Quantising that axis into a shared categorical is the 5-way-softmax defect again.</p>
+   <p>⇒ Flagged for the Master Mind: either the fan vocabulary gains a longitudinal axis, or
+    <span class="mono">ANCHOR_GOAL</span> stays metric. Recorded, not silently diverged.</p>
+  </div>
+  <div class="box" style="border-left:3px solid var(--ok)">
+   <h3>New: <span class="mono">ADAPT_SPEED_FOR_CURVE</span></h3>
+   <p>Your idea, added as a v6.1 append. Slowing for an arc is neither a held
+    <span class="mono">SPEED_BAND</span> nor a <span class="mono">STOP_POINT</span> — it is
+    speed <b>governed by the geometry being traversed</b> (v<sub>apex</sub> ≤ √(a<sub>lat</sub>·R)).</p>
+   <p>⚠️ <b>My first version got the trigger wrong twice.</b> I gated it on a deceleration
+    coinciding with curvature, then “validated” it against the CoT phrase <i>“curve ahead”</i>.
+    Both were the wrong referent: you meant the <b>turning manoeuvre / arc detection</b>, not a
+    word. The trigger is now a <b>turn detected inside the tactical band</b>, and the
+    deceleration requirement is gone — a turn taken at an already-suitable speed is still speed
+    governed by that curve. <span class="mono">dv_ms</span> records how much the ego actually
+    slowed, so the two cases stay distinguishable without a second token.</p>
+   <p><b>113 of 801 clips</b> carry it, and by construction each is paired with a turning
+    manoeuvre — the longitudinal partner the vocabulary was missing.</p>
   </div>
  </div>
 </section>

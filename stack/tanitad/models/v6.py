@@ -381,6 +381,53 @@ TACTICAL_GOAL_TOKENS_LON: tuple[str, ...] = (
     "SPEED_BAND", "GAP_TARGET", "YIELD_AT", "STOP_POINT", "WAIT_FOR_ONCOMING",
     "TRAFFIC_LIGHT_REACT", "LON_UNCONSTRAINED",
 )
+
+# ---------------------------------------------------------------------------- #
+# ⭐ v6.1 LON GOAL — ADAPT_SPEED_FOR_CURVE, APPENDED. (PI idea, 2026-08-23)
+# ---------------------------------------------------------------------------- #
+#: **PI:** *"it is better to add another long tactical behaviour which is adapt
+#: speed for curve, we can use this in turning manoeuvres and also sharp curves.
+#: This can be e.g. automatically set in intersections, turn left and
+#: non-stopping situations."*
+#:
+#: ⭐ WHY IT IS THE MISSING LONGITUDINAL PARTNER OF A TURN. Slowing for
+#: curvature is not a speed BAND and not a STOP — it is speed that is
+#: *governed by the geometry the ego is about to traverse*. Before this the only
+#: available tokens were `SPEED_BAND` (a held range, which a decelerating
+#: approach is not) and `LON_UNCONSTRAINED` (an abstention). So the longitudinal
+#: half of every junction turn and every sharp bend was either mis-described or
+#: silently dropped — while it is the most physically determined longitudinal
+#: behaviour there is: v_apex is bounded by lateral acceleration, v <= sqrt(a_lat * R).
+#:
+#: ⚠️ IT IS DEFINED BY CO-OCCURRENCE, NOT BY DECELERATION ALONE. Any brake event
+#: decelerates; this token requires the slowdown to be *for the curvature* —
+#: deceleration into a curvature peak, with NO stop. A decelerating approach to
+#: a red light is `STOP_POINT`, not this. The emitter enforces exactly that, and
+#: the CoT's "adapt speed for the right curve ahead" (366 clips) is an
+#: INDEPENDENT witness, never the trigger.
+#:
+#: ⛔ APPEND, NEVER INSERT — same contract as the other v6.1 tuples.
+#: `TACTICAL_GOAL_TOKENS_LON` sizes `GoalVocabulary(...).table.weight`
+#: (v6.py builds `self.vocab_tac_lon`), and resumes are tensor-strict.
+#: Indices 0-6 keep their meaning; a 7-wide head widens to 8 by PADDING.
+TACTICAL_GOAL_TOKENS_LON_V61: tuple[str, ...] = TACTICAL_GOAL_TOKENS_LON + (
+    "ADAPT_SPEED_FOR_CURVE",
+)
+
+TACTICAL_LON_GOAL_VERSIONS: dict[str, tuple[str, ...]] = {
+    "v6.0": TACTICAL_GOAL_TOKENS_LON,
+    "v6.1": TACTICAL_GOAL_TOKENS_LON_V61,
+}
+
+
+def tactical_lon_goals(version: str = "v6.0") -> tuple[str, ...]:
+    """The longitudinal tactical goal vocabulary for ``version``. Default v6.0."""
+    try:
+        return TACTICAL_LON_GOAL_VERSIONS[version]
+    except KeyError:
+        raise ValueError(
+            f"unknown tactical lon goal vocabulary version {version!r}; "
+            f"known: {sorted(TACTICAL_LON_GOAL_VERSIONS)}") from None
 #: the two abstains are NOT part of the §4 nine — they are the factoring's own.
 GOAL_AXIS_ABSTAIN: tuple[str, str] = ("LAT_UNCONSTRAINED", "LON_UNCONSTRAINED")
 

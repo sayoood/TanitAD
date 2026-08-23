@@ -135,12 +135,22 @@ def test_a_bend_is_follow_main_road_not_a_turn():
 
 
 def test_every_emitted_token_is_in_the_v6_vocabulary():
-    """The tuples size live embedding tables; an unknown token is a crash."""
+    """The tuples size live embedding tables; an unknown token is a crash.
+
+    ⚠️ The LON side is checked against v6.1 because `ADAPT_SPEED_FOR_CURVE` is
+    a v6.1 append — and the emitter must only produce it when v6.1 is selected,
+    which `test_the_curve_token_is_absent_under_v60` pins separately.
+    """
     from tanitad.models import v6
     for t in TG.LAT_TOKENS:
         assert t in v6.TACTICAL_GOAL_TOKENS_LAT
+    v61 = set(v6.tactical_lon_goals("v6.1"))
     for t in TG.LON_TOKENS:
-        assert t in v6.TACTICAL_GOAL_TOKENS_LON
+        assert t in v61, t
+    # everything except the v6.1 append must ALSO exist in v6.0
+    v60 = set(v6.tactical_lon_goals("v6.0"))
+    for t in set(TG.LON_TOKENS) - {"ADAPT_SPEED_FOR_CURVE"}:
+        assert t in v60, t
 
 
 def test_goal_args_are_expressed_in_the_ego_frame_at_the_key():
@@ -196,3 +206,59 @@ def test_a_true_out_and_back_is_still_an_evasion():
                           lambda t: 2.0 * np.exp(-((t - 4.0) ** 2) / 0.6))
     g = TG.derive(poses)
     assert g.lat_token == "EVADE_IN_CORRIDOR", (g.lat_token, g.lat_args)
+
+
+# -- ADAPT_SPEED_FOR_CURVE (PI 2026-08-23) ---------------------------------
+def test_slowing_into_a_curve_is_not_a_speed_band():
+    """The longitudinal partner of a turn: speed governed by curvature."""
+    poses = _drive([(12.0, None, 2.0), (11.0, 20.0, 1.0), (7.0, 12.0, 3.0),
+                    (7.0, None, 3.0)])
+    g = TG.derive(poses, lon_vocab="v6.1")
+    assert g.lon_token == "ADAPT_SPEED_FOR_CURVE", (g.lon_token, g.lon_args)
+    assert g.lon_args["v_apex_ms"] < g.lon_args["v_approach_ms"]
+
+
+def test_a_turn_at_a_held_speed_is_STILL_governed_by_the_curve():
+    """PI clarification 2026-08-23: the trigger is the TURNING MANOEUVRE, not a
+    deceleration and not the word "curve". A turn taken at an already-suitable
+    speed is still speed governed by that curve — `dv_ms` records how much the
+    ego actually slowed, so the two cases stay distinguishable without a second
+    token."""
+    poses = _drive([(8.0, 30.0, 9.0)])
+    g = TG.derive(poses, lon_vocab="v6.1")
+    assert g.lon_token == "ADAPT_SPEED_FOR_CURVE", (g.lon_token, g.lon_args)
+    assert abs(g.lon_args["dv_ms"]) < 1.0, "held speed should show ~no dv"
+
+
+def test_a_straight_road_at_a_held_speed_is_a_speed_band():
+    """The negative control: no arc, no curve token."""
+    g = TG.derive(_drive([(9.0, None, 9.0)]), lon_vocab="v6.1")
+    assert g.lon_token == "SPEED_BAND", g.lon_args
+
+
+def test_decelerating_to_a_stop_is_a_stop_point_not_a_curve():
+    """A red-light approach also decelerates; it must not steal this token."""
+    poses = _drive([(9.0, 15.0, 2.0)] + [(v, 15.0, 0.1) for v in
+                                         np.linspace(9, 0, 20)]
+                   + [(0.0, None, 3.0)])
+    assert TG.derive(poses, lon_vocab="v6.1").lon_token == "STOP_POINT"
+
+
+def test_a_straight_deceleration_is_not_a_curve():
+    poses = _drive([(12.0, None, 3.0), (6.0, None, 6.0)])
+    assert TG.derive(poses, lon_vocab="v6.1").lon_token != "ADAPT_SPEED_FOR_CURVE"
+
+
+def test_the_curve_token_is_absent_under_v60():
+    """v6.0 has no such token; the emitter must not invent it."""
+    poses = _drive([(12.0, None, 2.0), (11.0, 20.0, 1.0), (7.0, 12.0, 3.0),
+                    (7.0, None, 3.0)])
+    g = TG.derive(poses, lon_vocab="v6.0")
+    assert g.lon_token != "ADAPT_SPEED_FOR_CURVE"
+
+
+def test_every_lon_token_is_in_the_v61_vocabulary():
+    from tanitad.models import v6
+    v61 = set(v6.tactical_lon_goals("v6.1"))
+    for t in TG.LON_TOKENS:
+        assert t in v61, t

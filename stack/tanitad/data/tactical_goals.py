@@ -66,11 +66,17 @@ EVADE_NET_YAW_DEG = 12.0    # an evasion ends on the ORIGINAL heading
 V_STOP_MS = 0.5
 SPEED_BAND_TOL_MS = 1.5     # half-width of a held speed band
 YIELD_MAX_STOP_S = 1.5      # a brief hold before proceeding
+# ADAPT_SPEED_FOR_CURVE gates (PI 2026-08-23)
+CURVE_MIN_YAW_DEG = 20.0    # below this there is no curvature to adapt to
+CURVE_MAX_R_M = 80.0        # a straighter path does not govern speed
+# (a deceleration gate was REMOVED: a turn taken at an already-suitable
+#  speed is still speed governed by the curve — PI clarification)
 
 LAT_TOKENS = ("ANCHOR_GOAL", "CORRIDOR_OFFSET", "EVADE_IN_CORRIDOR",
               "LAT_UNCONSTRAINED")
 LON_TOKENS = ("SPEED_BAND", "GAP_TARGET", "YIELD_AT", "STOP_POINT",
-              "WAIT_FOR_ONCOMING", "TRAFFIC_LIGHT_REACT", "LON_UNCONSTRAINED")
+              "WAIT_FOR_ONCOMING", "TRAFFIC_LIGHT_REACT", "LON_UNCONSTRAINED",
+              "ADAPT_SPEED_FOR_CURVE")
 
 
 @dataclass
@@ -92,7 +98,8 @@ class TacticalGoal:
 
 
 def derive(poses, *, key: int = 0, hz: float = HZ_DEFAULT,
-           stop_reason: str | None = None) -> TacticalGoal:
+           stop_reason: str | None = None,
+           lon_vocab: str = "v6.0") -> TacticalGoal:
     """Derive `g_tac` over the 2-6 s tactical band from ego poses.
 
     ``stop_reason`` is the OPTIONAL semantic reason (light / sign / queue /
@@ -120,6 +127,15 @@ def derive(poses, *, key: int = 0, hz: float = HZ_DEFAULT,
 
     # ---- LATERAL -----------------------------------------------------------
     man = EM.analyse(p, key=key, hz=hz)
+    from tanitad.models import v6 as _v6
+    curve_ok = "ADAPT_SPEED_FOR_CURVE" in _v6.tactical_lon_goals(lon_vocab)
+    # the turning manoeuvre INSIDE the tactical band — arc detection, not a word
+    band_man = EM.analyse(p[:hi + 1], key=lo, hz=hz) if hi - lo >= 3 else None
+    band_turn = bool(
+        band_man is not None
+        and (band_man.lateral_class.startswith("JUNCTION_TURN")
+             or (abs(band_man.peak_yaw_deg) >= CURVE_MIN_YAW_DEG
+                 and band_man.turn_radius_m <= CURVE_MAX_R_M)))
     lat_off = ey[lo:hi + 1]
     j = int(np.argmax(np.abs(lat_off)))
     peak_lat = float(lat_off[j])
@@ -210,6 +226,38 @@ def derive(poses, *, key: int = 0, hz: float = HZ_DEFAULT,
                         else f"geometry(stop)+vlm({stop_reason})")
         # ⚠️ the VLM may REFINE the reason of a stop geometry already found;
         # it may never CREATE the stop. See the module docstring.
+    # ⭐ ADAPT_SPEED_FOR_CURVE (PI 2026-08-23) — the longitudinal partner of a
+    # turn. Slowing for curvature is neither a held band nor a stop: it is speed
+    # GOVERNED BY the geometry about to be traversed (v_apex is bounded by
+    # lateral acceleration, v <= sqrt(a_lat * R)). Before this token, the
+    # longitudinal half of every junction turn and sharp bend was either called
+    # SPEED_BAND (false — it is not held) or abstained away.
+    # ⚠️ DEFINED BY CO-OCCURRENCE, NOT BY DECELERATION. Any brake decelerates;
+    # this requires the slowdown to land ON the curvature and NOT end in a stop.
+    # A decelerating approach to a red light is STOP_POINT, not this.
+    elif (curve_ok and not eps and band_turn):
+        # ⭐ THE TRIGGER IS THE TURNING MANOEUVRE ITSELF (PI clarification
+        # 2026-08-23: *"by curve I don't mean curve as a term but from turning
+        # manoeuvre or arc detection — if you detect a tactical turning
+        # manoeuvre you can set adapt speed for curve"*).
+        #
+        # ⚠️ MY FIRST VERSION GATED ON A DECELERATION COINCIDING WITH
+        # CURVATURE, and then "validated" it against the CoT phrase "curve
+        # ahead" — which measured the wrong thing twice over: the trigger is
+        # the ARC, and the CoT word is not the referent. Requiring a large dv
+        # also excluded the common case of a turn taken at an already-suitable
+        # speed, where the speed is still GOVERNED BY the curve.
+        #
+        # So: a turn in the tactical band that does not end in a stop has its
+        # longitudinal behaviour set by that turn's geometry. `dv_ms` records
+        # how much the ego actually slowed, so a consumer can distinguish
+        # "braked for it" from "was already slow enough" without a second token.
+        lon_tok = "ADAPT_SPEED_FOR_CURVE"
+        lon_args = {"v_apex_ms": round(v_lo_b, 2),
+                    "v_approach_ms": round(v_hi_b, 2),
+                    "dv_ms": round(v_lo_b - v_hi_b, 2),
+                    "radius_m": man.turn_radius_m}
+        lon_prov = f"geometry(speed governed by {man.lateral_class}, no stop)"
     elif v_hi_b - v_lo_b <= 2 * SPEED_BAND_TOL_MS:
         mid = 0.5 * (v_hi_b + v_lo_b)
         lon_tok = "SPEED_BAND"

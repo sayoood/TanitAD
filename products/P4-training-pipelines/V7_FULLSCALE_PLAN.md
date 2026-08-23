@@ -197,6 +197,54 @@ exists (`:5879`) · **run provenance recorded** (P4-4).
 
 ---
 
+### 3.4 ⭐ TWO CONFIG DECISIONS ARE NOW SETTLED BY MEASUREMENT (2026-08-23)
+
+Both are independent of which OBJECTIVE variant wins, so **v7 can be finalised on
+them now** while the objective is still being decided.
+
+| decision | value | evidence |
+|---|---|---|
+| **readout azimuth** | `--readout-grid 4 --readout-grid-w 8 --readout-dim 64` (= 2048, **the incumbent d_op — no extra latent dimension**) | E-DEC-2, LOEO paired: speed **+0.0374 → +0.2830** (t 5.17, **12/12** episodes), `d_ego` **+0.1532 → +0.3601** (t 6.12, 12/12) |
+| **rollout depth** | `--o5-k 4` minimum, `8` measured better; ⛔ **NEVER 1** | H-PROOF-7/7b, rolled read-out: cos at j=6 **0.0686 (k=1) → 0.1987 (k=4) → 0.2468 (k=8)**, monotone, advantage GROWING with horizon (2.80× at j=1 → **3.60×** at j=6) |
+
+⛔ **`--o5-k 1` IS A CORRECTNESS BUG, NOT A TUNING CHOICE (C139).** `rollout_transitions`
+builds the rollout from `t[1]` — the h=1 head ONLY — rolled `k_roll` times. At
+`k_roll = 1`, and with O1/O2/O3 off, **the h=2 / h=4 heads receive no gradient at
+all**: their weight norms read **0.02612 / 0.02614 in every arm at 2k steps and at
+30k**, identical to five significant figures — the untouched `1e-3` init. Any
+evaluation that QUERIES those heads measures an untrained layer.
+⚠️ v6F is CLEAN (`o5_k = 60`, all six terms on ⇒ head norms 24.27 / 26.11 / 26.12);
+the condition was **introduced by the two-term simplification**, which removed the
+only consumers of the h≥2 heads.
+
+⚠️ **Two negative results that bound the readout decision:**
+* `rdw20` (20 azimuth bins) is **WORSE than `rdw8` when TRAINED**, although a
+  frozen-encoder re-pooling curve put the optimum at 20. The curve was a pointer,
+  not a design — do not ship a geometry chosen on a frozen-encoder sweep.
+* Widening **reverses on ENVIRONMENT targets**: it helps `n_agents` but HURTS
+  `lead_gap_m` and bearing (a scalar depending on one region ahead is diluted by
+  more bins). `rdw8` is chosen on EGO evidence; the environment cost is real and
+  must be re-measured at full scale.
+
+⚠️ **Scale caveat (H-SCALE-2):** tiny-arm screening is valid for ARCHITECTURE
+decisions and invalid for CAPABILITY levels — the readout ranking held across a
+4× encoder / 15× steps / 18× data change, while absolute rank moved 3.80 → 8.54
+and predictor cos 0.054 → 0.609. **Never quote a tiny-arm number as v7's expected
+capability.**
+
+### 3.5 Read-out protocol for any v7 arm (non-negotiable)
+
+⛔ A read-out at h≥2 must **ROLL** the h=1 head, never query `predictor(...)[2]`.
+Predictor statistic = **mean-centred cos vs a ≥100-draw permutation null**, report
+`z` (C137 retired divergence-over-movement: its denominator was an arm property
+spanning 468×). Decodability = **leave-one-episode-out PAIRED** (the episode
+bootstrap returns ±1.6 on a 0.2 effect at 12 clusters). Every panel carries a
+CONSTANT control reading exactly 0.0000 and a RAW-PIXEL floor, and reports **EGO
+AND ENVIRONMENT** — ego alone hid a total absence of scene content for this entire
+campaign.
+
+---
+
 ## 4. ⛔ THE ONE DECISION I AM NOT TAKING
 
 `PREREG_E_ENC_3WAY.md` §0 says the 3-way *"does not start until an arm
