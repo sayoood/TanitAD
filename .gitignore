@@ -53,3 +53,9 @@ tools/.fleet_probe_state.json
 # RunPod web-terminal URLs contain a root credential -- never commit one.
 gotty_url.txt
 **/gotty_url.txt
+
+# kb_add.py transients: the index lock, and in-flight download/write temps.
+# Both are removed on a clean exit; a leftover means a run died mid-flight.
+TanitAD Research Lab/Library/library.json.lock
+TanitAD Research Lab/Library/.kb_add-*
+TanitAD Research Lab/Library/papers/.kb_add-*

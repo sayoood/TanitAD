@@ -308,7 +308,11 @@ def test_default_loss_is_BIT_IDENTICAL_to_the_pre_w_anchor_trainer():
                 f"{stage}: term {t!r} MOVED against {old._ref}"
         # the log is what an operator reads; a silently changed key is a run
         # row that stops being comparable with the ones before it.
-        assert set(lo["log"]) == set(ln["log"])
+        _ADD_OK = {'o5_form', 'o6_rows', 'o6_row_renorm',
+                   # H-RANK-22: additive only; the loss is bit-identical.
+                   'o1_detach_encoder'}
+        assert not (set(lo['log']) - set(ln['log'])), 'log keys REMOVED'
+        assert (set(ln['log']) - set(lo['log'])) <= _ADD_OK, 'unexpected new log keys'
 
 
 def test_the_loss_identity_guard_CAN_FAIL():
@@ -713,9 +717,9 @@ def test_the_loss_refuses_a_missing_head_and_a_missing_target():
 # =========================================================================== #
 
 _BANKED = [
-    "TanitAD Research Hub/Data Engineering/Implementation/incoming/"
+    "TanitAD Research Lab/Data Engineering/Implementation/incoming/"
     "2026-08-04-instrument-durability/refc_anchors_full_REBUILD.pt",
-    "TanitAD Research Hub/Architecture & Inference/Implementation/incoming/"
+    "TanitAD Research Lab/Architecture & Inference/Implementation/incoming/"
     "2026-07-27-percandidate-labels/raw/anchors_dev256.pt",
 ]
 

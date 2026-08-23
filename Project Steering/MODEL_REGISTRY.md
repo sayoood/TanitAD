@@ -13,7 +13,7 @@
 > read from the raw eval JSON on `tanitad-eval`, not from prose. Pods were read-only.
 >
 > Companion docs: `Project Steering/PROGRAM_OVERVIEW.md` (whole-program briefing) · `DECISIONS.md` (ADR
-> log) · `TanitAD Research Hub/HYPOTHESIS_LEDGER.md` (H-numbers) · `Paper/TANITAD_PAPER.md`.
+> log) · `TanitAD Research Lab/HYPOTHESIS_LEDGER.md` (H-numbers) · `Paper/TANITAD_PAPER.md`.
 
 **Verification legend**
 
@@ -314,7 +314,7 @@ predict closed-loop.**
 beyond-ADE suite's headline latency — rounded to **14.33 ms** in `PROGRAM_OVERVIEW.md:54` and
 `LOOP_STATE.md:64` — and that value appeared **nowhere in this document** until now: the exact defect
 corrected below for "11.16 ms", repeated on a second tick. Traced and MEASURED:
-`TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-24-traffic-light-scenario-metric/real_tms_cnce.json`
+`TanitAD Research Lab/Benchmarks & Eval/Implementation/incoming/2026-07-24-traffic-light-scenario-metric/real_tms_cnce.json`
 (`latency.decision_tick_p50_ms`), generator `real_telemetry_tms_cnce.py:109`. **Conditions:** RTX 4060 ·
 **fp32 eager** (no autocast, no CUDA graph) · **comma2k19 val, n = 30 episodes** · log-replay ·
 architecture **`base250cam`, `params_billions` 0.2628 = 262.8 M, instantiated fresh (random init)** —
@@ -376,7 +376,7 @@ Sources: `taniteval/results/eff_flagship-30k.json` (2026-07-20, `taniteval.effic
 (`combined_tick_harness.py`, reconstruction gap; see §6).
 
 **✅ DEPLOYMENT EXPORT — MEASURED 2026-07-22** (A40 SM 8.6 **proxy**; raw in
-`TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-07-22-orin-thor-deployment/artifacts/`;
+`TanitAD Research Lab/Architecture & Inference/Implementation/incoming/2026-07-22-orin-thor-deployment/artifacts/`;
 full staged plan `DEPLOYMENT_PLAN.md` in that folder). The **exact deployed arch** (`action_dim=3`,
 263.44 M = `total_model 263,442,838`) exports to **static-shape ONNX** (encoder `[1,9,256,256]→[1,2048]`,
 predictor `states[1,8,2048], actions[1,8,3]`), torch-vs-ORT parity ≤ **1.9e-6** (`export_report.json`);
@@ -1025,7 +1025,7 @@ with resume-duplicated rows in its tail.
 > `…/flagship-v2corpus-30k_ABORTED-labelsFALSE-20260725T0221Z/`. `--no-labels-v2`
 > would have made **labels a second differing variable** vs §1.3.
 
-Full provenance: `TanitAD Research Hub/Data Engineering/Implementation/incoming/2026-07-25-v2-launch-readiness/V2_LAUNCH_READINESS.md`.
+Full provenance: `TanitAD Research Lab/Data Engineering/Implementation/incoming/2026-07-25-v2-launch-readiness/V2_LAUNCH_READINESS.md`.
 
 ---
 
@@ -1160,9 +1160,9 @@ identical. **q90 is the headline** because it is format-faithful.
 ⚠️ **Two harnesses disagree 0.8 %** on this corpus: `eval_flagship_v4.py`'s MODE-A canary gives
 **0.5705**, `eval_four_families.py` gives **0.5752**. Recorded, not smoothed over; unresolved.
 
-**Artifacts:** `TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-08-05-v1arch-oodval-four-families/`
+**Artifacts:** `TanitAD Research Lab/Benchmarks & Eval/Implementation/incoming/2026-08-05-v1arch-oodval-four-families/`
 (RESULT.md + raw JSON) · protocol `EVAL_PROTOCOL_OODVAL_2026-08-05.md` · videos
-`TanitAD Research Hub/Evaluation/Videos/v1arch-oodval-openloop-2026-08-05/` · pod4
+`TanitAD Research Lab/Evaluation/Videos/v1arch-oodval-openloop-2026-08-05/` · pod4
 `/workspace/evalout/` (windows dumps, lead block).
 
 ---
@@ -1178,7 +1178,7 @@ models**. Quote the registry key, never the bare "v1.6".
 | **architecture** | `flagship-v1arch-v2bal-30k` trunk (encoder 87.02 M + predictor 91.36 M + policies), **entirely frozen** (md5 `c1157528…` proved identical before/after training) + `UnicycleStepReadout` **2.11 M** trainable — latent transition `(z_prev, z_hat)` → per-step `(accel, yaw_rate)`, integrated non-holonomically (`dy ≡ 0`, `yaw_rate` bounded by `\|v\|·κ_max`, v carried from the TRUE v0). ⛔ `speed_input=False, predict_delta=False` — the head reads ONLY the WM latents; the v0/feedback shortcut surface was REMOVED after run 4 failed the reliance gate at 0.0891 (`…/2026-08-06-v1-defect-triage/results/UNICYCLE_RUN4_RESULT.md`). |
 | **training** | 3,000 steps, batch 32, AdamW lr 3e-4 cosine, 58 min on one A40. Loss = pos-L1 + 0.3·heading + 0.5·net-yaw + 0.05·accel-barrier + 0.05·jerk-barrier (barriers above the TRAIN-corpus human p99; dense 0.1 s grid). Train corpus: 600 eps of `epcache-physicalai-v2bal-4b7eeeac222d` (local copy). Head warm-started from `grounding.step.op`, zero-init output (= constant-velocity start). |
 | **parity** | trunk untouched ⇒ inherits v1arch's parity (skip-hash `f09e44db` lineage). Eval corpus: `physicalai-oodval-6f4b94e4c7ce-q90`, 40 episodes, stride-1 rollout grid, **6,834 windows** — the SAME grid as every banked v1arch temporal/kinematic number. |
-| **ckpt** | `pod4:/workspace/experiments/unicycle-readout-v2-latentsonly/unicycle_readout.pt` · **banked in-repo 2026-08-06**: `TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-08-06-v1-defect-triage/results/unicycle_readout_v16.pt` (8.4 MB, md5 `81f7f3a19ad0da97fb55ed9270f2f884` verified matching the pod copy — single-disk risk closed) |
+| **ckpt** | `pod4:/workspace/experiments/unicycle-readout-v2-latentsonly/unicycle_readout.pt` · **banked in-repo 2026-08-06**: `TanitAD Research Lab/Architecture & Inference/Implementation/incoming/2026-08-06-v1-defect-triage/results/unicycle_readout_v16.pt` (8.4 MB, md5 `81f7f3a19ad0da97fb55ed9270f2f884` verified matching the pod copy — single-disk risk closed) |
 
 **RESULTS [TIER T0 — teacher-forced; see EVAL_DOCTRINE.md] — MEASURED 2026-08-06, paired episode-cluster bootstrap over 40 episodes, 2,000
 draws** (`…/2026-08-06-v1-defect-triage/results/v16_full_eval.json.xz`). Δ = v1.6 − v1arch,
@@ -2346,7 +2346,7 @@ Eval **identical to base/XL**: `taniteval.refc_eval` on the canonical 40-ep / 88
 the only source**, and it holds more than the dead citation claimed:
 
 ```
-TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-22-refc-small-30k/
+TanitAD Research Lab/Benchmarks & Eval/Implementation/incoming/2026-07-22-refc-small-30k/
   refc-small-30k.json                          ← the raw eval output
   scaleab_refc-small-30k_vs_refc-base-30k.json
   scaleab_refc-small-30k_vs_refc-xl-30k.json   ← the brace form `{base,xl}` was never a real path
@@ -2417,7 +2417,7 @@ at 12 % of the 100 ms budget. Evidence class: **MEASURED** (this run + eval, art
 | **Label coverage** *(4,000-window sample, in `config.json`)* | left 0.121 · straight 0.5645 · right 0.115 · **UNKNOWN 0.1995 (masked out)** → 80.05 % judgeable, vs v1's straight-by-default target |
 | **Code** | `stack/scripts/refc_train.py` gained `--labels {v1,v21}` (**default `v1` = XL-reproducible**), `RouteV21Dataset`, a fail-loud masked route CE, and 5 k/15 k/20 k/30 k **milestone archiving** (the gate series XL lacks). 15/15 `tests/test_refc.py` pass. Pod3 drift repaired before launch (`refb_labels.py` still had `use_net_dyaw=True`; `ckpt_io.py` was absent) — backups in `/workspace/ops/backup-20260720-refcmed/`. |
 | **Eval** | canonical `taniteval.refc_eval` path, **identical to XL**: n=881 windows / 40 val eps / `/root/valdata/physicalai-val-0c5f7dac3b11`, window 8 / stride 8, nav=follow, 2 truncated-denoise steps. Parity proven three ways: same 881 `eid`s, bit-identical GT, and **bit-identical CV baseline in every stratum** (0.6468 / 0.9345 / 0.9322 high/med/low, 0.4393 / 1.3566 / 2.3764 straight/gentle/sharp — the same numbers §4.1 prints for XL). Registry entry `refc-base-30k` added to `taniteval/taniteval/registry.py` with `config_preset="base"`. |
-| **Note** | `TanitAD Research Hub/Benchmarks & Eval/Research/2026-07-20-refc-medium-scaling.md` (pre-registered the reading rule) |
+| **Note** | `TanitAD Research Lab/Benchmarks & Eval/Research/2026-07-20-refc-medium-scaling.md` (pre-registered the reading rule) |
 | **HF** | ✅ **`Sayood/tanitad-refc-base`** — public + **gated `manual`**, pushed 2026-07-25. Files: `ckpt.pt` **1,250,838,325 B** (md5 `8f10d6f934f4199e11ddc7352e074939`, re-verified immediately before upload), `config.json`, `metrics.json`, model card. An anonymous `HEAD` of `https://huggingface.co/Sayood/tanitad-refc-base/resolve/main/ckpt.pt` returns **401 `GatedRepo`** *(re-verified by me 2026-08-03, unauthenticated request, `X-Error-Code: GatedRepo`)*. Now 3 copies (HF + eval pod + pod3). Note: `…/incoming/2026-07-25-refc-hf-push/NOTE.md` |
 
 **Results — FINAL step 29,999 (`refc-base-30k`), 881 windows** ✅ *(raw: `taniteval/results/refc-base-30k.json`)*
@@ -2730,7 +2730,7 @@ at all.
 > **split-selection noise**, not model uncertainty. Measured **1.107–3.100× too narrow, median 1.499×**
 > across **27 dumps = 25 distinct arms** *(two double-banked pairs — C126,
 > `taniteval/results/dump_exclusions.json`)* — MEASURED 2026-07-25,
-> `TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-25-jack-blast-radius/jack_recompute.json`.
+> `TanitAD Research Lab/Benchmarks & Eval/Implementation/incoming/2026-07-25-jack-blast-radius/jack_recompute.json`.
 > *(The older **1.28–2.06×, median 1.51×** band was never wrong, only **under-sampled at 10 arms**: all
 > 10 reproduce bit-for-bit against `Project Steering/CI_RECOMPUTE_2026-07-20.json`.)* Coverage
 > simulation: naive **62.3 %** vs cluster-bootstrap **93.8 %** (target 93–97 %).
@@ -2821,7 +2821,7 @@ deleted so every previously published number stays traceable. Sources: the per-r
 | 13 | Flagship **no-speed** (ablation control) | `flagship-nospeed` | ~22 000 | 263.4 M | 3.0175 [2.5450, 3.5444] <!-- src: taniteval/results/driving_flagship-nospeed.json#headline.ade_0_2s.mean --> | 5.0282 | 0.7423 | ✗ | *2.9176 ± 0.3558* |
 | 14 | REF-A dyn-in 4B | `refa-dynin-30k` | 29 999 | — | 3.0471 [2.4984, 3.6878] <!-- src: taniteval/results/driving_refa-dynin-30k.json#headline.ade_0_2s.mean --> | 4.7642 | 0.7412 | ✗ | *2.9196 ± 0.3937* |
 | 15 | Flagship **v2** (killed) | `flagship-v2-6k` | 6 000 | 272.9 M | 5.9396 [4.3273, 7.6249] <!-- src: taniteval/results/driving_flagship-v2-6k.json#headline.ade_0_2s.mean --> | 12.4011 | 0.8524 | ✗ | *6.179 ± 1.2845* |
-| — | Flagship v1 tactical **head** (not rollout) | `plan_flagship-30k` | 29 999 | — | **3.3839** [2.8336, 3.9722] <!-- src: TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-08-16-jack-in-gates/raw/g1_g4_both_estimators.json#G1.arms.tactical_head.corrected_mean --> ⚠️ **the "🟥 no windows dump — legacy only" that stood here is REFUTED (2026-08-16):** `clwin_flagship-30k.pt`'s `plan_direct` **is** this arm — it reproduces the legacy 3.1501 ± 0.3472 **bit-exactly at 4 dp**, and its `full_set` mean is 3.3839. Same stale-absence class (**C69**/**C70**) as the P2 row above | — | — | ✗ | *3.38 (3.150 ± 0.347 in the P2 pass)* |
+| — | Flagship v1 tactical **head** (not rollout) | `plan_flagship-30k` | 29 999 | — | **3.3839** [2.8336, 3.9722] <!-- src: TanitAD Research Lab/Benchmarks & Eval/Implementation/incoming/2026-08-16-jack-in-gates/raw/g1_g4_both_estimators.json#G1.arms.tactical_head.corrected_mean --> ⚠️ **the "🟥 no windows dump — legacy only" that stood here is REFUTED (2026-08-16):** `clwin_flagship-30k.pt`'s `plan_direct` **is** this arm — it reproduces the legacy 3.1501 ± 0.3472 **bit-exactly at 4 dp**, and its `full_set` mean is 3.3839. Same stale-absence class (**C69**/**C70**) as the P2 row above | — | — | ✗ | *3.38 (3.150 ± 0.347 in the P2 pass)* |
 
 *Arms recomputed but not ranked here (same 881 windows; full table in `jack_recompute.json`):*
 **v1.6** `flagship-v16-ab-ft` 0.4375 [0.3423, 0.5501] (legacy 0.4886 — the largest single-arm bias in the
@@ -2938,7 +2938,7 @@ they were made in the operator loop and never got an ADR.
 | **⭐ D-033** | **07-19** | **v3 pivot: hierarchical world-model PLANNING. Supervised heads demote to proposal priors** | Three measured pathologies all trace to head-supervision: longitudinal mean-regression (REF-A 94 % longitudinal, flagship high-speed the only above-floor stratum), a degenerate strategic seam (`route_skill_vs_chance` 0.0 — pure command echo), and an actively **harmful** intent→operative seam (cos vs-none **−0.238**). Making target-speed and mode-switching a **planning cost** instead of a head fixes all three at once | **P2 passed both decisive gates at zero training cost — and BOTH VERDICTS SURVIVE the estimator correction (2026-08-16/17).** ⛔ **The numbers this row published were `overlapping_holdout_se`, the BANNED estimator, and it was DECIDING both gates.** ✅ **Neither flips.** Decision-grade (episode-cluster bootstrap; §5 for the full table): **G4 closed-loop 0.9799 [0.7456, 1.2312] vs threshold 1.7318 → PASS, CI-separated**, and ⭐ **the first-ever PAIRED form −0.7375 [−0.9362, −0.5295], p(δ>0) = 0.0000, n = 221 win / 20 ep — strictly stronger than the two-interval claim it replaces**, ⇒ **42.9 % less drift**; **divergence 7.24 % [2.25 %, 14.09 %] vs 23.50 %** ⇒ 3.2× fewer. **G1: head 3.3839 [2.8336, 3.9722]; the planner arm was never dumped per-window ⇒ the re-decision is PARTIAL** — sign and separation hold, magnitude pending ~400 s GPU; a flip would need a **−73.6 %** error against a measured **−6.9 % to +5.9 %** envelope. ⚠️ **Carry with these numbers:** point estimates moved **−6.9 % to +6.8 %, bidirectional within one artifact**; intervals were **1.17×–2.17× too narrow**; the **divergence rate — the safety-shaped number — by +20.3 %**; the **G4 threshold itself was a legacy heldout mean 2.69 % LOW (1.6852 vs 1.7318), so the old gate was HARDER than the honest one**; and the banned statistic gave **7 of 40 val episodes weight exactly 0** (**C73**). ⚠️ **`planner_beats_cv` is a THIRD verdict on this path, still UNDECIDED, and its flip IS reachable** (§5). ⚠️ **Unseeded CEM** ⇒ every P2 figure carries an unbounded sampling component. *Superseded, kept visible: G1 0.893 ± 0.114 vs head 3.150, Δ +2.257 ± 0.329, "72 % reduction"; G4 1.038 ± 0.202 vs 1.685 ± 0.098, "38 % less drift"; divergence 8.7 % vs 22.2 %, "2.5× fewer".* Weight-sweep robust across a 4× band (0.647→0.669, wins all 9) — ⚠️ **on an 8-EPISODE subset**, not banned-estimator-decided | `V3_HIERARCHICAL_PLANNING_DESIGN.md` + `V3_GOAL_VOCABULARY_V1.md` (frozen). v1 remains the operative arm. Sayed's framing: v3 = the **original DINO-WM recipe** (frozen encoder + feature-prediction of action-consequences, **no supervised head**) + CEM/diffusion/MPC planner |
 | **D-A9** | 07-19 | **VTARGET moved strategic → tactical** | P2 measured that the planner tracks its minted `v_target` to **1.03 m/s** — *better than the GT log tracks it (1.54 m/s)*. The longitudinal target is a **control-rate** quantity that must be re-derived faster than the strategic cadence (20 ticks); leaving it at strategic starves the cost function between updates | P2 §2.3 + §5.2; strategic route decode remains at the strategic level | `V3_GOAL_VOCABULARY_V1.md`. ⚠️ The exact vocabulary-level wording should be read from that doc before implementation — this row records *that* it moved and *why* |
 | **D-A10** | 07-19 | **P2's residual is 66 % lateral — that is the P3/P4 scope, not a failure** | P2's cost is longitudinal + comfort + progress **only**; it carries no lateral/route/goal term by design. So it nails longitudinal and defaults laterally to the smoothest option. Curved-window error 2.114 m *is* the measured cost-of-no-lateral-goal | long-RMSE 1.41 / lat-RMSE 1.97; speed-decoupled cross-track 0.445 m; true actions reach 0.484 on the same curved windows | P3 = strategic lateral goal in the cost; P4 = goal-conditioned tactical predictor to lift the WM from imitation-era to planning-grade |
-| **D-A11** | 07-20 | **Cosmos-Reason1-7B chosen as the dataset VLM labeler; Cosmos3 is not a labeler** | Byte-pull gating check (2026-07-20): Cosmos3-Nano/Super (OpenMDW 1.1 omnimodel, commercial-OK), Cosmos-Reason1-7B and Reason2-32B are **ungated**; only Reason2-2B/8B are gated. The pilot verdict then separated *serving* from *labeling*: Cosmos3 needs `vllm-omni`/`sglang` rather than vanilla vLLM and did not behave as a labeler | commit **`547c8ec`** "dataset: VLM pilot verdict — Cosmos-Reason1-7B for labeling, Cosmos3 is not a labeler"; pilot artifacts in `TanitAD Research Hub/Data Engineering/` | ⚠️ Sayed had earlier asked for **Cosmos3 for the dataset**; the pilot changed the answer. Every VLM label maps onto the frozen `V3_GOAL_VOCABULARY_V1` |
+| **D-A11** | 07-20 | **Cosmos-Reason1-7B chosen as the dataset VLM labeler; Cosmos3 is not a labeler** | Byte-pull gating check (2026-07-20): Cosmos3-Nano/Super (OpenMDW 1.1 omnimodel, commercial-OK), Cosmos-Reason1-7B and Reason2-32B are **ungated**; only Reason2-2B/8B are gated. The pilot verdict then separated *serving* from *labeling*: Cosmos3 needs `vllm-omni`/`sglang` rather than vanilla vLLM and did not behave as a labeler | commit **`547c8ec`** "dataset: VLM pilot verdict — Cosmos-Reason1-7B for labeling, Cosmos3 is not a labeler"; pilot artifacts in `TanitAD Research Lab/Data Engineering/` | ⚠️ Sayed had earlier asked for **Cosmos3 for the dataset**; the pilot changed the answer. Every VLM label maps onto the frozen `V3_GOAL_VOCABULARY_V1` |
 
 ### 8.1 Open questions this log deliberately does not close
 
@@ -2987,7 +2987,7 @@ they were made in the operator loop and never got an ADR.
    attributed** — cache geometry (the rigs' horizons agree on 8 of 256 rows here) and MLP
    extrapolation both remain live explanations. Do not cite it as an established mechanism. The YouTube-scale IDM data pipeline is **gated on
    the re-gate** and does not proceed on these numbers. Raw:
-   `TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-07-22-idm-proof/results.json`.
+   `TanitAD Research Lab/Architecture & Inference/Implementation/incoming/2026-07-22-idm-proof/results.json`.
    **UPDATE 2026-07-24 — the fix was built and it FAILED.** The own dynamics-encoder designed to give this
    head a rig-robust latent (from-scratch, GAIA-2 all-block camera-conditioned, `dynenc-branchB` @ 40k) was
    measured on the decisive held-out-rig transfer gate and **REFUTED**: best cross-rig speed R² **−0.667**
@@ -3010,7 +3010,7 @@ they were made in the operator loop and never got an ADR.
    > moves **R² +0.0114 → +0.3308** and **MAE −42.5 %**, but **medAE moves only −1.1 % and nMedAE gets
    > 8.0 % WORSE**, with Spearman ρ flat (+0.001). **The repair fixes the tail and the summary
    > statistic, not typical accuracy** — a correction quoting only the R² jump overstates it.
-   > Full inventory + what is still stale-pending: `TanitAD Research Hub/Benchmarks & Eval/
+   > Full inventory + what is still stale-pending: `TanitAD Research Lab/Benchmarks & Eval/
    > Implementation/incoming/2026-07-27-comma-yaw-reissue/COMMA_YAW_REISSUE.md`.
    > ⚠️ **PhysicalAI/rig-B numbers in §8.1 #6 and §10 are UNAFFECTED and must not be re-issued.**
    >
@@ -3034,7 +3034,7 @@ they were made in the operator loop and never got an ADR.
    > **−0.288** on its own held-out clips, ρ 0.211, nMedAE 2.36). **Testable ≠ working.**
    > ⚠️ PhysicalAI remains UNAFFECTED and was **re-measured, not inherited**: `n_pai_changed = 0`,
    > yaw R² **+0.903482 bit-identical** under legacy, repaired and strict-admissible protocols.
-   > Record: `TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/
+   > Record: `TanitAD Research Lab/Benchmarks & Eval/Implementation/incoming/
    > 2026-07-27-anchor-settlement/ANCHOR_SETTLEMENT.md` (raw: `anchor_overlap.json`,
    > `anchor_resettlement.json`, `arms_resettlement.json`).
 
@@ -3103,7 +3103,7 @@ speed R² clears the **>0.9** gate:
 contrast, **cross speed R² > 0.9 AND yaw R² > 0.9 AND ADE@2s < 1.5× in-domain**.
 
 **Results — MEASURED, converged head (epochs = 50, decision-grade)** ✅ *(read from
-`TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-07-24-branchb-transfer-eval/results_branchb_transfer_e50_CONVERGED.json`;
+`TanitAD Research Lab/Architecture & Inference/Implementation/incoming/2026-07-24-branchb-transfer-eval/results_branchb_transfer_e50_CONVERGED.json`;
 ckpt md5s above; flagship-v1 frozen paired control md5 `b5f07d9e3dd2ca643949bc86832e6585`, step 29999;
 episode-cluster bootstrap over rig-B eval clips, 2000×; clips train rigA 100 / rigB 120 / comma 80, val
 rigA 26 / rigB 54, ~~**episode-disjoint**~~ 🟥 **FALSE — CORRECTED 2026-07-28.** The val clips are
@@ -3269,7 +3269,7 @@ NOT survive** — the `trajectory`-task claim, corrected in its own block below.
 | **Source corpus** | `nvidia/PhysicalAI-Autonomous-Vehicles` — **306,152 clips ≈ 1,701 h** (MEASURED, `data_collection.parquet` row count 2026-08-06, `…/2026-08-06-alpamayo-augmentation/DESIGN.md`). |
 | **Coverage of source** | **4,729 / 306,152 clips = 1.54 %** of the corpus by clip. ⚠️ The PI brief targeted **100 h ≈ 18,000 clips (5.9 %)**; delivered is **26.3 % of that target** — a scope fact, not a failure, and it is the number a "scale the augmentation" decision starts from. |
 | **Delivery vs selection** | **4,729 delivered / 4,800 selected = 98.52 % of the manifest**; **23,644 / 24,000 rows = 98.52 %**. |
-| **Pipeline entry point** | `TanitAD Research Hub/Benchmarks & Eval/Research/2026-08-06-alpamayo-augmentation/tools/a2_alltasks.py` (the 5-task battery), driven per batch by `…/2026-08-05-alpamayo2-super/tools/a2_batch.py`; the single-clip quantised runner is `…/2026-08-05-alpamayo2-super/tools/a2_quant_run.py` (+ its `run_4bit_a40/` copy). Design + stage plan: `…/2026-08-06-alpamayo-augmentation/DESIGN.md`. ⚠️ **The orchestration ran pod-side and the pods are dead** — §2.6 of the addendum records that `a2_batch_out/` did not reach the repo, so the *driver invocation* is 🟥 UNVERIFIED even though the entry points are in-repo. |
+| **Pipeline entry point** | `TanitAD Research Lab/Benchmarks & Eval/Research/2026-08-06-alpamayo-augmentation/tools/a2_alltasks.py` (the 5-task battery), driven per batch by `…/2026-08-05-alpamayo2-super/tools/a2_batch.py`; the single-clip quantised runner is `…/2026-08-05-alpamayo2-super/tools/a2_quant_run.py` (+ its `run_4bit_a40/` copy). Design + stage plan: `…/2026-08-06-alpamayo-augmentation/DESIGN.md`. ⚠️ **The orchestration ran pod-side and the pods are dead** — §2.6 of the addendum records that `a2_batch_out/` did not reach the repo, so the *driver invocation* is 🟥 UNVERIFIED even though the entry points are in-repo. |
 | **Artifacts live** | HF `Sayood/tanitad-alpamayo2-augmentation` (5 files, far-side listing MEASURED 2026-08-16) · in-repo tooling + road-class labels under `…/2026-08-06-alpamayo-augmentation/` (`aug_road_class.json`, `a2_records_stats.json`, `tools/`, `pilot_rows_10clips.jsonl`, `aug_candidates_phase1.json.xz`) · local verified copy of the parquet in the session scratchpad (not committed — 25.97 MB). |
 | **Status** | ✅ COMPLETE, on HF, **`error` non-null on 0 of 23,644 rows** |
 | **HF** | `Sayood/tanitad-alpamayo2-augmentation` · 5 files: `records.parquet` (25,970,018 B), `README.md`, `selection_manifest.json` (340,800 B), `vqa_bank_500.json`, `.gitattributes` |
@@ -3341,7 +3341,7 @@ selected set**, so nothing may be inferred about the delivered 4,729 from the ma
 
 ⭐ **But the stratification SURVIVES INTACT, and this is MEASURED, not assumed.** Joining the
 parquet's own `clip_id` to
-`TanitAD Research Hub/Benchmarks & Eval/Research/2026-08-06-alpamayo-augmentation/aug_road_class.json`
+`TanitAD Research Lab/Benchmarks & Eval/Research/2026-08-06-alpamayo-augmentation/aug_road_class.json`
 (3,592 labelled clips; `_rule` = *"ego-derived (labels-may-use-ego); highway frac(v>20)>0.6;
 intersection_rich stop+turn or big turn at low speed; urban vmed>2; else unstructured"*):
 
@@ -3367,7 +3367,7 @@ intersection_rich 1,241 · highway 384 · unstructured 83 · unlabelled 1,208; d
 identical on all four labelled strata, unlabelled **1,137**; and the **81 zero-row clips are
 81/81 unlabelled** and the **10 off-manifest clips 10/10 unlabelled**. `aug_road_class.json`
 carries `counts` + `classes` (**3,592 labelled clip_ids**) and is git-tracked at
-`TanitAD Research Hub/Benchmarks & Eval/Research/2026-08-06-alpamayo-augmentation/aug_road_class.json`.
+`TanitAD Research Lab/Benchmarks & Eval/Research/2026-08-06-alpamayo-augmentation/aug_road_class.json`.
 *(An earlier draft of this row asserted that file "IS NOT THERE" — that absence-claim was wrong
 and is retracted; it is present and tracked. Operating-Standard rule 2: absence at one probe is
 not absence.)*
@@ -3380,7 +3380,7 @@ reading:
 
 | document | claim | scope it names |
 |---|---|---|
-| `TanitAD Research Hub/Data Engineering/TANITDATASET_V1_STRATEGY.md:61` | **"PhysicalAI-AV/Alpamayo … commercial-OK for internal AV dev but no-derivatives → firewalled, `recipe-only`"**; `:42` `firewalled` = *"never enters the lake — recipe-only"*; `:35` `assemble_lake_record` **raises `PermissionError`** if PhysicalAI-AV is fed to the lake | the **source dataset** |
+| `TanitAD Research Lab/Data Engineering/TANITDATASET_V1_STRATEGY.md:61` | **"PhysicalAI-AV/Alpamayo … commercial-OK for internal AV dev but no-derivatives → firewalled, `recipe-only`"**; `:42` `firewalled` = *"never enters the lake — recipe-only"*; `:35` `assemble_lake_record` **raises `PermissionError`** if PhysicalAI-AV is fed to the lake | the **source dataset** |
 | `…/Research/2026-08-05-alpamayo2-super/ALPAMAYO2_SUPER_ANALYSIS.md:24, :162, :229` | **"OpenMDW-1.1 … fine-tuning, derivatives, commercial redistribution"**, and **"OpenMDW-1.1 permits derivative use"** cited as the licence basis for auto-labelling | the **model weights** |
 
 ⚠️ **This dataset is precisely the object the two scopes collide on:** it is a **derivative of
@@ -3471,7 +3471,7 @@ by the card's own per-clip rate.
 
 **Sources.** `records.parquet` (sha256 verified above) · `selection_manifest.json` ·
 `Project Steering/Reports/2026-08-15-2200-campaign-science-addendum.md` §2.2/§2.5 ·
-`TanitAD Research Hub/Benchmarks & Eval/Research/2026-08-06-alpamayo-augmentation/DESIGN.md` ·
+`TanitAD Research Lab/Benchmarks & Eval/Research/2026-08-06-alpamayo-augmentation/DESIGN.md` ·
 comparison analysis `…/Research/2026-08-05-alpamayo2-super/ALPAMAYO2_SUPER_ANALYSIS.md`.
 
 ⇒ **`Paper/TANITAD_PAPER.md` may now promote its A2 counts from INHERITED to MEASURED,
@@ -3542,7 +3542,7 @@ post-30k, **densest-chunks-first** (top 50 chunks ⇒ **1,317 clips / 65 GB**, i
 clips for 3.5 % of the bytes).
 
 **Evidence class.** All figures in 11.1a are **MEASURED** by this session's streams and **INHERITED into
-this row and so marked** — owning packages: `TanitAD Research Hub/Data Engineering/Implementation/incoming/2026-08-16-tactical-labels/TACTICAL_LABEL_VALIDATION.md`,
+this row and so marked** — owning packages: `TanitAD Research Lab/Data Engineering/Implementation/incoming/2026-08-16-tactical-labels/TACTICAL_LABEL_VALIDATION.md`,
 `…/incoming/2026-08-17-aug120-refuse/AUG120_REFUSE.md`, `…/incoming/2026-08-15-aug120-fusion/NEXT_4472_BUILD_INPUTS.md`
 (all three paths verified to resolve, 2026-08-17 — note they live under **Data Engineering**, not
 *Benchmarks & Eval*). ⚠️ **The 1.84 TB is MEASURED counts × an ESTIMATED mean chunk size (1.30 GB)** —
@@ -3589,7 +3589,7 @@ here or from its own summary JSON.
 | **Alpamayo coverage** | **201/201 (100 %)** — the slice is *defined* by carrying an A2 record; **1,005 A2 rows = 201 × 5 tasks**, all five task keys present on all 201. |
 | ⛔ **SAM3 (perception) coverage** | **86 / 201 = 42.8 %.** **115 clips (57.2 %) carry NO SAM3 record**, stamped `perception.absent = "AUG120_SAM3_STAGE_GAP"` per record. |
 | **Corroborations / conflicts** | **88 / 10** — ⚠️ a **floor, not a rate**: with SAM3 absent on 115 clips, 2 of the 6 checks cannot fire at all. |
-| **Artifacts live** | HF `Sayood/tanitad-ph0-aug120/fused_aug120/` (204 files, far-side verified 204/204 + a 6/6 md5 byte round-trip) · in-repo raw + code at `TanitAD Research Hub/Data Engineering/Implementation/incoming/2026-08-15-aug120-fusion/` (`raw/fused_aug120_summary.json`, `raw/fused_aug120_batch_accounting.json`, `raw/fused_aug120_label_sources.json`, `raw/aug120_coverage.json`). |
+| **Artifacts live** | HF `Sayood/tanitad-ph0-aug120/fused_aug120/` (204 files, far-side verified 204/204 + a 6/6 md5 byte round-trip) · in-repo raw + code at `TanitAD Research Lab/Data Engineering/Implementation/incoming/2026-08-15-aug120-fusion/` (`raw/fused_aug120_summary.json`, `raw/fused_aug120_batch_accounting.json`, `raw/fused_aug120_label_sources.json`, `raw/aug120_coverage.json`). |
 | **Pipeline entry point** | `stack/scripts/ph1_fuse.py` (fuser) · `stack/scripts/aug120_pipeline.py` (label production) · `stack/scripts/ph0_sam3.py` (perception stage) · run driver `…/2026-08-15-aug120-fusion/code/aug120_fuse_run.py`. Strategy: `…/2026-08-07-hierarchical-wm-redesign/PH1_FUSION_STRATEGY.md`. |
 | **Parity** | ⛔ **NOT the training-parity corpus** (inherits §11.1's position). Disjoint by construction from the val-600 fused set. |
 | **License** | Inherits §11.1's 🟥 **OPEN PI DECISION** verbatim — it is a derivative of a derivative. |
@@ -3632,7 +3632,7 @@ spread across *every* batch — **14.4× larger**.
 5. 🟥 **15 `goal_evidence: grounded` verdicts** rest on SAM3 sign tracks whose class reliability is
    flagged (⅔ of best crops had no sign) — a threshold study is scoped but not run.
 
-**Owning document.** `TanitAD Research Hub/Data Engineering/Implementation/incoming/2026-08-15-aug120-fusion/AUG120_FUSION_RESULT.md`
+**Owning document.** `TanitAD Research Lab/Data Engineering/Implementation/incoming/2026-08-15-aug120-fusion/AUG120_FUSION_RESULT.md`
 (+ `MANIFEST.md`, `NEXT_4472_BUILD_INPUTS.md` for the follow-on build). Tests:
 `stack/tests/test_ph1_fuse.py` 14 passed; full suite 2,812 passed / 0 failed / 17 skipped / 2 xfailed.
 
@@ -3751,3 +3751,125 @@ digest, and the chain re-walks inside the repo with **no pod access**. **Derived
 **Owning documents:** `…/incoming/2026-08-18-pooling-ladder-ER10/`, `…/2026-08-18-c106-adversarial/`,
 `…/2026-08-18-ladder-3seed/`, `…/2026-08-17-thor-concurrency-pilot/`; classes **C92, C97, C100,
 C103, C104, C106, C107, C109, C112** in `RETRACTION_LOG.md`.
+
+## 13. v7-tiny WORLD-MODEL LINE — the collapse-elimination arms [TIER T0-DIAGNOSTIC throughout]
+
+⛔ **NOTHING IN THIS SECTION IS A DRIVING NUMBER.** Every row is T0 (world-model diagnostic).
+Per `EVAL_DOCTRINE.md` a T0 number may never be presented as driving performance — these arms have
+no scorer, no planner and no closed loop.
+
+### 13.1 `champ30k` — two-term (LeWM-style) + k=1 + 32 SIGReg subspaces — COMPLETE at 30,000
+
+The first arm in the programme whose predictor **beats the HOLD baseline at all**, and the arm
+E-PROOF-1 was built to adjudicate. Sourced from raw JSON
+(`TanitAD Research Lab/Architecture & Inference/Research/2026-08-19-simwam-analysis/raw/e_proof1_champ30k.json`).
+
+| field | value |
+|---|---|
+| recipe | two-term objective (**O5 rollout + O6 SIGReg only**; O1/O2/O3 **off**), `--o5-k 1`, `--sigreg-subspaces 32`, `--sigreg-slices 512`, `--o5-form l1`, `--w-o5 1.0 --w-o6 0.1` |
+| steps | 30,000 |
+| eval corpus | `physicalai-val-0c5f7dac3b11`, **12 clips**, parity `true` |
+| eval tier | **T0-DIAGNOSTIC** |
+| estimator | episode-cluster bootstrap; probes fit lambda and PCA basis on the FIT split only |
+
+**A - RANK** — participation **6.489** (n=1680, d=2048, top-8 share 0.8805).
+⛔ Recorded as FAIL against `O6_PARTICIPATION_FLOOR = 8.56`, **and that FAIL is NOT admissible as of
+2026-08-23**: §13.3 shows no live instrument reproduces 8.56, and the reference is d=1024 against
+this arm's d=2048. **Status of the rank gate: UNDECIDABLE, not failed.**
+
+**B1 - PREDICTOR vs HOLD** — the positive result, and it is narrow:
+
+| horizon | explained movement | CI95 | beats HOLD |
+|---|---|---|---|
+| h=1 (0.1 s) | **+0.1303** | [+0.1079, +0.1512] | **yes — the first in the programme** |
+| h=2 (0.2 s) | **-0.0** | [-0.0, +0.0] | no |
+| h=4 (0.4 s) | **-0.0** | [-0.0, -0.0] | no |
+
+⚠️ **The h>=2 rows are EXACTLY zero with a ZERO-WIDTH CI, which is a signature, not a small effect.**
+`EM = 1 - ||z_hat - z_plus||^2 / ||z - z_plus||^2` is identically 0 iff `z_hat = z`, i.e. **the
+predictor returns its input unchanged**. Read together with B2 below, the arm behaves as an
+**identity map beyond one tick** — and that is now **MEASURED, not inferred: H-PROOF-2 SUPPORTED**
+(`…/2026-08-19-simwam-analysis/raw/h_proof2_identity.json`, 8 held-out val clips).
+`mean||z_hat(h) - z_last|| / mean||z_true(h) - z_last||` reads **0.0002 at h=2** (0.008 against a
+true motion of 46.19) and **0.0002 at h=4** (0.008 against 49.22), while the action-sensitive
+control arm `fixed` reads **0.207 / 0.154** on the same probe -- three orders of magnitude larger,
+which is what shows the probe measures the arm rather than the harness.
+⇒ read with B2, **the two-term recipe learned the TRIVIAL SOLUTION: copy the input, ignore the
+actions.** Beating HOLD at h=1 is its only non-trivial behaviour.
+⚠️ `fixed` is not thereby a healthy predictor (0.15-0.21 is still near-identity; its h=1 ratio of
+30x overshoots because its own latent barely moves, 0.093/tick against champ30k's 42.6). The
+contrast is decisive about IDENTITY, not a certificate for `fixed`.
+
+**B2 - COUNTERFACTUAL DIVERGENCE (anti-echo)** — **ACTION-BLIND.** Rollouts under altered actions,
+in units of true per-tick movement (2049.85 MSE): left **0.0000**, right **0.0000**, brake
+**0.0001**, throttle **0.0002**. For contrast the six-term `fixed` arm reads **474.9x** under x100
+actions. Removing O1 did not merely weaken action-conditioning, it removed it.
+
+**C - DECODABILITY** — does not clear the raw-pixel floor, and the point estimates are not even
+significantly positive (n=700, d=128 PCA, lambda on the FIT split):
+
+| target | latent | pixel floor | frozen DINOv3 | constant control |
+|---|---|---|---|---|
+| speed | +0.2557 **[-0.4179, +0.3855]** | +0.1976 [-0.1099, +0.3440] | **+0.5045** [+0.1982, +0.5509] | 0.0000 [0, 0] |
+| `d_ego` | +0.2256 **[-0.3662, +0.3597]** | +0.1820 [-0.0875, +0.2984] | **+0.5588** [+0.2137, +0.6285] | 0.0000 |
+| yaw-rate | -0.0102 [-0.0753, +0.0002] | +0.0049 [-0.1148, +0.0160] | -0.0005 | 0.0000 |
+
+⚠️ **The latent's CI straddles zero on every target**, so "the latent decodes speed at +0.26" is
+NOT a supported statement; the honest reading is *indistinguishable from the pixel floor and from
+zero*. The **constant control reads exactly 0.0000 with zero width** on all three, which is what
+makes the rest of the panel trustworthy. Frozen DINOv3 on the **same clips, same probe** separates
+cleanly on two of three, so the target IS decodable and this representation does not carry it.
+
+**VERDICT — `PASS_ALL: false`.** One gate of four passes, and only at h=1. The arm proves the
+collapse can be *prevented* (H-RANK-11) without proving the representation *learned the environment*.
+
+### 13.2 The O1 coupling — why the two-term recipe is action-blind (H-RANK-18, MEASURED 2026-08-23)
+
+Matched 2k-step arms, same 130-clip corpus, same instrument, `.../raw/h_rank18_readout.json`:
+
+| arm | terms | participation (held24 / val) | divergence x100 actions | v0 x3 |
+|---|---|---|---|---|
+| `lewm` | O5+O6 | **4.43** / 3.42 | **0.000** | 0.000 |
+| `lewm_o1` | O5+O6+**O1** | **2.94** / 2.59 | **516.6** | 388.5 |
+| `fixed` | all six | 2.94 / 2.61 | 474.9 | 1159.8 |
+
+**O1 is the single term that BOTH buys action-conditioning AND causes the collapse.** Adding it to
+the collapse-free recipe restored divergence from exactly zero *and* returned participation to the
+six-term value to three significant figures. **H-RANK-18 REFUTED** — the two failure modes are
+coupled, not separable by adding O1 at full weight.
+⚠️ These are **NON-PARITY 130-clip arms at 2k steps**: the admissible read is the *shape* across
+matched arms, never an absolute number, and none is comparable to §13.1's parity numbers.
+
+### 13.3 ⛔ THE PARTICIPATION FLOOR IS NOT REPRODUCIBLE, AND A SCALAR FLOOR IS NOT VALID (2026-08-23)
+
+Frozen DINOv3 ViT-L/16, patch tokens mean-pooled per frame, through **`spectrum_report` itself**
+(the gate's own function), **n=1440 in every row**:
+
+| sample | participation |
+|---|---|
+| 12 physicalai-val clips — *the corpus `8.56` is sourced to* | **5.756** |
+| 130-clip lead corpus — *the corpus `40.77` is sourced to* | **20.228 +- 0.327** |
+| 130-clip lead corpus, full n=5617 | **20.516** |
+
+**Neither published number survives.** The **3.51x** between rows one and two is **episode diversity
+alone** — same encoder, same d=1024, same n=1440, same instrument, only the clips differ
+(**H-RANK-23 SUPPORTED**). Sample size is **not** the confound (**H-RANK-21 REFUTED**): a synthetic
+control with closed-form truth reads **0.974x / 1.002x** of truth at n=1440 for the concentrated
+spectra we actually have, and the real bank is flat in n (19.29@360 -> 20.52@5617).
+
+A participation value is comparable only at matched **CORPUS**, matched **EPISODE COUNT** and
+matched **AMBIENT DIMENSION**. ⛔ **No arm may currently be failed on the O6 participation clause**,
+and ⛔ **the reverse claim is equally inadmissible** — champ30k is d=2048 and every banked reference
+is d=1024, so "6.489 beats 5.756" is not supported either. Recorded in code beside the constant
+(`stack/tanitad/models/v6.py`, `O6_PARTICIPATION_REFERENCES`) and pinned by
+`stack/tests/test_participation_floor_provenance.py`.
+**ROOT-CAUSE CLASS: a number true for one scope, quoted where that scope does not apply** — the
+`df` / `free` / cgroup / `step_s` family, this time inside a gate that decides.
+
+**Raw artifacts** — all under `TanitAD Research Lab/Architecture & Inference/Research/`:
+
+* `…/2026-08-19-simwam-analysis/raw/e_proof1_champ30k.json` — the §13.1 battery
+* `…/2026-08-19-simwam-analysis/raw/h_rank18_readout.json` — the §13.2 O1 coupling
+* `…/2026-08-19-simwam-analysis/raw/h_rank16_floor_reconcile.json` — DINOv3 on the 130-clip corpus, swept in n
+* `…/2026-08-19-simwam-analysis/raw/h_rank16_floor_valclips.json` — DINOv3 on the 12 val clips (the apples-to-apples floor)
+* `…/2026-08-19-simwam-analysis/raw/h_rank21_partic_nbias.json` — the synthetic finite-n control with closed-form truth

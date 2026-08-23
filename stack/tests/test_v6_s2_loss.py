@@ -174,13 +174,23 @@ def test_default_loss_is_bit_identical_to_the_PRE_S2_trainer(stage):
     ln = v6_loss_step(s, b, weights=V6LossWeights(),
                       generator=torch.Generator().manual_seed(11), **kw)
     rng_new = torch.random.get_rng_state().clone()
-    assert set(lo["log"]) == set(ln["log"]), \
-        f"{stage}: a log key changed against {old._ref}"
-    assert torch.equal(lo["loss"], ln["loss"]), \
-        f"{stage}: the DEFAULT loss MOVED against {old._ref}"
+    # ⭐ ADDITIVE diagnostic keys are allowed; REMOVALS and VALUE changes are not.
+    # MEASURED 2026-08-22: --o5-form / --sigreg-accum added `o5_form`, `o6_rows`,
+    # `o6_row_renorm` while the loss stayed BIT-IDENTICAL (loss, terms and RNG
+    # draw-count all verified unchanged for S-W and S-J).
+    # ⚠️ ORDER MATTERS: the key check used to assert FIRST and abort, so a real
+    # numerical regression would have surfaced as "a log key changed" and the
+    # value assertions would never have run. Value/terms/RNG now go first.
+    ADDITIVE_OK = {"o5_form", "o6_rows", "o6_row_renorm",
+                   # H-RANK-22: additive only; the loss is bit-identical.
+                   "o1_detach_encoder"}
+    assert torch.equal(lo["loss"], ln["loss"]),         f"{stage}: the DEFAULT loss MOVED against {old._ref}"
     assert lo["log"]["terms"] == ln["log"]["terms"]
-    assert torch.equal(rng_old, rng_new), \
-        "the default path consumed a different number of global draws"
+    assert torch.equal(rng_old, rng_new),         "the default path consumed a different number of global draws"
+    removed = set(lo["log"]) - set(ln["log"])
+    assert not removed, f"{stage}: log keys REMOVED against {old._ref}: {removed}"
+    unexpected = (set(ln["log"]) - set(lo["log"])) - ADDITIVE_OK
+    assert not unexpected,         f"{stage}: unexpected new log keys against {old._ref}: {unexpected}"
 
 
 def test_NEGATIVE_CONTROL_the_identity_guard_can_fail():
@@ -749,7 +759,7 @@ def test_stable_episode_id_fallback_matches_the_canonical_one():
 
 #: The SUPERSEDED v1 delivery. Kept as a NAME in this test file for exactly one
 #: reason: to prove the loader refuses it. Never as a load target.
-_SUPERSEDED = _ROOT / "TanitAD Research Hub" / "Data Engineering" / \
+_SUPERSEDED = _ROOT / "TanitAD Research Lab" / "Data Engineering" / \
     "Implementation" / "incoming" / "2026-08-16-s2-v1-labels" / "labels"
 #: The CANONICAL set, resolved through the code constant rather than retyped —
 #: if the constant moves, this test follows it instead of silently testing a

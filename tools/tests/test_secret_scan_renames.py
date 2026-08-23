@@ -22,7 +22,7 @@ import secret_scan as S  # noqa: E402
 
 def _git(repo: Path, *args: str) -> str:
     return subprocess.run(["git", *args], cwd=str(repo), capture_output=True,
-                          text=True, check=True).stdout
+                          text=True, encoding="utf-8", check=True).stdout
 
 
 @pytest.fixture

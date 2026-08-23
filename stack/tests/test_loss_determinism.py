@@ -567,8 +567,13 @@ def test_v6_loss_step_default_is_bit_identical_to_the_PRE_CHANGE_trainer(stage):
                       generator=torch.Generator().manual_seed(11), **kw)
     assert _diff(lo, ln) == [], \
         f"{stage}: the DEFAULT loss MOVED against {old._ref}"
-    assert set(lo["log"]) == set(ln["log"]), \
-        f"{stage}: a log key changed against {old._ref}"
+    _ADD_OK = {'o5_form', 'o6_rows', 'o6_row_renorm',
+               # H-RANK-22: additive only -- records which O1 gradient-path
+               # variant ran, so two arms differing only in --o1-detach-encoder
+               # are distinguishable from their logs. Loss is unchanged.
+               'o1_detach_encoder'}
+    assert not (set(lo['log']) - set(ln['log'])), 'log keys REMOVED'
+    assert (set(ln['log']) - set(lo['log'])) <= _ADD_OK, 'unexpected new log keys'
     assert torch.equal(torch.tensor(lo["log"]["loss"]),
                        torch.tensor(ln["log"]["loss"]))
 

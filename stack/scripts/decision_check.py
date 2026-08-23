@@ -36,9 +36,30 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
 
+def _first_existing(*rel: str) -> Path:
+    """Resolve a record from CANDIDATE paths, newest-migration-first.
+
+    ⛔ MEASURED 2026-08-23: migration P7 moved `DECISIONS.md` to
+    `archive/DECISIONS_2026-07-20.md` and this module still named the root path.
+    ``units()`` returns [] for a missing file WITHOUT raising, so the tool kept
+    exiting 0 while surfacing zero decisions -- a guard whose green result meant
+    "I could not read the register", indistinguishable from "nothing applies".
+    Resolving from candidates keeps the guard working across moves; the last
+    entry is returned when none exist so the caller still gets a real path to
+    report as absent.
+    """
+    for r in rel:
+        p = REPO / r
+        if p.exists():
+            return p
+    return REPO / rel[-1]
+
+
 #: (label, path, regex marking the start of a citable unit)
 SOURCES: tuple[tuple[str, Path, str], ...] = (
-    ("DECISION", REPO / "DECISIONS.md", r"^## (D-[A-Za-z0-9]+)\b"),
+    ("DECISION",
+     _first_existing("DECISIONS.md", "archive/DECISIONS_2026-07-20.md"),
+     r"^## (D-[A-Za-z0-9]+)\b"),
     ("REGISTRY", REPO / "Project Steering/MODEL_REGISTRY.md",
      r"^#{2,4} ([0-9][0-9.]*\s.*)$"),
     ("RETRACTION", REPO / "Project Steering/RETRACTION_LOG.md",

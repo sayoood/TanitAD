@@ -196,6 +196,17 @@ class V6LossWeights:
     o1_fact: float = 1.0        # factual roll anchored to true waypoints
     o1_scene: float = 0.3       # ego/scene factorisation (P6's subspace)
     o2_nearfield: float = 1.0
+    #: H-RANK-22 (2026-08-23). MEASURED: O1 is the term that simultaneously
+    #: BUYS action-sensitivity and CAUSES the rank collapse -- adding it to the
+    #: collapse-free two-term recipe restored divergence 0.000 -> 516.6 while
+    #: participation fell 4.43 -> 2.94, i.e. exactly back to the six-term arm
+    #: (`h_rank18_readout.json`). The mechanism hypothesis is that O1's gradient
+    #: reaches the ENCODER and buys action-predictability by spending scene
+    #: variance. This flag confines O1 to the PREDICTOR (encoder states are
+    #: detached for the O1 term ONLY), which -- if the hypothesis holds --
+    #: gives action-conditioning at no cost in rank.
+    #: DEFAULT False => the incumbent loss is bit-identical.
+    o1_detach_encoder: bool = False
     o3_masked: float = 1.0
     o5_rollout: float = 1.0
     o6_sigreg: float = 0.1      # LeJEPA's ONE validated knob — keep it fixed
@@ -2251,15 +2262,21 @@ def v6_loss_step(stack: V6Stack, batch: dict, *, stage: str,
                 0.05, 3.0)
             rand_dk = rand_dk.to(dev)
             rand_da = rand_da.to(dev)
+        # H-RANK-22: confine O1's gradient to the predictor when asked. `states`
+        # is the ENCODER's window output, so detaching it here (and ONLY here --
+        # every other term still trains the encoder) removes the path by which
+        # O1 can reshape the representation itself.
+        o1_states = states.detach() if w.o1_detach_encoder else states
         L1 = stage_a_losses(
-            stack.predictor_op, stack.step_readout_op, states,
+            stack.predictor_op, stack.step_readout_op, o1_states,
             batch["actions2"], batch["future_actions2"], batch["v0"],
             batch["gt_wp"], z_true[o1_k - 1], o1_k, dkappa=dkappa,
             daccel=daccel, rand_dk=rand_dk, rand_da=rand_da,
             w_ctrl=w.o1_ctrl, w_fact=w.o1_fact, w_scene=w.o1_scene,
             ctrl_form="response")
         terms["o1"] = L1["loss"]
-        log |= {"o1_ctrl": float(L1["l_ctrl"].detach()),
+        log |= {"o1_detach_encoder": bool(w.o1_detach_encoder),
+                "o1_ctrl": float(L1["l_ctrl"].detach()),
                 "o1_fact": float(L1["l_fact"].detach()),
                 "o1_scene": float(L1["l_scene"].detach()),
                 "o1_factual_ade": float(L1["factual_ade"]),
@@ -3474,6 +3491,7 @@ def resolve_lambda_plan(a) -> float:
 def _weights_from_args(a) -> V6LossWeights:
     return V6LossWeights(
         o1_ctrl=a.w_o1_ctrl, o1_fact=a.w_o1_fact, o1_scene=a.w_o1_scene,
+        o1_detach_encoder=bool(getattr(a, "o1_detach_encoder", False)),
         o2_nearfield=a.w_o2, o3_masked=a.w_o3, o5_rollout=a.w_o5,
         o6_sigreg=a.w_o6, t1_latent=a.w_t1, s1_latent=a.w_s1,
         w_select=a.w_select, w_anchor=float(getattr(a, "w_anchor", 0.0)),
@@ -5312,6 +5330,12 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--w-o1-ctrl", type=float, default=1.0)
     ap.add_argument("--w-o1-fact", type=float, default=1.0)
     ap.add_argument("--w-o1-scene", type=float, default=0.3)
+    # H-RANK-22: O1 is the term that both buys action-sensitivity and collapses
+    # the rank. This confines its gradient to the PREDICTOR (encoder detached for
+    # the O1 term only). Default OFF => incumbent loss bit-identical.
+    ap.add_argument("--o1-detach-encoder", action="store_true",
+                    help="confine O1 to the predictor: detach encoder states for "
+                         "the O1 term only (H-RANK-22)")
     ap.add_argument("--dkappa", type=float, default=DKAPPA_DEFAULT)
     ap.add_argument("--daccel", type=float, default=DACCEL_DEFAULT)
     ap.add_argument("--rand-dkappa-max", type=float, default=0.05)

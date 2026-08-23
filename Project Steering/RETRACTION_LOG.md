@@ -7410,3 +7410,145 @@ peak-selection from an oscillating monitor.** ⇒ STANDING RULE: a run's
 headline number is the VAL-side reading or nothing; train-side monitors are
 trajectory evidence only, and a monitor that oscillates is summarised by its
 window MEAN with its sd, never by its maxima.
+
+---
+
+## C134 — "six TURN_LEFT clips are mislabelled — the ego does not turn" SCORED A STRATEGIC LABEL ON A TACTICAL WINDOW, and every one of the six dissolved on the correct horizon (2026-08-23, self-caught before reporting)
+
+**What I was about to report.** A first pass over the 39-clip label-validation
+sample judged `g_str` against the ego's heading change over the **next 4
+seconds** and found six `TURN_LEFT` clips that barely rotate — `01b24287` at
+−0.6°, `34a9dd22` at −1.1°, `315e885b` at −1.9°, `f5b0ad84` at −1.0°,
+`a2524c12` at −1.6°, `6c3688c0` at −1.2° (TURN_RIGHT). Six of 39 is a 15 %
+defect rate, and it would have been the headline of a report recommending the
+label pipeline be reworked before scaling.
+
+**What is actually true.** `HIERARCHY_VOCABULARY.md` §3 defines the strategic
+horizon as **8–30 s**. Re-measured over the full available horizon, every one of
+the six carries a real, large turn that simply starts later than 4 s:
+
+| clip | yaw @ 4 s | peak yaw on horizon | onset |
+|---|---|---|---|
+| `01b24287` | −0.6° | **+100.3°** | t+7.3 s |
+| `34a9dd22` | −1.1° | +75.1° | t+5.1 s |
+| `6c3688c0` | −1.2° | −89.7° | t+8.4 s |
+| `315e885b` | −1.9° | +70.1° | t+8.8 s |
+| `f5b0ad84` | −1.0° | +66.4° | t+8.9 s |
+| `a2524c12` | −1.6° | +43.6° | t+11.2 s |
+
+Across the sample, **10 of 21 labelled turns begin more than 4 s after the
+anchor** (median onset 3.7 s, max 11.2 s). The corrected agreement is **87.2 %**,
+not the ~72 % the 4 s window implied. `MEASURED (ours,
+products/P2-data-pipelines/2026-08-23-label-validation-sample/raw/sample_v2_slim.json)`
+
+**Why it nearly shipped.** The 4 s window was not chosen — it was *inherited*
+from the tactical label horizon already in the harness, and never re-derived for
+the family being scored. It produced a confident, plausible, well-formed table.
+Nothing about the output looked wrong; only asking *"what horizon is this label
+defined over?"* exposed it.
+
+**ROOT-CAUSE CLASS: SCOPE ERROR — a rule that is true somewhere, applied where
+it does not hold** (the `df`-on-a-pod / Thor-`free` / `step_s`-divisor /
+per-worker-RAM family, now in a label-validation costume). The distinguishing
+signal is the same each time: **a probe that answers a different question than
+the one asked, and therefore looks like an answer.**
+
+⇒ **STANDING RULE: a validation harness states the horizon each label family is
+defined over, and scores each family on ITS OWN horizon.** A single window
+applied across families is a defect in the harness, not a finding about the
+labels. Cross-horizon comparisons (e.g. strategic `TURN_*` against a 2 s
+tactical class) are reported as *expected divergence* with the onset
+distribution beside them — 52 % of strategic turns legitimately read `lane_keep`
+tactically, and a guard that treats that as a contradiction manufactures a ~50 %
+failure rate on a healthy corpus (`stack/tests/test_label_guard.py::
+test_turn_with_tactical_lane_keep_is_silent` pins exactly this).
+
+**Second defect, same investigation, caught before any number was quoted.** The
+label↔frame join runs through `episode_id_legacy`, which the clip index itself
+documents as colliding. I checked collisions on the **label side only**; a
+legacy id claimed by two **cache** episodes then admitted clip `4879e5f3` into
+the sample **twice, with two different trajectories** (+70.3° and +1.4° at 4 s) —
+two scenes wearing one label. ⇒ **Both sides of a join key are checked, and a
+uniqueness assertion over the output ids is part of the extractor** (3 label-side
++ 3 cache-side ids refused; `raw/refused_legacy_ids.json`). Class: **C2-adjacent
+— a check performed at one location and treated as complete.**
+
+## C135 — `O6_PARTICIPATION_FLOOR = 8.56` HAS BEEN FAILING ARMS AGAINST A NUMBER NO INSTRUMENT REPRODUCES, because a corpus-specific value was written into code as a portable scalar (2026-08-23, found by running the gate's own function on the reference)
+
+**What the code asserted:** a single scalar floor, `8.56`, sourced *"frozen DINOv3
+8.56/17.25, n=1440"*, applied to every arm's participation ratio. champ30k is on
+record as FAILING the O6 collapse gate at **6.489 < 8.56** (H-RANK-13).
+
+**What the measurement says.** Frozen DINOv3 ViT-L/16, patch tokens mean-pooled,
+through **`spectrum_report` itself** — the gate's own function — at **n=1440**:
+
+| sample | participation |
+|---|---|
+| 12 physicalai-val clips *(the corpus 8.56 is sourced to)* | **5.756** |
+| 130-clip lead corpus *(the corpus E-TRUNK-3's 40.77 is sourced to)* | **20.228 ± 0.327** |
+| 130-clip lead corpus, full n=5617 | **20.516** |
+
+**Neither published number is reproduced.** Not 8.56, not 40.77.
+
+**ROOT CAUSE — and it is NOT that someone typed a wrong number.** Participation
+depends on **how many distinct episodes the SAMPLE spans**: rows one and two
+differ by **3.51×** with the encoder, the ambient dimension, the sample size and
+the instrument ALL held fixed — only the clips differ (H-RANK-23). A scalar floor
+is therefore **not a portable quantity**, and writing one into code as a constant
+made a scope-bound measurement look like a property of the world.
+
+⛔ **CLASS: a number true for ONE scope, quoted where that scope does not apply.**
+This repo has now paid for that class in five costumes — `df` reporting the
+cluster instead of the pod quota, `free`/`tegrastats` on Thor's unified memory,
+cgroup `usage_in_bytes` counting page cache, `step_s` accumulated-vs-divided, the
+per-DataLoader-worker RAM figure quoted at a trainer with zero workers — and this
+is the first time it sat **inside a gate that DECIDES**, where the cost is not a
+misread but a wrong verdict on a 30k-step run.
+
+**What I ruled OUT before concluding, because the obvious explanation was wrong.**
+I hypothesised the gap was finite-n bias (n=1440 vs 5617) — **H-RANK-21, REFUTED
+by its own control**: on a synthetic population with closed-form truth the
+estimator reads **0.974×/1.002×** of truth at n=1440 for concentrated spectra, and
+the real DINOv3 bank is **flat in n** (19.29@360 → 20.52@5617). Had I skipped the
+control I would have "explained" the gap with a plausible mechanism that is false.
+
+**Corrections applied:** `O6_PARTICIPATION_REFERENCES` records all three measured
+values *with corpus, n and d in the key*; `O6_FLOOR_IS_CORPUS_AND_DIM_SPECIFIC`
+flags the constraint; `stack/tests/test_participation_floor_provenance.py` pins it
+and **refuses a bare reference** (each key must parse into encoder/corpus/n/d).
+
+⚠️ **The opposite claim is equally inadmissible and I am not making it.** champ30k
+is d=2048 and every banked reference is d=1024; participation scales with the
+ambient dimension, so *"6.489 beats 5.756"* is **not supported**. The honest state
+is **UNDECIDABLE until a matched-d reference exists** — not a pass, not a fail.
+
+## C136 — MIGRATION P7 ARCHIVED `DECISIONS.md` AND `decision_check.py` KEPT EXITING 0 WHILE SURFACING ZERO DECISIONS (2026-08-23, caught by the repo-side suite)
+
+**What happened:** migration P7 staged `R100 DECISIONS.md →
+archive/DECISIONS_2026-07-20.md`. `decision_check.py:41` still resolved
+`REPO / "DECISIONS.md"`, and `units()` returns `[]` for a missing path **without
+raising**. The tool therefore kept **exiting 0** while reading nothing.
+
+**Why this is worse than a crash.** The tool exists to surface standing PI
+decisions *before* we re-adopt something already rejected — **D-003** (*"frozen
+encoder is a COMPARISON ARM, NOT a hedge to adopt"*) is the decision **C129**
+violated. A guard that silently finds nothing returns the SAME green result as
+"no standing decision applies". The failure mode is indistinguishable from success
+at the call site.
+
+⛔ **CLASS: a lookup that treats ABSENCE as an EMPTY ANSWER instead of an ERROR.**
+Same family as the poisoned memmap that produced a full-size file of zeros and
+exited 0, and as the library tool that reported success after filing 11 papers
+under the query string. **A tool reporting success is not evidence its output is
+right** — and here the output was empty, which is the cheapest thing to check.
+
+**Correction:** `decision_check.py` now resolves records from **candidate paths**
+(`_first_existing`), so it survives the move and the next one; the three
+`test_decision_check.py` assertions that were red are green, and D-003/D-033
+surface again.
+
+⚠️ **The generalisable lesson is about MIGRATIONS, not about this file:** moving a
+document is a code change whenever a tool names its path. The migration staged a
+rename that no test covered until the whole suite ran from the repo — which it had
+not been doing, because the mirror the suite ran in was missing `tools/` and
+`taniteval/` entirely.

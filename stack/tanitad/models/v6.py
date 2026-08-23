@@ -138,6 +138,7 @@ __all__ = [
     "DOMAIN_MIX_MIN_STRATUM_EPISODES",
     "spectrum_report", "SpectrumAccumulator", "o6_rank_verdict",
     "O6_ADMISSIBLE_CEILING", "O6_RANK_FLOOR", "O6_PARTICIPATION_FLOOR",
+    "O6_PARTICIPATION_REFERENCES", "O6_FLOOR_IS_CORPUS_AND_DIM_SPECIFIC",
     # X4 — the O6 spectrum pattern applied PER LAYER (op / tac / str)
     "X4_LAYER_POLICY", "layer_spectrum_policy", "x4_rank_verdict",
     "LayerSpectrumMonitor", "sigreg_trend_verdict",
@@ -1357,6 +1358,43 @@ O6_RANK_FLOOR = 64.0
 #: ⚠️ ``O6_RANK_FLOOR = 64`` was calibrated on a synthetic α=2 power-law
 #: (healthy 122.4 / collapsed 19.4) and never against a real sample.
 O6_PARTICIPATION_FLOOR = 8.56
+
+#: ⛔⛔ THE FLOOR ABOVE IS NOT REPRODUCIBLE, AND A BARE SCALAR FLOOR IS NOT
+#: STRUCTURALLY VALID. MEASURED 2026-08-23, frozen DINOv3 ViT-L/16 (patch tokens
+#: mean-pooled per frame) through THIS function, n=1440 in every row:
+#:
+#:     12 physicalai-val clips  (the corpus 8.56 is sourced to)  ->   5.756
+#:    130-clip lead corpus       (the corpus 40.77 is sourced to) ->  20.228 +- 0.327
+#:    130-clip lead corpus, full n=5617                          ->  20.516
+#:
+#: Three consequences, each MEASURED rather than argued:
+#:  1. Neither published number is reproduced. 8.56 and 40.77 are BOTH absent.
+#:  2. The 3.51x spread between rows one and two is EPISODE DIVERSITY alone --
+#:     same encoder, same d, same n, same instrument, only the clips differ
+#:     (H-RANK-23). So participation measures how many distinct scenes the SAMPLE
+#:     spans as much as it measures the representation.
+#:  3. Sample size is NOT the confound (H-RANK-21 REFUTED): the estimator reads
+#:     0.97-1.00x of closed-form truth at n=1440 for concentrated spectra, which
+#:     is our regime, and the real DINOv3 bank is flat in n (19.29@360 ->
+#:     20.52@5617).
+#:
+#: ⇒ A participation number is comparable ONLY at matched CORPUS, matched
+#: EPISODE COUNT and matched AMBIENT DIMENSION d. Note d differs across the
+#: things we routinely compare: z_op is d=2048, this DINOv3 column is d=1024, so
+#: they are NOT directly comparable in either direction.
+#:
+#: ⛔ Until a matched-d, matched-corpus reference exists, DO NOT FAIL AN ARM ON
+#: THE PARTICIPATION CLAUSE. champ30k's recorded FAIL (6.489 < 8.56) compares an
+#: arm to a number no live instrument reproduces, on a different d.
+#: Pinned by ``stack/tests/test_participation_floor_provenance.py``.
+O6_PARTICIPATION_REFERENCES = {
+    "dinov3_vitl16_meanpooled/physicalai-val-12clips/n1440/d1024": 5.756,
+    "dinov3_vitl16_meanpooled/lead-130clips/n1440/d1024": 20.228,
+    "dinov3_vitl16_meanpooled/lead-130clips/n5617/d1024": 20.516,
+}
+
+#: ⚠️ A floor is only quotable together with the sample it was measured on.
+O6_FLOOR_IS_CORPUS_AND_DIM_SPECIFIC = True
 
 #: ⚠️ RANK IS NECESSARY, NOT SUFFICIENT. flagship v1-era has the HIGHEST rank
 #: measured in this programme and NO environment interpretation: it was

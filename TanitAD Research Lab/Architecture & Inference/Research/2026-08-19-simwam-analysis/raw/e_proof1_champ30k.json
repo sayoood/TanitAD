@@ -1,0 +1,187 @@
+{
+ "_evidence_class": "MEASURED (ours; dev-box RTX 4060)",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "arm": "champ30k",
+ "step": 30000,
+ "n_clips": 12,
+ "parity": true,
+ "val_split": "physicalai-val-0c5f7dac3b11",
+ "gates": {
+  "A_rank": {
+   "n": 1680,
+   "d": 2048,
+   "participation": 6.489,
+   "top8_share": 0.8805,
+   "floor": 8.56,
+   "pass": false
+  },
+  "B1_g2": {
+   "1": {
+    "em": 0.1303,
+    "ci95": [
+     0.1079,
+     0.1512
+    ],
+    "beats_hold": true
+   },
+   "2": {
+    "em": -0.0,
+    "ci95": [
+     -0.0,
+     0.0
+    ],
+    "beats_hold": false
+   },
+   "4": {
+    "em": -0.0,
+    "ci95": [
+     -0.0,
+     -0.0
+    ],
+    "beats_hold": false
+   }
+  },
+  "B2_counterfactual": {
+   "true_per_tick_movement_mse": 2049.84890009,
+   "left": {
+    "divergence_over_true_movement": 0.0
+   },
+   "right": {
+    "divergence_over_true_movement": 0.0
+   },
+   "brake": {
+    "divergence_over_true_movement": 0.0001
+   },
+   "throttle": {
+    "divergence_over_true_movement": 0.0002
+   },
+   "pass": false
+  },
+  "C_decodability": {
+   "speed": {
+    "latent": {
+     "r2": 0.2557,
+     "ci95": [
+      -0.4179,
+      0.3855
+     ],
+     "n": 700,
+     "d": 128
+    },
+    "frozen DINOv3": {
+     "r2": 0.5045,
+     "ci95": [
+      0.1982,
+      0.5509
+     ],
+     "n": 700,
+     "d": 128
+    },
+    "pixel (floor)": {
+     "r2": 0.1976,
+     "ci95": [
+      -0.1099,
+      0.344
+     ],
+     "n": 700,
+     "d": 128
+    },
+    "constant (control)": {
+     "r2": 0.0,
+     "ci95": [
+      0.0,
+      0.0
+     ],
+     "n": 700,
+     "d": 1
+    },
+    "latent_beats_pixel_and_zero": false
+   },
+   "yaw_rate": {
+    "latent": {
+     "r2": -0.0102,
+     "ci95": [
+      -0.0753,
+      0.0002
+     ],
+     "n": 700,
+     "d": 128
+    },
+    "frozen DINOv3": {
+     "r2": -0.0005,
+     "ci95": [
+      -0.0049,
+      0.0007
+     ],
+     "n": 700,
+     "d": 128
+    },
+    "pixel (floor)": {
+     "r2": 0.0049,
+     "ci95": [
+      -0.1148,
+      0.016
+     ],
+     "n": 700,
+     "d": 128
+    },
+    "constant (control)": {
+     "r2": 0.0,
+     "ci95": [
+      0.0,
+      0.0
+     ],
+     "n": 700,
+     "d": 1
+    },
+    "latent_beats_pixel_and_zero": false
+   },
+   "d_ego": {
+    "latent": {
+     "r2": 0.2256,
+     "ci95": [
+      -0.3662,
+      0.3597
+     ],
+     "n": 700,
+     "d": 128
+    },
+    "frozen DINOv3": {
+     "r2": 0.5588,
+     "ci95": [
+      0.2137,
+      0.6285
+     ],
+     "n": 700,
+     "d": 128
+    },
+    "pixel (floor)": {
+     "r2": 0.182,
+     "ci95": [
+      -0.0875,
+      0.2984
+     ],
+     "n": 700,
+     "d": 128
+    },
+    "constant (control)": {
+     "r2": 0.0,
+     "ci95": [
+      0.0,
+      0.0
+     ],
+     "n": 700,
+     "d": 1
+    },
+    "latent_beats_pixel_and_zero": false
+   }
+  }
+ },
+ "verdict": {
+  "A_rank": false,
+  "B1_predictor_beats_hold": true,
+  "B2_not_an_echo": false,
+  "C_decodable_speed": false,
+  "PASS_ALL": false
+ }
+}
