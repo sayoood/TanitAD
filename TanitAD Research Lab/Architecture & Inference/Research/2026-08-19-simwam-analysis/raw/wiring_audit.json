@@ -1,0 +1,58 @@
+{
+ "_evidence_class": "MEASURED (ours; trained checkpoint weights)",
+ "what": "how far each stage of the action path travelled from init",
+ "arms": {
+  "champ30k": {
+   "step": 30000,
+   "n_blocks": 3,
+   "film_weight_norm": 10.922433,
+   "film_bias_norm": 0.60868,
+   "act_emb_weight_norm": 17.7538,
+   "head_weight_norm_mean": 1.447456,
+   "head_norm_over_downscaled_init": 55.399,
+   "measured_divergence_x100": "0.0000"
+  },
+  "lewm": {
+   "step": 2000,
+   "n_blocks": 3,
+   "film_weight_norm": 4.459851,
+   "film_bias_norm": 0.196557,
+   "act_emb_weight_norm": 19.1744,
+   "head_weight_norm_mean": 0.136775,
+   "head_norm_over_downscaled_init": 5.235,
+   "measured_divergence_x100": "0.000"
+  },
+  "lewm_o1": {
+   "step": 2000,
+   "n_blocks": 3,
+   "film_weight_norm": 4.876176,
+   "film_bias_norm": 0.112795,
+   "act_emb_weight_norm": 18.4429,
+   "head_weight_norm_mean": 0.2268,
+   "head_norm_over_downscaled_init": 8.68,
+   "measured_divergence_x100": "516.6"
+  },
+  "lewm_o1_detach": {
+   "step": 2000,
+   "n_blocks": 3,
+   "film_weight_norm": 6.589248,
+   "film_bias_norm": 0.257613,
+   "act_emb_weight_norm": 18.755,
+   "head_weight_norm_mean": 0.409445,
+   "head_norm_over_downscaled_init": 15.671,
+   "measured_divergence_x100": "6.53"
+  },
+  "fixed": {
+   "step": 2000,
+   "n_blocks": 3,
+   "film_weight_norm": 5.078009,
+   "film_bias_norm": 0.153506,
+   "act_emb_weight_norm": 18.5199,
+   "head_weight_norm_mean": 0.266887,
+   "head_norm_over_downscaled_init": 10.215,
+   "measured_divergence_x100": "474.9"
+  }
+ },
+ "film_ratio_fixed_over_champ30k": 0.46,
+ "verdict": "champ30k's FiLM weight norm is 10.92243 against `fixed`'s 5.07801 (0.5x). FiLM is EXACTLY zero at init, so this is the entire learned action pathway. Its residual heads sit at 55.40x their DOWN-SCALED init, i.e. they grew past the 1e-3 regime."
+}

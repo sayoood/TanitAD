@@ -7552,3 +7552,112 @@ document is a code change whenever a tool names its path. The migration staged a
 rename that no test covered until the whole suite ran from the repo — which it had
 not been doing, because the mirror the suite ran in was missing `tools/` and
 `taniteval/` entirely.
+
+## C137 — "THE PREDICTOR IS ACTION-BLIND" WAS AN ARTEFACT OF A METRIC WHOSE DENOMINATOR IS AN ARM PROPERTY, and every arm is in fact action-conditioned (2026-08-23, PI challenge)
+
+**What was asserted**, in the drumbeat handoff, in `MODEL_REGISTRY.md` §13, in the
+E-PROOF-1 verdict and to the PI repeatedly: champ30k's predictor is ACTION-BLIND,
+counterfactual divergence **0.000** against `fixed`'s **475×**; *"the two-term
+recipe LEARNED to ignore actions"*.
+
+**What the corrected measurement says.** Normalising by the predictor's OWN delta
+instead of by the arm's latent movement —
+`rel = ||z_hat(a x100) - z_hat(a)|| / ||z_hat(a) - z_t||`:
+
+| arm | rel. action response | old "divergence" |
+|---|---|---|
+| champ30k | **0.7194** | 0.0000 |
+| lewm | **0.5426** | 0.000 |
+| lewm_o1 | **1.1640** | 1031.8 |
+| lewm_o1_detach | **0.7806** | 254.5 |
+| fixed | **0.8358** | 925.3 |
+
+**Every arm is substantially action-conditioned.** Nothing ever ignored actions.
+
+**ROOT CAUSE.** The old statistic was
+`||z_hat(a') - z_hat(a)||^2 / ||true per-tick latent movement||^2`. That
+denominator is a property of **the arm's latent scale**, not of the predictor,
+and across these five arms it spans **0.088 to 41.3 — a factor of 468**. Two
+predictors with identical action sensitivity therefore score up to 468x apart,
+and champ30k's "0.000" meant only *its delta is small in absolute terms*.
+
+⛔ **CLASS: a ratio whose DENOMINATOR is not held fixed across the things being
+compared** — the same scope family as C135 (a corpus-specific floor quoted as
+portable) and as `df` / `free` / cgroup / `step_s`. It is the THIRD time this
+class has bitten in one day, and the first time it was a metric I built myself.
+
+**What I got right and what it cost.** The PI caught this by noticing an internal
+inconsistency I had reported without resolving — *"you said the predictor is
+stronger, now we are saying it is not reacting on actions"*. Two claims of mine
+were mutually incompatible and I had not tested the join. The mechanism I
+proposed first (a starved action path: FiLM zero-init behind a 1e-3 head
+throttling its gradient 1000x) was **also wrong**, and the weight audit refuted
+it: champ30k's FiLM norm is **10.92**, the LARGEST of all five arms, and its
+heads grew **55.4x** past the down-scaled init.
+
+**WHAT SURVIVES, and it is now sharper.** champ30k's delta is
+**0.264x the true movement at h=1** and **0.0002x at h>=2** — a correctly
+action-conditioned direction at a quarter of the right magnitude one tick out,
+then no motion at all. The defect is **OUTPUT MAGNITUDE and HORIZON DECAY**, not
+the action wiring. H-PROOF-2 (identity beyond one tick) is unaffected: it never
+used the divergence metric.
+
+**Blast radius.** Every cross-arm divergence number in this session — H-RANK-18,
+H-RANK-22, H-RANK-26's premise — was computed with the confounded denominator and
+is corrected to the scale-free statistic. The RANK halves of those rows used an
+independent measurement and stand.
+
+---
+
+## C135 — "clip 5b4eef8f is a road bend, so my own turn guard is a false positive" USED AN ESTIMATOR WHOSE VALUE GROWS WITH THE HORIZON, and I began weakening a CORRECT guard on it (2026-08-23, self-caught mid-iteration)
+
+**What I was doing.** Acting on the PI's direction to combine curvature with the
+speed profile, I computed turn radius as **arc ÷ Δyaw over the available
+horizon**. Clip `5b4eef8f` returned **R = 83.7 m at steady speed** — textbook road
+geometry — and Alpamayo's CoT agreed in spirit ("nudge left to pass the cyclist
+in the same lane"). I concluded the `G1-fallback-absorbs-turn` guard was refusing
+a correct `FOLLOW_MAIN_ROAD`, and started rewriting it to be more permissive.
+
+**Why it is wrong.** That estimator divides a turn's heading change by an arc
+that **includes the straight road after the turn**, so the computed radius grows
+without bound as the horizon lengthens. The turn occupies 4 s of a 12 s window;
+the remaining 8 s of straight driving diluted it by ~7×. Instantaneous curvature
+(κ = ω/v, minimised over the manoeuvre) gives **R = 12.4 m**, and the raw yaw
+trace confirms it: **+69° accumulated in 4.0 s at a peak yaw rate of 26 °/s**.
+A tight junction turn. ⇒ **All three original FOLLOW_MAIN_ROAD flags were
+genuine; the guard was right and my correction was the error.**
+
+**What caught it.** Not the numbers — they were self-consistent. Dumping the raw
+**yaw-rate trace** did, because 26 °/s is not something a bend produces. The
+independent confirmation came from Alpamayo on a DIFFERENT clip: on `00d05901`,
+where the CoT says *"Turn right at the intersection since the traffic light is
+green"*, the arc-based estimator said ROAD_BEND and the curvature estimator says
+JUNCTION_TURN. The VLM caught a real classifier error.
+
+⚠️ **And the same investigation shows the VLM cannot be the arbiter either**:
+`5b4eef8f` and `c84534a9` BOTH say "nudge left to pass the cyclist" through
+unambiguous 69° and 87° junction turns. Two witnesses, each wrong somewhere, and
+only the raw kinematics settle it.
+
+**ROOT-CAUSE CLASS: an estimator whose value depends on a window that has nothing
+to do with the quantity being measured.** One level below C134 — that was *which*
+window, this is *that a window was used at all* where an INSTANTANEOUS quantity
+was required. Same family as quoting a learning-curve exponent without its fit
+window: a number that is a property of the measurement interval being read as a
+property of the system.
+
+⇒ **STANDING RULE: for a quantity defined pointwise (curvature, yaw rate,
+acceleration), compute it POINTWISE and reduce with an explicit statistic
+(min/max/percentile over the manoeuvre) — never as a ratio of two horizon
+aggregates.** And when an estimator disagrees with a prior verdict, plot the RAW
+signal before acting: `test_the_estimator_error_is_pinned` now builds a fixture
+where the two estimators disagree by 4×, so the correct one cannot be silently
+replaced again.
+
+**Second bug, same module, caught by its own test before shipping.**
+`decel_events` re-armed *during* a descent, so one smooth 10 → 0 m/s stop counted
+as **SIX** decelerations — which would have made every ordinary controlled stop
+classify as stop-and-go traffic and destroyed the QUEUE discriminator the
+function exists to provide. Class: **a counter that counts samples where it means
+to count events.** It surfaced only because the test asserted the COUNT rather
+than that the code ran. QUEUE on the 39-clip sample drops 3 → 1 after the fix.

@@ -3800,10 +3800,44 @@ actions.** Beating HOLD at h=1 is its only non-trivial behaviour.
 30x overshoots because its own latent barely moves, 0.093/tick against champ30k's 42.6). The
 contrast is decisive about IDENTITY, not a certificate for `fixed`.
 
-**B2 - COUNTERFACTUAL DIVERGENCE (anti-echo)** — **ACTION-BLIND.** Rollouts under altered actions,
-in units of true per-tick movement (2049.85 MSE): left **0.0000**, right **0.0000**, brake
-**0.0001**, throttle **0.0002**. For contrast the six-term `fixed` arm reads **474.9x** under x100
-actions. Removing O1 did not merely weaken action-conditioning, it removed it.
+**B2 - COUNTERFACTUAL DIVERGENCE (anti-echo)** — ⛔ **THE "ACTION-BLIND" VERDICT IS RETRACTED
+(C137, 2026-08-23). The predictor IS action-conditioned; the metric was confounded.**
+
+The original statistic divided by **true per-tick latent movement**, which is a property of the
+ARM, not of the predictor, and spans **0.088 to 41.3 across our arms — a factor of 468**. Two
+predictors with identical action sensitivity therefore score up to 468x apart, and champ30k's
+"0.0000" meant only *its delta is small in absolute terms*.
+
+Re-measured scale-free — normalising by the predictor's OWN delta,
+`rel = ||z_hat(a x100) - z_hat(a)|| / ||z_hat(a) - z_t||`
+(`…/2026-08-19-simwam-analysis/raw/action_response_scalefree.json`, 6 val clips):
+
+| arm | relative action response | old (confounded) divergence |
+|---|---|---|
+| **champ30k** | **0.7194** | 0.0000 |
+| `lewm` | 0.5426 | 0.000 |
+| `lewm_o1` | 1.1640 | 1031.8 |
+| `lewm_o1_detach` | 0.7806 | 254.5 |
+| `fixed` | 0.8358 | 925.3 |
+
+**Every arm is substantially action-conditioned. No arm ever ignored actions.**
+
+⭐ Corroborated independently at the WEIGHT level
+(`…/raw/wiring_audit.json`): `FiLM.to_scale_shift` is **exactly zero at init**, so its norm is the
+entire learned action pathway — champ30k's is **10.92**, the LARGEST of all five arms (2.15x
+`fixed`'s 5.08), and its residual heads grew **55.4x** past the down-scaled init. A starved action
+path was the first hypothesis and the weights refute it.
+
+⭐ **THE REAL DEFECT, and it is sharper than the retracted one: OUTPUT MAGNITUDE and HORIZON DECAY.**
+champ30k's delta is **0.264x the true movement at h=1** (~4x too small) and **0.0002x at h>=2**
+(the identity map, §13.1 B1 / H-PROOF-2, which never used this metric and is unaffected). No arm is
+magnitude-calibrated: `lewm` **0.020x**, `lewm_o1_detach` **3.57x**, `lewm_o1` **17.6x**,
+`fixed` **25.8x**. ⇒ the lever is the delta's SCALE and its decay with horizon, NOT the action
+wiring. This also reframes `RESIDUAL_HEAD_INIT_SCALE = 1e-3`: it removed a 1000x-too-large delta and
+left us ~4x too small at h=1.
+
+⛔ **ROOT-CAUSE CLASS (C137): a ratio whose DENOMINATOR is not held fixed across the things being
+compared** — the same scope family as §13.3's floor and as `df` / `free` / cgroup / `step_s`.
 
 **C - DECODABILITY** — does not clear the raw-pixel floor, and the point estimates are not even
 significantly positive (n=700, d=128 PCA, lambda on the FIT split):
@@ -3820,10 +3854,21 @@ zero*. The **constant control reads exactly 0.0000 with zero width** on all thre
 makes the rest of the panel trustworthy. Frozen DINOv3 on the **same clips, same probe** separates
 cleanly on two of three, so the target IS decodable and this representation does not carry it.
 
-**VERDICT — `PASS_ALL: false`.** One gate of four passes, and only at h=1. The arm proves the
-collapse can be *prevented* (H-RANK-11) without proving the representation *learned the environment*.
+**VERDICT — `PASS_ALL: false`, and the gate-by-gate reading CHANGED on 2026-08-23 (C137):**
 
-### 13.2 The O1 coupling — why the two-term recipe is action-blind (H-RANK-18, MEASURED 2026-08-23)
+| gate | status |
+|---|---|
+| **A** rank | **UNDECIDABLE** — the 8.56 floor is not reproducible and is measured at half this arm's `d` (§13.3). Neither pass nor fail. |
+| **B1** beats HOLD | **PASSES at h=1 only** (+0.1303 [+0.1079, +0.1512]); identity map at h>=2. |
+| **B2** action-conditioned | **PASSES** — relative action response **0.7194**. The earlier FAIL was the retracted metric. |
+| **C** decodable above pixels | **SPLIT — and the split is the finding (E-DEC-1, 2026-08-23).** `z_op` (AFTER the 4×4 readout) does NOT beat the pixel floor (`z_op − pix` t = 0.71 on speed). But the **ENCODER TOKENS DO, decisively**: `enc − pix` **+0.2535 (t = 3.68), 12/12 episodes** on speed and **+0.3603 (t = 4.21), 11/12** on `d_ego`, and the encoder is statistically indistinguishable from frozen DINOv3 on `d_ego`. ⇒ **the trunk learned; the readout discards it.** The original FAIL judged `z_op` and concluded about the encoder. |
+
+⇒ the arm proves the collapse can be *prevented* (H-RANK-11) and that the predictor *is* action-
+conditioned, **without proving the representation learned anything a raw pixel does not already
+carry**. The binding failure is **C (decodability)**, supported by the magnitude/horizon defect in
+B1-B2: a correctly-directed delta at ~1/4 the right size one tick out, and none at all thereafter.
+
+### 13.2 The O1 coupling — rank versus action-response strength (H-RANK-18, MEASURED 2026-08-23; divergence column superseded by C137)
 
 Matched 2k-step arms, same 130-clip corpus, same instrument, `.../raw/h_rank18_readout.json`:
 
