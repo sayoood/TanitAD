@@ -108,7 +108,8 @@ def _jpeg_offsets(jpeg_len: torch.Tensor) -> torch.Tensor:
 
 def _decode_stacked(jpeg_buf: torch.Tensor, offs: torch.Tensor, n_stack: int,
                     a: int, b: int, codec: str = "jpeg",
-                    sl: "tuple[slice, slice] | None" = None) -> torch.Tensor:
+                    sl: "tuple[slice, slice] | None" = None,
+                    newest_only: bool = False) -> torch.Tensor:
     """Decode + D-015 channel-stack ONLY stacked-frame rows ``[a:b]``.
 
     ``stack_frames`` output row ``j`` = channel-concat of raw frames
@@ -124,6 +125,21 @@ def _decode_stacked(jpeg_buf: torch.Tensor, offs: torch.Tensor, n_stack: int,
     orders are bit-identical and the cheaper one is used here."""
     k = n_stack - 1
     dec = tvio.decode_png if codec == "png" else tvio.decode_jpeg
+    if newest_only:
+        # ⭐ H-RANK-8 (2026-08-23): emit ONLY the newest frame of each stack —
+        # raw frame ``j + k`` for row ``j`` — so the row<->pose alignment the
+        # manifest already encodes (poses[k:]) is preserved EXACTLY while the
+        # channel count drops 3*n_stack -> 3. Rows [a:b] need raw [a+k : b+k].
+        # WHY: with a 3-frame stack consecutive latents share 2/3 of their input,
+        # and lag-1 dz autocorrelation measured NEGATIVE (-0.075) — per-frame
+        # noise, not motion. This isolates that mechanism as ONE variable.
+        raw = [dec(jpeg_buf[int(offs[i]):int(offs[i + 1])],
+                   mode=tvio.ImageReadMode.RGB)
+               for i in range(a + k, b + k)]
+        if sl is not None:
+            rs, cs = sl
+            raw = [f[:, rs, cs] for f in raw]
+        return torch.stack(raw)                            # [b-a, 3, h, w] u8
     raw = [dec(jpeg_buf[int(offs[i]):int(offs[i + 1])],
                mode=tvio.ImageReadMode.RGB)
            for i in range(a, b + k)]                       # [3, H, W] u8 each
@@ -268,12 +284,15 @@ class V2CompressedCache:
 
     def __init__(self, cache_dir, lru_size: int = 64,
                  frame: CanonicalFrame | None = None,
-                 allow_lossy: bool = False):
+                 allow_lossy: bool = False,
+                 newest_frame_only: bool = False):
         self.cache_dir = str(cache_dir)
         self.lru_size = max(1, int(lru_size))
         self.files: list[str] = []
         self.frame = frame
         self.allow_lossy = bool(allow_lossy)
+        #: H-RANK-8 switch — single newest frame per row (3 channels), alignment kept.
+        self.newest_frame_only = bool(newest_frame_only)
         self._lru: "OrderedDict[int, tuple]" | None = None
 
     # Pickling: drop the live LRU so a populated cache is never serialised into
@@ -332,7 +351,8 @@ class V2CompressedCache:
 
     def decode_stacked_range(self, clip_idx: int, a: int, b: int) -> torch.Tensor:
         jpeg_buf, offs, n_stack, codec, sl = self._payload(clip_idx)
-        return _decode_stacked(jpeg_buf, offs, n_stack, a, b, codec, sl)
+        return _decode_stacked(jpeg_buf, offs, n_stack, a, b, codec, sl,
+                               newest_only=self.newest_frame_only)
 
 
 # --------------------------------------------------------------------------- #
@@ -463,7 +483,8 @@ def build_v2_providers(cache_dirs, lru_size: int = 64, rebuild: bool = False,
                        verbose: bool = True,
                        stable_ids: bool = True,
                        frame: CanonicalFrame | None = None,
-                       allow_lossy: bool = False) -> list[LazyV2Episode]:
+                       allow_lossy: bool = False,
+                       newest_frame_only: bool = False) -> list[LazyV2Episode]:
     """Build the lazy provider list for one or more v2 cache dirs.
 
     ⭐ ``frame`` (2026-07-28) requests a CENTRED SUB-FRAME of whatever geometry
@@ -498,7 +519,8 @@ def build_v2_providers(cache_dirs, lru_size: int = 64, rebuild: bool = False,
         cd = str(cd)
         man = load_or_build_manifest(cd, rebuild=rebuild, verbose=verbose)
         cache = V2CompressedCache(cd, lru_size=lru_size, frame=frame,
-                                  allow_lossy=allow_lossy)
+                                  allow_lossy=allow_lossy,
+                                  newest_frame_only=newest_frame_only)
         cache.files = man["files"]
         key = "episode_uid" if (stable_ids and "episode_uid" in man) else "episode_id"
         _sl_rep = None

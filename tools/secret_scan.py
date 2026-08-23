@@ -168,6 +168,11 @@ SOURCE_DOC_SUFFIXES = {
     ".py", ".pyi", ".md", ".rst", ".sh", ".bash", ".ps1", ".bat",
     ".js", ".ts", ".c", ".h", ".cc", ".cpp", ".hpp", ".go", ".rs", ".java",
     ".ipynb", ".html", ".css", ".sql", ".toml", ".cfg", ".ini", ".xml",
+    # 2026-08-23: banked literature. arXiv 2305.18290 ("...Your Language Model
+    # is SECRETLY a Reward Model") matched `*secret*` and blocked a 5,400-path
+    # commit. A paper TITLE is not a credential file; its CONTENT is still
+    # scanned like any other blob (Tier A unchanged).
+    ".pdf",
 }
 
 # ⚠️ NARROWED WITH A REASON (MEASURED 2026-08-18, whole-repo run). The obvious
@@ -706,7 +711,7 @@ def staged_paths(repo: Path) -> list[str]:
     """The index, as repo-relative POSIX paths.
 
     ``-z`` because git C-quotes any path with a space otherwise -- and this repo
-    is full of them (``TanitAD Research Hub/...``). An unquoted read here is the
+    is full of them (``TanitAD Research Lab/...``). An unquoted read here is the
     trap that has now caught three separate streams."""
     out = git(repo, "diff", "--cached", "--name-only", "-z",
               "--diff-filter=ACMR")
@@ -724,10 +729,18 @@ def scan_staged(repo: Path, max_bytes: int = DEFAULT_MAX_BYTES) -> Report:
     # git's OWN ignore verdict -- the tool that owns the fact (operating standard
     # 2). --no-index makes check-ignore answer for ALREADY-staged paths, which is
     # exactly the `git add -f Keys.txt` case; without it the probe is vacuous.
-    if paths:
+    # ⭐ 2026-08-23: a RENAME (R) of an already-tracked path is NOT a new
+    # `git add -f` — that force-add was committed before. The Hub->Lab migration
+    # re-staged 5,342 renames, 42 of them force-added media (the tracked
+    # showcase-video corpus), and each was reported as fresh exposure. Only this
+    # PATH probe is narrowed to A/C/M; content scanning below still covers
+    # every staged blob, renames included.
+    new_paths = [q for q in git(repo, "diff", "--cached", "--name-only", "-z",
+                                 "--diff-filter=ACM").split("\0") if q]
+    if new_paths:
         proc = subprocess.run(
             ["git", "check-ignore", "--no-index", "-z", "--stdin"],
-            cwd=str(repo), input=("\0".join(paths) + "\0").encode("utf-8"),
+            cwd=str(repo), input=("\0".join(new_paths) + "\0").encode("utf-8"),
             capture_output=True)
         for raw in proc.stdout.decode("utf-8", "replace").split("\0"):
             if raw:

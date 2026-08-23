@@ -65,7 +65,7 @@ hypotheses are proven. Consequences, binding:
   the Master Mind or the PI = GPU access is controlled, no double work.
 - **Decoupled from production.** Two jobs daily, sequential across the four
   fields (Data Engineering · Architecture & Inference · Deployment &
-  Optimization · Opponent analysis & Benchmarks):
+  Optimization · Opponent Analysis · Benchmarks & Evals — FIVE fields, PI 2026-08-22):
   1. **Literature research** — identify relevant, impactful publications;
      emphasise CROSS-DISCIPLINE TRANSFER (LLMs, foundation models, world/action
      models, robotics → our AD use case).

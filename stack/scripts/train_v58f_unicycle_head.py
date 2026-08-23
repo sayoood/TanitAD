@@ -341,7 +341,11 @@ def build_train_episodes(a, *, cache_frame, train_frame):
                                         require=bool(a.require_parity))
     slice_frame = None if train_frame == cache_frame else train_frame
     eps = build_v2_providers(dirs, lru_size=int(a.v2_lru), frame=slice_frame,
-                             verbose=True)
+                             verbose=True,
+                             # H-RANK-8: single newest frame per row (3 ch),
+                             # alignment preserved; absent/False = incumbent.
+                             newest_frame_only=bool(getattr(a, "newest_frame_only",
+                                                            False)))
     if not eps:
         raise SystemExit(f"[w4] no *.v2ep.pt under {dirs} — does --v2-cache "
                          f"point at the split dir?")

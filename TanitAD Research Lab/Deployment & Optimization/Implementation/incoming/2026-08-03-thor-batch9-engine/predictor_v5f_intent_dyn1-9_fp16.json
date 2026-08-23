@@ -1,0 +1,108 @@
+{
+  "ckpt": "/home/nvidia/models/v5f/ckpt.pt",
+  "step": 1000,
+  "params_M": 263.58,
+  "window": 8,
+  "state_dim": 2048,
+  "action_dim": 3,
+  "batch_profile": "dynamic 1..9 (opt 9)",
+  "onnx": {
+    "path": "/home/nvidia/trt_deploy/predictor_v5f_intent_dyn1-9_fp16.onnx",
+    "export_s": 1.81,
+    "MB": 346.8,
+    "opset": 17,
+    "dynamic_batch": true,
+    "fastpath": "OFF",
+    "inputs": [
+      "states",
+      "actions",
+      "intent"
+    ],
+    "intent_dim": 256
+  },
+  "engine": {
+    "ok": true,
+    "cmd": "/usr/src/tensorrt/bin/trtexec --onnx=/home/nvidia/trt_deploy/predictor_v5f_intent_dyn1-9_fp16.onnx --saveEngine=/home/nvidia/trt_deploy/predictor_v5f_intent_dyn1-9_fp16.plan --skipInference --fp16 --minShapes=states:1x8x2048,actions:1x8x3,intent:1x256 --optShapes=states:9x8x2048,actions:9x8x3,intent:9x256 --maxShapes=states:9x8x2048,actions:9x8x3,intent:9x256",
+    "build_s": 40.0,
+    "MB": 174.7,
+    "returncode": 0,
+    "tail": null
+  },
+  "verify": {
+    "io_names": [
+      "states",
+      "actions",
+      "intent",
+      "z_next"
+    ],
+    "profile_states": [
+      [
+        1,
+        8,
+        2048
+      ],
+      [
+        9,
+        8,
+        2048
+      ],
+      [
+        9,
+        8,
+        2048
+      ]
+    ],
+    "profile_actions": [
+      [
+        1,
+        8,
+        3
+      ],
+      [
+        9,
+        8,
+        3
+      ],
+      [
+        9,
+        8,
+        3
+      ]
+    ],
+    "has_intent": true,
+    "per_batch": {
+      "1": {
+        "shape": [
+          1,
+          2048
+        ],
+        "rel_err": 0.0008486,
+        "finite": true
+      },
+      "9": {
+        "shape": [
+          9,
+          2048
+        ],
+        "rel_err": 0.00060605,
+        "finite": true
+      }
+    },
+    "profile_intent": [
+      [
+        1,
+        256
+      ],
+      [
+        9,
+        256
+      ],
+      [
+        9,
+        256
+      ]
+    ],
+    "intent_is_live_rel_change": 0.046953,
+    "row_independence_rel_err": 0.00219724
+  }
+}

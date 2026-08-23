@@ -41,6 +41,10 @@ terms VERBATIM — no synonyms, no drift.`
 | **LAN** | Lane-Anchored Navigation: leak-guarded geometric route corridor label (replaces 4-way nav_cmd) | lan.py |
 | **aligned vocabulary** | the tactical/strategic token set of HIERARCHY_VOCABULARY.md — NOT the ego-geometric subset | 2026-08-22 |
 | **v7-tiny** | the 29-min validation rig: v6's real trainer at 19M params on the parity corpus | 2026-08-22 |
+| **TanitResim** | P9 — replay & visualization pipeline, UI + CLI (owned by EvalFlyWheel; early versions exist) | 2026-08-22 |
+| **TanitSpear** | future product — own data generation/rendering/augmentation pipeline (GAIA-class, done cheaper; small-scale proofs first) | 2026-08-22 |
+| **TanitSim** | future product — closed-loop environment on our own real data (AlpaSim-class), linked to TanitSpear | 2026-08-22 |
+| **transfer handoff** | the mandatory Lab⇄FlyWheel carry of an extremely good result — accept or reject with a reason, never silent (§7 charters) | 2026-08-22 |
 | **verify by content** | never trust exit codes, file counts, names, or "success" prints; assert on the bytes | C77/C79 |
 | **gate participation (train-pooled)** | the O6 gate pools rows from the O4-weighted TRAIN stream — cross-arm comparable, but inflated vs a val-side read (~5.5 vs ~3.4 on the same model); quote val-side participation for representation claims | H-RANK-9 |
 

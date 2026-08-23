@@ -150,7 +150,7 @@ from stage_a_probes import DACCEL_DEFAULT, DKAPPA_DEFAULT  # noqa: E402
 #: equals `s2_labels.S2_CANONICAL_LABELS_REL` (C81 — audit the copies against
 #: each other where a fact is written twice).
 S2_CANONICAL_LABELS_REL = (
-    "TanitAD Research Hub/Data Engineering/Implementation/incoming/"
+    "TanitAD Research Lab/Data Engineering/Implementation/incoming/"
     "2026-08-16-s2-v1-labels/review/labels_v2")
 
 __all__ = [
@@ -3073,6 +3073,10 @@ def build_stack_from_args(a) -> V6Stack:
     invariant AND the X3 matrix BEFORE any GPU time is spent. Both refusals are
     pre-launch on purpose: an over-budget or mis-wired model discovered at hour
     six of a run is a wasted GPU-day."""
+    if getattr(a, "newest_frame_only", False) and int(a.in_channels) != 3:
+        raise SystemExit("[v6] --newest-frame-only feeds 3-channel frames; pass "
+                         f"--in-channels 3 (got {a.in_channels}). Refusing to "
+                         "build a 9-channel encoder for 3-channel input.")
     enc = EncoderConfig(in_channels=a.in_channels, image_size=a.frame_h,
                         image_width=a.frame_w, patch_size=a.patch,
                         d_model=a.enc_dim, depth=a.enc_depth,
@@ -4882,6 +4886,12 @@ def build_parser() -> argparse.ArgumentParser:
                          "this stage's gate")
     # ---- model geometry ----------------------------------------------------
     ap.add_argument("--in-channels", type=int, default=9)
+    #: H-RANK-8 — feed ONLY the newest frame of each 3-frame stack (3 channels).
+    #: Consecutive latents then share NO input frames; the hypothesis is that
+    #: the 2/3-shared stack makes dz noise-like (lag-1 autocorr measured -0.075).
+    #: Implies --in-channels 3; the trainer enforces that coupling below.
+    ap.add_argument("--newest-frame-only", dest="newest_frame_only",
+                    action="store_true")
     ap.add_argument("--frame-h", type=int, default=256)
     ap.add_argument("--frame-w", type=int, default=640)
     ap.add_argument("--patch", type=int, default=16)

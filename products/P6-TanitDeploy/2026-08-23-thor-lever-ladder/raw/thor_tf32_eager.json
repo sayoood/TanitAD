@@ -1,0 +1,64 @@
+{
+ "spec": "E-DEPLOY-3",
+ "controls": {
+  "state_dict_loads_clean": {
+   "expect": "0/0",
+   "n_missing": 0,
+   "n_unexpected": 0,
+   "pass": true
+  },
+  "fp32_deterministic": {
+   "expect": "bit-identical repeat",
+   "measured": true,
+   "pass": true
+  },
+  "tf32_switch_is_live": {
+   "expect": "a 2048^2 fp32 matmul changes when TF32 is enabled",
+   "max_abs_change": 0.07703971862792969,
+   "pass": true
+  }
+ },
+ "arms": [
+  {
+   "arm": "fp32_highest",
+   "n": 40,
+   "median_ms": 12.368682015221566,
+   "p90_ms": 12.418678030371666,
+   "deviation_m": 0.0
+  },
+  {
+   "arm": "tf32_high",
+   "n": 40,
+   "median_ms": 12.734493531752378,
+   "p90_ms": 12.762040016241372,
+   "deviation_m": 0.0,
+   "finite": true,
+   "speedup_vs_fp32": 0.971
+  },
+  {
+   "arm": "tf32_high_cuda_graph",
+   "n": 40,
+   "median_ms": 6.112108007073402,
+   "p90_ms": 6.164716905914247,
+   "deviation_m": 0.0,
+   "speedup_vs_fp32": 2.024
+  }
+ ],
+ "env": {
+  "torch": "2.13.0+cu130",
+  "device": "NVIDIA Thor",
+  "default_matmul_precision": "highest",
+  "cudnn_allow_tf32_default": true,
+  "matmul_allow_tf32_default": false
+ },
+ "fp16_deviation_bar_m": 0.08663,
+ "verdict": "H-DEPLOY-6 REFUTED \u2014 TF32 gain -3.0 % (bar 5 %), deviation 0.0000e+00 m vs fp16 bar 8.6630e-02 m",
+ "integrator_prediction_check": {
+  "prediction": "TF32 touches matmuls only, so waypoint deviation should be far below fp16 autocast's (which downcast the integrator's inputs)",
+  "tf32_dev_m": 0.0,
+  "fp16_dev_m": 0.08663,
+  "ratio_tf32_over_fp16": 0.0,
+  "prediction_holds": true
+ },
+ "_evidence_class": "MEASURED (ours; Thor, in-process probes only)"
+}

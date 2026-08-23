@@ -2421,7 +2421,7 @@ SHAPE and a measured RECOVERABILITY, not a line of code.** `in_channels=9` is fo
 from the line everyone read. Related to **C15** (semantics from a name) — here the semantics were
 taken from an *indexing expression* instead.
 
-Evidence: `TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-08-03-latent-bottleneck/`
+Evidence: `TanitAD Research Lab/Architecture & Inference/Implementation/incoming/2026-08-03-latent-bottleneck/`
 (`LATENT_BOTTLENECK.md`, `results_mechanism.json`, `results_temporal_falsifier.json`,
 `results_precision_ladder.json`, `raw/temporal_kv_cost.json`).
 
@@ -3153,7 +3153,7 @@ that had never once executed look like a working default.
 ## R-2026-08-04-vt — ⛔ A MEASURED ABSENCE THAT WENT STALE IN ONE DAY, and a caveat that was already retracted and reached me anyway
 
 **Stream:** Architecture & Inference / D-VT1 (leak-guarded target speed).
-**Artifacts:** `TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-08-04-target-speed/`.
+**Artifacts:** `TanitAD Research Lab/Architecture & Inference/Implementation/incoming/2026-08-04-target-speed/`.
 
 ### 1. *"The parity train cache is not reachable from any non-training host"* — FALSE by 2026-08-04
 
@@ -3455,7 +3455,7 @@ only REF-C latent dumps … E-WC2 now needs a GPU pass at a deliberate training 
 **What is true.** The REF-C latents are **in this repo**, at
 
 ```
-TanitAD Research Hub/Architecture & Inference/Implementation/incoming/
+TanitAD Research Lab/Architecture & Inference/Implementation/incoming/
     2026-08-04-lambda-findability/raw/latents_refc-{base,xl}-30k.pt     39.5 MB / 26.7 MB
 ```
 
@@ -4098,7 +4098,7 @@ for a MISSING OPTIONAL DEPENDENCY on the box that runs CI is treated as *not cov
 ⇒ **Fixed at the root, not at the symptom:** the assertion now reads
 `m2["version"] == MANIFEST_VERSION` — **a version literal in a test is a stale claim waiting to
 happen**, and the constant cannot drift from itself. *(Suite after the fix: recorded in
-`TanitAD Research Hub/Data Engineering/Implementation/incoming/2026-08-16-sam3-dtype-fix/SAM3_DTYPE_FIX.md`
+`TanitAD Research Lab/Data Engineering/Implementation/incoming/2026-08-16-sam3-dtype-fix/SAM3_DTYPE_FIX.md`
 §7 — measured, not projected.)*
 
 ⭐ **THIS IS C13/C14's FAMILY — an instrument structurally unable to report the answer it is cited
@@ -5723,7 +5723,7 @@ checkpoint's `v6_config`. **Δ = 17 280.** C104's substantive point is unaffecte
 still 12.2 % over the "Sub-300M" headline); only the digits need fixing.
 
 Full pre-registration, controls, kill criteria and manifest:
-`TanitAD Research Hub/Architecture & Inference/Research/2026-08-18-encoder-experiments/PREREG_ENCODER_EXPERIMENTS.md`
+`TanitAD Research Lab/Architecture & Inference/Research/2026-08-18-encoder-experiments/PREREG_ENCODER_EXPERIMENTS.md`
 
 ---
 
@@ -5827,7 +5827,7 @@ was true and covered 80 % of the rows.
 The agent's first staging check **word-split space-containing paths into 360 fragments and compared
 empty-to-empty**, reporting *"360 files, 0 mismatches"*. Redone with `-z`: **72 files, 0 mismatches.**
 ⇒ ⭐ **"A CHECK THAT CANNOT FAIL IS NOT A CHECK."** This repo's paths contain spaces
-(`TanitAD Research Hub`), so any unquoted/word-split verification degenerates to a tautology that
+(`TanitAD Research Lab`), so any unquoted/word-split verification degenerates to a tautology that
 reports success. **Same family as the pooling story and the fixture-shaped test: a green result whose
 green means nothing.**
 
@@ -6473,7 +6473,7 @@ it. **The token is still plaintext on Thor.** ⇒ *A rule with no mechanism is C
 never ran", written yesterday.*
 
 ⚠️ **And the space-splitting trap caught ME during this very verification** — an unquoted `for f in
-$(grep -rl …)` tore this repo's `TanitAD Research Hub` paths into fragments and reported
+$(grep -rl …)` tore this repo's `TanitAD Research Lab` paths into fragments and reported
 `No such file or directory` for each. Redone with `-rlZ` + NUL-delimited read. **Third logged
 instance, first one in my own hands.**
 
@@ -7377,3 +7377,36 @@ SIGReg dosage does not, and nothing reaches the frozen reference.
 frames — the only representation here with demonstrated decodability), a
 `participation_pass` clause in `o6_rank_verdict`, and
 `O6_RANK_IS_NOT_SUFFICIENT` recording that rank alone admits v1 (see C131).
+
+## C133 — "champ30k clears the frozen-DINOv3 floor (envelope ~11)" QUOTED THE TRAIN-POOLED MONITOR AS THE HEADLINE WHILE ITS VAL CONTROL WAS PENDING, and took cycle PEAKS as an envelope (2026-08-23, caught by the drumbeat's own val probe)
+
+**What was asserted (to the PI, twice, and in the title of commit `c29c659`):**
+that champ30k's participation had cleared 8.56 with an "upper envelope ~11".
+**What the control says:** val-side participation **6.499** at step 30,000
+(`~/v7tiny/val_rank_3way.json`, n=1440) — BELOW the floor.
+
+**Two compounding errors.** (1) The "11" came from the train-pooled rolling
+spectrum (last 30 readings: mean 9.49, max 11.94, min 6.42), an instrument
+H-RANK-9 had ALREADY measured as inflated vs val — I reported it as decisive
+before the val probe ran. (2) "Envelope" selected the MAXIMA of a three-phase
+O4-sampling cycle; the rolling mean was 9.49, the gate's end reading 6.49, val
+6.50. Selecting peaks from an oscillating monitor is a selection bias in a
+costume.
+
+**What SURVIVES, and it is substantial:** collapse is PREVENTED — rise-then-
+plateau over 24k steps where all-six rose-then-collapsed (H-RANK-11); val-side
+participation rose **4.05 → 6.50 (+60 %)** from 6k to 30k (H-RANK-12); the
+highest participation and best energy spread of any trained arm (H-RANK-15).
+The causal attribution to the OBJECTIVE stands. "Solved" does not.
+
+**Also surfaced:** the floor's own provenance is contested (H-RANK-16: 8.56 in
+code vs 40.77 in E-TRUNK-3 for "frozen DINOv3" — two instruments, one name).
+Until DINOv3 is measured through the SAME instrument on the SAME clips, the
+gap is somewhere between 1.3× and 6× and no pass/fail is quotable.
+
+**ROOT-CAUSE CLASS: narrating a headline from the known-inflated instrument
+before its pre-registered control reported (C130 family), compounded by
+peak-selection from an oscillating monitor.** ⇒ STANDING RULE: a run's
+headline number is the VAL-side reading or nothing; train-side monitors are
+trajectory evidence only, and a monitor that oscillates is summarised by its
+window MEAN with its sd, never by its maxima.

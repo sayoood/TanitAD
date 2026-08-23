@@ -1,0 +1,294 @@
+{
+ "stage": "S-W",
+ "pass": null,
+ "verdict": "INCONCLUSIVE",
+ "required": [
+  "P1",
+  "P3",
+  "P6"
+ ],
+ "required_effective": [
+  "P1",
+  "P3",
+  "P6"
+ ],
+ "not_applicable_required": [],
+ "applicability_conflicts": [],
+ "arm": {
+  "has_scorer": false,
+  "scorer_class": null,
+  "selector": "none",
+  "_source": "the BUILT stack (stack.cand_score), not the --selector flag"
+ },
+ "vacuous_gate": null,
+ "sel_gap_tier": "the gate probe `sel_gap` is the T1 instrument (taniteval.selgap, episode-cluster bootstrap) supplied through --gate-probes \u2014 NOT the T0 train-time log key of the same name emitted under `if w.w_select:`. Enabling --w-select alone makes the LOG key appear and leaves the GATE unchanged; the gate needs an arm that HAS a scorer AND the T1 battery.",
+ "reported_only": [
+  "P2",
+  "P5",
+  "P8",
+  "O6_spectrum",
+  "X4_spectrum_layers"
+ ],
+ "criteria": {
+  "P1_retention": ">= 0.85x R2(z) at k=10 per driving target",
+  "P3_sign": ">= 0.95 per channel, BOTH lat and lon",
+  "P3_gain": "median gain in [0.5, 2.0], WITHOUT post-training",
+  "P6_dims": "action-subspace dims (80 % var) <= 32",
+  "O6_rank_retention": "o6_rank_verdict: (1) ADMISSIBLE only at rank_ceiling >= 1024 -- a single 48-row batch is INCONCLUSIVE by construction, pool with --spectrum-accum; (2) RETENTION fails only when the cluster-JACKKNIFE interval on ER_cur/ER_ref lies WHOLLY below 0.8x, passes only when it lies wholly at/above, else INCONCLUSIVE; (3) FLOOR: pooled effective_rank >= 64 regardless of retention",
+  "X4_rank_retention": "x4_rank_verdict per layer {tac, str}: clause 1 at the LAYER'S ceiling_min (tac 256, str 128 -- NOT z_op's 1024, which d_str=256 can never reach), clause 2 identical, clause 3 at the layer's measured floor (32). --spectrum-accum 33 recommended (32 leaves tac one row short); INCONCLUSIVE is not a pass"
+ },
+ "owners": {
+  "P1": "scripts/probe_latent_state.py",
+  "P2": "scripts/probe_latent_state.py",
+  "P3": "scripts/stage_a_probes.py",
+  "P6": "scripts/stage_a_probes.py",
+  "P5": "taniteval/tools/t1_eval.py",
+  "P8": "scripts/train_p8_occupancy.py",
+  "O6_spectrum": "tanitad.models.v6.spectrum_report",
+  "X4_spectrum_layers": "tanitad.models.v6.LayerSpectrumMonitor"
+ },
+ "probes": {
+  "P1": {
+   "pass": null,
+   "status": "not-run",
+   "owner": "scripts/probe_latent_state.py",
+   "reason": "no artifact supplied to --gate-probes and this trainer does not run the battery in-loop (it is a separate, frozen instrument by design)",
+   "tier_note": null
+  },
+  "P3": {
+   "pass": null,
+   "status": "not-run",
+   "owner": "scripts/stage_a_probes.py",
+   "reason": "no artifact supplied to --gate-probes and this trainer does not run the battery in-loop (it is a separate, frozen instrument by design)",
+   "tier_note": null
+  },
+  "P6": {
+   "pass": null,
+   "status": "not-run",
+   "owner": "scripts/stage_a_probes.py",
+   "reason": "no artifact supplied to --gate-probes and this trainer does not run the battery in-loop (it is a separate, frozen instrument by design)",
+   "tier_note": null
+  },
+  "P2": {
+   "pass": null,
+   "status": "not-run",
+   "owner": "scripts/probe_latent_state.py",
+   "reason": "no artifact supplied to --gate-probes and this trainer does not run the battery in-loop (it is a separate, frozen instrument by design)",
+   "tier_note": null
+  },
+  "P5": {
+   "pass": null,
+   "status": "not-run",
+   "owner": "taniteval/tools/t1_eval.py",
+   "reason": "no artifact supplied to --gate-probes and this trainer does not run the battery in-loop (it is a separate, frozen instrument by design)",
+   "tier_note": null
+  },
+  "P8": {
+   "pass": null,
+   "status": "not-run",
+   "owner": "scripts/train_p8_occupancy.py",
+   "reason": "no artifact supplied to --gate-probes and this trainer does not run the battery in-loop (it is a separate, frozen instrument by design)",
+   "tier_note": null
+  },
+  "O6_spectrum": {
+   "pass": null,
+   "status": "reported",
+   "owner": "tanitad.models.v6.spectrum_report",
+   "n": 1032,
+   "d": 2048,
+   "top_k": 8,
+   "participation_ratio": 6.493442439506156,
+   "effective_rank": 19.339628507939626,
+   "top_k_share": 0.8731556646457289,
+   "rank_ceiling": 1031,
+   "effective_rank_frac": 0.01875812658384057,
+   "rank_admissible": true,
+   "ceiling_note": "a centred covariance from n=1032 rows has rank <= 1031; effective_rank is bounded by that, NOT by d=2048",
+   "pooled_steps": 43,
+   "pool_capacity": 43,
+   "pool_block_rows": 6,
+   "verdict": {
+    "criterion": "O6_rank_retention v2 (SIGREG_GATE_POWER.md)",
+    "effective_rank": 19.339628507939626,
+    "rank_ceiling": 1031,
+    "effective_rank_frac": 0.01875812658384057,
+    "retention_threshold": 0.8,
+    "absolute_floor": 64.0,
+    "participation_ratio": 6.493442439506156,
+    "participation_floor": 8.56,
+    "participation_pass": false,
+    "statistic_note": "effective_rank uses p \u221d \u03c3 (amplitude, tail-sensitive); participation_ratio uses p \u221d \u03c3\u00b2 (energy). COLLAPSE is an energy question \u2014 decide on participation.",
+    "ceiling_min": 1024,
+    "pass": false,
+    "status": "FAIL",
+    "reason": "effective_rank 19.340 < the pre-registered absolute floor 64.0 at an ADMISSIBLE ceiling 1031 \u2014 clause 3."
+   },
+   "reason": "rank RETENTION needs a series AND an admissible rank ceiling; see SIGREG_GATE_POWER.md \u2014 at n=48 the reading is bounded by 47 and the >= 0.8x criterion fires on noise 9-38 % of the time"
+  },
+  "X4_spectrum_layers": {
+   "pass": null,
+   "status": "reported",
+   "owner": "tanitad.models.v6.LayerSpectrumMonitor",
+   "layers": {
+    "tac": {
+     "spectrum": {
+      "n": 4,
+      "d": 128,
+      "top_k": 4,
+      "participation_ratio": 2.4698152909778206,
+      "effective_rank": 2.915146401436835,
+      "top_k_share": 1.0,
+      "rank_ceiling": 3,
+      "effective_rank_frac": 0.9717154671456116,
+      "rank_admissible": false,
+      "ceiling_note": "a centred covariance from n=4 rows has rank <= 3; effective_rank is bounded by that, NOT by d=128",
+      "rank_admissible_layer": false,
+      "admissibility_note": "rank_admissible tests the O6/z_op constant (1024); THE BINDING ADMISSIBILITY FOR THIS LAYER is rank_admissible_layer (ceiling >= 64, RULE ONLY \u2014 d=128 does not match the measured dimension for layer 'tac')"
+     },
+     "spectrum_pooled": {
+      "n": 172,
+      "d": 128,
+      "top_k": 8,
+      "participation_ratio": 10.588427391625645,
+      "effective_rank": 55.3175585526688,
+      "top_k_share": 0.7393204454039857,
+      "rank_ceiling": 128,
+      "effective_rank_frac": 0.432168426192725,
+      "rank_admissible": false,
+      "ceiling_note": "a centred covariance from n=172 rows has rank <= 128; effective_rank is bounded by that, NOT by d=128",
+      "pooled_steps": 43,
+      "pool_capacity": 43,
+      "pool_block_rows": 4,
+      "rank_admissible_layer": true,
+      "admissibility_note": "rank_admissible tests the O6/z_op constant (1024); THE BINDING ADMISSIBILITY FOR THIS LAYER is rank_admissible_layer (ceiling >= 64, RULE ONLY \u2014 d=128 does not match the measured dimension for layer 'tac')",
+      "cluster_unit": "STEP (4 rows) \u2014 conservative over-grouping; see class docstring"
+     },
+     "verdict": {
+      "criterion": "X4_rank_retention v1 (per-layer; o6_rank_verdict under the layer's measured policy \u2014 X4_P9.md)",
+      "effective_rank": 55.3175585526688,
+      "rank_ceiling": 128,
+      "effective_rank_frac": 0.432168426192725,
+      "retention_threshold": 0.8,
+      "absolute_floor": null,
+      "participation_ratio": 10.588427391625645,
+      "participation_floor": 8.56,
+      "participation_pass": true,
+      "statistic_note": "effective_rank uses p \u221d \u03c3 (amplitude, tail-sensitive); participation_ratio uses p \u221d \u03c3\u00b2 (energy). COLLAPSE is an energy question \u2014 decide on participation.",
+      "ceiling_min": 64,
+      "reference_effective_rank": 41.933665694959,
+      "retention": 1.3191682061632577,
+      "pass": null,
+      "status": "INCONCLUSIVE",
+      "reason": "both readings must carry effective_rank_ci95 (spectrum_report(..., ci_reps=N)). A point ratio with no interval is the defect this replaces.",
+      "layer": "tac",
+      "d": 128,
+      "policy_basis": "RULE ONLY \u2014 d=128 does not match the measured dimension for layer 'tac' (512); run x4_layer_power.py at this d before gating on a floor",
+      "floor_note": "clause 3 DISABLED: no measured floor for this (layer, d); the verdict can still FAIL on retention (clause 2) but never on the floor"
+     }
+    },
+    "str": {
+     "spectrum": {
+      "n": 4,
+      "d": 64,
+      "top_k": 4,
+      "participation_ratio": 2.6425697644646897,
+      "effective_rank": 2.9416136778564796,
+      "top_k_share": 1.0,
+      "rank_ceiling": 3,
+      "effective_rank_frac": 0.9805378926188265,
+      "rank_admissible": false,
+      "ceiling_note": "a centred covariance from n=4 rows has rank <= 3; effective_rank is bounded by that, NOT by d=64",
+      "rank_admissible_layer": false,
+      "admissibility_note": "rank_admissible tests the O6/z_op constant (1024); THE BINDING ADMISSIBILITY FOR THIS LAYER is rank_admissible_layer (ceiling >= 32, RULE ONLY \u2014 d=64 does not match the measured dimension for layer 'str')"
+     },
+     "spectrum_pooled": {
+      "n": 172,
+      "d": 64,
+      "top_k": 8,
+      "participation_ratio": 10.984248921899702,
+      "effective_rank": 43.18467657111875,
+      "top_k_share": 0.7099637479941526,
+      "rank_ceiling": 64,
+      "effective_rank_frac": 0.6747605714237305,
+      "rank_admissible": false,
+      "ceiling_note": "a centred covariance from n=172 rows has rank <= 64; effective_rank is bounded by that, NOT by d=64",
+      "pooled_steps": 43,
+      "pool_capacity": 43,
+      "pool_block_rows": 4,
+      "rank_admissible_layer": true,
+      "admissibility_note": "rank_admissible tests the O6/z_op constant (1024); THE BINDING ADMISSIBILITY FOR THIS LAYER is rank_admissible_layer (ceiling >= 32, RULE ONLY \u2014 d=64 does not match the measured dimension for layer 'str')",
+      "cluster_unit": "STEP (4 rows) \u2014 conservative over-grouping; see class docstring"
+     },
+     "verdict": {
+      "criterion": "X4_rank_retention v1 (per-layer; o6_rank_verdict under the layer's measured policy \u2014 X4_P9.md)",
+      "effective_rank": 43.18467657111875,
+      "rank_ceiling": 64,
+      "effective_rank_frac": 0.6747605714237305,
+      "retention_threshold": 0.8,
+      "absolute_floor": null,
+      "participation_ratio": 10.984248921899702,
+      "participation_floor": 8.56,
+      "participation_pass": true,
+      "statistic_note": "effective_rank uses p \u221d \u03c3 (amplitude, tail-sensitive); participation_ratio uses p \u221d \u03c3\u00b2 (energy). COLLAPSE is an energy question \u2014 decide on participation.",
+      "ceiling_min": 32,
+      "reference_effective_rank": 33.38815391376644,
+      "retention": 1.2934131273820761,
+      "pass": null,
+      "status": "INCONCLUSIVE",
+      "reason": "both readings must carry effective_rank_ci95 (spectrum_report(..., ci_reps=N)). A point ratio with no interval is the defect this replaces.",
+      "layer": "str",
+      "d": 64,
+      "policy_basis": "RULE ONLY \u2014 d=64 does not match the measured dimension for layer 'str' (256); run x4_layer_power.py at this d before gating on a floor",
+      "floor_note": "clause 3 DISABLED: no measured floor for this (layer, d); the verdict can still FAIL on retention (clause 2) but never on the floor"
+     }
+    }
+   },
+   "reason": "per-layer rank retention (tac ceiling_min 256 / floor 32, str 128 / 32 \u2014 x4_layer_power.json); verdicts are INCONCLUSIVE until pooled to the layer's own ceiling (--spectrum-accum 33 recommended: 32 leaves tac ONE ROW short at 8 rows/step)"
+  },
+  "X3_isolation": {
+   "pass": null,
+   "status": "error",
+   "reason": "RuntimeError: Input type (torch.FloatTensor) and weight type (torch.cuda.FloatTensor) should be the same or input should be a MKLDNN tensor and weight is a dense tensor"
+  }
+ },
+ "missing_required": [],
+ "inconclusive_required": [
+  "P1",
+  "P3",
+  "P6"
+ ],
+ "failed_required": [],
+ "next_stage": "S-T",
+ "revalidates": null,
+ "bound_outcomes": {
+  "PASS": "S-W propagates upward; the next stage may launch",
+  "FAIL": "the next stage MUST NOT launch (X5). Diagnose at THIS layer; a failed stage never propagates upward.",
+  "INCONCLUSIVE": "treated as NOT-PASS. Run the missing probes, or override with --allow-inconclusive-gate AND --gate-off-reason (the reason is recorded).",
+  "NOT_APPLICABLE": "a required criterion this ARM cannot produce (see not_applicable_required). It is excluded from the verdict and its question stays UNMEASURED \u2014 never counted as satisfied. A PASS here certifies required_effective ONLY."
+ },
+ "tier": "gate assembled from frozen-battery probes (T0/T1 per probe)",
+ "_evidence_class": "MEASURED (ours) for probes present; probes listed in missing_required were NOT RUN; probes listed in not_applicable_required are UNMEASURABLE on this arm and each names what would change that",
+ "param_report": {
+  "total": 19337289,
+  "budget": 300000000,
+  "within_budget": true,
+  "headroom": 280662711,
+  "per_group": {
+   "encoder": 972032,
+   "readout": 16512,
+   "predictor_op": 7568387,
+   "layer_tac": 4878893,
+   "layer_str": 3562401,
+   "planner": 689272,
+   "aux": 1649792,
+   "interp": 0
+  },
+  "trainable": 10206723,
+  "arm": "shared-encoder+adapters",
+  "d_op": 2048,
+  "d_tac": 128,
+  "d_str": 64,
+  "_note": "E-ENC decides at MATCHED TOTAL PARAMS \u2014 compare arms on this number, not on per-layer widths",
+  "_evidence_class": "MEASURED (ours; count at instantiation)"
+ }
+}

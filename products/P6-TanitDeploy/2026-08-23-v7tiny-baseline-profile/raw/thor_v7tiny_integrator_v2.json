@@ -1,0 +1,67 @@
+{
+ "spec": "E-DEPLOY-1d-v2",
+ "controls": {},
+ "v1_defect": "v1 passed fp32 controls under autocast and measured 0.0 deviation; autocast does not cast cumsum/sin/cos inputs, so the rollout stayed fp32 and the test held its own independent variable fixed.",
+ "reference": {
+  "v0_m_s": 10.925131797790527,
+  "x_end_m": 65.55082702636719,
+  "wp32_dtype": "torch.float32",
+  "y_absmax": 0.0
+ },
+ "by_control_dtype": {
+  "fp16": {
+   "control_dtype": "torch.float16",
+   "waypoints_out_dtype": "torch.float16",
+   "max_abs_m": 0.04168701171875,
+   "mean_abs_m": 0.007907580584287643,
+   "ulp_of_out_dtype_at_x_end_m": 0.0625,
+   "deviation_in_ulp": 0.6669921875,
+   "per_step_t0": 0.0007163286209106445,
+   "per_step_t9": 0.004555702209472656,
+   "per_step_t29": 0.0058441162109375,
+   "per_step_t59": 0.0116729736328125,
+   "monotone_nondecreasing": false,
+   "reproduces_end_to_end": {
+    "standalone_m": 0.04168701171875,
+    "end_to_end_m": 0.086628,
+    "ratio": 0.4812186789346401,
+    "same_order_of_magnitude": true
+   },
+   "fix_upcast_before_rollout": {
+    "expect": "bit-identical to the fp32 reference",
+    "bit_identical": true,
+    "max_abs_m": 0.0
+   }
+  },
+  "bf16": {
+   "control_dtype": "torch.bfloat16",
+   "waypoints_out_dtype": "torch.bfloat16",
+   "max_abs_m": 2.3008270263671875,
+   "mean_abs_m": 0.3238166868686676,
+   "ulp_of_out_dtype_at_x_end_m": 0.5,
+   "deviation_in_ulp": 4.601654052734375,
+   "per_step_t0": 0.0012367963790893555,
+   "per_step_t9": 0.07486820220947266,
+   "per_step_t29": 0.4745941162109375,
+   "per_step_t59": 2.3008270263671875,
+   "monotone_nondecreasing": false,
+   "reproduces_end_to_end": {
+    "standalone_m": 2.3008270263671875,
+    "end_to_end_m": 2.6179,
+    "ratio": 0.8788827023061184,
+    "same_order_of_magnitude": true
+   },
+   "fix_upcast_before_rollout": {
+    "expect": "bit-identical to the fp32 reference",
+    "bit_identical": true,
+    "max_abs_m": 0.0
+   }
+  }
+ },
+ "end_to_end_reference": {
+  "source": "raw/thor_v7tiny_mechanism.json b=1",
+  "fp16_max_abs_m": 0.086628,
+  "bf16_max_abs_m": 2.6179
+ },
+ "_evidence_class": "MEASURED (ours; Thor, in-process probes only)"
+}
