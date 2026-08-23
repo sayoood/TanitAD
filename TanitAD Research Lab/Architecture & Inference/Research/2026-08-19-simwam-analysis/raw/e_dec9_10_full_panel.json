@@ -1,0 +1,268 @@
+{
+ "_evidence_class": "MEASURED (ours; dev-box RTX 4060)",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "arms_missing": [],
+ "arms": {
+  "rdw8": {
+   "participation_val": 3.796,
+   "participation_heldout24": 3.617,
+   "step": 2000,
+   "predictor": {
+    "1": {
+     "cos": 0.0541,
+     "z": 3.99,
+     "n": 108
+    },
+    "2": {
+     "cos": 0.0014,
+     "z": 0.8,
+     "n": 108
+    },
+    "4": {
+     "cos": 0.0014,
+     "z": 0.84,
+     "n": 108
+    }
+   }
+  },
+  "o7w1p0": {
+   "participation_val": 3.605,
+   "participation_heldout24": 4.523,
+   "step": 2000,
+   "predictor": {
+    "1": {
+     "cos": 0.0728,
+     "z": 4.1,
+     "n": 108
+    },
+    "2": {
+     "cos": 0.0026,
+     "z": 0.87,
+     "n": 108
+    },
+    "4": {
+     "cos": -0.0033,
+     "z": -1.86,
+     "n": 108
+    }
+   }
+  },
+  "o8w1p0": {
+   "participation_val": 3.684,
+   "participation_heldout24": 3.746,
+   "step": 2000,
+   "predictor": {
+    "1": {
+     "cos": 0.0433,
+     "z": 2.77,
+     "n": 108
+    },
+    "2": {
+     "cos": 0.0042,
+     "z": 1.59,
+     "n": 108
+    },
+    "4": {
+     "cos": -0.0044,
+     "z": -2.32,
+     "n": 108
+    }
+   }
+  }
+ },
+ "blocks": {
+  "EGO (held-out val)": {
+   "speed": {
+    "z_op rdw8": {
+     "r2": 0.283,
+     "delta_vs_base": 0.0,
+     "t": 0.0,
+     "n_favouring": 0,
+     "n": 12
+    },
+    "z_op o7w1p0": {
+     "r2": 0.4589,
+     "delta_vs_base": 0.1759,
+     "t": 3.32,
+     "n_favouring": 10,
+     "n": 12
+    },
+    "z_op o8w1p0": {
+     "r2": 0.056,
+     "delta_vs_base": -0.227,
+     "t": -4.0,
+     "n_favouring": 1,
+     "n": 12
+    },
+    "pixel (floor)": {
+     "r2": 0.1156,
+     "delta_vs_base": -0.1673,
+     "t": -2.37,
+     "n_favouring": 2,
+     "n": 12
+    },
+    "frozen DINOv3": {
+     "r2": 0.4081,
+     "delta_vs_base": 0.1251,
+     "t": 2.72,
+     "n_favouring": 11,
+     "n": 12
+    },
+    "constant (control)": {
+     "r2": 0.0,
+     "delta_vs_base": -0.283,
+     "t": -9.36,
+     "n_favouring": 0,
+     "n": 12
+    }
+   },
+   "d_ego": {
+    "z_op rdw8": {
+     "r2": 0.3601,
+     "delta_vs_base": 0.0,
+     "t": 0.0,
+     "n_favouring": 0,
+     "n": 12
+    },
+    "z_op o7w1p0": {
+     "r2": 0.3421,
+     "delta_vs_base": -0.018,
+     "t": -0.51,
+     "n_favouring": 3,
+     "n": 12
+    },
+    "z_op o8w1p0": {
+     "r2": 0.0829,
+     "delta_vs_base": -0.2772,
+     "t": -4.78,
+     "n_favouring": 1,
+     "n": 12
+    },
+    "pixel (floor)": {
+     "r2": -0.0781,
+     "delta_vs_base": -0.4382,
+     "t": -5.26,
+     "n_favouring": 0,
+     "n": 12
+    },
+    "frozen DINOv3": {
+     "r2": 0.3238,
+     "delta_vs_base": -0.0363,
+     "t": -0.64,
+     "n_favouring": 4,
+     "n": 12
+    },
+    "constant (control)": {
+     "r2": 0.0,
+     "delta_vs_base": -0.3601,
+     "t": -8.92,
+     "n_favouring": 0,
+     "n": 12
+    }
+   }
+  },
+  "ENV (in-sample)": {
+   "lead_gap_m": {
+    "z_op rdw8": {
+     "r2": -0.329,
+     "delta_vs_base": 0.0,
+     "t": 0.0,
+     "n_favouring": 0,
+     "n": 24
+    },
+    "z_op o7w1p0": {
+     "r2": -0.1823,
+     "delta_vs_base": 0.1467,
+     "t": 4.8,
+     "n_favouring": 21,
+     "n": 24
+    },
+    "z_op o8w1p0": {
+     "r2": -0.035,
+     "delta_vs_base": 0.294,
+     "t": 3.5,
+     "n_favouring": 20,
+     "n": 24
+    },
+    "pixel (floor)": {
+     "r2": 0.0064,
+     "delta_vs_base": 0.3354,
+     "t": 5.71,
+     "n_favouring": 17,
+     "n": 24
+    },
+    "frozen DINOv3": {
+     "r2": 0.0294,
+     "delta_vs_base": 0.3584,
+     "t": 6.62,
+     "n_favouring": 20,
+     "n": 24
+    },
+    "constant (control)": {
+     "r2": 0.0,
+     "delta_vs_base": 0.329,
+     "t": 5.61,
+     "n_favouring": 17,
+     "n": 24
+    }
+   },
+   "n_agents": {
+    "z_op rdw8": {
+     "r2": -1.0407,
+     "delta_vs_base": 0.0,
+     "t": 0.0,
+     "n_favouring": 0,
+     "n": 24
+    },
+    "z_op o7w1p0": {
+     "r2": -0.2553,
+     "delta_vs_base": 0.7854,
+     "t": 8.56,
+     "n_favouring": 23,
+     "n": 24
+    },
+    "z_op o8w1p0": {
+     "r2": -0.6584,
+     "delta_vs_base": 0.3823,
+     "t": 4.6,
+     "n_favouring": 22,
+     "n": 24
+    },
+    "pixel (floor)": {
+     "r2": -0.2156,
+     "delta_vs_base": 0.825,
+     "t": 8.11,
+     "n_favouring": 24,
+     "n": 24
+    },
+    "frozen DINOv3": {
+     "r2": 0.2754,
+     "delta_vs_base": 1.3161,
+     "t": 12.58,
+     "n_favouring": 24,
+     "n": 24
+    },
+    "constant (control)": {
+     "r2": 0.0,
+     "delta_vs_base": 1.0407,
+     "t": 9.65,
+     "n_favouring": 24,
+     "n": 24
+    }
+   }
+  }
+ },
+ "kill_gate": {
+  "o7w1p0": {
+   "REJECTED_by_kill_gate": false,
+   "reason": "passes the gate",
+   "predicts_beyond_h1": false
+  },
+  "o8w1p0": {
+   "REJECTED_by_kill_gate": false,
+   "reason": "passes the gate",
+   "predicts_beyond_h1": false
+  }
+ },
+ "verdict": "o7w1p0: passes gate \u00b7 still identity at h>=2; o8w1p0: passes gate \u00b7 still identity at h>=2"
+}

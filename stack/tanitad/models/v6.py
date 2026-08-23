@@ -288,6 +288,54 @@ def tactical_lat_actions(version: str = "v6.0") -> tuple[str, ...]:
         raise ValueError(
             f"unknown tactical vocabulary version {version!r}; "
             f"known: {sorted(TACTICAL_VOCAB_VERSIONS)}") from None
+
+
+# ---------------------------------------------------------------------------- #
+# ⭐ v6.1 STRATEGIC ACTIONS — PREPARE_TURN_L / PREPARE_TURN_R, APPENDED.
+# ---------------------------------------------------------------------------- #
+#: ⛔ THE GAP, FOUND BY THE PI ON A REAL CLIP (2026-08-23). `0e56dae2` carries
+#: `g_str = TURN_LEFT` (junction turn, R = 6.4 m) and `a_str = HOLD_CORRIDOR` —
+#: "hold the corridor" as the action for LEAVING it. The six v6.0 strategic
+#: actions have NO token for preparing a junction turn: `PREPARE_EXIT` is a
+#: motorway exit, `PREPARE_LANE_CHANGE` is lane-relative, and the remaining
+#: four are longitudinal or a hold. So every turn in the corpus was forced onto
+#: a token that CONTRADICTS it. The label was not wrong by degree; the
+#: vocabulary could not express the right answer at all.
+#:
+#: ⭐ APPEND, NEVER INSERT — the same contract as TACTICAL_LAT_ACTIONS_V61.
+#: `STRATEGIC_ACTION_TOKENS` SIZES A LIVE TENSOR (`v6.py` builds
+#: `GoalVocabulary(STRATEGIC_ACTION_TOKENS, ...)`, whose `table.weight` is
+#: `(n_tokens, d_goal_embed)`), and resumes are tensor-strict. Indices 0-5 keep
+#: their meaning, so existing labels, dumps and checkpoints stay valid and a
+#: 6-wide head widens to 8 by PADDING rather than retraining.
+#:
+#: ⚠️ WHAT THEY MEAN. `PREPARE_TURN_L/R` is the STRATEGIC action that precedes
+#: and commits to a junction traversal — the strategic counterpart of the
+#: tactical `TURN_L`/`TURN_R`. It answers "what is the ego doing about the
+#: route decision", where `HOLD_CORRIDOR` answers "nothing, stay put".
+#:
+#: ⛔ DEFAULTS TO v6.0. Selecting v6.1 is a deliberate act by the trainer, and
+#: it MUST be paired with `tactical_lat_actions("v6.1")` — a strategic layer
+#: that can say "prepare to turn" while the tactical layer can only say
+#: "lane keep" reproduces the same contradiction one level down.
+STRATEGIC_ACTION_TOKENS_V61: tuple[str, ...] = STRATEGIC_ACTION_TOKENS + (
+    "PREPARE_TURN_L", "PREPARE_TURN_R",
+)
+
+STRATEGIC_ACTION_VOCAB_VERSIONS: dict[str, tuple[str, ...]] = {
+    "v6.0": STRATEGIC_ACTION_TOKENS,
+    "v6.1": STRATEGIC_ACTION_TOKENS_V61,
+}
+
+
+def strategic_action_tokens(version: str = "v6.0") -> tuple[str, ...]:
+    """The strategic action vocabulary for ``version``. Default v6.0."""
+    try:
+        return STRATEGIC_ACTION_VOCAB_VERSIONS[version]
+    except KeyError:
+        raise ValueError(
+            f"unknown strategic action vocabulary version {version!r}; "
+            f"known: {sorted(STRATEGIC_ACTION_VOCAB_VERSIONS)}") from None
 #: §2 "every goal token carries OPTIONAL temporal and spatial constraint slots
 #: … uniformly typed". Unset = unconstrained (the mask says which are set).
 CONSTRAINT_SLOTS: tuple[str, ...] = (

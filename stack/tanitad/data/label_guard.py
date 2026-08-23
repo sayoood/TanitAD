@@ -73,7 +73,8 @@ class GuardReport:
 def check(*, clip_id: str, g_str: str | None, a_str: str | None,
           peak_yaw_deg: float, v_at_key_ms: float, v_end_ms: float,
           v_min_future_ms: float, tac_lat: str | None = None,
-          tac_lon: str | None = None) -> GuardReport:
+          tac_lon: str | None = None, lateral_class: str | None = None,
+          stop_type: str | None = None) -> GuardReport:
     """Run every consistency rule over one clip's already-derived labels.
 
     ``peak_yaw_deg`` is the signed yaw excursion of largest magnitude on the
@@ -91,12 +92,41 @@ def check(*, clip_id: str, g_str: str | None, a_str: str | None,
     # FALLBACK, a missed turn becomes a confident "carry on straight" rather
     # than an abstention — the same substitute-a-confident-claim failure the
     # lane-change gate was retired for.
-    if g_str in _NO_MANOEUVRE_GOALS and abs(peak_yaw_deg) >= TURN_DEG:
+    # ⭐ PREFER THE MANOEUVRE CLASSIFIER WHEN THE CALLER SUPPLIES IT.
+    # Raw yaw CANNOT separate a junction turn from a curving main road, and
+    # refusing a correct FOLLOW_MAIN_ROAD on a bend would repeat exactly the
+    # LANE_TARGET mistake. `ego_manoeuvre.analyse` makes that split on
+    # instantaneous curvature (kappa = omega/v), so when its verdict is
+    # available it decides; the yaw form remains only as a fallback for callers
+    # that have not been migrated.
+    if g_str in _NO_MANOEUVRE_GOALS:
+        if lateral_class is not None:
+            if lateral_class.startswith("JUNCTION_TURN"):
+                out.findings.append(Finding(
+                    "G1-fallback-absorbs-turn", "REFUSE",
+                    f"{g_str} asserts no junction manoeuvre, but the ego "
+                    f"executes {lateral_class} ({peak_yaw_deg:+.1f} deg). Emit "
+                    f"a turn token or abstain."))
+        elif abs(peak_yaw_deg) >= TURN_DEG:
+            out.findings.append(Finding(
+                "G1-fallback-absorbs-turn", "REFUSE",
+                f"{g_str} asserts no junction manoeuvre, but the hindsight path "
+                f"turns {peak_yaw_deg:+.1f} deg on the horizon. Emit a turn "
+                f"token or abstain."))
+
+    # -- G6: a stop the strategic layer does not distinguish ------------------
+    # PI 2026-08-23: "we need better detection prepare-to-stop to differentiate
+    # from traffic jam situations at least strategically." A queue and a red
+    # light look identical for the first seconds; what separates them is
+    # REPETITION (a jam stops repeatedly) and RECOVERY (a light releases to
+    # cruise). PREPARE_STOP over a QUEUE is a different strategic situation and
+    # must not be emitted as if it were a controlled stop.
+    if a_str == "PREPARE_STOP" and stop_type == "QUEUE":
         out.findings.append(Finding(
-            "G1-fallback-absorbs-turn", "REFUSE",
-            f"{g_str} asserts no junction manoeuvre, but the hindsight path "
-            f"turns {peak_yaw_deg:+.1f} deg on the horizon. Emit a turn token "
-            f"or abstain."))
+            "G6-queue-vs-controlled-stop", "FLAG",
+            "PREPARE_STOP over STOP_AND_GO/QUEUE kinematics — this is "
+            "queueing traffic, not a controlled stop; the strategic layer "
+            "should distinguish them."))
 
     # -- G2: strategic and tactical families disagree on the DIRECTION -------
     # ⚠️ Only a SIGN CONFLICT is a finding. A strategic TURN_* with tactical

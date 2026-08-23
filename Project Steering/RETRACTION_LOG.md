@@ -7661,3 +7661,247 @@ classify as stop-and-go traffic and destroyed the QUEUE discriminator the
 function exists to provide. Class: **a counter that counts samples where it means
 to count events.** It surfaced only because the test asserted the COUNT rather
 than that the code ran. QUEUE on the 39-clip sample drops 3 → 1 after the fix.
+
+---
+
+## C136 — "Alpamayo lane to tactical LAT agrees 80 percent" WAS A BASE-RATE ARTEFACT; against a permutation control the lateral axis is AT CHANCE, and its CoT hallucinates objects that are not in the frame (2026-08-23, PI challenge: "there is no cyclist... are we sure we are taking the right indices?")
+
+**What I reported.** Iteration 2 stated that Alpamayo's `lane` axis agreed with
+our factored tactical LAT on **80 % (12/15)** of paired clips, and used that to
+present the CoT term-search as a validated label source.
+
+**What the PI saw.** A clip (`5b4eef8f`) whose frames contain **no cyclist**,
+carrying the CoT *"Nudge left to pass the cyclist in the same lane"* — and asked
+whether the clip-to-row indices were correct.
+
+**What is actually true, in three parts.**
+
+**(1) The 80 % was an artefact.** 14 of 16 Alpamayo rows say "Lane Keep" and the
+2 s tactical window is almost entirely `lane_keep`. Two nearly-CONSTANT sequences
+agree by construction. Re-measured against a class-balanced ego verdict with a
+**2000-shuffle permutation control**, at five anchors AND whole-clip:
+
+| axis | real | shuffled | p |
+|---|---|---|---|
+| `lateral` (best anchor) | 31.2 % | 23.9 % | **0.335** |
+| `lane` (whole clip) | 20.0 % | 19.5 % | **0.706** |
+
+Chance. Eight clips whose heading changes by **51-137 deg** are labelled
+"Go Straight" / "Lane Keep".
+
+**(2) The join is NOT the problem — and that had to be TESTED, not assumed.**
+The LONGITUDINAL axis DOES beat its own shuffle control: **50.0 % vs 28.7 %,
+p=0.028** at t+4 s. A scrambled `clip_id` mapping would put EVERY axis at chance,
+so the indexing is sound. Per-row provenance confirms it structurally (`clip_id`
+and `raw_json` are read from the same parquet row).
+
+**(3) The CoT hallucinates.** The builder's own metadata records the cause:
+**temperature 0.6, ONE draw per clip**, with cross-draw stability UNMEASURED.
+Two clips say "nudge left to pass the cyclist" through unambiguous 68 and 82 deg
+junction turns. The PI's observation was correct and is now MEASURED.
+
+**ROOT-CAUSE CLASS: a raw agreement percentage between two SKEWED variables,
+quoted without a chance baseline.** Same family as the ridge probe whose constant
+control read the same value as the signal, and as a criterion that cannot RULE.
+=> **STANDING RULE: any agreement, concordance or coverage percentage between two
+categorical variables ships with a PERMUTATION or base-rate control IN THE SAME
+TABLE. A number with no chance baseline is not a measurement.**
+
+**Blast radius, corrected in the same turn:** register row H-DATA-3 and the
+report's "80 %" cell; `alpamayo_semantics.py` now states the division of labour
+(geometry decides WHAT, the CoT may only refine WHY); and `tactical_goals.py` was
+written GEOMETRY-FIRST precisely because `tac_str_labels.compose()` derives its
+lateral tier from `alpamayo_lane` — on this corpus that tier is built on noise.
+Every CoT-proposed token stays `disputed=true` and may NOT be promoted without a
+grounding pass.
+
+---
+
+## C137 — three estimator defects in ONE classifier, each of which inverted or erased a real manoeuvre (2026-08-23, found by iterating against real clips)
+
+Recorded together because they share a shape: **each produced a confident,
+self-consistent answer that was wrong, and each was caught only by comparing
+against an INDEPENDENT witness** (the raw yaw trace, or Alpamayo's CoT).
+
+1. **Peak-absolute selection reported the WRONG TURN in a sequence.** Clips
+   contain manoeuvre SEQUENCES. `90006660` turns RIGHT -40 deg then LEFT +93 deg;
+   taking the largest excursion reported TURN_LEFT while the existing label
+   (TURN_RIGHT) was correct — *my classifier was the wrong one*. => the primary
+   manoeuvre is the **FIRST sustained segment**; `n_turn_segments` exposes the rest.
+
+2. **Segment endpoints understate a turn, and a 0.7 deg shortfall INVERTED a
+   direction.** The yaw-RATE gate closes while the HEADING is still changing.
+   `00d05901`'s first (right) turn gated out at **-24.3 deg** against a `TURN_DEG`
+   of 25 — so it was discarded and the LATER left-hand segment reported instead,
+   on a clip whose own CoT says *"turn right at the intersection"*. => segments
+   extend to their local yaw EXTREMUM (recovers -38.1 deg).
+
+3. **Changing an estimator INVALIDATES its thresholds, and I nearly kept the old
+   ones.** The "empty margin 37.4-77.9 m" was measured with peak-absolute radii.
+   On the corrected estimator the sample sorts as **R <= 28.7 m** (26 clips, all
+   |peak| >= 33 deg), **R = 48.1 m** (`00d05901`, a wide junction turn confirmed
+   by its CoT), **R >= 77.9 m** (all |peak| <= 13 deg). The real gap is
+   **48.1 -> 77.9 m** and `R_TURN_M` moved 40 -> 60 to sit inside it. Keeping the
+   old gate classified a semantically-confirmed intersection turn as road geometry.
+
+**ROOT-CAUSE CLASS: a reduction that silently answers a different question than
+the one asked** (which manoeuvre? how much of it? under which estimator?).
+=> **STANDING RULE: when an estimator changes, EVERY threshold derived from it is
+invalid until re-measured, and the re-measurement is published beside the new value.**
+
+---
+
+## C138 — I MOVED A THRESHOLD TO AGREE WITH A WITNESS I HAD ALREADY MEASURED UNRELIABLE, and only looking at the frames caught it (2026-08-23, PI challenge: "did you validate the sample?")
+
+**What I did.** After rebuilding the turn classifier I found one clip,
+`00d05901`, sitting at R = 48.1 m — outside the 40 m turn gate, so classified
+ROAD_BEND_R. Alpamayo's CoT for that clip reads *"Turn right at the intersection
+since the traffic light is green."* I treated that as an INDEPENDENT SEMANTIC
+WITNESS, concluded the gate was too tight, and moved `R_TURN_M` from **40 to 60**
+so the clip would classify as a junction turn. I then wrote that the VLM "caught
+a real classifier error".
+
+**What the frames show.** `00d05901` is a **RURAL MOUNTAIN ROAD through forest** —
+oncoming traffic on a country lane, hillside, guardrail posts, trees. Across all
+9 sampled frames (t−4 s … t+12 s) there is **no intersection and no traffic
+light**. The CoT is FABRICATED in both of its specifics.
+
+**Why this is worse than a wrong number.** ⛔ **I had ALREADY MEASURED, in the
+same session, that Alpamayo's lateral axis is at chance (31.2 % vs 23.9 %
+shuffled, p=0.335) and that its CoT hallucinates.** I then used that same source
+to justify a threshold change — inside the very module whose docstring records
+its unreliability. A witness does not become admissible because it happens to
+agree with the change you want to make.
+
+**ROOT-CAUSE CLASS: calibrating an instrument on a source already shown
+unreliable — confirmation-shopping for a witness.** It is the mirror image of
+C136: there I quoted an agreement with no chance baseline; here I quoted a
+*single* agreement from a source whose chance baseline I had already computed.
+⇒ **STANDING RULE: a source's admissibility is decided BEFORE it is used, and a
+source measured unreliable for a quantity may NEVER calibrate a threshold on that
+quantity. When a single clip is the only thing standing between two threshold
+choices, look at the clip.**
+
+**Correction applied in the same turn:** `R_TURN_M` reverted 60 → 40,
+`R_BEND_M` 77 → 60, and the module docstring now records why. `00d05901` returns
+to ROAD_BEND_R, which is what the frames support.
+
+⚠️ **Honest residual, not resolved:** the SHIPPED label for this clip is
+`TURN_RIGHT` with provenance `engine_a.route_v3` — Engine A's own GEOMETRY, not
+Alpamayo. So two independent derivations call it a turn and mine calls it a bend
+at R = 48.1 m on a winding country road. Nine frames cannot settle whether a
+−38° rural bend is a "turn"; what they DO settle is that the CoT's intersection
+and traffic light do not exist. The threshold now sits where the FRAMES support
+it, and the disagreement with Engine A is recorded rather than hidden.
+
+---
+
+## C139 — "two clips hallucinate the cyclist" GENERALISED FROM ONE VERIFIED CLIP TO A SECOND I NEVER LOOKED AT (2026-08-23, self-caught during visual validation)
+
+I wrote that clips `5b4eef8f` **and** `c84534a9` both claim "nudge left to pass
+the cyclist" through junction turns and were both hallucinations. I had verified
+`5b4eef8f` (the PI supplied its frames; no cyclist) and **assumed** the second
+because it carries the identical templated sentence.
+
+**`c84534a9` genuinely contains cyclists** — plainly visible at t0 and t+2 s,
+alongside green traffic lights, on an urban tram street. The referent is CORRECT
+there; only the verb ("nudge left") mismatches a right turn.
+
+**ROOT-CAUSE CLASS: an identical string treated as an identical case.** The CoT
+vocabulary is heavily templated (1,103 distinct strings over 4,729 clips; this
+exact sentence appears 34 times), so shared wording says nothing about shared
+truth. ⇒ **STANDING RULE: a per-clip claim is verified per clip. Template
+frequency is a reason to check MORE clips, never fewer.**
+
+**Corrected tally on visually checkable CoT claims (n=4):** 5b4eef8f cyclist —
+**absent** (wrong); c84534a9 cyclist — **present** (right); e084c7c3 red traffic
+light — **present, ego stops** (right); 00d05901 intersection + green light —
+**neither exists** (wrong). **2/4 correct.** Small n, but direct evidence: the
+CoT is neither reliable nor worthless, and nothing distinguishes the two cases
+without looking.
+
+---
+
+## C140 ⛔⛔ — THE LABEL-TO-FRAME JOIN WAS WRONG ON 20.5 % OF CLIPS, AND A FRAME-BY-FRAME VALIDATION "CONFIRMED" CONCLUSIONS ABOUT CLIPS IT NEVER SAW (2026-08-23, found by cross-checking against the provider's own egomotion)
+
+**The defect.** The episode cache is keyed by `episode_id` = the 16-bit
+`episode_id_legacy`. The label↔frame↔pose join ran through it. I refused ids
+claimed by more than one LABELLED clip (3), and ids claimed by more than one
+CACHE episode (3) — and believed that made the join safe. It does not:
+
+> A cache episode whose TRUE clip is **not in the labelled set** can collide
+> with a labelled clip's legacy id. On each side the id looks unique, so
+> **neither ambiguity check can see it.**
+
+**MEASURED: 8 of 39 joined clips (20.5 %) resolved to the WRONG EPISODE.**
+Verified by correlating each cache episode's speed against the provider
+egomotion of the clip it claimed to be: 31/39 gave r > 0.999 (rmse < 0.15 m/s);
+the other 8 gave r = **−0.96 … +0.87** with rmse **2.6–18.4 m/s**. Different
+vehicles, different moments.
+
+⛔ **WHY THIS IS THE WORST ERROR IN THIS SESSION.** The mismatched set is
+`00d05901, 1a293863, 5b4eef8f, a8a381bf, 2d5cabf1, 4d389996, 5aef0388,
+b99058dc` — which includes **every clip a frame-by-frame validation had just
+"confirmed"**. So:
+
+* "no cyclist in `5b4eef8f`" — I inspected another clip's frames;
+* "`5aef0388` is plainly an 86.9° right turn" — another clip's frames;
+* "`00d05901` is a rural forest road with no intersection" — another clip's
+  frames, which is also the evidence C138 rests on;
+* the "3/3 flagged pipeline errors confirmed" tally — **all three on wrong
+  frames**.
+
+⚠️ **The PI asked exactly this question** ("are we sure we are taking the right
+indices?") and I answered it with a permutation test that validated the
+**Alpamayo↔label** join — which IS sound (p=0.028). I tested the join I had
+been thinking about instead of the join that was actually feeding my eyes.
+
+**ROOT-CAUSE CLASS: a lossy key trusted because its OBSERVABLE collisions were
+handled.** Absence of *detectable* ambiguity was read as absence of ambiguity —
+the C2 family (absence from a single probe), applied to a join. ⇒ **STANDING
+RULE: a join through a lossy key is INVALID until validated against a
+CONTENT-BASED signal from both sides.** For ego data that check is cheap:
+correlate the speed traces (`egomotion_source.verify_against`, r > 0.99 and
+rmse < 0.5 m/s). ⇒ **AND THE STRUCTURAL FIX: do not use the lossy key at all.**
+The pipeline now keys everything on the CLIP UUID — egomotion (801/801 coverage),
+mp4 frames (filename IS the uuid), and labels. `stack/tanitad/data/egomotion_source.py`.
+
+**Blast radius.** Every geometry number computed off the episode cache for those
+8 clips, the C138/C139 evidence, the visual-validation table, and the
+"32/39 = 82.1 % strategic agreement" figure. All recomputed on the UUID-keyed
+source; the corrected corpus-scale numbers are in
+`products/P2-data-pipelines/2026-08-23-label-validation-sample/RESULT.md` §22.
+
+---
+
+## C141 — "81 % OF THE STRATEGIC HORIZON IS PAST THE END OF THE CLIP" WAS AN ARTEFACT OF THE WRONG POSE SOURCE; THE DATA WAS THERE ALL ALONG (2026-08-23)
+
+**What I reported, twice, and escalated to the PI as a programme-level blocker:**
+the strategic band (key + 8…30 s) is 22 s wide, clips are 19.9 s with the anchor
+at 7.8 s, so only **4.0 s = 18.2 %** of the band is observable and *"every
+strategic label on this corpus is an extrapolation over the remaining 81 %"*. I
+recommended narrowing the strategic definition or sourcing longer sequences.
+
+**What is true.** That measured the **20 s EPISODE CACHE**, not the corpus. The
+provider's egomotion for the same clips runs **20–140 s** (median span 140 s).
+Recomputed over all 801 labelled clips:
+
+| | |
+|---|---|
+| horizon after the anchor | min 12.3 s · **median 37.0 s** |
+| strategic band observable | **median 22.0 s of 22 s = 100 %** |
+| clips with the FULL 22 s band | **757/801 = 94.5 %** |
+| clips with ≥ 50 % of the band | 769/801 = 96.0 % |
+
+⇒ **The strategic layer CAN be supervised on OBSERVED future.** There is no
+corpus limitation, no definition to narrow, and no new data to source. The
+label emitter now derives `g_str` over the full observed band and abstains
+explicitly on the 44 clips that are genuinely short.
+
+**ROOT-CAUSE CLASS: a property of one DERIVED ARTEFACT reported as a property of
+the CORPUS.** The episode cache is a 20 s training window, not the recording;
+I read its boundary as the world's boundary. Same family as `df` on a pod
+(a container's view read as the filesystem's) — and it very nearly cost a
+redefinition of the programme's strategic layer.
+⇒ **STANDING RULE: before declaring a DATA limitation, check the PROVIDER's
+artefact, not the pipeline's cache of it.**

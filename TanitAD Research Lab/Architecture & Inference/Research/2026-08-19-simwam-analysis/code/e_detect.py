@@ -372,7 +372,7 @@ def main() -> None:
             "eval_tier": "T0-DIAGNOSTIC",
             "question": "can a spatial head localise VEHICLES in metres from a "
                         "frozen trunk?",
-            "prereg": "TanitAD Research Hub/Architecture & Inference/Research/"
+            "prereg": "TanitAD Research Lab/Architecture & Inference/Research/"
                       "2026-08-19-simwam-analysis/PREREG_E_DETECT_1.md",
             "n_rows": len(keys), "n_episodes": len(rows_by_ep),
             "grid": json.loads(

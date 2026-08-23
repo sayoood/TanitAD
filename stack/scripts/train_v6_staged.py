@@ -865,6 +865,117 @@ class ResumeLineageError(SystemExit):
 # the measure losses — PURE, CPU-testable (no dataset, no checkpoint)
 # ============================================================================
 
+# ---------------------------------------------------------------------------
+# O7 — distillation into a FROZEN EXTERNAL encoder (E-DEC-9)
+# ---------------------------------------------------------------------------
+#: ⛔ THE TERM EXISTS BECAUSE EVERY OTHER TERM HAS A SELF-GENERATED TARGET.
+#: O5 predicts our own next latent; O3 predicts our own masked readout cells;
+#: O6 asks only for isotropy; O1 asks only for per-action difference. The model
+#: therefore picks BOTH what to represent and what to predict, and
+#: "ego motion + noise" satisfies all of it with ZERO scene content -- which is
+#: exactly what was measured (every arm BELOW a constant predictor on agent
+#: count, while frozen DINOv3 reads +0.2754 on data it never trained on).
+#: O7's target is produced by a frozen network. The model cannot choose it.
+O7_DEFAULT_MODEL = "facebook/dinov3-vitl16-pretrain-lvd1689m"
+
+
+class O7Distill(torch.nn.Module):
+    """Frozen-teacher distillation head: readout cells -> teacher cell features.
+
+    Holds the frozen teacher (eval, bf16, requires_grad=False) OUT of the module
+    registry so it is never saved into our checkpoint and never optimised, and a
+    small trainable head that IS registered.
+    """
+
+    def __init__(self, d_readout: int, n_cells: int, grid_hw: tuple[int, int],
+                 model_id: str = O7_DEFAULT_MODEL, hidden: int = 512):
+        super().__init__()
+        self.n_cells, self.grid_hw, self.model_id = int(n_cells), tuple(grid_hw), model_id
+        self.head = torch.nn.Sequential(
+            torch.nn.Linear(int(d_readout), hidden), torch.nn.GELU(),
+            torch.nn.Linear(hidden, 1024))
+        self._teacher = None            # lazy; leading underscore => not a submodule
+
+    def _load(self, dev):
+        if self._teacher is None:
+            import truststore
+            truststore.inject_into_ssl()
+            from transformers import DINOv3ViTModel
+            m = DINOv3ViTModel.from_pretrained(
+                self.model_id, dtype=torch.bfloat16, local_files_only=True).to(dev).eval()
+            for p in m.parameters():
+                p.requires_grad_(False)
+            object.__setattr__(self, "_teacher", m)
+        return self._teacher
+
+    @torch.no_grad()
+    def target(self, rgb: Tensor) -> Tensor:
+        """rgb [B, 3, H, W] in [0,1] -> teacher cells [B, n_cells, 1024]."""
+        m = self._load(rgb.device)
+        b, _c, h, w = rgb.shape
+        rows, cols = h // 16, w // 16
+        gh, gw = self.grid_hw
+        # ImageNet normalisation, matching the processor the bank was built with
+        mean = torch.tensor([0.485, 0.456, 0.406], device=rgb.device).view(1, 3, 1, 1)
+        std = torch.tensor([0.229, 0.224, 0.225], device=rgb.device).view(1, 3, 1, 1)
+        x = ((rgb - mean) / std).to(torch.bfloat16)
+        tok = m(pixel_values=x).last_hidden_state[:, -(rows * cols):].float()
+        d = tok.shape[-1]
+        t = tok.reshape(b, gh, rows // gh, gw, cols // gw, d).mean(dim=(2, 4))
+        return t.reshape(b, gh * gw, d)
+
+    def forward(self, z_op_last: Tensor, rgb: Tensor) -> Tensor:
+        b = z_op_last.shape[0]
+        cells = z_op_last.reshape(b, self.n_cells, -1)
+        pred = self.head(cells)
+        tgt = self.target(rgb)
+        if not torch.isfinite(tgt).all():
+            # the silent DINOv3 NaN mode -- refuse rather than train on garbage
+            raise RuntimeError("O7: teacher produced non-finite features")
+        return torch.nn.functional.mse_loss(pred, tgt.to(pred.dtype))
+
+class O8Pixel(torch.nn.Module):
+    """O8 — distillation into RAW PIXELS (E-DEC-10). External, teacher-free.
+
+    Same shape as :class:`O7Distill` so the two are a matched pair: readout
+    cells -> a per-cell target. The difference is only the target's origin --
+    O7's comes from a frozen network trained on external data, O8's comes from
+    the input image itself, so O8 keeps the pipeline self-contained.
+
+    ⚠️ The target is the cell region downsampled to ``ph x pw`` RGB, NOT its mean
+    colour: a mean is trivially predictable and would let the term be satisfied
+    without representing layout, which is the same degeneracy E-DEC-7 describes.
+    """
+
+    def __init__(self, d_readout: int, n_cells: int, grid_hw: tuple[int, int],
+                 ph: int = 8, pw: int = 10, hidden: int = 512):
+        super().__init__()
+        self.n_cells, self.grid_hw = int(n_cells), tuple(grid_hw)
+        self.ph, self.pw = int(ph), int(pw)
+        self.out_dim = 3 * self.ph * self.pw
+        self.head = torch.nn.Sequential(
+            torch.nn.Linear(int(d_readout), hidden), torch.nn.GELU(),
+            torch.nn.Linear(hidden, self.out_dim))
+
+    @torch.no_grad()
+    def target(self, rgb: Tensor) -> Tensor:
+        """rgb [B, 3, H, W] in [0,1] -> [B, n_cells, 3*ph*pw]."""
+        gh, gw = self.grid_hw
+        b = rgb.shape[0]
+        # one adaptive pool to the FULL cell-grid x per-cell patch resolution,
+        # then split -- so every cell gets the same treatment with no rounding.
+        z = torch.nn.functional.adaptive_avg_pool2d(rgb, (gh * self.ph, gw * self.pw))
+        z = z.reshape(b, 3, gh, self.ph, gw, self.pw).permute(0, 2, 4, 1, 3, 5)
+        return z.reshape(b, gh * gw, self.out_dim)
+
+    def forward(self, z_op_last: Tensor, rgb: Tensor) -> Tensor:
+        b = z_op_last.shape[0]
+        cells = z_op_last.reshape(b, self.n_cells, -1)
+        pred = self.head(cells)
+        tgt = self.target(rgb)
+        return torch.nn.functional.mse_loss(pred, tgt.to(pred.dtype))
+
+
 def o2_near_field_loss(pred_cells: Tensor, true_cells: Tensor,
                        cell_ranges_m: Tensor, v_ego: Tensor, *,
                        tau_s: float = 2.0, horizon_s: float = HORIZON_S,
@@ -4042,6 +4153,27 @@ def train(a) -> dict:
     if not trainable:
         raise SystemExit(f"[v6] ⛔ stage {a.stage} has NO trainable parameters "
                          f"— the freeze map and the stage disagree")
+    # E-DEC-9: O7 frozen-teacher distillation. Built ONLY when the weight is
+    # non-zero, so with the flag off nothing is constructed, nothing enters the
+    # optimiser, and the loss / RNG stream / state_dict stay bit-identical.
+    o7 = None
+    if float(getattr(a, "w_o7_distill", 0.0)) > 0:
+        # ⛔ n_cells / grid_shape live on V6Config, NOT on V6Stack (which has a
+        # `cells(z_op)` METHOD). The first wiring read stack.n_cells and died.
+        o7 = O7Distill(d_readout=int(stack.cfg.readout.d_readout),
+                       n_cells=int(stack.cfg.n_cells), grid_hw=stack.cfg.grid_shape,
+                       model_id=str(getattr(a, "o7_model", O7_DEFAULT_MODEL))).to(device)
+        trainable = trainable + [q for q in o7.parameters() if q.requires_grad]
+        print(f"[o7] distillation ON  w={float(a.w_o7_distill):g} "
+              f"teacher={o7.model_id} cells={o7.n_cells} grid={o7.grid_hw}", flush=True)
+    o8 = None
+    if float(getattr(a, "w_o8_pixel", 0.0)) > 0:
+        o8 = O8Pixel(d_readout=int(stack.cfg.readout.d_readout),
+                     n_cells=int(stack.cfg.n_cells),
+                     grid_hw=stack.cfg.grid_shape).to(device)
+        trainable = trainable + [q for q in o8.parameters() if q.requires_grad]
+        print(f"[o8] raw-pixel target ON  w={float(a.w_o8_pixel):g} "
+              f"cells={o8.n_cells} patch={o8.ph}x{o8.pw}", flush=True)
     opt = torch.optim.AdamW(trainable, lr=a.lr, weight_decay=a.wd)
     sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=a.steps)
     start_step = 0
@@ -4319,6 +4451,23 @@ def train(a) -> dict:
                              t2_negative=getattr(a, "t2_negative",
                                                  "lane_mirror"),
                              t5_w_kappa=float(getattr(a, "t5_w_kappa", 1.0)))
+            # ---- O7: distil the readout cells into a FROZEN teacher ---------
+            # The teacher sees the NEWEST RGB frame: the 9-channel stack is
+            # [f_{t-2}, f_{t-1}, f_t], so the last three channels are frame t.
+            if o7 is not None:
+                _zl = L["out"]["z_op_win"][:, -1]
+                _rgb = batch["frames"][:, -1, -3:].float()
+                _l7 = o7(_zl, _rgb)
+                L["loss"] = L["loss"] + float(a.w_o7_distill) * _l7
+                L["log"]["o7_distill"] = float(_l7.detach())
+                L["log"]["o7_w"] = float(a.w_o7_distill)
+            if o8 is not None:
+                _zl8 = L["out"]["z_op_win"][:, -1]
+                _rgb8 = batch["frames"][:, -1, -3:].float()
+                _l8 = o8(_zl8, _rgb8)
+                L["loss"] = L["loss"] + float(a.w_o8_pixel) * _l8
+                L["log"]["o8_pixel"] = float(_l8.detach())
+                L["log"]["o8_w"] = float(a.w_o8_pixel)
         opt.zero_grad(set_to_none=True)
         L["loss"].backward()
         gn = torch.nn.utils.clip_grad_norm_(trainable, a.clip)
@@ -5330,6 +5479,17 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--w-o1-ctrl", type=float, default=1.0)
     ap.add_argument("--w-o1-fact", type=float, default=1.0)
     ap.add_argument("--w-o1-scene", type=float, default=0.3)
+    # E-DEC-9: distillation into a FROZEN EXTERNAL encoder. DEFAULT 0.0 => the
+    # head is never built, the loss is bit-identical, the state_dict is unchanged.
+    ap.add_argument("--w-o7-distill", type=float, default=0.0,
+                    help="weight for O7 frozen-teacher distillation (E-DEC-9); "
+                         "0 disables it entirely")
+    ap.add_argument("--o7-model", type=str, default=O7_DEFAULT_MODEL,
+                    help="frozen teacher for O7")
+    # E-DEC-10: RAW-PIXEL external target — the teacher-free counterpart of O7.
+    ap.add_argument("--w-o8-pixel", type=float, default=0.0,
+                    help="weight for O8 raw-pixel distillation (E-DEC-10); "
+                         "0 disables it entirely")
     # H-RANK-22: O1 is the term that both buys action-sensitivity and collapses
     # the rank. This confines its gradient to the PREDICTOR (encoder detached for
     # the O1 term only). Default OFF => incumbent loss bit-identical.
