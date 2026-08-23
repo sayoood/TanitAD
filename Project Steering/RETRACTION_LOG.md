@@ -7279,3 +7279,101 @@ harder — this is the same family as C6's confounded decoder and the `df` /
 could refute the explanation you are about to give, you may not give the
 explanation until that control has reported.** Naming the mechanism as a
 CANDIDATE is always admissible; stating it as the cause is not.
+
+## C131 — "flagship v1 drove at 0.452 m, the programme's best" USED A WM-FIDELITY NUMBER AS A DRIVING RESULT, and then proposed calibrating a representation gate on it (2026-08-22, PI challenge)
+
+**What was asserted (repeatedly, in one session):** that flagship v1 "drove at
+0.452 m — the programme's best", and — worse — that its measured effective rank
+of **24.66** should therefore anchor the *strong* tier of a recalibrated
+`O6_RANK_FLOOR`, on the reasoning that it was a representation belonging to a
+model that "demonstrably drove".
+
+**What is withdrawn:** both. `MODEL_REGISTRY.md:188` labels the number
+`ade_0_2s` = **`wm_fidelity_ade_2s` — "a WORLD-MODEL FIDELITY number, NOT a
+planning number"**, and `:285` records **open-loop 0.4271 → closed-loop 1.7318
+(4.05×)** with *"open-loop does not predict closed-loop"* and *"the closed-loop
+failure was UNDERSTATED"*. The PI states the mechanism: v1 was conditioned on
+the future GT points and learned from them, **bypassing the encoder and vision**,
+and fails in closed loop. It is the action-echo defect (route head an exact
+bijection of its own nav input, 369/369, scoring 1.0000) in the ADE column.
+
+**⭐ WHAT THE CORRECTED DATAPOINT ACTUALLY SHOWS — and it inverts the argument
+it was recruited for.** v1-era's effective rank **24.66** is the HIGHEST of
+anything measured this session — above frozen DINOv3's **17.25** — while having
+no environment interpretation at all (speed R² on our own trunk +0.0025; DINOv3
++0.1473). ⇒ **RANK IS NECESSARY BUT NOT SUFFICIENT.** Effective rank measures
+whether variance is SPREAD, not whether it ENCODES THE WORLD. A representation
+can spread variance across two dozen directions carrying a memorised action-echo
+and nothing about the scene. **v1 is not a known-good reference; it is the
+counter-example.**
+
+**ROOT-CAUSE CLASS: a metric quoted outside the tier its own registry stamps on
+it, then promoted to a CALIBRATION ANCHOR — so one scope error silently became
+the reference standard for a gate.** The registry names the tier three columns
+from the number; `EVAL_DOCTRINE.md` binds every number to carry its tier
+precisely to stop this. Same family as the `df` / `free` / `step_s` scope traps
+(a true value read in the wrong scope), but more expensive: a scope error in a
+*threshold* propagates to every arm judged against it.
+
+⇒ **STANDING RULE THIS EARNS: a gate threshold may only be anchored on a sample
+whose EVIDENCE TIER matches the property being gated.** A representation-quality
+floor must be calibrated on representations with demonstrated DECODABILITY —
+never on a driving number, and never on a synthetic population (see the same
+entry's second finding: `O6_RANK_FLOOR = 64` was calibrated on an α=2 power-law
+that reads 202.03, while EVERY real representation measured — DINOv3 17.25,
+v1-era 24.66, v6F 5.86 — FAILS it). ⚠️ And the pass condition for a world model
+is rank **AND** decodability; rank alone admits v1.
+
+## C132 — "every real representation FAILS the rank gate" COMPARED A σ² STATISTIC TO A σ THRESHOLD, and the two rank the arms in OPPOSITE ORDERS (2026-08-22, PI challenge)
+
+**What was asserted:** that `spectrum_report` uses "CENTRED covariance
+eigenvalues (σ²) — the same estimator as my probe, so the numbers are directly
+comparable to `O6_RANK_FLOOR = 64`", and therefore that **every** real
+representation (frozen DINOv3 17.25, flagship v1-era 24.66, v6F 5.86) fails the
+gate.
+
+**What is withdrawn:** the comparison, and the conclusion drawn from it. Reading
+`v6.py:1590-1600` rather than its docstring: `sv = svdvals(zc); eig = sv**2;
+er = effective_rank(sv); participation_ratio(eig)`. **`effective_rank` is passed
+SINGULAR VALUES (p ∝ σ); `participation_ratio` is passed EIGENVALUES (p ∝ σ²).**
+Two statistics under one report, differing only in normalisation, and the
+docstring describes only the σ² path. Every "eff. rank" quoted in that session
+was σ²-based and was compared to a σ-based threshold.
+
+**⭐ WHY THIS IS NOT A UNIT SLIP — THE VERDICTS INVERT.** MEASURED at n=1440 on
+v7-tiny's own arms:
+
+| arm | top-1 energy | effective_rank(σ) | participation(σ²) | gate @64 |
+|---|---|---|---|---|
+| `fixed` (all six terms) | **0.551** | **130.91** | 2.94 | **PASS** |
+| `lewm-long` (two-term) | 0.339 | **24.14** | 5.00 | **FAIL** |
+
+A representation with **55 % of its variance in ONE direction PASSES a COLLAPSE
+gate**, while a cleaner one fails — because p ∝ σ weights the near-zero tail
+heavily, so it measures how many directions are non-negligible in AMPLITUDE and
+**REWARDS A NOISY TAIL**. Reproduced synthetically: 55 % top energy + a broad
+thin tail reads participation 3.09 against effective_rank(σ) **435.46**, a 141×
+disagreement on one population.
+
+**ROOT-CAUSE CLASS: two statistics sharing one report and one informal name
+("rank"), differing only in normalisation, read across their boundary — with the
+docstring documenting one path and the code taking the other.** Same family as
+C128 (a rank bounded by its sample count) and the σ-vs-σ² confusion that made
+one v1 spectrum read 7.59 and 24.93 on the same day. ⚠️ The dangerous property
+is that BOTH numbers are individually correct, so neither looks wrong in
+isolation; only the ordering exposes it.
+
+⇒ **STANDING RULE THIS EARNS: a threshold names its STATISTIC, not just its
+quantity — and when one report emits two normalisations of the same quantity, a
+gate must state which and a test must pin the ordering on a fixture where they
+disagree.** Collapse is an ENERGY question (a direction at 1e-6 carries no
+information), so the admissible statistic is p ∝ σ².
+
+**What survives:** the substantive ordering, on the defensible statistic —
+all-six 2.94 → LeWM two-term 5.00 → frozen DINOv3 8.56. The LeWM recipe helps,
+SIGReg dosage does not, and nothing reaches the frozen reference.
+
+**Fix shipped:** `O6_PARTICIPATION_FLOOR = 8.56` (frozen DINOv3, MEASURED on our
+frames — the only representation here with demonstrated decodability), a
+`participation_pass` clause in `o6_rank_verdict`, and
+`O6_RANK_IS_NOT_SUFFICIENT` recording that rank alone admits v1 (see C131).

@@ -88,7 +88,7 @@ from tanitad.models.encoder import ViT5Encoder, ViTEncoder
 from tanitad.models.metric_dynamics import StepDisplacementReadout
 from tanitad.models.predictor import OperativePredictor
 from tanitad.models.readout import SpatialGridReadout
-from tanitad.models.sigreg import SigReg
+from tanitad.models.sigreg import SigReg, SubspaceSigReg
 from tanitad.models.tactical import FTac
 
 __all__ = [
@@ -137,7 +137,7 @@ __all__ = [
     "DOMAIN_MIX_CONTROL_MIN_N", "DOMAIN_MIX_MAX_AMPLIFICATION",
     "DOMAIN_MIX_MIN_STRATUM_EPISODES",
     "spectrum_report", "SpectrumAccumulator", "o6_rank_verdict",
-    "O6_ADMISSIBLE_CEILING", "O6_RANK_FLOOR",
+    "O6_ADMISSIBLE_CEILING", "O6_RANK_FLOOR", "O6_PARTICIPATION_FLOOR",
     # X4 — the O6 spectrum pattern applied PER LAYER (op / tac / str)
     "X4_LAYER_POLICY", "layer_spectrum_policy", "x4_rank_verdict",
     "LayerSpectrumMonitor", "sigreg_trend_verdict",
@@ -1332,6 +1332,40 @@ O6_ADMISSIBLE_CEILING = 1024
 #: the ``top_k`` the energy share is taken over.
 O6_RANK_FLOOR = 64.0
 
+#: ⛔⛔ THE STATISTIC THE COLLAPSE GATE MUST USE. MEASURED 2026-08-22, and it
+#: inverts the verdict: ``spectrum_report`` computes ``effective_rank(sv)`` from
+#: **singular values** (p ∝ σ) while ``participation_ratio(eig)`` uses
+#: **eigenvalues** (p ∝ σ²) — two statistics under one report, differing only in
+#: normalisation. p ∝ σ gives enormous weight to the long tail of near-zero
+#: directions, so it measures how many directions are non-negligible in
+#: AMPLITUDE and REWARDS A NOISY TAIL.
+#:
+#: The failure is concrete, on v7-tiny's own arms at n=1440:
+#:     arm `fixed`      top-1 energy **0.551**, effective_rank(σ) **130.91** -> PASSES 64
+#:     arm `lewm-long`  top-1 energy  0.339, effective_rank(σ)   24.14  -> FAILS 64
+#: A representation with **55 % of its variance in ONE direction** passes, and a
+#: cleaner one fails, because the cleaner spectrum has a smaller tail. For the
+#: COLLAPSE question ENERGY is what matters (a direction at 1e-6 carries no
+#: information), so the admissible statistic is p ∝ σ² — the participation ratio,
+#: which orders these arms coherently with ``top1_share`` AND with the ego-probe
+#: (frozen DINOv3 best on both).
+#:
+#: Calibrated on REAL representations on OUR frames (n=1440), never on a
+#: synthetic population: frozen DINOv3 **8.56** (the only representation with
+#: demonstrated decodability here — speed R² +0.147 vs our +0.0025), v7-tiny
+#: two-term 5.00, flagship v1-era 4.92, all-six-terms 2.94, v6F@20k 2.70.
+#: ⚠️ ``O6_RANK_FLOOR = 64`` was calibrated on a synthetic α=2 power-law
+#: (healthy 122.4 / collapsed 19.4) and never against a real sample.
+O6_PARTICIPATION_FLOOR = 8.56
+
+#: ⚠️ RANK IS NECESSARY, NOT SUFFICIENT. flagship v1-era has the HIGHEST rank
+#: measured in this programme and NO environment interpretation: it was
+#: conditioned on future GT points, bypassed the encoder and vision, and fails
+#: closed-loop (`MODEL_REGISTRY.md:285`, open-loop 0.4271 -> closed-loop 1.7318,
+#: 4.05x). A gate satisfied by rank alone admits exactly that model. The pass
+#: condition for a world model is rank AND decodability.
+O6_RANK_IS_NOT_SUFFICIENT = True
+
 
 def spectrum_report(z: Tensor, *, top_k: int = 8, ci_reps: int = 0,
                     block: int = 1, generator=None) -> dict:
@@ -1570,11 +1604,23 @@ def o6_rank_verdict(cur: dict, ref: dict | None = None, *,
     ceiling = int(cur.get("rank_ceiling", min(int(cur.get("n", 2)) - 1,
                                               int(cur.get("d", 1)))))
     er = float(cur["effective_rank"])
+    pr = cur.get("participation_ratio")
     out: dict = {"criterion": "O6_rank_retention v2 (SIGREG_GATE_POWER.md)",
                  "effective_rank": er, "rank_ceiling": ceiling,
                  "effective_rank_frac": er / max(ceiling, 1),
                  "retention_threshold": float(retention),
-                 "absolute_floor": float(floor)}
+                 "absolute_floor": float(floor),
+                 # ⭐ the ENERGY-based clause; see O6_PARTICIPATION_FLOOR for why
+                 # effective_rank(σ) cannot decide collapse on its own.
+                 "participation_ratio": (float(pr) if pr is not None else None),
+                 "participation_floor": float(O6_PARTICIPATION_FLOOR),
+                 "participation_pass": (None if pr is None
+                                        else bool(float(pr)
+                                                  >= O6_PARTICIPATION_FLOOR)),
+                 "statistic_note": "effective_rank uses p ∝ σ (amplitude, "
+                                   "tail-sensitive); participation_ratio uses "
+                                   "p ∝ σ² (energy). COLLAPSE is an energy "
+                                   "question — decide on participation."}
     out["ceiling_min"] = int(ceiling_min)
     if ceiling < ceiling_min:
         out |= {"pass": None, "status": "INCONCLUSIVE",
@@ -3768,6 +3814,10 @@ class V6Config:
     sigreg_slices: int = 512
     sigreg_beta: float = 1.0
     sigreg_free_dims: int = 0
+    #: Sub-JEPA (arXiv 2605.09241): K random ORTHOGONAL subspaces
+    #: for the Gaussian constraint instead of the full ambient
+    #: space. 1 = off = LeWM's full-space SIGReg (incumbent).
+    sigreg_subspaces: int = 1
 
     # ---- the invariant ------------------------------------------------------
     param_budget: int = PARAM_BUDGET
@@ -4535,7 +4585,14 @@ class V6Stack(nn.Module):
         # ---- O3 aux + O6 ---------------------------------------------------
         self.masked_cells = MaskedCellPredictor(
             cfg.n_cells, int(cfg.readout.d_readout), hidden=cfg.aux_hidden)
-        self.sigreg = SigReg(cfg.sigreg_slices, cfg.sigreg_beta)
+        _sub = int(getattr(cfg, "sigreg_subspaces", 1) or 1)
+        # ⚠️ dim is the COMPLEMENT that `position_relaxed` actually
+        # passes down, not d_op — the exempt ego columns never reach it.
+        _sd = int(cfg.d_op) - max(0, int(cfg.sigreg_free_dims))
+        self.sigreg = (SubspaceSigReg(_sd, _sub, cfg.sigreg_slices,
+                                      cfg.sigreg_beta)
+                       if _sub > 1 else
+                       SigReg(cfg.sigreg_slices, cfg.sigreg_beta))
         #: per-cell nominal ranges for O2 (ESTIMATED prior — see the function).
         self.register_buffer("cell_ranges_m",
                              readout_grid_ranges(gh, gw).reshape(-1),

@@ -127,6 +127,81 @@ class SigReg(torch.nn.Module):
         return stat.mean()
 
 
+class SubspaceSigReg(torch.nn.Module):
+    """Sub-JEPA's SUBSPACE Gaussian regularizer (arXiv 2605.09241, banked).
+
+    ⛔ THE CRITIQUE IT IMPLEMENTS, verbatim from the paper: *"latent
+    representations inherently lie on low-dimensional manifolds within a
+    high-dimensional ambient space, and enforcing an isotropic Gaussian prior
+    directly in this ambient space introduces an overly strong bias."* Sub-JEPA
+    applies the Gaussian constraint in K random subspaces instead, which
+    *"relaxes the global constraint while preserving its anti-collapse effect"*.
+
+    THE METHOD (paper §Subspace Projection): K row-orthonormal projections
+    ``P_k in R^{d_s x D}`` with ``d_s = round(D / K)`` — one hyperparameter.
+    Each is built from a random Gaussian matrix via QR, and the projections are
+    FROZEN: *"Freezing the projections prevents the regularizer itself from
+    adapting to the evolving latent distribution."* LeWM's sliced Epps-Pulley
+    then runs INDEPENDENTLY inside each subspace.
+
+    ⭐ IMPLEMENTATION NOTE. With ``d_s = D/K`` and mutual orthogonality, the K
+    projections together are exactly ONE ``D x D`` orthogonal matrix cut into K
+    row-blocks — so one QR builds all of them, and the blocks are orthogonal to
+    each other by construction, which is what the paper asks for.
+
+    ⭐⭐ WHY THIS COMPOSES WITH OUR OWN FIX. MEASURED 2026-08-22: v6's O6 sees
+    ``B*W = 24`` rows in ``D = 2048`` (n/d = 0.012), so its Epps-Pulley estimate
+    is mostly sampling noise — the same ``n << d`` defect the O6 rank GATE
+    refuses to rule on. ``SigRegRowBank`` raises n; this lowers d. Together,
+    n=1536 rows in ``d_s=64`` is n/d_s = 24 — a ~2000x better-conditioned
+    estimator than the incumbent, from two independent directions.
+
+    ⚠️ Sub-JEPA is validated on four CONTINUOUS-CONTROL environments, not on
+    driving video. Same scope caveat as LeWM itself.
+    """
+
+    def __init__(self, dim: int, n_subspaces: int, n_slices: int = 512,
+                 beta: float = 1.0, seed: int = 0):
+        super().__init__()
+        if n_subspaces < 1:
+            raise ValueError(f"n_subspaces must be >= 1, got {n_subspaces}")
+        if n_subspaces > dim:
+            raise ValueError(f"n_subspaces {n_subspaces} > dim {dim}")
+        self.dim, self.n_subspaces = int(dim), int(n_subspaces)
+        self.n_slices, self.beta = int(n_slices), float(beta)
+        self.d_s = int(round(dim / n_subspaces))
+        g = torch.Generator().manual_seed(int(seed))
+        q, _r = torch.linalg.qr(torch.randn(dim, dim, generator=g))
+        # [K, d_s, D] row-orthonormal blocks of one orthogonal basis
+        blocks = q.t()[: self.n_subspaces * self.d_s]
+        self.register_buffer("proj",
+                             blocks.reshape(self.n_subspaces, self.d_s, dim))
+
+    def extra_repr(self) -> str:
+        return (f"dim={self.dim}, K={self.n_subspaces}, d_s={self.d_s}, "
+                f"slices={self.n_slices}")
+
+    def forward(self, z: Tensor, *,
+                generator: torch.Generator | None = None) -> Tensor:
+        if z.ndim != 2:
+            z = z.reshape(-1, z.shape[-1])
+        if z.is_cuda:
+            with torch.autocast("cuda", enabled=False):
+                return self._forward_fp32(z.float(), generator)
+        return self._forward_fp32(z.float(), generator)
+
+    def _forward_fp32(self, z: Tensor,
+                      generator: torch.Generator | None = None) -> Tensor:
+        inner = SigReg(self.n_slices, self.beta)
+        P = self.proj.to(device=z.device, dtype=z.dtype)
+        # ⚠️ the Epps-Pulley statistic itself is REUSED, never reimplemented:
+        # its no-divide-by-n behaviour is the validated operating point and was
+        # once a silent-disable bug.
+        stats = [inner._forward_fp32(z @ P[k].t(), generator)
+                 for k in range(self.n_subspaces)]
+        return torch.stack(stats).mean()
+
+
 def position_relaxed(sigreg: "SigReg", z: Tensor, free_dims: int, *,
                      generator: torch.Generator | None = None) -> Tensor:
     """SIGReg on the COMPLEMENT of a fixed ego-motion subspace (§B.3 relaxation).

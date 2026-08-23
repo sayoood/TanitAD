@@ -104,8 +104,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))          # scripts/
 sys.path.insert(1, str(Path(__file__).resolve().parents[1]))      # stack root
 
 from tanitad.config import EncoderConfig, PredictorConfig, ReadoutConfig  # noqa: E402
+from tanitad.models.predictor import RESIDUAL_HEAD_INIT_SCALE
 from tanitad.models.v6 import (  # noqa: E402
-    GOAL_ARG_SLOTS, HORIZON_S, MODULE_GROUPS, PLAN_STEPS, STAGES,
+    GOAL_ARG_SLOTS, HORIZON_S, MODULE_GROUPS, O6_ADMISSIBLE_CEILING,
+    PLAN_STEPS, STAGES,
     STRATEGIC_ACTION_TOKENS, STRATEGIC_GOAL_TOKENS, InteractionSampler,
     LayerSpectrumMonitor, V6Config, V6Stack, apply_stage_freeze,
     kinematic_saliency,
@@ -943,8 +945,8 @@ def rollout_step_weights(k: int, mode: str = "uniform", *,
     return w / w.mean().clamp_min(1e-8)
 
 
-def o5_rollout_consistency_loss(zhat_steps, z_true_steps, weights: Tensor
-                                ) -> tuple[Tensor, dict]:
+def o5_rollout_consistency_loss(zhat_steps, z_true_steps, weights: Tensor,
+                                form: str = "l1") -> tuple[Tensor, dict]:
     """O5 — multi-step rollout consistency, error at EVERY step.
 
     ``zhat_steps`` / ``z_true_steps``: sequences of ``[B, S]`` latents of equal
@@ -955,6 +957,17 @@ def o5_rollout_consistency_loss(zhat_steps, z_true_steps, weights: Tensor
     than measured after: an endpoint-only loss is minimisable by a trajectory
     that is wrong throughout and right at the end, and that is precisely the
     shape T1 rollouts fail with.
+
+    ``form`` selects the per-step error: ``"l1"`` (this programme's incumbent)
+    or ``"mse"``. ⭐ WHY THIS IS A KNOB. LeWM (arXiv 2603.19312, banked) trains
+    a stable end-to-end JEPA with exactly TWO terms -- an MSE next-embedding
+    loss plus SIGReg -- and attributes JEPA fragility to "complex multi-term
+    losses" with "under-specified anti-collapse regularization". MEASURED
+    2026-08-22 on v7-tiny: running o5+o6 ALONE lifted latent participation
+    2.94 -> 4.43 and was the ONLY arm whose effective rank rose at all, while a
+    1000x sweep of the SIGReg weight did nothing. Our O5 is L1 over a k-step
+    rollout; LeWM's is MSE on the next embedding. That deviation is the next
+    thing to test, so it is a flag rather than a fork.
     """
     if len(zhat_steps) != len(z_true_steps):
         raise ValueError(f"rollout length mismatch: {len(zhat_steps)} vs "
@@ -962,15 +975,65 @@ def o5_rollout_consistency_loss(zhat_steps, z_true_steps, weights: Tensor
     k = len(zhat_steps)
     if weights.numel() != k:
         raise ValueError(f"weights must be [k={k}], got {weights.numel()}")
-    per = torch.stack([(zhat_steps[j].float() - z_true_steps[j].float())
-                       .abs().mean() for j in range(k)])               # [k]
+    if form not in ("l1", "mse"):
+        raise ValueError(f"o5 form must be 'l1' or 'mse', got {form!r}")
+    d = [(zhat_steps[j].float() - z_true_steps[j].float()) for j in range(k)]
+    per = torch.stack([(x.abs().mean() if form == "l1" else x.pow(2).mean())
+                       for x in d])                                    # [k]
     loss = (weights.to(per.device).float() * per).mean()
     return loss, {"o5_loss": float(loss.detach()),
-                  "o5_k": k,
+                  "o5_k": k, "o5_form": form,
                   "o5_step1": float(per[0].detach()),
                   "o5_stepK": float(per[-1].detach()),
                   "o5_growth": float((per[-1] / per[0].clamp_min(1e-8))
                                      .detach())}
+
+
+class SigRegRowBank:
+    """A detached ring of past operative latents, so SIGReg can ESTIMATE its
+    distribution from many rows while the gradient still flows only through the
+    current batch.
+
+    ⛔ THE DEFECT THIS FIXES. S-W feeds O6 ``states.reshape(-1, d)`` =
+    ``[B*W, d]``. On the v7-tiny geometry that is **24 rows in 2048 dimensions**,
+    and SIGReg then runs an Epps-Pulley normality test per random projection on
+    those 24 samples. The sample covariance of 24 points in 2048-d has rank
+    <= 24, so "isotropic in 2048-d" is UNREACHABLE BY CONSTRUCTION and most of
+    the gradient is sampling noise.
+
+    ⭐ We already knew this number. The O6 rank GATE refuses to rule at exactly
+    this n -- *"rank_ceiling 23 < 1024: a centred covariance from n=24 rows
+    cannot resolve rank"* -- and correctly reports INCONCLUSIVE. The LOSS has the
+    identical power problem and fails SILENTLY instead.
+
+    MEASURED 2026-08-22 on v7-tiny (participation / effective rank of z_op,
+    1440 held-out rows): all six terms 2.94/5.84; a 1000x sweep of the SIGReg
+    WEIGHT does nothing (3.34/5.36); dropping to LeWM's two terms 4.43/7.10;
+    6k steps 5.00/7.40 -- against frozen DINOv3's 8.56/17.25 on the same
+    frames. Weight is not the lever, so estimator POWER is the next candidate.
+
+    ⚠️ Only the current rows carry gradient; history is detached. This changes
+    the ESTIMATE, not the objective.
+    """
+
+    __slots__ = ("capacity", "_buf")
+
+    def __init__(self, capacity: int = 1):
+        if capacity < 1:
+            raise ValueError(f"capacity must be >= 1, got {capacity}")
+        self.capacity = int(capacity)
+        self._buf: list[Tensor] = []
+
+    def rows(self, z: Tensor) -> Tensor:
+        """-> the rows SIGReg should see: history (detached) ++ ``z`` (live)."""
+        out = (torch.cat([*self._buf, z], dim=0) if self._buf else z)
+        self._buf.append(z.detach())
+        if len(self._buf) >= self.capacity:
+            self._buf = self._buf[-(self.capacity - 1):] if self.capacity > 1                 else []
+        return out
+
+    def n_rows(self, per_step: int) -> int:
+        return per_step * self.capacity
 
 
 def o6_sigreg_loss(sigreg, z: Tensor, free_dims: int = 0, *,
@@ -2085,7 +2148,9 @@ def s1_persistence_control(stack: V6Stack, z_str: Tensor, targets: Tensor, *,
 
 def v6_loss_step(stack: V6Stack, batch: dict, *, stage: str,
                  weights: V6LossWeights, o1_k: int = 10, o5_k: int = 20,
-                 o5_mode: str = "uniform", o3_mode: str = "action",
+                 o5_mode: str = "uniform", o5_form: str = "l1",
+                 sigreg_bank: "SigRegRowBank | None" = None,
+                 o3_mode: str = "action",
                  o3_blocks: int = 2, o3_block_hw: tuple[int, int] = (2, 2),
                  o3_band_rows: int = 0, o2_tau_s: float = 2.0,
                  dkappa: float = DKAPPA_DEFAULT,
@@ -2229,7 +2294,8 @@ def v6_loss_step(stack: V6Stack, batch: dict, *, stage: str,
         if w.o5_rollout:
             sw = rollout_step_weights(k_roll, o5_mode, device=dev)
             l5, lg5 = o5_rollout_consistency_loss(zhat_steps,
-                                                  z_true[:k_roll], sw)
+                                                  z_true[:k_roll], sw,
+                                                  form=o5_form)
             terms["o5"] = w.o5_rollout * l5
             log |= lg5 | {"o5_mode": o5_mode}
 
@@ -2265,8 +2331,26 @@ def v6_loss_step(stack: V6Stack, batch: dict, *, stage: str,
 
     # ---- O6: SIGReg on the operative latent --------------------------------
     if w.o6_sigreg:
-        l6 = o6_sigreg_loss(stack.sigreg, states.reshape(-1, states.shape[-1]),
-                            cfg.sigreg_free_dims, generator=sigreg_generator)
+        z6 = states.reshape(-1, states.shape[-1])
+        base_rows = z6.shape[0]
+        if sigreg_bank is not None:
+            z6 = sigreg_bank.rows(z6)
+        l6 = o6_sigreg_loss(stack.sigreg, z6, cfg.sigreg_free_dims,
+                            generator=sigreg_generator)
+        # ⛔ HOLD THE OPERATING POINT WHEN n CHANGES. The Epps-Pulley statistic
+        # is deliberately NOT normalised by n — its batch scale is part of the
+        # validated (lambda=0.1, slices=512) point. So pooling rows silently
+        # MULTIPLIES the effective lambda by ~n/base. MEASURED 2026-08-22:
+        # 24 rows -> o6_sigreg 3.10; 192 rows -> 46.3, a ~15x inflation, and
+        # the arms read WORSE (participation 4.43 -> 2.92) for that reason and
+        # not for lack of estimator power. Rescaling by base/n keeps the weight
+        # fixed so the row count is the ONLY variable.
+        # ⚠️ This is NOT the ALPS-4B bug (dividing by n at the INCUMBENT n,
+        # which destroyed the validated scale); it restores that exact scale.
+        if sigreg_bank is not None and z6.shape[0] > base_rows:
+            l6 = l6 * (base_rows / float(z6.shape[0]))
+        log["o6_rows"] = int(z6.shape[0])
+        log["o6_row_renorm"] = round(base_rows / float(z6.shape[0]), 6)
         terms["o6"] = w.o6_sigreg * l6
         log["o6_sigreg"] = float(l6.detach())
 
@@ -3010,6 +3094,7 @@ def build_stack_from_args(a) -> V6Stack:
         isolate_planner_from_encoder=not a.no_isolate_planner,
         isolate_uplink=not a.no_isolate_uplink, uplink=a.uplink,
         ema_decay=a.ema_decay, sigreg_slices=a.sigreg_slices,
+        sigreg_subspaces=getattr(a, "sigreg_subspaces", 1),
         sigreg_free_dims=a.sigreg_free_dims, param_budget=a.param_budget,
         f_hidden_tac=a.f_hidden_tac, f_hidden_str=a.f_hidden_str,
         f_blocks=a.f_blocks,
@@ -3100,6 +3185,9 @@ def build_stack_from_args(a) -> V6Stack:
             *_read_anchor_table(a.anchor_table), dt=cfg.dt)
         print(f"[v6] anchor table {a.anchor_table} -> {json.dumps(prov)}",
               flush=True)
+    from tanitad.models.predictor import residual_init_scale_banner
+    print(residual_init_scale_banner(), flush=True)
+    _warn_rank_gate_unrulable(a, stack)
     rep = stack.assert_param_budget()
     print(f"[v6] params {rep['total']/1e6:.2f} M / budget "
           f"{rep['budget']/1e6:.0f} M · arm {rep['arm']} · per-group "
@@ -3294,6 +3382,8 @@ def dry_run(a, stack: V6Stack | None = None) -> dict:
     gen = torch.Generator().manual_seed(a.seed)
     rows: list[dict] = []
     t0 = time.time()
+    sigreg_bank = (SigRegRowBank(a.sigreg_accum)
+                   if getattr(a, "sigreg_accum", 1) > 1 else None)
     for step in range(1, int(a.dry_steps) + 1):
         b = synthetic_train_batch(
             stack, batch=a.dry_batch, k=a.dry_k, seed=a.seed + step,
@@ -3306,7 +3396,9 @@ def dry_run(a, stack: V6Stack | None = None) -> dict:
         dk, da = sample_random_deltas(a.dry_batch, gen, a.rand_dkappa_max,
                                       a.rand_daccel_max)
         L = v6_loss_step(stack, b, stage=a.stage, weights=weights, o1_k=o1_k,
-                         o5_k=o5_k, o5_mode=a.o5_mode, o3_mode=a.o3_mode,
+                         o5_k=o5_k, o5_mode=a.o5_mode, o5_form=getattr(a, "o5_form", "l1"),
+                         sigreg_bank=sigreg_bank,
+                         o3_mode=a.o3_mode,
                          o3_blocks=a.o3_blocks,
                          o3_block_hw=(a.o3_block_h, a.o3_block_w),
                          o3_band_rows=a.o3_band_rows, o2_tau_s=a.o2_tau_s,
@@ -3388,6 +3480,63 @@ def _weights_from_args(a) -> V6LossWeights:
         lambda_plan=resolve_lambda_plan(a))
 
 
+def rank_gate_capacity(batch: int, window: int,
+                       ceiling_min: int = O6_ADMISSIBLE_CEILING) -> dict:
+    """Can the O6 RANK criterion rule at these settings? -> a verdict dict.
+
+    ⛔ WHY THIS EXISTS — THE MOST EXPENSIVE SILENT FAILURE FOUND SO FAR.
+    `O6_rank_retention` carries `absolute_floor` 64. MEASURED 2026-08-22, v6F at
+    step 20,000 reads an effective rank of **5.86** on 1,440 held-out rows, and
+    its mean-pooled ENCODER tokens read **1.03** with 99.7 % of the variance in a
+    single direction -- a dimensionally COLLAPSED representation, against frozen
+    DINOv3's 8.56 / 17.25 on the identical frames. The gate would have FAILED it.
+
+    It never got the chance. One spectrum call sees only `batch * window` rows,
+    so `rank_ceiling` was 23 and the verdict came back INCONCLUSIVE with an
+    entirely correct explanation of its own blindness:
+
+        "rank_ceiling 23 < 1024: a centred covariance from n=24 rows cannot
+         resolve rank. Pool more steps (SpectrumAccumulator) before asking."
+
+    `--spectrum-accum` defaults to 1 (off). So EVERY run reports INCONCLUSIVE on
+    the one criterion that would have caught the collapse, and INCONCLUSIVE is
+    treated as NOT-PASS but does not stop anything -- a nine-day run proceeded on
+    a gate that could not see. ⇒ A criterion that CANNOT RULE at the configured
+    settings is worse than no criterion, because the gate report looks populated.
+    This makes the blindness LOUD at startup instead of discoverable in a
+    post-mortem.
+    """
+    rows_per_call = max(1, int(batch) * int(window))
+    need = -(-(ceiling_min + 1) // rows_per_call)      # ceil division
+    return {"rows_per_call": rows_per_call, "ceiling_min": int(ceiling_min),
+            "required_spectrum_accum": int(need)}
+
+
+def _warn_rank_gate_unrulable(a, stack: V6Stack) -> None:
+    """Print a loud banner when O6's rank criterion cannot rule as configured."""
+    w = int(stack.cfg.predictor.window)
+    info = rank_gate_capacity(int(a.batch), w)
+    have = int(getattr(a, "spectrum_accum", 1) or 1)
+    reach = have * info["rows_per_call"] - 1
+    if have >= info["required_spectrum_accum"]:
+        print(f"[v6] O6 rank gate CAN rule: --spectrum-accum {have} x "
+              f"{info['rows_per_call']} rows/call -> ceiling {reach} "
+              f">= {info['ceiling_min']}", flush=True)
+        return
+    print(
+        f"[v6] ⛔ O6 RANK GATE CANNOT RULE AT THESE SETTINGS — it will report "
+        f"INCONCLUSIVE no matter what the representation does.\n"
+        f"[v6]    --spectrum-accum {have} x {info['rows_per_call']} rows/call "
+        f"-> rank_ceiling {reach}, but the criterion needs "
+        f"{info['ceiling_min']}.\n"
+        f"[v6]    USE --spectrum-accum {info['required_spectrum_accum']} "
+        f"(cost: ~{info['required_spectrum_accum'] * info['rows_per_call'] * stack.cfg.d_op * 4 / 1e6:.0f} MB "
+        f"of CPU ring buffer).\n"
+        f"[v6]    MEASURED 2026-08-22: v6F@20k effective rank 5.86 vs an "
+        f"absolute_floor of 64 — a COLLAPSED representation that this gate "
+        f"would have failed, had it been able to see.", flush=True)
+
+
 def _run_config(a, stack: V6Stack, freeze: dict) -> dict:
     return {
         "run": f"v6-staged-{a.stage}",
@@ -3400,6 +3549,15 @@ def _run_config(a, stack: V6Stack, freeze: dict) -> dict:
                                         .for_stage(a.stage)),
         "freeze": freeze,
         "param_report": stack.param_report(),
+        #: ⛔ THE INIT REGIME IS NOT IN `args` — it arrives through the
+        #: TANITAD_RESIDUAL_INIT_SCALE environment variable, so a run's own
+        #: artifacts recorded NOTHING about it. MEASURED 2026-08-22: the
+        #: v7-tiny `fixed` and `regress` arms differ ONLY in this value and
+        #: their config.json files were byte-identical on it — the one
+        #: variable of a two-arm ablation was invisible in the record and had
+        #: to be reconstructed from the launch script. An env-var input that
+        #: changes the model is a RUN FACT and belongs beside the run.
+        "residual_head_init_scale": float(RESIDUAL_HEAD_INIT_SCALE),
         "args": {k: (list(v) if isinstance(v, tuple) else v)
                  for k, v in vars(a).items()},
         "horizon_spec": {
@@ -3921,6 +4079,14 @@ def train(a) -> dict:
 
     history: list[dict] = []
     spectrum_last: dict | None = None
+    #: ⛔ the POOLED reading, which is what the O6 RANK criterion needs.
+    #: Before 2026-08-22 the pooled spectrum was computed and written to
+    #: the LOG while `run_stage_gate` was handed the SINGLE-BATCH one, so
+    #: --spectrum-accum improved the log and never the gate: every run in
+    #: this programme reported INCONCLUSIVE ("rank_ceiling 23 < 1024")
+    #: no matter what the flag said. MEASURED on Thor's `lewm` arm, which
+    #: ran with --spectrum-accum 43 and still gated on n=24.
+    spectrum_pooled_last: dict | None = None
     spectrum_ref: dict | None = None
     # ⚠️ OPT-IN, and deliberately so: --spectrum-accum defaults to 1, which
     # leaves ``spec_acc`` None and the emission path exactly what it was. The
@@ -3928,6 +4094,15 @@ def train(a) -> dict:
     spec_acc = (SpectrumAccumulator(capacity=a.spectrum_accum,
                                     block=stack.cfg.predictor.window)
                 if a.spectrum_accum > 1 else None)
+    # ⭐ O6's ESTIMATOR power, distinct from the gate's. Default 1 = off, so the
+    # incumbent path is byte-identical.
+    sigreg_bank = (SigRegRowBank(getattr(a, "sigreg_accum", 1))
+                   if getattr(a, "sigreg_accum", 1) > 1 else None)
+    if sigreg_bank is not None:
+        print(f"[v6] SIGReg row bank: {a.sigreg_accum} x "
+              f"{a.batch * stack.cfg.predictor.window} = "
+              f"{sigreg_bank.n_rows(a.batch * stack.cfg.predictor.window)} rows "
+              f"(was {a.batch * stack.cfg.predictor.window})", flush=True)
     # A DEDICATED generator for the bootstrap, so switching the CI on cannot
     # consume the global stream and move the run's loss (the exact failure the
     # loss-determinism stream just fixed on the SigReg side).
@@ -4104,6 +4279,7 @@ def train(a) -> dict:
                             enabled=amp_on and dev_type == "cuda"):
             L = v6_loss_step(stack, batch, stage=a.stage, weights=weights,
                              o1_k=a.o1_k, o5_k=a.o5_k, o5_mode=a.o5_mode,
+                             o5_form=getattr(a, "o5_form", "l1"), sigreg_bank=sigreg_bank,
                              o3_mode=a.o3_mode, o3_blocks=a.o3_blocks,
                              o3_block_hw=(a.o3_block_h, a.o3_block_w),
                              o3_band_rows=a.o3_band_rows,
@@ -4162,6 +4338,7 @@ def train(a) -> dict:
             if spec_acc is not None and len(spec_acc):
                 rec_s["spectrum_pooled"] = spec_acc.report(
                     ci_reps=a.spectrum_ci_reps, generator=spec_gen)
+                spectrum_pooled_last = rec_s["spectrum_pooled"]
                 rec_s["o6_verdict"] = o6_rank_verdict(
                     rec_s["spectrum_pooled"], spectrum_ref)
                 if spectrum_ref is None and rec_s["spectrum_pooled"][
@@ -4333,8 +4510,10 @@ def train(a) -> dict:
                 indent=1))
     fh.close()
 
+    # ⭐ pooled first: a criterion that cannot RULE at the configured settings
+    # is worse than no criterion, because the gate report looks populated.
     gate = run_stage_gate(stack, a.stage, out_dir=out_dir,
-                          spectrum=spectrum_last,
+                          spectrum=(spectrum_pooled_last or spectrum_last),
                           x4_spectra=x4_last,
                           extra_probes=_load_gate_probes(a.gate_probes))
     # ⛔ DONE-MARKER, written in the SAME turn the run finishes. A supervised
@@ -4347,6 +4526,7 @@ def train(a) -> dict:
         "gate_verdict": gate["verdict"], "gate": "stage_gate.json",
         "elapsed_s": round(time.time() - t0, 1),
         "param_report": stack.param_report(),
+        "residual_head_init_scale": float(RESIDUAL_HEAD_INIT_SCALE),
         "next": (f"stage {gate['next_stage']} may launch with --prev-gate "
                  f"{out_dir}/stage_gate.json"
                  if gate["pass"] is True and gate["next_stage"]
@@ -5144,6 +5324,16 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--o5-k", type=int, default=20,
                     help="O5 rollout length in 10 Hz steps (60 = the §4b 6 s "
                          "horizon; needs a cache with max_horizon >= 60)")
+    #: ⭐ LeWM (banked) uses MSE on the next embedding; this programme's
+    #: incumbent is L1 over a k-step rollout. MEASURED 2026-08-22: the
+    #: two-term o5+o6 arm was the only one to raise effective rank, so the
+    #: remaining deviation from LeWM is worth a flag, not a fork.
+    #: ⭐ rows SIGReg ESTIMATES from = --sigreg-accum x (batch*window).
+    #: 1 = off (incumbent, 24 rows at batch 4 / window 6).
+    ap.add_argument("--sigreg-accum", type=int, default=1)
+    #: ⭐ Sub-JEPA subspace count K (1 = off = LeWM full-space).
+    ap.add_argument("--sigreg-subspaces", type=int, default=1)
+    ap.add_argument("--o5-form", choices=("l1", "mse"), default="l1")
     ap.add_argument("--o5-mode",
                     choices=("uniform", "linear-decay", "endpoint"),
                     default="uniform")

@@ -12,11 +12,20 @@ embeddings concatenate here later).
 
 from __future__ import annotations
 
+import os
+
 #: Multiplier applied to the DEFAULT init of the residual delta heads.
 #: Chosen so the initial delta is comparable to the latent's own movement rather
 #: than ~1000x above it, while keeping the head non-zero so gradient still
 #: reaches the predictor body (see OperativePredictor.__init__).
-RESIDUAL_HEAD_INIT_SCALE = 1e-3
+RESIDUAL_HEAD_INIT_SCALE = float(
+    os.environ.get("TANITAD_RESIDUAL_INIT_SCALE", "1e-3"))
+#: The env override exists for ONE purpose: the DELIBERATE REGRESSION arm.
+#: Setting TANITAD_RESIDUAL_INIT_SCALE=1.0 restores the pre-2026-08-22 default
+#: init, so an ablation can re-introduce the defect and prove the gate detects
+#: it. A gate that cannot fail is not a gate. It is read at import time and
+#: echoed by `residual_init_scale_banner()` so a run always SAYS which regime it
+#: is in rather than leaving it to be inferred from the commit.
 
 import torch
 from torch import Tensor, nn
@@ -219,3 +228,11 @@ def change_weighted_mse(pred: Tensor, target: Tensor, prev: Tensor,
     w = (target - prev).abs()
     w = w / w.mean(dim=-1, keepdim=True).clamp_min(eps)
     return (w * (pred - target).pow(2)).mean()
+
+
+def residual_init_scale_banner() -> str:
+    """One line naming the init regime, for a run to print into its log."""
+    d = RESIDUAL_HEAD_INIT_SCALE
+    return (f"[predictor] RESIDUAL_HEAD_INIT_SCALE={d:g}"
+            + ("  <-- DEFECT REINTRODUCED (regression arm)" if d >= 1.0
+               else "  (identity-scale start)"))

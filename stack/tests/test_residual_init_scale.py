@@ -185,3 +185,155 @@ def test_gradient_reaches_every_fixed_predictor_body():
     s0 = torch.randn(2, cfg.str_dim) * DINO_FIELD_MAD
     sp.rollout(s0, torch.randn(2, 2, cfg.a_dim)).pow(2).mean().backward()
     assert float(sp.act.weight.grad.abs().sum()) > 0,         "no gradient reaches StrategicSubspacePredictor.act"
+
+
+def test_run_config_records_the_init_scale():
+    """⛔ The init regime arrives by ENV VAR, so nothing in ``args`` records it.
+
+    MEASURED 2026-08-22: the v7-tiny `fixed` and `regress` arms differed ONLY in
+    ``TANITAD_RESIDUAL_INIT_SCALE`` and their ``config.json`` files were
+    identical on it — the single variable of a two-arm ablation was absent from
+    both arms' own records and had to be reconstructed from the launch script.
+    An env-var input that changes the model is a RUN FACT.
+    """
+    import ast
+    import pathlib
+    src = pathlib.Path(__file__).resolve().parents[1] / \
+        "scripts" / "train_v6_staged.py"
+    tree = ast.parse(src.read_text(encoding="utf-8-sig"))
+    fn = next((n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef)
+               and n.name == "_run_config"), None)
+    assert fn is not None, "_run_config vanished from train_v6_staged.py"
+    keys = {k.value for n in ast.walk(fn) if isinstance(n, ast.Dict)
+            for k in n.keys if isinstance(k, ast.Constant)}
+    assert "residual_head_init_scale" in keys, (
+        "_run_config no longer records `residual_head_init_scale`; a two-arm "
+        "init ablation would again produce indistinguishable config.json files")
+
+
+def test_banner_names_the_regression_arm():
+    """The banner must SAY when the defect is deliberately reintroduced, so a
+    regression arm is never mistaken for a normal run in a log."""
+    import importlib
+    import os
+    import tanitad.models.predictor as P
+    prev = os.environ.get("TANITAD_RESIDUAL_INIT_SCALE")
+    try:
+        os.environ["TANITAD_RESIDUAL_INIT_SCALE"] = "1.0"
+        importlib.reload(P)
+        assert P.RESIDUAL_HEAD_INIT_SCALE == 1.0
+        assert "DEFECT" in P.residual_init_scale_banner().upper(), (
+            "the banner does not flag a reintroduced defect")
+        os.environ["TANITAD_RESIDUAL_INIT_SCALE"] = "1e-3"
+        importlib.reload(P)
+        assert "DEFECT" not in P.residual_init_scale_banner().upper()
+    finally:
+        if prev is None:
+            os.environ.pop("TANITAD_RESIDUAL_INIT_SCALE", None)
+        else:
+            os.environ["TANITAD_RESIDUAL_INIT_SCALE"] = prev
+        importlib.reload(P)
+
+
+def test_rank_gate_capacity_arithmetic():
+    """⛔ The O6 rank criterion must be able to RULE, or it is decoration.
+
+    MEASURED 2026-08-22: v6F@20k has an effective rank of 5.86 against an
+    `absolute_floor` of 64 — a COLLAPSED representation the gate would have
+    FAILED. It reported INCONCLUSIVE for nine days instead, because
+    `--spectrum-accum` defaults to 1 and one spectrum call sees only
+    `batch * window` rows, so `rank_ceiling` was 47 against a `ceiling_min` of
+    1024. A criterion that cannot rule at the configured settings is worse than
+    no criterion, because the gate report looks populated.
+    """
+    import sys
+    import pathlib
+    sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]
+                           / "scripts"))
+    import train_v6_staged as T
+
+    assert T.O6_ADMISSIBLE_CEILING == 1024
+    # the live v6F geometry: batch 8, window 6 -> 48 rows per spectrum call
+    r = T.rank_gate_capacity(8, 6)
+    assert r["rows_per_call"] == 48
+    assert r["required_spectrum_accum"] == 22, (
+        "v6F needed --spectrum-accum 22 to let the rank gate rule; it ran with 1")
+    # v7-tiny's geometry
+    assert T.rank_gate_capacity(4, 6)["required_spectrum_accum"] == 43
+    # the default is what made every run blind on this criterion
+    assert 1 < r["required_spectrum_accum"], (
+        "if the default ever reaches the ceiling, drop this guard")
+
+
+def test_rank_gate_warning_fires_on_the_default():
+    """The blindness must be LOUD at startup, not discoverable in a post-mortem."""
+    import io
+    import sys
+    import pathlib
+    import contextlib
+    from types import SimpleNamespace
+    sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]
+                           / "scripts"))
+    import train_v6_staged as T
+
+    stack = SimpleNamespace(cfg=SimpleNamespace(
+        predictor=SimpleNamespace(window=6), d_op=2048))
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        T._warn_rank_gate_unrulable(SimpleNamespace(batch=8, spectrum_accum=1),
+                                    stack)
+    out = buf.getvalue()
+    assert "CANNOT RULE" in out, "the default must warn"
+    assert "--spectrum-accum 22" in out, "the warning must name the fix"
+
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        T._warn_rank_gate_unrulable(SimpleNamespace(batch=8, spectrum_accum=22),
+                                    stack)
+    assert "CAN rule" in buf.getvalue(), "a sufficient setting must not warn"
+
+
+def test_gate_receives_the_pooled_spectrum_not_one_batch():
+    """⛔ --spectrum-accum must reach the GATE, not only the log.
+
+    MEASURED 2026-08-22 on Thor: the `lewm` arm ran with --spectrum-accum 43
+    and its stage_gate.json still reported ``n: 24`` /
+    ``rank_ceiling 23 < 1024`` / INCONCLUSIVE — because the pooled reading was
+    written to the log record while ``run_stage_gate`` was handed the
+    SINGLE-BATCH ``spectrum_last``. Every run in this programme therefore
+    reported INCONCLUSIVE on the one criterion that would have caught the
+    representation collapse, no matter what the flag said.
+    """
+    import ast
+    import pathlib
+    src = (pathlib.Path(__file__).resolve().parents[1]
+           / "scripts" / "train_v6_staged.py").read_text(encoding="utf-8-sig")
+    tree = ast.parse(src)
+    calls = [n for n in ast.walk(tree) if isinstance(n, ast.Call)
+             and getattr(n.func, "id", None) == "run_stage_gate"]
+    assert calls, "run_stage_gate call vanished"
+    real = [c for c in calls
+            for kw in c.keywords if kw.arg == "spectrum"
+            and "pooled" in ast.unparse(kw.value)]
+    assert real, (
+        "run_stage_gate is not handed the POOLED spectrum — the rank criterion "
+        "cannot rule and will report INCONCLUSIVE forever")
+
+
+def test_row_bank_renormalises_so_lambda_is_not_silently_changed():
+    """⛔ Pooling rows must not change the EFFECTIVE loss weight.
+
+    The Epps-Pulley statistic is deliberately not n-normalised, so its value
+    scales with the row count. MEASURED 2026-08-22: 24 rows -> o6_sigreg 3.10,
+    192 rows -> 46.3 (~15x). Without compensation, a row-count experiment is
+    also a lambda experiment, and the lambda sweep is already known flat-to-
+    harmful — which is exactly how the bank8/sub16 arms read WORSE than
+    baseline for a reason that had nothing to do with estimator power.
+    """
+    import pathlib
+    src = (pathlib.Path(__file__).resolve().parents[1]
+           / "scripts" / "train_v6_staged.py").read_text(encoding="utf-8-sig")
+    assert "o6_row_renorm" in src, "the renormalisation factor is not logged"
+    assert "base_rows / float(z6.shape[0])" in src, (
+        "the o6 term is not rescaled when the row bank enlarges n; the row "
+        "count would silently multiply the effective lambda")

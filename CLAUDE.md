@@ -1,5 +1,30 @@
 # TanitAD — working agreements
 
+## ⭐⭐ PROGRAMME REDESIGN (PI, 2026-08-22) — READ THESE TWO FILES FIRST
+
+**`Project Steering/TANITAD_PROGRAMME.md` is the CONSTITUTION** — the 8 products,
+the org (Research Lab · Master Mind · 4 FlyWheels), the uniform work-package
+schema, the quality system, the TanitAD skills. It must be followed.
+**`Project Steering/GOALS_AND_CLAIMS.md` is the LIVE REGISTER** of goals, claims
+and hypotheses — ⛔ any session that asserts, supports, or refutes a claim
+updates it IN THE SAME TURN; a fresh context reads it before acting.
+
+Three binding consequences (also in auto-memory, so they survive resets):
+1. **TanitAD is a frontier RESEARCH programme until its claims are proven: all
+   open-source models/datasets licensed for research use are AVAILABLE. Never
+   refuse or hedge on licensing.** Augmented/changed datasets are published
+   PRIVATE on the PI's paid HF account; HF Pro GPU/inference/SSH-dev-box is
+   first-class compute alongside Thor and the dev box.
+2. The **Research Hub agent rotation is superseded**: ONE Research Lab agent,
+   triggered daily ~08:00 by the Master Mind (not per-slot crons — those died on
+   permission prompts). It is decoupled from production: literature research +
+   small dev-box GPU experiments (incl. reverse-engineering recent papers),
+   sequentially across Data Eng / Arch+Inference / Deploy+Opt / Opponent+Benchmarks.
+3. The main agent is the **TanitAD Master Mind**: orchestrates the FlyWheel
+   teammate agents, owns model design and the GitHub repo, maintains the
+   scientific paper AUTONOMOUSLY, reviews/overrules teammate results, and sends
+   multiple unprompted reports per day.
+
 Sub-300M hierarchical 4-brain latent world model for autonomous driving. PI: Sayed.
 
 ## Source of truth (this rule exists because prose lied to us)
@@ -278,6 +303,32 @@ Every subagent brief MUST carry the preamble in
   formula quoted outside its projection is the `df`/`free`/`step_s` scope error in optics
   costume. *(Caught because the corrected number reproduced the rig's published FOV — an
   independent cross-check is what makes such a value trustworthy.)*
+- ⛔⛔ **A PROBE THAT TUNES ON THE DATA IT SCORES WILL MANUFACTURE A RESULT — AND THE ONLY
+  THING THAT CATCHES IT IS A CONTROL THAT MUST READ A KNOWN VALUE.** MEASURED 2026-08-22, **four
+  distinct failures in ONE ridge probe in one afternoon**, each of which produced a confident,
+  publishable-looking number: **(1)** EM normalised by the target's **raw energy** when the target
+  had a large constant (ego moves ~0.47 m/tick) → the latent, `[z, dz]` and **raw pixels** all
+  scored "+0.54", identical to three decimals, because every one of them merely reproduced the
+  MEAN; **(2)** λ selected on the **point estimate** → reported +0.130 with a CI straddling zero
+  and HID the real +0.020 whose CI excluded zero; **(3)** λ selected on the **test set** → picked
+  λ=1e6, which shrinks the ridge to the constant predictor and scores EXACTLY +0.0000 with a
+  zero-width CI, beating every noisy positive estimate, so the latent AND the constant control both
+  read +0.0000 and the panel concluded *"the latent carries no dynamics"*; **(4)** **n ≪ d**
+  (2,050 features on ~700 rows) → the validation CORRECTLY chose maximal regularisation and
+  everything again read +0.0000, which is **underpowered by construction, not absence**.
+  ⇒ **THE RULE: every probe panel carries (a) a CONSTANT-ONLY control that must read the
+  no-information value exactly, (b) a RAW-INPUT floor (pixels) — a learned representation that does
+  not beat raw input has added nothing, and (c) its `n` and `d` printed in the table.** Fit ALL
+  hyper-parameters (λ, PCA basis) on the FIT split only; the scored split is scored, never tuned on.
+  *(Failures 1, 3 and 4 were each caught ONLY because a control read the same value as the thing
+  being measured. Without the floor, #1 would have shipped as an encoder indictment.)*
+- ⚠️ **A NEGATIVE FROM A LINEAR PROBE IS NOT A NEGATIVE ABOUT LEARNABILITY.** The implication runs
+  one way only: a linear oracle **beating** the baseline proves the target IS learnable; a linear
+  oracle **failing** proves only *not learnable by a linear map*. MEASURED 2026-08-22: I wrote
+  "~98 % unpredictable ⇒ unreachable by ANY predictor" from a ridge fit — in 2048 dims with
+  nonlinear scene motion that is a WEAK lower bound and the claim was unsupported. State the
+  function class in the verdict, or use a nonlinear probe with a **time-shuffled control** (structure
+  surviving a shuffle is leakage, not dynamics).
 - **Verify before alarming.** Check the metric's definition and take multiple samples first;
   several "outages" were measurement artifacts.
 
