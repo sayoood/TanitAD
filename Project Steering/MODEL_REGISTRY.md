@@ -3809,6 +3809,38 @@ derivation stands as mathematics; the conclusions *"a frozen part is the only th
 *"a teacher-free content source is the whole problem"* were drawn **inside the small-data regime**
 and must be re-tested at parity before deciding the v7 design.
 
+### 13.0d ⭐⭐⭐ `splitp30k` — frozen distilled encoder at PARITY, 30,000 steps — the first arm to beat the predictor floor AND carry high scene content
+
+Frozen distilled encoder + trainable readout and predictor, O5+O6 only, `--o5-k 4`, PARITY corpus,
+30,000 steps, batch 8. Raw: `…/2026-08-19-simwam-analysis/raw/gatec_panel.json` and
+`gatec_meanpred.json`.
+
+| field | value |
+|---|---|
+| train corpus | `physicalai-train-e438721ae894-w120-256x640cyl`, `require_parity` **true** |
+| init / freeze | `init_from = distill_init.pt`, `--freeze-encoder` — **confirmed from the LIVE process args**, not the config's stage block (C146) |
+| steps / elapsed | 30,000 / **27,041 s** on Jetson Thor · `summary.json` `done: true` |
+| ckpt md5 | `4348cad27dbf1895654c40681d92ea97` (verified BOTH sides of the pull) |
+| eval tier | **T0-DIAGNOSTIC** |
+
+| metric (same 24-clip ENV set / 12-clip val) | `rdw8p30k` | **`splitp30k`** | `splitfrz10k` (130 clips) | frozen DINOv3 |
+|---|---|---|---|---|
+| **predictor `nrmse` vs constant floor** | **0.7903** ✅ | **0.8416** ✅ | 4.1757 ❌ | — |
+| predictor cos h=1 (z) | 0.6224 (33.61) | 0.5481 (21.75) | 0.0007 (0.40) | — |
+| participation val / held24 | **25.58 / 26.96** | 6.38 / 7.63 | 2.68 / 2.47 | — |
+| `n_agents` | −0.0180 | **+0.3881** (t 28.21, 24/24) | +0.4156 | +0.2754 |
+| `n_agents` vs raw-pixel floor (paired) | +0.1976 (t 10.21) | **+0.6037 (t 30.86, 24/24)** | +0.6313 (t 36.67) | +0.4911 |
+| `lead_gap_m` | **+0.0063** | −0.0940 (t −6.22) | −0.0123 | +0.0294 |
+| speed / `d_ego` | +0.1482 / +0.0963 | +0.0971 / −0.0399 | +0.2594 / +0.2939 | +0.4081 / +0.3238 |
+
+⭐⭐⭐ **`splitp30k` is the FIRST arm in the programme to BEAT the constant-predictor floor AND carry high scene content.** It joins `rdw8p30k`, `scale1` and `champ30k` as the fourth arm ever to beat the predictor floor, and its `n_agents` **+0.3881 is above frozen DINOv3 (+0.2754)** and **30.86σ above raw pixels**. ⇒ **E-DEC-20's "no arm wins both axes" is SUPERSEDED.**
+
+⭐ **AND THE FROZEN-FIELD PREDICTOR COLLAPSE WAS ALSO A SMALL-DATA ARTEFACT.** The same frozen encoder at 130 clips (`splitfrz10k`) gives `nrmse` **4.1757 — worse than a constant**; at parity it gives **0.8416 — beating it**. Freezing does **not** destroy the predictor; the 130-clip corpus did. That is the fourth conclusion of this campaign re-scoped by scale (after E-DEC-7/14/17/18).
+
+⚠️ **THE COSTS ARE REAL AND ARE NOT ROUNDED AWAY.** (1) Its predictor is **worse than `rdw8p30k`'s** (0.8416 vs 0.7903) — freezing still costs prediction quality. (2) **`lead_gap_m` goes the WRONG WAY**: +0.0063 → **−0.0940**, below the raw-pixel floor (t −3.91) — **the two environment targets dissociate again**, so `n_agents` alone must never be quoted as "environment". (3) **Participation drops 4×** (25.58 → 6.38) and the pre-registered kill-gate REJECTS the arm on rank; that is weighed against C131/C135/E-DEC-7 (rank does not track capability) but it is not dismissed. (4) Ego degrades, `d_ego` **−0.0399 below the constant control** — least informative under E-DEC-17 (ego is free) but recorded. (5) ⛔ **It is TEACHER-DEPENDENT AT INIT**, so it does **not** satisfy the PI's "clear preference without pretrained labels"; the teacher-free question is unchanged and open.
+
+⭐ **VALIDITY:** completed 30,000 steps, `summary.json` `done: true`, elapsed 27,041 s; ckpt md5 `4348cad27dbf1895654c40681d92ea97` verified on BOTH sides of the pull; `--freeze-encoder` + `init_from=distill_init.pt` + `require_parity` confirmed from the LIVE process args, not the config's stage block (C146). ⚠️ ENV rows are IN-SAMPLE for all parity arms (130/130 lead clips are inside parity train, 0 in val — MEASURED pod-side); EGO rows are held out.
+
 ### 13.0b ⭐⭐ `splitfrz10k` — frozen distilled encoder, 10,000 steps — the programme's best SCENE-CONTENT carrier, with a predictor worse than a constant
 
 Frozen distilled encoder + trainable readout and predictor, O5+O6 only, `--o5-k 4`,

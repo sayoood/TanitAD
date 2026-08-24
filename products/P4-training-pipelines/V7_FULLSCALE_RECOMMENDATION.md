@@ -13,8 +13,9 @@ Claims live in `Project Steering/GOALS_AND_CLAIMS.md` (E-DEC-16 … E-DEC-20).
 ## 1. The recommendation in one line
 
 **Train v7 on the PLAIN two-term objective at parity scale, for as many steps as
-the budget allows. Add no auxiliary term. Do not grow the encoder yet. Hold the
-frozen-initialisation decision for `splitp30k`.**
+the budget allows. Add no auxiliary term. Do not grow the encoder yet.**
+⭐ **INITIALISE FROM THE FROZEN DISTILLED ENCODER — Gate C has now answered, and
+it is worth the cost. See §5b.**
 
 ## 2. The config
 
@@ -123,10 +124,56 @@ Since the encoder provably did not move, **the trainable readout+predictor found
 degenerate solution on top of a fixed feature field.** Freezing preserves
 **content** and does **not** preserve the **predictor**.
 
-⇒ **Two arms, each winning one axis, neither winning both.** That is why the
-config above leaves the initialisation open: **`splitp30k`** (frozen distilled
-encoder, parity, 30k, running) is the arm that tests whether both are obtainable
-at once, and it is the most informative number outstanding.
+⇒ Two arms, each winning one axis, neither winning both — **at 130 clips.**
+⭐ **§5b SUPERSEDES THIS: at parity scale one arm wins both.**
+
+## 5b. ⭐⭐⭐ GATE C ANSWERED — the frozen distilled encoder at parity wins BOTH axes
+
+`splitp30k`: frozen distilled encoder, PARITY corpus, 30,000 steps, `--o5-k 4`.
+Completed clean (done-marker, elapsed 27,041 s, ckpt md5 verified both sides,
+`--freeze-encoder` + `init_from` confirmed from the live process args).
+
+| metric | `rdw8p30k` (no init) | **`splitp30k`** (frozen distilled init) | `splitfrz10k` (130 clips) | frozen DINOv3 |
+|---|---|---|---|---|
+| **predictor `nrmse` vs constant floor** | **0.7903** ✅ | **0.8416** ✅ | 4.1757 ❌ | — |
+| participation val / held24 | **25.58 / 26.96** | 6.38 / 7.63 | 2.68 / 2.47 | — |
+| `n_agents` | −0.0180 | **+0.3881** (t 28.21, 24/24) | +0.4156 | +0.2754 |
+| `n_agents` vs raw-pixel floor | +0.1976 (t 10.21) | **+0.6037 (t 30.86)** | +0.6313 | +0.4911 |
+| `lead_gap_m` | **+0.0063** | −0.0940 (t −6.22) | −0.0123 | +0.0294 |
+| speed / `d_ego` | +0.1482 / +0.0963 | +0.0971 / −0.0399 | +0.2594 / +0.2939 | +0.4081 / +0.3238 |
+
+**Two things follow.**
+
+**(1) The frozen initialisation earns its place.** It is the fourth arm ever to
+beat the predictor floor, and its `n_agents` is **above frozen DINOv3** and
+**30.86σ above raw pixels** — a `+0.4061` gain over the un-initialised arm on
+24/24 clips. Content was the programme's core deficit; this is the largest
+correction to it that has survived a floor.
+
+**(2) The frozen-field predictor collapse was ALSO a small-data artefact.** The
+same frozen encoder reads `nrmse` **4.1757 at 130 clips** and **0.8416 at
+parity**. Freezing does not destroy the predictor; the small corpus did. That is
+the fourth conclusion of this campaign re-scoped by scale.
+
+**The costs, stated rather than netted away.**
+
+* Its predictor is **worse than the un-initialised arm's** (0.8416 vs 0.7903).
+* **`lead_gap_m` goes the wrong way** — +0.0063 → −0.0940, *below* the pixel floor
+  (t −3.91). **The two environment targets dissociate**, so `n_agents` alone may
+  never be quoted as "environment".
+* **Participation drops 4×** and the pre-registered kill-gate **rejects** the arm
+  on rank. Weighed against C131/C135/E-DEC-7 (rank does not track capability) —
+  but not dismissed.
+* Ego degrades; `d_ego` **−0.0399, below the constant control**. Least informative
+  axis under §13.8 (ego is free), but recorded.
+* ⛔ **It is TEACHER-DEPENDENT AT INIT.** It does **not** satisfy the standing
+  preference for no pretrained labels. **The teacher-free question is unchanged
+  and open** — this buys capability, not independence.
+
+⇒ **Recommendation: adopt the frozen distilled initialisation for v7**, because
+the content gain (+0.4061 on 24/24) is far larger than the predictor cost
+(+0.0513 nrmse), and content is the deficit. ⚠️ **Adopt it as a measured
+trade-off with a named dependency, not as a free win.**
 
 ## 6. Gates before the full spend
 
@@ -134,10 +181,11 @@ at once, and it is the most informative number outstanding.
 |---|---|---|---|
 | **A** | Does `--o5-k 8` transfer to parity? **Both of our best arms ever ran `--o5-k 1`** — the setting the tiny four-point curve calls a correctness bug. `ok8p30k` = `rdw8p30k` with one flag changed. | ~25–35 h (8× rollout) | **armed on Thor** behind `splitp30k`, md5-verified, watcher self-match-safe |
 | **B** | DATA or STEPS? `rdw8s30k` (30k on 130 clips) vs `rdw8p30k`. If DATA, the step budget above is wasted without corpus expansion and the Data FlyWheel's priority changes. | running | lands ~18:00 today |
-| **C** | Does the frozen part give content **and** predictor at parity? `splitp30k`. | running | ~10.8k/30k |
+| **C** | Does the frozen part give content **and** predictor at parity? `splitp30k`. | done | ⭐ **ANSWERED — YES, see §5b** |
 
-**I would not sign a long v7 run before B and C read out.** A is a
-cheaper-or-equal question and can run in parallel.
+**C has read out (§5b). I would still not sign a long v7 run before B**, which
+decides whether the step budget is worth anything without corpus expansion. A is a
+cheaper-or-equal question and is now running on Thor.
 
 ## 6b. ⛔ CORRECTION (same day, C149): the predictor metric lacked its floor
 
