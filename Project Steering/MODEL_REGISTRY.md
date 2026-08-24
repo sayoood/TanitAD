@@ -3809,6 +3809,73 @@ derivation stands as mathematics; the conclusions *"a frozen part is the only th
 *"a teacher-free content source is the whole problem"* were drawn **inside the small-data regime**
 and must be re-tested at parity before deciding the v7 design.
 
+### 13.0b ⭐⭐ `splitfrz10k` — frozen distilled encoder, 10,000 steps — the programme's best SCENE-CONTENT carrier, with a predictor worse than a constant
+
+Frozen distilled encoder + trainable readout and predictor, O5+O6 only, `--o5-k 4`,
+130-clip corpus, 10,000 steps. Raw:
+`…/2026-08-19-simwam-analysis/raw/depth10k_panel.json` and `meanpred_all.json`.
+
+⭐ **The freeze is verified by CONTENT at BOTH checkpoints**: all 41 `encoder.*`
+tensors byte-identical to the distill init, **max|Δ| = 0** (2k and 10k alike),
+while every trainable arm moved 0.08–0.33. *(The arm's own `config.json` reports
+`'encoder': {'trainable': 972032, 'frozen': 0}` — that is the STAGE PLAN, not the
+`--freeze-encoder` override. See **C146**.)*
+
+| metric (24-clip in-sample ENV set) | `splitfrz` 2k | **`splitfrz10k`** | `rdw8p30k` | frozen DINOv3 |
+|---|---|---|---|---|
+| `n_agents` | +0.4035 | **+0.4156** (t 10.65, 24/24) | −0.0180 | +0.2754 |
+| `n_agents` vs raw-pixel floor (paired) | +0.6191 (t 36.27) | **+0.6313 (t 36.67, 24/24)** | +0.1976 (t 10.21) | — |
+| `lead_gap_m` | −0.0172 | −0.0123 | +0.0063 | +0.0294 |
+| speed / `d_ego` | +0.2465 / +0.2878 | +0.2594 / +0.2939 | +0.1482 / +0.0963 | +0.4081 / +0.3238 |
+| participation val / held24 | 2.28 / 2.17 | 2.68 / 2.47 | **25.58 / 26.96** | — |
+| **predictor nrmse vs constant floor** | 0.9902 / 0.9982 | **4.8321** / 0.9982 | **0.7845** / 0.9978 | — |
+
+⭐ **Highest `n_agents` in the programme — above `rdw8p30k` AND above a frozen
+DINOv3 that never saw our data, on the same clips, 36σ over raw pixels — and it
+HOLDS and improves over 5× more training,** with ego intact.
+⛔ **Its predictor is WORSE THAN A CONSTANT** (nrmse 4.83 against a 0.9982 floor),
+with **82 %** of its output a fixed offset and its h=1 head **grown 2.676×** — so
+it is **miscalibrated, not dead**. ⚠️ The earlier reading "the predictor dies" is
+superseded by this sharper one; the cos-only figure (0.1872 → 0.0007) was quoted
+before the constant floor existed (**C149**).
+
+⇒ **Content and prediction DISSOCIATE across arms, and no arm in the registry wins
+both.** `splitp30k` (frozen distilled at PARITY scale) is the arm that tests
+whether both are obtainable at once.
+
+### 13.0c ⭐⭐⭐ THE PREDICTOR CENSUS — exactly three arms in the programme beat a constant predictor
+
+`meanpred_all.json` — 30 finished arms re-scored against the floor **C149** added
+(`nrmse = ||d̂ − t|| / ||t||` versus a dataset-mean-delta predictor;
+`nrmse_zero` = 1.0 by construction), h=1, 10 held-out val clips. `rdw8s30k`
+excluded: its checkpoint is a mid-run periodic save.
+
+| verdict | n | arms (nrmse) |
+|---|---|---|
+| **BEATS a constant** | **3** | `rdw8p30k` **0.7845** · `scale1` **0.8200** · `champ30k` **0.9348** |
+| ≈ a constant | 16 | every healthy 2k arm — `o5k4` 0.9988 · `o5k8` 0.9984 · `o5k16` 0.9984 · `splitfrz` 0.9902 · `postrain10k` 0.9967 |
+| **WORSE than a constant** | 11 | all four O1 (`o1sgw3` **22.72**, `o1sg` 17.47) · all five PSG (`psgenc01` **32.38**) · `frzrand` 3.98 · `splitfrz10k` 4.83 · `rdw8o3` 1.07 |
+
+⭐ **The separation is exact and was checked programmatically, not by eye:** every
+arm that beats the floor is **30,000 steps on the PARITY corpus**; every
+30k-parity arm beats it; **no sub-30k arm ever does** (`arms <30k that beat` = **[]**,
+`30k arms that do not` = **[]**). `champ30k` and `scale1` do it at **batch 4**.
+
+⚠️⚠️ **This census CANNOT separate steps from data** — all three winners are 30k
+*and* parity, always together. `rdw8s30k` (30k on 130 clips) is the arm that
+separates them and its verdict is pre-registered.
+
+⭐ **A single-number screen falls out:** `mean_fraction_of_prediction` orders the
+three classes almost perfectly — BEATS **0.0719 / 0.1148 / 0.1790**, ≈constant
+~0.34–0.82, WORSE 0.73–0.87. **A predictor whose output is mostly a fixed offset
+is the failure mode**, and this detects it without any baseline arm.
+
+⛔ **Consequence for every row in §13:** a predictor `cos` with a permutation `z`
+establishes *there is signal*, never *the predictor works*. Rows written before
+2026-08-24 quote the former. **The `--o5-k` depth ranking is entirely inside the
+floor** (0.9988 / 0.9984 / 0.9984 against 0.9981 / 0.9975 / 0.9985) and its
+ordering does not even match the cos ordering it was drawn from.
+
 ### 13.1 `champ30k` — two-term (LeWM-style) + k=1 + 32 SIGReg subspaces — COMPLETE at 30,000
 
 The first arm in the programme whose predictor **beats the HOLD baseline at all**, and the arm

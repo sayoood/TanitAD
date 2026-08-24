@@ -4343,6 +4343,21 @@ def train(a) -> dict:
             n_f += _p.numel()
         print(f"[freeze] encoder FROZEN: {n_f/1e6:.2f} M params; readout + "
               f"predictor remain trainable (E-DEC-14)", flush=True)
+    if bool(getattr(a, "freeze_readout", False)):
+        # E-DEC-20c. On a frozen encoder the CONTENT holds to 10k (n_agents
+        # +0.4035 -> +0.4156) while the predictor goes from ~a constant to ~5x
+        # MISCALIBRATED (nrmse 4.83, mean-fraction 0.8174) and its h=1 head GROWS
+        # 2.676x. The encoder provably did not move (max|delta| = 0 over 41
+        # tensors), so the degeneracy lives in the two parties that CAN move --
+        # and they moved comparably (predictor_op 0.1784, readout 0.1644), so the
+        # weight norms cannot attribute it. Freezing the readout as well leaves
+        # the PREDICTOR as the only trainable party and separates them.
+        n_r = 0
+        for _n, _p in stack.readout.named_parameters():
+            _p.requires_grad_(False)
+            n_r += _p.numel()
+        print(f"[freeze] readout FROZEN: {n_r/1e3:.2f} k params (E-DEC-20c)",
+              flush=True)
     trainable = [p for p in stack.parameters() if p.requires_grad]
     if not trainable:
         raise SystemExit(f"[v6] ⛔ stage {a.stage} has NO trainable parameters "
@@ -5804,6 +5819,10 @@ def build_parser() -> argparse.ArgumentParser:
                          "calls it (inference stays VISION-ONLY).")
     ap.add_argument("--psg-labels", type=str, default=None,
                     help="jsonl of per-frame ego-frame cuboids (obstacle.offline).")
+    ap.add_argument("--freeze-readout", action="store_true",
+                    help="E-DEC-20c: freeze the readout too, so the PREDICTOR is "
+                         "the only trainable party. Separates which module goes "
+                         "degenerate on a frozen feature field.")
     ap.add_argument("--psg-enc-only", action="store_true",
                     help="E-DEC-18c: apply PSG to the ENCODED latent ONLY, so no "
                          "gradient reaches the predictor. PhyLatent's mechanism IS "
