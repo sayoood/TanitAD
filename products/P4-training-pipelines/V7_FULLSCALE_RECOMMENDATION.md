@@ -180,12 +180,18 @@ trade-off with a named dependency, not as a free win.**
 | gate | question | cost | status |
 |---|---|---|---|
 | **A** | Does `--o5-k 8` transfer to parity? **Both of our best arms ever ran `--o5-k 1`** — the setting the tiny four-point curve calls a correctness bug. `ok8p30k` = `rdw8p30k` with one flag changed. | ~25–35 h (8× rollout) | **armed on Thor** behind `splitp30k`, md5-verified, watcher self-match-safe |
-| **B** | DATA or STEPS? `rdw8s30k` (30k on 130 clips) vs `rdw8p30k`. If DATA, the step budget above is wasted without corpus expansion and the Data FlyWheel's priority changes. | running | lands ~18:00 today |
+| **B** | DATA or STEPS? `rdw8s30k` (30k on 130 clips) vs `rdw8p30k`. | done | ⭐ **ANSWERED — STEPS.** `nrmse` **0.7877** vs **0.7845**: 30k steps on 130 clips MATCHES 30k on 2,376 episodes. **The corpus we hold is sufficient; buy GPU-hours, not data.** |
 | **C** | Does the frozen part give content **and** predictor at parity? `splitp30k`. | done | ⭐ **ANSWERED — YES, see §5b** |
 
-**C has read out (§5b). I would still not sign a long v7 run before B**, which
-decides whether the step budget is worth anything without corpus expansion. A is a
-cheaper-or-equal question and is now running on Thor.
+**B and C have both read out.** B answered **STEPS** — 30,000 steps on 130 clips
+matches 30,000 on the full corpus (`nrmse` 0.7877 vs 0.7845), so the step budget
+in §2 is worth spending on the corpus we already hold and **corpus expansion is
+not a prerequisite**. C answered **yes** (§5b). **The long v7 run is therefore
+unblocked**; A remains a cheaper-or-equal question and is running on Thor.
+
+⚠️ Two bounds travel with B. It is a statement about the **predictor**, not about
+content — and it does **not** reduce the value of the held-out label job (§G2 of
+the plan), which fixes *in-sample validity*, a different problem from data volume.
 
 ## 6b. ⛔ CORRECTION (same day, C149): the predictor metric lacked its floor
 
