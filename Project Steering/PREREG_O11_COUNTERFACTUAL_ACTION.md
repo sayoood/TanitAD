@@ -87,7 +87,38 @@ action pathway as a fraction of the latent pathway. Control value: **8.5 %**.
 | ⭐ **CONFIRMED** | ratio **≥ 50 %** AND `o5_loss` within **+10 %** of the control's | The objective is the lever. O11-CF goes into the v7 full-scale recipe, and every arm ranked on `nrmse` is re-read with the shuffle control beside it. |
 | ⚠️ **PARTIAL** | ratio in **[20 %, 50 %)** with `o5_loss` not degraded | Real but insufficient. Sweep `--w-o11-cf` (0.3 / 3.0) and `--o11-k` before committing full-scale GPU. |
 | ⛔ **DEGENERATE** | ratio rises **but `o5_loss` degrades > 10 %** | This is the ẑ = f(z) + λa solution the term's own docstring warns about — perfect action separation, useless prediction. **O11-CF is wrong for this rig and is not carried forward.** |
-| ⛔ **REFUTED** | ratio **< 20 %** with `o11_excess` ≈ 0 throughout training | The objective is NOT the lever. The predictor cannot be made action-conditioned by asking it to be, and the deficit is architectural (the action pathway's capacity or where it enters). **Next probe becomes the action-injection site, not the loss.** |
+| ⛔ **REFUTED** | ratio **< 20 %** with `o11_excess` ≈ 0 throughout training | ⚠️ **DO NOT ACT ON THIS BRANCH UNTIL E-DEC-39 HAS RETURNED — see §3.1.** If the action IS recoverable from the latent transition, the objective is not the lever and the next probe is the action-injection SITE. If it is NOT recoverable, REFUTED says nothing about the objective at all. |
+
+### 3.1 ⛔⛔ THE GATE ON THE REFUTED BRANCH (added 2026-08-24 22:05, before the arm finished)
+
+**REFUTED has two completely different causes and they demand opposite next
+steps.** O11 asks the predictor to make ẑ_{t+k} depend on the action. But **if the
+action's effect on the latent over k ticks is below the latent's own noise floor,
+NO objective can succeed** — the information is not there to learn, and a flat
+`o11_excess` would be a fact about the DATA, not about the loss.
+
+**E-DEC-39 (`idm_oracle.py`, queued) bounds it, using ENCODED latents only and no
+predictor anywhere:**
+
+| column | asks |
+|---|---|
+| `z_t` alone → a_t | the BASELINE — how much of the action is predictable from the present latent through the driver's own autocorrelation |
+| `[z_t, z_{t+k}]` → a_t | **the QUESTION** |
+| `[z_t, z_{t+k} − z_t]` → a_t | the same information, delta-parameterised |
+
+⭐ **The readable quantity is the DELTA, not the raw R².** A latent that encodes
+ego speed makes a_t partly recoverable from `z_t` alone — that is autocorrelation
+of behaviour, not knowledge of consequences. The question is strictly whether
+adding the FUTURE latent improves recovery.
+
+| E-DEC-39 result | what REFUTED then means |
+|---|---|
+| `[z_t, z_{t+k}]` **beats** `z_t` alone | the transition carries the action ⇒ O11 had something real to learn ⇒ **REFUTED is about the objective/architecture, and the injection-site fix is the right next spend** |
+| it **does not** | the action leaves no recoverable trace in k ticks ⇒ **the ceiling on O11 is zero for reasons no loss can change**, and the next step is a LONGER HORIZON or a different action representation — *not* the injection site |
+
+⚠️ Without this gate, a REFUTED reading would send the next GPU-day at the FiLM
+for a problem that is not at the FiLM. This is risk (3) in
+`PLAN_TO_THE_GOAL_2026-08-24.md`, written there in advance.
 
 **Secondary reads, recorded but not decisive:**
 
