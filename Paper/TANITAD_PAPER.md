@@ -4403,6 +4403,26 @@ token grid, not that a readout trained at width 128 would retain it — the
 projection is learned, and widening it changes the latent dimension every arm in
 this section shares.
 
+**A follow-up settles what the projection is actually doing, and it is not what
+the preceding paragraphs imply.** The map is [64, 128] of full rank, so its null
+space is 64-dimensional by construction and half of *any* direction is discarded.
+Splitting fitted directions into kept and discarded subspaces gives a null-space
+share of **0.5313** for range, **0.5440** for agent count, against a random-
+direction band of **0.5473, 95 % [0.5146, 0.5840]**. Range lies inside that band:
+**the projection is not oriented away from it.**
+
+The agent-count control is what makes this readable. That direction loses the same
+proportion of its energy, and the readout *keeps* it — indeed improves it, from
++0.3274 unprojected to +0.3881 projected — while range collapses. A lossy map that
+improves one target is not compressing but **selecting**. The two signals differ
+enormously in strength before the projection ever acts (+0.3274 against +0.0719),
+and the objective rewards one of them.
+
+⇒ **The projection discards range because nothing in the objective asks for it,
+not because of where it points.** Widening the projection removes a forced loss
+but supplies no incentive; if a width-128 readout still fails to carry range, the
+finding will be about the objective, not the readout.
+
 ### 13.13 What this section does not establish
 
 No claim is made about driving. No arm here has a planner or a closed loop, and
