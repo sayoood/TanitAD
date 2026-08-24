@@ -66,7 +66,9 @@ MIN_LEAD, N_CLIPS, F, K = 20, 20, 100, 4
 
 def main() -> int:
     import v7tiny_g2 as G
-    from rangeprobe_rff import rff_fold          # the convex, clip-disjoint probe
+    # ⛔ IMPORT the metric, never reimplement it — this file's own copy of the
+    # earlier within-clip R2 made its CONSTANT control read -2064.63.
+    from rangeprobe_rff import rff_fold, within_clip_r
 
     dev = torch.device("cuda")
     LAB = {}
@@ -148,8 +150,7 @@ def main() -> int:
                         ytr = [Yv[j] for j in range(len(Yv)) if j != i]
                         pred, ym = rff_fold(Xtr, ytr, X[i])
                         yte = Yv[i].ravel()
-                        sink.append(1.0 - float(((yte - pred) ** 2).sum())
-                                    / max(float(((yte - yte.mean()) ** 2).sum()), 1e-12))
+                        sink.append(within_clip_r(pred, yte))
                 got[cname] = (np.array(tw), np.array(sw))
             base = got["z_t alone"][0]
             rep["arms"][arm]["channels"].setdefault(name, {})

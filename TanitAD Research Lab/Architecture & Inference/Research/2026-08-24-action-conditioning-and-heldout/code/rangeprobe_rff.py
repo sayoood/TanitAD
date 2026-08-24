@@ -57,6 +57,27 @@ D_EFF, D_RFF, SEED = 96, 1024, 0
 LAMBDAS = (1e-2, 1e-1, 1.0, 10.0, 100.0, 1e3, 1e4, 1e5)
 
 
+def within_clip_r(pred, yte):
+    """Within-clip Pearson r with BOTH series centred — THE shared metric.
+
+    ⛔⛔ EXPORTED SO IT CANNOT BE DUPLICATED AND DRIFT. `idm_oracle.py` carried
+    its own copy of the earlier, BROKEN within-clip R2 (prediction centred on the
+    FIT mean, divided by the TEST clip's variance) — so fixing the metric here
+    left a broken copy there, and its CONSTANT control read -2064.63 where it
+    must read 0. Same family as the banked probe copy that went stale while the
+    scratchpad copy was fixed: **a metric with two implementations has one
+    correct implementation at most.**
+
+    A zero-variance prediction (the constant column) returns EXACTLY 0.0, the
+    correct no-information value.
+    """
+    import numpy as _np
+    pc = pred - pred.mean()
+    yc = yte - yte.mean()
+    den = float(_np.sqrt((pc ** 2).sum() * (yc ** 2).sum()))
+    return float((pc * yc).sum() / den) if den > 1e-12 else 0.0
+
+
 def rff_fold(Xtr_clips, ytr_clips, Xte, seed=SEED):
     """PCA -> standardise -> RFF -> ridge. Everything fit on Xtr only.
 
@@ -175,10 +196,7 @@ def score(Xs, Ys, seed=SEED):
         # contaminated by an offset either model could not know. A prediction with
         # NO variance (the constant column) reads EXACTLY 0, the correct
         # no-information value, instead of a spurious large negative.
-        pc = pred - pred.mean()
-        yc = yte - yte.mean()
-        den = float(np.sqrt((pc ** 2).sum() * (yc ** 2).sum()))
-        r_w = float((pc * yc).sum() / den) if den > 1e-12 else 0.0
+        r_w = within_clip_r(pred, yte)
         out.append((1.0 - ss_res / max(ss_tot_x, 1e-12), r_w))
     a = np.array(out, dtype=float)
     return a[:, 0], a[:, 1]

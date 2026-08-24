@@ -8533,3 +8533,75 @@ retraction.
 ⚠️ **What is NOT rehabilitated:** the **PREDICTOR** half of mandate (2) and all
 of mandate (3). E-DEC-30/33 are unaffected — 32 of 32 arms remain
 action-independent, and that census was never a cross-split comparison.
+
+## C154 ⛔⛔ — SIX INSTRUMENT FAILURES IN ONE NIGHT, EVERY ONE CAUGHT BY A CONTROL READING A KNOWN VALUE WRONG, AND NONE BY INSPECTION (2026-08-24, during the O11 overnight run)
+
+**Nothing here reached a report.** Each defect was caught because a control that
+must read a *known* value read something else. Logged as one entry because they
+share a spine: **an instrument is not correct because it looks correct; it is
+correct when its controls read their known values — and a fix is only real at the
+ONE place the quantity is computed.**
+
+| # | defect | what the control read | must read |
+|---|---|---|---|
+| 1 | MLP probe (non-convex) diverged | shuffled −14.00, pixel floor −27.98 | ≈ 0 |
+| 2 | λ chosen on a random-**row** inner split | shuffled −6.40 / −4.60 / −5.47 | ≈ 0 |
+| 3 | within-clip R² centred on the **fit** mean | **constant control −78.7, −655.8** | **0.0000** |
+| 4 | duplicated metric in `idm_oracle.py` | **constant control −2064.63** | **0.0000** |
+| 5 | four concurrent probe processes | 0 rows in 28 min, shared output path | — |
+| 6 | stub log lines admitted by `is not None` | excess t **+0.40** (artefact) | t **−0.05** |
+
+**#1 — non-convex optimisation is the wrong tool for a containment question.**
+A full-batch MLP with early stopping was asked what a representation *contains*.
+It diverged, and its own shuffled control said so. ⇒ Replaced with **RFF+ridge**:
+genuinely nonlinear (RBF approximation) but **CONVEX with a closed form**, so
+there is no optimiser, learning rate or stopping rule to get wrong.
+
+**#2 — "fit hyper-parameters on the FIT split only" is NECESSARY BUT NOT
+SUFFICIENT.** A random-**row** inner split put frames from every training clip in
+both halves, so a model that had merely memorised clip-level statistics validated
+perfectly, λ was driven small, and predictions exploded on a genuinely held-out
+CLIP. ⇒ **The inner validation must be SPLIT THE SAME WAY as the outer test.**
+
+**#3 — a metric that removes an offset from the denominator and leaves it in the
+numerator.** Within-clip R² divided by the test clip's own variance while the
+prediction was still centred on the FIT mean. For `n_agents`, a clip whose mean
+is 144 against a fit mean of 33 contributes ~12,000 squared error per row against
+a within-clip variance of ~50 — hence **−656 for a COLUMN OF ONES**. ⭐ **A
+constant column cannot be broken by data. That reading was proof the METRIC was
+broken, not the columns**, and it is the single most useful number of the night.
+⇒ Replaced with **within-clip Pearson r, both series centred**, where a
+zero-variance prediction reads EXACTLY 0.
+
+**#4 — A METRIC WITH TWO IMPLEMENTATIONS HAS ONE CORRECT IMPLEMENTATION AT MOST.**
+`idm_oracle.py` was written before #3 was found and carried its **own copy** of
+the broken within-clip R². Fixing the metric in one file left a broken copy in the
+other, and its constant control read **−2064.63**. ⇒ The metric is now a single
+exported function (`within_clip_r`) that both probes IMPORT. **Same family as the
+banked `spatialenv.py` going stale while the scratchpad copy was fixed** — that
+one was caught by comparing md5s, this one by a control.
+
+**#5 — four concurrent processes, and the ops rule that follows.** I relaunched
+the probe after each fix and never killed its predecessors. They competed for BLAS
+threads **and all defaulted to the same output JSON**, so they would have
+overwritten each other's results. 28 minutes, zero rows. Same family as
+*"concurrent torch arms make NO progress while looking exactly like a hang"*, in
+numpy costume. ⇒ **`run_one.sh`**: every relaunch kills its own predecessors by
+command-line match before exec'ing.
+
+**#6 — A STUB LOG LINE IS A C152 IN A LOG FILE.** The trainer writes TWO lines per
+step: a real one and a stub whose numeric fields are **0**. My filter admitted any
+row where `o11_excess is not None` — and `0.0` is not None — so **~50 % of every
+statistic was padding zeros**: the mean diluted toward zero, the variance
+inflated. It reported gnorm median 0.41 (really **2.91**), `o5` median 0.0153
+(really **0.1340**), and an excess **t of +0.40 that was an artefact**; the clean
+first-half figure is **t −0.05 with `pick_acc` exactly 0.250**. ⚠️ I had already
+QUOTED the +0.40 to the PI. ⇒ **Filter on a field that is FALSY in the stub
+(`o11_loss`), never on `is not None`** — the C152 rule (*a missing value
+representable as a valid one*) applied to logs rather than labels.
+
+⭐⭐ **THE ONE RULE THAT WOULD HAVE CAUGHT ALL SIX: put a control with a KNOWN
+value in every panel, and ABORT rather than print when it misses.** The
+`sh.mean() < -0.25` gate added after #1 caught #2, #3 and #4 automatically — it
+turned three silent wrong answers into three loud refusals. A panel without such
+a gate is not cheaper; it is just quieter about being wrong.
