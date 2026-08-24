@@ -63,7 +63,19 @@ OUT = Path(os.environ.get("SPD_OUT", str(SP / "deltaz.json")))
 ARMS = os.environ.get("SPD_ARMS", "rdw8p30k,splitp30k").split(",")
 MIN_LEAD, N_CLIPS, F = 20, 20, 100
 K = int(os.environ.get("SPD_K", "4"))
-N_DIR = 8            # top PCA directions of Δz to score
+# ⛔⛔ WHICH DIRECTIONS ARE SCORED IS ITSELF A HYPOTHESIS. The top PCA directions
+# of Δz are BY CONSTRUCTION its highest-variance ones — plausibly exactly the
+# smooth DRIFT directions. If the action lives in LOW-variance directions, a
+# top-8 panel would miss it entirely and report "Δz is drift" when the truth is
+# "Δz is drift PLUS a small action component we did not look at".
+# ⇒ SPD_DIRS selects a BAND: "0:8" (the default, top-8) or e.g. "100:108",
+# "500:508". Running the same panel on several bands is the control for the
+# choice of band. E-DEC-39 already probed the FULL 2048-dim transition and found
+# no action, so the two are consistent — but consistency is not the same as
+# having looked.
+_b = os.environ.get("SPD_DIRS", "0:8").split(":")
+DIR_LO, DIR_HI = int(_b[0]), int(_b[1])
+N_DIR = DIR_HI - DIR_LO
 
 
 def main() -> int:
@@ -152,13 +164,17 @@ def main() -> int:
         print(f"  === {arm} (step {st}) · {len(DZ)} clips · {len(DZa)} rows ===")
         print(f"  Δz spectrum: top-1 {ev[0]:.1%} · top-8 {ev[:8].sum():.1%} · "
               f"{n90} directions cover 90 %  (of {DZa.shape[1]} dims)")
-        dirs = Vt[:N_DIR]
+        print(f"  scoring PCA directions [{DIR_LO}:{DIR_HI}] — "
+              f"{ev[DIR_LO:DIR_HI].sum():.2%} of Δz variance", flush=True)
+        dirs = Vt[DIR_LO:DIR_HI]
         Y = {j: [ (dz - mu) @ dirs[j][:, None] for dz in DZ ] for j in range(N_DIR)}
         rng = np.random.default_rng(0)
         rep["arms"][arm] = {"step": int(st), "n_rows": int(len(DZa)),
                             "dz_top1_var": round(float(ev[0]), 4),
                             "dz_top8_var": round(float(ev[:8].sum()), 4),
-                            "dz_dirs_for_90pct": n90, "columns": {}}
+                            "dz_dirs_for_90pct": n90, "pca_band": [DIR_LO, DIR_HI],
+                            "band_variance_share": round(float(ev[DIR_LO:DIR_HI].sum()), 5),
+                            "columns": {}}
         print(f"\n  {'column':<22}{'mean r (top-8 dirs)':>21}{'shuffled':>11}"
               f"{'true-shuf':>11}{'t':>7}")
         for cname, X in COL.items():

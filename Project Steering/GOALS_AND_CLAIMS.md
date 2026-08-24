@@ -99,6 +99,47 @@ floor lives INSIDE the loss. Pre-registered with four outcomes in
 ⭐⭐ **THE SPLIT ACROSS ARMS IS THE HEADLINE.** `splitp30k` (frozen distilled): `n_agents` from `z_t` **+0.3864** — far the richest — but its predictor **ADDS NOTHING**, delta vs `z_t` of −0.0008 / −0.0320 / −0.0158 at k=1/3/6, all NEGATIVE (t −3.69 / −5.62 / −6.26), and at k=6 `lead_closing` degrades to −0.0747 (t −2.11). `rdw8p30k` (trained): content only +0.0777 but the predictor **adds substantially**. ⇒ **the frozen arm CARRIES the environment and does not PREDICT it; the trained arm PREDICTS change and carries less of it.** E-DEC-20's dissociation in a new form ⇒ **mandate (2) — environment in BOTH encoder and predictor — is NOT yet satisfied by any single arm.**
 
 ⚠️ **FOUR BOUNDS.** (1) **ẑ also beats the encoded-future CEILING**, which is anomalous. Two explanations and this panel cannot separate them: the rollout is **ACTION-CONDITIONED**, so ẑ carries the ego's commanded motion that a single encoded frame lacks — *or* it is temporal **smoothing** of a noisy target. **An action-shuffled control would separate them and has not been run.** (2) All absolute R² are **small** (0.03–0.15); `lead_closing` +0.0019 is barely above zero. (3) **IN-SAMPLE** until the held-out corpus lands. (4) k=1 is **underpowered by construction** — the ceiling itself is barely above `z_t` there (+0.0123, t 0.75), i.e. the scene has not changed enough for prediction to add anything; only k=3–6 carry headroom. |
+| E-DEC-40 | ⭐⭐⭐⭐ **WHAT IS THE LATENT TRANSITION Δz? — the fact that explains EVERY negative in this campaign** | ⛔⛔ **MEASURED: Δz IS THE LATENT'S OWN DRIFT. 64 % predictable from `z_t` ALONE (t 65.6). The action and the scene change together add +0.0021 — nothing.** | `…/raw/deltaz_top8.json`
+
+`rdw8p30k`, 20 lead-matched held-out clips, 1,920 rows, k=4. NONLINEAR RFF+ridge,
+clip-disjoint λ, within-clip Pearson r on Δz's top-8 PCA directions.
+**Δz spectrum: top-1 11.0 % · top-8 45.0 % · only 25 of 2048 directions cover 90 %.**
+
+| what predicts Δz | mean r | shuffled | true − shuf | t |
+|---|---|---|---|---|
+| **`z_t` (drift)** | **+0.6570** | +0.0154 | **+0.6416** | **65.64** |
+| action `[steer, accel, v0]` | +0.0105 | −0.0086 | **+0.0190** | 1.88 |
+| scene delta | −0.0043 | +0.0192 | **−0.0235** | −2.04 |
+| all three | +0.6591 | −0.0056 | +0.6647 | 66.99 |
+| **constant (control)** | **+0.0000** | +0.0000 | +0.0000 | 0.00 |
+
+⇒ **THE TRANSITION IS THE LATENT DRIFTING ALONG ITS OWN LOW-DIMENSIONAL MANIFOLD.
+It is not the world changing, and it is not the ego acting.**
+
+⭐⭐⭐ **THIS SINGLE FACT EXPLAINS EVERY NEGATIVE IN THE CAMPAIGN:**
+1. **The predictor is action-independent** (E-DEC-30/33, 32 of 32 arms) — because
+   **Δz does not depend on the action**. Predicting drift from `z_t` is the
+   *correct* solution to O5, not a failure to solve it.
+2. **The action is not recoverable from Δz** at any horizon 0.2–3.0 s (E-DEC-39b)
+   — because Δz ≈ f(`z_t`), and `z_t` alone already gives what there is.
+3. **O11 could only be satisfied degenerately** — the information was never there,
+   so manufacturing separation was the only route to a low loss.
+4. **The `nrmse` 0.7845 that five arms achieved is REAL** — it is genuine learning
+   of the **drift function**. That is a true capability and it is **not world
+   modelling**.
+
+⚠️ **THE LIMITATION, STATED ON THE CLAIM:** this scores Δz's **top-8 PCA
+directions**, which are by construction its highest-variance ones — plausibly
+exactly the smooth drift directions. **If the action lives in low-variance
+directions this panel would miss it.** E-DEC-39 probed the FULL 2048-dim
+transition and also found no action, so the two are consistent — but *consistency
+is not the same as having looked*. A PCA-band control (8:16, 32:40, 128:136,
+512:520) is queued and this claim is provisional until it returns.
+
+⚠️ `splitp30k` differs quantitatively — drift r **+0.1993** (t 8.38), far less
+self-predictable — but its action (**−0.0109**) and scene (**+0.0232**)
+contributions are null just the same.
+
 | E-DEC-39b | ⭐⭐⭐ **Does a LONGER HORIZON make the action recoverable? (closes the E-DEC-39 gate's second branch)** | ⛔⛔ **MEASURED — NO, FLAT FROM 0.2 s TO 3.0 s. A longer-horizon O11 is NOT justified. 0 of 10 cells clear, at ZERO GPU cost instead of 8 h of training.** | `…/raw/idm_k{2,8,16,30}.json`
 
 `rdw8p30k`, held-out lead-matched, RFF+ridge, within-clip Pearson r. The readable
