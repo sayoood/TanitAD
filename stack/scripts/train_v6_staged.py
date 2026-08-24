@@ -4793,9 +4793,24 @@ def train(a) -> dict:
             # Every one of those runs cost GPU-days before a read-out said so.
             #
             # Two batch statistics, both cheap and both self-contained:
-            #   pred_rel_scale = ||d_hat|| / ||t||   -- 1.0 is calibrated. The
-            #     O1 family read 17-22 and the PSG family up to 32 AT READ-OUT;
-            #     this would have shown it within the first few hundred steps.
+            #   pred_rel_scale = ||d_hat|| / ||t||
+            #     ⛔ 1.0 IS NOT THE HEALTHY VALUE -- I assumed it was and it is
+            #     wrong. MEASURED on held-out windows (relscale.json), the bands
+            #     are set by real arms:
+            #        ~0.01        predicting essentially no magnitude (= constant)
+            #        0.28 - 0.52  the THREE arms that beat the constant floor
+            #                     (champ30k 0.2760, scale1 0.4206, rdw8p30k 0.5162)
+            #        4.7 - 22.7   catastrophically miscalibrated (splitfrz10k,
+            #                     the O1 family, the PSG family)
+            #     A good predictor here UNDER-predicts: it emits the confident
+            #     part of the delta and shrinks the rest, which is what minimising
+            #     an L1/L2 error should do. The alarm is "<<0.1 or >>1", not "!= 1".
+            #     ⚠️ AND THE TRAINER-SIDE VALUE IS NOT DIRECTLY COMPARABLE TO THAT
+            #     TABLE: this is computed on TRAINING batches under autocast, the
+            #     table on held-out clips in fp32. MEASURED gap: a 400-step
+            #     two-term arm reads 0.22-0.42 here while o5k4 at 2,000 steps reads
+            #     0.0119 there. Use this for the TRAJECTORY within one run; use
+            #     relscale.json / meanpred.py for cross-arm bands.
             #   pred_mean_frac = ||mean_B(d_hat)|| / rms(d_hat)  -- how much of
             #     the batch's prediction is one SHARED offset. In the census this
             #     ordered the three classes almost perfectly: 0.07-0.18 for arms
@@ -4843,8 +4858,13 @@ def train(a) -> dict:
                     L["log"]["pred_batch"] = int(_b)
                     L["log"]["pred_health_note"] = (
                         "BATCH statistics, NOT the dataset floor verdict. "
-                        "pred_rel_scale 1.0 = calibrated (the O1 family read "
-                        "17-22 and PSG up to 32 at read-out). "
+                        "pred_rel_scale: MEASURED bands on held-out windows "
+                        "are ~0.01 = predicting no magnitude, 0.28-0.52 = the "
+                        "three arms that beat the constant floor, 4.7-22.7 = "
+                        "miscalibrated. 1.0 is NOT the healthy value. This "
+                        "trainer-side value is on TRAINING batches under "
+                        "autocast and is NOT directly comparable to those "
+                        "bands -- use it for the trajectory within one run. "
                         "pred_mean_frac_excess: 1.0 = independent "
                         "predictions, >1 = one shared offset across the batch, "
                         "which is the failure mode. Its FLOOR is batch-"
