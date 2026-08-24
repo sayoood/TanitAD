@@ -99,6 +99,37 @@ floor lives INSIDE the loss. Pre-registered with four outcomes in
 ⭐⭐ **THE SPLIT ACROSS ARMS IS THE HEADLINE.** `splitp30k` (frozen distilled): `n_agents` from `z_t` **+0.3864** — far the richest — but its predictor **ADDS NOTHING**, delta vs `z_t` of −0.0008 / −0.0320 / −0.0158 at k=1/3/6, all NEGATIVE (t −3.69 / −5.62 / −6.26), and at k=6 `lead_closing` degrades to −0.0747 (t −2.11). `rdw8p30k` (trained): content only +0.0777 but the predictor **adds substantially**. ⇒ **the frozen arm CARRIES the environment and does not PREDICT it; the trained arm PREDICTS change and carries less of it.** E-DEC-20's dissociation in a new form ⇒ **mandate (2) — environment in BOTH encoder and predictor — is NOT yet satisfied by any single arm.**
 
 ⚠️ **FOUR BOUNDS.** (1) **ẑ also beats the encoded-future CEILING**, which is anomalous. Two explanations and this panel cannot separate them: the rollout is **ACTION-CONDITIONED**, so ẑ carries the ego's commanded motion that a single encoded frame lacks — *or* it is temporal **smoothing** of a noisy target. **An action-shuffled control would separate them and has not been run.** (2) All absolute R² are **small** (0.03–0.15); `lead_closing` +0.0019 is barely above zero. (3) **IN-SAMPLE** until the held-out corpus lands. (4) k=1 is **underpowered by construction** — the ceiling itself is barely above `z_t` there (+0.0123, t 0.75), i.e. the scene has not changed enough for prediction to add anything; only k=3–6 carry headroom. |
+| E-DEC-39b | ⭐⭐⭐ **Does a LONGER HORIZON make the action recoverable? (closes the E-DEC-39 gate's second branch)** | ⛔⛔ **MEASURED — NO, FLAT FROM 0.2 s TO 3.0 s. A longer-horizon O11 is NOT justified. 0 of 10 cells clear, at ZERO GPU cost instead of 8 h of training.** | `…/raw/idm_k{2,8,16,30}.json`
+
+`rdw8p30k`, held-out lead-matched, RFF+ridge, within-clip Pearson r. The readable
+quantity is the DELTA from adding the future latent to `z_t` alone.
+
+| k (ticks / s) | accel: `z_t` alone | **delta from `z_{t+k}`** | t | steer delta | t |
+|---|---|---|---|---|---|
+| 2 / 0.2 | +0.1381 | −0.0012 | −0.02 | +0.0528 | 1.23 |
+| 4 / 0.4 | +0.1709 | −0.0358 | −0.62 | +0.0600 | 1.16 |
+| 8 / 0.8 | +0.1543 | −0.0155 | −0.22 | +0.0293 | 0.59 |
+| 16 / 1.6 | +0.1350 | −0.0637 | −0.76 | +0.0158 | 0.38 |
+| **30 / 3.0** | +0.1283 | **−0.1029** | −1.38 | +0.0519 | 0.88 |
+
+⭐ **THE DELTA GETS MORE NEGATIVE WITH HORIZON** — adding a longer-range future
+latent makes action recovery *worse*, not better.
+⭐ **AND THE NULL IS NOT A POWER FAILURE:** the `z_t`-alone baseline is stable at
+**0.128–0.171 across every k**, so the instrument detects a signal of that size at
+each horizon and never detects the transition.
+
+⇒ **THE E-DEC-39 GATE'S "LONGER HORIZON" BRANCH IS NOW CLOSED BY MEASUREMENT.**
+The remaining possibilities from that gate are a **different action
+representation** or — the reading all of tonight's evidence converges on — the
+deficit is in the **ENCODER/LATENT ITSELF**. The latent demonstrably encodes ego
+state (accel recoverable at r ≈ 0.15 from `z_t` alone) and the ego's action
+demonstrably moves the world, yet **Δz carries no trace of it at any horizon from
+0.2 s to 3.0 s**. Δz must therefore be dominated by something else, which is
+exactly what **E-DEC-40** measures.
+
+⭐ **THIS COST ZERO GPU.** Testing it by training a longer-horizon O11 arm would
+have cost ~8 h of the only GPU we have and returned the same answer.
+
 | E-DEC-39 | ⭐⭐⭐ **Is the action even RECOVERABLE from the latent transition? (the gate on O11's REFUTED branch)** | ⛔ **MEASURED — NO DETECTABLE CONTRIBUTION from the future latent, on either arm. Weak negative: underpowered at 20 clips, but the panel's own detected signal bounds it.** | `…/raw/idm_oracle.json`
 
 Encoded latents only, **no predictor anywhere**. k=4, 20 lead-matched held-out
