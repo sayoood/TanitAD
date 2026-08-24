@@ -8130,3 +8130,38 @@ reporting success while filing 11 papers under the query string.
 evidence about the run.** For any property that decides a result — frozen /
 trainable, which cache, which corpus — verify it in the **artifact** (weights,
 hashes, counts), and make the verification print its own n.
+
+## C147 ⚠️ — "PSG DOES NOT BEAT THE RAW-PIXEL FLOOR" WAS READ OFF TWO POINT ESTIMATES AGAINST A THIRD COLUMN — THE C138 ERROR, IN THE ONE PLACE THE RULE LIVES (2026-08-24, self-caught within the hour)
+
+**What I asserted.** That PSG's environment gain "fails the raw-pixel floor",
+citing `n_agents` **+0.1050** (pixel) against **+0.0958** (PSG). It went into
+`GOALS_AND_CLAIMS.md`, into the loop's own state, and into a report to the PI.
+
+**Why it is not admissible.** Both numbers are per-arm means whose only paired
+statistic is against the **`o5k4` baseline**, not against each other. The panel
+prints `delta_vs_base` and its `t` — there was no arm-vs-floor pairing anywhere
+in the instrument. **C138 is the same error** ("we beat DINOv3", from two
+estimates each measured against a third column; the paired test showed we LOSE).
+The gap here is **0.0092** — comfortably inside what a pairing can reverse — so
+the claim was not merely under-supported, it was unresolved in both directions.
+
+**Root-cause class — A STANDING RULE WITH NO INSTRUMENT BEHIND IT.** *"A learned
+representation that does not beat raw input has added nothing"* is a binding
+probe-panel rule, and the panel that exists to enforce it **carried the floor as
+a display column only**. A rule enforced by eye is a rule that will be applied
+inconsistently and confidently. This is the same shape as the criteria-registry
+work (C133): the fix is never "read more carefully", it is to make the check a
+computed field with a verdict.
+
+**Fix, applied in the same turn.** All four panels now compute the paired
+arm-versus-floor contrast on the same clips and emit
+`delta_vs_pixel_floor` / `t_vs_pixel_floor` / `n_favouring_vs_pixel_floor` /
+`beats_raw_input`, printed beside the baseline contrast. The PSG verdict is
+marked PENDING that read-out rather than left standing.
+
+⭐ **THE PAIRED TEST RAN AND THE ORIGINAL CLAIM WAS WRONG IN ITS STATISTICAL FORM.** `psgw1` vs the floor on `n_agents` is **−0.0092, t −1.67, 27/44 favouring PSG** — *indistinguishable*, not *below*. (On `lead_gap_m` it IS below: t −2.18, 7/44.) The operative conclusion survives — PSG does not BEAT raw input — but "the floor is higher" was never established and is withdrawn.
+
+⚠️ **The direction of the error matters here.** It was a claim AGAINST our own
+result, so it would have made the programme *more* pessimistic, not less — which
+is precisely why it nearly passed unchallenged. **A conservative-sounding claim
+gets the same evidential standard as a favourable one.**
