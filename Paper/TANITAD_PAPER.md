@@ -3895,6 +3895,28 @@ instead established that the objective could not learn the scene at all, that
 four of our own instruments were reporting artefacts, and that the two levers
 which do work are architectural and configural rather than objective-level.
 
+> ⛔⛔ **SUPERSEDED TARGET — READ BEFORE ANY `lead_gap_m` NUMBER BELOW.** Every
+> `lead_gap_m` value in this section was computed against a **defective target**.
+> MEASURED over all 25,790 labelled frames: **4.8 %** have no lead and took an
+> **80.0 m default**, and that 4.8 % carried **59.9 % of the total variance** — so
+> the quantity mostly measured *"is there a lead at all"*, not range. And 80.0 is
+> **not** a sentinel outside the data: real leads reach **180.84 m**, so a no-lead
+> frame was numerically indistinguishable from a genuine lead at 80 m.
+>
+> Split into `lead_present` (binary, all frames) and `lead_range_m` (lead-present
+> frames only, no sentinel), **the repair flips verdicts**: two arms that "beat the
+> raw-pixel floor" on the defective target (t 4.23 and **t 10.28**) do not on the
+> sound one. On the honest range target **every arm of ours is worse than a
+> constant, as are raw pixels**; only a frozen DINOv3 carries range (+0.0336).
+>
+> ⭐ And the cause is now known (§13.12): the readout's **128→64 projection**, not
+> its pooling — at the identical grid the *unprojected* tokens read **+0.0719**
+> where the readout reads **−0.1611**. The information is in our encoder.
+>
+> The `lead_gap_m` cells are **kept as the historical record** and are labelled;
+> they may **not** be quoted as range decodability. `n_agents` is unaffected — it
+> is a count with no sentinel.
+
 ### 13.1 The degeneracy: why a non-collapsed latent can still encode nothing
 
 Let \(E_\theta\) be the encoder, \(P_\phi\) the action-conditioned predictor, and
@@ -4129,7 +4151,9 @@ predicts and what made every collapsed arm still read ego well.
 > ego columns.
 
 Finally, the random arm's `lead_gap_m` is **+0.0064 — equal to the raw-pixel
-floor to four decimals.** Under the panel's standing rule, columns that agree to
+floor to four decimals** *(on the defective target; see the banner at the head of
+this section — the observation about agreeing columns stands, the quantity does
+not)*. Under the panel's standing rule, columns that agree to
 several decimals are read as a degeneracy signal rather than a result, and this
 one has an interpretation: to a linear probe, a frozen random transformer is a
 random linear map of the image and spans essentially the pixel subspace. The two
@@ -4315,8 +4339,11 @@ not survive contact with the full corpus.
 *worse* than the un-initialised arm's (0.8416 against 0.7903), so the
 initialisation trades prediction for content rather than adding both.
 `lead_gap_m` moves the wrong way, from +0.0063 to −0.0940, below the raw-pixel
-floor — **the two environment targets dissociate, and `n_agents` alone may not be
-called "environment"**. Participation falls fourfold and the pre-registered
+floor. ⚠️ That quantity is since **superseded** (banner above): on the repaired
+target this arm reads `lead_range_m` **−0.1611**, the worst of any arm, so the
+direction of the finding survives and its magnitude is larger. **The two
+environment targets dissociate, and `n_agents` alone may not be called
+"environment"** — which §13.13 traces to the readout's projection. Participation falls fourfold and the pre-registered
 kill-gate rejects the arm on rank; we weigh that against the evidence that rank
 does not track capability, but we do not discard it. Ego degrades below the
 constant control, which §13.8 makes the least informative axis.
@@ -4326,7 +4353,57 @@ from a pretrained model, so this result buys capability, not independence. **The
 question of whether a teacher-free source of scene content exists is exactly where
 it was**, and none of the six auxiliary-objective families in §13.10 answered it.
 
-### 13.12 What this section does not establish
+### 13.12 Proven result 10 — the readout's projection, not its pooling, is what discards object range
+
+§13.11 left an asymmetry inside "environment": the best representation counts
+agents far better than a frozen DINOv3 and localises the lead vehicle worse than a
+constant predictor. Counting is a global statistic; range is a per-object
+geometric one, so the natural suspicion was spatial resolution — the readout pools
+16×40 encoder tokens to 4×8, keeping only four elevation bins, and in a
+cylindrical projection range is carried by vertical position and apparent size.
+
+That suspicion is testable without training anything. If the readout *discards*
+range the encoder already holds, then pooling the **same** tokens differently will
+show it. Training a fresh arm would confound readout capacity with re-learning,
+and would do so in the small-scale regime §13.10 has shown to be uninformative.
+Holding columns fixed at 8, varying only rows, and reducing every column to the
+same 128 principal components:
+
+| column | `lead_range_m` | `lead_present` | `n_agents` |
+|---|---|---|---|
+| **readout 4×8** — the model's actual output | **−0.1611** | −0.0439 | **+0.3881** |
+| **tokens 4×8** — same grid, *unprojected* | **+0.0719** (t 13.68, 24/24) | −0.0684 | +0.3274 |
+| tokens 8×8 | +0.0291 | −0.1115 | +0.3812 |
+| tokens 16×8 | −0.0205 | −0.1284 | +0.3535 |
+| raw-pixel floor | −0.0800 | **+0.0018** | −0.2357 |
+| constant control | +0.0000 | 0.0000 | 0.0000 |
+
+**The decisive comparison is the first two rows: identical grid, identical
+pooling, differing only in the readout's 128 → 64 linear projection.** Range goes
+from −0.1611 to **+0.0719**. The projection is what removes it. And the
+unprojected tokens exceed the frozen DINOv3 reference (+0.0336), so **the range
+information is present in our own encoder** — the model discards it on the way
+out.
+
+**The resolution hypothesis is not supported, and the ladder that tests it is
+itself confounded.** Range falls as rows increase, but so does the signal-to-noise
+of a fixed 128-component basis: dimensionality grows from 4 096 to 16 384 across
+those rows, and coarser pooling averages more tokens per cell. We therefore make
+no claim about elevation resolution in either direction; only the matched-grid
+comparison is clean.
+
+**The projection is a trade, not a defect.** On `n_agents` the projected readout
+is the *best* column of the six, above every unprojected alternative. A learned
+compression that improves a global count and destroys a per-object geometric
+quantity is behaving exactly as a bottleneck should when its objective never asked
+for the latter.
+
+⚠️ This is a probe result. It establishes that the information survives to the
+token grid, not that a readout trained at width 128 would retain it — the
+projection is learned, and widening it changes the latent dimension every arm in
+this section shares.
+
+### 13.13 What this section does not establish
 
 No claim is made about driving. No arm here has a planner or a closed loop, and
 the tier doctrine forbids reading T0 diagnostics as capability. The environment
@@ -4358,9 +4435,10 @@ re-test before it may inform a design decision. **The first such re-test has now
 run** (§13.11), and it overturned a fourth: the predictor collapse on a frozen
 field was the small corpus, not the freeze.
 
-Nor does §13.11 establish that the problem is solved. Its `lead_gap_m` sits below
-the raw-pixel floor while its `n_agents` sits far above it, so the representation
-is not uniformly better — it is better at one environment target and worse at the
+Nor does §13.11 establish that the problem is solved. On the repaired targets its
+`lead_range_m` sits **below a constant predictor** (−0.1611, the worst of any arm)
+while its `n_agents` sits far above the raw-pixel floor, so the representation is
+not uniformly better — it is better at one environment target and worse at the
 other. Its predictor is worse than the arm without the initialisation. Its
 environment rows are in-sample. Its rank fails the gate we pre-registered. And it
 is **teacher-dependent**: the frozen field is distilled from a pretrained model,

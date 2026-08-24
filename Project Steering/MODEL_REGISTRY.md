@@ -3758,6 +3758,8 @@ C103, C104, C106, C107, C109, C112** in `RETRACTION_LOG.md`.
 Per `EVAL_DOCTRINE.md` a T0 number may never be presented as driving performance — these arms have
 no scorer, no planner and no closed loop.
 
+⛔⛔ **`lead_gap_m` IS A SUPERSEDED TARGET (C150) — every `lead_gap_m` cell in §13 was computed against it.** MEASURED over all 25,790 labelled frames: **4.8 %** of frames have no lead and took an **80.0 m default**, carrying **59.9 % of the total variance**, and 80.0 is **not** a sentinel outside the data (real leads reach **180.84 m**). Split into `lead_present` + `lead_range_m` (lead-present frames only), **the repair flips verdicts**: `scale1` and `champ30k` "beat pixels" on the defective target (t 4.23 / **10.28**) and do **not** on the sound one, where **every arm of ours is worse than a constant** and only frozen DINOv3 carries range (+0.0336). ⭐ Cause identified (E-DEC-25): the readout's **128→64 projection**, not its pooling — at the identical grid the *unprojected* tokens read **+0.0719** against the readout's **−0.1611**. Cells below are kept as the historical record and **may not be quoted as range decodability**; `n_agents` is unaffected. Raw: `…/raw/leadsplit.json`, `…/raw/rowladder.json`.
+
 ### 13.0 ⭐⭐⭐ `rdw8p30k` — the settled readout geometry at PARITY SCALE — COMPLETE at 30,000 (2026-08-24)
 
 **The arm that re-scopes the whole collapse campaign.** Identical architecture and identical
@@ -3792,8 +3794,9 @@ on environment content** — with no external target of any kind.
 ⚠️ **Bounds, which are not small.** `n_agents` is still **marginally below the constant control**
 (−0.0180 vs 0.0000) and **well below frozen DINOv3** (+0.2754); on this clip set the pixel floor
 (−0.2156) is itself below the constant control, so clearing it is the weaker of the two bars.
-`lead_gap_m` **+0.0063** is above the constant control and **level with pixels**, just under DINOv3
-(+0.0294). **Ego degrades** — which under E-DEC-17 is the least informative axis, because a frozen
+`lead_gap_m` **+0.0063** is above the constant control and level with pixels, just under DINOv3
+(+0.0294) — ⚠️ **on the SUPERSEDED target (C150); on the repaired one this arm reads `lead_range_m`
+−0.0167, below a constant.** **Ego degrades** — which under E-DEC-17 is the least informative axis, because a frozen
 RANDOM encoder reads the best speed of any arm.
 ⛔ **Confounded three ways** — corpus, steps and batch all moved. Direction unambiguous, cause not
 isolated.
@@ -3837,7 +3840,7 @@ Frozen distilled encoder + trainable readout and predictor, O5+O6 only, `--o5-k 
 
 ⭐ **AND THE FROZEN-FIELD PREDICTOR COLLAPSE WAS ALSO A SMALL-DATA ARTEFACT.** The same frozen encoder at 130 clips (`splitfrz10k`) gives `nrmse` **4.1757 — worse than a constant**; at parity it gives **0.8416 — beating it**. Freezing does **not** destroy the predictor; the 130-clip corpus did. That is the fourth conclusion of this campaign re-scoped by scale (after E-DEC-7/14/17/18).
 
-⚠️ **THE COSTS ARE REAL AND ARE NOT ROUNDED AWAY.** (1) Its predictor is **worse than `rdw8p30k`'s** (0.8416 vs 0.7903) — freezing still costs prediction quality. (2) **`lead_gap_m` goes the WRONG WAY**: +0.0063 → **−0.0940**, below the raw-pixel floor (t −3.91) — **the two environment targets dissociate again**, so `n_agents` alone must never be quoted as "environment". (3) **Participation drops 4×** (25.58 → 6.38) and the pre-registered kill-gate REJECTS the arm on rank; that is weighed against C131/C135/E-DEC-7 (rank does not track capability) but it is not dismissed. (4) Ego degrades, `d_ego` **−0.0399 below the constant control** — least informative under E-DEC-17 (ego is free) but recorded. (5) ⛔ **It is TEACHER-DEPENDENT AT INIT**, so it does **not** satisfy the PI's "clear preference without pretrained labels"; the teacher-free question is unchanged and open.
+⚠️ **THE COSTS ARE REAL AND ARE NOT ROUNDED AWAY.** (1) Its predictor is **worse than `rdw8p30k`'s** (0.8416 vs 0.7903) — freezing still costs prediction quality. (2) **`lead_gap_m` goes the WRONG WAY**: +0.0063 → **−0.0940**, below the raw-pixel floor (t −3.91) — ⚠️ on the SUPERSEDED target; on the repaired one it reads `lead_range_m` **−0.1611**, the worst of any arm, so the direction holds and the magnitude is larger (C150 / E-DEC-24) — **the two environment targets dissociate again**, so `n_agents` alone must never be quoted as "environment". (3) **Participation drops 4×** (25.58 → 6.38) and the pre-registered kill-gate REJECTS the arm on rank; that is weighed against C131/C135/E-DEC-7 (rank does not track capability) but it is not dismissed. (4) Ego degrades, `d_ego` **−0.0399 below the constant control** — least informative under E-DEC-17 (ego is free) but recorded. (5) ⛔ **It is TEACHER-DEPENDENT AT INIT**, so it does **not** satisfy the PI's "clear preference without pretrained labels"; the teacher-free question is unchanged and open.
 
 ⭐ **VALIDITY:** completed 30,000 steps, `summary.json` `done: true`, elapsed 27,041 s; ckpt md5 `4348cad27dbf1895654c40681d92ea97` verified on BOTH sides of the pull; `--freeze-encoder` + `init_from=distill_init.pt` + `require_parity` confirmed from the LIVE process args, not the config's stage block (C146). ⚠️ ENV rows are IN-SAMPLE for all parity arms (130/130 lead clips are inside parity train, 0 in val — MEASURED pod-side); EGO rows are held out.
 
