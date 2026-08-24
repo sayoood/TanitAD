@@ -101,8 +101,39 @@ floor lives INSIDE the loss. Pre-registered with four outcomes in
 ⚠️ **FOUR BOUNDS.** (1) **ẑ also beats the encoded-future CEILING**, which is anomalous. Two explanations and this panel cannot separate them: the rollout is **ACTION-CONDITIONED**, so ẑ carries the ego's commanded motion that a single encoded frame lacks — *or* it is temporal **smoothing** of a noisy target. **An action-shuffled control would separate them and has not been run.** (2) All absolute R² are **small** (0.03–0.15); `lead_closing` +0.0019 is barely above zero. (3) **IN-SAMPLE** until the held-out corpus lands. (4) k=1 is **underpowered by construction** — the ceiling itself is barely above `z_t` there (+0.0123, t 0.75), i.e. the scene has not changed enough for prediction to add anything; only k=3–6 carry headroom. |
 | E-DEC-32 | ⭐⭐⭐ **Does the environment content GENERALISE? (PI mandate 2, the decisive read)** | ⚠️⛔ **MEASURED, and it must be read in THREE parts — one negative, one confounded, one absent.** | `…/raw/envpred_ho2.json`, `…/raw/spatialenv_ho3.json`
 
-**(a) ⛔ THE ONE ATTRIBUTABLE NEGATIVE — `splitp30k` loses its rank against a FIXED
-EXTERNAL ENCODER measured on the IDENTICAL ROWS.** `n_agents`:
+⛔⛔ **(a) IS RETRACTED — C153. THE LEAD-MATCHED PANEL REVERSES IT.** Restricting
+the held-out set to the 70 clips meeting the SAME selection criterion
+(`SPD_MIN_LEAD=20`; 24 clips, 2,399 rows, **99.96 %** coverage, 24/24 kept),
+`splitp30k` `n_agents` reads **+0.1220 against DINOv3 +0.0998** — **ABOVE it,
+exactly as in-sample.** The rank inversion was a selection artefact too. I had
+already documented the confound in (b) and argued (a) survived it *because DINOv3
+is scored on the same rows*; **a shared-rows control removes MEASUREMENT
+artefacts, not DISTRIBUTION effects** — two encoders with different inductive
+biases degrade differently off-distribution and can swap order with no
+memorisation by either.
+
+⭐⭐ **WHAT THE MATCHED PANEL ESTABLISHES — THE ENCODER HALF OF MANDATE (2) IS
+SUPPORTED, AND IT IS NOT ONLY COUNTING:**
+
+| held-out, lead-matched | `splitp30k` | pixels | DINOv3 |
+|---|---|---|---|
+| `n_agents` | **+0.1220** | +0.0281 | +0.0998 |
+| `occ_center` | **+0.3351** | −0.1720 | +0.3998 |
+| **`n_free_cols`** (the PI's corridor signal) | **+0.2080** | +0.0289 | +0.4857 |
+| `occ_col3` | **+0.3315** | +0.0174 | +0.4733 |
+| `occ_col6` | **+0.3093** | +0.1332 | +0.1616 |
+
+⚠️ **SCOPE: lead-present (traffic-following) held-out clips.** ⚠️ **AND THE REAL
+REMAINING GAP: frozen DINOv3 beats us on 4 of 5 aggregate spatial targets**
+(`occ_left` +0.3315 vs −0.0159, `occ_center` +0.3998 vs +0.3351, `occ_right`
++0.3477 vs +0.1728, `n_free_cols` +0.4857 vs +0.2080). Our trunk is BEHIND an
+off-the-shelf frozen encoder on spatial localisation. ⛔ **The PREDICTOR half of
+mandate (2) and all of mandate (3) are UNAFFECTED by this rehabilitation** —
+E-DEC-30/33 stand, 32 of 32 arms action-independent.
+
+**(a) AS ORIGINALLY WRITTEN, RETAINED FOR THE RECORD — ⛔ RETRACTED:** `splitp30k`
+loses its rank against a FIXED EXTERNAL ENCODER measured on the IDENTICAL ROWS.
+`n_agents`:
 
 | | `splitp30k` | `rdw8p30k` | pixels | **frozen DINOv3** |
 |---|---|---|---|---|

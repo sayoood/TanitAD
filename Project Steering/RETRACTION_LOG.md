@@ -8469,3 +8469,67 @@ another.
 ⚠️ **STATUS OF THE HELD-OUT ENVIRONMENT VERDICT: PENDING, NOT NEGATIVE.** What is
 established is that the pre-fix held-out numbers are **inadmissible** and must not
 be quoted from any log, report or summary that captured them.
+
+## C153 ⛔⛔ — I IDENTIFIED THE SELECTION CONFOUND AND THEN RULED ONE RESULT "ATTRIBUTABLE" ANYWAY, BECAUSE A SHARED-ROWS CONTROL REMOVES MEASUREMENT ARTEFACTS AND **NOT** DISTRIBUTION EFFECTS (2026-08-24, refuted by the matched panel I had queued in the same turn)
+
+**What was asserted**, in E-DEC-32(a), committed as `78dca8e` and reported to the
+PI: that `splitp30k`'s **in-sample scene-content advantage does not generalise**.
+The reasoning was explicit and felt careful:
+
+> *"DINOv3 trained on neither corpus and is scored on the same rows, so the RANK
+> CHANGE is attributable to our arm even though the absolute R² is not."*
+
+`splitp30k` `n_agents` went **+0.3881 (above DINOv3 +0.2754)** in-sample to
+**−0.3515 (far below DINOv3 −0.0366)** held-out. I had *already* found and
+documented the selection confound in the same entry — the in-sample corpus is
+`slotprobe-**LEAD130**`, 130/130 lead-present against 70/122 held-out — and used
+it to disqualify the *absolute* numbers. Then I let the *rank* stand.
+
+**What the lead-matched panel says.** Restricting the held-out set to the 70
+clips meeting the **same** selection criterion (`SPD_MIN_LEAD=20`, 24 clips
+scored, 2,399 rows, **99.96 %** label coverage, 24/24 kept):
+
+| held-out `n_agents` | `splitp30k` | pixels | DINOv3 |
+|---|---|---|---|
+| **unmatched** | −0.3515 | −0.5768 | −0.0366 |
+| **lead-matched** | **+0.1220** | +0.0281 | **+0.0998** |
+
+⇒ **`splitp30k` is ABOVE DINOv3 on the matched held-out set, exactly as
+in-sample.** The rank inversion was a selection artefact too. And it is not a
+marginal recovery: on the matched set `splitp30k` also reads `occ_center`
+**+0.3351**, `n_free_cols` **+0.2080**, `occ_col3` **+0.3315**, `occ_col6`
+**+0.3093** — spatial structure, not only counting, all above the raw-pixel floor.
+
+**ROOT-CAUSE CLASS: treating a SHARED-ROWS control as if it neutralised a
+DISTRIBUTION SHIFT.** It does not, and the distinction is the whole lesson:
+
+* A control on the **same rows** removes **measurement** artefacts — a broken
+  target, a mask bug, a fake zero. That is what caught C152, and it worked.
+* It does **not** remove **distribution** effects. Two encoders with different
+  inductive biases **degrade differently off-distribution**, so their *relative
+  order can invert with no memorisation by either*. A frozen external reference
+  is a fixed *instrument*, not a fixed *ranking*.
+
+⚠️ **The aggravating detail is the same one as C151, one rung higher.** The
+matched panel — the experiment that refutes this — **was implemented and queued
+in the same turn, before the claim was written**. I found the confound, built the
+instrument to remove it, and then published a reading that the pending instrument
+was specifically designed to test. ⇒ **C151's rule was stated as "a result whose
+control is still running is a pending measurement". C153 sharpens it: that
+applies to EVERY part of a finding, including the part you have argued your way
+around.** Arguing that one component survives a known confound is not a substitute
+for the measurement that settles it.
+
+⭐ **WHAT NOW STANDS, WITH ITS SCOPE.** On **lead-present (traffic-following)
+held-out clips**, `splitp30k` carries generalising scene content — agent count
+above DINOv3, plus centre occupancy, free-space/corridor and per-column
+occupancy above the raw-pixel floor. **The ENCODER half of the PI's mandate (2)
+is SUPPORTED.** ⚠️ Frozen DINOv3 still beats it on 4 of 5 aggregate spatial
+targets (`occ_left` +0.3315, `occ_center` +0.3998, `occ_right` +0.3477,
+`n_free_cols` +0.4857), so our trunk is **behind an off-the-shelf frozen encoder
+on spatial localisation** — a real gap, and a separate finding from this
+retraction.
+
+⚠️ **What is NOT rehabilitated:** the **PREDICTOR** half of mandate (2) and all
+of mandate (3). E-DEC-30/33 are unaffected — 32 of 32 arms remain
+action-independent, and that census was never a cross-split comparison.
