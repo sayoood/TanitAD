@@ -167,6 +167,36 @@ predictor claim in the campaign that survives its own floor. **Gate A becomes mo
 important, not less**: the `--o5-k` depth ranking it tests was measured entirely
 inside that noise floor.
 
+## 6c. ⭐ The 30-arm census — the single strongest argument in this document
+
+Every finished arm this programme has quoted a predictor number for, re-scored
+against the C149 floor (`meanpred_all.json`, 0 new training; `rdw8s30k` excluded
+as a mid-run save):
+
+| verdict | n | arms (nrmse) |
+|---|---|---|
+| **BEATS a constant** | **3** | `rdw8p30k` **0.7845** · `scale1` **0.8200** · `champ30k` **0.9348** |
+| ≈ a constant | 16 | every healthy 2k arm (`o5k4` 0.9988, `o5k8` 0.9984, `o5k16` 0.9984, `splitfrz` 0.9902, …) |
+| **worse** than a constant | 11 | all four O1 arms (up to **22.72**) · all five PSG arms (up to **32.38**) · `frzrand` 3.98 · `splitfrz10k` 4.83 |
+
+**Every arm that beats the floor is 30,000 steps on the parity corpus, and every
+30k-parity arm beats it. No sub-30k arm ever does.** `champ30k` and `scale1` do it
+at **batch 4**.
+
+This is why §1 recommends spending on steps and corpus rather than on another
+objective: **three arms in the programme's history have a working predictor, and
+what they share is scale — not a term.**
+
+⚠️ **It cannot separate steps from data** — all three winners are 30k *and*
+parity, always together. That is Gate B, and pre-empting it here would repeat
+C148. The census does make Gate B binary: `rdw8s30k` is 30k on 130 clips. Beats
+the floor ⇒ steps suffice. Does not ⇒ data is required.
+
+⭐ **A free diagnostic:** `mean_fraction_of_prediction` orders the three classes
+almost perfectly (BEATS 0.07–0.18, ≈constant 0.34–0.82, worse 0.73–0.87). A
+predictor whose output is mostly a fixed offset is the failure mode, and this is a
+one-number screen for it that needs no baseline arm.
+
 ## 7. What is explicitly NOT claimed
 
 * **No driving claim.** All T0. `C131`: flagship v1's open-loop 0.4271 → closed-loop 1.7318, a 4.05× divergence.
