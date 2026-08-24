@@ -61,7 +61,14 @@ LEAD = Path(os.environ.get("SPD_CORPUS",
 LABELS = Path(os.environ.get("SPD_LABELS", str(SP / "sp2/val130_agents.jsonl")))
 OUT = Path(os.environ.get("SPD_OUT", str(SP / "idm_oracle.json")))
 ARMS = os.environ.get("SPD_ARMS", "rdw8p30k,splitp30k").split(",")
-MIN_LEAD, N_CLIPS, F, K = 20, 20, 100, 4
+MIN_LEAD, N_CLIPS, F = 20, 20, 100
+# ⭐ K IS SWEPT. E-DEC-39 measured k=4 and found no detectable contribution from
+# the future latent. The E-DEC-39 gate in PREREG_O11 says the next step is then a
+# LONGER HORIZON — but that costs 8 GPU-hours to test by training, and ZERO to
+# test here. If recoverability RISES with k, a longer-horizon O11 is justified. If
+# it stays flat at every k, the action leaves no trace in THIS LATENT at any
+# horizon, and the deficit is the ENCODER, not the horizon and not the loss.
+K = int(os.environ.get("SPD_K", "4"))
 
 
 def main() -> int:

@@ -47,6 +47,8 @@ T0-DIAGNOSTIC. MEASURED (ours; dev-box RTX 4060).
 from __future__ import annotations
 
 import json
+import os
+import pathlib
 import sys
 from pathlib import Path
 
@@ -58,8 +60,11 @@ sys.path.insert(0, str(SP))
 sys.path.insert(0, str(SP / "sp2"))
 sys.path.insert(0, r"C:\Users\Admin\tanitad-mirror\stack")
 LEAD = SP / "sp2/cache/slotprobe-lead130-w120-256x640cyl"
-OUT = SP / "actchan.json"
-ARMS = ["rdw8p30k", "splitp30k", "scale1"]
+OUT = pathlib.Path(os.environ.get("SPD_OUT", str(SP / "actchan.json")))
+# ⭐ arms and output are env-overridable so the O11 arm is scored by the
+# IDENTICAL instrument on the IDENTICAL windows/clips/seed as its baseline,
+# rather than by a forked copy that could drift from it.
+ARMS = os.environ.get("SPD_ARMS", "rdw8p30k,splitp30k,scale1").split(",")
 N_CLIPS, F, STRIDE = 12, 80, 2
 
 
