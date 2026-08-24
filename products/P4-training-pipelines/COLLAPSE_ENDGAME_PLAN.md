@@ -134,10 +134,26 @@ corpus; **0** are in the val cache. So `n_agents` **+0.3881** is measured on cli
 the model trained on. The contrast between arms is valid; **a generalisation claim
 is not available at all**.
 
-⇒ **This is the single biggest credibility gap in the whole result**, and it is
-not fixable with what is on disk: we hold `obstacle.offline` labels only for those
-130 clips. It requires a **Data FlyWheel job** — extract agent labels for a set of
-parity **val** clips and rebuild the probe corpus there.
+⇒ **This is the single biggest credibility gap in the whole result.**
+
+⭐ **FEASIBILITY AND COST ARE NOW SETTLED (E-DEC-27), metadata-only, no bytes
+fetched.** The `obstacle.offline` labels live on HF as 3,146 chunks totalling
+147.2 GiB — but only the chunks holding val clips are needed, the clip→chunk table
+**survives in-repo** (`…/2026-07-24-v2-corpus-50h-balanced/r0_selection_v2.parquet`),
+and `build_obstacle_join.py` already downloads exactly the chunks a clip list
+requires:
+
+| | |
+|---|---|
+| **130 held-out val clips** | **92 chunks → 3.58 GiB** |
+| all 256 available | 146 chunks → 5.67 GiB |
+| new code needed | **none** |
+
+⇒ the job is `build_obstacle_join.py --selection <parquet>` over a val clip list.
+⛔ **NOT started: HF quota is a hard ceiling and a 3.58 GiB pull is spend — the
+PI's call.** ⚠️ Only 256 of the 600 val clips are in the table (ample; the current
+corpus is 130), and the C150 split must be applied to the new corpus from the
+start rather than retrofitted.
 
 ### G3 ⛔ Teacher dependence
 
