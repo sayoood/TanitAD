@@ -113,8 +113,36 @@ def main() -> int:
             if line.strip():
                 r = json.loads(line)
                 LAB.setdefault(r["clip_id"], {})[int(r["frame_idx"])] = r.get("agents", [])
-    clips = [c for c in sorted(LEAD.glob("*.v2ep.pt"))[:N_CLIPS]
-             if torch.load(c, map_location="cpu", weights_only=False)["clip_id"] in LAB]
+    # ⛔⛔ THE SELECTION CONFOUND, AND THE KNOB THAT REMOVES IT. The in-sample
+    # corpus is named `slotprobe-LEAD130` because it was SELECTED FOR LEAD
+    # PRESENCE: MEASURED 2026-08-24, 130/130 of its clips carry >=20 lead-present
+    # frames (mean 96.0 of 100), against 70/122 (57 %, mean 42.2, median 29.5)
+    # on the unselected held-out val set. It is also traffic-denser (n_agents
+    # mean 52.96 vs 32.90). ⇒ AN ABSOLUTE R2 COMPARED ACROSS THE TWO SPLITS IS
+    # CONFOUNDED BY SELECTION, not a clean generalisation read — and every
+    # column including frozen DINOv3 and raw pixels drops, which is the tell.
+    # SPD_MIN_LEAD restricts the held-out set to clips meeting the SAME
+    # criterion, so the two corpora agree on the thing one of them was chosen
+    # for. Default 0 reproduces the unmatched run exactly.
+    MIN_LEAD = int(os.environ.get("SPD_MIN_LEAD", "0"))
+
+    def _lead_frames(cid):
+        ag = LAB.get(cid, {})
+        return sum(1 for i in range(F)
+                   if any(abs(x.get("cy", 9e9)) < 1.8 and x.get("cx", -1) > 0
+                          for x in ag.get(i, [])))
+
+    _all = [c for c in sorted(LEAD.glob("*.v2ep.pt"))
+            if torch.load(c, map_location="cpu", weights_only=False)["clip_id"] in LAB]
+    if MIN_LEAD > 0:
+        _kept = [c for c in _all
+                 if _lead_frames(torch.load(c, map_location="cpu",
+                                            weights_only=False)["clip_id"]) >= MIN_LEAD]
+        print(f"  LEAD-MATCHED SELECTION: {len(_kept)}/{len(_all)} clips carry "
+              f">= {MIN_LEAD} lead-present frames (the in-sample corpus is "
+              f"100 % by construction)", flush=True)
+        _all = _kept
+    clips = _all[:N_CLIPS]
     present = [a for a in ARMS if (SP / f"v7tiny_{a}" / "ckpt.pt").is_file()]
     print(f"\n  E-DEC-29 · SPATIAL environment · arms {present} · {len(clips)} clips\n"
           f"  'where', not just 'how many' — 8 azimuth columns + a corridor signal\n",
@@ -204,7 +232,8 @@ def main() -> int:
     rep = {"_evidence_class": "MEASURED (ours; dev-box RTX 4060)",
            "eval_tier": "T0-DIAGNOSTIC", "split": SPLIT,
            "corpus": str(LEAD), "labels": str(LABELS), "arms": present,
-           "label_coverage_floor": 0.80, "method": "LOEO paired probe, PCA d_eff=128 fit on training clips only; "
+           "label_coverage_floor": 0.80,
+           "min_lead_frames": int(os.environ.get("SPD_MIN_LEAD", "0")), "method": "LOEO paired probe, PCA d_eff=128 fit on training clips only; "
                      "8 azimuth columns matching the readout, cylindrical projection, "
                      "+x fwd/+y LEFT (MEASURED convention)", "targets": {}}
     order = (["n_agents", "occ_left", "occ_center", "occ_right", "n_free_cols"]

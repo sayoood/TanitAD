@@ -99,6 +99,46 @@ floor lives INSIDE the loss. Pre-registered with four outcomes in
 ⭐⭐ **THE SPLIT ACROSS ARMS IS THE HEADLINE.** `splitp30k` (frozen distilled): `n_agents` from `z_t` **+0.3864** — far the richest — but its predictor **ADDS NOTHING**, delta vs `z_t` of −0.0008 / −0.0320 / −0.0158 at k=1/3/6, all NEGATIVE (t −3.69 / −5.62 / −6.26), and at k=6 `lead_closing` degrades to −0.0747 (t −2.11). `rdw8p30k` (trained): content only +0.0777 but the predictor **adds substantially**. ⇒ **the frozen arm CARRIES the environment and does not PREDICT it; the trained arm PREDICTS change and carries less of it.** E-DEC-20's dissociation in a new form ⇒ **mandate (2) — environment in BOTH encoder and predictor — is NOT yet satisfied by any single arm.**
 
 ⚠️ **FOUR BOUNDS.** (1) **ẑ also beats the encoded-future CEILING**, which is anomalous. Two explanations and this panel cannot separate them: the rollout is **ACTION-CONDITIONED**, so ẑ carries the ego's commanded motion that a single encoded frame lacks — *or* it is temporal **smoothing** of a noisy target. **An action-shuffled control would separate them and has not been run.** (2) All absolute R² are **small** (0.03–0.15); `lead_closing` +0.0019 is barely above zero. (3) **IN-SAMPLE** until the held-out corpus lands. (4) k=1 is **underpowered by construction** — the ceiling itself is barely above `z_t` there (+0.0123, t 0.75), i.e. the scene has not changed enough for prediction to add anything; only k=3–6 carry headroom. |
+| E-DEC-32 | ⭐⭐⭐ **Does the environment content GENERALISE? (PI mandate 2, the decisive read)** | ⚠️⛔ **MEASURED, and it must be read in THREE parts — one negative, one confounded, one absent.** | `…/raw/envpred_ho2.json`, `…/raw/spatialenv_ho3.json`
+
+**(a) ⛔ THE ONE ATTRIBUTABLE NEGATIVE — `splitp30k` loses its rank against a FIXED
+EXTERNAL ENCODER measured on the IDENTICAL ROWS.** `n_agents`:
+
+| | `splitp30k` | `rdw8p30k` | pixels | **frozen DINOv3** |
+|---|---|---|---|---|
+| in-sample | **+0.3881** (⭐ ABOVE DINOv3) | +0.0777 | −0.2357 | **+0.2754** |
+| held-out | **−0.3515** (⛔ far BELOW) | **−0.0941** (≈ DINOv3) | −0.5768 | **−0.0366** |
+
+DINOv3 trained on neither corpus and is scored on the same rows, so **the RANK
+CHANGE is attributable to our arm even though the absolute R² is not.**
+⇒ **`splitp30k`'s in-sample scene-content advantage does not generalise.** It was
+the Gate-C winner and the programme's "carries content" claim; that half of it
+does not survive. `rdw8p30k` holds its position next to DINOv3 and **beats the
+raw-pixel floor at every k** (−0.0839 vs −0.1920 / −0.0814 vs −0.1953 / −0.0827
+vs −0.2930, `envpred_ho2.json`), which is the standing `beats_raw_input`
+criterion.
+
+**(b) ⚠️ THE ABSOLUTE DROP IS CONFOUNDED BY CORPUS SELECTION — do not quote it as
+a generalisation gap.** The in-sample corpus is named `slotprobe-**LEAD130**`
+because it was **SELECTED FOR LEAD PRESENCE**:
+
+| | clips with ≥20 lead-present frames | mean lead frames/clip | `n_agents` mean |
+|---|---|---|---|
+| in-sample | **130/130 (100 %)** | 96.0 of 100 | 52.96 |
+| held-out | **70/122 (57 %)** | 42.2 (median 29.5) | 32.90 |
+
+One is a lead-enriched, traffic-dense subset; the other is unselected val. ⭐ **The
+tell that this is selection and not memorisation: EVERY column drops, including
+DINOv3 (+0.2754 → −0.0366) and raw pixels (−0.2357 → −0.5768).** A control that
+moves with the treatment means the measurement changed (the C152 lesson, applied
+before asserting rather than after). **A lead-matched held-out panel
+(`SPD_MIN_LEAD=20`) is queued to remove it.**
+
+**(c) ⛔ THE LEAD TARGETS ARE ABSENT, NOT NEGATIVE — n = 6 clips.** Only 6 of 23
+held-out clips carry ≥20 lead-present frames in the probe's window range, and the
+values swing −3.87 to +0.23. **Reported as UNMEASURABLE with the reason and the
+n**, per the four-families rule, never as a negative result.
+
 | E-DEC-31 | ⭐⭐ **The held-out environment set EXISTS — every prior content number was IN-SAMPLE** | ⭐ **BUILT: 124 held-out val episodes, 23,164 frames, 762,204 agent boxes, reader-verified, ZERO overlap with the in-sample 130, md5 `66efaa94fcc58b7fc4f57734545b103c`, 23.6 s.** Held-out VERDICT is **PENDING** — the first read was invalidated by C152 and the fixed instrument is running. | `…/raw/val130_join.meta.json`
 
 ⛔ **C152 — THE FIRST HELD-OUT READ WAS AN ARTEFACT, AND ITS OWN CONTROL SAID SO.** Every
