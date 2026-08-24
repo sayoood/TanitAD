@@ -104,14 +104,41 @@ def main() -> int:
             if line.strip():
                 r = json.loads(line)
                 LAB.setdefault(r["clip_id"], {})[int(r["frame_idx"])] = r.get("agents", [])
-    clips = [c for c in sorted(LEAD.glob("*.v2ep.pt"))[:N_CLIPS]
-             if torch.load(c, map_location="cpu", weights_only=False)["clip_id"] in LAB]
+    # ⛔⛔ THE SAME SELECTION MATCHING AS spatialenv.py, AND HERE IT FIXES TWO
+    # THINGS AT ONCE. (1) C153: the in-sample corpus is `slotprobe-LEAD130`, chosen
+    # for lead presence (130/130 clips vs 70/122 held-out), and comparing absolute
+    # R2 across that gap reversed a verdict — splitp30k n_agents read -0.3515
+    # unmatched and +0.1220 MATCHED, i.e. ABOVE frozen DINOv3, exactly as
+    # in-sample. (2) POWER: unmatched, only 6 of 23 held-out clips carried >=20
+    # lead-present rows, so `lead_range_m` and `lead_closing` — THE targets for
+    # the PI's "the vehicle in front decelerates" question — were UNMEASURABLE and
+    # were reported as absent rather than negative. Matching makes them powered.
+    # Default 0 reproduces the unmatched run exactly.
+    MIN_LEAD = int(os.environ.get("SPD_MIN_LEAD", "0"))
+
+    def _lead_frames(cid):
+        ag = LAB.get(cid, {})
+        return sum(1 for i in range(F)
+                   if any(abs(x.get("cy", 9e9)) < 1.8 and x.get("cx", -1) > 0
+                          for x in ag.get(i, [])))
+
+    _all = [c for c in sorted(LEAD.glob("*.v2ep.pt"))
+            if torch.load(c, map_location="cpu", weights_only=False)["clip_id"] in LAB]
+    if MIN_LEAD > 0:
+        _kept = [c for c in _all
+                 if _lead_frames(torch.load(c, map_location="cpu",
+                                            weights_only=False)["clip_id"]) >= MIN_LEAD]
+        print(f"  LEAD-MATCHED SELECTION: {len(_kept)}/{len(_all)} clips carry "
+              f">= {MIN_LEAD} lead-present frames", flush=True)
+        _all = _kept
+    clips = _all[:N_CLIPS]
     present = [a for a in ARMS if (SP / f"v7tiny_{a}" / "ckpt.pt").is_file()]
     print(f"\n  E-DEC-28 · does the PREDICTED latent carry the environment?"
           f"\n  arms {present} · {len(clips)} clips · rolled k = {KS}\n", flush=True)
 
     rep = {"_evidence_class": "MEASURED (ours; dev-box RTX 4060)",
-           "eval_tier": "T0-DIAGNOSTIC", "split": SPLIT,
+           "eval_tier": "T0-DIAGNOSTIC",
+           "min_lead_frames": int(os.environ.get("SPD_MIN_LEAD", "0")), "split": SPLIT,
            "corpus": str(LEAD), "labels": str(LABELS),
            "method": "h=1 head rolled k times -> zhat_{t+k}; probed against the "
                      "environment AT t+k. The decisive control is z_t (ENCODED, "

@@ -1,0 +1,46 @@
+{
+ "_evidence_class": "MEASURED (ours; dev-box RTX 4060)",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "min_lead_frames": 20,
+ "split": "HELD-OUT, LEAD-MATCHED",
+ "function_class": "ridge (LINEAR). A negative here is a negative about LINEAR decodability only \u2014 the standing rule.",
+ "targets": {
+  "lead_range_m": {
+   "n_clips": 24,
+   "n_rows": 1917,
+   "columns": {
+    "z_op splitp30k": -2.0056,
+    "z_op rdw8p30k": -0.2482,
+    "tokens 16x8 (unprojected)": -0.3891,
+    "pixels (floor)": -0.1056,
+    "frozen DINOv3": 0.0531,
+    "constant (control)": 0.0
+   }
+  },
+  "lead_closing": {
+   "n_clips": 23,
+   "n_rows": 1845,
+   "columns": {
+    "z_op splitp30k": -0.0065,
+    "z_op rdw8p30k": -0.2589,
+    "tokens 16x8 (unprojected)": -0.0164,
+    "pixels (floor)": -0.0156,
+    "frozen DINOv3": -0.003,
+    "constant (control)": 0.0
+   }
+  },
+  "n_agents (POSITIVE CONTROL \u2014 known carried)": {
+   "n_clips": 24,
+   "n_rows": 1917,
+   "columns": {
+    "z_op splitp30k": 0.0944,
+    "z_op rdw8p30k": -0.0558,
+    "tokens 16x8 (unprojected)": 0.2952,
+    "pixels (floor)": 0.0178,
+    "frozen DINOv3": 0.072,
+    "constant (control)": 0.0
+   }
+  }
+ },
+ "verdict": "OUR ENCODER \u2014 frozen DINOv3 carries range and we do not; the fix is representational"
+}

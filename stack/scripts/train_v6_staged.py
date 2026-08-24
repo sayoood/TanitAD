@@ -4773,7 +4773,21 @@ def train(a) -> dict:
             # the mirror sync and the import were all correct. Frame identity is
             # forwarded unconditionally: it is two int64 columns, it changes no
             # loss, and a term that needs it must not have to edit this line.
-            "ep_idx": b["ep_idx"], "t_last": b["t_last"],
+            #
+            # ⛔ BUT IT IS FORWARDED WITH `.get`, NOT `[...]`, AND THAT IS THE
+            # POINT. MEASURED 2026-08-24: shipping this trainer to Thor while its
+            # `train_flagship4b.py` was still the pre-frame-identity version
+            # (0 occurrences of `ep_idx`) made the O11 launch die instantly with
+            # `KeyError: 'ep_idx'` — a HARD CRASH caused by a field that no active
+            # loss even reads. The grep-verify before launch confirmed the O11
+            # marker was present and said nothing about its DEPENDENCY, because a
+            # one-file ship cannot be verified by grepping that one file.
+            # ⇒ An OPTIONAL diagnostic field must DEGRADE, never crash: a term
+            # that genuinely needs frame identity should fail with its own clear
+            # message, not take down every run on a tree that is merely one file
+            # behind. Same family as the analysis-time import that destroyed a
+            # completed rollout — make the optional thing optional.
+            "ep_idx": b.get("ep_idx"), "t_last": b.get("t_last"),
         }
         if t5_partner:
             # rows [0, n) are the anchors and rows [n, 2n) their +lag partners,
