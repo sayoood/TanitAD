@@ -3880,6 +3880,34 @@ whether both are obtainable at once.
 
 ### 13.0c ⭐⭐⭐ THE PREDICTOR CENSUS — exactly three arms in the programme beat a constant predictor
 
+> ⛔⛔ **READ THIS BEFORE QUOTING ANY `nrmse` BELOW — E-DEC-30 (MEASURED
+> 2026-08-24).** Every `nrmse` in this section is **UNCHANGED TO FOUR DECIMALS
+> when the predictor's actions are replaced by a sequence from a random other
+> moment**: `rdw8p30k` **0.7845 → 0.7845** (prediction moves 0.77 %),
+> `scale1` 0.8200 → 0.8199, `splitp30k` 0.8683 → 0.8680.
+> `…/2026-08-24-action-conditioning-and-heldout/raw/nrmse_shuf.json`
+>
+> ⇒ **BEATING THE CONSTANT FLOOR IS NOT EVIDENCE OF AN ACTION-CONDITIONED WORLD
+> MODEL.** These arms beat the floor by TEMPORAL EXTRAPOLATION — predicting that
+> the scene continues — which is a real and non-trivial capability and is
+> correctly recorded here. It is **not** the capability of answering *"what
+> happens to the scene if I brake?"*, and this census must never be cited for
+> that. The full channel factorial (`raw/actchan.json`, 444 windows, 3 arms,
+> positive control passing on all three) puts the action pathway at **2–9 %** of
+> the latent pathway, with a hard-left→hard-right sign flip moving `rdw8p30k`
+> by **1.1 %**.
+>
+> ⚠️ **The C149 floor did its job and is not in question** — it is why "≈ a
+> constant" is 16 arms rather than a ranking of noise. The gap C149 did not
+> close is that a *constant-predictor* floor cannot distinguish extrapolation
+> from action-conditioning; only a **shuffled-action** control can, and that
+> control did not exist until E-DEC-30. ⇒ **Any future row in this census
+> carries `nrmse` AND `nrmse_SHUFFLED` side by side.** A row with only the
+> former is incomplete in the same way an ADE-only eval is incomplete.
+>
+> The fix under test is **O11-CF** (`train_v6_staged.py`), pre-registered with
+> four outcomes in `PREREG_O11_COUNTERFACTUAL_ACTION.md`.
+
 `meanpred_all.json` — 30 finished arms re-scored against the floor **C149** added
 (`nrmse = ||d̂ − t|| / ||t||` versus a dataset-mean-delta predictor;
 `nrmse_zero` = 1.0 by construction), h=1, 10 held-out val clips. `rdw8s30k`
