@@ -4133,7 +4133,88 @@ columns are demonstrably not the same array — they differ on speed (+0.3552 vs
 of the arm, not a plumbing error. It is precisely what the raw-input floor is in
 the panel to catch.
 
-### 13.9 What this section does not establish
+### 13.9 Proven result 7 — scale, not an auxiliary objective, produces both the predictor and the scene content
+
+Every result in §13.3–§13.8 was measured on a 2 000-step screen over 130 clips.
+That regime was chosen because it makes architecture comparisons cheap, and
+§13.7 already warned that it is valid for *architecture* and invalid for
+*capability levels*. This section is what happens when the same architecture and
+the same two-term objective are given the full corpus and 30 000 steps.
+
+**The arm.** Identical encoder, readout, predictor and objective (O5 rollout +
+O6 SIGReg) as the tiny screen — **no teacher, no external target, no auxiliary
+term of any kind.** Only the corpus (130 clips → the 2 376-episode parity
+corpus), the step budget (2k → 30k) and the batch (4 → 8) differ.
+
+| metric | tiny screen (2k, 130 clips) | **parity (30k)** | vs tiny | vs raw-pixel floor (paired) |
+|---|---|---|---|---|
+| participation (val / held-out) | 3.80 / 3.62 | **25.58 / 26.96** | — | — |
+| predictor cos h=1 (z) | 0.0541 (3.99) | **0.6224 (30.55)** | — | — |
+| speed | +0.2830 | +0.1482 | t −3.71 | +0.0326 (t 0.64) |
+| `d_ego` | +0.3601 | +0.0963 | t −6.29 | +0.1744 (t 2.77) |
+| `lead_gap_m` | −0.3290 | **+0.0063** | t 6.67, 22/24 | −0.0001 (t −0.01) |
+| `n_agents` | −1.0407 | **−0.0180** | t 10.06, 24/24 | **+0.1976 (t 10.21, 24/24)** |
+
+Participation rises roughly sevenfold; the predictor's mean-centred cosine rises
+**11.5×**, and is **3.3× the best figure this programme has measured under any
+objective**; and `n_agents` becomes **the first trained representation of ours to
+beat the raw-pixel floor** on scene content — with nothing supervising it but the
+model's own next-latent.
+
+**The bounds are not small, and they are the reason this is not a solution.**
+`n_agents` remains marginally *below* a constant predictor (−0.0180) and well
+below frozen DINOv3 (+0.2754). On this clip set the raw-pixel floor (−0.2156) is
+itself below the constant control, so clearing the floor is the *weaker* of the
+two bars and must not be quoted as the stronger. Ego decodability *degrades* —
+which §13.8 makes the least informative axis, since a frozen random encoder reads
+the best speed of any arm. And the comparison moves three variables at once
+(corpus, steps, batch), so its direction is unambiguous while its cause is not;
+the factorial decomposition is pre-registered and running.
+
+**Validity was checked rather than assumed.** Of the 130 clips carrying the
+environment labels, **130 are inside the parity training corpus and 0 are in the
+validation cache.** The environment rows are therefore *in-sample for both arms*
+— a valid contrast, but not a generalisation claim — while the ego rows are held
+out for both.
+
+#### The counterpart negative: an external, label-derived target does not substitute
+
+The opposite hypothesis was tested in the same week and at the same tiny scale:
+**physical-state grounding (PSG)** — one shared state head applied to the encoded
+*and* the predicted latent, supervised by our own 3-D cuboid labels. It is
+external and immovable like a distillation teacher while requiring no pretrained
+model, and it is training-time only, so inference remains vision-only.
+
+| weight | predictor cos h=1 (z) | speed | `lead_gap_m` vs pixel floor | `n_agents` vs pixel floor |
+|---|---|---|---|---|
+| **0** | **0.1234 (6.61)** | **+0.3062** | −0.6812 (t −14.36) | −0.7367 (t −20.45) |
+| 0.1 | −0.0029 (−0.84) | +0.2026 | **+0.0418 (t 0.93)** | −0.0843 (t −29.63) |
+| 1 | 0.0021 (0.41) | +0.1407 | −0.1031 (t −2.18) | **−0.0092 (t −1.67)** |
+| 3 | 0.0098 (1.00) | +0.0037 | −0.3067 (t −5.22) | −0.4034 (t −4.71) |
+
+PSG moves environment decodability enormously — it takes the objective from far
+below raw pixels (t −20.45) to indistinguishable from them — but **it never
+exceeds the floor at any weight, and it destroys the predictor at every weight
+including a tenfold reduction**, with no recovery as the weight falls. The
+loss-magnitude explanation (the term outweighed the objective by 10–30×) is
+therefore not the mechanism: the damage is structural to the shared head.
+
+Read together, the two results point the same way. At tiny scale every auxiliary
+objective we constructed — counterfactual separation, masked-cell prediction,
+pixel reconstruction, EMA-target masked latents, and label-derived state
+grounding — either failed the raw-input floor, destroyed the predictor, or both.
+At parity scale the plain two-term objective did neither. **The evidence
+available to us says the deficit was one of data and optimisation budget, not of
+objective design** — and it says so most sharply about the conclusions we
+ourselves drew inside the small-data regime, which are re-opened rather than
+confirmed by it.
+
+⚠️ Estimator note: every contrast above is a paired leave-one-episode-out
+statistic on the same clips, and the arm-versus-floor column is paired
+explicitly. Comparing two arms' point estimates against a shared third column is
+not a test of one against the other; doing so is a documented error of ours.
+
+### 13.10 What this section does not establish
 
 No claim is made about driving. No arm here has a planner or a closed loop, and
 the tier doctrine forbids reading T0 diagnostics as capability. The environment
@@ -4143,10 +4224,26 @@ isolated and two-stage forms clear it. Whether a teacher-free target of sufficie
 **closed**: masked latent prediction against a slow (EMA) copy of our own
 encoder fails in both its naive and its neighbour-aggregated form — `n_agents`
 −4.3623 and −2.9681 respectively, with ego below the constant control in both.
-The route under test is instead **physical-state grounding**: one shared state
-head on the encoded *and* the predicted trajectory, supervised by our own banked
-3-D cuboids, which is external and immovable like a teacher while requiring no
-pretrained model. It is training-time only and never on the inference path.
+Physical-state grounding, the strongest remaining candidate, is now closed too
+(§13.9): it never exceeds the raw-input floor and destroys the predictor at every
+weight tested.
+
+Nor does §13.9 establish that scale *solves* the problem. The parity arm remains
+marginally below a constant predictor on `n_agents` and well below a frozen
+DINOv3 that never saw our data; it clears only the weaker of the two floors; and
+its gain is confounded across corpus, steps and batch, so we cannot yet say which
+of the three is the lever, or whether the curve has flattened. Its environment
+rows are in-sample.
+
+What §13.9 does establish is narrower and mainly cautionary: **conclusions drawn
+from 2 000-step screens over 130 clips did not survive contact with the full
+corpus.** Five of this section's own findings — the degeneracy's practical
+severity, the necessity of a frozen part, the insufficiency of freezing alone,
+and both PSG results — were measured in that regime. The derivation in §13.1
+stands as mathematics regardless. The empirical claims built on top of it are
+re-opened by §13.9, not confirmed by it, and each requires a parity-scale
+re-test before it may inform a design decision. The first such re-test is
+running.
 
 ## References
 

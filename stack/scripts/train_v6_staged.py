@@ -1127,15 +1127,27 @@ class O10PSG(torch.nn.Module):
         return x.reshape(b, self.gw, self.gh * d)
 
     def forward(self, enc_cells: Tensor, pred_cells: Tensor, tgt_now: Tensor,
-                tgt_next: Tensor, valid: Tensor):
+                tgt_next: Tensor, valid: Tensor, enc_only: bool = False):
         p_enc = self.head(self._columns(enc_cells))
-        p_pred = self.head(self._columns(pred_cells))
         w = valid.reshape(-1, 1, 1).to(p_enc.dtype)
         denom = w.sum().clamp_min(1.0) * self.gw * self.ch
         l_enc = (w * (p_enc - tgt_now.to(p_enc.dtype)) ** 2).sum() / denom
+        if enc_only:
+            # E-DEC-18c. MEASURED: PSG zeroes the predictor at w = 0.03, 0.1, 1
+            # and 3 -- and at 0.03 it costs ego NOTHING (speed t -0.26), so the
+            # damage is not competition for capacity, it is specific. The two
+            # candidate mechanisms are (a) the shared head on the PREDICTED
+            # branch, which is PhyLatent's actual proposal, and (b) merely adding
+            # a supervised loss anywhere. Dropping the predicted branch separates
+            # them: the predictor then receives NO PSG gradient at all.
+            return l_enc, {"psg_enc": float(l_enc.detach()),
+                           "psg_pred": 0.0, "psg_enc_only": True,
+                           "psg_n_supervised": int(valid.sum())}
+        p_pred = self.head(self._columns(pred_cells))
         l_pred = (w * (p_pred - tgt_next.to(p_pred.dtype)) ** 2).sum() / denom
         return l_enc + l_pred, {"psg_enc": float(l_enc.detach()),
                                 "psg_pred": float(l_pred.detach()),
+                                "psg_enc_only": False,
                                 "psg_n_supervised": int(valid.sum())}
 
 
@@ -4754,7 +4766,8 @@ def train(a) -> dict:
                 _l10, _lg10 = o10(_e10.reshape(_b10, _nc, -1),
                                   _zh[0].reshape(_b10, _nc, -1),
                                   psg_bank[_ei, _tl], psg_bank[_ei, _tn],
-                                  psg_valid[_ei])
+                                  psg_valid[_ei],
+                                  enc_only=bool(getattr(a, "psg_enc_only", False)))
                 L["loss"] = L["loss"] + float(a.w_o10_psg) * _l10
                 L["log"] |= _lg10 | {"o10_w": float(a.w_o10_psg)}
         opt.zero_grad(set_to_none=True)
@@ -5791,6 +5804,12 @@ def build_parser() -> argparse.ArgumentParser:
                          "calls it (inference stays VISION-ONLY).")
     ap.add_argument("--psg-labels", type=str, default=None,
                     help="jsonl of per-frame ego-frame cuboids (obstacle.offline).")
+    ap.add_argument("--psg-enc-only", action="store_true",
+                    help="E-DEC-18c: apply PSG to the ENCODED latent ONLY, so no "
+                         "gradient reaches the predictor. PhyLatent's mechanism IS "
+                         "the shared head on BOTH branches, so this is the "
+                         "diagnostic that says whether the predictor damage comes "
+                         "from that mechanism or merely from adding a loss.")
     ap.add_argument("--psg-eval-every", type=int, default=3,
                     help="⛔ LEAK GUARD: every Nth sorted clip is HELD OUT of PSG "
                          "supervision. The PSG target DETERMINES n_agents and "
