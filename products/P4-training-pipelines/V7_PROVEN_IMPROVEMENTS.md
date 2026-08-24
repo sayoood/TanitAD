@@ -174,9 +174,11 @@ six-term result.
 Monotone in depth, and **the advantage GROWS with horizon**. ⚠️ Absolute level still
 low: cos 0.25 ≈ **6 % of variance explained** — *predicts* is not *predicts well*.
 
-⇒ **v7 config: `--o5-k 8` — the MEASURED optimum. ⛔ NEVER 1, ⛔ not 16.**
+⇒ ⚠️ **v7 rollout depth is PENDING GATE A (`--o5-k 8` vs `1`) — see the superseded banner below.**
 
-⭐ **UPGRADED 2026-08-24 — `--o5-k 8` IS NOW THE MEASURED OPTIMUM, NOT AN EXTRAPOLATION.**
+⚠️ **SUPERSEDED 2026-08-24 (C149) — PENDING GATE A.** The four-point cosine curve below was scored with a permutation null and **no constant-predictor floor**. With the floor added, **all four arms sit inside it** (`nrmse` 0.9988 / 0.9984 / 0.9984 against mean-delta controls 0.9981 / 0.9975 / 0.9985) and the ordering does not even reproduce the cosine ordering. **A ranking among four models none of which beat a constant cannot select a hyper-parameter** — and the only two arms in the programme whose predictors DO beat the floor (`rdw8p30k`, `scale1`) both ran `--o5-k 1`. The curve is kept below as the record of what was measured; the DECISION is Gate A's.
+
+⭐ **MEASURED 2026-08-24 — the training-time curve, kept as the record.**
 The "4 minimum, 8 better" line came from H-PROOF-7's **read-out-time** rolling depth `k_roll`,
 which is a DIFFERENT KNOB from the **training-time** `--o5-k`. The training-time curve has now
 been read out directly over four banked arms (`depth_panel.json`; `rdw8` **is** k=1):
@@ -200,7 +202,7 @@ been read out directly over four banked arms (`depth_panel.json`; `rdw8` **is** 
   and the raw-pixel floor beats it on `lead_gap_m` throughout. **Depth tunes the objective; it
   does not put the scene in the latent.**
 
-⇒ **v7 ships `--o5-k 8`.** ⛔ never 1 (a correctness bug, C139) · ⛔ not 16 (ego collapses).
+⇒ ⚠️ **v7's rollout depth is GATE A's call, not this curve's.** ⛔ `--o5-k 1` is still a genuine correctness bug **for the h≥2 heads** (C139: they never receive a gradient) — but that is an argument about which heads get trained, **not** evidence that k=1 predicts worse, and the two floor-beating arms show it does not. ⛔ `--o5-k 16` collapses ego and is excluded regardless.
 
 
 ---

@@ -104,6 +104,26 @@ champ30k is **19.34 M of a 300 M budget** — 15.5× headroom. The parameters ar
 axis is therefore the ENCODER first (`--enc-dim 128 → 384+`, `--enc-depth 3 → 8+`,
 the trainer's own defaults), not the predictor.
 
+⛔ **CONTESTED 2026-08-24 — DO NOT SPEND HERE FIRST WITHOUT RE-READING THIS.**
+The programme now has two parity-scale arms, and they are comparable because
+**`d_op` is 2048 in both**:
+
+| | `scale1` | `rdw8p30k` |
+|---|---|---|
+| encoder | 256 × 6 (**4×** params) | 128 × 3 |
+| readout | old 4×4, dim 128 | 4×8×64 |
+| batch | 4 | 8 |
+| predictor `nrmse` vs constant floor | 0.8200 / 0.9973 | **0.7845** / 0.9978 |
+| `n_agents` | **+0.0263** | −0.0180 |
+
+**Four times the encoder bought nothing at 30k on parity** — the tiny encoder is
+if anything ahead on prediction. At this step budget the arms look **data/step-
+limited, not capacity-limited**. ⚠️ Batch and readout shape also differ, so this
+is **suggestive, not decisive**; it is a reason to sequence capacity **after** the
+data-vs-steps answer (`rdw8s30k`, pre-registered and running), not a reason to
+freeze the encoder size forever. The live position is
+`V7_FULLSCALE_RECOMMENDATION.md`.
+
 ### A2. Staged ladder (per `/TanitAD_ValidateAIDesign`)
 1. **Scale-1 — ⭐ LAUNCHED 2026-08-23, Thor `~/v7tiny/scale1`.**
    `--enc-dim 256 --enc-depth 6 --enc-heads 8`, everything else identical.
@@ -205,9 +225,11 @@ them now** while the objective is still being decided.
 | decision | value | evidence |
 |---|---|---|
 | **readout azimuth** | `--readout-grid 4 --readout-grid-w 8 --readout-dim 64` (= 2048, **the incumbent d_op — no extra latent dimension**) | E-DEC-2, LOEO paired: speed **+0.0374 → +0.2830** (t 5.17, **12/12** episodes), `d_ego` **+0.1532 → +0.3601** (t 6.12, 12/12) |
-| **rollout depth** | ⭐ `--o5-k 8` — **the measured optimum**; ⛔ **NEVER 1**, ⛔ **not 16** | H-PROOF-7/7b, rolled read-out: cos at j=6 **0.0686 (k=1) → 0.1987 (k=4) → 0.2468 (k=8)**, monotone, advantage GROWING with horizon (2.80× at j=1 → **3.60×** at j=6) |
+| **rollout depth** | ⚠️ **PENDING GATE A** — `--o5-k 8` vs `1`; the tiny-arm ranking behind it is withdrawn (C149) | H-PROOF-7/7b, rolled read-out: cos at j=6 **0.0686 (k=1) → 0.1987 (k=4) → 0.2468 (k=8)**, monotone, advantage GROWING with horizon (2.80× at j=1 → **3.60×** at j=6) |
 
-⭐ **UPGRADED 2026-08-24 — `--o5-k 8` IS NOW THE MEASURED OPTIMUM, NOT AN EXTRAPOLATION.**
+⚠️ **SUPERSEDED 2026-08-24 (C149) — PENDING GATE A.** The four-point cosine curve below was scored with a permutation null and **no constant-predictor floor**. With the floor added, **all four arms sit inside it** (`nrmse` 0.9988 / 0.9984 / 0.9984 against mean-delta controls 0.9981 / 0.9975 / 0.9985) and the ordering does not even reproduce the cosine ordering. **A ranking among four models none of which beat a constant cannot select a hyper-parameter** — and the only two arms in the programme whose predictors DO beat the floor (`rdw8p30k`, `scale1`) both ran `--o5-k 1`. The curve is kept below as the record of what was measured; the DECISION is Gate A's.
+
+⭐ **MEASURED 2026-08-24 — the training-time curve, kept as the record.**
 The "4 minimum, 8 better" line came from H-PROOF-7's **read-out-time** rolling depth `k_roll`,
 which is a DIFFERENT KNOB from the **training-time** `--o5-k`. The training-time curve has now
 been read out directly over four banked arms (`depth_panel.json`; `rdw8` **is** k=1):
@@ -231,7 +253,32 @@ been read out directly over four banked arms (`depth_panel.json`; `rdw8` **is** 
   and the raw-pixel floor beats it on `lead_gap_m` throughout. **Depth tunes the objective; it
   does not put the scene in the latent.**
 
-⇒ **v7 ships `--o5-k 8`.** ⛔ never 1 (a correctness bug, C139) · ⛔ not 16 (ego collapses).
+⛔⛔ **THE JUSTIFICATION ABOVE IS WITHDRAWN (C149, 2026-08-24) — `--o5-k 8` IS
+NOW PENDING GATE A, NOT SETTLED.**
+
+The cosine ranking this decision rests on (0.0541 → 0.1234 → 0.1328 → 0.1327 at
+k = 1/4/8/16) was scored with a **permutation null and no constant-predictor
+floor**. With the floor added, **all four arms sit inside it**: `nrmse` 0.9988 /
+0.9984 / 0.9984 against mean-delta controls 0.9981 / 0.9975 / 0.9985. The
+ordering does not even reproduce the cosine ordering it was drawn from. **A
+ranking among four models none of which beat a constant cannot select a
+hyper-parameter.**
+
+⚠️ **And the two best arms the programme has ever produced — `rdw8p30k` and
+`scale1`, the only arms whose predictors beat the floor — both ran `--o5-k 1`**,
+the setting this table calls a correctness bug.
+
+⇒ **GATE A is now load-bearing**: `ok8p30k` = `rdw8p30k` with the single flag
+`--o5-k 1 → 8`, armed on Thor. Committed in advance — **k=8 clearly better ⇒ ship
+8** · **indistinguishable ⇒ ship k=1, which is 3–4× cheaper per step and
+"cheaper and equal" is a result** · **k=8 worse ⇒ the tiny depth curve does not
+transfer at all, and every other tiny-arm hyper-parameter in this plan becomes
+suspect.**
+
+⛔ `--o5-k 1` remains a genuine correctness bug **for the h≥2 heads** (C139: they
+never receive a gradient) — but that is an argument about which heads get
+trained, **not** evidence that k=1 predicts worse, and the two floor-beating arms
+show it does not.
 
 ⛔ **`--o5-k 1` IS A CORRECTNESS BUG, NOT A TUNING CHOICE (C139).** `rollout_transitions`
 builds the rollout from `t[1]` — the h=1 head ONLY — rolled `k_roll` times. At
