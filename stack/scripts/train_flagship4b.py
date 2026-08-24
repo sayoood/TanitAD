@@ -141,6 +141,22 @@ class FlagshipWindowDataset(FailLoudWindowDataset):
         e_i, t = self.index[i]
         item["pose_prev"] = torch.as_tensor(
             self.episodes[e_i].poses[t + self.window - 2]).float()
+        # ── FRAME IDENTITY (E-DEC-18) ────────────────────────────────────────
+        # A label-conditioned term (PSG: a shared physical-state head on the
+        # encoded AND predicted trajectories, supervised by our own banked 3D
+        # cuboids) has to join per-frame labels to the window it is scoring, and
+        # the batch carried no way to say WHICH clip and WHICH frame it holds.
+        # `ep_idx` indexes ``self.episodes`` -- whose order is the cache's sorted
+        # ``<clip_id>.v2ep.pt`` order, so a consumer resolves the clip id from the
+        # cache listing rather than from anything stored here. `t_last` is the
+        # LAST OBSERVED frame of the window: the same frame O7/O8/O9 target
+        # (``frames[:, -1]``), so a label term lines up with the external-target
+        # terms by construction instead of by a convention someone has to recall.
+        # ⚠️ Emitted unconditionally as int64 tensors so ``default_collate``
+        # stacks them; nothing reads them unless a term asks, and adding a key
+        # cannot change any existing loss, RNG draw or state_dict.
+        item["ep_idx"] = torch.tensor(e_i, dtype=torch.long)
+        item["t_last"] = torch.tensor(t + self.window - 1, dtype=torch.long)
         return item
 
 

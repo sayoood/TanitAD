@@ -4073,14 +4073,80 @@ is valid for *architecture* decisions and invalid for *capability levels*.
 ⚠️ Confounded (size, steps and corpus all differ); the matched-readout contrast is
 the clean part, and a parity-scale disambiguating run is in progress.
 
-### 13.8 What this section does not establish
+### 13.8 Proven result 6 — freezing is necessary but not sufficient, and ego decodability is free
+
+The strongest arm of the campaign is a **split encoder**: a frozen distilled
+encoder with a trainable readout and predictor, optimised by the two-term
+objective alone. It reaches `n_agents` **+0.4035** (paired LOEO, t 13.45, 24/24)
+— above pure distillation (+0.3274) and above a frozen DINOv3 that never saw our
+data (+0.2754) — with the best in-objective predictor measured here
+(cos h=1 **0.1872**, z 7.99 against a 200-draw permutation null). That the
+encoder was in fact frozen is established by **content, not by a flag**: its 41
+`encoder.*` tensors are byte-identical to the initialisation (sha256 match,
+max|Δ| = 0), while every trainable arm moved 0.08–0.33.
+
+Two explanations survive that observation, and they prescribe opposite research
+programmes. Either the **teacher's content** is what the frozen field carries, or
+**immovability alone** suffices, because a frozen field cannot be eroded by the
+degeneracy of §13.1 — in which case the result is teacher-free by construction.
+The discriminating experiment is a single control: freeze a **randomly
+initialised** encoder and change nothing else.
+
+| metric | two-term baseline | frozen **distilled** | frozen **random** | raw-pixel floor | constant |
+|---|---|---|---|---|---|
+| participation (val / held-out) | 3.48 / 4.87 | 2.28 / 2.17 | 2.46 / 3.49 | — | — |
+| predictor cos h=1 (z) | 0.1234 (6.61) | **0.1872 (7.99)** | **0.0016 (0.51)** | — | — |
+| speed | +0.3062 | +0.2465 | **+0.3552** | +0.1156 | 0.0000 |
+| `d_ego` | +0.2157 | +0.2878 | +0.2024 | −0.0781 | 0.0000 |
+| `lead_gap_m` | −0.3495 | −0.0172 | +0.0064 | +0.0064 | 0.0000 |
+| `n_agents` | −0.4434 | **+0.4035** | **−1.1027** | −0.2156 | 0.0000 |
+
+**The predictor settles it.** On a frozen *random* encoder the predictor is
+statistically indistinguishable from noise (z 0.51); on the frozen *distilled*
+encoder it is the best measured (z 7.99). `n_agents` differs by **1.5062**
+between arms that are identical in every respect but the origin of the frozen
+weights, and the random arm falls below both the constant control and the
+raw-pixel floor. **Freezing is necessary but not sufficient.** This is the
+result of §13.4 recovered from the opposite side: there, *externality* was
+necessary but not sufficient, because a slow copy of a weak encoder is a weak
+target; here, *immovability* is necessary but not sufficient, because a frozen
+empty field is an empty field. What a teacher supplies is **content**.
+
+**A second result follows at no extra cost, and it is a constraint on how every
+number in this section may be read.** The frozen random encoder has the **best
+speed of the three arms** (+0.3552) and healthy `d_ego` (+0.2024) — from weights
+that were never trained on anything. Ego state is therefore recoverable from an
+essentially arbitrary feature field, which is exactly what §13.1's `z = (u, η)`
+predicts and what made every collapsed arm still read ego well.
+
+> **Ego decodability is not evidence that an objective learned anything.** A
+> representation claim must rest on scene content or on prediction, never on the
+> ego columns.
+
+Finally, the random arm's `lead_gap_m` is **+0.0064 — equal to the raw-pixel
+floor to four decimals.** Under the panel's standing rule, columns that agree to
+several decimals are read as a degeneracy signal rather than a result, and this
+one has an interpretation: to a linear probe, a frozen random transformer is a
+random linear map of the image and spans essentially the pixel subspace. The two
+columns are demonstrably not the same array — they differ on speed (+0.3552 vs
++0.1156) and on `n_agents` (−1.1027 vs −0.2156) — so the agreement is a property
+of the arm, not a plumbing error. It is precisely what the raw-input floor is in
+the panel to catch.
+
+### 13.9 What this section does not establish
 
 No claim is made about driving. No arm here has a planner or a closed loop, and
 the tier doctrine forbids reading T0 diagnostics as capability. The environment
 result inside the full objective remains **below a constant predictor**; only the
 isolated and two-stage forms clear it. Whether a teacher-free target of sufficient
-*content* exists — masked latent prediction against a slow (EMA) copy of our own
-encoder, with neighbour-aggregated targets — is open and pre-registered.
+*content* exists is the campaign's open question, and one candidate is now
+**closed**: masked latent prediction against a slow (EMA) copy of our own
+encoder fails in both its naive and its neighbour-aggregated form — `n_agents`
+−4.3623 and −2.9681 respectively, with ego below the constant control in both.
+The route under test is instead **physical-state grounding**: one shared state
+head on the encoded *and* the predicted trajectory, supervised by our own banked
+3-D cuboids, which is external and immovable like a teacher while requiring no
+pretrained model. It is training-time only and never on the inference path.
 
 ## References
 

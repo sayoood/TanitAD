@@ -7905,3 +7905,228 @@ I read its boundary as the world's boundary. Same family as `df` on a pod
 redefinition of the programme's strategic layer.
 ⇒ **STANDING RULE: before declaring a DATA limitation, check the PROVIDER's
 artefact, not the pipeline's cache of it.**
+
+---
+
+## C142 ⛔⛔ — "ALPAMAYO'S LATERAL AXIS IS AT CHANCE" WAS AN n=16 VERDICT; AT n=919 IT IS 65.6 % vs 37.2 % SHUFFLED, p < 0.0001 (2026-08-23, PI challenge)
+
+**What I asserted, in code and in three documents.** That Alpamayo's `lateral`
+and `lane` axes carry no usable information about ego turns — "31.2 % real vs
+23.9 % shuffled, p=0.335" — and therefore that a tactical lateral label derived
+from them is "built on noise". That claim is written into
+`tactical_goals.py`, `s2_geom_emit.py`, `cot_tokens_v7.py`, the register
+(D-DATA-ALPA-LAT) and two published reports.
+
+**What is true.** That test had **n = 16 paired clips**. Sixteen. Against a
+3-class problem with a dominant class, it could not have ruled either way — and
+I said so about `WAIT_FOR_ONCOMING` in the same session while failing to apply
+it here. Re-run on the FULL Alpamayo corpus joined to provider egomotion:
+
+| anchor | real | shuffled | p | n |
+|---|---|---|---|---|
+| t=5.1 s (Alpamayo's own t0) | **65.6 %** | 37.2 % | **<0.0001** | 919 |
+| t=6.0 s | 65.8 % | 37.0 % | <0.0001 | 919 |
+| t=7.8 s (our s2 anchor) | 60.7 % | 37.2 % | <0.0001 | 919 |
+| t=3.0 s | 64.7 % | 36.8 % | <0.0001 | 919 |
+
+**The axis is strongly informative at every anchor.** It is not a substitute for
+geometry, but it is a legitimate corroborating signal and I was wrong to
+dismiss it.
+
+**Two compounding errors, both mine:**
+1. **I never found the real dataset.** I worked from a derived per-clip export
+   (`cot`, `lane`, `lateral`, `longitudinal`) and concluded "meta_action is not
+   reachable locally" and "the Alpamayo data is limited". The actual dataset is
+   on HF — `Sayood/tanitad-alpamayo2-augmentation`, `records.parquet`, 26 MB —
+   with **23,644 rows over 4,729 clips in FIVE tasks**: `meta_action`,
+   `trajectory`, `auto_labeling`, `vqa`, `grounding_via_vqa`. **26.3 hours of
+   driving**, which is the ~20 h the PI remembered.
+2. **I never checked Alpamayo's anchor.** Its `t0_us` is **5.1 s**; our s2
+   anchor is 8.0 s — a 2.9 s offset I compared across without knowing.
+
+**ROOT-CAUSE CLASS: a NEGATIVE asserted from a sample that could not rule, and a
+DERIVED EXPORT mistaken for the dataset.** The first is the same family as
+C136 (an agreement quoted without a chance baseline) inverted — here the
+baseline existed but n did not. The second is the `df`-on-a-pod family: reading
+a projection of the artefact and describing it as the artefact.
+⇒ **STANDING RULE: before asserting that a SOURCE is uninformative, state its n
+and the minimum n at which the test could rule. And before describing a
+dataset's contents, locate the DATASET — not a file derived from it.**
+
+**Blast radius, corrected in the same turn:** the "geometry decides the lateral
+axis because Alpamayo is at chance" rationale in `tactical_goals.py`,
+`s2_geom_emit.py` and `cot_tokens_v7.py`; register row D-DATA-ALPA-LAT; and the
+`disputed` status of CoT tokens — **93.3 % of clips carry 2D bounding boxes**
+(`grounding_via_vqa`: Car 2292, Pedestrian 1079, traffic light 889), which is
+precisely the image-space grounding the fusion gate required to promote them.
+
+---
+
+## C143 ⛔ — `"_L" in "FOLLOW_LANE"` IS TRUE: A SUBSTRING COLLISION READ EVERY STRAIGHT CLIP AS A LEFT TURN (2026-08-23)
+
+**What it produced.** The fused emitter reported **`alpamayo_lateral_agreement
+24.9 %`** on a 600-clip run. Read naively that says the Alpamayo lateral axis is
+worse than chance and should be dropped — one run after C142 established it at
+**69.9 %, lift x1.68**. Two contradictory numbers about the same axis in the
+same hour.
+
+**The cause was in OUR code, not the data.** The fusion layer decided the
+geometry side with `"_L" in token`. `FOLLOW_LANE` **contains `_L`**, so every
+straight-driving clip — the majority of the corpus — was scored as a LEFT turn:
+
+    >>> "_L" in "FOLLOW_LANE"
+    True
+
+**Fixed** by `alpamayo_fusion.side_of()`, which matches token SUFFIXES
+(`_L`/`_LEFT`) rather than substrings, and by `fuse_lateral` **refusing** a raw
+token instead of pattern-matching one. Re-run: **24.9 % -> 62.1 %**. Pinned by
+`stack/tests/test_alpamayo_fusion_sides.py` (14 tests), whose first assertion is
+the collision itself so the bug cannot return unnoticed.
+
+**ROOT-CAUSE CLASS: a pattern that accidentally matches a longer string, read as
+a result.** Identical in shape to the polling monitor whose filter matched its
+own echoed command, and to `pgrep -f` self-matching the ssh line — this time
+wearing a vocabulary-token costume. ⇒ **STANDING RULE: never substring-test a
+vocabulary token. Match a suffix, an exact value, or an enum — and have the
+function REFUSE input it cannot interpret unambiguously rather than guessing.**
+
+⭐ **What caught it: a number that contradicted a measurement taken an hour
+earlier.** Not a test, not a review — the discipline of comparing a new number
+against the banked one. A pipeline that had never measured the lateral axis
+properly would have shipped 24.9 % as a finding about Alpamayo.
+
+---
+
+## C144 ⛔ — THE GROUNDING BOXES ARE 0-1000 NORMALISED, AND THERE IS ONLY ONE QUESTION PER CLIP: TWO ERRORS IN THE "FUSION GATE" I HAD JUST CALLED THE FIND OF THE NIGHT (2026-08-23)
+
+**Error 1 — the coordinate space.** I rendered `bbox_2d` as PIXELS. On a
+1920x1080 frame the raw values FIT, so nothing errored: box `[535, 667, 556,
+728]` drew a `Pedestrian` on a blank wall, and I read that as *"Alpamayo detects
+the class but mislocalises it"*. Rescaled by `/1000` the identical box lands
+**exactly on a real pedestrian walking in the road**, confirmed by cropping the
+region at full resolution on two independent clips (`683d37fb` pedestrian,
+`5355f3cc` lead vehicle). **The localisation is accurate; the renderer was
+wrong.** ⇒ *"It fits inside the frame" is not a test of a coordinate space* —
+the `df`-on-a-pod family, a plausible number in the wrong units.
+
+**Error 2 — and this one reached the label logic.** I built a `contradicted`
+state: *"the clip has boxes, none of kind X, therefore X is absent"*. **Invalid.**
+There is exactly **ONE grounding question per clip**, sampled from a pool:
+4,411 clips carry one distinct question, 318 none. The pedestrian question is
+asked on only **1,165 of 4,729** clips, and **3,246 clips with boxes were never
+asked about pedestrians at all**. A missing box of kind X almost always means
+the question about X was never put.
+
+⇒ **GROUNDING CAN CONFIRM, NEVER REFUTE.** The honest state is `not checked`,
+and it must not read as evidence against the token.
+
+**ROOT-CAUSE CLASS: a sampled bank read as a complete inventory** — and
+compounded, because **I identified this exact error correctly for `vqa` in the
+same file, in the same session** (*"~5 questions per clip, ~0.3 % coverage per
+question; it cannot systematically populate a label"*) and then failed to apply
+it one field over, to `grounding_via_vqa`, which is WORSE: one question per clip,
+not five. Getting the reasoning right once does not transfer it.
+
+**Also corrected by the same check:** my own visual reading. I had written that
+`683d37fb` showed an *"empty road, clean cruise"* and called its
+`EVADE_IN_CORRIDOR` a false positive. There **is** a pedestrian in the road; the
+box found it and my 400 px montage tile did not. ⇒ **A negative from a
+thumbnail is not a negative.** Verify at the resolution the claim was made at —
+the same rule as stating an interval's estimator, applied to eyeballs.
+
+---
+
+## C145 ⛔⛔ — A TOKEN THAT FIRED 408x MORE OFTEN WHEN THE SCENE WAS EMPTY: NEGATED ENUMERATIONS READ AS POSITIVES (2026-08-24)
+
+**The measurement that exposed it.** Splitting the corpus by Alpamayo's own
+`critical_components_analysis` — 853 clips saying *nothing is critical*, 2,029
+naming a component — and asking how often each perception token fires in each:
+
+| token | "nothing critical" | names a component | ratio |
+|---|---|---|---|
+| `TRAFFIC_LIGHT_REACT` | **60.4 %** | 0.1 % | **408x** |
+| `EVADE_IN_CORRIDOR` | 7.0 % | 2.0 % | 3.6x |
+| `GAP_TARGET` | 0.7 % | 16.1 % | 0.04x ✓ |
+| `YIELD` | 3.6 % | 17.0 % | 0.21x ✓ |
+
+Two tokens ran BACKWARDS: they fired hardest exactly where the source says there
+is nothing to react to. The others ran the correct way round, which is what made
+these diagnosable rather than merely noisy.
+
+**The cause, visible in the source text.** The clean-scene sentence is:
+
+    "The first 2 seconds show a clear highway with no lead vehicle pedestrians
+     cyclists traffic lights or obstacles affecting the ego lane."
+
+Six negated terms under ONE `no`. A term matcher sees `traffic light` and emits
+`TRAFFIC_LIGHT_REACT`. **515 of 533 emissions of that token were this artefact.**
+
+**Fixed** by `stack/tanitad/data/cot_negation.py`: negation scopes run from a cue
+to the end of the clause, closing on a contrastive conjunction (`no pedestrians
+BUT a cyclist`), with false cues (`no doubt`, `not only`) excluded; spans are
+BLANKED not deleted so character offsets stay valid. Result over the corpus:
+`TRAFFIC_LIGHT_REACT` **533 -> 18**, inversion ratio **408.3 -> 1.19**.
+⭐ **The coloured light tokens barely moved** (RED −5, GREEN −4, YELLOW −1) —
+the fix removed noise, not signal, and that is the check that makes it
+trustworthy. Pinned by `stack/tests/test_cot_negation.py`.
+
+**ROOT-CAUSE CLASS: a test whose pattern cannot express the phenomenon it tests
+for will report that the phenomenon is rare.** ⚠️ **I had already probed
+negation earlier the same night** and measured *"166 negated mentions, 3.5 % of
+clips — small"*, then moved on. That probe searched `\bno\b` within 40
+characters of a term. It structurally could not see a six-term enumeration under
+a single `no`, which is the shape that actually occurs — so it returned a small
+number, and the small number closed the question.
+
+⇒ **STANDING RULE: before accepting "X is rare", check that the instrument can
+DETECT X in the form X actually takes. State the form you searched for.** Same
+family as C9/C13/C14 — an instrument structurally unable to report the answer it
+is cited for — and as the `overlapping_holdout_se` trap: a number that is precise
+about the wrong quantity.
+
+⭐ **What found it was a CONTROL, not a test.** Splitting by an independent
+source's own negative and expecting the rates to differ in a known direction is
+exactly the constant-only control the probe-panel rule (C133 family) requires.
+Nothing in the label pipeline was failing; the tokens looked plausible one clip
+at a time.
+
+## C146 ⚠️ — A `config.json` BLOCK THAT RECORDS THE STAGE **PLAN** READ AS THE RUNTIME **STATE**, AND I ALMOST RETRACTED THE PROGRAMME'S BEST ARM ON IT (2026-08-24, self-caught by a content check)
+
+**What I nearly asserted.** `splitfrz` — frozen distilled encoder, the leading
+design (E-DEC-14, `n_agents` **+0.4035**) — has this in its own `config.json`:
+
+    "freeze": {"trainable_groups": ["aux", "encoder", "predictor_op", "readout"],
+               "per_group": {"encoder": {"trainable": 972032, "frozen": 0}, ...}}
+
+I read `"encoder": {"trainable": 972032, "frozen": 0}` as *the encoder was never
+frozen* and was one step from retracting the arm's defining property.
+
+**What is actually true.** That block records the **STAGE freeze plan** (which
+groups stage `S-W` makes trainable). The `--freeze-encoder` override is applied
+*after* it, is recorded **elsewhere in the same file** as `args.freeze_encoder:
+True`, and the block is never rewritten. Verified by CONTENT rather than by
+either field: the arm's 41 `encoder.*` tensors are **byte-identical to the
+distill init, sha256 match, max|Δ| = exactly 0**, while `o5k4`, `o9nb4` and
+`o5k16` moved 0.32–0.33 and `postrain10k` 0.081. **The encoder was frozen.**
+
+**Root-cause class — a probe that reports the wrong SCOPE, read as an answer.**
+The same family as `df` on a pod (reports the cluster, not the quota), `free` and
+`tegrastats` on Thor (report the box, not the process), cgroup
+`usage_in_bytes` (reports reclaimable cache, not pressure), and `step_s`
+(per-trainer divisor). Here the wrong scope is **temporal**: the block is true
+*before* the override and is read *after* it.
+
+⭐ **What caught it was insisting on a content check, and the content check ALSO
+failed silently first.** My first version hashed keys prefixed `encoder.` from
+the checkpoint root — but these checkpoints nest under `"stack"`, so **0 tensors
+matched and it hashed the empty string**, printing `FROZEN=True` for every arm
+including ones that had plainly moved. It was only readable as wrong because the
+script also printed `n=0`. ⇒ **Any hash/aggregate comparison must print the
+COUNT of items it compared**; an aggregate over an empty set is a confident
+answer to a question that was never asked. Same family as the library tool
+reporting success while filing 11 papers under the query string.
+
+**Standing rule.** ⛔ **A recorded config field is a claim about intent, not
+evidence about the run.** For any property that decides a result — frozen /
+trainable, which cache, which corpus — verify it in the **artifact** (weights,
+hashes, counts), and make the verification print its own n.

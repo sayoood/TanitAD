@@ -861,9 +861,25 @@ def test_train_flagship4b_is_untouched_by_this_change():
     # trains the reader to re-baseline on red, which is precisely how a real edit
     # would slip through. The pin below is the same content, keyed on `\n`, so it
     # now means the same thing on every platform.
+    # WHY THE PIN MOVED (2026-08-24) -- DELIBERATE, AND PROVEN INERT.
+    # `FlagshipWindowDataset.__getitem__` now also emits `ep_idx` and `t_last`:
+    # FRAME IDENTITY. Nothing in the batch could say WHICH clip and WHICH frame
+    # it held, so a label-conditioned term (E-DEC-18 / PSG -- a shared
+    # physical-state head on the encoded AND the predicted trajectory,
+    # supervised by our own banked 3D cuboids) could not be written at all.
+    # PROVEN INERT BY MEASUREMENT, not by inspection: the pre-edit file was
+    # reconstructed from the index and both datasets built over identical
+    # episodes. Over 42 windows x 12 pre-existing keys every value is
+    # BIT-IDENTICAL and no key is removed; the ONLY difference is the two added
+    # int64 keys. No tensor value moves and no RNG is consumed, so no published
+    # arm's weights or targets can shift.
+    # `t_last` is `t + window - 1`, the LAST OBSERVED frame -- the same frame
+    # O7/O8/O9 target via `frames[:, -1]`. Pinned separately by
+    # tests/test_frame_identity.py because an off-by-window here would be
+    # invisible in a loss curve.
     src = p.read_bytes().replace(b"\r\n", b"\n")
     assert hashlib.sha256(src).hexdigest() == \
-        "371d878622f74a79e8bf62c5896f0acdaf41ff8c259e82e505983ac69b8f1df1", (
+        "181f3726c671a1627d7d705d533a9a9a1658a25ac74e86898a2f73230ceb73c0", (
             "train_flagship4b.py changed. This trainer produced v1, v2corpus, RR-20/RR-CTL "
             "and v1arch — published weights and registry numbers depend on it. Confirm the "
             "edit is intended AND that no arm is mid-run on it, then update this pin "

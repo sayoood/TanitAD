@@ -183,7 +183,15 @@ def test_default_loss_is_bit_identical_to_the_PRE_S2_trainer(stage):
     # value assertions would never have run. Value/terms/RNG now go first.
     ADDITIVE_OK = {"o5_form", "o6_rows", "o6_row_renorm",
                    # H-RANK-22: additive only; the loss is bit-identical.
-                   "o1_detach_encoder"}
+                   "o1_detach_encoder",
+                   # E-DEC-15: additive only -- records whether O1's separation term
+                   # stop-gradded the FACTUAL branch (LIT-3 / PhyLatent CASC:
+                   # "the factual prediction is treated as a STOP-GRADIENT
+                   # REFERENCE"). Two arms differing only in
+                   # --o1-stopgrad-factual must be distinguishable from their
+                   # logs. Loss, terms and RNG draw-count all verified
+                   # BIT-IDENTICAL on the default path for S-W and S-J.
+                   "o1_stopgrad_factual"}
     assert torch.equal(lo["loss"], ln["loss"]),         f"{stage}: the DEFAULT loss MOVED against {old._ref}"
     assert lo["log"]["terms"] == ln["log"]["terms"]
     assert torch.equal(rng_old, rng_new),         "the default path consumed a different number of global draws"

@@ -310,7 +310,15 @@ def test_default_loss_is_BIT_IDENTICAL_to_the_pre_w_anchor_trainer():
         # row that stops being comparable with the ones before it.
         _ADD_OK = {'o5_form', 'o6_rows', 'o6_row_renorm',
                    # H-RANK-22: additive only; the loss is bit-identical.
-                   'o1_detach_encoder'}
+                   'o1_detach_encoder',
+                   # E-DEC-15: additive only -- records whether O1's separation term
+                   # stop-gradded the FACTUAL branch (LIT-3 / PhyLatent CASC:
+                   # "the factual prediction is treated as a STOP-GRADIENT
+                   # REFERENCE"). Two arms differing only in
+                   # --o1-stopgrad-factual must be distinguishable from their
+                   # logs. Loss, terms and RNG draw-count all verified
+                   # BIT-IDENTICAL on the default path for S-W and S-J.
+                   'o1_stopgrad_factual'}
         assert not (set(lo['log']) - set(ln['log'])), 'log keys REMOVED'
         assert (set(ln['log']) - set(lo['log'])) <= _ADD_OK, 'unexpected new log keys'
 

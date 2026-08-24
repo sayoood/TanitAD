@@ -174,7 +174,34 @@ six-term result.
 Monotone in depth, and **the advantage GROWS with horizon**. ⚠️ Absolute level still
 low: cos 0.25 ≈ **6 % of variance explained** — *predicts* is not *predicts well*.
 
-⇒ **v7 config: `--o5-k 4` minimum, 8 measured better, ⛔ NEVER 1.**
+⇒ **v7 config: `--o5-k 8` — the MEASURED optimum. ⛔ NEVER 1, ⛔ not 16.**
+
+⭐ **UPGRADED 2026-08-24 — `--o5-k 8` IS NOW THE MEASURED OPTIMUM, NOT AN EXTRAPOLATION.**
+The "4 minimum, 8 better" line came from H-PROOF-7's **read-out-time** rolling depth `k_roll`,
+which is a DIFFERENT KNOB from the **training-time** `--o5-k`. The training-time curve has now
+been read out directly over four banked arms (`depth_panel.json`; `rdw8` **is** k=1):
+
+| metric | k=1 | k=4 | k=8 | k=16 |
+|---|---|---|---|---|
+| participation val / held24 | 3.80/3.62 | 3.48/4.87 | 3.53/**6.39** | 4.27/4.21 |
+| predictor cos h=1 | 0.0541 | 0.1234 | **0.1328** | 0.1327 |
+| speed | +0.2830 | +0.3062 | **+0.3252** | **−0.2377** |
+| `d_ego` | **+0.3601** | +0.2157 | +0.1212 | **−0.4543** |
+| `lead_gap_m` | −0.3290 | −0.3495 | −0.2940 | **−0.2062** |
+| `n_agents` | −1.0407 | −0.4434 | −0.4648 | −0.5241 |
+
+* predictor cos **saturates at k=8** — k=16 adds nothing (0.1328 → 0.1327);
+* ego **survives to k=8 and collapses at k=16** — speed falls below the constant control;
+* `lead_gap_m` is the one metric that keeps wanting depth (monotone to k=16);
+* ⚠️ **`d_ego` is BEST at k=1** and declines monotonically — the two ego targets dissociate,
+  so depth **trades `d_ego` for speed and `lead_gap_m`**. Quote both or the curve reads as
+  uniformly good.
+* ⛔ at **every** depth the arm is **below the constant control on both environment targets**,
+  and the raw-pixel floor beats it on `lead_gap_m` throughout. **Depth tunes the objective; it
+  does not put the scene in the latent.**
+
+⇒ **v7 ships `--o5-k 8`.** ⛔ never 1 (a correctness bug, C139) · ⛔ not 16 (ego collapses).
+
 
 ---
 
@@ -273,6 +300,51 @@ the clean part. `rdw8p30k` (rdw8 geometry, 30k, parity — guard verified
 `e438721ae894`, sha256 matches manifest) is the disambiguating run.
 
 ---
+
+## 9b. ⭐⭐⭐ The SPLIT ENCODER, and the control that says why it works (E-DEC-14/17)
+
+**The arm.** Frozen distilled encoder + trainable readout and predictor, O5+O6
+only, `--o5-k 4`, no teacher in the loop. `n_agents` **+0.4035** (paired LOEO,
+t 13.45, **24/24**) — above pure distillation (+0.3274) and above a frozen
+DINOv3 that never saw our data (+0.2754). Predictor cos h=1 **0.1872** (z 7.99),
+the best measured in the programme.
+
+⭐ **The freeze is verified by CONTENT, not by a flag.** All 41 `encoder.*`
+tensors are byte-identical to the initialisation (sha256 match, **max|Δ| = 0**)
+where every trainable arm moved 0.08–0.33. ⚠️ This check exists because the
+arm's own `config.json` reads `'encoder': {'trainable': 972032, 'frozen': 0}` —
+that block records the STAGE freeze plan, not the `--freeze-encoder` override,
+and reading it as runtime state nearly retracted the result (**C146**).
+
+**The control (E-DEC-17) — freeze a RANDOM encoder, change nothing else:**
+
+| metric | two-term baseline | frozen **distilled** | frozen **random** | pixel floor | constant |
+|---|---|---|---|---|---|
+| predictor cos h=1 (z) | 0.1234 (6.61) | **0.1872 (7.99)** | **0.0016 (0.51)** | — | — |
+| speed | +0.3062 | +0.2465 | **+0.3552** | +0.1156 | 0.0000 |
+| `d_ego` | +0.2157 | +0.2878 | +0.2024 | −0.0781 | 0.0000 |
+| `lead_gap_m` | −0.3495 | −0.0172 | +0.0064 | +0.0064 | 0.0000 |
+| `n_agents` | −0.4434 | **+0.4035** | **−1.1027** | −0.2156 | 0.0000 |
+
+⇒ **FREEZING IS NECESSARY BUT NOT SUFFICIENT.** On a frozen *random* encoder the
+predictor is indistinguishable from noise (z 0.51); `n_agents` moves **1.5062**
+between the two frozen arms and the random one sits below the constant control
+*and* the pixel floor. The teacher supplied **content**, and a teacher-free
+source of content is the remaining problem (E-DEC-18 / PSG).
+
+⛔ **AND A STANDING CONSTRAINT ON THIS WHOLE LEDGER: EGO DECODABILITY IS FREE.**
+The frozen *random* encoder has the **best speed of the three arms** (+0.3552)
+and healthy `d_ego` (+0.2024) — from weights never trained on anything. That is
+exactly what the `z = (u, η)` degeneracy predicts. **No ego number may be cited
+as evidence that an objective worked**; a representation claim rests on scene
+content or on prediction. Where this ledger says "ego retained", read it as *"the
+arm did not go backwards"*, never as *"the arm learned something"*.
+
+⚠️ The split arm **fails the rank kill-gate** (participation 2.28/2.17, the
+lowest measured). That is not dismissed — it is weighed against C131, C135 and
+the degeneracy derivation, all of which say participation does not track
+capability — and it is why the parity-scale replication is queued rather than
+the design being adopted on a 2 k tiny arm.
 
 ## 10. Other proven trainer changes
 

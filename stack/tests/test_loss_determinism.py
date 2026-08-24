@@ -571,7 +571,15 @@ def test_v6_loss_step_default_is_bit_identical_to_the_PRE_CHANGE_trainer(stage):
                # H-RANK-22: additive only -- records which O1 gradient-path
                # variant ran, so two arms differing only in --o1-detach-encoder
                # are distinguishable from their logs. Loss is unchanged.
-               'o1_detach_encoder'}
+               'o1_detach_encoder',
+               # E-DEC-15: additive only -- records whether O1's separation term
+               # stop-gradded the FACTUAL branch (LIT-3 / PhyLatent CASC:
+               # "the factual prediction is treated as a STOP-GRADIENT
+               # REFERENCE"). Two arms differing only in
+               # --o1-stopgrad-factual must be distinguishable from their
+               # logs. Loss, terms and RNG draw-count all verified
+               # BIT-IDENTICAL on the default path for S-W and S-J.
+               'o1_stopgrad_factual'}
     assert not (set(lo['log']) - set(ln['log'])), 'log keys REMOVED'
     assert (set(ln['log']) - set(lo['log'])) <= _ADD_OK, 'unexpected new log keys'
     assert torch.equal(torch.tensor(lo["log"]["loss"]),

@@ -207,6 +207,10 @@ class V6LossWeights:
     #: gives action-conditioning at no cost in rank.
     #: DEFAULT False => the incumbent loss is bit-identical.
     o1_detach_encoder: bool = False
+    #: LIT-3 (PhyLatent CASC): treat the factual prediction as a STOP-GRADIENT
+    #: reference in O1's separation term, so it cannot corrupt what it is
+    #: separating around. DEFAULT False => incumbent loss bit-identical.
+    o1_stopgrad_factual: bool = False
     o3_masked: float = 1.0
     o5_rollout: float = 1.0
     o6_sigreg: float = 0.1      # LeJEPA's ONE validated knob — keep it fixed
@@ -974,6 +978,165 @@ class O8Pixel(torch.nn.Module):
         pred = self.head(cells)
         tgt = self.target(rgb)
         return torch.nn.functional.mse_loss(pred, tgt.to(pred.dtype))
+
+class O9EmaMasked(torch.nn.Module):
+    """O9 — masked-latent prediction against an EMA TARGET ENCODER (E-DEC-13).
+
+    ⛔ WHY O3 FAILED AND THIS IS DIFFERENT. O3 predicted the ONLINE network's own
+    readout cells: the model optimises BOTH the prediction and the target, so the
+    degeneracy of E-DEC-7 applies and "make the target easy" is a valid solution.
+    MEASURED (E-DEC-5b): O3 drove ego BELOW the constant control while moving the
+    environment not at all.
+
+    I-JEPA / V-JEPA solve this with a SEPARATE TARGET ENCODER updated by EMA. The
+    target is then produced by weights the optimiser cannot move at this step --
+    externality (E-DEC-8's working ingredient) WITHOUT an external model, which is
+    the PI's stated requirement ("clear preference without pretrained labels").
+
+    ⚠️ DMT-JEPA (banked 2405.17995) warns the naive form is still weak: masked
+    modelling in embedding space has "insufficient understanding of local
+    semantics... reduction of discriminative power". Its remedy aggregates each
+    masked target from SEMANTICALLY SIMILAR NEIGHBOURING patches. `neighbour_k > 0`
+    enables that: the target for a masked cell becomes the similarity-weighted mean
+    of its k nearest EMA cells rather than its own EMA cell.
+
+    The EMA encoder is held OUT of the module registry (leading underscore) so it
+    is never written into our checkpoint and never optimised.
+    """
+
+    def __init__(self, encoder, d_cell: int, n_cells: int, momentum: float = 0.996,
+                 mask_frac: float = 0.5, neighbour_k: int = 0, hidden: int = 256):
+        super().__init__()
+        import copy
+        self.momentum = float(momentum)
+        self.mask_frac = float(mask_frac)
+        self.neighbour_k = int(neighbour_k)
+        self.n_cells = int(n_cells)
+        tgt = copy.deepcopy(encoder).eval()
+        for q in tgt.parameters():
+            q.requires_grad_(False)
+        object.__setattr__(self, "_ema", tgt)
+        self.head = torch.nn.Sequential(
+            torch.nn.Linear(int(d_cell), hidden), torch.nn.GELU(),
+            torch.nn.Linear(hidden, int(d_cell)))
+        self.mask_token = torch.nn.Parameter(torch.zeros(1, 1, int(d_cell)))
+        torch.nn.init.trunc_normal_(self.mask_token, std=0.02)
+
+    @torch.no_grad()
+    def update_ema(self, encoder) -> None:
+        m = self.momentum
+        for pt, po in zip(self._ema.parameters(), encoder.parameters()):
+            pt.mul_(m).add_(po.detach(), alpha=1.0 - m)
+        for bt, bo in zip(self._ema.buffers(), encoder.buffers()):
+            bt.copy_(bo)
+
+    @torch.no_grad()
+    def _neighbour_targets(self, t: Tensor) -> Tensor:
+        """DMT-JEPA: replace each target by a similarity-weighted mean of its k
+        most similar cells, so the target carries LOCAL SEMANTICS rather than a
+        single cell's embedding."""
+        if self.neighbour_k <= 0:
+            return t
+        n = torch.nn.functional.normalize(t, dim=-1)
+        sim = n @ n.transpose(1, 2)                       # [B, C, C]
+        k = min(self.neighbour_k + 1, sim.shape[-1])
+        w, idx = sim.topk(k, dim=-1)
+        w = torch.softmax(w, dim=-1).unsqueeze(-1)        # [B, C, k, 1]
+        gathered = torch.gather(
+            t.unsqueeze(1).expand(-1, t.shape[1], -1, -1), 2,
+            idx.unsqueeze(-1).expand(-1, -1, -1, t.shape[-1]))
+        return (w * gathered).sum(2)
+
+    def forward(self, online_cells: Tensor, ema_cells: Tensor,
+                generator=None) -> Tensor:
+        b, c, _d = online_cells.shape
+        n_mask = max(1, int(round(self.mask_frac * c)))
+        # ⛔ the shared `generator` is a CPU generator; torch.rand with a CUDA
+        # device demands a CUDA one. Draw on the shared CPU stream and MOVE,
+        # so the mask stays reproducible from the run's own seed.
+        noise = torch.rand(b, c, generator=generator).to(online_cells.device)
+        mask = noise.argsort(dim=1) < n_mask               # [B, C] bool
+        with torch.no_grad():
+            tgt = self._neighbour_targets(ema_cells)
+        x = torch.where(mask.unsqueeze(-1),
+                        self.mask_token.to(online_cells.dtype).expand_as(online_cells),
+                        online_cells)
+        pred = self.head(x)
+        m = mask.unsqueeze(-1)
+        return (((pred - tgt.to(pred.dtype)) ** 2) * m).sum() / m.sum().clamp_min(1) / pred.shape[-1]
+
+
+class O10PSG(torch.nn.Module):
+    """O10 — PHYSICAL-STATE GROUNDING, supervised by OUR OWN banked 3D cuboids.
+
+    PhyLatent (ICLR 2025, banked ``2608.05720``) states the programme's root
+    cause almost verbatim — *"preventing global latent collapse does not ensure
+    that a representation preserves physical states and action consequences"* —
+    and its remedy is PSG: **one SHARED state head applied to BOTH the encoded
+    and the predicted trajectory**, "used only during training and not required
+    by the planner".
+
+    ⭐ WHY THIS IS NOT ANOTHER O1/O3/O9. Every objective that has failed here
+    (E-DEC-7) had a **self-generated target**: the model could satisfy it by
+    moving the target. O7 fixed that with a frozen DINOv3 teacher and worked;
+    O8 (pixels) and O9 (an EMA of our own encoder) were teacher-free and did
+    not. PSG's target is **external AND has content**: it comes from
+    ``obstacle.offline``, is not produced by any network, and cannot be moved by
+    the optimiser at all. It is the first teacher-free target in the programme
+    with those two properties together.
+
+    ⭐ THE SHARED HEAD IS THE MECHANISM, NOT A DETAIL. Supervising only the
+    encoded latent would be a plain auxiliary task and would say nothing about
+    the predictor. Because ``head`` is the same module on both branches, a
+    prediction is only cheap if it lands where the encoder's own physical state
+    would land — so the term prices ACTION CONSEQUENCES, which is what the
+    programme has never managed to make the predictor learn.
+
+    ⛔ INFERENCE IS VISION-ONLY (PI, binding). This head is a training-time
+    consumer of labels; it is never on the inference path and the planner never
+    calls it. ⛔ AND IT LEAKS BY CONSTRUCTION IF MIS-SPLIT: the target
+    determines both scored environment metrics, so the caller MUST supervise on
+    a clip-disjoint train split and score on the held-out clips
+    (``tanitad.data.psg_targets.clip_split``). ``valid`` is that mask.
+    """
+
+    def __init__(self, d_cell: int, grid_hw: tuple[int, int], n_cols: int = 8,
+                 ch: int = 2, hidden: int = 256):
+        super().__init__()
+        gh, gw = int(grid_hw[0]), int(grid_hw[1])
+        if gw != int(n_cols):
+            raise ValueError(
+                f"PSG targets are per-AZIMUTH-COLUMN over {n_cols} columns and "
+                f"the readout has {gw}. They must match, or every agent is "
+                "supervised into the wrong column (the registration IS the "
+                "term). Use --readout-grid-w 8.")
+        self.gh, self.gw, self.ch = gh, gw, int(ch)
+        self.head = torch.nn.Sequential(
+            torch.nn.Linear(int(d_cell) * gh, hidden), torch.nn.GELU(),
+            torch.nn.Linear(hidden, int(ch)))
+
+    def _columns(self, cells: Tensor) -> Tensor:
+        """[B, n_cells, d] -> [B, gw, gh*d], pooling each column's rows.
+
+        Rows are CONCATENATED rather than averaged: a mean over the 4 rows would
+        discard elevation, and "is the vehicle near the horizon or filling the
+        frame" is exactly the range cue channel 1 asks for.
+        """
+        b, c, d = cells.shape
+        x = cells.reshape(b, self.gh, self.gw, d).permute(0, 2, 1, 3)
+        return x.reshape(b, self.gw, self.gh * d)
+
+    def forward(self, enc_cells: Tensor, pred_cells: Tensor, tgt_now: Tensor,
+                tgt_next: Tensor, valid: Tensor):
+        p_enc = self.head(self._columns(enc_cells))
+        p_pred = self.head(self._columns(pred_cells))
+        w = valid.reshape(-1, 1, 1).to(p_enc.dtype)
+        denom = w.sum().clamp_min(1.0) * self.gw * self.ch
+        l_enc = (w * (p_enc - tgt_now.to(p_enc.dtype)) ** 2).sum() / denom
+        l_pred = (w * (p_pred - tgt_next.to(p_pred.dtype)) ** 2).sum() / denom
+        return l_enc + l_pred, {"psg_enc": float(l_enc.detach()),
+                                "psg_pred": float(l_pred.detach()),
+                                "psg_n_supervised": int(valid.sum())}
 
 
 def o2_near_field_loss(pred_cells: Tensor, true_cells: Tensor,
@@ -2384,9 +2547,11 @@ def v6_loss_step(stack: V6Stack, batch: dict, *, stage: str,
             batch["gt_wp"], z_true[o1_k - 1], o1_k, dkappa=dkappa,
             daccel=daccel, rand_dk=rand_dk, rand_da=rand_da,
             w_ctrl=w.o1_ctrl, w_fact=w.o1_fact, w_scene=w.o1_scene,
-            ctrl_form="response")
+            ctrl_form="response",
+            stopgrad_factual=bool(w.o1_stopgrad_factual))
         terms["o1"] = L1["loss"]
         log |= {"o1_detach_encoder": bool(w.o1_detach_encoder),
+                "o1_stopgrad_factual": bool(w.o1_stopgrad_factual),
                 "o1_ctrl": float(L1["l_ctrl"].detach()),
                 "o1_fact": float(L1["l_fact"].detach()),
                 "o1_scene": float(L1["l_scene"].detach()),
@@ -2417,6 +2582,15 @@ def v6_loss_step(stack: V6Stack, batch: dict, *, stage: str,
         trans = rollout_transitions(stack.predictor_op, states, aw3, fa3,
                                     k_roll, grad_checkpoint=rgc)
         zhat_steps = [t[1] for t in trans]
+        # PSG (E-DEC-18) needs the PREDICTED latent as well as the encoded one --
+        # PhyLatent's whole point is that the SAME state head sees both, so the
+        # predictor is pulled into the same physical-state space rather than into
+        # whatever self-consistent space O5 alone admits. The rollout is computed
+        # here and nowhere else, so it is exported rather than recomputed: a
+        # second rollout at the call site would double the cost AND could silently
+        # use different actions. Adding a key changes no loss, no RNG draw and no
+        # state_dict; nothing reads it unless a term asks.
+        out["zhat_steps"] = zhat_steps
 
         # ---- O5: error at EVERY step --------------------------------------
         if w.o5_rollout:
@@ -3603,6 +3777,7 @@ def _weights_from_args(a) -> V6LossWeights:
     return V6LossWeights(
         o1_ctrl=a.w_o1_ctrl, o1_fact=a.w_o1_fact, o1_scene=a.w_o1_scene,
         o1_detach_encoder=bool(getattr(a, "o1_detach_encoder", False)),
+        o1_stopgrad_factual=bool(getattr(a, "o1_stopgrad_factual", False)),
         o2_nearfield=a.w_o2, o3_masked=a.w_o3, o5_rollout=a.w_o5,
         o6_sigreg=a.w_o6, t1_latent=a.w_t1, s1_latent=a.w_s1,
         w_select=a.w_select, w_anchor=float(getattr(a, "w_anchor", 0.0)),
@@ -4173,6 +4348,17 @@ def train(a) -> dict:
         trainable = trainable + [q for q in o7.parameters() if q.requires_grad]
         print(f"[o7] distillation ON  w={float(a.w_o7_distill):g} "
               f"teacher={o7.model_id} cells={o7.n_cells} grid={o7.grid_hw}", flush=True)
+    o9 = None
+    if float(getattr(a, "w_o9_ema", 0.0)) > 0:
+        o9 = O9EmaMasked(stack.encoder, d_cell=int(stack.cfg.readout.d_readout),
+                         n_cells=int(stack.cfg.n_cells),
+                         momentum=float(getattr(a, "o9_momentum", 0.996)),
+                         mask_frac=float(getattr(a, "o9_mask_frac", 0.5)),
+                         neighbour_k=int(getattr(a, "o9_neighbour_k", 0))).to(device)
+        trainable = trainable + [q for q in o9.parameters() if q.requires_grad]
+        print(f"[o9] EMA-target masked latent ON  w={float(a.w_o9_ema):g} "
+              f"momentum={o9.momentum} mask={o9.mask_frac} "
+              f"neighbour_k={o9.neighbour_k} (TEACHER-FREE)", flush=True)
     o8 = None
     if float(getattr(a, "w_o8_pixel", 0.0)) > 0:
         o8 = O8Pixel(d_readout=int(stack.cfg.readout.d_readout),
@@ -4181,6 +4367,55 @@ def train(a) -> dict:
         trainable = trainable + [q for q in o8.parameters() if q.requires_grad]
         print(f"[o8] raw-pixel target ON  w={float(a.w_o8_pixel):g} "
               f"cells={o8.n_cells} patch={o8.ph}x{o8.pw}", flush=True)
+    o10 = None
+    psg_bank = psg_valid = None
+    if float(getattr(a, "w_o10_psg", 0.0)) > 0:
+        from tanitad.data.psg_targets import (PSG_CHANNELS, PSG_N_COLS,
+                                              clip_split, load_targets)
+        if not getattr(a, "psg_labels", None):
+            raise SystemExit("--w-o10-psg needs --psg-labels")
+        # The episode order IS the cache's sorted `<clip_id>.v2ep.pt` order --
+        # the same order `ep_idx` indexes. ⛔ Verified by COUNT rather than
+        # assumed: a silent length mismatch would shift every label by one clip,
+        # which no loss curve would show (C146's lesson -- an aggregate over the
+        # wrong set is a confident answer to a question never asked).
+        cache_dir = Path(a.v2_cache[0])
+        clip_ids = sorted(q.name[:-len(".v2ep.pt")]
+                          for q in cache_dir.glob("*.v2ep.pt"))
+        n_ep = len(ds_train.episodes)
+        if len(clip_ids) != n_ep:
+            raise SystemExit(
+                f"PSG: cache lists {len(clip_ids)} clips but the dataset holds "
+                f"{n_ep} episodes; the ep_idx->clip_id join would be off-by-N.")
+        tgt = load_targets(a.psg_labels)
+        missing = [c for c in clip_ids if c not in tgt]
+        if missing:
+            raise SystemExit(f"PSG: {len(missing)} clips have no labels, "
+                             f"e.g. {missing[:3]}")
+        t_max = max(int(tgt[c].shape[0]) for c in clip_ids)
+        bank = torch.zeros(n_ep, t_max, PSG_N_COLS, PSG_CHANNELS)
+        for i, c in enumerate(clip_ids):
+            v = torch.from_numpy(tgt[c])
+            bank[i, :v.shape[0]] = v
+        tr_ids, ho_ids = clip_split(clip_ids, int(getattr(a, "psg_eval_every", 3)))
+        tr = set(tr_ids)
+        psg_bank = bank.to(device)
+        psg_valid = torch.tensor([1.0 if c in tr else 0.0 for c in clip_ids],
+                                 device=device)
+        o10 = O10PSG(d_cell=int(stack.cfg.readout.d_readout),
+                     grid_hw=stack.cfg.grid_shape,
+                     n_cols=PSG_N_COLS, ch=PSG_CHANNELS).to(device)
+        trainable = trainable + [q for q in o10.parameters() if q.requires_grad]
+        print(f"[o10] PSG ON  w={float(a.w_o10_psg):g} labels={a.psg_labels} "
+              f"clips={n_ep} supervised={len(tr_ids)} HELD-OUT={len(ho_ids)} "
+              f"(every {int(getattr(a, 'psg_eval_every', 3))}th) "
+              f"cols={PSG_N_COLS} ch={PSG_CHANNELS} T_max={t_max} "
+              f"(TEACHER-FREE: our own cuboids)", flush=True)
+        (out_dir / "psg_split.json").write_text(json.dumps(
+            {"supervised_clips": tr_ids, "held_out_clips": ho_ids,
+             "eval_every": int(getattr(a, "psg_eval_every", 3)),
+             "_why": "the PSG target determines n_agents and lead_gap_m; those "
+                     "may only be scored on held_out_clips"}, indent=1))
     opt = torch.optim.AdamW(trainable, lr=a.lr, weight_decay=a.wd)
     sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=a.steps)
     start_step = 0
@@ -4358,6 +4593,13 @@ def train(a) -> dict:
         batch = {
             "frames": b["frames"], "actions2": aw2, "future_actions2": fa2,
             "v0": v0, "z_true_steps": z_true,
+            # ⚠️ THIS DICT IS A WHITELIST, NOT A VIEW OF `b`. A key added to the
+            # dataset reaches `b` and stops here -- which is exactly how PSG's
+            # first smoke test died with KeyError('ep_idx') while the dataset,
+            # the mirror sync and the import were all correct. Frame identity is
+            # forwarded unconditionally: it is two int64 columns, it changes no
+            # loss, and a term that needs it must not have to edit this line.
+            "ep_idx": b["ep_idx"], "t_last": b["t_last"],
         }
         if t5_partner:
             # rows [0, n) are the anchors and rows [n, 2n) their +lag partners,
@@ -4468,6 +4710,26 @@ def train(a) -> dict:
                 L["loss"] = L["loss"] + float(a.w_o7_distill) * _l7
                 L["log"]["o7_distill"] = float(_l7.detach())
                 L["log"]["o7_w"] = float(a.w_o7_distill)
+            if o9 is not None:
+                # ⚠️ DESIGN CHOICE, STATED: the EMA copy is of the ENCODER, and the
+                # target cells are produced by running it through the CURRENT
+                # readout under no_grad. I-JEPA EMAs the encoder and keeps the
+                # predictor online; here the readout is shared but DETACHED, so no
+                # gradient reaches the target at this step -- which is the property
+                # that matters (E-DEC-7: the failure is the model optimising BOTH
+                # sides). A fully-EMA'd readout is the stricter variant and is not
+                # what this arm tests.
+                o9.update_ema(stack.encoder)
+                _zl9 = L["out"]["z_op_win"][:, -1]
+                _b9 = _zl9.shape[0]
+                _on = _zl9.reshape(_b9, int(stack.cfg.n_cells), -1)
+                with torch.no_grad():
+                    _tok9 = o9._ema(batch["frames"][:, -1])
+                    _em = stack.readout(_tok9).reshape(_b9, int(stack.cfg.n_cells), -1)
+                _l9 = o9(_on, _em, generator=gen)
+                L["loss"] = L["loss"] + float(a.w_o9_ema) * _l9
+                L["log"]["o9_ema"] = float(_l9.detach())
+                L["log"]["o9_w"] = float(a.w_o9_ema)
             if o8 is not None:
                 _zl8 = L["out"]["z_op_win"][:, -1]
                 _rgb8 = batch["frames"][:, -1, -3:].float()
@@ -4475,6 +4737,26 @@ def train(a) -> dict:
                 L["loss"] = L["loss"] + float(a.w_o8_pixel) * _l8
                 L["log"]["o8_pixel"] = float(_l8.detach())
                 L["log"]["o8_w"] = float(a.w_o8_pixel)
+            if o10 is not None:
+                _zh = L["out"].get("zhat_steps")
+                if not _zh:
+                    raise RuntimeError(
+                        "PSG needs the predicted latent and the rollout did not "
+                        "run: --w-o10-psg requires --w-o5 > 0 (the shared head on "
+                        "BOTH branches IS the mechanism; supervising only the "
+                        "encoder would be a plain auxiliary task).")
+                _e10 = L["out"]["z_op_win"][:, -1]
+                _b10 = _e10.shape[0]
+                _nc = int(stack.cfg.n_cells)
+                _ei = batch["ep_idx"].long()
+                _tl = batch["t_last"].long().clamp_max(psg_bank.shape[1] - 1)
+                _tn = (batch["t_last"].long() + 1).clamp_max(psg_bank.shape[1] - 1)
+                _l10, _lg10 = o10(_e10.reshape(_b10, _nc, -1),
+                                  _zh[0].reshape(_b10, _nc, -1),
+                                  psg_bank[_ei, _tl], psg_bank[_ei, _tn],
+                                  psg_valid[_ei])
+                L["loss"] = L["loss"] + float(a.w_o10_psg) * _l10
+                L["log"] |= _lg10 | {"o10_w": float(a.w_o10_psg)}
         opt.zero_grad(set_to_none=True)
         L["loss"].backward()
         gn = torch.nn.utils.clip_grad_norm_(trainable, a.clip)
@@ -5494,6 +5776,27 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--o7-model", type=str, default=O7_DEFAULT_MODEL,
                     help="frozen teacher for O7")
     # E-DEC-10: RAW-PIXEL external target — the teacher-free counterpart of O7.
+    # E-DEC-13: masked-latent prediction against an EMA TARGET ENCODER.
+    # TEACHER-FREE (our own slow copy). Default 0.0 => nothing is constructed.
+    ap.add_argument("--w-o9-ema", type=float, default=0.0,
+                    help="weight for O9 EMA-target masked-latent (E-DEC-13)")
+    ap.add_argument("--o9-momentum", type=float, default=0.996)
+    ap.add_argument("--o9-mask-frac", type=float, default=0.5)
+    ap.add_argument("--o9-neighbour-k", type=int, default=0,
+                    help="DMT-JEPA neighbour-aggregated targets; 0 = own cell")
+    ap.add_argument("--w-o10-psg", type=float, default=0.0,
+                    help="O10 PSG (E-DEC-18): a SHARED physical-state head on the "
+                         "ENCODED and the PREDICTED latent, supervised by our own "
+                         "banked 3D cuboids. Training-time only; the planner never "
+                         "calls it (inference stays VISION-ONLY).")
+    ap.add_argument("--psg-labels", type=str, default=None,
+                    help="jsonl of per-frame ego-frame cuboids (obstacle.offline).")
+    ap.add_argument("--psg-eval-every", type=int, default=3,
+                    help="⛔ LEAK GUARD: every Nth sorted clip is HELD OUT of PSG "
+                         "supervision. The PSG target DETERMINES n_agents and "
+                         "lead_gap_m, so an arm supervised on all clips cannot be "
+                         "scored on either. Environment decodability is read on the "
+                         "held-out clips only.")
     ap.add_argument("--w-o8-pixel", type=float, default=0.0,
                     help="weight for O8 raw-pixel distillation (E-DEC-10); "
                          "0 disables it entirely")
@@ -5503,6 +5806,9 @@ def build_parser() -> argparse.ArgumentParser:
     # freezing makes erosion IN THE ENCODER structurally impossible, so if the
     # content still decays the erosion is happening in the READOUT — which is
     # exactly what this flag isolates. Default off => nothing changes.
+    ap.add_argument("--o1-stopgrad-factual", action="store_true",
+                    help="LIT-3: treat the factual prediction as a "
+                         "stop-gradient reference in O1's separation term")
     ap.add_argument("--freeze-encoder", action="store_true",
                     help="freeze the encoder; train readout+predictor only "
                          "(E-DEC-14 split-encoder probe)")

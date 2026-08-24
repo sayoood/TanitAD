@@ -205,7 +205,33 @@ them now** while the objective is still being decided.
 | decision | value | evidence |
 |---|---|---|
 | **readout azimuth** | `--readout-grid 4 --readout-grid-w 8 --readout-dim 64` (= 2048, **the incumbent d_op — no extra latent dimension**) | E-DEC-2, LOEO paired: speed **+0.0374 → +0.2830** (t 5.17, **12/12** episodes), `d_ego` **+0.1532 → +0.3601** (t 6.12, 12/12) |
-| **rollout depth** | `--o5-k 4` minimum, `8` measured better; ⛔ **NEVER 1** | H-PROOF-7/7b, rolled read-out: cos at j=6 **0.0686 (k=1) → 0.1987 (k=4) → 0.2468 (k=8)**, monotone, advantage GROWING with horizon (2.80× at j=1 → **3.60×** at j=6) |
+| **rollout depth** | ⭐ `--o5-k 8` — **the measured optimum**; ⛔ **NEVER 1**, ⛔ **not 16** | H-PROOF-7/7b, rolled read-out: cos at j=6 **0.0686 (k=1) → 0.1987 (k=4) → 0.2468 (k=8)**, monotone, advantage GROWING with horizon (2.80× at j=1 → **3.60×** at j=6) |
+
+⭐ **UPGRADED 2026-08-24 — `--o5-k 8` IS NOW THE MEASURED OPTIMUM, NOT AN EXTRAPOLATION.**
+The "4 minimum, 8 better" line came from H-PROOF-7's **read-out-time** rolling depth `k_roll`,
+which is a DIFFERENT KNOB from the **training-time** `--o5-k`. The training-time curve has now
+been read out directly over four banked arms (`depth_panel.json`; `rdw8` **is** k=1):
+
+| metric | k=1 | k=4 | k=8 | k=16 |
+|---|---|---|---|---|
+| participation val / held24 | 3.80/3.62 | 3.48/4.87 | 3.53/**6.39** | 4.27/4.21 |
+| predictor cos h=1 | 0.0541 | 0.1234 | **0.1328** | 0.1327 |
+| speed | +0.2830 | +0.3062 | **+0.3252** | **−0.2377** |
+| `d_ego` | **+0.3601** | +0.2157 | +0.1212 | **−0.4543** |
+| `lead_gap_m` | −0.3290 | −0.3495 | −0.2940 | **−0.2062** |
+| `n_agents` | −1.0407 | −0.4434 | −0.4648 | −0.5241 |
+
+* predictor cos **saturates at k=8** — k=16 adds nothing (0.1328 → 0.1327);
+* ego **survives to k=8 and collapses at k=16** — speed falls below the constant control;
+* `lead_gap_m` is the one metric that keeps wanting depth (monotone to k=16);
+* ⚠️ **`d_ego` is BEST at k=1** and declines monotonically — the two ego targets dissociate,
+  so depth **trades `d_ego` for speed and `lead_gap_m`**. Quote both or the curve reads as
+  uniformly good.
+* ⛔ at **every** depth the arm is **below the constant control on both environment targets**,
+  and the raw-pixel floor beats it on `lead_gap_m` throughout. **Depth tunes the objective; it
+  does not put the scene in the latent.**
+
+⇒ **v7 ships `--o5-k 8`.** ⛔ never 1 (a correctness bug, C139) · ⛔ not 16 (ego collapses).
 
 ⛔ **`--o5-k 1` IS A CORRECTNESS BUG, NOT A TUNING CHOICE (C139).** `rollout_transitions`
 builds the rollout from `t[1]` — the h=1 head ONLY — rolled `k_roll` times. At
