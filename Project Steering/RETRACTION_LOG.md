@@ -8253,3 +8253,55 @@ cos_raw 0.6305 ≈ cos_ctr 0.6307, mean-fraction only 0.0719, and it beats the
 constant baseline by 0.21 nrmse. E-DEC-19's headline — that scale, not an
 auxiliary objective, produced the predictor — is unaffected and is in fact the
 only predictor claim in the campaign that survives the control.
+
+## C150 ⛔ — `lead_gap_m` IS A DEFECTIVE TARGET: A 4.8 % MINORITY CARRIES 60 % OF ITS VARIANCE, AND ITS "NO LEAD" SENTINEL SITS INSIDE THE RANGE OF REAL VALUES (2026-08-24, found in the first free step of diagnosing it)
+
+**What has been asserted, repeatedly and by me.** That `lead_gap_m` is one of the
+two ENVIRONMENT decodability targets, and that **no arm beats the raw-pixel floor
+on it at any scale** — quoted as a representation failure in E-DEC-19, E-DEC-14b-R,
+the v7 recommendation and Paper §13.9/§13.11.
+
+**What the label distribution actually is** (MEASURED over all 25,790 frames of
+`lead130_agents.jsonl`, the corpus every one of those numbers was computed on):
+
+| | |
+|---|---|
+| frames with NO lead (target set to the **80.0 default**) | **4.8 %** (1,237) |
+| frames with a real lead | 95.2 % — mean **17.97 m**, sd 11.10, min 0.14, **max 180.84** |
+| **share of total variance carried by the 4.8 % default** | **59.9 %** |
+
+**Two defects, and they compound.**
+
+1. **The target is dominated by a rare sentinel.** Sixty per cent of the variance
+   an R² is fitting comes from 4.8 % of the frames. So `lead_gap_m` mostly measures
+   **"is there a lead at all"** — a detection problem — and only incidentally
+   measures **range**, which is what the name and every interpretation assume.
+2. ⛔ **The sentinel is NOT outside the data range.** Real leads reach **180.84 m**,
+   so a frame with *no lead* (80.0) is **numerically indistinguishable from a frame
+   with a genuine lead at 80 m**. The target conflates absence with a specific
+   distance.
+
+**Consequence.** "No arm beats the raw-pixel floor on `lead_gap_m`" **may be a
+property of the target rather than of the representations.** Raw pixels are
+plausibly *good* at the binary presence question that dominates the variance, which
+would explain why nothing beats them. ⛔ **Every `lead_gap_m` number in the campaign
+inherits this and none of them may be quoted as a range-decodability result until
+the target is fixed.** The `n_agents` numbers are unaffected — that target is a
+count with no sentinel.
+
+**Root-cause class — A TARGET WHOSE DISTRIBUTION WAS NEVER INSPECTED.** Sibling of
+C149 (a metric whose floor was never computed) and C147 (a rule with no
+instrument): here the *estimator* was scrutinised for a month while the *label* was
+taken on faith. The panels carry a constant control, a raw-pixel floor and a paired
+statistic — and none of that can detect a target that is measuring a different
+question than its name says.
+
+⭐ **What found it:** deciding to check the label distribution BEFORE running the
+readout-row sweep that had been planned to "fix" `lead_gap_m`. That sweep would
+have burned GPU tuning a representation against a broken target, and any result —
+positive or negative — would have been uninterpretable.
+
+**The fix, for the next panel:** score **two separate targets** — `lead_present`
+(binary, the question the variance is actually about) and `lead_range_m`
+(continuous, **lead-present frames only**, no sentinel) — each with its own
+constant control and raw-pixel floor and its own **n**.
