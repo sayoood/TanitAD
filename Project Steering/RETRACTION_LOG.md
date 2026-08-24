@@ -8165,3 +8165,34 @@ marked PENDING that read-out rather than left standing.
 result, so it would have made the programme *more* pessimistic, not less — which
 is precisely why it nearly passed unchallenged. **A conservative-sounding claim
 gets the same evidential standard as a favourable one.**
+
+## C148 ⚠️ — "BATCH IS RULED OUT FOR FREE" WAS AN INFERENCE FROM A NON-MATCHED ARM, AND THE CELL I HAD ALREADY QUEUED REFUTED IT WITHIN THE HOUR (2026-08-24)
+
+**What I asserted, to the PI and in the loop state.** That E-DEC-19b's BATCH cell
+was "answered for free" and "batch is NOT the lever", because `scale1` reaches the
+parity regime at **batch 4**.
+
+**Why it was wrong.** `scale1` is not a matched control — 4× encoder, different
+readout — so it can only show that the regime is *reachable* at batch 4. It says
+nothing about how much batch *contributes*. The matched cell, `rdw8b8` (batch 8,
+2k, 130 clips, everything else identical to `rdw8`), measures exactly that and it
+is **large**: `n_agents` **−1.0407 → −0.1099** (t 2.75, 22/24) — about **86 % of
+the distance** from `rdw8` to `rdw8p30k` — and cos 0.0541 → 0.0933 (z 5.49).
+
+**The corrected claim is narrower and more useful than either version.** Batch is
+a **substantial lever for ENVIRONMENT decodability and a minor one for the
+PREDICTOR** (0.0933 against 0.6224); the 11.5× predictor gain is steps+data. Batch
+and steps+data look partially **substitutable** on the environment axis — both
+routes reach `n_agents` ≈ 0 — which is a real finding a null would have hidden.
+
+**Root-cause class — CONCLUDING A NULL FROM AN UNMATCHED ARM WHILE THE MATCHED
+CELL WAS ALREADY RUNNING.** This is the C138/C147 family once more: a comparison
+that is not paired and not matched, read as a verdict. The aggravating detail is
+that **the correct experiment was already queued and 40 minutes from finishing** —
+the cost of waiting was zero and I spent a claim instead.
+
+⛔ **Standing rule: when a factorial cell is already scheduled, do not pre-empt it
+with an inference from a non-matched arm.** A pre-registered cell exists precisely
+so the answer is measured. If a spare observation seems to answer it early, that
+observation is a HYPOTHESIS about the cell, and must be labelled as one until the
+cell reads out.
