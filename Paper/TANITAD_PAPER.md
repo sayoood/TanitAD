@@ -4075,9 +4075,11 @@ the clean part, and a parity-scale disambiguating run is in progress.
 
 ### 13.8 Proven result 6 — freezing is necessary but not sufficient, and ego decodability is free
 
-The strongest arm of the campaign is a **split encoder**: a frozen distilled
-encoder with a trainable readout and predictor, optimised by the two-term
-objective alone. It reaches `n_agents` **+0.4035** (paired LOEO, t 13.45, 24/24)
+The strongest arm **of the small-scale screen** is a **split encoder**: a frozen
+distilled encoder with a trainable readout and predictor, optimised by the
+two-term objective alone. *(Everything in this subsection is measured at 2 000
+steps over 130 clips. §13.11 repeats the design at full scale and the conclusions
+below do not all survive it — read them together.)* It reaches `n_agents` **+0.4035** (paired LOEO, t 13.45, 24/24)
 — above pure distillation (+0.3274) and above a frozen DINOv3 that never saw our
 data (+0.2754) — with the best in-objective predictor measured here
 (cos h=1 **0.1872**, z 7.99 against a 200-draw permutation null). That the
@@ -4235,7 +4237,7 @@ emits the **dataset-mean delta** for every window. A no-motion predictor scores
 |---|---|---|---|---|
 | two-term, 2k | 0.1072 (7.58) | 0.9988 | 0.9981 | does not beat a constant |
 | frozen-distilled, 2k | 0.1706 (9.18) | 0.9902 | 0.9982 | does not beat a constant |
-| frozen-distilled, 10k | 0.0012 (0.84) | **4.8321** | 0.9982 | **worse than a constant** |
+| frozen-distilled, 10k *(130 clips)* | 0.0012 (0.84) | **4.8321** | 0.9982 | **worse than a constant** — ⚠️ §13.11: the same design at full scale reads **0.8416 and beats it** |
 | **parity, 30k** | 0.6307 (**44.45**) | **0.7845** | 0.9978 | **beats it (~38 % of delta energy)** |
 
 Extended to **every finished arm the programme has trained** — thirty of them,
@@ -4279,7 +4281,52 @@ that fraction is a one-number screen requiring no baseline arm.
 long-run **and** full-corpus, always together. That comparison is pre-registered
 and running.
 
-### 13.11 What this section does not establish
+### 13.11 Proven result 9 — at full scale one arm carries the scene *and* predicts, and a fourth small-scale conclusion dissolves
+
+§13.8 ended with two arms that each won one axis: a frozen distilled encoder that
+carried scene content but whose predictor was worse than a constant, and a
+full-corpus arm that predicted but carried little content. Both were measured in
+the regime §13.10 has since shown to be uninformative about prediction.
+
+Running the frozen-distilled design at full scale — same objective, same freeze,
+30 000 steps on the full corpus — resolves it:
+
+| | full-corpus, no init | **full-corpus, frozen distilled init** | frozen distilled, 130 clips | frozen DINOv3 |
+|---|---|---|---|---|
+| predictor `nrmse` vs constant floor | **0.7903** | **0.8416** | 4.1757 | — |
+| participation (val / held-out) | **25.58 / 26.96** | 6.38 / 7.63 | 2.68 / 2.47 | — |
+| `n_agents` | −0.0180 | **+0.3881** (t 28.21, 24/24) | +0.4156 | +0.2754 |
+| `n_agents` vs raw-pixel floor (paired) | +0.1976 (t 10.21) | **+0.6037 (t 30.86)** | +0.6313 (t 36.67) | +0.4911 |
+| `lead_gap_m` | **+0.0063** | −0.0940 (t −6.22) | −0.0123 | +0.0294 |
+
+**This is the first representation in the programme to clear the constant-predictor
+floor and carry scene content at the same time.** Its `n_agents` exceeds a frozen
+DINOv3 that never saw our data, and sits 30.86σ above raw pixels — a gain of
++0.4061 over the same architecture without the initialisation, on 24 of 24 clips.
+
+**And the collapse §13.8 attributed to the frozen field was, once again, the small
+corpus.** The identical frozen encoder reads `nrmse` **4.1757 on 130 clips** and
+**0.8416 on the full corpus**. Freezing does not destroy the predictor. This is
+the fourth conclusion of this section — after the degeneracy's practical severity,
+the necessity of a frozen part, and the insufficiency of freezing alone — that did
+not survive contact with the full corpus.
+
+**What it costs, stated rather than netted against the gain.** Its predictor is
+*worse* than the un-initialised arm's (0.8416 against 0.7903), so the
+initialisation trades prediction for content rather than adding both.
+`lead_gap_m` moves the wrong way, from +0.0063 to −0.0940, below the raw-pixel
+floor — **the two environment targets dissociate, and `n_agents` alone may not be
+called "environment"**. Participation falls fourfold and the pre-registered
+kill-gate rejects the arm on rank; we weigh that against the evidence that rank
+does not track capability, but we do not discard it. Ego degrades below the
+constant control, which §13.8 makes the least informative axis.
+
+⛔ **And it is teacher-dependent at initialisation.** The frozen field is distilled
+from a pretrained model, so this result buys capability, not independence. **The
+question of whether a teacher-free source of scene content exists is exactly where
+it was**, and none of the six auxiliary-objective families in §13.10 answered it.
+
+### 13.12 What this section does not establish
 
 No claim is made about driving. No arm here has a planner or a closed loop, and
 the tier doctrine forbids reading T0 diagnostics as capability. The environment
@@ -4307,8 +4354,20 @@ severity, the necessity of a frozen part, the insufficiency of freezing alone,
 and both PSG results — were measured in that regime. The derivation in §13.1
 stands as mathematics regardless. The empirical claims built on top of it are
 re-opened by §13.9, not confirmed by it, and each requires a parity-scale
-re-test before it may inform a design decision. The first such re-test is
-running.
+re-test before it may inform a design decision. **The first such re-test has now
+run** (§13.11), and it overturned a fourth: the predictor collapse on a frozen
+field was the small corpus, not the freeze.
+
+Nor does §13.11 establish that the problem is solved. Its `lead_gap_m` sits below
+the raw-pixel floor while its `n_agents` sits far above it, so the representation
+is not uniformly better — it is better at one environment target and worse at the
+other. Its predictor is worse than the arm without the initialisation. Its
+environment rows are in-sample. Its rank fails the gate we pre-registered. And it
+is **teacher-dependent**: the frozen field is distilled from a pretrained model,
+so the result is about what a distilled prior buys, not about learning scene
+content from our data alone. That question — the one the six auxiliary-objective
+families of §13.10 were built to answer — remains open, and nothing in §13.11
+touches it.
 
 §13.10 adds a second caution of the same kind, aimed at this section's own
 method. A missing baseline survived in the predictor block for the whole campaign
