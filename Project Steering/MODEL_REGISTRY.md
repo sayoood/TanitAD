@@ -3880,12 +3880,33 @@ whether both are obtainable at once.
 
 ### 13.0c ⭐⭐⭐ THE PREDICTOR CENSUS — exactly three arms in the programme beat a constant predictor
 
-> ⛔⛔ **READ THIS BEFORE QUOTING ANY `nrmse` BELOW — E-DEC-30 (MEASURED
-> 2026-08-24).** Every `nrmse` in this section is **UNCHANGED TO FOUR DECIMALS
-> when the predictor's actions are replaced by a sequence from a random other
-> moment**: `rdw8p30k` **0.7845 → 0.7845** (prediction moves 0.77 %),
-> `scale1` 0.8200 → 0.8199, `splitp30k` 0.8683 → 0.8680.
-> `…/2026-08-24-action-conditioning-and-heldout/raw/nrmse_shuf.json`
+> ⛔⛔ **READ THIS BEFORE QUOTING ANY `nrmse` BELOW — E-DEC-33, THE FULL
+> 32-ARM CENSUS (MEASURED 2026-08-24, 10 held-out val clips).** Every `nrmse` in
+> this section is essentially **UNCHANGED when the predictor's actions are
+> replaced by a sequence from a random other moment.** Not a selected subset —
+> **all 32 arms the programme has ever trained**:
+>
+> | | value |
+> |---|---|
+> | max RELATIVE change in `nrmse` from replacing every action with noise | **0.0919 %** |
+> | median relative change | **0.0097 %** |
+> | **arms exceeding 0.1 %** | **0 of 32** |
+> | how far the prediction moves (‖d−d_shuf‖/‖d‖), range | 0.0027 – **0.1163** |
+> | for scale: a **10 % LATENT** nudge moves `rdw8p30k` | **0.1768** |
+>
+> ⇒ **THE LARGEST ACTION RESPONSE ANYWHERE IN THE PROGRAMME (11.6 %) IS SMALLER
+> THAN WHAT A 10 % PERTURBATION OF THE LATENT DOES (17.7 %).** The floor-beating
+> arms are among the *least* action-sensitive: `rdw8p30k` 0.0077, `scale1`
+> 0.0084, `rdw8s30k` 0.0125, `champ30k` 0.0305, `splitp30k` 0.0495.
+> `…/2026-08-24-action-conditioning-and-heldout/raw/nrmse_shuf_census.json`
+>
+> ⚠️ **A TEMPTING PATTERN THAT DOES NOT HOLD, RECORDED SO IT IS NOT RE-DERIVED.**
+> The five best-`nrmse` arms cluster at low action sensitivity, which looks like
+> *"the better the predictor, the more it ignores actions"*. **Spearman(`nrmse`,
+> action-sensitivity) = +0.048 over the 22 non-divergent arms — no monotone
+> relation.** The apparent trend is a few extreme points. The mechanism in §3.2
+> of the E-DEC-30 report stands on its own argument; it is **not** additionally
+> supported by a correlation across arms.
 >
 > ⇒ **BEATING THE CONSTANT FLOOR IS NOT EVIDENCE OF AN ACTION-CONDITIONED WORLD
 > MODEL.** These arms beat the floor by TEMPORAL EXTRAPOLATION — predicting that
