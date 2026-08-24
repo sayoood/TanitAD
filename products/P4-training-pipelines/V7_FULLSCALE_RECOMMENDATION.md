@@ -139,6 +139,34 @@ at once, and it is the most informative number outstanding.
 **I would not sign a long v7 run before B and C read out.** A is a
 cheaper-or-equal question and can run in parallel.
 
+## 6b. ⛔ CORRECTION (same day, C149): the predictor metric lacked its floor
+
+Every "the predictor works" number in this programme came from **mean-centred cos
+vs a permutation null**. That null answers *is the correlation non-zero*; it never
+answered *is this better than predicting the average motion*. With the missing
+control added (`meanpred.json`; `nrmse = ||d̂ − t|| / ||t||`, against a
+dataset-mean-delta predictor, `nrmse_zero` = 1.0 by construction):
+
+| arm | cos_ctr (z) | `nrmse` | mean-only control | verdict |
+|---|---|---|---|---|
+| `o5k4` 2k | 0.1072 (7.58) | 0.9988 | 0.9981 | does NOT beat a constant |
+| `splitfrz` 2k | 0.1706 (9.18) | 0.9902 | 0.9982 | does NOT beat a constant |
+| `splitfrz10k` | 0.0012 (0.84) | **4.8321** | 0.9982 | **WORSE than a constant** |
+| **`rdw8p30k`** | 0.6307 (**44.45**) | **0.7845** | 0.9978 | **BEATS it (~38 % of delta energy)** |
+
+⇒ **Only the parity-scale arm has a predictor in any useful sense.** The tiny arms
+carry a small, genuinely non-zero directional signal (~0.2–2 % of variance) that
+does not reduce error below a constant.
+
+**Consequences for this document.** §5's claim that `splitfrz` had "the best
+in-objective predictor" is **withdrawn** — it is a mean predictor, and the
+frozen-vs-parity dissociation is therefore even starker than §5 states: the frozen
+arm's advantage is **content only**, and it never had a working predictor to lose.
+§3's argument is **unaffected and strengthened** — `rdw8p30k` is now the only
+predictor claim in the campaign that survives its own floor. **Gate A becomes more
+important, not less**: the `--o5-k` depth ranking it tests was measured entirely
+inside that noise floor.
+
 ## 7. What is explicitly NOT claimed
 
 * **No driving claim.** All T0. `C131`: flagship v1's open-loop 0.4271 → closed-loop 1.7318, a 4.05× divergence.

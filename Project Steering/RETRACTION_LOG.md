@@ -8196,3 +8196,60 @@ with an inference from a non-matched arm.** A pre-registered cell exists precise
 so the answer is measured. If a spare observation seems to answer it early, that
 observation is a HYPOTHESIS about the cell, and must be labelled as one until the
 cell reads out.
+
+## C149 ⛔⛔ — THE PREDICTOR METRIC HAD A PERMUTATION NULL BUT NO CONSTANT-PREDICTOR BASELINE, SO EVERY TINY-ARM "THE PREDICTOR WORKS" CLAIM RANKED ARMS INSIDE THE NOISE FLOOR OF PREDICTING THE MEAN (2026-08-24, self-caught while diagnosing E-DEC-20)
+
+**What I have been asserting.** Predictor competence from **mean-centred cos vs a
+200-draw permutation null**, e.g. "`splitfrz` has the best in-objective predictor
+measured (0.1872, z 7.99)", "`o5k4` 0.1234 (z 6.61)", and the whole `--o5-k`
+depth ranking.
+
+**What the permutation null actually tests.** *Is the correlation non-zero?* It
+does **not** test *is the prediction better than predicting the average motion?*
+Those are different questions and I was answering the weaker one for weeks.
+
+**MEASURED with the control added** (`meanpred.json`, h=1, 10 held-out val clips;
+`nrmse = ||d̂ − t|| / ||t||`, `nrmse_meanonly` predicts every window with the
+dataset-mean delta, `nrmse_zero` = 1.0 by construction):
+
+| arm | cos_ctr (z) | nrmse | mean-only control | verdict |
+|---|---|---|---|---|
+| `o5k4` (2k) | 0.1072 (7.58) | **0.9988** | 0.9981 | does NOT beat a constant |
+| `splitfrz` (2k) | 0.1706 (9.18) | **0.9902** | 0.9982 | does NOT beat a constant |
+| `splitfrz10k` | 0.0012 (0.84) | **4.8321** | 0.9982 | **WORSE than a constant** |
+| `rdw8p30k` (30k parity) | 0.6307 (**44.45**) | **0.7845** | 0.9978 | **BEATS it — ~38 % of delta energy** |
+
+⇒ **Only the parity-scale arm has a predictor in any useful sense.** The tiny arms
+carry a **small but genuinely non-zero directional signal** (~0.2–2 % of variance)
+that **does not reduce prediction error below a constant**. The cosines were real;
+the *competence* they were quoted as evidence for was not.
+
+⛔ **Specific withdrawals.** "`splitfrz` has the best in-objective predictor
+measured in the programme" is withdrawn — it is a mean predictor. The E-DEC-16
+`--o5-k` depth ranking (cos 0.0541 → 0.1234 → 0.1328 → 0.1327) is a ranking
+**within** that noise floor and may not be quoted as "the predictor improves with
+depth"; the *settled* `--o5-k 8` therefore rests on an even thinner reed than
+Gate A already assumed. And E-DEC-20's "the predictor DIES between 2k and 10k" is
+**sharpened, not softened**: it did not merely die, it went from ≈constant to
+**~5× miscalibrated** (mean-fraction 0.8174), consistent with its h=1 head growing
+2.676×.
+
+**Root-cause class — A NULL THAT IS NOT THE FLOOR.** Exactly the sibling of
+**C147**: there, the raw-pixel floor existed as a display column but was never
+paired; here, a *statistical* null (permutation) was mistaken for a *baseline*
+(constant predictor). CLAUDE.md's probe-panel rule already demands "a CONSTANT-ONLY
+control that must read the no-information value" — the ENVIRONMENT and EGO blocks
+carry one and read exactly 0.0000, and **the PREDICTOR block never had one.** The
+rule was obeyed in two of three blocks and the gap survived because the missing
+block was the one with the most impressive-looking z-scores.
+
+**Fix, same turn.** `meanpred.py` is banked, and the predictor block of every panel
+must carry `nrmse` against `nrmse_meanonly` and `nrmse_zero` beside the cos. A
+permutation z is admissible for *"is there signal"* and never for *"the predictor
+works"*.
+
+⚠️ **What this does NOT touch.** `rdw8p30k`'s result gets STRONGER, not weaker:
+cos_raw 0.6305 ≈ cos_ctr 0.6307, mean-fraction only 0.0719, and it beats the
+constant baseline by 0.21 nrmse. E-DEC-19's headline — that scale, not an
+auxiliary objective, produced the predictor — is unaffected and is in fact the
+only predictor claim in the campaign that survives the control.
