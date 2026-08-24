@@ -99,6 +99,50 @@ floor lives INSIDE the loss. Pre-registered with four outcomes in
 ⭐⭐ **THE SPLIT ACROSS ARMS IS THE HEADLINE.** `splitp30k` (frozen distilled): `n_agents` from `z_t` **+0.3864** — far the richest — but its predictor **ADDS NOTHING**, delta vs `z_t` of −0.0008 / −0.0320 / −0.0158 at k=1/3/6, all NEGATIVE (t −3.69 / −5.62 / −6.26), and at k=6 `lead_closing` degrades to −0.0747 (t −2.11). `rdw8p30k` (trained): content only +0.0777 but the predictor **adds substantially**. ⇒ **the frozen arm CARRIES the environment and does not PREDICT it; the trained arm PREDICTS change and carries less of it.** E-DEC-20's dissociation in a new form ⇒ **mandate (2) — environment in BOTH encoder and predictor — is NOT yet satisfied by any single arm.**
 
 ⚠️ **FOUR BOUNDS.** (1) **ẑ also beats the encoded-future CEILING**, which is anomalous. Two explanations and this panel cannot separate them: the rollout is **ACTION-CONDITIONED**, so ẑ carries the ego's commanded motion that a single encoded frame lacks — *or* it is temporal **smoothing** of a noisy target. **An action-shuffled control would separate them and has not been run.** (2) All absolute R² are **small** (0.03–0.15); `lead_closing` +0.0019 is barely above zero. (3) **IN-SAMPLE** until the held-out corpus lands. (4) k=1 is **underpowered by construction** — the ceiling itself is barely above `z_t` there (+0.0123, t 0.75), i.e. the scene has not changed enough for prediction to add anything; only k=3–6 carry headroom. |
+| E-DEC-39 | ⭐⭐⭐ **Is the action even RECOVERABLE from the latent transition? (the gate on O11's REFUTED branch)** | ⛔ **MEASURED — NO DETECTABLE CONTRIBUTION from the future latent, on either arm. Weak negative: underpowered at 20 clips, but the panel's own detected signal bounds it.** | `…/raw/idm_oracle.json`
+
+Encoded latents only, **no predictor anywhere**. k=4, 20 lead-matched held-out
+clips, 1,920 rows, RFF+ridge (convex, clip-disjoint λ), within-clip Pearson r.
+
+| `rdw8p30k` | TRUE r | SHUF r | **vs `z_t` alone** | t |
+|---|---|---|---|---|
+| accel · `z_t` **alone** | **+0.1709** | −0.0160 | (baseline) | — |
+| accel · `[z_t, z_{t+k}]` | +0.1351 | −0.0152 | **−0.0358** | −0.62 |
+| accel · `[z_t, dz]` | +0.0663 | −0.0305 | **−0.1045** | −1.88 |
+| steer · `[z_t, z_{t+k}]` | −0.0087 | −0.0144 | +0.0600 | 1.16 |
+| constant (control) | **+0.0000** | +0.0000 | — | — |
+
+⭐ **THE PANEL CONTAINS ITS OWN POSITIVE CONTROL AND IT PASSES:** accel from
+`z_t` **alone** reads **+0.1709 against a shuffled −0.0160**, so the instrument
+detects a signal of that size. **The same instrument finds NO delta reaching
+|t| 2 anywhere when the future latent is added** (max 1.57; `rdw8p30k` accel is
+**−0.62**, i.e. adding the future makes it *worse*).
+⇒ **Whatever action information sits in the latent transition is SMALLER than the
+ego-autocorrelation signal the panel readily detects.** That is a bound, not a
+proof of absence — 20 clips is underpowered and the wording matters.
+
+⚠️ **Do not read `splitp30k`'s "+0.1339" as evidence:** its steer baseline is
+**−0.2063, worse than a constant** (t 2.13), so every column "improves" on a
+broken baseline.
+
+⭐⭐ **AND THIS EXPLAINS THE O11 ARM.** `o11p30k` broke out of the floor at step
+5400 immediately after a **gnorm spike of 673.75** (run median 2.91) and reached
+`o11_loss` **0.00046** against the `ln 4` floor with **`pick_acc` 1.000** by step
+6200. But `sep_rel` went **0.01 → 12–17** (counterfactual rollouts 12–17× farther
+from the truth than the true-action one) and `o5_loss` rose **+18.7 %** against
+the seven steps immediately preceding. ⇒ **This is ẑ = f(z) + λa — the exact
+degenerate solution the term's own docstring named as its trivial minimiser.**
+
+⇒ **PREREG OUTCOME: DEGENERATE.** And E-DEC-39 says *why* it was the only
+solution available: **O11 asked for information the latent transition does not
+measurably contain, so the only way to satisfy it was to manufacture separation.**
+⚠️ The prereg's DEGENERATE branch reads *"O11-CF is wrong for this rig and is not
+carried forward"* — written before we knew the term could open the pathway at
+all. The evidence says something narrower and more useful: **the term WORKS as an
+optimisation target and the information is missing.** The next step is therefore a
+**LONGER HORIZON or a different action representation**, per the E-DEC-39 gate —
+**not** the injection site, and not simply abandoning O11.
+
 | E-DEC-38 | ⭐⭐⭐ **THE COUNTERFACTUAL PHYSICS TEST — can the WM answer "if I brake, what happens?" (PI mandate 3, directly)** | ⛔⛔ **MEASURED — NO, on all three arms, with every control reading correctly. This is the pre-O11 BASELINE.** | `…/raw/physics_baseline_preO11.json`
 
 24 lead-matched HELD-OUT clips, k=6, 395 closing / 440 free-flow windows.
