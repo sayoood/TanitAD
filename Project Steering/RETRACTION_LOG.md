@@ -8399,3 +8399,73 @@ action** — it is a low-variance nuisance input, and extrapolation captures mos
 the variance. The predictor is doing exactly what it was asked to do. ⇒ The fix
 is not a bigger predictor or more steps; it is **an objective that cannot be
 minimised without using the actions.**
+
+## C152 ⛔ — AN UNLABELLED FRAME ENTERED THE PROBE AS "ZERO AGENTS IN VIEW", AND THE DEFECT WAS INVISIBLE ON THE ONLY CORPUS IT HAD EVER RUN ON (2026-08-24, caught by an EXTERNAL control moving with the treatment)
+
+**What was nearly asserted.** The first held-out read of the environment probe —
+the read that converts every content claim in this campaign from IN-SAMPLE to
+GENERALISATION — showed every arm collapsing:
+
+| target | `splitp30k` | `rdw8p30k` | pixels | **frozen DINOv3** |
+|---|---|---|---|---|
+| `n_agents` in-sample | **+0.3881** | +0.0777 | — | **+0.2754** |
+| `n_agents` held-out (pre-fix) | **−0.3657** | −0.0580 | −0.0810 | **+0.0114** |
+
+The available reading — *"the environment content does not generalise; the
+encoder memorised those 130 clips"* — is coherent, matches the programme's known
+failure modes, and would have been reported as the answer to the PI's mandate (2).
+
+**⭐ WHAT STOPPED IT: THE EXTERNAL CONTROL MOVED WITH THE TREATMENT.** Frozen
+DINOv3 dropped **+0.2754 → +0.0114** on the same panel. DINOv3 trained on
+neither corpus, so it **cannot** have memorised ours. A control that is supposed
+to be invariant to the hypothesis, and moves anyway, means **the MEASUREMENT
+changed, not the model** — and that is the only reason this was probed instead of
+published.
+
+**The defect.** `spatial_targets` wrote `a = ag.get(i, [])`, so a frame with **no
+label** became `n_agents = 0` — a missing value silently wearing the costume of a
+real observation. In LOEO, a mostly-unlabelled held-out clip asks the probe to
+predict a **constant 0 from real imagery**, and R² goes sharply negative for
+**every column**, including the external reference.
+
+**Why it had never shown up:**
+
+| corpus | labelled of first 100 frames | clips < 50 labelled | **fake zeros** |
+|---|---|---|---|
+| in-sample | 100.0 | 0 | **0.00 %** |
+| held-out | 95.1, **min 0** | **7 of 124** | **4.90 %** |
+
+⛔ **The in-sample corpus was BUILT FROM those labels, so its coverage is 100 % by
+construction.** The probe had only ever run on a corpus that could not express
+the defect. **A latent defect in an instrument is not evidence the instrument is
+sound; it is evidence the instrument has only met one input.** Same family as
+"absence found at ONE location is not absence", one level up: *correctness*
+observed at one location is not correctness.
+
+**ROOT-CAUSE CLASS: a missing value that is representable as a valid value.**
+This is **C150 exactly** — `lead_gap_m`'s 80.0 "no lead" default sitting inside
+the range of real leads — and the E-DETECT-1 all-zero memmap, and the
+`jpeg_buf`-named-but-PNG codec. In all four the failure is silent because the bad
+value is *type-correct and range-plausible*. ⇒ **A target built from an optional
+label carries a MASK, never a default.** `0 agents` and `unknown` are different
+propositions and no probe may conflate them.
+
+**The fix, and the control that makes it trustworthy.** `spatial_targets` now
+returns a labelled-mask; unlabelled rows are dropped rather than zero-filled;
+clips below **80 %** coverage are dropped entirely; and **the count dropped is
+printed** — an aggregate that does not state what it compared is the vacuous
+freeze-check defect in another costume. `envpred.py`'s `n_agents` is NaN-masked to
+match (its lead targets already were).
+
+⭐ **The re-run of the IN-SAMPLE split with the FIXED instrument reproduces the
+pre-fix numbers EXACTLY** — `n_agents` splitp30k **+0.3881**, DINOv3 **+0.2754**,
+`n_free_cols` **+0.2869** / **+0.3701**, at `2400/2400 frames labelled
+(100.00 %), 24/24 clips kept, 0 dropped`. **That is what makes the held-out read
+attributable**: the fix is proven inert where the defect was absent, so any
+held-out movement belongs to the fix and not to a side effect of it. A fix
+shipped without this control would have replaced one unfalsifiable number with
+another.
+
+⚠️ **STATUS OF THE HELD-OUT ENVIRONMENT VERDICT: PENDING, NOT NEGATIVE.** What is
+established is that the pre-fix held-out numbers are **inadmissible** and must not
+be quoted from any log, report or summary that captured them.

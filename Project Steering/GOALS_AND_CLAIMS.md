@@ -58,7 +58,33 @@ a fresh context reads after the constitution.`
 ⛔ **But the boundary is sharp.** All eight per-azimuth-column occupancies sit at or below zero. With `lead_range_m` failing at every arm (E-DEC-24), the honest statement is: **the representation knows roughly HOW CROWDED the scene is, HOW MUCH ROOM is ahead, and WHICH SIDE things are on — and does not know WHERE any individual object is.**
 
 ⚠️ **THREE BOUNDS.** (1) The per-column targets are **SPARSE** (most columns empty in most frames), so R² there is noisy — `occ_col4` at **−0.9301** reads as instability, not a measurement, and no per-column claim should rest on a single value. (2) **DINOv3 beats us on the corridor signal** (+0.3701 vs +0.2869) and on `occ_left`, so this is not a place we lead — consistent with **C138**. (3) IN-SAMPLE until the held-out corpus lands. ⭐ **NEXT, and it is the E-DEC-25 shape:** run this same probe on the **TOKEN grid**. If the fine per-column structure is present in the tokens and absent from the readout cells, the deficit is the READOUT and the objective, not the encoder. |
-| E-DEC-28 | ⭐⭐⭐ **Does the PREDICTED latent carry the environment? (PI mandate 2 + 3)** | ⭐⭐⭐ **MEASURED — YES for the trained-encoder arm, NO for the frozen one. The dissociation reappears, and no single arm has both.** | `…/raw/envpred.json`. The h=1 head rolled k times, then ẑ_{t+k} probed against the scene **at t+k**. ⛔ **THE WHOLE TEST IS THE `z_t` CONTRAST**: the scene at t+k is heavily autocorrelated with t, so beating the CONSTANT proves nothing — only beating **`z_t` (encoded present, the no-prediction baseline)** shows the predictor propagates scene structure. Ceiling `z_{t+k}` and a raw-pixel floor carried. n ≈ 1,950–2,230 rows over 24 clips, probe d_eff = 128.
+| E-DEC-30 | ⭐⭐⭐ **Is the predictor conditioned on its ACTIONS at operating magnitudes? (PI mandate 3)** | ⛔⛔ **MEASURED — NO. Normalised against each arm's own positive control, a 251 % change to the ENTIRE action tensor moves the prediction by 8.5 % (`rdw8p30k`) / 2.2 % (`splitp30k`) / 4.2 % (`scale1`) of what a 10 % LATENT nudge does. A hard-left→hard-right sign flip moves `rdw8p30k` by 1.1 %.** | `…/2026-08-24-action-conditioning-and-heldout/raw/actchan.json`
+
+⭐ **THE POSITIVE CONTROL IS WHAT MAKES THIS READABLE, AND IT PASSES ON ALL THREE ARMS**
+(latent +10 % noise → 0.1768 / 10.4510 / 0.2571). This is insensitivity, not a dead
+predictor. `d_in` is printed beside every `d_out` so a null can never be read off a weak
+perturbation — the shuffles are 232–251 % input changes, not nudges.
+
+⛔ **AND `nrmse` — THE NUMBER THE ENTIRE GATE-B/GATE-C CENSUS RANKS ARMS ON — IS
+UNCHANGED TO FOUR DECIMALS UNDER AN ACTION SHUFFLE** (`rdw8p30k` 0.7845 → 0.7845,
+prediction moved 0.77 %). Every arm ranked on it must be re-read with the shuffle
+control beside it.
+
+⭐ **C137 IS REPRODUCED AND NOT RE-RETRACTED — ITS SCOPE IS NARROWED.** Its own metric
+(`a × 100`) reads 0.5084 here, so its measurement stands. But ×100 is an input **75×
+larger in norm than a real action**; that is the tail of a saturating nonlinearity. ⇒ **A
+sensitivity probe must perturb at the magnitude the model will actually meet.**
+
+⭐⭐ **THE MECHANISM, WHICH MAKES IT A DESIGN FINDING RATHER THAN A BUG.** O5 trains
+ẑ_{t+k} ≈ z_{t+k}; over 0.6 s the scene at t+k is overwhelmingly set by the scene at t and
+only marginally by the ego's command, so **the loss-minimising solution is to ignore the
+action**. Neither a bigger predictor nor more steps fixes that — the objective does.
+**Fix implemented and tested: O11-CF** (`train_v6_staged.py`), an InfoNCE over actions
+whose no-information value is **exactly `ln(1+n_neg)`**, so the C149 constant-predictor
+floor lives INSIDE the loss. Pre-registered with four outcomes in
+`PREREG_O11_COUNTERFACTUAL_ACTION.md`.
+
+| E-DEC-28 | ⛔ **Does the PREDICTED latent carry the environment? (PI mandate 2 + 3)** | ⛔ **PHYSICS READING RETRACTED (C151) — the `lead_closing` / `lead_range_m` gains reproduce to three decimals under SHUFFLED actions, so they are temporal smoothing, not action-conditioned world modelling. The R² values stand as numbers; the mechanism attached to them does not.** | `…/raw/envpred.json`, `…/raw/actionshuf.json`. The h=1 head rolled k times, then ẑ_{t+k} probed against the scene **at t+k**. ⛔ **THE WHOLE TEST IS THE `z_t` CONTRAST**: the scene at t+k is heavily autocorrelated with t, so beating the CONSTANT proves nothing — only beating **`z_t` (encoded present, the no-prediction baseline)** shows the predictor propagates scene structure. Ceiling `z_{t+k}` and a raw-pixel floor carried. n ≈ 1,950–2,230 rows over 24 clips, probe d_eff = 128.
 
 **`rdw8p30k` (the predictor champion), rolled k=6 (k=3 for closing):**
 
@@ -73,6 +99,20 @@ a fresh context reads after the constitution.`
 ⭐⭐ **THE SPLIT ACROSS ARMS IS THE HEADLINE.** `splitp30k` (frozen distilled): `n_agents` from `z_t` **+0.3864** — far the richest — but its predictor **ADDS NOTHING**, delta vs `z_t` of −0.0008 / −0.0320 / −0.0158 at k=1/3/6, all NEGATIVE (t −3.69 / −5.62 / −6.26), and at k=6 `lead_closing` degrades to −0.0747 (t −2.11). `rdw8p30k` (trained): content only +0.0777 but the predictor **adds substantially**. ⇒ **the frozen arm CARRIES the environment and does not PREDICT it; the trained arm PREDICTS change and carries less of it.** E-DEC-20's dissociation in a new form ⇒ **mandate (2) — environment in BOTH encoder and predictor — is NOT yet satisfied by any single arm.**
 
 ⚠️ **FOUR BOUNDS.** (1) **ẑ also beats the encoded-future CEILING**, which is anomalous. Two explanations and this panel cannot separate them: the rollout is **ACTION-CONDITIONED**, so ẑ carries the ego's commanded motion that a single encoded frame lacks — *or* it is temporal **smoothing** of a noisy target. **An action-shuffled control would separate them and has not been run.** (2) All absolute R² are **small** (0.03–0.15); `lead_closing` +0.0019 is barely above zero. (3) **IN-SAMPLE** until the held-out corpus lands. (4) k=1 is **underpowered by construction** — the ceiling itself is barely above `z_t` there (+0.0123, t 0.75), i.e. the scene has not changed enough for prediction to add anything; only k=3–6 carry headroom. |
+| E-DEC-31 | ⭐⭐ **The held-out environment set EXISTS — every prior content number was IN-SAMPLE** | ⭐ **BUILT: 124 held-out val episodes, 23,164 frames, 762,204 agent boxes, reader-verified, ZERO overlap with the in-sample 130, md5 `66efaa94fcc58b7fc4f57734545b103c`, 23.6 s.** Held-out VERDICT is **PENDING** — the first read was invalidated by C152 and the fixed instrument is running. | `…/raw/val130_join.meta.json`
+
+⛔ **C152 — THE FIRST HELD-OUT READ WAS AN ARTEFACT, AND ITS OWN CONTROL SAID SO.** Every
+arm collapsed (`splitp30k` `n_agents` +0.3881 → −0.3657) **and frozen DINOv3 collapsed
+with them (+0.2754 → +0.0114)**. DINOv3 trained on neither corpus, so it cannot have
+memorised ours: **a control that moves with the treatment means the MEASUREMENT changed,
+not the model.** Cause: `ag.get(i, [])` turned an **UNLABELLED** frame into `n_agents = 0`
+— 0.00 % of in-sample frames (that corpus was BUILT from those labels) but **4.90 %
+held-out, concentrated in 7 clips with <50 labelled frames and one with ZERO**. Same class
+as C150. Fixed with a labelled-mask, an 80 % coverage floor, and a **printed** count of
+what was dropped. ⭐ The in-sample re-run with the fixed instrument **reproduces exactly**
+(+0.3881 / +0.2754 / n_free_cols +0.2869, 2400/2400 frames, 0 dropped), which is what
+makes the held-out read attributable. ⛔ **The pre-fix held-out numbers are INADMISSIBLE.**
+
 | E-DEC-27 | **The held-out environment set (G2) is buildable, and at what cost?** | ⭐ **FEASIBILITY SETTLED — it is a bounded, priced, no-new-code job. AWAITING PI GO (HF quota is the PI's).** | G2 is the campaign's biggest credibility gap: **130 of 130 labelled clips are inside the parity TRAIN corpus, 0 in val**, so every content number — including `splitp30k`'s **+0.3881** — is IN-SAMPLE. Before asking the PI to commission anything I priced it, metadata-only, no bytes fetched:
 
 | step | finding |
