@@ -4343,7 +4343,7 @@ floor. ⚠️ That quantity is since **superseded** (banner above): on the repai
 target this arm reads `lead_range_m` **−0.1611**, the worst of any arm, so the
 direction of the finding survives and its magnitude is larger. **The two
 environment targets dissociate, and `n_agents` alone may not be called
-"environment"** — which §13.13 traces to the readout's projection. Participation falls fourfold and the pre-registered
+"environment"** — which §13.12 traces to the readout's projection. Participation falls fourfold and the pre-registered
 kill-gate rejects the arm on rank; we weigh that against the evidence that rank
 does not track capability, but we do not discard it. Ego degrades below the
 constant control, which §13.8 makes the least informative axis.
