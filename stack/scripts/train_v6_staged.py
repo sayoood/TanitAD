@@ -3850,6 +3850,18 @@ def dry_run(a, stack: V6Stack | None = None) -> dict:
         L = v6_loss_step(stack, b, stage=a.stage, weights=weights, o1_k=o1_k,
                          o5_k=o5_k, o5_mode=a.o5_mode, o5_form=getattr(a, "o5_form", "l1"),
                          sigreg_bank=sigreg_bank,
+                         # ⛔ THE DRY-RUN MUST PASS THE SAME KNOBS AS THE TRAINING
+                         # CALL SITE. Adding them only there left this path on the
+                         # signature DEFAULTS, so `--o11-negs 3 --o11-k 4` silently
+                         # dry-ran as n_neg=1, k=6 — MEASURED 2026-08-24, caught
+                         # only because the log prints both back. A dry-run whose
+                         # hyper-parameters differ from the run it exists to
+                         # de-risk is worse than no dry-run: it certifies a
+                         # configuration nobody is going to train. Same wrong-scope
+                         # family as reading `df` on a pod.
+                         o11_k=int(getattr(a, "o11_k", 6)),
+                         o11_tau=float(getattr(a, "o11_tau", 1.0)),
+                         o11_negs=int(getattr(a, "o11_negs", 1)),
                          o3_mode=a.o3_mode,
                          o3_blocks=a.o3_blocks,
                          o3_block_hw=(a.o3_block_h, a.o3_block_w),

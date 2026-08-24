@@ -130,7 +130,19 @@ action pathway as a fraction of the latent pathway. Control value: **8.5 %**.
   fraction for the three counterfactual rolls.
 * ⛔ **Launches only after Gate A (`ok8p30k`) completes** — never add GPU load to
   a box that is training. Gate A was at 22,600/30,000 when this was registered.
-* Code is already **shipped and md5-verified on Thor**
-  (`5c62f5edf1a86e7fd2fa578883b36f91`, O11 marker present, `--w-o11-cf` knob
-  present). Thor has no git credentials; this arrived by file-ship, as every
+* Code is **shipped and md5-verified on Thor**
+  (**`24994d5ce95d736028c913dd7cfd31c1`**, O11 marker present, `--w-o11-cf` knob
+  present, and **both** call sites carrying the knobs — see below). Thor has no git
+  credentials; this arrived by file-ship, as every Thor-side change must.
+
+⛔ **A BUG THE DRY-RUN CAUGHT, RECORDED BECAUSE IT WOULD HAVE INVALIDATED THIS
+TEST SILENTLY.** The first ship patched only the TRAINING call site, so the
+`--dry-run` path ran on the signature DEFAULTS: `--o11-negs 3 --o11-k 4` dry-ran
+as **n_neg = 1, k = 6**. It was visible only because the term logs its own
+parameters back. **A dry-run whose hyper-parameters differ from the run it exists
+to de-risk certifies a configuration nobody is going to train** — the wrong-scope
+family again. Fixed; the shipped file now carries the knobs at **both** call
+sites (`grep -c "o11_k=int(getattr"` = **2**, verified on Thor), and the dry-run
+reproduces `o11_n_neg: 3`, `o11_at_step: 4`, `o11_loss` 1.3862943649 against
+`ln 4` = 1.3862943611, `pick_acc` 0.25 = chance, finite gnorm. Thor has no git credentials; this arrived by file-ship, as every
   pod-side change must.
