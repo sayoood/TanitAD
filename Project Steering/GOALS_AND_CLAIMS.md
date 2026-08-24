@@ -99,6 +99,59 @@ floor lives INSIDE the loss. Pre-registered with four outcomes in
 ⭐⭐ **THE SPLIT ACROSS ARMS IS THE HEADLINE.** `splitp30k` (frozen distilled): `n_agents` from `z_t` **+0.3864** — far the richest — but its predictor **ADDS NOTHING**, delta vs `z_t` of −0.0008 / −0.0320 / −0.0158 at k=1/3/6, all NEGATIVE (t −3.69 / −5.62 / −6.26), and at k=6 `lead_closing` degrades to −0.0747 (t −2.11). `rdw8p30k` (trained): content only +0.0777 but the predictor **adds substantially**. ⇒ **the frozen arm CARRIES the environment and does not PREDICT it; the trained arm PREDICTS change and carries less of it.** E-DEC-20's dissociation in a new form ⇒ **mandate (2) — environment in BOTH encoder and predictor — is NOT yet satisfied by any single arm.**
 
 ⚠️ **FOUR BOUNDS.** (1) **ẑ also beats the encoded-future CEILING**, which is anomalous. Two explanations and this panel cannot separate them: the rollout is **ACTION-CONDITIONED**, so ẑ carries the ego's commanded motion that a single encoded frame lacks — *or* it is temporal **smoothing** of a noisy target. **An action-shuffled control would separate them and has not been run.** (2) All absolute R² are **small** (0.03–0.15); `lead_closing` +0.0019 is barely above zero. (3) **IN-SAMPLE** until the held-out corpus lands. (4) k=1 is **underpowered by construction** — the ceiling itself is barely above `z_t` there (+0.0123, t 0.75), i.e. the scene has not changed enough for prediction to add anything; only k=3–6 carry headroom. |
+| E-DEC-38 | ⭐⭐⭐ **THE COUNTERFACTUAL PHYSICS TEST — can the WM answer "if I brake, what happens?" (PI mandate 3, directly)** | ⛔⛔ **MEASURED — NO, on all three arms, with every control reading correctly. This is the pre-O11 BASELINE.** | `…/raw/physics_baseline_preO11.json`
+
+24 lead-matched HELD-OUT clips, k=6, 395 closing / 440 free-flow windows.
+
+**Q1 — BRAKE vs MAINTAIN from the identical state, scaled by each arm's OWN
+positive control (a 10 % LATENT nudge):**
+
+| arm | closing | free-flow |
+|---|---|---|
+| `rdw8p30k` | **0.0166** | 0.0184 |
+| `splitp30k` | **0.0028** | 0.0017 |
+| `scale1` | **0.0117** | 0.0104 |
+
+⇒ **Changing the command from full brake to maintain moves the prediction by
+0.2–1.7 % of what a 10 % jitter in the latent does.**
+
+**Q2 — is the TRUE action identifiable among {true} + 3 counterfactuals?
+(EXACT chance 0.25, ties credited at chance):** 0.2633 · 0.2747 · 0.2582 when
+closing. ⇒ **All within noise of chance.**
+
+**Q3 — ⭐ THE PHYSICS-SPECIFIC ONE: does the action matter MORE when a lead is
+closing?** ratio closing/free-flow = **0.90 · 1.67 · 1.12** — `rdw8p30k` is
+*below* 1. ⇒ **No consistent pattern, and no evidence the action matters more
+where braking is consequential.** A model with driving physics could not read
+this way.
+
+⇒ **MANDATE 3 IS ANSWERED NEGATIVELY BY A DIRECT COUNTERFACTUAL TEST**, not only
+by the indirect action-sensitivity census (E-DEC-30/33). This is the baseline
+`o11p30k` must beat, and it had to exist BEFORE the arm landed for the comparison
+to be readable.
+
+| E-DEC-36b | **Is lead range/closing NONLINEARLY decodable within-clip?** | ⚠️ **PARTIAL — and the panel is UNDERPOWERED, which is the honest headline.** | `…/raw/rangeprobe_within_clip.json`
+
+Within-clip Pearson r (both series centred), RFF+ridge (convex), clip-disjoint λ:
+
+| `lead_closing` (n=1845) | TRUE r | SHUF r | delta | t |
+|---|---|---|---|---|
+| `splitp30k` | +0.1435 | −0.0299 | **+0.1734** | **2.43** |
+| **raw pixels (floor)** | **+0.1806** | +0.0280 | **+0.1526** | **2.18** |
+| frozen DINOv3 | +0.0610 | −0.0200 | +0.0810 | 1.07 |
+| constant (control) | **+0.0000** | +0.0000 | −0.0000 | 0.00 |
+
+⛔ **RAW 8×8 PIXELS TRACK THE CLOSING RATE AS WELL AS OUR BEST REPRESENTATION.**
+By the standing rule a representation that does not beat raw input has added
+nothing. On `lead_range_m` NOTHING is significant (all |t| < 0.7, DINOv3
+included).
+
+⚠️⚠️ **AND THE PANEL'S OWN POSITIVE CONTROL LIMITS WHAT IT CAN SAY:** `n_agents`
+— known carried at **+0.2215** on the cross-clip metric — reads only **t 1.67**
+here. **The within-clip panel at 24 clips cannot reliably detect a signal it is
+known to contain**, so the `lead_closing` t 2.43 is SUGGESTIVE, not solid.
+⇒ Any follow-up needs more clips before this metric decides anything.
+
 | E-DEC-32 | ⭐⭐⭐ **Does the environment content GENERALISE? (PI mandate 2, the decisive read)** | ⚠️⛔ **MEASURED, and it must be read in THREE parts — one negative, one confounded, one absent.** | `…/raw/envpred_ho2.json`, `…/raw/spatialenv_ho3.json`
 
 ⛔⛔ **(a) IS RETRACTED — C153. THE LEAD-MATCHED PANEL REVERSES IT.** Restricting

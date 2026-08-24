@@ -84,7 +84,18 @@ def rff_fold(Xtr_clips, ytr_clips, Xte, seed=SEED):
     mu = Xtr.mean(0, keepdims=True)
     Xc = Xtr - mu
     k = min(D_EFF, Xc.shape[1], max(Xc.shape[0] - 1, 1))
-    _, _, Vt = np.linalg.svd(Xc, full_matrices=False)
+    # ⛔ RANDOMIZED SVD, not a full one. `np.linalg.svd` on ~1800 x 16384 costs
+    # O(n^2 p) and there are 24 folds x 2 (true/shuffled) x 6 columns x 3 targets
+    # of them — MEASURED 2026-08-24: ZERO rows emitted in 28 minutes. A randomized
+    # range-finder for k=96 components costs O(n p k), i.e. ~5 % of that, and the
+    # top-96 subspace is all the probe ever uses.
+    rs = np.random.default_rng(seed + 1)
+    Om = rs.standard_normal((Xc.shape[1], k + 10))
+    Yq = Xc @ Om
+    for _ in range(2):                      # power iterations for accuracy
+        Yq = Xc @ (Xc.T @ Yq)
+    Q, _ = np.linalg.qr(Yq)
+    _, _, Vt = np.linalg.svd(Q.T @ Xc, full_matrices=False)
     V = Vt[:k].T
     A, B = Xc @ V, (Xte - mu) @ V
     s = A.std(0, keepdims=True) + 1e-8
@@ -148,9 +159,27 @@ def score(Xs, Ys, seed=SEED):
         # within-clip temporal structure this metric measures, while leaving the
         # clip's mean untouched.
         ss_tot_x = float(((yte - ym) ** 2).sum())          # cross-clip
-        ss_tot_w = float(((yte - yte.mean()) ** 2).sum())  # within-clip
-        out.append((1.0 - ss_res / max(ss_tot_x, 1e-12),
-                    1.0 - ss_res / max(ss_tot_w, 1e-12)))
+        # ⛔⛔ THE WITHIN-CLIP METRIC MUST CENTRE **BOTH** SERIES. My first version
+        # divided by the TEST CLIP's variance while leaving the prediction centred
+        # on the FIT mean — so the between-clip offset was removed from the
+        # DENOMINATOR and left in the NUMERATOR. MEASURED 2026-08-24: the CONSTANT
+        # control read -78.7 on lead_range_m and -655.8 on n_agents. A column of
+        # ones cannot be broken by the data, so that was proof the METRIC was
+        # broken, not the columns — and the sanity gate caught it before a single
+        # number was reported. (For n_agents a clip whose mean is 144 against a
+        # fit mean of 33 contributes ~12,000 squared error per row against a
+        # within-clip variance of ~50.)
+        # ⇒ WITHIN-CLIP PEARSON r: does the prediction TRACK THE SHAPE of the
+        # within-clip variation? That is exactly the PI's question — "if the lead
+        # decelerates the gap CHANGES" — and it is scale-free, so it cannot be
+        # contaminated by an offset either model could not know. A prediction with
+        # NO variance (the constant column) reads EXACTLY 0, the correct
+        # no-information value, instead of a spurious large negative.
+        pc = pred - pred.mean()
+        yc = yte - yte.mean()
+        den = float(np.sqrt((pc ** 2).sum() * (yc ** 2).sum()))
+        r_w = float((pc * yc).sum() / den) if den > 1e-12 else 0.0
+        out.append((1.0 - ss_res / max(ss_tot_x, 1e-12), r_w))
     a = np.array(out, dtype=float)
     return a[:, 0], a[:, 1]
 
@@ -180,7 +209,7 @@ def main() -> int:
                              f"approx, median-heuristic bandwidth) + ridge; "
                              f"CONVEX, closed form, no optimiser",
            "targets": {}}
-    hdr = (f"  {'target':<16}{'column':<30}{'TRUE_w':>9}{'SHUF_w':>9}"
+    hdr = (f"  {'target':<16}{'column':<30}{'TRUE_r':>9}{'SHUF_r':>9}"
            f"{'TRUE-SHUF':>11}{'t':>7}{'n':>7}{'d':>7}")
     print(hdr); print("  " + "-" * (len(hdr) - 2), flush=True)
     for tn, Y in TG.items():
@@ -191,7 +220,7 @@ def main() -> int:
                 raise SystemExit(f"[FATAL] {tn}/{cname} row mismatch")
             tr_x, tr_w = score(X, Y)
             sh_x, sh_w = score(X, Ysh)
-            tr, sh = tr_w, sh_w        # ⭐ the WITHIN-CLIP pair is the readable one
+            tr, sh = tr_w, sh_w   # ⭐ within-clip Pearson r is the readable pair
             # ⛔ THE SANITY GATE the MLP version lacked.
             if float(sh.mean()) < -0.25:
                 print(f"  {tn:<16}{cname:<30}  ABORT - shuffled control reads "
@@ -201,8 +230,8 @@ def main() -> int:
             t = float(d.mean()) / max(float(d.std(ddof=1) / np.sqrt(len(d))), 1e-12)
             nrow = sum(len(y) for y in Y)
             rep["targets"][tn]["columns"][cname] = {
-                "true_WITHIN": round(float(tr_w.mean()), 4),
-                "shuffled_WITHIN": round(float(sh_w.mean()), 4),
+                "true_WITHIN_r": round(float(tr_w.mean()), 4),
+                "shuffled_WITHIN_r": round(float(sh_w.mean()), 4),
                 "true_CROSS": round(float(tr_x.mean()), 4),
                 "shuffled_CROSS": round(float(sh_x.mean()), 4),
                 "true_minus_shuffled": round(float(d.mean()), 4),
