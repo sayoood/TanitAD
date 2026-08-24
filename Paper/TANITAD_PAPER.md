@@ -4103,7 +4103,10 @@ initialised** encoder and change nothing else.
 
 **The predictor settles it.** On a frozen *random* encoder the predictor is
 statistically indistinguishable from noise (z 0.51); on the frozen *distilled*
-encoder it is the best measured (z 7.99). `n_agents` differs by **1.5062**
+encoder it is the best measured *by that statistic* (z 7.99) — ⚠️ **and §13.10
+shows the statistic was the wrong one: neither arm's predictor beats a constant,
+so this contrast is between two non-predictors and only its `n_agents` half
+survives.** `n_agents` differs by **1.5062**
 between arms that are identical in every respect but the origin of the frozen
 weights, and the random arm falls below both the constant control and the
 raw-pixel floor. **Freezing is necessary but not sufficient.** This is the
@@ -4156,8 +4159,8 @@ corpus), the step budget (2k → 30k) and the batch (4 → 8) differ.
 | `n_agents` | −1.0407 | **−0.0180** | t 10.06, 24/24 | **+0.1976 (t 10.21, 24/24)** |
 
 Participation rises roughly sevenfold; the predictor's mean-centred cosine rises
-**11.5×**, and is **3.3× the best figure this programme has measured under any
-objective**; and `n_agents` becomes **the first trained representation of ours to
+**11.5×**; ⚠️ the comparison to other arms is superseded by §13.10, which shows
+this is one of only three arms whose predictor beats a constant at all; and `n_agents` becomes **the first trained representation of ours to
 beat the raw-pixel floor** on scene content — with nothing supervising it but the
 model's own next-latent.
 
@@ -4214,7 +4217,69 @@ statistic on the same clips, and the arm-versus-floor column is paired
 explicitly. Comparing two arms' point estimates against a shared third column is
 not a test of one against the other; doing so is a documented error of ours.
 
-### 13.10 What this section does not establish
+### 13.10 Proven result 8 — the missing floor, and a census of every predictor this programme has trained
+
+Every predictor number in §13.3–§13.9 was a **mean-centred cosine against a
+200-draw permutation null**. That null answers *is the correlation non-zero*. It
+does not answer *is the prediction better than predicting the average motion* —
+and those are different questions. The panels already carried a constant control
+on the ego and environment blocks, where it reads exactly 0.0000 by construction;
+the predictor block never had one.
+
+Adding it changes what the campaign's numbers mean. Define
+`nrmse = ‖d̂ − t‖ / ‖t‖` over one-step latent deltas, against a predictor that
+emits the **dataset-mean delta** for every window. A no-motion predictor scores
+1.0 by construction, and the mean-delta control scores ≈0.998 here.
+
+| arm | cos (z) | `nrmse` | mean-delta control | verdict |
+|---|---|---|---|---|
+| two-term, 2k | 0.1072 (7.58) | 0.9988 | 0.9981 | does not beat a constant |
+| frozen-distilled, 2k | 0.1706 (9.18) | 0.9902 | 0.9982 | does not beat a constant |
+| frozen-distilled, 10k | 0.0012 (0.84) | **4.8321** | 0.9982 | **worse than a constant** |
+| **parity, 30k** | 0.6307 (**44.45**) | **0.7845** | 0.9978 | **beats it (~38 % of delta energy)** |
+
+Extended to **every finished arm the programme has trained** — thirty of them,
+spanning six auxiliary-objective families and three scales — the picture is
+unusually clean:
+
+| verdict | n | representative values |
+|---|---|---|
+| **beats a constant** | **3** | 0.7845 · 0.8200 · 0.9348 |
+| indistinguishable from a constant | 16 | every healthy 2 000-step arm (0.990–0.999) |
+| **worse than a constant** | 11 | all counterfactual-separation arms (up to 22.7); all state-grounding arms (up to 32.4) |
+
+**Every arm that beats the floor is 30 000 steps on the full corpus; every such
+arm beats it; no shorter arm ever does.** Two of the three do so at batch 4, so
+batch size is not the operative variable for prediction. The separation was
+checked programmatically rather than by inspection.
+
+Two consequences follow, and they cut in opposite directions.
+
+**The negative one.** The rollout-depth ranking of §13.6 — cosines 0.0541 →
+0.1234 → 0.1328 → 0.1327 across `k` = 1, 4, 8, 16 — lies **entirely inside this
+floor** (nrmse 0.9988 / 0.9984 / 0.9984 against controls 0.9981 / 0.9975 /
+0.9985), and its ordering does not even reproduce the cosine ordering it was
+drawn from. That ranking may not be quoted as evidence that prediction improves
+with depth. The same applies to any claim that one small-scale arm predicts
+better than another: those arms were being ranked within the noise band of a
+constant.
+
+**The positive one.** The result of §13.9 is the *only* predictor claim in the
+campaign that survives its own floor, and the census places it in context rather
+than merely restating it: across thirty arms and six objective families, working
+prediction appears exactly three times, and what those three share is scale.
+
+A third observation is practical. The fraction of a predictor's output explained
+by a fixed offset orders the three classes almost perfectly — 0.07–0.18 for the
+arms that beat the floor, 0.34–0.82 for those at it, 0.73–0.87 for those below —
+so **a predictor whose output is mostly a constant is the failure mode**, and
+that fraction is a one-number screen requiring no baseline arm.
+
+⚠️ The census cannot separate *steps* from *data*: all three successful arms are
+long-run **and** full-corpus, always together. That comparison is pre-registered
+and running.
+
+### 13.11 What this section does not establish
 
 No claim is made about driving. No arm here has a planner or a closed loop, and
 the tier doctrine forbids reading T0 diagnostics as capability. The environment
@@ -4244,6 +4309,18 @@ stands as mathematics regardless. The empirical claims built on top of it are
 re-opened by §13.9, not confirmed by it, and each requires a parity-scale
 re-test before it may inform a design decision. The first such re-test is
 running.
+
+§13.10 adds a second caution of the same kind, aimed at this section's own
+method. A missing baseline survived in the predictor block for the whole campaign
+while the identical baseline was present, and read exactly zero, in the two
+blocks either side of it. It survived because the block without it produced the
+largest and most persuasive test statistics, so nothing about the output invited
+the question. We record it here because the correction is more transferable than
+the result: **a statistical null and a performance floor are different objects,
+and a metric that carries only the first can rank a field of models none of which
+work.** Nothing in §13.10 relies on the reader accepting that framing — the
+`nrmse` column and its control are reported for every arm, and the arithmetic is
+the argument.
 
 ## References
 
