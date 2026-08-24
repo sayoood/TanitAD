@@ -8305,3 +8305,97 @@ positive or negative — would have been uninterpretable.
 (binary, the question the variance is actually about) and `lead_range_m`
 (continuous, **lead-present frames only**, no sentinel) — each with its own
 constant control and raw-pixel floor and its own **n**.
+
+## C151 ⛔⛔ — I REPORTED A "FIRST POSITIVE PHYSICS SIGNAL" FROM A PREDICTOR THAT DOES NOT READ ITS ACTIONS, AND THE CONTROL THAT KILLED IT WAS ALREADY QUEUED WHEN I SENT THE CLAIM (2026-08-24, self-caught by the control I had committed in advance)
+
+**What was asserted**, to the PI, in the E-DEC-28 report roughly one hour before
+the refutation: that `rdw8p30k`'s **predicted** latent rising above the constant
+on `lead_range_m` (+0.0342) and `lead_closing` (+0.0019, t 31.62) was *"the first
+positive signal for the PI's driving-physics question"* — his *"if the vehicle in
+front decelerates, the ego must react on it"*.
+
+**What the control says.** The identical rollout, with the action sequence drawn
+from a **random other time in the same clip**, reproduces every one of those
+numbers to three decimals — and on `lead_range_m` the shuffled rollout is
+*marginally better*:
+
+| target (k=6) | `z_t` | true actions | **SHUFFLED actions** |
+|---|---|---|---|
+| `n_agents` | +0.0994 | +0.1529 (t 11.03) | **+0.1492 (t 10.96)** |
+| `lead_range_m` | +0.0023 | +0.0342 (t 12.62) | **+0.0360 (t 13.20)** |
+| `lead_closing` (k=3) | −0.0256 | +0.0019 (t 31.62) | **+0.0019 (t 31.68)** |
+
+⇒ The advantage is **temporal smoothing**, not action-conditioned world
+modelling. It also explains the anomaly I flagged and could not account for in
+the same report — ẑ scoring *above* the encoded-future ceiling. An extrapolator
+that averages is smoother than the noisy true future, so it probes better.
+
+**And the latent-space metric goes the same way.** `nrmse` — the number **five
+arms are ranked on**, and the whole Gate-B/Gate-C census — is unchanged to four
+decimals under the same shuffle: `rdw8p30k` **0.7845 → 0.7845**, prediction moved
+**0.77 %**.
+
+**ROOT-CAUSE CLASS: a claim about a mechanism, evidenced only by an output.**
+Every number I quoted was correct. None of them was evidence for the *mechanism*
+I attached to it, because I never varied the input the mechanism requires. This
+is the sibling of the ECHO TEST (C-echo: flagship v1's route head scored 1.0000
+by reproducing its own input) and of the vision-only leak rule — *ask whether the
+result survives removing the thing it is supposed to depend on*. Here the thing
+was the action, and it does survive, so the dependence was never there.
+
+⚠️ **The aggravating detail, and the reason this is logged ⛔⛔ rather than ⚠️:**
+`actionshuf.py` — the control that refuted this — **was already written, queued,
+and its two outcomes committed in advance** when I sent the claim. I reported the
+positive reading while its own falsifier sat in the queue. A pre-registered
+control is worth nothing if the claim is published before it returns. ⇒ **A
+result whose control is still running is not a result; it is a pending
+measurement, and it must be reported as one or not at all.**
+
+⭐ **THE SCOPE ERROR I THEN NEARLY MADE ON TOP OF IT** — caught before it left the
+turn, and it is the more instructive half. Reading the shuffle result, I wrote
+*"the predictor is action-blind"*. It is **not that claim**. The action tensor is
+**3-dimensional** — `action_dim = 3  # [steer, accel, v0/10]`
+(`flagship_v15.py:101`) — and the probe does `torch.cat([aa, vv], -1)`, so my
+shuffle replaced **steer and accel only** and left **v0 at its true value**: the
+exact channel the programme MEASURED to be worth **3.73 → 0.83 m** fwd_ade. I had
+perturbed two of three channels and generalised to all three. **C137 retracted a
+programme-wide action-blind claim once already, for a defect of this same
+family.** The full factorial is E-DEC-30 below.
+
+**The corrected, control-normalised statement (E-DEC-30, MEASURED, 444 windows,
+3 arms).** `d_in` = how different the input actually is; `d_out` = the
+C137-corrected response, normalised by the predictor's OWN delta:
+
+| condition | d_in | `rdw8p30k` d_out | vs its own positive control |
+|---|---|---|---|
+| shuffle steer+accel | 2.32 | 0.0062 | 3.5 % |
+| **negate** steer+accel (hard left → hard right) | 1.52 | 0.0114 | 6.4 % |
+| shuffle **all three** channels | 2.51 | 0.0150 | **8.5 %** |
+| zero v0 | 0.43 | 0.0620 | 35.1 % |
+| `scale100_sa` (**the C137 probe form**) | 75.37 | 0.5084 | 288 % |
+| **[control] latent +10 % noise** | 0.10 | **0.1768** | 100 % |
+
+Same shape on all three arms: a **251 % change to the entire action tensor**
+moves the prediction by **2–9 %** of what a **10 % nudge to the latent** does.
+The positive control passes everywhere, so this is insensitivity, not a dead
+predictor.
+
+⭐ **C137 IS REPRODUCED AND NOT RE-RETRACTED — ITS SCOPE IS NARROWED.** C137's own
+metric (`a × 100`) reads 0.5084 here, so its measurement stands and the arms *are*
+responsive at that input. But ×100 is an input **75× larger in norm than a real
+action**; that response is the tail of a saturating nonlinearity. In the
+**operating regime** — a real shuffle, a real sign flip — the response is
+0.6–1.5 %. ⇒ **A sensitivity probe must perturb at the magnitude the model will
+actually meet.** A response measured only at 75× the operating input is not
+evidence about operation. Same family as `df` on a pod and the pinhole formula on
+a cylindrical projection: a true number, quoted outside the regime where it
+applies.
+
+⭐⭐ **WHY THE OBJECTIVE PRODUCES THIS, WHICH MAKES IT A DESIGN FINDING RATHER
+THAN A BUG.** O5 trains ẑ_{t+k} ≈ z_{t+k}. Over a 0.6 s horizon the scene at
+t+k is overwhelmingly determined by the scene at t and only marginally by the
+ego's commanded action. So **the loss-minimising solution is to ignore the
+action** — it is a low-variance nuisance input, and extrapolation captures most of
+the variance. The predictor is doing exactly what it was asked to do. ⇒ The fix
+is not a bigger predictor or more steps; it is **an objective that cannot be
+minimised without using the actions.**

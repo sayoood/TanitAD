@@ -1,0 +1,52 @@
+{
+ "_evidence_class": "MEASURED (ours; dev-box RTX 4060)",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "method": "h=1 head, one step. cos_raw is UNCENTRED; cos_ctr is mean-centred with a 200-draw permutation null. nrmse_meanonly is the CONSTANT-DELTA control and nrmse_zero = 1.0 by construction.",
+ "arms": {
+  "rdw8p30k": {
+   "step": 30000,
+   "cos_raw": 0.6305,
+   "cos_centred": 0.6307,
+   "z_centred": 42.23,
+   "mean_fraction_of_prediction": 0.0719,
+   "nrmse": 0.7845,
+   "nrmse_SHUFFLED_actions": 0.7845,
+   "cos_raw_SHUFFLED": 0.6305,
+   "rel_change_in_prediction_from_shuffling": 0.0077,
+   "nrmse_meanonly_control": 0.9978,
+   "nrmse_zero_control": 1.0,
+   "n_windows": 190,
+   "verdict": "BEATS the mean predictor"
+  },
+  "splitp30k": {
+   "step": 30000,
+   "cos_raw": 0.4961,
+   "cos_centred": 0.5001,
+   "z_centred": 31.12,
+   "mean_fraction_of_prediction": 0.0924,
+   "nrmse": 0.8683,
+   "nrmse_SHUFFLED_actions": 0.868,
+   "cos_raw_SHUFFLED": 0.4966,
+   "rel_change_in_prediction_from_shuffling": 0.0495,
+   "nrmse_meanonly_control": 0.9985,
+   "nrmse_zero_control": 1.0,
+   "n_windows": 190,
+   "verdict": "BEATS the mean predictor"
+  },
+  "scale1": {
+   "step": 30000,
+   "cos_raw": 0.5998,
+   "cos_centred": 0.6002,
+   "z_centred": 20.42,
+   "mean_fraction_of_prediction": 0.1148,
+   "nrmse": 0.82,
+   "nrmse_SHUFFLED_actions": 0.8199,
+   "cos_raw_SHUFFLED": 0.6,
+   "rel_change_in_prediction_from_shuffling": 0.0084,
+   "nrmse_meanonly_control": 0.9973,
+   "nrmse_zero_control": 1.0,
+   "n_windows": 190,
+   "verdict": "BEATS the mean predictor"
+  }
+ }
+}

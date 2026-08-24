@@ -89,6 +89,7 @@ from __future__ import annotations
 import argparse
 import importlib
 import json
+import math
 import os
 import random
 import sys
@@ -162,6 +163,7 @@ __all__ = [
     "probe_applies", "arm_record",
     "o2_near_field_loss", "o3_masked_cell_loss", "o5_rollout_consistency_loss",
     "o6_sigreg_loss", "rollout_step_weights", "build_o4_weights",
+    "o11_counterfactual_action_loss",
     "ANCHOR_OBJECTIVES", "ANCHOR_OBJ_MODES", "ANCHOR_AXIS_W_DEFAULT",
     "anchor_goal_loss",
     "S2_IGNORE_ID", "s2_goal_loss", "synthetic_s2_batch",
@@ -213,6 +215,9 @@ class V6LossWeights:
     o1_stopgrad_factual: bool = False
     o3_masked: float = 1.0
     o5_rollout: float = 1.0
+    #: O11-CF (E-DEC-30). 0.0 => the incumbent loss is
+    #: bit-identical; nothing rolls and no RNG is drawn.
+    o11_cf: float = 0.0
     o6_sigreg: float = 0.1      # LeJEPA's ONE validated knob — keep it fixed
     # layers T / S
     t1_latent: float = 1.0      # goal-conditioned tactical latent prediction
@@ -1284,6 +1289,109 @@ def o5_rollout_consistency_loss(zhat_steps, z_true_steps, weights: Tensor,
                   "o5_stepK": float(per[-1].detach()),
                   "o5_growth": float((per[-1] / per[0].clamp_min(1e-8))
                                      .detach())}
+
+
+O11_NO_INFO_LOSS = None          # set per-call: ln(1 + n_neg), the EXACT floor
+
+
+def o11_counterfactual_action_loss(zhat_pos, zhat_negs, z_true,
+                                   tau: float = 1.0) -> tuple[Tensor, dict]:
+    """O11-CF — an objective that CANNOT be minimised by ignoring the actions.
+
+    ⛔ THE DEFECT THIS EXISTS TO FIX (E-DEC-30, MEASURED 2026-08-24, 444 windows,
+    3 arms, positive control passing on all three). Replacing the ENTIRE action
+    tensor with one drawn from a random other time — a **251 % change to the
+    input** — moves `rdw8p30k`'s prediction by **1.5 %**, while a **10 % nudge to
+    the latent** moves it by 17.7 %. Flipping a hard left into a hard right moves
+    it 1.1 %. `nrmse` — the number five arms and the whole Gate-B/Gate-C census
+    are ranked on — is unchanged to four decimals under the same shuffle
+    (0.7845 → 0.7845). The predictor is a temporal extrapolator, not an
+    action-conditioned world model.
+
+    ⭐ WHY O5 PRODUCES THAT, WHICH IS WHY A BIGGER PREDICTOR WOULD NOT FIX IT.
+    O5 trains ẑ_{t+k} ≈ z_{t+k}. Over a 0.6 s horizon the scene at t+k is
+    overwhelmingly determined by the scene at t and only marginally by the ego's
+    commanded action, so **the loss-minimising solution is to ignore the action**
+    — it is a low-variance nuisance input and extrapolation captures most of the
+    variance. The predictor is doing exactly what it was asked to do. The fix is
+    therefore an OBJECTIVE, not capacity or steps.
+
+    THE TERM. Roll the identical states with the TRUE future actions and with
+    ``n_neg`` COUNTERFACTUAL future action sequences taken from other batch
+    elements, then require the true-action rollout to be the one that matches the
+    observed future, as an InfoNCE over actions:
+
+        logits_i = -||ẑ(a_i) - z_true||² / τ ,  target = the true-action index
+
+    ⭐⭐ THE PROPERTY THAT MAKES IT THE RIGHT INSTRUMENT: **an action-independent
+    predictor scores EXACTLY ln(1 + n_neg) and cannot do better.** If ẑ does not
+    depend on a, every logit is identical, the softmax is uniform, and the loss
+    sits precisely at the no-information value. So this objective carries its own
+    constant-predictor floor *inside the loss* — the C149 control, built in rather
+    than bolted on. `o11_excess` below is the loss MINUS that floor; it is ≤ 0
+    only for an action-blind predictor and is the number to watch.
+
+    ⚠️ WHY IT IS ADDED TO O5 AND MUST NEVER REPLACE IT. O11 alone is trivially
+    minimised by ẑ = f(z) + λa for large λ — perfect action-separation, useless
+    prediction. O5 keeps the prediction accurate; O11 forces the accuracy to be
+    action-dependent. A run that improves O11 while O5 degrades is the degenerate
+    solution, and both are logged so it is visible rather than inferred.
+
+    ⚠️ ONLY THE **FUTURE** ACTIONS ARE SWAPPED, never the observed window: the
+    window's actions are part of *what happened* and are legitimately shared
+    across the comparison, while the future actions are the counterfactual
+    *what if I do this instead*. Swapping the window would make the negatives
+    differ in their conditioning history too and the term would no longer isolate
+    action-conditioning.
+
+    ``zhat_pos`` ``[B, S]``; ``zhat_negs`` a list of ``n_neg`` ``[B, S]``;
+    ``z_true`` ``[B, S]``.
+    """
+    if not zhat_negs:
+        raise ValueError("o11 needs at least one counterfactual rollout")
+    n_neg = len(zhat_negs)
+    zt = z_true.float()
+
+    def _d(x):
+        return (x.float() - zt).pow(2).mean(dim=-1)                     # [B]
+
+    d_pos = _d(zhat_pos)
+    d_neg = torch.stack([_d(x) for x in zhat_negs], dim=1)              # [B,n]
+    logits = torch.cat([-d_pos[:, None], -d_neg], dim=1) / max(tau, 1e-6)
+    tgt = torch.zeros(logits.shape[0], dtype=torch.long, device=logits.device)
+    loss = torch.nn.functional.cross_entropy(logits, tgt)
+    floor = float(math.log(1 + n_neg))
+    with torch.no_grad():
+        # ⭐ the separation actually achieved, in the units of the distance
+        # itself — readable without reference to tau, so a tau change cannot be
+        # mistaken for a change in action-conditioning.
+        sep = float((d_neg.mean() - d_pos.mean()).detach())
+        rel = sep / max(float(d_pos.mean().detach()), 1e-12)
+        # ⛔ TIES MUST BE CREDITED AT CHANCE, NOT TO THE TARGET. A plain
+        # `logits.argmax() == tgt` reads **1.0000 for a completely action-blind
+        # predictor**, because an action-independent ẑ makes every logit
+        # bit-identical and argmax then returns index 0 — which IS the target.
+        # That is the C149 shape (a diagnostic whose best-looking value is the
+        # no-information case) inside the very term written to prevent it, and
+        # it was caught by `test_an_action_blind_predictor_scores_EXACTLY_the_
+        # no_information_floor` demanding the control read chance EXACTLY.
+        # Comparing DISTANCES rather than logits also makes this reading
+        # independent of tau.
+        dall = torch.cat([d_pos[:, None], d_neg], dim=1)            # [B, 1+n]
+        mn = dall.min(dim=1, keepdim=True).values
+        tied = torch.isclose(dall, mn, rtol=1e-9, atol=1e-12).float()
+        acc = float((tied[:, 0] / tied.sum(dim=1).clamp_min(1.0))
+                    .mean().detach())
+    return loss, {"o11_loss": float(loss.detach()),
+                  "o11_n_neg": n_neg, "o11_tau": float(tau),
+                  "o11_no_info_floor": round(floor, 4),
+                  # ⛔ THE READING: > 0 means the true action is identifiable
+                  # from the prediction. <= 0 means action-blind, and no amount
+                  # of o5 progress changes that.
+                  "o11_excess": round(floor - float(loss.detach()), 6),
+                  "o11_sep_abs": sep, "o11_sep_rel": rel,
+                  "o11_pick_acc": acc,
+                  "o11_chance_acc": round(1.0 / (1 + n_neg), 4)}
 
 
 class SigRegRowBank:
@@ -2461,7 +2569,9 @@ def v6_loss_step(stack: V6Stack, batch: dict, *, stage: str,
                  anchor_axis_w: tuple[float, float] = ANCHOR_AXIS_W_DEFAULT,
                  t2_positive: str = "photometric",
                  t2_negative: str = "lane_mirror",
-                 t5_w_kappa: float = 1.0
+                 t5_w_kappa: float = 1.0,
+                 o11_k: int = 6, o11_tau: float = 1.0,
+                 o11_negs: int = 1
                  ) -> dict:
     """One batch of the v6 staged objective.
 
@@ -2572,7 +2682,7 @@ def v6_loss_step(stack: V6Stack, batch: dict, *, stage: str,
                 "o1_arms": list(TRAIN_ARMS)}
 
     # ---- the factual rollout, computed ONCE for O2 / O3 / O5 ---------------
-    need_roll = bool(w.o2_nearfield or w.o3_masked or w.o5_rollout)
+    need_roll = bool(w.o2_nearfield or w.o3_masked or w.o5_rollout or w.o11_cf)
     if need_roll:
         from tanitad.models.metric_dynamics import rollout_transitions
         k_roll = max(o5_k, 1)
@@ -2612,6 +2722,30 @@ def v6_loss_step(stack: V6Stack, batch: dict, *, stage: str,
                                                   form=o5_form)
             terms["o5"] = w.o5_rollout * l5
             log |= lg5 | {"o5_mode": o5_mode}
+
+        # ---- O11-CF: the action must be IDENTIFIABLE from the prediction ----
+        if w.o11_cf:
+            jc = min(max(o11_k, 1), k_roll) - 1
+            B = fa3.shape[0]
+            if B < 2:
+                raise ValueError("o11 needs batch >= 2 for counterfactuals")
+            negs = []
+            for q in range(max(o11_negs, 1)):
+                # ⛔ a CYCLIC SHIFT by a non-zero offset is a DERANGEMENT by
+                # construction — no element keeps its own action sequence.
+                # `randperm` is not: it fixes points with probability ~1/B, and
+                # a fixed point silently makes that row's "counterfactual" the
+                # TRUE action, pulling the loss toward the floor and reading as
+                # action-blindness that is not there.
+                off = 1 + (q % (B - 1))
+                fa_neg = torch.roll(fa3, shifts=off, dims=0)
+                tn = rollout_transitions(stack.predictor_op, states, aw3,
+                                         fa_neg, jc + 1, grad_checkpoint=rgc)
+                negs.append(tn[jc][1])
+            l11, lg11 = o11_counterfactual_action_loss(
+                zhat_steps[jc], negs, z_true[jc], tau=o11_tau)
+            terms["o11"] = w.o11_cf * l11
+            log |= lg11 | {"o11_at_step": jc + 1}
 
         # ---- O2: time-to-reach weighted near field ------------------------
         if w.o2_nearfield:
@@ -3791,6 +3925,7 @@ def _weights_from_args(a) -> V6LossWeights:
         o1_detach_encoder=bool(getattr(a, "o1_detach_encoder", False)),
         o1_stopgrad_factual=bool(getattr(a, "o1_stopgrad_factual", False)),
         o2_nearfield=a.w_o2, o3_masked=a.w_o3, o5_rollout=a.w_o5,
+        o11_cf=float(getattr(a, 'w_o11_cf', 0.0)),
         o6_sigreg=a.w_o6, t1_latent=a.w_t1, s1_latent=a.w_s1,
         w_select=a.w_select, w_anchor=float(getattr(a, "w_anchor", 0.0)),
         w_s2_goal=float(getattr(a, "w_s2_goal", 0.0)),
@@ -4710,6 +4845,9 @@ def train(a) -> dict:
             L = v6_loss_step(stack, batch, stage=a.stage, weights=weights,
                              o1_k=a.o1_k, o5_k=a.o5_k, o5_mode=a.o5_mode,
                              o5_form=getattr(a, "o5_form", "l1"), sigreg_bank=sigreg_bank,
+                             o11_k=int(getattr(a, 'o11_k', 6)),
+                             o11_tau=float(getattr(a, 'o11_tau', 1.0)),
+                             o11_negs=int(getattr(a, 'o11_negs', 1)),
                              o3_mode=a.o3_mode, o3_blocks=a.o3_blocks,
                              o3_block_hw=(a.o3_block_h, a.o3_block_w),
                              o3_band_rows=a.o3_band_rows,
@@ -5963,6 +6101,25 @@ def build_parser() -> argparse.ArgumentParser:
                     help="O4 saliency exponent; 0 = uniform (control arm)")
     ap.add_argument("--o4-floor", type=float, default=0.25)
     ap.add_argument("--w-o5", type=float, default=1.0)
+    # ---- O11-CF: the objective that CANNOT be minimised action-blind -------
+    ap.add_argument("--w-o11-cf", type=float, default=0.0,
+                    help="O11-CF counterfactual action contrastive (E-DEC-30). "
+                         "0.0 => incumbent loss bit-identical. ADDS to O5, "
+                         "never replaces it: O11 alone is minimised by "
+                         "zhat = f(z) + lambda*a, which separates actions "
+                         "perfectly and predicts nothing.")
+    ap.add_argument("--o11-k", type=int, default=6,
+                    help="rollout step the contrastive is taken at (clamped to "
+                         "--o5-k). Short is deliberate: the action's influence "
+                         "on the scene is largest early and is swamped by "
+                         "autocorrelation later.")
+    ap.add_argument("--o11-tau", type=float, default=1.0,
+                    help="InfoNCE temperature over squared latent distance.")
+    ap.add_argument("--o11-negs", type=int, default=1,
+                    help="counterfactual action sequences per window. The "
+                         "no-information floor is ln(1+n) EXACTLY, so this "
+                         "changes the floor -- never compare o11_loss across "
+                         "different values, compare o11_excess.")
     ap.add_argument("--o5-k", type=int, default=20,
                     help="O5 rollout length in 10 Hz steps (60 = the §4b 6 s "
                          "horizon; needs a cache with max_horizon >= 60)")
