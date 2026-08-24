@@ -142,6 +142,18 @@ def main() -> int:
         COLS[f"z_op {arm}"] = col
         del w
         torch.cuda.empty_cache()
+    # ⛔ EVERY COLUMN MUST EXIST BEFORE THE MASK IS APPLIED. The first version of
+    # this fix masked `COLS` and then added `pixel (floor)` and `frozen DINOv3`
+    # AFTERWARDS — so the two reference columns went in UNMASKED, at 100 rows
+    # against the targets' ~92, and the panel died in the probe's `Xc.T @ Yc`
+    # (899 vs 900). ⚠️ IT PASSED IN-SAMPLE, because at 100.00 % coverage the mask
+    # is all-True and the no-op hid the length mismatch — **the same
+    # "invisible on the only corpus it met" pattern as the C152 defect this
+    # block exists to fix**. Building the full column set first makes the
+    # masking loop total by construction rather than by discipline.
+    COLS["pixel (floor)"] = PIX
+    COLS["frozen DINOv3"] = P.dinov3_encode(clips, F, dev)
+
     # ⭐ APPLY THE LABELLED-MASK AND STATE THE COUNT. A clip whose coverage is
     # too thin is DROPPED rather than silently zero-filled, and how many were
     # dropped is printed — an aggregate that does not report what it compared
@@ -161,12 +173,25 @@ def main() -> int:
     MASK = [MASK[i] for i in keep_ci]
     for k in list(COLS):
         COLS[k] = [COLS[k][i][MASK[j]] for j, i in enumerate(keep_ci)]
-    PIX = [PIX[i][MASK[j]] for j, i in enumerate(keep_ci)]
     for k in list(TG):
         TG[k] = [TG[k][i][MASK[j]] for j, i in enumerate(keep_ci)]
-    COLS["pixel (floor)"] = PIX
-    COLS["frozen DINOv3"] = P.dinov3_encode(clips, F, dev)
+    # the constant control is built from the ALREADY-MASKED targets, so it is
+    # length-correct by construction and reads exactly 0.0000 as it must.
     COLS["constant (control)"] = [np.ones((len(v), 1)) for v in TG["n_agents"]]
+
+    # ⛔ ASSERT THE ROW COUNTS AGREE. This is the check whose ABSENCE turned a
+    # column-alignment bug into a `matmul` error 200 lines away, in a panel that
+    # had already spent 8 minutes encoding DINOv3. Every column and every target
+    # must have identical per-clip lengths before a single probe is fit.
+    nrows = [len(v) for v in TG["n_agents"]]
+    for k, v in COLS.items():
+        got = [len(x) for x in v]
+        if got != nrows:
+            raise SystemExit(f"[FATAL] column {k!r} has per-clip lengths {got} "
+                             f"but the targets have {nrows} — a column was "
+                             f"added after the mask was applied")
+    print(f"  row-count check: {len(COLS)} columns x {len(nrows)} clips all "
+          f"agree at {sum(nrows)} rows", flush=True)
 
     def loeo(X, Y):
         o = []
