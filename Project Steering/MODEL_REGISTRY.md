@@ -3758,6 +3758,57 @@ C103, C104, C106, C107, C109, C112** in `RETRACTION_LOG.md`.
 Per `EVAL_DOCTRINE.md` a T0 number may never be presented as driving performance — these arms have
 no scorer, no planner and no closed loop.
 
+### 13.0 ⭐⭐⭐ `rdw8p30k` — the settled readout geometry at PARITY SCALE — COMPLETE at 30,000 (2026-08-24)
+
+**The arm that re-scopes the whole collapse campaign.** Identical architecture and identical
+two-term objective to the 2k tiny screen `rdw8` — **no teacher, no external target, no PSG** —
+run on the sacred corpus for 30,000 steps. Sourced from raw JSON
+(`TanitAD Research Lab/Architecture & Inference/Research/2026-08-19-simwam-analysis/raw/p30k_panel.json`).
+
+| field | value |
+|---|---|
+| recipe | two-term (**O5 rollout + O6 SIGReg only**; O1/O2/O3 **off**), `--o5-k 1`, `--readout-grid 4 --readout-grid-w 8 --readout-dim 64`, `--sigreg-subspaces 32`, `--sigreg-slices 512`, `--o5-form l1`, `--w-o5 1.0 --w-o6 0.1` |
+| encoder | `enc-dim 128`, `enc-depth 3`, `enc-heads 4` (0.97 M) · total **19,300,297** params, trainable 10,169,731 |
+| train corpus | **`physicalai-train-e438721ae894-w120-256x640cyl`**, `require_parity` **true** |
+| steps / batch | 30,000 / 8 · elapsed **29,758 s** on Jetson Thor · `summary.json` `done: true` |
+| ckpt md5 | `6e382ebe721ba4b7df97e8305f695767` (verified BOTH sides of the pull) |
+| gate | `INCONCLUSIVE` (`stage_gate.json`) |
+| eval tier | **T0-DIAGNOSTIC** |
+| estimator | paired LOEO over clips; probes fit lambda and PCA basis on the FIT split only; every panel carries a constant control at exactly 0.0000 and a raw-pixel floor |
+
+| metric | `rdw8` (2k, 130 clips) | **`rdw8p30k`** | vs `rdw8` | vs RAW-PIXEL floor (paired) |
+|---|---|---|---|---|
+| participation val / held24 | 3.80 / 3.62 | **25.58 / 26.96** | — | — |
+| predictor cos h=1 (z) | 0.0541 (3.99) | **0.6224 (30.55)** | — | — |
+| speed | +0.2830 | +0.1482 | t −3.71 | +0.0326 (t 0.64) |
+| `d_ego` | +0.3601 | +0.0963 | t −6.29 | +0.1744 (t 2.77) |
+| `lead_gap_m` | −0.3290 | **+0.0063** | t 6.67, 22/24 | −0.0001 (t −0.01) |
+| `n_agents` | −1.0407 | **−0.0180** | t 10.06, **24/24** | **+0.1976 (t 10.21, 24/24)** |
+
+⭐ **Participation ~7×**, **predictor cos 11.5× the tiny arm and 3.3× the best previously measured
+anywhere in the programme**, and **the first time any trained arm of ours beats the raw-pixel floor
+on environment content** — with no external target of any kind.
+
+⚠️ **Bounds, which are not small.** `n_agents` is still **marginally below the constant control**
+(−0.0180 vs 0.0000) and **well below frozen DINOv3** (+0.2754); on this clip set the pixel floor
+(−0.2156) is itself below the constant control, so clearing it is the weaker of the two bars.
+`lead_gap_m` **+0.0063** is above the constant control and **level with pixels**, just under DINOv3
+(+0.0294). **Ego degrades** — which under E-DEC-17 is the least informative axis, because a frozen
+RANDOM encoder reads the best speed of any arm.
+⛔ **Confounded three ways** — corpus, steps and batch all moved. Direction unambiguous, cause not
+isolated.
+
+⭐ **Validity, checked rather than assumed (MEASURED pod-side):** **130 of 130** lead-corpus clips
+are INSIDE the parity train corpus and **0** are in the val cache. ⇒ the ENV rows are **in-sample
+for BOTH arms** — a valid contrast, **not** a generalisation claim — and the EGO rows are **held out
+for both**. *(Clip ids are gated-confidential and live only on the pod; only the count was returned.)*
+
+⛔⛔ **Consequence for the campaign:** E-DEC-7/14/17/18 were all measured on 2k tiny arms. Per
+H-SCALE-2 that is valid for ARCHITECTURE and invalid for CAPABILITY LEVELS. The degeneracy
+derivation stands as mathematics; the conclusions *"a frozen part is the only thing that works"* and
+*"a teacher-free content source is the whole problem"* were drawn **inside the small-data regime**
+and must be re-tested at parity before deciding the v7 design.
+
 ### 13.1 `champ30k` — two-term (LeWM-style) + k=1 + 32 SIGReg subspaces — COMPLETE at 30,000
 
 The first arm in the programme whose predictor **beats the HOLD baseline at all**, and the arm

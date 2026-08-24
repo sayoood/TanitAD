@@ -1,0 +1,278 @@
+{
+ "_evidence_class": "MEASURED (ours; dev-box RTX 4060)",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "arms_missing": [],
+ "arms": {
+  "rdw8": {
+   "participation_val": 3.796,
+   "participation_heldout24": 3.617,
+   "step": 2000,
+   "predictor": {
+    "1": {
+     "cos": 0.0541,
+     "z": 3.99,
+     "n": 108
+    },
+    "2": {
+     "cos": 0.0014,
+     "z": 0.8,
+     "n": 108
+    },
+    "4": {
+     "cos": 0.0014,
+     "z": 0.84,
+     "n": 108
+    }
+   }
+  },
+  "rdw8p30k": {
+   "participation_val": 25.583,
+   "participation_heldout24": 26.965,
+   "step": 30000,
+   "predictor": {
+    "1": {
+     "cos": 0.6224,
+     "z": 30.55,
+     "n": 108
+    },
+    "2": {
+     "cos": -0.0024,
+     "z": -1.06,
+     "n": 108
+    },
+    "4": {
+     "cos": -0.0032,
+     "z": -1.57,
+     "n": 108
+    }
+   }
+  }
+ },
+ "blocks": {
+  "EGO (held-out val)": {
+   "speed": {
+    "z_op rdw8": {
+     "r2": 0.283,
+     "delta_vs_base": 0.0,
+     "t": 0.0,
+     "n_favouring": 0,
+     "n": 12,
+     "delta_vs_pixel_floor": 0.1673,
+     "t_vs_pixel_floor": 2.37,
+     "n_favouring_vs_pixel_floor": 10,
+     "beats_raw_input": true
+    },
+    "z_op rdw8p30k": {
+     "r2": 0.1482,
+     "delta_vs_base": -0.1348,
+     "t": -3.71,
+     "n_favouring": 1,
+     "n": 12,
+     "delta_vs_pixel_floor": 0.0326,
+     "t_vs_pixel_floor": 0.64,
+     "n_favouring_vs_pixel_floor": 2,
+     "beats_raw_input": false
+    },
+    "pixel (floor)": {
+     "r2": 0.1156,
+     "delta_vs_base": -0.1673,
+     "t": -2.37,
+     "n_favouring": 2,
+     "n": 12
+    },
+    "frozen DINOv3": {
+     "r2": 0.4081,
+     "delta_vs_base": 0.1251,
+     "t": 2.72,
+     "n_favouring": 11,
+     "n": 12,
+     "delta_vs_pixel_floor": 0.2924,
+     "t_vs_pixel_floor": 4.74,
+     "n_favouring_vs_pixel_floor": 12,
+     "beats_raw_input": true
+    },
+    "constant (control)": {
+     "r2": 0.0,
+     "delta_vs_base": -0.283,
+     "t": -9.36,
+     "n_favouring": 0,
+     "n": 12,
+     "delta_vs_pixel_floor": -0.1156,
+     "t_vs_pixel_floor": -1.81,
+     "n_favouring_vs_pixel_floor": 2,
+     "beats_raw_input": false
+    }
+   },
+   "d_ego": {
+    "z_op rdw8": {
+     "r2": 0.3601,
+     "delta_vs_base": 0.0,
+     "t": 0.0,
+     "n_favouring": 0,
+     "n": 12,
+     "delta_vs_pixel_floor": 0.4382,
+     "t_vs_pixel_floor": 5.26,
+     "n_favouring_vs_pixel_floor": 12,
+     "beats_raw_input": true
+    },
+    "z_op rdw8p30k": {
+     "r2": 0.0963,
+     "delta_vs_base": -0.2638,
+     "t": -6.29,
+     "n_favouring": 0,
+     "n": 12,
+     "delta_vs_pixel_floor": 0.1744,
+     "t_vs_pixel_floor": 2.77,
+     "n_favouring_vs_pixel_floor": 11,
+     "beats_raw_input": true
+    },
+    "pixel (floor)": {
+     "r2": -0.0781,
+     "delta_vs_base": -0.4382,
+     "t": -5.26,
+     "n_favouring": 0,
+     "n": 12
+    },
+    "frozen DINOv3": {
+     "r2": 0.3238,
+     "delta_vs_base": -0.0363,
+     "t": -0.64,
+     "n_favouring": 4,
+     "n": 12,
+     "delta_vs_pixel_floor": 0.4019,
+     "t_vs_pixel_floor": 3.41,
+     "n_favouring_vs_pixel_floor": 12,
+     "beats_raw_input": true
+    },
+    "constant (control)": {
+     "r2": 0.0,
+     "delta_vs_base": -0.3601,
+     "t": -8.92,
+     "n_favouring": 0,
+     "n": 12,
+     "delta_vs_pixel_floor": 0.0781,
+     "t_vs_pixel_floor": 0.72,
+     "n_favouring_vs_pixel_floor": 5,
+     "beats_raw_input": false
+    }
+   }
+  },
+  "ENV (in-sample)": {
+   "lead_gap_m": {
+    "z_op rdw8": {
+     "r2": -0.329,
+     "delta_vs_base": 0.0,
+     "t": 0.0,
+     "n_favouring": 0,
+     "n": 24,
+     "delta_vs_pixel_floor": -0.3354,
+     "t_vs_pixel_floor": -5.71,
+     "n_favouring_vs_pixel_floor": 7,
+     "beats_raw_input": false
+    },
+    "z_op rdw8p30k": {
+     "r2": 0.0063,
+     "delta_vs_base": 0.3353,
+     "t": 6.67,
+     "n_favouring": 22,
+     "n": 24,
+     "delta_vs_pixel_floor": -0.0001,
+     "t_vs_pixel_floor": -0.01,
+     "n_favouring_vs_pixel_floor": 12,
+     "beats_raw_input": false
+    },
+    "pixel (floor)": {
+     "r2": 0.0064,
+     "delta_vs_base": 0.3354,
+     "t": 5.71,
+     "n_favouring": 17,
+     "n": 24
+    },
+    "frozen DINOv3": {
+     "r2": 0.0294,
+     "delta_vs_base": 0.3584,
+     "t": 6.62,
+     "n_favouring": 20,
+     "n": 24,
+     "delta_vs_pixel_floor": 0.023,
+     "t_vs_pixel_floor": 2.81,
+     "n_favouring_vs_pixel_floor": 10,
+     "beats_raw_input": true
+    },
+    "constant (control)": {
+     "r2": 0.0,
+     "delta_vs_base": 0.329,
+     "t": 5.61,
+     "n_favouring": 17,
+     "n": 24,
+     "delta_vs_pixel_floor": -0.0064,
+     "t_vs_pixel_floor": -16.75,
+     "n_favouring_vs_pixel_floor": 0,
+     "beats_raw_input": false
+    }
+   },
+   "n_agents": {
+    "z_op rdw8": {
+     "r2": -1.0407,
+     "delta_vs_base": 0.0,
+     "t": 0.0,
+     "n_favouring": 0,
+     "n": 24,
+     "delta_vs_pixel_floor": -0.825,
+     "t_vs_pixel_floor": -8.11,
+     "n_favouring_vs_pixel_floor": 0,
+     "beats_raw_input": false
+    },
+    "z_op rdw8p30k": {
+     "r2": -0.018,
+     "delta_vs_base": 1.0227,
+     "t": 10.06,
+     "n_favouring": 24,
+     "n": 24,
+     "delta_vs_pixel_floor": 0.1976,
+     "t_vs_pixel_floor": 10.21,
+     "n_favouring_vs_pixel_floor": 24,
+     "beats_raw_input": true
+    },
+    "pixel (floor)": {
+     "r2": -0.2156,
+     "delta_vs_base": 0.825,
+     "t": 8.11,
+     "n_favouring": 24,
+     "n": 24
+    },
+    "frozen DINOv3": {
+     "r2": 0.2754,
+     "delta_vs_base": 1.3161,
+     "t": 12.58,
+     "n_favouring": 24,
+     "n": 24,
+     "delta_vs_pixel_floor": 0.4911,
+     "t_vs_pixel_floor": 20.18,
+     "n_favouring_vs_pixel_floor": 24,
+     "beats_raw_input": true
+    },
+    "constant (control)": {
+     "r2": 0.0,
+     "delta_vs_base": 1.0407,
+     "t": 9.65,
+     "n_favouring": 24,
+     "n": 24,
+     "delta_vs_pixel_floor": 0.2156,
+     "t_vs_pixel_floor": 9.21,
+     "n_favouring_vs_pixel_floor": 22,
+     "beats_raw_input": true
+    }
+   }
+  }
+ },
+ "kill_gate": {
+  "rdw8p30k": {
+   "REJECTED_by_kill_gate": false,
+   "reason": "passes the gate",
+   "h2_head_trained": false,
+   "predicts_beyond_h1": null
+  }
+ },
+ "verdict": "rdw8p30k: passes gate \u00b7 h>=2 NOT MEASURABLE HERE (untrained heads, C139)"
+}
