@@ -4785,6 +4785,74 @@ def train(a) -> dict:
                                   enc_only=bool(getattr(a, "psg_enc_only", False)))
                 L["loss"] = L["loss"] + float(a.w_o10_psg) * _l10
                 L["log"] |= _lg10 | {"o10_w": float(a.w_o10_psg)}
+            # ---- PREDICTOR-HEALTH MONITOR (C149 / E-DEC-21) -----------------
+            # ⭐ WHY THIS EXISTS. The census of 30 finished arms found that 11 of
+            # them emit deltas 1.07x to 32x the size of the true one, and 16 more
+            # sit exactly at a constant predictor -- and NONE of that was visible
+            # from the training log, because the loss was falling the whole time.
+            # Every one of those runs cost GPU-days before a read-out said so.
+            #
+            # Two batch statistics, both cheap and both self-contained:
+            #   pred_rel_scale = ||d_hat|| / ||t||   -- 1.0 is calibrated. The
+            #     O1 family read 17-22 and the PSG family up to 32 AT READ-OUT;
+            #     this would have shown it within the first few hundred steps.
+            #   pred_mean_frac = ||mean_B(d_hat)|| / rms(d_hat)  -- how much of
+            #     the batch's prediction is one SHARED offset. In the census this
+            #     ordered the three classes almost perfectly: 0.07-0.18 for arms
+            #     that beat a constant, 0.34-0.82 for arms at it, 0.73-0.87 for
+            #     arms below it.
+            # ⚠️ STATED LIMIT: these are BATCH statistics, not the dataset-level
+            # `nrmse` verdict. An in-batch mean control would be optimistically
+            # strong (it fits the very batch it is scored on), so NO verdict is
+            # emitted here -- `meanpred.py` on held-out clips remains the
+            # admissible test. This is an EARLY WARNING, not a floor.
+            _zhh = L["out"].get("zhat_steps")
+            if _zhh and z_true:
+                with torch.no_grad():
+                    _dh = (_zhh[0].reshape(_zhh[0].shape[0], -1)
+                           - L["out"]["z_op_win"][:, -1].reshape(_zhh[0].shape[0], -1))
+                    _tt = (z_true[0].reshape(_dh.shape[0], -1)
+                           - L["out"]["z_op_win"][:, -1].reshape(_dh.shape[0], -1))
+                    _tn = _tt.norm().clamp_min(1e-12)
+                    L["log"]["pred_rel_scale"] = float(_dh.norm() / _tn)
+                    _rms = _dh.pow(2).mean().sqrt().clamp_min(1e-12)
+                    _b = _dh.shape[0]
+                    _mf = float(_dh.mean(0).norm()
+                                / (_rms * _dh.shape[1] ** 0.5))
+                    # ⛔ RAW mean-fraction HAS A BATCH-DEPENDENT FLOOR and is
+                    # therefore NOT comparable across runs: for B independent
+                    # zero-mean predictions it reads 1/sqrt(B) by construction
+                    # (0.707 at batch 2, 0.354 at batch 8), so a small-batch run
+                    # would look collapsed purely from its batch size. MEASURED
+                    # in the first smoke of this very monitor: 0.9988 at batch 2.
+                    # Shipping it raw would have repeated C149 -- a statistic
+                    # whose floor was never computed -- inside the instrument
+                    # written to prevent C149. The EXCESS form divides it out:
+                    #   1.0  = indistinguishable from independent predictions
+                    #   >1.0 = a genuinely SHARED offset across the batch
+                    #   >1.0 = a genuinely SHARED offset across the batch
+                    # ⚠️ ITS FLOOR IS BATCH-INVARIANT; ITS CEILING IS NOT.
+                    # Total collapse (every prediction identical) gives raw
+                    # mean_frac = 1 and therefore excess = sqrt(B). MEASURED at
+                    # step 2 with the near-identity residual init: 1.41 at
+                    # batch 2 and 2.82 at batch 8 -- the SAME condition reading
+                    # different magnitudes. ⇒ across batch sizes this statistic
+                    # is comparable for "is it above 1", NOT for how far above.
+                    L["log"]["pred_mean_frac"] = _mf
+                    L["log"]["pred_mean_frac_excess"] = _mf * (_b ** 0.5)
+                    L["log"]["pred_batch"] = int(_b)
+                    L["log"]["pred_health_note"] = (
+                        "BATCH statistics, NOT the dataset floor verdict. "
+                        "pred_rel_scale 1.0 = calibrated (the O1 family read "
+                        "17-22 and PSG up to 32 at read-out). "
+                        "pred_mean_frac_excess: 1.0 = independent "
+                        "predictions, >1 = one shared offset across the batch, "
+                        "which is the failure mode. Its FLOOR is batch-"
+                        "invariant, its CEILING is sqrt(batch), so across batch "
+                        "sizes compare ABOVE-1-OR-NOT, never the magnitude. RAW "
+                        "pred_mean_frac has a 1/sqrt(batch) floor and may NOT be "
+                        "compared across batch sizes at all. The admissible test "
+                        "remains meanpred.py on held-out clips (C149).")
         opt.zero_grad(set_to_none=True)
         L["loss"].backward()
         gn = torch.nn.utils.clip_grad_norm_(trainable, a.clip)

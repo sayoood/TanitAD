@@ -579,7 +579,15 @@ def test_v6_loss_step_default_is_bit_identical_to_the_PRE_CHANGE_trainer(stage):
                # --o1-stopgrad-factual must be distinguishable from their
                # logs. Loss, terms and RNG draw-count all verified
                # BIT-IDENTICAL on the default path for S-W and S-J.
-               'o1_stopgrad_factual'}
+               'o1_stopgrad_factual',
+               # C149/E-DEC-21: additive only. The predictor-health monitor
+               # (pred_rel_scale, pred_mean_frac*, pred_batch) is an EARLY
+               # WARNING for the failure the 30-arm census found in 27 of 30
+               # arms -- deltas 1.07-32x too large, or a prediction that is
+               # mostly one shared offset -- none of which was visible from a
+               # falling loss. Loss, terms and RNG draw-count verified
+               # BIT-IDENTICAL; it runs under no_grad and adds no draw.
+               'pred_rel_scale', 'pred_mean_frac', 'pred_mean_frac_excess', 'pred_batch', 'pred_health_note'}
     assert not (set(lo['log']) - set(ln['log'])), 'log keys REMOVED'
     assert (set(ln['log']) - set(lo['log'])) <= _ADD_OK, 'unexpected new log keys'
     assert torch.equal(torch.tensor(lo["log"]["loss"]),
