@@ -99,6 +99,63 @@ floor lives INSIDE the loss. Pre-registered with four outcomes in
 ⭐⭐ **THE SPLIT ACROSS ARMS IS THE HEADLINE.** `splitp30k` (frozen distilled): `n_agents` from `z_t` **+0.3864** — far the richest — but its predictor **ADDS NOTHING**, delta vs `z_t` of −0.0008 / −0.0320 / −0.0158 at k=1/3/6, all NEGATIVE (t −3.69 / −5.62 / −6.26), and at k=6 `lead_closing` degrades to −0.0747 (t −2.11). `rdw8p30k` (trained): content only +0.0777 but the predictor **adds substantially**. ⇒ **the frozen arm CARRIES the environment and does not PREDICT it; the trained arm PREDICTS change and carries less of it.** E-DEC-20's dissociation in a new form ⇒ **mandate (2) — environment in BOTH encoder and predictor — is NOT yet satisfied by any single arm.**
 
 ⚠️ **FOUR BOUNDS.** (1) **ẑ also beats the encoded-future CEILING**, which is anomalous. Two explanations and this panel cannot separate them: the rollout is **ACTION-CONDITIONED**, so ẑ carries the ego's commanded motion that a single encoded frame lacks — *or* it is temporal **smoothing** of a noisy target. **An action-shuffled control would separate them and has not been run.** (2) All absolute R² are **small** (0.03–0.15); `lead_closing` +0.0019 is barely above zero. (3) **IN-SAMPLE** until the held-out corpus lands. (4) k=1 is **underpowered by construction** — the ceiling itself is barely above `z_t` there (+0.0123, t 0.75), i.e. the scene has not changed enough for prediction to add anything; only k=3–6 carry headroom. |
+| E-DEC-52 | ⛔⛔⛔ **O13 IS DEGENERATE — and from its own arm alone I would have concluded the OPPOSITE. The tenth failed objective, and the point at which OBJECTIVE DESIGN IS EXHAUSTED ON THIS CORPUS.** | **MEASURED, matched pair, same corpus/seed/steps, differing ONLY in the o13 weight.** `o5` degrades **+192.4 %** by the end. | `…/raw/o13_pilot_vs_matched_control.json`
+
+3,000 steps each, 24 episodes, ⚠️ **NON-PARITY, TRAINING SET** — a feasibility
+pilot, not the pre-registered read. Block medians per 500 steps (single rows at
+batch 4 are far too noisy: this pilot read `o13_excess` **+0.3614 at step 800 and
+−0.1624 at step 1500**, and I called the second a "reversal" before the medians
+showed the trend was positive throughout).
+
+| steps | `o13_excess` | beats\_pt | shuffled | `o5` (o13) | `o5` (ctrl) | **`o5` rel** |
+|---|---|---|---|---|---|---|
+| 0–500 | +0.1887 | +0.2313 | 1.129 | 0.0575 | 0.0519 | **+10.8 %** |
+| 500–1000 | +0.1625 | +0.2332 | 1.264 | 0.0496 | 0.0251 | **+97.1 %** |
+| 1000–1500 | +0.0030 | +0.0535 | 1.068 | 0.0339 | 0.0148 | **+129.2 %** |
+| 1500–2000 | +0.1142 | +0.1085 | 1.267 | 0.0260 | 0.0110 | **+135.2 %** |
+| 2000–2500 | +0.4596 | +0.4537 | 1.441 | 0.0228 | 0.0079 | **+189.7 %** |
+| 2500–3000 | +0.2457 | +0.2635 | 0.986 | 0.0195 | 0.0067 | **+192.4 %** |
+
+⭐⭐⭐ **THE METHODOLOGICAL RESULT IS BIGGER THAN THE OBJECTIVE RESULT.** Read the
+`o5` (o13) column alone: **0.0575 → 0.0195, monotonically falling.** That is what
+healthy training looks like, and every diagnostic *inside* the arm agreed —
+`o13_excess` positive in all six blocks, the shuffled control sitting at its floor,
+`zhat` beating passthrough throughout. **I would have reported success.** The
+matched control shows the identical recipe reaches **0.0067** without the term:
+the arm's "improvement" is **a third of what it would have achieved by doing
+nothing.** ⇒ **A FALLING LOSS CURVE IS NOT EVIDENCE. It is evidence only relative
+to a matched arm**, and this is the cleanest demonstration of that in the
+programme.
+
+⛔ **THE PRE-REGISTERED CONSEQUENCE, APPLIED AS WRITTEN.**
+`PREREG_O13_EGO_DYNAMICS.md` §4, committed **before** this ran: *"`o13_excess > 0`
+while `o5` degrades ≥ 10 % → **DEGENERATE**. O13 is **abandoned, not retuned**,
+and logged as the tenth failed objective."* The criterion fired at **19× its
+threshold**. ⇒ **`o13p30k` is NOT launched.** The staged trainer, the gated
+launcher and the md5 verification all remain on Thor, unused.
+
+⚠️ **THE RATIONALISATION I AM DECLINING TO MAKE, STATED SO THE PI CAN OVERRULE ME.**
+O13's loss is O(1) while `o5` is O(0.02), so at `--w-o13-ego 0.1` the new term
+carries **~5× the weight of the objective it competes with** — the degeneracy may
+be MIS-SCALING rather than something fundamental. That is a real observation and I
+am recording it. **But "it's degenerate, maybe with a smaller weight…" is exactly
+how nine objectives consumed this campaign**, and the pre-registration says
+*abandoned, not retuned* precisely to stop me. ⇒ **A weight sweep is a NEW
+hypothesis and needs its own pre-registration and its own cheapest discriminating
+experiment — not a quiet retune of an abandoned one. It is a PI call, not mine.**
+
+⭐⭐ **WHERE THIS LEAVES THE PROGRAMME — and E-DEC-48b already wrote the answer.**
+Ten objective terms have now failed (O1, O2, O3, O7, O8, O9, O10, O11, PSG, O13),
+and the tenth was aimed at **the one target the action demonstrably determines**
+(Δspeed t 2.56, Δyaw t 4.57), through **a readout the action cannot reach**, on **a
+subspace the encoder demonstrably has**. It is the best-motivated objective the
+programme has built, and it made prediction three times worse.
+⇒ **The problem was never objective design.** The pre-registration's REFUTED
+branch named the remaining lever in advance: **INTERVENTIONAL DATA — the same
+scene paired with different actions, which only simulation supplies.** That is a
+**PI provisioning decision**, and the programme has now reached it by measurement
+rather than by argument.
+
 | E-DEC-51 | ⭐⭐⭐⭐ **THE ORACLE THAT REFUSED THE OBVIOUS DESIGN — ~8 GPU-hours saved by 40 minutes of probe** | ⛔ **MEASURED, identity control +0.9337 (t 23.74): the latent adds NOTHING to the action on the ego's own dynamics.** A head on `(z_t, action_t)` would read the two action scalars and ignore the 2048-d latent. | `…/raw/o13oracle_latent_adds_to_action.json`
 
 E-DEC-50 established the target. The natural objective is a head on

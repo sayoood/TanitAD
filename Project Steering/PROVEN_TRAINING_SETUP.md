@@ -156,7 +156,21 @@ criterion at step 20,400).
 proves it has no information. The action's measurable causal content is the EGO's
 own dynamics — and no objective has ever used that as a target.**
 
-### O13 — the ego-dynamics objective (the recommended next arm)
+### ⛔ O13 — BUILT, PILOTED, AND REFUTED AS DEGENERATE (E-DEC-52, 2026-08-26)
+
+⛔⛔ **DO NOT RUN O13. A matched-pair pilot degrades prediction by +192.4 %** —
+ten times worse than O11, the previous worst. `o13_excess` was positive in all six
+blocks and every in-arm diagnostic looked healthy; **the arm's own `o5` fell
+monotonically 0.0575 → 0.0195 and looked like successful training.** The matched
+control reaches **0.0067** without the term. ⇒ **A falling loss curve is not
+evidence; it is evidence only against a matched arm.**
+
+Per `PREREG_O13_EGO_DYNAMICS.md`, committed before the outcome was known, the
+DEGENERATE branch prescribes **abandonment, not retuning**. The design is
+documented below as the record of what was built and why — **it is not a
+recommendation.**
+
+### O13 — the design, retained as a record (NOT recommended)
 
 > Predict **Δ(speed, yaw)** at t+k from **`zhat_{t+k}` ALONE**, through a
 > **frozen, parameter-free random readout**, alongside the existing scene
@@ -210,7 +224,11 @@ complementary, not ranked**, and ego content is a **trainable** property.
 --init-from <DINOv3-distilled ckpt>      # ⭐ the ONE lever that fixed collapse
                                          #    AND representation. Not an objective.
 --stage S-W                              # scene prediction from the scene
---w-o13-ego <tbd> --o13-k 4              # ⭐ NEW: Δ(speed,yaw) from zhat ALONE.
+# ⛔ NO O13. Piloted and REFUTED as degenerate (E-DEC-52): +192.4 % worse
+# prediction against a matched control. The line below is kept STRUCK OUT rather
+# than deleted, because a silently removed recommendation is indistinguishable
+# from one nobody got to.
+# --w-o13-ego <tbd> --o13-k 4            # ⛔ REFUTED: Δ(speed,yaw) from zhat ALONE.
                                          #    The readout is forbidden the action
                                          #    AND z_t — E-DEC-51 measured that a
                                          #    head given the action ignores the
@@ -235,7 +253,8 @@ failures, and E-DEC-48b explains why as a class rather than one at a time.
 | The action determines the ego's own Δspeed / Δyaw | **MEASURED** (t 2.56 / 4.57) |
 | The encoder carries ego LEVELS but not CHANGES | **MEASURED** (identity control 23.74) |
 | A head on `(z_t, action)` would be an ACTION ECHO | **MEASURED** (latent adds −0.0065 / −0.0153) |
-| **O13 will improve action-conditioning** | ⚠️ **PLAUSIBLE — not yet run**; pre-registered with an abort criterion |
+| **O13 improves action-conditioning** | ⛔ **REFUTED — DEGENERATE.** Matched pair: `o5` +192.4 % worse (E-DEC-52) |
+| Objective design can solve action-conditioning **on this corpus** | ⛔ **TEN terms have now failed**, the tenth being the best-motivated one. The remaining lever is **interventional data** — a PI decision. |
 | Any of this improves DRIVING | ⛔ **UNKNOWN — every number here is T0** |
 
 ⚠️ **Multiplicity, stated:** the ego panel spans ~40 cells at t ≈ 2; several marginal
