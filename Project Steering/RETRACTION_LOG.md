@@ -8548,7 +8548,7 @@ ONE place the quantity is computed.**
 | 2 | λ chosen on a random-**row** inner split | shuffled −6.40 / −4.60 / −5.47 | ≈ 0 |
 | 3 | within-clip R² centred on the **fit** mean | **constant control −78.7, −655.8** | **0.0000** |
 | 4 | duplicated metric in `idm_oracle.py` | **constant control −2064.63** | **0.0000** |
-| 5 | four concurrent probe processes | 0 rows in 28 min, shared output path | — |
+| 5 | ~~four~~ **TWO** concurrent probe JOBS (corrected by C155) | 0 rows in 28 min, shared output path | — |
 | 6 | stub log lines admitted by `is not None` | excess t **+0.40** (artefact) | t **−0.05** |
 
 **#1 — non-convex optimisation is the wrong tool for a containment question.**
@@ -8605,3 +8605,46 @@ value in every panel, and ABORT rather than print when it misses.** The
 `sh.mean() < -0.25` gate added after #1 caught #2, #3 and #4 automatically — it
 turned three silent wrong answers into three loud refusals. A panel without such
 a gate is not cheaper; it is just quieter about being wrong.
+
+## C155 ⚠️ — "FOUR CONCURRENT PROCESSES" WAS TWO JOBS: A PROCESS COUNT IS NOT A JOB COUNT (2026-08-25, self-caught by checking parentage instead of the tally)
+
+**What was asserted**, in C154 #5 and to the PI: that **four** concurrent
+`rangeprobe_rff.py` processes were competing for BLAS threads.
+
+**What the parentage says.** On this box the venv's `python.exe` is a **LAUNCHER
+STUB** that spawns the real interpreter, so **one job always appears as two
+`python.exe` entries**:
+
+    nohup.exe (28864)
+      └─ python.exe (31444)     4 MB   <- stub
+           └─ python.exe (29048)  2329 MB   <- the real worker
+
+Verified by `ParentProcessId` and `WorkingSetSize` on a launch I knew to be
+single. ⇒ **The "four" were TWO JOBS.** The concurrency itself was real — I had
+relaunched after each fix without killing the predecessor — but **the number was
+doubled by the stub effect, and I wrote the doubled number into the log.**
+
+⚠️ **AND I COMPOUNDED IT MINUTES LATER.** When two processes appeared for a single
+launch, I accused `run_one.sh`'s `exec` of forking under MSYS bash. It does not
+fork; it was the same stub. That accusation had already been appended to the
+script itself, where it would have misled the next reader more than the original
+error did. It is now replaced by this correction.
+
+**ROOT-CAUSE CLASS: reading an AGGREGATE as if it answered a STRUCTURAL question.**
+A count answers *"how many entries match?"* — never *"how many jobs are
+running?"* — and the gap between those is invisible until you check the
+relationship. This is the `df`-on-a-pod family exactly: a probe reporting the
+wrong scope, read as an answer.
+
+⚠️ **This is the THIRD scope error of this shape in one night**, which is why it
+is logged rather than quietly fixed:
+1. the **whole-predictor vs seam** gradient ratio (0.0000 vs the 33 % that mattered);
+2. **"the action seam is 10,000× starved"** — comparing O5's whole-predictor
+   gradient, dominated by the wide output heads, against the FiLM; the
+   apples-to-apples figure is **25×**;
+3. **this one.**
+
+⇒ **Before quoting a count, state what ONE UNIT looks like and verify it.**
+Parent/child for processes — exactly as `git ls-files --stage` against
+`git hash-object` is the real check for a staged file, rather than `git add`'s
+exit code.

@@ -120,6 +120,28 @@ def main() -> int:
                     den = float((z0 - base).norm())
                     if den < 1e-9:
                         continue
+                    # ⭐⭐ THE DEGENERACY GUARD, MEASURED IN THE SAME LOOP.
+                    # MEASURED 2026-08-25: the o11p30k arm scored **120 %** on
+                    # this panel's headline ratio — CONFIRMED territory — while
+                    # being demonstrably degenerate (zhat = f(z) + lambda*a).
+                    # The pre-registration's CONFIRMED clause is a CONJUNCTION
+                    # (ratio >= 50 % AND o5 within +10 %), and ONLY that clause
+                    # caught it. ⛔ A GUARD THAT LIVES IN A DOCUMENT IS A GUARD
+                    # THAT WILL EVENTUALLY BE FORGOTTEN. So the panel now
+                    # measures prediction quality ITSELF and computes the
+                    # verdict, instead of leaving it to be remembered.
+                    #
+                    # nrmse_1 = ||zhat - z_true|| / ||z_true - z_last||, the same
+                    # C149 form used everywhere else: 1.0 is the no-change
+                    # predictor, and a DEGENERATE arm is far ABOVE it because it
+                    # has traded accuracy for separation.
+                    if i + W < len(zt):
+                        ztrue = zt[i + W].to(dev).reshape(-1)
+                        tn = float((ztrue - base).norm())
+                        if tn > 1e-9:
+                            acc.setdefault("[qual] nrmse_1", [[], []])[1].append(
+                                float((z0 - ztrue).norm()) / tn)
+                            acc["[qual] nrmse_1"][0].append(0.0)
                     conds = {
                         "shuffle_sa": torch.cat([aa2, vv], -1),
                         "shuffle_v": torch.cat([aa, vv2], -1),
@@ -145,10 +167,14 @@ def main() -> int:
             del w
         torch.cuda.empty_cache()
 
+        q = acc.get("[qual] nrmse_1", [[], []])[1]
+        nrmse1 = float(np.mean(q)) if q else float("nan")
         n = len(acc["shuffle_sa"][0])
         print(f"  === {arm} (step {st}) · {n} windows ===")
         print(f"  {'condition':<26}{'d_in':>10}{'d_out':>10}{'reading':>34}")
-        rep["arms"][arm] = {"step": int(st), "n_windows": n, "conditions": {}}
+        rep["arms"][arm] = {"step": int(st), "n_windows": n,
+                            "nrmse_1_vs_no_change": round(nrmse1, 4),
+                            "conditions": {}}
         for k, (di, do) in acc.items():
             mi, mo = float(np.mean(di)), float(np.mean(do))
             if k.startswith("[ctrl]"):
@@ -166,6 +192,23 @@ def main() -> int:
                 "d_in": round(mi, 4), "d_out": round(mo, 4),
                 "d_out_median": round(float(np.median(do)), 4), "reading": rd}
             print(f"  {k:<26}{mi:>10.4f}{mo:>10.4f}{rd:>34}")
+        sa = float(np.mean(acc["shuffle_all"][1]))
+        ct = float(np.mean(acc["[ctrl] latent +10% noise"][1]))
+        ratio = sa / max(ct, 1e-12)
+        # ⛔ THE VERDICT IS A CONJUNCTION, COMPUTED — never the ratio alone.
+        degen = (nrmse1 == nrmse1) and nrmse1 > 1.10      # worse than no-change
+        verdict = ("DEGENERATE - high action response bought with a WORSE "
+                   "prediction (nrmse_1 %.3f > 1.10, the no-change floor)" % nrmse1
+                   if degen and ratio >= 0.20 else
+                   "CONFIRMED  - action pathway >= 50% and the prediction holds"
+                   if ratio >= 0.50 else
+                   "PARTIAL    - 20-50%" if ratio >= 0.20 else "REFUTED    - < 20%")
+        rep["arms"][arm]["action_pathway_ratio"] = round(ratio, 4)
+        rep["arms"][arm]["verdict"] = verdict
+        print("")
+        print(f"  action pathway = shuffle_all / control = {ratio:.1%}"
+              f"   ·   nrmse_1 vs no-change = {nrmse1:.4f}")
+        print(f"  VERDICT (conjunction, computed): {verdict}")
         print()
 
     OUT.write_text(json.dumps(rep, indent=1), encoding="utf-8")
