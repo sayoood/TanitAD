@@ -1855,6 +1855,82 @@
    "cited_by": [
     "products/P4-training-pipelines/METHOD_LIBRARY.md"
    ]
+  },
+  "2607.26712": {
+   "key": "2607.26712",
+   "kind": "arxiv",
+   "title": "ActSWM: Action-Sensitive World Models for Long-Horizon Planning in Open-World Games",
+   "authors": [
+    "Zhenfeng Gan",
+    "ZiTong Zeng",
+    "Jiajun Cheng",
+    "Yeke Song",
+    "Yongyi Tang",
+    "Xueqian Wang"
+   ],
+   "published": "2026-07-29",
+   "abstract": "Latent world models support efficient model-predictive control by optimizing future control sequences in latent space and replanning in a receding-horizon manner. However, existing latent predictors often lack stable long-horizon rollout ability, and prediction accuracy alone does not ensure that rollouts remain responsive to the actions being planned. We identify Context Collapse, a failure mode in which autoregressive latent predictors maintain high similarity to future states while producing nearly indistinguishable futures under different action sequences. To address this issue, we propose ActSWM, an action-sensitive latent world model grounded in a transition-separation principle: a planning-useful latent dynamics model should keep alternative-action futures distinguishable and make the action associated with each local transition recoverable. Under this principle, action sensitivit",
+   "url": "https://arxiv.org/abs/2607.26712",
+   "path": "TanitAD Research Lab/Library/papers/2607.26712_ActSWM-Action-Sensitive-World-Models-for-Long-Horizon-Planni.pdf",
+   "bytes": 6110821,
+   "sha256": "b293843f4b2377d72f364f66ee1cc5a61f59a8010e46950e1feacb3187ff1260",
+   "banked": "2026-08-25",
+   "tags": [
+    "action-conditioning"
+   ],
+   "note": "ActSWM: names our failure CONTEXT COLLAPSE (rollouts insensitive to actions while matching future states); diagnoses it with a recorded-vs-ZERO-action gap = our zero_sa; fix = HINGE loss on rollout separation + a RANDOMLY-INITIALISED FROZEN action readout on [z_t,z_t+1] whose loss backprops through the LATENT INPUTS (so it shapes the ENCODER, unlike our O11 which only touched the predictor FiLM); AND independently reproduces our O11 degeneracy - a JOINTLY TRAINED readout raised separation while fidelity fell 0.972->0.698",
+   "cited_by": [
+    "Project Steering/GOALS_AND_CLAIMS.md"
+   ]
+  },
+  "2412.05337": {
+   "key": "2412.05337",
+   "kind": "arxiv",
+   "title": "ACT-Bench: Towards Action Controllable World Models for Autonomous Driving",
+   "authors": [
+    "Hidehisa Arai",
+    "Keishi Ishihara",
+    "Tsubasa Takahashi",
+    "Yu Yamaguchi"
+   ],
+   "published": "2024-12-06",
+   "abstract": "World models have emerged as promising neural simulators for autonomous driving, with the potential to supplement scarce real-world data and enable closed-loop evaluations. However, current research primarily evaluates these models based on visual realism or downstream task performance, with limited focus on fidelity to specific action instructions - a crucial property for generating targeted simulation scenes. Although some studies address action fidelity, their evaluations rely on closed-source mechanisms, limiting reproducibility. To address this gap, we develop an open-access evaluation framework, ACT-Bench, for quantifying action fidelity, along with a baseline world model, Terra. Our benchmarking framework includes a large-scale dataset pairing short context videos from nuScenes with corresponding future trajectory data, which provides conditional input for generating future video ",
+   "url": "https://arxiv.org/abs/2412.05337",
+   "path": "TanitAD Research Lab/Library/papers/2412.05337_ACT-Bench-Towards-Action-Controllable-World-Models-for-Auton.pdf",
+   "bytes": 4793374,
+   "sha256": "560190990e9f2d2f89add329668ce653c758d9975447e6f52db7ebed6bbe11c5",
+   "banked": "2026-08-25",
+   "tags": [
+    "action-conditioning"
+   ],
+   "note": "queued for the action-conditioning review",
+   "cited_by": [
+    "Project Steering/GOALS_AND_CLAIMS.md"
+   ]
+  },
+  "1905.11979": {
+   "key": "1905.11979",
+   "kind": "arxiv",
+   "title": "Causal Confusion in Imitation Learning",
+   "authors": [
+    "Pim de Haan",
+    "Dinesh Jayaraman",
+    "Sergey Levine"
+   ],
+   "published": "2019-05-28",
+   "abstract": "Behavioral cloning reduces policy learning to supervised learning by training a discriminative model to predict expert actions given observations. Such discriminative models are non-causal: the training procedure is unaware of the causal structure of the interaction between the expert and the environment. We point out that ignoring causality is particularly damaging because of the distributional shift in imitation learning. In particular, it leads to a counter-intuitive \"causal misidentification\" phenomenon: access to more information can yield worse performance. We investigate how this problem arises, and propose a solution to combat it through targeted interventions---either environment interaction or expert queries---to determine the correct causal model. We show that causal misidentification occurs in several benchmark control domains as well as realistic driving settings, and valida",
+   "url": "https://arxiv.org/abs/1905.11979",
+   "path": "TanitAD Research Lab/Library/papers/1905.11979_Causal-Confusion-in-Imitation-Learning.pdf",
+   "bytes": 1307334,
+   "sha256": "eb7626a054b3aaf45e396ea62d5088ab620d38b84e1ad22b272df3b1e91488b7",
+   "banked": "2026-08-25",
+   "tags": [
+    "action-conditioning"
+   ],
+   "note": "queued for the action-conditioning review",
+   "cited_by": [
+    "Project Steering/GOALS_AND_CLAIMS.md"
+   ]
   }
  }
 }
