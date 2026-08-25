@@ -1,7 +1,10 @@
 # Action conditioning — hypotheses, and what the literature already knows
 
-**Written** 2026-08-25 · **Author** Master Mind · **Tier** every number is
-T0-DIAGNOSTIC · **Status** hypothesis register, not a decision
+**Written** 2026-08-25 · **Updated** 2026-08-26 · **Author** Master Mind
+**Tier** every number is T0-DIAGNOSTIC
+⭐ **Status: NO LONGER A HYPOTHESIS REGISTER — all five were DECIDED by
+measurement within 24 hours. Read §2b FIRST; §3 is kept unedited as the
+record of the reasoning, and its ordering is superseded.**
 
 ---
 
@@ -56,6 +59,57 @@ GTA, Apex — **no driving**. In games the action largely *determines* the next
 frame. Ours barely does over 0.4–3.0 s (E-DEC-39). **Their method creates the
 signal rather than mining it, which is the right direction — but it has never been
 tested where the causal effect is this weak.**
+
+---
+
+## 2b. ⭐⭐⭐ OUTCOMES — every hypothesis below has now been TESTED (2026-08-26)
+
+**This register was written as a hypothesis list on 2026-08-25. Within 24 hours all
+five were decided by measurement. The original §3 text is kept BELOW, unedited, so
+the reasoning that led to each can be audited against what happened — but §3's
+ordering is SUPERSEDED by this table.**
+
+| | hypothesis | verdict | evidence |
+|---|---|---|---|
+| **H2** | the action is CONFOUNDED with the scene | ⭐ **CONFIRMED** | E-DEC-48b: marginal **−0.1678 (t −3.50)** against a positive control at t 8.5–14.3 |
+| **H3** | the horizon is wrong — predict what the action DETERMINES | ⭐⭐ **CONFIRMED AND MADE PRECISE** | E-DEC-50: action → Δspeed **t 2.56**, Δyaw **t 4.57**; identity control **+0.9337 (t 23.74)** |
+| **H1** | O11 asked the PREDICTOR for what the ENCODER never encoded | 🔶 **HALF RIGHT, AND DEMOTED** | the encoder carries ego **levels** (2.07 / 2.76 / 3.10) but neither **change**; the missing piece is in the TRANSITION, and O12's frozen readout aims it at the SCENE, where E-DEC-48b proves there is nothing |
+| **H4** | the action embedding is a bottleneck | ⛔ **NOT TESTED, NOT NEEDED** | superseded — the input pathway has capacity; the TARGET was wrong |
+| **H5** | under-shoot / gain error | ⛔ **REFUTED** (unchanged) | α\* 1.10–1.51 but rescaling gains ≈ 0 |
+
+⭐⭐⭐ **THE SYNTHESIS H2 AND H3 MAKE TOGETHER, WHICH NEITHER MAKES ALONE.**
+H2 says what the action **cannot** do: it carries no information about the future
+**scene**, so nine objectives (O1, O2, O3, O7, O8, O9, O10, O11, PSG) were asking
+for something observational driving data does not contain. H3 says what it **can**
+do: it determines the **ego's own dynamics**. ⇒ **The failure was never objective
+design. It was the TARGET.**
+
+⇒ **O13-EGO** — predict Δ(speed, yaw) from the **predicted latent alone**, through
+a **frozen readout the action cannot reach**. Implemented, 9 tests, 2-arm wiring
+smoke, pre-registered (`PREREG_O13_EGO_DYNAMICS.md`), staged on Thor.
+
+⛔ **AND THE ORACLE THAT CORRECTED O13'S OWN FIRST DESIGN (E-DEC-51).** The obvious
+form — a head on `(z_t, action_t)` — was measured **before** any GPU: the latent
+adds **−0.0065 (t −0.06)** to Δspeed and **−0.0153 (t −0.12)** to Δyaw over the
+action alone. Such a head reads the two action scalars and ignores the 2048-d
+latent: **O11's degeneracy in a new costume, on a better target.** Hence the
+readout is forbidden the action *and* `z_t`.
+
+### ⚠️ The re-ranking, stated rather than done silently
+
+**§4 below recommends H1 (ActSWM's frozen readout, as O12) second. That ordering
+is now WRONG and is superseded:**
+
+| | then | **now** |
+|---|---|---|
+| 1 | H2 (cheapest, most consequential) | ✅ done — CONFIRMED |
+| 2 | H1 → O12 frozen readout | ⭐ **H3 → O13**, the only target with measured action information |
+| 3 | H3 | 🔶 **O12**, retained but demoted — it would create action structure in a space E-DEC-48b measured to have none |
+| 4 | ⛔ not H4 | unchanged |
+
+⚠️ **O12 is DEMOTED, NOT CANCELLED.** If O13 is REFUTED, O12 is not the fallback
+either — the pre-registration commits that outcome to **interventional data**, a PI
+provisioning decision, rather than to a tenth objective on the same corpus.
 
 ---
 
