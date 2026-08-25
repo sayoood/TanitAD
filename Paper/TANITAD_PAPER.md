@@ -4596,6 +4596,127 @@ lead-matched to the in-sample selection criterion; that matching was necessary
 because comparing across the unmatched split reversed a verdict once already.
 
 
+### 13.17 Proven result 13 — in observational driving data the action is redundant with the scene, and that single fact explains nine failed objectives at once
+
+Nine objective terms in this programme (O1, O2, O3, O7, O8, O9, O10, O11, PSG)
+were designed to make the latent transition depend on the ego's action. All nine
+failed. The natural reading is that nine designs were wrong. The measurement below
+supports a different and much simpler one: **they were all asking the model to
+extract information that observational driving data does not contain.**
+
+The test predicts the **future scene** at t+k — deliberately, because the scene at
+t demonstrably predicts it, which is what makes *"the action adds nothing on top of
+it"* a meaningful statement rather than a restatement of a null. Three nested
+predictors are compared on 20 held-out lead-matched clips, k = 4, with a nonlinear
+RFF+ridge, clip-disjoint λ selection, a within-clip Pearson r, a time-shuffled
+control on every cell, and a constant control reading exactly +0.0000.
+
+| target at t+k | `scene_t` (positive control) | `action_t` | **action's marginal given the scene** |
+|---|---|---|---|
+| `n_agents` | **+0.7089 (t 12.58)** | +0.0755 (t 0.64) | **−0.1678 (t −3.50)** |
+| `occ_center` | **+0.6588 (t 8.52)** | −0.0179 (t 0.14) | +0.0217 (t 0.40) |
+| `n_free_cols` | **+0.6324 (t 14.34)** | +0.1083 (t 1.43) | **−0.1337 (t −1.83)** |
+| `lead_closing` | +0.0988 (t 1.83) ✗ | — | **no verdict** — control failed |
+
+The scene predicts the future scene strongly; the action predicts it not at all;
+and *adding* the action makes it significantly worse. The fourth row is reported as
+**no verdict** rather than as a null: its positive control did not pass, and a
+panel whose baseline does not work cannot demonstrate redundancy. That guard is not
+decorative — an earlier version of this experiment predicted Δz, where nothing
+works, and its automatic verdict line printed *"the action is redundant"* off an
+all-null panel. Redundancy requires the baseline to succeed.
+
+The interpretation is causal, and it runs opposite to the intuition the objectives
+encoded. In real traffic **the scene causes the action**, not the reverse: a driver
+brakes *because* the lead brakes, while the lead's behaviour is almost unaffected
+by the ego. A model that reads the scene can therefore predict the future without
+using the action at all, and the action's *marginal* information is ≈ 0 even though
+its *causal* effect on the ego is real. This is the mirror of causal confusion in
+imitation learning (de Haan et al., arXiv 1905.11979): there the entanglement
+destroys a policy, here it starves an objective.
+
+⇒ *"If the lead decelerates, the ego must react"* is **not a proposition the world
+model should encode — it is one the planner should.** The world model's job is to
+predict the scene from the scene.
+
+What would change this conclusion is not a better loss but **interventional data** —
+the same scene paired with different actions, which only simulation supplies.
+
+### 13.18 Proven result 14 — the action's entire causal content is the ego's own dynamics, a target no objective had used
+
+§13.17 establishes what the action cannot do. It does not test the one thing the
+action certainly *does* determine: the ego's own future state. That omission
+mattered, because the two results have opposite implications and only the pair is
+actionable.
+
+The panel below is gated on an **identity control** — `action_t` predicting
+`accel_t`, a quantity it contains — which must read ≈ 1.0 for anything below it to
+be admissible. It reads **+0.9337 (t 23.74)**.
+
+| target | `z_t` (encoded) | `ẑ_{t+k}` (predicted) | `action_t` |
+|---|---|---|---|
+| identity `accel_t` | +0.1555 (3.10) | +0.0504 (0.78) | **+0.9337 (23.74)** |
+| speed (**level**) | **+0.1255 (2.07)** | +0.0697 (0.94) | +0.1504 (1.30) |
+| yaw-rate (**level**) | **+0.1176 (2.76)** | +0.1414 (2.50) | +0.5773 (5.09) |
+| Δspeed (**change**) | −0.0077 (−0.13) | −0.0445 (−0.72) | **+0.3171 (2.56)** |
+| Δyaw (**change**) | +0.0636 (0.98) | +0.0670 (1.06) | **+0.5638 (4.57)** |
+
+Three facts compose. **The action determines the ego's own dynamics** (Δspeed
+t 2.56, Δyaw t 4.57). **The encoder already represents ego state** — speed, yaw-rate
+and acceleration are all decodable, three for three, which is a coherent pattern
+rather than one marginal row. And **the transition connects neither**: ẑ never
+exceeds z_t on any ego target, and on the one arm whose latent does carry Δspeed it
+destroys it (+0.1494 → −0.0287).
+
+The action→Δspeed relation is not an artefact of label construction. The corpus's
+acceleration channel is the dataset's own measured longitudinal `ax`, taken from a
+different sensor stream than the speed (which is derived from vx, vy); the ingest
+states explicitly that it is not a finite difference of v; and empirically
+`r(accel, realised Δv over one tick) = +0.326`, nowhere near the ≈ 1.0 an identity
+would produce. The Δyaw relation, by contrast, **is** close to kinematic — steering
+is stored as atan(L·curvature) and yaw-rate ≈ v·curvature — and that is precisely
+why it is the right target rather than a suspicious one: it is closed-form driving
+physics, a deterministic function of two quantities the encoder already carries,
+that the transition nonetheless fails to compute.
+
+⇒ The objective this implies (**O13**) predicts Δ(speed, yaw) from the *predicted
+latent alone*, through a frozen, parameter-free random readout. The readout is
+denied the action, so the action's only route to the loss is through the predictor;
+and denied z_t, so the passthrough solution is closed. Its floor is arithmetic —
+standardised targets make a zero prediction score exactly 1.0 — so the
+no-information value is asserted rather than estimated.
+
+That design was itself corrected by measurement before any compute was spent. The
+obvious form, a head on (z_t, action_t), was tested first: the latent adds
+**−0.0065 (t −0.06)** to Δspeed and **−0.0153 (t −0.12)** to Δyaw over the action
+alone, meaning such a head would read the two action scalars and ignore the 2048-d
+latent — the loss would fall, the metric would look excellent, and the world model
+would have learned nothing. That is the same degeneracy O11 exhibited, on a better
+target, and it cost forty minutes of probe rather than eight GPU-hours to find.
+
+### 13.19 What §13.17–13.18 do not establish
+
+**O13 has not been run.** Everything above is a diagnosis and a design; the
+objective's efficacy is pre-registered with four outcomes and an abort criterion
+fixed in advance, and none of them has been read. A training-set-positive result
+would not settle it — the pre-registration classes that as PARTIAL precisely
+because O11 also produced a positive training signal while degrading prediction.
+
+**§13.17 measures the action's contribution to predicting *other agents*, not the
+ego.** Read alone it would license the much stronger and false claim that the
+action is uninformative; §13.18 is what bounds it.
+
+**The ego panel spans roughly forty cells at t ≈ 2**, and several marginal rows in
+it will be noise. The load-bearing claims are chosen not to depend on them: the
+identity control (23.74), the action columns (2.56 / 4.57 / 5.09), the coherent
+level triple (3.10 / 2.76 / 2.07), and one arm's Δspeed content replicated three
+times across three independent code paths (t 2.50 / 2.05 / 2.10).
+
+**No claim is made about driving.** Every number in §13.17–13.18 is T0 — a
+diagnostic of what the representation contains and how it responds. A confirmed
+O13 would establish that the transition can be made to carry ego dynamics. It would
+say nothing about whether a planner built on it drives.
+
 ## References
 
 (Formal bibliography at LaTeX export; the working citations live in
