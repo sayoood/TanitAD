@@ -8780,3 +8780,39 @@ NEEDS A POSITIVE CONTROL** — exactly what every probe panel in this campaign
 carries and what I shipped a watchdog three times without. ⇒ **Before arming a
 monitor, run its filter against a job you KNOW is running and check the count is
 non-zero.** "It looks right" is how versions 1, 2 and 3 shipped.
+
+## C159 ⛔ — "THE ACTION IS REDUNDANT WITH THE SCENE" WAS PRINTED WHEN **NEITHER** PREDICTOR WORKED (2026-08-25, caught before it left the turn)
+
+**What the panel printed.** E-DEC-48's verdict line:
+*"ACTION IS REDUNDANT WITH THE SCENE — confounded, and no loss can help."* That
+conclusion, had it stood, would have **redirected the programme away from every
+loss-side fix toward interventional data** — a PI-level change.
+
+**What the numbers say.** On `rdw8p30k`, predicting Δz: scene **t −0.64**, action
+**t 1.88**, scene+action **t −2.19**, constant +0.0000. ⇒ **NOTHING PREDICTS THE
+TARGET.** Not the scene, not the action, not both.
+
+⛔ **YOU CANNOT CONCLUDE REDUNDANCY WHEN NEITHER PREDICTOR WORKS.** Redundancy
+means: the action works alone, the scene works alone, and together they add
+nothing beyond the scene. All-null is a *different* finding — it is E-DEC-40
+restated (Δz's residual is noise), wearing a confounding label.
+
+**Two defects, and the second is the general one.**
+1. **The verdict fired on `marginal_t < 2`**, which is true whenever *nothing*
+   works — the **seventh** auto-verdict in two days to fire on the wrong
+   quantity.
+2. ⭐ **THE PANEL HAD NO POSITIVE CONTROL** — no column that *should* succeed. Without
+   one it cannot distinguish *"the action is redundant"* from *"this panel detects
+   nothing here"*, and those imply opposite next steps.
+
+**ROOT-CAUSE CLASS: asking a comparative question about a target nothing predicts.**
+A marginal-contribution test is only meaningful **on a target the baseline
+demonstrably explains**. Δz's residual was already MEASURED to be noise, so asking
+whether the action adds to it re-asks an answered question and dresses the answer
+as something new.
+
+**The corrected test (`confound2.py`, E-DEC-48b)** predicts the **FUTURE SCENE at
+t+k** — which `scene_t` predicts strongly by autocorrelation, making *"adds nothing
+on top of it"* meaningful — and ⛔ **prints a verdict ONLY IF the positive control
+passes (t > 2)**, otherwise `NO VERDICT`. That guard is what the first version
+lacked.
