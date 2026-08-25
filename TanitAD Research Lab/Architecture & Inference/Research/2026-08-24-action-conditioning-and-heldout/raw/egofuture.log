@@ -1,0 +1,59 @@
+
+  E-DEC-49 (H3) - DOES THE ACTION PREDICT THE EGO'S OWN FUTURE?
+  target = delta-speed(t -> t+k), the quantity the accel command causes
+
+[predictor] RESIDUAL_HEAD_INIT_SCALE=0.001  (identity-scale start)
+[v6] O6 rank gate CAN rule: --spectrum-accum 43 x 48 rows/call -> ceiling 2063 >= 1024
+[v6] params 19.30 M / budget 300 M · arm shared-encoder+adapters · per-group {'encoder': 0.97, 'readout': 0.01, 'predictor_op': 7.57, 'layer_tac': 4.88, 'layer_str': 3.56, 'planner': 0.69, 'aux': 1.62, 'interp': 0.0}
+[v6] X3 isolation pass=True violations={'planner_to_encoder': 0, 'tactical_to_below': 0, 'strategic_to_below': 0}
+[geometry] v6_probe_trunk: NON-DEFAULT - 256x640px, f_ref 305.58, cylindrical, HFOV 120.00deg / VFOV 45.46deg, tokens 640 (16x40 @ patch 16), state_dim 2048, cache fragment {'geom': '256x640f305.5775cyl'}
+[geometry] WARNING: this frame (120.00deg) EXCEEDS comma2k19's entire field (65.203deg). comma2k19 cannot supply it at any resolution — it must be letterboxed (geometry_mode='rectify', explicit unobserved mask), given its own frame, or dropped from the mix. That is a PI decision, not a default.
+  === rdw8p30k (step 30000) - 20 clips, 1800 rows ===
+  column                            r     shuf   t-shuf      t
+  spd_t (POSITIVE CONTROL)    +0.0404  +0.0331  +0.0072   0.05
+  action_t                    +0.3445  +0.0059  +0.3386   2.65
+  spd_t + action_t            +0.3804  +0.0177  +0.3627   2.92
+  z_t (ENCODED)               +0.0087  +0.0167  -0.0081  -0.11
+  zhat_t+k (PREDICTED)        +0.0081  +0.0061  +0.0020   0.03
+  constant (control)          +0.0000  +0.0000  +0.0000   0.00
+
+  ctrl t +0.32 | action marginal t +1.53 | prediction adds t -0.01
+  => NO VERDICT - the positive control (spd_t) reads t +0.32; this panel cannot answer
+
+[predictor] RESIDUAL_HEAD_INIT_SCALE=0.001  (identity-scale start)
+[v6] O6 rank gate CAN rule: --spectrum-accum 43 x 24 rows/call -> ceiling 1031 >= 1024
+[v6] params 19.30 M / budget 300 M · arm shared-encoder+adapters · per-group {'encoder': 0.97, 'readout': 0.01, 'predictor_op': 7.57, 'layer_tac': 4.88, 'layer_str': 3.56, 'planner': 0.69, 'aux': 1.62, 'interp': 0.0}
+[v6] X3 isolation pass=True violations={'planner_to_encoder': 0, 'tactical_to_below': 0, 'strategic_to_below': 0}
+[geometry] v6_probe_trunk: NON-DEFAULT - 256x640px, f_ref 305.58, cylindrical, HFOV 120.00deg / VFOV 45.46deg, tokens 640 (16x40 @ patch 16), state_dim 2048, cache fragment {'geom': '256x640f305.5775cyl'}
+[geometry] WARNING: this frame (120.00deg) EXCEEDS comma2k19's entire field (65.203deg). comma2k19 cannot supply it at any resolution — it must be letterboxed (geometry_mode='rectify', explicit unobserved mask), given its own frame, or dropped from the mix. That is a PI decision, not a default.
+  === postrain10k (step 10000) - 20 clips, 1800 rows ===
+  column                            r     shuf   t-shuf      t
+  spd_t (POSITIVE CONTROL)    +0.0404  +0.0331  +0.0072   0.05
+  action_t                    +0.3445  +0.0059  +0.3386   2.65
+  spd_t + action_t            +0.3804  +0.0177  +0.3627   2.92
+  z_t (ENCODED)               +0.0379  +0.0305  +0.0073   0.08
+  zhat_t+k (PREDICTED)        +0.0479  -0.0072  +0.0551   0.90
+  constant (control)          +0.0000  +0.0000  +0.0000   0.00
+
+  ctrl t +0.32 | action marginal t +1.53 | prediction adds t +0.12
+  => NO VERDICT - the positive control (spd_t) reads t +0.32; this panel cannot answer
+
+[predictor] RESIDUAL_HEAD_INIT_SCALE=0.001  (identity-scale start)
+[v6] O6 rank gate CAN rule: --spectrum-accum 43 x 48 rows/call -> ceiling 2063 >= 1024
+[v6] params 19.30 M / budget 300 M · arm shared-encoder+adapters · per-group {'encoder': 0.97, 'readout': 0.01, 'predictor_op': 7.57, 'layer_tac': 4.88, 'layer_str': 3.56, 'planner': 0.69, 'aux': 1.62, 'interp': 0.0}
+[v6] X3 isolation pass=True violations={'planner_to_encoder': 0, 'tactical_to_below': 0, 'strategic_to_below': 0}
+[geometry] v6_probe_trunk: NON-DEFAULT - 256x640px, f_ref 305.58, cylindrical, HFOV 120.00deg / VFOV 45.46deg, tokens 640 (16x40 @ patch 16), state_dim 2048, cache fragment {'geom': '256x640f305.5775cyl'}
+[geometry] WARNING: this frame (120.00deg) EXCEEDS comma2k19's entire field (65.203deg). comma2k19 cannot supply it at any resolution — it must be letterboxed (geometry_mode='rectify', explicit unobserved mask), given its own frame, or dropped from the mix. That is a PI decision, not a default.
+  === splitp30k (step 30000) - 20 clips, 1800 rows ===
+  column                            r     shuf   t-shuf      t
+  spd_t (POSITIVE CONTROL)    +0.0404  +0.0331  +0.0072   0.05
+  action_t                    +0.3445  +0.0059  +0.3386   2.65
+  spd_t + action_t            +0.3804  +0.0177  +0.3627   2.92
+  z_t (ENCODED)               +0.1554  -0.0345  +0.1899   2.50
+  zhat_t+k (PREDICTED)        +0.0046  -0.0473  +0.0519   0.47
+  constant (control)          +0.0000  +0.0000  +0.0000   0.00
+
+  ctrl t +0.32 | action marginal t +1.53 | prediction adds t -1.06
+  => NO VERDICT - the positive control (spd_t) reads t +0.32; this panel cannot answer
+
+-> C:\Users\Admin\AppData\Local\Temp\claude\G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD\8fc25020-a1d5-4e1b-a9e2-aeccf845c5a2\scratchpad\egofuture.json

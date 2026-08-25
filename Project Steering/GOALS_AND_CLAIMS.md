@@ -99,6 +99,78 @@ floor lives INSIDE the loss. Pre-registered with four outcomes in
 ⭐⭐ **THE SPLIT ACROSS ARMS IS THE HEADLINE.** `splitp30k` (frozen distilled): `n_agents` from `z_t` **+0.3864** — far the richest — but its predictor **ADDS NOTHING**, delta vs `z_t` of −0.0008 / −0.0320 / −0.0158 at k=1/3/6, all NEGATIVE (t −3.69 / −5.62 / −6.26), and at k=6 `lead_closing` degrades to −0.0747 (t −2.11). `rdw8p30k` (trained): content only +0.0777 but the predictor **adds substantially**. ⇒ **the frozen arm CARRIES the environment and does not PREDICT it; the trained arm PREDICTS change and carries less of it.** E-DEC-20's dissociation in a new form ⇒ **mandate (2) — environment in BOTH encoder and predictor — is NOT yet satisfied by any single arm.**
 
 ⚠️ **FOUR BOUNDS.** (1) **ẑ also beats the encoded-future CEILING**, which is anomalous. Two explanations and this panel cannot separate them: the rollout is **ACTION-CONDITIONED**, so ẑ carries the ego's commanded motion that a single encoded frame lacks — *or* it is temporal **smoothing** of a noisy target. **An action-shuffled control would separate them and has not been run.** (2) All absolute R² are **small** (0.03–0.15); `lead_closing` +0.0019 is barely above zero. (3) **IN-SAMPLE** until the held-out corpus lands. (4) k=1 is **underpowered by construction** — the ceiling itself is barely above `z_t` there (+0.0123, t 0.75), i.e. the scene has not changed enough for prediction to add anything; only k=3–6 carry headroom. |
+| E-DEC-50 | ⭐⭐⭐⭐⭐ **THE ACTION'S ENTIRE CAUSAL CONTENT IS THE EGO'S OWN DYNAMICS — a target NO objective has ever used** | ⛔⛔ **MEASURED, identity control +0.9337 (t 23.74).** The latent carries ego **LEVELS**; the action determines the ego's **CHANGES**; and **the transition connects neither.** | `…/raw/egostate_levels_vs_changes.json`, `…/raw/egofuture_ego_own_future.json`
+
+20 held-out clips, 1,800 rows, k=4, RFF+ridge, clip-disjoint λ, within-clip Pearson
+r, time-shuffled control, constant reading **+0.0000**, and an **IDENTITY control
+(`action_t` → `accel_t`) that MUST read ~1.0 — it reads +0.9337, t 23.74**, so the
+rig is valid before anything below it is read.
+
+**`rdw8p30k`:**
+
+| target | `z_t` ENCODED | `zhat` PREDICTED | `action_t` |
+|---|---|---|---|
+| IDENTITY `accel_t` | +0.1555 (3.10) | +0.0504 (0.78) | **+0.9337 (23.74)** ✅ rig |
+| **speed** (LEVEL) | **+0.1255 (2.07)** ✅ | +0.0697 (0.94) | +0.1504 (1.30) |
+| **yaw-rate** (LEVEL) | **+0.1176 (2.76)** ✅ | +0.1414 (2.50) ✅ | +0.5773 (5.09) |
+| **Δspeed** (CHANGE) | −0.0077 (−0.13) ✗ | −0.0445 (−0.72) ✗ | **+0.3171 (2.56)** |
+| **Δyaw** (CHANGE) | +0.0636 (0.98) ✗ | +0.0670 (1.06) ✗ | **+0.5638 (4.57)** |
+
+⭐⭐⭐ **THE THREE FACTS THAT COMPOSE INTO THE ANSWER:**
+1. **The action DOES determine the ego's own future** — Δspeed t 2.56, Δyaw
+   t 4.57. **Echo-cleared:** the corpus's `accel` is the dataset's OWN measured
+   `ax` (`physicalai.py:604-632` states verbatim it is *not* a finite difference of
+   v), and `r(accel, realised Δv_1tick) = +0.326` — nowhere near the ~1.0 an
+   identity would give.
+2. **The encoder ALREADY represents ego state** — speed 2.07, yaw-rate 2.76,
+   accel 3.10: **three for three**, a coherent pattern rather than one marginal row.
+3. ⛔ **The PREDICTOR adds nothing on any ego target, in either arm.** `zhat`
+   never exceeds `z_t`, and on `splitp30k`'s Δspeed it **destroys** it
+   (+0.1494 → −0.0287).
+
+⇒ ⭐⭐⭐ **NINE OBJECTIVES ASKED THE ACTION TO MOVE THE SCENE LATENT — where
+E-DEC-48b proves it has NO information. The action's measurable causal content is
+the EGO's own dynamics, and no objective has ever used that as a target.** This is
+the constructive complement to E-DEC-48b: that result said what the action cannot
+do, this one says what it *can*, and both are held-out and controlled.
+
+⇒ **O13 — the EGO-DYNAMICS objective:** predict Δ(speed, yaw) at t+k from
+`(z_t, action_t)`. Action-conditioning aimed at the one quantity the action
+demonstrably determines, on a subspace the encoder demonstrably already has.
+⭐ The Δyaw relation is **largely KINEMATIC** (steer = atan(L·curvature),
+yaw-rate ≈ v·curvature), so r +0.56 is **not an empirical discovery** — it is
+exactly the closed-form driving physics the mandate names, which makes it the
+cleanest possible target: a deterministic function of quantities the encoder
+already carries, that the transition still fails to compute.
+
+⚠️ **ARM DISSOCIATION, REPLICATED.** `splitp30k` — the arm that also won the
+representation benchmark — carries the Δspeed CHANGE at **t 2.50** (`egofuture`)
+and **t 2.05** (`egostate`), two independent runs, while `rdw8p30k` reads −0.13.
+Its levels are correspondingly weaker (speed 0.65, yaw-rate 1.78). ⇒ **the two
+arms are complementary, not ranked**, and the ego content is a *trainable* property.
+
+⚠️ **MULTIPLICITY, STATED:** ~40 cells at t≈2 across targets × columns × arms;
+several marginal rows will be noise. The load-bearing claims are the ones that do
+not depend on them — the identity control (23.74), the action columns
+(2.56 / 4.57 / 5.09), the coherent level triple (3.10 / 2.76 / 2.07), and the
+replicated `splitp30k` Δspeed.
+
+| E-DEC-49 | ⭐⭐⭐ **The action predicts the EGO's own future — the question E-DEC-48b left open** | **MEASURED, held-out:** `action_t` → Δspeed **+0.3386 (t 2.65)**; `z_t` −0.0081; `zhat` +0.0020. | `…/raw/egofuture_ego_own_future.json`
+
+⛔ **THE VERDICT LINE READS "NO VERDICT" AND THAT GATE WAS RIGHT.** I designated
+`spd_t` the positive control, but current speed does not predict *change* in speed
+(r −0.063) — a physically correct null, so the gate correctly refused. ⚠️ **A gate
+that refuses a verdict is NOT a reason to discard the panel — it is a reason to
+read the columns and fix the control.** Reading them is what surfaced both the
+action's +0.3386 and `splitp30k`'s +0.1899, and E-DEC-50 then re-ran the question
+with an IDENTITY control that reads a KNOWN value.
+
+⛔ **AND THE READING I ALMOST PUBLISHED WAS WRONG** — see C161. `zhat` +0.0020
+looked like *"the predictor is handed the action and throws it away"*, until the
+panel's own `z_t` column (−0.0081) showed the true encoded latent did not carry it
+either. **A control I had already computed refuted the interpretation before it was
+written down.**
+
 | E-DEC-48b | ⭐⭐⭐⭐ **THE ACTION IS REDUNDANT WITH THE SCENE — nine failed objectives were a DATA limit, not a loss bug** | ⛔⛔ **MEASURED, positive control passing at t 8.5–14.3: the action's MARGINAL contribution to predicting the FUTURE SCENE is ZERO or NEGATIVE (−0.1678, t −3.50 on `n_agents`).** | `…/raw/confound2_future_scene.json`
 
 `rdw8p30k`, 20 lead-matched held-out clips, k=4. NONLINEAR RFF+ridge, clip-disjoint

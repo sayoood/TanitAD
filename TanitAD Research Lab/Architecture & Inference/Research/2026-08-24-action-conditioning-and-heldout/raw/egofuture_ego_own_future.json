@@ -1,0 +1,168 @@
+{
+ "_evidence_class": "MEASURED (ours; dev-box RTX 4060)",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "split": "HELD-OUT",
+ "k": 4,
+ "target": "delta speed(t -> t+k)",
+ "arms": {
+  "rdw8p30k": {
+   "step": 30000,
+   "n_clips": 20,
+   "n_rows": 1800,
+   "columns": {
+    "spd_t (POSITIVE CONTROL)": {
+     "r": 0.0404,
+     "shuffled": 0.0331,
+     "true_minus_shuffled": 0.0072,
+     "t": 0.05
+    },
+    "action_t": {
+     "r": 0.3445,
+     "shuffled": 0.0059,
+     "true_minus_shuffled": 0.3386,
+     "t": 2.65
+    },
+    "spd_t + action_t": {
+     "r": 0.3804,
+     "shuffled": 0.0177,
+     "true_minus_shuffled": 0.3627,
+     "t": 2.92
+    },
+    "z_t (ENCODED)": {
+     "r": 0.0087,
+     "shuffled": 0.0167,
+     "true_minus_shuffled": -0.0081,
+     "t": -0.11
+    },
+    "zhat_t+k (PREDICTED)": {
+     "r": 0.0081,
+     "shuffled": 0.0061,
+     "true_minus_shuffled": 0.002,
+     "t": 0.03
+    },
+    "constant (control)": {
+     "r": 0.0,
+     "shuffled": 0.0,
+     "true_minus_shuffled": 0.0,
+     "t": 0.0
+    }
+   },
+   "positive_control_t": 0.32,
+   "action_marginal_given_speed": {
+    "delta": 0.34,
+    "t": 1.53
+   },
+   "prediction_adds_over_z_t": {
+    "delta": -0.0005,
+    "t": -0.01
+   },
+   "verdict": "NO VERDICT - the positive control (spd_t) reads t +0.32; this panel cannot answer"
+  },
+  "postrain10k": {
+   "step": 10000,
+   "n_clips": 20,
+   "n_rows": 1800,
+   "columns": {
+    "spd_t (POSITIVE CONTROL)": {
+     "r": 0.0404,
+     "shuffled": 0.0331,
+     "true_minus_shuffled": 0.0072,
+     "t": 0.05
+    },
+    "action_t": {
+     "r": 0.3445,
+     "shuffled": 0.0059,
+     "true_minus_shuffled": 0.3386,
+     "t": 2.65
+    },
+    "spd_t + action_t": {
+     "r": 0.3804,
+     "shuffled": 0.0177,
+     "true_minus_shuffled": 0.3627,
+     "t": 2.92
+    },
+    "z_t (ENCODED)": {
+     "r": 0.0379,
+     "shuffled": 0.0305,
+     "true_minus_shuffled": 0.0073,
+     "t": 0.08
+    },
+    "zhat_t+k (PREDICTED)": {
+     "r": 0.0479,
+     "shuffled": -0.0072,
+     "true_minus_shuffled": 0.0551,
+     "t": 0.9
+    },
+    "constant (control)": {
+     "r": 0.0,
+     "shuffled": 0.0,
+     "true_minus_shuffled": 0.0,
+     "t": 0.0
+    }
+   },
+   "positive_control_t": 0.32,
+   "action_marginal_given_speed": {
+    "delta": 0.34,
+    "t": 1.53
+   },
+   "prediction_adds_over_z_t": {
+    "delta": 0.01,
+    "t": 0.12
+   },
+   "verdict": "NO VERDICT - the positive control (spd_t) reads t +0.32; this panel cannot answer"
+  },
+  "splitp30k": {
+   "step": 30000,
+   "n_clips": 20,
+   "n_rows": 1800,
+   "columns": {
+    "spd_t (POSITIVE CONTROL)": {
+     "r": 0.0404,
+     "shuffled": 0.0331,
+     "true_minus_shuffled": 0.0072,
+     "t": 0.05
+    },
+    "action_t": {
+     "r": 0.3445,
+     "shuffled": 0.0059,
+     "true_minus_shuffled": 0.3386,
+     "t": 2.65
+    },
+    "spd_t + action_t": {
+     "r": 0.3804,
+     "shuffled": 0.0177,
+     "true_minus_shuffled": 0.3627,
+     "t": 2.92
+    },
+    "z_t (ENCODED)": {
+     "r": 0.1554,
+     "shuffled": -0.0345,
+     "true_minus_shuffled": 0.1899,
+     "t": 2.5
+    },
+    "zhat_t+k (PREDICTED)": {
+     "r": 0.0046,
+     "shuffled": -0.0473,
+     "true_minus_shuffled": 0.0519,
+     "t": 0.47
+    },
+    "constant (control)": {
+     "r": 0.0,
+     "shuffled": 0.0,
+     "true_minus_shuffled": 0.0,
+     "t": 0.0
+    }
+   },
+   "positive_control_t": 0.32,
+   "action_marginal_given_speed": {
+    "delta": 0.34,
+    "t": 1.53
+   },
+   "prediction_adds_over_z_t": {
+    "delta": -0.1508,
+    "t": -1.06
+   },
+   "verdict": "NO VERDICT - the positive control (spd_t) reads t +0.32; this panel cannot answer"
+  }
+ }
+}

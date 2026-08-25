@@ -8781,6 +8781,66 @@ carries and what I shipped a watchdog three times without. ⇒ **Before arming a
 monitor, run its filter against a job you KNOW is running and check the count is
 non-zero.** "It looks right" is how versions 1, 2 and 3 shipped.
 
+## C161 — I read a PREDICTOR defect off a number that a CONTROL in the same table refuted
+
+**Class:** *interpretation asserted before the row beside it was read* — the same
+family as C152/C153/C159, and the eighth time in three days that **a control, not a
+hypothesis, produced the finding.**
+
+**What I was about to write.** E-DEC-49 shows `zhat` (the predicted latent) carries
+r +0.0020 of the ego's imminent speed change while the *action* carries +0.3386.
+My drafted conclusion: *"the predictor is HANDED the action and throws it away"* —
+a clean, quotable indictment of the transition.
+
+**What refuted it, in the same table.** The `z_t` column — the **true encoded
+latent, no prediction involved** — reads **−0.0081**. The information was never in
+the latent for the predictor to discard. The defect was not where I was about to
+put it.
+
+**Why it matters beyond the wording.** The wrong version points at the predictor;
+the right version points at the *representation*, and the two imply different fixes
+(a transition loss vs. an ego-state component). E-DEC-50 then measured that
+`rdw8p30k` DOES carry ego LEVELS (speed 2.07, yaw-rate 2.76, accel 3.10) but not
+CHANGES — a third, more precise answer that neither draft would have found.
+
+**The rule:** ⛔ **before writing a conclusion about one column, read every other
+column of the same row.** A panel is designed so its controls can refute it; that
+only works if they are read *before* the sentence is composed, not after.
+
+---
+
+## C160 — an `else` branch in a verdict is an ASSERTION about every case you failed to enumerate
+
+**Class:** *incomplete case analysis in an auto-verdict* — **NEW**, and the NINTH
+auto-verdict defect in this campaign. The previous eight fired on the **wrong
+quantity**; this one fires on the **right quantities with a missing cell**.
+
+**What happened.** `egostate.py` classifies an arm by two booleans — does `z_t`
+carry ego LEVELS, does it carry ego CHANGES. I wrote three branches:
+`levels & !changes` → "LEVELS YES, CHANGES NO"; `levels` → "BOTH"; `else` →
+**"NEITHER — the latent is a pure scene-appearance representation with NO ego
+state."** There is no branch for **changes-yes / levels-no**, and `splitp30k` is
+exactly that arm: Δspeed **+0.1494, t 2.05** (replicating **t 2.50** from
+`egofuture.py`), levels 0.65 / 1.78. ⇒ **The verdict line asserted the OPPOSITE of
+the table printed two lines above it.**
+
+**Why it is a distinct class.** Every prior auto-verdict defect was a *measurement*
+error — a denominator that was an arm property (C157), a metric with no positive
+control (C159), a normaliser dominated by a constant. Here the **numbers are
+correct and the conclusion is inverted**, purely because the default branch carried
+a substantive claim. A reader who trusted the verdict line would have concluded the
+best-representation arm has no ego state, when it is the ONLY arm that does.
+
+**The rule:** ⛔ **enumerate every cell of a decision table explicitly, and make the
+default `UNCLASSIFIED`, never a substantive claim.** An `else` that says something
+about the world is a claim about all the cases you did not think of. ⚠️ The count
+now stands at **nine** auto-verdict defects: the durable lesson is that a verdict
+line is *itself a measurement* and needs the same controls as the panel — which is
+what the IDENTITY control (+0.9337, t 23.74) provides for the numbers and what this
+rule provides for the logic.
+
+---
+
 ## C159 ⛔ — "THE ACTION IS REDUNDANT WITH THE SCENE" WAS PRINTED WHEN **NEITHER** PREDICTOR WORKED (2026-08-25, caught before it left the turn)
 
 **What the panel printed.** E-DEC-48's verdict line:
