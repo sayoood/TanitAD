@@ -99,6 +99,33 @@ floor lives INSIDE the loss. Pre-registered with four outcomes in
 ⭐⭐ **THE SPLIT ACROSS ARMS IS THE HEADLINE.** `splitp30k` (frozen distilled): `n_agents` from `z_t` **+0.3864** — far the richest — but its predictor **ADDS NOTHING**, delta vs `z_t` of −0.0008 / −0.0320 / −0.0158 at k=1/3/6, all NEGATIVE (t −3.69 / −5.62 / −6.26), and at k=6 `lead_closing` degrades to −0.0747 (t −2.11). `rdw8p30k` (trained): content only +0.0777 but the predictor **adds substantially**. ⇒ **the frozen arm CARRIES the environment and does not PREDICT it; the trained arm PREDICTS change and carries less of it.** E-DEC-20's dissociation in a new form ⇒ **mandate (2) — environment in BOTH encoder and predictor — is NOT yet satisfied by any single arm.**
 
 ⚠️ **FOUR BOUNDS.** (1) **ẑ also beats the encoded-future CEILING**, which is anomalous. Two explanations and this panel cannot separate them: the rollout is **ACTION-CONDITIONED**, so ẑ carries the ego's commanded motion that a single encoded frame lacks — *or* it is temporal **smoothing** of a noisy target. **An action-shuffled control would separate them and has not been run.** (2) All absolute R² are **small** (0.03–0.15); `lead_closing` +0.0019 is barely above zero. (3) **IN-SAMPLE** until the held-out corpus lands. (4) k=1 is **underpowered by construction** — the ceiling itself is barely above `z_t` there (+0.0123, t 0.75), i.e. the scene has not changed enough for prediction to add anything; only k=3–6 carry headroom. |
+| E-DEC-43 | ⭐⭐⭐ **IS PHYSICS GATED ON SCENE CONTENT? — the fix I had not yet ruled out** | ⛔ **MEASURED — NO. The three arms with the MOST spatial content show no more physics than the ones carrying nothing.** | `…/raw/physics_distilled.json`
+
+The three DISTILLED arms cleanly beat every scratch arm on `occ_center`
+(E-DEC-42). If content bought physics, *"improve the encoder"* would be the whole
+answer. It does not.
+
+| arm | Q1/ctrl (closing) | Q2 pick (chance 0.25) | Q3 closing/free |
+|---|---|---|---|
+| `splitfrz10k` | **0.0037** | 0.2203 | 0.67 |
+| `postrain10k` | **0.0024** | 0.2722 | 1.29 |
+| `splitp30k` | **0.0028** | 0.2747 | 1.67 |
+
+**Brake-vs-maintain moves the prediction by 0.24–0.37 % of what a 10 % LATENT
+jitter does.** The true action is identifiable **at chance** on all three. Q3
+scatters 0.67–1.67 with no consistent direction — one arm is BELOW 1, i.e. the
+action matters *less* when a lead is closing.
+
+⇒ **PHYSICS IS NOT GATED ON SCENE CONTENT.** An encoder can carry *where things
+are* and still have a predictor that cannot answer *what happens if I brake*. The
+two are INDEPENDENT, and the deficit sits in the **TRANSITION** — exactly where
+E-DEC-40 (Δz is drift) and E-DEC-42 (residual is noise in all 8 arms) put it.
+
+⭐ **WHY THIS MATTERS FOR THE NEXT GPU-DAY.** It removes "improve the encoder" as
+a route to mandate 3. Better initialisation demonstrably buys spatial CONTENT
+(E-DEC-42, clean separation) and demonstrably does **not** buy PHYSICS. Those are
+now two separate problems with two separate answers, and only the first has one.
+
 | E-DEC-42 | ⭐⭐⭐⭐ **PIXEL-GROUNDEDNESS SEPARATES INITIALISATION PERFECTLY — the cleanest structural result in the campaign** | ⭐ **MEASURED, 8 arms, NO OVERLAP: distilled inits +0.1838…+0.2513 (all t > 5.7) vs scratch-trained +0.0098…+0.0830.** ⛔ **AND: 0 of 8 arms' drift-removed residual carries the action.** | `…/raw/egodom_*.json`, `code/ground_table.py`
 
 How much of `z_t`'s top-8 PCA directions is explained by RAW 8×8 PIXELS.
