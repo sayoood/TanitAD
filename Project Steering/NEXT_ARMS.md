@@ -22,7 +22,14 @@ as the claims under it.** Re-derive it whenever a load-bearing claim moves.
    Gate-A flags + `--init-from` the DINOv3-distilled checkpoint.
    ⇒ **When it lands: score it AND launch item 2 in the SAME turn.**
 
-2. ⭐⭐⭐ **`o13p30k`** — **THE NEXT ARM. O13-EGO at 30k parity.**
+2. ⛔⛔ **`o13p30k` — CANCELLED. O13 PILOTED AND REFUTED AS DEGENERATE
+   (E-DEC-52): `o5` +192.4 % worse against a matched control, ten times worse than
+   O11.** The staged trainer and gated launcher remain on Thor, unused. Per the
+   pre-registration the DEGENERATE branch prescribes **abandonment, not retuning**.
+   ⚠️ The struck-through entry below is kept as the record of what was queued and
+   why — a silently deleted item is indistinguishable from one nobody got to.
+
+   ~~**`o13p30k`** — O13-EGO at 30k parity.~~
    Motivated by the strongest pair of measurements in the campaign:
    **E-DEC-48b** (the action's marginal contribution to the future SCENE is
    **−0.1678, t −3.50**, against a positive control at t 8.5–14.3 — nine
@@ -60,10 +67,16 @@ as the claims under it.** Re-derive it whenever a load-bearing claim moves.
 2. **`egostate.py` on `postrain30k`** when it lands — the pre-registered O13 read
    uses this instrument, so the incumbent's numbers on the newest arm are needed
    as the comparison baseline.
-3. **E-DEC-40 on `splitp30k`** — its drift r is +0.1993 vs `rdw8p30k`'s +0.6570,
-   and it is now the only arm whose latent carries the ego's Δspeed (**t 2.50 /
-   2.05 / 2.10, replicated three times, three code paths**). ⭐ Does its residual
-   carry more than noise? If yes that arm is qualitatively different.
+3. ⛔ **E-DEC-40 on `splitp30k` — ALREADY DONE, AND NEGATIVE.** ⚠️ I queued this
+   two hours ago without checking whether it had already run; `deltaz_splitp30k.json`
+   was already banked. **A queue item that is already done is the stale-blocker
+   class in its most embarrassing form — it was stale the moment I wrote it.**
+   ⇒ **Check the banked results before queueing a probe.**
+   **The answer:** drift `z_t` +0.1952 (t 8.38); **action −0.0109 (t −0.57)**;
+   scene-delta +0.0232 (t 1.29); all-three +0.2287 (t 10.52); constant +0.0000.
+   ⇒ Even in the arm with the LOWEST drift and the ONLY one carrying ego Δspeed,
+   **the action explains nothing of Δz and the residual is noise.** `splitp30k` is
+   NOT qualitatively different on this axis, and the last hope on this list closes.
 4. **The `nrmse` census re-read** on the new arms, with `nrmse_SHUFFLED` beside
    it, per MODEL_REGISTRY 13.0c.
 
