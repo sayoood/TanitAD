@@ -18,7 +18,21 @@ THE THREE QUESTIONS, each with its own exact null:
   Q1  ACTION SENSITIVITY. Roll the identical window twice — BRAKE vs MAINTAIN —
       and measure ||ẑ_brake − ẑ_maintain|| / ||ẑ_true − z_last||. NULL: 0 (an
       action-blind predictor). SCALE: the same window's response to a 10 %
-      LATENT nudge, which is the E-DEC-30 positive control. A model whose
+      LATENT nudge, which is the E-DEC-30 positive control.
+
+      ⛔⛔ REPORT THE RAW RESPONSE AND THE RATIO SIDE BY SIDE, WITH THE
+      DENOMINATOR PRINTED (C157). The control value is an ARM PROPERTY and it
+      varies 77x across arms (postrain10k 13.09 vs rdw8p30k 0.17). MEASURED
+      2026-08-25: ranking arms by Q1/ctrl INVERTED the ordering — the two LARGEST
+      raw brake-vs-maintain responses in the programme (postrain10k 0.03083,
+      splitp30k 0.01561, both DISTILLED) came LAST on the ratio, and
+      Spearman(drift, response) flipped from -0.310 raw to +0.762 normalised. I
+      reported a "distilled arms trade content for action-response" finding off
+      the ratio; it was the denominator, not the models.
+      ⚠️ THIS IS C137's DEFECT REINTRODUCED — "a metric whose denominator is an
+      arm property" — inside the instrument built to avoid it. The ratio is still
+      the right SCALE-FREE comparison for one arm against itself; it is NOT a
+      cross-arm ranking. Both columns, always. A model whose
       response to "brake vs coast" is a few percent of its response to latent
       jitter cannot be reasoning about braking.
 
@@ -194,9 +208,10 @@ def main() -> int:
 
         rep["arms"][arm] = {"step": int(st), "regimes": {}}
         print(f"  === {arm} (step {st}) ===")
-        print(f"  {'regime':<14}{'n':>6}{'Q1 brake-vs-maintain':>23}"
-              f"{'[ctrl] latent 10%':>20}{'Q1/ctrl':>10}"
-              f"{'Q2 pick':>10}{'chance':>9}")
+        print(f"  {'regime':<14}{'n':>6}{'RAW Q1':>12}{'[ctrl] denom':>14}"
+              f"{'Q1/ctrl':>10}{'Q2 pick':>10}{'chance':>9}")
+        print(f"  {'':14}{'':6}{'<- CROSS-ARM':>12}{'ARM PROPERTY':>14}"
+              f"{'within-arm':>10}")
         for g in ("closing", "not_closing"):
             a = acc[g]
             if not a["q1"]:
@@ -211,13 +226,15 @@ def main() -> int:
                 "q1_shuffled_pair": round(sh, 5),
                 "q2_pick_true_action": round(q2, 4),
                 "q2_chance": round(1.0 / (1 + N_CF), 4)}
-            print(f"  {g:<14}{len(a['q1']):>6}{q1:>23.5f}{ct:>20.5f}"
+            print(f"  {g:<14}{len(a['q1']):>6}{q1:>12.5f}{ct:>14.5f}"
                   f"{q1 / max(ct, 1e-12):>10.4f}{q2:>10.4f}"
                   f"{1.0 / (1 + N_CF):>9.4f}")
         r = rep["arms"][arm]["regimes"]
         if "closing" in r and "not_closing" in r:
             a, b = r["closing"]["q1_over_control"], r["not_closing"]["q1_over_control"]
             rep["arms"][arm]["q3_closing_over_free"] = round(a / max(b, 1e-12), 4)
+            rep["arms"][arm]["_cross_arm_metric"] = "q1_brake_vs_maintain (RAW)"
+            rep["arms"][arm]["_within_arm_metric"] = "q1_over_control"
             print(f"  ⭐ Q3  action sensitivity CLOSING / FREE-FLOW = "
                   f"{a / max(b, 1e-12):.4f}   (1.0 = the action matters no more "
                   f"when a lead is closing)")

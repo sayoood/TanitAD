@@ -8690,3 +8690,64 @@ evidence favours **distil DINOv3 into our architecture, then TRAIN it**
 t 4.48) over **distil then FREEZE** (`splitp30k` — best content, transition
 signal not significant). Both are ours. `postrain30k` is testing the trainable
 variant at 30k parity, with the init md5-verified identical on Thor and locally.
+
+## C157 ⛔⛔ — I REINTRODUCED C137's EXACT DEFECT INSIDE THE INSTRUMENT BUILT TO AVOID IT, AND IT INVERTED A CROSS-ARM RANKING (2026-08-25, self-caught ~15 minutes after reporting it)
+
+**What was asserted**, to the PI, twice in one hour: that **"more drift goes with
+more physics"** (Spearman +0.762, n=8), and from it that **"distilled inits buy
+content and COST action-response — a trade, not a free win"**, presented as a
+table with distilled arms losing on physics.
+
+**What the raw measurement says.** `Q1/ctrl` divides the brake-vs-maintain
+response by each arm's OWN response to a 10 % latent nudge. **That denominator is
+an ARM PROPERTY and it varies 77× across arms** — `postrain10k` 13.09,
+`splitp30k` 5.52, against `rdw8p30k` 0.17.
+
+| arm | drift | **RAW Q1** | control (denominator) | ratio | init |
+|---|---|---|---|---|---|
+| `postrain10k` | 0.3650 | **0.03083** | **13.09365** | 0.0024 | DISTILLED |
+| `splitp30k` | 0.1952 | **0.01561** | **5.51606** | 0.0028 | DISTILLED |
+| `champ30k` | 0.6138 | 0.01215 | 1.21180 | 0.0100 | scratch |
+| `rdw8p30k` | 0.6416 | 0.00284 | 0.17066 | **0.0166** | scratch |
+| `ro128p30k` | 0.6374 | 0.00124 | 0.18021 | 0.0069 | scratch |
+
+**The two LARGEST raw responses in the programme are the two arms the ratio
+ranked LAST**, and:
+
+| metric | Spearman(drift, response) |
+|---|---|
+| ratio `Q1/ctrl` — **what I reported** | **+0.762** |
+| **RAW `Q1`** | **−0.310** |
+
+**The sign flips.** And on the raw response there is **no separation at all** —
+distilled [0.00161, 0.03083], scratch [0.00124, 0.01215], fully overlapping.
+
+⇒ **BOTH claims are withdrawn.** There is no measured content-for-action trade,
+and no positive drift-physics relationship. E-DEC-45 (the drift separation
+itself) **stands** — it uses no per-arm denominator.
+
+**ROOT-CAUSE CLASS: C137, verbatim — "a metric whose denominator is an ARM
+PROPERTY".** The programme retracted a programme-wide action-blind claim for this
+exact defect, I quoted C137's correction approvingly when building `actchan`, and
+then **reintroduced the same defect in `physics.py`, the instrument written to
+answer C137's question properly.**
+
+⚠️ **The distinction I collapsed, and it is the whole lesson.** `Q1/ctrl` is the
+CORRECT scale-free comparison **for one arm against itself** — it is what makes
+"the action moves this predictor less than its own jitter does" meaningful. It is
+**NOT a cross-arm ranking**, because the normaliser differs per arm by 77×.
+⇒ **A within-arm normalisation and a cross-arm comparison are different
+statistics, and a ratio that is right for one is wrong for the other.** Same
+family as `df`-on-a-pod: a correct instrument, read at the wrong scope.
+
+**The fix, in code rather than in a note.** `physics.py` now prints **RAW Q1 as
+the cross-arm column and the control denominator beside it**, with the ratio
+explicitly labelled *within-arm*; the JSON records `_cross_arm_metric` and
+`_within_arm_metric` so a later reader cannot pick the wrong one by accident.
+
+⚠️ **What still holds after the retraction, and it is better news than what it
+replaces:** distilled inits give more grounded latents (E-DEC-42), more spatial
+content, less drift-dominated transitions (E-DEC-45) — **and the two largest raw
+action responses.** No trade. The trade was my metric, not the models.
+⚠️ All responses remain tiny in absolute terms (≤ 3 % of a latent nudge), so this
+is a better-ordered set of failures, not a capability.
