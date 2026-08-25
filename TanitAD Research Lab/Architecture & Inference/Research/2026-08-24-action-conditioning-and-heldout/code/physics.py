@@ -86,7 +86,20 @@ LABELS = Path(os.environ.get("SPD_LABELS", str(SP / "sp2/val130_agents.jsonl")))
 OUT = Path(os.environ.get("SPD_OUT", str(SP / "physics.json")))
 ARMS = os.environ.get("SPD_ARMS", "rdw8p30k,splitp30k,scale1").split(",")
 MIN_LEAD, N_CLIPS, F, K, N_CF = 20, 24, 100, 6, 3
-BRAKE, MAINTAIN = -0.30, 0.0          # accel channel, in the corpus's units
+# ⛔⛔ THE PERTURBATION IS SET FROM THE CORPUS'S OWN PERCENTILES, NOT GUESSED.
+# MEASURED 2026-08-25 on 2,400 held-out rows: the accel channel has mean -0.4682,
+# sd 0.8991, p5 -2.2771, p50 -0.2568, p95 +0.7222.
+# My original BRAKE = -0.30 / MAINTAIN = 0.0 were BOTH ABOVE THE MEAN (z +0.19
+# and +0.52) — i.e. both represented ACCELERATION relative to typical driving —
+# and their separation was 0.30 in a channel with sd 0.90: A 0.33-SD NUDGE
+# LABELLED "BRAKE VS MAINTAIN". The real contrast is ~10x that.
+# ⚠️ This is the weak-perturbation trap `actchan`'s `d_in` column exists to catch,
+# in the one instrument where I never applied it. A null measured with a
+# perturbation the model would never see is not evidence about the model.
+BRAKE = float(os.environ.get("SPD_BRAKE", "-2.2771"))    # corpus p5
+MAINTAIN = float(os.environ.get("SPD_MAINTAIN", "0.7222"))  # corpus p95
+# printed with every panel so the contrast can never again be invisible
+ACCEL_MEAN, ACCEL_SD = -0.4682, 0.8991
 
 
 def main() -> int:
@@ -133,6 +146,8 @@ def main() -> int:
     rep = {"_evidence_class": "MEASURED (ours; dev-box RTX 4060)",
            "eval_tier": "T0-DIAGNOSTIC", "split": "HELD-OUT, LEAD-MATCHED",
            "brake_accel": BRAKE, "maintain_accel": MAINTAIN,
+           "contrast_in_sd": round(abs(MAINTAIN - BRAKE) / ACCEL_SD, 3),
+           "accel_channel_mean": ACCEL_MEAN, "accel_channel_sd": ACCEL_SD,
            "q2_chance": round(1.0 / (1 + N_CF), 4), "arms": {}}
 
     for arm in present:
@@ -191,6 +206,27 @@ def main() -> int:
                     dsa = np.array(ds)
                     tied = np.isclose(dsa, dsa.min(), rtol=1e-9, atol=1e-12)
                     q2 = float(tied[0] / tied.sum())     # ties credited at CHANCE
+                    # ⭐⭐ Q2X — THE EXTREME VARIANT, AND WHY Q2 ALONE IS NOT ENOUGH.
+                    # Q2's counterfactuals are drawn from RANDOM OTHER MOMENTS in
+                    # the same clip. If the corpus is mostly cruising they barely
+                    # differ from the true action, so Q2 is hard for a TRIVIAL
+                    # reason rather than an informative one — the same
+                    # weak-perturbation trap that made the original BRAKE/MAINTAIN
+                    # contrast 0.33 SD. Q2X instead pits the TRUE action against
+                    # the corpus EXTREMES (p5 and p95, a 3.3-SD span): if the
+                    # predictor cannot tell its own action from a hard brake and a
+                    # hard accelerate, no weaker test will show anything.
+                    # `q2_cf_sd` records how far the RANDOM counterfactuals
+                    # actually were, so a Q2 null can be read.
+                    aex = []
+                    for vx in (BRAKE, MAINTAIN):
+                        ax = aa.clone(); ax[..., 1] = vx
+                        aex.append(float((roll(torch.cat([ax, vv], -1)) - zf).norm()))
+                    dx = np.array([ds[0]] + aex)
+                    tx = np.isclose(dx, dx.min(), rtol=1e-9, atol=1e-12)
+                    q2x = float(tx[0] / tx.sum())
+                    cfsd = float(np.std([float(act[max(0, i - 1)][1])] +
+                                        [aa[0, 0, 1].item()]))
                     # time-shuffled control for Q1: two RANDOM action sequences
                     r1 = int(rng.integers(0, max(1, len(act) - W)))
                     r2 = int(rng.integers(0, max(1, len(act) - W)))
@@ -202,6 +238,7 @@ def main() -> int:
 
                     g = "closing" if clo[tgt] < -0.05 else "not_closing"
                     acc[g]["q1"].append(q1); acc[g]["q2"].append(q2)
+                    acc[g].setdefault("q2x", []).append(q2x)
                     acc[g]["ctrl"].append(ctrl); acc[g]["shuf"].append(shuf)
         del w
         torch.cuda.empty_cache()
@@ -209,7 +246,7 @@ def main() -> int:
         rep["arms"][arm] = {"step": int(st), "regimes": {}}
         print(f"  === {arm} (step {st}) ===")
         print(f"  {'regime':<14}{'n':>6}{'RAW Q1':>12}{'[ctrl] denom':>14}"
-              f"{'Q1/ctrl':>10}{'Q2 pick':>10}{'chance':>9}")
+              f"{'Q1/ctrl':>10}{'Q2':>8}{'Q2X':>8}{'chance':>9}")
         print(f"  {'':14}{'':6}{'<- CROSS-ARM':>12}{'ARM PROPERTY':>14}"
               f"{'within-arm':>10}")
         for g in ("closing", "not_closing"):
@@ -218,6 +255,7 @@ def main() -> int:
                 print(f"  {g:<14}{0:>6}   (no windows)"); continue
             q1, ct = float(np.mean(a["q1"])), float(np.mean(a["ctrl"]))
             q2 = float(np.mean(a["q2"]))
+            q2x = float(np.mean(a.get("q2x", [np.nan])))
             sh = float(np.nanmean(a["shuf"]))
             rep["arms"][arm]["regimes"][g] = {
                 "n": len(a["q1"]), "q1_brake_vs_maintain": round(q1, 5),
@@ -225,10 +263,11 @@ def main() -> int:
                 "q1_over_control": round(q1 / max(ct, 1e-12), 5),
                 "q1_shuffled_pair": round(sh, 5),
                 "q2_pick_true_action": round(q2, 4),
-                "q2_chance": round(1.0 / (1 + N_CF), 4)}
+                "q2_chance": round(1.0 / (1 + N_CF), 4),
+                "q2x_true_vs_extremes": round(q2x, 4), "q2x_chance": 0.3333}
             print(f"  {g:<14}{len(a['q1']):>6}{q1:>12.5f}{ct:>14.5f}"
-                  f"{q1 / max(ct, 1e-12):>10.4f}{q2:>10.4f}"
-                  f"{1.0 / (1 + N_CF):>9.4f}")
+                  f"{q1 / max(ct, 1e-12):>10.4f}{q2:>8.4f}{q2x:>8.4f}"
+                  f"{1.0 / (1 + N_CF):>6.2f}/{0.3333:.2f}")
         r = rep["arms"][arm]["regimes"]
         if "closing" in r and "not_closing" in r:
             a, b = r["closing"]["q1_over_control"], r["not_closing"]["q1_over_control"]

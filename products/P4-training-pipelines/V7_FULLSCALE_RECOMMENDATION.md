@@ -259,3 +259,92 @@ one-number screen for it that needs no baseline arm.
 * **`n_agents` −0.0180 is still marginally below a constant predictor**, and on that clip set the pixel floor (−0.2156) is itself below the constant control — so clearing the floor is **the weaker of the two bars** and must not be quoted as the stronger.
 * **Batch is not null** — `rdw8b8` moves `n_agents` −1.0407 → −0.1099 (t 2.75, 22/24), ~86 % of the distance to `rdw8p30k`, at 2k. It is a substantial lever for **environment** and a minor one for the **predictor** (0.0933 vs 0.6224). I claimed it was ruled out for free; that is withdrawn (`C148`).
 * **Tiny-arm results do not license capability claims** (H-SCALE-2). Four conclusions of mine from 2026-08-23/24 were re-opened by E-DEC-19, and `--o5-k 8` is itself a tiny-arm result — hence Gate A.
+
+---
+
+## 7. ⛔⛔ AMENDMENT, 2026-08-25 — THE RECOMMENDATION ABOVE OMITS THE ONE VARIABLE THAT MOVES ANYTHING
+
+Sections 1–6 recommend the **plain two-term objective at parity scale** and argue
+against growing the encoder. **Both halves still hold.** But the recommendation
+never mentions **initialisation**, and a measurement campaign on 8 arms has since
+shown that initialisation is the only factor that separates arms cleanly on any
+axis we can measure.
+
+### 7.1 What changed
+
+| finding | evidence | strength |
+|---|---|---|
+| **Scratch-trained encoders all converge to a ~64 %-drift transition** | 5 arms in a **4 % band** (0.6138–0.6416) across different batch, readout width, `d_op`, corpus, steps and weights | ⭐ strongest structural result in the campaign |
+| **Distilled inits land outside that band** | 0.1753 / 0.1952 / 0.3650 — no overlap | ⭐ clean |
+| **Distilled inits are 2.2× more pixel-grounded** | distilled +0.1838…+0.2513 (all t > 5.7) vs scratch +0.0098…+0.0830 | ⭐ clean, no overlap |
+| **and carry more spatial content** | `occ_center` distilled [+0.1090, +0.3351] vs scratch [−0.1607, +0.0035] | ⭐ clean; scratch arms sit **at or below the raw-pixel floor** |
+| **and give the two largest raw action responses** | `postrain10k` 0.496, `splitp30k` 0.178 at a 3.3-SD brake contrast | ⚠️ overlapping ranges — directional only |
+
+Against that: **nine objective terms have now failed** (O1, O2, O3, O7, O8, O9,
+O10, O11, PSG). §3's *"the one thing that worked and the twenty that did not"*
+remains true — and the thing that works is **where you start**, not what you add.
+
+### 7.2 The single change to the config
+
+```bash
+--init-from <DINOv3-distilled checkpoint>      # ← the amendment
+```
+
+Everything else in §2 stands. ⚠️ **This is not "use a frozen foundation model".**
+`splitp30k` and `postrain10k` are **our own 19.3 M architecture** with DINOv3-L/16
+distilled into it (`O7_DEFAULT_MODEL =
+facebook/dinov3-vitl16-pretrain-lvd1689m`), and the distilled student **beats the
+teacher** on held-out `n_agents` (+0.1220 vs +0.0998). The lever is *start from a
+strong visual prior*, which is a **pre-training step**, not an architecture swap.
+
+⚠️ **FROZEN vs TRAINABLE is the open question, and it is being measured.**
+`splitp30k` (frozen distilled) has the best **content**; `postrain10k` (trainable
+distilled) is the only arm whose **transition carries the scene** (t 4.48).
+`postrain30k` — §2's config plus `--init-from`, one flag changed against Gate A —
+is running at 30k parity to decide it. **No full-scale spend should be committed
+before it lands.**
+
+### 7.3 ⛔ What the amendment does NOT promise
+
+**None of this buys action-conditioning, and the evidence on that is now strong
+rather than suggestive:**
+
+* At a **3.3-SD brake-vs-cruise contrast** taken from the corpus's own
+  percentiles (p5 −2.2771 vs p95 +0.7222), no arm treats a closing lead
+  differently — Q3 scatters 0.81–1.59 with two arms below 1.
+* **Q2X is BELOW CHANCE on every arm** (0.068–0.175 against 0.333): a hard brake
+  or hard accelerate produces a prediction **closer to the true future than the
+  arm's own true action does**. That is anti-signal, not absence of signal, and
+  the reading that fits is that **the predictor under-shoots the magnitude of
+  change** — so amplifying the action input accidentally compensates. **Action
+  magnitude is a gain knob, not a semantic input.**
+* The residual after drift removal is **noise in all 8 arms** (0 carry the action
+  at t > 2).
+
+⇒ **Scale + a distilled init is a bet on CONTENT and REPRESENTATION QUALITY. It
+is not a bet on the world model becoming action-conditioned**, and the plan should
+not be sold as one. Mandate 3 needs a different intervention, and we do not yet
+know what it is.
+
+### 7.4 What this means for REF-A v1
+
+`refa-4brain-speed-30k` is **frozen DINOv2-B/14 + temporal adapter**, ADE@2s
+**2.1322 ± 0.1821**, plateaued (14 k = 2.05 → 30 k = 2.14), **does not beat CV**,
+and is ACCEPTED AS REFERENCE with its ceiling attributed to the frozen encoder.
+
+Today's data **refines that diagnosis rather than overturning it**:
+
+* Frozen-distilled (`splitp30k`) gives the **best content** of any arm — so
+  "frozen" is not itself the defect.
+* Trainable-distilled (`postrain10k`) is the only arm with a **transition-side**
+  scene signal — so the defect REF-A hit is plausibly **frozen-ness at the
+  TRANSITION, not at the encoder**.
+
+⚠️ **REF-A's job is to be a FIXED comparison point.** Changing it changes the
+reference and invalidates every cross-arm number that cites it. ⇒ **Do not modify
+REF-A v1.** If the frozen/trainable question matters for the reference line, it
+belongs in a **new arm (REF-A v2)**, declared as such, with v1 left untouched.
+
+**REF-A v2, if commissioned** — and this should wait for `postrain30k`:
+`--init-from` a DINOv3-distilled checkpoint (not DINOv2), encoder **trainable**,
+otherwise REF-A v1's args verbatim so the pair isolates one variable.
