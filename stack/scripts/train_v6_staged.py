@@ -164,6 +164,7 @@ __all__ = [
     "o2_near_field_loss", "o3_masked_cell_loss", "o5_rollout_consistency_loss",
     "o6_sigreg_loss", "rollout_step_weights", "build_o4_weights",
     "o11_counterfactual_action_loss",
+    "o13_ego_dynamics_loss",
     "ANCHOR_OBJECTIVES", "ANCHOR_OBJ_MODES", "ANCHOR_AXIS_W_DEFAULT",
     "anchor_goal_loss",
     "S2_IGNORE_ID", "s2_goal_loss", "synthetic_s2_batch",
@@ -218,6 +219,7 @@ class V6LossWeights:
     #: O11-CF (E-DEC-30). 0.0 => the incumbent loss is
     #: bit-identical; nothing rolls and no RNG is drawn.
     o11_cf: float = 0.0
+    o13_ego: float = 0.0
     o6_sigreg: float = 0.1      # LeJEPA's ONE validated knob — keep it fixed
     # layers T / S
     t1_latent: float = 1.0      # goal-conditioned tactical latent prediction
@@ -1392,6 +1394,116 @@ def o11_counterfactual_action_loss(zhat_pos, zhat_negs, z_true,
                   "o11_sep_abs": sep, "o11_sep_rel": rel,
                   "o11_pick_acc": acc,
                   "o11_chance_acc": round(1.0 / (1 + n_neg), 4)}
+
+
+def o13_ego_dynamics_loss(zhat_k, dv_true, dyaw_true, z_t=None,
+                          seed: int = 1300) -> tuple[Tensor, dict]:
+    """O13-EGO — action-conditioning aimed at the ONE target the action actually
+    determines, through a readout the action CANNOT reach.
+
+    ⭐⭐⭐ WHY THIS TARGET AND NOT THE SCENE (E-DEC-48b + E-DEC-50, both held-out,
+    both with passing positive controls). Nine objective terms — O1, O2, O3, O7,
+    O8, O9, O10, O11, PSG — all asked the action to move the 2048-d SCENE latent.
+    E-DEC-48b measured, against a positive control at t 8.5-14.3, that the action's
+    MARGINAL contribution to predicting the future scene is ZERO OR NEGATIVE
+    (-0.1678, t -3.50 on `n_agents`). **They asked the model to extract information
+    observational driving data does not contain.** In real traffic the causal arrow
+    runs SCENE -> ACTION: other agents evolve independently of what we do.
+
+    E-DEC-50 then measured what the action DOES determine — the EGO's own dynamics:
+    delta-speed **t 2.56**, delta-yaw **t 4.57**, against an IDENTITY control
+    (action -> accel) reading **+0.9337, t 23.74**. And the encoder already carries
+    the ego LEVELS (speed 2.07, yaw-rate 2.76, accel 3.10) while carrying neither
+    CHANGE. ⇒ **The substrate exists, the information exists, and no objective has
+    ever connected them.**
+
+    ⛔⛔ WHY THE HEAD IS FORBIDDEN THE ACTION — THIS IS THE WHOLE DESIGN, AND IT
+    COMES FROM AN ORACLE THAT REFUSED THE OBVIOUS VERSION (E-DEC-51). The natural
+    form is a head on ``(z_t, action_t)`` -> delta(speed, yaw). Measured before
+    spending the ~8 GPU-hours: the latent adds **-0.0065 (t -0.06)** to delta-speed
+    and **-0.0153 (t -0.12)** to delta-yaw over the action ALONE. ⇒ **such a head
+    would learn to read the two action scalars and ignore the 2048-d latent
+    entirely** — the loss would fall, the metric would look excellent, and the world
+    model would have learned NOTHING. That is O11's degeneracy in a new costume.
+
+    ⇒ **The readout sees ONLY ``zhat_k``.** Not the action, not ``z_t``. The
+    action's only path to this loss is THROUGH THE PREDICTOR, so the gradient can
+    only be reduced by making the PREDICTED LATENT carry the ego's future dynamics
+    — which is exactly the missing property. Excluding ``z_t`` additionally forbids
+    the passthrough solution (predicting the future from the present without using
+    the action at all).
+
+    ⭐ THE PROJECTION IS FROZEN AND PARAMETER-FREE — regenerated from a fixed seed
+    every call, so it has no state, no optimizer interaction, and CANNOT ADAPT to
+    make itself easy to hit. This is ActSWM's frozen-readout guard (arXiv
+    2607.26712) applied to a target with measured information behind it, rather
+    than to a separation score that can be manufactured.
+
+    ⭐⭐ THE FLOOR IS EXACTLY 1.0 AND IS A KNOWN VALUE. Targets are standardised
+    per batch, so a zero prediction scores ``mean(y_std**2) == 1.0`` exactly, and
+    any CONSTANT prediction ``c`` scores ``1 + c**2 >= 1``. The no-information value
+    is therefore not estimated, not inherited, and not an arm property — it is
+    arithmetic. ``o13_excess = 1.0 - loss`` is the number to watch: > 0 means the
+    predicted latent carries real ego dynamics.
+
+    ⚠️ THE DENOMINATOR IS A DATA PROPERTY, NOT AN ARM PROPERTY. C137 (and its
+    reintroduction as C157) came from normalising by something the arm itself
+    controls, which makes arms incomparable. Here the standardisation uses the
+    BATCH'S TRUE delta(speed, yaw) — identical across arms on the same data and
+    seed.
+
+    ⚠️ THE delta-YAW RELATION IS LARGELY KINEMATIC (steer = atan(L*curvature),
+    yaw-rate ~ v*curvature), so its r +0.56 is NOT an empirical discovery. That is
+    the POINT: it is the closed-form driving physics the programme is trying to
+    learn — a deterministic function of quantities the encoder already carries,
+    that the transition still fails to compute.
+
+    Logged controls, every step and free:
+      ``o13_shuffled``  the same loss with the TARGETS permuted across the batch.
+                        MUST sit near 1.0. If it does not, the term is fitting
+                        something other than the pairing and the run is suspect.
+      ``o13_on_z_t``    the same frozen readout applied to the TRUE ``z_t``
+                        (detached, no gradient) — the PASSTHROUGH diagnostic. If
+                        ``zhat`` never beats it, this term is not doing its job,
+                        and that is visible LIVE rather than at eval.
+
+    ``zhat_k`` ``[B, S]``; ``dv_true``/``dyaw_true`` ``[B]``; ``z_t`` optional
+    ``[B, S]`` for the diagnostic only.
+    """
+    y = torch.stack([dv_true.reshape(-1).float(),
+                     dyaw_true.reshape(-1).float()], dim=1)             # [B,2]
+    if y.shape[0] < 2:
+        raise ValueError("o13 needs batch >= 2 to standardise its targets")
+    mu = y.mean(dim=0, keepdim=True).detach()
+    sd = y.std(dim=0, unbiased=False, keepdim=True).detach().clamp_min(1e-6)
+    ys = (y - mu) / sd                                                  # [B,2]
+    d = int(zhat_k.shape[-1])
+    g = torch.Generator(device="cpu").manual_seed(int(seed))
+    P = (torch.randn(d, 2, generator=g) / math.sqrt(d)).to(
+        device=zhat_k.device, dtype=torch.float32)
+    pred = zhat_k.float().reshape(-1, d) @ P                            # [B,2]
+    loss = (pred - ys).pow(2).mean()
+    floor = 1.0
+    with torch.no_grad():
+        idx = torch.randperm(ys.shape[0], device=ys.device)
+        shuf = float((pred - ys[idx]).pow(2).mean().detach())
+        onz = None
+        if z_t is not None:
+            pz = z_t.detach().float().reshape(-1, d) @ P
+            onz = float((pz - ys).pow(2).mean().detach())
+    out = {"o13_loss": float(loss.detach()),
+           "o13_no_info_floor": floor,
+           # ⛔ THE READING: > 0 means the PREDICTED latent carries real ego
+           # dynamics. <= 0 means it does not, and no o5 progress changes that.
+           "o13_excess": round(floor - float(loss.detach()), 6),
+           # ⭐ the per-step positive control; must sit near 1.0
+           "o13_shuffled": round(shuf, 6),
+           "o13_seed": int(seed)}
+    if onz is not None:
+        out["o13_on_z_t"] = round(onz, 6)
+        # > 0 means zhat beats the PRESENT latent -- the term is earning its place
+        out["o13_beats_passthrough"] = round(onz - float(loss.detach()), 6)
+    return loss, out
 
 
 class SigRegRowBank:
@@ -2571,7 +2683,8 @@ def v6_loss_step(stack: V6Stack, batch: dict, *, stage: str,
                  t2_negative: str = "lane_mirror",
                  t5_w_kappa: float = 1.0,
                  o11_k: int = 6, o11_tau: float = 1.0,
-                 o11_negs: int = 1
+                 o11_negs: int = 1,
+                 o13_k: int = 4, o13_seed: int = 1300
                  ) -> dict:
     """One batch of the v6 staged objective.
 
@@ -2682,7 +2795,8 @@ def v6_loss_step(stack: V6Stack, batch: dict, *, stage: str,
                 "o1_arms": list(TRAIN_ARMS)}
 
     # ---- the factual rollout, computed ONCE for O2 / O3 / O5 ---------------
-    need_roll = bool(w.o2_nearfield or w.o3_masked or w.o5_rollout or w.o11_cf)
+    need_roll = bool(w.o2_nearfield or w.o3_masked or w.o5_rollout or w.o11_cf
+                     or w.o13_ego)
     if need_roll:
         from tanitad.models.metric_dynamics import rollout_transitions
         k_roll = max(o5_k, 1)
@@ -2746,6 +2860,30 @@ def v6_loss_step(stack: V6Stack, batch: dict, *, stage: str,
                 zhat_steps[jc], negs, z_true[jc], tau=o11_tau)
             terms["o11"] = w.o11_cf * l11
             log |= lg11 | {"o11_at_step": jc + 1}
+        if w.o13_ego:
+            # ⭐ the readout sees ONLY the PREDICTED latent -- never the action
+            # (which would let it echo, E-DEC-51) and never z_t (which would let
+            # it pass through). The action reaches this loss ONLY through the
+            # predictor, which is the entire point of the term.
+            jd = min(max(o13_k, 1), k_roll) - 1
+            fp = batch.get("future_poses")
+            pl = batch.get("pose_last")
+            if fp is None or pl is None:
+                raise ValueError(
+                    "o13 needs `future_poses` [B,H,4] and `pose_last` [B,4] "
+                    "in the batch; both are already part of the v6 contract")
+            if fp.shape[1] <= jd:
+                raise ValueError(
+                    f"o13_k={o13_k} needs future_poses horizon > {jd}, "
+                    f"got {fp.shape[1]}")
+            dv = fp[:, jd, 3].float() - pl[:, 3].float()
+            dyw = fp[:, jd, 2].float() - pl[:, 2].float()
+            dyw = torch.atan2(torch.sin(dyw), torch.cos(dyw))   # wrap to (-pi,pi]
+            l13, lg13 = o13_ego_dynamics_loss(
+                zhat_steps[jd], dv, dyw, z_t=states[:, -1],
+                seed=o13_seed)
+            terms["o13"] = w.o13_ego * l13
+            log |= lg13 | {"o13_at_step": jd + 1}
 
         # ---- O2: time-to-reach weighted near field ------------------------
         if w.o2_nearfield:
@@ -3862,6 +4000,8 @@ def dry_run(a, stack: V6Stack | None = None) -> dict:
                          o11_k=int(getattr(a, "o11_k", 6)),
                          o11_tau=float(getattr(a, "o11_tau", 1.0)),
                          o11_negs=int(getattr(a, "o11_negs", 1)),
+                         o13_k=int(getattr(a, "o13_k", 4)),
+                         o13_seed=int(getattr(a, "o13_seed", 1300)),
                          o3_mode=a.o3_mode,
                          o3_blocks=a.o3_blocks,
                          o3_block_hw=(a.o3_block_h, a.o3_block_w),
@@ -3938,6 +4078,7 @@ def _weights_from_args(a) -> V6LossWeights:
         o1_stopgrad_factual=bool(getattr(a, "o1_stopgrad_factual", False)),
         o2_nearfield=a.w_o2, o3_masked=a.w_o3, o5_rollout=a.w_o5,
         o11_cf=float(getattr(a, 'w_o11_cf', 0.0)),
+        o13_ego=float(getattr(a, 'w_o13_ego', 0.0)),
         o6_sigreg=a.w_o6, t1_latent=a.w_t1, s1_latent=a.w_s1,
         w_select=a.w_select, w_anchor=float(getattr(a, "w_anchor", 0.0)),
         w_s2_goal=float(getattr(a, "w_s2_goal", 0.0)),
@@ -4788,6 +4929,18 @@ def train(a) -> dict:
             # behind. Same family as the analysis-time import that destroyed a
             # completed rollout — make the optional thing optional.
             "ep_idx": b.get("ep_idx"), "t_last": b.get("t_last"),
+            # ⭐ O13-EGO needs the ego's OWN future — the one target the
+            # action demonstrably determines (E-DEC-50: dv t 2.56, dyaw
+            # t 4.57). Forwarded with `.get` for exactly the reason the
+            # note above gives: a tree one file behind must DEGRADE into
+            # o13's own named error, not a bare KeyError that takes down
+            # every run. ⚠️ This line is the fix for a smoke failure that
+            # is THIS COMMENT'S OWN WARNING, repeated: the O13 call site
+            # read `batch["future_poses"]` assuming the dict was a view
+            # of `b`. It is not. The 12-step smoke caught it in two
+            # minutes; a 30,000-step launch would have died at step 1.
+            "future_poses": b.get("future_poses"),
+            "pose_last": b.get("pose_last"),
         }
         if t5_partner:
             # rows [0, n) are the anchors and rows [n, 2n) their +lag partners,
@@ -4874,6 +5027,8 @@ def train(a) -> dict:
                              o11_k=int(getattr(a, 'o11_k', 6)),
                              o11_tau=float(getattr(a, 'o11_tau', 1.0)),
                              o11_negs=int(getattr(a, 'o11_negs', 1)),
+                             o13_k=int(getattr(a, 'o13_k', 4)),
+                             o13_seed=int(getattr(a, 'o13_seed', 1300)),
                              o3_mode=a.o3_mode, o3_blocks=a.o3_blocks,
                              o3_block_hw=(a.o3_block_h, a.o3_block_w),
                              o3_band_rows=a.o3_band_rows,
@@ -6128,6 +6283,22 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--o4-floor", type=float, default=0.25)
     ap.add_argument("--w-o5", type=float, default=1.0)
     # ---- O11-CF: the objective that CANNOT be minimised action-blind -------
+    ap.add_argument("--w-o13-ego", type=float, default=0.0,
+                    help="O13-EGO: predict delta(speed, yaw) at t+k from the "
+                         "PREDICTED LATENT ALONE, through a FROZEN random "
+                         "readout. The action is NOT an input to the readout "
+                         "(E-DEC-51 measured that a head given both learns to "
+                         "read the action and ignore the latent), so the "
+                         "action's only path to this loss is through the "
+                         "predictor. Floor is EXACTLY 1.0; watch o13_excess.")
+    ap.add_argument("--o13-k", type=int, default=4,
+                    help="O13 horizon in operative steps (default 4 = the "
+                         "horizon at which E-DEC-50 measured the action's "
+                         "effect on ego dynamics: dv t 2.56, dyaw t 4.57).")
+    ap.add_argument("--o13-seed", type=int, default=1300,
+                    help="seed for O13's FROZEN readout. Changing it changes "
+                         "the target direction -- never compare o13_loss "
+                         "across different seeds.")
     ap.add_argument("--w-o11-cf", type=float, default=0.0,
                     help="O11-CF counterfactual action contrastive (E-DEC-30). "
                          "0.0 => incumbent loss bit-identical. ADDS to O5, "
