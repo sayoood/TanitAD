@@ -99,6 +99,56 @@ floor lives INSIDE the loss. Pre-registered with four outcomes in
 ⭐⭐ **THE SPLIT ACROSS ARMS IS THE HEADLINE.** `splitp30k` (frozen distilled): `n_agents` from `z_t` **+0.3864** — far the richest — but its predictor **ADDS NOTHING**, delta vs `z_t` of −0.0008 / −0.0320 / −0.0158 at k=1/3/6, all NEGATIVE (t −3.69 / −5.62 / −6.26), and at k=6 `lead_closing` degrades to −0.0747 (t −2.11). `rdw8p30k` (trained): content only +0.0777 but the predictor **adds substantially**. ⇒ **the frozen arm CARRIES the environment and does not PREDICT it; the trained arm PREDICTS change and carries less of it.** E-DEC-20's dissociation in a new form ⇒ **mandate (2) — environment in BOTH encoder and predictor — is NOT yet satisfied by any single arm.**
 
 ⚠️ **FOUR BOUNDS.** (1) **ẑ also beats the encoded-future CEILING**, which is anomalous. Two explanations and this panel cannot separate them: the rollout is **ACTION-CONDITIONED**, so ẑ carries the ego's commanded motion that a single encoded frame lacks — *or* it is temporal **smoothing** of a noisy target. **An action-shuffled control would separate them and has not been run.** (2) All absolute R² are **small** (0.03–0.15); `lead_closing` +0.0019 is barely above zero. (3) **IN-SAMPLE** until the held-out corpus lands. (4) k=1 is **underpowered by construction** — the ceiling itself is barely above `z_t` there (+0.0123, t 0.75), i.e. the scene has not changed enough for prediction to add anything; only k=3–6 carry headroom. |
+| E-DEC-44 | ⭐⭐⭐ **THE FIRST TRANSITION THAT CARRIES THE WORLD — `postrain10k`'s Δz encodes the SCENE CHANGE** | ⭐ **MEASURED t 4.48, surviving Bonferroni across 4 bands — but CONFINED to Δz's top-8 directions, and it is the SCENE, not the ACTION.** | `…/raw/deltaz_distilled.json`, `…/raw/deltaz_post_band_*.json`
+
+Every arm before this had a Δz that was drift and nothing else. Two distilled arms
+break that:
+
+| arm | drift | t | **scene delta** | t | action | t |
+|---|---|---|---|---|---|---|
+| `rdw8p30k` (scratch) | +0.6416 | 65.6 | −0.0235 | −1.18 | +0.0014 | 0.12 |
+| `splitfrz10k` (distilled) | **+0.1753** | 7.47 | +0.0219 | 1.38 | −0.0554 | −2.61 |
+| **`postrain10k`** (post-trained) | +0.3650 | 18.3 | **+0.0621** | **4.48** | −0.0162 | −1.14 |
+
+⭐ **Drift dominance FALLS with a distilled init** — +0.6416 (scratch) → +0.3650 →
++0.1753 — and in `postrain10k` the transition carries the world's change
+significantly, with the constant control at **+0.0000** and the shuffled control
+at −0.0107.
+
+⭐ **AND ITS PREDICTED LATENT HOLDS THE CONTENT** (`envpred`, k=6): `n_agents`
+from ẑ **+0.1200** against **+0.1185** from the encoded `z_t` — retained, well
+above the raw-pixel floor (+0.0192) and the constant, and — unlike every earlier
+arm — **NOT above its own encoded-future ceiling** (+0.1694). That ceiling breach
+was the smoothing signature that invalidated E-DEC-28; its absence here is what
+makes this reading admissible.
+
+⚠️⚠️ **THE BAND CONTROL QUALIFIES IT, AND THE QUALIFICATION IS PART OF THE
+CLAIM.** The scene signal exists **only** in Δz's top-8 PCA directions:
+
+| band | scene delta | t |
+|---|---|---|
+| **0:8** | **+0.0621** | **4.48** |
+| 8:16 | −0.0101 | −0.74 |
+| 32:40 | +0.0224 | 1.47 |
+| 128:136 | +0.0029 | 0.20 |
+
+t 4.48 **survives Bonferroni** across the four bands, and the top-8 carry **64.4 %**
+of Δz's variance — so a real scene signal living in the dominant directions is
+plausible. But it is **one band in one arm** and must be replicated before it
+carries weight.
+
+⚠️ **IT IS THE SCENE, NOT THE ACTION.** Both distilled arms still show the action
+absent or negative (−0.0554, −0.0162). For the PI's physics question — *the lead
+decelerates, so the ego reacts* — **the world's half is now present in one arm;
+the ego's half is present in none.**
+
+⭐ **THE 8-ARM TEST IS RUNNING WITH ITS PREDICTION COMMITTED IN ADVANCE**: all
+three distilled arms are positive and the one scratch arm is negative, so the four
+remaining scratch arms (`champ30k`, `scale1`, `rdw8s30k`, `ro128p30k`) are
+predicted **≤ 0 or non-significant**. If that holds it is the SECOND clean
+distilled-vs-scratch separation of the day (the first was encoder CONTENT,
+E-DEC-42); if it fails, `postrain10k` is a one-arm curiosity.
+
 | E-DEC-43 | ⭐⭐⭐ **IS PHYSICS GATED ON SCENE CONTENT? — the fix I had not yet ruled out** | ⛔ **MEASURED — NO. The three arms with the MOST spatial content show no more physics than the ones carrying nothing.** | `…/raw/physics_distilled.json`
 
 The three DISTILLED arms cleanly beat every scratch arm on `occ_center`

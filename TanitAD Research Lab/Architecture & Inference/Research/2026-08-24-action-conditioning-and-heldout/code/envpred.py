@@ -65,7 +65,8 @@ LABELS = pathlib.Path(os.environ.get("SPD_LABELS",
     str(SP / "sp2/lead130_agents.jsonl")))
 OUT = pathlib.Path(os.environ.get("SPD_OUT", str(SP / "envpred.json")))
 SPLIT = os.environ.get("SPD_SPLIT", "IN-SAMPLE")
-ARMS = ["splitp30k", "rdw8p30k"]
+ARMS = os.environ.get("SPD_ARMS",
+                      ",".join(["splitp30k", "rdw8p30k"])).split(",")
 N_CLIPS, F = 24, 100
 KS = (1, 3, 6)
 
