@@ -158,8 +158,24 @@ own dynamics — and no objective has ever used that as a target.**
 
 ### O13 — the ego-dynamics objective (the recommended next arm)
 
-> Predict **Δ(speed, yaw)** at t+k from `(z_t, action_t)` with a small supervised
-> head, alongside the existing scene objective.
+> Predict **Δ(speed, yaw)** at t+k from **`zhat_{t+k}` ALONE**, through a
+> **frozen, parameter-free random readout**, alongside the existing scene
+> objective.
+
+⛔ **THIS DESIGN WAS CORRECTED WITHIN THE HOUR BY ITS OWN ORACLE (E-DEC-51), AND
+THE FIRST VERSION OF THIS DOCUMENT CARRIED THE REFUTED FORM.** The obvious
+objective is a head on `(z_t, action_t)`. Measured before spending the GPU: the
+latent adds **−0.0065 (t −0.06)** to Δspeed and **−0.0153 (t −0.12)** to Δyaw
+over the action *alone*. ⇒ **such a head learns to read the two action scalars
+and ignore the 2048-d latent** — the loss falls, the metric looks excellent, and
+the world model learns nothing. O11's degeneracy in a new costume.
+
+⇒ **The readout is therefore forbidden BOTH the action** (which closes the echo)
+**and `z_t`** (which closes the passthrough). The action's only route to the loss
+is *through the predictor*. The floor is arithmetic and exact — **1.0** — because
+the targets are standardised per batch. Implemented, 9 unit tests, 2-arm wiring
+smoke, and pre-registered with four outcomes and a step-12,800 abort criterion
+fixed before the outcome is known: `PREREG_O13_EGO_DYNAMICS.md`.
 
 **Why this one and not the previous nine:**
 
@@ -194,9 +210,12 @@ complementary, not ranked**, and ego content is a **trainable** property.
 --init-from <DINOv3-distilled ckpt>      # ⭐ the ONE lever that fixed collapse
                                          #    AND representation. Not an objective.
 --stage S-W                              # scene prediction from the scene
---w-o13-ego <tbd>                        # ⭐ NEW: Δ(speed,yaw) from (z_t, action)
-                                         #    the ONLY action target with measured
-                                         #    information behind it
+--w-o13-ego <tbd> --o13-k 4              # ⭐ NEW: Δ(speed,yaw) from zhat ALONE.
+                                         #    The readout is forbidden the action
+                                         #    AND z_t — E-DEC-51 measured that a
+                                         #    head given the action ignores the
+                                         #    latent entirely. Floor is EXACTLY
+                                         #    1.0; watch o13_excess.
 --spectrum-accum <ceiling >= state_dim>  # rank gate; cheap, retained
 ```
 
@@ -215,7 +234,8 @@ failures, and E-DEC-48b explains why as a class rather than one at a time.
 | The action adds ≤ 0 to predicting the future SCENE | **MEASURED** (control t 8.5–14.3) |
 | The action determines the ego's own Δspeed / Δyaw | **MEASURED** (t 2.56 / 4.57) |
 | The encoder carries ego LEVELS but not CHANGES | **MEASURED** (identity control 23.74) |
-| **O13 will improve action-conditioning** | ⚠️ **PLAUSIBLE — not yet run** |
+| A head on `(z_t, action)` would be an ACTION ECHO | **MEASURED** (latent adds −0.0065 / −0.0153) |
+| **O13 will improve action-conditioning** | ⚠️ **PLAUSIBLE — not yet run**; pre-registered with an abort criterion |
 | Any of this improves DRIVING | ⛔ **UNKNOWN — every number here is T0** |
 
 ⚠️ **Multiplicity, stated:** the ego panel spans ~40 cells at t ≈ 2; several marginal

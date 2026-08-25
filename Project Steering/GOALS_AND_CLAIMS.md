@@ -99,6 +99,50 @@ floor lives INSIDE the loss. Pre-registered with four outcomes in
 ⭐⭐ **THE SPLIT ACROSS ARMS IS THE HEADLINE.** `splitp30k` (frozen distilled): `n_agents` from `z_t` **+0.3864** — far the richest — but its predictor **ADDS NOTHING**, delta vs `z_t` of −0.0008 / −0.0320 / −0.0158 at k=1/3/6, all NEGATIVE (t −3.69 / −5.62 / −6.26), and at k=6 `lead_closing` degrades to −0.0747 (t −2.11). `rdw8p30k` (trained): content only +0.0777 but the predictor **adds substantially**. ⇒ **the frozen arm CARRIES the environment and does not PREDICT it; the trained arm PREDICTS change and carries less of it.** E-DEC-20's dissociation in a new form ⇒ **mandate (2) — environment in BOTH encoder and predictor — is NOT yet satisfied by any single arm.**
 
 ⚠️ **FOUR BOUNDS.** (1) **ẑ also beats the encoded-future CEILING**, which is anomalous. Two explanations and this panel cannot separate them: the rollout is **ACTION-CONDITIONED**, so ẑ carries the ego's commanded motion that a single encoded frame lacks — *or* it is temporal **smoothing** of a noisy target. **An action-shuffled control would separate them and has not been run.** (2) All absolute R² are **small** (0.03–0.15); `lead_closing` +0.0019 is barely above zero. (3) **IN-SAMPLE** until the held-out corpus lands. (4) k=1 is **underpowered by construction** — the ceiling itself is barely above `z_t` there (+0.0123, t 0.75), i.e. the scene has not changed enough for prediction to add anything; only k=3–6 carry headroom. |
+| E-DEC-51 | ⭐⭐⭐⭐ **THE ORACLE THAT REFUSED THE OBVIOUS DESIGN — ~8 GPU-hours saved by 40 minutes of probe** | ⛔ **MEASURED, identity control +0.9337 (t 23.74): the latent adds NOTHING to the action on the ego's own dynamics.** A head on `(z_t, action_t)` would read the two action scalars and ignore the 2048-d latent. | `…/raw/o13oracle_latent_adds_to_action.json`
+
+E-DEC-50 established the target. The natural objective is a head on
+`(z_t, action_t)` → Δ(speed, yaw). **Before spending the GPU, the question asked
+was: does the latent ADD anything to the action?**
+
+| arm | latent adds to Δspeed | latent adds to Δyaw |
+|---|---|---|
+| `rdw8p30k` | **−0.0065 (t −0.06)** | **−0.0153 (t −0.12)** |
+| `splitp30k` | +0.0541 (t +0.45) | (not significant) |
+
+⇒ ⛔ **Such a head would be an ACTION ECHO.** The loss would fall, the metric
+would look excellent, and the world model would have learned **nothing** — O11's
+degeneracy in a new costume, on a better-motivated target.
+
+⭐⭐ **THIS IS WHAT THE 40-MINUTE PROBE IS FOR.** The campaign has now eliminated
+**seven** design branches this way, each for ~40 minutes against ~8 GPU-hours:
+drift-floor objective, ego-compensation, longer horizon, readout widening,
+encoder-content-as-route-to-physics, O3 (aborted on its pre-committed criterion),
+and now the naive O13.
+
+⇒ **THE REDESIGN THE ORACLE DICTATED, and it is strictly better:** the readout
+sees **ONLY `zhat_{t+k}`** — not the action (echo closed by construction), not
+`z_t` (passthrough closed by construction). **The action's only path to the loss
+is THROUGH THE PREDICTOR**, so the gradient can only fall by making the PREDICTED
+LATENT carry the ego's future dynamics — which is precisely the missing property.
+That is ActSWM's frozen-readout guard (arXiv 2607.26712) applied to a target with
+MEASURED information behind it, rather than to a separation score that can be
+manufactured. Pre-registered: `PREREG_O13_EGO_DYNAMICS.md`.
+
+⚠️ **THE DIMENSIONAL CONTROL THAT MADE THE PANEL READABLE.** The raw joint is
+2050-d against ~1710 training rows — `n < d`, which CLAUDE.md records as
+*"underpowered by construction, not absence"*. The panel therefore ran a **balanced
+joint** (PCA-32 of the latent + the 2 action scalars, **basis fit on the training
+folds only**) and reports both. ⭐ The calibration that proves the caveat was real:
+on the IDENTITY target, which the action determines exactly, `joint_raw` reads
+**+0.8879** — BELOW `action_t`'s +0.9337 — i.e. **the raw joint costs ~0.05 in
+pure dilution.** Without the balanced column the whole panel would have read as
+"the latent hurts", which is a dimensionality artefact, not a finding.
+
+⭐ **`splitp30k`'s Δspeed content replicated a THIRD time** here at **t 2.10**
+(after t 2.50 in `egofuture` and t 2.05 in `egostate`) — three runs, three
+different code paths.
+
 | E-DEC-50 | ⭐⭐⭐⭐⭐ **THE ACTION'S ENTIRE CAUSAL CONTENT IS THE EGO'S OWN DYNAMICS — a target NO objective has ever used** | ⛔⛔ **MEASURED, identity control +0.9337 (t 23.74).** The latent carries ego **LEVELS**; the action determines the ego's **CHANGES**; and **the transition connects neither.** | `…/raw/egostate_levels_vs_changes.json`, `…/raw/egofuture_ego_own_future.json`
 
 20 held-out clips, 1,800 rows, k=4, RFF+ridge, clip-disjoint λ, within-clip Pearson
