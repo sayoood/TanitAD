@@ -99,6 +99,52 @@ floor lives INSIDE the loss. Pre-registered with four outcomes in
 ⭐⭐ **THE SPLIT ACROSS ARMS IS THE HEADLINE.** `splitp30k` (frozen distilled): `n_agents` from `z_t` **+0.3864** — far the richest — but its predictor **ADDS NOTHING**, delta vs `z_t` of −0.0008 / −0.0320 / −0.0158 at k=1/3/6, all NEGATIVE (t −3.69 / −5.62 / −6.26), and at k=6 `lead_closing` degrades to −0.0747 (t −2.11). `rdw8p30k` (trained): content only +0.0777 but the predictor **adds substantially**. ⇒ **the frozen arm CARRIES the environment and does not PREDICT it; the trained arm PREDICTS change and carries less of it.** E-DEC-20's dissociation in a new form ⇒ **mandate (2) — environment in BOTH encoder and predictor — is NOT yet satisfied by any single arm.**
 
 ⚠️ **FOUR BOUNDS.** (1) **ẑ also beats the encoded-future CEILING**, which is anomalous. Two explanations and this panel cannot separate them: the rollout is **ACTION-CONDITIONED**, so ẑ carries the ego's commanded motion that a single encoded frame lacks — *or* it is temporal **smoothing** of a noisy target. **An action-shuffled control would separate them and has not been run.** (2) All absolute R² are **small** (0.03–0.15); `lead_closing` +0.0019 is barely above zero. (3) **IN-SAMPLE** until the held-out corpus lands. (4) k=1 is **underpowered by construction** — the ceiling itself is barely above `z_t` there (+0.0123, t 0.75), i.e. the scene has not changed enough for prediction to add anything; only k=3–6 carry headroom. |
+| E-DEC-48b | ⭐⭐⭐⭐ **THE ACTION IS REDUNDANT WITH THE SCENE — nine failed objectives were a DATA limit, not a loss bug** | ⛔⛔ **MEASURED, positive control passing at t 8.5–14.3: the action's MARGINAL contribution to predicting the FUTURE SCENE is ZERO or NEGATIVE (−0.1678, t −3.50 on `n_agents`).** | `…/raw/confound2_future_scene.json`
+
+`rdw8p30k`, 20 lead-matched held-out clips, k=4. NONLINEAR RFF+ridge, clip-disjoint
+λ, within-clip Pearson r, time-shuffled control, constant reading **+0.0000**.
+**Target: the FUTURE SCENE at t+k** — chosen because `scene_t` demonstrably
+predicts it, which is what makes *"adds nothing on top of it"* a meaningful claim.
+
+| target | `scene_t` (POSITIVE CONTROL) | `action_t` | **action's marginal given scene** |
+|---|---|---|---|
+| `n_agents` | **+0.7089 (t 12.58)** | +0.0755 (t 0.64) | **−0.1678 (t −3.50)** |
+| `occ_center` | **+0.6588 (t 8.52)** | −0.0179 (t 0.14) | +0.0217 (t 0.40) |
+| `n_free_cols` | **+0.6324 (t 14.34)** | +0.1083 (t 1.43) | **−0.1337 (t −1.83)** |
+| `lead_closing` | +0.0988 (t 1.83) ✗ | — | ⛔ **NO VERDICT** — control failed, guard fired |
+
+⇒ **The scene predicts the future scene strongly; the action predicts it not at
+all; and ADDING the action makes it WORSE.** In observational driving data the
+ego's command carries no information about how other traffic evolves beyond what
+the present scene already carries.
+
+⭐⭐⭐ **THIS EXPLAINS NINE FAILURES AT ONCE.** O1, O2, O3, O7, O8, O9, O10, O11 and
+PSG did not fail because they were badly designed — **they asked the model to
+extract information that observational driving data does not contain.** It is also
+why O11 could only manufacture separation (E-DEC-30/C151) and why Δz's residual is
+noise in all 8 arms (E-DEC-40/42).
+
+⚠️⚠️ **SCOPE — THIS REFRAMES MANDATE 3, IT DOES NOT CLOSE IT.** The panel measures
+the action's contribution to predicting **OTHER AGENTS**. It does **NOT** test its
+contribution to predicting the **EGO'S OWN** future state, which the action
+certainly determines. ⇒ **The causal arrow in driving data runs SCENE → ACTION,
+not ACTION → SCENE.** Other traffic evolves largely independently of what we do.
+
+⇒ *"If the lead decelerates, the ego must react"* is **not a statement the WORLD
+MODEL should encode — it is one the PLANNER should.** The world model should
+predict the scene from the scene; **action-conditioning belongs on the EGO
+TRAJECTORY** (hypothesis H3 in `ACTION_CONDITIONING_HYPOTHESES.md`), which this
+result strengthens rather than refutes.
+
+⚠️ **What would still change this:** a corpus with INTERVENTIONAL action diversity
+(the same scene paired with different actions — simulation, or AlpaSim). That is a
+PI-level provisioning call, not a loss change.
+
+⚠️ **The first version of this test (`confound.py`) was INCONCLUSIVE and its
+verdict retracted (C159):** it predicted Δz, where NOTHING works, and printed
+"redundant" off an all-null panel. Redundancy requires the baseline to WORK. The
+banked `confound_deltaz_target_INCONCLUSIVE.json` is kept as the record.
+
 | E-DEC-45 | ⭐⭐⭐⭐ **SCRATCH-TRAINED ENCODERS ALL CONVERGE TO THE SAME DRIFT-DOMINATED TRANSITION — a 4 % spread across five unrelated recipes** | ⭐ **MEASURED: scratch 0.6138–0.6416 (5 arms) vs distilled 0.1753 / 0.3650 (2 arms). No overlap.** | `…/raw/deltaz_*.json`
 
 How much of Δz is predictable from `z_t` alone — the drift fraction — measured with
