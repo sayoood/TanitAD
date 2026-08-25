@@ -4479,6 +4479,123 @@ work.** Nothing in §13.10 relies on the reader accepting that framing — the
 `nrmse` column and its control are reported for every arm, and the arithmetic is
 the argument.
 
+### 13.14 Proven result 11 — the transition is the latent's own drift, and that one fact explains every action-conditioning failure in this programme
+
+Sections 13.1–13.13 record ten results and a lengthening list of closed
+candidates: an EMA target, physical-state grounding, an external label-derived
+target. Each was closed on its own terms, and the list read as bad luck. It was
+not. A single measurement accounts for all of them.
+
+**The measurement.** Decompose the latent transition Δz = z_{t+k} − z_t and ask
+what predicts it, on held-out lead-matched clips, with a nonlinear probe (random
+Fourier features + ridge — convex, closed form), λ selected on a *clip-disjoint*
+inner split, a time-shuffled control on every cell, and a constant control that
+reads exactly zero.
+
+| what predicts Δz (`rdw8p30k`, top-8 PCA directions) | r | shuffled | true − shuf | t |
+|---|---|---|---|---|
+| **z_t — the latent's own position** | **+0.6570** | +0.0154 | **+0.6416** | **65.64** |
+| the ego's action `[steer, accel, v0]` | +0.0105 | −0.0086 | +0.0190 | 1.88 |
+| the scene's change | −0.0043 | +0.0192 | −0.0235 | −2.04 |
+| all three together | +0.6591 | −0.0056 | +0.6647 | 66.99 |
+| constant (control) | **+0.0000** | +0.0000 | +0.0000 | 0.00 |
+
+Δz is **64 % predictable from where the latent already is**, and only 25 of 2048
+directions carry 90 % of its variance. Adding the action *and* the scene change
+contributes **+0.0021**.
+
+**The transition is the latent drifting along its own low-dimensional manifold.
+It is not the world changing, and it is not the ego acting.**
+
+Four consequences follow immediately, and each was previously recorded as a
+separate failure:
+
+1. **The predictor is action-independent** — across *all 32 arms this programme
+   has trained*, replacing every action with noise changes `nrmse` by at most
+   0.0919 % (median 0.0097 %; 0 of 32 exceed 0.1 %). That is not a failure to
+   solve the objective. Predicting drift from z_t **is** the correct solution to a
+   next-latent objective, and every arm found it.
+2. **The action is not recoverable from the transition** at any horizon from
+   0.2 s to 3.0 s (k = 2, 4, 8, 16, 30; 0 of 10 cells reach |t| > 2, and the delta
+   grows *more negative* with horizon). The instrument is not underpowered: the
+   z_t-alone baseline it detects is stable at r 0.128–0.171 across every k.
+3. **An objective that demands action-dependence can only manufacture it.** A
+   counterfactual action-contrastive term (§13.15) reached a perfect
+   discrimination score by driving the counterfactual rollouts 12–17× further from
+   the truth than the true-action rollout, while degrading prediction — the
+   degenerate ẑ = f(z) + λa its own derivation predicts.
+4. **The `nrmse` improvements this programme has ranked arms on are real, and are
+   not world modelling.** They are genuine learning of the drift function.
+
+**The residual is noise, in every arm.** Fitting the drift model on the fit clips
+only and probing what predicts the held-out residual: the action reads t 0.12, the
+scene t −1.18. Across all eight arms measured, **0 carry the action positively**
+(t > 2); the single arm at |t| > 2 has t = −2.17, i.e. the action makes the
+residual prediction *worse*. No objective can recover information that is not
+present.
+
+### 13.15 Proven result 12 — initialisation, not the objective, determines whether the latent is grounded in the image
+
+Eight objective terms have now been tested and closed. The one factor that
+separates arms cleanly is not an objective at all.
+
+Measuring how much of z_t's top-8 PCA directions is explained by raw 8×8 pixels —
+same probe, same controls:
+
+| arm | pixels → z_t | t | initialisation |
+|---|---|---|---|
+| `splitfrz10k` | **+0.2513** | 6.99 | distilled |
+| `splitp30k` | **+0.2104** | 5.78 | distilled |
+| `postrain10k` | **+0.1838** | 6.23 | post-trained |
+| `rdw8p30k` | +0.0830 | 4.95 | scratch |
+| `rdw8s30k` | +0.0275 | 1.95 | scratch |
+| `ro128p30k` | +0.0116 | 0.82 | scratch |
+| `champ30k` | +0.0105 | 0.63 | scratch |
+| `scale1` | +0.0098 | 0.79 | scratch |
+
+**min(distilled) +0.1838 versus max(scratch) +0.0830 — a 2.2× gap with nothing in
+between**, and three of the five scratch-trained arms are not significantly
+grounded at all. The same split appears in spatial content: on centre-occupancy
+the three distilled arms span [+0.1090, +0.3351] and the five scratch arms
+[−0.1607, +0.0035] — again disjoint, and the scratch arms sit at or below the
+raw-pixel floor (−0.1720).
+
+The full ordering is monotone in the strength of the visual prior the encoder
+began with: **frozen DINOv3 (+0.3998) > distilled inits > scratch-trained ≈ raw
+pixels.**
+
+⚠️ **What this does not show.** Groundedness does not predict content in general:
+`ro128p30k` has the lowest groundedness of any arm and still carries more
+`n_agents` than `rdw8p30k`, whose groundedness is seven times higher. The
+separation holds on centre-occupancy and fails on `n_agents` and free-space. The
+claim is specifically about *where things are*, not *how many* or *how much space
+is free*.
+
+⚠️ **And it does not buy physics.** The three distilled arms — the best-positioned
+in the programme — answer a counterfactual no better than arms carrying nothing:
+brake-versus-maintain moves their prediction by 0.24–0.37 % of what a 10 %
+perturbation of the latent does, the true action is identifiable at chance
+(0.2203–0.2747 against 0.25), and the closing/free-flow ratio scatters 0.67–1.67
+with one arm below one. **Scene content and action-conditioning are independent
+problems**, and only the first currently has an answer.
+
+### 13.16 What §13.14–13.15 do not establish
+
+The drift result is measured on Δz's **top-8 PCA directions**, which are by
+construction its highest-variance ones. A band control (directions 8–16, 32–40,
+128–136, 512–520) shows drift concentrated in roughly the top 40 directions and
+absent beyond them, and finds a small but real action contribution in band 8–16
+(+0.0258, t 2.73) — marginal after correcting for four bands. So *"the action
+contributes nothing"* is too strong; *"the action contributes roughly 4 % of what
+drift does, in a narrow band"* is what the data support.
+
+No claim is made about driving. Every number here is T0 — a diagnostic of what the
+representation contains and how it responds, never a statement that a planner
+built on it would drive. The corpus is a 124-clip held-out validation set,
+lead-matched to the in-sample selection criterion; that matching was necessary
+because comparing across the unmatched split reversed a verdict once already.
+
+
 ## References
 
 (Formal bibliography at LaTeX export; the working citations live in
