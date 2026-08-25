@@ -99,6 +99,43 @@ floor lives INSIDE the loss. Pre-registered with four outcomes in
 ⭐⭐ **THE SPLIT ACROSS ARMS IS THE HEADLINE.** `splitp30k` (frozen distilled): `n_agents` from `z_t` **+0.3864** — far the richest — but its predictor **ADDS NOTHING**, delta vs `z_t` of −0.0008 / −0.0320 / −0.0158 at k=1/3/6, all NEGATIVE (t −3.69 / −5.62 / −6.26), and at k=6 `lead_closing` degrades to −0.0747 (t −2.11). `rdw8p30k` (trained): content only +0.0777 but the predictor **adds substantially**. ⇒ **the frozen arm CARRIES the environment and does not PREDICT it; the trained arm PREDICTS change and carries less of it.** E-DEC-20's dissociation in a new form ⇒ **mandate (2) — environment in BOTH encoder and predictor — is NOT yet satisfied by any single arm.**
 
 ⚠️ **FOUR BOUNDS.** (1) **ẑ also beats the encoded-future CEILING**, which is anomalous. Two explanations and this panel cannot separate them: the rollout is **ACTION-CONDITIONED**, so ẑ carries the ego's commanded motion that a single encoded frame lacks — *or* it is temporal **smoothing** of a noisy target. **An action-shuffled control would separate them and has not been run.** (2) All absolute R² are **small** (0.03–0.15); `lead_closing` +0.0019 is barely above zero. (3) **IN-SAMPLE** until the held-out corpus lands. (4) k=1 is **underpowered by construction** — the ceiling itself is barely above `z_t` there (+0.0123, t 0.75), i.e. the scene has not changed enough for prediction to add anything; only k=3–6 carry headroom. |
+| E-DEC-45 | ⭐⭐⭐⭐ **SCRATCH-TRAINED ENCODERS ALL CONVERGE TO THE SAME DRIFT-DOMINATED TRANSITION — a 4 % spread across five unrelated recipes** | ⭐ **MEASURED: scratch 0.6138–0.6416 (5 arms) vs distilled 0.1753 / 0.3650 (2 arms). No overlap.** | `…/raw/deltaz_*.json`
+
+How much of Δz is predictable from `z_t` alone — the drift fraction — measured with
+the identical instrument on every arm (NONLINEAR RFF+ridge, clip-disjoint λ,
+within-clip Pearson r, constant control at exactly +0.0000):
+
+| arm | drift | t | init |
+|---|---|---|---|
+| `splitfrz10k` | **+0.1753** | 7.5 | **distilled** |
+| `postrain10k` | **+0.3650** | 18.3 | **distilled** |
+| `champ30k` | +0.6138 | 56.5 | scratch |
+| `scale1` | +0.6360 | 74.7 | scratch |
+| `rdw8s30k` | +0.6372 | 67.0 | scratch |
+| `ro128p30k` | +0.6374 | 67.7 | scratch |
+| `rdw8p30k` | +0.6416 | 65.6 | scratch |
+
+⭐⭐ **FIVE SCRATCH ARMS LAND IN A 4 % BAND** — across different batch sizes (4 vs
+8), readout widths (64 vs 128, d_op 2048 vs 4096), corpora (parity vs 130-clip),
+step counts and objective weights. **Whatever else you change, a scratch-trained
+encoder converges on a latent whose transition is ~64 % its own drift.** The two
+distilled arms land at 0.1753 and 0.3650 — outside that band entirely.
+
+⇒ **This is the strongest structural result of the campaign**, and unlike the
+scene-content signal (E-DEC-44, one significant arm) it does not rest on a single
+measurement: the scratch cluster is five arms with a 4 % spread.
+
+⚠️ **`splitp30k` is measured on this instrument separately** — its value came from
+a different probe (`egodom`, key `residual`) and my assembler read the wrong field,
+printing a spurious 0.0000. **A zero from a parse error is indistinguishable from
+a real zero**, which is why it is excluded here rather than quoted; the same-instrument
+run is in flight.
+
+⚠️ **What it does NOT show.** A lower drift fraction is not itself a capability —
+`splitfrz10k` has the lowest drift *and* a non-significant scene signal (t 1.38).
+Low drift means the transition is not merely the latent sliding along its own
+manifold; it does not establish that what replaces the drift is useful.
+
 | E-DEC-44 | ⭐⭐⭐ **THE FIRST TRANSITION THAT CARRIES THE WORLD — `postrain10k`'s Δz encodes the SCENE CHANGE** | ⭐ **MEASURED t 4.48, surviving Bonferroni across 4 bands — but CONFINED to Δz's top-8 directions, and it is the SCENE, not the ACTION.** | `…/raw/deltaz_distilled.json`, `…/raw/deltaz_post_band_*.json`
 
 Every arm before this had a Δz that was drift and nothing else. Two distilled arms

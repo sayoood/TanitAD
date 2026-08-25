@@ -8648,3 +8648,45 @@ is logged rather than quietly fixed:
 Parent/child for processes — exactly as `git ls-files --stage` against
 `git hash-object` is the real check for a staged file, rather than `git add`'s
 exit code.
+
+## C156 ⚠️ — "OUR TRUNK IS BEHIND FROZEN DINOv3, SO THE NEXT ARM IS A FROZEN DINOv3 TRUNK" — TWO ERRORS IN ONE RECOMMENDATION (2026-08-25, caught by the PI's challenge)
+
+**What was asserted**, repeatedly, in the plan and to the PI: that frozen DINOv3
+*"beats our TRAINED trunk on 4 of 5 aggregate spatial targets"*, and therefore
+*"the honest next arm is frozen DINOv3 trunk + our predictor, which puts our
+parameter budget where we actually add value."*
+
+**Error 1 — I quoted 4 of 5 and omitted the one we WIN.** On the held-out
+lead-matched panel, `splitp30k` reads `n_agents` **+0.1220 against frozen
+DINOv3's +0.0998** — our 19.3 M-parameter encoder beats a ViT-L teacher on the
+target this campaign measures best. Saying *"behind on 4 of 5"* without saying
+*"ahead on the one we measure most reliably"* is a selective read of my own table.
+The honest summary is **mixed**, not a rout.
+
+**Error 2 — and it is the worse one — the recommendation misdescribed our OWN
+arms.** `splitp30k` and `postrain10k` are **DINOv3-DISTILLED inits**:
+`O7_DEFAULT_MODEL = "facebook/dinov3-vitl16-pretrain-lvd1689m"`, distilled into
+**our** 128-dim, 3-layer, 19.3 M architecture. ⇒ **"Take a frozen DINOv3" was
+proposing to replace our encoder with the teacher we ALREADY DISTIL FROM** — and
+the distilled student is the arm that carries content. The lever the evidence
+supports is *"start from a strong visual prior"*, which we **already do**; it is
+not *"stop training an encoder"*.
+
+⚠️ **AND FROZEN DINOv3 HAS NEVER BEEN TRAINED AS A TRUNK AT ALL.** Every DINOv3
+number in this campaign is a **PROBE COLUMN** — what a frozen DINOv3 encoding
+carries when a probe reads it. That is not the same quantity as *"an arm trained
+on top of it"*, and I recommended a GPU-day on the strength of the wrong one.
+
+**ROOT-CAUSE CLASS: a recommendation built from a comparison table without
+checking what the compared things ARE.** The table said `splitp30k` vs `DINOv3`;
+it did not say that `splitp30k` **is** DINOv3, distilled. Same family as the
+`df`-on-a-pod scope errors, but at the level of *provenance* rather than *units*:
+⇒ **before recommending a swap, state what each arm is MADE OF, not only how it
+scores.** One `grep` for the teacher id would have caught it, and did.
+
+⭐ **THE CORRECTED READING, which is better news than what it replaces.** The
+evidence favours **distil DINOv3 into our architecture, then TRAIN it**
+(`postrain10k`'s recipe — the only arm whose transition carries the world,
+t 4.48) over **distil then FREEZE** (`splitp30k` — best content, transition
+signal not significant). Both are ours. `postrain30k` is testing the trainable
+variant at 30k parity, with the init md5-verified identical on Thor and locally.
