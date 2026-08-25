@@ -99,6 +99,47 @@ floor lives INSIDE the loss. Pre-registered with four outcomes in
 ⭐⭐ **THE SPLIT ACROSS ARMS IS THE HEADLINE.** `splitp30k` (frozen distilled): `n_agents` from `z_t` **+0.3864** — far the richest — but its predictor **ADDS NOTHING**, delta vs `z_t` of −0.0008 / −0.0320 / −0.0158 at k=1/3/6, all NEGATIVE (t −3.69 / −5.62 / −6.26), and at k=6 `lead_closing` degrades to −0.0747 (t −2.11). `rdw8p30k` (trained): content only +0.0777 but the predictor **adds substantially**. ⇒ **the frozen arm CARRIES the environment and does not PREDICT it; the trained arm PREDICTS change and carries less of it.** E-DEC-20's dissociation in a new form ⇒ **mandate (2) — environment in BOTH encoder and predictor — is NOT yet satisfied by any single arm.**
 
 ⚠️ **FOUR BOUNDS.** (1) **ẑ also beats the encoded-future CEILING**, which is anomalous. Two explanations and this panel cannot separate them: the rollout is **ACTION-CONDITIONED**, so ẑ carries the ego's commanded motion that a single encoded frame lacks — *or* it is temporal **smoothing** of a noisy target. **An action-shuffled control would separate them and has not been run.** (2) All absolute R² are **small** (0.03–0.15); `lead_closing` +0.0019 is barely above zero. (3) **IN-SAMPLE** until the held-out corpus lands. (4) k=1 is **underpowered by construction** — the ceiling itself is barely above `z_t` there (+0.0123, t 0.75), i.e. the scene has not changed enough for prediction to add anything; only k=3–6 carry headroom. |
+| E-DEC-42 | ⭐⭐⭐⭐ **PIXEL-GROUNDEDNESS SEPARATES INITIALISATION PERFECTLY — the cleanest structural result in the campaign** | ⭐ **MEASURED, 8 arms, NO OVERLAP: distilled inits +0.1838…+0.2513 (all t > 5.7) vs scratch-trained +0.0098…+0.0830.** ⛔ **AND: 0 of 8 arms' drift-removed residual carries the action.** | `…/raw/egodom_*.json`, `code/ground_table.py`
+
+How much of `z_t`'s top-8 PCA directions is explained by RAW 8×8 PIXELS.
+Held-out lead-matched, NONLINEAR RFF+ridge, clip-disjoint λ, within-clip Pearson r,
+time-shuffled control, constant reading **+0.0000** exactly.
+
+| arm | pixels → `z_t` | t | residual: action | t | init |
+|---|---|---|---|---|---|
+| `splitfrz10k` | **+0.2513** | 6.99 | −0.0578 | −2.17 | **DISTILLED** |
+| `splitp30k` | **+0.2104** | 5.78 | −0.0452 | −1.81 | **DISTILLED** |
+| `postrain10k` | **+0.1838** | 6.23 | −0.0113 | −0.60 | **DISTILLED** |
+| `rdw8p30k` | +0.0830 | 4.95 | +0.0014 | 0.12 | scratch |
+| `rdw8s30k` | +0.0275 | 1.95 | +0.0066 | 0.50 | scratch |
+| `ro128p30k` | +0.0116 | 0.82 | −0.0182 | −1.59 | scratch |
+| `champ30k` | +0.0105 | 0.63 | −0.0007 | −0.05 | scratch |
+| `scale1` | +0.0098 | 0.79 | −0.0012 | −0.10 | scratch |
+
+⭐⭐ **min(distilled) +0.1838 vs max(scratch) +0.0830 — a 2.2× gap with NOTHING in
+between.** Every distilled arm is significantly grounded in the image; **three of
+the five scratch-trained arms are not grounded at all** (t 0.63–0.82).
+⇒ **HOW THE ENCODER IS INITIALISED DETERMINES WHETHER ITS LATENT IS GROUNDED IN
+THE INPUT AT ALL** — a cleaner separation than anything EIGHT objective terms
+produced (O1, O2, O7, O8, O9, O10, O11, PSG).
+
+⛔⛔ **AND THE RESIDUAL VERDICT IS NOW UNANIMOUS: 0 of 8 arms' drift-removed
+residual positively carries the action** (t > 2). The single arm at |t| > 2 is
+`splitfrz10k` at **t −2.17** — the action makes the residual prediction *worse*, a
+negative outlier and NOT a lead. ⇒ **E-DEC-40 generalises across the whole arm
+population: no objective can recover action information from Δz, because it is not
+there in ANY arm we have.**
+
+⚠️ **WHAT THIS DOES *NOT* SHOW.** Groundedness does **NOT** predict scene content:
+`ro128p30k` has the LOWEST groundedness (+0.0116, not significant) yet carries MORE
+content than `rdw8p30k` (+0.0108 vs −0.0405), whose groundedness is 7× higher. The
+strong hypothesis — *"pixel-groundedness predicts content-carrying"* — is **dead,
+killed by its own third data point**. A content sweep over the same 8 arms is
+running to test whether a weaker relation survives.
+
+⚠️ **Ego explains nothing anywhere** (−0.0389 … +0.0339, |t| ≤ 2.32), so the
+latent is not ego-dominated in any arm — which also kills the ego-compensation fix.
+
 | E-DEC-40 | ⭐⭐⭐⭐ **WHAT IS THE LATENT TRANSITION Δz? — the fact that explains EVERY negative in this campaign** | ⛔⛔ **MEASURED: Δz IS THE LATENT'S OWN DRIFT. 64 % predictable from `z_t` ALONE (t 65.6). The action and the scene change together add +0.0021 — nothing.** | `…/raw/deltaz_top8.json`
 
 `rdw8p30k`, 20 lead-matched held-out clips, 1,920 rows, k=4. NONLINEAR RFF+ridge,
