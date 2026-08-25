@@ -13,6 +13,30 @@
 # ⇒ The fix is not vigilance. It is the Monitor rule applied honestly: *if this
 # box went idle right now, would my filter emit anything?* Now it does.
 #
+# ⛔⛔ THE ALLOW-LIST DEFECT, FIXED 2026-08-25. The first version matched a
+# HARDCODED LIST of probe names (egodom|deltaz|actchan|...). Two new probes —
+# `confound.py` and `undershoot.py` — were therefore INVISIBLE to it, and the
+# sentinel reported IDLE-DEV while `confound.py` was running with 2 GB resident.
+# ⚠️ A WATCHDOG WITH AN ALLOW-LIST GOES BLIND TO EXACTLY THE WORK THAT IS NEWEST,
+# which is the work most likely to need watching. It now matches ANY python
+# running a .py out of the scratchpad, so a probe added tomorrow is covered
+# without editing the sentinel. Same family as an absence-claim probed at ONE
+# location: the filter answered "is one of THESE running?", never "is anything
+# running?".
+# ⚠️ AND THE FIRST FIX WAS WRONG TOO, caught by SELF-TESTING it rather than
+# assuming: I matched 'scratchpad.*\.py', but the probes are launched after a
+# `cd` into the scratchpad, so the word never appears in the CommandLine — the
+# pattern saw ZERO while a 1.9 GB job was running. The working match is the VENV
+# (`venvs	anitad`) plus a `.py`, which is what every probe actually shares.
+# ⇒ A WATCHDOG MUST BE TESTED AGAINST A KNOWN-RUNNING JOB. "It looks right" is
+# how the first version shipped — and the SECOND fix was wrong too
+# (`venvs..tanitad` needs TWO characters where the path has one backslash), which
+# only a THIRD self-test caught. Candidates were finally scored against the live
+# process: 'venvs.tanitad.*\.py' -> 2, 'venvs\tanitad.*\.py' -> 0.
+# THREE WRONG PATTERNS IN A ROW, EACH OF WHICH "LOOKED RIGHT". The lesson is not
+# about regex: A MONITOR'S FILTER IS ITSELF A MEASUREMENT AND NEEDS A POSITIVE
+# CONTROL, exactly like every probe panel in this campaign.
+#
 # Emits:
 #   ZZIDLE-THOR ...   no trainer process on Thor
 #   ZZIDLE-DEV ...    no probe process on the dev box
@@ -27,7 +51,7 @@ LAST=""
 while true; do
   T=$(ssh -n -o ConnectTimeout=20 tanitad-thor-wifi \
         'ps -eo args | grep -c "[t]rain_v6_staged"' 2>/dev/null | tr -d '\r')
-  D=$($PS -NoProfile -Command "(Get-CimInstance Win32_Process -Filter \"Name='python.exe'\" | Where-Object { \$_.CommandLine -match 'egodom|deltaz|actchan|physics|idm_oracle|rangeprobe|spatialenv|envpred' } | Measure-Object).Count" 2>/dev/null | tr -d '\r')
+  D=$($PS -NoProfile -Command "(Get-CimInstance Win32_Process -Filter \"Name='python.exe'\" | Where-Object { \$_.CommandLine -match 'venvs.tanitad.*\.py' } | Measure-Object).Count" 2>/dev/null | tr -d '\r')
   T=${T:-0}; D=${D:-0}
   STATE="T${T}D${D}"
   if [ "$T" = "0" ] && [ "$D" = "0" ]; then

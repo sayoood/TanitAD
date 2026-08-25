@@ -8751,3 +8751,32 @@ content, less drift-dominated transitions (E-DEC-45) — **and the two largest r
 action responses.** No trade. The trade was my metric, not the models.
 ⚠️ All responses remain tiny in absolute terms (≤ 3 % of a latent nudge), so this
 is a better-ordered set of failures, not a capability.
+
+## C158 ⚠️ — THE IDLE SENTINEL WAS BLIND TO ITS NEWEST JOBS, AND I NEEDED THREE SELF-TESTS TO FIX ITS FILTER (2026-08-25)
+
+**What it reported.** `ZZIDLE-DEV` repeatedly while `confound.py` was running with
+**1.9 GB resident**. I acted on those alarms by launching more work — harmless
+here, but I also **told the PI the box was idle when it was not.**
+
+**The defect.** The sentinel matched a **hardcoded list of probe names**
+(`egodom|deltaz|actchan|physics|idm_oracle|rangeprobe|spatialenv|envpred`). Two
+probes written after it — `confound.py`, `undershoot.py` — were invisible to it.
+⇒ **A WATCHDOG WITH AN ALLOW-LIST GOES BLIND TO EXACTLY THE WORK THAT IS NEWEST**,
+which is the work most likely to need watching. Its filter answered *"is one of
+THESE running?"* and I read it as *"is ANYTHING running?"* — the same wrong-scope
+shape as an absence-claim probed at one location.
+
+**And the fix took three attempts, each of which looked right:**
+
+| attempt | pattern | matched (live job present) |
+|---|---|---|
+| 1 | hardcoded name list | 0 for new probes |
+| 2 | `scratchpad.*\.py` | **0** — probes are launched after a `cd`, so the word never appears in the CommandLine |
+| 3 | `venvs..tanitad.*\.py` | **0** — two wildcards where the path has one backslash |
+| ✅ 4 | `venvs.tanitad.*\.py` | **2** — scored against the live process |
+
+⭐ **THE LESSON IS NOT ABOUT REGEX. A MONITOR'S FILTER IS ITSELF A MEASUREMENT AND
+NEEDS A POSITIVE CONTROL** — exactly what every probe panel in this campaign
+carries and what I shipped a watchdog three times without. ⇒ **Before arming a
+monitor, run its filter against a job you KNOW is running and check the count is
+non-zero.** "It looks right" is how versions 1, 2 and 3 shipped.
