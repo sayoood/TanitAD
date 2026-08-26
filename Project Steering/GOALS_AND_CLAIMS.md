@@ -99,6 +99,61 @@ floor lives INSIDE the loss. Pre-registered with four outcomes in
 ⭐⭐ **THE SPLIT ACROSS ARMS IS THE HEADLINE.** `splitp30k` (frozen distilled): `n_agents` from `z_t` **+0.3864** — far the richest — but its predictor **ADDS NOTHING**, delta vs `z_t` of −0.0008 / −0.0320 / −0.0158 at k=1/3/6, all NEGATIVE (t −3.69 / −5.62 / −6.26), and at k=6 `lead_closing` degrades to −0.0747 (t −2.11). `rdw8p30k` (trained): content only +0.0777 but the predictor **adds substantially**. ⇒ **the frozen arm CARRIES the environment and does not PREDICT it; the trained arm PREDICTS change and carries less of it.** E-DEC-20's dissociation in a new form ⇒ **mandate (2) — environment in BOTH encoder and predictor — is NOT yet satisfied by any single arm.**
 
 ⚠️ **FOUR BOUNDS.** (1) **ẑ also beats the encoded-future CEILING**, which is anomalous. Two explanations and this panel cannot separate them: the rollout is **ACTION-CONDITIONED**, so ẑ carries the ego's commanded motion that a single encoded frame lacks — *or* it is temporal **smoothing** of a noisy target. **An action-shuffled control would separate them and has not been run.** (2) All absolute R² are **small** (0.03–0.15); `lead_closing` +0.0019 is barely above zero. (3) **IN-SAMPLE** until the held-out corpus lands. (4) k=1 is **underpowered by construction** — the ceiling itself is barely above `z_t` there (+0.0123, t 0.75), i.e. the scene has not changed enough for prediction to add anything; only k=3–6 carry headroom. |
+| E-DEC-58 | ⭐⭐⭐ **THE PI'S REFRAME IS RIGHT AND MY INSTANTIATION OF IT WAS WRONG — the label-derived geometric targets are too noisy to see a 0.4 s ego-motion effect, and the CLOSED FORM failing its own null is the proof** | **MEASURED**, 76 held-out clips, 5,747 rows, K-fold fit / per-clip score, matched null (44 draws) through the identical code path. | `…/raw/egomotion_geom.json`
+
+**PI directive:** *"why are you using curvature, use just the values: yaw rate, long
+acc and v0 as measured state not an action. v0 is required to predict the state of
+the environment…"* ⇒ Two corrections follow, and both are right:
+
+1. ⛔ **The channel was badly parameterised.** `steer = atan(L·κ)` with **L a legacy
+   constant 2.9 m for every clip** — a bicycle-model proxy — and **it carries no
+   speed**, while the quantity that actually moves the image is `ω = v·κ`.
+   ⇒ **IMPLEMENTED** as `--cond-param omega_accel_v` (7 tests). The conversion is
+   **exact and the wheelbase cancels**, so no re-cache and **no parity break**.
+   ⛔ The incumbent remains the DEFAULT — the parameterisation changes the
+   predictor's input distribution, so every banked checkpoint depends on it.
+2. ⛔⛔ **We tested EGO-MOTION-INVARIANT targets.** E-DEC-48b asked whether the
+   action predicts `n_agents` / `occ_center` / `n_free_cols` — **counting
+   descriptors. The number of agents does not change because you yaw.**
+
+**The geometric panel** (targets ego motion actually moves — bearings rotate with
+ω, ranges close with v):
+
+| target | scene (control) | ego `[ω,a,v]` | closed form | **ego marginal** |
+|---|---|---|---|---|
+| **Δbearing** | 4.31 | 1.41 | **2.54** | **+2.56** |
+| Δrange | 4.91 | 0.98 | 1.81 | −0.66 |
+| bearing@t+k | **19.76** | −1.44 | −1.35 | −0.05 |
+| range@t+k | **19.79** | 2.52 | 3.52 | −2.65 |
+
+⛔ **THE MATCHED NULL (44 draws, same K-fold path, Gaussian inputs): p95 2.86,
+MAX 4.15.** ⇒ Δbearing's +2.56 reads **P = 0.068 — INSIDE the null.** So does the
+closed form, and so does range@t+k's −2.65.
+
+⭐⭐⭐ **THE TELL IS THE CLOSED FORM, AND IT DIAGNOSES THE PANEL RATHER THAN THE
+PHYSICS.** A bearing rotating by `ω·k·dt` is a **physical certainty**. If pure
+kinematics cannot clear the null, **the defect is the TARGET, not the channel and
+not the hypothesis.** *"Mean bearing of detected agents"* churns as detections
+appear and disappear between frames; over 0.4 s that label noise swamps the real
+rotation. ⚠️ Meanwhile the panel's own controls reach **t 19.8** on the level
+targets — **it detects real effects fine.**
+
+⇒ **THE RIGHT TARGET IS NOT A LABEL-DERIVED SUMMARY AT ALL.** It is the **latent or
+the image itself** — optical flow, or the latent's own change — which ego motion
+moves by construction and which does not churn. **That is the next experiment, and
+it is the first one in this thread aimed at a target that can actually carry the
+effect.**
+
+⚠️ **A COST ERROR WORTH RECORDING.** Moving the panels from 20 to 129 clips to cure
+underpowering, I priced it at **6.5×**. Leave-one-CLIP-out is **O(n²)** — n fits,
+each on n−1 clips — so it is **42×**. Three jobs burned ~90 k CPU-seconds and
+produced nothing. ⇒ Fixed by **K-fold fit + per-clip score** (`panel_kfold.py`):
+the t-test needs per-CLIP scores, but **the FIT does not have to be per-clip** —
+10 fits instead of 129, the same 129 scores, clip-disjointness preserved. **13×
+cheaper, same statistic.** ⚠️ It is a different estimator, so its null was
+re-measured under the identical scheme — which is why the 4.15 above is not the
+3.49 of the leave-one-out panels.
+
 | E-DEC-57 | ⛔⛔⛔⛔ **OUR "ACTION" CHANNEL IS NOT A COMMAND — IT IS THE EGO'S MEASURED MOTION IN DIFFERENT UNITS. The closed form reproduces the measured yaw-rate at r = 0.9988.** | **MEASURED**, 1,900 frames, 20 held-out clips, CPU, no model. **Raised by the PI**, who pointed out that steering *must* correspond to yaw-rate. | `…/raw/kinematic_identity.json`
 
 **The channels, from `physicalai.py:604-632` (read from source):**

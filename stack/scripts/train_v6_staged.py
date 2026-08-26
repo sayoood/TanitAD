@@ -154,6 +154,21 @@ S2_CANONICAL_LABELS_REL = (
     "TanitAD Research Lab/Data Engineering/Implementation/incoming/"
     "2026-08-16-s2-v1-labels/review/labels_v2")
 
+#: ⭐ PI DIRECTIVE 2026-08-26 — the conditioning parameterisation.
+#: ``"steer_accel_v"``  the INCUMBENT: [atan(L*kappa), a_long, v/SPEED_SCALE].
+#: ``"omega_accel_v"``  the MEASURED EGO STATE: [yaw_rate, a_long, v/SPEED_SCALE].
+#: ⛔ Selected by ``--cond-param``; the incumbent stays the DEFAULT because the
+#: parameterisation changes the predictor's input distribution, so every existing
+#: checkpoint and every cross-arm comparison depends on it not moving silently.
+COND_EGO_STATE = "omega_accel_v"
+COND_INCUMBENT = "steer_accel_v"
+#: the LEGACY constant `physicalai.py` uses for every clip in the default regime.
+#: ⚠️ It CANCELS in the conversion below — see the docstring — so this value does
+#: not enter the result. It is named only because the inverse must use the SAME
+#: wheelbase the forward transform used.
+_COND_WHEELBASE_M = 2.9
+
+
 __all__ = [
     "V6LossWeights", "STAGE_PRECONDITION", "STAGE_GATE_SPEC",
     "STAGE_INVALIDATES", "STAGE_INVALIDATION_MECHANISM",
@@ -2684,7 +2699,8 @@ def v6_loss_step(stack: V6Stack, batch: dict, *, stage: str,
                  t5_w_kappa: float = 1.0,
                  o11_k: int = 6, o11_tau: float = 1.0,
                  o11_negs: int = 1,
-                 o13_k: int = 4, o13_seed: int = 1300
+                 o13_k: int = 4, o13_seed: int = 1300,
+                 cond_param: str = COND_INCUMBENT
                  ) -> dict:
     """One batch of the v6 staged objective.
 
@@ -2747,7 +2763,7 @@ def v6_loss_step(stack: V6Stack, batch: dict, *, stage: str,
 
     # ---- the shared forward ------------------------------------------------
     out = stack.forward(frames=batch["frames"], actions=_lift3(
-        batch["actions2"], batch["v0"]), v0=batch["v0"],
+        batch["actions2"], batch["v0"], cond_param), v0=batch["v0"],
         own_frames_tac=batch.get("own_frames_tac"),
         own_frames_str=batch.get("own_frames_str"))
     states = out["z_op_win"]                                   # [B, W, d_op]
@@ -2803,8 +2819,8 @@ def v6_loss_step(stack: V6Stack, batch: dict, *, stage: str,
         if len(z_true) < k_roll:
             raise ValueError(f"rollout needs z_true_steps >= o5_k={o5_k}, "
                              f"got {len(z_true)}")
-        aw3, fa3 = _lift3(batch["actions2"], batch["v0"]), _lift3(
-            batch["future_actions2"], batch["v0"])
+        aw3, fa3 = (_lift3(batch["actions2"], batch["v0"], cond_param),
+                    _lift3(batch["future_actions2"], batch["v0"], cond_param))
         # ⛔ The rollout's checkpointing is NOT the encoder's. It used to read
         # `cfg.encoder.grad_checkpoint`, which coupled two unrelated decisions
         # to one flag: the k=60 roll NEEDS checkpointing (it fixed a MEASURED
@@ -3157,13 +3173,47 @@ def v6_loss_step(stack: V6Stack, batch: dict, *, stage: str,
             **{k: v for k, v in terms.items()}}
 
 
-def _lift3(a2: Tensor, v0: Tensor) -> Tensor:
-    """2-channel (steer, accel) -> the 3-channel speed-append format the
-    predictor trains with. The ``canary_rollout`` / ``lift_actions3`` pattern
-    (SPEED_SCALE contract), inlined for a single tensor so this module does not
-    depend on the P8 trainer just to append a column."""
+def _lift3(a2: Tensor, v0: Tensor, cond_param: str = COND_INCUMBENT) -> Tensor:
+    """2-channel (steer, accel) -> the 3-channel format the predictor trains with.
+
+    ⭐⭐ WHY A SECOND PARAMETERISATION EXISTS (PI, 2026-08-26): *"why are you using
+    curvature, use just the values: yaw rate, long acc and v0 as measured state not
+    an action."* Two defects in the incumbent, both real:
+
+    1. ``steer = atan(L*kappa)`` is a BICYCLE-MODEL STEERING PROXY, and ``L`` is a
+       LEGACY CONSTANT 2.9 m applied to every clip in the default regime — a fake
+       per-clip constant baked into a quantity that only ever needed to be a
+       rotation rate.
+    2. ⛔ **``steer`` CONTAINS NO SPEED.** The geometrically meaningful quantity —
+       the one that determines how the image moves — is the YAW RATE
+       ``omega = v*kappa``. The incumbent forces the predictor to reconstruct that
+       PRODUCT from two separate channels through a FiLM bottleneck.
+
+    ⭐ THE CONVERSION IS EXACT AND THE WHEELBASE CANCELS:
+
+        steer = atan(L*kappa)  =>  tan(steer) = L*kappa
+        =>  v * tan(steer) / L  =  v * kappa  =  omega          [L cancels]
+
+    so no data-pipeline change, no re-cache, and **no parity break** — the same
+    stored ``actions`` tensor yields the measured yaw rate identically. MEASURED
+    against the independent quaternion-derived yaw rate: **r = 0.9988**
+    (`kinematic_identity.json`).
+
+    ⚠️ ``a_long`` and ``v`` are passed through unchanged; only channel 0 moves.
+    ⚠️ These are MEASURED EGO STATE, not commands. Nothing here claims otherwise,
+    and E-DEC-57 retracted the claims that did.
+    """
     from tanitad.models.flagship_v15 import SPEED_SCALE
     v = (v0.to(a2.dtype) / SPEED_SCALE)[:, None, None]
+    if cond_param == COND_EGO_STATE:
+        # channel 0: steer -> omega = v * tan(steer) / L  (L cancels the forward
+        # transform exactly). v0 is in m/s here, NOT the SPEED_SCALE-normalised v.
+        omega = (v0.to(a2.dtype)[:, None] * torch.tan(a2[..., 0])
+                 / _COND_WHEELBASE_M)[..., None]
+        a2 = torch.cat([omega, a2[..., 1:]], dim=-1)
+    elif cond_param != COND_INCUMBENT:
+        raise ValueError(f"unknown --cond-param {cond_param!r}; expected "
+                         f"{COND_INCUMBENT!r} or {COND_EGO_STATE!r}")
     return torch.cat([a2, v.expand(-1, a2.shape[1], -1)], dim=-1)
 
 
@@ -4002,6 +4052,7 @@ def dry_run(a, stack: V6Stack | None = None) -> dict:
                          o11_negs=int(getattr(a, "o11_negs", 1)),
                          o13_k=int(getattr(a, "o13_k", 4)),
                          o13_seed=int(getattr(a, "o13_seed", 1300)),
+                         cond_param=str(getattr(a, "cond_param", COND_INCUMBENT)),
                          o3_mode=a.o3_mode,
                          o3_blocks=a.o3_blocks,
                          o3_block_hw=(a.o3_block_h, a.o3_block_w),
@@ -5029,6 +5080,7 @@ def train(a) -> dict:
                              o11_negs=int(getattr(a, 'o11_negs', 1)),
                              o13_k=int(getattr(a, 'o13_k', 4)),
                              o13_seed=int(getattr(a, 'o13_seed', 1300)),
+                             cond_param=str(getattr(a, 'cond_param', COND_INCUMBENT)),
                              o3_mode=a.o3_mode, o3_blocks=a.o3_blocks,
                              o3_block_hw=(a.o3_block_h, a.o3_block_w),
                              o3_band_rows=a.o3_band_rows,
@@ -6283,6 +6335,18 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--o4-floor", type=float, default=0.25)
     ap.add_argument("--w-o5", type=float, default=1.0)
     # ---- O11-CF: the objective that CANNOT be minimised action-blind -------
+    ap.add_argument("--cond-param", type=str, default=COND_INCUMBENT,
+                    choices=[COND_INCUMBENT, COND_EGO_STATE],
+                    help="conditioning parameterisation. DEFAULT is the incumbent "
+                         "[atan(L*kappa), a_long, v]. 'omega_accel_v' feeds the "
+                         "MEASURED EGO STATE [yaw_rate, a_long, v] instead (PI "
+                         "directive 2026-08-26): steer is a bicycle-model proxy "
+                         "with a LEGACY 2.9 m wheelbase and carries NO SPEED, "
+                         "while omega = v*kappa is what actually determines how "
+                         "the image moves. The conversion is EXACT (the wheelbase "
+                         "cancels), so no re-cache and no parity break. "
+                         "⛔ It DOES change the predictor's input distribution -- "
+                         "never compare arms across this flag.")
     ap.add_argument("--w-o13-ego", type=float, default=0.0,
                     help="O13-EGO: predict delta(speed, yaw) at t+k from the "
                          "PREDICTED LATENT ALONE, through a FROZEN random "
