@@ -12,7 +12,7 @@ that fixes the pairing — and **neither of them bounds the statistic's TAIL.**
 noise of the same shape. A random input carries nothing, so every t it produces is
 a draw from the null. Over **104 independent draws** at two column widths:
 
-        |t| median 0.61 · p90 1.96 · p95 2.57 · p99 2.93 · MAX 3.49
+        |t| median 0.61 · p90 1.98 · p95 2.57 · p99 2.93 · MAX 3.49
 
 ⇒ **THE EFFECTIVE BAR FOR THIS PANEL FAMILY IS |t| ≈ 2.9, NOT 2.0.**
 

@@ -192,7 +192,7 @@ I flagged `action → Δspeed` (t 2.56) as *"own null not measured"* rather than
 assuming it safe. **The dev box was idle, so I measured it** — and my stated reason
 for expecting it to be safe was wrong.
 
-**104 independent null draws** (Gaussian input, identical panel): p90 **1.96**, p95
+**104 independent null draws** (Gaussian input, identical panel): p90 **1.98**, p95
 **2.57**, p99 **2.93**, **MAX 3.49**.
 
 ⛔ **A random 3-vector reached 3.49 — HIGHER than a random 2048-d latent (2.93).**

@@ -170,6 +170,32 @@ def main() -> int:
         rep["arms"][arm]["identity_control_r"] = (
             round(float(ident_r), 4) if ident_r is not None else None)
         g = rep["arms"][arm]["targets"]
+        # ⛔⛔ THIS BLOCK IS A REWRITE. The original classified arms from `t > 2.0`
+        # with NO NULL BEHIND THE THRESHOLD, and its `else` branch asserted "the
+        # latent is a pure SCENE-APPEARANCE representation with NO ego state".
+        # It emitted that verdict TWICE against tables that did not support it:
+        #   * `splitp30k` — Δspeed t 2.05, i.e. CHANGES-yes/levels-no, a cell the
+        #     three-branch tree had no slot for, so the default fired and asserted
+        #     the OPPOSITE of the table two lines above it (C160);
+        #   * `postrain30k` — where, with a measured null reaching 3.49, ABSENCE is
+        #     not established either, so "NO ego state" was unsupportable in a
+        #     second, independent way.
+        # ⇒ Two fixes: (a) every cell is enumerated and the default is named
+        # UNCLASSIFIED, never a claim about the world; (b) significance is decided
+        # against the MEASURED null (taniteval/taniteval/null_calibration.py,
+        # E-DEC-54/56: 104 draws, p95 2.57, max 3.49), so `t ≈ 2` can never again
+        # be read as a finding.
+        try:
+            from taniteval.null_calibration import describe, verdict as nullv
+        except ImportError:                       # probe must run without the repo
+            nullv, describe = None, lambda: "null calibration UNAVAILABLE"
+
+        def sig(t):
+            """True only if t clears the measured null outright."""
+            if nullv is None:
+                return abs(float(t)) > 3.49       # the banked max, hardcoded fallback
+            return nullv(float(t))[0] == "SURVIVES"
+
         if ident_r is None or ident_r < 0.90:
             v = (f"NO VERDICT - the IDENTITY control reads {ident_r}, not ~1.0. The "
                  f"rig cannot be trusted; fix it before reading anything below it.")
@@ -178,19 +204,21 @@ def main() -> int:
                      g["yawrate_t (LEVEL)"]["z_t (ENCODED)"]["t"])
             ch = max(g["dv_4tick (CHANGE)"]["z_t (ENCODED)"]["t"],
                      g["dyaw_4tick (CHANGE)"]["z_t (ENCODED)"]["t"])
-            if lv > 2.0 and ch <= 2.0:
-                v = ("LEVELS YES, CHANGES NO - the latent knows the ego's STATE but "
-                     "not its DYNAMICS. The fix is a dynamics objective on an ego "
-                     "subspace THAT ALREADY EXISTS, and action-conditioning has "
-                     "something real to act on.")
-            elif lv > 2.0:
-                v = ("LEVELS AND CHANGES BOTH PRESENT - ego state is represented; "
-                     "action-conditioning's failure is NOT a missing-variable problem.")
+            L, C = sig(lv), sig(ch)
+            if L and C:
+                v = "LEVELS AND CHANGES BOTH ABOVE THE NULL - ego state is represented."
+            elif L:
+                v = ("LEVELS ABOVE THE NULL, CHANGES NOT - the latent carries ego "
+                     "STATE but not its DYNAMICS.")
+            elif C:
+                v = ("CHANGES ABOVE THE NULL, LEVELS NOT - unusual; report the cells, "
+                     "and check the levels are not simply low-variance here.")
             else:
-                v = ("NEITHER - the latent is a pure SCENE-APPEARANCE representation "
-                     "with NO ego state. Conditioning it on an action asks a variable "
-                     "that does not encode ego motion to move in response to an ego "
-                     "command. THE LATENT NEEDS AN EXPLICIT EGO COMPONENT.")
+                # ⭐ THE DEFAULT IS NOT A CLAIM. "No cell above the null" is a
+                # statement about THIS PANEL's power, not about the latent.
+                v = (f"UNCLASSIFIED - no cell clears the measured null "
+                     f"(levels max t {lv:+.2f}, changes max t {ch:+.2f}). "
+                     f"This is NOT evidence of absence: {describe()}.")
         rep["arms"][arm]["verdict"] = v
         if ident_r is not None:
             print(f"  IDENTITY control r = {ident_r:.4f}")
