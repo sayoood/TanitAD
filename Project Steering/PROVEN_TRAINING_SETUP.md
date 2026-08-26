@@ -148,7 +148,13 @@ criterion at step 20,400).
 
 ⭐⭐⭐ **Three facts compose into the answer:**
 
-1. **The action determines the ego's own future — ⚠️ ON Δyaw ONLY (t 4.57).**
+1. ⛔⛔ **FULLY RETRACTED (E-DEC-57).** The Δyaw relation is a **kinematic
+   identity**: `v·tan(steer)/L` reproduces the measured yaw-rate at **r = 0.9988**,
+   so the corpus's "steering action" is the measured yaw-rate re-parameterised.
+   ⇒ **The programme has NO surviving evidence that its action channel carries
+   information about the ego's future.** ⚠️ **And therefore no objective could ever
+   have exploited it** — which is why ten of them degenerated rather than failed
+   gracefully.
    ⛔ Δspeed (t 2.56) **RETRACTED by E-DEC-56** — P(null ≥ 2.56) = 0.067 against a
    104-draw measured null whose max is **3.49**.
    **Echo-cleared:** the corpus's `accel` is the dataset's own measured `ax`
@@ -264,7 +270,8 @@ failures, and E-DEC-48b explains why as a class rather than one at a time.
 | Distilled init drives representation (`n_agents` +0.1220 > DINOv3 +0.0998) | **MEASURED** |
 | Δz is 64 % drift; residual is noise in 8/8 arms | **MEASURED** |
 | The action adds ≤ 0 to predicting the future SCENE | **MEASURED** (control t 8.5–14.3) |
-| The action determines the ego's own **Δyaw** | **MEASURED** (t 4.57, P(null) = 0.000) |
+| The action determines the ego's own **Δyaw** | ⛔ **RETRACTED (E-DEC-57)** — a kinematic identity, closed-form r 0.9988 |
+| **Our `action` channel is a genuine control input** | ⛔ **REFUTED — it is the ego's measured motion in other units.** Action-conditioning was never tested in the sense the literature means it. |
 | The action determines the ego's own Δspeed | ⛔ **RETRACTED** — t 2.56, P(null) = 0.067 (E-DEC-56) |
 | The encoder carries ego LEVELS but not CHANGES | **MEASURED** (identity control 23.74) |
 | A head on `(z_t, action)` would be an ACTION ECHO | **MEASURED** (latent adds −0.0065 / −0.0153) |

@@ -99,6 +99,82 @@ floor lives INSIDE the loss. Pre-registered with four outcomes in
 ⭐⭐ **THE SPLIT ACROSS ARMS IS THE HEADLINE.** `splitp30k` (frozen distilled): `n_agents` from `z_t` **+0.3864** — far the richest — but its predictor **ADDS NOTHING**, delta vs `z_t` of −0.0008 / −0.0320 / −0.0158 at k=1/3/6, all NEGATIVE (t −3.69 / −5.62 / −6.26), and at k=6 `lead_closing` degrades to −0.0747 (t −2.11). `rdw8p30k` (trained): content only +0.0777 but the predictor **adds substantially**. ⇒ **the frozen arm CARRIES the environment and does not PREDICT it; the trained arm PREDICTS change and carries less of it.** E-DEC-20's dissociation in a new form ⇒ **mandate (2) — environment in BOTH encoder and predictor — is NOT yet satisfied by any single arm.**
 
 ⚠️ **FOUR BOUNDS.** (1) **ẑ also beats the encoded-future CEILING**, which is anomalous. Two explanations and this panel cannot separate them: the rollout is **ACTION-CONDITIONED**, so ẑ carries the ego's commanded motion that a single encoded frame lacks — *or* it is temporal **smoothing** of a noisy target. **An action-shuffled control would separate them and has not been run.** (2) All absolute R² are **small** (0.03–0.15); `lead_closing` +0.0019 is barely above zero. (3) **IN-SAMPLE** until the held-out corpus lands. (4) k=1 is **underpowered by construction** — the ceiling itself is barely above `z_t` there (+0.0123, t 0.75), i.e. the scene has not changed enough for prediction to add anything; only k=3–6 carry headroom. |
+| E-DEC-57 | ⛔⛔⛔⛔ **OUR "ACTION" CHANNEL IS NOT A COMMAND — IT IS THE EGO'S MEASURED MOTION IN DIFFERENT UNITS. The closed form reproduces the measured yaw-rate at r = 0.9988.** | **MEASURED**, 1,900 frames, 20 held-out clips, CPU, no model. **Raised by the PI**, who pointed out that steering *must* correspond to yaw-rate. | `…/raw/kinematic_identity.json`
+
+**The channels, from `physicalai.py:604-632` (read from source):**
+
+```
+actions[:,0] = steer = atan(wheelbase · curvature)   ← from the `curvature` channel
+actions[:,1] = accel = ax                            ← measured longitudinal accel
+poses[:,2]   = yaw   = quaternion_yaw(qx,qy,qz,qw)   ← a different sensor path
+poses[:,3]   = v     = hypot(vx, vy)
+```
+
+Kinematically `yaw_rate = v·κ` and `κ = tan(steer)/L`, so `Δyaw(t→t+k) ≈
+v_t·tan(steer_t)/L·k·dt` needs **no learning at all**. The test compares that
+closed form against the learned probe:
+
+| relation | r |
+|---|---|
+| `steer_t` vs **measured** yaw-rate | +0.7826 |
+| **closed form `v·tan(steer)/L` vs measured yaw-rate** | **+0.9988** |
+| `steer_t` vs Δyaw(t→t+4) | +0.7967 |
+| **closed form vs Δyaw(t→t+4)** | **+0.9923** |
+| the LEARNED probe (E-DEC-50) | **+0.5638** |
+
+⛔ **r = 0.9988 is not "largely kinematic" — it is an IDENTITY TO THREE DECIMALS.**
+The corpus's `curvature` is the measured yaw-rate divided by speed; `steer` is a
+re-parameterisation of it. ⇒ **The learned probe was a LOSSY estimator (0.5638) of
+a relation computable exactly with no data (0.9923).**
+
+⭐⭐⭐ **WHAT THIS RETRACTS — the last two surviving ego claims:**
+
+| claim | was | now |
+|---|---|---|
+| `action → Δyaw` | t 4.57, "MEASURED" | ⛔ **THE IDENTITY, recovered imperfectly. Not a finding.** |
+| `action → yaw-rate` LEVEL | t 5.09, "MEASURED" | ⛔ **A TAUTOLOGY** (r 0.9988 closed-form) |
+| `action → Δspeed` | t 2.56 | already retracted (E-DEC-56, inside the null) |
+
+⇒ ⛔⛔ **THE PROGRAMME HAS **ZERO** SURVIVING EVIDENCE THAT ITS ACTION CHANNEL
+CARRIES INFORMATION ABOUT THE EGO'S FUTURE beyond an algebraic restatement of
+measurements it already holds.**
+
+⭐⭐⭐ **AND THIS IS THE DIAGNOSIS THE WHOLE CAMPAIGN WAS MISSING — it is more
+actionable than the one it replaces.** Ten objective terms tried to make the
+transition depend on "the action". But the action is a **deterministic function of
+the ego motion the model can already observe**, not a control input whose
+consequences must be learned. ⇒ **Forcing dependence on it could only ever produce
+degeneracy** (O11's separation-without-accuracy, O13's +192.4 %), because there is
+no *causal* content to exploit — only a units conversion.
+
+⇒ **"Action-conditioning" was NEVER TESTED in this programme, in the sense the
+literature means it.** ActSWM, Genie, GAIA condition on a **command** (a key press,
+a steering-wheel angle, a pedal). We conditioned on the realised trajectory's own
+curvature. That is not a weaker version of the same experiment — **it is a
+different experiment.**
+
+⚠️ **WHAT E-DEC-48b STILL MEANS, AND IT SURVIVES INTACT** — arguably strengthened.
+It showed the "action" adds nothing to predicting the future SCENE. Under the
+corrected reading that becomes: **the ego's own realised motion does not predict how
+other traffic evolves.** Same conclusion, cleaner statement, and the scene→action
+causality argument is untouched.
+
+⭐ **AND THE INGEST ALREADY SAID SO — I read past it.** `physicalai.py:12` labels
+the channel a **"road-wheel angle PROXY"**, and `curvature` is a RAW PhysicalAI
+egomotion column (`col("curvature")`, listed at line 10 beside ax/ay/az), not
+something we derived. **The code never claimed it was a command; the programme read
+it as one.** ⇒ Same family as every scope error in `CLAUDE.md`: a value that is
+correct in its own frame, quoted in a frame where it means something else.
+
+⚠️ **PROVENANCE STILL OPEN, AND NOT ASSUMED:** r = 0.9988 shows `curvature` is
+*equivalent to* yaw-rate/speed; it does not prove the dataset *derived* it that way.
+The dataset card should be checked before that mechanism is asserted. **The
+consequence for us does not depend on which it is.**
+
+⇒ **THE FIX IS NAMED, AND IT IS NOT ONLY INTERVENTIONAL DATA:** we need a **genuine
+control input**. comma2k19 carries CAN steering-wheel angle; PhysicalAI's derived
+`curvature` does not. **A PI decision, and cheaper than a simulator.**
+
 | E-DEC-56 | ⭐⭐⭐⭐⭐ **THE CALIBRATION CONSTANT: this panel family's significance bar is \|t\| ≈ 2.9, NOT 2.0 — and it is now EMPIRICAL** | **MEASURED, 104 INDEPENDENT null draws** across two column dimensionalities: p90 **1.98**, p95 **2.57**, p99 **2.93**, **MAX 3.49**. | `…/raw/egonull_measured.json`, `…/raw/egonull_d3.json`
 
 Same panel, same clips, same real targets, same RFF+ridge / clip-disjoint λ /
@@ -403,7 +479,13 @@ rig is valid before anything below it is read.
 | **Δyaw** (CHANGE) | +0.0636 (0.98) ✗ | +0.0670 (1.06) ✗ | **+0.5638 (4.57)** |
 
 ⭐⭐⭐ **THE THREE FACTS THAT COMPOSE INTO THE ANSWER:**
-1. **The action determines the ego's own future — ⚠️ ON Δyaw ONLY (t 4.57).**
+1. ⛔⛔ **FULLY RETRACTED BY E-DEC-57.** This read *"the action determines the
+   ego's own future — on Δyaw (t 4.57)"*. **The relation is a KINEMATIC IDENTITY**:
+   the closed form `v·tan(steer)/L` reproduces the measured yaw-rate at **r =
+   0.9988**, so `steer` IS the measured yaw-rate in other units and the probe's
+   0.5638 was a lossy estimate of it. ⇒ **No surviving evidence that the action
+   channel carries ego information at all.** *(kept below as the record)*
+   ~~**The action determines the ego's own future — on Δyaw (t 4.57).**~~
    ⛔ **Δspeed (t 2.56) is RETRACTED by E-DEC-56**: the measured null for this panel
    reaches 3.49 and P(null ≥ 2.56) = **0.067**. The surviving channel is the
    **kinematic** one (steer → yaw-rate), so the physics reading is unchanged in
