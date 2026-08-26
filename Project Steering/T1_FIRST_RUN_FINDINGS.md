@@ -76,3 +76,56 @@ so it delivers:
 ⚠️ **Stated in advance so the partial result is not later presented as a full one**,
 and so the T1 comparison is not mistaken for the crossed cell's pre-registered T0
 criterion (drift < 0.45 **and** held-out `nrmse` ≤ 0.893), which it does not replace.
+
+
+---
+
+## 5. ⭐ UPDATE 20:15 — one gap CLOSED, one found to be DATA-BLOCKED
+
+### ✅ CLOSED: the anti-echo half of LONGITUDINAL
+
+`v0` now reaches the scorer and the gate returns a verdict instead of UNAVAILABLE:
+
+```
+anti_echo.status: OK
+holdv0        = LOSES_TO_HOLDV0
+copy_detector = CLEAN (echo_index 0.0000 vs GT 0.1455)
+```
+
+⭐ **Two substantive readings.** The longitudinal prediction is **worse than holding
+the current speed**, so the claim stays inadmissible under the 2026-08-16 condition
+— but the copy detector is **CLEAN**, so it is **not** the nav-echo failure. It
+predicts something real that loses to the trivial baseline. ⇒ **Inadmissible for a
+MEASURED reason now, not a missing input.**
+
+⚠️ The fix took **three hops** and only the first was obvious: write `v0` to the
+dump → register it in `_META_KEYS` (the dump's key space *is* the arm space, so it
+was enumerated as a prediction arm) → **forward it into the scorer's `win` dict,
+which is a WHITELIST, NOT A VIEW.** Third instance of that pattern today.
+
+### ⛔ DATA-BLOCKED: distance-keeping
+
+`build_lead_block.py` requires staged **`obstacle.offline`** parquet plus egomotion
+and a clip-order TSV. **Neither Thor nor the dev box holds any parquet source.** The
+only agent data available is `val130_agents.jsonl`, which covers the **non-parity**
+corpus and therefore cannot serve the parity run either.
+
+⇒ **This is a DATA-PROVISIONING blocker, not an engineering one**, and it is where I
+stop. ⚠️ **Distance-keeping is the other half of the family carrying 88.7 % of the
+oracle gap**, so it is worth the PI's attention: headway / time-gap / TTC are the
+only metrics that can see whether the arm keeps a safe distance rather than merely
+tracing the right shape.
+
+### What the armed parity run now delivers — revised
+
+| family | status |
+|---|---|
+| LONGITUDINAL — anti-echo | ✅ **now available** (hold-v0 comparison + copy detector) |
+| LONGITUDINAL — distance-keeping | ⛔ data-blocked (no `obstacle.offline`) |
+| LATERAL | ✅ available |
+| TACTICAL | ✅ available |
+| STRATEGIC | ⛔ needs map-derived option sets |
+| S-rate / lag | ✅ available |
+
+⇒ **Three of four families report, one half-family is data-blocked, one is a named
+work item.** Better than this morning, and honestly short of complete.
