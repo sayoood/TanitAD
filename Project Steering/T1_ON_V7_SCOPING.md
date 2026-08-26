@@ -104,3 +104,47 @@ until this adapter exists — regardless of how the crossed cell reads.
 ⚠️ **This is a bigger hole than the action-conditioning result.** That thread is
 closed and well-powered; this one is open and never attempted. ⇒ **Recommended as
 the next work item after the crossed cell reads**, ahead of any further T0 probe.
+
+
+---
+
+## 6. ⭐ EXECUTED 19:20 — the blockers are NAMED, and neither is corpus plumbing
+
+Rather than estimate, I ran `t1_eval.py` against a v7 checkpoint and recorded each
+failure in turn. **Three refusals, all clean, and the tool refused correctly every
+time** (it never ran on a mismatched model):
+
+| # | refusal | fix |
+|---|---|---|
+| 1 | `rollout mode needs --dump-dir` | pass one |
+| 2 | `rollout mode needs --head or --grounding-readout` | `--grounding-readout` — the mode that uses the model's OWN step readout, which §2b verified exists |
+| 3 | ⛔ **`ckpt has no 'model'+'grounding' keys — needs a flagship trunk checkpoint (v1/v4/v5f shape). Keys: ['config','opt','stack','step']`** | **the real one** |
+
+### The two actual blockers
+
+1. ⭐ **CHECKPOINT SHAPE (small).** `t1_eval` expects the flagship `'model'` +
+   `'grounding'` layout; a v7 ckpt ships **`'stack'`**. But `load_trunk_auto`
+   *already* loads exactly that shape — it is what every probe in this campaign
+   used. ⇒ **Route a `'stack'`-keyed checkpoint through `load_trunk_auto` and hand
+   T1 `stack.predictor_op` + `stack.step_readout_op`.** ~15 lines in the load path;
+   §2b proved the resulting objects satisfy T1's interface.
+
+2. ⛔ **GEOMETRY (the one I under-weighted).** The run printed
+   `[geometry] t1_eval: DEPLOYED (unchanged) - 256x256px, f_ref 266.00, **pinhole**`
+   while every v7 arm is **256×640, f_ref 305.58, cylindrical**. ⇒ **The geometry
+   must follow the CHECKPOINT, not t1_eval's default.** ⚠️ This is the
+   `CLAUDE.md` optics trap in eval form: *a correct formula quoted outside its
+   projection*. Left unfixed it would produce T1 numbers that look valid and are
+   computed in the wrong frame — **worse than a crash.**
+
+### What this changes
+
+⇒ **"Corpus plumbing, unknown cost" was wrong twice over.** The corpus was never the
+blocker; the checkpoint adapter is small; and the geometry is the item that actually
+needs care. ⚠️ **Estimating it twice produced two wrong answers; running it produced
+the list in ten minutes.**
+
+⛔ **I have NOT edited `t1_eval.py`.** It is the programme's primary eval instrument
+and the doctrine's T1 authority; a change to its load path and geometry handling
+should be a deliberate, reviewed edit rather than something appended to a probe
+session. **The scoping is done and the work is ready to start.**
