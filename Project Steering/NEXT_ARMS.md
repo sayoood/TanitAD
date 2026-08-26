@@ -1,86 +1,65 @@
-# The queue — so an idle box always has a next item
+# Next steps — ordered against the PI's staged plan
 
-⛔ WHY THIS FILE EXISTS. Twice in one day a box went idle because a job finished
-and NOTHING WAS QUEUED BEHIND IT. The idle sentinel makes that loud; this file
-makes it answerable in one step instead of requiring a fresh decision each time.
-Ordered, each with the MEASUREMENT that motivates it — never a guess.
+**Rewritten** 2026-08-26 after the PI restated the goal: *"find the architecture and
+training recipe for v7 and prepare the scaled training"*, and the sequence: **show the
+OPERATIVE capability first; in PARALLEL generate the tactical and strategic data (Data
+FlyWheel); then train the rest; then show the dominance of the hierarchical reasoning.**
 
-**Rewritten 2026-08-26 00:20.** ⚠️ **The previous version had rotted in the way
-this programme keeps rediscovering: its Thor item 2 was motivated by a claim
-C156 RETRACTED** (*"frozen DINOv3 beats our TRAINED trunk on 4 of 5 spatial
-targets"* — the retraction is that I omitted `n_agents`, the target we WIN at
-+0.1220 vs +0.0998, and recommended replacing our encoder with the teacher we
-already distil from). Three more items named arms that had since finished or been
-aborted. ⇒ **A queue is a claim about what is worth doing; it rots exactly as fast
-as the claims under it.** Re-derive it whenever a load-bearing claim moves.
+⭐ Rationale and evidence for every choice below: `Project Steering/V7_RECIPE_AND_SCALEUP.md`.
+⚠️ This is a **PRIORITY ORDER, NOT A DEPENDENCY CHAIN** — a blocked item never licenses idling.
 
 ---
 
-## Thor (GPU, ~8 h each)
+## STAGE A — operative capability (the near-term deliverable)
 
-1. **`postrain30k`** — **RUNNING**, ~step 13,600/30,000, ETA ~04:30 Europe/Berlin.
-   Gate-A flags + `--init-from` the DINOv3-distilled checkpoint.
-   ⇒ **When it lands: score it AND launch item 2 in the SAME turn.**
+| # | item | state | blocker |
+|---|---|---|---|
+| **A1** | **D1 — the crossed cell `postrain30k_freeze`.** Does freezing stop drift *without* wrecking prediction? Pre-registered: **drift < 0.45 AND held-out nrmse ≤ 0.893**, DEGENERATE a live branch | ▶ **RUNNING 24,000/30,000** | — |
+| **A2** | **First T1 on a v7 arm, parity corpus, both arms.** ⛔ The programme has NEVER evaluated a v7 arm at T1, so it holds **no** driving claim | 🔶 chain armed on Thor, fires on A1's done-marker | A1 |
+| **A3** | **D2 — `--cond-param omega_accel_v`** ([yaw_rate, a_long, v] as measured state, the PI's directive). Implemented, 7 tests green, **never run as an arm**. ⚠️ Tests whether a channel that is *not* a restatement of the realised trajectory behaves differently — the confound E-DEC-57 exposed | ⏸ queued | Thor busy (A1) |
+| **A4** | **Distance-keeping** — the half-family carrying 88.7 % of the oracle gap. Engineering **DONE** (`b6e98043a`: the PI's straight-driving gate, `NOT_STRAIGHT` state, 10 tests) | ⛔ **DATA-BLOCKED** | `obstacle.offline` parquet not staged on Thor or dev box → **A5** |
+| **A5** | **Stage `obstacle.offline` for the parity clips** | ⏸ not started | **Data FlyWheel** |
+| **A6** | **Strategic family** — needs map-derived option sets (`strategic_gt.py` → `taniteval.strategic_optionset`). ⚠️ A route label read off the ego's own future yaw is **NOT** a substitute — it cannot tell whether the map admitted a choice | ⏸ not started | Stage B data |
 
-2. ⛔⛔ **`o13p30k` — CANCELLED. O13 PILOTED AND REFUTED AS DEGENERATE
-   (E-DEC-52): `o5` +192.4 % worse against a matched control, ten times worse than
-   O11.** The staged trainer and gated launcher remain on Thor, unused. Per the
-   pre-registration the DEGENERATE branch prescribes **abandonment, not retuning**.
-   ⚠️ The struck-through entry below is kept as the record of what was queued and
-   why — a silently deleted item is indistinguishable from one nobody got to.
+---
 
-   ~~**`o13p30k`** — O13-EGO at 30k parity.~~
-   Motivated by the strongest pair of measurements in the campaign:
-   **E-DEC-48b** (the action's marginal contribution to the future SCENE is
-   **−0.1678, t −3.50**, against a positive control at t 8.5–14.3 — nine
-   objectives asked for information the data does not contain) and **E-DEC-50**
-   (the action DOES determine the ego's own dynamics: Δspeed **t 2.56**, Δyaw
-   **t 4.57**, identity control **+0.9337, t 23.74**).
-   **Ready to launch:** implemented, 9 unit tests, 2-arm wiring smoke passing,
-   pre-registered (`PREREG_O13_EGO_DYNAMICS.md`, four outcomes + a step-12,800
-   abort criterion fixed before the outcome is known), and **staged on Thor at
-   `/home/nvidia/staging/train_v6_staged_O13.py`, md5
-   `ed82d89f41a14e66c40aa0e3a64826d6` verified identical to local.**
-   ⛔ **Swap the staged trainer in only AFTER `postrain30k` writes its
-   done-marker** — its supervisor relaunches from the trainer path.
+## STAGE B — the data the upper levels need (Data FlyWheel; runs in PARALLEL, not after)
 
-3. 🔶 **`o12p30k`** — ActSWM's frozen readout. **DEMOTED, NOT CANCELLED.** It
-   would create action-discriminative structure in a space E-DEC-48b measured to
-   have no action information. ⚠️ **It is NOT the fallback if O13 fails** — the
-   pre-registration commits a REFUTED O13 to **interventional data**, a PI
-   provisioning decision, not to a tenth objective on this corpus.
+| # | item | why it is not gated on Stage A |
+|---|---|---|
+| **B1** | **Tactical labels** — manoeuvre classes, selected-vs-executed, goal/anchor selection | Label derivation may use ego, other agents, maps, future poses (PI, 2026-08-03). None of it needs a trained arm |
+| **B2** | **Strategic labels** — map-derived option sets, route/goal. ⛔ PhysicalAI-AV has **no map, lane graph, junction annotation, traffic-light feature or route signal** (card, verbatim: *"we do not include open maps data"*), and `egomotion` carries **no lat/lon**, so OSM map-matching on our traces is impossible ⇒ the topology must come from **AlpaSim** (`map.xodr`) or an external corpus | This is the long pole for Stage D and the reason to start it now |
+| **B3** | **`obstacle.offline` staging** (= A5) — unblocks distance-keeping immediately | Pure provisioning |
 
-4. ⛔ **`dinofrozen30k` — REMOVED, its motivation was RETRACTED (C156).**
-   Kept here as a named removal rather than deleted, because a silently vanished
-   queue item is indistinguishable from one nobody got to.
+⚠️ **B2 is the critical path to the PI's thesis** and nothing in Stage A shortens it.
 
-5. ⛔ **`o3p30k` / `o2p30k` / `o3o2p30k` — REMOVED.** O3 was run and **aborted at
-   step 20,400 on its own pre-committed criterion**. E-DEC-48b now explains the
-   whole family as a class: these all move the SCENE latent.
+---
 
-## Dev box (probe, ~40 min each)
+## STAGE C — train the upper levels
 
-1. **O13 feasibility pilot + matched w=0 control** — **RUNNING** (3,000 steps
-   each, 24 eps, NON-PARITY). ⚠️ Answers *"does o13 cost prediction accuracy?"*,
-   **not** *"does it generalise?"* — O11 also showed a positive excess while
-   degrading `o5` by 18.7 %, and only a matched arm separates the two.
-2. **`egostate.py` on `postrain30k`** when it lands — the pre-registered O13 read
-   uses this instrument, so the incumbent's numbers on the newest arm are needed
-   as the comparison baseline.
-3. ⛔ **E-DEC-40 on `splitp30k` — ALREADY DONE, AND NEGATIVE.** ⚠️ I queued this
-   two hours ago without checking whether it had already run; `deltaz_splitp30k.json`
-   was already banked. **A queue item that is already done is the stale-blocker
-   class in its most embarrassing form — it was stale the moment I wrote it.**
-   ⇒ **Check the banked results before queueing a probe.**
-   **The answer:** drift `z_t` +0.1952 (t 8.38); **action −0.0109 (t −0.57)**;
-   scene-delta +0.0232 (t 1.29); all-three +0.2287 (t 10.52); constant +0.0000.
-   ⇒ Even in the arm with the LOWEST drift and the ONLY one carrying ego Δspeed,
-   **the action explains nothing of Δz and the residual is noise.** `splitp30k` is
-   NOT qualitatively different on this axis, and the last hope on this list closes.
-4. **The `nrmse` census re-read** on the new arms, with `nrmse_SHUFFLED` beside
-   it, per MODEL_REGISTRY 13.0c.
+Gated on B1/B2. Recipe carried from `V7_RECIPE_AND_SCALEUP.md` §5.1 plus whatever D1/D2 settle.
 
-## Standing rule
+---
 
-⛔ When a job finishes, **START THE NEXT ITEM IN THE SAME TURN**, then report. The
-report is the last 10 % of a turn, never the whole turn.
+## STAGE D — hierarchy dominance over the references
+
+| # | item | state |
+|---|---|---|
+| **D-a** | **REF-C** baseline | ✅ trained — `refc-diffusion-xl-30k`, complete at 29,999, scored |
+| **D-b** | **REF-D** | ⛔ **does not exist** — 0 registry rows. **Needs a PI definition of what REF-D is** |
+| **D-c** | **Hierarchy-traversing eval** | ⛔ does not exist. `four_families` states it verbatim: *a world-model FIDELITY pass does not traverse the hierarchy* — which is why the strategic family reads UNAVAILABLE |
+| **D-d** | **Frozen-DINOv3 WM** as reference/fallback (PI directive) | 🔶 partial — `dinofrozen30k` was pulled from the queue after C156 and should be restored, since DINOv3 currently **beats our trained encoder** on free space (+0.3701 vs +0.2869) and side occupancy (+0.2735 vs +0.1325) |
+
+---
+
+## 0-GPU work, pullable any time (gated ≠ idle)
+
+- The **D1-negative contingency**: if freezing comes back degenerate, specify the
+  partial/staged unfreeze and the **content-preserving auxiliary that is NOT
+  self-generated** — the single property every one of the ten failed objectives shared
+  (E-DEC-7).
+- **Ablate what actually distinguishes `splitp30k` from `postrain30k`** with the init held
+  fixed. C164 killed the attribution but the **0.47 effect is real and seed-stable
+  (~1.5 % run-to-run)**; we currently have the result with no explanation.
+- Restore `dinofrozen30k` to the queue (D-d).
+- Re-read older §13 cells at t 2–3 against the **measured null (|t| ≈ 2.9)**.
