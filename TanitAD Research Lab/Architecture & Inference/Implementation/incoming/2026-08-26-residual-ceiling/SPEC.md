@@ -136,3 +136,35 @@ not abandoned**.
 - raw JSON under `raw/`
 - ⛔ **if any control misreads, log the class in `RETRACTION_LOG.md`** — this campaign's
   eleven defects were all caught by controls, most after publication
+
+---
+
+## A. ⚠️ AMENDMENT A1 — recorded BEFORE any result was read (2026-08-26)
+
+Three deviations from the body above, each chosen to reuse the banked, control-verified
+machinery rather than build a new estimator (the C-probe lesson: a new metric rig is a
+new set of undiscovered defects):
+
+1. **Metric: the within-clip-r / marginal-over-drift form of E-DEC-40/59, NOT the C149
+   nrmse form.** Every arm becomes a COLUMN `[z_t + X]`, and the readable quantity is its
+   per-clip paired MARGINAL over the `z_t` (drift) column — the identical construction,
+   code path (`panel_kfold.kfold_clip_scores` + `rff_fold`), corpus
+   (`physicalai-val130-heldout`, 80 clips), k=4, and Δz PCA band [0:8) as the banked
+   panels. ⭐ This buys an EXACT known value for the positive control: `rdw8p30k` drift
+   r **+0.6718 (t 134.84)** at 7,680 rows (`latentmotion.json`). Drift removal is
+   implicit in the marginal (the probe always has z_t; the question is what X adds),
+   which also sidesteps a two-stage fit-split bookkeeping error.
+2. **The oracle's token field is spatially pooled 16×40 → 4×10 (40 positions × 768 ch =
+   30,720 dims), plus 32×80 grey pixels, plus z_t.** The full 640×768 field is
+   computationally out of reach for the per-fold PCA at n≈7k; 4×10 retains 2.5× the
+   model's own 4×4 readout positions at full channel width. ⚠️ Consequence, stated in
+   advance: a NULL on this oracle bounds "predictable from a 4×10-pooled observation",
+   not from the full field — escalation to 8×20 is the named follow-up if the verdict
+   is borderline.
+3. **A6 (deliberate regression) is `[z_t + Gaussian noise dims]`** — same width as the
+   ego block; its marginal must be ≈0. A5 remains the per-column time-shuffle built into
+   the same code path.
+4. RFF probe is NONLINEAR (RBF approximation) by construction, so a null is not merely
+   "not linear". The predictor column is `[z_t + zhat_k]` with zhat produced by the
+   arm's own predictor at k=4 under T0 true-action conditioning (stated per the tier
+   doctrine).
