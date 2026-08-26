@@ -99,6 +99,58 @@ floor lives INSIDE the loss. Pre-registered with four outcomes in
 ⭐⭐ **THE SPLIT ACROSS ARMS IS THE HEADLINE.** `splitp30k` (frozen distilled): `n_agents` from `z_t` **+0.3864** — far the richest — but its predictor **ADDS NOTHING**, delta vs `z_t` of −0.0008 / −0.0320 / −0.0158 at k=1/3/6, all NEGATIVE (t −3.69 / −5.62 / −6.26), and at k=6 `lead_closing` degrades to −0.0747 (t −2.11). `rdw8p30k` (trained): content only +0.0777 but the predictor **adds substantially**. ⇒ **the frozen arm CARRIES the environment and does not PREDICT it; the trained arm PREDICTS change and carries less of it.** E-DEC-20's dissociation in a new form ⇒ **mandate (2) — environment in BOTH encoder and predictor — is NOT yet satisfied by any single arm.**
 
 ⚠️ **FOUR BOUNDS.** (1) **ẑ also beats the encoded-future CEILING**, which is anomalous. Two explanations and this panel cannot separate them: the rollout is **ACTION-CONDITIONED**, so ẑ carries the ego's commanded motion that a single encoded frame lacks — *or* it is temporal **smoothing** of a noisy target. **An action-shuffled control would separate them and has not been run.** (2) All absolute R² are **small** (0.03–0.15); `lead_closing` +0.0019 is barely above zero. (3) **IN-SAMPLE** until the held-out corpus lands. (4) k=1 is **underpowered by construction** — the ceiling itself is barely above `z_t` there (+0.0123, t 0.75), i.e. the scene has not changed enough for prediction to add anything; only k=3–6 carry headroom. |
+| E-DEC-61 | ⭐⭐⭐⭐ **TRAINING THE ENCODER IS WHAT MANUFACTURES DRIFT — the same recipe reads 0.359 at 10k and 0.669 at 30k.** The real grouping variable was never the initialisation. | **MEASURED**, 9 arms, 80 clips, 7,680 rows, drift controls t 26–147. | `…/raw/freezetest.json`, `…/raw/seedrep.json`
+
+| arm | encoder | steps | **drift** |
+|---|---|---|---|
+| `splitp30k` | **FROZEN** | 30k | **0.199** |
+| `splitfrz10k` | **FROZEN** | 10k | **0.337** |
+| `postrain10k` | trained | 10k | 0.359 |
+| `champ30k` | trained | 30k | 0.616 |
+| `o11p30k` | trained | **7.5k** | 0.646 |
+| `rdw8s30k` | trained | 30k | 0.635 |
+| `rdw8p30k` | trained | 30k | 0.657 |
+| `ro128p30k` | trained | 30k | 0.658 |
+| `postrain30k` | trained | 30k | 0.669 |
+| `postrain30k_seed1` | trained | 30k | 0.679 |
+
+⭐⭐⭐ **THE LOAD-BEARING EVIDENCE IS A WITHIN-RECIPE TRAJECTORY, NOT A GROUPED
+COMPARISON — deliberately, because a grouped comparison is what produced C164 four
+hours ago.** `postrain10k` → `postrain30k` is **the same recipe, the same
+`--init-from`, the same everything except training length**, and its drift goes
+**0.359 → 0.669**. There is no label standing for a bundle here: the only variable
+is how long the encoder trained.
+
+⇒ **TRAINED ENCODERS CONVERGE TO drift ≈ 0.62–0.68** — six of seven trained arms,
+spanning **7.5k to 30k steps and BOTH initialisations**, land in a 0.06-wide band.
+**Frozen encoders do not** (0.199, 0.337).
+
+⭐⭐ **THE MECHANISM, AND IT IS THE DEEPEST EXPLANATION THIS CAMPAIGN HAS
+PRODUCED.** O5 trains the predictor so that `ẑ_{t+k} ≈ z_{t+k}`. When the ENCODER
+is trainable, the cheapest way to satisfy that is not to predict better — it is to
+make the LATENT ITSELF EASIER TO PREDICT, i.e. smooth and self-predictable.
+⇒ **Joint training under O5 MANUFACTURES the drift the programme has spent three
+nights trying to remove.** Freezing the encoder removes the degree of freedom that
+allows it.
+
+⇒ **This explains the ten failed objectives as a class, and better than E-DEC-48b
+did.** Every one of them was bolted onto an O5 that was, in parallel, optimising the
+encoder toward exactly the property those terms were fighting. **They were not
+merely mining an empty seam — they were mining against an active pump.**
+
+⚠️ **WHAT THIS IS NOT, AND THE ROWS THAT SAY SO.** It is **not** "frozen good,
+trained bad" as a clean separation: `splitfrz10k` (frozen, 0.337) and `postrain10k`
+(trained, 0.359) are **0.022 apart**, and `o11p30k` is a trained arm **at only 7.5k
+steps already at 0.646**, so it is not simply a function of step count either. ⇒ The
+defensible claim is the **trained-encoder attractor at 0.62–0.68** plus the
+**within-recipe trajectory**, not a two-group split. ⚠️ **n = 2 on the frozen side.**
+
+⇒ ⭐ **THE EXPERIMENT THIS MAKES WELL-POSED, and it is one flag:** run the
+`postrain` recipe with `--freeze-encoder`, everything else identical. If drift stays
+low while `o5` holds, freezing is the lever and the programme has its first
+*positive* result with a clean attribution. ⛔ **That is a crossed cell — precisely
+what C164 says was missing from the original claim — and it costs one 30k arm.**
+
 | E-DEC-60 | ⛔⛔⛔⛔⛔ **`--init-from` IS NOT THE LEVER. The campaign's ONLY POSITIVE RESULT WAS CONFOUNDED — two arms share the distilled checkpoint and their drift differs by 0.47.** ⭐ And the seed replication itself WORKED: 0.669 vs 0.679. | **MEASURED**, 80 clips, 7,680 rows, drift control t 143–147. | `…/raw/seedrep.json`
 
 | arm | `init_from` | steps | **drift** |
