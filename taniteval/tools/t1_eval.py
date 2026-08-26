@@ -16,7 +16,7 @@ Faithful parameterised port of the working T1 implementation that produced
 MODEL_REGISTRY §1.12 (open-loop lateral skill is an action echo; S-curve
 reproduction 97.9 % -> ~5 % closed-loop, hold-action 0.0 %):
 
-* ``TanitAD Research Hub/Architecture & Inference/Implementation/incoming/
+* ``TanitAD Research Lab/Architecture & Inference/Implementation/incoming/
   2026-08-06-v1-defect-triage/tools/closed_loop_dump.py``  (the GPU roll+dump)
 * ``…/tools/analyze_cl.py`` + ``…/tools/s_curve_dump.py``  (the analysis)
 * ``…/results/closed_loop_analysis.json``                   (the §1.12 numbers)
@@ -962,6 +962,22 @@ def load_ext_trunk(a, model_frame):
     _stack_scripts_on_path()
     from eval_flagship_v4 import load_v1_from_ck
     ck = torch.load(a.ckpt, map_location="cpu", weights_only=False)
+    # ⭐ v6/v7 checkpoints ship a 'stack' key instead of 'model'+'grounding' — a
+    # DIFFERENT MODEL, not a different layout, so no conversion bridges it and the
+    # loader must branch. `load_trunk_auto` returns exactly this function's
+    # documented triple, and its `V6Grounding` exposes `.step["op"] =
+    # stack.step_readout_op` — the interface line 1016 consumes.
+    # VERIFIED BY EXECUTION on rdw8p30k (T1_ON_V7_SCOPING.md §2b):
+    #   predictor(win_s, win_a)[1] -> [B, 2048]
+    #   step_readout(z_t, z_hat)   -> [B, 3],  pose_dim == 3
+    # ⚠️ Guarded on "stack" in ck, which NO flagship checkpoint carries, so the
+    # v1/v4/v5f path below is provably unreachable for them and unchanged.
+    # ⛔ The v7 frame is 256x640 CYLINDRICAL; t1_eval defaults to the deployed
+    # 256x256 pinhole. PASS --frame-h/--frame-w/--projection/--frame-hfov, or T1
+    # is computed in the wrong projection and LOOKS VALID.
+    if isinstance(ck, dict) and "stack" in ck and "model" not in ck:
+        from tanitad.eval.v6_probe_trunk import load_trunk_auto
+        return load_trunk_auto(ck, a.device, ckpt_path=a.ckpt)
     if not isinstance(ck, dict) or "model" not in ck or "grounding" not in ck:
         sys.exit(f"[t1] {a.ckpt} has no 'model'+'grounding' keys — the adapter "
                  f"path needs a flagship trunk checkpoint (v1/v4/v5f shape). "
