@@ -23,7 +23,7 @@ TOOL = Path(__file__).resolve().parents[1] / "tools" / "eval_four_families.py"
 
 
 def _tree():
-    return ast.parse(TOOL.read_text())
+    return ast.parse(TOOL.read_text(encoding="utf-8"))
 
 
 def test_the_tool_exists_and_parses():
@@ -35,7 +35,7 @@ def test_it_runs_BOTH_passes_because_neither_alone_can_fill_four_families():
     """The fidelity pass gives LONGITUDINAL/LATERAL; only the hierarchy pass
     traverses the decision heads. A tool that called one of them would report two
     families UNAVAILABLE and look like a completed eval."""
-    src = TOOL.read_text()
+    src = TOOL.read_text(encoding="utf-8")
     assert "rollout.collect(" in src
     assert "hierarchy.run(" in src
     assert "all_families(" in src
@@ -45,7 +45,7 @@ def test_hierarchy_is_not_left_at_its_40_episode_default():
     """``hierarchy.run``'s ``max_eps`` defaults to 40. On a 290-episode corpus
     that silently scores 14 % of it — the same class of defect as the ``--episodes``
     default that returned a 17 %-optimistic number on this very corpus."""
-    src = TOOL.read_text()
+    src = TOOL.read_text(encoding="utf-8")
     assert "max_eps=len(eps)" in src, (
         "hierarchy.run must be told the real episode count, not left at 40")
 
@@ -53,13 +53,13 @@ def test_hierarchy_is_not_left_at_its_40_episode_default():
 def test_episodes_flag_is_recorded_in_the_output_not_just_honoured():
     """A truncated denominator that is not in the record is indistinguishable
     from a full run once the log scrolls away."""
-    src = TOOL.read_text()
+    src = TOOL.read_text(encoding="utf-8")
     for k in ("episodes_scored", "episodes_available", "episodes_flag"):
         assert f'"{k}"' in src, f"the output record must carry {k}"
 
 
 def test_the_banned_estimator_is_named_as_banned_and_never_called():
-    src = TOOL.read_text()
+    src = TOOL.read_text(encoding="utf-8")
     assert "overlapping_holdout_se" in src, (
         "the record must say which estimator is NOT used — a bare 'CI' invites "
         "the reader to assume the old one")
@@ -75,7 +75,7 @@ def test_ci_components_reuse_four_families_own_geometry():
     """⛔ A second implementation of the geometry here would let the interval and
     the point estimate drift apart silently — the exact failure the estimator
     rule exists to prevent."""
-    src = TOOL.read_text()
+    src = TOOL.read_text(encoding="utf-8")
     assert "ff._seq_geometry(" in src, (
         "per-window CI components must come from four_families' own "
         "_seq_geometry, not a re-derivation")
@@ -84,7 +84,7 @@ def test_ci_components_reuse_four_families_own_geometry():
 def test_out_refuses_a_directory():
     """MEASURED failure on this corpus: --out given a directory raised
     IsADirectoryError only AFTER the whole scoring pass had run."""
-    src = TOOL.read_text()
+    src = TOOL.read_text(encoding="utf-8")
     assert "os.path.isdir(a.out)" in src
     i_guard = src.index("os.path.isdir(a.out)")
     i_load = src.index("loaders.load(")
@@ -92,7 +92,7 @@ def test_out_refuses_a_directory():
 
 
 def test_skip_hierarchy_says_the_result_is_inadmissible():
-    src = TOOL.read_text()
+    src = TOOL.read_text(encoding="utf-8")
     seg = src[src.index("--skip-hierarchy"):src.index("--skip-hierarchy") + 400]
     assert "UNAVAILABLE" in seg and "NOT admissible" in seg
 
@@ -102,13 +102,13 @@ def test_vision_only_and_binding_rules_travel_with_the_record():
     conversation that produced it. ``route_acc_nav`` near 1.0 is an ECHO of the
     model's own input — v1 MEASURED exactly 1.0000 — and a reader with only the
     JSON must be told that."""
-    src = TOOL.read_text()
+    src = TOOL.read_text(encoding="utf-8")
     assert '"_vision_only"' in src and "route_acc_follow" in src
     assert '"_binding"' in src and "WORK ITEM" in src
 
 
 def test_corpus_identity_is_recorded_so_arms_are_not_cross_compared_blindly():
-    src = TOOL.read_text()
+    src = TOOL.read_text(encoding="utf-8")
     assert '"corpus"' in src and '"corpus_key"' in src
 
 
