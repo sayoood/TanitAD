@@ -4619,7 +4619,7 @@ control on every cell, and a constant control reading exactly +0.0000.
 | `lead_closing` | +0.0988 (t 1.83) ✗ | — | **no verdict** — control failed |
 
 The scene predicts the future scene strongly and the action predicts it not at
-all. ⚠️ The *marginal* column should not be over-read: a 128-draw empirical null for
+all. ⚠️ The *marginal* column should not be over-read: a 104-draw empirical null for
 this estimator (built by replacing the input with Gaussian noise) reaches \|t\| =
 **3.49**, so the `n_free_cols` marginal (−1.83) is inside it and `n_agents` (−3.50)
 clears it by 0.01. **"Adding the action actively hurts" is therefore not
@@ -4669,7 +4669,7 @@ be admissible. It reads **+0.9337 (t 23.74)**.
 Three facts appeared to compose; two have since been retracted. **The action
 determines the ego's own Δyaw** (t 4.57, and the relation is kinematic). ⛔ **The
 Δspeed half (t 2.56) does not survive the estimator's measured null** — P(null ≥
-2.56) = 0.070 against 128 draws whose max is 3.49 — so the longitudinal channel is
+2.56) = 0.070 against 104 draws whose max is 3.49 — so the longitudinal channel is
 withdrawn. **The transition connects nothing**: ẑ never exceeds z_t on any ego
 target.
 
@@ -4729,7 +4729,7 @@ level triple (3.10 / 2.76 / 2.07), and one arm's Δspeed content replicated thre
 times across three independent code paths (t 2.50 / 2.05 / 2.10).
 
 **The estimator's null is heavy-tailed and was measured, not assumed.** Replacing
-the input with Gaussian noise and rerunning the identical panel gives, over 128
+the input with Gaussian noise and rerunning the identical panel gives, over 104 independent
 draws at two column dimensionalities, p95 **2.60**, p99 **2.93**, max **3.49** —
 so \|t\| ≈ 2.9 is this family's effective bar, not 2.0. ⚠️ Dimensionality is not
 what sets the tail: a random **3-vector** reached 3.49 while a random 2048-d latent

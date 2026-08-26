@@ -47,7 +47,7 @@ contribution to predicting the **future scene** is **zero or negative**:
 | `occ_center` | **+0.6588 (8.52)** | −0.0179 (0.14) | +0.0217 (0.40) |
 | `n_free_cols` | **+0.6324 (14.34)** | +0.1083 (1.43) | −0.1337 (−1.83) ⛔ |
 
-⚠️ **§8 (added 06:35) SUPERSEDES THE MARGINAL COLUMN.** A measured 128-draw null
+⚠️ **§8 (added 06:35) SUPERSEDES THE MARGINAL COLUMN.** A measured 104-draw null
 for this estimator reaches \|t\| **3.49**, so `n_free_cols` (−1.83) is inside it
 and `n_agents` (−3.50) clears by 0.01. ⇒ *"adding the action actively hurts"* is
 **withdrawn**. The load-bearing statement — **the action adds NOTHING** — is
@@ -192,8 +192,8 @@ I flagged `action → Δspeed` (t 2.56) as *"own null not measured"* rather than
 assuming it safe. **The dev box was idle, so I measured it** — and my stated reason
 for expecting it to be safe was wrong.
 
-**128 pooled null draws** (Gaussian input, identical panel): p90 **2.02**, p95
-**2.60**, p99 **2.93**, **MAX 3.49**.
+**104 independent null draws** (Gaussian input, identical panel): p90 **1.96**, p95
+**2.57**, p99 **2.93**, **MAX 3.49**.
 
 ⛔ **A random 3-vector reached 3.49 — HIGHER than a random 2048-d latent (2.93).**
 So "the action columns are only 3 scalars and therefore have a tighter null", which
@@ -209,7 +209,7 @@ The heavy tail comes from the estimator, not the column width.
 | yaw-rate level (action) | 5.09 | 0.000 | ✅ |
 | **action → Δyaw** | 4.57 | 0.000 | ✅ |
 | E-DEC-48b marginal `n_agents` | 3.50 | 0.000 | ⚠️ clears by 0.01 |
-| **action → Δspeed** | 2.56 | **0.070** | ⛔ retracted |
+| **action → Δspeed** | 2.56 | **0.067** | ⛔ retracted |
 | E-DEC-48b marginal `n_free_cols` | 1.83 | **0.125** | ⛔ retracted |
 
 ⇒ **Two more retractions, and one survivor with no margin.** *"Adding the action

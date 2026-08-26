@@ -105,7 +105,7 @@ the **future scene** is **zero or negative** (−0.1678, t −3.50 on `n_agents`
 | `occ_center` | **+0.6588 (8.52)** | −0.0179 (0.14) | +0.0217 (0.40) |
 | `n_free_cols` | **+0.6324 (14.34)** | +0.1083 (1.43) | −0.1337 (−1.83) ⛔ *inside null* |
 
-⚠️ **E-DEC-56: the marginals are NOT the load-bearing part.** Against a 128-draw
+⚠️ **E-DEC-56: the marginals are NOT the load-bearing part.** Against a 104-draw
 measured null (max 3.49) the `n_free_cols` marginal is inside it and `n_agents`
 clears by 0.01. ⇒ **"adding the action actively HURTS" is not supportable.** The
 supportable — and sufficient — statement is that **the action adds NOTHING**, which
@@ -149,8 +149,8 @@ criterion at step 20,400).
 ⭐⭐⭐ **Three facts compose into the answer:**
 
 1. **The action determines the ego's own future — ⚠️ ON Δyaw ONLY (t 4.57).**
-   ⛔ Δspeed (t 2.56) **RETRACTED by E-DEC-56** — P(null ≥ 2.56) = 0.070 against a
-   128-draw measured null whose max is **3.49**.
+   ⛔ Δspeed (t 2.56) **RETRACTED by E-DEC-56** — P(null ≥ 2.56) = 0.067 against a
+   104-draw measured null whose max is **3.49**.
    **Echo-cleared:** the corpus's `accel` is the dataset's own measured `ax`
    (`physicalai.py:604-632` states verbatim it is *not* a finite difference of v),
    and `r(accel, realised Δv_1tick) = +0.326` — nowhere near the ≈ 1.0 an identity
@@ -265,7 +265,7 @@ failures, and E-DEC-48b explains why as a class rather than one at a time.
 | Δz is 64 % drift; residual is noise in 8/8 arms | **MEASURED** |
 | The action adds ≤ 0 to predicting the future SCENE | **MEASURED** (control t 8.5–14.3) |
 | The action determines the ego's own **Δyaw** | **MEASURED** (t 4.57, P(null) = 0.000) |
-| The action determines the ego's own Δspeed | ⛔ **RETRACTED** — t 2.56, P(null) = 0.070 (E-DEC-56) |
+| The action determines the ego's own Δspeed | ⛔ **RETRACTED** — t 2.56, P(null) = 0.067 (E-DEC-56) |
 | The encoder carries ego LEVELS but not CHANGES | **MEASURED** (identity control 23.74) |
 | A head on `(z_t, action)` would be an ACTION ECHO | **MEASURED** (latent adds −0.0065 / −0.0153) |
 | **O13 improves action-conditioning** | ⛔ **REFUTED — DEGENERATE.** Matched pair: `o5` +192.4 % worse (E-DEC-52) |
