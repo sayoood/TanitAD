@@ -24,6 +24,66 @@ arm in this campaign has been evaluated there.
 > ⇒ The next experiment is an ablation of what distinguishes `splitp30k` from
 > `postrain30k` with the init held fixed.
 
+
+---
+
+## ⭐ WHERE THIS STANDS AT 2026-08-26 19:10 — read this first
+
+⚠️ **This document has been corrected three times in one day and the body below is
+now a patchwork of retraction banners.** The banners are kept because they are the
+audit trail; **this section is the current answer in one place.** Where the two
+disagree, this section wins and the banner explains why.
+
+### The four mandate axes, as they actually stand
+
+| axis | status | what is actually true |
+|---|---|---|
+| **Collapse** | 🔶 **EFFECT REAL, CAUSE UNDER TEST** | One arm (`splitp30k`) has drift **0.199** against **0.616–0.679** for six others — large, and **seed-stable** (replicate: 0.669 vs 0.679, ~1.5 % variance). ⛔ The cause is **NOT `--init-from`** (C164: two arms share it, 0.47 apart). Leading hypothesis: **O5 manufactures drift when the encoder is trainable** (E-DEC-61). **Crossed cell running.** |
+| **Representation** | 🔶 **EFFECT REAL, ATTRIBUTION RETRACTED** | `splitp30k` beats frozen DINOv3 on `n_agents` (**+0.1220 > +0.0998**) — that measurement stands. The *cause* shared the retracted init attribution. |
+| **Prediction** | ⛔ **LOCATED** | The transition is the latent's own **drift**: `z_t` predicts Δz at **r 0.674 (t 134.84)**. Trained encoders converge to **0.62–0.68** across 6 of 7 arms, both inits, 7.5k–30k steps. |
+| **Driving physics via action-conditioning** | ⛔ **CLOSED, NEGATIVELY, AND WELL-POWERED** | Ego motion's marginal over drift: **−0.0006 (t −0.48)**, with the drift control at **t 134.84**. Measured with the *right* channels (`[ω, a_long, v]` as measured state), the *right* target (the latent's own change), and **no power excuse**. |
+
+### What is actually recommended today
+
+```
+--stage S-W                          # scene prediction from the scene
+--spectrum-accum <ceiling >= d_op>   # rank gate; cheap, retained
+```
+
+⛔ **That is the whole list.** Every other lever this document previously
+recommended has been retracted or is under test:
+
+- ⛔ **`--init-from` is NOT a lever** (C164) — keep it if you like, but it does not
+  buy the drift separation.
+- ⛔ **Do NOT add O1, O2, O3, O7, O8, O9, O10, O11, O13 or PSG.** Ten measured
+  failures; O13's matched pair degraded prediction by **+192.4 %**.
+- 🔶 **`--freeze-encoder` is the open question**, not a recommendation. Pre-registered
+  (`PREREG_FREEZE_CROSSED_CELL.md`) with **DEGENERATE as a live branch** — E-DEC-20c
+  records a frozen encoder driving the predictor ~5× miscalibrated.
+
+### What would change the picture
+
+1. **The crossed cell** (running, ~7 h): does freezing stop drift *without* wrecking
+   prediction? Read = drift **< 0.45** AND held-out `nrmse` **≤ 0.893**.
+2. ⛔ **Nothing else is queued, deliberately.** Both rescues of the
+   action-conditioning thread are closed — E-DEC-59 (well-powered null) and
+   E-DEC-62 (the low-variance subspace, p 0.067 at n=30). **An eleventh objective
+   term is not warranted.**
+
+### ⚠️ The honest meta-point
+
+Nine claims were retracted in ~24 hours (C156–C164). **Every retraction came from a
+control, and most of the controls were run after the claim was published.** The
+durable output of this campaign may be the instrument discipline rather than any
+result: a **measured null** (`taniteval/taniteval/null_calibration.py`, |t| ≈ 2.9,
+not 2.0), a **p-value floored at 1/N**, and the rule that **a grouped comparison is
+a lever only if the groups are matched on everything but the label**.
+
+⛔ **Every number in this document is T0-DIAGNOSTIC. T1 has never been run on any
+v7 arm, so no capability claim about driving is available at all.**
+
+---
+
 ## 0. The one-paragraph answer
 
 Two of the four are **SOLVED and the lever is known**: collapse and representation
