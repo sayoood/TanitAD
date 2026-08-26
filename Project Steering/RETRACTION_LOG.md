@@ -8781,6 +8781,51 @@ carries and what I shipped a watchdog three times without. ⇒ **Before arming a
 monitor, run its filter against a job you KNOW is running and check the count is
 non-zero.** "It looks right" is how versions 1, 2 and 3 shipped.
 
+## C164 — a clean separation between two groups, where the label was not the only difference
+
+**Class:** *confounded grouping presented as a lever* — and it retracts **the
+campaign's only positive result**, the one I gave the PI as the answer to the
+mandate.
+
+**The claim.** *"Collapse and representation are SOLVED, and the lever is ONE config
+change: `--init-from <DINOv3-distilled ckpt>`."* Evidence: latent drift **0.175–0.365
+for three distilled arms vs 0.614–0.642 for five scratch arms — non-overlapping,
+across unrelated recipes.** I called that band *"what a floor looks like"* and wrote
+it into `PROVEN_TRAINING_SETUP.md`, `GOALS_AND_CLAIMS.md`, the paper and the
+overnight report.
+
+**What refuted it.** `postrain30k` and `postrain30k_seed1` are **`--init-from` the
+same `distill_init.pt`**, at 30k, and read drift **0.669 / 0.679** — the scratch
+band. `splitp30k`, also distilled and also 30k, reads **0.199**. ⇒ **Two arms share
+the supposed lever and sit 0.47 apart.**
+
+**Why the non-overlap fooled me, and this is the transferable part.** A clean gap
+between groups feels like strong evidence *because it is*, for the proposition
+*"these groups differ"*. **It says nothing about WHICH difference caused it.** The
+three distilled arms were not otherwise-matched to the five scratch arms — they came
+from different recipe lines — so *"distilled"* was a label on a bundle, not an
+intervention. ⚠️ **I never ran the one arm that would have tested it: distilled init
+on a scratch recipe.** `postrain30k` turned out to be almost exactly that, and it
+broke the claim the moment it was measured.
+
+**What makes the refutation trustworthy rather than one more null.** The seed
+replicate: **0.669 vs 0.679, ~1.5 % run-to-run variance.** The programme's first
+variance estimate says a 0.47 gap is not seed noise. **The instrument was never the
+problem.**
+
+**The rule:** ⛔ **A grouped comparison is a LEVER only if the groups are matched on
+everything except the label. Otherwise it is a CORRELATION between a label and a
+bundle** — and the cheapest test is always the crossed cell: **apply the supposed
+lever to an arm from the OTHER group.** ⚠️ *"Non-overlapping ranges across unrelated
+recipes"* made it sound MORE robust; the unrelated recipes were the confound.
+
+⭐ **What survives:** `splitp30k`'s 0.199 against 0.657–0.679 for three other 30k
+arms is large, real and seed-stable. **The effect is genuine; the attribution was
+not.** The next experiment is an ablation of what distinguishes `splitp30k` from
+`postrain30k` with the init held fixed.
+
+---
+
 ## C163 — I wrote the guard against precision-overclaim in the morning and bypassed it by teatime
 
 **Class:** *a guard that exists, is correct, and is not called* — distinct from every

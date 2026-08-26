@@ -12,6 +12,18 @@ arm in this campaign has been evaluated there.
 
 ---
 
+> ⛔⛔⛔ **RETRACTED 2026-08-26 (E-DEC-60 / C164): `--init-from` IS NOT THE
+> LEVER.** `postrain30k` and `postrain30k_seed1` are `--init-from` the SAME
+> distilled checkpoint at 30k and read drift **0.669 / 0.679** — the *scratch*
+> band — while distilled `splitp30k` reads **0.199**. **Two arms share the
+> supposed lever and sit 0.47 apart**, so the distilled/scratch separation was a
+> CONFOUND: the groups were not matched on anything but the label.
+> ⭐ **What survives:** `splitp30k`'s drift really is 0.199 against 0.657–0.679 for
+> three other 30k arms — large, real, and **seed-stable** (the replicate gives
+> ~1.5 % run-to-run variance). **The effect is genuine; the attribution was not.**
+> ⇒ The next experiment is an ablation of what distinguishes `splitp30k` from
+> `postrain30k` with the init held fixed.
+
 ## 0. The one-paragraph answer
 
 Two of the four are **SOLVED and the lever is known**: collapse and representation
@@ -32,7 +44,7 @@ they all asked the action to move the scene.
 |---|---|
 | **Status** | **MEASURED.** Defeated. |
 | **The number** | latent rank **3.80 → 25.58**; five arms clear the C149 constant-predictor floor |
-| **The lever** | **`--init-from <DINOv3-distilled ckpt>`** — a single config change |
+| **The lever** | ⛔ **RETRACTED — NOT `--init-from` (E-DEC-60/C164). UNIDENTIFIED; `splitp30k`'s recipe carries it.** |
 | **What did NOT work** | nine objective terms (O1, O2, O3, O7, O8, O9, O10, O11, PSG) |
 
 ⭐⭐ **The cleanest separation in the campaign — eight arms, no overlap.** Latent
@@ -266,8 +278,8 @@ failures, and E-DEC-48b explains why as a class rather than one at a time.
 
 | claim | class |
 |---|---|
-| Distilled init defeats collapse (drift 0.175–0.365 vs 0.614–0.642) | **MEASURED** |
-| Distilled init drives representation (`n_agents` +0.1220 > DINOv3 +0.0998) | **MEASURED** |
+| Distilled init defeats collapse | ⛔ **RETRACTED (C164)** — confounded grouping; two distilled arms 0.47 apart |
+| `splitp30k` beats frozen DINOv3 on `n_agents` (+0.1220 > +0.0998) | **MEASURED** — but the CAUSE is not the init |
 | Δz is 64 % drift; residual is noise in 8/8 arms | **MEASURED** |
 | The action adds ≤ 0 to predicting the future SCENE | **MEASURED** (control t 8.5–14.3) |
 | The action determines the ego's own **Δyaw** | ⛔ **RETRACTED (E-DEC-57)** — a kinematic identity, closed-form r 0.9988 |

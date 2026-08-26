@@ -99,6 +99,51 @@ floor lives INSIDE the loss. Pre-registered with four outcomes in
 ⭐⭐ **THE SPLIT ACROSS ARMS IS THE HEADLINE.** `splitp30k` (frozen distilled): `n_agents` from `z_t` **+0.3864** — far the richest — but its predictor **ADDS NOTHING**, delta vs `z_t` of −0.0008 / −0.0320 / −0.0158 at k=1/3/6, all NEGATIVE (t −3.69 / −5.62 / −6.26), and at k=6 `lead_closing` degrades to −0.0747 (t −2.11). `rdw8p30k` (trained): content only +0.0777 but the predictor **adds substantially**. ⇒ **the frozen arm CARRIES the environment and does not PREDICT it; the trained arm PREDICTS change and carries less of it.** E-DEC-20's dissociation in a new form ⇒ **mandate (2) — environment in BOTH encoder and predictor — is NOT yet satisfied by any single arm.**
 
 ⚠️ **FOUR BOUNDS.** (1) **ẑ also beats the encoded-future CEILING**, which is anomalous. Two explanations and this panel cannot separate them: the rollout is **ACTION-CONDITIONED**, so ẑ carries the ego's commanded motion that a single encoded frame lacks — *or* it is temporal **smoothing** of a noisy target. **An action-shuffled control would separate them and has not been run.** (2) All absolute R² are **small** (0.03–0.15); `lead_closing` +0.0019 is barely above zero. (3) **IN-SAMPLE** until the held-out corpus lands. (4) k=1 is **underpowered by construction** — the ceiling itself is barely above `z_t` there (+0.0123, t 0.75), i.e. the scene has not changed enough for prediction to add anything; only k=3–6 carry headroom. |
+| E-DEC-60 | ⛔⛔⛔⛔⛔ **`--init-from` IS NOT THE LEVER. The campaign's ONLY POSITIVE RESULT WAS CONFOUNDED — two arms share the distilled checkpoint and their drift differs by 0.47.** ⭐ And the seed replication itself WORKED: 0.669 vs 0.679. | **MEASURED**, 80 clips, 7,680 rows, drift control t 143–147. | `…/raw/seedrep.json`
+
+| arm | `init_from` | steps | **drift** |
+|---|---|---|---|
+| **`splitp30k`** | **distilled** | 30k | **0.199** |
+| **`postrain30k`** | **distilled** | 30k | **0.669** |
+| **`postrain30k_seed1`** | **distilled** | 30k | **0.679** |
+| `postrain10k` | distilled | 10k | 0.359 |
+| `rdw8p30k` | **None (scratch)** | 30k | 0.657 / 0.674 |
+
+⛔ **TWO ARMS `--init-from` THE SAME `distill_init.pt`, BOTH AT 30k, 0.47 APART.**
+Initialisation cannot be the lever if two arms that share it land at opposite ends
+of the range. ⇒ **The claim I wrote as the mandate answer —** *"collapse and
+representation are SOLVED, and the lever is a single config change,
+`--init-from <DINOv3-distilled ckpt>`"* **— DOES NOT SURVIVE.**
+
+⭐⭐ **HOW THE CONFOUND WORKED.** The banked separation was *"distilled
+0.175–0.365 vs scratch 0.614–0.642, non-overlapping across five unrelated
+recipes"*, and I read the non-overlap as strong evidence. **But the grouping
+variable was not the only thing that differed between the groups.** The three
+distilled arms also shared recipe features the five scratch arms lacked; `splitp30k`
+carries whatever the real cause is, and `postrain30k` — distilled but on the Gate-A
+recipe — does not. **A clean separation between two groups is worth nothing if the
+label is not the only difference.** See C164.
+
+⭐⭐⭐ **THE SEED REPLICATION IS THE PART THAT WORKED, AND IT IS WHY THIS IS SOLID.**
+`postrain30k` 0.669 vs `postrain30k_seed1` 0.679 — **run-to-run variance of ~1.5 %
+on the drift metric.** The programme's first variance estimate, and it says
+between-arm differences of 0.47 are emphatically real, not seed noise. ⇒ **The
+instrument is fine. The interpretation was wrong.**
+
+⚠️ **THE GATE THIS WAS RUN TO ANSWER, ANSWERED AS PRE-COMMITTED.**
+`PLAN_REVISION_2026-08-26.md` §4: *"If seed 1 does not reproduce the drift
+separation, the one solved axis is not solved, and item 3 (v7-full) should not
+launch."* ⇒ **Seed 1 reproduced its own arm faithfully but the SEPARATION is not
+where the claim put it.** ⛔ **v7-full must not launch on the "distilled init
+solves collapse" premise.**
+
+⇒ ⭐ **WHAT SURVIVES, AND IT IS WORTH KEEPING.** `splitp30k`'s drift really is
+0.199 against 0.657–0.679 for three other 30k arms — **a large, real, seed-stable
+difference.** Something in that recipe works. **We do not know what, and the next
+experiment is the obvious one: an ablation over what distinguishes `splitp30k` from
+`postrain30k`, holding the init fixed.** That is a well-posed question with a cheap
+answer, and it is the first time this programme has had one on the positive side.
+
 | E-DEC-59 | ⭐⭐⭐⭐⭐ **EGO MOTION ADDS NOTHING TO THE LATENT TRANSITION — the first negative in this campaign that survives ALL THREE critiques (wrong channel, wrong target, too few clips)** | ⛔ **MEASURED, 80 clips, 7,680 rows, drift control t 134.84.** Ego marginal over drift: **−0.0006 (t −0.48)**. | `…/raw/latentmotion.json`
 
 | column | r | t |

@@ -4534,7 +4534,29 @@ scene t −1.18. Across all eight arms measured, **0 carry the action positively
 residual prediction *worse*. No objective can recover information that is not
 present.
 
-### 13.15 Proven result 12 — initialisation, not the objective, determines whether the latent is grounded in the image
+### 13.15 ⛔ RETRACTED — "initialisation determines groundedness" was a confounded grouping
+
+⛔⛔ **This section's attribution does not survive (2026-08-26).** It reported that
+latent drift separates cleanly by initialisation — 0.175–0.365 for distilled arms
+against 0.614–0.642 for scratch — across unrelated recipes, and concluded that
+initialisation, not the objective, is what matters.
+
+**Two arms initialised from the same distilled checkpoint, both trained to 30,000
+steps, read drift 0.669 and 0.679; a third, also distilled, reads 0.199.** A
+variable shared by arms 0.47 apart cannot be the cause. The clean non-overlap was
+real, but the groups differed in recipe as well as in initialisation, so the label
+stood for a bundle rather than an intervention — and the crossed cell that would
+have tested it (distilled init on a scratch-line recipe) was never run until now.
+
+⭐ **The effect survives; the attribution does not.** One arm's drift really is
+0.199 against 0.657–0.679 for three others, and a seed replicate puts run-to-run
+variance at ~1.5 %, so the difference is far outside noise. What causes it is
+open, and the ablation that would identify it is well posed.
+
+*The original section follows, retained unedited as the record of what was claimed
+and on what evidence.*
+
+### 13.15 (superseded) Proven result 12 — initialisation, not the objective, determines whether the latent is grounded in the image
 
 Eight objective terms have now been tested and closed. The one factor that
 separates arms cleanly is not an objective at all.

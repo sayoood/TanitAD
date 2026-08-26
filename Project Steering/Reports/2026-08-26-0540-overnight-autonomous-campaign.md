@@ -17,6 +17,18 @@ driving.**
 
 ---
 
+> ⛔⛔⛔ **RETRACTED 2026-08-26 (E-DEC-60 / C164): `--init-from` IS NOT THE
+> LEVER.** `postrain30k` and `postrain30k_seed1` are `--init-from` the SAME
+> distilled checkpoint at 30k and read drift **0.669 / 0.679** — the *scratch*
+> band — while distilled `splitp30k` reads **0.199**. **Two arms share the
+> supposed lever and sit 0.47 apart**, so the distilled/scratch separation was a
+> CONFOUND: the groups were not matched on anything but the label.
+> ⭐ **What survives:** `splitp30k`'s drift really is 0.199 against 0.657–0.679 for
+> three other 30k arms — large, real, and **seed-stable** (the replicate gives
+> ~1.5 % run-to-run variance). **The effect is genuine; the attribution was not.**
+> ⇒ The next experiment is an ablation of what distinguishes `splitp30k` from
+> `postrain30k` with the init held fixed.
+
 ## 1. The four answers
 
 | axis | verdict | the lever |
