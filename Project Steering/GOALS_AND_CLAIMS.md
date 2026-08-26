@@ -99,6 +99,46 @@ floor lives INSIDE the loss. Pre-registered with four outcomes in
 ⭐⭐ **THE SPLIT ACROSS ARMS IS THE HEADLINE.** `splitp30k` (frozen distilled): `n_agents` from `z_t` **+0.3864** — far the richest — but its predictor **ADDS NOTHING**, delta vs `z_t` of −0.0008 / −0.0320 / −0.0158 at k=1/3/6, all NEGATIVE (t −3.69 / −5.62 / −6.26), and at k=6 `lead_closing` degrades to −0.0747 (t −2.11). `rdw8p30k` (trained): content only +0.0777 but the predictor **adds substantially**. ⇒ **the frozen arm CARRIES the environment and does not PREDICT it; the trained arm PREDICTS change and carries less of it.** E-DEC-20's dissociation in a new form ⇒ **mandate (2) — environment in BOTH encoder and predictor — is NOT yet satisfied by any single arm.**
 
 ⚠️ **FOUR BOUNDS.** (1) **ẑ also beats the encoded-future CEILING**, which is anomalous. Two explanations and this panel cannot separate them: the rollout is **ACTION-CONDITIONED**, so ẑ carries the ego's commanded motion that a single encoded frame lacks — *or* it is temporal **smoothing** of a noisy target. **An action-shuffled control would separate them and has not been run.** (2) All absolute R² are **small** (0.03–0.15); `lead_closing` +0.0019 is barely above zero. (3) **IN-SAMPLE** until the held-out corpus lands. (4) k=1 is **underpowered by construction** — the ceiling itself is barely above `z_t` there (+0.0123, t 0.75), i.e. the scene has not changed enough for prediction to add anything; only k=3–6 carry headroom. |
+| E-DEC-55 | ⭐ **THE PRE-REGISTERED READ: NOT REPLICATED — and the pre-registration called it in advance** | **MEASURED**, `postrain30k` @30k, identity control **+0.9337 (t 23.74)**. `ẑ` Δyaw **t 1.13** against a pre-committed bar of **t > 3.0**. | `…/raw/egostate_postrain30k.json`
+
+`PREREG_POSTRAIN30K_EGO_REPLICATION.md` predicted, **before this checkpoint
+existed**, that `postrain30k`'s predicted latent would carry the ego's Δyaw — the
+one cell in the 8-arm census that had exceeded threshold (`postrain10k`, t 3.00).
+
+| target | `z_t` | `ẑ` | `action_t` |
+|---|---|---|---|
+| IDENTITY `accel_t` | +0.0398 (0.54) | −0.0164 (−0.26) | **+0.9337 (23.74)** ✅ rig |
+| speed (LEVEL) | −0.0519 (−0.84) | +0.1150 (1.59) | +0.1504 (1.30) |
+| yaw-rate (LEVEL) | +0.0440 (0.57) | +0.0574 (0.85) | **+0.5773 (5.09)** |
+| **Δspeed** (CHANGE) | −0.0682 (−1.43) | **−0.1461 (−2.52)** | **+0.3171 (2.56)** |
+| **Δyaw** (CHANGE) | +0.1117 (1.49) | **+0.0645 (1.13)** ⛔ | **+0.5638 (4.57)** |
+
+⛔ **NOT REPLICATED** (t 1.13, the ≤ 2.0 branch). `postrain10k`'s 3.00 was one of
+the two-to-three false positives a 48-cell census produces from nothing —
+**exactly what E-DEC-54's measured null (max 2.93 over 80 draws) said it was.**
+
+⭐⭐ **THE PROCESS IS THE RESULT HERE.** The NOT-REPLICATED branch was written
+**first** and labelled the likeliest; the threshold was tightened from an anecdotal
+2.6 to a measured 3.0 **while the arm was at step 27,600 and unscored**; and the
+prediction was run even after its motivating observation had evaporated, because a
+pre-registration quietly withdrawn when its motivation weakens teaches nothing.
+**Every one of those choices was made before the number existed, and the number
+landed where the pre-registration said it probably would.**
+
+⚠️ **THE AUTO-VERDICT LINE IS STILL DEFECTIVE (C160, unfixed).** It printed *"the
+latent is a pure SCENE-APPEARANCE representation with NO ego state"* — a
+substantive `else` branch, and now wrong in a second way: **with a null reaching
+2.93, ABSENCE is not established either.** The admissible statement is *"no cell
+above the null"*, not *"no ego state"*. ⇒ **Read the table, never the line.**
+
+⭐ **WHAT STANDS AFTER THE WHOLE EGO THREAD.** The action carries real, large
+information about the ego's own dynamics — Δyaw **t 4.57**, yaw-rate level
+**t 5.09** — far above any plausible null and on a rig whose identity control reads
+a known value. **No arm's latent, encoded or predicted, carries it above the null.
+And O13, the objective built to force the connection, is degenerate (+192.4 %).**
+⇒ A complete and coherent NEGATIVE on the action-conditioning axis, from four
+independent directions.
+
 | E-DEC-54 | ⛔⛔⛔ **THE EGO CENSUS IS ENTIRELY NULL — a latent that provably carries NOTHING reaches t +2.93, and it retracts a claim I published six hours ago** | **MEASURED, 24 null draws:** \|t\| median **0.44**, p90 **2.05**, p95 **2.71**, **max 2.93**. | `…/raw/egonull_measured.json`
 
 Identical panel — same 20 held-out clips, same real targets, same RFF+ridge,

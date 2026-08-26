@@ -104,3 +104,25 @@ motivation weakens teaches nothing.
 existed** — `postrain30k` was at step ~27,600 of 30,000 and unscored. Tightening a
 threshold on null data is sound; tightening it on test data is not, and the
 timestamps are recorded here so the distinction is auditable.
+
+
+---
+
+## ⛔ OUTCOME, 2026-08-26 ~05:20 — NOT REPLICATED
+
+`postrain30k` @ step 30,000, 20 held-out clips, k = 4, identity control
+**+0.9337 (t 23.74)** → the verdict is admissible.
+
+| target | `ẑ` (PREDICTED) | bar | outcome |
+|---|---|---|---|
+| **Δyaw** | **t 1.13** | t > 3.0 | ⛔ **NOT REPLICATED** (≤ 2.0 branch) |
+| Δspeed | t −2.52 | — | negative; reported beside it as the guards require |
+
+⇒ `postrain10k`'s t 3.00 was a false positive from a 48-cell census, as E-DEC-54's
+measured null (max **2.93** over 80 draws) indicated. **The 8-arm ego census is
+null in full.**
+
+⚠️ Both targets are reported, per the guard that a prediction about one target must
+not be presented as though both cleared. ⚠️ The step-count caveat is moot: the
+effect was not present at 30k **and** was inside the null at 10k, so there is no
+"real at 10k, gone by 30k" reading to choose between.
