@@ -197,3 +197,57 @@ may be the discipline rather than any single result:
 evaluated at T1, so **no claim about driving is available from this campaign at all.**
 Item 3 in §6 is therefore not a formality — it is the first evidence that would bear on
 the PI's actual question.
+
+
+---
+
+## 8. ⭐⭐⭐ HOW EFFECTIVENESS IS PROVEN — the ladder, and the control that would have caught v1.x
+
+**The PI's question:** *"how can we prove the effectiveness of the taken measures?"*
+
+⛔ **Start from why the last attempt's proof failed.** v1.7 cleared every gate it was
+measured against and still did not drive: **ADE −16 % vs v1.6, CI-separated, every
+non-regression gate green** — and at T1 its S-curve reproduction was **0.0430**. The
+proof was not wrong, it was **measured in the wrong tier**. ⇒ **A v7 effectiveness
+claim that is not T1 with the echo control is not a claim about driving.**
+
+⭐⭐ **The programme already OWNS the instrument that exposes this: the HOLD-ACTION
+control**, which reproduces **0.0 %** of S-reversals when the apparent skill is an echo
+of the supplied action. It is the single sharpest test we have, and it is free.
+
+### The ladder — an arm earns the next level only by clearing the previous
+
+| level | what it proves | criterion | ⛔ deliberate-regression arm (must FAIL) |
+|---|---|---|---|
+| **L0** | the **rig** is valid | constant control reads the no-information value **EXACTLY**; the positive control reads its **KNOWN** value; a raw-pixel floor is present; `n` and `d` printed | an input with the target provably absent |
+| **L1** | no collapse | **participation (σ²), val-side, ≥ 8.56** (frozen DINOv3, MEASURED on our frames). ⛔ Never `effective_rank` (C132: they disagree up to 141×) | — ⛔ **rank is NECESSARY, NOT SUFFICIENT (C131):** v1-era had the highest rank ever measured here and no environment interpretation |
+| **L2** | the latent **carries** the environment | beats the raw-pixel floor **AND** the constant control **AND** frozen DINOv3 — paired — on `n_agents`, `n_free_cols`, `occ_{l,c,r}` | **`frzrand`** (frozen RANDOM ViT). It spans essentially the pixel subspace and **must not clear L2**; it already reads `lead_gap_m` **equal to the pixel floor to four decimals** |
+| **L3** | ⭐ the predictor **ADDS** — *the dissociation gate, and the actual v7 bar* | `zhat` beats `z_t` on the same targets, paired, **\|t\| ≥ 2.9** against the measured null | **`splitp30k`** — a known predictor-dead arm (t −3.69 / −5.62 / −6.26). If it clears L3, the gate is broken |
+| **L4** | ⭐⭐⭐ it **DRIVES**, and **not by echo** | **T1.** S-curve reproduction must **exceed the HOLD-ACTION control**; ADE below the **CV floor 0.5352**; all four metric families, paired episode-cluster bootstrap | ⭐ **v1.7 ITSELF** — banked at 0.9785 open / **0.0430 closed**, hold-action **0.0 %**. A harness that does not reproduce that collapse cannot be trusted to detect it in v7 |
+| **L5** | the **hierarchy** earns its place | separated from **REF-C** and from the **frozen-DINOv3 WM** (the PI's fallback), paired episode-cluster bootstrap | a **flattened single-level** variant of the same arm, same corpus, same steps |
+
+⭐ **Why v1.7 as the L4 regression arm is the strongest part of this design.** It costs
+nothing (the numbers are banked), it is the *exact* failure we are trying not to repeat,
+and it makes the harness falsifiable **before** it is used to bless v7. Per the
+validation standard: *if the gate does not FAIL the regression arm, a PASS on the fixed
+arm means nothing.*
+
+### The four rules that make each level admissible
+
+1. ⛔ **ONE VARIABLE, and diff the LAUNCH COMMANDS, not the intent.** C164 is the cost of
+   skipping this: a grouped comparison is a lever **only if the groups are matched on
+   everything but the label**, and `--init-from` failed exactly that test.
+2. ⛔ **The bar is the MEASURED null — \|t\| ≈ 2.9, not 2.0** (104 draws,
+   `taniteval/taniteval/null_calibration.py`), with **p floored at 1/N**.
+3. ⛔ **Every hyper-parameter fitted on FIT only.** λ selected on the scored split picks
+   maximal regularisation and reads **exactly the floor**, which then beats every noisy
+   positive estimate — measured, four times in one afternoon.
+4. ⛔ **Name the ARM beside the number** (C166). A column swap in a six-column table
+   silently reverses the verdict and nothing in the number itself flags it.
+
+### What the ladder does NOT prove
+
+⚠️ **L1–L3 are all T0 and none of them is evidence about driving.** v1.7 is the proof of
+that: it is possible to clear open-loop gates convincingly and reproduce 4 % of the
+manoeuvres that matter. **L4 is the first level at which the word "effective" is
+admissible**, and no v7 arm has ever reached it.
