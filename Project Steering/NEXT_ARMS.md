@@ -63,7 +63,7 @@ Gated on B1/B2. Recipe carried from `V7_RECIPE_AND_SCALEUP.md` §5.1 plus whatev
 
 | # | arm | one variable | why |
 |---|---|---|---|
-| **A7** | `freezek4_30k` — `postrain30k_freeze` recipe with **`--o5-k 4`** | `o5-k` 8→4 | ⭐ the C164 leftover made concrete: `splitp30k` (0.199 drift) differs from the freeze cell (0.3905) in recipe, and `o5-k` is the known candidate. If this lands ≈0.20, the splitp30k separation is fully explained by freeze+k; if it stays ≈0.39, something else in the split recipe carries it |
+| **A7** | ⭐ **REDEFINED after a MEASURED config diff (2026-08-27 02:00)** — `k4_30k`: the `postrain30k` recipe, TRAINABLE, with **`--o5-k 4`** | `o5_k` 8→4 | The recursive config diff of `splitp30k` vs `postrain30k_freeze` found **exactly ONE substantive knob: `o5_k` 4 vs 8** (all other leaf diffs are newer-trainer args at weight 0.0 — inert — or derived: `o4_span_steps = window + o5_k`). ⇒ freeze+k4 **IS** `splitp30k`, so the originally-specified A7 was a near-replication. The informative missing cell is the fourth corner of the 2×2: trainable+k8 = 0.669 (`postrain30k`) · frozen+k8 = 0.3905 (`postrain30k_freeze`) · frozen+k4 = **0.199** (`splitp30k`) · **trainable+k4 = MISSING**. Additive prediction, stated in advance: ≈0.48; if k4 only helps under freeze (interaction), ≈0.67. Either way the C164 leftover resolves into main effects + interaction |
 | **A8** | **`dinofrozen30k`** — frozen **DINOv3** WM at parity, RESTORED to the queue (pulled after C156, wrongly) | encoder source | the PI's designated reference/fallback WM — and DINOv3 currently beats our trained encoder on free space (+0.3701 vs +0.2869) and side occupancy. The L5 ladder comparison needs this arm trained, not assumed |
 
 ## 0-GPU work, pullable any time (gated ≠ idle)
