@@ -43,9 +43,16 @@ contribution to predicting the **future scene** is **zero or negative**:
 
 | target at t+k | `scene_t` (control) | `action_t` | **action's marginal** |
 |---|---|---|---|
-| `n_agents` | **+0.7089 (12.58)** | +0.0755 (0.64) | **−0.1678 (−3.50)** |
+| `n_agents` | **+0.7089 (12.58)** | +0.0755 (0.64) | −0.1678 (−3.50) |
 | `occ_center` | **+0.6588 (8.52)** | −0.0179 (0.14) | +0.0217 (0.40) |
-| `n_free_cols` | **+0.6324 (14.34)** | +0.1083 (1.43) | **−0.1337 (−1.83)** |
+| `n_free_cols` | **+0.6324 (14.34)** | +0.1083 (1.43) | −0.1337 (−1.83) ⛔ |
+
+⚠️ **§8 (added 06:35) SUPERSEDES THE MARGINAL COLUMN.** A measured 128-draw null
+for this estimator reaches \|t\| **3.49**, so `n_free_cols` (−1.83) is inside it
+and `n_agents` (−3.50) clears by 0.01. ⇒ *"adding the action actively hurts"* is
+**withdrawn**. The load-bearing statement — **the action adds NOTHING** — is
+untouched: it rests on the **action columns** being null (0.64 / 0.14 / 1.43)
+against a control at t 8.5–14.3.
 
 **The causal arrow runs SCENE → ACTION, not the reverse.** Other traffic evolves
 almost independently of what we do. ⇒ *"If the lead decelerates, the ego must
