@@ -8781,6 +8781,51 @@ carries and what I shipped a watchdog three times without. ⇒ **Before arming a
 monitor, run its filter against a job you KNOW is running and check the count is
 non-zero.** "It looks right" is how versions 1, 2 and 3 shipped.
 
+## C163 — I wrote the guard against precision-overclaim in the morning and bypassed it by teatime
+
+**Class:** *a guard that exists, is correct, and is not called* — distinct from every
+earlier entry, all of which were guards that did not exist yet. **Caught before it
+entered any document, and logged anyway because the mechanism is more dangerous than
+the instance.**
+
+**What happened.** The band panels gave an ego-marginal of **t +2.00** (directions
+8–16) and **+2.20** (32–40). Six null draws of that same marginal all fell within
+|t| ≤ 1.37, so I printed:
+
+> `band 8:16 ego marginal  t +2.00   P(null>=|t|) = 0.000`
+
+⛔ **Six draws cannot resolve a p below 1/6 = 0.167.** `0.000` is not a small
+p-value; it is `k/N` with `k = 0`, which means *"no draw reached it"* and nothing
+more.
+
+**Why it is C163 and not a repeat of C162.** C162 happened because **no null had been
+measured**. This time the null existed, the sample size was known, and
+`taniteval/taniteval/null_calibration.py::p_value` — **written this morning, in
+response to C162, with an explicit floor `max(k/N, 1/N)` and a docstring saying why**
+— was sitting in the repo. **I did not call it.** I wrote an ad-hoc
+`(a >= t).mean()` in a throwaway probe instead.
+
+⇒ **A guard in a library protects only the code paths that import it.** The
+throwaway analysis line is exactly where overclaims are born, and it is the path
+least likely to import anything.
+
+**The rule:** ⛔ **Any p-value, anywhere — including a one-off print in a scratch
+probe — goes through `null_calibration.p_value`, which floors at 1/N.** If the
+function is inconvenient to import, that is an argument for making it easier to
+import, not for retyping the arithmetic.
+
+⚠️ **And state N beside every p.** `p = 0.17 (n = 6)` is honest and unimpressive;
+`p = 0.000` is neither. The floored value forces the first form.
+
+⭐ **What it would have cost.** The band result, if real, changes the campaign's
+conclusion from *"the information is not in the data"* to *"the information is in
+LOW-VARIANCE directions an MSE loss weights to nothing"* — and only the second has a
+fix (a whitened prediction loss). **A conclusion that consequential, published off
+six draws, would have been the most expensive overclaim of the campaign.** 24 more
+seeds are running instead.
+
+---
+
 ## C162 — I published "the encoder represents ego state" from three cells that a MEASURED null reaches
 
 **Class:** *a threshold asserted from an anecdote instead of measured* — and the
