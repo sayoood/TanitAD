@@ -3801,6 +3801,8 @@ trainable**, because the cheapest way to satisfy `ẑ_{t+k} ≈ z_{t+k}` is an e
 target rather than a better prediction. `postrain30k_freeze` is the crossed cell,
 pre-registered in `PREREG_FREEZE_CROSSED_CELL.md`.
 
+⭐ **FIRST PARITY T1 (2026-08-27, both arms, 40 eps × 6,924 windows, episode-cluster bootstrap):** ADE dense **14.52 m** [11.55, 17.58] (trained) / **14.21** [11.23, 17.35] (frozen) vs CV floor 0.5352 — **neither arm drives**; `_longitudinal_claim_admissible: False` BOTH (LOSES_TO_HOLDV0, copy CLEAN) so every longitudinal figure is fidelity-diagnostic. Speed bias ≈ −(mean speed): the rollout sheds speed — **E-DEC-63's drift predictor wearing its T1 consequence**. Masked S-rate **0.2632** [0.1404, 0.4182] vs **0.0175** [0.0, 0.0556] (separated; trained = oscillatory jerk 185 m/s³, frozen = inert jerk 5.6 — neither is skill). Strategic + distance-keeping + sel_gap UNAVAILABLE (named work items); `paired_decision_grade` EMPTY (single-arm invocations — paired read queued). Full read: `…/incoming/2026-08-27-t1-parity-first/RESULT.md` + raw JSONs.
+
 ⚠️ **`postrain30k` also carries the programme's first T1 execution** (see
 `T1_FIRST_RUN_FINDINGS.md`). ⛔ **Its longitudinal numbers are NOT admissible**:
 `_longitudinal_claim_admissible: False`, `holdv0 = LOSES_TO_HOLDV0`, though
