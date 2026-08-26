@@ -145,8 +145,8 @@ separation it was credited with.
 
 | # | decision | the experiment | state |
 |---|---|---|---|
-| **D1** | **encoder trainable or frozen** | `postrain30k_freeze` — the crossed cell. Pre-registered read (`PREREG_FREEZE_CROSSED_CELL.md`): **drift < 0.45 AND held-out nrmse ≤ 0.893** | ▶ **RUNNING, 24,000/30,000** |
-| **D2** | **the conditioning channel** | `--cond-param omega_accel_v` — the AV ego data as measured state, per the PI. Implemented, 7 tests passing, **never run as an arm** | ⏸ queued behind D1 |
+| **D1** | **encoder trainable or frozen** | `postrain30k_freeze` — the crossed cell | ⛔ **ANSWERED 2026-08-27: DEGENERATE — drift 0.3905 ✅ but nrmse 0.9301 vs 0.8115 (+14.6 %) ⛔. The v7 encoder stays TRAINABLE**; anti-drift moves to the representational lever (E-DEC-63) |
+| **D2** | **the conditioning channel** | `--cond-param omega_accel_v` — the AV ego data as measured state, per the PI | ▶ **RUNNING** (Thor `omega30k`, PID 1611779; `PREREG_D2_OMEGA_CONDITIONING.md`) |
 
 ⭐ **D1 is the v7 decision experiment, not a side quest.** It asks precisely whether
 content and prediction can coexist: freezing is the only condition under which drift has

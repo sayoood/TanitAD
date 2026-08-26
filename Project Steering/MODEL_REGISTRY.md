@@ -3770,7 +3770,7 @@ distilled arms 0.175–0.365 vs scratch 0.614–0.642, non-overlapping"* (**C164
 |---|---|---|---|---|---|
 | **`postrain30k`** | trained | `distill_init.pt` | 30,000 | **0.669** | `a58585883c279633c799a6f6968cc4b2` |
 | **`postrain30k_seed1`** | trained | `distill_init.pt` | 30,000 | **0.679** | `85c9ae2cfba3d487f9b0275fef3bf36c` |
-| **`postrain30k_freeze`** | ⭐ **FROZEN** | `distill_init.pt` | 30,000 | ▶ **RUNNING** | — |
+| **`postrain30k_freeze`** | ⭐ **FROZEN** | `distill_init.pt` | 30,000 | **0.3905** | `5f5e5c92cd8fb3dc92f7b38580149689` |
 
 **Recipe (all three, byte-identical except where noted):** `--stage S-W`, `--o5-form
 l1`, `--w-o5 1.0 --w-o6 0.1`, O1/O2/O3 **off**, `--o5-k 8`, `--sigreg-subspaces 32`,
@@ -3806,6 +3806,8 @@ pre-registered in `PREREG_FREEZE_CROSSED_CELL.md`.
 `_longitudinal_claim_admissible: False`, `holdv0 = LOSES_TO_HOLDV0`, though
 `copy_detector = CLEAN`. Per the 2026-08-16 rule they are **fidelity diagnostics,
 not capability results**, and may not be quoted as driving performance.
+
+⛔ **The crossed cell READ (2026-08-27): DEGENERATE** — drift 0.3905 (< 0.45) but held-out nrmse **0.9301 vs 0.8115** (+14.6 %, over the pre-registered 10 %). Freezing is NOT the v7 encoder policy; see `PREREG_FREEZE_CROSSED_CELL.md` OUTCOME and E-DEC-64. Its parity-T1 masked S-rate is **0.0175** vs the trained arm's **0.2632** (exploratory, raw in `…/incoming/2026-08-27-t1-parity-first/raw/`).
 
 **Instrument:** drift from `latentmotion.py` (K-fold fit / per-clip score, 80
 held-out clips, drift control t 143–147), raw at

@@ -121,3 +121,34 @@ QUOTED AS THOUGH IT WERE.** It may be reported as a within-arm trajectory only.
 ⚠️ **This amendment is legitimate only because it precedes any read** — the arm is
 at step ~600 of 30,000 and no held-out eval has been run. **A criterion may be fixed
 on a defect; it may never be fixed on a result.**
+
+
+---
+
+## OUTCOME — read 2026-08-27 00:25 (Europe/Berlin), instruments as pre-registered
+
+| read | value | incumbent (`postrain30k`, same rig) | band |
+|---|---|---|---|
+| drift (`latentmotion`, 80 clips, k=4, band 0:8) | **0.3905** (t 32.21) | 0.669 | **< 0.45** ✅ |
+| held-out `nrmse` (`meanpred`, same clips) | **0.9301** | **0.8115** | **+14.6 % — ≥ 10 % worse** ⛔ |
+
+⇒ ⛔ **DEGENERATE, per the committed table**: *"Freezing trades collapse for
+miscalibration and is NOT a fix. Report as such; do not retune."* The v7 encoder
+policy is therefore **TRAINABLE** — drift is accepted as a cost where it arises, and
+the anti-drift lever moves to the representation (E-DEC-63's pixel finding), not to
+freezing.
+
+**Texture, so the band is not over-read:** this is degradation, not the E-DEC-20c
+collapse — cos 0.3792 (t 24.27), still clearly beating the mean-only control
+(0.9984). And the freeze did NOT reproduce `splitp30k`'s 0.199 — 0.3905 sits between
+the bands, so **part of the splitp30k separation remains unexplained beyond
+trainability** (consistent with C164: its recipe difference carries something more).
+
+**E-DEC-61 (O5 manufactures drift when the encoder is trainable): SUPPORTED by the
+crossed cell** — one variable moved drift 0.669 → 0.3905.
+
+⚠️ **Exploratory corroboration (NOT the criterion, declared before the run):** at
+T1 on the parity corpus the frozen arm's masked S-rate is **0.0175** vs the trained
+arm's **0.2632** — the same direction at the primary tier.
+Raw: `…/8fc25020…/scratchpad/freezedrift.json`, `freezenrmse.json`;
+`…/incoming/2026-08-27-t1-parity-first/raw/`.
