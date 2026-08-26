@@ -52,6 +52,20 @@ Gated on B1/B2. Recipe carried from `V7_RECIPE_AND_SCALEUP.md` §5.1 plus whatev
 
 ---
 
+## Overnight 2026-08-27 — the queue moved
+
+- **A1 D1: ANSWERED — DEGENERATE** (drift 0.3905 ✅ / nrmse 0.9301 ⛔ +14.6 %). Encoder stays TRAINABLE.
+- **A2: DONE** — first parity T1, both arms; neither drives (ADE ~14 m vs floor 0.54); it is E-DEC-63's drift predictor at the primary tier. `…/incoming/2026-08-27-t1-parity-first/RESULT.md`.
+- **A3 D2: RUNNING** — `omega30k`, `PREREG_D2_OMEGA_CONDITIONING.md`.
+- **E-DEC-63 (+F1–F4): CLOSED** — the ceiling beyond drift is small, pixel-borne, NOT photometric; the token field actively displaces it. The representational lever has a measured target.
+
+### The next two cells after D2, specified now
+
+| # | arm | one variable | why |
+|---|---|---|---|
+| **A7** | `freezek4_30k` — `postrain30k_freeze` recipe with **`--o5-k 4`** | `o5-k` 8→4 | ⭐ the C164 leftover made concrete: `splitp30k` (0.199 drift) differs from the freeze cell (0.3905) in recipe, and `o5-k` is the known candidate. If this lands ≈0.20, the splitp30k separation is fully explained by freeze+k; if it stays ≈0.39, something else in the split recipe carries it |
+| **A8** | **`dinofrozen30k`** — frozen **DINOv3** WM at parity, RESTORED to the queue (pulled after C156, wrongly) | encoder source | the PI's designated reference/fallback WM — and DINOv3 currently beats our trained encoder on free space (+0.3701 vs +0.2869) and side occupancy. The L5 ladder comparison needs this arm trained, not assumed |
+
 ## 0-GPU work, pullable any time (gated ≠ idle)
 
 - The **D1-negative contingency**: if freezing comes back degenerate, specify the
