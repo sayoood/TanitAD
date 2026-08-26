@@ -9,6 +9,51 @@ products, the org, or the north star** — those are the constitution's and the 
 
 ---
 
+## 0. ⛔⛔ CORRECTION, 07:05 — §2 AND §3 ARE WITHDRAWN. The PI refuted them within the hour.
+
+**The PI:** *"but the AV dataset must contain ego data, why do we need an IDM?"*
+**Correct, and §2/§3 below do not survive it.**
+
+1. ⛔ **PhysicalAI HAS ego data** — `curvature`, `ax`, `vx/vy`, quaternion yaw. **An
+   IDM reconstructs actions for corpora that have NONE** (YouTube, dashcam,
+   smartphone). That is P3's ORIGINAL scope and it remains right *there*. ⇒ **§2's
+   "P3 moves onto the critical path" CONFLATED TWO DIFFERENT PROBLEMS and is
+   withdrawn.** P3's design constraint (never regress the derived `steer`) is still
+   worth keeping — but as a note on P3, not as a programme re-prioritisation.
+2. ⛔ **E-DEC-57 establishes something NARROWER than §1–§3 assumed.** It shows our
+   *"action → ego dynamics"* results were **CIRCULAR** — the action *is* the
+   realised motion. It does **NOT** show the action channel is unusable for world
+   modelling: **`(v, κ)` is a legitimate control input; a bicycle model takes
+   exactly that.** "State vs command" was never the defect, and building a plan on
+   that distinction was an over-reach.
+3. ⇒ **§3's comma2k19 gate is NOT the decision it was billed as.** It would tell us
+   whether command and realised motion differ (interesting for actuation lag), but
+   it does not decide whether action-conditioning is possible.
+
+⭐⭐⭐ **AND THE MISS THE PI'S QUESTION SURFACED, WHICH IS LARGER THAN THE ERROR IT
+CORRECTED: every ego panel ran on 20 of 129 AVAILABLE held-out clips.** The measured
+null reached \|t\| **3.49** largely *because* n = 20 — with 20 clip-level scores the
+SE estimate is itself noisy, so the statistic is heavy-tailed. ⇒ **The whole chain
+built on that null — E-DEC-53 (census null), E-DEC-54 (retracting "the encoder
+carries ego state"), E-DEC-56 (two more retractions) — is PROVISIONAL ON AN
+UNDERPOWERED PANEL, and I presented it as settled.**
+
+At 129 clips the null **tightens** (more folds ⇒ a better SE estimate) while a real
+effect **grows ~2.55×**: `rdw8p30k`'s yaw-rate would go 2.76 → ~7.0 *if it is real*.
+**The discrimination improves from both sides.**
+
+⇒ ▶ **RUNNING NOW:** the identical ego panel at **129 clips** (`rdw8p30k`,
+`postrain30k`) and a **fresh null at 129 clips** — the banked constant is explicitly
+scoped to ~20-clip panels and may not be reused. **No IDM, no simulator, no new
+data.** ⛔ **Nothing in §1–§6 below should be acted on until that reads.**
+
+⚠️ **The transferable lesson:** I measured a null, corrected three claims against it,
+built a plan revision on the corrected picture — and never asked whether the panel
+had the power to see the effect in the first place. **A null is not a finding when
+n is a free parameter you left at 15 % of the corpus.**
+
+---
+
 ## 1. ⭐ The one structural consequence: the programme was two tracks wearing one name
 
 | | **TRACK A — representation & perception** | **TRACK B — world model & imagination** |
