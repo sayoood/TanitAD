@@ -33,7 +33,33 @@ lead-block alignment and reporting.
 ⇒ **The rollout math, the predictor signature and the step-readout signature all
 match.** T1 was never architecturally incompatible with v7.
 
-## 3. ⛔ What is actually missing — one thing
+## 2b. ⭐⭐ EXECUTED 19:15 — the model side needs NO ADAPTER AT ALL
+
+**`w.stack.step_readout_op` exists.** The probe wrapper returns the trunk, and
+`load_trunk_auto` builds it as `trunk, V6Grounding(trunk.stack), step` — so the full
+v6 stack was always reachable **one attribute deeper** than §3 assumed. Run on
+`rdw8p30k`, the exact two calls `t1_eval.py:830-831` makes:
+
+```
+z_hat = predictor(win_s, win_a)[1]      ->  (2, 2048)
+d     = step_readout(z_t, z_hat)        ->  (2, 3)      ✓ T1 expects [B, 3]
+step_readout_op.pose_dim = 3
+```
+
+⇒ ⭐ **Both of §4's "NOT yet verified" model-side risks are now verified TRUE, and
+neither required writing any code.** `pose_dim` is 3; the stack rebuilds from a v7
+checkpoint outside the trainer (the probe loader has been doing it all campaign).
+
+⚠️ **§3 below overstated the work and is superseded on the model side.** It is kept
+because the reasoning that led there — reading `load_arm`, seeing only `predictor`
+and `window`, and concluding an adapter was needed — is exactly the
+**absence-found-at-one-location** error `CLAUDE.md` warns about: I probed the
+wrapper, not the object it wraps. **The remaining cost is entirely §4's corpus
+plumbing.**
+
+---
+
+## 3. ⛔ What is actually missing — one thing *(SUPERSEDED by §2b: the model side needs nothing)*
 
 **`v7tiny_g2.load_arm` returns a PROBE TRUNK, not the full stack.** It calls
 `tanitad.eval.v6_probe_trunk.load_trunk_auto`, which yields an object exposing
@@ -54,9 +80,11 @@ so the construction path exists and is exercised daily.
 - The probe-trunk loader does **not** expose `step_readout_op` (executed).
 - v7's `predictor(z, a)[1]` returns the expected latent (executed, all day).
 
-⚠️ **NOT yet verified — and these are where the cost actually lives:**
-- that `pose_dim` is 3, matching T1's `[B, 3]` expectation;
-- that a v7 checkpoint rebuilds the full stack outside the trainer;
+✅ **VERIFIED 19:15 by execution (§2b), both without writing code:**
+- `pose_dim` **is 3**, matching T1's `[B, 3]`;
+- a v7 checkpoint **does** rebuild the full stack outside the trainer.
+
+⚠️ **STILL NOT verified — and this is now where ALL the cost lives:**
 - the corpus / `--v2-val-cache` / lead-block plumbing for the v7 geometry
   (256×640 cylindrical) — T1's defaults are w120 flagship;
 - whether `--grounding-readout` or the separate `--head` path is the right mode.
