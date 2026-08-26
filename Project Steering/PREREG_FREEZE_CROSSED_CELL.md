@@ -80,3 +80,44 @@ One 30k arm on Thor (~8 h). **It displaces `postrain30k_seed2`**, killed at ~7k
 steps: a third variance point refines an estimate already at 1.5 %, while this cell
 decides whether the campaign's leading explanation is right. ⚠️ Stated because
 killing a running arm is a real cost, not a free choice.
+
+
+---
+
+## ⛔ AMENDMENT, 2026-08-26 ~15:05 — BEFORE ANY READ. The `o5` criterion was C137 in my own pre-registration.
+
+**The defect.** §3 judged the DEGENERATE branch on *"`o5` within 10 % of
+`postrain30k`"*. But **`o5 = ‖ẑ_{t+k} − z_{t+k}‖` is measured against the ENCODER'S
+OWN LATENTS**, and the two arms have **different encoders** — one frozen, one
+trained. A frozen encoder whose latents simply have a smaller scale would show a
+lower `o5` **without predicting any better.** ⇒ **`o5` is not comparable across arms
+with different latent spaces.** That is **C137 — a metric whose denominator is an
+ARM PROPERTY — written into a pre-registration four hours after I logged the
+retraction for it.**
+
+⚠️ **It would have fired in the flattering direction.** At matched steps the frozen
+arm already reads `o5` **0.0228 / 0.0409 / 0.0882** against `postrain30k`'s
+**0.0422 / 0.1025 / 0.2209** — roughly half. Left uncorrected, that reads as
+"freezing improves prediction" when it may only mean the latents shrank.
+
+**The replacement, and it is the programme's own standard.** The prediction-quality
+read becomes a **HELD-OUT, SCALE-FREE `nrmse` in the C149 form**:
+
+    nrmse = ‖d̂ − t‖ / ‖t − mean(t)‖        (1.0 = the constant-predictor floor)
+
+computed on the same 80 held-out clips as the drift read, so **both numbers come
+from one instrument on one split**, and neither depends on the arm's latent scale.
+
+| revised outcome | criterion |
+|---|---|
+| ⭐ **CONFIRMED** | drift **< 0.45** AND held-out `nrmse` **≤ `postrain30k`'s × 1.10** |
+| ⛔ **DEGENERATE** | drift < 0.45 but held-out `nrmse` **> ×1.10** (or ≥ 1.0, the floor) |
+| ⛔ **REFUTED** | drift **≥ 0.55** |
+| 🔶 **UNCLASSIFIED** | 0.45 ≤ drift < 0.55 |
+
+⚠️ ⛔ **THE TRAINING-LOG `o5` IS NOT ADMISSIBLE FOR THIS COMPARISON AND WILL NOT BE
+QUOTED AS THOUGH IT WERE.** It may be reported as a within-arm trajectory only.
+
+⚠️ **This amendment is legitimate only because it precedes any read** — the arm is
+at step ~600 of 30,000 and no held-out eval has been run. **A criterion may be fixed
+on a defect; it may never be fixed on a result.**
