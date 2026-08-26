@@ -3760,6 +3760,62 @@ no scorer, no planner and no closed loop.
 
 ⛔⛔ **`lead_gap_m` IS A SUPERSEDED TARGET (C150) — every `lead_gap_m` cell in §13 was computed against it.** MEASURED over all 25,790 labelled frames: **4.8 %** of frames have no lead and took an **80.0 m default**, carrying **59.9 % of the total variance**, and 80.0 is **not** a sentinel outside the data (real leads reach **180.84 m**). Split into `lead_present` + `lead_range_m` (lead-present frames only), **the repair flips verdicts**: `scale1` and `champ30k` "beat pixels" on the defective target (t 4.23 / **10.28**) and do **not** on the sound one, where **every arm of ours is worse than a constant** and only frozen DINOv3 carries range (+0.0336). ⭐ Cause identified (E-DEC-25): the readout's **128→64 projection**, not its pooling — at the identical grid the *unprojected* tokens read **+0.0719** against the readout's **−0.1611**. Cells below are kept as the historical record and **may not be quoted as range decodability**; `n_agents` is unaffected. Raw: `…/raw/leadsplit.json`, `…/raw/rowladder.json`.
 
+### 13.9 ⭐ THE POSTRAIN TRIO (2026-08-26) — and the retraction of the lever they were built to prove
+
+⛔⛔ **READ THIS BEFORE QUOTING ANY DRIFT NUMBER IN §13.** These three arms retract
+the claim the section was built around — *"initialisation determines groundedness;
+distilled arms 0.175–0.365 vs scratch 0.614–0.642, non-overlapping"* (**C164**).
+
+| arm | encoder | `--init-from` | steps | **drift** | ckpt md5 |
+|---|---|---|---|---|---|
+| **`postrain30k`** | trained | `distill_init.pt` | 30,000 | **0.669** | `a58585883c279633c799a6f6968cc4b2` |
+| **`postrain30k_seed1`** | trained | `distill_init.pt` | 30,000 | **0.679** | `85c9ae2cfba3d487f9b0275fef3bf36c` |
+| **`postrain30k_freeze`** | ⭐ **FROZEN** | `distill_init.pt` | 30,000 | ▶ **RUNNING** | — |
+
+**Recipe (all three, byte-identical except where noted):** `--stage S-W`, `--o5-form
+l1`, `--w-o5 1.0 --w-o6 0.1`, O1/O2/O3 **off**, `--o5-k 8`, `--sigreg-subspaces 32`,
+`--sigreg-slices 512`, `--spectrum-accum 43`, batch 8, `--v2-lru 64`, corpus
+**`physicalai-train-e438721ae894-w120-256x640cyl`**. `postrain30k_seed1` differs
+only in `--seed 1`; `postrain30k_freeze` only in `--freeze-encoder`.
+
+⛔ **WHAT THEY RETRACT.** `postrain30k` and `splitp30k` are **both** `--init-from`
+the same `distill_init.pt` at 30k and read **0.669** vs **0.199** — *0.47 apart*.
+⇒ **Initialisation cannot be the lever.** The old distilled/scratch separation was a
+**confounded grouping**: the three "distilled" arms came from different recipe lines
+than the five "scratch" ones, so the label stood for a bundle. **The crossed cell
+that would have tested it (distilled init on a scratch-line recipe) was never run
+until `postrain30k` accidentally was one.**
+
+⭐⭐ **THE PROGRAMME'S FIRST RUN-TO-RUN VARIANCE ESTIMATE.** `postrain30k` 0.669 vs
+`postrain30k_seed1` 0.679 ⇒ **~1.5 % on the drift metric.** ⇒ A 0.47 between-arm gap
+is emphatically **not** seed noise, and every single-seed comparison in §13 may now
+be read against a known variance for the first time.
+
+⭐ **WHAT REPLACED THE RETRACTED LEVER (E-DEC-61).** Six of seven **trained-encoder**
+arms converge to drift **0.616–0.679** across 7.5k–30k steps and *both*
+initialisations; the two **frozen-encoder** arms (0.199, 0.337) are the only ones
+outside it. The load-bearing evidence is a **within-recipe trajectory** —
+`postrain10k` **0.359** → `postrain30k` **0.669**, same recipe, same init, only
+training length differing. **Hypothesis: O5 MANUFACTURES drift when the encoder is
+trainable**, because the cheapest way to satisfy `ẑ_{t+k} ≈ z_{t+k}` is an easier
+target rather than a better prediction. `postrain30k_freeze` is the crossed cell,
+pre-registered in `PREREG_FREEZE_CROSSED_CELL.md`.
+
+⚠️ **`postrain30k` also carries the programme's first T1 execution** (see
+`T1_FIRST_RUN_FINDINGS.md`). ⛔ **Its longitudinal numbers are NOT admissible**:
+`_longitudinal_claim_admissible: False`, `holdv0 = LOSES_TO_HOLDV0`, though
+`copy_detector = CLEAN`. Per the 2026-08-16 rule they are **fidelity diagnostics,
+not capability results**, and may not be quoted as driving performance.
+
+**Instrument:** drift from `latentmotion.py` (K-fold fit / per-clip score, 80
+held-out clips, drift control t 143–147), raw at
+`…/2026-08-24-action-conditioning-and-heldout/raw/seedrep.json` and
+`…/raw/freezetest.json`. **Eval tier T0-DIAGNOSTIC** except the T1 row above.
+
+⚠️ **The §13 significance bar has moved.** `|t| ≈ 2.9`, not 2.0 — measured over 104
+null draws (`taniteval/taniteval/null_calibration.py`, E-DEC-54/56). Several older
+§13 cells sit at t 2–3 and are **not** separable from noise under it.
+
 ### 13.0 ⭐⭐⭐ `rdw8p30k` — the settled readout geometry at PARITY SCALE — COMPLETE at 30,000 (2026-08-24)
 
 **The arm that re-scopes the whole collapse campaign.** Identical architecture and identical
