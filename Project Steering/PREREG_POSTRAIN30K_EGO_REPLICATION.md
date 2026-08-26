@@ -78,3 +78,29 @@ stops it from being narrated into a finding tomorrow.
   the flattering reading.
 - ⚠️ **Every number is T0.** A replication would say the transition carries an ego
   change. It would say **nothing** about driving.
+
+---
+
+## ⛔ AMENDMENT, 2026-08-26 ~03:50 — BEFORE `postrain30k` WAS SCORED
+
+**The threshold moves from t > 2.6 to t > 3.0**, and the reason is that the 2.6
+came from an **anecdote** (one physically meaningless cell) while **E-DEC-54 then
+MEASURED the null**: 24 draws from a latent that provably carries nothing give
+\|t\| p95 **2.71** and **max 2.93** — on Δyaw, the very target of this prediction.
+
+⇒ **`postrain10k`'s t 3.00, the observation that motivated this pre-registration,
+is itself inside the null.** The census is entirely null, and the honest state of
+this prediction is that **its motivating evidence has evaporated.** It is kept and
+run anyway, because a pre-registration that is quietly withdrawn when its
+motivation weakens teaches nothing.
+
+| revised outcome | criterion |
+|---|---|
+| ⭐ REPLICATED | `ẑ` Δyaw **t > 3.0** *and* above the null max |
+| 🔶 WEAK | 2.0 < t ≤ 3.0 — **inside the measured null; report as null** |
+| ⛔ NOT REPLICATED | t ≤ 2.0 |
+
+⚠️ **This amendment is legitimate only because it happened before any test data
+existed** — `postrain30k` was at step ~27,600 of 30,000 and unscored. Tightening a
+threshold on null data is sound; tightening it on test data is not, and the
+timestamps are recorded here so the distinction is auditable.

@@ -99,6 +99,83 @@ floor lives INSIDE the loss. Pre-registered with four outcomes in
 ⭐⭐ **THE SPLIT ACROSS ARMS IS THE HEADLINE.** `splitp30k` (frozen distilled): `n_agents` from `z_t` **+0.3864** — far the richest — but its predictor **ADDS NOTHING**, delta vs `z_t` of −0.0008 / −0.0320 / −0.0158 at k=1/3/6, all NEGATIVE (t −3.69 / −5.62 / −6.26), and at k=6 `lead_closing` degrades to −0.0747 (t −2.11). `rdw8p30k` (trained): content only +0.0777 but the predictor **adds substantially**. ⇒ **the frozen arm CARRIES the environment and does not PREDICT it; the trained arm PREDICTS change and carries less of it.** E-DEC-20's dissociation in a new form ⇒ **mandate (2) — environment in BOTH encoder and predictor — is NOT yet satisfied by any single arm.**
 
 ⚠️ **FOUR BOUNDS.** (1) **ẑ also beats the encoded-future CEILING**, which is anomalous. Two explanations and this panel cannot separate them: the rollout is **ACTION-CONDITIONED**, so ẑ carries the ego's commanded motion that a single encoded frame lacks — *or* it is temporal **smoothing** of a noisy target. **An action-shuffled control would separate them and has not been run.** (2) All absolute R² are **small** (0.03–0.15); `lead_closing` +0.0019 is barely above zero. (3) **IN-SAMPLE** until the held-out corpus lands. (4) k=1 is **underpowered by construction** — the ceiling itself is barely above `z_t` there (+0.0123, t 0.75), i.e. the scene has not changed enough for prediction to add anything; only k=3–6 carry headroom. |
+| E-DEC-54 | ⛔⛔⛔ **THE EGO CENSUS IS ENTIRELY NULL — a latent that provably carries NOTHING reaches t +2.93, and it retracts a claim I published six hours ago** | **MEASURED, 24 null draws:** \|t\| median **0.44**, p90 **2.05**, p95 **2.71**, **max 2.93**. | `…/raw/egonull_measured.json`
+
+Identical panel — same 20 held-out clips, same real targets, same RFF+ridge,
+clip-disjoint λ, within-clip Pearson r, same time-shuffled control — with the
+**latent replaced by Gaussian noise of the same shape**. A random latent carries
+nothing about the ego, so every t it produces is a draw from the null.
+
+| seed | speed | yaw-rate | Δspeed | Δyaw |
+|---|---|---|---|---|
+| 0 | −0.28 | −0.16 | −0.42 | −0.31 |
+| 1 | **+2.21** | +0.28 | +1.63 | +0.40 |
+| 2 | +0.47 | −0.41 | +0.74 | −0.29 |
+| 3 | **+2.80** | −0.35 | −0.86 | −0.78 |
+| 4 | −1.07 | +1.69 | +0.29 | **+2.93** |
+
+⭐⭐⭐ **WHAT THIS COSTS, STATED FIRST.** Two claims fall:
+
+1. **E-DEC-53's only positive** — `postrain10k`'s predicted Δyaw at **t 3.00** — is
+   **inside the null** (which reaches **2.93** on the *same target* from pure
+   noise). ⇒ **The 8-arm ego census is ENTIRELY NULL.** No arm's latent, encoded or
+   predicted, carries ego dynamics above what a random latent produces.
+2. ⛔ **E-DEC-50's "the encoder ALREADY represents ego state — three for three"**
+   rested on speed **2.07**, yaw-rate **2.76**, accel **3.10**. The null's p95 is
+   **2.71** and its max is **2.93**. ⇒ **Not separable from noise.** See C162.
+
+⚠️ **WHAT THIS DOES *NOT* TOUCH, because the null is column-specific.** It was
+measured for a **d = 2048 latent**. The **action** columns are 3 scalars and have a
+different (far tighter) null, and the **identity control reads +0.9337 at t 23.74**
+— a known value the rig reproduces. So E-DEC-48b's scene panel (control t 8.5–14.3,
+marginal t −3.50) and the action→Δyaw result (**t 4.57**) are **NOT** swept in here.
+⚠️ **But action→Δspeed at t 2.56 is close enough to matter, and its own null has
+not been measured.** That is a WORK ITEM, not a claim, and it is named rather than
+assumed away.
+
+⇒ **THE GENERAL SHAPE: the campaign's LARGE effects survive; its MARGINAL ones
+(t 2–3) do not.** That is the honest partition and it is better to have it than the
+extra findings.
+
+⭐ **I set the replication threshold at t > 2.6 from an ANECDOTE** (one physically
+meaningless cell, `rdw8s30k`'s yaw-rate −2.64) **and the measurement says 2.6 is too
+loose.** `PREREG_POSTRAIN30K_EGO_REPLICATION.md` is amended to **t > 3.0** — done
+**before `postrain30k` was scored**, which is the only time a threshold may move.
+
+⚠️ **My stated reason for expecting this null to be weak was ALSO wrong**, and the
+measurement corrected me: I predicted an i.i.d. Gaussian would *understate* the
+noise because it lacks a trained latent's temporal structure. It did not — it
+reached 2.93 on its own. **A caveat is not a measurement either.**
+
+| E-DEC-53 | ⛔ **The 8-arm EGO-STATE CENSUS — reported here as ENTIRELY NULL, per E-DEC-54** | **MEASURED**, 20 held-out clips, 1,800 rows, identity control **+0.9555**. | `…/raw/egostate_census_8arms.json`
+
+`z_t` (ENCODED), t vs the time-shuffled control:
+
+| arm | step | speed | yaw-rate | Δspeed | Δyaw |
+|---|---|---|---|---|---|
+| `rdw8p30k` | 30000 | 2.07 | 2.76 | −0.13 | 0.98 |
+| `splitp30k` | 30000 | 0.65 | 1.78 | 2.05 | 1.83 |
+| `ro128p30k` | 30000 | −0.49 | 1.99 | 0.12 | 2.21 |
+| `champ30k` | 30000 | 0.70 | −0.74 | −0.68 | −0.80 |
+| `rdw8s30k` | 30000 | 0.10 | **−2.64** | −1.23 | −1.33 |
+| `o11p30k` | 7500 | −1.78 | 1.72 | −1.10 | 1.56 |
+| `postrain10k` | 10000 | 3.15 | 1.16 | 0.51 | 1.14 |
+| `splitfrz10k` | 10000 | −0.47 | 1.55 | −1.94 | 1.80 |
+
+`ẑ` (PREDICTED) on the changes: all ≤ 1.6 except `postrain10k`'s Δyaw at **3.00**.
+
+⛔ **E-DEC-54 measured the null for this panel — p95 2.71, max 2.93 — so EVERY cell
+above, including the 3.00, is inside it.** ⇒ **No arm's latent, encoded or
+predicted, carries ego dynamics above what a RANDOM latent produces.** The census
+is reported as null in full; the per-arm "levels only / changes only" labels its
+own verdict logic emitted are **void**.
+
+⚠️ The `rdw8s30k` **−2.64** on yaw-rate is the row that started the correction: a
+latent cannot meaningfully *anti-carry* its own yaw-rate, so that cell had to be
+noise — which is what prompted measuring the null instead of inferring it.
+⚠️ ⛔ **And that census's verdict logic was ALSO the C160 defect again** — it
+labelled arms from `t > 2` cells with no null behind the threshold at all.
+
 | E-DEC-52 | ⛔⛔⛔ **O13 IS DEGENERATE — and from its own arm alone I would have concluded the OPPOSITE. The tenth failed objective, and the point at which OBJECTIVE DESIGN IS EXHAUSTED ON THIS CORPUS.** | **MEASURED, matched pair, same corpus/seed/steps, differing ONLY in the o13 weight.** `o5` degrades **+192.4 %** by the end. | `…/raw/o13_pilot_vs_matched_control.json`
 
 3,000 steps each, 24 episodes, ⚠️ **NON-PARITY, TRAINING SET** — a feasibility
@@ -223,8 +300,14 @@ rig is valid before anything below it is read.
    `ax` (`physicalai.py:604-632` states verbatim it is *not* a finite difference of
    v), and `r(accel, realised Δv_1tick) = +0.326` — nowhere near the ~1.0 an
    identity would give.
-2. **The encoder ALREADY represents ego state** — speed 2.07, yaw-rate 2.76,
-   accel 3.10: **three for three**, a coherent pattern rather than one marginal row.
+2. ⛔ **RETRACTED (C162) — "the encoder already represents ego state" is NOT
+   separable from noise.** It rested on speed 2.07, yaw-rate 2.76, accel 3.10;
+   **E-DEC-54 then measured the null for this exact panel and found p95 2.71,
+   max 2.93.** All three are inside it. ⚠️ The "three for three" framing made a
+   coherent *pattern* out of three cells that are individually null — and no null
+   seed produced 3 of 4 cells above 2.0, so the pattern argument is *weakly*
+   better than chance, but **6 seeds cannot quantify it.** ⇒ **Downgraded to
+   UNRESOLVED**, not to a negative.
 3. ⛔ **The PREDICTOR adds nothing on any ego target, in either arm.** `zhat`
    never exceeds `z_t`, and on `splitp30k`'s Δspeed it **destroys** it
    (+0.1494 → −0.0287).

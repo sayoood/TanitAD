@@ -8781,6 +8781,53 @@ carries and what I shipped a watchdog three times without. ⇒ **Before arming a
 monitor, run its filter against a job you KNOW is running and check the count is
 non-zero.** "It looks right" is how versions 1, 2 and 3 shipped.
 
+## C162 — I published "the encoder represents ego state" from three cells that a MEASURED null reaches
+
+**Class:** *a threshold asserted from an anecdote instead of measured* — and the
+first time in this campaign that a **published** claim was retracted by a control I
+ran **afterwards** rather than by one that was already in the table.
+
+**The claim.** E-DEC-50, committed and pushed: *"The encoder ALREADY represents ego
+state — speed 2.07, yaw-rate 2.76, accel 3.10: **three for three**, a coherent
+pattern rather than one marginal row."* It reached `GOALS_AND_CLAIMS.md`,
+`PROVEN_TRAINING_SETUP.md` (the PI's mandate deliverable) and the paper.
+
+**What refuted it.** E-DEC-54 re-ran the identical panel with the latent replaced by
+**Gaussian noise of the same shape**. Over 24 draws the null reaches \|t\| p95
+**2.71**, max **2.93** — including **+2.93 on Δyaw** and **+2.80 on speed**. All
+three cells of the "three for three" are inside it.
+
+**Why I believed it.** Two arguments, both wrong in the same way:
+1. *"Three targets agreeing is stronger than one marginal row."* True in principle,
+   but I never measured how often three agree **by chance**, and 6 null seeds still
+   cannot say.
+2. *"|t| ≈ 2.6 is the noise band"* — inferred from ONE physically meaningless cell
+   (`rdw8s30k` yaw-rate −2.64). **An anecdote about the null is still an anecdote**,
+   and I then wrote it into a pre-registration as a threshold.
+
+⚠️ **And my hedge was wrong too.** I predicted an i.i.d. Gaussian null would
+*understate* the noise, lacking a trained latent's temporal structure. It did not —
+it reached 2.93 unaided. **A caveat is not a measurement.**
+
+**What survives, because the null is COLUMN-SPECIFIC.** It was measured for a
+d=2048 latent. The action columns are 3 scalars with a far tighter null, and the
+identity control reads a KNOWN value (+0.9337, t 23.74). So E-DEC-48b (control
+t 8.5–14.3, marginal t −3.50) and action→Δyaw (t 4.57) stand. ⚠️ **action→Δspeed at
+t 2.56 has no null of its own yet — named as a work item, not assumed safe.**
+
+**The rule:** ⛔ **A PANEL'S NOISE FLOOR IS A MEASUREMENT, NOT AN INFERENCE. Run the
+same panel on a provably-uninformative input and read its tail — it is usually
+CPU-only and costs minutes.** Every panel in this campaign carried a *constant*
+control (which reads exactly 0) and a *time-shuffled* control (which fixes the
+pairing) — **neither of which bounds the t-statistic's tail.** ⇒ The third control
+is now standard: **a random-input arm of the same shape.**
+
+⚠️ **The general partition this leaves:** the campaign's LARGE effects survive
+(t > 4), its MARGINAL ones (t 2–3) do not. Better to hold that than the extra
+findings.
+
+---
+
 ## C161 — I read a PREDICTOR defect off a number that a CONTROL in the same table refuted
 
 **Class:** *interpretation asserted before the row beside it was read* — the same

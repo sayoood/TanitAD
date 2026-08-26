@@ -4661,12 +4661,20 @@ be admissible. It reads **+0.9337 (t 23.74)**.
 | Δspeed (**change**) | −0.0077 (−0.13) | −0.0445 (−0.72) | **+0.3171 (2.56)** |
 | Δyaw (**change**) | +0.0636 (0.98) | +0.0670 (1.06) | **+0.5638 (4.57)** |
 
-Three facts compose. **The action determines the ego's own dynamics** (Δspeed
-t 2.56, Δyaw t 4.57). **The encoder already represents ego state** — speed, yaw-rate
-and acceleration are all decodable, three for three, which is a coherent pattern
-rather than one marginal row. And **the transition connects neither**: ẑ never
-exceeds z_t on any ego target, and on the one arm whose latent does carry Δspeed it
-destroys it (+0.1494 → −0.0287).
+Three facts appeared to compose, and the third has since been retracted. **The
+action determines the ego's own dynamics** (Δspeed t 2.56, Δyaw t 4.57). **The
+transition connects nothing**: ẑ never exceeds z_t on any ego target.
+
+⛔ **The middle claim — that the encoder already represents ego state, "three for
+three" at speed 2.07, yaw-rate 2.76 and accel 3.10 — does not survive its own null.**
+Re-running the identical panel with the latent replaced by Gaussian noise of the
+same shape gives \|t\| p95 **2.71** and max **2.93** over 24 draws: all three cells
+are inside it, and a subsequent 8-arm census contained no cell above the null
+either. The correct statement is that **whether the encoder carries ego state is
+UNRESOLVED at this sample size**, not that it does. The null is column-specific and
+was measured for a 2048-d latent, so it does not touch the 3-scalar action columns
+(whose identity control reads t 23.74) — but it does mean the marginal
+latent-side rows in this section carried no information.
 
 The action→Δspeed relation is not an artefact of label construction. The corpus's
 acceleration channel is the dataset's own measured longitudinal `ax`, taken from a

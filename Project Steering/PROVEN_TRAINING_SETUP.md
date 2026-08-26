@@ -134,9 +134,9 @@ criterion at step 20,400).
 
 | target | `z_t` ENCODED | `zhat` PREDICTED | `action_t` |
 |---|---|---|---|
-| IDENTITY `accel_t` | +0.1555 (3.10) | +0.0504 (0.78) | **+0.9337 (23.74)** ✅ |
-| **speed** (LEVEL) | **+0.1255 (2.07)** ✅ | +0.0697 (0.94) | +0.1504 (1.30) |
-| **yaw-rate** (LEVEL) | **+0.1176 (2.76)** ✅ | +0.1414 (2.50) ✅ | +0.5773 (5.09) |
+| IDENTITY `accel_t` | +0.1555 (3.10) ⚠️ *at the null max* | +0.0504 (0.78) | **+0.9337 (23.74)** ✅ |
+| **speed** (LEVEL) | +0.1255 (2.07) ⛔ *inside null* | +0.0697 (0.94) | +0.1504 (1.30) |
+| **yaw-rate** (LEVEL) | +0.1176 (2.76) ⛔ *inside null* | +0.1414 (2.50) ⛔ | +0.5773 (5.09) |
 | **Δspeed** (CHANGE) | −0.0077 (−0.13) ✗ | −0.0445 (−0.72) ✗ | **+0.3171 (2.56)** |
 | **Δyaw** (CHANGE) | +0.0636 (0.98) ✗ | +0.0670 (1.06) ✗ | **+0.5638 (4.57)** |
 
@@ -147,8 +147,14 @@ criterion at step 20,400).
    (`physicalai.py:604-632` states verbatim it is *not* a finite difference of v),
    and `r(accel, realised Δv_1tick) = +0.326` — nowhere near the ≈ 1.0 an identity
    would give.
-2. **The encoder ALREADY represents ego state** — speed 2.07, yaw-rate 2.76, accel
-   3.10: **three for three**, a coherent pattern rather than one marginal row.
+2. ⛔ **RETRACTED (C162) — NOT separable from noise.** This read *"the encoder
+   ALREADY represents ego state — speed 2.07, yaw-rate 2.76, accel 3.10: three for
+   three"*. **E-DEC-54 then MEASURED the null for this exact panel** by replacing
+   the latent with Gaussian noise of the same shape: over 24 draws \|t\| p95
+   **2.71**, **max 2.93**. All three cells are inside it. ⚠️ The "three for three"
+   framing manufactured a *pattern* from three individually-null cells. ⇒ **Whether
+   the encoder carries ego state is UNRESOLVED at this n** — not established, and
+   not refuted either.
 3. ⛔ **The predictor adds nothing on any ego target, in either arm.** `zhat` never
    exceeds `z_t`, and on `splitp30k`'s Δspeed it **destroys** it (+0.1494 → −0.0287).
 
