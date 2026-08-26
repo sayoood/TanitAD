@@ -148,3 +148,59 @@ the list in ten minutes.**
 and the doctrine's T1 authority; a change to its load path and geometry handling
 should be a deliberate, reviewed edit rather than something appended to a probe
 session. **The scoping is done and the work is ready to start.**
+
+
+---
+
+## 7. ⭐ FINAL SCOPE, 19:25 — one blocker, and it is ~15 lines
+
+⚠️ **Third correction to this document in one afternoon, each time by executing
+instead of estimating.** The trend is one-directional: every estimate was
+pessimistic, and every execution shrank the job.
+
+### Blocker 2 (geometry) — ⭐ FREE. The flags already exist.
+
+`t1_eval --help` lists them; my earlier grep missed them because a shared helper
+adds them, not a literal `add_argument("--frame…` in this file:
+
+```
+--frame-h 256  --frame-w 640  --projection cylindrical  --frame-hfov 120
+```
+
+⇒ **No code change.** The default was the deployed pinhole frame; v7's cylindrical
+frame is expressible on the command line. ⚠️ **It still must be passed explicitly —
+the default would silently compute T1 in the wrong projection**, which is the
+failure mode worth more care than the crash.
+
+### Blocker 1 (checkpoint) — the only real work, and it CANNOT be shimmed
+
+`load_ext_trunk` routes through `eval_flagship_v4.load_v1_from_ck`, which **builds a
+flagship architecture and loads STRICT**. A v7 `'stack'` checkpoint is **not a
+different layout of the same model — it is a different model.** ⇒ **No checkpoint
+conversion bridges this. The loader must branch.**
+
+The branch is small because the destination already exists:
+
+```python
+# in load_ext_trunk, before the flagship path
+if isinstance(ck, dict) and "stack" in ck:
+    from tanitad.eval.v6_probe_trunk import load_trunk_auto
+    trunk, _grounding, step = load_trunk_auto(ck, device, ckpt_path=a.ckpt)
+    return trunk, trunk.stack, step     # predictor_op + step_readout_op live here
+```
+
+§2b verified by execution that the resulting objects satisfy T1's interface exactly
+(`predictor(win_s, win_a)[1] -> [B, 2048]`, `step_readout(z_t, z_hat) -> [B, 3]`,
+`pose_dim == 3`).
+
+### ⇒ The whole job
+
+| item | cost |
+|---|---|
+| geometry | **0** — pass four existing flags |
+| loader branch | **~15 lines** in `t1_eval.load_ext_trunk` |
+| verify T1's `grounding` consumer accepts `trunk.stack` | **unknown, small** — the one thing still unexecuted |
+
+⛔ **Still not edited.** `t1_eval.py` is the doctrine's T1 authority; the branch is
+trivial but it belongs in a reviewed edit, and the third bullet above should be
+executed first. **The scoping is finished and the estimate has stopped moving.**
