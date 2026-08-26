@@ -8781,6 +8781,63 @@ carries and what I shipped a watchdog three times without. ⇒ **Before arming a
 monitor, run its filter against a job you KNOW is running and check the count is
 non-zero.** "It looks right" is how versions 1, 2 and 3 shipped.
 
+## C166 — I told the PI representation was NOT solved, by quoting the WRONG ARM
+
+**Class:** *a true number quoted outside its scope* — the `df` / Thor `free` / cgroup
+`usage_in_bytes` / `step_s` family, in a cross-arm costume. **Caught by the PI**, who
+remembered the earlier claim and challenged the contradiction.
+
+**What I said (2026-08-26, in chat).** Asked *"is the collapse issue still not
+solved?"* I answered **"content: no"** and produced this table as the evidence:
+
+| | `rdw8p30k` (ours) | frozen DINOv3 | const |
+|---|---|---|---|
+| `n_agents` | **-0.0180** | +0.2754 | 0.0000 |
+
+**Why it is wrong.** Every number there is correct **for `rdw8p30k`**, and
+`rdw8p30k` is **not the arm the representation claim rests on**. The standing claim
+is about **`splitp30k`** (frozen distilled encoder at parity scale), and in the SAME
+table of E-DEC-29 it reads **`n_agents` +0.3881 — above frozen DINOv3 (+0.2754) and
+above the constant control.** ⇒ **The claim the PI remembered — *"`splitp30k` above
+frozen DINOv3 on `n_agents`, proven held-out"* — STANDS. I inverted a proven result
+into an unproven one by reading one column to the left.**
+
+⚠️ **AND MY HEADLINE COMPOUNDED IT.** I titled the answer *"Is collapse solved? —
+no"* and only then conceded that rank collapse **is** solved (participation
+3.80/3.62 -> 25.58/26.96, 5 arms above the constant floor). The header contradicted
+my own next paragraph, and the header is what a reader keeps.
+
+⭐ **WHAT IS GENUINELY RETRACTED IN THE OLD CLAIM — the other half, and not the half
+I attacked.** The report said *"lever = **initialisation** (8-arm clean
+separation)"*. **That half IS dead (C164):** `postrain30k` and `splitp30k` share the
+same `distill_init.pt` and sit **0.47 apart** on drift, so the distilled/scratch
+separation was a **confounded grouping**. ⇒ **We have the RESULT without the
+EXPLANATION** — which is a real weakness, and it is not the one I reported.
+
+⚠️ **Two standing caveats that were always in E-DEC-29 and must travel with the
+claim**, so "above DINOv3" is never quoted flat: `splitp30k` beats DINOv3 on
+`n_agents` but **LOSES to it on free space** (+0.2869 vs +0.3701) and on **side
+occupancy** (`occ_left` +0.1325 vs +0.2735), and **all eight per-azimuth-column
+occupancies sit at or below zero.** The honest form is E-DEC-29's own: *the
+representation knows roughly how crowded the scene is, how much room is ahead and
+which side things are on — and does not know WHERE any individual object is.*
+
+⭐⭐ **THE ACTUAL OPEN PROBLEM, which BOTH of my statements talked past.** It is not
+"is there content" — it is the **DISSOCIATION** (E-DEC-20, sharpened at line 99 of
+`GOALS_AND_CLAIMS.md`): **`splitp30k` CARRIES the environment (`n_agents` +0.3864
+from `z_t`, the richest measured) and its predictor ADDS NOTHING** (deltas -0.0008 /
+-0.0320 / -0.0158 at k=1/3/6, all negative, t -3.69 / -5.62 / -6.26); **`rdw8p30k`
+PREDICTS change and carries less of it** (content +0.0777). ⇒ **No single arm
+satisfies mandate (2) — environment in BOTH encoder and predictor.** That is the
+sentence that should have answered the PI.
+
+**The rule:** ⛔ **A cross-arm claim names its ARM in the same breath as its number.**
+Before answering "is X solved", re-read which arm the standing claim was made ON —
+a column swap in a six-column table silently reverses the verdict, and nothing in the
+number itself flags it.
+
+---
+
 ## C165 — I tried to satisfy the parity requirement by RENAMING a directory
 
 **Class:** *a guard satisfied by relabelling rather than by fact.* **Caught by the
