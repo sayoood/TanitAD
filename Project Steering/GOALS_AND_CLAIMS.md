@@ -99,6 +99,64 @@ floor lives INSIDE the loss. Pre-registered with four outcomes in
 ⭐⭐ **THE SPLIT ACROSS ARMS IS THE HEADLINE.** `splitp30k` (frozen distilled): `n_agents` from `z_t` **+0.3864** — far the richest — but its predictor **ADDS NOTHING**, delta vs `z_t` of −0.0008 / −0.0320 / −0.0158 at k=1/3/6, all NEGATIVE (t −3.69 / −5.62 / −6.26), and at k=6 `lead_closing` degrades to −0.0747 (t −2.11). `rdw8p30k` (trained): content only +0.0777 but the predictor **adds substantially**. ⇒ **the frozen arm CARRIES the environment and does not PREDICT it; the trained arm PREDICTS change and carries less of it.** E-DEC-20's dissociation in a new form ⇒ **mandate (2) — environment in BOTH encoder and predictor — is NOT yet satisfied by any single arm.**
 
 ⚠️ **FOUR BOUNDS.** (1) **ẑ also beats the encoded-future CEILING**, which is anomalous. Two explanations and this panel cannot separate them: the rollout is **ACTION-CONDITIONED**, so ẑ carries the ego's commanded motion that a single encoded frame lacks — *or* it is temporal **smoothing** of a noisy target. **An action-shuffled control would separate them and has not been run.** (2) All absolute R² are **small** (0.03–0.15); `lead_closing` +0.0019 is barely above zero. (3) **IN-SAMPLE** until the held-out corpus lands. (4) k=1 is **underpowered by construction** — the ceiling itself is barely above `z_t` there (+0.0123, t 0.75), i.e. the scene has not changed enough for prediction to add anything; only k=3–6 carry headroom. |
+| E-DEC-56 | ⭐⭐⭐⭐⭐ **THE CALIBRATION CONSTANT: this panel family's significance bar is \|t\| ≈ 2.9, NOT 2.0 — and it is now EMPIRICAL** | **MEASURED, 128 null draws** across two column dimensionalities: p90 **2.02**, p95 **2.60**, p99 **2.93**, **MAX 3.49**. | `…/raw/egonull_measured.json`, `…/raw/egonull_d3.json`
+
+Same panel, same clips, same real targets, same RFF+ridge / clip-disjoint λ /
+within-clip Pearson r / time-shuffled control — **input replaced by Gaussian noise**
+at **d = 2048** (80 draws) and **d = 3** (48 draws).
+
+| null | n | p95 | max |
+|---|---|---|---|
+| d = 2048 | 80 | 2.56–2.71 | **2.93** |
+| **d = 3** | 48 | 2.59 | **3.49** |
+| **POOLED** | **128** | **2.60** | **3.49** |
+
+⛔ **MY ASSUMPTION THAT THE 3-SCALAR ACTION COLUMNS HAD "A FAR TIGHTER NULL" WAS
+WRONG, AND I WROTE IT INTO E-DEC-54 AS THE REASON THE ACTION RESULTS WERE SAFE.**
+A random **3-vector** reaches **+3.49** — *higher* than a random 2048-d latent.
+⇒ **Column dimensionality is not what sets this tail.** The heavy tail comes from
+the estimator itself: 20 clip-level scores, a ridge refit per fold, and a
+difference of two correlated means. ⚠️ It is **not** a t-distribution and must not
+be read as one.
+
+⭐⭐⭐ **EVERY CLAIM IN THE CAMPAIGN, RE-TESTED AGAINST THE EMPIRICAL NULL:**
+
+| claim | t | P(null ≥ \|t\|) | |
+|---|---|---|---|
+| identity control (`action`→`accel`) | 23.74 | 0.000 | ✅ |
+| E-DEC-48b scene control | 12.58 | 0.000 | ✅ |
+| yaw-rate LEVEL from the action | 5.09 | 0.000 | ✅ |
+| **action → Δyaw** | 4.57 | 0.000 | ✅ |
+| E-DEC-48b marginal, `n_agents` | 3.50 | 0.000 | ⚠️ **survives, but the null's max is 3.49** |
+| **action → Δspeed** | **2.56** | **0.070** | ⛔ **INSIDE THE NULL — RETRACTED** |
+| E-DEC-48b marginal, `n_free_cols` | **1.83** | **0.125** | ⛔ **INSIDE THE NULL — RETRACTED** |
+
+⇒ **TWO MORE CLAIMS FALL, AND ONE SURVIVES ONLY NARROWLY.**
+
+1. ⛔ **`action → Δspeed` (t 2.56) is retracted.** E-DEC-50's *"the action determines
+   the ego's own dynamics"* now rests on **Δyaw alone** (4.57) — which does survive
+   cleanly, and is the **kinematic** channel (steer → yaw-rate), so the physics
+   reading is unchanged in kind. But the longitudinal half is gone.
+2. ⛔ **E-DEC-48b's `n_free_cols` marginal (−1.83) is retracted** — I had bolded it.
+3. ⚠️ **E-DEC-48b's headline `n_agents` marginal (−3.50) survives by 0.01.** The
+   *"adding the action actively HURTS"* framing is therefore **not supportable**;
+   the supportable statement is the one the programme actually needs — **the action
+   adds NOTHING**, which rests on the action columns being null (0.64 / 0.14 / 1.43)
+   against a control at 8.5–14.3, and is untouched.
+
+⭐⭐ **NOTHING THAT MATTERS TO THE PROGRAMME'S CONCLUSIONS MOVES.** E-DEC-48b's
+verdict (the action is redundant with the scene), E-DEC-52 (O13 degenerate,
++192.4 % — a paired loss ratio, not a t-statistic), and the collapse/representation
+results (which are separations between non-overlapping ranges, not t-tests) all
+stand. **What falls is exactly the set of marginal decorations** — and that is the
+third time tonight the same partition appeared.
+
+⚠️ **AND THE AUTO-VERDICT DEFECT AGAIN (C160, still unfixed).** `egonull.py`
+compared the threshold to **p95** and printed *"2.6 is CONSERVATIVE, keep it"* while
+its **own max was 3.49**. ⇒ **A threshold is a statement about the TAIL; comparing
+it to p95 answers a different question.** Read the max, or state the quantile you
+are buying.
+
 | E-DEC-55 | ⭐ **THE PRE-REGISTERED READ: NOT REPLICATED — and the pre-registration called it in advance** | **MEASURED**, `postrain30k` @30k, identity control **+0.9337 (t 23.74)**. `ẑ` Δyaw **t 1.13** against a pre-committed bar of **t > 3.0**. | `…/raw/egostate_postrain30k.json`
 
 `PREREG_POSTRAIN30K_EGO_REPLICATION.md` predicted, **before this checkpoint
@@ -335,8 +393,11 @@ rig is valid before anything below it is read.
 | **Δyaw** (CHANGE) | +0.0636 (0.98) ✗ | +0.0670 (1.06) ✗ | **+0.5638 (4.57)** |
 
 ⭐⭐⭐ **THE THREE FACTS THAT COMPOSE INTO THE ANSWER:**
-1. **The action DOES determine the ego's own future** — Δspeed t 2.56, Δyaw
-   t 4.57. **Echo-cleared:** the corpus's `accel` is the dataset's OWN measured
+1. **The action determines the ego's own future — ⚠️ ON Δyaw ONLY (t 4.57).**
+   ⛔ **Δspeed (t 2.56) is RETRACTED by E-DEC-56**: the measured null for this panel
+   reaches 3.49 and P(null ≥ 2.56) = **0.070**. The surviving channel is the
+   **kinematic** one (steer → yaw-rate), so the physics reading is unchanged in
+   kind; the longitudinal half is gone. **Echo-cleared:** the corpus's `accel` is the dataset's OWN measured
    `ax` (`physicalai.py:604-632` states verbatim it is *not* a finite difference of
    v), and `r(accel, realised Δv_1tick) = +0.326` — nowhere near the ~1.0 an
    identity would give.

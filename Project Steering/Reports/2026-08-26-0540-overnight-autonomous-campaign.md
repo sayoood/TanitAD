@@ -166,8 +166,8 @@ elsewhere.
 | Distilled init drives representation (`n_agents` +0.1220 > DINOv3 +0.0998) | **MEASURED** |
 | Δz is 64 % drift; residual is noise in 8/8 arms | **MEASURED** |
 | The action adds ≤ 0 to predicting the future SCENE | **MEASURED** (control t 8.5–14.3) |
-| The action determines the ego's own Δyaw | **MEASURED** (t 4.57) |
-| The action determines the ego's own Δspeed | ⚠️ **t 2.56 — own null not yet measured** |
+| The action determines the ego's own Δyaw | **MEASURED** (t 4.57, P(null) 0.000) |
+| The action determines the ego's own Δspeed | ⛔ **RETRACTED** — t 2.56, P(null) **0.070** |
 | O13 improves action-conditioning | ⛔ **REFUTED — degenerate, +192.4 %** |
 | The encoder carries ego state | ⚠️ **UNRESOLVED** — inside the null (C162) |
 | Objective design can solve this **on this corpus** | ⛔ **10 terms have failed** |
@@ -175,3 +175,47 @@ elsewhere.
 
 ⚠️ **The partition to remember: this campaign's LARGE effects survive; its MARGINAL
 ones (t 2–3) did not.** I would rather hand you that than the extra findings.
+
+
+---
+
+## 8. ⭐ Addendum, 06:35 — decision item 3 is answered, and it cost two more claims
+
+I flagged `action → Δspeed` (t 2.56) as *"own null not measured"* rather than
+assuming it safe. **The dev box was idle, so I measured it** — and my stated reason
+for expecting it to be safe was wrong.
+
+**128 pooled null draws** (Gaussian input, identical panel): p90 **2.02**, p95
+**2.60**, p99 **2.93**, **MAX 3.49**.
+
+⛔ **A random 3-vector reached 3.49 — HIGHER than a random 2048-d latent (2.93).**
+So "the action columns are only 3 scalars and therefore have a tighter null", which
+is the reason I gave in E-DEC-54 for the action results being safe, **is false.**
+The heavy tail comes from the estimator, not the column width.
+
+**Every claim re-tested:**
+
+| claim | t | P(null ≥ \|t\|) | |
+|---|---|---|---|
+| identity control | 23.74 | 0.000 | ✅ |
+| E-DEC-48b scene control | 12.58 | 0.000 | ✅ |
+| yaw-rate level (action) | 5.09 | 0.000 | ✅ |
+| **action → Δyaw** | 4.57 | 0.000 | ✅ |
+| E-DEC-48b marginal `n_agents` | 3.50 | 0.000 | ⚠️ clears by 0.01 |
+| **action → Δspeed** | 2.56 | **0.070** | ⛔ retracted |
+| E-DEC-48b marginal `n_free_cols` | 1.83 | **0.125** | ⛔ retracted |
+
+⇒ **Two more retractions, and one survivor with no margin.** *"Adding the action
+actively hurts the scene prediction"* is withdrawn; **"the action adds nothing"** —
+the statement the programme actually needs — is untouched, because it rests on the
+action columns being null against a control at t 8.5–14.3.
+
+⭐⭐ **NOTHING THAT DECIDES ANYTHING MOVED.** E-DEC-48b's verdict, E-DEC-52's
++192.4 % (a paired loss ratio, not a t-statistic), and the
+collapse/representation results (non-overlapping ranges, not t-tests) all stand.
+**What fell was, for the third time tonight, exactly the set of marginal
+decorations.**
+
+⭐ **The durable output is a constant:** for this panel family the bar is
+**\|t\| ≈ 2.9, not 2.0**, and it is now measured rather than argued. Every future
+read in this programme should quote it.

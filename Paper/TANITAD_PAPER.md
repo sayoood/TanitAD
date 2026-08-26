@@ -4618,8 +4618,13 @@ control on every cell, and a constant control reading exactly +0.0000.
 | `n_free_cols` | **+0.6324 (t 14.34)** | +0.1083 (t 1.43) | **−0.1337 (t −1.83)** |
 | `lead_closing` | +0.0988 (t 1.83) ✗ | — | **no verdict** — control failed |
 
-The scene predicts the future scene strongly; the action predicts it not at all;
-and *adding* the action makes it significantly worse. The fourth row is reported as
+The scene predicts the future scene strongly and the action predicts it not at
+all. ⚠️ The *marginal* column should not be over-read: a 128-draw empirical null for
+this estimator (built by replacing the input with Gaussian noise) reaches \|t\| =
+**3.49**, so the `n_free_cols` marginal (−1.83) is inside it and `n_agents` (−3.50)
+clears it by 0.01. **"Adding the action actively hurts" is therefore not
+supportable; "the action adds nothing" is**, and it is what the argument needs — it
+rests on the action columns being null against a control at t 8.5–14.3. The fourth row is reported as
 **no verdict** rather than as a null: its positive control did not pass, and a
 panel whose baseline does not work cannot demonstrate redundancy. That guard is not
 decorative — an earlier version of this experiment predicted Δz, where nothing
@@ -4661,9 +4666,12 @@ be admissible. It reads **+0.9337 (t 23.74)**.
 | Δspeed (**change**) | −0.0077 (−0.13) | −0.0445 (−0.72) | **+0.3171 (2.56)** |
 | Δyaw (**change**) | +0.0636 (0.98) | +0.0670 (1.06) | **+0.5638 (4.57)** |
 
-Three facts appeared to compose, and the third has since been retracted. **The
-action determines the ego's own dynamics** (Δspeed t 2.56, Δyaw t 4.57). **The
-transition connects nothing**: ẑ never exceeds z_t on any ego target.
+Three facts appeared to compose; two have since been retracted. **The action
+determines the ego's own Δyaw** (t 4.57, and the relation is kinematic). ⛔ **The
+Δspeed half (t 2.56) does not survive the estimator's measured null** — P(null ≥
+2.56) = 0.070 against 128 draws whose max is 3.49 — so the longitudinal channel is
+withdrawn. **The transition connects nothing**: ẑ never exceeds z_t on any ego
+target.
 
 ⛔ **The middle claim — that the encoder already represents ego state, "three for
 three" at speed 2.07, yaw-rate 2.76 and accel 3.10 — does not survive its own null.**
@@ -4719,6 +4727,16 @@ it will be noise. The load-bearing claims are chosen not to depend on them: the
 identity control (23.74), the action columns (2.56 / 4.57 / 5.09), the coherent
 level triple (3.10 / 2.76 / 2.07), and one arm's Δspeed content replicated three
 times across three independent code paths (t 2.50 / 2.05 / 2.10).
+
+**The estimator's null is heavy-tailed and was measured, not assumed.** Replacing
+the input with Gaussian noise and rerunning the identical panel gives, over 128
+draws at two column dimensionalities, p95 **2.60**, p99 **2.93**, max **3.49** —
+so \|t\| ≈ 2.9 is this family's effective bar, not 2.0. ⚠️ Dimensionality is not
+what sets the tail: a random **3-vector** reached 3.49 while a random 2048-d latent
+peaked at 2.93. The heaviness comes from the estimator — 20 clip-level scores, a
+ridge refit per fold, and a difference of two correlated means — and it must not be
+read as a t-distribution. Every claim in §13.17–13.18 has been re-tested against
+this null; what survives is listed above, and what did not is withdrawn in place.
 
 **No claim is made about driving.** Every number in §13.17–13.18 is T0 — a
 diagnostic of what the representation contains and how it responds. A confirmed
