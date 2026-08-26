@@ -1,0 +1,41 @@
+{
+ "_evidence_class": "MEASURED (ours; dev-box RTX 4060)",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "split": "HELD-OUT",
+ "k": 4,
+ "null_mode": false,
+ "pca_band": [
+  32,
+  40
+ ],
+ "arms": {
+  "rdw8p30k": {
+   "step": 30000,
+   "n_clips": 80,
+   "n_rows": 7680,
+   "columns": {
+    "z_t (DRIFT / POSITIVE CONTROL)": {
+     "r": 0.5304,
+     "t": 82.76
+    },
+    "ego_state [w, a, v]": {
+     "r": 0.0214,
+     "t": 4.08
+    },
+    "z_t + ego_state": {
+     "r": 0.5348,
+     "t": 83.82
+    },
+    "constant (control)": {
+     "r": 0.0,
+     "t": 0.0
+    }
+   },
+   "drift_control_t": 82.76,
+   "ego_marginal_over_drift": {
+    "delta": 0.0044,
+    "t": 2.2
+   }
+  }
+ }
+}

@@ -99,6 +99,39 @@ floor lives INSIDE the loss. Pre-registered with four outcomes in
 ⭐⭐ **THE SPLIT ACROSS ARMS IS THE HEADLINE.** `splitp30k` (frozen distilled): `n_agents` from `z_t` **+0.3864** — far the richest — but its predictor **ADDS NOTHING**, delta vs `z_t` of −0.0008 / −0.0320 / −0.0158 at k=1/3/6, all NEGATIVE (t −3.69 / −5.62 / −6.26), and at k=6 `lead_closing` degrades to −0.0747 (t −2.11). `rdw8p30k` (trained): content only +0.0777 but the predictor **adds substantially**. ⇒ **the frozen arm CARRIES the environment and does not PREDICT it; the trained arm PREDICTS change and carries less of it.** E-DEC-20's dissociation in a new form ⇒ **mandate (2) — environment in BOTH encoder and predictor — is NOT yet satisfied by any single arm.**
 
 ⚠️ **FOUR BOUNDS.** (1) **ẑ also beats the encoded-future CEILING**, which is anomalous. Two explanations and this panel cannot separate them: the rollout is **ACTION-CONDITIONED**, so ẑ carries the ego's commanded motion that a single encoded frame lacks — *or* it is temporal **smoothing** of a noisy target. **An action-shuffled control would separate them and has not been run.** (2) All absolute R² are **small** (0.03–0.15); `lead_closing` +0.0019 is barely above zero. (3) **IN-SAMPLE** until the held-out corpus lands. (4) k=1 is **underpowered by construction** — the ceiling itself is barely above `z_t` there (+0.0123, t 0.75), i.e. the scene has not changed enough for prediction to add anything; only k=3–6 carry headroom. |
+| E-DEC-62 | ⛔ **THE LOW-VARIANCE-SUBSPACE HYPOTHESIS IS CLOSED, NEGATIVE — and the way it closed is the strongest vindication of the null discipline this campaign has produced.** | **MEASURED**, 30 matched null draws through the identical code path. | `…/raw/latentbandnull_*.log`
+
+The hypothesis: ego motion's contribution survives in **LOW-VARIANCE** directions of
+Δz that an MSE loss weights to nothing — which would have meant *"the information is
+there but the objective cannot see it"* (fixable, via a whitened loss) rather than
+*"the information is not there"* (not fixable by any loss).
+
+**Matched null, marginal over drift, K-fold, 80 clips, n = 30:** \|t\| median 0.56,
+p90 1.39, p95 1.90, **MAX 3.03**.
+
+| band | observed t | p | |
+|---|---|---|---|
+| 8:16 | +2.00 | **0.067** (2/30) | not significant |
+| 32:40 | +2.20 | **0.033** (1/30) | ⚠️ **×2 bands tested ⇒ 0.066** |
+| top-8 | −0.48 | 0.700 (21/30) | — |
+
+⇒ ⛔ **Not supported.** The one band that scrapes 0.033 uncorrected does not survive
+correcting for the two bands actually tested, and it rests on **a single null draw**
+exceeding it.
+
+⭐⭐⭐ **THE VINDICATION, AND IT IS WORTH MORE THAN THE HYPOTHESIS WAS.** At **n = 7**
+this same cell read **p = 0.143** with a null max of **1.37**. At **n = 30** the null
+max is **3.03** and p is **0.067**. ⇒ **MORE DRAWS MADE THE RESULT WORSE, NOT
+BETTER** — because a tail estimated from a handful of draws is far too tight.
+⚠️ **I printed `P = 0.000` off six draws (C163).** Had that been published, thirty
+draws would have refuted it. **The floor at 1/N is not pedantry; it is the whole
+difference between a finding and an artefact here.**
+
+⇒ Both candidate rescues of the action-conditioning thread are now closed:
+**E-DEC-59** (ego motion adds nothing to the transition, well-powered) and this.
+**The remaining live hypothesis is E-DEC-61's — that O5 MANUFACTURES the drift —
+and its crossed cell is running.**
+
 | E-DEC-61 | ⭐⭐⭐⭐ **TRAINING THE ENCODER IS WHAT MANUFACTURES DRIFT — the same recipe reads 0.359 at 10k and 0.669 at 30k.** The real grouping variable was never the initialisation. | **MEASURED**, 9 arms, 80 clips, 7,680 rows, drift controls t 26–147. | `…/raw/freezetest.json`, `…/raw/seedrep.json`
 
 | arm | encoder | steps | **drift** |
