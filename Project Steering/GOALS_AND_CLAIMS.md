@@ -99,6 +99,51 @@ floor lives INSIDE the loss. Pre-registered with four outcomes in
 ⭐⭐ **THE SPLIT ACROSS ARMS IS THE HEADLINE.** `splitp30k` (frozen distilled): `n_agents` from `z_t` **+0.3864** — far the richest — but its predictor **ADDS NOTHING**, delta vs `z_t` of −0.0008 / −0.0320 / −0.0158 at k=1/3/6, all NEGATIVE (t −3.69 / −5.62 / −6.26), and at k=6 `lead_closing` degrades to −0.0747 (t −2.11). `rdw8p30k` (trained): content only +0.0777 but the predictor **adds substantially**. ⇒ **the frozen arm CARRIES the environment and does not PREDICT it; the trained arm PREDICTS change and carries less of it.** E-DEC-20's dissociation in a new form ⇒ **mandate (2) — environment in BOTH encoder and predictor — is NOT yet satisfied by any single arm.**
 
 ⚠️ **FOUR BOUNDS.** (1) **ẑ also beats the encoded-future CEILING**, which is anomalous. Two explanations and this panel cannot separate them: the rollout is **ACTION-CONDITIONED**, so ẑ carries the ego's commanded motion that a single encoded frame lacks — *or* it is temporal **smoothing** of a noisy target. **An action-shuffled control would separate them and has not been run.** (2) All absolute R² are **small** (0.03–0.15); `lead_closing` +0.0019 is barely above zero. (3) **IN-SAMPLE** until the held-out corpus lands. (4) k=1 is **underpowered by construction** — the ceiling itself is barely above `z_t` there (+0.0123, t 0.75), i.e. the scene has not changed enough for prediction to add anything; only k=3–6 carry headroom. |
+| E-DEC-59 | ⭐⭐⭐⭐⭐ **EGO MOTION ADDS NOTHING TO THE LATENT TRANSITION — the first negative in this campaign that survives ALL THREE critiques (wrong channel, wrong target, too few clips)** | ⛔ **MEASURED, 80 clips, 7,680 rows, drift control t 134.84.** Ego marginal over drift: **−0.0006 (t −0.48)**. | `…/raw/latentmotion.json`
+
+| column | r | t |
+|---|---|---|
+| `z_t` (DRIFT — the POSITIVE CONTROL) | **+0.6740** | **134.84** |
+| `ego_state [ω, a_long, v]` | +0.0141 | 2.78 |
+| `z_t + ego_state` | +0.6741 | 135.21 |
+| constant (control) | +0.0000 | 0.00 |
+| ⭐ **ego's MARGINAL over the drift** | **−0.0006** | **−0.48** |
+
+⭐⭐⭐ **WHY THIS ONE IS DIFFERENT FROM EVERY OTHER NEGATIVE TONIGHT.** Each earlier
+null had an excuse available, and in each case the excuse turned out to be real:
+
+| critique | how this panel answers it |
+|---|---|
+| *"wrong channel — `steer` is a speed-blind bicycle proxy"* | uses **`[ω, a_long, v]` as MEASURED STATE**, the PI's directive, with ω = v·κ |
+| *"wrong target — counting descriptors are ego-motion-invariant"* | uses **Δz, the latent's OWN change** — ego motion moves the image by construction, so it must move this |
+| *"underpowered — 20 of 129 clips, null reached 3.49"* | **80 clips, 7,680 rows, and the control reads t 134.84.** There is no power excuse available. |
+
+⇒ **The joint (0.6741) is INDISTINGUISHABLE from the drift alone (0.6740).** With the
+right channels, the right target and overwhelming power, **ego motion adds nothing
+to predicting the latent transition beyond what the latent's own drift already
+explains.**
+
+⚠️ **`ego_state` alone reads t 2.78 — and that is NOT a counter-example.** Ego motion
+correlates with drift, so it recovers a little of what drift explains. The
+decision-grade quantity is the **MARGINAL**, and it is −0.0006.
+
+⚠️ **WHAT IS STILL OPEN, AND IT WAS NAMED BEFORE THIS RESULT EXISTED:** the panel
+scores the **top-8 PCA directions of Δz**, matching E-DEC-40 for comparability. That
+arm's own band control found the only hint of action content in directions
+**8–16 (+0.0258, t 2.73)** — a **LOW-VARIANCE subspace the top-8 projection is blind
+to by construction.** ⇒ **The band variant (8:16, 32:40) is queued.** Committing to
+it in advance is what stops the top-8 null from being narrated as the whole answer.
+
+⚠️ Also open: one arm (`rdw8p30k`), and the matched null is still running — though
+a marginal of **t −0.48** needs no null to be unimpressive.
+
+⭐⭐ **THE PROGRAMME-LEVEL READING.** Three nights of objective design assumed the
+transition *could* respond to the action if only the loss were right. This says the
+transition is drift, and **that drift is not modulated by the ego's own motion at
+all** — which is a statement about the REPRESENTATION and the HORIZON, not about any
+loss. **It is the strongest form of the campaign's central negative, and the first
+version of it I would defend without caveats about power or parameterisation.**
+
 | E-DEC-58 | ⭐⭐⭐ **THE PI'S REFRAME IS RIGHT AND MY INSTANTIATION OF IT WAS WRONG — the label-derived geometric targets are too noisy to see a 0.4 s ego-motion effect, and the CLOSED FORM failing its own null is the proof** | **MEASURED**, 76 held-out clips, 5,747 rows, K-fold fit / per-clip score, matched null (44 draws) through the identical code path. | `…/raw/egomotion_geom.json`
 
 **PI directive:** *"why are you using curvature, use just the values: yaw rate, long
