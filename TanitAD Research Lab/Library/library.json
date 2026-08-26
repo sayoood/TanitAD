@@ -1931,6 +1931,92 @@
    "cited_by": [
     "Project Steering/GOALS_AND_CLAIMS.md"
    ]
+  },
+  "2402.15391": {
+   "key": "2402.15391",
+   "kind": "arxiv",
+   "title": "Genie: Generative Interactive Environments",
+   "authors": [
+    "Jake Bruce",
+    "Michael Dennis",
+    "Ashley Edwards",
+    "Jack Parker-Holder",
+    "Yuge Shi",
+    "Edward Hughes",
+    "Matthew Lai",
+    "Aditi Mavalankar",
+    "Richie Steigerwald",
+    "Chris Apps",
+    "Yusuf Aytar",
+    "Sarah Bechtle"
+   ],
+   "published": "2024-02-23",
+   "abstract": "We introduce Genie, the first generative interactive environment trained in an unsupervised manner from unlabelled Internet videos. The model can be prompted to generate an endless variety of action-controllable virtual worlds described through text, synthetic images, photographs, and even sketches. At 11B parameters, Genie can be considered a foundation world model. It is comprised of a spatiotemporal video tokenizer, an autoregressive dynamics model, and a simple and scalable latent action model. Genie enables users to act in the generated environments on a frame-by-frame basis despite training without any ground-truth action labels or other domain-specific requirements typically found in the world model literature. Further the resulting learned latent action space facilitates training agents to imitate behaviors from unseen videos, opening the path for training generalist agents of th",
+   "url": "https://arxiv.org/abs/2402.15391",
+   "path": "TanitAD Research Lab/Library/papers/2402.15391_Genie-Generative-Interactive-Environments.pdf",
+   "bytes": 42346194,
+   "sha256": "94c63a5ced89355326706c88236591c2972ced12f3dece4f8982f020110c81f3",
+   "banked": "2026-08-26",
+   "tags": [
+    "latent-action"
+   ],
+   "note": "Genie: learns a LATENT ACTION MODEL from unlabelled video (VQ over observation pairs) + dynamics conditioned on it. THE fix-family for E-DEC-57: our corpus has no genuine command channel, only realised curvature.",
+   "cited_by": [
+    "Project Steering/GOALS_AND_CLAIMS.md"
+   ]
+  },
+  "2312.10812": {
+   "key": "2312.10812",
+   "kind": "arxiv",
+   "title": "Learning to Act without Actions",
+   "authors": [
+    "Dominik Schmidt",
+    "Minqi Jiang"
+   ],
+   "published": "2023-12-17",
+   "abstract": "Pre-training large models on vast amounts of web data has proven to be an effective approach for obtaining powerful, general models in domains such as language and vision. However, this paradigm has not yet taken hold in reinforcement learning. This is because videos, the most abundant form of embodied behavioral data on the web, lack the action labels required by existing methods for imitating behavior from demonstrations. We introduce Latent Action Policies (LAPO), a method for recovering latent action information, and thereby latent-action policies, world models, and inverse dynamics models, purely from videos. LAPO is the first method able to recover the structure of the true action space just from observed dynamics, even in challenging procedurally-generated environments. LAPO enables training latent-action policies that can be rapidly fine-tuned into expert-level policies, either o",
+   "url": "https://arxiv.org/abs/2312.10812",
+   "path": "TanitAD Research Lab/Library/papers/2312.10812_Learning-to-Act-without-Actions.pdf",
+   "bytes": 7447991,
+   "sha256": "a7ddbc946a2d7570565b32dea2a47db3213c4364577329b3c5df203d60175080",
+   "banked": "2026-08-26",
+   "tags": [
+    "latent-action"
+   ],
+   "note": "LAPO: recovers latent actions from observation pairs ALONE, then grounds them to true actions with a SMALL labelled set. The grounding step is what our comma2k19 CAN data could supply.",
+   "cited_by": [
+    "Project Steering/GOALS_AND_CLAIMS.md"
+   ]
+  },
+  "2206.11795": {
+   "key": "2206.11795",
+   "kind": "arxiv",
+   "title": "Video PreTraining (VPT): Learning to Act by Watching Unlabeled Online Videos",
+   "authors": [
+    "Bowen Baker",
+    "Ilge Akkaya",
+    "Peter Zhokhov",
+    "Joost Huizinga",
+    "Jie Tang",
+    "Adrien Ecoffet",
+    "Brandon Houghton",
+    "Raul Sampedro",
+    "Jeff Clune"
+   ],
+   "published": "2022-06-23",
+   "abstract": "Pretraining on noisy, internet-scale datasets has been heavily studied as a technique for training models with broad, general capabilities for text, images, and other modalities. However, for many sequential decision domains such as robotics, video games, and computer use, publicly available data does not contain the labels required to train behavioral priors in the same way. We extend the internet-scale pretraining paradigm to sequential decision domains through semi-supervised imitation learning wherein agents learn to act by watching online unlabeled videos. Specifically, we show that with a small amount of labeled data we can train an inverse dynamics model accurate enough to label a huge unlabeled source of online data -- here, online videos of people playing Minecraft -- from which we can then train a general behavioral prior. Despite using the native human interface (mouse and key",
+   "url": "https://arxiv.org/abs/2206.11795",
+   "path": "TanitAD Research Lab/Library/papers/2206.11795_Video-PreTraining-VPT-Learning-to-Act-by-Watching-Unlabeled.pdf",
+   "bytes": 7673065,
+   "sha256": "87c5af9a2d444412e42f950cb5341c36608e4bed54c2fe0fbd1cadc406ecab85",
+   "banked": "2026-08-26",
+   "tags": [
+    "latent-action"
+   ],
+   "note": "VPT: trains an INVERSE DYNAMICS MODEL on a small labelled set, then pseudo-labels action-free video at scale. The canonical answer to 'we have observations but no commands'.",
+   "cited_by": [
+    "Project Steering/GOALS_AND_CLAIMS.md"
+   ]
   }
  }
 }
