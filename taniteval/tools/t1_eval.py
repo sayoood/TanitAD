@@ -154,7 +154,13 @@ _TIER_NOTE = {
 _FAN_SUFFIXES = ("_fan_err", "_sel_idx", "_fan_scores")
 # Per-episode metadata written beside the arms. NOT arms: they carry no
 # trajectories, produce no numbers, and must not be asked for a tier stamp.
-_META_KEYS = ("eid", "clip_index")
+# ⚠️ THE DUMP'S KEY SPACE IS THE ARM SPACE. Anything not listed here is
+# enumerated as a prediction arm and must carry a T0/T1 tier stamp — which is
+# how adding `v0` to the dump immediately failed with "arms ['v0'] carry no
+# tier stamp". `v0` is a PER-WINDOW COVARIATE (the ego speed at t0 that
+# `taniteval.v0_antiecho` needs to build its hold-v0 baseline), exactly the
+# same ROLE as eid/clip_index, and not a prediction.
+_META_KEYS = ("eid", "clip_index", "v0")
 
 _ESTIMATOR_NOTE = (
     "point estimates are FULL-SET pooled means over windows; intervals are the "
@@ -351,6 +357,7 @@ def analyze(dump_files, *, tiers=None, gt_key="g", n_boot=2000, seed=0,
     P_cat = {a: [] for a in arms}
     fan = {a: {"err": [], "idx": [], "sc": [], "has_sc": False} for a in arms}
     G_cat, eid_w, byte_max = [], [], []
+    v0_w = []   # per-window ego speed at t0, for v0_antiecho
 
     ref_files = None
     if byte_check is not None:
@@ -366,6 +373,9 @@ def analyze(dump_files, *, tiers=None, gt_key="g", n_boot=2000, seed=0,
         n_w = G.shape[0]
         G_cat.append(G)
         eid_w += [eid] * n_w
+        if "v0" in d.files:
+            v0_w.append(np.asarray(d["v0"], dtype=np.float64)
+                        .reshape(-1)[:n_w])
 
         _, ac_g, _, dh_g, ok_g = controls(G, dt)
         a_g = ac_g[:, :NEAR].mean(1)
@@ -475,6 +485,16 @@ def analyze(dump_files, *, tiers=None, gt_key="g", n_boot=2000, seed=0,
                "wp_steps": [i + 1 for i in wp_idx],
                "dense_steps": list(range(1, Kh + 1)),
                "dt_s": dt, "eid": eid_w}
+        # ⛔ THIS DICT IS A WHITELIST, NOT A VIEW OF THE DUMP — the third
+        # instance of that pattern found today (the v6 trainer batch dict
+        # and the probe wrapper were the others). `v0` reached the .npz and
+        # still did not reach `v0_antiecho`, which reported "no ego speed at
+        # t0 in the window dict" while the key sat in the file. A value is
+        # only present where it is FORWARDED.
+        if v0_w:
+            _v0 = np.concatenate(v0_w)
+            if _v0.shape[0] == pred_t.shape[0]:
+                win["v0"] = _v0
         if lead is not None:
             win["lead"] = {"leads": np.asarray(lead["leads"]),
                            "lead_lens": np.asarray(lead["lead_lens"]),
@@ -1079,7 +1099,17 @@ def run_rollout_ext(a):
         T = min(int(ep.feats.shape[0]), int(poses.shape[0]),
                 int(ep.actions.shape[0]))
         starts = list(range(0, T - w - k, stride))
-        acc = {kk: [] for kk in ["g"] + arm_keys}
+        # ⭐ v0 IS DUMPED (2026-08-26). Without it `taniteval.v0_antiecho`
+        # reports "no ego speed at t0 in the window dict" and
+        # `_longitudinal_claim_admissible` is False FOREVER for this dump
+        # shape — so NO longitudinal capability claim can ever be made from
+        # it, and 88.7 % of the programme's oracle gap is longitudinal.
+        # The value is already in scope (`v0 = pl[:, 3]`) and already fed to
+        # the rollout; it simply was never recorded. Same class as the
+        # 2026-08-12 note above, which added eid/clip_index for the lead join.
+        # ⚠️ Purely ADDITIVE: a new npz key. Existing consumers read keys by
+        # name and are unaffected.
+        acc = {kk: [] for kk in ["g", "v0"] + arm_keys}
         lastl = []
         with torch.no_grad():
             for i0 in range(0, len(starts), a.chunk):
@@ -1106,6 +1136,7 @@ def run_rollout_ext(a):
                         cl = roll_closed(model, head, states, awE, v0, ego,
                                          k=k, dt=dt, wheelbase=a.wheelbase)
                     acc["cl"].append(cl.float().cpu().numpy())
+                    acc["v0"].append(v0.float().cpu().numpy())
                     if a.with_t0_open_loop:
                         fa = torch.stack([ep.actions[s + w:s + w + k]
                                           for s in ch]).to(dev).float()
