@@ -1,0 +1,78 @@
+{
+ "_evidence_class": "MEASURED (ours; dev-box RTX 4060)",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "arm": "rdw8p30k",
+ "step": 30000,
+ "n_clips": 80,
+ "n_rows": 7280,
+ "k": 4,
+ "pca_band": [
+  0,
+  8
+ ],
+ "columns": {
+  "z_t (baseline)": {
+   "d": 2048,
+   "r": 0.6722,
+   "shuf": -0.0056
+  },
+  "z_t + pixels (A3 re-run)": {
+   "d": 4608,
+   "r": 0.6818,
+   "shuf": -0.0029
+  },
+  "z_t + pixels + noise5120 (F1 DILUTION)": {
+   "d": 9728,
+   "r": 0.6853,
+   "shuf": -0.0067
+  },
+  "z_t + lum3 (F2 PHOTOMETRIC)": {
+   "d": 2051,
+   "r": 0.6709,
+   "shuf": -0.0071
+  },
+  "z_t + tokens (F3 NO PIXELS)": {
+   "d": 7168,
+   "r": 0.6656,
+   "shuf": -0.0011
+  }
+ },
+ "marginals_over_baseline": {
+  "z_t + pixels (A3 re-run)": {
+   "delta": 0.0096,
+   "t": 5.11,
+   "verdict": "SURVIVES"
+  },
+  "z_t + pixels + noise5120 (F1 DILUTION)": {
+   "delta": 0.0131,
+   "t": 9.1,
+   "verdict": "SURVIVES"
+  },
+  "z_t + lum3 (F2 PHOTOMETRIC)": {
+   "delta": -0.0013,
+   "t": -1.09,
+   "verdict": "INSIDE_NULL"
+  },
+  "z_t + tokens (F3 NO PIXELS)": {
+   "delta": -0.0066,
+   "t": -3.95,
+   "verdict": "INSIDE_NULL"
+  }
+ },
+ "f4_per_direction_pixel_marginal": [
+  0.0216,
+  0.0113,
+  -0.0018,
+  0.0187,
+  -0.0011,
+  0.0086,
+  0.011,
+  0.0085
+ ],
+ "reads": {
+  "a3_replicates": true,
+  "dilution_explains_oracle_null": false,
+  "photometric_explains_a3": false,
+  "tokens_carry_it": false
+ }
+}

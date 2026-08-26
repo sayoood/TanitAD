@@ -75,3 +75,40 @@ achievable ceiling of the current latent space to within noise, and A3 shows the
 latent is missing predictable content that is present in its own input. Whether
 that content is scene structure or photometrics decides *which* representational
 fix (F2 settles it, minutes of compute).
+
+
+---
+
+## F1-F4 OUTCOME — measured 2026-08-27 00:50, same rig, same fold seeds
+
+| column | marginal over `z_t` | t | verdict |
+|---|---|---|---|
+| A3 pixels (re-run) | **+0.0096** | 5.11 | replicates exactly ✅ |
+| F1 pixels + noise5120 (width-matched to oracle) | **+0.0131** | **9.10** | SURVIVES |
+| F2 lum3 (photometric) | −0.0013 | −1.09 | INSIDE_NULL |
+| F3 tokens, no pixels | **−0.0066** | **−3.95** | negative |
+
+**F4** — the pixel marginal is SPREAD across Δz directions (PC0 +0.0216, PC3
++0.0187, PC1 +0.0113, PC5–7 ≈+0.009), not concentrated in one appearance mode.
+
+⭐⭐ **Three of the four open questions close, one against my own hypothesis:**
+
+1. ⛔ **Dilution does NOT explain the oracle null** — width-matched NOISE leaves the
+   pixel signal fully intact (F1, t 9.10, stronger than A3). My capacity-dilution
+   reading in the main RESULT is **withdrawn as the mechanism**.
+2. ⭐ **The mechanism is the TOKENS THEMSELVES: F3 is *negative* (t −3.95).** The
+   encoder's pooled token field carries drift-redundant structure that actively
+   displaces the pixel signal in the probe's PCA basis — structured redundancy
+   captures basis components; isotropic noise does not. That is why tokens+pixels
+   (A4) read null while pixels+noise (F1) survives.
+3. ⛔ **The photometric deflation is REFUTED at the luminance level** (F2 null) and
+   disfavoured by F4's spread. The component behaves like scene structure.
+4. ⚠️ **Bound stated:** "absent from the token field" is established for the
+   **4×10-pooled** field; the unpooled 640-token field remains untested (compute
+   bound, AMENDMENT A1).
+
+⇒ **The E-DEC-63 conclusion sharpens into the v7 design input:** the encoder
+discards pixel-level content that predicts its own latent's future, that content is
+not photometric drift, and the token representation actively crowds it out. The
+representational lever is not merely "where the work is" — it now has a measured,
+specific defect to aim at.
