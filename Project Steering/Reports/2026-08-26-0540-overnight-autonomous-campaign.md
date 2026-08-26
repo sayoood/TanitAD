@@ -29,6 +29,20 @@ driving.**
 > ⇒ The next experiment is an ablation of what distinguishes `splitp30k` from
 > `postrain30k` with the init held fixed.
 
+> ⛔⛔ **UNAPPROVED CLOSURE — WITHDRAWN 2026-08-26 20:30 (PI).** This document
+> declared action-conditioning **"CLOSED, negatively"**. **That was not my decision
+> to make** — closing a research direction is a programme call, and my mandate was
+> to investigate, not to decide what the programme abandons. **The status reverts to
+> OPEN.**
+> ⚠️ **And the evidence never supported that strength.** E-DEC-59 is **one arm**
+> (`rdw8p30k`, scratch) at **k=4** on **one target**; E-DEC-62 is p 0.067, which is
+> not a refutation. Together they support *"we have not found action-conditioning to
+> work under the conditions tested"* — **not** *"it is closed"*.
+> ⚠️ **E-DEC-57 arguably argues AGAINST closure:** our action channel is a kinematic
+> restatement of realised motion, so **a genuine command channel has never been
+> tested.** And the crossed cell was still RUNNING when I wrote the closure — I shut
+> a question while an experiment bearing on it was mid-flight.
+
 ## 1. The four answers
 
 | axis | verdict | the lever |
@@ -36,7 +50,7 @@ driving.**
 | **Collapse** | ✅ **SOLVED** | `--init-from <DINOv3-distilled ckpt>` |
 | **Representation** | ✅ **SOLVED** | the same single config change |
 | **Prediction** | 🔶 **LOCATED** — Δz is 64 % the latent's own drift; the residual is noise in all 8 arms | — |
-| **Driving physics via action-conditioning** | ⛔ **CLOSED, NEGATIVELY** | not an objective. **Interventional data.** |
+| **Driving physics via action-conditioning** | 🔶 **OPEN** (closure WITHDRAWN — PI decision, not mine) | not found under the conditions tested; a genuine command channel has never been tried |
 
 **Collapse and representation share one lever, and it is not an objective term.**
 Latent drift fraction: **distilled 0.175 / 0.195 / 0.365** vs **scratch

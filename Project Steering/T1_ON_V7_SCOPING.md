@@ -101,8 +101,9 @@ and that T0 is *never* driving performance. So:
 ⛔ **TanitAD currently has no capability claim of any kind**, and cannot acquire one
 until this adapter exists — regardless of how the crossed cell reads.
 
-⚠️ **This is a bigger hole than the action-conditioning result.** That thread is
-closed and well-powered; this one is open and never attempted. ⇒ **Recommended as
+⚠️ **This is a bigger hole than the action-conditioning result.** ⛔ *(That thread
+was described here as "closed" — WITHDRAWN 2026-08-26: closing it was not my call,
+and the evidence supports only "not found under the conditions tested".)* ⇒ **Recommended as
 the next work item after the crossed cell reads**, ahead of any further T0 probe.
 
 

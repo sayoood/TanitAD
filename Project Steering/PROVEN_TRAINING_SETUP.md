@@ -27,6 +27,20 @@ arm in this campaign has been evaluated there.
 
 ---
 
+> ⛔⛔ **UNAPPROVED CLOSURE — WITHDRAWN 2026-08-26 20:30 (PI).** This document
+> declared action-conditioning **"CLOSED, negatively"**. **That was not my decision
+> to make** — closing a research direction is a programme call, and my mandate was
+> to investigate, not to decide what the programme abandons. **The status reverts to
+> OPEN.**
+> ⚠️ **And the evidence never supported that strength.** E-DEC-59 is **one arm**
+> (`rdw8p30k`, scratch) at **k=4** on **one target**; E-DEC-62 is p 0.067, which is
+> not a refutation. Together they support *"we have not found action-conditioning to
+> work under the conditions tested"* — **not** *"it is closed"*.
+> ⚠️ **E-DEC-57 arguably argues AGAINST closure:** our action channel is a kinematic
+> restatement of realised motion, so **a genuine command channel has never been
+> tested.** And the crossed cell was still RUNNING when I wrote the closure — I shut
+> a question while an experiment bearing on it was mid-flight.
+
 ## ⭐ WHERE THIS STANDS AT 2026-08-26 19:10 — read this first
 
 ⚠️ **This document has been corrected three times in one day and the body below is
@@ -41,7 +55,7 @@ disagree, this section wins and the banner explains why.
 | **Collapse** | 🔶 **EFFECT REAL, CAUSE UNDER TEST** | One arm (`splitp30k`) has drift **0.199** against **0.616–0.679** for six others — large, and **seed-stable** (replicate: 0.669 vs 0.679, ~1.5 % variance). ⛔ The cause is **NOT `--init-from`** (C164: two arms share it, 0.47 apart). Leading hypothesis: **O5 manufactures drift when the encoder is trainable** (E-DEC-61). **Crossed cell running.** |
 | **Representation** | 🔶 **EFFECT REAL, ATTRIBUTION RETRACTED** | `splitp30k` beats frozen DINOv3 on `n_agents` (**+0.1220 > +0.0998**) — that measurement stands. The *cause* shared the retracted init attribution. |
 | **Prediction** | ⛔ **LOCATED** | The transition is the latent's own **drift**: `z_t` predicts Δz at **r 0.674 (t 134.84)**. Trained encoders converge to **0.62–0.68** across 6 of 7 arms, both inits, 7.5k–30k steps. |
-| **Driving physics via action-conditioning** | ⛔ **CLOSED, NEGATIVELY, AND WELL-POWERED** | Ego motion's marginal over drift: **−0.0006 (t −0.48)**, with the drift control at **t 134.84**. Measured with the *right* channels (`[ω, a_long, v]` as measured state), the *right* target (the latent's own change), and **no power excuse**. |
+| **Driving physics via action-conditioning** | 🔶 **OPEN — closure WITHDRAWN (PI)** | Ego motion's marginal over drift: **−0.0006 (t −0.48)**, with the drift control at **t 134.84**. Measured with the *right* channels (`[ω, a_long, v]` as measured state), the *right* target (the latent's own change), and **no power excuse**. |
 
 ### What is actually recommended today
 
