@@ -75,7 +75,10 @@ combination is the proposal.
 
 ### 1.2 Tactical level — the Alpamayo action space
 
-- **Action space:** the **meta-action vocabulary** of the Alpamayo-2 augmentation
+- ⚠️ **Scope (PI correction, 2026-08-27):** the Alpamayo-2 augmentation set supplies
+  **LABELS for the tactical level only** — it is NOT "the Alpamayo action space",
+  which is the planning representation in §1.5.
+- **Tactical label space:** the **meta-action vocabulary** of the Alpamayo-2 augmentation
   (4,729 clips, `meta_action` with CoT at 100 % coverage; `trajectory` task as the
   dense counterpart). This replaces the 5-way softmax whose LAT/LON mixing is our
   single largest known decoder defect (the longitudinal-blindness root cause).
@@ -104,6 +107,19 @@ metric ⇒ feeds the hierarchy-traversing eval Stage D needs).
 
 - **Kept:** anchored-diffusion proposal generation (REF-C lineage; the v6 stack
   already carries it: 4 diffusion steps, 8 candidates, query proposals).
+- ⭐ **THE PLANNING REPRESENTATION (PI, 2026-08-27 — the Alpamayo learning, already
+  incorporated): every candidate, proposal and decode lives in the
+  `UnicycleAccelCurvatureActionSpace` — per-step `(a, κ)` integrated through ONE
+  unicycle rollout from the true `v0` at dt 0.1** (`ALPAMAYO2_SUPER_ANALYSIS` leverage
+  idea #1; `stack/tanitad/models/kinematic.py: rollout_unicycle` + inverse;
+  `UnicycleEmission` in `V6F_PLANNER_DESIGN`). MEASURED case, ours: feasible **by
+  construction** (census violations 0.0); free-XY waypoint heads amplify ε **25×** in
+  acceleration at dt 0.1 and the v5f dense fan measured **97.6 % infeasible steps /
+  100 % infeasible candidates** — so raw-waypoint action spaces are REFUTED, not
+  merely dispreferred; selected accel MAE **0.774 vs 9.297**; speed becomes a STATE
+  you integrate, never a coordinate you emit — which is also what makes the
+  four-family LONGITUDINAL metrics well-posed on candidates. ⚠️ `tanh` is not a safe
+  saturating squash for these channels (§13 of the analysis).
 - **Fix 1 (measured defect):** rank candidates by the **REFINED** trajectory's
   score — REF-C ranks with the un-refined anchor's score (registry §4 flaw).
 - **Fix 2 (adopted from Drive-JEPA):** ⭐ **trajectory-vocabulary distillation** —
@@ -155,7 +171,6 @@ P4 needs all. This is the PI's staged plan with the gates attached.
 2. **NAVSIM as external yardstick** for Stage D (the surveyed field proves itself
    there) — provisioning call, not scheduled.
 3. **P0 bake-off budget:** default 4 tiny arms (~2 h Thor total). Approve or trim.
-4. Whether "optimized action space from Alpamayo" means MORE than the meta-action
-   vocabulary + trajectory parameterisation adopted in §1.2 — **if there is a
-   specific action-space document I have not found, point me to it and §1.2 will be
-   revised against it.**
+4. ~~Alpamayo action space~~ — **RESOLVED (PI, 2026-08-27): it is the PLANNING
+   REPRESENTATION** — the `(a, κ)` unicycle action space — now first-class in §1.5;
+   the augmentation set is scoped to tactical labels in §1.2.
