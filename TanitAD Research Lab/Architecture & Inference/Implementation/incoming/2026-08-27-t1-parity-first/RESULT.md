@@ -70,3 +70,16 @@ The L-ladder position (`V7_RECIPE_AND_SCALEUP.md` §8): the v7-tiny line stands 
 scaled run must beat, now with the pre-registered instrument that will detect it.
 The lever remains as E-DEC-63 sharpened it: representation first; a planner/decoder
 stage before any T1 capability claim is expected of the WM line.
+
+
+---
+
+## UPDATE 2026-08-27 — the paired ADE read (the empty `paired_decision_grade` closed)
+
+Paired episode-cluster bootstrap over the banked dumps (same 40 episodes, n_boot
+4000, pooled-ratio resampling — `raw/t1_paired_ade.json`):
+**Δ(trained − frozen) ADE = +0.311 m, CI95 [−0.096, +0.720], NOT separated**
+(P(trained worse) = 0.931 — leaning worse, below decision grade). ⇒ On ADE the two
+arms are indistinguishable at T1; **the masked S-rate contrast (0.2632 vs 0.0175,
+non-overlapping CIs) remains the ONLY separated T1 difference**, with its
+oscillation-vs-inertia caveat attached. The RESULT above stands unchanged.
