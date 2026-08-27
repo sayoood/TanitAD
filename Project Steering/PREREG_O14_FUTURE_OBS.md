@@ -69,3 +69,31 @@ with clean controls — the band is scale-wrong, not the rig.
    the instrument-validity burden, stated as a limitation.
 3. Launch order: tiny gates first (the prereg's own rule); the 30k arm launches
    tonight IF no tiny gate fails against base.
+
+
+---
+
+## TINY-LADDER GATES — read 2026-08-27 ~23:15, per AMENDMENT B
+
+| arm | drift | nrmse | cos |
+|---|---|---|---|
+| `o14base2k` (w=0) | 0.4531 | 0.9876 | 0.183 |
+| `o14fut01` | 0.4576 | 0.9886 | 0.184 |
+| `o14fut10` | 0.4733 | **0.9746** | 0.246 |
+| `o14rec10` | 0.4704 | 0.9769 | 0.233 |
+| `o14dr10` (shuffled) | 0.4533 | 0.9895 | 0.179 |
+
+**No gate fails vs base**: worst drift +4.5 % relative (~3× the 1.5 % seed band, no
+explosion); the DR arm sits exactly at base on drift (correct inertness); fut10 /
+rec10 marginally BETTER on nrmse. ⚠️ Scale fact, stated: at 2k EVERY arm including
+base reads "IS the mean predictor" (nrmse ~0.98 vs mean-only ~0.998, cos ~0.2) —
+the prediction gate is barely meaningful at 2k and the read is vs-base RELATIVE,
+exactly as Amendment B prescribed. Exploratory cell: pixel-marginal null in base /
+fut01 / fut10 alike — no dose effect at 2k.
+
+⇒ **`o14fut30k` LAUNCHED** (2026-08-27 ~23:20, Thor PID 1629511, first log row
+content-verified): the verbatim `postrain30k` line + `--w-o14 1.0 --o14-mode fut
+--o14-k 4` + `--tac-vocab-version v6.0` (head-matched to the incumbent), NO other
+change — the matched pair for the absorption PRIMARY at 30k. Raw gates:
+`o14drift.json` / `o14nrmse.json` + absorb_*.json (8fc25020/b53d2f9f scratchpads;
+banking with the ladder package). T0-DIAGNOSTIC throughout.
