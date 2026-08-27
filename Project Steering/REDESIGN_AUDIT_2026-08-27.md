@@ -37,5 +37,14 @@ and the reason nothing broke mid-rename. Not Hub residue.
    Explicit decision, never a regex.
 4. The nested `TanitAD Research Lab/Project Steering/` and `Opponent Analysis`
    naming vs the constitution's "Opponent+Benchmarks" — reconcile with the PI.
-5. Sweep the other agent worktrees (5+ live) for Hub-era bases before their
-   next integration — the zen-bose case will recur.
+5. ✅ **Worktree sweep EXECUTED (2026-08-28 00:58)** — 48 worktrees scanned by
+   staged-file count and Hub-path count. Hazards found, none integrated unbriefed:
+   | worktree | staged | under Hub | action |
+   |---|---|---|---|
+   | `exciting-kepler-4d4449` | 32 | **27** | no live session — needs a briefed integration pass |
+   | `interesting-tharp-463cf3` | 32 | **20** | session LIVE — escalation report requested (zen-bose pattern) |
+   | `reverent-heyrovsky-38d232` | 53 | 0 | large stranded package — surface to the PI |
+   | `fervent-perlman-1dde67` | 11 | 0 | small; queue |
+   | 4 others | 1–3 each | 0 | minor |
+   The remaining 40 worktrees: 0 staged. Original item (sweep before their next
+   integration) is thereby CLOSED; the follow-ups above replace it.
