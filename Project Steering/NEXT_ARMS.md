@@ -46,7 +46,7 @@ Gated on B1/B2. Recipe carried from `V7_RECIPE_AND_SCALEUP.md` §5.1 plus whatev
 | # | item | state |
 |---|---|---|
 | **D-a** | **REF-C** baseline | ✅ trained — `refc-diffusion-xl-30k`, complete at 29,999, scored |
-| **D-b** | **REF-D** | ⛔ **does not exist** — 0 registry rows. **Needs a PI definition of what REF-D is** |
+| **D-b** | **REF-D** | 🔶 **code EXISTS** (`stack/tanitad/refs/refd.py`, tactical+strategic policies, shared-vocabulary doctrine) — my earlier “does not exist” was true only of REGISTRY rows: **no trained arm yet.** v7-vocab wired 2026-08-27 |
 | **D-c** | **Hierarchy-traversing eval** | ⛔ does not exist. `four_families` states it verbatim: *a world-model FIDELITY pass does not traverse the hierarchy* — which is why the strategic family reads UNAVAILABLE |
 | **D-d** | **Frozen-DINOv3 WM** as reference/fallback (PI directive) | 🔶 partial — `dinofrozen30k` was pulled from the queue after C156 and should be restored, since DINOv3 currently **beats our trained encoder** on free space (+0.3701 vs +0.2869) and side occupancy (+0.2735 vs +0.1325) |
 

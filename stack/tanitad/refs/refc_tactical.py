@@ -35,7 +35,7 @@ are the mixing: any lateral uncertainty raises the bar a longitudinal class must
 clear. That is the mechanism, in algebra, from source.
 
 MEASURED (REF-C-base step 29999, canonical val, **n = 1364 windows / 39
-episodes**; run directory ``TanitAD Research Hub/Architecture & Inference/
+episodes**; run directory ``TanitAD Research Lab/Architecture & Inference/
 Implementation/incoming/2026-08-03-dtac1-tactical-head/``, substrate
 ``dtac1_substrate_refc-base-30k.pt``, banked in that directory):
 
@@ -164,6 +164,25 @@ COLLAPSE_TABLE: tuple[tuple[int, ...], ...] = (
     (TURN_LEFT, TURN_LEFT, TURN_LEFT),        # lat = turn_left   (lon LOST)
     (TURN_RIGHT, TURN_RIGHT, TURN_RIGHT),     # lat = turn_right  (lon LOST)
 )
+
+
+# ---- the v7 -> kin3 projection (PI mandate, 2026-08-27) --------------------
+# Token-name keyed so a scorer can project any arm's v7-vocabulary outputs onto
+# the KINEMATIC measurement classes. A projection for METRICS, never a label
+# source: it is many-to-one on purpose and destroys exactly the distinctions
+# (NUDGE vs LANE_CHANGE, CREEP vs BRAKE_TO) the v7 space exists to keep.
+V7_TO_KIN3_LAT: dict[str, int] = {
+    "LANE_KEEP": LAT_LANE_KEEP, "ABORT_LC": LAT_LANE_KEEP,
+    "NUDGE_L": LAT_LANE_KEEP, "NUDGE_R": LAT_LANE_KEEP,
+    "LANE_CHANGE_L": LAT_TURN_LEFT, "TURN_L": LAT_TURN_LEFT,
+    "LANE_CHANGE_R": LAT_TURN_RIGHT, "TURN_R": LAT_TURN_RIGHT,
+}
+V7_TO_KIN3_LON: dict[str, int] = {
+    "FOLLOW": LON_STEADY, "CRUISE": LON_STEADY, "HOLD": LON_STEADY,
+    "YIELD_MERGE": LON_BRAKE_STOP, "BRAKE_TO": LON_BRAKE_STOP,
+    "CREEP": LON_BRAKE_STOP, "ADAPT_SPEED_FOR_CURVE": LON_BRAKE_STOP,
+    "ACCELERATE": LON_ACCELERATE,
+}
 
 
 def collapse_table(device=None, dtype=torch.long) -> Tensor:

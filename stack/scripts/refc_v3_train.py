@@ -1,6 +1,6 @@
 """REF-C v3 trainer — the goal-mediated hierarchy on the supervised arm.
 
-Design: ``TanitAD Research Hub/Architecture & Inference/Research/
+Design: ``TanitAD Research Lab/Architecture & Inference/Research/
 2026-08-18-refc-v3-design/REFC_V3_DESIGN.md`` (edge list E1..E12).
 Experiment: ``PREREG_REFC_V3.md`` (E-V3DOM-1 — arms v3-H / v3-F, 3 seeds,
 both outcomes committed). ⛔ Registered BEFORE any training step; do not launch
@@ -178,6 +178,15 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
 
     # ---- factored tactical CE (2 s labels; the shared aux surface) ---------
     lat_t, lon_t = tac.window_factored_labels(pose_last, fut_ext[:, :20])
+    # kinematic labels are 3x3; a wider head means the model was built for the
+    # v7 FlyWheel space but is being fed kin3 -- the CE would train silently
+    # WRONG classes. Refuse, never truncate. (PI vocab mandate, 2026-08-27.)
+    if out["lat_logits"].shape[-1] != tac.N_LAT:
+        raise RuntimeError(
+            f"head/label vocabulary mismatch: lat head width "
+            f"{out['lat_logits'].shape[-1]} vs kinematic {tac.N_LAT} -- build "
+            f"with tac_vocab_version='kin3' for kinematic supervision, or "
+            f"supply v7 labels")
     loss_lat = F.cross_entropy(out["lat_logits"], lat_t)
     loss_lon = F.cross_entropy(out["lon_logits"], lon_t)
     model.core.update_tactical_prior(lat_t, lon_t)

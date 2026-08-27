@@ -1,7 +1,7 @@
 """REF-C v3 — the goal-mediated strategic/tactical/operative hierarchy on the
 supervised arm (the 4B-dominance proof track).
 
-Design + pre-registration: ``TanitAD Research Hub/Architecture & Inference/
+Design + pre-registration: ``TanitAD Research Lab/Architecture & Inference/
 Research/2026-08-18-refc-v3-design/`` (``REFC_V3_DESIGN.md`` carries the edge
 list E1..E12 this module implements; ``PREREG_REFC_V3.md`` commits the
 experiment). This docstring repeats only what a reader of the CODE needs.
@@ -122,6 +122,9 @@ GOAL_DIMS: int = 4
 
 @dataclass
 class RefCV3Config:
+    #: ⭐ v7 mandate default; the kinematic trainer passes "kin3"
+    #: explicitly because its labels are the 3x3 kinematic classes.
+    tac_vocab_version: str = "v7.0"
     """v3 = a core RefCConfig + the goal-cascade switch + shared sizing.
 
     ``hier`` is THE dominance lever (one switch builds/withholds the cascade).
@@ -309,8 +312,23 @@ class RefCV3Model(nn.Module):
         # supplier; the core's own pooled-based heads keep training as the
         # shared aux surface in BOTH arms, so the supervision surface is
         # identical and only the DECISION SOURCE differs).
-        self.lat_head_tac = nn.Linear(cfg.d_tac, tac.N_LAT)
-        self.lon_head_tac = nn.Linear(cfg.d_tac, tac.N_LON)
+        # ⭐ v7 mandate (PI 2026-08-27), with the SUPERVISION fact stated:
+        # these heads TRAIN against `tac.window_factored_labels` — the
+        # KINEMATIC 3x3 — so "kin3" is what today's trainer can supervise;
+        # v7.0 (8x8, the FlyWheel space) is the go-forward head and NEEDS
+        # v7 labels. The trainer PINS its version and `refc_v3_train`
+        # refuses a head/label width mismatch loudly.
+        _vv = getattr(cfg, "tac_vocab_version", "kin3")
+        if _vv == "kin3":
+            _nlat, _nlon = tac.N_LAT, tac.N_LON
+        else:
+            from tanitad.models.v6 import (tactical_lat_actions,
+                                           tactical_lon_actions_v)
+            _nlat = len(tactical_lat_actions(_vv))
+            _nlon = len(tactical_lon_actions_v(_vv))
+        self.tac_vocab_version = _vv
+        self.lat_head_tac = nn.Linear(cfg.d_tac, _nlat)
+        self.lon_head_tac = nn.Linear(cfg.d_tac, _nlon)
         # E8 — tactical geometric goals, E4.1 layout (x, y, heading, speed)@tau.
         self.tac_goal_head = nn.Linear(cfg.d_tac, k * GOAL_DIMS)
         # E7 — tactical latent into the decoder's target-latent FiLM port.

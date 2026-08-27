@@ -108,7 +108,9 @@ from torch import Tensor
 
 from tanitad.config import StrategicPolicyConfig, TacticalPolicyConfig
 from tanitad.models.fourbrain import StrategicPolicy, TacticalPolicy
-from tanitad.models.v6 import TACTICAL_LAT_ACTIONS, TACTICAL_LON_ACTIONS
+from tanitad.models.v6 import (TACTICAL_LAT_ACTIONS,
+                               TACTICAL_LON_ACTIONS, tactical_lat_actions,
+                               tactical_lon_actions_v)
 from tanitad.refs.refa_v1 import TokenFieldPredictor, WideAdapter, _Block
 from tanitad.refs.refa_v1p import ActionStreamPredictor
 
@@ -139,6 +141,8 @@ PRIOR_GEOMETRY: dict = {
 
 @dataclass
 class RefDConfig:
+    #: ⭐ v7 mandate: default = the frozen FlyWheel vocabulary.
+    tac_vocab_version: str = "v7.0"
     """Every number that defines the arm, in one place."""
 
     # ---- the frozen prior ------------------------------------------------- #
@@ -347,7 +351,10 @@ class RefD(nn.Module):
 
         # factored lat x lon heads, importing v6's tuples BY IDENTITY so the
         # retired 5-way mixed softmax cannot come back through a copy
-        self.n_lat, self.n_lon = len(TACTICAL_LAT_ACTIONS), len(TACTICAL_LON_ACTIONS)
+        # ⭐ v7 mandate (PI 2026-08-27) — same contract as refa_v1/v6.py.
+        _vv = getattr(cfg, "tac_vocab_version", "v6.0")
+        self.n_lat = len(tactical_lat_actions(_vv))
+        self.n_lon = len(tactical_lon_actions_v(_vv))
         self.lat_head = nn.Sequential(nn.LayerNorm(cfg.d_state),
                                       nn.Linear(cfg.d_state, self.n_lat))
         self.lon_head = nn.Sequential(nn.LayerNorm(cfg.d_state),

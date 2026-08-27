@@ -57,7 +57,9 @@ from tanitad.models.fourbrain import StrategicPolicy, TacticalPolicy
 # ⛔ ONE VOCABULARY SOURCE. These tuples are IMPORTED, never re-declared — a
 # second copy is a second vocabulary, and the programme has already paid for
 # that once (see the defect note below).
-from tanitad.models.v6 import TACTICAL_LAT_ACTIONS, TACTICAL_LON_ACTIONS
+from tanitad.models.v6 import (TACTICAL_LAT_ACTIONS,
+                               TACTICAL_LON_ACTIONS, tactical_lat_actions,
+                               tactical_lon_actions_v)
 from tanitad.refs.refa_v1_plan import PlanConfig, icem_plan, unicycle_paths
 
 __all__ = ["RefAV1Config", "RefAV1", "DINOV3_GEOMETRY",
@@ -79,6 +81,9 @@ DINOV3_GEOMETRY = {
 
 @dataclass
 class RefAV1Config:
+    #: ⭐ v7 mandate: new builds default to the FROZEN FlyWheel
+    #: vocabulary; recorded configs keep their version.
+    tac_vocab_version: str = "v7.0"
     """Every number that defines the arm, in one place, so a launch can be
     diffed against a checkpoint."""
 
@@ -450,7 +455,12 @@ class RefAV1(nn.Module):
         # ⇒ v1 decodes the tactical action on TWO independent heads over the
         # v6 vocabulary, imported from `v6.py` so there is exactly one source.
         # The legacy `maneuver_logits` is NOT consumed anywhere in v1.
-        self.n_lat, self.n_lon = len(TACTICAL_LAT_ACTIONS), len(TACTICAL_LON_ACTIONS)
+        # ⭐ v7 mandate (PI 2026-08-27): the head vocabulary resolves through
+        # the version registry. getattr fallback v6.0 = pre-field configs
+        # (old checkpoints) keep their shapes.
+        _vv = getattr(cfg, "tac_vocab_version", "v6.0")
+        self.n_lat = len(tactical_lat_actions(_vv))
+        self.n_lon = len(tactical_lon_actions_v(_vv))
         d_int = intent_dim or cfg.d_state
         self.lat_head = nn.Sequential(nn.LayerNorm(d_int),
                                       nn.Linear(d_int, self.n_lat))
