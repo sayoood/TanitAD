@@ -3760,6 +3760,24 @@ no scorer, no planner and no closed loop.
 
 ⛔⛔ **`lead_gap_m` IS A SUPERSEDED TARGET (C150) — every `lead_gap_m` cell in §13 was computed against it.** MEASURED over all 25,790 labelled frames: **4.8 %** of frames have no lead and took an **80.0 m default**, carrying **59.9 % of the total variance**, and 80.0 is **not** a sentinel outside the data (real leads reach **180.84 m**). Split into `lead_present` + `lead_range_m` (lead-present frames only), **the repair flips verdicts**: `scale1` and `champ30k` "beat pixels" on the defective target (t 4.23 / **10.28**) and do **not** on the sound one, where **every arm of ours is worse than a constant** and only frozen DINOv3 carries range (+0.0336). ⭐ Cause identified (E-DEC-25): the readout's **128→64 projection**, not its pooling — at the identical grid the *unprojected* tokens read **+0.0719** against the readout's **−0.1611**. Cells below are kept as the historical record and **may not be quoted as range decodability**; `n_agents` is unaffected. Raw: `…/raw/leadsplit.json`, `…/raw/rowladder.json`.
 
+### 13.10 ⭐ THE DECISION ARMS OF 2026-08-27 — k4, omega, the O14 ladder
+
+All T0-DIAGNOSTIC · parity train corpus · the `postrain30k` recipe unless noted ·
+raws under `…/Architecture & Inference/Implementation/incoming/2026-08-27-*`.
+
+| arm | one variable | steps | drift | nrmse | verdict |
+|---|---|---|---|---|---|
+| **`k4_30k`** | `--o5-k 4` (trainable) | 30k | **0.6701** (t 148.81) | 0.7682 | ⭐ **INTERACTION** — k INERT on the trainable line; the 2×2 closes (E-DEC-66; `PREREG_A7_K4_CELL.md`) |
+| **`omega30k`** | `--cond-param omega_accel_v` | 30k | 0.6911 (t 149.16) | ⭐ **0.6911** vs 0.8115 | **MIXED — ADOPTED**: marginal null; nrmse −14.8 % (~4× the 3.5 % 2-seed band; single seed) (E-DEC-65) |
+| `o14base2k` | w_o14=0 (+omega) | 2k | 0.4531 | 0.9876 | the ladder base; ⚠️ pixel-marginal NULL at 2k (Amendment B) |
+| `o14fut01` / `o14fut10` / `o14rec10` | O14 fut 0.1 / fut 1.0 / rec 1.0 | 2k | 0.4576 / 0.4733 / 0.4704 | 0.9886 / **0.9746** / 0.9769 | gates PASS vs base; cos 0.18→0.24–25 under the aux (below decision grade) |
+| `o14dr10` | fut 1.0 + SHUFFLED targets (DR) | 2k | **0.4533** (= base) | 0.9895 | the deliberate-regression arm behaves — exactly inert |
+| **`o14fut30k`** | `--w-o14 1.0 --o14-mode fut` vs `postrain30k` (NO omega — one variable) | 30k | ▶ RUNNING | ▶ | **the ABSORPTION PRIMARY** (E-DEC-67 / Amendment B): pixel-marginal vs the incumbent's +0.0096 (t 5.11) |
+
+⚠️ ckpt md5s: k4 `c914e6a0a4b0ee7548b469408cacc53e` · omega `8cbd242b4e7c01fc6107f7874439d996` ·
+ladder arms in the sweep logs. The 2k arms carry `--tac-vocab-version v6.0` EXPLICITLY
+(head-matched to arm 1, which predates the v7-vocab mandate).
+
 ### 13.9 ⭐ THE POSTRAIN TRIO (2026-08-26) — and the retraction of the lever they were built to prove
 
 ⛔⛔ **READ THIS BEFORE QUOTING ANY DRIFT NUMBER IN §13.** These three arms retract
