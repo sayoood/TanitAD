@@ -165,13 +165,17 @@ P4 needs all. This is the PI's staged plan with the gates attached.
 
 ---
 
-## 3. Open decisions for the PI
+## 3. Decisions — CLOSED 2026-08-27 (PI: "go with your defaults, approve 2 and 3")
 
-1. **Fallback teacher:** DINOv3 (current) vs **V-JEPA 2.1** dense features for the
-   distill/fallback arm — one extra probe column decides; default: measure both.
-2. **NAVSIM as external yardstick** for Stage D (the surveyed field proves itself
-   there) — provisioning call, not scheduled.
-3. **P0 bake-off budget:** default 4 tiny arms (~2 h Thor total). Approve or trim.
-4. ~~Alpamayo action space~~ — **RESOLVED (PI, 2026-08-27): it is the PLANNING
-   REPRESENTATION** — the `(a, κ)` unicycle action space — now first-class in §1.5;
-   the augmentation set is scoped to tactical labels in §1.2.
+1. **Fallback teacher: RESOLVED BY MEASUREMENT** (E-DEC-68) — DINOv3 wins 9/9,
+   6/9 paired-separated. DINOv3 is the v7r distill/fallback teacher.
+2. **NAVSIM: APPROVED IN PRINCIPLE** — zero-cost scouting commissioned to the
+   Eval FlyWheel (`…/Benchmarks & Evals/…/2026-08-27-navsim-provisioning-brief/`);
+   the download/provisioning spend returns to the PI with the scout's cost table.
+3. **P0 bake-off (two-term vs EMA-teacher): APPROVED** — 4 tiny arms ≈ 2 h Thor;
+   queues after `o14fut30k`. ⚠️ Requires implementing the EMA-teacher target
+   behind a flag first (default bit-identical, test-pinned — the O14 pattern).
+4. **Stage B / B-1 (relabel the parity corpus, Thor nights, quantisation
+   validation first): APPROVED, EXECUTION GATED ON THE PI'S SIGNAL** — the PI is
+   refining details with the Data FlyWheel agent first. ⛔ Nothing spawns until
+   the signal.
