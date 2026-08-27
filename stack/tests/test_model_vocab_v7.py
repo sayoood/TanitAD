@@ -116,3 +116,27 @@ def test_v6_builds_reproduce_the_old_tensor_shapes():
     assert st.vocab_a_str.table.weight.shape == (len(STRATEGIC_ACTION_TOKENS), d)
     assert st.vocab_a_lat.table.weight.shape == (len(TACTICAL_LAT_ACTIONS), d)
     assert st.vocab_a_lon.table.weight.shape == (len(TACTICAL_LON_ACTIONS), d)
+
+
+def test_recorded_args_without_the_field_mean_v6():
+    """THE LOADER PROPERTY (found the hard way: the k4_30k drift read failed on
+    v7-shaped heads): build_stack_from_args on a namespace LACKING the field —
+    i.e. any pre-mandate run's recorded args — must produce v6 shapes; with
+    v7.0 it must produce the FlyWheel shapes."""
+    sys.path.insert(0, str(_STACK / "scripts"))
+    from train_v6_staged import build_parser, build_stack_from_args
+    base = ["--out", "UNUSED", "--stage", "S-W", "--frame-h", "64",
+            "--frame-w", "160", "--enc-dim", "32", "--enc-depth", "1",
+            "--enc-heads", "2", "--readout-grid", "2", "--readout-grid-w", "4",
+            "--readout-dim", "16", "--pred-dim", "32", "--pred-depth", "1",
+            "--pred-heads", "2", "--window", "4", "--d-tac", "16",
+            "--d-str", "8"]
+    a_new = build_parser().parse_args(base)
+    assert a_new.tac_vocab_version == "v7.0"
+    st_new = build_stack_from_args(a_new)
+    assert st_new.vocab_a_str.table.weight.shape[0] == 7      # v7
+    a_old = build_parser().parse_args(base)
+    del a_old.tac_vocab_version                                # pre-field args
+    st_old = build_stack_from_args(a_old)
+    assert st_old.vocab_a_str.table.weight.shape[0] == 6      # v6.0
+    assert st_old.vocab_str.table.weight.shape[0] == 11       # v6.0

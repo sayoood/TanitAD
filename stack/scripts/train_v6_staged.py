@@ -3875,6 +3875,11 @@ def build_stack_from_args(a) -> V6Stack:
         isolate_interp_from_encoder=not bool(
             getattr(a, "no_isolate_interp", False)),
         vit5_encoder=bool(a.vit5_encoder), n_registers=a.n_registers)
+    # ⭐ the vocabulary version rides the ARGS round-trip (PI mandate
+    # 2026-08-27): a NEW launch records --tac-vocab-version (default v7.0);
+    # a RECORDED-args namespace from an old run lacks the key and MUST mean
+    # v6.0 — that is what keeps every existing checkpoint loadable.
+    cfg.tac_vocab_version = str(getattr(a, "tac_vocab_version", "v6.0"))
     stack = V6Stack(cfg)
     if float(getattr(a, "w_o14", 0.0)) > 0:
         # O14 head: bottleneck MLP so the aux stays small (~0.6 M at d_op 2048
@@ -6457,6 +6462,8 @@ def build_parser() -> argparse.ArgumentParser:
                     help="seed for O13's FROZEN readout. Changing it changes "
                          "the target direction -- never compare o13_loss "
                          "across different seeds.")
+    ap.add_argument("--tac-vocab-version", default="v7.0",
+                    help="vocabulary version for ALL six surfaces (v7.0 = the frozen FlyWheel vocabulary, MANDATORY default for new runs; recorded-args resumes of old runs resolve v6.0).")
     ap.add_argument("--w-o14", type=float, default=0.0,
                     help="O14 future-observation aux (PREREG_O14_FUTURE_OBS; R2, PI-approved 2026-08-27). 0 = bit-identical trainer.")
     ap.add_argument("--o14-mode", choices=("fut", "rec", "fut_diff"),

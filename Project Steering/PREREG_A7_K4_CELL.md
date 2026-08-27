@@ -41,3 +41,33 @@ trainable encoder?), participation, and the E-DEC-63 pixel-marginal probe
 
 ⚠️ **What this cell cannot say:** anything about driving (T0 only), and nothing
 about `o5_k`'s effect at scale beyond 19 M params.
+
+
+---
+
+## OUTCOME — read 2026-08-27, instruments as pre-registered
+
+**`k4_30k` drift = 0.6701 (t 148.81)** — inside the INTERACTION band (≈0.67,
+≥0.60), nowhere near ADDITIVE (0.42–0.54) or K-DOMINANT (≤0.42).
+
+| | k8 | k4 |
+|---|---|---|
+| **trainable** | 0.669 / nrmse 0.8115 | **0.6701 / nrmse 0.7682** |
+| **frozen** | 0.3905 / nrmse 0.9301 | **0.199** (`splitp30k`) |
+
+⇒ ⭐ **INTERACTION: `o5_k` does NOTHING on a trainable encoder** (0.669 → 0.6701,
+within the 1.5 % seed band) **and helps only under freeze** (0.3905 → 0.199).
+**The C164 leftover fully resolves**: `splitp30k`'s 0.199 = the freeze main effect
+plus the freeze×k4 interaction — no unexplained residue remains, and the
+trainable-encoder drift attractor (0.62–0.68) is untouched by k.
+
+**Consequence for v7:** with the encoder TRAINABLE (D1) and k inert on drift,
+⛔ **no known training-knob lowers drift on the trainable line — the
+representational route (O14, E-DEC-67) is the only live anti-drift lever.**
+Secondary: k4's nrmse 0.7682 (−5.3 % vs incumbent, ~1.5× the 3.5 % seed band —
+noted, not separated-grade).
+
+Raw: `k4drift.json` / `k4nrmse.json` (8fc25020 scratchpad; banking next package).
+T0-DIAGNOSTIC. ⚠️ The read required a same-day loader fix (recorded-args without
+`tac_vocab_version` must mean v6.0) — found because this ckpt was the FIRST loaded
+after the v7-vocab mandate landed; the property is now test-pinned.
