@@ -20,11 +20,16 @@ from tanitad.models.v6 import (TACTICAL_LAT_ACTIONS, TACTICAL_LAT_ACTIONS_V61,
 
 
 # --------------------------------------------------- inert at default (the point) --
-def test_the_DEFAULT_is_still_v6_0_so_the_live_run_is_untouched():
-    assert V6Config().tac_vocab_version == "v6.0"
-    assert tactical_lat_actions() is TACTICAL_LAT_ACTIONS
-    assert len(tactical_lat_actions()) == 6
-
+def test_the_DEFAULT_is_v7_0_by_PI_mandate_and_old_runs_resolve_unchanged():
+    """UPDATED 2026-08-27: the PI made the FlyWheel v7 vocabulary MANDATORY, so
+    the config DEFAULT is now v7.0. The protection this test used to provide —
+    the live run's shapes untouched — is preserved by the RECORDED-version
+    property instead: a v6-era config resolves to the v6 tuples exactly."""
+    from tanitad.models.v6 import (V6Config, tactical_lat_actions,
+                                   TACTICAL_LAT_ACTIONS)
+    assert V6Config().tac_vocab_version == "v7.0"
+    assert tactical_lat_actions("v6.0") == TACTICAL_LAT_ACTIONS
+    assert tactical_lat_actions() == TACTICAL_LAT_ACTIONS  # getter default stays v6.0
 
 def test_the_v6_0_tuple_is_UNCHANGED_member_for_member():
     """The live checkpoint's six rows mean these six things, in this order."""

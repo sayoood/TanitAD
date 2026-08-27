@@ -336,6 +336,65 @@ def strategic_action_tokens(version: str = "v6.0") -> tuple[str, ...]:
         raise ValueError(
             f"unknown strategic action vocabulary version {version!r}; "
             f"known: {sorted(STRATEGIC_ACTION_VOCAB_VERSIONS)}") from None
+
+
+# ---------------------------------------------------------------------------- #
+# ⭐⭐ v7.0 — THE FROZEN FLYWHEEL VOCABULARY (PI, MANDATORY, 2026-08-27)
+# ---------------------------------------------------------------------------- #
+#: The tactical+strategic vocabulary defined WITH the Data FlyWheel agent and
+#: FROZEN on PI instruction 2026-08-24 ("we will stabilize now the vocabulary
+#: and keep it constant") lives in `vocab_v7.py` — definitions, admissibility
+#: maps, `assert_frozen`. The MODEL consumes it ONLY through this registry:
+#: ⛔ the v7 strategic and tactical-goal tuples are RESTRUCTURES, not appends
+#: (v6 STOP_AT/ROUTE_TO/... → v7 *_FOLLOW_ROUTE forms; REDUCE_TO removed), so
+#: index meaning changes and an old checkpoint is loadable ONLY under its
+#: RECORDED `tac_vocab_version`. New builds default to v7.0; resumes replay
+#: their recorded config and are untouched.
+from .vocab_v7 import (  # noqa: E402
+    GOAL_ADMISSIBLE_LON as _V7_GOAL_ADMISSIBLE_LON,
+    STRATEGIC_ACTION_TOKENS_V7, STRATEGIC_GOAL_TOKENS_V7,
+    TACTICAL_GOAL_TOKENS_V7, TACTICAL_LAT_ACTIONS_V7, TACTICAL_LON_ACTIONS_V7,
+)
+
+TACTICAL_VOCAB_VERSIONS["v7.0"] = TACTICAL_LAT_ACTIONS_V7
+STRATEGIC_ACTION_VOCAB_VERSIONS["v7.0"] = STRATEGIC_ACTION_TOKENS_V7
+
+STRATEGIC_GOAL_VOCAB_VERSIONS: dict[str, tuple[str, ...]] = {
+    "v6.0": STRATEGIC_GOAL_TOKENS, "v6.1": STRATEGIC_GOAL_TOKENS,
+    "v7.0": STRATEGIC_GOAL_TOKENS_V7,
+}
+TACTICAL_GOAL_VOCAB_VERSIONS: dict[str, tuple[str, ...]] = {
+    "v6.0": TACTICAL_GOAL_TOKENS, "v6.1": TACTICAL_GOAL_TOKENS,
+    "v7.0": TACTICAL_GOAL_TOKENS_V7,
+}
+TACTICAL_LON_ACTION_VOCAB_VERSIONS: dict[str, tuple[str, ...]] = {
+    "v6.0": TACTICAL_LON_ACTIONS, "v6.1": TACTICAL_LON_ACTIONS,
+    "v7.0": TACTICAL_LON_ACTIONS_V7,
+}
+
+def _vocab_of(registry: dict, version: str, what: str) -> tuple[str, ...]:
+    try:
+        return registry[version]
+    except KeyError:
+        raise ValueError(f"unknown {what} vocabulary version {version!r}; "
+                         f"known: {sorted(registry)}") from None
+
+
+def strategic_goal_tokens(version: str = "v6.0") -> tuple[str, ...]:
+    """Strategic goal vocabulary for ``version`` (v7.0 = the FlyWheel freeze)."""
+    return _vocab_of(STRATEGIC_GOAL_VOCAB_VERSIONS, version, "strategic goal")
+
+
+def tactical_goal_tokens(version: str = "v6.0") -> tuple[str, ...]:
+    """Tactical goal vocabulary for ``version`` (v7.0 = 22 frozen tokens)."""
+    return _vocab_of(TACTICAL_GOAL_VOCAB_VERSIONS, version, "tactical goal")
+
+
+def tactical_lon_actions_v(version: str = "v6.0") -> tuple[str, ...]:
+    """Tactical LON action vocabulary for ``version`` (v7.0 adds
+    ADAPT_SPEED_FOR_CURVE + ACCELERATE, appended)."""
+    return _vocab_of(TACTICAL_LON_ACTION_VOCAB_VERSIONS, version,
+                     "tactical lon action")
 #: §2 "every goal token carries OPTIONAL temporal and spatial constraint slots
 #: … uniformly typed". Unset = unconstrained (the mask says which are set).
 CONSTRAINT_SLOTS: tuple[str, ...] = (
@@ -418,6 +477,10 @@ TACTICAL_LON_GOAL_VERSIONS: dict[str, tuple[str, ...]] = {
     "v6.0": TACTICAL_GOAL_TOKENS_LON,
     "v6.1": TACTICAL_GOAL_TOKENS_LON_V61,
 }
+#: the v7 LON-goal split is the FlyWheel's OWN admissibility map's key set,
+#: order-preserved from the goal tuple — derived, never invented here.
+TACTICAL_LON_GOAL_VERSIONS["v7.0"] = tuple(
+    t for t in TACTICAL_GOAL_TOKENS_V7 if t in _V7_GOAL_ADMISSIBLE_LON)
 
 
 def tactical_lon_goals(version: str = "v6.0") -> tuple[str, ...]:
@@ -3629,7 +3692,11 @@ class V6Config:
     #: v6F S-W checkpoint's shape (6 tokens). v6.1 appends TURN_L/TURN_R
     #: and is intended for the post-30k S-T launch, where
     #: STAGE_MAY_INTRODUCE legitimises the widened keys.
-    tac_vocab_version: str = "v6.0"
+    #: ⭐ governs ALL six vocabulary surfaces since v7.0 (PI mandate
+    #: 2026-08-27: the FlyWheel vocabulary is MANDATORY for new builds).
+    #: Resumed runs replay their recorded value and are untouched; configs
+    #: predating the field mean v6.0 (the getattr fallbacks say so).
+    tac_vocab_version: str = "v7.0"
     d_tac: int = 512               # §3.1 of the redesign: information decreases up
     d_str: int = 256
     # ``d_op`` is DERIVED from the readout (grid × grid_w × d_readout) — the
@@ -4649,16 +4716,23 @@ class V6Stack(nn.Module):
                 grid_w=cfg.readout.grid_w)
 
         # ---- vocabularies: ONE object per seam, held by BOTH views ---------
-        self.vocab_str = GoalVocabulary(STRATEGIC_GOAL_TOKENS, cfg.d_goal_embed)
-        self.vocab_tac = GoalVocabulary(TACTICAL_GOAL_TOKENS, cfg.d_goal_embed)
+        # ⭐ ALL surfaces resolve through the version registry (PI mandate
+        # 2026-08-27: v7.0 = the frozen FlyWheel vocabulary). The getattr
+        # fallback stays "v6.0": a config that PREDATES the field is a v6-era
+        # run and must keep its shapes.
+        _vv = getattr(cfg, "tac_vocab_version", "v6.0")
+        self.vocab_str = GoalVocabulary(strategic_goal_tokens(_vv),
+                                        cfg.d_goal_embed)
+        self.vocab_tac = GoalVocabulary(tactical_goal_tokens(_vv),
+                                        cfg.d_goal_embed)
         #: the layers' OWN action vocabularies (each conditions its own
         #: predictor). Tactical is FACTORED LAT × LON by design (§4).
-        self.vocab_a_str = GoalVocabulary(STRATEGIC_ACTION_TOKENS,
+        self.vocab_a_str = GoalVocabulary(strategic_action_tokens(_vv),
                                           cfg.d_goal_embed)
-        self.vocab_a_lat = GoalVocabulary(
-            tactical_lat_actions(getattr(cfg, "tac_vocab_version", "v6.0")),
-            cfg.d_goal_embed)
-        self.vocab_a_lon = GoalVocabulary(TACTICAL_LON_ACTIONS, cfg.d_goal_embed)
+        self.vocab_a_lat = GoalVocabulary(tactical_lat_actions(_vv),
+                                          cfg.d_goal_embed)
+        self.vocab_a_lon = GoalVocabulary(tactical_lon_actions_v(_vv),
+                                          cfg.d_goal_embed)
 
         # ---- layer O: predictor + the g_tac conditioner ---------------------
         self.predictor_op = OperativePredictor(cfg.predictor, cfg.d_op,
@@ -4764,7 +4838,9 @@ class V6Stack(nn.Module):
             # per axis — not a second idiom for the same job.
             self.vocab_tac_lat = GoalVocabulary(TACTICAL_GOAL_TOKENS_LAT,
                                                 cfg.d_goal_embed)
-            self.vocab_tac_lon = GoalVocabulary(TACTICAL_GOAL_TOKENS_LON,
+            self.vocab_tac_lon = GoalVocabulary(
+                tactical_lon_goals(getattr(cfg, "tac_vocab_version",
+                                           "v6.0")),
                                                 cfg.d_goal_embed)
             self.goal_head_tac_lat = GoalHead(self.vocab_tac_lat, cfg.d_tac,
                                               d_cond=cfg.d_goal_embed)
