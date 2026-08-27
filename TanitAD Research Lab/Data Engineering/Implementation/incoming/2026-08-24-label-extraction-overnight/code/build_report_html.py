@@ -21,7 +21,7 @@ from tanitad.models import vocab_v7 as V7          # noqa: E402
 CAM = "C:/Users/Admin/tanitad-data/physicalai/camera/camera_front_wide_120fov"
 OFFS = (-4.0, -2.0, 0.0, 2.0, 4.0, 6.0)
 LAB = json.load(open("C:/Users/Admin/tanitad-wt/_s2build/report/sample_labels.json"))
-SUM = json.load(open("C:/Users/Admin/tanitad-wt/_s2build/v7_final3/summary.json"))
+SUM = json.load(open("C:/Users/Admin/tanitad-wt/_s2build/v7_time/summary.json"))
 
 #: My verdict per clip, written from the FRAMES before the labels were read.
 VERDICT = {
@@ -51,10 +51,15 @@ VERDICT = {
                        "Alpamayo's box at full resolution shows <b>a real pedestrian walking in the "
                        "road</b>, lit by the headlights. EVADE + NUDGE_L is <b>correct</b>; my "
                        "400 px thumbnail was the unreliable instrument."),
-    "d94365be": (True, "Residential street packed with parked cars both sides — the textbook EVADE "
-                       "corridor. The ego holds the centre with no measurable nudge, so EVADE is "
-                       "correctly WITHHELD (it fired before tonight) and SPEED_BAND + CRUISE "
-                       "stands. Strategic TURN_LEFT_FOLLOW_ROUTE matches a 94° turn at t+24 s."),
+    "d94365be": (False, "⭐ <b>The clip whose ONCOMING timing you questioned — you were right to.</b> "
+                        "<code>REACT_ON_ONCOMING</code> is marked <b>untimed</b>: nothing in the "
+                        "source places it in 2–6 s. This clip has <b>no motion segments and no "
+                        "components analysis at all</b>, so there is no time evidence of any kind, "
+                        "and Alpamayo's anchor sits 2.9 s before ours — an event it names can have "
+                        "finished before our band opens, which is what you saw in the frames. Worse, "
+                        "its two text fields contradict each other: <i>cot</i> says nudge LEFT for a "
+                        "parked car, <i>chain_of_causation</i> says nudge RIGHT for an oncoming "
+                        "vehicle. Corpus-wide <b>REACT_ON_ONCOMING is 0 timed / 344 untimed</b>."),
     "59b57590": (True, "⭐ <b>The clip whose MERGE you questioned — you were right, there is no "
                        "merge.</b> The only occurrence of \"merg\" in the whole text is "
                        "<i>\"potential door-opening/merge hazards\"</i>, a hypothetical risk class "
@@ -176,8 +181,20 @@ def clip_section(cid: str, rec: dict) -> str:
         rows.append(
             f'<tr><td class="tok">{t}</td><td class="args">'
             f'{html.escape(json.dumps(args)) if args else "—"}</td>'
-            f'<td>{badge(a.get("provenance", "geometry"), a.get("disputed"), a.get("grounded"))}</td></tr>')
+            f'<td>{badge(a.get("provenance", "geometry"), a.get("disputed"), a.get("grounded"))}'
+            f'{"" if not a.get("time_basis") else (chr(32) + chr(60) + "span class=" + chr(34) + "p seg" + chr(34) + chr(62) + "timed" + chr(60) + "/span" + chr(62)) if a.get("time_basis") == "segment" else (chr(32) + chr(60) + "span class=" + chr(34) + "p untimed" + chr(34) + chr(62) + "untimed" + chr(60) + "/span" + chr(62))}'
+            f'</td></tr>')
 
+    src = rec.get("cot_source") or {}
+    ma = src.get("meta_action") or {}
+    meta_html = (" · ".join(f"<b>{html.escape(k)}</b> {html.escape(str(v))}"
+                            for k, v in ma.items()) or "—")
+    chain_html = html.escape(src.get("chain_of_causation") or "—")
+    if (src.get("conflict") or {}).get("conflict"):
+        chain_html += ('<br><span class="conflictwarn">&#9888; CONTRADICTS '
+                       '<code>cot</code> on direction — DROPPED for extraction</span>')
+    comp_html = html.escape((src.get("components_analysis") or "—")[:1400]).replace(chr(10), "<br>")
+    motion_html = html.escape((src.get("motion_analysis") or "—")[:1400]).replace(chr(10), "<br>")
     cls = "ok" if ok is True else ("bad" if ok is False else "unk")
     mark = "✓" if ok is True else ("✗" if ok is False else "?")
     return f"""
@@ -220,9 +237,18 @@ def clip_section(cid: str, rec: dict) -> str:
   <b>{'agrees' if lat.get('agree') else 'disagrees'}</b><br>
   <b>critical component</b> <code>{comp.get('type')}</code>
   {'<i>(explicit NONE)</i>' if comp.get('is_explicit_none') else ''}
-  · <b>box</b> {', '.join(al.get('boxes', [])) or '—'}<br>
-  <b>CoT</b> <i>{html.escape((arec.cot if arec else '') or '')}</i>
+  · <b>box</b> {', '.join(al.get('boxes', [])) or '—'}
  </div>
+ <details class="src" open>
+  <summary>Alpamayo source, verbatim — meta_action and all four text fields</summary>
+  <table class="srct">
+   <tr><th>meta_action</th><td>{meta_html}</td></tr>
+   <tr><th>cot</th><td>{html.escape(src.get('cot') or '—')}</td></tr>
+   <tr><th>chain_of_causation</th><td>{chain_html}</td></tr>
+   <tr><th>critical_components</th><td>{comp_html}</td></tr>
+   <tr><th>motion_analysis</th><td>{motion_html}</td></tr>
+  </table>
+ </details>
  <div class="verdict {cls}"><b>My reading of the frames:</b> {note}</div>
 </section>"""
 

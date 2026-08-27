@@ -422,6 +422,49 @@ output and reported it as the emitter's. The emitter applies a lateral-evidence 
 this ego displaces <b>0.01–0.05 m</b> with the road's arc removed. It never changes lane in
 view. The extractor finds the phrase; the gate correctly refuses the token.</div>
 
+<h2>Is the oncoming label in the right time slot?</h2>
+<p>No — and it cannot be, on present evidence. You spotted it in the past frames, and the
+data agrees.</p>
+</div>
+
+<table class="ba">
+<tr><th>Question</th><th>Measurement</th><th class="num">Result</th></tr>
+<tr><td><b>Do CoT tokens carry a time?</b></td>
+    <td>A CoT claim has no timestamp. Only Alpamayo's parsed <i>motion segments</i> give one,
+        and <b>1,845 clips (39.0 %) have no time information whatsoever</b> — no segments, no
+        "first N seconds" phrase. <code>d94365be</code> is one of them.</td>
+    <td class="num was">87.2 % untimed</td></tr>
+<tr><td><b>Specifically REACT_ON_ONCOMING</b></td>
+    <td>Not a single emission is supported by a timed segment.</td>
+    <td class="num was">0 timed / 344</td></tr>
+<tr><td><b>Why it lands in the past</b></td>
+    <td>Alpamayo's anchor is <b>5.1 s</b>, ours is <b>8.0 s</b>. Its text describes a window
+        starting 2.9 s before ours, so an event it names can finish before our tactical band
+        opens.</td>
+    <td class="num was">−2.9 s</td></tr>
+<tr><td><b>And the two texts disagree</b></td>
+    <td>On <code>d94365be</code>: <i>cot</i> "nudge <b>LEFT</b> due to the <b>parked car</b>",
+        <i>chain_of_causation</i> "nudge <b>RIGHT</b> due to the <b>oncoming vehicle</b>". My
+        concatenation was feeding the extractor both halves of a contradiction.</td>
+    <td class="num was">49 clips</td></tr>
+</table>
+
+<div class="col">
+<div class="note"><b>What changed rather than what I concluded.</b> Every CoT-derived goal now
+carries <code>time_basis</code>: <span class="p seg">timed</span> when a parsed motion segment
+overlapping 2–6 s mentions it, <span class="p untimed">untimed</span> when the band placement
+is an assumption nothing supports. A consumer that weights those equally is now choosing to.
+On a direction conflict the primary <code>cot</code> field wins and the secondary is dropped
+(48 clips).<br><br>
+⚠️ I am not deleting the untimed tokens. They are 87 % of the perception signal, and the
+claims are often true — they are just not <i>placed</i>. Marking them is honest; discarding
+them would throw away most of what Alpamayo knows. <b>Whether an untimed token should train
+the tactical head is your call, and the field is there so you can make it.</b></div>
+
+<h2>Every scene now shows Alpamayo's raw text</h2>
+<p>As you asked: <code>meta_action</code> and all four source fields verbatim under each scene,
+so nothing the pipeline read is hidden behind a summary.</p>
+
 <h2>Twelve random scenes, checked against their frames</h2>
 <p>Stratified across turn / stop / light / evade / exit / cruise, then randomised
 inside each stratum — a uniform draw would have shown you ten cruises. The verdict

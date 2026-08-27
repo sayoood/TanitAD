@@ -39,6 +39,7 @@ from __future__ import annotations
 
 import glob
 import io
+import os
 import zipfile
 from dataclasses import dataclass
 from functools import lru_cache
@@ -46,6 +47,12 @@ from functools import lru_cache
 import numpy as np
 
 EGO_GLOB = "C:/Users/Admin/tanitad-data/physicalai/labels/egomotion/*.zip"
+#: Flat per-clip store built by `_s2build/dl/pull_egomotion.py` for the full
+#: 4,729-clip Alpamayo corpus. 47 GB of chunk zips collapse to ~5 GB here
+#: because only the clips we label are kept. Read FIRST: a flat parquet needs
+#: no zip directory scan, so a 4,729-clip run starts in milliseconds instead
+#: of opening 1,415 archives.
+EGO_FLAT = "C:/Users/Admin/tanitad-data/physicalai/labels/egomotion_alpamayo/*.parquet"
 HZ = 10.0                 # the label timeline
 RAW_T0_S = 8.0            # s2 anchor on the raw clip timeline
 CLIP_LEN_S = 20.0
@@ -68,12 +75,20 @@ class EgoTrack:
 
 @lru_cache(maxsize=1)
 def _index() -> dict[str, tuple[str, str]]:
-    """clip_uuid -> (zip path, member name). Built once, from filenames only."""
+    """clip_uuid -> (container, member). Built once, from filenames only.
+
+    A flat parquet is recorded as ``(path, "")`` and a zip member as
+    ``(zip_path, member)``; `load` branches on the empty member. The flat
+    store wins on collision — it is the one built from the clip index, so it
+    cannot contain a neighbour's data.
+    """
     out: dict[str, tuple[str, str]] = {}
     for p in sorted(glob.glob(EGO_GLOB)):
         with zipfile.ZipFile(p) as z:
             for e in z.namelist():
                 out[e.split(".")[0]] = (p, e)
+    for p in sorted(glob.glob(EGO_FLAT)):
+        out[os.path.basename(p).split(".")[0]] = (p, "")
     return out
 
 
@@ -99,8 +114,11 @@ def load(clip_id: str, *, hz: float = HZ, max_s: float | None = None) -> EgoTrac
     if clip_id not in idx:
         raise KeyError(f"no egomotion for clip {clip_id!r}")
     path, member = idx[clip_id]
-    with zipfile.ZipFile(path) as z:
-        df = pd.read_parquet(io.BytesIO(z.read(member)))
+    if member:
+        with zipfile.ZipFile(path) as z:
+            df = pd.read_parquet(io.BytesIO(z.read(member)))
+    else:
+        df = pd.read_parquet(path)
 
     ts = df["timestamp"].to_numpy(dtype=np.float64) / 1e6      # us -> s
     ts = ts - ts[0]

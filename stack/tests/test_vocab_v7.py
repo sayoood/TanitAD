@@ -58,7 +58,11 @@ def test_tactical_goals_have_no_abstain_and_no_anchor_goal():
     """PI: remove ABSTAIN; the anchor is the ARG FRAME, not a goal."""
     assert not any("ABSTAIN" in t for t in V7.TACTICAL_GOAL_TOKENS_V7)
     assert "ANCHOR_GOAL" not in V7.TACTICAL_GOAL_TOKENS_V7
-    assert V7.ANCHOR_ARG_SLOTS == ("goal_x_m", "goal_y_m", "t_reach_s")
+    # ⭐ `band_s` added 2026-08-27 — the anchor now states WHICH band it closes,
+    # after tactical was corrected from 0-6 s to 2-6 s. The three geometric
+    # slots are unchanged; this is an arg name, not a class.
+    assert V7.ANCHOR_ARG_SLOTS[:3] == ("goal_x_m", "goal_y_m", "t_reach_s")
+    assert "band_s" in V7.ANCHOR_ARG_SLOTS
 
 
 def test_traffic_light_goals_carry_the_colour():

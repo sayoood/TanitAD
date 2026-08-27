@@ -33,6 +33,8 @@ from __future__ import annotations
 import re
 from dataclasses import asdict, dataclass, field
 
+from . import cot_negation as NEG
+
 # --- traffic light ----------------------------------------------------------
 _LIGHT = re.compile(r"\btraffic light|\bstop light|\bsignal\b")
 _LIGHT_COLOUR = (("RED", re.compile(r"\bred\b")),
@@ -44,7 +46,39 @@ _ONCOMING = re.compile(r"\boncoming\b")
 _YIELD = re.compile(r"\byield")
 _YIELD_SIGN = re.compile(r"\byield sign\b")
 # --- merge / gap ------------------------------------------------------------
+#: ⛔ A MERGE THAT IS A NAMED RISK, NOT AN EVENT. MEASURED 2026-08-27 on
+#: `59b57590`, which the PI questioned: the ONLY "merg" in the whole text is
+#:
+#:   "…create potential door-opening/merge hazards; keeping extra clearance
+#:    can motivate moving left."
+#:
+#: — a hypothetical hazard CLASS inside a compound noun, in a sentence
+#: explaining why parked cars matter. There is no merge in the scene. Negation
+#: scoping cannot catch this: "potential" is not a negation, it is IRREALIS.
+#: ⇒ refuse `merge` when it heads a hazard/risk noun phrase or is bound into a
+#: slashed compound. 3 of 129 MERGE emissions (2.3 %) are this shape.
+_MERGE_HAZARD = re.compile(
+    r"\bmerg\w*[-/\s]*(?:hazard|risk|conflict)s?\b"
+    r"|\b(?:hazard|risk|conflict)s?\s+(?:of|from)\s+merg\w*"
+    r"|[/-]merg\w*", re.I)
 _MERGE = re.compile(r"\bmerg(?:e|es|ing)\b")
+
+#: ⭐ THE LANE CHANGE THE PIPELINE NEVER READ. MEASURED 2026-08-27: **174 clips
+#: state a lane change in plain language and NOT ONE produced a token** (101
+#: left, 73 right) — `LANE_CHANGE_L`/`LANE_CHANGE_R` are in the frozen
+#: vocabulary and simply had no extractor. `59b57590` opens with "Change lanes
+#: to the left due to the right lane being constrained by parked vehicles" and
+#: emitted a phantom MERGE instead of the manoeuvre it actually describes.
+_LANE_CHANGE = (
+    ("L", re.compile(r"\bchange\s+lanes?\s+to\s+the\s+left\b"
+                     r"|\blane\s+change\s+to\s+the\s+left\b"
+                     r"|\bmove\s+(?:in)?to\s+the\s+left\s+lane\b"
+                     r"|\bmerge\s+(?:in)?to\s+the\s+left\s+lane\b", re.I)),
+    ("R", re.compile(r"\bchange\s+lanes?\s+to\s+the\s+right\b"
+                     r"|\blane\s+change\s+to\s+the\s+right\b"
+                     r"|\bmove\s+(?:in)?to\s+the\s+right\s+lane\b"
+                     r"|\bmerge\s+(?:in)?to\s+the\s+right\s+lane\b", re.I)),
+)
 _GAP = re.compile(r"\b(?:create|usable|find)\s+(?:a\s+)?gap\b|\bgap\b.*\blane\b")
 # --- exit / ramp: PI — take it from terms, not geometry ---------------------
 _EXIT = re.compile(r"\bexit\b|\boff-?ramp\b|\bramp\b|\bsplit to the (left|right)\b")
@@ -58,7 +92,20 @@ _OVERTAKE = re.compile(
     r"(?:car|vehicle|truck|bus|van)\s+ahead\b")
 #: EVADE = a lateral manoeuvre around a STATIC obstacle or a VRU.
 _EVADE_VERB = re.compile(r"\bnudge\b|\bincrease clearance\b|\bshift\b|\bmove over\b")
-_EVADE_OBJ = (("PARKED", re.compile(r"\bparked\b")),
+#: ⭐ A STOPPED VEHICLE IS A STATIC OBSTACLE, SO PASSING IT IS **EVADE**, NOT
+#: OVERTAKE — the PI's distinction turns on whether the object MOVES.
+#: MEASURED 2026-08-24 on `d452ea24`: the CoT reads "Nudge left to pass the
+#: stopped bus in the same lane", geometry shows `NUDGE_L`, and the clip was
+#: labelled `FOLLOW_LANE` and nothing else — because `bus` was absent from this
+#: list, and the OVERTAKE pattern demands "…ahead" immediately after the noun,
+#: which "the stopped bus in the same lane" does not supply. Listed FIRST so a
+#: stopped vehicle cannot fall through to a weaker class.
+_EVADE_OBJ = (("STOPPED_VEHICLE", re.compile(
+                  r"\bstopped\s+(?:bus|truck|van|car|vehicle|lorry)\b"
+                  r"|\b(?:bus|truck|van|car|vehicle)\s+(?:is\s+)?stopped\b"
+                  r"|\bstationary\s+(?:bus|truck|van|car|vehicle)\b"
+                  r"|\bdouble-?parked\b")),
+              ("PARKED", re.compile(r"\bparked\b")),
               ("CYCLIST", re.compile(r"\bcyclist|\bbicycle|\bbike\b")),
               ("PEDESTRIAN", re.compile(r"\bpedestrian")),
               ("DOOR", re.compile(r"\b(?:open |car )?door\b")),
@@ -72,6 +119,7 @@ class CotTokens:
     oncoming: bool = False
     yield_: str | None = None            # SIGN | HAZARD
     merge: bool = False
+    lane_change: str | None = None     # L | R
     gap: bool = False
     exit_side: str | None = None         # LEFT | RIGHT | UNKNOWN
     overtake: bool = False
@@ -86,7 +134,14 @@ class CotTokens:
 def extract(cot: str | None) -> CotTokens:
     if not cot or not cot.strip():
         return CotTokens()
-    t = cot.lower()
+    # ⛔⛔ NEGATED TERMS ARE NOT PRESENT TERMS. MEASURED 2026-08-24:
+    # `TRAFFIC_LIGHT_REACT` fired on 60.4 % of the clips where Alpamayo states
+    # nothing is critical, against 0.1 % where it names a component — a 408x
+    # inversion, caused entirely by matching inside sentences of the form
+    # "...with no lead vehicle pedestrians cyclists traffic lights or
+    # obstacles...". Blanking the negated spans BEFORE matching is the fix;
+    # offsets are preserved so `evidence` still refers to the original text.
+    t = NEG.strip_negated(cot.lower())
     c = CotTokens(evidence=cot)
 
     if _LIGHT.search(t):
@@ -98,7 +153,16 @@ def extract(cot: str | None) -> CotTokens:
     c.oncoming = bool(_ONCOMING.search(t))
     if _YIELD.search(t):
         c.yield_ = "SIGN" if _YIELD_SIGN.search(t) else "HAZARD"
-    c.merge = bool(_MERGE.search(t))
+    # a lane change is a stronger, more specific claim than "merge" and is
+    # tested FIRST — "merge into the left lane" is a lane change, not a merge.
+    for side, pat in _LANE_CHANGE:
+        if pat.search(t):
+            c.lane_change = side
+            break
+    # ⛔ refuse a `merge` that names a HAZARD CLASS rather than an event
+    c.merge = bool(_MERGE.search(t)) and not _MERGE_HAZARD.search(t)
+    if c.lane_change:
+        c.merge = False
     c.gap = bool(_GAP.search(t))
     if _EXIT.search(t):
         c.exit_side = "UNKNOWN"
@@ -136,6 +200,8 @@ def goals_from_cot(cot: str | None) -> dict[str, dict]:
         out["REACT_ON_ONCOMING"] = {"oncoming_slot": None}
     if c.yield_:
         out["YIELD"] = {"reason": c.yield_.lower()}
+    if c.lane_change:
+        out[f"LANE_CHANGE_{c.lane_change}"] = {"side": c.lane_change.lower()}
     if c.merge:
         out["MERGE"] = {"agent_slot": None}
     if c.gap:
