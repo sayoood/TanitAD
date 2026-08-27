@@ -5054,6 +5054,9 @@ class V6Stack(nn.Module):
         # target is raw pixels — DATA, not a perception label — so encoder
         # backprop is the group's X3-permitted job, unlike agent_slots below.
         ("o14_head.", "aux"),
+        # O5-EMA teacher (P0): requires_grad False throughout — never in an
+        # optimiser; mapped so group_of resolves them for freeze bookkeeping.
+        ("ema_o5_enc.", "aux"), ("ema_o5_ro.", "aux"),
         # ⭐ THE AGENT-SLOT DECODER IS `interp`, NOT `aux` — and the distinction
         # is the whole X3 argument, not tidiness. `aux` MAY backprop into the
         # encoder (ISOLATION_MATRIX: O3/O6 are label-free trunk losses and that

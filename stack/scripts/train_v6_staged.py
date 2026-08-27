@@ -402,7 +402,7 @@ STAGE_MAY_INTRODUCE: dict[str, tuple[str, ...]] = {
     # ⛔ Found the hard way 2026-08-27: the ladder's arm 2 (o14fut01) refused
     # its init because this tuple was () — the module landed without its
     # introduction permission.
-    "S-W": ("o14_head.",),
+    "S-W": ("o14_head.", "ema_o5_enc.", "ema_o5_ro."),
     # S-T introduces, by design: the selector (when an arm is opted into), and
     # the g_str->P_T conditioning port `cond_tac_dyn.` (F-1,
     # DIAGRAM_CONFORMANCE.md 2026-08-16 — the diagram/§5-spec'd tactical-
@@ -3888,6 +3888,13 @@ def build_stack_from_args(a) -> V6Stack:
     # v6.0 — that is what keeps every existing checkpoint loadable.
     cfg.tac_vocab_version = str(getattr(a, "tac_vocab_version", "v6.0"))
     stack = V6Stack(cfg)
+    if str(getattr(a, "o5_target", "live")) == "ema":
+        from tanitad.models.v6 import _EmaCopy
+        # ⚠️ these deepcopy whatever the modules hold NOW (random init);
+        # `_resync_ema_o5` MUST run after any --init-from load or the teacher
+        # is a frozen random net. Both load sites call it.
+        stack.ema_o5_enc = _EmaCopy(stack.encoder, float(a.ema_decay))
+        stack.ema_o5_ro = _EmaCopy(stack.readout, float(a.ema_decay))
     if float(getattr(a, "w_o14", 0.0)) > 0:
         # O14 head: bottleneck MLP so the aux stays small (~0.6 M at d_op 2048
         # vs 5.2 M for a direct linear — a 27 % param bump on v7-tiny would
@@ -4082,6 +4089,8 @@ def dry_run(a, stack: V6Stack | None = None) -> dict:
                             "assembles; it proves nothing about the lineage."}
     if getattr(a, "init_from", None):
         init_report = load_stage_init(stack, a.init_from, stage=a.stage)
+        _resync_ema_o5(stack)
+        _resync_ema_o5(stack)
         init_report["exercised"] = True
         print(f"[v6 dry] init-from OK · introduced="
               f"{init_report['introduced_keys']} · trunk_md5="
@@ -4166,6 +4175,9 @@ def dry_run(a, stack: V6Stack | None = None) -> dict:
             L["loss"].backward()
             gn = float(torch.nn.utils.clip_grad_norm_(trainable, a.clip))
             opt.step()
+            if hasattr(stack, "ema_o5_enc"):
+                stack.ema_o5_enc.update(stack.encoder)
+                stack.ema_o5_ro.update(stack.readout)
             stack.ema_update()
         else:
             gn = 0.0
@@ -4400,6 +4412,8 @@ def train(a) -> dict:
     init_report: dict = {"init_from": None}
     if a.init_from:
         init_report = load_stage_init(stack, a.init_from, stage=a.stage)
+        _resync_ema_o5(stack)
+        _resync_ema_o5(stack)
         print(f"[v6] initialised from {json.dumps(init_report)}", flush=True)
     stack = stack.to(device)
     freeze = apply_stage_freeze(stack, a.stage)
@@ -5047,8 +5061,14 @@ def train(a) -> dict:
                 # dimension the GPU is built for.
                 ff = b["future_frames"][:, :need_k]
                 fb, fk = ff.shape[:2]
-                z_flat = stack.readout(stack.encoder(
-                    ff.reshape(fb * fk, *ff.shape[2:]))).reshape(fb, fk, -1)
+                if hasattr(stack, "ema_o5_enc"):
+                    # O5-EMA teacher: the TARGET comes from the slow copies —
+                    # the student cannot chase a target it moves itself.
+                    z_flat = stack.ema_o5_ro.module(stack.ema_o5_enc.module(
+                        ff.reshape(fb * fk, *ff.shape[2:]))).reshape(fb, fk, -1)
+                else:
+                    z_flat = stack.readout(stack.encoder(
+                        ff.reshape(fb * fk, *ff.shape[2:]))).reshape(fb, fk, -1)
                 z_true = [z_flat[:, j].detach() for j in range(need_k)]
         o14_tgt = None
         if float(getattr(a, "w_o14", 0.0)) > 0:
@@ -5354,6 +5374,9 @@ def train(a) -> dict:
         L["loss"].backward()
         gn = torch.nn.utils.clip_grad_norm_(trainable, a.clip)
         opt.step()
+        if hasattr(stack, "ema_o5_enc"):
+            stack.ema_o5_enc.update(stack.encoder)
+            stack.ema_o5_ro.update(stack.readout)
         sched.step()
         stack.ema_update()
 
@@ -5807,6 +5830,19 @@ def supersede_init_on_resume(init_report: dict, resumed_from) -> dict:
         "resumed_from": str(resumed_from),
         "_evidence_class": "MEASURED (ours; this run's launch order)",
     }
+
+
+def _resync_ema_o5(stack) -> None:
+    """Copy the LIVE encoder/readout into the O5-EMA teacher — required after
+    any weight load, because the copies were taken at construction time."""
+    if hasattr(stack, "ema_o5_enc"):
+        with torch.no_grad():
+            for dst_m, src_m in ((stack.ema_o5_enc.module, stack.encoder),
+                                 (stack.ema_o5_ro.module, stack.readout)):
+                for pd, ps in zip(dst_m.parameters(), src_m.parameters()):
+                    pd.copy_(ps)
+                for bd, bs in zip(dst_m.buffers(), src_m.buffers()):
+                    bd.copy_(bs)
 
 
 def load_stage_init(stack: V6Stack, ckpt_path, *, strict: bool = True,
@@ -6355,6 +6391,8 @@ def build_parser() -> argparse.ArgumentParser:
                          "higher->lower latent path")
     ap.add_argument("--uplink", choices=("stopgrad", "ema"), default="stopgrad")
     ap.add_argument("--ema-decay", type=float, default=0.996)
+    ap.add_argument("--o5-target", choices=("live", "ema"), default="live",
+                    help="O5's target-latent source. live = the incumbent (stop-grad only). ema = EMA-slow encoder+readout copies (the Drive-JEPA teacher core; P0 bake-off, PI-approved 2026-08-27). Decay = --ema-decay.")
     # ---- measures ----------------------------------------------------------
     ap.add_argument("--o1-k", type=int, default=10,
                     help="O1/L_ctrl roll horizon (the W3 probe's k)")
