@@ -41,3 +41,31 @@ cost: 5 tiny arms x ~20 min + probe re-runs; NO full-scale GPU before gates.
 ⚠️ **The loss curve is never the result** — future pixels are partly unpredictable
 (other agents), the head will regress toward blur, and the raw L1 value is
 uninformative by construction. Only the probes above are read.
+
+
+---
+
+## AMENDMENT B — recorded 2026-08-27 after arm 1's probe, BEFORE further reads
+
+⚠️ **The primary read's premise fails at the ladder's scale.** The base 2k arm
+(`o14base2k`, w=0) reads pixel-marginal **−0.0033 (t −0.59, INSIDE_NULL)** — there
+is **no positive baseline marginal to absorb at 2k steps**. The E-DEC-63 baseline
+(+0.0096, t 5.11) was measured at **30k**; the displacement evidently BUILDS with
+training (consistent with E-DEC-61's within-recipe drift trajectory). The rig's
+drift-validity band [0.60, 0.74] is likewise 30k-calibrated; 2k arms sit ~0.45
+with clean controls — the band is scale-wrong, not the rig.
+
+**Revised read, committed now:**
+1. The tiny ladder's readable quantities are the GATES — drift, nrmse,
+   participation vs the matched base — plus one exploratory cell: whether any
+   O14 arm's pixel-marginal DIFFERS from base at 2k (either sign is
+   informative; none is the absorption read).
+2. ⭐ **The absorption PRIMARY moves to a 30k arm**: `o14fut30k` — the
+   `postrain30k` recipe + `--w-o14 1.0 --o14-mode fut` (v6.0 vocab pinned for
+   comparability with the incumbent), read against the E-DEC-63 baseline at
+   matched scale: SUCCESS = pixel-marginal at 30k **below** the incumbent's
+   +0.0096 toward the null, gates holding. The DR control at 30k is NOT
+   retrained (8 h); the 2k DR arm plus the time-shuffle inside the probe carry
+   the instrument-validity burden, stated as a limitation.
+3. Launch order: tiny gates first (the prereg's own rule); the 30k arm launches
+   tonight IF no tiny gate fails against base.
