@@ -528,3 +528,82 @@ def test_ordinary_paths_still_resolve_and_missing_ones_still_fail():
     assert cc._dig(art, "four_families.lateral.yaw_rate_mae_degps") == (True, 4.9188)
     assert cc._dig(art, "four_families.lateral.nope") == (False, None)
     assert cc._dig(art, "four_families.nope.yaw_rate_mae_degps") == (False, None)
+
+
+# ============================ NAVSIM GATES (EvalFlyWheel, 2026-08-27) =========
+# The provisioning scout surfaced two blockers that 32 GB of dataset does not
+# fix, plus one labelling obligation. The Master Mind's word was that they go
+# into the NavSim criteria "before any number is produced" — so they ship as
+# registry gates with regression arms, not as a note in a message.
+
+@pytest.fixture(scope="module")
+def navsim(registry) -> dict:
+    return registry["benchmarks"]["navsim"]
+
+
+def test_navsim_estimator_gate_exists_and_blocks(navsim):
+    """⛔ NavSim resamples SCENE TOKENS, not episodes, and its scenes explicitly
+    OVERLAP. Resampling overlapping units as independent understates variance —
+    the overlapping_holdout_se family, on a borrowed benchmark."""
+    g = navsim["GATE_estimator_cluster_unit"]
+    assert g["blocking"] is True
+    assert "UNAVAILABLE" in g["admissible_until_settled"]
+    assert "scene" in g["why"].lower() and "overlap" in g["why"].lower()
+
+
+def test_navsim_ego_enforcement_gate_demands_a_MECHANISM_not_an_assertion(navsim):
+    """MEASURED: the devkit has NO switch that removes ego status, and nothing
+    verifies an agent declined to read it. 'We did not use it' is an assertion."""
+    g = navsim["GATE_ego_status_enforcement"]
+    assert g["blocking"] is True
+    assert "assertion, not enforcement" in g["rule"]
+    assert len(g["acceptable_mechanisms"]) >= 2
+
+
+def test_navsim_modality_label_gate_exists(navsim):
+    """The leaderboard server records no modality, so the labelling duty is ours."""
+    g = navsim["GATE_modality_label"]
+    assert g["blocking"] is True
+    for k in ("protocol.sensor_set", "protocol.setting"):
+        assert k in g["keys"]
+
+
+def test_the_comparable_ladder_is_recorded_with_its_source(navsim):
+    """Our comparable class is front-camera-only + perception-free, NOT the
+    multi-camera headline. Pin the ladder so a future report cannot drift to the
+    flattering row."""
+    lad = navsim["GATE_modality_label"]["comparable_ladder_perception_free_front_only"]
+    assert "2601.22032" in lad["_source"]
+    assert lad["LAW"]["PDMS"] == 83.8
+    assert lad["Drive-JEPA"]["PDMS"] == 89.0
+    # the entry rung must stay inside our parameter budget, or the ladder is the
+    # wrong one to be quoting at all
+    assert lad["LAW"]["encoder"] == "21M"
+
+
+def test_drive_jepa_v1_number_is_93_7_not_93_3(navsim):
+    """⛔ The commissioning brief carried 93.3. The paper's abstract and §1 both
+    say 93.7; 93.3 appears only in its own NeurIPS checklist, misquoting itself."""
+    ref = navsim["published_reference_numbers"]
+    assert ref["drive_jepa_v1_PDMS_full_framework"] == 93.7
+    assert "93.3" in ref["drive_jepa_v1_PDMS_NOTE"]
+    assert ref["latent_wam_v2_EPDMS"] == 89.3
+
+
+def test_the_v1_branch_pin_is_recorded(navsim):
+    """'v1 PDMS from main' silently computes EPDMS — main IS v2."""
+    pin = navsim["published_reference_numbers"]["_harness_pin"]
+    assert "v1.1" in pin and "main" in pin
+
+
+def test_DELIBERATE_REGRESSION_navsim_gates_cannot_be_silently_dropped(registry):
+    """⭐ The arm that makes the four tests above mean something: if someone
+    removes a NavSim gate from the registry, this fails. A gate that can vanish
+    without a test failing is a note, not machinery."""
+    ns = registry["benchmarks"]["navsim"]
+    required = {"GATE_estimator_cluster_unit", "GATE_ego_status_enforcement",
+                "GATE_modality_label"}
+    missing = required - set(ns)
+    assert not missing, f"NavSim gate(s) removed from the registry: {missing}"
+    for name in required:
+        assert ns[name].get("blocking") is True, f"{name} was downgraded to non-blocking"

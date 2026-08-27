@@ -30,7 +30,12 @@ and the reason nothing broke mid-rename. Not Hub residue.
 2. **Lab-results routing**: the Lab's daily output should land as one
    `TanitAD Research Lab/<domain>/…` package AND be triaged into the next
    morning's report (added to the report template).
-3. The nested `TanitAD Research Lab/Project Steering/` and `Opponent Analysis`
+3. ⚠️ **Naming decision for the PI (flagged by the EvalFlyWheel):** the repo has
+   BOTH `Benchmarks & Eval/` (top-level, singular — holds LEADERBOARD.md) AND
+   `TanitAD Research Lab/Benchmarks & Evals/` (plural). They are DIFFERENT
+   directories; a blanket singular→plural rename would break the former.
+   Explicit decision, never a regex.
+4. The nested `TanitAD Research Lab/Project Steering/` and `Opponent Analysis`
    naming vs the constitution's "Opponent+Benchmarks" — reconcile with the PI.
-4. Sweep the other agent worktrees (5+ live) for Hub-era bases before their
+5. Sweep the other agent worktrees (5+ live) for Hub-era bases before their
    next integration — the zen-bose case will recur.

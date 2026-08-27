@@ -222,3 +222,29 @@ it is not lost:** my 25 Library files are staged under **`TanitAD Research Hub/`
 resurrects a second parallel library tree, and `library.json` is whole-file JSON: **yours 78
 entries · mine 44 · shared 24 · only-mine 20 — including `2406.15349`, the NavSim paper, which is
 absent from your index.** Merge by **key union**, never file-replace, and re-path my files first.
+
+---
+
+## 7. ADDENDUM 2026-08-27 — the two blockers are now ENFORCED, not pending
+
+§5 closed with two things that 32 GB does not fix. They are no longer a promise in a message:
+they are **blocking gates in `products/P7-TanitEval/CRITERIA_REGISTRY.json` v2.3.0**, each with a
+regression arm in `tools/tests/test_criteria_check.py` (**55 tests green**; full `tools/` suite
+**362 passed** on the merged tree).
+
+| gate | blocking rule |
+|---|---|
+| `navsim.estimator_unit` | a NavSim artifact MUST declare `estimator.cluster_unit`; until the unit is settled and pre-registered, the ONLY admissible interval is `{status:UNAVAILABLE, reason, n}`. ⛔ A bare point estimate, or an episode-cluster CI, FAILS. |
+| `navsim.ego_enforcement` | MUST name the **mechanism** by which the agent did not read ego status, plus its evidence. ⛔ *"we did not use it"* is an assertion, not enforcement, and FAILS. |
+| `navsim.modality_label` | MUST declare `protocol.sensor_set` and `protocol.setting`. ⛔ Comparing our row against a multi-camera or perception-based row without both FAILS. |
+
+⭐ **Why the estimator gate is phrased around overlap, not just units:** NavSim scenes are
+explicitly allowed to overlap (PUB-DEVKIT `docs/splits.md`: *"NavSim splits contain overlapping
+scenes"*). Resampling overlapping units as if independent understates variance — the same family
+as `overlapping_holdout_se`, which biases the POINT ESTIMATE bidirectionally up to a sign flip.
+Inventing a CI here would reproduce a retracted defect on a borrowed benchmark.
+
+The corrected reference numbers (93.7 not 93.3; the perception-free ladder LAW 83.8 → Drive-JEPA
+89.0; the `v1.1`-branch pin) are recorded in the same registry block under
+`published_reference_numbers`, with a test asserting the ladder's entry rung stays inside our
+parameter budget — so a future report cannot quietly drift to the flattering multi-camera row.

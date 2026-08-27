@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "version": "2.2.0",
+ "version": "2.3.0",
  "created": "2026-08-23",
  "owner": "TanitAD_EvalFlyWheel",
  "why": "TANITAD_PROGRAMME.md §5 charter: 'Criteria completeness is enforced by machinery, not memory — we measurably failed to keep them complete by hand.' This file is the machine-readable registry every eval output is diffed against. A criterion may be PRESENT or REFUSED-with-a-reason; it may never be SILENTLY ABSENT.",
@@ -482,7 +482,74 @@
      ],
      "note": "UNVERIFIED whether nuPlan's route_roadblock_ids derives from the expert path. Run this leak check BEFORE quoting a route-conditioned result - same family as our route-head echo."
     }
-   ]
+   ],
+   "GATE_estimator_cluster_unit": {
+    "id": "navsim.estimator_unit",
+    "blocking": true,
+    "rule": "A NavSim artifact MUST declare `estimator.cluster_unit`. Until the unit is settled and PRE-REGISTERED, the only admissible interval is an explicit {status:UNAVAILABLE, reason, n}. ⛔ A bare point estimate with no interval block, or an interval computed with the episode-cluster bootstrap, FAILS.",
+    "why": "Our episode-cluster bootstrap does not transfer: NavSim resamples SCENE TOKENS, not episodes, and NavSim scenes are explicitly allowed to OVERLAP (PUB-DEVKIT docs/splits.md: 'NavSim splits contain overlapping scenes'). Resampling overlapping units as if independent understates the variance — the same family as overlapping_holdout_se, which biases the POINT ESTIMATE bidirectionally up to a sign flip. Inventing a CI here would reproduce a retracted defect on a borrowed benchmark.",
+    "keys": [
+     "estimator.cluster_unit",
+     "estimator.interval"
+    ],
+    "admissible_until_settled": "UNAVAILABLE with a reason and n"
+   },
+   "GATE_ego_status_enforcement": {
+    "id": "navsim.ego_enforcement",
+    "blocking": true,
+    "rule": "A NavSim artifact MUST carry `protocol.ego_status_enforcement` naming the MECHANISM by which the agent did not read ego status, and the evidence for it. ⛔ 'we did not use it' is an assertion, not enforcement, and FAILS.",
+    "why": "MEASURED from the devkit: there is NO switch that removes ego status. `EgoStatus` (ego_velocity, ego_acceleration, ego_pose) is ALWAYS populated on AgentInput and nothing in the framework verifies an agent declined to read it — `SensorConfig` gates cameras and LiDAR only. Our vision-only rule (PI, 2026-08-03, binding) is therefore ours alone to enforce and evidence. This is the leak-guard question in a borrowed harness: an input that is present at inference is consumed unless something PREVENTS it.",
+    "acceptable_mechanisms": [
+     "the agent never receives EgoStatus (zeroed/stripped at the adapter seam, asserted in a test)",
+     "an ablation showing the metric is unchanged when ego fields are randomised"
+    ],
+    "keys": [
+     "protocol.ego_status_enforcement"
+    ]
+   },
+   "GATE_modality_label": {
+    "id": "navsim.modality_label",
+    "blocking": true,
+    "rule": "A NavSim artifact MUST declare `protocol.sensor_set` and `protocol.setting` (e.g. 'front-camera-only, perception-free'). ⛔ Comparing our row against a multi-camera or perception-based row without both fields present FAILS.",
+    "why": "The leaderboard server records NO modality — only TEAM_NAME, AUTHORS, EMAIL, INSTITUTION, COUNTRY — so every 'camera-only' claim in the field is the authors', not the server's. MEASURED 2026-08-27 from the banked primary: Drive-JEPA's 93.7 PDMS headline uses 1024x256 stacking FRONT+LEFT+RIGHT, while its perception-free row uses the front camera only at 512x256. Comparing our single 256x640 front-camera arm against the 93.7 row would be a category error in our own favour's opposite direction — and comparing it against the perception-free ladder is legitimate. The label is what makes the difference visible.",
+    "comparable_ladder_perception_free_front_only": {
+     "_source": "PUB-PAPER Drive-JEPA (arXiv 2601.22032) Table 1, read from the banked PDF",
+     "LAW": {
+      "encoder": "21M",
+      "data_h": 20,
+      "PDMS": 83.8
+     },
+     "World4Drive": {
+      "encoder": "21M",
+      "data_h": 20,
+      "PDMS": 85.1
+     },
+     "Epona": {
+      "encoder": "1.1B",
+      "data_h": 128,
+      "PDMS": 86.1
+     },
+     "Drive-JEPA": {
+      "encoder": "307M",
+      "data_h": 330,
+      "PDMS": 89.0
+     },
+     "_note": "This is TanitAD's comparable class: front-camera-only, perception-free (supervised solely by human trajectories, no perception annotations), entry rung 21M and top rung 307M — our scale band."
+    },
+    "keys": [
+     "protocol.sensor_set",
+     "protocol.setting"
+    ]
+   },
+   "published_reference_numbers": {
+    "_evidence": "PUB-PAPER, extracted by the EvalFlyWheel from the banked PDFs 2026-08-27",
+    "drive_jepa_v1_PDMS_full_framework": 93.7,
+    "drive_jepa_v1_PDMS_NOTE": "⛔ 93.7, NOT 93.3. The abstract and §1 both say 93.7; the 93.3 appears only in the paper's own NeurIPS checklist, where it misquotes its own abstract. Cite 93.7 and note the internal inconsistency if the figure is load-bearing.",
+    "drive_jepa_v2_EPDMS": 87.8,
+    "drive_jepa_perception_free_front_only_PDMS": 89.0,
+    "latent_wam_v2_EPDMS": 89.3,
+    "_harness_pin": "⛔ v1 PDMS must come from the v1.1 BRANCH — `main` is v2 and its scorer is the EPDMS scorer, so 'v1 PDMS from main' silently computes a different metric. Neither paper states a devkit SHA, and the 2025-09-29 human-filter bugfix (issue #151) sits between v2.2 and now, so which side they are on is UNVERIFIED. Pin OUR SHA beside our number."
+   }
   },
   "nuscenes": {
    "pending": false,
