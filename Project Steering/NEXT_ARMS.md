@@ -56,7 +56,8 @@ Gated on B1/B2. Recipe carried from `V7_RECIPE_AND_SCALEUP.md` §5.1 plus whatev
 
 - **A1 D1: ANSWERED — DEGENERATE** (drift 0.3905 ✅ / nrmse 0.9301 ⛔ +14.6 %). Encoder stays TRAINABLE.
 - **A2: DONE** — first parity T1, both arms; neither drives (ADE ~14 m vs floor 0.54); it is E-DEC-63's drift predictor at the primary tier. `…/incoming/2026-08-27-t1-parity-first/RESULT.md`.
-- **A3 D2: RUNNING** — `omega30k`, `PREREG_D2_OMEGA_CONDITIONING.md`.
+- **A3 D2: ANSWERED (MIXED)** — marginal null; nrmse −14.8 % (~4× seed band); **`omega_accel_v` adopted**. Raws banked (`…/2026-08-27-d2-omega-read`).
+- **O14 (R2): IMPLEMENTED + LADDER ARMED** — trainer flags test-pinned (`55701f0e2`); 5-arm tiny ladder chained behind A7; read chain ready (`o14_ladder_read.sh`, slim absorption probe).
 - **E-DEC-63 (+F1–F4): CLOSED** — the ceiling beyond drift is small, pixel-borne, NOT photometric; the token field actively displaces it. The representational lever has a measured target.
 
 ### The next two cells after D2, specified now

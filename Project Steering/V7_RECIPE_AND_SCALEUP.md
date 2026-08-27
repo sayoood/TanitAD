@@ -132,6 +132,9 @@ first variance estimate and every single-seed comparison should be read against 
 --o5-k 8
 --sigreg-subspaces 32 --sigreg-slices 512
 --spectrum-accum <ceiling >= d_op>   # rank gate; cheap, retained
+--cond-param omega_accel_v           # ADOPTED 2026-08-27 (D2/E-DEC-65): the PI's
+                                     # measured-state channel; no-worse drift,
+                                     # likely-better prediction (single-seed hedge)
                                      # corpus: physicalai-train-e438721ae894 (PARITY)
 ```
 
@@ -146,7 +149,7 @@ separation it was credited with.
 | # | decision | the experiment | state |
 |---|---|---|---|
 | **D1** | **encoder trainable or frozen** | `postrain30k_freeze` — the crossed cell | ⛔ **ANSWERED 2026-08-27: DEGENERATE — drift 0.3905 ✅ but nrmse 0.9301 vs 0.8115 (+14.6 %) ⛔. The v7 encoder stays TRAINABLE**; anti-drift moves to the representational lever (E-DEC-63) |
-| **D2** | **the conditioning channel** | `--cond-param omega_accel_v` — the AV ego data as measured state, per the PI | ▶ **RUNNING** (Thor `omega30k`, PID 1611779; `PREREG_D2_OMEGA_CONDITIONING.md`) |
+| **D2** | **the conditioning channel** | `--cond-param omega_accel_v` — the AV ego data as measured state, per the PI | ⭐ **ANSWERED 2026-08-27 (MIXED, prereg OUTCOME): marginal null (t −1.29), drift unchanged, held-out nrmse IMPROVED 14.8 % (~4× the 3.5 % seed band, single seed) — ADOPTED for v7r** |
 
 ⭐ **D1 is the v7 decision experiment, not a side quest.** It asks precisely whether
 content and prediction can coexist: freezing is the only condition under which drift has

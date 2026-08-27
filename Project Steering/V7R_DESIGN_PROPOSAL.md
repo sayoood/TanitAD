@@ -68,8 +68,9 @@ combination is the proposal.
   structured target", with published JEPA precedent (2602.12540). Source of
   occupancy labels: `obstacle.offline` (Stage B staging) — labels may use
   privileged data; inference stays vision-only.
-- **Conditioning:** `--cond-param omega_accel_v` if D2 reads CHANNEL-MATTERS or
-  neutral-with-no-side-effect; the prereg's four outcomes decide, not taste.
+- **Conditioning:** `--cond-param omega_accel_v` — **ADOPTED (D2 read 2026-08-27,
+  MIXED per prereg):** marginal null, drift unchanged, held-out nrmse −14.8 %
+  (~4× the measured seed band; single-seed hedge until the replicate).
 - ⛔ **What the WM does NOT do (E-DEC-48b):** encode the reaction. *"If the lead
   brakes, ego must react"* lives in the planner.
 
