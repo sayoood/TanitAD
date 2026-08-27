@@ -2018,6 +2018,156 @@
    "cited_by": [
     "Project Steering/GOALS_AND_CLAIMS.md"
    ]
+  },
+  "2601.22032": {
+   "key": "2601.22032",
+   "kind": "arxiv",
+   "title": "Drive-JEPA: Video JEPA Meets Multimodal Trajectory Distillation for End-to-End Driving",
+   "authors": [
+    "Linhan Wang",
+    "Zichong Yang",
+    "Chen Bai",
+    "Guoxiang Zhang",
+    "Xiaotong Liu",
+    "Xiaoyin Zheng",
+    "Xiao-Xiao Long",
+    "Chang-Tien Lu",
+    "Cheng Lu"
+   ],
+   "published": "2026-01-29",
+   "abstract": "End-to-end autonomous driving increasingly leverages self-supervised video pretraining to learn transferable planning representations. However, pretraining video world models for scene understanding has so far brought only limited improvements. This limitation is compounded by the inherent ambiguity of driving: each scene typically provides only a single human trajectory, making it difficult to learn multimodal behaviors. In this work, we propose Drive-JEPA, a framework that integrates Video Joint-Embedding Predictive Architecture (V-JEPA) with multimodal trajectory distillation for end-to-end driving. First, we adapt V-JEPA for end-to-end driving, pretraining a ViT encoder on large-scale driving videos to produce predictive representations aligned with trajectory planning. Second, we introduce a proposal-centric planner that distills diverse simulator-generated trajectories alongside hu",
+   "url": "https://arxiv.org/abs/2601.22032",
+   "path": "TanitAD Research Lab/Library/papers/2601.22032_Drive-JEPA-Video-JEPA-Meets-Multimodal-Trajectory-Distillati.pdf",
+   "bytes": 2376317,
+   "sha256": "d88c053a67aca11b7bbd4c5f9f000cbf95c3f5e94656b6bad89cc9a717ab3672",
+   "banked": "2026-08-27",
+   "tags": [
+    "jepa-driving"
+   ],
+   "note": "Drive-JEPA: V-JEPA driving encoder + light planner, NAVSIM v1 93.3 PDMS / v2 87.8 EPDMS / B2D 64.52, ViT-L 307M, 208h video",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-27-jepa-driving-survey/JEPA_DRIVING_SURVEY.md"
+   ]
+  },
+  "2603.24581": {
+   "key": "2603.24581",
+   "kind": "arxiv",
+   "title": "Latent-WAM: Latent World Action Modeling for End-to-End Autonomous Driving",
+   "authors": [
+    "Linbo Wang",
+    "Yupeng Zheng",
+    "Qiang Chen",
+    "Shiwei Li",
+    "Yichen Zhang",
+    "Zebin Xing",
+    "Qichao Zhang",
+    "Xiang Li",
+    "Deheng Qian",
+    "Pengxuan Yang",
+    "Yihang Dong",
+    "Ce Hao"
+   ],
+   "published": "2026-03-25",
+   "abstract": "We introduce Latent-WAM, an efficient end-to-end autonomous driving framework that achieves strong trajectory planning through spatially-aware and dynamics-informed latent world representations. Existing world-model-based planners suffer from inadequately compressed representations, limited spatial understanding, and underutilized temporal dynamics, resulting in sub-optimal planning under constrained data and compute budgets. Latent-WAM addresses these limitations with two core modules: a Spatial-Aware Compressive World Encoder (SCWE) that distills geometric knowledge from a foundation model and compresses multi-view images into compact scene tokens via learnable queries, and a Dynamic Latent World Model (DLWM) that employs a causal Transformer to autoregressively predict future world status conditioned on historical visual and motion representations. Extensive experiments on NAVSIM v2 a",
+   "url": "https://arxiv.org/abs/2603.24581",
+   "path": "TanitAD Research Lab/Library/papers/2603.24581_Latent-WAM-Latent-World-Action-Modeling-for-End-to-End-Auton.pdf",
+   "bytes": 13531896,
+   "sha256": "b02d50f25f82296cc364859aa883aadd5edce0156a175f168b26112a18253429",
+   "banked": "2026-08-27",
+   "tags": [
+    "jepa-driving"
+   ],
+   "note": "Latent-WAM: distilled-foundation latent + causal transformer WM, 89.3 EPDMS NAVSIM v2 perception-free",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-27-jepa-driving-survey/JEPA_DRIVING_SURVEY.md"
+   ]
+  },
+  "2604.03208": {
+   "key": "2604.03208",
+   "kind": "arxiv",
+   "title": "Hierarchical Planning with Latent World Models",
+   "authors": [
+    "Wancong Zhang",
+    "Basile Terver",
+    "Artem Zholus",
+    "Soham Chitnis",
+    "Harsh Sutaria",
+    "Mido Assran",
+    "Randall Balestriero",
+    "Amir Bar",
+    "Adrien Bardes",
+    "Yann LeCun",
+    "Nicolas Ballas"
+   ],
+   "published": "2026-04-03",
+   "abstract": "World models are a promising path to zero-shot embodied control through planning. However, existing world model planners struggle on long-horizon, multi-stage tasks: prediction errors compound and naive search is exponential in the planning horizon. Hierarchy mitigates both by decomposing tasks into shorter, tractable subproblems; yet prior hierarchical approaches either amortize control into task-specific policies (hierarchical RL) or assume low-dimensional states and known dynamics (classical hierarchical MPC). We present Hierarchical Planning with Latent World Models (HWM), an architecture and planning paradigm for hierarchical model predictive control (MPC) directly on visual world models trained solely via next-latent prediction. HWM learns world models at multiple temporal scales within a shared latent space, so predictions from the long-horizon model serve as subgoals for the shor",
+   "url": "https://arxiv.org/abs/2604.03208",
+   "path": "TanitAD Research Lab/Library/papers/2604.03208_Hierarchical-Planning-with-Latent-World-Models.pdf",
+   "bytes": 18258188,
+   "sha256": "a3217f9fa8806a9d1b01f03bf2005de4a85e1d9bbe2312c39fd993ceaf233b9d",
+   "banked": "2026-08-27",
+   "tags": [
+    "hierarchy"
+   ],
+   "note": "Hierarchical Planning with Latent World Models: 2-level latent subgoals, 70% vs 0% flat, 3x less planning compute",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-27-jepa-driving-survey/JEPA_DRIVING_SURVEY.md"
+   ]
+  },
+  "2602.12540": {
+   "key": "2602.12540",
+   "kind": "arxiv",
+   "title": "Self-Supervised JEPA-based World Models for LiDAR Occupancy Completion and Forecasting",
+   "authors": [
+    "Haoran Zhu",
+    "Anna Choromanska"
+   ],
+   "published": "2026-02-13",
+   "abstract": "Autonomous driving, as an agent operating in the physical world, requires the fundamental capability to build \\textit{world models} that capture how the environment evolves spatiotemporally in order to support long-term planning. At the same time, scalability demands learning such models in a self-supervised manner; \\textit{joint-embedding predictive architecture (JEPA)} enables learning world models via leveraging large volumes of unlabeled data without relying on expensive human annotations. In this paper, we propose \\textbf{AD-LiST-JEPA}, a self-supervised world model for autonomous driving that predicts future spatiotemporal evolution from LiDAR data using a JEPA framework. We evaluate the quality of the learned representations through a downstream LiDAR-based occupancy completion and forecasting (OCF) task, which jointly assesses perception and prediction. Proof of concept experimen",
+   "url": "https://arxiv.org/abs/2602.12540",
+   "path": "TanitAD Research Lab/Library/papers/2602.12540_Self-Supervised-JEPA-based-World-Models-for-LiDAR-Occupancy.pdf",
+   "bytes": 4476485,
+   "sha256": "62bbd02a25fdd523fcfd8190265f75f4634f67204e47c9837771f4a6be84b7e8",
+   "banked": "2026-08-27",
+   "tags": [
+    "jepa-driving"
+   ],
+   "note": "JEPA-based world models for LiDAR occupancy completion+forecasting - occupancy as the WM target",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-27-jepa-driving-survey/JEPA_DRIVING_SURVEY.md"
+   ]
+  },
+  "2507.00603": {
+   "key": "2507.00603",
+   "kind": "arxiv",
+   "title": "World4Drive: End-to-End Autonomous Driving via Intention-aware Physical Latent World Model",
+   "authors": [
+    "Yupeng Zheng",
+    "Pengxuan Yang",
+    "Zebin Xing",
+    "Qichao Zhang",
+    "Yuhang Zheng",
+    "Yinfeng Gao",
+    "Pengfei Li",
+    "Teng Zhang",
+    "Zhongpu Xia",
+    "Peng Jia",
+    "Dongbin Zhao"
+   ],
+   "published": "2025-07-01",
+   "abstract": "End-to-end autonomous driving directly generates planning trajectories from raw sensor data, yet it typically relies on costly perception supervision to extract scene information. A critical research challenge arises: constructing an informative driving world model to enable perception annotation-free, end-to-end planning via self-supervised learning. In this paper, we present World4Drive, an end-to-end autonomous driving framework that employs vision foundation models to build latent world models for generating and evaluating multi-modal planning trajectories. Specifically, World4Drive first extracts scene features, including driving intention and world latent representations enriched with spatial-semantic priors provided by vision foundation models. It then generates multi-modal planning trajectories based on current scene features and driving intentions and predicts multiple intention",
+   "url": "https://arxiv.org/abs/2507.00603",
+   "path": "TanitAD Research Lab/Library/papers/2507.00603_World4Drive-End-to-End-Autonomous-Driving-via-Intention-awar.pdf",
+   "bytes": 1829991,
+   "sha256": "627cc44ed008f29584d4b8cdf02c2ef6f027c8051b22f8acc1691257ecf6f9db",
+   "banked": "2026-08-27",
+   "tags": [
+    "hierarchy"
+   ],
+   "note": "World4Drive: intention-aware physical latent world model, multi-modal trajectory generate/evaluate/select",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-27-jepa-driving-survey/JEPA_DRIVING_SURVEY.md"
+   ]
   }
  }
 }
