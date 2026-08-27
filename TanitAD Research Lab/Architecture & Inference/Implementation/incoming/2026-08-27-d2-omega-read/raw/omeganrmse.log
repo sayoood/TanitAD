@@ -1,0 +1,21 @@
+
+  E-DEC-20b  ·  arms ['omega30k', 'postrain30k']  ·  10 held-out val clips
+
+  arm             step  cos_raw  cos_ctr      z  meanfrac   nrmse  nrmse_mean                   verdict
+  -----------------------------------------------------------------------------------------------------
+[predictor] RESIDUAL_HEAD_INIT_SCALE=0.001  (identity-scale start)
+[v6] O6 rank gate CAN rule: --spectrum-accum 43 x 48 rows/call -> ceiling 2063 >= 1024
+[v6] params 19.30 M / budget 300 M · arm shared-encoder+adapters · per-group {'encoder': 0.97, 'readout': 0.01, 'predictor_op': 7.57, 'layer_tac': 4.88, 'layer_str': 3.56, 'planner': 0.69, 'aux': 1.62, 'interp': 0.0}
+[v6] X3 isolation pass=True violations={'planner_to_encoder': 0, 'tactical_to_below': 0, 'strategic_to_below': 0}
+[geometry] v6_probe_trunk: NON-DEFAULT - 256x640px, f_ref 305.58, cylindrical, HFOV 120.00deg / VFOV 45.46deg, tokens 640 (16x40 @ patch 16), state_dim 2048, cache fragment {'geom': '256x640f305.5775cyl'}
+[geometry] WARNING: this frame (120.00deg) EXCEEDS comma2k19's entire field (65.203deg). comma2k19 cannot supply it at any resolution — it must be letterboxed (geometry_mode='rectify', explicit unobserved mask), given its own frame, or dropped from the mix. That is a PI decision, not a default.
+  omega30k       30000   0.7534   0.7534  54.74    0.0720  0.6911      0.9979  BEATS the mean predictor
+[predictor] RESIDUAL_HEAD_INIT_SCALE=0.001  (identity-scale start)
+[v6] O6 rank gate CAN rule: --spectrum-accum 43 x 48 rows/call -> ceiling 2063 >= 1024
+[v6] params 19.30 M / budget 300 M · arm shared-encoder+adapters · per-group {'encoder': 0.97, 'readout': 0.01, 'predictor_op': 7.57, 'layer_tac': 4.88, 'layer_str': 3.56, 'planner': 0.69, 'aux': 1.62, 'interp': 0.0}
+[v6] X3 isolation pass=True violations={'planner_to_encoder': 0, 'tactical_to_below': 0, 'strategic_to_below': 0}
+[geometry] v6_probe_trunk: NON-DEFAULT - 256x640px, f_ref 305.58, cylindrical, HFOV 120.00deg / VFOV 45.46deg, tokens 640 (16x40 @ patch 16), state_dim 2048, cache fragment {'geom': '256x640f305.5775cyl'}
+[geometry] WARNING: this frame (120.00deg) EXCEEDS comma2k19's entire field (65.203deg). comma2k19 cannot supply it at any resolution — it must be letterboxed (geometry_mode='rectify', explicit unobserved mask), given its own frame, or dropped from the mix. That is a PI decision, not a default.
+  postrain30k    30000   0.6394   0.6395  39.33    0.0855  0.8115      0.9976  BEATS the mean predictor
+
+-> C:\Users\Admin\AppData\Local\Temp\claude\G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD\8fc25020-a1d5-4e1b-a9e2-aeccf845c5a2\scratchpad\omeganrmse.json
