@@ -235,6 +235,7 @@ class V6LossWeights:
     #: bit-identical; nothing rolls and no RNG is drawn.
     o11_cf: float = 0.0
     o13_ego: float = 0.0
+    o14_fut: float = 0.0
     o6_sigreg: float = 0.1      # LeJEPA's ONE validated knob — keep it fixed
     # layers T / S
     t1_latent: float = 1.0      # goal-conditioned tactical latent prediction
@@ -1409,6 +1410,47 @@ def o11_counterfactual_action_loss(zhat_pos, zhat_negs, z_true,
                   "o11_sep_abs": sep, "o11_sep_rel": rel,
                   "o11_pick_acc": acc,
                   "o11_chance_acc": round(1.0 / (1 + n_neg), 4)}
+
+
+O14_PIX_H, O14_PIX_W = 32, 80
+
+
+def _o14_pixel_target(frames, future_frames, *, mode: str, k: int,
+                      shuffle: bool = False):
+    """[B, H*W] grey 32x80 target for O14, from the batch's own frame tensors.
+
+    Channel layout: frames are [B, W, C, H, W'] with C = 3*n_stack and the
+    NEWEST frame's RGB in the LAST 3 channels (the encode-window stack order).
+    Slicing [-3:] is layout-generic: it is also correct for C=3
+    (--newest-frame-only).
+
+    ``shuffle`` is the DELIBERATE-REGRESSION arm: a CYCLIC SHIFT across the
+    batch — a derangement by construction. ``randperm`` fixes points with
+    probability ~1/B, silently making that row's "shuffled" target the TRUE
+    one (the o11 counterfactual lesson, same words).
+    """
+    import torch.nn.functional as _F
+    if mode not in ("fut", "rec", "fut_diff"):
+        raise ValueError(f"unknown o14 mode {mode!r}")
+
+    def _grey(x):                                      # [B, C, H, W'] -> [B, H*W]
+        g = x[:, -3:].float().mean(dim=1, keepdim=True)
+        g = _F.adaptive_avg_pool2d(g, (O14_PIX_H, O14_PIX_W))
+        return g.reshape(g.shape[0], -1)
+
+    if mode in ("fut", "fut_diff"):
+        kk = future_frames.shape[1]
+        if k > kk:
+            raise ValueError(f"o14_k={k} needs future_frames horizon >= {k}, "
+                             f"got {kk} — rebuild the cache or lower o14-k")
+        tgt = _grey(future_frames[:, k - 1])
+        if mode == "fut_diff":
+            tgt = tgt - _grey(frames[:, -1])
+    else:
+        tgt = _grey(frames[:, -1])
+    if shuffle:
+        tgt = torch.roll(tgt, shifts=1, dims=0)
+    return tgt
 
 
 def o13_ego_dynamics_loss(zhat_k, dv_true, dyaw_true, z_t=None,
@@ -2700,6 +2742,7 @@ def v6_loss_step(stack: V6Stack, batch: dict, *, stage: str,
                  o11_k: int = 6, o11_tau: float = 1.0,
                  o11_negs: int = 1,
                  o13_k: int = 4, o13_seed: int = 1300,
+                 o14_mode: str = "fut", o14_k: int = 4,
                  cond_param: str = COND_INCUMBENT
                  ) -> dict:
     """One batch of the v6 staged objective.
@@ -2809,6 +2852,36 @@ def v6_loss_step(stack: V6Stack, batch: dict, *, stage: str,
                 "o1_factual_ade": float(L1["factual_ade"]),
                 "o1_basis_dims": L1["basis_dims"],
                 "o1_arms": list(TRAIN_ARMS)}
+
+    # ---- O14: future-observation prediction (R2, PREREG_O14_FUTURE_OBS) ----
+    # Reads the ENCODER window state, never zhat — the hypothesis is about what
+    # the REPRESENTATION retains (E-DEC-63: pixel-predictive content displaced
+    # by token structure), so the gradient must reach the encoder (INERT is a
+    # pre-registered outcome and this is the line an INERT read audits first).
+    if w.o14_fut:
+        if not hasattr(stack, "o14_head"):
+            raise RuntimeError("w_o14 > 0 but stack has no o14_head — "
+                               "build_stack_from_args gates its construction "
+                               "on --w-o14; the weight and the module must "
+                               "travel together")
+        if "o14_tgt" not in batch:
+            raise KeyError("o14_tgt missing from batch — the batch dict is a "
+                           "WHITELIST, NOT A VIEW (4th instance): the target "
+                           "is computed at the batch-build site and must be "
+                           "forwarded explicitly")
+        a3_last = _lift3(batch["actions2"], batch["v0"], cond_param)[:, -1]
+        o14_in = torch.cat([states[:, -1].float(), a3_last.float()], dim=-1)
+        o14_pred = stack.o14_head(o14_in)
+        l14 = torch.nn.functional.l1_loss(o14_pred,
+                                          batch["o14_tgt"].float())
+        terms["o14"] = w.o14_fut * l14
+        # ⚠️ the raw value is UNINFORMATIVE BY CONSTRUCTION (future pixels are
+        # partly unpredictable; the head regresses toward blur). Logged for
+        # liveness only; the RESULT is the E-DEC-63 absorption probe, never
+        # this curve. The prereg says so; this comment is where the rule lives
+        # next to the number it governs.
+        log |= {"o14": float(l14.detach()), "o14_mode": o14_mode,
+                "o14_k": int(o14_k)}
 
     # ---- the factual rollout, computed ONCE for O2 / O3 / O5 ---------------
     need_roll = bool(w.o2_nearfield or w.o3_masked or w.o5_rollout or w.o11_cf
@@ -3803,6 +3876,14 @@ def build_stack_from_args(a) -> V6Stack:
             getattr(a, "no_isolate_interp", False)),
         vit5_encoder=bool(a.vit5_encoder), n_registers=a.n_registers)
     stack = V6Stack(cfg)
+    if float(getattr(a, "w_o14", 0.0)) > 0:
+        # O14 head: bottleneck MLP so the aux stays small (~0.6 M at d_op 2048
+        # vs 5.2 M for a direct linear — a 27 % param bump on v7-tiny would
+        # confound every capacity-matched comparison). Input = [z_t, a3_last].
+        d_op = int(cfg.d_op)
+        stack.o14_head = torch.nn.Sequential(
+            torch.nn.Linear(d_op + 3, 128), torch.nn.GELU(),
+            torch.nn.Linear(128, O14_PIX_H * O14_PIX_W))
     # ---- the P7 fallback calibration, installed BEFORE the first forward ----
     # Same discipline as the anchor table below: the comparator refuses to
     # fire uncalibrated, and an inadmissible band (rho below P7's gate) must
@@ -4052,6 +4133,8 @@ def dry_run(a, stack: V6Stack | None = None) -> dict:
                          o11_negs=int(getattr(a, "o11_negs", 1)),
                          o13_k=int(getattr(a, "o13_k", 4)),
                          o13_seed=int(getattr(a, "o13_seed", 1300)),
+                         o14_mode=str(getattr(a, "o14_mode", "fut")),
+                         o14_k=int(getattr(a, "o14_k", 4)),
                          cond_param=str(getattr(a, "cond_param", COND_INCUMBENT)),
                          o3_mode=a.o3_mode,
                          o3_blocks=a.o3_blocks,
@@ -4130,6 +4213,7 @@ def _weights_from_args(a) -> V6LossWeights:
         o2_nearfield=a.w_o2, o3_masked=a.w_o3, o5_rollout=a.w_o5,
         o11_cf=float(getattr(a, 'w_o11_cf', 0.0)),
         o13_ego=float(getattr(a, 'w_o13_ego', 0.0)),
+        o14_fut=float(getattr(a, 'w_o14', 0.0)),
         o6_sigreg=a.w_o6, t1_latent=a.w_t1, s1_latent=a.w_s1,
         w_select=a.w_select, w_anchor=float(getattr(a, "w_anchor", 0.0)),
         w_s2_goal=float(getattr(a, "w_s2_goal", 0.0)),
@@ -4954,11 +5038,21 @@ def train(a) -> dict:
                 z_flat = stack.readout(stack.encoder(
                     ff.reshape(fb * fk, *ff.shape[2:]))).reshape(fb, fk, -1)
                 z_true = [z_flat[:, j].detach() for j in range(need_k)]
+        o14_tgt = None
+        if float(getattr(a, "w_o14", 0.0)) > 0:
+            o14_tgt = _o14_pixel_target(
+                b["frames"], b["future_frames"],
+                mode=str(getattr(a, "o14_mode", "fut")),
+                k=int(getattr(a, "o14_k", 4)),
+                shuffle=bool(getattr(a, "o14_shuffle_targets", False)))
         dk, da = sample_random_deltas(aw2.shape[0], gen, a.rand_dkappa_max,
                                       a.rand_daccel_max)
         batch = {
             "frames": b["frames"], "actions2": aw2, "future_actions2": fa2,
             "v0": v0, "z_true_steps": z_true,
+            # O14: the pixel target, computed above — forwarded EXPLICITLY
+            # because this dict is a whitelist (see the block comment below).
+            **({"o14_tgt": o14_tgt} if o14_tgt is not None else {}),
             # ⚠️ THIS DICT IS A WHITELIST, NOT A VIEW OF `b`. A key added to the
             # dataset reaches `b` and stops here -- which is exactly how PSG's
             # first smoke test died with KeyError('ep_idx') while the dataset,
@@ -6363,6 +6457,15 @@ def build_parser() -> argparse.ArgumentParser:
                     help="seed for O13's FROZEN readout. Changing it changes "
                          "the target direction -- never compare o13_loss "
                          "across different seeds.")
+    ap.add_argument("--w-o14", type=float, default=0.0,
+                    help="O14 future-observation aux (PREREG_O14_FUTURE_OBS; R2, PI-approved 2026-08-27). 0 = bit-identical trainer.")
+    ap.add_argument("--o14-mode", choices=("fut", "rec", "fut_diff"),
+                    default="fut",
+                    help="fut: grey pixels at t+k. rec: at t (the R1 contrast). fut_diff: pix(t+k)-pix(t).")
+    ap.add_argument("--o14-k", type=int, default=4,
+                    help="horizon of the pixel target, in ticks (E-DEC-63 measured at k=4).")
+    ap.add_argument("--o14-shuffle-targets", action="store_true",
+                    help="DELIBERATE-REGRESSION arm: cyclic-shift the targets across the batch (a derangement — randperm fixes points, the o11 lesson). The absorption gate MUST NOT move under this flag.")
     ap.add_argument("--w-o11-cf", type=float, default=0.0,
                     help="O11-CF counterfactual action contrastive (E-DEC-30). "
                          "0.0 => incumbent loss bit-identical. ADDS to O5, "

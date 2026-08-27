@@ -4974,6 +4974,10 @@ class V6Stack(nn.Module):
         # nothing of theirs for a stage to train or freeze.)
         ("prop_diffusion.", "planner"),
         ("masked_cells.", "aux"), ("sigreg.", "aux"),
+        # O14 (PREREG_O14_FUTURE_OBS): future-OBSERVATION prediction. The
+        # target is raw pixels — DATA, not a perception label — so encoder
+        # backprop is the group's X3-permitted job, unlike agent_slots below.
+        ("o14_head.", "aux"),
         # ⭐ THE AGENT-SLOT DECODER IS `interp`, NOT `aux` — and the distinction
         # is the whole X3 argument, not tidiness. `aux` MAY backprop into the
         # encoder (ISOLATION_MATRIX: O3/O6 are label-free trunk losses and that
