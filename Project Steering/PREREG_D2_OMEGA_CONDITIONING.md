@@ -64,3 +64,43 @@ three reads are T0). A T1 pass on the parity corpus follows only if the arm earn
 
 **Cost:** ~4.1 h Thor (30k steps at ~26.5 s/step... measured trio pace ~0.49 s/step
 wall — 30k in ~4.1 h). Launched immediately after this file was written.
+
+
+---
+
+## OUTCOME — read 2026-08-27 ~08:20, instruments as pre-registered
+
+| read | `omega30k` | incumbent `postrain30k` | seed band (n=2) |
+|---|---|---|---|
+| drift (`latentmotion`, 80 clips) | **0.6911** (t 149.16) | 0.669 | 0.669–0.679 (~1.5 %) |
+| ego marginal over drift | **−0.0014 (t −1.29) — INSIDE the null** | +0.0073 (t 2.78), also null | — |
+| held-out `nrmse` (`meanpred`, same 190 windows) | ⭐ **0.6911** | 0.8115 | **0.7831–0.8115 (~3.5 %)** |
+| cos (same rig) | **0.7534** | 0.6394 | 0.6394–0.6734 |
+
+⚠️ `omega30k`'s drift and nrmse reading the same 0.6911 is a verified COINCIDENCE
+— different instruments, different quantities, all sibling fields differ.
+
+⇒ **MIXED, per the committed rule — the numbers, not a rounded verdict:**
+
+1. **The conditioning MARGINAL is null** — `[ω, a_long, v]` adds no predictive
+   content over drift, exactly like the incumbent channel. The E-DEC-48b reading
+   (scene→action; the planner owns the reaction) **extends to the measured-state
+   parameterisation.** *(Secondary: the ego-ALONE column reads t 3.77 vs its
+   shuffle — MARGINAL band — up from the incumbent's 2.78; noted, not load-bearing.)*
+2. **Drift is not separated** (+3.3 % vs a ~1.5 % 2-seed band — within ~2× seed
+   noise; no claim).
+3. ⭐ **THE UNEXPECTED CELL: held-out prediction quality IMPROVED 14.8 %** (nrmse
+   0.8115 → 0.6911; cos 0.6394 → 0.7534, z 39.3 → 54.7) — **~4× the measured
+   seed spread**, single seed, n_windows 190. Mechanistically coherent without
+   contradicting (1): the old channel is `atan(L·κ)` with a legacy 2.9 m wheelbase
+   and speed-blindness; ω = v·κ is the physically correct rate, so **the predictor
+   is better CONDITIONED without the latent carrying more ego content** — which is
+   precisely the PI's original argument for v0/ω as measured state.
+
+**Decision consequence for v7r §1.1:** `--cond-param omega_accel_v` is ADOPTED —
+PI-directed, measured no-worse on drift, and likely better on prediction quality.
+⚠️ The 14.8 % is a SINGLE-SEED number; a seed replicate is queued as a low-priority
+arm and the claim stays at "likely" until it exists.
+
+Raw: `omegadrift.json`, `omeganrmse.json`, `seed1nrmse.json` (8fc25020 scratchpad;
+banking with the next incoming package). T0-DIAGNOSTIC throughout.
