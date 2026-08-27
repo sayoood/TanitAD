@@ -121,7 +121,11 @@ def _small(**kw) -> V6Config:
 
 
 def _args(*extra) -> object:
-    return build_parser().parse_args(_SMALL_ARGV + list(extra))
+    # v6.0 pinned: the byte-identity reference is the PRE-v7-mandate module,
+    # and the recorded-version property is exactly what makes the CLI build
+    # reproduce it (PI vocab mandate, 2026-08-27).
+    return build_parser().parse_args(
+        _SMALL_ARGV + ["--tac-vocab-version", "v6.0"] + list(extra))
 
 
 def _build(cfg: V6Config, seed: int = 0) -> V6Stack:

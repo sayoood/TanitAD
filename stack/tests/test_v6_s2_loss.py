@@ -81,6 +81,11 @@ def tiny_cfg(**kw) -> V6Config:
         f_hidden_tac=32, f_hidden_str=32, d_plan_feat=16, emission_hidden=16,
         n_candidates=3, aux_hidden=16, sigreg_slices=8)
     base.update(kw)
+    # ⚠️ v6.0 PINNED (2026-08-28): this file exercises the s2-strategic-v1
+    # LABEL SET (2026-08-16, v6-era ids incl. ROUTE_TO), so the heads must be
+    # v6-shaped regardless of the v7 default mandate. The v7 S2 label path is
+    # the DataFlyWheel's v7 extraction — a separate test when it lands.
+    base.setdefault("tac_vocab_version", "v6.0")
     return V6Config(**base)
 
 

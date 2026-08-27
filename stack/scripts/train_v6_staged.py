@@ -3993,7 +3993,9 @@ def synthetic_train_batch(stack: V6Stack, *, batch: int = 2, k: int = 12,
 
 
 def synthetic_s2_batch(batch: int = 2, *, seed: int = 0,
-                       valid_frac: float = 0.75, device=None) -> dict:
+                       valid_frac: float = 0.75, device=None,
+                       n_goal: int | None = None,
+                       n_action: int | None = None) -> dict:
     """Synthetic S2 label keys — the ``--dry-run`` stand-in for the real join.
 
     Shapes and dtypes are EXACTLY ``s2_labels.S2WindowSupervision.batch``'s,
@@ -4003,7 +4005,11 @@ def synthetic_s2_batch(batch: int = 2, *, seed: int = 0,
     (the gated token would trip the loss's own refusal, correctly)."""
     g = torch.Generator().manual_seed(seed)
     b = int(batch)
-    n_g, n_a = len(STRATEGIC_GOAL_TOKENS), len(STRATEGIC_ACTION_TOKENS)
+    # ⚠️ sizes must come from the BUILT stack when versions can differ
+    # (the v7 mandate): module constants are v6.0 and a v7-shaped head
+    # fed v6-ranged ids trips the range guard — measured 2026-08-28.
+    n_g = int(n_goal) if n_goal else len(STRATEGIC_GOAL_TOKENS)
+    n_a = int(n_action) if n_action else len(STRATEGIC_ACTION_TOKENS)
     valid = torch.rand(b, generator=g) < float(valid_frac)
     if b and not bool(valid.any()):
         valid[0] = True                    # a dry step should exercise n>0
@@ -4133,8 +4139,10 @@ def dry_run(a, stack: V6Stack | None = None) -> dict:
             s1_multi_k=int(a.s1_multi_k) if w_stage_dry.w_s1_multi else 0)
         b["gt_wp"] = torch.randn(a.dry_batch, o1_k, 2, generator=gen)
         if w_stage_dry.w_s2_goal:
-            b |= synthetic_s2_batch(a.dry_batch, seed=a.seed + step,
-                                    device=device)
+            b |= synthetic_s2_batch(
+                a.dry_batch, seed=a.seed + step, device=device,
+                n_goal=stack.vocab_str.table.weight.shape[0],
+                n_action=stack.vocab_a_str.table.weight.shape[0])
         dk, da = sample_random_deltas(a.dry_batch, gen, a.rand_dkappa_max,
                                       a.rand_daccel_max)
         L = v6_loss_step(stack, b, stage=a.stage, weights=weights, o1_k=o1_k,

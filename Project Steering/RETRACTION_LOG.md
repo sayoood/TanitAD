@@ -1025,6 +1025,32 @@ directions; a renumber breaks half of them silently. Instead:
    numbers its own sequence; collisions become impossible without an allocator.
    Un-prefixed `C<n>` above this notice are historical and stay as they are.
 
+## MM-C1 — the vocab-default flip shipped with a RED suite my regression set never ran
+
+**Class:** *incomplete regression surface on a default-changing edit.* **Found by the
+DataFlyWheel** (its worktree triage reproduced 9 failures at clean HEAD), grown 5→9
+between my commits while I ran only the suites I had authored or touched.
+
+**What happened.** The v7 vocabulary mandate flipped `tac_vocab_version`'s default to
+v7.0. I ran the vocab/o13/o14/cond/EMA suites (all green) and never ran
+`test_v6_anchor_loss` / `test_v6_s2_loss` — which build DEFAULT configs and therefore
+silently became v7-shaped while their FIXTURES are v6-era by content (the
+s2-strategic-v1 label set; the pre-change byte-identity reference). The S2 range guard
+fired exactly as designed: *"the labels and the head disagree on the vocabulary size."*
+
+**The fixes (all three root-cause-honest):** the S2 tests pin `v6.0` because their
+LABELS are v6-era (the v7 S2 path gets its own test when the DataFlyWheel's v7 labels
+integrate); the anchor byte-identity test pins `v6.0` because its reference IS the
+pre-mandate module — the recorded-version property is what makes it reproducible; and
+`synthetic_s2_batch` now derives id ranges FROM THE BUILT STACK (`vocab_str.table`),
+never from module constants — version-agnostic by construction.
+
+**The rule:** ⛔ **an edit that changes a DEFAULT runs the suites that USE the
+default, not the suites that name the feature.** `git grep -l "V6Config()"` and
+`build_parser().parse_args` callers are the regression surface of a default flip.
+
+---
+
 ## C61 — 2026-07-29 — quoting a decay SHAPE from an instrument that cannot separate the two causes
 
 **Root-cause class: REPORTING A MECHANISM WHEN THE MEASUREMENT ONLY SUPPORTS A MAGNITUDE.**
