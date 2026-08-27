@@ -1007,6 +1007,24 @@ Append; never delete. A wrong claim that stays visible is worth more than a tidy
 
 ---
 
+## ⛔ ID-COLLISION NOTICE + THE ALLOCATION RULE (binding, 2026-08-28)
+
+**MEASURED (DataFlyWheel found it; Master Mind verified by block count): NINE IDs
+each carry 2–3 DIFFERENT findings from different agents** — C133 (×3), C134, C135,
+C136, C137, C146, C147, C148, C149 (×2 each). Root cause is STRUCTURAL: concurrent
+agents allocating sequential integers against an append-only log, merged keep-both,
+collide by construction — nobody's carelessness.
+
+⛔ **NOTHING IS RENUMBERED.** Existing citations point at these IDs from both
+directions; a renumber breaks half of them silently. Instead:
+1. **A bare ambiguous ID is no longer a sufficient citation.** Any NEW text citing
+   one of the nine MUST disambiguate by finding, e.g. *"C147 (the phantom-MERGE
+   finding)"* vs *"C147 (PSG pixel-floor)"*.
+2. ⭐ **FORWARD RULE — stream-prefixed IDs from now on:** `ARCH-C<n>`, `DE-C<n>`,
+   `EVAL-C<n>`, `TRAIN-C<n>`, `DEPLOY-C<n>`, `MM-C<n>` (Master Mind). Each stream
+   numbers its own sequence; collisions become impossible without an allocator.
+   Un-prefixed `C<n>` above this notice are historical and stay as they are.
+
 ## C61 — 2026-07-29 — quoting a decay SHAPE from an instrument that cannot separate the two causes
 
 **Root-cause class: REPORTING A MECHANISM WHEN THE MEASUREMENT ONLY SUPPORTS A MAGNITUDE.**
@@ -9453,3 +9471,58 @@ token. Measured with the road's own arc removed, that ego displaces
 view. The CoT describes an intent the clip does not execute.
 **ROOT-CAUSE CLASS: verifying at the wrong layer of the pipeline** — the same
 family as quoting a trainer log where only eval output is admissible.
+
+---
+
+## C149 ⛔⛔ — 87 % OF PERCEPTION TOKENS HAVE NO TIME EVIDENCE PLACING THEM IN THE TACTICAL BAND, AND THE TWO CoT FIELDS CONTRADICT EACH OTHER (PI, 2026-08-27)
+
+**The PI asked a timing question about one token** — *"can you check if the oncoming
+label is in the right time slot, I see it in the past"* on `d94365be`. It is not,
+and structurally it could not have been.
+
+**(1) A CoT CLAIM CARRIES NO TIMESTAMP.** Only Alpamayo's parsed `motion_analysis`
+segments give one. MEASURED over 4,729 clips:
+
+| time evidence | clips |
+|---|---|
+| parsed motion segments (explicit durations) | 2,857 (60.4 %) |
+| only a "first N seconds" phrase | 27 (0.6 %) |
+| ⛔ **NONE AT ALL** | **1,845 (39.0 %)** |
+
+At token level it is worse — **87.2 % of emitted CoT tokens are `untimed`**, and
+**`REACT_ON_ONCOMING` is 0 timed / 344 untimed: not one has time evidence.**
+`EVADE_IN_CORRIDOR` likewise 0/200. `d94365be` has no segments and no components
+analysis at all.
+
+Compounding it: **Alpamayo's anchor is 5.1 s, ours is 8.0 s**, so its text
+describes a window opening 2.9 s BEFORE ours. An event it names can be finished
+before our tactical band starts — which is exactly what the PI saw in the frames.
+
+**(2) `cot` AND `chain_of_causation` CONTRADICT EACH OTHER.** They are two
+independent generative draws. On `d94365be`:
+
+    cot   : "Nudge LEFT due to the PARKED CAR on the right."
+    chain : "Nudge RIGHT due to the ONCOMING VEHICLE"
+
+Opposite direction, different object, same clip. Of the 557 clips where both name
+exactly one side, **49 (8.8 %) CONFLICT**. ⚠️ **`cot_text()` concatenates all four
+fields, so the extractor was taking claims from BOTH SIDES of a contradiction** —
+and the +77 % token-yield gain that concatenation bought (C142 era) is partly
+this. `chain_of_causation` alone contributes 93 `REACT_ON_ONCOMING` tokens `cot`
+does not.
+
+**Fixed:** every CoT goal now carries `time_basis` (`segment` | `untimed`), so a
+band placement that is an ASSUMPTION says so; and on a direction conflict the
+primary `cot` wins and the secondary is dropped (48 clips).
+
+⛔ **NOT fixed by deletion, deliberately.** The untimed tokens are 87 % of the
+perception signal and the claims are often true — they are simply not PLACED.
+Marking them is honest; discarding them would throw away most of what Alpamayo
+knows. **Whether an untimed token may train the tactical head is a PI decision,
+and the field exists so it can be made rather than defaulted.**
+
+**ROOT-CAUSE CLASS: a label placed in a time band by ASSUMPTION, with the
+assumption invisible.** Same family as the anchor mismatch (C142) and the
+`overlapping_holdout_se` trap — a quantity that is precise about the wrong thing.
+⇒ **STANDING RULE: a token assigned to a temporal band must record what placed it
+there. "It came from the CoT" is a source, not a time.**
