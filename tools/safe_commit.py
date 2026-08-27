@@ -39,7 +39,7 @@ retries.
 Usage::
 
     # the normal call: declare what you staged, pass a message
-    python tools/safe_commit.py -p tools/ -p "TanitAD Research Hub/Data Engineering" \\
+    python tools/safe_commit.py -p tools/ -p "TanitAD Research Lab/Data Engineering" \\
         -m "tools: wave-1 ops tooling"
 
     # a long message lives in a file (never shell-quote a multi-line message)
@@ -205,7 +205,7 @@ def staged_paths(repo: Path) -> list[str]:
     """The index, as repo-relative POSIX paths.
 
     ``-z`` because git otherwise C-quotes any path with a space -- and the hub
-    tree is full of them (``TanitAD Research Hub/...``)."""
+    tree is full of them (``TanitAD Research Lab/...``)."""
     out = git(repo, "diff", "--cached", "--name-only", "-z").stdout
     return [p for p in out.split("\0") if p]
 

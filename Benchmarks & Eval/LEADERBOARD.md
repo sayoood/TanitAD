@@ -1,44 +1,118 @@
 # TanitAD Leaderboard
 
-*Rewritten 2026-07-21 from `Project Steering/MODEL_REGISTRY.md` §6 + the raw eval artifacts under
-`taniteval/results/`. This closes registry gap **R5** ("LEADERBOARD.md is stale and in the wrong units
-— newest row is camera-frame ADE@1s @27 k"): every internal row below is now **metric-BEV `ade_0_2s`
-in metres** on the canonical 881 windows, and the old camera-frame gate ladder has been moved to §8
-under its own unit label. Maintained by the Benchmarks & Eval agent.*
+*Rebuilt **2026-08-23** by the EvalFlyWheel from `Project Steering/MODEL_REGISTRY.md` and the raw
+eval artifacts. **Only two sources are quotable here: the registry and raw eval JSON.** No number on
+this page is transcribed from a summary, changelog, weekly report or `PROJECT_STATE.md`; where a
+prose doc and the registry disagree the registry wins and the conflict is reported in §11 / §12.*
 
-**Regenerate the driving tables — CPU-only, no GPU, no pod, seconds:**
+> ⚠️ **Staleness this rebuild closes.** The page header said *"Rewritten 2026-07-21"* while the body
+> carried un-headlined patches dated 2026-08-02, 2026-08-16 and 2026-08-17 — so the banner
+> **understated** how much had moved and **overstated** how coherent it was. The content gap was
+> larger still: **the entire v5f / v5.8f / v1arch / unicycle-readout / T1 campaign (2026-08-05 →
+> 2026-08-12) had no row anywhere on this page.** Full audit: §11.
+> ⛔ **The structural defect this rebuild fixes** is not staleness: §1–§4 were headed *"Driving
+> capability … the standard read"* while every number in them is **TIER T0, teacher-forced** —
+> which `Project Steering/EVAL_DOCTRINE.md` forbids being quoted as driving performance. See §0.1.
+
+**Regenerate the T0 canonical driving tables — CPU-only, no GPU, no pod, seconds:**
 ```
 python -m taniteval.runner driving-all          # recompute every arm with a windows_*.pt
-python -m taniteval.driving --leaderboard       # emit §2's markdown table
+python -m taniteval.driving --leaderboard       # emit §1's markdown table
 ```
+✅ **Both commands VERIFIED BY CONTENT 2026-08-23** (they were not checked at the last rebuild):
+`driving-all` is registered at `taniteval/taniteval/runner.py:496`; `--leaderboard` at
+`taniteval/taniteval/driving.py:1113`, emitting `leaderboard_md()` (`driving.py:1063`).
+⛔ **Neither command can regenerate §1a (T1), §3 (T2) or the w120 / OOD-val blocks** — those come
+from `taniteval/tools/t1_eval.py`, `taniteval/tools/ff_rescore.py`,
+`taniteval/tools/eval_four_families.py` and per-campaign gate emitters, and are banked as raw JSON
+under `TanitAD Research Lab/…/Implementation/incoming/`. A "regenerate the leaderboard" that runs
+only the two lines above rebuilds **one tier of three**.
 
 ---
 
-## 0. How to read this page — units, estimator, floors (binding)
+## 0. How to read this page — tiers, units, estimator, floors (binding)
 
-**UNITS.** Internal rows (§1–§6) are **metric-BEV ego-frame `ade_0_2s`, metres**, averaged over the
-waypoints at 0.5/1/1.5/2 s. They are **not** the camera-frame `ADE@1s` of the 2026-07-12 D1 gate
-(§8) and the two must never be compared. Speeds are m/s, headings degrees, latency milliseconds.
+### 0.1 ⛔ TIERS — the first thing to read on any row (`Project Steering/EVAL_DOCTRINE.md`, PI 2026-08-07)
 
-**CORPUS.** `physicalai-val-0c5f7dac3b11` — **881 windows / 40 episodes**, window 8, stride 8,
-K = 20 @ 10 Hz, `nav=follow`, operative step intent-free. Identical windows for every arm, so every
-cross-arm delta below is **paired**. §7 and §8 use *different corpora* and are labelled as such.
+| tier | condition | may be quoted as |
+|---|---|---|
+| **T0** | **teacher-forced** — the predictor consumes the **recorded future actions** | *"prediction quality"* — ⛔ **NEVER "driving performance"** |
+| **T1** | **action-closed loop** — the predictor consumes the **decoder/planner's own actions**; perception context fixed at t0 | *"closed-loop (imagination) driving"* — **the PRIMARY offline eval** |
+| **T2** | **perception-closed loop** — AlpaSim / NuRec re-render, or real-footage log-replay | *"closed-loop driving"* |
 
-**ESTIMATOR.** The decision-grade interval is the **episode-cluster bootstrap** over the 40 val
-episodes (`taniteval/ci.py`, B = 2000); for two arms or an arm-vs-floor on the same windows it is the
-**paired** form. The legacy `heldout ± ci95` — historically mislabelled "8-split episode-disjoint
-jackknife" — is `overlapping_holdout_se` and is measured **1.28–2.06× too narrow** across 10 arms
-(MEASURED, `Project Steering/CI_RECOMPUTE_2026-07-20.json`). It appears in §1 **only** in a column
-explicitly marked deprecated, so published figures stay traceable; `taniteval/driving.py` *refuses*
-to emit it.
+**A capability claim ("drives", "handles", "improves driving") requires T1 or better.** T0 supports
+attribution and prediction claims only. **Every row below carries its tier.**
 
-**win / tie / LOST is three-way on purpose.** A paired interval that excludes zero while favouring the
-**floor** means the trivial baseline beat the model. Six arms are CI-separated *against themselves*
-on speed MAE; a sep/tie rendering would have printed those as wins.
+⛔ **THE CANONICAL 881-WINDOW LEADERBOARD (§1–§2, §4–§5) IS TIER T0.** Verified from source, not
+from prose: `taniteval/taniteval/rollout.py:184` feeds `ep.actions[t+window : t+window+fwd_k]` — the
+**expert's future actions** — into `rollout_decode`, and the module's own docstring
+(`rollout.py:151-160`) says the result is *"a world-model fidelity decode of a known control
+sequence … it just may not be quoted as driving or as hierarchy"*, stamping
+`actions_source="expert_future"` and `pc2_pass = False` **by construction** (`rollout.py:237`).
+⇒ **Every ADE in §1, §2, §4 and §5 is a T0 number**, and the previous heading of §2 — *"Driving
+capability … the standard read"* — was a doctrine violation. It is restamped here, the numbers are
+unchanged.
 
-**FLOORS** on the same 881 windows (MEASURED; rows 1–2 `taniteval/results/driving_flagship-30k.json`,
-rows 3–4 **recomputed 2026-08-02** on these exact windows —
-`…/incoming/2026-08-02-ctrv-floor/raw/ctrv_readjudication.json`):
+⚠️ **NAME COLLISION, and it caused the violation.** `taniteval.driving` emits
+`BLOCK = "taniteval.driving/tier0"` and `surface: "4 waypoints 0.5 s apart (tier-0)"`. That
+**"tier-0" is the METRIC-SUITE tier** (the sparse 4-knot surface vs the dense tier-1 surface) and is
+a **different axis** from EVAL_DOCTRINE's T0/T1/T2. Both happen to read "tier 0" for these rows, but
+for unrelated reasons. **Never infer an EVAL_DOCTRINE tier from the `BLOCK` string.** On this page,
+`T0/T1/T2` always means the EVAL_DOCTRINE tier; the metric surface is written out in words.
+
+### 0.2 UNITS
+
+§1–§5 rows are **metric-BEV ego-frame `ade_0_2s`, metres**, averaged over the waypoints at
+0.5/1/1.5/2 s. They are **not** the camera-frame `ADE@1s` of the 2026-07-12 D1 gate (§8) and the two
+must never be compared. §1a's `ade_dense_m` is a **dense 20-step 10 Hz** mean and is a **different
+reducer on a different grid** — do not difference it against `ade_0_2s`. Speeds m/s, accelerations
+m/s², headings degrees, yaw-rates °/s, curvature 1/m, latency ms.
+
+### 0.3 CORPORA — there are now FOUR, and they are never mixed
+
+| # | corpus | grid | used by |
+|---|---|---|---|
+| **C1** | `physicalai-val-0c5f7dac3b11` (256×256 pinhole) | **881 windows / 40 episodes**, window 8, stride 8, K=20 @10 Hz, `nav=follow`, operative step intent-free | §1, §1b, §1c, §2, §4, §5 (**all T0**) |
+| **C2** | `physicalai-val-0c5f7dac3b11-w120-256x640cyl` (cylindrical, HFOV 120°, subframe 176×624) | **881 windows / 600 episodes**, stride 8 | §2.5 (v5f / v5.8f, **T0**) |
+| **C3** | same w120 cache, **stride 1** | **6,844 windows / 40 episodes**, dense 20-step | §1a (**T1** + its T0 control) |
+| **C4** | `physicalai-oodval-6f4b94e4c7ce-q90` — PhysicalAI-AV's **own official eval split**, 290 clips, zero training overlap | **6,382 windows / 290 clusters** (v1arch), **6,834 windows / 40 eps stride-1** (unicycle line) | §2.6, §2.7, §1a.4 |
+
+⛔ **C1's 881 and C2's 881 are DIFFERENT 881s** (40 episodes vs 600). The coincidence has already
+misled once; always carry the corpus letter.
+
+### 0.4 ESTIMATOR
+
+The decision-grade interval is the **episode-cluster bootstrap** over the val episodes
+(`taniteval/ci.py`, B = 2000); for two arms or an arm-vs-floor on the same windows it is the
+**paired** form. The legacy `heldout ± ci95` — historically mislabelled *"8-split episode-disjoint
+jackknife"* — is `overlapping_holdout_se`; it is **1.107–3.100× too narrow, median 1.499×** over
+**27 dumps = 25 distinct arms**, and its central value is a **mean-of-split-means** that shifts the
+point estimate **−6.67 % to +11.69 %, bidirectionally** (MODEL_REGISTRY §6; blast radius
+`…/incoming/2026-07-25-jack-blast-radius/`). It appears on this page **only** in the column
+explicitly marked DEPRECATED, so published figures stay traceable;
+`taniteval/driving.py` *refuses* to emit it
+(`estimator.deprecated_and_refused: "overlapping_holdout_se"`, present in every `driving_*.json`).
+⛔ **No verdict, ranking or gate on this page rests on a `heldout` value.** The 2026-08-16 gate
+re-drive (`…/incoming/2026-08-16-jack-in-gates/`) re-decided G1 and G4 under the correct estimator
+and **neither flipped**; the one banned verdict still standing is `planner_beats_cv` (§1, P2 row),
+carried as **UNDECIDED**, not as ✗.
+
+⚠️ **The 1.107–3.100× band supersedes the "1.28–2.06× across 10 arms" that §0 of this page used to
+print** — the older band was never wrong, only under-sampled. Corrected here 2026-08-23.
+
+### 0.5 win / tie / LOST is three-way on purpose
+
+A paired interval that excludes zero while favouring the **floor** means the trivial baseline beat
+the model. ⛔ **This rule was being violated by §1's own `beats CV` column**, which rendered
+two-way ✅/✗ and printed **✗ for two arms the raw JSON calls `tie`** (`refb-10k` and `refb`; see
+§11). Fixed below: the column is now three-way and reads `favours` straight out of
+`driving_<key>.json → verdict.ade_vs_cv`.
+
+### 0.6 FLOORS on C1 (881 windows)
+
+MEASURED. Rows 1–2 from `taniteval/results/driving_flagship-30k.json → floor_values` (re-read
+2026-08-23, exact); rows 3–4 recomputed 2026-08-02 on these exact windows —
+`TanitAD Research Lab/Benchmarks & Eval/Implementation/incoming/2026-08-02-ctrv-floor/raw/ctrv_readjudication.json`.
 
 | floor | ADE@2s m | FDE@2s m | miss@2m | speed MAE m/s | \|along\| m | \|cross\| m | heading° | κ-sign | wins/881 |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
@@ -49,26 +123,256 @@ rows 3–4 **recomputed 2026-08-02** on these exact windows —
 | *best-of-3 **ORACLE*** (privileged per-window min) | *0.4820* | — | — | — | — | — | — | — | — |
 | no-vision ego-status ceiling (AD-MLP repro) | *0.5735* | — | — | — | — | — | — | — | — |
 
-⭐ **CTRV IS THE FLOOR, and it was missing from the gate.** `taniteval/driving.py:304` scores every arm
-against `FLOORS = ("cv", "holdv0")` — **both straight lines**. CTRV is admissible under the identical
-information budget (`poses[last]`, `poses[last-1]`, no future), is **already computed on every window**
-by `driving_diagnostic.baseline_waypoints` and discarded by `rollout.collect`, and it beats both
-incumbents: paired **CTRV − CV = +0.3113 m [0.1674, 0.4844] separated**, **CTRV − hold-v0 = +0.2611 m
-[0.1419, 0.4061] separated**. It wins **423 of 881 windows** outright (CV 156, hold-v0 302).
-⇒ **every lateral / turn / curvature verdict published against the two-floor family carries a
-CV-derived magnitude that is ~5× too generous** — see §1b. Fix proposed:
-`…/incoming/2026-08-02-ctrv-floor` (patch + 11 tests, validated end-to-end).
+⭐ **CTRV IS THE FLOOR, and it is still missing from the gate.** `taniteval/driving.py:304` scores
+every arm against `FLOORS = ("cv", "holdv0")` — **both straight lines**. CTRV is admissible under
+the identical information budget (`poses[last]`, `poses[last-1]`, no future), is already computed on
+every window by `driving_diagnostic.baseline_waypoints` and discarded by `rollout.collect`, and it
+beats both incumbents: paired **CTRV − CV = +0.3113 m [0.1674, 0.4844] separated**,
+**CTRV − hold-v0 = +0.2611 m [0.1419, 0.4061] separated**. It wins **423 of 881** windows outright
+(CV 156, hold-v0 302). ⇒ **every lateral / turn / curvature verdict published against the two-floor
+family carries a CV-derived magnitude that is ~5× too generous** — see §1b. Patch + 11 tests,
+validated end-to-end, still **UNMERGED** at `…/incoming/2026-08-02-ctrv-floor/` — §12 W-2.
 
-*hold-v0 is the strongest trivial **longitudinal** floor and the one VTARGET provably loses to at 2 s
-(MAE 1.65 vs 0.475, MODEL_REGISTRY §4.1). The previous rows "best-of-3 0.5005 / CTRV oracle 0.523" were
-INHERITED from MODEL_REGISTRY §0.3 on a **different corpus, with no interval**; they are superseded by
-the recomputed rows above. **best-of-N is an ORACLE** — it picks the winner per window using the ground
-truth, exactly like the nuScenes `PhysicsOracle`. It is a reference, never a competitor.*
+*hold-v0 is the strongest trivial **longitudinal** floor and the one VTARGET provably loses to at
+2 s (MAE 1.65 vs 0.475, MODEL_REGISTRY §4.1). **best-of-N is an ORACLE** — it picks the winner per
+window using ground truth, like the nuScenes `PhysicsOracle`. A reference, never a competitor.*
 
-### 1b. Floor re-adjudication — 25 banked arms rescored against CTRV (2026-08-02, MEASURED)
+⚠️ **The T1 floor is a DIFFERENT floor and it is `ha` (hold-action), not CV.** See §1a — a control
+that merely holds the last action beats both closed-loop arms by 10–25×. **Clearing a T0 floor is
+not evidence of anything driving-related** (EVAL_DOCTRINE rule 2).
 
-Paired episode-cluster bootstrap, B = 2000, same 881 windows, orientation `floor − model`.
-Alignment verified **bit-exact** (`max_abs_diff_cv = max_abs_diff_gt = 0.0`) on 25 of 27 dumps; the two
+### 0.7 THE FOUR METRIC FAMILIES (binding, PI 2026-08-02)
+
+Every eval reports **LONGITUDINAL / LATERAL / TACTICAL / STRATEGIC**, per family, never pooled,
+never ADE alone. Each family carries its estimator and CI on the same windows as the ADE it
+accompanies. **A family that cannot be computed is reported `NOT MEASURED` with its reason and its
+n — a WORK ITEM, never a silent omission.** Family coverage on this page:
+
+| block | tier | LONG | LAT | TACTICAL | STRATEGIC |
+|---|:--:|:--:|:--:|:--:|:--:|
+| §1a T1 (C3) | T1 | ✅ (distance-keeping ❌) | ✅ | ✅ | ❌ n/a-corpus |
+| §1c T0 vs floors (C1) | T0 | ✅ (distance-keeping ❌) | ✅ | ❌ | ❌ |
+| §2.5 v5f / v5.8f (C2) | T0 | ✅ (distance-keeping ❌) | ✅ | ❌ | ❌ |
+| §2.6 v1arch OOD-val (C4) | T0 | ✅ **incl. distance-keeping** | ✅ | ✅ | ⚠️ measured **and it is a constant predictor** |
+| §1 / §2 / §3 / §4 canonical (C1) | T0 | partial | partial | ❌ | ❌ |
+| §3 T2 AlpaSim / low-OOD | T2 | ❌ | ⚠️ corridor only | ❌ | ❌ |
+
+Every ❌ above is enumerated as a work item in §12.
+
+---
+
+## 1a. TIER **T1** — ACTION-CLOSED LOOP · ⭐ **THE PRIMARY EVAL** ⭐
+
+*MEASURED 2026-08-11 ~23:27Z (rollout) / 2026-08-12 ~00:55Z (four-family rescore). Corpus **C3** —
+6,844 windows / 40 val episodes, stride 1, dense 20 steps @ 10 Hz. Instruments
+`taniteval/tools/t1_eval.py` (`--v2-val-cache --grounding-readout`) and
+`taniteval/tools/ff_rescore.py`. Point estimates are `full_set` pooled means; intervals are the
+**episode-cluster bootstrap** (B = 2000, 40 clusters); cross-arm deltas are the **paired** form.
+`overlapping_holdout_se` is used nowhere in this block. **Evidence class: MEASURED (ours).**
+Artifacts, all banked in-repo and md5-verified against the release manifest:
+`TanitAD Research Lab/Benchmarks & Eval/Implementation/incoming/2026-08-18-v58f-artifact-banking/gates/four_families/ff_{stageA,v5f30k}_{cl,ol,ha}.json`
+(+ `ff_comparison.full.json`); registry anchor **MODEL_REGISTRY §1.14**.*
+
+**Three surfaces per arm.** `cl` = action-closed loop (**T1**) · `ol` = teacher-forced (**T0**, a WM
+diagnostic, never driving) · `ha` = hold-action control (**T1**). All three on identical windows.
+
+### 1a.1 T1 headline
+
+| arm | surface | **tier** | ADE dense m [ep-cluster CI95] | FDE last m | evidence | artifact |
+|---|:--:|:--:|---|---:|---|---|
+| `stage-a-repaired` | **`cl`** | **T1** | ⛔ **9.3697** [6.6822, 12.2576] | 19.5256 | MEASURED 2026-08-11 | `ff_stageA_cl.json` |
+| `stage-a-repaired` | `ha` | **T1** *(control)* | ⭐ **0.4246** [0.3500, 0.5132] | 1.2242 | MEASURED 2026-08-11 | `ff_stageA_ha.json` |
+| `stage-a-repaired` | `ol` | T0 *(diagnostic)* | *0.3659* [0.2926, 0.4521] | 1.0231 | MEASURED 2026-08-11 | `ff_stageA_ol.json` |
+| `v5f-30k` | **`cl`** | **T1** | ⛔ **23.9837** [21.4420, 26.3470] | 53.4756 | MEASURED 2026-08-11 | `ff_v5f30k_cl.json` |
+| `v5f-30k` | `ha` | **T1** *(control)* | **0.9597** [0.8361, 1.0879] | 2.8631 | MEASURED 2026-08-11 | `ff_v5f30k_ha.json` |
+| `v5f-30k` | `ol` | T0 *(diagnostic)* | *0.9397* [0.8162, 1.0679] | 2.8003 | MEASURED 2026-08-11 | `ff_v5f30k_ol.json` |
+
+⛔⛔ **THE PROGRAMME HAS NO CLOSED-LOOP DRIVING COMPETENCE AT T1, AND THIS IS THE PAGE'S HEADLINE.**
+The hold-action control beats the repaired arm **22×** (0.4246 vs 9.3697) and the v5f arm **25×**
+(0.9597 vs 23.9837). Within-arm paired `cl − ol`: **+9.0039 [6.3659, 11.8487]** (repaired) and
+**+23.0439 [20.5613, 25.3884]** (v5f), both separated at `p_delta_gt0 = 1.0`. **The same checkpoint
+on the same windows reads 0.3659 at T0 and 9.3697 at T1 — a 25× gap.** That single row is why the
+tier doctrine exists, and why no T0 number anywhere on this page may be read as driving.
+
+**The stage-A repair wins on every surface, separated.** Paired `stage-a-repaired − v5f-30k`, same
+windows: `cl` ADE **−14.6139 [−16.9319, −12.2010]** (`p_delta_gt0` 0.0), `ol` **−0.5739 [−0.7002,
+−0.4570]**, `ha` **−0.5351 [−0.6644, −0.4181]**; `cl` LON speed MAE **−17.2064 [−19.7815,
+−14.4927]**. The repair targeted action-response gain (0.27 → 0.971/0.966, longitudinal sign 1.0 —
+MODEL_REGISTRY §1.13c) and improves **exactly the axis it targeted**.
+
+### 1a.2 T1 — LONGITUDINAL
+
+| metric | `stageA·cl` | `stageA·ha` | `v5f·cl` | `v5f·ha` |
+|---|---:|---:|---:|---:|
+| speed MAE m/s [CI95] | **9.7291** [7.1431, 12.5948] | 0.5671 [0.4815, 0.6615] | **26.9356** [24.8280, 28.8900] | 1.4531 [1.2837, 1.6287] |
+| speed bias m/s *(+ = too fast)* | ⛔ **+9.3892** | −0.0435 | ⛔ **+26.5931** | −1.2149 |
+| along-track MAE m [CI95] | **9.2655** [6.5869, 12.1362] | 0.3487 [0.2865, 0.4210] | **23.8965** [21.3555, 26.2788] | 0.8901 [0.7758, 1.0098] |
+| along final bias m | **+18.5801** | — | — | — |
+| accel MAE m/s² | ⛔ **19.0948** *(> 1.9 g — a true blow-up)* | 1.6187 | ⛔ **51.148** | 2.5658 |
+| ego progress ratio (mean / median) | **1.7279** / 1.0994 | — | — | — |
+| target-speed acc @0.5 / 1.0 / 2.0 m/s | 0.3398 / 0.5069 / 0.6564 | — | — | — |
+| **distance-keeping (headway / time-gap / TTC)** | ⛔ **NOT MEASURED — WORK ITEM** | ⛔ | ⛔ | ⛔ |
+
+**distance-keeping reason (verbatim from the artifact, `status: UNAVAILABLE`, `n: 0`):** *no
+lead-agent track was supplied to the scorer.* PhysicalAI-AV **does** ship `obstacle.offline` (3D
+agent tracks on 97.44 % of the corpus) and the instrument **exists** at
+`taniteval/tools/build_lead_block.py` — it has simply not been built **for this dense C3 grid**.
+⚠️ The registry twice cited it as `tools/build_lead_block.py`, which does not exist, making a built
+instrument look unbuilt. **Not supplying it is a WORK ITEM, not a pass** (§12 W-1), and it is the
+half of LONGITUDINAL where 88.7 % of the T0 oracle gap was measured to live.
+
+⭐ **THE DIVERGENCE IS ~99 % LONGITUDINAL — visible ONLY because the families are reported.** Of the
+repaired arm's `cl` ADE 9.3697, along-track MAE is **9.2655** and cross-track is **0.7446**; for
+v5f, 23.8965 against 0.9993. The car holds its lane and its **speed integrates away**. A scalar ADE
+would have shown the 25× gap and **not** shown that it is one axis.
+
+### 1a.3 T1 — LATERAL *(healthy, and NOT the problem)*
+
+| metric | `stageA·cl` | `stageA·ha` | `v5f·cl` | `v5f·ha` |
+|---|---:|---:|---:|---:|
+| heading MAE ° — **pooled-over-steps reducer** | 3.8776 | 2.4189 | 2.7171 | 2.9279 |
+| heading MAE ° — **per-window reducer** [CI95] | 5.3945 [3.6203, 7.5348] | 3.9859 [2.2402, 6.0477] | 3.6204 [2.2465, 5.5110] | 4.5954 [2.7428, 6.7966] |
+| yaw-rate MAE °/s | 4.9188 | 3.0260 | 4.5151 | 4.3442 |
+| curvature MAE 1/m (bias) | 0.018586 (−0.0024) | 0.011293 | 0.017753 | 0.016452 |
+| cross-track MAE m [CI95] | 0.7446 [0.5436, 0.9794] | 0.1689 [0.1281, 0.2192] | 0.9993 [0.7595, 1.2875] | 0.2072 [0.1444, 0.2856] |
+
+⚠️ **TWO HEADING NUMBERS, SAME FILE, SAME ARM — reported, not smoothed over.** `four_families.
+lateral.heading_mae_deg` pools over valid steps (3.8776 for `stageA·cl`); `intervals.metrics.
+LAT_heading_mae_deg` reduces per window then means (5.3945). **MODEL_REGISTRY §1.14 publishes
+5.3945 in its table and 3.8776 in its prose without stating that they are different reducers.**
+Same defect class as §1c's three refused intervals. **Quote the reducer with the number.** All four
+LATERAL members the binding rule names — heading, curvature, yaw-rate, cross-track — are present,
+and none of them is where the failure lives.
+
+### 1a.4 T1 — TACTICAL *(factored; the collapsed 5-way reports neither axis)*
+
+| arm · surface | tier | lateral acc / κ | **longitudinal acc / κ** | 5-way acc / κ | goal bearing MAE ° | goal range ratio |
+|---|:--:|---|---|---|---:|---:|
+| `stageA·cl` | **T1** | 0.7515 [0.6844, 0.8159] / **0.3795** [0.2351, 0.5073] | 0.3327 [0.2608, 0.4062] / ⛔ **0.0405** | 0.3036 / 0.1404 | 4.8098 | **1.7584** |
+| `stageA·ha` | **T1** | 0.8675 / 0.6427 | 0.5586 / 0.2072 | 0.5776 / 0.3904 | 3.7017 | 0.9722 |
+| `stageA·ol` | T0 | 0.9109 / 0.7614 | 0.6034 / 0.2665 | 0.6518 / 0.4915 | 2.0754 | 0.9813 |
+| `v5f·cl` | **T1** | 0.8378 / 0.5083 | 0.2181 / ⛔ **0.0102** | 0.2224 / 0.1173 | 3.7124 | **4.8141** |
+| `v5f·ha` | **T1** | 0.8336 / 0.5493 | 0.2092 / **−0.0223** | 0.2696 / 0.1465 | 4.3538 | 0.8751 |
+| `v5f·ol` | T0 | 0.8608 / 0.6186 | 0.2145 / −0.0198 | 0.2849 / 0.1625 | 3.3482 | 0.8751 |
+
+⛔ **κ 0.0405 is chance agreement: longitudinal decision-making at T1 is AT CHANCE.** The collapsed
+5-way (κ 0.1404) sits *between* the two axes and reports neither — **the direct measurement of the
+lat/lon-mixing 5-way softmax that `CLAUDE.md` names as our largest known architectural defect**, and
+it is visible only because the family is reported **factored**. Per-class lateral (`stageA·cl`):
+`lane_keep` recall 0.8092 / precision 0.8747; `turn_left` 0.4994 / 0.6627; `turn_right` recall
+0.6003 / **precision 0.2879** (1,195 predicted against 573 true — right turns over-predicted 2.1×).
+⚠️ **The hold-action control beats the model on BOTH axes** — the tactical restatement of the
+headline. ⭐ **Goal-setting: the DIRECTION is right and the DISTANCE is wrong** — bearing MAE 4.81°
+against a range ratio of 1.7584 and a long-bias of +18.58 m vs a lat-bias of −1.21 m. *(The
+artifact labels `goal_point_error_m` as FDE under another name; it is not sold as a new metric.)*
+
+### 1a.5 T1 — STRATEGIC
+
+⛔ **NOT MEASURED — `status: UNAVAILABLE`, n = 6,844.** Per clause 5 of the binding rule, the reason
+and the n are given rather than the family dropped. **Reason (from the artifact):** PhysicalAI-AV
+carries no map, no lane graph, no junction/roundabout label, no traffic-light feature and no
+route/goal signal — the dataset card says verbatim *"we do not include open maps data"*, and
+`obstacle.offline`'s enum over 87,481 cuboids is 10 classes, all dynamic agents; `egomotion` carries
+no lat/lon/GNSS (clip-local metres), so OSM map-matching is impossible. Both label sources that do
+exist are **inadmissible**: (a) a route class read off the ego's own future yaw cannot tell whether
+the map admitted a choice at all — that is how the closed-loop harness once published
+`route_head_eq_logged = 1.0000`, and `GATE_PROTOCOL` §0.7 declares `nonav_route_beats_majority`
+VOID BY CONSTRUCTION; (b) a supplied route is optimistic by construction, because our only route
+supplier here is the ego's own future path.
+⇒ **No rescore of these windows can close it.** The instrument that would is the VLM strategic
+pipeline **PH0 → PH1 → PH2** (PH0 v2 gate PASSED 8/8 on an n = 8 smoke, MODEL_REGISTRY §1.14).
+**Settled at five independent probes — do not re-ask** (`CLAUDE.md` operating standard rule 2).
+**This is a WORK ITEM blocked on a CORPUS fact, not a pass** — §12 W-3.
+
+### 1a.6 Other T1 measurements *(different corpus — do not mix with 1a.1)*
+
+*MEASURED 2026-08-06, corpus **C4** stride-1 (6,834 windows / 40 eps), predictor rolled on the
+**decoder's own** actions. Registry anchor **MODEL_REGISTRY §1.12**; artifact
+`…/incoming/2026-08-06-v1-defect-triage/results/closed_loop_analysis.json`. Evidence: MEASURED.*
+
+| metric | v1.6 open (T0) | **v1.6 closed (T1)** | v1.7 open (T0) | **v1.7 closed (T1)** | CV floor |
+|---|---:|---:|---:|---:|---:|
+| ADE m | 0.3398 | **0.4714** (+0.132 [0.112, 0.152]) | 0.2849 | **0.4616** (+0.177 [0.148, 0.208]) | 0.5352 |
+| net-yaw err rad | 0.0108 | **0.0725** (×6.7) | 0.0109 | 0.0761 | — |
+| speed MAE m/s | 0.441 | 0.606 | 0.369 | 0.598 | — |
+| **S-curve reproduction** | **0.9785** | ⛔ **0.0538** | 0.9785 | 0.0430 | 0 |
+
+⛔ **The finding that re-frames every open-loop lateral number on this page:** the **hold-action arm
+reproduces 0.0 % of S-reversals** and the closed loop ~5 %, against 97.9 % teacher-forced. **The
+counter-steer in a T0 eval comes from the TRUE-action conditioning, not from vision.** Open-loop
+LATERAL skill is largely an **action echo**; closed-loop, the stack drives near-straight with speed
+control and retains **~33 %** of its T0 ADE advantage over CV.
+⚠️ These two T1 blocks (§1a.1 on C3, §1a.6 on C4) are **not comparable** — different corpora,
+different arms, different action interfaces. The C3 arms diverge catastrophically; the C4 arms
+degrade gracefully. Reconciling that is itself an open question (§12 W-9).
+
+---
+
+## 1. TIER **T0** — canonical open-loop ADE on C1 (`ade_0_2s`, m) ⛔ *prediction quality, NOT driving*
+
+*Every value below **re-verified BY CONTENT 2026-08-23** against
+`taniteval/results/driving_<key>.json → headline.ade_0_2s` and `→ verdict.ade_vs_cv`; all agree with
+MODEL_REGISTRY §6 to 4 dp. Estimator `episode_cluster_bootstrap`, B = 2000, 40 clusters, in every
+file. Latency is the arm's own `taniteval/results/eff_<key>.json`, fp32, batch 1, A40 —
+re-verified 2026-08-23. Evidence class: **MEASURED (ours)** for every row.*
+
+| Rank | Arm | key | Step | Params | **ADE@2s m, full-set [ep-cluster CI95]** | FDE@2s | miss@2m | **vs CV (paired, 3-way)** | tick p50 fp32 | 10 Hz @p99 | *heldout ± ci95 (DEPRECATED)* |
+|---:|---|---|---:|---:|---|---:|---:|:--|---:|:--:|---|
+| **1=** | Flagship v1 (speed+jerk) FINAL | `flagship-30k` | 29 999 | 263.4 M | **0.4271** [0.3675, 0.4871] | 0.9075 | 0.045 | ✅ **model** +0.4106 [0.2050, 0.6240] | 97.32 ms | ❌ | *0.4522 ± 0.0312* |
+| **1=** | REF-C-XL (anchored diffusion) FINAL | `refc-xl-30k` | 29 999 | 251.9 M | **0.4714** [0.3896, 0.5556] | 1.0061 | 0.142 | ✅ **model** +0.3663 [0.2029, 0.5521] | 44.06 ms | ✅ | *0.4577 ± 0.0572* |
+| **1=** | REF-C-base (anchored diffusion) FINAL | `refc-base-30k` | 29 999 | **104.2 M** | **0.4728** [0.3835, 0.5699] | 1.0031 | 0.142 | ✅ **model** +0.3649 [0.2008, 0.5558] | **21.78 ms** | ✅ | *0.4523 ± 0.0497* |
+| — ‡ | Flagship v1.6 (LP-FT, `ab` head) | `flagship-v16-ab-ft` | 5 999 | ~263 M | **0.4375** [0.3423, 0.5501] | 0.9297 | 0.106 | ✅ **model** +0.4003 [0.2731, 0.5533] | — | — | *0.4886 ± 0.0800* ⚠ |
+| — ‡ | REF-C v1.2, k16-reg rescorer | `refc-v12-k16reg` | 29 999 | 251.9 M | **0.4576** [0.3742, 0.5438] | 0.9750 | 0.129 | ✅ **model** +0.3801 [0.2204, 0.5654] | — | — | — |
+| — ‡ | REF-C v1.2, learned rescorer | `refc-v12` | 29 999 | 251.9 M | **0.4625** [0.3781, 0.5486] | 0.9819 | 0.137 | ✅ **model** +0.3752 [0.2146, 0.5589] | — | — | — |
+| — ‡ | REF-C-XL live-decode snapshot | `refc-xl-live` | 29 999 | 251.9 M | **0.4788** [0.3977, 0.5638] | 1.0193 | 0.148 | ✅ **model** +0.3590 [0.1959, 0.5451] | 44.0 ms | ✅ | — |
+| — ‡ | REF-C-**small** FINAL | `refc-small-30k` | 29 999 | **54.7 M** | **0.5261** [0.4295, 0.6262] | 1.1115 | 0.171 | ✅ **model** +0.3116 | **11.50 ms** | ✅ | *0.5007 ± 0.0671* |
+| — | *hold-v0 (trivial floor)* | — | — | 0 | *0.7876* | 1.6521 | 0.292 | — | — | — | — |
+| — | *constant velocity (trivial floor)* | — | — | 0 | *0.8377* [0.6234, 1.0716] | 1.7406 | 0.304 | — | — | — | *0.8248* |
+| 5 | REF-B v2 (arch-v2) FINAL | `refb-v2-30k` | 29 999 | 271.6 M | 0.5913 [0.4766, 0.7131] | 1.2434 | 0.207 | ✅ **model** +0.2464 [0.0969, 0.4216] | — | — | *0.5921 ± 0.0685* |
+| — ‡ | REF-C-XL snapshot | `refc-xl` | ~28 000 | 251.9 M | 0.6048 [0.5170, 0.7009] | 1.1873 | 0.167 | ✅ **model** +0.2329 [0.0642, 0.4260] | 44.0 ms | ✅ | — |
+| 6 | Flagship v1, 19 k relay | `flagship-speed` | 19 000 | 263.4 M | 0.6152 [0.5422, 0.6951] | 1.3168 | 0.167 | ✅ **model** +0.2225 [0.0218, 0.4302] | 99.6 ms | ❌ | *0.6277 ± 0.0551* |
+| 7 | REF-B v2 @20 k milestone | `refb-v2-20k` | 20 000 | 271.6 M | 0.6435 [0.5410, 0.7516] | 1.3218 | 0.216 | ✅ **model** +0.1942 [0.0541, 0.3652] | — | — | *0.6462 ± 0.0548* |
+| 8 | REF-B speed | `refb-10k` | 10 000 | 262.8 M | 0.8372 [0.6753, 1.0218] | 1.6964 | 0.268 | ⚖️ **TIE** +0.0005 [−0.0982, 0.0951] | 60.47 ms | ✅ | *0.8255 ± 0.0992* |
+| — ‡ | Flagship v4.1 @10 k | `flagship-v4.1-10k` | 10 000 | ~273 M | 0.8522 [0.7468, 0.9800] | 1.5176 | 0.249 | ⚖️ **TIE** −0.0145 [−0.1508, 0.1448] | — | — | *0.8707* |
+| 9 | REF-B v1 | `refb` | 6 000 | 262.5 M | 0.8629 [0.6928, 1.0385] | 1.7351 | 0.318 | ⚖️ **TIE** −0.0252 [−0.1007, 0.0496] | 59.80 ms | ✅ | *0.8682 ± 0.0817* |
+| — ‡ | Flagship v4.2 @4 k | `flagship-v4.2-step4000` | 4 000 | ~273 M | 0.9869 [0.8795, 1.1088] | 1.7487 | 0.294 | ⚖️ **TIE** −0.1492 [−0.2980, 0.0256] | — | — | *1.0490* |
+| 10 | P2 CEM planner over frozen v1 | `planner_p2` | (n/a) | 0 trained | — ⚠️ **the open-loop CEM arm (`plan_wp`) was never dumped per-window**; the *closed-loop* windows ARE banked and both gates were re-decided 2026-08-16 — **neither flips** | — | — | ⛔ **UNDECIDED** *(banned verdict, flip reachable)* | — | — | *0.893 ± 0.114* |
+| 11 | Flagship **v3enc** (RESTART, reg. §1.4) | `flagship-v3enc-10k` | 10 000 | 272.9 M | **1.9654** [1.6556, 2.2859] | 3.6084 | 0.690 | ❌ **floor** −1.1277 [−1.4134, −0.8741] | — | — | *2.1072 ± 0.2020* |
+| 12 | REF-A DINOv2 4B | `refa-dinov2` | 29 999 | 156.6 M† | 2.1675 [1.9081, 2.4212] | 3.2803 | 0.613 | ❌ **floor** −1.3298 [−1.5415, −1.1233] | 88.58 ms | ❌ | *2.1322 ± 0.1821* |
+| 13 | Flagship **no-speed** (ablation control) | `flagship-nospeed` | ~22 000 | 263.4 M | 3.0175 [2.5450, 3.5444] | 5.0282 | 0.742 | ❌ **floor** −2.1798 [−2.7714, −1.6714] | 101.58 ms | ❌ | *2.9176 ± 0.3558* |
+| 14 | REF-A dyn-in 4B | `refa-dynin-30k` | 29 999 | 156.6 M† | 3.0471 [2.4984, 3.6878] | 4.7642 | 0.741 | ❌ **floor** −2.2094 [−2.8164, −1.7232] | 84.52 ms | ❌ | *2.9196 ± 0.3937* |
+| 15 | Flagship v2 (killed) | `flagship-v2-6k` | 6 000 | 272.9 M | 5.9396 [4.3273, 7.6249] | 12.4011 | 0.852 | ❌ **floor** −5.1019 [−6.9322, −3.4332] | — | — | *6.179 ± 1.2845* |
+| — | Flagship v1 **tactical head** (not rollout) | `plan_flagship-30k` | 29 999 | — | **3.3839** [2.8336, 3.9722] | — | — | ❌ **floor** | — | — | *3.150 ± 0.347* |
+
+**Ranks are MODEL_REGISTRY §6's, unchanged** (they run 1=…15 after the 2026-07-25 re-emission
+renumbered the table). ‡ marks arms with a window dump and a scored block but **no §6 rank**; they
+are placed in ADE order and never renumbered — the registry is the source of truth for ranks.
+`vs CV` is the **paired** episode-cluster delta (CV − model, m) with its `favours` label read
+straight from the JSON.
+
+† REF-A's params **exclude the external frozen DINOv2/I-JEPA encoder**, and so does its latency —
+never compare a features-in row to a pixels-in row unadjusted.
+⚠ v1.6's `heldout` comes from a **different eid family** (`eval_flagship_v16.py` clusters on real
+`episode_id`, `bench.py` on file indices 0–39); the two `heldout` means are **not comparable**. The
+full-set and episode-cluster columns are unaffected. v1.6 vs v1 paired: **Δ +0.0104 [−0.0888,
++0.1147], NOT separated** (registry §1.4b) → an ADE **tie**, which is why it carries no rank.
+⚠️ **`refc-v12-identity` is deliberately absent.** It is a designed control that is
+**bit-equivalent to `refc-xl-30k`** (same decode; `max |Δpred| = 7.6e-06`) and listing it would
+double-count one model. `taniteval/results/dump_exclusions.json` is the machine-readable truth;
+`taniteval.dump_census` must be imported for any census — **a bare glob is a defect**
+(EVAL_DOCTRINE rule 6, C126). Same for `windows_overfit_refa-dynin-30k.pt` ≡ `refa-dynin-30k`.
+⚠️ **The REF-A overfit ladder** (`overfit_refa-dynin-{5k,15k,20k,30k}` = 3.8307 / 3.7818 / 3.1138 /
+3.0471, all ❌ floor-separated) is a **milestone curve of one arm**, not four arms. Recorded here so
+the dumps are accounted for; never rank them.
+
+**Ranks 1= are a three-way ADE tie no paired test can order** (§6: base-vs-XL Δ +0.0013 [−0.0281,
++0.0316]; flagship-vs-XL +0.0443 [−0.0544, +0.1465]). **Latency is the only separator among them —
+and §2 adds a second one.**
+
+### 1b. Floor re-adjudication — 25 banked arms rescored against CTRV (2026-08-02, MEASURED) [T0]
+
+Paired episode-cluster bootstrap, B = 2000, same C1 windows, orientation `floor − model`. Alignment
+verified **bit-exact** (`max_abs_diff_cv = max_abs_diff_gt = 0.0`) on 25 of 27 dumps; the two
 88-window `refc-v12-smoke-*` partials are refused, not approximated.
 
 | verdict on `ade_0_2s`: vs CV → vs CTRV | n | arms |
@@ -80,14 +384,14 @@ Alignment verified **bit-exact** (`max_abs_diff_cv = max_abs_diff_gt = 0.0`) on 
 | loses → loses | 9 | REF-A family, `flagship-nospeed`, `flagship-v2-6k`, `flagship-v3enc-10k` |
 
 **16 of 25 verdicts move. 12 arms beat the trivial floor under CV; 6 do under CTRV (11 / 5 over
-DISTINCT arms — the census counted a double-banked dump pair, C126 + `taniteval/results/dump_exclusions.json`), and the best
-surviving margin in the whole fleet is +0.0890 m.**
+DISTINCT arms after `dump_exclusions.json`), and the best surviving margin in the whole fleet is
++0.0890 m.**
 
-⭐ **flagship-v1 @30k** — ADE 0.4271, vs CV **+0.4106 separated (favours model)**, vs CTRV
-**+0.0993 [−0.0258, +0.2204] NOT separated**. ⛔ **`PROJECT_STATE`'s "the FIRST arm below EVERY trivial
-bar" is a point-estimate statement** (0.4271 < 0.5265 is true); with the program's own decision-grade
-paired estimator it is a **tie** against a constant-turn-rate extrapolation. Escalated to the
-orchestrator — `PROJECT_STATE` / `MODEL_REGISTRY` are not editable by this agent.
+⭐ **flagship-v1 @30k** — ADE 0.4271, vs CV **+0.4106 separated**, vs CTRV **+0.0993 [−0.0258,
++0.2204] NOT separated**. ⛔ *"the FIRST arm below EVERY trivial bar"* is a **point-estimate
+statement** (0.4271 < 0.5265 is true); under the programme's own decision-grade paired estimator it
+is a **TIE** against a constant-turn-rate extrapolation. **And it is a T0 tie**, so it was never a
+driving claim in the first place.
 
 **Where the win survives (flagship-v1, pre-registered criteria — all three HELD, ~5× smaller):**
 
@@ -99,7 +403,8 @@ orchestrator — `PROJECT_STATE` / `MODEL_REGISTRY` are not editable by this age
 | overall \|cross\| | 881 | 0.2369 | 1.0089 | 0.3741 | +0.7720 model | **+0.1372 [0.026, 0.252] model** | 5.6× |
 
 ⇒ `verdict.where_the_win_lives = "lateral only"` **survives as a direction** and must never again be
-quoted with a CV-derived magnitude.
+quoted with a CV-derived magnitude. ⚠️ **And §1a.6 bounds what it means:** a T0 lateral win is
+largely an **action echo** (S-curve reproduction 97.9 % → 5 % closed-loop, 0 % hold-action).
 
 **Where CTRV reveals a loss CV structurally could not** (flagship-v1; exploratory, not pre-registered):
 
@@ -111,139 +416,99 @@ quoted with a CV-derived magnitude.
 | `speed_top10pct` | `ade_0_2s` | 89 | floor −0.4156 | **floor −0.6173 [−0.782, −0.459]** |
 | `speed_top10pct` | \|cross\| / heading° / crosstrack | 89 | tie / tie / tie | **floor / floor / floor** |
 
-⭐ At the top speed decile **CTRV's ADE is 0.0986 m and the model's is 0.7159 m — 7.3× worse — and the
-model now loses LATERALLY too.** The high-speed weakness has been framed as purely *longitudinal*
+⭐ At the top speed decile **CTRV's ADE is 0.0986 m and the model's is 0.7159 m — 7.3× worse — and
+the model loses LATERALLY too.** The high-speed weakness has been framed as purely *longitudinal*
 because a straight-line floor cannot expose a lateral one on a road that is locally an arc.
 
-### 1c. The FOUR METRIC FAMILIES vs the floors (binding rule, CLAUDE.md 2026-08-02)
+### 1c. THE FOUR METRIC FAMILIES vs the floors on C1 [T0]
 
-Same 881 windows; point estimates from `taniteval/four_families.py` itself; paired episode-cluster
-bootstrap where a per-window form reproduces the module (see refusals below).
-⚠️ Sparse 4-waypoint cadence — the driver sets `DT_S = 0.5`; **not** comparable to a dense-10 Hz run.
-Artifact: `…/incoming/2026-08-02-ctrv-floor/raw/four_families_vs_floors.json`.
+Same C1 windows; point estimates from `taniteval/four_families.py` itself; paired episode-cluster
+bootstrap where a per-window form reproduces the module (refusals below).
+⚠️ Sparse 4-waypoint cadence (`DT_S = 0.5`) — **not** comparable to a dense-10 Hz run.
+Artifact: `…/incoming/2026-08-02-ctrv-floor/raw/four_families_vs_floors.json`. MEASURED 2026-08-02.
 
 | family / metric | flagship-30k | REF-C-XL-30k | CV | hold-v0 | **CTRV-g** | flagship vs CTRV |
 |---|---:|---:|---:|---:|---:|---|
 | **LONG** `speed_mae_mps` | 0.4710 | 0.4545 | 0.4678 | 0.4818 | 0.4682 | tie |
 | **LONG** `speed_bias_mps` *(+ = too fast)* | **+0.1911** | +0.0209 | −0.0545 | −0.1340 | −0.0557 | **floor** −0.2468 [−0.347, −0.144] |
 | **LONG** `along_final_bias_m` | **+0.3375** | +0.0511 | +0.0347 | −0.1232 | −0.1107 | **floor** −0.4482 [−0.652, −0.238] |
-| **LONG** distance-keeping (headway/TTC) | **UNAVAILABLE** — no lead-agent track is read from the episode cache (`obstacle.offline` exists on 97.44 % of the corpus). **A WORK ITEM.** |
+| **LONG** distance-keeping (headway / time-gap / TTC) | ⛔ **NOT MEASURED — WORK ITEM.** No lead-agent track is read from the episode cache on this grid. `obstacle.offline` exists on 97.44 % of the corpus and the reader exists (`taniteval/tools/build_lead_block.py`); it has not been joined to C1. **n = 0.** §12 W-1 |
 | ⭐ **LAT** `curvature_mae_1pm` | **0.026969** | 0.012138 | 0.012221 | 0.012221 | **0.008967** | *point only — interval refused* |
 | **LAT** `yaw_rate_mae_degps` | 1.8581 | 1.8216 | 3.6951 | 3.6951 | 2.2333 | *point only — interval refused* |
 | **LAT** `heading_mae_deg` | 1.5032 | 1.1484 | 3.8265 | 3.5322 | 1.6213 | *point only — interval refused* |
 | **LAT** `cross_mae_m` | **0.1152** | 0.1310 | 0.5259 | 0.4662 | 0.1604 | **model** +0.0452 [+0.008, +0.084] |
-| **TACTICAL** | **UNAVAILABLE** — the scored pass is a world-model FIDELITY rollout under the expert's true future actions (`pc2_pass=False`), so no manoeuvre decision is decoded. Needs a hierarchy-traversing eval. **A WORK ITEM.** |
-| **STRATEGIC** | **UNAVAILABLE** — same reason; no route decision is decoded. **A WORK ITEM.** |
+| **TACTICAL** | ⛔ **NOT MEASURED — WORK ITEM.** The scored pass is a teacher-forced WM-fidelity rollout (`pc2_pass = False`, `actions_source = "expert_future"`), so **no manoeuvre decision is decoded at all**. **n = 0.** ⇒ needs a hierarchy-traversing eval, or read it at T1 where the driven path *is* the decision (§1a.4, now closed at source: `t1_eval.py` passes `tactical_from_traj=True, tier=t`). §12 W-4 |
+| **STRATEGIC** | ⛔ **NOT MEASURED — WORK ITEM.** Same teacher-forced reason, **and** the corpus reason of §1a.5. **n = 0.** §12 W-3 |
 
 ⭐⭐ **CROSS-TRACK AND CURVATURE DISAGREE, AND CURVATURE IS THE ONE THAT MATTERS HERE.** The flagship
-**beats** the CTRV floor on cross-track (+0.0452 separated) while its **curvature error is 3.0× worse
-than CTRV's and 2.2× worse than a straight line's**. The path goes through roughly the right points
-with the wrong *shape* — the "smooth but wrong" failure ADE and cross-track both hide. Note also that
-REF-C-XL's curvature is **2.2× better** than the flagship's while its ADE is worse (0.4714 vs 0.4271):
-**ADE inverts this ordering.**
+**beats** the CTRV floor on cross-track (+0.0452 separated) while its **curvature error is 3.0×
+worse than CTRV's and 2.2× worse than a straight line's**. The path goes through roughly the right
+points with the wrong *shape* — the "smooth but wrong" failure ADE and cross-track both hide.
+REF-C-XL's curvature is **2.2× better** than the flagship's while its ADE is *worse* (0.4714 vs
+0.4271): **ADE inverts this ordering.**
 
-⚠️ **Three intervals REFUSED on purpose.** `heading` / `yaw_rate` / `curvature` are published as point
-estimates only: the module reduces them as a pooled mean over valid steps, a per-window form is a
-mean-of-per-window-means, and the two differ (7.6e-01 / 5.9e-01 / 3.6e-02 on flagship-30k). The driver
-measures the disagreement per metric and refuses the interval above 1e-3 rather than bootstrap a
-statistic that is not the published one. Work item: a per-window reducer inside `four_families`.
+⚠️ **Three intervals REFUSED on purpose.** `heading` / `yaw_rate` / `curvature` are published as
+point estimates only: the module reduces them as a pooled mean over valid steps, a per-window form
+is a mean-of-per-window-means, and the two differ (7.6e-01 / 5.9e-01 / 3.6e-02 on flagship-30k). The
+driver measures the disagreement per metric and refuses the interval above 1e-3 rather than
+bootstrap a statistic that is not the published one. **The same two-reducer hazard is live at T1 and
+is NOT refused there** — see §1a.3. Work item: a per-window reducer inside `four_families` (§12 W-5).
 
 > ⚠ **Open-loop ⊥ closed-loop (standing footnote, G-B1).** arXiv 2605.00066 (Apr-2026, 15 methods):
-> ADE/FDE have **no reliable correlation** with closed-loop Driving Score. Our own evidence: flagship v1
-> open-loop **0.4271** [0.3675, 0.4871] → closed-loop **1.7318** [1.5707, 1.9070] (**4.05×**),
-> divergence >5 m on **23.50 %** [16.80 %, 30.27 %] of windows (MODEL_REGISTRY §1.2).
-> ⛔ **ESTIMATOR CORRECTED 2026-08-17 — this footnote published three BANNED `overlapping_holdout_se`
-> split-means** (*0.4522 → 1.685, 22.2 %*). All three are corrected above from
-> `…/incoming/2026-07-26-closedloop-artifact-rerun/closedloop_flagship-30k.CORRECTED.json`; **all three
-> moved the same way — the closed-loop failure was UNDERSTATED**, so this footnote's own point
-> *strengthens* (degradation ratio 3.73× → **4.05×**). *(Superseded, kept visible: 0.4522 → 1.685,
-> 22.2 %.)* **An external-simulator data point exists (§5.5) but is reconstruction-OOD confounded:** REF-C's
-> open-loop ADE on the AlpaSim NuRec reconstructions is **1.52 (3.21× its real-footage 0.4728)**, so its
-> closed-loop failures measure model × reconstruction-fidelity — **not** a clean open-loop⊥closed-loop
-> demonstration (RETRACTION_LOG C6). **A 2026-07-23 real-footage low-OOD harness (§5.5, both arms 1.02–1.20×
-> OOD, n = 40 paired) now confirms the REF-C > flagship-v1 closed-loop ordering OFF-reconstruction** — but it
-> measures lane-keeping/drift, not off-road/collision. **Never rank a TanitAD checkpoint on an open-loop number alone.** Every
-> internal row carries `claim_strength: open-loop / weak`.
+> ADE/FDE have **no reliable correlation** with closed-loop Driving Score. Our own evidence, now
+> three-fold: flagship v1 open-loop **0.4271** [0.3675, 0.4871] → imagination-closed-loop **1.7318**
+> [1.5707, 1.9070] (**4.05×**), divergence > 5 m on **23.50 %** [16.80 %, 30.27 %] of windows
+> (registry §1.2); v1.6 T0 0.3398 → T1 0.4714 (§1a.6); and the decisive one — **stage-A T0 0.3659 →
+> T1 9.3697, 25×** (§1a.1).
+> ⛔ **ESTIMATOR CORRECTED 2026-08-17 — this footnote once published three BANNED
+> `overlapping_holdout_se` split-means** (*0.4522 → 1.685, 22.2 %*), all corrected above from
+> `…/incoming/2026-07-26-closedloop-artifact-rerun/closedloop_flagship-30k.CORRECTED.json`; **all
+> three moved the same way — the closed-loop failure was UNDERSTATED**, so the footnote's own point
+> *strengthens*. **Never rank a TanitAD checkpoint on a T0 number alone.**
 
 ---
 
-## 1. Internal leaderboard — open-loop ADE, metric-BEV `ade_0_2s` (m)
-
-*Ranks and the deprecated column from MODEL_REGISTRY §6; the full-set point estimate and the
-episode-cluster interval are recomputed from the committed window dumps and **match §6 exactly** where
-§6 quotes them (flagship 0.4271 [0.3675, 0.4871]; REF-C-XL 0.4714 [0.3896, 0.5556]; REF-C-base 0.4728
-[0.3835, 0.5699]). Latency is this arm's own `taniteval/results/eff_<key>.json`, fp32, batch 1, A40.*
-
-| Rank | Arm | key | Step | Params | **ADE@2s m, full-set [ep-cluster CI95]** | FDE@2s m, full-set | miss@2m, full-set | beats CV, paired Δ m | tick p50 fp32 | 10 Hz @p99 | *ADE@2s heldout ± ci95 (DEPRECATED)* |
-|---:|---|---|---:|---:|---|---:|---:|:--:|---:|:--:|---|
-| **1=** | Flagship v1 (speed+jerk) FINAL | `flagship-30k` | 29 999 | 263.4 M | **0.4271** [0.3675, 0.4871] | 0.9075 | 0.045 | ✅ +0.4106 | 97.3 ms | ❌ | *0.4522 ± 0.0312* |
-| **1=** | REF-C-XL (anchored diffusion) FINAL | `refc-xl-30k` | 29 999 | 251.9 M | **0.4714** [0.3896, 0.5556] | 1.0061 | 0.142 | ✅ +0.3663 | 44.1 ms | ✅ | *0.458 ± 0.057* |
-| **1=** | REF-C-base (anchored diffusion) FINAL | `refc-base-30k` | 29 999 | **104.2 M** | **0.4728** [0.3835, 0.5699] | 1.0031 | 0.142 | ✅ +0.3649 | **21.8 ms** | ✅ | *0.4523 ± 0.0497* |
-| — ‡ | Flagship v1.6 (LP-FT, `ab` head) | `flagship-v16-ab-ft` | 5 999 | ~263 M | **0.4375** [0.3423, 0.5501] | 0.9297 | 0.106 | ✅ +0.4003 | — | — | *0.4886 ± 0.0800* ⚠ |
-| — ‡ | REF-C-**small** (anchored diffusion) FINAL | `refc-small-30k` | 29 999 | **54.7 M** | **0.5261** [0.4295, 0.6262] | 1.1115 | 0.171 | ✅ +0.3116 | **11.5 ms** | ✅ | *0.5007 ± 0.0671* |
-| — | *hold-v0 (trivial floor)* | — | — | 0 | *0.7876* | 1.6521 | 0.292 | — | — | — | — |
-| — | *constant velocity (trivial floor)* | — | — | 0 | *0.8377* | 1.7406 | 0.304 | — | — | — | *0.8248* |
-| 3 | REF-B v2 (arch-v2) FINAL | `refb-v2-30k` | 29 999 | 271.6 M | 0.5913 [0.4766, 0.7131] | 1.2434 | 0.207 | ✅ +0.2464 | — | — | *0.5921 ± 0.0685* |
-| — ‡ | REF-C-XL snapshot | `refc-xl` | ~28 000 | 251.9 M | 0.6048 [0.5170, 0.7009] | 1.1873 | 0.167 | ✅ +0.2329 | 44.0 ms | ✅ | — |
-| 4 | Flagship v1, 19 k relay | `flagship-speed` | 19 000 | 263.4 M | 0.6152 [0.5422, 0.6951] | 1.3168 | 0.167 | ✅ +0.2225 | 99.6 ms | ❌ | *0.6277 ± 0.0551* |
-| 5 | REF-B v2 @20 k milestone | `refb-v2-20k` | 20 000 | 271.6 M | 0.6435 [0.5410, 0.7516] | 1.3218 | 0.216 | ✅ +0.1942 | — | — | *0.6462 ± 0.0548* |
-| 6 | REF-B speed | `refb-10k` | 10 000 | 262.8 M | 0.8372 [0.6753, 1.0218] | 1.6964 | 0.268 | ✗ +0.0005 | 60.5 ms | ✅ | *0.8255 ± 0.0992* |
-| 7 | REF-B v1 | `refb` | 6 000 | 262.5 M | 0.8629 [0.6928, 1.0385] | 1.7351 | 0.318 | ✗ −0.0252 | 59.8 ms | ✅ | *0.8682 ± 0.0817* |
-| 8 | P2 CEM planner over frozen v1 | `planner_p2` | (n/a) | 0 trained | — ⚠️ **open-loop CEM arm never dumped per-window** (the *closed-loop* windows ARE banked and both gates were re-decided 2026-08-16 — **neither flips**) | — | — | ⚠️ **undecided** | — | — | *0.893 ± 0.114* |
-| 9 | REF-A DINOv2 4B | `refa-dinov2` | 29 999 | 156.6 M† | 2.1675 [1.9081, 2.4212] | 3.2803 | 0.613 | ✗ −1.3298 | 88.6 ms | ❌ | *2.1322 ± 0.1821* |
-| 10 | Flagship **no-speed** (ablation control) | `flagship-nospeed` | ~22 000 | 263.4 M | 3.0175 [2.5450, 3.5444] | 5.0282 | 0.742 | ✗ | 101.6 ms | ❌ | *2.9176 ± 0.3558* |
-| 11 | REF-A dyn-in 4B | `refa-dynin-30k` | 29 999 | 156.6 M† | 3.0471 [2.4984, 3.6878] | 4.7642 | 0.741 | ✗ | 84.5 ms | ❌ | *2.9196 ± 0.3937* |
-| 12 | Flagship v2 (killed) | `flagship-v2-6k` | 6 000 | 272.9 M | 5.9396 [4.3273, 7.6249] | 12.4011 | 0.852 | ✗ | — | — | *6.179 ± 1.2845* |
-| — | Flagship v3enc | — | running | 272.9 M | 🟥 not evaluated | — | — | — | — | — | — |
-
-**Rank numbers are MODEL_REGISTRY §6's, unchanged.** ‡ marks three arms that have a window dump and a
-tier-0 row but **no §6 rank** — `flagship-v16-ab-ft` (an ADE tie with v1, so it cannot be ordered),
-`refc-small-30k` (FINAL, but a SEPARATED third rung ~0.053 m below the base≈XL tie — the ladder's first
-separation, registry §4.2) and `refc-xl` (a pre-final snapshot). They are shown in ADE order but never
-renumbered; the registry is the source of truth for ranks. `beats CV` is the **paired** episode-cluster delta (CV − model, m).
-
-† REF-A's params **exclude the external frozen DINOv2/I-JEPA encoder**, and so does its latency —
-never compare a features-in row to a pixels-in row unadjusted.
-⚠ v1.6's heldout comes from a **different eid family** (`eval_flagship_v16.py` clusters on real
-`episode_id`, `bench.py` on file indices 0–39) — the two `heldout` means are **not comparable**.
-The full-set and episode-cluster columns are unaffected. v1.6 vs v1 paired: **Δ +0.0104
-[−0.0888, +0.1147], NOT separated** (MODEL_REGISTRY §1.4b) → an ADE **tie**, which is why it carries
-no rank.
-
-**Ranks 1= are a three-way ADE tie no paired test can order** (§6: ADE Δ +0.0013 [−0.0281, +0.0316]
-base-vs-XL; +0.0443 [−0.0544, +0.1465] flagship-vs-XL). **Latency is the only separator among them —
-and §2 now adds a second one.**
-
----
-
-## 2. Driving capability — TanitEval v2 tier-0 · **the standard read**
+## 2. TIER **T0** — the split read on C1 · *what a single ADE column hides*
 
 *MEASURED 2026-07-21, `python -m taniteval.runner driving-all`, CPU-only over the committed
-`windows_<key>.pt`. Every interval is an **episode-cluster bootstrap** (B = 2000, 40 episodes); every
-win/tie/LOST is a **paired** episode-cluster test against a trivial floor. Spec:
-`TanitAD Research Hub/Benchmarks & Eval/TANITEVAL_V2_METRIC_SUITE.md`. Artifacts:
-`taniteval/results/driving_<key>.json`, and inline in every `results/<key>.json`.*
+`windows_<key>.pt`. Every interval is an **episode-cluster bootstrap** (B = 2000, 40 episodes);
+every win/tie/LOST is a **paired** episode-cluster test against a trivial floor. Spec:
+`TanitAD Research Lab/Benchmarks & Eval/TANITEVAL_V2_METRIC_SUITE.md`. Artifacts:
+`taniteval/results/driving_<key>.json`. ⛔ **T0 — prediction quality, not driving.** The section
+heading that stood here until 2026-08-23 was "Driving capability … the standard read"; that framing
+is retracted, the numbers are unchanged.*
 
 **ADE is one column, not the verdict.** The same 0.43-vs-0.47 that reads as a tie in §1 decomposes
 into three different competencies here, and the arms rank differently on each.
 
-| arm | ADE@2s m [ep-cluster boot CI95] | along / cross @2s m (vs CV) | speed MAE m/s: model vs hold-v0 (vs CV) | cruise Δ m/s vs hold-v0 | heading on straights ° | κ-sign | tick p50 | where the win lives |
+| arm | ADE@2s m [ep-cluster CI95] | along / cross @2s m (vs CV) | speed MAE m/s: model vs hold-v0 (vs CV) | cruise Δ m/s vs hold-v0 | heading on straights ° | κ-sign | tick p50 | where the win lives |
 |---|---|---|---|---|---|---|---|---|
-| flagship-30k | **0.4271** [0.3675, 0.4871] | 0.841 **tie** / 0.237 win | 0.471 vs 0.482 **tie** | −0.212 **LOST** | 7.98 vs CV 1.399 | 0.954 | 97.3 ms (fp32) | **lateral only** |
-| refc-xl-30k | **0.4714** [0.3896, 0.5556] | 0.878 win / 0.280 win | 0.455 vs 0.482 **tie** | −0.069 **LOST** | 3.863 vs CV 1.399 | 0.919 | 44.1 ms (fp32) | both axes |
-| refc-base-30k | **0.4728** [0.3835, 0.5699] | 0.866 win / 0.292 win | 0.446 vs 0.482 **tie** | −0.054 **LOST** | 5.834 vs CV 1.399 | 0.916 | 21.8 ms (fp32) | both axes |
+| flagship-30k | **0.4271** [0.3675, 0.4871] | 0.841 **tie** / 0.237 win | 0.471 vs 0.482 **tie** | −0.212 **LOST** | 7.98 vs CV 1.399 | 0.954 | 97.3 ms | **lateral only** |
+| refc-xl-30k | **0.4714** [0.3896, 0.5556] | 0.878 win / 0.280 win | 0.455 vs 0.482 **tie** | −0.069 **LOST** | 3.863 vs CV 1.399 | 0.919 | 44.1 ms | both axes |
+| refc-base-30k | **0.4728** [0.3835, 0.5699] | 0.866 win / 0.292 win | 0.446 vs 0.482 **tie** | −0.054 **LOST** | 5.834 vs CV 1.399 | 0.916 | 21.8 ms | both axes |
 | flagship-v16-ab-ft | **0.4375** [0.3423, 0.5501] | 0.683 win / 0.423 win | **0.389 vs 0.482 win** | −0.058 **LOST** | 7.687 vs CV 1.399 | 0.865 | — | both axes |
-| refc-small-30k | **0.5261** [0.4295, 0.6262] | 0.970 win / 0.314 win | 0.506 vs 0.482 **tie** | −0.091 **LOST** | 3.531 vs CV 1.399 | 0.921 | 11.5 ms (fp32) | both axes |
+| refc-v12-k16reg | **0.4576** [0.3742, 0.5438] | — | — | — | — | — | — | both axes |
+| refc-v12 | **0.4625** [0.3781, 0.5486] | — | — | — | — | — | — | both axes |
+| refc-xl-live | **0.4788** [0.3977, 0.5638] | — | — | — | — | — | — | both axes |
+| refc-small-30k | **0.5261** [0.4295, 0.6262] | 0.970 win / 0.314 win | 0.506 vs 0.482 **tie** | −0.091 **LOST** | 3.531 vs CV 1.399 | 0.921 | 11.5 ms | both axes |
 | refb-v2-30k | **0.5913** [0.4766, 0.7131] | 1.029 **tie** / 0.408 win | 0.530 vs 0.482 **LOST** | −0.097 **LOST** | 5.75 vs CV 1.399 | 0.907 | — | lateral only |
-| refc-xl | **0.6048** [0.5170, 0.7009] | 1.033 **tie** / 0.340 win | 0.572 vs 0.482 **LOST** | −0.186 **LOST** | 8.974 vs CV 1.399 | 0.869 | 44.0 ms (fp32) | lateral only |
-| flagship-speed | **0.6152** [0.5422, 0.6951] | 1.178 **tie** / 0.407 win | 0.663 vs 0.482 **LOST** | −0.406 **LOST** | 8.992 vs CV 1.399 | 0.927 | 99.6 ms (fp32) | lateral only |
+| refc-xl | **0.6048** [0.5170, 0.7009] | 1.033 **tie** / 0.340 win | 0.572 vs 0.482 **LOST** | −0.186 **LOST** | 8.974 vs CV 1.399 | 0.869 | 44.0 ms | lateral only |
+| flagship-speed | **0.6152** [0.5422, 0.6951] | 1.178 **tie** / 0.407 win | 0.663 vs 0.482 **LOST** | −0.406 **LOST** | 8.992 vs CV 1.399 | 0.927 | 99.6 ms | lateral only |
 | refb-v2-20k | **0.6435** [0.5410, 0.7516] | 1.109 **tie** / 0.434 win | 0.579 vs 0.482 **LOST** | −0.128 **LOST** | 6.222 vs CV 1.399 | 0.889 | — | lateral only |
-| refb-10k | **0.8372** [0.6753, 1.0218] | 1.157 **tie** / 0.894 win | 0.546 vs 0.482 **LOST** | −0.115 **LOST** | 2.181 vs CV 1.399 | 0.803 | 60.5 ms (fp32) | lateral only |
-| refb | **0.8629** [0.6928, 1.0385] | 1.153 **tie** / 0.960 **tie** | 0.541 vs 0.482 **LOST** | −0.106 **LOST** | 1.854 vs CV 1.399 | 0.781 | 59.8 ms (fp32) | neither axis separated |
-| refa-dinov2 | **2.1675** [1.9081, 2.4212] | 3.099 **LOST** / 0.578 win | 1.775 vs 0.482 **LOST** | −1.472 **LOST** | 1.925 vs CV 1.399 | 0.866 | 88.6 ms (fp32) | lateral only |
-| flagship-nospeed | **3.0175** [2.5450, 3.5444] | 4.968 **LOST** / 0.448 win | 2.521 vs 0.482 **LOST** | −2.250 **LOST** | 5.986 vs CV 1.399 | 0.948 | 101.6 ms (fp32) | lateral only |
-| refa-dynin-30k | **3.0471** [2.4984, 3.6878] | 4.536 **LOST** / 0.782 **tie** | 2.379 vs 0.482 **LOST** | −1.963 **LOST** | 4.781 vs CV 1.399 | 0.838 | 84.5 ms (fp32) | neither axis separated |
+| refb-10k | **0.8372** [0.6753, 1.0218] | 1.157 **tie** / 0.894 win | 0.546 vs 0.482 **LOST** | −0.115 **LOST** | 2.181 vs CV 1.399 | 0.803 | 60.5 ms | lateral only |
+| flagship-v4.1-10k | **0.8522** [0.7468, 0.9800] | — | — | — | — | — | — | neither axis separated |
+| refb | **0.8629** [0.6928, 1.0385] | 1.153 **tie** / 0.960 **tie** | 0.541 vs 0.482 **LOST** | −0.106 **LOST** | 1.854 vs CV 1.399 | 0.781 | 59.8 ms | neither axis separated |
+| flagship-v4.2-step4000 | **0.9869** [0.8795, 1.1088] | — | — | — | — | — | — | neither axis separated |
+| flagship-v3enc-10k | **1.9654** [1.6556, 2.2859] | — | — | — | — | — | — | neither axis separated |
+| refa-dinov2 | **2.1675** [1.9081, 2.4212] | 3.099 **LOST** / 0.578 win | 1.775 vs 0.482 **LOST** | −1.472 **LOST** | 1.925 vs CV 1.399 | 0.866 | 88.6 ms | lateral only |
+| flagship-nospeed | **3.0175** [2.5450, 3.5444] | 4.968 **LOST** / 0.448 win | 2.521 vs 0.482 **LOST** | −2.250 **LOST** | 5.986 vs CV 1.399 | 0.948 | 101.6 ms | lateral only |
+| refa-dynin-30k | **3.0471** [2.4984, 3.6878] | 4.536 **LOST** / 0.782 **tie** | 2.379 vs 0.482 **LOST** | −1.963 **LOST** | 4.781 vs CV 1.399 | 0.838 | 84.5 ms | neither axis separated |
 | flagship-v2-6k | **5.9396** [4.3273, 7.6249] | 11.659 **LOST** / 3.066 **LOST** | 6.353 vs 0.482 **LOST** | −7.282 **LOST** | 16.867 vs CV 1.399 | 0.751 | — | neither axis separated |
+
+*Blank cells are **NOT MEASURED**, not zero: the six arms added to this table on 2026-08-23 have a
+`driving_<key>.json` with a full headline + verdict block, but were never carried into the
+2026-07-21 panel narrative. Their `where the win lives` is read from their own
+`verdict.where_the_win_lives`. Filling the remaining columns is a **zero-GPU** pass — §12 W-6.*
 
 **Column definitions.** `along/cross` = the Frenet split of the 2 s residual on the GT path tangent
 (orthonormal, so `along² + cross² = ‖err‖²` exactly); the tag is the paired test **vs CV**.
@@ -253,39 +518,166 @@ steady windows, paired vs hold-v0. `heading on straights` = **T3** on the 634 wi
 \|net heading\| < 5°. `κ-sign` = **T4** curvature *sign* agreement (the curvature *magnitude* is
 refused at this resolution — MEASURED 24× the signal). `tick p50` = panel 04b, fp32, batch 1, A40.
 
-### What the split changes — five readings that a single ADE column hid
+### What the split changes — five readings a single ADE column hid
 
-1. **The rank-1= three-way tie is not a tie on driving.** All three beat CV on ADE, but only the two
-   REF-C arms beat CV **along-track** (XL +0.2170 [+0.0584, +0.3783]; base +0.2300 [+0.0773, +0.3816],
-   both separated). **flagship v1's along-track win is +0.2543 [−0.0278, +0.5304] — not separated.**
-   The program's flagship is the *only* member of its own rank tier with no CI-separated longitudinal
-   competency. Its entire separated advantage is lateral: cross-track +0.7720 [+0.4166, +1.1914].
-2. **flagship-v1.6 is an ADE tie and a longitudinal win.** It is the **only arm in the program** whose
-   speed MAE beats CV with a separated interval (+0.0785 [+0.0066, +0.1516]); its along-track error is
-   the best measured anywhere (0.683 m), its progress error the best (0.697 m vs v1's 0.837), and its
-   longitudinal share of squared error drops from v1's **0.8933 to 0.5638**. It pays for it laterally:
-   cross-track 0.423 vs v1's 0.237, path geometry 0.204 vs 0.111, κ-sign 0.865 vs 0.954. The registry's
-   "unfreezing changed nothing measurable" is exactly right **on ADE** — and on the split it is wrong in
-   both directions at once: unfreezing **traded lateral geometry for longitudinal tracking.**
-3. **No arm in the program can hold a steady speed as well as doing nothing.** Every one of the 14 rows
-   is CI-separated **against** hold-v0 on the 639 steady windows — from −0.054 (refc-base) to −7.28
-   (flagship v2). This is a program-level finding, not a flagship quirk (§3).
+1. **The rank-1= three-way tie is not a tie on prediction quality.** All three beat CV on ADE, but
+   only the two REF-C arms beat CV **along-track** (XL +0.2170 [+0.0584, +0.3783]; base +0.2300
+   [+0.0773, +0.3816], both separated). **flagship v1's along-track win is +0.2543 [−0.0278,
+   +0.5304] — not separated.** The programme's flagship is the *only* member of its own rank tier
+   with no CI-separated longitudinal competency; its entire separated advantage is lateral
+   (cross-track +0.7720 [+0.4166, +1.1914]) — and §1a.6 shows a T0 lateral advantage is largely an
+   action echo.
+2. **flagship-v1.6 is an ADE tie and a longitudinal win.** The **only arm in the programme** whose
+   speed MAE beats CV with a separated interval (+0.0785 [+0.0066, +0.1516]); best along-track
+   anywhere (0.683 m), best progress error (0.697 vs v1's 0.837), longitudinal share of squared
+   error **0.8933 → 0.5638**. It pays laterally: cross 0.423 vs 0.237, path geometry 0.204 vs 0.111,
+   κ-sign 0.865 vs 0.954. *"Unfreezing changed nothing measurable"* is exact **on ADE** and wrong in
+   both directions on the split: unfreezing **traded lateral geometry for longitudinal tracking.**
+3. **No arm in the programme can hold a steady speed as well as doing nothing.** Every one of the 14
+   panelled rows is CI-separated **against** hold-v0 on the 639 steady windows — −0.054 (refc-base)
+   to −7.28 (flagship v2). A programme-level finding, not a flagship quirk (§3.0).
 4. **On going straight, the ADE ranking inverts.** CV scores 1.399° mean heading error on the 634
-   straight windows. The best arms there are the two *worst* on ADE among the trained set —
-   `refb` 1.854° and `refb-10k` 2.181° — while flagship v1 scores 7.98° and REF-C-XL 3.863°. On sharp
-   curves it flips back: flagship v1 3.811° vs `refb` 26.559° (§4). Neither ordering is visible in ADE.
-5. **A catastrophic ADE can hide an intact competency.** `flagship-nospeed` (3.0175 m, the no-speed
+   straight windows; the best arms there are the two *worst* on ADE among the trained set (`refb`
+   1.854°, `refb-10k` 2.181°) while flagship v1 scores 7.98° and REF-C-XL 3.863°. On sharp curves it
+   flips back (flagship v1 3.811° vs `refb` 26.559°, §4). Neither ordering is visible in ADE.
+5. **A catastrophic ADE can hide an intact competency.** `flagship-nospeed` (3.0175, the no-speed
    ablation control) still beats CV on cross-track (+0.5611 [+0.1934, +0.9886], separated) and posts
-   κ-sign 0.948; **98.97 %** of its squared error is along-track. Its failure is *purely* longitudinal —
-   the cleanest confirmation of the speed-channel result we have, and invisible in the scalar.
+   κ-sign 0.948; **98.97 %** of its squared error is along-track. Its failure is *purely*
+   longitudinal — the cleanest confirmation of the speed-channel result we have, invisible in the scalar.
+
+### 2.5 TIER **T0** — the v5f / v5.8f line on corpus **C2** *(w120 cylindrical — cross-frame, never comparable to §1)*
+
+⚠️ **NOT COMPARABLE TO ANY 256×256-PINHOLE NUMBER.** Different geometry, different corpus, different
+val episode set (600 vs 40). ⛔ **Every selected-ADE row below is measured under an ORACLE GOAL** —
+the artifacts stamp `goal_provenance.goal_source = "oracle_gt_future"`, `is_oracle: true`,
+`deployable: false`. **These are upper bounds on a non-deployable configuration.**
+
+| arm | metric | value | tier | estimator / interval | evidence | artifact |
+|---|---|---:|:--:|---|---|---|
+| `flagship-v5f-w120-30k` | selected ADE@2s | **0.4011** | T0 | point on the fixed 881 grid — **no interval** | MEASURED 2026-08-09 | `…/2026-08-18-v58f-artifact-banking/gates/i4a_none.json` |
+| `flagship-v5f-w120-30k` | **oracle (best-in-fan) ADE@2s** | **0.1975** | T0 | point | MEASURED 2026-08-09 | same |
+| `flagship-v5f-w120-30k` | `sel_gap` | **0.2036** | T0 | point | MEASURED | same |
+| `flagship-v5f-w120-30k` | miss@2m | 0.1487 | T0 | point | MEASURED | same |
+| `flagship-v5f-w120-30k` | `wm_canary_ade@2s` | 1.2450 | T0 | point *(inert-controller regime — benign by construction)* | MEASURED | same |
+| **v5.8f** `rescorer-top8-kincost` | selected ADE@2s | **0.4815** [0.3928, 0.5771] | T0 | **episode-cluster bootstrap**, B = 2000, 40 clusters | MEASURED 2026-08-10 | `…/2026-08-07-hierarchical-wm-redesign/v58f_rescore_ci.json` |
+| **v5.8f** frozen-argmax *(control)* | selected ADE@2s | 0.7933 [0.6414, 0.9757] | T0 | ep-cluster bootstrap | MEASURED 2026-08-10 | same |
+| **W4** UnicycleEmission fan | oracle ADE | **0.1077** | T0 | point | MEASURED 2026-08-10 | `…/2026-08-07-hierarchical-wm-redesign/w4_gate.json` |
+| **W4** | selected-candidate accel MAE | **0.515** m/s² *(vs v5f's 8.10 — 16×)* | T0 | point | MEASURED | `v58f_rescore_ci.json` / `w4_gate.json` |
+| **W7-w4r** K=32 (repaired trunk) | selected ADE | **3.6142** *(gate FAIL vs 0.4505)* | T0 | point; ρ across-window **0.439** [gate ρ≥0.3, CI excludes 0] | MEASURED 2026-08-11 | `…/2026-08-18-v58f-artifact-banking/gates/w7_w4r_k32_gate.json` |
+
+**I4a imagination ablation — the imagination channel is LOAD-BEARING** (same ckpt, same grid, only
+the imagination input changed; MEASURED 2026-08-11):
+`intact` **0.4011** (oracle 0.1975, miss 0.1487) · `zeroed` **7.6493** — **19× collapse** (oracle
+1.4573, miss 0.8048) · `shuffled` **1.2492** — 3.1× (oracle 0.4259, miss 0.2974).
+Artifacts `gates/i4a_{none,zero,shuffle}.json`. The ordering **zero ≫ shuffle ≫ intact** is the
+discriminating result: shuffling preserves the marginals and destroys only the window↔consequence
+correspondence, so the planner reads imagination as **content**, not as a bias term.
+⚠️ Stamped: the head was **trained** with imagination present, so this measures the dependence of
+*this* architecture, not the value of retraining without it.
+
+**Four families for `flagship-v5f-w120-30k` on C2** — artifact
+`…/2026-08-07-hierarchical-wm-redesign/v5f_four_families_30k.json`, MEASURED, **point estimates, no
+intervals in the artifact**:
+
+| family | value |
+|---|---|
+| **LONG** | speed MAE **0.7024** m/s · speed bias **+0.1009** · along MAE **0.3031** m · along final bias +0.1193 · **accel MAE 8.1075 m/s²** · ego progress ratio 0.9961 (median 1.0007, n 850) |
+| **LONG** distance-keeping | ⛔ **NOT MEASURED — WORK ITEM**, `status: UNAVAILABLE`, **n = 0**, no lead track supplied. §12 W-1 |
+| **LAT** | heading MAE **4.0779°** · yaw-rate MAE **49.6867 °/s** · curvature MAE **0.297514 1/m** (bias −0.047794) · cross MAE **0.1819** m (final 0.5311) |
+| **TACTICAL** | ⛔ **NOT MEASURED — WORK ITEM**, `status: UNAVAILABLE` — tactical decisions are not present in the scored pass. §12 W-4 |
+| **STRATEGIC** | ⛔ **NOT MEASURED — WORK ITEM**, corpus reason as §1a.5. §12 W-3 |
+
+⭐ **The accel MAE 8.1075 and yaw-rate 49.69 °/s are the point of this block.** The waypoint fan is
+kinematically infeasible: **97.6 %** of all 256×20×881 fan steps violate \|a\| ≤ 4 ∨
+\|yr\| ≤ 0.33 v + 0.05, and **100 %** of selected / oracle / all candidates are infeasible at the
+>5 %-bad-steps threshold (`x0_lite_f32.json`). W4's unicycle re-parameterisation fixes it by
+construction (accel MAE 0.774, violations 0.0) and **nearly halves the oracle** (0.1975 → 0.1077) —
+the waypoint jitter was hiding coverage, not providing it. ⚠️ **The whole remaining deficit is
+SELECTION:** three independent fast-scoring surfaces (pooled query / +kinematics / spatial
+cross-attention) all failed the same held-out gate, and W7 (WM-roll re-rank) fails at every K with a
+**winner's-curse** signature. Fast per-candidate scoring on this trunk is **RETIRED**
+(MODEL_REGISTRY §1.13/§1.14).
+
+### 2.6 TIER **T0** — `flagship-v1arch-v2bal-30k` on corpus **C4** *(the first COMPLETE four-family block)*
+
+⛔ **NOT COMPARABLE to §1** (different corpus). ⛔ **This arm's CANONICAL-val numbers are
+INADMISSIBLE**: **21 of the 40 canonical val episodes are inside its 9,000-clip training pool**
+(`Project Steering/LEAK_v1arch_val_2026-08-05.md`). C4 (`physicalai-oodval-6f4b94e4c7ce-q90`, 290
+clips, **zero** overlap) is the admissible corpus and is the only one quoted here.
+*MEASURED 2026-08-05, episode-cluster bootstrap over 290 clips, B = 2000, 6,382 windows. Registry
+anchor **MODEL_REGISTRY §1.9**; artifacts
+`…/incoming/2026-08-05-v1arch-oodval-four-families/` (RESULT.md + raw JSON); protocol
+`Project Steering/EVAL_PROTOCOL_OODVAL_2026-08-05.md`.*
+
+| family | headline | reading |
+|---|---|---|
+| — (ADE) | `ade_mean_4wp` **0.5752** [0.5370, 0.6142] · `fde_2s` **1.4018** [1.3040, 1.5010] | |
+| **LONGITUDINAL** | speed bias **+0.484 m/s** · along final bias **+0.943 m** · ego progress **1.0795×** · **time-gap at 15+ m/s 1.43 s** | ⛔ systematic **over-speed** — **71.95 %** of windows ahead at 2 s, **75.51 %** faster than the human: a **prior**, not a tail |
+| **LONGITUDINAL** distance-keeping ✅ | **n = 2,846 lead windows**: headway **25.53 m** · time-gap **5.76 s** · min-TTC **14.73 s** (632 censored at the 30 s cap). Window states LEAD 3,002 / NO_LEAD 2,752 / NO_LABEL 628 | ⭐ **the ONLY block on this page where distance-keeping is MEASURED** |
+| **LATERAL** | cross MAE **0.0552 m** [0.0500, 0.0611] · heading MAE 0.806° · curvature bias −0.000126 | tight; not where effort belongs |
+| **TACTICAL** | κ **0.6033** (SUBSTANTIAL), agreement 0.8881 [0.8740, 0.9021] · **`seams_beneficial_of_3` = 0** | the manoeuvre label is honest; **the hierarchy seam is FALSIFIED at this checkpoint** |
+| **STRATEGIC** ⚠️ | `route_acc_follow` **0.8031** == `majority_straight_rate` **0.8031** · `follow_pred_distribution` **{left 0, straight 1737, right 0}** · `route_acc_nav` **1.0000** | ⛔ **no vision-only route skill at all — a constant predictor.** `route_acc_nav = 1.0000` is an **ECHO of its own input**, not skill. Confirmed off-leak |
+
+⚠️ **Two harnesses disagree 0.8 % on this corpus** and it is recorded, not smoothed over:
+`eval_flagship_v4.py`'s MODE-A canary gives **0.5705**, `eval_four_families.py` gives **0.5752**.
+Unresolved — §12 W-7. **JPEG-format control:** raw uint8 vs the q90 round-trip on the same 6,382
+windows moves every metric **< 0.03** (largest: heading 0.0236°); q90 is the headline because it is
+format-faithful.
+
+### 2.7 TIER **T0** — the frozen-trunk unicycle readout line on corpus **C4** *(decoder-only contrast)*
+
+*MEASURED 2026-08-06, paired episode-cluster bootstrap over 40 episodes, 2,000 draws, **6,834
+stride-1 windows**, same frozen-trunk latent rolls for both arms. Registry anchor **§1.10 / §1.11**;
+artifacts `…/incoming/2026-08-06-v1-defect-triage/results/{v16_full_eval.json.xz,
+v16_distance_keeping.json, v16_tactical_executed.json}`. ⛔ **T0 — teacher-forced; the T1 reading of
+these same arms is §1a.6, and it is much worse.***
+
+| metric | v1arch | **v1.6 `flagship-v16-unicycle`** | Δ [CI95] | separated | **v1.7 `flagship-v17-speedloss`** |
+|---|---:|---:|---|:--:|---:|
+| ADE 2 s (m) | 0.3584 | **0.3398** | −0.0186 [−0.0706, +0.0293] | ✗ (parity) | **0.2849** (−0.0549 [−0.0713, −0.0412] vs v1.6, ✅) |
+| speed bias (m/s) | +0.3793 | **−0.0265** | −0.4058 [−0.5162, −0.3022] | ✅ | — |
+| along-final bias (m) | +0.7524 | **−0.0511** | −0.8036 [−1.0197, −0.5851] | ✅ | — |
+| accel RMS (m/s²) | 2.9465 | **0.7172** | −2.2293 [−3.0886, −1.4641] | ✅ *(human ≈ 0.91)* | — |
+| jerk RMS (m/s³) | 36.1682 | **1.1334** | −35.0348 [−46.6907, −24.8134] | ✅ *(human ≈ 1.71)* | 1.567 |
+| net-yaw err (rad) | 0.0307 | **0.0108** | −0.0199 [−0.0248, −0.0153] | ✅ (−65 %) | Δ +0.0001, ✗ |
+| heading MAE (rad/step) | 0.0027 | **0.0015** | −0.0012 [−0.0015, −0.0009] | ✅ | — |
+| cross-track MAE (m) | 0.0502 | **0.0363** | −0.0139 [−0.0193, −0.0091] | ✅ | — |
+| replan accel jump (m/s²) | 1.1310 | **0.1016** | *point est., 11× lower* | — | 0.125 |
+
+**LONGITUDINAL distance-keeping ✅ MEASURED** (30 lead-bearing episodes, 880 stride-8 windows, LEAD
+419 / NO_LEAD 329 / NO_LABEL 132; sign = *v1arch − v1.6* and *GT − v1.6*): min headway 25.23 /
+**25.52** / GT 25.39 (−0.238 [−0.385, −0.091] ✅ · −0.026 [−0.225, +0.153] ✗); min time-gap 7.71 /
+**7.98** / GT 7.98 (−0.138 [−0.252, −0.049] ✅ · −0.010 ✗); min TTC 14.97 / **17.82** / GT 17.10
+(**−2.818 [−3.892, −1.784] ✅** · −0.597 ✗). ⇒ **v1arch is CI-separated more aggressive on all three;
+v1.6 is statistically indistinguishable from GT on every distance-keeping metric at this n.**
+
+**TACTICAL (executed) ✅ MEASURED**: agreement with GT-executed **v1arch 0.5016 → v1.6 0.7694**;
+executed toggle rate 0.0620 → **0.0309** vs GT 0.0318 (paired Δ vs v1arch −0.0311 [−0.0462, −0.0177]
+separated; Δ vs GT −0.0009 [−0.0066, +0.0055] NOT separated); executed dwell 2.61 → 4.38 s (GT 3.52).
+v1arch over-calls `accelerate` 2,668 vs GT 975 — the longitudinal defect in decision space.
+⚠️ TACTICAL **declared-head** metrics are identical to v1arch's (policies untouched; the declared
+0.55 s dwell-toggling defect is NOT fixed by v1.6). **STRATEGIC: NOT MEASURED** — no map (§1a.5).
+
+**v1.7 pre-registered gates (both outcomes committed before launch): the PRIMARY gates FAILED.**
+P1 decel response ratio **0.1547** vs ≥ 0.40 ❌ · P2 accel lag **+0.173 s** vs ≤ +0.15 ❌ · N1–N5 all
+✅. ⇒ **Outcome B binds: the position-loss hypothesis for the decel ramp is REFUTED for the speed-L1
+lever.** v1.7 is registered as the best open-loop head in the lineage, **not** as the lag fix.
 
 ---
 
-## 3. Longitudinal regime — L1 CRUISE-QUALITY vs L2 TRANSIENT-RESPONSE
+## 3. TIER **T2** — perception-closed loop *(AlpaSim NuRec n = 12 · real-footage low-OOD n = 40)*
 
-*Speed MAE (m/s) by realised longitudinal regime (\|mean accel over the window\| vs ±0.5 m/s², a
-PROPOSED threshold). Floor = hold-v0. Paired episode-cluster, orientation floor − model, so **positive
-= the model wins**. `steady` n=639, `brake` n=95, `accel` n=147.*
+*A DIFFERENT AXIS from §1–§2 — never mixed with a T0 ADE. See §5.5 for the full block, which is
+retained unchanged below with its retractions and its mandatory "@ 2 s" qualifier. Standing T2
+ordering, **triple-confirmed** across three independent instruments (n = 1 scene-dependent → n = 12
+NuRec → n = 40 real-footage): **REF-C base > flagship v1**.*
+
+### 3.0 Longitudinal regime on C1 — L1 CRUISE-QUALITY vs L2 TRANSIENT-RESPONSE [T0]
+
+*(kept at its historical position in the reading order; **tier T0**.) Speed MAE (m/s) by realised
+longitudinal regime (\|mean accel over the window\| vs ±0.5 m/s², a PROPOSED threshold). Floor =
+hold-v0. Paired episode-cluster, orientation floor − model, so **positive = the model wins**.
+`steady` n=639, `brake` n=95, `accel` n=147.*
 
 | arm | steady: model / hold-v0 | paired Δ [CI95] | brake Δ | accel Δ |
 |---|---|---|---|---|
@@ -307,23 +699,20 @@ PROPOSED threshold). Floor = hold-v0. Paired episode-cluster, orientation floor 
 
 **Cruise quality and transient response point in opposite directions for the same checkpoint, and
 ADE averages them away.** flagship v1 is **2.0× worse than hold-v0** on the 639 steady windows while
-winning brake (+0.6433) and accel (+0.5716) decisively — a model that disturbs a speed that needed no
-disturbing. **72.5 % of the corpus is steady**, so the failure dominates the corpus and is still
-invisible in the scalar because the *geometry* carries ADE there (flagship steady ADE 0.3834 vs
-hold-v0's 0.5430).
-
-`flagship-v16-ab-ft` is the interesting row: it cuts the cruise loss **3.7×** versus v1 (−0.0575 vs
-−0.2122) *while keeping* v1's braking response (+0.6404 vs +0.6433) — the only arm that does both.
-The REF-C arms have the best cruise of any trained arm but are only tied on braking.
+winning brake (+0.6433) and accel (+0.5716) decisively — a model that disturbs a speed that needed
+no disturbing. **72.5 % of the corpus is steady**, so the failure dominates the corpus and is still
+invisible in the scalar because *geometry* carries ADE there (flagship steady ADE 0.3834 vs
+hold-v0's 0.5430). `flagship-v16-ab-ft` cuts the cruise loss **3.7×** versus v1 (−0.0575 vs −0.2122)
+*while keeping* v1's braking response (+0.6404 vs +0.6433) — the only arm that does both.
 
 ---
 
-## 4. Heading and curvature by GT curvature bucket (T3 / T4)
+## 4. TIER **T0** — heading and curvature by GT curvature bucket on C1 (T3 / T4)
 
 *Mean heading error @2 s, degrees. Buckets: straight <5° (n=634) / gentle 5–15° (n=103) / sharp ≥15°
 (n=144) on \|net heading change\|. **R5 applies:** heading is heavy-tailed, so the median is shown
-beside the mean and is the honest reducer — flagship v1's corpus mean of 6.61° carries a bootstrap CI
-of [2.34, 12.02].*
+beside the mean and is the honest reducer — flagship v1's corpus mean of 6.61° carries a bootstrap
+CI of [2.34, 12.02].*
 
 | arm | straight: mean / median | gentle | sharp | κ-sign straight / gentle / sharp |
 |---|---|---|---|---|
@@ -345,22 +734,24 @@ of [2.34, 12.02].*
 | ***CV floor*** | *1.399 / **0.451*** | *7.852* | *28.743* | *0.764 / 0.233 / 0.204* |
 
 **The mean/median gap is the point.** On the mean, flagship v1 is **5.7×** worse than a straight line
-at going straight (7.980 vs 1.399). On the **median** — the reducer R5 actually mandates — it is
-**2.45×** (1.105 vs 0.451). Both are real; the mean says a tail of windows is badly wrong, the median
-says the typical straight window is only moderately wrong. **Quote the median as the headline and the
-mean as the tail evidence; never quote one alone.**
+at going straight (7.980 vs 1.399). On the **median** — the reducer R5 mandates — it is **2.45×**
+(1.105 vs 0.451). Both are real; the mean says a tail of windows is badly wrong, the median says the
+typical straight window is only moderately wrong. **Quote the median as the headline and the mean as
+the tail evidence; never quote one alone.**
 
 Every trained arm beats CV decisively on **gentle and sharp** curves and on **curvature sign** (CV
-scores 0.233 / 0.204 sign agreement there — a straight line has no sign to agree with). That is where
-the vision is doing work.
+scores 0.233 / 0.204 there — a straight line has no sign to agree with). That is where the vision is
+doing work — **at T0**; §1a.6 shows how much of it survives closing the loop.
 
 ---
 
-## 5. Deployment axis — inference efficiency (panel 04b)
+## 5. Deployment axis — inference efficiency (panel 04b) *(tier-independent)*
 
 *MEASURED on one A40, batch 1, ≥200 warmed iterations, per-iteration CUDA events,
-`torch.cuda.synchronize()` bracketed, precision applied identically to every arm and recorded. Source:
-`taniteval/results/eff_<key>.json` (canonical files only; quarantined runs excluded).*
+`torch.cuda.synchronize()` bracketed, precision applied identically to every arm and recorded.
+Source: `taniteval/results/eff_<key>.json` → `<precision>.plan_step.{p50_ms,p99_ms}` (canonical
+files only; the `*.CONTAMINATED-*` runs are excluded). **Re-verified BY CONTENT 2026-08-23** — every
+cell below is exact to the artifact.*
 
 | arm | p50 fp32 | p99 fp32 | p50 tf32 | p50 amp16 | params | meets 10 Hz @p99 |
 |---|---:|---:|---:|---:|---:|:--:|
@@ -377,128 +768,105 @@ the vision is doing work.
 
 **Admissibility is a gate, ranking is a frontier, and there is no scalar composite.** An arm is
 admissible only if it (a) meets the 10 Hz budget at **p99** in its declared deploy precision **and**
-(b) beats every trivial floor on the headline capability metric with a CI-separated paired bootstrap.
-Any single number trading metres against milliseconds embeds an exchange rate nobody has measured —
-and our arms rank *oppositely* on the two axes (REF-C wins latency 2.2–4.6×, the flagship wins batched
-throughput 34.8 vs 29.9 windows/s @ batch 32). Report the Pareto frontier; do not collapse it.
-R12 (closed 2026-07-21): the composed inference levers put flagship v1 at **18.75 ms p50 / 18.76 p99 =
-53.3 Hz**, which *does* clear (a).
+(b) beats every trivial floor on the headline capability metric with a CI-separated paired
+bootstrap — **at T1**, per EVAL_DOCTRINE rule 2. ⛔ **On that reading NO arm in the programme is
+admissible today**: §1a.1 shows both T1 arms losing to a hold-action control. Any single number
+trading metres against milliseconds embeds an unmeasured exchange rate, and our arms rank
+*oppositely* on the two axes (REF-C wins latency 2.2–4.6×, the flagship wins batched throughput 34.8
+vs 29.9 windows/s @ batch 32). Report the Pareto frontier; do not collapse it.
+R12 (closed 2026-07-21): the composed inference levers put flagship v1 at **18.75 ms p50 / 18.76
+p99 = 53.3 Hz**, which *does* clear (a).
 
-> ⚠ **Conflict on record, reported not resolved.** MODEL_REGISTRY §6 reading 3 quotes the flagship
-> tick as **103.42 / 93.76 / 104.49 ms** (fp32/tf32/amp16) and REF-C-XL amp16 as **26.12 ms**. The
-> committed artifacts say **97.32 / 97.70 / 123.83** and **21.00**. The fp32 and tf32 REF-C figures
-> agree (44.28≈44.06, 27.84≈27.78); the flagship's do not, and the flagship's own repeatability
-> record (`eff_repeatability.json`, 5 clean reps) is **99.03–100.05 ms p50**, which brackets neither.
-> The two sets were evidently measured in different sessions. **This page quotes the committed
-> artifact**; the conclusion is unchanged in every version (REF-C is multiple-× faster; the flagship
-> misses 10 Hz at p99 in all three precisions). Needs one reconciliation pass by the eval-pod owner.
+> ⚠ **Conflict on record, reported not resolved (registry R14).** MODEL_REGISTRY §6 reading 3 quotes
+> the flagship tick as **103.42 / 93.76 / 104.49 ms** (fp32/tf32/amp16) and REF-C-XL amp16 as
+> **26.12 ms**. The committed artifacts say **97.32 / 97.70 / 123.83** and **21.00** — re-confirmed
+> here 2026-08-23. The registry itself flags these six figures as **UNRESOLVED SOURCE (2026-08-03)**
+> and says *"do not re-cite"*. The flagship's own repeatability record (`eff_repeatability.json`, 5
+> clean reps) is **99.03–100.05 ms p50**, bracketing neither. **This page quotes the committed
+> artifact.** The conclusion is unchanged in every version. Needs one reconciliation pass — §12 W-8.
 
 ### 5.1 Deployment path — ONNX + TensorRT-FP16 + CUDA-graph (Orin / Thor) — MEASURED on an A40 proxy
 
-*The deploy object is flagship v1's **planning tick** (`encode 1 new 9-ch frame → slide 8-state window →
-20 sequential operative steps → SE(2) accumulate`). MEASURED 2026-07-22 on an **A40 (SM 8.6) proxy**; raw
-under `TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-07-22-orin-thor-deployment/artifacts/`.
-Full staged plan + evidence classes: that folder's `DEPLOYMENT_PLAN.md`.*
+*The deploy object is flagship v1's **planning tick** (`encode 1 new 9-ch frame → slide 8-state
+window → 20 sequential operative steps → SE(2) accumulate`). MEASURED 2026-07-22 on an **A40
+(SM 8.6) proxy**; raw under `TanitAD Research Lab/Architecture & Inference/Implementation/incoming/2026-07-22-orin-thor-deployment/artifacts/`.*
 
 | measurement | value | source JSON |
 |---|---|---|
-| composed planning tick (L1+L2+L3+L7) | **18.75 ms p50 / 18.76 p99 = 53.3 Hz** | `eff_levers_flagship-30k.json` (07-21; registry §1.2, R12) |
+| composed planning tick (L1+L2+L3+L7) | **18.75 ms p50 / 18.76 p99 = 53.3 Hz** | `eff_levers_flagship-30k.json` (registry §1.2, R12) |
 | CUDA-graph rollout, K=20 (predictor-only proxy) | eager **96.40 → graph 27.87 ms** p50 (**3.46×**) | `bench_latency_report.json` |
 | predictor 1-call, fp32 / fp16 | 4.96 / 4.12 ms p50 | `bench_latency_report.json` |
-| TensorRT-FP16 engine (A40 proxy) | encoder **1.205 ms** · predictor **0.666 ms** p50; **MHA fuses** (no standalone softmax) | `trt_fp16_report.json` |
+| TensorRT-FP16 engine (A40 proxy) | encoder **1.205 ms** · predictor **0.666 ms** p50; **MHA fuses** | `trt_fp16_report.json` |
 | static-shape ONNX export | encoder + predictor build clean, torch-vs-ORT parity ≤ **1.9e-6** | `export_report.json` |
 
-**Per-chip precision map (PUBLISHED, vendor specs — a plan, not a measured tick):** Orin (Ampere SM 8.7)
-→ **FP16 baseline; INT8 only behind a per-layer benchmark; NO FP8, NO FP4**. Thor (Blackwell) →
-**FP16/FP8 + NVFP4** (the 4× weight-traffic win, Thor-only). INT8 on an Orin ViT can run **~2.7× slower
-than FP16** on non-optimal kernels — INT8 is a per-layer hypothesis to disprove, never a default.
+**Per-chip precision map (PUBLISHED, vendor specs — a plan, not a measured tick):** Orin (Ampere
+SM 8.7) → **FP16 baseline; INT8 only behind a per-layer benchmark; NO FP8, NO FP4**. Thor
+(Blackwell) → **FP16/FP8 + NVFP4**. INT8 on an Orin ViT can run **~2.7× slower than FP16** on
+non-optimal kernels — a per-layer hypothesis to disprove, never a default.
 
-**⚠️ Hardware-blocked, stated honestly.** Every latency above is an **A40** number; the A40 TRT engine is a
-**proxy — TRT engines are NOT portable across GPU architectures** (Orin SM 8.7, Thor Blackwell). Real
-Orin/Thor throughput, the on-device engine build, and any NVFP4 number **need the target silicon** (not on
-hand) and are **not fabricated** here. What the A40 build establishes and *does* transfer: the ONNX→TRT
-path builds with no plugin, MHA fusion is achievable for our ViT (retires the NVIDIA #4537 risk on SM 8.6),
+**⚠️ Hardware-blocked, stated honestly.** Every latency above is an **A40** number; the A40 TRT
+engine is a **proxy — TRT engines are NOT portable across GPU architectures**. Real Orin/Thor
+throughput, the on-device engine build and any NVFP4 number **need the target silicon** and are
+**not fabricated** here. What the A40 build establishes and *does* transfer: the ONNX→TRT path
+builds with no plugin, MHA fusion is achievable for our ViT (retires NVIDIA #4537 on SM 8.6),
 CUDA-graph capture is exact, and the 20-step rollout is the binding term.
 
----
-
-## 5.5 CLOSED-LOOP — AlpaSim NuRec reconstructions (n = 12) · ⚠️ RECONSTRUCTION-OOD CONFOUNDED
+## 5.5 TIER **T2** — AlpaSim NuRec reconstructions (n = 12) · ⚠️ RECONSTRUCTION-OOD CONFOUNDED
 
 *MEASURED 2026-07-22 on the AlpaSim closed-loop harness (NuRec photoreal reconstructions, **480×854**,
-20 s rollouts) — the program's **first external-simulator** closed-loop numbers (the imagination-in-the-loop
-harness behind the G-B1 footnote / MODEL_REGISTRY §1.2 was self-referential). Raw
+20 s rollouts) — the programme's **first external-simulator** closed-loop numbers. Raw
 (`…/incoming/2026-07-22-alpasim-closedloop-evalpod/`): `REFC_suite_results.json`
 (+ `REFC_suite_{base,xl}_results.json`), open-loop control `REFC_openloop_diagnostic.json`, flagship
-`Flagship_v1_results-summary.json`. A **"pass" = no at-fault collision AND no off-road**; `mean score`
-folds in progress-to-GT (`score_criteria`). **A DIFFERENT AXIS from §1–§5 — never mixed with open-loop
-ADE.***
+`Flagship_v1_results-summary.json`. A **"pass" = no at-fault collision AND no off-road**; `mean
+score` folds in progress-to-GT. **A DIFFERENT AXIS from §1–§5 — never mixed with a T0 ADE.***
 
-> ⚠️⚠️ **HEADLINE — these numbers are ENV-CONFOUNDED, not a clean model result (`RETRACTION_LOG.md` C6,
-> 07-22).** The open-loop control settles it: **REF-C's open-loop ADE *on the AlpaSim reconstructions* is
-> 1.52 m (de@2s 2.58), 3.21× its taniteval real-footage 0.4728** — consistent across **4 scenes / 288
-> predictions** (per-scene 1.40–1.77 m; `REFC_openloop_diagnostic.json`). REF-C is fed NuRec input **~3×
-> off its training distribution**, so the at-fault / pass numbers below measure **model ×
-> reconstruction-fidelity, NOT the model.** The base-vs-XL *ordering* survives (the same OOD hits both);
-> **"REF-C collides closed-loop" does NOT survive as a model indictment.**
+> ⚠️⚠️ **HEADLINE — these numbers are ENV-CONFOUNDED, not a clean model result (`RETRACTION_LOG.md`
+> C6).** The open-loop control settles it: **REF-C's open-loop ADE *on the AlpaSim reconstructions*
+> is 1.52 m (de@2s 2.58), 3.21× its taniteval real-footage 0.4728** — consistent across **4 scenes /
+> 288 predictions** (per-scene 1.40–1.77 m). REF-C is fed NuRec input **~3× off its training
+> distribution**, so the pass rates below measure **model × reconstruction-fidelity, NOT the
+> model.** The base-vs-XL *ordering* survives; *"REF-C collides closed-loop"* does **not** survive as
+> a model indictment.
 
 | arm | params | **at-fault collision** | off-road | **pass rate** | **mean score** | **dist-to-GT (m)** | progress-rel |
 |---|---:|:--:|:--:|:--:|:--:|---:|---:|
 | **REF-C-base** | 104.2 M | **33.3 % (4/12)** | 16.7 % (2/12) | **6/12** | **0.345** | **1.642** | 0.877 |
 | **REF-C-XL** | 251.9 M | **33.3 % (4/12)** | 25.0 % (3/12) | **5/12** | **0.246** | 1.973 | 0.885 |
 
-**⚠️ n = 12 — one scene = 8.3 pp, and the raw JSON's own caveat is "wide binomial CIs at n = 12".**
-Further caveats carried verbatim from `REFC_suite_results.json`: **n = 12 subset** of the 916-scene public
-suite (not the full set); **480×854** render (the earlier single-scene runs were 1080×1920); **NuRec
-reconstructions, not real-world**. Both arms' collisions are entirely *at-fault*
-(`collision_any == collision_at_fault` = 0.333); XL's extra failures over base are off-road.
+**⚠️ n = 12 — one scene = 8.3 pp**, and the raw JSON's own caveat is *"wide binomial CIs at n = 12"*.
+Further caveats carried verbatim: **n = 12 subset** of the 916-scene public suite; **480×854** render;
+**NuRec reconstructions, not real-world**. **base ≥ XL ORDERING holds under the shared OOD** — base
+mean score 0.345 > XL 0.246, passes 6/12 vs 5/12, closer to GT (1.64 vs 1.97 m) at the same 33 %
+at-fault rate. **Scale bought no closed-loop advantage.**
 
-**base ≥ XL ORDERING holds under the shared OOD.** The open-loop "anchor-width is the lever, encoder scale
-is not" result (§1 / registry §4.3: base ties XL on ADE at 2.4× fewer params) **carries into closed loop** —
-base **mean score 0.345 > XL 0.246**, **passes 6/12 vs 5/12**, and is **closer to GT (1.64 vs 1.97 m)** — at
-the same 33 % at-fault rate. Both arms eat the same reconstruction-OOD, so the *ordering* is readable even
-though the *levels* are not a clean model result. **Scale bought no closed-loop advantage.**
+**Flagship v1 DOES drive closed-loop (via its `tactical_policy` head) — but a PAIRED n = 12 suite
+REVERSES the n = 1 "beats REF-C" read.** MEASURED 2026-07-23, same 12 scenes, identical NuRec
+renders, f-theta verified live: **REF-C base statistically beats flagship v1** — pass **8/12 vs
+2/12**, mean score **0.496 vs 0.066**, paired Δ **−0.430 [−0.646, −0.215]** (scene-cluster boot95
+excludes 0), score sign-test **8-0** (p = 0.008), pass-McNemar **6-0** (p = 0.031); **at-fault
+collisions TIED** (1-1, p = 1.0). Mechanism: flagship's tactical head is a **high-deviation
+planner** — plan_dev **1.12 vs REF-C 0.34** (3.3× wider) — so its failure mode is **off-road, not
+collision** (8/12 offroad). **Resolution confound RESOLVED (2026-07-23):** a native-1080×1920 paired
+re-run **holds the delta** (**−0.295 [−0.494, −0.117]**, sign-test 7-0) → the **model is the dominant
+axis, resolution is second-order**.
 
-**Flagship v1 DOES drive closed-loop (via its `tactical_policy` head) — but a PAIRED n = 12 suite REVERSES
-the n = 1 "beats REF-C" read.** MEASURED 2026-07-23, same 12 scenes, both models fed the identical NuRec
-renders, f-theta verified live (flag f_eff 265.7 / refc 265.6): **REF-C base statistically beats flagship
-v1** — pass **8/12 vs 2/12**, mean score **0.496 vs 0.066**, paired Δ **−0.430 [−0.646, −0.215]** (scene-cluster
-boot95 excludes 0), score sign-test **8-0** (p = 0.008), pass-McNemar **6-0** (p = 0.031); **at-fault collisions
-TIED** (1-1, p = 1.0). Mechanism (MEASURED, `flagship_vs_refc_suite_results.json` / `…NOTE.md`): flagship's
-tactical head is a **high-deviation planner** — plan_dev **1.12 vs REF-C 0.34** (3.3× wider) — so its failure
-mode is **off-road, not collision** (8/12 offroad). The lone n = 1 pass on wide-highway `01d503d4` (score
-0.699, rollout `71f9740c`) was a **lucky scene** where the wide swerve happened to dodge the collision; it
-does **not** generalize. **This still corrects the older "v1 can't drive closed-loop" claim** (pure v1 does
-drive from observations via its tactical policy) — but the "v1 **beats** REF-C" headline is retracted
-(`RETRACTION_LOG.md` C5, 07-23). Same within-sim / ~3.2× OOD caveat. **Resolution confound RESOLVED (2026-07-23):**
-a native-1080×1920 paired re-run **holds the delta** (**−0.295 [−0.494, −0.117]**, sign-test 7-0) → the **model is
-the dominant axis, resolution is second-order** (flagship's deficit shrinks ~30% at native but stays significant;
-collisions tied at both res). The only axis still open is **sim2real reconstruction-OOD** (~3.2×), which needs a
-real-footage harness, not another sim run. Raw: `flagship_vs_refc_native1080_{results.json,NOTE.md}`.
+**⭐ sim2real reconstruction-OOD axis CLOSED — REF-C base still beats flagship v1 on a REAL-FOOTAGE
+low-OOD harness (n = 40, 2026-07-23).** Real-footage log-replay (drive the recorded frames, integrate
+the ego kinematically, arc-length re-index + homography-warp for on-policy deviation — both arms held
+at **1.02–1.20× OOD**, ≪ NuRec's 3.75×;
+`…/incoming/2026-07-23-lowood-lanekeeping-refc/lowood_lanekeep_40ep.json`, episode-cluster bootstrap,
+paired). Because a map/agent-free source **cannot** emit off-road/collision, it carries
+**`corridor_departure_rate`** (on-policy |XTE| > 1.75 m lane-half-width).
 
-**⭐ sim2real reconstruction-OOD axis CLOSED — REF-C base still beats flagship v1 on a REAL-FOOTAGE low-OOD
-harness (n = 40, 2026-07-23).** The one axis left open above (~3.2× NuRec reconstruction-OOD) is settled by a
-*different* instrument that needs no renderer: **real-footage log-replay** (drive the recorded frames, integrate
-the ego kinematically, arc-length re-index + homography-warp for on-policy deviation — both arms held at
-**1.02–1.20× OOD**, ≪ NuRec's 3.75×; `…/incoming/2026-07-23-lowood-lanekeeping-refc/lowood_lanekeep_40ep.json`,
-episode-cluster bootstrap, paired). Because a map/agent-free source **cannot** emit off-road/collision (that axis
-still needs a lower-OOD renderer), it carries a new low-OOD metric **`corridor_departure_rate`** (on-policy
-|XTE| > 1.75 m lane-half-width).
-
-> 🔴 **MANDATORY QUALIFIER ADDED 2026-07-25 — every number in this block is a *2-SECOND* closed-loop
-> number, and none of them said so.** Source-read (`lowood_closedloop.py:59`): the instrument rolls out
-> **K = max(WP_STEPS) = 20 at DT = 0.1 → a 2.0 s horizon**. The failure mode these numbers are used to
-> reason about — a junction crossing — is a **~20 s** event, and imitation compounding error scales
-> ~**T²ε**, so a 2 s rollout can mechanically under-state on-policy drift by orders of magnitude.
-> **Quote these as "closed-loop @ 2 s", never as "closed-loop" unqualified.** This does NOT overturn the
-> *ordering* (REF-C base > flagship v1 — both arms measured on the identical horizon, and the ordering is
-> triple-confirmed on three independent instruments); it bounds what the ABSOLUTE rates mean.
-> ⚠️ It also puts the **`LOWOOD-CL-TRAIN` "BOUND" verdict under suspicion of being an instrument
-> artifact** — a horizon sweep (K = 20…200) is running now to settle it; if drift grows super-linearly
-> with horizon, that verdict owes a C6-class retraction.
-> ⚠️ **Unreconciled:** the closed-loop research doc reports a junction **window**-departure of **0.368**
-> against the 0.0134 all-strata / 0.064 junction figures below — a metric-definition mismatch
-> (window-level vs episode-level) that must be reconciled BEFORE either is quoted as the junction rate.
-> Source: `…/Research/2026-07-25-closed-loop-diffusion-planner/CLOSED_LOOP_PLANNER_RESEARCH.md`.
+> 🔴 **MANDATORY QUALIFIER — every number in this block is a *2-SECOND* closed-loop number.**
+> Source-read (`lowood_closedloop.py:59`): the instrument rolls out **K = max(WP_STEPS) = 20 at
+> DT = 0.1 → a 2.0 s horizon**. The failure mode these numbers are used to reason about — a junction
+> crossing — is a **~20 s** event, and imitation compounding error scales ~**T²ε**. **Quote these as
+> "closed-loop @ 2 s", never as "closed-loop" unqualified.** This does NOT overturn the *ordering*;
+> it bounds what the ABSOLUTE rates mean.
+> ⚠️ **Unreconciled:** the closed-loop research doc reports a junction **window**-departure of
+> **0.368** against the 0.0134 all-strata / 0.064 junction figures below — a metric-definition
+> mismatch (window-level vs episode-level) that must be reconciled BEFORE either is quoted (§12 W-10).
 
 | n = 40 / 881 win, paired | flagship v1 | REF-C base | Δ (flag − refc) | separated |
 |---|:--:|:--:|:--:|:--:|
@@ -506,45 +874,44 @@ still needs a lower-OOD renderer), it carries a new low-OOD metric **`corridor_d
 | `corridor_departure_rate`@1.75m | 0.0318 | **0.0134** | +0.0184 [+0.0077, +0.0328] | **yes** |
 | peak XTE (m) | 0.764 | **0.442** | +0.321 [+0.193, +0.495] | yes |
 
-**REF-C base wins in EVERY stratum → the C7 ordering (REF-C > flagship closed-loop) is now TRIPLE-confirmed**
-across three independent instruments (n = 1 scene-dependent → n = 12 NuRec AlpaSim → n = 40 real-footage), so it
-is **not a reconstruction artifact**. The metric also **decomposes flagship's deficit**: in longitudinal scenes
-both arms keep the lane near-perfectly (departure 0.4 % / 0.04 %) yet flagship's ADE is 4× REF-C's (1.455 vs
-0.354) → flagship's gap is **longitudinal, not lane-keeping** (its 89 %-longitudinal signature); in junctions
-flagship departs 2.3× more (14.6 % vs 6.4 %, peak XTE 2.37 vs 1.46 m) → its tactical head is **high-deviation**,
-independently reconfirming the mechanism above. ⚠️ **Bound:** lane-keeping / on-policy drift only, NOT
-off-road/collision; within-source relative; deployed-decoder vs deployed-decoder.
+**REF-C base wins in EVERY stratum → the ordering is TRIPLE-confirmed** (n = 1 → n = 12 NuRec →
+n = 40 real-footage), so it is **not a reconstruction artifact**. It also **decomposes flagship's
+deficit**: in longitudinal scenes both arms keep the lane near-perfectly (departure 0.4 % / 0.04 %)
+yet flagship's ADE is 4× REF-C's (1.455 vs 0.354) → flagship's gap is **longitudinal, not
+lane-keeping**; in junctions flagship departs 2.3× more (14.6 % vs 6.4 %, peak XTE 2.37 vs 1.46 m).
+⚠️ **Bound:** lane-keeping / on-policy drift only, NOT off-road/collision; within-source relative.
 
 > ⚠️ **Retractions on record (`RETRACTION_LOG.md`, 07-22/07-23).** **C5** — the n=1 *"REF-C collides
-> at-fault"* over-read the worst-case scene `01d503d4`. **C6** — the n=12 *"REF-C fails ~half closed-loop"*
-> is **reconstruction-OOD confounded** (open-loop-on-reconstructions control 3.21×): run the
-> open-loop-vs-known control **before** attributing a closed-loop failure to the model. <!-- lint-ok: the next line QUOTES the C7-retracted claim in the act of reversing it - this block IS the retraction notice, not a restatement. -->
-> **C7 (07-23)** — the
-> n=1 *"flagship v1 **beats** REF-C closed-loop"* is **reversed** by the paired n=12 suite (REF-C base wins
-> 8/12 vs 2/12, sign-test 8-0): a closed-loop win from n=1 is scene-dependent — never headline it until n ≥ ~12.
+> at-fault"* over-read the worst-case scene `01d503d4`. **C6** — the n=12 *"REF-C fails ~half
+> closed-loop"* is **reconstruction-OOD confounded**: run the open-loop-on-reconstructions control
+> **before** attributing a closed-loop failure to the model.
+> <!-- lint-ok: the next line QUOTES the C7-retracted claim in the act of reversing it. -->
+> **C7 (07-23)** — the n=1 *"flagship v1 **beats** REF-C closed-loop"* is **reversed** by the paired
+> n=12 suite: a closed-loop win from n=1 is scene-dependent — never headline it until n ≥ ~12.
 
 ---
 
-## 6. What TanitEval v2 deliberately does **not** measure
+## 6. What TanitEval deliberately does **not** measure
 
-Refusals are part of the contract and are recorded in every `driving_<key>.json`. Each is a data
-limitation, not an oversight:
+Refusals are part of the contract and are recorded in every `driving_<key>.json → refused`. Each is
+a data limitation, not an oversight:
 
 | refused | why |
 |---|---|
-| headway / distance-keeping / **TTC** | no lead-agent state exists anywhere in the stored data (`lead_state` is a shape-fixed `None` stub); no boxes, no tracks, no depth |
-| any **VTARGET**-referenced target-speed metric at 2 s | refuted with numbers — it sits +1.42 m/s above v0 and loses to holding v0 (MAE 1.65 vs 0.475); it is the right quantity at the wrong timescale |
-| **intersection / roundabout / merge capability** | the events are 5–20 s, the horizon is 2 s, the clips are ~20 s. A 2 s window inside a roundabout is kinematically indistinguishable from a constant-radius curve. The S1 strata are **kinematic signatures** (`launch_from_stop`, `stop_approach`, `sustained_turn`) and must never be renamed |
+| headway / distance-keeping / **TTC** *on C1 and C2* | no lead-agent state is joined to those grids (`lead_state` is a shape-fixed `None` stub). ⚠️ **This is a JOIN gap, not a data gap** — `obstacle.offline` exists on 97.44 % of the corpus and the family **is** measured on C4 (§2.6, §2.7). ⇒ a WORK ITEM (§12 W-1), not a permanent refusal |
+| any **VTARGET**-referenced target-speed metric at 2 s | refuted with numbers — it sits +1.42 m/s above v0 and loses to holding v0 (MAE 1.65 vs 0.475); the right quantity at the wrong timescale |
+| **intersection / roundabout / merge capability** | the events are 5–20 s, the horizon is 2 s, the clips ~20 s. A 2 s window inside a roundabout is kinematically indistinguishable from a constant-radius curve. The S1 strata are **kinematic signatures** (`launch_from_stop`, `stop_approach`, `sustained_turn`) and must never be renamed |
 | **lane-centre deviation / lane-keeping** | no lane geometry exists; the only lane number in the codebase is a hard-coded `LANE_HALF_M = 1.75` proxy |
-| naive **curvature MAE** at the persisted resolution | MEASURED 1.2015 vs a signal of 0.0495 1/m — 24× the signal. It measures knot jitter. Sign agreement survives and discriminates |
-| **collision rate / drivable-area / NAVSIM PDMS / nuPlan CLS / CARLA DS** | need agent boxes, an HD map or a simulator |
+| naive **curvature MAE** at the C1 4-knot resolution | MEASURED 1.2015 vs a signal of 0.0495 1/m — 24× the signal. It measures knot jitter. Sign agreement survives and discriminates. *(At the dense 10 Hz surface — C2, C3 — curvature IS reported; see §1a.3, §2.5.)* |
+| **collision rate / drivable-area / NAVSIM PDMS / nuPlan CLS / CARLA DS** | need agent boxes, an HD map or a simulator. See §9 |
+| **STRATEGIC route/goal quality** on every PhysicalAI grid | no map, lane graph, junction label, traffic-light feature or route signal exists in the corpus; both available label sources are inadmissible (§1a.5). **Settled at five probes** |
 | a scalar **capability × efficiency** composite | embeds an unmeasured exchange rate; the arms rank oppositely on the two axes |
 
 ---
 
 ## 7. Different-corpus measurements — do not mix with §1–§5
 
-*These are **not** on the 881 PhysicalAI val windows and are not comparable to the tables above.*
+*These are **not** on the C1 val windows and are not comparable to the tables above. All **T0**.*
 
 ### 7.1 Trivial-baseline floor, comma2k19 + Cosmos-DD (2026-07-15) — camera/BEV mixed, 26 132 anchors
 
@@ -570,22 +937,22 @@ Source: `Implementation/incoming/2026-07-15-baseline-floor/`.
 
 comma highway is **73.9 % straight** — identical to nuScenes → our open-loop val inherits the same
 ego-status-shortcut pathology (AD-MLP, arXiv 2312.03031). Convention note: `pointwise` = UniAD,
-`cumulative` = ST-P3/VAD; they differ ~2×. The **in-corpus** version of this ceiling — the one that
-belongs beside §1 — is the **0.5735 m** ego-status ridge on our own 881 windows.
+`cumulative` = ST-P3/VAD; they differ ~2×. The **in-corpus** version of this ceiling is the
+**0.5735 m** ego-status ridge on our own C1 windows (§0.6).
 
 > ⚠ **The warning this page must carry.** The set of metrics computable from ego logs alone is
 > *precisely* the set the critique literature showed is gameable by an ego-status MLP with no
 > perception. **A map-free suite cannot, on its own, discriminate perception quality.** The two
-> antidotes are first-class members of the suite, not extras: the **ego-status ceiling** (0.5735 —
-> flagship v1's 0.4271 clears it) and the **vision-ablation on high-divergence windows** (vision effect
-> **+1.325 m, CI [+1.04, +1.64]**, CI-separated).
+> antidotes are first-class members of the suite: the **ego-status ceiling** (0.5735 — flagship v1's
+> 0.4271 clears it) and the **vision-ablation on high-divergence windows** (vision effect
+> **+1.325 m, CI [+1.04, +1.64]**, CI-separated). ⚠️ Both are **T0** statements.
 
 ### 7.3 Supervised-IDM cross-domain probe (2026-07-22) — a FINDING, not a leaderboard model
 
 *A ~2.9 M supervised inverse-dynamics head (latent window → speed / yaw-rate / steer / accel), the
 pre-registered gate for a YouTube-scale IDM data pipeline. Raw:
-`TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-07-22-idm-proof/results.json`.
-Gate: cross-domain speed R² > 0.9 AND yaw R² > 0.9 AND ADE@2s < 1.5× the in-domain held-out ADE.*
+`…/incoming/2026-07-22-idm-proof/results.json`. Gate: cross-domain speed R² > 0.9 AND yaw R² > 0.9
+AND ADE@2s < 1.5× the in-domain held-out ADE.*
 
 | split | in-distribution | cross-domain | verdict |
 |---|---|---|---|
@@ -593,51 +960,43 @@ Gate: cross-domain speed R² > 0.9 AND yaw R² > 0.9 AND ADE@2s < 1.5× the in-d
 | rig-A → **rig-B** (same corpus, other camera rig) | held-out speed R² 0.786, ADE@2s 4.36 | rig-B speed R² **−2.465**, yaw R² −0.109, ADE@2s 17.47 | **FAIL** (ADE ratio 4.01) |
 
 > 🔴 **LABEL-PROTOCOL CORRECTION 2026-07-27 (C29) — read before quoting the comma `yaw R² 0.000`.**
-> That cell was scored with **`heading_repair` OFF** and **no `v_min` gate**. comma2k19's heading is
-> `arctan2` of the ENU velocity and is **undefined at standstill**: MEASURED, **26.27 % of comma frames
-> below 0.5 m/s are physically impossible and 0.000 % above it** (PhysicalAI: **zero in every bin**, so
-> the `0.924` / `−0.109` / rig-B cells are UNAFFECTED). **`0.000` measures the label, not the transfer.**
-> The value is left in place for audit and is marked **STALE-PENDING**: no repaired measurement exists on
-> *this* substrate (12,420 comma windows, no `v_min`), so nothing may be substituted into the cell.
-> **What is measured elsewhere** (v3 val split, `heading_repair` ON, `v_min` 0.5, 2,992 comma windows,
-> nothing retrained): deployed head comma `yaw_rate` **R² +0.3308**, up from **+0.0114** on the same
-> windows with the repair off; retrained, **+0.679**.
-> ⭐ **Honesty condition:** comma-only, the repair moves **R² +0.0114 → +0.3308** and **MAE −42.5 %**, but
-> **medAE only −1.1 % and nMedAE 8.0 % WORSE** (Spearman ρ flat, +0.001). It fixes **the tail and the
-> summary statistic, not typical accuracy**.
-> ⚠️ **The verdict is NOT overturned by this.** The gate's primary channel is **speed** (0.657, unaffected
-> by the heading label) and the ADE ratio 2.40 — both fail on their own. What changes is the *reason* the
-> yaw cell reads zero. Inventory: `TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/
-> 2026-07-27-comma-yaw-reissue/COMMA_YAW_REISSUE.md`.
->
-> 🔴 **AMENDED 2026-07-27 (`anchor-settlement`, class C43) — `+0.3308` is WITHDRAWN.** *(Nothing above is rewritten; every value keeps its date.)* Settled **BY CONTENT** — sha256 of the raw `poses` float32 bytes **and** of the raw `frames_u8` sensor bytes, never filenames: **2 of the 22 comma val episodes it was measured on are bit-identical to 2 of the deployed head's own 40 comma TRAINING clips**. Without them the same head reads comma yaw **R² −0.746 (CI [−1.574, −0.177])**; its published interval **[−1.2982, +0.7047]** already spanned zero. ✅ **`+0.679` is NOT withdrawn** (it is `R0`, trained on a content-disjoint split) but reads **+0.3038 (CI [+0.054, +0.479])** on the 20 content-clean episodes. ⇒ **comma yaw is TESTABLE; the DEPLOYED head does not do it.** PhysicalAI unaffected — re-measured, not inherited (`n_pai_changed = 0`, +0.903482 bit-identical). Record: `TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/2026-07-27-anchor-settlement/ANCHOR_SETTLEMENT.md`.
-> ⚠️ **The FAIL verdict is still not overturned** — it rests on speed (0.657) and the ADE ratio 2.40, neither of which any heading label touches.
+> That cell was scored with **`heading_repair` OFF** and no `v_min` gate. comma2k19's heading is
+> `arctan2` of the ENU velocity and is **undefined at standstill**: **26.27 % of comma frames below
+> 0.5 m/s are physically impossible and 0.000 % above it** (PhysicalAI: zero in every bin, so the
+> `0.924` / `−0.109` / rig-B cells are UNAFFECTED). **`0.000` measures the label, not the transfer.**
+> Left in place for audit, marked **STALE-PENDING**: no repaired measurement exists on *this*
+> substrate, so nothing may be substituted into the cell.
+> 🔴 **AMENDED 2026-07-27 (class C43) — `+0.3308` is WITHDRAWN.** Settled **BY CONTENT** (sha256 of
+> raw `poses` and `frames_u8` bytes, never filenames): **2 of the 22 comma val episodes are
+> bit-identical to 2 of the deployed head's own 40 comma TRAINING clips**. Without them the same head
+> reads comma yaw **R² −0.746 (CI [−1.574, −0.177])**. ✅ **`+0.679` is NOT withdrawn** (trained on a
+> content-disjoint split) but reads **+0.3038 (CI [+0.054, +0.479])** on the 20 clean episodes.
+> ⇒ **comma yaw is TESTABLE; the DEPLOYED head does not do it.** PhysicalAI unaffected.
+> ⚠️ **The FAIL verdict is not overturned** — it rests on speed (0.657) and the ADE ratio 2.40,
+> neither of which any heading label touches.
 
 **The supervised-IDM paradigm works in-distribution and does NOT transfer.** It fails even the
-*same-corpus, other-rig* split (rig-B speed R² −2.465 — worse than predicting the mean), so the failure is
-**domain shift, not dataset**. The YouTube-IDM data line is **gated on the re-gate** and does not proceed on
-these numbers. Recorded as a finding; **no model row.**
+*same-corpus, other-rig* split (rig-B speed R² −2.465 — worse than predicting the mean), so the
+failure is **domain shift, not dataset**. Recorded as a finding; **no model row.**
 
 ---
 
 ## 8. Historical — camera-frame gate ladder (SUPERSEDED, different unit)
 
-*Retained for traceability only. **Unit: camera-frame `ADE@1s`**, not metric-BEV `ade_0_2s`. This block
-was the newest content on this page until 2026-07-21 and was the substance of registry gap R5.*
+*Retained for traceability only. **Unit: camera-frame `ADE@1s`**, not metric-BEV `ade_0_2s`.*
 
 ### FLAGSHIP — step 27 000, route-resampled protocol, exact training val (comma+pai), 2026-07-12
 
 | Gate | Verdict | Value | Note |
 |---|---|---|---|
-| **D1** (probe ADE@1s) | FAIL | **6.44 ± 0.55 m** (8 route splits; range 4.96–7.41) | **camera-frame unit** — superseded by the metric-BEV harness in §1 |
+| **D1** (probe ADE@1s) | FAIL | **6.44 ± 0.55 m** (8 route splits; range 4.96–7.41) | **camera-frame unit** — superseded by §1 |
 | **D2** (imagination ranking) | ✅ PASS | dir-acc 0.864, P4 fwd-dyn 0.971, fit-R² 0.98 | the world-model-usable-for-selection claim holds |
 | **D3** (imagined vs oracle @2s) | FAIL, K-step-improved | imagined 1.97 m vs oracle 1.52 m, ratio 1.30 | K-step closed the ratio from ~4× |
 
-> **D1/D3 statistical-power footnote (G-B1).** Those gates were reported from a **single fixed seed=0**
-> split at 4–9 val episodes; a measured power audit shows the ADE@1s estimator swings **5–7 m across
-> split seeds** on the *same* checkpoint (95 % CI half-width ±4.5 m at n=4). Single-seed D1 values are
-> descriptive, not decision-grade. The step-14k→21k "regression" (5.18→11.52 m) is inside that noise
-> band. Superseded by §1's 881-window, 40-episode, episode-cluster protocol.
+> **D1/D3 statistical-power footnote (G-B1).** Those gates came from a **single fixed seed=0** split
+> at 4–9 val episodes; a measured power audit shows the ADE@1s estimator swings **5–7 m across split
+> seeds** on the *same* checkpoint (95 % CI half-width ±4.5 m at n=4). Single-seed D1 values are
+> descriptive, not decision-grade. Superseded by §1's 881-window, 40-episode protocol.
 
 ### Live scenario metrics — SC-01 Work-Zone Phantom (2026-07-08, scripted policies, single seed)
 
@@ -646,30 +1005,46 @@ was the newest content on this page until 2026-07-21 and was the substance of re
 | reactive (E2E-like) | 32.37 | 0.00 | 0.006 | 8.68e5 | −0.7 |
 | world_model (anticipatory) | **12.83** | **0.834** | 0.023 | 1.06e6 | −0.7 |
 
-Weak rows: scripted archetypes, single seed, and **LAL-v1 is non-discriminative here** (its −1.5 m/s³
-trigger never fires on a comfort-bounded ease-off) — superseded by **LAL-v2**, which returns +0.3…+3.1 s
-anticipation lead vs −0.3 s reactive. LOPS's 0.0 is structural (a no-estimate policy scores 0 by
-definition), so it proves latent-track *presence, not quality*. Not an edge claim.
+Weak rows: scripted archetypes, single seed, and **LAL-v1 is non-discriminative here** — superseded
+by **LAL-v2** (+0.3…+3.1 s anticipation lead vs −0.3 s reactive). LOPS's 0.0 is structural. Not an
+edge claim.
 
 ---
 
-## 9. External context — published numbers, **not comparable to §1–§5**
+## 9. EXTERNAL BENCHMARKS — ⏳ **PENDING, table skeletons reserved for the merge**
 
-*Different benchmarks, different sensors, different corpora. Kept as targets and orientation only.*
+⛔ **DO NOT FILL THESE FROM MEMORY OR FROM PROSE.** Two sister agents own the published numbers;
+this section is a **merge target with fixed column headers** so their rows drop in mechanically.
+The EvalFlyWheel internal-rows agent (this rebuild) deliberately researched **no** external
+benchmark. Every external row must arrive with **benchmark · split · metric · value · source
+(arXiv/leaderboard + date) · access date**, and must state whether TanitAD can compute the metric at
+all.
 
-### Open-loop (NAVSIM v2 EPDMS, navtest/navhard)
+**Programme goal this section serves: `G3 — Beat published SOTA on community benchmarks (NavSim …)
+via TanitEval` — status OPEN** (`Project Steering/GOALS_AND_CLAIMS.md`).
 
-| System | EPDMS | Source / date | Note |
-|---|---|---|---|
-| SOTA claim (survey) | 89.3 | arXiv 2606.19641, 2026-06 | navtest |
-| HAD | 88.6 | arXiv 2604.03581, 2026-04 | diffusion + metric-decoupled RL (navtest) |
-| Drive-JEPA | 93.3 (PDMS, NAVSIM **v1**) | arXiv 2601.22032, 2026-01 | v1 metric — not comparable to EPDMS |
-| DrivoR (test-time opt) | **56.3** (EPDMS, **navhard**) | arXiv 2606.07170, 2026-06 | navhard #1 |
-| DriveFuture | **55.5** (EPDMS, **navhard**) | arXiv 2605.09701, 2026-04 | navhard #1 *learned*; future-aware latent WM |
-| PDM-Closed (baseline) | 51.3 (EPDMS, **navhard**) | arXiv 2506.04218 / leaderboard 2026-03 | pseudo-sim (3DGS aug), R²≈0.8 vs CL |
-| **TanitAD** | — | — | **structurally not computable**: EPDMS needs agent boxes, drivable-area polygons and a route centerline. We adopt only its **Extended Comfort** idea and the human-log filter; a partial PDMS is never published |
+### 9.1 NavSim (PDMS / EPDMS) — ⏳ `PENDING — NavSim research agent`
 
-### Closed-loop (Bench2Drive, CARLA) — the arbiter block
+| System | Benchmark | Split | Metric | Value | Source / date | Note |
+|---|---|---|---|---:|---|---|
+| *(rows pending)* | NavSim v1 / v2 | navtest / navhard | PDMS / EPDMS | — | — | — |
+| **TanitAD** | NAVSIM v2 | — | EPDMS | **— NOT COMPUTABLE TODAY** | — | EPDMS needs agent boxes, drivable-area polygons and a route centerline; PhysicalAI-AV has none (§1a.5). We adopt only its **Extended Comfort** idea and the human-log filter. **A partial PDMS is never published.** |
+
+*Carried forward from the 2026-07-21 page as ORIENTATION ONLY, pending the agent's re-verification —
+⚠️ these are INHERITED, not re-checked in this rebuild, and must be replaced or confirmed:*
+SOTA claim (survey) 89.3 EPDMS navtest, arXiv 2606.19641 · HAD 88.6 navtest, arXiv 2604.03581 ·
+Drive-JEPA 93.3 PDMS **NAVSIM v1** (not comparable to EPDMS), arXiv 2601.22032 · DrivoR 56.3 EPDMS
+**navhard**, arXiv 2606.07170 · DriveFuture 55.5 EPDMS **navhard**, arXiv 2605.09701 · PDM-Closed
+51.3 EPDMS navhard, arXiv 2506.04218.
+
+### 9.2 nuScenes — ⏳ `PENDING — nuScenes research agent`
+
+| System | Benchmark | Split | Metric | Value | Source / date | Note |
+|---|---|---|---|---:|---|---|
+| *(rows pending)* | nuScenes | val | L2 @1/2/3 s · collision rate | — | — | ⚠️ the agent must state the **convention** (`pointwise` = UniAD vs `cumulative` = ST-P3/VAD — they differ ~2×) and whether the ego-status-shortcut control was run |
+| **TanitAD** | nuScenes | — | L2 / collision | **— NOT RUN** | — | no nuScenes ingest exists in `taniteval/registry.py` (three eval corpora, none nuScenes). A cross-corpus claim needs an ingest first — §12 W-11 |
+
+### 9.3 Closed-loop (Bench2Drive, CARLA) — the arbiter block *(kept, INHERITED)*
 
 | System | Driving Score | Success Rate | Source / date |
 |---|---|---|---|
@@ -680,7 +1055,7 @@ definition), so it proves latent-track *presence, not quality*. Not an edge clai
 CARLA seed variance ≈ 5 DS same-model → our closed-loop rows will report mean ± CI over ≥3 seeds; a
 "beats baseline" claim requires separated CIs.
 
-### Competitor parameter envelope (W-05 / CNCE)
+### 9.4 Competitor parameter envelope (W-05 / CNCE)
 
 | System | Params | Deployment class | Source |
 |---|---|---|---|
@@ -689,49 +1064,101 @@ CARLA seed variance ≈ 5 DS same-model → our closed-loop rows will report mea
 | **TanitAD flagship v1** | **263.4 M** | on-car hierarchical latent WM + tactical | MODEL_REGISTRY §1.2 |
 | **TanitAD REF-C-base** | **104.2 M** | on-car anchored-diffusion planner, 21.8 ms fp32 | MODEL_REGISTRY §4.3 |
 
-*Not an apples-to-apples score* — a parameter/compute-envelope comparison only. The efficiency wedge is
-credible only *at matched safe-progress*.
+*Not an apples-to-apples score* — a parameter/compute-envelope comparison only. The efficiency wedge
+is credible only *at matched safe-progress*, which requires a T1 or T2 number we do not yet have.
 
 ---
 
-## 10. Provenance, regeneration, and what is still missing
+## 10. Provenance and regeneration
 
-**Every number in §1–§6 traces to** `Project Steering/MODEL_REGISTRY.md` §6/§1.x or to a committed
-artifact under `taniteval/results/`: `driving_<key>.json` (§2–§4, §6), `eff_<key>.json` (§5),
-`windows_<key>.pt` (the substrate for all of them). Nothing here is transcribed from a summary,
-changelog or weekly report. **The 2026-07-22 additions trace to their staged raw JSONs:** §5.5 closed-loop
-→ `…/incoming/2026-07-22-alpasim-closedloop-evalpod/{REFC_suite_results,REFC_openloop_diagnostic,Flagship_v1_results-summary}.json`;
-§5.1 deployment →
-`…/incoming/2026-07-22-orin-thor-deployment/artifacts/{export,bench_latency,trt_fp16}_report.json`;
-the `refc-small-30k` rows (§1–§5) → `…/incoming/2026-07-22-refc-small-30k/refc-small-30k.json`; §7.3 IDM →
-`…/incoming/2026-07-22-idm-proof/results.json`.
+**Every number in §0–§5 traces to** `Project Steering/MODEL_REGISTRY.md` or to a raw eval artifact:
+`taniteval/results/driving_<key>.json` (§1, §1b, §2, §3.0, §4, §6), `eff_<key>.json` (§5),
+`windows_<key>.pt` (the substrate), and the banked campaign JSONs listed inline in §1a, §2.5, §2.6,
+§2.7, §3, §5.1. **Nothing is transcribed from a summary, changelog, weekly report or
+`PROJECT_STATE.md`.**
 
-**Regenerate:** `python -m taniteval.runner driving-all` then
-`python -m taniteval.driving --leaderboard`. CPU-only, offline, ~1 minute for all 24 dumps.
+**Regenerate — T0/C1 only:** `python -m taniteval.runner driving-all` then
+`python -m taniteval.driving --leaderboard`. CPU-only, offline, ~1 minute.
+⛔ **A census over `windows_*.pt` MUST import `taniteval.dump_census` and honour
+`taniteval/results/dump_exclusions.json`; a bare glob is a defect** (EVAL_DOCTRINE rule 6, C126) —
+27 dumps are **25 distinct arms**.
 
-**Known gaps, marked UNVERIFIED:**
-- `planner_p2` and flagship **v3enc** have **no window dump**, so they have no §2 row. P2's ADE
-  (0.893 ± 0.114) survives only under the deprecated estimator.
-  ⚠️ **PARTIALLY REFUTED 2026-08-16 — "no window dump" is true of ONE arm, not of P2.** The *closed-loop*
-  windows are banked (`…/2026-07-26-closedloop-artifact-rerun/raw_windows/p2win_flagship-30k.pt`, 221
-  win / 20 ep) and so is the tactical-head arm (`clwin_flagship-30k.pt` → `plan_direct`). Only the
-  **open-loop CEM arm** (`plan_wp`) was never dumped. ⇒ **G4 is fully re-decided and G1 on 3 of 4 arms,
-  CPU-only, and NEITHER FLIPS**: G4 **0.9799 [0.7456, 1.2312] < 1.7318**, plus a first-ever **paired**
-  form **−0.7375 [−0.9362, −0.5295], p(δ>0) = 0.0000**. ~400 s of GPU closes the last arm.
-  ⛔ **And P2's `✗ Beats CV` above is itself an un-re-decided banned verdict** (`planner_beats_cv`,
-  banned on both sides) whose flip **is** reachable — it needs a +6.59 % error against a measured local
-  upper edge of +5.877 % and a programme-wide +11.69 %. Treat it as **undecided**.
-  *(Details: `MODEL_REGISTRY.md` §5 · `…/incoming/2026-08-16-jack-in-gates/JACK_IN_GATES.md`.)*
-- `flagship-v16-ab-ft`, `refb-v2-*` and `flagship-v2-6k` have **no `eff_<key>.json`** → no latency
-  column. Nothing blocks it but a run on an idle GPU.
-- **Tier-1 is blocked on one line.** `rollout.collect` computes the dense 20-step path and discards 16
-  of 20 steps at `rollout.py:94`. Persisting it unlocks jerk, the adopted nuPlan/NAVSIM comfort bounds,
-  the curvature *profile*, decel-onset lead time (already implemented and unmerged since 2026-07-09)
-  and plan-stability / Extended Comfort. ~1 MB per arm.
-- **Regime thresholds are PROPOSED** (±0.5 m/s², \|κ\| < 1e-3, the 5°/15° curvature split). The
-  measured effects are large and unlikely to be threshold-driven, but a sensitivity sweep is owed.
-- The 4-waypoint speed is a **0.5 s box-average**, not an instantaneous speed, so the §3 cruise
-  numbers are **conservative** — the dense path will make them stricter, not looser.
-- `driving.py` buckets curvature at 5°/15°; `driving_diagnostic.curvature_bucket` (used by
-  `bench.by_curvature`) buckets at 5°/20°. Both are recorded in every block; the panels are not
-  interchangeable until reconciled.
+---
+
+## 11. What changed since the 2026-07-21 rebuild *(so the staleness is auditable)*
+
+**A. Errors found and fixed in the page itself** (each verified against raw JSON, cited in
+`LEADERBOARD_RECONCILIATION.md`):
+
+| # | what was wrong | what it is now |
+|---|---|---|
+| F-1 ⛔ | §1–§4 headed *"Driving capability … the standard read"* with **no tier stamp**; the numbers are **teacher-forced** | restamped **T0**; §0.1 added; T1 promoted to §1a as the primary read |
+| F-2 ⛔ | `flagship-v3enc` row read *"running · 🟥 not evaluated"* | **1.9654** [1.6556, 2.2859], from `driving_flagship-v3enc-10k.json` (registry §6 rank 11 already carried it) |
+| F-3 ⛔ | `beats CV` printed **✗** for `refb-10k` (+0.0005) and `refb` (−0.0252) | both are **`favours: "tie"`, `separated: false`** in their own JSON → rendered **TIE**, as §0.5 requires |
+| F-4 | §0 quoted the interval-narrowing band as **1.28–2.06× over 10 arms** | **1.107–3.100×, median 1.499×, over 27 dumps = 25 arms** (registry §6) |
+| F-5 | six scored arms had a `driving_<key>.json` and **no row**: `flagship-v4.1-10k`, `flagship-v4.2-step4000`, `refc-v12`, `refc-v12-k16reg`, `refc-xl-live`, plus the REF-A overfit ladder | all added to §1 / §2 with their verdicts |
+| F-6 | header said *"Rewritten 2026-07-21"* while carrying 08-02 / 08-16 / 08-17 patches | rebuilt and dated 2026-08-23; the patch dates are kept inline |
+| F-7 | §5's ⚠️-conflict box implied the registry figure might stand | the registry itself marks those six latency figures **UNRESOLVED SOURCE / do not re-cite**; recorded as such |
+
+**B. Whole campaigns that had NO row on this page and now do:**
+v5f-w120-30k (§2.5) · v5.8f W1/W2/W4/W4b/W4c/W7 ladder (§2.5) · I4a imagination ablation (§2.5) ·
+`flagship-v1arch-v2bal-30k` OOD-val four families (§2.6) · `flagship-v16-unicycle` and
+`flagship-v17-speedloss` (§2.7) · the §1.12 decoder-conditioned closed loop (§1a.6) · **the T1
+pseudo-closed-loop campaign and its four-family rescore (§1a) — the programme's PRIMARY tier, absent
+for 11 days.**
+
+**C. Doctrine that landed after 2026-07-21 and is now enforced here:**
+`EVAL_DOCTRINE.md` T0/T1/T2 (2026-08-09) · the four-family binding rule (PI 2026-08-02) ·
+`dump_exclusions.json` / `dump_census` (2026-08-18, C126) · the jack-in-gates re-drive (2026-08-16) ·
+the goal-input / vision-only inference rules (PI 2026-08-03).
+
+**D. Still NOT on this page, deliberately:** the **v6 / v7-tiny** line. `v6F-SW-30k` appears in
+MODEL_REGISTRY **§12 only, as a frozen-trunk readout diagnostic explicitly stamped
+"may NEVER be quoted as driving performance"**, and **v7-tiny has no MODEL_REGISTRY row at all** —
+its results live in `Project Steering/GOALS_AND_CLAIMS.md` (H-RANK-*, H-INIT-1) and under
+`TanitAD Research Lab/Architecture & Inference/Research/2026-08-19-simwam-analysis/`. Per the
+quotable-source rule, **no v7-tiny number is admissible on the leaderboard until it has a registry
+row** — §12 W-12.
+
+---
+
+## 12. Gaps and work items — every model with no current number, every missing family
+
+### 12.1 Missing metric families *(a missing family is a WORK ITEM, never a pass)*
+
+| id | gap | where | why it is missing | cost |
+|---|---|---|---|---|
+| **W-1** | **LONGITUDINAL distance-keeping** (headway / time-gap / TTC) NOT MEASURED on C1, C2, C3 | §1a.2, §1c, §2.5 | no lead-agent track joined to those grids — a **JOIN** gap, not a data gap. `obstacle.offline` covers 97.44 % of the corpus; the instrument exists at **`taniteval/tools/build_lead_block.py`** (⚠️ the registry twice cites the non-existent `tools/build_lead_block.py`) | CPU + a join; it is already **closed on C4** (§2.6) — copy that recipe |
+| **W-3** | **STRATEGIC** NOT MEASURED anywhere on PhysicalAI | §1a.5, §1c, §2.5 | corpus fact: no map / lane graph / junction label / route signal, and both available label sources are inadmissible. **Settled at 5 probes** | blocked on the VLM PH0→PH1→PH2 pipeline (PH0 v2 gate PASSED at n = 8) or an external corpus |
+| **W-4** | **TACTICAL** NOT MEASURED on C1 and C2 | §1c, §2.5 | the scored pass is teacher-forced (`pc2_pass = False`), so no manoeuvre decision is decoded | closed at source for **future T1 runs** (`t1_eval.py` passes `tactical_from_traj=True`); a C1/C2 backfill needs a hierarchy-traversing rescore |
+| **W-5** | three LAT intervals **refused** on C1, and the same two-reducer hazard is **unflagged at T1** | §1c, §1a.3 | `four_families` pools over steps; a per-window form is a mean-of-per-window-means; they differ | implement a per-window reducer inside `four_families`; zero GPU |
+| **W-6** | six §2 rows have ADE + verdict but **blank along/cross/speed/heading/κ columns** | §2 | never carried into the 2026-07-21 panel narrative | `driving-all` already emits them — a **zero-GPU** re-render |
+
+### 12.2 Models in MODEL_REGISTRY with no current leaderboard number
+
+| registry § | key | status | what is missing |
+|---|---|---|---|
+| §1.7 | `flagship-v2corpus-30k` | ⚠️ **status UNVERIFIED** — registry reads 🟢 RUNNING with an ETA **26 days in the past**, no completion / final-step / final-eval row anywhere, and its host pod1 shows `/dev/nvidia*` empty | **re-probe the run before anything quotes or waits on it.** No eval JSON exists |
+| §1.5 | `flagship-v4-fromscratch`, v4.1/v4.2 milestone ladder | v4.1-10k and v4.2-step4000 now ranked (§1); the rest single-disk, not HF-backed | milestone evals; checkpoint banking |
+| §2.2 | `refa-ijepa-4brain-speed-15k` | ⛔ **val is ~80 % leaked into train — the number is UNUSABLE** | a clean split, or permanent exclusion |
+| §3.4 | `refb-refbpatch-30k` | crashed | nothing to score |
+| §5 | `planner_p2` (open-loop CEM arm) | **no per-window dump** for `plan_wp` | ~400 s of GPU closes the last arm and settles the standing `planner_beats_cv` UNDECIDED |
+| §10 | `dynenc-branchB` | side IDM model, 🟥 FAIL on held-out-rig transfer | not a driving arm — no leaderboard row by design |
+| §12 | `v6F-SW-30k` | T0-diagnostic readout line only | ⛔ **may never be quoted as driving.** A driving number needs a T1 eval |
+| *(absent)* | **v7-tiny line** | ⛔ **NO REGISTRY ROW AT ALL** | **W-12: mint a MODEL_REGISTRY §1.x row** before any v7-tiny number is admissible here (see §11-D) |
+
+### 12.3 Instrument and reconciliation work items
+
+| id | item |
+|---|---|
+| **W-2** | **CTRV is still not in the gate.** `driving.py:304` scores against `FLOORS = ("cv","holdv0")`, both straight lines. The patch + 11 tests are validated end-to-end and **UNMERGED** at `…/incoming/2026-08-02-ctrv-floor/`. ⚠️ Until merged, every new arm is auto-scored against a floor that is ~5× too generous laterally |
+| **W-7** | **Two harnesses disagree 0.8 %** on C4 for `v1arch` (`eval_flagship_v4.py` MODE-A 0.5705 vs `eval_four_families.py` 0.5752). Recorded, unresolved |
+| **W-8** | **Registry R14 latency conflict** — registry §6 reading 3's six figures are marked UNRESOLVED SOURCE and are not in any committed artifact. One reconciliation pass on an idle A40, or restate from the JSONs |
+| **W-9** | **The two T1 blocks disagree in character** — §1a.1 (C3) diverges 22–25× against `ha`; §1a.6 (C4) degrades ~1.4×. Different corpora, arms and action interfaces; the reconciliation is unwritten |
+| **W-10** | **Junction departure-rate definition mismatch** — 0.368 (window-level, research doc) vs 0.064 (episode-level, §5.5). Reconcile BEFORE either is quoted |
+| **W-11** | **No nuScenes ingest exists** (`taniteval/registry.py` lists three eval corpora, none nuScenes). G3 needs one before any cross-benchmark claim |
+| **W-13** | **Tier-1 metric surface is blocked on one line** — `rollout.collect` computes the dense 20-step path and discards 16 of 20 steps at `rollout.py:94`. Persisting it unlocks jerk, the adopted nuPlan/NAVSIM comfort bounds, the curvature *profile*, decel-onset lead time (implemented and unmerged since 2026-07-09) and plan-stability / Extended Comfort. **~1 MB per arm** |
+| **W-14** | **Regime thresholds are PROPOSED** (±0.5 m/s², \|κ\| < 1e-3, the 5°/15° split). Effects are large and unlikely to be threshold-driven, but a sensitivity sweep is owed |
+| **W-15** | **`driving.py` buckets curvature at 5°/15°; `driving_diagnostic.curvature_bucket` at 5°/20°.** Both are recorded in every block; the panels are **not interchangeable** until reconciled |
+| **W-16** | **`flagship-v16-ab-ft`, `refb-v2-*`, `flagship-v2-6k`, the v4 line and the REF-C v1.2 family have no `eff_<key>.json`** → no latency column. Nothing blocks it but a run on an idle GPU |
+| **W-17** | The C1 4-waypoint speed is a **0.5 s box-average**, not an instantaneous speed, so §3.0's cruise numbers are **conservative** — the dense path makes them stricter, not looser |

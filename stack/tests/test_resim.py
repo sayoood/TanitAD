@@ -333,6 +333,31 @@ def test_sample_bundle_exercises_full_standard(tmp_path):
     assert len(mixes) >= 3
 
 
+def test_sample_bundle_shows_both_strategic_branches(tmp_path):
+    """The demo must exhibit the fix, not just satisfy it: REF-B fills the
+    strategic PREDICTION slot from its route head, main/refa declare it
+    unavailable, and all three still show the logged input separately."""
+    from tanitad.resim.sample import make_sample_bundle
+
+    session = make_sample_bundle(tmp_path / "demo")
+    st = session["episodes"][0]["steps"][0]
+    assert _viz(st, "refb", "strategic")["state"] == "present"
+    assert _viz(st, "refb", "strategic")["kind"] == "model_output"
+    for arm in ("main", "refa"):
+        strat = _viz(st, arm, "strategic")
+        assert strat["state"] == "unavailable" and strat["reason"]
+    for arm in ("main", "refa", "refb"):
+        inp = _viz(st, arm, "strategic_input")
+        assert inp["kind"] == "given_input" and inp["state"] == "present"
+    # the demo's route head is NOT a bijection of its own input -- an exact
+    # input->output bijection is the nav-echo defect the programme measured at
+    # 369/369, and a demo bundle must not model one.
+    pairs = {(_viz(s, "refb", "strategic_input")["value"],
+              _viz(s, "refb", "strategic")["value"])
+             for ep in session["episodes"] for s in ep["steps"]}
+    assert len({p for _, p in pairs}) < len({i for i, _ in pairs})
+
+
 def test_sample_bundle_serves_over_fastapi(tmp_path):
     """The synthetic bundle is servable end-to-end: build_app lists it, returns
     its session.json, and serves a frame from an uncalibrated (fallback) step."""
@@ -611,3 +636,284 @@ def test_frame_fetch_and_guards(client):
     assert ok.headers["content-type"] == "image/jpeg"
     assert client.get("/frames/sess1/missing.jpg").status_code == 404
     assert client.get("/frames/nope/x.jpg").status_code == 404
+
+
+# ---------- (k) the viz-standard CONTRACT (tanitad.viz_standard) --------------
+# THE STANDARD used to be a docstring claim and a README table. These pin it as
+# a data structure that travels with the artifact: five declared elements per
+# rendered frame, `source` + `kind` mandatory when present, `reason` mandatory
+# when unavailable, and -- the defect class in SPEC section 3.1 -- a PREDICTION
+# slot that refuses a ground-truth-derived input.
+
+
+def test_viz_element_requires_source_and_kind_when_present():
+    from tanitad.viz_standard import VizElement, VizStandardError
+
+    ok = VizElement.present("tactical", "turn_left",
+                            source="ArmOutput.maneuver_probs.argmax(-1)",
+                            kind="model_output")
+    assert ok.state == "present" and ok.kind == "model_output"
+    # a present element with no declared source is exactly how 3.1 hid
+    with pytest.raises(VizStandardError, match="source"):
+        VizElement(element="tactical", state="present", value="turn_left",
+                   kind="model_output")
+    with pytest.raises(VizStandardError, match="kind"):
+        VizElement(element="tactical", state="present", value="turn_left",
+                   source="somewhere")
+
+
+def test_viz_element_requires_reason_when_unavailable():
+    from tanitad.viz_standard import VizElement, VizStandardError
+
+    el = VizElement.unavailable("strategic", "arm 'main' has no route head")
+    assert el.state == "unavailable" and "route head" in el.reason
+    assert "unavailable" in el.hud_text() and "no route head" in el.hud_text()
+    with pytest.raises(VizStandardError, match="reason"):
+        VizElement(element="strategic", state="unavailable")
+
+
+def test_check_frame_refuses_a_silently_missing_element():
+    """The contract's whole point: a frame may not be rendered with an element
+    quietly absent. Every missing standard element is named."""
+    from tanitad.viz_standard import (STANDARD_ELEMENTS, VizElement,
+                                      VizStandardError, check_frame)
+
+    full = [VizElement.present(e, "x", source="src", kind="derived")
+            for e in STANDARD_ELEMENTS]
+    assert len(check_frame(full, where="unit")) == len(STANDARD_ELEMENTS)
+
+    partial = [e for e in full if e.element not in ("strategic", "bev")]
+    with pytest.raises(VizStandardError) as ei:
+        check_frame(partial, where="unit")
+    msg = str(ei.value)
+    assert "strategic" in msg and "bev" in msg and "unit" in msg
+
+
+def test_check_frame_accepts_a_declared_unavailable_element():
+    from tanitad.viz_standard import (STANDARD_ELEMENTS, VizElement,
+                                      check_frame, hud_lines)
+
+    els = [VizElement.present(e, "x", source="src", kind="derived")
+           for e in STANDARD_ELEMENTS if e != "strategic"]
+    els.append(VizElement.unavailable(
+        "strategic", "arm 'refa' has no route-prediction head"))
+    got = check_frame(els, where="unit")
+    assert len(got) == len(STANDARD_ELEMENTS)
+    # the reason is DRAWN, never blank
+    line = [ln for ln in hud_lines(got) if ln.startswith("strategic")][0]
+    assert "unavailable" in line and "no route-prediction head" in line
+
+
+def test_prediction_slot_refuses_a_given_input():
+    """*** THE SPEC section 3.1 DEFECT CLASS, refused at the type level. ***
+
+    `strategic` and `tactical` are PREDICTION slots. A value whose kind is
+    `given_input` / `gt_label` cannot be put in one -- which is precisely what
+    the SPA did with the GT-derived nav command."""
+    from tanitad.viz_standard import (PREDICTION_ELEMENTS, VizElement,
+                                      VizStandardError, check_frame)
+
+    assert set(PREDICTION_ELEMENTS) == {"tactical", "strategic"}
+    els = [VizElement.present(e, "x", source="src", kind="derived")
+           for e in ("camera", "bev", "ade", "tactical")]
+    els.append(VizElement.present(
+        "strategic", "left",
+        source="refb_labels.nav_command(episode.poses, t)",
+        kind="given_input"))                      # <- the nav-echo defect
+    with pytest.raises(VizStandardError, match="given_input"):
+        check_frame(els, where="unit")
+    # ... and the same value is fine in the aux INPUT slot
+    els[-1] = VizElement.present(
+        "strategic_input", "left",
+        source="refb_labels.nav_command(episode.poses, t)", kind="given_input")
+    els.append(VizElement.unavailable("strategic", "no route head"))
+    assert len(check_frame(els, where="unit")) == 6
+
+
+def test_privileged_and_conditioned_values_are_marked_on_the_frame():
+    from tanitad.viz_standard import VizElement, hud_lines
+
+    given = VizElement.present(
+        "strategic_input", "left",
+        source="refb_labels.nav_command(episode.poses, t)", kind="given_input")
+    assert given.privileged
+    pred = VizElement.present(
+        "strategic", "route_straight", source="route_logits.argmax(-1)",
+        kind="model_output", conditioned_on=("nav_cmd",))
+    lines = hud_lines([given, pred])
+    assert any("given" in ln.lower() for ln in lines)      # privileged marker
+    assert any("nav_cmd" in ln for ln in lines)            # conditioning shown
+
+
+def test_viz_elements_round_trip_through_json():
+    from tanitad.viz_standard import VizElement, from_json, to_json
+
+    els = (VizElement.present("ade", "0.42 m", source="mean L2", kind="derived",
+                              n=4),
+           VizElement.unavailable("camera", "calibration unverified"))
+    assert from_json(to_json(els)) == els
+    assert json.loads(json.dumps(to_json(els)))[0]["kind"] == "derived"
+
+
+# ---------- (l) SPEC section 3.1 REGRESSION: nav_cmd is an INPUT --------------
+# `nav_cmd` is derived from the episode's OWN FUTURE POSES and FED to the model
+# (replay/arms.py:526). Rendering it as the strategic PREDICTION is the nav-echo
+# defect the programme binds against. The bundle must carry the two apart, and
+# an arm with no route head must say `unavailable` with a reason -- never fall
+# back to the input.
+
+
+def _viz(step_dict, arm, element):
+    """The one viz record for (arm, element) in an exported step."""
+    rows = step_dict["arms"][arm]["viz"]
+    hit = [r for r in rows if r["element"] == element]
+    assert len(hit) == 1, f"{arm}/{element}: expected 1 record, got {len(hit)}"
+    return hit[0]
+
+
+def test_export_declares_the_five_standard_elements_per_arm(tmp_path):
+    from tanitad.viz_standard import STANDARD_ELEMENTS
+
+    _, session = _build(tmp_path)
+    for ep in session["episodes"]:
+        for st in ep["steps"]:
+            for name in ("main", "refb"):
+                got = {r["element"] for r in st["arms"][name]["viz"]}
+                assert got >= set(STANDARD_ELEMENTS), \
+                    f"{name} missing {set(STANDARD_ELEMENTS) - got}"
+
+
+def test_export_strategic_slot_is_unavailable_without_a_route_head(tmp_path):
+    """*** The regression pin. *** refb carries nav_cmd=1 but NO route
+    prediction: the strategic slot must be `unavailable` with a reason that
+    names the input -- not the input's value wearing a prediction's label."""
+    _, session = _build(tmp_path)
+    st = session["episodes"][0]["steps"][0]
+    strat = _viz(st, "refb", "strategic")
+    assert strat["state"] == "unavailable"
+    assert strat["source"] is None and strat["kind"] is None
+    assert "nav_cmd" in strat["reason"] and "input" in strat["reason"].lower()
+    # main has neither -> still declared, still with a reason
+    assert _viz(st, "main", "strategic")["state"] == "unavailable"
+
+
+def test_export_declares_the_gt_derived_input_in_its_own_slot(tmp_path):
+    _, session = _build(tmp_path)
+    st = session["episodes"][0]["steps"][0]
+    inp = _viz(st, "refb", "strategic_input")
+    assert inp["state"] == "present" and inp["kind"] == "given_input"
+    assert inp["value"] == "left"                         # nav_cmd=1 -> "left"
+    assert "nav_command" in inp["source"] and "poses" in inp["source"]
+    # main emits no nav_cmd at all -> no input record is fabricated for it
+    assert not [r for r in st["arms"]["main"]["viz"]
+                if r["element"] == "strategic_input"]
+
+
+def test_export_strategic_slot_carries_a_real_route_prediction(tmp_path):
+    """When an arm DOES emit a route prediction it fills the slot as a
+    model_output -- and declares that it was computed under the nav input."""
+    rec = _rec(0, 0, 3)
+    rec.arms["refb"].route_pred = 1                    # route_straight
+    session = export_bundle([rec], tmp_path / "routed", "x",
+                            maneuver_classes=MANEUVERS)
+    st = session["episodes"][0]["steps"][0]
+    strat = _viz(st, "refb", "strategic")
+    assert strat["state"] == "present" and strat["kind"] == "model_output"
+    assert strat["value"] == "route_straight"
+    assert "route_logits" in strat["source"]
+    assert any("nav_cmd" in c for c in strat["conditioned_on"]), \
+        "a route head FiLM-conditioned on the nav input must declare it"
+    assert st["arms"]["refb"]["heads"]["route_pred"] == 1
+    # the input is STILL carried separately, never merged into the prediction
+    assert _viz(st, "refb", "strategic_input")["value"] == "left"
+
+
+def test_meta_carries_route_classes_and_the_gt_input_registry(tmp_path):
+    from tanitad.resim.export import GT_DERIVED_INPUT_HEADS, ROUTE_CLASSES
+
+    _, session = _build(tmp_path)
+    assert session["meta"]["route_classes"] == list(ROUTE_CLASSES)
+    assert session["meta"]["gt_derived_input_heads"] == \
+        sorted(GT_DERIVED_INPUT_HEADS)
+    assert "nav_cmd" in session["meta"]["gt_derived_input_heads"]
+
+
+# -- the front-end half: a source contract over the SPA ------------------------
+# There is no JS test runner here, so the SPA's half of the fix is pinned as a
+# SOURCE contract: the GT-derived input key may be read in exactly ONE declared
+# accessor, and the model-route accessor may never touch it. Grepping is the
+# instrument, but the rule it enforces is structural -- the old app.js read
+# `heads.nav_cmd` straight into a row labelled `strategic: route <goal>`.
+
+_ACC_OPEN = "// >>> GT-DERIVED-INPUT ACCESSOR"
+_ACC_CLOSE = "// <<< GT-DERIVED-INPUT ACCESSOR"
+_GT_INPUT_KEYS = ("nav_cmd",)
+
+
+def _app_js() -> str:
+    from tanitad.resim.export import static_dir
+    return (static_dir() / "app.js").read_text(encoding="utf-8")
+
+
+def _js_function_body(src: str, name: str) -> str:
+    """Source of ``function <name>(...) { ... }`` by brace counting."""
+    i = src.index("function " + name + "(")
+    j = src.index("{", i)
+    depth, k = 0, j
+    while k < len(src):
+        if src[k] == "{":
+            depth += 1
+        elif src[k] == "}":
+            depth -= 1
+            if depth == 0:
+                return src[i:k + 1]
+        k += 1
+    raise AssertionError(f"unbalanced braces reading {name}()")
+
+
+def test_spa_reads_the_gt_derived_input_only_in_its_declared_accessor():
+    """*** THE SPA-side regression pin. *** Every read of a GT-derived input
+    key lives inside the one accessor whose name says it is an input."""
+    lines = _app_js().splitlines()
+    starts = [i for i, l in enumerate(lines) if _ACC_OPEN in l]
+    ends = [i for i, l in enumerate(lines) if _ACC_CLOSE in l]
+    assert len(starts) == 1 and len(ends) == 1 and starts[0] < ends[0], (
+        "app.js must declare exactly one GT-derived-input accessor block "
+        f"delimited by {_ACC_OPEN!r} / {_ACC_CLOSE!r}")
+    lo, hi = starts[0], ends[0]
+    offenders = []
+    for i, line in enumerate(lines):
+        if not any(k in line for k in _GT_INPUT_KEYS):
+            continue
+        if lo <= i <= hi:
+            continue
+        s = line.strip()
+        if s.startswith("//") or s.startswith("*") or s.startswith("/*"):
+            continue                                    # prose may name it
+        offenders.append(f"  app.js:{i + 1}: {s}")
+    assert not offenders, (
+        "a ground-truth-derived INPUT is read outside the declared accessor "
+        "-- this is the nav-echo defect:\n" + "\n".join(offenders))
+
+
+def test_spa_model_route_accessor_never_touches_the_input():
+    body = _js_function_body(_app_js(), "routePred")
+    for key in _GT_INPUT_KEYS:
+        assert key not in body, (
+            f"routePred() references {key!r}: the model-route field must never "
+            "fall back to the logged input")
+    assert "reason" in body, "an unavailable route must carry its reason"
+
+
+def test_spa_labels_the_prediction_and_the_input_distinctly():
+    src = _app_js()
+    assert 'var LBL_ROUTE_PRED = "route (model)";' in src
+    assert 'var LBL_ROUTE_INPUT = "route (logged input)";' in src
+    hud = _js_function_body(src, "updateCamHud")
+    assert "LBL_ROUTE_PRED" in hud and "LBL_ROUTE_INPUT" in hud, \
+        "the camera HUD must render BOTH fields, never one merged row"
+    # an absent prediction is DRAWN with its reason, not skipped: the HUD sends
+    # that branch through naSpan(), whose text says so.
+    assert "naSpan(rp.reason)" in hud, \
+        "an absent route prediction must render its reason, not vanish"
+    assert "unavailable" in _js_function_body(src, "naSpan")

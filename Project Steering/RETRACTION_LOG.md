@@ -9109,3 +9109,347 @@ t+k** — which `scene_t` predicts strongly by autocorrelation, making *"adds no
 on top of it"* meaningful — and ⛔ **prints a verdict ONLY IF the positive control
 passes (t > 2)**, otherwise `NO VERDICT`. That guard is what the first version
 lacked.
+
+---
+
+## C146 ⛔ — THE HIERARCHY BANDS WERE WRONG AT BOTH ENDS, AND A ROAD CURVE WAS BEING LABELLED A TURN (PI, 2026-08-27)
+
+**Three defects, all reported by the PI from ONE screenshot of the label table.**
+
+**(1) The bands.** The emitter used **0-6 s** for TACTICAL and treated anything
+from 6 s onward as STRATEGIC. Both ends are wrong: 0-2 s belongs to the
+**OPERATIVE** layer, and the strategic band does not open until **8 s**. The
+visible symptom was `TURN_RIGHT_FOLLOW_ROUTE` carrying **`by_time_s: 6.0`** — a
+route-level token for a manoeuvre 2 s before the route layer's horizon begins.
+**435 clips** carried such a token; now **0**. Bands are now
+`OPERATIVE (0,2) · TACTICAL (2,6) · STRATEGIC (8,30)`.
+
+**(2) A real gap, previously absorbed in silence.** Nothing in the hierarchy owns
+**6-8 s**. The old rule swept it into strategic. Manoeuvres landing only there
+are now returned under `bands.unassigned_manoeuvres` — **54 clips (1.1 %)**. That
+is a design question for the PI, and it stays visible instead of being answered
+by an emitter default.
+
+**(3) A road curve is not a turn.** `43bbcbf9` is a motorway S-bend — +38 deg by
+t+3 s, back to +24 deg by t+6 s, then -53 deg by t+14 s, driven at **12.0 ->
+14.3 m/s while ACCELERATING**. It was labelled `TURN_L` with `radius_m 40.1`.
+Two causes:
+
+* **The radius came from PEAK INSTANTANEOUS curvature** (`1/max(kappa)`), so a
+  single noisy yaw-rate sample set the number for the whole manoeuvre. The ARC
+  radius over the same span is **144 m**. Now `R = arc / dyaw`.
+* **No speed condition at all.** Thresholds were swept against an INDEPENDENT
+  reference — Alpamayo's own `motion_analysis` segment types, 349 "turn
+  left/right" vs 1,468 "keep lane", text labels owing nothing to our geometry:
+
+      |dyaw| >= 15 deg AND R_arc <= 140 m AND v_min <= 8.0 m/s
+      -> precision 70.6 %, recall 61.3 %, F1 0.656   (vs 54.1 % on dyaw alone)
+
+  ⭐ The speed gate removes **70 of 159 false positives (44 %)**.
+
+⚠️ **THE PI'S MECHANISM WAS RIGHT, THE SIGNAL WAS NOT.** He predicted turns are
+found by *"strongly decelerating due to curvature, yield, stop sign"*. In the
+2-6 s band a turning ego is **ACCELERATING** (median dv **+2.2 m/s**) because it
+is already exiting; `dv` separates nothing. Turn clips are ALREADY SLOW **4 s
+before the anchor** (5.4 vs 14.0 m/s) — the braking happens outside every window
+we observe. ⇒ **the usable signature is ABSOLUTE SPEED, not speed CHANGE.**
+
+**ROOT-CAUSE CLASS: an estimator that is precise about the wrong quantity**
+(peak-instantaneous vs arc radius — the same family as
+`overlapping_holdout_se`), compounded by **a layer boundary asserted in prose
+and never encoded**. The bands existed in the Mission Plan; the emitter used
+different ones for months and nothing compared them.
+
+⚠️ **And I re-committed the two-detector defect while fixing it.** Gating the
+GOAL on `is_turn` while leaving the ACTION on `EM.analyse` left **329 clips
+(7.0 %)** with `lat=TURN_*` and no turn goal — the exact mirror of the 219-clip
+defect from a week earlier. Coherence went 0.40 % -> 7.16 % -> **0.21 %** once
+both sides read the same gated list. Pinned by `stack/tests/test_bands_and_turns.py`
+(11 tests), which checks the goal/action contract in BOTH directions.
+
+---
+
+## C147 ⛔ — A PHANTOM `MERGE` FROM A HAZARD NOUN PHRASE, AND THE LANE CHANGE THE PIPELINE HAD NEVER READ (PI, 2026-08-27)
+
+**The PI asked one question** — *"why did you extract Merge from Alpamayo, I
+don't see this in the CoT or did I miss something"* — about `59b57590`. He did
+not miss anything. **There is no merge in that scene.**
+
+The only occurrence of `merg` in the clip's entire text is:
+
+    "…They are adjacent to the right lane and create potential
+     door-opening/merge hazards; keeping extra clearance can motivate
+     moving left."
+
+A hypothetical hazard CLASS inside a compound noun, in a sentence explaining why
+parked cars matter. ⚠️ **Negation scoping (C145) cannot catch this** — "potential"
+is not a negation, it is IRREALIS. A term matcher has no notion of whether the
+noun it found denotes an EVENT or a RISK. **3 of 129 MERGE emissions (2.3 %).**
+
+⭐ **BUT THE QUESTION FOUND TWO LARGER DEFECTS SITTING BESIDE IT:**
+
+**(1) `LANE_CHANGE_L` / `LANE_CHANGE_R` HAD NO EXTRACTOR AT ALL.** Both are in
+the FROZEN vocabulary. **174 clips state a lane change in plain language and NOT
+ONE produced a token** (101 left, 73 right). `59b57590` opens with *"Change lanes
+to the left due to the right lane being constrained by parked vehicles"* — the
+manoeuvre the clip is ABOUT — and the pipeline emitted a phantom MERGE while
+saying nothing about it. A token can be in the vocabulary, be tested for
+freezing, be defined in the matrix, and still have **zero** extraction path;
+nothing checked that every frozen token is REACHABLE.
+
+**(2) `components_analysis` IS A NUMBERED LIST AND ONLY ENTRY 1 WAS READ.** On
+**197 clips** it carries 2-6 entries. On `59b57590` we kept `Lane divider
+(dashed center line)` and discarded `Parked vehicles along the right curb`,
+`Traffic lights ahead` and `Lead vehicle far ahead` — three entries that map to
+tokens, thrown away in favour of a road marking. Corpus-wide the fix reads
+**3,733 entries instead of 3,107**.
+
+**Result:** MERGE **129 -> 82**, LANE_CHANGE **0 -> 39** emitted (of 176
+claimed), coherence unchanged at 0.21 %.
+
+⚠️ **WHY ONLY 39 OF 176 — AND WHY THAT IS CORRECT.** A lane change must show
+lateral motion, so the emitter's lateral-evidence gate applies. Measuring the
+cross-track residual AFTER removing the road's own fitted arc, against a matched
+control:
+
+| window | claimed | control | separation |
+|---|---|---|---|
+| our tactical 2-6 s | 0.12 m | 0.04 m | +0.07 m |
+| Alpamayo's -2.9…+3.1 s | 0.52 m | 0.11 m | +0.41 m |
+| wide -3…+8 s | **1.52 m** | 0.50 m | **+1.02 m** |
+
+The signal is real and grows with the window, but **the median claimed lane
+change never displaces a full lane width (~3.5 m) inside anything we observe**.
+⇒ the 39 admitted are those geometry can confirm; loosening the gate to inflate
+the count would be manufacturing labels. ⚠️ The FIRST version of this measurement
+used deviation from the initial heading and put the CONTROL at 7.95 m — any
+curve produces that. **A displacement measure without the road's arc removed is
+measuring the road, not the manoeuvre.**
+
+**ROOT-CAUSE CLASS: a term matcher has no notion of MODALITY, and a vocabulary
+has no notion of REACHABILITY.** The first is the C145 family one step further
+out (negation -> irrealis); the second is new and worse, because every existing
+check passed while a token could never be produced.
+
+⇒ **STANDING RULE: a frozen vocabulary needs a REACHABILITY test — for every
+token, either an extraction path exists or the token is explicitly listed as
+not-yet-extractable with a reason.** Freezing a token is not the same as being
+able to emit it.
+---
+
+## C133 — "the TACTICAL and STRATEGIC families have NEVER been instrumented" (EvalFlyWheel, 2026-08-23)
+
+**RETRACTED, same day, by three independent probes.** The claim was filed as
+H-EVAL-1/-2/-3 in `GOALS_AND_CLAIMS.md` and quoted in a PI report before it was
+checked outside the directory it was measured in.
+
+**What I asserted.** That TACTICAL and STRATEGIC carry no metric anywhere, that
+LATERAL yaw-rate is absent everywhere, and that no T1 artifact exists — each
+stated as a property of the PROGRAMME, on a census of `taniteval/results/`.
+
+**What is true.**
+
+| asserted | measured |
+|---|---|
+| TACTICAL never instrumented | `stack/tanitad/.../four_families.py` implements κ, per-class confusion, `never_predicted`, and FACTORED lat/lon decisions with bootstrapped CIs. Present in 8 of 135 in-scope artifacts. |
+| STRATEGIC never instrumented | `strategic_optionset.strategic_family:558` works. It is a **missing CORPUS**, not a missing instrument: 14 scenes → 12 admissible, 18 scoreable events. Refused WITH a reason and n=6844 in 9 artifacts. |
+| LATERAL yaw-rate absent everywhere | implemented at `four_families.py:445-451` alongside heading, curvature and cross-track; present in 11 artifacts (4.9188 °/s on `ff_stageA_cl`). |
+| zero T1 artifacts | 4 T1 artifacts, banked and md5-verified, at `…/incoming/2026-08-18-v58f-artifact-banking/gates/four_families/`. |
+
+Repo-wide recursive census: **135 in-scope artifacts, not 34** — the first census
+saw a quarter of the evidence.
+
+**ROOT-CAUSE CLASS: a second probe that varies the METHOD but not the SCOPE does
+not satisfy the two-probe rule.** I did run a second probe — a regex sweep over
+every nested key name, instead of the registry's key paths — and it agreed, so I
+treated the absence as confirmed. But both probes ran over **the same 71 files**.
+Varying the instrument while holding the location fixed cannot detect that the
+location is the wrong one; it only measures the instrument's own consistency.
+This is the CLAUDE.md rule *"absence found at ONE location is not absence"* in its
+most deceptive form, because the ritual of a second probe was performed.
+
+⚠️ Aggravating: the artifacts I declared non-compliant were the **most** disciplined
+in the repo. `ff_stageA_cl.json` refuses STRATEGIC with a reasoned paragraph and
+its n, and disavows `overlapping_holdout_se` by name. My checker read the
+disavowal as a use and the reasoned refusal as a silent omission — **an instrument
+that punishes exactly the behaviour it exists to reward.**
+
+⇒ **STANDING RULE THIS EARNS: a completeness finding names its SCOPE in the same
+sentence as its number, and a census tool prints the scope it swept.** "0/34 in
+`taniteval/results/`" is a finding; "never instrumented" is a different claim
+needing a different sweep. A second probe must move the LOCATION, not just the method.
+
+**Fixes shipped in the same turn:**
+- `tools/criteria_check.py` gained `--recursive`, and every census now prints
+  `SCOPE OF THIS CENSUS: <path>` with a warning against restating it repo-wide.
+- The checker learned the second refusal idiom (`{status: UNAVAILABLE, reason, n}`
+  inline on the criterion) and the `four_families` schema — 18 new key paths.
+- The forbidden-estimator check now judges disavowal CONTEXT, un-truncated, so
+  naming `overlapping_holdout_se` in order to reject it is no longer a violation.
+- 6 new regression tests pin each false positive (25/25 green).
+
+**What survives:** the genuinely universal gaps, now correctly scoped over 135
+artifacts — **TACTICAL per-class confusion 0/135 present and 0 refused**;
+**93/135 carry no tier stamp**; only **4** artifacts are T1. Those are real, and
+they were worth finding. The overstatement was not.
+
+---
+
+## C133-b — "TACTICAL per-class confusion is the surviving universal gap" (EvalFlyWheel, 2026-08-23)
+
+**RETRACTED within the hour, by reading the emitter.** This is the SECOND retraction of the same
+claim family in one session, and the more instructive one — because it survived the fix for C133.
+
+**What I asserted.** After correcting C133 I published a narrowed claim to the PI: that
+`TACTICAL per-class confusion` was absent in 0/135 in-scope artifacts and not refused — "the
+surviving universal absence".
+
+**What is true.** The confusion matrix has always been emitted. `four_families.py:535-567`
+(`_class_report`) returns `confusion_gt_rows_pred_cols`, `per_class` recall/precision/support,
+`class_order`, and `never_predicted`. MEASURED in `ff_stageA_cl.json`:
+
+| block | κ | accuracy | matrix |
+|---|---|---|---|
+| lateral_decision | 0.3795 | 0.7515 | 3×3, present |
+| longitudinal_decision | **0.0405 (chance)** | 0.3327 | 3×3, present |
+| maneuver_5way_collapsed | 0.1404 | 0.3036 | 5×5, present |
+
+My registry looked for the key `confusion`. The emitter writes `confusion_gt_rows_pred_cols`.
+**The gap was a spelling mistake in my own configuration.**
+
+**ROOT-CAUSE CLASS: in a config-driven instrument, a KEY THAT RESOLVES NOWHERE and a METRIC THAT
+EXISTS NOWHERE are the same observation — both print "0 present" — and only one of them is a
+finding.** C133 was a scope error; this is a *namespace* error, and the C133 fix (sweep wider)
+could not catch it, because widening the sweep only adds more artifacts that also fail to answer a
+key nobody emits. The two failures share a deeper parent: **I measured the world through a
+configuration I wrote, and never validated the configuration against the code that produces the
+data.**
+
+⇒ **STANDING RULE THIS EARNS: a criterion is defined by reading its EMITTER, and an instrument must
+be able to tell "nobody answers this key" apart from "nobody has this metric".** Concretely: before
+reporting any absence, check whether the key resolves in at least ONE artifact anywhere. If it
+resolves nowhere, the null hypothesis is a typo in the instrument, NOT a gap in the programme.
+
+**Fixes shipped in the same turn:**
+- `tools/criteria_check.py` gained `audit_keys()`, a new **UNRESOLVABLE** classification reported
+  SEPARATELY from ABSENT, and the census now runs the self-check FIRST and prints
+  `⛔ REGISTRY SELF-CHECK FAILED` before any family table.
+- `CRITERIA_REGISTRY.json` v2.1.0: `tac.confusion` now names the emitted key; a
+  `registry_hygiene` block records the rule; criteria may declare `not_yet_emitted: true` so a
+  deliberate gap is explicit rather than indistinguishable from a typo.
+- Six tests, including a **two-sided guard**: one asserts the registry names the emitted key, and
+  one asserts `four_families.py` still emits it — so renaming either side breaks a test instead of
+  silently zeroing a family.
+
+**Corrected state of the TACTICAL family: fully instrumented, 3/3 criteria present** on the T1
+artifacts (κ, per-class confusion, factored lat/lon decisions, `never_predicted`, goal-setting, all
+with bootstrapped CIs). The real tactical finding is not absence — it is the measured content:
+**longitudinal decision κ = 0.0405, statistically indistinguishable from chance**, while the
+collapsed 5-way (κ 0.1404) reports neither axis honestly. That is the defect worth the PI's
+attention, and it was visible in the data all along.
+
+⚠️ Note for anyone auditing this repo: `never_predicted` is the load-bearing field of that block.
+The deployed arm once emitted **0 of 881** `accelerate` decisions — a class silently deleted from
+its vocabulary, which no accuracy scalar and no κ can show.
+
+---
+
+## C134 — the forbidden-estimator GUARD skipped every file it was meant to police (EvalFlyWheel, 2026-08-23)
+
+**Not a wrong claim — a guard that could not produce one.** The whole
+`overlapping_holdout_se` enforcement suite has been reporting PASS on **no input
+at all**, for every agent in this programme.
+
+**The defect.** `gate_guard.scan_paths` matched its skip tokens against
+`f.as_posix()` — the **ABSOLUTE** path (`gate_guard.py:249` at HEAD) — while its
+caller passed `SKIP = ("__pycache__", "/.claude/", "/experiments/")`
+(`test_no_jack_in_gates.py:39`). Every agent works in a git worktree at
+`<repo>/.claude/worktrees/<name>/`, so the token `/.claude/` matched the
+**CHECKOUT ROOT** and the scan skipped **373 of 373 files**.
+
+⚠️ **Why it survived so long: it is correct from the primary checkout.** Run from
+`<repo>/`, no path contains `/.claude/`, the scan works, the suite means
+something. Run from any worktree — which is where every agent runs — it scans
+nothing and passes. **The guard worked for the PI and was vacuous for the
+programme**, which is precisely the population that needed it.
+
+**ROOT-CAUSE CLASS: an instrument structurally unable to report the answer it is
+cited for — and passing, loudly, because emptiness and cleanliness are the same
+observation to a counter that only counts violations.** Same family as the O6
+rank gate that could never rule (spectrum n=24 against ceiling 1024), as `df`
+hiding the per-pod MooseFS quota, and as C133-b's key-that-resolves-nowhere. The
+signature is always identical: **a zero that means "nothing was measured" read as
+a zero that means "nothing is wrong".**
+
+⇒ **STANDING RULE THIS EARNS: a scanner must assert on its OWN INPUT COUNT.** A
+scan that examined zero files is a FAILED scan, never a clean one. Any guard
+whose verdict is "no violations found" must publish how many units it inspected,
+and a test must pin that count above zero. Path filters are matched RELATIVE to
+the scan root, never against an absolute path that contains the checkout.
+
+**Fixes shipped:** skip tokens now match relative to `root`; the guard grew an
+arithmetic-shape detector (`scan_*_shapes`) so an unnamed clone of
+`1.96·std/√n` is caught without its name; `mean_ci` and
+`overlapping_holdout_mean_ci` added to `BANNED_CALLS` after the unnamed clone at
+`stack/scripts/driving_diagnostic.py:167-177` was found still live. 16 tests
+pass, and the guard now inspects 36 files where it inspected 0.
+
+⚠️ **Consequence for the record:** every previous green run of
+`test_no_jack_in_gates.py` performed inside a worktree is **evidence of nothing**.
+The estimator tree has not actually been clean-verified until this fix — which is
+how the `driving_diagnostic.mean_ci` clone survived two prior audits.
+
+---
+
+## C148 ⛔ — THE TACTICAL WINDOW STAYED AT 0-6 s AFTER THE BANDS WERE CORRECTED, AND `SPEED_BAND` WAS GATED ON THE ACTION'S CONDITION (PI, 2026-08-27)
+
+**(1) The band fix was HALF APPLIED, and the report said so.** C146 corrected the
+bands to `OPERATIVE (0,2) · TACTICAL (2,6) · STRATEGIC (8,30)` — but only
+`split_by_band` was moved. `tactical_goals()` still computed `SPEED_BAND`, the
+stop episodes and the goal anchor from **`key` (0 s)**, i.e. over ground the
+OPERATIVE layer owns. The PI caught it from a table header reading
+*"TACTICAL GOALS · 0–6 S"* and asked why it still said 0–6.
+
+⚠️ **The header was not stale — it was ACCURATE.** I had updated the constants
+and one call site, then written a retraction describing the whole layer as
+fixed. ⇒ **When a boundary constant changes, grep every consumer of the OLD
+expression before claiming the change is applied.** The anchor now carries
+`band_s` so the window can never again be implicit.
+
+**(2) `SPEED_BAND` was gated on the speed being HELD.** PI: *"Speed should be
+actually always there because it describes the target speed … the speed interval
+(max, min) there."* The gate conflated two different things:
+
+* a **target speed band** is a property EVERY plan has — min/max over the
+  tactical window always exist;
+* whether the speed is **held** is the LONGITUDINAL ACTION's verdict, already
+  said by `CRUISE` / `ACCELERATE` / `BRAKE_TO`.
+
+Gating the goal on the action's condition deleted the target speed from exactly
+the scenes where it matters most. **1,440 -> 4,719 clips (100 %).** MEASURED
+medians show it discriminates the situation, which is why it earns its place on
+every clip: stopping **0.00-1.40**, turning **4.52-7.11**, cruising
+**12.78-13.16** m/s.
+
+⇒ The exclusion `("SPEED_BAND", "STOP_POINT")` is RETIRED. It read "a stop is not
+a held band" — true of the old definition. Under the PI's, a stop is a band of
+`0.0-0.0`, which is information. Keeping it would have flagged **335 coherent
+clips**. (A semantic constraint, not a tensor dimension — no token changed.)
+
+**(3) Goal vs action is now explicit** (`vocab_v7.ROLE_OF`): 26 goals, 23
+actions, 3 inputs. A GOAL is what to achieve and by when; an ACTION is what to do
+now about it. Same scene: goal `TURN_LEFT_FOLLOW_ROUTE` (a left turn at t+24 s),
+action `PREPARE_TURN_L_FOLLOW_ROUTE` (begin setting up, without changing the
+current tactical manoeuvre).
+
+**Coherence 0.21 % -> 0.13 %.**
+
+⚠️ **AND A CORRECTION I OWE THE PI.** I reported that `59b57590` "now emits
+LANE_CHANGE_L". **It does not, and should not.** I checked
+`COT.goals_from_cot()` — the EXTRACTOR — and reported it as the EMITTER's
+output; the emitter applies a lateral-evidence gate and correctly refuses the
+token. Measured with the road's own arc removed, that ego displaces
+**0.01-0.05 m** in every window against a ~3.5 m lane: it never changes lane in
+view. The CoT describes an intent the clip does not execute.
+**ROOT-CAUSE CLASS: verifying at the wrong layer of the pipeline** — the same
+family as quoting a trainer log where only eval output is admissible.

@@ -9,7 +9,14 @@
  * (taniteval.corpus_overlay): each arm's decoded tactical maneuver + strategic
  * route/goal + ADE + v0, with a BEV-only fallback note when a step's camera
  * calibration is unrecoverable. Everything is legended. URL hash carries
- * session/episode/step so a view is shareable: #/s/<id>/e/<ep>/t/<step>. */
+ * session/episode/step so a view is shareable: #/s/<id>/e/<ep>/t/<step>.
+ *
+ * The HUD is drawn FROM THE BUNDLE'S VIZ-STANDARD RECORDS (tanitad.viz_standard
+ * -> session.json `arms[name].viz`), so an element that could not be computed
+ * renders its REASON instead of vanishing, and the model's route PREDICTION and
+ * the ground-truth-derived route INPUT are two separate, separately labelled
+ * fields. See the PROVENANCE CONTRACT block below — it is the fix for a defect
+ * where this SPA showed an input where a viewer reads a decision. */
 (function () {
   "use strict";
 
@@ -98,8 +105,10 @@
   }
 
   // ---------- decoded-intent helpers (THE STANDARD's text HUD) -----------
-  // Strategic route/goal command names, indexed by ArmOutput.nav_cmd. Data-
-  // driven from the bundle (export.NAV_COMMANDS) so the label is correct; the
+  // Labels for the GT-DERIVED NAVIGATOR INPUT (bundle meta.nav_commands, from
+  // export.NAV_COMMANDS). ⛔ This vocabulary labels an INPUT, never a model
+  // decision — the model's own route classes are meta.route_classes and are a
+  // DIFFERENT, 3-entry vocabulary. Data-driven so the label is correct; the
   // canonical tuple is the fallback for older bundles (the previous hard-coded
   // ["straight","left","right"] mislabelled follow/straight).
   function navCommands() {
@@ -111,6 +120,81 @@
     var c = navCommands();
     return (c && c[id] != null) ? c[id] : ("cmd" + id);
   }
+
+  // ---------- ⛔ PROVENANCE CONTRACT — the nav-echo guard ----------------
+  // The navigator command is DERIVED FROM THE EPISODE'S OWN FUTURE POSES and
+  // FED TO the model (stack/tanitad/replay/arms.py, RefBArm.run_batch). It is
+  // an INPUT. This SPA used to print it as `strategic: route <goal>` — a value
+  // the model was GIVEN, rendered where a viewer can only read it as a value
+  // the model DECIDED. That is the nav-echo defect: flagship v1's route head
+  // was an exact bijection of the nav we fed it (369/369) and scored 1.0000 —
+  // an echo of its own input read as skill.
+  //
+  // THE RULE (pinned by stack/tests/test_resim.py):
+  //   1. a GT-derived input key may be READ in exactly ONE function —
+  //      routeInput(), between the sentinel comments below;
+  //   2. routePred() — the model's route decision — may never reference one;
+  //   3. the two are drawn as two separate, differently labelled rows, and an
+  //      absent prediction draws its REASON. Never a blank, never the input.
+  var LBL_ROUTE_PRED = "route (model)";
+  var LBL_ROUTE_INPUT = "route (logged input)";
+
+  // Labels for the MODEL's route decision (refb ROUTE_CLASSES). Distinct from
+  // navCommands() above on purpose — different head, different vocabulary.
+  function routeClasses() {
+    return (S.sess && S.sess.meta.route_classes) ||
+      ["route_left", "route_straight", "route_right"];
+  }
+  function routeName(id) {
+    if (id == null) return null;
+    var c = routeClasses();
+    return (c && c[id] != null) ? c[id] : ("r" + id);
+  }
+  // One arm's viz-standard record for `element` (tanitad.viz_standard), or null
+  // on a pre-contract bundle.
+  function vizRecord(arm, element) {
+    var rows = arm && arm.viz;
+    if (!rows) return null;
+    for (var i = 0; i < rows.length; i++)
+      if (rows[i].element === element) return rows[i];
+    return null;
+  }
+  function vizReason(arm, element, fallback) {
+    var r = vizRecord(arm, element);
+    return (r && r.reason) || fallback;
+  }
+  // The MODEL's own strategic decision. {value, source, cond} when the arm has
+  // a route head, else {reason}. It has no access to the logged input by
+  // construction — that is the point.
+  function routePred(arm) {
+    var r = vizRecord(arm, "strategic");
+    if (r) {
+      if (r.state === "present")
+        return { value: r.value, source: r.source,
+                 cond: (r.conditioned_on || []).join(", ") };
+      return { reason: r.reason };
+    }
+    var h = (arm && arm.heads) || {};              // pre-contract bundle
+    if (h.route_pred != null)
+      return { value: routeName(h.route_pred), cond: "",
+               source: "route_logits.argmax(-1)" };
+    return { reason: "this bundle carries no route prediction for the arm" };
+  }
+  function condSuffix(rp) { return rp.cond ? "  (cond. " + rp.cond + ")" : ""; }
+
+  // >>> GT-DERIVED-INPUT ACCESSOR (nav-echo guard) >>>
+  // ⛔ THE ONLY place a ground-truth-derived INPUT may be read from a bundle.
+  // Everything it returns is drawn under LBL_ROUTE_INPUT with a "given" marker.
+  function routeInput(arm) {
+    var r = vizRecord(arm, "strategic_input");
+    if (r && r.state === "present")
+      return { value: r.value, source: r.source };
+    var h = (arm && arm.heads) || {};              // pre-contract bundle
+    if (h.nav_cmd == null) return null;
+    return { value: navName(h.nav_cmd) || ("cmd" + h.nav_cmd),
+             source: "refb_labels.nav_command(episode.poses, t)" };
+  }
+  // <<< GT-DERIVED-INPUT ACCESSOR <<<
   // The arm's DECODED tactical maneuver = argmax of its maneuver_probs head
   // (the same intent taniteval's HUD prints as "tactical: <man>"); null if the
   // arm has no maneuver head.
@@ -716,13 +800,22 @@
 
   // ---------- decoded-intent HUD (per-arm camera text overlay) ----------
   // Mirrors taniteval.corpus_overlay's text HUD, per arm and co-located with
-  // the camera: the arm's decoded TACTICAL maneuver + STRATEGIC route/goal +
-  // ADE + v0, and the BEV-only fallback note on an uncalibrated step.
+  // the camera: the arm's decoded TACTICAL maneuver + the STRATEGIC pair
+  // (model route / logged input) + ADE + v0, and the BEV-only fallback note on
+  // an uncalibrated step.
+  //
+  // Drawn from the bundle's viz-standard records: an element that could not be
+  // computed renders "unavailable — <reason>", never nothing. A blank slot is
+  // indistinguishable from an element nobody implemented, which is how the
+  // strategic defect survived review.
   function hudRow(k, valEl) {
     var row = el("div", "hud-intent");
     row.appendChild(el("span", "hud-k", k));
     row.appendChild(valEl);
     return row;
+  }
+  function naSpan(reason) {
+    return el("span", "hud-na", "unavailable — " + reason);
   }
   function updateCamHud(name, st) {
     var hud = S.dom.camHud && S.dom.camHud[name];
@@ -741,22 +834,34 @@
       else if (gt != null) row.appendChild(el("span", "hud-gt",
         "gt " + maneuverLabel(gt).toLowerCase()));
       hud.appendChild(row);
+    } else {
+      hud.appendChild(hudRow("tactical", naSpan(vizReason(
+        arm, "tactical", "the arm emits no maneuver distribution"))));
     }
-    if (heads.nav_cmd != null) {            // strategic: route <goal>
-      hud.appendChild(hudRow("strategic",
-        el("span", "hud-v", "route " + (navName(heads.nav_cmd) || heads.nav_cmd))));
+
+    // ⛔ STRATEGIC — TWO fields, never one merged row. The prediction slot
+    // shows the MODEL's route or its reason; the input is labelled as such.
+    var rp = routePred(arm);
+    hud.appendChild(hudRow(LBL_ROUTE_PRED, rp.value != null
+      ? el("span", "hud-v", rp.value + condSuffix(rp))
+      : naSpan(rp.reason)));
+    var ri = routeInput(arm);
+    if (ri) {
+      var irow = hudRow(LBL_ROUTE_INPUT, el("span", "hud-v", ri.value));
+      irow.appendChild(el("span", "hud-given", "given · gt-derived"));
+      hud.appendChild(irow);
     }
+
     // metrics: per-arm ADE + ego v0 (always shown — the honest scalar read)
     var ade = arm ? arm.ade : null;
     hud.appendChild(el("div", "hud-metrics",
       "ADE " + (ade == null ? "–" : fmt(ade, 2) + " m") +
       "  ·  v " + fmt(st.ego.speed, 1) + " m/s"));
-    if (manId == null && heads.nav_cmd == null && ade == null)
-      hud.lastChild.textContent = "no decoded intent";
     // BEV-only fallback note when the camera geometry was unrecoverable
     if (stepIsUncalibrated(st)) {
       hud.appendChild(el("div", "hud-fallback",
-        "camera overlay disabled — calibration unverified · see BEV"));
+        "camera overlay disabled — " + vizReason(
+          arm, "camera", "calibration unverified") + " · see BEV"));
     }
   }
 
@@ -1127,11 +1232,26 @@
   }
 
   // ---------- head readouts --------------------------------------------
+  // The strategic pair in the head-readout panel — same contract as the camera
+  // HUD: prediction and logged input are two rows, and the prediction row
+  // carries its reason when the arm has no route head.
+  function renderStrategicRows(host, arm) {
+    var rp = routePred(arm), ri = routeInput(arm);
+    host.appendChild(el("div", "sub", "strategic route / goal"));
+    host.appendChild(el("div", "hnote", LBL_ROUTE_PRED + ": " +
+      (rp.value != null ? rp.value + condSuffix(rp)
+                        : "unavailable — " + rp.reason)));
+    if (ri)
+      host.appendChild(el("div", "hnote given", LBL_ROUTE_INPUT + ": " +
+        ri.value + " — ground-truth-derived INPUT to the model, not a " +
+        "prediction (" + ri.source + ")"));
+  }
   function renderHeads(host, name, arm) {
     host.innerHTML = "";
     var col = armColor(name);
-    var h = arm ? arm.heads : null;
-    if (!h || Object.keys(h).length === 0) {
+    var h = (arm && arm.heads) || {};
+    renderStrategicRows(host, arm);        // contract: always drawn, both fields
+    if (Object.keys(h).length === 0) {
       host.appendChild(el("div", "none", "No monitor heads for this arm.")); return;
     }
     if (h.imag_rel) {
@@ -1165,10 +1285,6 @@
         man.appendChild(row);
       });
       host.appendChild(man);
-    }
-    if (h.nav_cmd != null) {
-      host.appendChild(el("div", "sub", "strategic route / goal (nav command): " +
-        (navName(h.nav_cmd) || h.nav_cmd)));
     }
   }
   function bar(k, v, max, color, valText) {

@@ -176,13 +176,13 @@ failure is carried on the final summary line, never only in scrollback.
 **False-positive budget (MEASURED 2026-08-18):** whole tracked repo = 6,201 files / 662 MB /
 **0 blocking** / 64 advisory. The first run produced 7 blocking findings, all artifacts; each
 was narrowed with its reason (see the report in
-`TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-08-18-credential-scanner/`).
+`TanitAD Research Lab/Architecture & Inference/Implementation/incoming/2026-08-18-credential-scanner/`).
 
 ## safe_commit — *use this instead of `git commit`*
 
 ```bash
 # the normal call: declare what you staged
-python tools/safe_commit.py -p tools/ -p "TanitAD Research Hub/Data Engineering" \
+python tools/safe_commit.py -p tools/ -p "TanitAD Research Lab/Data Engineering" \
     -m "tools: wave-1 ops tooling"
 
 python tools/safe_commit.py --print-index                 # look FIRST (always free)
@@ -230,7 +230,7 @@ Also refuses to commit on `main` (`--allow-main` to override) and never passes
 python tools/registry_lint.py                       # the standard sweep
 python tools/registry_lint.py --strict               # body + boilerplate hits also fail
 python tools/registry_lint.py --self-test            # 5 red/green falsifiers
-python tools/registry_lint.py --file "TanitAD Research Hub/Benchmarks & Eval/LEADERBOARD.md"
+python tools/registry_lint.py --file "TanitAD Research Lab/Benchmarks & Eval/LEADERBOARD.md"
 python tools/registry_lint.py --json lint.json
 ```
 

@@ -478,6 +478,16 @@ class RefBArm:
     to the model, not a prediction, so it is computed outside the latency
     timer. Maneuver ground truth uses the pinned pseudo-label derivation
     (refb_labels.window_maneuver_labels).
+
+    ⛔ ``nav_cmd`` (input) and ``route_pred`` (the model's own route decision,
+    ``route_logits.argmax`` over ROUTE_CLASSES) are DIFFERENT FIELDS and must
+    stay different downstream. ``route_logits`` was computed by every forward
+    pass here and then DISCARDED, which left the visualization layer with only
+    the input to show — and it showed it in a prediction slot (the nav-echo
+    defect). It is now returned. ⚠️ ``StrategicHead`` is FiLM-conditioned on
+    ``nav_emb(nav_cmd)`` (refs/refb.py:295-305), so ``route_pred`` is a model
+    output computed UNDER the GT-derived input; consumers declare that with
+    ``tanitad.viz_standard``'s ``conditioned_on`` rather than hiding it.
     """
 
     name = "refb"
@@ -533,6 +543,9 @@ class RefBArm:
                 wp = torch.stack([out["waypoints"][k]
                                   for k in WAYPOINT_STEPS], dim=1)
                 probs = torch.softmax(out["maneuver_logits"].float(), dim=-1)
+                # The model's OWN strategic decision (aux-CE-supervised route
+                # head). Distinct from nav_cmd above, which is its input.
+                route_pred = out["route_logits"].float().argmax(dim=-1)
                 ood = self.model.ood.score(out["states"][:, -1].float())
         per_win_ms = lt.ms / B
 
@@ -548,6 +561,7 @@ class RefBArm:
         wp_np = wp.float().cpu().numpy()
         seq_np = out["action_seq"].float().cpu().numpy()
         probs_np = probs.cpu().numpy()
+        route_np = route_pred.cpu().numpy()
         conf = out["conf_pred"].float().cpu()
         outs = []
         for j in range(B):
@@ -559,7 +573,8 @@ class RefBArm:
                 action_seq=seq_np[j],
                 maneuver_probs=probs_np[j],
                 maneuver_gt=int(man_gt[j]),
-                nav_cmd=int(nav[j]),
+                nav_cmd=int(nav[j]),            # GIVEN INPUT (GT-derived)
+                route_pred=int(route_np[j]),    # model's own route decision
                 conf=float(conf[j]),
                 ood=float(ood[j]),
             ))

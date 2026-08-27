@@ -16,7 +16,11 @@ never has to know the projection maths)::
         "created": "YYYY-MM-DD HH:MM:SS",
         "waypoint_steps": [5, 10, 15, 20],
         "maneuver_classes": [str, ...] | null,
-        "nav_commands": [str, ...],   # strategic route/goal labels (nav_cmd idx)
+        "nav_commands": [str, ...],   # labels for the GT-DERIVED nav INPUT
+        "route_classes": [str, ...],  # labels for the model's route PREDICTION
+        "gt_derived_input_heads": [str, ...],  # head keys that are INPUTS, not
+                                      #   predictions — the SPA must never
+                                      #   render one in a prediction slot
         "corpora": [str, ...],
         "uncalibrated_corpora": [str, ...],  # camera overlay off (BEV fallback)
         "arms": [ {name, color, ckpt, ade, fde, latency_p50}, ... ],
@@ -44,7 +48,15 @@ never has to know the projection maths)::
                   "steer": float | null, "accel": float | null,
                   "ade": float | null,
                   "heads": { imag_rel?:{k:v}, sigma?, conf?, ood?,
-                             maneuver_probs?:[...], maneuver_gt?, nav_cmd? }
+                             maneuver_probs?:[...], maneuver_gt?,
+                             nav_cmd?,      # GT-DERIVED INPUT, not a prediction
+                             route_pred? }, # model route decision (ROUTE_CLASSES)
+                  "viz": [ {element, state, value, source, kind, reason, n,
+                            conditioned_on}, ... ]   # THE VIZ STANDARD, see
+                                         #   tanitad.viz_standard: five records
+                                         #   per arm per step, each present
+                                         #   with a declared source+kind or
+                                         #   unavailable with a drawn reason
               } } }, ... ] }, ...
       ]
     }
@@ -78,6 +90,7 @@ import numpy as np
 
 from tanitad.replay.engine import WAYPOINT_STEPS, TimestepRecord
 from tanitad.replay.rr_log import cam_for_corpus, to_image_plane
+from tanitad.viz_standard import VizElement, check_frame, to_json
 
 
 def _labels_module():
@@ -137,6 +150,131 @@ RESIM_COLORS: dict[str, str] = {
 # mislabelled indices 0 and 3). The decoded strategic route/goal in the viz
 # standard's text HUD ("strategic: route {route}") reads this table.
 NAV_COMMANDS: tuple[str, ...] = ("follow", "left", "right", "straight")
+
+# The model's OWN route decision classes (mirror tanitad.refs.refb.ROUTE_CLASSES
+# — 3 classes over the 15-25 s horizon, aux-CE supervised). DIFFERENT from
+# NAV_COMMANDS above, which has 4 and is an INPUT. They were conflated in the
+# UI; they are not the same vocabulary and never were.
+ROUTE_CLASSES: tuple[str, ...] = ("route_left", "route_straight", "route_right")
+
+# ⛔ Head keys whose value is DERIVED FROM GROUND TRUTH and FED TO the model.
+# They are INPUTS. Emitted into meta so the SPA is data-driven about provenance
+# instead of trusting a label. `nav_cmd` is computed from the episode's OWN
+# FUTURE POSES (replay/arms.py RefBArm.run_batch); showing it where a viewer
+# reads a model decision is the nav-echo defect this registry exists to stop.
+GT_DERIVED_INPUT_HEADS: frozenset[str] = frozenset({"nav_cmd"})
+
+# Provenance strings used by the viz-standard records below. Written once here
+# so a reviewer can see exactly what every strategic value on screen came from.
+_SRC_NAV_INPUT = ("scripts/refb_labels.nav_command(episode.poses, t) "
+                  "-- derived from the episode's OWN FUTURE POSES, fed to the "
+                  "model as its navigator command")
+_SRC_ROUTE_PRED = ("ArmOutput.route_pred = RefBModel.route_logits.argmax(-1) "
+                   "(aux-CE-supervised strategic head)")
+# ⚠️ refs/refb.py:295-305 — StrategicHead is FiLM-conditioned on
+# nav_emb(nav_cmd), so the route prediction is computed UNDER the GT-derived
+# input. Declared, not hidden: the same admissibility question the programme
+# asks of any goal signal.
+_ROUTE_PRED_CONDITIONED_ON = (
+    "nav_cmd (GT-derived; StrategicHead is FiLM-conditioned on nav_emb)",)
+
+
+def _name_at(names: Sequence[str], idx: int | None) -> str | None:
+    """Class name for an index, or a stable ``i<idx>`` when out of vocabulary."""
+    if idx is None:
+        return None
+    return names[idx] if 0 <= idx < len(names) else f"i{idx}"
+
+
+def _arm_viz_elements(name: str, o, *, corpus: str, cam_ok: bool,
+                      has_wp: bool, ade: float | None,
+                      maneuver_classes: Sequence[str] | None) -> list[dict]:
+    """THE VIZ STANDARD, declared per arm per step (tanitad.viz_standard).
+
+    Five records — camera / bev / tactical / strategic / ade — every one either
+    ``present`` with its ``source`` + ``kind``, or ``unavailable`` with a
+    reason the SPA draws. ``check_frame`` refuses to return if one is silently
+    missing, or if the GT-derived navigator input is put in the ``strategic``
+    PREDICTION slot; the input gets its own ``strategic_input`` record instead.
+    """
+    els: list[VizElement] = []
+
+    # 1. camera projection ------------------------------------------------
+    if not has_wp:
+        els.append(VizElement.unavailable(
+            "camera", f"arm '{name}' emitted no waypoints to project"))
+    elif not cam_ok:
+        els.append(VizElement.unavailable(
+            "camera", f"camera calibration unverified for corpus "
+                      f"'{corpus}' -- BEV-only fallback"))
+    else:
+        els.append(VizElement.present(
+            "camera", "trajectory fan",
+            source=f"rr_log.to_image_plane(ArmOutput.waypoints, "
+                   f"cam_for_corpus('{corpus}'))",
+            kind="model_output"))
+
+    # 2. metric BEV inset --------------------------------------------------
+    if has_wp:
+        els.append(VizElement.present(
+            "bev", "trajectory fan (m)",
+            source="ArmOutput.waypoints [ego metres, +x fwd / +y left]",
+            kind="model_output"))
+    else:
+        els.append(VizElement.unavailable(
+            "bev", f"arm '{name}' emitted no waypoints"))
+
+    # 3. tactical manoeuvre (decoded) --------------------------------------
+    man_probs = getattr(o, "maneuver_probs", None)
+    if man_probs is not None:
+        idx = int(np.argmax(np.asarray(man_probs)))
+        els.append(VizElement.present(
+            "tactical",
+            _name_at(list(maneuver_classes or ()), idx) or f"m{idx}",
+            source="ArmOutput.maneuver_probs.argmax(-1)",
+            kind="model_output"))
+    else:
+        els.append(VizElement.unavailable(
+            "tactical",
+            f"arm '{name}' emits no maneuver_probs -- no tactical head is "
+            f"wired in tanitad.replay.arms"))
+
+    # 4. strategic route/goal ---------------------------------------------
+    # ⛔ THE FIX. nav_cmd is an INPUT and can never fill this slot.
+    route_pred = getattr(o, "route_pred", None)
+    nav_cmd = getattr(o, "nav_cmd", None)
+    if route_pred is not None:
+        els.append(VizElement.present(
+            "strategic", _name_at(ROUTE_CLASSES, int(route_pred)),
+            source=_SRC_ROUTE_PRED, kind="model_output",
+            conditioned_on=_ROUTE_PRED_CONDITIONED_ON))
+    elif nav_cmd is not None:
+        els.append(VizElement.unavailable(
+            "strategic",
+            f"arm '{name}' emits no route prediction -- only the GT-derived "
+            f"navigator INPUT (nav_cmd) exists for this arm, and an input may "
+            f"not fill a prediction slot"))
+    else:
+        els.append(VizElement.unavailable(
+            "strategic", f"arm '{name}' has no strategic route head"))
+
+    # 4b. the INPUT, in its own declared slot ------------------------------
+    if nav_cmd is not None:
+        els.append(VizElement.present(
+            "strategic_input", _name_at(NAV_COMMANDS, int(nav_cmd)),
+            source=_SRC_NAV_INPUT, kind="given_input"))
+
+    # 5. ADE ---------------------------------------------------------------
+    if ade is not None:
+        els.append(VizElement.present(
+            "ade", f"{ade:.3f} m",
+            source="mean ||pred - gt||_2 over WAYPOINT_STEPS", kind="derived",
+            n=len(WAYPOINT_STEPS)))
+    else:
+        els.append(VizElement.unavailable(
+            "ade", f"arm '{name}' emitted no waypoints to score"))
+
+    return to_json(check_frame(els, where=f"arm '{name}' on corpus '{corpus}'"))
 
 
 def resim_color(name: str) -> str:
@@ -371,8 +509,13 @@ def export_bundle(records: Iterable[TimestepRecord], out_dir: str | Path,
                                            for p in o.maneuver_probs]
             if o.maneuver_gt is not None:
                 heads["maneuver_gt"] = int(o.maneuver_gt)
+            # ⛔ nav_cmd is a GT-DERIVED INPUT (meta.gt_derived_input_heads).
+            # It is kept for back-compat and for the "logged input" field; the
+            # STRATEGIC PREDICTION is route_pred and nothing else.
             if o.nav_cmd is not None:
                 heads["nav_cmd"] = int(o.nav_cmd)
+            if getattr(o, "route_pred", None) is not None:
+                heads["route_pred"] = int(o.route_pred)
 
             step_dict["arms"][name] = {
                 "wp_img": wp_img, "wp_bev": wp_bev,
@@ -381,6 +524,11 @@ def export_bundle(records: Iterable[TimestepRecord], out_dir: str | Path,
                 "accel": (round(float(o.action[1]), 4)
                           if o.action is not None else None),
                 "ade": ade, "heads": heads,
+                # THE VIZ STANDARD as a contract that travels with the bundle
+                "viz": _arm_viz_elements(
+                    name, o, corpus=rec.corpus, cam_ok=cam_ok,
+                    has_wp=o.waypoints is not None, ade=ade,
+                    maneuver_classes=maneuver_classes),
             }
         step_dict["_worst"] = round(worst_this_step, 4)
         ep_steps[ep].append(step_dict)
@@ -439,7 +587,12 @@ def export_bundle(records: Iterable[TimestepRecord], out_dir: str | Path,
             "waypoint_steps": list(WAYPOINT_STEPS),
             "maneuver_classes": (list(maneuver_classes)
                                  if maneuver_classes else None),
-            "nav_commands": list(NAV_COMMANDS),   # strategic route/goal labels
+            # ⛔ nav_commands labels the GT-derived navigator INPUT; the
+            # model's own route decision uses route_classes. Two vocabularies,
+            # two fields — they were displayed as one and that was the defect.
+            "nav_commands": list(NAV_COMMANDS),   # INPUT vocabulary (4)
+            "route_classes": list(ROUTE_CLASSES),  # model route head (3)
+            "gt_derived_input_heads": sorted(GT_DERIVED_INPUT_HEADS),
             "corpora": list(corpora) if corpora else corpora_seen,
             "uncalibrated_corpora": sorted(uncal),  # BEV-only fallback corpora
             "arms": arms_meta,

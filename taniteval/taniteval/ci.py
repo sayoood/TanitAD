@@ -223,7 +223,8 @@ def _reducer_name(reduce):
 # The estimators                                                               #
 # --------------------------------------------------------------------------- #
 def episode_cluster_bootstrap(per_window, eid, reduce="mean",
-                              n_boot=DEFAULT_N_BOOT, seed=0, alpha=0.05) -> dict:
+                              n_boot=DEFAULT_N_BOOT, seed=0, alpha=0.05,
+                              dp=DISPLAY_DP) -> dict:
     """Percentile CI on a per-window metric, resampling EPISODES with replacement.
 
     ``per_window`` [N] are the per-window components (displacements, 0/1 miss
@@ -234,6 +235,15 @@ def episode_cluster_bootstrap(per_window, eid, reduce="mean",
     interval, it does not move the mean. Returns a dict carrying its own
     provenance (``estimator``, ``n_episodes``, ``n_boot``) so a number can never
     be quoted without the construction that produced it.
+
+    ⚠️ ``dp`` (2026-08-23, ADDITIVE — the default is unchanged, so no published
+    number moves) is the publication rounding. It exists because the programme's
+    4 dp is a **display** convention chosen for metres and m/s, and it silently
+    destroys a component whose natural magnitude is smaller: ``curvature_bias_1pm``
+    runs at ~1e-4 1/m, so at 4 dp its interval renders ``[0.0, 0.0]`` — a
+    degenerate-looking record around a real effect. Same defect class as
+    :func:`_render_bounds`, one level up: **the display lied, so the display is
+    what is parameterised.** The estimator is untouched.
     """
     v = np.asarray(per_window, dtype=np.float64)
     if v.ndim != 1:
@@ -245,17 +255,21 @@ def episode_cluster_bootstrap(per_window, eid, reduce="mean",
     point = red(v)
     boots = np.array([red(v[sel]) for sel in _draws(uniq, idx_by_ep, n_boot, seed)])
     lo, hi = np.percentile(boots, [100 * alpha / 2, 100 * (1 - alpha / 2)])
-    return {"mean": round(point, 4),
-            "lo": round(float(lo), 4),
-            "hi": round(float(hi), 4),
-            # symmetric half-width, for drop-in comparison with the old ± ci95
-            "ci95": round(float((hi - lo) / 2.0), 4),
-            "se": round(float(boots.std(ddof=1)), 4),
-            "reducer": _reducer_name(reduce),
-            "n_windows": int(v.size),
-            "n_episodes": int(len(uniq)),
-            "n_boot": int(n_boot),
-            "estimator": _NEW_ESTIMATOR}
+    dp = int(dp)
+    out = {"mean": round(point, dp),
+           "lo": round(float(lo), dp),
+           "hi": round(float(hi), dp),
+           # symmetric half-width, for drop-in comparison with the old ± ci95
+           "ci95": round(float((hi - lo) / 2.0), dp),
+           "se": round(float(boots.std(ddof=1)), dp),
+           "reducer": _reducer_name(reduce),
+           "n_windows": int(v.size),
+           "n_episodes": int(len(uniq)),
+           "n_boot": int(n_boot),
+           "estimator": _NEW_ESTIMATOR}
+    if dp != DISPLAY_DP:
+        out["display_dp"] = dp
+    return out
 
 
 def paired_episode_cluster_bootstrap(a, b, eid, n_boot=DEFAULT_N_BOOT, seed=0,
@@ -321,7 +335,12 @@ def bootstrap_metrics(components, eid, n_boot=DEFAULT_N_BOOT, seed=0,
                       alpha=0.05) -> dict:
     """Episode-cluster bootstrap over a whole metric suite in ONE resampling.
 
-    ``components`` maps ``metric_name -> (per_window_values[N], reducer_name)``.
+    ``components`` maps ``metric_name -> (per_window_values[N], reducer_name)``
+    — or, since 2026-08-23, ``(per_window_values[N], reducer_name, dp)`` so one
+    suite can mix magnitudes (metres at 4 dp beside 1/m curvature at 6). The
+    2-tuple form is unchanged and still rounds at :data:`DISPLAY_DP`, so no
+    existing caller's numbers move.
+
     Every metric is recomputed on the SAME resampled episode draw, so the
     reported intervals are mutually consistent (ade@1s and ade@2s move together
     exactly as they do in reality).
@@ -331,6 +350,8 @@ def bootstrap_metrics(components, eid, n_boot=DEFAULT_N_BOOT, seed=0,
         return {}
     vals = {k: np.asarray(components[k][0], dtype=np.float64) for k in names}
     reds = {k: resolve_reducer(components[k][1]) for k in names}
+    dps = {k: int(components[k][2]) if len(components[k]) > 2 else DISPLAY_DP
+           for k in names}
     n = vals[names[0]].size
     for k in names:
         if vals[k].size != n:
@@ -342,15 +363,18 @@ def bootstrap_metrics(components, eid, n_boot=DEFAULT_N_BOOT, seed=0,
             boots[k][i] = reds[k](vals[k][sel])
     out = {}
     for k in names:
+        dp = dps[k]
         lo, hi = np.percentile(boots[k], [100 * alpha / 2, 100 * (1 - alpha / 2)])
-        out[k] = {"mean": round(reds[k](vals[k]), 4),
-                  "lo": round(float(lo), 4),
-                  "hi": round(float(hi), 4),
-                  "ci95": round(float((hi - lo) / 2.0), 4),
-                  "se": round(float(boots[k].std(ddof=1)), 4),
+        out[k] = {"mean": round(reds[k](vals[k]), dp),
+                  "lo": round(float(lo), dp),
+                  "hi": round(float(hi), dp),
+                  "ci95": round(float((hi - lo) / 2.0), dp),
+                  "se": round(float(boots[k].std(ddof=1)), dp),
                   "reducer": _reducer_name(components[k][1]),
                   "n_windows": int(n),
                   "n_episodes": int(len(uniq)),
                   "n_boot": int(n_boot),
                   "estimator": _NEW_ESTIMATOR}
+        if dp != DISPLAY_DP:
+            out[k]["display_dp"] = dp
     return out

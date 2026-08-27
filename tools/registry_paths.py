@@ -77,7 +77,7 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 REGISTRY = REPO_ROOT / "Project Steering" / "MODEL_REGISTRY.md"
-HUB = REPO_ROOT / "TanitAD Research Hub"
+HUB = REPO_ROOT / "TanitAD Research Lab"
 ALLOWLIST = Path(__file__).resolve().parent / "registry_paths_allow.json"
 
 EXTS = (".json", ".pt", ".jsonl", ".npz", ".npy", ".md", ".py", ".csv",
@@ -233,7 +233,7 @@ def classify(tok: str) -> str:
 def resolve(tok: str, repo_root: Path | None = None,
             hub: Path | None = None) -> dict:
     root = repo_root or REPO_ROOT
-    hubdir = hub or (root / "TanitAD Research Hub")
+    hubdir = hub or (root / "TanitAD Research Lab")
     kind = classify(tok)
     rec = {"citation": tok, "kind": kind}
 

@@ -104,9 +104,9 @@ def test_empty_index_refuses(repo):
 
 
 def test_directory_prefix_and_glob_declarations_match(repo):
-    _stage(repo, "TanitAD Research Hub/Data Engineering/x.md")
+    _stage(repo, "TanitAD Research Lab/Data Engineering/x.md")
     _stage(repo, "tools/a.py")
-    assert _run(repo, "-p", "TanitAD Research Hub/", "-p", "tools/*.py",
+    assert _run(repo, "-p", "TanitAD Research Lab/", "-p", "tools/*.py",
                 "-m", "both") == 0
 
 
@@ -291,10 +291,10 @@ def test_message_file_is_used_verbatim(repo, tmp_path):
 
 
 def test_paths_with_spaces_survive_the_index_listing(repo):
-    _stage(repo, "TanitAD Research Hub/Data Engineering/note with space.md")
-    plan = safe_commit.build_plan(repo, ["TanitAD Research Hub/"], False, True,
+    _stage(repo, "TanitAD Research Lab/Data Engineering/note with space.md")
+    plan = safe_commit.build_plan(repo, ["TanitAD Research Lab/"], False, True,
                                   False, False)
-    assert plan.index == ["TanitAD Research Hub/Data Engineering/note with space.md"]
+    assert plan.index == ["TanitAD Research Lab/Data Engineering/note with space.md"]
     assert not plan.foreign
 
 

@@ -43,7 +43,7 @@ def repo(tmp_path: Path) -> Path:
 
 
 def _intake(repo: Path, slug: str, verdict_line: str) -> Path:
-    d = repo / "TanitAD Research Hub" / "Tools&DevEnv" / "Implementation" / "incoming" / slug
+    d = repo / "TanitAD Research Lab" / "Tools&DevEnv" / "Implementation" / "incoming" / slug
     d.mkdir(parents=True)
     body = (
         "# INTAKE — test\n\n## What\nx\n\n"
@@ -61,7 +61,7 @@ def test_clean_hub_passes(repo):
 
 
 def test_uncommitted_hub_file_blocks(repo):
-    note = repo / "TanitAD Research Hub" / "Tools&DevEnv" / "Research" / "2026-07-18-x.md"
+    note = repo / "TanitAD Research Lab" / "Tools&DevEnv" / "Research" / "2026-07-18-x.md"
     note.parent.mkdir(parents=True)
     note.write_text("finding\n", encoding="utf-8")  # untracked deliverable
     assert sg.main(["--repo", str(repo)]) == 1
@@ -151,7 +151,7 @@ def test_stale_intake_warns_blocks_under_strict(repo):
 
 
 def test_missing_verdict_line_is_unfilled(repo):
-    d = repo / "TanitAD Research Hub" / "X" / "Implementation" / "incoming" / "2026-06-01-noverdict"
+    d = repo / "TanitAD Research Lab" / "X" / "Implementation" / "incoming" / "2026-06-01-noverdict"
     d.mkdir(parents=True)
     (d / "INTAKE.md").write_text("# INTAKE\n\nno verdict section here\n", encoding="utf-8")
     rep = sg.build_report(repo, "HEAD", sg.date(2026, 7, 18), 3)

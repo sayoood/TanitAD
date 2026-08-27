@@ -227,9 +227,207 @@ def _masked(x: torch.Tensor, m: torch.Tensor) -> tuple[float, int]:
     return float(x[m].mean()), n
 
 
+# ============================================================================ #
+# ⭐ INTERVALS ON EVERY REPORTED COMPONENT (2026-08-23)                         #
+#                                                                              #
+# ⛔ THE HOLE THIS CLOSES, MEASURED. Before today NEITHER `longitudinal()` nor  #
+# `lateral()` took an `eid` or produced a single interval: every number in both #
+# families was a BARE POINT ESTIMATE, and the intervals that existed were       #
+# computed by the CALLERS over a hand-picked subset —                          #
+#                                                                              #
+#   tools/eval_four_families.py  7 components                                  #
+#   tools/ff_rescore.py         10 components                                  #
+#   tools/t1_eval.py             6 components                                  #
+#                                                                              #
+# — so `target_speed_acc`, `speed_bias`, `speed_rmse`, `accel_mae`,            #
+# `along_bias`, `along_final_bias`, `ego_progress`, `yaw_rate_mae`,           #
+# `curvature_bias`, `cross_bias`, `cross_final_mae` and every pooled           #
+# `distance_keeping` scalar shipped with NO interval at all. CLAUDE.md's        #
+# estimator rule ("never quote an interval without its estimator") has a silent #
+# twin — **never quote a POINT ESTIMATE without an interval** — and a           #
+# hand-picked subset is exactly how the twin gets broken without anyone lying.  #
+#                                                                              #
+# ⭐ THE DESIGN RULE THAT MAKES THIS SAFE: the interval's point estimate is the #
+# BLOCK'S OWN NUMBER, recomputed by the same arithmetic, never a second         #
+# implementation. `ff_rescore.score_arm` already states why ("a second          #
+# implementation lets the interval and the point estimate drift apart           #
+# silently"). Concretely:                                                      #
+#                                                                              #
+#   * an UNMASKED component (speed, along, cross, accel, target-speed bands) is #
+#     a flat mean over [n, H] entries; every window has the same H, so the mean #
+#     of the per-window means IS that number, exactly.                          #
+#   * a MASKED component (heading / yaw-rate / curvature) is a mean over a      #
+#     ragged subset, and the mean of per-window means is a DIFFERENT statistic  #
+#     (macro vs micro). Those therefore bootstrap a **ratio of sums** —         #
+#     `sum(per-window error sums) / sum(per-window counts)` — which reproduces  #
+#     the block's masked mean to float64, so the interval is centred on the     #
+#     number that is printed and not on a near-miss of it.                      #
+#                                                                              #
+# ⚠️ NOTHING HERE MOVES AN EXISTING VALUE. Every emitted metric keeps its exact #
+# arithmetic; this layer only ADDS a `ci` sub-block beside it. `tests/          #
+# test_eval_pipeline.py` pins that equality in both directions.                 #
+# ============================================================================ #
+
+#: ⛔ THE DECLARED COVERAGE CONTRACT. Every scalar the LONGITUDINAL/LATERAL
+#: blocks report is named here with the dotted path it lives at, because
+#: coverage that is only implicit cannot be AUDITED: a metric added without an
+#: interval, or an interval quietly dropped, both read as "the block looks fine".
+#: :func:`ci_coverage` diffs the emitted block against these two tuples, and
+#: `_NON_METRIC_KEYS` below closes the other direction — a numeric leaf that is
+#: neither declared nor known provenance is reported as UNDECLARED.
+LONGITUDINAL_COMPONENTS = (
+    "speed_mae_mps", "speed_bias_mps", "speed_rmse_mps",
+    # ⛔ DERIVED from the bands tuple, never re-typed: the emitter builds these
+    # keys with the same f-string, so a band added to TARGET_SPEED_BANDS_MPS
+    # cannot appear in the block without also appearing in the coverage contract.
+    *(f"target_speed_acc.within_{b}_mps" for b in TARGET_SPEED_BANDS_MPS),
+    "along_mae_m", "along_bias_m", "along_final_bias_m",
+    "accel_mae_mps2",
+    "ego_progress.progress_ratio_mean", "ego_progress.progress_ratio_median",
+    "ego_progress.progress_error_mean", "ego_progress.under_progress_rate",
+    "ego_progress.gt_progress_mean_m", "ego_progress.t0_axis_gt_self_ratio",
+    "distance_keeping.mean_headway_min_m",
+    "distance_keeping.mean_time_gap_min_s",
+    "distance_keeping.mean_min_ttc_s",
+)
+
+LATERAL_COMPONENTS = (
+    "heading_mae_deg", "yaw_rate_mae_degps",
+    "curvature_mae_1pm", "curvature_bias_1pm",
+    "cross_mae_m", "cross_bias_m", "cross_final_mae_m",
+)
+
+#: Numeric leaves that are PROVENANCE / DENOMINATORS, not measurements — they
+#: must NOT carry an interval, and listing them explicitly is what lets
+#: :func:`ci_coverage` flag anything else that appears without one.
+_NON_METRIC_KEYS = frozenset({
+    "dt_s", "n", "n_windows", "n_boot", "seed", "min_ds_m", "min_ds_mps",
+    "n_steps_heading", "n_steps_curvature", "n_steps_yaw_rate",
+    "excluded_below_min_ds", "n_excluded_low_gt_progress", "min_progress_m",
+    "n_time_gap", "n_closing", "ttc_cap_s", "n_episodes", "n_total",
+    "n_windows_dropped_no_valid_step", "n_components", "n_with_interval",
+    "n_unavailable", "n_undeclared", "path_steps", "alpha",
+})
+
+#: The unit the bootstrap resamples. Stated in every emitted CI block, because
+#: an interval whose cluster unit is the WINDOW rather than the EPISODE is
+#: anti-conservative by roughly the within-clip correlation and looks identical.
+CI_RESAMPLING_UNIT = ("EPISODE (win['eid']) — consecutive windows of one clip "
+                      "are not independent, so the episode is the cluster unit")
+
+
+def _ci_unavailable(reason: str, n: int, **extra) -> dict:
+    """The ONLY admissible shape for a component that cannot carry an interval.
+
+    ⛔ Never a bare point estimate and never silence: the binding rule's clause 5
+    shape — status + reason + n — one level down from the family."""
+    out = {"status": "UNAVAILABLE", "reason": reason, "n": int(n)}
+    out.update(extra)
+    return out
+
+
+def _ratio_reducer(sums, counts, scale: float = 1.0, label: str = "masked_mean"):
+    """A ``ratio of sums`` reducer for :func:`taniteval.ci.bootstrap_metrics`.
+
+    ⛔ WHY THE VALUES ARE INDICES. ``ci`` reducers receive ONE 1-D array per
+    component, and a ratio of sums needs TWO aligned arrays (the per-window error
+    sums and the per-window valid-step counts). The supported escape hatch is the
+    CALLABLE reducer — ``ci.resolve_reducer`` exists precisely so kappa/F1/AUC can
+    bootstrap without inventing their own estimator — so the component's "values"
+    are the row indices and the reducer closes over both arrays. The resampling,
+    the cluster unit and the percentile arithmetic are ``ci``'s, untouched.
+
+    ⚠️ The caller MUST restrict the rows to ``counts > 0`` before calling. Then
+    every resampled episode contributes at least one valid step and the
+    denominator can never be zero; the dropped rows contribute 0 to BOTH sums, so
+    the restriction does not change the statistic.
+    """
+    import numpy as np
+    s = np.asarray(sums, dtype=np.float64)
+    c = np.asarray(counts, dtype=np.float64)
+
+    def _r(idx):
+        i = np.asarray(idx, dtype=np.int64)
+        tot = float(c[i].sum())
+        if tot <= 0:
+            return float("nan")
+        return float(scale * (float(s[i].sum()) / tot))
+
+    _r.__name__ = f"{label}=sum(err)/sum(valid_steps)"
+    return _r
+
+
+def _run_ci_groups(groups: dict, n_boot: int, seed: int) -> dict:
+    """Run one :func:`ci.bootstrap_metrics` per (eid-subset) GROUP.
+
+    ``groups`` maps a group key -> ``{"eid": [...], "components": {name: (values,
+    reducer, dp)}, "meta": {name: {...extra fields...}}}``. Grouping is what keeps
+    the intervals *mutually consistent* wherever they can be: everything scored on
+    the full window set moves together inside a single resampling, exactly as
+    ``ci.bootstrap_metrics`` documents. Components with a different denominator
+    (progress excludes stopped windows; distance-keeping excludes free flow) get
+    their own draw, because they genuinely have a different n.
+    """
+    from taniteval import ci as _ci
+    out = {}
+    for spec in groups.values():
+        comps, eid = spec["components"], spec["eid"]
+        if not comps:
+            continue
+        res = _ci.bootstrap_metrics(comps, eid, n_boot=n_boot, seed=seed)
+        for name, block in res.items():
+            block["resampling_unit"] = CI_RESAMPLING_UNIT
+            block.update(spec.get("meta", {}).get(name, {}))
+            out[name] = block
+    return out
+
+
+def _ci_block(components: dict, unavailable: dict, n_windows: int,
+              eid_note: str | None = None) -> dict:
+    """Assemble the per-family ``ci`` sub-block, with its own completeness read."""
+    n_ok = len(components)
+    n_na = len(unavailable)
+    blk = {
+        "estimator": "episode_cluster_bootstrap",
+        "point_estimate": "full_set (the block's own printed value, recomputed "
+                          "by the same arithmetic — never a second implementation)",
+        "resampling_unit": CI_RESAMPLING_UNIT,
+        "n_windows": int(n_windows),
+        "components": components,
+        "unavailable": unavailable,
+        "n_components": n_ok + n_na,
+        "n_with_interval": n_ok,
+        "n_unavailable": n_na,
+        "complete": n_na == 0,
+        "⛔_rule": ("every component this family REPORTS carries an "
+                   "episode-cluster-bootstrap interval, or an explicit "
+                   "{status,reason,n}. A bare point estimate is neither."),
+    }
+    if eid_note:
+        blk["_eid_note"] = eid_note
+    return blk
+
+
+def _resolve_eid(eid, n: int) -> tuple[list | None, str | None]:
+    """-> (eid list of length n, or (None, why-not)). Never guesses a cluster id."""
+    if eid is None:
+        return None, ("no per-window episode id (win['eid']) — the episode-cluster "
+                      "bootstrap has no cluster unit, so NO interval can be formed. "
+                      "⛔ A window-level resampling is NOT a substitute: consecutive "
+                      "windows of one clip are strongly dependent and it would be "
+                      "anti-conservative. Supply win['eid'].")
+    e = list(eid)
+    if len(e) != n:
+        return None, (f"win['eid'] has {len(e)} entries for {n} windows — refusing "
+                      f"to form clusters from a misaligned id array")
+    if n == 0:
+        return None, "0 windows — nothing to resample"
+    return e, None
+
+
 def longitudinal(pred: torch.Tensor, gt: torch.Tensor, dt: float = DT_S,
                  lead: dict | None = None, win: dict | None = None,
-                 n_boot: int = 2000, seed: int = 0) -> dict:
+                 n_boot: int = 2000, seed: int = 0, eid=None) -> dict:
     """Is the arm setting the RIGHT SPEED, and does it keep distance?
 
     ⛔ ``dt`` is the spacing between the supplied waypoints. Speed scales as 1/dt and acceleration
@@ -263,7 +461,8 @@ def longitudinal(pred: torch.Tensor, gt: torch.Tensor, dt: float = DT_S,
     sp_err = P["speed"] - G["speed"]
     al_err = P["along"] - G["along"]
     ac_err = P["accel"] - G["accel"]
-    return {
+    dk = _distance_keeping(pred, dt, lead)
+    out = {
         # --- speed setting ---
         "speed_mae_mps": round(float(sp_err.abs().mean()), 4),
         "speed_bias_mps": round(float(sp_err.mean()), 4),          # + = too fast
@@ -297,7 +496,7 @@ def longitudinal(pred: torch.Tensor, gt: torch.Tensor, dt: float = DT_S,
         "rate_scaling_note": ("speed ~ 1/dt, accel ~ 1/dt^2. Numbers computed with a wrong dt are "
                               "off by those powers; along_* are dt-invariant."),
         # --- distance keeping ---
-        "distance_keeping": _distance_keeping(pred, dt, lead),
+        "distance_keeping": dk,
         # ⛔ THE ANTI-ECHO CONTROLS (PI 2026-08-16) — ALWAYS ON, never on request.
         # Every speed number above can be earned by copying v0; these are the
         # three controls that say whether it was. `longitudinal_claim_admissible`
@@ -305,6 +504,139 @@ def longitudinal(pred: torch.Tensor, gt: torch.Tensor, dt: float = DT_S,
         "anti_echo": _anti_echo(pred, gt, dt, win, lead, n_boot, seed),
         "n_windows": int(pred.shape[0]),
     }
+    # ⭐ EVERY component above now carries an episode-cluster interval, or says
+    # in the clause-5 shape why it cannot. See the block comment above
+    # LONGITUDINAL_COMPONENTS for the hole this closes.
+    if eid is None and isinstance(win, dict):
+        eid = win.get("eid")
+    out["ci"] = _longitudinal_ci(out, sp_err, al_err, ac_err, pred, gt, lead,
+                                 eid, n_boot, seed)
+    return out
+
+
+def _longitudinal_ci(out: dict, sp_err, al_err, ac_err, pred, gt, lead,
+                     eid, n_boot: int, seed: int) -> dict:
+    """Episode-cluster intervals for EVERY scalar :func:`longitudinal` reports."""
+    import numpy as np
+
+    n = int(pred.shape[0])
+    ids, why = _resolve_eid(eid, n)
+    if ids is None:
+        return _ci_block({}, {c: _ci_unavailable(why, n)
+                              for c in LONGITUDINAL_COMPONENTS}, n)
+
+    groups: dict = {}
+
+    def _add(group, name, values, reduce="mean", dp=4, eids=None, **meta):
+        g = groups.setdefault(group, {"eid": eids if eids is not None else ids,
+                                      "components": {}, "meta": {}})
+        g["components"][name] = (values, reduce, dp)
+        if meta:
+            g["meta"][name] = meta
+
+    # -- group ALL: one resampling, so these intervals move together ---------- #
+    # every window has the same H, so the mean of the per-window means IS the
+    # flat mean the block prints (pinned by test_eval_pipeline).
+    _add("ALL", "speed_mae_mps", sp_err.abs().mean(1).numpy())
+    _add("ALL", "speed_bias_mps", sp_err.mean(1).numpy())
+    _add("ALL", "speed_rmse_mps", (sp_err ** 2).mean(1).numpy(), reduce="rms")
+    for b in TARGET_SPEED_BANDS_MPS:
+        _add("ALL", f"target_speed_acc.within_{b}_mps",
+             (sp_err.abs() <= b).float().mean(1).numpy())
+    _add("ALL", "along_mae_m", al_err.abs().mean(1).numpy())
+    _add("ALL", "along_bias_m", al_err.mean(1).numpy())
+    _add("ALL", "along_final_bias_m", al_err[:, -1].numpy())
+    if ac_err.shape[1] > 0:
+        _add("ALL", "accel_mae_mps2", ac_err.abs().mean(1).numpy())
+
+    unavailable: dict = {}
+    if ac_err.shape[1] == 0:
+        unavailable["accel_mae_mps2"] = _ci_unavailable(
+            "the horizon has fewer than 2 steps, so no acceleration exists to "
+            "difference — the block's value is NaN for the same reason", n)
+
+    # -- EGO PROGRESS: its own denominator (stopped windows are EXCLUDED) ----- #
+    prog = out.get("ego_progress", {})
+    if prog.get("status") == "OK":
+        from taniteval.progress import progress_per_window
+        w = progress_per_window(pred.detach().cpu().numpy(),
+                                gt.detach().cpu().numpy(), "human_dir")
+        v = w["valid"]
+        pe = [e for e, k in zip(ids, v) if k]
+        drop = int((~v).sum())
+        _add("PROGRESS", "ego_progress.progress_ratio_mean", w["ratio"][v],
+             eids=pe, n_excluded_low_gt_progress=drop)
+        _add("PROGRESS", "ego_progress.progress_ratio_median", w["ratio"][v],
+             reduce="median", eids=pe, n_excluded_low_gt_progress=drop)
+        _add("PROGRESS", "ego_progress.progress_error_mean", w["error"][v],
+             eids=pe, n_excluded_low_gt_progress=drop)
+        _add("PROGRESS", "ego_progress.under_progress_rate",
+             (w["ratio"][v] < 1.0).astype(float), eids=pe,
+             n_excluded_low_gt_progress=drop)
+        _add("PROGRESS", "ego_progress.gt_progress_mean_m",
+             w["gt_progress_m"][v], eids=pe, n_excluded_low_gt_progress=drop)
+        gs = progress_per_window(gt.detach().cpu().numpy(),
+                                 gt.detach().cpu().numpy(), "t0_axis")
+        gv = gs["valid"]
+        _add("PROGRESS_T0AXIS", "ego_progress.t0_axis_gt_self_ratio",
+             gs["ratio"][gv], eids=[e for e, k in zip(ids, gv) if k],
+             _what=("a property of the GROUND TRUTH's own geometry (the "
+                    "curvature confound in pseudosim's published reading), not "
+                    "of the arm — its interval is corpus dispersion"))
+    else:
+        why_p = prog.get("reason", "ego_progress is not OK")
+        for c in LONGITUDINAL_COMPONENTS:
+            if c.startswith("ego_progress."):
+                unavailable[c] = _ci_unavailable(why_p, int(prog.get("n", 0)))
+
+    # -- DISTANCE KEEPING: pooled scalars, on the windows that HAVE a lead ---- #
+    dk = out.get("distance_keeping", {})
+    dk_pw = dk.get("_per_window") if isinstance(dk, dict) else None
+    dk_eid = (lead or {}).get("eid") if isinstance(lead, dict) else None
+    dk_names = ("distance_keeping.mean_headway_min_m",
+                "distance_keeping.mean_time_gap_min_s",
+                "distance_keeping.mean_min_ttc_s")
+    if dk.get("status") != "OK" or dk_pw is None:
+        why_d = dk.get("reason") or (
+            "distance_keeping did not produce per-window arrays, so no interval "
+            "can be formed over them")
+        for c in dk_names:
+            unavailable[c] = _ci_unavailable(why_d, int(dk.get("n", 0) or 0))
+    elif dk_eid is None or len(list(dk_eid)) != n:
+        for c in dk_names:
+            unavailable[c] = _ci_unavailable(
+                "the lead block carries no per-window episode id (lead['eid']) "
+                "aligned to the scored windows, so the episode-cluster bootstrap "
+                "has no cluster unit. ⛔ A pooled point estimate is not a "
+                "substitute.", int(dk.get("n", 0) or 0))
+    else:
+        de = [str(x) for x in dk_eid]
+        hw = np.asarray(dk_pw["headway_min_m"], dtype=np.float64)
+        tg = np.asarray(dk_pw["time_gap_min_s"], dtype=np.float64)
+        tt = np.asarray(dk_pw["min_ttc_s"], dtype=np.float64)
+        have = np.isfinite(hw)
+        have_tg = np.isfinite(tg)
+        he = [e for e, k in zip(de, have) if k]
+        _add("DK_HAVE", "distance_keeping.mean_headway_min_m", hw[have],
+             eids=he, n_windows_with_lead=int(have.sum()))
+        _add("DK_HAVE", "distance_keeping.mean_min_ttc_s", tt[have], eids=he,
+             n_windows_with_lead=int(have.sum()),
+             censoring_note=dk.get("censoring_note"))
+        if have_tg.any():
+            _add("DK_TG", "distance_keeping.mean_time_gap_min_s", tg[have_tg],
+                 eids=[e for e, k in zip(de, have_tg) if k],
+                 n_time_gap=int(have_tg.sum()),
+                 _note=("the time gap is NaN below lead_metrics.MIN_SPEED_MPS "
+                        "and is never clamped, so its denominator is smaller "
+                        "than headway's"))
+        else:
+            unavailable["distance_keeping.mean_time_gap_min_s"] = _ci_unavailable(
+                "no window has a finite time gap (every ego speed is below "
+                "lead_metrics.MIN_SPEED_MPS) — the block reports NaN for the "
+                "same reason", 0)
+
+    comps = _run_ci_groups(groups, n_boot, seed)
+    return _ci_block(comps, unavailable, n)
 
 
 def _anti_echo(pred: torch.Tensor, gt: torch.Tensor, dt: float,
@@ -419,7 +751,8 @@ def _distance_keeping(pred: torch.Tensor, dt: float, lead: dict | None) -> dict:
     return out
 
 
-def lateral(pred: torch.Tensor, gt: torch.Tensor, dt: float = DT_S) -> dict:
+def lateral(pred: torch.Tensor, gt: torch.Tensor, dt: float = DT_S, eid=None,
+            n_boot: int = 2000, seed: int = 0) -> dict:
     """Heading, curvature, yaw-rate and cross-track — not cross-track alone.
 
     A path can be smooth and wrong: matching cross-track at the waypoints while turning with the
@@ -441,7 +774,7 @@ def lateral(pred: torch.Tensor, gt: torch.Tensor, dt: float = DT_S) -> dict:
     curv_bias, _ = _masked(P["curvature"] - G["curvature"], both_pair)
 
     ct_err = P["cross"] - G["cross"]
-    return {
+    out = {
         "heading_mae_deg": round(math.degrees(head_mae), 4) if n_head else None,
         "yaw_rate_mae_degps": round(math.degrees(yaw_mae), 4) if n_head else None,
         "curvature_mae_1pm": round(curv_mae, 6) if n_curv else None,
@@ -452,6 +785,16 @@ def lateral(pred: torch.Tensor, gt: torch.Tensor, dt: float = DT_S) -> dict:
         # transparency: how much of the horizon was usable
         "n_steps_heading": n_head,
         "n_steps_curvature": n_curv,
+        # ⚠️ ADDITIVE (2026-08-23). `yaw_rate_mae_degps` is emitted under the
+        # HEADING count (`if n_head`) while it is masked by `both_pair`, so it
+        # has never carried its own denominator — and when a window set has
+        # valid single steps but no valid PAIRS it emits NaN under a non-zero
+        # n_head. The correct denominator was already computed (it is the same
+        # mask as curvature); it is now NAMED rather than discarded, which is
+        # also what its interval has to be formed over. The emitted VALUE is
+        # deliberately unchanged — moving it would silently rewrite banked
+        # numbers, and this is the honest first half of that fix.
+        "n_steps_yaw_rate": n_curv,
         "excluded_below_min_ds": int((~both).sum()),
         # ⛔ the gate SCALES with dt now. A fixed 0.05 m on a 0.5 s grid excluded ~nothing and let
         # crawling windows into the curvature statistic.
@@ -461,6 +804,87 @@ def lateral(pred: torch.Tensor, gt: torch.Tensor, dt: float = DT_S) -> dict:
         "dt_invariant": ["heading_mae_deg", "curvature_*", "cross_*"],
         "n_windows": int(pred.shape[0]),
     }
+    out["ci"] = _lateral_ci(out, P, G, ct_err, both, both_pair, dh, eid,
+                            n_boot, seed)
+    return out
+
+
+def _lateral_ci(out: dict, P: dict, G: dict, ct_err, both, both_pair, dh,
+                eid, n_boot: int, seed: int) -> dict:
+    """Episode-cluster intervals for EVERY scalar :func:`lateral` reports.
+
+    ⛔ heading / yaw-rate / curvature are MASKED means over a ragged subset of
+    steps, so their interval is a **ratio of sums** (see :func:`_ratio_reducer`)
+    and NOT a mean of per-window means — the latter is a different statistic
+    (macro vs micro) and would centre the interval on a number the block does
+    not print. cross-track is unmasked and reduces exactly.
+    """
+    import numpy as np
+
+    n = int(ct_err.shape[0])
+    ids, why = _resolve_eid(eid, n)
+    if ids is None:
+        return _ci_block({}, {c: _ci_unavailable(why, n)
+                              for c in LATERAL_COMPONENTS}, n)
+
+    groups: dict = {}
+
+    def _add(group, name, values, reduce="mean", dp=4, eids=None, **meta):
+        g = groups.setdefault(group, {"eid": eids if eids is not None else ids,
+                                      "components": {}, "meta": {}})
+        g["components"][name] = (values, reduce, dp)
+        if meta:
+            g["meta"][name] = meta
+
+    unavailable: dict = {}
+
+    def _masked_component(group, name, err, mask, scale, dp, label, why_empty):
+        """Per-window (sum, count) -> a ratio-of-sums bootstrap on rows with count>0."""
+        cnt = mask.sum(1).numpy().astype(np.float64)
+        s = (err * mask).sum(1).numpy().astype(np.float64)
+        keep = cnt > 0
+        if not keep.any():
+            unavailable[name] = _ci_unavailable(why_empty, 0)
+            return
+        sk, ck = s[keep], cnt[keep]
+        _add(group, name, np.arange(sk.size, dtype=np.float64),
+             reduce=_ratio_reducer(sk, ck, scale=scale, label=label), dp=dp,
+             eids=[e for e, k in zip(ids, keep) if k],
+             n_steps=int(ck.sum()),
+             n_windows_dropped_no_valid_step=int((~keep).sum()),
+             _reduction=("MICRO mean = sum(per-window error sums) / "
+                         "sum(per-window valid-step counts) — identical to the "
+                         "masked mean the block prints, NOT a mean of "
+                         "per-window means"))
+
+    _masked_component(
+        "MASK_HEADING", "heading_mae_deg", dh.abs(), both, 180.0 / math.pi, 4,
+        "heading_mae_deg",
+        "no step in any window clears MIN_DS — a stopped path has no tangent, so "
+        "the block reports None for the same reason")
+    _masked_component(
+        "MASK_PAIR", "yaw_rate_mae_degps",
+        (P["yaw_rate"] - G["yaw_rate"]).abs(), both_pair, 180.0 / math.pi, 4,
+        "yaw_rate_mae_degps",
+        "no window has two consecutive valid steps, so no yaw rate is defined")
+    _masked_component(
+        "MASK_PAIR", "curvature_mae_1pm",
+        (P["curvature"] - G["curvature"]).abs(), both_pair, 1.0, 6,
+        "curvature_mae_1pm",
+        "no window has two consecutive valid steps, so no curvature is defined")
+    _masked_component(
+        "MASK_PAIR", "curvature_bias_1pm",
+        P["curvature"] - G["curvature"], both_pair, 1.0, 6,
+        "curvature_bias_1pm",
+        "no window has two consecutive valid steps, so no curvature is defined")
+
+    # cross-track is unmasked: every window contributes every step.
+    _add("ALL", "cross_mae_m", ct_err.abs().mean(1).numpy())
+    _add("ALL", "cross_bias_m", ct_err.mean(1).numpy())
+    _add("ALL", "cross_final_mae_m", ct_err[:, -1].abs().numpy())
+
+    comps = _run_ci_groups(groups, n_boot, seed)
+    return _ci_block(comps, unavailable, n)
 
 
 # ============================================================================ #
@@ -1130,12 +1554,130 @@ def strategic(win: dict, hier: dict | None = None, optionset: dict | None = None
     return out
 
 
+def _dig_loose(obj, path: str) -> tuple[bool, object]:
+    """Resolve a dotted path where a KEY may itself contain a dot.
+
+    ⛔ WHY THE OBVIOUS `path.split('.')` IS WRONG HERE. The target-speed bands
+    are emitted as ``within_0.5_mps`` — the band value is *in the key* — so a
+    naive split produces ``['target_speed_acc', 'within_0', '5_mps']`` and the
+    component resolves to NOTHING. MEASURED while building this layer: all three
+    ``target_speed_acc`` bands were reported as "not present in the block" while
+    they were present, correct, and already carrying intervals. A resolver that
+    silently misses is exactly the ``absence found at one location`` trap, so it
+    matches the LONGEST key prefix at each level instead of assuming keys are
+    dot-free. Returns ``(found, value)``.
+    """
+    if not isinstance(obj, dict):
+        return False, None
+    if path in obj:
+        return True, obj[path]
+    for k in obj:
+        ks = str(k)
+        if path.startswith(ks + "."):
+            found, val = _dig_loose(obj[k], path[len(ks) + 1:])
+            if found:
+                return True, val
+    return False, None
+
+
+def _numeric_leaves(obj, prefix: str = "") -> dict:
+    """Every numeric leaf under ``obj``, by dotted path. Booleans are NOT numbers
+    here — a flag is a verdict, not a measurement."""
+    out = {}
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            p = f"{prefix}.{k}" if prefix else str(k)
+            if isinstance(v, bool) or v is None:
+                continue
+            if isinstance(v, (int, float)):
+                out[p] = v
+            elif isinstance(v, dict):
+                out.update(_numeric_leaves(v, p))
+    return out
+
+
+def ci_coverage(family_block: dict, family: str) -> dict:
+    """⭐ AUDIT one emitted LONGITUDINAL/LATERAL block for interval coverage.
+
+    This is the instrument that makes a MISSING interval fail rather than read as
+    a clean record. It answers three questions, and the third is the one a
+    hand-maintained list cannot:
+
+    ``missing``      a DECLARED component that the block reports but that carries
+                     neither an interval nor a ``{status,reason,n}``. ⛔ VIOLATION.
+    ``unavailable``  declared, reported, and honestly declined. A WORK ITEM.
+    ``undeclared``   a numeric leaf in the block that is neither a declared
+                     component nor known provenance (:data:`_NON_METRIC_KEYS`) —
+                     i.e. **a metric someone added without an interval**. That is
+                     how the hole this whole layer closes was dug in the first
+                     place, so it is detected structurally rather than by
+                     remembering to update a list.
+
+    ⚠️ A component the block does NOT report (value ``None``, or a key that never
+    appears because its input was absent) is not counted as missing — there is
+    nothing to bound. It shows up in ``not_reported``.
+    """
+    declared = {"longitudinal": LONGITUDINAL_COMPONENTS,
+                "lateral": LATERAL_COMPONENTS}.get(family)
+    if declared is None:
+        raise ValueError(f"ci_coverage covers longitudinal/lateral, not {family!r}")
+    ci = family_block.get("ci")
+    if not isinstance(ci, dict):
+        return {"family": family, "status": "ABSENT",
+                "reason": ("the block carries NO `ci` sub-block at all — every "
+                           "number in it is a bare point estimate"),
+                "missing": list(declared), "unavailable": [], "undeclared": [],
+                "not_reported": [], "complete": False}
+    comps = ci.get("components", {}) or {}
+    nas = ci.get("unavailable", {}) or {}
+
+    missing, unavail, not_reported = [], [], []
+    for c in declared:
+        if c in comps and "lo" in comps[c] and "hi" in comps[c]:
+            continue
+        if c in nas and nas[c].get("reason") and nas[c].get("n") is not None:
+            unavail.append(c)
+        elif not _dig_loose(family_block, c)[0]:
+            not_reported.append(c)
+        else:
+            missing.append(c)
+
+    # the other direction: a numeric leaf nobody declared
+    skip_roots = ("ci.", "anti_echo.", "distance_keeping.by_speed.",
+                  "distance_keeping._per_window.", "ego_progress.n",
+                  "distance_keeping.n")
+    undeclared = []
+    for path in _numeric_leaves(family_block):
+        if path.startswith(skip_roots):
+            continue
+        leaf = path.rsplit(".", 1)[-1]
+        if leaf in _NON_METRIC_KEYS or path in declared:
+            continue
+        undeclared.append(path)
+
+    return {
+        "family": family,
+        "status": "OK",
+        "n_declared": len(declared),
+        "n_with_interval": len(declared) - len(missing) - len(unavail) - len(not_reported),
+        "missing": sorted(missing),
+        "unavailable": sorted(unavail),
+        "undeclared": sorted(undeclared),
+        "not_reported": sorted(not_reported),
+        "complete": not missing and not undeclared,
+        "⛔_verdict": ("VIOLATION — a reported component carries no interval and "
+                       "no reason" if (missing or undeclared) else
+                       "every reported component carries an interval or a "
+                       "reasoned refusal"),
+    }
+
+
 def all_families(win: dict, hier: dict | None = None, prefer_dense: bool = True,
                  optionset: dict | None = None,
                  tactical_from_traj: bool = False,
                  strategic_no_label: bool = False,
                  tier: str | None = None, n_boot: int = 2000,
-                 seed: int = 0) -> dict:
+                 seed: int = 0, protocol: dict | None = None) -> dict:
     """The full binding block for one arm. Attach to every eval result, beside ADE.
 
     ``win`` is a ``rollout.collect``/``refb_eval``/``refc_eval`` window dict; ``pred``/``gt`` are
@@ -1185,8 +1727,10 @@ def all_families(win: dict, hier: dict | None = None, prefer_dense: bool = True,
                 "tier": tier, "n_boot": n_boot, "seed": seed}
     fam = {
         "longitudinal": longitudinal(pred, gt, dt, win.get("lead"), win=win,
-                                     n_boot=n_boot, seed=seed),
-        "lateral": lateral(pred, gt, dt),
+                                     n_boot=n_boot, seed=seed,
+                                     eid=win.get("eid")),
+        "lateral": lateral(pred, gt, dt, eid=win.get("eid"),
+                           n_boot=n_boot, seed=seed),
         "tactical": tactical(win, hier, traj),
         "strategic": strategic(win, hier, optionset,
                                no_label=({"n": int(pred.shape[0]), "tier": tier}
@@ -1211,6 +1755,25 @@ def all_families(win: dict, hier: dict | None = None, prefer_dense: bool = True,
         "in ADDITION to ADE. Per-family, never pooled. A family reported UNAVAILABLE is a WORK "
         "ITEM, not a pass.")
     fam["_families_unavailable"] = unavailable
+    # ⭐ INTERVAL COVERAGE, at the top of the block (2026-08-23). `_complete`
+    # asks whether the four families carry NUMBERS; this asks whether those
+    # numbers carry their UNCERTAINTY. Both were needed: until today LON and LAT
+    # were `_complete: true` while every scalar in them was a bare point
+    # estimate, and nothing in the record said so.
+    fam["_ci_coverage"] = {
+        "longitudinal": ci_coverage(fam["longitudinal"], "longitudinal"),
+        "lateral": ci_coverage(fam["lateral"], "lateral"),
+    }
+    fam["_intervals_complete"] = bool(
+        fam["_ci_coverage"]["longitudinal"].get("complete")
+        and fam["_ci_coverage"]["lateral"].get("complete"))
+    fam["_intervals_rule"] = (
+        "every component the LONGITUDINAL and LATERAL blocks REPORT carries an "
+        "episode-cluster-bootstrap interval (taniteval.ci, cluster unit = the "
+        "episode), or an explicit {status,reason,n}. ⛔ overlapping_holdout_se is "
+        "never used: it biases the POINT ESTIMATE, not only the interval. Any "
+        "TWO-ARM delta must use ci.paired_episode_cluster_bootstrap — never a "
+        "combination of two single-arm intervals in quadrature.")
     fam["_complete"] = not unavailable and \
         fam["longitudinal"]["distance_keeping"]["status"] == "OK" and \
         fam["longitudinal"]["anti_echo"]["status"] == "OK"
@@ -1249,4 +1812,51 @@ def all_families(win: dict, hier: dict | None = None, prefer_dense: bool = True,
         for k in ("longitudinal", "lateral", "tactical", "strategic"):
             if isinstance(fam[k], dict):
                 fam[k].setdefault("tier", tier)
+    else:
+        # ⛔ AN UNSTAMPED BLOCK MUST SAY SO. Omitting the tier used to omit the
+        # T0 echo warning with it (the warning lives under `if tier is not None`),
+        # so the one caller that passed no tier produced a block that looked
+        # CLEANER than a correctly-stamped T0 one — the guard disappeared exactly
+        # when it was needed. MEASURED 2026-08-23: `eval_four_families.py` never
+        # passed `tier=` and 93 of 135 in-scope artifacts carry no tier at all.
+        # Same class as C133: silence read as compliance.
+        fam["_tier"] = None
+        fam["⛔_tier_missing"] = (
+            "NO TIER SUPPLIED to all_families(). This block is NOT QUOTABLE: a "
+            "number without its tier cannot be read as driving performance or as "
+            "a WM diagnostic, and the T0 action-echo warning is suppressed when "
+            "the tier is absent. Pass tier='T0'|'T1'|'T2' at the call site.")
+
+    # ---- PROTOCOL DECLARATIONS ------------------------------------------- #
+    # ⛔ THREE BINDING FACTS THAT ONLY THE CALLER KNOWS, AND THAT AN ARTIFACT
+    # MUST NOT LEAVE SILENT: what the model consumed at inference (vision-only
+    # is binding, PI 2026-08-03), whether the goal path is information-disjoint
+    # from the situation classifier (PI 2026-08-03), and WHICH corpus was
+    # scored (parity is sacred).
+    #
+    # This block never GUESSES them. An emitter that invented "vision_only:
+    # true" would be manufacturing compliance, which is worse than the gap. So
+    # an absent declaration is written out as UNDECLARED, with what to pass —
+    # the same contract as the tier above: the gap is visible, never silent.
+    # MEASURED 2026-08-23: the release gate scored RG-07/RG-08/RG-12 as FAIL on
+    # our best T1 artifacts purely because nothing recorded these, not because
+    # anything was violated.
+    _UNDECLARED = "UNDECLARED — pass `protocol=` to all_families(); NOT assumed compliant"
+    proto = dict(protocol or {})
+    fam["_protocol"] = {
+        "inference_inputs": proto.get("inference_inputs", _UNDECLARED),
+        "vision_only": proto.get("vision_only", _UNDECLARED),
+        "goal_source": proto.get("goal_source", _UNDECLARED),
+        "goal_situation_disjoint": proto.get("goal_situation_disjoint", _UNDECLARED),
+        "corpus": proto.get("corpus", _UNDECLARED),
+        "parity_key": proto.get("parity_key", _UNDECLARED),
+        "_binding": (
+            "vision-only at inference (labels MAY use ego); the goal input must "
+            "not carry the situation classifier's output in any form; the corpus "
+            "identity makes cross-arm deltas interpretable. An UNDECLARED value "
+            "is a WORK ITEM — it is never read as compliance."),
+    }
+    fam["_protocol_undeclared"] = sorted(
+        k for k, v in fam["_protocol"].items()
+        if not k.startswith("_") and v == _UNDECLARED)
     return fam

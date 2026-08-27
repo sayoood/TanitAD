@@ -103,6 +103,16 @@ def main():
     ap.add_argument("--batch", type=int, default=8)
     ap.add_argument("--speed-input", action="store_true")
     ap.add_argument("--n-boot", type=int, default=2000)
+    ap.add_argument("--tier", choices=["T0", "T1", "T2"], default="T0",
+                    help="⛔ REQUIRED SEMANTICS. This tool's LON/LAT surface is "
+                         "rollout.collect, which is TEACHER-FORCED by the "
+                         "recorded actions (rollout.py:151-160, pc2_pass=False "
+                         "by construction) — so the honest default is T0, a "
+                         "world-model diagnostic that is NEVER driving "
+                         "performance. Pass T1 only for an action-closed-loop "
+                         "surface. Omitting the tier used to suppress the T0 "
+                         "echo warning entirely, so there is no 'unstamped' "
+                         "option here on purpose.")
     ap.add_argument("--skip-hierarchy", action="store_true",
                     help="⛔ leaves TACTICAL and STRATEGIC UNAVAILABLE. For a "
                          "smoke test only — the result is NOT admissible.")
@@ -230,7 +240,7 @@ def main():
         _p(f"[lead] attached {n_lead} rows  "
            f"states={dict(zip(states.tolist(), counts.tolist()))}")
 
-    fam = ff.all_families(win, hier=hier)
+    fam = ff.all_families(win, hier=hier, tier=a.tier)
 
     if a.carry_hierarchy_from:
         # The decision families were computed by hierarchy.run on THESE windows;

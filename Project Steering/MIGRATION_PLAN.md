@@ -12,7 +12,7 @@ gates between phases are mandatory.`
   Competing vocabularies: `scripts/`(27) vs `code/`(105); `artifacts/`(29) vs
   `results/`(6) vs `raw/`(131); `INTAKE.md`(48) vs `PRE_REGISTRATION.md`(31)
   vs `PREREG.md`(2); `MANIFEST.md`(24) vs `RESULTS.md`(3) vs `VERDICT.md`(2).
-- **Blast radius of the rename**: literal `"TanitAD Research Hub"` in **517
+- **Blast radius of the rename**: literal `"TanitAD Research Lab"` in **517
   code+md files / 814 occurrences** (+11k occurrences inside raw JSON records,
   which stay as historical values).
 - ⛔ **`tools/` CANNOT stay unchanged**: 12 files hardcode the Hub name
@@ -51,11 +51,10 @@ gates between phases are mandatory.`
 
 - **P0 remaining**: `git rm` the 3 duplicate PDFs in `Ressources/` (byte-identical
   to Library copies); PI call on the 22.6 GB.
-- **P1 — THE RENAME** (atomic): `git mv "TanitAD Research Hub" "TanitAD Research
+- **P1 — THE RENAME** (atomic): `git mv "TanitAD Research Lab" "TanitAD Research
   Lab"` + literal rewrite in the 517 files + the 12 `tools/` constants + the 24
   MODEL_REGISTRY paths + README/CLAUDE.md. Gate: `tools/registry_paths.py`,
-  `registry_lint.py`, all three test suites green, `rg -c "TanitAD Research
-  Hub"` = 0 outside archive/ and raw records.
+  `registry_lint.py`, all three test suites green, `rg -c "TanitAD Research Lab"` = 0 outside archive/ and raw records.
 - **P2 — field merges** (mkdir 4 fields; mv P&O→Deploy&Opt, Tools&DevEnv→
   `_devenv`; B&E→Opponent&Benchmarks, Opponent Analyzer→`_opponent`,
   Evaluation→`_evaluation`). Fixes the 33 files / 43 refs that name merged areas.
@@ -90,9 +89,23 @@ the O234 raw dir → its own WP · the flat-JSON gate results in Evaluation WPs
 ## Execution constraints
 
 1. ⛔ **Do not run P1 while any agent is staging into old paths.** The label
-   agent (own session) writes under `TanitAD Research Hub/…` — coordinate a
+   agent (own session) writes under the OLD paths — coordinate a
    window or land its work first.
 2. The index must be EMPTY at P1 start (commit or stash in-flight work first).
 3. Each phase's commit message names the phase; `archive/` is append-only.
 4. G: flap risk: run P1 from a verified-fresh clone state, and re-verify staging
    (blob compare) after each phase — the index moves under concurrent sessions.
+
+
+## Lesson: blanket rewrites damage docs that QUOTE the old value
+
+⚠️ MEASURED during P1 (2026-08-22). The literal rewrite touched 2,819 files and
+also rewrote the documents whose JOB is to name the old string — this plan's own
+`git mv` example became `Lab -> Lab`, and its blast-radius line claimed the new
+name was found in 517 files. Both were nonsense, and both looked like ordinary
+prose.
+
+⇒ **A rename sweep must EXCLUDE the documents that describe the rename** (this
+file, RETRACTION_LOG, VOCABULARY's Deprecated section), or repair them
+immediately afterwards. Same principle the registry guard already encodes: *a
+quote of a defective source stands* — rewriting it deletes the evidence.

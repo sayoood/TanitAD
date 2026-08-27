@@ -220,10 +220,10 @@ ARTIFACTS: list[Artifact] = [
         desc="flagship_v4_anchors_dense.pt — the 256x20x2 dense anchor set the "
              "v4/v5 anchored-diffusion planner is defined against",
         candidates=[
-            ("repo", "TanitAD Research Hub/Architecture & Inference/"
+            ("repo", "TanitAD Research Lab/Architecture & Inference/"
                      "Implementation/incoming/2026-07-28-pod-migration-rescue/"
                      "flagship_v4_anchors_dense.pt"),
-            ("github", "TanitAD Research Hub/Architecture & Inference/"
+            ("github", "TanitAD Research Lab/Architecture & Inference/"
                        "Implementation/incoming/2026-07-28-pod-migration-rescue/"
                        "flagship_v4_anchors_dense.pt"),
             ("pod5", "/workspace/experiments/flagship_v4_anchors_dense.pt"),
@@ -236,9 +236,9 @@ ARTIFACTS: list[Artifact] = [
         kind="anchors",
         desc="refc_anchors_small64.pt — REF-C small anchor set",
         candidates=[
-            ("repo", "TanitAD Research Hub/Benchmarks & Eval/Implementation/"
+            ("repo", "TanitAD Research Lab/Benchmarks & Eval/Implementation/"
                      "incoming/2026-07-22-refc-small-30k/refc_anchors_small64.pt"),
-            ("github", "TanitAD Research Hub/Benchmarks & Eval/Implementation/"
+            ("github", "TanitAD Research Lab/Benchmarks & Eval/Implementation/"
                        "incoming/2026-07-22-refc-small-30k/refc_anchors_small64.pt"),
             ("pod5", "/workspace/experiments/refc_anchors_small64.pt"),
             ("thor", "/home/nvidia/models/refc_anchors_small64.pt"),
@@ -249,10 +249,10 @@ ARTIFACTS: list[Artifact] = [
         kind="anchors",
         desc="anchors_dev256.pt — per-candidate label anchor set",
         candidates=[
-            ("repo", "TanitAD Research Hub/Architecture & Inference/"
+            ("repo", "TanitAD Research Lab/Architecture & Inference/"
                      "Implementation/incoming/2026-07-27-percandidate-labels/"
                      "raw/anchors_dev256.pt"),
-            ("github", "TanitAD Research Hub/Architecture & Inference/"
+            ("github", "TanitAD Research Lab/Architecture & Inference/"
                        "Implementation/incoming/2026-07-27-percandidate-labels/"
                        "raw/anchors_dev256.pt"),
             ("thor", "/home/nvidia/models/anchors_dev256.pt"),

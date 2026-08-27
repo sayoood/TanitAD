@@ -55,7 +55,7 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 
 INCOMING_GLOB = "*/Implementation/incoming/*"
-HUB_DIR = "TanitAD Research Hub"
+HUB_DIR = "TanitAD Research Lab"
 VERDICT_PLACEHOLDER = "integrate / integrate-with-changes / defer / reject"
 VERDICT_UNFILLED = {"", "-", "--", "_pending_", "pending", "tbd", "todo", "none", "n/a"}
 

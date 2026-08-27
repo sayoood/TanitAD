@@ -59,7 +59,7 @@ from pathlib import Path
 # Working-tree paths that hold agent deliverables. An uncommitted change under any
 # of these at session end is the stranded-results failure the guard blocks on.
 HUB_PREFIXES = (
-    "TanitAD Research Hub/",
+    "TanitAD Research Lab/",
     "Project Steering/",
     "DECISIONS.md",
     "PROJECT_STATE.md",
@@ -101,7 +101,8 @@ def git(repo: Path, *args: str) -> str:
         cwd=str(repo),
         capture_output=True,
         text=True,
-    , encoding="utf-8")
+        encoding="utf-8",
+    )
     if proc.returncode != 0:
         raise GitError(f"git {' '.join(args)} -> {proc.returncode}: {proc.stderr.strip()}")
     return proc.stdout.rstrip()
@@ -275,7 +276,7 @@ def _verdict_unfilled(text: str) -> tuple[bool, str]:
 
 
 def check_stale_intakes(repo: Path, now: date, max_age_days: int) -> list[StaleIntake]:
-    hub = repo / "TanitAD Research Hub"
+    hub = repo / "TanitAD Research Lab"
     out: list[StaleIntake] = []
     if not hub.is_dir():
         return out

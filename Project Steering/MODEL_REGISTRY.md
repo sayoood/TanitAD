@@ -314,7 +314,7 @@ predict closed-loop.**
 beyond-ADE suite's headline latency — rounded to **14.33 ms** in `PROGRAM_OVERVIEW.md:54` and
 `LOOP_STATE.md:64` — and that value appeared **nowhere in this document** until now: the exact defect
 corrected below for "11.16 ms", repeated on a second tick. Traced and MEASURED:
-`TanitAD Research Lab/Benchmarks & Eval/Implementation/incoming/2026-07-24-traffic-light-scenario-metric/real_tms_cnce.json`
+`TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-07-24-traffic-light-scenario-metric/real_tms_cnce.json`
 (`latency.decision_tick_p50_ms`), generator `real_telemetry_tms_cnce.py:109`. **Conditions:** RTX 4060 ·
 **fp32 eager** (no autocast, no CUDA graph) · **comma2k19 val, n = 30 episodes** · log-replay ·
 architecture **`base250cam`, `params_billions` 0.2628 = 262.8 M, instantiated fresh (random init)** —
@@ -1160,7 +1160,7 @@ identical. **q90 is the headline** because it is format-faithful.
 ⚠️ **Two harnesses disagree 0.8 %** on this corpus: `eval_flagship_v4.py`'s MODE-A canary gives
 **0.5705**, `eval_four_families.py` gives **0.5752**. Recorded, not smoothed over; unresolved.
 
-**Artifacts:** `TanitAD Research Lab/Benchmarks & Eval/Implementation/incoming/2026-08-05-v1arch-oodval-four-families/`
+**Artifacts:** `TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-08-05-v1arch-oodval-four-families/`
 (RESULT.md + raw JSON) · protocol `EVAL_PROTOCOL_OODVAL_2026-08-05.md` · videos
 `TanitAD Research Lab/Evaluation/Videos/v1arch-oodval-openloop-2026-08-05/` · pod4
 `/workspace/evalout/` (windows dumps, lead block).
@@ -2346,7 +2346,7 @@ Eval **identical to base/XL**: `taniteval.refc_eval` on the canonical 40-ep / 88
 the only source**, and it holds more than the dead citation claimed:
 
 ```
-TanitAD Research Lab/Benchmarks & Eval/Implementation/incoming/2026-07-22-refc-small-30k/
+TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-07-22-refc-small-30k/
   refc-small-30k.json                          ← the raw eval output
   scaleab_refc-small-30k_vs_refc-base-30k.json
   scaleab_refc-small-30k_vs_refc-xl-30k.json   ← the brace form `{base,xl}` was never a real path
@@ -2417,7 +2417,7 @@ at 12 % of the 100 ms budget. Evidence class: **MEASURED** (this run + eval, art
 | **Label coverage** *(4,000-window sample, in `config.json`)* | left 0.121 · straight 0.5645 · right 0.115 · **UNKNOWN 0.1995 (masked out)** → 80.05 % judgeable, vs v1's straight-by-default target |
 | **Code** | `stack/scripts/refc_train.py` gained `--labels {v1,v21}` (**default `v1` = XL-reproducible**), `RouteV21Dataset`, a fail-loud masked route CE, and 5 k/15 k/20 k/30 k **milestone archiving** (the gate series XL lacks). 15/15 `tests/test_refc.py` pass. Pod3 drift repaired before launch (`refb_labels.py` still had `use_net_dyaw=True`; `ckpt_io.py` was absent) — backups in `/workspace/ops/backup-20260720-refcmed/`. |
 | **Eval** | canonical `taniteval.refc_eval` path, **identical to XL**: n=881 windows / 40 val eps / `/root/valdata/physicalai-val-0c5f7dac3b11`, window 8 / stride 8, nav=follow, 2 truncated-denoise steps. Parity proven three ways: same 881 `eid`s, bit-identical GT, and **bit-identical CV baseline in every stratum** (0.6468 / 0.9345 / 0.9322 high/med/low, 0.4393 / 1.3566 / 2.3764 straight/gentle/sharp — the same numbers §4.1 prints for XL). Registry entry `refc-base-30k` added to `taniteval/taniteval/registry.py` with `config_preset="base"`. |
-| **Note** | `TanitAD Research Lab/Benchmarks & Eval/Research/2026-07-20-refc-medium-scaling.md` (pre-registered the reading rule) |
+| **Note** | `TanitAD Research Lab/Benchmarks & Evals/Research/2026-07-20-refc-medium-scaling.md` (pre-registered the reading rule) |
 | **HF** | ✅ **`Sayood/tanitad-refc-base`** — public + **gated `manual`**, pushed 2026-07-25. Files: `ckpt.pt` **1,250,838,325 B** (md5 `8f10d6f934f4199e11ddc7352e074939`, re-verified immediately before upload), `config.json`, `metrics.json`, model card. An anonymous `HEAD` of `https://huggingface.co/Sayood/tanitad-refc-base/resolve/main/ckpt.pt` returns **401 `GatedRepo`** *(re-verified by me 2026-08-03, unauthenticated request, `X-Error-Code: GatedRepo`)*. Now 3 copies (HF + eval pod + pod3). Note: `…/incoming/2026-07-25-refc-hf-push/NOTE.md` |
 
 **Results — FINAL step 29,999 (`refc-base-30k`), 881 windows** ✅ *(raw: `taniteval/results/refc-base-30k.json`)*
@@ -2730,7 +2730,7 @@ at all.
 > **split-selection noise**, not model uncertainty. Measured **1.107–3.100× too narrow, median 1.499×**
 > across **27 dumps = 25 distinct arms** *(two double-banked pairs — C126,
 > `taniteval/results/dump_exclusions.json`)* — MEASURED 2026-07-25,
-> `TanitAD Research Lab/Benchmarks & Eval/Implementation/incoming/2026-07-25-jack-blast-radius/jack_recompute.json`.
+> `TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-07-25-jack-blast-radius/jack_recompute.json`.
 > *(The older **1.28–2.06×, median 1.51×** band was never wrong, only **under-sampled at 10 arms**: all
 > 10 reproduce bit-for-bit against `Project Steering/CI_RECOMPUTE_2026-07-20.json`.)* Coverage
 > simulation: naive **62.3 %** vs cluster-bootstrap **93.8 %** (target 93–97 %).
@@ -2821,7 +2821,7 @@ deleted so every previously published number stays traceable. Sources: the per-r
 | 13 | Flagship **no-speed** (ablation control) | `flagship-nospeed` | ~22 000 | 263.4 M | 3.0175 [2.5450, 3.5444] <!-- src: taniteval/results/driving_flagship-nospeed.json#headline.ade_0_2s.mean --> | 5.0282 | 0.7423 | ✗ | *2.9176 ± 0.3558* |
 | 14 | REF-A dyn-in 4B | `refa-dynin-30k` | 29 999 | — | 3.0471 [2.4984, 3.6878] <!-- src: taniteval/results/driving_refa-dynin-30k.json#headline.ade_0_2s.mean --> | 4.7642 | 0.7412 | ✗ | *2.9196 ± 0.3937* |
 | 15 | Flagship **v2** (killed) | `flagship-v2-6k` | 6 000 | 272.9 M | 5.9396 [4.3273, 7.6249] <!-- src: taniteval/results/driving_flagship-v2-6k.json#headline.ade_0_2s.mean --> | 12.4011 | 0.8524 | ✗ | *6.179 ± 1.2845* |
-| — | Flagship v1 tactical **head** (not rollout) | `plan_flagship-30k` | 29 999 | — | **3.3839** [2.8336, 3.9722] <!-- src: TanitAD Research Lab/Benchmarks & Eval/Implementation/incoming/2026-08-16-jack-in-gates/raw/g1_g4_both_estimators.json#G1.arms.tactical_head.corrected_mean --> ⚠️ **the "🟥 no windows dump — legacy only" that stood here is REFUTED (2026-08-16):** `clwin_flagship-30k.pt`'s `plan_direct` **is** this arm — it reproduces the legacy 3.1501 ± 0.3472 **bit-exactly at 4 dp**, and its `full_set` mean is 3.3839. Same stale-absence class (**C69**/**C70**) as the P2 row above | — | — | ✗ | *3.38 (3.150 ± 0.347 in the P2 pass)* |
+| — | Flagship v1 tactical **head** (not rollout) | `plan_flagship-30k` | 29 999 | — | **3.3839** [2.8336, 3.9722] <!-- src: TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-08-16-jack-in-gates/raw/g1_g4_both_estimators.json#G1.arms.tactical_head.corrected_mean --> ⚠️ **the "🟥 no windows dump — legacy only" that stood here is REFUTED (2026-08-16):** `clwin_flagship-30k.pt`'s `plan_direct` **is** this arm — it reproduces the legacy 3.1501 ± 0.3472 **bit-exactly at 4 dp**, and its `full_set` mean is 3.3839. Same stale-absence class (**C69**/**C70**) as the P2 row above | — | — | ✗ | *3.38 (3.150 ± 0.347 in the P2 pass)* |
 
 *Arms recomputed but not ranked here (same 881 windows; full table in `jack_recompute.json`):*
 **v1.6** `flagship-v16-ab-ft` 0.4375 [0.3423, 0.5501] (legacy 0.4886 — the largest single-arm bias in the
@@ -3010,7 +3010,7 @@ they were made in the operator loop and never got an ADR.
    > moves **R² +0.0114 → +0.3308** and **MAE −42.5 %**, but **medAE moves only −1.1 % and nMedAE gets
    > 8.0 % WORSE**, with Spearman ρ flat (+0.001). **The repair fixes the tail and the summary
    > statistic, not typical accuracy** — a correction quoting only the R² jump overstates it.
-   > Full inventory + what is still stale-pending: `TanitAD Research Lab/Benchmarks & Eval/
+   > Full inventory + what is still stale-pending: `TanitAD Research Lab/Benchmarks & Evals/
    > Implementation/incoming/2026-07-27-comma-yaw-reissue/COMMA_YAW_REISSUE.md`.
    > ⚠️ **PhysicalAI/rig-B numbers in §8.1 #6 and §10 are UNAFFECTED and must not be re-issued.**
    >
@@ -3034,7 +3034,7 @@ they were made in the operator loop and never got an ADR.
    > **−0.288** on its own held-out clips, ρ 0.211, nMedAE 2.36). **Testable ≠ working.**
    > ⚠️ PhysicalAI remains UNAFFECTED and was **re-measured, not inherited**: `n_pai_changed = 0`,
    > yaw R² **+0.903482 bit-identical** under legacy, repaired and strict-admissible protocols.
-   > Record: `TanitAD Research Lab/Benchmarks & Eval/Implementation/incoming/
+   > Record: `TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/
    > 2026-07-27-anchor-settlement/ANCHOR_SETTLEMENT.md` (raw: `anchor_overlap.json`,
    > `anchor_resettlement.json`, `arms_resettlement.json`).
 
@@ -3269,7 +3269,7 @@ NOT survive** — the `trajectory`-task claim, corrected in its own block below.
 | **Source corpus** | `nvidia/PhysicalAI-Autonomous-Vehicles` — **306,152 clips ≈ 1,701 h** (MEASURED, `data_collection.parquet` row count 2026-08-06, `…/2026-08-06-alpamayo-augmentation/DESIGN.md`). |
 | **Coverage of source** | **4,729 / 306,152 clips = 1.54 %** of the corpus by clip. ⚠️ The PI brief targeted **100 h ≈ 18,000 clips (5.9 %)**; delivered is **26.3 % of that target** — a scope fact, not a failure, and it is the number a "scale the augmentation" decision starts from. |
 | **Delivery vs selection** | **4,729 delivered / 4,800 selected = 98.52 % of the manifest**; **23,644 / 24,000 rows = 98.52 %**. |
-| **Pipeline entry point** | `TanitAD Research Lab/Benchmarks & Eval/Research/2026-08-06-alpamayo-augmentation/tools/a2_alltasks.py` (the 5-task battery), driven per batch by `…/2026-08-05-alpamayo2-super/tools/a2_batch.py`; the single-clip quantised runner is `…/2026-08-05-alpamayo2-super/tools/a2_quant_run.py` (+ its `run_4bit_a40/` copy). Design + stage plan: `…/2026-08-06-alpamayo-augmentation/DESIGN.md`. ⚠️ **The orchestration ran pod-side and the pods are dead** — §2.6 of the addendum records that `a2_batch_out/` did not reach the repo, so the *driver invocation* is 🟥 UNVERIFIED even though the entry points are in-repo. |
+| **Pipeline entry point** | `TanitAD Research Lab/Benchmarks & Evals/Research/2026-08-06-alpamayo-augmentation/tools/a2_alltasks.py` (the 5-task battery), driven per batch by `…/2026-08-05-alpamayo2-super/tools/a2_batch.py`; the single-clip quantised runner is `…/2026-08-05-alpamayo2-super/tools/a2_quant_run.py` (+ its `run_4bit_a40/` copy). Design + stage plan: `…/2026-08-06-alpamayo-augmentation/DESIGN.md`. ⚠️ **The orchestration ran pod-side and the pods are dead** — §2.6 of the addendum records that `a2_batch_out/` did not reach the repo, so the *driver invocation* is 🟥 UNVERIFIED even though the entry points are in-repo. |
 | **Artifacts live** | HF `Sayood/tanitad-alpamayo2-augmentation` (5 files, far-side listing MEASURED 2026-08-16) · in-repo tooling + road-class labels under `…/2026-08-06-alpamayo-augmentation/` (`aug_road_class.json`, `a2_records_stats.json`, `tools/`, `pilot_rows_10clips.jsonl`, `aug_candidates_phase1.json.xz`) · local verified copy of the parquet in the session scratchpad (not committed — 25.97 MB). |
 | **Status** | ✅ COMPLETE, on HF, **`error` non-null on 0 of 23,644 rows** |
 | **HF** | `Sayood/tanitad-alpamayo2-augmentation` · 5 files: `records.parquet` (25,970,018 B), `README.md`, `selection_manifest.json` (340,800 B), `vqa_bank_500.json`, `.gitattributes` |
@@ -3341,7 +3341,7 @@ selected set**, so nothing may be inferred about the delivered 4,729 from the ma
 
 ⭐ **But the stratification SURVIVES INTACT, and this is MEASURED, not assumed.** Joining the
 parquet's own `clip_id` to
-`TanitAD Research Lab/Benchmarks & Eval/Research/2026-08-06-alpamayo-augmentation/aug_road_class.json`
+`TanitAD Research Lab/Benchmarks & Evals/Research/2026-08-06-alpamayo-augmentation/aug_road_class.json`
 (3,592 labelled clips; `_rule` = *"ego-derived (labels-may-use-ego); highway frac(v>20)>0.6;
 intersection_rich stop+turn or big turn at low speed; urban vmed>2; else unstructured"*):
 
@@ -3367,7 +3367,7 @@ intersection_rich 1,241 · highway 384 · unstructured 83 · unlabelled 1,208; d
 identical on all four labelled strata, unlabelled **1,137**; and the **81 zero-row clips are
 81/81 unlabelled** and the **10 off-manifest clips 10/10 unlabelled**. `aug_road_class.json`
 carries `counts` + `classes` (**3,592 labelled clip_ids**) and is git-tracked at
-`TanitAD Research Lab/Benchmarks & Eval/Research/2026-08-06-alpamayo-augmentation/aug_road_class.json`.
+`TanitAD Research Lab/Benchmarks & Evals/Research/2026-08-06-alpamayo-augmentation/aug_road_class.json`.
 *(An earlier draft of this row asserted that file "IS NOT THERE" — that absence-claim was wrong
 and is retracted; it is present and tracked. Operating-Standard rule 2: absence at one probe is
 not absence.)*
@@ -3471,7 +3471,7 @@ by the card's own per-clip rate.
 
 **Sources.** `records.parquet` (sha256 verified above) · `selection_manifest.json` ·
 `Project Steering/Reports/2026-08-15-2200-campaign-science-addendum.md` §2.2/§2.5 ·
-`TanitAD Research Lab/Benchmarks & Eval/Research/2026-08-06-alpamayo-augmentation/DESIGN.md` ·
+`TanitAD Research Lab/Benchmarks & Evals/Research/2026-08-06-alpamayo-augmentation/DESIGN.md` ·
 comparison analysis `…/Research/2026-08-05-alpamayo2-super/ALPAMAYO2_SUPER_ANALYSIS.md`.
 
 ⇒ **`Paper/TANITAD_PAPER.md` may now promote its A2 counts from INHERITED to MEASURED,
@@ -3814,7 +3814,7 @@ not capability results**, and may not be quoted as driving performance.
 **Instrument:** drift from `latentmotion.py` (K-fold fit / per-clip score, 80
 held-out clips, drift control t 143–147), raw at
 `…/2026-08-24-action-conditioning-and-heldout/raw/seedrep.json` and
-`…/raw/freezetest.json`. **Eval tier T0-DIAGNOSTIC** except the T1 row above.
+`…/raw/freezedrift.json` *(cited as `freezetest.json` until 2026-08-27 — that name was the armed chain's PLANNED output; the read that actually ran wrote `freezedrift.json`, now banked)*. **Eval tier T0-DIAGNOSTIC** except the T1 row above.
 
 ⚠️ **The §13 significance bar has moved.** `|t| ≈ 2.9`, not 2.0 — measured over 104
 null draws (`taniteval/taniteval/null_calibration.py`, E-DEC-54/56). Several older

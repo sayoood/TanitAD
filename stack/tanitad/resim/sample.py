@@ -6,8 +6,11 @@ Builds a self-contained bundle exercising EVERY element of THE STANDARD
   * camera projection    — per-arm trajectory fans on a road-like frame;
   * metric BEV inset      — all arms + GT in metres (the master panel);
   * decoded intent text   — each arm's tactical maneuver (maneuver_probs argmax)
-                            + strategic route/goal (nav_cmd), rendered as the
-                            camera HUD;
+                            + the STRATEGIC PAIR: the model's route prediction
+                            (route_pred; REF-B only) and, separately labelled,
+                            the ground-truth-derived nav INPUT. main/refa have
+                            no route head, so their strategic element renders
+                            "unavailable + reason" — both branches on screen;
   * ADE + v0              — per-arm error and ego speed;
   * formal-gate panel     — a synthetic D1-D3 + Phase-0 GO verdict;
   * BEV-only fallback     — one episode on an "uncalibrated" corpus so the
@@ -47,6 +50,13 @@ _SCENARIOS = [
     ("cosmos-ood-demo", TURN_RIGHT, 2, "OOD (BEV-only)"),   # uncalibrated
 ]
 _UNCALIBRATED = "cosmos-ood-demo"
+
+# Demo route PREDICTION (index into export.ROUTE_CLASSES = route_left /
+# route_straight / route_right) per nav INPUT index (export.NAV_COMMANDS =
+# follow / left / right / straight). ⚠️ Deliberately NOT a bijection of the
+# input: an arm whose route output is an exact echo of the route input is the
+# nav-echo defect, and a demo bundle must not model one.
+_ROUTE_FOR_NAV = {0: 1, 1: 0, 2: 2, 3: 1}
 
 
 def _road_frame(t: int, curve: float, h: int = 256, w: int = 256) -> np.ndarray:
@@ -148,6 +158,12 @@ def _arm_output(name: str, k_step: int, v0: float, curve: float,
         out.maneuver_probs = _man_probs(true_man, prof["sharp"], rng)
         out.maneuver_gt = true_man
         out.nav_cmd = nav_cmd
+        # Only REF-B has a route head in tanitad.replay.arms, so only REF-B
+        # fills the STRATEGIC PREDICTION slot; main/refa carry the GT-derived
+        # nav INPUT alone and their strategic element renders
+        # "unavailable + reason". The demo therefore shows BOTH branches of the
+        # nav-echo fix on one screen — which is the point of shipping it.
+        out.route_pred = _ROUTE_FOR_NAV[nav_cmd]
         out.conf = float(np.clip(0.8 - 0.02 * k_step, 0, 1))
         out.ood = float(np.clip(0.15 + 0.03 * k_step, 0, 1))
     return out

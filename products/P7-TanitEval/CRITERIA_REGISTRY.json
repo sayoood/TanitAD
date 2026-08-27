@@ -1,0 +1,645 @@
+{
+ "schema": 1,
+ "version": "2.2.0",
+ "created": "2026-08-23",
+ "owner": "TanitAD_EvalFlyWheel",
+ "why": "TANITAD_PROGRAMME.md §5 charter: 'Criteria completeness is enforced by machinery, not memory — we measurably failed to keep them complete by hand.' This file is the machine-readable registry every eval output is diffed against. A criterion may be PRESENT or REFUSED-with-a-reason; it may never be SILENTLY ABSENT.",
+ "three_states": {
+  "PRESENT": "the metric is in the artifact at one of its keys",
+  "REFUSED": "the artifact's `refused` block names the criterion AND gives a reason — admissible, and becomes a WORK ITEM",
+  "ABSENT": "neither — VIOLATION. This is the silent omission the doctrine forbids."
+ },
+ "doctrine": {
+  "families_never_pooled": "The four families are reported per-family. A single composite hides the trade-off we are trying to see.",
+  "ade_alone_is_incomplete": "ADE stays, but an eval reporting ADE alone must not be presented as a result (PI, 2026-08-02, binding).",
+  "estimator": "paired episode-cluster bootstrap over val episodes (taniteval/ci.py)",
+  "forbidden_estimator": "overlapping_holdout_se — biases the point estimate bidirectionally, up to a sign flip",
+  "tier_required": "every artifact carries its tier; T0 is a WM diagnostic and is NEVER driving performance"
+ },
+ "applicability": {
+  "why": "A criteria check that scores PROFILING artifacts against DRIVING criteria reports a huge violation count that is pure noise — and a probe reporting the wrong scope is worse than no probe (the `df` trap, the Thor `free` trap, the cgroup `usage_in_bytes` trap). Scope is therefore decided BEFORE any criterion is evaluated, and an artifact whose kind cannot be determined is reported as UNKNOWN, never silently dropped and never counted as compliant.",
+  "in_scope_if_any": [
+   {
+    "kind": "block_prefix",
+    "value": "taniteval.driving"
+   },
+   {
+    "kind": "key_present",
+    "value": "headline.ade_0_2s"
+   },
+   {
+    "kind": "key_present",
+    "value": "ade_0_2s"
+   },
+   {
+    "kind": "key_present",
+    "value": "full_set.model"
+   },
+   {
+    "kind": "key_present",
+    "value": "heldout.model"
+   },
+   {
+    "kind": "key_present",
+    "value": "four_families"
+   }
+  ],
+  "out_of_scope_if_any": [
+   {
+    "kind": "key_present",
+    "value": "fp32.params",
+    "reason": "precision/parameter profiling artifact"
+   },
+   {
+    "kind": "key_present",
+    "value": "tf32.params",
+    "reason": "precision/parameter profiling artifact"
+   },
+   {
+    "kind": "key_present",
+    "value": "amp16.params",
+    "reason": "precision/parameter profiling artifact"
+   },
+   {
+    "kind": "key_present",
+    "value": "efficiency.params",
+    "reason": "efficiency profiling artifact"
+   },
+   {
+    "kind": "key_present",
+    "value": "_schema",
+    "reason": "schema/doc artifact, not an eval"
+   },
+   {
+    "kind": "key_present",
+    "value": "exclusions",
+    "reason": "corpus census artifact, not an eval"
+   },
+   {
+    "kind": "key_present",
+    "value": "clips",
+    "reason": "clip-level dump, not a scored eval"
+   }
+  ]
+ },
+ "tiers": {
+  "key_paths": [
+   "block",
+   "tier",
+   "protocol.tier"
+  ],
+  "values": {
+   "T0": {
+    "aliases": [
+     "tier0",
+     "taniteval.driving/tier0"
+    ],
+    "is_driving_performance": false,
+    "note": "teacher-forced world-model fidelity diagnostic. NEVER reported as driving performance."
+   },
+   "T1": {
+    "aliases": [
+     "tier1",
+     "taniteval.driving/tier1"
+    ],
+    "is_driving_performance": true,
+    "note": "action-closed loop — the PRIMARY driving tier."
+   },
+   "T2": {
+    "aliases": [
+     "tier2",
+     "taniteval.driving/tier2"
+    ],
+    "is_driving_performance": true,
+    "note": "re-perception sim."
+   }
+  }
+ },
+ "families": {
+  "LONGITUDINAL": {
+   "why": "88.7 % of our oracle gap is longitudinal. ADE hides it — an arm can win ADE while setting the wrong speed.",
+   "criteria": [
+    {
+     "id": "long.target_speed",
+     "required": true,
+     "label": "target-speed accuracy",
+     "keys": [
+      "headline.speed_mae_mps",
+      "headline.speed_bias_mps",
+      "four_families.longitudinal.speed_mae_mps",
+      "four_families.longitudinal.target_speed_acc"
+     ],
+     "note": "MAE and signed bias; the bias is what exposes systematic over-prediction."
+    },
+    {
+     "id": "long.along_track_error",
+     "required": true,
+     "label": "along-track displacement error",
+     "keys": [
+      "headline.long_abs_2s_m",
+      "headline.long_signed_2s_m",
+      "four_families.longitudinal.along_mae_m",
+      "four_families.longitudinal.along_bias_m"
+     ]
+    },
+    {
+     "id": "long.progress",
+     "required": true,
+     "label": "ego progress",
+     "keys": [
+      "headline.progress_abs_err_m",
+      "headline.progress_signed_err_m",
+      "four_families.longitudinal.ego_progress"
+     ]
+    },
+    {
+     "id": "long.distance_keeping",
+     "required": true,
+     "label": "distance-keeping (headway / time-gap / TTC to the lead agent)",
+     "keys": [
+      "headline.headway_m",
+      "headline.time_gap_s",
+      "headline.ttc_s",
+      "longitudinal.distance_keeping",
+      "four_families.longitudinal.distance_keeping"
+     ],
+     "refused_as": [
+      "headway_ttc_distance_keeping"
+     ],
+     "note": "MEASURED 2026-08-23: refused in 27/27 complete artifacts — 'no lead-agent state exists (lead_state is a None stub)'. Largest open criterion gap, on the family owning most of the oracle gap."
+    }
+   ]
+  },
+  "LATERAL": {
+   "why": "'lateral is fine' has been asserted from cross-track alone; curvature and yaw are where a smooth-but-wrong path shows up.",
+   "criteria": [
+    {
+     "id": "lat.cross_track",
+     "required": true,
+     "label": "cross-track error",
+     "keys": [
+      "headline.lat_abs_2s_m",
+      "headline.lat_signed_2s_m",
+      "headline.pathgeom_crosstrack_m",
+      "four_families.lateral.cross_mae_m"
+     ]
+    },
+    {
+     "id": "lat.heading",
+     "required": true,
+     "label": "heading error",
+     "keys": [
+      "headline.heading_mae_2s_deg",
+      "headline.heading_med_2s_deg",
+      "headline.heading_exceed_5deg",
+      "four_families.lateral.heading_mae_deg"
+     ]
+    },
+    {
+     "id": "lat.curvature",
+     "required": true,
+     "label": "curvature error",
+     "keys": [
+      "headline.curv_mae_1_per_m",
+      "headline.curvature_mae",
+      "four_families.lateral.curvature_mae_1pm"
+     ],
+     "partial_keys": [
+      "headline.curv_sign_agree"
+     ],
+     "refused_as": [
+      "curvature_mae_at_this_resolution"
+     ],
+     "note": "MEASURED 2026-08-23: magnitude refused in 27/27 ('measured 24x the signal; SIGN agreement only at tier 0'). curv_sign_agree is a PARTIAL satisfaction — sign without magnitude."
+    },
+    {
+     "id": "lat.yaw_rate",
+     "required": true,
+     "label": "yaw-rate error",
+     "keys": [
+      "headline.yaw_rate_mae_dps",
+      "headline.yawrate_mae",
+      "lateral.yaw_rate",
+      "four_families.lateral.yaw_rate_mae_degps"
+     ],
+     "note": "MEASURED 2026-08-23: ABSENT in 71/71 artifacts and NOT in any refused block — a silent omission."
+    }
+   ]
+  },
+  "TACTICAL": {
+   "why": "The 5-way manoeuvre softmax that MIXES lat+lon is our single largest known defect; a scalar ADE cannot see a decision error.",
+   "criteria": [
+    {
+     "id": "tac.manoeuvre_decision",
+     "required": true,
+     "label": "manoeuvre-decision quality (selected vs executed)",
+     "keys": [
+      "tactical.manoeuvre_accuracy",
+      "tactical.maneuver_accuracy",
+      "headline.maneuver_acc",
+      "four_families.tactical.lateral_decision",
+      "four_families.tactical.longitudinal_decision",
+      "four_families.tactical.maneuver_5way_collapsed"
+     ],
+     "note": "MEASURED 2026-08-23: ABSENT in 71/71 and NOT refused — silent omission."
+    },
+    {
+     "id": "tac.confusion",
+     "required": true,
+     "label": "confusion over the manoeuvre classes",
+     "keys": [
+      "four_families.tactical.lateral_decision.confusion_gt_rows_pred_cols",
+      "four_families.tactical.longitudinal_decision.confusion_gt_rows_pred_cols",
+      "four_families.tactical.maneuver_5way_collapsed.confusion_gt_rows_pred_cols",
+      "tactical.confusion_gt_rows_pred_cols"
+     ],
+     "note": "MEASURED 2026-08-23: the emitter writes `confusion_gt_rows_pred_cols` (four_families.py:563), together with `per_class` recall/precision and `never_predicted`. An earlier registry looked for `confusion` and the census duly reported '0/135, silently absent everywhere' - a REGISTRY TYPO wearing a finding's clothes. See C133-b. `never_predicted` is the load-bearing field: the deployed arm emitted 0 of 881 'accelerate' decisions, which no accuracy scalar can show."
+    },
+    {
+     "id": "tac.goal_selection",
+     "required": true,
+     "label": "tactical goal / anchor selection quality",
+     "keys": [
+      "tactical.anchor_selection",
+      "tactical.goal_selection",
+      "headline.anchor_top1",
+      "four_families.tactical.goal_setting"
+     ]
+    }
+   ]
+  },
+  "STRATEGIC": {
+   "why": "The hierarchy is the programme's thesis. If we never measure the strategic level we cannot claim it works.",
+   "criteria": [
+    {
+     "id": "strat.decision",
+     "required": true,
+     "label": "strategic decision quality",
+     "keys": [
+      "strategic.decision_accuracy",
+      "strategic.accuracy",
+      "four_families.strategic"
+     ],
+     "note": "MEASURED 2026-08-23: ABSENT in 71/71 and NOT refused — silent omission."
+    },
+    {
+     "id": "strat.route_goal",
+     "required": true,
+     "label": "strategic route / goal-setting quality",
+     "keys": [
+      "strategic.route_quality",
+      "strategic.goal_setting",
+      "headline.route_acc",
+      "four_families.strategic"
+     ],
+     "leak_guard": "route_head_echo",
+     "note": "A route head that is a bijection of its own nav input scores 1.0000 by ECHO, not skill (MEASURED 2026-08-03, flagship v1: 369/369 and 81/81). Any route/goal score must ship its echo test."
+    }
+   ]
+  }
+ },
+ "leak_guards": {
+  "why": "For ANY head, ask whether its inputs at inference include something the label was derived from. Same family as the C6 confound and the REF-A I-JEPA leak (~80 % of val inside train).",
+  "guards": [
+   {
+    "id": "vision_only_inference",
+    "required": true,
+    "rule": "Inference uses VISION ONLY. Labels may use ego/privileged data (PI, 2026-08-03, binding).",
+    "keys": [
+     "protocol.inference_inputs",
+     "protocol.vision_only"
+    ],
+    "note": "An artifact must state what the model consumed at inference, or its number cannot be checked for this."
+   },
+   {
+    "id": "goal_situation_disjoint",
+    "required": true,
+    "rule": "The goal path and the situation path stay information-disjoint at inference; a goal input must not carry the situation classifier's output in any form (PI, 2026-08-03, binding).",
+    "keys": [
+     "protocol.goal_source"
+    ]
+   },
+   {
+    "id": "route_head_echo",
+    "required": false,
+    "rule": "A route/goal head scoring near 1.0 must publish its echo test against its own input.",
+    "keys": [
+     "strategic.echo_test"
+    ]
+   }
+  ]
+ },
+ "artifact_hygiene": {
+  "criteria": [
+   {
+    "id": "hyg.tier_stamp",
+    "required": true,
+    "label": "tier stamp present",
+    "note": "MEASURED 2026-08-23: only 27/71 artifacts carry any tier marker."
+   },
+   {
+    "id": "hyg.estimator_named",
+    "required": true,
+    "label": "estimator named",
+    "keys": [
+     "estimator.interval",
+     "estimator",
+     "_estimator",
+     "four_families.tactical._estimator",
+     "intervals.estimator"
+    ]
+   },
+   {
+    "id": "hyg.n_reported",
+    "required": true,
+    "label": "n printed (windows and episodes)",
+    "keys": [
+     "n_windows",
+     "n_episodes",
+     "four_families.longitudinal.n_windows"
+    ]
+   },
+   {
+    "id": "hyg.no_forbidden_estimator",
+    "required": true,
+    "label": "overlapping_holdout_se not used as a decision-grade interval",
+    "note": "It may appear ONLY under an explicitly deprecated label, or in the `deprecated_and_refused` field."
+   },
+   {
+    "id": "hyg.parity",
+    "required": true,
+    "label": "corpus identity recorded (parity key + skip-hash)",
+    "keys": [
+     "parity",
+     "protocol.corpus",
+     "protocol.parity_key",
+     "corpus",
+     "val_cache"
+    ],
+    "note": "Parity is sacred: the canonical train corpus is `physicalai-train-e438721ae894` (2376 episodes), skip-hash `f09e44db`. An artifact that does not record WHICH corpus it scored is not cross-arm comparable, and every delta computed against it is uninterpretable. Anything that re-selects episodes must be flagged NON-PARITY explicitly."
+   },
+   {
+    "id": "ctrl.floor_comparison",
+    "required": true,
+    "label": "headline metrics reported against their trivial control(s)",
+    "keys": [
+     "floors",
+     "floor_values",
+     "vs_floor_paired",
+     "controls",
+     "four_families.longitudinal.anti_echo"
+    ],
+    "note": "⭐ THE CRITERION THAT WOULD HAVE CAUGHT THE PROGRAMME'S LARGEST MISREAD. A model number without its control is unreadable: MEASURED 2026-08-23, the T1 `stage-a-repaired · cl` arm reads 9.3697 m while its own hold-action control reads 0.4246 m on the SAME windows — the trivial baseline beat the model 22×. An artifact reporting only the model's value looks like a result. Controls: hold-v0 (go straight at the observed entry speed) and constant velocity. ⛔ A paired interval that excludes zero while favouring the FLOOR means the trivial baseline won — render that as LOST, never as a tie."
+   }
+  ]
+ },
+ "benchmarks": {
+  "_status": "FILLED 2026-08-23 from the banked protocol specs. A benchmark is enforced only for an artifact that CLAIMS it (a `benchmark` key). Adopting a benchmark means running ITS published protocol verbatim and citing it - never ours relabelled.",
+  "_four_families_still_bind": "An EPDMS or an L2 number does NOT satisfy the four-families rule. Tactical and strategic are absent from NavSim BY CONSTRUCTION, as are longitudinal target-speed and lateral heading/curvature/yaw. A benchmark artifact must REFUSE each absent family explicitly, with its reason and n.",
+  "navsim": {
+   "pending": false,
+   "protocol_doc": "products/P7-TanitEval/benchmarks/NAVSIM_PROTOCOL.md",
+   "primary": [
+    "arXiv:2406.15349",
+    "arXiv:2506.04218v3"
+   ],
+   "devkit_pin": "autonomousvision/navsim@0a380a9 (2025-10-27)",
+   "THE_COLUMN_TRAP": "READ `score`, NEVER `pdm_score`. PDMScorer._aggregate_pdm_scores masks Extended Comfort out and divides by 14; the real EPDMS (denominator 16) is assembled downstream in run_pdm_score.py::compute_final_scores. The wrong column looks perfectly valid.",
+   "ESTIMATOR_UNRESOLVED": "Our episode-cluster bootstrap does NOT transfer - NavSim's resampling unit is a scene token, not an episode. Do not report a NavSim CI until the cluster unit is settled and pre-registered.",
+   "variants": {
+    "PDMS_v1": {
+     "multipliers": [
+      "NC",
+      "DAC"
+     ],
+     "weighted": {
+      "EP": 5,
+      "TTC": 5,
+      "C": 2
+     },
+     "denominator": 12,
+     "note": "DDC exists in v1 code with weight 0.0 (pdm_scorer.py:39-48)"
+    },
+    "EPDMS_v2": {
+     "multipliers": [
+      "NC",
+      "DAC",
+      "DDC"
+     ],
+     "weighted": {
+      "EP": 5,
+      "TTC": 5,
+      "LK": 2,
+      "HC": 2,
+      "EC": 2
+     },
+     "denominator": 16
+    }
+   },
+   "criteria": [
+    {
+     "id": "navsim.score",
+     "required": true,
+     "label": "EPDMS/PDMS from the `score` column",
+     "keys": [
+      "benchmark.navsim.score"
+     ],
+     "note": "NOT `pdm_score` - see the column trap above."
+    },
+    {
+     "id": "navsim.variant",
+     "required": true,
+     "label": "which variant + split named",
+     "keys": [
+      "benchmark.navsim.variant"
+     ],
+     "note": "PDMS_v1 vs EPDMS_v2, and navtest vs navhard. 'EPDMS on navtest' (64-87) is NOT navhard EPDMS (11-55); four incomparable protocols exist."
+    },
+    {
+     "id": "navsim.submetrics",
+     "required": true,
+     "label": "every sub-metric reported",
+     "keys": [
+      "benchmark.navsim.submetrics"
+     ],
+     "note": "A composite alone hides which term moved."
+    },
+    {
+     "id": "navsim.ego_inputs",
+     "required": true,
+     "label": "declared ego inputs (vision-only compliance)",
+     "keys": [
+      "benchmark.navsim.ego_inputs"
+     ],
+     "note": "NavSim publishes NO fully ego-free number; even 'camera-only' LTF consumes driving_command + ego_velocity + ego_acceleration. Design against TransFuser B1 'Goal only' = 81.8 PDMS. driving_command is 4-dim in the devkit, not the 3 the paper states."
+    },
+    {
+     "id": "navsim.route_leak_check",
+     "required": true,
+     "label": "route_roadblock_ids provenance checked",
+     "keys": [
+      "benchmark.navsim.route_leak_check"
+     ],
+     "note": "UNVERIFIED whether nuPlan's route_roadblock_ids derives from the expert path. Run this leak check BEFORE quoting a route-conditioned result - same family as our route-head echo."
+    }
+   ]
+  },
+  "nuscenes": {
+   "pending": false,
+   "protocol_doc": "products/P7-TanitEval/benchmarks/NUSCENES_PROTOCOL.md",
+   "primary": [
+    "arXiv:1903.11027"
+   ],
+   "licence_status": "CONFLICT, UNRESOLVED: the paper states CC BY-NC-SA 4.0 (non-commercial); the AWS Open Data registry lists 'Commercial'. Treat as RESEARCH-ONLY until written terms are obtained.",
+   "tasks": {
+    "detection": {
+     "adoptable": true,
+     "criteria": [
+      {
+       "id": "nusc.det.nds",
+       "required": true,
+       "label": "NDS",
+       "keys": [
+        "benchmark.nuscenes.detection.nds"
+       ]
+      },
+      {
+       "id": "nusc.det.map",
+       "required": true,
+       "label": "mAP (center-distance matching)",
+       "keys": [
+        "benchmark.nuscenes.detection.map"
+       ]
+      },
+      {
+       "id": "nusc.det.tp",
+       "required": true,
+       "label": "the five TP metrics (ATE/ASE/AOE/AVE/AAE)",
+       "keys": [
+        "benchmark.nuscenes.detection.tp_metrics"
+       ]
+      }
+     ]
+    },
+    "tracking": {
+     "adoptable": true,
+     "criteria": [
+      {
+       "id": "nusc.trk.amota",
+       "required": true,
+       "label": "AMOTA",
+       "keys": [
+        "benchmark.nuscenes.tracking.amota"
+       ]
+      },
+      {
+       "id": "nusc.trk.amotp",
+       "required": true,
+       "label": "AMOTP",
+       "keys": [
+        "benchmark.nuscenes.tracking.amotp"
+       ]
+      }
+     ]
+    },
+    "prediction": {
+     "adoptable": true,
+     "criteria": [
+      {
+       "id": "nusc.pred.minade",
+       "required": true,
+       "label": "minADE_k",
+       "keys": [
+        "benchmark.nuscenes.prediction.min_ade"
+       ]
+      },
+      {
+       "id": "nusc.pred.minfde",
+       "required": true,
+       "label": "minFDE_k",
+       "keys": [
+        "benchmark.nuscenes.prediction.min_fde"
+       ]
+      },
+      {
+       "id": "nusc.pred.missrate",
+       "required": true,
+       "label": "MissRate_k",
+       "keys": [
+        "benchmark.nuscenes.prediction.miss_rate"
+       ]
+      }
+     ]
+    },
+    "planning_openloop": {
+     "adoptable": false,
+     "THE_VERDICT": "INADMISSIBLE as a TanitAD criterion or gate. Usable ONLY as a cited external-comparability row. Three measurements: (1) the averaging convention alone moves one VAD checkpoint 0.72 -> 1.22 m (+70 %) and FLIPS the UniAD/VAD ranking; (2) the ground-truth HUMAN trajectory scores 0.36-0.96 % collision - the metric's false-positive floor exceeds the published spread; (3) AD-MLP with no camera and no LiDAR ties a full perception stack. And VAD's 'high-level command' is computed from the GT future trajectory thresholded at +/-2 m and handed back as an input - OUR route-head echo defect, published as state of the art.",
+     "criteria": [
+      {
+       "id": "nusc.plan.protocol_tag",
+       "required": true,
+       "label": "which evaluation implementation produced the number",
+       "keys": [
+        "benchmark.nuscenes.planning.protocol_tag"
+       ],
+       "note": "uniad (L2 AT the timestep) vs stp3 (L2 averaged UP TO it). Five axes of divergence, not one. An untagged L2 is not comparable to anything."
+      },
+      {
+       "id": "nusc.plan.gt_control",
+       "required": true,
+       "label": "the GT-trajectory control published alongside",
+       "keys": [
+        "benchmark.nuscenes.planning.gt_control"
+       ],
+       "note": "The echo test applied to a borrowed instrument: report what the ground-truth human trajectory scores under the same protocol. Without it the number cannot be read."
+      },
+      {
+       "id": "nusc.plan.command_source",
+       "required": true,
+       "label": "high-level command refused, or replaced by a predicted goal",
+       "keys": [
+        "benchmark.nuscenes.planning.command_source"
+       ],
+       "note": "The GT-derived command is inadmissible under our vision-only rule."
+      },
+      {
+       "id": "nusc.plan.nonstraight_subset",
+       "required": true,
+       "label": "the non-straight subset reported alongside full val",
+       "keys": [
+        "benchmark.nuscenes.planning.nonstraight"
+       ],
+       "note": "Most of nuScenes val is straight-line constant-velocity driving."
+      }
+     ]
+    }
+   }
+  }
+ },
+ "schema_note": "Two artifact schemas are recognised: `taniteval.driving` (headline.* + a top-level `refused` block) and `four_families` (ff_*.json, per-family blocks whose criteria decline inline via {status:UNAVAILABLE, reason, n}). Both refusal idioms are honest and both are read.",
+ "registry_hygiene": {
+  "why": "A criterion whose keys resolve in NO artifact anywhere is far more likely a REGISTRY TYPO than a universal absence. This happened twice on 2026-08-23 (tac.confusion), and the second time it was published to the PI as 'the surviving universal gap'. The checker therefore reports UNRESOLVABLE separately from ABSENT, and a test pins that every criterion resolves in at least one real artifact.",
+  "rule": "Adding a criterion means naming the key the EMITTER actually writes. Read the producing code, do not guess the name. If a metric is genuinely not emitted anywhere yet, set `not_yet_emitted: true` so the intent is explicit and the audit stays green."
+ },
+ "release_gate": {
+  "why": "The PI asked (2026-08-23) to finalize the tests and criteria that must run at EVERY model release. This block names which registry criteria are release-blocking, so the gate and the census read one source.",
+  "blocking": [
+   "all four families PRESENT or REFUSED-with-reason-and-n",
+   "hyg.tier_stamp",
+   "hyg.estimator_named",
+   "hyg.n_reported",
+   "hyg.no_forbidden_estimator",
+   "hyg.parity",
+   "ctrl.floor_comparison",
+   "leak_guards.vision_only_inference",
+   "leak_guards.goal_situation_disjoint"
+  ],
+  "blocking_note": "Each is cheap, objective, and earned by a measured failure. ⛔ A T1 artifact is REQUIRED: T0 is a world-model diagnostic and a release may never be gated on it alone.",
+  "advisory": [
+   "regression vs the previous release (per family)"
+  ],
+  "advisory_note": "Advisory until two clean releases exist to compare — a regression gate with no trustworthy baseline manufactures false failures.",
+  "cannot_rule_is_a_verdict": "⭐ A criterion that cannot decide at the configured settings must return CANNOT-RULE, loudly — never a silent PASS and never a perpetual INCONCLUSIVE. MEASURED precedent: the O6 rank gate could never rule (spectrum n=24 against a ceiling of 1024) and its silence was read as a pass for weeks.",
+  "pi_decision_open": "Whether a FAIL blocks the release or advises is the PI's call (open as of 2026-08-23). Recommendation on record: blocking on the list above, advisory on regression."
+ }
+}
