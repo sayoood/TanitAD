@@ -395,7 +395,14 @@ STAGE_PRECONDITION: dict[str, str | None] = {
 #: ⚠️ An allowed prefix must be WHOLLY absent from the checkpoint. A PARTIALLY
 #: present module is a geometry mismatch, not an introduction, and stays fatal.
 STAGE_MAY_INTRODUCE: dict[str, tuple[str, ...]] = {
-    "S-W": (),                  # starts the ladder; there is nothing to inherit
+    # S-W starts the ladder; the ONE thing it may introduce is the O14 head
+    # (PREREG_O14_FUTURE_OBS): a NEW module gated on --w-o14, absent from every
+    # pre-O14 checkpoint (distill_init.pt included). Its fresh init feeds only
+    # its own L1 term, so the introduction changes no other loss at step 0.
+    # ⛔ Found the hard way 2026-08-27: the ladder's arm 2 (o14fut01) refused
+    # its init because this tuple was () — the module landed without its
+    # introduction permission.
+    "S-W": ("o14_head.",),
     # S-T introduces, by design: the selector (when an arm is opted into), and
     # the g_str->P_T conditioning port `cond_tac_dyn.` (F-1,
     # DIAGRAM_CONFORMANCE.md 2026-08-16 — the diagram/§5-spec'd tactical-

@@ -151,3 +151,11 @@ def test_the_target_carries_no_gradient():
     assert not fr.requires_grad and not ff.requires_grad     # the real case
     t = _o14_pixel_target(fr, ff, mode="fut", k=2)
     assert t.requires_grad is False and t.grad_fn is None
+
+
+def test_the_head_is_introducible_at_S_W():
+    """A pre-O14 checkpoint (distill_init included) lacks o14_head.*; without
+    this allowance load_stage_init refuses the init and the arm dies at launch
+    (measured: the ladder's arm 2, 2026-08-27)."""
+    from train_v6_staged import STAGE_MAY_INTRODUCE
+    assert "o14_head." in STAGE_MAY_INTRODUCE["S-W"]
