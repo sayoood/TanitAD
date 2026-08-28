@@ -418,13 +418,19 @@ def strategic_from_alpamayo(alpamayo_lane: str | None,
                            "the clip-level Alpamayo record cannot supply"))
 
     if lane in ("left lane change", "right lane change"):
-        # the ACTION is stated; the GOAL still needs a target lane
-        return (None,
+        # ⭐ THE GOAL IS STILL ROUTE-FOLLOWING (PI 2026-08-23). A lane change is
+        # HOW the ego follows the road, not a different strategic intent. Before
+        # this the goal was `None` here — a silent absence, see below.
+        return (LabelField("FOLLOW_MAIN_ROAD", Leg.ALPAMAYO,
+                           corroborated_by=(Leg.ALPAMAYO,)),
                 LabelField("PREPARE_LANE_CHANGE", Leg.ALPAMAYO,
                            corroborated_by=(Leg.ALPAMAYO,)))
 
-    if lat in ALPAMAYO_GOES_STRAIGHT and lane == "lane keep":
-        if set(names) & JUNCTION_REFERENTS:
+    if lane == "lane keep":
+        # ⭐ ANY lateral value, not just "Go Straight" (PI 2026-08-23). The
+        # junction discriminator still decides STRAIGHT_THROUGH vs
+        # FOLLOW_MAIN_ROAD; what changed is that a STEER no longer falls through.
+        if lat in ALPAMAYO_GOES_STRAIGHT and (set(names) & JUNCTION_REFERENTS):
             return (LabelField("STRAIGHT_THROUGH", Leg.ALPAMAYO,
                                corroborated_by=(Leg.ALPAMAYO,)),
                     LabelField(ABSTAIN, Leg.NONE,
@@ -435,7 +441,37 @@ def strategic_from_alpamayo(alpamayo_lane: str | None,
                 LabelField(ABSTAIN, Leg.NONE,
                            "no strategic action implied by continuing along "
                            "the road"))
-    return None, None
+
+    # ⛔ THE FALL-THROUGH USED TO BE `return None, None` — AND THAT WAS A SILENT
+    # ABSTENTION ON 41.16 % OF THE CORPUS (1 944 of 4 723 clips, MEASURED
+    # 2026-08-23). Returning the FIELD as `None` BYPASSES
+    # `LabelField.__post_init__`, whose own error text is *"an absent value MUST
+    # carry a reason — a silent abstention is indistinguishable from a bug"*: the
+    # guard lives on the object and this path never constructed one. 85 % of that
+    # gap was `lane == "lane keep"` with `lateral` a STEER, which the branch above
+    # now covers.
+    #
+    # ⭐ PI DIRECTIVE 2026-08-23, verbatim: *"no abstension"* and *"the strategic
+    # goals should follow the goal follow route"*. Without a navigation route the
+    # ego is, by definition, following the main road — `FOLLOW_MAIN_ROAD` is
+    # already declared THE DEFAULT for exactly this case (PI 2026-08-11,
+    # HIERARCHY_VOCABULARY.md §3). So the default is emitted, WITH its reason,
+    # instead of a hole.
+    #
+    # ⚠️ AND THIS IS SAFE ONLY BECAUSE THE TURN IS AN *ACTION*, NOT A GOAL.
+    # VISUALLY VALIDATED 2026-08-23 (10 clips rendered from the parity corpus):
+    # the steer population is MIXED — `24ae03a3` is genuine gentle curve-following
+    # (-7.7 deg over 105 m) but `092ad43d` is visibly a JUNCTION TURN (give-way
+    # triangle in frame, -64.6 deg over 13.9 m) that Alpamayo labelled
+    # `lane = "Lane Keep"`. A goal-level turn/no-turn split would therefore have
+    # been WRONG on Alpamayo's own field. Keeping the goal at route-following and
+    # putting the manoeuvre in `a_str` as TURN_LEFT/TURN_RIGHT(within_m) — derived
+    # from GEOMETRY, not from `lane` — is what makes that mislabelling harmless.
+    return (LabelField("FOLLOW_MAIN_ROAD", Leg.ALPAMAYO,
+                       corroborated_by=(Leg.ALPAMAYO,)),
+            LabelField(ABSTAIN, Leg.NONE,
+                       f"no strategic action derivable from lane={lane!r} / "
+                       f"lateral={lat!r}; the goal defaults to route-following"))
 
 
 def strategic_from_lane_target(rel: str, *, exit_ahead_on_side: bool | None = None
@@ -764,6 +800,32 @@ def compose(*, clip_id: str,
         if _g_alp is not None or _a_alp is not None:
             g_str, a_str = _g_alp, _a_alp
             flags.append("STRATEGIC_FROM_ALPAMAYO")
+
+    # ⛔ CONTRADICTION OVERRIDES THE DEFAULT — and it is an OVERRIDE, not a
+    # branch, on purpose.
+    #
+    # The PI's *"no abstension"* (2026-08-23) removes abstentions that are GAPS
+    # (no rule covered this input). It does NOT remove abstentions that are
+    # CONTRADICTIONS (two legs assert incompatible things) — those are the design
+    # working, and `LABEL_PIPELINE_CONFIRMATION.md` §2 names the one such clip in
+    # its sample as *"this is the design WORKING"*.
+    #
+    # ⚠️ WHY AN OVERRIDE. When `strategic_from_alpamayo` gained the
+    # route-following default it began returning a goal on the lane-change path,
+    # so the earlier branch won and the `elif not lane_target_is_admissible(...)`
+    # refusal below became UNREACHABLE — `test_declared_lane_change_refuses_a_
+    # contradicting_lane_target` caught it immediately. Re-ordering branches would
+    # fix it until the next default is added; an override cannot be defeated by
+    # branch order at all.
+    if (lat.value in LAT_REQUIRES_LANE_TARGET
+            and not lane_target_is_admissible(lat.value, vlm_lane_target_rel)):
+        r = (f"Alpamayo {lat.value} requires lane target "
+             f"{LAT_REQUIRES_LANE_TARGET[lat.value]}, VLM read "
+             f"{vlm_lane_target_rel} — routed to review")
+        g_str = LabelField(ABSTAIN, Leg.NONE, r)
+        a_str = LabelField(ABSTAIN, Leg.NONE, r)
+        if "LAT_LANE_TARGET_DISAGREEMENT" not in flags:
+            flags.append("LAT_LANE_TARGET_DISAGREEMENT")
 
     # ⛔ ROUTE_TO is reachable through EXACTLY ONE audited path: a sign that was
     # READ, verified EXTERIOR, and demonstrably FOLLOWED (route_to_from_sign).
