@@ -29,6 +29,10 @@ per the measurement constraints that bind them.
 Every literal here is MEASURED (2026-08-16, this box, torch CPU at seed 0) —
 recompute on drift, never inherit.
 """
+# ⚠️ FRAME PIN (2026-08-28): this suite asserts v6-ERA recorded facts;
+# the v7 vocab mandate flipped the default, so configs here pin v6.0 to keep
+# each assertion's original meaning. v7-frame coverage: test_model_vocab_v7.py.
+
 from __future__ import annotations
 
 import copy
@@ -74,7 +78,8 @@ def tiny_cfg(**kw) -> V6Config:
                                   horizons=(1, 2), action_dim=3),
         d_tac=32, d_str=16, d_goal_embed=16, adapter_hidden=32,
         f_hidden_tac=32, f_hidden_str=32, d_plan_feat=16, emission_hidden=16,
-        n_candidates=3, aux_hidden=16, sigreg_slices=8, diffusion_hidden=32)
+        n_candidates=3, aux_hidden=16, sigreg_slices=8, diffusion_hidden=32,
+        tac_vocab_version="v6.0")  # frame pin, see header
     base.update(kw)
     return V6Config(**base)
 
@@ -100,7 +105,7 @@ GOOD_CALIB = {"spearman_rho": 0.7164, "rho_ci": [0.5847, 0.7696],
 # =========================================================================== #
 
 def test_all_three_default_off_and_absent():
-    c = V6Config()
+    c = V6Config(tac_vocab_version="v6.0")
     assert c.proposals == "query"
     assert c.mpc_refine is False
     assert c.fallback_trigger is False
@@ -189,13 +194,14 @@ def test_default_is_byte_identical_to_the_PRE_CHANGE_architecture():
 
 @pytest.mark.slow
 def test_default_FULL_config_counts_are_the_live_resume_counts():
-    f = build(V6Config())
+    f = build(V6Config(tac_vocab_version="v6.0"))
     assert (_n(f), len(f.state_dict())) == (HEAD_FULL_PARAMS, HEAD_FULL_KEYS)
 
 
 @pytest.mark.slow
 def test_config_E_default_build_is_unchanged():
     e = build(V6Config(
+        tac_vocab_version="v6.0",
         encoder=EncoderConfig(in_channels=9, image_size=256, image_width=640,
                               patch_size=16, d_model=768, depth=12,
                               n_heads=12),
@@ -247,8 +253,8 @@ def test_diffusion_builds_only_under_flag_and_perturbs_no_shared_tensor():
 
 @pytest.mark.slow
 def test_diffusion_param_delta_at_production_geometry_is_the_measured_one():
-    d = build(V6Config())
-    s = build(V6Config(proposals="diffusion"))
+    d = build(V6Config(tac_vocab_version="v6.0"))
+    s = build(V6Config(tac_vocab_version="v6.0", proposals="diffusion"))
     assert _n(s) - _n(d) == DIFFUSION_DELTA_PROD
 
 

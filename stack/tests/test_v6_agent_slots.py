@@ -48,6 +48,12 @@ WHAT THIS FILE PINS, and why each pin is load-bearing:
 Every number in this file's literals is MEASURED (2026-08-16, this box, torch
 CPU build at seed 0) — recompute on drift, never inherit.
 """
+# ⚠️ FRAME PIN (2026-08-28): this suite asserts v6-ERA recorded facts
+# (byte-identity hashes, MEASURED head counts, v6 token sets). The PI's v7
+# vocab mandate flipped the DEFAULT tac_vocab_version to v7.0, which changes
+# constructed head shapes; every config here pins v6.0 so each assertion
+# keeps its original meaning. v7-frame coverage: test_model_vocab_v7.py.
+
 from __future__ import annotations
 
 import copy
@@ -95,6 +101,7 @@ PROD_SLOT_PARAMS = 3_207_445
 PROD_SLOT_KW = dict(n_queries=16, d_model=256, depth=3, n_heads=8)
 
 _SMALL_KW = dict(
+    tac_vocab_version="v6.0",  # frame pin, see header
     d_tac=32, d_str=16, adapter_hidden=32, f_hidden_tac=32, f_hidden_str=32,
     f_blocks=1, aux_hidden=16, sigreg_slices=8, plan_steps=6, dt=0.1,
     op_band_s=(0.0, 0.2), tac_band_s=(0.2, 0.6), hz_op=10.0, hz_tac=2.0,
@@ -120,6 +127,7 @@ def _small(**kw) -> V6Config:
 
 
 def _config_e(**kw) -> V6Config:
+    kw.setdefault("tac_vocab_version", "v6.0")  # frame pin
     return V6Config(
         encoder=EncoderConfig(in_channels=9, image_size=256, image_width=640,
                               patch_size=16, d_model=768, depth=12,
@@ -147,7 +155,7 @@ def _n(m) -> int:
 # =========================================================================== #
 
 def test_the_head_defaults_off_and_is_absent():
-    c = V6Config()
+    c = V6Config(tac_vocab_version="v6.0")
     assert c.agent_slots is False
     assert c.slot_src == "cells"
     assert c.isolate_interp_from_encoder is True
@@ -174,7 +182,7 @@ def test_the_interp_group_exists_and_is_EMPTY_by_default():
 @pytest.mark.slow
 def test_default_FULL_config_counts_are_the_live_resume_counts():
     """87,893,449 / 405 — the numbers a broken strict resume would kill."""
-    f = _build(V6Config())
+    f = _build(V6Config(tac_vocab_version="v6.0"))
     assert (_n(f), len(f.state_dict())) == (HEAD_FULL_PARAMS, HEAD_FULL_KEYS)
 
 
@@ -244,7 +252,8 @@ def test_default_is_byte_identical_to_the_PRE_CHANGE_architecture():
         pytest.skip("git could not produce a pre-change revision of v6.py")
 
     torch.manual_seed(0)
-    old = head.V6Stack(head.V6Config(**{**_sub_cfgs(), **_SMALL_KW}))
+    old = head.V6Stack(head.V6Config(**{k: v for k, v in {**_sub_cfgs(), **_SMALL_KW}.items()
+                              if k != "tac_vocab_version"}))
     rng_old = torch.random.get_rng_state()
     torch.manual_seed(0)
     new = _build(_small())
@@ -270,7 +279,8 @@ def test_default_forward_is_bit_identical_and_grows_no_output_key():
     if head is None:
         pytest.skip("git could not produce a pre-change revision of v6.py")
     torch.manual_seed(0)
-    old = head.V6Stack(head.V6Config(**{**_sub_cfgs(), **_SMALL_KW}))
+    old = head.V6Stack(head.V6Config(**{k: v for k, v in {**_sub_cfgs(), **_SMALL_KW}.items()
+                              if k != "tac_vocab_version"}))
     new = _build(_small())
     b = new.synthetic_batch(2)
     o_old, o_new = old.forward(**b), new.forward(**b)
@@ -800,4 +810,4 @@ def test_the_defaults_are_the_declared_placeholders():
     right number is the join's measured per-frame agent-count distribution,
     which is UNMEASURED (no join file lives in the repo). This test exists so
     the placeholder cannot quietly become a claim."""
-    assert V6Config().n_slot_queries == N_QUERIES_DEFAULT == 16
+    assert V6Config(tac_vocab_version="v6.0").n_slot_queries == N_QUERIES_DEFAULT == 16

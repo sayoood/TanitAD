@@ -21,6 +21,12 @@ build's ``state_dict`` stays byte-identical — proved here per tensor with
 ``torch.equal`` against the module as it exists at git HEAD, never by hashing a
 ``torch.save`` container (RETRACTION_LOG C72: those bytes are not canonical).
 """
+# ⚠️ FRAME PIN (2026-08-28): this suite asserts v6-ERA recorded facts
+# (byte-identity hashes, MEASURED head counts, v6 token sets). The PI's v7
+# vocab mandate flipped the DEFAULT tac_vocab_version to v7.0, which changes
+# constructed head shapes; every config here pins v6.0 so each assertion
+# keeps its original meaning. v7-frame coverage: test_model_vocab_v7.py.
+
 from __future__ import annotations
 
 import copy
@@ -50,7 +56,7 @@ from tanitad.models.v6 import (  # noqa: E402
 HEAD_SMALL_PARAMS, HEAD_SMALL_KEYS = 611_293, 223
 HEAD_FULL_PARAMS, HEAD_FULL_KEYS = 87_893_449, 405
 
-#: MEASURED this turn on the FULL ``V6Config()`` (d_tac 512, d_goal_embed 128,
+#: MEASURED this turn on the FULL ``V6Config(tac_vocab_version="v6.0")`` (d_tac 512, d_goal_embed 128,
 #: head hidden 256, K 256, n_lat_bins 16, n_agent_slots 8). Recompute, never
 #: inherit: ``selector="mlp"``'s design-time estimate of +41,089 was never
 #: realised and the implementation cost +33,801.
@@ -63,6 +69,7 @@ ANCHOR_ONEHOT_DELTA_FULL = 33_024      # Linear(d_goal_embed -> K), on top of ca
 #: built from exactly these, so the two arms differ by the new code and nothing
 #: else.
 _SMALL_KW = dict(
+    tac_vocab_version="v6.0",  # frame pin, see header
     d_tac=32, d_str=16, adapter_hidden=32, f_hidden_tac=32, f_hidden_str=32,
     f_blocks=1, aux_hidden=16, sigreg_slices=8, plan_steps=6, dt=0.1,
     op_band_s=(0.0, 0.2), tac_band_s=(0.2, 0.6), hz_op=10.0, hz_tac=2.0,
@@ -110,7 +117,7 @@ def _load_table(stack: V6Stack, seed: int = 3) -> dict:
 # =========================================================================== #
 
 def test_every_new_lever_defaults_off():
-    c = V6Config()
+    c = V6Config(tac_vocab_version="v6.0")
     assert (c.goal_factored, c.goal_multilabel, c.goal_cat_args,
             c.anchor_goal) == (False, False, False, "none")
     s = _build(_small())
@@ -132,7 +139,7 @@ def test_default_counts_are_the_MEASURED_head_counts():
 def test_default_FULL_config_counts_are_the_MEASURED_head_counts():
     """The config the live run actually uses. Kept separate because building an
     87.9 M-parameter stack is seconds, not milliseconds."""
-    f = _build(V6Config())
+    f = _build(V6Config(tac_vocab_version="v6.0"))
     assert (_n(f), len(f.state_dict())) == (HEAD_FULL_PARAMS, HEAD_FULL_KEYS)
 
 
@@ -205,7 +212,8 @@ def test_all_off_is_byte_identical_to_the_PRE_CHANGE_architecture():
         pytest.skip("git could not produce a pre-change revision of v6.py")
 
     torch.manual_seed(0)
-    old = head.V6Stack(head.V6Config(**{**_sub_cfgs(), **_SMALL_KW}))
+    old = head.V6Stack(head.V6Config(**{k: v for k, v in {**_sub_cfgs(), **_SMALL_KW}.items()
+                              if k != "tac_vocab_version"}))
     rng_old = torch.random.get_rng_state()
     torch.manual_seed(0)
     new = V6Stack(_small())
@@ -333,8 +341,8 @@ def test_factored_param_delta_is_MEASURED_on_a_full_V6Stack():
 
 def test_factored_delta_on_the_REAL_config_is_the_recorded_literal():
     """The number the writeup quotes, asserted rather than remembered."""
-    off = _build(V6Config())
-    on = _build(V6Config(goal_factored=True))
+    off = _build(V6Config(tac_vocab_version="v6.0"))
+    on = _build(V6Config(tac_vocab_version="v6.0", goal_factored=True))
     assert _n(on) - _n(off) == FACTORED_DELTA_FULL
 
 

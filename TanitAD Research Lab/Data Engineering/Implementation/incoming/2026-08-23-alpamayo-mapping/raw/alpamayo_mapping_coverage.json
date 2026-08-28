@@ -1,0 +1,1032 @@
+{
+ "_evidence_class": "MEASURED (ours)",
+ "_generated": "2026-08-23",
+ "_source": {
+  "hf_repo": "Sayood/tanitad-alpamayo2-augmentation (dataset, gated=auto)",
+  "file": "records.parquet",
+  "sha256": "ecae276db9969de115abb3caa1e87d97eae0535544be8f5edcc33ec45d925ed2",
+  "sha256_matches_banked_2026_08_06": true,
+  "n_rows_total": 23644,
+  "n_meta_action_rows": 4729,
+  "n_unique_clips": 4729,
+  "model_id": "nvidia/Alpamayo2-Super",
+  "quantisation": "NF4-backbone-4bit-UNVALIDATED",
+  "sampling": "do_sample=True, temperature 0.6, seed 42, ONE draw per clip. NOT the model's mode; stability across draws UNMEASURED.",
+  "note_4800_vs_4729": "HIERARCHY_VOCABULARY Sec.1 says '4,800-clip'. The banked corpus is 4 729 clips. Use 4 729."
+ },
+ "_parity_status": {
+  "verdict": "NOT AN EVAL CORPUS. Never use it as one.",
+  "measured_by": ".../2026-08-18-alpamayo-parity-exclusion/",
+  "detail": "201 of the 4 729 records are in parity TRAIN physicalai-train-e438721ae894. Only 257 have w120 video built, so the buildable eval split TODAY is 257 clips of which 201 = 78.21 % are train (REF-A-I-JEPA scale). Separately 6 of the 40 canonical val episodes (15.0 %) sit inside the Alpamayo record set. Blast radius on published numbers: ZERO.",
+  "consequence_here": "A VOCABULARY-DESIGN measurement is not an eval -- nothing here scores a model, so contamination does not invalidate these coverage numbers. It DOES forbid Alpamayo meta-actions as held-out tactical labels, and the remaining 4 472-clip build must call parity.filter_train_clips() first."
+ },
+ "admissibility_hazards": {
+  "SPEED_LIMIT_intent_is_a_FORBIDDEN_CHANNEL_LAUNDERED": {
+   "n": 41,
+   "pct": 0.87,
+   "detail": "41 CoT phrases read a speed-limit sign's TEXT ('a 120 speed limit sign is posted ahead', 'a 35 mph speed limit sign sets the target speed'). `stack/tanitad/models/v6.py:188-200` records the F-14 blocker: sign KIND and TEXT are FORBIDDEN (RETRACTION_LOG C87) and the G1 sign-text gate is CLOSED at 0/31. Taking `v_hi` from an Alpamayo phrase is the SAME forbidden fact arriving through a teacher model.",
+   "worse": "the same v6.py cell records that the two highest-scoring FALSE positives of the sign channel are a DASHBOARD `30` ROUNDEL (0.927) and a hoarding (0.778) -- a dashboard roundel is the EGO SPEEDOMETER, so a sign-derived target speed can be an EGO ECHO arriving through the vision channel. A VLM reading the same pixels inherits the same failure.",
+   "verdict": "SPEED_LIMIT is the ONE intent whose numeric arg the phrase determines, and it is INADMISSIBLE for that very reason. It is counted in coverage as a GOAL (SPEED_BAND is groundable from other evidence) but its `v_hi` arg must be DISCARDED."
+  },
+  "alpamayo_is_a_TEACHER_not_ground_truth": {
+   "detail": "One draw per clip at temperature 0.6, seed 42; cross-draw stability UNMEASURED. PhysicalAI-AV is listed as Alpamayo TRAINING data, so these labels may be partly memorised. Usable for VOCABULARY COVERAGE (what can the vocabulary express), questionable for ACCURACY."
+  }
+ },
+ "vocab_version_status_MEASURED_from_code": {
+  "TACTICAL_LAT_ACTIONS_v6_0": [
+   "LANE_KEEP",
+   "LANE_CHANGE_L",
+   "LANE_CHANGE_R",
+   "ABORT_LC",
+   "NUDGE_L",
+   "NUDGE_R"
+  ],
+  "TACTICAL_LAT_ACTIONS_V61": "v6.0 + TURN_L, TURN_R (APPENDED, indices 6-7)",
+  "model_default": "v6.0 -- `tactical_lat_actions()` defaults to v6.0 because the live v6F S-W run holds `vocab_a_lat.table.weight (6,128)` under a TENSOR-STRICT resume contract (v6.py:237-246)",
+  "label_pipeline_default": "v6.1 -- `tanitad/lake/tac_str_labels.py:538,570` and `scripts/vlm_tac_compose.py:67` both default to v6.1",
+  "consequence": "THE LABEL SIDE ALREADY EMITS TURN_L/TURN_R AND THE MODEL SIDE CANNOT CONSUME THEM. That split is itself a tokenizer-freeze item: the freeze must name ONE version, not two.",
+  "label_pipeline_reads_LAT_from_the_Lane_axis_ONLY": {
+   "evidence": "`tanitad/lake/tac_str_labels.py:103-104` -- 'Alpamayo LANE axis -> a_tac_lat ... Under v6.1 this covers 100 % of parseable rows'. The CoT is consumed for the LONGITUDINAL referent (`referents_from_cot`, `lon_from_alpamayo`), not for LAT.",
+   "consequence_MEASURED_here": "800 instances (16.92 % of the corpus) have a CoT that says NUDGE while the `Lane` axis says `Lane Keep`. Reading LAT from the Lane axis labels all 800 LANE_KEEP. Whether those are real sub-lane evasions the axis fails to encode, or CoT embellishment, is UNADJUDICATED -- and it is a larger label swing than the TURN question (3.94 %) by 4.3x."
+  },
+  "label_pipeline_already_does_the_joint_LON": {
+   "evidence": "`tac_str_labels.py:129-253` -- `lon_is_admissible()` uses the magnitude axis as a PRIOR and `lon_from_alpamayo()` takes the action from the CoT's referents, abstaining on ambiguity. Independent convergence with this report's joint_LON_resolution."
+  },
+  "TACTICAL_LON_ACTIONS": [
+   "FOLLOW",
+   "CRUISE",
+   "YIELD_MERGE",
+   "BRAKE_TO",
+   "CREEP",
+   "HOLD"
+  ],
+  "TACTICAL_GOAL_TOKENS_n": 9,
+  "STRATEGIC_GOAL_TOKENS_n": 11,
+  "note_LANE_TARGET": "still in STRATEGIC_GOAL_TOKENS (v6.py:167) purely to size an embedding table; emitted by NO path (801/801 UNKNOWN). It is NOT a mapping target here."
+ },
+ "channel1_distribution": {
+  "longitudinal": {
+   "Gentle Deceleration": 1594,
+   "Maintain Speed": 1225,
+   "Gentle Acceleration": 1151,
+   "Stop": 304,
+   "Strong Deceleration": 267,
+   "Strong Acceleration": 182,
+   "Reverse": 6
+  },
+  "lateral": {
+   "Go Straight": 2504,
+   "Steer Right": 1020,
+   "Steer Left": 649,
+   "None": 304,
+   "Sharp Steer Right": 135,
+   "Sharp Steer Left": 115,
+   "Reverse Right": 1,
+   "Reverse Left": 1
+  },
+  "lane": {
+   "Lane Keep": 4035,
+   "None": 304,
+   "Turn Right": 101,
+   "Turn Left": 85,
+   "Right Lane Change": 82,
+   "Slightly Shift Left": 69,
+   "Slightly Shift Right": 31,
+   "Left Lane Change": 22
+  },
+  "joint_triples_n_distinct": 98
+ },
+ "channel1_mapping": {
+  "LON": {
+   "Maintain Speed": {
+    "token": "CRUISE",
+    "args_undetermined": [
+     "v"
+    ],
+    "confidence": "high",
+    "rationale": "hold current speed; `v` NOT in the phrase -- recoverable from ego v(t0) in hindsight (labels-may-use-ego), never from the phrase",
+    "n": 1225,
+    "pct": 25.9
+   },
+   "Gentle Acceleration": {
+    "token": "CRUISE",
+    "args_undetermined": [
+     "v"
+    ],
+    "confidence": "medium",
+    "rationale": "target-speed increase. Our LON set is TARGET-typed and Alpamayo's is RATE-typed, so `v` is unrecoverable from the phrase; only the sign+severity band transfers",
+    "n": 1151,
+    "pct": 24.34
+   },
+   "Strong Acceleration": {
+    "token": "CRUISE",
+    "args_undetermined": [
+     "v"
+    ],
+    "confidence": "medium",
+    "rationale": "as Gentle Acceleration. The gentle/strong distinction has NO slot in our LON vocabulary and is LOST",
+    "n": 182,
+    "pct": 3.85
+   },
+   "Gentle Deceleration": {
+    "token": "BRAKE_TO",
+    "args_undetermined": [
+     "v",
+     "within_m"
+    ],
+    "confidence": "medium",
+    "rationale": "speed reduction; neither `v` nor `within_m` is in the phrase; gentle/strong has no slot and is LOST",
+    "n": 1594,
+    "pct": 33.71
+   },
+   "Strong Deceleration": {
+    "token": "BRAKE_TO",
+    "args_undetermined": [
+     "v",
+     "within_m"
+    ],
+    "confidence": "medium",
+    "rationale": "as Gentle Deceleration; severity LOST",
+    "n": 267,
+    "pct": 5.65
+   },
+   "Stop": {
+    "token": "HOLD",
+    "args_undetermined": [
+     "within_m"
+    ],
+    "confidence": "high",
+    "rationale": "come to / remain at rest = HOLD; the approach is BRAKE_TO(0, within_m) and `within_m` is NOT determined by the phrase",
+    "n": 304,
+    "pct": 6.43
+   }
+  },
+  "LAT_from_Lane_axis_v6_0": {
+   "Lane Keep": {
+    "token": "LANE_KEEP",
+    "args_undetermined": [],
+    "confidence": "high",
+    "rationale": "identical semantics; LANE_KEEP takes no args so nothing is lost",
+    "n": 4035,
+    "pct": 85.32
+   },
+   "Left Lane Change": {
+    "token": "LANE_CHANGE_L",
+    "args_undetermined": [
+     "within_m"
+    ],
+    "confidence": "high",
+    "rationale": "identical semantics; `within_m` NOT determined by the phrase",
+    "n": 22,
+    "pct": 0.47
+   },
+   "Right Lane Change": {
+    "token": "LANE_CHANGE_R",
+    "args_undetermined": [
+     "within_m"
+    ],
+    "confidence": "high",
+    "rationale": "identical semantics; `within_m` NOT determined by the phrase",
+    "n": 82,
+    "pct": 1.73
+   },
+   "Slightly Shift Left": {
+    "token": "NUDGE_L",
+    "args_undetermined": [
+     "lat_m"
+    ],
+    "confidence": "high",
+    "rationale": "sub-lane lateral offset = NUDGE by construction; `lat_m` NOT determined (Alpamayo has no magnitude slot)",
+    "n": 69,
+    "pct": 1.46
+   },
+   "Slightly Shift Right": {
+    "token": "NUDGE_R",
+    "args_undetermined": [
+     "lat_m"
+    ],
+    "confidence": "high",
+    "rationale": "sub-lane lateral offset = NUDGE; `lat_m` NOT determined",
+    "n": 31,
+    "pct": 0.66
+   },
+   "Turn Left": {
+    "token": "LANE_KEEP",
+    "args_undetermined": [],
+    "confidence": "medium",
+    "rationale": "v6.0 reading: a junction turn is not a lane change -- the ego holds its corridor while the corridor turns, so LAT = LANE_KEEP and the turn is g_str:TURN_LEFT. v6.1 maps it to TURN_L instead (see LANE2LAT_V61); this is a live PI decision, not a settled fact",
+    "n": 85,
+    "pct": 1.8
+   },
+   "Turn Right": {
+    "token": "LANE_KEEP",
+    "args_undetermined": [],
+    "confidence": "medium",
+    "rationale": "as Turn Left; v6.1 maps it to TURN_R",
+    "n": 101,
+    "pct": 2.14
+   }
+  },
+  "LAT_from_Lane_axis_v6_1": {
+   "Lane Keep": {
+    "token": "LANE_KEEP",
+    "args_undetermined": [],
+    "confidence": "high",
+    "rationale": "identical semantics; LANE_KEEP takes no args so nothing is lost",
+    "n": 4035,
+    "pct": 85.32
+   },
+   "Left Lane Change": {
+    "token": "LANE_CHANGE_L",
+    "args_undetermined": [
+     "within_m"
+    ],
+    "confidence": "high",
+    "rationale": "identical semantics; `within_m` NOT determined by the phrase",
+    "n": 22,
+    "pct": 0.47
+   },
+   "Right Lane Change": {
+    "token": "LANE_CHANGE_R",
+    "args_undetermined": [
+     "within_m"
+    ],
+    "confidence": "high",
+    "rationale": "identical semantics; `within_m` NOT determined by the phrase",
+    "n": 82,
+    "pct": 1.73
+   },
+   "Slightly Shift Left": {
+    "token": "NUDGE_L",
+    "args_undetermined": [
+     "lat_m"
+    ],
+    "confidence": "high",
+    "rationale": "sub-lane lateral offset = NUDGE by construction; `lat_m` NOT determined (Alpamayo has no magnitude slot)",
+    "n": 69,
+    "pct": 1.46
+   },
+   "Slightly Shift Right": {
+    "token": "NUDGE_R",
+    "args_undetermined": [
+     "lat_m"
+    ],
+    "confidence": "high",
+    "rationale": "sub-lane lateral offset = NUDGE; `lat_m` NOT determined",
+    "n": 31,
+    "pct": 0.66
+   },
+   "Turn Left": {
+    "token": "TURN_L",
+    "args_undetermined": [],
+    "confidence": "high",
+    "rationale": "v6.1 junction-traversal token; route-conditioned, and REPRESENTABLE BUT NOT SCOREABLE at n=85 (v6.py:262-266)",
+    "n": 85,
+    "pct": 1.8
+   },
+   "Turn Right": {
+    "token": "TURN_R",
+    "args_undetermined": [],
+    "confidence": "high",
+    "rationale": "v6.1 junction-traversal token; n=101, not scoreable",
+    "n": 101,
+    "pct": 2.14
+   }
+  },
+  "_version_note": "The two tables differ ONLY on `Turn Left`/`Turn Right` (186 rows, 3.94 %). Instance coverage is IDENTICAL at 93.57 % either way -- the choice is about whether a junction traversal is representable AS ITSELF or only as LANE_KEEP + a strategic goal. It changes no coverage number and it is a PI decision.",
+  "Lateral_axis_is_OPERATIVE_not_tactical": {
+   "Go Straight": {
+    "operative_reading": "kappa ~ 0",
+    "n": 2504,
+    "pct": 52.95
+   },
+   "Steer Left": {
+    "operative_reading": "kappa > 0, moderate",
+    "n": 649,
+    "pct": 13.72
+   },
+   "Steer Right": {
+    "operative_reading": "kappa < 0, moderate",
+    "n": 1020,
+    "pct": 21.57
+   },
+   "Sharp Steer Left": {
+    "operative_reading": "kappa > 0, large",
+    "n": 115,
+    "pct": 2.43
+   },
+   "Sharp Steer Right": {
+    "operative_reading": "kappa < 0, large",
+    "n": 135,
+    "pct": 2.85
+   }
+  }
+ },
+ "channel1_coverage": {
+  "_definition": "instance-weighted over the 4 729 meta_action rows",
+  "n": 4729,
+  "LON_mapped": 4723,
+  "LON_pct": 99.87,
+  "LAT_mapped": 4425,
+  "LAT_pct": 93.57,
+  "FACTORED_PAIR_complete": 4419,
+  "FACTORED_PAIR_pct": 93.44,
+  "distinct_value_coverage": {
+   "longitudinal": "6/7",
+   "lane": "7/8",
+   "lateral": "5/8"
+  }
+ },
+ "channel1_UNMAPPED": {
+  "longitudinal": {
+   "Reverse": 6
+  },
+  "lane": {
+   "None": 304
+  },
+  "lateral": {
+   "None": 304,
+   "Reverse Right": 1,
+   "Reverse Left": 1
+  },
+  "reverse_adjudication": "`Reverse` / `Reverse Left` / `Reverse Right` are adjudicated DECODE ARTEFACTS, not a vocabulary gap. Evidence: all 6 `Longitudinal: Reverse` rows carry a FORWARD-driving CoT ('Keep lane to continue driving since the path ahead is clear', 'Slow down for the right curve ahead'), and both `Reverse *` LATERAL rows fall on the SAME 2 clips as a `Longitudinal: Reverse`. Sampling is temperature 0.6, so a 0.13 % / 0.04 % tail is consistent with decode noise. => do NOT add a REVERSE token on this evidence. They are still COUNTED as UNMAPPED so the number is visible, not assumed away.",
+  "reverse_lon_clips": [
+   "3ae000c7-7c53-4e9b-abc8-db451213bcee",
+   "7c5306c1-b8f0-4830-ad01-03b90a1320e9",
+   "ac2b5946-c165-4fec-a830-ad972083065b",
+   "ba410e2e-0ab4-4d00-bfa1-02e6b6ca1baf",
+   "f93d3ab4-dad8-4622-be1a-82564b11a858",
+   "fe764229-15df-4506-b7e4-2977fd78e834"
+  ],
+  "reverse_lat_clips": [
+   "7c5306c1-b8f0-4830-ad01-03b90a1320e9",
+   "ba410e2e-0ab4-4d00-bfa1-02e6b6ca1baf"
+  ],
+  "reverse_lat_clips_subset_of_lon": true
+ },
+ "our_tokens_with_no_alpamayo_source": {
+  "LON": {
+   "FOLLOW(time_gap_s)": "no Longitudinal value expresses car-following; recoverable ONLY from the CoT (intent FOLLOW_LEAD, 20.28 % of instances)",
+   "YIELD/MERGE(gap_slot)": "no Longitudinal value expresses yielding; recoverable ONLY from the CoT (YIELD_* intents, 10.25 % of instances)",
+   "CREEP": "no Alpamayo value at all, in either channel"
+  },
+  "LAT": {
+   "ABORT_LC": "0 instances in either channel. A single-frame declaration cannot express an abort, which is defined by a CHANGE of a previous decision"
+  }
+ },
+ "stop_absorption_finding": {
+  "n_Stop": 304,
+  "n_Stop_with_both_other_axes_absent": 304,
+  "n_nonStop_with_any_axis_absent": 0,
+  "identity_exact": true,
+  "note": "`Longitudinal: Stop` TERMINATES the declaration -- Lateral and Lane are not emitted at all (the generation ends `Stop.<|traj_future_start|>`). Not a parse failure. Consequence for a FACTORED LAT x LON head: on 6.43 % of instances the corpus supplies NO lateral token, so LAT must abstain or be imputed from hindsight geometry. It is also why the FACTORED-PAIR coverage is capped at 93.44 % no matter how good the mapping is."
+ },
+ "channel2_coverage": {
+  "_definition": "instance-weighted over the same 4 729 rows' CoT strings; rules are ORDERED and FIRST MATCH WINS, so per-intent counts are first-match counts, not concept-occurrence counts",
+  "n": 4729,
+  "n_distinct_cot": 1062,
+  "TIER_specific_n": 3991,
+  "TIER_specific_pct": 84.39,
+  "TIER_default_n": 725,
+  "TIER_default_pct": 15.33,
+  "TIER_action_only_n": 13,
+  "TIER_action_only_pct": 0.27,
+  "TIER_unmapped_n": 0,
+  "TIER_unmapped_pct": 0.0,
+  "HEADLINE_grounded_goal_pct": 84.39,
+  "INCLUDING_default_token_pct": 99.73,
+  "distinct_by_tier": {
+   "specific": 1000,
+   "default": 50,
+   "action_only": 12
+  },
+  "distinct_specific_pct": 94.16,
+  "distinct_incl_default_pct": 98.87,
+  "by_intent": {
+   "FOLLOW_LEAD": {
+    "n": 959,
+    "pct": 20.28,
+    "tier": "specific"
+   },
+   "CORRIDOR_DEFAULT": {
+    "n": 725,
+    "pct": 15.33,
+    "tier": "default"
+   },
+   "TRAFFIC_LIGHT": {
+    "n": 645,
+    "pct": 13.64,
+    "tier": "specific"
+   },
+   "EVADE_DYNAMIC": {
+    "n": 626,
+    "pct": 13.24,
+    "tier": "specific"
+   },
+   "SPEED_FOR_CURVE": {
+    "n": 410,
+    "pct": 8.67,
+    "tier": "specific"
+   },
+   "SPEED_FOR_FEATURE": {
+    "n": 316,
+    "pct": 6.68,
+    "tier": "specific"
+   },
+   "YIELD_VRU": {
+    "n": 261,
+    "pct": 5.52,
+    "tier": "specific"
+   },
+   "EVADE_STATIC_FURNITURE": {
+    "n": 148,
+    "pct": 3.13,
+    "tier": "specific"
+   },
+   "YIELD_TRAFFIC": {
+    "n": 115,
+    "pct": 2.43,
+    "tier": "specific"
+   },
+   "YIELD_SIGN": {
+    "n": 109,
+    "pct": 2.3,
+    "tier": "specific"
+   },
+   "LANE_CHANGE": {
+    "n": 67,
+    "pct": 1.42,
+    "tier": "specific"
+   },
+   "JUNCTION_TURN": {
+    "n": 56,
+    "pct": 1.18,
+    "tier": "specific"
+   },
+   "GAP_ACCEPT": {
+    "n": 49,
+    "pct": 1.04,
+    "tier": "specific"
+   },
+   "EVADE_OTHER": {
+    "n": 42,
+    "pct": 0.89,
+    "tier": "specific"
+   },
+   "SPEED_LIMIT": {
+    "n": 41,
+    "pct": 0.87,
+    "tier": "specific"
+   },
+   "STOP_SIGN": {
+    "n": 40,
+    "pct": 0.85,
+    "tier": "specific"
+   },
+   "RESUME_AFTER_CLEAR": {
+    "n": 40,
+    "pct": 0.85,
+    "tier": "specific"
+   },
+   "FORK_SPLIT": {
+    "n": 33,
+    "pct": 0.7,
+    "tier": "specific"
+   },
+   "ROUNDABOUT": {
+    "n": 17,
+    "pct": 0.36,
+    "tier": "specific"
+   },
+   "ACTION_ONLY_NO_REFERENT": {
+    "n": 13,
+    "pct": 0.27,
+    "tier": "action_only"
+   },
+   "OVERTAKE": {
+    "n": 8,
+    "pct": 0.17,
+    "tier": "specific"
+   },
+   "INTERSECTION_APPROACH": {
+    "n": 8,
+    "pct": 0.17,
+    "tier": "specific"
+   },
+   "QUEUE": {
+    "n": 1,
+    "pct": 0.02,
+    "tier": "specific"
+   }
+  }
+ },
+ "channel2_mapping": {
+  "RESUME_AFTER_CLEAR": {
+   "tier": "specific",
+   "goal_tokens": [
+    "a_str:RESUME_CRUISE(v_target)",
+    "g_tac:SPEED_BAND(v_lo, v_hi)"
+   ],
+   "args_determined_by_phrase": [
+    "none"
+   ],
+   "confidence": "high",
+   "rationale": "the RELEASE of a yield/stop once the blocker clears. `RESUME_CRUISE` exists at the STRATEGIC layer (a_str); there is no tactical 'release' token, so the tactical read is a SPEED_BAND change. `v_target` is never numeric in the phrase",
+   "n": 40,
+   "pct": 0.85
+  },
+  "FOLLOW_LEAD": {
+   "tier": "specific",
+   "goal_tokens": [
+    "g_tac:GAP_TARGET(agent_slot_id, time_gap_s)"
+   ],
+   "args_determined_by_phrase": [
+    "none"
+   ],
+   "confidence": "high",
+   "rationale": "the lead agent is named; `agent_slot_id` needs the PERCEPTION-AGENTS head and `time_gap_s` the LEAD-STATE head -- the phrase determines neither",
+   "n": 959,
+   "pct": 20.28
+  },
+  "TRAFFIC_LIGHT": {
+   "tier": "specific",
+   "goal_tokens": [
+    "g_tac:TRAFFIC_LIGHT_REACT(light_slot_id, state, stopline_arc_m)"
+   ],
+   "args_determined_by_phrase": [
+    "state"
+   ],
+   "confidence": "high",
+   "rationale": "`state` IS determined by the phrase (red/yellow/green literal); `light_slot_id` and `stopline_arc_m` are not",
+   "n": 645,
+   "pct": 13.64
+  },
+  "STOP_SIGN": {
+   "tier": "specific",
+   "goal_tokens": [
+    "g_tac:STOP_POINT(position_arc_m, reason=sign)",
+    "g_str:STOP_AT(distance_m)"
+   ],
+   "args_determined_by_phrase": [
+    "reason"
+   ],
+   "confidence": "high",
+   "rationale": "`reason=sign` determined; the arc/distance is not",
+   "n": 40,
+   "pct": 0.85
+  },
+  "YIELD_SIGN": {
+   "tier": "specific",
+   "goal_tokens": [
+    "g_tac:YIELD_AT(position_arc_m, gap_slot)"
+   ],
+   "args_determined_by_phrase": [
+    "none"
+   ],
+   "confidence": "high",
+   "rationale": "yield point named; neither arc nor gap slot is",
+   "n": 109,
+   "pct": 2.3
+  },
+  "YIELD_VRU": {
+   "tier": "specific",
+   "goal_tokens": [
+    "g_tac:YIELD_AT(position_arc_m, gap_slot)"
+   ],
+   "args_determined_by_phrase": [
+    "none"
+   ],
+   "confidence": "high",
+   "rationale": "VRU yield. `gap_slot` IS groundable -- obstacle.offline's 10 dynamic classes include pedestrians/cyclists -- but the arc is not",
+   "n": 261,
+   "pct": 5.52
+  },
+  "YIELD_TRAFFIC": {
+   "tier": "specific",
+   "goal_tokens": [
+    "g_tac:YIELD_AT(position_arc_m, gap_slot)"
+   ],
+   "args_determined_by_phrase": [
+    "none"
+   ],
+   "confidence": "high",
+   "rationale": "yield to a vehicle; slot groundable via obstacle.offline, arc not",
+   "n": 115,
+   "pct": 2.43
+  },
+  "GAP_ACCEPT": {
+   "tier": "specific",
+   "goal_tokens": [
+    "g_tac:GAP_TARGET(agent_slot_id, time_gap_s)",
+    "a_str:PREPARE_LANE_CHANGE(dir, within_m)"
+   ],
+   "args_determined_by_phrase": [
+    "dir"
+   ],
+   "confidence": "high",
+   "rationale": "`dir` determined where the phrase names a side; the gap slot and time gap are not",
+   "n": 49,
+   "pct": 1.04
+  },
+  "OVERTAKE": {
+   "tier": "specific",
+   "goal_tokens": [
+    "a_tac LAT:LANE_CHANGE_L/R(within_m)",
+    "g_tac:SPEED_BAND(v_lo, v_hi)"
+   ],
+   "args_determined_by_phrase": [
+    "dir"
+   ],
+   "confidence": "medium",
+   "rationale": "OVERTAKE has no single token: it decomposes into a LAT lane change plus a LON speed band, which is exactly what the factored scheme is for. No `OVERTAKE` token is needed or proposed",
+   "n": 8,
+   "pct": 0.17
+  },
+  "LANE_CHANGE": {
+   "tier": "specific",
+   "goal_tokens": [
+    "a_tac LAT:LANE_CHANGE_L/R(within_m)",
+    "a_str:PREPARE_LANE_CHANGE(dir, within_m)"
+   ],
+   "args_determined_by_phrase": [
+    "dir"
+   ],
+   "confidence": "high",
+   "rationale": "`dir` determined where a side is named; `within_m` never",
+   "n": 67,
+   "pct": 1.42
+  },
+  "EVADE_DYNAMIC": {
+   "tier": "specific",
+   "goal_tokens": [
+    "g_tac:EVADE_IN_CORRIDOR(lat_offset_m, obstacle_slot, past_arc_m)"
+   ],
+   "args_determined_by_phrase": [
+    "none"
+   ],
+   "confidence": "high",
+   "rationale": "exactly the token's stated use-case; `obstacle_slot` IS groundable for these DYNAMIC classes via obstacle.offline",
+   "n": 626,
+   "pct": 13.24
+  },
+  "EVADE_STATIC_FURNITURE": {
+   "tier": "specific",
+   "goal_tokens": [
+    "g_tac:EVADE_IN_CORRIDOR(lat_offset_m, obstacle_slot, past_arc_m)"
+   ],
+   "args_determined_by_phrase": [
+    "none"
+   ],
+   "confidence": "medium",
+   "rationale": "GROUNDING GAP, not a vocabulary gap. The token fits, but `obstacle_slot` has NO supplier: obstacle.offline's enum over 87 481 cuboids is 10 classes, ALL DYNAMIC AGENTS (CLAUDE.md), so static roadside furniture has nothing to point at. Engine C (SAM) is the candidate supplier",
+   "n": 148,
+   "pct": 3.13
+  },
+  "EVADE_OTHER": {
+   "tier": "specific",
+   "goal_tokens": [
+    "g_tac:EVADE_IN_CORRIDOR(lat_offset_m, obstacle_slot, past_arc_m)"
+   ],
+   "args_determined_by_phrase": [
+    "none"
+   ],
+   "confidence": "medium",
+   "rationale": "residual nudge whose object no earlier rule classified",
+   "n": 42,
+   "pct": 0.89
+  },
+  "WAIT_ONCOMING": {
+   "tier": "specific",
+   "goal_tokens": [
+    "g_tac:WAIT_FOR_ONCOMING(narrow_arc_m, oncoming_slot)"
+   ],
+   "args_determined_by_phrase": [
+    "none"
+   ],
+   "confidence": "high",
+   "rationale": "the token's stated use-case (narrow-road / parked-lane pinch negotiation). Requires an explicit WAIT/HOLD/UNTIL or a NARROWS reference -- a bare mention of oncoming traffic is an evasion or a corridor observation, not a negotiated wait",
+   "n": 0,
+   "pct": 0.0
+  },
+  "FORK_SPLIT": {
+   "tier": "specific",
+   "goal_tokens": [
+    "g_str:EXIT_RIGHT/EXIT_LEFT(distance_m)",
+    "a_str:PREPARE_EXIT(dir, within_m)",
+    "a_tac LAT:LANE_KEEP"
+   ],
+   "args_determined_by_phrase": [
+    "dir"
+   ],
+   "confidence": "medium",
+   "rationale": "A FORK IS NOT A LANE CHANGE: the ego holds its lane and the LANE diverges, so LAT stays LANE_KEEP and the choice is strategic. `dir` determined; distances not. Note many of these phrases cite OVERHEAD SIGNAGE, which our vocabulary can only read through the G1-gated OCR path (g_str:ROUTE_TO)",
+   "n": 33,
+   "pct": 0.7
+  },
+  "JUNCTION_TURN": {
+   "tier": "specific",
+   "goal_tokens": [
+    "g_str:TURN_LEFT/TURN_RIGHT/STRAIGHT_THROUGH(intersection arc)"
+   ],
+   "args_determined_by_phrase": [
+    "direction"
+   ],
+   "confidence": "high",
+   "rationale": "direction determined; the intersection arc is not",
+   "n": 56,
+   "pct": 1.18
+  },
+  "ROUNDABOUT": {
+   "tier": "specific",
+   "goal_tokens": [
+    "g_tac:YIELD_AT(position_arc_m, gap_slot)",
+    "g_str:STRAIGHT_THROUGH/TURN_LEFT/TURN_RIGHT(intersection arc)"
+   ],
+   "args_determined_by_phrase": [
+    "none"
+   ],
+   "confidence": "medium",
+   "rationale": "roundabout entry = a yield point; the EXIT taken is a strategic choice the phrase usually does not state",
+   "n": 17,
+   "pct": 0.36
+  },
+  "INTERSECTION_APPROACH": {
+   "tier": "specific",
+   "goal_tokens": [
+    "g_str:STRAIGHT_THROUGH(intersection arc)",
+    "g_tac:SPEED_BAND(v_lo, v_hi)"
+   ],
+   "args_determined_by_phrase": [
+    "none"
+   ],
+   "confidence": "medium",
+   "rationale": "uncontrolled approach to a junction with no light/sign named",
+   "n": 8,
+   "pct": 0.17
+  },
+  "SPEED_FOR_CURVE": {
+   "tier": "specific",
+   "goal_tokens": [
+    "g_tac:SPEED_BAND(v_lo, v_hi)",
+    "g_str:KEEP_CORRIDOR(target_arc_m)"
+   ],
+   "args_determined_by_phrase": [
+    "none"
+   ],
+   "confidence": "high",
+   "rationale": "curvature-driven speed target; no numeric band in the phrase",
+   "n": 410,
+   "pct": 8.67
+  },
+  "SPEED_LIMIT": {
+   "tier": "specific",
+   "goal_tokens": [
+    "g_tac:SPEED_BAND(v_lo, v_hi)"
+   ],
+   "args_determined_by_phrase": [
+    "v_hi"
+   ],
+   "confidence": "high",
+   "rationale": "the ONE intent where a numeric arg is sometimes literally in the phrase ('a 120 speed limit sign is posted ahead')",
+   "n": 41,
+   "pct": 0.87
+  },
+  "SPEED_FOR_FEATURE": {
+   "tier": "specific",
+   "goal_tokens": [
+    "g_tac:SPEED_BAND(v_lo, v_hi)"
+   ],
+   "args_determined_by_phrase": [
+    "none"
+   ],
+   "confidence": "high",
+   "rationale": "road-feature / obstruction speed adaptation; no numeric band in the phrase",
+   "n": 316,
+   "pct": 6.68
+  },
+  "QUEUE": {
+   "tier": "specific",
+   "goal_tokens": [
+    "g_tac:STOP_POINT(position_arc_m, reason=queue)",
+    "g_tac:GAP_TARGET(agent_slot_id, time_gap_s)"
+   ],
+   "args_determined_by_phrase": [
+    "reason"
+   ],
+   "confidence": "high",
+   "rationale": "`reason=queue` determined",
+   "n": 1,
+   "pct": 0.02
+  },
+  "CORRIDOR_DEFAULT": {
+   "tier": "default",
+   "goal_tokens": [
+    "g_str:FOLLOW_MAIN_ROAD",
+    "g_str:KEEP_CORRIDOR(target_arc_m)"
+   ],
+   "args_determined_by_phrase": [
+    "none"
+   ],
+   "confidence": "high",
+   "rationale": "the PI's stated no-route default (2026-08-11). It IS a real token and a real mapping, but it is the NULL hypothesis, so it is reported as its own tier and never folded into the headline coverage",
+   "n": 725,
+   "pct": 15.33
+  },
+  "ACTION_ONLY_NO_REFERENT": {
+   "tier": "action_only",
+   "goal_tokens": [],
+   "args_determined_by_phrase": [
+    "none"
+   ],
+   "confidence": "n/a",
+   "rationale": "determines an a_tac LON ACTION but names NO referent => NO goal token is determinable. Counted as GOAL-UNMAPPED, not as coverage",
+   "n": 13,
+   "pct": 0.27
+  }
+ },
+ "channel2_UNMAPPED": {
+  "_definition": "tiers `action_only` (an a_tac ACTION is determined but NO goal token is) and `unmapped` (nothing matched). LOGGED IN FULL.",
+  "n_instances": 13,
+  "pct_instances": 0.27,
+  "n_distinct": 12,
+  "phrases": [
+   {
+    "n": 2,
+    "cot": "maintain speed due to an oncoming vehicle"
+   },
+   {
+    "n": 1,
+    "cot": "accelerate due to the traffic controller signaling to proceed"
+   },
+   {
+    "n": 1,
+    "cot": "maintain speed due to pedestrians staying on the sidewalk"
+   },
+   {
+    "n": 1,
+    "cot": "resume speed since the pedestrians remain on the sidewalk"
+   },
+   {
+    "n": 1,
+    "cot": "maintain speed due to an oncoming motorcycle"
+   },
+   {
+    "n": 1,
+    "cot": "accelerate to match the traffic flow because the light ahead is green and the lead vehicle begins moving while adjacent lanes are occupied by cars alongside"
+   },
+   {
+    "n": 1,
+    "cot": "slow down due to a stopped vehicle ahead"
+   },
+   {
+    "n": 1,
+    "cot": "resume speed because the pedestrians remain off the roadway"
+   },
+   {
+    "n": 1,
+    "cot": "adapt speed for limited visibility in dense fog"
+   },
+   {
+    "n": 1,
+    "cot": "slow down because the gap to the leading car is closing"
+   },
+   {
+    "n": 1,
+    "cot": "adjust speed and keep safe distance due to the vehicle ahead"
+   },
+   {
+    "n": 1,
+    "cot": "adapt speed for limited visibility due to dense fog"
+   }
+  ]
+ },
+ "why_LAT_comes_from_the_Lane_axis_not_the_Lateral_axis": {
+  "_definition": "row-normalised % of the `Lateral` axis within each `Lane` value",
+  "crosstab_pct": {
+   "Lane Keep": {
+    "n": 4035,
+    "Go Straight": 59.1,
+    "Steer Left": 15.2,
+    "Steer Right": 23.8,
+    "Sharp Steer Left": 0.8,
+    "Sharp Steer Right": 1.0
+   },
+   "Turn Left": {
+    "n": 85,
+    "Go Straight": 0.0,
+    "Steer Left": 18.8,
+    "Steer Right": 0.0,
+    "Sharp Steer Left": 81.2,
+    "Sharp Steer Right": 0.0
+   },
+   "Turn Right": {
+    "n": 101,
+    "Go Straight": 0.0,
+    "Steer Left": 0.0,
+    "Steer Right": 19.8,
+    "Sharp Steer Left": 0.0,
+    "Sharp Steer Right": 80.2
+   },
+   "Left Lane Change": {
+    "n": 22,
+    "Go Straight": 36.4,
+    "Steer Left": 40.9,
+    "Steer Right": 22.7,
+    "Sharp Steer Left": 0.0,
+    "Sharp Steer Right": 0.0
+   },
+   "Right Lane Change": {
+    "n": 82,
+    "Go Straight": 65.9,
+    "Steer Left": 1.2,
+    "Steer Right": 23.2,
+    "Sharp Steer Left": 1.2,
+    "Sharp Steer Right": 8.5
+   },
+   "Slightly Shift Left": {
+    "n": 69,
+    "Go Straight": 62.3,
+    "Steer Left": 7.2,
+    "Steer Right": 18.8,
+    "Sharp Steer Left": 7.2,
+    "Sharp Steer Right": 2.9
+   },
+   "Slightly Shift Right": {
+    "n": 31,
+    "Go Straight": 48.4,
+    "Steer Left": 9.7,
+    "Steer Right": 9.7,
+    "Sharp Steer Left": 19.4,
+    "Sharp Steer Right": 9.7
+   }
+  },
+  "finding": "If `Lateral` were a proxy for lane topology each row would concentrate in one column. It does not. A JUNCTION TURN is 80-81 % `Sharp Steer *` (large curvature) while a LANE CHANGE is ~60 % `Go Straight` -- i.e. ON THE `Lateral` AXIS A LANE CHANGE IS INDISTINGUISHABLE FROM A LANE KEEP. `Lateral` measures CURVATURE MAGNITUDE; `Lane` measures LANE TOPOLOGY. Our `a_tac` LAT axis is topological, so it must be mapped from `Lane`.",
+  "corroborates": "the 2026-08-05 `a2_parse_meta_action.py` LAT2DIR projection scored agreement 0.4706 / kappa 0.1488 against the driven path on n=34 -- it projected our direction classes onto the `Lateral` axis, which is the wrong axis. The low agreement was a category error, not a model failure."
+ },
+ "joint_LON_resolution": {
+  "_why": "The prior screening (.../2026-08-18-alpamayo-screening/ALPAMAYO_SCREENING_AND_VOCAB_REVIEW.md Sec.2.1) established that our LON vocabulary is REASON-TYPED and Alpamayo's Longitudinal axis is MAGNITUDE-TYPED, so the axis alone cannot pick a LON token. RE-VERIFIED AND CONFIRMED here. The reason, however, IS in the record -- it is the chain-of-causation -- so the LON token is determined by the PAIR.",
+  "axis_alone_uniquely_determines_a_LON_token": 304,
+  "axis_alone_pct": 6.43,
+  "axis_values_that_are_unique_alone": [
+   "Stop"
+  ],
+  "JOINT_axis_x_intent_determines_a_LON_token": 4723,
+  "JOINT_pct": 99.87,
+  "joint_token_distribution": {
+   "CRUISE": 1770,
+   "BRAKE_TO": 1267,
+   "FOLLOW": 898,
+   "YIELD_MERGE": 484,
+   "HOLD": 304,
+   "None": 6
+  },
+  "note": "CREEP is produced by no (axis, intent) pair -- it has no Alpamayo source at all. The 6 unresolved are the `Reverse` decode artefacts."
+ },
+ "gtac_goal_axis_supply": {
+  "_why": "v6.py factors the GOAL vocabulary too (TACTICAL_GOAL_TOKENS_LAT/LON, 2026-08-16). This is which axis the corpus actually supplies goal evidence FOR.",
+  "counts": {
+   "LON only": 3019,
+   "no g_tac token": 894,
+   "LAT only": 816
+  },
+  "pct": {
+   "LON only": 63.84,
+   "no g_tac token": 18.9,
+   "LAT only": 17.26
+  },
+  "finding": "The LAT goal axis is nearly unsupplied. Alpamayo's CoT grounds EVADE_IN_CORRIDOR and nothing else on LAT: ANCHOR_GOAL and CORRIDOR_OFFSET -- the two remaining LAT goal tokens, and ANCHOR_GOAL is the '+4.7 PDMS' geometric-goal lever -- have NO Alpamayo source in either channel. They are geometry-derived by construction, so this is expected, but it means Alpamayo cannot supervise the LAT goal head at all."
+ },
+ "rule_robustness": {
+  "specific_hits_also_matching_the_default_pattern": 340,
+  "pct_of_specific": 8.52,
+  "note": "ordering sensitivity: this many `specific` instances would fall to CORRIDOR_DEFAULT if the default rule were moved first. The headline coverage is stable to within this band.",
+  "n_specific_rules_matched_per_phrase": {
+   "0": 738,
+   "1": 2184,
+   "2": 1144,
+   "3": 646,
+   "4": 17
+  },
+  "multi_label_pct": 38.21,
+  "multi_label_note": "phrases matching >1 SPECIFIC rule. Real: 'slow down for the roundabout because of the yield sign' is genuinely a YIELD_AT and a roundabout. First-match assigns one; a production tokenizer should emit a SET."
+ },
+ "channel_disagreement": {
+  "_definition": "rows where BOTH the CoT and the `Lane` axis assert a LAT class",
+  "n_comparable": 1642,
+  "n_agree": 696,
+  "agreement": 0.4239,
+  "cohens_kappa": 0.0109,
+  "crosstab": {
+   "cot=NUDGE|axis=LANE_KEEP": 800,
+   "cot=LANE_KEEP|axis=LANE_KEEP": 649,
+   "cot=LANE_CHANGE|axis=LANE_KEEP": 73,
+   "cot=LANE_KEEP|axis=LANE_CHANGE": 42,
+   "cot=LANE_CHANGE|axis=LANE_CHANGE": 25,
+   "cot=NUDGE|axis=NUDGE": 22,
+   "cot=LANE_KEEP|axis=NUDGE": 17,
+   "cot=LANE_CHANGE|axis=NUDGE": 10,
+   "cot=NUDGE|axis=LANE_CHANGE": 4
+  },
+  "note": "ONE decode produced both, so this is INTERNAL INCONSISTENCY of the generation, not inter-annotator disagreement. Any supervised use must declare which channel it reads. The dominant cell is cot=NUDGE|axis=LANE_KEEP: the CoT reports a sub-lane evasion the `Lane` axis does not encode."
+ }
+}

@@ -484,8 +484,10 @@ def test_run_rollout_ext_writes_the_documented_dump_and_analyze_reads_it(
     files = sorted(str(f) for f in dump.glob("ep*.npz"))
     assert len(files) == 2
     with np.load(files[0]) as d:
+        # "v0" joined the dump for the hold-v0 / longitudinal-floor reads
+        # (the parity-T1 instrumentation); _META_KEYS in t1_eval.py names it.
         assert set(d.files) == {"g", "cl", "ol", "ha", "ws",
-                                "eid", "clip_index"}
+                                "eid", "clip_index", "v0"}
         n = d["g"].shape[0]
         assert d["g"].shape == (n, K, 2) and d["g"].dtype == np.float32
         for arm in ("cl", "ol", "ha"):

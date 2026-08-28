@@ -23,6 +23,12 @@ demonstrated here on the bare functional and then shown to be absent from the
 shipped one. Same discipline as F-8's flat-plan control: know your functional's
 degenerate input before you rank a corpus with it.
 """
+# ⚠️ FRAME PIN (2026-08-28): this suite asserts v6-ERA recorded facts
+# (byte-identity hashes, MEASURED head counts, v6 token sets). The PI's v7
+# vocab mandate flipped the DEFAULT tac_vocab_version to v7.0, which changes
+# constructed head shapes; every config here pins v6.0 so each assertion
+# keeps its original meaning. v7-frame coverage: test_model_vocab_v7.py.
+
 from __future__ import annotations
 
 import math
@@ -344,7 +350,7 @@ def test_default_build_is_untouched_at_the_production_geometry():
     """⛔ 87,893,449 params / 405 keys. The live tensor-strict v6F S-W resume
     depends on this being exactly true. F-9 adds ZERO parameters: nothing it
     introduces is an ``nn.Module``."""
-    m = V6Stack(V6Config())
+    m = V6Stack(V6Config(tac_vocab_version="v6.0"))
     assert sum(p.numel() for p in m.parameters()) == 87_893_449
     assert len(m.state_dict()) == 405
 
@@ -354,7 +360,7 @@ def test_nothing_in_F9_is_a_module_or_carries_state():
     schedule and a score is a number. Neither is a parameter."""
     assert not isinstance(T3Curriculum(), torch.nn.Module)
     assert not hasattr(T3Curriculum(), "state_dict")
-    m = V6Stack(V6Config())
+    m = V6Stack(V6Config(tac_vocab_version="v6.0"))
     assert not any("t3" in k for k in m.state_dict())
 
 

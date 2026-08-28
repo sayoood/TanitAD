@@ -310,12 +310,28 @@ def test_goal_gate_receives_gradient():
 # non-attributable, which is C122's lesson applied to scale.
 # --------------------------------------------------------------------------- #
 def test_the_two_size_rungs_build_and_measure():
+    import dataclasses
+
     from tanitad.refs.refc_v3 import (RefCV3Model, param_breakdown_v3,
                                       refc_v3_small_config, refc_v3_xl_config)
-    small = param_breakdown_v3(RefCV3Model(refc_v3_small_config()))
-    xl = param_breakdown_v3(RefCV3Model(refc_v3_xl_config()))
+    # ⚠️ The REGISTERED rung counts are kin3-era facts (the trained/registered
+    # models carry 3x3 kinematic tactical heads), so the historical pins build
+    # with the version pinned — while the NAMED configs default to v7.0 per the
+    # PI's 2026-08-27 vocab mandate. Asserting the registry numbers against the
+    # default silently re-dated them when the default flipped (the MM-C1 class).
+    small = param_breakdown_v3(RefCV3Model(dataclasses.replace(
+        refc_v3_small_config(), tac_vocab_version="kin3")))
+    xl = param_breakdown_v3(RefCV3Model(dataclasses.replace(
+        refc_v3_xl_config(), tac_vocab_version="kin3")))
     assert small["total"] == 62_930_419
     assert xl["total"] == 217_760_775
+    # The mandate's measured cost: v7.0 heads (8x8 vs 3x3) add exactly 5,130
+    # params at BOTH rungs — head-only, so the rung identity is otherwise
+    # unchanged and the hierarchy-cost invariant below is version-independent.
+    assert param_breakdown_v3(RefCV3Model(refc_v3_small_config()))["total"] \
+        == 62_930_419 + 5_130
+    assert param_breakdown_v3(RefCV3Model(refc_v3_xl_config()))["total"] \
+        == 217_760_775 + 5_130
     # ⭐ the hierarchy cost is essentially CONSTANT across the ladder, which is
     # why scale and hierarchy are separate decisions.
     assert abs((xl["total"] - xl["core"]) - (small["total"] - small["core"])) < 200_000

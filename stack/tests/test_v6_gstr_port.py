@@ -34,6 +34,12 @@ comparison is a module compared with itself).
 Every number in this file's literals is MEASURED (2026-08-16, this box, torch
 CPU build at seed 0) — recompute on drift, never inherit.
 """
+# ⚠️ FRAME PIN (2026-08-28): this suite asserts v6-ERA recorded facts
+# (byte-identity hashes, MEASURED head counts, v6 token sets). The PI's v7
+# vocab mandate flipped the DEFAULT tac_vocab_version to v7.0, which changes
+# constructed head shapes; every config here pins v6.0 so each assertion
+# keeps its original meaning. v7-frame coverage: test_model_vocab_v7.py.
+
 from __future__ import annotations
 
 import copy
@@ -75,6 +81,7 @@ PORT_DELTA = 33_024
 PORT_KEYS = ("cond_tac_dyn.weight", "cond_tac_dyn.bias")
 
 _SMALL_KW = dict(
+    tac_vocab_version="v6.0",  # frame pin, see header
     d_tac=32, d_str=16, adapter_hidden=32, f_hidden_tac=32, f_hidden_str=32,
     f_blocks=1, aux_hidden=16, sigreg_slices=8, plan_steps=6, dt=0.1,
     op_band_s=(0.0, 0.2), tac_band_s=(0.2, 0.6), hz_op=10.0, hz_tac=2.0,
@@ -96,6 +103,7 @@ def _small(**kw) -> V6Config:
 
 
 def _config_e(**kw) -> V6Config:
+    kw.setdefault("tac_vocab_version", "v6.0")  # frame pin
     return V6Config(
         encoder=EncoderConfig(in_channels=9, image_size=256, image_width=640,
                               patch_size=16, d_model=768, depth=12,
@@ -141,7 +149,7 @@ def _perturb_g_str(s: V6Stack, scale: float = 3.0, seed: int = 11) -> None:
 # =========================================================================== #
 
 def test_the_port_defaults_off_and_is_absent():
-    c = V6Config()
+    c = V6Config(tac_vocab_version="v6.0")
     assert c.tac_goal_cond is False
     s = _build(_small())
     assert s.cond_tac_dyn is None
@@ -156,7 +164,7 @@ def test_default_counts_are_the_MEASURED_head_counts():
 @pytest.mark.slow
 def test_default_FULL_config_counts_are_the_live_resume_counts():
     """87,893,449 / 405 — the numbers a broken strict resume would kill."""
-    f = _build(V6Config())
+    f = _build(V6Config(tac_vocab_version="v6.0"))
     assert (_n(f), len(f.state_dict())) == (HEAD_FULL_PARAMS, HEAD_FULL_KEYS)
 
 
@@ -231,7 +239,8 @@ def test_default_is_byte_identical_to_the_PRE_CHANGE_architecture():
         pytest.skip("git could not produce a pre-change revision of v6.py")
 
     torch.manual_seed(0)
-    old = head.V6Stack(head.V6Config(**{**_sub_cfgs(), **_SMALL_KW}))
+    old = head.V6Stack(head.V6Config(**{k: v for k, v in {**_sub_cfgs(), **_SMALL_KW}.items()
+                              if k != "tac_vocab_version"}))
     rng_old = torch.random.get_rng_state()
     torch.manual_seed(0)
     new = _build(_small())
@@ -257,7 +266,7 @@ def test_default_FULL_build_is_byte_identical_to_the_PRE_CHANGE_architecture():
     torch.manual_seed(0)
     old = head.V6Stack(head.V6Config())
     torch.manual_seed(0)
-    new = _build(V6Config())
+    new = _build(V6Config(tac_vocab_version="v6.0"))
     so, sn = old.state_dict(), new.state_dict()
     assert list(so) == list(sn)
     for k in so:
@@ -273,7 +282,8 @@ def test_default_forward_is_bit_identical_and_emits_no_new_key():
     if head is None:
         pytest.skip("git could not produce a pre-change revision of v6.py")
     torch.manual_seed(0)
-    old = head.V6Stack(head.V6Config(**{**_sub_cfgs(), **_SMALL_KW}))
+    old = head.V6Stack(head.V6Config(**{k: v for k, v in {**_sub_cfgs(), **_SMALL_KW}.items()
+                              if k != "tac_vocab_version"}))
     new = _build(_small())
     b = new.synthetic_batch(2)
     o_old = old.forward(**b)
@@ -303,8 +313,8 @@ def test_turning_the_port_on_perturbs_NO_pre_existing_tensor():
 def test_port_delta_on_the_REAL_config_is_the_recorded_literal():
     """MEASURE, do not arithmetic (the selector's +41,089 estimate was never
     realised; the implementation cost +33,801)."""
-    off = _build(V6Config())
-    on = _build(V6Config(tac_goal_cond=True))
+    off = _build(V6Config(tac_vocab_version="v6.0"))
+    on = _build(V6Config(tac_vocab_version="v6.0", tac_goal_cond=True))
     assert _n(on) - _n(off) == PORT_DELTA
     assert len(on.state_dict()) - len(off.state_dict()) == len(PORT_KEYS)
 

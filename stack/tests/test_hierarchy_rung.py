@@ -15,6 +15,11 @@ from tanitad.models.hierarchy import (HierarchyRung, HierarchyRungConfig,
                                       assert_matches_v6, rung_param_count)
 
 
+# ⚠️ FRAME PIN (2026-08-28): this suite asserts v6-ERA recorded facts
+# (byte-identity hashes, MEASURED head counts, v6 token sets). The PI's v7
+# vocab mandate flipped the DEFAULT tac_vocab_version to v7.0, which changes
+# constructed head shapes; every config here pins v6.0 so each assertion
+# keeps its original meaning. v7-frame coverage: test_model_vocab_v7.py.
 def _rungs(stack, c):
     tac = HierarchyRung(
         HierarchyRungConfig(d_in=c.d_op, d_layer=c.d_tac,
@@ -38,7 +43,7 @@ def _rungs(stack, c):
 
 @pytest.fixture(scope="module")
 def built():
-    c = V.V6Config()
+    c = V.V6Config(tac_vocab_version="v6.0")
     stack = V.V6Stack(c)
     return stack, c, *_rungs(stack, c)
 
@@ -110,7 +115,7 @@ def test_the_three_operations_run(built):
 def test_v6_itself_is_UNTOUCHED_by_this_module():
     """⛔ v6 is training under tensor-strict resume. This module is ADDITIVE."""
     import tanitad.models.hierarchy  # noqa: F401
-    stack = V.V6Stack(V.V6Config())
+    stack = V.V6Stack(V.V6Config(tac_vocab_version="v6.0"))
     assert sum(p.numel() for p in stack.parameters()) == 87_893_449
     assert len(stack.state_dict()) == 405
 

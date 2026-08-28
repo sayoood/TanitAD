@@ -21,7 +21,8 @@ from tanitad.refs.refd import (PRIOR_GEOMETRY, FlowControlPolicy,  # noqa: E402
 
 
 def _small(**kw):
-    c = RefDConfig(d_enc=64, d_state=64, n_tokens=16, op_layers=1, tac_layers=1,
+    c = RefDConfig(tac_vocab_version="v6.0",  # frame pin: the v6-tuple identity test below
+                   d_enc=64, d_state=64, n_tokens=16, op_layers=1, tac_layers=1,
                    op_heads=4, tac_queries=4, plan_steps=8, policy_hidden=32,
                    flow_steps=3)
     for k, v in kw.items():

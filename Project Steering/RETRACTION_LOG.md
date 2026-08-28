@@ -9552,3 +9552,22 @@ assumption invisible.** Same family as the anchor mismatch (C142) and the
 `overlapping_holdout_se` trap — a quantity that is precise about the wrong thing.
 ⇒ **STANDING RULE: a token assigned to a temporal band must record what placed it
 there. "It came from the CoT" is a source, not a time.**
+
+## MM-C1 ADDENDUM (2026-08-28) — the recorded blast radius was 5× too small
+
+MM-C1 recorded 9 failures in 2 suites (s2/anchor) and closed with "run the
+suites that USE the default." Tonight's FULL-suite gate found the true blast
+radius: **46 failures across 16 suites** — every "default is byte-identical to
+the PRE-CHANGE architecture" guard, every MEASURED-head-count pin, the refc_v3
+registered size rungs, and the refd/refa v6-tuple identity tests. All fixed by
+FRAME-PINNING the suites to `tac_vocab_version="v6.0"` (each assertion keeps
+its recorded meaning; v7-frame semantics live in test_model_vocab_v7 /
+test_refs_vocab_v7), with two true-lag repairs alongside (S-W's
+STAGE_MAY_INTRODUCE grew the declared O14/EMA prefixes; the T1 dump grew `v0`).
+
+**ROOT-CAUSE CLASS (sharpened): "the suites that USE the default" cannot be
+enumerated by memory — it is the FULL SUITE.** A default-changing edit's
+regression set is `pytest -q` entire, not a hand-picked list; the hand-picked
+list is exactly how 37 of the 46 escaped. The mandate's measured cost is now
+itself pinned: +5,130 params (refc geometry) / +5,775 (production geometry),
+head-only, both rungs.

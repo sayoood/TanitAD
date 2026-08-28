@@ -30,6 +30,12 @@ implementation was written):
    ZERO. 30 s is longer than a 12 s episode. Pinned below so a later launch
    cannot quietly truncate the ladder instead of amending the spec.
 """
+# ⚠️ FRAME PIN (2026-08-28): this suite asserts v6-ERA recorded facts
+# (byte-identity hashes, MEASURED head counts, v6 token sets). The PI's v7
+# vocab mandate flipped the DEFAULT tac_vocab_version to v7.0, which changes
+# constructed head shapes; every config here pins v6.0 so each assertion
+# keeps its original meaning. v7-frame coverage: test_model_vocab_v7.py.
+
 from __future__ import annotations
 
 import sys
@@ -394,7 +400,7 @@ def test_the_06b8782_class_does_not_apply_to_F11():
 def test_default_build_is_untouched_at_the_production_geometry():
     """⛔ 87,893,449 params / 405 keys — the live tensor-strict v6F S-W resume
     depends on this. F-11 adds ZERO parameters."""
-    m = V6Stack(V6Config())
+    m = V6Stack(V6Config(tac_vocab_version="v6.0"))
     assert sum(p.numel() for p in m.parameters()) == 87_893_449
     assert len(m.state_dict()) == 405
 

@@ -27,7 +27,7 @@ def _tiny(**kw) -> RefAV1Config:
                 op_window=4, tac_layers=1, tac_queries=4, str_dim=16,
                 str_layers=1)
     base.update(kw)
-    return RefAV1Config(**base)
+    return RefAV1Config(tac_vocab_version="v6.0", **base)  # frame pin: v6-tuple emission tests
 
 
 # --------------------------------------------------------------- geometry --

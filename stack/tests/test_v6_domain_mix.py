@@ -35,6 +35,12 @@ from a working mix. Same class as C119, where the naive interaction entropy read
 0.9649 on an empty road against 0.2500 on a dense one. Both are refused, not
 warned about, because the score cannot see them.
 """
+# ⚠️ FRAME PIN (2026-08-28): this suite asserts v6-ERA recorded facts
+# (byte-identity hashes, MEASURED head counts, v6 token sets). The PI's v7
+# vocab mandate flipped the DEFAULT tac_vocab_version to v7.0, which changes
+# constructed head shapes; every config here pins v6.0 so each assertion
+# keeps its original meaning. v7-frame coverage: test_model_vocab_v7.py.
+
 from __future__ import annotations
 
 import collections
@@ -612,7 +618,10 @@ def test_F10_needs_no_STAGE_MAY_INTRODUCE_entry():
     from train_v6_staged import STAGE_MAY_INTRODUCE
     for stage, allowed in STAGE_MAY_INTRODUCE.items():
         assert not any("domain" in x for x in allowed), (stage, allowed)
-    assert STAGE_MAY_INTRODUCE["S-W"] == ()
+    # S-W introduces the two PI-approved AUX modules (O14 R2 future-obs head,
+    # E-DEC-67; O5-EMA teacher copies, MM-E1) — declared, test-pinned in
+    # test_o14_future_obs / test_o5_ema_teacher. Everything else stays ().
+    assert STAGE_MAY_INTRODUCE["S-W"] == ("o14_head.", "ema_o5_enc.", "ema_o5_ro.")
     assert STAGE_MAY_INTRODUCE["S-J"] == ()
 
 
@@ -660,7 +669,8 @@ def test_default_build_is_untouched_at_the_production_geometry():
 
     def counts(*extra):
         a = build_parser().parse_args(
-            ["--stage", "S-S", "--out", "unused"] + list(extra))
+            ["--stage", "S-S", "--out", "unused",
+             "--tac-vocab-version", "v6.0"] + list(extra))  # frame pin
         torch.manual_seed(0)
         s = build_stack_from_args(a)
         return sum(p.numel() for p in s.parameters()), len(s.state_dict())
@@ -671,7 +681,7 @@ def test_default_build_is_untouched_at_the_production_geometry():
                   "--domain-tau", "0") == (87_893_449, 405)
     # and against a hand-built default config, so the two paths agree
     torch.manual_seed(0)
-    f = V6Stack(V6Config())
+    f = V6Stack(V6Config(tac_vocab_version="v6.0"))
     assert (sum(p.numel() for p in f.parameters()),
             len(f.state_dict())) == (87_893_449, 405)
 

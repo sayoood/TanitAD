@@ -1,0 +1,129 @@
+{
+ "probe": "D-LAN-COV",
+ "evidence_class": "MEASURED",
+ "PARITY": "NON-PARITY \u2014 cache physicalai-train-14231cd29c74 (400 eps) is NOT physicalai-train-e438721ae894/f09e44db. Mechanism probe only; never quotable as a cross-arm result.",
+ "cache": "C:\\Users\\Admin\\tanitad-data\\physicalai\\_epcache\\physicalai-train-14231cd29c74",
+ "n_episodes_loaded": 60,
+ "window": 8,
+ "seed": 0,
+ "cfg": {
+  "arclengths_m": [
+   20.0,
+   40.0,
+   80.0,
+   160.0
+  ],
+  "min_lead_m": 5.0,
+  "lat_clip": 1.0
+ },
+ "nav_cmd_baseline_valid_frac": [
+  0.21,
+  0.25
+ ],
+ "episode_len_median": 199.0,
+ "MEASURED_shipped_default": {
+  "n_windows": 8000,
+  "any_valid_frac": 0.6924,
+  "per_anchor_valid_frac": [
+   0.449,
+   0.6134,
+   0.3392,
+   0.012
+  ],
+  "speed_mean_mps": 5.965,
+  "speed_median_mps": 6.201,
+  "any_valid_frac_by_speed": {
+   "0-5": {
+    "n": 3058,
+    "frac": 0.6246
+   },
+   "10-15": {
+    "n": 1024,
+    "frac": 0.7637
+   },
+   "15-20": {
+    "n": 94,
+    "frac": 0.4894
+   },
+   "5-10": {
+    "n": 3824,
+    "frac": 0.7325
+   }
+  }
+ },
+ "CONTROL_constant_only_lead_inf": {
+  "n_windows": 8000,
+  "any_valid_frac": 0.0,
+  "per_anchor_valid_frac": [
+   0.0,
+   0.0,
+   0.0,
+   0.0
+  ],
+  "speed_mean_mps": 5.965,
+  "speed_median_mps": 6.201,
+  "any_valid_frac_by_speed": {
+   "0-5": {
+    "n": 3058,
+    "frac": 0.0
+   },
+   "10-15": {
+    "n": 1024,
+    "frac": 0.0
+   },
+   "15-20": {
+    "n": 94,
+    "frac": 0.0
+   },
+   "5-10": {
+    "n": 3824,
+    "frac": 0.0
+   }
+  }
+ },
+ "CONTROL_no_guard_floor": {
+  "n_windows": 8000,
+  "any_valid_frac": 0.754,
+  "per_anchor_valid_frac": [
+   0.754,
+   0.6134,
+   0.3392,
+   0.012
+  ],
+  "speed_mean_mps": 5.965,
+  "speed_median_mps": 6.201,
+  "any_valid_frac_by_speed": {
+   "0-5": {
+    "n": 3058,
+    "frac": 0.6246
+   },
+   "10-15": {
+    "n": 1024,
+    "frac": 0.8838
+   },
+   "15-20": {
+    "n": 94,
+    "frac": 0.7021
+   },
+   "5-10": {
+    "n": 3824,
+    "frac": 0.824
+   }
+  }
+ },
+ "leak_guard_lead_m": {
+  "mean": 16.65,
+  "median": 17.29,
+  "p90": 26.1,
+  "max": 39.26,
+  "shortest_arclength_m": 20.0,
+  "frac_windows_where_lead_exceeds_shortest_anchor": 0.3485,
+  "frac_windows_where_lead_exceeds_LONGEST_anchor": 0.0
+ },
+ "CONTROL_able_to_fail": true,
+ "H4_verdict": "SUPPORTED",
+ "H4_margin_over_nav_cmd": 0.4424,
+ "H5_verdict": "SUPPORTED",
+ "guard_cost_frac": 0.0616,
+ "INTERPRETATION": "any_valid_frac is the fraction of windows on which the strategic goal head receives ANY gradient. It bounds the LAN experiment from above."
+}

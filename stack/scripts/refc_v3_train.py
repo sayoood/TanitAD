@@ -54,6 +54,17 @@ import torch.nn.functional as F
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+# The preflight's own banners carry ⛔/✅. On a cp1252 console (the Windows dev
+# box, where a preflight is MEANT to be run before spending a GPU day) printing
+# them raises UnicodeEncodeError — MEASURED: the run below died on the "✅ PASS"
+# line AFTER every check had passed, so a PASSING preflight exited non-zero with
+# a traceback. A gate whose success path crashes is a false negative.
+for _s in (sys.stdout, sys.stderr):
+    try:
+        _s.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, ValueError):        # already utf-8, or not a TTY
+        pass
+
 import refb_labels  # noqa: E402
 from refc_train import (  # noqa: E402  — SHARED surfaces, imported not copied
     ANCHOR_CLS_WEIGHT, LAT_WEIGHT, LAW_AHEAD, LAW_WEIGHT, LON_WEIGHT,
@@ -110,15 +121,26 @@ class V3Dataset(RouteV21Dataset):
         return item
 
 
-def _synth_episodes(n: int, cfg: refc.RefCConfig, seed: int = 0):
+def _synth_episodes(n: int, cfg: refc.RefCConfig, seed: int = 0,
+                    min_frames: int = 40):
     """CI-only synthetic corpus (unicycle drives, tiny frames). NEVER a
-    substitute for the parity cache — refused alongside --data-root."""
+    substitute for the parity cache — refused alongside --data-root.
+
+    ``min_frames`` exists because the DEFAULT corpus is too SHORT to carry a
+    LAN route and that is not obvious from reading it: T=40 at 2-8 m/s is
+    ~8-32 m of total path, while the shortest LAN anchor sits at 20 m ARC-LENGTH
+    *beyond* a leak guard of ~2 s x v + 5 m. MEASURED (D-LAN-COV, this package):
+    every anchor of every window is masked on the default corpus, so a LAN
+    preflight built on it would compute ``goal_str`` over an all-invalid label
+    and report a green 0.0 — a loss that exists and cannot learn. The LAN arm
+    therefore asks for a corpus long enough for the question to be answerable.
+    """
     import types
     g = torch.Generator().manual_seed(seed)
     h, wpx = cfg.encoder.image_hw()
     eps = []
     for e in range(n):
-        T = 40 + 8 * e
+        T = max(min_frames, 40) + 8 * e
         v = 2.0 + 6.0 * torch.rand((), generator=g)
         yr = (torch.rand((), generator=g) - 0.5) * 0.4
         yaw = torch.cumsum(torch.full((T,), float(yr)) * 0.1, dim=0)
@@ -258,6 +280,104 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
 # Preflight — everything that must be true BEFORE a GPU day
 # ============================================================================
 
+def _lan_arm_preflight(cfg, args) -> int:
+    """Exercise the LAN → ``goal_str`` pathway BEFORE a GPU day.
+
+    ⚠️ THIS ARM EXISTS BECAUSE THE PREFLIGHT COULD NOT SEE THE THING IT WAS
+    BEING CITED FOR. MEASURED (D-LAN-PF, this package): ``preflight()`` builds
+    a bare ``V3Dataset``, which emits no ``lan`` key, so ``compute_losses_v3``
+    skips ``loss_gstr`` BY DESIGN and ``goal_str`` never appears in the loss
+    dict at all — with or without ``--goal-str``. The quantity people read
+    instead, ``route``, is the v2.1 NAV-derived CE masked by ``nav_valid``; it
+    is bit-identical with and without every LAN flag and can never testify
+    about LAN. Same class as C9/C13/C14: an instrument structurally unable to
+    report the answer it is quoted for.
+
+    Three checks, in the order that makes a failure diagnosable:
+      1. the dataset actually emits ``lan`` at the pinned width;
+      2. the LABEL is live — ``any_valid_frac`` > 0. A ``goal_str`` computed
+         over an all-invalid label is 0.0 and looks like a pass;
+      3. ``goal_str`` is PRESENT, FINITE and NON-ZERO.
+    Then a DELIBERATE-REGRESSION control (programme 6.2): with the leak guard
+    pushed to +inf the label must go dead and ``goal_str`` must collapse to
+    0.0. A check that cannot fail is not evidence, so the control runs every
+    time and its own failure fails the preflight.
+    """
+    k = len(args.lan_arclengths)
+    lan_cfg = DataLanConfig(arclengths_m=tuple(args.lan_arclengths),
+                            min_lead_m=args.lan_min_lead_m)
+    cfg.core.lan = refc.LanConfig(k=k)
+    torch.manual_seed(0)
+    model = v3.RefCV3Model(cfg)
+
+    # Long enough that the leak guard is a GUARD and not a wall — see
+    # _synth_episodes.__doc__ for the arithmetic that sets this floor.
+    # ⚠️ Derived from the ARC-LENGTHS ONLY, deliberately NOT from min_lead_m:
+    # the regression control below cranks min_lead_m to +inf, and a corpus that
+    # grew with it would change TWO things at once — the control would compare
+    # a different corpus rather than isolate the guard. The cap keeps a
+    # pathological --lan-arclengths from asking for an unallocatable corpus
+    # (at 4000 frames the reachable path is ~800 m, so anchors beyond that
+    # still read dead, which is the correct verdict and not an evasion).
+    need_m = max(args.lan_arclengths) + 50.0
+    min_frames = min(int(need_m / (2.0 * 0.1)) + 4 * cfg.core.window, 4000)
+    eps = _synth_episodes(2, cfg.core, seed=0, min_frames=min_frames)
+
+    def _batch(lc):
+        ds = lan_dataset_class(V3Dataset)(
+            eps, window=cfg.core.window, max_horizon=20,
+            channels=cfg.core.encoder.in_channels, lan_cfg=lc)
+        return (torch.utils.data.default_collate([ds[0], ds[1]]),
+                ds.lan_stats(n=512, seed=0))
+
+    batch, stats = _batch(lan_cfg)
+    if "lan" not in batch:
+        print("[v3-preflight] ⛔ FAIL: lan dataset emitted no `lan` key")
+        return 6
+    if tuple(batch["lan"].shape[1:]) != (k * 4,):
+        print(f"[v3-preflight] ⛔ FAIL: lan width {tuple(batch['lan'].shape)} "
+              f"!= pinned {k * 4}")
+        return 6
+    print(f"[v3-preflight] lan label coverage: {json.dumps(stats)}")
+    if stats["any_valid_frac"] <= 0.0:
+        print("[v3-preflight] ⛔ FAIL: every LAN anchor is masked — `goal_str` "
+              "would be 0.0 over an ALL-INVALID label and read as a pass. The "
+              "strategic goal head would train on nothing (C9 class).")
+        return 6
+
+    losses = compute_losses_v3(model, batch, "cpu", mode="diffusion")
+    gs = losses.get("goal_str")
+    if gs is None:
+        print("[v3-preflight] ⛔ FAIL: `goal_str` absent from the loss dict — "
+              "the LAN pathway did not fire even though `lan` was present.")
+        return 6
+    gs = float(gs.detach())
+    if not (gs == gs and abs(gs) != float("inf")):
+        print(f"[v3-preflight] ⛔ FAIL: goal_str non-finite ({gs})")
+        return 6
+    if gs == 0.0:
+        print("[v3-preflight] ⛔ FAIL: goal_str is exactly 0.0 on a LIVE label "
+              "— the strategic head carries no gradient.")
+        return 6
+
+    # ---- deliberate-regression control: the check must be ABLE to fail ------
+    dead_cfg = DataLanConfig(arclengths_m=tuple(args.lan_arclengths),
+                             min_lead_m=1e9)
+    dead_batch, dead_stats = _batch(dead_cfg)
+    dead_gs = float(compute_losses_v3(model, dead_batch, "cpu",
+                                      mode="diffusion")["goal_str"].detach())
+    if dead_stats["any_valid_frac"] != 0.0 or dead_gs != 0.0:
+        print(f"[v3-preflight] ⛔ FAIL: the regression control did NOT go dead "
+              f"(valid_frac={dead_stats['any_valid_frac']}, "
+              f"goal_str={dead_gs}) — this preflight cannot detect a dead LAN "
+              f"label, so its PASS means nothing.")
+        return 6
+    print(f"[v3-preflight] lan arm OK: goal_str={gs:.4f} live / "
+          f"{dead_gs:.4f} under the +inf-guard control "
+          f"(control able to fail: True)")
+    return 0
+
+
 def preflight(args) -> int:
     print("[v3-preflight] building both arms + pinning the delta …")
     cfg_h = v3.refc_v3_sized_config(args.size, hier=True)
@@ -317,6 +437,14 @@ def preflight(args) -> int:
         return 5
     print(f"[v3-preflight] loss step OK: "
           f"{ {k: round(float(t.detach()), 4) for k, t in losses.items() if torch.is_tensor(t) and t.ndim == 0} }")
+    # ⛔ `route` above is the v2.1 NAV-derived CE, NOT the LAN route. It is
+    # masked by nav_valid and is bit-identical with and without every LAN flag
+    # (MEASURED, D-LAN-PF) — reading it as evidence about LAN is a category
+    # error the LAN arm below exists to prevent.
+    if (args.goal_str or args.graft_lan) and cfg.hier:
+        rc = _lan_arm_preflight(cfg, args)
+        if rc:
+            return rc
     print("[v3-preflight] ✅ PASS")
     return 0
 

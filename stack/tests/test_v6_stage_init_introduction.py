@@ -40,9 +40,14 @@ from train_v6_staged import (  # noqa: E402
     STAGE_MAY_INTRODUCE, load_stage_init)
 
 
+# ⚠️ FRAME PIN (2026-08-28): this suite asserts v6-ERA recorded facts
+# (byte-identity hashes, MEASURED head counts, v6 token sets). The PI's v7
+# vocab mandate flipped the DEFAULT tac_vocab_version to v7.0, which changes
+# constructed head shapes; every config here pins v6.0 so each assertion
+# keeps its original meaning. v7-frame coverage: test_model_vocab_v7.py.
 def _stack(selector="none"):
     torch.manual_seed(0)
-    return V6Stack(V6Config(selector=selector))
+    return V6Stack(V6Config(tac_vocab_version="v6.0", selector=selector))
 
 
 @pytest.fixture(scope="module")
@@ -99,7 +104,10 @@ def test_only_s_t_may_introduce_and_only_its_declared_modules():
     assert STAGE_MAY_INTRODUCE["S-T"] == (
         "cand_score.", "cond_tac_dyn.", "prop_diffusion.", "fallback.",
         "agent_slots.", "t2_head.")
-    assert STAGE_MAY_INTRODUCE["S-W"] == ()
+    # S-W introduces the two PI-approved AUX modules (O14 R2 future-obs head,
+    # E-DEC-67; O5-EMA teacher copies, MM-E1) — declared, test-pinned in
+    # test_o14_future_obs / test_o5_ema_teacher. Everything else stays ().
+    assert STAGE_MAY_INTRODUCE["S-W"] == ("o14_head.", "ema_o5_enc.", "ema_o5_ro.")
     assert STAGE_MAY_INTRODUCE["S-S"] == ()
     assert STAGE_MAY_INTRODUCE["S-J"] == ()
 

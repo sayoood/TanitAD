@@ -20,6 +20,12 @@ that refuses ``w_t5_consist > 0`` with ``lambda_plan == 0`` is therefore
 load-bearing, and it is WIRED (``v6_loss_step`` + ``preflight``), not merely
 documented — "a guard that is never called is not a guard".
 """
+# ⚠️ FRAME PIN (2026-08-28): this suite asserts v6-ERA recorded facts
+# (byte-identity hashes, MEASURED head counts, v6 token sets). The PI's v7
+# vocab mandate flipped the DEFAULT tac_vocab_version to v7.0, which changes
+# constructed head shapes; every config here pins v6.0 so each assertion
+# keeps its original meaning. v7-frame coverage: test_model_vocab_v7.py.
+
 from __future__ import annotations
 
 import sys
@@ -56,7 +62,7 @@ def test_the_cell_adds_no_parameters_and_no_state_dict_key():
     """⛔ THE REASON F-8 NEEDS NO ``STAGE_MAY_INTRODUCE`` ENTRY, and the reason
     it cannot break the live tensor-strict resume: it holds nothing. Same
     construction as ``MpcRefiner``."""
-    s = V6Stack(V6Config())
+    s = V6Stack(V6Config(tac_vocab_version="v6.0"))
     assert sum(p.numel() for p in s.parameters()) == 87_893_449
     assert len(s.state_dict()) == 405
     assert not any("t5" in k.lower() for k in s.state_dict())

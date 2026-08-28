@@ -3,7 +3,7 @@
 THE SPEC, quoted rather than paraphrased (two independent locations, per the
 "absence found at ONE location is not absence" rule):
 
-  * ``TanitAD Research Hub/Architecture & Inference/Implementation/incoming/
+  * ``TanitAD Research Lab/Architecture & Inference/Implementation/incoming/
     2026-08-07-hierarchical-wm-redesign/V6_TRAINING_MEASURES.md:65`` — *"T2 |
     **manoeuvre-contrastive windows** (label-free): time-reversal and
     lane-mirror augmentations as hard negatives for the tactical predictor | a
@@ -20,6 +20,12 @@ rejects-everything guard and a passes-everything guard within one day, so every
 claim below is pinned in BOTH directions — the cell does what it says, AND it is
 genuinely absent when off.
 """
+# ⚠️ FRAME PIN (2026-08-28): this suite asserts v6-ERA recorded facts
+# (byte-identity hashes, MEASURED head counts, v6 token sets). The PI's v7
+# vocab mandate flipped the DEFAULT tac_vocab_version to v7.0, which changes
+# constructed head shapes; every config here pins v6.0 so each assertion
+# keeps its original meaning. v7-frame coverage: test_model_vocab_v7.py.
+
 from __future__ import annotations
 
 import math
@@ -41,7 +47,7 @@ from tanitad.models.v6 import (  # noqa: E402
 from test_v6_gstr_port import _small  # noqa: E402
 
 #: MEASURED on this box 2026-08-18 by BUILDING the module, never estimated.
-#: (`V6Stack(V6Config())` vs `V6Stack(V6Config(t2_contrastive=True))`.)
+#: (`V6Stack(V6Config(tac_vocab_version="v6.0"))` vs `V6Stack(V6Config(tac_vocab_version="v6.0", t2_contrastive=True))`.)
 DEFAULT_PARAMS, DEFAULT_KEYS = 87_893_449, 405
 #: d_tac 512 -> hidden 256 -> proj 128:
 #:   Linear(512,256) 131,072 + 256 = 131,328
@@ -62,7 +68,7 @@ def _t2(**kw) -> V6Config:
 
 def test_default_build_is_untouched_at_the_production_geometry():
     """⛔ THE GUARD ON THE LIVE RUN. Not a toy geometry: the real default."""
-    s = V6Stack(V6Config())
+    s = V6Stack(V6Config(tac_vocab_version="v6.0"))
     assert sum(p.numel() for p in s.parameters()) == DEFAULT_PARAMS
     assert len(s.state_dict()) == DEFAULT_KEYS
     assert not any(k.startswith("t2_head") for k in s.state_dict())
@@ -70,7 +76,7 @@ def test_default_build_is_untouched_at_the_production_geometry():
 
 
 def test_t2_head_is_absent_from_the_default_config():
-    assert V6Config().t2_contrastive is False
+    assert V6Config(tac_vocab_version="v6.0").t2_contrastive is False
 
 
 def test_default_forward_emits_no_t2_key_and_the_head_is_unreferenced():
@@ -116,8 +122,8 @@ def test_for_stage_zeroes_the_weight_where_layer_tac_is_frozen(stage):
 def test_measured_parameter_cost_at_the_production_geometry():
     """⛔ MEASURED BY BUILDING THE MODULE. A prior doc's '+41,089' was an
     ESTIMATE and the measured figure was +33,801 — hence this test."""
-    off = V6Stack(V6Config())
-    on = V6Stack(V6Config(t2_contrastive=True))
+    off = V6Stack(V6Config(tac_vocab_version="v6.0"))
+    on = V6Stack(V6Config(tac_vocab_version="v6.0", t2_contrastive=True))
     d_p = sum(p.numel() for p in on.parameters()) \
         - sum(p.numel() for p in off.parameters())
     d_k = len(on.state_dict()) - len(off.state_dict())
@@ -125,7 +131,7 @@ def test_measured_parameter_cost_at_the_production_geometry():
     assert tuple(k for k in on.state_dict()
                  if k.startswith("t2_head")) == T2_KEYS
     # the arithmetic, so a geometry change cannot silently drift the constant
-    c = V6Config()
+    c = V6Config(tac_vocab_version="v6.0")
     assert d_p == (c.d_tac * c.d_t2_hidden + c.d_t2_hidden
                    + c.d_t2_hidden * c.d_t2_proj + c.d_t2_proj + 1)
 
@@ -145,7 +151,11 @@ def test_stage_may_introduce_carries_the_head():
     import train_v6_staged as T
     assert "t2_head." in T.STAGE_MAY_INTRODUCE["S-T"]
     # ⛔ and the stages that may introduce NOTHING still may not
-    for st in ("S-W", "S-S", "S-J"):
+    # S-W introduces the two PI-approved AUX modules (O14 R2 future-obs head,
+    # E-DEC-67; O5-EMA teacher copies, MM-E1) — declared, test-pinned in
+    # test_o14_future_obs / test_o5_ema_teacher. Everything else stays ().
+    assert T.STAGE_MAY_INTRODUCE["S-W"] == ("o14_head.", "ema_o5_enc.", "ema_o5_ro.")
+    for st in ("S-S", "S-J"):
         assert T.STAGE_MAY_INTRODUCE[st] == ()
 
 
