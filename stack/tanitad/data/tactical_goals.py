@@ -12,8 +12,8 @@ Two gaps were found by inspecting real clips:
     on this corpus.** MEASURED 2026-08-23, n=16 paired clips, 2000-shuffle
     permutation controls at five anchors AND whole-clip:
 
-        alpamayo `lateral` vs ego turn side : 31.2 % real vs 23.9 % shuffled, p=0.335
-        alpamayo `lane`    vs ego turn side : 20.0 % real vs 19.5 % shuffled, p=0.706
+        ⚠️ RETRACTED (C142): that was n=16. At n=919 the axis reads
+        65.6 % vs 37.2 % shuffled, p<0.0001 — strongly informative.
 
     Eight clips whose whole-clip yaw reaches 51-137 deg are labelled
     "Go Straight" / "Lane Keep". ⇒ A tactical LATERAL label derived from that

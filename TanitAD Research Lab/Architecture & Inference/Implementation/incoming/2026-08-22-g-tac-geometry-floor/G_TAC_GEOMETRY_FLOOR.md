@@ -363,9 +363,16 @@ Three scope pins recorded at integration, before any line above travels:
 3. ⭐ **The CORRIDOR_OFFSET verdict is now a TWO-STREAM CONVERGENCE WITH ONE
    DISSENTER.** This package BUILT the curvature-relative deriver and measured
    it inadmissible (fires 65.63 % vs the refuted gate's 63.07 %; realised
-   |lat_offset| p50 2.012 m vs a 0.75 m lane bar). The DataFlyWheel
-   independently DECLINED to build it (`vocab_v7.NOT_YET_EXTRACTABLE`: "the
-   threshold has not been calibrated against any independent reference").
-   ⛔ But `tactical_goals.py` EMITS it (4/39 clips in its census) — those
-   labels inherit the uncalibrated-threshold objection from both streams and
-   must not supervise anything until the producers' disagreement is resolved.
+   |lat_offset| p50 2.012 m vs a 0.75 m lane bar). The DataFlyWheel's **v7 emitter**
+   independently declines it (`vocab_v7.NOT_YET_EXTRACTABLE`; 0 emitted on all
+   4,719 clips, verified) — CORRECTED same night: the same stream's EARLIER
+   v6.1-era module is the dissenter below, so the convergence is
+   "kepler-measured × v7-emitter-declines", not "stream declined to build".
+   ⛔ But `tactical_goals.py` (the v6.1-era module at HEAD) EMITS it, via
+   `abs(peak_lat) >= 1.0 m` RAW excursion — the exact quantity §3's census
+   refuted, weaker than the curvature-relative form ruled inadmissible above,
+   constant uncalibrated. Verified blast radius: the v6.1 emitter only; the v7
+   set carries zero. Those 4/39 labels supervise nothing — not even as a
+   negative control — until the three-armed cross-agreement experiment (WITH a
+   chance baseline; both live derivers fire ~63–66 %, so agreement alone is the
+   C136 base-rate artefact) resolves the producer question.
