@@ -21,78 +21,60 @@ from tanitad.models import vocab_v7 as V7          # noqa: E402
 CAM = "C:/Users/Admin/tanitad-data/physicalai/camera/camera_front_wide_120fov"
 OFFS = (-4.0, -2.0, 0.0, 2.0, 4.0, 6.0)
 LAB = json.load(open("C:/Users/Admin/tanitad-wt/_s2build/report/sample_labels.json"))
-SUM = json.load(open("C:/Users/Admin/tanitad-wt/_s2build/v7_time/summary.json"))
+SUM = json.load(open("C:/Users/Admin/tanitad-wt/_s2build/v7_final_rel/summary.json"))
 
 #: My verdict per clip, written from the FRAMES before the labels were read.
 VERDICT = {
-    "e55a16e8": (True, "Signalised intersection, several light heads on masts, a lead car at the "
-                       "stop line. The scene is essentially FROZEN across all 10 s — the ego is "
-                       "stopped. Labels: STOP_POINT + TRAFFIC_LIGHT_REACT_RED + lon=HOLD. Correct "
-                       "on every axis, and Alpamayo's <code>Stop</code> state agrees."),
-    "5355f3cc": (True, "A pedestrian with a backpack crosses the zebra directly in front of the ego "
-                       "at +2 s and clears it by +6 s. Labels: STOP_POINT + YIELD with "
-                       "lon=BRAKE_TO, and Alpamayo names <code>pedestrian at crosswalk</code> as "
-                       "the critical component. The case the pipeline most needs to get right, and "
-                       "it does. <b>lon read FOLLOW before tonight.</b>"),
-    "ec075947": (True, "Urban junction: the view sweeps ~90° past a corner building. A genuine "
-                       "junction turn — tight arc, low speed — so it survives the new turn gate: "
-                       "TURN_R tactical, lat=TURN_R, NAV_TURN_R. Strategic is now "
-                       "<b>FOLLOW_ROUTE</b>, correctly: the turn happens inside the plan, and "
-                       "nothing else falls in the 8–30 s band."),
-    "43bbcbf9": (True, "⭐ <b>The clip that exposed three defects at once.</b> The PI said he saw "
-                       "no turning manoeuvre here and was right: it is a motorway S-bend — +38° by "
-                       "t+3 s, back to +24° by t+6 s, then −53° by t+14 s — driven at 12.0→14.3 m/s "
-                       "<b>while accelerating</b>. It was labelled TURN_L with radius 40 m, a number "
-                       "from peak instantaneous curvature; the arc radius is <b>144 m</b>. It now "
-                       "emits no turn at all: LANE_KEEP + ADAPT_SPEED_FOR_CURVE, "
-                       "NAV_FOLLOW_ROAD, strategic FOLLOW_ROUTE."),
-    "683d37fb": (True, "⚠️ <b>I read this wrong and the data corrected me.</b> On the montage I saw "
-                       "'empty dusk road' and called its EVADE a false positive. Cropping "
-                       "Alpamayo's box at full resolution shows <b>a real pedestrian walking in the "
-                       "road</b>, lit by the headlights. EVADE + NUDGE_L is <b>correct</b>; my "
-                       "400 px thumbnail was the unreliable instrument."),
-    "d94365be": (False, "⭐ <b>The clip whose ONCOMING timing you questioned — you were right to.</b> "
-                        "<code>REACT_ON_ONCOMING</code> is marked <b>untimed</b>: nothing in the "
-                        "source places it in 2–6 s. This clip has <b>no motion segments and no "
-                        "components analysis at all</b>, so there is no time evidence of any kind, "
-                        "and Alpamayo's anchor sits 2.9 s before ours — an event it names can have "
-                        "finished before our band opens, which is what you saw in the frames. Worse, "
-                        "its two text fields contradict each other: <i>cot</i> says nudge LEFT for a "
-                        "parked car, <i>chain_of_causation</i> says nudge RIGHT for an oncoming "
-                        "vehicle. Corpus-wide <b>REACT_ON_ONCOMING is 0 timed / 344 untimed</b>."),
-    "59b57590": (True, "⭐ <b>The clip whose MERGE you questioned — you were right, there is no "
-                       "merge.</b> The only occurrence of \"merg\" in the whole text is "
-                       "<i>\"potential door-opening/merge hazards\"</i>, a hypothetical risk class "
-                       "in a compound noun. That token is gone. <b>The lane change the CoT claims "
-                       "is deliberately NOT emitted</b>: measured with the road's arc removed, this "
-                       "ego displaces <b>0.01–0.05 m</b> in every window — a lane is ~3.5 m, so it "
-                       "never changes lane in view. The CoT describes an intent the clip does not "
-                       "execute, and the lateral-evidence gate is right to withhold it."),
-    "472944a4": (True, "⚠️ <b>My second wrong call, corrected by the box.</b> I read the growing "
-                       "light as an oncoming headlight and reported REACT_ON_ONCOMING as missing. "
-                       "The box, cropped at full resolution, shows <b>a car ahead with red TAIL "
-                       "lights</b> — same direction, not oncoming — and the source says "
-                       "<code>merging vehicle from the left</code>. YIELD + MERGE + GAP_TARGET is "
-                       "<b>correct</b>. At night, on a downscaled tile, I cannot reliably tell "
-                       "headlights from tail-lights."),
-    "0d932392": (True, "Night elevated road, no traffic, no light anywhere in 10 s. It emitted a "
-                       "phantom TRAFFIC_LIGHT_REACT when I first reviewed it; that token is now "
-                       "gone and the label is SPEED_BAND alone. <b>This clip exposed the 408× "
-                       "negation inversion</b> — 515 false light tokens across the corpus."),
-    "d452ea24": (True, "Red lights at −4 s, a crossing, and the ego passing a bus from +2 s to "
-                       "+6 s. It was labelled FOLLOW_LANE and nothing else when I first reviewed "
-                       "it. The source reads <i>'nudge left to pass the stopped bus'</i> and "
-                       "geometry shows NUDGE_L — <b>a stopped vehicle is a STATIC obstacle, so this "
-                       "is EVADE, not OVERTAKE</b>, which is now what it emits. The traffic light "
-                       "at −4 s is still not captured."),
-    "295aba84": (None, "Night multi-lane arterial, a white pickup close in the adjacent left lane "
-                       "at −4 s. YIELD + MERGE with critical component <code>merging vehicle from "
-                       "the left</code> is <b>plausible but not confirmable</b> from six frames. "
-                       "Recorded as unverified rather than counted either way."),
-    "6faad52e": (None, "Night suburban, a vehicle passes on the left at −4 s, then a railed bridge. "
-                       "The strategic TURN_LEFT_FOLLOW_ROUTE is for an 86° turn at <b>t+26 s</b> — "
-                       "well beyond where the frame strip ends, so it is <b>unverifiable from this "
-                       "evidence</b>, not wrong."),
+    "d8f80c0f": (True, "Rainy dusk, residential. The NEW yield-for-turn path's first fresh-sample "
+                       "case: a 1.55–4.59 m/s creep-and-go with a measured −42° turn at t+2.7 s → "
+                       "YIELD_FOR_TURN_R + TURN_R + CORRIDOR_OFFSET(left) for the parked cars on "
+                       "the right. The frames show the slow wet crawl past parked vehicles; the "
+                       "turn itself is subtle at strip scale — geometry (−42°, R measured) is the "
+                       "decisive witness, the frames are consistent."),
+    "b5812659": (True, "⚠️ <b>I misread this one first and the data corrected me — again.</b> I "
+                       "took the blue island sign as keep-RIGHT; it is keep-LEFT, and the facades "
+                       "sweep rightward exactly as an 80° LEFT turn predicts. Label: TURN_L@14.5 m "
+                       "+ TRAFFIC_LIGHT_REACT_YELLOW (the CoT says yellow, and slowing then "
+                       "RESUME_CRUISE matches). Third time this session my eyeballing lost to the "
+                       "measurement."),
+    "95d2c361": (True, "City junction, −90° right turn from the anchor into a narrow street, at "
+                       "1.25–4.52 m/s. The CoT talks only about the lead vehicle — <b>geometry "
+                       "supplies the whole turn</b>, which is the division of labour working: "
+                       "geometry decides WHAT, the CoT decides WHY, and here it had no why."),
+    "d6982eb9": (True, "⭐ <b>The cleanest CORRIDOR_OFFSET showcase in either sample.</b> Night "
+                       "street, tram tracks, a parked van and SUV clearly on the RIGHT; the CoT "
+                       "says nudge left for them; the label is CORRIDOR_OFFSET(left) with "
+                       "lat=LANE_KEEP — a HELD offset, no transient nudge, exactly the semantics "
+                       "the token was redesigned for. Band 9.34–9.57 m/s steady."),
+    "d5700d32": (True, "Suburban two-way road, parked cars right, and at +4 s an oncoming car "
+                       "passes on the left — REACT_ON_ONCOMING is <b>untimed by evidence but "
+                       "actually visible in-window here</b>. CORRIDOR_OFFSET(left) matches the "
+                       "parked-right context. The t_nominal 4.0 s convention happens to land on "
+                       "the truth in this clip."),
+    "1da60b2a": (True, "Night junction, red heads visible from the anchor on. STOP_POINT@15.3 m + "
+                       "TRAFFIC_LIGHT_REACT_RED + BRAKE_TO, band 0.0–4.81 m/s. The CoT also "
+                       "claims a lane change left; the lateral-evidence gate refuses it "
+                       "(measured LANE_KEEP) — in the dark frames no lane change is visible "
+                       "either. An honest refusal, shown as one."),
+    "0a0bb8fe": (True, "⭐ <b>The band design working end-to-end.</b> The ego is ALREADY mid-turn "
+                       "at the anchor (−69° starting t+0.0 s — operative ground, so no tactical "
+                       "TURN token: correct), proceeds through the green (TRAFFIC_LIGHT_REACT_"
+                       "GREEN), and the SECOND turn at t+19.5 s lands exactly where it belongs: "
+                       "strategic TURN_RIGHT_FOLLOW_ROUTE + NAV_TURN_R."),
+    "ffd66d72": (True, "Mountain night. The oncoming headlight passes at −4 s — <b>before the "
+                       "band</b> — and REACT_ON_ONCOMING carries `untimed` + t_nominal 4.0: this "
+                       "fresh clip reproduces the exact defect the PI caught on d94365be, now "
+                       "wearing its honest flag. The measured NUDGE_R and 16–18 m/s cruise match "
+                       "the snow-edged road."),
+    "263597d8": (True, "⭐ <b>TAKE_EXIT_R confirmed visually on an unseen clip.</b> The road "
+                       "forks at the anchor; the ego takes the right branch along the wall, "
+                       "scooter ahead — extracted from TERMS as the PI directed, geometry-side "
+                       "agreeing (NUDGE_R + BRAKE_TO). The +132° manoeuvre at t+10.7 s becomes "
+                       "strategic TURN_LEFT_FOLLOW_ROUTE, beyond what the strip can show."),
+    "3ae000c7": (True, "Parking area, near-standstill: SPEED_BAND 0.70–0.93 m/s with lon=CREEP — "
+                       "the CREEP class doing precisely what it was added for — and a strategic "
+                       "STOP_AT for the coming halt. The frames barely change across 10 s, "
+                       "which is the label's content."),
 }
 
 

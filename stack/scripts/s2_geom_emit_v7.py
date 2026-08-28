@@ -226,8 +226,17 @@ def tactical_goals(poses, key, seq, cot, hz=HZ, lat_action=None,
         nxt = None
     if nxt and nxt[0] < TACTICAL_S[1]:
         side = "L" if nxt[2] > 0 else "R"
-        held = bool(stops and (stops[0][1] - stops[0][0] + 1) / hz >= 0.5
-                    and stops[0][0] / hz < nxt[0])
+        # ⛔ THE YIELD-STOP PRECEDES THE TURN, SO IT MAY PRECEDE THE BAND.
+        # MEASURED 2026-08-28: after the stop search moved to the 2-6 s band
+        # (C148), YIELD_FOR_TURN_* collapsed 58 -> 1 — and of 46 turn clips
+        # with a real >=0.5 s stop before the turn, **all 46 stops START in
+        # 0-2 s**, the operative band the search can no longer see. The GOAL
+        # stays banded; the EVIDENCE for its qualifier is allowed to lie
+        # earlier, because "yield, then turn" is one intent whose yield half
+        # naturally sits just before the plan window. Search [0, turn_start).
+        v_pre = p[key:min(len(p) - 1, key + int(round(nxt[0] * hz))) + 1, 3]
+        pre_stops = EM.stop_episodes(v_pre, hz)
+        held = bool(pre_stops and (pre_stops[0][1] - pre_stops[0][0] + 1) / hz >= 0.5)
         tok = f"YIELD_FOR_TURN_{side}" if held else f"TURN_{side}"
         goals[tok] = {"within_m": _arc_to(p, key, nxt[0], hz),
                       "by_time_s": nxt[0], "radius_m": nxt[3],

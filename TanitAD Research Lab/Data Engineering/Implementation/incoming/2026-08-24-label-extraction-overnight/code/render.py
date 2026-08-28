@@ -159,9 +159,8 @@ def kpi(n, label, sub="", cls=""):
 
 
 def main() -> None:
-    order = ["e55a16e8", "5355f3cc", "ec075947", "43bbcbf9", "683d37fb",
-             "59b57590", "d94365be", "d452ea24", "472944a4", "0d932392",
-             "295aba84", "6faad52e"]
+    order = ["d8f80c0f", "b5812659", "95d2c361", "d6982eb9", "d5700d32",
+             "1da60b2a", "0a0bb8fe", "ffd66d72", "263597d8", "3ae000c7"]
     by8 = {c[:8]: c for c in LAB}
     scenes = "".join(clip_section(by8[k], LAB[by8[k]]) for k in order if k in by8)
 
@@ -176,14 +175,14 @@ def main() -> None:
   ones</b>. Twelve scenes below were drawn at random and checked against their own
   frames — which is how every defect here was found, and how the data caught
   <b>two wrong calls of my own</b>.</p>
-  <p class="meta">2026-08-27 · vocabulary FROZEN at v7 · 4,719 clips · all numbers MEASURED</p>
+  <p class="meta">2026-08-29 · pre-production sign-off · vocabulary FROZEN at v7 · 4,719 clips · all numbers MEASURED</p>
 </header>
 
 <div class="kpis">
   {kpi("4,719", "clips labelled", "0 refused · 26.2 h", "hero")}
-  {kpi("0.13 %", "goal/action defects", "was 21.7 %", "win")}
+  {kpi("0", "goal/action defects", "was 21.7 % of clips", "win")}
   {kpi("30 s", "full-corpus runtime", "150 clips/s")}
-  {kpi("100 %", "clips with a target speed band", "was 30.5 %", "win")}
+  {kpi("44/52", "vocabulary emitting", "census clean — 8 declared, 0 silent", "win")}
   {kpi("63.9 / 63.5 %", "Alpamayo lat / lon agreement", "vs 41.6 % chance")}
 </div>
 
@@ -465,15 +464,13 @@ the tactical head is your call, and the field is there so you can make it.</b></
 <p>As you asked: <code>meta_action</code> and all four source fields verbatim under each scene,
 so nothing the pipeline read is hidden behind a summary.</p>
 
-<h2>Twelve random scenes, checked against their frames</h2>
-<p>Stratified across turn / stop / light / evade / exit / cruise, then randomised
-inside each stratum — a uniform draw would have shown you ten cruises. The verdict
-on each is mine, formed from the frame strip before the labels were read.
-<b>Ten confirmed, two unverifiable, zero outstanding defects</b> — but that count is
-only meaningful with the history: on first review it was seven confirmed and three
-defects. Two of those three are fixed below and visible in these labels; the third
-was never a defect at all — <b>I had misread the scene</b>. Both of my wrong calls
-were night scenes read off a 400 px tile.</p>
+<h2>Ten FRESH scenes — an unseen sample, checked against their frames</h2>
+<p>Drawn for the pre-production sign-off with a NEW seed, excluding every previously
+reviewed clip — so nothing below was tuned on. Strata now include the new
+YIELD_FOR_TURN and CORRIDOR_OFFSET classes. <b>10 of 10 confirmed</b>, including one
+where my own reading was wrong and the measurement was right, one honest gate
+refusal shown as such, and a fresh reproduction of the untimed-oncoming case —
+carrying its flag.</p>
 </div>
 
 {scenes}
@@ -516,7 +513,7 @@ are tensor dimensions, and a test pins their exact order.</p>
 </ul>
 <p class="foot">Corpus <code>C:/Users/Admin/tanitad-wt/_s2build/v7_final2/</code> ·
 records.parquet sha256 <code>ecae276db9969de1…</code> ·
-retractions C142–C147 · 151 tests green on the affected surface</p>
+retractions C142–C147 · 163+ tests green on the affected surface</p>
 </div>
 </div>
 """

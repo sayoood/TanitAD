@@ -262,9 +262,14 @@ def goals_from_cot(cot: str | None) -> dict[str, dict]:
         out["MERGE"] = {"agent_slot": None}
     if c.gap:
         out["GAP_TARGET"] = {"agent_slot": None, "time_gap_s": None}
-    if c.exit_side:
-        side = c.exit_side if c.exit_side != "UNKNOWN" else "RIGHT"
-        out[f"TAKE_EXIT_{side[0]}"] = {"side": side.lower()}
+    if c.exit_side and c.exit_side != "UNKNOWN":
+        # ⛔ NO SIDE STATED -> NO TOKEN. The old branch DEFAULTED unknown to
+        # RIGHT — a coin flip written into ground truth. MEASURED 2026-08-28:
+        # 9 of 183 exit clips, and one of them reads "continue straight PAST
+        # the service-area exit" — not an exit-taking at all. The same
+        # honest-output rule as offset ties and the both-sides exit conflict:
+        # when the source cannot say which side, emit neither.
+        out[f"TAKE_EXIT_{c.exit_side[0]}"] = {"side": c.exit_side.lower()}
     if c.overtake:
         out["OVERTAKE_VEHICLE"] = {"agent_slot": None}
     if c.evade_obj:
