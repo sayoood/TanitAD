@@ -333,3 +333,39 @@ is MEASURED.
 **Nothing in this package lives on only one disk.** Everything is in the repo
 working tree and staged. Per the operating standard: **staged, never committed,
 never pushed.**
+
+---
+
+## INTEGRATION ADDENDUM (Master Mind, 2026-08-28, at landing — commit 9e61f1a7c)
+
+Three scope pins recorded at integration, before any line above travels:
+
+1. ⚠️ **"0 producers" was true on 2026-08-22 and is not true at today's HEAD.**
+   `stack/tanitad/data/tactical_goals.py` landed at HEAD on 08-23 (commit
+   `b840828`, register row D-DATA-GTAC) while this package sat stranded in the
+   worktree. HEAD therefore now carries **TWO independent g_tac producers**
+   (`g_tac_geom.py` — this package — and `tactical_goals.py`), built blind to
+   each other. Their cross-agreement on shared clips is an OPEN INSTRUMENT
+   QUESTION; neither may be quoted as "the" producer until it is measured.
+
+2. ⚠️ **"The LAT axis does not discriminate" is a CORRIDOR_OFFSET fact, not a
+   lateral-axis fact.** CORRIDOR_OFFSET is the only lateral goal token in the
+   v6.1 frame, and it asks a displacement question ("how far off the lane
+   reference"). The v7 frame's lateral goals are DIFFERENT QUANTITIES —
+   junction turns gated on arc radius + speed (TURN_L/R, calibrated vs
+   Alpamayo's own turn labels at precision 70.6 % / recall 61.3 %, 349 pos /
+   1,468 neg), measured-motion-gated EVADE/LANE_CHANGE — and the DataFlyWheel's
+   4,719-clip v7 set carries **1,037 lateral goals on 989 clips**. Do not quote
+   this package's LAT abstention against the v7 set. (Scope pin from the
+   DataFlyWheel's cross-stream check, 2026-08-28; CoT-sourced v7 tokens carry
+   their own 87.2 %-untimed caveat, on file with the PI.)
+
+3. ⭐ **The CORRIDOR_OFFSET verdict is now a TWO-STREAM CONVERGENCE WITH ONE
+   DISSENTER.** This package BUILT the curvature-relative deriver and measured
+   it inadmissible (fires 65.63 % vs the refuted gate's 63.07 %; realised
+   |lat_offset| p50 2.012 m vs a 0.75 m lane bar). The DataFlyWheel
+   independently DECLINED to build it (`vocab_v7.NOT_YET_EXTRACTABLE`: "the
+   threshold has not been calibrated against any independent reference").
+   ⛔ But `tactical_goals.py` EMITS it (4/39 clips in its census) — those
+   labels inherit the uncalibrated-threshold objection from both streams and
+   must not supervise anything until the producers' disagreement is resolved.
