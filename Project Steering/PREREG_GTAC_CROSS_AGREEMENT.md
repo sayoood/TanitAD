@@ -68,3 +68,20 @@ lie — 2026-08-28).
 **Cost:** CPU minutes, 0 GPU. **Banking:** agreement matrices + kappas + base
 rates as raw JSON beside the RESULT; register row updated in the same turn as
 the read.
+
+---
+
+## AMENDMENT A — recorded 2026-08-28 late, before execution
+
+A FOURTH producer exists: the PI-designed CoT side-only route (perception-admitted via the
+grounding-box test — exactly the independent-reference class this prereg demanded, arriving
+by a different door). Two design updates, neither weakening the original rules:
+1. The experiment adds arm D (CoT side-only) where clips overlap. ⛔ The standing fact is
+   NARROWED, not retired: *cross-agreement between the GEOMETRIC producers still cannot admit
+   CORRIDOR_OFFSET* — geometry is now declared structurally blind to a held offset
+   (arc-removal cancels it), so a geometry-vs-geometry kappa on this token measures shared
+   artefact by construction. Geometry arms are scored on the OTHER axes only.
+2. Arm D enters with its own validation record (one failed check with physics on file) and is
+   the only arm permitted to emit the token, per vocab_v7's TACTICAL_GOAL_NEEDS_PERCEPTION.
+The lane-detector reference (LAB-RUN-002 design) remains the stronger eventual reference;
+urgency lowered, requirement unchanged (chance baseline; the reference must be able to say NO).
