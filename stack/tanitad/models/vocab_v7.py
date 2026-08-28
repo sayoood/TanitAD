@@ -256,6 +256,11 @@ def action_serves_goals(lat: str, lon: str, goals) -> dict:
 #: are in the vocabulary so a perception-fed head can emit them; the geometry
 #: emitter must NOT invent them.
 TACTICAL_GOAL_NEEDS_PERCEPTION: frozenset[str] = frozenset({
+    # CORRIDOR_OFFSET joined 2026-08-28 with its CoT extractor: a held in-lane
+    # offset is INVISIBLE to arc-removed geometry (the fit absorbs it), so any
+    # future geometric emitter producing it would be the uncalibrated-threshold
+    # defect this token was declared unreachable for. Perception-only, forever.
+    "CORRIDOR_OFFSET",
     "GAP_TARGET", "REACT_ON_ONCOMING", "OVERTAKE_VEHICLE", "MERGE",
     "TAKE_EXIT_L", "TAKE_EXIT_R",
     "TRAFFIC_LIGHT_REACT", "TRAFFIC_LIGHT_REACT_RED",
@@ -590,11 +595,11 @@ NOT_YET_EXTRACTABLE: dict[str, str] = {
         "needs a lane change BEGUN and then abandoned — a two-phase lateral "
         "signature we do not yet detect, and rare enough that no calibration "
         "reference exists in the corpus.",
-    "CORRIDOR_OFFSET":
-        "needs a SUSTAINED lateral offset held inside the lane, distinguished "
-        "from the transient nudge that EVADE_IN_CORRIDOR already covers. The "
-        "geometry is available; the threshold has not been calibrated against "
-        "any independent reference, and guessing it would manufacture labels.",
+    # CORRIDOR_OFFSET left this list 2026-08-28: the PI designed a CoT-term
+    # route (two pattern classes, direct ego-direction vs object-side with the
+    # sign inverted; side-only constraint, no invented magnitude). 906 clips,
+    # 89 % cross-class side agreement. The GEOMETRIC threshold objection stands
+    # unchanged — this route does not use one.
     "YIELD_MERGE":
         "needs MERGE (a perception claim) to coincide with a measured "
         "deceleration. MERGE itself now stands at 82 clips after the hazard "

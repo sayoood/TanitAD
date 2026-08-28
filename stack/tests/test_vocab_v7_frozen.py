@@ -197,7 +197,11 @@ def test_vocab_reachability():
         assert len(why.split()) >= 8, (
             f"{tok} is declared unreachable with no real reason: {why!r}")
     # the declaration must not quietly grow: this is the number the PI was told
-    assert len(unreachable) == 9, (
-        f"{len(unreachable)} tokens declared unreachable, expected 9. "
+    # 9 -> 8 on 2026-08-28: CORRIDOR_OFFSET became extractable via the
+    # PI-designed CoT-term route (side-only constraint; two pattern classes
+    # with the object-side sign inverted). The geometric-threshold objection
+    # that put it on this list was never answered — it was ROUTED AROUND.
+    assert len(unreachable) == 8, (
+        f"{len(unreachable)} tokens declared unreachable, expected 8. "
         f"If a token became extractable, REMOVE it here. If a new one became "
         f"unreachable, that is a regression, not a bookkeeping update.")

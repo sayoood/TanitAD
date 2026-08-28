@@ -112,6 +112,62 @@ _EVADE_OBJ = (("STOPPED_VEHICLE", re.compile(
               ("ONCOMING", re.compile(r"\boncoming\b")))
 _SPEED_LIMIT = re.compile(r"\bspeed limit\b")
 
+# --- corridor offset: a HELD in-lane bias, PI-designed extraction 2026-08-28 --
+#: ⭐ TWO PATTERN CLASSES WITH OPPOSITE SIGN RULES — the subtlety that makes
+#: this extractable at all. DIRECT phrases state the EGO's own direction
+#: ("keep right", "position left", "slight left offset"); OBJECT-SIDE phrases
+#: place the OBSTACLE ("clearance to the van ON THE RIGHT", "pedestrians near
+#: the LEFT curb") and the ego offsets to the OPPOSITE side. Reading the second
+#: class as the first silently inverts ~2/3 of the corpus signal.
+#:
+#: MEASURED 2026-08-28 over 4,729 clips (negation-stripped text):
+#:   * 906 clips claim an offset — 723 left / 164 right / 19 conflicted
+#:     (excluded). The 82 % LEFT skew is itself content validation: obstacles
+#:     overwhelmingly sit on the RIGHT in right-hand traffic.
+#:   * clips carrying BOTH classes agree on the side **89 %** (78/88).
+#:   * geometry sign test: correct direction, p = 0.14 — CANNOT RULE, and
+#:     structurally never could: the arc fit that removes road curvature also
+#:     absorbs any HELD offset. That is precisely why this token needed a
+#:     non-geometric route (see D-DATA-GTAC-b).
+_OFFSET_DIRECT = tuple(re.compile(x) for x in (
+    r"\b(?:keep|stay|keeping|staying)\s+(?:to\s+the\s+|slightly\s+)?(left|right)\b",
+    r"\bposition(?:ed|ing)?\s+(?:to\s+the\s+|to(?:ward)?s?\s+the\s+|slightly\s+)?(left|right)\b",
+    r"\b(?:slight|small)\s+(left|right)\s+offset\b",
+    r"\boffset(?:ting)?\s+(?:slightly\s+)?(?:to\s+the\s+)?(left|right)\b",
+    r"\bshift(?:ing|ed)?\s+(?:slightly\s+)?(?:to\s+the\s+)?(left|right)\b",
+    r"\bbias(?:ed)?\s+(?:to(?:ward)?s?\s+the\s+)?(left|right)\b",
+))
+_OFFSET_OBJSIDE = tuple(re.compile(x) for x in (
+    r"\bclearance\s+(?:to|from)\s+[^.]{0,60}?\bon\s+the\s+(left|right)\b",
+    r"\b(?:parked|stopped|stationary)\s+(?:car|van|truck|vehicle|bus)s?\b[^.]{0,50}?\bon\s+the\s+(left|right)\b",
+    r"\b(?:pedestrian|cyclist|worker)s?\b[^.]{0,60}?\b(?:on|near|along)\s+the\s+(left|right)\b",
+    r"\b(left|right)\s+(?:curb|edge|shoulder)\b",
+))
+_OFFSET_OPP = {"left": "right", "right": "left"}
+
+
+def offset_side(t: str) -> str | None:
+    """Resolved ego-offset side, or None (no claim, or conflicted votes).
+
+    Majority vote across both classes; a tie is AMBIGUITY and returns None —
+    when the source cannot say which side, the honest output is neither
+    (the same rule that removed the TAKE_EXIT_L+R forbidden pair).
+    """
+    votes: dict[str, int] = {}
+    for pat in _OFFSET_DIRECT:
+        for m in pat.finditer(t):
+            votes[m.group(1)] = votes.get(m.group(1), 0) + 1
+    for pat in _OFFSET_OBJSIDE:
+        for m in pat.finditer(t):
+            side = _OFFSET_OPP[m.group(1)]
+            votes[side] = votes.get(side, 0) + 1
+    if not votes:
+        return None
+    top = max(votes, key=votes.get)
+    if sum(v for k, v in votes.items() if k != top) >= votes[top]:
+        return None
+    return top
+
 
 @dataclass
 class CotTokens:
@@ -213,4 +269,13 @@ def goals_from_cot(cot: str | None) -> dict[str, dict]:
         out["OVERTAKE_VEHICLE"] = {"agent_slot": None}
     if c.evade_obj:
         out["EVADE_IN_CORRIDOR"] = {"obstacle_class": c.evade_obj.lower()}
+    # ⭐ PI 2026-08-28: CORRIDOR_OFFSET carries EXACTLY one constraint — the
+    # side. No magnitude: no source can state one, and inventing it would be
+    # the uncalibrated-threshold defect this token was declared unreachable
+    # for. A held offset is invisible to arc-removed geometry, so this is a
+    # perception claim like the rest of this module's output: disputed until
+    # corroborated, never geometry-verified.
+    side = offset_side(NEG.strip_negated((cot or "").lower()))
+    if side:
+        out["CORRIDOR_OFFSET"] = {"side": side}
     return out
