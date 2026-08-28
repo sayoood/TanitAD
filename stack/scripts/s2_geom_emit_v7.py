@@ -332,10 +332,47 @@ def tactical_goals(poses, key, seq, cot, hz=HZ, lat_action=None,
         stem = t.split("_")[0].lower()
         basis = ("segment" if timed_terms and stem in timed_terms else
                  "untimed")
+        # ⭐ NOMINAL TIME FOR UNTIMED TOKENS — PI decision 2026-08-28:
+        # *"Depending whether the label is strategic or tactical use the middle
+        # time — for tactical 3 seconds, for strategic use 20 seconds."*
+        #
+        # Implemented as THE PRINCIPLE (band midpoint) on the PI's OWN bands:
+        # tactical [2,6] -> 4.0 s, strategic [8,30] -> 19.0 s. The PI's spoken
+        # numbers (3 / 20) are the midpoints of the OLD 0-6 s band and a round
+        # 8-30; using them verbatim would re-import the band error he himself
+        # corrected (C146). Flagged to him rather than silently either way.
+        #
+        # ⚠️ `t_nominal_s` is an ASSUMPTION, not a measurement — that is why it
+        # is a separate field and `time_basis` stays `untimed`. A trainer may
+        # now place every token; a consumer can still tell placed-by-evidence
+        # from placed-by-convention. All CoT goals are tactical today, so the
+        # strategic midpoint (19.0) has no live consumer yet; the rule is
+        # written for both layers so it does not need re-deciding later.
+        t_nom = ((TACTICAL_S[0] + TACTICAL_S[1]) / 2.0 if basis == "untimed"
+                 else None)
+        extra = {"t_nominal_s": t_nom,
+                 "t_nominal_provenance": "band-midpoint (PI 2026-08-28)"}             if t_nom is not None else {}
         goals.setdefault(t, {**a, "provenance": "vlm-cot", "disputed": True,
-                             "time_basis": basis})
-    if not goals:
-        goals["FOLLOW_LANE"] = {}
+                             "time_basis": basis, **extra})
+    # ⛔ FOLLOW_LANE IS A **LATERAL** GOAL AND MUST NOT BE CROWDED OUT BY A
+    # LONGITUDINAL ONE. MEASURED 2026-08-28 while writing the state report:
+    # FOLLOW_LANE fell from 1,281 emissions to **ZERO**. The fallback was
+    # `if not goals`, and once SPEED_BAND became unconditional (PI: the target
+    # speed is always present) the goal set is NEVER empty — so the lateral
+    # axis silently lost its default.
+    #
+    # ⇒ The condition is "no LATERAL goal", not "no goal at all". Which tokens
+    # are lateral is derived from the EXCLUSION MATRIX rather than a second
+    # hardcoded list: FOLLOW_LANE is declared mutually exclusive with exactly
+    # the lateral intents it competes with, so if adding it would violate the
+    # matrix, another lateral goal already holds and it must not fire.
+    if "FOLLOW_LANE" not in goals:
+        trial = dict(goals)
+        trial["FOLLOW_LANE"] = {}
+        if not V7.validate_goal_set(trial):
+            goals[V7.assert_frozen("FOLLOW_LANE", where="tactical")] = {
+                "provenance": "geometry",
+                "reason": "no other lateral goal holds over the tactical band"}
     # ⚠️ the exclusion matrix is CHECKED, not assumed
     viol = V7.validate_goal_set(goals)
     return goals, anchor, viol

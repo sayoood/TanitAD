@@ -139,8 +139,31 @@ def main() -> None:
         if buf:
             fh.write("\n".join(buf) + "\n")
 
+    # ⛔ EMISSION CENSUS — catches a token silently falling to ZERO.
+    # MEASURED 2026-08-28: `FOLLOW_LANE` went 1,281 -> 0 when SPEED_BAND became
+    # unconditional (the `if not goals` fallback could never fire again), and
+    # NOTHING caught it. `test_vocab_reachability` checks the DECLARED
+    # unreachable list, not what the corpus actually produces — so a regression
+    # that empties a class is invisible to it. This census is the check that
+    # binds, and it runs on every corpus build.
+    from tanitad.models import vocab_v7 as _V7
+    _seen = collections.Counter()
+    for _c in (tok_g_str, tok_a_str, tok_g_tac, tok_lat, tok_lon, tok_nav):
+        _seen.update(_c)
+    silent = sorted(t for t in _V7.ALL_V7_TOKENS
+                    if not _seen.get(t) and t not in _V7.NOT_YET_EXTRACTABLE)
+    if silent:
+        print(f"  ⚠️ {len(silent)} frozen token(s) emitted ZERO times and NOT "
+              f"declared unreachable: {silent}", flush=True)
+
     summary = {
         "emitted": n_ok,
+        "vocab_emission_census": {
+            "frozen": len(_V7.ALL_V7_TOKENS),
+            "emitted_at_least_once": sum(1 for t in _V7.ALL_V7_TOKENS if _seen.get(t)),
+            "declared_unreachable": len(_V7.NOT_YET_EXTRACTABLE),
+            "silent_and_undeclared": silent,
+        },
         "refused": len(refused),
         "scope": len(scope()),
         "alpamayo_clips": len(AR.available()),
