@@ -97,3 +97,38 @@ content-verified): the verbatim `postrain30k` line + `--w-o14 1.0 --o14-mode fut
 change — the matched pair for the absorption PRIMARY at 30k. Raw gates:
 `o14drift.json` / `o14nrmse.json` + absorb_*.json (8fc25020/b53d2f9f scratchpads;
 banking with the ladder package). T0-DIAGNOSTIC throughout.
+
+---
+
+## OUTCOME — the 30k absorption PRIMARY, read 2026-08-28 ~09:10 (per AMENDMENT B)
+
+**Verdict: ABSORBED.** All three probes MEASURED (dev-box 4060, T0-DIAGNOSTIC), rig valid
+(constant 0 exactly; deliberate-regression failed as required; shuffles ~0; A1 in band):
+
+| read | o14fut30k | incumbent | gate/criterion | result |
+|---|---|---|---|---|
+| **pixel-marginal over z_t** (PRIMARY) | **−0.0047, t −3.09** | +0.0096, t +5.11 (rdw8p30k) | falls toward null | **the positive marginal is GONE** — sign-flipped, below the SURVIVES bar |
+| latentmotion drift | 0.6709 (t 142.96) | 0.669 (postrain30k) | not above band | HOLDS (+0.3 % rel) |
+| meanpred nrmse | 0.8288 | 0.8115 | not >10 % worse | HOLDS (+2.1 %) |
+| cos (centred) | 0.6043 | 0.6395 | — | −5.5 % rel, stated |
+
+Raws: `absorb_o14fut30k.json`, `o14fut30k_drift.json`, `o14fut30k_nrmse.json`
+(banked in `…/incoming/2026-08-27-o14-tiny-ladder/raw/`). Ckpt md5 `3e4a7443…` verified
+Thor↔dev-box; Thor-side backup in `/home/nvidia/staging/o14fut30k_ckpt_final.pt`.
+
+**The two facts that must travel with ABSORBED:**
+1. ⚠️ **The residual marginal is a small NEGATIVE in the 2.9–4.2 marginal band, not an exact
+   null** — adding raw pixels now *hurts* the fit (z_t+pixels r 0.6685 < z_t 0.6732), i.e.
+   estimation cost of 2,560 uninformative dims. A negative marginal cannot be unabsorbed
+   information; the ABSORBED reading stands.
+2. ⚠️ **Absorption did NOT reduce drift** (0.6709 ≈ 0.669) and mildly cost prediction
+   (nrmse +2.1 %, cos −5.5 %). O14-fut is the **anti-DISPLACEMENT lever** (it closes
+   E-DEC-63's measured target — the token field no longer displaces pixel-borne
+   information), **not an anti-drift lever**. The drift attractor itself is untouched and
+   remains the open front (P0/EMA and successors).
+
+**Consequence (per the committed outcome):** O14-fut **earns its place in the v7r recipe**
+as the representational auxiliary — R2 ADOPTED into `V7_RECIPE_AND_SCALEUP.md` §5.1
+(`--w-o14 1.0 --o14-mode fut --o14-k 4`), with fact 2 stated wherever R2 is cited. The DR
+control at 30k was not retrained (8 h); the 2k DR arm + the probe-internal time-shuffle
+carry instrument validity, stated as a limitation (Amendment B).

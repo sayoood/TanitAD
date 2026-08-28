@@ -3772,7 +3772,7 @@ raws under `…/Architecture & Inference/Implementation/incoming/2026-08-27-*`.
 | `o14base2k` | w_o14=0 (+omega) | 2k | 0.4531 | 0.9876 | the ladder base; ⚠️ pixel-marginal NULL at 2k (Amendment B) |
 | `o14fut01` / `o14fut10` / `o14rec10` | O14 fut 0.1 / fut 1.0 / rec 1.0 | 2k | 0.4576 / 0.4733 / 0.4704 | 0.9886 / **0.9746** / 0.9769 | gates PASS vs base; cos 0.18→0.24–25 under the aux (below decision grade) |
 | `o14dr10` | fut 1.0 + SHUFFLED targets (DR) | 2k | **0.4533** (= base) | 0.9895 | the deliberate-regression arm behaves — exactly inert |
-| **`o14fut30k`** | `--w-o14 1.0 --o14-mode fut` vs `postrain30k` (NO omega — one variable) | 30k | ▶ RUNNING | ▶ | **the ABSORPTION PRIMARY** (E-DEC-67 / Amendment B): pixel-marginal vs the incumbent's +0.0096 (t 5.11) |
+| **`o14fut30k`** | `--w-o14 1.0 --o14-mode fut` vs `postrain30k` (NO omega — one variable) | 30k | ✅ DONE 2026-08-28 (0.979 s/step, ckpt md5 `3e4a7443`) | **ABSORBED**: pixel-marginal **−0.0047 (t −3.09)** vs incumbent +0.0096 (t +5.11); drift 0.6709 (≈ band); nrmse 0.8288 (+2.1 %); cos_ctr 0.6043 (−5.5 % rel) | **the ABSORPTION PRIMARY** (E-DEC-67): R2 adopted into v7r; ⚠️ drift UNCHANGED — anti-displacement, not anti-drift. Raws: ladder package `raw/absorb_o14fut30k.json` etc. T0-DIAGNOSTIC |
 
 ⚠️ ckpt md5s: k4 `c914e6a0a4b0ee7548b469408cacc53e` · omega `8cbd242b4e7c01fc6107f7874439d996` ·
 ladder arms in the sweep logs. The 2k arms carry `--tac-vocab-version v6.0` EXPLICITLY

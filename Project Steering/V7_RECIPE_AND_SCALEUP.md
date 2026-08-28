@@ -135,6 +135,13 @@ first variance estimate and every single-seed comparison should be read against 
 --cond-param omega_accel_v           # ADOPTED 2026-08-27 (D2/E-DEC-65): the PI's
                                      # measured-state channel; no-worse drift,
                                      # likely-better prediction (single-seed hedge)
+--w-o14 1.0 --o14-mode fut --o14-k 4 # R2 ADOPTED 2026-08-28 (E-DEC-67, ABSORBED):
+                                     # the future-observation aux removes the
+                                     # E-DEC-63 pixel-marginal (+0.0096 t5.11 ->
+                                     # -0.0047 t-3.09); gates held (drift ~band,
+                                     # nrmse +2.1%). ⚠️ anti-DISPLACEMENT only —
+                                     # drift itself UNCHANGED (0.671 ~ 0.669); the
+                                     # drift attractor stays the open front (P0).
                                      # corpus: physicalai-train-e438721ae894 (PARITY)
 ```
 
