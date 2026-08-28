@@ -45,3 +45,35 @@ EMA-BETTER, the 30k pair inherits those questions.
 **Cost:** 2 arms × ~35 min Thor, after `o14fut30k` vacates. The two-term incumbent
 is NOT retrained — `o14base2k` is bit-comparable by construction (verify: config
 diff must show only `--o5-target` and seed).
+
+---
+
+## OUTCOME — read 2026-08-28 ~10:30 (both arms chain-run overnight, config-diff CLEAN)
+
+**🔶 MIXED — the axes disagree; per the committed table: the numbers, no verdict (C160).**
+All MEASURED (dev-box 4060, T0-DIAGNOSTIC), raws `p0_drift.json` / `p0_nrmse.json`:
+
+| read | o14base2k (two-term) | ema2k_s0 | ema2k_s1 | seed spread |
+|---|---|---|---|---|
+| drift r | 0.4531 (t 45.18) | **0.4002** (t 34.20) | **0.3644** (t 29.93) | 0.0358 |
+| meanpred nrmse | 0.9876 | 0.9912 | 0.9954 | 0.0042 |
+| cos (centred) | 0.1845 | **0.1336** | **0.0979** | 0.0357 |
+
+- **Drift: BETTER on both seeds, beyond the seed spread** (smallest gap to base 0.0529 >
+  spread 0.0358; −11.7 % / −19.6 % rel). ⭐ This is the **first measured lever that moves
+  drift downward on the trainable line at any scale** (A7/k4 and O14 both left it flat).
+- **Prediction: WORSE on both seeds, beyond the seed spread on cos** (−27.6 % / −46.9 %
+  rel; base−s0 gap 0.0509 > spread 0.0357). nrmse worse by +0.4 %/+0.8 % (small; every 2k
+  arm sits at the mean-predictor floor per the scale-facts).
+- EMA-BETTER fails on "nrmse/cos not worse"; EMA-WORSE fails on "drift higher". ⇒ MIXED.
+- **Participation was NOT read** — neither probe emits it; recorded as an instrument gap
+  (a missing read is a work item, not a silent omission). At 2k with a MIXED no-verdict
+  it does not change the outcome class.
+
+**HYPOTHESIS (unread, stated for the record):** an EMA teacher lags the student most at
+the START of training — at 2k the target is dominated by near-random early weights, so
+the cos cost may be a warmup transient rather than a real trade. Discriminating: a 30k
+matched pair, where the teacher has converged. **Not auto-escalated** (only EMA-BETTER
+escalates by the committed table); the 30k-pair question goes to the PI as a
+decision-with-default in the midday report (default: run it after the v7r launch decision,
+Thor is idle).
