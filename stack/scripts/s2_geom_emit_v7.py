@@ -292,6 +292,8 @@ def tactical_goals(poses, key, seq, cot, hz=HZ, lat_action=None,
     # ego went the other way. The lateral axis is one geometry MEASURES, so a
     # sentence cannot outvote it; the exit token is dropped rather than
     # emitted as a contradiction for a consumer to resolve.
+    _cot_goals = COT.goals_from_cot(cot)
+    _both_exit_sides = ("TAKE_EXIT_L" in _cot_goals and "TAKE_EXIT_R" in _cot_goals)
     geom_side = next((AF.side_of(k) for k in goals
                       if k.startswith(("TURN_", "YIELD_FOR_TURN_"))), None)
     _SIDED = {"TAKE_EXIT_L": "left", "TAKE_EXIT_R": "right",
@@ -320,6 +322,12 @@ def tactical_goals(poses, key, seq, cot, hz=HZ, lat_action=None,
         if t in _LATERAL_EVIDENCE and not nudging:
             continue
         if (geom_side and t in _SIDED and _SIDED[t] != geom_side):
+            continue
+        # ⛔ THE CoT NAMED BOTH SIDES — that is ambiguity, not two exits.
+        # 1 clip (`32d2a7cb`) emitted TAKE_EXIT_L and TAKE_EXIT_R together, a
+        # forbidden pair. When the source cannot say which side, the honest
+        # output is NEITHER, not a coin flip between them.
+        if t.startswith("TAKE_EXIT_") and _both_exit_sides:
             continue
         stem = t.split("_")[0].lower()
         basis = ("segment" if timed_terms and stem in timed_terms else
@@ -369,7 +377,20 @@ def tactical_actions(poses, key, seq, hz=HZ):
     # described the plan as an acceleration. The plan's first obligation is to
     # reach the stop.
     stopping = bool(EM.stop_episodes(poses[key:key + n + 1, 3], hz))
-    if m.v_at_key <= V_STOP_MS and m.v_end <= V_STOP_MS:
+
+    # ⛔ A BAND THAT NEVER EXCEEDS WALKING PACE IS NOT AN ACCELERATION.
+    # MEASURED 2026-08-28: the last 5 STOP_POINT-with-non-braking clips were all
+    # the same shape — ego AT REST at the anchor (`within_m 0.0`), a 1.3-3.7 s
+    # hold, then creeping away. Their whole 2-6 s band tops out at 1.0-1.2 m/s,
+    # yet dv over the plan lands in [1.0, 1.5) and falls through to the final
+    # else -> ACCELERATE. A vehicle going from 0.1 to 1.1 m/s is CREEPING, and
+    # calling it an acceleration reads as "the plan is to speed up".
+    lo_i = key + int(round(TACTICAL_S[0] * hz))
+    band_v = poses[lo_i:key + n + 1, 3]
+    band_max = float(band_v.max()) if len(band_v) else float(m.v_end)
+    if band_max <= 2.0:
+        lon = "HOLD" if band_max <= V_STOP_MS else "CREEP"
+    elif m.v_at_key <= V_STOP_MS and m.v_end <= V_STOP_MS:
         lon = "HOLD"
     elif stopping and m.v_at_key > V_STOP_MS:
         lon = "BRAKE_TO"
@@ -606,6 +627,29 @@ def nav_command(poses, key, seq, hz=HZ):
             "provenance": "ego-future", "oracle": True}
 
 
+def _scene_presence(clip_id: str) -> dict:
+    """What Alpamayo's 2D boxes prove is VISIBLE — never what the ego did.
+
+    ⚠️ One sampled grounding question per clip, so ABSENCE here is not evidence
+    of absence: 3,246 clips with boxes were never asked about pedestrians. The
+    `asked` field records what the clip was actually questioned about, so a
+    consumer can tell "not present" from "not asked".
+    """
+    c = AR.get(clip_id)
+    if not c:
+        return {"asked": None, "visible": [], "boxes_norm1000": []}
+    return {
+        "asked": c.box_question,
+        "visible": c.box_labels(),
+        "traffic_light_visible": c.grounded("traffic_light"),
+        "vru_visible": c.grounded("vru"),
+        "vehicle_visible": c.grounded("vehicle"),
+        # 0-1000 normalised, as stored — see `AlpamayoClip.boxes_px`
+        "boxes_norm1000": [{"label": lab, "bbox": b} for _q, lab, b in c.boxes],
+        "provenance": "alpamayo-grounding-box",
+    }
+
+
 def _alpamayo_layer(clip_id: str, poses, key, goals: dict) -> dict:
     """Corroborate, ground and enrich — never overwrite geometry.
 
@@ -670,6 +714,17 @@ def _alpamayo_layer(clip_id: str, poses, key, goals: dict) -> dict:
             if tok == "EVADE_IN_CORRIDOR" and goals.get("_lat") not in (
                     "NUDGE_L", "NUDGE_R"):
                 continue
+            # ⛔ THIS LAYER MUST RESPECT THE EXCLUSION MATRIX TOO.
+            # MEASURED 2026-08-28: `32d2a7cb`'s CoT says "split to the RIGHT"
+            # and the CoT path correctly emitted only TAKE_EXIT_R — then this
+            # layer added TAKE_EXIT_L from a segment type, producing the
+            # forbidden pair. A back door that bypasses the matrix is the same
+            # defect as the lateral-evidence back door fixed earlier: every
+            # path that ADDS a goal must obey the same rules.
+            if any(tok in pair and other in goals
+                   for pair in V7.TACTICAL_GOAL_EXCLUSIVE
+                   for other in pair if other != tok):
+                continue
             if tok in ("EVADE_IN_CORRIDOR", "TAKE_EXIT_L", "TAKE_EXIT_R",
                        "MERGE", "YIELD"):
                 goals[V7.assert_frozen(tok, where="alpamayo-structured")] = {
@@ -714,6 +769,12 @@ def emit_one(clip_id: str, *, sem_row=None) -> dict:
     goals.pop("_lat", None)
     # ⭐ THE FUSION GATE: a CoT token backed by a BOX is no longer `disputed`.
     goals = AF.ground_tokens(clip_id, goals)
+    # ⭐ second evidence tier, kept SEPARATE from `grounded` (box = perception,
+    # component = a second text claim). Raises corroboration of checkable
+    # tokens from 41.1 % to 70.1 % without conflating the two classes.
+    for _t, _a in goals.items():
+        if isinstance(_a, dict) and _a.get("provenance") == "vlm-cot":
+            _a.update(AF.corroborate(clip_id, _t, _a))
     viol = V7.validate_goal_set(goals)          # re-check after the additions
     g_str, a_str = strategic(poses, key, seq, HZ)
     return {
@@ -756,6 +817,21 @@ def emit_one(clip_id: str, *, sem_row=None) -> dict:
                             if AR.get(clip_id) else None),
             "conflict": AF.cot_conflict(clip_id),
         },
+        # ⭐ SCENE PRESENCE FROM THE BOXES — perception facts, NOT goal tokens.
+        # MEASURED 2026-08-28: 710 clips carry a traffic-light BOX and no
+        # traffic-light token. That is NOT a missed reaction and must not be
+        # converted into one: at box area >= 500 the ego brakes on 21.4 % of
+        # them against a CORPUS BASE RATE OF 25.3 % — and even the clips that
+        # DO carry a token brake at only 26.1 %. The behavioural leg carries no
+        # lift whatsoever, so "large light + braking" would have manufactured
+        # ~43 labels out of chance (the C136 base-rate artefact again; the
+        # control caught it before it shipped).
+        #
+        # ⇒ The box proves the object is VISIBLE. Nothing available proves the
+        # ego REACTED, and `TRAFFIC_LIGHT_REACT` is a reaction token. Presence
+        # is therefore recorded HERE, as scene context a consumer may use, and
+        # never promoted to a goal.
+        "scene": _scene_presence(clip_id),
         "semantics": (SEM.extract(cot).as_dict() if cot else None),
         "cot_tokens": COT.extract(cot).as_dict() if cot else None,
         "horizon": {"available_s": round(tr.horizon_available_s, 1),

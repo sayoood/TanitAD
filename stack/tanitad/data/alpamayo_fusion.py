@@ -296,6 +296,48 @@ def cot_conflict(clip_id: str) -> dict:
             "cot": c.cot, "chain_of_causation": c.chain_of_causation}
 
 
+def corroborate(clip_id: str, token: str, args: dict) -> dict:
+    """A SECOND, clearly-separated evidence tier for a CoT token.
+
+    ⚠️ CORRECTS A NUMBER I PUBLISHED. I reported box grounding at "~13 % of CoT
+    tokens" and called it a ceiling. That was the WRONG DENOMINATOR — it counted
+    every CoT token, including those with no checkable object at all (a `YIELD`
+    whose reason is a sign has nothing a box could confirm). Over the tokens
+    that DO name a checkable object kind, box grounding is **41.1 %**
+    (755/1,835).
+
+    ⭐ And a second source exists. `critical_components_analysis` names the
+    object that forces the behaviour, and it comes from a DIFFERENT Alpamayo
+    task (`auto_labeling`) than the boxes (`grounding_via_vqa`). It corroborates
+    **50.2 %**, and either source reaches **70.1 %**.
+
+    ⛔ THEY ARE NOT THE SAME EVIDENCE CLASS AND ARE NEVER MERGED INTO ONE FLAG.
+    A box is IMAGE-SPACE PERCEPTION; a named component is a SECOND TEXT CLAIM by
+    the same model family. `grounded` keeps meaning box-only, and this returns a
+    separate `corroboration` tier so a consumer can require perception where
+    perception is what it needs.
+    """
+    from . import alpamayo_structured as AST
+    KIND = {"TRAFFIC_LIGHT_REACT": "traffic_light",
+            "TRAFFIC_LIGHT_REACT_RED": "traffic_light",
+            "TRAFFIC_LIGHT_REACT_GREEN": "traffic_light",
+            "TRAFFIC_LIGHT_REACT_YELLOW": "traffic_light",
+            "OVERTAKE_VEHICLE": "vehicle", "REACT_ON_ONCOMING": "vehicle",
+            "GAP_TARGET": "vehicle", "MERGE": "vehicle"}
+    kind = KIND.get(token) or _EVADE_GROUND.get(
+        str(args.get("obstacle_class", "")).lower())
+    if not kind:
+        return {"corroboration": "not_checkable",
+                "reason": "no object kind a box or component could confirm"}
+    by_box = bool(args.get("grounded"))
+    kinds = {c.kind for c in AST.critical_components(clip_id) if c.kind}
+    by_comp = kind in kinds
+    tier = ("both" if by_box and by_comp else
+            "box" if by_box else "component" if by_comp else "none")
+    return {"corroboration": tier, "object_kind": kind,
+            "by_box_perception": by_box, "by_named_component": by_comp}
+
+
 def cot_text(clip_id: str) -> str:
     """The richest CoT text available for term extraction.
 

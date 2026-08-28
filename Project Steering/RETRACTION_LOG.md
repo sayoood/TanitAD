@@ -9571,3 +9571,74 @@ regression set is `pytest -q` entire, not a hand-picked list; the hand-picked
 list is exactly how 37 of the 46 escaped. The mandate's measured cost is now
 itself pinned: +5,130 params (refc geometry) / +5,775 (production geometry),
 head-only, both rungs.
+
+---
+
+## DE-C150 ⛔ — THE FOUR OPEN ITEMS CLOSED, AND TWO OF MY OWN NUMBERS WERE WRONG (PI, 2026-08-28)
+
+The PI asked to solve the four open items from the label report. Two were real
+defects, one was a wrong denominator of mine, and one turned out not to be
+possible from the artifact at all.
+
+**(1) "Traffic lights under-read on rich scenes — a source-coverage limit."**
+⚠️ **The framing was wrong: 710 clips carry a traffic-light BOX and no
+traffic-light token.** The evidence exists. ⛔ **But converting it was refuted by
+a control.** A visible light is not a reacted-to light, so the candidate rule was
+"large box + braking". Box area does separate (783 vs 210 median, 3.7x) — but:
+
+| | braking rate |
+|---|---|
+| light-box clips WITH a token | 26.1 % |
+| light-box clips WITHOUT a token | 21.4 % |
+| **CORPUS BASE RATE** | **25.3 %** |
+
+No lift, in either direction — the behavioural leg carries nothing, and the rule
+would have manufactured ~43 labels out of chance. Same shape as C136.
+⇒ Resolved by recording box-derived **presence** in a new `scene` block
+(`traffic_light_visible`, `vru_visible`, `vehicle_visible`, the boxes, and
+`asked`), explicitly NOT a goal. The box proves the object is VISIBLE; nothing
+available proves the ego REACTED, and `TRAFFIC_LIGHT_REACT` is a reaction token.
+
+**(2) Goal/action contradictions: 0.40 % -> 0.000 % (0 of 4,719).** Two roots:
+* **5 clips**: ego AT REST at the anchor creeping away at ~1 m/s, labelled
+  `ACCELERATE` because dv over the plan lands in [1.0, 1.5) and falls through to
+  the final else. **A tactical band whose maximum speed is 1.2 m/s cannot be an
+  acceleration** — now `HOLD`/`CREEP` on a band-max test. (CREEP 63 -> 141,
+  HOLD 77 -> 133.)
+* **1 clip**: the CoT said "split to the RIGHT" and the CoT path correctly
+  emitted only `TAKE_EXIT_R`; the **structured-segment layer then added
+  `TAKE_EXIT_L`**, a forbidden pair. That layer bypassed the exclusion matrix
+  entirely — the same back-door defect as the lateral-evidence bypass fixed
+  earlier. ⇒ **every path that ADDS a goal now checks the matrix.**
+
+**(3) ⚠️ "Grounding reaches only ~13 % of CoT tokens" — MY DENOMINATOR WAS
+WRONG.** That counted EVERY CoT token, including ones with no checkable object
+(a `YIELD` whose reason is a sign has nothing a box could confirm). Over tokens
+that name a checkable object kind it is **41.1 % (755/1,835)**. I reported a rate
+over the wrong population and then called it a ceiling.
+⭐ And a second source exists: `critical_components_analysis` names the forcing
+object and comes from a DIFFERENT task (`auto_labeling`) than the boxes
+(`grounding_via_vqa`) — it corroborates **50.2 %**, and **either source reaches
+70.1 %**. ⛔ Kept as a SEPARATE tier (`corroboration: both|box|component|none|
+not_checkable`): a box is image-space PERCEPTION, a named component is a second
+TEXT claim by the same model family. `grounded` still means box-only, so a
+consumer can require perception where perception is what it needs.
+
+**(4) "Alpamayo's `trajectory` task is unused."** ⛔ **It cannot be used from
+this artifact — the predicted path is NOT in the export.** `records.parquet`
+carries only `*_shape` fields (`pred_xyz_shape [1,1,1,64,3]`,
+`ego_future_xyz_shape [1,1,64,3]`) plus rendering metadata and error scalars;
+the arrays live wherever the augmentation was generated. `ade_m` is populated on
+**255/4,729 rows (5.4 %)**.
+The one idea it could still serve — ADE as a per-clip reliability weight for the
+CoT — **CANNOT BE RULED ON**: lateral difference +0.053 (permutation p = 0.428),
+longitudinal +0.036 (p = 0.594), and **underpowered by 13x** — detecting a
+5-point difference at 80 % power needs ~1,566 per group and we have 123.
+⇒ Not a null result. Stated as cannot-rule, with the n it would take. Using it
+would need a re-export carrying the arrays.
+
+**ROOT-CAUSE CLASSES:** (1) is the C136 base-rate family — a plausible
+conjunction with no lift, caught only because a control was run. (3) is a
+DENOMINATOR error: a rate is meaningless until the population it is over is
+named, and I named it wrongly. (4) is the C9/C13/C14 family — an instrument
+structurally unable to answer the question it is cited for.
