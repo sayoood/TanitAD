@@ -88,7 +88,20 @@ def main(argv=None) -> int:
         # *.parquet) makes a NAMED file drop SILENTLY from the commit, violating
         # the refuse-or-commit guarantee. MEASURED twice 2026-08-29 (the cy table
         # and frames_provenance.parquet each needed a manual plumbing rescue).
-        _git("add", "-f", "--", *a.paths, env=env)
+        # ⛔ -f ONLY for explicitly NAMED FILES. A named file is intentional by
+        # this tool's contract, so a gitignore rule must not silently drop it
+        # (MEASURED 2026-08-29: the repo-wide *.parquet rule dropped two named
+        # files from their commits at exit 0). But a DIRECTORY pathspec means
+        # "whatever is inside", and forcing there overrides .gitignore for the
+        # whole subtree — which swept 284 then 287 .pyc artifacts into two
+        # commits the same night. Directories keep gitignore; files do not.
+        import os as _os
+        _files = [q for q in a.paths if _os.path.isfile(q)]
+        _dirs = [q for q in a.paths if not _os.path.isfile(q)]
+        if _files:
+            _git("add", "-f", "--", *_files, env=env)
+        if _dirs:
+            _git("add", "--", *_dirs, env=env)
         tree = _git("write-tree", env=env)
 
         head = _git("rev-parse", "HEAD")
