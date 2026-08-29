@@ -96,3 +96,37 @@ LIFTED** for the ladder as amended.
 5. Implementation verified: 18-test suite incl. the analytic innovation anchor
    (z_{t+1}=z_t ⇒ innovation-EP ~10 vs plain ~1) and a cross-fit leak test; 213-test
    battery green; known benign doubled resync at the init-load sites recorded.
+
+---
+
+## L1 OUTCOME — innovation-SIGReg, read 2026-08-29 ~22:10 (MEASURED, T0-DIAGNOSTIC)
+
+| read | e4_l1_inno | base o14fut10 | verdict |
+|---|---|---|---|
+| **drift r** | **0.3551** (t 26.6) | 0.4733 (t 47.9) | **−25.0 % — the largest drift reduction ever measured on the trainable line** |
+| cos (centred) | **0.0108** | 0.2462 | **−95.6 %** ⛔ |
+| nrmse | **1.0162** | 0.9746 | **>1.0 — WORSE THAN THE MEAN PREDICTOR** ⛔ |
+
+**Verdict: PRED-PAYS ⇒ FAILED**, by the pre-committed protection (any cell paying >5 %
+cos fails regardless of drift). The protection did exactly the job E-DEC-69 bought it for.
+
+⛔ **THE MECHANISM, and it is the point of the result:** the constraint and the primary
+metric are nearly the same quantity. SIGReg-on-innovations demands Δz − g(z_t) be
+isotropic-Gaussian; an encoder satisfies that most easily by making Δz **temporally
+structureless** — at which point drift (the ridge-predictability of Δz from z_t) is low
+BY CONSTRUCTION and prediction is impossible BY CONSTRUCTION. nrmse > 1.0 is the
+signature: the latent's motion became noise. **This is the tune-on-what-you-score family
+in objective form** — a regulariser aimed at the statistic the read measures.
+⇒ **Standing consequence: DRIFT ALONE IS NEVER A VALID OBJECTIVE.** Any future
+anti-drift lever is admissible only with the prediction protection attached; a drift
+number quoted without its cos/nrmse pair is inadmissible.
+
+⭐ **HYPOTHESIS raised (NOT established — n=2, different mechanisms, different scales):
+drift and prediction quality may be POSITIVELY COUPLED rather than independent.** Every
+measurement so far points the same way: EMA at 30k *raised* drift (+3.6 %) and *raised*
+prediction (+24.5 %); innovation-SIGReg at 2k *lowered* drift (−25 %) and *destroyed*
+prediction (−95.6 %). If that coupling is real, the programme's target is not "minimise
+drift" but **the residual — prediction quality AT MATCHED DRIFT**, i.e. a frontier, and
+the dissociation blocker should be restated in those terms. Discriminating test: the
+remaining ladder arms (L2 frozen-teacher and L4 crop constrain the TARGET, not the
+innovations) — if they also trade along the same line, the coupling is mechanism-independent.
