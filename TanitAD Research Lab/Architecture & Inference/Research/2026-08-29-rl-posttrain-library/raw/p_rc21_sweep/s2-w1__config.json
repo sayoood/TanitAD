@@ -1,0 +1,95 @@
+{
+ "method": "grpo",
+ "group_size": 4,
+ "normalize": "none",
+ "w_intra": 1.0,
+ "w_inter": 1.0,
+ "kl_coef": 0.0,
+ "awr_beta": 1.0,
+ "noise_mode": "multiplicative",
+ "noise_scale": 0.1,
+ "ttc_min_s": 1.5,
+ "veto_value": -1.0,
+ "w_anchor": 1.0,
+ "anchor_form": "l2",
+ "train_mode_forward": false,
+ "reward_weights": {
+  "progress": 0.3,
+  "collision": 1.0,
+  "headway": 0.3,
+  "feasibility": 0.5,
+  "comfort": 0.2
+ },
+ "dt": 0.5,
+ "lr": 1e-05,
+ "steps": 2000,
+ "batch": 2,
+ "grad_clip": 1.0,
+ "seed": 0,
+ "w_imitation": 0.0,
+ "freeze_trunk": true,
+ "trainable_prefixes": [
+  "decoder"
+ ],
+ "forbidden_prefixes": [
+  "decoder.conf_head",
+  "scorer"
+ ],
+ "exclude_prefixes": [
+  "decoder.conf_head"
+ ],
+ "decoder_steps": 2,
+ "out_dir": "C:/Users/Admin/tanitad-data/rl-pilot/sweep-s2-w1",
+ "run_name": "p-rc21-default",
+ "save_every": 250,
+ "_requirements": {
+  "needs": "a scalar reward per sampled trajectory + >=2 samples per group",
+  "have": true,
+  "why": "rule-based rewards (collision / feasibility / headway / comfort) are computable from geometry + GT scene facts, and the diffusion decoder can be sampled G times per anchor under exploration noise"
+ },
+ "_evidence_class": "MEASURED (ours; this run's own configuration)",
+ "_tier": "training-side config; capability claims are T1 only (EVAL_DOCTRINE.md)",
+ "freeze_report": {
+  "total_params": 104191577,
+  "trainable_params": 8634120,
+  "frozen_params": 95557457,
+  "trainable_fraction": 0.08286773507612809,
+  "n_trainable_tensors": 68,
+  "trainable_names_head": [
+   "decoder.feat_proj.weight",
+   "decoder.feat_proj.bias",
+   "decoder.traj_proj.weight",
+   "decoder.traj_proj.bias",
+   "decoder.cond_proj.weight",
+   "decoder.cond_proj.bias",
+   "decoder.time_embed.weight",
+   "decoder.layers.0.norm_q.weight",
+   "decoder.layers.0.norm_q.bias",
+   "decoder.layers.0.cross.in_proj_weight",
+   "decoder.layers.0.cross.in_proj_bias",
+   "decoder.layers.0.cross.out_proj.weight"
+  ],
+  "trainable_prefixes": [
+   "decoder"
+  ],
+  "forbidden_prefixes": [
+   "decoder.conf_head",
+   "scorer"
+  ],
+  "exclude_prefixes": [
+   "decoder.conf_head"
+  ],
+  "excluded_names": [
+   "decoder.conf_head.weight",
+   "decoder.conf_head.bias"
+  ],
+  "freeze_trunk": true
+ },
+ "reward_weights_in_force": {
+  "progress": 0.3,
+  "collision": 1.0,
+  "headway": 0.3,
+  "feasibility": 0.5,
+  "comfort": 0.2
+ }
+}

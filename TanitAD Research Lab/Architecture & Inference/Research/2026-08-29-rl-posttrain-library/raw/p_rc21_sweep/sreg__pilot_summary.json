@@ -1,0 +1,78 @@
+{
+ "done": true,
+ "run": "p-rc21-hackable",
+ "method": "grpo",
+ "steps": 300,
+ "counters": {
+  "steps": 300,
+  "windows_scored": 600,
+  "samples_scored": 307200,
+  "reward_evals": 300,
+  "advantage_evals": 300,
+  "optimizer_steps": 300,
+  "components_fired": {
+   "progress": 300
+  }
+ },
+ "freeze_report": {
+  "total_params": 104191577,
+  "trainable_params": 8634120,
+  "frozen_params": 95557457,
+  "trainable_fraction": 0.08286773507612809,
+  "n_trainable_tensors": 68,
+  "trainable_names_head": [
+   "decoder.feat_proj.weight",
+   "decoder.feat_proj.bias",
+   "decoder.traj_proj.weight",
+   "decoder.traj_proj.bias",
+   "decoder.cond_proj.weight",
+   "decoder.cond_proj.bias",
+   "decoder.time_embed.weight",
+   "decoder.layers.0.norm_q.weight",
+   "decoder.layers.0.norm_q.bias",
+   "decoder.layers.0.cross.in_proj_weight",
+   "decoder.layers.0.cross.in_proj_bias",
+   "decoder.layers.0.cross.out_proj.weight"
+  ],
+  "trainable_prefixes": [
+   "decoder"
+  ],
+  "forbidden_prefixes": [
+   "decoder.conf_head",
+   "scorer"
+  ],
+  "exclude_prefixes": [
+   "decoder.conf_head"
+  ],
+  "excluded_names": [
+   "decoder.conf_head.weight",
+   "decoder.conf_head.bias"
+  ],
+  "freeze_trunk": true
+ },
+ "train_mode_forward": false,
+ "reward_audit": {
+  "verdict": "clean",
+  "flagged": false,
+  "inconclusive": false,
+  "dead_components": [],
+  "reason": "no degenerate policy in the panel beats the sane reference (this is necessary, NOT sufficient \u2014 the panel is fixed and finite, so it bounds the claim)",
+  "reference": 1.5,
+  "scores": {
+   "bullet_straight": 1.5,
+   "frozen": 0.0,
+   "teleport": 1.5,
+   "spinner": -0.010409737005829811,
+   "shaky": 1.5
+  }
+ },
+ "final_loss": -0.24417603015899658,
+ "_tier": "T0 training-side; capability claims are T1 only",
+ "_evidence_class": "MEASURED (ours)",
+ "pilot_delta": {
+  "R1": -0.2711985527227323,
+  "R2": -0.0024088541666666685,
+  "R3_rel": 0.6540056893380315
+ },
+ "w_anchor": 0.0
+}
