@@ -130,3 +130,20 @@ drift" but **the residual — prediction quality AT MATCHED DRIFT**, i.e. a fron
 the dissociation blocker should be restated in those terms. Discriminating test: the
 remaining ladder arms (L2 frozen-teacher and L4 crop constrain the TARGET, not the
 innovations) — if they also trade along the same line, the coupling is mechanism-independent.
+
+## L2 OUTCOME — frozen-teacher, read 2026-08-29 ~23:30 (MEASURED, T0-DIAGNOSTIC)
+
+| read | e4_l2_frozen | base o14fut10 | verdict |
+|---|---|---|---|
+| **drift r** | **0.3238** (t 25.4) | 0.4733 (t 47.9) | **−31.6 % — larger than L1's −25.0 %** |
+| cos (centred) | 0.0377 | 0.2462 | −84.7 % ⛔ |
+| nrmse | **10.9050** | 0.9746 | ⛔⛔ **11× the target's own scale** — not merely worse than the mean predictor, DEGENERATE |
+
+**Verdict: PRED-PAYS ⇒ FAILED**, and by a wider margin than L1.
+
+⚠️ **The mechanism differs from L1's and that matters.** L1 destroyed temporal
+structure (Δz → noise; nrmse → 1.0, the zero-predictor bound). L2's nrmse **10.9** is a
+different pathology: a **frozen** target space that the live encoder drifts away from, so
+the predictor is trained toward coordinates the encoder no longer occupies and its
+outputs lose scale calibration entirely. Same class of outcome — a degenerate latent —
+reached by a different route.
