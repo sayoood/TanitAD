@@ -1,7 +1,7 @@
 # TanitScena — TanitAD's scenario-database web app
 
 Turns the Opponent-Analyzer **Opponent-Weakness Scenario Database**
-(`TanitAD Research Hub/Opponent Analyzer/SCENARIO_DATABASE.md` — the SC-01..SC-14
+(`TanitAD Research Lab/Opponent Analyzer/SCENARIO_DATABASE.md` — the SC-01..SC-14
 catalogue of documented opponent "dumb situations") into a searchable,
 browsable, **visual** single-port app with **local semantic (vector) search**.
 Commissioned by Sayed (D-029). Self-contained, pod-servable, no build step, no
@@ -94,7 +94,7 @@ Single plain-HTTP port — proxy-friendly:
 
 ```
 python scripts/scena_app.py --port 8890 \
-    --db-md "TanitAD Research Hub/Opponent Analyzer/SCENARIO_DATABASE.md"
+    --db-md "TanitAD Research Lab/Opponent Analyzer/SCENARIO_DATABASE.md"
 ```
 
 Then open the proxied URL:

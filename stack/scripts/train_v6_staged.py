@@ -98,6 +98,18 @@ from collections import deque
 from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 
+# ⛔ P4-9 — THIS MUST PRECEDE `import torch`. torch reads OMP_NUM_THREADS when it
+# initialises its thread pool AT IMPORT; setting it afterwards changes the
+# environment and nothing else. It previously ran inside main(), ~7,700 lines
+# below the import, so the "113 threads per process" guard it documents was
+# INERT — the pool had already been sized. MEASURED 2026-07-27: 7 concurrent
+# arms sat at GPU sm 0-6 % for 50 minutes with zero progress; the same arm with
+# OMP_NUM_THREADS=6 finished in 232 s.
+# ``setdefault`` so an explicit value from the launcher still wins; the resolved
+# value is recorded in `run_provenance` so it can never be a silent difference
+# between two "identical" arms.
+os.environ.setdefault("OMP_NUM_THREADS", "6")
+
 import torch
 from torch import Tensor
 
@@ -4717,6 +4729,49 @@ def _warn_rank_gate_unrulable(a, stack: V6Stack) -> None:
             "meant to gate this stage. (P4-1)")
 
 
+def resolve_amp_dtype(dev_type: str, want_amp: bool) -> dict:
+    """Resolve the autocast dtype by PROBING, never by assumption (P4-8).
+
+    ``torch.bfloat16`` was hardcoded with no capability check. bf16 autocast
+    needs Ampere or newer; on anything older the run either errors or silently
+    degrades, and nothing in the artifacts said which dtype was in force.
+
+    ⛔ WHY THE FALLBACK IS fp32 AND NOT fp16. fp16 autocast REQUIRES a
+    ``GradScaler`` -- without one, gradients underflow to zero and training
+    quietly produces a worse model rather than failing. Adding an
+    fp16+GradScaler path here would be a branch that NEVER RUNS on any machine
+    we own (A40, RTX 4060 and Thor are all bf16-capable), i.e. an unexercised
+    code path in the step loop, which is precisely the dead-flag defect P4-5
+    just removed. Falling back to fp32 is slower and CORRECT. If a non-bf16
+    target ever matters, implement fp16+GradScaler as its own change, with a
+    test that actually exercises it.
+
+    Returns a record, not a bare dtype: the resolved choice and the REASON go
+    into `config.json`, so two runs on two machines can never differ silently
+    in numerical precision.
+    """
+    if not want_amp or dev_type != "cuda":
+        return {"dtype": None, "name": "fp32", "autocast": False,
+                "bf16_supported": None,
+                "reason": ("AMP disabled by --no-amp" if not want_amp
+                           else f"device is {dev_type!r}, not cuda")}
+    try:
+        ok = bool(torch.cuda.is_bf16_supported())
+    except Exception as exc:                                    # noqa: BLE001
+        ok = False
+        probe = f"probe failed ({type(exc).__name__}), assuming NO bf16"
+    else:
+        probe = "torch.cuda.is_bf16_supported()"
+    if ok:
+        return {"dtype": torch.bfloat16, "name": "bf16", "autocast": True,
+                "bf16_supported": True, "reason": probe}
+    return {"dtype": None, "name": "fp32", "autocast": False,
+            "bf16_supported": False,
+            "reason": (f"{probe} -> False; falling back to fp32. fp16 is NOT "
+                       "used because it needs a GradScaler this trainer does "
+                       "not have (see P4-8).")}
+
+
 def run_provenance(device=None) -> dict:
     """WHO/WHERE/WHAT-CODE produced this run. Never raises (P4-4).
 
@@ -4785,6 +4840,13 @@ def run_provenance(device=None) -> dict:
         "gpu_capability": _safe(lambda: str(torch.cuda.get_device_capability(0))
                                 if torch.cuda.is_available() else "n/a"),
         "device_resolved": str(device) if device is not None else "unset",
+        # ⭐ P4-9 — the RESOLVED thread settings. OMP_NUM_THREADS is read by
+        # torch AT IMPORT, so its value is a run fact that cannot be recovered
+        # afterwards from the launch line if a launcher set it.
+        "omp_num_threads": os.environ.get("OMP_NUM_THREADS", "<unset>"),
+        "torch_num_threads": _safe(lambda: torch.get_num_threads()),
+        "bf16_supported": _safe(lambda: bool(torch.cuda.is_bf16_supported())
+                                if torch.cuda.is_available() else None),
         # ⚠️ TIMEZONE-AWARE ON PURPOSE. Pods and logs run UTC while the PI reads
         # Europe/Berlin; a naive timestamp has been read as a broken clock more
         # than once. ``astimezone()`` on a UTC-aware stamp yields the LOCAL zone
@@ -4869,6 +4931,10 @@ def train(a) -> dict:
               flush=True)
         device = "cpu"
     amp_on = (device == "cuda") and not a.no_amp
+    # (P4-8) resolve the autocast dtype ONCE, by probe, and announce it.
+    amp_spec = resolve_amp_dtype("cuda" if device == "cuda" else "cpu", amp_on)
+    print(f"[v6] autocast: {amp_spec['name']} "
+          f"(autocast={amp_spec['autocast']}) — {amp_spec['reason']}", flush=True)
 
     # ---- X5 precondition BEFORE anything expensive -------------------------
     pre = assert_stage_precondition(
@@ -5726,8 +5792,9 @@ def train(a) -> dict:
             # the join was precomputed per episode, so this is O(batch).
             batch |= {kk: v.to(device)
                       for kk, v in s2_sup.batch(idx).items()}
-        with torch.autocast(dev_type, dtype=torch.bfloat16,
-                            enabled=amp_on and dev_type == "cuda"):
+        with torch.autocast(dev_type,
+                            dtype=amp_spec["dtype"] or torch.float32,
+                            enabled=bool(amp_spec["autocast"])):
             L = v6_loss_step(stack, batch, stage=a.stage, weights=weights,
                              o1_k=a.o1_k, o5_k=a.o5_k, o5_mode=a.o5_mode,
                              o5_form=getattr(a, "o5_form", "l1"), sigreg_bank=sigreg_bank,
@@ -7827,7 +7894,8 @@ def main(argv=None) -> int:
     ap.add_argument("--i-know-this-is-the-control-arm", action="store_true",
                     dest="control_arm_ack", help=argparse.SUPPRESS)
     a = ap.parse_args(argv)
-    os.environ.setdefault("OMP_NUM_THREADS", "6")   # the 113-threads trap
+    # (P4-9) OMP_NUM_THREADS moved to the module header, BEFORE `import torch`.
+    # Setting it here was too late to size torch's thread pool.
     if a.print_launch:
         print(_launch_line(a))
         return 0

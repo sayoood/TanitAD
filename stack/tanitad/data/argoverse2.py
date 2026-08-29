@@ -159,7 +159,7 @@ archives are individually addressable and need no tar:
     datasets/av2/sensor/{{train,val,test}}/<log_id>/map/log_map_archive_*.json
 
 Reproducible puller (anonymous, verifies size + MD5 + parse on every file):
-    TanitAD Research Hub/Data Engineering/Implementation/incoming/
+    TanitAD Research Lab/Data Engineering/Implementation/incoming/
       2026-07-26-av2-zod-ingest/evidence/av2_pull_sensor_lane_graphs.py
 
 DEV-BOX TRAP: bare curl here fails with CRYPT_E_NO_REVOCATION_CHECK and reports

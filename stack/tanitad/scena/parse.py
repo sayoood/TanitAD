@@ -1,7 +1,7 @@
 """SCENARIO_DATABASE.md -> structured ``Scenario`` dicts.
 
 The Opponent-Weakness Scenario Database is authored by hand in Markdown
-(``TanitAD Research Hub/Opponent Analyzer/SCENARIO_DATABASE.md``): one ``##
+(``TanitAD Research Lab/Opponent Analyzer/SCENARIO_DATABASE.md``): one ``##
 SC-xx — <title> [W-xx] ★★★`` heading per scenario, then a set of
 ``- **Field:** value`` bullets (Opponent evidence, Description, TanitAD
 mechanism, Data sources, Metric hooks, Status).

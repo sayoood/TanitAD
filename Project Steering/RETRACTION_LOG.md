@@ -10343,3 +10343,37 @@ NON-ZERO COUNT is part of the pass criterion — RC=0 also means "nothing ran"; 
 already noticed.** My wrong filenames were真 and salient, so I stopped there — the
 explanation FIT without being TESTED. ⇒ A diagnosis that explains one observation must
 predict a second: "wrong filenames" predicts RC=4, which one command would have refuted.
+
+### ⚠️ TRAIN-C10 COROLLARY (same night, opposite direction): A RED SUITE IS NOT EVIDENCE OF A REGRESSION
+
+The rule above says a green exit code can be empty. **The mirror is equally true
+and bit within the hour:** the final verification of the P4 batch returned
+**234 failed / RC=1**, and the honest first reading was *"I broke something."*
+
+**I did not.** The discriminator was the **failure CLASS**, not the count:
+`OSError: [Errno 22]` raised inside `importlib._bootstrap_external` — Python
+failing to **read source files off the G: mount**, which is the documented
+Drive-FS hard-failure window, not an assertion failing anywhere. Three
+independent lines agreed: (1) wrong error type for a code fault; (2) the failing
+files (`test_ph0_sam3` 53, `test_ph0_rich_overlay` 16, `test_obstacle_join`,
+`test_t1_v2_adapter`) touch nothing the batch changed; (3) re-running the top four
+**with zero code changes → 116 passed, RC=0**. The clean re-run then returned
+**5115 passed, 0 failed**.
+
+⚠️ **A SECOND CANDIDATE EXISTED AND WAS NOT THE CONVENIENT ONE TO DISMISS.** That
+same run was the first in which I dropped `OMP_NUM_THREADS=6` from the
+environment, and the 113-threads trap *looks exactly like a hang*. What settles it
+is that a thread count cannot produce `errno 22` on an `importlib` read. ⇒ The
+mechanism was decided by the error class; the re-run only corroborated it. *(Had I
+reasoned from the re-run alone, I would have been right by luck — and the peer's
+MM-C3 root cause, "diagnosed by the nearest plausible cause I had already
+noticed", is exactly the failure that was available here.)*
+
+⭐ **THE COMBINED RULE, both directions:** ⛔ **`RC` alone is never the verdict.**
+A pass needs `RC == 0` **AND** a real test count. A failure needs its **class**
+identified before any diagnosis — an infrastructure fault, an empty collection and
+a genuine regression are three different events wearing the same red.
+
+⚠️ **And a cheap arithmetic check that would have caught either:** the batch added
+16 tests and the suite went **5099 → 5115**. A count that moves by exactly the
+number of tests you wrote is independent evidence the run was real.
