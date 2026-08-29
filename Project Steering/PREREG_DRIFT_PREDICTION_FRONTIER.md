@@ -54,3 +54,48 @@ cost: 2 new arms x ~35 min Thor (~1.2 h) + probe reads on the 4060; test_1 is FR
 including tonight's — is re-interpreted, and the paper's §14 open problem is restated.
 If DECOUPLED, we get the innovation constraint's usable operating point, which is what
 L1 failed to find by testing only one weight. Both outcomes are decision-grade.
+
+---
+
+## OUTCOME — 2026-08-30 ~01:30, from MM-E4's five arms (MEASURED, T0-DIAGNOSTIC)
+
+**Test 2 is VOID and CANCELLED** (its mechanism failed its own regression control —
+MM-E4's verdict). **Test 1 answered**, and with the shuffled control it answers more than
+it was designed to:
+
+| arm | mechanism | drift Δ | cos | coupled? |
+|---|---|---|---|---|
+| L1 innovation-SIGReg | dynamics constraint | −25.0 % | 0.0108 | yes |
+| L2 frozen-teacher | **target** constraint | −31.6 % | 0.0377 | yes |
+| ctrl shuffled-g | **arithmetically meaningless** | −20.1 % | 0.0066 | yes |
+| L3 L1+L2 | both | −15.5 % | 0.0816 | yes |
+| L4 azimuthal crop | target **view** | **+4.5 %** | **0.2105** | n/a — no drift change, prediction kept |
+| EMA (30k, E-DEC-69) | target source | **+3.6 %** | **+24.5 %** | yes, other direction |
+
+**Verdict: COUPLED — but the coupling is TRIVIAL, not a frontier.** Every arm that moved
+drift down moved prediction down, across four mutually unrelated mechanisms *including a
+meaningless one*; the two arms that moved drift UP (EMA, and L4 slightly) kept or improved
+prediction. A relationship that survives replacing the mechanism with noise is not a
+trade-off between two capabilities — **it is one quantity seen twice.**
+
+⭐ **THE REFRAMING, and it is the night's most consequential claim.** Drift measures the
+predictability of Δz from z_t. Prediction quality measures whether the predictor can
+produce Δz. **These are not opposed goals in tension; they are largely the same property
+of the latent's temporal structure.** Destroying that structure lowers drift *because* it
+destroys predictability. ⇒ **High drift is not, by itself, a pathology — it is partly what
+a temporally-structured latent looks like.** The programme's real question was never "how
+do we lower drift" but **"how much of the predictable structure is SELF-REFERENCE versus
+ENVIRONMENT"**, and no instrument here separates those. That separation is the actual open
+problem, and it is not the one MM-E4 was built to attack.
+
+⛔ **What this does NOT say:** that the drift attractor is harmless. The T1 evidence stands
+— arms sitting at 0.67 drift do not drive (ADE ~14.5 m vs the 0.5352 CV floor). It says
+the *statistic* cannot be optimised directly, and that lowering it without a mechanism
+that distinguishes self-reference from environment buys nothing.
+
+**Consequences adopted:** (1) ⛔ no further arm is funded on "lower drift" as its primary
+read; (2) the pre-committed frozen-teacher lever (§14.10) is **already spent** — L2 was it,
+and it failed; (3) the successor question is an INSTRUMENT question: build a read that
+separates self-referential predictability from environment-driven predictability, and only
+then re-open the attack. Candidate: condition the drift ridge on scene content and compare
+the residual against a scene-shuffled control — the E-DEC-63 rig already has the parts.
