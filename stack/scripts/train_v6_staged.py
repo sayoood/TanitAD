@@ -4652,8 +4652,36 @@ def rank_gate_capacity(batch: int, window: int,
             "required_spectrum_accum": int(need)}
 
 
+def o6_is_required(stage: str | None) -> bool:
+    """Is ``O6_spectrum`` a REQUIRED criterion for this stage's gate?
+
+    ⭐ The distinction decides whether an unrulable rank gate is a warning or a
+    refusal (P4-1). Read from ``STAGE_GATE_SPEC`` rather than hardcoded, so
+    promoting O6 from `reported` to `required` automatically arms the abort —
+    a constant copied here would silently keep warning after the promotion,
+    which is the failure this whole guard exists to prevent, one level up.
+    """
+    return "O6_spectrum" in tuple(
+        STAGE_GATE_SPEC.get(stage or "", {}).get("required", ()))
+
+
 def _warn_rank_gate_unrulable(a, stack: V6Stack) -> None:
-    """Print a loud banner when O6's rank criterion cannot rule as configured."""
+    """Banner when O6's rank criterion cannot rule — REFUSING if O6 is required.
+
+    ⛔ P4-1: warn-only was not enough. INCONCLUSIVE counts as NOT-PASS, so when
+    O6 is REQUIRED an unrulable rank gate blocks the ladder for an INSTRUMENT
+    reason while looking like a scientific verdict. Printing a banner and
+    proceeding spends the GPU-days anyway and discovers it at the gate.
+
+    ⇒ Required  -> ``SystemExit`` at startup, before any compute.
+       Reported -> the banner, unchanged: a reported criterion cannot block
+                   anything, so refusing would be the opposite error.
+
+    ⚠️ As of today ``O6_spectrum`` is REPORTED at every stage, so the abort
+    branch does not fire on any current launch line. That is deliberate: this
+    arms the guard **for the promotion**, which is exactly when a stale copy of
+    the policy would fail silently. Both branches are pinned by tests.
+    """
     w = int(stack.cfg.predictor.window)
     info = rank_gate_capacity(int(a.batch), w)
     have = int(getattr(a, "spectrum_accum", 1) or 1)
@@ -4675,6 +4703,92 @@ def _warn_rank_gate_unrulable(a, stack: V6Stack) -> None:
         f"[v6]    MEASURED 2026-08-22: v6F@20k effective rank 5.86 vs an "
         f"absolute_floor of 64 — a COLLAPSED representation that this gate "
         f"would have failed, had it been able to see.", flush=True)
+    if o6_is_required(getattr(a, "stage", None)):
+        raise SystemExit(
+            "[v6] ⛔ REFUSING TO LAUNCH: O6_spectrum is a REQUIRED "
+            f"criterion for stage {getattr(a, 'stage', None)!r}, and it "
+            "CANNOT RULE at these settings.\n"
+            "     A required criterion that is structurally INCONCLUSIVE "
+            "counts as NOT-PASS, so this run would burn its full compute and "
+            "then block the ladder for an INSTRUMENT reason.\n"
+            f"     ⇒ relaunch with --spectrum-accum "
+            f"{info['required_spectrum_accum']} (see the banner above), or "
+            "move O6_spectrum to `reported` in STAGE_GATE_SPEC if it is not "
+            "meant to gate this stage. (P4-1)")
+
+
+def run_provenance(device=None) -> dict:
+    """WHO/WHERE/WHAT-CODE produced this run. Never raises (P4-4).
+
+    ⛔ WHY THIS EXISTS: two runs on two machines could produce byte-identical
+    `config.json` files. The config records what was ASKED FOR; nothing recorded
+    what actually executed, so a result could not be tied to a code state, a
+    machine, or a driver.
+
+    ⭐ THE LOAD-BEARING FIELD IS ``trainer_md5``, not ``git_sha``. Pods have no
+    git credentials -- a pod checkout's HEAD sits weeks behind while its working
+    tree is fully current, because every fix arrives by md5-verified FILE-SHIP.
+    On such a machine the git SHA is actively MISLEADING and the hash of the
+    executing file is the only true identity. Both are recorded; read the md5.
+
+    ⚠️ EVERY probe is individually guarded and records its own failure string
+    instead of raising. Provenance must never be the reason a training run dies
+    -- that would be an observability tool causing the outage it exists to
+    explain. A field reading "unavailable: ..." is the honest answer, and it is
+    distinguishable from a field that was never collected.
+    """
+    import datetime
+    import hashlib
+    import platform
+    import subprocess
+
+    def _safe(fn, default_prefix="unavailable"):
+        try:
+            return fn()
+        except Exception as exc:                       # noqa: BLE001
+            return f"{default_prefix}: {type(exc).__name__}: {exc}"
+
+    def _git(*args):
+        # ⛔ LOCAL-ONLY porcelain with a hard timeout. Never `fetch`/`pull` here:
+        # on a credential-less pod a network git command HANGS rather than
+        # failing, which would stall every launch at startup.
+        return subprocess.run(("git", *args), capture_output=True, text=True,
+                              timeout=10, cwd=str(Path(__file__).resolve().parent)
+                              ).stdout.strip()
+
+    def _trainer_md5():
+        return hashlib.md5(Path(__file__).resolve().read_bytes()).hexdigest()
+
+    prov = {
+        "trainer_file": str(Path(__file__).resolve()),
+        "trainer_md5": _safe(_trainer_md5),
+        "git_sha": _safe(lambda: _git("rev-parse", "HEAD") or "unavailable: empty"),
+        "git_dirty": _safe(lambda: bool(_git("status", "--porcelain"))),
+        "git_branch": _safe(lambda: _git("rev-parse", "--abbrev-ref", "HEAD")),
+        "hostname": _safe(platform.node),
+        "platform": _safe(lambda: f"{platform.system()} {platform.release()}"),
+        "python": _safe(platform.python_version),
+        "torch": _safe(lambda: torch.__version__),
+        "cuda_runtime": _safe(lambda: torch.version.cuda or "cpu-build"),
+        "cudnn": _safe(lambda: str(torch.backends.cudnn.version())),
+        "gpu_name": _safe(lambda: torch.cuda.get_device_name(0)
+                          if torch.cuda.is_available() else "no CUDA device"),
+        "gpu_capability": _safe(lambda: str(torch.cuda.get_device_capability(0))
+                                if torch.cuda.is_available() else "n/a"),
+        "device_resolved": str(device) if device is not None else "unset",
+        # ⚠️ TIMEZONE-AWARE ON PURPOSE. Pods and logs run UTC while the PI reads
+        # Europe/Berlin; a naive timestamp has been read as a broken clock more
+        # than once. ``astimezone()`` on a UTC-aware stamp yields the LOCAL zone
+        # with its offset, so the frame travels with the number.
+        "started_at": _safe(lambda: datetime.datetime.now(
+            datetime.timezone.utc).astimezone().isoformat()),
+        "started_at_utc": _safe(lambda: datetime.datetime.now(
+            datetime.timezone.utc).isoformat()),
+        "_read": "trainer_md5 is the identity on a file-shipped machine; "
+                 "git_sha may be stale there (pods have no git credentials).",
+        "_evidence_class": "MEASURED (ours; this process)",
+    }
+    return prov
 
 
 def _run_config(a, stack: V6Stack, freeze: dict) -> dict:
@@ -4710,6 +4824,8 @@ def _run_config(a, stack: V6Stack, freeze: dict) -> dict:
         "gate_spec": STAGE_GATE_SPEC[a.stage],
         "tier": "training-side config; capability claims are T1 only "
                 "(EVAL_DOCTRINE.md)",
+        # ⭐ P4-4 — what actually executed, not what was asked for.
+        "provenance": run_provenance(getattr(a, "device", None)),
         "_evidence_class": "MEASURED (ours; this run's own configuration)",
     }
 
@@ -4730,8 +4846,7 @@ def train(a) -> dict:
     """
     from torch.utils.data import default_collate
 
-    from eval_flagship_v4 import (_eval_cfg, _plan, build_v2_val_episodes,
-                                  resolve_eval_frames)
+    from eval_flagship_v4 import _eval_cfg, _plan, resolve_eval_frames
     from train_flagship4b import FlagshipWindowDataset
     from train_flagship_v4 import _to_device
     from train_v58f_unicycle_head import build_train_episodes
@@ -4768,13 +4883,35 @@ def train(a) -> dict:
         rg["ckpt"] = assert_resume_lineage(rg["from"], stage=a.stage)
     print(f"[v6] launch mode: {json.dumps(rg)}", flush=True)
 
-    # ---- the val corpus is for probing, never training ---------------------
-    overlap = (set(map(os.path.abspath, a.v2_cache))
-               & set(map(os.path.abspath, a.v2_val_cache or [])))
-    if overlap:
-        raise SystemExit(f"[v6] ⛔ --v2-cache and --v2-val-cache share dirs "
-                         f"{sorted(overlap)} — val windows in training are "
-                         f"not allowed")
+    # ---- ⛔ --v2-val-cache IS NOT WIRED IN THIS TRAINER (P4-5) --------------
+    # It built a `ds_val` that was printed and then never read: no loss, no
+    # probe and no gate consumed it. A flag that mounts and windows a whole val
+    # corpus while nothing validates is worse than an absent one, because the
+    # launch line reads as though validation is happening.
+    #
+    # ⚠️ THE REASON IT SURVIVED: the SAME flag name IS fully wired in
+    # `train_flagship_v4.py` (the held-out gate) and in `eval_flagship_v4.py` /
+    # `probe_latent_state.py`. An operator who knows those semantics reads a v6
+    # launch line and correctly believes validation happens — the flag is
+    # meaningful *somewhere*, which is exactly why nobody noticed it is dead
+    # *here*. Same family as the `df`/`step_s` scope traps: a true fact quoted
+    # outside its scope reads like an answer.
+    #
+    # Refusing rather than warning is deliberate — a warning on a long launch
+    # scrolls past. ⭐ Verified before refusing: NO v6 launch line passes this
+    # flag (`stack/ops/runs.d/*.env` -> only the v5f env, which targets
+    # train_flagship_v4.py; pbattery_watcher passes it to probe_latent_state).
+    if a.v2_val_cache:
+        raise SystemExit(
+            "[v6] ⛔ --v2-val-cache is NOT SUPPORTED by train_v6_staged.py.\n"
+            "     It was accepted and silently ignored: the dataset was built, "
+            "printed, and never read by any loss, probe or gate.\n"
+            "     ⇒ Drop the flag. For a held-out gate use "
+            "train_flagship_v4.py, where this flag IS wired; for latent "
+            "probing use probe_latent_state.py --v2-val-cache.\n"
+            "     (P4-5. If you are wiring validation into v6, remove this "
+            "refusal in the SAME change that adds the consumer — never "
+            "before.)")
 
     torch.manual_seed(a.seed)
     random.seed(a.seed)
@@ -4931,15 +5068,9 @@ def train(a) -> dict:
                 f"EFFECTIVE RE-SELECTION of the corpus and breaks cross-arm "
                 f"comparability. Lower K, or re-extract longer clips from the "
                 f"same episode list.")
-    if a.v2_val_cache:
-        val_eps, _vp = build_v2_val_episodes(a, cache_frame=cache_frame,
-                                             train_frame=model_frame)
-        ds_val = FlagshipWindowDataset(
-            val_eps, window=stack.cfg.predictor.window, max_horizon=max_h,
-            maneuver_h=plan.maneuver_h,
-            channels=stack.cfg.encoder.in_channels)
-        print(f"[v6] val {len(val_eps)} eps / {len(ds_val)} windows",
-              flush=True)
+    # (P4-5) The dead `ds_val` construction lived here. `--v2-val-cache` is
+    # refused at argument-validation time above, so this branch was
+    # unreachable-by-contract as well as unread.
 
     # ---- S2: the strategic-goal label join (S-S/S-J; default absent) --------
     # Loaded AFTER the corpus so the join is over the REAL episode ids, and
@@ -6013,6 +6144,10 @@ def train(a) -> dict:
         "elapsed_s": round(time.time() - t0, 1),
         "param_report": stack.param_report(),
         "residual_head_init_scale": float(RESIDUAL_HEAD_INIT_SCALE),
+        # ⭐ P4-4 — recorded on the DONE-MARKER too, not only in config.json: a
+        # summary is what gets quoted, and a quoted number should carry the
+        # identity of the code that produced it without a second lookup.
+        "provenance": run_provenance(getattr(a, "device", None)),
         "next": (f"stage {gate['next_stage']} may launch with --prev-gate "
                  f"{out_dir}/stage_gate.json"
                  if gate["pass"] is True and gate["next_stage"]
@@ -7072,7 +7207,11 @@ def build_parser() -> argparse.ArgumentParser:
                          f"({STAGE_LAMBDA_PLAN}). 0 in S-W BY CONSTRUCTION.")
     # ---- data --------------------------------------------------------------
     ap.add_argument("--v2-cache", nargs="+", default=[])
-    ap.add_argument("--v2-val-cache", nargs="+", default=[])
+    # ⛔ accepted only so the launch fails with an EXPLANATION rather than
+    # argparse's bare "unrecognized arguments" (P4-5). It is refused in main().
+    ap.add_argument("--v2-val-cache", nargs="+", default=[],
+                    help="⛔ NOT SUPPORTED in v6 — refused at startup. Use "
+                         "train_flagship_v4.py for a held-out gate.")
     ap.add_argument("--v2-lru", type=int, default=64)
     ap.add_argument("--v2-subframe", default=None, metavar="HxW")
     ap.add_argument("--frame-hfov", type=float, default=120.0)
