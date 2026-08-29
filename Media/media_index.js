@@ -9912,7 +9912,9 @@ window.MEDIA_INDEX = {
    "off_device_copy": null,
    "original_paths": [
     "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/alpamayo-showcase-2026-08-07/showcase_00_99507eea.png"
-   ]
+   ],
+   "source_clip_id": "99507eea-756e-4f40-89f9-a1191cecf333",
+   "provenance_note": "source clip IDENTIFIED 2026-08-29: a member of the Alpamayo-labelled corpus (token->clip_id matched 6/6 against s2_labels_v7); the producing RUN remains unrecorded — tag stays until it is named"
   },
   {
    "id": "showcase-01-44feb6df",
@@ -9940,7 +9942,9 @@ window.MEDIA_INDEX = {
    "off_device_copy": null,
    "original_paths": [
     "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/alpamayo-showcase-2026-08-07/showcase_01_44feb6df.png"
-   ]
+   ],
+   "source_clip_id": "44feb6df-848b-4602-be2d-91f04ef78aa3",
+   "provenance_note": "source clip IDENTIFIED 2026-08-29: a member of the Alpamayo-labelled corpus (token->clip_id matched 6/6 against s2_labels_v7); the producing RUN remains unrecorded — tag stays until it is named"
   },
   {
    "id": "showcase-02-15958430",
@@ -9968,7 +9972,9 @@ window.MEDIA_INDEX = {
    "off_device_copy": null,
    "original_paths": [
     "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/alpamayo-showcase-2026-08-07/showcase_02_15958430.png"
-   ]
+   ],
+   "source_clip_id": "15958430-1119-458a-918d-a0feff0fa1f3",
+   "provenance_note": "source clip IDENTIFIED 2026-08-29: a member of the Alpamayo-labelled corpus (token->clip_id matched 6/6 against s2_labels_v7); the producing RUN remains unrecorded — tag stays until it is named"
   },
   {
    "id": "showcase-03-829320e2",
@@ -9996,7 +10002,9 @@ window.MEDIA_INDEX = {
    "off_device_copy": null,
    "original_paths": [
     "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/alpamayo-showcase-2026-08-07/showcase_03_829320e2.png"
-   ]
+   ],
+   "source_clip_id": "829320e2-ba11-48e9-8196-1247e5709b5f",
+   "provenance_note": "source clip IDENTIFIED 2026-08-29: a member of the Alpamayo-labelled corpus (token->clip_id matched 6/6 against s2_labels_v7); the producing RUN remains unrecorded — tag stays until it is named"
   },
   {
    "id": "showcase-04-f15c0b7b",
@@ -10024,7 +10032,9 @@ window.MEDIA_INDEX = {
    "off_device_copy": null,
    "original_paths": [
     "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/alpamayo-showcase-2026-08-07/showcase_04_f15c0b7b.png"
-   ]
+   ],
+   "source_clip_id": "f15c0b7b-445b-474b-b664-23e1c95f8028",
+   "provenance_note": "source clip IDENTIFIED 2026-08-29: a member of the Alpamayo-labelled corpus (token->clip_id matched 6/6 against s2_labels_v7); the producing RUN remains unrecorded — tag stays until it is named"
   },
   {
    "id": "showcase-05-2d1df54a",
@@ -10052,7 +10062,9 @@ window.MEDIA_INDEX = {
    "off_device_copy": null,
    "original_paths": [
     "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/alpamayo-showcase-2026-08-07/showcase_05_2d1df54a.png"
-   ]
+   ],
+   "source_clip_id": "2d1df54a-bc3d-4dc8-bf1a-3dc6596300b1",
+   "provenance_note": "source clip IDENTIFIED 2026-08-29: a member of the Alpamayo-labelled corpus (token->clip_id matched 6/6 against s2_labels_v7); the producing RUN remains unrecorded — tag stays until it is named"
   },
   {
    "id": "showcase-06-8dc5d14d",

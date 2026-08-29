@@ -413,3 +413,11 @@ not be quoted as results.
 `python Media/tool/build_index_js.py --check` validates without writing. The
 check also cross-joins the index against `MEDIA_MANIFEST.json`: every manifest
 sha256 must appear exactly once.
+
+## The manifest membership rule (owner-settled, 2026-08-29)
+
+An asset enters `MEDIA_MANIFEST.json` **when git does not cover it** — the test is
+the RISK, not the file type. Today that means the gitignored `*.mp4`s; images are
+tracked by git and stay out (the manifest is a RISK REGISTER, `media_index.json`
+is a VIEW — the two must not converge). If images ever become gitignored, they
+qualify that day; report untracked images to the manifest owner (EvalFlyWheel).
