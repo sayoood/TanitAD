@@ -143,6 +143,13 @@ first variance estimate and every single-seed comparison should be read against 
                                      # drift itself UNCHANGED (0.671 ~ 0.669); the
                                      # drift attractor stays the open front (P0).
                                      # corpus: physicalai-train-e438721ae894 (PARITY)
+--o5-target ema                      # ADOPTED 2026-08-29 by the PI (E-DEC-69): the
+                                     # largest prediction gain ever measured on the
+                                     # trainable line (cos +24.5%, nrmse -9.9%,
+                                     # absorption held) at a +3.6% drift cost,
+                                     # knowingly accepted. GATED: one 30k tau-RAMP
+                                     # arm runs first (fixed tau=0.996 is known-
+                                     # suboptimal); it decides ramp-vs-fixed ONLY.
 ```
 
 ⛔ **Do NOT add O1, O2, O3, O7, O8, O9, O10, O11, O13 or PSG.** Ten measured failures;
