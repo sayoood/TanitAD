@@ -1,6 +1,6 @@
 # TanitAD: A Data-Efficient, Hierarchically-Imagining, Self-Supervised Driving Stack with Built-In Self-Knowledge
 
-**Status:** living paper, **v1.2 (2026-08-29)**. Maintained per D-020: every gate evaluation appends
+**Status:** living paper, **v1.3 (2026-08-29)**. Maintained per D-020: every gate evaluation appends
 results; every accepted decision that changes the method updates §3–§5. Source of truth is this
 Markdown; LaTeX export is a release step. Honesty rule (P8): no number appears here without its
 instrument rows in the referenced experiment record. *(Version note: the status line was left at
@@ -25,7 +25,7 @@ E-DEC-69), the EMA-teacher result MM-E1 with its pre-registered transient predic
 the T1 consequence, and the open attack list — plus Figure 4. It also records that **§12 and §13
 had entered the paper without changelog entries** while the status line sat at v1.1: the same
 status-line drift this note has already documented twice, now a third time; both sections are
-hereby owned by the changelog rather than silently absorbed.)*
+hereby owned by the changelog rather than silently absorbed. **v1.3 (2026-08-29, the same evening)** adds §15 — the first cell of the PI-ranked attack ladder to report, which cut drift by a record 25.0 % and destroyed prediction in the same arm; the mathematics of why an objective aimed at the read's own residual must do exactly that; the standing consequence the programme adopted (**drift alone is never a valid objective**); the **coupling hypothesis** MM-E5 raises from n = 2, stated as a hypothesis, with a competing account and two registered discriminating tests; a **provenance note** establishing by source the mode in which this paper's numbers were produced; and Figure 5. It is v1.3 rather than v1.2.1 because it changes what the programme may optimise for — or at minimum registers the test that would — and because it adds a methods section this paper did not previously carry. The status line and the changelog move in the SAME edit: this note has documented that drift three times without the practice being stated, so it is stated here.)*
 
 **Authors:** Sayed Bouzouraa; TanitAD autonomous research system.
 
@@ -1105,7 +1105,7 @@ set**; the evaluation harness now **refuses it in code** rather than documenting
 the caller at the clean 40-episode split. Instrument rule I7 (task-identity fingerprints) is thereby
 extended from *corpus identity* to *train/eval disjointness*, enforced mechanically.
 
-### 5.8 Five instrument rules the negative round added (added v1.1)
+### 5.8 Instrument rules the failures added: I11–I16 (I11–I15 added v1.1; I16 added v1.3)
 
 **Each was earned by one of our own claims failing, and each generalizes past the experiment that
 produced it.** They are stated as method because four of the five would have changed a published
@@ -1153,6 +1153,22 @@ negatives admissible rather than merely convenient.
   test the direction you were not trying to fix** — every correction to a criterion is a candidate
   bias in the opposite direction, and a floor repair that stops no-signal arms failing by construction
   can just as easily let noise pass by construction.
+- **I16 — an OBJECTIVE may not be a function of the read's own RESIDUAL** (added v1.3). The
+  probe-side rule above it — *fit every hyper-parameter on the fit split; the scored split is
+  scored, never tuned on* — does not reach a **training term**, and the gap is not one of degree.
+  MM-E4's L1 constrained the dynamics innovations \(\Delta z - g(z_t)\) to be isotropic-Gaussian
+  while the primary read was the predictability of \(\Delta z\) from \(z_t\) — *the same
+  regression's residual*. It cut drift by the largest margin this programme has measured **and**
+  left the latent at the mean predictor (nrmse 1.0162 > 1.0), because a minimiser can satisfy such
+  a term by making the transition structureless, at which point the statistic reads its
+  no-information value **by construction** (§15.2). ⚠️ **Every probe-side safeguard was in place
+  and none of them could help**: the ridge was cross-fitted both ways, the constant control read
+  exactly 0.0000, and λ was fixed in advance and made *relative* precisely so it could not track
+  the quantity under study. The defect is not in how the term is **fitted** but in what it is a
+  function **of**, so the check is structural and runs at design time: *name the primary read,
+  write down its residual, and confirm no training term is a function of it.* Its corollary is
+  binding on reporting as well as on design: **a drift number quoted without its paired
+  prediction reads is inadmissible** (§15.3).
 
 ## 6. Experimental program
 
@@ -5132,7 +5148,7 @@ preserved, at a +3.6 % drift cost. The reading consistent with all four cells is
 **target denoising**: the teacher's temporal average strips per-step fitting noise
 from the target, so the predictor fits signal — the same rationale data2vec states
 for teacher averaging — while the slow self-simplification is untouched. Whether
-v7f *ships* with EMA for prediction quality is an **open PI decision**; if adopted,
+v7f *ships* with EMA for prediction quality was, at the time §14 was written, an **open PI decision** — taken in the affirmative the same evening (§15.4); on adoption,
 the amendment's requirement of a τ-ramp arm first applies unchanged (fixed-τ is a
 mis-specification no published system ships), and the EMA×O14 interaction remains
 unseparated.
@@ -5233,13 +5249,15 @@ line.** The attack list, in the order the evidence ranks it:
    — so the shortcut's gradient contribution is subtracted by construction. Two
    failure modes are named in advance: \(g\) in the loop is a second movable
    target, and a frozen \(g\) goes stale as the latent moves; both need controls
-   before the first arm.
+   before the first arm. ⚠️ **A third failure mode, not named here, was found by measurement the same evening and is structural rather than practical: this design's training signal is the read's own residual (§15.3).**
 
 Two cheaper due-diligence arms ride alongside: a **τ-ramp arm** (the I-JEPA
 schedule) is *required before any EMA adoption* per the stage-2 amendment, and a
 2 k **fast-early-teacher discriminator** (data2vec-style low-τ start) would confirm
 the transient account at the scale it was observed — both one-variable,
 ladder-priced.
+
+⇒ **§15 reports the first cell of this ladder to return**, the standing consequence it earned, and the hypothesis it raised about whether *drift downward* is the right direction at all.
 
 ### 14.11 What §14 does not establish
 
@@ -5258,6 +5276,414 @@ omega pair. Items 4–5 of the attack list are **PROPOSED and unmeasured**; item
 2–3 are hypotheses supported at other scales and domains. And no claim about
 driving is made anywhere except §14.8 — which is *negative* at T1 for both arms
 and carries its admissibility flags in the same sentence.
+
+## 15. Prediction at matched drift: an anti-drift objective that succeeded and failed, a coupling hypothesis, and the mode our numbers were measured in (2026-08-29)
+
+**Tier: T0-DIAGNOSTIC throughout.** Every drift, cosine and nrmse number in this
+section is a world-model diagnostic — never driving performance; the one driving
+number quoted (§15.5) is T1 and belongs to a *retracted* readout, quoted only to
+size an instrument defect. Evidence class: **MEASURED (ours)** with the raw
+artifact named, except the published SIGReg/LeJEPA construction (**PUBLISHED**,
+banked), the coupling statement of §15.4 (**HYPOTHESIS**, and it is labelled as
+one in every sentence that carries it), and the §14.10-item-5 consequence
+(**inference from the mechanism, not a measurement**). Pre-registrations:
+`PREREG_DRIFT_ATTACK_LADDER.md` (MM-E4, with Amendments A and B), and
+`PREREG_DRIFT_PREDICTION_FRONTIER.md` (MM-E5). Retraction-log entries: TRAIN-C5
+and MM-C2.
+
+> **Figure 5 — `Paper/figures/drift_frontier.svg`** (generated by
+> `Paper/figures/make_drift_frontier.py`, which **reads the banked probe JSONs at
+> generation time and exits if one is missing** — no hand-typed fallback, with four
+> cross-artifact tripwires: the base arm `o14fut10`'s drift *and* centred cosine
+> must agree between the O14 ladder's and the drift-ladder's raws, the 2 k incumbent
+> `o14base2k`'s drift must agree between the ladder's and the bake-off's, and the
+> 30 k incumbent's cosine between its own raw and the EMA pair's; the `.png` export
+> is gated on cairosvg's native cairo exactly as Figure 4's is): the (drift,
+> prediction) plane drawn **once per scale and never once for both** — panel A at
+> 2 k, panel B at 30 k, **axes deliberately not shared**, because a 2 k drift number
+> and a 30 k drift number are not commensurable (§14.1's validity band is
+> 30 k-calibrated) and plotting them on one pair of axes would assert a comparison
+> the instrument cannot support. Each intervention appears as an **arrow from its
+> own base to itself** — the one-variable delta, which is the only comparison
+> licensed — and panel C draws the registered dose curve with its two measured and
+> two not-yet-run points.
+
+§14 closed on an open problem and a ranked attack list. The PI ranked that list on
+2026-08-29 and the ranking produced a tiny ladder, MM-E4, whose cells are the top
+two mechanisms and their combination: a **frozen-teacher** target (attack-list item
+1) and **innovation-SIGReg**, the regulariser-side sibling of item 5. This section
+reports the **first of those cells to report**, and it is a result of an unusual
+shape: the intervention **worked on the primary metric, by the largest margin the
+programme has ever measured, and was failed anyway** — correctly, by a protection
+rule registered less than three hours earlier. §15.1 states the cell and its
+numbers; §15.2 gives the mechanism with its mathematics; §15.3 names the class and
+the standing consequence, including what the failure implies for an item still
+sitting on §14.10's list; §15.4 states the coupling hypothesis MM-E5 raises, with
+its limits and its registered discriminating tests; §15.5 is a provenance note on
+the configuration in which this paper's numbers were produced; §15.6 states what
+§15 does not establish.
+
+### 15.1 The cell: innovation-SIGReg (MM-E4 L1)
+
+The lever. §14.10's item 5 proposed subtracting the drift-predictable component
+from O5's target. MM-E4's L1 is the same idea placed in the **regulariser**
+instead of the target: the sketched-Gaussianity term O6 keeps its machinery
+verbatim and only its *input tensor* changes, from the latents \(z\) to the
+**dynamics innovations**
+
+$$\varepsilon_t \;=\; \Delta z_t \;-\; g(z_t), \qquad \Delta z_t = z_{t+1} - z_t ,$$
+
+with \(g\) a closed-form ridge with intercept, fitted **under `no_grad` on one half
+of the batch and applied to the other, both ways** — so no row is ever scored under
+a \(g\) that saw it, which is the 2026-08-22 probe rule carried into a
+training term. The ridge constant is **relative** (`O6_INNOVATION_RIDGE_REL` = 1e-2
+of the fit half's mean centred-Gram diagonal) and fixed in advance by the
+pre-registration: an *absolute* λ would shrink in relative terms as latent norms
+grow, which is the very quantity under study, and would couple the constraint's
+strength to the thing being measured. Gradient reaches only the live \(z_t,
+z_{t+1}\) of the scored rows; \(g\) is a per-batch constant. Implementation:
+`stack/scripts/train_v6_staged.py`, `o6_innovation_rows` (flag `--o6-innovation`),
+default-off and bit-identical when off, with an 18-test suite whose analytic anchor
+is the inversion this cell depends on — \(z_{t+1} \equiv z_t\) makes the rows
+exactly zero, a point mass the sketched test penalises hard where plain SIGReg on
+the same states reads near-null.
+
+The read (MEASURED, ours; `…/incoming/2026-08-29-e4-drift-ladder/raw/`,
+`e4_e4_l1_inno_drift.json` and `e4_e4_l1_inno_nrmse.json`; the v7-tiny 2 k rig,
+80 held-out clips, 7,680 rows, one variable against the recipe base `o14fut10`
+— itself the O14 ladder's `--w-o14 1.0` arm, so the lever is tested *on* the
+adopted recipe rather than beside it, per Amendment A):
+
+| read | `e4_l1_inno` | base `o14fut10` | change | verdict |
+|---|---|---|---|---|
+| **drift r** (PRIMARY) | **0.3551** (t 26.59) | 0.4733 (t 47.90) | **−25.0 %** | the largest drift reduction ever measured on the trainable line |
+| cos (centred) — PROTECTED | **0.0108** | 0.2462 | **−95.6 %** | ⛔ |
+| cos vs its permutation null | **0.72 σ** | 11.26 σ | — | ⛔ **no longer separated from its own null** |
+| nrmse (constant predictor = 1.0) | **1.0162** | 0.9746 | +4.3 % | ⛔ **above 1.0, and above its own mean-only control (0.9984)** |
+| mean fraction of the prediction | **0.9876** | 0.0952 | — | ⛔ 98.8 % of the predicted \(\Delta z\) *is* the batch mean |
+| constant control | 0.0000 | 0.0000 | — | ✅ exact, both arms |
+| ego-state marginal over \(z_t\) | +0.0077 (t 1.25) | −0.0047 (t −1.14) | — | inside null, both arms |
+
+⇒ **PRED-PAYS ⇒ FAILED**, by the committed protection: *any cell that pays > 5 %
+centred cosine is FAILED regardless of drift.* The protection is not a
+post-hoc reading. It entered the pre-registration at **19:00** on 2026-08-29
+(commit `96ac1dc`), derived from E-DEC-69's finding that landed at **17:57** the
+same day (commit `c716276`, §14.7) — **2 h 40 min before the 21:40 read it
+failed** (commit `9c5cb6f`). Without that clause the ladder's own `DRIFT-DOWN`
+outcome would have awarded this arm the 30 k confirmation run the pre-registration
+prices at **~8.2 h of Thor**, spent confirming a latent that had become noise.
+⚠️ Note also which axis the protection had to be written on: at 2 k every arm sits
+near the mean-predictor floor (the ladder's nrmse span is 0.9746–0.9895 against a
+mean-only control of ~0.998), so **nrmse has almost no headroom at this scale and
+the centred cosine is the sensitive read** — a scale fact recorded in the
+pre-registration before the arm ran, not discovered in it.
+
+### 15.2 Why it worked, and why working is exactly the failure
+
+**The objective.** SIGReg is the sliced Gaussianity test of LeJEPA
+[arXiv:2511.08544] (PUBLISHED, banked): by Cramér–Wold a distribution is
+\(\mathcal{N}(0, I)\) iff every one-dimensional projection is
+\(\mathcal{N}(0,1)\), so for \(M\) freshly drawn unit directions \(u_m\) and the
+Epps–Pulley statistic \(T_{\mathrm{EP}}\) against \(\mathcal{N}(0,1)\),
+
+$$\mathrm{SIGReg}(E) \;=\; \frac{1}{M}\sum_{m=1}^{M}
+T_{\mathrm{EP}}\!\big(\{\langle u_m,\, e_i\rangle\}_{i=1}^{n}\big),$$
+
+minimised exactly when the empirical law of \(E\) is isotropic standard Gaussian.
+The incumbent applies it to the embeddings, \(E = \{z_i\}\); L1's single change is
+\(E = \{\varepsilon_i\}\). The trained objective is therefore
+
+$$\mathcal{L} \;=\; \mathcal{L}_{\mathrm{O5}}(\theta,\phi)
+\;+\; \lambda_6\,\mathrm{SIGReg}\big(\{\Delta z_t - g(z_t)\}\big).$$
+
+**The read.** §14.1's drift statistic is \(r = \operatorname{corr}(\tilde
+g(z_t),\, \Delta z_{t\to t+k})\) with \(\tilde g\) a cross-fitted probe. Write the
+regression decomposition (exact for the least-squares fit, and approximate at the
+ridge constant used here):
+
+$$\operatorname{Var}(\Delta z) \;=\; \operatorname{Var}\big(\tilde g(z_t)\big)
+\;+\; \operatorname{Var}(\varepsilon)
+\qquad\Longrightarrow\qquad
+r^{2} \;=\; 1 \;-\; \frac{\operatorname{Var}(\varepsilon)}
+{\operatorname{Var}(\Delta z)} .$$
+
+**The collision, in one line: the regulariser's argument is the read's own
+residual.** The term constrains \(\varepsilon\); the statistic is a monotone
+function of \(\operatorname{Var}(\varepsilon)/\operatorname{Var}(\Delta z)\).
+
+**Why a minimiser can satisfy the term by destroying the dynamics.** The
+constraint pins the *residual* — it demands \(\varepsilon\) be isotropic with unit
+variance in every direction — and says **nothing whatever about**
+\(\operatorname{Var}(\tilde g(z_t))\), the numerator that carries the predictable
+structure. Two families satisfy it:
+
+* **(a) the intended one** — the latent keeps its world-driven temporal structure
+  and the *residual around* that structure is Gaussianised;
+* **(b) the shortcut** — the encoder makes \(\Delta z\) an i.i.d. isotropic
+  Gaussian sequence, **independent of \(z_t\)**. At that configuration the optimal
+  ridge is \(g \equiv 0\), so \(\varepsilon = \Delta z\) and the term is satisfied
+  *exactly*. And there,
+  * **drift is zero by construction**: no map of \(z_t\) correlates with a change
+    independent of \(z_t\), so \(r \to 0\) whatever probe family reads it;
+  * **prediction is impossible by construction**: the best attainable output of any
+    predictor is \(\mathbb{E}[\Delta z \mid z_t, c_t] = 0\), i.e. the mean
+    predictor, so \(\mathrm{nrmse} \to 1\) and the centred cosine collapses to its
+    permutation null.
+
+Family (b) is strictly cheaper for the encoder than family (a) — it requires no
+world content at all — and nothing in the term separates them. This is the §14.2
+argument in its sharpest form: there, the *target* was movable and the shortcut was
+an easier target; here, the *constraint* is a function of the read's residual and
+the shortcut is a structureless latent.
+
+**The measured signature is the predicted signature.** Family (b) predicts four
+things jointly, and the raws read all four: drift falls (0.4733 → 0.3551, −25.0 %);
+nrmse crosses 1.0 (1.0162) *and* its own mean-only control (0.9984); the predicted
+\(\Delta z\) becomes the batch mean (mean fraction 0.0952 → 0.9876); and the
+centred cosine loses separation from its permutation null (\(z\) 11.26 → 0.72). It
+is the co-occurrence that identifies the mechanism — any one of the four alone
+would admit weaker readings.
+
+⚠️ **What this argument does and does not establish.** It establishes that the
+degenerate family **is in the minimiser set** and that the measured arm sits **at
+its predicted signature**. It does **not** prove the arm arrived there by that
+route: a 2 k arm is not converged, the drift did not go to zero (0.3551, still
+t 26.59 against its controls), and an alternative account in which the term merely
+adds a large gradient that damages the representation non-specifically is not
+excluded by these reads. The dose curve of §15.4 is the measurement that
+discriminates the two, and it is registered rather than run.
+
+⚠️ **A scope precision the argument needs, and which strengthens rather than
+weakens it.** The training term's \(g\) and the read's \(\tilde g\) are **not the
+same map**: the term uses a *linear* ridge over the full \(d = 2048\) at \(k = 1\)
+tick, cross-fitted across batch halves; the read uses a *random-Fourier-features*
+ridge on the **top-8 PCA band** of \(\Delta z\) at \(k = 4\) ticks, cross-fitted
+across clip-disjoint folds. So the term does not literally optimise the reported
+statistic — and the collision does not require that it does. It requires only that
+the term's argument be the residual of a regression *in the same family* as the
+read's, because the degenerate configuration is horizon- and basis-free: if the
+increments are i.i.d. and independent of \(z_t\), then \(z_{t+4} - z_t\) is a sum
+of terms independent of \(z_t\) and every band of it is unpredictable from \(z_t\)
+too. The 25 % transfer from a \(k=1\), full-dimensional, linear constraint to a
+\(k=4\), top-8-band, nonlinear read is itself the measurement of that transfer.
+
+### 15.3 The class, the standing consequence, and one design it re-prices
+
+**The class: Goodhart in objective form — *tune-on-what-you-score*, moved from the
+probe to the loss.** The programme already carries the probe-side rule, earned on
+2026-08-22: *fit every hyper-parameter on the fit split only; the scored
+split is scored, never tuned on.*
+L1 is the same failure one level up, and the probe-side rule does not reach it —
+L1's ridge is **impeccably cross-fitted**, its constant control reads exactly
+0.0000, and its λ was fixed in advance and made relative precisely so it could not
+track the quantity under study. Every safeguard the earlier lesson demanded was in
+place, and none of them could help, because the defect is not in how the term was
+*fitted* but in what the term is a function *of*. The training-time rule is
+therefore distinct and stronger:
+
+> ⛔ **An objective may not be a function of the read's own residual.** A
+> regulariser aimed at the statistic the primary read measures can drive that
+> statistic to its no-information value while destroying the quantity the statistic
+> was a proxy for — and the loss curve, the controls, and the cross-fitting will all
+> look correct while it does.
+>
+> — entered as **I16** in §5.8, because a rule that lives only in the
+> results section that earned it is a rule the next experiment will not read.
+
+**The standing consequence the programme adopted** (`PREREG_DRIFT_ATTACK_LADDER.md`,
+L1 OUTCOME):
+
+> ⛔ **Drift alone is never a valid objective.** Any future anti-drift lever is
+> admissible only with the prediction protection attached, and **a drift number
+> quoted without its paired prediction reads is inadmissible** — in this paper, in
+> the registry, and in any report.
+
+Applied backwards, this does not disturb §14: every drift number there is already
+published beside its nrmse and cosine, and the two arms that moved drift most —
+the frozen encoder (§14.4) and this one — were both failed on the prediction side
+by pre-committed bands. Applied forwards it re-prices a design:
+
+⭐ **§14.10's item 5 — the drift-orthogonalised target — is now a worse bet than it
+was written as, and for a reason its own pre-registration did not name.** Item 5
+proposed training O5 on the residual target \(\Delta z - g(z_t)\). It named two
+failure modes in advance (a \(g\) inside the loop is a second movable target; a
+frozen \(g\) goes stale). The collision above is a **third**, it is structural
+rather than practical, and it applies to item 5 exactly as it applies to L1,
+because item 5's *training signal* is likewise the read's residual — the placement
+in the target rather than the regulariser changes which term carries the gradient,
+not what the gradient is a function of. ⇒ Item 5 is **not refuted** — it was never
+run — but it may not be launched without the same protection, and its prior should
+now be read from L1's result. This is an **inference from the mechanism, not a
+measurement of item 5**, and it is labelled as such. Items 1–3 of the attack list
+(frozen-teacher/SALT-class, both-branch VICReg, predictor-capacity) are untouched
+by this argument: none of them takes the read's residual as its argument. Item 4
+(contrastive future discrimination) is likewise untouched, its own registered
+hazard being a different one.
+
+### 15.4 The coupling hypothesis (MM-E5) — stated as a hypothesis
+
+**The observation.** Two interventions have now moved drift and prediction, and
+they moved them **in the same direction**:
+
+| lever | scale | drift | prediction (cos, centred) | source |
+|---|---|---|---|---|
+| EMA teacher | 30 k | **+3.6 %** (0.6709 → 0.6952) | **+24.5 %** (0.6043 → 0.7524) | E-DEC-69, §14.7 |
+| innovation-SIGReg | 2 k | **−25.0 %** (0.4733 → 0.3551) | **−95.6 %** (0.2462 → 0.0108) | MM-E4 L1, §15.1 |
+
+**The hypothesis.** If that co-movement is **mechanism-independent**, then the
+programme's objective is mis-stated. The target would not be *minimum drift* but
+**maximum prediction at matched drift** — a frontier — and §14's open problem would
+be restated from *"we have a defect to remove"* to *"we sit at a bad point on a
+frontier"*. Every anti-drift result in the programme, §14's included, would be
+re-read as a **position** on that frontier rather than as a pass or a fail.
+
+**Precedence.** MM-E5 was registered in `PREREG_DRIFT_PREDICTION_FRONTIER.md`,
+commit **`6e719a493`, 2026-08-29 22:02** — **before the arms that can discriminate
+it reported**: at registration L2 (frozen-teacher) was mid-training and L3/L4 were
+unstarted. That ordering is in the git history rather than in the document's own
+prose, and it is part of the claim's standing: the outcomes below were committed
+against unknown results.
+
+⚠️ **The limits, stated with the claim and not after it.** **n = 2.** The two
+points differ in **mechanism** (one constrains the innovations, one replaces the
+target with a slow copy), in **scale** (2 k against 30 k), and in the **part of the
+prediction axis they occupy** — the 2 k pair moves between "barely predicting" and
+"not predicting" (0.2462 → 0.0108) while the 30 k pair moves within a régime where
+prediction is real (0.6043 → 0.7524); those are not the same dynamic range. There
+is **no shared axis**: §14.1's drift-validity band is 30 k-calibrated, 2 k arms sit
+near 0.45 with clean controls, and every 2 k number is admissible **vs-base
+relative only** — which is why Figure 5 draws two panels and never one. ⇒ This is a
+**HYPOTHESIS**, and no result in this paper may be re-read through it until the
+tests below report.
+
+⚠️ **A competing account that the same n = 2 fits equally well, and that the
+registered outcomes anticipate.** The co-movement may be a property not of the
+(drift, prediction) plane but of **which levers happen to work**. Note what the
+record actually contains: **every drift reduction this programme has measured on
+the trainable line either turned out to be a warm-up transient (the 2 k EMA arms,
+§14.7) or is explained by the removal of temporal structure (L1, §15.2)** — we
+have no example of a drift reduction by a route we would call good. Under that account there is no frontier — there is a
+**selection effect over mechanisms**, and a lever that lowered drift by some other
+route could still buy prediction. This distinction decides which test is
+load-bearing: **the dose curve cannot separate the two**, because it varies only the
+weight of a mechanism already known to work by removing structure; **only the
+disjoint-mechanism arms can.** The pre-registration's `L1-SPECIFIC` outcome is
+exactly this possibility, committed in advance.
+
+**The two registered discriminating tests, with their committed outcomes.**
+
+1. **Test 1 — the disjoint-mechanism arms (free; already queued in the E4 chain).**
+   MM-E4's **L2 (frozen-teacher)** and **L4 (azimuthal-crop targets)** constrain the
+   **target**, not the innovations — a mechanism family disjoint from L1's. Their
+   (drift, cos) pairs are read against the same base `o14fut10` on the same
+   instrument. *(L4's crop is geometrically clean only because our 256×640 corpus is
+   **cylindrical**, where column is linear in azimuth, so a horizontal crop is a
+   pure FOV restriction; the pre-registration records that scope condition, because
+   the same trick on a pinhole projection would warp the view.)*
+2. **Test 2 — the dose curve (PI-approved; 2 arms, ~1.2 h Thor).** A sweep of the
+   innovation constraint's weight: `--o6-innovation` at `--w-o6` ∈ {0.01, 0.03}
+   added to the two measured points {0 = base, 0.1 = L1}, everything else the
+   `o14fut10` line at 2 k. **Four points on one axis with one mechanism varying** —
+   the clean shape test that a single arm cannot give.
+
+Committed outcomes, verbatim in substance from the pre-registration:
+
+| outcome | condition | consequence |
+|---|---|---|
+| **COUPLED** | drift and cos move **monotonically together** across test 2's four points | the objective is restated as the frontier; the programme reports *prediction at matched drift* from then on, and MM-E4's remaining levers are re-read as frontier **positions**, not pass/fail |
+| **DECOUPLED** | a point exists with **lower drift and cos within the seed band of base** | coupling refuted; that weight is the innovation constraint's operating point and the minimise-drift framing survives |
+| **L1-SPECIFIC** | test 1's disjoint-mechanism arms do **not** trade along the same line while test 2's do | the coupling is a property of **innovation constraints**, not of drift — reported as such, **not generalised** |
+| **NON-MONOTONE** | the dose sweep is not monotone | **no verdict** — report the points and stop; a non-monotone dose curve means an uncontrolled variable |
+
+**One decision already taken, and what it is and is not.** On the evening of the
+same day the PI adopted the EMA teacher for v7f (`D-EMA-ADOPT`, commit `a67b3c0`,
+21:52), accepting its **+3.6 % drift cost** for its **+24.5 % prediction gain**,
+gated on a τ-ramp arm — which supersedes §14.7's description of ship-with-EMA as an
+open decision. That decision is **consistent with** the coupling reading and is
+**not evidence for it**: it was taken on prediction grounds with the drift cost
+knowingly accepted, and a decision cannot corroborate the hypothesis that would
+justify it. If MM-E5 returns COUPLED, the trade the PI made is the *shape* the
+programme should have been making all along; if it returns DECOUPLED or
+L1-SPECIFIC, the decision stands unchanged on its own prediction evidence.
+
+### 15.5 Provenance: the configuration our numbers were measured in
+
+A reader is entitled to know that the numbers in this paper were produced with the
+model in the configuration being claimed about. On 2026-08-29 we found one that was
+not, and audited the rest.
+
+**The defect (TRAIN-C5, RETRACTED; commit `1c914808a`).** A sibling experiment —
+the GRPO post-training pilot on REF-C v2.1, `stack/scripts/rl_pilot_refc21.py` —
+scored its model in **`train` mode**. `nn.Module.training` defaults to **True** and
+nothing in that path overrode it, so every readout was taken with `ego_dropout` and
+`route_dropout` at 0.5 (per-sample Bernoulli zeroing of \(v_0\) and of the route)
+and with stochastic truncated-diffusion noise live. **MEASURED impact** on the same
+cold-start checkpoint, three seeds per mode (`raw/p_rc21/eval_mode_impact.json`,
+probe `code/eval_mode_impact.py`): selection-ADE **2.000 m in `train` mode against
+0.726 m in `eval` mode — the readout overstated the error by +175.7 %** (from the
+unrounded per-seed means; the tabled values round as shown) [TIER T1;
+quoted here only to size the defect, and belonging to a retracted result], the
+collision rate barely moved (11.063 % → 10.638 %), and the run-to-run spread went
+**0.099 m → exactly 0.000 m**. That last number dissolved two of the experiment's
+own pre-registered limitations rather than fixing them: the planned "seed the
+decoder noise" work was unnecessary because `.eval()` is total, and the 17 %
+wobble that had been attributed to diffusion noise was **dropout**.
+
+**The audit (MM-C2), established by source — and re-verified independently for this
+section on 2026-08-29 rather than inherited:**
+
+| instrument | how it obtains eval mode | verdict |
+|---|---|---|
+| drift / prediction probes `latentmotion.py`, `meanpred.py` — **the source of every §14 and §15 drift, cos and nrmse number** | **0** direct calls each; their shared loader `v7tiny_g2.load_arm` (defined :96) calls `world.eval()` at :103 | ✅ SAFE |
+| T1 driving instrument `taniteval/tools/t1_eval.py` — **the source of §14.8** | **5** direct calls (:1044, :1052, :1070, :1229, :1242) | ✅ SAFE |
+| eval harness `taniteval/runner.py` | **0** direct; its loader `taniteval/data.py:173` does `.to(device).eval()`; `compounding.py:112` and `hierarchy.py:551` are explicit | ✅ SAFE |
+| flagship / diagnostic evals | explicit calls throughout `stack/scripts/eval_*.py` and `stack/tanitad/eval/`; the one file with **zero** direct calls, `eval_v58f.py`, is assembled by `tanitad.models.v58f.load_v58f`, whose module sets `requires_grad_(False)` and `self.eval()` in its constructor (:326) | ✅ SAFE |
+| **the RL pilot** | **built its own model path, bypassing every loader that sets eval** | ⛔ the sole affected instrument |
+
+⇒ **No number in this paper is affected.** The defect was local to a new code path
+that constructed a model without going through a house loader.
+
+⭐ **The class, which is why this note is in the paper rather than in an errata
+file: a safety default that lives in a LOADER is not a property of the MODEL.** The
+audit's own table is the argument — **three of the four safe families contain at
+least one scoring path that never sets eval itself** and is safe only because a
+loader does it on their behalf. That is not a property of those instruments, it is a property of how
+they were invoked, and a new script that builds its own object silently opts out.
+The recognition signal is therefore not "a missing `.eval()`" but **"a code path
+that constructs or loads a model without the house loader"**. ⇒ **The standing
+rule: a scoring function asserts `not model.training` itself, and records the mode
+in its output** — the assertion belongs where the number is produced, not where the
+object is built. The companion rule earned in the same pass: **every training run
+saves the checkpoint its numbers describe**, because the pilot's trained decoder had
+not been saved and its result therefore could not be re-measured at all once the
+defect surfaced. A run whose result cannot be re-measured is a run that has to be
+repeated.
+
+This generalises one step further, and the generalisation is the reason it earns a
+methods note: **the mode a model is in is an experimental variable like any other,
+and it had no instrument.** Framework defaults are not neutral — they are a
+configuration choice made by someone who never saw the experiment.
+
+### 15.6 What §15 does not establish
+
+The L1 mechanism argument (§15.2) is a statement about the **minimiser set** plus a
+**four-way signature match**, not a demonstration that this particular 2 k arm
+reached the degenerate configuration by the degenerate route; the dose curve is the
+registered discriminator and it has not run. The consequence drawn for §14.10's
+item 5 (§15.3) is an **inference from the mechanism**, not a measurement of item 5,
+which remains unrun. The coupling statement (§15.4) is a **HYPOTHESIS at n = 2**
+across two mechanisms, two scales and two different parts of the prediction axis,
+with a **competing selection-over-mechanisms account** that the same evidence fits;
+neither test 1 nor test 2 had reported when this section was written, and **no
+result in this paper may be re-read through the frontier framing until they do**.
+All L1 numbers are **2 k**, hence admissible **vs-base relative only** under
+§14.1's 30 k-calibrated validity band, and the arm's own deliberate-regression
+control (`--o6-innovation-shuffle`, the time-shuffled \(g\) that must destroy the
+constraint) is **implemented and registered but not yet read** — until it is, L1's
+drift reduction carries the ladder's `REGRESSION-FAILS` clause as an open
+instrument risk, not a discharged one. Nothing in §15 is a driving claim; the sole
+T1 number quoted (§15.5) belongs to a retracted readout of a different model and is
+quoted only to size an instrument defect.
 
 ## References
 
@@ -5714,3 +6140,81 @@ CGTR (teacher refresh; LLM-distillation scope) arXiv:2606.03532; PhyLatent arXiv
   §13.9–§13.10 / the ladder and bake-off packages; tier stamps throughout (T0-DIAGNOSTIC except
   the two T1 rows, which say so).
 
+- **v1.3 (2026-08-29, the same evening): prediction at matched drift.** **New §15**, which
+  reports the first cell of the PI-ranked drift-attack ladder (MM-E4,
+  `PREREG_DRIFT_ATTACK_LADDER.md` with Amendments A and B) to return, and takes three things
+  from it. **(a) An anti-drift objective that worked and failed.** *Innovation-SIGReg* — O6's
+  sketched-Gaussianity test with its input swapped from the latents to the dynamics innovations
+  \(\Delta z - g(z_t)\), \(g\) a cross-fitted per-batch ridge with a deliberately RELATIVE
+  constant — cut drift **0.4733 → 0.3551 (−25.0 %), the largest reduction ever measured on the
+  trainable line**, and destroyed prediction in the same arm: **cos_ctr 0.2462 → 0.0108
+  (−95.6 %)**, **nrmse 0.9746 → 1.0162 — above 1.0 and above its own mean-only control 0.9984**,
+  **98.8 % of the predicted \(\Delta z\) being the batch mean**, and the centred cosine falling
+  from **11.26σ to 0.72σ** against its permutation null. The mechanism is given with its
+  mathematics: the regulariser's argument **is the read's own residual**, and since
+  \(r^2 = 1 - \operatorname{Var}(\varepsilon)/\operatorname{Var}(\Delta z)\), a minimiser can
+  satisfy an isotropic-Gaussian constraint on \(\varepsilon\) by making \(\Delta z\) i.i.d.
+  and independent of \(z_t\) — at which point drift is zero **by construction** and prediction
+  is the mean predictor **by construction**. All four predicted signatures co-occur in the raws.
+  The scope precision that the term's \(g\) (linear, full-\(d\), \(k=1\), batch-half
+  cross-fit) is **not** the read's \(\tilde g\) (RFF, top-8 PCA band, \(k=4\), clip-disjoint
+  folds) is stated, and shown to strengthen rather than weaken the argument. **Class: Goodhart in
+  objective form**, promoted to the method section as **§5.8's I16** (the heading's count and
+  span are corrected with it) — the 2026-08-22 probe rule (*never tune on what you score*) moved from the
+  probe to the loss, and demonstrably out of that rule's reach: L1's ridge was impeccably
+  cross-fitted, its constant control read exactly 0.0000, its λ was fixed in advance and made
+  relative, and none of it helped, because the defect is in what the term is a function **of**.
+  ⇒ **Standing consequence adopted: drift alone is never a valid objective, and a drift number
+  quoted without its paired prediction reads is inadmissible.** The pre-committed protection
+  (> 5 % cos cost ⇒ FAIL regardless of drift), itself derived from E-DEC-69 at 17:57 and
+  registered at 19:00, caught the 21:40 read; without its clause the ladder's own `DRIFT-DOWN`
+  outcome would have spent the ~8.2 h of Thor it prices on confirming a latent that had become
+  noise. §14.10's **item 5 (the drift-orthogonalised target) is re-priced** by the same argument
+  — an inference from the mechanism, not a measurement, and labelled as such — while items 1–4
+  are untouched. **(b) The coupling hypothesis (MM-E5), stated as a hypothesis and not as a
+  finding.** Two measurements now move drift and prediction the SAME way — EMA at 30 k (+3.6 %
+  drift, +24.5 % cos; E-DEC-69) and innovation-SIGReg at 2 k (−25.0 %, −95.6 %) — and if that is
+  mechanism-independent the programme's objective is mis-stated: not minimum drift but **maximum
+  prediction at matched drift**, a frontier, with §14's open problem restated from *a defect to
+  remove* to *a bad point on a frontier*. Registered in
+  `PREREG_DRIFT_PREDICTION_FRONTIER.md`, commit `6e719a493`, **BEFORE the discriminating arms
+  reported** (L2 mid-training, L3/L4 unstarted — precedence in the git history, and part of the
+  claim's standing). Carried with its limits in the same breath: **n = 2**, different mechanisms,
+  different scales, **no shared axis**, and two different parts of the cosine axis (0.01–0.25
+  against 0.60–0.75); plus a **competing account the same evidence fits** — a selection effect
+  over which levers happen to work, since the only lever that ever lowered drift did so by
+  removing temporal structure — which makes **test 1 (the disjoint-mechanism arms) load-bearing
+  and test 2 (the 4-point dose curve) unable to settle it**, exactly as the pre-registration's
+  `L1-SPECIFIC` outcome anticipates. All four committed outcomes are tabled. The PI's same-evening
+  `D-EMA-ADOPT` decision (commit `a67b3c0`) is recorded as **consistent with, and not evidence
+  for**, the hypothesis — and it supersedes §14.7's description of ship-with-EMA as open.
+  **(c) New §15.5, a provenance note: the configuration our numbers were measured in.** TRAIN-C5
+  retracted a sibling experiment's magnitudes — the RL pilot scored in **`train` mode**, dropout
+  live, **overstating selection-ADE by +175.7 %** (2.000 m vs 0.726 m in eval mode) and dissolving
+  two of its own pre-registered limits (the eval-mode readout is exactly deterministic, spread
+  0.099 → 0.000 m; the wobble blamed on diffusion noise was dropout). The MM-C2 blast-radius audit
+  is reproduced **and independently re-verified by source for this section**: the drift/prediction
+  probes get eval mode from their shared loader `v7tiny_g2.load_arm` (`world.eval()`, :103), the
+  T1 instrument has 5 direct calls, the eval harness gets it from `data.py:173` with
+  `compounding.py:112` and `hierarchy.py:551` explicit, and the one flagship script with **zero**
+  direct calls (`eval_v58f.py`) is assembled by `load_v58f`, whose module sets `self.eval()` in
+  its constructor — **so no number in this paper is affected**, and the sole affected path was the
+  one that built its own model. **Class: a safety default that lives in a LOADER is not a property
+  of the MODEL**; three of the four safe instrument families never set eval themselves. ⇒
+  **Standing rule: a scoring function asserts `not model.training` itself and records the mode**,
+  and every training run saves the checkpoint its numbers describe. **New Figure 5**
+  (`Paper/figures/make_drift_frontier.py` → `drift_frontier.svg`; same generation contract as
+  Figure 4 — every value read from the banked probe JSONs, no hand-typed fallback, **four**
+  cross-artifact tripwires, `.png` gated on cairosvg's native cairo) draws the (drift, prediction)
+  plane **once per scale and never once for both**, with unshared and separately-labelled axes,
+  every intervention as an arrow **from its own base to itself**, the coupling hypothesis as
+  shaded **quadrants** rather than a fitted frontier line (sign agreement is its entire content;
+  a drawn curve would assert a slope no measurement supports), the motivation-only 2 k EMA arms
+  muted and excluded from the n, and the two unrun doses drawn as **absence**. **§15.6** states
+  what §15 does not establish: the mechanism argument is a minimiser-set claim plus a signature
+  match, not a demonstration of route; the item-5 consequence is an inference; the coupling
+  statement is a HYPOTHESIS whose tests had not reported; all L1 numbers are 2 k and hence
+  vs-base relative only; and **L1's own deliberate-regression control is registered but not yet
+  read**, so the ladder's `REGRESSION-FAILS` clause stands open. Tier stamps throughout:
+  T0-DIAGNOSTIC except the single T1 number in §15.5, which belongs to a retracted readout of a
+  different model and is quoted only to size an instrument defect.
