@@ -10083,3 +10083,46 @@ two machines: 34.0 vs ~36 MB/ep. ⭐ **That agreement is what converts the corre
 estimate from a claim into a fact — and it is the practice the class recommends: an
 estimate about a consumed artifact should be corroborated by measuring the artifact the
 consumer has actually been consuming, which usually already exists.**
+
+---
+
+## DE-C153 ⛔⛔ — MY VALIDATION GATE WAS ABOUT TO EXCLUDE ~190 HEALTHY CLIPS AND CALL IT DILIGENCE (DataFlyWheel, 2026-08-29)
+
+**Caught BEFORE it shipped, and only because the gate was trial-run against real data instead of
+trusted to work at 03:00.** Two defects in `validate_release.py`, the pre-handover gate for the B1
+training corpus. The second is the one worth a class.
+
+**Defect 1 (crash, harmless-because-loud).** The gate segfaulted (exit 139), deterministically,
+with **no traceback and no clip named**. `st.frames` / `st.average_rate` were read AFTER the
+`with av.open(...)` block closed — a PyAV stream is a view onto its container, so a post-close read
+is a **use-after-free**. It hid behind the property that made it look safe: it only fires on clips
+that PASS the duration check, so any probe returning early never reaches it. *A first reproduction
+attempt PASSED and nearly bought the "flaky, environmental" story — what broke it was diffing the
+repro against the real probe line by line rather than re-running it.* (CLAUDE.md already forbids the
+retry-until-it-works theory; this is why.)
+
+**Defect 2 (silent, and the dangerous one).** **129 of 3,176 banked clips (~4 %, ~190 corpus-wide)
+failed as `"last-frame mean None (zeros trap)"`.** Hand-decoded three of them: **all 605 frames
+present, 20.17 s, last-frame means 87.0 / 14.7 / 81.4 — the files are perfectly healthy.** The
+probe's `seek(dur - 0.5 s)` can land past the last decodable packet and yield nothing, leaving
+`last=None`. ⇒ the gate would have written ~190 GOOD clips into the MANIFEST **exclusions ledger
+with an authoritative-sounding reason**, and every downstream consumer would have trained on a
+silently 4 %-smaller corpus **with documentation that looked like rigour**. Fixed with a back-off
+(0.5 s → 2.0 s) then a full sequential-decode fallback, so a `None` verdict now means the DATA and
+not the seek. Re-ran: **129 → 0** non-absent failures.
+
+**ROOT-CAUSE CLASS — C83: AN INSTRUMENT THAT INVENTS THE DEFECT IT REPORTS.**
+Recognition signal: **a failure mode that is UNIFORM, PLAUSIBLE, and whose individual cases nobody
+has opened by hand.** Uniformity is what makes it convincing and is exactly what should make it
+suspect — real corruption is ragged; an artefact of the instrument is identical every time.
+⇒ **STANDING RULE: before ANY exclusion ledger is written, hand-verify at least three failing cases
+against the raw artifact by an INDEPENDENT path** (here: full sequential decode vs the seek probe).
+An exclusion is a claim about the data and needs the same evidence class as any other claim.
+
+**⚠️ Why this is worse than a crash, and belongs above defect 1 in any write-up:** a crash costs a
+window and announces itself. This one **produces a plausible artifact, on time, that is wrong** —
+and it launders its own error into the provenance record, where the next reader finds a documented
+exclusion and has no reason to re-open it. Same family as C77 (a pipeline that records its own
+failure faithfully and passes every structural check) and the C133 fake-gap case — and the mirror
+image of the E-DETECT-1 all-zero floor, which manufactured false POSITIVES by the same mechanism.
+**Structural checks cannot catch it: the counts, the schema and the reasons were all well-formed.**
