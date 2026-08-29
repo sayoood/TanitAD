@@ -1,6 +1,18 @@
 # NavSim → TanitAD frame decision (commission deliverable 2 of 4)
 
-**Date** 2026-08-29 · **Owner** DataFlyWheel · **Status** DECIDED, build pending B1
+**Date** 2026-08-29 · **Owner** DataFlyWheel · **Status** BUILT — see `RESULT.md`
+
+> ⛔ **SELF-CORRECTION (same day, after the build measured it).** The coverage
+> argument below is **HORIZONTAL ONLY**, and on that axis it held (measured
+> camera share l0 24.1 % · f0 41.0 % · r0 24.2 %). **The vertical axis was never
+> checked and does NOT hold:** the 256×640 frame needs **45.3° VFOV**, NavSim's
+> cameras carry **38.5°** — a 6.8° deficit no stitch can close, leaving a
+> scalloped unobserved band at top and bottom (**10.7 %** of the frame).
+> The delivered corpus therefore defaults to **`PHYSICALAI_RIG_CLEAN_176x624`**,
+> MEASURED **100.0000 %** observed over 204 scenes × 5 rigs.
+> **Root-cause class: a coverage claim stated for "the frame" from an analysis
+> of ONE of its two axes** — the same shape as quoting a rule outside its scope.
+> The fix that generalises: *a coverage claim names every axis it checked.*
 
 ## The decision
 
@@ -41,6 +53,23 @@ admissible designs, decided in favour of the first:
 ⛔ Explicit REPROJECTION only (pinhole ray → cylinder), never a resize; verified
 with the harness's own `lateral.assert_axis_convention`
 (`taniteval/taniteval/lateral.py:170`).
+
+**Addendum (same day, measured from a synthetic scene pickle):**
+
+1. **The cameras are NOT ideal pinholes — every cam entry carries a 5-param
+   `distortion` vector, measured `[-0.356, 0.173, -0.002, 0.000, …]`.** A
+   k1 of −0.356 is strong barrel distortion; at the image edges (exactly where
+   the stitch seams live) an undistortion-free mapping would misplace pixels by
+   tens of px. ⇒ the cylinder→source-pixel map applies the distortion model
+   (project ray with K, then distort), so the "static per rig" map is
+   K+distortion+extrinsics per camera — still computed once, still recorded.
+2. **Coverage confirmed from extrinsics, not assumed:** `cam_l0`/`cam_r0`
+   `sensor2lidar_rotation` yields yaw offsets ≈ ±35°; with 63.7° HFOV each the
+   l0+f0+r0 fan spans ≈ ±67° — the 120° cylindrical frame (±60°) is covered
+   with seam overlap on both sides.
+3. Synthetic frames carry `camera_dict` with all 8 cams (`cam_f0…cam_b0`), each
+   holding `data_path`, `sensor2lidar_rotation/translation`, `cam_intrinsic`,
+   `distortion` — so the build never touches the devkit for geometry.
 
 ## Provenance of the measurement
 
