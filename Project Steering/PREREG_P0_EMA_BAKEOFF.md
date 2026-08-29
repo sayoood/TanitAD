@@ -110,3 +110,26 @@ outcomes:
                run's timeline in view
 cost: 1 arm x ~8.2 h Thor (idle); EMA trainer already installed + content-verified
 launch: chain_ema30k.sh, ZZLAUNCHED 07:27 UTC 2026-08-29, first row content-verified
+
+### STAGE 2 AMENDMENT — the τ-schedule interpretation frame (recorded BEFORE the read, 2026-08-29 ~14:15)
+
+LAB-RUN-003's Arch package (`…/Research/2026-08-29-ema-warmup-rollout-composition/`)
+lands three scope facts that bind the read:
+1. **Our arms run FIXED τ=0.996, no ramp** (MEASURED, `train_v6_staged.py:6401`).
+   Every published EMA recipe ramps τ because a fixed-τ teacher is dominated by
+   random weights early (Mean Teacher / data2vec / BYOL's 2.7–4.1-pt constant-τ
+   ablation). At 2k the teacher horizon was 12.5 % of the run — 10–100× off every
+   published operating point; **at 30k fixed τ=0.996 sits INSIDE the published
+   band** ⇒ a 30k null/negative is a REAL EMA result, not a schedule artifact.
+2. **Prediction committed now**: the transient account predicts the cos gap
+   NARROWS at 30k. **Symmetric caveat, equally committed**: the 2k drift gain
+   may share the transient origin — if drift reduction ALSO vanishes at 30k,
+   that is EMA-OUT, not "mixed again".
+3. **No published EMA study exists at ≤5k steps** — the 2k stage-1 verdict is
+   off the published map in BOTH directions and is hereby down-weighted to
+   motivation-only status.
+Consequence edits to the outcome table (narrowing, not weakening): EMA-JOINS
+additionally requires a **τ-ramp arm before recipe adoption** (published
+best practice; adoption on a fixed-τ arm alone would ship a known-suboptimal
+schedule); EMA-OUT's follow-up lever is the frozen-teacher feature target
+(SALT ≥ V-JEPA 2 at ⅓ FLOPs — banked).
