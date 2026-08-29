@@ -148,14 +148,16 @@
    "sha256": "7683c366109c091a47b7ae8a3d6520131edd3db1a5aa594d74c7636d2f9745d6",
    "banked": "2026-08-18",
    "tags": [
+    "cem",
     "frozen-encoder",
-    "world-model",
     "planning",
-    "cem"
+    "rollout-composition",
+    "world-model"
    ],
-   "note": "DINO-WM: frozen DINOv2 PATCH features + latent L2 + CEM/MPC; CLS/global ablation degrades badly",
+   "note": "DINO-WM: frozen DINOv2 PATCH features + latent L2 + CEM/MPC; CLS/global ablation degrades badly | DINO-WM: one-step teacher-forced predictor (frameskip 1-5), multi-step ONLY by autoregressive composition at plan time (CEM/MPC receding horizon)",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-18-frozen-encoder-literature/FROZEN_ENCODER_LITERATURE.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-18-frozen-encoder-literature/FROZEN_ENCODER_LITERATURE.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-29-ema-warmup-rollout-composition/RESULT.md"
    ]
   },
   "2502.00622": {
@@ -212,13 +214,15 @@
    "sha256": "9cfcfde5fb0d9730637da5b9e7317825c3f3d09e91f3553e22eeba42c74d2226",
    "banked": "2026-08-18",
    "tags": [
+    "ema-teacher",
     "frozen-encoder",
-    "world-model",
-    "planning"
+    "planning",
+    "world-model"
    ],
-   "note": "V-JEPA 2 / 2-AC: frozen video ViT + compact action-conditioned predictor on <62h Droid, MPC to a goal image",
+   "note": "V-JEPA 2 / 2-AC: frozen video ViT + compact action-conditioned predictor on <62h Droid, MPC to a goal image | V-JEPA2-AC: teacher-forcing + rollout loss with T=2 (one recurrent step of gradient); error accumulation over long rollouts acknowledged verbatim",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-18-frozen-encoder-literature/FROZEN_ENCODER_LITERATURE.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-18-frozen-encoder-literature/FROZEN_ENCODER_LITERATURE.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-29-ema-warmup-rollout-composition/RESULT.md"
    ]
   },
   "2509.11417": {
@@ -939,10 +943,12 @@
    "sha256": "d0385798e8bada8e81b915c1743be81d9ce8776f12ed937e09351995e099ce37",
    "banked": "2026-08-23",
    "tags": [
-    "rl-model-based"
+    "rl-model-based",
+    "rollout-composition"
    ],
-   "note": "DreamerV3: RL entirely inside a learned world model",
+   "note": "DreamerV3: RL entirely inside a learned world model | DreamerV3: one-step RSSM, imagination horizon H=15 by composition (hp table p.21)",
    "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-29-ema-warmup-rollout-composition/RESULT.md",
     "products/P4-training-pipelines/METHOD_LIBRARY.md"
    ]
   },
@@ -2195,11 +2201,13 @@
    "sha256": "d3bc66d321cfceccc4f431113dea3f0f481d74d29dd283a33e204a4326f0403c",
    "banked": "2026-08-23",
    "tags": [
+    "benchmark-portfolio",
     "benchmarks",
     "nuscenes"
    ],
-   "note": "NAVSIM v1 NeurIPS2024: non-reactive pseudo-simulation, PDMS, navtrain/navtest | NAVSIM: ~75% of nuScenes is trivial straight driving; displacement metrics uncorrelated with closed-loop; PDMS alternative",
+   "note": "NAVSIM v1 NeurIPS2024: non-reactive pseudo-simulation, PDMS, navtrain/navtest | NAVSIM: ~75% of nuScenes is trivial straight driving; displacement metrics uncorrelated with closed-loop; PDMS alternative | NAVSIM v1: navtrain 103k / navtest 12k, 450GB standalone; PDMS = aggregated post-simulation subscores, aligns with closed-loop better than traditional open-loop metrics",
    "cited_by": [
+    "TanitAD Research Lab/Benchmarks & Evals/Research/2026-08-29-benchmark-portfolio/RESULT.md",
     "products/P7-TanitEval/BENCHMARKS_SPEC.md",
     "products/P7-TanitEval/benchmarks/NAVSIM_PROTOCOL.md",
     "products/P7-TanitEval/benchmarks/NUSCENES_PROTOCOL.md"
@@ -2253,10 +2261,12 @@
    "sha256": "44ae16928e12d27a27800ada722bd57211c04d894c59dbceaed3b81bb3679acf",
    "banked": "2026-08-23",
    "tags": [
+    "benchmark-portfolio",
     "benchmarks"
    ],
-   "note": "PDM CoRL2023: the planner and scoring function PDMS is named after",
+   "note": "PDM CoRL2023: the planner and scoring function PDMS is named after | PDM: open-loop ego-forecasting and closed-loop planning fundamentally misaligned; best open-loop uses ONLY centerline; rule-based PDM-Closed wins closed-loop nuPlan",
    "cited_by": [
+    "TanitAD Research Lab/Benchmarks & Evals/Research/2026-08-29-benchmark-portfolio/RESULT.md",
     "products/P7-TanitEval/benchmarks/NAVSIM_PROTOCOL.md"
    ]
   },
@@ -2348,12 +2358,14 @@
    "sha256": "ceab525d5769b984d475b634a17d1a30d5258c9ebe3e83b4932aebc01a416f9b",
    "banked": "2026-08-23",
    "tags": [
+    "benchmark-portfolio",
     "benchmarks",
     "ego-status-leak",
     "nuscenes"
    ],
-   "note": "AD-MLP: ego-status-only MLP tops nuScenes open-loop L2; the shortcut NAVSIM claims to fix | AD-MLP: ego-state-only MLP, no perception, matches SOTA open-loop L2 on nuScenes; uses ST-P3 (TemAvg) eval",
+   "note": "AD-MLP: ego-status-only MLP tops nuScenes open-loop L2; the shortcut NAVSIM claims to fix | AD-MLP: ego-state-only MLP, no perception, matches SOTA open-loop L2 on nuScenes; uses ST-P3 (TemAvg) eval | AD-MLP: perception-free MLP (past traj+velocity only) cuts nuScenes open-loop L2 ~20pct vs perception methods - the open-loop indictment",
    "cited_by": [
+    "TanitAD Research Lab/Benchmarks & Evals/Research/2026-08-29-benchmark-portfolio/RESULT.md",
     "products/P7-TanitEval/BENCHMARKS_SPEC.md",
     "products/P7-TanitEval/benchmarks/NAVSIM_PROTOCOL.md",
     "products/P7-TanitEval/benchmarks/NUSCENES_PROTOCOL.md"
@@ -2609,10 +2621,12 @@
    "sha256": "c289b8904ce05ee3503dd67d3765d9d93da61493a4cf6c2c861a08f4466e7899",
    "banked": "2026-08-23",
    "tags": [
+    "benchmark-portfolio",
     "benchmarks"
    ],
-   "note": "BEV-Planner Is Ego Status All You Need: quantifies the nuScenes ego shortcut; proposes CCR",
+   "note": "BEV-Planner Is Ego Status All You Need: quantifies the nuScenes ego shortcut; proposes CCR | BEV-Planner: nuScenes too simple -> ego-status dominates planning; open-loop metrics do not comprehensively assess planning quality",
    "cited_by": [
+    "TanitAD Research Lab/Benchmarks & Evals/Research/2026-08-29-benchmark-portfolio/RESULT.md",
     "products/P7-TanitEval/benchmarks/NAVSIM_PROTOCOL.md"
    ]
   },
@@ -2901,11 +2915,13 @@
    "sha256": "056cba6b20952c609dc94b59830f859b0743705b9d465d24e61dcbb5b839d4a9",
    "banked": "2026-08-28",
    "tags": [
-    "label-pipelines"
+    "label-pipelines",
+    "lane-detection"
    ],
-   "note": "CLRerNet: monocular lane detection, CULane F1 81.43 (paper) / 81.11-81.55 (released models) - the candidate independent lane-boundary reference instrument",
+   "note": "CLRerNet: monocular lane detection, CULane F1 81.43 (paper) / 81.11-81.55 (released models) - the candidate independent lane-boundary reference instrument | CLRerNet: LaneIoU confidence; CULane F1 81.43 paper / 81.55 EMA ckpt; input crop+resize 800x320; Apache-2.0 repo with DLA-34 checkpoints (mmdet 3.3)",
    "cited_by": [
-    "TanitAD Research Lab/Data Engineering/Research/2026-08-28-corridor-ref-untimed-cot/RESULT.md"
+    "TanitAD Research Lab/Data Engineering/Research/2026-08-28-corridor-ref-untimed-cot/RESULT.md",
+    "TanitAD Research Lab/Data Engineering/Research/2026-08-29-lane-detector-deployment/RESULT.md"
    ]
   },
   "2404.08471": {
@@ -3078,11 +3094,13 @@
    "sha256": "9c9cb468f756152821e9be62244eb57cabf8617a47807f0ee8f1b26d13955f96",
    "banked": "2026-08-28",
    "tags": [
+    "quant-gate",
     "quantization"
    ],
-   "note": "PTQ4ViT: twin uniform quantizer post-softmax/GELU; 32 calibration images; <0.5% top-1 drop at W8A8 on ViT/DeiT/Swin",
+   "note": "PTQ4ViT: twin uniform quantizer post-softmax/GELU; 32 calibration images; <0.5% top-1 drop at W8A8 on ViT/DeiT/Swin | PTQ4ViT: 32 calib images suffice for ViT PTQ; twin uniform quantization for post-softmax/GELU",
    "cited_by": [
-    "TanitAD Research Lab/Deployment & Optimization/Research/2026-08-28-vit-int8-fp8-thor/RESULT.md"
+    "TanitAD Research Lab/Deployment & Optimization/Research/2026-08-28-vit-int8-fp8-thor/RESULT.md",
+    "TanitAD Research Lab/Deployment & Optimization/Research/2026-08-29-quant-gate-spec/RESULT.md"
    ]
   },
   "2212.08254": {
@@ -3103,11 +3121,13 @@
    "sha256": "40a6053868f7077df3742f64bd264369772ef20c5c4cd46bfefbd2cf3db817ae",
    "banked": "2026-08-28",
    "tags": [
+    "quant-gate",
     "quantization"
    ],
-   "note": "RepQ-ViT: per-channel calibration reparameterized to per-tensor inference for LN activations; log-sqrt2 softmax quantizer",
+   "note": "RepQ-ViT: per-channel calibration reparameterized to per-tensor inference for LN activations; log-sqrt2 softmax quantizer | RepQ-ViT: per-channel calibrate then reparameterize to per-tensor deploy",
    "cited_by": [
-    "TanitAD Research Lab/Deployment & Optimization/Research/2026-08-28-vit-int8-fp8-thor/RESULT.md"
+    "TanitAD Research Lab/Deployment & Optimization/Research/2026-08-28-vit-int8-fp8-thor/RESULT.md",
+    "TanitAD Research Lab/Deployment & Optimization/Research/2026-08-29-quant-gate-spec/RESULT.md"
    ]
   },
   "2303.17951": {
@@ -3135,11 +3155,13 @@
    "sha256": "80b6c85db5baa3bf9320e692138115bcd2402bffde1bca6db0be0de8f996d7f0",
    "banked": "2026-08-28",
    "tags": [
+    "quant-gate",
     "quantization"
    ],
-   "note": "Qualcomm FP8-vs-INT8: FP8 units 50-180% less area/energy efficient than INT8; accuracy parity or INT8-favored with proper PTQ on most nets",
+   "note": "Qualcomm FP8-vs-INT8: FP8 units 50-180% less area/energy efficient than INT8; accuracy parity or INT8-favored with proper PTQ on most nets | Qualcomm FP8-vs-INT8: FP8 markedly less efficient than INT8 on this workload class",
    "cited_by": [
-    "TanitAD Research Lab/Deployment & Optimization/Research/2026-08-28-vit-int8-fp8-thor/RESULT.md"
+    "TanitAD Research Lab/Deployment & Optimization/Research/2026-08-28-vit-int8-fp8-thor/RESULT.md",
+    "TanitAD Research Lab/Deployment & Optimization/Research/2026-08-29-quant-gate-spec/RESULT.md"
    ]
   },
   "2405.03144": {
@@ -3161,11 +3183,13 @@
    "sha256": "ec1a8ffe3374053baae6e9fed9f9147e7adad502b3f87c6199bf48d0e5842d3e",
    "banked": "2026-08-28",
    "tags": [
+    "quant-gate",
     "quantization"
    ],
-   "note": "PTQ4SAM: dense-prediction PTQ; bimodal post-softmax + outlier channels collapse naive low-bit PTQ on SAM; their fix near-lossless at 6-bit",
+   "note": "PTQ4SAM: dense-prediction PTQ; bimodal post-softmax + outlier channels collapse naive low-bit PTQ on SAM; their fix near-lossless at 6-bit | The sub-6-bit dense-head cliff: W4A4 box AP -23.2, SAM-L 36.4 to 5.4 - invisible to scalar heads",
    "cited_by": [
-    "TanitAD Research Lab/Deployment & Optimization/Research/2026-08-28-vit-int8-fp8-thor/RESULT.md"
+    "TanitAD Research Lab/Deployment & Optimization/Research/2026-08-28-vit-int8-fp8-thor/RESULT.md",
+    "TanitAD Research Lab/Deployment & Optimization/Research/2026-08-29-quant-gate-spec/RESULT.md"
    ]
   },
   "2606.07170": {
@@ -3227,6 +3251,358 @@
    "note": "DrivoR (CVPR26, Valeo): camera-only, camera-aware register tokens compress multi-cam ViT features; generate+score decoders; the strongest camera-only NavSim family",
    "cited_by": [
     "TanitAD Research Lab/Opponent Analysis/Research/2026-08-28-navsim-v2-camera-lane/RESULT.md"
+   ]
+  },
+  "2202.03555": {
+   "key": "2202.03555",
+   "kind": "arxiv",
+   "title": "data2vec: A General Framework for Self-supervised Learning in Speech, Vision and Language",
+   "authors": [
+    "Alexei Baevski",
+    "Wei-Ning Hsu",
+    "Qiantong Xu",
+    "Arun Babu",
+    "Jiatao Gu",
+    "Michael Auli"
+   ],
+   "published": "2022-02-07",
+   "abstract": "While the general idea of self-supervised learning is identical across modalities, the actual algorithms and objectives differ widely because they were developed with a single modality in mind. To get us closer to general self-supervised learning, we present data2vec, a framework that uses the same learning method for either speech, NLP or computer vision. The core idea is to predict latent representations of the full input data based on a masked view of the input in a self-distillation setup using a standard Transformer architecture. Instead of predicting modality-specific targets such as words, visual tokens or units of human speech which are local in nature, data2vec predicts contextualized latent representations that contain information from the entire input. Experiments on the major benchmarks of speech recognition, image classification, and natural language understanding demonstrat",
+   "url": "https://arxiv.org/abs/2202.03555",
+   "path": "TanitAD Research Lab/Library/papers/2202.03555_data2vec-A-General-Framework-for-Self-supervised-Learning-in.pdf",
+   "bytes": 925969,
+   "sha256": "9ab545577568481959f5ba5596385cdf1e6344f5b1a5a821a9779996ebeb0e18",
+   "banked": "2026-08-29",
+   "tags": [
+    "ema-teacher"
+   ],
+   "note": "data2vec: EMA tau ramped UP 0.999to0.9999 so the teacher updates faster early, verbatim: when the model is random - the warmup-transient fix stated",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-29-ema-warmup-rollout-composition/RESULT.md"
+   ]
+  },
+  "2006.07733": {
+   "key": "2006.07733",
+   "kind": "arxiv",
+   "title": "Bootstrap your own latent: A new approach to self-supervised Learning",
+   "authors": [
+    "Jean-Bastien Grill",
+    "Florian Strub",
+    "Florent Altché",
+    "Corentin Tallec",
+    "Pierre H. Richemond",
+    "Elena Buchatskaya",
+    "Carl Doersch",
+    "Bernardo Avila Pires",
+    "Zhaohan Daniel Guo",
+    "Mohammad Gheshlaghi Azar",
+    "Bilal Piot",
+    "Koray Kavukcuoglu"
+   ],
+   "published": "2020-06-13",
+   "abstract": "We introduce Bootstrap Your Own Latent (BYOL), a new approach to self-supervised image representation learning. BYOL relies on two neural networks, referred to as online and target networks, that interact and learn from each other. From an augmented view of an image, we train the online network to predict the target network representation of the same image under a different augmented view. At the same time, we update the target network with a slow-moving average of the online network. While state-of-the art methods rely on negative pairs, BYOL achieves a new state of the art without them. BYOL reaches $74.3\\%$ top-1 classification accuracy on ImageNet using a linear evaluation with a ResNet-50 architecture and $79.6\\%$ with a larger ResNet. We show that BYOL performs on par or better than the current state of the art on both transfer and semi-supervised benchmarks. Our implementation and",
+   "url": "https://arxiv.org/abs/2006.07733",
+   "path": "TanitAD Research Lab/Library/papers/2006.07733_Bootstrap-your-own-latent-A-new-approach-to-self-supervised.pdf",
+   "bytes": 4837213,
+   "sha256": "873e7b74d58e1e17806cf7a3cf6b80ead914559f36ed19313c749672eed0aa94",
+   "banked": "2026-08-29",
+   "tags": [
+    "ema-teacher"
+   ],
+   "note": "BYOL: tau_base 0.996 cosine to 1.0; constant-tau ablation top-1: 0.99=72.5, 0.999=69.8, 0.9=68.4, 1.0=18.8, 0=0.3 - teacher speed is first-order",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-29-ema-warmup-rollout-composition/RESULT.md"
+   ]
+  },
+  "1703.01780": {
+   "key": "1703.01780",
+   "kind": "arxiv",
+   "title": "Mean teachers are better role models: Weight-averaged consistency targets improve semi-supervised deep learning results",
+   "authors": [
+    "Antti Tarvainen",
+    "Harri Valpola"
+   ],
+   "published": "2017-03-06",
+   "abstract": "The recently proposed Temporal Ensembling has achieved state-of-the-art results in several semi-supervised learning benchmarks. It maintains an exponential moving average of label predictions on each training example, and penalizes predictions that are inconsistent with this target. However, because the targets change only once per epoch, Temporal Ensembling becomes unwieldy when learning large datasets. To overcome this problem, we propose Mean Teacher, a method that averages model weights instead of label predictions. As an additional benefit, Mean Teacher improves test accuracy and enables training with fewer labels than Temporal Ensembling. Without changing the network architecture, Mean Teacher achieves an error rate of 4.35% on SVHN with 250 labels, outperforming Temporal Ensembling trained with 1000 labels. We also show that a good network architecture is crucial to performance. C",
+   "url": "https://arxiv.org/abs/1703.01780",
+   "path": "TanitAD Research Lab/Library/papers/1703.01780_Mean-teachers-are-better-role-models-Weight-averaged-consist.pdf",
+   "bytes": 863822,
+   "sha256": "b2557b947c0f2b8fc85b604e2743164619771f3e36616b038048d6d46fc16025",
+   "banked": "2026-08-29",
+   "tags": [
+    "ema-teacher"
+   ],
+   "note": "Mean Teacher: alpha 0.99 early then 0.999 late - teacher should forget the old inaccurate student weights quickly; the original EMA warmup rationale",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-29-ema-warmup-rollout-composition/RESULT.md"
+   ]
+  },
+  "2301.08243": {
+   "key": "2301.08243",
+   "kind": "arxiv",
+   "title": "Self-Supervised Learning from Images with a Joint-Embedding Predictive Architecture",
+   "authors": [
+    "Mahmoud Assran",
+    "Quentin Duval",
+    "Ishan Misra",
+    "Piotr Bojanowski",
+    "Pascal Vincent",
+    "Michael Rabbat",
+    "Yann LeCun",
+    "Nicolas Ballas"
+   ],
+   "published": "2023-01-19",
+   "abstract": "This paper demonstrates an approach for learning highly semantic image representations without relying on hand-crafted data-augmentations. We introduce the Image-based Joint-Embedding Predictive Architecture (I-JEPA), a non-generative approach for self-supervised learning from images. The idea behind I-JEPA is simple: from a single context block, predict the representations of various target blocks in the same image. A core design choice to guide I-JEPA towards producing semantic representations is the masking strategy; specifically, it is crucial to (a) sample target blocks with sufficiently large scale (semantic), and to (b) use a sufficiently informative (spatially distributed) context block. Empirically, when combined with Vision Transformers, we find I-JEPA to be highly scalable. For instance, we train a ViT-Huge/14 on ImageNet using 16 A100 GPUs in under 72 hours to achieve strong ",
+   "url": "https://arxiv.org/abs/2301.08243",
+   "path": "TanitAD Research Lab/Library/papers/2301.08243_Self-Supervised-Learning-from-Images-with-a-Joint-Embedding.pdf",
+   "bytes": 3571832,
+   "sha256": "eddbdc093eb4d48662bcf4fbd1c6735ccd606205cc9070977ce317d68aff3941",
+   "banked": "2026-08-29",
+   "tags": [
+    "ema-teacher"
+   ],
+   "note": "I-JEPA: momentum 0.996 linearly to 1.0 over pretraining; EMA target essential for ViT JEAs (collapse avoidance)",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-29-ema-warmup-rollout-composition/RESULT.md"
+   ]
+  },
+  "2509.24317": {
+   "key": "2509.24317",
+   "kind": "arxiv",
+   "title": "Rethinking JEPA: Compute-Efficient Video SSL with Frozen Teachers",
+   "authors": [
+    "Xianhang Li",
+    "Chen Huang",
+    "Chun-Liang Li",
+    "Eran Malach",
+    "Josh Susskind",
+    "Vimal Thilak",
+    "Etai Littwin"
+   ],
+   "published": "2025-09-29",
+   "abstract": "Video Joint Embedding Predictive Architectures (V-JEPA) learn generalizable off-the-shelf video representation by predicting masked regions in latent space with an exponential moving average (EMA)-updated teacher. While EMA prevents representation collapse, it complicates scalable model selection and couples teacher and student architectures. We revisit masked-latent prediction and show that a frozen teacher suffices. Concretely, we (i) train a target encoder with a simple pixel-reconstruction objective under V-JEPA masking, then (ii) freeze it and train a student to predict the teacher's latents on masked regions. This leads to a two-stage, unregularized scheme that we refer to as SALT (Static-teacher Asymmetric Latent Training). SALT decouples optimization into pixel reconstruction (teacher) and masked latent prediction (student), increasing transparency, efficiency, and scalability wh",
+   "url": "https://arxiv.org/abs/2509.24317",
+   "path": "TanitAD Research Lab/Library/papers/2509.24317_Rethinking-JEPA-Compute-Efficient-Video-SSL-with-Frozen-Teac.pdf",
+   "bytes": 2944144,
+   "sha256": "53243e3b0673daed4d1072d84ce5b7b3e063045b390a7a20e79c9c4ab69366f7",
+   "banked": "2026-08-29",
+   "tags": [
+    "ema-teacher"
+   ],
+   "note": "SALT: frozen pixel-pretrained teacher replaces EMA; +0.9 SSv2 vs V-JEPA2 ViT-g, better acc-FLOPs Pareto; students robust to small sub-optimal teachers",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-29-ema-warmup-rollout-composition/RESULT.md"
+   ]
+  },
+  "2606.03532": {
+   "key": "2606.03532",
+   "kind": "arxiv",
+   "title": "When Should the Teacher Move? Temporal Coupling and Stability in Self On-Policy Distillation",
+   "authors": [
+    "Haowei Guo",
+    "Baolong Bi",
+    "Ruicheng Zhang",
+    "Bingqian Sun",
+    "Wentao Zhang"
+   ],
+   "published": "2026-06-02",
+   "abstract": "Self on-policy distillation trains a student policy against a teacher derived from its own parameter history, yet the teacher's update schedule -- which governs the \\emph{temporal coupling} between teacher and student -- has not been systematically studied as a stability variable. Through a controlled schedule sweep on Qwen3-8B, we establish that \\emph{isolation periods}, defined as complete teacher freezing between updates, are the key structural property enabling stable learning, not teacher age. To characterize these underlying training dynamics, we introduce a diagnostic framework of temporal KL structure, refresh shock, and length-tail risk. This framework further uncovers \\emph{state-oblivious collapse}: optimal short-horizon fixed schedules catastrophically fail under long-horizon training because a clock-driven refresh can copy a transiently drifting student into the teacher in a",
+   "url": "https://arxiv.org/abs/2606.03532",
+   "path": "TanitAD Research Lab/Library/papers/2606.03532_When-Should-the-Teacher-Move-Temporal-Coupling-and-Stability.pdf",
+   "bytes": 1658801,
+   "sha256": "a9d00edfd0b0ed16e705654b7a5e3e94f82cbe4007c862911f5615c912aa9833",
+   "banked": "2026-08-29",
+   "tags": [
+    "ema-teacher"
+   ],
+   "note": "CGTR: continuous EMA = chronic teacher contamination; consolidation-gated HARD refresh beats EMA 0.806 vs 0.713 (LLM on-policy distillation domain)",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-29-ema-warmup-rollout-composition/RESULT.md"
+   ]
+  },
+  "2310.16828": {
+   "key": "2310.16828",
+   "kind": "arxiv",
+   "title": "TD-MPC2: Scalable, Robust World Models for Continuous Control",
+   "authors": [
+    "Nicklas Hansen",
+    "Hao Su",
+    "Xiaolong Wang"
+   ],
+   "published": "2023-10-25",
+   "abstract": "TD-MPC is a model-based reinforcement learning (RL) algorithm that performs local trajectory optimization in the latent space of a learned implicit (decoder-free) world model. In this work, we present TD-MPC2: a series of improvements upon the TD-MPC algorithm. We demonstrate that TD-MPC2 improves significantly over baselines across 104 online RL tasks spanning 4 diverse task domains, achieving consistently strong results with a single set of hyperparameters. We further show that agent capabilities increase with model and data size, and successfully train a single 317M parameter agent to perform 80 tasks across multiple task domains, embodiments, and action spaces. We conclude with an account of lessons, opportunities, and risks associated with large TD-MPC2 agents. Explore videos, models, data, code, and more at https://tdmpc2.com",
+   "url": "https://arxiv.org/abs/2310.16828",
+   "path": "TanitAD Research Lab/Library/papers/2310.16828_TD-MPC2-Scalable-Robust-World-Models-for-Continuous-Control.pdf",
+   "bytes": 7858004,
+   "sha256": "99832c555b66665ad1e26cd48e75ea9dda4f3750175b993e7ed5b8dfe399b9e0",
+   "banked": "2026-08-29",
+   "tags": [
+    "rollout-composition"
+   ],
+   "note": "TD-MPC2: one-step latent model UNROLLED H=3 (lambda 0.5) in training; MPPI plans at H=3 - multi-step by unrolling, never separate per-horizon heads",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-29-ema-warmup-rollout-composition/RESULT.md"
+   ]
+  },
+  "1906.08253": {
+   "key": "1906.08253",
+   "kind": "arxiv",
+   "title": "When to Trust Your Model: Model-Based Policy Optimization",
+   "authors": [
+    "Michael Janner",
+    "Justin Fu",
+    "Marvin Zhang",
+    "Sergey Levine"
+   ],
+   "published": "2019-06-19",
+   "abstract": "Designing effective model-based reinforcement learning algorithms is difficult because the ease of data generation must be weighed against the bias of model-generated data. In this paper, we study the role of model usage in policy optimization both theoretically and empirically. We first formulate and analyze a model-based reinforcement learning algorithm with a guarantee of monotonic improvement at each step. In practice, this analysis is overly pessimistic and suggests that real off-policy data is always preferable to model-generated on-policy data, but we show that an empirical estimate of model generalization can be incorporated into such analysis to justify model usage. Motivated by this analysis, we then demonstrate that a simple procedure of using short model-generated rollouts branched from real data has the benefits of more complicated model-based algorithms without the usual pi",
+   "url": "https://arxiv.org/abs/1906.08253",
+   "path": "TanitAD Research Lab/Library/papers/1906.08253_When-to-Trust-Your-Model-Model-Based-Policy-Optimization.pdf",
+   "bytes": 3668344,
+   "sha256": "89d12b6142a285e541f6315a8911db469bea33514f3b80bdbe6e52439197b149",
+   "banked": "2026-08-29",
+   "tags": [
+    "rollout-composition"
+   ],
+   "note": "MBPO: model error compounds with rollout length; k=1 surprisingly difficult to beat; long learned-model rollouts unreliable",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-29-ema-warmup-rollout-composition/RESULT.md"
+   ]
+  },
+  "2603.23465": {
+   "key": "2603.23465",
+   "kind": "arxiv",
+   "title": "Statistical Efficiency of Single- and Multi-step Models for Forecasting and Control",
+   "authors": [
+    "Anne Somalwar",
+    "Bruce D. Lee",
+    "George J. Pappas",
+    "Nikolai Matni"
+   ],
+   "published": "2026-03-24",
+   "abstract": "Compounding error, where small prediction mistakes accumulate over time, presents a major challenge in learning-based control. A common remedy is to train multi-step predictors directly instead of rolling out single-step models. However, it is unclear when the benefits of multi-step predictors outweigh the difficulty of learning a more complex model. We provide the first quantitative analysis of this trade-off for linear dynamical systems. We study three predictor classes: (i) single step models, (ii) multi-step models, and (iii) single step models trained with multi-step losses. We show that when the model class is well-specified and accurately captures the system dynamics, single-step models achieve the lowest asymptotic prediction error. On the other hand, when the model class is misspecified due to partial observability, direct multi-step predictors can significantly reduce bias and ",
+   "url": "https://arxiv.org/abs/2603.23465",
+   "path": "TanitAD Research Lab/Library/papers/2603.23465_Statistical-Efficiency-of-Single-and-Multi-step-Models-for-F.pdf",
+   "bytes": 1243703,
+   "sha256": "75add7d16720e6af924e07a988766229ecd1ecedecb981e0da9b5eb55f88dd1c",
+   "banked": "2026-08-29",
+   "tags": [
+    "rollout-composition"
+   ],
+   "note": "Single vs multi-step statistical efficiency: composed one-step preferable in SMALL-DATA regimes; direct multi-step heads need substantially more samples",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-29-ema-warmup-rollout-composition/RESULT.md"
+   ]
+  },
+  "2406.03877": {
+   "key": "2406.03877",
+   "kind": "arxiv",
+   "title": "Bench2Drive: Towards Multi-Ability Benchmarking of Closed-Loop End-To-End Autonomous Driving",
+   "authors": [
+    "Xiaosong Jia",
+    "Zhenjie Yang",
+    "Qifeng Li",
+    "Zhiyuan Zhang",
+    "Junchi Yan"
+   ],
+   "published": "2024-06-06",
+   "abstract": "In an era marked by the rapid scaling of foundation models, autonomous driving technologies are approaching a transformative threshold where end-to-end autonomous driving (E2E-AD) emerges due to its potential of scaling up in the data-driven manner. However, existing E2E-AD methods are mostly evaluated under the open-loop log-replay manner with L2 errors and collision rate as metrics (e.g., in nuScenes), which could not fully reflect the driving performance of algorithms as recently acknowledged in the community. For those E2E-AD methods evaluated under the closed-loop protocol, they are tested in fixed routes (e.g., Town05Long and Longest6 in CARLA) with the driving score as metrics, which is known for high variance due to the unsmoothed metric function and large randomness in the long route. Besides, these methods usually collect their own data for training, which makes algorithm-level",
+   "url": "https://arxiv.org/abs/2406.03877",
+   "path": "TanitAD Research Lab/Library/papers/2406.03877_Bench2Drive-Towards-Multi-Ability-Benchmarking-of-Closed-Loo.pdf",
+   "bytes": 7789861,
+   "sha256": "c4b3514da643b7e564c3bb1efbcdaa17eaf6a61231da22125aeb5af708540c93",
+   "banked": "2026-08-29",
+   "tags": [
+    "benchmark-portfolio"
+   ],
+   "note": "Bench2Drive: CARLA-v2 closed-loop, 44 scenarios x 220 short routes; 2M-frame Think2Drive expert train set (Apache-2.0); DS + multi-ability + smoothness; eval cost 8xH800 x 2 days (VAD)",
+   "cited_by": [
+    "TanitAD Research Lab/Benchmarks & Evals/Research/2026-08-29-benchmark-portfolio/RESULT.md"
+   ]
+  },
+  "2510.26125": {
+   "key": "2510.26125",
+   "kind": "arxiv",
+   "title": "WOD-E2E: Waymo Open Dataset for End-to-End Driving in Challenging Long-tail Scenarios",
+   "authors": [
+    "Runsheng Xu",
+    "Hubert Lin",
+    "Wonseok Jeon",
+    "Hao Feng",
+    "Yuliang Zou",
+    "Liting Sun",
+    "John Gorman",
+    "Ekaterina Tolstaya",
+    "Sarah Tang",
+    "Brandyn White",
+    "Ben Sapp",
+    "Mingxing Tan"
+   ],
+   "published": "2025-10-30",
+   "abstract": "Vision-based end-to-end (E2E) driving has garnered significant interest in the research community due to its scalability and synergy with multimodal large language models (MLLMs). However, current E2E driving benchmarks primarily feature nominal scenarios, failing to adequately test the true potential of these systems. Furthermore, existing open-loop evaluation metrics often fall short in capturing the multi-modal nature of driving or effectively evaluating performance in long-tail scenarios. To address these gaps, we introduce the Waymo Open Dataset for End-to-End Driving (WOD-E2E). WOD-E2E contains 4,021 driving segments (approximately 12 hours), specifically curated for challenging long-tail scenarios that that are rare in daily life with an occurring frequency of less than 0.03%. Concretely, each segment in WOD-E2E includes the high-level routing information, ego states, and 360-degr",
+   "url": "https://arxiv.org/abs/2510.26125",
+   "path": "TanitAD Research Lab/Library/papers/2510.26125_WOD-E2E-Waymo-Open-Dataset-for-End-to-End-Driving-in-Challen.pdf",
+   "bytes": 8306889,
+   "sha256": "553db25eb2190eda3450672000b80a4841bbf06d1b9b614333cbe351ddf3e0b3",
+   "banked": "2026-08-29",
+   "tags": [
+    "benchmark-portfolio"
+   ],
+   "note": "WOD-E2E: 4021 long-tail segments (<0.03pct freq, ~12h), 8-cam 360, routing+ego states; open-loop Rater Feedback Score vs preference labels; val labels public, test held out for the challenge",
+   "cited_by": [
+    "TanitAD Research Lab/Benchmarks & Evals/Research/2026-08-29-benchmark-portfolio/RESULT.md"
+   ]
+  },
+  "2411.01499": {
+   "key": "2411.01499",
+   "kind": "arxiv",
+   "title": "Polar R-CNN: End-to-End Lane Detection with Fewer Anchors",
+   "authors": [
+    "Shengqi Wang",
+    "Junmin Liu",
+    "Xiangyong Cao",
+    "Zengjie Song",
+    "Kai Sun"
+   ],
+   "published": "2024-11-03",
+   "abstract": "Lane detection is a critical and challenging task in autonomous driving, particularly in real-world scenarios where traffic lanes can be slender, lengthy, and often obscured by other vehicles, complicating detection efforts. Existing anchor-based methods typically rely on prior lane anchors to extract features and subsequently refine the location and shape of lanes. While these methods achieve high performance, manually setting prior anchors is cumbersome, and ensuring sufficient coverage across diverse datasets often requires a large amount of dense anchors. Furthermore, the use of Non-Maximum Suppression (NMS) to eliminate redundant predictions complicates real-world deployment and may underperform in complex scenarios. In this paper, we propose Polar R-CNN, an end-to-end anchor-based method for lane detection. By incorporating both local and global polar coordinate systems, Polar R-CN",
+   "url": "https://arxiv.org/abs/2411.01499",
+   "path": "TanitAD Research Lab/Library/papers/2411.01499_Polar-R-CNN-End-to-End-Lane-Detection-with-Fewer-Anchors.pdf",
+   "bytes": 43495974,
+   "sha256": "ea91756e2d86a1d69e59c27a437c8026d47c9328caf57e643f9c6f14e94c446e",
+   "banked": "2026-08-29",
+   "tags": [
+    "lane-detection"
+   ],
+   "note": "Polar R-CNN: NMS-free anchor-based lane detector, far fewer anchors, lightweight - the deployment-friendly CLRerNet peer",
+   "cited_by": [
+    "TanitAD Research Lab/Data Engineering/Research/2026-08-29-lane-detector-deployment/RESULT.md"
+   ]
+  },
+  "2507.18653": {
+   "key": "2507.18653",
+   "kind": "arxiv",
+   "title": "Adapt, But Don't Forget: Fine-Tuning and Contrastive Routing for Lane Detection under Distribution Shift",
+   "authors": [
+    "Mohammed Abdul Hafeez Khan",
+    "Parth Ganeriwala",
+    "Sarah M. Lehman",
+    "Siddhartha Bhattacharyya",
+    "Amy Alvarez",
+    "Natasha Neogi"
+   ],
+   "published": "2025-07-22",
+   "abstract": "Lane detection models are often evaluated in a closed-world setting, where training and testing occur on the same dataset. We observe that, even within the same domain, cross-dataset distribution shifts can cause severe catastrophic forgetting during fine-tuning. To address this, we first train a base model on a source distribution and then adapt it to each new target distribution by creating separate branches, fine-tuning only selected components while keeping the original source branch fixed. Based on a component-wise analysis, we identify effective fine-tuning strategies for target distributions that enable parameter-efficient adaptation. At inference time, we propose using a supervised contrastive learning model to identify the input distribution and dynamically route it to the corresponding branch. Our framework achieves near-optimal F1-scores while using significantly fewer paramet",
+   "url": "https://arxiv.org/abs/2507.18653",
+   "path": "TanitAD Research Lab/Library/papers/2507.18653_Adapt-But-Don-t-Forget-Fine-Tuning-and-Contrastive-Routing-f.pdf",
+   "bytes": 2696356,
+   "sha256": "4ca1b7f6323b2e309eb83494d88949e15f9375119a1928e309823546fa174ee0",
+   "banked": "2026-08-29",
+   "tags": [
+    "lane-detection"
+   ],
+   "note": "Lane detection under cross-dataset distribution shift: branch fine-tuning + contrastive routing; near-optimal F1 with far fewer params than per-domain models",
+   "cited_by": [
+    "TanitAD Research Lab/Data Engineering/Research/2026-08-29-lane-detector-deployment/RESULT.md"
    ]
   }
  }
