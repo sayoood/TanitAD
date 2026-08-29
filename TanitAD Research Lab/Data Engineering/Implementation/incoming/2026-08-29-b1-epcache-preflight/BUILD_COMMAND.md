@@ -46,15 +46,42 @@ PI wanted the camera INSIDE the dataset: it is what makes Thor able to build.**
 
 ---
 
+## ⛔ CORRECTION to the suggested Thor paths — the camera bank placement
+
+The suggested `<root>/camera/camera_front_wide_120fov/` is **exactly the layout
+that fails**, and it fails silently. `_physicalai_root_of` (`physicalai.py:166`)
+walks a clip path's parents for a directory literally named **`r0`**; without one
+it returns `None`, and then intrinsics AND extrinsics both fall back with nothing
+raised — `extrinsics_for_clip` → `None`, callers "treat the mount as level".
+
+⇒ **`/home/nvidia/data/physicalai-b1/r0/camera_front_wide_120fov/`** (note `r0/`).
+Everything else in the suggestion is good; output and root adopted as proposed.
+
+```
+ROOT   /home/nvidia/data/physicalai-b1
+OUT    /home/nvidia/data/physicalai-b1-w120-256x640cyl
+STACK  /home/nvidia/TanitAD/stack
+PY     /home/nvidia/venvs/tanitad-train/bin/python
+```
+
 ## The command
 
 ```bash
-# 0. PREREQUISITES on Thor (each must be true; none is implied by the others)
-#    a. dataset pulled:  camera/*.mp4 (4,719), labels/, index/, egomotion/
-#    b. calibration present: calibration/camera_intrinsics + sensor_extrinsics
-#       chunk parquets, AND calibration/physicalai_front_wide_intrinsics.csv
-#    c. layout: the camera bank MUST sit under an `r0/` parent, and
-#       <root>/r0/r0_selection.parquet must list all 4,719 clips with chunk
+# 0. PREREQUISITES on Thor — run the two staged scripts (now portable):
+python build_intr_csv.py --root "$ROOT" \
+    --index "$BUNDLE/index/clip_to_chunk.parquet" \
+    --clips "$BUNDLE/labels/s2_labels_v7.jsonl" \
+    --cy-check "$BUNDLE/index/front_wide_cy.parquet"
+
+python prepare_b1_root.py --root "$ROOT" \
+    --camera-src "$BUNDLE/camera" \
+    --index "$BUNDLE/index/clip_to_chunk.parquet" \
+    --clips "$BUNDLE/labels/s2_labels_v7.jsonl" \
+    --calib-src "$ROOT/calibration" \
+    --intrinsics-csv "$ROOT/calibration/physicalai_front_wide_intrinsics.csv"
+# prepare_b1_root ATTACHES the camera bank (symlink on POSIX) — 61.6 GB is never
+# copied — and asserts the r0_selection covers EVERY clip rather than silently
+# writing a short one.
 
 # 1. GATE — must exit 0. Nothing starts if it does not.
 python preflight_epcache_build.py --root "$ROOT" --sample 120
@@ -83,8 +110,41 @@ is deliberately not fully observed on rig A (that is what the mask is for). It i
 the flag for the *rig-clean* 176×624 frame, which the PNG cache can be sliced to
 later without a rebuild — the reason the codec decision matters.
 
-**Expected**: ~3.4–4.6 h at 6–8 workers, CPU-bound, GPU-free (measured:
-decode+remap 6.19 s + PNG encode 14.79 s = 20.98 s/clip). Artifact ~161 GB.
+## ⚠️ Wall-clock re-derived for THOR'S 14 CORES — and why I will not quote it as measured
+
+My 3.4–4.6 h was measured on a **24-core** box. Thor has **14**. Naively rescaling
+is the `df`/scope error again, so here is the model **and its uncertainty**, and
+then the cheap way to replace it with a fact.
+
+**The structure that decides it: PNG encode is 70 % of the work and is
+effectively SINGLE-THREADED per clip** (a Python loop over `tvio.encode_png`,
+14.79 s of the 20.98 s). Decode is the part that wants 4 threads. So the build
+scales with **worker COUNT**, not with threads per worker:
+
+| config on 14 cores | note | projected |
+|---|---|---|
+| 6 workers × 4 decode threads | **24 threads on 14 cores — oversubscribed**, the trap the trainer's own comment warns about | worse than the table below |
+| **3 workers × 4 threads** (keeps W×T ≤ cores) | starves the single-threaded encode | **~9.2 h** |
+| **6–7 workers × 2 threads** ⭐ | encode-parallel, decode slightly slower | **~5–6 h** |
+
+⇒ **suggest `PAI_DECODE_THREADS=2` with 6 workers**, NOT 6×4. The intuition
+"6 workers held the dev box, so use 6 workers" imports the wrong half of the
+config — the thread count is what has to shrink.
+
+⛔ **This is a MODEL, not a measurement — do not put it in the morning report as
+measured.** The builder ships `measure` for exactly this:
+
+```bash
+python "$STACK/scripts/v2_compressed.py" measure --root "$ROOT" --n 12 \
+    --codec png --height 256 --width 640 --f-ref 305.5774907364391 \
+    --projection-mode cylindrical
+```
+
+12 clips gives Thor's own per-clip cost in a few minutes. **Run it before the
+build and quote THAT number**; my projection is a prior, and priors have been
+wrong twice tonight already.
+
+**Artifact** ~161 GB against 657 GB free — comfortable. CPU-bound, GPU-free.
 
 ---
 
