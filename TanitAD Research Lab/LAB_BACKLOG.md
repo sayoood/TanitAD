@@ -1,5 +1,30 @@
 # LAB BACKLOG — the durable seed list for the daily Research Lab pass
 
+## The update contract (Master Mind, 2026-08-29 — this is the workflow, binding)
+
+**The same-turn rule, mirrored from GOALS_AND_CLAIMS:** any session that EXECUTES,
+REFUTES, SUPERSEDES, or UNBLOCKS a row updates that row IN THE SAME TURN. A backlog
+that is only read rots — that is how the last one accumulated void doctrine lines and
+measurement-refuted items.
+
+| motion | owner | when |
+|---|---|---|
+| **consume** — a row worked on gets `▶ TAKEN <date> <session>`; done gets `✅ DONE <date> → <artifact path>` | whoever executes (daily Lab run, FlyWheel, MM) | same turn |
+| **propose** — new rows from Lab findings ("what this changes"), retraction follow-ups, FlyWheel escalations | the finder, appended under `## PROPOSED (unranked)`, never self-ranked | same turn |
+| **fence** — a row refuted by measurement gets ⛔ REFUTED + the register row id, never silently deleted | whoever measures | same turn |
+| **rank** — PROPOSED rows move into the ranked list; priorities re-sorted | **Master Mind only** — with each daily-run commit, full re-sort weekly | daily/weekly |
+| **⛔PI rows** — approve/unpark/kill | **the PI** — one sentence suffices; MM records it | on decision |
+
+**Ranking criteria, in order (the PI's stated priority, 2026-08-29):** (1) serves
+driving-with-WM / hierarchical dominance / an excellent driving model; (2) unblocked
+now; (3) evidence class of the expected payoff (MEASURED-lever > PUBLISHED > HYPOTHESIS);
+(4) cost. Rows failing (1) rank below everything that passes it regardless of cost.
+
+**Freshness tripwire:** the daily run's summary states the backlog delta (consumed /
+proposed / none). A week with zero deltas while runs happened = the contract is being
+violated — flag it in the program report.
+
+
 `The daily Lab spawn reads this file; the Master Mind re-ranks weekly; rows are retired by
 linking the answering package.`
 
