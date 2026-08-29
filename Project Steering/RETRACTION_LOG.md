@@ -9712,3 +9712,57 @@ loses its turn tokens. Their labels become NUDGE_side + EVADE_IN_CORRIDOR (45)
 / CORRIDOR_OFFSET (41) / FOLLOW_LANE — the obstacle-pass semantics the PI
 described. The lane-detector reference remains the instrument that recovers
 false suppressions.
+
+
+---
+
+## TRAIN-C1 — 2026-08-29 — NEAR-MISS: my mock's module names were chosen to match the code under test, so it could not catch the wiring being inverted
+
+**Stream:** TanitAD_TrainingFlyWheel. **Class: C6-adjacent — a control that cannot
+fail.** Not a published retraction (nothing shipped, nothing was quoted): a
+NEAR-MISS logged under the finder-writes-the-entry standard because the class
+generalises to every FlyWheel that builds against a model surface.
+⚠️ **ID note:** the Master Mind's brief said `TF-C1`; the binding allocation rule
+in this file (2026-08-28) names the training stream **`TRAIN-C`**. Using the rule.
+
+**What happened.** Building `stack/tanitad/rl/` (RL post-training for the refcv3
+planner, commission D-RL-REFCV3), I set the default
+`PostTrainConfig.trainable_prefixes = ("scorer", "lat_head_tac", "lon_head_tac",
+"tac_goal_head", "str_goal_head")` and validated it against a `TinyPlanner` mock
+whose modules I had named `core` / `scorer` / `lat_head_tac`.
+
+Every test passed. Against the **real** `RefCV3Model` that default:
+* trains `scorer` — **the SELECTOR**, 87 parameters;
+* leaves `core.decoder` — **the diffusion decoder, the GENERATOR** — frozen;
+* reports `0.81 % trainable` and raises nothing.
+
+That is the exact inversion of the method being implemented. DiffusionDriveV2's
+stated motivation is **selector over-reliance** (*"a downstream selector … often
+less robust than the generator … prone to failure … particularly in
+out-of-distribution scenarios"*), and our own SEL-1 winner's-curse refusal
+measured the same defect independently. I would have spent the campaign training
+the one component the whole design exists to stop depending on — using a reward
+built specifically to avoid depending on it.
+
+**Why the tests could not catch it.** I chose the mock's module names to satisfy
+the config's prefixes. **A mock whose names are chosen to match the code under
+test cannot detect a naming bug — it manufactures the agreement it is supposed to
+check.** Same family as C2 (absence from a single probe): one probe, and the
+probe was built from the same belief as the thing it probed.
+
+**Caught by** running `select_trainable()` against a real `RefCV3Model` as an
+afterthought integration check — not by any test I had planned.
+
+**The fixes.** Default is now `("core.decoder",)`; a new
+`forbidden_prefixes=("scorer",)` makes `select_trainable` **raise** if the
+selector would ever become trainable, even when named explicitly;
+`stack/tests/test_rl_refcv3_integration.py` (11 tests) exercises the real model
+end-to-end — decoder trainable, selector frozen, trunk frozen, reward consuming
+the real `anchor_traj` fan; and the mock in `test_rl_posttrain.py` was rewired to
+**mirror** `RefCV3Model`'s layout rather than the config's expectations.
+
+**⭐ THE RULE:** **a mock validates PLUMBING; only the real model validates
+WIRING.** Any component that selects, freezes, or routes by *parameter or module
+NAME* must be exercised against the real module tree before it is called
+validated — a passing test over a mock you named yourself is not evidence. This
+binds every FlyWheel building against model surfaces.

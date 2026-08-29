@@ -148,6 +148,27 @@ class RewardComponent:
     ``fn`` maps (traj, ctx) -> ``[...]`` reward, HIGHER IS BETTER, and every
     component is bounded in [lo, hi] so a composition cannot be dominated by one
     unbounded term (the classic reward-hacking amplifier).
+
+    ⛔ ``neutral`` — THE VALUE FOR "THIS CONSTRAINT IS NOT PRESENT IN THE SCENE".
+    ⚠️ CORRECTED 2026-08-29 after a peer review of this module. The absence
+    semantics were INCONSISTENT and the inconsistency was silent::
+
+        collision      absent -> 0.0  = its BEST  (range [-1, 0])
+        headway        absent -> 0.0  = its WORST (range [0, 1])
+        gt_similarity  absent -> 0.0  = its WORST (range [0, 1])
+
+    So a window with no obstacle was rewarded while a window with no lead
+    vehicle was punished — for the same underlying fact, *nothing to constrain
+    against*. On our corpus the second case is common, so the default reward was
+    quietly penalising ordinary open road.
+
+    **The rule now: ABSENCE MEANS NO CONSTRAINT, THEREFORE NO PENALTY** — every
+    component returns its BEST value when its scene fact is missing, and
+    ``audit.report_component_coverage`` flags it as not-fired so the absence is
+    visible instead of being read as safety. *(A constant cancels in a
+    group-relative advantage, so this does not bias the gradient; it biased the
+    audit and any absolute reporting, which is where a wrong number gets
+    quoted.)*
     """
     name: str
     fn: Callable[..., Tensor]
@@ -156,6 +177,7 @@ class RewardComponent:
     degenerate: str                  # the policy that maximises it while driving badly
     grounded: str                    # "rule-based" | "gt-derived" | "learned"
     hackable_alone: bool
+    neutral: float = 0.0             # value when the scene fact is absent
 
     def __call__(self, traj: Tensor, ctx: dict) -> Tensor:
         r = self.fn(traj, ctx)
@@ -208,7 +230,10 @@ def _headway(traj: Tensor, ctx: dict) -> Tensor:
     """
     lead = ctx.get("lead_path")
     if lead is None:
-        return torch.zeros(traj.shape[:-2], device=traj.device, dtype=traj.dtype)
+        # NO LEAD => no headway constraint => no penalty (the `neutral` rule).
+        # This read 0.0 (the WORST value) until 2026-08-29, silently penalising
+        # every open-road window on a corpus where most windows have no lead.
+        return torch.ones(traj.shape[:-2], device=traj.device, dtype=traj.dtype)
     t_star = float(ctx.get("target_time_gap_s", 2.0))
     kin = kinematics(traj, ctx.get("dt", DT_S))
     gap = (lead[..., 1:, :] - traj[..., 1:, :]).norm(dim=-1)     # [..., S-1]
@@ -274,7 +299,9 @@ def _gt_similarity(traj: Tensor, ctx: dict) -> Tensor:
     """
     gt = ctx.get("gt_traj")
     if gt is None:
-        return torch.zeros(traj.shape[:-2], device=traj.device, dtype=traj.dtype)
+        # NO TARGET => no imitation penalty (the `neutral` rule). Coverage
+        # reporting flags it as not-fired so the absence is visible.
+        return torch.ones(traj.shape[:-2], device=traj.device, dtype=traj.dtype)
     scale = float(ctx.get("ade_scale_m", 2.0))
     while gt.dim() < traj.dim():
         gt = gt.unsqueeze(-3)
@@ -286,22 +313,23 @@ COMPONENTS: dict[str, RewardComponent] = {
     c.name: c for c in (
         RewardComponent("progress", _progress, -1.0, 1.5,
                         degenerate="straight-line max-speed through obstacles",
-                        grounded="rule-based", hackable_alone=True),
+                        grounded="rule-based", hackable_alone=True,
+                        neutral=0.0),
         RewardComponent("collision", _collision, -1.0, 0.0,
                         degenerate="stand still forever (never collides)",
-                        grounded="gt-derived", hackable_alone=True),
+                        grounded="gt-derived", hackable_alone=True, neutral=0.0),
         RewardComponent("headway", _headway, 0.0, 1.0,
                         degenerate="fall infinitely far behind the lead",
-                        grounded="gt-derived", hackable_alone=True),
+                        grounded="gt-derived", hackable_alone=True, neutral=1.0),
         RewardComponent("feasibility", _kinematic_feasibility, 0.0, 1.0,
                         degenerate="stand still (trivially feasible)",
-                        grounded="rule-based", hackable_alone=True),
+                        grounded="rule-based", hackable_alone=True, neutral=1.0),
         RewardComponent("comfort", _comfort, 0.0, 1.0,
                         degenerate="stand still (perfectly smooth)",
-                        grounded="rule-based", hackable_alone=True),
+                        grounded="rule-based", hackable_alone=True, neutral=1.0),
         RewardComponent("gt_similarity", _gt_similarity, 0.0, 1.0,
                         degenerate="none known — but it is ADE, not driving skill",
-                        grounded="gt-derived", hackable_alone=False),
+                        grounded="gt-derived", hackable_alone=False, neutral=1.0),
     )
 }
 
@@ -309,13 +337,39 @@ COMPONENTS: dict[str, RewardComponent] = {
 #: term: progress is checked by collision + headway, and the two stand-still
 #: degenerates (feasibility, comfort) are checked by progress. A weight vector
 #: that breaks that pairing is what `audit.audit_reward` is for.
+#:
+#: ⛔ ``gt_similarity`` IS DELIBERATELY ABSENT — REMOVED 2026-08-29 after peer
+#: review, and this is the most important line in the file.
+#:
+#: It was here at weight 0.40 *while* ``PostTrainConfig.w_imitation`` added a
+#: separate imitation loss at 1.0, so the imitation signal was counted TWICE.
+#: The double count is not the real damage. The real damage is WHERE the second
+#: copy sat:
+#:
+#:   A group-relative advantage is computed ACROSS the candidates of one fan.
+#:   A term that says "be closer to the single logged expert path" therefore
+#:   assigns its highest advantage to whichever candidate is nearest that path,
+#:   and pushes probability mass onto it and OFF every other mode.
+#:   ⇒ **Inside the advantage, an imitation term is a FAN-COLLAPSE objective.**
+#:
+#: That destroys precisely the property the whole method exists to buy: DDv2's
+#: raw-fan floor holds at **84.4** where DiffusionDrive's falls to **75.3**
+#: (top-1 -> top-10). Collapsing the fan onto the expert would have made our
+#: numbers look fine on the selected trajectory while the fan rotted underneath
+#: — which is the SAME failure shape as selector over-reliance, arrived at from
+#: the other side.
+#:
+#: ⇒ The imitation anchor belongs OUTSIDE the advantage, as DDv2 has it:
+#: ``L = L_RL + lambda * L_IL`` (``config.w_imitation``, applied in
+#: ``posttrain.rl_objective``). The component stays in ``COMPONENTS`` because it
+#: is a legitimate DIAGNOSTIC and someone may want it deliberately — but
+#: ``PostTrainConfig.validate()`` now REFUSES the combination.
 DEFAULT_WEIGHTS: dict[str, float] = {
     "progress": 0.30,
     "collision": 1.00,
     "headway": 0.30,
     "feasibility": 0.50,
     "comfort": 0.20,
-    "gt_similarity": 0.40,
 }
 
 #: ⛔ The DELIBERATE-REGRESSION arm. `audit.audit_reward` MUST flag this. If it

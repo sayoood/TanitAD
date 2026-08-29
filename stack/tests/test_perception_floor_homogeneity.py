@@ -44,7 +44,7 @@ _REPO = os.path.dirname(os.path.dirname(os.path.dirname(
 sys.path.insert(0, os.path.join(_REPO, "colab"))
 
 MANIFEST = os.path.join(
-    _REPO, "TanitAD Research Hub", "Data Engineering", "Implementation",
+    _REPO, "TanitAD Research Lab", "Data Engineering", "Implementation",
     "incoming", "2026-08-17-perception-floor-unify", "raw",
     "floor_homogeneity_manifest.json")
 

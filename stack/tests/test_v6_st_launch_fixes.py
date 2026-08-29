@@ -491,7 +491,7 @@ def test_E4_a_gate_with_nothing_left_to_check_is_REFUSED(tmp_path):
 
 def test_E4_the_resolution_is_banked_with_its_reasons():
     """The fix is only as good as the record of WHY it went this way."""
-    doc = (_REPO / "TanitAD Research Hub" / "Architecture & Inference"
+    doc = (_REPO / "TanitAD Research Lab" / "Architecture & Inference"
            / "Implementation" / "incoming" / "2026-08-17-e4-selector-resolution"
            / "E4_SELECTOR_RESOLUTION.md")
     assert doc.exists(), doc
@@ -501,7 +501,7 @@ def test_E4_the_resolution_is_banked_with_its_reasons():
     assert "0.3026" in text                  # the recovered planted sigma
     assert "has_scorer" in text
     # the predecessor finding is still reachable, not overwritten
-    old = (_REPO / "TanitAD Research Hub" / "Architecture & Inference"
+    old = (_REPO / "TanitAD Research Lab" / "Architecture & Inference"
            / "Implementation" / "incoming" / "2026-08-17-st-launch-readiness"
            / "ST_LAUNCH_READINESS.md")
     assert "it can never read PASS on the planned arm" in old.read_text(

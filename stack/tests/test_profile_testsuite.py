@@ -1,7 +1,7 @@
 """Standalone tests for the test-suite profiler parsers + budget logic.
 
 Pure: feeds canned pytest text to the parsers; never spawns pytest. Run with
-    pytest "TanitAD Research Hub/Tools&DevEnv/Implementation/incoming/2026-07-09-testsuite-io-profiling/tests" -q
+    pytest "TanitAD Research Lab/Tools&DevEnv/Implementation/incoming/2026-07-09-testsuite-io-profiling/tests" -q
 """
 
 from __future__ import annotations

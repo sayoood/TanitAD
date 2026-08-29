@@ -117,7 +117,12 @@ def test_collision_fires_only_when_within_radius():
 
 
 def test_collision_with_no_obstacles_is_zero_for_everyone():
-    """ABSENT information reads 0 — it must not read as 'safe'."""
+    """No obstacles -> 0, which is `collision`'s NEUTRAL (and its best).
+
+    Absence means no constraint, therefore no penalty. It is NOT a claim of
+    safety: `audit.report_component_coverage` flags the component as not-fired
+    so the absence stays visible instead of being read as a safeguard.
+    """
     r = R.COMPONENTS["collision"](straight(), {})
     assert float(r) == pytest.approx(0.0)
 
@@ -208,3 +213,43 @@ def test_batched_shapes_are_preserved():
     spec = R.RewardSpec()
     out = spec(traj, {"gt_traj": straight(21, 10.0)})
     assert out.shape == (2, 3, 4)
+
+
+# ---------------------------------------------------------------------------
+# ABSENCE SEMANTICS + the imitation double-count (peer review, 2026-08-29)
+# ---------------------------------------------------------------------------
+
+def test_absence_means_no_penalty_for_EVERY_component():
+    """⛔ The E.3 fix.
+
+    Before this, `collision` absent read its BEST value while `headway` and
+    `gt_similarity` absent read their WORST — the same underlying fact ("no
+    such constraint in this scene") scored in opposite directions. On a corpus
+    where most windows have no lead vehicle, that silently penalised ordinary
+    open road.
+    """
+    traj = straight(21, 10.0)
+    for name, comp in R.COMPONENTS.items():
+        if name == "progress":
+            continue          # progress needs no scene fact; it is always defined
+        v = float(comp(traj, {}))
+        assert v == pytest.approx(comp.neutral, abs=1e-6), (
+            f"{name} with an absent scene fact read {v}, not its declared "
+            f"neutral {comp.neutral}")
+        assert v == pytest.approx(comp.hi, abs=1e-6), (
+            f"{name}'s neutral must be its BEST value — absence means no "
+            f"constraint, therefore no penalty (got {v}, hi={comp.hi})")
+
+
+def test_no_lead_is_not_punished():
+    """The concrete case: open road must not score worse than car-following."""
+    traj = straight(21, 10.0)
+    assert float(R.COMPONENTS["headway"](traj, {})) == pytest.approx(1.0)
+
+
+def test_gt_similarity_is_NOT_in_the_default_reward():
+    """⛔ The E.2 fix — an imitation term inside a group-relative advantage is
+    a fan-collapse objective."""
+    assert "gt_similarity" not in R.DEFAULT_WEIGHTS
+    assert "gt_similarity" in R.COMPONENTS, (
+        "the component stays available as a diagnostic; only the DEFAULT drops it")

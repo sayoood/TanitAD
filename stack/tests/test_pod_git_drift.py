@@ -241,7 +241,7 @@ def test_an_unambiguous_program_authored_basename_is_name_drift_not_a_shrug():
     The banked script could not have produced its own banked JSON — a different
     model had been profiled. The tool saw the file and downgraded it.
     """
-    idx = _index({"TanitAD Research Hub/Architecture & Inference/Implementation"
+    idx = _index({"TanitAD Research Lab/Architecture & Inference/Implementation"
                   "/incoming/2026-08-02-thor-deployment-profile/thor_profile.py":
                   b"def main():\n    out = {}\n"})
     got = classify([(sha256_bytes(b"def main():\n    out['frame'] = f\n"),

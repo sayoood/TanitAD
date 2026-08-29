@@ -35,7 +35,7 @@ import torch
 from tanitad.refs import refc_select as sl
 
 REPO = Path(__file__).resolve().parents[2]
-HUB = REPO / "TanitAD Research Hub"
+HUB = REPO / "TanitAD Research Lab"
 #: THE PRODUCTION vocabularies (4-step). These are what the arms decode.
 ANCHORS_FULL = (HUB / "Data Engineering" / "Implementation" / "incoming"
                 / "2026-08-04-instrument-durability"

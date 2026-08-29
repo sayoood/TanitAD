@@ -465,4 +465,15 @@ def test_spectrum_report_and_o6_verdict_UNCHANGED_vs_the_pre_X4_revision():
         vo = prev.o6_rank_verdict(old)
         vn = __import__("tanitad.models.v6", fromlist=["o6_rank_verdict"]
                         ).o6_rank_verdict(new)
-        assert vo == vn, f"o6_rank_verdict moved at {shape}"
+        # ⭐ The PARTICIPATION clause is an intended, PI-approved addition
+        # (C132): effective_rank(σ) is not a collapse statistic — it PASSES a
+        # representation with 55 % of its energy in one direction while failing
+        # a cleaner one, a 141x disagreement. The verdict now also carries
+        # participation (σ², the ENERGY statistic) and its floor.
+        # Everything PRE-EXISTING must still be byte-identical; only these
+        # four keys may be added, and none may be removed or changed.
+        ADDED_OK = {"participation_ratio", "participation_pass",
+                    "participation_floor", "statistic_note"}
+        assert set(vo) - set(vn) == set(),             f"o6_rank_verdict keys REMOVED at {shape}: {set(vo) - set(vn)}"
+        assert set(vn) - set(vo) <= ADDED_OK,             f"unexpected o6_rank_verdict keys at {shape}: {set(vn) - set(vo) - ADDED_OK}"
+        assert {k: vn[k] for k in vo} == vo,             f"a PRE-EXISTING o6_rank_verdict value moved at {shape}"

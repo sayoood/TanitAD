@@ -401,7 +401,7 @@ def test_the_banked_p8_frame_is_recoverable_from_the_launch_chains():
     chains banked IN THIS REPO, which name the exact flags. This test pins the
     provenance so the recovery cannot be lost again."""
     root = os.path.dirname(_STACK)
-    chain = os.path.join(root, "TanitAD Research Hub", "Architecture & "
+    chain = os.path.join(root, "TanitAD Research Lab", "Architecture & "
                          "Inference", "Implementation", "incoming",
                          "2026-08-11-ops-bundle", "p8c_chain.sh")
     assert os.path.exists(chain), chain

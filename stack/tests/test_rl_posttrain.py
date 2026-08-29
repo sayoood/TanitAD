@@ -173,8 +173,8 @@ def test_smoke_reports_the_reward_audit_in_its_summary(tmp_path):
     """The loop's own audit runs with NO scene context, so it must say so.
 
     ⚠️ It would be easy — and wrong — to let the summary say `clean` here. The
-    loop audits the reward SPEC, not the run's data, so `collision`/`headway`/
-    `gt_similarity` have nothing to fire on and the verdict cannot rule. The
+    loop audits the reward SPEC, not the run's data, so `collision` and
+    `headway` have nothing to fire on and the verdict cannot rule. The
     honest verdict is INCONCLUSIVE, and the run record carries it.
     """
     m = TinyPlanner()
@@ -184,7 +184,7 @@ def test_smoke_reports_the_reward_audit_in_its_summary(tmp_path):
     assert summary["reward_audit"]["verdict"] == "INCONCLUSIVE"
     assert summary["reward_audit"]["flagged"] is False
     assert set(summary["reward_audit"]["dead_components"]) == {
-        "collision", "headway", "gt_similarity"}
+        "collision", "headway"}
 
 
 def test_smoke_with_the_hackable_reward_reports_FLAGGED(tmp_path):

@@ -81,3 +81,30 @@ def test_to_dict_records_every_knob_and_the_requirement():
 def test_empty_reward_is_rejected():
     with pytest.raises(ValueError, match="no components"):
         PostTrainConfig(reward_weights={}).validate()
+
+
+def test_imitation_double_count_is_REFUSED():
+    """⛔ gt_similarity inside the reward AND w_imitation outside it."""
+    from tanitad.rl.rewards import DEFAULT_WEIGHTS
+    w = dict(DEFAULT_WEIGHTS); w["gt_similarity"] = 0.4
+    with pytest.raises(ValueError, match="DOUBLE-COUNTED IMITATION"):
+        PostTrainConfig(reward_weights=w, w_imitation=1.0).validate()
+
+
+def test_the_refusal_names_the_fan_collapse_mechanism():
+    """A refusal that does not say WHY teaches nobody."""
+    from tanitad.rl.rewards import DEFAULT_WEIGHTS
+    w = dict(DEFAULT_WEIGHTS); w["gt_similarity"] = 0.4
+    try:
+        PostTrainConfig(reward_weights=w, w_imitation=1.0).validate()
+    except ValueError as e:
+        msg = str(e)
+    assert "FAN-COLLAPSE" in msg and "GROUP-RELATIVE" in msg
+    assert "84.4" in msg and "75.3" in msg, "cite the measured fan floors"
+
+
+def test_gt_similarity_alone_is_allowed_when_imitation_is_off():
+    """Deliberate is fine; accidental is not."""
+    from tanitad.rl.rewards import DEFAULT_WEIGHTS
+    w = dict(DEFAULT_WEIGHTS); w["gt_similarity"] = 0.4
+    PostTrainConfig(reward_weights=w, w_imitation=0.0).validate()

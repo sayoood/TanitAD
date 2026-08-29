@@ -146,6 +146,21 @@ class PostTrainConfig:
             pass
         if not self.reward_weights:
             raise ValueError("a reward with no components is not a reward")
+        if self.reward_weights.get("gt_similarity", 0.0) > 0.0 and self.w_imitation > 0.0:
+            raise ValueError(
+                "DOUBLE-COUNTED IMITATION SIGNAL: `gt_similarity` has weight "
+                f"{self.reward_weights['gt_similarity']} INSIDE the reward while "
+                f"w_imitation={self.w_imitation} adds an imitation loss OUTSIDE "
+                "it. Beyond the double count, the in-reward copy sits inside a "
+                "GROUP-RELATIVE ADVANTAGE computed across the candidates of one "
+                "fan: it gives the highest advantage to whichever candidate is "
+                "nearest the single logged expert path and pushes mass off every "
+                "other mode — i.e. it is a FAN-COLLAPSE objective, destroying the "
+                "raw-fan quality this method exists to buy (DDv2 holds 84.4 "
+                "top-10 where DiffusionDrive falls to 75.3). Keep the imitation "
+                "anchor OUTSIDE the advantage (L = L_RL + lambda*L_IL): set "
+                "w_imitation and drop gt_similarity from reward_weights, or set "
+                "w_imitation=0 and accept the fan-collapse risk deliberately.")
 
     def to_dict(self) -> dict:
         d = asdict(self)

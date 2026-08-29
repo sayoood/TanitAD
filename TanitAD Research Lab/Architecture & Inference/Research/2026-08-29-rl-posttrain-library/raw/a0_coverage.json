@@ -1,0 +1,63 @@
+{
+ "_what": "A0 reward-coverage probe on real held-out windows",
+ "_corpus": "physicalai-val130-heldout",
+ "_evidence_class": "MEASURED (ours; rule-based over real scene facts)",
+ "_tier": "N/A \u2014 instrument coverage, not a capability claim",
+ "_fan": "anchor vocabulary (synth_anchor_pool + FPS, n=64) \u2014 checkpoint-independent; a trained fan is TIGHTER, so these spreads are an UPPER BOUND",
+ "n_windows": 240,
+ "n_windows_with_obstacles": 184,
+ "n_windows_with_lead": 68,
+ "components": {
+  "collision": {
+   "weight": 1.0,
+   "fired_frac": 0.5416666666666666,
+   "spread_mean": 0.5416666666666666,
+   "spread_median": 1.0,
+   "spread_max": 1.0,
+   "value_mean": -0.190234375,
+   "n_windows": 240
+  },
+  "comfort": {
+   "weight": 0.2,
+   "fired_frac": 1.0,
+   "spread_mean": 0.9895649552345276,
+   "spread_median": 0.9895649552345276,
+   "spread_max": 0.9895649552345276,
+   "value_mean": 0.4171764850616455,
+   "n_windows": 240
+  },
+  "feasibility": {
+   "weight": 0.5,
+   "fired_frac": 1.0,
+   "spread_mean": 1.0,
+   "spread_median": 1.0,
+   "spread_max": 1.0,
+   "value_mean": 0.9782982468605042,
+   "n_windows": 240
+  },
+  "headway": {
+   "weight": 0.3,
+   "fired_frac": 0.2833333333333333,
+   "spread_mean": 0.28023239051302273,
+   "spread_median": 0.0,
+   "spread_max": 1.0,
+   "value_mean": 0.7595847211778164,
+   "n_windows": 240
+  },
+  "progress": {
+   "weight": 0.3,
+   "fired_frac": 1.0,
+   "spread_mean": 1.5,
+   "spread_median": 1.5,
+   "spread_max": 1.5,
+   "value_mean": 1.1478393077850342,
+   "n_windows": 240
+  }
+ },
+ "dead": [],
+ "inert": [
+  "headway"
+ ],
+ "weak": [],
+ "verdict": "\u26d4 FAIL \u2014 component(s) ['headway'] fire but their MEDIAN SPREAD across the fan is ~0: identical for every candidate on most windows, so they cancel in the group-relative advantage and cannot rank anything. Present is not the same as informative. A1 must not launch on this reward as weighted."
+}

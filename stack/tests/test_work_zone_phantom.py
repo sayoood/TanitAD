@@ -12,7 +12,7 @@ suite). Two things are asserted:
    compliance (no incursion into the closed lane).
 
 No simulator, no cross-package import â€” numpy + pytest only. Run:
-    pytest "TanitAD Research Hub/Opponent Analyzer/Implementation/incoming/2026-07-17-work-zone-phantom-scenario/tests"
+    pytest "TanitAD Research Lab/Opponent Analyzer/Implementation/incoming/2026-07-17-work-zone-phantom-scenario/tests"
 """
 
 from __future__ import annotations

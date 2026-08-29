@@ -51,7 +51,7 @@ for p in (str(ROOT), str(ROOT / "scripts")):
     if p not in sys.path:
         sys.path.insert(0, p)
 
-_TS = (REPO / "TanitAD Research Hub" / "Architecture & Inference" /
+_TS = (REPO / "TanitAD Research Lab" / "Architecture & Inference" /
        "Implementation" / "incoming" / "2026-08-04-target-speed")
 _V6 = ROOT / "tanitad" / "models" / "v6.py"
 

@@ -28,7 +28,7 @@ from step_time_guard import (  # noqa: E402
 )
 
 REPO = Path(__file__).resolve().parents[2]
-LIVE_LOG = (REPO / "TanitAD Research Hub" / "Architecture & Inference" /
+LIVE_LOG = (REPO / "TanitAD Research Lab" / "Architecture & Inference" /
             "Implementation" / "incoming" / "2026-08-18-o2-live-and-ridge-reread" /
             "raw" / "v6F-SW-30k_train_log.jsonl")
 

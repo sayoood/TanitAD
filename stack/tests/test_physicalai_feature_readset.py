@@ -72,7 +72,7 @@ DOCS_CARRYING_THE_COUNT = (
     "Project Steering/V6F_PLANNER_DESIGN.md",
     "Project Steering/Gates/flagship-v5-retrain.PREP.md  ('32-of-36', the complement)",
     "stack/tanitad/data/bev_raster.py  (module docstring -- the count also rotted INTO CODE)",
-    "TanitAD Research Hub/**/incoming/**  (~11 further dated write-ups; history, "
+    "TanitAD Research Lab/**/incoming/**  (~11 further dated write-ups; history, "
     "lower blast radius -- fix the four above first)",
 )
 
@@ -265,7 +265,7 @@ def test_no_undeclared_feature_path_in_episode_build() -> None:
 # --------------------------------------------------------------------------- #
 #: MEASURED enumeration of every PhysicalAI-AV feature (2026-07-26 probe package).
 _FEATURES_CSV = (
-    _REPO / "TanitAD Research Hub" / "Data Engineering" / "Implementation" /
+    _REPO / "TanitAD Research Lab" / "Data Engineering" / "Implementation" /
     "incoming" / "2026-07-26-physicalai-feature-probe" / "pai_features.csv"
 )
 

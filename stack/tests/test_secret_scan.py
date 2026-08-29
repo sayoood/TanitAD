@@ -510,11 +510,11 @@ def test_the_filter_rule_travels_with_the_json(repo):
 
 
 def test_paths_with_spaces_survive_the_staged_listing(repo):
-    """⚠️ This repo's paths contain spaces (``TanitAD Research Hub/...``) and an
+    """⚠️ This repo's paths contain spaces (``TanitAD Research Lab/...``) and an
     unquoted read degenerates into a sweep that reports success on nothing. That
     trap has caught three separate streams, including during C117's own
     verification."""
-    rel = "TanitAD Research Hub/Some Area/run log.log"
+    rel = "TanitAD Research Lab/Some Area/run log.log"
     _stage(repo, rel, f"--token {_hf()}")
     assert rel in ss.staged_paths(repo)
     rep = ss.scan_staged(repo)

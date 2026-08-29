@@ -39,7 +39,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 import run_gate as rg                                              # noqa: E402
 
 _REPO = Path(__file__).resolve().parents[2]
-_E1A = (_REPO / "TanitAD Research Hub" / "Architecture & Inference"
+_E1A = (_REPO / "TanitAD Research Lab" / "Architecture & Inference"
         / "Implementation" / "incoming" / "2026-07-25-closedloop-horizon-and-shift"
         / "e1a_horizon_heldout44_K185.json")
 _REFC_DRIVING = _REPO / "taniteval" / "results" / "driving_refc-base-30k.json"

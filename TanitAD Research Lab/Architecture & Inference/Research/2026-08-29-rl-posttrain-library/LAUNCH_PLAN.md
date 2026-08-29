@@ -40,6 +40,52 @@ for each real refcv3 window batch:
 **Cost:** minutes, CPU or 4060. **This is the cheapest possible way to discover
 the campaign is not fundable, and it costs no GPU-hours to find out.**
 
+### ⛔ A0 HAS RUN — 2026-08-29 — AND IT **FAILS**. A1 IS BLOCKED.
+
+`raw/a0_coverage.json` · instrument `stack/scripts/rl_a0_coverage.py` ·
+**240 windows** over the **held-out** `physicalai-val130-heldout` corpus (129
+episodes, 124 carrying the `obstacle.offline` join) · 184 windows with obstacles,
+68 with a lead · fan = the anchor vocabulary (checkpoint-independent; refcv3 has
+no trained checkpoint yet). MEASURED (ours).
+
+| component | weight | fires | median spread | mean |
+|---|---|---|---|---|
+| feasibility | 0.50 | 100 % | 1.0000 | 0.9783 |
+| comfort | 0.20 | 100 % | 0.9896 | 0.4172 |
+| progress | 0.30 | 100 % | 1.5000 | 1.1478 |
+| collision | 1.00 | 54.2 % | 1.0000 | −0.1902 |
+| **headway** | 0.30 | **28.3 %** | **0.0000** | 0.7596 |
+
+**VERDICT: FAIL — `headway` is INERT.** It fires on 28 % of windows and its
+**median spread across the fan is 0.0000**: identical for every candidate on most
+windows, so it cancels exactly in the group-relative advantage and cannot rank
+anything. ⭐ **Present is not the same as informative** — and the first version of
+this probe called that a PASS, because its verdict only failed on *never fires*.
+The verdict logic now has four states (DEAD / INERT / WEAK / PASS); the leniency
+was mine and it was caught by reading the spread column instead of the headline.
+
+**Diagnosis (mechanism, not just the number).** `headway` is
+`min_t (gap_t / v_t) / T*` clamped to [0, 1]. With a lead 40 m ahead at 10 m/s the
+time gap is ≈2 s = `T*`, so nearly every candidate saturates at **1.0**. The term
+is a *constraint* (satisfied / violated), not a *ranking signal*, and it only
+discriminates in close-following windows.
+
+⛔ **What must NOT happen next:** re-weighting or re-shaping `headway` to make
+this number look better is *hacking the audit*. The fix has to be argued from the
+driving semantics — a graded time-gap reward that ranks below AND above `T*`, or
+`headway` demoted to a hard constraint applied outside the advantage — and then
+A0 re-run.
+
+⚠️ **Second, milder finding:** `progress` has median spread **1.5000**, exactly
+its clamp width, with mean 1.1478 — it is saturating at its `hi` bound, which
+compresses ranking among the fastest candidates. Not blocking; recorded.
+
+⚠️ **Two components rank on roughly half the windows or fewer** (`collision`
+54.2 %, `headway` 28.3 %). For `collision` that is plausibly the true base rate —
+open road genuinely has no obstacle in the corridor — which is the CONDITIONAL
+case the verdict logic now names. **State the base rate in the launch record
+rather than reading absence as safety.**
+
 ---
 
 ## 1. The arms

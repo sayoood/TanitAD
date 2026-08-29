@@ -112,7 +112,7 @@ def test_information_free_context_is_INCONCLUSIVE_not_clean_and_not_flagged():
     report = AUD.audit_reward(R.RewardSpec(), {})
     assert report.inconclusive
     assert report.verdict == "INCONCLUSIVE"
-    assert set(report.dead_components) == {"collision", "headway", "gt_similarity"}
+    assert set(report.dead_components) == {"collision", "headway"}
     assert report.flagged is False
 
 

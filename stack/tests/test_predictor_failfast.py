@@ -1,6 +1,6 @@
 """Standalone tests for the operative-predictor fail-fast validator.
 
-Run: pytest "TanitAD Research Hub/Production & Optimization/Implementation/incoming/2026-07-09-models-predictor-failfast/tests" -q
+Run: pytest "TanitAD Research Lab/Production & Optimization/Implementation/incoming/2026-07-09-models-predictor-failfast/tests" -q
 
 The validator is self-contained (imports only torch), so these tests do not
 need the tanitad package. The export-safety test is skipped if onnx is absent.

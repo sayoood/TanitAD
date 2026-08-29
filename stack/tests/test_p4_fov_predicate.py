@@ -42,9 +42,9 @@ from tanitad.data.bev_raster import (GRID_DEFAULT, cell_azimuth_rad,  # noqa: E4
 torch = pytest.importorskip("torch")
 tp8 = pytest.importorskip("train_p8_occupancy")
 
-P4_DIR = (_REPO / "TanitAD Research Hub" / "Architecture & Inference"
+P4_DIR = (_REPO / "TanitAD Research Lab" / "Architecture & Inference"
           / "Implementation" / "incoming" / "2026-08-16-p4-fov-predicate")
-BANKED = (_REPO / "TanitAD Research Hub" / "Architecture & Inference"
+BANKED = (_REPO / "TanitAD Research Lab" / "Architecture & Inference"
           / "Implementation" / "incoming" / "2026-08-07-hierarchical-wm-redesign")
 
 

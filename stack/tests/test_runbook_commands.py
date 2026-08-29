@@ -68,7 +68,7 @@ import v6_chain as C                                               # noqa: E402
 import train_v6_staged as T                                        # noqa: E402
 
 _REPO = _STACK.parent
-RUNBOOK = (_REPO / "TanitAD Research Hub" / "Architecture & Inference"
+RUNBOOK = (_REPO / "TanitAD Research Lab" / "Architecture & Inference"
            / "Implementation" / "incoming" / "2026-08-07-hierarchical-wm-redesign"
            / "V6_GO_PACKAGE.md")
 
@@ -82,7 +82,7 @@ TRAINER_TOKEN = "scripts/train_v6_staged.py"
 #: real `<root>/v6F-SW-30k/config.json` is found first and wins; off-box (here,
 #: and on the dev box where these commands are generated) this banked copy is
 #: what makes the line reproducible.
-GEOMETRY_FROM = (_REPO / "TanitAD Research Hub" / "Architecture & Inference"
+GEOMETRY_FROM = (_REPO / "TanitAD Research Lab" / "Architecture & Inference"
                  / "Implementation" / "incoming" / "2026-08-17-st-launch-fixes"
                  / "raw" / "v6F-SW-30k.config.json")
 
