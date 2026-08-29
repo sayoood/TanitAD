@@ -133,3 +133,33 @@ additionally requires a **τ-ramp arm before recipe adoption** (published
 best practice; adoption on a fixed-τ arm alone would ship a known-suboptimal
 schedule); EMA-OUT's follow-up lever is the frozen-teacher feature target
 (SALT ≥ V-JEPA 2 at ⅓ FLOPs — banked).
+
+---
+
+## STAGE 2 OUTCOME — read 2026-08-29 ~18:10 (config-diff CLEAN: {o5_target ABSENT→ema, out} only)
+
+All MEASURED (dev-box 4060, T0-DIAGNOSTIC, rig valid; ckpt md5 `3a030ba2` both sides):
+
+| read | emao14_30k (EMA) | o14fut30k (incumbent) | committed criterion |
+|---|---|---|---|
+| drift r | **0.6952** (t 154.6) | 0.6709 | below beyond ~1.5 % band → **FAILS: +3.6 % ABOVE** |
+| meanpred nrmse | **0.7466** | 0.8288 | within +10 % → **−9.9 % BETTER** |
+| cos (centred) | **0.7524** | 0.6043 | within band → **+24.5 % BETTER** |
+| absorption marginal | +0.0028 (t 2.16) INSIDE_NULL | −0.0047 | stays absorbed → **HOLDS** |
+
+**Verdict per the τ-amendment: EMA-OUT on the committed question.** The amendment's
+symmetric caveat fires exactly: the 2k drift gain (−12/−20 %) VANISHED AND INVERTED at
+30k (+3.6 %) — it was a warmup transient, as was the 2k cos cost (−27/−47 % → **+24.5 %
+gain**). Both stage-1 effects were artifacts of a fixed-τ teacher read far outside its
+operating band; the committed prediction ("the cos gap narrows at 30k") is confirmed in
+the strongest form. **EMA is NOT the drift lever. The drift attractor stays open**; the
+next pre-committed lever is the frozen-teacher feature target (SALT-class, banked).
+
+⭐ **NEW FINDING, exploratory (not pre-registered — registered as E-DEC-69 for its own
+follow-up): the EMA teacher is the LARGEST PREDICTION improvement ever measured on the
+trainable line** — cos 0.6043 → 0.7524, nrmse 0.8288 → 0.7466, with absorption preserved,
+at a +3.6 % drift cost. Whether v7f SHIPS with EMA for prediction quality is a **PI
+decision** (the MIXED consequence clause: PI decides with the scaled-run timeline in
+view). If adopted, the amendment's τ-ramp-before-adoption requirement applies unchanged.
+⚠️ The committed interpretation limit also stands: this pair cannot separate "EMA at 30k"
+from "EMA×O14 interaction" (the 2k evidence was collected without O14).
