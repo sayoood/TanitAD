@@ -13,7 +13,13 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt        # noqa: E402
 import numpy as np                     # noqa: E402
 
-sys.path.insert(0, "G:/Meine Ablage/SayBouBase/raw/Projects/TanitAD/stack")
+# Prefer the local mirror when present — the G: mount flaps (Errno 22 mid-
+# import) and an importlib get_data failure kills the whole render. Same
+# recipe as the dev-box run notes: run the stack off C:, read data off C:.
+import os as _os
+_MIR = "C:/Users/Admin/tanitad-wt/_runstack"
+sys.path.insert(0, _MIR if _os.path.isdir(_MIR + "/tanitad")
+                else "G:/Meine Ablage/SayBouBase/raw/Projects/TanitAD/stack")
 from tanitad.data import alpamayo_records as AR    # noqa: E402
 from tanitad.data import egomotion_source as ES    # noqa: E402
 from tanitad.models import vocab_v7 as V7          # noqa: E402
@@ -25,12 +31,20 @@ SUM = json.load(open("C:/Users/Admin/tanitad-wt/_s2build/v7_final_rel/summary.js
 
 #: My verdict per clip, written from the FRAMES before the labels were read.
 VERDICT = {
-    "d8f80c0f": (True, "Rainy dusk, residential. The NEW yield-for-turn path's first fresh-sample "
-                       "case: a 1.55–4.59 m/s creep-and-go with a measured −42° turn at t+2.7 s → "
-                       "YIELD_FOR_TURN_R + TURN_R + CORRIDOR_OFFSET(left) for the parked cars on "
-                       "the right. The frames show the slow wet crawl past parked vehicles; the "
-                       "turn itself is subtle at strip scale — geometry (−42°, R measured) is the "
-                       "decisive witness, the frames are consistent."),
+    "d8f80c0f": (False, "⛔ <b>The PI caught this one, and my published CONFIRMED verdict was "
+                        "wrong — the fourth misread the data has corrected this session.</b> "
+                        "Zoomed frames show NO junction: a parked yellow car at the left edge and "
+                        "the ego straightening onto the SAME street — a pull-out/pass that scored "
+                        "−42.7° at R 12.2 m and walking speed, kinematically identical to a turn. "
+                        "Geometry cannot separate these; the text can (its CoT says <i>nudge left "
+                        "to pass the parked vehicle</i>, and no turn word appears anywhere). The "
+                        "new corroboration mechanism now marks this turn "
+                        "<code>contested + disputed</code> — flagged, not deleted, because "
+                        "confirmed and contested turns have near-identical |Δyaw| distributions "
+                        "(p50 49.5° vs 45.2°) and any auto-deletion rule would kill real turns "
+                        "like ec075947 (−78°, visually confirmed, ALSO carries parked-car text). "
+                        "The 68 contested turns are exactly the population the lane-detector "
+                        "reference would settle."),
     "b5812659": (True, "⚠️ <b>I misread this one first and the data corrected me — again.</b> I "
                        "took the blue island sign as keep-RIGHT; it is keep-LEFT, and the facades "
                        "sweep rightward exactly as an 80° LEFT turn predicts. Label: TURN_L@14.5 m "

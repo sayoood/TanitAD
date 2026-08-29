@@ -467,7 +467,7 @@ so nothing the pipeline read is hidden behind a summary.</p>
 <h2>Ten FRESH scenes — an unseen sample, checked against their frames</h2>
 <p>Drawn for the pre-production sign-off with a NEW seed, excluding every previously
 reviewed clip — so nothing below was tuned on. Strata now include the new
-YIELD_FOR_TURN and CORRIDOR_OFFSET classes. <b>10 of 10 confirmed</b>, including one
+YIELD_FOR_TURN and CORRIDOR_OFFSET classes. <b>9 of 10 confirmed, 1 corrected by the PI</b>: my published CONFIRMED on d8f80c0f was wrong — a pull-out around a parked car, kinematically identical to a turn, now flagged <code>contested</code> by the new turn-corroboration mechanism. Also here: one
 where my own reading was wrong and the measurement was right, one honest gate
 refusal shown as such, and a fresh reproduction of the untimed-oncoming case —
 carrying its flag.</p>

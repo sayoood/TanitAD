@@ -338,6 +338,76 @@ def corroborate(clip_id: str, token: str, args: dict) -> dict:
             "by_box_perception": by_box, "by_named_component": by_comp}
 
 
+_TURN_WORD = __import__("re").compile(
+    r"\bturn(?:s|ing)?\s+(?:to\s+the\s+)?(left|right)\b", __import__("re").I)
+_TURN_CTX = __import__("re").compile(
+    r"\b(?:intersection|junction|t-junction|crossroads|corner|turn(?:s|ing)?)\b",
+    __import__("re").I)
+_PASS_CTX = __import__("re").compile(
+    r"\b(?:parked|stopped|stationary|double-?parked)\b"
+    r"[^.]{0,60}?\b(?:car|vehicle|van|truck|bus)s?\b"
+    r"|\bnudge\b|\bpass(?:ing|es)?\s+the\s+parked\b|\bpull(?:ing)?\s+out\b",
+    __import__("re").I)
+
+
+def turn_corroboration(clip_id: str, side: str, t_start_rel_s: float) -> dict:
+    """Is a GEOMETRIC turn a junction turn, or an obstacle-pass in disguise?
+
+    ⛔⛔ WHY THIS EXISTS (PI, 2026-08-29, clip `d8f80c0f`): at walking speed a
+    pull-out around a parked car produces a tight, slow, large-dyaw manoeuvre
+    that is KINEMATICALLY IDENTICAL to a junction turn — `d8f80c0f` scored
+    -42.7 deg at R=12.2 m and 1.6-4.6 m/s, passed every `is_turn` gate, and was
+    published as YIELD_FOR_TURN_R + TURN_R. The zoomed frames show no junction
+    at all: a parked yellow car at the left edge, and the ego straightening
+    onto the SAME street. Geometry cannot tell these apart; the TEXT can.
+
+    Three states, and the asymmetry is the design:
+
+      confirmed      — an explicit turn CLAIM agrees: a motion segment typed
+                       "turn <side>", or a side-matched "turn left/right" in
+                       the text, or junction context words.
+      contested      — NO turn claim anywhere AND the text actively describes
+                       an obstacle-pass (parked/stopped vehicle, nudge,
+                       pull-out). Only then is the turn re-read as obstacle
+                       geometry.
+      uncorroborated — silence. ⛔ SILENCE IS NOT CONTRADICTION: `95d2c361` is
+                       a real, visually confirmed -90 deg junction turn whose
+                       CoT discusses only the lead vehicle. Uncorroborated
+                       turns are KEPT — geometry stays authoritative — and
+                       merely labelled so.
+
+    ⚠️ `meta_action` steer direction deliberately does NOT confirm: steering
+    around a parked car is also a "Sharp Steer Right", so it cannot separate
+    the two cases (`d8f80c0f`'s meta says exactly that).
+
+    ⚠️ The text describes Alpamayo's window, which ends ~+5.1 s relative to our
+    anchor. A manoeuvre starting later is OUTSIDE what the text can speak
+    about, so it can be confirmed but never contested by it.
+    """
+    from . import alpamayo_structured as AST
+    from . import cot_negation as NEG
+    txt = NEG.strip_negated(cot_text(clip_id).lower())
+    want = side.lower()
+
+    seg_turn = any(
+        ("turn left" in seg.raw_type.lower() and want == "left")
+        or ("turn right" in seg.raw_type.lower() and want == "right")
+        for seg in AST.motion_segments(clip_id))
+    m = _TURN_WORD.search(txt)
+    word_turn = bool(m and m.group(1) == want)
+    ctx_turn = bool(_TURN_CTX.search(txt))
+    if seg_turn or word_turn or ctx_turn:
+        ev = ("segment" if seg_turn else "turn-word" if word_turn else "junction-context")
+        return {"state": "confirmed", "evidence": ev}
+
+    beyond_text = t_start_rel_s > (AR.ALPAMAYO_T0_S - 8.0) + 8.0  # +5.1 s rel
+    if not beyond_text and _PASS_CTX.search(txt):
+        return {"state": "contested",
+                "evidence": "obstacle-pass context, no turn claim anywhere"}
+    return {"state": "uncorroborated",
+            "evidence": "text silent on the lateral manoeuvre"}
+
+
 def cot_text(clip_id: str) -> str:
     """The richest CoT text available for term extraction.
 

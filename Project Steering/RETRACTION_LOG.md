@@ -9642,3 +9642,60 @@ conjunction with no lift, caught only because a control was run. (3) is a
 DENOMINATOR error: a rate is meaningless until the population it is over is
 named, and I named it wrongly. (4) is the C9/C13/C14 family — an instrument
 structurally unable to answer the question it is cited for.
+
+
+---
+
+## DE-C151 ⛔ — A PULL-OUT AROUND A PARKED CAR IS KINEMATICALLY IDENTICAL TO A JUNCTION TURN, AND I PUBLISHED IT AS A CONFIRMED TURN (PI, 2026-08-29)
+
+**The PI caught it on `d8f80c0f`** in the fresh-sample sign-off report: the clip
+scored −42.7 deg at R 12.2 m and 1.6–4.6 m/s, passed every `is_turn` gate
+(calibrated dyaw/arc-R/speed), and shipped as `YIELD_FOR_TURN_R + TURN_R` —
+**with my visual verdict "CONFIRMED" published beside it.** Zoomed frames show
+no junction at all: a parked yellow car at the left edge and the ego
+straightening onto the SAME street. A pull-out/pass manoeuvre.
+
+⚠️ **My published verdict was the fourth misread of the session corrected by a
+measurement** (after the 683d37fb "empty road", the 472944a4 "oncoming"
+tail-lights, and the b5812659 keep-left sign). The verdict is corrected IN
+PLACE in the published report, marked as the PI's catch.
+
+**THE MECHANISM (PI: "if ego says turns, confirm with cot or something
+similar"):** every geometric turn now carries a corroboration state from
+Alpamayo's text (`alpamayo_fusion.turn_corroboration`):
+
+| state | n | rule |
+|---|---|---|
+| `confirmed` | 408 | a motion segment typed "turn <side>", a side-matched turn-word, or junction-context words |
+| `uncorroborated` | 139 | text SILENT → turn KEPT. ⛔ Silence is not contradiction: `95d2c361` is a real, visually confirmed −90 deg turn whose CoT discusses only the lead vehicle |
+| `contested` | 68 | NO turn claim anywhere AND the text describes an obstacle-pass (parked/stopped vehicle, nudge, pull-out) → token KEPT but `disputed: true` + evidence string |
+
+⚠️ `meta_action` steer direction deliberately does NOT confirm — steering around
+a parked car is also a "Sharp Steer Right" (`d8f80c0f`'s meta says exactly
+that), so it cannot separate the two cases.
+
+⛔⛔ **WHY FLAGGED, NOT DELETED — the deletion rule was REFUTED BEFORE SHIPPING.**
+The obvious demotion ("contest only kinematically marginal turns, keep
+unambiguous ~90 deg corners") fails on data: confirmed and contested turns have
+near-IDENTICAL |dyaw| distributions (p50 49.5 vs 45.2 deg; p25 35.0 vs 31.9),
+so every angle cut that demotes the contested set also demotes hundreds of
+segment-confirmed real turns — and `ec075947`, a VISUALLY CONFIRMED −78 deg
+corner, ALSO carries parked-car text (turning past parked cars at a corner is
+normal). There is no admissible auto-deletion rule on present evidence. The
+68 contested clips are exactly the population the lane-detector reference
+(D-DATA-GTAC-b) would settle — its urgency moves UP again.
+
+**ROOT-CAUSE CLASSES:** (1) two physically different manoeuvres identical under
+every measured feature — a calibrated gate cannot exceed the separability of
+its features, and the missing feature is lane semantics; (2) my verdict:
+confirming a label from evidence that cannot distinguish the alternatives
+(the strip showed a heading change; a heading change was never in dispute).
+⇒ STANDING RULE: **a visual confirmation must name what it saw that
+DISCRIMINATES, not what is merely consistent.**
+
+*(Also struck again while wiring: the bash-heredoc backslash trap ate `\b` into
+literal backspace bytes in `alpamayo_fusion.py` — 14 of them — making the
+contest patterns silently unable to match anything. Repaired byte-exact via a
+Write-tool script; the repair itself failed twice through bash first. The trap
+note's instruction stands: regex content goes through Write/Edit, never
+heredocs.)*

@@ -238,11 +238,42 @@ def tactical_goals(poses, key, seq, cot, hz=HZ, lat_action=None,
         pre_stops = EM.stop_episodes(v_pre, hz)
         held = bool(pre_stops and (pre_stops[0][1] - pre_stops[0][0] + 1) / hz >= 0.5)
         tok = f"YIELD_FOR_TURN_{side}" if held else f"TURN_{side}"
+        # ⭐⭐ TURN CORROBORATION (PI, 2026-08-29, `d8f80c0f`): at walking speed
+        # a pull-out around a parked car is KINEMATICALLY IDENTICAL to a
+        # junction turn — that clip scored -42.7 deg / R 12.2 m / 1.6-4.6 m/s,
+        # passed every is_turn gate, and the zoomed frames show no junction:
+        # a parked yellow car and the ego straightening onto the SAME street.
+        # Geometry cannot tell these apart; the text can. Every geometric turn
+        # is now checked against Alpamayo's turn claims (motion segments,
+        # turn-words, junction context).
+        #
+        # ⛔ CONTESTED TURNS ARE FLAGGED, NOT DELETED. MEASURED before wiring:
+        # confirmed and contested turns have near-IDENTICAL |dyaw|
+        # distributions (p50 49.5 vs 45.2 deg), so any angle cut that demotes
+        # the contested set also kills hundreds of segment-confirmed real
+        # turns — and `ec075947`, a visually confirmed -78 deg corner, ALSO
+        # carries parked-car text. There is no admissible auto-deletion rule
+        # on present evidence. A contested turn therefore keeps its token and
+        # gains `disputed: true` + the evidence string — the same honest state
+        # every other unadjudicable claim carries — and the 68-clip contested
+        # set is exactly the population the lane-detector reference would
+        # settle. Silence stays neutral: `95d2c361`'s real -90 deg turn has a
+        # lead-vehicle-only CoT and must survive.
+        corr = (AF.turn_corroboration(clip_id_for_time,
+                                      "left" if side == "L" else "right",
+                                      float(nxt[0]))
+                if clip_id_for_time else
+                {"state": "uncorroborated", "evidence": "no clip id"})
+        extra_t = {"corroboration": corr["state"],
+                   "corroboration_evidence": corr["evidence"]}
+        if corr["state"] == "contested":
+            extra_t["disputed"] = True
         goals[tok] = {"within_m": _arc_to(p, key, nxt[0], hz),
                       "by_time_s": nxt[0], "radius_m": nxt[3],
-                      "dyaw_deg": nxt[2]}
+                      "dyaw_deg": nxt[2], **extra_t}
         if held:
-            goals[f"TURN_{side}"] = {"by_time_s": nxt[0], "radius_m": nxt[3]}
+            goals[f"TURN_{side}"] = {"by_time_s": nxt[0], "radius_m": nxt[3],
+                                     **extra_t}
     if stops and not any(k.startswith(("TURN_", "YIELD_FOR_TURN_"))
                          for k in goals):
         i0, i1 = stops[0]
