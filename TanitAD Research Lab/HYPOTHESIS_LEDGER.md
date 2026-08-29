@@ -1,5 +1,12 @@
 # TanitAD — Hypothesis Ledger (SINGLE SOURCE OF TRUTH for hypothesis status)
 
+> ⛔ **SUPERSEDED AS AUTHORITY (Master Mind, 2026-08-29, executing the steering audit):**
+> the constitution names `Project Steering/GOALS_AND_CLAIMS.md` as the live register of
+> hypothesis/claim status — THAT file wins on any disagreement. This ledger is retained as
+> the HISTORICAL RECORD of the pre-register era (newest evidence 2026-08-07); do not quote
+> statuses from it. Its sole-source header below is void.
+
+
 > **This file is the only place a hypothesis status may be quoted from.** `PROGRAM_OVERVIEW.md` §3
 > points here and carries no status table of its own. Model *facts* (params, training args, results)
 > still come from `Project Steering/MODEL_REGISTRY.md`; this file tracks **questions**, not models.
@@ -56,7 +63,7 @@ add a row that breaks this shape. *(Checked 2026-07-25: 41/41 rows pass; every f
 on disk.)*
 
 **Path convention:** paths starting `taniteval/`, `stack/` or `Project Steering/` are
-**repo-relative**; everything else is **relative to `TanitAD Research Hub/`**. A `.../` prefix
+**repo-relative**; everything else is **relative to `TanitAD Research Lab/`**. A `.../` prefix
 abbreviates a hub team directory (`<Team>/Implementation/incoming/…`). ⚠️ `taniteval/results/`
 also holds files suffixed **`.CONTAMINATED-20260720-*`** — this ledger cites only the clean,
 un-suffixed twins; never glob-match these paths.
@@ -109,7 +116,7 @@ audit assigned DoA to the parent only.
 | **H17** | Unified-FOV masked-periphery training | **PARKED** (was Stale-Orphaned) | 5% | — | **untested** — dossier only: `Architecture & Inference/Research/UNIFIED_FOV_FOVEATED_PATCHING.md`; no experiment in 13 days | urban-ADE lift + imagination calibration without a comma regression | `PARK` → §3 | **never** | **— unowned** |
 | **H18** | Hierarchical action grounding | Partially (operative Confirmed) | 55% | MEASURED | grounding dominance **Δ +2.9568 m at 30 k** — ~~Δ 2.70 m~~ **CORRECTED UPWARD 2026-07-25** (the split-mean *under*stated it; `…/incoming/2026-07-25-jack-blast-radius/jack_hierarchy_recompute.json`). This is the leg that **survives and strengthens** the same estimator correction that retracted H26's ctx→tactical seam: it would need an **8.65× interval widening** to un-separate, against a worst-measured 3.10× (hierarchy panel over `taniteval/results/driving_flagship-30k.json`) | per level: grounded consequence beats ungrounded selection at that horizon | **`PROVE`** — folds into HPP as **supporting evidence for the hierarchy**; extend to tactical/strategic | 2026-07-25 | Architecture & Inference |
 
-### 1.3 Survey-derived proposals (H19–H24, `TanitAD Research Hub/Project Steering/Research/2026-07-17-external-survey-derivation.md` §2)
+### 1.3 Survey-derived proposals (H19–H24, `TanitAD Research Lab/Project Steering/Research/2026-07-17-external-survey-derivation.md` §2)
 
 | ID | Hypothesis (short) | Status | DoA | Evidence | Deciding artifact (or "untested") | Gate / falsifier | Action | Last retested | Owner |
 |---|---|---|---:|:--:|---|---|:--:|:--:|---|
@@ -291,7 +298,7 @@ retired in favour of R3's, because "validated-toy" and "supported" were being re
 capability when they meant *toy-scale* and *someone else's paper*.
 
 The full divergence inventory between the two ledgers is in
-`TanitAD Research Hub/Implementation/incoming/2026-07-25-wave1-hypothesis-ledger/WAVE1_E_REPORT.md`.
+`TanitAD Research Lab/Implementation/incoming/2026-07-25-wave1-hypothesis-ledger/WAVE1_E_REPORT.md`.
 
 ### 7.2 Change log — **ARCHIVE, 2026-07-05 → 2026-07-19. NOT a status source.**
 

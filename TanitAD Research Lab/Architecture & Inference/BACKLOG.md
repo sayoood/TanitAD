@@ -54,7 +54,7 @@ the same story: 1-step imagination is good, recursion + decode waste it.
 3. **Flagship-v2 retrain pack — design + CPU/4060-smoke EVERY lever now** so the retrain starts
    the day the 30k verdict lands: (a) v0+yr0 into tactical+strategic brains (the 3.38 m fix; same
    leakage-safe pattern as the operative v0); (b) future-ACTION dropout p≈0.3 (grow imagination
-   share); (c) rollout-k 4→12-20 (close the train/eval gap); (d) goal-conditioned step-readout —
+   share); (c) rollout-k 4→12-20 (close the train/eval gap); (d) goal-conditioned step-readout — ⛔ **REFUTED BY MEASUREMENT before execution (E-DEC-16/E-DEC-66: training-time k reverses past 8, k inert on the trainable line) — do NOT execute as written**
    decode the trajectory FROM the 0.885-cos goal latent; (e) nav-command dropout (strategic must
    infer route from vision; route-from-vision is 67.5% vs 100% echo); (f) TMS jerk penalty on
    rollout paths (tms 0.09 → target ≥0.3). Each lever: one config flag, one smoke test, one

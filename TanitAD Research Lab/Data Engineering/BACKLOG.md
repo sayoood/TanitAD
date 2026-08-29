@@ -70,7 +70,7 @@ ego-status shortcut pathology; nuScenes is 73.9%). The corpus-diversity gain is 
 ## P0 — next run
 
 -2. **HF recipe-dataset `Sayood/tanitad-realmix` (Sayed 2026-07-11 night).** Versionable,
-   improvable realmix WITHOUT shipping PhysicalAI-derived data (license doctrine: NEVER to HF,
+   improvable realmix WITHOUT shipping PhysicalAI-derived data (license doctrine: NEVER to HF,  ⭐ **SUPERSEDED by the constitution §0 (2026-08-22) and measured practice: research-licensed data publishes PRIVATE on the PI's HF (e.g. `Sayood/tanitad-v7-training-corpus`, verified 2026-08-29). This line is VOID; kept struck-through for the record.**
    even privately). Contents: comma-by-reference (existing public dataset), r0_selection.parquet
    + build params + split seed + mix ratio, per-episode SHA256 of built episodes (verify-without-
    ship), data card + rebuild instruction (fetch-camera + build_pai_cache.py — users pass NVIDIA's
