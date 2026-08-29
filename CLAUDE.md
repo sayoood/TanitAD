@@ -277,6 +277,30 @@ Every subagent brief MUST carry the preamble in
   per batch so no second full copy exists (`e_trunk_pooling2.py`: 25.6 GB → 2.76 GB, 3 seeds in
   42 s). *Same family as the `df` / Thor `free` / cgroup `usage_in_bytes` traps: a probe that
   reports the wrong scope, read as an answer.*
+- ⛔ **AN ARTIFACT'S COST IS THE COST OF THE FILE ITS *CONSUMER* OPENS — NOT THE ONE YOU
+  FOUND ON DISK.** MEASURED 2026-08-29: the B1 epcache was sized by loading
+  `_epcache/.../ep_00000.pt` (raw `frames_u8 [199,9,256,256]` uint8 = 117.4 MB, **exactly**
+  the file size), scaled to 256×640, and published as a **1.38 TB capacity wall** — a format
+  change, a geometry downgrade, a sharding design and "a PI decision" all followed from it.
+  Every number was right; the **artifact** was wrong. The v7 trainer's `--v2-cache` reads
+  `*.v2ep.pt` (`tanitad/data/v2_dataset.py`, written by
+  `scripts/v2_compressed.py::build_compressed`), which stores **ENCODED** frames —
+  **34.0 MB/ep, 161 GB**, confirmed independently at ~36 MB/ep over 2,403 live episodes.
+  **It fits with ~4× headroom; there was never a wall.**
+  ⇒ **Before pricing ANY derived artifact, open the CONSUMER'S LOADER and price what IT
+  reads; name the consumer and the loader file in the estimate, or the estimate is
+  inadmissible.** Same family as the `df` / Thor `free` / cgroup `usage_in_bytes` / `step_s`
+  traps with the object swapped: **a true measurement quoted outside its scope reads exactly
+  like an answer**, and it is worse than no estimate because it manufactures decisions.
+  ⚠️ **Corollary — when you correct the artifact, RE-RUN the cost; never port the old timing
+  onto the new format.** Re-timing the real path changed the plan more than the retraction
+  did: **PNG encode is 70 % of the build** (6.19 s decode+remap + 14.79 s encode), so the true
+  wall-clock is **3.4–4.6 h**, not the ~1.2 h a decode-only benchmark reported — and a 4 h job
+  was about to be started in a 1.5 h gap.
+  ⚠️ The codec is **load-bearing, not a speed knob**: `v2_dataset.py:325` and
+  `slice_v2_cache.py` **refuse to sub-frame a LOSSY cache**, so only a PNG cache can be sliced
+  to another geometry without a rebuild. *(DE-C152 / class C82; drafted by the DataFlyWheel,
+  applied by the Master Mind on the PI's direct authorisation 2026-08-29.)*
 - ⚠️ **A DERIVED CONSTANT SILENTLY CHANGES THE EXPERIMENT WHEN ITS INPUT CHANGES.** Same file:
   `HORIZON` moved from a hardcoded `7` to `round(6.0 * 10.0 / STRIDE)`. At stride 8 that is **8, not
   7** — 6.4 s instead of the banked 5.6 s — which cost exactly **one window per clip (1,509 →
@@ -636,7 +660,7 @@ Instrument: `taniteval/tools/t1_eval.py` (E1.2).
 ## ⛔ BINDING — RESEARCH BANKING: BANK THE PRIMARY, OR THE DELIVERABLE IS INCOMPLETE (Sayed, 2026-08-18)
 
 **A research deliverable that cites a paper it did not bank is incomplete.** Every literature pass
-downloads its primary sources into `TanitAD Research Hub/Library/`, indexes them, and extends the
+downloads its primary sources into `TanitAD Research Lab/Library/`, indexes them, and extends the
 knowledge base incrementally.
 
 ```bash
