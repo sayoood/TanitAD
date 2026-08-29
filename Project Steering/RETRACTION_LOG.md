@@ -10192,3 +10192,69 @@ invariance as a defect signal.** A sweep over an axis you expect to matter is a
 wrong tensor has the right shape, units and magnitude. ⚠️ And when a model returns
 several same-shaped tensors, **read the source for which one the forward pass
 actually updates** before measuring; a plausible name is not provenance.
+
+---
+
+## TRAIN-C8 — 2026-08-29 — NEAR-MISS: my ORACLE control was evaluated on a subset DEFINED BY the control's own outcome
+
+**Class:** `circular-control` — new to this log, and the most dangerous kind,
+because a circular control **looks like the strongest possible evidence.**
+
+**What I built.** Measuring whether REF-C's anchor vocabulary can express
+obstacle-avoiding trajectories, I added the control CLAUDE.md demands: the human
+driver's own future, which must read a known value. It read **0.0 % clearing
+`d_safe`** against the model's **87.5 %** — a spectacular, campaign-reorganising
+contrast, and I began writing it up as the headline.
+
+⛔ **It was guaranteed by construction.** I had selected the evaluation windows
+with `if clearance(gt) >= D_SAFE: continue` — i.e. *keep the windows where the
+human fails* — and then reported how often the human fails on them. **0.0 % was
+arithmetic, not measurement.**
+
+**What the honest version cost:** re-running over ALL windows rather than the
+selected subset. The finding survived and is in fact stronger — the human is
+inside `d_safe` on **45.1 %** of all windows with a visible lead track, which is a
+statement about the THRESHOLD rather than about a hand-picked subset.
+
+⭐ **THE RULE: a control must be evaluated on a population defined WITHOUT
+reference to the control's outcome.** Before quoting any control, write down the
+selection predicate and check that the control's own quantity does not appear in
+it. ⚠️ Note the shape: this passed every check the probe-panel rule specifies —
+the control was present, it was the right control, and it read an extreme value.
+**Presence of a control is not validity of a control.** Same family as the
+2026-08-22 ridge-probe panel (a probe that tunes on the data it scores), one level
+up: here the probe *selects* on the data it scores.
+
+---
+
+## TRAIN-C9 — 2026-08-29 — NEAR-MISS: I nearly published a mechanism the data refutes, sourced from a docstring that was CORRECT
+
+**Class:** `plausible-mechanism-never-measured` — the positive-control complement
+of C8, and it happened in the same hour.
+
+**What I nearly wrote.** `stack/tanitad/rl/rewards.py:240-241` documents, truly,
+that obstacles are "a static snapshot". From that I derived a compelling mechanism:
+we score the ego's 2 s **future** against agents frozen at **t0**, so ordinary
+car-following — ego advances, lead car does not — must register as closing to zero
+clearance every time, and *that* is why the human "fails" the safety term. It
+explained every null in the campaign, it followed from source, and it was wrong.
+
+**The measurement.** The join already carries `track_id`, so each obstacle can be
+propagated to its own future position and mapped back into the t0 ego frame. Human
+clearance, static vs real tracks: **54.9 % → 56.3 % at 5 m (+1.4 pp)**; 77.5 % →
+84.5 % at 2 m. The snapshot artifact is real and **negligible**. The actual cause
+is much duller: the threshold is simply too large for this corpus.
+
+⭐ **THE RULE: a mechanism derived from correct source is still a HYPOTHESIS.**
+Reading the code tells you what the code does; it does not tell you how much of the
+observed effect that behaviour accounts for. **Quantify the share before naming a
+cause** — and prefer a mechanism test that the existing data can already answer,
+which is what `track_id` turned out to be. ⚠️ Note what made this one easy to
+believe: it was *correct about the code*, *consistent with every observation*, and
+*actionable*. None of those is evidence of magnitude.
+
+*(Both C8 and C9 were caught inside one measurement session, and both by the same
+move — running the fuller version of a probe I had already "finished". Two of my
+own live hypotheses died tonight, plus the Master Mind's inference-budget reading.
+That is three ideas retired for the cost of three 0-training probes, and it is the
+cheapest place any of them could have died.)*

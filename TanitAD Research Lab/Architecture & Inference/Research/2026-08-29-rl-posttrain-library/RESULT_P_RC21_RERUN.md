@@ -259,3 +259,89 @@ usable budget is 2.08 m of the 3.67 m gap (57 %), the policy's own movement is
 capped there, and the only remaining way to give it somewhere safe to move *to* is
 to change **where the anchors are** — DDv2 re-clusters them from data; ours are FPS
 over a synthetic unicycle pool.
+
+---
+
+## ⭐⭐ ADDENDUM 4 — THE SAFETY TARGET IS MIS-CALIBRATED. Not the policy, not the vocabulary.
+
+`Zero training. Two probes: anchor-vocabulary coverage (n=32 near-miss windows of
+90) and target calibration on real agent TRACKS (n=71 windows with a followable
+track). Evidence class: MEASURED (ours).`
+
+### The number that reorganises the campaign
+
+**On 45.1 % of all windows carrying a visible lead track, the HUMAN DRIVER'S OWN
+FUTURE is inside `d_safe = 5.0 m`.**
+
+| clearance threshold | human clears it (obstacles STATIC, as scored) | human clears it (real TRACKS) |
+|---|---|---|
+| 2 m | 77.5 % | 84.5 % |
+| 3 m | 71.8 % | 76.1 % |
+| **5 m (our `d_safe`)** | **54.9 %** | **56.3 %** |
+
+⇒ The proximity barrier fires **against the demonstration distribution on nearly
+half of all windows**. It is not a safety threshold in this corpus; it is a
+threshold that marks ordinary competent driving as unsafe.
+
+### And the vocabulary is NOT the constraint — the opposite of what I expected
+
+On near-miss windows, coverage of a candidate clearing `d_safe` (N=128 anchors,
+pool n=90, S=4, d=8):
+
+| vocabulary | clears `d_safe` | best clearance |
+|---|---|---|
+| **CURRENT (the model's own bank)** | **87.5 %** | **8.586 m** |
+| CLUSTERED (k-means on real futures) | 68.8 % | 6.482 m |
+| RANDOM (same pool, no clustering) | **68.8 %** | **6.482 m** |
+
+⛔ **Item 2 is dead, and its own floor control killed it.** CLUSTERED and RANDOM
+agree **to three decimals on both columns** — re-clustering buys *nothing* over
+random draws from the same pool, exactly the outcome the Master Mind's control was
+built to detect. And both are **worse than the bank we already have**, because the
+synthetic unicycle pool contains extreme manoeuvres real futures do not.
+
+⇒ **The existing vocabulary already contains "solutions" on 87.5 % of near-miss
+windows. The policy declines to take them — correctly, because they are evasive
+manoeuvres the human never performs.** The trust region pulls toward the
+demonstration distribution; the proximity barrier pushes away from it; and since
+the barrier's threshold is set where the human lives, the two are in **direct
+opposition by construction**. That is the tension Addendum 2 named, now with a cause.
+
+### ⚠️ TWO ERRORS OF MINE INSIDE THIS ADDENDUM, BOTH CAUGHT BEFORE PUBLICATION
+
+**(1) My oracle control was CIRCULAR, and its headline number is WITHDRAWN.**
+I selected near-miss windows by the condition *"the human's clearance < `d_safe`"*
+and then reported *"the human clears `d_safe` in 0.0 % of them"*. That 0.0 % is
+**definitional, not measured** — a control cannot be evaluated on a subset defined
+by the control's own outcome. ⛔ Do not quote it. The non-circular version is the
+calibration table above, computed over **all** windows with a followable track,
+and it carries the finding on its own. *(The coverage comparison is unaffected:
+the vocabularies were never used to select the windows.)*
+
+**(2) My proposed mechanism was WRONG, and the measurement refutes it.**
+`rewards.py:240-241` states obstacles are "a static snapshot", so I predicted the
+violations were an artifact of scoring the ego's 2 s **future** against agents
+frozen at **t0** — car-following would then look like closing to zero every time.
+I built the moving-obstacle version from the join's `track_id` field, propagating
+each track to its own future position and mapping it back into the t0 ego frame.
+**The gap is 54.9 % → 56.3 %: +1.4 pp.** The snapshot artifact is real and
+negligible; it explains **none** of the effect. The threshold is simply too large.
+
+⭐ I was one write-up away from publishing a mechanism that is not the mechanism.
+It cost one probe to find out, and the probe existed only because the field needed
+to test it was already in the data.
+
+### What to do instead — calibrate the barrier to the demonstrations
+
+Set `d_safe` at a **percentile of the human's own clearance distribution** rather
+than at a round number. From the tracks-based column: p5 **0.787 m**, p25
+**3.245 m**, p50 **5.916 m**. A barrier near **2 m** fires on **15.5 %** of
+windows — rare, and rare in the places where clearance is genuinely unusual —
+instead of on 45 %. ⚠️ This is a **specification** change, so it needs its own
+pre-registration with both outcomes committed; it is not a knob to turn inside an
+existing arm.
+
+⛔ **What is NOT claimed:** that a recalibrated barrier will make RL work here.
+Every prior null was measured against the mis-calibrated target, so they are
+uninformative about the recalibrated one — but "uninformative" is not "promising".
+The campaign's exit stands until a pre-registered arm says otherwise.
