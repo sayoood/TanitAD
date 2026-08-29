@@ -9699,3 +9699,16 @@ contest patterns silently unable to match anything. Repaired byte-exact via a
 Write-tool script; the repair itself failed twice through bash first. The trap
 note's instruction stands: regex content goes through Write/Edit, never
 heredocs.)*
+
+**ADDENDUM (PI decision, 2026-08-29, same day):** the flag-only policy above is
+SUPERSEDED — *"if geometry says turn right but the cot is saying nudge or pass
+parking vehicle then it is not turning."* Contested turns now have their
+TURN/YIELD_FOR_TURN tokens SUPPRESSED (goal + lateral action -> NUDGE + nav ->
+NAV_FOLLOW_ROAD), decided once in `emit_one` so the three consumers cannot
+diverge. 68 clips affected; each carries a `turn_suppression` record (side,
+dyaw, evidence, rule) so the set is auditable and recoverable. The accepted,
+named cost: `ec075947`'s real -78 deg corner also carries parked-car text and
+loses its turn tokens. Their labels become NUDGE_side + EVADE_IN_CORRIDOR (45)
+/ CORRIDOR_OFFSET (41) / FOLLOW_LANE — the obstacle-pass semantics the PI
+described. The lane-detector reference remains the instrument that recovers
+false suppressions.

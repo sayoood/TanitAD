@@ -186,7 +186,7 @@ def _arc_to(poses, key, t_s, hz=HZ):
 
 
 def tactical_goals(poses, key, seq, cot, hz=HZ, lat_action=None,
-                   clip_id_for_time=None):
+                   clip_id_for_time=None, turn_suppressed=False):
     """The tactical goal SET for the NEXT manoeuvre, plus its anchor args."""
     p = np.asarray(poses, dtype=np.float64)
     # ⛔⛔ THE TACTICAL WINDOW IS 2-6 s, AND THIS FUNCTION WAS STILL USING 0-6 s.
@@ -224,6 +224,8 @@ def tactical_goals(poses, key, seq, cot, hz=HZ, lat_action=None,
     # fires for curves — that is exactly the token the PI added for them.
     if nxt is not None and not is_turn(nxt):
         nxt = None
+    if turn_suppressed:
+        nxt = None      # PI rule: contested => no TURN and no YIELD_FOR_TURN
     if nxt and nxt[0] < TACTICAL_S[1]:
         side = "L" if nxt[2] > 0 else "R"
         # ⛔ THE YIELD-STOP PRECEDES THE TURN, SO IT MAY PRECEDE THE BAND.
@@ -418,7 +420,7 @@ def tactical_goals(poses, key, seq, cot, hz=HZ, lat_action=None,
     return goals, anchor, viol
 
 
-def tactical_actions(poses, key, seq, hz=HZ):
+def tactical_actions(poses, key, seq, hz=HZ, suppress_turn=False):
     n = int(round(PLAN_S * hz))
     if key + n >= len(poses):
         return {"lat": "LANE_KEEP", "lon": "CRUISE", "truncated": True,
@@ -437,7 +439,12 @@ def tactical_actions(poses, key, seq, hz=HZ):
     # `EM.analyse` still supplies NUDGE, which is a different fact.
     inplan, _post, _gap = split_by_band(poses, key, seq, hz)
     turns = [s for s in inplan if is_turn(s)]
-    if turns:
+    if turns and suppress_turn:
+        # PI 2026-08-29: a contested turn is NOT a turn — the manoeuvre is an
+        # obstacle pass, so the honest lateral action is the NUDGE it is.
+        biggest = max(turns, key=lambda s: abs(s[2]))
+        lat = "NUDGE_L" if biggest[2] > 0 else "NUDGE_R"
+    elif turns:
         biggest = max(turns, key=lambda s: abs(s[2]))
         lat = "TURN_L" if biggest[2] > 0 else "TURN_R"
     else:
@@ -682,7 +689,7 @@ def strategic(poses, key, seq, hz=HZ):
     return g, a
 
 
-def nav_command(poses, key, seq, hz=HZ):
+def nav_command(poses, key, seq, hz=HZ, suppress_turn=False):
     """⛔ MODEL INPUT derived from the EGO FUTURE — training only.
 
     See `vocab_v7.NAV_PROVENANCE`. On PhysicalAI the only route supplier is the
@@ -693,6 +700,11 @@ def nav_command(poses, key, seq, hz=HZ):
     if nxt is None:
         return {"token": "NAV_FOLLOW_ROAD", "args": {},
                 "provenance": "ego-future", "oracle": True}
+    if suppress_turn:
+        return {"token": V7.assert_frozen("NAV_FOLLOW_ROAD", where="nav"),
+                "args": {}, "provenance": "ego-future",
+                "reason": "contested turn (obstacle pass) — nav does not "
+                          "command a turn (PI 2026-08-29)"}
     if not is_turn(nxt):
         return {"token": V7.assert_frozen("NAV_FOLLOW_ROAD", where="nav"),
                 "args": {}, "provenance": "ego-future",
@@ -836,11 +848,39 @@ def emit_one(clip_id: str, *, sem_row=None) -> dict:
     # 3,188 (+77 %) over the 4,729-clip corpus.
     cot = AF.cot_text(clip_id) or (sem_row.get("cot") if sem_row else None)
     seq = manoeuvre_sequence(poses, key, HZ)
+    # ⭐⭐ CONTESTED TURNS ARE SUPPRESSED — PI DECISION 2026-08-29, superseding
+    # the flag-only policy of the same morning: *"if geometry says turn right
+    # but the cot is saying nudge or pass parking vehicle then it is not
+    # turning."* Decided ONCE here so goal, action and nav cannot diverge —
+    # the two-detector defect has bitten three times already.
+    #
+    # ⚠️ The ACCEPTED COST, measured before the switch: confirmed and
+    # contested turns have near-identical |dyaw| distributions, and
+    # `ec075947` — a visually confirmed -78 deg corner whose text also
+    # mentions parked cars — loses its TURN tokens under this rule. The PI
+    # chose the trade with that on the table ("let do a last trial"). Every
+    # suppression is recorded under `turn_suppression` so the 68-clip set
+    # stays auditable and recoverable when the lane-detector reference lands.
+    _sup = None
+    _ipl, _, _ = split_by_band(poses, key, seq, HZ)
+    _tns = [s for s in _ipl if is_turn(s)]
+    if _tns:
+        _big = max(_tns, key=lambda s: abs(s[2]))
+        _side = "left" if _big[2] > 0 else "right"
+        _corr = AF.turn_corroboration(clip_id, _side, float(_big[0]))
+        if _corr["state"] == "contested":
+            _sup = {"applied": True, "side": _side,
+                    "t_start_s": float(_big[0]), "dyaw_deg": float(_big[2]),
+                    "radius_m": float(_big[3]),
+                    "evidence": _corr["evidence"],
+                    "rule": "PI 2026-08-29: geometry-turn + nudge/pass-parked "
+                            "text => not a turn"}
     # ⚠️ ACTIONS FIRST: the goals consult them, so one fact has one detector.
-    _at = tactical_actions(poses, key, seq, HZ)
+    _at = tactical_actions(poses, key, seq, HZ, suppress_turn=bool(_sup))
     goals, anchor, viol = tactical_goals(poses, key, seq, cot, HZ,
                                          lat_action=_at["lat"],
-                                         clip_id_for_time=clip_id)
+                                         clip_id_for_time=clip_id,
+                                         turn_suppressed=bool(_sup))
     goals["_lat"] = _at["lat"]          # so the structured layer sees it
     alpa = _alpamayo_layer(clip_id, poses, key, goals)
     goals.pop("_lat", None)
@@ -878,10 +918,11 @@ def emit_one(clip_id: str, *, sem_row=None) -> dict:
                   # shape — recorded per clip so it cannot hide.
                   "serves_goals": V7.action_serves_goals(
                       _at["lat"], _at["lon"], goals)},
-        "nav_command": nav_command(poses, key, seq, HZ),
+        "nav_command": nav_command(poses, key, seq, HZ, suppress_turn=bool(_sup)),
         # ⭐ the PI asked for the RAW source text in the visualisation, and the
         # conflict check that goes with it — two independent generative draws
         # disagree on direction for 8.8 % of the clips that state one.
+        "turn_suppression": _sup,
         "cot_source": {
             "cot": (AR.get(clip_id).cot if AR.get(clip_id) else None),
             "chain_of_causation": (AR.get(clip_id).chain_of_causation

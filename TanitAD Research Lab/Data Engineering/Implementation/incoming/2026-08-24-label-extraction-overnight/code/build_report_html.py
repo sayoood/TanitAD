@@ -31,20 +31,17 @@ SUM = json.load(open("C:/Users/Admin/tanitad-wt/_s2build/v7_final_rel/summary.js
 
 #: My verdict per clip, written from the FRAMES before the labels were read.
 VERDICT = {
-    "d8f80c0f": (False, "⛔ <b>The PI caught this one, and my published CONFIRMED verdict was "
-                        "wrong — the fourth misread the data has corrected this session.</b> "
-                        "Zoomed frames show NO junction: a parked yellow car at the left edge and "
-                        "the ego straightening onto the SAME street — a pull-out/pass that scored "
-                        "−42.7° at R 12.2 m and walking speed, kinematically identical to a turn. "
-                        "Geometry cannot separate these; the text can (its CoT says <i>nudge left "
-                        "to pass the parked vehicle</i>, and no turn word appears anywhere). The "
-                        "new corroboration mechanism now marks this turn "
-                        "<code>contested + disputed</code> — flagged, not deleted, because "
-                        "confirmed and contested turns have near-identical |Δyaw| distributions "
-                        "(p50 49.5° vs 45.2°) and any auto-deletion rule would kill real turns "
-                        "like ec075947 (−78°, visually confirmed, ALSO carries parked-car text). "
-                        "The 68 contested turns are exactly the population the lane-detector "
-                        "reference would settle."),
+    "d8f80c0f": (True, "⭐ <b>THE PI'S RULE, APPLIED — final trial.</b> Geometry scored a turn "
+                       "(−42.7° at R 12.2 m, walking speed) but the CoT says <i>nudge left to "
+                       "pass the parked vehicle</i> and no turn word appears anywhere → "
+                       "<b>it is not a turn</b>. The TURN and YIELD_FOR_TURN tokens are now "
+                       "SUPPRESSED: the label reads NUDGE_R + EVADE/FOLLOW_LANE + SPEED_BAND, "
+                       "and nav no longer commands a turn. 68 clips corpus-wide follow this "
+                       "rule; each carries a `turn_suppression` record with the evidence, so "
+                       "the set stays auditable and recoverable when the lane-detector "
+                       "reference lands. Known accepted cost: ec075947's real −78° corner also "
+                       "carries parked-car text and loses its turn tokens — the PI chose the "
+                       "trade knowingly."),
     "b5812659": (True, "⚠️ <b>I misread this one first and the data corrected me — again.</b> I "
                        "took the blue island sign as keep-RIGHT; it is keep-LEFT, and the facades "
                        "sweep rightward exactly as an 80° LEFT turn predicts. Label: TURN_L@14.5 m "
@@ -173,13 +170,29 @@ def clip_section(cid: str, rec: dict) -> str:
     for t, a in rec["g_tac"]["goals"].items():
         a = a if isinstance(a, dict) else {}
         args = {k: v for k, v in a.items()
-                if k not in ("provenance", "disputed", "grounded", "grounding", "reason")}
+                if k not in ("provenance", "disputed", "grounded", "grounding", "reason", "corroboration", "corroboration_evidence", "time_basis", "t_nominal_s", "t_nominal_provenance")}
+        # ⛔ THE PAGE MUST SHOW WHAT THE RECORD KNOWS. The PI looked at
+        # d8f80c0f AFTER turn corroboration shipped and still saw a clean
+        # `geometry` badge on TURN_R — because badge() short-circuits on
+        # provenance and never reached `disputed`, and the page data was a
+        # stale pre-corroboration copy. A flag that exists only in the JSONL
+        # is not a flag to the reviewer.
+        corr = a.get("corroboration")
+        cbadge = ("" if not corr else
+                  ' <span class="p or">contested · disputed</span>'
+                  if corr == "contested" else
+                  ' <span class="p g">turn confirmed</span>'
+                  if corr == "confirmed" else
+                  ' <span class="p">uncorroborated</span>')
+        tb = a.get("time_basis")
+        tbadge = ("" if not tb else
+                  ' <span class="p seg">timed</span>' if tb == "segment"
+                  else ' <span class="p untimed">untimed</span>')
         rows.append(
             f'<tr><td class="tok">{t}</td><td class="args">'
             f'{html.escape(json.dumps(args)) if args else "—"}</td>'
             f'<td>{badge(a.get("provenance", "geometry"), a.get("disputed"), a.get("grounded"))}'
-            f'{"" if not a.get("time_basis") else (chr(32) + chr(60) + "span class=" + chr(34) + "p seg" + chr(34) + chr(62) + "timed" + chr(60) + "/span" + chr(62)) if a.get("time_basis") == "segment" else (chr(32) + chr(60) + "span class=" + chr(34) + "p untimed" + chr(34) + chr(62) + "untimed" + chr(60) + "/span" + chr(62))}'
-            f'</td></tr>')
+            f'{cbadge}{tbadge}</td></tr>')
 
     src = rec.get("cot_source") or {}
     ma = src.get("meta_action") or {}
