@@ -98,11 +98,48 @@ def test_stationary_path_reads_zero_curvature_not_infinity():
 # Components — each against a hand-computed value
 # ---------------------------------------------------------------------------
 
-def test_progress_is_along_track_over_reference():
+def test_progress_falls_back_to_a_fixed_reference_without_v0():
+    """The degraded mode, pinned so its behaviour is explicit."""
     v, n, ref = 10.0, 21, 30.0
     r = R.COMPONENTS["progress"](straight(n, v), {"progress_ref_m": ref})
-    # clamped at hi=1.5; v*T = 20 m, 20/30 = 0.6667
     assert float(r) == pytest.approx(20.0 / ref, abs=1e-3)
+
+
+def test_progress_per_window_reference_is_ONE_at_constant_speed():
+    """⭐ The adopted semantics: 1.0 == 'kept the current speed'.
+
+    ref = v0 * horizon; a path that holds v0 covers exactly that distance.
+    """
+    v, n = 10.0, 21
+    r = R.COMPONENTS["progress"](straight(n, v), {"v0": v})
+    assert float(r) == pytest.approx(1.0, abs=1e-3)
+
+
+def test_progress_ranks_above_and_below_the_current_speed():
+    v, n = 10.0, 21
+    faster = float(R.COMPONENTS["progress"](straight(n, 15.0), {"v0": v}))
+    slower = float(R.COMPONENTS["progress"](straight(n, 5.0), {"v0": v}))
+    assert slower == pytest.approx(0.5, abs=1e-2)
+    assert faster == pytest.approx(1.5, abs=1e-2)   # at the clamp
+    assert slower < 1.0 < faster
+
+
+def test_progress_reference_is_floored_for_a_near_stopped_window():
+    """⚠️ Without the floor, ref -> 0 as v0 -> 0 and the reward explodes."""
+    r = float(R.COMPONENTS["progress"](straight(21, 10.0),
+                                       {"v0": 0.0, "progress_min_ref_m": 5.0}))
+    assert r == pytest.approx(1.5)          # clamped, finite — not inf/nan
+    assert math.isfinite(r)
+
+
+def test_progress_reference_is_NOT_derived_from_the_fan_or_the_expert():
+    """⛔ A fan- or expert-derived reference would be tuning on what we score."""
+    traj = straight(21, 10.0)
+    with_gt = float(R.COMPONENTS["progress"](
+        traj, {"v0": 10.0, "gt_traj": straight(21, 30.0)}))
+    without_gt = float(R.COMPONENTS["progress"](traj, {"v0": 10.0}))
+    assert with_gt == pytest.approx(without_gt), (
+        "progress must not change when a ground-truth path is present")
 
 
 def test_collision_fires_only_when_within_radius():

@@ -174,7 +174,11 @@ def main() -> int:
                 if 0.0 < float(ex) < LEAD_MAX_GAP_M:
                     obs_xy.append((float(ex), float(ey)))
 
-            ctx: dict = {"dt": DT, "gt_traj": gt}
+            # ⭐ v0 = the window's OWN current ego speed (poses[:, 3]), which is
+            # what `progress` now normalises by. Inference-admissible ego state,
+            # never fan-derived and never expert-derived.
+            ctx: dict = {"dt": DT, "gt_traj": gt,
+                         "v0": float(poses[t0, 3])}
             if obs_xy:
                 ctx["obstacles"] = torch.tensor(obs_xy, dtype=torch.float32)
                 n_with_obstacles += 1

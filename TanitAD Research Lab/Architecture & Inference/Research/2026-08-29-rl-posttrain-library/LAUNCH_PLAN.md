@@ -97,10 +97,47 @@ anything is not more signal. The TTC-veto separation stands.
 * **TTC veto separated from the ranking term** — a constraint pins a candidate,
   a ranking signal orders them; fusing them produces something that does neither.
 
-⚠️ **Second, milder finding (stands):** `progress` has spread **1.5000**,
-exactly its clamp width, mean 1.1478 — saturating at its `hi` bound, compressing
-ranking among the fastest candidates. Not blocking; recorded.
+#### ✅ `progress` — PER-WINDOW REFERENCE ADOPTED AND MEASURED (2026-08-29)
 
+Decision (Master Mind): reference = `max(v0 × horizon, 5 m)`, where `v0` is the
+window's own current ego speed — inference-admissible ego state, ⛔ **never
+fan-derived and never expert-derived** (either would be the tune-on-what-you-score
+class). Semantics: **1.0 = "kept the current speed"**, and that zero point is a
+driving fact rather than an arbitrary metre count.
+
+**The prediction was: saturation disappears on fast windows and appears honestly
+on stopped ones. MEASURED, 240 windows, fraction of the fan pinned at the clamp:**
+
+| v0 band | n | clamped, PER-WINDOW ref | clamped, OLD fixed 30 m ref |
+|---|---|---|---|
+| stopped < 2 m/s | 39 | 95.3 % | 37.5 % |
+| slow 2–8 | 81 | 89.3 % | 37.5 % |
+| mid 8–15 | 82 | 63.8 % | 37.5 % |
+| **fast > 15** | 38 | **19.9 %** | 37.5 % |
+
+⭐ Confirmed on both halves: saturation on fast windows nearly **halves**
+(37.5 % → 19.9 %), and rises on stopped ones where the quantity is genuinely
+ill-posed. ⭐ **The tell is the OLD column: 37.5 % in EVERY band.** A fixed
+reference is *blind to the window* — it applies one yardstick to a stopped car
+and a highway cruise, which is precisely the speed prior the change removes.
+
+⚠️ **The pooled mean moved the WRONG WAY and would have misled** (1.1478 →
+1.3192), because this corpus is dominated by slow windows (median v0 **8.1 m/s**,
+p10 0.7, p90 17.3) where saturation is now intentionally high. That is TRAIN-C2's
+lesson recurring within a day: **a pooled average over a heterogeneous population
+answers a different question than the one asked.** The band split is the answer.
+
+⚠️ **HONEST RESIDUAL:** at 95.3 % clamped, `progress` carries almost no ranking
+on stopped windows — "weakly" is generous. There the reward is effectively
+`feasibility + comfort + collision`. Defensible (maintaining 0.7 m/s is not a
+goal worth ranking toward) but it must not be discovered later: **on near-stopped
+windows the progress term is inert by construction**, and A1's per-band reporting
+should carry it.
+
+⚠️ **AND THIS IS AN UPPER BOUND ON SATURATION.** The fan here is the raw anchor
+vocabulary, which samples 0–30 m/s uniformly, so most candidates are implausible
+for any given window. A trained decoder's fan concentrates near plausible speeds
+⇒ real saturation will be LOWER in every band. Re-measure once a cold start exists.
 
 ---
 

@@ -189,14 +189,49 @@ class RewardComponent:
 # ---------------------------------------------------------------------------
 
 def _progress(traj: Tensor, ctx: dict) -> Tensor:
-    """Net along-track displacement, normalised by a reference distance.
+    """Along-track displacement relative to MAINTAINING THE CURRENT SPEED.
 
-    ⛔ THE CANONICAL HACKABLE REWARD. Maximised by driving straight and as fast
-    as possible, THROUGH anything in the way. Retained on purpose as the
-    deliberate-regression arm.
+    ⭐ PER-WINDOW REFERENCE, adopted 2026-08-29 (Master Mind decision) after A0
+    measured the fixed-reference version SATURATING: median spread **1.5000** =
+    exactly its clamp width, mean **1.1478** > 1.0, i.e. a large share of
+    candidates pinned at the `hi` bound and ranking was compressed among exactly
+    the fastest candidates the reward most needs to order.
+
+    The reference is now ``max(v0 * horizon_s, min_ref_m)``:
+
+    * ``v0`` is the window's OWN current ego speed — inference-admissible ego
+      state at labels-time.
+      ⛔ **It is deliberately NOT derived from the fan and NOT from the logged
+      expert.** A fan-derived reference would be tuning on what we score (the
+      probe-that-tunes-on-its-own-data class); an expert-derived one would smuggle
+      the imitation signal back into a term we removed it from.
+    * ``min_ref_m`` floors near-stopped windows so the normalisation cannot
+      explode as v0 -> 0.
+
+    Semantics, and this is why the choice is right rather than merely convenient:
+    **1.0 means "kept the current speed"**, >1 accelerating, <1 decelerating. The
+    zero point is a driving fact, not an arbitrary metre count — a fixed 30 m
+    reference silently bakes in a speed prior that is wrong at both ends of the
+    speed distribution.
+
+    ⚠️ Falls back to a FIXED reference when ``v0`` is absent from the context.
+    That is a degraded mode: it restores the saturation A0 measured, so callers
+    should supply ``v0``.
     """
-    ref = float(ctx.get("progress_ref_m", 30.0))
-    return kinematics(traj, ctx.get("dt", DT_S)).along / max(ref, EPS)
+    kin = kinematics(traj, ctx.get("dt", DT_S))
+    v0 = ctx.get("v0")
+    if v0 is None:
+        ref = float(ctx.get("progress_ref_m", 30.0))
+        return kin.along / max(ref, EPS)
+    horizon_s = (traj.shape[-2] - 1) * float(ctx.get("dt", DT_S))
+    min_ref = float(ctx.get("progress_min_ref_m", 5.0))
+    if isinstance(v0, Tensor):
+        ref = (v0 * horizon_s).clamp_min(min_ref)
+        while ref.dim() < kin.along.dim():
+            ref = ref.unsqueeze(-1)
+    else:
+        ref = max(float(v0) * horizon_s, min_ref)
+    return kin.along / ref
 
 
 def _collision(traj: Tensor, ctx: dict) -> Tensor:
@@ -370,7 +405,8 @@ def _gt_similarity(traj: Tensor, ctx: dict) -> Tensor:
 COMPONENTS: dict[str, RewardComponent] = {
     c.name: c for c in (
         RewardComponent("progress", _progress, -1.0, 1.5,
-                        degenerate="straight-line max-speed through obstacles",
+                        degenerate="straight-line max-speed through obstacles "
+                                   "(now: 1.5x the current speed)",
                         grounded="rule-based", hackable_alone=True,
                         neutral=0.0),
         RewardComponent("collision", _collision, -1.0, 0.0,
