@@ -1,0 +1,134 @@
+{
+ "name": "tanitad-v7-training-corpus",
+ "released": "2026-08-29",
+ "authorization": "PI (Sayed), 2026-08-29, verbatim: 'Let take the current state as base line and release the data set as required for training our next model v7f, refcv3, refav1 and refd. The usage of the corresponding data to the alpamayo and tactical_/strategic labeled data is mandatory'",
+ "corpus": {
+  "n_clips": 4719,
+  "hours": 26.2,
+  "corpus_id_sha256_16": "a48251e89c7a8603",
+  "definition": "alpamayo(4,729) INTERSECT provider egomotion, UUID-keyed",
+  "parity_note": "THIS IS A NEW, SEPARATELY IDENTIFIED CORPUS. It does NOT re-select the canonical parity corpus physicalai-train-e438721ae894 (2,376 episodes, skip-hash f09e44db), which remains untouched and authoritative for all cross-arm parity comparisons."
+ },
+ "baseline": {
+  "labels_blob": "121a8d93e4f1",
+  "staging_verified": "blob-compare vs git index, 2026-08-29",
+  "commit": "1c3513f27 \u2014 INDEPENDENTLY VERIFIED 2026-08-29 after mount recovery: HEAD blob 121a8d93 == D-LABEL-GT pin (re-pin 9b440d662), ec075947 cost named in the register row",
+  "register_row": "D-LABEL-GT (Project Steering/GOALS_AND_CLAIMS.md)",
+  "vocab": "v7 FROZEN, 52 tokens, vocab_v7.py blob fc6719545313",
+  "bands_s": {
+   "operative": [
+    0,
+    2
+   ],
+   "tactical": [
+    2,
+    6
+   ],
+   "strategic": [
+    8,
+    30
+   ]
+  }
+ },
+ "consumers": [
+  "v7f",
+  "refcv3",
+  "refav1",
+  "refd"
+ ],
+ "exclusions": {
+  "clips": [],
+  "policy": "EMPTY AT RELEASE: all 4,719 clips have labels (0 refused) and egomotion (asserted). Camera integrity is verified at pull time (ftyp check in tools/pull_camera.py); any clip whose camera fails MUST be appended here by the cache builder with a reason, so skip-lists stay manifest-derived, never discovered."
+ },
+ "per_clip_cy": {
+  "file": "index/front_wide_cy.parquet",
+  "status": "INCLUDED",
+  "why_mandatory": "TWO front-wide rigs: cy~543 (A) vs cy~755 (B); a geometric-center crop is ~215 px wrong for rig B. Every epcache build MUST crop around per-clip cy."
+ },
+ "trainer_conditions_mandatory": [
+  "MASK the 8 NOT_YET_EXTRACTABLE classes (vocab_v7.NOT_YET_EXTRACTABLE) \u2014 a full-vocab head trains 8 permanently empty classes otherwise",
+  "WEIGHT the strategic skew: FOLLOW_ROUTE is ~64-74 % of g_str",
+  "disputed tokens (incl. contested-turn suppressed records and CoT tokens without box grounding) follow the PI's disputed policy: mask or down-weight, never train as clean positives",
+  "untimed CoT tokens carry t_nominal_s = band midpoint (PI 2026-08-28); time_basis='untimed' distinguishes placed-by-convention from placed-by-evidence",
+  "nav_command is a MODEL INPUT derived from the ego future (oracle) \u2014 training input only, never a target, never at eval in vision-only arms"
+ ],
+ "quality_at_release": {
+  "exclusion_violations": 0,
+  "goal_action_coherence_defects": 0,
+  "vocab_emitting": "44/52 (8 declared unreachable with reasons)",
+  "turn_suppressions": 68,
+  "turn_corroboration": {
+   "confirmed": 408,
+   "uncorroborated": 139,
+   "contested_suppressed": 68
+  }
+ },
+ "per_consumer": {
+  "v7f": {
+   "heads": "full v7: g_str + a_str + g_tac(multi-label) + a_tac lat/lon; nav_command as INPUT",
+   "notes": "all five universal conditions binding; SPEED_BAND always present (regression target v_lo/v_hi)"
+  },
+  "refcv3": {
+   "heads": "tactical goal set + lat/lon actions (selection surface per its own prereg)",
+   "notes": "universal conditions binding; nav_command admissible as input only"
+  },
+  "refav1": {
+   "heads": "frozen-encoder reference; label heads as probes over g_tac + a_tac",
+   "notes": "universal conditions binding"
+  },
+  "refd": {
+   "heads": "reference D consumer; label interface identical",
+   "notes": "universal conditions binding"
+  },
+  "shared_consumer_module": "Master Mind builds ONE canonical label-consumer implementing mask-the-8 + skew weights + disputed/t_nominal policy, asserted against this manifest \u2014 the decide-once pattern applied to consumption."
+ },
+ "camera": {
+  "not_shipped": "~47 GB; retrieve deterministically with tools/pull_camera.py + index/clip_to_chunk.parquet from nvidia/PhysicalAI-Autonomous-Vehicles"
+ },
+ "files": {
+  "alpamayo/records.parquet": {
+   "sha256": "ecae276db9969de115abb3caa1e87d97eae0535544be8f5edcc33ec45d925ed2",
+   "bytes": 25970018
+  },
+  "alpamayo/selection_manifest.json": {
+   "sha256": "7d9f4a7950cfaec1d6600eae0dd61e1f623f38d53352b2e51e2fdc0645cf7bc3",
+   "bytes": 340800
+  },
+  "DATACARD.md": {
+   "sha256": "4e49cc0800c5150dde119bdf82ec78d267d962e05c7c60ed5313b79db134a6e9",
+   "bytes": 2447
+  },
+  "egomotion/egomotion_alpamayo.tar": {
+   "sha256": "d38592bed40cec2a562ee3228d7b632d787f6f84557248e4898d186cf760bd8f",
+   "bytes": 1967093760
+  },
+  "index/clip_to_chunk.parquet": {
+   "sha256": "24111f314530ed7fa8a58431bf6e0f3a374a2895273587eb81a8964b130d8310",
+   "bytes": 189309
+  },
+  "index/front_wide_cy.parquet": {
+   "sha256": "6c823a1815e77e9e70595831dbc2548db2ee7196d0971f1cf895533d3645c80b",
+   "bytes": 195449
+  },
+  "labels/s2_labels_v7.jsonl.gz": {
+   "sha256": "116e4aed0aa21d152538bf45b7c676062a7cb323171863b5b849c2f595d08b58",
+   "bytes": 1849324
+  },
+  "labels/summary.json": {
+   "sha256": "b4ea59043bc6c65cef652a5ecce6f8f4a24e12d197e8c1c91b5c5b265e88dd97",
+   "bytes": 1882
+  },
+  "MANIFEST.json": {
+   "sha256": "c6a6a503aea0a62964acec676cb3d739d3964d57075128b7c84aa60d97639f2f",
+   "bytes": 5827
+  },
+  "tools/pull_camera.py": {
+   "sha256": "103726d0a6b02d694b57cd4c3fd6998b434ea20c62f4fb68809fb627fc0107c3",
+   "bytes": 3379
+  },
+  "tools/pull_egomotion_range.py": {
+   "sha256": "dc60e52f2d04d1fcc0431604539f140e61330a038a74b3431d2a5e1bbe4d418b",
+   "bytes": 7689
+  }
+ }
+}
