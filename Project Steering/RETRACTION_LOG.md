@@ -10018,3 +10018,68 @@ MODEL — a new code path that builds its own object silently opts out.** Recogn
 signal: any new script that constructs or loads a model without the house loader.
 ⇒ **Standing rule: a scoring function asserts `not model.training` itself** rather than
 trusting its caller — the assertion belongs where the number is produced.
+
+
+---
+
+## DE-C152 ⛔ — I PRICED A 1.38 TB "CAPACITY WALL" AGAINST A FORMAT THE TRAINER DOES NOT READ (DataFlyWheel, 2026-08-29)
+
+**The claim, retracted the same day it was made:** *"the B1 epcache at the training frame is
+~1.38 TB, does not fit the dev box (372 GB free), cannot ship, and the PI must choose between a
+rig-clean downgrade / an encoded-cache format change / shard-and-stream."*
+
+**What was true:** the measurement. I loaded `_epcache/.../ep_00000.pt`, found
+`frames_u8 [199, 9, 256, 256]` uint8 = 117.4 MB **exactly matching the file size**, correctly
+concluded that artifact stores RAW uint8, and scaled it to the 256x640 frame: 293.4 MB/ep,
+x 4,719 = 1.38 TB. Every number in that chain is right.
+
+**What was false: the artifact.** The v7 trainer's `--v2-cache` reads `*.v2ep.pt`
+(`tanitad/data/v2_dataset.py`), written by `scripts/v2_compressed.py::build_compressed`, which
+stores **ENCODED** frames (`jpeg_buf` + `jpeg_len` + `codec`). I benchmarked the LEGACY epcache.
+Caught by the Master Mind (independent read of a live cache on Thor); verified here against the
+writer before accepting. Re-measured end to end: **34.0 MB/ep, 161 GB** — and the Master Mind's
+independent median over 2,403 live episodes reads **~36 MB/ep**. Two methods, two machines, one
+answer. **It fits Thor's 658 GB free ~4x over. There was never a wall.**
+
+**ROOT-CAUSE CLASS — C82: PRICING AN ARTIFACT WITHOUT IDENTIFYING ITS CONSUMER.**
+Recognition signal: **a size, cost, or schema estimate whose evidence is a file the estimator
+FOUND, rather than the file the consumer's loader OPENS.** The giveaway is that the artifact was
+located by browsing a directory (`ls`, `find`, "the cache lives here") instead of by reading the
+consuming code path. This is the `df` / Thor `free` / cgroup `usage_in_bytes` / `step_s` family
+with the object swapped: **a true measurement quoted outside its scope reads exactly like an
+answer**, and it is worse than no estimate because it manufactures downstream decisions — here a
+format change, a geometry downgrade, a sharding design and "a PI decision", every one of them an
+artefact of the error.
+
+⇒ **STANDING RULE: before pricing any derived artifact, open the CONSUMER'S LOADER and price
+what IT reads.** Name the consumer and the loader file in the estimate, or the estimate is
+inadmissible. Same discipline as citing a registry row rather than prose.
+
+**⭐ The correction was NOT the end of the finding — re-measuring the right format changed the
+plan more than the retraction did.** On the real path, **PNG encoding is 70 % of the build**
+(decode+remap 6.19 s + encode 14.79 s = 20.98 s/clip), so the honest wall-clock is **3.4–4.6 h at
+6–8 workers, not the ~1.2 h** I had quoted from a decode+remap-only benchmark. The Master Mind
+was sizing a ~1.5 h gap and would have started a 4 h job in it. **Corollary to C82: when you
+correct the artifact, RE-RUN the cost — do not port the old timing onto the new format.**
+
+**And the codec is load-bearing, not a performance knob:** jpeg is 4.6x faster and 4.6x smaller,
+but `v2_dataset.py:325` / `slice_v2_cache.py` **refuse to sub-frame a LOSSY cache** (a centred
+slice equals a rebuild only when lossless), and the live parity cache is `codec: png`. A PNG wide
+cache can be sliced to the rig-clean 176x624 frame with **no rebuild**; a jpeg one cannot. ⇒ build
+PNG, pay the 4x.
+
+⚠️ **Sibling trap re-confirmed in the same artifact (C15):** the buffer is named `jpeg_buf`
+while `codec` says `png`. Read the codec field, never the buffer name.
+
+
+**MM corroboration of the corrected number (independent method, same night).** The
+DataFlyWheel's revised 34.0 MB/ep came from ENCODING sample clips locally. I measured the
+same quantity by a different route: `du` + per-file sizes over the LIVE parity cache on
+Thor — 2,403 real `*.v2ep.pt` episodes at the same 256×640 cylindrical geometry, **median
+~36 MB/ep, 80 GB total**, and I opened one file to confirm the format by content
+(`jpeg_buf` + `jpeg_len`, `codec: png`, 201 frames, 30.0 MB — note the buffer NAME says
+jpeg while the CODEC field says png, the standing naming trap). Two agents, two methods,
+two machines: 34.0 vs ~36 MB/ep. ⭐ **That agreement is what converts the corrected
+estimate from a claim into a fact — and it is the practice the class recommends: an
+estimate about a consumed artifact should be corroborated by measuring the artifact the
+consumer has actually been consuming, which usually already exists.**
