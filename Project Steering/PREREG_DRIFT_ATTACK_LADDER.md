@@ -147,3 +147,44 @@ different pathology: a **frozen** target space that the live encoder drifts away
 the predictor is trained toward coordinates the encoder no longer occupies and its
 outputs lose scale calibration entirely. Same class of outcome — a degenerate latent —
 reached by a different route.
+
+---
+
+## LADDER VERDICT — all five arms read, 2026-08-30 ~01:15 (MEASURED, T0-DIAGNOSTIC)
+
+| arm | drift r | Δ vs base | cos | nrmse | verdict |
+|---|---|---|---|---|---|
+| base `o14fut10` | 0.4733 | — | 0.2462 | 0.9746 | — |
+| L1 innovation-SIGReg | 0.3551 | **−25.0 %** | 0.0108 | 1.0162 | PRED-PAYS → **and see below** |
+| L2 frozen-teacher | 0.3238 | **−31.6 %** | 0.0377 | 10.9050 | PRED-PAYS (degenerate) |
+| L3 L1+L2 | 0.4001 | −15.5 % | 0.0816 | 0.9979 | PRED-PAYS; **less** than either alone |
+| L4 azimuthal crop | 0.4948 | **+4.5 %** | 0.2105 | 0.9804 | no drift effect; prediction ~intact |
+| **ctrl shuffled-g** | **0.3782** | **−20.1 %** | 0.0066 | 1.0153 | ⛔ **THE CONTROL FIRED** |
+
+## ⛔ REGRESSION-FAILS — the committed outcome, and it voids L1's mechanism claim
+
+The deliberate-regression arm fits the ridge `g` on **time-shuffled** `z_t`, so its
+constraint is arithmetically meaningless and was pre-registered to be INERT. It is not:
+it reproduces **−20.1 %** of L1's **−25.0 %** drift reduction, with the same prediction
+collapse (cos 0.0066, nrmse > 1). Per the prereg's committed branch: **read NOTHING from
+L1's mechanism.** The innovation constraint is not what lowered drift.
+
+⇒ **What the ladder actually established** (and it is a stronger, cheaper fact than the
+one it set out to find): **drift is trivially reducible by ANY term that perturbs the
+latent's temporal structure — including a meaningless one — and every such reduction
+costs the prediction.** L1, L2 and the shuffled control differ completely in mechanism
+and land in the same place. A statistic that a meaningless regulariser can move by 20 %
+is **not a target**; it is a symptom.
+
+⭐ **L4 is the informative cell.** The one arm that did NOT lower drift (+4.5 %) is also
+the one that KEPT prediction (cos 0.2105 vs base 0.2462, nrmse 0.9804). It constrains the
+target's *view* rather than the latent's dynamics, and it neither bought the artifact nor
+paid the price — evidence that the trade is a property of *dynamics-perturbing* terms
+specifically, not an unavoidable law.
+
+**Consequence for MM-E5 (the coupling hypothesis):** ⛔ its test 2 (the innovation-weight
+dose curve) is now **VOID as designed** — it would sweep the dose of a term whose effect
+is reproduced by its own shuffled control, i.e. it would measure the artifact's dose
+response. The E5 sweep arms are **cancelled**; the frontier question survives only via
+mechanisms that pass their own regression control. That is the honest saving: ~1.2 h of
+Thor not spent measuring nothing.
