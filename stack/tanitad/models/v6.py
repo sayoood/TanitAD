@@ -4594,8 +4594,19 @@ class _EmaCopy(nn.Module):
         self.decay = float(decay)
 
     @torch.no_grad()
-    def update(self, src: nn.Module) -> None:
-        d = self.decay
+    def update(self, src: nn.Module, decay: float | None = None) -> None:
+        # ``decay=None`` uses the copy's CONFIGURED decay — the incumbent
+        # path, BIT-IDENTICAL, and what every existing call site passes
+        # (so the adapter copies driven by ``ema_update()`` are untouched
+        # by the O5 tau-ramp). A caller may instead pass a PER-STEP tau:
+        # the O5-EMA teacher does, under ``--ema-decay-ramp``.
+        # ⚠️ Passed, NOT assigned to ``self.decay``, on purpose. Mutating
+        # the attribute would leave the object reporting ONE STEP's tau as
+        # though it were the run's setting — the same class of error as a
+        # derived constant that silently changes with its input.
+        # ``decay`` is a plain float either way, never a buffer, so no
+        # ``state_dict`` key exists or appears for it.
+        d = self.decay if decay is None else float(decay)
         for pt, ps in zip(self.module.parameters(), src.parameters()):
             pt.mul_(d).add_(ps.detach(), alpha=1.0 - d)
         for bt, bs in zip(self.module.buffers(), src.buffers()):

@@ -178,7 +178,7 @@ __all__ = [
     "probe_applies", "arm_record",
     "o2_near_field_loss", "o3_masked_cell_loss", "o5_rollout_consistency_loss",
     "o6_sigreg_loss", "o6_innovation_rows", "O6_INNOVATION_RIDGE_REL",
-    "azimuthal_target_crop",
+    "azimuthal_target_crop", "ema_tau_at",
     "rollout_step_weights", "build_o4_weights",
     "o11_counterfactual_action_loss",
     "o13_ego_dynamics_loss",
@@ -1792,6 +1792,131 @@ def azimuthal_target_crop(ff: Tensor, frac: float, *,
             align_corners=False, antialias=True)
         out[bi] = res.to(ff.dtype).reshape(crop.shape[:-1] + (Wf,))
     return out
+
+
+def ema_tau_at(step: int, total_steps: int, *, ramp: str = "off",
+               fixed: float, start: float = 0.99,
+               end: float | None = None) -> float:
+    """The O5-EMA teacher's tau AT THIS STEP (``--ema-decay-ramp``).
+
+    ``ramp="off"`` returns ``fixed`` unchanged — the incumbent constant
+    ``--ema-decay``, BIT-IDENTICAL, and the default.
+
+    ``ramp="cosine"`` follows **BYOL** — a banked PRIMARY, Library key
+    ``2006.07733``, sha256 ``873e7b74d58e1e17`` (first 16; the full hash is
+    in ``library.json`` and re-verifiable with ``kb_add.py --verify``) —
+    which states it verbatim on p5 of that file:
+    *"the exponential moving average parameter tau starts from tau_base = 0.996
+    and is increased to one during training. Specifically, we set
+    tau := 1 - (1 - tau_base) * (cos(pi*k/K) + 1)/2 with k the current training
+    step"*. Generalising BYOL's two endpoints (tau_base -> ``start``,
+    1 -> ``end``) gives exactly what this implements::
+
+        tau(step) = end - (end - start) * (cos(pi * step / total_steps) + 1)/2
+
+    ⚠️ **BYOL is the ONLY one of the three banked EMA-teacher primaries that
+    ramps on a COSINE, so the schedule is cited to BYOL ALONE.** MEASURED by
+    reading the banked PDFs (Library keys ``2202.03555`` and ``2301.08243``,
+    both tagged ``ema-teacher``): data2vec (2202.03555 p4) *"use[s] a schedule for
+    tau that linearly increases this parameter from tau_0 to the target value
+    tau_e over the first tau_n updates"*, and I-JEPA (2301.08243 p12) *"use[s] a
+    momentum value of 0.996, and linearly increase[s] this"* — both LINEAR.
+    Calling this "the BYOL/data2vec/I-JEPA cosine schedule" would be a
+    PUBLISHED claim two of the three sources do not support.
+
+    ⚠️ **One deliberate deviation from BYOL: ``end`` defaults to the run's
+    fixed ``--ema-decay`` (0.996), not BYOL's 1.0.** BYOL ends at a frozen
+    teacher; we end where the FIXED arm (`emao14_30k`) sat for its entire run,
+    so the ramped arm differs from it in the SHAPE of the tau trajectory and in
+    nothing else at the endpoint. Ending at 1.0 would confound "ramped" with
+    "frozen at the end" and make the matched pair unreadable.
+
+    Why ``--ema-decay-start`` defaults to 0.99 rather than something lower:
+    BYOL's own constant-tau ablation (p8, same banked file) reports that tau=0
+    "destabilizes training" and tau=1 "prevents iterative improvement", while
+    "all values of the decay rate between 0.9 and 0.999 yield performance above
+    68.4%". 0.99 sits inside that measured plateau, so the ramp opens in a
+    region the primary shows to be safe rather than in one it shows to be
+    degenerate. PUBLISHED, not tuned by us — and not tunable on the arm it is
+    about to be measured on.
+
+    Convention check — this is the half of an EMA that silently inverts:
+    ``_EmaCopy.update`` computes ``teacher = d*teacher + (1-d)*student``, so
+    tau is the RETENTION weight ON THE TEACHER. That is BYOL's own convention
+    (its pseudo-code, p35: ``target = target + (1 - tau) * (online - target)``).
+    Higher tau = slower teacher in both. No flip.
+
+    ``step`` is the trainer's ABSOLUTE step, which is what makes a strict
+    resume CONTINUE the ramp instead of restarting it — a restarted ramp drops
+    tau back to ``start`` mid-run and re-randomises the teacher while the log
+    looks healthy. The train loop is 1-based (``range(start_step + 1,
+    steps + 1)``), so the LAST update lands exactly on ``end``; ``step=0`` is
+    the analytic left endpoint and returns ``start`` exactly.
+
+    Refuses (by name) a non-increasing or out-of-range pair rather than running
+    a ramp that quietly walks tau DOWNWARD. ``end`` may be exactly 1.0 (BYOL's
+    own endpoint); ``start`` may not, because a run-long tau of 1.0 is
+    ``--o5-target frozen`` in a ramp's costume.
+    """
+    if ramp == "off":
+        return float(fixed)
+    if ramp != "cosine":
+        raise ValueError(f"unknown --ema-decay-ramp {ramp!r} "
+                         f"(expected 'off' or 'cosine')")
+    start_v, end_v = float(start), float(fixed if end is None else end)
+    # ⚠️ ASYMMETRIC ON PURPOSE, and the asymmetry is BYOL's.
+    # `end` may be EXACTLY 1.0 — that is the primary's own endpoint ("increased
+    # to one during training"), and refusing it would leave this unable to
+    # express the schedule it cites. tau = 1.0 is reached only at the FINAL
+    # step, where a teacher that stops moving for one update changes nothing.
+    # `start` stays in the OPEN interval: a start of 1.0 is a teacher frozen
+    # for the WHOLE run, which is `--o5-target frozen`'s cell, and would be a
+    # silent duplicate arm wearing a ramp's config.
+    if not 0.0 < start_v < 1.0:
+        raise ValueError(f"--ema-decay-start must be in (0, 1), got {start_v} "
+                         f"(1.0 for the whole run is --o5-target frozen)")
+    if not 0.0 < end_v <= 1.0:
+        raise ValueError(f"--ema-decay-end must be in (0, 1], got {end_v}")
+    if start_v > end_v:
+        raise ValueError(
+            f"--ema-decay-ramp cosine needs --ema-decay-start ({start_v}) <= "
+            f"--ema-decay-end ({end_v}): the ramp must be MONOTONE "
+            f"NON-DECREASING. A teacher that gets FASTER as the student "
+            f"converges is the inverse of every published recipe, and would "
+            f"read as a ramp arm in the config while being its own control.")
+    if int(total_steps) <= 0:
+        raise ValueError(f"total_steps must be >= 1, got {total_steps}")
+    prog = min(1.0, max(0.0, float(step) / float(int(total_steps))))
+    return end_v - (end_v - start_v) * (math.cos(math.pi * prog) + 1.0) / 2.0
+
+
+def _ema_tau_record(a, tau: float) -> dict:
+    """The auditable trace of ``--ema-decay-ramp``: the tau ACTUALLY USED at
+    this step, plus what produced it.
+
+    Returns an EMPTY dict when the ramp is off, so an unramped run's log rows
+    are byte-identical to the incumbent's — the log is part of the bit-identity
+    contract, not an exception to it. Recorded rather than left to be
+    re-derived from the flags after the fact: a schedule inferred later cannot
+    show what the run ACTUALLY did, and a derived constant that changes with
+    its input is exactly how a "reproduction" becomes a different experiment.
+    """
+    if str(getattr(a, "ema_decay_ramp", "off")) == "off":
+        return {}
+    end = getattr(a, "ema_decay_end", None)
+    end = float(a.ema_decay if end is None else end)
+    return {
+        "ema_tau": round(float(tau), 8),
+        "ema_tau_note": (
+            f"the O5-EMA teacher's decay ACTUALLY USED at this step: "
+            f"{a.ema_decay_ramp} ramp "
+            f"{float(getattr(a, 'ema_decay_start', 0.99))} -> {end} over "
+            f"{int(a.steps)} steps, on the ABSOLUTE step so a resume continues "
+            f"it (BYOL 2006.07733 form; see ema_tau_at). "
+            f"⚠️ SCOPE: the O5 teacher ONLY — the adapter EMAs "
+            f"(stack.ema_update) are NOT ramped and keep the fixed "
+            f"--ema-decay {float(a.ema_decay)}."),
+    }
 
 
 def build_o4_weights(actions_per_window, *, dt: float = 0.1,
@@ -4096,6 +4221,28 @@ def build_stack_from_args(a) -> V6Stack:
     if _crop and not (0.0 < _crop < 1.0):
         raise SystemExit(f"[v6] ⛔ --o5-target-crop {_crop} must be in (0, 1)"
                          f" — 1.0 (or more) would be a silent no-op arm")
+    _ramp = str(getattr(a, "ema_decay_ramp", "off"))
+    if _ramp != "off":
+        # ⛔ FAIL AT LAUNCH, NOT AT STEP 1. Same lesson as the analysis-time
+        # import that died AFTER the rollout: a config error that only
+        # surfaces once the corpus is built has already spent the expensive
+        # part of the run. One evaluation of the schedule costs microseconds.
+        try:
+            ema_tau_at(0, int(getattr(a, "steps", 1) or 1), ramp=_ramp,
+                       fixed=float(a.ema_decay),
+                       start=float(getattr(a, "ema_decay_start", 0.99)),
+                       end=getattr(a, "ema_decay_end", None))
+        except ValueError as _e:
+            raise SystemExit(f"[v6] ⛔ {_e}") from _e
+        if not hasattr(stack, "ema_o5_enc"):
+            # NOT a refusal: the ramp is legitimately inert on non-EMA arms
+            # (a chain may carry the flag across a panel). It is announced,
+            # because a flag that silently does nothing is how a "ramped arm"
+            # gets banked that never ramped.
+            print("[v6] ⚠️ --ema-decay-ramp is set but --o5-target is not "
+                  "'ema': there is no O5 teacher to ramp, so the flag is "
+                  "INERT for this arm. The adapter EMAs keep --ema-decay.",
+                  flush=True)
     if float(getattr(a, "w_o14", 0.0)) > 0:
         # O14 head: bottleneck MLP so the aux stays small (~0.6 M at d_op 2048
         # vs 5.2 M for a direct linear — a 27 % param bump on v7-tiny would
@@ -4389,8 +4536,21 @@ def dry_run(a, stack: V6Stack | None = None) -> dict:
             gn = float(torch.nn.utils.clip_grad_norm_(trainable, a.clip))
             opt.step()
             if hasattr(stack, "ema_o5_enc"):
-                stack.ema_o5_enc.update(stack.encoder)
-                stack.ema_o5_ro.update(stack.readout)
+                # ⚠️ THE DRY-RUN RAMPS ON THE REAL RUN'S `--steps`, NOT ON
+                # --dry-steps. A dry-run whose schedule differs from the run it
+                # exists to de-risk certifies a configuration nobody is going
+                # to train (the o11/o13 pass-through above exists for exactly
+                # this). With the real total it exercises the ramp's OPENING —
+                # the part a launch can actually get wrong.
+                ema_tau = ema_tau_at(
+                    step, int(a.steps),
+                    ramp=str(getattr(a, "ema_decay_ramp", "off")),
+                    fixed=float(a.ema_decay),
+                    start=float(getattr(a, "ema_decay_start", 0.99)),
+                    end=getattr(a, "ema_decay_end", None))
+                stack.ema_o5_enc.update(stack.encoder, ema_tau)
+                stack.ema_o5_ro.update(stack.readout, ema_tau)
+                L["log"] |= _ema_tau_record(a, ema_tau)
             stack.ema_update()
         else:
             gn = 0.0
@@ -5609,8 +5769,24 @@ def train(a) -> dict:
         gn = torch.nn.utils.clip_grad_norm_(trainable, a.clip)
         opt.step()
         if hasattr(stack, "ema_o5_enc"):
-            stack.ema_o5_enc.update(stack.encoder)
-            stack.ema_o5_ro.update(stack.readout)
+            # ⛔ `step` IS THE ABSOLUTE STEP (the loop is
+            # `range(start_step + 1, a.steps + 1)`), so a strict resume
+            # CONTINUES the ramp. Using a process-local counter here
+            # (`n_proc`, `step - start_step`) would drop tau back to
+            # --ema-decay-start after every restart and re-randomise the
+            # teacher mid-run, with a perfectly healthy-looking log.
+            ema_tau = ema_tau_at(
+                step, int(a.steps),
+                ramp=str(getattr(a, "ema_decay_ramp", "off")),
+                fixed=float(a.ema_decay),
+                start=float(getattr(a, "ema_decay_start", 0.99)),
+                end=getattr(a, "ema_decay_end", None))
+            stack.ema_o5_enc.update(stack.encoder, ema_tau)
+            stack.ema_o5_ro.update(stack.readout, ema_tau)
+            # rides `L["log"]`, so it reaches BOTH the per-`--log-every` row
+            # and any other consumer of that dict — and is absent entirely
+            # when the ramp is off (bit-identical logs).
+            L["log"] |= _ema_tau_record(a, ema_tau)
         sched.step()
         stack.ema_update()
 
@@ -6637,6 +6813,13 @@ def build_parser() -> argparse.ArgumentParser:
                          "higher->lower latent path")
     ap.add_argument("--uplink", choices=("stopgrad", "ema"), default="stopgrad")
     ap.add_argument("--ema-decay", type=float, default=0.996)
+    ap.add_argument("--ema-decay-ramp", choices=("off", "cosine"),
+                    default="off",
+                    help="tau schedule for the O5-EMA TEACHER only (--o5-target ema). off = the incumbent FIXED --ema-decay, bit-identical. cosine = BYOL's ramp (2006.07733, banked): tau rises from --ema-decay-start to --ema-decay-end over --steps, so the teacher is FAST (close to the student) early instead of random-dominated, and slow late. D-EMA-ADOPT's PI condition for shipping v7f with the EMA teacher. INERT without an EMA teacher, and it never touches the adapter EMAs.")
+    ap.add_argument("--ema-decay-start", type=float, default=0.99,
+                    help="tau at step 0 of the ramp (BYOL's tau_base). Read only when --ema-decay-ramp is not off.")
+    ap.add_argument("--ema-decay-end", type=float, default=None,
+                    help="tau the ramp ENDS at, at --steps. Default = --ema-decay, so the ramp LANDS exactly where the fixed arm sat for its whole run — which is what makes the ramped/fixed pair a one-variable comparison. ⚠️ BYOL ends at 1.0; we deliberately do NOT, because ending at a frozen teacher would confound 'ramped' with 'frozen at the end'. May be exactly 1.0 (BYOL's own endpoint) if an arm wants the literal recipe.")
     ap.add_argument("--o5-target", choices=("live", "ema", "frozen"),
                     default="live",
                     help="O5's target-latent source. live = the incumbent (stop-grad only). ema = EMA-slow encoder+readout copies (the Drive-JEPA teacher core; P0 bake-off, PI-approved 2026-08-27). Decay = --ema-decay. frozen = a FIXED copy of encoder+readout taken at init (after --init-from, via the resync) and NEVER updated — the movable-target-removed cell (MM-E4 L2, PREREG_DRIFT_ATTACK_LADDER).")
