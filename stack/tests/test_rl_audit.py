@@ -186,3 +186,18 @@ def test_coverage_reports_a_component_that_does_fire():
                                         {"obstacles": torch.tensor([[25.0, 0.0]])})
     assert cov["collision"]["fired"] is True
     assert cov["collision"]["spread"] > 0
+
+
+def test_reference_policy_alias_still_works_but_the_clear_name_exists():
+    """⚠️ A trajectory and a policy are different objects.
+
+    `audit.reference_policy` returns a TRAJECTORY; `anchor.ReferencePolicy` is a
+    FROZEN MODEL. Exporting both under one name from one package is the
+    conflation TRAIN-C5's vocabulary rule forbids. The alias keeps old callers
+    working; the clear name is what new code uses.
+    """
+    import torch
+    from tanitad.rl.anchor import ReferencePolicy
+    assert AUD.reference_policy is AUD.sane_reference_trajectory
+    assert isinstance(AUD.sane_reference_trajectory(), torch.Tensor)
+    assert isinstance(ReferencePolicy, type)

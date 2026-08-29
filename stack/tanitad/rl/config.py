@@ -84,6 +84,31 @@ class PostTrainConfig:
     ttc_min_s: float = 1.5
     veto_value: float = -1.0
 
+    # --- REFERENCE-POLICY ANCHOR (the trust region; OUTSIDE the advantage) --
+    #: ⭐ GRPO's stabiliser is a trust region against the REFERENCE POLICY, not
+    #: an imitation loss against labels (MM ruling 2026-08-29). Measured cost of
+    #: running without one: sel-ADE drift +69.5 % in P-RC21's P1 arm.
+    #: 0.0 = OFF (the P-RC21 configuration, kept so the sweep has its own null).
+    w_anchor: float = 0.0
+    anchor_form: str = "l2"          # "l2" | "l1"; no "kl" — see anchor.py
+
+    #: ⛔ FORWARD MODE FOR THE POLICY BEING OPTIMISED. Default EVAL.
+    #: MEASURED 2026-08-29: with the live model in TRAIN mode and the frozen
+    #: reference in EVAL, the anchor divergence at STEP ZERO reads **2.774 m²**
+    #: — between a model and an exact deepcopy of itself. That is not policy
+    #: drift, it is `ego_dropout=0.5` + `route_dropout=0.5` + stochastic
+    #: diffusion firing on one side only, and an anchor built on it would spend
+    #: its whole budget penalising a MODE MISMATCH.
+    #:
+    #: Beyond fixing the anchor, eval is the more principled regime: RL
+    #: post-training optimises a CONVERGED planner, and the policy we care about
+    #: is the DEPLOYED one. Dropout would inject noise into the policy gradient
+    #: on top of the exploration noise we add deliberately and can control.
+    #: ⚠️ P-RC21's first campaign ran in TRAIN mode BY ACCIDENT (nn.Module's
+    #: default, never overridden — TRAIN-C5), not by design. Making it a recorded
+    #: flag means the choice is now made rather than inherited.
+    train_mode_forward: bool = False
+
     # --- reward ------------------------------------------------------------
     reward_weights: dict[str, float] = field(
         default_factory=lambda: dict(DEFAULT_WEIGHTS))
@@ -164,6 +189,10 @@ class PostTrainConfig:
             pass
         if not self.reward_weights:
             raise ValueError("a reward with no components is not a reward")
+        if self.anchor_form not in ("l2", "l1"):
+            raise ValueError(f"anchor_form must be 'l2'|'l1', got {self.anchor_form!r}")
+        if self.w_anchor < 0.0:
+            raise ValueError(f"w_anchor must be >= 0, got {self.w_anchor}")
         if self.reward_weights.get("gt_similarity", 0.0) > 0.0 and self.w_imitation > 0.0:
             raise ValueError(
                 "DOUBLE-COUNTED IMITATION SIGNAL: `gt_similarity` has weight "

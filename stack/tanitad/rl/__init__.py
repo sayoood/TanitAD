@@ -41,11 +41,14 @@ Tier: everything here is **T0 training-side**. A capability claim needs T1
 (``Project Steering/EVAL_DOCTRINE.md``).
 """
 
+from .anchor import (ReferencePolicy, anchor_penalty,
+                     trajectory_divergence)
 from .advantage import (composite_advantage, grpo_advantage,
                         policy_gradient_loss,
                         truncated_inter_anchor_advantage)
 from .audit import (AuditReport, assert_selector_disjoint, audit_reward,
                     degenerate_panel, reference_policy,
+                    sane_reference_trajectory,
                     report_component_coverage)
 from .config import METHODS, REQUIREMENTS, PostTrainConfig
 from .rewards import (COMPONENTS, DEFAULT_WEIGHTS, FORBIDDEN_REWARD_INPUTS,
@@ -60,8 +63,9 @@ __all__ = [
     "kinematics",
     "composite_advantage", "grpo_advantage", "policy_gradient_loss",
     "truncated_inter_anchor_advantage",
+    "ReferencePolicy", "anchor_penalty", "trajectory_divergence",
     "AuditReport", "assert_selector_disjoint", "audit_reward",
-    "degenerate_panel", "reference_policy", "report_component_coverage",
+    "degenerate_panel", "reference_policy", "sane_reference_trajectory", "report_component_coverage",
     "METHODS", "REQUIREMENTS", "PostTrainConfig",
     "SmokeCounters", "apply_exploration_noise", "rl_objective",
     "run_posttrain", "select_trainable",

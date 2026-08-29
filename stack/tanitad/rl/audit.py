@@ -105,15 +105,25 @@ def degenerate_panel(n_steps: int = 21, dt: float = R.DT_S,
     }
 
 
-def reference_policy(n_steps: int = 21, dt: float = R.DT_S,
-                     v: float = 10.0, device=None) -> Tensor:
-    """A sane path: straight, lawful speed, zero curvature, zero jerk.
+def sane_reference_trajectory(n_steps: int = 21, dt: float = R.DT_S,
+                              v: float = 10.0, device=None) -> Tensor:
+    """A sane TRAJECTORY: straight, lawful speed, zero curvature, zero jerk.
+
+    ⚠️ RENAMED 2026-08-29. This was ``reference_policy`` — which collided with
+    ``anchor.ReferencePolicy``, a FROZEN MODEL. A trajectory and a policy are
+    different objects, and the package exported both under one name the day
+    after TRAIN-C5 established that conflated names hide design changes. The
+    old name remains as a deprecated alias so existing callers do not break.
 
     This is deliberately MODEST — it does not maximise progress. A reward that
     ranks `bullet_straight` above this one is telling you it prefers speed to
     everything else, which is the finding we want surfaced.
     """
     return _line(n_steps, v, dt, device=device)
+
+
+#: deprecated alias — prefer ``sane_reference_trajectory`` (see the rename note)
+reference_policy = sane_reference_trajectory
 
 
 @dataclass
@@ -175,7 +185,7 @@ def audit_reward(spec: R.RewardSpec, ctx: dict | None = None, *,
     assert_selector_disjoint(ctx)
     ctx.setdefault("dt", spec.dt)
 
-    ref_traj = reference_policy(n_steps, spec.dt, device=device)
+    ref_traj = sane_reference_trajectory(n_steps, spec.dt, device=device)
     ref = float(spec(ref_traj, ctx))
 
     panel = degenerate_panel(n_steps, spec.dt, device)

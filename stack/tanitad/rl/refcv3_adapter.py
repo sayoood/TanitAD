@@ -96,7 +96,7 @@ def sample_offsets(offset: Tensor, cfg: PostTrainConfig, *,
 
 
 def make_refcv3_sample_fn(model, cfg: PostTrainConfig, *,
-                          build_ctx=None,
+                          build_ctx=None, reference=None,
                           generator: torch.Generator | None = None):
     """Return a ``sample_fn(batch, cfg) -> (traj, logp, ctx)`` for a RefCV3Model.
 
@@ -123,7 +123,18 @@ def make_refcv3_sample_fn(model, cfg: PostTrainConfig, *,
 
         ctx = dict(build_ctx(batch, out)) if build_ctx else {}
         ctx.setdefault("dt", cfg_in.dt)
-        return traj, logp, ctx
+
+        if reference is None:
+            return traj, logp, ctx
+        # The trust-region pair: the LIVE deterministic fan against the FROZEN
+        # reference's fan on the SAME inputs. Both are means (pre-exploration),
+        # because the anchor constrains the policy, not the noise.
+        with torch.no_grad():
+            ref_out = reference(frames, batch.get("nav_cmd"), batch.get("v0"),
+                                steps=int(getattr(cfg_in, "decoder_steps", 0)),
+                                lan=batch.get("lan"))
+        return traj, logp, ctx, {"anchor_pair": (anchor_traj,
+                                                 ref_out["anchor_traj"])}
 
     return sample_fn
 

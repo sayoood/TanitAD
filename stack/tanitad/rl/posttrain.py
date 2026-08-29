@@ -45,6 +45,7 @@ import torch
 from torch import Tensor
 
 from . import advantage as A
+from . import anchor as ANC
 from . import audit as AUD
 from . import rewards as R
 from .config import PostTrainConfig
@@ -160,7 +161,8 @@ def apply_exploration_noise(offset: Tensor, cfg: PostTrainConfig,
 
 
 def rl_objective(traj: Tensor, logp: Tensor, ctx: dict, cfg: PostTrainConfig,
-                 spec: R.RewardSpec, *, imitation_loss: Tensor | None = None
+                 spec: R.RewardSpec, *, imitation_loss: Tensor | None = None,
+                 anchor_pair: tuple[Tensor, Tensor] | None = None
                  ) -> dict[str, Tensor]:
     """One RL objective evaluation over ``traj [B, N, G, S, 2]``.
 
@@ -198,9 +200,33 @@ def rl_objective(traj: Tensor, logp: Tensor, ctx: dict, cfg: PostTrainConfig,
     loss = pg["loss"]
     if imitation_loss is not None:
         loss = loss + cfg.w_imitation * imitation_loss.mean()
-    return {"loss": loss, "pg": pg["pg"], "reward": reward,
-            "advantage": parts["total"], "adv_intra": parts["intra"],
-            "adv_inter": parts["inter"]}
+
+    # ⭐ THE TRUST REGION — applied to the LOSS, never inside the advantage.
+    # Same placement rule as the veto: it CONSTRAINS the policy rather than
+    # ranking candidates. Inside the group-relative advantage it would become a
+    # fan-collapse objective (see rewards.DEFAULT_WEIGHTS on gt_similarity).
+    out = {"loss": loss, "pg": pg["pg"], "reward": reward,
+           "advantage": parts["total"], "adv_intra": parts["intra"],
+           "adv_inter": parts["inter"]}
+    if cfg.w_anchor > 0.0:
+        if anchor_pair is None:
+            raise ValueError(
+                f"w_anchor={cfg.w_anchor} requires anchor_pair=(live_mean_fan, "
+                "ref_mean_fan) on the SAME inputs. Refusing to run a trust "
+                "region with no reference — that is the unanchored "
+                "configuration that drifted +69.5 % in P-RC21.")
+        # ⛔ THE TRUST REGION CONSTRAINS THE POLICY'S MEAN, NOT ITS SAMPLES.
+        # Penalising the drawn samples would also penalise the exploration
+        # noise, whose scale is |offset|*sigma under the multiplicative form —
+        # i.e. it would SHRINK offsets rather than HOLD POSITION. Those are
+        # different objectives, and the shrinkage one is not a trust region.
+        live_mean, ref_mean = anchor_pair
+        anc = ANC.anchor_penalty(live_mean, ref_mean, w=cfg.w_anchor,
+                                 form=cfg.anchor_form)
+        out["loss"] = out["loss"] + anc["penalty"]
+        out["anchor_penalty"] = anc["penalty"]
+        out["anchor_divergence"] = anc["divergence"]
+    return out
 
 
 def run_posttrain(model, sample_fn: Callable, cfg: PostTrainConfig, *,
@@ -216,6 +242,9 @@ def run_posttrain(model, sample_fn: Callable, cfg: PostTrainConfig, *,
     spec = spec or R.RewardSpec(weights=dict(cfg.reward_weights), dt=cfg.dt)
     torch.manual_seed(cfg.seed)
 
+    # ⛔ Set the forward mode EXPLICITLY and record it. Inheriting
+    # nn.Module's training=True default is TRAIN-C5.
+    model.train(bool(getattr(cfg, "train_mode_forward", False)))
     freeze_report = select_trainable(model, cfg)
     params = [p for p in model.parameters() if p.requires_grad]
     opt = torch.optim.AdamW(params, lr=cfg.lr)
@@ -232,8 +261,13 @@ def run_posttrain(model, sample_fn: Callable, cfg: PostTrainConfig, *,
     src = batches if batches is not None else range(cfg.steps)
     history: list[dict] = []
     for step, batch in enumerate(src, start=1):
-        traj, logp, ctx = sample_fn(batch, cfg)
-        out = rl_objective(traj, logp, ctx, cfg, spec)
+        got = sample_fn(batch, cfg)
+        # sample_fn may return (traj, logp, ctx) or (traj, logp, ctx, extras);
+        # `extras` carries anchor_pair when a trust region is configured.
+        traj, logp, ctx = got[0], got[1], got[2]
+        extras = got[3] if len(got) > 3 else {}
+        out = rl_objective(traj, logp, ctx, cfg, spec,
+                           anchor_pair=extras.get("anchor_pair"))
 
         opt.zero_grad(set_to_none=True)
         out["loss"].backward()
@@ -266,6 +300,7 @@ def run_posttrain(model, sample_fn: Callable, cfg: PostTrainConfig, *,
         "steps": counters.steps,
         "counters": counters.to_dict(),
         "freeze_report": freeze_report,
+        "train_mode_forward": bool(getattr(cfg, "train_mode_forward", False)),
         "reward_audit": {"verdict": audit.verdict, "flagged": audit.flagged,
                          "inconclusive": audit.inconclusive,
                          "dead_components": audit.dead_components,

@@ -80,3 +80,78 @@ Step cost measured at launch (first 20 steps) before committing to 2,000; hard
 stop if the P1 projection exceeds ~2 h. 4060 only, `nvidia-smi` clear first;
 ⛔ Thor untouched (B1 epcache build owns it overnight). Checkpoint + done-marker
 per house rules; every knob in `config.json` via `PostTrainConfig.to_dict()`.
+
+---
+
+# ⭐ AMENDMENT 1 — 2026-08-29 — the ANCHOR SWEEP replaces the `w_imitation` remedy
+
+`Landed BEFORE the re-run, with no readout_after for any anchored arm in
+existence. Same precedence discipline as the original prereg (06c715d8b).`
+
+## Why this amendment exists
+
+P-RC21's first campaign produced a FAIL whose diagnosis was *"no policy anchor"*.
+§4's remedy branch said **"raise `w_imitation`, re-run once"**. ⛔ **That branch is
+WITHDRAWN**, for a reason of substance rather than convenience:
+
+> `w_imitation` is an **imitation loss against LABELS**. GRPO's stabiliser is a
+> **TRUST REGION against the REFERENCE POLICY**. They are different objects, and
+> the original prereg named the wrong one.
+
+Master Mind ruling, 2026-08-29. The two are used interchangeably in secondary
+summaries of the RLHF/GRPO family, which is exactly how the substitution passed
+unnoticed — logged as vocabulary in `VOCABULARY.md` and as TRAIN-C5's family.
+
+## What replaces it
+
+**The reference-policy anchor** (`stack/tanitad/rl/anchor.py`): a divergence
+penalty between the training decoder's mean fan and the mean fan of a **frozen
+deepcopy of the cold start**, applied to the LOSS and **never inside the
+group-relative advantage** (same placement rule as the veto — it constrains the
+policy rather than ranking candidates).
+
+⚠️ It constrains the **policy's MEAN**, not its samples. Penalising the drawn
+samples would penalise the exploration noise, whose scale is `|offset|·σ`, i.e.
+it would SHRINK offsets rather than HOLD POSITION — a different objective.
+
+## The sweep (replaces the single re-run)
+
+| arm | `w_anchor` | purpose |
+|---|---|---|
+| **S0** | 0.0 | the unanchored null — reproduces the original P1 configuration exactly, now with a CORRECT readout |
+| **S1** | low | is a light trust region enough? |
+| **S2** | high | does a strong trust region kill the reward gain along with the drift? |
+| **S-reg** | 0.0, `HACKABLE_WEIGHTS` | the deliberate-regression control, unchanged |
+
+⭐ This also yields the **anchor-strength curve DDv2 never published**, which
+makes the re-run a contribution rather than a repair.
+
+## ⛔ Committed outcomes — written before any anchored arm runs
+
+| result | reading | consequence |
+|---|---|---|
+| **R2 falls (paired-CI separated) at some `w_anchor` with R3 held within its re-derived guard** | the DDv2 mechanism transfers once the trust region is present — the original FAIL was a missing constraint, not a dead method | promote; A1-on-refcv3 proceeds with the anchored recipe |
+| R3 held at every `w_anchor` but **R2 never falls** | the anchor fixes drift and the reward still cannot prune collisions ⇒ the REWARD is the limit, not the stabiliser | do NOT scale; the next lever is reward composition |
+| **R2 and R3 both frozen as `w_anchor` rises** | the trust region is binding so hard the policy cannot move at all | the useful window is below the tested low value — re-sweep downward once |
+| **monotone trade-off with no window** (any R2 gain costs R3 beyond guard) | the surrogate estimator, not the anchor, is the limit | STOP the surrogate line; escalate M-B9 (true diffusion-step density) from deferred |
+| S-reg fails to degrade | ⛔ the readout is void again and NOTHING in the sweep may be read | fix the readout first |
+
+## Readout changes since the original prereg (all forced by TRAIN-C5)
+
+1. ⛔ **`.eval()` is mandatory and recorded** (`"eval_mode": true`). The original
+   readouts ran in TRAINING mode with `ego_dropout=0.5` — every magnitude in
+   `RESULT_P_RC21.md` §1 is superseded, not extended.
+2. **The R3 guard is re-derived from the CORRECT instrument.** In eval mode the
+   readout is EXACTLY deterministic (run-to-run spread **0.000 m** over 3 seeds),
+   so the original "+10 % against a 17 % noise floor" is replaced by a guard that
+   can actually fail: **R3 must not exceed the S0 baseline by more than 10 %**,
+   and that 10 % is now well above zero measurement noise rather than below it.
+3. **Per-episode values are stored**, so the PAIRED episode-cluster bootstrap the
+   house rule requires is computable — the original readout kept aggregates only
+   and could not answer whether R2's small move was separated.
+4. **`ckpt_after.pt` is saved**, because P1's outcome could not be re-measured.
+
+## Unchanged from the original prereg
+NON-PARITY corpus · T0 only, no driving claim · surrogate Gaussian-on-offset is
+not the true diffusion density · static-lead approximation · 15 val episodes ·
+decoder-only with `conf_head` excluded · 4060 only, Thor untouched.
