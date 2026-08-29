@@ -10258,3 +10258,88 @@ move — running the fuller version of a probe I had already "finished". Two of 
 own live hypotheses died tonight, plus the Master Mind's inference-budget reading.
 That is three ideas retired for the cost of three 0-training probes, and it is the
 cheapest place any of them could have died.)*
+
+---
+
+## TRAIN-C10 — 2026-08-30 — ⛔ `$?` AFTER A PIPE IS THE *PIPE'S* EXIT CODE: a verification that reported GREEN over ZERO TESTS
+
+**Class:** `the-verification-instrument-cannot-report-its-own-failure` — the C9/C13/C14
+family aimed at the one tool whose whole job is to tell us whether anything works.
+**Hit TWO agents independently in one night**, which is why it is logged as a class
+and not as a slip.
+
+**Symptom (both cases).** A test run reported success while proving nothing:
+mine printed `EXIT=0` over a suite with a real failure; a peer's printed `RC=0`
+over a run where **no tests ran at all**.
+
+⚠️ **THE PEER'S OWN DIAGNOSIS WAS WRONG, AND THAT IS THE INSTRUCTIVE PART.** They
+attributed it to guessing test filenames that do not exist. MEASURED — that is not
+the mechanism:
+
+| command shape | pytest's real code | what `$?` reports |
+|---|---|---|
+| `pytest missing_file.py -q` | **4** (usage error) | 4 |
+| `pytest -k <matches nothing>` | **5** (no tests ran) | 5 |
+| `pytest <empty dir>` | **5** | 5 |
+| **`pytest missing_file.py -q 2>&1 \| tail -2; echo $?`** | **4** | ⛔ **0** |
+| `pytest <all passing> \| grep FAILED; echo $?` | **0** | ⛔ **1** |
+
+⇒ **pytest reports empty collection correctly, and our `pyproject.toml` does not
+mask it.** The green came from the **PIPE**: `$?` after `cmd | tail` is *`tail`'s*
+status, and `tail` always succeeds. The filenames explain "no tests ran"; they do
+not explain `RC=0`. **A fix aimed at checking filenames would have left the defect
+in place** — and the mirror case is worse in the other direction: piping a *passing*
+suite through `grep FAILED` yields **1**, a green run reading as a failure.
+
+⭐ **THE RULE, and it is two rules because the trap is symmetric:**
+1. **Capture the status BEFORE any pipe**, inside the group:
+   `{ pytest …; echo "RC=$?"; } > artifact 2>&1` — then read `RC` from the artifact.
+   Never `cmd | tail; echo $?`. (In bash `PIPESTATUS[0]`/`set -o pipefail` also work;
+   the braces form survives being copied into a different shell.)
+2. **A non-zero count is part of the pass criterion.** `RC=0` means "nothing
+   failed", which is also true of nothing running. Read the `N passed` line, and
+   for a filtered run read the `deselected` count too.
+
+⚠️ **Why this outranks an ordinary tooling bug:** every other guard in this
+programme is *reported through* this channel. A falsified control, a pinned count,
+an adversarial verify — all of them arrive as a test result. **An exit code that
+cannot go red is a single point of failure for the entire quality system**, and it
+is invisible precisely because it says the thing we hoped to hear. Same family as
+the E-DETECT-1 all-zero floor (a control that scores at chance makes everything
+look like a winner), one level up: here the *scoreboard* is the thing that cannot
+lose.
+
+## MM-C3 — I mis-diagnosed TRAIN-C10 and the fix I drew would have left it in place (MM, 2026-08-30)
+
+The TrainingFlyWheel reported a suite run that printed "no tests ran" and exited 0. I
+attributed it to **my wrong filenames** and concluded "read the count line". Both halves
+were wrong as a diagnosis: wrong filenames explain the empty collection, they do NOT
+explain RC=0 — pytest returns **4** for a missing file. **The zero came from the PIPE.**
+
+REPRODUCED INDEPENDENTLY (MM, this box, before accepting their correction):
+| command | RC |
+|---|---|
+| `pytest tests/__nope__.py` | **4** (correct) |
+| `pytest tests/__nope__.py 2>&1 \| tail -1` | ⛔ **0** |
+| `pytest <a PASSING suite> 2>&1 \| grep FAILED` | ⛔ **1** |
+
+`$?` after a pipeline is the LAST stage's status. `tail` always succeeds, so every
+failure vanishes; `grep` fails when it matches nothing, so a GREEN suite reads red. The
+channel lies in both directions.
+
+⛔ **WHY THIS OUTRANKS AN ORDINARY TOOLING BUG (their framing, adopted):** every other
+guard in this programme — falsified controls, pinned counts, adversarial verifies — is
+REPORTED THROUGH this channel. An exit code that cannot go red is a single point of
+failure for the entire quality system, and it is invisible because it says what we hoped
+to hear. Same family as the E-DETECT-1 all-zero floor (a control at chance makes every
+arm look like a winner), one level up: here the SCOREBOARD is what cannot lose.
+
+⇒ **TWO rules, not one.** (1) Capture status BEFORE any pipe:
+`{ pytest …; echo "RC=$?"; } > artifact 2>&1` and read RC from the artifact. (2) A
+NON-ZERO COUNT is part of the pass criterion — RC=0 also means "nothing ran"; read the
+"N passed" line, and "deselected" on filtered runs.
+
+**ROOT-CAUSE CLASS (mine): diagnosing a symptom by the nearest plausible cause I had
+already noticed.** My wrong filenames were真 and salient, so I stopped there — the
+explanation FIT without being TESTED. ⇒ A diagnosis that explains one observation must
+predict a second: "wrong filenames" predicts RC=4, which one command would have refuted.
