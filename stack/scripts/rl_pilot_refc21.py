@@ -161,7 +161,26 @@ def load_model(ckpt_path, device):
 
 @torch.no_grad()
 def readout(model, src: WindowSource, spec: RewardSpec, cfg, device, n=120):
-    """R1/R2/R3 on a FIXED, seed-derived window set (identical before/after)."""
+    """R1/R2/R3 on a FIXED, seed-derived window set (identical before/after).
+
+    ⛔ EVAL MODE IS MANDATORY AND IS SET HERE (TRAIN-C5, 2026-08-29).
+    The first P-RC21 readout ran with ``model.training == True`` — nn.Module's
+    default, never overridden — so EVERY reported number was measured with
+    ``ego_dropout=0.5`` and ``route_dropout=0.5`` zeroing half the ego/route
+    inputs, plus stochastic truncated-diffusion noise. MEASURED impact on the
+    cold start, 3 seeds each (`raw/p_rc21/eval_mode_impact.json`):
+
+        train mode  R3 2.000 m (run-to-run spread 0.099 m)
+        eval  mode  R3 0.726 m (run-to-run spread **0.000 m**)
+
+    ⇒ the readout was reporting **+175.7 %** against the deployed configuration,
+    and its 17 % run-to-run wobble was dropout, not diffusion noise. ⭐ In eval
+    mode the decoder is deterministic BY CONSTRUCTION (`refc.py:1396` — noise is
+    ``zeros_like`` when not training), so before/after differences are EXACT and
+    the seeding I had pre-registered is unnecessary.
+    """
+    was_training = model.training
+    model.eval()
     rng = np.random.default_rng(1234)
     picks = []
     for stem in src.stems:
@@ -197,6 +216,7 @@ def readout(model, src: WindowSource, spec: RewardSpec, cfg, device, n=120):
             comp_sums[k] = comp_sums.get(k, 0.0) + float(v.mean())
         n_win += 1
 
+    model.train(was_training)
     ep_means = {k: {m: float(np.mean(v[m])) for m in v} for k, v in per_ep.items()}
     arr = lambda m: np.array([e[m] for e in ep_means.values()])
     boot = []
@@ -216,8 +236,13 @@ def readout(model, src: WindowSource, spec: RewardSpec, cfg, device, n=120):
         "R3_sel_ade_m": {"mean": float(arr("ade").mean()),
                          "ci95": [float(lo_[2]), float(hi_[2])]},
         "R4_component_means": {k: v / max(n_win, 1) for k, v in comp_sums.items()},
-        "_estimator": "episode-cluster bootstrap, 2000 reps — ⚠️ few clusters, "
-                      "claims only when CIs separate",
+        "per_episode": ep_means,      # ⭐ stored so the PAIRED bootstrap the house
+                                      # rule requires is computable post-hoc —
+                                      # the first readout kept aggregates only
+        "eval_mode": True,
+        "_estimator": "episode-cluster bootstrap, 2000 reps (UNPAIRED here; "
+                      "per_episode is stored so a PAIRED test is computable) — "
+                      "⚠️ few clusters, claims only when CIs separate",
         "_tier": "T0 training-side; NON-PARITY corpus; readout-only selector use",
     }
 
@@ -283,6 +308,12 @@ def main() -> int:
     sample_fn = make_refcv3_sample_fn(model, cfg, build_ctx=build_ctx)
     summary = run_posttrain(model, sample_fn, cfg, batches=batches())
 
+    # ⛔ SAVE THE TRAINED DECODER. The first pilot saved none, so when the
+    # eval-mode defect surfaced there was no way to re-measure P1's outcome
+    # without re-training. A run whose result cannot be re-measured is a run
+    # that has to be repeated.
+    torch.save({"model": model.state_dict(), "cfg": cfg.to_dict()},
+               os.path.join(a.out, "ckpt_after.pt"))
     after = readout(model, val_src, RewardSpec(dt=DT_TRAJ), cfg, device)
     json.dump(after, open(os.path.join(a.out, "readout_after.json"), "w"),
               indent=1)

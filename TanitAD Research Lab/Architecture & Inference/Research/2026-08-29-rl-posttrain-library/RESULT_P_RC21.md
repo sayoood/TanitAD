@@ -9,6 +9,36 @@ enters cross-arm comparisons or the leaderboard.
 
 ---
 
+## ⛔ CORRECTION BANNER (added 2026-08-29, after this document was committed)
+
+**EVERY ABSOLUTE NUMBER IN §1 WAS MEASURED WITH THE MODEL IN TRAINING MODE AND
+MUST NOT BE QUOTED.** `nn.Module.training` defaults to True and nothing in the
+pilot ever overrode it, so all readouts ran with `ego_dropout=0.5`,
+`route_dropout=0.5` and stochastic diffusion active. MEASURED impact on the cold
+start (3 seeds each, `raw/p_rc21/eval_mode_impact.json`):
+
+| mode | R2 collision | R3 sel-ADE | run-to-run R3 spread |
+|---|---|---|---|
+| train (reported below) | 11.063 % | **2.000 m** | 0.099 m |
+| **eval (deployed)** | 10.638 % | **0.726 m** | **0.000 m** |
+
+⇒ sel-ADE was overstated by **+175.7 %**; the v2.1 cold start's true deployed
+sel-ADE is **0.726 m**. The collision baseline is close (11.06 → 10.64 %).
+
+**What survives:** P1's **FAIL** verdict in DIRECTION — R2 was flat in both modes
+and R3's +69.5 % far exceeds train-mode's own 0.099 m wobble — and P2-reg's
+CI-separated degradation. **What does not:** every magnitude in §1, and §4's
+limits 1–2, which **dissolve** rather than needing the fixes I proposed (eval mode
+is EXACTLY deterministic, so seeding is unnecessary and the 17 % wobble I blamed
+on diffusion noise was dropout).
+
+⚠️ **P1's outcome cannot be re-measured**: `run_posttrain` saved no checkpoint, so
+the trained decoder no longer exists. Full entry: `RETRACTION_LOG.md` **TRAIN-C5**.
+Fixes shipped (eval-mode readout, per-episode storage, `ckpt_after.pt`); the
+re-run supersedes §1 entirely.
+
+---
+
 ## 0. Verdict in one line
 
 ⛔ **P1 does NOT meet its committed outcome.** The fan-collision rate did not

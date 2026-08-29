@@ -9933,3 +9933,88 @@ the cheaper guard.**
 `@pytest.mark.parametrize("dt", [0.1, 0.5])`. Evidence:
 `…/2026-08-29-rl-posttrain-library/RESULT_P_RC21.md` §3.2 and
 `raw/p_rc21/p2-reg__pilot_summary.json`.
+
+---
+
+## TRAIN-C5 — 2026-08-29 — RETRACTION: every number in the P-RC21 readout was measured with the model in TRAINING mode
+
+**Stream:** TanitAD_TrainingFlyWheel. **PUBLISHED** — the RESULT was committed
+(`67d4e89e0`) and was going into the morning report, so this is a retraction, not
+a near-miss.
+⭐ **CLASS — MEASURING A CONFIGURATION THAT IS NOT THE ONE BEING CLAIMED ABOUT.**
+Recognition signal: **an evaluation path that never sets `.eval()`** — or more
+generally, a readout that inherits a framework DEFAULT which differs from the
+deployed setting. `nn.Module.training` defaults to **True**; nothing in
+`rl_pilot_refc21.py`, `posttrain.py` or `refcv3_adapter.py` ever overrode it.
+
+**What was wrong.** With `training=True` the REF-C v2.1 forward path applies
+`ego_dropout = 0.5` and `route_dropout = 0.5` (per-sample Bernoulli zeroing of
+v0 and of the route) and draws stochastic truncated-diffusion noise
+(`refc.py:1396` — noise is `zeros_like` only when NOT training). So every R1/R2/R3
+in `RESULT_P_RC21.md`, before and after, both arms, was measured on a model
+randomly discarding half its ego and route inputs.
+
+**MEASURED impact** (same cold-start checkpoint, 3 seeds each,
+`raw/p_rc21/eval_mode_impact.json`, probe `code/eval_mode_impact.py`):
+
+| mode | R1 | R2 collision | R3 sel-ADE | run-to-run R3 spread |
+|---|---|---|---|---|
+| train (what was reported) | +0.9511 | 11.063 % | **2.000 m** | 0.099 m |
+| **eval (deployed)** | +0.8105 | 10.638 % | **0.726 m** | **0.000 m** |
+
+⇒ **the readout overstated sel-ADE by +175.7 %.** The v2.1 cold start's true
+deployed sel-ADE is **0.726 m**, not the ~1.8–2.1 m reported.
+
+**What this does and does NOT change.**
+* ⛔ **Every ABSOLUTE number in RESULT_P_RC21.md §1 is measured in the wrong
+  configuration** and must not be quoted. The collision baseline moves little
+  (11.06 → 10.64 %); the ADE numbers are ~2.75× inflated.
+* ⚠️ **P1's FAIL verdict is unchanged in DIRECTION but no longer verifiable in
+  magnitude**: R2 was flat in both modes, and R3's +69.5 % degradation far
+  exceeds train-mode's own 0.099 m wobble. But — see below — the trained
+  checkpoint was never saved, so P1's outcome CANNOT be re-measured in eval mode
+  without re-training.
+* ⭐ **Two pre-registered "limits" DISSOLVE rather than needing fixes.** In eval
+  mode the readout is **EXACTLY deterministic** (spread 0.000 across 3 seeds),
+  so (a) the "seed the decoder noise" fix is unnecessary — `.eval()` is total —
+  and (b) the 17 % run-to-run wobble I attributed to diffusion noise was
+  **dropout**. I diagnosed the symptom's cause wrongly even while reporting the
+  symptom honestly.
+
+**A COMPOUNDING GAP, found in the same pass:** `run_posttrain` **saved no model
+checkpoint** — only `config.json`/`summary.json`. So when this defect surfaced,
+P1's trained decoder no longer existed. ⇒ **A run whose result cannot be
+re-measured is a run that has to be repeated.** Now fixed: `ckpt_after.pt` is
+written before the after-readout.
+
+**The rule:** ⛔ **Any evaluation path sets `.eval()` explicitly and records the
+mode in its output** (`"eval_mode": true`), and **every training run saves the
+checkpoint its numbers describe.** Framework defaults are not neutral: they are
+a configuration choice made by someone who never saw your experiment.
+
+**Fixes shipped:** `readout()` sets `.eval()` and restores the caller's mode;
+`per_episode` values are stored so the PAIRED bootstrap is computable;
+`ckpt_after.pt` is saved. Evidence: `raw/p_rc21/eval_mode_impact.json`.
+
+## MM-C2 — the eval-mode BLAST-RADIUS audit that TRAIN-C5 demanded (MM, 2026-08-29)
+
+TRAIN-C5 (the RL pilot scoring in `train` mode: dropout live, +175.7 % overstated ADE)
+raises the only question that matters programme-wide: **which of our OTHER numbers were
+produced in train mode?** Answered by source, two probe classes, MEASURED:
+
+| instrument | eval-mode source | verdict |
+|---|---|---|
+| drift / prediction probes (`latentmotion.py`, `meanpred.py`) | neither calls `.eval()` **directly** — their shared loader `v7tiny_g2.load_arm` does (`world.eval()`, line 103) | ✅ SAFE |
+| T1 driving instrument (`t1_eval.py`) | 5 direct calls | ✅ SAFE |
+| eval harness (`taniteval/runner.py`) | 0 direct — its loader `data.py:173` does `.to(device).eval()`; `compounding.py:112`, `hierarchy.py:551` also explicit | ✅ SAFE |
+| flagship / diagnostic evals | explicit calls | ✅ SAFE |
+| **the RL pilot** | **built its own model path, bypassing every loader that sets eval** | ⛔ the sole affected instrument |
+
+⇒ **The E-DEC-69 / MM-E1 / MM-E4 / registry numbers stand.** The defect was LOCAL to a
+new code path that constructed a model without going through a loader.
+
+**ROOT-CAUSE CLASS: a safety default that lives in a LOADER is not a property of the
+MODEL — a new code path that builds its own object silently opts out.** Recognition
+signal: any new script that constructs or loads a model without the house loader.
+⇒ **Standing rule: a scoring function asserts `not model.training` itself** rather than
+trusting its caller — the assertion belongs where the number is produced.
