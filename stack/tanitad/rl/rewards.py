@@ -221,26 +221,84 @@ def _collision(traj: Tensor, ctx: dict) -> Tensor:
 
 
 def _headway(traj: Tensor, ctx: dict) -> Tensor:
-    """Time-gap to a lead vehicle, saturating at a comfortable target.
+    """GRADED, ASYMMETRIC time-gap reward. Peaks at the target gap T*.
 
-    ``ctx["lead_path"]`` is ``[..., S, 2]``. Reward is ``min(gap_t / v_t, T*) /
-    T*`` minimised over steps -> [0, 1]: keeping AT LEAST the target time gap
-    scores 1, tailgating scores toward 0. The reference implementation for the
-    reported number is ``taniteval.lead_metrics.distance_keeping``.
+    ⛔ REDESIGNED 2026-08-29 AFTER A0 MEASURED THE FIRST VERSION INERT.
+    The original was ``min_t (gap_t / v_t) / T*`` clamped to [0, 1] — a
+    SATURATING CONSTRAINT. A0 (240 held-out windows, `raw/a0_coverage.json`)
+    measured it firing on 28.3 % of windows with a **median spread across the fan
+    of 0.0000**: with a lead 40 m ahead at 10 m/s the time gap is already ≈2 s
+    = T*, so nearly every candidate pinned at 1.0. A term that is identical for
+    every candidate cancels EXACTLY in a group-relative advantage — it was
+    present and carrying no signal.
+
+    The shape now ranks on BOTH sides of T* (Master Mind design ruling, as model-
+    design owner; do NOT demote this to a pure hard constraint — that would
+    discard the distance-keeping signal, and longitudinal error is 88.7 % of our
+    historical oracle gap):
+
+        t < T*      steep  — (t/T*)**k, k>1. Tailgating is punished hard and
+                             the penalty accelerates as the gap closes.
+        T* <= t <= FAR*T*  mild  — linear decline by `dawdle` over the span.
+                             Sitting at a 4 s gap is wrong, but nothing like as
+                             wrong as following at 0.8 s.
+        t > FAR*T*  saturated at the FAR value — beyond genuinely-far there is
+                             nothing left to rank.
+
+    Peak is exactly 1.0 at t == T*, so the reward's argmax IS the target gap.
+
+    ⚠️ The hard safety constraint is NOT here. TTC / collision-imminent is a
+    VETO applied OUTSIDE the advantage (``ttc_violation``), because a constraint
+    and a ranking signal are different objects and fusing them into one term is
+    what produced the inert component in the first place.
     """
     lead = ctx.get("lead_path")
     if lead is None:
         # NO LEAD => no headway constraint => no penalty (the `neutral` rule).
-        # This read 0.0 (the WORST value) until 2026-08-29, silently penalising
-        # every open-road window on a corpus where most windows have no lead.
         return torch.ones(traj.shape[:-2], device=traj.device, dtype=traj.dtype)
     t_star = float(ctx.get("target_time_gap_s", 2.0))
+    k = float(ctx.get("headway_tailgate_exp", 2.0))
+    dawdle = float(ctx.get("headway_dawdle_penalty", 0.25))
+    far = float(ctx.get("headway_far_mult", 2.0))
+
     kin = kinematics(traj, ctx.get("dt", DT_S))
     gap = (lead[..., 1:, :] - traj[..., 1:, :]).norm(dim=-1)     # [..., S-1]
-    lead_len = float(ctx.get("lead_len_m", 4.5))
-    gap = (gap - lead_len).clamp_min(0.0)
-    tg = gap / kin.speed.clamp_min(0.5)
-    return (tg.min(dim=-1).values / t_star).clamp(0.0, 1.0)
+    gap = (gap - float(ctx.get("lead_len_m", 4.5))).clamp_min(0.0)
+    tg = (gap / kin.speed.clamp_min(0.5)).amin(dim=-1)           # worst step
+
+    ratio = tg / max(t_star, EPS)
+    below = ratio.clamp(0.0, 1.0).pow(k)                          # steep
+    span = max(far - 1.0, EPS)
+    above = 1.0 - dawdle * ((ratio - 1.0).clamp(0.0, span) / span)
+    return torch.where(ratio < 1.0, below, above)
+
+
+def ttc_violation(traj: Tensor, ctx: dict) -> Tensor:
+    """⛔ The HARD safety VETO — a constraint, never a ranking term.
+
+    True where a candidate's time-to-collision with the lead drops below
+    ``ttc_min_s``. Applied OUTSIDE the group-relative advantage (see
+    ``advantage.truncated_inter_anchor_advantage``), exactly like a collision:
+    a vetoed candidate is pinned, not merely ranked lower.
+
+    Separating this from ``_headway`` is the point. One term that tried to be
+    both a constraint and a ranking signal saturated and became inert; the
+    constraint half belongs where constraints go.
+
+    TTC uses the CLOSING speed (how fast the gap shrinks), not the ego speed —
+    matching a lead at 30 m/s at a 10 m gap is stable, not imminent.
+    """
+    lead = ctx.get("lead_path")
+    if lead is None:
+        return torch.zeros(traj.shape[:-2], device=traj.device, dtype=torch.bool)
+    ttc_min = float(ctx.get("ttc_min_s", 1.5))
+    dt = float(ctx.get("dt", DT_S))
+    gap = (lead[..., 1:, :] - traj[..., 1:, :]).norm(dim=-1)
+    gap = (gap - float(ctx.get("lead_len_m", 4.5))).clamp_min(0.0)
+    closing = (gap[..., :-1] - gap[..., 1:]) / dt                 # >0 = closing
+    ttc = gap[..., :-1] / closing.clamp_min(1e-3)
+    imminent = (closing > 0) & (ttc < ttc_min)
+    return imminent.any(dim=-1)
 
 
 def _motion_gate(kin: Kinematics, min_m: float = 1.0) -> Tensor:

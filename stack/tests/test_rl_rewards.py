@@ -127,20 +127,92 @@ def test_collision_with_no_obstacles_is_zero_for_everyone():
     assert float(r) == pytest.approx(0.0)
 
 
-def test_headway_saturates_at_the_target_time_gap():
-    """A lead exactly T* seconds ahead scores 1.0; half that scores ~0.5."""
-    v, n, t_star, lead_len = 10.0, 21, 2.0, 4.5
+def _headway_at(gap_time_s, t_star=2.0, v=10.0, n=21, lead_len=4.5):
+    """Build a scene whose worst-step time gap is exactly `gap_time_s`."""
     ego = straight(n, v)
-    # lead at a constant gap of v*T* + lead_len -> time gap exactly T*
-    lead = ego + torch.tensor([v * t_star + lead_len, 0.0])
-    r = R.COMPONENTS["headway"](ego, {"lead_path": lead, "target_time_gap_s": t_star,
-                                      "lead_len_m": lead_len})
-    assert float(r) == pytest.approx(1.0, abs=1e-3)
+    lead = ego + torch.tensor([gap_time_s * v + lead_len, 0.0])
+    return float(R.COMPONENTS["headway"](
+        ego, {"lead_path": lead, "target_time_gap_s": t_star,
+              "lead_len_m": lead_len}))
 
-    half = ego + torch.tensor([v * (t_star / 2) + lead_len, 0.0])
-    r2 = R.COMPONENTS["headway"](ego, {"lead_path": half, "target_time_gap_s": t_star,
-                                       "lead_len_m": lead_len})
-    assert float(r2) == pytest.approx(0.5, abs=1e-2)
+
+def test_graded_headway_peaks_exactly_at_the_target_gap():
+    """⛔ The A0 fix. The reward's ARGMAX is the target gap itself."""
+    assert _headway_at(2.0) == pytest.approx(1.0, abs=1e-3)
+    assert _headway_at(1.0) < 1.0 and _headway_at(3.0) < 1.0
+
+
+def test_graded_headway_analytic_values_below_target():
+    """Below T*: (t/T*)**k with k=2. Steep, and hand-computable."""
+    assert _headway_at(1.0) == pytest.approx(0.25, abs=1e-2)    # (0.5)^2
+    assert _headway_at(1.5) == pytest.approx(0.5625, abs=2e-2)  # (0.75)^2
+    assert _headway_at(0.0) == pytest.approx(0.0, abs=1e-3)
+
+
+def test_graded_headway_analytic_values_above_target():
+    """Above T*: mild linear decline, saturating at FAR=2x."""
+    assert _headway_at(4.0) == pytest.approx(0.75, abs=1e-2)    # 1 - dawdle
+    assert _headway_at(8.0) == pytest.approx(0.75, abs=1e-2)    # saturated
+
+
+def test_headway_is_ASYMMETRIC_tailgating_hurts_exactly_3x_dawdling():
+    """⭐ The design ruling: dawdling at 4 s is wrong; 1 s following is worse.
+
+    The ratio is not a vague inequality — it is ANALYTIC and worth pinning as a
+    number, so that changing `headway_tailgate_exp` or `headway_dawdle_penalty`
+    has to be a deliberate decision rather than a silent drift:
+
+        at t = T*/2  ->  (0.5)**2      = 0.25  ->  loss 0.75
+        at t = 2*T*  ->  1 - dawdle    = 0.75  ->  loss 0.25
+        ratio                                        = 3.0 exactly
+    """
+    tailgate_loss = 1.0 - _headway_at(1.0)     # half the target gap
+    dawdle_loss = 1.0 - _headway_at(4.0)       # double the target gap
+    assert tailgate_loss / dawdle_loss == pytest.approx(3.0, abs=0.15), (
+        f"tailgating loss {tailgate_loss:.3f} vs dawdling {dawdle_loss:.3f}")
+    assert tailgate_loss > dawdle_loss
+
+
+def test_graded_headway_RANKS_on_both_sides_of_the_target():
+    """⛔ THE PROPERTY A0 MEASURED MISSING: spread across candidates.
+
+    The old saturating term read a median spread of 0.0000 across the fan and
+    was therefore INERT in a group-relative advantage.
+    """
+    vals = [_headway_at(t) for t in (0.5, 1.0, 1.5, 2.0, 3.0, 4.0)]
+    assert len(set(round(v, 4) for v in vals)) >= 5, (
+        f"headway must rank distinct gaps, got {vals}")
+    assert max(vals) - min(vals) > 0.5
+
+
+# ---------------------------------------------------------------------------
+# The TTC veto — a CONSTRAINT, deliberately not a reward component
+# ---------------------------------------------------------------------------
+
+def test_ttc_veto_fires_when_closing_fast_on_a_static_lead():
+    ego = straight(21, 20.0)                       # 20 m/s
+    lead = torch.zeros(21, 2) + torch.tensor([15.0, 0.0])   # static, 15 m ahead
+    assert bool(R.ttc_violation(ego, {"lead_path": lead, "ttc_min_s": 1.5,
+                                      "lead_len_m": 0.0}))
+
+
+def test_ttc_veto_is_quiet_when_matching_the_lead_speed():
+    """Matching speed at a short gap is stable, not imminent — TTC uses the
+    CLOSING speed, not the ego speed."""
+    ego = straight(21, 20.0)
+    lead = ego + torch.tensor([15.0, 0.0])         # same speed, constant gap
+    assert not bool(R.ttc_violation(ego, {"lead_path": lead, "ttc_min_s": 1.5,
+                                          "lead_len_m": 0.0}))
+
+
+def test_ttc_veto_is_quiet_with_no_lead():
+    assert not bool(R.ttc_violation(straight(21, 10.0), {}))
+
+
+def test_ttc_veto_is_NOT_a_reward_component():
+    """The separation is the point: constraints pin, ranking signals order."""
+    assert "ttc" not in R.COMPONENTS
+    assert not any("ttc" in n for n in R.DEFAULT_WEIGHTS)
 
 
 def test_feasibility_is_one_inside_the_envelope_and_decays_outside():

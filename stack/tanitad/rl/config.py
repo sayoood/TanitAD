@@ -76,6 +76,14 @@ class PostTrainConfig:
     noise_mode: str = "multiplicative"
     noise_scale: float = 0.1
 
+    # --- hard safety VETO (a CONSTRAINT, applied OUTSIDE the advantage) -----
+    #: ⛔ Separated from the `headway` RANKING term on the Master Mind's design
+    #: ruling. One term that tried to be both saturated and went INERT (A0
+    #: measured median spread 0.0000). A constraint pins a candidate; a ranking
+    #: signal orders them. They are different objects.
+    ttc_min_s: float = 1.5
+    veto_value: float = -1.0
+
     # --- reward ------------------------------------------------------------
     reward_weights: dict[str, float] = field(
         default_factory=lambda: dict(DEFAULT_WEIGHTS))

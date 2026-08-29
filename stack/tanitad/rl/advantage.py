@@ -89,26 +89,37 @@ def grpo_advantage(reward: Tensor, *, normalize: str = "none") -> Tensor:
 
 
 def truncated_inter_anchor_advantage(reward: Tensor, *,
-                                     collided: Tensor | None = None,
-                                     collision_value: float = -1.0) -> Tensor:
+                                     veto: Tensor | None = None,
+                                     veto_value: float = -1.0) -> Tensor:
     """Cross-anchor advantage with negatives truncated to 0. ``reward`` [..., N].
 
-    Negatives -> 0 (do not push mass into the low-quality modes); collisions ->
-    ``collision_value`` (the one failure that is never acceptable). ``collided``
-    is a bool mask ``[..., N]``.
+    Negatives -> 0 (do not push mass into the low-quality modes); VETOED
+    candidates -> ``veto_value``.
+
+    ⛔ ``veto`` IS THE CONSTRAINT CHANNEL, AND IT IS DELIBERATELY NOT A REWARD
+    TERM. It carries collision AND TTC-imminent — failures that are never
+    acceptable at any ranking. Applying it HERE, after the centring, is what
+    makes it a constraint: a vetoed candidate is PINNED rather than merely
+    ordered below its neighbours, so no amount of good behaviour elsewhere in
+    the trajectory can buy it back.
+
+    ⚠️ Why the separation is load-bearing: the first ``headway`` term tried to be
+    a constraint and a ranking signal at once. It saturated at its bound and A0
+    measured a median spread of **0.0000** across the fan — present, and
+    carrying no signal. Constraints pin; ranking signals order. Fusing them
+    produces something that does neither.
     """
     adv = (reward - reward.mean(dim=-1, keepdim=True)).clamp_min(0.0)
-    if collided is not None:
-        if collided.shape != reward.shape:
-            raise ValueError(f"collided {tuple(collided.shape)} must match "
+    if veto is not None:
+        if veto.shape != reward.shape:
+            raise ValueError(f"veto {tuple(veto.shape)} must match "
                              f"reward {tuple(reward.shape)}")
-        adv = torch.where(collided,
-                          torch.full_like(adv, collision_value), adv)
+        adv = torch.where(veto, torch.full_like(adv, veto_value), adv)
     return adv
 
 
 def composite_advantage(reward_ig: Tensor, *,
-                        collided_ig: Tensor | None = None,
+                        veto_ig: Tensor | None = None,
                         w_intra: float = 1.0, w_inter: float = 1.0,
                         normalize: str = "none") -> dict[str, Tensor]:
     """DDv2's composition on a ``[..., N, G]`` reward (N anchors x G samples).
@@ -121,8 +132,8 @@ def composite_advantage(reward_ig: Tensor, *,
         raise ValueError(f"expected [..., N, G], got {tuple(reward_ig.shape)}")
     intra = grpo_advantage(reward_ig, normalize=normalize)          # [..., N, G]
     per_anchor = reward_ig.mean(dim=-1)                              # [..., N]
-    coll_n = collided_ig.any(dim=-1) if collided_ig is not None else None
-    inter = truncated_inter_anchor_advantage(per_anchor, collided=coll_n)
+    veto_n = veto_ig.any(dim=-1) if veto_ig is not None else None
+    inter = truncated_inter_anchor_advantage(per_anchor, veto=veto_n)
     total = w_intra * intra + w_inter * inter.unsqueeze(-1)
     return {"intra": intra, "inter": inter, "total": total,
             "per_anchor_reward": per_anchor}

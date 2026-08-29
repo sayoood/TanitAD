@@ -9766,3 +9766,57 @@ WIRING.** Any component that selects, freezes, or routes by *parameter or module
 NAME* must be exercised against the real module tree before it is called
 validated — a passing test over a mock you named yourself is not evidence. This
 binds every FlyWheel building against model surfaces.
+
+
+---
+
+## TRAIN-C2 — 2026-08-29 — I reported an RL reward component INERT and triggered a design change; the component was fine and my METRIC was wrong
+
+**Stream:** TanitAD_TrainingFlyWheel. **Class: C5 (a scalar off the wrong
+population) compounded by C3 (mechanism asserted instead of measured).** This one
+was PUBLISHED — it went to the Master Mind, who issued a design ruling on the
+strength of it — so it is a retraction, not a near-miss.
+
+**The claim, retracted.** *"A0 FAIL — `headway` is INERT: fires on 28.3 % of
+windows and its median spread across the fan is 0.0000, so it cancels in the
+group-relative advantage and cannot rank anything."*
+
+**What was actually true.** `headway` ranked the fan on **68/68 = 100 % of the
+windows where a lead vehicle exists**, with a median conditional spread of
+**1.0000**. It was never inert.
+
+**The defect was in my statistic.** I took the median spread over **all 240
+windows**. `headway` is UNDEFINED where there is no lead — 72 % of the corpus —
+and returns a constant there by design (the `neutral` rule I had written myself
+the same afternoon). So the median was dominated by windows the component does
+not apply to, read 0.0000, and I attributed that to the component.
+⭐ **A statistic computed over a population where the quantity is undefined is
+not a weak measurement — it is a DIFFERENT measurement.** Applicability and
+conditional spread are two numbers and must be reported as two numbers.
+
+**What it cost.** The Master Mind issued a headway design ruling (graded
+asymmetric shape + a separated TTC veto) in response to a failure that did not
+exist. ⚠️ **And the redesign did not improve the thing I claimed it would fix**:
+measured A/B on the identical 68 windows, OLD conditional spread **1.0000** vs
+NEW **0.9209** — the new shape ranks slightly *less* widely on the raw anchor fan.
+
+**What survives, and why the change is still kept.** The ruling stands on its own
+DESIGN merit, independent of my false premise: the old term saturates at 1.0 for
+every gap ≥ T*, so it cannot distinguish a 2 s gap from a 6 s one and carries no
+dawdling signal — which the four-families longitudinal rule exists to protect.
+The graded shape ranks on both sides of T*; the TTC veto separates a CONSTRAINT
+from a RANKING signal. Both are better design. ⛔ **Neither may be credited with
+fixing an inertness that was never there.**
+
+**The rule:** ⛔ **Before reporting a component dead, check whether it is
+DEFINED on the windows you averaged over.** Report `applicable_frac` and
+`spread | applicable` separately, never a single pooled number — and when a
+measurement triggers someone else's design decision, A/B the fix against the old
+behaviour before claiming the fix worked. *(Same family as the `df`/`free`/cgroup
+traps: a probe that reports the wrong scope, read as an answer.)*
+
+**Fixed in** `stack/scripts/rl_a0_coverage.py` (three-number reporting:
+`applicable_frac`, `spread_median_WHEN_APPLICABLE`, `spread_median_ALL`), and the
+corrected verdict now reads **PASS** with `headway` flagged as a 28.3 % BASE RATE
+rather than a defect. Evidence: `…/2026-08-29-rl-posttrain-library/raw/a0_coverage.json`
+and `…/code/ab_headway.py`.

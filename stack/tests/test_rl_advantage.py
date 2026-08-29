@@ -64,19 +64,24 @@ def test_negatives_are_truncated_to_zero():
     assert (adv >= 0).all()
 
 
-def test_collisions_are_pinned_to_minus_one_even_when_above_mean():
-    """A colliding candidate must be punished however good it otherwise looks."""
+def test_vetoed_candidates_are_pinned_even_when_far_above_mean():
+    """⛔ A CONSTRAINT PINS; a ranking signal only orders.
+
+    The veto channel carries collision AND TTC-imminent. A vetoed candidate must
+    be punished however good it otherwise looks — no amount of comfort or
+    progress elsewhere in the trajectory buys it back.
+    """
     r = torch.tensor([[0.0, 1.0, 2.0, 9.0]])
-    collided = torch.tensor([[False, False, False, True]])
-    adv = A.truncated_inter_anchor_advantage(r, collided=collided)
+    veto = torch.tensor([[False, False, False, True]])
+    adv = A.truncated_inter_anchor_advantage(r, veto=veto)
     assert adv[0, 3].item() == pytest.approx(-1.0)
     assert adv[0, 0].item() == pytest.approx(0.0)
 
 
-def test_collided_shape_mismatch_is_refused():
+def test_veto_shape_mismatch_is_refused():
     with pytest.raises(ValueError, match="must match"):
         A.truncated_inter_anchor_advantage(torch.zeros(1, 4),
-                                           collided=torch.zeros(1, 3, dtype=torch.bool))
+                                           veto=torch.zeros(1, 3, dtype=torch.bool))
 
 
 # ---------------------------------------------------------------------------

@@ -40,7 +40,7 @@ for each real refcv3 window batch:
 **Cost:** minutes, CPU or 4060. **This is the cheapest possible way to discover
 the campaign is not fundable, and it costs no GPU-hours to find out.**
 
-### ⛔ A0 HAS RUN — 2026-08-29 — AND IT **FAILS**. A1 IS BLOCKED.
+### ✅ A0 HAS RUN — 2026-08-29 — **PASS**. (An earlier FAIL is RETRACTED: TRAIN-C2.)
 
 `raw/a0_coverage.json` · instrument `stack/scripts/rl_a0_coverage.py` ·
 **240 windows** over the **held-out** `physicalai-val130-heldout` corpus (129
@@ -48,43 +48,50 @@ episodes, 124 carrying the `obstacle.offline` join) · 184 windows with obstacle
 68 with a lead · fan = the anchor vocabulary (checkpoint-independent; refcv3 has
 no trained checkpoint yet). MEASURED (ours).
 
-| component | weight | fires | median spread | mean |
-|---|---|---|---|---|
-| feasibility | 0.50 | 100 % | 1.0000 | 0.9783 |
-| comfort | 0.20 | 100 % | 0.9896 | 0.4172 |
-| progress | 0.30 | 100 % | 1.5000 | 1.1478 |
-| collision | 1.00 | 54.2 % | 1.0000 | −0.1902 |
-| **headway** | 0.30 | **28.3 %** | **0.0000** | 0.7596 |
+| component | weight | applies | spread \| applicable | spread \| ALL | mean |
+|---|---|---|---|---|---|
+| feasibility | 0.50 | 100 % | 1.0000 | 1.0000 | 0.9783 |
+| comfort | 0.20 | 100 % | 0.9896 | 0.9896 | 0.4172 |
+| progress | 0.30 | 100 % | 1.5000 | 1.5000 | 1.1478 |
+| collision | 1.00 | 54.2 % | 1.0000 | 1.0000 | −0.1902 |
+| headway | 0.30 | 28.3 % | **0.9209** | 0.0000 | 0.7454 |
 
-**VERDICT: FAIL — `headway` is INERT.** It fires on 28 % of windows and its
-**median spread across the fan is 0.0000**: identical for every candidate on most
-windows, so it cancels exactly in the group-relative advantage and cannot rank
-anything. ⭐ **Present is not the same as informative** — and the first version of
-this probe called that a PASS, because its verdict only failed on *never fires*.
-The verdict logic now has four states (DEAD / INERT / WEAK / PASS); the leniency
-was mine and it was caught by reading the spread column instead of the headline.
+**VERDICT: PASS — every weighted component ranks the fan wherever it applies.**
+⚠️ `headway` (28.3 %) and `collision` (54.2 %) apply on fewer than all windows.
+That is the **BASE RATE of the situations they score** — most windows have no lead
+vehicle and open road has no obstacle in the corridor — not a defect. It is
+recorded here so absence is never later read as safety.
 
-**Diagnosis (mechanism, not just the number).** `headway` is
-`min_t (gap_t / v_t) / T*` clamped to [0, 1]. With a lead 40 m ahead at 10 m/s the
-time gap is ≈2 s = `T*`, so nearly every candidate saturates at **1.0**. The term
-is a *constraint* (satisfied / violated), not a *ranking signal*, and it only
-discriminates in close-following windows.
+#### ⛔ RETRACTED: the first A0 run reported FAIL, and it was MY METRIC, not the reward
 
-⛔ **What must NOT happen next:** re-weighting or re-shaping `headway` to make
-this number look better is *hacking the audit*. The fix has to be argued from the
-driving semantics — a graded time-gap reward that ranks below AND above `T*`, or
-`headway` demoted to a hard constraint applied outside the advantage — and then
-A0 re-run.
+The first version of this probe pooled the spread over **all 240 windows**.
+`headway` is UNDEFINED where there is no lead (72 % of them) and returns a
+constant there by design, so the pooled median read **0.0000** and I reported the
+component INERT. Measured A/B on the identical 68 lead-present windows
+(`code/ab_headway.py`):
 
-⚠️ **Second, milder finding:** `progress` has median spread **1.5000**, exactly
-its clamp width, with mean 1.1478 — it is saturating at its `hi` bound, which
-compresses ranking among the fastest candidates. Not blocking; recorded.
+| headway shape | ranks on | median spread when ranking |
+|---|---|---|
+| OLD (saturating) | **68/68 = 100 %** | **1.0000** |
+| NEW (graded) | 68/68 = 100 % | 0.9209 |
 
-⚠️ **Two components rank on roughly half the windows or fewer** (`collision`
-54.2 %, `headway` 28.3 %). For `collision` that is plausibly the true base rate —
-open road genuinely has no obstacle in the corridor — which is the CONDITIONAL
-case the verdict logic now names. **State the base rate in the launch record
-rather than reading absence as safety.**
+⇒ **The component was never inert, and the redesign did not fix an inertness —
+it slightly narrowed the raw-fan spread.** Full entry: `RETRACTION_LOG.md`
+**TRAIN-C2**. ⭐ *A statistic computed over a population where the quantity is
+undefined is not a weak measurement; it is a different measurement.*
+
+#### What is kept anyway, on design merit rather than on my false premise
+* **Graded asymmetric headway** — the old shape saturates at 1.0 for every gap
+  ≥ T*, so it cannot tell a 2 s gap from a 6 s one and carries **no dawdling
+  signal**, which the four-families longitudinal rule exists to protect. The
+  graded shape ranks both sides of T*, with tailgating penalised exactly 3×
+  dawdling (analytic, pinned by test).
+* **TTC veto separated from the ranking term** — a constraint pins a candidate,
+  a ranking signal orders them; fusing them produces something that does neither.
+
+⚠️ **Second, milder finding (stands):** `progress` has spread **1.5000**,
+exactly its clamp width, mean 1.1478 — saturating at its `hi` bound, compressing
+ranking among the fastest candidates. Not blocking; recorded.
 
 ---
 

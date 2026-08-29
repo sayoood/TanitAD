@@ -162,9 +162,14 @@ def rl_objective(traj: Tensor, logp: Tensor, ctx: dict, cfg: PostTrainConfig,
     if reward.shape != logp.shape:
         raise ValueError(f"reward {tuple(reward.shape)} vs logp "
                          f"{tuple(logp.shape)} must match")
-    collided = None
+    # ⛔ THE VETO CHANNEL — constraints, not ranking terms. Collision OR
+    # TTC-imminent. Applied outside the group-relative centring so a vetoed
+    # candidate is PINNED, never merely ranked lower.
+    veto = None
     if "collision" in spec.weights:
-        collided = R.COMPONENTS["collision"](traj, ctx) < 0
+        veto = R.COMPONENTS["collision"](traj, ctx) < 0
+    ttc = R.ttc_violation(traj, {**ctx, "ttc_min_s": cfg.ttc_min_s})
+    veto = ttc if veto is None else (veto | ttc)
 
     if cfg.method == "awr":
         # advantage-weighted regression: weight the imitation loss by exp(A/beta)
@@ -176,7 +181,7 @@ def rl_objective(traj: Tensor, logp: Tensor, ctx: dict, cfg: PostTrainConfig,
         return {"loss": loss, "reward": reward, "advantage": adv,
                 "awr_weight": w}
 
-    parts = A.composite_advantage(reward, collided_ig=collided,
+    parts = A.composite_advantage(reward, veto_ig=veto,
                                   w_intra=cfg.w_intra, w_inter=cfg.w_inter,
                                   normalize=cfg.normalize)
     pg = A.policy_gradient_loss(logp, parts["total"], kl_coef=cfg.kl_coef)

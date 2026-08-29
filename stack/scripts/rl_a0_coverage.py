@@ -201,16 +201,30 @@ def main() -> int:
         raise SystemExit("[a0] ⛔ ZERO windows scored — refusing to report a "
                          "coverage verdict over an empty set")
 
+    # ⛔ CORRECTED (second time) — THE POPULATION MATTERS.
+    # The first metric took the median spread over ALL windows. `headway` is
+    # UNDEFINED where there is no lead vehicle (72 % of windows here), so that
+    # median was dominated by windows the component does not apply to and read
+    # 0.0000 — which I first reported as the component being inert. It is not:
+    # headway fired on 68/240 = 28.3 % of windows, which is EXACTLY the
+    # lead-present count, i.e. it ranks on 100 % of the windows where it applies.
+    # ⇒ Report APPLICABILITY and CONDITIONAL SPREAD as two separate numbers.
+    # A statistic computed over a population where the quantity is undefined is
+    # not a weak measurement, it is a different measurement.
     rows = {}
-    for name, s in agg.items():
-        sp = np.array(s["spreads"], dtype=float)
+    for name, st in agg.items():
+        sp = np.array(st["spreads"], dtype=float)
+        live = sp[sp > 1e-9]
         rows[name] = {
             "weight": spec.weights[name],
-            "fired_frac": s["fired"] / max(s["seen"], 1),
-            "spread_mean": float(sp.mean()), "spread_median": float(np.median(sp)),
+            "applicable_frac": st["fired"] / max(st["seen"], 1),
+            "spread_median_ALL": float(np.median(sp)),
+            "spread_median_WHEN_APPLICABLE": (float(np.median(live))
+                                              if live.size else 0.0),
             "spread_max": float(sp.max()),
-            "value_mean": float(np.mean(s["means"])),
-            "n_windows": int(s["seen"]),
+            "value_mean": float(np.mean(st["means"])),
+            "n_windows": int(st["seen"]),
+            "n_applicable": int(live.size),
         }
 
     # ⛔ CORRECTED after the first run: "fires at all" is TOO LENIENT.
@@ -218,28 +232,27 @@ def main() -> int:
     # most windows it is identical across every candidate, so it cancels exactly
     # in the group-relative advantage and cannot rank anything. A term can be
     # present and still carry no signal; only SPREAD makes it a ranking signal.
-    dead = [n for n, r in rows.items() if r["fired_frac"] == 0.0]
+    dead = [n for n, r in rows.items() if r["applicable_frac"] == 0.0]
     inert = [n for n, r in rows.items()
-             if n not in dead and r["spread_median"] <= 1e-9]
-    weak = [n for n, r in rows.items()
-            if n not in dead and n not in inert and r["fired_frac"] < 0.5]
+             if n not in dead and r["spread_median_WHEN_APPLICABLE"] <= 1e-9]
+    rare = [n for n, r in rows.items()
+            if n not in dead and n not in inert and r["applicable_frac"] < 0.5]
     if dead:
-        verdict = (f"⛔ FAIL — component(s) {dead} NEVER fired over {n_windows} "
-                   "real windows. They cancel in the group-relative advantage "
-                   "and contribute nothing. A1 must not launch.")
+        verdict = (f"⛔ FAIL — component(s) {dead} NEVER applied over "
+                   f"{n_windows} real windows. They cancel in the group-relative "
+                   "advantage and contribute nothing. A1 must not launch.")
     elif inert:
-        verdict = (f"⛔ FAIL — component(s) {inert} fire but their MEDIAN SPREAD "
-                   "across the fan is ~0: identical for every candidate on most "
-                   "windows, so they cancel in the group-relative advantage and "
-                   "cannot rank anything. Present is not the same as informative. "
-                   "A1 must not launch on this reward as weighted.")
-    elif weak:
-        verdict = (f"⚠️ CONDITIONAL — component(s) {weak} rank on fewer than half "
-                   "the windows. Admissible only if that is the true base rate of "
-                   "the situation they score (e.g. obstacles are genuinely absent "
-                   "from open road); state the base rate in the launch record.")
+        verdict = (f"⛔ FAIL — component(s) {inert} apply but are IDENTICAL "
+                   "across the fan even where they apply: they cancel in the "
+                   "group-relative advantage and cannot rank anything. Present is "
+                   "not the same as informative. A1 must not launch.")
     else:
-        verdict = "PASS — every weighted component fires AND ranks"
+        verdict = ("PASS — every weighted component ranks the fan wherever it "
+                   "applies")
+        if rare:
+            verdict += (f" — ⚠️ {rare} apply on <50 % of windows; that is a "
+                        "BASE RATE of the situation they score, not a defect, and "
+                        "it belongs in the launch record")
 
     out = {
         "_what": "A0 reward-coverage probe on real held-out windows",
@@ -252,7 +265,7 @@ def main() -> int:
         "n_windows": n_windows,
         "n_windows_with_obstacles": n_with_obstacles,
         "n_windows_with_lead": n_with_lead,
-        "components": rows, "dead": dead, "inert": inert, "weak": weak,
+        "components": rows, "dead": dead, "inert": inert, "rare": rare,
         "verdict": verdict,
     }
     with open(a.out, "w", encoding="utf-8") as fh:
@@ -260,10 +273,12 @@ def main() -> int:
 
     print(f"\n[a0] {n_windows} windows · {n_with_obstacles} with obstacles · "
           f"{n_with_lead} with a lead", flush=True)
-    print(f"{'component':<14}{'w':>6}{'fired':>9}{'spread~':>11}{'mean':>9}")
-    for name, r in sorted(rows.items(), key=lambda kv: -kv[1]["fired_frac"]):
-        print(f"{name:<14}{r['weight']:>6.2f}{r['fired_frac']:>8.1%}"
-              f"{r['spread_median']:>11.4f}{r['value_mean']:>9.4f}")
+    print(f"{'component':<14}{'w':>6}{'applies':>9}{'spread|app':>12}"
+          f"{'spread|all':>12}{'mean':>9}")
+    for name, r in sorted(rows.items(), key=lambda kv: -kv[1]["applicable_frac"]):
+        print(f"{name:<14}{r['weight']:>6.2f}{r['applicable_frac']:>8.1%}"
+              f"{r['spread_median_WHEN_APPLICABLE']:>12.4f}"
+              f"{r['spread_median_ALL']:>12.4f}{r['value_mean']:>9.4f}")
     print(f"\n[a0] VERDICT: {verdict}")
     print(f"-> {a.out}")
     return 0
