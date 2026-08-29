@@ -66,26 +66,68 @@ def _fmt(v, nd=3):
     return f"{v:.{nd}f}" if isinstance(v, (int, float)) else "—"
 
 
+#: The one admissible estimator for a leaderboard row (``taniteval.ci``).
+_PRIMARY_ESTIMATOR = "episode_cluster_bootstrap"
+
+
+def _primary(r):
+    """This arm's DECISION-GRADE model/cv blocks, or ``None``.
+
+    ⛔ CLOSED 2026-08-28 (PI ruling, ``products/P7-TanitEval/ESTIMATOR_CLOSEOUT.md``).
+    The leaderboard used to ORDER and DISPLAY ``heldout.model.ade_0_2s`` — the
+    mean over 8 OVERLAPPING random 20 % holdouts. That is not merely a narrow
+    interval: its point estimate differs from the full-set metric by −6.67 % to
+    +11.69 % across the 27 banked dumps, **bidirectionally**, so the ordering
+    itself was an artifact of the estimator. Rows are now built from
+    ``cluster_bootstrap``; an arm that has none is listed WITHOUT numbers rather
+    than filled in from the deprecated block, because a mixed table is worse
+    than a short one."""
+    cb = r.get("cluster_bootstrap") or {}
+    model, cv = cb.get("model"), cb.get("cv")
+    if not isinstance(model, dict) or not isinstance(cv, dict):
+        return None
+    node = model.get("ade_0_2s")
+    if not isinstance(node, dict) or node.get("estimator") != _PRIMARY_ESTIMATOR:
+        return None                       # never let a stray block masquerade
+    return model, cv
+
+
 def _lb_rows(results):
+    scored, unscored = [], []
+    for key, r in results.items():
+        p = _primary(r)
+        (scored if p else unscored).append((key, r, p))
+    scored.sort(key=lambda t: t[2][0]["ade_0_2s"]["mean"])
     rows = []
-    order = sorted(results.items(),
-                   key=lambda kv: kv[1]["heldout"]["model"]["ade_0_2s"]["mean"])
-    for key, r in order:
-        hm, hc = r["heldout"]["model"], r["heldout"]["cv"]
+    for key, r, (hm, hc) in scored:
         ratio = hm["ade_0_2s"]["mean"] / max(hc["ade_0_2s"]["mean"], 1e-9)
         cls = "good" if ratio < 1 else "warn" if ratio < 3 else "crit"
         m = r.get("model", {})
+        a = hm["ade_0_2s"]
+        ci = (f"[{_fmt(a['lo'])}, {_fmt(a['hi'])}]" if a.get("lo") is not None
+              else f"±{_fmt(a.get('ci95'))}")
         rows.append(f"""<tr>
 <td><div class="mname">{m.get('name', key)}</div>
 <div class="meta">{m.get('encoder', '')} · step {r.get('ckpt_step')}</div></td>
-<td class="r"><span class="big">{_fmt(hm['ade_0_2s']['mean'])}</span>
-<span class="meta">±{_fmt(hm['ade_0_2s']['ci95'])}</span></td>
+<td class="r"><span class="big">{_fmt(a['mean'])}</span>
+<span class="meta">{ci}</span></td>
 <td class="r mono">{_fmt(hm['fde@2s']['mean'])}</td>
 <td class="r mono">{_fmt(hm['rmse']['mean'])}</td>
 <td class="r mono">{_fmt(hm['miss_rate@2m']['mean'], 3)}</td>
 <td class="r mono">{_fmt(hm['tms_openloop']['mean'], 3)}</td>
 <td class="r"><span class="pill {cls}">{ratio:.1f}× CV</span></td>
 <td class="r mono">{r['n_windows']}</td></tr>""")
+    for key, r, _p in sorted(unscored):
+        m = r.get("model", {})
+        rows.append(f"""<tr>
+<td><div class="mname">{m.get('name', key)}</div>
+<div class="meta">{m.get('encoder', '')} · step {r.get('ckpt_step')}</div></td>
+<td class="r" colspan="6"><span class="pill crit">NO PRIMARY INTERVAL</span>
+<span class="meta"> · this arm has only the DEPRECATED
+overlapping_holdout_se block; its point estimate is a mean-of-split-means, not
+the full-set metric, so it is NOT comparable with the rows above. Re-run:
+<span class="mono">python -m taniteval.runner run --model {key}</span></span></td>
+<td class="r mono">{r.get('n_windows', '—')}</td></tr>""")
     return "\n".join(rows)
 
 
@@ -398,7 +440,10 @@ def build(res_dir=Path("/root/taniteval/results"),
                               "pathspeed_", "driving_")):
             continue
         d = json.loads(f.read_text())
-        if "heldout" in d:
+        # `heldout` alone still admits an arm — `_lb_rows` renders it as
+        # NO PRIMARY INTERVAL rather than dropping it, so a stale artifact is
+        # visible as stale instead of silently absent from the leaderboard.
+        if "cluster_bootstrap" in d or "heldout" in d:
             results[f.stem] = d
     reg = res_dir / "regression_status.txt"
     regtxt = reg.read_text().strip() if reg.exists() else "not run"
@@ -438,8 +483,15 @@ held-out val 0c5f7dac3b11 · eval pod A40<br>regression: <b>{regtxt}</b></div></
 <th class="r">vs CV</th><th class="r">windows</th></tr></thead>
 <tbody>{_lb_rows(results)}</tbody></table></div>
 <div class="note">All metrics computed fresh by <span class="mono">taniteval.runner</span>
-on the same 40 held-out episodes; ±CI95 from 8 overlapping random 20% holdouts
-(DEPRECATED estimator — not a jackknife; episode-cluster bootstrap supersedes it).
+on the same 40 held-out episodes. Point estimate = the FULL-SET metric; interval =
+the <b>episode-cluster bootstrap</b> over those 40 episodes
+(<span class="mono">taniteval.ci</span>), shown as [lo, hi].
+⛔ Until 2026-08-28 this table was ORDERED and printed on
+<span class="mono">heldout</span> = <span class="mono">overlapping_holdout_se</span>,
+whose point estimate is a mean over 8 <i>overlapping</i> random 20% holdouts and
+differs from the full-set metric by −6.67% … +11.69% <i>bidirectionally</i> — so the
+ordering was partly an artifact of the estimator. Arms with no primary interval are
+listed without numbers rather than back-filled from the deprecated block.
 TMS = hub smoothness metric on the predicted path (→1 smooth).</div>
 
 <div class="eyebrow">01b · Kinematic floor / ego-status ceiling / skill_score (top program risk G1)</div>

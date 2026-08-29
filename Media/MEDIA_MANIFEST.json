@@ -1,0 +1,4162 @@
+{
+ "schema_version": 1,
+ "generated_utc": "2026-08-28T21:44:20Z",
+ "media_root": "Media",
+ "note": "Content-addressed index of every video asset in the TanitAD programme. The BINARIES are gitignored (.gitignore: *.mp4); THIS FILE is tracked, so the programme always knows what exists and whether a copy has rotted. Verify with: python tools/media_verify.py",
+ "backup_root": "C:\\Users\\Admin\\tanitad-media-backup",
+ "totals": {
+  "unique_assets": 132,
+  "bytes": 597351500,
+  "campaigns": 25,
+  "tracked_in_git": 45,
+  "untracked": 87,
+  "without_local_backup": 17,
+  "sole_copy": 0,
+  "unverified": 0,
+  "on_remote_ref": 45,
+  "with_off_device_copy": 132,
+  "single_device_risk": 0
+ },
+ "campaigns": {
+  "2026-07-19-flagship-v1-ood-overlays": {
+   "description": "Flagship v1 (speedjerk-30k) open-loop overlays on the same OOD comma.ai + Cosmos clips as REF-A: the matched comparison set.",
+   "n_assets": 5,
+   "bytes": 4051955
+  },
+  "2026-07-19-flagship30k-gtpred-overlays": {
+   "description": "Ground-truth-vs-prediction overlays: 8 comma/Cosmos gtpred clips plus 6 flagship-30k PhysicalAI val-episode overlays.",
+   "n_assets": 14,
+   "bytes": 14789610
+  },
+  "2026-07-19-refa-ood-overlays": {
+   "description": "REF-A (frozen DINOv2 4-brain, dyn-in, 30k) open-loop overlays on OOD footage (comma.ai + Cosmos synthetic).",
+   "n_assets": 5,
+   "bytes": 4183102
+  },
+  "2026-07-20-label-qa-clips": {
+   "description": "Label-QA clips: per-episode trajectory-label renders (turn angle / radius / speed tags) used to validate the situation labels.",
+   "n_assets": 19,
+   "bytes": 12047739
+  },
+  "2026-07-20-refb-v2-30k-overlays": {
+   "description": "REF-B v2 at step 29999 on PhysicalAI val episodes (sharp turn, worst window, straight cruise, high-speed curve/straight).",
+   "n_assets": 5,
+   "bytes": 5673367
+  },
+  "2026-07-20-refc-planfan-xl-overlays": {
+   "description": "REF-C plan-fan (step 29999) and REF-C XL live (step 28000) overlays on the same PhysicalAI val episodes.",
+   "n_assets": 9,
+   "bytes": 12494355
+  },
+  "2026-07-21-refc-planfan-clips": {
+   "description": "Plan-fan visualisations; _base vs _xl are the two REF-C capacities on the identical window. Scenario-tagged (junction/braking/cruise/high-speed).",
+   "n_assets": 18,
+   "bytes": 8609165
+  },
+  "2026-07-22-alpasim-closedloop-archive": {
+   "description": "SUPERSEDED 10.4s AlpaSim CLOSED-loop clips from the now-terminated eval pod. Archive only.",
+   "n_assets": 4,
+   "bytes": 3004787
+  },
+  "2026-07-25-idm-youtube-validation": {
+   "description": "IDM reconstruction validation against YouTube footage, episode 20.",
+   "n_assets": 1,
+   "bytes": 611131
+  },
+  "2026-08-02-v2corpus-vs-v1-overlays": {
+   "description": "v1 vs v2corpus overlays on PhysicalAI, split INTRAIN (seen in training) vs LEAKFREE (held out); the pairing is the point.",
+   "n_assets": 12,
+   "bytes": 26268803
+  },
+  "2026-08-03-alpasim-closedloop-thor": {
+   "description": "AlpaSim/NuRec CLOSED-loop on Thor: the model DRIVES, each frame rendered from where it actually went. 4 x 18.0s. WITHIN-SIM RELATIVE (3.21x OOD).",
+   "n_assets": 4,
+   "bytes": 41477768
+  },
+  "2026-08-03-alpasim-gsplat-cutin": {
+   "description": "AlpaSim gsplat scripted scenarios: cut-in and lead-vehicle-at-8m, flagship-v1 vs refc-base.",
+   "n_assets": 4,
+   "bytes": 31267745
+  },
+  "2026-08-03-alpasim-gsplat-scene2-realclose": {
+   "description": "AlpaSim gsplat scene2 real-close-objects scenario, flagship-v1 vs refc-base.",
+   "n_assets": 2,
+   "bytes": 16283076
+  },
+  "2026-08-03-alpasim-openloop-thor": {
+   "description": "AlpaSim/NuRec OPEN-loop on Thor, scene 00040136: ego follows the LOGGED trajectory; the model predicts but never drives. WITHIN-SIM RELATIVE (3.21x OOD).",
+   "n_assets": 4,
+   "bytes": 45153482
+  },
+  "2026-08-03-alpasim-openloop-thor-junction-7c72937c": {
+   "description": "AlpaSim/NuRec OPEN-loop on Thor, junction scene 7c72937c. NOTE: filenames COLLIDE with the sibling scene campaign but the content differs, verified distinct by sha256.",
+   "n_assets": 4,
+   "bytes": 42531950
+  },
+  "2026-08-05-v1arch-oodval-openloop": {
+   "description": "Long open-loop reels on PhysicalAI's OWN official eval split (290 clips, zero training overlap). WORLD-MODEL FIDELITY, not driving: the rollout decodes the expert's true future actions.",
+   "n_assets": 3,
+   "bytes": 111801574
+  },
+  "2026-08-06-alpamayo2-vs-flagship": {
+   "description": "Alpamayo-2 vs TanitAD flagship side-by-side comparison reel.",
+   "n_assets": 1,
+   "bytes": 2042864
+  },
+  "2026-08-06-v16-vs-v1arch": {
+   "description": "v1.6 (unfrozen trunk) vs v1-arch: a continuous reel plus the paired comparison reel.",
+   "n_assets": 2,
+   "bytes": 78310138
+  },
+  "2026-08-06-v17": {
+   "description": "v1.7 continuous open-loop reel.",
+   "n_assets": 1,
+   "bytes": 69262099
+  },
+  "2026-08-09-v5f-fan": {
+   "description": "v5f trajectory-fan compact visualisation.",
+   "n_assets": 1,
+   "bytes": 19428197
+  },
+  "2026-08-10-v5f-bev": {
+   "description": "v5f metric-BEV compact visualisation.",
+   "n_assets": 1,
+   "bytes": 19828120
+  },
+  "2026-08-10-v5f-planfan": {
+   "description": "v5f plan-fan compact visualisation.",
+   "n_assets": 1,
+   "bytes": 20056477
+  },
+  "2026-08-12-ph0-vlm-overlay": {
+   "description": "Phase-0 rich overlay reels: the VLM-annotation overlay and the full pipeline reel.",
+   "n_assets": 2,
+   "bytes": 2446419
+  },
+  "2026-08-16-sam3-dtype-fix": {
+   "description": "SAM3 segmentation rich overlays after the dtype fix; one clip per PhysicalAI clip hash.",
+   "n_assets": 8,
+   "bytes": 4763220
+  },
+  "2026-08-17-sam3-extraction-v2": {
+   "description": "SAM3 extraction v2 rich overlays.",
+   "n_assets": 2,
+   "bytes": 964357
+  }
+ },
+ "assets": [
+  {
+   "sha256": "5d13b5f51d2a80880dc9b0e8e5886bdada8b7588dd8b16635f497f0d151fda2f",
+   "bytes": 1306434,
+   "campaign": "2026-07-19-flagship-v1-ood-overlays",
+   "filename": "flagship-30k_comma_curve_overlay.mp4",
+   "media_path": "Media/2026-07-19-flagship-v1-ood-overlays/flagship-30k_comma_curve_overlay.mp4",
+   "shows": "flagship v1 (speedjerk-30k)",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/flagship-v1/flagship-30k_comma_curve_overlay.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/flagship-v1/flagship-30k_comma_curve_overlay.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "adbd51cf8b28286d78deed90b98ca8c3be48db0d",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "0513e81094a85e52f4e17e16488661ed109a3089bea6b553b1cdabd57bc7fd7e",
+   "bytes": 1045944,
+   "campaign": "2026-07-19-flagship-v1-ood-overlays",
+   "filename": "flagship-30k_comma_highspeed_overlay.mp4",
+   "media_path": "Media/2026-07-19-flagship-v1-ood-overlays/flagship-30k_comma_highspeed_overlay.mp4",
+   "shows": "flagship v1 (speedjerk-30k)",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/flagship-v1/flagship-30k_comma_highspeed_overlay.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/flagship-v1/flagship-30k_comma_highspeed_overlay.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "77f7abba778fc1c77dcfc8214495e50afec0101f",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "6c96f1aea559725707a36fa131993f4879dd5c3b71921a39cca4c2c4b1111753",
+   "bytes": 1495155,
+   "campaign": "2026-07-19-flagship-v1-ood-overlays",
+   "filename": "flagship-30k_comma_straightcruise_overlay.mp4",
+   "media_path": "Media/2026-07-19-flagship-v1-ood-overlays/flagship-30k_comma_straightcruise_overlay.mp4",
+   "shows": "flagship v1 (speedjerk-30k) - straight cruise",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/flagship-v1/flagship-30k_comma_straightcruise_overlay.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/flagship-v1/flagship-30k_comma_straightcruise_overlay.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "a7e66dde5184dfd9215f8658f397f7e04542fe73",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "26725e8c167f7babca9a4de870d13488eea909e318bd86404b23ef9a8611e26b",
+   "bytes": 97819,
+   "campaign": "2026-07-19-flagship-v1-ood-overlays",
+   "filename": "flagship-30k_cosmos_foggycurve_overlay.mp4",
+   "media_path": "Media/2026-07-19-flagship-v1-ood-overlays/flagship-30k_cosmos_foggycurve_overlay.mp4",
+   "shows": "flagship v1 (speedjerk-30k) - foggy curve",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/flagship-v1/flagship-30k_cosmos_foggycurve_overlay.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/flagship-v1/flagship-30k_cosmos_foggycurve_overlay.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "431414c0825f994698a9bac75a477fe12000a5ac",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "9450dcb0bbb463a729969e8eba849010a20acca7c7199e6494bd742e1300861a",
+   "bytes": 106603,
+   "campaign": "2026-07-19-flagship-v1-ood-overlays",
+   "filename": "flagship-30k_cosmos_sunnyhighway_overlay.mp4",
+   "media_path": "Media/2026-07-19-flagship-v1-ood-overlays/flagship-30k_cosmos_sunnyhighway_overlay.mp4",
+   "shows": "flagship v1 (speedjerk-30k) - sunny highway",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/flagship-v1/flagship-30k_cosmos_sunnyhighway_overlay.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/flagship-v1/flagship-30k_cosmos_sunnyhighway_overlay.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "906e5d9d6a9bce1db2c6c96100cda8669908bd64",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "a0cc07a60edb25e8f9d519f2d34f53a13bab9eba6d937ecef3d93d4d5d81b63e",
+   "bytes": 1320533,
+   "campaign": "2026-07-19-flagship30k-gtpred-overlays",
+   "filename": "comma_curve_gtpred.mp4",
+   "media_path": "Media/2026-07-19-flagship30k-gtpred-overlays/comma_curve_gtpred.mp4",
+   "shows": "GT-vs-prediction",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/other/comma_curve_gtpred.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/other/comma_curve_gtpred.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "976e56166f531787fc798c2cfc8549a1f7ed9ebf",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "1278be1874f209874546842dc581abb4bc32977bef8b20db78cfd98b7d7b1bd1",
+   "bytes": 1100360,
+   "campaign": "2026-07-19-flagship30k-gtpred-overlays",
+   "filename": "comma_highspeed-curve_gtpred.mp4",
+   "media_path": "Media/2026-07-19-flagship30k-gtpred-overlays/comma_highspeed-curve_gtpred.mp4",
+   "shows": "GT-vs-prediction - high-speed curve",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/other/comma_highspeed-curve_gtpred.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/other/comma_highspeed-curve_gtpred.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "b5c170a27fedba8299979a6f7cc28ea6bcd86c93",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "81b26b91c25000eaefce72988d0dbe2b2ed87e3b2adad67974b27d62e076e035",
+   "bytes": 1063332,
+   "campaign": "2026-07-19-flagship30k-gtpred-overlays",
+   "filename": "comma_highspeed_gtpred.mp4",
+   "media_path": "Media/2026-07-19-flagship30k-gtpred-overlays/comma_highspeed_gtpred.mp4",
+   "shows": "GT-vs-prediction",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/other/comma_highspeed_gtpred.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/other/comma_highspeed_gtpred.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "f73e0aca828b62dd5c2b07f8446d5aad5d227846",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "cb3a6ea423abeed2122a0ee1e509836e488c30ef938b4ae77de492579588decf",
+   "bytes": 1510533,
+   "campaign": "2026-07-19-flagship30k-gtpred-overlays",
+   "filename": "comma_straightcruise_gtpred.mp4",
+   "media_path": "Media/2026-07-19-flagship30k-gtpred-overlays/comma_straightcruise_gtpred.mp4",
+   "shows": "GT-vs-prediction - straight cruise",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/other/comma_straightcruise_gtpred.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/other/comma_straightcruise_gtpred.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "9822481b2f851899255553c30c15a9dd0c9e1a67",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "a0465ba7fa310ca4a372e699e33a8094e984fe1ff8ceb4fc72c62e6162325f8d",
+   "bytes": 125890,
+   "campaign": "2026-07-19-flagship30k-gtpred-overlays",
+   "filename": "cosmos_dream-curve_gtpred.mp4",
+   "media_path": "Media/2026-07-19-flagship30k-gtpred-overlays/cosmos_dream-curve_gtpred.mp4",
+   "shows": "GT-vs-prediction - synthetic curve",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/other/cosmos_dream-curve_gtpred.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/other/cosmos_dream-curve_gtpred.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "5ec2c574f41dd279e613e7ccaa4c8ac8748c38c6",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "0cdfbe37ac1b9c97a7a46ef2480462bd8ae855701a95e5845536028777def8c5",
+   "bytes": 100876,
+   "campaign": "2026-07-19-flagship30k-gtpred-overlays",
+   "filename": "cosmos_goldenhour-highspeed_gtpred.mp4",
+   "media_path": "Media/2026-07-19-flagship30k-gtpred-overlays/cosmos_goldenhour-highspeed_gtpred.mp4",
+   "shows": "GT-vs-prediction - golden-hour high speed",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/other/cosmos_goldenhour-highspeed_gtpred.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/other/cosmos_goldenhour-highspeed_gtpred.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "8b36ab337fd8d36afb13f5f5893179a0ac0f2234",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "d4a2224b03b43769d18df1a17ce3e21a831a719eb6e2dfc1c3b9b8e3af686875",
+   "bytes": 158620,
+   "campaign": "2026-07-19-flagship30k-gtpred-overlays",
+   "filename": "cosmos_night-urban_gtpred.mp4",
+   "media_path": "Media/2026-07-19-flagship30k-gtpred-overlays/cosmos_night-urban_gtpred.mp4",
+   "shows": "GT-vs-prediction - night urban",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/other/cosmos_night-urban_gtpred.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/other/cosmos_night-urban_gtpred.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "711bd09e179829d45073d760242e779e71a87359",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "0e89f9aa6858fdaf7c8c32be66a480db51fae80fe73c6b3f6b520670ff020bb3",
+   "bytes": 123536,
+   "campaign": "2026-07-19-flagship30k-gtpred-overlays",
+   "filename": "cosmos_sunny-highway_gtpred.mp4",
+   "media_path": "Media/2026-07-19-flagship30k-gtpred-overlays/cosmos_sunny-highway_gtpred.mp4",
+   "shows": "GT-vs-prediction",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/other/cosmos_sunny-highway_gtpred.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/other/cosmos_sunny-highway_gtpred.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "009d292aa2305c557dcacca4c1f39b8238f3cee7",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "953adc830b7b23bce121c207f6715347a534c8f7420aa20c2b948e7dba306f4b",
+   "bytes": 1405256,
+   "campaign": "2026-07-19-flagship30k-gtpred-overlays",
+   "filename": "flagship30k_overlay_braking_ep27.mp4",
+   "media_path": "Media/2026-07-19-flagship30k-gtpred-overlays/flagship30k_overlay_braking_ep27.mp4",
+   "shows": "flagship v1 (speedjerk-30k) - braking, episode 27",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/other/flagship30k_overlay_braking_ep27.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/other/flagship30k_overlay_braking_ep27.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "3d7cada800d10ae0700437baeb9c66b616292926",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "c20f42dd251e2159f8faefe91430d42999e80623b9d9601a139966b6fa804d3f",
+   "bytes": 2235714,
+   "campaign": "2026-07-19-flagship30k-gtpred-overlays",
+   "filename": "flagship30k_overlay_gentleturn_ep38.mp4",
+   "media_path": "Media/2026-07-19-flagship30k-gtpred-overlays/flagship30k_overlay_gentleturn_ep38.mp4",
+   "shows": "flagship v1 (speedjerk-30k) - gentle turn, episode 38",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/other/flagship30k_overlay_gentleturn_ep38.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/other/flagship30k_overlay_gentleturn_ep38.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "271b3009b984eb8b69ef62cc7ca28c95a4860f8a",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "f4369a98a0f6e23d54d8675176eef0ed818f9d29cff4ce4c6c78ea8954d2182b",
+   "bytes": 1414803,
+   "campaign": "2026-07-19-flagship30k-gtpred-overlays",
+   "filename": "flagship30k_overlay_highspeed-curve_ep28.mp4",
+   "media_path": "Media/2026-07-19-flagship30k-gtpred-overlays/flagship30k_overlay_highspeed-curve_ep28.mp4",
+   "shows": "flagship v1 (speedjerk-30k) - high-speed curve, episode 28",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/other/flagship30k_overlay_highspeed-curve_ep28.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/other/flagship30k_overlay_highspeed-curve_ep28.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "e284c0913515fb833d6d9efa42d4c3b9cf35c2e3",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "76204cbe79665e97d7c8eb6adfe7e6ac5c45a8dad67e00706049c02a561fcf32",
+   "bytes": 766409,
+   "campaign": "2026-07-19-flagship30k-gtpred-overlays",
+   "filename": "flagship30k_overlay_highspeed-wrong_ep31.mp4",
+   "media_path": "Media/2026-07-19-flagship30k-gtpred-overlays/flagship30k_overlay_highspeed-wrong_ep31.mp4",
+   "shows": "flagship v1 (speedjerk-30k) - high-speed failure case, episode 31",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/other/flagship30k_overlay_highspeed-wrong_ep31.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/other/flagship30k_overlay_highspeed-wrong_ep31.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "4d5bd8a12ae3465125f949faba4b8bc7cd63d042",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "539b10269c1a923b44a4553285723b769fa6424c99f1bff8f5b99ac15d2ce5ed",
+   "bytes": 1903797,
+   "campaign": "2026-07-19-flagship30k-gtpred-overlays",
+   "filename": "flagship30k_overlay_sharpturn_ep03.mp4",
+   "media_path": "Media/2026-07-19-flagship30k-gtpred-overlays/flagship30k_overlay_sharpturn_ep03.mp4",
+   "shows": "flagship v1 (speedjerk-30k) - sharp turn, episode 3",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/other/flagship30k_overlay_sharpturn_ep03.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/other/flagship30k_overlay_sharpturn_ep03.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "6fa8b406c5625a2429c7386952bef8d71092e679",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "2ebfce9715d22a1956448b37f0cec6474100b9b1fe964e58442e2e39204714c4",
+   "bytes": 1559951,
+   "campaign": "2026-07-19-flagship30k-gtpred-overlays",
+   "filename": "flagship30k_overlay_straightcruise_ep17.mp4",
+   "media_path": "Media/2026-07-19-flagship30k-gtpred-overlays/flagship30k_overlay_straightcruise_ep17.mp4",
+   "shows": "flagship v1 (speedjerk-30k) - straight cruise, episode 17",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/other/flagship30k_overlay_straightcruise_ep17.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/other/flagship30k_overlay_straightcruise_ep17.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "4019a2543e43efdb5f5b8322b72fa2f19f3e2733",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "036cb20ed32f64b1f62d738c8ed854016a6b1d14574829013a40e37ecfec44aa",
+   "bytes": 1338774,
+   "campaign": "2026-07-19-refa-ood-overlays",
+   "filename": "refa-dynin-30k_comma_curve_overlay.mp4",
+   "media_path": "Media/2026-07-19-refa-ood-overlays/refa-dynin-30k_comma_curve_overlay.mp4",
+   "shows": "REF-A dyn-in 30k",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/REF-A/refa-dynin-30k_comma_curve_overlay.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/REF-A/refa-dynin-30k_comma_curve_overlay.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "bb26320ca9ccaff9a8c11bf86d323d08c2a004c6",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "93330dcb3129e356b21802b1a16e81e3900e51911718bc94f2b3acab415ec1d5",
+   "bytes": 1095887,
+   "campaign": "2026-07-19-refa-ood-overlays",
+   "filename": "refa-dynin-30k_comma_highspeed_overlay.mp4",
+   "media_path": "Media/2026-07-19-refa-ood-overlays/refa-dynin-30k_comma_highspeed_overlay.mp4",
+   "shows": "REF-A dyn-in 30k",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/REF-A/refa-dynin-30k_comma_highspeed_overlay.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/REF-A/refa-dynin-30k_comma_highspeed_overlay.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "33a060bfc9a9f19b6c3fd1bb90adc1b94b5fcf86",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "98028fbce836ab161e9364464850312902719cad1cd6f0374dccf7e83256284d",
+   "bytes": 1541377,
+   "campaign": "2026-07-19-refa-ood-overlays",
+   "filename": "refa-dynin-30k_comma_straightcruise_overlay.mp4",
+   "media_path": "Media/2026-07-19-refa-ood-overlays/refa-dynin-30k_comma_straightcruise_overlay.mp4",
+   "shows": "REF-A dyn-in 30k - straight cruise",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/REF-A/refa-dynin-30k_comma_straightcruise_overlay.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/REF-A/refa-dynin-30k_comma_straightcruise_overlay.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "25a478198afeccf369278576444564827ac02be3",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "6076409294968805504dc311d6d92a708f6f782a8c950196d03a8e73ce867a6f",
+   "bytes": 96832,
+   "campaign": "2026-07-19-refa-ood-overlays",
+   "filename": "refa-dynin-30k_cosmos_foggycurve_overlay.mp4",
+   "media_path": "Media/2026-07-19-refa-ood-overlays/refa-dynin-30k_cosmos_foggycurve_overlay.mp4",
+   "shows": "REF-A dyn-in 30k - foggy curve",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/REF-A/refa-dynin-30k_cosmos_foggycurve_overlay.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/REF-A/refa-dynin-30k_cosmos_foggycurve_overlay.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "ca6ecdf331a895f27f15e536c600813cc3669937",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "077d8707ec40fa9d4cecf7b2d4daead92ee6075a33d9bc586b85d78ae8946585",
+   "bytes": 110232,
+   "campaign": "2026-07-19-refa-ood-overlays",
+   "filename": "refa-dynin-30k_cosmos_sunnyhighway_overlay.mp4",
+   "media_path": "Media/2026-07-19-refa-ood-overlays/refa-dynin-30k_cosmos_sunnyhighway_overlay.mp4",
+   "shows": "REF-A dyn-in 30k - sunny highway",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/REF-A/refa-dynin-30k_cosmos_sunnyhighway_overlay.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/REF-A/refa-dynin-30k_cosmos_sunnyhighway_overlay.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "9413977efb4596b3e07377c43fd42572081bac66",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "86cc0f34a271116b60dfc42074948fbe5be526163ef55499f037ef506050e2b7",
+   "bytes": 626090,
+   "campaign": "2026-07-20-label-qa-clips",
+   "filename": "labels_ep_00006_turn-170deg-R7.mp4",
+   "media_path": "Media/2026-07-20-label-qa-clips/labels_ep_00006_turn-170deg-R7.mp4",
+   "shows": "label-QA render - episode 6",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "videos-2026-07-20/labels_ep_00006_turn-170deg-R7.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/Research/videos-2026-07-20/labels_ep_00006_turn-170deg-R7.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "55dd908213ef5c23b4ca1ade89aa555e3e3c5656",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "532ff391729b554a259bfa96401418c59f273807acbfe2038ed395d2f0431df2",
+   "bytes": 96770,
+   "campaign": "2026-07-20-label-qa-clips",
+   "filename": "labels_ep_00006_turn-170deg.mp4",
+   "media_path": "Media/2026-07-20-label-qa-clips/labels_ep_00006_turn-170deg.mp4",
+   "shows": "label-QA render - episode 6",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "videos-2026-07-20/labels_ep_00006_turn-170deg.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/Research/videos-2026-07-20/labels_ep_00006_turn-170deg.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "3c4b2a4984889457b0ec057eb7c141712c5ad6dc",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "bf2280f41db55ceaddc415e2a300110659324f07ed2019941ce6f3bef9fe4b55",
+   "bytes": 819584,
+   "campaign": "2026-07-20-label-qa-clips",
+   "filename": "labels_ep_00012_turn-right-104deg.mp4",
+   "media_path": "Media/2026-07-20-label-qa-clips/labels_ep_00012_turn-right-104deg.mp4",
+   "shows": "label-QA render - episode 12",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "videos-2026-07-20/labels_ep_00012_turn-right-104deg.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/Research/videos-2026-07-20/labels_ep_00012_turn-right-104deg.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "74330eece4c777c08b5b924f5d06673ac106792c",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "aa9ff583180e0de291400adc86067165261c5016e0faf04df1e43513460f5f67",
+   "bytes": 849462,
+   "campaign": "2026-07-20-label-qa-clips",
+   "filename": "labels_ep_00015_sharpturn-225deg-R13.mp4",
+   "media_path": "Media/2026-07-20-label-qa-clips/labels_ep_00015_sharpturn-225deg-R13.mp4",
+   "shows": "label-QA render - sharp turn, episode 15",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "videos-2026-07-20/labels_ep_00015_sharpturn-225deg-R13.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/Research/videos-2026-07-20/labels_ep_00015_sharpturn-225deg-R13.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "1fb4cd239cd22572101b8a267f826db8526ed1d6",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "7c812b1b8e12ac03be9833dce824dfb2d21a872d6f8b249dd4fa1eb3ac6c5beb",
+   "bytes": 549772,
+   "campaign": "2026-07-20-label-qa-clips",
+   "filename": "labels_ep_00017_sharpturn-right-173deg.mp4",
+   "media_path": "Media/2026-07-20-label-qa-clips/labels_ep_00017_sharpturn-right-173deg.mp4",
+   "shows": "label-QA render - sharp turn, episode 17",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "videos-2026-07-20/labels_ep_00017_sharpturn-right-173deg.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/Research/videos-2026-07-20/labels_ep_00017_sharpturn-right-173deg.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "9d55958fed4079d099781ff9abb3ce16f58d4f24",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "791fefb956c24cf5f1a4314b2d56280523d9e8764d4fc1aa7b68da65ebae7bc3",
+   "bytes": 1029806,
+   "campaign": "2026-07-20-label-qa-clips",
+   "filename": "labels_ep_00018_turn-137deg.mp4",
+   "media_path": "Media/2026-07-20-label-qa-clips/labels_ep_00018_turn-137deg.mp4",
+   "shows": "label-QA render - episode 18",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "videos-2026-07-20/labels_ep_00018_turn-137deg.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/Research/videos-2026-07-20/labels_ep_00018_turn-137deg.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "0542e8909e7543fe28afb68e398c94dafb907f3a",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "3387d7eb500f43dd06767f3c9e60060c4b627a165856c13df774a6be554abab1",
+   "bytes": 714244,
+   "campaign": "2026-07-20-label-qa-clips",
+   "filename": "labels_ep_00029_turn-right-110deg-15ms.mp4",
+   "media_path": "Media/2026-07-20-label-qa-clips/labels_ep_00029_turn-right-110deg-15ms.mp4",
+   "shows": "label-QA render - episode 29",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "videos-2026-07-20/labels_ep_00029_turn-right-110deg-15ms.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/Research/videos-2026-07-20/labels_ep_00029_turn-right-110deg-15ms.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "417bf6fcdcf67670d75e0dcc015e56507f129f89",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "c93682031fd7f9e0d2b18c6e0c339ec75c1f15a37a926d5917e4dae437a9c6c2",
+   "bytes": 737790,
+   "campaign": "2026-07-20-label-qa-clips",
+   "filename": "labels_ep_00031_turn-120deg-R6.mp4",
+   "media_path": "Media/2026-07-20-label-qa-clips/labels_ep_00031_turn-120deg-R6.mp4",
+   "shows": "label-QA render - episode 31",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "videos-2026-07-20/labels_ep_00031_turn-120deg-R6.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/Research/videos-2026-07-20/labels_ep_00031_turn-120deg-R6.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "51c72c9db98218ad3d66384cf13391d7df9fa668",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "5d2bf160d2f45ea9c3adca62539a6af8ebb76f097698f37ece2866ca48509a2d",
+   "bytes": 788235,
+   "campaign": "2026-07-20-label-qa-clips",
+   "filename": "labels_ep_00036_turn-147deg-R24.mp4",
+   "media_path": "Media/2026-07-20-label-qa-clips/labels_ep_00036_turn-147deg-R24.mp4",
+   "shows": "label-QA render - episode 36",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "videos-2026-07-20/labels_ep_00036_turn-147deg-R24.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/Research/videos-2026-07-20/labels_ep_00036_turn-147deg-R24.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "8e858552ac0ab1470750cbc645820e204b38217b",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "b1507b283eda7f3a1e2149f4abb61476cc3e6dc7068dd276633575a8bab8027b",
+   "bytes": 496932,
+   "campaign": "2026-07-20-label-qa-clips",
+   "filename": "labels_ep_00038_straight-22ms.mp4",
+   "media_path": "Media/2026-07-20-label-qa-clips/labels_ep_00038_straight-22ms.mp4",
+   "shows": "label-QA render - episode 38",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "videos-2026-07-20/labels_ep_00038_straight-22ms.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/Research/videos-2026-07-20/labels_ep_00038_straight-22ms.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "777e84f9559954e63c37b225da9826aabfa88ba3",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "8aec29ef049ae1646c1cc454733906fad0ae2846282c644e93c2fcca4d54e996",
+   "bytes": 606011,
+   "campaign": "2026-07-20-label-qa-clips",
+   "filename": "labels_ep_00045_straight-highspeed-35ms.mp4",
+   "media_path": "Media/2026-07-20-label-qa-clips/labels_ep_00045_straight-highspeed-35ms.mp4",
+   "shows": "label-QA render - episode 45",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "videos-2026-07-20/labels_ep_00045_straight-highspeed-35ms.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/Research/videos-2026-07-20/labels_ep_00045_straight-highspeed-35ms.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "cad3a818378ae269d0a4df61438713e4287b4bef",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "3226b37aa2857aa807fa56c217ef79b6010e7587d608160217bb9119d989a88f",
+   "bytes": 301746,
+   "campaign": "2026-07-20-label-qa-clips",
+   "filename": "labels_ep_00056_stopped-noarc.mp4",
+   "media_path": "Media/2026-07-20-label-qa-clips/labels_ep_00056_stopped-noarc.mp4",
+   "shows": "label-QA render - episode 56",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "videos-2026-07-20/labels_ep_00056_stopped-noarc.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/Research/videos-2026-07-20/labels_ep_00056_stopped-noarc.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "2d52fa97d64454c2f00a5930ee4013d5d2ea12ed",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "aca5be1ab7f33596703c5d0d3f2c79900585f0436032fd80acc9c33b8928f8c7",
+   "bytes": 614515,
+   "campaign": "2026-07-20-label-qa-clips",
+   "filename": "labels_ep_00064_straight-16ms.mp4",
+   "media_path": "Media/2026-07-20-label-qa-clips/labels_ep_00064_straight-16ms.mp4",
+   "shows": "label-QA render - episode 64",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "videos-2026-07-20/labels_ep_00064_straight-16ms.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/Research/videos-2026-07-20/labels_ep_00064_straight-16ms.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "f0727e19a50ac15256c22443ab56c071d1c18990",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "023518211c390e6122a39b4ef247ab316eafba7410cd8f0db9cd2bca5bff022c",
+   "bytes": 426591,
+   "campaign": "2026-07-20-label-qa-clips",
+   "filename": "labels_ep_00068_straight-slow.mp4",
+   "media_path": "Media/2026-07-20-label-qa-clips/labels_ep_00068_straight-slow.mp4",
+   "shows": "label-QA render - episode 68",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "videos-2026-07-20/labels_ep_00068_straight-slow.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/Research/videos-2026-07-20/labels_ep_00068_straight-slow.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "c5465db4c73fc2db04a7f5a4c18315c8a809e022",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "02aaa60cf85084509580e7f94b6a62785cf2224bd59e24ae4e36eb9dcc739b3a",
+   "bytes": 654698,
+   "campaign": "2026-07-20-label-qa-clips",
+   "filename": "labels_ep_00069_widedrift-479m-D3case.mp4",
+   "media_path": "Media/2026-07-20-label-qa-clips/labels_ep_00069_widedrift-479m-D3case.mp4",
+   "shows": "label-QA render - episode 69",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "videos-2026-07-20/labels_ep_00069_widedrift-479m-D3case.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/Research/videos-2026-07-20/labels_ep_00069_widedrift-479m-D3case.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "6312da57717ad02dc0ff6982651ab5451ea0efd6",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "5ed5e4e1e67a47ddcea7a505ff2f8c5a0db8e7b2773657ce2a4a552d1c5a2f8d",
+   "bytes": 774782,
+   "campaign": "2026-07-20-label-qa-clips",
+   "filename": "labels_ep_00071_widedrift-87deg.mp4",
+   "media_path": "Media/2026-07-20-label-qa-clips/labels_ep_00071_widedrift-87deg.mp4",
+   "shows": "label-QA render - episode 71",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "videos-2026-07-20/labels_ep_00071_widedrift-87deg.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/Research/videos-2026-07-20/labels_ep_00071_widedrift-87deg.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "0a45aea69ba00a3f7600cf0755fd6d8bbd692950",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "19a009067d48d16b9dfaafe98cb09ec3fe3f577081a67b80a97f1abc85c5b537",
+   "bytes": 812242,
+   "campaign": "2026-07-20-label-qa-clips",
+   "filename": "labels_ep_00073_turn-108deg.mp4",
+   "media_path": "Media/2026-07-20-label-qa-clips/labels_ep_00073_turn-108deg.mp4",
+   "shows": "label-QA render - episode 73",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "videos-2026-07-20/labels_ep_00073_turn-108deg.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/Research/videos-2026-07-20/labels_ep_00073_turn-108deg.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "388d8e9e925875fa03419108437c35d5fa0b9917",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "85278f7eea63cd9af8a86ba55f4b6f0733a48857c93b4248e01a8306adaa069b",
+   "bytes": 515346,
+   "campaign": "2026-07-20-label-qa-clips",
+   "filename": "labels_ep_00076_straight-23ms.mp4",
+   "media_path": "Media/2026-07-20-label-qa-clips/labels_ep_00076_straight-23ms.mp4",
+   "shows": "label-QA render - episode 76",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "videos-2026-07-20/labels_ep_00076_straight-23ms.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/Research/videos-2026-07-20/labels_ep_00076_straight-23ms.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "e3768f08f69be4cc5f53fa3efdea76fc27c8a032",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "30d4c4e0fb5d67f117193fdf3c288f2ecb940eae114b2f8fbf1d89878c627692",
+   "bytes": 633123,
+   "campaign": "2026-07-20-label-qa-clips",
+   "filename": "labels_ep_00078_turn-153deg.mp4",
+   "media_path": "Media/2026-07-20-label-qa-clips/labels_ep_00078_turn-153deg.mp4",
+   "shows": "label-QA render - episode 78",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "videos-2026-07-20/labels_ep_00078_turn-153deg.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/Research/videos-2026-07-20/labels_ep_00078_turn-153deg.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "a7ea0ee9100f4df31daa002e204be4fb16d35d4b",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "6c4271dd0e9b654032a7fb86e1ffe5674c6edd80210b63dee29e5257c47d8b00",
+   "bytes": 1516181,
+   "campaign": "2026-07-20-refb-v2-30k-overlays",
+   "filename": "refb-v2-30k_step29999_physicalai_ep03_sharpturn.mp4",
+   "media_path": "Media/2026-07-20-refb-v2-30k-overlays/refb-v2-30k_step29999_physicalai_ep03_sharpturn.mp4",
+   "shows": "REF-B v2 step-29999 - sharp turn, episode 29999",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 4,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/REF-B/refb-v2-30k_step29999_physicalai_ep03_sharpturn.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "backup",
+     "path": "videos-2026-07-20/refb-v2-30k_step29999_physicalai_ep03_sharpturn.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/Research/videos-2026-07-20/refb-v2-30k_step29999_physicalai_ep03_sharpturn.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/REF-B/refb-v2-30k_step29999_physicalai_ep03_sharpturn.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "79f241270c644ae7f7ac3b9dd54964bb48dc95a5",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "d427d64364024ee4d7ed59e365fa892dacd4533e1ff1306b71cc969e2ed8e76d",
+   "bytes": 1138016,
+   "campaign": "2026-07-20-refb-v2-30k-overlays",
+   "filename": "refb-v2-30k_step29999_physicalai_ep11_failure-worstwindow.mp4",
+   "media_path": "Media/2026-07-20-refb-v2-30k-overlays/refb-v2-30k_step29999_physicalai_ep11_failure-worstwindow.mp4",
+   "shows": "REF-B v2 step-29999 - worst-ADE window, episode 29999",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 4,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/REF-B/refb-v2-30k_step29999_physicalai_ep11_failure-worstwindow.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "backup",
+     "path": "videos-2026-07-20/refb-v2-30k_step29999_physicalai_ep11_failure-worstwindow.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/Research/videos-2026-07-20/refb-v2-30k_step29999_physicalai_ep11_failure-worstwindow.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/REF-B/refb-v2-30k_step29999_physicalai_ep11_failure-worstwindow.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "e3636709b9ce99f9172329578f5e38bcf4960777",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "634b9b3f32fec96348031f72071b9e4099a9d8a3f08285e9233cff141b3e7322",
+   "bytes": 1193980,
+   "campaign": "2026-07-20-refb-v2-30k-overlays",
+   "filename": "refb-v2-30k_step29999_physicalai_ep17_straightcruise.mp4",
+   "media_path": "Media/2026-07-20-refb-v2-30k-overlays/refb-v2-30k_step29999_physicalai_ep17_straightcruise.mp4",
+   "shows": "REF-B v2 step-29999 - straight cruise, episode 29999",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/REF-B/refb-v2-30k_step29999_physicalai_ep17_straightcruise.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/REF-B/refb-v2-30k_step29999_physicalai_ep17_straightcruise.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "1f1f8754c19cfbbcf8d509b917728888742df902",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "605bc3834542ed3ba701792e40fb02b6e4778cd13d587937c4109a4550f068f5",
+   "bytes": 1222455,
+   "campaign": "2026-07-20-refb-v2-30k-overlays",
+   "filename": "refb-v2-30k_step29999_physicalai_ep28_highspeed-curve.mp4",
+   "media_path": "Media/2026-07-20-refb-v2-30k-overlays/refb-v2-30k_step29999_physicalai_ep28_highspeed-curve.mp4",
+   "shows": "REF-B v2 step-29999 - high-speed curve, episode 29999",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/REF-B/refb-v2-30k_step29999_physicalai_ep28_highspeed-curve.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/REF-B/refb-v2-30k_step29999_physicalai_ep28_highspeed-curve.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "39a496bdf754b277821bddf6c51843596dd3b9e8",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "bbb3f3eefd3d7e18ec00541215793b66a26f3bf2147c36d806aa84caff91b001",
+   "bytes": 602735,
+   "campaign": "2026-07-20-refb-v2-30k-overlays",
+   "filename": "refb-v2-30k_step29999_physicalai_ep31_highspeed-straight.mp4",
+   "media_path": "Media/2026-07-20-refb-v2-30k-overlays/refb-v2-30k_step29999_physicalai_ep31_highspeed-straight.mp4",
+   "shows": "REF-B v2 step-29999 - high-speed straight, episode 29999",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 4,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/REF-B/refb-v2-30k_step29999_physicalai_ep31_highspeed-straight.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "backup",
+     "path": "videos-2026-07-20/refb-v2-30k_step29999_physicalai_ep31_highspeed-straight.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/Research/videos-2026-07-20/refb-v2-30k_step29999_physicalai_ep31_highspeed-straight.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/REF-B/refb-v2-30k_step29999_physicalai_ep31_highspeed-straight.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "2899ea89a7c53574c0ef122550aeefe66645d046",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "55439d7f8d0694761a0733b1db82d4a9d1b129489fa545c40aa7f66042dd278a",
+   "bytes": 2213952,
+   "campaign": "2026-07-20-refc-planfan-xl-overlays",
+   "filename": "refc-planfan_step29999_ep03_sharpturn.mp4",
+   "media_path": "Media/2026-07-20-refc-planfan-xl-overlays/refc-planfan_step29999_ep03_sharpturn.mp4",
+   "shows": "REF-C plan-fan step-29999 - sharp turn, episode 29999",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 4,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/REF-C/refc-planfan_step29999_ep03_sharpturn.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "backup",
+     "path": "videos-2026-07-20/refc-planfan_step29999_ep03_sharpturn.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/Research/videos-2026-07-20/refc-planfan_step29999_ep03_sharpturn.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/REF-C/refc-planfan_step29999_ep03_sharpturn.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "75f0447fbd7b7a3131559cb1b085e749b4729ff7",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "542852ef69e3121d5519b9b10600aab7bff15915b7023e747bda8504aa773ff4",
+   "bytes": 2084273,
+   "campaign": "2026-07-20-refc-planfan-xl-overlays",
+   "filename": "refc-planfan_step29999_ep11_failure-worstwindow.mp4",
+   "media_path": "Media/2026-07-20-refc-planfan-xl-overlays/refc-planfan_step29999_ep11_failure-worstwindow.mp4",
+   "shows": "REF-C plan-fan step-29999 - worst-ADE window, episode 29999",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 4,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/REF-C/refc-planfan_step29999_ep11_failure-worstwindow.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "backup",
+     "path": "videos-2026-07-20/refc-planfan_step29999_ep11_failure-worstwindow.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/Research/videos-2026-07-20/refc-planfan_step29999_ep11_failure-worstwindow.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/REF-C/refc-planfan_step29999_ep11_failure-worstwindow.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "c503485014171ddf3a3c3052eae00962bd43ed94",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "7a49677bac30822baccf23a97007ce9b778b51543863e9c0bef41eeda9437243",
+   "bytes": 1732586,
+   "campaign": "2026-07-20-refc-planfan-xl-overlays",
+   "filename": "refc-planfan_step29999_ep28_highspeed-curve.mp4",
+   "media_path": "Media/2026-07-20-refc-planfan-xl-overlays/refc-planfan_step29999_ep28_highspeed-curve.mp4",
+   "shows": "REF-C plan-fan step-29999 - high-speed curve, episode 29999",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 4,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/REF-C/refc-planfan_step29999_ep28_highspeed-curve.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "backup",
+     "path": "videos-2026-07-20/refc-planfan_step29999_ep28_highspeed-curve.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/Research/videos-2026-07-20/refc-planfan_step29999_ep28_highspeed-curve.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/REF-C/refc-planfan_step29999_ep28_highspeed-curve.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "5fede8448d4095ec0a13d0b4ad8ba92e43dcc833",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "f52ff7e4d8a392e97cef73c52693e80273e1ab5e41805843d357982a4a11b347",
+   "bytes": 761308,
+   "campaign": "2026-07-20-refc-planfan-xl-overlays",
+   "filename": "refc-planfan_step29999_ep31_highspeed-straight.mp4",
+   "media_path": "Media/2026-07-20-refc-planfan-xl-overlays/refc-planfan_step29999_ep31_highspeed-straight.mp4",
+   "shows": "REF-C plan-fan step-29999 - high-speed straight, episode 29999",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 4,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/REF-C/refc-planfan_step29999_ep31_highspeed-straight.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "backup",
+     "path": "videos-2026-07-20/refc-planfan_step29999_ep31_highspeed-straight.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/Research/videos-2026-07-20/refc-planfan_step29999_ep31_highspeed-straight.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/REF-C/refc-planfan_step29999_ep31_highspeed-straight.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "a7540580b7a87a8a4821f4d310f6603a84886a8d",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "f8eb3dd88fc018812aaf7fb70a91772643ef4a430f4b5e32f82852c423cc2031",
+   "bytes": 1521289,
+   "campaign": "2026-07-20-refc-planfan-xl-overlays",
+   "filename": "refc-xl-live_step28000_physicalai_ep03_sharpturn.mp4",
+   "media_path": "Media/2026-07-20-refc-planfan-xl-overlays/refc-xl-live_step28000_physicalai_ep03_sharpturn.mp4",
+   "shows": "REF-C XL live step-28000 - sharp turn, episode 28000",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 4,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/REF-C/refc-xl-live_step28000_physicalai_ep03_sharpturn.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "backup",
+     "path": "videos-2026-07-20/refc-xl-live_step28000_physicalai_ep03_sharpturn.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/Research/videos-2026-07-20/refc-xl-live_step28000_physicalai_ep03_sharpturn.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/REF-C/refc-xl-live_step28000_physicalai_ep03_sharpturn.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "a7229bf1250abf0678cdfec8b0e6b93d1d89636a",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "3e2d6b0837e383faa2c078fba76e461b23a957c2c5ed0050768f905cd032b31c",
+   "bytes": 1135077,
+   "campaign": "2026-07-20-refc-planfan-xl-overlays",
+   "filename": "refc-xl-live_step28000_physicalai_ep11_failure-worstwindow.mp4",
+   "media_path": "Media/2026-07-20-refc-planfan-xl-overlays/refc-xl-live_step28000_physicalai_ep11_failure-worstwindow.mp4",
+   "shows": "REF-C XL live step-28000 - worst-ADE window, episode 28000",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 4,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/REF-C/refc-xl-live_step28000_physicalai_ep11_failure-worstwindow.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "backup",
+     "path": "videos-2026-07-20/refc-xl-live_step28000_physicalai_ep11_failure-worstwindow.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/Research/videos-2026-07-20/refc-xl-live_step28000_physicalai_ep11_failure-worstwindow.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/REF-C/refc-xl-live_step28000_physicalai_ep11_failure-worstwindow.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "8c0f7be2e9a726fe6df3573dbaa3bdf91b830349",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "9c46386188cc6287e5dacad2fb26d792d722b91813661a5527b491782077e4c6",
+   "bytes": 1211811,
+   "campaign": "2026-07-20-refc-planfan-xl-overlays",
+   "filename": "refc-xl-live_step28000_physicalai_ep17_straightcruise.mp4",
+   "media_path": "Media/2026-07-20-refc-planfan-xl-overlays/refc-xl-live_step28000_physicalai_ep17_straightcruise.mp4",
+   "shows": "REF-C XL live step-28000 - straight cruise, episode 28000",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/REF-C/refc-xl-live_step28000_physicalai_ep17_straightcruise.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/REF-C/refc-xl-live_step28000_physicalai_ep17_straightcruise.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "4218c0374034f6b1296388d3fa5d0f54c4db3f0f",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "0630999c5bab38fa8a70e9172e7096ac688df4d74fb16f5588319db5271e7c14",
+   "bytes": 1228058,
+   "campaign": "2026-07-20-refc-planfan-xl-overlays",
+   "filename": "refc-xl-live_step28000_physicalai_ep28_highspeed-curve.mp4",
+   "media_path": "Media/2026-07-20-refc-planfan-xl-overlays/refc-xl-live_step28000_physicalai_ep28_highspeed-curve.mp4",
+   "shows": "REF-C XL live step-28000 - high-speed curve, episode 28000",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/REF-C/refc-xl-live_step28000_physicalai_ep28_highspeed-curve.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/REF-C/refc-xl-live_step28000_physicalai_ep28_highspeed-curve.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "a1b467ac4083f4df93f8559f8261b500d103824d",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "05bcfae62ff4dd4b8d17f1c86daa34b1863d7451f14a8a8443efa238bfffe0ce",
+   "bytes": 606001,
+   "campaign": "2026-07-20-refc-planfan-xl-overlays",
+   "filename": "refc-xl-live_step28000_physicalai_ep31_highspeed-straight.mp4",
+   "media_path": "Media/2026-07-20-refc-planfan-xl-overlays/refc-xl-live_step28000_physicalai_ep31_highspeed-straight.mp4",
+   "shows": "REF-C XL live step-28000 - high-speed straight, episode 28000",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 4,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/REF-C/refc-xl-live_step28000_physicalai_ep31_highspeed-straight.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "backup",
+     "path": "videos-2026-07-20/refc-xl-live_step28000_physicalai_ep31_highspeed-straight.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/Research/videos-2026-07-20/refc-xl-live_step28000_physicalai_ep31_highspeed-straight.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/REF-C/refc-xl-live_step28000_physicalai_ep31_highspeed-straight.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "edae5416b79789ee45ddc7aaca8f089248ba9c27",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "84592c8490515f148633058e5d08e2ebc8875c182428a12bbf0dd67f9ce4426c",
+   "bytes": 398300,
+   "campaign": "2026-07-21-refc-planfan-clips",
+   "filename": "planfan_bad_selection_good_fan_ep09_f167_base.mp4",
+   "media_path": "Media/2026-07-21-refc-planfan-clips/planfan_bad_selection_good_fan_ep09_f167_base.mp4",
+   "shows": "REF-C plan-fan - good fan / bad selection, episode 9, frame 167, base capacity",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 4,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/planfan-clips/planfan_bad_selection_good_fan_ep09_f167_base.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "backup",
+     "path": "videos-2026-07-21/planfan_bad_selection_good_fan_ep09_f167_base.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/Research/videos-2026-07-21/planfan_bad_selection_good_fan_ep09_f167_base.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/planfan-clips/planfan_bad_selection_good_fan_ep09_f167_base.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "17d2571843676564302aeceb620a85eb037cefbc",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "d9c275b817a164b51015e9244a9964ccc4d740e5837383bb6a3af1098ca6ab75",
+   "bytes": 441813,
+   "campaign": "2026-07-21-refc-planfan-clips",
+   "filename": "planfan_bad_selection_good_fan_ep09_f167_xl.mp4",
+   "media_path": "Media/2026-07-21-refc-planfan-clips/planfan_bad_selection_good_fan_ep09_f167_xl.mp4",
+   "shows": "REF-C plan-fan - good fan / bad selection, episode 9, frame 167, XL capacity",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 4,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/planfan-clips/planfan_bad_selection_good_fan_ep09_f167_xl.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "backup",
+     "path": "videos-2026-07-21/planfan_bad_selection_good_fan_ep09_f167_xl.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/Research/videos-2026-07-21/planfan_bad_selection_good_fan_ep09_f167_xl.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/planfan-clips/planfan_bad_selection_good_fan_ep09_f167_xl.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "cd474ee567415289afe9ced151d3c2cab7888c31",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "b4aed7e2eff05e8a56497140d6e47c5e1349128278080f37feb992460ca52b64",
+   "bytes": 607521,
+   "campaign": "2026-07-21-refc-planfan-clips",
+   "filename": "planfan_bad_selection_good_fan_ep19_f119_base.mp4",
+   "media_path": "Media/2026-07-21-refc-planfan-clips/planfan_bad_selection_good_fan_ep19_f119_base.mp4",
+   "shows": "REF-C plan-fan - good fan / bad selection, episode 19, frame 119, base capacity",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 4,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/planfan-clips/planfan_bad_selection_good_fan_ep19_f119_base.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "backup",
+     "path": "videos-2026-07-21/planfan_bad_selection_good_fan_ep19_f119_base.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/Research/videos-2026-07-21/planfan_bad_selection_good_fan_ep19_f119_base.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/planfan-clips/planfan_bad_selection_good_fan_ep19_f119_base.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "dfdd1c888e6eb5a5637003740d954f795c42928a",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "1ea3e23e14d4de5a4b2ea9bac9d3502b62a1ec05c74513686bd122331e70c650",
+   "bytes": 622689,
+   "campaign": "2026-07-21-refc-planfan-clips",
+   "filename": "planfan_bad_selection_good_fan_ep19_f119_xl.mp4",
+   "media_path": "Media/2026-07-21-refc-planfan-clips/planfan_bad_selection_good_fan_ep19_f119_xl.mp4",
+   "shows": "REF-C plan-fan - good fan / bad selection, episode 19, frame 119, XL capacity",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 4,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/planfan-clips/planfan_bad_selection_good_fan_ep19_f119_xl.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "backup",
+     "path": "videos-2026-07-21/planfan_bad_selection_good_fan_ep19_f119_xl.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/Research/videos-2026-07-21/planfan_bad_selection_good_fan_ep19_f119_xl.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/planfan-clips/planfan_bad_selection_good_fan_ep19_f119_xl.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "ed9b363e58dea5b5f480eda15619cefd079ff266",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "54c422946ebd6a2a482b56dbb937367973bb11f5d918b13a5f4e806c37d97b12",
+   "bytes": 462852,
+   "campaign": "2026-07-21-refc-planfan-clips",
+   "filename": "planfan_braking_longitudinal_ep27_f159_base.mp4",
+   "media_path": "Media/2026-07-21-refc-planfan-clips/planfan_braking_longitudinal_ep27_f159_base.mp4",
+   "shows": "REF-C plan-fan - braking, longitudinal braking, episode 27, frame 159, base capacity",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 4,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/planfan-clips/planfan_braking_longitudinal_ep27_f159_base.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "backup",
+     "path": "videos-2026-07-21/planfan_braking_longitudinal_ep27_f159_base.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/Research/videos-2026-07-21/planfan_braking_longitudinal_ep27_f159_base.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/planfan-clips/planfan_braking_longitudinal_ep27_f159_base.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "b54221463788cbaa0667be52e550c54fbe308b8d",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "fe836cd526d7bf2d42ce13f18a05727b73da5605eef0467dc5064035fe818515",
+   "bytes": 484622,
+   "campaign": "2026-07-21-refc-planfan-clips",
+   "filename": "planfan_braking_longitudinal_ep27_f159_xl.mp4",
+   "media_path": "Media/2026-07-21-refc-planfan-clips/planfan_braking_longitudinal_ep27_f159_xl.mp4",
+   "shows": "REF-C plan-fan - braking, longitudinal braking, episode 27, frame 159, XL capacity",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 4,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/planfan-clips/planfan_braking_longitudinal_ep27_f159_xl.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "backup",
+     "path": "videos-2026-07-21/planfan_braking_longitudinal_ep27_f159_xl.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/Research/videos-2026-07-21/planfan_braking_longitudinal_ep27_f159_xl.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/planfan-clips/planfan_braking_longitudinal_ep27_f159_xl.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "4d071af29aca3a5c9a029bfebe5346d14d008483",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "40baedbc4cddd390b44c77ee77ede15d23bb465901d0d7641c362af7eadc8cc5",
+   "bytes": 591998,
+   "campaign": "2026-07-21-refc-planfan-clips",
+   "filename": "planfan_cruise_steady_ep05_f079_base.mp4",
+   "media_path": "Media/2026-07-21-refc-planfan-clips/planfan_cruise_steady_ep05_f079_base.mp4",
+   "shows": "REF-C plan-fan - steady cruise, episode 5, frame 79, base capacity",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 4,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/planfan-clips/planfan_cruise_steady_ep05_f079_base.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "backup",
+     "path": "videos-2026-07-21/planfan_cruise_steady_ep05_f079_base.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/Research/videos-2026-07-21/planfan_cruise_steady_ep05_f079_base.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/planfan-clips/planfan_cruise_steady_ep05_f079_base.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "b123c8fce2a20415913b6112b750c93847571f01",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "86efcf3bbab3f830894c1e46e4069868e6874c9418c1ac8a6e8621dfd9509750",
+   "bytes": 606581,
+   "campaign": "2026-07-21-refc-planfan-clips",
+   "filename": "planfan_cruise_steady_ep05_f079_xl.mp4",
+   "media_path": "Media/2026-07-21-refc-planfan-clips/planfan_cruise_steady_ep05_f079_xl.mp4",
+   "shows": "REF-C plan-fan - steady cruise, episode 5, frame 79, XL capacity",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 4,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/planfan-clips/planfan_cruise_steady_ep05_f079_xl.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "backup",
+     "path": "videos-2026-07-21/planfan_cruise_steady_ep05_f079_xl.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/Research/videos-2026-07-21/planfan_cruise_steady_ep05_f079_xl.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/planfan-clips/planfan_cruise_steady_ep05_f079_xl.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "a359b53e7b78af74199b7a2d5deb1787b17b113f",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "c838519bb3931d40a1b6ca4547111b01c5603d506c2efa84cda66c7efc209553",
+   "bytes": 421095,
+   "campaign": "2026-07-21-refc-planfan-clips",
+   "filename": "planfan_cruise_steady_ep15_f135_base.mp4",
+   "media_path": "Media/2026-07-21-refc-planfan-clips/planfan_cruise_steady_ep15_f135_base.mp4",
+   "shows": "REF-C plan-fan - steady cruise, episode 15, frame 135, base capacity",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 4,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/planfan-clips/planfan_cruise_steady_ep15_f135_base.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "backup",
+     "path": "videos-2026-07-21/planfan_cruise_steady_ep15_f135_base.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/Research/videos-2026-07-21/planfan_cruise_steady_ep15_f135_base.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/planfan-clips/planfan_cruise_steady_ep15_f135_base.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "90be5264e4378838ce06af70a5bd1fb2f76f4b8b",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "6c84134b6ee24653c1c35470f221dfa0676343ec9449d3ba590be6206d47df37",
+   "bytes": 456577,
+   "campaign": "2026-07-21-refc-planfan-clips",
+   "filename": "planfan_cruise_steady_ep15_f135_xl.mp4",
+   "media_path": "Media/2026-07-21-refc-planfan-clips/planfan_cruise_steady_ep15_f135_xl.mp4",
+   "shows": "REF-C plan-fan - steady cruise, episode 15, frame 135, XL capacity",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 4,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/planfan-clips/planfan_cruise_steady_ep15_f135_xl.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "backup",
+     "path": "videos-2026-07-21/planfan_cruise_steady_ep15_f135_xl.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/Research/videos-2026-07-21/planfan_cruise_steady_ep15_f135_xl.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/planfan-clips/planfan_cruise_steady_ep15_f135_xl.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "1a609852f13111f428027d5e9d442539296eacbc",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "cd795d1a2d7544827d73d806d687b0c538e49afb571019d5a415a17eabab671f",
+   "bytes": 416292,
+   "campaign": "2026-07-21-refc-planfan-clips",
+   "filename": "planfan_good_selection_ep13_f031_base.mp4",
+   "media_path": "Media/2026-07-21-refc-planfan-clips/planfan_good_selection_ep13_f031_base.mp4",
+   "shows": "REF-C plan-fan - good selection, episode 13, frame 31, base capacity",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 4,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/planfan-clips/planfan_good_selection_ep13_f031_base.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "backup",
+     "path": "videos-2026-07-21/planfan_good_selection_ep13_f031_base.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/Research/videos-2026-07-21/planfan_good_selection_ep13_f031_base.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/planfan-clips/planfan_good_selection_ep13_f031_base.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "a8824e768b4d3bd949c3d83a6257e1e0e6f39807",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "648f26f5b1f46b3249eab5d4e7543283951d8ab8ea8ffb04d328921c56b930fd",
+   "bytes": 421603,
+   "campaign": "2026-07-21-refc-planfan-clips",
+   "filename": "planfan_good_selection_ep13_f031_xl.mp4",
+   "media_path": "Media/2026-07-21-refc-planfan-clips/planfan_good_selection_ep13_f031_xl.mp4",
+   "shows": "REF-C plan-fan - good selection, episode 13, frame 31, XL capacity",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 4,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/planfan-clips/planfan_good_selection_ep13_f031_xl.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "backup",
+     "path": "videos-2026-07-21/planfan_good_selection_ep13_f031_xl.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/Research/videos-2026-07-21/planfan_good_selection_ep13_f031_xl.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/planfan-clips/planfan_good_selection_ep13_f031_xl.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "b088c6666248c047a456f385d21f061909471599",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "da1efc39c188bc88bcff8b989627f1557b8b14ef860e61a28aad3563cd9cf00e",
+   "bytes": 227637,
+   "campaign": "2026-07-21-refc-planfan-clips",
+   "filename": "planfan_high_speed_ep31_f031_base.mp4",
+   "media_path": "Media/2026-07-21-refc-planfan-clips/planfan_high_speed_ep31_f031_base.mp4",
+   "shows": "REF-C plan-fan - high speed, episode 31, frame 31, base capacity",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 4,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/planfan-clips/planfan_high_speed_ep31_f031_base.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "backup",
+     "path": "videos-2026-07-21/planfan_high_speed_ep31_f031_base.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/Research/videos-2026-07-21/planfan_high_speed_ep31_f031_base.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/planfan-clips/planfan_high_speed_ep31_f031_base.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "89bf3fa5dc8c652c1df74be32a5250af2da1a5ea",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "ade0c81dc8ff3dd4f91f5111adbe24516ded8a07d4000ac730db58fb19113c44",
+   "bytes": 231989,
+   "campaign": "2026-07-21-refc-planfan-clips",
+   "filename": "planfan_high_speed_ep31_f031_xl.mp4",
+   "media_path": "Media/2026-07-21-refc-planfan-clips/planfan_high_speed_ep31_f031_xl.mp4",
+   "shows": "REF-C plan-fan - high speed, episode 31, frame 31, XL capacity",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 4,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/planfan-clips/planfan_high_speed_ep31_f031_xl.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "backup",
+     "path": "videos-2026-07-21/planfan_high_speed_ep31_f031_xl.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/Research/videos-2026-07-21/planfan_high_speed_ep31_f031_xl.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/planfan-clips/planfan_high_speed_ep31_f031_xl.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "7ca548d30121306083e2a01a790423544ac93bb5",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "af8fcf7be97dd6d4699550f0437720f9a544914ccd57e44fdd6bd5dda3b6a502",
+   "bytes": 504178,
+   "campaign": "2026-07-21-refc-planfan-clips",
+   "filename": "planfan_multimodal_junction_ep34_f095_base.mp4",
+   "media_path": "Media/2026-07-21-refc-planfan-clips/planfan_multimodal_junction_ep34_f095_base.mp4",
+   "shows": "REF-C plan-fan - multimodal junction, episode 34, frame 95, base capacity",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 4,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/planfan-clips/planfan_multimodal_junction_ep34_f095_base.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "backup",
+     "path": "videos-2026-07-21/planfan_multimodal_junction_ep34_f095_base.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/Research/videos-2026-07-21/planfan_multimodal_junction_ep34_f095_base.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/planfan-clips/planfan_multimodal_junction_ep34_f095_base.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "fe15ddf5e17b9eccf4b60c1c0e8413bd29d3511f",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "5847f3fbb719d03477fe91c114ac588ce9d0048340aa792c9c412d8201996ed5",
+   "bytes": 515481,
+   "campaign": "2026-07-21-refc-planfan-clips",
+   "filename": "planfan_multimodal_junction_ep34_f095_xl.mp4",
+   "media_path": "Media/2026-07-21-refc-planfan-clips/planfan_multimodal_junction_ep34_f095_xl.mp4",
+   "shows": "REF-C plan-fan - multimodal junction, episode 34, frame 95, XL capacity",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 4,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/planfan-clips/planfan_multimodal_junction_ep34_f095_xl.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "backup",
+     "path": "videos-2026-07-21/planfan_multimodal_junction_ep34_f095_xl.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/Research/videos-2026-07-21/planfan_multimodal_junction_ep34_f095_xl.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/planfan-clips/planfan_multimodal_junction_ep34_f095_xl.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "204c364563d00c96095809ca28f3200eeb4689aa",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "d9fb9062326cbdcee06e751a4d301e9a705c379a0afc3ed8eef462c69af5c339",
+   "bytes": 580907,
+   "campaign": "2026-07-21-refc-planfan-clips",
+   "filename": "planfan_multimodal_junction_ep36_f119_base.mp4",
+   "media_path": "Media/2026-07-21-refc-planfan-clips/planfan_multimodal_junction_ep36_f119_base.mp4",
+   "shows": "REF-C plan-fan - multimodal junction, episode 36, frame 119, base capacity",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 4,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/planfan-clips/planfan_multimodal_junction_ep36_f119_base.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "backup",
+     "path": "videos-2026-07-21/planfan_multimodal_junction_ep36_f119_base.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/Research/videos-2026-07-21/planfan_multimodal_junction_ep36_f119_base.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/planfan-clips/planfan_multimodal_junction_ep36_f119_base.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "0d5aa00321af889a722c902ee5b2be05734a29f1",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "f057ac384b2f66b3e3c16268e6fbd6641237321d98c29bcbb14ebe8978cd4f1c",
+   "bytes": 617030,
+   "campaign": "2026-07-21-refc-planfan-clips",
+   "filename": "planfan_multimodal_junction_ep36_f119_xl.mp4",
+   "media_path": "Media/2026-07-21-refc-planfan-clips/planfan_multimodal_junction_ep36_f119_xl.mp4",
+   "shows": "REF-C plan-fan - multimodal junction, episode 36, frame 119, XL capacity",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 4,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/planfan-clips/planfan_multimodal_junction_ep36_f119_xl.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "backup",
+     "path": "videos-2026-07-21/planfan_multimodal_junction_ep36_f119_xl.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/Research/videos-2026-07-21/planfan_multimodal_junction_ep36_f119_xl.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/planfan-clips/planfan_multimodal_junction_ep36_f119_xl.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "2387864f667e32cd5636aebadf4a2c374740c82e",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "8057ed518ae13e684cac72d560e204ffac7d751daf7707e7aaae46dcfb1f1332",
+   "bytes": 766198,
+   "campaign": "2026-07-22-alpasim-closedloop-archive",
+   "filename": "flagship-v1_alpasim-closedloop_10s.mp4",
+   "media_path": "Media/2026-07-22-alpasim-closedloop-archive/flagship-v1_alpasim-closedloop_10s.mp4",
+   "shows": "flagship v1 - CLOSED loop",
+   "aliases": [
+    "Flagship_v1_video.mp4"
+   ],
+   "tracked_in_git": true,
+   "on_local_backup": true,
+   "n_source_copies": 4,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/alpasim-closedloop-archive-2026-07-22/flagship-v1_alpasim-closedloop_10s.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-07-22-alpasim-closedloop-evalpod/Flagship_v1_video.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/alpasim-closedloop-archive-2026-07-22/flagship-v1_alpasim-closedloop_10s.mp4",
+     "tracked_in_git": true
+    },
+    {
+     "root": "worktree",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/alpasim-closedloop-archive-2026-07-22/flagship-v1_alpasim-closedloop_10s.mp4",
+     "tracked_in_git": true
+    }
+   ],
+   "git_blob_sha1": "90f74a07796ee95317fba5d256f97c79f0dd9383",
+   "on_remote_ref": true,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "a239cb77c51e8c8a56261fba7716c7579ea5a93349ba48c10bae0e5ca364c0e6",
+   "bytes": 644467,
+   "campaign": "2026-07-22-alpasim-closedloop-archive",
+   "filename": "refc-base_alpasim-closedloop_10s.mp4",
+   "media_path": "Media/2026-07-22-alpasim-closedloop-archive/refc-base_alpasim-closedloop_10s.mp4",
+   "shows": "REF-C base - CLOSED loop",
+   "aliases": [
+    "REFC_base_video.mp4"
+   ],
+   "tracked_in_git": true,
+   "on_local_backup": true,
+   "n_source_copies": 4,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/alpasim-closedloop-archive-2026-07-22/refc-base_alpasim-closedloop_10s.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-07-22-alpasim-closedloop-evalpod/REFC_base_video.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/alpasim-closedloop-archive-2026-07-22/refc-base_alpasim-closedloop_10s.mp4",
+     "tracked_in_git": true
+    },
+    {
+     "root": "worktree",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/alpasim-closedloop-archive-2026-07-22/refc-base_alpasim-closedloop_10s.mp4",
+     "tracked_in_git": true
+    }
+   ],
+   "git_blob_sha1": "f710c242faab6351f5fc83b526609fb45d74804a",
+   "on_remote_ref": true,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "725207abf906320598cfb71f23e1f5ec5d72ed3639467fac155ab3b537e2b4bf",
+   "bytes": 822503,
+   "campaign": "2026-07-22-alpasim-closedloop-archive",
+   "filename": "refc-small_alpasim-closedloop_10s.mp4",
+   "media_path": "Media/2026-07-22-alpasim-closedloop-archive/refc-small_alpasim-closedloop_10s.mp4",
+   "shows": "REF-C small - CLOSED loop",
+   "aliases": [
+    "REFC_small_video.mp4"
+   ],
+   "tracked_in_git": true,
+   "on_local_backup": true,
+   "n_source_copies": 4,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/alpasim-closedloop-archive-2026-07-22/refc-small_alpasim-closedloop_10s.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-07-22-alpasim-closedloop-evalpod/REFC_small_video.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/alpasim-closedloop-archive-2026-07-22/refc-small_alpasim-closedloop_10s.mp4",
+     "tracked_in_git": true
+    },
+    {
+     "root": "worktree",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/alpasim-closedloop-archive-2026-07-22/refc-small_alpasim-closedloop_10s.mp4",
+     "tracked_in_git": true
+    }
+   ],
+   "git_blob_sha1": "19f20c89d6a80823f04b30bbc1bdc69a09b6988c",
+   "on_remote_ref": true,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "8d82ba7b5e76079efae3fc7f644a16f2f4c849fd2e1eef637fc32e5b4ed14bce",
+   "bytes": 771619,
+   "campaign": "2026-07-22-alpasim-closedloop-archive",
+   "filename": "refc-xl_alpasim-closedloop_10s.mp4",
+   "media_path": "Media/2026-07-22-alpasim-closedloop-archive/refc-xl_alpasim-closedloop_10s.mp4",
+   "shows": "REF-C XL - CLOSED loop",
+   "aliases": [
+    "REFC_xl_video.mp4"
+   ],
+   "tracked_in_git": true,
+   "on_local_backup": true,
+   "n_source_copies": 4,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/alpasim-closedloop-archive-2026-07-22/refc-xl_alpasim-closedloop_10s.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/Implementation/incoming/2026-07-22-alpasim-closedloop-evalpod/REFC_xl_video.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/alpasim-closedloop-archive-2026-07-22/refc-xl_alpasim-closedloop_10s.mp4",
+     "tracked_in_git": true
+    },
+    {
+     "root": "worktree",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/alpasim-closedloop-archive-2026-07-22/refc-xl_alpasim-closedloop_10s.mp4",
+     "tracked_in_git": true
+    }
+   ],
+   "git_blob_sha1": "8df1f16ea59afac124e964e2458798792cdadcc2",
+   "on_remote_ref": true,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "a779715800f365b9d25ce6cc4f6eb9a3bcc38f82d7408adf4039daa54e131fbb",
+   "bytes": 611131,
+   "campaign": "2026-07-25-idm-youtube-validation",
+   "filename": "idm_recon_ep00020.mp4",
+   "media_path": "Media/2026-07-25-idm-youtube-validation/idm_recon_ep00020.mp4",
+   "shows": "IDM reconstruction - episode 20",
+   "aliases": [],
+   "tracked_in_git": true,
+   "on_local_backup": false,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Architecture & Inference/Implementation/incoming/2026-07-25-idm-youtube-validation/idm_recon_ep00020.mp4",
+     "tracked_in_git": true
+    },
+    {
+     "root": "worktree",
+     "path": "TanitAD Research Lab/Architecture & Inference/Implementation/incoming/2026-07-25-idm-youtube-validation/idm_recon_ep00020.mp4",
+     "tracked_in_git": true
+    }
+   ],
+   "git_blob_sha1": "2c640d9cf01b1eb1836b7029c1f11f24ea644706",
+   "on_remote_ref": true,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "c3acfdbe3501f0c080576b151cdac874fa90c503af73c403241258cdedececb6",
+   "bytes": 2534727,
+   "campaign": "2026-08-02-v2corpus-vs-v1-overlays",
+   "filename": "v1_physicalai_INTRAIN-ep01_overlay.mp4",
+   "media_path": "Media/2026-08-02-v2corpus-vs-v1-overlays/v1_physicalai_INTRAIN-ep01_overlay.mp4",
+   "shows": "v1 - episode SEEN in training, episode 1",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/v2corpus-vs-v1/v1_physicalai_INTRAIN-ep01_overlay.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/v2corpus-vs-v1/v1_physicalai_INTRAIN-ep01_overlay.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "5550bb224ffa0efcf0e690556e96cb0e21c06185",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "425e231c9ee2e193794d24d132ba239e5679abcee986427f22449a047b25fb2f",
+   "bytes": 1959642,
+   "campaign": "2026-08-02-v2corpus-vs-v1-overlays",
+   "filename": "v1_physicalai_INTRAIN-ep11_overlay.mp4",
+   "media_path": "Media/2026-08-02-v2corpus-vs-v1-overlays/v1_physicalai_INTRAIN-ep11_overlay.mp4",
+   "shows": "v1 - episode SEEN in training, episode 11",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/v2corpus-vs-v1/v1_physicalai_INTRAIN-ep11_overlay.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/v2corpus-vs-v1/v1_physicalai_INTRAIN-ep11_overlay.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "3b2cee2831c9c1b74fd474de3d909ba90fe587c9",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "60badb25af42471f219a9d7a5d0e450f7ae933f265ec3e66eaa8f58d27d1f53c",
+   "bytes": 2497677,
+   "campaign": "2026-08-02-v2corpus-vs-v1-overlays",
+   "filename": "v1_physicalai_LEAKFREE-ep00_overlay.mp4",
+   "media_path": "Media/2026-08-02-v2corpus-vs-v1-overlays/v1_physicalai_LEAKFREE-ep00_overlay.mp4",
+   "shows": "v1 - held-out episode, episode 0",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/v2corpus-vs-v1/v1_physicalai_LEAKFREE-ep00_overlay.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/v2corpus-vs-v1/v1_physicalai_LEAKFREE-ep00_overlay.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "e1d5e47afb395508d5291eaf33413998bef0c9f8",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "ed21e21db7f7d0c24704a1c45016009b3fd5536fab143a2efdc7c8b06385dce7",
+   "bytes": 2813750,
+   "campaign": "2026-08-02-v2corpus-vs-v1-overlays",
+   "filename": "v1_physicalai_LEAKFREE-ep03_overlay.mp4",
+   "media_path": "Media/2026-08-02-v2corpus-vs-v1-overlays/v1_physicalai_LEAKFREE-ep03_overlay.mp4",
+   "shows": "v1 - held-out episode, episode 3",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/v2corpus-vs-v1/v1_physicalai_LEAKFREE-ep03_overlay.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/v2corpus-vs-v1/v1_physicalai_LEAKFREE-ep03_overlay.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "a94c9fe0e028997d35a5896851495cd17f573b16",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "f2a12a6afab104eab1614b08da42bb579d7d316ac18739ba83bf96e4854a74a8",
+   "bytes": 2079974,
+   "campaign": "2026-08-02-v2corpus-vs-v1-overlays",
+   "filename": "v1_physicalai_LEAKFREE-ep08_overlay.mp4",
+   "media_path": "Media/2026-08-02-v2corpus-vs-v1-overlays/v1_physicalai_LEAKFREE-ep08_overlay.mp4",
+   "shows": "v1 - held-out episode, episode 8",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/v2corpus-vs-v1/v1_physicalai_LEAKFREE-ep08_overlay.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/v2corpus-vs-v1/v1_physicalai_LEAKFREE-ep08_overlay.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "6e2ff37aa15a7c0725ea7ad57ad7dd5eb106a340",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "465441226a8a977ce6489b051ecc6709c76114f206aaf1aae4fffef2bc869ec0",
+   "bytes": 1208035,
+   "campaign": "2026-08-02-v2corpus-vs-v1-overlays",
+   "filename": "v1_physicalai_LEAKFREE-ep31_overlay.mp4",
+   "media_path": "Media/2026-08-02-v2corpus-vs-v1-overlays/v1_physicalai_LEAKFREE-ep31_overlay.mp4",
+   "shows": "v1 - held-out episode, episode 31",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/v2corpus-vs-v1/v1_physicalai_LEAKFREE-ep31_overlay.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/v2corpus-vs-v1/v1_physicalai_LEAKFREE-ep31_overlay.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "cbb8a65f43e5d1ed247a4b7d1a769d700079b7a0",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "ed8dca7f54a85bf4627ec570c4caf53c4e6d72bc4383d1998983fb98c740e2a5",
+   "bytes": 2528419,
+   "campaign": "2026-08-02-v2corpus-vs-v1-overlays",
+   "filename": "v2corpus_physicalai_INTRAIN-ep01_overlay.mp4",
+   "media_path": "Media/2026-08-02-v2corpus-vs-v1-overlays/v2corpus_physicalai_INTRAIN-ep01_overlay.mp4",
+   "shows": "v2corpus - episode SEEN in training, episode 1",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/v2corpus-vs-v1/v2corpus_physicalai_INTRAIN-ep01_overlay.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/v2corpus-vs-v1/v2corpus_physicalai_INTRAIN-ep01_overlay.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "26258e3493605b401c624d0aa220499e85bf485b",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "58e28e896dff4d7b8433cc9b22eab5a8ce461745621f5b67d888afc40223cd9b",
+   "bytes": 1978916,
+   "campaign": "2026-08-02-v2corpus-vs-v1-overlays",
+   "filename": "v2corpus_physicalai_INTRAIN-ep11_overlay.mp4",
+   "media_path": "Media/2026-08-02-v2corpus-vs-v1-overlays/v2corpus_physicalai_INTRAIN-ep11_overlay.mp4",
+   "shows": "v2corpus - episode SEEN in training, episode 11",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/v2corpus-vs-v1/v2corpus_physicalai_INTRAIN-ep11_overlay.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/v2corpus-vs-v1/v2corpus_physicalai_INTRAIN-ep11_overlay.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "1c3920a54bd7156e9eb53a5aa247596d22abc56f",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "0c19441d11693bc9fd299fb964e22dfba4d40fe8e3dbdbfefd3660cefb314240",
+   "bytes": 2501911,
+   "campaign": "2026-08-02-v2corpus-vs-v1-overlays",
+   "filename": "v2corpus_physicalai_LEAKFREE-ep00_overlay.mp4",
+   "media_path": "Media/2026-08-02-v2corpus-vs-v1-overlays/v2corpus_physicalai_LEAKFREE-ep00_overlay.mp4",
+   "shows": "v2corpus - held-out episode, episode 0",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/v2corpus-vs-v1/v2corpus_physicalai_LEAKFREE-ep00_overlay.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/v2corpus-vs-v1/v2corpus_physicalai_LEAKFREE-ep00_overlay.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "9d23f93fa01af30640d541e05dd05b2e2b66601e",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "1e465031ba8d29b91e9418880024d27d3dae3922c9ef64deb4f17ba652de413b",
+   "bytes": 2830238,
+   "campaign": "2026-08-02-v2corpus-vs-v1-overlays",
+   "filename": "v2corpus_physicalai_LEAKFREE-ep03_overlay.mp4",
+   "media_path": "Media/2026-08-02-v2corpus-vs-v1-overlays/v2corpus_physicalai_LEAKFREE-ep03_overlay.mp4",
+   "shows": "v2corpus - held-out episode, episode 3",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/v2corpus-vs-v1/v2corpus_physicalai_LEAKFREE-ep03_overlay.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/v2corpus-vs-v1/v2corpus_physicalai_LEAKFREE-ep03_overlay.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "a2ec21a96ee62c8d219690704953f7201001a043",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "f1e49ea75c95c5b4dbb1f82f3b4b6d6d8ff1985b54fd27d9b29d6f9e637e5184",
+   "bytes": 2135035,
+   "campaign": "2026-08-02-v2corpus-vs-v1-overlays",
+   "filename": "v2corpus_physicalai_LEAKFREE-ep08_overlay.mp4",
+   "media_path": "Media/2026-08-02-v2corpus-vs-v1-overlays/v2corpus_physicalai_LEAKFREE-ep08_overlay.mp4",
+   "shows": "v2corpus - held-out episode, episode 8",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/v2corpus-vs-v1/v2corpus_physicalai_LEAKFREE-ep08_overlay.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/v2corpus-vs-v1/v2corpus_physicalai_LEAKFREE-ep08_overlay.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "7a76a47a0c19ca110c97d998de243642c1ed839e",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "d9c8dcd2b9be0b0391b50415863b5405cf86756e4816ef89867e30d7316714ba",
+   "bytes": 1200479,
+   "campaign": "2026-08-02-v2corpus-vs-v1-overlays",
+   "filename": "v2corpus_physicalai_LEAKFREE-ep31_overlay.mp4",
+   "media_path": "Media/2026-08-02-v2corpus-vs-v1-overlays/v2corpus_physicalai_LEAKFREE-ep31_overlay.mp4",
+   "shows": "v2corpus - held-out episode, episode 31",
+   "aliases": [],
+   "tracked_in_git": false,
+   "on_local_backup": true,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/v2corpus-vs-v1/v2corpus_physicalai_LEAKFREE-ep31_overlay.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/v2corpus-vs-v1/v2corpus_physicalai_LEAKFREE-ep31_overlay.mp4",
+     "tracked_in_git": false
+    }
+   ],
+   "git_blob_sha1": "4c1305d50bbb1bdcb4b6c6f69a996159b4119c17",
+   "on_remote_ref": false,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "37e81b5c1986a1002d2f9b9f85a1fe064c5c7cf39898de65c14f47312a053a84",
+   "bytes": 9305701,
+   "campaign": "2026-08-03-alpasim-closedloop-thor",
+   "filename": "flagship-v1_empty_road.mp4",
+   "media_path": "Media/2026-08-03-alpasim-closedloop-thor/flagship-v1_empty_road.mp4",
+   "shows": "flagship v1 - empty road",
+   "aliases": [],
+   "tracked_in_git": true,
+   "on_local_backup": true,
+   "n_source_copies": 3,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/alpasim-closedloop-thor-2026-08-03/flagship-v1_empty_road.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/alpasim-closedloop-thor-2026-08-03/flagship-v1_empty_road.mp4",
+     "tracked_in_git": true
+    },
+    {
+     "root": "worktree",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/alpasim-closedloop-thor-2026-08-03/flagship-v1_empty_road.mp4",
+     "tracked_in_git": true
+    }
+   ],
+   "git_blob_sha1": "08dc0a39516081fbc989cb35d5b9a033299f2e91",
+   "on_remote_ref": true,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "f0439cc02d7c4849508ca64b720f6aa48113876a86b1e4c286c64127f59487b0",
+   "bytes": 9639963,
+   "campaign": "2026-08-03-alpasim-closedloop-thor",
+   "filename": "flagship-v1_with_objects.mp4",
+   "media_path": "Media/2026-08-03-alpasim-closedloop-thor/flagship-v1_with_objects.mp4",
+   "shows": "flagship v1 - with traffic",
+   "aliases": [],
+   "tracked_in_git": true,
+   "on_local_backup": true,
+   "n_source_copies": 3,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/alpasim-closedloop-thor-2026-08-03/flagship-v1_with_objects.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/alpasim-closedloop-thor-2026-08-03/flagship-v1_with_objects.mp4",
+     "tracked_in_git": true
+    },
+    {
+     "root": "worktree",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/alpasim-closedloop-thor-2026-08-03/flagship-v1_with_objects.mp4",
+     "tracked_in_git": true
+    }
+   ],
+   "git_blob_sha1": "75e2efede754b9958f9a703ea401557b77480493",
+   "on_remote_ref": true,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "c64a37a97bc837711ce1408eb314c6f975b8a258f020b607e9b3219bfc0cdf63",
+   "bytes": 11172732,
+   "campaign": "2026-08-03-alpasim-closedloop-thor",
+   "filename": "refc-base_empty_road.mp4",
+   "media_path": "Media/2026-08-03-alpasim-closedloop-thor/refc-base_empty_road.mp4",
+   "shows": "REF-C base - empty road",
+   "aliases": [],
+   "tracked_in_git": true,
+   "on_local_backup": true,
+   "n_source_copies": 3,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/alpasim-closedloop-thor-2026-08-03/refc-base_empty_road.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/alpasim-closedloop-thor-2026-08-03/refc-base_empty_road.mp4",
+     "tracked_in_git": true
+    },
+    {
+     "root": "worktree",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/alpasim-closedloop-thor-2026-08-03/refc-base_empty_road.mp4",
+     "tracked_in_git": true
+    }
+   ],
+   "git_blob_sha1": "38f17bcfb5398818c6602bb507ce069e968892cf",
+   "on_remote_ref": true,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "6ab61d9fd758391323b7e62bd91a03edfc3f06e9f6014e4ffdaa032f505cde15",
+   "bytes": 11359372,
+   "campaign": "2026-08-03-alpasim-closedloop-thor",
+   "filename": "refc-base_with_objects.mp4",
+   "media_path": "Media/2026-08-03-alpasim-closedloop-thor/refc-base_with_objects.mp4",
+   "shows": "REF-C base - with traffic",
+   "aliases": [],
+   "tracked_in_git": true,
+   "on_local_backup": true,
+   "n_source_copies": 3,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/alpasim-closedloop-thor-2026-08-03/refc-base_with_objects.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/alpasim-closedloop-thor-2026-08-03/refc-base_with_objects.mp4",
+     "tracked_in_git": true
+    },
+    {
+     "root": "worktree",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/alpasim-closedloop-thor-2026-08-03/refc-base_with_objects.mp4",
+     "tracked_in_git": true
+    }
+   ],
+   "git_blob_sha1": "d1ebb38f73589c3b6e9918970892095a41af80f5",
+   "on_remote_ref": true,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "440ab7b72245f2e9926e0df1ec137b40ac43360879671f4da0d7c7518664bd3b",
+   "bytes": 8143058,
+   "campaign": "2026-08-03-alpasim-gsplat-cutin",
+   "filename": "flagship-v1_cutin.mp4",
+   "media_path": "Media/2026-08-03-alpasim-gsplat-cutin/flagship-v1_cutin.mp4",
+   "shows": "flagship v1 - cut-in scenario",
+   "aliases": [],
+   "tracked_in_git": true,
+   "on_local_backup": false,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "primary",
+     "path": "stack/experiments/alpasim-gsplat/results/cutin/videos/flagship-v1_cutin.mp4",
+     "tracked_in_git": true
+    },
+    {
+     "root": "worktree",
+     "path": "stack/experiments/alpasim-gsplat/results/cutin/videos/flagship-v1_cutin.mp4",
+     "tracked_in_git": true
+    }
+   ],
+   "git_blob_sha1": "ff58cb85991bc1e63d45ba2605291e2882724f15",
+   "on_remote_ref": true,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "ad795a13657971a0a2d7b695581d24aa4d20b80c2d75a171bf1e53922b435027",
+   "bytes": 7126790,
+   "campaign": "2026-08-03-alpasim-gsplat-cutin",
+   "filename": "flagship-v1_lead8.mp4",
+   "media_path": "Media/2026-08-03-alpasim-gsplat-cutin/flagship-v1_lead8.mp4",
+   "shows": "flagship v1 - lead vehicle at 8 m",
+   "aliases": [],
+   "tracked_in_git": true,
+   "on_local_backup": false,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "primary",
+     "path": "stack/experiments/alpasim-gsplat/results/cutin/videos/flagship-v1_lead8.mp4",
+     "tracked_in_git": true
+    },
+    {
+     "root": "worktree",
+     "path": "stack/experiments/alpasim-gsplat/results/cutin/videos/flagship-v1_lead8.mp4",
+     "tracked_in_git": true
+    }
+   ],
+   "git_blob_sha1": "67faab38894158f4f6fa60e785bda7e4ab4112fb",
+   "on_remote_ref": true,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "b4987d3b8ba89667c7ff2c847f283f4cd61f4fb15cebc7e6633464cb7a363a9a",
+   "bytes": 8091636,
+   "campaign": "2026-08-03-alpasim-gsplat-cutin",
+   "filename": "refc-base_cutin.mp4",
+   "media_path": "Media/2026-08-03-alpasim-gsplat-cutin/refc-base_cutin.mp4",
+   "shows": "REF-C base - cut-in scenario",
+   "aliases": [],
+   "tracked_in_git": true,
+   "on_local_backup": false,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "primary",
+     "path": "stack/experiments/alpasim-gsplat/results/cutin/videos/refc-base_cutin.mp4",
+     "tracked_in_git": true
+    },
+    {
+     "root": "worktree",
+     "path": "stack/experiments/alpasim-gsplat/results/cutin/videos/refc-base_cutin.mp4",
+     "tracked_in_git": true
+    }
+   ],
+   "git_blob_sha1": "25baa7e9d683510a1fd508d13c0d455bb5a50673",
+   "on_remote_ref": true,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "7fbe92bb0deafaf30550358164141ad4da85ec80b8075cae6d07c4e2fb9dbfb5",
+   "bytes": 7906261,
+   "campaign": "2026-08-03-alpasim-gsplat-cutin",
+   "filename": "refc-base_lead8.mp4",
+   "media_path": "Media/2026-08-03-alpasim-gsplat-cutin/refc-base_lead8.mp4",
+   "shows": "REF-C base - lead vehicle at 8 m",
+   "aliases": [],
+   "tracked_in_git": true,
+   "on_local_backup": false,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "primary",
+     "path": "stack/experiments/alpasim-gsplat/results/cutin/videos/refc-base_lead8.mp4",
+     "tracked_in_git": true
+    },
+    {
+     "root": "worktree",
+     "path": "stack/experiments/alpasim-gsplat/results/cutin/videos/refc-base_lead8.mp4",
+     "tracked_in_git": true
+    }
+   ],
+   "git_blob_sha1": "8a7bb2427959d309acb44c2d159ff2b3a5d78155",
+   "on_remote_ref": true,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "ba2049fabd0dedd1e95b7da6fcf49beb6f9cdb1f241768ac1c066660a7ecdedf",
+   "bytes": 8453891,
+   "campaign": "2026-08-03-alpasim-gsplat-scene2-realclose",
+   "filename": "flagship-v1_scene2_objects.mp4",
+   "media_path": "Media/2026-08-03-alpasim-gsplat-scene2-realclose/flagship-v1_scene2_objects.mp4",
+   "shows": "flagship v1 - scene2 with close objects",
+   "aliases": [],
+   "tracked_in_git": true,
+   "on_local_backup": false,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "primary",
+     "path": "stack/experiments/alpasim-gsplat/results/scene2-realclose/videos/flagship-v1_scene2_objects.mp4",
+     "tracked_in_git": true
+    },
+    {
+     "root": "worktree",
+     "path": "stack/experiments/alpasim-gsplat/results/scene2-realclose/videos/flagship-v1_scene2_objects.mp4",
+     "tracked_in_git": true
+    }
+   ],
+   "git_blob_sha1": "a17731e0138f8b2fe9a76feb94cb252f579fa28b",
+   "on_remote_ref": true,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "23852d745f3f5d2e359856edbfdbeff554f7a72c00ba6c4ba2183c434ebe5f76",
+   "bytes": 7829185,
+   "campaign": "2026-08-03-alpasim-gsplat-scene2-realclose",
+   "filename": "refc-base_scene2_objects.mp4",
+   "media_path": "Media/2026-08-03-alpasim-gsplat-scene2-realclose/refc-base_scene2_objects.mp4",
+   "shows": "REF-C base - scene2 with close objects",
+   "aliases": [],
+   "tracked_in_git": true,
+   "on_local_backup": false,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "primary",
+     "path": "stack/experiments/alpasim-gsplat/results/scene2-realclose/videos/refc-base_scene2_objects.mp4",
+     "tracked_in_git": true
+    },
+    {
+     "root": "worktree",
+     "path": "stack/experiments/alpasim-gsplat/results/scene2-realclose/videos/refc-base_scene2_objects.mp4",
+     "tracked_in_git": true
+    }
+   ],
+   "git_blob_sha1": "aab82a2c7d6aff2deffeb5c9bcec0311f786d011",
+   "on_remote_ref": true,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "cedd470faa9dc24ba6971c8704c2c5385d2e8fddc5435409ff4f12b1d0e71b1e",
+   "bytes": 11282804,
+   "campaign": "2026-08-03-alpasim-openloop-thor",
+   "filename": "flagship-v1_openloop_empty_road.mp4",
+   "media_path": "Media/2026-08-03-alpasim-openloop-thor/flagship-v1_openloop_empty_road.mp4",
+   "shows": "flagship v1 - empty road, OPEN loop",
+   "aliases": [],
+   "tracked_in_git": true,
+   "on_local_backup": true,
+   "n_source_copies": 3,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/alpasim-openloop-thor-2026-08-03/flagship-v1_openloop_empty_road.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/alpasim-openloop-thor-2026-08-03/flagship-v1_openloop_empty_road.mp4",
+     "tracked_in_git": true
+    },
+    {
+     "root": "worktree",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/alpasim-openloop-thor-2026-08-03/flagship-v1_openloop_empty_road.mp4",
+     "tracked_in_git": true
+    }
+   ],
+   "git_blob_sha1": "28cd66241e452a82199beb2f2809e937c1c95070",
+   "on_remote_ref": true,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "f9bb7134747672515b302aa313ec46c53d2c836db467bb4be21a5adbf0e85ed4",
+   "bytes": 11451395,
+   "campaign": "2026-08-03-alpasim-openloop-thor",
+   "filename": "flagship-v1_openloop_with_objects.mp4",
+   "media_path": "Media/2026-08-03-alpasim-openloop-thor/flagship-v1_openloop_with_objects.mp4",
+   "shows": "flagship v1 - with traffic, OPEN loop",
+   "aliases": [],
+   "tracked_in_git": true,
+   "on_local_backup": true,
+   "n_source_copies": 3,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/alpasim-openloop-thor-2026-08-03/flagship-v1_openloop_with_objects.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/alpasim-openloop-thor-2026-08-03/flagship-v1_openloop_with_objects.mp4",
+     "tracked_in_git": true
+    },
+    {
+     "root": "worktree",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/alpasim-openloop-thor-2026-08-03/flagship-v1_openloop_with_objects.mp4",
+     "tracked_in_git": true
+    }
+   ],
+   "git_blob_sha1": "07497637fd1918d787fa5b7ad4d9248409938370",
+   "on_remote_ref": true,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "39b5533a38676160fe9017d28c1e2fccc922557112c94903cd35f8b49a92999b",
+   "bytes": 11131009,
+   "campaign": "2026-08-03-alpasim-openloop-thor",
+   "filename": "refc-base_openloop_empty_road.mp4",
+   "media_path": "Media/2026-08-03-alpasim-openloop-thor/refc-base_openloop_empty_road.mp4",
+   "shows": "REF-C base - empty road, OPEN loop",
+   "aliases": [],
+   "tracked_in_git": true,
+   "on_local_backup": true,
+   "n_source_copies": 3,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/alpasim-openloop-thor-2026-08-03/refc-base_openloop_empty_road.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/alpasim-openloop-thor-2026-08-03/refc-base_openloop_empty_road.mp4",
+     "tracked_in_git": true
+    },
+    {
+     "root": "worktree",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/alpasim-openloop-thor-2026-08-03/refc-base_openloop_empty_road.mp4",
+     "tracked_in_git": true
+    }
+   ],
+   "git_blob_sha1": "5e18966c9ba02bb282a74d2155ee598d80b85b9f",
+   "on_remote_ref": true,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "a6e4d6d2494d1a4ae8a7de0dfd92698ad0550b155c72cedaa836c7a0bc0ddbcb",
+   "bytes": 11288274,
+   "campaign": "2026-08-03-alpasim-openloop-thor",
+   "filename": "refc-base_openloop_with_objects.mp4",
+   "media_path": "Media/2026-08-03-alpasim-openloop-thor/refc-base_openloop_with_objects.mp4",
+   "shows": "REF-C base - with traffic, OPEN loop",
+   "aliases": [],
+   "tracked_in_git": true,
+   "on_local_backup": true,
+   "n_source_copies": 3,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/alpasim-openloop-thor-2026-08-03/refc-base_openloop_with_objects.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/alpasim-openloop-thor-2026-08-03/refc-base_openloop_with_objects.mp4",
+     "tracked_in_git": true
+    },
+    {
+     "root": "worktree",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/alpasim-openloop-thor-2026-08-03/refc-base_openloop_with_objects.mp4",
+     "tracked_in_git": true
+    }
+   ],
+   "git_blob_sha1": "6130f88c31fda92e5762a6757580e58a8134c1da",
+   "on_remote_ref": true,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "06cdee9a14ea9aacc5eb194e913ccdb05d4baf994baa3da53709d1541354dc15",
+   "bytes": 10890174,
+   "campaign": "2026-08-03-alpasim-openloop-thor-junction-7c72937c",
+   "filename": "flagship-v1_openloop_empty_road.mp4",
+   "media_path": "Media/2026-08-03-alpasim-openloop-thor-junction-7c72937c/flagship-v1_openloop_empty_road.mp4",
+   "shows": "flagship v1 - empty road, OPEN loop",
+   "aliases": [],
+   "tracked_in_git": true,
+   "on_local_backup": true,
+   "n_source_copies": 3,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/alpasim-openloop-thor-2026-08-03/junction-7c72937c/flagship-v1_openloop_empty_road.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/alpasim-openloop-thor-2026-08-03/junction-7c72937c/flagship-v1_openloop_empty_road.mp4",
+     "tracked_in_git": true
+    },
+    {
+     "root": "worktree",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/alpasim-openloop-thor-2026-08-03/junction-7c72937c/flagship-v1_openloop_empty_road.mp4",
+     "tracked_in_git": true
+    }
+   ],
+   "git_blob_sha1": "f72398319020a24d43dd91990561ab20de1038a0",
+   "on_remote_ref": true,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "7b946fc504b0c4d5d3c365a5951f66c7923f5e3f06bf45650d52ef978ea1580b",
+   "bytes": 10340390,
+   "campaign": "2026-08-03-alpasim-openloop-thor-junction-7c72937c",
+   "filename": "flagship-v1_openloop_with_objects.mp4",
+   "media_path": "Media/2026-08-03-alpasim-openloop-thor-junction-7c72937c/flagship-v1_openloop_with_objects.mp4",
+   "shows": "flagship v1 - with traffic, OPEN loop",
+   "aliases": [],
+   "tracked_in_git": true,
+   "on_local_backup": true,
+   "n_source_copies": 3,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/alpasim-openloop-thor-2026-08-03/junction-7c72937c/flagship-v1_openloop_with_objects.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/alpasim-openloop-thor-2026-08-03/junction-7c72937c/flagship-v1_openloop_with_objects.mp4",
+     "tracked_in_git": true
+    },
+    {
+     "root": "worktree",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/alpasim-openloop-thor-2026-08-03/junction-7c72937c/flagship-v1_openloop_with_objects.mp4",
+     "tracked_in_git": true
+    }
+   ],
+   "git_blob_sha1": "da37cc5e58a807c38871396ce1fd03a3a85e3521",
+   "on_remote_ref": true,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "4e915a7bc5e195ede7c9044fc9a9403f11ecc43e9646ea4ec7c6ad77c7231bd3",
+   "bytes": 10893108,
+   "campaign": "2026-08-03-alpasim-openloop-thor-junction-7c72937c",
+   "filename": "refc-base_openloop_empty_road.mp4",
+   "media_path": "Media/2026-08-03-alpasim-openloop-thor-junction-7c72937c/refc-base_openloop_empty_road.mp4",
+   "shows": "REF-C base - empty road, OPEN loop",
+   "aliases": [],
+   "tracked_in_git": true,
+   "on_local_backup": true,
+   "n_source_copies": 3,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/alpasim-openloop-thor-2026-08-03/junction-7c72937c/refc-base_openloop_empty_road.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/alpasim-openloop-thor-2026-08-03/junction-7c72937c/refc-base_openloop_empty_road.mp4",
+     "tracked_in_git": true
+    },
+    {
+     "root": "worktree",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/alpasim-openloop-thor-2026-08-03/junction-7c72937c/refc-base_openloop_empty_road.mp4",
+     "tracked_in_git": true
+    }
+   ],
+   "git_blob_sha1": "46dc83821354fd463537dba96346c93010ae7849",
+   "on_remote_ref": true,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "10d4af1c7539ee3cc6793995eb9bec5a6ba6a7e4d6ecb93a408ec893d7244e4f",
+   "bytes": 10408278,
+   "campaign": "2026-08-03-alpasim-openloop-thor-junction-7c72937c",
+   "filename": "refc-base_openloop_with_objects.mp4",
+   "media_path": "Media/2026-08-03-alpasim-openloop-thor-junction-7c72937c/refc-base_openloop_with_objects.mp4",
+   "shows": "REF-C base - with traffic, OPEN loop",
+   "aliases": [],
+   "tracked_in_git": true,
+   "on_local_backup": true,
+   "n_source_copies": 3,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/alpasim-openloop-thor-2026-08-03/junction-7c72937c/refc-base_openloop_with_objects.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/alpasim-openloop-thor-2026-08-03/junction-7c72937c/refc-base_openloop_with_objects.mp4",
+     "tracked_in_git": true
+    },
+    {
+     "root": "worktree",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/alpasim-openloop-thor-2026-08-03/junction-7c72937c/refc-base_openloop_with_objects.mp4",
+     "tracked_in_git": true
+    }
+   ],
+   "git_blob_sha1": "eb2599a44d8406428bfd2d26048a6319fcd7e22e",
+   "on_remote_ref": true,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "1f17f5dc37fdbec7e62b767b5df266f4c7bde5770d23f778038ad2de6a888416",
+   "bytes": 23707092,
+   "campaign": "2026-08-05-v1arch-oodval-openloop",
+   "filename": "v1arch_oodval_openloop_best12.mp4",
+   "media_path": "Media/2026-08-05-v1arch-oodval-openloop/v1arch_oodval_openloop_best12.mp4",
+   "shows": "v1-arch - best 12 by ADE (CHERRY-PICKED), OPEN loop",
+   "aliases": [],
+   "tracked_in_git": true,
+   "on_local_backup": true,
+   "n_source_copies": 3,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/v1arch-oodval-openloop-2026-08-05/v1arch_oodval_openloop_best12.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/v1arch-oodval-openloop-2026-08-05/v1arch_oodval_openloop_best12.mp4",
+     "tracked_in_git": true
+    },
+    {
+     "root": "worktree",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/v1arch-oodval-openloop-2026-08-05/v1arch_oodval_openloop_best12.mp4",
+     "tracked_in_git": true
+    }
+   ],
+   "git_blob_sha1": "be0b296a0ef16561aaa50ba7ded8f9f186034e13",
+   "on_remote_ref": true,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "5cfdd888a77b5da9bc4cb92b8b2e53a7c16f36611aba1be31f34b9f2d32786c8",
+   "bytes": 68398173,
+   "campaign": "2026-08-05-v1arch-oodval-openloop",
+   "filename": "v1arch_oodval_openloop_representative.mp4",
+   "media_path": "Media/2026-08-05-v1arch-oodval-openloop/v1arch_oodval_openloop_representative.mp4",
+   "shows": "v1-arch - spread selection, 30 eps, OPEN loop",
+   "aliases": [],
+   "tracked_in_git": true,
+   "on_local_backup": true,
+   "n_source_copies": 3,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/v1arch-oodval-openloop-2026-08-05/v1arch_oodval_openloop_representative.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/v1arch-oodval-openloop-2026-08-05/v1arch_oodval_openloop_representative.mp4",
+     "tracked_in_git": true
+    },
+    {
+     "root": "worktree",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/v1arch-oodval-openloop-2026-08-05/v1arch_oodval_openloop_representative.mp4",
+     "tracked_in_git": true
+    }
+   ],
+   "git_blob_sha1": "b09611e09ef218953665c222423c20a1b41d29e1",
+   "on_remote_ref": true,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "d8059aeb03d74037e72f32ffb0367edb577b1e0b76b8b566d5e0932bca7f0512",
+   "bytes": 19696309,
+   "campaign": "2026-08-05-v1arch-oodval-openloop",
+   "filename": "v1arch_oodval_openloop_worst12.mp4",
+   "media_path": "Media/2026-08-05-v1arch-oodval-openloop/v1arch_oodval_openloop_worst12.mp4",
+   "shows": "v1-arch - worst 12 by ADE, OPEN loop",
+   "aliases": [],
+   "tracked_in_git": true,
+   "on_local_backup": true,
+   "n_source_copies": 3,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/v1arch-oodval-openloop-2026-08-05/v1arch_oodval_openloop_worst12.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/v1arch-oodval-openloop-2026-08-05/v1arch_oodval_openloop_worst12.mp4",
+     "tracked_in_git": true
+    },
+    {
+     "root": "worktree",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/v1arch-oodval-openloop-2026-08-05/v1arch_oodval_openloop_worst12.mp4",
+     "tracked_in_git": true
+    }
+   ],
+   "git_blob_sha1": "44deaff2283c04d73f26cd6a3000c855f2eca7d0",
+   "on_remote_ref": true,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "b84a8f1eca74ad81ab9e6abfbf5c36a4b5ce4224ec190218ec7e8d9642bf762f",
+   "bytes": 2042864,
+   "campaign": "2026-08-06-alpamayo2-vs-flagship",
+   "filename": "alpamayo_vs_flagship.mp4",
+   "media_path": "Media/2026-08-06-alpamayo2-vs-flagship/alpamayo_vs_flagship.mp4",
+   "shows": "Alpamayo-2 vs flagship",
+   "aliases": [],
+   "tracked_in_git": true,
+   "on_local_backup": true,
+   "n_source_copies": 3,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/alpamayo2-vs-flagship-2026-08-06/alpamayo_vs_flagship.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/alpamayo2-vs-flagship-2026-08-06/alpamayo_vs_flagship.mp4",
+     "tracked_in_git": true
+    },
+    {
+     "root": "worktree",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/alpamayo2-vs-flagship-2026-08-06/alpamayo_vs_flagship.mp4",
+     "tracked_in_git": true
+    }
+   ],
+   "git_blob_sha1": "0049b382479b74f82fc97a00d4ee6015504e2d3a",
+   "on_remote_ref": true,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "8a1da6fa523627fd03a7e0eecf581ab0bbcfe811ccf450b9974714bdeb12508e",
+   "bytes": 69493311,
+   "campaign": "2026-08-06-v16-vs-v1arch",
+   "filename": "v16_continuous.mp4",
+   "media_path": "Media/2026-08-06-v16-vs-v1arch/v16_continuous.mp4",
+   "shows": "v1.6 - continuous reel",
+   "aliases": [],
+   "tracked_in_git": true,
+   "on_local_backup": true,
+   "n_source_copies": 3,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/v16-vs-v1arch-2026-08-06/v16_continuous.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/v16-vs-v1arch-2026-08-06/v16_continuous.mp4",
+     "tracked_in_git": true
+    },
+    {
+     "root": "worktree",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/v16-vs-v1arch-2026-08-06/v16_continuous.mp4",
+     "tracked_in_git": true
+    }
+   ],
+   "git_blob_sha1": "0ae06df506a44478846827ebf8723e6dacbd89a7",
+   "on_remote_ref": true,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "bc73f6ad6e6aa9c898698bc2e714682888e046eb1a5d64d5c5dfd65bd56c8f77",
+   "bytes": 8816827,
+   "campaign": "2026-08-06-v16-vs-v1arch",
+   "filename": "v16_vs_v1arch_reel.mp4",
+   "media_path": "Media/2026-08-06-v16-vs-v1arch/v16_vs_v1arch_reel.mp4",
+   "shows": "v1.6",
+   "aliases": [],
+   "tracked_in_git": true,
+   "on_local_backup": true,
+   "n_source_copies": 3,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/v16-vs-v1arch-2026-08-06/v16_vs_v1arch_reel.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/v16-vs-v1arch-2026-08-06/v16_vs_v1arch_reel.mp4",
+     "tracked_in_git": true
+    },
+    {
+     "root": "worktree",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/v16-vs-v1arch-2026-08-06/v16_vs_v1arch_reel.mp4",
+     "tracked_in_git": true
+    }
+   ],
+   "git_blob_sha1": "7733f5e7769141cbf11c1ee80397caa59b001c0b",
+   "on_remote_ref": true,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "d9c1c6ce44ee93a743e865d62f276cf5b6410d4d73cdfd88b06de193f5888f98",
+   "bytes": 69262099,
+   "campaign": "2026-08-06-v17",
+   "filename": "v17_continuous.mp4",
+   "media_path": "Media/2026-08-06-v17/v17_continuous.mp4",
+   "shows": "v1.7 - continuous reel",
+   "aliases": [],
+   "tracked_in_git": true,
+   "on_local_backup": true,
+   "n_source_copies": 3,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/v17-2026-08-06/v17_continuous.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/v17-2026-08-06/v17_continuous.mp4",
+     "tracked_in_git": true
+    },
+    {
+     "root": "worktree",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/v17-2026-08-06/v17_continuous.mp4",
+     "tracked_in_git": true
+    }
+   ],
+   "git_blob_sha1": "ec7fc2c69d6bc11e0b500754a1a5d41c9cae2566",
+   "on_remote_ref": true,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "f454b626805f4d9b94e874ca83277526103260bb6db2cf1c0b2a3fd6065e46c4",
+   "bytes": 19428197,
+   "campaign": "2026-08-09-v5f-fan",
+   "filename": "v5f_fan_compact.mp4",
+   "media_path": "Media/2026-08-09-v5f-fan/v5f_fan_compact.mp4",
+   "shows": "v5f",
+   "aliases": [],
+   "tracked_in_git": true,
+   "on_local_backup": true,
+   "n_source_copies": 3,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/v5f-fan-2026-08-09/v5f_fan_compact.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/v5f-fan-2026-08-09/v5f_fan_compact.mp4",
+     "tracked_in_git": true
+    },
+    {
+     "root": "worktree",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/v5f-fan-2026-08-09/v5f_fan_compact.mp4",
+     "tracked_in_git": true
+    }
+   ],
+   "git_blob_sha1": "c6419007e7ee3b4856cdd69ee9bc70b6a9b28a49",
+   "on_remote_ref": true,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "b853242c58ddf8a861b795a3ce8c21f5151c26fd285ec66568f4b5167217f7e4",
+   "bytes": 19828120,
+   "campaign": "2026-08-10-v5f-bev",
+   "filename": "v5f_bev_compact.mp4",
+   "media_path": "Media/2026-08-10-v5f-bev/v5f_bev_compact.mp4",
+   "shows": "v5f",
+   "aliases": [],
+   "tracked_in_git": true,
+   "on_local_backup": true,
+   "n_source_copies": 3,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/v5f-bev-2026-08-10/v5f_bev_compact.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/v5f-bev-2026-08-10/v5f_bev_compact.mp4",
+     "tracked_in_git": true
+    },
+    {
+     "root": "worktree",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/v5f-bev-2026-08-10/v5f_bev_compact.mp4",
+     "tracked_in_git": true
+    }
+   ],
+   "git_blob_sha1": "e9285c9e9d4bfd864ff00abaf2a9ac801c264aba",
+   "on_remote_ref": true,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "dcfa39f645a36f8fbc94d4fda8a1d5baf23fccac9a4bb7564cfdc126180362eb",
+   "bytes": 20056477,
+   "campaign": "2026-08-10-v5f-planfan",
+   "filename": "v5f_planfan_compact.mp4",
+   "media_path": "Media/2026-08-10-v5f-planfan/v5f_planfan_compact.mp4",
+   "shows": "v5f",
+   "aliases": [],
+   "tracked_in_git": true,
+   "on_local_backup": true,
+   "n_source_copies": 3,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/v5f-planfan-2026-08-10/v5f_planfan_compact.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/v5f-planfan-2026-08-10/v5f_planfan_compact.mp4",
+     "tracked_in_git": true
+    },
+    {
+     "root": "worktree",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/v5f-planfan-2026-08-10/v5f_planfan_compact.mp4",
+     "tracked_in_git": true
+    }
+   ],
+   "git_blob_sha1": "c0e0bc56a79e17a28be1fe4941815073bd1784d2",
+   "on_remote_ref": true,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "f467b86b2ba008adb9016825f2a72bcfdabed10d28650dd83f5397f151c520b9",
+   "bytes": 1550623,
+   "campaign": "2026-08-12-ph0-vlm-overlay",
+   "filename": "ph0_full_pipeline_reel.mp4",
+   "media_path": "Media/2026-08-12-ph0-vlm-overlay/ph0_full_pipeline_reel.mp4",
+   "shows": "Phase-0 pipeline",
+   "aliases": [],
+   "tracked_in_git": true,
+   "on_local_backup": true,
+   "n_source_copies": 3,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/ph0-vlm-overlay-2026-08-12/ph0_full_pipeline_reel.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/ph0-vlm-overlay-2026-08-12/ph0_full_pipeline_reel.mp4",
+     "tracked_in_git": true
+    },
+    {
+     "root": "worktree",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/ph0-vlm-overlay-2026-08-12/ph0_full_pipeline_reel.mp4",
+     "tracked_in_git": true
+    }
+   ],
+   "git_blob_sha1": "605b1575ddec2a47055348e3e3e4e5d833c3848a",
+   "on_remote_ref": true,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "951b9140c659f8bb46e155ef3a89fc5e06dfe9dcde039150268d03a1b058acc5",
+   "bytes": 895796,
+   "campaign": "2026-08-12-ph0-vlm-overlay",
+   "filename": "ph0_vlm_overlay_reel.mp4",
+   "media_path": "Media/2026-08-12-ph0-vlm-overlay/ph0_vlm_overlay_reel.mp4",
+   "shows": "Phase-0 pipeline",
+   "aliases": [],
+   "tracked_in_git": true,
+   "on_local_backup": true,
+   "n_source_copies": 3,
+   "sources": [
+    {
+     "root": "backup",
+     "path": "Videos/ph0-vlm-overlay-2026-08-12/ph0_vlm_overlay_reel.mp4",
+     "tracked_in_git": false
+    },
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/ph0-vlm-overlay-2026-08-12/ph0_vlm_overlay_reel.mp4",
+     "tracked_in_git": true
+    },
+    {
+     "root": "worktree",
+     "path": "TanitAD Research Lab/Benchmarks & Evals/_evaluation/Videos/ph0-vlm-overlay-2026-08-12/ph0_vlm_overlay_reel.mp4",
+     "tracked_in_git": true
+    }
+   ],
+   "git_blob_sha1": "1d7072c3e2afc38d053e9d740fee635da6b4a6f0",
+   "on_remote_ref": true,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "b335bc55afee26213b9801283ad03f31c85990b387810fa2a8097af3448798de",
+   "bytes": 716578,
+   "campaign": "2026-08-16-sam3-dtype-fix",
+   "filename": "0089a096_rich.mp4",
+   "media_path": "Media/2026-08-16-sam3-dtype-fix/0089a096_rich.mp4",
+   "shows": "SAM3 rich overlay",
+   "aliases": [],
+   "tracked_in_git": true,
+   "on_local_backup": false,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Data Engineering/Implementation/incoming/2026-08-16-sam3-dtype-fix/video/0089a096_rich.mp4",
+     "tracked_in_git": true
+    },
+    {
+     "root": "worktree",
+     "path": "TanitAD Research Lab/Data Engineering/Implementation/incoming/2026-08-16-sam3-dtype-fix/video/0089a096_rich.mp4",
+     "tracked_in_git": true
+    }
+   ],
+   "git_blob_sha1": "c8261e758f83213590dbb55ec5088d7f278b3e49",
+   "on_remote_ref": true,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "5dd85ae69fb2f3ca6123b2c146e5b156e328402a1947854c6fb958a791076965",
+   "bytes": 517282,
+   "campaign": "2026-08-16-sam3-dtype-fix",
+   "filename": "093bfa29_rich.mp4",
+   "media_path": "Media/2026-08-16-sam3-dtype-fix/093bfa29_rich.mp4",
+   "shows": "SAM3 rich overlay",
+   "aliases": [],
+   "tracked_in_git": true,
+   "on_local_backup": false,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Data Engineering/Implementation/incoming/2026-08-16-sam3-dtype-fix/video/093bfa29_rich.mp4",
+     "tracked_in_git": true
+    },
+    {
+     "root": "worktree",
+     "path": "TanitAD Research Lab/Data Engineering/Implementation/incoming/2026-08-16-sam3-dtype-fix/video/093bfa29_rich.mp4",
+     "tracked_in_git": true
+    }
+   ],
+   "git_blob_sha1": "525a15dd784d83be518fccd1b2daa34a0fd265c0",
+   "on_remote_ref": true,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "d161d73b13249a0f5d57456a813e7a7cd8f792c4649b9c6b5644ff3e8a27023d",
+   "bytes": 513408,
+   "campaign": "2026-08-16-sam3-dtype-fix",
+   "filename": "15a65b76_rich.mp4",
+   "media_path": "Media/2026-08-16-sam3-dtype-fix/15a65b76_rich.mp4",
+   "shows": "SAM3 rich overlay",
+   "aliases": [],
+   "tracked_in_git": true,
+   "on_local_backup": false,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Data Engineering/Implementation/incoming/2026-08-16-sam3-dtype-fix/video/15a65b76_rich.mp4",
+     "tracked_in_git": true
+    },
+    {
+     "root": "worktree",
+     "path": "TanitAD Research Lab/Data Engineering/Implementation/incoming/2026-08-16-sam3-dtype-fix/video/15a65b76_rich.mp4",
+     "tracked_in_git": true
+    }
+   ],
+   "git_blob_sha1": "a26704d9fab7ef5d17d03cd4ecf08ce66a507e0d",
+   "on_remote_ref": true,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "6701bfdd263172319be5014576c14bee974de7607bcf62510ba4aeb0c3ce90e0",
+   "bytes": 312449,
+   "campaign": "2026-08-16-sam3-dtype-fix",
+   "filename": "38aac500_rich.mp4",
+   "media_path": "Media/2026-08-16-sam3-dtype-fix/38aac500_rich.mp4",
+   "shows": "SAM3 rich overlay",
+   "aliases": [],
+   "tracked_in_git": true,
+   "on_local_backup": false,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Data Engineering/Implementation/incoming/2026-08-16-sam3-dtype-fix/video/38aac500_rich.mp4",
+     "tracked_in_git": true
+    },
+    {
+     "root": "worktree",
+     "path": "TanitAD Research Lab/Data Engineering/Implementation/incoming/2026-08-16-sam3-dtype-fix/video/38aac500_rich.mp4",
+     "tracked_in_git": true
+    }
+   ],
+   "git_blob_sha1": "8294c7ff1b9f3ecfc4d0a435d243d7334842ff79",
+   "on_remote_ref": true,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "1e8efaf70463ea5eec3372b0f6c0483c50d1a3849ac4b76d2eb4cc15a587dc9e",
+   "bytes": 494806,
+   "campaign": "2026-08-16-sam3-dtype-fix",
+   "filename": "42745b48_rich.mp4",
+   "media_path": "Media/2026-08-16-sam3-dtype-fix/42745b48_rich.mp4",
+   "shows": "SAM3 rich overlay",
+   "aliases": [],
+   "tracked_in_git": true,
+   "on_local_backup": false,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Data Engineering/Implementation/incoming/2026-08-16-sam3-dtype-fix/video/42745b48_rich.mp4",
+     "tracked_in_git": true
+    },
+    {
+     "root": "worktree",
+     "path": "TanitAD Research Lab/Data Engineering/Implementation/incoming/2026-08-16-sam3-dtype-fix/video/42745b48_rich.mp4",
+     "tracked_in_git": true
+    }
+   ],
+   "git_blob_sha1": "69c109443bf016fd22e42cbbcf2c74d3b50daaf2",
+   "on_remote_ref": true,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "da5bbd5cc7dc22edd8ed11540db7aea0e8efde5e8c11a27e000559fcbeaa9ffd",
+   "bytes": 790829,
+   "campaign": "2026-08-16-sam3-dtype-fix",
+   "filename": "814c2f74_rich.mp4",
+   "media_path": "Media/2026-08-16-sam3-dtype-fix/814c2f74_rich.mp4",
+   "shows": "SAM3 rich overlay",
+   "aliases": [],
+   "tracked_in_git": true,
+   "on_local_backup": false,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Data Engineering/Implementation/incoming/2026-08-16-sam3-dtype-fix/video/814c2f74_rich.mp4",
+     "tracked_in_git": true
+    },
+    {
+     "root": "worktree",
+     "path": "TanitAD Research Lab/Data Engineering/Implementation/incoming/2026-08-16-sam3-dtype-fix/video/814c2f74_rich.mp4",
+     "tracked_in_git": true
+    }
+   ],
+   "git_blob_sha1": "4e91801b2613446c4b8c8c1f0df6134e88e8a967",
+   "on_remote_ref": true,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "00f137b539222792fd22d2e11a7909247bcb6b7351c964c83c734cad552efae1",
+   "bytes": 777915,
+   "campaign": "2026-08-16-sam3-dtype-fix",
+   "filename": "8f5df500_rich.mp4",
+   "media_path": "Media/2026-08-16-sam3-dtype-fix/8f5df500_rich.mp4",
+   "shows": "SAM3 rich overlay",
+   "aliases": [],
+   "tracked_in_git": true,
+   "on_local_backup": false,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Data Engineering/Implementation/incoming/2026-08-16-sam3-dtype-fix/video/8f5df500_rich.mp4",
+     "tracked_in_git": true
+    },
+    {
+     "root": "worktree",
+     "path": "TanitAD Research Lab/Data Engineering/Implementation/incoming/2026-08-16-sam3-dtype-fix/video/8f5df500_rich.mp4",
+     "tracked_in_git": true
+    }
+   ],
+   "git_blob_sha1": "54dee4b85c41b31bc7164fe4263cd94a492e9da7",
+   "on_remote_ref": true,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "09dbaa1929884382609f4c7818a82ca82a1839ae699189b1cc421b537fb10a88",
+   "bytes": 639953,
+   "campaign": "2026-08-16-sam3-dtype-fix",
+   "filename": "bb41e3b8_rich.mp4",
+   "media_path": "Media/2026-08-16-sam3-dtype-fix/bb41e3b8_rich.mp4",
+   "shows": "SAM3 rich overlay",
+   "aliases": [],
+   "tracked_in_git": true,
+   "on_local_backup": false,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Data Engineering/Implementation/incoming/2026-08-16-sam3-dtype-fix/video/bb41e3b8_rich.mp4",
+     "tracked_in_git": true
+    },
+    {
+     "root": "worktree",
+     "path": "TanitAD Research Lab/Data Engineering/Implementation/incoming/2026-08-16-sam3-dtype-fix/video/bb41e3b8_rich.mp4",
+     "tracked_in_git": true
+    }
+   ],
+   "git_blob_sha1": "49e0fdd46b1d75e114d3c4663220a19b7eeac822",
+   "on_remote_ref": true,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "e85188942a22fc0f186a19c3fa2c0c44da28b391b31375ebb6ea10ff22d06ce3",
+   "bytes": 483168,
+   "campaign": "2026-08-17-sam3-extraction-v2",
+   "filename": "v2_aa291a17.mp4",
+   "media_path": "Media/2026-08-17-sam3-extraction-v2/v2_aa291a17.mp4",
+   "shows": "SAM3 extraction v2",
+   "aliases": [],
+   "tracked_in_git": true,
+   "on_local_backup": false,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Data Engineering/Implementation/incoming/2026-08-16-sam3-extraction-v2/video/v2_aa291a17.mp4",
+     "tracked_in_git": true
+    },
+    {
+     "root": "worktree",
+     "path": "TanitAD Research Lab/Data Engineering/Implementation/incoming/2026-08-16-sam3-extraction-v2/video/v2_aa291a17.mp4",
+     "tracked_in_git": true
+    }
+   ],
+   "git_blob_sha1": "c9df638bd9c3b6275927107768e0f99e48d2b4c7",
+   "on_remote_ref": true,
+   "off_device_copy": true
+  },
+  {
+   "sha256": "9af1838874753215061014eadc1218650d3828e8f8db1cfed117cb0f81455d50",
+   "bytes": 481189,
+   "campaign": "2026-08-17-sam3-extraction-v2",
+   "filename": "v2_e084c7c3.mp4",
+   "media_path": "Media/2026-08-17-sam3-extraction-v2/v2_e084c7c3.mp4",
+   "shows": "SAM3 extraction v2",
+   "aliases": [],
+   "tracked_in_git": true,
+   "on_local_backup": false,
+   "n_source_copies": 2,
+   "sources": [
+    {
+     "root": "primary",
+     "path": "TanitAD Research Lab/Data Engineering/Implementation/incoming/2026-08-16-sam3-extraction-v2/video/v2_e084c7c3.mp4",
+     "tracked_in_git": true
+    },
+    {
+     "root": "worktree",
+     "path": "TanitAD Research Lab/Data Engineering/Implementation/incoming/2026-08-16-sam3-extraction-v2/video/v2_e084c7c3.mp4",
+     "tracked_in_git": true
+    }
+   ],
+   "git_blob_sha1": "8f60e87adab3e941b1d909dad8183420dd3f64ed",
+   "on_remote_ref": true,
+   "off_device_copy": true
+  }
+ ],
+ "risk_note": "'tracked_in_git' does NOT by itself mean an asset survives the G: mount dying, because .git also lives on G:. An asset is safe when off_device_copy is true: either a copy exists on local disk (on_local_backup) or its blob is reachable from a remote ref (on_remote_ref), i.e. actually pushed to GitHub."
+}

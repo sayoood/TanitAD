@@ -352,16 +352,25 @@ class Row:
 def blocking_for(cid: str, registry: dict, cfg: "Cfg") -> tuple[bool, str]:
     """Is this criterion release-BLOCKING or ADVISORY? The registry decides.
 
-    ⚠️ The registry records `pi_decision_open`: whether a FAIL blocks or advises is
-    the PI's call. Until it is made, the gate follows the recommendation ON RECORD
-    (blocking on the listed set, advisory on regression) and PRINTS which it used,
-    so nobody has to guess which policy produced a verdict.
+    ⛔ **PI RULING 2026-08-28 (Sayed): THE RELEASE GATE DOES NOT BLOCK A RELEASE.**
+    Every criterion is ADVISORY. The flag below therefore answers *"did the registry
+    NAME this criterion?"* — it no longer means *"this stops a release"*. Authority
+    moved to the PI; measurement did not move.
+
+    ⚠️ **What did NOT change, and must not:** the gate still reports a FAIL as a FAIL,
+    at full strength, and CANNOT-RULE is still a verdict rather than a silent pass.
+    Advisory is about authority, not honesty — softening a verdict because it no
+    longer blocks would destroy the only thing this instrument is for.
     """
     root = cid.split(".")[0]
     spec = registry.get("release_gate", {})
-    for entry in spec.get("blocking", []):
+    # `advisory_all` is the post-ruling name of the criterion set; `blocking` is the
+    # pre-ruling name, read as a fallback so an older registry still resolves rather
+    # than silently falling through to the blocking-by-default branch below.
+    named = spec.get("advisory_all", spec.get("blocking", []))
+    for entry in named:
         if root in _REGISTRY_TO_RG.get(entry, ()):
-            return True, f"registry release_gate.blocking: {entry!r}"
+            return True, f"registry release_gate.advisory_all: {entry!r}"
     if root in _ALWAYS_BLOCKING:
         return True, _ALWAYS_BLOCKING[root]
     if root == "RG-11":
@@ -882,13 +891,27 @@ def run_gate(artifacts_dir: str, cfg: Cfg, registry: dict) -> dict:
     n_cannot = sum(r.state == CANNOT_RULE for r in rows)
     blk_fail = sum(r.state == FAIL and r.blocking for r in rows)
     blk_cannot = sum(r.state == CANNOT_RULE and r.blocking for r in rows)
-    verdict = "RELEASE-BLOCKED" if blk_fail else \
-              ("RELEASE-INCONCLUSIVE" if blk_cannot else "RELEASE-CLEARED")
+    # ⛔ PI RULING 2026-08-28: the gate does NOT block a release. The verdict names
+    # what was MEASURED; it does not claim an authority it no longer has. The counts
+    # stay exactly as loud as before — advisory is about authority, not honesty, and
+    # a gate that softened its language here would be worthless.
+    # The three states are PRESERVED (they drive the exit-code contract and are the
+    # honest distinction between "violated" and "could not be evaluated"); only the
+    # word "BLOCKED" goes, because the gate no longer holds that authority.
+    if blk_fail:
+        verdict = f"ADVISORY-FAIL ({n_fail} criterion failure(s); does not block)"
+    elif blk_cannot:
+        verdict = f"ADVISORY-INCONCLUSIVE ({n_cannot} cannot rule; does not block)"
+    elif n_fail:
+        verdict = f"ADVISORY-FAIL ({n_fail} advisory failure(s); does not block)"
+    else:
+        verdict = "ADVISORY-PASS (all criteria pass)"
     return {"spec": SPEC_DOC, "registry_version": registry.get("version"),
             "model": cfg.model, "baseline": cfg.baseline,
             "artifacts_dir": artifacts_dir,
-            "blocking_policy": registry.get("release_gate", {}).get(
-                "pi_decision_open", "no release_gate block in the registry"),
+            "blocking_policy": (registry.get("release_gate", {})
+                                .get("PI_RULING_2026-08-28", {})
+                                .get("ruling", "no PI ruling recorded — advisory")),
             "scope": [{"file": a.path, "scope": a.scope, "role": a.role,
                        "tier": a.tier, "arm": a.arm, "arm_key": a.arm_key,
                        "n_windows": a.n_windows, "n_episodes": a.n_episodes,
@@ -899,7 +922,10 @@ def run_gate(artifacts_dir: str, cfg: Cfg, registry: dict) -> dict:
                        "BLOCKING_FAIL": blk_fail, "BLOCKING_CANNOT_RULE": blk_cannot,
                        "ADVISORY_FAIL": n_fail - blk_fail},
             "verdict": verdict,
-            "verdict_is": "a CONJUNCTION over named criteria — ⛔ NOT a pooled score",
+            "verdict_is": ("a CONJUNCTION over named criteria — ⛔ NOT a "
+                           "pooled score; ADVISORY per the PI ruling of 2026-08-28, "
+                           "which moved stop/go authority to the PI and left the "
+                           "measurement untouched"),
             "_rows": rows, "_arts": arts}
 
 
@@ -971,7 +997,7 @@ def render(res: dict) -> str:
     c = res["counts"]
     out.append(f"PASS {c['PASS']} · FAIL {c['FAIL']} · CANNOT-RULE {c['CANNOT_RULE']} "
                f"· N/A {c['NA']}")
-    out.append(f"   of the FAILs, {c['BLOCKING_FAIL']} are BLOCKING and "
+    out.append(f"   of the FAILs, {c['BLOCKING_FAIL']} are registry-named and "
                f"{c['ADVISORY_FAIL']} advisory; "
                f"{c['BLOCKING_CANNOT_RULE']} blocking criteria CANNOT RULE")
     out.append(f"   policy: {res['blocking_policy']}")

@@ -242,8 +242,11 @@ def main(argv=None):
     torch.save({k: win[k] for k in ("pred", "gt", "cv", "eid", "speed",
                                     "head_deg", "wp_steps")},
                Path(args.results) / f"windows_{args.tag}.pt")
+    # ⛔ 2026-08-28: was `res["heldout"]["model"]` — the deprecated block, now a
+    # tombstone carrying no numbers (ESTIMATOR_CLOSEOUT.md).
     print(json.dumps({"tag": args.tag, "mechanism": win["mech"],
-                      "heldout": res.get("heldout", {}).get("model", {}),
+                      "cluster_bootstrap":
+                          res.get("cluster_bootstrap", {}).get("model", {}),
                       "full_set": res.get("full_set", res.get("model")),
                       "wall_s": res["wall_s"]}, indent=2, default=str),
           flush=True)

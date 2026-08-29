@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "version": "2.3.0",
+ "version": "2.5.0",
  "created": "2026-08-23",
  "owner": "TanitAD_EvalFlyWheel",
  "why": "TANITAD_PROGRAMME.md §5 charter: 'Criteria completeness is enforced by machinery, not memory — we measurably failed to keep them complete by hand.' This file is the machine-readable registry every eval output is diffed against. A criterion may be PRESENT or REFUSED-with-a-reason; it may never be SILENTLY ABSENT.",
@@ -549,6 +549,144 @@
     "drive_jepa_perception_free_front_only_PDMS": 89.0,
     "latent_wam_v2_EPDMS": 89.3,
     "_harness_pin": "⛔ v1 PDMS must come from the v1.1 BRANCH — `main` is v2 and its scorer is the EPDMS scorer, so 'v1 PDMS from main' silently computes a different metric. Neither paper states a devkit SHA, and the 2025-09-29 human-filter bugfix (issue #151) sits between v2.2 and now, so which side they are on is UNVERIFIED. Pin OUR SHA beside our number."
+   },
+   "OFFICIAL_COLUMN": {
+    "column": "navhard_two_stage EPDMS",
+    "harness": "autonomousvision/navsim @ <SHA> — the SHA is part of the column, not a footnote",
+    "devkit_pin_used_for_this_registry": "0a380a9 (2025-10-27)",
+    "why": "⛔ NavSim v2 carries TWO protocols both called 'EPDMS', roughly 30 POINTS APART: the method papers' single-stage navtest-EPDMS (~76-88) and the challenge's navhard-two-stage (~35-56). A single 'EPDMS' column lets them be read as one metric — precise about the wrong thing, which is the overlapping_holdout_se class exactly. The NavSim authors explicitly disown the navtest variant in print.",
+    "consequence_for_our_positioning": "⭐ MEASURED 2026-08-28 by the EvalFlyWheel from the banked PDF (arXiv 2601.22032), SEVEN probe terms all zero — 'navhard', 'nav hard', 'two_stage', 'two-stage', 'two stage', 'private_test', 'challenge': Drive-JEPA NEVER mentions navhard. Its 87.8 'EPDMS on v2' is therefore the navtest variant, NOT the challenge protocol. ⇒ a navhard number of ours is NOT comparable to Drive-JEPA's 87.8. The camera-only navhard bar to anchor against is DrivoR 56.3 EPDMS at ~40M params (privileged ceiling 56.6).",
+    "what_still_stands": "Drive-JEPA's PERCEPTION-FREE ladder is PDMS on NavSim v1 (their Table 2, 'the first block is the perception-free setting'): LAW 83.8 / World4Drive 85.1 / Epona 86.1 / Drive-JEPA 89.0. That is a v1 PDMS claim and remains valid AS A v1 CLAIM — it must never be printed in an EPDMS column."
+   },
+   "GATE_no_cross_protocol_comparison": {
+    "id": "navsim.cross_protocol",
+    "blocking": true,
+    "rule": "Every NavSim number MUST declare `protocol.navsim_protocol` from the closed set below AND the devkit SHA. ⛔ Placing two different protocols in one column, or comparing across them, FAILS — including implicitly, by omitting the tag.",
+    "closed_set": [
+     "PDMS_v1_navtest",
+     "EPDMS_v2_navhard_two_stage",
+     "EPDMS_v2_navtest_single_stage",
+     "EPDMS_v2_private_test_hard_two_stage",
+     "EPDMS_v2_warmup_two_stage"
+    ],
+    "official": "EPDMS_v2_navhard_two_stage",
+    "why": "~30 points separate two protocols wearing the same name. Untagged, our own leaderboard would merge them by accident — and a reader has no way to tell. Same family as navsim.modality_label: the number is only meaningful with the condition attached.",
+    "keys": [
+     "protocol.navsim_protocol",
+     "protocol.devkit_sha"
+    ]
+   },
+   "EPDMS_submetrics": {
+    "_formula": "EPDMS = prod(NC,DAC,DDC,TLC) * ( sum_w(TTC,EP,HC,LK,EC) / 16 ); filter_m = 1.0 if the human also violated m, else m(agent)",
+    "_weighted_denominator": 16,
+    "_source": "PUB-DEVKIT docs/metrics.md + pdm_scorer.yaml; [N2] Eq.(1) — triple-confirmed",
+    "multiplicative": {
+     "NC": {
+      "name": "no at-fault collisions",
+      "range": [
+       0,
+       0.5,
+       1
+      ],
+      "family": "TACTICAL",
+      "family_note": "a decision OUTCOME, not decision quality — see _family_caveat"
+     },
+     "DAC": {
+      "name": "drivable area compliance",
+      "range": [
+       0,
+       1
+      ],
+      "family": "STRATEGIC",
+      "family_note": "staying on the drivable topology is a route-level property"
+     },
+     "DDC": {
+      "name": "driving direction compliance",
+      "range": [
+       0,
+       0.5,
+       1
+      ],
+      "family": "STRATEGIC",
+      "new_in_v2": true,
+      "family_note": "direction-of-travel against the lane graph — route-level"
+     },
+     "TLC": {
+      "name": "traffic light compliance",
+      "range": [
+       0,
+       1
+      ],
+      "family": "TACTICAL",
+      "new_in_v2": true,
+      "family_note": "stop/go at a light is a tactical decision"
+     }
+    },
+    "weighted": {
+     "EP": {
+      "name": "ego progress",
+      "weight": 5,
+      "range": [
+       0,
+       1
+      ],
+      "family": "LONGITUDINAL"
+     },
+     "TTC": {
+      "name": "time to collision within bound",
+      "weight": 5,
+      "range": [
+       0,
+       1
+      ],
+      "family": "LONGITUDINAL",
+      "family_note": "maps onto our long.distance_keeping criterion directly"
+     },
+     "LK": {
+      "name": "lane keeping",
+      "weight": 2,
+      "range": [
+       0,
+       1
+      ],
+      "family": "LATERAL",
+      "new_in_v2": true,
+      "family_note": "the cross-track analogue"
+     },
+     "HC": {
+      "name": "history comfort",
+      "weight": 2,
+      "range": [
+       0,
+       1
+      ],
+      "family": null,
+      "new_in_v2": true,
+      "family_note": "⛔ UNMAPPED — comfort is a separate axis from our four families"
+     },
+     "EC": {
+      "name": "extended comfort",
+      "weight": 2,
+      "range": [
+       0,
+       1
+      ],
+      "family": null,
+      "new_in_v2": true,
+      "family_note": "⛔ UNMAPPED — comfort; also never human-filtered (injected downstream of the filter)"
+     }
+    },
+    "_family_caveat": "⭐ THE HONEST READING, and it is a finding rather than a mapping problem: EPDMS measures COMPLIANCE AND OUTCOMES, not DECISION QUALITY. Nothing in it corresponds to our tac.manoeuvre_decision (selected vs executed manoeuvre), tac.confusion, or strat.route_goal (goal-setting quality). NC and TLC are mapped to TACTICAL as the closest honest home, but a collision-free run is not evidence that the manoeuvre DECISION was right. ⇒ An EPDMS number does NOT satisfy the four-families rule. A NavSim artifact must still emit our families, or refuse them with reason and n.",
+    "_unmapped": [
+     "HC",
+     "EC"
+    ],
+    "_families_epdms_cannot_supply": [
+     "tac.manoeuvre_decision",
+     "tac.confusion",
+     "tac.goal_selection",
+     "strat.route_goal"
+    ]
    }
   },
   "nuscenes": {
@@ -690,7 +828,21 @@
  },
  "release_gate": {
   "why": "The PI asked (2026-08-23) to finalize the tests and criteria that must run at EVERY model release. This block names which registry criteria are release-blocking, so the gate and the census read one source.",
-  "blocking": [
+  "advisory": [
+   "regression vs the previous release (per family)",
+   "(all criteria are advisory per the PI ruling above)"
+  ],
+  "advisory_note": "Advisory until two clean releases exist to compare — a regression gate with no trustworthy baseline manufactures false failures.",
+  "cannot_rule_is_a_verdict": "⭐ A criterion that cannot decide at the configured settings must return CANNOT-RULE, loudly — never a silent PASS and never a perpetual INCONCLUSIVE. MEASURED precedent: the O6 rank gate could never rule (spectrum n=24 against a ceiling of 1024) and its silence was read as a pass for weeks.",
+  "pi_decision_open": null,
+  "PI_RULING_2026-08-28": {
+   "ruling": "THE RELEASE GATE DOES NOT BLOCK A RELEASE.",
+   "by": "Sayed (PI), 2026-08-28",
+   "effect": "Every criterion below is ADVISORY. The gate REPORTS; it never stops a release. It still returns PASS / FAIL / CANNOT-RULE per criterion and still exits non-zero on a FAIL so CI can surface it — but no human or process is required to stop on that signal.",
+   "what_does_NOT_change": "⛔ Advisory is about AUTHORITY, not about honesty. The gate must keep reporting a FAIL as a FAIL, at full strength and in the same words. Softening a verdict because it no longer blocks would destroy the only thing the instrument is for. In particular the floor comparison stays loud: a release whose trivial control beats it 22x is still reported as beaten, and CANNOT-RULE is still a verdict, never a silent pass.",
+   "rationale_recorded": "The programme has research character and moves faster than a blocking gate would allow; the PI keeps the stop/go authority rather than delegating it to the instrument. The gate's value is that nothing ships UNMEASURED - not that it can veto."
+  },
+  "advisory_all": [
    "all four families PRESENT or REFUSED-with-reason-and-n",
    "hyg.tier_stamp",
    "hyg.estimator_named",
@@ -701,12 +853,7 @@
    "leak_guards.vision_only_inference",
    "leak_guards.goal_situation_disjoint"
   ],
-  "blocking_note": "Each is cheap, objective, and earned by a measured failure. ⛔ A T1 artifact is REQUIRED: T0 is a world-model diagnostic and a release may never be gated on it alone.",
-  "advisory": [
-   "regression vs the previous release (per family)"
-  ],
-  "advisory_note": "Advisory until two clean releases exist to compare — a regression gate with no trustworthy baseline manufactures false failures.",
-  "cannot_rule_is_a_verdict": "⭐ A criterion that cannot decide at the configured settings must return CANNOT-RULE, loudly — never a silent PASS and never a perpetual INCONCLUSIVE. MEASURED precedent: the O6 rank gate could never rule (spectrum n=24 against a ceiling of 1024) and its silence was read as a pass for weeks.",
-  "pi_decision_open": "Whether a FAIL blocks the release or advises is the PI's call (open as of 2026-08-23). Recommendation on record: blocking on the list above, advisory on regression."
+  "advisory_note_previous": "Each is cheap, objective, and earned by a measured failure. ⛔ A T1 artifact is REQUIRED: T0 is a world-model diagnostic and a release may never be gated on it alone.",
+  "exit_code_contract": "non-zero exit on any FAIL is RETAINED so automation can surface it; the exit code is information, not an authority to stop."
  }
 }

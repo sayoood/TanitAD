@@ -155,6 +155,29 @@ def test_mean_ci_basic():
     assert ci["n_splits"] == 3
 
 
+def test_mean_ci_is_the_DECLARED_deprecated_estimator():
+    """⛔ CLOSED 2026-08-28 (products/P7-TanitEval/ESTIMATOR_CLOSEOUT.md).
+
+    ``mean_ci`` was the UNNAMED CLONE: ``1.96 * std / sqrt(n)`` over per-split
+    means of 8 OVERLAPPING random 20 % holdouts, under a name no grep for
+    ``jack`` or ``overlapping_holdout`` returns, emitting NO ``estimator``
+    field, reachable from six live callers. It is now
+    ``overlapping_holdout_mean_ci`` — a DECLARED reproduction — with
+    ``mean_ci`` kept as a back-compat alias, and its output self-labels so
+    ``driving.assert_no_deprecated_estimator`` refuses any block carrying it.
+
+    ⚠️ The arithmetic is untouched, ddof=1 included: routing it through
+    ``ci.overlapping_holdout_se`` (ddof=0) would rescale every published
+    D-number by ``sqrt((n-1)/n)`` = 0.935 at n=8."""
+    assert dd.mean_ci is dd.overlapping_holdout_mean_ci
+    assert dd.DEPRECATED_ESTIMATOR == "overlapping_holdout_se"
+    node = dd.mean_ci([1.0, 2.0, 3.0])
+    assert node["estimator"] == "overlapping_holdout_se"
+    assert node["deprecated"] is True
+    assert node["ci95"] == pytest.approx(1.96 * 1.0 / 3 ** 0.5, abs=5e-5)
+    assert dd.agg_metric_dicts([{"a": 1.0}, {"a": 2.0}])["a"]["deprecated"]
+
+
 # --------------------------------------------------------------------------- #
 # end-to-end pipeline through a real (untrained) smoke WorldModel             #
 # --------------------------------------------------------------------------- #

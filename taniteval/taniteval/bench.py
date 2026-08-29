@@ -23,9 +23,20 @@ estimator name:
   * ``cluster_bootstrap`` — resample the 40 EPISODES with replacement, B=2000,
     recompute the metric, percentile bounds. **This is the primary interval**
     (``result["primary_ci"] == "cluster_bootstrap"``).
-  * ``heldout`` — the old block, numerically UNCHANGED so every published
-    number stays reproducible, but each metric now carries
+  * ``legacy_overlapping_holdout_se`` — the old block, numerically UNCHANGED so
+    every published number stays reproducible, but each metric carries
     ``estimator: "overlapping_holdout_se"`` and ``deprecated: True``.
+
+⛔ CLOSED 2026-08-28 (PI ruling, ``products/P7-TanitEval/ESTIMATOR_CLOSEOUT.md``)
+--------------------------------------------------------------------------------
+``run()`` used to emit that same block a SECOND time under the bare key
+``heldout``. The bare key is invisible to ``gate_guard`` (it carries no verdict
+word), so five consumers read a mean-of-split-means as the arm's headline
+number: the dashboard leaderboard ORDERED on it, ``runner.regression`` fell back
+to it, ``refc_rerank`` published it, ``efficiency`` paired it with latency, and
+``generalization`` printed it. The key is now a TOMBSTONE — estimator label,
+no ``mean``/``ci95`` — so the ``run_gate`` tripwire that keys on the name stays
+armed while nothing can be quoted out of it.
 """
 from __future__ import annotations
 
@@ -165,12 +176,22 @@ def _suite_components(pred, gt):
 # --------------------------------------------------------------------------- #
 #: Self-labelling key for the legacy block, matching ``closedloop.LEGACY_BLOCK``
 #: and ``hierarchy.LEGACY_BLOCK`` so one grep finds every quarantined number in
-#: the harness. ``heldout`` REMAINS as a back-compat alias to the same dict on
-#: purpose: ``run_gate._deprecated_present`` looks for exactly that key to decide
-#: fail-loud-vs-fallback, and ``report`` / ``efficiency`` / ``refc_rerank`` /
-#: ``generalization`` still read it. Renaming it would silently disarm the gate's
-#: own refusal, which is the opposite of the intent.
+#: the harness.
 LEGACY_BLOCK = "legacy_overlapping_holdout_se"
+#: ⚠️ **LIVE TRIPWIRE — the KEY stays, the NUMBERS do not.**
+#: ``run_gate._deprecated_present`` searches for exactly this key to decide
+#: fail-loud-vs-fallback, so deleting it would silently disarm the gate's own
+#: refusal of the biased estimator. But until 2026-08-28 this key aliased the
+#: FULL legacy dict, which meant a decision-grade-LOOKING ``{"mean": …,
+#: "ci95": …}`` sat under an unlabelled name that ``gate_guard`` cannot see —
+#: and ``report``/``refc_rerank``/``efficiency``/``generalization``/
+#: ``runner.regression`` all read it as if it were the arm's number.
+#: ⇒ The key now carries a TOMBSTONE (:func:`_alias_tombstone`): the
+#: ``estimator`` field that arms the tripwire, and NO ``mean``/``ci95``/``std``.
+#: A consumer that still dereferences ``["mean"]`` gets a ``KeyError`` instead
+#: of a silently biased number, and the real values stay bit-identical one key
+#: over in :data:`LEGACY_BLOCK`.
+HELDOUT_ALIAS = "heldout"
 DEPRECATED_ESTIMATOR = "overlapping_holdout_se"
 ESTIMATOR_NOTE = (
     "`heldout ± ci95` is `overlapping_holdout_se`: mean ± 1.96·std/sqrt(8) over "
@@ -217,8 +238,10 @@ def _quarantine(legacy, boot_model, n_splits, val_frac):
                      "for any decision; `cluster_bootstrap` is.",
         "_estimator": DEPRECATED_ESTIMATOR,
         "estimator_note": ESTIMATOR_NOTE,
-        "_alias": "also emitted as the top-level `heldout` key for back-compat "
-                  "(run_gate._deprecated_present keys on that name).",
+        "_alias": "the top-level `heldout` key is a TOMBSTONE (estimator label "
+                  "only, no mean/ci95) so run_gate._deprecated_present stays "
+                  "armed on that name while no consumer can copy a number out "
+                  "of it. The values live HERE.",
         "n_splits": n_splits, "val_frac": val_frac,
         "model": lm, "cv": legacy["cv"],
         "ci_width_ratio_new_over_legacy": {
@@ -234,6 +257,41 @@ def _quarantine(legacy, boot_model, n_splits, val_frac):
             for m in ("ade_0_2s", "fde@2s", "miss_rate@2m", "tms_openloop")
             if m in lm and m in boot_model},
     }
+
+
+#: What a tombstoned metric node says where its ``mean``/``ci95`` used to be.
+WITHDRAWN_NOTE = (
+    "WITHDRAWN from this key on 2026-08-28 (PI ruling). The value was computed "
+    "with `overlapping_holdout_se`, which biases the POINT estimate as well as "
+    "the width (-6.67 % to +11.69 % on headline ade_0_2s across 27 banked "
+    "dumps; up to x-4.15 WITH A SIGN FLIP on paired deltas). It is unchanged "
+    "and reproducible under `legacy_overlapping_holdout_se`. The decision-grade "
+    "number is `cluster_bootstrap.model.<metric>` "
+    "(estimator: episode_cluster_bootstrap).")
+
+
+def _tombstone_node(metric):
+    """One withdrawn metric node: the estimator label, and no number.
+
+    ⭐ **Keeping ``estimator`` is what keeps the gate armed.**
+    ``run_gate._deprecated_present`` accepts a node on either ``"mean" in n``
+    OR ``n["estimator"] == DEPRECATED_ESTIMATOR`` — so dropping the number
+    leaves the tripwire firing through the second branch, which is the branch
+    that was written for exactly this shape."""
+    return {"estimator": DEPRECATED_ESTIMATOR, "deprecated": True,
+            "withdrawn": True,
+            "_moved_to": f"{LEGACY_BLOCK}.model.{metric}",
+            "_read": WITHDRAWN_NOTE}
+
+
+def _alias_tombstone(legacy):
+    """The back-compat ``heldout`` key, with the numbers removed.
+
+    Same keys, same nesting, so ``run_gate._deprecated_present`` and every
+    ``"heldout" in d`` presence check keep working; no ``mean``/``ci95``/
+    ``std``, so nothing can be quoted out of it by accident."""
+    return {side: {m: _tombstone_node(m) for m in block}
+            for side, block in legacy.items()}
 
 
 def _strata(labels, de_m, de_c):
@@ -258,8 +316,13 @@ def run(data, n_splits=8, val_frac=0.2, seed=0, n_boot=_ci.DEFAULT_N_BOOT):
     Reports two interval blocks (see the module docstring):
       ``cluster_bootstrap`` — PRIMARY. Episode-cluster bootstrap over the val
         episodes, B=``n_boot``. Point estimate is the full-set metric.
-      ``heldout`` — DEPRECATED. The pre-2026-07-20 overlapping-random-holdout
-        block, numerically unchanged so published numbers stay reproducible.
+      ``legacy_overlapping_holdout_se`` — DEPRECATED. The pre-2026-07-20
+        overlapping-random-holdout block, numerically unchanged so published
+        numbers stay reproducible, wrapped in its own provenance.
+      ``heldout`` — a TOMBSTONE of that block (estimator label, no numbers).
+        The key survives because ``run_gate._deprecated_present`` keys on it;
+        the numbers do not, because five consumers were reading them as the
+        arm's headline.
 
     ``beats_cv_ade_0_2s`` is decided on the PRIMARY (full-set) estimate, and
     ``beats_cv_separated`` reports whether the paired episode-clustered
@@ -293,14 +356,12 @@ def run(data, n_splits=8, val_frac=0.2, seed=0, n_boot=_ci.DEFAULT_N_BOOT):
            for s in data["speed"]]
     beats = boot_model["ade_0_2s"]["mean"] < boot_cv["ade_0_2s"]["mean"]
     legacy_block = {"model": _agg(model_split), "cv": _agg(cv_split)}
-    return {
+    out = {
         "n_windows": int(pred.shape[0]),
         "n_episodes": boot_model["ade_0_2s"]["n_episodes"],
         "primary_ci": "cluster_bootstrap",
         "cluster_bootstrap": {"model": boot_model, "cv": boot_cv,
                               "model_vs_cv_paired": vs_cv},
-        LEGACY_BLOCK: _quarantine(legacy_block, boot_model, n_splits, val_frac),
-        "heldout": legacy_block,
         "full_set": {"model": _suite(pred, gt), "cv": _suite(cv, gt)},
         "beats_cv_ade_0_2s": bool(beats),
         "beats_cv_separated": bool(vs_cv["separated"] and vs_cv["delta"] > 0),
@@ -315,6 +376,33 @@ def run(data, n_splits=8, val_frac=0.2, seed=0, n_boot=_ci.DEFAULT_N_BOOT):
                                              "'8-split episode-disjoint jackknife')",
                      "claim_strength": "open-loop / weak (arXiv:2605.00066)"},
     }
+    # The policy, ENFORCED — same shape as closedloop / hierarchy / planner_p2:
+    # run the guard BEFORE the quarantined blocks are attached, because those
+    # blocks exist precisely to carry the deprecated numbers under their true
+    # name and are the one documented exemption.
+    assert_no_deprecated_estimator(out)
+    out[LEGACY_BLOCK] = _quarantine(legacy_block, boot_model, n_splits, val_frac)
+    out[HELDOUT_ALIAS] = _alias_tombstone(legacy_block)
+    return out
+
+
+def assert_no_deprecated_estimator(res):
+    """Refuse to return a bench block whose numbers are the deprecated estimator.
+
+    The omission this closes (MEASURED 2026-08-23, ESTIMATOR_CLOSEOUT.md):
+    ``closedloop``, ``hierarchy``, ``planner_p2``, ``driving``, ``corridor``,
+    ``lateral`` and ``strategic_probes`` each call ``driving``'s single
+    implementation of the policy before returning. ``bench.run`` — the entry
+    point behind the leaderboard, the regression gate and every ``<key>.json``
+    — never did, and it was the module still emitting a bare, gate-invisible
+    ``heldout`` block.
+
+    Run BEFORE :data:`LEGACY_BLOCK` and :data:`HELDOUT_ALIAS` are attached; both
+    are quarantine keys and are the documented exemption."""
+    from taniteval import driving as _drv
+    return _drv.assert_no_deprecated_estimator(
+        {k: v for k, v in res.items()
+         if k not in (LEGACY_BLOCK, HELDOUT_ALIAS)}, _path="bench")
 
 
 # =========================================================================== #

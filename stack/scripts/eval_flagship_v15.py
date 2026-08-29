@@ -235,10 +235,18 @@ def main(argv=None):
                 if k in data}, wp)
     print(f"[windows] {wp} (per-window pred/gt/cv/eid — enables paired "
           f"episode-clustered tests)", flush=True)
-    m = res["heldout"]["model"]
+    # ⛔ CLOSED 2026-08-28 (PI ruling, products/P7-TanitEval/ESTIMATOR_CLOSEOUT.md).
+    # G1/G2/G3 below were adjudicated on `res["heldout"]["model"]` — the
+    # `overlapping_holdout_se` mean-of-split-means. That is a GATE decided by
+    # the banned estimator, and `gate_guard` could not see it twice over: the
+    # taint enters through a dict key (`bench.run` is not a banned CALL), and
+    # the verdict keys are spelled `G1_beat_…`, which `_DECIDING_RE` does not
+    # match. Both gaps are recorded in ESTIMATOR_CLOSEOUT.md §OPEN.
+    m = res["cluster_bootstrap"]["model"]
     print(json.dumps({
         "key": a.key, "n_windows": res["n_windows"],
-        "ade@2s_heldout": m["ade@2s"], "ade@2s_full": res["full_set"]["model"]["ade@2s"],
+        "estimator": m["ade@2s"]["estimator"],
+        "ade@2s_primary": m["ade@2s"], "ade@2s_full": res["full_set"]["model"]["ade@2s"],
         "fde@2s": m["fde@2s"], "miss@2m": m["miss_rate@2m"],
         "beats_cv": res["beats_cv_ade_0_2s"],
         # Gate constants read from Project Steering/MODEL_REGISTRY.md.

@@ -185,7 +185,7 @@ def test_the_synthetic_release_PASSES(tmp_path, registry):
     assert _cannot(res) == set(), \
         json.dumps([r.as_dict() for r in res["_rows"] if r.state == rg.CANNOT_RULE],
                    indent=1)
-    assert res["verdict"] == "RELEASE-CLEARED"
+    assert res["verdict"].startswith("ADVISORY-PASS")
 
 
 def test_the_verdict_is_never_a_pooled_score(tmp_path, registry):
@@ -335,16 +335,21 @@ def test_DELIBERATE_REGRESSION_each_criterion_can_actually_fail(tmp_path, regist
     assert failed <= collateral, (
         f"{cid} broke UNDECLARED collateral {sorted(failed - collateral)} — "
         f"either the criteria are entangled or the breaker is too coarse")
-    assert res["verdict"] == "RELEASE-BLOCKED"
+    assert res["verdict"].startswith("ADVISORY-FAIL")
 
 
 def test_the_registry_decides_what_blocks_not_this_tool(tmp_path, registry):
-    """The blocking set is `CRITERIA_REGISTRY.json:release_gate.blocking`. A rule
-    living only in the tool would drift from the census the first time either was
-    edited — the decay the registry exists to stop."""
+    """The criterion set is `CRITERIA_REGISTRY.json:release_gate.advisory_all`. A
+    rule living only in the tool would drift from the census the first time either
+    was edited — the decay the registry exists to stop.
+
+    ⚠️ PI ruling 2026-08-28: the gate is ADVISORY. The rows must still be PRODUCED
+    and still carry their `blocking_why` provenance — the tool's internal
+    `blocking` flag now means "this is a criterion the registry named", not "this
+    stops a release". Authority moved to the PI; measurement did not move."""
     res = _run(tmp_path, registry, _release_docs())
     by_id = {r.id: r for r in res["_rows"]}
-    for entry in registry["release_gate"]["blocking"]:
+    for entry in registry["release_gate"]["advisory_all"]:
         for rid in rg._REGISTRY_TO_RG.get(entry, ()):
             rows = [r for r in res["_rows"] if r.id.split(".")[0] == rid]
             assert rows, f"registry blocks on {entry!r} but no {rid} row exists"
@@ -362,10 +367,20 @@ def test_regression_is_ADVISORY_until_the_registry_says_otherwise(tmp_path, regi
     row = next(r for r in res["_rows"] if r.id == "RG-11.LON")
     assert row.state == rg.FAIL and row.blocking is False
     assert "advisory" in row.blocking_why
-    assert res["verdict"] == "RELEASE-CLEARED", \
-        "an advisory failure must not flip the verdict"
     assert res["counts"]["ADVISORY_FAIL"] >= 1
     assert "[ADVISORY]" in rg.render(res)
+
+    # ⛔ CHANGED BY THE PI RULING OF 2026-08-28, deliberately.
+    # Before the ruling this asserted the verdict stayed "RELEASE-CLEARED" when only
+    # an advisory criterion failed — because "cleared" then meant "nothing BLOCKING
+    # failed". Now nothing blocks at all, so a verdict of PASS would have to mean
+    # "nothing failed". Reporting PASS while a regression genuinely failed is exactly
+    # the softening the ruling must not cause: advisory is about AUTHORITY, not
+    # honesty. So the verdict names the failure...
+    assert res["verdict"].startswith("ADVISORY-FAIL"),         "a real failure must be named in the verdict even when nothing blocks"
+    # ...while the escalation path stays clear: nothing registry-named failed, so the
+    # exit-code contract still reports 0 and no process is asked to stop.
+    assert res["counts"]["BLOCKING_FAIL"] == 0,         "an advisory-only failure must not escalate to the registry-named count"
 
 
 def test_a_broken_gate_exits_non_zero(tmp_path, registry, monkeypatch, capsys):
@@ -374,14 +389,14 @@ def test_a_broken_gate_exits_non_zero(tmp_path, registry, monkeypatch, capsys):
     d = _write(tmp_path / "arts", docs)
     code = rg.main(["--model", "relX", "--artifacts", str(d), "--baseline", "baseW"])
     assert code == 1, "a FAILing release must exit 1"
-    assert "RELEASE-BLOCKED" in capsys.readouterr().out
+    assert "ADVISORY-FAIL" in capsys.readouterr().out
 
 
 def test_a_clean_release_exits_zero(tmp_path, registry, capsys):
     d = _write(tmp_path / "arts", _release_docs())
     code = rg.main(["--model", "relX", "--artifacts", str(d), "--baseline", "baseW"])
     assert code == 0
-    assert "RELEASE-CLEARED" in capsys.readouterr().out
+    assert "ADVISORY-PASS" in capsys.readouterr().out
 
 
 # =================================================================================
@@ -402,7 +417,7 @@ def test_CANNOT_RULE_when_n_episodes_is_below_the_cluster_floor(tmp_path, regist
     assert "n_episodes=3" in row.detail and "floor" in row.detail
     assert "RG-10" in row.detail and "RG-11" in row.detail, \
         "an unrulable criterion must name what it DISARMS downstream"
-    assert res["verdict"] == "RELEASE-INCONCLUSIVE"
+    assert res["verdict"].startswith("ADVISORY-INCONCLUSIVE")
     assert "CANNOT RULE" in rg.render(res)
 
 
@@ -413,7 +428,7 @@ def test_CANNOT_RULE_when_no_control_was_banked(tmp_path, registry):
     docs.pop("ff_relX_ha.json")
     res = _run(tmp_path, registry, docs)
     assert "RG-10" in _cannot(res), json.dumps(_states(res), indent=1)
-    assert res["verdict"] == "RELEASE-INCONCLUSIVE"
+    assert res["verdict"].startswith("ADVISORY-INCONCLUSIVE")
 
 
 def test_CANNOT_RULE_when_the_named_baseline_is_not_in_scope(tmp_path, registry):
@@ -442,7 +457,7 @@ def test_cannot_rule_exits_two_not_zero(tmp_path, registry, capsys):
     d = _write(tmp_path / "arts", docs)
     code = rg.main(["--model", "relX", "--artifacts", str(d), "--baseline", "baseW"])
     assert code == 2
-    assert "RELEASE-INCONCLUSIVE" in capsys.readouterr().out
+    assert "ADVISORY-INCONCLUSIVE" in capsys.readouterr().out
 
 
 # =================================================================================
@@ -543,7 +558,7 @@ def test_the_json_report_carries_every_criterion_and_the_scope(tmp_path, registr
     rg.main(["--model", "relX", "--artifacts", str(d), "--baseline", "baseW",
              "--json", str(out)])
     rep = json.loads(out.read_text(encoding="utf-8"))
-    assert rep["verdict"] == "RELEASE-CLEARED"
+    assert rep["verdict"].startswith("ADVISORY-PASS")
     assert len(rep["scope"]) == len(docs)
     assert {c["id"] for c in rep["criteria"]} >= {
         "RG-01", "RG-02", "RG-03", "RG-04", "RG-05", "RG-06", "RG-07", "RG-08",
@@ -558,3 +573,38 @@ def test_every_registry_family_has_a_gate_metric_or_is_declared_absent(registry)
     covered = {s.family for s in rg.FAMILY_METRICS}
     assert set(registry["families"]) <= covered, \
         f"registry families with no gate metric: {set(registry['families']) - covered}"
+
+
+
+# ------------------------- the PI ruling: advisory, still honest (2026-08-28) ---
+
+def test_the_verdict_no_longer_claims_blocking_authority(tmp_path, registry):
+    """⛔ PI ruling 2026-08-28: the gate does not block a release. The word must go
+    from the verdict — a tool that keeps announcing an authority it does not have is
+    lying about the process."""
+    docs, _ = _break_rg11(copy.deepcopy(_release_docs()))
+    res = _run(tmp_path, registry, docs)
+    assert "BLOCKED" not in res["verdict"].upper().replace("DOES NOT BLOCK", "")
+    assert res["verdict"].startswith("ADVISORY")
+
+
+def test_advisory_did_NOT_soften_the_counts(tmp_path, registry):
+    """⭐ THE REGRESSION ARM FOR THE RULING ITSELF.
+
+    Advisory is about AUTHORITY, not honesty. A FAIL must still be counted and named
+    a FAIL. If making the gate advisory had quietly reduced the failure count, the
+    instrument would be worthless — and that drift is exactly what this programme
+    keeps paying for.
+    """
+    docs, _ = _break_rg11(copy.deepcopy(_release_docs()))
+    res = _run(tmp_path, registry, docs)
+    n_fail = res["counts"]["FAIL"]
+    assert n_fail > 0, "the broken fixture must still produce FAILs"
+    assert str(n_fail) in res["verdict"], "the verdict must carry the honest count"
+
+
+def test_the_exit_code_contract_survives_the_ruling(tmp_path, registry):
+    """The exit code is INFORMATION, not authority — automation still needs to see a
+    failure, even though no process is required to stop on it."""
+    import tools.release_gate as _rg  # noqa: F401
+    assert "exit 1" in rg.__doc__ and "exit 2" in rg.__doc__

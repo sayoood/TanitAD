@@ -32,18 +32,37 @@ from taniteval import gate_guard as gg
 REPO = Path(__file__).resolve().parents[2]
 
 #: The enforced scope: product code whose output decides something.
-ENFORCED_ROOTS = [REPO / "taniteval" / "taniteval",
-                  REPO / "taniteval" / "tools",
-                  REPO / "stack" / "tanitad",
-                  REPO / "stack" / "scripts"]
+#: ⭐ 2026-08-28 — ``(REPO / "taniteval", "*.py")`` was ADDED. The scope covered
+#: ``taniteval/taniteval`` and ``taniteval/tools`` but not the ``taniteval/``
+#: top level, where ~35 standalone drivers live — including
+#: ``recompute_ci.py``, an unguarded caller of ``ci.overlapping_holdout_se``.
+#: It was outside the guard by accident, not by decision. MEASURED before
+#: adding: **zero** new violations, name or shape, so the extension costs
+#: nothing and closes the gap. Non-recursive on purpose: ``taniteval/tests``
+#: contains deliberate reproductions of the arithmetic (they are fixtures that
+#: PROVE the guard fires) and policing the guard's own negative controls would
+#: be the self-match trap again.
+ENFORCED_ROOTS = [(REPO / "taniteval" / "taniteval", "**/*.py"),
+                  (REPO / "taniteval" / "tools", "**/*.py"),
+                  (REPO / "taniteval", "*.py"),
+                  (REPO / "stack" / "tanitad", "**/*.py"),
+                  (REPO / "stack" / "scripts", "**/*.py")]
 SKIP = ("__pycache__", "/.claude/", "/experiments/")
+
+
+def _scan_all(fn):
+    """Run a ``gate_guard`` scanner over every ``(root, pattern)`` in scope."""
+    out = []
+    for root, pattern in ENFORCED_ROOTS:
+        out += fn([root], pattern=pattern, skip=SKIP)
+    return out
 
 
 # --------------------------------------------------------------------------- #
 # THE GUARD                                                                    #
 # --------------------------------------------------------------------------- #
 def test_no_gate_is_decided_by_the_banned_estimator():
-    v = gg.scan_paths(ENFORCED_ROOTS, skip=SKIP)
+    v = _scan_all(gg.scan_paths)
     assert not v, (
         "a GATE verdict is computed from the banned `overlapping_holdout_se` "
         "family. That estimator biases the POINT ESTIMATE (mean-of-split-means, "
@@ -52,6 +71,182 @@ def test_no_gate_is_decided_by_the_banned_estimator():
         "Replace it with ci.episode_cluster_bootstrap / "
         "ci.paired_episode_cluster_bootstrap and keep the old value beside it "
         "under a key ending `_LEGACY`.\n  " + "\n  ".join(str(x) for x in v))
+
+
+# --------------------------------------------------------------------------- #
+# ⭐ THE ARITHMETIC-SHAPE CENSUS — the guard that had no caller                  #
+# --------------------------------------------------------------------------- #
+"""``gate_guard.scan_source_shapes`` finds ``z · dispersion / sqrt(n)`` written
+under ANY name — the failure mode a name-keyed rule is always one rename behind.
+Its own docstring says admissibility is settled by
+``tests/test_no_jack_in_gates.py::SHAPE_ALLOWLIST``.
+
+⛔ **That allowlist did not exist, and neither did any caller.** MEASURED
+2026-08-28: ``grep -rn 'scan_paths_shapes\\|scan_file_shapes'`` over the repo
+returned only the definitions in ``gate_guard.py`` itself. The detector was
+120 lines of correct, tested-by-nobody code — an instrument structurally unable
+to report the answer it is cited for, which is the same class as ``df`` hiding
+the per-pod quota and as ``_files_under`` skipping 373 of 373 files.
+
+The census below is EXHAUSTIVE and EXACT: every shape in scope is either
+allowlisted with a reason or listed as a known-open defect, and the test fails
+if the detected set differs from their union in EITHER direction. So:
+
+* a NEW site fails on the day it is written, whatever it is called;
+* a known-open site that is "fixed" by renaming it into
+  ``is_declared_estimator_name`` self-exemption ALSO fails, because it
+  disappears from a census that requires it to be there.
+"""
+
+#: ``(relative path, function)`` -> why this ``z·sd/sqrt(n)`` is a VALID SE.
+#: The inputs must be genuinely independent; that is a semantic claim no syntax
+#: tree can check, which is exactly why it is written down by a human here.
+SHAPE_ALLOWLIST = {
+    ("stack/tanitad/eval/bakeoff.py", "mean_ci95"):
+        "Aggregates over independent TRAINING SEEDS, not over holdouts of one "
+        "pool. Different seeds are independent draws, so the normal-"
+        "approximation SE is the right estimator. Blessed by name in "
+        "gate_guard's own module note.",
+}
+
+#: ``(relative path, function)`` -> a MEASURED instance of the deprecated
+#: estimator that is still live, with its escalation. These are NOT approved;
+#: they are enumerated so the census is exact and so silently renaming one away
+#: fails this test.
+SHAPE_KNOWN_OPEN = {
+    ("stack/tanitad/eval/gates.py", "run_d1"):
+        "⛔ OPEN — a FOURTH unnamed clone, found 2026-08-28 while closing the "
+        "other three. `run_d1` averages ADE over `split_by_episode(eid, "
+        "val_frac, s)` for s in seed..seed+n_splits-1 — 8 OVERLAPPING random "
+        "20 % holdouts — then decides `passed = admissible and ade < thr` on "
+        "that mean-of-split-means and prints `ADE@1s=<ade>±<ade_ci95>` into "
+        "the verdict string. The name guard cannot see it (no banned call "
+        "name; the verdict key is `passed`, but nothing it reads is tainted "
+        "by a banned CALL). ⇒ Fixing it moves every D1 verdict in the "
+        "programme, so it is a PI decision, not an agent's. Escalated in "
+        "products/P7-TanitEval/ESTIMATOR_CLOSEOUT.md §OPEN-1.",
+}
+
+
+def _shape_census():
+    out = {}
+    for v in _scan_all(gg.scan_paths_shapes):
+        path, _ln, fname, _why = v
+        rel = Path(path).resolve().relative_to(REPO).as_posix()
+        out.setdefault((rel, fname), []).append(v)
+    return out
+
+
+def test_the_shape_detector_is_actually_RUN_over_the_enforced_scope():
+    """The regression that matters most: this test existing at all.
+
+    If ``_scan_all`` ever returns nothing because the scope collapsed (the
+    ``_files_under`` skip bug did exactly that), the census would be trivially
+    equal to an empty allowlist and the guard would go green on no input."""
+    files = [f for root, pattern in ENFORCED_ROOTS
+             for f in gg._files_under(root, pattern, SKIP)]
+    assert len(files) > 200, (
+        f"the shape scan saw only {len(files)} files — the scope collapsed, "
+        f"and a guard with no input is not a passing guard")
+
+
+def test_every_z_sd_over_sqrt_n_in_scope_is_accounted_for():
+    found = set(_shape_census())
+    known = set(SHAPE_ALLOWLIST) | set(SHAPE_KNOWN_OPEN)
+    new = found - known
+    assert not new, (
+        "a NEW `z · dispersion / sqrt(n)` construction appeared in enforced "
+        "scope. If its inputs are genuinely independent, add it to "
+        "SHAPE_ALLOWLIST with the argument for why. If they are overlapping "
+        "holdouts of one pool, it is `overlapping_holdout_se` under a new "
+        "name — use taniteval.ci.episode_cluster_bootstrap instead.\n  "
+        + "\n  ".join(f"{p}::{f}" for p, f in sorted(new)))
+    gone = known - found
+    assert not gone, (
+        "a site left the census without the census being updated. A known-open "
+        "defect must not vanish by RENAME — `is_declared_estimator_name` "
+        "self-exemption hides the arithmetic without fixing it. If it was "
+        "genuinely fixed, delete its row here in the same commit.\n  "
+        + "\n  ".join(f"{p}::{f}" for p, f in sorted(gone)))
+
+
+def test_the_closed_unnamed_clone_is_gone_from_the_census():
+    """⭐ SITE 3, closed 2026-08-28. ``driving_diagnostic.mean_ci`` was the
+    unnamed clone: the right arithmetic under a name no rule could see, with
+    six live callers and NO ``estimator`` field on its output.
+
+    It is now ``overlapping_holdout_mean_ci`` — a DECLARED reproduction, so the
+    shape detector exempts it by design and the NAME guard governs it instead
+    (both spellings are already in ``gg.BANNED_CALLS``). This test pins all
+    three halves of that, because any one of them alone would be a fake fix."""
+    assert ("stack/scripts/driving_diagnostic.py", "mean_ci") \
+        not in _shape_census()
+    assert gg.is_declared_estimator_name("overlapping_holdout_mean_ci")
+    assert not gg.is_declared_estimator_name("mean_ci"), \
+        "the innocent alias must NOT self-exempt — only a declaring name does"
+    assert {"mean_ci", "overlapping_holdout_mean_ci"} <= gg.BANNED_CALLS
+    import driving_diagnostic as dd
+    assert dd.mean_ci is dd.overlapping_holdout_mean_ci
+    node = dd.mean_ci([1.0, 2.0, 3.0])
+    assert node["estimator"] == "overlapping_holdout_se"
+    assert node["deprecated"] is True
+    # verbatim ddof=1 arithmetic — a reproduction that changes the number is
+    # not a reproduction (ci.overlapping_holdout_se is ddof=0 and would rescale
+    # every published D-number by sqrt((n-1)/n)).
+    assert node["ci95"] == pytest.approx(1.96 * 1.0 / 3 ** 0.5, abs=5e-5)
+
+
+# --------------------------------------------------------------------------- #
+# DELIBERATE REGRESSION ARM — the guard must still catch the closed defect      #
+# --------------------------------------------------------------------------- #
+#: ``driving_diagnostic.mean_ci`` VERBATIM as it stood until 2026-08-28.
+#: A guard never shown to fail proves nothing, so the removed defect is kept
+#: here as a fixture and the detector is required to find it.
+PRE_CLOSEOUT_MEAN_CI = '''
+def mean_ci(vals):
+    """mean, 95% CI (route-resampled protocol, matching gates.run_d1)."""
+    n = len(vals)
+    m = sum(vals) / n
+    std = (sum((v - m) ** 2 for v in vals) / max(1, n - 1)) ** 0.5
+    return {"mean": round(m, 4), "ci95": round(1.96 * std / n ** 0.5, 4),
+            "std": round(std, 4), "n_splits": n,
+            "per_split": [round(v, 4) for v in vals]}
+'''
+
+#: The same defect after the FIRST thing an author reaches for when a one-line
+#: rule complains: split it over two statements.
+LAUNDERED_SE = '''
+def summarise(vals):
+    n = len(vals)
+    sd = statistics.stdev(vals)
+    se = sd / math.sqrt(n)
+    return {"mean": statistics.mean(vals), "ci95": 1.96 * se}
+'''
+
+#: ...and after renaming it to something that sounds harmless.
+RENAMED_CLONE = '''
+def summarise_splits(vals):
+    n = len(vals)
+    spread = np.std(vals)
+    return {"mean": float(np.mean(vals)), "ci95": 1.959964 * spread / np.sqrt(n)}
+'''
+
+
+@pytest.mark.parametrize("src,label", [
+    (PRE_CLOSEOUT_MEAN_CI, "driving_diagnostic.mean_ci as it stood until 2026-08-28"),
+    (LAUNDERED_SE, "the same SE split over two statements"),
+    (RENAMED_CLONE, "the same SE under a name nobody has banned yet"),
+])
+def test_shape_guard_fires_on_the_reintroduced_defect(src, label):
+    v = gg.scan_source_shapes(src, label)
+    assert v, f"the SHAPE guard did NOT fire on: {label}"
+
+
+def test_shape_guard_does_not_fire_on_a_declared_reproduction():
+    """The one in-module exemption, pinned so it cannot silently widen."""
+    declared = PRE_CLOSEOUT_MEAN_CI.replace("def mean_ci(",
+                                            "def overlapping_holdout_mean_ci(")
+    assert gg.scan_source_shapes(declared, "declared") == []
 
 
 def test_planner_p2_gates_are_decision_grade():

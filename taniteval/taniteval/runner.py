@@ -387,37 +387,65 @@ def run_ab(a, b):
     return r
 
 
-def regression(update=False, tol_frac=0.08):
+def _has_deprecated_block(d, keys):
+    """True iff ``d`` carries the DEPRECATED ``heldout`` block for these metrics.
+
+    Accepts BOTH shapes on purpose: a historical artifact, whose nodes still
+    hold ``mean``/``ci95``, and a post-2026-08-28 artifact, whose ``heldout``
+    key is ``bench._alias_tombstone`` — estimator label only. Either way the
+    arm has no admissible interval and must be re-run, so both must reach the
+    same refusal. Keying on ``mean`` alone would let a tombstoned artifact fall
+    through as "no block at all" and be silently dropped instead of named."""
+    model = d.get("heldout", {}).get("model")
+    if not isinstance(model, dict):
+        return False
+    return any(isinstance(model.get(k), dict) for k in keys)
+
+
+def regression(update=False, tol_frac=0.08, allow_missing=False):
     """Golden-value regression: every stored result within tol of golden.
 
     Reads the PRIMARY episode-cluster-bootstrap point estimate (2026-07-25).
     It used to read the deprecated ``heldout`` block, whose mean-over-8-
     overlapping-holdouts differs from the full-set metric by up to ±10.5 %
     (MEASURED over the committed fixtures) — so a real 8 % regression could hide
-    inside the estimator gap. Results written before ``cluster_bootstrap``
-    existed fall back to ``heldout``; the source is recorded per arm so a mixed
-    golden file cannot pass as a like-for-like comparison."""
+    inside the estimator gap.
+
+    ⛔ **CLOSED 2026-08-28 (PI ruling): the ``heldout`` fallback now REFUSES.**
+    Labelling the source ``heldout(DEPRECATED)`` and continuing was still a
+    silent substitution: `golden.json` would hold a mean-of-split-means for
+    some arms and a full-set mean for others, and the ±8 % tolerance is then
+    compared across a −6.67 %…+11.69 % estimator gap. A mixed golden file is
+    not a weaker comparison, it is not a comparison at all — so an arm with no
+    ``cluster_bootstrap`` block is SKIPPED, named, and (unless
+    ``allow_missing``) the whole gate exits non-zero telling the caller to
+    re-run it."""
     gpath = RES / "golden.json"
     keys = ["ade_0_2s", "fde@2s", "miss_rate@2m"]
-    current, sources = {}, {}
+    current, refused = {}, []
     for f in RES.glob("*.json"):
         if f.name.startswith(("ab_", "golden", "run_")):
             continue
         d = json.loads(f.read_text())
         block = d.get("cluster_bootstrap", {}).get("model")
-        src = "cluster_bootstrap"
-        if not block and "heldout" in d:
-            block, src = d["heldout"]["model"], "heldout(DEPRECATED)"
+        if not block and _has_deprecated_block(d, keys):
+            refused.append(f.stem)
+            continue
         if block and all(k in block for k in keys):
             current[f.stem] = {k: block[k]["mean"] for k in keys}
-            sources[f.stem] = src
-    stale = sorted(k for k, v in sources.items() if v != "cluster_bootstrap")
-    if stale:
-        print(f"[regression] ⚠ {len(stale)} arm(s) have NO cluster_bootstrap "
-              f"block and were read off the DEPRECATED heldout estimator "
-              f"(different point estimate, not comparable): "
-              f"{', '.join(stale[:6])}{' …' if len(stale) > 6 else ''}. "
-              f"Re-run them so the comparison is like-for-like.", flush=True)
+    if refused:
+        print(f"[regression] ⛔ REFUSED {len(refused)} arm(s): no "
+              f"cluster_bootstrap block, only the DEPRECATED "
+              f"overlapping_holdout_se ('heldout') estimator. Its point "
+              f"estimate is a mean-of-split-means, not the full-set metric "
+              f"(-6.67 % … +11.69 % on ade_0_2s over 27 banked dumps), so it "
+              f"is NOT a like-for-like substitute and is no longer silently "
+              f"used: {', '.join(sorted(refused)[:6])}"
+              f"{' …' if len(refused) > 6 else ''}. Re-run them "
+              f"(`python -m taniteval.runner run --model <key>`).", flush=True)
+        if not allow_missing:
+            print("[regression] FAIL", flush=True)
+            return False
     if update or not gpath.exists():
         gpath.write_text(json.dumps(current, indent=2))
         print(f"[regression] golden updated ({len(current)} models)", flush=True)
@@ -459,6 +487,13 @@ def main():
                                                        default=40)
     g = sub.add_parser("regression"); g.add_argument("--update-golden",
                                                      action="store_true")
+    g.add_argument("--allow-missing-primary", action="store_true",
+                   help="do NOT fail the gate when an arm has only the "
+                        "DEPRECATED overlapping_holdout_se block. The arm is "
+                        "still SKIPPED and named — this flag only downgrades "
+                        "the refusal from fatal to reported, and exists so a "
+                        "partial re-run can make progress. It never restores "
+                        "the old silent fallback.")
     ge = sub.add_parser("generalize"); ge.add_argument("--model", required=True)
     ge.add_argument("--episodes", type=int, default=40)
     ge.add_argument("--corpus", default="physicalai")
@@ -537,7 +572,8 @@ def main():
                 print(f"[hier-all] {m['key']} FAILED: "
                       f"{type(e).__name__}: {str(e)[:140]}", flush=True)
     elif a.cmd == "regression":
-        ok = regression(update=a.update_golden)
+        ok = regression(update=a.update_golden,
+                        allow_missing=a.allow_missing_primary)
         sys.exit(0 if ok else 1)
     elif a.cmd == "generalize":
         from taniteval import generalization

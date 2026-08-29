@@ -44,7 +44,10 @@ sys.path.insert(0, os.path.join(_STACK, "scripts"))
 
 from tanitad.data import parity                                  # noqa: E402
 
-_HUB = os.path.join(_REPO, "TanitAD Research Hub")
+# PI directive 2026-08-27: "TanitAD Research Hub/" is dead; the tree is
+# "TanitAD Research Lab/". Both names are 20 bytes, so this rename is invisible
+# to any size- or count-based check -- verified by artifact existence instead.
+_HUB = os.path.join(_REPO, "TanitAD Research Lab")
 _PILOT = os.path.join(
     _HUB, "Architecture & Inference", "Implementation", "incoming",
     "2026-08-17-thor-concurrency-pilot")

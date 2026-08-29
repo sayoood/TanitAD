@@ -88,7 +88,19 @@ def is_banned_callable(node: ast.AST, aliases=()) -> str | None:
 
     ``aliases`` are extra local names bound to a banned estimator by an import
     — ``from taniteval.planner_p2 import _jack_paired as agg`` makes the call
-    site read ``agg(...)``, which no name-based rule would catch on its own."""
+    site read ``agg(...)``, which no name-based rule would catch on its own.
+
+    ⭐ A **DECLARED** name (:data:`_DECLARED_RE` — anything containing
+    ``overlapping_holdout`` or ``jackknife``) is banned here too, and the
+    asymmetry with the shape detector is the point: declaring the estimator
+    buys a function the right to CONTAIN the arithmetic, never the right to
+    DECIDE with it. MEASURED 2026-08-28: renaming
+    ``recompute_ci.naive_published`` to
+    ``reproduce_overlapping_holdout_published`` correctly exempted it from the
+    shape detector — and simultaneously left a verdict computed from its output
+    invisible to this guard, because the new name was in neither
+    :data:`BANNED_CALLS` nor :data:`BANNED_CALL_RE`. The declared exemption had
+    a hole exactly where it was widest."""
     if isinstance(node, ast.Call):
         return is_banned_callable(node.func, aliases)
     if isinstance(node, ast.Attribute):
@@ -97,7 +109,8 @@ def is_banned_callable(node: ast.AST, aliases=()) -> str | None:
         name = node.id
     else:
         return None
-    if name in BANNED_CALLS or BANNED_CALL_RE.match(name) or name in aliases:
+    if name in BANNED_CALLS or BANNED_CALL_RE.match(name) or name in aliases \
+            or _DECLARED_RE.search(name):
         return name
     return None
 
@@ -112,7 +125,8 @@ def banned_import_aliases(tree: ast.AST) -> dict[str, str]:
         if isinstance(n, (ast.Import, ast.ImportFrom)):
             for a in n.names:
                 orig = a.name.rsplit(".", 1)[-1]
-                if orig in BANNED_CALLS or BANNED_CALL_RE.match(orig):
+                if orig in BANNED_CALLS or BANNED_CALL_RE.match(orig) \
+                        or _DECLARED_RE.search(orig):
                     out[a.asname or orig] = orig
     return out
 
@@ -425,11 +439,22 @@ def _sqrt_operand(node):
     return None
 
 
-def _is_dispersion(node) -> bool:
-    """A standard deviation, however it was spelled."""
+def _is_dispersion(node, disp_names=()) -> bool:
+    """A standard deviation, however it was spelled.
+
+    ``disp_names`` are local names PROVEN to hold a dispersion by
+    :func:`_dispersion_names`. Without them the detector was still name-keyed
+    in its numerator: ``spread = np.std(vals)`` followed by
+    ``1.96 * spread / sqrt(n)`` slipped through, because ``spread`` is not in
+    :data:`_DISPERSION_NAME_RE`. MEASURED 2026-08-28 by a deliberate-regression
+    fixture in ``test_no_jack_in_gates.py``. That is the same "one rename
+    behind" failure the shape detector exists to end, one level down — so the
+    numerator now follows the DATA, exactly as :func:`_se_names` already did
+    for the whole ``dispersion / sqrt(n)`` expression."""
     if _callee_name(node) in _DISPERSION_FUNCS:
         return True
-    if isinstance(node, ast.Name) and _DISPERSION_NAME_RE.search(node.id):
+    if isinstance(node, ast.Name) and (_DISPERSION_NAME_RE.search(node.id)
+                                       or node.id in disp_names):
         return True
     if isinstance(node, ast.Attribute) and _DISPERSION_NAME_RE.search(node.attr):
         return True
@@ -467,15 +492,40 @@ def _muldiv(node, num=None, den=None):
     return num, den
 
 
-def _is_se_shape(node) -> bool:
+def _dispersion_names(tree, seed=()) -> set:
+    """Local names bound to a dispersion — ``spread = np.std(v)`` and friends.
+
+    Fixpoint, so ``a = np.std(v)`` then ``b = a`` then ``1.96 * b / sqrt(n)``
+    is still caught. Deliberately narrow: only a name whose VALUE is itself a
+    dispersion qualifies, so ``mean = np.mean(v)`` does not become one."""
+    out = set(seed)
+    for _ in range(4):
+        changed = False
+        for n in ast.walk(tree):
+            if not isinstance(n, (ast.Assign, ast.AnnAssign)) or n.value is None:
+                continue
+            if not _is_dispersion(n.value, out):
+                continue
+            targets = n.targets if isinstance(n, ast.Assign) else [n.target]
+            for nm in (m for t in targets for m in _target_names(t)):
+                if nm not in out:
+                    out.add(nm)
+                    changed = True
+        if not changed:
+            break
+    return out
+
+
+def _is_se_shape(node, disp_names=()) -> bool:
     """``dispersion / sqrt(...)`` — a standard error, without the z."""
     if not isinstance(node, ast.BinOp):
         return False
     num, den = _muldiv(node)
-    return any(_is_dispersion(x) for x in num) and any(_is_sqrt(x) for x in den)
+    return (any(_is_dispersion(x, disp_names) for x in num)
+            and any(_is_sqrt(x) for x in den))
 
 
-def _se_names(tree) -> dict:
+def _se_names(tree, disp_names=()) -> dict:
     """Names bound to a bare ``dispersion / sqrt(n)`` — the laundered form.
 
     ``se = std / sqrt(n)`` on one line and ``ci = 1.96 * se`` on the next is the
@@ -489,7 +539,7 @@ def _se_names(tree) -> dict:
                 continue
             targets = n.targets if isinstance(n, ast.Assign) else [n.target]
             names = [nm for t in targets for nm in _target_names(t)]
-            hit = _is_se_shape(n.value) or bool(
+            hit = _is_se_shape(n.value, disp_names) or bool(
                 _names_read(n.value) & set(out))
             if not hit:
                 continue
@@ -520,7 +570,8 @@ def scan_source_shapes(src, path="<src>") -> list[Violation]:
     the admissibility allowlist lives in the test rather than here."""
     tree = ast.parse(src, filename=str(path))
     owner = _enclosing_functions(tree)
-    se = _se_names(tree)
+    disp = _dispersion_names(tree)
+    se = _se_names(tree, disp)
     out: list[Violation] = []
     seen = set()
     for node in ast.walk(tree):
@@ -530,7 +581,7 @@ def scan_source_shapes(src, path="<src>") -> list[Violation]:
         num, den = _muldiv(node)
         if not any(_is_quantile(x) for x in num):
             continue
-        direct = (any(_is_dispersion(x) for x in num)
+        direct = (any(_is_dispersion(x, disp) for x in num)
                   and any(_is_sqrt(x) for x in den))
         via = sorted({x.id for x in num
                       if isinstance(x, ast.Name) and x.id in se})

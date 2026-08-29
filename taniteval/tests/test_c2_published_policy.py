@@ -29,7 +29,12 @@ from taniteval.ci import paired_episode_cluster_bootstrap
 from tanitad.models import wm_reference_select as W
 
 _REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-_HUB = os.path.join(_REPO, "TanitAD Research Hub", "Architecture & Inference",
+# ⛔ PI directive 2026-08-27: "TanitAD Research Hub/" is dead programme-wide; the
+# tree is "TanitAD Research Lab/". Artifacts verified present under the Lab path
+# before this edit — the 6 failures here were rename fallout, not missing data.
+# ⚠️ Hub and Lab are both 3 characters, so a size- or count-based check cannot see
+# this rename; it has to be verified by content.
+_HUB = os.path.join(_REPO, "TanitAD Research Lab", "Architecture & Inference",
                     "Implementation", "incoming")
 V5 = os.path.join(_HUB, "2026-07-26-v5-imagination-selection", "raw")
 CANARY = os.path.join(_HUB, "2026-07-27-canary-proxy", "raw", "canary_proxy.json")

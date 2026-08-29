@@ -253,10 +253,15 @@ def main(argv=None):
                 ("pred", "gt", "cv", "eid", "speed", "head_deg", "wp_steps")
                 if k in data}, wp)
     print(f"[windows] {wp} (enables paired episode-clustered tests)", flush=True)
-    m = res["heldout"]["model"]
+    # ⛔ CLOSED 2026-08-28 — see eval_flagship_v15.py for the full note. G1/G2/G3
+    # were adjudicated on the deprecated `heldout` block; they are now decided
+    # on the episode-cluster bootstrap (whose point estimate IS the full-set
+    # metric), so the thresholds below compare like with like.
+    m = res["cluster_bootstrap"]["model"]
     print(json.dumps({
         "key": a.key, "n_windows": res["n_windows"],
-        "ade@2s_heldout": m["ade@2s"],
+        "estimator": m["ade@2s"]["estimator"],
+        "ade@2s_primary": m["ade@2s"],
         "ade@2s_full": res["full_set"]["model"]["ade@2s"],
         "fde@2s": m["fde@2s"], "miss@2m": m["miss_rate@2m"],
         "beats_cv": res["beats_cv_ade_0_2s"],

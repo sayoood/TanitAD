@@ -446,12 +446,16 @@ def test_every_live_criterion_resolves_somewhere_in_the_real_corpus(registry):
 
 # --------------------------------- the release-gate criteria (PI, 2026-08-23) ---
 
-def test_parity_criterion_exists_and_is_blocking(registry):
+def test_parity_criterion_exists_and_is_checked(registry):
     """Parity is sacred. An artifact that does not record WHICH corpus it scored is
-    not cross-arm comparable, and every delta against it is uninterpretable."""
+    not cross-arm comparable, and every delta against it is uninterpretable.
+
+    ⚠️ PI ruling 2026-08-28 made the gate ADVISORY — the criterion must still EXIST
+    and still be CHECKED. Advisory changes who may stop a release, not whether we
+    measure."""
     ids = {c["id"] for c in registry["artifact_hygiene"]["criteria"]}
     assert "hyg.parity" in ids
-    assert "hyg.parity" in registry["release_gate"]["blocking"]
+    assert "hyg.parity" in registry["release_gate"]["advisory_all"]
 
 
 def test_floor_comparison_is_a_criterion_and_is_blocking(registry):
@@ -459,7 +463,7 @@ def test_floor_comparison_is_a_criterion_and_is_blocking(registry):
     at 9.3697 m against its own hold-action control at 0.4246 m."""
     ids = {c["id"] for c in registry["artifact_hygiene"]["criteria"]}
     assert "ctrl.floor_comparison" in ids
-    assert "ctrl.floor_comparison" in registry["release_gate"]["blocking"]
+    assert "ctrl.floor_comparison" in registry["release_gate"]["advisory_all"]
     crit = next(c for c in registry["artifact_hygiene"]["criteria"]
                 if c["id"] == "ctrl.floor_comparison")
     assert "22" in crit["note"], "keep the measured example - it is why the rule exists"
@@ -488,7 +492,7 @@ def test_an_artifact_with_no_corpus_recorded_FAILS(registry, compliant):
 def test_the_gate_requires_a_T1_artifact_not_only_T0(registry):
     """⛔ T0 is a world-model diagnostic. A release may never be gated on it alone -
     the same checkpoint reads 0.3659 at T0 and 9.3697 at T1."""
-    note = registry["release_gate"]["blocking_note"]
+    note = registry["release_gate"]["advisory_note_previous"]
     assert "T1" in note and "T0" in note
 
 
@@ -504,7 +508,9 @@ def test_regression_is_advisory_until_there_is_a_baseline(registry):
     """A regression gate with no trustworthy baseline manufactures false failures."""
     rg = registry["release_gate"]
     assert any("regression" in a for a in rg["advisory"])
-    assert not any("regression" in b for b in rg["blocking"])
+    # PI ruling 2026-08-28: nothing blocks at all, so the old "regression is not in
+    # the blocking set" assertion is now trivially true by construction.
+    assert "blocking" not in rg, "the PI made the gate advisory; a blocking set must not return"
 
 
 # ------------------------------------- dotted key names (found 2026-08-23) ---
@@ -607,3 +613,113 @@ def test_DELIBERATE_REGRESSION_navsim_gates_cannot_be_silently_dropped(registry)
     assert not missing, f"NavSim gate(s) removed from the registry: {missing}"
     for name in required:
         assert ns[name].get("blocking") is True, f"{name} was downgraded to non-blocking"
+
+
+
+# ------------------------------- the PI ruling: advisory, not silent (2026-08-28) ---
+
+def test_the_PI_advisory_ruling_is_recorded_with_its_effect(registry):
+    """A ruling that lives only in a chat message decays. Pin it."""
+    r = registry["release_gate"]["PI_RULING_2026-08-28"]
+    assert "DOES NOT BLOCK" in r["ruling"].upper()
+    assert r["by"].startswith("Sayed")
+
+
+def test_advisory_must_NOT_soften_the_verdict(registry):
+    """⭐ THE POINT OF THE RULING, and the way it could go wrong.
+
+    Advisory is about AUTHORITY, not honesty. If "it no longer blocks" quietly
+    became "it no longer says FAIL", the instrument would be worthless — and that
+    is exactly the drift this programme keeps paying for.
+    """
+    r = registry["release_gate"]["PI_RULING_2026-08-28"]
+    txt = r["what_does_NOT_change"]
+    assert "FAIL as a FAIL" in txt
+    assert "CANNOT-RULE" in txt
+    assert "22x" in txt or "22×" in txt, "keep the measured floor example concrete"
+
+
+def test_every_criterion_survived_the_move_to_advisory(registry):
+    """DELIBERATE REGRESSION ARM: making the gate advisory must not quietly DROP a
+    criterion. All nine survive, by name."""
+    adv = registry["release_gate"]["advisory_all"]
+    for must in ("hyg.tier_stamp", "hyg.estimator_named", "hyg.no_forbidden_estimator",
+                 "hyg.parity", "ctrl.floor_comparison",
+                 "leak_guards.vision_only_inference",
+                 "leak_guards.goal_situation_disjoint"):
+        assert must in adv, f"{must} vanished when the gate became advisory"
+    assert len(adv) == 9
+
+
+# ================= navhard protocol pin (work package 2026-08-28) ============
+# LAB-RUN-002: NavSim v2 carries TWO protocols called "EPDMS", ~30 points apart.
+# Untagged, our own leaderboard merges them by accident.
+
+def test_the_official_navsim_column_is_navhard_two_stage(navsim):
+    oc = navsim["OFFICIAL_COLUMN"]
+    assert oc["column"] == "navhard_two_stage EPDMS"
+    assert "30 POINTS APART" in oc["why"].upper()
+
+
+def test_cross_protocol_comparison_is_gated(navsim):
+    g = navsim["GATE_no_cross_protocol_comparison"]
+    assert g["blocking"] is True
+    assert g["official"] == "EPDMS_v2_navhard_two_stage"
+    assert g["official"] in g["closed_set"]
+    # the tag must be mandatory, including by omission
+    assert "omitting the tag" in g["rule"]
+
+
+def test_drive_jepa_87_8_is_recorded_as_NOT_navhard(navsim):
+    """⭐ Independently verified by the EvalFlyWheel from the banked PDF: seven probe
+    terms ('navhard', 'two_stage', 'private_test', 'challenge', …) ALL ZERO. Its
+    87.8 is the navtest variant, so our navhard number is not comparable to it."""
+    c = navsim["OFFICIAL_COLUMN"]["consequence_for_our_positioning"]
+    assert "NEVER mentions navhard" in c
+    assert "56.3" in c, "the camera-only navhard bar (DrivoR) must be named"
+
+
+def test_the_v1_PDMS_ladder_is_preserved_as_a_v1_claim(navsim):
+    """The perception-free ladder is still valid — as PDMS v1. It must never be
+    printed in an EPDMS column."""
+    w = navsim["OFFICIAL_COLUMN"]["what_still_stands"]
+    assert "89.0" in w and "83.8" in w
+    assert "never be printed in an EPDMS column" in w
+
+
+def test_all_nine_EPDMS_submetrics_are_ingested(navsim):
+    s = navsim["EPDMS_submetrics"]
+    mult, wtd = s["multiplicative"], s["weighted"]
+    assert set(mult) == {"NC", "DAC", "DDC", "TLC"}
+    assert set(wtd) == {"EP", "TTC", "LK", "HC", "EC"}
+    assert sum(v["weight"] for v in wtd.values()) == s["_weighted_denominator"] == 16
+
+
+def test_every_submetric_declares_a_family_or_an_explicit_None(navsim):
+    """⛔ No sub-metric may be silently unmapped — the whole point of the four-family
+    rule is that a gap is DECLARED, not omitted."""
+    s = navsim["EPDMS_submetrics"]
+    for block in ("multiplicative", "weighted"):
+        for name, m in s[block].items():
+            assert "family" in m, f"{name} has no family key at all"
+            if m["family"] is None:
+                assert name in s["_unmapped"]
+                assert "UNMAPPED" in m["family_note"]
+
+
+def test_EPDMS_is_recorded_as_NOT_satisfying_the_four_families(navsim):
+    """⭐ The honest reading, and it is a finding: EPDMS measures COMPLIANCE AND
+    OUTCOMES, not DECISION QUALITY. A collision-free run is not evidence the
+    manoeuvre decision was right."""
+    s = navsim["EPDMS_submetrics"]
+    assert "does NOT satisfy the four-families rule" in s["_family_caveat"]
+    for missing in ("tac.manoeuvre_decision", "tac.confusion", "strat.route_goal"):
+        assert missing in s["_families_epdms_cannot_supply"]
+
+
+def test_DELIBERATE_REGRESSION_the_protocol_pin_cannot_silently_vanish(navsim):
+    """⭐ The arm that makes the rest mean something: downgrade or delete the pin and
+    this fails. A pin that can disappear without a test failing is a note."""
+    assert navsim["GATE_no_cross_protocol_comparison"]["blocking"] is True
+    assert navsim["OFFICIAL_COLUMN"]["column"], "the official column was emptied"
+    assert len(navsim["GATE_no_cross_protocol_comparison"]["closed_set"]) >= 5
