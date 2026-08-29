@@ -47,14 +47,20 @@ def test_only_the_echo_free_pass_is_read(tmp_path):
 
 
 def test_a_capped_generation_abstains_and_is_counted(tmp_path):
-    """The number that must never be read as 'the model cannot do this'."""
+    """The number that must never be read as 'the model cannot do this'.
+
+    The VLM leg must ABSTAIN and the cap must be counted. Since 9e61f1a (the
+    ungated Alpamayo path) a capped VLM no longer starves the strategic slot:
+    g_str may come from the INDEPENDENT Alpamayo leg — but only with its
+    provenance flag, so a reader can still tell no VLM verdict backs it."""
     raw = _raw(tmp_path, [{"clip_id": "c1", "kind": "lane",
                            "raw": "reasoning... VERDICT: LEFT but wait",
                            "hit_cap": True, "closed_think": False}])
     labels, cen = _run(tmp_path, _payload(tmp_path), raw)
     assert cen["quality"]["hit_cap"] == 1
     assert cen["verdicts"]["lane"]["ABSTAIN"] == 1
-    assert labels[0]["g_str"]["value"] == "ABSTAIN"
+    assert labels[0]["g_str"]["value"] != "LANE_TARGET"  # the capped verdict must not leak
+    assert "STRATEGIC_FROM_ALPAMAYO" in labels[0]["flags"]
 
 
 def test_a_reason_without_a_referent_does_not_become_a_label(tmp_path):
