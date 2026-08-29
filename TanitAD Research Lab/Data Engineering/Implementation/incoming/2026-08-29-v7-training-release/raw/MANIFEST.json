@@ -37,8 +37,9 @@
   "refd"
  ],
  "exclusions": {
-  "clips": [],
-  "policy": "EMPTY AT RELEASE: all 4,719 clips have labels (0 refused) and egomotion (asserted). Camera integrity is verified at pull time (ftyp check in tools/pull_camera.py); any clip whose camera fails MUST be appended here by the cache builder with a reason, so skip-lists stay manifest-derived, never discovered."
+  "count": 0,
+  "policy": "EMPTY AT RELEASE: all 4,719 clips have labels (0 refused) and egomotion (asserted). Camera integrity is verified at pull time (ftyp check in tools/pull_camera.py); any clip whose camera fails MUST be appended here by the cache builder with a reason, so skip-lists stay manifest-derived, never discovered.",
+  "entries": []
  },
  "per_clip_cy": {
   "file": "index/front_wide_cy.parquet",
@@ -83,7 +84,23 @@
   "shared_consumer_module": "Master Mind builds ONE canonical label-consumer implementing mask-the-8 + skew weights + disputed/t_nominal policy, asserted against this manifest \u2014 the decide-once pattern applied to consumption."
  },
  "camera": {
-  "not_shipped": "~47 GB; retrieve deterministically with tools/pull_camera.py + index/clip_to_chunk.parquet from nvidia/PhysicalAI-Autonomous-Vehicles"
+  "status": "SHIPPED_IN_DATASET",
+  "changed_from_v1": "v1 shipped a RETRIEVAL TOOL (tools/pull_camera.py); the PI directed that the frames themselves ship inside the private dataset. The tool is retained for provenance/reproduction.",
+  "feature": "camera_front_wide_120fov",
+  "path": "camera/<clip_id>.mp4",
+  "n_files": 4719,
+  "bytes_total": 61616613650,
+  "gb_total": 61.62,
+  "per_file_sha256": "camera/camera_sha256.json",
+  "validated": "every file decode-probed; see validation.md / validation.json",
+  "per_clip_cy_is_mandatory_for_this_camera": {
+   "file": "index/front_wide_cy.parquet",
+   "why": "TWO front-wide rigs (cy~543 A / cy~755 B). A geometric-centre crop is ~215 px wrong for rig B, which is the MAJORITY (2,723 of 4,719). Every epcache build from these mp4s MUST crop around the per-clip cy in index/front_wide_cy.parquet.",
+   "rig_split": {
+    "B": 2723,
+    "A": 1996
+   }
+  }
  },
  "files": {
   "alpamayo/records.parquet": {
@@ -130,5 +147,31 @@
    "sha256": "dc60e52f2d04d1fcc0431604539f140e61330a038a74b3431d2a5e1bbe4d418b",
    "bytes": 7689
   }
+ },
+ "validation": {
+  "verdict": "PASS",
+  "validated_on": "2026-08-30",
+  "gate": "code/validate_release.py",
+  "joins": {
+   "labels": 4719,
+   "camera_files": 4719,
+   "egomotion": 4719,
+   "cy": 4719,
+   "alpamayo": 4719
+  },
+  "camera_decode_probe": "4719/4719",
+  "exclusions_written": 0,
+  "checks": [
+   "mp4 ftyp magic",
+   "first+last frame decode, mean > 2.0 (zeros trap)",
+   "duration 20 +/- 3 s",
+   "frame count vs duration x fps +/- 5 % (truncation)",
+   "clip-UUID joins across labels/camera/egomotion/cy/alpamayo",
+   "per-file sha256"
+  ],
+  "gate_defects_found_and_fixed_before_use": [
+   "use-after-free reading PyAV stream attrs after container close (segfault, exit 139, no traceback) -- reads moved inside the container block",
+   "seek(dur-0.5s) could yield no frame on a HEALTHY clip, reporting 129/3176 (~4%) as corrupt; hand-decoding three showed all 605 frames present. Fixed with back-off + full-decode fallback: 129 -> 0. See RETRACTION_LOG DE-C153 (class C83, an instrument that invents the defect it reports)."
+  ]
  }
 }
