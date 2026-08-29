@@ -5057,6 +5057,10 @@ class V6Stack(nn.Module):
         # O5-EMA teacher (P0): requires_grad False throughout — never in an
         # optimiser; mapped so group_of resolves them for freeze bookkeeping.
         ("ema_o5_enc.", "aux"), ("ema_o5_ro.", "aux"),
+        # O5-FROZEN teacher (MM-E4 L2, PREREG_DRIFT_ATTACK_LADDER): same X3
+        # status as the EMA pair — requires_grad False throughout, never in
+        # an optimiser, and never updated after the post-init-load resync.
+        ("frozen_o5_enc.", "aux"), ("frozen_o5_ro.", "aux"),
         # ⭐ THE AGENT-SLOT DECODER IS `interp`, NOT `aux` — and the distinction
         # is the whole X3 argument, not tidiness. `aux` MAY backprop into the
         # encoder (ISOLATION_MATRIX: O3/O6 are label-free trunk losses and that

@@ -104,10 +104,13 @@ def test_only_s_t_may_introduce_and_only_its_declared_modules():
     assert STAGE_MAY_INTRODUCE["S-T"] == (
         "cand_score.", "cond_tac_dyn.", "prop_diffusion.", "fallback.",
         "agent_slots.", "t2_head.")
-    # S-W introduces the two PI-approved AUX modules (O14 R2 future-obs head,
-    # E-DEC-67; O5-EMA teacher copies, MM-E1) — declared, test-pinned in
-    # test_o14_future_obs / test_o5_ema_teacher. Everything else stays ().
-    assert STAGE_MAY_INTRODUCE["S-W"] == ("o14_head.", "ema_o5_enc.", "ema_o5_ro.")
+    # S-W introduces the PI-approved AUX module sets (O14 R2 future-obs head,
+    # E-DEC-67; O5-EMA teacher copies, MM-E1; O5-FROZEN teacher copies, MM-E4
+    # L2) — declared, test-pinned in test_o14_future_obs / test_o5_ema_teacher
+    # / test_drift_levers. Everything else stays ().
+    assert STAGE_MAY_INTRODUCE["S-W"] == (
+        "o14_head.", "ema_o5_enc.", "ema_o5_ro.",
+        "frozen_o5_enc.", "frozen_o5_ro.")
     assert STAGE_MAY_INTRODUCE["S-S"] == ()
     assert STAGE_MAY_INTRODUCE["S-J"] == ()
 

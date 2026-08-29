@@ -151,10 +151,13 @@ def test_stage_may_introduce_carries_the_head():
     import train_v6_staged as T
     assert "t2_head." in T.STAGE_MAY_INTRODUCE["S-T"]
     # ⛔ and the stages that may introduce NOTHING still may not
-    # S-W introduces the two PI-approved AUX modules (O14 R2 future-obs head,
-    # E-DEC-67; O5-EMA teacher copies, MM-E1) — declared, test-pinned in
-    # test_o14_future_obs / test_o5_ema_teacher. Everything else stays ().
-    assert T.STAGE_MAY_INTRODUCE["S-W"] == ("o14_head.", "ema_o5_enc.", "ema_o5_ro.")
+    # S-W introduces the PI-approved AUX module sets (O14 R2 future-obs head,
+    # E-DEC-67; O5-EMA teacher copies, MM-E1; O5-FROZEN teacher copies, MM-E4
+    # L2) — declared, test-pinned in test_o14_future_obs / test_o5_ema_teacher
+    # / test_drift_levers. Everything else stays ().
+    assert T.STAGE_MAY_INTRODUCE["S-W"] == (
+        "o14_head.", "ema_o5_enc.", "ema_o5_ro.",
+        "frozen_o5_enc.", "frozen_o5_ro.")
     for st in ("S-S", "S-J"):
         assert T.STAGE_MAY_INTRODUCE[st] == ()
 

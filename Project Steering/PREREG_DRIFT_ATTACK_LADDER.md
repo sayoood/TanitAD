@@ -80,3 +80,19 @@ LIFTED** for the ladder as amended.
    if the manifest arrives mid-ladder, the ladder yields after the current arm.
 5. All committed reads/outcomes/protections of the base prereg unchanged, including
    the E-DEC-69 protected-asset rule and L1's time-shuffled-g regression arm.
+
+## AMENDMENT B — implementation annotations (2026-08-29 ~21:00, before launch)
+
+1. L2 implemented WITHOUT a projection (deepcopy ⇒ identical dims; the base prereg's
+   "learned projection" phrasing is superseded — one less trainable surface, cleaner).
+2. L4's crop fraction: **0.8** (recorded here per the prereg's own requirement).
+3. ⛔ **The capacity rider is DROPPED from this ladder**: `--pred-depth 5` cannot load
+   `distill_init.pt` (geometry-mismatch refusal by design); minting a depth-5 init or
+   running scratch-init would add a confounded arm and implementation time against the
+   PI's minimize-time instruction. It returns, if ever, as its own one-variable cell
+   with a matched init. Ladder = L1/L2/L3/L4 + the shuffle control = 5 arms ≈ 3 h.
+4. All launches carry `--tac-vocab-version v6.0` explicitly (the banked base argv
+   predates the flag; today's default is v7.0 — the loader-property lesson).
+5. Implementation verified: 18-test suite incl. the analytic innovation anchor
+   (z_{t+1}=z_t ⇒ innovation-EP ~10 vs plain ~1) and a cross-fit leak test; 213-test
+   battery green; known benign doubled resync at the init-load sites recorded.

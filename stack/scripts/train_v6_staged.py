@@ -177,7 +177,9 @@ __all__ = [
     "GATE_APPLICABILITY", "UNMEASURED_BY_CONSTRUCTION", "SEL_GAP_TIER_NOTE",
     "probe_applies", "arm_record",
     "o2_near_field_loss", "o3_masked_cell_loss", "o5_rollout_consistency_loss",
-    "o6_sigreg_loss", "rollout_step_weights", "build_o4_weights",
+    "o6_sigreg_loss", "o6_innovation_rows", "O6_INNOVATION_RIDGE_REL",
+    "azimuthal_target_crop",
+    "rollout_step_weights", "build_o4_weights",
     "o11_counterfactual_action_loss",
     "o13_ego_dynamics_loss",
     "ANCHOR_OBJECTIVES", "ANCHOR_OBJ_MODES", "ANCHOR_AXIS_W_DEFAULT",
@@ -402,7 +404,11 @@ STAGE_MAY_INTRODUCE: dict[str, tuple[str, ...]] = {
     # ⛔ Found the hard way 2026-08-27: the ladder's arm 2 (o14fut01) refused
     # its init because this tuple was () — the module landed without its
     # introduction permission.
-    "S-W": ("o14_head.", "ema_o5_enc.", "ema_o5_ro."),
+    "S-W": ("o14_head.", "ema_o5_enc.", "ema_o5_ro.",
+            # MM-E4 L2 (PREREG_DRIFT_ATTACK_LADDER): the frozen-teacher
+            # copies — introduced by the drift-ladder arms over the
+            # o14fut10-line init, exactly like the EMA pair above.
+            "frozen_o5_enc.", "frozen_o5_ro."),
     # S-T introduces, by design: the selector (when an arm is opted into), and
     # the g_str->P_T conditioning port `cond_tac_dyn.` (F-1,
     # DIAGRAM_CONFORMANCE.md 2026-08-16 — the diagram/§5-spec'd tactical-
@@ -1633,6 +1639,161 @@ def o6_sigreg_loss(sigreg, z: Tensor, free_dims: int = 0, *,
     return position_relaxed(sigreg, z, free_dims, generator=generator)
 
 
+#: MM-E4 L1 — the FIXED ridge for the per-batch innovation fit
+#: (PREREG_DRIFT_ATTACK_LADDER: "lambda fixed, document the value").
+#: Applied as lam = REL * mean(diag(K)) of the FIT half's centred dual Gram,
+#: i.e. 1e-2 of the mean squared centred-feature norm. RELATIVE on purpose:
+#: an ABSOLUTE lambda would shrink (relatively) as latent norms grow — the
+#: very drift under study — coupling the constraint's strength to the thing
+#: being measured. Never tuned on anything the term is evaluated on (the
+#: 2026-08-22 probe rules); changing it is a prereg amendment, not a sweep.
+O6_INNOVATION_RIDGE_REL: float = 1e-2
+
+
+def o6_innovation_rows(states: Tensor, *, shuffle: bool = False,
+                       generator: torch.Generator | None = None,
+                       ridge_rel: float = O6_INNOVATION_RIDGE_REL) -> Tensor:
+    """MM-E4 L1 — O6's input becomes the dynamics INNOVATIONS dz - g(z_t).
+
+    ``states`` ``[B, W, d]`` -> ``[B*(W-1), d]`` innovation rows, batch-major.
+    g is a closed-form ridge z_t -> dz = z_{t+1} - z_t WITH intercept (centred
+    on the fit half's means), computed UNDER no_grad on one half of the batch
+    and applied to the OTHER half — cross-fitted both ways, so no row is ever
+    scored under a g that saw it (the 2026-08-22 tuned-on-scored rules). Both
+    halves enter the returned tensor with equal row weight, so the single
+    Epps-Pulley statistic downstream averages them symmetrically — ONE sigreg
+    call at (W-1)/W of the incumbent row count, which keeps the validated
+    no-divide-by-n operating point as close as one variable allows and leaves
+    every downstream piece (row bank, renorm, slice draw, weight) untouched.
+
+    Gradient flows through the LIVE z_t / z_{t+1} of the scored rows only; g
+    (map and means) is a per-batch CONSTANT. The ridge is solved in the DUAL
+    (an n_fit x n_fit Gram): n_fit = (B//2)*(W-1) << d always holds here.
+
+    ``shuffle=True`` is the deliberate-regression arm: z_t rows are permuted
+    against dz BEFORE the fit, so g carries no dynamics and the constraint
+    degenerates to ~plain SIGReg on centred dz. The permutation draws from
+    ``generator`` — the O6 stream (``sigreg_generator`` at the loss site);
+    ``None`` = the global RNG, exactly the incumbent O6 draw behaviour.
+
+    Analytic anchor (test-pinned): z_{t+1} == z_t makes dz == 0, the fit
+    intercept 0, hence rows == 0 EXACTLY — a point mass the sketched test
+    penalises hard (~0.163*n per slice) where plain SIGReg on the same
+    states reads near-null. That inversion is the cell's whole point.
+    """
+    if states.is_cuda:
+        # mirror SigReg.forward: the dual solve and Gram must not run bf16
+        # under autocast — same reason the Epps-Pulley statistic is fp32.
+        with torch.autocast("cuda", enabled=False):
+            return _o6_innovation_rows_fp32(states, shuffle, generator,
+                                            ridge_rel)
+    return _o6_innovation_rows_fp32(states, shuffle, generator, ridge_rel)
+
+
+def _o6_innovation_rows_fp32(states: Tensor, shuffle: bool,
+                             generator: "torch.Generator | None",
+                             ridge_rel: float) -> Tensor:
+    if states.ndim != 3:
+        raise ValueError(f"o6_innovation_rows wants [B, W, d], got "
+                         f"{tuple(states.shape)}")
+    B, W, d = states.shape
+    if B < 2 or W < 2:
+        raise ValueError(
+            f"o6_innovation_rows needs batch >= 2 (cross-fit halves) and "
+            f"window >= 2 (a dz must exist), got B={B}, W={W}")
+    z_t = states[:, :-1]                      # [B, W-1, d]
+    dz = states[:, 1:] - states[:, :-1]      # [B, W-1, d]
+    half = B // 2
+    halves = ((slice(0, half), slice(half, B)),
+              (slice(half, B), slice(0, half)))
+    scored: dict[int, Tensor] = {}
+    for fit_sl, score_sl in halves:
+        with torch.no_grad():
+            Xf = z_t[fit_sl].reshape(-1, d).float()
+            Yf = dz[fit_sl].reshape(-1, d).float()
+            if shuffle:
+                n = Xf.shape[0]
+                if generator is None:
+                    perm = torch.randperm(n, device=Xf.device)
+                elif generator.device.type == Xf.device.type:
+                    perm = torch.randperm(n, device=Xf.device,
+                                          generator=generator)
+                else:
+                    perm = torch.randperm(n, device=generator.device,
+                                          generator=generator).to(Xf.device)
+                Xf = Xf[perm]
+            mu_x = Xf.mean(dim=0)
+            mu_y = Yf.mean(dim=0)
+            Xc = Xf - mu_x
+            Yc = Yf - mu_y
+            n_fit = Xc.shape[0]
+            gram = Xc @ Xc.t()                       # [n_fit, n_fit]
+            lam = (float(ridge_rel)
+                   * float(gram.diagonal().mean().clamp_min(0.0)) + 1e-8)
+            A = torch.linalg.solve(
+                gram + lam * torch.eye(n_fit, device=gram.device,
+                                       dtype=gram.dtype), Yc)
+            M = Xc.t() @ A                           # [d, d] — a CONSTANT map
+        zs = z_t[score_sl].reshape(-1, d)            # LIVE: gradient flows here
+        pred = (zs.float() - mu_x) @ M + mu_y
+        r = dz[score_sl].reshape(-1, d).float() - pred
+        scored[int(score_sl.start)] = r.reshape(dz[score_sl].shape)
+    out = torch.cat([scored[0], scored[half]], dim=0)     # batch-major order
+    return out.reshape(-1, d).to(states.dtype)
+
+
+def azimuthal_target_crop(ff: Tensor, frac: float, *,
+                          generator: torch.Generator | None = None) -> Tensor:
+    """MM-E4 L4 — a random contiguous AZIMUTHAL window on TARGET frames only.
+
+    ``ff`` ``[B, k, ..., H, W]``: per SAMPLE one uniform offset selects a
+    contiguous ``round(frac*W)``-column window — the SAME window across that
+    sample's k future frames — then the window is resized back to full width
+    (bilinear, antialias). Height untouched; the caller leaves the INPUT path
+    untouched, so the view change lives entirely on O5's teacher side.
+
+    ⚠️ Geometrically clean ONLY because our 256x640 corpus is CYLINDRICAL:
+    column is LINEAR in azimuth (az_max = (W/2)/f_ref — the measured
+    2026-08-21 finding), so a horizontal crop is a pure FOV restriction. On a
+    pinhole projection the same crop would warp the view nonlinearly; the
+    prereg (Amendment A #2) records this scope condition — quoting the trick
+    outside a cylindrical projection is the FOV-formula scope trap again.
+
+    Offsets draw from ``generator`` (the trainer passes its step RNG, so a
+    seeded run replays its crops; ``None`` = global RNG). Refuses (by name)
+    any ``frac`` outside (0, 1) or one that ROUNDS to full width — that arm
+    would be a silent no-op wearing a crop cell's config.
+    """
+    if ff.ndim < 4:
+        raise ValueError(f"azimuthal_target_crop wants [B, k, ..., H, W], "
+                         f"got {tuple(ff.shape)}")
+    frac = float(frac)
+    if not (0.0 < frac < 1.0):
+        raise ValueError(f"--o5-target-crop must be in (0, 1), got {frac}")
+    B, k = int(ff.shape[0]), int(ff.shape[1])
+    H, Wf = int(ff.shape[-2]), int(ff.shape[-1])
+    cw = int(round(frac * Wf))
+    if cw >= Wf or cw < 2:
+        raise ValueError(
+            f"--o5-target-crop {frac} rounds to a {cw}-column window on "
+            f"width {Wf} — not a genuine crop (needs 2 <= cw < W)")
+    if generator is None:
+        offs = torch.randint(0, Wf - cw + 1, (B,))
+    else:
+        offs = torch.randint(0, Wf - cw + 1, (B,), generator=generator,
+                             device=generator.device).cpu()
+    out = torch.empty_like(ff)
+    for bi in range(B):
+        o = int(offs[bi])
+        crop = ff[bi, ..., o:o + cw]                     # [k, ..., H, cw]
+        flat = crop.reshape(k, -1, H, cw)
+        res = torch.nn.functional.interpolate(
+            flat.float(), size=(H, Wf), mode="bilinear",
+            align_corners=False, antialias=True)
+        out[bi] = res.to(ff.dtype).reshape(crop.shape[:-1] + (Wf,))
+    return out
+
+
 def build_o4_weights(actions_per_window, *, dt: float = 0.1,
                      alpha: float = 1.0, floor: float = 0.25,
                      w_jerk: float = 1.0, w_decel: float = 1.0,
@@ -2740,6 +2901,8 @@ def v6_loss_step(stack: V6Stack, batch: dict, *, stage: str,
                  rand_da: Tensor | None = None,
                  generator: torch.Generator | None = None,
                  sigreg_generator: torch.Generator | None = None,
+                 o6_innovation: bool = False,
+                 o6_innovation_shuffle: bool = False,
                  rollout_grad_checkpoint: bool | None = None,
                  anchor_objective: str = "metric",
                  anchor_axis_w: tuple[float, float] = ANCHOR_AXIS_W_DEFAULT,
@@ -2805,6 +2968,11 @@ def v6_loss_step(stack: V6Stack, batch: dict, *, stage: str,
     """
     if stage not in STAGES:
         raise ValueError(f"unknown stage {stage!r}")
+    if o6_innovation_shuffle and not o6_innovation:
+        raise ValueError(
+            "--o6-innovation-shuffle is the deliberate-regression arm OF "
+            "--o6-innovation and is meaningless without it — refusing "
+            "loudly rather than running a silently-plain arm")
     w = weights.for_stage(stage)
     cfg = stack.cfg
     dev = batch["frames"].device
@@ -3013,7 +3181,19 @@ def v6_loss_step(stack: V6Stack, batch: dict, *, stage: str,
 
     # ---- O6: SIGReg on the operative latent --------------------------------
     if w.o6_sigreg:
-        z6 = states.reshape(-1, states.shape[-1])
+        if o6_innovation:
+            # MM-E4 L1: the sketched test's INPUT becomes the innovations
+            # dz - g(z_t) (cross-fitted per batch; see o6_innovation_rows).
+            # Everything downstream — row bank, renorm, slice draw, weight
+            # — is the incumbent machinery, so the input tensor is the ONE
+            # variable of this cell. The shuffle permutation rides the O6
+            # stream (sigreg_generator; None = global, the incumbent draw).
+            z6 = o6_innovation_rows(states, shuffle=o6_innovation_shuffle,
+                                    generator=sigreg_generator)
+            log["o6_input"] = ("innovation_shuffled"
+                               if o6_innovation_shuffle else "innovation")
+        else:
+            z6 = states.reshape(-1, states.shape[-1])
         base_rows = z6.shape[0]
         if sigreg_bank is not None:
             z6 = sigreg_bank.rows(z6)
@@ -3895,6 +4075,27 @@ def build_stack_from_args(a) -> V6Stack:
         # is a frozen random net. Both load sites call it.
         stack.ema_o5_enc = _EmaCopy(stack.encoder, float(a.ema_decay))
         stack.ema_o5_ro = _EmaCopy(stack.readout, float(a.ema_decay))
+    elif str(getattr(a, "o5_target", "live")) == "frozen":
+        from tanitad.models.v6 import _EmaCopy
+        # MM-E4 L2 (PREREG_DRIFT_ATTACK_LADDER): the FIXED distill-init
+        # teacher. Same construction as the EMA pair, but NO update is ever
+        # wired — the per-step update sites key on `ema_o5_enc`, which frozen
+        # mode deliberately does not set — so after the post-init-load resync
+        # these weights never move again. Same config by construction (a
+        # deepcopy), hence NO projection head; the shape walk below is the
+        # guard that keeps that true if construction ever diverges.
+        stack.frozen_o5_enc = _EmaCopy(stack.encoder, 1.0)
+        stack.frozen_o5_ro = _EmaCopy(stack.readout, 1.0)
+        for _dst, _src in ((stack.frozen_o5_enc.module, stack.encoder),
+                           (stack.frozen_o5_ro.module, stack.readout)):
+            _ds = [tuple(p.shape) for p in _dst.parameters()]
+            _ss = [tuple(p.shape) for p in _src.parameters()]
+            assert _ds == _ss, ("frozen O5 teacher shape mismatch "
+                                "(same-config contract broken)", _ds, _ss)
+    _crop = float(getattr(a, "o5_target_crop", 0.0) or 0.0)
+    if _crop and not (0.0 < _crop < 1.0):
+        raise SystemExit(f"[v6] ⛔ --o5-target-crop {_crop} must be in (0, 1)"
+                         f" — 1.0 (or more) would be a silent no-op arm")
     if float(getattr(a, "w_o14", 0.0)) > 0:
         # O14 head: bottleneck MLP so the aux stays small (~0.6 M at d_op 2048
         # vs 5.2 M for a direct linear — a 27 % param bump on v7-tiny would
@@ -4148,6 +4349,10 @@ def dry_run(a, stack: V6Stack | None = None) -> dict:
         L = v6_loss_step(stack, b, stage=a.stage, weights=weights, o1_k=o1_k,
                          o5_k=o5_k, o5_mode=a.o5_mode, o5_form=getattr(a, "o5_form", "l1"),
                          sigreg_bank=sigreg_bank,
+                         o6_innovation=bool(
+                             getattr(a, "o6_innovation", False)),
+                         o6_innovation_shuffle=bool(
+                             getattr(a, "o6_innovation_shuffle", False)),
                          # ⛔ THE DRY-RUN MUST PASS THE SAME KNOBS AS THE TRAINING
                          # CALL SITE. Adding them only there left this path on the
                          # signature DEFAULTS, so `--o11-negs 3 --o11-k 4` silently
@@ -5068,12 +5273,29 @@ def train(a) -> dict:
                 # v1's ~8), and a Python loop over it wastes the batch
                 # dimension the GPU is built for.
                 ff = b["future_frames"][:, :need_k]
+                if float(getattr(a, "o5_target_crop", 0.0)) > 0.0:
+                    # MM-E4 L4: TARGET frames only — the input path is
+                    # untouched, so the view change lives entirely on the
+                    # teacher side of O5. One window per sample, shared
+                    # across its k futures; offsets ride the step RNG so a
+                    # seeded run replays its crops. Composable with any
+                    # --o5-target (the crop precedes every teacher branch).
+                    ff = azimuthal_target_crop(
+                        ff, float(a.o5_target_crop), generator=gen)
                 fb, fk = ff.shape[:2]
                 if hasattr(stack, "ema_o5_enc"):
                     # O5-EMA teacher: the TARGET comes from the slow copies —
                     # the student cannot chase a target it moves itself.
                     z_flat = stack.ema_o5_ro.module(stack.ema_o5_enc.module(
                         ff.reshape(fb * fk, *ff.shape[2:]))).reshape(fb, fk, -1)
+                elif hasattr(stack, "frozen_o5_enc"):
+                    # MM-E4 L2: the FIXED distill-init teacher — the movable
+                    # target removed entirely (resynced after --init-from,
+                    # never updated afterwards).
+                    z_flat = stack.frozen_o5_ro.module(
+                        stack.frozen_o5_enc.module(
+                            ff.reshape(fb * fk, *ff.shape[2:]))
+                    ).reshape(fb, fk, -1)
                 else:
                     z_flat = stack.readout(stack.encoder(
                         ff.reshape(fb * fk, *ff.shape[2:]))).reshape(fb, fk, -1)
@@ -5209,6 +5431,10 @@ def train(a) -> dict:
             L = v6_loss_step(stack, batch, stage=a.stage, weights=weights,
                              o1_k=a.o1_k, o5_k=a.o5_k, o5_mode=a.o5_mode,
                              o5_form=getattr(a, "o5_form", "l1"), sigreg_bank=sigreg_bank,
+                             o6_innovation=bool(
+                                 getattr(a, 'o6_innovation', False)),
+                             o6_innovation_shuffle=bool(
+                                 getattr(a, 'o6_innovation_shuffle', False)),
                              o11_k=int(getattr(a, 'o11_k', 6)),
                              o11_tau=float(getattr(a, 'o11_tau', 1.0)),
                              o11_negs=int(getattr(a, 'o11_negs', 1)),
@@ -5841,16 +6067,28 @@ def supersede_init_on_resume(init_report: dict, resumed_from) -> dict:
 
 
 def _resync_ema_o5(stack) -> None:
-    """Copy the LIVE encoder/readout into the O5-EMA teacher — required after
-    any weight load, because the copies were taken at construction time."""
+    """Copy the LIVE encoder/readout into the O5 teacher(s) — required after
+    any weight load, because the copies were taken at construction time.
+
+    Covers BOTH teacher kinds: the EMA pair (``--o5-target ema``) and the
+    FROZEN pair (``--o5-target frozen``, MM-E4 L2). For the frozen teacher
+    this resync IS "taken at init": after it nothing updates those weights
+    again (no per-step update is wired for the frozen prefixes). Runs after
+    ``--init-from`` only — a strict RESUME instead restores the teacher from
+    the checkpoint, keeping its trajectory (EMA) / its freeze (frozen)."""
+    pairs = []
     if hasattr(stack, "ema_o5_enc"):
-        with torch.no_grad():
-            for dst_m, src_m in ((stack.ema_o5_enc.module, stack.encoder),
-                                 (stack.ema_o5_ro.module, stack.readout)):
-                for pd, ps in zip(dst_m.parameters(), src_m.parameters()):
-                    pd.copy_(ps)
-                for bd, bs in zip(dst_m.buffers(), src_m.buffers()):
-                    bd.copy_(bs)
+        pairs += [(stack.ema_o5_enc.module, stack.encoder),
+                  (stack.ema_o5_ro.module, stack.readout)]
+    if hasattr(stack, "frozen_o5_enc"):
+        pairs += [(stack.frozen_o5_enc.module, stack.encoder),
+                  (stack.frozen_o5_ro.module, stack.readout)]
+    with torch.no_grad():
+        for dst_m, src_m in pairs:
+            for pd, ps in zip(dst_m.parameters(), src_m.parameters()):
+                pd.copy_(ps)
+            for bd, bs in zip(dst_m.buffers(), src_m.buffers()):
+                bd.copy_(bs)
 
 
 def load_stage_init(stack: V6Stack, ckpt_path, *, strict: bool = True,
@@ -6399,8 +6637,11 @@ def build_parser() -> argparse.ArgumentParser:
                          "higher->lower latent path")
     ap.add_argument("--uplink", choices=("stopgrad", "ema"), default="stopgrad")
     ap.add_argument("--ema-decay", type=float, default=0.996)
-    ap.add_argument("--o5-target", choices=("live", "ema"), default="live",
-                    help="O5's target-latent source. live = the incumbent (stop-grad only). ema = EMA-slow encoder+readout copies (the Drive-JEPA teacher core; P0 bake-off, PI-approved 2026-08-27). Decay = --ema-decay.")
+    ap.add_argument("--o5-target", choices=("live", "ema", "frozen"),
+                    default="live",
+                    help="O5's target-latent source. live = the incumbent (stop-grad only). ema = EMA-slow encoder+readout copies (the Drive-JEPA teacher core; P0 bake-off, PI-approved 2026-08-27). Decay = --ema-decay. frozen = a FIXED copy of encoder+readout taken at init (after --init-from, via the resync) and NEVER updated — the movable-target-removed cell (MM-E4 L2, PREREG_DRIFT_ATTACK_LADDER).")
+    ap.add_argument("--o5-target-crop", type=float, default=0.0,
+                    help="MM-E4 L4 (PREREG_DRIFT_ATTACK_LADDER Amendment A): crop the O5 TARGET frames only to a random contiguous azimuthal window of this fraction of full width (uniform offset per sample, SAME window across that sample's k future frames), resized back to full width with antialias BEFORE the target encoder. The input path is untouched, vertical is untouched. Geometrically clean ONLY on our CYLINDRICAL frames (column linear in azimuth, so a horizontal crop is a pure FOV restriction). 0 = off (bit-identical); composable with any --o5-target.")
     # ---- measures ----------------------------------------------------------
     ap.add_argument("--o1-k", type=int, default=10,
                     help="O1/L_ctrl roll horizon (the W3 probe's k)")
@@ -6561,6 +6802,10 @@ def build_parser() -> argparse.ArgumentParser:
                     choices=("uniform", "linear-decay", "endpoint"),
                     default="uniform")
     ap.add_argument("--w-o6", type=float, default=0.1)
+    ap.add_argument("--o6-innovation", action="store_true",
+                    help="MM-E4 L1 (PREREG_DRIFT_ATTACK_LADDER): O6's sketched test runs on the dynamics INNOVATIONS dz - g(z_t) instead of the states. g = per-batch closed-form ridge, fit under no_grad on the OPPOSITE half-batch (cross-fitted both ways — never fit and scored on the same rows; lambda fixed at O6_INNOVATION_RIDGE_REL). Off = bit-identical incumbent O6.")
+    ap.add_argument("--o6-innovation-shuffle", action="store_true",
+                    help="deliberate-regression arm OF --o6-innovation (instrument validity, prereg-committed): permute z_t across rows before fitting g, so g carries no dynamics and the constraint must degenerate to ~plain SIGReg on centred dz. Requires --o6-innovation.")
     ap.add_argument("--sigreg-slices", type=int, default=512)
     ap.add_argument("--sigreg-free-dims", type=int, default=0)
     ap.add_argument("--spectrum-every", type=int, default=200)
