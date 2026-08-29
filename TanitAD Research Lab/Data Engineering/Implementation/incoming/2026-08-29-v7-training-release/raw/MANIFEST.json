@@ -37,9 +37,28 @@
   "refd"
  ],
  "exclusions": {
-  "count": 0,
-  "policy": "EMPTY AT RELEASE: all 4,719 clips have labels (0 refused) and egomotion (asserted). Camera integrity is verified at pull time (ftyp check in tools/pull_camera.py); any clip whose camera fails MUST be appended here by the cache builder with a reason, so skip-lists stay manifest-derived, never discovered.",
-  "entries": []
+  "policy": "append-with-reason; never a silent skip",
+  "data_quality": {
+   "count": 0,
+   "basis": "validate_release.py \u2014 4,719/4,719 decode-probed, 0 failures"
+  },
+  "parity_deployed_val40": {
+   "count": 6,
+   "clip_id_sha256": [
+    "7b7cd0636a3301ab2b5e08dadc6c66061ab7b8809a057bf2b8a726937f57d8c4",
+    "a26c7f0ef8774609c21431e6c525f7e4583415dc079fdbf1648bfe769da4b5e3",
+    "a2bd72d903854fca9f9a829021b3a0d8eb16b26ed638bd17e9931f18516f3405",
+    "b8c8727d24748c232268f9e810381b829286388707510386314fafd2bcb94b3b",
+    "ba9a53c67540f8abed622ca9294fb7e1423e5d050faa90295b83e857812c0bac",
+    "cde81aaedb2df097c39f1a8b24d1aec69e790c77de263c65be229bb87f06589d"
+   ],
+   "confidentiality": "\ud83d\udd12 digests only \u2014 the val40 ids are gated-confidential",
+   "source": "stack/tanitad/data/deployed_val40_clip_digests.json (corpus_key physicalai-val-0c5f7dac3b11, n_clips 40)",
+   "why": "These clips are in THE deployed val40 \u2014 the split that produces the programme's published open-loop statistic. Training any consumer on them measures the model partly on its own training data (C6/leak family).",
+   "required_build_flag": "--corpus-role train --exclude-parity-overlap",
+   "effect": "4,719 - 6 = 4,713 clips enter the epcache; the exclusion is recorded in the build's _geometry.json.",
+   "precedent": "the builder's own --help names the Alpamayo 4,472 build's 6 deployed-val episodes \u2014 the same sanctioned repair."
+  }
  },
  "per_clip_cy": {
   "file": "index/front_wide_cy.parquet",
@@ -100,7 +119,8 @@
     "B": 2723,
     "A": 1996
    }
-  }
+  },
+  "note_parity": "The camera bank ships all 4,719 clips; the 6 val40-overlap clips are excluded AT BUILD TIME, not from the dataset \u2014 so an eval consumer can still read them legitimately."
  },
  "files": {
   "alpamayo/records.parquet": {
