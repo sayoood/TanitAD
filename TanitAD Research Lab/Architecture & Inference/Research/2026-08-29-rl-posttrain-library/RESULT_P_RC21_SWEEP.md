@@ -174,3 +174,57 @@ raw fan, the policy will keep buying it with drift. The re-run must therefore
 report the decomposition again, and a `feasibility`-still-dominates result would
 mean the term needs a reference (feasibility RELATIVE to the cold start's fan)
 rather than an absolute one.
+
+---
+
+## ⭐ THREE FINDINGS THAT OUTLIVE THIS CAMPAIGN
+
+Recorded here because they are design rules for every group-relative objective
+the programme builds, not facts about REF-C v2.1.
+
+### 1. ⛔ AN ADVANTAGE ESTIMATOR RANKS WHAT **VARIES**, NOT WHAT IS **WEIGHTED**
+
+MEASURED, and the cross-check is what makes it a rule rather than an anecdote:
+the scene-grounded terms carried **more** weight than the scene-free ones
+(`collision` 1.00 + `headway` 0.30 = **1.30** vs `feasibility` 0.50 + `comfort`
+0.20 + `progress` 0.30 = **1.00**) — and the gradient went to the scene-free
+side anyway, with `feasibility` alone supplying **87 %** of the gain.
+
+⇒ **A BINARY term inside a group-relative advantage is nearly INERT BY
+CONSTRUCTION.** Centring a reward across candidates removes anything constant,
+and a hit/no-hit flag is constant across the large majority of fans. Weighting it
+higher does not help: zero variance times any weight is still zero.
+
+**The design rule:** every term intended to *rank* must be continuous over the
+range the candidates actually occupy. Terms that are genuinely binary belong in
+the **constraint/veto channel**, not the reward — the same separation already
+forced for TTC (`advantage.truncated_inter_anchor_advantage`) and for headway.
+
+### 2. ⭐ THE REFUTED PREDICTION IS WORTH AS MUCH AS THE RESULT
+
+The prediction (`progress` pays for the drift) was recorded **before** the
+decomposition ran, and the measurement refuted it (`feasibility`, 87 %). Stating
+the refutation alongside the number is what makes the 87 % credible rather than a
+story fitted to data already seen — the same reason a pre-registration must land
+before its outcome. A diagnosis that merely *confirms* what its author expected
+should be trusted less, not more, unless the expectation was written down first.
+
+### 3. ⚠️ "TAME THE FAN" IS THE SAME CLASS AS MM-E4 L1 — TWO LANES, ONE FAILURE, ONE EVENING
+
+| lane | cheap continuous direction | what it satisfied | what it destroyed |
+|---|---|---|---|
+| MM-E4 L1 (drift ladder) | a regulariser aimed at the statistic its own read measures | drift −25 % | prediction |
+| **P-RC21 (this lane)** | make the emitted fan blander | `feasibility` +87 % of the gain | ADE +44 % |
+
+⇒ **THE CLASS: an objective admits a cheap continuous direction that satisfies
+the metric while destroying the thing the metric was a proxy for.** Both were
+found the same evening in independent lanes, which is what makes it a class
+rather than a coincidence.
+
+**The check, now structural rather than remembered:** before adopting any new
+reward term, ask *what is the cheapest continuous way to increase this, and would
+we deploy the behaviour that results?* The `proximity` barrier is built to fail
+that check safely — it **caps at 0**, so its optimum is "keep a normal margin",
+which sits inside the driving envelope rather than outside it. A term whose
+optimum lies outside the envelope (an unbounded distance-maximiser, a saturating
+headway) is this class waiting to happen.

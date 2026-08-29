@@ -10126,3 +10126,69 @@ exclusion and has no reason to re-open it. Same family as C77 (a pipeline that r
 failure faithfully and passes every structural check) and the C133 fake-gap case — and the mirror
 image of the E-DETECT-1 all-zero floor, which manufactured false POSITIVES by the same mechanism.
 **Structural checks cannot catch it: the counts, the schema and the reasons were all well-formed.**
+
+---
+
+## TRAIN-C6 — 2026-08-29 — NEAR-MISS: a pre-registered EXIT CONDITION that named a quantity the readout does not emit
+
+**Class:** `instrument-cannot-answer-the-question-asked-of-it` (C9/C13/C14 family) —
+but at the **pre-registration** layer, which is new here.
+
+**What I wrote.** `PREREG_P_RC21.md` AMENDMENT 2 committed exit B as *"proximity
+contributes a non-trivial share of ΔR1"*. ⛔ **`R1` is computed with the DEFAULT
+reward spec** — deliberately, so arms stay cross-comparable — and the default spec
+**excludes** the proximity term the amendment had just added. The exit asked for a
+number my own instrument cannot produce, and it was written *by the person who
+built the instrument*, hours after building it.
+
+**Why it survived review.** The exit is well-formed English, references a real
+component and a real metric, and reads as obviously measurable. Nothing in the
+prereg's own structure can detect that the two nouns belong to different specs.
+
+**What saved it.** `ckpt_after.pt` existed, so the decomposition was recoverable
+post-hoc with no re-training — and it existed **only** because TRAIN-C5 had forced
+checkpoint saving three hours earlier. A defect fixed in the morning paid for a
+different defect in the evening. ⚠️ Without it, an exit condition committed in
+advance would have been **unresolvable**, which is the worst possible failure of a
+pre-registration: it converts a commitment into an after-the-fact judgement call.
+
+⭐ **THE RULE: check every pre-registered exit against the readout's OUTPUT SCHEMA
+when the prereg is written, not when it is read.** For each exit, name the field
+that will carry the answer. If no field exists, either add it to the instrument or
+rewrite the exit — before any number exists. *(Same family as C9/C13/C14 —
+instruments structurally unable to report the answer they are cited for — with the
+sharpening that a **pre-registration can contain the defect on its own**, before
+the instrument is ever run.)*
+
+---
+
+## TRAIN-C7 — 2026-08-29 — NEAR-MISS: I measured `offset` when the policy's output is `anchor_traj`, and a SWEEP over an irrelevant-looking parameter is what caught it
+
+**Class:** `right-shaped-wrong-quantity` (the `df` / Thor `free` / cgroup
+`usage_in_bytes` scope family) — plus a positive lesson about controls.
+
+**What happened.** Measuring REF-C's reachable set, I read `out["offset"]`. It is a
+real tensor of the right shape, right units (metres), and plausible magnitude
+(1.68 m), and every downstream ratio computed cleanly. ⛔ **But `out["offset"]` is
+the CLASSIFIER-PASS offset** (`stack/tanitad/refs/refc.py:1364-1365`); the
+truncated-diffusion loop accumulates into `x` and returns it as **`anchor_traj`**
+(`:1394-1399`, `:1515`). `offset` is never updated by the loop.
+
+**How it was caught — and this is the transferable part.** The Master Mind's design
+note asked for the measurement *at several denoise budgets*, so I swept steps
+0/2/4/8. All four returned **byte-identical** numbers. A quantity the refinement
+loop is supposed to refine cannot be invariant to how many refinement steps run ⇒
+I was reading the wrong tensor. On the corrected quantity the values are 1.681 /
+2.084 / 2.439 / 3.187 m — a clean monotone curve.
+
+⚠️ **Had I measured only the deployed `steps=2`, the wrong number would have looked
+entirely correct** and would have *supported* a "structurally dead" conclusion that
+the corrected data materially refines (reach at the 2 s endpoint goes 3.08 m →
+6.08 m from steps 2 → 8, crossing the 3.67 m gap it must close).
+
+⭐ **THE RULE: sweep the parameter your quantity MUST depend on, and treat
+invariance as a defect signal.** A sweep over an axis you expect to matter is a
+**control**, not extra coverage — it is often the only check available when the
+wrong tensor has the right shape, units and magnitude. ⚠️ And when a model returns
+several same-shaped tensors, **read the source for which one the forward pass
+actually updates** before measuring; a plausible name is not provenance.

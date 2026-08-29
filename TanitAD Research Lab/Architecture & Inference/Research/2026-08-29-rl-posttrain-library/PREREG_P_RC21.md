@@ -155,3 +155,58 @@ makes the re-run a contribution rather than a repair.
 NON-PARITY corpus · T0 only, no driving claim · surrogate Gaussian-on-offset is
 not the true diffusion density · static-lead approximation · 15 val episodes ·
 decoder-only with `conf_head` excluded · 4060 only, Thor untouched.
+
+---
+
+# ⭐ AMENDMENT 2 — 2026-08-29 — proximity barrier added; BOTH exits pre-committed
+
+`Landed BEFORE the re-run, with no readout for any proximity arm in existence.
+Third consecutive prereg landed ahead of its numbers (06c715d8b, AMENDMENT 1,
+this).`
+
+## The change under test
+
+**One change only:** add the graded **proximity barrier** to the reward.
+`r(d) = 0` beyond `d_safe = 5 m`; `−(1 − d/d_safe)²` inside; capped at 0 so it
+cannot be maximised by fleeing (Master Mind design constraint — an unbounded
+distance-maximiser buys the timid-driving pathology).
+
+**Weight: `proximity = 0.5`**, pre-registered here rather than chosen after
+seeing results. Rationale: it must be able to compete with `feasibility` (0.5),
+which the sweep decomposition measured as supplying **87 %** of the reward gain.
+Setting it below that would guarantee the same outcome; setting it far above
+would make the arm a proximity study rather than a balance test.
+
+Everything else is held: anchor as built, `w_imitation = 0`, eval-mode readout,
+decoder-only, same corpus, same 15 val clusters, seed 0.
+
+## The arms
+
+| arm | `w_anchor` | reward | role |
+|---|---|---|---|
+| **context** | 0 | previous sweep's `s0-w0` | ⚠️ NOT re-run — the anchor is settled and re-measuring it would spend compute to re-establish a known number |
+| **T1** | 1.0 | DEFAULT + proximity 0.5 | the light trust region |
+| **T2** | 10.0 | DEFAULT + proximity 0.5 | the binding trust region |
+| **T-reg** | 0 | `HACKABLE_WEIGHTS` | unchanged regression control |
+
+## ⛔ BOTH EXITS, COMMITTED BEFORE THE NUMBERS EXIST
+
+The primary diagnostic is **the ΔR1 decomposition**, not the headline delta.
+
+| outcome | reading | pre-committed consequence |
+|---|---|---|
+| **A — `feasibility` STILL dominates the gain at `w ≥ 1`** | the barrier gave the scene-grounded direction something continuous to rank and the policy *still* prefers taming the fan ⇒ the problem is that `feasibility` is scored in ABSOLUTE terms against a raw vocabulary full of slack | ⭐ **Make `feasibility` RELATIVE to the cold-start fan**: reward *"no less feasible than the reference"* rather than *"as feasible as possible"* — i.e. clamp the gain at the reference's own feasibility so there is no reward for exceeding it. Implement, then re-run T1/T2 once. |
+| **B — `feasibility` recedes and `proximity` ranks** (proximity contributes a non-trivial share of ΔR1, collision-family terms no longer inert) | the binary-term diagnosis was right and the barrier fixed it | proceed to the R2 question: does fan collision now separate? If yes → the mechanism transfers and A1-on-refcv3 inherits this reward. If no → the reward can rank safety and still not improve it, which is a DIFFERENT and harder finding — escalate rather than iterate. |
+| **C — neither: total ΔR1 ≈ 0 at every w** | the barrier neutralised the easy gain without supplying a usable one; the objective is now flat inside the trust region | STOP the reward-composition line. The next lever is the FAN (its diversity/support), not the scoring of it. |
+| **D — T-reg fails to degrade** | ⛔ readout void, nothing in the re-run is readable | fix the readout first, as in TRAIN-C5 |
+
+⚠️ **Guard against reading A as success.** A rising `proximity` contribution is
+*not* evidence of better driving — the barrier can only ever reduce a penalty,
+so a gain there means candidates moved out of the near-miss band. Whether that
+helped is R2's question and R3's, not R1's.
+
+## Reporting requirement
+The re-run reports the **full per-component decomposition at both `w`**, in the
+same table shape as the sweep addendum, plus paired-CI ΔR1/ΔR2/ΔR3. A headline
+delta without the decomposition is not an admissible readout for this arm — the
+decomposition is what turned the last null into a diagnosis.
