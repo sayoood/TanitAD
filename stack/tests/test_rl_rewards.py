@@ -362,3 +362,72 @@ def test_gt_similarity_is_NOT_in_the_default_reward():
     assert "gt_similarity" not in R.DEFAULT_WEIGHTS
     assert "gt_similarity" in R.COMPONENTS, (
         "the component stays available as a diagnostic; only the DEFAULT drops it")
+
+
+# ---------------------------------------------------------------------------
+# proximity — a BARRIER, not a distance-maximiser (MM design constraint)
+# ---------------------------------------------------------------------------
+
+def _prox_at(lat, d_safe=5.0):
+    """Obstacle `lat` metres to the side of a straight path; radii sum 2 m."""
+    return float(R.COMPONENTS["proximity"](
+        straight(21, 10.0), {"obstacles": torch.tensor([[10.0, lat]]),
+                             "proximity_safe_m": d_safe}))
+
+
+def test_proximity_is_analytic_inside_the_barrier():
+    """r(d) = -(1 - d/d_safe)^2 for d < d_safe; clearance = lat - 2 m."""
+    assert _prox_at(0.0) == pytest.approx(-1.0, abs=1e-4)     # clearance 0
+    assert _prox_at(2.5) == pytest.approx(-0.81, abs=1e-3)    # clearance 0.5
+    assert _prox_at(4.0) == pytest.approx(-0.36, abs=1e-3)    # clearance 2.0
+
+
+def test_proximity_is_EXACTLY_FLAT_beyond_the_safe_distance():
+    """⛔ THE DESIGN CONSTRAINT: no reward for extra distance.
+
+    An unbounded 'further is better' term buys timid driving — hugging empty
+    space, refusing gaps a competent driver takes. Flat above the threshold
+    means good candidates are UNRANKED by it, which is what we want on the
+    ~50 % of windows with no obstacle in the corridor.
+    """
+    assert _prox_at(7.0) == pytest.approx(0.0, abs=1e-9)      # clearance 5.0
+    assert _prox_at(20.0) == pytest.approx(0.0, abs=1e-9)
+    assert _prox_at(200.0) == pytest.approx(0.0, abs=1e-9)
+
+
+def test_proximity_cannot_be_MAXIMISED_by_fleeing():
+    """⛔ The check the Master Mind asked for: can the new term be maximised by
+    a behaviour we would refuse to deploy?
+
+    No — its maximum is 0, reached by ANY candidate merely `d_safe` away. There
+    is no gradient toward 'further', so a flee-everything policy scores exactly
+    the same as a competent one that keeps a normal margin.
+    """
+    competent, fleeing = _prox_at(7.0), _prox_at(200.0)
+    assert competent == fleeing == pytest.approx(0.0, abs=1e-9)
+    vals = [_prox_at(x) for x in (7.0, 10.0, 30.0, 100.0)]
+    assert max(vals) <= 0.0 and len(set(vals)) == 1, (
+        f"proximity rewards extra distance ({vals}) — it is a maximiser, not a "
+        "barrier, and would buy the timid-driving pathology")
+
+
+def test_proximity_is_monotone_and_bounded():
+    d = [_prox_at(x) for x in (0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0)]
+    assert all(b >= a - 1e-9 for a, b in zip(d, d[1:])), f"not monotone: {d}"
+    assert min(d) >= -1.0 and max(d) <= 0.0
+
+
+def test_proximity_absent_obstacles_is_neutral():
+    assert float(R.COMPONENTS["proximity"](straight(), {})) == pytest.approx(0.0)
+
+
+def test_proximity_gives_the_advantage_something_CONTINUOUS_to_rank():
+    """The measured motivation: `collision` is binary and contributed ~0 to ΔR1
+    at every anchor strength. A barrier varies across near-miss candidates."""
+    lats = [2.2, 2.6, 3.0, 3.4, 3.8]
+    prox = [_prox_at(x) for x in lats]
+    coll = [float(R.COMPONENTS["collision"](
+        straight(21, 10.0), {"obstacles": torch.tensor([[10.0, x]])}))
+        for x in lats]
+    assert len(set(round(p, 4) for p in prox)) == len(lats), "proximity is flat"
+    assert len(set(coll)) == 1, "collision was expected to be constant here"

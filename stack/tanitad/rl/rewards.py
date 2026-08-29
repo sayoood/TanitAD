@@ -353,6 +353,47 @@ def _motion_gate(kin: Kinematics, min_m: float = 1.0) -> Tensor:
     return (kin.arc_len / max(min_m, EPS)).clamp(0.0, 1.0)
 
 
+def _proximity(traj: Tensor, ctx: dict) -> Tensor:
+    """⭐ A BARRIER on closeness to obstacles — NOT a distance-maximiser.
+
+    ``0`` at or beyond ``d_safe``; falls steeply to ``-1`` at contact::
+
+        r(d) = 0                        for d >= d_safe
+        r(d) = -(1 - d/d_safe) ** p     for d <  d_safe
+
+    ⛔ THE SHAPE IS THE POINT, and it is a design constraint from the Master
+    Mind (2026-08-29): **penalise below a threshold, go FLAT above it.** An
+    unbounded "further from obstacles is better" reward buys the timid-driving
+    pathology — hugging empty space, refusing gaps a competent driver takes —
+    and would be the saturating-headway mistake in a new costume: a term whose
+    optimum sits OUTSIDE the driving envelope. A barrier constrains bad
+    candidates and leaves good ones **unranked by it**, which is exactly what we
+    want on the ~50 % of windows with no obstacle in the corridor.
+
+    ⚠️ WHY THIS EXISTS (measured, not speculative). The sweep decomposition
+    showed ``collision`` is BINARY per candidate and contributes ~0 to ΔR1 at
+    every anchor strength, while ``feasibility`` — continuous, with headroom on
+    a raw fan — supplied **87 %** of the reward gain and did so by making the fan
+    blander (+44 % ADE drift). The gradient followed the EASIEST term, not the
+    heaviest. A graded barrier gives the group-relative advantage something
+    continuous to rank in the scene-grounded direction.
+
+    ⚠️ It CANNOT be gamed upward: its maximum is 0, reached by any candidate
+    that simply stays ``d_safe`` away. There is no reward for going further, so
+    the degenerate "flee all obstacles" policy gains nothing over a competent one.
+    """
+    obs = ctx.get("obstacles")
+    if obs is None or obs.numel() == 0:
+        return torch.zeros(traj.shape[:-2], device=traj.device, dtype=traj.dtype)
+    d_safe = float(ctx.get("proximity_safe_m", 5.0))
+    p = float(ctx.get("proximity_exp", 2.0))
+    r = float(ctx.get("ego_radius_m", 1.0)) + float(ctx.get("obs_radius_m", 1.0))
+    d = (traj.unsqueeze(-2) - obs.unsqueeze(-3)).norm(dim=-1)      # [..., S, K]
+    clearance = (d - r).clamp_min(0.0).amin(dim=-1).amin(dim=-1)   # worst step
+    deficit = (1.0 - clearance / max(d_safe, EPS)).clamp(0.0, 1.0)
+    return -deficit.pow(p)
+
+
 def _kinematic_feasibility(traj: Tensor, ctx: dict) -> Tensor:
     """1 when the whole path respects the (a, kappa) envelope, decaying to 0.
 
@@ -409,6 +450,10 @@ COMPONENTS: dict[str, RewardComponent] = {
                                    "(now: 1.5x the current speed)",
                         grounded="rule-based", hackable_alone=True,
                         neutral=0.0),
+        RewardComponent("proximity", _proximity, -1.0, 0.0,
+                        degenerate="none — a BARRIER caps at 0, so fleeing "
+                                   "obstacles gains nothing over competence",
+                        grounded="gt-derived", hackable_alone=False, neutral=0.0),
         RewardComponent("collision", _collision, -1.0, 0.0,
                         degenerate="stand still forever (never collides)",
                         grounded="gt-derived", hackable_alone=True, neutral=0.0),

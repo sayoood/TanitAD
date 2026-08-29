@@ -109,3 +109,68 @@ sharpens why: the reward currently pays for drift. Ranked:
 | 2 | **The collision term cannot rank what it cannot see.** It fires on ~50 % of windows (base rate) and is binary per candidate. A graded proximity term (distance-to-nearest-obstacle, not a hit/no-hit flag) would give the advantage something continuous to work with — the same fix class as graded headway. |
 | 3 | Only after 1–2: re-run the sweep's `w_anchor ∈ {1, 10}` arms with the revised reward. The anchor is settled; it does not need re-establishing. |
 | 4 | Still deferred: M-B9 (true diffusion-step density). §3 does not implicate the estimator — the policy moves and the reward tracks it; the objective is what is mis-specified. |
+
+---
+
+## ⭐ ADDENDUM — the ΔR1 DECOMPOSITION (2026-08-29, Master Mind's sharper question)
+
+The question asked was not *"which term pays for drift"* but the stronger
+**"at `w_anchor`=10, does ANY component have a positive ΔR1?"** — because if none
+does, the finding is not *one badly-shaped term* but **an objective with NO local
+improvement direction inside the trust region**.
+
+### Weighted contribution to ΔR1, per component, all four anchor strengths
+
+| `w_anchor` | collision | comfort | **feasibility** | headway | progress | SUM |
+|---|---|---|---|---|---|---|
+| 0.0 | −0.0073 | +0.0115 | **+0.1101** | −0.0023 | +0.0151 | **+0.1272** |
+| 0.1 | +0.0005 | −0.0050 | **+0.0727** | −0.0007 | +0.0020 | +0.0694 |
+| 1.0 | −0.0017 | −0.0278 | −0.0355 | −0.0003 | −0.0007 | −0.0660 |
+| 10.0 | +0.0005 | −0.0220 | −0.0170 | −0.0003 | +0.0007 | −0.0380 |
+| REG (progress-only) | +0.0024 | −0.0702 | **−0.2213** | −0.0054 | **+0.0232** | −0.2712 |
+
+### Answers
+
+⛔ **At `w_anchor` = 1.0: NO component is positive.** The objective has no local
+improvement direction inside that trust region — every direction it can reward
+requires leaving the reference.
+
+⚠️ **At `w_anchor` = 10.0 the answer is NOT a clean "none":** `collision`
+(+0.0005) and `progress` (+0.0007) are positive. But they are **~3 % of the
+magnitude** of the negative terms (`comfort` −0.0220, `feasibility` −0.0170), so
+the strong claim holds *effectively* while the literal binary answer is "two,
+negligibly". Stating both rather than rounding to the cleaner story.
+
+### ⭐ THE DIAGNOSIS — and it refutes my own prediction
+
+I predicted `progress` would supply the drift-paying gain. **It does not.**
+`feasibility` supplies **+0.1101 of the +0.1272 total at w=0 — 87 %.** Progress
+contributes 12 %.
+
+**Mechanism.** `feasibility` is continuous, weighted 0.50, and the RAW ANCHOR
+VOCABULARY is full of headroom (it samples 0–30 m/s and ±0.35 rad/s uniformly, so
+many candidates sit outside the (a, κ) envelope). The cheapest way to raise it is
+to emit **blander trajectories** — lower curvature, gentler acceleration. That
+costs ADE (+44 %) and does nothing for collisions. ⇒ **the reward gain and the
+drift are the same movement**, and the movement is "make the fan tamer".
+
+⚠️ **The weights are NOT the problem.** Scene-grounded terms carry *more* weight
+(collision 1.00 + headway 0.30 = 1.30) than scene-free ones (0.50 + 0.20 + 0.30 =
+1.00). ⭐ **The gradient followed the EASIEST term, not the heaviest.**
+`collision` is BINARY per candidate and only improves by actually avoiding an
+obstacle; `feasibility` is continuous with slack everywhere. An advantage
+estimator ranks what varies.
+
+**Cross-check from the regression arm:** training on progress-only drives
+`progress` to **+0.0232** (its largest value anywhere, as it must) while
+`feasibility` **collapses −0.2213**. The two are in direct tension, which is what
+the composed reward is supposed to balance and currently does not.
+
+### What this changes about the fix
+A graded proximity **barrier** (approved, implemented) gives the scene-grounded
+direction something continuous to rank. But this decomposition says it is **not
+sufficient alone**: as long as `feasibility` offers the largest easy gain on a
+raw fan, the policy will keep buying it with drift. The re-run must therefore
+report the decomposition again, and a `feasibility`-still-dominates result would
+mean the term needs a reference (feasibility RELATIVE to the cold start's fan)
+rather than an absolute one.
