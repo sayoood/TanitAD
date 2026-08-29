@@ -353,3 +353,63 @@ SAM3 extraction v2 rich overlays.
 |---|---|---|---|
 | `v2_aa291a17.mp4` | 0.48 | SAM3 extraction v2 | tracked |
 | `v2_e084c7c3.mp4` | 0.48 | SAM3 extraction v2 | tracked |
+
+
+---
+
+## The clickable media browser (`tool/index.html`) — added 2026-08-29
+
+**Open [`tool/index.html`](tool/index.html) directly** (double-click — `file://`, no
+server, no CDN). Modern dark UI: full-text search; type / eval-tier / topic /
+model-arm / tag filters; thumbnail card grid; click a card for inline **video
+replay** with every field of metadata, a copy-path button and prev/next; keyboard
+navigation (`/` search, arrows, Enter, Esc).
+
+### `media_index.json` — a DERIVED view, never a second inventory
+
+`MEDIA_MANIFEST.json` stays the **source inventory** of video assets (sha256 is the
+identity). `media_index.json` is **generated downstream** of it for the browser:
+
+* **132 video records — one per manifest asset, joined by `sha256`** (never by
+  filename: four filenames carry different content, four assets have two names).
+  Each record keeps `manifest_sha256` as the back-reference, points at the
+  manifest's own `media_path`, and **surfaces `off_device_copy`** (the real risk
+  property) plus `tracked_in_git`, `campaign`, `shows`, `aliases`,
+  `original_paths` — extended with browse fields the manifest does not carry:
+  `title`, `caption`, `model_arm` (exact `MODEL_REGISTRY.md` name), **`eval_tier`**,
+  `topic`, `tags`, `source_run`.
+* **359 image records** (result figures, stills, montages, QA crops from the
+  repo-wide sweep) with `in_manifest: false` — images are outside the manifest's
+  (video) scope and live at their tracked in-place repo paths.
+
+### ⛔ The tier stamp is binding (EVAL_DOCTRINE.md — marketing never strips it)
+
+Every asset showing model behavior carries `eval_tier`: **T0** = teacher-forced /
+true-future-conditioned — a *world-model diagnostic*, never "driving performance"
+(all open-loop overlay reels are T0; an orange line tracking a green line looks
+like driving and is not). **T1** = action-closed loop (AlpaSim T1 results are
+within-sim relative). **none** = not model behavior, or a mixed-tier figure — the
+caption says which. Records tagged `unverified-provenance` / `unclassified` must
+not be quoted as results.
+
+### How to add an asset (3 steps)
+
+1. **Video** → follow rule 3 above: drop it in `Media/<YYYY-MM-DD>-<campaign-slug>/`
+   **and give it a `MEDIA_MANIFEST.json` row in the same turn** (sha256, sources,
+   `shows`). **Image** (< 50 MB, a result) → leave it at its repo path (tracked).
+2. **Add/extend the derived record** in `media_index.json`: copy a neighbouring
+   record as template; fill every field — `model_arm` exactly as
+   `MODEL_REGISTRY.md` spells it, `eval_tier` mandatory for model behavior,
+   caveats in the caption; for videos set `manifest_sha256` to the manifest row's
+   sha256.
+3. **Regenerate + validate:**
+   ```bash
+   python tools/media_verify.py           # manifest <-> disk: MISSING / MISMATCH / ORPHAN
+   python Media/tool/build_index_js.py    # index -> media_index.js + path/schema/sha-join checks
+   ```
+   Stage the text files (`media_index.json`, `media_index.js`); binaries follow the
+   manifest's tracking policy (`*.mp4` stays untracked pending the PI decision).
+
+`python Media/tool/build_index_js.py --check` validates without writing. The
+check also cross-joins the index against `MEDIA_MANIFEST.json`: every manifest
+sha256 must appear exactly once.
