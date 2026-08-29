@@ -3722,6 +3722,309 @@
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-29-refc-origins-successors/RESULT.md"
    ]
+  },
+  "2409.00588": {
+   "key": "2409.00588",
+   "kind": "arxiv",
+   "title": "Diffusion Policy Policy Optimization",
+   "authors": [
+    "Allen Z. Ren",
+    "Justin Lidard",
+    "Lars L. Ankile",
+    "Anthony Simeonov",
+    "Pulkit Agrawal",
+    "Anirudha Majumdar",
+    "Benjamin Burchfiel",
+    "Hongkai Dai",
+    "Max Simchowitz"
+   ],
+   "published": "2024-09-01",
+   "abstract": "We introduce Diffusion Policy Policy Optimization, DPPO, an algorithmic framework including best practices for fine-tuning diffusion-based policies (e.g. Diffusion Policy) in continuous control and robot learning tasks using the policy gradient (PG) method from reinforcement learning (RL). PG methods are ubiquitous in training RL policies with other policy parameterizations; nevertheless, they had been conjectured to be less efficient for diffusion-based policies. Surprisingly, we show that DPPO achieves the strongest overall performance and efficiency for fine-tuning in common benchmarks compared to other RL methods for diffusion-based policies and also compared to PG fine-tuning of other policy parameterizations. Through experimental investigation, we find that DPPO takes advantage of unique synergies between RL fine-tuning and the diffusion parameterization, leading to structured and ",
+   "url": "https://arxiv.org/abs/2409.00588",
+   "path": "TanitAD Research Lab/Library/papers/2409.00588_Diffusion-Policy-Policy-Optimization.pdf",
+   "bytes": 19770513,
+   "sha256": "4b81907b0a8ea7118e4922720f2e7d269d5cf00d3725e44fc6d25f49d02413f3",
+   "banked": "2026-08-29",
+   "tags": [
+    "rl-posttrain"
+   ],
+   "note": "DPPO: the two-layer MDP that DDv2 cites (ref [38]) for treating the denoising chain as an MDP; diffusion-policy RL fine-tuning, PPO on the denoising MDP.",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-29-rl-posttrain-library/RESULT.md"
+   ]
+  },
+  "2305.13301": {
+   "key": "2305.13301",
+   "kind": "arxiv",
+   "title": "Training Diffusion Models with Reinforcement Learning",
+   "authors": [
+    "Kevin Black",
+    "Michael Janner",
+    "Yilun Du",
+    "Ilya Kostrikov",
+    "Sergey Levine"
+   ],
+   "published": "2023-05-22",
+   "abstract": "Diffusion models are a class of flexible generative models trained with an approximation to the log-likelihood objective. However, most use cases of diffusion models are not concerned with likelihoods, but instead with downstream objectives such as human-perceived image quality or drug effectiveness. In this paper, we investigate reinforcement learning methods for directly optimizing diffusion models for such objectives. We describe how posing denoising as a multi-step decision-making problem enables a class of policy gradient algorithms, which we refer to as denoising diffusion policy optimization (DDPO), that are more effective than alternative reward-weighted likelihood approaches. Empirically, DDPO is able to adapt text-to-image diffusion models to objectives that are difficult to express via prompting, such as image compressibility, and those derived from human feedback, such as aes",
+   "url": "https://arxiv.org/abs/2305.13301",
+   "path": "TanitAD Research Lab/Library/papers/2305.13301_Training-Diffusion-Models-with-Reinforcement-Learning.pdf",
+   "bytes": 5379165,
+   "sha256": "fea5c60166a3718d5f435e5171424204fd3388c358060ad2b60a62e6e625ab95",
+   "banked": "2026-08-29",
+   "tags": [
+    "rl-posttrain"
+   ],
+   "note": "DDPO: denoising-chain-as-MDP policy gradient for diffusion models; the primary for per-denoise-step credit assignment (DDPO_SF vs DDPO_IS), and the source of the reward-hacking-on-a-learned-reward demonstration.",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-29-rl-posttrain-library/RESULT.md"
+   ]
+  },
+  "2305.16381": {
+   "key": "2305.16381",
+   "kind": "arxiv",
+   "title": "DPOK: Reinforcement Learning for Fine-tuning Text-to-Image Diffusion Models",
+   "authors": [
+    "Ying Fan",
+    "Olivia Watkins",
+    "Yuqing Du",
+    "Hao Liu",
+    "Moonkyung Ryu",
+    "Craig Boutilier",
+    "Pieter Abbeel",
+    "Mohammad Ghavamzadeh",
+    "Kangwook Lee",
+    "Kimin Lee"
+   ],
+   "published": "2023-05-25",
+   "abstract": "Learning from human feedback has been shown to improve text-to-image models. These techniques first learn a reward function that captures what humans care about in the task and then improve the models based on the learned reward function. Even though relatively simple approaches (e.g., rejection sampling based on reward scores) have been investigated, fine-tuning text-to-image models with the reward function remains challenging. In this work, we propose using online reinforcement learning (RL) to fine-tune text-to-image models. We focus on diffusion models, defining the fine-tuning task as an RL problem, and updating the pre-trained text-to-image diffusion models using policy gradient to maximize the feedback-trained reward. Our approach, coined DPOK, integrates policy optimization with KL regularization. We conduct an analysis of KL regularization for both RL fine-tuning and supervised ",
+   "url": "https://arxiv.org/abs/2305.16381",
+   "path": "TanitAD Research Lab/Library/papers/2305.16381_DPOK-Reinforcement-Learning-for-Fine-tuning-Text-to-Image-Di.pdf",
+   "bytes": 25629922,
+   "sha256": "1bc0f1d5a172ece50eafddf403521c2c83677eadde3e303b0ac290d19726d57c",
+   "banked": "2026-08-29",
+   "tags": [
+    "rl-posttrain"
+   ],
+   "note": "DPOK: online RL fine-tuning of diffusion with a KL-to-pretrained regulariser; the KL-regularised counterpart to DDv2's IL-regulariser choice, and the paper that contrasts RL fine-tuning against supervised reward-weighted fine-tuning.",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-29-rl-posttrain-library/RESULT.md"
+   ]
+  },
+  "2311.12908": {
+   "key": "2311.12908",
+   "kind": "arxiv",
+   "title": "Diffusion Model Alignment Using Direct Preference Optimization",
+   "authors": [
+    "Bram Wallace",
+    "Meihua Dang",
+    "Rafael Rafailov",
+    "Linqi Zhou",
+    "Aaron Lou",
+    "Senthil Purushwalkam",
+    "Stefano Ermon",
+    "Caiming Xiong",
+    "Shafiq Joty",
+    "Nikhil Naik"
+   ],
+   "published": "2023-11-21",
+   "abstract": "Large language models (LLMs) are fine-tuned using human comparison data with Reinforcement Learning from Human Feedback (RLHF) methods to make them better aligned with users' preferences. In contrast to LLMs, human preference learning has not been widely explored in text-to-image diffusion models; the best existing approach is to fine-tune a pretrained model using carefully curated high quality images and captions to improve visual appeal and text alignment. We propose Diffusion-DPO, a method to align diffusion models to human preferences by directly optimizing on human comparison data. Diffusion-DPO is adapted from the recently developed Direct Preference Optimization (DPO), a simpler alternative to RLHF which directly optimizes a policy that best satisfies human preferences under a classification objective. We re-formulate DPO to account for a diffusion model notion of likelihood, util",
+   "url": "https://arxiv.org/abs/2311.12908",
+   "path": "TanitAD Research Lab/Library/papers/2311.12908_Diffusion-Model-Alignment-Using-Direct-Preference-Optimizati.pdf",
+   "bytes": 12999512,
+   "sha256": "9f78deb765c2bf19418f3d58928e8b24ccf7a3929626396a3c0e2331a9faea26",
+   "banked": "2026-08-29",
+   "tags": [
+    "rl-posttrain"
+   ],
+   "note": "Diffusion-DPO: DPO on diffusion models via the denoising ELBO surrogate; the reference for preference optimisation on a diffusion policy without a reward model or rollouts.",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-29-rl-posttrain-library/RESULT.md"
+   ]
+  },
+  "2309.17400": {
+   "key": "2309.17400",
+   "kind": "arxiv",
+   "title": "Directly Fine-Tuning Diffusion Models on Differentiable Rewards",
+   "authors": [
+    "Kevin Clark",
+    "Paul Vicol",
+    "Kevin Swersky",
+    "David J Fleet"
+   ],
+   "published": "2023-09-29",
+   "abstract": "We present Direct Reward Fine-Tuning (DRaFT), a simple and effective method for fine-tuning diffusion models to maximize differentiable reward functions, such as scores from human preference models. We first show that it is possible to backpropagate the reward function gradient through the full sampling procedure, and that doing so achieves strong performance on a variety of rewards, outperforming reinforcement learning-based approaches. We then propose more efficient variants of DRaFT: DRaFT-K, which truncates backpropagation to only the last K steps of sampling, and DRaFT-LV, which obtains lower-variance gradient estimates for the case when K=1. We show that our methods work well for a variety of reward functions and can be used to substantially improve the aesthetic quality of images generated by Stable Diffusion 1.4. Finally, we draw connections between our approach and prior work, p",
+   "url": "https://arxiv.org/abs/2309.17400",
+   "path": "TanitAD Research Lab/Library/papers/2309.17400_Directly-Fine-Tuning-Diffusion-Models-on-Differentiable-Rewa.pdf",
+   "bytes": 29238632,
+   "sha256": "8e6af196b52553041d4bf5b605a0764c2a07730b90b016876db8855ddfebcc5b",
+   "banked": "2026-08-29",
+   "tags": [
+    "rl-posttrain"
+   ],
+   "note": "DRaFT: direct backprop of a DIFFERENTIABLE reward through the sampling chain; the pathwise-gradient alternative that dominates the score-function estimator when the reward is differentiable in the emitted trajectory.",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-29-rl-posttrain-library/RESULT.md"
+   ]
+  },
+  "2505.05470": {
+   "key": "2505.05470",
+   "kind": "arxiv",
+   "title": "Flow-GRPO: Training Flow Matching Models via Online RL",
+   "authors": [
+    "Jie Liu",
+    "Gongye Liu",
+    "Jiajun Liang",
+    "Yangguang Li",
+    "Jiaheng Liu",
+    "Xintao Wang",
+    "Pengfei Wan",
+    "Di Zhang",
+    "Wanli Ouyang"
+   ],
+   "published": "2025-05-08",
+   "abstract": "We propose Flow-GRPO, the first method to integrate online policy gradient reinforcement learning (RL) into flow matching models. Our approach uses two key strategies: (1) an ODE-to-SDE conversion that transforms a deterministic Ordinary Differential Equation (ODE) into an equivalent Stochastic Differential Equation (SDE) that matches the original model's marginal distribution at all timesteps, enabling statistical sampling for RL exploration; and (2) a Denoising Reduction strategy that reduces training denoising steps while retaining the original number of inference steps, significantly improving sampling efficiency without sacrificing performance. Empirically, Flow-GRPO is effective across multiple text-to-image tasks. For compositional generation, RL-tuned SD3.5-M generates nearly perfect object counts, spatial relations, and fine-grained attributes, increasing GenEval accuracy from $",
+   "url": "https://arxiv.org/abs/2505.05470",
+   "path": "TanitAD Research Lab/Library/papers/2505.05470_Flow-GRPO-Training-Flow-Matching-Models-via-Online-RL.pdf",
+   "bytes": 9396130,
+   "sha256": "30cf4c2638cf6ab85ccae4737c5c9fd5c1fc2b42e082b70e26635c8c39a71139",
+   "banked": "2026-08-29",
+   "tags": [
+    "rl-posttrain"
+   ],
+   "note": "Flow-GRPO: ODE-to-SDE conversion to make a deterministic flow/DDIM sampler stochastic enough for policy gradients, plus denoising-step reduction; the primary for DDv2's eta=1-at-train / eta=0-at-eval exploration trick.",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-29-rl-posttrain-library/RESULT.md"
+   ]
+  },
+  "2210.10760": {
+   "key": "2210.10760",
+   "kind": "arxiv",
+   "title": "Scaling Laws for Reward Model Overoptimization",
+   "authors": [
+    "Leo Gao",
+    "John Schulman",
+    "Jacob Hilton"
+   ],
+   "published": "2022-10-19",
+   "abstract": "In reinforcement learning from human feedback, it is common to optimize against a reward model trained to predict human preferences. Because the reward model is an imperfect proxy, optimizing its value too much can hinder ground truth performance, in accordance with Goodhart's law. This effect has been frequently observed, but not carefully measured due to the expense of collecting human preference data. In this work, we use a synthetic setup in which a fixed \"gold-standard\" reward model plays the role of humans, providing labels used to train a proxy reward model. We study how the gold reward model score changes as we optimize against the proxy reward model using either reinforcement learning or best-of-$n$ sampling. We find that this relationship follows a different functional form depending on the method of optimization, and that in both cases its coefficients scale smoothly with the ",
+   "url": "https://arxiv.org/abs/2210.10760",
+   "path": "TanitAD Research Lab/Library/papers/2210.10760_Scaling-Laws-for-Reward-Model-Overoptimization.pdf",
+   "bytes": 3186215,
+   "sha256": "c793c551a1b027402f758cce0fbf6b400cf66d0df57d2875d275e73cfd58bfc9",
+   "banked": "2026-08-29",
+   "tags": [
+    "rl-posttrain"
+   ],
+   "note": "Gao/Schulman/Hilton: scaling laws for reward-model OVERoptimisation; the primary for the proxy-vs-gold divergence curve (Goodhart) that any learned reward must be sized against.",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-29-rl-posttrain-library/RESULT.md"
+   ]
+  },
+  "2209.13085": {
+   "key": "2209.13085",
+   "kind": "arxiv",
+   "title": "Defining and Characterizing Reward Hacking",
+   "authors": [
+    "Joar Skalse",
+    "Nikolaus H. R. Howe",
+    "Dmitrii Krasheninnikov",
+    "David Krueger"
+   ],
+   "published": "2022-09-27",
+   "abstract": "We provide the first formal definition of reward hacking, a phenomenon where optimizing an imperfect proxy reward function leads to poor performance according to the true reward function. We say that a proxy is unhackable if increasing the expected proxy return can never decrease the expected true return. Intuitively, it might be possible to create an unhackable proxy by leaving some terms out of the reward function (making it \"narrower\") or overlooking fine-grained distinctions between roughly equivalent outcomes, but we show this is usually not the case. A key insight is that the linearity of reward (in state-action visit counts) makes unhackability a very strong condition. In particular, for the set of all stochastic policies, two reward functions can only be unhackable if one of them is constant. We thus turn our attention to deterministic policies and finite sets of stochastic polic",
+   "url": "https://arxiv.org/abs/2209.13085",
+   "path": "TanitAD Research Lab/Library/papers/2209.13085_Defining-and-Characterizing-Reward-Hacking.pdf",
+   "bytes": 849540,
+   "sha256": "d9a8567f6d5bc9fa23754b93391b02aac7750c29240b86a89c5248b048cbe8fc",
+   "banked": "2026-08-29",
+   "tags": [
+    "rl-posttrain"
+   ],
+   "note": "Skalse et al.: formal definition of reward hacking/unhackability; the primary for 'which reward pairs can diverge under optimisation' and for why a proxy reward needs a gold-metric control.",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-29-rl-posttrain-library/RESULT.md"
+   ]
+  },
+  "2201.03544": {
+   "key": "2201.03544",
+   "kind": "arxiv",
+   "title": "The Effects of Reward Misspecification: Mapping and Mitigating Misaligned Models",
+   "authors": [
+    "Alexander Pan",
+    "Kush Bhatia",
+    "Jacob Steinhardt"
+   ],
+   "published": "2022-01-10",
+   "abstract": "Reward hacking -- where RL agents exploit gaps in misspecified reward functions -- has been widely observed, but not yet systematically studied. To understand how reward hacking arises, we construct four RL environments with misspecified rewards. We investigate reward hacking as a function of agent capabilities: model capacity, action space resolution, observation space noise, and training time. More capable agents often exploit reward misspecifications, achieving higher proxy reward and lower true reward than less capable agents. Moreover, we find instances of phase transitions: capability thresholds at which the agent's behavior qualitatively shifts, leading to a sharp decrease in the true reward. Such phase transitions pose challenges to monitoring the safety of ML systems. To address this, we propose an anomaly detection task for aberrant policies and offer several baseline detectors",
+   "url": "https://arxiv.org/abs/2201.03544",
+   "path": "TanitAD Research Lab/Library/papers/2201.03544_The-Effects-of-Reward-Misspecification-Mapping-and-Mitigatin.pdf",
+   "bytes": 2235996,
+   "sha256": "2158d01ced6faf348f4ec292bfd9449300ba86c6bf422473aaaf3eb7b91da6ff",
+   "banked": "2026-08-29",
+   "tags": [
+    "rl-posttrain"
+   ],
+   "note": "Pan et al.: effects of reward misspecification - PHASE TRANSITIONS where a more capable policy suddenly starts hacking a proxy reward; the primary for staging a capability-scaled reward audit.",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-29-rl-posttrain-library/RESULT.md"
+   ]
+  },
+  "2506.08052": {
+   "key": "2506.08052",
+   "kind": "arxiv",
+   "title": "ReCogDrive: A Reinforced Cognitive Framework for End-to-End Autonomous Driving",
+   "authors": [
+    "Yongkang Li",
+    "Kaixin Xiong",
+    "Xiangyu Guo",
+    "Fang Li",
+    "Sixu Yan",
+    "Gangwei Xu",
+    "Lijun Zhou",
+    "Long Chen",
+    "Haiyang Sun",
+    "Bing Wang",
+    "Kun Ma",
+    "Guang Chen"
+   ],
+   "published": "2025-06-09",
+   "abstract": "Recent studies have explored leveraging the world knowledge and cognitive capabilities of Vision-Language Models (VLMs) to address the long-tail problem in end-to-end autonomous driving. However, existing methods typically formulate trajectory planning as a language modeling task, where physical actions are output in the language space, potentially leading to issues such as format-violating outputs, infeasible actions, and slow inference speeds. In this paper, we propose ReCogDrive, a novel Reinforced Cognitive framework for end-to-end autonomous Driving, unifying driving understanding and planning by integrating an autoregressive model with a diffusion planner. First, to instill human driving cognition into the VLM, we introduce a hierarchical data pipeline that mimics the sequential cognitive process of human drivers through three stages: generation, refinement, and quality control. Bu",
+   "url": "https://arxiv.org/abs/2506.08052",
+   "path": "TanitAD Research Lab/Library/papers/2506.08052_ReCogDrive-A-Reinforced-Cognitive-Framework-for-End-to-End-A.pdf",
+   "bytes": 11571529,
+   "sha256": "c3166925daae7ff447f7bb95fcc155e1bd00c8e9cdac0fbb558f24ca5842934f",
+   "banked": "2026-08-29",
+   "tags": [
+    "rl-posttrain"
+   ],
+   "note": "RecogDrive: the other GRPO-on-diffusion E2E-AD work DDv2 positions against (ref [29]); a simulator-assisted reward on a vanilla diffusion planner.",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-29-rl-posttrain-library/RESULT.md"
+   ]
+  },
+  "2208.06193": {
+   "key": "2208.06193",
+   "kind": "arxiv",
+   "title": "Diffusion Policies as an Expressive Policy Class for Offline Reinforcement Learning",
+   "authors": [
+    "Zhendong Wang",
+    "Jonathan J Hunt",
+    "Mingyuan Zhou"
+   ],
+   "published": "2022-08-12",
+   "abstract": "Offline reinforcement learning (RL), which aims to learn an optimal policy using a previously collected static dataset, is an important paradigm of RL. Standard RL methods often perform poorly in this regime due to the function approximation errors on out-of-distribution actions. While a variety of regularization methods have been proposed to mitigate this issue, they are often constrained by policy classes with limited expressiveness that can lead to highly suboptimal solutions. In this paper, we propose representing the policy as a diffusion model, a recent class of highly-expressive deep generative models. We introduce Diffusion Q-learning (Diffusion-QL) that utilizes a conditional diffusion model to represent the policy. In our approach, we learn an action-value function and we add a term maximizing action-values into the training loss of the conditional diffusion model, which result",
+   "url": "https://arxiv.org/abs/2208.06193",
+   "path": "TanitAD Research Lab/Library/papers/2208.06193_Diffusion-Policies-as-an-Expressive-Policy-Class-for-Offline.pdf",
+   "bytes": 1298411,
+   "sha256": "380ae19ca845afdf0d0edf51104b956db0fa5aab24b532575b3d7d9bde5a3af0",
+   "banked": "2026-08-29",
+   "tags": [
+    "rl-posttrain"
+   ],
+   "note": "Diffusion-QL: Q-learning-guided diffusion policy for offline RL; the value-guided alternative to policy-gradient post-training of a diffusion planner.",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-29-rl-posttrain-library/RESULT.md"
+   ]
   }
  }
 }
