@@ -77,3 +77,36 @@ matched pair, where the teacher has converged. **Not auto-escalated** (only EMA-
 escalates by the committed table); the 30k-pair question goes to the PI as a
 decision-with-default in the midday report (default: run it after the v7r launch decision,
 Thor is idle).
+
+---
+
+## STAGE 2 — the 30k pair (PI-APPROVED 2026-08-29: "approve the ema 30k pair, run it now")
+
+```yaml
+hypothesis: MM-E1 (stage 2)
+arm: emao14_30k = the o14fut30k launch line VERBATIM + --o5-target ema
+matched_incumbent: o14fut30k (exists; drift 0.6709, nrmse 0.8288, marginal ABSORBED)
+one_variable: --o5-target ema          # vs o14fut30k; config-diff verified before any read
+why_this_incumbent: the decision is "does EMA join the v7r RECIPE", and the recipe
+  now carries O14 — so the recipe-relevant pair is against the O14 arm, not the
+  bare two-term postrain30k (kept as context row only). NOTE cond_param stays
+  steer_accel_v (o14fut30k's recorded value; the omega template would have
+  silently added a second variable).
+interpretation_limit (committed): the 2k evidence was collected WITHOUT O14
+  (w_o14=0 arms). If this arm reads null/confusing, "EMA fails at 30k" and
+  "EMA x O14 interaction" are NOT separable from this pair alone (the A7
+  lesson); the diagnostic arm (ema, no o14) would be a follow-up, not a rerun.
+reads: latentmotion drift vs 0.6709 · meanpred nrmse vs 0.8288 · the slim
+  absorption marginal (must STAY inside null — absorption must not resurface) ·
+  cos_ctr vs 0.6043
+outcomes:
+  EMA-JOINS:   drift meaningfully below 0.6709 (beyond the ~1.5% band) AND
+               nrmse/cos within +10%/band AND marginal stays absorbed
+               => --o5-target ema enters V7_RECIPE §5.1
+  EMA-OUT:     drift ~unchanged OR prediction pays beyond band => dropped; the
+               drift attractor stays open (frozen-teacher feature target is the
+               next pre-committed lever)
+  MIXED:       axes disagree => numbers, no verdict, PI decides with the scaled
+               run's timeline in view
+cost: 1 arm x ~8.2 h Thor (idle); EMA trainer already installed + content-verified
+launch: chain_ema30k.sh, ZZLAUNCHED 07:27 UTC 2026-08-29, first row content-verified
