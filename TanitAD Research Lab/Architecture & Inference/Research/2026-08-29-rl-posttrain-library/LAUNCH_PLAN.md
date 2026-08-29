@@ -1,7 +1,7 @@
 # LAUNCH PLAN — RL post-training of the refcv3 planner (D-RL-REFCV3)
 
 `Owner: TanitAD_TrainingFlyWheel · 2026-08-29 · PREREG-READY, NOT LAUNCHED.
-Library: stack/tanitad/rl/ (85 tests green). Commission: PI via Master Mind —
+Library: stack/tanitad/rl/ (111 tests green). Commission: PI via Master Mind —
 "develop a library of RL methods to post-train the planner of refcv3 by RL …
 implement it and validate it, to be prepared for training."`
 
@@ -80,7 +80,15 @@ it slightly narrowed the raw-fan spread.** Full entry: `RETRACTION_LOG.md`
 **TRAIN-C2**. ⭐ *A statistic computed over a population where the quantity is
 undefined is not a weak measurement; it is a different measurement.*
 
-#### What is kept anyway, on design merit rather than on my false premise
+#### ✅ DECIDED (Master Mind, 2026-08-29): GRADED STAYS — on independent merit
+
+Ruling, verbatim in substance: *the old saturating shape genuinely carries no
+ordering above T*, and ordering both regimes is worth 8 % raw spread — spread was
+never the goal, INFORMATIVE ORDERING is.* ⭐ That is the pooled-median lesson
+applied one level up: a wider spread over a range where the term cannot order
+anything is not more signal. The TTC-veto separation stands.
+
+#### Why it is kept — design merit, NOT my retracted premise
 * **Graded asymmetric headway** — the old shape saturates at 1.0 for every gap
   ≥ T*, so it cannot tell a 2 s gap from a 6 s one and carries **no dawdling
   signal**, which the four-families longitudinal rule exists to protect. The
@@ -92,6 +100,34 @@ undefined is not a weak measurement; it is a different measurement.*
 ⚠️ **Second, milder finding (stands):** `progress` has spread **1.5000**,
 exactly its clamp width, mean 1.1478 — saturating at its `hi` bound, compressing
 ranking among the fastest candidates. Not blocking; recorded.
+
+
+---
+
+## 0c. ⛔ A1 IS BLOCKED, AND NOT ON THE EMA READ — refcv3 HAS NO IL COLD START
+
+**Verified by content 2026-08-29** (two probes, per the absence rule):
+* `Project Steering/MODEL_REGISTRY.md` — **no refcv3 row.** Its REF-C rows are the
+  older v2.1 lineage (`refc-diffusion-{small,base,xl}-v21-30k`), not v3.
+* **No refcv3 checkpoint on disk** anywhere in the repo or the session scratchpads.
+  The nearest lineage artifact, REF-C-XL's `ckpt.pt` (md5
+  `966d4eff1ea5ddf86efba01b8344e198`), is recorded at
+  `tanitad-eval:/root/models/refc-xl-30k/` — and **`tanitad-eval` is terminated**.
+
+A1 is *RL post-training from an IL cold start* (DDv2's protocol, and the whole
+point of the method). **There is no cold start to post-train from.** Running the
+loop from a random init would not be A1; it would be RL-from-scratch, which is
+neither what DDv2 did nor what the commission asked for, and any number from it
+would be uninterpretable.
+
+⇒ **Sequencing: B1 corpus → refcv3 IL cold start → A1.** The IL arm is the
+prerequisite, it is owned outside this FlyWheel, and its cost dominates §4.
+
+**What is runnable NOW, and is deliberately NOT an arm:** a MECHANISM smoke of the
+full loop on a randomly-initialised refcv3 at real scale — it proves the pipeline
+runs end-to-end, exercises the veto and both advantage halves on real windows, and
+produced the §4 cost numbers. ⛔ It is labelled a mechanism check and may never be
+quoted as an A1 result.
 
 ---
 
@@ -155,27 +191,33 @@ If **A3 (AWR) matches A1**, ship A3: it adds no module, no state-dict key and no
 
 ---
 
-## 4. Cost
+## 4. Cost — MEASURED 2026-08-29, and it is not the bottleneck
 
-⚠️ **`UNVERIFIED` — refcv3 post-training step time has never been measured**, and
-I will not invent one. Step 0 of A1 is to log `step_s_interval` for 200 steps and
-put the real number here. What IS known:
+⭐ **RL post-training is compute-TRIVIAL next to the IL cold start it needs.**
+Measured on the real-scale model (`refc_v3_sized_config('small')`, **62.94 M
+params**, `core.decoder` trainable **9.06 M = 14.4 %**) on the dev-box RTX 4060,
+fan `[B=2, N=128, G=4]`:
 
-| fact | value | class |
+| quantity | value | class |
 |---|---|---|
-| RL post-training is a **fine-tune from a cold start**, not a from-scratch run | DDv2 used **10 RL epochs** on 8×L20 after full IL pretraining | PUBLISHED |
-| our comparable from-scratch run (v7-tiny scale1, 23.87 M, 30k steps, Thor) | **16,323.9 s = 4.5 h**, `step_s_interval` ≈ 0.55 s | MEASURED (ours) |
-| the reward adds a per-candidate geometric pass over `[B, N, G, S, 2]` | pure tensor ops, no model forward — expected small vs the decoder | ESTIMATED |
-| `group_size` multiplies decoder sampling cost by G | G=4 default | — |
+| step time | **0.054 s/step** | MEASURED (ours) |
+| 1,000 steps | **0.9 min** | derived |
+| 10,000 steps (DDv2 used 10 RL epochs) | **~0.2 h** | derived |
+| peak GPU | **0.56 GB** of 8.19 GB | MEASURED (ours) |
 
-**Machines.** ⛔ **Thor is off-limits while the EMA arm runs** (`emao14_30k`,
-PID 1640883, 6h54m elapsed at 16:20 CEST) and the B1 epcache build has the box
-overnight. ⇒ **A0 and the A2 regression arm run on the dev-box RTX 4060** (they
-are small); **A1/A3 wait for Thor**, or run on the 4060 at reduced `--size` as a
-mechanism check that is explicitly NOT the headline number.
-⛔ 4060 only when `nvidia-smi` shows no python compute.
+⚠️ **STATED LIMIT — this excludes DATA LOADING.** Frames were synthetic; the real
+loop adds PNG/JPEG decode per window, which on this stack has no DataLoader
+workers and is the suspected wall-clock driver elsewhere (P4-6). ⇒ Treat 0.054 s
+as the COMPUTE floor, not the run time. The honest reading is a *ratio*: the RL
+update is cheap enough that the campaign's cost is dominated by (a) the cold
+start and (b) data loading — not by the policy gradient.
 
----
+⛔ **THE REAL BLOCKER IS NOT COMPUTE.** See §0c.
+
+**Machines.** ⛔ Thor is off-limits (EMA arm, then the B1 epcache build overnight).
+The **dev-box RTX 4060 is sufficient for every arm in this plan** — 0.56 GB peak
+leaves the box free — and is to be used only when `nvidia-smi` shows no python
+compute.
 
 ## 5. What this plan deliberately does not claim
 

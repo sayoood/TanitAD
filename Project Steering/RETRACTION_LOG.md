@@ -9772,9 +9772,20 @@ binds every FlyWheel building against model surfaces.
 
 ## TRAIN-C2 — 2026-08-29 — I reported an RL reward component INERT and triggered a design change; the component was fine and my METRIC was wrong
 
-**Stream:** TanitAD_TrainingFlyWheel. **Class: C5 (a scalar off the wrong
-population) compounded by C3 (mechanism asserted instead of measured).** This one
-was PUBLISHED — it went to the Master Mind, who issued a design ruling on the
+**Stream:** TanitAD_TrainingFlyWheel.
+⭐ **CLASS — THE SCOPE FAMILY, IN PROBE COSTUME:** *a statistic computed over a
+population where the quantity is UNDEFINED is not a weak measurement — it is a
+DIFFERENT measurement.* Recognition signal: **a pooled average whose denominator
+includes rows the quantity does not apply to.** This is the `df`-on-a-pod /
+`free`-on-Thor / cgroup-`usage_in_bytes` / `step_s`-divisor family exactly — a
+probe that reports the wrong SCOPE, read as an answer — and it is now recorded
+as reaching statistics, not just system counters. Formally C5 (a scalar off the
+wrong population) compounded by C3 (mechanism asserted instead of measured).
+⇒ **The fix is structural: report APPLICABILITY and CONDITIONAL value as two
+numbers. A single pooled number cannot distinguish "absent" from "present and
+uninformative", and those demand opposite actions.**
+
+This one was PUBLISHED — it went to the Master Mind, who issued a design ruling on the
 strength of it — so it is a retraction, not a near-miss.
 
 **The claim, retracted.** *"A0 FAIL — `headway` is INERT: fires on 28.3 % of
