@@ -20,6 +20,16 @@ driving-with-WM / hierarchical dominance / an excellent driving model; (2) unblo
 now; (3) evidence class of the expected payoff (MEASURED-lever > PUBLISHED > HYPOTHESIS);
 (4) cost. Rows failing (1) rank below everything that passes it regardless of cost.
 
+**The injection lane (PI addition, 2026-08-29):** the PI and the Master Mind may
+INJECT research topics directly — explicitly INCLUDING topics that cannot be
+considered inside the running production programme (frontier bets, out-of-scope
+explorations). Injected rows live under `## INJECTED (PI / MM)` below, carry their
+injector and date, and are EXEMPT from ranking criterion 1 — the production filter
+does not demote them; that is the lane's purpose. ⭐ GUARANTEE: whenever the lane is
+non-empty, the daily Lab run dedicates AT LEAST ONE of its four packages to the top
+injected row — exploration cannot be crowded out by production-adjacent work. PI
+injections outrank MM injections by default.
+
 **Freshness tripwire:** the daily run's summary states the backlog delta (consumed /
 proposed / none). A week with zero deltas while runs happened = the contract is being
 violated — flag it in the program report.
@@ -83,3 +93,15 @@ named empty searches. Rows marked ⛔PI need a PI decision before compute is spe
 - NuRec feasibility probe (done: msgpack open, gsplat 492 FPS on Thor).
 - AlpaSim "docker-host-only" blocker (refuted: runs bare on A40; renderer via layer-fetch).
 - "NEVER to HF, even privately" doctrine (superseded by TANITAD_PROGRAMME §0: private HF is the rule).
+
+
+## INJECTED (PI / MM)
+
+*PI injections: just tell the Master Mind the topic in one sentence — it lands here
+the same turn, top of the lane.*
+
+| # | topic | injector | date | state |
+|---|---|---|---|---|
+| I-1 | Latent model-predictive planning with a LEARNED terminal value over composed h=1 rollouts — does a cheap value head beat fan-scoring at equal rollout budget? | MM | 2026-08-29 | open |
+| I-2 | State-space / linear-attention predictors (Mamba-class) as the O5 predictor at matched params — long-horizon composition cost vs our transformer | MM | 2026-08-29 | open |
+| I-3 | Self-supervised closed-loop adaptation: can T1 rollout disagreement (prediction-vs-observation at deployment) supervise online encoder updates without labels? | MM | 2026-08-29 | open |
