@@ -580,3 +580,78 @@ class RewardSpec:
             term = self.weights[n] * v
             out = term if out is None else out + term
         return out
+
+
+#: ⭐ EVERY THRESHOLD CONSTANT CARRIES ITS CALIBRATION AGAINST THE
+#: DEMONSTRATION DISTRIBUTION — or the test suite refuses the module.
+#:
+#: ⛔ THE FAILURE THIS PREVENTS. ``proximity_safe_m = 5.0`` was a round number
+#: with no derivation. MEASURED 2026-08-29: it flags the HUMAN DRIVER'S OWN
+#: FUTURE on 34.9 % of windows with an in-lane lead (45.1 % on the wider join
+#: gate). The trust region pulls the policy toward the demonstration
+#: distribution while the barrier pushes it away, with the threshold set where
+#: the human lives — opposed by construction, and the reason a whole RL campaign
+#: measured nothing. No test could have caught it, because nothing required a
+#: constant to be justified.
+#:
+#: ⚠️ WHAT THIS REGISTRY IS AND IS NOT. It is NOT a re-measurement — the rates
+#: below come from a probe over a real corpus (``threshold_sweep.py``), which CI
+#: cannot run. It is a COVERAGE CONTRACT: every threshold-like constant must
+#: appear here with a measured rate and the artifact that produced it, so a NEW
+#: constant fails the suite until somebody measures it. The numbers are
+#: evidence; the test enforces that evidence exists.
+#:
+#: ``flags_human_frac`` = fraction of DEMONSTRATION windows the constant flags,
+#: over the population meeting that constant's OWN applicability gate — never a
+#: subset selected by the outcome (TRAIN-C8).
+#:
+#: ⭐ READ THE RATE AS A DESIGN STATEMENT: ~0.05–0.15 is a threshold doing its
+#: job (real driving contains real risk). Above ~0.25 the constant is either
+#: mis-calibrated or asserting that competent human driving is unsafe — which is
+#: a claim to defend explicitly, not to inherit from a default.
+THRESHOLD_CALIBRATION: dict[str, dict] = {
+    "proximity_safe_m": {
+        "value": 5.0, "flags_human_frac": 0.349, "n": 43,
+        "verdict": "MISCALIBRATED",
+        "note": "flags a third of competent human driving; superseding value "
+                "pre-registered in PREREG_D_SAFE_CAL.md (2.0 m, ~0.155). "
+                "45.1 % on the wider join gate — quote neither without its gate.",
+    },
+    "target_time_gap_s": {
+        "value": 2.0, "flags_human_frac": 0.118, "n": 34,
+        "verdict": "REVIEW",
+        "note": "mis-set in the OPPOSITE direction: the human median gap is "
+                "2.992 s, so T* rewards following CLOSER than humans drive. A "
+                "graded peak, not a barrier, so it shapes rather than vetoes. "
+                "P4-12 — needs its own both-outcomes prereg.",
+    },
+    "ttc_min_s": {
+        "value": 1.5, "flags_human_frac": 0.059, "n": 34, "verdict": "OK",
+        "note": "hard veto; a low rate is correct for one.",
+    },
+    "kappa_max_1pm": {
+        "value": 0.2, "flags_human_frac": 0.042, "n": 120, "verdict": "OK",
+        "note": "feasibility envelope, curvature.",
+    },
+    "jerk_max_mps3": {
+        "value": 8.0, "flags_human_frac": 0.033, "n": 120, "verdict": "OK",
+        "note": "identical to pseudosim COMFORT_LIMITS jerk_max_mps3.",
+    },
+    "a_max_mps2": {
+        "value": 4.0, "flags_human_frac": 0.008, "n": 120, "verdict": "OK",
+        "note": "feasibility envelope, longitudinal acceleration.",
+    },
+    "lat_acc_max_mps2": {
+        "value": 4.0, "flags_human_frac": 0.000, "n": 120, "verdict": "OK",
+        "note": "never flags the human on this corpus — non-binding, not wrong.",
+    },
+}
+
+#: The measurement behind every row above. ⛔ Do not edit a rate without
+#: re-running this and updating the artifact path in the same change.
+THRESHOLD_CALIBRATION_SOURCE = (
+    "TanitAD Research Lab/Architecture & Inference/Research/"
+    "2026-08-29-rl-posttrain-library/code/threshold_sweep.py -> "
+    "raw/p_rc21_rerun/threshold_sweep.json (MEASURED 2026-08-29, ours, "
+    "NON-PARITY pilot corpus, T0)"
+)

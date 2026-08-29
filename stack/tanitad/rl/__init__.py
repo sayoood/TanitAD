@@ -53,13 +53,16 @@ from .audit import (AuditReport, assert_selector_disjoint, audit_reward,
 from .config import METHODS, REQUIREMENTS, PostTrainConfig
 from .rewards import (COMPONENTS, DEFAULT_WEIGHTS, FORBIDDEN_REWARD_INPUTS,
                       HACKABLE_WEIGHTS, Kinematics, RewardComponent,
-                      RewardSpec, clearance, kinematics)
+                      RewardSpec, THRESHOLD_CALIBRATION,
+                      THRESHOLD_CALIBRATION_SOURCE,
+                      clearance, kinematics)
 from .posttrain import (SmokeCounters, apply_exploration_noise, rl_objective,
                         run_posttrain, select_trainable)
 
 __all__ = [
     "COMPONENTS", "DEFAULT_WEIGHTS", "FORBIDDEN_REWARD_INPUTS",
     "HACKABLE_WEIGHTS", "Kinematics", "RewardComponent", "RewardSpec",
+    "THRESHOLD_CALIBRATION", "THRESHOLD_CALIBRATION_SOURCE",
     "clearance", "kinematics",
     "composite_advantage", "grpo_advantage", "policy_gradient_loss",
     "truncated_inter_anchor_advantage",

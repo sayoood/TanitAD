@@ -4752,7 +4752,16 @@ def run_provenance(device=None) -> dict:
         # ⛔ LOCAL-ONLY porcelain with a hard timeout. Never `fetch`/`pull` here:
         # on a credential-less pod a network git command HANGS rather than
         # failing, which would stall every launch at startup.
+        # ⚠️ encoding= is MANDATORY (pinned by test_text_encoding_is_explicit):
+        # text mode without it decodes with the LOCALE codec — cp1252 on this dev
+        # box — so a branch name or commit subject carrying any non-Latin-1 glyph
+        # raises UnicodeDecodeError. Here `_safe` would swallow that into
+        # "unavailable: UnicodeDecodeError", i.e. the run would SILENTLY LOSE its
+        # git identity rather than crash — a degradation, which is worse to
+        # diagnose than a failure. errors="replace" guarantees a string even for
+        # bytes that are not valid UTF-8 either.
         return subprocess.run(("git", *args), capture_output=True, text=True,
+                              encoding="utf-8", errors="replace",
                               timeout=10, cwd=str(Path(__file__).resolve().parent)
                               ).stdout.strip()
 
