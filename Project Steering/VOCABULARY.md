@@ -55,3 +55,21 @@ terms VERBATIM — no synonyms, no drift.`
 | "Research Hub" (agent rotation) | TanitAD Research Lab | 2026-08-22 |
 | effective_rank as the collapse gate | participation ratio (σ²) | C132 |
 | "the 0.452 m driving result" | `wm_fidelity_ade_2s` (T0 WM fidelity; closed-loop is 1.7318) | C131 |
+
+## ⛔ "anchor" is AMBIGUOUS — say which one (TrainingFlyWheel find, MM ruling, 2026-08-29)
+
+Two different objects hide behind the same word in RL post-training, and treating them
+as synonyms makes a DESIGN CHANGE read as a PARAPHRASE:
+
+| term | pulls toward | needs | portability |
+|---|---|---|---|
+| **imitation anchor** (IL loss) | the LABELS / logged expert | a ground-truth join; corpus-specific | must be re-derived per dataset |
+| **trust region / reference-policy anchor** (KL or L2 to a frozen reference policy) | the COLD-START MODEL'S OWN outputs | nothing but a frozen copy — label-free | transfers unchanged across corpora |
+
+⚠️ MEASURED CONSEQUENCE (P-RC21, commit `67d4e89e0`): the pilot substituted the first
+for the second, ran with neither, and its selected-trajectory ADE drifted +69.5 % —
+the failure the trust region exists to prevent. Secondary literature summaries use the
+names interchangeably, so this is a common conflation, not a private error.
+
+⇒ **A document that says "anchor" must say WHICH.** Same family as quoting a number
+without its estimator: precise about the wrong object.
