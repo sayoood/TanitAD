@@ -83,7 +83,12 @@ def main(argv=None) -> int:
     env = dict(os.environ, GIT_INDEX_FILE=TMP_INDEX)
     try:
         _git("read-tree", "HEAD", env=env)
-        _git("add", "--", *a.paths, env=env)
+        # -f: a path NAMED on this tool's command line is intentional by the
+        # tool's own contract — without it, a gitignore rule (e.g. the repo-wide
+        # *.parquet) makes a NAMED file drop SILENTLY from the commit, violating
+        # the refuse-or-commit guarantee. MEASURED twice 2026-08-29 (the cy table
+        # and frames_provenance.parquet each needed a manual plumbing rescue).
+        _git("add", "-f", "--", *a.paths, env=env)
         tree = _git("write-tree", env=env)
 
         head = _git("rev-parse", "HEAD")
