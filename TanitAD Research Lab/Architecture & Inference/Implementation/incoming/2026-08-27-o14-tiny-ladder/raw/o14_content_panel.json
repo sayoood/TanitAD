@@ -1,0 +1,202 @@
+{
+ "_evidence_class": "MEASURED (ours; dev-box RTX 4060)",
+ "eval_tier": "T0-DIAGNOSTIC",
+ "arms_missing": [],
+ "arms": {
+  "o14fut30k": {
+   "participation_val": 22.97,
+   "participation_heldout24": 19.551,
+   "step": 30000,
+   "predictor": {
+    "1": {
+     "cos": 0.5939,
+     "z": 29.55,
+     "n": 108,
+     "nrmse": 0.8304,
+     "nrmse_meanonly_control": 0.9963,
+     "nrmse_zero_control": 1.0,
+     "mean_fraction_of_prediction": 0.119,
+     "beats_constant_predictor": true
+    },
+    "2": {
+     "cos": 0.0015,
+     "z": 0.68,
+     "n": 108,
+     "nrmse": 1.0,
+     "nrmse_meanonly_control": 0.9968,
+     "nrmse_zero_control": 1.0,
+     "mean_fraction_of_prediction": 0.1449,
+     "beats_constant_predictor": false
+    },
+    "4": {
+     "cos": -0.0,
+     "z": 0.05,
+     "n": 108,
+     "nrmse": 1.0,
+     "nrmse_meanonly_control": 0.9923,
+     "nrmse_zero_control": 1.0,
+     "mean_fraction_of_prediction": 0.1463,
+     "beats_constant_predictor": false
+    }
+   }
+  },
+  "postrain30k": {
+   "participation_val": 22.373,
+   "participation_heldout24": 20.577,
+   "step": 30000,
+   "predictor": {
+    "1": {
+     "cos": 0.626,
+     "z": 31.69,
+     "n": 108,
+     "nrmse": 0.8182,
+     "nrmse_meanonly_control": 0.9965,
+     "nrmse_zero_control": 1.0,
+     "mean_fraction_of_prediction": 0.0895,
+     "beats_constant_predictor": true
+    },
+    "2": {
+     "cos": -0.0007,
+     "z": -0.27,
+     "n": 108,
+     "nrmse": 1.0,
+     "nrmse_meanonly_control": 0.9968,
+     "nrmse_zero_control": 1.0,
+     "mean_fraction_of_prediction": 0.1151,
+     "beats_constant_predictor": false
+    },
+    "4": {
+     "cos": -0.0039,
+     "z": -2.08,
+     "n": 108,
+     "nrmse": 1.0,
+     "nrmse_meanonly_control": 0.9951,
+     "nrmse_zero_control": 1.0,
+     "mean_fraction_of_prediction": 0.1171,
+     "beats_constant_predictor": false
+    }
+   }
+  }
+ },
+ "env_row_skipped": "lead130_agents.jsonl TTL-cleaned; regenerate via e_detect_prep.py cuboid join",
+ "blocks": {
+  "EGO (held-out val)": {
+   "speed": {
+    "z_op o14fut30k": {
+     "r2": 0.0981,
+     "delta_vs_base": 0.0,
+     "t": 0.0,
+     "n_favouring": 0,
+     "n": 12,
+     "delta_vs_pixel_floor": -0.0176,
+     "t_vs_pixel_floor": -0.26,
+     "n_favouring_vs_pixel_floor": 3,
+     "beats_raw_input": false
+    },
+    "z_op postrain30k": {
+     "r2": 0.2157,
+     "delta_vs_base": 0.1176,
+     "t": 2.98,
+     "n_favouring": 8,
+     "n": 12,
+     "delta_vs_pixel_floor": 0.1,
+     "t_vs_pixel_floor": 1.89,
+     "n_favouring_vs_pixel_floor": 8,
+     "beats_raw_input": false
+    },
+    "pixel (floor)": {
+     "r2": 0.1156,
+     "delta_vs_base": 0.0176,
+     "t": 0.26,
+     "n_favouring": 9,
+     "n": 12
+    },
+    "frozen DINOv3": {
+     "r2": 0.4081,
+     "delta_vs_base": 0.31,
+     "t": 10.18,
+     "n_favouring": 12,
+     "n": 12,
+     "delta_vs_pixel_floor": 0.2924,
+     "t_vs_pixel_floor": 4.74,
+     "n_favouring_vs_pixel_floor": 12,
+     "beats_raw_input": true
+    },
+    "constant (control)": {
+     "r2": 0.0,
+     "delta_vs_base": -0.0981,
+     "t": -3.34,
+     "n_favouring": 3,
+     "n": 12,
+     "delta_vs_pixel_floor": -0.1156,
+     "t_vs_pixel_floor": -1.81,
+     "n_favouring_vs_pixel_floor": 2,
+     "beats_raw_input": false
+    }
+   },
+   "d_ego": {
+    "z_op o14fut30k": {
+     "r2": 0.0124,
+     "delta_vs_base": 0.0,
+     "t": 0.0,
+     "n_favouring": 0,
+     "n": 12,
+     "delta_vs_pixel_floor": 0.0905,
+     "t_vs_pixel_floor": 1.26,
+     "n_favouring_vs_pixel_floor": 5,
+     "beats_raw_input": false
+    },
+    "z_op postrain30k": {
+     "r2": 0.2722,
+     "delta_vs_base": 0.2598,
+     "t": 6.14,
+     "n_favouring": 11,
+     "n": 12,
+     "delta_vs_pixel_floor": 0.3503,
+     "t_vs_pixel_floor": 5.94,
+     "n_favouring_vs_pixel_floor": 12,
+     "beats_raw_input": true
+    },
+    "pixel (floor)": {
+     "r2": -0.0781,
+     "delta_vs_base": -0.0905,
+     "t": -1.26,
+     "n_favouring": 7,
+     "n": 12
+    },
+    "frozen DINOv3": {
+     "r2": 0.3238,
+     "delta_vs_base": 0.3114,
+     "t": 5.92,
+     "n_favouring": 12,
+     "n": 12,
+     "delta_vs_pixel_floor": 0.4019,
+     "t_vs_pixel_floor": 3.41,
+     "n_favouring_vs_pixel_floor": 12,
+     "beats_raw_input": true
+    },
+    "constant (control)": {
+     "r2": 0.0,
+     "delta_vs_base": -0.0124,
+     "t": -0.31,
+     "n_favouring": 3,
+     "n": 12,
+     "delta_vs_pixel_floor": 0.0781,
+     "t_vs_pixel_floor": 0.72,
+     "n_favouring_vs_pixel_floor": 5,
+     "beats_raw_input": false
+    }
+   }
+  },
+  "ENV (in-sample)": {}
+ },
+ "kill_gate": {
+  "postrain30k": {
+   "REJECTED_by_kill_gate": false,
+   "reason": "passes the gate",
+   "h2_head_trained": false,
+   "predicts_beyond_h1": null
+  }
+ },
+ "verdict": "postrain30k: passes gate \u00b7 h>=2 NOT MEASURABLE HERE (untrained heads, C139)"
+}
