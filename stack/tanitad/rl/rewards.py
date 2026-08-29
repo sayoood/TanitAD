@@ -387,11 +387,46 @@ def _proximity(traj: Tensor, ctx: dict) -> Tensor:
         return torch.zeros(traj.shape[:-2], device=traj.device, dtype=traj.dtype)
     d_safe = float(ctx.get("proximity_safe_m", 5.0))
     p = float(ctx.get("proximity_exp", 2.0))
+    clr = clearance(traj, ctx)                       # ⭐ the ONE definition
+    deficit = (1.0 - clr / max(d_safe, EPS)).clamp(0.0, 1.0)
+    return -deficit.pow(p)
+
+
+def clearance(traj: Tensor, ctx: dict) -> Tensor:
+    """Worst-case surface-to-surface clearance of a path, in metres. Pure.
+
+    ``traj [..., S, 2]`` against ``ctx["obstacles"] [..., K, 2]`` -> ``[...]``,
+    the minimum over BOTH steps and obstacles, floored at 0 (a path through an
+    obstacle reads 0, not negative -- penetration depth is the collision term's
+    business, not this one's).
+
+    ⚠️ SHAPE CONTRACT, and it is easy to get wrong: the obstacle tensor's leading
+    dims must broadcast against ``traj``'s WITHOUT the ``S`` axis. For the usual
+    fan ``[B, N, S, 2]`` that means ``[B, 1, K, 2]`` -- **not** ``[B, K, 2]``,
+    which carries no axis for the N candidates. ``[B, K, 2]`` happens to broadcast
+    correctly when ``B == 1`` and raises a bare ``RuntimeError`` when it does not,
+    so a caller can pass the wrong shape, see it work on a single-window smoke
+    test, and have it fail only once the batch grows.
+
+    ⭐ EXTRACTED so the quantity has ONE definition. ``_proximity`` shapes it into
+    a barrier and ``R5`` in the pilot readout thresholds it; before this they each
+    recomputed it, which is how two "clearances" drift apart and a report compares
+    a barrier's notion of close with a readout's.
+
+    ⚠️ Returns ``nan`` when there are no obstacles -- NOT 0 and NOT +inf. A window
+    with nothing to be close to is UNDEFINED for this quantity, and the caller must
+    decide whether to drop it. Scoring absence as "clear" is how a thin obstacle
+    join silently reports safety (the same family as TRAIN-C2, where a median
+    pooled over windows where the term is undefined became a different
+    measurement, and as the E-DETECT-1 all-zero floor).
+    """
+    obs = ctx.get("obstacles")
+    if obs is None or obs.numel() == 0:
+        return torch.full(traj.shape[:-2], float("nan"),
+                          device=traj.device, dtype=traj.dtype)
     r = float(ctx.get("ego_radius_m", 1.0)) + float(ctx.get("obs_radius_m", 1.0))
     d = (traj.unsqueeze(-2) - obs.unsqueeze(-3)).norm(dim=-1)      # [..., S, K]
-    clearance = (d - r).clamp_min(0.0).amin(dim=-1).amin(dim=-1)   # worst step
-    deficit = (1.0 - clearance / max(d_safe, EPS)).clamp(0.0, 1.0)
-    return -deficit.pow(p)
+    return (d - r).clamp_min(0.0).amin(dim=-1).amin(dim=-1)
 
 
 def _kinematic_feasibility(traj: Tensor, ctx: dict) -> Tensor:

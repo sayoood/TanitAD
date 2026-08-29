@@ -345,3 +345,125 @@ existing arm.
 Every prior null was measured against the mis-calibrated target, so they are
 uninformative about the recalibrated one — but "uninformative" is not "promising".
 The campaign's exit stands until a pre-registered arm says otherwise.
+
+---
+
+## ✅ ADDENDUM 5 — THE MISCALIBRATION IS CONFINED TO ONE CONSTANT. Our eval instruments are FINE.
+
+`Zero training. n=120 windows (43 with an in-lane lead). Every constant tested
+against the population meeting ITS OWN applicability gate — never a subset
+selected by the outcome (TRAIN-C8). Evidence class: MEASURED (ours).`
+
+**The question** (Master Mind extension): Addendum 4 found a reward constant that
+flags competent human driving at a high rate. Is that a *shape of error* our EVAL
+instruments share? If so, every "our arm violates X on Y % of windows" number we
+have published inherits it.
+
+**The answer is no.** Nine of ten constants are well-calibrated, including every
+one that was self-labelled PROPOSED.
+
+| constant | value | n | **flags the human** | human p50 | source |
+|---|---|---|---|---|---|
+| **`proximity_safe_m`** | 5.0 | 43 | **⛔ 34.9 %** | 8.472 m | `rl/rewards.py:388` |
+| `target_time_gap_s` (T*) | 2.0 | 34 | ⚠️ 11.8 % | 2.992 s | `rl/rewards.py:294` |
+| `ttc_min_s` (hard VETO) | 1.5 | 34 | 5.9 % | 2.992 s | `rl/rewards.py:329` |
+| `kappa_max_1pm` | 0.2 | 120 | 4.2 % | 0.022 | `rl/rewards.py:76` |
+| `jerk_max_mps3` | 8.0 | 120 | 3.3 % | 1.771 | `rl/rewards.py:78` |
+| `pdm_a_lon_max_mps2` | 3.0 | 120 | 3.3 % | 0.669 | `pseudosim.py:803` **PROPOSED** |
+| `pdm_a_lat_max_mps2` | 3.0 | 120 | 1.7 % | 0.634 | `pseudosim.py:803` **PROPOSED** |
+| `a_max_mps2` | 4.0 | 120 | 0.8 % | 0.669 | `rl/rewards.py:75` |
+| `pdm_yaw_rate_max_radps` | 0.95 | 120 | 0.8 % | 0.113 | `pseudosim.py:804` **PROPOSED** |
+| `lat_acc_max_mps2` | 4.0 | 120 | **0.0 %** | 0.634 | `rl/rewards.py:77` |
+
+⭐ **The `PROPOSED` comfort constants are the headline non-finding.** They were the
+prime suspects — round numbers, imported from nuPlan/NAVSIM, with the source
+docstring conceding *"their exact constants are not quotable"*. Measured against
+this corpus they flag the human at **0.8–3.3 %**. They are fine, and the worry that
+motivated this sweep is **refuted for them.**
+
+✅ **And it corroborates an instrument decision made for a different reason.**
+`pseudosim` drops `comfort` from the composite via its discriminative-range gate
+(`COMPONENT_WEIGHTS` carries 0.0). This sweep shows *why* that is correct: the
+human sits at p95 **2.13 / 2.31 / 6.78** against limits of **3.0 / 3.0 / 8.0**, so
+nothing in the neighbourhood of real driving approaches them and the term cannot
+discriminate. **The range gate caught a non-binding term without knowing it was
+non-binding** — the instrument behaved correctly on evidence it did not have.
+
+### ⚠️ Two honesty notes on the numbers above
+
+**(1) `proximity_safe_m` reads 34.9 % here and 45.1 % in Addendum 4. Both are
+right; they describe DIFFERENT POPULATIONS.** Addendum 4 gated on the join's own
+filter (any agent ahead within `LEAD_MAX_GAP_M`); this table adds the in-lane
+lateral filter (`|cy| ≤ 2 m`), which is the population the *lead* metrics use. ⛔
+Neither number supersedes the other and neither may be quoted without its gate.
+The conclusion is unchanged at either value: a third to a half of competent human
+driving is flagged.
+
+**(2) `target_time_gap_s = 2.0` is not mis-calibrated in the same direction — it is
+arguably too AGGRESSIVE.** The human's median time gap is **2.992 s**, well
+*above* our target, so `T*` rewards following **closer** than humans actually
+drive. At 11.8 % flagged it is not urgent, and it is a graded peak rather than a
+barrier, so it shapes rather than vetoes. ⚠️ Logged as a work item, not a defect:
+the fix would be to set `T*` from the demonstration median, and that is a
+specification change requiring its own both-outcomes prereg.
+
+### The scope this fixes
+
+⛔ **Do NOT escalate an eval-doctrine item to the PI.** The sweep was built to find
+one and found the opposite: the four-families instruments largely **report** raw
+quantities (`lead_metrics.distance_keeping` emits headway/time-gap/TTC as values,
+not verdicts), and the thresholds that do exist are sound. **The miscalibration is
+one constant in one reward term, and `PREREG_D_SAFE_CAL.md` already covers it.**
+
+⭐ **A sweep that refutes its own motivating hypothesis is worth as much as one
+that confirms it** — this one bounded the blast radius of Addendum 4 to a single
+line of code, and it did so before anyone re-derived a published eval number.
+
+---
+
+## ⭐ ADDENDUM 6 — R5 LANDS, AND ITS FIRST READING CLOSES THE ARGUMENT
+
+`The field PREREG_D_SAFE_CAL is gated on now exists, with tests, verified on the
+real model. Its cold-start value was not part of the prereg and is reported here
+as an observation, not an exit.`
+
+**R5 = `R5_gt_clearance_violation_frac`** — the fraction of scored windows whose
+**SELECTED** candidate (the trajectory that would actually be driven) is inside
+`proximity_safe_m`. Distinct from R2, which is a property of all 128 fan
+candidates; the gap between them is where reward hacking hides.
+
+| | value |
+|---|---|
+| **REF-C v2.1 cold start, selected path** | **34.2 %** (n=15 episodes with obstacles) |
+| **HUMAN driver, same gate** (Addendum 5) | **34.9 %** |
+| model fan collision rate (R2) | 10.35 % |
+
+⭐ **The model's driven path violates `d_safe = 5.0 m` at the same rate as the
+human's — 34.2 % vs 34.9 %.** An imitation-trained planner reproducing the
+demonstration distribution's clearance behaviour to within a point is the policy
+working *correctly*. ⇒ At this threshold there was never a defect for the barrier
+to remove: it was asking a well-imitating policy to stop imitating.
+
+⚠️ **This is an observation, not a pre-registered exit, and it does not
+pre-decide `D-SAFE-CAL`.** It is one arm on one corpus with 15 clusters and no
+paired interval; the prereg's outcomes 1 and 2 both remain live. It is recorded
+because it was measured while wiring the field, and because a number this close
+would look like hindsight if it appeared after the arms ran.
+
+### Implementation notes
+
+* ⭐ **`clearance()` extracted to `rewards.py` as the ONE definition of "how
+  close".** `_proximity` now shapes it into a barrier and R5 thresholds it;
+  previously each recomputed it, which is how two notions of "close" drift apart
+  and a report compares a barrier's with a readout's.
+* ⛔ **Absence returns `nan`, never 0 and never +inf.** A window with no obstacles
+  is UNDEFINED for clearance, and the readout drops it rather than scoring it
+  clean — otherwise a thin obstacle join dilutes the violation rate toward zero
+  and reports safety. That is TRAIN-C2's family (a statistic pooled where the
+  quantity is undefined) and the E-DETECT-1 all-zero floor's.
+* 9 new tests (`stack/tests/test_rl_clearance.py`), RL suite **149 passed**.
+* ⚠️ **One test found a real documentation gap while failing:** the obstacle shape
+  contract is `[B, 1, K, 2]`, and `[B, K, 2]` broadcasts correctly at `B == 1`
+  while dying at `B > 1` — so the wrong shape survives a single-window smoke test.
+  Now spelled out in the docstring and pinned by a test that asserts the loud
+  failure.
