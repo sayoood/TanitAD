@@ -70,8 +70,28 @@ def sample_offsets(offset: Tensor, cfg: PostTrainConfig, *,
     eps = torch.randn(mean.shape, generator=generator, device=mean.device,
                       dtype=mean.dtype)
     sample = mean + scale * eps
-    # log N(sample; mean, scale) summed over the trajectory axes
-    logp = (-0.5 * eps.pow(2) - torch.log(scale) - LOG_SQRT_2PI)
+
+    # ⛔ THE SCORE-FUNCTION GRADIENT LIVES IN (sample.detach() - mean) — NOT eps.
+    #
+    # CORRECTED 2026-08-29 after pilot P-RC21's first P1 arm COLLAPSED THE
+    # PLANNER (fan collision 11.1 % -> 0.0 % because R3 exploded 1.97 m ->
+    # 347.2 m: every candidate left the road). Root cause, MEASURED by A/B
+    # (`code/estimator_ab.py`): the original wrote
+    #     logp = -0.5*eps**2 - log(scale)
+    # with eps the RAW DRAW — a symbolic substitution that makes the
+    # (sample - mean) dependence CANCEL. d(logp)/d(mean) then flows ONLY through
+    # log(scale)=log|mean·sigma|, so the update can shrink or inflate |offset|
+    # by advantage sign but can NEVER move the mean toward good samples. In the
+    # toy A/B the degenerate form leaves the mean at its start (+0.500 after
+    # 400 steps, target +3.0) while this form reaches +2.750.
+    #
+    # The correct REINFORCE logp treats the drawn sample as a CONSTANT and the
+    # density parameters as live: eps_eff = (sample.detach() - mean)/scale.
+    # ⚠️ The old version PASSED test_sample_offsets_shapes_and_differentiability
+    # — a nonzero gradient is not a correct gradient. The pinning test is now
+    # DIRECTIONAL (test_score_function_gradient_points_toward_good_samples).
+    eps_eff = (sample.detach() - mean) / scale
+    logp = (-0.5 * eps_eff.pow(2) - torch.log(scale) - LOG_SQRT_2PI)
     return sample, logp.sum(dim=(-1, -2))
 
 
@@ -92,6 +112,7 @@ def make_refcv3_sample_fn(model, cfg: PostTrainConfig, *,
     def sample_fn(batch, cfg_in: PostTrainConfig):
         frames = batch["frames"]
         out = model(frames, batch.get("nav_cmd"), batch.get("v0"),
+                    steps=int(getattr(cfg_in, "decoder_steps", 0)),
                     lan=batch.get("lan"))
         anchor_traj = out["anchor_traj"]                   # [B, N, S, 2]
         offset = out["offset"]                             # [B, N, S, 2]
@@ -116,7 +137,8 @@ def gt_context(batch, out=None) -> dict:
     """
     ctx: dict = {}
     for key in ("gt_traj", "obstacles", "lead_path", "lead_len_m",
-                "target_time_gap_s", "a_max", "kappa_max", "progress_ref_m"):
+                "target_time_gap_s", "a_max", "kappa_max", "progress_ref_m",
+                "v0", "dt"):
         if key in batch:
             ctx[key] = batch[key]
     return ctx

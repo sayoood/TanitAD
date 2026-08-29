@@ -1,0 +1,68 @@
+{
+ "_what": "A0 reward-coverage probe on real held-out windows",
+ "_corpus": "physicalai-train-14231cd29c74",
+ "_evidence_class": "MEASURED (ours; rule-based over real scene facts)",
+ "_tier": "N/A \u2014 instrument coverage, not a capability claim",
+ "_fan": "anchor vocabulary (synth_anchor_pool + FPS, n=64) \u2014 checkpoint-independent; a trained fan is TIGHTER, so these spreads are an UPPER BOUND",
+ "n_windows": 270,
+ "n_windows_with_obstacles": 210,
+ "n_windows_with_lead": 60,
+ "components": {
+  "collision": {
+   "weight": 1.0,
+   "applicable_frac": 0.5074074074074074,
+   "spread_median_ALL": 1.0,
+   "spread_median_WHEN_APPLICABLE": 1.0,
+   "spread_max": 1.0,
+   "value_mean": -0.15167824074074074,
+   "n_windows": 270,
+   "n_applicable": 137
+  },
+  "comfort": {
+   "weight": 0.2,
+   "applicable_frac": 1.0,
+   "spread_median_ALL": 0.9895649552345276,
+   "spread_median_WHEN_APPLICABLE": 0.9895649552345276,
+   "spread_max": 0.9895649552345276,
+   "value_mean": 0.4171764850616455,
+   "n_windows": 270,
+   "n_applicable": 270
+  },
+  "feasibility": {
+   "weight": 0.5,
+   "applicable_frac": 1.0,
+   "spread_median_ALL": 1.0,
+   "spread_median_WHEN_APPLICABLE": 1.0,
+   "spread_max": 1.0,
+   "value_mean": 0.9782982468605042,
+   "n_windows": 270,
+   "n_applicable": 270
+  },
+  "headway": {
+   "weight": 0.3,
+   "applicable_frac": 0.2222222222222222,
+   "spread_median_ALL": 0.0,
+   "spread_median_WHEN_APPLICABLE": 0.9637203812599182,
+   "spread_max": 0.9997898936271667,
+   "value_mean": 0.8123788818393897,
+   "n_windows": 270,
+   "n_applicable": 60
+  },
+  "progress": {
+   "weight": 0.3,
+   "applicable_frac": 1.0,
+   "spread_median_ALL": 1.5,
+   "spread_median_WHEN_APPLICABLE": 1.5,
+   "spread_max": 1.5,
+   "value_mean": 1.3885485348878084,
+   "n_windows": 270,
+   "n_applicable": 270
+  }
+ },
+ "dead": [],
+ "inert": [],
+ "rare": [
+  "headway"
+ ],
+ "verdict": "PASS \u2014 every weighted component ranks the fan wherever it applies \u2014 \u26a0\ufe0f ['headway'] apply on <50 % of windows; that is a BASE RATE of the situation they score, not a defect, and it belongs in the launch record"
+}

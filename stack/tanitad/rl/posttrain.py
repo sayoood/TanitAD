@@ -97,14 +97,22 @@ def select_trainable(model, cfg: PostTrainConfig) -> dict:
     parameter list runs happily and changes nothing.
     """
     forbidden = tuple(getattr(cfg, "forbidden_prefixes", ()) or ())
+    excluded_pfx = tuple(getattr(cfg, "exclude_prefixes", ()) or ())
     total = trainable = 0
     names: list[str] = []
     leaked: list[str] = []
+    excluded: list[str] = []
     for name, p in model.named_parameters():
         total += p.numel()
         want = (not cfg.freeze_trunk) or any(
             name.startswith(pfx) or f".{pfx}" in name
             for pfx in cfg.trainable_prefixes)
+        # exclude runs FIRST (normal path, recorded); forbidden stays the
+        # tripwire that fires only if an exclusion is removed by mistake.
+        if want and any(name.startswith(e) or f".{e}" in name
+                        for e in excluded_pfx):
+            excluded.append(name)
+            want = False
         if want and any(name.startswith(f) or f".{f}" in name for f in forbidden):
             leaked.append(name)
             want = False
@@ -131,6 +139,8 @@ def select_trainable(model, cfg: PostTrainConfig) -> dict:
             "trainable_names_head": names[:12],
             "trainable_prefixes": list(cfg.trainable_prefixes),
             "forbidden_prefixes": list(forbidden),
+            "exclude_prefixes": list(excluded_pfx),
+            "excluded_names": excluded,
             "freeze_trunk": cfg.freeze_trunk}
 
 

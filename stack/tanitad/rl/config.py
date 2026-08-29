@@ -127,6 +127,16 @@ class PostTrainConfig:
     #: ``select_trainable`` refuses if one of these ends up requiring grad.
     forbidden_prefixes: tuple[str, ...] = ("scorer",)
 
+    #: Prefixes EXCLUDED from training even when a trainable prefix covers them
+    #: — skipped and RECORDED, not refused. Needed for the v2.1 pilot, where the
+    #: selector surface (``decoder.conf_head``, 257 params) lives INSIDE the
+    #: decoder: "train the decoder" must not mean "train the selector".
+    exclude_prefixes: tuple[str, ...] = ()
+
+    #: Denoise steps the sampler asks the model for. 0 = classifier pass;
+    #: the v2.1 REF-C deploys truncated diffusion at 2 (its own config).
+    decoder_steps: int = 0
+
     # --- bookkeeping -------------------------------------------------------
     out_dir: str = ""
     run_name: str = "refcv3-rl-posttrain"

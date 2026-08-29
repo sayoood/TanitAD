@@ -121,9 +121,11 @@ def main() -> int:
     ap.add_argument("--windows-per-clip", type=int, default=6)
     ap.add_argument("--n-anchors", type=int, default=64)
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--glob", default="*.v2ep.pt",
+                    help="episode filename pattern (old-format epcache: ep_*.pt)")
     a = ap.parse_args()
 
-    eps = sorted(glob.glob(os.path.join(a.epdir, "*.v2ep.pt")))
+    eps = sorted(glob.glob(os.path.join(a.epdir, a.glob)))
     if not eps:
         raise SystemExit(f"[a0] no episodes under {a.epdir}")
     clip_ids = {os.path.basename(p).split(".")[0] for p in eps}

@@ -244,3 +244,43 @@ def test_zero_noise_is_identity():
     cfg = PostTrainConfig(noise_scale=0.0)
     x = torch.randn(16, 2)
     assert torch.allclose(apply_exploration_noise(x, cfg), x)
+
+
+# ---------------------------------------------------------------------------
+# exclude_prefixes — the v2.1 pilot profile (selector INSIDE the decoder)
+# ---------------------------------------------------------------------------
+
+class TinyV21(nn.Module):
+    """Mirrors REF-C v2.1: the selector surface (conf_head) lives INSIDE the
+    decoder, so "train the decoder" must not mean "train the selector"."""
+
+    def __init__(self):
+        super().__init__()
+        self.encoder = nn.Linear(4, 8)
+        self.decoder = nn.Module()
+        self.decoder.layers = nn.Linear(8, 8)
+        self.decoder.offset_head = nn.Linear(8, 4)
+        self.decoder.conf_head = nn.Linear(8, 1)
+
+
+def test_exclude_skips_and_records_without_raising():
+    m = TinyV21()
+    cfg = PostTrainConfig(trainable_prefixes=("decoder",),
+                          exclude_prefixes=("decoder.conf_head",),
+                          forbidden_prefixes=("decoder.conf_head",))
+    rep = select_trainable(m, cfg)
+    assert not m.decoder.conf_head.weight.requires_grad
+    assert m.decoder.layers.weight.requires_grad
+    assert m.decoder.offset_head.weight.requires_grad
+    assert not m.encoder.weight.requires_grad
+    assert "decoder.conf_head.weight" in rep["excluded_names"]
+
+
+def test_forbidden_tripwire_fires_if_the_exclusion_is_removed():
+    """⛔ Belt and braces: dropping the exclude by mistake must be LOUD."""
+    m = TinyV21()
+    cfg = PostTrainConfig(trainable_prefixes=("decoder",),
+                          exclude_prefixes=(),
+                          forbidden_prefixes=("decoder.conf_head",))
+    with pytest.raises(RuntimeError, match="FORBIDDEN PARAMETERS"):
+        select_trainable(m, cfg)

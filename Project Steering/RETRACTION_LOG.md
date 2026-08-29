@@ -9831,3 +9831,105 @@ traps: a probe that reports the wrong scope, read as an answer.)*
 corrected verdict now reads **PASS** with `headway` flagged as a 28.3 % BASE RATE
 rather than a defect. Evidence: `…/2026-08-29-rl-posttrain-library/raw/a0_coverage.json`
 and `…/code/ab_headway.py`.
+
+
+---
+
+## TRAIN-C3 — 2026-08-29 — NEAR-MISS: a policy-gradient estimator whose gradient was nonzero, differentiable, test-covered — and semantically WRONG
+
+**Stream:** TanitAD_TrainingFlyWheel. **Class — extends TRAIN-C1 from wiring to
+MATHEMATICS: *a plumbing test (shapes, differentiability, finiteness) cannot
+catch an estimator whose gradient points the wrong way.* Recognition signal: an
+optimisation objective validated only by "backward() produces a gradient".**
+Nothing was published — the pilot's own readout caught it on the first run — so
+this is a near-miss, logged finder-writes-the-entry.
+
+**What happened.** P-RC21's first P1 arm (grpo, 2,000 steps, the REAL v2.1
+cold start) COLLAPSED THE PLANNER: fan collision 11.113 % → **0.000 %** because
+sel-ADE exploded **1.969 m → 347.227 m** — every candidate left the road, so
+nothing was left to collide with. R2's "perfect safety" was the readout's
+tripwire working: a metric moving to its best value for the worst reason.
+
+**Root cause, MEASURED by A/B** (`…/2026-08-29-rl-posttrain-library/code/estimator_ab.py`):
+`sample_offsets` wrote ``logp = -0.5*eps² - log(scale)`` with ``eps`` the RAW
+DRAW. That symbolic substitution makes the ``(sample - mean)`` dependence CANCEL,
+so ``d(logp)/d(mean)`` flows only through ``log(scale) = log|mean·σ|``: the
+update can shrink or inflate |offset| by advantage sign but can NEVER move the
+mean toward good samples. Toy A/B: degenerate form **+0.500 → +0.500** after
+400 steps (target +3.0); corrected form (``eps_eff = (sample.detach() - mean)/scale``)
+**→ +2.750**. On the real model the inflate direction won and the fan diverged.
+
+**Why the tests could not catch it.**
+``test_sample_offsets_shapes_and_differentiability`` asserted ``off.grad is not
+None`` — and log(scale) supplies exactly such a gradient. **A nonzero gradient
+is not a correct gradient.** Same family as TRAIN-C1 (a mock named to satisfy
+the code cannot catch a naming bug): a test that asserts EXISTENCE cannot catch
+DIRECTION.
+
+**⭐ What worked — and is the reusable lesson.** The pilot found this in
+**3 minutes on the 4060** because the design forced it into the open: (a) the
+PILOT-FIRST rule (run the cheap real arm before any claim), (b) a readout with a
+metric pair whose joint movement is diagnostic (R2→0 alone reads as success;
+R2→0 WITH R3→347 m reads as collapse), (c) both-outcomes pre-registration so the
+anomaly had nowhere to hide. **The fix ships with a DIRECTIONAL pin**
+(`test_score_function_gradient_points_toward_good_samples`: the toy mean must
+actually CONVERGE toward reward), and the broken run's artifacts are preserved at
+`tanitad-data/rl-pilot/p1-grpo-BROKEN-ESTIMATOR/` as evidence, not deleted.
+
+**The rule:** ⛔ **every optimisation objective ships a convergence test on a toy
+problem with a known optimum — existence tests (differentiable, finite, shaped)
+validate plumbing only.** For score-function estimators specifically: the logp
+must be a function of ``sample.detach()`` against live parameters; substituting
+the raw noise symbolically cancels the very term that learns.
+
+
+---
+
+## TRAIN-C4 — 2026-08-29 — NEAR-MISS: a deliberate-regression guard that reported `clean` because a SAMPLING-RATE parameter changed underneath it
+
+**Stream:** TanitAD_TrainingFlyWheel.
+⭐ **CLASS — THE GUARD-WENT-BLIND FAMILY, VIA A PARAMETER THE GUARD DOES NOT
+MENTION:** *a guard validated at one setting of a global parameter silently stops
+being able to fail at another.* Recognition signal: **a regression test that pins
+one value of a knob the guard's own arithmetic depends on** — here `dt`.
+Sibling of TRAIN-C1 (a mock named to satisfy the code cannot catch a naming bug)
+and TRAIN-C3 (an existence test cannot catch a wrong gradient direction): all
+three are *a check that cannot fail in the configuration where it actually runs*.
+
+**What happened.** Pilot P-RC21's P2-reg arm is the DELIBERATE-REGRESSION arm —
+it trains on `HACKABLE_WEIGHTS` (progress-only), and `audit_reward` **must** flag
+it. Its own run record reads **`"verdict": "clean"`**.
+
+**Root cause, MEASURED** (`audit_reward` on `HACKABLE_WEIGHTS`, no ctx):
+
+| dt | reference | bullet_straight | verdict |
+|---|---|---|---|
+| 0.1 | 0.6667 | 1.5000 | **FLAGGED** (winners: bullet_straight, teleport) |
+| **0.5** | **1.5000** | **1.5000** | **`clean`** |
+
+The pilot's trajectories are spaced at **dt = 0.5 s** (REF-C v2.1 horizons
+5/10/15/20 frames @10 Hz). At that spacing the *fixed 30 m* progress reference
+saturates BOTH the sane reference AND the degenerate policy at the clamp — they
+**TIE at exactly 1.5000**, and the audit's "strictly beats the reference" rule
+finds no winner. My test
+`test_smoke_with_the_hackable_reward_reports_FLAGGED` pinned **dt = 0.1 only**.
+
+**What saved it.** The **BEHAVIOURAL** regression arm caught what the STATIC
+audit missed: P2-reg's composed reward fell **+0.9586 → +0.6592**, CIs
+**[0.849, 1.057] vs [0.549, 0.762] — non-overlapping**, and fan collisions rose
+(+0.586 pp). ⭐ **Two independent guards, and the one that held was not the one
+designed for this job.** That is the argument for redundant guards of *different
+kinds* rather than one better guard.
+
+**The rule:** ⛔ **A guard's regression test must be PARAMETRISED over every
+global its arithmetic touches** — here `dt`, and by the same argument any
+horizon, unit or clamp. And when a guard's verdict disagrees with a behavioural
+arm, the disagreement is itself the finding: **do not reconcile it by trusting
+the cheaper guard.**
+
+**Fixes:** the progress reference must scale with `dt` (the per-window
+`v0 × horizon` reference already does — the *fallback* fixed 30 m does not);
+`test_smoke_with_the_hackable_reward_reports_FLAGGED` becomes
+`@pytest.mark.parametrize("dt", [0.1, 0.5])`. Evidence:
+`…/2026-08-29-rl-posttrain-library/RESULT_P_RC21.md` §3.2 and
+`raw/p_rc21/p2-reg__pilot_summary.json`.

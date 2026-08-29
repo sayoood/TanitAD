@@ -164,3 +164,30 @@ def test_end_to_end_posttrain_step_on_the_real_model(model, tmp_path):
     for n, p in model.named_parameters():
         if n in before:
             assert torch.allclose(before[n], p), f"frozen trunk parameter {n} MOVED"
+
+
+def test_score_function_gradient_points_toward_good_samples():
+    """⛔ DIRECTIONAL pin — differentiability is not correctness.
+
+    The first sampler passed the shapes-and-differentiability test while its
+    gradient flowed ONLY through log(scale): it could never move the mean toward
+    positive-advantage samples, and pilot P-RC21's P1 collapsed the planner
+    (R3 1.97 m -> 347.2 m) before the readout caught it. This test optimises a
+    toy mean against reward = -(sample - 3)^2 and requires actual CONVERGENCE —
+    the degenerate estimator leaves the mean at its start and fails here.
+    """
+    from tanitad.rl.refcv3_adapter import sample_offsets
+    torch.manual_seed(0)
+    m = torch.nn.Parameter(torch.full((1, 1, 1, 2), 0.5))
+    opt = torch.optim.SGD([m], lr=0.05)
+    cfg = PostTrainConfig(group_size=8, noise_mode="multiplicative",
+                          noise_scale=0.3)
+    for _ in range(400):
+        sample, logp = sample_offsets(m, cfg)
+        reward = -(sample.detach() - 3.0).pow(2).sum(dim=(-1, -2))
+        adv = reward - reward.mean(dim=-1, keepdim=True)
+        loss = -(adv.detach() * logp).mean()
+        opt.zero_grad(); loss.backward(); opt.step()
+    assert float(m.mean()) > 2.0, (
+        f"mean stuck at {float(m.mean()):+.3f} — the score-function gradient "
+        "does not point toward good samples (the P-RC21 collapse bug)")

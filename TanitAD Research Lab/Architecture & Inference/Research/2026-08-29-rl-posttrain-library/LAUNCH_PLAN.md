@@ -157,6 +157,16 @@ loop from a random init would not be A1; it would be RL-from-scratch, which is
 neither what DDv2 did nor what the commission asked for, and any number from it
 would be uninterpretable.
 
+⭐ **PI DIRECTIVE (2026-08-29, direct): the blocker is bridged by a PILOT.**
+*"Take the existing refc model if it is not the same and try to apply the RL
+training until refcv3 is finished."* ⇒ **P-RC21** (`PREREG_P_RC21.md`): the same
+library, decoder-only, on the REAL v2.1 cold start `refc-diffusion-base-v21-30k`
+(104.19 M, ckpt via the `Sayood/tanitad-refc-base` HF mirror, md5-verified), over
+the NON-PARITY dev-box epcache with a locally built `obstacle.offline` join
+(54 train / 15 val episodes joined; **A0 PASS on that corpus**,
+`raw/a0_pilot.json`). ⛔ Pilot numbers do NOT transfer to refcv3 — the METHOD
+verdict does. A1's own sequencing below is unchanged.
+
 ⇒ **Sequencing: B1 corpus → refcv3 IL cold start → A1.** The IL arm is the
 prerequisite, it is owned outside this FlyWheel, and its cost dominates §4.
 
