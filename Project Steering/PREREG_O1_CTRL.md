@@ -40,6 +40,44 @@ recorded value; using the omega template would silently add a second variable.
 
 **Cost:** ~8.6 h on an idle Thor. Readout is free (the MM-E10 probe re-run).
 
+### ✅ 2.1 — THE ONE-VARIABLE CHECK, RUN 2026-08-30 AT STEP ~18,000, BEFORE ANY READ
+
+§4 committed to *"config-diff must show **only** `w_o1_ctrl` before any read"*. Done —
+and it required separating two things a naive diff conflates:
+
+```
+postrain30k 194 args · o1ctrl30k 210 args
+SHARED KEYS WITH DIFFERENT VALUES:  out (the output directory) · w_o1_ctrl 0.0 -> 1.0
+                                    total: 2
+KEYS ONLY IN o1ctrl30k:             16   (absent from postrain30k, NOT value changes)
+```
+
+⭐ **VERDICT: the one-variable claim HOLDS.** The only genuine difference is
+`w_o1_ctrl`; `out` is the output path. The 16 extra keys are flags added to the
+trainer *between* the two runs — `w_o13_ego 0.0`, `w_o14 0.0`, `o6_innovation False`,
+`ema_decay_ramp 'off'` and so on, all inert.
+
+⛔ **AND THE ONE THAT LOOKED LIKE A SECOND VARIABLE IS NOT ONE — but it took a real
+check, not a glance.** `o1ctrl30k` records `cond_param='steer_accel_v'` while
+postrain30k records **nothing**. That is exactly the confound §2 warned about by name.
+Resolved at source: `COND_INCUMBENT = "steer_accel_v"` (`train_v6_staged.py:164`) **is**
+the argparse default (`:6914`), the consumers fall back to it via
+`getattr(a, "cond_param", COND_INCUMBENT)` (`:4519`, `:5603`), and the three other 30k
+arms all record the same value. ⇒ postrain30k **ran** the incumbent parameterisation and
+merely predates the key being *recorded*.
+
+⚠️ **THIS PRE-REGISTRATION WAS ITSELF IMPRECISE AND IS CORRECTED HERE.** §2 said
+*"`cond_param` stays **None** — postrain30k's recorded value"*. Its recorded value is
+**ABSENT**, not `None`; I read `None` because `dict.get()` returns it for a missing key.
+And `None` was never a legal value — argparse restricts to two choices and `_lift3`
+raises on anything else (`:3599`). ⇒ the correct statement is **"`cond_param` stays the
+INCUMBENT DEFAULT `steer_accel_v`"**.
+
+⭐ The general form, and it is the fourth instance in one day: **an absent key and a key
+whose value is null are different facts, and `.get()` makes them look identical.** A
+config diff built on `.get()` reports 16 phantom variables here — enough to declare a
+clean arm confounded and discard a valid 8.6 h run.
+
 ## 3. Reads and outcomes, COMMITTED IN ADVANCE
 
 **Primary:** the MM-E10 action-divergence probe, same corpus, same n, same
