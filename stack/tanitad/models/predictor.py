@@ -131,7 +131,8 @@ class OperativePredictor(nn.Module):
     """
 
     def __init__(self, cfg: PredictorConfig, state_dim: int,
-                 intent_dim: int | None = None, gated_intent: bool = False):
+                 intent_dim: int | None = None, gated_intent: bool = False,
+                 allow_untrained_horizons: bool = True):
         super().__init__()
         self.cfg = cfg
         self.state_dim = state_dim      # plain int; not a buffer => state_dict unchanged
@@ -170,6 +171,57 @@ class OperativePredictor(nn.Module):
         # existing checkpoint loads byte-identically.
         self.heads = nn.ModuleDict(
             {str(k): nn.Linear(d, state_dim) for k in cfg.horizons})
+        # ⛔⛔ ONLY head "1" IS EVER TRAINED, AND THAT IS BY DESIGN — but the
+        # config has been free to claim otherwise, and the claim corrupted three
+        # analyses before anyone checked.
+        #
+        # `metric_dynamics.rollout_transitions` reaches long horizons by applying
+        # the **1-step head autoregressively** (`predictor(ws, wa)[1]`, k times,
+        # full-chain gradient — explicitly NOT truncated BPTT), and O5 supervises
+        # every step. So the trained horizon is `o5_k * dt`, and heads for k != 1
+        # are ALLOCATED, COMPUTED IN `forward`, AND CONSUMED BY NO LOSS.
+        #
+        # MEASURED 2026-08-31 on `o1ctrl30k`, all 8 snapshots, steps 5,000-22,500:
+        #     |W1| 3.7283 -> 7.7516      (moving)
+        #     |W2| 0.026154 CONSTANT     (delta EXACTLY 0.000e+00 at every step)
+        #     |W4| 0.026113 CONSTANT     (delta EXACTLY 0.000e+00 at every step)
+        # Bit-identical across 17,500 steps, WITH `w_o1_ctrl 1.0` in force.
+        #
+        # ⚠️ THE COST WAS NEVER TRAINING, IT WAS MEASUREMENT. Untrained heads
+        # emit initialisation noise that reads as a number: MM-E10 reported h2/h4
+        # action-divergence ratios of ~1e-5 as if they meant something, MM-E14
+        # retracted them, and on 2026-08-31 the same heads produced a false
+        # "the model only imagines 0.1 s" alarm. A silent dead parameter is a
+        # measurement hazard, not a wasted-FLOPs problem.
+        #
+        # ⛔ THE GUARD DEFAULTS TO PERMISSIVE HERE, DELIBERATELY, AND THE HARD
+        # REFUSAL LIVES IN THE TRAINER'S PREFLIGHT INSTEAD.
+        # ~30 banked checkpoints were built with horizons (1,2,4); their
+        # state_dict carries heads.2/heads.4, so a constructor that refused them
+        # would make every one of them unloadable and break `load_trunk_auto`
+        # mid-flight — including the MM-E11 read this guard was written during.
+        # LOADING OLD WORK IS NOT AUTHORING NEW WORK. A checkpoint is a record of
+        # what was done and must stay readable however wrong it was; a new arm is
+        # a decision and can be refused. Refusing at the wrong one of those two
+        # would have destroyed the evidence instead of preventing the defect.
+        # ⇒ `train_v6_staged.py` refuses `--horizons` with any entry != 1 when
+        # CONFIGURING a run. See `_refuse_untrained_horizons` there.
+        untrained = [k for k in cfg.horizons if int(k) != 1]
+        if untrained and not allow_untrained_horizons:
+            raise ValueError(
+                f"[predictor] ⛔ horizons {tuple(cfg.horizons)} declare "
+                f"{untrained}, which NO loss consumes: the O5 rollout applies "
+                f"head '1' autoregressively (metric_dynamics.rollout_transitions), "
+                f"so heads {untrained} would receive EXACTLY zero gradient and "
+                f"then emit initialisation noise into every probe that reads them "
+                f"(this produced two retracted findings). Use horizons=(1,) and "
+                f"set the HORIZON WITH --o5-k (o5_k * dt seconds; the binding "
+                f"target is 6.0 s = o5_k 60 per §4b). Pass "
+                f"allow_untrained_horizons=True ONLY to load a pre-2026-08-31 "
+                f"checkpoint whose state_dict already carries the dead heads.")
+        #: Which horizons actually receive gradient. Read this, never `cfg.horizons`,
+        #: when reporting what a model was trained to predict.
+        self.trained_horizons = (1,)
         if cfg.residual:
             for h in self.heads.values():
                 h.weight.data.mul_(RESIDUAL_HEAD_INIT_SCALE)

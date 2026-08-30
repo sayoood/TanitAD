@@ -3120,7 +3120,13 @@ def v6_loss_step(stack: V6Stack, batch: dict, *, stage: str,
     out = stack.forward(frames=batch["frames"], actions=_lift3(
         batch["actions2"], batch["v0"], cond_param), v0=batch["v0"],
         own_frames_tac=batch.get("own_frames_tac"),
-        own_frames_str=batch.get("own_frames_str"))
+        own_frames_str=batch.get("own_frames_str"),
+        # ⭐ NAV (PI directive 2026-08-30). `.get` matches this dict's own
+        # degrade-not-crash discipline; MANDATORY-ness is enforced by the
+        # PREFLIGHT refusal, not here — a refusal is auditable and lands in
+        # config.json, a silent default is invisible. If nav_cond is on and
+        # these are absent, V6Stack.forward raises NavTokenMissing by name.
+        nav_token=batch.get("nav_token"), nav_args=batch.get("nav_args"))
     states = out["z_op_win"]                                   # [B, W, d_op]
     z_true = batch["z_true_steps"]
 
@@ -5714,6 +5720,13 @@ def train(a) -> dict:
             # minutes; a 30,000-step launch would have died at step 1.
             "future_poses": b.get("future_poses"),
             "pose_last": b.get("pose_last"),
+            # ⭐ NAV, forwarded with `.get` for the reason this block already
+            # gives twice: a tree one file behind must DEGRADE into a named
+            # error, never a bare KeyError that takes down every run. The
+            # channel is MANDATORY when --nav-cond is set, and that is enforced
+            # at PREFLIGHT (auditable, recorded in config.json) plus a named
+            # NavTokenMissing from V6Stack.forward — not by a crash here.
+            "nav_token": b.get("nav_token"), "nav_args": b.get("nav_args"),
         }
         if t5_partner:
             # rows [0, n) are the anchors and rows [n, 2n) their +lag partners,
@@ -6194,7 +6207,8 @@ def train(a) -> dict:
                           f"({type(e).__name__}: {e}) — continuing",
                           flush=True)
             _save_ckpt(out_dir / "ckpt.pt", stack=stack, opt=opt, step=step,
-                       cfg_json=cfg_json)
+                       cfg_json=cfg_json,
+                       keep_step=not bool(getattr(a, "no_step_ckpts", False)))
             (out_dir / "metrics.json").write_text(json.dumps(
                 {"history": history, "stage": a.stage,
                  "_read": "TRAINING numbers. Only eval output is quotable "
@@ -6244,9 +6258,42 @@ def _load_gate_probes(path) -> dict:
     return json.loads(p.read_text())
 
 
-def _save_ckpt(path: Path, *, stack, opt, step: int, cfg_json: dict) -> None:
-    torch.save({"stack": stack.state_dict(), "opt": opt.state_dict(),
-                "step": step, "config": cfg_json}, path)
+def _save_ckpt(path: Path, *, stack, opt, step: int, cfg_json: dict,
+               keep_step: bool = True) -> None:
+    """Write the checkpoint ATOMICALLY, and keep a STEP-STAMPED copy.
+
+    ⛔ THE DEFECT THIS FIXES. `--save-every` wrote only ``ckpt.pt`` and
+    OVERWROTE it, so a 30k run left ONE file, overwritten 12 times. MEASURED
+    across all three banked 30k arms (postrain30k, emao14_30k, o14fut30k): each
+    directory contains exactly one checkpoint. ⇒ a val curve can prove step
+    12,300 was the best model in the run and THAT MODEL NO LONGER EXISTS.
+    Selection needs ARTIFACTS, not just a signal — and every after-the-fact
+    trajectory question ("when did it become action-deaf?") was unanswerable for
+    every arm we have ever trained.
+
+    ⭐ ATOMIC BY RENAME, and this is a real fix rather than a mitigation. A
+    mid-write copy yields a TORN CHECKPOINT THAT LOADS AND IS WRONG — worse than
+    a missing one. Polling for a stable file size only narrows the window;
+    writing to a temp path and ``os.replace``-ing closes it, because rename is
+    atomic within a filesystem and no reader can ever observe a partial file.
+
+    ⚠️ ``keep_step`` DEFAULTS TRUE, and the asymmetry with ``nav_cond`` (which
+    defaults False) is deliberate, not drift: a default that changes ARTIFACTS is
+    not a default that changes ARCHITECTURE. Step-stamped copies alter no model,
+    no loss, no RNG draw and no comparability — they only add files (~143 MB x
+    12 = ~1.7 GB on a 30k run). The cost of NOT having them is unrecoverable;
+    the cost of having them is disk.
+    """
+    payload = {"stack": stack.state_dict(), "opt": opt.state_dict(),
+               "step": step, "config": cfg_json}
+    tmp = Path(str(path) + ".tmp")
+    torch.save(payload, tmp)
+    os.replace(tmp, path)                       # atomic; no torn file is visible
+    if keep_step:
+        stamped = Path(path).with_name(f"ckpt_step{int(step)}.pt")
+        tmp2 = Path(str(stamped) + ".tmp")
+        torch.save(payload, tmp2)
+        os.replace(tmp2, stamped)
 
 
 def resume_guard(out_dir, *, resume: str, force_rerun: bool) -> dict:
@@ -6608,6 +6655,23 @@ def build_parser() -> argparse.ArgumentParser:
     #: Consecutive latents then share NO input frames; the hypothesis is that
     #: the 2/3-shared stack makes dz noise-like (lag-1 autocorr measured -0.075).
     #: Implies --in-channels 3; the trainer enforces that coupling below.
+    # ⭐ NAV CONDITIONING (PI directive 2026-08-30): mandatory for every future
+    # arm, enforced by the preflight refusal below rather than by a default flip.
+    ap.add_argument("--i-know-this-arm-predates-nav", action="store_true",
+                    dest="predates_nav",
+                    help="reproduce a PRE-DIRECTIVE arm without nav; the choice "
+                         "is RECORDED in config.json rather than left silent")
+    # ⛔ OPT-OUT, not opt-in: see _save_ckpt's docstring. Every arm trained
+    # before today has an UNRECOVERABLE checkpoint trajectory because this was
+    # not the default.
+    ap.add_argument("--no-step-ckpts", dest="no_step_ckpts", action="store_true",
+                    help="do NOT keep ckpt_step<N>.pt copies (default: keep). "
+                         "Only for disk-constrained hosts — the trajectory is "
+                         "unrecoverable afterwards.")
+    ap.add_argument("--nav-cond", dest="nav_cond", action="store_true",
+                    help="condition all three layers on the nav command token "
+                         "(PI directive 2026-08-30). MANDATORY for v7-line arms; "
+                         "the preflight REFUSES a v7 stage without it.")
     ap.add_argument("--newest-frame-only", dest="newest_frame_only",
                     action="store_true")
     ap.add_argument("--frame-h", type=int, default=256)
@@ -7335,6 +7399,37 @@ def _launch_line(a) -> str:
 def preflight(a) -> list[str]:
     """Refusals that must fire BEFORE a GPU-day is spent."""
     problems: list[str] = []
+    # ---- NAV IS MANDATORY, AND THIS IS WHERE THAT IS ENFORCED ---------------
+    # ⛔ Deliberately a REFUSAL, not a flipped default. A refusal is AUDITABLE —
+    # it names the missing flag and the flag lands in config.json — whereas a
+    # default is INVISIBLE and would silently change the construction of every
+    # existing arm, the comparability break the PI ruled against. Same idiom as
+    # the parity gate refusing without --exclude-parity-overlap.
+    # ⚠️ The opt-out is HONOURED here, not merely advertised. The first version
+    # of this block named --i-know-this-arm-predates-nav in its message and
+    # refused anyway — an escape hatch that does not open, which is the same
+    # defect family as a flag that validates itself without being wired.
+    # ⛔ SCOPE: this refusal broke the DRY LADDER when I first wrote it, because I
+    # refused EVERY v6 arm while the decision was to refuse a v7-LINE arm.
+    # MEASURED: `v6_chain.run_chain` breaks out of its loop on a non-zero return
+    # code (v6_chain.py:2061) BEFORE it writes `dry_ckpt` (:2071), so a preflight
+    # that refuses a dry step silently truncates the ladder transcript — the
+    # failure surfaced three modules away as `KeyError('dry_ckpt')`.
+    # ⇒ A dry run trains nothing and produces no comparable arm, so nav cannot
+    # make it incomparable and there is nothing for the refusal to protect.
+    if (not bool(getattr(a, "nav_cond", False))
+            and not bool(getattr(a, "predates_nav", False))
+            and not bool(getattr(a, "dry_run", False))):
+        problems.append(
+            "--nav-cond is REQUIRED (PI directive 2026-08-30): the nav command "
+            "token is a mandatory input to the operative, tactical and "
+            "strategic layers for every arm trained from now on. Pass "
+            "--nav-cond.\n"
+            "     ⚠️ An arm without it is ARCHITECTURALLY DIFFERENT "
+            "from every arm after it and cannot be compared with them.\n"
+            "     If you are deliberately reproducing a PRE-DIRECTIVE arm, pass "
+            "--i-know-this-arm-predates-nav to record that choice in the run "
+            "config rather than leaving it unrecorded.")
     if a.stage == "S-W" and resolve_lambda_plan(a):
         problems.append(
             f"--stage S-W with --lambda-plan {a.lambda_plan}: S-W is the WORLD "
@@ -7688,6 +7783,42 @@ def preflight(a) -> list[str]:
             f"--selector {a.selector} for the GEOMETRY: S-S must carry the "
             f"S-T arm's scorer forward or --init-from fails on unexpected "
             f"cand_score.* keys.")
+    # ---- HORIZONS: refuse a horizon no loss can train ----------------------
+    # ⛔⛔ MEASURED 2026-08-31 on `o1ctrl30k`, all 8 snapshots, steps 5,000-22,500:
+    #     |W1| 3.7283 -> 7.7516   moving
+    #     |W2| 0.026154 CONSTANT  delta EXACTLY 0.000e+00 at every snapshot
+    #     |W4| 0.026113 CONSTANT  delta EXACTLY 0.000e+00 at every snapshot
+    # Bit-identical over 17,500 steps, with `--w-o1-ctrl 1.0` in force.
+    #
+    # WHY, and it is BY DESIGN rather than a bug: `rollout_transitions` reaches
+    # long horizons by applying the 1-step head AUTOREGRESSIVELY --
+    # `predictor(ws, wa)[1]`, k times, full-chain gradient (explicitly NOT
+    # truncated BPTT) -- and O5 supervises the error at EVERY step. So the
+    # horizon is set by `--o5-k` (= o5_k * dt seconds), and heads for k != 1 are
+    # allocated, computed in `forward`, and consumed by NO loss.
+    #
+    # ⚠️ THE DAMAGE WAS NEVER WASTED FLOPS, IT WAS MEASUREMENT. Untrained heads
+    # emit initialisation noise that reads as a number: MM-E10 published h2/h4
+    # action-divergence ratios of ~1e-5 as if meaningful, MM-E14 retracted them,
+    # and the same heads then produced a false "the model only imagines 0.1 s"
+    # alarm. A silently dead parameter is a measurement hazard.
+    hz = tuple(int(h) for h in (getattr(a, "horizons", None) or (1,)))
+    dead = [h for h in hz if h != 1]
+    if dead:
+        problems.append(
+            f"--horizons {hz} declares {dead}, which NO loss consumes. The O5 "
+            f"rollout applies head '1' autoregressively "
+            f"(metric_dynamics.rollout_transitions), so heads {dead} would take "
+            f"EXACTLY zero gradient and then feed initialisation noise to every "
+            f"probe that reads them — this has already produced two retracted "
+            f"findings. ⇒ pass --horizons 1 and set the HORIZON with --o5-k: it "
+            f"is o5_k x dt seconds, and the BINDING target is 6.0 s = --o5-k 60 "
+            f"(§4b, 'every planned trajectory spans up to 6 s'; v6.py PLAN_STEPS "
+            f"= 60, HORIZON_S = 6.0). Current --o5-k {getattr(a, 'o5_k', '?')} = "
+            f"{float(getattr(a, 'o5_k', 0)) * float(getattr(a, 'dt', 0.1)):.1f} s. "
+            f"⚠️ Loading an OLD checkpoint built with (1,2,4) is unaffected — "
+            f"this refuses CONFIGURING a new arm, never reading a banked one.")
+
     # ---- S2: every incoherent combination refused in MILLISECONDS ----------
     w_s2 = float(getattr(a, "w_s2_goal", 0.0))
     s2p = getattr(a, "s2_labels", None)

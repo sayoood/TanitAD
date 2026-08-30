@@ -281,8 +281,45 @@ step     |W1|      |W2|       |W4|      | Δ from previous snapshot
 This is stronger than MM-E14's "untrained" and it holds **with `w_o1_ctrl 1.0` in
 force**, so it is a property of the wiring, not of any objective.
 
-⇒ `--horizons 1 2 4` is effectively `[1]`. The **actually trained** prediction horizon
-is **h=1 = 0.1 s**:
+### ⛔⛔ SELF-RETRACTION 2026-08-31 — THE "0.1 s / 1.7 %" FIGURE BELOW IS WRONG
+
+I read the zero-gradient result as *"the trained horizon is 0.1 s"*. **It is not, and
+the architecture is sounder than I said.** `rollout_transitions`
+(`metric_dynamics.py:247`) reaches long horizons by applying the **1-step head
+autoregressively `k` times** under the true future actions:
+
+```python
+def _step(ws, wa):
+    return predictor(ws, wa)[1]          # 1-step head, rolled
+```
+
+and its docstring is explicit that this is **not** truncated BPTT: *"step 60's error
+still reshapes step 1's prediction, which is the entire point of O5."* O5 then
+supervises **error at EVERY step** (`train_v6_staged.py:3238-3243`).
+
+⇒ **The trained horizon is `o5_k × dt`, not one tick.** At `o5_k 8` that is **0.8 s =
+13 %** of the binding 6.0 s — the same 13 % already in the table above. The correct
+reading of the zero-gradient measurement is narrower:
+
+⭐ **The `horizons=(1,2,4)` heads 2 and 4 are VESTIGIAL** — allocated in
+`predictor.py:171`, computed in the forward, and **consumed by no loss**. That is a real
+defect, but it is a **measurement-integrity** defect, not a horizon defect: it produced
+MM-E10's meaningless h2/h4 ratios, forced MM-E14's retraction, and then produced this
+alarm. It does **not** shorten what the model is trained to imagine.
+
+⚠️ **And I alarmed in the wrong direction** — the failure mode I have been cataloguing
+all day, committed by me: I had a true measurement (Δ = exactly 0) and attached the
+wrong consequence to it. *A claim can be factually correct and still mislead every
+reader who acts on it.* The zero-gradient fact stands; "therefore 0.1 s" does not.
+
+⇒ **The 6 s fix is `--o5-k 60`, one flag** — and the code was built for it: the rollout
+grad-checkpointing exists *specifically* because *"the k=60 roll … killed the run at
+37.97 GiB on a 44 GiB A40"*. ⛔ MEASURED: **no v7-tiny arm has ever run `o5_k ≥ 20`.**
+
+*(The superseded reading follows, kept so the retraction is checkable.)*
+
+⇒ ~~`--horizons 1 2 4` is effectively `[1]`. The **actually trained** prediction horizon
+is **h=1 = 0.1 s**:~~
 
 | | horizon | vs the binding 6.0 s |
 |---|---|---|
