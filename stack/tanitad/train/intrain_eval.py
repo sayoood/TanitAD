@@ -30,6 +30,8 @@ distance cannot see a decision defect.
 """
 from __future__ import annotations
 
+import hashlib
+import os
 from typing import Any, Callable, Iterable
 
 import torch
@@ -311,3 +313,108 @@ def should_run_val(step: int, *, monitor_every: int = 100,
     return {"monitor": step > 0 and step % monitor_every == 0,
             "select": step > 0 and step % save_every == 0,
             "monitor_every": monitor_every, "save_every": save_every}
+
+
+#: ⛔ v7.2 SUPERSEDES the v3 split-manifest. The split is now the DATA LAYOUT —
+#: two label files — rather than a manifest a trainer must apply correctly.
+#: ⭐ WHY THAT IS STRUCTURALLY BETTER: a trainer that opens the train file
+#: CANNOT accidentally score eval clips, because they are not in the file. The
+#: load-time leak guard below becomes belt-and-braces rather than the only thing
+#: standing between us and a leak. It stays — a guard that has become redundant
+#: is not a guard you delete, it is one that should never fire.
+#: ⛔ CORRECTED 2026-08-30 — THESE PINS NAMED THE WRONG COPY, AND THE GUARD WOULD
+#: THEREFORE HAVE REFUSED THE CANONICAL ARTIFACT AND ACCEPTED THE SUPERSEDED ONE.
+#: The previous values (`0a586fe8…` / `bffc9df5…`) are the blobs under
+#: `release/_v72_verify/labels/` — a round-trip VERIFY download taken before the
+#: schema fix. The canonical build output is `release/v72/`, and its md5s are the
+#: ones the producer published. MEASURED: both names resolve to exactly TWO copies
+#: on this box with TWO DISTINCT md5s, differing by 2,359 B (train) and 60 B (eval).
+#:
+#: ⚠️ THE ROOT CAUSE IS NOT A STALE NUMBER, IT IS HOW THE ARTIFACT WAS IDENTIFIED.
+#: The pins were captured through `glob.glob("C:/Users/Admin/**/<name>")[0]` — the
+#: first hit of a recursive home-directory glob — so the *subject* of the assertion
+#: was whichever copy the filesystem happened to yield. A test that pins a hash but
+#: chooses its file nondeterministically pins nothing. ⇒ `resolve_v72` below fails
+#: on ambiguity instead of picking, and `LabelManifest.to_dict()`'s own warning is
+#: the rule this violated: *md5 is the identity — copies exist under several roots
+#: and their md5s differ.*
+V72 = {
+    "train": {"name": "s2_labels_v7.2_train.jsonl.gz", "n": 4572,
+              "md5": "0ff902130ce76886b8a925eceed9e3a5"},
+    "eval": {"name": "s2_labels_v7.2_eval.jsonl.gz", "n": 147,
+             "md5": "aa12c948f062181c3297265b51526ec5"},
+}
+
+
+def resolve_v72(side: str, roots):
+    """The ONE path for ``side``, or a refusal naming every candidate.
+
+    ⛔ Never returns "the first match". If several copies exist and their md5s
+    DIFFER, that is an ambiguous subject and the caller must be told which copies
+    it is choosing between — silently picking one is how the stale pin above was
+    captured in the first place. Identical copies under different paths are fine:
+    the bytes are the artifact, the path is not.
+    """
+    import glob as _glob
+    name = V72[side]["name"]
+    hits = sorted({os.path.realpath(h) for r in roots
+                   for h in _glob.glob(os.path.join(r, "**", name),
+                                       recursive=True)})
+    if not hits:
+        return None
+    by_md5: dict[str, list[str]] = {}
+    for h in hits:
+        with open(h, "rb") as fh:
+            by_md5.setdefault(hashlib.md5(fh.read()).hexdigest(), []).append(h)
+    if len(by_md5) > 1:
+        detail = "; ".join(f"{m} -> {', '.join(p)}" for m, p in sorted(by_md5.items()))
+        raise EvalSplitError(
+            f"[val] ⛔ {name} resolves to {len(hits)} copies with "
+            f"{len(by_md5)} DISTINCT md5s: {detail}. Refusing to guess which is "
+            f"the artifact — md5 is the identity, and taking the first glob hit "
+            f"is exactly how this module's pins came to name a pre-fix verify "
+            f"download. Name the canonical root explicitly.")
+    return hits[0]
+
+#: ⚠️ THE OVERLAP THAT MUST BE STAMPED ON EVERY COMPARISON.
+#: v7.2 eval = the v3 eval set + 6 clips that were held out of training for
+#: val40 leakage and then used for nothing. Recovering them cost no labelling
+#: run and no training data — but it means OUR EVAL SET NOW OVERLAPS THE
+#: DEPLOYED val40 BY 6 CLIPS (15 % of val40, 4 % of our eval).
+#:
+#: ⛔ NOT a leak: neither side is trained on, and train contains zero val40
+#: clips. But our val curve and the published open-loop statistic are NO LONGER
+#: FULLY INDEPENDENT, and any comparison between them must say so.
+#:
+#: ⚠️⚠️ AND IT IS FAR TIGHTER THAN 15 % SUGGESTS. Per D-VAL40-NOLABELS, val40's
+#: ONLY labelled clips are exactly these 6. ⇒ if anyone scores val40 on the
+#: LABEL-BASED families, they are scoring precisely the clips that are also in
+#: our eval set: the two numbers would share their ENTIRE SUPPORT, not 15 % of
+#: it. On the label families they are not two measurements, they are one.
+VAL40_OVERLAP = {
+    "n_clips": 6, "pct_of_val40": 0.15, "pct_of_our_eval": 0.04,
+    "is_leak": False,
+    "_read": "trajectory/ADE comparisons: partially dependent, state it. "
+             "LABEL-FAMILY comparisons: the two numbers share their ENTIRE "
+             "support (val40's only labelled clips ARE these 6) — they are not "
+             "independent measurements and must never be presented as agreement.",
+}
+
+
+def v72_stamp(side: str, path: str, md5: str) -> dict:
+    """The stamp a v7.2 number carries. ⛔ It must name WHICH SIDE, not just the
+    blob: with three label releases and three splits live and all resolving, a
+    number that says only "v7.2" does not say what it scored."""
+    if side not in V72:
+        raise EvalSplitError(f"[val] unknown v7.2 side {side!r}; have {sorted(V72)}")
+    exp = V72[side]
+    if md5 != exp["md5"]:
+        raise EvalSplitError(
+            f"[val] ⛔ v7.2 {side} md5 {md5} != {exp['md5']}. Three label "
+            f"releases resolve; the wrong one opens cleanly. Refusing.")
+    return {"labels_release": "v7.2", "labels_side": side,
+            "labels_path": path, "labels_md5": md5,
+            "n_clips": exp["n"],
+            "val40_overlap": VAL40_OVERLAP if side == "eval" else None,
+            "_read": "per-competence numbers are INADMISSIBLE at n=147 "
+                     "(~13 stop-launch, ~24 highway); quote the aggregate"}

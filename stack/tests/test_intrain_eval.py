@@ -7,6 +7,7 @@ module is not an ADE watcher.
 """
 import glob
 import json
+import os
 
 import pytest
 import torch
@@ -263,3 +264,128 @@ def test_the_real_v3_split_loads_and_is_disjoint():
     assert len(sp.eval_ids) == 141
     assert not (sp.eval_ids & sp.train_ids)
     assert sp.stamp()["split_sha"].startswith(V3_SHA)
+
+
+# ------------------------------------------------------------------ v7.2
+import hashlib
+
+from tanitad.train.intrain_eval import V72, VAL40_OVERLAP, v72_stamp
+
+#: ⛔ The CANONICAL build root — `release/v72/`. NOT `release/_v72_verify/`, which
+#: holds a pre-fix round-trip download whose md5s differ from the artifact's. The
+#: root is named rather than globbed for, because "wherever the glob lands" is how
+#: the wrong copy got pinned in the first place.
+_V72_CANONICAL_ROOT = r"C:/Users/Admin/tanitad-wt/_s2build/release/v72"
+_V72E = glob.glob(os.path.join(_V72_CANONICAL_ROOT, "**",
+                               "s2_labels_v7.2_eval.jsonl.gz"), recursive=True)
+needs_v72 = pytest.mark.skipif(not _V72E, reason="v7.2 not on this box")
+
+
+def test_a_v72_number_must_name_WHICH_SIDE():
+    """⛔ Three label releases and three splits are live and ALL RESOLVE, so a
+    number that says only "v7.2" does not say what it scored."""
+    st = v72_stamp("eval", "/p", V72["eval"]["md5"])
+    assert st["labels_side"] == "eval" and st["n_clips"] == 147
+    with pytest.raises(EvalSplitError):
+        v72_stamp("both", "/p", V72["eval"]["md5"])
+
+
+def test_the_wrong_release_is_REFUSED_by_md5():
+    """The wrong-but-valid file opens cleanly; only the hash catches it."""
+    with pytest.raises(EvalSplitError) as e:
+        v72_stamp("eval", "/p", V72["train"]["md5"])   # train md5 on the eval side
+    assert "Refusing" in str(e.value)
+
+
+def test_the_val40_OVERLAP_is_stamped_on_the_eval_side_only():
+    """⚠️ 6 clips overlap the deployed val40 — NOT a leak (neither side is
+    trained on) but our val curve and the published statistic are no longer
+    fully independent."""
+    assert v72_stamp("eval", "/p", V72["eval"]["md5"])["val40_overlap"]["n_clips"] == 6
+    assert v72_stamp("train", "/p", V72["train"]["md5"])["val40_overlap"] is None
+
+
+def test_the_overlap_note_says_the_LABEL_FAMILIES_SHARE_THEIR_ENTIRE_SUPPORT():
+    """⚠️⚠️ Tighter than 15 % suggests: val40's ONLY labelled clips ARE these 6,
+    so on the label-based families the two numbers are not independent
+    measurements at all — they are one measurement, and must never be presented
+    as two that agree."""
+    assert VAL40_OVERLAP["is_leak"] is False
+    assert "ENTIRE" in VAL40_OVERLAP["_read"]
+
+
+@needs_v72
+def test_the_real_v72_files_match_their_declared_md5s():
+    """⛔ Resolves through :func:`resolve_v72`, NEVER ``glob(...)[0]``.
+
+    The pins this asserts were originally captured from the first hit of a
+    recursive home-directory glob, which on this box is the ``_v72_verify``
+    round-trip download rather than the canonical ``release/v72/`` build — two
+    copies, two distinct md5s. A hash assertion whose subject is chosen
+    nondeterministically asserts nothing, so ambiguity must FAIL, not resolve.
+    """
+    import gzip
+    from tanitad.train.intrain_eval import resolve_v72
+    for side, want in V72.items():
+        p = resolve_v72(side, [_V72_CANONICAL_ROOT])
+        if p is None:
+            pytest.skip(f"{side} side not present")
+        raw = open(p, "rb").read()
+        assert hashlib.md5(raw).hexdigest() == want["md5"], f"{side}: {p}"
+        n = sum(1 for _ in gzip.open(p, "rt", encoding="utf-8"))
+        assert n == want["n"], f"{side}: {n} != {want['n']}"
+
+
+def test_resolve_v72_REFUSES_when_copies_disagree(tmp_path):
+    """⭐ The regression that would have caught the stale pin.
+
+    Two copies with differing bytes must raise and NAME both, rather than
+    silently returning one — the failure mode that put a pre-fix verify
+    download into a production guard.
+    """
+    import gzip
+    from tanitad.train.intrain_eval import resolve_v72
+    name = V72["train"]["name"]
+    for sub, payload in (("a", b"one"), ("b", b"two")):
+        d = tmp_path / sub
+        d.mkdir()
+        with gzip.open(d / name, "wb") as fh:
+            fh.write(payload)
+    with pytest.raises(EvalSplitError) as e:
+        resolve_v72("train", [str(tmp_path)])
+    msg = str(e.value)
+    assert "DISTINCT md5s" in msg and "Refusing to guess" in msg
+    assert msg.count(name) >= 2, "both candidate paths must be named"
+
+
+def test_resolve_v72_accepts_identical_copies_under_different_paths(tmp_path):
+    """⚠️ The bytes are the artifact; the path is not. Duplicates that AGREE
+    are not ambiguity and must not be refused."""
+    import gzip
+    from tanitad.train.intrain_eval import resolve_v72
+    name = V72["train"]["name"]
+    for sub in ("a", "b"):
+        d = tmp_path / sub
+        d.mkdir()
+        with gzip.open(d / name, "wb") as fh:
+            fh.write(b"same")
+    assert resolve_v72("train", [str(tmp_path)]) is not None
+
+
+@needs_v72
+def test_the_two_sides_are_DISJOINT_by_construction():
+    """⭐ The structural improvement: the split is now WHICH FILE YOU OPEN. A
+    trainer reading the train file cannot score eval clips because they are not
+    in it. The load-time guard becomes belt-and-braces — kept, because a guard
+    that has become redundant is one that should never fire, not one to delete."""
+    import gzip
+    from tanitad.train.intrain_eval import resolve_v72
+    ids = {}
+    for side in V72:
+        p = resolve_v72(side, [_V72_CANONICAL_ROOT])
+        if p is None:
+            pytest.skip(f"{side} side not present")
+        ids[side] = {json.loads(l)["clip_id"]
+                     for l in gzip.open(p, "rt", encoding="utf-8")}
+    assert not (ids["train"] & ids["eval"]), "the two sides must not overlap"
+    assert len(ids["train"]) + len(ids["eval"]) == 4719, "every clip assigned"
