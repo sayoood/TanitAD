@@ -238,7 +238,79 @@ T0-indistinguishable arms landing on opposite sides. **A strategic readout whose
 referent sits 62× beyond the model's effective imagination is *expected* to read at
 chance.** This does not prove the mechanism — it removes the puzzle.
 
-## ⛔⛔ AND THE LADDER IS SHORTER THAN IT WAS DESIGNED TO BE — WE SHORTENED IT
+## ⛔⛔⛔ CORRECTION 2026-08-31, PI-FLAGGED — I MEASURED AGAINST THE WRONG TARGET
+
+**The PI: *"we said clearly that the prediction must be up to 6 seconds, this was
+already included in v1.7 etc."* They are right, it is binding, and it is documented.**
+Everything below this section measured our rollout against the trainer's `--o5-k`
+**default of 20**. That was the wrong reference and it **understated the gap**.
+
+**§4b, "the binding 6-second horizon — the clause that reshaped v6"** (`Project
+Steering/Reports/2026-08-15-2200-campaign-science-addendum.md` §1.5), verbatim:
+
+> *"Every planned trajectory spans up to 6 s — covering BOTH the operative and the
+> tactical horizon in one kinematically consistent rollout."*
+> *"a 60-step control sequence (a, κ) @10 Hz integrated through ONE unicycle rollout
+> 0→6 s — never two stitched trajectories."*
+> **"Emission heads scale k=20 → k=60."**
+
+⛔ **So `k=20` is the SUPERSEDED value, and §4b says so explicitly.** My recommendation
+to "restore `--o5-k` to its default 20" pointed at the number the programme had already
+retired. The binding target is **k=60 / 6.0 s**, and it is already in the code:
+`v6.py:153` `PLAN_STEPS = 60`, `:155` `HORIZON_S = PLAN_STEPS * DT # 6.0 s`.
+
+⭐ **AND THE THREE BANDS ARE NOT MY DISCOVERY — THEY ARE THIS SPEC.** §4b states
+*"0–2 s is the operative band, 2–6 s the tactical band"*. The label bands I measured
+**implement a decided design**, they do not reveal one. Presenting them as a finding
+was wrong; what is genuinely new is only the *gap* between them and what we trained.
+
+### ⛔⛔ THE REAL NUMBER: WE TRAIN 1.7 % OF THE BINDING HORIZON
+
+MEASURED on the O1 arm's own snapshots, **all 8, steps 5,000 → 22,500**:
+
+```
+step     |W1|      |W2|       |W4|      | Δ from previous snapshot
+5000    3.7283   0.026154   0.026113   |   --        --          --
+7500    6.0255   0.026154   0.026113   | 2.897e+00  0.000e+00  0.000e+00
+...
+22500   7.7516   0.026154   0.026113   | 3.203e-01  0.000e+00  0.000e+00
+```
+
+⛔ **The h=2 and h=4 heads are BIT-IDENTICAL across 17,500 steps — Δ exactly
+`0.000e+00`.** Not "small gradient": **zero gradient**. They have never been updated.
+This is stronger than MM-E14's "untrained" and it holds **with `w_o1_ctrl 1.0` in
+force**, so it is a property of the wiring, not of any objective.
+
+⇒ `--horizons 1 2 4` is effectively `[1]`. The **actually trained** prediction horizon
+is **h=1 = 0.1 s**:
+
+| | horizon | vs the binding 6.0 s |
+|---|---|---|
+| §4b requirement | 6.0 s (k=60) | — |
+| nominal rollout `o5_k 8` | 0.8 s | **13 %** |
+| `o5_k 20` (the superseded value) | 2.0 s | 33 % |
+| **actually trained (only h=1 gets gradient)** | **0.1 s** | **1.7 %** |
+
+⚠️ **AND THE PROGRAMME ALREADY SUSPECTED THIS, a week before I measured it.**
+`PLAN_TO_THE_GOAL_2026-08-24.md:159`: *"The 0.6 s horizon may be too short for actions
+to matter at all."* That note now has a mechanism and a worse number — it is not 0.6 s,
+it is **0.1 s**. ⭐ And the same failure class was caught once before: the 2026-08-12
+report records that inheriting `plan.max_horizon = 20` *"would have made the 6 s horizon
+structurally untrainable"*. It was caught there and missed here.
+
+⚠️ **Scope, so this is not over-claimed:** §4b binds the *planned trajectory* and the
+*emission heads* to 6 s / k=60. Whether the world-model rollout term `o5_k` must equal
+60 is a design question I am not settling here. The defensible statement is narrower and
+sufficient: **a world model trained to imagine 0.1 s cannot support a planner required
+to roll to 6 s**, and no objective on top can supply reach the trunk was never trained
+to have.
+
+⇒ **The `o5k20` arm as prepared is aimed at the retired number and should not run as
+specified.** Corrected recommendation in §"recipe consequence" below.
+
+## ⛔ AND THE LADDER IS SHORTER THAN IT WAS DESIGNED TO BE — WE SHORTENED IT
+*(⚠️ superseded by the correction above: the reference here is the `--o5-k 20` default,
+not the binding 6 s. Kept because the three-flags-below-default pattern still stands.)*
 
 **MEASURED on Thor's authoritative stack** (`/home/nvidia/TanitAD/stack/scripts/
 train_v6_staged.py`, the tree these checkpoints were trained with — MM-C12
