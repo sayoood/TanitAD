@@ -10576,3 +10576,119 @@ teammate's prose and carried into a launch command unchecked. Operating-standard
 rule 1 says a claim that decides a GPU-day must be MEASURED or PUBLISHED. **A flag
 name in a launch command is exactly such a claim** — the cheapest possible
 measurement is `--help`, and it is now a mandatory step of writing any chain.
+
+---
+
+## TRAIN-C12 — 2026-08-30 — ⛔ TRAIN-C6 RECURRED IN THE EXPERIMENT WRITTEN TO PREVENT IT, PLUS AN EXIT CONDITION THAT DID NOT DESCRIBE ITS OWN ARM
+
+**Class:** `committed-rule-that-does-not-match-the-object-it-names` — TRAIN-C6's
+class, twice, in its own successor. **D-SAFE-CAL returned VOID and produced no
+verdict about `d_safe`.** Five arms, ~40 min of GPU, no science, and both causes
+are mine.
+
+### Defect 1 — exit 5 described an arm that does not exist
+
+Exit 5 read *"if arm D (proximity at weight 0) moves anything at all ⇒ instrument
+failure."* But `--reward proximity0` sets `weights["proximity"] = 0.0` on top of
+`DEFAULT_WEIGHTS`, **which never contained `proximity`** — so arm D is
+bit-identical to the plain default-reward arm. It is a **full RL run**; moving its
+own objective is expected. The exit could only ever fire, and it did.
+
+⭐ **And arm D is in fact the healthiest object in the table:** it reproduces the
+banked `prev w=1 no-prox` arm to four decimals (ΔR1 **−0.0660 vs −0.0660**,
+collision **−0.0017 vs −0.0017**) across a different session and a modified
+script. **The condition declared a perfect reproduction to be a harness failure.**
+⇒ The rule I meant — *"D must MATCH the banked arm; a DIVERGENCE is the alarm"* —
+has the **opposite sign** to the rule I wrote.
+
+### Defect 2 — the PRIMARY diagnostic was blind to the term under study
+
+`R4_component_means` is scored with the DEFAULT spec so arms stay comparable, and
+the default spec **has no `proximity`**. So the decomposition the prereg calls
+*"the PRIMARY diagnostic"* could not see the only term the experiment varied —
+**exactly TRAIN-C6**, in the successor written to avoid TRAIN-C6.
+
+⚠️ **Why C6's rule did not catch it: the rule was too NARROW.** It said *"check
+every pre-registered EXIT against the readout's output schema"*. I checked the
+exits — that is why R5 exists — and never checked the **diagnostic**. A rule
+scoped to one artifact class leaves the neighbouring class unguarded, and the
+neighbouring class is where it recurred.
+
+### ⭐ THE WIDENED RULE
+
+1. **Audit EVERY committed artifact against the readout's output schema — exits,
+   diagnostics, controls, and arm definitions alike.** For each, name the field
+   that carries its answer. C6's exit-only scope is superseded.
+2. **A committed condition must be checked against the OBJECT it names, not only
+   against the metric.** Write out what the arm actually computes — here, that
+   `proximity0` == `DEFAULT_WEIGHTS` — before committing a rule about how it
+   should behave. An arm definition is as capable of being wrong as a metric.
+3. **Prefer REPRODUCTION conditions to MOTION conditions for controls.** *"The
+   control must match a banked value"* is falsifiable and self-calibrating;
+   *"the control must not move"* silently assumes the control is inert, and an
+   assumption inside a control is where nothing else is looking.
+
+⚠️ **What kept this from being worse:** the exit was selected **mechanically by
+code** from the committed table, so the VOID was visible instead of being
+reasoned away — and I reported the VOID rather than overriding a branch I no
+longer liked after seeing the data. *(A pre-registration whose author may set
+aside inconvenient branches post-hoc is not a pre-registration.)* The saved
+`ckpt_after.pt` from TRAIN-C5 then recovered the missing decomposition for **zero
+GPU** — that one fix has now rescued **three** separate analyses.
+
+---
+
+## MM-C6 — 2026-08-30 — ⛔ I WROTE A SPEC THAT SAID "MEASURE, DON'T TRUST THE DOC", AND ALL THREE OF ITS OWN FACTS WERE WRONG
+
+**Class:** `absence-at-one-depth` + `name-collision-by-suffix` — the
+"absence found at ONE location is not absence" rule, violated inside a document
+whose §0 cites that very rule to warn its reader.
+
+**What happened.** `SPEC_V7_LABELS_CONSUMER.md` was written from probes I ran
+myself against the real blob, explicitly to avoid inheriting a teammate's prose
+(MM-C5, an hour earlier). The TrainingFlyWheel implemented it, measured against the
+data as the spec instructed, and found **three divergences — all mine**:
+
+| # | my claim | the measurement |
+|---|---|---|
+| 1 | "the 8 `NOT_YET_EXTRACTABLE` tokens are exactly the classes with zero occurrences, per head" | ⛔ FALSE. The mask holds `LANE_CHANGE_L_FOLLOW_ROUTE`/`_R_FOLLOW_ROUTE` — **strategic goal** tokens — not `LANE_CHANGE_L`/`_R`, the **tactical lat action** tokens. Both tactical tokens are absent AND unmasked ⇒ **two dead logits** on the head carrying our factored-lat/lon fix. |
+| 2 | "`nav_command` … oracle:true, 100 %, all 4,719" | ⛔ HALF FALSE. `provenance == "ego-future"` **is** 4,719/4,719; the `oracle` KEY is present on only **4,190**, absent on 529 (all `NAV_FOLLOW_ROAD`, all still ego-future). A guard written `if rec["oracle"]` raises `KeyError`; `rec.get("oracle") is True` passes **529 ego-future records through as NON-oracle**. |
+| 3 | "`disputed`/`time_basis`/`t_nominal_s` … **zero hits**, top level and inside five named sections — the prep doc was written against an older blob" | ⛔ FALSE, AND THE MOST EXPENSIVE. All three live **one level deeper**, per goal inside `g_tac.goals.<TOKEN>`. **2,343 records (49.6 %) carry at least one DISPUTED goal.** `agree` likewise is `alpamayo.lateral.agree` / `.longitudinal.agree`, not `alpamayo.agree`. Following my spec would have **DISCARDED A DISPUTED FLAG ON HALF THE CORPUS** — a condition D-LABEL-GT requires be respected. |
+
+⚠️ **Error 3 is the rule failing inside its own citation.** I searched the top
+level and five named sub-dicts, found nothing, and wrote a **positive absence
+claim** — then blamed the prep doc for citing fields that "do not exist". They
+existed the whole time, one nesting level below where I stopped. AGENT_OPERATING
+_STANDARD #2 says probe a second path, a second name, and **the tool that owns the
+fact**; a recursive walk is the second probe here, and it costs one line.
+
+⚠️ **Error 1 is a NEW shape worth naming: a name collision by SUFFIX.**
+`LANE_CHANGE_L` and `LANE_CHANGE_L_FOLLOW_ROUTE` are different tokens in different
+heads, and set arithmetic over a flat mask silently conflated them. My §3 table even
+*printed* "absent (⇒ masked): LANE_CHANGE_L, LANE_CHANGE_R, ABORT_LC" — the
+implication arrow was an assumption, not a computed result. ⇒ **When two vocabularies
+share a stem, do the arithmetic PER HEAD against that head's own token list, and
+print the intersection rather than asserting it.**
+
+⭐ **WHAT ACTUALLY CAUGHT IT — and this is the transferable part.** Not review, and
+not care: the spec told the implementer *"implement against the schema, not against
+the doc"*, and the implementer replied that **the spec is itself a doc** and made the
+loader validate its assumptions against the data at load time, failing loudly on
+divergence. That instruction is what found my three errors. ⇒ **A spec should
+require the code to re-derive the spec's own numbers and fail if they differ** — a
+document cannot be trusted to describe data, including this one, including the one
+you are reading.
+
+⚠️ **And it generalises to the numbers, not just the fields:** my §7 asked for a
+RESULT.md "carrying the corpus-wide counts the module computes (so the numbers above
+are re-derived by the code, not copied from this spec)". That clause was right and it
+is the only reason the divergences surfaced as *data* rather than as opinion. Keep it
+in every spec.
+
+**Not corrected unilaterally:** whether the two tactical tokens belong in
+`NOT_YET_EXTRACTABLE` is a DATA question (extractor limit vs corpus fact vs — the
+possibility that matters most — real lane changes being absorbed into the 1,115
+`NUDGE_L`/`NUDGE_R` labels, which would be a label defect on 26 h rather than an
+absence). Referred to the DataFlyWheel, who owns the extractor. The loader meanwhile
+uses `vocab ∪ empirically-absent` with per-token provenance, so no arm carries a dead
+logit while the question is open.
