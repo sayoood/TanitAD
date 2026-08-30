@@ -68,6 +68,13 @@ corpus be mistaken for an accidental one.
   07:00–19:00 local-clock split and is named `daynight_clock` so nobody reads it
   as measured. It will mislabel shoulder hours and high-latitude summers.
 
+## ⛔ THE INERTIA NUMBERS BELOW ARE SUPERSEDED — see `STOP_COVERAGE_AND_WINDOW_CORRECTION.md`
+
+They were computed over the **full egomotion span (median 139.3 s)**, not the
+**20 s camera clip the model sees** — 7× too much driving. Corrected on the
+trainable window: **76.1 %** of clips never stop (not 61.3 %), mean stopped
+fraction **6.8 %**. The CONCLUSION strengthens; the magnitudes were wrong.
+
 ## ⭐ CODEVILLA INERTIA — measured for the first time, and it does NOT apply to us
 
 Codevilla's *more-data-is-worse* result was **not** an argument about high-speed

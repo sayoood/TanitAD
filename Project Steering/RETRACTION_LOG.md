@@ -10857,3 +10857,51 @@ on our data — so the document's own scope caveat was correct and I still ranke
 item first. **A stated caveat does not protect a ranked recommendation**: the ranking
 is what a reader acts on. Items transferred by argument should not be ranked against
 items measured on our own system.
+
+---
+
+## MM-C10 — 2026-08-30 — ⛔ I COMMITTED A CORPUS STATISTIC COMPUTED OVER 7× MORE DRIVING THAN THE MODEL EVER SEES
+
+**Class:** **C82** — *price the artifact the CONSUMER reads* — in its **fourth
+costume today**, and the first time it reached the register as a committed number.
+
+**What happened.** D-INERTIA-B1 was committed at ~11:40 with the stopped-frame
+statistic computed over the **egomotion parquet's full span — a median 139.3 s
+(median 2,828 rows)**. **The camera clip the model ever sees is 20 s** (201 frames
+at 10 Hz). The statistic therefore described **~7× more driving than training shows.**
+
+| statistic | ⛔ committed (139 s) | ✅ correct (20 s) |
+|---|---|---|
+| stopped-frame mean | 5.6 % | **6.8 %** |
+| clips with NO stopped frames | 61.3 % | **76.1 %** |
+| any stop | 38.7 % | **23.9 %** |
+| full STOP→LAUNCH cycle | 12.4 % | **11.8 %** |
+
+⭐ **THE CONCLUSION SURVIVED AND STRENGTHENED** — 76.1 % of clips never stop on the
+window that matters, so the inertia mechanism has even less mass to form on. **The
+direction was right and the magnitudes were wrong.**
+
+⚠️ **AND THAT IS THE DANGEROUS SHAPE, NOT THE SAFE ONE.** An error that moves a
+result **in the direction you already believe** is the one that gets checked least. I
+committed it, wrote it into a register row and reported it upward without asking what
+span the number covered — because the answer it gave was the answer I expected. Had it
+moved against the conclusion I would have interrogated it.
+
+⚠️ **The second measure is where it would actually have cost us.** On the wrong span,
+stop-launch coverage reads **33.3 % / 12.4 %** and looks comfortable. On the trainable
+window it is **23.9 % / 11.8 %**, with only **115 clips (2.4 %)** containing
+stop-and-go. **A coverage gap can be hidden by a span error and read as adequacy** —
+and adequacy is a conclusion nobody re-examines.
+
+⭐ **THE RULE: A CORPUS STATISTIC MUST BE COMPUTED OVER THE WINDOW THE MODEL
+CONSUMES, AND THE WINDOW MUST BE STATED BESIDE THE NUMBER.** An ego/label file is
+routinely LONGER than the trainable clip; the length of the file on disk is not the
+length of the experience. The fix shipped with the correction emits **both spans side
+by side**, so the delta is visible rather than assumed — which is the right shape for
+any statistic whose span is not obvious from the file.
+
+⚠️ **Provenance, and the part that generalises:** the finder had already noticed the
+parquet held ~3,131 rows where a 20 s clip at 10 Hz is ~200, and *walked past their own
+evidence*. The signal was present and unread. ⇒ **When a row count is an order of
+magnitude off your mental model, that IS the finding — stop and resolve it before
+computing anything on top of it.**
