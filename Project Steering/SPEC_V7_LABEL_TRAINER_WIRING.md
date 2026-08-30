@@ -67,9 +67,10 @@ strict superset on the fields the incumbent supervises:
 
 | v7 field | destination | lossless? |
 |---|---|---|
-| `str_action` | existing `a_str` key | ✅ 1:1 |
-| `str_goal` | existing `g_str` key | ✅ 1:1 |
-| `t0_s`, `bands` | the existing `_in_band` test | ✅ same semantics |
+| `a_str.token` / `g_str.token` | existing `a_str` / `g_str` id | ✅ 1:1 |
+| `a_str.args` / `g_str.args` | ⛔ **NOT 1:1 — a named DICT, not a vector** (§3.2) | needs an encoder |
+| `t0_s` | the existing `_in_band` test | ✅ 1:1 |
+| `bands` | ⛔ **NOT the same semantics — see §3.1** | three bands, not one |
 | `tac_lat`, `tac_lon` | ⭐ **NEW** batch keys — factored, kept apart | new supervision |
 | `tac_anchor` | ⭐ **NEW** key: the admissible predicted geometric goal point | new supervision |
 | `audit` (incl. per-goal `disputed`) | ⛔ **NEVER a training input** (`v7_labels.py:117`) | audit only |
@@ -78,6 +79,66 @@ strict superset on the fields the incumbent supervises:
 ⛔ **The factored pair must NOT be recombined into a single 5-way manoeuvre class.**
 That lat+lon-mixing softmax is the programme's largest known defect and the whole
 reason the factored labels exist.
+
+### ⛔ 3.1 — v7 CARRIES THREE BANDS, ONE PER ABSTRACTION LAYER, AND THEY DIFFER ON EVERY RECORD
+
+⚠️ **This corrects my own first draft, which called the band "same semantics".** MEASURED
+on the v7 blob (301 records sampled, `s2_labels_v7.jsonl.gz` md5 `e22acf70…`):
+
+```
+bands.operative_s  [0.0,  2.0]
+bands.tactical_s   [2.0,  6.0]
+bands.strategic_s  [8.0, 30.0]      tactical_s != strategic_s on 301 of 301 records
+```
+
+The incumbent record has **one** `valid_window_s` and `S2WindowSupervision._in_band`
+applies it to every family. v7 has **three**, and they differ on every record sampled.
+⇒ **`_in_band` must be evaluated PER FAMILY**: the strategic pair against
+`strategic_s`, the new factored-tactical keys against `tactical_s`. Applying one band
+to all families would supervise the tactical heads over the strategic horizon —
+silently, with no error and no count anomaly.
+
+⚠️ **And the v7 record has NO `valid_window_s` key at all**, so
+`rec.get("valid_window_s", band)` **silently falls back to the FILE-LEVEL default**.
+That is the dangerous shape: not a crash, a plausible wrong answer. *(I initially
+wrote that the key was present-with-`None` and would raise. It is simply absent and
+the default fires — demonstrated, not assumed, which is why the claim survived
+one round and this one did not.)*
+
+⭐ **The three bands are not a formatting quirk — they are the hierarchy made
+mechanical.** Operative validity is ~2 s, tactical ~4 s, strategic ~22 s. The nav
+directive requires conditioning all three layers; the bands say each layer is valid
+over a different horizon. Per-layer band evaluation therefore *is* the hierarchy, not
+an implementation detail of it.
+
+### ⛔ 3.2 — `args` IS A NAMED DICT, NOT THE INCUMBENT'S [8] VECTOR
+
+`a_str` / `g_str` carry `{token, args, provenance, reason}` — the same four fields the
+incumbent block has, which is why the token maps 1:1. But the payload differs:
+
+```
+"a_str": {"token": "PREPARE_TURN_R_FOLLOW_ROUTE",
+          "args": {"within_m": 106.5, "by_time_s": 11.1},
+          "provenance": "geometry", "reason": "106.5 m / 11.1s ahead, not yet begun"}
+```
+
+`_check_block` produces an `[8]` float vector plus its mask; v7's `args` is a **named
+dict**. ⇒ the adapter needs an explicit arg encoder mapping named keys onto the
+vector slots, and the **mask** must mark the slots the record did not name. Do not
+assume positional agreement.
+
+### ⭐ 3.3 — A SECOND, INDEPENDENT REASON NOT TO CONVERT
+
+`load_s2_labels` requires a per-record `disjointness.situation_classifier_output_used:
+false` stamp (5 references, incl. `assert_payload_disjoint`). **v7 records carry no
+such stamp — 0 of 201 sampled.** `tanitad/data/v7_labels.py` has **zero** references
+to it and loads all four artifacts (4,719 / 4,719 / 4,572 / 147).
+
+⇒ converting to the old contract would have required **inventing** a disjointness
+stamp our builder never emits — i.e. **asserting a property instead of recording
+one**, which is precisely the failure the stamp exists to prevent. The vocabulary-loss
+argument was the known reason not to convert; this is a second, independent one that
+neither of us had found.
 
 ## 4. Two traps that will bite this wiring
 
@@ -109,7 +170,7 @@ at `:4601`.
 
 ⚠️ These are the **schema-fixed rebuilds**; the earlier blobs were unloadable.
 
-### ⛔ 5.1 — THE BLOCKER: I CANNOT FIND THESE ARTIFACTS ANYWHERE THE TRAINER RUNS
+### ✅ 5.1 — RESOLVED: THE BLOBS ARE ON HF BY DESIGN (the probe log is kept below)
 
 **MEASURED 2026-08-30, four locations plus the tool that owns the fact:**
 
@@ -136,9 +197,7 @@ send the implementer to discover this after starting.
 and **where it lives** — repo path / Thor path / HF repo id. *An artifact in one
 agent's context is not done* (operating standard, rule 3), and this is exactly the
 failure that stranded TanitEval, REF-B v2's architecture and the pod ops bundle on
-single disks. ⚠️ State this as **"not found at five probes"**, never as *"it was never
-built"* — the EVAL6 result shows the work is real, and the missing thing may be a
-path I have not looked at.
+single disks. **✅ RESOLVED same day.** The blobs live on **HF `Sayood/tanitad-v7-training-corpus` (PRIVATE)** — `labels/`, `index/`, `splits/` — deliberately, because they are multi-MB data artifacts and the repo carries the CODE and the MANIFESTS that describe them. The repo-side code and records are **STAGED, not committed** (agents stage, never push), which is why `git ls-tree` on the producing branch shows a tip predating them. ⇒ **the five probes were the five places a REPO-RESIDENT artifact would be, and the artifact is not repo-resident.** ⭐ The correction worth keeping is not "look in more places" — it is that *"pushed and round-tripped"* names no address. **A remote is not a location; a repo id is.** That is the deliverable-manifest rule doing its job, and the reason the finding closed in one message instead of a day. ⚠️ Kept here rather than deleted because the probe log is what makes the resolution checkable.
 
 ## 6. The val round, and the two-root eval corpus
 
