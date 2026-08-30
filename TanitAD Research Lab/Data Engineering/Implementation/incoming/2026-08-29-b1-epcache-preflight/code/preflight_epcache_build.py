@@ -33,7 +33,11 @@ from tanitad.data.physicalai import (_physicalai_root_of,  # noqa: E402
 
 ap = argparse.ArgumentParser()
 ap.add_argument("--root", required=True)
-ap.add_argument("--cam-glob", default="r0/camera_front_wide_120fov/*.mp4")
+ap.add_argument("--cam-glob", default="r0/camera_front_wide/*.mp4",
+                help="⛔ `camera_front_wide` — the directory name discovery globs "
+                     "(physicalai.py:466). `_120fov` is the FEATURE name and "
+                     "belongs in FILE names; this default was wrong until "
+                     "2026-08-30 and made the gate fail on a VALID root.")
 ap.add_argument("--sample", type=int, default=40)
 ap.add_argument("--seed", type=int, default=0)
 a = ap.parse_args()

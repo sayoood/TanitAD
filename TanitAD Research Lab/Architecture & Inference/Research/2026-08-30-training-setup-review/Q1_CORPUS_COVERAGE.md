@@ -94,3 +94,55 @@ there is no epoch, and episode coverage is already total. Steps should be chosen
 by convergence, not by a division whose frame does not apply.
 ⚠️ The only coverage-motivated change worth considering is **batch 16 on hosts
 where it is free**, and that is a throughput question with a per-host answer.
+
+---
+
+## 6. ⭐ THE OPEN HALF, CLOSED: O4 weighting changes coverage almost not at all
+
+`Same simulation, driven by the LIVE arm's draw distribution. Saliency computed
+with the REAL `kinematic_saliency` from REAL actions derived from 120 episodes of
+`physicalai-train-14231cd29c74`, weights via the real
+`saliency_weights(s, alpha=1.0, floor=0.25)` — the argparse defaults
+(`:7120-7122`). MEASURED, not modelled.`
+
+**Two structural facts read from source before simulating**, because they bound
+what weighting can possibly do:
+
+* `InteractionSampler` draws **episodes UNIFORMLY** — `v6.py:786` says it
+  verbatim, *"Episodes are drawn uniformly so no episode is starved"*. ⇒ **EPISODE
+  coverage is structurally unaffected and stays 100 %.**
+* `floor = 0.25 > 0` keeps every window **reachable** (`v6.py:759`, *"NOT
+  cosmetic"*). ⇒ weighting can slow the tail; it cannot zero any window.
+
+**The measured skew is mild:** per-window weight spread **2.98× max/min**, and
+quantiles (relative to mean) `[0.555, 0.756, 0.881, 1.068, 1.739]`. The floor
+dominates whenever saliency is small, which is most windows.
+
+| corpus / config | WINDOW unif → weighted | FRAME mean | FRAME p1 |
+|---|---|---|---|
+| parity, batch 8 | 44.00 % → **43.60 %** | 98.18 % → 97.91 % | 93.84 % → 92.39 % |
+| parity, batch 16 | 68.59 % → **67.16 %** | 99.05 % → 98.95 % | 96.98 % → 96.45 % |
+| B1, batch 8 | 25.43 % → **25.41 %** | 96.41 % → 95.83 % | 86.93 % → **84.77 %** |
+| B1, batch 16 | 44.26 % → **43.85 %** | 98.19 % → 97.92 % | 93.47 % → 92.39 % |
+
+⇒ **Window coverage is unchanged to within 1.4 pp; frame mean within 0.6 pp; the
+tail (p1) degrades by at most 2.2 pp.** The worry that O4 weighting would collapse
+the tail is **not supported** — the floor is doing exactly the job its docstring
+claims.
+
+### ⚠️ A comparison error I made and corrected
+
+The first weighted run simulated only the **120** episodes whose weights I had
+measured, while the uniform run took its minimum over **all 2,376 / 4,713**. A
+minimum over 120 samples is a far less extreme order statistic, so the weighted
+arm appeared to *improve* the tail (MIN 87.8 % vs 64.8 %) — **purely a sample-size
+artifact.** The 120 measured weight profiles are now **tiled to corpus size** so
+both runs take the minimum over the same number of episodes.
+
+⚠️ **And read `MIN` with care even now:** it is a single-sample extreme over
+thousands of episodes and is correspondingly volatile (B1 b8: 64.8 % uniform vs
+73.6 % weighted — the ordering here is noise, not signal). **`p1` is the stable
+tail statistic** and it is the one quoted in the conclusion above.
+
+⇒ **Consequence unchanged:** the coverage weakness is a tail on B1 at batch 8, its
+lever is batch 16 at the same step count, and O4 weighting is not the cause.

@@ -89,3 +89,70 @@ The nav token is a route signal and is admissible. ⛔ Inadmissible: any nav inp
 derived from the **situation classifier's output** — posterior, argmax, embedding,
 or any feature of them. Every arm states what its nav token is computed from; for
 B1 the answer is **the ego's own future path**, which is why §2 is mandatory.
+
+---
+
+## AMENDMENT 1 (2026-08-30, BEFORE any arm exists) — a T0 NULL is not evidence of inertness either
+
+§0 commits that a T0 **regression** on a nav arm is escalated to T1 rather than
+auto-failed. ⭐ **The converse needs the same protection, and it did not have it.**
+
+PUBLISHED (DINO-WM, App. A.4.1): over **92× data**, prediction fidelity moved
+**+4 %** (SSIM 0.949 → 0.987) while control competence moved **11.5×** (planning
+success 0.08 → 0.92). ⚠️ **Our corpus sits squarely in their n = 1,000–5,000
+band — where prediction has already saturated and control has not.** That is a
+published instance of our exact symptom: a change can be nearly invisible to a
+prediction metric while moving control substantially.
+
+⇒ **A T0 null on the nav arm is NOT evidence that the channel is inert.** T0 is a
+prediction-fidelity tier and it is the tier the literature shows saturating first.
+
+**Committed consequence, before numbers exist:**
+
+* Outcome **2** (INERT) may be declared **only** on the conjunction *T0 null*
+  **AND** *shuffled-nav does not degrade*. ⛔ **A T0 null alone may never close
+  the channel** — that reading is now explicitly refused.
+* Symmetrically, outcome **1** may not be declared on a T0 gain alone; outcome 3
+  already covers the T0-gain-without-shuffled-degradation case.
+* ⇒ In both directions **`shuffled-nav` is the arbiter, not T0.** T0 is context.
+
+⭐ This is the same shape as §0 with the sign flipped, and both exist because the
+gate we own is a T0 gate while the claim we care about is T1. Writing both down in
+advance is what stops the gate from deciding a question it cannot see.
+
+---
+
+## AMENDMENT 2 (2026-08-30, still BEFORE any arm) — the TRIPLE-DAMPING confound
+
+MEASURED while wiring the operative port: **nav is damped three times over at
+initialisation**, and two of those I added.
+
+| damper | value at init | source |
+|---|---|---|
+| FiLM `to_scale_shift` | **zero-init** | `predictor.py:41-42` — pre-existing, and it makes the WHOLE conditioning pathway inert at init |
+| `NavConditioner.layer_proj` | **zero-init** | mine, for loss-continuity at introduction |
+| `NavConditioner.gate` | **0.1** | mine, per H26 so nav cannot dilute `act_emb` |
+
+⭐ **The FiLM half is not nav-specific and I verified that with a control**: at
+init, changing the ACTIONS moves the output exactly as little as changing nav
+(both `False`). The zero-init is global, so it is not a nav bug — but it *does*
+compound with the two dampers I added.
+
+⛔ **THE CONFOUND, COMMITTED IN ADVANCE:** if the nav arm reads **INERT**
+(prereg outcome 2 — T0 null AND shuffled-nav does not degrade), there are now
+**two competing explanations** and they demand different responses:
+
+1. **the channel carries nothing useful** — the finding we are testing for; or
+2. **the channel never engaged** because it started at zero behind a 0.1 gate and
+   training had no gradient pressure to grow it.
+
+⇒ **Outcome 2 may NOT be declared without reading the learned gate.** Committed
+diagnostic: report `NavConditioner.gate` per layer at every checkpoint. A gate
+that **grew** and still shows no shuffled-nav degradation is explanation 1 — a
+real inert-channel finding. A gate still **at or below its 0.1 init** is
+explanation 2, an engagement failure, and the correct response is a
+**gate-init / warmup arm**, not a conclusion about nav.
+
+⚠️ Writing this now matters because after the fact "it never engaged" is
+indistinguishable from "it was useless" — and the second is the more publishable
+of the two, which is exactly why it must not be the default reading.

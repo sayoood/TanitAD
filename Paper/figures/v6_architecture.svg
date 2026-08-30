@@ -40,7 +40,7 @@
   <rect x="52" y="150" width="176" height="70" rx="6" class="soft"/>
   <text x="140" y="175" text-anchor="middle" class="t sm" font-weight="600">Front camera video</text>
   <text x="140" y="193" text-anchor="middle" class="m xs">120° cyl · 256×640 · 10 Hz</text>
-  <text x="140" y="209" text-anchor="middle" class="m xs">+ proprioception (v₀, controls)</text>
+  <text x="140" y="209" text-anchor="middle" class="m xs">+ EGO STATE (see below) · v₀</text>
   <path class="flow" d="M140,220 L140,246"/>
   <rect x="52" y="250" width="176" height="142" rx="6" class="panel"/>
   <text x="140" y="274" text-anchor="middle" class="t sub">Encoder <tspan class="mono">f_θ</tspan></text>
@@ -88,6 +88,20 @@
   <circle cx="296" cy="222" r="3" fill="#1e7a4f"/>
   <circle cx="296" cy="428" r="3" fill="#1e7a4f"/>
   <circle cx="296" cy="570" r="3" fill="#1e7a4f"/>
+
+
+  <!-- ============ EGO STATE (the action channel) ============ -->
+  <!-- ⛔ CEILING y=884 (full-width rule) and y=912 (STAGED TRAINING heading).
+       Nothing in this block may cross 884. -->
+  <text x="52" y="750" class="m h2">EGO STATE</text>
+  <rect x="52" y="760" width="176" height="116" rx="6" fill="#eef7fa" stroke="#bcd9e4" stroke-width="1.2"/>
+  <text x="140" y="778" text-anchor="middle" class="t sm" font-weight="600">IS the action conditioning</text>
+  <text x="140" y="792" text-anchor="middle" class="m xs">3 channels — not a separate path</text>
+  <rect x="62" y="799" width="156" height="36" rx="4" fill="#ffffff" stroke="#cfe0e8"/>
+  <text x="140" y="813" text-anchor="middle" class="m xs"><tspan class="mono">steer_accel_v</tspan> · INCUMBENT</text>
+  <text x="140" y="828" text-anchor="middle" class="m xs"><tspan class="mono">omega_accel_v</tspan> · measured ego</text>
+  <text x="140" y="850" text-anchor="middle" class="m xs"><tspan font-weight="700">v₀ → unicycle INTEGRATOR only</tspan></text>
+  <text x="140" y="866" text-anchor="middle" class="m xs">--cond-param · incumbent is DEFAULT</text>
 
   <!-- ============ STRATEGIC ============ -->
   <rect x="336" y="132" width="686" height="132" rx="8" fill="#faf7fd" stroke="#d9c9ea" stroke-width="1.4"/>
@@ -213,7 +227,7 @@
     <line x1="0" y1="14" x2="34" y2="14" stroke="#c2701a" stroke-width="2.1" marker-end="url(#ahGoal)"/>
     <text x="44" y="18" class="s xs">goals — condition the layer below</text>
     <line x1="0" y1="36" x2="34" y2="36" stroke="#0e7490" stroke-width="1.9" marker-end="url(#ahAct)"/>
-    <text x="44" y="40" class="s xs">actions — condition the layer's own predictor</text>
+    <text x="44" y="40" class="s xs">actions — condition the layer's own predictor; they ARE the ego state</text>
     <line x1="0" y1="58" x2="34" y2="58" stroke="#64748b" stroke-width="1.4" stroke-dasharray="5 4" marker-end="url(#ahUp)"/>
     <text x="44" y="62" class="s xs">latents upward — stop-grad or EMA-slow copy</text>
     <line x1="0" y1="80" x2="34" y2="80" stroke="#1e7a4f" stroke-width="2.0" marker-end="url(#ahNav)"/>

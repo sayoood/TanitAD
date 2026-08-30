@@ -97,7 +97,30 @@ look tighter than the evidence supports.
 |---|---|
 | `build_navsim_eval.py`, `validate_navsim.py`, `navsim_loader.py` | repo `code/` (this package) |
 | `BUILD.json`, `clean_subframe.json`, `frames_provenance.parquet` (per-scene sha256 + observed frac) | repo `raw/` |
-| frame bank (417 MB, 204×`.npy` + per-rig src maps), `navsim_ego_sidecar.parquet`, `valid_mask_intersection.npy` | dev box `C:/Users/Admin/tanitad-wt/_s2build/navsim/corpus` — **not in git (size); ships to HF with the eval release** |
+| frame bank (417 MB, 204×`.npy` + per-rig src maps), `navsim_ego_sidecar.parquet`, `valid_mask_intersection.npy` | dev box `C:/Users/Admin/tanitad-wt/_s2build/navsim/corpus` — not in git (size). ⭐ **BIT-REPRODUCIBLE, see below — so it is not a stranded artifact.** |
+
+### ⭐ The 417 MB bank does not need shipping: it is bit-reproducible (VERIFIED)
+
+"An artifact on one disk is NOT done" (operating standard 3) normally forces a
+ship. Here the stronger guarantee was available and was **measured**, not assumed:
+the corpus was rebuilt from the committed `build_navsim_eval.py` and compared
+scene by scene against the first build's banked hashes.
+
+```
+scenes 204/204, same token set
+per-scene frame-bank sha256 IDENTICAL   204/204
+observed_frac identical                 True
+mean_px identical                       True
+rebuild cost                            1.2 min, no GPU
+```
+
+⇒ the repo holds everything needed to regenerate the bank exactly, and
+`raw/frames_provenance.parquet` carries the per-scene sha256 so **any rebuild can
+be VERIFIED rather than trusted**. That is a better guarantee than a shipped
+blob: bytes on a disk can rot silently, whereas a hash-checked deterministic
+rebuild cannot diverge without saying so. *(The build was written to be
+deterministic by construction — no RNG, no timestamps, no thread-order
+dependence in the output.)*
 | `FRAME_DECISION.md`, `EGO_SIDECAR.md`, `ADAPTER_CHANGES.md` | this package |
 
 ## Remaining
