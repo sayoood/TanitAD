@@ -4,6 +4,19 @@
 distribution of our 26 h — I thought we sampled with strategy, but let's check it
 again."* · Blob `s2_labels_v7.jsonl.gz` md5 `ee44875916ae7c0ac002c6716b9658ea`.
 
+## ⛔ SUPERSEDED IN PART — read `STRATA_AND_INERTIA.md` first
+
+**The headline below ("B1 is an availability intersection, NOT a designed
+sample") is WITHDRAWN.** B1 IS the product of a PI-ordered stratified selection
+(`2026-08-06-alpamayo-augmentation/DESIGN.md:3,:12,:49`). My measurement was
+right — B1 equals the Alpamayo record set exactly — but **a set that equals its
+parent is not unselected; its PARENT was selected**, one level up, when clips
+were chosen to send for labelling. Class C85. The country table in §3 below is
+the stratification's own fingerprint, which I attributed to the wrong actor.
+
+**What still stands unchanged:** the r0/parity speed-gate finding (§2), the
+metadata-tags correction (§3), and every measured number here.
+
 ## The answer in one line
 
 **There are TWO corpora and they were selected in OPPOSITE ways — and the one we
