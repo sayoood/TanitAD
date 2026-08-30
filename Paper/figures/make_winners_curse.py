@@ -32,7 +32,7 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.abspath(os.path.join(HERE, os.pardir, os.pardir))
 GATES = os.path.join(
-    REPO, "TanitAD Research Hub", "Architecture & Inference", "Implementation",
+    REPO, "TanitAD Research Lab", "Architecture & Inference", "Implementation",
     "incoming", "2026-08-07-hierarchical-wm-redesign")
 
 W, H = 1240, 806

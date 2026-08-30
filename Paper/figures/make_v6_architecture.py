@@ -1,4 +1,39 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1140" width="1600" height="1140" font-family="Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif">
+"""Generate Figure: the v6 architecture — the ONLY figure that had no generator.
+
+⛔ WHY THIS EXISTS. Every other figure in `Paper/figures/` is produced by a
+`make_*.py` (drift_story, drift_frontier, lf0_bev_panels, v58f_results,
+winners_curse). `v6_architecture.svg` was hand-authored, so edits to it were
+unreproducible and its PNG could drift from its SVG with nothing to catch it.
+MEASURED consequence: the PNG was stale against the SVG after the 2026-08-30 nav
+edit and only a manual note flagged it.
+
+The figure body is held verbatim below with the LAYOUT CONSTANTS named, so a
+future edit can move a band without hunting magic numbers, and re-running this
+script always produces both artifacts from one source.
+
+⚠️ PNG: cairosvg's native cairo is frequently absent on Windows (the same note
+`make_drift_story.py:379` carries). This script degrades exactly as that one
+does — SVG always, PNG when the renderer exists — and says which it produced.
+"""
+import os
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+
+# ---- layout constants (the bands the arrows and boxes key on) --------------
+COL_L_X, COL_L_W = 52, 176          # left input/encoder/nav column
+LAYER_X, LAYER_W = 336, 686         # the four layer boxes
+BAND_STRATEGIC = (132, 132)         # (y, height)
+BAND_TACTICAL = (338, 148)
+BAND_OPERATIVE = (544, 144)
+BAND_CONTEXT = (744, 96)
+#: ⛔ the ONLY vertical corridor clear of BOTH gradient-isolation markers
+#: (circles at x=312,y=558 and x=322,y=352, r=10) AND of the encoder taps
+#: (verticals at x=248/262/276/290). The nav bus runs here; moving it into
+#: 302..332 would draw nav straight through an isolation barrier.
+NAV_BUS_X = 296
+NAV_TAPS_Y = (222, 428, 662)        # one per layer, each inside its band
+
+SVG = r"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1140" width="1600" height="1140" font-family="Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif">
   <defs>
     <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M0,0 L10,5 L0,10 z" fill="#46586e"/></marker>
@@ -261,3 +296,47 @@
   <text x="52" y="1092" class="m xs">Every measure shown is either a defect measured on v5f (W3 action gain, P1 lead-state absence, P7/P8 readouts) or a mechanism published in the JEPA world-model line</text>
   <text x="52" y="1108" class="m xs">(V-JEPA 2 / 2-AC, DINO-WM, Drive-JEPA, AD-L-JEPA, V-JEPA 2.1). The frozen battery P1–P9 + I4 is the single yardstick carried from v5f to v6.</text>
 </svg>
+"""
+
+
+def main() -> None:
+    sp = os.path.join(HERE, "v6_architecture.svg")
+    with open(sp, "w", encoding="utf-8") as f:
+        f.write(SVG)
+    print(f"wrote {sp}")
+    pp = os.path.join(HERE, "v6_architecture.png")
+    try:
+        import cairosvg
+        cairosvg.svg2png(bytestring=SVG.encode("utf-8"), write_to=pp, scale=2.0)
+        print(f"wrote {pp}")
+    except Exception as e:                                  # noqa: BLE001
+        # OSError: cairosvg installed without its native cairo (Windows).
+        print(f"cairosvg unavailable ({type(e).__name__}) — SVG only. "
+              f"⚠️ {os.path.basename(pp)} is now STALE.")
+        print(BROWSER_FALLBACK)
+
+
+#: ⭐ A RENDERER THAT NEEDS NO CAIRO. Probed 2026-08-30 across both boxes: no
+#: cairosvg, no rsvg-convert, no inkscape, no chromium, no magick — the PNG
+#: looked unrenderable. It is not: ANY browser can rasterise the SVG through a
+#: canvas, and the bytes come back as base64.
+#:
+#:   1. build an HTML page holding the SVG as a `data:image/svg+xml;base64,...`
+#:      on an `Image`, drawn into a `<canvas width=2400 height=1710>` (paint an
+#:      opaque white rect first — the SVG has no background of its own);
+#:   2. `canvas.toDataURL("image/png").split(",")[1]` -> base64;
+#:   3. decode to bytes and write.
+#:
+#: ⚠️ `command -v convert` on Windows resolves to
+#: `C:\Windows\system32\convert` — the FAT-to-NTFS FILESYSTEM CONVERTER, not
+#: ImageMagick. A script that probes for `convert` and runs it finds a real
+#: binary and does something entirely unrelated. Probe for `magick` instead.
+BROWSER_FALLBACK = (
+    "   → no cairo needed: rasterise via a browser canvas "
+    "(SVG as a data: URI on an Image → drawImage into a 2400x1710 canvas → "
+    "toDataURL('image/png')), then base64-decode to the file. "
+    "See the note above this constant for the exact recipe.")
+
+
+if __name__ == "__main__":
+    main()

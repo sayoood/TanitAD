@@ -11139,3 +11139,53 @@ environment for an entire campaign.
 failed, no error appeared, and the controls passed. **A silent version divergence
 produces plausible numbers by construction** — it is only visible if you ask which
 file was imported, and nothing was asking.
+
+---
+
+## MM-C13 — 2026-08-30 — ⛔ I SEARCHED THOROUGHLY INSIDE A CATEGORY THAT EXCLUDED THE ANSWER, AND CALLED IT ABSENCE
+
+**Class:** `thoroughness-within-the-wrong-category` — a sharpening of *"absence
+found at ONE location is not absence"*. The rule as written says probe a second
+**path** and a second **name**. This failure passed both of those tests and was
+still wrong, because the miss was in the **KIND** of thing searched for.
+
+**What happened.** The v6 architecture figure's PNG needed regenerating and
+`cairosvg` was absent. I probed **both machines** for `rsvg-convert`, `inkscape`,
+`magick`, `convert`, `chromium`, `chromium-browser`, `google-chrome`, and checked
+`cairosvg` in Thor's training venv *and* its system python. All absent. I reported
+to the PI that the PNG **could not be rendered anywhere in the fleet** and escalated
+it as a pre-ship blocker on Figure 1.
+
+⛔ **WRONG. No renderer needed installing at all.** The DataFlyWheel rasterised it
+through a **browser canvas**: SVG as a `data:image/svg+xml;base64` URI on an
+`Image`, `drawImage` into a `<canvas width=2400 height=1710>`, `toDataURL('image/png')`,
+decode, write. Output 2400×1710 RGBA, 553 KB, dimensions exactly matching the file it
+replaced.
+
+⚠️ **My search was thorough and correctly executed — inside a category that could not
+contain the answer.** Every probe asked *"is an SVG-rendering COMMAND-LINE BINARY
+installed?"*. The capability existed in a different form the whole time. **Two probes
+at two paths and two names does not help when the wrong NOUN is being searched for.**
+
+⭐ **THE RULE: before reporting a capability absent, ask what OTHER FORM the
+capability could take — not just where else the same form might live.** "No CLI
+renderer" and "cannot render" are different claims, and I asserted the second having
+tested only the first. *(A browser, a library binding, a service, a different
+language's stdlib, an already-installed application's scripting interface — each is a
+form, not a location.)*
+
+⚠️ **AND IT WAS ESCALATED TO THE PI**, which is what makes it worth a retraction
+rather than a note: a false "impossible" spends someone else's attention and can
+change a plan. **The cost of an incorrect absence claim scales with how far it
+travels**, and this one travelled to the top.
+
+## A second trap found in the same search, worth its own line
+
+**`command -v convert` on Windows resolves to `C:\Windows\system32\convert` — the
+FAT-to-NTFS FILESYSTEM CONVERTER, not ImageMagick.** A script probing for `convert`
+finds a **real binary**, runs it, and does something entirely unrelated to images.
+
+⇒ **Probe for `magick`, never `convert`.** Same family as the inert-flag class
+(MM-C11) with the object swapped: **the NAME resolves, so the check passes, and the
+thing behind the name is not what was asked for.** Worth proposing for the CLAUDE.md
+traps section — it is a general Windows hazard, not a TanitAD one.

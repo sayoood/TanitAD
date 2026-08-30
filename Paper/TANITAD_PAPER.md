@@ -257,13 +257,28 @@ OOD self-monitoring.
 
 ## 3. The 4B architecture
 
-> **Figure 1 — `Paper/figures/v6_architecture.svg`** (also rendered as `.png`): the v6
+> **Figure 1 — `Paper/figures/v6_architecture.svg`** (also rendered as `.png`; both
+> emitted by `Paper/figures/make_v6_architecture.py`): the v6
 > instantiation of the 4B architecture — the four layers with their own predictors and
 > action spaces, goals conditioning downward, latents flowing upward through tested
 > gradient-isolation barriers, the single 6 s trajectory spanning the operative and
 > tactical bands, the frozen-latent interpretation heads, and the staged S-W → S-T →
 > S-S → (optional) S-J training protocol with its per-stage gates. §3.9 gives the
 > formal objects; §10 gives the staging rationale and its evidence.
+>
+> **The NAV COMMAND channel (added 2026-08-30)** is drawn as a single green bus with one
+> tap per layer, because that is what it is: **one shared embedding conditioning all three
+> layers** — an *input*, not a head and not a loss, conditioning the world model "like the
+> actions" (additive into the same `cond` the actions build). It is shared precisely so the
+> layers cannot drift apart in how they read the route. ⛔ **On this corpus the channel is an
+> ORACLE**: every `nav_command` in B1 carries `provenance: "ego-future"` (4,719/4,719),
+> computed from the ego's own future path — and flagship v1's route head, an exact bijection
+> of the nav it was fed (369/369, 81/81), **scored 1.0000**, an echo read as skill. Its
+> controls therefore ship with it — `real · hold · shuffled · none` — and **no capability
+> claim from a nav arm is admissible without `shuffled` reported beside it**, `shuffled`
+> being the decisive one: no degradation means the channel is INERT. A missing token
+> **raises**; it never defaults, so an arm cannot train without the channel while its config
+> claims otherwise.
 
 ### 3.1 Overview and notation
 
