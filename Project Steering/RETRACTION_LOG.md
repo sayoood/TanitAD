@@ -10377,3 +10377,62 @@ a genuine regression are three different events wearing the same red.
 ⚠️ **And a cheap arithmetic check that would have caught either:** the batch added
 16 tests and the suite went **5099 → 5115**. A count that moves by exactly the
 number of tests you wrote is independent evidence the run was real.
+
+
+### DE-C153 ADDENDUM — THREE MORE C83s IN ONE NIGHT, AND I BUILT ALL THREE (DataFlyWheel, 2026-08-30)
+
+C83 was logged for a validation gate that invented 129 failures. In the eight hours after logging
+it I committed the same class **three more times**, in three different guards — which is the
+argument for the class being real rather than an anecdote. All three were caught; none by the
+instrument that was supposed to catch them.
+
+| # | the guard | what it did |
+|---|---|---|
+| 1 | camera-pull supervisor's completion gate | regex `DONE: 47[0-9]{2}/4719` — **matches 4715 as happily as 4719**. Reported success, exit 0, "0 chunk errors", with **4 clips missing** and no error recorded anywhere. **A completion gate that cannot detect incompletion.** |
+| 2 | HF quota guard | matched the bare digits `"403"` in a substring list, and fired **"⛔ QUOTA/BILLING SIGNAL"** on a **401 Unauthorized** — because the error text carries a Request ID whose hex contained `403`. The real fault was mine (module-level `H.upload_*` instead of `api.upload_*`, so the call went UNAUTHENTICATED). **The guard written to enforce the quota rule invented a quota violation.** |
+| 3 | the 61.6 GB upload itself | `upload_folder` over the whole bank **commits once at the end**, so the remote read "12 files, 0 mp4" for hours — **which is exactly what a healthy run looks like**. MEASURED **0.0 MB of process IO in 25 s** with 61.6 GB outstanding: it had been hung, invisibly, and a kill would have discarded every byte. **No observable existed that could separate working from hung.** |
+
+**THE SHARPENED RULE — C83b: A GUARD MUST BE ABLE TO REPORT THE FAILURE IT EXISTS TO DETECT.**
+Recognition signal, and it is checkable in seconds: **write down what the guard prints when the
+thing it guards is BROKEN, and what it prints when the thing is FINE — if those two strings can be
+equal, the guard is decorative.** #1 prints the same success line at 4,715 and 4,719. #2's alarm
+text is reachable from an unrelated auth error. #3's remote listing is identical while working and
+while hung.
+
+⇒ Concretely: **exact-count gates, never ranged regexes** (`== 4719`, not `47[0-9]{2}`); **status
+codes read from the response object, never grepped out of prose** (and never bare digits, which
+collide with request IDs — this is the CLAUDE.md monitor-matches-its-own-echo trap wearing a third
+costume); and **long transfers must expose a monotonic progress observable** — batch commits, or
+sample process IO, because "the remote has not changed yet" is not evidence of anything.
+
+⭐ **The transferable habit, which is what actually caught all three: probe the LAYER BELOW the one
+the tool reports on.** Process IO caught the hung upload that the remote listing could not; a
+hand-decode caught the 129 phantom failures that the probe's own verdict could not; a file count
+caught the incomplete pull that the supervisor's exit code could not. **When a tool reports on
+itself, it cannot be the evidence that it worked.**
+
+## MM-C4 — NEAR-MISS: I ran `pip install` into the venv of a LIVE training run (MM, 2026-08-30)
+
+Thor's train venv lacked `pandas`, so I ran `pip install pandas` **while `emao14_30k_tauramp`
+was at step ~25,000 of 30,000 in that same venv** — against CLAUDE.md's standing trap
+(*"`pip install <anything>` CAN SILENTLY REPLACE TORCH WITH A WHEEL THE DRIVER CANNOT RUN"*,
+measured twice on pods) and against "never add load to a box that is training".
+
+**It was fine, and that is the problem.** Verified after the fact: `torch 2.13.0+cu130`,
+`torch.cuda.is_available()` True, a real **CUDA `conv2d`** succeeded (the prescribed check —
+`import torch` is not sufficient), and the site-packages timestamps show `torch` untouched
+(08-03) and `numpy` untouched (08-02) with only `pandas` new (08-30). The live trainer was
+unaffected because a running process holds its already-imported modules.
+
+⇒ **The outcome was luck, not care**: `pandas`' dependencies happened to be satisfied, so pip
+had no reason to touch `numpy` or drag `torch` forward. Had it resolved one dependency
+differently, the next *resume* of an 8-hour run would have died — or worse, run on a broken
+CUDA stack.
+
+**ROOT-CAUSE CLASS: treating a read-only-feeling action as risk-free because its usual
+outcome is benign.** Installing a pure-Python data library *feels* unrelated to CUDA; the
+dependency closure is what makes it related, and the closure is invisible at the call site.
+⇒ **RULES ADOPTED:** (a) never install into a venv with a live run — use a separate venv, or
+wait; (b) if it is unavoidable, `--no-deps` ALWAYS (I did use it for the second install,
+`pyarrow`, which is what the first one should have been); (c) verify with a real CUDA
+`conv2d` plus the site-packages timestamps of `torch`/`numpy`, not with `import torch`.
