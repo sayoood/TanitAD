@@ -1,0 +1,163 @@
+  tanitad imported from C:\Users\Admin\tanitad-wt\stack\tanitad\__init__.py
+
+  MM-E6 — DRIFT DECOMPOSITION: environment vs self-reference
+  corpus physicalai-val130-heldout · SCORED 80 clips / FIT 49 clips (disjoint) · k=4 · PCA band [0:8) · rank(P)=96 · device cpu
+  scene bank dino_heldout_16x40 (grid 16x40) · repaired applied-shuffle control ON · 3-frame secondary OFF · OMP_NUM_THREADS 8
+
+[predictor] RESIDUAL_HEAD_INIT_SCALE=0.001  (identity-scale start)
+[v6] O6 rank gate CAN rule: --spectrum-accum 43 x 48 rows/call -> ceiling 2063 >= 1024
+[v6] params 19.30 M / budget 300 M · arm shared-encoder+adapters · per-group {'encoder': 0.97, 'readout': 0.01, 'predictor_op': 7.57, 'layer_tac': 4.88, 'layer_str': 3.56, 'planner': 0.69, 'aux': 1.62, 'interp': 0.0}
+[v6] X3 isolation pass=True violations={'planner_to_encoder': 0, 'tactical_to_below': 0, 'strategic_to_below': 0}
+[geometry] v6_probe_trunk: NON-DEFAULT - 256x640px, f_ref 305.58, cylindrical, HFOV 120.00deg / VFOV 45.46deg, tokens 640 (16x40 @ patch 16), state_dim 2048, cache fragment {'geom': '256x640f305.5775cyl'}
+[geometry] WARNING: this frame (120.00deg) EXCEEDS comma2k19's entire field (65.203deg). comma2k19 cannot supply it at any resolution — it must be letterboxed (geometry_mode='rectify', explicit unobserved mask), given its own frame, or dropped from the mix. That is a PI decision, not a default.
+  === postrain30k (step 30000) — SCORED 80 clips, 7680 rows, d_z 2048 ===
+    P: lambda 10 (clip-disjoint inner split, 12/49 clips held) · in-FIT R2 +0.0145
+    P: ⭐ OUT-OF-SAMPLE R2 (scene->z, SCORED) +0.0006
+    P [SCENE-SHUFFLED]: lambda 10 (clip-disjoint inner split, 12/49 clips held) · in-FIT R2 +0.0122
+    P [SCENE-SHUFFLED]: ⭐ OUT-OF-SAMPLE R2 -0.0004 (must be ~0 or negative)
+    participation: z_full 25.16 · z_env 14.00 · z_res 25.16 · z_env 11.89 · rand96 19.91 · rand_res 25.14 · z_env 14.00
+    P prep 126s
+    ⛔ VECTORISATION GATE: max|rff_fold_multi - rff_fold| = 1.155e-13 PASS
+    column                                    r     shuf   r-shuf       t     d
+    ---------------------------------------------------------------------------
+    z_full (r_full)                     +0.6671  -0.0026  +0.6697  130.40  2048
+    z_env rank96 (r_env)                +0.0332  -0.0129  +0.0461    7.78  2048
+    z_res (r_res)                       +0.6660  +0.0007  +0.6653  121.63  2048
+    z_env SCENE-SHUFFLED (ctrl)         +0.0337  -0.0090  +0.0427    6.88  2048
+    rand96 (rank-matched ctrl)          +0.6553  -0.0000  +0.6554  136.91  2048
+    rand_res (ADDED null)               +0.6661  -0.0000  +0.6661  120.53  2048
+    constant (ctrl)                     +0.0000  +0.0000  +0.0000    0.00     1
+    z_env APPLIED-SHUFFLED (REPAIRED ctrl)  -0.0048  +0.0031  -0.0079   -1.22  2048
+    ⭐ REPAIRED CONTROL  r_env +0.0332 vs applied-shuffled -0.0048, paired diff +0.0381 [0.0281, 0.0483] [COLLAPSES — r_env IS scene-driven]
+
+    CONTROLS  constant +0.000000 [PASS] · scene-shuffled +0.0337 vs r_env +0.0332, paired diff -0.0005 [-0.004, 0.0031] [FAIL — SUPERSEDED, does not gate] · rank-matched +0.6553 vs r_env +0.0332 [PASS (distinct)]
+    P POWER   out-of-sample R2 +0.0006 [⚠️ P IS UNDERPOWERED — reads vacuous] · shuffled-P -0.0004
+    share_self 0.9975 [0.9961, 0.9986]  ·  null (rank-matched pair) 0.5081 [0.5056, 0.5107]  ·  diff +0.4894 [0.4864, 0.4922]
+    arm elapsed 393s
+
+[predictor] RESIDUAL_HEAD_INIT_SCALE=0.001  (identity-scale start)
+[v6] O6 rank gate CAN rule: --spectrum-accum 43 x 48 rows/call -> ceiling 2063 >= 1024
+[v6] params 19.89 M / budget 300 M · arm shared-encoder+adapters · per-group {'encoder': 0.97, 'readout': 0.01, 'predictor_op': 7.57, 'layer_tac': 4.88, 'layer_str': 3.56, 'planner': 0.69, 'aux': 2.21, 'interp': 0.0}
+[v6] X3 isolation pass=True violations={'planner_to_encoder': 0, 'tactical_to_below': 0, 'strategic_to_below': 0}
+[geometry] v6_probe_trunk: NON-DEFAULT - 256x640px, f_ref 305.58, cylindrical, HFOV 120.00deg / VFOV 45.46deg, tokens 640 (16x40 @ patch 16), state_dim 2048, cache fragment {'geom': '256x640f305.5775cyl'}
+[geometry] WARNING: this frame (120.00deg) EXCEEDS comma2k19's entire field (65.203deg). comma2k19 cannot supply it at any resolution — it must be letterboxed (geometry_mode='rectify', explicit unobserved mask), given its own frame, or dropped from the mix. That is a PI decision, not a default.
+  === o14fut30k (step 30000) — SCORED 80 clips, 7680 rows, d_z 2048 ===
+    P: lambda 10 (clip-disjoint inner split, 12/49 clips held) · in-FIT R2 +0.0191
+    P: ⭐ OUT-OF-SAMPLE R2 (scene->z, SCORED) +0.0014
+    P [SCENE-SHUFFLED]: lambda 100000 (clip-disjoint inner split, 12/49 clips held) · in-FIT R2 +0.0000
+    P [SCENE-SHUFFLED]: ⭐ OUT-OF-SAMPLE R2 -0.0000 (must be ~0 or negative)
+    participation: z_full 25.81 · z_env 12.52 · z_res 25.82 · z_env 11.11 · rand96 19.96 · rand_res 25.80 · z_env 12.52
+    P prep 183s
+    ⛔ VECTORISATION GATE: max|rff_fold_multi - rff_fold| = 2.487e-14 PASS
+    column                                    r     shuf   r-shuf       t     d
+    ---------------------------------------------------------------------------
+    z_full (r_full)                     +0.6698  +0.0105  +0.6593  124.01  2048
+    z_env rank96 (r_env)                +0.0698  -0.0023  +0.0721   10.74  2048
+    z_res (r_res)                       +0.6699  +0.0089  +0.6610  121.80  2048
+    z_env SCENE-SHUFFLED (ctrl)         +0.0710  -0.0081  +0.0791   10.36  2048
+    rand96 (rank-matched ctrl)          +0.6580  +0.0058  +0.6523  129.54  2048
+    rand_res (ADDED null)               +0.6704  +0.0051  +0.6653  128.14  2048
+    constant (ctrl)                     +0.0000  +0.0000  +0.0000    0.00     1
+    z_env APPLIED-SHUFFLED (REPAIRED ctrl)  -0.0006  +0.0005  -0.0012   -0.22  2048
+    ⭐ REPAIRED CONTROL  r_env +0.0698 vs applied-shuffled -0.0006, paired diff +0.0705 [0.056, 0.0844] [COLLAPSES — r_env IS scene-driven]
+
+    CONTROLS  constant +0.000000 [PASS] · scene-shuffled +0.0710 vs r_env +0.0698, paired diff -0.0012 [-0.006, 0.0035] [FAIL — SUPERSEDED, does not gate] · rank-matched +0.6580 vs r_env +0.0698 [PASS (distinct)]
+    P POWER   out-of-sample R2 +0.0014 [⚠️ P IS UNDERPOWERED — reads vacuous] · shuffled-P -0.0000
+    share_self 0.9893 [0.9855, 0.9926]  ·  null (rank-matched pair) 0.5093 [0.5067, 0.512]  ·  diff +0.4799 [0.4754, 0.4842]
+    arm elapsed 454s
+
+[predictor] RESIDUAL_HEAD_INIT_SCALE=0.001  (identity-scale start)
+[v6] O6 rank gate CAN rule: --spectrum-accum 43 x 48 rows/call -> ceiling 2063 >= 1024
+[v6] params 20.87 M / budget 300 M · arm shared-encoder+adapters · per-group {'encoder': 0.97, 'readout': 0.01, 'predictor_op': 7.57, 'layer_tac': 4.88, 'layer_str': 3.56, 'planner': 0.69, 'aux': 3.19, 'interp': 0.0}
+[v6] X3 isolation pass=True violations={'planner_to_encoder': 0, 'tactical_to_below': 0, 'strategic_to_below': 0}
+[geometry] v6_probe_trunk: NON-DEFAULT - 256x640px, f_ref 305.58, cylindrical, HFOV 120.00deg / VFOV 45.46deg, tokens 640 (16x40 @ patch 16), state_dim 2048, cache fragment {'geom': '256x640f305.5775cyl'}
+[geometry] WARNING: this frame (120.00deg) EXCEEDS comma2k19's entire field (65.203deg). comma2k19 cannot supply it at any resolution — it must be letterboxed (geometry_mode='rectify', explicit unobserved mask), given its own frame, or dropped from the mix. That is a PI decision, not a default.
+  === emao14_30k (step 30000) — SCORED 80 clips, 7680 rows, d_z 2048 ===
+    P: lambda 10 (clip-disjoint inner split, 12/49 clips held) · in-FIT R2 +0.0045
+    P: ⭐ OUT-OF-SAMPLE R2 (scene->z, SCORED) +0.0004
+    P [SCENE-SHUFFLED]: lambda 10 (clip-disjoint inner split, 12/49 clips held) · in-FIT R2 +0.0040
+    P [SCENE-SHUFFLED]: ⭐ OUT-OF-SAMPLE R2 -0.0001 (must be ~0 or negative)
+    participation: z_full 26.25 · z_env 16.15 · z_res 26.24 · z_env 11.74 · rand96 20.91 · rand_res 26.24 · z_env 16.15
+    P prep 153s
+    ⛔ VECTORISATION GATE: max|rff_fold_multi - rff_fold| = 1.315e-13 PASS
+    column                                    r     shuf   r-shuf       t     d
+    ---------------------------------------------------------------------------
+    z_full (r_full)                     +0.6952  +0.0045  +0.6907  135.94  2048
+    z_env rank96 (r_env)                +0.0364  -0.0033  +0.0397    5.79  2048
+    z_res (r_res)                       +0.6949  +0.0056  +0.6893  136.80  2048
+    z_env SCENE-SHUFFLED (ctrl)         +0.0380  -0.0060  +0.0440    6.43  2048
+    rand96 (rank-matched ctrl)          +0.6888  +0.0063  +0.6825  133.65  2048
+    rand_res (ADDED null)               +0.6939  +0.0061  +0.6877  142.85  2048
+    constant (ctrl)                     +0.0000  +0.0000  +0.0000    0.00     1
+    z_env APPLIED-SHUFFLED (REPAIRED ctrl)  -0.0053  -0.0081  +0.0028    0.65  2048
+    ⭐ REPAIRED CONTROL  r_env +0.0364 vs applied-shuffled -0.0053, paired diff +0.0417 [0.0304, 0.0544] [COLLAPSES — r_env IS scene-driven]
+
+    CONTROLS  constant +0.000000 [PASS] · scene-shuffled +0.0380 vs r_env +0.0364, paired diff -0.0016 [-0.0048, 0.0017] [FAIL — SUPERSEDED, does not gate] · rank-matched +0.6888 vs r_env +0.0364 [PASS (distinct)]
+    P POWER   out-of-sample R2 +0.0004 [⚠️ P IS UNDERPOWERED — reads vacuous] · shuffled-P -0.0001
+    share_self 0.9973 [0.9953, 0.9985]  ·  null (rank-matched pair) 0.5037 [0.5018, 0.5057]  ·  diff +0.4936 [0.4907, 0.4959]
+    arm elapsed 533s
+
+[predictor] RESIDUAL_HEAD_INIT_SCALE=0.001  (identity-scale start)
+[v6] O6 rank gate CAN rule: --spectrum-accum 43 x 48 rows/call -> ceiling 2063 >= 1024
+[v6] params 19.89 M / budget 300 M · arm shared-encoder+adapters · per-group {'encoder': 0.97, 'readout': 0.01, 'predictor_op': 7.57, 'layer_tac': 4.88, 'layer_str': 3.56, 'planner': 0.69, 'aux': 2.21, 'interp': 0.0}
+[v6] X3 isolation pass=True violations={'planner_to_encoder': 0, 'tactical_to_below': 0, 'strategic_to_below': 0}
+[geometry] v6_probe_trunk: NON-DEFAULT - 256x640px, f_ref 305.58, cylindrical, HFOV 120.00deg / VFOV 45.46deg, tokens 640 (16x40 @ patch 16), state_dim 2048, cache fragment {'geom': '256x640f305.5775cyl'}
+[geometry] WARNING: this frame (120.00deg) EXCEEDS comma2k19's entire field (65.203deg). comma2k19 cannot supply it at any resolution — it must be letterboxed (geometry_mode='rectify', explicit unobserved mask), given its own frame, or dropped from the mix. That is a PI decision, not a default.
+  === e4_l4_crop (step 2000) — SCORED 80 clips, 7680 rows, d_z 2048 ===
+    P: lambda 1 (clip-disjoint inner split, 12/49 clips held) · in-FIT R2 +0.5706
+    P: ⭐ OUT-OF-SAMPLE R2 (scene->z, SCORED) +0.2611
+    P [SCENE-SHUFFLED]: lambda 100000 (clip-disjoint inner split, 12/49 clips held) · in-FIT R2 +0.0000
+    P [SCENE-SHUFFLED]: ⭐ OUT-OF-SAMPLE R2 -0.0000 (must be ~0 or negative)
+    participation: z_full 6.85 · z_env 4.08 · z_res 7.94 · z_env 4.18 · rand96 7.41 · rand_res 6.79 · z_env 4.08
+    P prep 170s
+    ⛔ VECTORISATION GATE: max|rff_fold_multi - rff_fold| = 1.510e-14 PASS
+    column                                    r     shuf   r-shuf       t     d
+    ---------------------------------------------------------------------------
+    z_full (r_full)                     +0.4950  +0.0019  +0.4931   32.87  2048
+    z_env rank96 (r_env)                +0.1316  -0.0054  +0.1370   11.29  2048
+    z_res (r_res)                       +0.4880  -0.0004  +0.4884   29.81  2048
+    z_env SCENE-SHUFFLED (ctrl)         +0.1299  -0.0058  +0.1357   10.67  2048
+    rand96 (rank-matched ctrl)          +0.4659  +0.0055  +0.4604   30.41  2048
+    rand_res (ADDED null)               +0.4967  +0.0000  +0.4967   32.81  2048
+    constant (ctrl)                     +0.0000  +0.0000  +0.0000    0.00     1
+    z_env APPLIED-SHUFFLED (REPAIRED ctrl)  -0.0065  +0.0005  -0.0069   -1.11  2048
+    ⭐ REPAIRED CONTROL  r_env +0.1316 vs applied-shuffled -0.0065, paired diff +0.1381 [0.1116, 0.1632] [COLLAPSES — r_env IS scene-driven]
+
+    CONTROLS  constant +0.000000 [PASS] · scene-shuffled +0.1299 vs r_env +0.1316, paired diff +0.0017 [-0.0073, 0.0101] [FAIL — SUPERSEDED, does not gate] · rank-matched +0.4659 vs r_env +0.1316 [PASS (distinct)]
+    P POWER   out-of-sample R2 +0.2611 [PASS] · shuffled-P -0.0000
+    share_self 0.9322 [0.9134, 0.9498]  ·  null (rank-matched pair) 0.5320 [0.523, 0.5415]  ·  diff +0.4002 [0.3799, 0.4193]
+    arm elapsed 536s
+
+[predictor] RESIDUAL_HEAD_INIT_SCALE=0.001  (identity-scale start)
+[v6] O6 rank gate CAN rule: --spectrum-accum 43 x 48 rows/call -> ceiling 2063 >= 1024
+[v6] params 19.30 M / budget 300 M · arm shared-encoder+adapters · per-group {'encoder': 0.97, 'readout': 0.01, 'predictor_op': 7.57, 'layer_tac': 4.88, 'layer_str': 3.56, 'planner': 0.69, 'aux': 1.62, 'interp': 0.0}
+[v6] X3 isolation pass=True violations={'planner_to_encoder': 0, 'tactical_to_below': 0, 'strategic_to_below': 0}
+[geometry] v6_probe_trunk: NON-DEFAULT - 256x640px, f_ref 305.58, cylindrical, HFOV 120.00deg / VFOV 45.46deg, tokens 640 (16x40 @ patch 16), state_dim 2048, cache fragment {'geom': '256x640f305.5775cyl'}
+[geometry] WARNING: this frame (120.00deg) EXCEEDS comma2k19's entire field (65.203deg). comma2k19 cannot supply it at any resolution — it must be letterboxed (geometry_mode='rectify', explicit unobserved mask), given its own frame, or dropped from the mix. That is a PI decision, not a default.
+  === postrain30k_freeze (step 30000) — SCORED 80 clips, 7680 rows, d_z 2048 ===
+    P: lambda 0.1 (clip-disjoint inner split, 12/49 clips held) · in-FIT R2 +0.9023
+    P: ⭐ OUT-OF-SAMPLE R2 (scene->z, SCORED) +0.5147
+    P [SCENE-SHUFFLED]: lambda 100 (clip-disjoint inner split, 12/49 clips held) · in-FIT R2 +0.0162
+    P [SCENE-SHUFFLED]: ⭐ OUT-OF-SAMPLE R2 -0.0016 (must be ~0 or negative)
+    participation: z_full 9.98 · z_env 5.82 · z_res 15.43 · z_env 6.82 · rand96 8.52 · rand_res 10.02 · z_env 5.82
+    P prep 141s
+    ⛔ VECTORISATION GATE: max|rff_fold_multi - rff_fold| = 3.941e-15 PASS
+    column                                    r     shuf   r-shuf       t     d
+    ---------------------------------------------------------------------------
+    z_full (r_full)                     +0.3907  +0.0005  +0.3902   17.89  2048
+    z_env rank96 (r_env)                +0.2134  -0.0007  +0.2141   10.33  2048
+    z_res (r_res)                       +0.3489  +0.0030  +0.3459   16.63  2048
+    z_env SCENE-SHUFFLED (ctrl)         +0.2135  -0.0028  +0.2163   10.19  2048
+    rand96 (rank-matched ctrl)          +0.3703  +0.0001  +0.3702   18.00  2048
+    rand_res (ADDED null)               +0.3865  -0.0001  +0.3866   18.07  2048
+    constant (ctrl)                     +0.0000  +0.0000  +0.0000    0.00     1
+    z_env APPLIED-SHUFFLED (REPAIRED ctrl)  -0.0001  +0.0041  -0.0042   -0.53  2048
+    ⭐ REPAIRED CONTROL  r_env +0.2134 vs applied-shuffled -0.0001, paired diff +0.2134 [0.1727, 0.2523] [COLLAPSES — r_env IS scene-driven]
+
+    CONTROLS  constant +0.000000 [PASS] · scene-shuffled +0.2135 vs r_env +0.2134, paired diff -0.0002 [-0.0108, 0.0112] [FAIL — SUPERSEDED, does not gate] · rank-matched +0.3703 vs r_env +0.2134 [PASS (distinct)]
+    P POWER   out-of-sample R2 +0.5147 [PASS] · shuffled-P -0.0016
+    share_self 0.7279 [0.6753, 0.7848]  ·  null (rank-matched pair) 0.5214 [0.5021, 0.5404]  ·  diff +0.2065 [0.152, 0.2666]
+    arm elapsed 413s
+
+-> C:\Users\Admin\AppData\Local\Temp\claude\G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD\8e7cfa33-c625-47cf-88aa-711db80ac113\scratchpad\mm_e6_v2_16x40.json
+RC=0
