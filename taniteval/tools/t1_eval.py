@@ -922,15 +922,105 @@ def _stack_scripts_on_path():
     return p
 
 
+_GEOM_FIELDS = ("frame_h", "frame_w", "frame_hfov", "projection")
+
+
+def ckpt_geometry(ckpt_path):
+    """The geometry a v6/v7 checkpoint was TRAINED at, or ``None``.
+
+    Reads the trainer's own recorded flags — it does not re-derive them, because
+    "a geometry can never be spelled two different ways" is the rule
+    ``tanitad.geometry`` exists to enforce. Prefers the sibling ``config.json``
+    (cheap, exact, written by the trainer) and falls back to the checkpoint's
+    ``config.args``; a multi-GB ckpt is not loaded twice when the sidecar is there.
+
+    Returns ``None`` for flagship (``'model'``+``'grounding'``) checkpoints, so
+    the v1/v4/v5f path is provably untouched.
+    """
+    import json as _json
+    args = None
+    side = os.path.join(os.path.dirname(os.path.abspath(ckpt_path)), "config.json")
+    if os.path.exists(side):
+        try:
+            with open(side, encoding="utf-8") as fh:
+                args = (_json.load(fh) or {}).get("args")
+        except Exception:                                   # noqa: BLE001
+            args = None
+    if args is None:
+        import torch
+        ck = torch.load(ckpt_path, map_location="cpu", weights_only=False)
+        if not (isinstance(ck, dict) and "stack" in ck and "model" not in ck):
+            return None
+        args = (ck.get("config") or {}).get("args")
+        del ck
+    if not isinstance(args, dict):
+        return None
+    geo = {k: args.get(k) for k in _GEOM_FIELDS if args.get(k) is not None}
+    if args.get("f_ref") is not None:
+        geo["f_ref"] = args["f_ref"]
+    return geo or None
+
+
+def adopt_ckpt_geometry(a):
+    """Make the eval frame follow the CHECKPOINT, or REFUSE on a contradiction.
+
+    ⛔ THE DEFECT THIS CLOSES. ``t1_eval``'s geometry defaults reproduce the
+    DEPLOYED 256x256 / f_ref 266 / **pinhole** frame, while every v7 arm is
+    256x640 / hfov 120 / **cylindrical**. Run without flags, T1 rolled a v7
+    checkpoint in the wrong projection and printed numbers that LOOK VALID —
+    strictly worse than a crash, and the same family as the pinhole-FOV-on-a-
+    cylindrical-corpus trap (a correct formula quoted outside its projection).
+
+    ⚠️ The previous mitigation was a COMMENT telling the operator to pass four
+    flags. A rule that is true and stated where a human must remember to apply it
+    is not a guard; this programme has logged that class repeatedly. So:
+
+    * a geometry field the caller did NOT pass is taken FROM THE CHECKPOINT;
+    * a field the caller passed that CONTRADICTS the checkpoint is a hard exit
+      naming both values — never a silent override in either direction.
+
+    Flagship checkpoints carry no such record, so they are returned untouched.
+    """
+    geo = ckpt_geometry(a.ckpt)
+    if not geo:
+        return None
+    adopted, conflict = {}, []
+    for k, v in geo.items():
+        cur = getattr(a, k, None)
+        if cur is None:
+            # ⛔ hfov and f_ref are two spellings of one quantity and
+            # `frame_from_args` refuses both — never adopt one over a passed other.
+            if k == "frame_hfov" and getattr(a, "f_ref", None) is not None:
+                continue
+            if k == "f_ref" and getattr(a, "frame_hfov", None) is not None:
+                continue
+            setattr(a, k, v)
+            adopted[k] = v
+        elif cur != v:
+            conflict.append(f"{k}: passed {cur!r} vs checkpoint {v!r}")
+    if conflict:
+        sys.exit("[t1] ⛔ GEOMETRY CONTRADICTS THE CHECKPOINT — refusing rather "
+                 "than rolling in a frame the model was not trained in:\n  "
+                 + "\n  ".join(conflict)
+                 + f"\n  ({a.ckpt})\n  Drop the flag to adopt the checkpoint's "
+                   "own geometry, or fix it to match.")
+    if adopted:
+        print(f"[geometry] t1_eval: ADOPTED FROM CHECKPOINT {adopted} "
+              f"(fields passed on the CLI are kept and cross-checked)", flush=True)
+    return adopted
+
+
 def resolve_ext_frames(a):
     """``(cfg, cache_frame, model_frame)`` for the adapter path.
 
     Delegates to ``eval_flagship_v4.resolve_eval_frames`` -> the TRAINER's own
     ``resolve_v2_frames``, so this tool cannot resolve ``--v2-subframe`` a
     second, different way. With no geometry flags it returns the canonical
-    256x256 frame and nothing moves."""
+    256x256 frame and nothing moves — EXCEPT for a v6/v7 checkpoint, whose own
+    recorded geometry is adopted first (see :func:`adopt_ckpt_geometry`)."""
     _stack_scripts_on_path()
     from eval_flagship_v4 import _eval_cfg, resolve_eval_frames
+    adopt_ckpt_geometry(a)
     cfg = _eval_cfg()
     cache_frame, model_frame = resolve_eval_frames(a, cfg, label="t1_eval")
     return cfg, cache_frame, model_frame
@@ -993,8 +1083,11 @@ def load_ext_trunk(a, model_frame):
     # ⚠️ Guarded on "stack" in ck, which NO flagship checkpoint carries, so the
     # v1/v4/v5f path below is provably unreachable for them and unchanged.
     # ⛔ The v7 frame is 256x640 CYLINDRICAL; t1_eval defaults to the deployed
-    # 256x256 pinhole. PASS --frame-h/--frame-w/--projection/--frame-hfov, or T1
-    # is computed in the wrong projection and LOOKS VALID.
+    # 256x256 pinhole. ⭐ RESOLVED 2026-08-30: `adopt_ckpt_geometry` (called from
+    # `resolve_ext_frames`, which runs BEFORE this loader) takes any unpassed
+    # geometry field FROM THE CHECKPOINT and hard-exits on a contradiction, so a
+    # flagless v7 run is now correct instead of silently pinhole. The old advice —
+    # "pass the four flags" — was a comment, not a guard.
     if isinstance(ck, dict) and "stack" in ck and "model" not in ck:
         from tanitad.eval.v6_probe_trunk import load_trunk_auto
         return load_trunk_auto(ck, a.device, ckpt_path=a.ckpt)
