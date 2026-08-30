@@ -187,14 +187,31 @@ not self-generated** — the one property every failed objective shared (E-DEC-7
 
 ## 6. Preparing the scaled training — what must be true before the big run
 
+*(state refreshed 2026-08-30)*
+
 | # | prerequisite | state |
 |---|---|---|
-| 1 | **D1 answered** (encoder policy) | ▶ running |
-| 2 | **D2 answered** (conditioning channel) | ⏸ queued |
-| 3 | **A T1 number on a v7 arm** — the programme has **never** evaluated a v7 arm at T1 | 🔶 chain armed on Thor, parity corpus, both arms |
-| 4 | **Four metric families reporting** | 🔶 3 of 4: longitudinal anti-echo ✅, lateral ✅, tactical ✅; **distance-keeping** needs `obstacle.offline` staged (engineering now done — the straight-driving gate landed `b6e98043a`); **strategic** needs map-derived option sets |
-| 5 | **Tactical + strategic training labels** | ⛔ **Data FlyWheel work (PI's Stage B)** — not started |
-| 6 | **REF-C / REF-D comparison harness** | REF-C trained (`refc-diffusion-xl-30k`); **REF-D does not exist**; hierarchy-traversing eval does not exist — **PI's Stage D** |
+| 1 | **D1 answered** (encoder policy) | ✅ **ANSWERED — DEGENERATE**; the v7 encoder stays TRAINABLE |
+| 2 | **D2 answered** (conditioning channel) | ✅ **ANSWERED (MIXED)** — `omega_accel_v` adopted |
+| 3 | **A T1 number on a v7 arm** | ✅ **DONE 2026-08-30** — three arms, 40 episodes, episode-cluster bootstrap (D-T1-V7-READ). ⛔ It is a **FLOOR, not a capability**: every arm is worse than its own hold-action control on every distance metric, and all three `LOSES_TO_HOLDV0`. ⭐ But `copy_detector` is CLEAN (`echo_index` 0.0000) — the v7 line does not ECHO, which v1.x did |
+| 4 | **Four metric families reporting** | ⛔ **RE-SCOPED 2026-08-30 — the blocker is the CORPUS, not the instrument.** val40 carries v7 labels on **6 of its 40 clips**, so it can serve TRAJECTORY/ADE and **cannot** serve the label-based families (D-VAL40-NOLABELS). That is why `strategic` read UNAVAILABLE and `tactical` read *trajectory-derived* — I had logged both as instrument gaps. ⇒ the fix is the **labelled** eval split (v7.2 eval side, 147 clips), not eval-code work |
+| 5 | **Tactical + strategic training labels** | ✅ **DELIVERED** — B1 s2-geom-v7, 4,719 clips, and `stack/tanitad/data/v7_labels.py` is the ONE consumer for all four trainers |
+| 6 | **REF-C / REF-D comparison harness** | unchanged: REF-C trained; **REF-D does not exist**; hierarchy-traversing eval does not exist — **PI's Stage D** |
+| **7** | ⛔ **NEW — nav conditioning at all three layers** (PI directive 2026-08-30) | model, whitelist and preflight ✅ **DONE and tested**; ⛔ **the DATA PATH does not yet emit `nav_token`/`nav_args` per window**, so `--nav-cond` constructs and then RAISES `NavTokenMissing` by name. **v7f cannot launch with nav until the join lands** — and it will say so rather than train something unconditioned |
+| **8** | ⛔ **NEW — step-stamped checkpoints** | `--save-every` **OVERWRITES** `ckpt.pt`; a 30k run leaves ONE checkpoint (B3). **Checkpoint selection has nothing to select from**, and no arm's trajectory is recoverable after the fact |
+
+⛔ **AND THE OPEN FRONT HAS MOVED.** The drift attractor is no longer the primary
+target: MM-E10 measured the predictor **ACTION-DEAF** (the action moves the prediction
+**0.4–0.6 %** as much as the scene at h=1, **~0.001 %** beyond), with both controls
+reading their known values, so the "degenerate rollout" account is refuted. MM-E12 then
+showed the action is **NOT redundant** given the scene — the model ignores information
+that is genuinely there. ⇒ **drift is DOWNSTREAM of a predictor that is barely
+conditioned**, consistent with MM-E4 (drift trivially reducible ⇒ a symptom) and MM-E6
+(drift self-referential). The indicated lever is **O1** — the term the code documents as
+*"the ANTI-ACTION-ECHO measure"*, default 1.0, which **every arm in this campaign ran at
+0** — and `o1ctrl30k` (MM-E11) is testing exactly that. ⚠️ A second, unexplained defect
+travels with it: the predictor **collapses horizons ≥2** (`max|h1−h2| = 1.211` vs
+`max|h2−h4| = 0.0018`).
 
 ⭐ **The staged plan (PI, 2026-08-26):** show **operative** capability first; **in
 parallel** the Data FlyWheel generates the tactical/strategic data; then train the upper
