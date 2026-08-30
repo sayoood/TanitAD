@@ -339,9 +339,9 @@ def test_the_real_v72_files_match_their_declared_md5s():
 def test_resolve_v72_REFUSES_when_copies_disagree(tmp_path):
     """⭐ The regression that would have caught the stale pin.
 
-    Two copies with differing bytes must raise and NAME both, rather than
-    silently returning one — the failure mode that put a pre-fix verify
-    download into a production guard.
+    Two copies with differing bytes, NEITHER matching the declared md5, must
+    raise and NAME both rather than silently returning one — the failure mode
+    that put a pre-fix verify download into a production guard.
     """
     import gzip
     from tanitad.train.intrain_eval import resolve_v72
@@ -358,17 +358,72 @@ def test_resolve_v72_REFUSES_when_copies_disagree(tmp_path):
     assert msg.count(name) >= 2, "both candidate paths must be named"
 
 
-def test_resolve_v72_accepts_identical_copies_under_different_paths(tmp_path):
+def _write_blob(p, payload: bytes):
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_bytes(payload)
+    return hashlib.md5(payload).hexdigest()
+
+
+def test_resolve_v72_picks_the_DECLARED_md5_over_a_same_named_impostor(tmp_path,
+                                                                      monkeypatch):
+    """⭐⭐ CONTENT BEATS LOCATION — the property the whole fix exists for.
+
+    A stale copy sharing the artifact's name must NOT make the artifact
+    unresolvable. The md5 is the identity; the filename only finds candidates.
+    """
+    from tanitad.train.intrain_eval import resolve_v72, V72 as _V
+    name = _V["train"]["names"][0]
+    good = _write_blob(tmp_path / "canonical" / name, b"the-real-artifact")
+    _write_blob(tmp_path / "_verify" / name, b"a-stale-download")
+    monkeypatch.setitem(_V["train"], "md5", good)
+    got = resolve_v72("train", [str(tmp_path)])
+    assert got is not None and "canonical" in got, got
+
+
+def test_resolve_v72_finds_the_artifact_under_an_ALIASED_name(tmp_path,
+                                                              monkeypatch):
+    """⚠️ The local-disk vs HF rename (`clip_index_eval.json` vs
+    `clip_index_v7.2_eval.json`). A name mismatch must not read as ABSENCE."""
+    from tanitad.train.intrain_eval import resolve_v72, V72 as _V
+    alias = _V["train"]["names"][1]
+    md5 = _write_blob(tmp_path / "r" / alias, b"renamed-on-upload")
+    monkeypatch.setitem(_V["train"], "md5", md5)
+    assert resolve_v72("train", [str(tmp_path)]) is not None
+
+
+def test_resolve_v72_REFUSES_a_lone_copy_that_is_the_WRONG_copy(tmp_path,
+                                                               monkeypatch):
+    """⛔ One copy is not automatically the right copy.
+
+    A single file whose md5 contradicts the pin is a MISMATCH, not ambiguity —
+    and accepting it silently is precisely how the pre-fix blob got in.
+    """
+    from tanitad.train.intrain_eval import resolve_v72, V72 as _V
+    name = _V["train"]["names"][0]
+    _write_blob(tmp_path / "r" / name, b"not-the-artifact")
+    monkeypatch.setitem(_V["train"], "md5", "0" * 32)
+    with pytest.raises(EvalSplitError) as e:
+        resolve_v72("train", [str(tmp_path)])
+    assert "WRONG copy" in str(e.value)
+
+
+def test_resolve_v72_accepts_identical_copies_under_different_paths(tmp_path,
+                                                                    monkeypatch):
     """⚠️ The bytes are the artifact; the path is not. Duplicates that AGREE
-    are not ambiguity and must not be refused."""
-    import gzip
-    from tanitad.train.intrain_eval import resolve_v72
-    name = V72["train"]["name"]
+    are not ambiguity and must not be refused.
+
+    ⚠️ The payload is pinned to the DECLARED md5 rather than arbitrary bytes:
+    once the resolver keys on content, a fixture writing something else is no
+    longer testing "duplicates agree", it is testing "a lone wrong copy is
+    accepted" — which must FAIL. The property is unchanged; the fixture had to
+    start producing the artifact it claims to duplicate.
+    """
+    from tanitad.train.intrain_eval import resolve_v72, V72 as _V
+    name = _V["train"]["names"][0]
+    md5 = None
     for sub in ("a", "b"):
-        d = tmp_path / sub
-        d.mkdir()
-        with gzip.open(d / name, "wb") as fh:
-            fh.write(b"same")
+        md5 = _write_blob(tmp_path / sub / name, b"same")
+    monkeypatch.setitem(_V["train"], "md5", md5)
     assert resolve_v72("train", [str(tmp_path)]) is not None
 
 

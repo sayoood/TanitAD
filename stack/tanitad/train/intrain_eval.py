@@ -338,42 +338,73 @@ def should_run_val(step: int, *, monitor_every: int = 100,
 #: on ambiguity instead of picking, and `LabelManifest.to_dict()`'s own warning is
 #: the rule this violated: *md5 is the identity — copies exist under several roots
 #: and their md5s differ.*
+#: ⚠️ ``names`` is a TUPLE OF ALIASES, not a single filename. The producer found
+#: that the same artifact is called `clip_index_eval.json` on local disk and
+#: `clip_index_v7.2_eval.json` on HF — the upload renamed it — and that mismatch
+#: was caught only because the wrong path happened not to exist, which is luck
+#: rather than method. A name is a HINT for finding candidates; the md5 decides.
 V72 = {
-    "train": {"name": "s2_labels_v7.2_train.jsonl.gz", "n": 4572,
+    "train": {"names": ("s2_labels_v7.2_train.jsonl.gz",
+                        "s2_labels_v72_train.jsonl.gz"), "n": 4572,
               "md5": "0ff902130ce76886b8a925eceed9e3a5"},
-    "eval": {"name": "s2_labels_v7.2_eval.jsonl.gz", "n": 147,
+    "eval": {"names": ("s2_labels_v7.2_eval.jsonl.gz",
+                       "s2_labels_v72_eval.jsonl.gz"), "n": 147,
              "md5": "aa12c948f062181c3297265b51526ec5"},
 }
+#: Back-compat for callers that read the old scalar key.
+for _s in V72.values():
+    _s["name"] = _s["names"][0]
+del _s
 
 
-def resolve_v72(side: str, roots):
-    """The ONE path for ``side``, or a refusal naming every candidate.
+def resolve_v72(side: str, roots, *, by_content: bool = True):
+    """The ONE path for ``side``, chosen BY CONTENT — or a refusal naming every
+    candidate. Returns ``None`` when nothing is found.
 
-    ⛔ Never returns "the first match". If several copies exist and their md5s
-    DIFFER, that is an ambiguous subject and the caller must be told which copies
-    it is choosing between — silently picking one is how the stale pin above was
-    captured in the first place. Identical copies under different paths are fine:
-    the bytes are the artifact, the path is not.
+    ⛔ Never returns "the first match". Taking the first hit of a recursive glob
+    is how this module's pins came to name a pre-fix verify download, and it is
+    also *racy*: a glob over a directory another process is writing can select a
+    file mid-write.
+
+    ⭐ **The md5 is the identity; the filename is only a hint for finding
+    candidates.** When ``by_content`` and exactly one candidate matches the
+    declared md5, that copy wins even if others share its name — selecting by
+    bytes is the whole point, and it is what makes a stale same-named copy
+    lying around harmless rather than fatal.
+
+    ⚠️ Ambiguity that content CANNOT resolve still raises: several distinct md5s
+    and none of them the declared one means the artifact is absent and something
+    else is wearing its name. Identical copies under different paths are fine.
     """
     import glob as _glob
-    name = V72[side]["name"]
-    hits = sorted({os.path.realpath(h) for r in roots
-                   for h in _glob.glob(os.path.join(r, "**", name),
-                                       recursive=True)})
+    spec = V72[side]
+    names = spec.get("names") or (spec["name"],)
+    want = spec["md5"]
+    hits = sorted({os.path.realpath(h) for r in roots for n in names
+                   for h in _glob.glob(os.path.join(r, "**", n), recursive=True)})
     if not hits:
         return None
     by_md5: dict[str, list[str]] = {}
     for h in hits:
         with open(h, "rb") as fh:
             by_md5.setdefault(hashlib.md5(fh.read()).hexdigest(), []).append(h)
+    if by_content and want in by_md5:
+        return by_md5[want][0]
     if len(by_md5) > 1:
         detail = "; ".join(f"{m} -> {', '.join(p)}" for m, p in sorted(by_md5.items()))
         raise EvalSplitError(
-            f"[val] ⛔ {name} resolves to {len(hits)} copies with "
-            f"{len(by_md5)} DISTINCT md5s: {detail}. Refusing to guess which is "
-            f"the artifact — md5 is the identity, and taking the first glob hit "
-            f"is exactly how this module's pins came to name a pre-fix verify "
-            f"download. Name the canonical root explicitly.")
+            f"[val] ⛔ {names[0]} resolves to {len(hits)} copies with "
+            f"{len(by_md5)} DISTINCT md5s and NONE matches the declared "
+            f"{want}: {detail}. Refusing to guess — md5 is the identity. Either "
+            f"the artifact is not among these or the declared pin is stale; "
+            f"both are decisions for a human, not for a resolver.")
+    only = next(iter(by_md5))
+    if by_content and only != want:
+        raise EvalSplitError(
+            f"[val] ⛔ {names[0]} found at {by_md5[only][0]} with md5 {only}, "
+            f"but the declared v7.2 {side} md5 is {want}. One copy that is the "
+            f"WRONG copy is not ambiguity — it is a mismatch, and silently "
+            f"accepting it is how a pre-fix blob reached a production guard.")
     return hits[0]
 
 #: ⚠️ THE OVERLAP THAT MUST BE STAMPED ON EVERY COMPARISON.
