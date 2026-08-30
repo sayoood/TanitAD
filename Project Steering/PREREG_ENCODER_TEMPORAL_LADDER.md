@@ -95,3 +95,67 @@ worth it at a 0.2 s encoder window; factorised attention is not a separate quest
 `latentmotion` must read **exactly 0.0000**, and the drift positive control must land
 in its known band — a panel where those drift is a broken rig, not a result.
 Report **n** and the seed spread beside every delta.
+
+---
+
+## ⛔ OUTCOME — MM-E8 CANNOT BE READ AT 2k. THREE INDEPENDENT REASONS, ALL MEASURED AFTER LAUNCH.
+
+**Read 2026-08-30 from the two completed 3-frame arms.** The ladder is stopped, not
+because an arm failed but because **the design was unfit and I did not check before
+launching.**
+
+### 1. The seed spread is 1.6–2.6× larger than the number I put in the prereg
+
+§1 committed *"the 2k seed spread on this recipe is 0.0358 (drift) / 0.0357 (cos)"*.
+⛔ **That number was INHERITED from the P0 EMA arms — a different recipe — and I
+built the resolution criterion on it.** Measured on `enc3f_2k` vs `enc3f_2k_s1`,
+which differ only in seed:
+
+| read | seed 0 | seed 1 | **measured spread** | assumed |
+|---|---|---|---|---|
+| drift r | 0.2690 | 0.3254 | **0.0564** | 0.0358 |
+| cos_ctr | 0.1469 | 0.0523 | **0.0946** | 0.0357 |
+| nrmse | 0.9957 | 0.9989 | 0.0032 | — |
+
+⚠️ **The cos spread (0.0946) is LARGER THAN EITHER ARM'S VALUE** (0.147, 0.052). No
+encoder effect of plausible size survives that.
+
+### 2. Both arms **ARE the mean predictor**
+
+`nrmse` 0.9957 / 0.9989, verdict *"IS the mean predictor"* on both. This is the
+documented 2k scale-fact — every 2k arm sits at the mean-predictor floor — so the
+prediction axis has no headroom in which an encoder change could show.
+
+### 3. The k=1 shortcut is ACTIVE at 2k and ABSENT at 30k (MM-E9)
+
+`o5_step1/o5_stepK` = **0.31–0.36 at 2k**, **1.00–1.11 at 30k**. The single-frame arm
+removes the encoder's motion **and** the overlap, and the overlap is a 2k-only
+phenomenon. Even a resolvable 2k result would answer a question that does not exist
+at production scale.
+
+*(A fourth, separate defect: `--newest-frame-only` is INERT in `train_v6_staged.py`
+— MM-C11 — so the single-frame arms could not run regardless.)*
+
+## Verdict, per the committed table
+
+**UNRESOLVED at this scale — and NOT "equivalent".** §2 committed that deltas inside
+the seed band are unresolved rather than null, and that commitment is what makes this
+reportable instead of embarrassing: had I quoted a 2k encoder result it would have
+been noise dressed as a finding.
+
+⇒ **(b) and (c) stay unbuilt.** The gate in §0 never opened — it cannot open at 2k.
+The question needs **30k arms**, where the shortcut is absent, the mean-predictor
+floor is cleared, and the spread is (unknown and must be measured, not inherited).
+
+## ⭐ The lesson, which is mine
+
+**MEASURE THE SEED SPREAD BEFORE DESIGNING THE RESOLUTION CRITERION, NOT AFTER.** I
+wrote a prereg whose entire power analysis rested on a number carried over from a
+different recipe, marked it as a fact, and launched four arms on it. The
+`INHERITED`-vs-`MEASURED` rule exists for exactly this and I applied it to other
+people's numbers all day while quoting my own from memory.
+
+⚠️ **And the cheap check existed**: two seeds of the incumbent is 34 minutes and
+would have said *"this rig cannot resolve your question"* before any arm ran. **A
+two-seed power probe belongs in front of every ladder**, not inside its outcome
+section.
