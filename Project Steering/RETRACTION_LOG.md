@@ -10735,3 +10735,70 @@ agent that committed it*, with the mechanism measured rather than guessed. That 
 what makes it a durable rule instead of an unexplained incident — and it is the same
 discipline that made D-SAFE-CAL's VOID and MM-E6's own VOID trustworthy. An agent
 that hides a resource breach costs the programme the rule as well as the GPU-minutes.
+
+---
+
+## MM-C8 — 2026-08-30 — ⛔ I DIVIDED BY A DENOMINATOR WHOSE FRAME DOES NOT EXIST, AND CALLED IT "0.29 EPOCHS"
+
+**Class:** `a-statistic-computed-in-a-frame-the-system-does-not-have` — the
+`df` / `step_s` / cgroup family, with the object swapped from a probe to an
+**arithmetic frame**. Worse than those, because the number was **decision-grade**:
+it argued for raising the scaled run's step count.
+
+**What I claimed**, to the PI directly and in a teammate brief: 30,000 steps ×
+batch 8 = 240,000 samples against ~411,000 (parity) / ~815,000 (B1) windows, giving
+*"~0.58 epochs on parity, ~0.29 epochs on B1 — we have never made one full pass over
+the training corpus, and on B1 we would see roughly a quarter of it."* I told the PI
+their instinct that 30k might not cover 26 h *"looks right"*.
+
+⛔ **REFUTED** by the TrainingFlyWheel, verified by me at
+`train_v6_staged.py:5217-5218` → `train_v58f_unicycle_head.make_sampler:357-378`:
+**the sampler draws i.i.d. WITH REPLACEMENT** — `rng.randrange` over episodes, then
+`rng.randrange` over that episode's windows. **There is no epoch loop.** So
+`steps × batch / n_windows` is an **expected-draws ratio, not a coverage fraction**:
+N draws from M items never touch N distinct items. Coverage is coupon-collector,
+`1 − (1 − 1/M)^N`.
+
+**The measured coverage** (simulation of the actual sampler; window coverage tracks
+the analytic to within 0.3 pp):
+
+| corpus / config | EPISODE | WINDOW | FRAME mean | FRAME min |
+|---|---|---|---|---|
+| parity, batch 8 | **100.00 %** | 44.00 % | 98.18 % | 87.44 % |
+| B1, batch 8 | **100.00 %** | 25.43 % | 96.41 % | ⚠️ 64.82 % |
+| B1, batch 16 | **100.00 %** | 44.26 % | 98.19 % | 84.92 % |
+
+**We see 100 % of the episodes and ~96 % of the frames.** My "roughly a quarter"
+was the WINDOW number — and window coverage is *the least meaningful of the three*,
+because stride-1 windows share all but one frame, so a missed window does not mean
+missed driving.
+
+⚠️ **THE PART THAT MAKES THIS A RETRACTION AND NOT A ROUNDING ERROR: the false
+premise pointed at a real, costly action.** "We have never made one full pass" argues
+for **raising the step count**, which is GPU-days on the scaled run. The correct
+consequence is the opposite: **step count must be chosen by CONVERGENCE, because
+there is no epoch to reach.** The real weakness the honest analysis found is a
+**TAIL, not a mean** — B1's worst-covered episode sees 64.8 % of its frames at
+batch 8 — and its lever is **batch 16, not more steps** (worst episode 64.8 % →
+84.9 % at the same step count).
+
+⭐ **THE RULE: before dividing, ASK WHETHER THE DENOMINATOR'S FRAME EXISTS.**
+"Epochs" presumes a shuffled without-replacement pass. Read the sampler before
+quoting an epoch count — and state the coverage UNIT (episode / window / frame),
+because on stride-1 windows the three differ by ~4× and the least meaningful one is
+the one a naive division reports.
+
+⚠️ **Two things I did right, and they are the only reason this cost nothing:** I
+stamped the 173 windows/episode as INHERITED and told the TrainingFlyWheel to
+re-derive it and *"say so plainly if I am wrong — that is a better outcome than an
+unnecessary reconfiguration."* They did, and they did. **Inviting the refutation in
+the brief is what converted a wrong number into a measurement in one hop.**
+*(They also refined the 173: `max_h` is STAGE-DERIVED, so at the plan_steps horizon
+it is 199 − 6 − 60 = 133, and they report both rather than picking one.)*
+
+⚠️ **Still open, and correctly flagged by them as load-bearing:** their simulation
+used `make_sampler`, which `train_v6_staged.py:5300` names as **the `--o4-alpha 0`
+CONTROL-ARM sampler**. A live arm with O4 weighting draws non-uniformly by design,
+so low-weight windows fall below every figure above. ⇒ **these numbers are the
+UNIFORM UPPER BOUND**, and no claim about a weighted arm's coverage is admissible
+until the same simulation runs on the live arm's actual weights.
