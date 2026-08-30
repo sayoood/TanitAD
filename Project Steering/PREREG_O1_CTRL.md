@@ -86,10 +86,42 @@ instrument. Incumbent values to beat (`postrain30k`): **h1 ratio 0.00595 · h2
 
 | outcome | criterion | consequence |
 |---|---|---|
-| **O1-WORKS** | h1 ratio rises by **≥10×** (to ≥0.06) and h2/h4 rise off the floor | the diagnosis is confirmed and O1 enters the v7 recipe; the frozen-teacher lever is deprioritised |
+| **O1-WORKS** | h1 ratio rises by **≥10×** (to ≥0.06) ~~and h2/h4 rise off the floor~~ — see the amendment below | the diagnosis is confirmed and O1 enters the v7 recipe; the frozen-teacher lever is deprioritised |
 | **O1-INSUFFICIENT** | ratio rises but stays **<10×** | the term helps and is not the whole story; report the number, do not adopt on its own |
 | **O1-INERT** | ratio unchanged within noise | ⛔ the defect is NOT the missing objective — it is architectural (how actions enter the predictor), and the next lever is the conditioning path itself, not another loss weight |
 | 🔶 MIXED | h1 and h2/h4 disagree | numbers, no verdict (C160) |
+
+### ⛔ AMENDMENT, MADE AT STEP ~23,000 — BEFORE THE 30k READ, AND HERE IS WHY THAT MATTERS
+
+The `O1-WORKS` criterion as first written was **UNSATISFIABLE**, and would have failed a
+succeeding arm. It required *"h2/h4 rise off the floor"* — but those heads are **never
+trained**, so they cannot rise. MEASURED on **this arm's own** banked snapshot
+`ckpt_step10000.pt`:
+
+```
+predictor_op.heads.1.weight   |W| = 6.7488     ← trained
+predictor_op.heads.2.weight   |W| = 0.0262     ← at initialisation
+predictor_op.heads.4.weight   |W| = 0.0261     ← at initialisation
+```
+
+⇒ ~258× smaller, **with `w_o1_ctrl 1.0` in force at step 10,000**. So O1 does *not* train
+the multi-horizon heads either, and MM-E14's finding carries onto this arm rather than
+being specific to the arms it was found on. An arm showing a **50× h1 gain** would still
+have failed the criterion as originally written.
+
+⭐ **AMENDED CRITERION:** `O1-WORKS` = the **h1** ratio rises **≥10×** (to ≥0.06). The
+h2/h4 clause is **struck**. ⛔ And h2/h4 must not be *reported* either: they measure
+initialisation noise, not conditioning, so quoting them would repeat exactly the error
+MM-E14 retracted.
+
+⚠️ **On the legitimacy of amending a pre-registration at all.** Changing a criterion
+*after* seeing the data is the cardinal sin and this is not that: the arm is at ~23,000
+of 30,000, **no MM-E11 number exists**, and the reason is an instrument defect
+independently registered as MM-E14 *before* this arm was launched. The amendment is
+recorded here with its evidence and its timing rather than made silently — a
+pre-registration that is quietly edited is worth less than none. ⭐ Had this been left,
+the failure mode was not a wrong number but a **correct arm discarded**: the most
+expensive kind, because it looks like a clean negative.
 
 ⛔ **THE ANTI-GATE, COMMITTED BEFORE ANY NUMBER EXISTS.** Banked primary: an arm
 **10.7× worse** on open-loop next-action MSE was **2.3× better** closed-loop, because
