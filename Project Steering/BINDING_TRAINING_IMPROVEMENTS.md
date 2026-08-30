@@ -122,10 +122,27 @@ ahead**; **deleting it raised the score 16.94 %**. Our own numbers are means.
 *(Context: our 10 Hz costs only -5.0 % DS vs 20 FPS, -7.6 % vs the 24 FPS optimum, and
 buys **36 % better comfort**. The cadence is fine; the tail is unmeasured.)*
 
-### B3. ⛔ No checkpoint SELECTION criterion exists
+### B3. ⛔⛔ THERE IS NOTHING TO SELECT FROM — `--save-every` OVERWRITES
 
-`--save-every 2500` on a 30k run = 12 checkpoints, and nothing but "final" chooses among
-them. **B1 is the prerequisite** — selection needs a val-side signal to select on.
+⛔ **CORRECTED 2026-08-30, and it is worse than I first wrote.** I recorded this as *"12
+checkpoints, and nothing but 'final' chooses among them"*. **MEASURED: `--save-every 2500` does
+not keep step-stamped copies — it overwrites `ckpt.pt`.** All three banked 30k arms
+(`postrain30k`, `emao14_30k`, `o14fut30k`) contain exactly ONE file each. A 30k run leaves **one
+checkpoint, overwritten 12 times.**
+
+⇒ **A val curve every 100 steps can prove step 12,300 was the best model in the run, and that
+model no longer exists.** Selection needs ARTIFACTS, not just a signal — so B1 is necessary and
+**not sufficient**, and the trainer change is the real prerequisite.
+
+⚠️ **It also silently forecloses every after-the-fact trajectory question.** *"When does the model
+become action-deaf?"* (MM-E10) is answerable only with intermediate checkpoints, and for every arm
+trained to date the answer is **unrecoverable**.
+
+**Stopgap in place, not a fix:** a Thor-side snapshotter banks `ckpt_step<N>.pt` at each 2500
+boundary for the live `o1ctrl30k` arm — copying only when the file is STABLE, because a mid-write
+copy yields a torn checkpoint that **loads and is wrong**. That makes o1ctrl30k the first arm in
+the programme with a checkpoint trajectory, at zero training cost. ⛔ It is external, it polls, and
+it will not exist for the next run unless someone remembers — **the fix belongs in the trainer.**
 
 ---
 
