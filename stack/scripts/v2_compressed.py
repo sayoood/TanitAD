@@ -265,10 +265,37 @@ def _hf_download(rel, root, dest=None):
 
 
 def _ensure_ego(root, ch):
-    """Egomotion zip for `ch` must exist (poses/maneuvers need it). Fetch if missing."""
+    """Egomotion zip for `ch` must exist (poses/maneuvers need it). Fetch if missing.
+
+    ⛔ VERIFY BY CONTENT, NOT BY SIZE. This gated on ``getsize > 1_000_000`` — a
+    threshold that silently encoded the OLD corpus's chunk DENSITY. MEASURED
+    2026-08-30 on B1: 4,719 clips spread over 1,411 chunks (~3.3 per chunk) give
+    zips of min 154,719 / mean 1,388,744 B, and **881 of 1,411 are VALID BUT UNDER
+    1 MB**. Every one was declared missing and sent to a doomed HF fetch (401,
+    the bundle is private), which killed all six build shards on chunk 0007.
+
+    ⚠️ WORSE THAN THE CRASH, AND THE REASON THIS IS A CONTENT CHECK NOW: ``dest``
+    is the EXISTING valid zip and ``_hf_download`` runs ``curl -C -``, so a fetch
+    that SUCCEEDED would have RESUMED ONTO A COMPLETE ARCHIVE and corrupted it —
+    the log shows `Resuming transfer from byte position 419509`, exactly
+    chunk_0007's true size. The 401 is the only reason that did not happen, i.e.
+    an auth failure protected the data from a size heuristic. A corrupt egomotion
+    zip yields wrong POSES, which is a silently wrong training corpus.
+
+    Same family as the decode-into-memmap trap: a cheap proxy (size) standing in
+    for the real question (is this a readable archive), read as an answer.
+    """
     ez = os.path.join(root, "labels", "egomotion", f"egomotion.chunk_{ch:04d}.zip")
-    if os.path.exists(ez) and os.path.getsize(ez) > 1_000_000:
-        return ez
+    if os.path.exists(ez):
+        import zipfile
+        try:
+            with zipfile.ZipFile(ez) as z:
+                if z.namelist():                  # openable AND non-empty
+                    return ez
+        except Exception:                                          # noqa: BLE001
+            pass
+        # truncated or corrupt: remove it so curl cannot RESUME onto the debris
+        os.unlink(ez)
     return _hf_download(f"labels/egomotion/egomotion.chunk_{ch:04d}.zip", root, dest=ez)
 
 
