@@ -133,13 +133,13 @@ them. **B1 is the prerequisite** — selection needs a val-side signal to select
 
 | # | item | evidence | cost |
 |---|---|---|---|
-| **C1** | **Ego-motion compensate the 3-frame stack** | BEVDet4D Tab. 3: concatenating an *unaligned* previous frame is **worse than no temporal input** (NDS 39.2 to 37.6, mAVE **+70 %**); translation align mAVE -23.2 %, +rotation a further -13.6 % | shares a homography with C2 |
+| ~~**C1**~~ | ⛔ **RETRACTED 2026-08-30 — SCOPE ERROR (MM-C9), do not implement.** *"Ego-motion compensate the 3-frame stack"* transferred BEVDet4D Tab. 3 outside its premise. BEVDet4D fuses two frames into **one ego-centric metric BEV grid**, which asserts that cell (i,j) is a fixed world location — so ego motion puts a static object in two cells and the representation **contradicts itself**; alignment repairs a broken claim. **Image space asserts no such correspondence.** Inter-frame pixel displacement is not corruption, it is **the motion signal** every video model reads. ⛔ And for us specifically it would be actively harmful: an action-conditioned world model's premise is that **the action changes the image**, so compensating the stack would delete the ego-motion evidence the predictor exists to learn. *(PI caught this; the class is the `df`/`step_s`/pinhole-FOV family — a true result quoted outside the premise that makes it true.)* | — |
 | **C2** | **Recovery / trajectory perturbation augmentation** | ChauffeurNet Fig. 7: the unperturbed baseline recovers **0 of 20** closed-loop situations; perturbed **20 of 20**. PilotNet's recipe is single-camera, no 3-D scene, **2 s label-correction horizon** — our exact setting | ~1-2 days, zero new GPU |
 | **C3** | **`dt` as an explicit input + staleness jitter** | Zoox Tab. 1: 100 ms staleness — **exactly our frame spacing** — costs -56 % / -31 % / -78 % F1, and is **almost fully recovered** by dt-as-feature + jitter, at ~zero cost on clean data | best cost/benefit in the review |
 | **C4** | **Persist the per-clip validity mask** | 73.25 % of the corpus is rig B with **8.89 %** hard-zero pixels; the mask **is computed then thrown away** (`calib.py:995`) and reaches no consumer. A fixed-location black region is a rig-identifying signal for a from-scratch ViT | sidecar; forecloses nothing |
 | **C5** | Photometric augmentation **drawn once per WINDOW** | All three E2E stacks apply it; CVRL Tab. 9: breaking temporal consistency costs **11.5 points**. Our 3 frames share one patch-embed conv, so per-frame jitter injects fake illumination change *inside one token* | low |
 
-⚠️ **C1-C3 are the ranked three.** All are input-side, all are measured, none needs a new
+⚠️ **C2-C3 are the ranked pair (C1 retracted).** All are input-side, all are measured, none needs a new
 corpus. **C2 addresses the failure our T1 floor actually exhibits.**
 
 ⚠️ **Clarification the PI asked for, recorded because I stated it badly once:** we DO

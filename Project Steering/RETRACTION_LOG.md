@@ -10802,3 +10802,58 @@ CONTROL-ARM sampler**. A live arm with O4 weighting draws non-uniformly by desig
 so low-weight windows fall below every figure above. ⇒ **these numbers are the
 UNIFORM UPPER BOUND**, and no claim about a weighted arm's coverage is admissible
 until the same simulation runs on the live arm's actual weights.
+
+---
+
+## MM-C9 — 2026-08-30 — ⛔ I TRANSFERRED A BEV RESULT INTO IMAGE SPACE, WHERE ITS PREMISE DOES NOT HOLD
+
+**Class:** `a-true-result-quoted-outside-the-premise-that-makes-it-true` — the
+`df` / `step_s` / cgroup / pinhole-FOV family. Fourth instance this week, and the
+first one caught by the PI rather than by a teammate or by me.
+
+**What I claimed**, in `BINDING_TRAINING_IMPROVEMENTS.md` §C1, ranked **first** of
+the input-pipeline items: *"ego-motion compensate the 3-frame stack"*, citing
+BEVDet4D Tab. 3 — concatenating an unaligned previous frame is **worse than no
+temporal input at all** (NDS 39.2 → 37.6, mAVE +70 %). I wrote that our 9-channel
+stack is *"uncompensated by construction"* and called it *"a concrete, measured
+defect."*
+
+⛔ **REFUTED by the PI, and the refutation is exact.** BEVDet4D fuses both frames
+into **one ego-centric metric BEV grid**. That grid **asserts** that cell (i,j) is a
+fixed world location — so when the ego moves, a static object occupies two different
+cells and **the representation contradicts itself**. Alignment repairs a broken
+claim.
+
+**Image space makes no such assertion.** Nothing declares that pixel (i,j) at t−2
+and at t are the same world point. Inter-frame pixel displacement is not corruption
+— **it is the motion signal**, and reading it is how every video model perceives
+motion.
+
+⚠️ **AND FOR US THE RECOMMENDATION WAS ACTIVELY HARMFUL, WHICH IS WHY THIS IS WORSE
+THAN A NULL.** An action-conditioned world model's entire premise is that **the
+action changes the image**. Ego-compensating the stack would have deleted exactly
+the ego-motion evidence the predictor exists to learn — I would have removed the
+signal while believing I was removing noise.
+
+⭐ **THE RULE: BEFORE TRANSFERRING ANY TEMPORAL-FUSION RESULT, STATE WHETHER IT
+OPERATES IN A SHARED METRIC SPACE OR IN IMAGE SPACE. Results do not cross that
+line.** A shared metric representation carries a correspondence claim that can be
+violated; an image sequence carries none, so "misalignment" is not a defined defect
+there.
+
+⚠️ **What the episode did produce, and it is the better question:** our setup is a
+**hybrid** — 3 frames channel-stacked at the encoder (no time axis), then a
+**sequence** of 6 per-timestep latents at the predictor. So the real design question
+is not compensation but **whether the encoder should see 3 frames at all**, given
+the predictor already models time — and whether folding local motion into a
+nominally-appearance latent **entangles content and dynamics at the encoder**, which
+would bear directly on the programme's recorded top blocker (content/prediction
+dissociation). Registered as a hypothesis for the literature review, explicitly with
+its counter-evidence demanded, **not** as a finding.
+
+⚠️ **Second-order note on how it got into a BINDING document.** §C was labelled
+*"PUBLISHED evidence transferred by argument"* and §D said no §C entry is validated
+on our data — so the document's own scope caveat was correct and I still ranked the
+item first. **A stated caveat does not protect a ranked recommendation**: the ranking
+is what a reader acts on. Items transferred by argument should not be ranked against
+items measured on our own system.
