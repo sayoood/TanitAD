@@ -783,10 +783,31 @@ def _alpamayo_layer(clip_id: str, poses, key, goals: dict) -> dict:
     # ⚠️ Pass a SIDE, not a token. `"_L" in "FOLLOW_LANE"` is True, and testing
     # the token directly reported 24.9 % lateral agreement where the truth is
     # 69.9 % — see `alpamayo_fusion.side_of`.
-    geom_turn = next((k for k in goals if k.startswith(("TURN_", "YIELD_FOR_TURN_"))),
-                     None)
-    lat_ok, lat_side = AF.fuse_lateral(
-        clip_id, AF.side_of(geom_turn) if geom_turn else "straight")
+    # ⛔⛔ FIXED 2026-08-30 (EvalFlyWheel found it; DataFlyWheel localised it).
+    # This used to derive the side from a scan of the GOAL tokens for a
+    # `TURN_`/`YIELD_FOR_TURN_` prefix, defaulting to "straight". But `agree` is
+    # documented and read as "do the two sources agree on the geometry's LATERAL
+    # CLASS", and the goal scan cannot see NUDGE_L/NUDGE_R at all — they are
+    # ACTIONS, not turn goals. So EVERY non-turn clip was compared as "straight",
+    # and the flag inverted on 992 of 4,416 records (22.5 %):
+    #   side=right + NUDGE_R  -> agree=False  (they genuinely AGREE)
+    #   side=straight + NUDGE_L -> agree=True (they genuinely CONTRADICT)
+    # in BOTH directions, so 622 real agreements were discarded as noise and 370
+    # real contradictions were hidden. The shipped 41.7 % disagreement rate is an
+    # artefact; on direction consistency the true rate is 36.0 %.
+    # ⚠️ `side_of` was NOT at fault and "fixing" it would have been a no-op — it
+    # handles the NUDGE suffix correctly and was simply never called with a NUDGE
+    # class. The defect was the CALLER passing the wrong quantity, which is why
+    # the fix is here. `fuse_lateral`'s own docstring already says to pass
+    # `side_of(<class>)`; this call site was the one violating that contract.
+    # `goals["_lat"]` is the geometry's lateral class and is threaded in one line
+    # above the caller for exactly this kind of use.
+    _lat_cls = goals.get("_lat")
+    if not _lat_cls:                       # emitter contract, not a soft default
+        raise RuntimeError(
+            "goals['_lat'] absent — fuse_lateral would silently fall back to "
+            "'straight' and re-create the 22.5 % inversion this replaced")
+    lat_ok, lat_side = AF.fuse_lateral(clip_id, AF.side_of(_lat_cls))
 
     # Typed tokens Alpamayo can see and geometry cannot, banded correctly.
     band = AST.band_tokens(clip_id, 2.0, PLAN_S)

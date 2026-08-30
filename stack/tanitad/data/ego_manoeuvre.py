@@ -100,6 +100,16 @@ class Manoeuvre:
     turn_arc_m: float
     turn_radius_m: float          # inf when straight
     kappa_max: float
+    #: ⭐ THE DECIDING EVIDENCE FOR A NUDGE, persisted 2026-08-30.
+    #: Signed peak lateral offset in metres from the key-frame heading
+    #: (`+` = left). NUDGE is called on `abs(lat_peak_m) >= NUDGE_LAT_M` (1.0 m)
+    #: and this value USED TO BE DISCARDED, so every NUDGE label was
+    #: unauditable after the fact and the question "how much NUDGE mass sits at
+    #: lane width?" could not be answered without a full re-extraction. One
+    #: float makes that class of question answerable forever.
+    #: ⚠️ NUDGE has NO UPPER BOUND (D-NUDGE-ABSORB), so this is also the only
+    #: field that can distinguish a 1 m wobble from an absorbed lane change.
+    lat_peak_m: float
     # -- longitudinal
     longitudinal_class: str       # LAUNCH | DECEL_TO_STOP | STOP_AND_GO | SLOWING | CRUISE
     stop_type: str                # NONE | CONTROLLED | QUEUE | YIELD | ALREADY_STOPPED
@@ -304,10 +314,17 @@ def analyse(poses, *, hz: float = HZ_DEFAULT, key: int = 0) -> Manoeuvre:
         slowed = bool(approach > 0.5 and apex / approach < TURN_SLOWDOWN_RATIO)
 
     # -- lateral class, with the ambiguous band resolved by speed -----------
+    # ⭐ The lateral track is computed UNCONDITIONALLY (2026-08-30) so
+    # `lat_peak_m` is populated on turns too, not only where it happens to
+    # decide the class. It used to live inside the `not is_turn` branch and be
+    # thrown away immediately after the comparison, which left every NUDGE
+    # label with its deciding evidence unrecoverable.
+    _c, _s = math.cos(-yaw[0]), math.sin(-yaw[0])
+    _lat_track = _s * (x - x[0]) + _c * (y - y[0])
+    _lat_peak = float(_lat_track[int(np.argmax(np.abs(_lat_track)))])
     conf = "HIGH"
     if not is_turn:
-        c, s = math.cos(-yaw[0]), math.sin(-yaw[0])
-        lat = s * (x - x[0]) + c * (y - y[0])
+        lat = _lat_track
         j = int(np.argmax(np.abs(lat)))
         if abs(peak) >= TURN_DEG:
             # a large heading change at a LARGE radius is road geometry, not a
@@ -359,7 +376,8 @@ def analyse(poses, *, hz: float = HZ_DEFAULT, key: int = 0) -> Manoeuvre:
         lateral_class=cls, peak_yaw_deg=round(peak, 1), yaw_onset_s=onset,
         turn_arc_m=round(arc, 1),
         turn_radius_m=(round(R, 1) if math.isfinite(R) else math.inf),
-        kappa_max=round(kappa, 4), longitudinal_class=lon,
+        kappa_max=round(kappa, 4), lat_peak_m=round(_lat_peak, 3),
+        longitudinal_class=lon,
         stop_type=stop_type, n_stop_episodes=n_stops,
         longest_stop_s=round(longest, 1), total_stop_s=round(total, 1),
         v_at_key=round(v_key, 2), v_min=round(v_min, 2), v_max=round(v_max, 2),
