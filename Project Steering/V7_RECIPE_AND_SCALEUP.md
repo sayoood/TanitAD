@@ -147,9 +147,18 @@ first variance estimate and every single-seed comparison should be read against 
                                      # largest prediction gain ever measured on the
                                      # trainable line (cos +24.5%, nrmse -9.9%,
                                      # absorption held) at a +3.6% drift cost,
-                                     # knowingly accepted. GATED: one 30k tau-RAMP
-                                     # arm runs first (fixed tau=0.996 is known-
-                                     # suboptimal); it decides ramp-vs-fixed ONLY.
+                                     # knowingly accepted.
+                                     # ⭐ GATE CLOSED 2026-08-30: the 30k tau-RAMP
+                                     # arm read NEUTRAL -- drift 0.6936 vs 0.6952,
+                                     # nrmse 0.7408 vs 0.7466, cos 0.7513 vs 0.7524,
+                                     # absorption INSIDE_NULL both ways. Every delta
+                                     # is ~20x SMALLER than the only seed spread this
+                                     # recipe has produced (0.036 at 2k).
+                                     # => tau stays FIXED at 0.996; --ema-decay-ramp
+                                     # is DROPPED. "Fixed tau is known-suboptimal" is
+                                     # true in general and does NOT bind at 30k, where
+                                     # tau=0.996 already sits inside the published
+                                     # band. THIS WAS THE LAST OPEN FLAG IN THE RECIPE.
 ```
 
 ⛔ **Do NOT add O1, O2, O3, O7, O8, O9, O10, O11, O13 or PSG.** Ten measured failures;

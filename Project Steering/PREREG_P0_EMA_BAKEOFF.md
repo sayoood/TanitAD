@@ -163,3 +163,54 @@ decision** (the MIXED consequence clause: PI decides with the scaled-run timelin
 view). If adopted, the amendment's τ-ramp-before-adoption requirement applies unchanged.
 ⚠️ The committed interpretation limit also stands: this pair cannot separate "EMA at 30k"
 from "EMA×O14 interaction" (the 2k evidence was collected without O14).
+
+---
+
+## STAGE 3 OUTCOME — the τ-RAMP arm, read 2026-08-30 ~08:40 (Europe/Berlin)
+
+**The amendment's gate: "EMA-JOINS additionally requires a τ-ramp arm before recipe
+adoption (adoption on a fixed-τ arm alone would ship a known-suboptimal schedule)."
+This closes it.** Arm `emao14_30k_tauramp` = the `emao14_30k` line verbatim +
+`--ema-decay-ramp cosine`. One variable. 30k steps, finished 06:1x UTC on Thor.
+
+All MEASURED (dev-box RTX 4060, **T0-DIAGNOSTIC**), raws `tau_drift.json` /
+`tau_nrmse.json` / `tau_absorb.json`; ckpt md5 `a64aa48a` verified both sides.
+
+| read | τ-RAMP (cosine) | FIXED τ=0.996 | Δ | rel |
+|---|---|---|---|---|
+| drift r | **0.6936** (t 148.16) | 0.6952 (t 154.57) | −0.0016 | −0.23 % |
+| meanpred nrmse | **0.7408** | 0.7466 | −0.0058 | −0.78 % |
+| cos (centred) | **0.7513** | 0.7524 | −0.0011 | −0.15 % |
+| absorption marginal | −0.0019 (t −1.49) **INSIDE_NULL** | +0.0028 (t 2.16) INSIDE_NULL | — | holds |
+
+**⭐ VERDICT: τ-RAMP IS NEUTRAL. The recipe keeps EMA at FIXED τ=0.996 and the
+cosine ramp is DROPPED as unnecessary complexity.**
+
+Every difference is **~20× smaller than the only seed spread this recipe has ever
+produced** (0.0358 on drift / 0.0357 on cos, the 2k stage-1 band). The ramp neither
+helps nor hurts on any of the three axes, and absorption stays inside the null both
+ways.
+
+⚠️ **Single seed at 30k** — there is no 30k seed band, so the honest statement is
+*"indistinguishable at the resolution we have"*, not *"identical"*. The 20× margin
+against the 2k spread is what makes the neutral call safe rather than merely
+unrefuted.
+
+⭐ **WHY RUNNING IT WAS STILL RIGHT.** The amendment's reasoning was that a fixed-τ
+teacher is dominated by random weights early and every published recipe ramps for
+that reason. That argument is sound and could not be dismissed a priori — but it
+turns out **not to bind at 30k**, because (per the Stage-2 amendment's own scope
+fact) fixed τ=0.996 at 30k already sits INSIDE the published operating band. The
+ramp was the cheapest way to convert "known-suboptimal in general" into "measured
+irrelevant here", and it retires the last open flag in the v7 recipe.
+
+⭐⭐ **A SECOND RESULT FELL OUT FOR FREE, AND IT IS THE MORE USEFUL ONE — A NOISE
+CONTROL FOR T1's S-RATE.** The τ-ramp and fixed-τ arms are **T0-indistinguishable**
+(above). At T1 (D-T1-V7-READ, same 40 episodes, same control) their S-rates land on
+**OPPOSITE SIDES of the same hold-action control**: ramp cl **0.1404 < ha 0.2105**,
+fixed cl **0.2807 > ha 0.2105**. ⇒ **Two models that cannot be told apart at T0 give
+opposite S-rate verdicts at T1**, which is direct evidence that the S-rate gap is
+NOISE at n=40 episodes and must not be read as signal. This retroactively justifies
+declining to draw a verdict from the S-rate/distance-metric disagreement (C160), and
+it means the **distance metrics — unanimous across all three arms — are the ones to
+trust**. An unplanned arm supplied the control the panel lacked.

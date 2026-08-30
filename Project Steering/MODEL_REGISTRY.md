@@ -3779,7 +3779,28 @@ raws under `…/Architecture & Inference/Implementation/incoming/2026-08-27-*`.
 | **`e4_l3_combo`** | + both | 2k | ✅ DONE 2026-08-29 | drift 0.4001 (−15.5 %) · cos 0.0816 · nrmse 0.9979 | MM-E4 L3 — LESS effective than either alone; the two mechanisms interfere. T0 |
 | **`e4_l4_crop`** | + `--o5-target-crop 0.8` | 2k | ✅ DONE 2026-08-29 | drift 0.4948 (**+4.5 %**) · cos **0.2105** · nrmse 0.9804 | MM-E4 L4 — ⭐ the informative cell: no drift change AND prediction kept, so the trade belongs to dynamics-perturbing terms, not to a law. T0 |
 | **`e4_ctrl_shuf`** | + `--o6-innovation --o6-innovation-shuffle` | 2k | ✅ DONE 2026-08-29 | drift **0.3782** (−20.1 %) · cos 0.0066 · nrmse 1.0153 | ⛔ **THE DELIBERATE-REGRESSION ARM FIRED.** A meaningless constraint reproduces most of L1's “gain” ⇒ drift is trivially reducible and is a SYMPTOM, not a target. T0 |
-| **`emao14_30k_tauramp`** | emao14_30k line + `--ema-decay-ramp cosine` (BYOL form; config-diff = {ema_decay_ramp, out}) | 30k | ▶ RUNNING (launched 2026-08-29 23:33, ~0.98 s/step, ETA ~07:45) | — | D-EMA-ADOPT's PI gate: decides ramp-vs-fixed τ ONLY, never ema-vs-none. τ logged per row (0.99 → 0.996). T0 |
+| **`emao14_30k_tauramp`** | emao14_30k line + `--ema-decay-ramp cosine` (BYOL form; config-diff = {ema_decay_ramp, out}) | 30k | ✅ DONE 2026-08-30 06:1x UTC (ckpt md5 `a64aa48a`) | ⭐ **NEUTRAL — the τ-ramp changes nothing at 30k**: drift **0.6936** (t 148.16) vs fixed-τ 0.6952; nrmse **0.7408** vs 0.7466; cos_ctr **0.7513** vs 0.7524; absorption **−0.0019 (t −1.49) INSIDE_NULL**. Every Δ is **~20× smaller than the only seed spread this recipe has produced** (0.036 at 2k) | ⭐ **D-EMA-ADOPT CLOSED: τ stays FIXED at 0.996, `--ema-decay-ramp` DROPPED — the last open flag in the v7 recipe.** *"Fixed τ is known-suboptimal"* is true in general and does NOT bind at 30k, where 0.996 already sits inside the published band. ⚠️ Single seed at 30k — the claim is "indistinguishable at the resolution we have", not "identical". Raws `tau_drift/tau_nrmse/tau_absorb.json`; rig controls valid (constant reads 0.0000 exactly). **T0-DIAGNOSTIC** |
+
+#### ⭐⭐ T1 — THE PROGRAMME'S FIRST CLOSED-LOOP CAPABILITY READ ON THE v7 LINE (2026-08-30)
+
+**Tier T1 (PRIMARY).** 40 episodes / **6,924 windows**, `--grounding-readout`, **episode-cluster bootstrap** (`taniteval.ci`) — ⛔ never `overlapping_holdout_se`. Geometry AND context window ADOPTED FROM EACH CHECKPOINT (`t1_eval.adopt_ckpt_geometry`, b821ca01f): every run printed `{256, 640, 120.0, cylindrical, window 6}`. `ha` = the **hold-action echo control**.
+
+| arm | ade_dense_m cl / ha | fde_last_m cl / ha | LAT_cross_mae_m cl / ha | LAT_heading_deg cl / ha |
+|---|---|---|---|---|
+| `emao14_30k` (EMA, fixed τ) | 14.069 / **13.879** | 26.297 / **26.131** | 1.310 / **1.124** | 94.63 / 95.13 |
+| `o14fut30k` (incumbent) | 14.293 / **14.116** | 26.690 / **26.442** | 1.461 / **1.426** | 99.41 / 96.39 |
+| `emao14_30k_tauramp` (EMA, ramp) | 13.864 / **13.806** | 26.076 / **25.951** | **1.072** / 1.170 | 94.19 / 92.06 |
+
+⛔ **IN EVERY DISTANCE METRIC, FOR EVERY ARM, THE CLOSED-LOOP ARM IS WORSE THAN ITS OWN HOLD-ACTION CONTROL** — the model's own actions make it worse than freezing the action. All three `holdv0=LOSES_TO_HOLDV0`; all three `_longitudinal_claim_admissible=false`, so ⛔ **no longitudinal number from any of these arms is claimable** under the PI's 2026-08-16 anti-echo rule. Heading MAE ~95° is chance; `speed_bias_mps −10.381`; `target_speed_acc within_2.0_mps 0.146`. Sole exception: the τ-ramp arm's lateral cross-track (1.072 < 1.170), one metric on one arm.
+
+⭐ **THE RESULT THAT IS NOT NEGATIVE: `copy_detector=CLEAN, echo_index 0.0000 vs GT 0.2113` on ALL THREE ARMS.** v1.x's entire failure was ECHO (S-curve 97.9 % open-loop → 0.0 % hold-action → ~5 % closed-loop). These arms do **not** echo — they also do not drive. The v7 line has traded *fake skill by echo* for *honest absence of skill*, which is exactly what the anti-echo control exists to reveal.
+
+⚠️ **SCOPE, BINDING — DO NOT QUOTE THIS AS "v7 CANNOT DRIVE".** These are ~19 M-param **v7-TINY** arms trained on stage **S-W ONLY** with EVERY planner objective at zero (`--w-o1-ctrl 0 --w-o1-fact 0 --w-o1-scene 0 --w-o2 0 --w-o3 0`). They are a world-model trunk plus a grounding readout and were **never trained to drive**. The supported claim is that **the untrained-planner FLOOR is now measured at T1**.
+
+⚠️ **S-rate is NOISE at this n, and an unplanned arm proved it.** S-rate(masked) cl/ha: EMA-fixed **0.2807 / 0.2105** (above control), incumbent **0.0702 / 0.1579** (below), τ-ramp **0.1404 / 0.2105** (below). ⭐ The τ-ramp and EMA-fixed arms are **T0-INDISTINGUISHABLE** (row above) yet land on OPPOSITE SIDES of the same control — direct evidence the S-rate gap is noise, not signal. ⇒ **the distance metrics, unanimous across all three arms, are the ones to trust**; per C160 no verdict is drawn from the S-rate/distance disagreement.
+
+⚠️ `strategic` family **UNAVAILABLE** (needs `route_pred`/`route_gt`; a fidelity pass does not traverse the hierarchy) ⇒ `_complete=false`. A missing family is a WORK ITEM, not a pass. Raws `/home/nvidia/t1dumps/{emao14_30k,o14fut30k,emao14_30k_tauramp}/t1.json`.
+
 | **`ema2k_s0`** / **`ema2k_s1`** | the `o14base2k` line verbatim + `--o5-target ema` (+`--seed 1` on s1); config-diff CLEAN (only the admissible set) | 2k | ✅ DONE 2026-08-28 (chain-run; md5 `fb71f49a`/`28b03198`) | 🔶 MIXED (MM-E1): drift 0.4002/0.3644 vs base 0.4531 (BETTER beyond spread) · cos_ctr 0.1336/0.0979 vs 0.1845 (WORSE beyond spread) · nrmse 0.9912/0.9954 vs 0.9876 | the P0 EMA-teacher bake-off; no verdict per the committed table; 30k-pair question → PI. Raws `…/2026-08-28-p0-ema-bakeoff/raw/`. T0-DIAGNOSTIC |
 
 ⚠️ ckpt md5s: k4 `c914e6a0a4b0ee7548b469408cacc53e` · omega `8cbd242b4e7c01fc6107f7874439d996` ·
