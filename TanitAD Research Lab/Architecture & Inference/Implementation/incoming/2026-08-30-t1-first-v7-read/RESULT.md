@@ -91,7 +91,17 @@ gap is noise, not signal**. ⇒ the distance metrics, unanimous across all three
 are the ones to trust; per C160 no verdict is drawn from the disagreement. *An arm run
 for an unrelated question supplied the control this panel lacked.*
 
-## Instrument gap, recorded not hidden
+## ⛔ CORRECTED 2026-08-30 — this was NOT an instrument gap
+
+The section below recorded `strategic: UNAVAILABLE` as an instrument gap and a work item.
+**It is a CORPUS fact.** The deployed val40 carries v7 labels on only **6 of its 40 clips**,
+and those 6 are exactly the ones excluded from B1 training for leakage (D-VAL40-NOLABELS).
+⇒ val40 is scoreable on **TRAJECTORY/ADE** — what it was built for — and **cannot** serve the
+four label-based families; that is also why `tactical` above reads *trajectory-derived*.
+**No eval-code work would ever have resolved it.** The fix is a LABELLED held-out split
+(`eval_split_v3`, sha `ea8670e041c14ccb`), not an instrument change.
+
+## Instrument gap, recorded not hidden — ⚠️ superseded by the correction above
 
 `strategic` family **UNAVAILABLE** — needs `route_pred`/`route_gt`; a world-model
 fidelity pass does not traverse the hierarchy. `_complete=false`. **A missing family is

@@ -17,9 +17,15 @@ from tanitad.models.nav_conditioning import (NAV_CONTROLS, NavArgStats,
 from tanitad.models.vocab_v7 import NAV_COMMAND_TOKENS
 
 
-def _cond(d_model=16):
+def _cond(d_model=16, **kw):
+    """⚠️ zero_init=False by DEFAULT here. The production default IS zero-init
+    (so introducing nav mid-ladder is loss-continuous), but a zero output
+    projection makes every output 0.0 regardless of its input — which would make
+    the sharedness and control tests pass VACUOUSLY. Zero-init gets its own
+    dedicated test instead of silently disabling every other one."""
     torch.manual_seed(0)
-    return NavConditioner(d_model=d_model)
+    kw.setdefault("zero_init", False)
+    return NavConditioner(d_model=d_model, **kw)
 
 
 # ---------------------------------------------------------------- gate 1
@@ -142,6 +148,34 @@ def test_the_control_reads_ZERO_on_an_arm_that_ignores_nav():
     assert torch.equal(nav_blind_arm(ids, args), nav_blind_arm(sid, sargs))
 
 
+def test_zero_init_makes_INTRODUCTION_loss_continuous():
+    """⛔ The production default: at init the nav term is EXACTLY zero, so
+    adding the channel to a running ladder does not discontinuously change the
+    loss. Same discipline as FiLM's zero-init (predictor.py:41-42)."""
+    c = NavConditioner(d_model=16)                       # production defaults
+    out = c(torch.tensor([0, 1]), torch.randn(2, 2), "operative")
+    assert torch.all(out == 0.0), "an introduced channel must start inert"
+
+
+def test_the_nav_term_is_GATED_so_it_cannot_dilute_the_action_channel():
+    """⛔ H26, MEASURED (predictor.py:126): the UNGATED intent_proj term reached
+    norm ~31.4 against act_emb ~28.3, DILUTING the action conditioning, and
+    engaging intent was net-HARMFUL to the operative. Nav enters the same
+    additive `cond` pathway as a THIRD term, so an ungated nav term would
+    reproduce H26 with one more competitor. The gate starts small and grows only
+    if training earns it."""
+    c = _cond(gate_init=0.1)
+    assert set(c.gate) == {"operative", "tactical", "strategic"}
+    for ln in c.layers:
+        assert float(c.gate[ln]) == pytest.approx(0.1)
+        assert c.gate[ln].requires_grad, "the gate must be LEARNABLE, not a constant"
+    ungated = _cond(gate_init=1.0)
+    ids, args = torch.tensor([0, 1]), torch.randn(2, 2)
+    small = c(ids, args, "operative").norm()
+    big = ungated(ids, args, "operative").norm()
+    assert small < big, "a smaller gate must produce a smaller term"
+
+
 # ---------------------------------------------------------------- gate 4
 def test_provenance_is_stamped_and_oracle_is_flagged():
     s = nav_provenance_stamp("ego-future", control="real")
@@ -175,3 +209,75 @@ def test_normalise_uses_the_stored_stats_not_the_batch():
     a = st.normalise(torch.tensor([50.0]), torch.tensor([5.0]))
     b = st.normalise(torch.tensor([50.0, 999.0]), torch.tensor([5.0, 99.0]))
     assert torch.allclose(a[0], b[0]), "an added outlier must not move the first row"
+
+
+# ------------------------------------------- the operative port (predictor.py)
+def test_operative_port_is_None_safe_and_byte_identical():
+    """⛔ nav_cond=None must reproduce the previous behaviour EXACTLY, so every
+    existing checkpoint stays a strict subset and no arm changes by accident."""
+    from tanitad.models.predictor import OperativePredictor, PredictorConfig
+    torch.manual_seed(0)
+    cfg = PredictorConfig()
+    m = OperativePredictor(cfg, 8)
+    st = torch.randn(2, cfg.window, 8)
+    ac = torch.randn(2, cfg.window, cfg.action_dim)
+    a, b = m(st, ac), m(st, ac, nav_cond=None)
+    assert all(torch.equal(a[k], b[k]) for k in a)
+
+
+def test_a_real_nav_term_REACHES_the_operative_output():
+    """⚠️ FiLM's to_scale_shift is ZERO-INIT (predictor.py:41-42), so at init NO
+    conditioning term moves the output — actions included. The control below
+    proves the inertness is GLOBAL rather than a nav wiring bug, then FiLM is
+    made live and nav must reach the output."""
+    from tanitad.models.predictor import OperativePredictor, PredictorConfig
+    torch.manual_seed(0)
+    cfg = PredictorConfig()
+    m = OperativePredictor(cfg, 8)
+    st = torch.randn(2, cfg.window, 8)
+    ac = torch.randn(2, cfg.window, cfg.action_dim)
+    d = m.act_emb[-1].out_features
+
+    base = m(st, ac)
+    # CONTROL: actions are equally inert at init ⇒ global zero-init, not a nav bug
+    assert all(torch.equal(base[k], m(st, torch.randn_like(ac))[k]) for k in base)
+    assert all(torch.equal(base[k], m(st, ac, nav_cond=torch.randn(2, d))[k])
+               for k in base)
+
+    with torch.no_grad():
+        for blk in m.blocks:
+            torch.nn.init.normal_(blk.film.to_scale_shift.weight, std=0.02)
+    live = m(st, ac)
+    assert any(not torch.equal(live[k], m(st, ac, nav_cond=torch.randn(2, d))[k])
+               for k in live), "with FiLM live, nav must reach the output"
+
+
+# ------------------------------------------------- per-layer widths (the sites)
+def test_each_layer_gets_ITS_OWN_width():
+    """⛔ THE THREE CONDITIONING SITES HAVE DIFFERENT SHAPES.
+
+    MEASURED from source: the operative site is an ADDITIVE FiLM pathway at the
+    predictor's hidden width (predictor.py:199), while FTac CONCATENATES
+    (tactical.py:267-272) and nav must instead be projected into the existing
+    g_flat width and ADDED — the `cond_tac_dyn` precedent (v6.py:4904-4907).
+    A single d_model would give two of three layers the WRONG width and die at
+    the first forward.
+    """
+    c = NavConditioner(widths={"operative": 256, "tactical": 128,
+                               "strategic": 64}, zero_init=False)
+    ids, args = torch.tensor([0, 1]), torch.randn(2, 2)
+    for ln, w in c.widths.items():
+        assert c(ids, args, ln).shape == (2, w), ln
+
+
+def test_constructing_without_widths_or_d_model_RAISES():
+    """A silent default width is the same class of defect as a silent default
+    nav token — it would produce a shape error far from its cause."""
+    with pytest.raises(ValueError) as e:
+        NavConditioner()
+    assert "widths=" in str(e.value)
+
+
+def test_d_model_still_serves_the_uniform_test_case():
+    c = NavConditioner(d_model=16, zero_init=False)
+    assert set(c.widths.values()) == {16}

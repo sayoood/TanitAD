@@ -89,6 +89,7 @@ from tanitad.models.metric_dynamics import StepDisplacementReadout
 from tanitad.models.predictor import OperativePredictor
 from tanitad.models.readout import SpatialGridReadout
 from tanitad.models.sigreg import SigReg, SubspaceSigReg
+from tanitad.models.nav_conditioning import NavTokenMissing
 from tanitad.models.tactical import FTac
 
 __all__ = [
@@ -3851,6 +3852,19 @@ class V6Config:
     #: the tactical WM loss cannot train ``layer_str`` backwards through it.
     tac_goal_cond: bool = False
 
+    #: ⛔ NAV CONDITIONING ON ALL THREE LAYERS (PI directive 2026-08-30).
+    #: DEFAULT FALSE ON PURPOSE. The directive makes nav MANDATORY for future
+    #: arms, but "mandatory" is enforced by a PREFLIGHT REFUSAL that names the
+    #: missing flag, NOT by flipping this default:
+    #:   * flipping it silently changes the construction of every existing arm —
+    #:     the comparability break the PI ruled against when they said v7f waits;
+    #:   * an EXPLICIT flag is recorded in ``config.json``; a default is not, so
+    #:     "did this arm have nav?" would be answerable only by knowing which
+    #:     code version was checked out;
+    #:   * ⭐ a refusal is AUDITABLE and a default is INVISIBLE — the same idiom
+    #:     as the parity gate refusing without ``--exclude-parity-overlap``.
+    nav_cond: bool = False
+
     # ---- PROPOSALS · MPC · FALLBACK (2026-08-16, DIAGRAM cells) ------------
     # ⛔ ALL DEFAULT OFF, built at the very END of __init__, and the default
     # build's state_dict is proved BYTE-IDENTICAL per tensor against a
@@ -4906,6 +4920,25 @@ class V6Stack(nn.Module):
             nn.init.zeros_(self.cond_tac_dyn.weight)
             nn.init.zeros_(self.cond_tac_dyn.bias)
 
+        # ---- NAV CONDITIONING, all three layers (PI directive 2026-08-30) ----
+        # ⛔ PER-LAYER WIDTHS, because the three sites have different shapes:
+        #   operative  -> cfg.predictor.d_model, ADDED to `cond` after act_emb
+        #                 (predictor.py:214, an additive FiLM pathway);
+        #   tactical   -> 2 * d_goal_embed == e_a_tac's width;
+        #   strategic  -> d_goal_embed      == e_a_str's width.
+        # FTac CONCATENATES (tactical.py:267-272) — there is NO additive cond
+        # pathway there — so nav is projected INTO the existing g_flat width and
+        # ADDED, exactly the `cond_tac_dyn` idiom above. A uniform width would
+        # die at the first forward; widening the cat would change `in_proj` and
+        # make every existing checkpoint UNLOADABLE.
+        self.nav = None
+        if cfg.nav_cond:
+            from tanitad.models.nav_conditioning import NavConditioner
+            self.nav = NavConditioner(widths={
+                "operative": int(cfg.predictor.d_model),
+                "tactical": 2 * int(cfg.d_goal_embed),
+                "strategic": int(cfg.d_goal_embed)})
+
         # ---- PROPOSALS · MPC · FALLBACK (2026-08-16) — built LAST, only when
         # asked. ⛔ Same rule as every gated lever above, same reason: the
         # default path draws NO RNG, creates NO state_dict key, and every
@@ -5252,7 +5285,8 @@ class V6Stack(nn.Module):
 
     def roll_consistency(self, states: Tensor, actions: Tensor,
                          a_ctl: Tensor, kappa: Tensor, v0: Tensor, *,
-                         intent: Tensor | None = None, k: int) -> Tensor:
+                         intent: Tensor | None = None,
+                         nav_cond: Tensor | None = None, k: int) -> Tensor:
         """Per-candidate IMAGINED-vs-CANDIDATE consistency cost [B, N]: roll
         ``predictor_op`` ``k`` steps under each candidate's OWN controls,
         decode the imagined per-step Δpose through ``step_readout_op``,
@@ -5313,7 +5347,11 @@ class V6Stack(nn.Module):
         dposes = []
         win_s, win_a = st, aw
         for j in range(k):
-            z_hat = self.predictor_op(win_s, win_a, intent=it)[1]
+            # ⚠️ NAV MUST REACH THE ROLLOUT. Conditioning training but not the
+            # rollout is the nav-echo shape: a path present in the diagram and
+            # absent from the gradient. It would LOOK like a working nav arm.
+            z_hat = self.predictor_op(win_s, win_a, intent=it,
+                                      nav_cond=nav_cond)[1]
             dposes.append(self.step_readout_op(win_s[:, -1], z_hat))
             if j < k - 1:
                 win_s = torch.cat([win_s[:, 1:], z_hat.unsqueeze(1)], dim=1)
@@ -5454,7 +5492,9 @@ class V6Stack(nn.Module):
 
     def forward(self, frames: Tensor, actions: Tensor, v0: Tensor, *,
                 own_frames_tac: Tensor | None = None,
-                own_frames_str: Tensor | None = None) -> dict:
+                own_frames_str: Tensor | None = None,
+                nav_token: Tensor | None = None,
+                nav_args: Tensor | None = None) -> dict:
         """One full hierarchy pass.
 
         ``frames``  [B, W, C, H, W'] · ``actions`` [B, W, A] (the 3-channel
@@ -5467,6 +5507,21 @@ class V6Stack(nn.Module):
         ``planner_side`` — the DECLARED surface :meth:`assert_isolation` probes.
         """
         cfg = self.cfg
+        # ---- NAV: MANDATORY when the channel is built, and it RAISES ---------
+        # ⛔ Never defaults. A silent default would train an arm without the
+        # channel while its config claims otherwise, and make two arms silently
+        # incomparable — the `_ensure_ego` size-threshold trap in a new costume.
+        nav_op = nav_tac = nav_str = None
+        if self.nav is not None:
+            if nav_token is None or nav_args is None:
+                raise NavTokenMissing(
+                    "[v6] ⛔ nav_cond=True but this batch carries no nav token. "
+                    "The nav command is a MANDATORY input to all three layers "
+                    "(PI directive 2026-08-30) and is never defaulted. Thread "
+                    "`nav_command` through the collate whitelist.")
+            nav_op = self.nav(nav_token, nav_args, "operative")
+            nav_tac = self.nav(nav_token, nav_args, "tactical")
+            nav_str = self.nav(nav_token, nav_args, "strategic")
         # ⚠️ The token branch runs ONLY for the F-18 `slot_src="tokens"` arm.
         # With the slot decoder off (the default) this is the pre-F-18 call,
         # byte-for-byte — same tensors, same RNG, no extra allocation.
@@ -5535,7 +5590,13 @@ class V6Stack(nn.Module):
              self.vocab_a_lon.encode(a_lon["probs"], a_lon["args"])], dim=-1)
 
         # ---- each layer's predictor rolls under its OWN action --------------
-        zh_str = self.predictor_str(z_str, e_a_str)
+        # ⛔ nav enters by PROJECT-AND-ADD into the existing g_flat width — the
+        # `cond_tac_dyn` idiom — because FTac CONCATENATES and widening its cat
+        # would change `in_proj` and orphan every existing checkpoint. The `if`
+        # keeps the ORIGINAL TENSOR OBJECT when nav is off (the :5544 bar), not
+        # merely an equal one: `+ 0` would add an autograd node.
+        e_a_str_n = e_a_str if nav_str is None else e_a_str + nav_str
+        zh_str = self.predictor_str(z_str, e_a_str_n)
         # ⭐ THE g_str -> P_T PORT (F-1): `z_tac_{t+k} = P_T(z_tac, a_tac |
         # g_str)` — the spec'd but previously unbuilt fifth downward port. The
         # strategic goal is projected (zero-init) and ADDED to the action-pair
@@ -5553,6 +5614,8 @@ class V6Stack(nn.Module):
         g_cond_tac = e_a_tac
         if self.cond_tac_dyn is not None:
             g_cond_tac = e_a_tac + self.cond_tac_dyn(self._cut(e_g_str, cut))
+        if nav_tac is not None:
+            g_cond_tac = g_cond_tac + nav_tac
         zh_tac = self.predictor_tac(z_tac, g_cond_tac)
         # ⚠️ the g_tac conditioning enters the OPERATIVE predictor detached
         # under isolation: the goal STEERS the operative dynamics, but the
@@ -5561,7 +5624,8 @@ class V6Stack(nn.Module):
         # conditioning port instead of the encoder — the same defect, one door
         # along).
         zh_op = self.predictor_op(z_op_win, actions,
-                                  intent=self._cut(e_g_tac, cut))
+                                  intent=self._cut(e_g_tac, cut),
+                                  nav_cond=nav_op)
 
         # ---- THE g_tac->OPERATIVE SEAM, exercised on DETACHED trunk inputs --
         # ⛔ Added 2026-08-13 after a PI question exposed that NO S-T loss
@@ -5575,8 +5639,16 @@ class V6Stack(nn.Module):
         # ONLY the goal-injection side (intent_proj + the goal embeddings) —
         # which is what makes it admissible in `planner_side` under X3: it
         # cannot carry gradient into the encoder BY CONSTRUCTION.
+        # ⚠️ NAV ENTERS THE SEAM TOO, and omitting it would be a SILENT defect.
+        # This seam exists (2026-08-13) precisely because a downlink was trained
+        # on the MAIN PATH ONLY — "a conditioning path present in the diagram,
+        # absent from the gradient". Nav detaches with the rest, so the port's
+        # own parameters get gradient without the WM loss training the nav path
+        # backwards through it.
         zh_op_seam = self.predictor_op(z_op_win.detach(), actions.detach(),
-                                       intent=self._cut(e_g_tac, cut))
+                                       intent=self._cut(e_g_tac, cut),
+                                       nav_cond=(None if nav_op is None
+                                                 else nav_op.detach()))
 
         # ---- the ONE 6 s plan ----------------------------------------------
         # roll context for the MPC consistency regularizer and the fallback's

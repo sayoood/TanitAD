@@ -152,6 +152,38 @@ class MotionSegment:
             lon = next((v for k, v in _LON_RULES if k in m), None)
         return lat, lon
 
+    @property
+    def lateral_side(self) -> str | None:
+        """``left`` | ``right`` | ``straight``, or None when the segment makes no
+        lateral claim — read from Alpamayo's OWN segment type.
+
+        ⛔ WHY THIS EXISTS (PI 2026-08-30: *"leverage more the cot and reasoning
+        of Alpamayo"*). `_LAT_RULES` maps BOTH ``nudge to the left`` AND ``nudge
+        to the right`` onto the single unsided token ``EVADE_IN_CORRIDOR``, so
+        **the direction Alpamayo explicitly stated was discarded** — on 130
+        segments (91 left / 39 right). Every other sided type keeps its side
+        (`turn right`->TURN_R, `split to the right`->TAKE_EXIT_R,
+        `change lane to the left`->LANE_CHANGE_L); nudge was the one that lost it.
+
+        ⚠️ The v7 vocabulary is FROZEN, so this does NOT mint EVADE_IN_CORRIDOR_L/R.
+        The token is unchanged; the side travels beside it, the same way
+        `EVADE_IN_CORRIDOR` already carries an ``obstacle_class`` argument
+        (`cot_tokens_v7.py:276`).
+        """
+        t = self.raw_type.strip().lower()
+        m = re.search(r"\b(?:nudge|shift|move over|split|merge|turn|change lane)\b"
+                      r"[^.,;]*?\bto the (left|right)\b", t)
+        if m:
+            return m.group(1)
+        lat, _ = self.tokens()
+        if lat:
+            if lat.endswith("_L"):
+                return "left"
+            if lat.endswith("_R"):
+                return "right"
+            return "straight"
+        return None
+
 
 @dataclass(frozen=True)
 class CriticalComponent:
@@ -265,8 +297,25 @@ def band_tokens(clip_id: str, lo_rel: float, hi_rel: float) -> dict:
         if b and b not in lon:
             lon.append(b)
     comp = critical_component(clip_id)
+    # ⭐ The banded lateral SIDE — Alpamayo's reasoning as a second, time-aligned
+    # lateral channel, independent of its `meta_action` label. MEASURED
+    # 2026-08-30 over 2,654 clips: the two channels agree on 64 % of clips, and
+    # where they AGREE the claim matches geometry 74.7 % of the time against a
+    # 65 % baseline; where they CONFLICT it is a coin flip (meta right 459,
+    # reasoning right 404). So concordance is a usable confidence signal and
+    # neither channel dominates the other.
+    sides = {s.lateral_side for s in segs} - {None}
+    directional = sides - {"straight"}
+    if len(directional) == 1:
+        band_side = directional.pop()
+    elif not directional and sides:
+        band_side = "straight"
+    else:
+        band_side = None                    # silent on a mixed or empty band
     return {
         "lateral": lat,
+        "lateral_side": band_side,
+        "lateral_sides_seen": sorted(sides),
         "longitudinal": lon,
         "n_segments": len(segs),
         "spans": [(round(s.t0_rel, 1), round(s.t1_rel, 1)) for s in segs],

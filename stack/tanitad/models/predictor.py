@@ -188,7 +188,22 @@ class OperativePredictor(nn.Module):
                             if gated_intent and intent_dim is not None else None)
 
     def forward(self, states: Tensor, actions: Tensor,
-                intent: Tensor | None = None) -> dict[int, Tensor]:
+                intent: Tensor | None = None,
+                nav_cond: Tensor | None = None) -> dict[int, Tensor]:
+        """``nav_cond`` — the NAV term, added into the SAME ``cond`` the actions
+        build (PI directive 2026-08-30: nav conditions the WM "like the actions").
+
+        ⛔ ADDITIVE AND ``None``-SAFE. ``nav_cond=None`` reproduces the previous
+        behaviour EXACTLY and adds no parameters here, so every existing
+        checkpoint stays a strict subset and no arm changes by accident. The
+        gating and zero-init live in ``NavConditioner`` (the caller), not here —
+        this site only accepts a ready term, exactly as it does for ``intent``.
+
+        ⚠️ H26 applies to this sum and is why the caller gates: the UNGATED
+        ``intent_proj`` term reached norm ~31.4 against ``act_emb`` ~28.3,
+        diluting the action conditioning, and was measured net-harmful. Nav is a
+        THIRD term in the same sum.
+        """
         # `-O`-proof, named-axis contract check. Supersedes the bare `assert`,
         # which was stripped under `python -O` and let a short window run
         # SILENTLY (pos slice, causal mask and FiLM cond all re-align).
@@ -205,6 +220,11 @@ class OperativePredictor(nn.Module):
             if self.intent_gate is not None:
                 term = self.intent_gate * term
             cond = cond + term
+        if nav_cond is not None:
+            # broadcast a per-window nav term across the window axis, matching
+            # how `intent` enters; a [B, W, D] term is used as-is.
+            cond = cond + (nav_cond.unsqueeze(1) if nav_cond.dim() == 2
+                           else nav_cond)
         mask = torch.triu(torch.ones(w, w, device=states.device, dtype=torch.bool),
                           diagonal=1)
         for blk in self.blocks:

@@ -41,8 +41,11 @@ def _rec(**over):
          "bands": {"operative_s": [0, 2], "tactical_s": [2, 6],
                    "strategic_s": [8, 30], "unassigned_manoeuvres": []},
          "t0_s": 8.0, "horizon": {"available_s": 30.0, "recording_span_s": 30.0},
+         # ⚠️ REAL args: with args={} both arg-semantics collapse to 0.0 and the
+         # test that distinguishes them passes VACUOUSLY.
          "nav_command": {"token": "NAV_TURN_R", "provenance": "ego-future",
-                         "oracle": True, "args": {}},
+                         "oracle": True,
+                         "args": {"distance_m": 106.5, "time_s": 11.1}},
          "turn_suppression": None,
          "alpamayo": {"lateral": {"agree": False},
                       "longitudinal": {"agree": False}}}
@@ -276,3 +279,64 @@ def test_nav_is_oracle_by_PROVENANCE_on_every_record_even_where_the_flag_is_abse
     assert len(with_flag) == 4190, f"expected 4190 flagged, got {len(with_flag)}"
     assert all(n["provenance"] == "ego-future" for n in navs)
     assert man.divergences == (), f"unexpected divergence: {man.divergences}"
+
+
+# ------------------------------------------------------------- the nav join
+def _emitter(fixture_blob, allow=True, semantics="t0_constant"):
+    from tanitad.data.v7_labels import NavEmitter
+    labels, man = load_v7_labels(fixture_blob, allow_oracle_nav=allow)
+    return NavEmitter(labels, man, {i: f"c{i}" for i in range(3)},
+                      semantics=semantics), labels, man
+
+
+def test_nav_emission_REQUIRES_the_oracle_stamp(fixture_blob):
+    """⭐ THE GATE IS THE ONLY CODE PATH TO THE VALUE. A nav-conditioned arm
+    physically cannot train unless its manifest carries allow_oracle_nav=True —
+    and that flag lands in config.json. Not a convention someone must remember."""
+    import torch
+    from tanitad.data.v7_labels import OracleNavRefused
+    em, _, _ = _emitter(fixture_blob, allow=False)
+    with pytest.raises(OracleNavRefused):
+        em(torch.tensor([0, 1]))
+
+
+def test_nav_emission_shapes_and_dtypes(fixture_blob):
+    import torch
+    em, _, _ = _emitter(fixture_blob)
+    tok, args = em(torch.tensor([0, 1, 2]))
+    assert tok.shape == (3,) and tok.dtype == torch.long
+    assert args.shape == (3, 2) and args.dtype == torch.float32
+
+
+def test_an_unmapped_episode_RAISES_rather_than_defaulting(fixture_blob):
+    """⛔ A default would feed ANOTHER clip's route to this window — worse than a
+    crash, because the model would train on a plausible wrong signal."""
+    import torch
+    from tanitad.data.v7_labels import NavTokenMissing
+    em, _, _ = _emitter(fixture_blob)
+    with pytest.raises(NavTokenMissing) as e:
+        em(torch.tensor([99]))
+    assert "no clip_id mapping" in str(e.value)
+
+
+def test_the_arg_SEMANTICS_live_behind_one_function(fixture_blob):
+    """⚠️ distance_m/time_s are measured to the nav point FROM t0, so a later
+    window is closer. `t0_constant` (default) holds them; `decremented` subtracts
+    elapsed time — right for a real nav system, but it makes the args a FUNCTION
+    OF EGO STATE and must be checked against the goal/situation
+    information-disjointness rule before shipping. The DataFlyWheel owns that
+    call; swapping is one line."""
+    import torch
+    a, _, _ = _emitter(fixture_blob, semantics="t0_constant")
+    b, _, _ = _emitter(fixture_blob, semantics="decremented")
+    _, args_a = a(torch.tensor([0]), t_last=torch.tensor([100]))
+    _, args_b = b(torch.tensor([0]), t_last=torch.tensor([100]))
+    assert args_a[0, 1] != args_b[0, 1], "the two semantics must actually differ"
+    assert a.provenance()["nav_arg_semantics"] == "t0_constant"
+
+
+def test_provenance_carries_the_blob_identity_and_the_semantics(fixture_blob):
+    em, _, _ = _emitter(fixture_blob)
+    p = em.provenance()
+    assert p["allow_oracle_nav"] is True and len(p["md5"]) == 32
+    assert p["nav_arg_semantics"] == "t0_constant"

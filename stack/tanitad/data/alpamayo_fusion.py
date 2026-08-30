@@ -183,6 +183,51 @@ def fuse_lateral(clip_id: str, geom_side: str) -> tuple[bool | None, str | None]
     return (a == geom_side), a
 
 
+def lateral_concordance(clip_id: str) -> dict:
+    """Do Alpamayo's TWO lateral channels agree with each other?
+
+    ⭐ PI 2026-08-30: *"leverage more the cot and reasoning of Alpamayo"*.
+    Alpamayo states its lateral action twice and independently: the structured
+    ``meta_action["lateral"]`` label, and its time-segmented ``motion_analysis``
+    reasoning. They are NOT redundant — MEASURED over 2,654 clips they disagree
+    on **36 %**, and neither dominates (when they conflict, the label is right
+    459 times and the reasoning 404).
+
+    What the pair buys is a CONFIDENCE signal rather than a better single source:
+
+    ======================  ======  ==========================
+    state                   share   matches geometry
+    ======================  ======  ==========================
+    concordant              64 %    **74.7 %**  (baseline 65 %)
+    self-contradictory      36 %    ~coin flip
+    ======================  ======  ==========================
+
+    ⇒ **a clip whose two Alpamayo channels contradict each other is not a second
+    opinion at all**, and corroboration built on it is noise wearing a number.
+    Returns ``state`` in {``concordant``, ``self_contradictory``, ``single_channel``,
+    ``silent``} so a consumer can weight or drop it — this REPORTS, it never
+    overrides geometry (see :func:`fuse_lateral`).
+    """
+    from . import alpamayo_structured as AST      # local: avoids an import cycle
+
+    c = AR.get(clip_id)
+    meta = c.lateral if c else None
+    try:
+        band = AST.band_tokens(clip_id, 0.0, 6.0).get("lateral_side")
+    except Exception:                                       # noqa: BLE001
+        band = None
+    if meta is None and band is None:
+        state = "silent"
+    elif meta is None or band is None:
+        state = "single_channel"
+    elif meta == band:
+        state = "concordant"
+    else:
+        state = "self_contradictory"
+    return {"state": state, "meta_action_side": meta, "reasoning_side": band,
+            "usable_as_corroboration": state in ("concordant", "single_channel")}
+
+
 #: Which box classes ground which CoT-derived token.
 _GROUNDS: dict[str, str] = {
     "TRAFFIC_LIGHT_REACT": "traffic_light",

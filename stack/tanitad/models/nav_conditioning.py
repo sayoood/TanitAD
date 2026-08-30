@@ -100,26 +100,98 @@ class NavConditioner(nn.Module):
     shared.
     """
 
-    def __init__(self, d_model: int, *, layers=("operative", "tactical", "strategic"),
-                 d_embed: int = 32, stats: NavArgStats | None = None):
+    def __init__(self, d_model: int | None = None, *,
+                 widths: dict[str, int] | None = None,
+                 layers=("operative", "tactical", "strategic"),
+                 d_embed: int = 32, stats: NavArgStats | None = None,
+                 gate_init: float = 0.1, zero_init: bool = True):
+        """``widths`` gives EACH layer the width of the tensor nav is added to.
+
+        ⛔ THE THREE SITES DIFFER IN SHAPE, AND ONE ``d_model`` IS WRONG FOR TWO
+        OF THEM. MEASURED from source, not from a docstring:
+
+        * **operative** — ``predictor.py:199``: ``cond = act_emb(actions)``, an
+          ADDITIVE FiLM pathway at the predictor's hidden width.
+        * **tactical / strategic** — ``tactical.py:267-272``: ``FTac.forward``
+          computes ``in_proj(cat([z_tac, g_flat]))``. It **CONCATENATES**; there
+          is NO additive cond pathway at these layers at all. Widening that cat
+          would change ``in_proj``'s shape, which the v6 docs say bypasses
+          ``STAGE_MAY_INTRODUCE`` — and would make every existing checkpoint
+          UNLOADABLE, breaking the comparability the PI ruled on.
+
+        ⭐ So nav follows the precedent already in the tree for this exact
+        problem, ``cond_tac_dyn`` (``v6.py:4904-4907``, applied at ``:5555``):
+        **project INTO the existing ``g_flat`` width and ADD**, zero-init —
+        ``g_cond_tac = e_a_tac + cond_tac_dyn(...)``. No shape change, so the
+        strict-subset property of the operative port is preserved here too.
+
+        | layer | width | added to |
+        |---|---|---|
+        | operative | predictor hidden ``d`` | ``cond`` after ``act_emb`` |
+        | tactical | ``2 * d_goal_embed`` | ``e_a_tac`` |
+        | strategic | ``d_goal_embed`` | the strategic ``g_flat`` |
+
+        ⚠️ ``d_model`` is retained ONLY for the uniform-width test case. Passing
+        it for a real stack gives two of three layers the wrong width and dies at
+        the first forward.
+        """
         super().__init__()
+        if widths is None:
+            if d_model is None:
+                raise ValueError(
+                    "[nav] pass widths={layer: width} — the three conditioning "
+                    "sites have DIFFERENT widths (operative=predictor hidden, "
+                    "tactical=2*d_goal_embed, strategic=d_goal_embed). d_model "
+                    "is only for the uniform-width test case.")
+            widths = {ln: int(d_model) for ln in layers}
         self.tokens = tuple(NAV_COMMAND_TOKENS)
         self.tok2id = {t: i for i, t in enumerate(self.tokens)}
-        self.layers = tuple(layers)
+        self.layers = tuple(widths)
+        self.widths = dict(widths)
         self.stats = stats
         self.embed = nn.Embedding(len(self.tokens), d_embed)     # SHARED
         self.arg_proj = nn.Linear(2, d_embed)                    # SHARED
         self.layer_proj = nn.ModuleDict(
-            {ln: nn.Linear(d_embed, d_model) for ln in self.layers})
+            {ln: nn.Linear(d_embed, w) for ln, w in widths.items()})
+        #: ⛔ REZERO GATE, PER LAYER — AND IT IS NOT OPTIONAL POLISH. MEASURED
+        #: (H26, ``predictor.py:126``): the UNGATED ``intent_proj`` term reached
+        #: norm ~31.4 against ``act_emb`` ~28.3, **diluting the action
+        #: conditioning**, and engaging intent was measured NET-HARMFUL to the
+        #: operative. The fix there was a ReZero gate at init 0.1 so the term
+        #: starts action-dominant and grows only if training earns it.
+        #: ⇒ Nav enters the SAME additive ``cond`` pathway as a THIRD term. An
+        #: ungated nav term would reproduce H26 with one more competitor. The
+        #: PI's "condition the WM like the actions" is right in KIND — nav is an
+        #: input, not a head — but "like the actions" must not mean "at equal
+        #: magnitude from step 0", which is the configuration H26 measured harmful.
+        self.gate = nn.ParameterDict(
+            {ln: nn.Parameter(torch.tensor(float(gate_init))) for ln in self.layers})
+        if zero_init:
+            #: zero-init the OUTPUT projection so introducing nav mid-ladder is
+            #: loss-continuous — the same discipline as FiLM's zero-init
+            #: (``predictor.py:41-42``) and the tac_goal_cond port.
+            for ln in self.layers:
+                nn.init.zeros_(self.layer_proj[ln].weight)
+                nn.init.zeros_(self.layer_proj[ln].bias)
 
     def encode(self, token_id: Tensor, args: Tensor) -> Tensor:
         """``[B]`` ids + ``[B, 2]`` NORMALISED args -> ``[B, d_embed]`` shared code."""
         return self.embed(token_id) + self.arg_proj(args)
 
     def forward(self, token_id: Tensor, args: Tensor, layer: str) -> Tensor:
+        """The term to ADD into that layer's existing ``cond``.
+
+        ⛔ ADDITIVE, NEVER CONCATENATED. ``predictor.py:199-207`` builds
+        ``cond = act_emb(actions)`` then ``cond = cond + intent_term``; the v6
+        docs state that a SHAPE CHANGE bypasses ``STAGE_MAY_INTRODUCE``'s
+        adjudication (and ``load_state_dict(strict=False)`` still RAISES on
+        shapes, measured). Concatenating nav would therefore change the
+        conditioning width and slip past the stage gate that decides what a
+        stage is allowed to introduce.
+        """
         if layer not in self.layer_proj:
             raise KeyError(f"[nav] unknown layer {layer!r}; have {self.layers}")
-        return self.layer_proj[layer](self.encode(token_id, args))
+        return self.gate[layer] * self.layer_proj[layer](self.encode(token_id, args))
 
     def ids_from_batch(self, batch: dict) -> Tensor:
         """⛔ RAISES on a missing/unknown token. Never defaults."""

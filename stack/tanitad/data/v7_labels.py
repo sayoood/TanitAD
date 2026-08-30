@@ -67,14 +67,21 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Iterable, Sequence
 
-from tanitad.models.vocab_v7 import (NOT_YET_EXTRACTABLE, STRATEGIC_ACTION_TOKENS_V7,
+# ⚠️ the emitter raises the SAME exception type the model-side guard uses, so
+# a missing nav is one error class end to end rather than two that must be
+# caught separately at the data boundary and in the forward.
+from tanitad.models.nav_conditioning import NavTokenMissing
+from tanitad.models.vocab_v7 import (NAV_COMMAND_TOKENS as NAV_TOKENS,
+                                     NOT_YET_EXTRACTABLE, STRATEGIC_ACTION_TOKENS_V7,
                                      STRATEGIC_GOAL_TOKENS_V7,
                                      TACTICAL_LAT_ACTIONS_V7,
                                      TACTICAL_LON_ACTIONS_V7)
 
 __all__ = ["HEADS", "LabelManifest", "V7Label", "assert_mask_matches_presence",
            "class_weights", "effective_mask", "flatten_tactical_actions",
-           "head_mask", "is_oracle_nav", "load_v7_labels", "oracle_nav"]
+           "head_mask", "is_oracle_nav", "load_v7_labels", "NavEmitter",
+           "NavTokenMissing",
+           "oracle_nav"]
 
 #: The four supervised heads. ⛔ ``tac_lat`` and ``tac_lon`` are SEPARATE by
 #: design (condition 2) — never merge them into one 25-way or 64-way head.
@@ -420,3 +427,103 @@ def flatten_tactical_actions(labels: Sequence[V7Label]) -> list[str]:
         "REFUSED. That is the 5-way-softmax defect (0/881 accelerate, the "
         "speed-fan) rebuilt in the labels. Use two heads: HEADS['tac_lat'] and "
         "HEADS['tac_lon'].")
+
+
+# ---------------------------------------------------------------------------
+# NAV EMISSION — the join from per-clip labels to per-window model inputs
+# ---------------------------------------------------------------------------
+class NavEmitter:
+    """Turn ``ep_idx`` into the ``(nav_token, nav_args)`` the model consumes.
+
+    PI DIRECTIVE 2026-08-30: the nav command conditions all three layers. The
+    labels are **per clip**; the model needs them **per window**. This is that
+    join, and it lives here rather than in the dataset because ``ep_idx`` indexes
+    the cache's sorted ``<clip_id>.v2ep.pt`` order and a consumer is expected to
+    resolve the clip id "from the cache listing rather than from anything stored"
+    in the batch (``train_flagship4b.py:149-151``).
+
+    ⭐ IT CANNOT EMIT WITHOUT THE ORACLE STAMP. Every arg goes through
+    :func:`oracle_nav`, which checks the MANIFEST — so a nav-conditioned arm
+    physically cannot train unless its manifest carries ``allow_oracle_nav=True``,
+    and that flag is recorded in ``config.json``. The gate is not a convention
+    someone must remember; it is the only code path to the value.
+
+    ⚠️ THE ARG SEMANTICS ARE BEHIND ONE FUNCTION AND THE CHOICE IS OPEN.
+    ``distance_m``/``time_s`` are measured **to the nav point from t0**, so a
+    window at offset t is closer to it than t0 was. Two readings:
+
+      ``t0_constant``  every window in a clip carries the t0 values. Simple, and
+                       wrong in an interesting way: the window 15 s later still
+                       says "turn right in 106.5 m" when it is 8 m away.
+      ``decremented``  subtract the ego's travelled distance / elapsed time. What
+                       a real nav system does — ⚠️ but it makes the args a
+                       FUNCTION OF EGO STATE, so it must be checked against the
+                       goal/situation information-disjointness rule before it
+                       ships (PI 2026-08-03: state what the goal is computed from).
+
+    ⛔ The DataFlyWheel owns that specification. Until it lands, the default is
+    ``t0_constant`` and the choice is RECORDED in :meth:`provenance` — swapping
+    it is a one-line change to :meth:`_args_for_window`, by design.
+    """
+
+    def __init__(self, labels: Sequence[V7Label], manifest: LabelManifest,
+                 clip_id_by_ep_idx: dict[int, str], *,
+                 semantics: str = "t0_constant"):
+        if semantics not in ("t0_constant", "decremented"):
+            raise ValueError(f"[nav] unknown semantics {semantics!r}")
+        self.manifest = manifest
+        self.semantics = semantics
+        self.clip_id_by_ep_idx = dict(clip_id_by_ep_idx)
+        self._by_clip = {x.clip_id: x for x in labels}
+        self._tok2id = {t: i for i, t in enumerate(NAV_TOKENS)}
+
+    def _args_for_window(self, nav: dict[str, Any], t_offset_s: float
+                         ) -> tuple[float, float]:
+        """⭐ THE ONE FUNCTION THE SEMANTICS LIVE IN (see the class docstring)."""
+        args = nav.get("args") or {}
+        d, t = float(args.get("distance_m", 0.0)), float(args.get("time_s", 0.0))
+        if self.semantics == "t0_constant":
+            return d, t
+        # ``decremented`` — deliberately NOT the default; see the disjointness note
+        return d, max(t - float(t_offset_s), 0.0)
+
+    def __call__(self, ep_idx, t_last=None, dt: float = 0.1):
+        """``ep_idx`` [B] -> ``(token_id [B] int64, args [B, 2] float32)``.
+
+        ⛔ RAISES on an unmapped episode. A default here would silently feed one
+        clip's route to another's windows — worse than a crash, because the model
+        would train on a plausible wrong signal.
+        """
+        import torch
+        idx = [int(i) for i in (ep_idx.tolist() if hasattr(ep_idx, "tolist")
+                                else ep_idx)]
+        offs = ([float(x) * dt for x in (t_last.tolist()
+                 if hasattr(t_last, "tolist") else t_last)]
+                if t_last is not None else [0.0] * len(idx))
+        ids, args = [], []
+        for e, off in zip(idx, offs):
+            clip = self.clip_id_by_ep_idx.get(e)
+            if clip is None:
+                raise NavTokenMissing(
+                    f"[nav] ⛔ ep_idx {e} has no clip_id mapping. Refusing rather "
+                    f"than defaulting: a default would feed ANOTHER clip's route "
+                    f"to this window and train on a plausible wrong signal.")
+            rec = self._by_clip.get(clip)
+            if rec is None:
+                raise NavTokenMissing(
+                    f"[nav] ⛔ clip {clip!r} (ep_idx {e}) has no label record.")
+            nav = oracle_nav(rec, self.manifest)      # ⭐ the gate, not a lookup
+            tok = nav.get("token")
+            if tok not in self._tok2id:
+                raise NavTokenMissing(f"[nav] ⛔ unknown nav token {tok!r}")
+            ids.append(self._tok2id[tok])
+            args.append(list(self._args_for_window(nav, off)))
+        return (torch.tensor(ids, dtype=torch.long),
+                torch.tensor(args, dtype=torch.float32))
+
+    def provenance(self) -> dict[str, Any]:
+        """Goes into ``config.json`` beside the label manifest."""
+        return {"nav_arg_semantics": self.semantics,
+                "n_clips_mapped": len(self.clip_id_by_ep_idx),
+                "n_label_records": len(self._by_clip),
+                **self.manifest.to_dict()}
