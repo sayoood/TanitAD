@@ -11110,6 +11110,22 @@ probably compatible with the one that trained them. **Probably is not verified.*
    provenance cannot be stated — and *"which code produced this number"* is exactly
    what `MODEL_REGISTRY`'s source-of-truth rule exists to answer.
 
+## ✅ RESOLVED 2026-08-30 — BENIGNLY, AND VERIFIED RATHER THAN ASSUMED
+
+**Step 1 — is the mirror a rogue tree?** No. `tanitad-mirror`'s `v6.py` hashes to blob `197ae0db0524bb11a6be0f9bbeec3ef14067ea5d`, which `git log --find-object` places in commits **`eef10dd`** (MM-E4 drift-levers) and **`8ea7731`** (O5 EMA-teacher) — a *committed historical revision of our own code*, contemporaneous with the arms being probed, not an unversioned tree.
+
+**Step 2 — does a banked number reproduce against current G:?** **YES, EXACTLY.** Forced the probe onto G:'s `tanitad` by pre-importing and **asserting the origin of all three modules** (`tanitad`, `eval.v6_probe_trunk`, `models.v6`) before the helper's hardcoded `sys.path.insert` could run — Python caches modules, so a cached import cannot be overridden by a later path insert.
+
+| | drift r | t |
+|---|---|---|
+| banked (via mirror) | 0.6952 | 154.57 |
+| **G:-pinned rerun** | **0.6952** | **154.57** |
+| delta | **0.000000** | — |
+
+Constant control read **exactly 0.0**. ⇒ **Every drift / meanpred / seed-spread number produced this campaign STANDS.**
+
+**Step 3 — close the gap that let it go unnoticed.** `latentmotion.py` and `meanpred.py` now emit `_tanitad_imported_from` into their own output JSON beside the numbers, verified on a fresh run (`G:\…\stack	anitad\__init__.py`, drift unchanged at 0.6952). ⛔ The hardcoded path was deliberately **left in place** — it resolves to a legitimate revision and other sessions may depend on it; **the defect was that nothing STATED the tree, not that the tree was wrong.**
+
 ## ⭐ The rule
 
 **A PROBE MUST STATE WHICH TREE IT IMPORTED.** Every probe should print
