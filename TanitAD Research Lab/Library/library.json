@@ -149,6 +149,7 @@
    "banked": "2026-08-18",
    "tags": [
     "cem",
+    "closed-loop-wm",
     "frozen-encoder",
     "planning",
     "rollout-composition",
@@ -157,7 +158,8 @@
    "note": "DINO-WM: frozen DINOv2 PATCH features + latent L2 + CEM/MPC; CLS/global ablation degrades badly | DINO-WM: one-step teacher-forced predictor (frameskip 1-5), multi-step ONLY by autoregressive composition at plan time (CEM/MPC receding horizon)",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-18-frozen-encoder-literature/FROZEN_ENCODER_LITERATURE.md",
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-29-ema-warmup-rollout-composition/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-29-ema-warmup-rollout-composition/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-t1-floor-action-sensitivity/RESULT.md"
    ]
   },
   "2502.00622": {
@@ -214,6 +216,7 @@
    "sha256": "9cfcfde5fb0d9730637da5b9e7317825c3f3d09e91f3553e22eeba42c74d2226",
    "banked": "2026-08-18",
    "tags": [
+    "closed-loop-wm",
     "ema-teacher",
     "frozen-encoder",
     "planning",
@@ -222,7 +225,8 @@
    "note": "V-JEPA 2 / 2-AC: frozen video ViT + compact action-conditioned predictor on <62h Droid, MPC to a goal image | V-JEPA2-AC: teacher-forcing + rollout loss with T=2 (one recurrent step of gradient); error accumulation over long rollouts acknowledged verbatim",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-18-frozen-encoder-literature/FROZEN_ENCODER_LITERATURE.md",
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-29-ema-warmup-rollout-composition/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-29-ema-warmup-rollout-composition/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-t1-floor-action-sensitivity/RESULT.md"
    ]
   },
   "2509.11417": {
@@ -440,11 +444,13 @@
    "sha256": "fe06b5488907f56aa9682e2e2febc552d85fe761fda43f2727e65d60fbeb6485",
    "banked": "2026-08-20",
    "tags": [
+    "closed-loop-wm",
     "ssl"
    ],
    "note": "LeJEPA (Balestriero & LeCun): SIGReg = sketched isotropic Gaussian regularization; provably prevents collapse without EMA/stop-grad/teacher. THE paper v6's o6_sigreg implements.",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-19-simwam-analysis/LEJEPA_VS_OURS.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-19-simwam-analysis/LEJEPA_VS_OURS.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-t1-floor-action-sensitivity/RESULT.md"
    ]
   },
   "2603.19312": {
@@ -498,11 +504,13 @@
    "sha256": "6ad4f8a379494eeb099cf7d489b75bec1c0ec3321428bcd0b0ca0f05662b8600",
    "banked": "2026-08-21",
    "tags": [
-    "driving"
+    "driving",
+    "input-pipeline"
    ],
-   "note": "DiffusionDrive: truncated diffusion policy over ANCHORED trajectory priors, ResNet/BEV encoder + diffusion planner. THE paper REF-C is derived from (D-030: 'REF-C redesigned to a DiffusionDrive anchored decoder'). Was UNBANKED until 2026-08-21 despite being REF-C's origin.",
+   "note": "DiffusionDrive: truncated diffusion policy over ANCHORED trajectory priors, ResNet/BEV encoder + diffusion planner. THE paper REF-C is derived from (D-030: 'REF-C redesigned to a DiffusionDrive anchored decoder'). Was UNBANKED until 2026-08-21 despite being REF-C's origin. | DiffusionDrive: three cropped forward cams concatenated as a 1024x256 image, ResNet-34, 88.1 PDMS NAVSIM",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-21-refcv3-review/REFCV3_REVIEW.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-21-refcv3-review/REFCV3_REVIEW.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md"
    ]
   },
   "2603.14482": {
@@ -670,10 +678,12 @@
    "sha256": "f5c200f838546b9c62ff35d38c21f788ef2db2adab919d6db58ec180c55e4823",
    "banked": "2026-08-23",
    "tags": [
-    "data-scaling"
+    "data-scaling",
+    "input-pipeline"
    ],
-   "note": "World-model future-image prediction as aux signal AMPLIFIES the data scaling law for VLA driving (NAVSIM v1/v2, 680x in-house corpus) - dense self-supervision beats action-only supervision at scale",
+   "note": "World-model future-image prediction as aux signal AMPLIFIES the data scaling law for VLA driving (NAVSIM v1/v2, 680x in-house corpus) - dense self-supervision beats action-only supervision at scale | DriveVLA-W0: NAVSIM SOTA 93.0 PDMS from a SINGLE front camera at 256x144 - lowest resolution in the survey",
    "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
     "TanitAD Research Lab/Data Engineering/2026-08-22-lab-run-001/RESULT.md"
    ]
   },
@@ -753,10 +763,12 @@
    "sha256": "a887dc13b3cf672b800968d3c8011d3d2741d8d68b342a0b4a390f7d4fe67ce1",
    "banked": "2026-08-23",
    "tags": [
+    "label-adjudication",
     "opponent-alpamayo"
    ],
    "note": "NVIDIA open 10B reasoning VLA (Cosmos-Reason + diffusion trajectory decoder + Chain-of-Causation data, SFT then RL): claimed +12pct hard-case planning, -35pct close encounters closed-loop, 99 ms; weights+code public",
    "cited_by": [
+    "TanitAD Research Lab/Data Engineering/Research/2026-08-30-label-source-adjudication/RESULT.md",
     "TanitAD Research Lab/Opponent Analysis/2026-08-22-lab-run-001/RESULT.md"
    ]
   },
@@ -1171,10 +1183,12 @@
    "sha256": "12b032cfd451b8ace4b18145dbe24382d2cbe2eda6b562331bc86799bbaafd5e",
    "banked": "2026-08-23",
    "tags": [
-    "imitation"
+    "imitation",
+    "input-pipeline"
    ],
-   "note": "DAgger: dataset aggregation, no-regret online imitation",
+   "note": "DAgger: dataset aggregation, no-regret online imitation | DAgger: no-regret online IL; theory of compounding error / covariate shift in behaviour cloning (T^2 eps vs T eps)",
    "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
     "products/P4-training-pipelines/METHOD_LIBRARY.md"
    ]
   },
@@ -1196,10 +1210,12 @@
    "sha256": "263508045450e05e3bd3f6a9fce6d5b240d17a728dd268c59eed1b868a716ed8",
    "banked": "2026-08-23",
    "tags": [
-    "imitation-ad"
+    "imitation-ad",
+    "input-pipeline"
    ],
-   "note": "Limitations of behavior cloning for autonomous driving",
+   "note": "Limitations of behavior cloning for autonomous driving | Codevilla et al: the INERTIA problem (spurious stop-stays-stopped correlation from observation history) + dataset bias/variance; behaviour cloning limitations measured in CARLA NoCrash",
    "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
     "products/P4-training-pipelines/METHOD_LIBRARY.md"
    ]
   },
@@ -1220,10 +1236,12 @@
    "sha256": "631b0794f2bb4b25afcb8d8a07abd27b10ca0de7812d5553caf2430921722be5",
    "banked": "2026-08-23",
    "tags": [
-    "imitation-ad"
+    "imitation-ad",
+    "input-pipeline"
    ],
-   "note": "ChauffeurNet: BC + synthesized perturbations & auxiliary losses",
+   "note": "ChauffeurNet: BC + synthesized perturbations & auxiliary losses | ChauffeurNet: trajectory perturbation + past-motion dropout; without them the policy cannot recover from drift (ablation M0-M4)",
    "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
     "products/P4-training-pipelines/METHOD_LIBRARY.md"
    ]
   },
@@ -1882,11 +1900,13 @@
    "sha256": "b293843f4b2377d72f364f66ee1cc5a61f59a8010e46950e1feacb3187ff1260",
    "banked": "2026-08-25",
    "tags": [
-    "action-conditioning"
+    "action-conditioning",
+    "closed-loop-wm"
    ],
    "note": "ActSWM: names our failure CONTEXT COLLAPSE (rollouts insensitive to actions while matching future states); diagnoses it with a recorded-vs-ZERO-action gap = our zero_sa; fix = HINGE loss on rollout separation + a RANDOMLY-INITIALISED FROZEN action readout on [z_t,z_t+1] whose loss backprops through the LATENT INPUTS (so it shapes the ENCODER, unlike our O11 which only touched the predictor FiLM); AND independently reproduces our O11 degeneracy - a JOINTLY TRAINED readout raised separation while fidelity fell 0.972->0.698",
    "cited_by": [
-    "Project Steering/GOALS_AND_CLAIMS.md"
+    "Project Steering/GOALS_AND_CLAIMS.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-t1-floor-action-sensitivity/RESULT.md"
    ]
   },
   "2412.05337": {
@@ -1907,12 +1927,15 @@
    "sha256": "560190990e9f2d2f89add329668ce653c758d9975447e6f52db7ebed6bbe11c5",
    "banked": "2026-08-25",
    "tags": [
-    "action-conditioning"
+    "action-conditioning",
+    "anti-echo-control"
    ],
    "note": "queued for the action-conditioning review | ACT-Bench: action fidelity = generate future VIDEO from a commanded trajectory, recover it with an INDEPENDENT trajectory estimator, score ADE/FDE. NOT RUNNABLE for us — we have no latent->video decoder (ACT_BENCH_ADOPTION.md). Its independent-estimator PRINCIPLE is what our ridge probes already satisfy.",
    "cited_by": [
     "Project Steering/ACT_BENCH_ADOPTION.md",
-    "Project Steering/GOALS_AND_CLAIMS.md"
+    "Project Steering/GOALS_AND_CLAIMS.md",
+    "TanitAD Research Lab/Benchmarks & Evals/Research/2026-08-30-anti-echo-control-precedent/RESULT.md",
+    "TanitAD Research Lab/Opponent Analysis/Research/2026-08-30-anti-echo-control-precedent/RESULT.md"
    ]
   },
   "1905.11979": {
@@ -1932,11 +1955,15 @@
    "sha256": "eb7626a054b3aaf45e396ea62d5088ab620d38b84e1ad22b272df3b1e91488b7",
    "banked": "2026-08-25",
    "tags": [
-    "action-conditioning"
+    "action-conditioning",
+    "closed-loop-wm",
+    "input-pipeline"
    ],
-   "note": "queued for the action-conditioning review",
+   "note": "queued for the action-conditioning review | Causal confusion in imitation learning: MORE information (past action / longer history) yields WORSE policies; the confounded 'no-frame-history' policy beats the history one",
    "cited_by": [
-    "Project Steering/GOALS_AND_CLAIMS.md"
+    "Project Steering/GOALS_AND_CLAIMS.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-t1-floor-action-sensitivity/RESULT.md"
    ]
   },
   "2402.15391": {
@@ -2201,13 +2228,18 @@
    "sha256": "d3bc66d321cfceccc4f431113dea3f0f481d74d29dd283a33e204a4326f0403c",
    "banked": "2026-08-23",
    "tags": [
+    "anti-echo-control",
     "benchmark-portfolio",
     "benchmarks",
+    "input-pipeline",
     "nuscenes"
    ],
-   "note": "NAVSIM v1 NeurIPS2024: non-reactive pseudo-simulation, PDMS, navtrain/navtest | NAVSIM: ~75% of nuScenes is trivial straight driving; displacement metrics uncorrelated with closed-loop; PDMS alternative | NAVSIM v1: navtrain 103k / navtest 12k, 450GB standalone; PDMS = aggregated post-simulation subscores, aligns with closed-loop better than traditional open-loop metrics",
+   "note": "NAVSIM v1 NeurIPS2024: non-reactive pseudo-simulation, PDMS, navtrain/navtest | NAVSIM: ~75% of nuScenes is trivial straight driving; displacement metrics uncorrelated with closed-loop; PDMS alternative | NAVSIM v1: navtrain 103k / navtest 12k, 450GB standalone; PDMS = aggregated post-simulation subscores, aligns with closed-loop better than traditional open-loop metrics | NAVSIM Table 2 sensor ablation: front-only 60deg FOV vs 3-cam concat 140/160deg vs 5-cam 240deg PDMS",
    "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
     "TanitAD Research Lab/Benchmarks & Evals/Research/2026-08-29-benchmark-portfolio/RESULT.md",
+    "TanitAD Research Lab/Benchmarks & Evals/Research/2026-08-30-anti-echo-control-precedent/RESULT.md",
+    "TanitAD Research Lab/Opponent Analysis/Research/2026-08-30-anti-echo-control-precedent/RESULT.md",
     "products/P7-TanitEval/BENCHMARKS_SPEC.md",
     "products/P7-TanitEval/benchmarks/NAVSIM_PROTOCOL.md",
     "products/P7-TanitEval/benchmarks/NUSCENES_PROTOCOL.md"
@@ -2236,10 +2268,12 @@
    "sha256": "e70fea2dddbfb42a026f9e45c3651aa109997998c5e694bf33ac41e05dfae7f1",
    "banked": "2026-08-23",
    "tags": [
-    "benchmarks"
+    "benchmarks",
+    "input-pipeline"
    ],
-   "note": "Hydra-MDP++: origin of EPDMS sub-metrics TLC and LK adopted by NAVSIM v2",
+   "note": "Hydra-MDP++: origin of EPDMS sub-metrics TLC and LK adopted by NAVSIM v2 | Hydra-MDP++: default 256x1024; ResNet-34 PDMS 86.6 vs V2-99 91.0 at the SAME resolution - backbone, not resolution, is the lever",
    "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
     "products/P7-TanitEval/benchmarks/NAVSIM_PROTOCOL.md"
    ]
   },
@@ -2261,12 +2295,15 @@
    "sha256": "44ae16928e12d27a27800ada722bd57211c04d894c59dbceaed3b81bb3679acf",
    "banked": "2026-08-23",
    "tags": [
+    "anti-echo-control",
     "benchmark-portfolio",
     "benchmarks"
    ],
    "note": "PDM CoRL2023: the planner and scoring function PDMS is named after | PDM: open-loop ego-forecasting and closed-loop planning fundamentally misaligned; best open-loop uses ONLY centerline; rule-based PDM-Closed wins closed-loop nuPlan",
    "cited_by": [
     "TanitAD Research Lab/Benchmarks & Evals/Research/2026-08-29-benchmark-portfolio/RESULT.md",
+    "TanitAD Research Lab/Benchmarks & Evals/Research/2026-08-30-anti-echo-control-precedent/RESULT.md",
+    "TanitAD Research Lab/Opponent Analysis/Research/2026-08-30-anti-echo-control-precedent/RESULT.md",
     "products/P7-TanitEval/benchmarks/NAVSIM_PROTOCOL.md"
    ]
   },
@@ -2327,10 +2364,12 @@
    "banked": "2026-08-23",
    "tags": [
     "benchmarks",
+    "input-pipeline",
     "nuscenes"
    ],
-   "note": "UniAD: at-timestep (NoAvg) L2 convention; canonical L2 0.48/0.96/1.65 avg 1.03",
+   "note": "UniAD: at-timestep (NoAvg) L2 convention; canonical L2 0.48/0.96/1.65 avg 1.03 | UniAD: 1600x900 input, ResNet-101, BEV 200x200 over [-51.2,51.2]m = 0.512 m/cell",
    "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
     "products/P7-TanitEval/BENCHMARKS_SPEC.md",
     "products/P7-TanitEval/benchmarks/NUSCENES_PROTOCOL.md"
    ]
@@ -2358,14 +2397,19 @@
    "sha256": "ceab525d5769b984d475b634a17d1a30d5258c9ebe3e83b4932aebc01a416f9b",
    "banked": "2026-08-23",
    "tags": [
+    "anti-echo-control",
     "benchmark-portfolio",
     "benchmarks",
     "ego-status-leak",
+    "input-pipeline",
     "nuscenes"
    ],
-   "note": "AD-MLP: ego-status-only MLP tops nuScenes open-loop L2; the shortcut NAVSIM claims to fix | AD-MLP: ego-state-only MLP, no perception, matches SOTA open-loop L2 on nuScenes; uses ST-P3 (TemAvg) eval | AD-MLP: perception-free MLP (past traj+velocity only) cuts nuScenes open-loop L2 ~20pct vs perception methods - the open-loop indictment",
+   "note": "AD-MLP: ego-status-only MLP tops nuScenes open-loop L2; the shortcut NAVSIM claims to fix | AD-MLP: ego-state-only MLP, no perception, matches SOTA open-loop L2 on nuScenes; uses ST-P3 (TemAvg) eval | AD-MLP: perception-free MLP (past traj+velocity only) cuts nuScenes open-loop L2 ~20pct vs perception methods - the open-loop indictment | AD-MLP: an MLP on ego state ALONE (no perception) beats camera E2E methods on nuScenes open-loop L2 - open-loop metrics can be won by echoing ego state",
    "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
     "TanitAD Research Lab/Benchmarks & Evals/Research/2026-08-29-benchmark-portfolio/RESULT.md",
+    "TanitAD Research Lab/Benchmarks & Evals/Research/2026-08-30-anti-echo-control-precedent/RESULT.md",
+    "TanitAD Research Lab/Opponent Analysis/Research/2026-08-30-anti-echo-control-precedent/RESULT.md",
     "products/P7-TanitEval/BENCHMARKS_SPEC.md",
     "products/P7-TanitEval/benchmarks/NAVSIM_PROTOCOL.md",
     "products/P7-TanitEval/benchmarks/NUSCENES_PROTOCOL.md"
@@ -2392,10 +2436,12 @@
    "banked": "2026-08-23",
    "tags": [
     "benchmarks",
+    "input-pipeline",
     "nuscenes"
    ],
-   "note": "SparseDrive: re-implements collision rate (0.5m grid + fixed-heading drawbacks); L2 aligned to VAD protocol",
+   "note": "SparseDrive: re-implements collision rate (0.5m grid + fixed-heading drawbacks); L2 aligned to VAD protocol | SparseDrive: -S 256x704 / -B 512x1408; sparse queries not dense BEV",
    "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
     "products/P7-TanitEval/BENCHMARKS_SPEC.md",
     "products/P7-TanitEval/benchmarks/NUSCENES_PROTOCOL.md"
    ]
@@ -2426,10 +2472,12 @@
    "sha256": "8927b0ffbfb0d9d5e86e168420a504dc14365131d5d31a7ede1da96e4768a8d3",
    "banked": "2026-08-23",
    "tags": [
-    "benchmarks"
+    "benchmarks",
+    "input-pipeline"
    ],
-   "note": "Hydra-MDP: 2024 NAVSIM challenge winner; NavFormer planning head",
+   "note": "Hydra-MDP: 2024 NAVSIM challenge winner; NavFormer planning head | Hydra-MDP: NAVSIM default input 256x1024 (front + cropped front-left/right concatenated); no matched resolution pair - V2-99@512x2048 scores 90.3 vs ViT-L@256x1024 91.0",
    "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
     "products/P7-TanitEval/benchmarks/NAVSIM_PROTOCOL.md"
    ]
   },
@@ -2593,10 +2641,12 @@
    "sha256": "132d462b20e35a48b626d93fe06170fb479abb4e4ca6f67a80ab5f69fc313be0",
    "banked": "2026-08-23",
    "tags": [
-    "benchmarks"
+    "benchmarks",
+    "input-pipeline"
    ],
-   "note": "TransFuser PAMI: the NAVSIM baseline and its LTF camera-only variant",
+   "note": "TransFuser PAMI: the NAVSIM baseline and its LTF camera-only variant | TransFuser: RGB input 704x160 (4.4:1 wide-thin, 3 cams cropped 320x160); camera-FOV ablation MEASURED 132deg DS 49.49 vs 120deg DS 42.18 on Longest6",
    "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
     "products/P7-TanitEval/benchmarks/NAVSIM_PROTOCOL.md"
    ]
   },
@@ -2621,12 +2671,17 @@
    "sha256": "c289b8904ce05ee3503dd67d3765d9d93da61493a4cf6c2c861a08f4466e7899",
    "banked": "2026-08-23",
    "tags": [
+    "anti-echo-control",
     "benchmark-portfolio",
-    "benchmarks"
+    "benchmarks",
+    "input-pipeline"
    ],
-   "note": "BEV-Planner Is Ego Status All You Need: quantifies the nuScenes ego shortcut; proposes CCR | BEV-Planner: nuScenes too simple -> ego-status dominates planning; open-loop metrics do not comprehensively assess planning quality",
+   "note": "BEV-Planner Is Ego Status All You Need: quantifies the nuScenes ego shortcut; proposes CCR | BEV-Planner: nuScenes too simple -> ego-status dominates planning; open-loop metrics do not comprehensively assess planning quality | BEV-Planner: ego status dominates open-loop nuScenes planning; open-loop L2 is a misleading metric, and ego-state shortcut inflates it",
    "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
     "TanitAD Research Lab/Benchmarks & Evals/Research/2026-08-29-benchmark-portfolio/RESULT.md",
+    "TanitAD Research Lab/Benchmarks & Evals/Research/2026-08-30-anti-echo-control-precedent/RESULT.md",
+    "TanitAD Research Lab/Opponent Analysis/Research/2026-08-30-anti-echo-control-precedent/RESULT.md",
     "products/P7-TanitEval/benchmarks/NAVSIM_PROTOCOL.md"
    ]
   },
@@ -2724,12 +2779,14 @@
    "banked": "2026-08-23",
    "tags": [
     "benchmarks",
+    "input-pipeline",
     "recovered-orphan"
    ],
    "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
     "products/P7-TanitEval/benchmarks/NUSCENES_PROTOCOL.md"
    ],
-   "note": "index row lost to the pre-2026-08-23 concurrent-write race; bytes verified by sha256, row rebuilt",
+   "note": "index row lost to the pre-2026-08-23 concurrent-write race; bytes verified by sha256, row rebuilt | VAD: VAD-Base 1280x720 + 200x200 BEV (L2 0.72 / coll 0.22) vs VAD-Tiny 640x360 + 100x100 BEV (L2 0.78 / coll 0.38) - halving resolution costs +8% L2 but +73% collision",
    "kind": "arxiv",
    "title": "VAD: Vectorized Scene Representation for Efficient Autonomous Driving",
    "authors": [
@@ -3461,11 +3518,13 @@
    "sha256": "89d12b6142a285e541f6315a8911db469bea33514f3b80bdbe6e52439197b149",
    "banked": "2026-08-29",
    "tags": [
+    "closed-loop-wm",
     "rollout-composition"
    ],
    "note": "MBPO: model error compounds with rollout length; k=1 surprisingly difficult to beat; long learned-model rollouts unreliable",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-29-ema-warmup-rollout-composition/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-29-ema-warmup-rollout-composition/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-t1-floor-action-sensitivity/RESULT.md"
    ]
   },
   "2603.23465": {
@@ -3512,11 +3571,14 @@
    "sha256": "c4b3514da643b7e564c3bb1efbcdaa17eaf6a61231da22125aeb5af708540c93",
    "banked": "2026-08-29",
    "tags": [
+    "anti-echo-control",
     "benchmark-portfolio"
    ],
    "note": "Bench2Drive: CARLA-v2 closed-loop, 44 scenarios x 220 short routes; 2M-frame Think2Drive expert train set (Apache-2.0); DS + multi-ability + smoothness; eval cost 8xH800 x 2 days (VAD)",
    "cited_by": [
-    "TanitAD Research Lab/Benchmarks & Evals/Research/2026-08-29-benchmark-portfolio/RESULT.md"
+    "TanitAD Research Lab/Benchmarks & Evals/Research/2026-08-29-benchmark-portfolio/RESULT.md",
+    "TanitAD Research Lab/Benchmarks & Evals/Research/2026-08-30-anti-echo-control-precedent/RESULT.md",
+    "TanitAD Research Lab/Opponent Analysis/Research/2026-08-30-anti-echo-control-precedent/RESULT.md"
    ]
   },
   "2510.26125": {
@@ -4024,6 +4086,2579 @@
    "note": "Diffusion-QL: Q-learning-guided diffusion policy for offline RL; the value-guided alternative to policy-gradient post-training of a diffusion planner.",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-29-rl-posttrain-library/RESULT.md"
+   ]
+  },
+  "1912.09390": {
+   "key": "1912.09390",
+   "kind": "arxiv",
+   "title": "Tangent Images for Mitigating Spherical Distortion",
+   "authors": [
+    "Marc Eder",
+    "Mykhailo Shvets",
+    "John Lim",
+    "Jan-Michael Frahm"
+   ],
+   "published": "2019-12-19",
+   "abstract": "In this work, we propose \"tangent images,\" a spherical image representation that facilitates transferable and scalable $360^\\circ$ computer vision. Inspired by techniques in cartography and computer graphics, we render a spherical image to a set of distortion-mitigated, locally-planar image grids tangent to a subdivided icosahedron. By varying the resolution of these grids independently of the subdivision level, we can effectively represent high resolution spherical images while still benefiting from the low-distortion icosahedral spherical approximation. We show that training standard convolutional neural networks on tangent images compares favorably to the many specialized spherical convolutional kernels that have been developed, while also scaling efficiently to handle significantly higher spherical resolutions. Furthermore, because our approach does not require specialized kernels, w",
+   "url": "https://arxiv.org/abs/1912.09390",
+   "path": "TanitAD Research Lab/Library/papers/1912.09390_Tangent-Images-for-Mitigating-Spherical-Distortion.pdf",
+   "bytes": 9208834,
+   "sha256": "f8f026d9511371b94efa257889a5fdfde564d94d5fde5ac436401c50ead55ace",
+   "banked": "2026-08-30",
+   "tags": [
+    "input-pipeline",
+    "projection-distortion"
+   ],
+   "note": "Tangent Images (Eder CVPR2020): render sphere to icosahedron-tangent planar patches; standard planar CNNs transfer to spherical data with limited drop and no specialized kernels",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md"
+   ]
+  },
+  "1905.01489": {
+   "key": "1905.01489",
+   "kind": "arxiv",
+   "title": "WoodScape: A multi-task, multi-camera fisheye dataset for autonomous driving",
+   "authors": [
+    "Senthil Yogamani",
+    "Ciaran Hughes",
+    "Jonathan Horgan",
+    "Ganesh Sistu",
+    "Padraig Varley",
+    "Derek O'Dea",
+    "Michal Uricar",
+    "Stefan Milz",
+    "Martin Simon",
+    "Karl Amende",
+    "Christian Witt",
+    "Hazem Rashed"
+   ],
+   "published": "2019-05-04",
+   "abstract": "Fisheye cameras are commonly employed for obtaining a large field of view in surveillance, augmented reality and in particular automotive applications. In spite of their prevalence, there are few public datasets for detailed evaluation of computer vision algorithms on fisheye images. We release the first extensive fisheye automotive dataset, WoodScape, named after Robert Wood who invented the fisheye camera in 1906. WoodScape comprises of four surround view cameras and nine tasks including segmentation, depth estimation, 3D bounding box detection and soiling detection. Semantic annotation of 40 classes at the instance level is provided for over 10,000 images and annotation for other tasks are provided for over 100,000 images. With WoodScape, we would like to encourage the community to adapt computer vision models for fisheye camera instead of using naive rectification.",
+   "url": "https://arxiv.org/abs/1905.01489",
+   "path": "TanitAD Research Lab/Library/papers/1905.01489_WoodScape-A-multi-task-multi-camera-fisheye-dataset-for-auto.pdf",
+   "bytes": 5122590,
+   "sha256": "25fcacf7a91acfbeea654bc8022de54e2d2f89d4b43458a7d9414eaf9302dfa3",
+   "banked": "2026-08-30",
+   "tags": [
+    "input-pipeline",
+    "projection-distortion"
+   ],
+   "note": "WoodScape (Yogamani ICCV2019): first fisheye AV dataset; argues AGAINST naive rectification (FOV loss + resampling distortion) and for native fisheye algorithms",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md"
+   ]
+  },
+  "2203.01452": {
+   "key": "2203.01452",
+   "kind": "arxiv",
+   "title": "Bending Reality: Distortion-aware Transformers for Adapting to Panoramic Semantic Segmentation",
+   "authors": [
+    "Jiaming Zhang",
+    "Kailun Yang",
+    "Chaoxiang Ma",
+    "Simon Reiß",
+    "Kunyu Peng",
+    "Rainer Stiefelhagen"
+   ],
+   "published": "2022-03-02",
+   "abstract": "Panoramic images with their 360-degree directional view encompass exhaustive information about the surrounding space, providing a rich foundation for scene understanding. To unfold this potential in the form of robust panoramic segmentation models, large quantities of expensive, pixel-wise annotations are crucial for success. Such annotations are available, but predominantly for narrow-angle, pinhole-camera images which, off the shelf, serve as sub-optimal resources for training panoramic models. Distortions and the distinct image-feature distribution in 360-degree panoramas impede the transfer from the annotation-rich pinhole domain and therefore come with a big dent in performance. To get around this domain difference and bring together semantic annotations from pinhole- and 360-degree surround-visuals, we propose to learn object deformations and panoramic image distortions in the Defo",
+   "url": "https://arxiv.org/abs/2203.01452",
+   "path": "TanitAD Research Lab/Library/papers/2203.01452_Bending-Reality-Distortion-aware-Transformers-for-Adapting-t.pdf",
+   "bytes": 14553905,
+   "sha256": "9ec48dd66c3d9ac9eca7d90744749853fd7191322e83c3c51d0be80978642d55",
+   "banked": "2026-08-30",
+   "tags": [
+    "input-pipeline",
+    "projection-distortion"
+   ],
+   "note": "Trans4PASS (Bending Reality): deformable patch embedding + deformable MLP for panoramic seg; DensePASS 56.38 mIoU, +14.39 over prior SOTA under pinhole->panoramic domain shift",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md"
+   ]
+  },
+  "2207.11860": {
+   "key": "2207.11860",
+   "kind": "arxiv",
+   "title": "Behind Every Domain There is a Shift: Adapting Distortion-aware Vision Transformers for Panoramic Semantic Segmentation",
+   "authors": [
+    "Jiaming Zhang",
+    "Kailun Yang",
+    "Hao Shi",
+    "Simon Reiß",
+    "Kunyu Peng",
+    "Chaoxiang Ma",
+    "Haodong Fu",
+    "Philip H. S. Torr",
+    "Kaiwei Wang",
+    "Rainer Stiefelhagen"
+   ],
+   "published": "2022-07-25",
+   "abstract": "In this paper, we address panoramic semantic segmentation which is under-explored due to two critical challenges: (1) image distortions and object deformations on panoramas; (2) lack of semantic annotations in the 360° imagery. To tackle these problems, first, we propose the upgraded Transformer for Panoramic Semantic Segmentation, i.e., Trans4PASS+, equipped with Deformable Patch Embedding (DPE) and Deformable MLP (DMLPv2) modules for handling object deformations and image distortions whenever (before or after adaptation) and wherever (shallow or deep levels). Second, we enhance the Mutual Prototypical Adaptation (MPA) strategy via pseudo-label rectification for unsupervised domain adaptive panoramic segmentation. Third, aside from Pinhole-to-Panoramic (Pin2Pan) adaptation, we create a new dataset (SynPASS) with 9,080 panoramic images, facilitating Synthetic-to-Real (Syn2Real) adaptatio",
+   "url": "https://arxiv.org/abs/2207.11860",
+   "path": "TanitAD Research Lab/Library/papers/2207.11860_Behind-Every-Domain-There-is-a-Shift-Adapting-Distortion-awa.pdf",
+   "bytes": 5697181,
+   "sha256": "716ad4e9e89d7a6ca5adafce9e44fe770c2786a13eae6f4774084d8387970dca",
+   "banked": "2026-08-30",
+   "tags": [
+    "input-pipeline",
+    "projection-distortion"
+   ],
+   "note": "Trans4PASS+ : distortion-aware ViT for panoramic semantic segmentation, extended DPE/DMLPv2",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md"
+   ]
+  },
+  "2212.08013": {
+   "key": "2212.08013",
+   "kind": "arxiv",
+   "title": "FlexiViT: One Model for All Patch Sizes",
+   "authors": [
+    "Lucas Beyer",
+    "Pavel Izmailov",
+    "Alexander Kolesnikov",
+    "Mathilde Caron",
+    "Simon Kornblith",
+    "Xiaohua Zhai",
+    "Matthias Minderer",
+    "Michael Tschannen",
+    "Ibrahim Alabdulmohsin",
+    "Filip Pavetic"
+   ],
+   "published": "2022-12-15",
+   "abstract": "Vision Transformers convert images to sequences by slicing them into patches. The size of these patches controls a speed/accuracy tradeoff, with smaller patches leading to higher accuracy at greater computational cost, but changing the patch size typically requires retraining the model. In this paper, we demonstrate that simply randomizing the patch size at training time leads to a single set of weights that performs well across a wide range of patch sizes, making it possible to tailor the model to different compute budgets at deployment time. We extensively evaluate the resulting model, which we call FlexiViT, on a wide range of tasks, including classification, image-text retrieval, open-world detection, panoptic segmentation, and semantic segmentation, concluding that it usually matches, and sometimes outperforms, standard ViT models trained at a single patch size in an otherwise ident",
+   "url": "https://arxiv.org/abs/2212.08013",
+   "path": "TanitAD Research Lab/Library/papers/2212.08013_FlexiViT-One-Model-for-All-Patch-Sizes.pdf",
+   "bytes": 11616937,
+   "sha256": "516935ee9c219c9c086bed034c0f21d79eb61949e9d4248739ac91e1d225e31a",
+   "banked": "2026-08-30",
+   "tags": [
+    "input-pipeline"
+   ],
+   "note": "FlexiViT: MEASURED accuracy-vs-patch-size curve; ViT-B/8 85.6% @156 GFLOPs vs ViT-B/32 79.1% @8.6 GFLOPs on ImageNet",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md"
+   ]
+  },
+  "2112.11790": {
+   "key": "2112.11790",
+   "kind": "arxiv",
+   "title": "BEVDet: High-performance Multi-camera 3D Object Detection in Bird-Eye-View",
+   "authors": [
+    "Junjie Huang",
+    "Guan Huang",
+    "Zheng Zhu",
+    "Yun Ye",
+    "Dalong Du"
+   ],
+   "published": "2021-12-22",
+   "abstract": "Autonomous driving perceives its surroundings for decision making, which is one of the most complex scenarios in visual perception. The success of paradigm innovation in solving the 2D object detection task inspires us to seek an elegant, feasible, and scalable paradigm for fundamentally pushing the performance boundary in this area. To this end, we contribute the BEVDet paradigm in this paper. BEVDet performs 3D object detection in Bird-Eye-View (BEV), where most target values are defined and route planning can be handily performed. We merely reuse existing modules to build its framework but substantially develop its performance by constructing an exclusive data augmentation strategy and upgrading the Non-Maximum Suppression strategy. In the experiment, BEVDet offers an excellent trade-off between accuracy and time-efficiency. As a fast version, BEVDet-Tiny scores 31.2% mAP and 39.2% ND",
+   "url": "https://arxiv.org/abs/2112.11790",
+   "path": "TanitAD Research Lab/Library/papers/2112.11790_BEVDet-High-performance-Multi-camera-3D-Object-Detection-in.pdf",
+   "bytes": 583501,
+   "sha256": "a54c2013f7d991e1af80d328dc1f3484613bf1197c186b8fb474fd14d61a522b",
+   "banked": "2026-08-30",
+   "tags": [
+    "input-pipeline"
+   ],
+   "note": "BEVDet: image-view (IDA) + BEV-space (BDA) augmentation ablation; BDA is what makes the BEV encoder trainable without overfitting | BEVDet: 1408x512 has +4.5 mAP over 704x256 (MEASURED); vertical crop is FIXED to the BOTTOM of the frame i.e. the sky is discarded",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md"
+   ]
+  },
+  "2203.17054": {
+   "key": "2203.17054",
+   "kind": "arxiv",
+   "title": "BEVDet4D: Exploit Temporal Cues in Multi-camera 3D Object Detection",
+   "authors": [
+    "Junjie Huang",
+    "Guan Huang"
+   ],
+   "published": "2022-03-31",
+   "abstract": "Single frame data contains finite information which limits the performance of the existing vision-based multi-camera 3D object detection paradigms. For fundamentally pushing the performance boundary in this area, a novel paradigm dubbed BEVDet4D is proposed to lift the scalable BEVDet paradigm from the spatial-only 3D space to the spatial-temporal 4D space. We upgrade the naive BEVDet framework with a few modifications just for fusing the feature from the previous frame with the corresponding one in the current frame. In this way, with negligible additional computing budget, we enable BEVDet4D to access the temporal cues by querying and comparing the two candidate features. Beyond this, we simplify the task of velocity prediction by removing the factors of ego-motion and time in the learning target. As a result, BEVDet4D with robust generalization performance reduces the velocity error b",
+   "url": "https://arxiv.org/abs/2203.17054",
+   "path": "TanitAD Research Lab/Library/papers/2203.17054_BEVDet4D-Exploit-Temporal-Cues-in-Multi-camera-3D-Object-Det.pdf",
+   "bytes": 711795,
+   "sha256": "3c2954f711175dffcd7594cc82f80a3a3e5eda6d890f6fdcbdd7c788e6ea8c91",
+   "banked": "2026-08-30",
+   "tags": [
+    "input-pipeline"
+   ],
+   "note": "BEVDet4D: ego-motion alignment of the previous BEV feature before temporal fusion; removing ego-motion cuts mAVE 1.544->1.186 (-23.2%) and mATE -5.4% | input-pipeline design review: FOV/camera-count and temporal-context axes",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md"
+   ]
+  },
+  "2005.10420": {
+   "key": "2005.10420",
+   "kind": "arxiv",
+   "title": "Towards Streaming Perception",
+   "authors": [
+    "Mengtian Li",
+    "Yu-Xiong Wang",
+    "Deva Ramanan"
+   ],
+   "published": "2020-05-21",
+   "abstract": "Embodied perception refers to the ability of an autonomous agent to perceive its environment so that it can (re)act. The responsiveness of the agent is largely governed by latency of its processing pipeline. While past work has studied the algorithmic trade-off between latency and accuracy, there has not been a clear metric to compare different methods along the Pareto optimal latency-accuracy curve. We point out a discrepancy between standard offline evaluation and real-time applications: by the time an algorithm finishes processing a particular frame, the surrounding world has changed. To these ends, we present an approach that coherently integrates latency and accuracy into a single metric for real-time online perception, which we refer to as \"streaming accuracy\". The key insight behind this metric is to jointly evaluate the output of the entire perception stack at every time instant,",
+   "url": "https://arxiv.org/abs/2005.10420",
+   "path": "TanitAD Research Lab/Library/papers/2005.10420_Towards-Streaming-Perception.pdf",
+   "bytes": 3736920,
+   "sha256": "d98b255d159fe72ed47ef031f7e97f793c0756b39473a92ce588809e025be79f",
+   "banked": "2026-08-30",
+   "tags": [
+    "input-pipeline"
+   ],
+   "note": "Streaming Perception (Li/Wang/Ramanan ECCV20): offline->streaming AP collapse 38.0 -> 6.2 on Argoverse-HD 30fps; the canonical measured accuracy-vs-latency metric",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md"
+   ]
+  },
+  "2203.17270": {
+   "key": "2203.17270",
+   "kind": "arxiv",
+   "title": "BEVFormer: Learning Bird's-Eye-View Representation from Multi-Camera Images via Spatiotemporal Transformers",
+   "authors": [
+    "Zhiqi Li",
+    "Wenhai Wang",
+    "Hongyang Li",
+    "Enze Xie",
+    "Chonghao Sima",
+    "Tong Lu",
+    "Qiao Yu",
+    "Jifeng Dai"
+   ],
+   "published": "2022-03-31",
+   "abstract": "3D visual perception tasks, including 3D detection and map segmentation based on multi-camera images, are essential for autonomous driving systems. In this work, we present a new framework termed BEVFormer, which learns unified BEV representations with spatiotemporal transformers to support multiple autonomous driving perception tasks. In a nutshell, BEVFormer exploits both spatial and temporal information by interacting with spatial and temporal space through predefined grid-shaped BEV queries. To aggregate spatial information, we design spatial cross-attention that each BEV query extracts the spatial features from the regions of interest across camera views. For temporal information, we propose temporal self-attention to recurrently fuse the history BEV information. Our approach achieves the new state-of-the-art 56.9\\% in terms of NDS metric on the nuScenes \\texttt{test} set, which is ",
+   "url": "https://arxiv.org/abs/2203.17270",
+   "path": "TanitAD Research Lab/Library/papers/2203.17270_BEVFormer-Learning-Bird-s-Eye-View-Representation-from-Multi.pdf",
+   "bytes": 4739748,
+   "sha256": "641561d0e4c1d46d6883a3d38c68b475030de5bbbcdf747af268366f47f97a6b",
+   "banked": "2026-08-30",
+   "tags": [
+    "input-pipeline"
+   ],
+   "note": "input-pipeline design review: FOV/camera-count and temporal-context axes",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md"
+   ]
+  },
+  "2104.10133": {
+   "key": "2104.10133",
+   "kind": "arxiv",
+   "title": "Large Scale Interactive Motion Forecasting for Autonomous Driving : The Waymo Open Motion Dataset",
+   "authors": [
+    "Scott Ettinger",
+    "Shuyang Cheng",
+    "Benjamin Caine",
+    "Chenxi Liu",
+    "Hang Zhao",
+    "Sabeek Pradhan",
+    "Yuning Chai",
+    "Ben Sapp",
+    "Charles Qi",
+    "Yin Zhou",
+    "Zoey Yang",
+    "Aurelien Chouard"
+   ],
+   "published": "2021-04-20",
+   "abstract": "As autonomous driving systems mature, motion forecasting has received increasing attention as a critical requirement for planning. Of particular importance are interactive situations such as merges, unprotected turns, etc., where predicting individual object motion is not sufficient. Joint predictions of multiple objects are required for effective route planning. There has been a critical need for high-quality motion data that is rich in both interactions and annotation to develop motion planning models. In this work, we introduce the most diverse interactive motion dataset to our knowledge, and provide specific labels for interacting objects suitable for developing joint prediction models. With over 100,000 scenes, each 20 seconds long at 10 Hz, our new dataset contains more than 570 hours of unique data over 1750 km of roadways. It was collected by mining for interesting interactions b",
+   "url": "https://arxiv.org/abs/2104.10133",
+   "path": "TanitAD Research Lab/Library/papers/2104.10133_Large-Scale-Interactive-Motion-Forecasting-for-Autonomous-Dr.pdf",
+   "bytes": 3219445,
+   "sha256": "7b659ec22facf54d1f9f0e98adf8bec4b4b53aaacac461bf24d93bae0d3a6be9",
+   "banked": "2026-08-30",
+   "tags": [
+    "input-pipeline"
+   ],
+   "note": "input-pipeline design review: FOV/camera-count and temporal-context axes | Waymo Open Motion Dataset: 570h/103k scenes - axis-7 data-scale anchor",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md"
+   ]
+  },
+  "2301.00493": {
+   "key": "2301.00493",
+   "kind": "arxiv",
+   "title": "Argoverse 2: Next Generation Datasets for Self-Driving Perception and Forecasting",
+   "authors": [
+    "Benjamin Wilson",
+    "William Qi",
+    "Tanmay Agarwal",
+    "John Lambert",
+    "Jagjeet Singh",
+    "Siddhesh Khandelwal",
+    "Bowen Pan",
+    "Ratnesh Kumar",
+    "Andrew Hartnett",
+    "Jhony Kaesemodel Pontes",
+    "Deva Ramanan",
+    "Peter Carr"
+   ],
+   "published": "2023-01-02",
+   "abstract": "We introduce Argoverse 2 (AV2) - a collection of three datasets for perception and forecasting research in the self-driving domain. The annotated Sensor Dataset contains 1,000 sequences of multimodal data, encompassing high-resolution imagery from seven ring cameras, and two stereo cameras in addition to lidar point clouds, and 6-DOF map-aligned pose. Sequences contain 3D cuboid annotations for 26 object categories, all of which are sufficiently-sampled to support training and evaluation of 3D perception models. The Lidar Dataset contains 20,000 sequences of unlabeled lidar point clouds and map-aligned pose. This dataset is the largest ever collection of lidar sensor data and supports self-supervised learning and the emerging task of point cloud forecasting. Finally, the Motion Forecasting Dataset contains 250,000 scenarios mined for interesting and challenging interactions between the a",
+   "url": "https://arxiv.org/abs/2301.00493",
+   "path": "TanitAD Research Lab/Library/papers/2301.00493_Argoverse-2-Next-Generation-Datasets-for-Self-Driving-Percep.pdf",
+   "bytes": 7823463,
+   "sha256": "be941cf637ba7fb6c9c443a5c68f58c935b5ada39bc9467415488526701c2658",
+   "banked": "2026-08-30",
+   "tags": [
+    "input-pipeline"
+   ],
+   "note": "input-pipeline design review: FOV/camera-count and temporal-context axes | Argoverse 2: sensor/motion-forecasting scale + 6 cities - axis-7 diversity anchor",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md"
+   ]
+  },
+  "2010.14876": {
+   "key": "2010.14876",
+   "kind": "arxiv",
+   "title": "Fighting Copycat Agents in Behavioral Cloning from Observation Histories",
+   "authors": [
+    "Chuan Wen",
+    "Jierui Lin",
+    "Trevor Darrell",
+    "Dinesh Jayaraman",
+    "Yang Gao"
+   ],
+   "published": "2020-10-28",
+   "abstract": "Imitation learning trains policies to map from input observations to the actions that an expert would choose. In this setting, distribution shift frequently exacerbates the effect of misattributing expert actions to nuisance correlates among the observed variables. We observe that a common instance of this causal confusion occurs in partially observed settings when expert actions are strongly correlated over time: the imitator learns to cheat by predicting the expert's previous action, rather than the next action. To combat this \"copycat problem\", we propose an adversarial approach to learn a feature representation that removes excess information about the previous expert action nuisance correlate, while retaining the information necessary to predict the next action. In our experiments, our approach improves performance significantly across a variety of partially observed imitation learn",
+   "url": "https://arxiv.org/abs/2010.14876",
+   "path": "TanitAD Research Lab/Library/papers/2010.14876_Fighting-Copycat-Agents-in-Behavioral-Cloning-from-Observati.pdf",
+   "bytes": 3155387,
+   "sha256": "e2f1a182076dd92d379c452527a721501c5730890a07c500d202f8b71257760e",
+   "banked": "2026-08-30",
+   "tags": [
+    "closed-loop-wm",
+    "input-pipeline"
+   ],
+   "note": "Copycat problem: longer observation histories make behavioural cloning WORSE; adversarial removal of prev-action nuisance info fixes it",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-t1-floor-action-sensitivity/RESULT.md"
+   ]
+  },
+  "1604.07316": {
+   "key": "1604.07316",
+   "kind": "arxiv",
+   "title": "End to End Learning for Self-Driving Cars",
+   "authors": [
+    "Mariusz Bojarski",
+    "Davide Del Testa",
+    "Daniel Dworakowski",
+    "Bernhard Firner",
+    "Beat Flepp",
+    "Prasoon Goyal",
+    "Lawrence D. Jackel",
+    "Mathew Monfort",
+    "Urs Muller",
+    "Jiakai Zhang",
+    "Xin Zhang",
+    "Jake Zhao"
+   ],
+   "published": "2016-04-25",
+   "abstract": "We trained a convolutional neural network (CNN) to map raw pixels from a single front-facing camera directly to steering commands. This end-to-end approach proved surprisingly powerful. With minimum training data from humans the system learns to drive in traffic on local roads with or without lane markings and on highways. It also operates in areas with unclear visual guidance such as in parking lots and on unpaved roads. The system automatically learns internal representations of the necessary processing steps such as detecting useful road features with only the human steering angle as the training signal. We never explicitly trained it to detect, for example, the outline of roads. Compared to explicit decomposition of the problem, such as lane marking detection, path planning, and control, our end-to-end system optimizes all processing steps simultaneously. We argue that this will even",
+   "url": "https://arxiv.org/abs/1604.07316",
+   "path": "TanitAD Research Lab/Library/papers/1604.07316_End-to-End-Learning-for-Self-Driving-Cars.pdf",
+   "bytes": 1289809,
+   "sha256": "c02b15a05434388b443b8f9a89ac37821eec91b9cd305c2c63ffa51fa2fdb123",
+   "banked": "2026-08-30",
+   "tags": [
+    "input-pipeline"
+   ],
+   "note": "NVIDIA PilotNet: synthetic shifted/rotated viewpoints with corrected steering are what teach recovery",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md"
+   ]
+  },
+  "2012.02124": {
+   "key": "2012.02124",
+   "kind": "arxiv",
+   "title": "Generalized Object Detection on Fisheye Cameras for Autonomous Driving: Dataset, Representations and Baseline",
+   "authors": [
+    "Hazem Rashed",
+    "Eslam Mohamed",
+    "Ganesh Sistu",
+    "Varun Ravi Kumar",
+    "Ciaran Eising",
+    "Ahmad El-Sallab",
+    "Senthil Yogamani"
+   ],
+   "published": "2020-12-03",
+   "abstract": "Object detection is a comprehensively studied problem in autonomous driving. However, it has been relatively less explored in the case of fisheye cameras. The standard bounding box fails in fisheye cameras due to the strong radial distortion, particularly in the image's periphery. We explore better representations like oriented bounding box, ellipse, and generic polygon for object detection in fisheye images in this work. We use the IoU metric to compare these representations using accurate instance segmentation ground truth. We design a novel curved bounding box model that has optimal properties for fisheye distortion models. We also design a curvature adaptive perimeter sampling method for obtaining polygon vertices, improving relative mAP score by 4.9% compared to uniform sampling. Overall, the proposed polygon model improves mIoU relative accuracy by 40.3%. It is the first detailed s",
+   "url": "https://arxiv.org/abs/2012.02124",
+   "path": "TanitAD Research Lab/Library/papers/2012.02124_Generalized-Object-Detection-on-Fisheye-Cameras-for-Autonomo.pdf",
+   "bytes": 6231197,
+   "sha256": "63d15bbaef1557fa052bd6637e4dc3d96f9d188aaeb170f4703157d60c37beb2",
+   "banked": "2026-08-30",
+   "tags": [
+    "input-pipeline",
+    "projection-distortion"
+   ],
+   "note": "Rashed WACV2021 generalized fisheye object detection: compares rectilinear vs CYLINDRICAL rectification vs native fisheye representations on WoodScape",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md"
+   ]
+  },
+  "2207.05844": {
+   "key": "2207.05844",
+   "kind": "arxiv",
+   "title": "Wayformer: Motion Forecasting via Simple &amp; Efficient Attention Networks",
+   "authors": [
+    "Nigamaa Nayakanti",
+    "Rami Al-Rfou",
+    "Aurick Zhou",
+    "Kratarth Goel",
+    "Khaled S. Refaat",
+    "Benjamin Sapp"
+   ],
+   "published": "2022-07-12",
+   "abstract": "Motion forecasting for autonomous driving is a challenging task because complex driving scenarios result in a heterogeneous mix of static and dynamic inputs. It is an open problem how best to represent and fuse information about road geometry, lane connectivity, time-varying traffic light state, and history of a dynamic set of agents and their interactions into an effective encoding. To model this diverse set of input features, many approaches proposed to design an equally complex system with a diverse set of modality specific modules. This results in systems that are difficult to scale, extend, or tune in rigorous ways to trade off quality and efficiency. In this paper, we present Wayformer, a family of attention based architectures for motion forecasting that are simple and homogeneous. Wayformer offers a compact model description consisting of an attention based scene encoder and a de",
+   "url": "https://arxiv.org/abs/2207.05844",
+   "path": "TanitAD Research Lab/Library/papers/2207.05844_Wayformer-Motion-Forecasting-via-Simple-amp-Efficient-Attent.pdf",
+   "bytes": 12532668,
+   "sha256": "e88a7d97f145a27e94d3dcf47c8282fd99f52695728b01909cdf34f22f01c3f5",
+   "banked": "2026-08-30",
+   "tags": [
+    "input-pipeline"
+   ],
+   "note": "input-pipeline design review: FOV/camera-count and temporal-context axes",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md"
+   ]
+  },
+  "2604.10391": {
+   "key": "2604.10391",
+   "kind": "arxiv",
+   "title": "FishRoPE: Projective Rotary Position Embeddings for Omnidirectional Visual Perception",
+   "authors": [
+    "Rahul Ahuja",
+    "Mudit Jain",
+    "Bala Murali Manoghar Sai Sudhakar",
+    "Venkatraman Narayanan",
+    "Pratik Likhar",
+    "Varun Ravi Kumar",
+    "Senthil Yogamani"
+   ],
+   "published": "2026-04-12",
+   "abstract": "Vision foundation models (VFMs) and Bird's Eye View (BEV) representation have advanced visual perception substantially, yet their internal spatial representations assume the rectilinear geometry of pinhole cameras. Fisheye cameras, widely deployed on production autonomous vehicles for their surround-view coverage, exhibit severe radial distortion that renders these representations geometrically inconsistent. At the same time, the scarcity of large-scale fisheye annotations makes retraining foundation models from scratch impractical. We present \\ours, a lightweight framework that adapts frozen VFMs to fisheye geometry through two components: a frozen DINOv2 backbone with Low-Rank Adaptation (LoRA) that transfers rich self-supervised features to fisheye without task-specific pretraining, and Fisheye Rotary Position Embedding (FishRoPE), which reparameterizes the attention mechanism in the ",
+   "url": "https://arxiv.org/abs/2604.10391",
+   "path": "TanitAD Research Lab/Library/papers/2604.10391_FishRoPE-Projective-Rotary-Position-Embeddings-for-Omnidirec.pdf",
+   "bytes": 5127084,
+   "sha256": "3de02c714aa70208400c6cd9a05fdde27da5e6280975f30321dcc1cf0e4c549a",
+   "banked": "2026-08-30",
+   "tags": [
+    "input-pipeline",
+    "projection-distortion"
+   ],
+   "note": "FishRoPE: projective RoPE for non-pinhole input; standard 2D axial RoPE 52.5 mAP -> 54.2 with projection-aware RoPE (WoodScape det); 61.4 -> 65.1 mIoU BEV seg",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md"
+   ]
+  },
+  "2309.16534": {
+   "key": "2309.16534",
+   "kind": "arxiv",
+   "title": "MotionLM: Multi-Agent Motion Forecasting as Language Modeling",
+   "authors": [
+    "Ari Seff",
+    "Brian Cera",
+    "Dian Chen",
+    "Mason Ng",
+    "Aurick Zhou",
+    "Nigamaa Nayakanti",
+    "Khaled S. Refaat",
+    "Rami Al-Rfou",
+    "Benjamin Sapp"
+   ],
+   "published": "2023-09-28",
+   "abstract": "Reliable forecasting of the future behavior of road agents is a critical component to safe planning in autonomous vehicles. Here, we represent continuous trajectories as sequences of discrete motion tokens and cast multi-agent motion prediction as a language modeling task over this domain. Our model, MotionLM, provides several advantages: First, it does not require anchors or explicit latent variable optimization to learn multimodal distributions. Instead, we leverage a single standard language modeling objective, maximizing the average log probability over sequence tokens. Second, our approach bypasses post-hoc interaction heuristics where individual agent trajectory generation is conducted prior to interactive scoring. Instead, MotionLM produces joint distributions over interactive agent futures in a single autoregressive decoding process. In addition, the model's sequential factorizat",
+   "url": "https://arxiv.org/abs/2309.16534",
+   "path": "TanitAD Research Lab/Library/papers/2309.16534_MotionLM-Multi-Agent-Motion-Forecasting-as-Language-Modeling.pdf",
+   "bytes": 1616757,
+   "sha256": "2b16d0bda4e2b7724885ba293c2c143fef92dcd102976d6f20f0d51ef08bd135",
+   "banked": "2026-08-30",
+   "tags": [
+    "input-pipeline"
+   ],
+   "note": "input-pipeline design review: FOV/camera-count and temporal-context axes",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md"
+   ]
+  },
+  "2603.27818": {
+   "key": "2603.27818",
+   "kind": "arxiv",
+   "title": "Benchmarking Multi-View BEV Object Detection with Mixed Pinhole and Fisheye Cameras",
+   "authors": [
+    "Xiangzhong Liu",
+    "Hao Shen"
+   ],
+   "published": "2026-03-29",
+   "abstract": "Modern autonomous driving systems increasingly rely on mixed camera configurations with pinhole and fisheye cameras for full view perception. However, Bird's-Eye View (BEV) 3D object detection models are predominantly designed for pinhole cameras, leading to performance degradation under fisheye distortion. To bridge this gap, we introduce a multi-view BEV detection benchmark with mixed cameras by converting KITTI-360 into nuScenes format. Our study encompasses three adaptations: rectification for zero-shot evaluation and fine-tuning of nuScenes-trained models, distortion-aware view transformation modules (VTMs) via the MEI camera model, and polar coordinate representations to better align with radial distortion. We systematically evaluate three representative BEV architectures, BEVFormer, BEVDet and PETR, across these strategies. We demonstrate that projection-free architectures are inh",
+   "url": "https://arxiv.org/abs/2603.27818",
+   "path": "TanitAD Research Lab/Library/papers/2603.27818_Benchmarking-Multi-View-BEV-Object-Detection-with-Mixed-Pinh.pdf",
+   "bytes": 8315806,
+   "sha256": "ef62145c5357fed8f8e9432600ce559b1d555326cef16f396a29f59789977e82",
+   "banked": "2026-08-30",
+   "tags": [
+    "input-pipeline",
+    "projection-distortion"
+   ],
+   "note": "Mixed pinhole+fisheye multi-view BEV detection benchmark: BEVDet/PETR lose >12 FDS points vs 6-camera pinhole config",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md"
+   ]
+  },
+  "2507.20174": {
+   "key": "2507.20174",
+   "kind": "arxiv",
+   "title": "LRR-Bench: Left, Right or Rotate? Vision-Language models Still Struggle With Spatial Understanding Tasks",
+   "authors": [
+    "Fei Kong",
+    "Jinhao Duan",
+    "Kaidi Xu",
+    "Zhenhua Guo",
+    "Xiaofeng Zhu",
+    "Xiaoshuang Shi"
+   ],
+   "published": "2025-07-27",
+   "abstract": "Real-world applications, such as autonomous driving and humanoid robot manipulation, require precise spatial perception. However, it remains underexplored how Vision-Language Models (VLMs) recognize spatial relationships and perceive spatial movement. In this work, we introduce a spatial evaluation pipeline and construct a corresponding benchmark. Specifically, we categorize spatial understanding into two main types: absolute spatial understanding, which involves querying the absolute spatial position (e.g., left, right) of an object within an image, and 3D spatial understanding, which includes movement and rotation. Notably, our dataset is entirely synthetic, enabling the generation of test samples at a low cost while also preventing dataset contamination. We conduct experiments on multiple state-of-the-art VLMs and observe that there is significant room for improvement in their spatial",
+   "url": "https://arxiv.org/abs/2507.20174",
+   "path": "TanitAD Research Lab/Library/papers/2507.20174_LRR-Bench-Left-Right-or-Rotate-Vision-Language-models-Still.pdf",
+   "bytes": 8748327,
+   "sha256": "44d29934a04107bae47b32d7d9e709a58caf67e4de260e06a134efde10e04e3f",
+   "banked": "2026-08-30",
+   "tags": [
+    "label-adjudication"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Data Engineering/Research/2026-08-30-label-source-adjudication/RESULT.md"
+   ]
+  },
+  "2310.19785": {
+   "key": "2310.19785",
+   "kind": "arxiv",
+   "title": "What's \"up\" with vision-language models? Investigating their struggle with spatial reasoning",
+   "authors": [
+    "Amita Kamath",
+    "Jack Hessel",
+    "Kai-Wei Chang"
+   ],
+   "published": "2023-10-30",
+   "abstract": "Recent vision-language (VL) models are powerful, but can they reliably distinguish \"right\" from \"left\"? We curate three new corpora to quantify model comprehension of such basic spatial relations. These tests isolate spatial reasoning more precisely than existing datasets like VQAv2, e.g., our What'sUp benchmark contains sets of photographs varying only the spatial relations of objects, keeping their identity fixed (see Figure 1: models must comprehend not only the usual case of a dog under a table, but also, the same dog on top of the same table). We evaluate 18 VL models, finding that all perform poorly, e.g., BLIP finetuned on VQAv2, which nears human parity on VQAv2, achieves 56% accuracy on our benchmarks vs. humans at 99%. We conclude by studying causes of this surprising behavior, finding: 1) that popular vision-language pretraining corpora like LAION-2B contain little reliable da",
+   "url": "https://arxiv.org/abs/2310.19785",
+   "path": "TanitAD Research Lab/Library/papers/2310.19785_What-s-up-with-vision-language-models-Investigating-their-st.pdf",
+   "bytes": 4872230,
+   "sha256": "ab7706f2d244c0cf0b6a72d8a8431f923a5fd1c7107611945c51e605459b9364",
+   "banked": "2026-08-30",
+   "tags": [
+    "label-adjudication"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Data Engineering/Research/2026-08-30-label-source-adjudication/RESULT.md"
+   ]
+  },
+  "2512.14044": {
+   "key": "2512.14044",
+   "kind": "arxiv",
+   "title": "OmniDrive-R1: Reinforcement-driven Interleaved Multi-modal Chain-of-Thought for Trustworthy Vision-Language Autonomous Driving",
+   "authors": [
+    "Zhenguo Zhang",
+    "Haohan Zheng",
+    "Yishen Wang",
+    "Le Xu",
+    "Tianchen Deng",
+    "Xuefeng Chen",
+    "Qu Chen",
+    "Bo Zhang",
+    "Wuxiong Huang"
+   ],
+   "published": "2025-12-16",
+   "abstract": "The deployment of Vision-Language Models (VLMs) in safety-critical domains like autonomous driving (AD) is critically hindered by reliability failures, most notably object hallucination. This failure stems from their reliance on ungrounded, text-based Chain-of-Thought (CoT) reasoning. While existing multi-modal CoT approaches attempt mitigation, they suffer from two fundamental flaws: (1) decoupled perception and reasoning stages that prevent end-to-end joint optimization, and (2) reliance on expensive, dense localization labels. Thus we introduce OmniDrive-R1, an end-to-end VLM framework designed for autonomous driving, which unifies perception and reasoning through an interleaved Multi-modal Chain-of-Thought (iMCoT) mechanism. Our core innovation is an Reinforcement-driven visual grounding capability, enabling the model to autonomously direct its attention and \"zoom in\" on critical reg",
+   "url": "https://arxiv.org/abs/2512.14044",
+   "path": "TanitAD Research Lab/Library/papers/2512.14044_OmniDrive-R1-Reinforcement-driven-Interleaved-Multi-modal-Ch.pdf",
+   "bytes": 4229325,
+   "sha256": "9226b9d961ef12b346418c53615c8e961970b5ce1fe242724041c18e0a8ef920",
+   "banked": "2026-08-30",
+   "tags": [
+    "label-adjudication"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Data Engineering/Research/2026-08-30-label-source-adjudication/RESULT.md"
+   ]
+  },
+  "2309.17080": {
+   "key": "2309.17080",
+   "kind": "arxiv",
+   "title": "GAIA-1: A Generative World Model for Autonomous Driving",
+   "authors": [
+    "Anthony Hu",
+    "Lloyd Russell",
+    "Hudson Yeo",
+    "Zak Murez",
+    "George Fedoseev",
+    "Alex Kendall",
+    "Jamie Shotton",
+    "Gianluca Corrado"
+   ],
+   "published": "2023-09-29",
+   "abstract": "Autonomous driving promises transformative improvements to transportation, but building systems capable of safely navigating the unstructured complexity of real-world scenarios remains challenging. A critical problem lies in effectively predicting the various potential outcomes that may emerge in response to the vehicle's actions as the world evolves. To address this challenge, we introduce GAIA-1 ('Generative AI for Autonomy'), a generative world model that leverages video, text, and action inputs to generate realistic driving scenarios while offering fine-grained control over ego-vehicle behavior and scene features. Our approach casts world modeling as an unsupervised sequence modeling problem by mapping the inputs to discrete tokens, and predicting the next token in the sequence. Emerging properties from our model include learning high-level structures and scene dynamics, contextual a",
+   "url": "https://arxiv.org/abs/2309.17080",
+   "path": "TanitAD Research Lab/Library/papers/2309.17080_GAIA-1-A-Generative-World-Model-for-Autonomous-Driving.pdf",
+   "bytes": 16421557,
+   "sha256": "ecde6dba2886066af5d1c6ec26d46de0375d5f1d9495373e6a4f3cba4a9025ae",
+   "banked": "2026-08-30",
+   "tags": [
+    "input-pipeline"
+   ],
+   "note": "GAIA-1: image tokenizer 288x512, spatial downsample D=16, 18x32=576 discrete tokens/frame, vocab 8192 | GAIA-1 (Wayve): generative driving world model; training-corpus hours + params are the axis-7 scale anchor | driving world model: front-mono camera + short context; input-pipeline review axes 2/5",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md"
+   ]
+  },
+  "1407.7644": {
+   "key": "1407.7644",
+   "kind": "arxiv",
+   "title": "",
+   "authors": [],
+   "published": "",
+   "abstract": "",
+   "url": "https://arxiv.org/abs/1407.7644",
+   "path": "TanitAD Research Lab/Library/papers/1407.7644_untitled.pdf",
+   "bytes": 330571,
+   "sha256": "8d523cc20724d1125c3d9a12dbe87d9624ae38e4b71a44fed022cbe0fbb12807",
+   "banked": "2026-08-30",
+   "tags": [
+    "label-adjudication"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Data Engineering/Research/2026-08-30-label-source-adjudication/RESULT.md"
+   ]
+  },
+  "2601.22336": {
+   "key": "2601.22336",
+   "kind": "arxiv",
+   "title": "Dependence-Aware Label Aggregation for LLM-as-a-Judge via Ising Models",
+   "authors": [
+    "Krishnakumar Balasubramanian",
+    "Aleksandr Podkopaev",
+    "Shiva Prasad Kasiviswanathan"
+   ],
+   "published": "2026-01-29",
+   "abstract": "Large-scale AI evaluation increasingly relies on aggregating binary judgments from $K$ annotators, including LLMs used as judges. Most classical methods, e.g., Dawid-Skene or (weighted) majority voting, assume annotators are conditionally independent given the true label $Y\\in\\{0,1\\}$, an assumption often violated by LLM judges due to shared data, architectures, prompts, and failure modes. Ignoring such dependencies can yield miscalibrated posteriors and even confidently incorrect predictions. We study label aggregation through a hierarchy of dependence-aware models based on Ising graphical models and latent factors. For class-dependent Ising models, the Bayes log-odds is generally quadratic in votes; for class-independent couplings, it reduces to a linear weighted vote with correlation-adjusted parameters. We present finite-$K$ examples showing that methods based on conditional independ",
+   "url": "https://arxiv.org/abs/2601.22336",
+   "path": "TanitAD Research Lab/Library/papers/2601.22336_Dependence-Aware-Label-Aggregation-for-LLM-as-a-Judge-via-Is.pdf",
+   "bytes": 722267,
+   "sha256": "88a07a10f0c391ce8f0b84753082193004255ae671daa990d1cb6e0fc18076a0",
+   "banked": "2026-08-30",
+   "tags": [
+    "label-adjudication"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Data Engineering/Research/2026-08-30-label-source-adjudication/RESULT.md"
+   ]
+  },
+  "1805.08877": {
+   "key": "1805.08877",
+   "kind": "arxiv",
+   "title": "Adversarial Label Learning",
+   "authors": [
+    "Chidubem Arachie",
+    "Bert Huang"
+   ],
+   "published": "2018-05-22",
+   "abstract": "We consider the task of training classifiers without labels. We propose a weakly supervised method---adversarial label learning---that trains classifiers to perform well against an adversary that chooses labels for training data. The weak supervision constrains what labels the adversary can choose. The method therefore minimizes an upper bound of the classifier's error rate using projected primal-dual subgradient descent. Minimizing this bound protects against bias and dependencies in the weak supervision. Experiments on three real datasets show that our method can train without labels and outperforms other approaches for weakly supervised learning.",
+   "url": "https://arxiv.org/abs/1805.08877",
+   "path": "TanitAD Research Lab/Library/papers/1805.08877_Adversarial-Label-Learning.pdf",
+   "bytes": 419844,
+   "sha256": "57d0cf26537501bcaa0c52cd2b9fe3c6476709df52d7289e021041cf77173e49",
+   "banked": "2026-08-30",
+   "tags": [
+    "label-adjudication"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Data Engineering/Research/2026-08-30-label-source-adjudication/RESULT.md"
+   ]
+  },
+  "2203.13270": {
+   "key": "2203.13270",
+   "kind": "arxiv",
+   "title": "Shoring Up the Foundations: Fusing Model Embeddings and Weak Supervision",
+   "authors": [
+    "Mayee F. Chen",
+    "Daniel Y. Fu",
+    "Dyah Adila",
+    "Michael Zhang",
+    "Frederic Sala",
+    "Kayvon Fatahalian",
+    "Christopher Ré"
+   ],
+   "published": "2022-03-24",
+   "abstract": "Foundation models offer an exciting new paradigm for constructing models with out-of-the-box embeddings and a few labeled examples. However, it is not clear how to best apply foundation models without labeled data. A potential approach is to fuse foundation models with weak supervision frameworks, which use weak label sources -- pre-trained models, heuristics, crowd-workers -- to construct pseudolabels. The challenge is building a combination that best exploits the signal available in both foundation models and weak sources. We propose Liger, a combination that uses foundation model embeddings to improve two crucial elements of existing weak supervision techniques. First, we produce finer estimates of weak source quality by partitioning the embedding space and learning per-part source accuracies. Second, we improve source coverage by extending source votes in embedding space. Despite the",
+   "url": "https://arxiv.org/abs/2203.13270",
+   "path": "TanitAD Research Lab/Library/papers/2203.13270_Shoring-Up-the-Foundations-Fusing-Model-Embeddings-and-Weak.pdf",
+   "bytes": 2475738,
+   "sha256": "35755d29f1a7d56bb85460f0e35ef842fe4fd9a4e2eda6a704b4ee7eb2e0fbc4",
+   "banked": "2026-08-30",
+   "tags": [
+    "label-adjudication"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Data Engineering/Research/2026-08-30-label-source-adjudication/RESULT.md"
+   ]
+  },
+  "1911.00068": {
+   "key": "1911.00068",
+   "kind": "arxiv",
+   "title": "Confident Learning: Estimating Uncertainty in Dataset Labels",
+   "authors": [
+    "Curtis G. Northcutt",
+    "Lu Jiang",
+    "Isaac L. Chuang"
+   ],
+   "published": "2019-10-31",
+   "abstract": "Learning exists in the context of data, yet notions of confidence typically focus on model predictions, not label quality. Confident learning (CL) is an alternative approach which focuses instead on label quality by characterizing and identifying label errors in datasets, based on the principles of pruning noisy data, counting with probabilistic thresholds to estimate noise, and ranking examples to train with confidence. Whereas numerous studies have developed these principles independently, here, we combine them, building on the assumption of a class-conditional noise process to directly estimate the joint distribution between noisy (given) labels and uncorrupted (unknown) labels. This results in a generalized CL which is provably consistent and experimentally performant. We present sufficient conditions where CL exactly finds label errors, and show CL performance exceeding seven recent",
+   "url": "https://arxiv.org/abs/1911.00068",
+   "path": "TanitAD Research Lab/Library/papers/1911.00068_Confident-Learning-Estimating-Uncertainty-in-Dataset-Labels.pdf",
+   "bytes": 7485235,
+   "sha256": "052ad95fb633d260461a04c7b86432d3dfe834a0d2b501a9cbcf6f69395345d7",
+   "banked": "2026-08-30",
+   "tags": [
+    "label-adjudication"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Data Engineering/Research/2026-08-30-label-source-adjudication/RESULT.md"
+   ]
+  },
+  "2503.20523": {
+   "key": "2503.20523",
+   "kind": "arxiv",
+   "title": "GAIA-2: A Controllable Multi-View Generative World Model for Autonomous Driving",
+   "authors": [
+    "Lloyd Russell",
+    "Anthony Hu",
+    "Lorenzo Bertoni",
+    "George Fedoseev",
+    "Jamie Shotton",
+    "Elahe Arani",
+    "Gianluca Corrado"
+   ],
+   "published": "2025-03-26",
+   "abstract": "Generative models offer a scalable and flexible paradigm for simulating complex environments, yet current approaches fall short in addressing the domain-specific requirements of autonomous driving - such as multi-agent interactions, fine-grained control, and multi-camera consistency. We introduce GAIA-2, Generative AI for Autonomy, a latent diffusion world model that unifies these capabilities within a single generative framework. GAIA-2 supports controllable video generation conditioned on a rich set of structured inputs: ego-vehicle dynamics, agent configurations, environmental factors, and road semantics. It generates high-resolution, spatiotemporally consistent multi-camera videos across geographically diverse driving environments (UK, US, Germany). The model integrates both structured conditioning and external latent embeddings (e.g., from a proprietary driving model) to facilitate ",
+   "url": "https://arxiv.org/abs/2503.20523",
+   "path": "TanitAD Research Lab/Library/papers/2503.20523_GAIA-2-A-Controllable-Multi-View-Generative-World-Model-for.pdf",
+   "bytes": 29380353,
+   "sha256": "f09e203c36ea055b90ff1d7cf65df7807ccb0aba48f418966adc7477af3dceb1",
+   "banked": "2026-08-30",
+   "tags": [
+    "input-pipeline"
+   ],
+   "note": "GAIA-2: 448x960 per camera, video tokenizer 32x spatial / 8x temporal downsample, 5 cameras, 8.4B latent world model",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md"
+   ]
+  },
+  "1804.06872": {
+   "key": "1804.06872",
+   "kind": "arxiv",
+   "title": "Co-teaching: Robust Training of Deep Neural Networks with Extremely Noisy Labels",
+   "authors": [
+    "Bo Han",
+    "Quanming Yao",
+    "Xingrui Yu",
+    "Gang Niu",
+    "Miao Xu",
+    "Weihua Hu",
+    "Ivor Tsang",
+    "Masashi Sugiyama"
+   ],
+   "published": "2018-04-18",
+   "abstract": "Deep learning with noisy labels is practically challenging, as the capacity of deep models is so high that they can totally memorize these noisy labels sooner or later during training. Nonetheless, recent studies on the memorization effects of deep neural networks show that they would first memorize training data of clean labels and then those of noisy labels. Therefore in this paper, we propose a new deep learning paradigm called Co-teaching for combating with noisy labels. Namely, we train two deep neural networks simultaneously, and let them teach each other given every mini-batch: firstly, each network feeds forward all data and selects some data of possibly clean labels; secondly, two networks communicate with each other what data in this mini-batch should be used for training; finally, each network back propagates the data selected by its peer network and updates itself. Empirical ",
+   "url": "https://arxiv.org/abs/1804.06872",
+   "path": "TanitAD Research Lab/Library/papers/1804.06872_Co-teaching-Robust-Training-of-Deep-Neural-Networks-with-Ext.pdf",
+   "bytes": 1984230,
+   "sha256": "217f5e7262af5bb555e3ddb11d5806f094af6965c7bcd71d10f159d3657d8593",
+   "banked": "2026-08-30",
+   "tags": [
+    "label-adjudication"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Data Engineering/Research/2026-08-30-label-source-adjudication/RESULT.md"
+   ]
+  },
+  "2110.05719": {
+   "key": "2110.05719",
+   "kind": "arxiv",
+   "title": "Dealing with Disagreements: Looking Beyond the Majority Vote in Subjective Annotations",
+   "authors": [
+    "Aida Mostafazadeh Davani",
+    "Mark Díaz",
+    "Vinodkumar Prabhakaran"
+   ],
+   "published": "2021-10-12",
+   "abstract": "Majority voting and averaging are common approaches employed to resolve annotator disagreements and derive single ground truth labels from multiple annotations. However, annotators may systematically disagree with one another, often reflecting their individual biases and values, especially in the case of subjective tasks such as detecting affect, aggression, and hate speech. Annotator disagreements may capture important nuances in such tasks that are often ignored while aggregating annotations to a single ground truth. In order to address this, we investigate the efficacy of multi-annotator models. In particular, our multi-task based approach treats predicting each annotators' judgements as separate subtasks, while sharing a common learned representation of the task. We show that this approach yields same or better performance than aggregating labels in the data prior to training across ",
+   "url": "https://arxiv.org/abs/2110.05719",
+   "path": "TanitAD Research Lab/Library/papers/2110.05719_Dealing-with-Disagreements-Looking-Beyond-the-Majority-Vote.pdf",
+   "bytes": 1039487,
+   "sha256": "6c23272ee8751b4d735bd4b97d0f1477668f5dcc6397f7215ea302f38a8e79e8",
+   "banked": "2026-08-30",
+   "tags": [
+    "label-adjudication"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Data Engineering/Research/2026-08-30-label-source-adjudication/RESULT.md"
+   ]
+  },
+  "2511.14117": {
+   "key": "2511.14117",
+   "kind": "arxiv",
+   "title": "Distributions In, Distributions Out: The Case for Soft-Label Training",
+   "authors": [
+    "Agamdeep Singh",
+    "Ashish Tiwari",
+    "Hosein Hasanbeig",
+    "Priyanshu Gupta"
+   ],
+   "published": "2025-11-18",
+   "abstract": "Supervised classifiers output a distribution over classes but are typically trained against a single label obtained by collapsing multiple annotators into a majority vote. On tasks where annotator disagreement reflects genuine ambiguity -- natural language inference, politeness, visually ambiguous categorization -- this collapse discards information and forces models to express uniform confidence on inputs where humans systematically disagree. We compare soft-label training, which uses the full annotation distribution as the target, against hard-label training across three datasets spanning vision and NLP (ChaosNLI, POPQUORN, CIFAR-10H). Soft-label training matches or exceeds hard-label accuracy on every dataset, reduces KL divergence to the annotator distribution by 32% on average (p &lt; 10^-4), and produces predictions whose per-sample entropy correlates 61% more strongly with annotat",
+   "url": "https://arxiv.org/abs/2511.14117",
+   "path": "TanitAD Research Lab/Library/papers/2511.14117_Distributions-In-Distributions-Out-The-Case-for-Soft-Label-T.pdf",
+   "bytes": 1823963,
+   "sha256": "fda6793d10cf0f74d27a3fce1efde76d5a477c072227d6e772e9ba55080b27b7",
+   "banked": "2026-08-30",
+   "tags": [
+    "label-adjudication"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Data Engineering/Research/2026-08-30-label-source-adjudication/RESULT.md"
+   ]
+  },
+  "2509.02351": {
+   "key": "2509.02351",
+   "kind": "arxiv",
+   "title": "Ordinal Adaptive Correction: A Data-Centric Approach to Ordinal Image Classification with Noisy Labels",
+   "authors": [
+    "Alireza Sedighi Moghaddam",
+    "Mohammad Reza Mohammadi"
+   ],
+   "published": "2025-09-02",
+   "abstract": "Labeled data is a fundamental component in training supervised deep learning models for computer vision tasks. However, the labeling process, especially for ordinal image classification where class boundaries are often ambiguous, is prone to error and noise. Such label noise can significantly degrade the performance and reliability of machine learning models. This paper addresses the problem of detecting and correcting label noise in ordinal image classification tasks. To this end, a novel data-centric method called ORDinal Adaptive Correction (ORDAC) is proposed for adaptive correction of noisy labels. The proposed approach leverages the capabilities of Label Distribution Learning (LDL) to model the inherent ambiguity and uncertainty present in ordinal labels. During training, ORDAC dynamically adjusts the mean and standard deviation of the label distribution for each sample. Rather tha",
+   "url": "https://arxiv.org/abs/2509.02351",
+   "path": "TanitAD Research Lab/Library/papers/2509.02351_Ordinal-Adaptive-Correction-A-Data-Centric-Approach-to-Ordin.pdf",
+   "bytes": 2735293,
+   "sha256": "889a448b55484ce1418c77ec796d867fbabf4973167f6203a2698b51c431d45a",
+   "banked": "2026-08-30",
+   "tags": [
+    "label-adjudication"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Data Engineering/Research/2026-08-30-label-source-adjudication/RESULT.md"
+   ]
+  },
+  "2506.12251": {
+   "key": "2506.12251",
+   "kind": "arxiv",
+   "title": "Efficient Multi-Camera Tokenization with Triplanes for End-to-End Driving",
+   "authors": [
+    "Boris Ivanovic",
+    "Cristiano Saltori",
+    "Yurong You",
+    "Yan Wang",
+    "Wenjie Luo",
+    "Marco Pavone"
+   ],
+   "published": "2025-06-13",
+   "abstract": "Autoregressive Transformers are increasingly being deployed as end-to-end robot and autonomous vehicle (AV) policy architectures, owing to their scalability and potential to leverage internet-scale pretraining for generalization. Accordingly, tokenizing sensor data efficiently is paramount to ensuring the real-time feasibility of such architectures on embedded hardware. To this end, we present an efficient triplane-based multi-camera tokenization strategy that leverages recent advances in 3D neural reconstruction and rendering to produce sensor tokens that are agnostic to the number of input cameras and their resolution, while explicitly accounting for their geometry around an AV. Experiments on a large-scale AV dataset and state-of-the-art neural simulator demonstrate that our approach yields significant savings over current image patch-based tokenization strategies, producing up to 72%",
+   "url": "https://arxiv.org/abs/2506.12251",
+   "path": "TanitAD Research Lab/Library/papers/2506.12251_Efficient-Multi-Camera-Tokenization-with-Triplanes-for-End-t.pdf",
+   "bytes": 9520948,
+   "sha256": "62ada98f7463f0be370822bfb13763e84ff215b59ed51a933da003f3a2a593e6",
+   "banked": "2026-08-30",
+   "tags": [
+    "input-pipeline"
+   ],
+   "note": "Triplane tokenization for E2E driving: 45 tokens/image matches 160-token DINOv2/VQGAN patch tokenizers on minADE6 (0.72 vs 0.69-0.74 @5s) - MEASURED token-count-vs-planning curve",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md"
+   ]
+  },
+  "2411.00079": {
+   "key": "2411.00079",
+   "kind": "arxiv",
+   "title": "Label Noise: Ignorance Is Bliss",
+   "authors": [
+    "Yilun Zhu",
+    "Jianxin Zhang",
+    "Aditya Gangrade",
+    "Clayton Scott"
+   ],
+   "published": "2024-10-31",
+   "abstract": "We establish a new theoretical framework for learning under multi-class, instance-dependent label noise. This framework casts learning with label noise as a form of domain adaptation, in particular, domain adaptation under posterior drift. We introduce the concept of \\emph{relative signal strength} (RSS), a pointwise measure that quantifies the transferability from noisy to clean posterior. Using RSS, we establish nearly matching upper and lower bounds on the excess risk. Our theoretical findings support the simple \\emph{Noise Ignorant Empirical Risk Minimization (NI-ERM)} principle, which minimizes empirical risk while ignoring label noise. Finally, we translate this theoretical insight into practice: by using NI-ERM to fit a linear classifier on top of a self-supervised feature extractor, we achieve state-of-the-art performance on the CIFAR-N data challenge.",
+   "url": "https://arxiv.org/abs/2411.00079",
+   "path": "TanitAD Research Lab/Library/papers/2411.00079_Label-Noise-Ignorance-Is-Bliss.pdf",
+   "bytes": 925920,
+   "sha256": "b263d16d383dddff00a1ee816bd60259ded635ef0d30f8340f1c70a820f62fdb",
+   "banked": "2026-08-30",
+   "tags": [
+    "label-adjudication"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Data Engineering/Research/2026-08-30-label-source-adjudication/RESULT.md"
+   ]
+  },
+  "2110.12088": {
+   "key": "2110.12088",
+   "kind": "arxiv",
+   "title": "Learning with Noisy Labels Revisited: A Study Using Real-World Human Annotations",
+   "authors": [
+    "Jiaheng Wei",
+    "Zhaowei Zhu",
+    "Hao Cheng",
+    "Tongliang Liu",
+    "Gang Niu",
+    "Yang Liu"
+   ],
+   "published": "2021-10-22",
+   "abstract": "Existing research on learning with noisy labels mainly focuses on synthetic label noise. Synthetic noise, though has clean structures which greatly enabled statistical analyses, often fails to model real-world noise patterns. The recent literature has observed several efforts to offer real-world noisy datasets, yet the existing efforts suffer from two caveats: (1) The lack of ground-truth verification makes it hard to theoretically study the property and treatment of real-world label noise; (2) These efforts are often of large scales, which may result in unfair comparisons of robust methods within reasonable and accessible computation power. To better understand real-world label noise, it is crucial to build controllable and moderate-sized real-world noisy datasets with both ground-truth and noisy labels. This work presents two new benchmark datasets CIFAR-10N, CIFAR-100N, equipping the ",
+   "url": "https://arxiv.org/abs/2110.12088",
+   "path": "TanitAD Research Lab/Library/papers/2110.12088_Learning-with-Noisy-Labels-Revisited-A-Study-Using-Real-Worl.pdf",
+   "bytes": 1081214,
+   "sha256": "10901035edc73e06ced8745c6c9f71b6ff2096f5b3824d063a0c0405281a5f69",
+   "banked": "2026-08-30",
+   "tags": [
+    "label-adjudication"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Data Engineering/Research/2026-08-30-label-source-adjudication/RESULT.md"
+   ]
+  },
+  "1605.07723": {
+   "key": "1605.07723",
+   "kind": "arxiv",
+   "title": "Data Programming: Creating Large Training Sets, Quickly",
+   "authors": [
+    "Alexander Ratner",
+    "Christopher De Sa",
+    "Sen Wu",
+    "Daniel Selsam",
+    "Christopher Ré"
+   ],
+   "published": "2016-05-25",
+   "abstract": "Large labeled training sets are the critical building blocks of supervised learning methods and are key enablers of deep learning techniques. For some applications, creating labeled training sets is the most time-consuming and expensive part of applying machine learning. We therefore propose a paradigm for the programmatic creation of training sets called data programming in which users express weak supervision strategies or domain heuristics as labeling functions, which are programs that label subsets of the data, but that are noisy and may conflict. We show that by explicitly representing this training set labeling process as a generative model, we can \"denoise\" the generated training set, and establish theoretically that we can recover the parameters of these generative models in a handful of settings. We then show how to modify a discriminative loss function to make it noise-aware, a",
+   "url": "https://arxiv.org/abs/1605.07723",
+   "path": "TanitAD Research Lab/Library/papers/1605.07723_Data-Programming-Creating-Large-Training-Sets-Quickly.pdf",
+   "bytes": 362152,
+   "sha256": "2b5cb4ec06201e35bad7fd3e1a0d297eb1a2d832588bf140d983c5350b78b9e2",
+   "banked": "2026-08-30",
+   "tags": [
+    "label-adjudication"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Data Engineering/Research/2026-08-30-label-source-adjudication/RESULT.md"
+   ]
+  },
+  "2405.17398": {
+   "key": "2405.17398",
+   "kind": "arxiv",
+   "title": "Vista: A Generalizable Driving World Model with High Fidelity and Versatile Controllability",
+   "authors": [
+    "Shenyuan Gao",
+    "Jiazhi Yang",
+    "Li Chen",
+    "Kashyap Chitta",
+    "Yihang Qiu",
+    "Andreas Geiger",
+    "Jun Zhang",
+    "Hongyang Li"
+   ],
+   "published": "2024-05-27",
+   "abstract": "World models can foresee the outcomes of different actions, which is of paramount importance for autonomous driving. Nevertheless, existing driving world models still have limitations in generalization to unseen environments, prediction fidelity of critical details, and action controllability for flexible application. In this paper, we present Vista, a generalizable driving world model with high fidelity and versatile controllability. Based on a systematic diagnosis of existing methods, we introduce several key ingredients to address these limitations. To accurately predict real-world dynamics at high resolution, we propose two novel losses to promote the learning of moving instances and structural information. We also devise an effective latent replacement approach to inject historical frames as priors for coherent long-horizon rollouts. For action controllability, we incorporate a vers",
+   "url": "https://arxiv.org/abs/2405.17398",
+   "path": "TanitAD Research Lab/Library/papers/2405.17398_Vista-A-Generalizable-Driving-World-Model-with-High-Fidelity.pdf",
+   "bytes": 18033269,
+   "sha256": "80bddfd98c754170d7ea8688e1be4dc76b2af87d7290254f6662570ff839e9f5",
+   "banked": "2026-08-30",
+   "tags": [
+    "input-pipeline"
+   ],
+   "note": "Vista: driving world model trained on OpenDV-2K; generation-speed + data-scale anchor | Vista: driving world model at 576x1024, two-stage train 320x576 then 576x1024; NO resolution ablation | driving world model: front-mono camera + short context; input-pipeline review axes 2/5",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md"
+   ]
+  },
+  "2403.09630": {
+   "key": "2403.09630",
+   "kind": "arxiv",
+   "title": "GenAD: Generalized Predictive Model for Autonomous Driving",
+   "authors": [
+    "Jiazhi Yang",
+    "Shenyuan Gao",
+    "Yihang Qiu",
+    "Li Chen",
+    "Tianyu Li",
+    "Bo Dai",
+    "Kashyap Chitta",
+    "Penghao Wu",
+    "Jia Zeng",
+    "Ping Luo",
+    "Jun Zhang",
+    "Andreas Geiger"
+   ],
+   "published": "2024-03-14",
+   "abstract": "In this paper, we introduce the first large-scale video prediction model in the autonomous driving discipline. To eliminate the restriction of high-cost data collection and empower the generalization ability of our model, we acquire massive data from the web and pair it with diverse and high-quality text descriptions. The resultant dataset accumulates over 2000 hours of driving videos, spanning areas all over the world with diverse weather conditions and traffic scenarios. Inheriting the merits from recent latent diffusion models, our model, dubbed GenAD, handles the challenging dynamics in driving scenes with novel temporal reasoning blocks. We showcase that it can generalize to various unseen driving datasets in a zero-shot manner, surpassing general or driving-specific video prediction counterparts. Furthermore, GenAD can be adapted into an action-conditioned prediction model or a mot",
+   "url": "https://arxiv.org/abs/2403.09630",
+   "path": "TanitAD Research Lab/Library/papers/2403.09630_GenAD-Generalized-Predictive-Model-for-Autonomous-Driving.pdf",
+   "bytes": 36566639,
+   "sha256": "70baf8494ea823cdcf0a3a68069b13bedd7fb3bacd92102f8e247184c4cd527d",
+   "banked": "2026-08-30",
+   "tags": [
+    "input-pipeline"
+   ],
+   "note": "GenAD/OpenDV-2K (Generalized Predictive Model): >2000 h web driving video; the data-scale comparison table vs nuScenes/Waymo/BDD",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md"
+   ]
+  },
+  "1912.04838": {
+   "key": "1912.04838",
+   "kind": "arxiv",
+   "title": "Scalability in Perception for Autonomous Driving: Waymo Open Dataset",
+   "authors": [
+    "Pei Sun",
+    "Henrik Kretzschmar",
+    "Xerxes Dotiwalla",
+    "Aurelien Chouard",
+    "Vijaysai Patnaik",
+    "Paul Tsui",
+    "James Guo",
+    "Yin Zhou",
+    "Yuning Chai",
+    "Benjamin Caine",
+    "Vijay Vasudevan",
+    "Wei Han"
+   ],
+   "published": "2019-12-10",
+   "abstract": "The research community has increasing interest in autonomous driving research, despite the resource intensity of obtaining representative real world data. Existing self-driving datasets are limited in the scale and variation of the environments they capture, even though generalization within and between operating regions is crucial to the overall viability of the technology. In an effort to help align the research community's contributions with real-world self-driving problems, we introduce a new large scale, high quality, diverse dataset. Our new dataset consists of 1150 scenes that each span 20 seconds, consisting of well synchronized and calibrated high quality LiDAR and camera data captured across a range of urban and suburban geographies. It is 15x more diverse than the largest camera+LiDAR dataset available based on our proposed diversity metric. We exhaustively annotated this data",
+   "url": "https://arxiv.org/abs/1912.04838",
+   "path": "TanitAD Research Lab/Library/papers/1912.04838_Scalability-in-Perception-for-Autonomous-Driving-Waymo-Open.pdf",
+   "bytes": 1986991,
+   "sha256": "3e6c712e0bb4bfedc8c67f106f69af60fd1eb40dc5d992ab724a84d04721a527",
+   "banked": "2026-08-30",
+   "tags": [
+    "input-pipeline"
+   ],
+   "note": "Waymo Open Dataset (Perception): scene count/hours - axis-7 data-scale anchor",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md"
+   ]
+  },
+  "1805.04687": {
+   "key": "1805.04687",
+   "kind": "arxiv",
+   "title": "BDD100K: A Diverse Driving Dataset for Heterogeneous Multitask Learning",
+   "authors": [
+    "Fisher Yu",
+    "Haofeng Chen",
+    "Xin Wang",
+    "Wenqi Xian",
+    "Yingying Chen",
+    "Fangchen Liu",
+    "Vashisht Madhavan",
+    "Trevor Darrell"
+   ],
+   "published": "2018-05-12",
+   "abstract": "Datasets drive vision progress, yet existing driving datasets are impoverished in terms of visual content and supported tasks to study multitask learning for autonomous driving. Researchers are usually constrained to study a small set of problems on one dataset, while real-world computer vision applications require performing tasks of various complexities. We construct BDD100K, the largest driving video dataset with 100K videos and 10 tasks to evaluate the exciting progress of image recognition algorithms on autonomous driving. The dataset possesses geographic, environmental, and weather diversity, which is useful for training models that are less likely to be surprised by new conditions. Based on this diverse dataset, we build a benchmark for heterogeneous multitask learning and study how to solve the tasks together. Our experiments show that special training strategies are needed for e",
+   "url": "https://arxiv.org/abs/1805.04687",
+   "path": "TanitAD Research Lab/Library/papers/1805.04687_BDD100K-A-Diverse-Driving-Dataset-for-Heterogeneous-Multitas.pdf",
+   "bytes": 4843444,
+   "sha256": "389263607a52d122cdbba434c7dc1120a81baf9799afe639313bb466bdd498a0",
+   "banked": "2026-08-30",
+   "tags": [
+    "input-pipeline"
+   ],
+   "note": "BDD100K: 100k videos ~40s each (~1100h), geographic+weather+time-of-day diversity - axis-7 diversity anchor",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md"
+   ]
+  },
+  "2309.16588": {
+   "key": "2309.16588",
+   "kind": "arxiv",
+   "title": "Vision Transformers Need Registers",
+   "authors": [
+    "Timothée Darcet",
+    "Maxime Oquab",
+    "Julien Mairal",
+    "Piotr Bojanowski"
+   ],
+   "published": "2023-09-28",
+   "abstract": "Transformers have recently emerged as a powerful tool for learning visual representations. In this paper, we identify and characterize artifacts in feature maps of both supervised and self-supervised ViT networks. The artifacts correspond to high-norm tokens appearing during inference primarily in low-informative background areas of images, that are repurposed for internal computations. We propose a simple yet effective solution based on providing additional tokens to the input sequence of the Vision Transformer to fill that role. We show that this solution fixes that problem entirely for both supervised and self-supervised models, sets a new state of the art for self-supervised visual models on dense visual prediction tasks, enables object discovery methods with larger models, and most importantly leads to smoother feature maps and attention maps for downstream visual processing.",
+   "url": "https://arxiv.org/abs/2309.16588",
+   "path": "TanitAD Research Lab/Library/papers/2309.16588_Vision-Transformers-Need-Registers.pdf",
+   "bytes": 6018622,
+   "sha256": "e7b94bffc68d851322d799a8be387fc8b36d53f9e6cc757bac511305acd60776",
+   "banked": "2026-08-30",
+   "tags": [
+    "input-pipeline",
+    "projection-distortion"
+   ],
+   "note": "Vision Transformers Need Registers: ViTs repurpose LOW-INFORMATION patch tokens into high-norm global-computation tokens, degrading dense prediction; relevant to our ~9pct invalid/padded region",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md"
+   ]
+  },
+  "1812.05752": {
+   "key": "1812.05752",
+   "kind": "arxiv",
+   "title": "A Commute in Data: The comma2k19 Dataset",
+   "authors": [
+    "Harald Schafer",
+    "Eder Santana",
+    "Andrew Haden",
+    "Riccardo Biasini"
+   ],
+   "published": "2018-12-14",
+   "abstract": "comma.ai presents comma2k19, a dataset of over 33 hours of commute in California's 280 highway. This means 2019 segments, 1 minute long each, on a 20km section of highway driving between California's San Jose and San Francisco. The dataset was collected using comma EONs that have sensors similar to those of any modern smartphone including a road-facing camera, phone GPS, thermometers and a 9-axis IMU. Additionally, the EON captures raw GNSS measurements and all CAN data sent by the car with a comma grey panda. Laika, an open-source GNSS processing library, is also introduced here. Laika produces 40% more accurate positions than the GNSS module used to collect the raw data. This dataset includes pose (position + orientation) estimates in a global reference frame of the recording camera. These poses were computed with a tightly coupled INS/GNSS/Vision optimizer that relies on data processe",
+   "url": "https://arxiv.org/abs/1812.05752",
+   "path": "TanitAD Research Lab/Library/papers/1812.05752_A-Commute-in-Data-The-comma2k19-Dataset.pdf",
+   "bytes": 7063772,
+   "sha256": "694ca3eedf2cae5ca6dbeb49f4e917827f19c117ed4300855c559b416ac1669c",
+   "banked": "2026-08-30",
+   "tags": [
+    "input-pipeline"
+   ],
+   "note": "Comma2k19: 33h highway driving corpus",
+   "cited_by": [
+    "x/RESULT.md"
+   ]
+  },
+  "2301.12511": {
+   "key": "2301.12511",
+   "kind": "arxiv",
+   "title": "Fast-BEV: A Fast and Strong Bird's-Eye View Perception Baseline",
+   "authors": [
+    "Yangguang Li",
+    "Bin Huang",
+    "Zeren Chen",
+    "Yufeng Cui",
+    "Feng Liang",
+    "Mingzhu Shen",
+    "Fenggang Liu",
+    "Enze Xie",
+    "Lu Sheng",
+    "Wanli Ouyang",
+    "Jing Shao"
+   ],
+   "published": "2023-01-29",
+   "abstract": "Recently, perception task based on Bird's-Eye View (BEV) representation has drawn more and more attention, and BEV representation is promising as the foundation for next-generation Autonomous Vehicle (AV) perception. However, most existing BEV solutions either require considerable resources to execute on-vehicle inference or suffer from modest performance. This paper proposes a simple yet effective framework, termed Fast-BEV , which is capable of performing faster BEV perception on the on-vehicle chips. Towards this goal, we first empirically find that the BEV representation can be sufficiently powerful without expensive transformer based transformation nor depth representation. Our Fast-BEV consists of five parts, We novelly propose (1) a lightweight deployment-friendly view transformation which fast transfers 2D image feature to 3D voxel space, (2) an multi-scale image encoder which le",
+   "url": "https://arxiv.org/abs/2301.12511",
+   "path": "TanitAD Research Lab/Library/papers/2301.12511_Fast-BEV-A-Fast-and-Strong-Bird-s-Eye-View-Perception-Baseli.pdf",
+   "bytes": 7751922,
+   "sha256": "4f96b681d8cffd3fd3d512f15189c0ce149b8a0f1913dbccc3a2c5005ddcc4cb",
+   "banked": "2026-08-30",
+   "tags": [
+    "input-pipeline"
+   ],
+   "note": "Fast-BEV: MEASURED image-resolution ablation Table VI 256x448 0.280mAP -> 928x1600 0.369mAP, saturates at 832x1440; Table VII voxel res 200x200x6 BEST (0.352) and 400x400x6 WORSE (0.337)",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md"
+   ]
+  },
+  "1905.06937": {
+   "key": "1905.06937",
+   "kind": "arxiv",
+   "title": "Monocular Plan View Networks for Autonomous Driving",
+   "authors": [
+    "Dequan Wang",
+    "Coline Devin",
+    "Qi-Zhi Cai",
+    "Philipp Krähenbühl",
+    "Trevor Darrell"
+   ],
+   "published": "2019-05-16",
+   "abstract": "Convolutions on monocular dash cam videos capture spatial invariances in the image plane but do not explicitly reason about distances and depth. We propose a simple transformation of observations into a bird's eye view, also known as plan view, for end-to-end control. We detect vehicles and pedestrians in the first person view and project them into an overhead plan view. This representation provides an abstraction of the environment from which a deep network can easily deduce the positions and directions of entities. Additionally, the plan view enables us to leverage advances in 3D object detection in conjunction with deep policy learning. We evaluate our monocular plan view network on the photo-realistic Grand Theft Auto V simulator. A network using both a plan view and front view causes less than half as many collisions as previous detection-based methods and an order of magnitude fewe",
+   "url": "https://arxiv.org/abs/1905.06937",
+   "path": "TanitAD Research Lab/Library/papers/1905.06937_Monocular-Plan-View-Networks-for-Autonomous-Driving.pdf",
+   "bytes": 8358357,
+   "sha256": "f9057accd78bddf444c958a4b6bdb1f75606b57bc960e3f31410e10c818f0c09",
+   "banked": "2026-08-30",
+   "tags": [
+    "input-pipeline"
+   ],
+   "note": "Wang et al MPV: HISTORY vs NO-HISTORY driving; history improves validation perplexity but roughly halves driving distance (primary source of de Haan Tab.1)",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md"
+   ]
+  },
+  "2412.02689": {
+   "key": "2412.02689",
+   "kind": "arxiv",
+   "title": "Data Scaling Laws for Imitation Learning-Based End-to-End Autonomous Driving",
+   "authors": [
+    "Yupeng Zheng",
+    "Pengxuan Yang",
+    "Zhongpu Xia",
+    "Qichao Zhang",
+    "Yuhang Zheng",
+    "Songen Gu",
+    "Bu Jin",
+    "Teng Zhang",
+    "Ben Lu",
+    "Chao Han",
+    "Xianpeng Lang",
+    "Dongbin Zhao"
+   ],
+   "published": "2024-12-03",
+   "abstract": "The end-to-end autonomous driving paradigm has recently attracted lots of attention due to its scalability. However, existing methods are constrained by the limited scale of real-world data, which hinders a comprehensive exploration of the scaling laws associated with end-to-end autonomous driving. To address this issue, we collected substantial data from various driving scenarios and behaviors and conducted an extensive study on the scaling laws of existing imitation learning-based end-to-end autonomous driving paradigms. Specifically, approximately 4 million demonstrations from 23 different scenario types were gathered, amounting to over 30,000 hours of driving demonstrations. We performed open-loop evaluations and closed-loop simulation evaluations in 1,400 diverse driving demonstrations (1,300 for open-loop and 100 for closed-loop) under stringent assessment conditions. Through exper",
+   "url": "https://arxiv.org/abs/2412.02689",
+   "path": "TanitAD Research Lab/Library/papers/2412.02689_Data-Scaling-Laws-for-Imitation-Learning-Based-End-to-End-Au.pdf",
+   "bytes": 2723634,
+   "sha256": "3626790176360b0f6b7d4a5a80be67f6008e8c28f3ead89db83a1e603f1a644e",
+   "banked": "2026-08-30",
+   "tags": [
+    "input-pipeline"
+   ],
+   "note": "Data scaling laws for E2E AD: trained at 512x960 from 3840x2160 native; ADE power law Y=0.6833*X^-0.188, r=-0.963; NO resolution ablation",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md"
+   ]
+  },
+  "2305.02008": {
+   "key": "2305.02008",
+   "kind": "arxiv",
+   "title": "Zenseact Open Dataset: A large-scale and diverse multimodal dataset for autonomous driving",
+   "authors": [
+    "Mina Alibeigi",
+    "William Ljungbergh",
+    "Adam Tonderski",
+    "Georg Hess",
+    "Adam Lilja",
+    "Carl Lindstrom",
+    "Daria Motorniuk",
+    "Junsheng Fu",
+    "Jenny Widahl",
+    "Christoffer Petersson"
+   ],
+   "published": "2023-05-03",
+   "abstract": "Existing datasets for autonomous driving (AD) often lack diversity and long-range capabilities, focusing instead on 360° perception and temporal reasoning. To address this gap, we introduce Zenseact Open Dataset (ZOD), a large-scale and diverse multimodal dataset collected over two years in various European countries, covering an area 9x that of existing datasets. ZOD boasts the highest range and resolution sensors among comparable datasets, coupled with detailed keyframe annotations for 2D and 3D objects (up to 245m), road instance/semantic segmentation, traffic sign recognition, and road classification. We believe that this unique combination will facilitate breakthroughs in long-range perception and multi-task learning. The dataset is composed of Frames, Sequences, and Drives, designed to encompass both data diversity and support for spatio-temporal learning, sensor fusion, localizati",
+   "url": "https://arxiv.org/abs/2305.02008",
+   "path": "TanitAD Research Lab/Library/papers/2305.02008_Zenseact-Open-Dataset-A-large-scale-and-diverse-multimodal-d.pdf",
+   "bytes": 6250265,
+   "sha256": "6e8e23e29b45ef681206ca0a56f6af50efa6ccf4231b0f4582d85550a33351f1",
+   "banked": "2026-08-30",
+   "tags": [
+    "input-pipeline"
+   ],
+   "note": "Zenseact Open Dataset (ZOD): multi-country/multi-city diversity anchor",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md"
+   ]
+  },
+  "2210.09267": {
+   "key": "2210.09267",
+   "kind": "arxiv",
+   "title": "CramNet: Camera-Radar Fusion with Ray-Constrained Cross-Attention for Robust 3D Object Detection",
+   "authors": [
+    "Jyh-Jing Hwang",
+    "Henrik Kretzschmar",
+    "Joshua Manela",
+    "Sean Rafferty",
+    "Nicholas Armstrong-Crews",
+    "Tiffany Chen",
+    "Dragomir Anguelov"
+   ],
+   "published": "2022-10-17",
+   "abstract": "Robust 3D object detection is critical for safe autonomous driving. Camera and radar sensors are synergistic as they capture complementary information and work well under different environmental conditions. Fusing camera and radar data is challenging, however, as each of the sensors lacks information along a perpendicular axis, that is, depth is unknown to camera and elevation is unknown to radar. We propose the camera-radar matching network CramNet, an efficient approach to fuse the sensor readings from camera and radar in a joint 3D space. To leverage radar range measurements for better camera depth predictions, we propose a novel ray-constrained cross-attention mechanism that resolves the ambiguity in the geometric correspondences between camera features and radar features. Our method supports training with sensor modality dropout, which leads to robust 3D object detection, even when ",
+   "url": "https://arxiv.org/abs/2210.09267",
+   "path": "TanitAD Research Lab/Library/papers/2210.09267_CramNet-Camera-Radar-Fusion-with-Ray-Constrained-Cross-Atten.pdf",
+   "bytes": 4747839,
+   "sha256": "2153743b786e915794051023220deb47ea1750eae44736e74de27e6a6bf22a97",
+   "banked": "2026-08-30",
+   "tags": [
+    "input-pipeline"
+   ],
+   "note": "CramNet: camera-only Waymo 3D vehicle AP collapses by distance band 14.54 (0-30m) -> 1.47 (30-50m) -> 0.10 (50m+)",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md"
+   ]
+  },
+  "2010.11929": {
+   "key": "2010.11929",
+   "kind": "arxiv",
+   "title": "An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale",
+   "authors": [
+    "Alexey Dosovitskiy",
+    "Lucas Beyer",
+    "Alexander Kolesnikov",
+    "Dirk Weissenborn",
+    "Xiaohua Zhai",
+    "Thomas Unterthiner",
+    "Mostafa Dehghani",
+    "Matthias Minderer",
+    "Georg Heigold",
+    "Sylvain Gelly",
+    "Jakob Uszkoreit",
+    "Neil Houlsby"
+   ],
+   "published": "2020-10-22",
+   "abstract": "While the Transformer architecture has become the de-facto standard for natural language processing tasks, its applications to computer vision remain limited. In vision, attention is either applied in conjunction with convolutional networks, or used to replace certain components of convolutional networks while keeping their overall structure in place. We show that this reliance on CNNs is not necessary and a pure transformer applied directly to sequences of image patches can perform very well on image classification tasks. When pre-trained on large amounts of data and transferred to multiple mid-sized or small image recognition benchmarks (ImageNet, CIFAR-100, VTAB, etc.), Vision Transformer (ViT) attains excellent results compared to state-of-the-art convolutional networks while requiring substantially fewer computational resources to train.",
+   "url": "https://arxiv.org/abs/2010.11929",
+   "path": "TanitAD Research Lab/Library/papers/2010.11929_An-Image-is-Worth-16x16-Words-Transformers-for-Image-Recogni.pdf",
+   "bytes": 3743814,
+   "sha256": "8ce7b83971a14508ca711a27c875c9b6914c4f6767cf3150fb1ca6c07aa056d6",
+   "banked": "2026-08-30",
+   "tags": [
+    "input-pipeline"
+   ],
+   "note": "ViT: patch ablation ViT-B/32 80.73%@55 exaFLOPs vs ViT-B/16 84.15%@224 exaFLOPs; ViT-L/32 84.37@196 vs ViT-L/16 86.30@783",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md"
+   ]
+  },
+  "2207.14024": {
+   "key": "2207.14024",
+   "kind": "arxiv",
+   "title": "Safety-Enhanced Autonomous Driving Using Interpretable Sensor Fusion Transformer",
+   "authors": [
+    "Hao Shao",
+    "Letian Wang",
+    "RuoBing Chen",
+    "Hongsheng Li",
+    "Yu Liu"
+   ],
+   "published": "2022-07-28",
+   "abstract": "Large-scale deployment of autonomous vehicles has been continually delayed due to safety concerns. On the one hand, comprehensive scene understanding is indispensable, a lack of which would result in vulnerability to rare but complex traffic situations, such as the sudden emergence of unknown objects. However, reasoning from a global context requires access to sensors of multiple types and adequate fusion of multi-modal sensor signals, which is difficult to achieve. On the other hand, the lack of interpretability in learning models also hampers the safety with unverifiable failure causes. In this paper, we propose a safety-enhanced autonomous driving framework, named Interpretable Sensor Fusion Transformer(InterFuser), to fully process and fuse information from multi-modal multi-view sensors for achieving comprehensive scene understanding and adversarial event detection. Besides, interme",
+   "url": "https://arxiv.org/abs/2207.14024",
+   "path": "TanitAD Research Lab/Library/papers/2207.14024_Safety-Enhanced-Autonomous-Driving-Using-Interpretable-Senso.pdf",
+   "bytes": 6988376,
+   "sha256": "01f409895fdb769b6e76e96ff3ae7a6d88636a09ec3483ee0537717358cf9624",
+   "banked": "2026-08-30",
+   "tags": [
+    "input-pipeline"
+   ],
+   "note": "InterFuser: CARLA closed-loop sensor-fusion transformer; runtime/deployment anchor | InterFuser: 224x224 front crop from 800x600 100deg cams; NO pooling before planner - 10 waypoint queries + 400 density-map queries cross-attend",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md"
+   ]
+  },
+  "1602.01237": {
+   "key": "1602.01237",
+   "kind": "arxiv",
+   "title": "How Far are We from Solving Pedestrian Detection?",
+   "authors": [
+    "Shanshan Zhang",
+    "Rodrigo Benenson",
+    "Mohamed Omran",
+    "Jan Hosang",
+    "Bernt Schiele"
+   ],
+   "published": "2016-02-03",
+   "abstract": "Encouraged by the recent progress in pedestrian detection, we investigate the gap between current state-of-the-art methods and the \"perfect single frame detector\". We enable our analysis by creating a human baseline for pedestrian detection (over the Caltech dataset), and by manually clustering the recurrent errors of a top detector. Our results characterize both localization and background-versus-foreground errors. To address localization errors we study the impact of training annotation noise on the detector performance, and show that we can improve even with a small portion of sanitized training data. To address background/foreground discrimination, we study convnets for pedestrian detection, and discuss which factors affect their performance. Other than our in-depth analysis, we report top performance on the Caltech dataset, and provide a new sanitized set of training and test annota",
+   "url": "https://arxiv.org/abs/1602.01237",
+   "path": "TanitAD Research Lab/Library/papers/1602.01237_How-Far-are-We-from-Solving-Pedestrian-Detection.pdf",
+   "bytes": 8098092,
+   "sha256": "054911c56e31b1d6b79172a7fc40fde609fcc7a88fa8f6be2742f6c50e48a387",
+   "banked": "2026-08-30",
+   "tags": [
+    "input-pipeline"
+   ],
+   "note": "Pedestrian detection miss-rate by PIXEL HEIGHT: >80px ~10%, 50-80px ~18%, 30-50px ~50%; authors state the pixel count itself is the source of difficulty",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md"
+   ]
+  },
+  "2203.11934": {
+   "key": "2203.11934",
+   "kind": "arxiv",
+   "title": "Learning from All Vehicles",
+   "authors": [
+    "Dian Chen",
+    "Philipp Krähenbühl"
+   ],
+   "published": "2022-03-22",
+   "abstract": "In this paper, we present a system to train driving policies from experiences collected not just from the ego-vehicle, but all vehicles that it observes. This system uses the behaviors of other agents to create more diverse driving scenarios without collecting additional data. The main difficulty in learning from other vehicles is that there is no sensor information. We use a set of supervisory tasks to learn an intermediate representation that is invariant to the viewpoint of the controlling vehicle. This not only provides a richer signal at training time but also allows more complex reasoning during inference. Learning how all vehicles drive helps predict their behavior at test time and can avoid collisions. We evaluate this system in closed-loop driving simulations. Our system outperforms all prior methods on the public CARLA Leaderboard by a wide margin, improving driving score by 25",
+   "url": "https://arxiv.org/abs/2203.11934",
+   "path": "TanitAD Research Lab/Library/papers/2203.11934_Learning-from-All-Vehicles.pdf",
+   "bytes": 6468233,
+   "sha256": "1793cedc5b68dc95640449cb98e4f44d9b680a1952dea9cc73b50b0457a82d14",
+   "banked": "2026-08-30",
+   "tags": [
+    "input-pipeline"
+   ],
+   "note": "LAV: 288x480 primary cam (40deg) + 3x 288x256 (64deg); BEV pillars 0.25m -> 0.5m output grid",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md"
+   ]
+  },
+  "2412.18607": {
+   "key": "2412.18607",
+   "kind": "arxiv",
+   "title": "DrivingGPT: Unifying Driving World Modeling and Planning with Multi-modal Autoregressive Transformers",
+   "authors": [
+    "Yuntao Chen",
+    "Yuqi Wang",
+    "Zhaoxiang Zhang"
+   ],
+   "published": "2024-12-24",
+   "abstract": "World model-based searching and planning are widely recognized as a promising path toward human-level physical intelligence. However, current driving world models primarily rely on video diffusion models, which specialize in visual generation but lack the flexibility to incorporate other modalities like action. In contrast, autoregressive transformers have demonstrated exceptional capability in modeling multimodal data. Our work aims to unify both driving model simulation and trajectory planning into a single sequence modeling problem. We introduce a multimodal driving language based on interleaved image and action tokens, and develop DrivingGPT to learn joint world modeling and planning through standard next-token prediction. Our DrivingGPT demonstrates strong performance in both action-conditioned video generation and end-to-end planning, outperforming strong baselines on large-scale n",
+   "url": "https://arxiv.org/abs/2412.18607",
+   "path": "TanitAD Research Lab/Library/papers/2412.18607_DrivingGPT-Unifying-Driving-World-Modeling-and-Planning-with.pdf",
+   "bytes": 3801241,
+   "sha256": "d0d9b8e4d5d847c3f63680fe04afc8f18f84bff2398fa3bc18c972bd4530c027",
+   "banked": "2026-08-30",
+   "tags": [
+    "input-pipeline"
+   ],
+   "note": "DrivingGPT: nuPlan/NAVSIM 900x1600 resized to 288x512; VQ-VAE downsample 16 -> 576 tokens/frame (downsample 8 -> 2304)",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md"
+   ]
+  },
+  "2004.07780": {
+   "key": "2004.07780",
+   "kind": "arxiv",
+   "title": "Shortcut Learning in Deep Neural Networks",
+   "authors": [
+    "Robert Geirhos",
+    "Jörn-Henrik Jacobsen",
+    "Claudio Michaelis",
+    "Richard Zemel",
+    "Wieland Brendel",
+    "Matthias Bethge",
+    "Felix A. Wichmann"
+   ],
+   "published": "2020-04-16",
+   "abstract": "Deep learning has triggered the current rise of artificial intelligence and is the workhorse of today's machine intelligence. Numerous success stories have rapidly spread all over science, industry and society, but its limitations have only recently come into focus. In this perspective we seek to distill how many of deep learning's problems can be seen as different symptoms of the same underlying problem: shortcut learning. Shortcuts are decision rules that perform well on standard benchmarks but fail to transfer to more challenging testing conditions, such as real-world scenarios. Related issues are known in Comparative Psychology, Education and Linguistics, suggesting that shortcut learning may be a common characteristic of learning systems, biological and artificial alike. Based on these observations, we develop a set of recommendations for model interpretation and benchmarking, highl",
+   "url": "https://arxiv.org/abs/2004.07780",
+   "path": "TanitAD Research Lab/Library/papers/2004.07780_Shortcut-Learning-in-Deep-Neural-Networks.pdf",
+   "bytes": 4158487,
+   "sha256": "da93a1633b56f6590836afaf3794c6131d38d53629e2cf9d219deb274d91ec15",
+   "banked": "2026-08-30",
+   "tags": [
+    "input-pipeline",
+    "projection-distortion"
+   ],
+   "note": "Geirhos Shortcut Learning in DNNs: models latch onto unintended cues predictive in-distribution and fail OOD; frame for a rig-identity mask shortcut",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md"
+   ]
+  },
+  "2008.03800": {
+   "key": "2008.03800",
+   "kind": "arxiv",
+   "title": "Spatiotemporal Contrastive Video Representation Learning",
+   "authors": [
+    "Rui Qian",
+    "Tianjian Meng",
+    "Boqing Gong",
+    "Ming-Hsuan Yang",
+    "Huisheng Wang",
+    "Serge Belongie",
+    "Yin Cui"
+   ],
+   "published": "2020-08-09",
+   "abstract": "We present a self-supervised Contrastive Video Representation Learning (CVRL) method to learn spatiotemporal visual representations from unlabeled videos. Our representations are learned using a contrastive loss, where two augmented clips from the same short video are pulled together in the embedding space, while clips from different videos are pushed away. We study what makes for good data augmentations for video self-supervised learning and find that both spatial and temporal information are crucial. We carefully design data augmentations involving spatial and temporal cues. Concretely, we propose a temporally consistent spatial augmentation method to impose strong spatial augmentations on each frame of the video while maintaining the temporal consistency across frames. We also propose a sampling-based temporal augmentation method to avoid overly enforcing invariance on clips that are ",
+   "url": "https://arxiv.org/abs/2008.03800",
+   "path": "TanitAD Research Lab/Library/papers/2008.03800_Spatiotemporal-Contrastive-Video-Representation-Learning.pdf",
+   "bytes": 948353,
+   "sha256": "9ff97162579abe64a857d820b4d356343fc5bc21854b99675f4813dfd92c0d8c",
+   "banked": "2026-08-30",
+   "tags": [
+    "input-pipeline"
+   ],
+   "note": "CVRL: TEMPORALLY CONSISTENT spatial augmentation for video - per-frame independent augmentation measurably hurts video representation learning",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md"
+   ]
+  },
+  "2601.07393": {
+   "key": "2601.07393",
+   "kind": "arxiv",
+   "title": "Software-Hardware Co-optimization for Modular E2E AV Paradigm: A Unified Framework of Optimization Approaches, Simulation Environment and Evaluation Metrics",
+   "authors": [
+    "Chengzhi Ji",
+    "Xingfeng Li",
+    "Zhaodong Lv",
+    "Hao Sun",
+    "Pan Liu",
+    "Hao Frank Yang",
+    "Ziyuan Pu"
+   ],
+   "published": "2026-01-12",
+   "abstract": "Modular end-to-end (ME2E) autonomous driving paradigms combine modular interpretability with global optimization capability and have demonstrated strong performance. However, existing studies mainly focus on accuracy improvement, while critical system-level factors such as inference latency and energy consumption are often overlooked, resulting in increasingly complex model designs that hinder practical deployment. Prior efforts on model compression and acceleration typically optimize either the software or hardware side in isolation. Software-only optimization cannot fundamentally remove intermediate tensor access and operator scheduling overheads, whereas hardware-only optimization is constrained by model structure and precision. As a result, the real-world benefits of such optimizations are often limited. To address these challenges, this paper proposes a reusable software and hardwar",
+   "url": "https://arxiv.org/abs/2601.07393",
+   "path": "TanitAD Research Lab/Library/papers/2601.07393_Software-Hardware-Co-optimization-for-Modular-E2E-AV-Paradig.pdf",
+   "bytes": 6212959,
+   "sha256": "3f191a45300e6f01ee02c97db0d2986533d8787a10bbc768b75c241b12234db8",
+   "banked": "2026-08-30",
+   "tags": [
+    "input-pipeline"
+   ],
+   "note": "SW-HW co-optimization for modular E2E AV: candidate latency-vs-driving-score instrument",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md"
+   ]
+  },
+  "2002.04523": {
+   "key": "2002.04523",
+   "kind": "arxiv",
+   "title": "Objective Mismatch in Model-based Reinforcement Learning",
+   "authors": [
+    "Nathan Lambert",
+    "Brandon Amos",
+    "Omry Yadan",
+    "Roberto Calandra"
+   ],
+   "published": "2020-02-11",
+   "abstract": "Model-based reinforcement learning (MBRL) has been shown to be a powerful framework for data-efficiently learning control of continuous tasks. Recent work in MBRL has mostly focused on using more advanced function approximators and planning schemes, with little development of the general framework. In this paper, we identify a fundamental issue of the standard MBRL framework -- what we call the objective mismatch issue. Objective mismatch arises when one objective is optimized in the hope that a second, often uncorrelated, metric will also be optimized. In the context of MBRL, we characterize the objective mismatch between training the forward dynamics model w.r.t.~the likelihood of the one-step ahead prediction, and the overall goal of improving performance on a downstream control task. For example, this issue can emerge with the realization that dynamics models effective for a specific",
+   "url": "https://arxiv.org/abs/2002.04523",
+   "path": "TanitAD Research Lab/Library/papers/2002.04523_Objective-Mismatch-in-Model-based-Reinforcement-Learning.pdf",
+   "bytes": 15238573,
+   "sha256": "3e1c230d77083e84bc6eba85bcc1a660978b57446b15cb300c88ae1a9375bc2b",
+   "banked": "2026-08-30",
+   "tags": [
+    "closed-loop-wm"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-t1-floor-action-sensitivity/RESULT.md"
+   ]
+  },
+  "2606.31232": {
+   "key": "2606.31232",
+   "kind": "arxiv",
+   "title": "Delta-JEPA: Learning Action-Sensitive World Models via Latent Difference Decoding",
+   "authors": [
+    "Zhenghao Zhang",
+    "Yuanxiang Wang",
+    "Zhenyu Guan",
+    "Yujia Yang",
+    "Bingkang Shi",
+    "Tianyu Zong",
+    "Hongzhu Yi",
+    "Guoqing Chao",
+    "Xingchen Chen",
+    "Tiankun Yang",
+    "Chenxi Bao",
+    "Tao Yu"
+   ],
+   "published": "2026-06-30",
+   "abstract": "Learning visual world models for planning requires compact latent dynamics that remain sensitive to actions, yet reconstruction-free joint-embedding objectives can collapse to action-insensitive representations. We propose Delta-JEPA, an end-to-end reconstruction-free world model that augments latent forward prediction with a Latent Difference Action Decoder (LDAD). Unlike inverse decoders that infer actions from concatenated endpoint embeddings, LDAD reconstructs the executed action from the latent displacement between consecutive observations. This displacement-level supervision directly regularizes transition geometry: adjacent embeddings cannot collapse without losing action information, and different actions are encouraged to induce distinguishable latent changes for rollout-based planning. Delta-JEPA uses only latent prediction and action reconstruction, avoiding pixel reconstructi",
+   "url": "https://arxiv.org/abs/2606.31232",
+   "path": "TanitAD Research Lab/Library/papers/2606.31232_Delta-JEPA-Learning-Action-Sensitive-World-Models-via-Latent.pdf",
+   "bytes": 2590879,
+   "sha256": "94e394fd9cbffaffb370fdc5f4bb3e2a2833ca41966e02efe800d5afff30371e",
+   "banked": "2026-08-30",
+   "tags": [
+    "closed-loop-wm"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-t1-floor-action-sensitivity/RESULT.md"
+   ]
+  },
+  "2606.07687": {
+   "key": "2606.07687",
+   "kind": "arxiv",
+   "title": "What Makes Video World Model Latents Action-Relevant: Prediction over Reconstruction",
+   "authors": [
+    "Jewon Yeom",
+    "Hanseul Kim",
+    "Jeongjae Park",
+    "Sungmok Jung",
+    "Jaejin Lee",
+    "Taesup Kim"
+   ],
+   "published": "2026-06-05",
+   "abstract": "Video world models are increasingly used to provide predictive visual representations, yet it remains unclear which pretraining signals induce action-relevant structure in their latent spaces. We study this question through a unified probe-based evaluation across diverse encoder families, including image-only self-supervision, video pretraining with and without latent prediction, reconstruction-based autoencoders, diffusion models, and shortcut-forcing dynamics models. Using a common inverse-dynamics probing objective, we find that action-relevant structure is driven primarily by temporal video pretraining rather than pixel reconstruction fidelity: models with strong pixel decoding quality can exhibit near-zero action recoverability, while video-pretrained self-supervised encoders consistently achieve the best Pareto trade-off between visual fidelity and action prediction. Comparing V-JE",
+   "url": "https://arxiv.org/abs/2606.07687",
+   "path": "TanitAD Research Lab/Library/papers/2606.07687_What-Makes-Video-World-Model-Latents-Action-Relevant-Predict.pdf",
+   "bytes": 586718,
+   "sha256": "350c69b2503e526a4e3bee4556003994a18464ab2b1a5b3bfb07f2cc2c487f81",
+   "banked": "2026-08-30",
+   "tags": [
+    "closed-loop-wm"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-t1-floor-action-sensitivity/RESULT.md"
+   ]
+  },
+  "1604.04004": {
+   "key": "1604.04004",
+   "kind": "arxiv",
+   "title": "Understanding How Image Quality Affects Deep Neural Networks",
+   "authors": [
+    "Samuel Dodge",
+    "Lina Karam"
+   ],
+   "published": "2016-04-14",
+   "abstract": "Image quality is an important practical challenge that is often overlooked in the design of machine vision systems. Commonly, machine vision systems are trained and tested on high quality image datasets, yet in practical applications the input images can not be assumed to be of high quality. Recently, deep neural networks have obtained state-of-the-art performance on many machine vision tasks. In this paper we provide an evaluation of 4 state-of-the-art deep neural network models for image classification under quality distortions. We consider five types of quality distortions: blur, noise, contrast, JPEG, and JPEG2000 compression. We show that the existing networks are susceptible to these quality distortions, particularly to blur and noise. These results enable future work in developing deep neural networks that are more invariant to quality distortions.",
+   "url": "https://arxiv.org/abs/1604.04004",
+   "path": "TanitAD Research Lab/Library/papers/1604.04004_Understanding-How-Image-Quality-Affects-Deep-Neural-Networks.pdf",
+   "bytes": 3041157,
+   "sha256": "0c31f56c90c52429d097dc7c846bf4d9e46b9b41a0f024261a5106cb07bc1cc0",
+   "banked": "2026-08-30",
+   "tags": [
+    "input-pipeline"
+   ],
+   "note": "Dodge & Karam: measured degradation of CNN accuracy under JPEG/JPEG2000 compression, blur, noise - quantifies the cost of a lossy codec on learned features",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md"
+   ]
+  },
+  "2510.26782": {
+   "key": "2510.26782",
+   "kind": "arxiv",
+   "title": "Cloning Deterministic Worlds: The Critical Role of Latent Geometry in Long-Horizon World Models",
+   "authors": [
+    "Zaishuo Xia",
+    "Yukuan Lu",
+    "Xinyi Li",
+    "Yifan Xu",
+    "Yubei Chen"
+   ],
+   "published": "2025-10-30",
+   "abstract": "A world model is an internal model that simulates how the world evolves. Given past observations and actions, it predicts the future physical state of both the embodied agent and its environment. Accurate world models are essential for enabling agents to think, plan, and reason effectively in complex, dynamic settings. However, existing world models often focus on random generation of open worlds, but neglect the need for high-fidelity modeling of deterministic scenarios (such as fixed-map mazes and static space robot navigation). In this work, we take a step toward building a truly accurate world model by addressing a fundamental yet open problem: constructing a model that can fully clone a deterministic 3D world. 1) Through diagnostic experiment, we quantitatively demonstrate that high-fidelity cloning is feasible and the primary bottleneck for long-horizon fidelity is the geometric st",
+   "url": "https://arxiv.org/abs/2510.26782",
+   "path": "TanitAD Research Lab/Library/papers/2510.26782_Cloning-Deterministic-Worlds-The-Critical-Role-of-Latent-Geo.pdf",
+   "bytes": 39050815,
+   "sha256": "a1777d8a809f803ebfe90bf5245ddcd633bb0cfa1e96b2055424b7599949d8a5",
+   "banked": "2026-08-30",
+   "tags": [
+    "closed-loop-wm"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-t1-floor-action-sensitivity/RESULT.md"
+   ]
+  },
+  "2507.09095": {
+   "key": "2507.09095",
+   "kind": "arxiv",
+   "title": "Temporal Misalignment Attacks against Multimodal Perception in Autonomous Driving",
+   "authors": [
+    "Md Hasan Shahriar",
+    "Md Mohaimin Al Barat",
+    "Harshavardhan Sundar",
+    "Ning Zhang",
+    "Naren Ramakrishnan",
+    "Y. Thomas Hou",
+    "Wenjing Lou"
+   ],
+   "published": "2025-07-12",
+   "abstract": "Multimodal fusion (MMF) plays a critical role in the perception of autonomous driving, which primarily fuses camera and LiDAR streams for a comprehensive and efficient scene understanding. However, its strict reliance on precise temporal synchronization exposes it to new vulnerabilities. In this paper, we introduce DejaVu, an attack that exploits the in-vehicular network to manipulate the integrity of time and create subtle temporal misalignments, severely degrading downstream MMF-based perception tasks. Our comprehensive attack analysis across different models and datasets reveals the sensors' task-specific imbalanced sensitivities: object detection is overly dependent on LiDAR inputs, while object tracking is highly reliant on the camera inputs. Consequently, with a single-frame LiDAR delay, an attacker can reduce the car detection mAP by up to 88.5%, while with a three-frame camera de",
+   "url": "https://arxiv.org/abs/2507.09095",
+   "path": "TanitAD Research Lab/Library/papers/2507.09095_Temporal-Misalignment-Attacks-against-Multimodal-Perception.pdf",
+   "bytes": 15740846,
+   "sha256": "2c7c1a2b18cb519e278ebd86f19124a222c8465610459480644aa82ed95daca1",
+   "banked": "2026-08-30",
+   "tags": [
+    "input-pipeline"
+   ],
+   "note": "Temporal misalignment: a ONE-FRAME sensor delay is catastrophic for AV perception (car mAP -88.5%, MOTA -73% at 3-frame camera delay)",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md"
+   ]
+  },
+  "2011.10566": {
+   "key": "2011.10566",
+   "kind": "arxiv",
+   "title": "Exploring Simple Siamese Representation Learning",
+   "authors": [
+    "Xinlei Chen",
+    "Kaiming He"
+   ],
+   "published": "2020-11-20",
+   "abstract": "Siamese networks have become a common structure in various recent models for unsupervised visual representation learning. These models maximize the similarity between two augmentations of one image, subject to certain conditions for avoiding collapsing solutions. In this paper, we report surprising empirical results that simple Siamese networks can learn meaningful representations even using none of the following: (i) negative sample pairs, (ii) large batches, (iii) momentum encoders. Our experiments show that collapsing solutions do exist for the loss and structure, but a stop-gradient operation plays an essential role in preventing collapsing. We provide a hypothesis on the implication of stop-gradient, and further show proof-of-concept experiments verifying it. Our \"SimSiam\" method achieves competitive results on ImageNet and downstream tasks. We hope this simple baseline will motivat",
+   "url": "https://arxiv.org/abs/2011.10566",
+   "path": "TanitAD Research Lab/Library/papers/2011.10566_Exploring-Simple-Siamese-Representation-Learning.pdf",
+   "bytes": 579388,
+   "sha256": "37d37c81d423d503f54d99bc5c9d9dc23d07c7bd1aad62f37b47ec7d2871e63e",
+   "banked": "2026-08-30",
+   "tags": [
+    "closed-loop-wm"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-t1-floor-action-sensitivity/RESULT.md"
+   ]
+  },
+  "2506.05780": {
+   "key": "2506.05780",
+   "kind": "arxiv",
+   "title": "Robust sensor fusion against on-vehicle sensor staleness",
+   "authors": [
+    "Meng Fan",
+    "Yifan Zuo",
+    "Patrick Blaes",
+    "Harley Montgomery",
+    "Subhasis Das"
+   ],
+   "published": "2025-06-06",
+   "abstract": "Sensor fusion is crucial for a performant and robust Perception system in autonomous vehicles, but sensor staleness, where data from different sensors arrives with varying delays, poses significant challenges. Temporal misalignment between sensor modalities leads to inconsistent object state estimates, severely degrading the quality of trajectory predictions that are critical for safety. We present a novel and model-agnostic approach to address this problem via (1) a per-point timestamp offset feature (for LiDAR and radar both relative to camera) that enables fine-grained temporal awareness in sensor fusion, and (2) a data augmentation strategy that simulates realistic sensor staleness patterns observed in deployed vehicles. Our method is integrated into a perspective-view detection model that consumes sensor data from multiple LiDARs, radars and cameras. We demonstrate that while a conv",
+   "url": "https://arxiv.org/abs/2506.05780",
+   "path": "TanitAD Research Lab/Library/papers/2506.05780_Robust-sensor-fusion-against-on-vehicle-sensor-staleness.pdf",
+   "bytes": 4173526,
+   "sha256": "9c5a7b84ccb865a0fa134b21d7e26d895cee2aed3ab5fb6db9d6f828c69cfa2e",
+   "banked": "2026-08-30",
+   "tags": [
+    "input-pipeline"
+   ],
+   "note": "Sensor staleness: explicit TIMESTAMP-OFFSET features make fusion robust to variable per-modality delay - the dt-as-input recipe",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md"
+   ]
+  },
+  "2509.10156": {
+   "key": "2509.10156",
+   "kind": "arxiv",
+   "title": "LayerLock: Non-collapsing Representation Learning with Progressive Freezing",
+   "authors": [
+    "Goker Erdogan",
+    "Nikhil Parthasarathy",
+    "Catalin Ionescu",
+    "Drew A. Hudson",
+    "Alexander Lerchner",
+    "Andrew Zisserman",
+    "Mehdi S. M. Sajjadi",
+    "Joao Carreira"
+   ],
+   "published": "2025-09-12",
+   "abstract": "We introduce LayerLock, a simple yet effective approach for self-supervised visual representation learning, that gradually transitions from pixel to latent prediction through progressive layer freezing. First, we make the observation that during training of video masked-autoencoding (MAE) models, ViT layers converge in the order of their depth: shallower layers converge early, deeper layers converge late. We then show that this observation can be exploited to accelerate standard MAE by progressively freezing the model according to an explicit schedule, throughout training. Furthermore, this same schedule can be used in a simple and scalable approach to latent prediction that does not suffer from \"representation collapse\". We apply our proposed approach, LayerLock, to large models of up to 4B parameters with results surpassing those of non-latent masked prediction on the 4DS perception su",
+   "url": "https://arxiv.org/abs/2509.10156",
+   "path": "TanitAD Research Lab/Library/papers/2509.10156_LayerLock-Non-collapsing-Representation-Learning-with-Progre.pdf",
+   "bytes": 2764439,
+   "sha256": "ab2b706d13ea74b35569553c8629932a505d65bc7807c381799c3581b097609c",
+   "banked": "2026-08-30",
+   "tags": [
+    "closed-loop-wm"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-t1-floor-action-sensitivity/RESULT.md"
+   ]
+  },
+  "2608.19085": {
+   "key": "2608.19085",
+   "kind": "arxiv",
+   "title": "DA-WAM: Decision-Aligned Future Latents for Driving World Models",
+   "authors": [
+    "Ruiguo Zhong",
+    "Benshan Ma",
+    "Xiaolong Chen",
+    "Lang Zhang",
+    "Mingyue Feng",
+    "Yaonong Wang",
+    "Pei Liu",
+    "Jun Ma"
+   ],
+   "published": "2026-08-19",
+   "abstract": "Anticipating how scenes evolve under ego actions is fundamental to safe autonomous driving, yet the full potential of world models for decision-making remains unrealized. The critical challenge lies in ensuring that future modeling is not merely predictive, but decision-informative: the predicted future must directly shape which trajectory is selected. Existing approaches decouple future representation learning from planning optimization, or share predicted states across trajectory candidates, thereby diluting the action-specific consequences that ought to guide selection. To bridge this gap, we propose DA-WAM, a framework that unifies predictive representation learning, action-conditioned future modeling, and trajectory scoring under a single decision-making objective. DA-WAM maintains predictive supervision throughout planner optimization via an online encoder and a stable momentum tar",
+   "url": "https://arxiv.org/abs/2608.19085",
+   "path": "TanitAD Research Lab/Library/papers/2608.19085_DA-WAM-Decision-Aligned-Future-Latents-for-Driving-World-Mod.pdf",
+   "bytes": 1493052,
+   "sha256": "9c942d4a7c5ae0d52027acd6cbdd8b7ec65f1c6a224a17aeb5d934d37018c19d",
+   "banked": "2026-08-30",
+   "tags": [
+    "closed-loop-wm"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-t1-floor-action-sensitivity/RESULT.md"
+   ]
+  },
+  "2607.05966": {
+   "key": "2607.05966",
+   "kind": "arxiv",
+   "title": "Imagined Rollouts are Kinematic, Not Dynamic: A Diagnosis of Long-Horizon World-Model Failure",
+   "authors": [
+    "Finn Rasmus Schäfer",
+    "Korbinian Moller",
+    "Yuan Gao",
+    "Christian Oefinger",
+    "Sebastian Schmidt",
+    "Johannes Betz"
+   ],
+   "published": "2026-07-07",
+   "abstract": "Long-horizon failure in world models is conventionally attributed to compounding error, a generic framing that does not distinguish what kind of error compounds. We propose a kinematic-vs-dynamic reframing: world models tend to imagine kinematically rather than dynamically. We operationalize this as the imagined Kinematic-Consistency Error, a per-step diagnostic that measures how far a rollout departs from a closed-form kinematic null, paired with a perturbation protocol that tests whether iKCE responds when physical conditions cross a regime boundary. We instantiate the diagnostic on a released DreamerV3 checkpoint trained on DMC walker-walk, where imagined iKCE runs roughly two orders of magnitude above that of matched real-physics rollouts. Across a friction sweep that crosses the gait-collapse boundary, the model's iKCE stays statistically flat even as the trained policy's reward col",
+   "url": "https://arxiv.org/abs/2607.05966",
+   "path": "TanitAD Research Lab/Library/papers/2607.05966_Imagined-Rollouts-are-Kinematic-Not-Dynamic-A-Diagnosis-of-L.pdf",
+   "bytes": 460318,
+   "sha256": "5001c22da59b25ecafdd1abbce1c8ff74fe19ddcf96e364f77ee2c2504363a8b",
+   "banked": "2026-08-30",
+   "tags": [
+    "closed-loop-wm"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-t1-floor-action-sensitivity/RESULT.md"
+   ]
+  },
+  "2603.09086": {
+   "key": "2603.09086",
+   "kind": "arxiv",
+   "title": "Latent World Models for Automated Driving: A Unified Taxonomy, Evaluation Framework, and Open Challenges",
+   "authors": [
+    "Rongxiang Zeng",
+    "Yongqi Dong"
+   ],
+   "published": "2026-03-10",
+   "abstract": "Emerging generative world models and vision-language-action (VLA) systems are rapidly reshaping automated driving by enabling scalable simulation, long-horizon forecasting, and capability-rich decision making. Across these directions, latent representations serve as the central computational substrate: they compress high-dimensional multi-sensor observations, enable temporally coherent rollouts, and provide interfaces for planning, reasoning, and controllable generation. This paper proposes a unifying latent-space framework that synthesizes recent progress in world models for automated driving. The framework organizes the design space by the target and form of latent representations (latent worlds, latent actions, latent generators; continuous states, discrete tokens, and hybrids) and by structural priors for geometry, topology, and semantics. Building on this taxonomy, the paper articul",
+   "url": "https://arxiv.org/abs/2603.09086",
+   "path": "TanitAD Research Lab/Library/papers/2603.09086_Latent-World-Models-for-Automated-Driving-A-Unified-Taxonomy.pdf",
+   "bytes": 22431724,
+   "sha256": "261ba6134958bd7a040e36f862f6a43233069211f0035b3732e7466539b27097",
+   "banked": "2026-08-30",
+   "tags": [
+    "closed-loop-wm"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-t1-floor-action-sensitivity/RESULT.md"
+   ]
+  },
+  "2405.04390": {
+   "key": "2405.04390",
+   "kind": "arxiv",
+   "title": "DriveWorld: 4D Pre-trained Scene Understanding via World Models for Autonomous Driving",
+   "authors": [
+    "Chen Min",
+    "Dawei Zhao",
+    "Liang Xiao",
+    "Jian Zhao",
+    "Xinli Xu",
+    "Zheng Zhu",
+    "Lei Jin",
+    "Jianshu Li",
+    "Yulan Guo",
+    "Junliang Xing",
+    "Liping Jing",
+    "Yiming Nie"
+   ],
+   "published": "2024-05-07",
+   "abstract": "Vision-centric autonomous driving has recently raised wide attention due to its lower cost. Pre-training is essential for extracting a universal representation. However, current vision-centric pre-training typically relies on either 2D or 3D pre-text tasks, overlooking the temporal characteristics of autonomous driving as a 4D scene understanding task. In this paper, we address this challenge by introducing a world model-based autonomous driving 4D representation learning framework, dubbed \\emph{DriveWorld}, which is capable of pre-training from multi-camera driving videos in a spatio-temporal fashion. Specifically, we propose a Memory State-Space Model for spatio-temporal modelling, which consists of a Dynamic Memory Bank module for learning temporal-aware latent dynamics to predict future changes and a Static Scene Propagation module for learning spatial-aware latent statics to offer c",
+   "url": "https://arxiv.org/abs/2405.04390",
+   "path": "TanitAD Research Lab/Library/papers/2405.04390_DriveWorld-4D-Pre-trained-Scene-Understanding-via-World-Mode.pdf",
+   "bytes": 5434658,
+   "sha256": "b7ba7a581b7b7a4bd8d661c82ed385e28c0bd183afa75477ad83e80a4441dfd7",
+   "banked": "2026-08-30",
+   "tags": [
+    "input-pipeline"
+   ],
+   "note": "DriveWorld: voxel 16x200x200, ResNet101-DCN; planning L2 0.69m avg / collision 0.19%; input resolution NOT stated in the primary",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md"
+   ]
+  },
+  "1903.07933": {
+   "key": "1903.07933",
+   "kind": "arxiv",
+   "title": "What the Constant Velocity Model Can Teach Us About Pedestrian Motion Prediction",
+   "authors": [
+    "Christoph Schöller",
+    "Vincent Aravantinos",
+    "Florian Lay",
+    "Alois Knoll"
+   ],
+   "published": "2019-03-19",
+   "abstract": "Pedestrian motion prediction is a fundamental task for autonomous robots and vehicles to operate safely. In recent years many complex approaches based on neural networks have been proposed to address this problem. In this work we show that - surprisingly - a simple Constant Velocity Model can outperform even state-of-the-art neural models. This indicates that either neural networks are not able to make use of the additional information they are provided with, or that this information is not as relevant as commonly believed. Therefore, we analyze how neural networks process their input and how it impacts their predictions. Our analysis reveals pitfalls in training neural networks for pedestrian motion prediction and clarifies false assumptions about the problem itself. In particular, neural networks implicitly learn environmental priors that negatively impact their generalization capabili",
+   "url": "https://arxiv.org/abs/1903.07933",
+   "path": "TanitAD Research Lab/Library/papers/1903.07933_What-the-Constant-Velocity-Model-Can-Teach-Us-About-Pedestri.pdf",
+   "bytes": 836984,
+   "sha256": "398716f40c5060d37e2e4fcf3812f15b9f7d9eb3fc8a3d1f5ae752487c28bf33",
+   "banked": "2026-08-30",
+   "tags": [
+    "anti-echo-control"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Benchmarks & Evals/Research/2026-08-30-anti-echo-control-precedent/RESULT.md",
+    "TanitAD Research Lab/Opponent Analysis/Research/2026-08-30-anti-echo-control-precedent/RESULT.md"
+   ]
+  },
+  "1809.04843": {
+   "key": "1809.04843",
+   "kind": "arxiv",
+   "title": "On Offline Evaluation of Vision-based Driving Models",
+   "authors": [
+    "Felipe Codevilla",
+    "Antonio M. López",
+    "Vladlen Koltun",
+    "Alexey Dosovitskiy"
+   ],
+   "published": "2018-09-13",
+   "abstract": "Autonomous driving models should ideally be evaluated by deploying them on a fleet of physical vehicles in the real world. Unfortunately, this approach is not practical for the vast majority of researchers. An attractive alternative is to evaluate models offline, on a pre-collected validation dataset with ground truth annotation. In this paper, we investigate the relation between various online and offline metrics for evaluation of autonomous driving models. We find that offline prediction error is not necessarily correlated with driving quality, and two models with identical prediction error can differ dramatically in their driving performance. We show that the correlation of offline evaluation with driving quality can be significantly improved by selecting an appropriate validation dataset and suitable offline metrics. The supplementary video can be viewed at https://www.youtube.com/wa",
+   "url": "https://arxiv.org/abs/1809.04843",
+   "path": "TanitAD Research Lab/Library/papers/1809.04843_On-Offline-Evaluation-of-Vision-based-Driving-Models.pdf",
+   "bytes": 3467017,
+   "sha256": "e9ccf25eb1652d6d09484267097d168afc0bcdeff68174d00f82dfc37322fd04",
+   "banked": "2026-08-30",
+   "tags": [
+    "anti-echo-control"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Benchmarks & Evals/Research/2026-08-30-anti-echo-control-precedent/RESULT.md",
+    "TanitAD Research Lab/Opponent Analysis/Research/2026-08-30-anti-echo-control-precedent/RESULT.md"
+   ]
+  },
+  "2506.08228": {
+   "key": "2506.08228",
+   "kind": "arxiv",
+   "title": "Scaling Laws of Motion Forecasting and Planning -- Technical Report",
+   "authors": [
+    "Mustafa Baniodeh",
+    "Kratarth Goel",
+    "Scott Ettinger",
+    "Carlos Fuertes",
+    "Ari Seff",
+    "Tim Shen",
+    "Cole Gulino",
+    "Chenjie Yang",
+    "Ghassen Jerfel",
+    "Dokook Choe",
+    "Rui Wang",
+    "Benjamin Charrow"
+   ],
+   "published": "2025-06-09",
+   "abstract": "We study the empirical scaling laws of a family of encoder-decoder autoregressive transformer models on the task of joint motion forecasting and planning in the autonomous driving domain. Using a 500 thousand hours driving dataset, we demonstrate that, similar to language modeling, model performance improves as a power-law function of the total compute budget, and we observe a strong correlation between model training loss and model evaluation metrics. Most interestingly, closed-loop metrics also improve with scaling, which has important implications for the suitability of open-loop metrics for model development and hill climbing. We also study the optimal scaling of the number of transformer parameters and the training data size for a training compute-optimal model. We find that as the training compute budget grows, optimal scaling requires increasing the model size 1.5x as fast as the ",
+   "url": "https://arxiv.org/abs/2506.08228",
+   "path": "TanitAD Research Lab/Library/papers/2506.08228_Scaling-Laws-of-Motion-Forecasting-and-Planning-Technical-Re.pdf",
+   "bytes": 6685014,
+   "sha256": "e7f1066f87c7f2e2c1f3322e9cd2d8df06788c615dbe301fb8bd23cf45715ac4",
+   "banked": "2026-08-30",
+   "tags": [
+    "input-pipeline"
+   ],
+   "note": "Waymo 'Scaling Laws of Motion Forecasting and Planning' (Baniodeh 2025): the primary data/model scaling-law curve for driving - axis-7 crux",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md"
+   ]
+  },
+  "2605.00066": {
+   "key": "2605.00066",
+   "kind": "arxiv",
+   "title": "Do Open-Loop Metrics Predict Closed-Loop Driving? A Cross-Benchmark Correlation Study of NAVSIM and Bench2Drive",
+   "authors": [
+    "Yiru Wang",
+    "Anqing Jiang",
+    "Shuo Wang",
+    "Yuwen Heng",
+    "Hai Yang",
+    "Yang Chen",
+    "Hao Sun"
+   ],
+   "published": "2026-04-30",
+   "abstract": "Open-loop evaluation offers fast, reproducible assessment of autonomous driving planners, but its ability to predict real closed-loop driving performance remains questionable. Prior work has shown that traditional open-loop metrics such as Average Displacement Error (ADE) and Final Displacement Error (FDE) exhibit no reliable correlation with closed-loop Driving Score. In this paper, we ask whether the more recent, safety-aware open-loop metrics introduced by NAVSIM~v2 can bridge this gap. By systematically cross-referencing published results from 15 state-of-the-art methods across NAVSIM (open-loop) and Bench2Drive (closed-loop), we compile a paired dataset of open-loop sub-metrics and closed-loop performance, yielding 8 methods with complete paired data. Our analysis reveals three key findings: (1) the aggregate NAVSIM PDM Score shows a strong positive but non-monotonic correlation wit",
+   "url": "https://arxiv.org/abs/2605.00066",
+   "path": "TanitAD Research Lab/Library/papers/2605.00066_Do-Open-Loop-Metrics-Predict-Closed-Loop-Driving-A-Cross-Ben.pdf",
+   "bytes": 222169,
+   "sha256": "dd033c92d2ecfb97a4776483f4a3fcad51fbb52812398b9946b49e5212394040",
+   "banked": "2026-08-30",
+   "tags": [
+    "anti-echo-control"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Benchmarks & Evals/Research/2026-08-30-anti-echo-control-precedent/RESULT.md",
+    "TanitAD Research Lab/Opponent Analysis/Research/2026-08-30-anti-echo-control-precedent/RESULT.md"
+   ]
+  },
+  "2412.03572": {
+   "key": "2412.03572",
+   "kind": "arxiv",
+   "title": "Navigation World Models",
+   "authors": [
+    "Amir Bar",
+    "Gaoyue Zhou",
+    "Danny Tran",
+    "Trevor Darrell",
+    "Yann LeCun"
+   ],
+   "published": "2024-12-04",
+   "abstract": "Navigation is a fundamental skill of agents with visual-motor capabilities. We introduce a Navigation World Model (NWM), a controllable video generation model that predicts future visual observations based on past observations and navigation actions. To capture complex environment dynamics, NWM employs a Conditional Diffusion Transformer (CDiT), trained on a diverse collection of egocentric videos of both human and robotic agents, and scaled up to 1 billion parameters. In familiar environments, NWM can plan navigation trajectories by simulating them and evaluating whether they achieve the desired goal. Unlike supervised navigation policies with fixed behavior, NWM can dynamically incorporate constraints during planning. Experiments demonstrate its effectiveness in planning trajectories from scratch or by ranking trajectories sampled from an external policy. Furthermore, NWM leverages its",
+   "url": "https://arxiv.org/abs/2412.03572",
+   "path": "TanitAD Research Lab/Library/papers/2412.03572_Navigation-World-Models.pdf",
+   "bytes": 7881066,
+   "sha256": "33b6532143148b60d991f7cfc0c6ff2c168a54c8dcd285e4dbee5eec84c51a5e",
+   "banked": "2026-08-30",
+   "tags": [
+    "closed-loop-wm"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-t1-floor-action-sensitivity/RESULT.md"
+   ]
+  },
+  "2303.11040": {
+   "key": "2303.11040",
+   "kind": "arxiv",
+   "title": "Benchmarking Robustness of 3D Object Detection to Common Corruptions in Autonomous Driving",
+   "authors": [
+    "Yinpeng Dong",
+    "Caixin Kang",
+    "Jinlai Zhang",
+    "Zijian Zhu",
+    "Yikai Wang",
+    "Xiao Yang",
+    "Hang Su",
+    "Xingxing Wei",
+    "Jun Zhu"
+   ],
+   "published": "2023-03-20",
+   "abstract": "3D object detection is an important task in autonomous driving to perceive the surroundings. Despite the excellent performance, the existing 3D detectors lack the robustness to real-world corruptions caused by adverse weathers, sensor noises, etc., provoking concerns about the safety and reliability of autonomous driving systems. To comprehensively and rigorously benchmark the corruption robustness of 3D detectors, in this paper we design 27 types of common corruptions for both LiDAR and camera inputs considering real-world driving scenarios. By synthesizing these corruptions on public datasets, we establish three corruption robustness benchmarks -- KITTI-C, nuScenes-C, and Waymo-C. Then, we conduct large-scale experiments on 24 diverse 3D object detection models to evaluate their corruption robustness. Based on the evaluation results, we draw several important findings, including: 1) mo",
+   "url": "https://arxiv.org/abs/2303.11040",
+   "path": "TanitAD Research Lab/Library/papers/2303.11040_Benchmarking-Robustness-of-3D-Object-Detection-to-Common-Cor.pdf",
+   "bytes": 20273452,
+   "sha256": "7dec30319fc9461deda21a838679cc72290a8c6fe952ed7a4798ae4ccf685288",
+   "banked": "2026-08-30",
+   "tags": [
+    "input-pipeline"
+   ],
+   "note": "nuScenes-C/KITTI-C corruption benchmark: camera-only 3D detectors are extremely vulnerable to photometric corruptions (brightness/dark/fog) - quantifies the cost of no photometric robustness",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md"
+   ]
+  },
+  "2212.03319": {
+   "key": "2212.03319",
+   "kind": "arxiv",
+   "title": "Understanding Self-Predictive Learning for Reinforcement Learning",
+   "authors": [
+    "Yunhao Tang",
+    "Zhaohan Daniel Guo",
+    "Pierre Harvey Richemond",
+    "Bernardo Ávila Pires",
+    "Yash Chandak",
+    "Rémi Munos",
+    "Mark Rowland",
+    "Mohammad Gheshlaghi Azar",
+    "Charline Le Lan",
+    "Clare Lyle",
+    "András György",
+    "Shantanu Thakoor"
+   ],
+   "published": "2022-12-06",
+   "abstract": "We study the learning dynamics of self-predictive learning for reinforcement learning, a family of algorithms that learn representations by minimizing the prediction error of their own future latent representations. Despite its recent empirical success, such algorithms have an apparent defect: trivial representations (such as constants) minimize the prediction error, yet it is obviously undesirable to converge to such solutions. Our central insight is that careful designs of the optimization dynamics are critical to learning meaningful representations. We identify that a faster paced optimization of the predictor and semi-gradient updates on the representation, are crucial to preventing the representation collapse. Then in an idealized setup, we show self-predictive learning dynamics carries out spectral decomposition on the state transition matrix, effectively capturing information of t",
+   "url": "https://arxiv.org/abs/2212.03319",
+   "path": "TanitAD Research Lab/Library/papers/2212.03319_Understanding-Self-Predictive-Learning-for-Reinforcement-Lea.pdf",
+   "bytes": 1814072,
+   "sha256": "e609dad7ab3dbcb3a1ca53debec84566ae9cd12b6b1568ceb41aea45ff0909fd",
+   "banked": "2026-08-30",
+   "tags": [
+    "closed-loop-wm"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-t1-floor-action-sensitivity/RESULT.md"
+   ]
+  },
+  "2512.10958": {
+   "key": "2512.10958",
+   "kind": "arxiv",
+   "title": "WorldLens: Full-Spectrum Evaluations of Driving World Models in Real World",
+   "authors": [
+    "Ao Liang",
+    "Lingdong Kong",
+    "Tianyi Yan",
+    "Hongsi Liu",
+    "Wesley Yang",
+    "Ziqi Huang",
+    "Wei Yin",
+    "Jialong Zuo",
+    "Yixuan Hu",
+    "Dekai Zhu",
+    "Dongyue Lu",
+    "Youquan Liu"
+   ],
+   "published": "2025-12-11",
+   "abstract": "Generative world models are reshaping embodied AI, enabling agents to synthesize realistic 4D driving environments that look convincing but often fail physically or behaviorally. Despite rapid progress, the field still lacks a unified way to assess whether generated worlds preserve geometry, obey physics, or support reliable control. We introduce WorldLens, a full-spectrum benchmark evaluating how well a model builds, understands, and behaves within its generated world. It spans five aspects -- Generation, Reconstruction, Action-Following, Downstream Task, and Human Preference -- jointly covering visual realism, geometric consistency, physical plausibility, and functional reliability. Across these dimensions, no existing world model excels universally: those with strong textures often violate physics, while geometry-stable ones lack behavioral fidelity. To align objective metrics with hu",
+   "url": "https://arxiv.org/abs/2512.10958",
+   "path": "TanitAD Research Lab/Library/papers/2512.10958_WorldLens-Full-Spectrum-Evaluations-of-Driving-World-Models.pdf",
+   "bytes": 40524941,
+   "sha256": "d9e19bd6b0718d9172e0f63e25508708d020d99e922a1bc33e7382dd8f6a295b",
+   "banked": "2026-08-30",
+   "tags": [
+    "anti-echo-control"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Opponent Analysis/Research/2026-08-30-anti-echo-control-precedent/RESULT.md"
+   ]
+  },
+  "2511.20325": {
+   "key": "2511.20325",
+   "kind": "arxiv",
+   "title": "AD-R1: Closed-Loop Reinforcement Learning for End-to-End Autonomous Driving with Impartial World Models",
+   "authors": [
+    "Tianyi Yan",
+    "Tao Tang",
+    "Xingtai Gui",
+    "Yongkang Li",
+    "Jiasen Zhesng",
+    "Weiyao Huang",
+    "Lingdong Kong",
+    "Wencheng Han",
+    "Xia Zhou",
+    "Xueyang Zhang",
+    "Yifei Zhan",
+    "Kun Zhan"
+   ],
+   "published": "2025-11-25",
+   "abstract": "End-to-end models for autonomous driving hold the promise of learning complex behaviors directly from sensor data, but face critical challenges in safety and handling long-tail events. Reinforcement Learning (RL) offers a promising path to overcome these limitations, yet its success in autonomous driving has been elusive. We identify a fundamental flaw hindering this progress: a deep seated optimistic bias in the world models used for RL. To address this, we introduce a framework for post-training policy refinement built around an Impartial World Model. Our primary contribution is to teach this model to be honest about danger. We achieve this with a novel data synthesis pipeline, Counterfactual Synthesis, which systematically generates a rich curriculum of plausible collisions and off-road events. This transforms the model from a passive scene completer into a veridical forecaster that r",
+   "url": "https://arxiv.org/abs/2511.20325",
+   "path": "TanitAD Research Lab/Library/papers/2511.20325_AD-R1-Closed-Loop-Reinforcement-Learning-for-End-to-End-Auto.pdf",
+   "bytes": 24463399,
+   "sha256": "497a2c8a034c5e281a262c5384368993a708d9266311a9750d9b09376ef99127",
+   "banked": "2026-08-30",
+   "tags": [
+    "anti-echo-control"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Benchmarks & Evals/Research/2026-08-30-anti-echo-control-precedent/RESULT.md",
+    "TanitAD Research Lab/Opponent Analysis/Research/2026-08-30-anti-echo-control-precedent/RESULT.md"
+   ]
+  },
+  "2505.05638": {
+   "key": "2505.05638",
+   "kind": "arxiv",
+   "title": "Closing the Loop: Motion Prediction Models beyond Open-Loop Benchmarks",
+   "authors": [
+    "Mohamed-Khalil Bouzidi",
+    "Christian Schlauch",
+    "Nicole Scheuerer",
+    "Yue Yao",
+    "Nadja Klein",
+    "Daniel Göhring",
+    "Jörg Reichardt"
+   ],
+   "published": "2025-05-08",
+   "abstract": "Fueled by motion prediction competitions and benchmarks, recent years have seen the emergence of increasingly large learning based prediction models, many with millions of parameters, focused on improving open-loop prediction accuracy by mere centimeters. However, these benchmarks fail to assess whether such improvements translate to better performance when integrated into an autonomous driving stack. In this work, we systematically evaluate the interplay between state-of-the-art motion predictors and motion planners. Our results show that higher open-loop accuracy does not always correlate with better closed-loop driving behavior and that other factors, such as temporal consistency of predictions and planner compatibility, also play a critical role. Furthermore, we investigate downsized variants of these models, and, surprisingly, find that in some cases models with up to 86% fewer para",
+   "url": "https://arxiv.org/abs/2505.05638",
+   "path": "TanitAD Research Lab/Library/papers/2505.05638_Closing-the-Loop-Motion-Prediction-Models-beyond-Open-Loop-B.pdf",
+   "bytes": 5197411,
+   "sha256": "01183a4e986641eb7836343bc9ef451a7f17e491a380f5275c63140e5e46c579",
+   "banked": "2026-08-30",
+   "tags": [
+    "anti-echo-control"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Benchmarks & Evals/Research/2026-08-30-anti-echo-control-precedent/RESULT.md"
+   ]
+  },
+  "2207.09705": {
+   "key": "2207.09705",
+   "kind": "arxiv",
+   "title": "Resolving Copycat Problems in Visual Imitation Learning via Residual Action Prediction",
+   "authors": [
+    "Chia-Chi Chuang",
+    "Donglin Yang",
+    "Chuan Wen",
+    "Yang Gao"
+   ],
+   "published": "2022-07-20",
+   "abstract": "Imitation learning is a widely used policy learning method that enables intelligent agents to acquire complex skills from expert demonstrations. The input to the imitation learning algorithm is usually composed of both the current observation and historical observations since the most recent observation might not contain enough information. This is especially the case with image observations, where a single image only includes one view of the scene, and it suffers from a lack of motion information and object occlusions. In theory, providing multiple observations to the imitation learning agent will lead to better performance. However, surprisingly people find that sometimes imitation from observation histories performs worse than imitation from the most recent observation. In this paper, we explain this phenomenon from the information flow within the neural network perspective. We also p",
+   "url": "https://arxiv.org/abs/2207.09705",
+   "path": "TanitAD Research Lab/Library/papers/2207.09705_Resolving-Copycat-Problems-in-Visual-Imitation-Learning-via.pdf",
+   "bytes": 4194743,
+   "sha256": "4e6c474c6b19f19e3d89bad5d6da2e2635816c791c292dd10ddd8cfe3730e85a",
+   "banked": "2026-08-30",
+   "tags": [
+    "anti-echo-control"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Benchmarks & Evals/Research/2026-08-30-anti-echo-control-precedent/RESULT.md"
+   ]
+  },
+  "2605.10858": {
+   "key": "2605.10858",
+   "kind": "arxiv",
+   "title": "Is Your Driving World Model an All-Around Player?",
+   "authors": [
+    "Lingdong Kong",
+    "Ao Liang",
+    "Tianyi Yan",
+    "Hongsi Liu",
+    "Wesley Yang",
+    "Ziqi Huang",
+    "Xian Sun",
+    "Wei Yin",
+    "Jialong Zuo",
+    "Yixuan Hu",
+    "Dekai Zhu",
+    "Dongyue Lu"
+   ],
+   "published": "2026-05-11",
+   "abstract": "Today's driving world models can generate remarkably realistic dash-cam videos, yet no single model excels universally. Some generate photorealistic textures but violate basic physics; others maintain geometric consistency but fail when subjected to closed-loop planning. This disconnect exposes a critical gap: the field evaluates how real generated worlds appear, but rarely whether they behave realistically. We introduce WorldLens, a unified benchmark that measures world-model fidelity across the full spectrum, from pixel quality and 4D geometry to closed-loop driving and human perceptual alignment, through five complementary aspects and 24 standardized dimensions. Our evaluation of six representative models reveals that no existing approach dominates across all axes: texture-rich models violate geometry, geometry-aware models lack behavioral fidelity, and even the strongest performers a",
+   "url": "https://arxiv.org/abs/2605.10858",
+   "path": "TanitAD Research Lab/Library/papers/2605.10858_Is-Your-Driving-World-Model-an-All-Around-Player.pdf",
+   "bytes": 6967061,
+   "sha256": "bbf66f1ae08b709c3d63e524462475cc86a598fa717b4485bcd8084890c77820",
+   "banked": "2026-08-30",
+   "tags": [
+    "anti-echo-control"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Benchmarks & Evals/Research/2026-08-30-anti-echo-control-precedent/RESULT.md"
+   ]
+  },
+  "2606.15032": {
+   "key": "2606.15032",
+   "kind": "arxiv",
+   "title": "How Should World Models Be Evaluated for Embodied Decision-Making? A Decision-Making-Centric Position",
+   "authors": [
+    "Yang Yu",
+    "Shiyuan Zhang",
+    "Yifei Sheng",
+    "Haoxiang Ren",
+    "Haoxin Lin"
+   ],
+   "published": "2026-06-13",
+   "abstract": "World models have become a central abstraction in modern AI. The term now refers to several different objects: action-conditioned environment models, latent imagination models, future-video predictors, interactive neural simulators, latent predictive representations, and synthetic-data engines. Evaluation has broadened along with the term. Recent papers measure video realism, perceptual similarity, instruction following, physical plausibility, policy ranking, executability, planning success, and downstream policy improvement. This produces both metric diversity and a recurring problem of claim/evidence mismatch: papers sometimes make a stronger claim about what their model is useful for than their evaluation can establish. This paper surveys the recent literature and argues that, for models presented as world models for embodied decision-making, the more decisive issue is not whether the",
+   "url": "https://arxiv.org/abs/2606.15032",
+   "path": "TanitAD Research Lab/Library/papers/2606.15032_How-Should-World-Models-Be-Evaluated-for-Embodied-Decision-M.pdf",
+   "bytes": 498970,
+   "sha256": "57cb755b08952285bb25ff4839e9aa9354318ed2ae07c60f832b257f6d0bb150",
+   "banked": "2026-08-30",
+   "tags": [
+    "anti-echo-control"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Benchmarks & Evals/Research/2026-08-30-anti-echo-control-precedent/RESULT.md",
+    "TanitAD Research Lab/Opponent Analysis/Research/2026-08-30-anti-echo-control-precedent/RESULT.md"
+   ]
+  },
+  "2204.04220": {
+   "key": "2204.04220",
+   "kind": "arxiv",
+   "title": "Characterizing and Understanding the Behavior of Quantized Models for Reliable Deployment",
+   "authors": [
+    "Qiang Hu",
+    "Yuejun Guo",
+    "Maxime Cordy",
+    "Xiaofei Xie",
+    "Wei Ma",
+    "Mike Papadakis",
+    "Yves Le Traon"
+   ],
+   "published": "2022-04-08",
+   "abstract": "Deep Neural Networks (DNNs) have gained considerable attention in the past decades due to their astounding performance in different applications, such as natural language modeling, self-driving assistance, and source code understanding. With rapid exploration, more and more complex DNN architectures have been proposed along with huge pre-trained model parameters. The common way to use such DNN models in user-friendly devices (e.g., mobile phones) is to perform model compression before deployment. However, recent research has demonstrated that model compression, e.g., model quantization, yields accuracy degradation as well as outputs disagreements when tested on unseen data. Since the unseen data always include distribution shifts and often appear in the wild, the quality and reliability of quantized models are not ensured. In this paper, we conduct a comprehensive study to characterize a",
+   "url": "https://arxiv.org/abs/2204.04220",
+   "path": "TanitAD Research Lab/Library/papers/2204.04220_Characterizing-and-Understanding-the-Behavior-of-Quantized-M.pdf",
+   "bytes": 3705905,
+   "sha256": "d3e316646f0d36185e87aa68d588c69c51f77f5174a9fab9732fa46fbe226274",
+   "banked": "2026-08-30",
+   "tags": [
+    "quant-validation"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Deployment & Optimization/Research/2026-08-30-b1-gate-strongly-typed/RESULT.md"
+   ]
+  },
+  "2207.06282": {
+   "key": "2207.06282",
+   "kind": "arxiv",
+   "title": "DiverGet: A Search-Based Software Testing Approach for Deep Neural Network Quantization Assessment",
+   "authors": [
+    "Ahmed Haj Yahmed",
+    "Houssem Ben Braiek",
+    "Foutse Khomh",
+    "Sonia Bouzidi",
+    "Rania Zaatour"
+   ],
+   "published": "2022-07-13",
+   "abstract": "Quantization is one of the most applied Deep Neural Network (DNN) compression strategies, when deploying a trained DNN model on an embedded system or a cell phone. This is owing to its simplicity and adaptability to a wide range of applications and circumstances, as opposed to specific Artificial Intelligence (AI) accelerators and compilers that are often designed only for certain specific hardware (e.g., Google Coral Edge TPU). With the growing demand for quantization, ensuring the reliability of this strategy is becoming a critical challenge. Traditional testing methods, which gather more and more genuine data for better assessment, are often not practical because of the large size of the input space and the high similarity between the original DNN and its quantized counterpart. As a result, advanced assessment strategies have become of paramount importance. In this paper, we present D",
+   "url": "https://arxiv.org/abs/2207.06282",
+   "path": "TanitAD Research Lab/Library/papers/2207.06282_DiverGet-A-Search-Based-Software-Testing-Approach-for-Deep-N.pdf",
+   "bytes": 1013211,
+   "sha256": "de375a8adf3016c0e4c46adabae5d65b2e8a91fb89c5377e95036277e40e592e",
+   "banked": "2026-08-30",
+   "tags": [
+    "quant-validation"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Deployment & Optimization/Research/2026-08-30-b1-gate-strongly-typed/RESULT.md"
+   ]
+  },
+  "2503.09594": {
+   "key": "2503.09594",
+   "kind": "arxiv",
+   "title": "SimLingo: Vision-Only Closed-Loop Autonomous Driving with Language-Action Alignment",
+   "authors": [
+    "Katrin Renz",
+    "Long Chen",
+    "Elahe Arani",
+    "Oleg Sinavski"
+   ],
+   "published": "2025-03-12",
+   "abstract": "Integrating large language models (LLMs) into autonomous driving has attracted significant attention with the hope of improving generalization and explainability. However, existing methods often focus on either driving or vision-language understanding but achieving both high driving performance and extensive language understanding remains challenging. In addition, the dominant approach to tackle vision-language understanding is using visual question answering. However, for autonomous driving, this is only useful if it is aligned with the action space. Otherwise, the model's answers could be inconsistent with its behavior. Therefore, we propose a model that can handle three different tasks: (1) closed-loop driving, (2) vision-language understanding, and (3) language-action alignment. Our model SimLingo is based on a vision language model (VLM) and works using only camera, excluding expens",
+   "url": "https://arxiv.org/abs/2503.09594",
+   "path": "TanitAD Research Lab/Library/papers/2503.09594_SimLingo-Vision-Only-Closed-Loop-Autonomous-Driving-with-Lan.pdf",
+   "bytes": 36992827,
+   "sha256": "a04e10b7291f20ace0491933111bb02367b4f7e19697fcef05408217babb01e3",
+   "banked": "2026-08-30",
+   "tags": [
+    "anti-echo-control"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Benchmarks & Evals/Research/2026-08-30-anti-echo-control-precedent/RESULT.md"
+   ]
+  },
+  "2012.08185": {
+   "key": "2012.08185",
+   "kind": "arxiv",
+   "title": "Scalable Verification of Quantized Neural Networks (Technical Report)",
+   "authors": [
+    "Thomas A. Henzinger",
+    "Mathias Lechner",
+    "Đorđe Žikelić"
+   ],
+   "published": "2020-12-15",
+   "abstract": "Formal verification of neural networks is an active topic of research, and recent advances have significantly increased the size of the networks that verification tools can handle. However, most methods are designed for verification of an idealized model of the actual network which works over real arithmetic and ignores rounding imprecisions. This idealization is in stark contrast to network quantization, which is a technique that trades numerical precision for computational efficiency and is, therefore, often applied in practice. Neglecting rounding errors of such low-bit quantized neural networks has been shown to lead to wrong conclusions about the network's correctness. Thus, the desired approach for verifying quantized neural networks would be one that takes these rounding errors into account. In this paper, we show that verifying the bit-exact implementation of quantized neural net",
+   "url": "https://arxiv.org/abs/2012.08185",
+   "path": "TanitAD Research Lab/Library/papers/2012.08185_Scalable-Verification-of-Quantized-Neural-Networks-Technical.pdf",
+   "bytes": 252838,
+   "sha256": "553671340fbf246317e3467ab27d594287903a572e60ffa198cde399f1119864",
+   "banked": "2026-08-30",
+   "tags": [
+    "quant-validation"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Deployment & Optimization/Research/2026-08-30-b1-gate-strongly-typed/RESULT.md"
+   ]
+  },
+  "2601.12638": {
+   "key": "2601.12638",
+   "kind": "arxiv",
+   "title": "Mixed Precision PointPillars for Efficient 3D Object Detection with TensorRT",
+   "authors": [
+    "Ninnart Fuengfusin",
+    "Keisuke Yoneda",
+    "Naoki Suganuma"
+   ],
+   "published": "2026-01-19",
+   "abstract": "LIDAR 3D object detection is one of the important tasks for autonomous vehicles. Ensuring that this task operates in real-time is crucial. Toward this, model quantization can be used to accelerate the runtime. However, directly applying model quantization often leads to performance degradation due to LIDAR's wide numerical distributions and extreme outliers. To address the wide numerical distribution, we proposed a mixed precision framework designed for PointPillars. Our framework first searches for sensitive layers with post-training quantization (PTQ) by quantizing one layer at a time to 8-bit integer (INT8) and evaluating each model for average precision (AP). The top-k most sensitive layers are assigned as floating point (FP). Combinations of these layers are greedily searched to produce candidate mixed precision models, which are finalized with either PTQ or quantization-aware train",
+   "url": "https://arxiv.org/abs/2601.12638",
+   "path": "TanitAD Research Lab/Library/papers/2601.12638_Mixed-Precision-PointPillars-for-Efficient-3D-Object-Detecti.pdf",
+   "bytes": 292682,
+   "sha256": "d23e91680ded3f7d2d77f9a042118f32380581b04edbd5366f8c966c54726cc0",
+   "banked": "2026-08-30",
+   "tags": [
+    "quant-validation"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Deployment & Optimization/Research/2026-08-30-b1-gate-strongly-typed/RESULT.md"
+   ]
+  },
+  "2603.08747": {
+   "key": "2603.08747",
+   "kind": "arxiv",
+   "title": "Diagnosing FP4 inference: a layer-wise and block-wise sensitivity analysis of NVFP4 and MXFP4",
+   "authors": [
+    "Musa Cim",
+    "Burak Topcu",
+    "Mahmut Taylan Kandemir"
+   ],
+   "published": "2026-03-05",
+   "abstract": "Quantization addresses the high resource demand for large language models (LLMs) by alleviating memory pressure and bandwidth congestion and providing significantly scaled compute power with a tolerable impact on accuracy. Four-bit floating point (FP4), the lowest-precision format that preserves essential numerical properties such as exponent and sign, has begun to be adopted in cutting-edge architectures, including Blackwell and AMD CDNA, to support LLM quantization and reduce deployment costs. Although aggressive quantization can yield efficiency gains, the quantization sensitivity of within-transformer layers and whether these sensitivities generalize across existing FP4 formats and model scales remain underexplored. To elucidate quantization sensitivity, this study conducts a systematic analysis of two FP4 formats, MXFP4 and NVFP4, across three Qwen2.5 model scales (0.5B, 7B, and 14B",
+   "url": "https://arxiv.org/abs/2603.08747",
+   "path": "TanitAD Research Lab/Library/papers/2603.08747_Diagnosing-FP4-inference-a-layer-wise-and-block-wise-sensiti.pdf",
+   "bytes": 3606419,
+   "sha256": "afd3c3550a699faafe4368b7605f18958aaa83f19276161aa4c8ca34216b0b9c",
+   "banked": "2026-08-30",
+   "tags": [
+    "quant-validation"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Deployment & Optimization/Research/2026-08-30-b1-gate-strongly-typed/RESULT.md"
+   ]
+  },
+  "2606.06527": {
+   "key": "2606.06527",
+   "kind": "arxiv",
+   "title": "Characterizing the Impact of NVFP4 Quantization for Low-Power Edge AI Deployment",
+   "authors": [
+    "Ovishake Sen",
+    "Venkata Nithin Kamineni",
+    "Daniel Lobo",
+    "Swarup Bhunia",
+    "Rickard Ewetz",
+    "Baibhab Chatterjee"
+   ],
+   "published": "2026-06-03",
+   "abstract": "Energy-efficient neural-network inference at the edge requires reducing arithmetic cost, memory traffic, computation energy, and storage overhead while maintaining acceptable accuracy. This paper presents an ablation-focused study of NVFP4 quantization for edge-efficient neural networks, with emphasis on the relationship between activation precision, weight precision, block-size scaling, retraining, and model accuracy. NVFP4 activations are represented using 4-bit FP4 data, an FP8 block scale, and an FP32 tensor scale, enabling ultra-low precision inference while preserving activation dynamic range. A block-size ablation over six edge-efficient models shows that block size B = 16 provides a practical accuracy/storage trade-off, requiring only 4.5078 bits per input for N = 4096. A weight precision ablation further shows that FP8 and FP16 weights provide only modest gains over FP4 weights ",
+   "url": "https://arxiv.org/abs/2606.06527",
+   "path": "TanitAD Research Lab/Library/papers/2606.06527_Characterizing-the-Impact-of-NVFP4-Quantization-for-Low-Powe.pdf",
+   "bytes": 238092,
+   "sha256": "f06fabdf19082b91406acdc62cb39cd79a3c3f23dfe352377bc89ea9466f1fad",
+   "banked": "2026-08-30",
+   "tags": [
+    "quant-validation"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Deployment & Optimization/Research/2026-08-30-b1-gate-strongly-typed/RESULT.md"
+   ]
+  },
+  "2510.25602": {
+   "key": "2510.25602",
+   "kind": "arxiv",
+   "title": "INT v.s. FP: A Comprehensive Study of Fine-Grained Low-bit Quantization Formats",
+   "authors": [
+    "Mengzhao Chen",
+    "Meng Wu",
+    "Hui Jin",
+    "Zhihang Yuan",
+    "Jing Liu",
+    "Chaoyi Zhang",
+    "Yunshui Li",
+    "Jie Huang",
+    "Jin Ma",
+    "Zeyue Xue",
+    "Zhiheng Liu",
+    "Xingyan Bin"
+   ],
+   "published": "2025-10-29",
+   "abstract": "Modern AI hardware, such as Nvidia's Blackwell architecture, is increasingly embracing low-precision floating-point (FP) formats to handle the pervasive activation outliers in Large Language Models (LLMs). Despite this industry trend, a unified comparison of FP and integer (INT) quantization across varying granularities has been missing, leaving algorithm and hardware co-design without clear guidance. This paper fills that gap by systematically investigating the trade-offs between FP and INT formats. We reveal a critical performance crossover: while FP excels in coarse-grained quantization, the comparison at fine-grained (block-wise) levels is more nuanced. Our comprehensive comparison demonstrates that for popular 8-bit fine-grained formats (e.g., MX with block size 32), MXINT8 is superior to its FP counterpart in both algorithmic accuracy and hardware efficiency. However, for 4-bit for",
+   "url": "https://arxiv.org/abs/2510.25602",
+   "path": "TanitAD Research Lab/Library/papers/2510.25602_INT-v-s-FP-A-Comprehensive-Study-of-Fine-Grained-Low-bit-Qua.pdf",
+   "bytes": 1523228,
+   "sha256": "4ddbb7a38ad9a146410ff621f44f9f67f1dd48d58622c35225009bcc57994f67",
+   "banked": "2026-08-30",
+   "tags": [
+    "quant-validation"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Deployment & Optimization/Research/2026-08-30-b1-gate-strongly-typed/RESULT.md"
+   ]
+  },
+  "2605.20868": {
+   "key": "2605.20868",
+   "kind": "arxiv",
+   "title": "Runtime-Certified Bounded-Error Quantized Attention",
+   "authors": [
+    "Dean Calver"
+   ],
+   "published": "2026-05-20",
+   "abstract": "KV cache quantization reduces the memory cost of long-context LLM inference, but introduces approximation error that is typically validated only empirically. Existing systems rely on average-case robustness, with no mechanism to detect or recover from failures at runtime. We present a tiered KV cache architecture that enables runtime-certified attention: INT8 keys and INT4 values are stored in GPU memory, while FP16 originals are retained in system RAM for deterministic fallback. A two-term error decomposition yields per-head, per-step bounds on (i) attention distribution distortion from key quantization and (ii) value reconstruction error. These bounds are computed online and used to drive adaptive precision selection and a multi-stage fallback ladder, which guarantees recovery to the exact dense attention output when required. Across PG-19, NIAH, and RULER benchmarks on LLaMA~3.1-8B wi",
+   "url": "https://arxiv.org/abs/2605.20868",
+   "path": "TanitAD Research Lab/Library/papers/2605.20868_Runtime-Certified-Bounded-Error-Quantized-Attention.pdf",
+   "bytes": 450051,
+   "sha256": "98550dbb4e5e212c3825c5ae66cbce4e68a27fbaa9df28e1c9598089faab2c24",
+   "banked": "2026-08-30",
+   "tags": [
+    "quant-validation"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Deployment & Optimization/Research/2026-08-30-b1-gate-strongly-typed/RESULT.md"
+   ]
+  },
+  "1703.09327": {
+   "key": "1703.09327",
+   "kind": "arxiv",
+   "title": "DART: Noise Injection for Robust Imitation Learning",
+   "authors": [
+    "Michael Laskey",
+    "Jonathan Lee",
+    "Roy Fox",
+    "Anca Dragan",
+    "Ken Goldberg"
+   ],
+   "published": "2017-03-27",
+   "abstract": "One approach to Imitation Learning is Behavior Cloning, in which a robot observes a supervisor and infers a control policy. A known problem with this \"off-policy\" approach is that the robot's errors compound when drifting away from the supervisor's demonstrations. On-policy, techniques alleviate this by iteratively collecting corrective actions for the current robot policy. However, these techniques can be tedious for human supervisors, add significant computation burden, and may visit dangerous states during training. We propose an off-policy approach that injects noise into the supervisor's policy while demonstrating. This forces the supervisor to demonstrate how to recover from errors. We propose a new algorithm, DART (Disturbances for Augmenting Robot Trajectories), that collects demonstrations with injected noise, and optimizes the noise level to approximate the error of the robot's",
+   "url": "https://arxiv.org/abs/1703.09327",
+   "path": "TanitAD Research Lab/Library/papers/1703.09327_DART-Noise-Injection-for-Robust-Imitation-Learning.pdf",
+   "bytes": 1729420,
+   "sha256": "f33317c653fc72fb7b618bd48075725a731f579c0ebca1c3a95aa4f6178891f9",
+   "banked": "2026-08-30",
+   "tags": [
+    "input-pipeline"
+   ],
+   "note": "DART: inject noise into the EXPERT during collection so the demonstration distribution covers the learner's error states - offline alternative to DAgger",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md"
+   ]
+  },
+  "2311.15260": {
+   "key": "2311.15260",
+   "kind": "arxiv",
+   "title": "NeuRAD: Neural Rendering for Autonomous Driving",
+   "authors": [
+    "Adam Tonderski",
+    "Carl Lindström",
+    "Georg Hess",
+    "William Ljungbergh",
+    "Lennart Svensson",
+    "Christoffer Petersson"
+   ],
+   "published": "2023-11-26",
+   "abstract": "Neural radiance fields (NeRFs) have gained popularity in the autonomous driving (AD) community. Recent methods show NeRFs' potential for closed-loop simulation, enabling testing of AD systems, and as an advanced training data augmentation technique. However, existing methods often require long training times, dense semantic supervision, or lack generalizability. This, in turn, hinders the application of NeRFs for AD at scale. In this paper, we propose NeuRAD, a robust novel view synthesis method tailored to dynamic AD data. Our method features simple network design, extensive sensor modeling for both camera and lidar -- including rolling shutter, beam divergence and ray dropping -- and is applicable to multiple datasets out of the box. We verify its performance on five popular AD datasets, achieving state-of-the-art performance across the board. To encourage further development, we will ",
+   "url": "https://arxiv.org/abs/2311.15260",
+   "path": "TanitAD Research Lab/Library/papers/2311.15260_NeuRAD-Neural-Rendering-for-Autonomous-Driving.pdf",
+   "bytes": 7226671,
+   "sha256": "6d98a39a64545c88568216372cefc3720f442a464e0176f67f5f647f89c4bc55",
+   "banked": "2026-08-30",
+   "tags": [
+    "input-pipeline"
+   ],
+   "note": "NeuRAD: neural rendering of real AV logs enables novel-view synthesis - the modern route to ChauffeurNet-style viewpoint perturbation on REAL camera logs",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md"
+   ]
+  },
+  "2304.06719": {
+   "key": "2304.06719",
+   "kind": "arxiv",
+   "title": "RoboBEV: Towards Robust Bird's Eye View Perception under Corruptions",
+   "authors": [
+    "Shaoyuan Xie",
+    "Lingdong Kong",
+    "Wenwei Zhang",
+    "Jiawei Ren",
+    "Liang Pan",
+    "Kai Chen",
+    "Ziwei Liu"
+   ],
+   "published": "2023-04-13",
+   "abstract": "The recent advances in camera-based bird's eye view (BEV) representation exhibit great potential for in-vehicle 3D perception. Despite the substantial progress achieved on standard benchmarks, the robustness of BEV algorithms has not been thoroughly examined, which is critical for safe operations. To bridge this gap, we introduce RoboBEV, a comprehensive benchmark suite that encompasses eight distinct corruptions, including Bright, Dark, Fog, Snow, Motion Blur, Color Quant, Camera Crash, and Frame Lost. Based on it, we undertake extensive evaluations across a wide range of BEV-based models to understand their resilience and reliability. Our findings indicate a strong correlation between absolute performance on in-distribution and out-of-distribution datasets. Nonetheless, there are considerable variations in relative performance across different approaches. Our experiments further demons",
+   "url": "https://arxiv.org/abs/2304.06719",
+   "path": "TanitAD Research Lab/Library/papers/2304.06719_RoboBEV-Towards-Robust-Bird-s-Eye-View-Perception-under-Corr.pdf",
+   "bytes": 25648418,
+   "sha256": "3092bd2a33a11021246853fabe2c3b0f647d1aa3ac16ab5fdbb01e7953b1ef25",
+   "banked": "2026-08-30",
+   "tags": [
+    "input-pipeline"
+   ],
+   "note": "RoboBEV: camera BEV perception robustness under brightness/dark/fog/snow/motion-blur corruptions",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md"
    ]
   }
  }
