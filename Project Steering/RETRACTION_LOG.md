@@ -11048,3 +11048,78 @@ is **inert by inspection**. And the sharper habit: when a feature is implemented
 library, check *which callers pass it* — `newest_frame_only` appearing in
 `v2_dataset.py` proved the capability existed and said nothing about whether our
 trainer reached it.
+# MM-C12 — ⚠️ EVERY PROBE THIS CAMPAIGN RESOLVED `tanitad` FROM AN UNVERIFIED THIRD MIRROR
+
+**Found** 2026-08-30 while preparing the action-divergence probe (MM-E10).
+**Status: OPEN — a provenance question, not yet a refutation.** Recorded now
+because it bears on numbers already quoted.
+
+## What I found
+
+There are **three** trees carrying `stack/tanitad`, with **three different**
+`models/v6.py`:
+
+| tree | v6.py size | md5 |
+|---|---|---|
+| `C:\Users\Admin\tanitad-mirror` | 333,712 B | `7d6a818385` |
+| `C:\Users\Admin\tanitad-wt` | 328,899 B | `d4bcd90d2a` |
+| `G:` (before today's nav wiring) | 328,899 B | `d4bcd90d2a` |
+| `G:` (now, post nav wiring) | 339,590 B | — |
+
+`tanitad-wt` matches the pre-nav G: exactly. **`tanitad-mirror` matches nothing** —
+it is a third version of unknown provenance.
+
+⛔ **And the probe scripts prefer it.** Every probe in this campaign
+(`latentmotion.py`, `meanpred.py`, `residual_ceiling.py`, and the `v7tiny_g2`
+helper they share) does:
+
+```python
+sys.path.insert(0, str(SP))
+sys.path.insert(0, str(SP / "sp2"))
+sys.path.insert(0, r"C:\Users\Admin\tanitad-mirror\stack")   # <- LAST insert(0) wins
+```
+
+The last `insert(0, ...)` is **first** on `sys.path`, so `tanitad` resolves from
+`tanitad-mirror`. And `load_trunk_auto` **REBUILDS the model from the checkpoint's
+config** rather than loading a serialised module — so **the code version is
+load-bearing for every number those probes produce.**
+
+⇒ **Drift, meanpred, absorption, and today's seed-spread measurement were all
+computed with `tanitad-mirror`'s v6.py, not the repo's.**
+
+## ⚠️ What stops this from being a refutation — for now
+
+The rig controls have passed throughout, and they are not weak:
+
+* the **constant control reads exactly 0.000000** in every panel;
+* the **drift positive control** lands in its known band;
+* ⭐ **MM-E6 independently rebuilt its pipeline and reproduced every banked drift
+  value to max |Δ| 0.0011**, with `emao14_30k` **exact**.
+
+A third-version `v6.py` that reproduces banked values to four decimals is very
+probably compatible with the one that trained them. **Probably is not verified.**
+
+## What must happen when G: returns
+
+1. `md5` `tanitad-mirror`'s `v6.py` against G:'s **pre-nav** blob — if the 333,712 B
+   file is a superset/ancestor with no forward-pass change, this closes benignly.
+2. Re-run **one** banked panel with `PYTHONPATH` forced to G: and confirm the number
+   reproduces. One arm is enough; the controls do the rest.
+3. Then **delete or re-point the hardcoded `tanitad-mirror` path** in the probe
+   helper. A probe that silently prefers an unversioned tree is a probe whose
+   provenance cannot be stated — and *"which code produced this number"* is exactly
+   what `MODEL_REGISTRY`'s source-of-truth rule exists to answer.
+
+## ⭐ The rule
+
+**A PROBE MUST STATE WHICH TREE IT IMPORTED.** Every probe should print
+`tanitad.__file__` into its own output JSON, beside the numbers — the same
+placement rule as `D-CAVEAT-PLACEMENT`. CLAUDE.md already says to *"re-check which
+tree actually got imported"* after a `PYTHONPATH` change; the failure here is that
+the check was never automated, so a hardcoded path silently outvoted the
+environment for an entire campaign.
+
+⚠️ **And the reason I nearly missed it:** the probes have worked all day. Nothing
+failed, no error appeared, and the controls passed. **A silent version divergence
+produces plausible numbers by construction** — it is only visible if you ask which
+file was imported, and nothing was asking.
