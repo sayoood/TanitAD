@@ -391,6 +391,38 @@ def test_resolve_v72_finds_the_artifact_under_an_ALIASED_name(tmp_path,
     assert resolve_v72("train", [str(tmp_path)]) is not None
 
 
+def test_the_clip_INDEXES_are_content_addressed_too(tmp_path, monkeypatch):
+    """⭐ The indexes were the ONE artifact identified only by PATH.
+
+    They carry the episode join, so a wrong-index join is a silent wrong-clip
+    supervision — the exact failure the legacy-id guard exists to prevent. Same
+    treatment as the labels: md5 decides, name is a hint, alias tolerated.
+    """
+    from tanitad.train.intrain_eval import resolve_v72, V72_INDEX
+    alias = V72_INDEX["eval_index"]["names"][1]      # the local build's name
+    md5 = _write_blob(tmp_path / "r" / alias, b'{"clips": []}')
+    monkeypatch.setitem(V72_INDEX["eval_index"], "md5", md5)
+    assert resolve_v72("eval_index", [str(tmp_path)]) is not None
+
+
+def test_V72_stays_LABELS_ONLY_so_gzip_iterating_callers_do_not_break():
+    """⚠️ Indexes are plain JSON; labels are gzipped jsonl. Folding them into
+    one dict would break every caller that iterates V72 expecting gzip — a
+    silent failure, since the read would raise far from the cause."""
+    from tanitad.train.intrain_eval import V72, V72_INDEX
+    assert set(V72) == {"train", "eval"}
+    assert not set(V72) & set(V72_INDEX)
+    assert all(s["names"][0].endswith(".jsonl.gz") for s in V72.values())
+    assert all(s["names"][0].endswith(".json") for s in V72_INDEX.values())
+
+
+def test_resolve_v72_refuses_an_UNKNOWN_artifact_name():
+    from tanitad.train.intrain_eval import resolve_v72
+    with pytest.raises(EvalSplitError) as e:
+        resolve_v72("nope", ["/tmp"])
+    assert "unknown v7.2 artifact" in str(e.value)
+
+
 def test_resolve_v72_REFUSES_a_lone_copy_that_is_the_WRONG_copy(tmp_path,
                                                                monkeypatch):
     """⛔ One copy is not automatically the right copy.

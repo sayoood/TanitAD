@@ -351,10 +351,31 @@ V72 = {
                        "s2_labels_v72_eval.jsonl.gz"), "n": 147,
              "md5": "aa12c948f062181c3297265b51526ec5"},
 }
-#: Back-compat for callers that read the old scalar key.
-for _s in V72.values():
+#: ⭐ THE CLIP INDEXES — the episode join. Added 2026-08-30 because they were the
+#: ONE artifact in this release identified **only by path**, which is precisely the
+#: defect closed for the labels above. md5s MEASURED by read-back on Thor
+#: (`/home/nvidia/data/v72/index/`) rather than from the uploader's side: a hash
+#: taken before transfer proves what was sent, not what arrived.
+#: ⚠️ The alias is real and not hypothetical — HF serves
+#: `clip_index_v7.2_eval.json`, the local build writes `clip_index_eval.json`.
+V72_INDEX = {
+    "train_index": {"names": ("clip_index_v7.2_train.json",
+                              "clip_index_train.json"), "n": 4572,
+                    "md5": "ca03aeadd25c57a7ac4bb555f3224559"},
+    "eval_index": {"names": ("clip_index_v7.2_eval.json",
+                             "clip_index_eval.json"), "n": 147,
+                   "md5": "2f68790b0a6fc9d7041331a190b245d4"},
+}
+
+#: Back-compat for callers that read the old scalar key. ⚠️ `V72` stays
+#: LABELS-ONLY — callers iterate it expecting gzipped jsonl, and folding plain
+#: JSON indexes into it would break them silently. Resolution consults both.
+for _s in (*V72.values(), *V72_INDEX.values()):
     _s["name"] = _s["names"][0]
 del _s
+
+#: Every content-addressed v7.2 artifact, for :func:`resolve_v72`.
+_V72_ALL = {**V72, **V72_INDEX}
 
 
 def resolve_v72(side: str, roots, *, by_content: bool = True):
@@ -377,7 +398,10 @@ def resolve_v72(side: str, roots, *, by_content: bool = True):
     else is wearing its name. Identical copies under different paths are fine.
     """
     import glob as _glob
-    spec = V72[side]
+    if side not in _V72_ALL:
+        raise EvalSplitError(
+            f"[val] ⛔ unknown v7.2 artifact {side!r}; have {sorted(_V72_ALL)}")
+    spec = _V72_ALL[side]
     names = spec.get("names") or (spec["name"],)
     want = spec["md5"]
     hits = sorted({os.path.realpath(h) for r in roots for n in names
