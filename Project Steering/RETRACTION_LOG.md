@@ -10692,3 +10692,46 @@ possibility that matters most — real lane changes being absorbed into the 1,11
 absence). Referred to the DataFlyWheel, who owns the extractor. The loader meanwhile
 uses `vocab ∪ empirically-absent` with per-token provenance, so no arm carries a dead
 logit while the question is open.
+
+---
+
+## MM-C7 — 2026-08-30 — ⛔ `CUDA_VISIBLE_DEVICES=""` DOES NOT DISABLE CUDA, AND THE PROBE THAT "CONFIRMS" IT LIES
+
+**Class:** `a-guard-that-reports-success-while-not-guarding` — the `df` / Thor `free` /
+cgroup `usage_in_bytes` family, moved into **resource isolation**, where its
+consequence is stealing a GPU from a live run rather than misreading one.
+
+**MEASURED 2026-08-30** (MM-E6 agent, self-reported unprompted). Setting
+`CUDA_VISIBLE_DEVICES=""` — the empty string, the obvious way to say *"no GPUs"* —
+leaves CUDA **fully live**:
+
+```
+CUDA_VISIBLE_DEVICES=""   ->  torch.cuda.is_available()  True      (!)
+                              torch.cuda.device_count()  0
+                              tensor.to("cuda")          LANDS ON cuda:0   (!)
+CUDA_VISIBLE_DEVICES="-1" ->  actually disabled
+```
+
+⚠️ **The trap is the pair of readings, not either one.** `device_count() == 0` looks
+exactly like a successful isolation and is the natural thing to assert in a
+preflight — while `is_available()` stays `True` and `.to("cuda")` still allocates on
+the physical device. A script that checks `device_count()` and proceeds has verified
+nothing. **Only `-1` works.**
+
+**Cost:** three DINOv3 runs (~13 min) executed on the RTX 4060 **while D-SAFE-CAL
+held it**, in direct violation of "never add GPU load to a device that is training".
+D-SAFE-CAL survived and completed — luck, not care, exactly as with MM-C4's pip into
+a live venv.
+
+⭐ **THE RULE: isolate with `CUDA_VISIBLE_DEVICES=-1`, and verify by ATTEMPTING AN
+ALLOCATION, not by reading a count.** The admissible check is a `try: torch.zeros(1,
+device="cuda")` that must RAISE; a device count is a claim about visibility, not
+about where a tensor lands. Better still, pass an explicit device through the code
+path rather than relying on an env var at all — which is what the agent switched to,
+and everything after ran CPU-only.
+
+⚠️ **Second-order note worth keeping:** the breach was found and reported *by the
+agent that committed it*, with the mechanism measured rather than guessed. That is
+what makes it a durable rule instead of an unexplained incident — and it is the same
+discipline that made D-SAFE-CAL's VOID and MM-E6's own VOID trustworthy. An agent
+that hides a resource breach costs the programme the rule as well as the GPU-minutes.
