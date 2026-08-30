@@ -10436,3 +10436,143 @@ dependency closure is what makes it related, and the closure is invisible at the
 wait; (b) if it is unavoidable, `--no-deps` ALWAYS (I did use it for the second install,
 `pyarrow`, which is what the first one should have been); (c) verify with a real CUDA
 `conv2d` plus the site-packages timestamps of `torch`/`numpy`, not with `import torch`.
+
+
+### DE-C153 ADDENDUM 2 — C82 AND C83 ARE ONE CLASS, AND THE UNIFYING RULE IS SHORTER THAN EITHER (DataFlyWheel + Master Mind, 2026-08-30)
+
+A fifth instance closed the loop. `preflight_epcache_build.py` **PASSED on Thor while the build was
+impossible**: `discover_r0_clips` returned **0 clips** because the camera directory was named
+`camera_front_wide_120fov` (the FEATURE name) rather than `camera_front_wide` (the name discovery
+globs), the per-clip `.timestamps.parquet` were absent, and the egomotion shipped as one `.tar`
+rather than per-chunk `.zip`. Discovery returns `[]` **silently**; `measure` printed *"0 clips"* and
+then died on an unrelated `--out` default, so the tool never named the real problem.
+
+**The preflight was not missing a check. It checked ROOT RECOVERY — which is about what I had just
+BUILT — and never checked DISCOVERY, which is what the BUILDER NEEDS.** Calibration resolving
+perfectly says nothing about whether a single clip can be found.
+
+⭐ **THE UNIFYING RULE (Master Mind's formulation, adopted): A GATE MUST ASSERT THE *CONSUMER'S*
+PRECONDITION, NOT THE *PRODUCER'S* OUTPUT.**
+
+This is the same sentence as **C82** (*price the artifact the CONSUMER reads, not the one you found*)
+with "price" swapped for "assert" — so C82 and C83 are **one class wearing two costumes**, and the
+shared error is **orienting the check toward yourself instead of toward whoever consumes the thing**.
+Tonight's five instances all fit it exactly:
+
+| # | I verified… | I should have verified… |
+|---|---|---|
+| 1 | the epcache format I FOUND (`ep_*.pt`, raw) | the format the TRAINER reads (`*.v2ep.pt`, encoded) — 1.38 TB → 161 GB |
+| 2 | that the pull's supervisor exited 0 | that **4719** files existed (its regex matched 4715) |
+| 3 | the files my uploader CHOSE to send (4,719 mp4) | the whole bundle a READER opens — the MANIFEST was stale on the remote |
+| 4 | the remote listing after MY upload | the artifact a reader opens FIRST — I never opened the manifest |
+| 5 | that root recovery worked (my output) | that discovery finds clips (the builder's input) |
+
+⇒ **The operational test, cheap enough to run every time: name the CONSUMER of the thing you are
+checking, then check the fact THAT CONSUMER needs.** If the fact you are asserting is one you
+produced, you are testing your own memory, not the world. #3 and #4 are the sharpest: **verifying
+your own work reproduces your own blind spot** — both were caught by someone going to USE the
+artifact, not by anyone confirming they had made it.
+
+**The remedy that worked**, and it is mechanical: `prepare_b1_root.py` now calls
+`discover_r0_clips` itself and REFUSES unless it returns all 4,719 — printing the three component
+counts (mp4 / timestamps / egomotion zips) so **the short leg names itself**. A silent zero becomes
+a diagnosis. Do this wherever a producer hands to a consumer: **run the consumer's own discovery as
+the last step of production.**
+
+---
+
+## TRAIN-C11 — 2026-08-30 — ⚠️ A RELAYED APPROVAL CARRIED A NUMBERING THAT ONLY EXISTED IN THE RELAYING MESSAGE
+
+**Class:** `referent-resolved-in-the-wrong-frame` — the `df` / `step_s` scope
+family, moved from measurement into **authorisation**, which is where its
+consequences are worst.
+
+**What happened.** The Master Mind relayed the PI's decision as **"I approve 1 and
+2"**. I had sent up two open items — (1) D-SAFE-CAL, (2) P4-12 — and the sentence
+parsed perfectly against my list. ⛔ **The numbering was not mine.** The PI had
+been shown a *different* numbered list, of the MM's own: (1) D-SAFE-CAL, (2) MM-E6,
+(3) the four-consumer training order. The two approved items were **D-SAFE-CAL and
+MM-E6**; **P4-12 was never approved.**
+
+⚠️ **Both lists started at 1, and item 1 was the same on both** — which is what
+makes this dangerous rather than merely confusing. The sentence was *unambiguous
+to the sender*, *unambiguous to me*, and we would have meant different things by
+it. Nothing in the message could have revealed the mismatch.
+
+**What made it harmless here.** I acted on the reading where **being wrong is
+cheapest**: I ran the pre-registered experiment (2 h of my own GPU, no code
+change) and explicitly **held** P4-12, saying so and asking for the referent. Had
+I inferred symmetric approval, I would have made a **second specification change
+in the same window** — the `--v2` conflation failure, ten levers on two axes and a
+non-attributable result. *(That the hold was ALSO right on the merits, independent
+of the numbering, is luck worth noticing: the merits argument is what should have
+carried it, and it did.)*
+
+⭐ **THE RULE (adopted by both sessions): RELAY APPROVALS BY NAME, NEVER BY INDEX.**
+*"The PI approved D-SAFE-CAL and MM-E6"* — never *"1 and 2"*. An index is
+meaningful only inside the document that defines it, and an approval crosses
+documents by construction.
+
+⚠️ **The receiving half matters as much:** when a relayed decision resolves
+against your own list, that is **not** evidence the sender meant your list. Ask for
+the referent whenever the cost of being wrong exceeds the cost of asking — and
+note that **an approval is exactly the case where that asymmetry is largest**,
+because the failure mode is doing something unauthorised while believing you were
+told to.
+
+---
+
+## MM-C5 — 2026-08-30 — ⛔ THE REMOTE'S CODE WAS OLD, AND THE ERROR THAT SAID SO LOOKS EXACTLY LIKE "YOUR COMMAND IS WRONG"
+
+**Class:** `stale-remote-checkout` (the documented `stack/`-drift trap) — but with
+a new and worse consequence: **the drift hid a SAFETY GUARD rather than a bug**,
+and the natural repair for the error it produces is the action that defeats the
+guard.
+
+**What happened.** I wrote the B1 epcache build chain citing `--workers`,
+`--corpus-role` and `--exclude-parity-overlap`. I had taken all three from the
+DataFlyWheel's prose brief — `INHERITED`, never checked against the tool. Before
+arming I ran `build --help` on Thor. Result:
+
+* `--workers` **does not exist at all** — the builder parallelises with `--shard i/K`.
+* `--corpus-role` and `--exclude-parity-overlap` **existed only in the repo copy**.
+  Thor's `stack/scripts/v2_compressed.py` was `4a880615…`, the repo's `0c9b809c…`:
+  the pre-guard version, predating commit `bfa54ad` by which the DataFlyWheel had
+  caught that **6 of the 4,719 B1 clips are in the deployed val40**.
+
+⛔ **THE TRAP.** `unrecognized arguments: --exclude-parity-overlap` reads, to every
+instinct, as *"you passed a flag that does not exist"* — and the obvious repair is
+to **drop the flag and re-run**. On Thor's stale builder that repair succeeds: the
+old builder has no parity concept, so it would have built **all 4,719 clips
+including the 6 leaked ones**, silently, over ~3.4 h, and the v7f scaled run would
+have trained on part of its own published-evaluation split. The guard that commit
+`bfa54ad` added would have been **absent, not overridden** — nothing would have
+refused, warned, or recorded it.
+
+⚠️ **Why the usual defence does not fire here.** The banked note says the builder
+*"REFUSES without the repair flag, so the guard works"*. That is true **of the
+repo's builder** and false of the host the build actually runs on. A guard's
+protection is a property of the **binary that executes**, never of the commit that
+introduced it — and `git log` on the remote is not evidence either (pods and Thor
+carry ancient HEADs with current working trees).
+
+**What I did instead.** Shipped the guarded builder + `parity.py` + **both** digest
+sets (`deployed_val40_clip_digests.json`, `parity_train_clip_digests.json`),
+md5-verified each on both sides, then **negative-controlled the guard**: ran the
+build with `--corpus-role train` and *without* the repair flag. It refused
+(`NEG_RC=1`), wrote **zero** files, named all three legitimate resolutions, and did
+not print the gated clip ids. Only then did the real chain get armed — and it
+**re-checks the builder's md5 against the guarded hash at launch time**, because a
+later re-sync could revert it between arming and firing.
+
+⭐ **THE RULE: AN UNKNOWN-FLAG ERROR FROM A REMOTE IS A VERSION HYPOTHESIS, NOT A
+TYPO.** Before deleting a flag to make a remote command run, diff the file's hash
+against the repo. And **never conclude a guard protects a run without watching it
+refuse on that host** — a guard verified only by reading its source is the
+`--sanctioned-audit` failure in advance.
+
+⚠️ **The second half is mine to own:** all three flag names were `INHERITED` from a
+teammate's prose and carried into a launch command unchecked. Operating-standard
+rule 1 says a claim that decides a GPU-day must be MEASURED or PUBLISHED. **A flag
+name in a launch command is exactly such a claim** — the cheapest possible
+measurement is `--help`, and it is now a mandatory step of writing any chain.
