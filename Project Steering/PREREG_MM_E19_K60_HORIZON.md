@@ -389,6 +389,29 @@ that is a **third independent line** arriving at the same conclusion — and thr
 independent arguments for one architectural change is a much stronger position than any
 of them alone.
 
+### ⚠️ A WEAKNESS IN MY OWN CRITERION, NAMED AT STEP 7,800 — BEFORE THE 8,200 READ
+
+The criterion is a **rolling 8-row median**. That means it **mechanically improves as
+spikes age out of the window, whether or not the arm is healthier.** At 7,800 the window
+still contains the 64,874 spike; at 8,200 it will not. ⇒ **a PASS at 8,200 partly reflects
+the window sliding, not only the arm settling**, and I would rather say so now than
+discover the convenience afterwards.
+
+⛔ **The committed criterion still governs the decision** — I am not replacing it after
+seeing data. But the READ at 8,200 must additionally report the quantity a sliding median
+cannot fake:
+
+**SPIKE ARRIVAL RATE — are spikes still coming?**
+* rows with gnorm > 50, per 1,000 steps, in the first vs second half of the run
+* falling rate ⇒ genuine settling · flat rate ⇒ the median moved and the arm did not
+
+⭐ Current shape, for the record before the read: spikes at **5,800 (13,278)**, **6,400
+(64,874)**, **7,200 (1,614)** — roughly every 700 steps and *decreasing in magnitude*
+(13k → 65k → 1.6k is not monotone, but the last is 40× below the peak), with clean
+returns to 0.61–5.20 between them. That is a different object from the predecessor's
+monotone escalation, and the arrival-rate read is what will separate "settling" from
+"still spiking, median flattered".
+
 ## 4. ⛔ The anti-gates, committed before any number exists
 
 * **O5 LOSS WILL BE HIGHER, AND THAT IS NOT A REGRESSION.** A 60-step rollout is a
