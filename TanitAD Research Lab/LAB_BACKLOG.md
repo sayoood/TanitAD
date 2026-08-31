@@ -95,6 +95,33 @@ named empty searches. Rows marked ⛔PI need a PI decision before compute is spe
 - "NEVER to HF, even privately" doctrine (superseded by TANITAD_PROGRAMME §0: private HF is the rule).
 
 
+## ⛔⛔ PROPOSED (unranked) — THE v7 GATE PROBLEMS, injected 2026-08-31 by the Master Mind
+
+⚠️ **WHY THIS SECTION EXISTS, AND IT IS AN ADMISSION.** The update contract above says any
+session that produces a finding proposes a row **in the same turn**. Between 2026-08-30 and
+2026-08-31 I generated MM-E10 through MM-E19 plus five gate problems and **proposed nothing** —
+this file has not been touched since 2026-08-29. MEASURED against its own text: **`hold-action`
+0 hits · `action-deaf` 0 · `L3` 0 · `teacher-forced` 0 · `target construction` 0 · `O11` 0.**
+
+⇒ **The Lab's own seed list contained NONE of the five problems now gating v7.** Today's run
+produced good work only because the questions were hand-fed in the spawn brief. Left to its
+standing instruction — *"pull the top unblocked rows from LAB_BACKLOG"* — it would have
+researched a stale list. **A backlog that is only read rots; this one was not even written to.**
+
+| # | pri | field | row |
+|---|---|---|---|
+| P-1 | P0 | Arch | ⭐⭐ **P1 — no v7 arm has ever beaten its own hold-action control.** All three arms `LOSES_TO_HOLDV0` on every distance metric, heading ~95° = chance. **This is the programme's actual problem**; the rows below are hypotheses about why. ⭐ The one positive: `copy_detector CLEAN`, echo 0.0000 — fake-skill-by-echo traded for honest absence of skill. → `V7_LAUNCH_GATE.md` P1 |
+| P-2 | P0 | Arch | **P2 — the predictor does not use its actions.** ELIMINATED: the missing objective (MM-E11, ratio FELL 0.40× vs a 10× criterion), zero-init FiLM (it trained), a starved gain (MM-E18, converged). OPEN: (a) horizon *[under test]*, (b) ⭐ **our "action" is realised motion, not a command — a genuine command channel has NEVER been tested**, (c) representation, (d) ⭐⭐ **TARGET CONSTRUCTION — our target is teacher-forced, so it already contains the action's effect** (UWM-JEPA 2605.25313, source-verified: *"applies beyond the unitary parameterisation"*) |
+| P-3 | P0 | Arch | ⭐⭐⭐ **O11 — the predictor HAS become action-sensitive once, and that arm was abandoned at 25 %.** `o11p30k` sat at the provable no-information floor for 5,200 steps, then `pick_acc 1.000` for 12 consecutive rows. ⛔ NOT one-variable (4 diffs incl. scratch init), and a scene-matching shortcut is available. **A 4-minute actdiv probe on its banked ckpt decides whether an 8.6 h arm is worth running** |
+| P-4 | P0 | Arch | **P5/L3 — does the predictor ADD anything over `z_t`?** The ladder calls it *"the dissociation gate, and the actual v7 bar"*. ⭐ Independently corroborated — UWM-JEPA reports the same pattern and *"locat[es] the separation in the predictor rather than the encoder"* |
+| P-5 | P0 | Arch | ⛔ **L2 IS NOT PASSED AS SPECIFIED — corrected 2026-08-31 after the PI pushed back.** L2 requires beating frozen DINOv3 on **five** targets (`n_agents`, `n_free_cols`, `occ_{l,c,r}`); **we beat it on ONE** (`n_agents` +0.1220 vs +0.0998). C156 retracted the *recommendation* to swap in DINOv3, **not** the underlying "behind on 4 of 5". ⚠️ Two panels also report different numbers for the same target (+0.1220/+0.0998 lead-matched vs +0.3881/+0.2754 E-DEC-29) — **reconcile before either is quoted** |
+| P-6 | P1 | Arch | **P3 — drift's 3.3× effect is real and seed-stable but UNATTRIBUTED.** ⛔ `--init-from` REFUTED (E-DEC-60). Ablation now designed and one-variable: `postrain30k + --freeze-encoder`. ⭐ Dual-purpose — the same arm reads drift AND L3 |
+| P-7 | P1 | Deploy | ⭐ **A flat strategic rollout is UNDEPLOYABLE** — latency is linear in K (measured), so K=300 costs ~350 ms / ~1,015 ms against a 100 ms budget, and CUDA graphs' 2.57× does not close it. **Temporal abstraction is a deployment requirement, not an efficiency preference** → `Research/2026-08-31-rollout-depth-latency` |
+| P-8 | P1 | Arch | ⛔ **k=60 with full-chain BPTT is GRADIENT-UNSTABLE at clip 1.0** (gnorm median 5.71 → 2.1e9; killed at step 9,000 on a pre-committed criterion). The 2.4× wall-clock was the priced half of the 6 s horizon; **this is the unpriced half** |
+
+⚠️ **Unranked by design** — per the contract the finder proposes and never self-ranks; the
+Master Mind ranks at the next daily-run commit, and ⛔PI rows are the PI's call.
+
 ## INJECTED (PI / MM)
 
 *PI injections: just tell the Master Mind the topic in one sentence — it lands here
