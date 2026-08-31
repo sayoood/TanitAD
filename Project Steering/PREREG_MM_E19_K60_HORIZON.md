@@ -322,6 +322,36 @@ update that follows destroys the trajectory. ⇒ if this arm survives, the findi
 k=60"* — the instability is a property of the horizon, and the clip is a containment, not
 a cure.
 
+### 🔶 CRITERION READ AT STEP 6,600 — **MIXED**. ONE extension, per the rule, and only one.
+
+```
+step 5800  gnorm  13,277.63   o5 0.2269      first spike
+step 6000  gnorm      15.25   o5 0.1289      recovered
+step 6200  gnorm       2.43   o5 0.1982      baseline
+step 6400  gnorm  64,874.16   o5 0.2630   <- SECOND spike, 4.9x larger than the first
+step 6600  gnorm     173.15   o5 0.3612      NOT back to baseline
+```
+
+| quantity | last 8 rows | threshold | verdict |
+|---|---|---|---|
+| gnorm median | **94.20** | < 50 | ⛔ **FAIL** |
+| `o5_loss` median | **0.2301** | < 0.25 | ✅ PASS |
+
+⇒ **MIXED.** The rule committed at step 8,400 of the predecessor says: *extend ONE more
+window, then decide; **do not extend twice**.* Doing that — decision at **step ~8,200**.
+
+⚠️ **Reading it honestly rather than hopefully:** the o5 median passes only because older
+healthy rows are still inside the window. The *trajectory* is 0.1982 → 0.2630 → **0.3612**,
+and 0.3612 is already past the 0.30 DEGRADED threshold on its own. The second spike is
+**4.9× the first** and did not return to baseline. ⛔ This looks like the predecessor with
+a longer fuse, not a contained arm.
+
+⛔ **I am not tightening the thresholds to fire early, and not loosening them to survive.**
+They were set before this arm existed and they govern; the single extension is what the
+rule allows and all it allows. **If the extension reads DEGRADED, the arm dies and clip 0.5
+is refuted as a mitigation** — which is a real result about the 6 s horizon, not a failure
+of the experiment.
+
 ## 4. ⛔ The anti-gates, committed before any number exists
 
 * **O5 LOSS WILL BE HIGHER, AND THAT IS NOT A REGRESSION.** A 60-step rollout is a
