@@ -54,8 +54,38 @@ below may be marked closed by me.** I can report that a criterion is met; the PI
   (it trained: ‖W‖ 2.97/3.06/5.44) · a starved conditioning gain (MM-E18: converged).
 * ⚠️ **Status is OPEN by PI ruling** — the 2026-08-26 "closed negatively" was withdrawn,
   and the evidence supports only *"not found to work under the conditions tested."*
+* ⭐⭐ **P2(b) SCOPED 2026-08-31 — AND IT CANNOT BE TESTED ON OUR TRAINING CORPUS AT ALL.**
+  Checked the source rather than inferring from the correlation:
+
+  | corpus | action signal | is it a command? |
+  |---|---|---|
+  | **PhysicalAI** (`physicalai-train-e438721ae894`, what every v7 arm trains on) | `actions = (steer_road_rad, accel_mps2)`, where **`steer = atan(wheelbase × curvature)`** — read off the `curvature` column | ⛔ **NO.** It is the realised path, restated. The v2ep cache stores only `actions [201,2]` + `poses [201,4]`; there is no command in the bytes |
+  | **comma2k19** | `processed_log/CAN/steering_angle` — the **driver's steering-wheel angle from CAN** (`STEER_RATIO = 15.3` wheel→road) | ⭐ **YES** — measured at the wheel, it leads the yaw response and contains corrections the path never shows |
+
+  ⇒ **E-DEC-57 is confirmed at the SOURCE, not merely by an r = 0.9988 correlation:** the
+  incumbent channel is documented in `physicalai.py` as a *"road-wheel angle proxy"*
+  computed from curvature. **We have never given this model a command because our corpus
+  does not contain one.**
+
+* ⛔ **TWO BLOCKERS ON THE ONLY CORPUS THAT COULD TEST IT:**
+  1. **GEOMETRY.** comma2k19's entire field is **65.203°**; our frame is **120°**. The
+     trainer warns on every run: *"comma2k19 cannot supply it at any resolution — it must
+     be letterboxed (explicit unobserved mask), given its own frame, or dropped from the
+     mix. That is a PI decision, not a default."* Any comma2k19 arm therefore breaks
+     same-data comparability with every v7 arm.
+  2. **DATA.** comma2k19 is **not on Thor** — only `extract_comma2k19.py` and its tests.
+
+* ⭐ **THE CHEAPEST DISCRIMINATING TEST NEEDS NO ARM, AND IT TRIAGES THE WHOLE QUESTION:**
+  once the data is present, correlate **CAN steering against the curvature-derived proxy
+  on the same clips**. If r ≈ 0.999 — the same regime as our action's 0.9988 with realised
+  pose change — then even a CAN command is nearly the realised path, and P2(b) is a weak
+  lever that does not deserve an arm. If r is materially lower, there **is** independent
+  command information and P2(b) becomes the strongest open candidate. ⚠️ Data-only: no
+  training, no GPU, and it decides whether to spend either.
+
 * **CLOSES WHEN:** (a), (b) and (c) are each measured, or one of them is confirmed and
-  the fix raises the action ratio materially.
+  the fix raises the action ratio materially. ⚠️ **(b) additionally needs a PI call on the
+  geometry** before any comma2k19 arm — that decision is named above and is not mine.
 
 ## P3 — DRIFT: A REAL, SEED-STABLE 3.3× EFFECT WHOSE CAUSE IS UNKNOWN
 
