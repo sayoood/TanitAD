@@ -969,16 +969,29 @@ class RefAV1(nn.Module):
                     "labels without future_feats: the label terms attach to "
                     "the training loss, which does not exist here — they "
                     "would be accepted and silently unused")
+            # ⭐ -100 IS THE NO-LABEL MARKER (cross_entropy's ignore_index) —
+            # the loader emits it for out-of-band windows and unlabeled
+            # episodes (97.0 % of B1 episodes carry a record, MEASURED
+            # 2026-09-01: 4,572/4,713 clip ids join). The range check
+            # validates only the LABELED rows, and an all-ignored family is
+            # SKIPPED rather than averaged — an all-ignored CE is NaN
+            # (MEASURED, pinned in tests/test_refav1_loader_labels.py), and a
+            # NaN here would poison every weight while reading as a batch
+            # hiccup, the exact family the short-future guard above refuses.
             tac_terms = []
             for name, lbl, key, n in (
                     ("lat", lat_label, "lat_logits", self.n_lat),
                     ("lon", lon_label, "lon_logits", self.n_lon)):
                 if lbl is None:
                     continue
-                if int(lbl.min()) < 0 or int(lbl.max()) >= n:
+                valid = lbl[lbl != -100]
+                if valid.numel() and (int(valid.min()) < 0
+                                      or int(valid.max()) >= n):
                     raise ValueError(
                         f"{name}_label outside [0, {n}) — vocabulary "
                         f"{self.cfg.tac_vocab_version} has {n} {name} actions")
+                if valid.numel() == 0:
+                    continue                      # all-ignored: skip, not NaN
                 out[f"loss_{name}_label"] = F.cross_entropy(out[key], lbl)
                 tac_terms.append(out[f"loss_{name}_label"])
             if tac_terms:
@@ -990,12 +1003,15 @@ class RefAV1(nn.Module):
                     raise ValueError(
                         "route_label supplied but the strategic policy emits "
                         "no route_logits")
-                if int(route_label.min()) < 0 or int(route_label.max()) >= rl.shape[-1]:
+                rvalid = route_label[route_label != -100]
+                if rvalid.numel() and (int(rvalid.min()) < 0
+                                       or int(rvalid.max()) >= rl.shape[-1]):
                     raise ValueError(
                         f"route_label outside [0, {rl.shape[-1]})")
-                out["loss_route_label"] = F.cross_entropy(rl, route_label)
-                out["loss"] = (out["loss"] + self.cfg.w_str_label
-                               * out["loss_route_label"])
+                if rvalid.numel():
+                    out["loss_route_label"] = F.cross_entropy(rl, route_label)
+                    out["loss"] = (out["loss"] + self.cfg.w_str_label
+                                   * out["loss_route_label"])
 
         # ---- the proposal imitation term (Drive-JEPA-adapted, 2026-09-01) --
         # The demo IS the input action sequence's first plan window — no new
