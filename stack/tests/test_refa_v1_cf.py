@@ -24,7 +24,7 @@ def _tiny(**kw) -> RefAV1Config:
     base = dict(tac_vocab_version="v6.0", d_enc=32, d_state=32, n_tokens=8,
                 op_dt=0.2, op_steps=30, op_layers=1, op_heads=2, op_window=2,
                 tac_dt=0.6, tac_steps=10, tac_queries=4, tac_layers=1,
-                str_dt=1.5, str_steps=4, str_dim=8, str_layers=1)
+                str_dt=1.2, str_steps=5, str_dim=8, str_layers=1)
     base.update(kw)
     return RefAV1Config(**base)
 
@@ -61,7 +61,7 @@ def test_on_it_emits_the_floor_and_the_excess():
     assert out["cf_no_info_floor"] == pytest.approx(math.log(4.0))
     assert out["cf_chance_acc"] == pytest.approx(0.25)
     assert out["cf_excess"] == pytest.approx(
-        out["cf_no_info_floor"] - float(out["cf_loss"]), abs=1e-6)
+        out["cf_no_info_floor"] - float(out["cf_loss"].detach()), abs=1e-6)
     assert torch.isfinite(out["cf_loss"])
 
 
@@ -78,7 +78,7 @@ def test_AN_ACTION_BLIND_PREDICTOR_SCORES_EXACTLY_THE_FLOOR():
 
     m.operative.rollout = action_blind
     out = m(f, a, future_feats=fut)
-    assert float(out["cf_loss"]) == pytest.approx(math.log(4.0), abs=1e-5)
+    assert float(out["cf_loss"].detach()) == pytest.approx(math.log(4.0), abs=1e-5)
     assert out["cf_excess"] == pytest.approx(0.0, abs=1e-5)
 
 
@@ -130,8 +130,9 @@ def test_the_term_reaches_the_total_loss_and_backprops():
     feat_only = (m.cfg.w_feat_op * out["loss_feat_op"]
                  + m.cfg.w_feat_tac * out["loss_feat_tac"]
                  + m.cfg.w_feat_str * out["loss_feat_str"])
-    assert float(out["loss"]) == pytest.approx(
-        float(feat_only) + 2.0 * float(out["cf_loss"]), abs=1e-5)
+    assert float(out["loss"].detach()) == pytest.approx(
+        float(feat_only.detach()) + 2.0 * float(out["cf_loss"].detach()),
+        abs=1e-5)
     out["loss"].backward()
     g = [p.grad for p in m.operative.parameters() if p.grad is not None]
     assert g and any(float(x.abs().sum()) > 0 for x in g)

@@ -42,6 +42,7 @@ def build_model(args) -> RefAV1:
     cfg = RefAV1Config(
         strategic_cfg=None if args.no_hierarchy else StrategicPolicyConfig(),
         tactical_cfg=None if args.no_hierarchy else TacticalPolicyConfig(),
+        w_cf=args.w_cf, cf_negs=args.cf_negs, cf_at_step=args.cf_at_step,
     )
     if args.smoke:
         cfg.d_enc, cfg.n_tokens, cfg.d_state = 32, 8, 32
@@ -98,6 +99,28 @@ def main(argv=None) -> int:
     ap.add_argument("--no-hierarchy", action="store_true",
                     help="ablation arm: drop both brains (they are a matched "
                          "set) — the change-#7 control")
+    # --- change #10 was UNREACHABLE FROM THE LAUNCH LINE until these existed - #
+    # ⛔ The counterfactual term shipped in the model with no flag to turn it
+    # on. That is the advertised-but-inert defect one level out: `sanity()`
+    # refuses w_cf with zero negatives, and meanwhile NO launch could set w_cf
+    # at all. A capability with no switch is not a capability.
+    ap.add_argument("--w-cf", type=float, default=0.0,
+                    help="weight on the counterfactual-action InfoNCE (change "
+                         "#10). 0 = off. Its no-information floor is "
+                         "ln(1+cf_negs), so cf_excess > 0 PROVES the predictor "
+                         "used the action.")
+    ap.add_argument("--cf-negs", type=int, default=3)
+    ap.add_argument("--cf-at-step", type=int, default=4)
+    # --- MM-E19 carried over: full-chain BPTT needs a tighter clip ---------- #
+    ap.add_argument("--clip", type=float, default=1.0,
+                    help="grad-norm clip. ⚠️ MM-E19 MEASURED a 60-step "
+                         "full-chain rollout diverging (gnorm 2.1e9) at the "
+                         "loose default and surviving at 0.5. v1 rolls 30 "
+                         "steps with full-chain gradient through an 80 M "
+                         "predictor — consider 0.5 for the first real arm.")
+    ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--resume", action="store_true",
+                    help="continue from <out>/ckpt.pt if present")
     ap.add_argument("--smoke", action="store_true")
     ap.add_argument("--device", default="cuda" if torch.cuda.is_available()
                     else "cpu")
@@ -108,9 +131,15 @@ def main(argv=None) -> int:
     if a.cache is not None:
         verify_cache(a.cache)
 
-    torch.manual_seed(0)
+    torch.manual_seed(a.seed)
     model = build_model(a).to(a.device)
     cfg = model.cfg
+    # ⛔ SANITY BEFORE THE SPEND, NOT AFTER. `sanity()` is what refuses an
+    # inexpressible ladder (a rate that is not an integer multiple of op_dt) and
+    # an advertised-but-inert counterfactual term. It was never called here, so
+    # a 30k-step arm could have run to completion on a config the model itself
+    # would have rejected.
+    cfg.sanity()
     a.out.mkdir(parents=True, exist_ok=True)
 
     # Stability item 4: adapter and predictor are SEPARATE param groups.
@@ -135,15 +164,38 @@ def main(argv=None) -> int:
         feats, _, _ = data.batch()
         model.std.fit(feats.to(a.device))
 
+    # ⛔ THE AUXILIARY HEAD IS ADVERTISED AND INERT — REFUSED RATHER THAN FAKED.
+    # The loop read `out["loss"] + cfg.w_aux_head * torch.zeros(())`: the
+    # config carries w_aux_head 0.1, the launch record would show it, and the
+    # term contributes EXACTLY nothing because no imitation target is wired.
+    # That is the defect `sanity()` refuses for w_cf, sitting in the trainer.
+    # ⚠️ Fixing it means supplying a proposal target, which the cache contract
+    # does not yet carry — so this REFUSES instead of pretending.
+    if cfg.w_aux_head:
+        raise SystemExit(
+            f"w_aux_head is {cfg.w_aux_head} but no imitation target exists in "
+            "the cache contract, so the term would be advertised in the launch "
+            "record and contribute exactly zero. Set it to 0.0, or wire the "
+            "proposal target first.")
+
+    start_step = 0
+    if a.resume and (a.out / "ckpt.pt").exists():
+        ck = torch.load(a.out / "ckpt.pt", map_location=a.device,
+                        weights_only=False)
+        model.load_state_dict(ck["model"])
+        opt.load_state_dict(ck["opt"])
+        start_step = int(ck["step"])
+        print(f"resumed from step {start_step}")
+
     log = (a.out / "train_log.jsonl").open("a", encoding="utf-8")
     t0 = time.time()
-    for step in range(1, a.steps + 1):
+    for step in range(start_step + 1, a.steps + 1):
         feats, actions, future = (x.to(a.device) for x in data.batch())
         out = model(feats, actions, future_feats=future)
-        loss = out["loss"] + cfg.w_aux_head * torch.zeros((), device=a.device)
+        loss = out["loss"]
         opt.zero_grad(set_to_none=True)
         loss.backward()
-        gnorm = nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+        gnorm = nn.utils.clip_grad_norm_(model.parameters(), a.clip)
         opt.step()
 
         if step % a.log_every == 0 or step == 1:
@@ -153,12 +205,29 @@ def main(argv=None) -> int:
                 # 0.8011 vs 0.220 random-init — i.e. NOT collapsed. If v1 ever
                 # drives this toward 0 the run is dead regardless of the loss.
                 adapter_std = float(model.encode(feats).std(dim=(0, 1, 2)).mean())
-            row = {"step": step, "loss": float(loss),
-                   "loss_feat_op": float(out["loss_feat_op"]),
-                   "loss_feat_tac": float(out["loss_feat_tac"]),
-                   "loss_feat_str": float(out["loss_feat_str"]),
+            row = {"step": step, "loss": float(loss.detach()),
+                   "loss_feat_op": float(out["loss_feat_op"].detach()),
+                   "loss_feat_tac": float(out["loss_feat_tac"].detach()),
+                   "loss_feat_str": float(out["loss_feat_str"].detach()),
                    "grad_norm": float(gnorm), "adapter_std": adapter_std,
+                   "clip": a.clip,
+                   # ⭐ THE REALISED LADDER, IN EVERY ROW. The horizon a level
+                   # actually trains on is now readable from the log instead of
+                   # inferred from the config — which is how a strategic rung
+                   # ran at 1.6 s reaching 5.0 s while its config said 1.5/6.0
+                   # and every test passed.
+                   "tac_target_s": [round((k + 1) * cfg.op_dt, 3)
+                                    for k in out["tac_target_idx"]],
+                   "str_target_s": [round((k + 1) * cfg.op_dt, 3)
+                                    for k in out["str_target_idx"]],
                    "elapsed_s": round(time.time() - t0, 1)}
+            if cfg.w_cf:
+                # ⭐ cf_excess is measured against a KNOWN floor, ln(1+cf_negs):
+                # > 0 proves the predictor used its action, with no baseline to
+                # argue about. This is the number the arm exists to move.
+                row.update(cf_loss=float(out["cf_loss"].detach()),
+                           cf_no_info_floor=out["cf_no_info_floor"],
+                           cf_excess=out["cf_excess"])
             log.write(json.dumps(row) + "\n")
             log.flush()
             print(json.dumps(row))

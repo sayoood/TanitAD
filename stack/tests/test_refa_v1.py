@@ -163,11 +163,21 @@ def test_the_predictor_is_residual_so_the_6s_rollout_starts_near_identity():
 
 
 def test_the_rollout_reaches_the_full_configured_horizon():
+    """⚠️ REWRITTEN 2026-08-31. This asserted `str_pred.shape[1] == 4` with the
+    comment `# 6.0 s at 1.5` — a hardcoded step count standing in for a horizon
+    claim. It kept passing while the strategic rung actually ran at 1.6 s and
+    reached 5.0 s, and it FAILED the repair that fixed exactly that. ⇒ derive
+    the count from the config and assert the thing the name promises: the
+    HORIZON, in seconds."""
     m = RefAV1(_tiny())
-    out = m(torch.randn(1, 4, 8, 32), torch.zeros(1, 30, 2))
-    assert out["op_pred"].shape[1] == 30            # 6.0 s at 0.2
-    assert out["tac_pred"].shape[1] == 10           # 6.0 s at 0.6
-    assert out["str_pred"].shape[1] == 4            # 6.0 s at 1.5
+    c = m.cfg
+    out = m(torch.randn(1, 4, 8, 32), torch.zeros(1, c.op_steps, 2))
+    for key, steps, dt in (("op_pred", c.op_steps, c.op_dt),
+                           ("tac_pred", c.tac_steps, c.tac_dt),
+                           ("str_pred", c.str_steps, c.str_dt)):
+        assert out[key].shape[1] == steps, key
+        assert out[key].shape[1] * dt == pytest.approx(6.0), (
+            f"{key} reaches {out[key].shape[1] * dt} s, not 6.0")
 
 
 # ------------------------------------------------- change #7: the hierarchy --

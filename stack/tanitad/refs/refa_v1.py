@@ -107,8 +107,22 @@ class RefAV1Config:
     tac_layers: int = 4
 
     # --- strategic: its OWN predictor on a strategy-only subspace --------- #
-    str_dt: float = 1.5
-    str_steps: int = 4                    # 4 * 1.5 = 6.0 s
+    # ⚠️⚠️ FORCED REPAIR 2026-08-31, WAS 1.5 x 4 — PENDING PI CONFIRMATION.
+    # 1.5 / op_dt 0.2 = 7.5 is NOT an integer, and the abstracted levels
+    # subsample the operative grid rather than indexing frames. The shipped
+    # default was therefore inexpressible: it silently rounded to stride 8 and
+    # ran the strategic rung at 1.6 s, of which only 3 of its 4 steps fitted
+    # inside a 30-step rollout — a realised horizon of 5.0 s against a config
+    # that said 6.0. ⇒ 1.5 could not stay.
+    # ⭐ 1.2 x 5 is the MINIMUM-DEPARTURE repair and is exact on every count:
+    # 1.2/0.2 = 6, and 5 x 6 = 30 = op_steps, so the targets land on
+    # 1.2 / 2.4 / 3.6 / 4.8 / 6.0 s with nothing truncated.
+    # ⛔ The alternatives that are equally exact — 1.0x6, 2.0x3, 3.0x2 — are a
+    # DESIGN choice (3.0x2 would match the 1:3:15 ratio MM-E15 read off the
+    # corpus), and that choice is the PI's. See `Project Steering/
+    # V7_LAUNCH_GATE.md`. This value keeps the arm constructible meanwhile.
+    str_dt: float = 1.2
+    str_steps: int = 5                    # 5 * 1.2 = 6.0 s, stride 6, exact
     str_dim: int = 256
     str_layers: int = 2
 
@@ -143,7 +157,13 @@ class RefAV1Config:
     w_feat_op: float = 1.0
     w_feat_tac: float = 0.5
     w_feat_str: float = 0.25
-    w_aux_head: float = 0.1               # imitation proposal: AUXILIARY only
+    # ⚠️ WAS 0.1 — set to 0.0 on 2026-08-31 so the advertisement matches the
+    # code. No imitation target exists in the stage-1 cache contract, so the
+    # trainer could only ever have multiplied this by zero. A non-zero weight
+    # here appeared in the config, in the launch record and in any published
+    # description of the recipe, while contributing nothing to the loss.
+    # ⇒ raise it again ONLY together with a real proposal target.
+    w_aux_head: float = 0.0               # imitation proposal: AUXILIARY only
 
     # --- change #10: the COUNTERFACTUAL-ACTION term (PI 2026-08-31) -------- #
     # ⛔ WHY v1 NEEDED A TENTH CHANGE. Change #4 makes the primary loss "predict
@@ -188,6 +208,34 @@ class RefAV1Config:
             raise ValueError("tactical horizon must reach exactly 6.0 s")
         if abs(self.str_dt * self.str_steps - 6.0) > 1e-6:
             raise ValueError("strategic horizon must reach exactly 6.0 s")
+        # ⛔⛔ THE CHECK THAT WAS MISSING, AND IT COST TWO LEVELS OF THE LADDER.
+        # The abstracted levels do NOT index frames — they SUBSAMPLE the
+        # operative target grid (`tgt[:, s-1::s]`). So a rate that is not an
+        # integer multiple of ``op_dt`` is INEXPRESSIBLE: the code silently
+        # rounds it to the nearest whole stride and trains a ladder nobody
+        # chose. MEASURED on the shipped default: str_dt 1.5 / op_dt 0.2 = 7.5,
+        # rounded to 8 -> the strategic rung ran at 1.6 s, and only 3 of its 4
+        # steps existed inside a 30-step rollout.
+        # ⚠️ The three-rates-reach-6.0-s test passed throughout, because it
+        # asserted ``dt * steps == 6.0`` on the CONFIG and never once looked at
+        # which future frame a prediction was regressed onto.
+        for name, dt, steps in (("tac_dt", self.tac_dt, self.tac_steps),
+                                ("str_dt", self.str_dt, self.str_steps)):
+            ratio = dt / self.op_dt
+            stride = int(round(ratio))
+            if abs(ratio - stride) > 1e-6:
+                raise ValueError(
+                    f"{name} ({dt}) is not an integer multiple of op_dt "
+                    f"({self.op_dt}): ratio {ratio}. The abstracted levels "
+                    "subsample the operative grid, so this rate cannot be "
+                    "represented and would be silently rounded to "
+                    f"{stride * self.op_dt:.4g} s")
+            if stride * steps > self.op_steps:
+                raise ValueError(
+                    f"{name} ladder needs operative index {stride * steps - 1} "
+                    f"but the rollout has only {self.op_steps} steps: "
+                    f"{steps - self.op_steps // stride} of its {steps} targets "
+                    "would be silently dropped")
         if int(round(self.plan_horizon_s / self.op_dt)) > self.op_steps:
             raise ValueError("plan horizon exceeds the operative rollout")
         if self.w_cf < 0.0:
@@ -534,6 +582,25 @@ class RefAV1(nn.Module):
         return self.tac_pool(q, field, field, need_weights=False)[0]
 
     # -- training ---------------------------------------------------------- #
+    def _stride(self, dt: float) -> int:
+        """How many operative steps one ``dt``-rate step spans.
+
+        ⭐ THE SINGLE PLACE a rate becomes an index step, so the ladder cannot
+        drift between the loss and the targets again. ``sanity()`` has already
+        refused any ``dt`` that is not an integer multiple of ``op_dt``, so the
+        rounding here is exact by construction rather than by luck.
+
+        ⛔ AND THE PHASE IS THE WHOLE POINT. Targets are sliced
+        ``[stride-1::stride]``, not ``[::stride]``: ``rollout()[:, 0]`` is the
+        state after ONE step, so a level whose step spans ``stride`` operative
+        steps must be regressed onto the observation ``stride`` steps ahead —
+        not onto the one 1 step ahead. MEASURED before the fix: **10 of 10
+        tactical and 4 of 4 strategic targets were wrong**, every one shifted
+        early by a full stride, which trained both abstracted levels to be
+        0.2 s predictors and silently shortened the ladder to 5.6 s / 5.0 s.
+        """
+        return max(1, int(round(dt / self.cfg.op_dt)))
+
     def forward(self, feats: Tensor, actions: Tensor, *,
                 future_feats: Tensor | None = None,
                 nav_cmd: Tensor | None = None,
@@ -576,10 +643,14 @@ class RefAV1(nn.Module):
                 tac.get("maneuver_logits")
 
         out["op_pred"] = self.operative.rollout(last, actions, intent=intent)
-        tac_a = actions[:, ::max(1, int(round(self.cfg.tac_dt / self.cfg.op_dt)))]
+        # ⚠️ ACTIONS keep phase ``[::stride]`` while TARGETS take
+        # ``[stride-1::stride]``, and the asymmetry is deliberate: a level's
+        # step j spans operative steps [j*s, (j+1)*s), so it CONSUMES the
+        # action that opens that window and PREDICTS the state that closes it.
+        tac_a = actions[:, ::self._stride(self.cfg.tac_dt)]
         out["tac_pred"] = self.tactical.rollout(
             self._tac_field(last), tac_a[:, :self.cfg.tac_steps], intent=intent)
-        str_a = actions[:, ::max(1, int(round(self.cfg.str_dt / self.cfg.op_dt)))]
+        str_a = actions[:, ::self._stride(self.cfg.str_dt)]
         out["str_pred"] = self.strategic.rollout(
             self.strategic.subspace(last), str_a[:, :self.cfg.str_steps])
         out["proposal"] = self.proposal(pooled).reshape(
@@ -591,13 +662,21 @@ class RefAV1(nn.Module):
             out["loss_feat_op"] = F.mse_loss(out["op_pred"][:, :k], tgt[:, :k])
             tq = torch.stack([self._tac_field(tgt[:, i])
                               for i in range(tgt.shape[1])], dim=1)
-            step = max(1, int(round(self.cfg.tac_dt / self.cfg.op_dt)))
-            tq = tq[:, ::step][:, :out["tac_pred"].shape[1]]
+            step = self._stride(self.cfg.tac_dt)
+            tq = tq[:, step - 1::step][:, :out["tac_pred"].shape[1]]
             kt = min(tq.shape[1], out["tac_pred"].shape[1])
             out["loss_feat_tac"] = F.mse_loss(out["tac_pred"][:, :kt], tq[:, :kt])
-            sstep = max(1, int(round(self.cfg.str_dt / self.cfg.op_dt)))
+            sstep = self._stride(self.cfg.str_dt)
             st = self.strategic.subspace(tgt.flatten(0, 1)).reshape(
-                tgt.shape[0], tgt.shape[1], -1)[:, ::sstep]
+                tgt.shape[0], tgt.shape[1], -1)[:, sstep - 1::sstep]
+            # ⭐ THE MODEL REPORTS ITS OWN ALIGNMENT. Emitted so the realised
+            # ladder is OBSERVABLE — by the test, and once per run in the log —
+            # instead of being re-derived by whoever is checking. A test that
+            # recomputes the slice it is auditing would pass against the very
+            # bug it exists to catch; these are the indices actually used.
+            out["tac_target_idx"] = list(range(step - 1, tgt.shape[1], step))[:kt]
+            out["str_target_idx"] = list(
+                range(sstep - 1, tgt.shape[1], sstep))[:st.shape[1]]
             ks = min(st.shape[1], out["str_pred"].shape[1])
             out["loss_feat_str"] = F.mse_loss(out["str_pred"][:, :ks],
                                               st[:, :ks])

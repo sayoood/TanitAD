@@ -423,6 +423,96 @@ interface and supervised head (FROST-Drive: a frozen 14 B **beats the same encod
 fine-tuned**), or as a **moderate frozen encoder with future-feature prediction AND test-time
 planning** (DINO-WM, V-JEPA 2-AC). v1 commits to configuration B in full.
 
+## ⛔⛔ refav1's TEMPORAL LADDER WAS NOT IMPLEMENTED — found and repaired 2026-08-31
+
+⚠️ **This was found by following the cache arithmetic one step further, and it is a bigger
+finding than the cache.** Change #9 — the three-rate ladder, which is the PI's
+three-planner directive and the one structure MM-E15 says the programme most needs — was
+**not in the model**. Both abstracted levels were being trained as 0.2 s predictors.
+
+### The defect, MEASURED through the real forward path
+
+The abstracted levels do not index frames; they **subsample the operative target grid**.
+The targets were sliced `tgt[:, ::stride]` when the correct phase is
+`tgt[:, stride-1::stride]` — because `rollout()[:, 0]` is the state after **one** step, so a
+level whose step spans `stride` operative steps must be regressed onto the observation
+`stride` steps ahead, not the one 1 step ahead.
+
+```
+TACTICAL   step j should sit at (j+1)*0.6 s        STRATEGIC  should sit at (j+1)*1.5 s
+ j  target at   should be                           j  target at   should be
+ 0    0.20 s      0.60 s   MISMATCH                 0    0.20 s      1.50 s   MISMATCH
+ 1    0.80 s      1.20 s   MISMATCH                 1    1.80 s      3.00 s   MISMATCH
+ …    …           …        MISMATCH                 2    3.40 s      4.50 s   MISMATCH
+ 9    5.60 s      6.00 s   MISMATCH                 3    5.00 s      6.00 s   MISMATCH
+
+tactical  10 of 10 wrong      realised horizon 5.60 s   (config said 6.00)
+strategic  4 of 4  wrong      realised horizon 5.00 s   (config said 6.00)
+operative  correct — it is the control, and it is the level with no stride
+```
+
+⭐ **Every target of both abstracted levels was wrong**, each shifted early by exactly one
+stride. The strategic rung's first step was regressed onto the frame **0.2 s** ahead while
+claiming **1.5 s** — off by 7.5×.
+
+### ⛔ AND A SECOND, INDEPENDENT DEFECT IN THE SAME LINE
+
+`str_dt 1.5 / op_dt 0.2 = 7.5`, and `int(round(7.5)) = 8`. So the strategic rung silently
+ran at **1.6 s**, and only **3** of its 4 steps fitted inside a 30-step rollout. **The
+config said 1.5 × 4 = 6.0 s; the code ran 1.6 × 3 = 5.0 s.** ⇒ this is the same root cause
+as the cache-grid finding above, reached from the opposite direction: a rate that is not an
+integer multiple of `op_dt` is **inexpressible**, not merely awkward to store.
+
+### ⚠️ WHY 39/39 TESTS WERE GREEN THROUGHOUT
+
+```python
+def test_change_9_all_three_rates_reach_exactly_six_seconds(dt, steps):
+    assert dt * steps == pytest.approx(6.0)
+```
+
+⛔ **It asserts the CONFIG arithmetic.** `1.5 * 4 == 6.0` passes trivially. The test never
+constructed a model, never called `forward`, and never asked which future frame a
+prediction was regressed onto. ⇒ **the advertisement was tested, not the code** — the same
+defect class as *advertised-but-inert*, one level out. A second test hardcoded
+`str_pred.shape[1] == 4` with the comment `# 6.0 s at 1.5`, so it *failed the repair* that
+fixed the bug.
+
+### ✅ THE REPAIR, with a negative control
+
+* `[stride-1::stride]` on both abstracted target slices; a single `_stride()` helper is now
+  the only place a rate becomes an index step. ⚠️ Actions keep `[::stride]` — a level
+  **consumes** the action opening its window and **predicts** the state closing it.
+* `sanity()` **refuses** a rate that is not an integer multiple of `op_dt`, and is now
+  **called by the trainer** before the spend (it never was).
+* ⭐ **The model reports its own alignment** — `tac_target_idx` / `str_target_idx` in the
+  output, `tac_target_s` / `str_target_s` in every log row. The realised ladder is now
+  readable from the log instead of inferred from the config. The tests **observe** those
+  indices rather than recomputing the slice, because a test that re-derives what it audits
+  passes against the bug as happily as against the fix.
+* ⭐ **NEGATIVE CONTROL RUN:** re-introducing `[::stride]` fails **5** tests including both
+  load-bearing ones; restoring passes **12**. Full refav1 suite **76 passed**; every other
+  module importing `refa_v1` **64 passed**.
+* **Smoke with the ladder logged:** `tac_target_s [0.6 … 6.0]`, `str_target_s [1.2 … 6.0]`.
+
+### ⚠️ `str_dt` CHANGED TO 1.2 × 5 AS A FORCED REPAIR — PI CONFIRMATION WANTED
+
+1.5 could not stay: it is inexpressible, and with the guard in place `RefAV1` refuses to
+construct at all. **1.2 × 5 is the minimum-departure repair and is exact on every count**
+(1.2/0.2 = 6; 5 × 6 = 30 = `op_steps`; targets on 1.2/2.4/3.6/4.8/6.0 with no truncation).
+⛔ Choosing among the equally exact alternatives — **1.0×6, 2.0×3, 3.0×2** — is a design
+call and is yours; 3.0×2 would match the **1 : 3 : 15** ratio MM-E15 read off the corpus.
+The value in code keeps the arm constructible meanwhile and is flagged as provisional at
+the definition site.
+
+### ⭐ WHAT THIS CHANGES ABOUT THE PROGRAMME'S READING OF refav1
+
+The claim *"refav1 already implements the temporal abstraction MM-E15 asks for"* — which I
+made on 2026-08-31 — **was true of the design document and false of the code.** No refav1
+arm has ever run, so nothing published is affected; but the convergence I reported between
+change #9 and MM-E15 was a convergence of two documents, not of a document and a model.
+
+---
+
 ## ⛔ refav1's STAGE-1 CACHE — the blocker is the LADDER'S FRAME GRID, not the disk
 
 Went to wire refav1's DataLoader. The trainer never touches an image — it consumes a
