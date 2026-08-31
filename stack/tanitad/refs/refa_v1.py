@@ -230,7 +230,11 @@ class RefAV1Config:
     # When on, the initial state becomes  z + W_m(z_t − z_{t−1})  with a FULL
     # cross-channel W_m (down-scaled init, so training starts indistinguishable
     # from baseline), and all three levels inherit it because they read the
-    # same injected state. The hypothesis is H-REFAV1-MOTION; the arm decides.
+    # same injected state. ⛔ H-REFAV1-MOTION (2026-09-02): REFUTED for this
+    # form at probe scale — the SHUFFLED-diff control gained as much as the
+    # true difference (and more at k16-30), so the benefit is channel
+    # augmentation, not motion. Stays default-OFF; no launch line may carry
+    # it without a new prereg separating augmentation from motion.
     motion_inject: bool = False
 
     # --- v7.2 LABEL supervision (PI 2026-08-31: "It must be trained with this

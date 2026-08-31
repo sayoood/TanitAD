@@ -1,0 +1,32 @@
+train 19 eps / val 5 eps (['ca5ca8f6', 'd61ccc80', 'e0c9fdb2', 'eb21b1bc', 'f5ba6098'])
+  [base] step    0  op 1.5031    3.9s
+  [base] step  100  op 0.7499  442.5s
+  [base] step  200  op 0.6575  888.0s
+  [base] step  300  op 0.4904  1330.4s
+  [base] step  400  op 0.4987  1763.3s
+  [base] step  500  op 0.6511  2194.2s
+  [motion] step    0  op 1.4975    4.1s
+  [motion] step  100  op 0.5439  443.7s
+  [motion] step  200  op 0.5051  887.1s
+  [motion] step  300  op 0.3758  1329.5s
+  [motion] step  400  op 0.3422  1783.8s
+  [motion] step  500  op 0.5841  2237.4s
+  [shuffle] step    0  op 1.4981    4.3s
+  [shuffle] step  100  op 0.5804  485.0s
+  [shuffle] step  200  op 0.5230  968.2s
+  [shuffle] step  300  op 0.3877  1500.3s
+  [shuffle] step  400  op 0.3474  2046.4s
+  [shuffle] step  500  op 0.5896  2547.5s
+
+held-out feature MSE (frozen space), mean over 5 val episodes
+     arm k1- 1 k2- 5 k6-15 k16-30   (copy-last floor in brackets)
+    base 0.4608 0.4845 0.5143 0.5460   [0.2311 0.3763 0.5138 0.6122]
+  motion 0.4130 0.4407 0.4751 0.5032   [0.2311 0.3763 0.5138 0.6122]
+ shuffle 0.4210 0.4438 0.4678 0.4780   [0.2311 0.3763 0.5138 0.6122]
+
+per-episode sign of (base - motion) at k6-30, motion wins if >0:
+  ca5ca8f6-0ed  +0.04340
+  d61ccc80-cc1  +0.04582
+  e0c9fdb2-084  +0.04129
+  eb21b1bc-817  +0.04138
+  f5ba6098-58c  +0.03491
