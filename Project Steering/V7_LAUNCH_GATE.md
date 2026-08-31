@@ -494,15 +494,31 @@ fixed the bug.
   module importing `refa_v1` **64 passed**.
 * **Smoke with the ladder logged:** `tac_target_s [0.6 … 6.0]`, `str_target_s [1.2 … 6.0]`.
 
-### ⚠️ `str_dt` CHANGED TO 1.2 × 5 AS A FORCED REPAIR — PI CONFIRMATION WANTED
+### ✅ DECIDED (PI, 2026-08-31): `str_dt = 3.0 × 2`, AND THE STRATEGIC PREDICTOR EXTENDS PAST 6 s
 
-1.5 could not stay: it is inexpressible, and with the guard in place `RefAV1` refuses to
-construct at all. **1.2 × 5 is the minimum-departure repair and is exact on every count**
-(1.2/0.2 = 6; 5 × 6 = 30 = `op_steps`; targets on 1.2/2.4/3.6/4.8/6.0 with no truncation).
-⛔ Choosing among the equally exact alternatives — **1.0×6, 2.0×3, 3.0×2** — is a design
-call and is yours; 3.0×2 would match the **1 : 3 : 15** ratio MM-E15 read off the corpus.
-The value in code keeps the arm constructible meanwhile and is flagged as provisional at
-the definition site.
+Verbatim: *"I think you can use 3.0 x2. The strategic layer must have its long horizon
+predictor in the abstract latent space not only 6 seconds."* Two commitments, both now
+IMPLEMENTED and tested:
+
+1. **In-window ladder 0.2 / 0.6 / 3.0 s = 1 : 3 : 15** — the exact ratio MM-E15 read off
+   the corpus label bands. Stride 15, 2 × 15 = 30 = `op_steps`, targets observed at 3.0
+   and 6.0 s (`test_the_PI_DECIDED_default_3_0x2_lands_exactly`).
+2. **The long-horizon strategic extension** (`str_horizon_s = 12.0`): the strategic
+   SUBSPACE predictor **continues autoregressively past the operative grid** — one
+   rollout, not a second head (pinned bit-identical in-window) — with 2 extra ticks at
+   **9.0 / 12.0 s**, supervised from CACHED features at 6.0 + k·3.0 s
+   (`str_ext_targets`/`str_ext_actions`, a refused-if-unpaired contract). ⇒ §4b's 6 s
+   binds the CONTROL OUTPUT and the token-field levels; the strategic latent predictor
+   reaches **inside the strategic label band [8, 30)**, at MM-E15's median manoeuvre
+   start of 12.5 s. This resolves the "strategic by rate, not by band" defect for refav1.
+   ⭐ Grid check: ext ticks at 9.0/12.0 s are cache steps 45/60 on the 0.2 s grid — the
+   **295.9 GiB cache is unchanged** (episodes are 20 s, so 12 s is always in-cache; the
+   loader loses ~1.2 s of window starts per episode to the longer future).
+
+⚠️ Found while implementing: a `future_feats` shorter than one strategic stride sliced to
+an EMPTY target and produced a **NaN total loss** that would have backpropagated as a
+"batch hiccup" — now refused by name. Suite after the change: **151 passed** (refav1 +
+every importer).
 
 ### ⭐ WHAT THIS CHANGES ABOUT THE PROGRAMME'S READING OF refav1
 
@@ -592,7 +608,7 @@ edge of 8 s.** So it is "strategic" by *rate*, not by the band its labels occupy
 the same defect MM-E15 found in the v7 arms, reproduced one level up: a level named for a
 horizon it does not reach.
 
-⚠️ **This is a PI question, not a fix I can apply**, because it touches the §4b horizon:
+✅ **ANSWERED (PI, 2026-08-31)** — *"not only 6 seconds"*: §4b binds the control output, not the strategic context predictor, which now extends to 12.0 s (see the DECIDED section below). The question as originally posed:
 
 > §4b binds the **control output** to 6 s. Does it also bind the **strategic context
 > predictor**, whose job is to FiLM the level below it rather than to emit a trajectory?

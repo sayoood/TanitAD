@@ -24,12 +24,17 @@ def _tiny(**kw) -> RefAV1Config:
     base = dict(tac_vocab_version="v6.0", d_enc=32, d_state=32, n_tokens=8,
                 op_dt=0.2, op_steps=30, op_layers=1, op_heads=2, op_window=2,
                 tac_dt=0.6, tac_steps=10, tac_queries=4, tac_layers=1,
-                str_dt=1.2, str_steps=5, str_dim=8, str_layers=1)
+                str_dt=3.0, str_steps=2, str_dim=8, str_layers=1)
     base.update(kw)
     return RefAV1Config(**base)
 
 
-def _batch(c: RefAV1Config, b=4, k=8):
+def _batch(c: RefAV1Config, b=4, k=None):
+    # ⚠️ k defaults to op_steps: a future shorter than one strategic stride
+    # (15 at the decided 3.0 s rate) is now REFUSED by the model — the k=8
+    # shortcut this fixture used produced an empty strategic target and a NaN
+    # loss, which is a real defect the model now refuses by name.
+    k = c.op_steps if k is None else k
     return (torch.randn(b, c.op_window, c.n_tokens, c.d_enc),
             torch.randn(b, max(k, c.op_steps), c.a_dim),
             torch.randn(b, k, c.n_tokens, c.d_enc))

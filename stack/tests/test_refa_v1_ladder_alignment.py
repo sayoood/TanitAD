@@ -24,7 +24,7 @@ def _cfg(**kw) -> RefAV1Config:
     base = dict(d_enc=16, d_state=16, n_tokens=8,
                 op_dt=0.2, op_steps=30, op_layers=1, op_heads=2, op_window=2,
                 tac_dt=0.6, tac_steps=10, tac_queries=4, tac_layers=1,
-                str_dt=1.2, str_steps=5, str_dim=8, str_layers=1)
+                str_dt=3.0, str_steps=2, str_dim=8, str_layers=1)
     base.update(kw)
     return RefAV1Config(**base)
 
@@ -108,13 +108,22 @@ def test_the_overrun_guard_is_a_BACKSTOP_and_cannot_fire_today(dt, steps):
     assert int(round(dt / c.op_dt)) * steps == c.op_steps
 
 
-def test_the_repaired_default_passes_every_check():
-    """⭐ str_dt 1.2 x 5: 1.2/0.2 = 6 exactly, 5*6 = 30 = op_steps exactly, so
-    the targets land on 1.2 / 2.4 / 3.6 / 4.8 / 6.0 s with no truncation."""
+def test_the_PI_DECIDED_default_3_0x2_lands_exactly():
+    """⭐ PI decision 2026-08-31: str_dt 3.0 x 2 — the 1 : 3 : 15 ladder.
+    3.0/0.2 = 15 exactly, 2*15 = 30 = op_steps; targets OBSERVED at operative
+    indices 14 and 29 = 3.0 s and 6.0 s."""
     c = _cfg()
     c.sanity()
-    assert _target_indices(c, "str") == [5, 11, 17, 23, 29]
+    assert _target_indices(c, "str") == [14, 29]
     assert _target_indices(c, "tac") == [2, 5, 8, 11, 14, 17, 20, 23, 26, 29]
+
+
+def test_a_valid_VARIANT_ladder_1_2x5_still_aligns():
+    """The interim repair stays exercised as a variant — the alignment law is
+    rate-generic, not a property of one default."""
+    c = _cfg(str_dt=1.2, str_steps=5)
+    c.sanity()
+    assert _target_indices(c, "str") == [5, 11, 17, 23, 29]
 
 
 # ------------------------------------------------------- end-to-end shapes ----

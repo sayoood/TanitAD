@@ -78,7 +78,14 @@ def test_change_2_encode_refuses_a_narrowed_token_grid():
 
 
 # ------------------------------------------------------------- 6 s horizons --
-@pytest.mark.parametrize("dt,steps", [(0.2, 30), (0.6, 10), (1.5, 4)])
+# ⚠️ REWRITTEN 2026-08-31: the rates are read FROM RefAV1Config, not typed as
+# literals. The literal list still carried (1.5, 4) after the PI retired it —
+# and 1.5 * 4 == 6.0 passes forever, which is how a stale advertisement
+# outlives the design it advertises.
+@pytest.mark.parametrize("dt,steps", [
+    (RefAV1Config.op_dt, RefAV1Config.op_steps),
+    (RefAV1Config.tac_dt, RefAV1Config.tac_steps),
+    (RefAV1Config.str_dt, RefAV1Config.str_steps)])
 def test_change_9_all_three_rates_reach_exactly_six_seconds(dt, steps):
     assert dt * steps == pytest.approx(6.0)
 

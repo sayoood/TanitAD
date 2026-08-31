@@ -107,24 +107,30 @@ class RefAV1Config:
     tac_layers: int = 4
 
     # --- strategic: its OWN predictor on a strategy-only subspace --------- #
-    # ⚠️⚠️ FORCED REPAIR 2026-08-31, WAS 1.5 x 4 — PENDING PI CONFIRMATION.
-    # 1.5 / op_dt 0.2 = 7.5 is NOT an integer, and the abstracted levels
-    # subsample the operative grid rather than indexing frames. The shipped
-    # default was therefore inexpressible: it silently rounded to stride 8 and
-    # ran the strategic rung at 1.6 s, of which only 3 of its 4 steps fitted
-    # inside a 30-step rollout — a realised horizon of 5.0 s against a config
-    # that said 6.0. ⇒ 1.5 could not stay.
-    # ⭐ 1.2 x 5 is the MINIMUM-DEPARTURE repair and is exact on every count:
-    # 1.2/0.2 = 6, and 5 x 6 = 30 = op_steps, so the targets land on
-    # 1.2 / 2.4 / 3.6 / 4.8 / 6.0 s with nothing truncated.
-    # ⛔ The alternatives that are equally exact — 1.0x6, 2.0x3, 3.0x2 — are a
-    # DESIGN choice (3.0x2 would match the 1:3:15 ratio MM-E15 read off the
-    # corpus), and that choice is the PI's. See `Project Steering/
-    # V7_LAUNCH_GATE.md`. This value keeps the arm constructible meanwhile.
-    str_dt: float = 1.2
-    str_steps: int = 5                    # 5 * 1.2 = 6.0 s, stride 6, exact
+    # ⭐ PI DECISION 2026-08-31: **3.0 s × 2** — replacing the inexpressible
+    # 1.5 × 4 (7.5 operative steps, silently rounded to 8 → the rung ran at
+    # 1.6 s with 3 of 4 targets; see D-REFAV1-LADDER) and the interim 1.2 × 5.
+    # 3.0/0.2 = 15 exactly, 2 × 15 = 30 = op_steps, targets at 3.0 / 6.0 s —
+    # and the resulting ladder 0.2 : 0.6 : 3.0 = **1 : 3 : 15** matches the
+    # ratio MM-E15 read off the corpus label bands.
+    str_dt: float = 3.0
+    str_steps: int = 2                    # 2 * 3.0 = 6.0 s in-window, stride 15
     str_dim: int = 256
     str_layers: int = 2
+
+    # --- ⭐ the LONG-HORIZON strategic extension (PI 2026-08-31) ----------- #
+    # Verbatim: *"The strategic layer must have its long horizon predictor in
+    # the abstract latent space not only 6 seconds."* ⇒ §4b's 6.0 s binds the
+    # CONTROL OUTPUT and the token-field levels; the strategic SUBSPACE
+    # predictor continues PAST the operative grid, in its own latent, at its
+    # own rate. Extension ticks are supervised from CACHED features at
+    # 6.0 + k·str_dt (the episode is 20 s, so 12 s is always in-cache), fed as
+    # ``str_ext_targets`` — they cannot come from the 6 s operative grid.
+    # Default 12.0 s: 2 extra ticks at 9.0 / 12.0 s, reaching INSIDE the
+    # strategic label band [8, 30) at MM-E15's median manoeuvre start
+    # (12.5 s) — the band the 6 s rung provably never reached.
+    str_horizon_s: float = 12.0
+    w_feat_str_ext: float = 0.25          # same weight class as w_feat_str
 
     # --- control / planning ----------------------------------------------- #
     a_dim: int = 2                        # (a, kappa) — Alpamayo-2 form
@@ -236,6 +242,23 @@ class RefAV1Config:
                     f"but the rollout has only {self.op_steps} steps: "
                     f"{steps - self.op_steps // stride} of its {steps} targets "
                     "would be silently dropped")
+        # --- the long-horizon strategic extension (PI 2026-08-31) ---------- #
+        if self.str_horizon_s < 6.0 - 1e-9:
+            raise ValueError(
+                f"str_horizon_s ({self.str_horizon_s}) below the 6.0 s "
+                "in-window horizon — the extension extends, it cannot shrink")
+        ext = (self.str_horizon_s - 6.0) / self.str_dt
+        if abs(ext - round(ext)) > 1e-6:
+            raise ValueError(
+                f"str_horizon_s {self.str_horizon_s}: the extension beyond "
+                f"6.0 s ({self.str_horizon_s - 6.0:.4g} s) is not an integer "
+                f"number of str_dt ({self.str_dt}) ticks — the same "
+                "inexpressibility class as the in-window grid rule above")
+        if self.w_feat_str_ext and self.str_ext_steps == 0:
+            raise ValueError(
+                f"w_feat_str_ext {self.w_feat_str_ext} with str_horizon_s "
+                f"{self.str_horizon_s} (zero extension ticks): the term would "
+                "be advertised in the config and inert in the loss")
         if int(round(self.plan_horizon_s / self.op_dt)) > self.op_steps:
             raise ValueError("plan horizon exceeds the operative rollout")
         if self.w_cf < 0.0:
@@ -253,6 +276,11 @@ class RefAV1Config:
     @property
     def plan_steps(self) -> int:
         return int(round(self.plan_horizon_s / self.op_dt))
+
+    @property
+    def str_ext_steps(self) -> int:
+        """Strategic ticks BEYOND the 6.0 s in-window grid (PI 2026-08-31)."""
+        return int(round((self.str_horizon_s - 6.0) / self.str_dt))
 
 
 # --------------------------------------------------------------------------- #
@@ -603,6 +631,8 @@ class RefAV1(nn.Module):
 
     def forward(self, feats: Tensor, actions: Tensor, *,
                 future_feats: Tensor | None = None,
+                str_ext_targets: Tensor | None = None,
+                str_ext_actions: Tensor | None = None,
                 nav_cmd: Tensor | None = None,
                 ego: Tensor | None = None) -> dict:
         """``feats`` [B,W,N,d_enc] observed window, ``actions`` [B,K,a_dim].
@@ -611,6 +641,15 @@ class RefAV1(nn.Module):
         features in the SAME standardised space. That is the primary loss
         (change #4): the model is asked to carry the world forward, not to hit a
         trajectory label.
+
+        ⭐ THE LONG-HORIZON STRATEGIC PAIR (PI 2026-08-31, *"not only 6
+        seconds"*): ``str_ext_targets`` [B, K_ext, N, d_enc] are cached DINOv3
+        features at t = 6.0 + k·str_dt (k = 1..K_ext — 9.0 s and 12.0 s at the
+        default), and ``str_ext_actions`` [B, K_ext, a_dim] the action opening
+        each of those windows. They CANNOT come from the 6 s operative grid —
+        the loader reads them straight off the episode cache. Supervision is
+        opportunistic: absent inputs skip the term (the smoke path), but one
+        without the other is a contract error, refused loudly.
         """
         field = self.encode(feats)                       # [B,W,N,d]
         last = field[:, -1]
@@ -650,14 +689,61 @@ class RefAV1(nn.Module):
         tac_a = actions[:, ::self._stride(self.cfg.tac_dt)]
         out["tac_pred"] = self.tactical.rollout(
             self._tac_field(last), tac_a[:, :self.cfg.tac_steps], intent=intent)
-        str_a = actions[:, ::self._stride(self.cfg.str_dt)]
-        out["str_pred"] = self.strategic.rollout(
-            self.strategic.subspace(last), str_a[:, :self.cfg.str_steps])
+        str_a = actions[:, ::self._stride(self.cfg.str_dt)][:, :self.cfg.str_steps]
+        # ⭐ ONE continued rollout, not two: the extension ticks roll on
+        # autoregressively from the in-window strategic state, which is what
+        # makes this a LONG-HORIZON PREDICTOR rather than a second head.
+        ext_k = self.cfg.str_ext_steps
+        has_ext = str_ext_targets is not None or str_ext_actions is not None
+        if has_ext:
+            if str_ext_targets is None or str_ext_actions is None:
+                raise ValueError(
+                    "str_ext_targets and str_ext_actions are a PAIR — one "
+                    "without the other would roll unsupervised ticks or "
+                    "supervise ticks that were never rolled")
+            if future_feats is None:
+                raise ValueError(
+                    "str_ext_targets without future_feats: the extension term "
+                    "attaches to the training loss, which does not exist here "
+                    "— the targets would be accepted and silently unused")
+            if ext_k == 0:
+                raise ValueError(
+                    f"extension inputs supplied but str_horizon_s "
+                    f"{self.cfg.str_horizon_s} yields zero extension ticks")
+            for nm, t_, want in (("str_ext_targets", str_ext_targets, ext_k),
+                                 ("str_ext_actions", str_ext_actions, ext_k)):
+                if t_.shape[1] != want:
+                    raise ValueError(f"{nm} carries {t_.shape[1]} ticks, "
+                                     f"config requires {want}")
+            full_a = torch.cat([str_a, str_ext_actions], dim=1)
+        else:
+            full_a = str_a
+        str_all = self.strategic.rollout(self.strategic.subspace(last), full_a)
+        out["str_pred"] = str_all[:, :self.cfg.str_steps]
+        if has_ext:
+            out["str_pred_ext"] = str_all[:, self.cfg.str_steps:]
+            out["str_ext_target_s"] = [
+                round(6.0 + (k + 1) * self.cfg.str_dt, 3) for k in range(ext_k)]
         out["proposal"] = self.proposal(pooled).reshape(
             -1, self.cfg.plan_steps, self.cfg.a_dim)
 
         if future_feats is not None:
             tgt = self.adapter(self.std(future_feats))
+            # ⛔ FOUND BY A TEST GOING NaN, 2026-08-31: a future shorter than
+            # one abstracted stride slices to an EMPTY target tensor, and
+            # `mse_loss` over zero elements is NaN — a poisoned total loss that
+            # backpropagates NaN into every weight while looking like a batch
+            # hiccup. A future too short to supervise a level is a contract
+            # error, and it is refused by name, not averaged into NaN.
+            for _nm, _dt in (("tactical", self.cfg.tac_dt),
+                             ("strategic", self.cfg.str_dt)):
+                _s = self._stride(_dt)
+                if tgt.shape[1] < _s:
+                    raise ValueError(
+                        f"future_feats carries {tgt.shape[1]} operative steps "
+                        f"but the {_nm} level's FIRST target sits at step "
+                        f"{_s} — the level would train on an empty tensor "
+                        "(NaN loss), not on a shorter ladder")
             k = min(tgt.shape[1], out["op_pred"].shape[1])
             out["loss_feat_op"] = F.mse_loss(out["op_pred"][:, :k], tgt[:, :k])
             tq = torch.stack([self._tac_field(tgt[:, i])
@@ -683,6 +769,18 @@ class RefAV1(nn.Module):
             out["loss"] = (self.cfg.w_feat_op * out["loss_feat_op"]
                            + self.cfg.w_feat_tac * out["loss_feat_tac"]
                            + self.cfg.w_feat_str * out["loss_feat_str"])
+
+            # ---- the long-horizon strategic term (PI 2026-08-31) ----------- #
+            # Same target pipeline as every other level — std -> adapter ->
+            # subspace — so the extension is the SAME prediction task at a
+            # longer reach, not a differently-normalised cousin.
+            if has_ext:
+                text = self.adapter(self.std(str_ext_targets))
+                st_e = self.strategic.subspace(text.flatten(0, 1)).reshape(
+                    text.shape[0], text.shape[1], -1)
+                out["loss_feat_str_ext"] = F.mse_loss(out["str_pred_ext"], st_e)
+                out["loss"] = (out["loss"] + self.cfg.w_feat_str_ext
+                               * out["loss_feat_str_ext"])
 
             # ---- change #10: the counterfactual-action term ---------------- #
             if self.cfg.w_cf:
