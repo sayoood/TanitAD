@@ -137,8 +137,34 @@ def test_preflight_REFUSES_without_nav_cond():
     assert "ARCHITECTURALLY DIFFERENT" in probs[0], "the refusal must say why"
 
 
-def test_preflight_accepts_with_nav_cond():
-    assert not _nav_problems(["--nav-cond"])
+def test_preflight_accepts_nav_cond_WITH_A_NAV_SOURCE():
+    """⭐ CONTRACT CHANGED 2026-08-31, and this test changed WITH it rather than
+    being relaxed to keep passing.
+
+    When it was written, nothing in the stack produced `nav_token`, so
+    `--nav-cond` alone was the only compliant form and its consequence was a
+    loud `NavTokenMissing` at step 0. `--nav-labels` now supplies the join
+    (PI-reviewed Alpamayo-CoT + ego nav command), so the two flags must travel
+    together — and the failure moves from step 0 to milliseconds, with a message
+    that names the flag instead of the symptom.
+    """
+    assert not _nav_problems(["--nav-cond", "--nav-labels", "some/labels.jsonl.gz"])
+
+
+def test_preflight_REFUSES_nav_cond_without_a_nav_SOURCE():
+    """⛔ The regression that would let an arm advertise nav it cannot receive.
+
+    ⚠️ The reverse is deliberately NOT refused: `--nav-labels` without
+    `--nav-cond` builds the join and trains nothing on it, which is how the join
+    gets checked before a GPU is spent.
+    """
+    probs = _nav_problems(["--nav-cond"])
+    assert probs, "--nav-cond with no nav source must be refused"
+    assert "--nav-labels" in probs[0], "the refusal must name the missing flag"
+    T, ap = _parser()
+    assert not [p for p in T.preflight(ap.parse_args(
+        BASE + ["--nav-labels", "x.gz", "--i-know-this-arm-predates-nav"]))
+        if "nav-cond" in p], "--nav-labels alone must stay legal"
 
 
 def test_the_advertised_ESCAPE_HATCH_ACTUALLY_OPENS():
@@ -168,3 +194,19 @@ def test_nav_is_forwarded_through_the_batch_WHITELIST():
     src = inspect.getsource(T)
     assert '"nav_token": b.get("nav_token")' in src
     assert 'nav_token=batch.get("nav_token")' in src, "and forwarded to the stack"
+
+
+def test_the_nav_refusal_does_NOT_break_the_DRY_LADDER():
+    """⛔ REGRESSION. The first version of this refusal refused EVERY v6 arm,
+    while the decision was to refuse a v7-LINE arm. MEASURED consequence:
+    `v6_chain.run_chain` breaks out of its loop on a non-zero return code
+    (v6_chain.py:2061) BEFORE writing `dry_ckpt` (:2071), so a refused dry step
+    silently truncated the ladder transcript and surfaced three modules away as
+    KeyError('dry_ckpt').
+
+    ⇒ A dry run trains nothing and produces no comparable arm, so nav cannot make
+    it incomparable and the refusal has nothing to protect. The scope of a
+    refusal is part of its correctness, not a detail.
+    """
+    assert not _nav_problems(["--dry-run"]), "a dry run must not be refused"
+    assert _nav_problems([]), "a real run must still be refused"

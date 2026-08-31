@@ -5477,6 +5477,55 @@ def train(a) -> dict:
              "eval_every": int(getattr(a, "psg_eval_every", 3)),
              "_why": "the PSG target determines n_agents and lead_gap_m; those "
                      "may only be scored on held_out_clips"}, indent=1))
+    # ---- NAV CONDITIONING: the per-clip -> per-window join (PI 2026-08-30) ----
+    # ⭐ PI DECISION 2026-08-31, RECORDED: the nav command was generated from a
+    # combination of Alpamayo CoT and ego data and was reviewed by the PI, who
+    # directed that it be used. The record carries both halves — `cot_source` /
+    # `cot_tokens` hold the Alpamayo chain-of-causation, and `nav_command` carries
+    # its own `provenance: "ego-future"` stamp with `_provenance.nav_command`
+    # reading "ORACLE (ego-future) — training input only".
+    #
+    # ⛔ `allow_oracle_nav=True` IS THEREFORE NOT AN OVERRIDE — IT IS THE MECHANISM
+    # THAT RECORDS THE DECISION. `NavEmitter` can only reach an arg through
+    # `oracle_nav()`, which checks the MANIFEST, so the flag lands in config.json
+    # and no eval can quote a nav-conditioned arm without the stamp being visible.
+    # The gate is the only code path to the value, not a convention to remember.
+    nav_emitter = None
+    if getattr(a, "nav_labels", None):
+        from tanitad.data.v7_labels import NavEmitter, load_v7_labels
+        # ⛔ THE JOIN IS BY CACHE ORDER, AND IS VERIFIED BY COUNT — the O10/PSG
+        # precedent above, for the same reason its comment gives: "a silent length
+        # mismatch would shift every label by one clip, which no loss curve would
+        # show". A wrong-clip nav is worse than a crash: the model would train on
+        # a plausible route for the wrong scene.
+        _cache = Path(a.v2_cache[0])
+        _clip_ids = sorted(q.name[:-len(".v2ep.pt")]
+                           for q in _cache.glob("*.v2ep.pt"))
+        _n_ep = len(ds_train.episodes)
+        if len(_clip_ids) != _n_ep:
+            raise SystemExit(
+                f"[nav] ⛔ cache lists {len(_clip_ids)} clips but the dataset "
+                f"holds {_n_ep} episodes; the ep_idx->clip_id join would be "
+                f"off-by-N and every window would get another clip's route.")
+        _labels, _manifest = load_v7_labels(a.nav_labels, allow_oracle_nav=True)
+        _by_clip = {x.clip_id for x in _labels}
+        _missing = [c for c in _clip_ids if c not in _by_clip]
+        if _missing:
+            raise SystemExit(
+                f"[nav] ⛔ {len(_missing)} of {len(_clip_ids)} cache clips have no "
+                f"v7 label (e.g. {_missing[:3]}). NavEmitter raises per-window on "
+                f"an unmapped episode; refusing now is the same failure seconds "
+                f"earlier and with the whole list.")
+        nav_emitter = NavEmitter(_labels, _manifest,
+                                 {i: c for i, c in enumerate(_clip_ids)},
+                                 semantics=str(getattr(a, "nav_semantics",
+                                                       "t0_constant")))
+        print(f"[nav] ON · labels={a.nav_labels} md5={_manifest.md5} "
+              f"records={_manifest.n_records} clips_joined={len(_clip_ids)} "
+              f"semantics={nav_emitter.semantics} "
+              f"allow_oracle_nav={_manifest.allow_oracle_nav} "
+              f"(PI-reviewed: Alpamayo CoT + ego)", flush=True)
+
     opt = torch.optim.AdamW(trainable, lr=a.lr, weight_decay=a.wd)
     sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=a.steps)
     start_step = 0
@@ -5708,6 +5757,18 @@ def train(a) -> dict:
             # behind. Same family as the analysis-time import that destroyed a
             # completed rollout — make the optional thing optional.
             "ep_idx": b.get("ep_idx"), "t_last": b.get("t_last"),
+            # ⭐ NAV, joined here because this dict is a WHITELIST (see above) and
+            # a key added upstream would stop at this line. Emitted only when
+            # --nav-labels was given; otherwise absent, and `V6Stack.forward`
+            # raises NavTokenMissing by name if --nav-cond was also passed.
+            # ⛔ NOT `.get`-defaulted to None on failure: NavEmitter RAISES on an
+            # unmapped episode, and that is deliberate — a default would silently
+            # feed one clip's route to another clip's windows, which trains a
+            # plausible wrong signal instead of stopping.
+            **({} if nav_emitter is None or b.get("ep_idx") is None else
+               dict(zip(("nav_token", "nav_args"),
+                        nav_emitter(b["ep_idx"], b.get("t_last"),
+                                    dt=float(getattr(a, "dt", 0.1)))))),
             # ⭐ O13-EGO needs the ego's OWN future — the one target the
             # action demonstrably determines (E-DEC-50: dv t 2.56, dyaw
             # t 4.57). Forwarded with `.get` for exactly the reason the
@@ -7312,6 +7373,25 @@ def build_parser() -> argparse.ArgumentParser:
                          "bit-identical. GOAL HEADS ONLY, never a trunk loss "
                          "(binding); in force only in S-S/S-J, where "
                          "layer_str trains. Needs --s2-labels.")
+    ap.add_argument("--nav-labels", default=None,
+                    help="v7 label blob (s2-geom-v7) supplying the NAV COMMAND "
+                         "per clip. ⭐ PI 2026-08-31: the nav command combines "
+                         "Alpamayo CoT and ego data and is PI-reviewed; the "
+                         "record's own `provenance: ego-future` stamp means the "
+                         "loader needs allow_oracle_nav, which this path sets and "
+                         "RECORDS in the manifest (config.json) — the stamp is how "
+                         "the decision travels with the arm, not a way around it. "
+                         "Joined to episodes by the cache's sorted *.v2ep.pt order, "
+                         "verified by count.")
+    ap.add_argument("--nav-semantics", default="t0_constant",
+                    choices=["t0_constant", "decremented"],
+                    help="how nav args age across a clip. 't0_constant': every "
+                         "window carries the t0 values (simple; the window 15 s "
+                         "later still says 'turn right in 106.5 m'). "
+                         "'decremented': subtract travelled distance/time — what a "
+                         "real nav system does, ⚠️ but it makes the args a FUNCTION "
+                         "OF EGO STATE and must clear the goal/situation "
+                         "information-disjointness rule first (PI 2026-08-03).")
     ap.add_argument("--s2-labels", default=None,
                     help="s2-strategic-v1 label artifact: the labels DIR "
                          "(clip_index.json + s2_labels_*.jsonl) or one "
@@ -7783,6 +7863,23 @@ def preflight(a) -> list[str]:
             f"--selector {a.selector} for the GEOMETRY: S-S must carry the "
             f"S-T arm's scorer forward or --init-from fails on unexpected "
             f"cand_score.* keys.")
+    # ---- NAV: --nav-cond without a nav SOURCE is an advertised-but-inert term
+    # ⛔ Until 2026-08-31 nothing produced `nav_token`, so `--nav-cond` could only
+    # ever hard-fail at step 0 with NavTokenMissing. Now that `--nav-labels`
+    # supplies it, the two flags must travel together or the failure moves from
+    # "loud at step 0" to "loud at step 0 for a reason the launch line does not
+    # explain". Refusing here names the missing flag in milliseconds instead.
+    # ⚠️ The reverse is NOT refused: --nav-labels without --nav-cond is a
+    # legitimate dry-run/diagnostic combination (build the join, train nothing on
+    # it), and refusing it would block checking the join before spending a GPU.
+    if bool(getattr(a, "nav_cond", False)) and not getattr(a, "nav_labels", None):
+        problems.append(
+            "--nav-cond without --nav-labels: nothing would produce `nav_token`, "
+            "so V6Stack.forward would raise NavTokenMissing at step 0. Pass "
+            "--nav-labels <v7 label blob> (the PI-reviewed Alpamayo-CoT + ego nav "
+            "command). ⚠️ That path loads with allow_oracle_nav=True and STAMPS "
+            "the manifest, so the arm carries its own provenance.")
+
     # ---- HORIZONS: refuse a horizon no loss can train ----------------------
     # ⛔⛔ MEASURED 2026-08-31 on `o1ctrl30k`, all 8 snapshots, steps 5,000-22,500:
     #     |W1| 3.7283 -> 7.7516   moving
