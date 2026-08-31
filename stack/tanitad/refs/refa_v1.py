@@ -224,6 +224,20 @@ class RefAV1Config:
     w_tac_label: float = 0.1
     w_str_label: float = 0.1
 
+    # --- nav injection into the DECISION LAYERS (PI 2026-09-01) ------------ #
+    # PI, after the echo concern was raised and answered: *"implement the nav
+    # injection into the tactical policy and also the operative layer"* —
+    # DECIDED. nav (PI-reviewed Alpamayo-CoT+ego derivation; NOT a situation-
+    # classifier output, so admissible under the goal-disjointness rule) now
+    # reaches: (1) the tactical policy DIRECTLY (added to its FiLM cond), and
+    # (2) the operative + tactical FIELD PREDICTORS (added to the intent they
+    # are conditioned on). ⛔ The strategic SUBSPACE predictor stays nav-free —
+    # its prediction remains independently falsifiable. ⚠️ EVAL OBLIGATION that
+    # travels with this: any nav-conditioned result carries a NAV-SHUFFLE
+    # control, because a conditioned model can satisfy its conditioning
+    # instead of the world (the C6 / nav-echo family).
+    nav_inject: bool = True
+
     # --- target space for the PRIMARY (operative) term --------------------- #
     # ⛔ "adapter" (the original form) HAS A COLLAPSE MINIMUM: the target is
     # ``adapter(std(future))`` and the adapter is TRAINED, so mapping
@@ -635,6 +649,23 @@ class RefAV1(nn.Module):
             nn.LayerNorm(cfg.d_state), nn.Linear(cfg.d_state, 512), nn.GELU(),
             nn.Linear(512, cfg.plan_steps * cfg.a_dim))
 
+        # Nav injection (PI 2026-09-01): composed HERE, never inside the shared
+        # fourbrain classes — the flagship holds the same brains, and widening
+        # their signatures would change every consumer at once. Down-scaled
+        # init so the decision arms start ≈ the pre-decision behaviour.
+        if cfg.nav_inject and cfg.tactical_cfg is not None:
+            from tanitad.models.predictor import RESIDUAL_HEAD_INIT_SCALE as _S
+            n_cmd = cfg.strategic_cfg.n_commands
+            d_cmd = cfg.strategic_cfg.d_cmd
+            self.nav_inj_emb = nn.Embedding(n_cmd, d_cmd)
+            self.nav_to_ctx = nn.Linear(d_cmd, cfg.strategic_cfg.d_ctx)
+            self.nav_to_intent = nn.Linear(d_cmd, intent_dim)
+            for lin in (self.nav_to_ctx, self.nav_to_intent):
+                lin.weight.data.mul_(_S)
+                lin.bias.data.mul_(_S)
+        else:
+            self.nav_inj_emb = None
+
         # Observed-motion injection (config-gated; params exist only when on,
         # so default state_dicts are byte-identical). Down-scaled init: the
         # injection starts near zero and the arm starts indistinguishable from
@@ -675,6 +706,33 @@ class RefAV1(nn.Module):
         if self.motion_in is not None:
             last = last + self.motion_in(field[:, -1] - field[:, -2])
         return last
+
+    def _run_brains(self, pooled_win: Tensor, nav_cmd: Tensor | None,
+                    ego: Tensor | None = None) -> dict | None:
+        """The strategic→tactical chain, in ONE place for forward AND plan.
+
+        ⭐ NAV INJECTION (PI 2026-09-01) lives here and only here: nav is added
+        to the tactical policy's FiLM cond (`ctx`) and to the `intent` that
+        conditions the operative and tactical FIELD predictors. Duplicating
+        this block in plan() was how a conditioning change could silently
+        apply at training and not at deployment — factored away.
+        """
+        if self.strategic_policy is None or self.tactical_policy is None:
+            return None
+        b = pooled_win.shape[0]
+        nav = (torch.zeros(b, dtype=torch.long, device=pooled_win.device)
+               if nav_cmd is None else nav_cmd)
+        strat = self.strategic_policy(pooled_win, nav, ego=ego)
+        ctx = strat["ctx"]
+        nemb = self.nav_inj_emb(nav) if self.nav_inj_emb is not None else None
+        if nemb is not None:
+            ctx = ctx + self.nav_to_ctx(nemb)         # nav → tactical policy
+        tac = self.tactical_policy(pooled_win, ctx, ego=ego)
+        intent = tac["intent"]
+        if nemb is not None:
+            intent = intent + self.nav_to_intent(nemb)  # nav → field predictors
+        return {"intent": intent, "ctx": ctx, "tac": tac,
+                "route_logits": strat.get("route_logits")}
 
     # -- training ---------------------------------------------------------- #
     def _stride(self, dt: float) -> int:
@@ -731,15 +789,15 @@ class RefAV1(nn.Module):
 
         intent = None
         out: dict = {}
-        if self.strategic_policy is not None and self.tactical_policy is not None:
-            b = pooled.shape[0]
-            nav = (torch.zeros(b, dtype=torch.long, device=pooled.device)
-                   if nav_cmd is None else nav_cmd)
-            strat = self.strategic_policy(pooled_win, nav, ego=ego)
-            tac = self.tactical_policy(pooled_win, strat["ctx"], ego=ego)
-            intent = tac["intent"]
-            out.update({"ctx": strat["ctx"], "intent": intent,
-                        "route_logits": strat.get("route_logits")})
+        brains = self._run_brains(pooled_win, nav_cmd, ego=ego)
+        if brains is not None:
+            intent = brains["intent"]
+            tac = brains["tac"]
+            # ⚠️ `ctx` here is the AUGMENTED cond the tactical policy actually
+            # consumed (nav added when nav_inject) — emitting the pre-injection
+            # value would misdescribe the conditioning that happened.
+            out.update({"ctx": brains["ctx"], "intent": intent,
+                        "route_logits": brains["route_logits"]})
             # ⭐ THE FACTORED DECODE — v1's tactical action. Two independent
             # softmaxes, so a longitudinal decision can never be outvoted by a
             # lateral one sharing its logit space.
@@ -1008,12 +1066,8 @@ class RefAV1(nn.Module):
         pooled_win = field.mean(dim=-2)
         pooled = pooled_win[:, -1]
 
-        intent = None
-        if self.strategic_policy is not None and self.tactical_policy is not None:
-            nav = (torch.zeros(1, dtype=torch.long, device=pooled.device)
-                   if nav_cmd is None else nav_cmd)
-            strat = self.strategic_policy(pooled_win, nav)
-            intent = self.tactical_policy(pooled_win, strat["ctx"])["intent"]
+        brains = self._run_brains(pooled_win, nav_cmd)
+        intent = None if brains is None else brains["intent"]
 
         proposal = self.proposal(pooled).reshape(cfg.plan_steps, cfg.a_dim)
         v0_t = torch.as_tensor([v0], dtype=torch.float32, device=feats.device)

@@ -88,7 +88,12 @@ class SmokeData:
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--cache", type=Path)
+    ap.add_argument("--cache", type=Path,
+                    help="stage-1 DINOv3 feature cache (0.2 s grid)")
+    ap.add_argument("--episodes", type=Path,
+                    help="the v2ep episode dir (actions/poses at 10 Hz)")
+    ap.add_argument("--lru", type=int, default=32,
+                    help="episodes held in RAM (each ~130 MB fp16 fields)")
     ap.add_argument("--out", type=Path, default=Path("./refa_v1_run"))
     ap.add_argument("--steps", type=int, default=30000)
     ap.add_argument("--bs", type=int, default=8)
@@ -142,8 +147,8 @@ def main(argv=None) -> int:
                     else "cpu")
     a = ap.parse_args(argv)
 
-    if not a.smoke and a.cache is None:
-        raise SystemExit("--cache is required unless --smoke")
+    if not a.smoke and (a.cache is None or a.episodes is None):
+        raise SystemExit("--cache AND --episodes are required unless --smoke")
     if a.cache is not None:
         verify_cache(a.cache)
 
@@ -166,19 +171,25 @@ def main(argv=None) -> int:
         [{"params": adapter_p, "lr": a.lr * a.adapter_lr_mult},
          {"params": rest_p, "lr": a.lr}], weight_decay=0.01)
 
-    data = SmokeData(cfg, a.bs) if a.smoke else None
-    if data is None:
-        raise SystemExit(
-            "the real DataLoader binds to the stage-1 cache and is wired in "
-            "the launch job; --smoke exercises the full loop offline. This is "
-            "deliberate: the trainer must not invent a loader for a cache that "
-            "does not exist yet, or the first real run would debug two things "
-            "at once.")
-
-    # Fit the standardizer ONCE, before step 0 (stability item 1).
-    with torch.no_grad():
-        feats, _, _ = data.batch()
-        model.std.fit(feats.to(a.device))
+    if a.smoke:
+        data = SmokeData(cfg, a.bs)
+        with torch.no_grad():
+            feats, _, _ = data.batch()
+            model.std.fit(feats.to(a.device))
+    else:
+        # ⭐ THE LOADER GAP IS CLOSED (2026-09-01): real windows over the
+        # stage-1 cache + v2ep kinematics. The loader emits (a, kappa) with the
+        # MEASURED channel repair (v2ep stores kappa first, r=0.995) and the
+        # str-extension pairs; labels/nav join is the next increment.
+        from tanitad.data.refav1_loader import RefAV1Windows
+        data = RefAV1Windows(a.cache, a.episodes, op_window=cfg.op_window,
+                             op_steps=cfg.op_steps, str_dt=cfg.str_dt,
+                             str_ext_steps=cfg.str_ext_steps,
+                             lru=a.lru, seed=a.seed)
+        print(f"loader: {len(data)} windows over {len(data.names)} episodes")
+        with torch.no_grad():
+            fit = data.batch(max(a.bs, 8))["feats"]
+            model.std.fit(fit.reshape(-1, cfg.d_enc).to(a.device))
 
     # ⛔ THE AUXILIARY HEAD IS ADVERTISED AND INERT — REFUSED RATHER THAN FAKED.
     # The loop read `out["loss"] + cfg.w_aux_head * torch.zeros(())`: the
@@ -206,8 +217,19 @@ def main(argv=None) -> int:
     log = (a.out / "train_log.jsonl").open("a", encoding="utf-8")
     t0 = time.time()
     for step in range(start_step + 1, a.steps + 1):
-        feats, actions, future = (x.to(a.device) for x in data.batch())
-        out = model(feats, actions, future_feats=future)
+        if a.smoke:
+            feats, actions, future = (x.to(a.device) for x in data.batch())
+            kw = {}
+        else:
+            b = data.batch(a.bs)
+            feats = b["feats"].to(a.device)
+            actions = b["actions"].to(a.device)
+            future = b["future_feats"].to(a.device)
+            kw = {k: (v.to(a.device) if torch.is_tensor(v) else v)
+                  for k, v in b.items()
+                  if k not in ("feats", "actions", "future_feats")
+                  and v is not None}
+        out = model(feats, actions, future_feats=future, **kw)
         loss = out["loss"]
         opt.zero_grad(set_to_none=True)
         loss.backward()

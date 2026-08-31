@@ -217,6 +217,7 @@
    "banked": "2026-08-18",
    "tags": [
     "closed-loop-wm",
+    "data-efficiency",
     "ema-teacher",
     "frozen-encoder",
     "planning",
@@ -226,6 +227,7 @@
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-18-frozen-encoder-literature/FROZEN_ENCODER_LITERATURE.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-29-ema-warmup-rollout-composition/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-data-efficiency-thesis/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-t1-floor-action-sensitivity/RESULT.md"
    ]
   },
@@ -1992,11 +1994,13 @@
    "sha256": "94c63a5ced89355326706c88236591c2972ced12f3dece4f8982f020110c81f3",
    "banked": "2026-08-26",
    "tags": [
+    "data-efficiency",
     "latent-action"
    ],
    "note": "Genie: learns a LATENT ACTION MODEL from unlabelled video (VQ over observation pairs) + dynamics conditioned on it. THE fix-family for E-DEC-57: our corpus has no genuine command channel, only realised curvature.",
    "cited_by": [
-    "Project Steering/GOALS_AND_CLAIMS.md"
+    "Project Steering/GOALS_AND_CLAIMS.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-data-efficiency-thesis/RESULT.md"
    ]
   },
   "2312.10812": {
@@ -2075,11 +2079,13 @@
    "sha256": "d88c053a67aca11b7bbd4c5f9f000cbf95c3f5e94656b6bad89cc9a717ab3672",
    "banked": "2026-08-27",
    "tags": [
+    "frozen-encoder",
     "jepa-driving"
    ],
-   "note": "Drive-JEPA: V-JEPA driving encoder + light planner, NAVSIM v1 93.3 PDMS / v2 87.8 EPDMS / B2D 64.52, ViT-L 307M, 208h video",
+   "note": "Drive-JEPA: V-JEPA driving encoder + light planner, NAVSIM v1 93.3 PDMS / v2 87.8 EPDMS / B2D 64.52, ViT-L 307M, 208h video | Drive-JEPA: V-JEPA video pretraining for end-to-end driving + proposal-centric planner distilling simulator+human trajectories, momentum-aware selection; 93.3 PDMS / 87.8 EPDMS SOTA",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-27-jepa-driving-survey/JEPA_DRIVING_SURVEY.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-27-jepa-driving-survey/JEPA_DRIVING_SURVEY.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-31-refav1-motion-inject/SPEC.md"
    ]
   },
   "2603.24581": {
@@ -2108,11 +2114,13 @@
    "sha256": "b02d50f25f82296cc364859aa883aadd5edce0156a175f168b26112a18253429",
    "banked": "2026-08-27",
    "tags": [
-    "jepa-driving"
+    "jepa-driving",
+    "world-models"
    ],
-   "note": "Latent-WAM: distilled-foundation latent + causal transformer WM, 89.3 EPDMS NAVSIM v2 perception-free",
+   "note": "Latent-WAM: distilled-foundation latent + causal transformer WM, 89.3 EPDMS NAVSIM v2 perception-free | Latent-WAM: spatially-aware compressive world encoder + dynamic latent world model for E2E driving",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-27-jepa-driving-survey/JEPA_DRIVING_SURVEY.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-27-jepa-driving-survey/JEPA_DRIVING_SURVEY.md",
+    "TanitAD Research Lab/Frontier Scan/Daily/2026-08-31/RESULT.md"
    ]
   },
   "2604.03208": {
@@ -2559,10 +2567,12 @@
    "sha256": "4206cc1b3aa41828c00cdbba7567732b190b05c9b599be9f6a7664e198585e0d",
    "banked": "2026-08-23",
    "tags": [
-    "benchmarks"
+    "benchmarks",
+    "flow-matching"
    ],
-   "note": "GoalFlow: navtest PDMS; the dagger row uses a GT-endpoint goal (privileged)",
+   "note": "GoalFlow: navtest PDMS; the dagger row uses a GT-endpoint goal (privileged) | GoalFlow: goal-point-conditioned flow matching, PDMS 90.3, single denoising step - the one-step shape our latency budget needs",
    "cited_by": [
+    "TanitAD Research Lab/Frontier Scan/Daily/2026-08-31/RESULT.md",
     "products/P7-TanitEval/benchmarks/NAVSIM_PROTOCOL.md"
    ]
   },
@@ -2674,10 +2684,12 @@
     "anti-echo-control",
     "benchmark-portfolio",
     "benchmarks",
+    "data-efficiency",
     "input-pipeline"
    ],
    "note": "BEV-Planner Is Ego Status All You Need: quantifies the nuScenes ego shortcut; proposes CCR | BEV-Planner: nuScenes too simple -> ego-status dominates planning; open-loop metrics do not comprehensively assess planning quality | BEV-Planner: ego status dominates open-loop nuScenes planning; open-loop L2 is a misleading metric, and ego-state shortcut inflates it",
    "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-data-efficiency-thesis/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
     "TanitAD Research Lab/Benchmarks & Evals/Research/2026-08-29-benchmark-portfolio/RESULT.md",
     "TanitAD Research Lab/Benchmarks & Evals/Research/2026-08-30-anti-echo-control-precedent/RESULT.md",
@@ -5330,10 +5342,12 @@
    "sha256": "3626790176360b0f6b7d4a5a80be67f6008e8c28f3ead89db83a1e603f1a644e",
    "banked": "2026-08-30",
    "tags": [
+    "data-efficiency",
     "input-pipeline"
    ],
    "note": "Data scaling laws for E2E AD: trained at 512x960 from 3840x2160 native; ADE power law Y=0.6833*X^-0.188, r=-0.963; NO resolution ablation",
    "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-data-efficiency-thesis/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md"
    ]
   },
@@ -5691,10 +5705,12 @@
    "sha256": "350c69b2503e526a4e3bee4556003994a18464ab2b1a5b3bfb07f2cc2c487f81",
    "banked": "2026-08-30",
    "tags": [
-    "closed-loop-wm"
+    "closed-loop-wm",
+    "data-efficiency"
    ],
    "note": "",
    "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-data-efficiency-thesis/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-t1-floor-action-sensitivity/RESULT.md"
    ]
   },
@@ -6684,6 +6700,1834 @@
    "note": "Hidden Biases of End-to-End Driving Models (TransFuser++): dataset-size and design ablations on CARLA driving score",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md"
+   ]
+  },
+  "2504.04338": {
+   "key": "2504.04338",
+   "kind": "arxiv",
+   "title": "Data Scaling Laws for End-to-End Autonomous Driving",
+   "authors": [
+    "Alexander Naumann",
+    "Xunjiang Gu",
+    "Tolga Dimlioglu",
+    "Mariusz Bojarski",
+    "Alperen Degirmenci",
+    "Alexander Popov",
+    "Devansh Bisla",
+    "Marco Pavone",
+    "Urs Müller",
+    "Boris Ivanovic"
+   ],
+   "published": "2025-04-06",
+   "abstract": "Autonomous vehicle (AV) stacks have traditionally relied on decomposed approaches, with separate modules handling perception, prediction, and planning. However, this design introduces information loss during inter-module communication, increases computational overhead, and can lead to compounding errors. To address these challenges, recent works have proposed architectures that integrate all components into an end-to-end differentiable model, enabling holistic system optimization. This shift emphasizes data engineering over software integration, offering the potential to enhance system performance by simply scaling up training resources. In this work, we evaluate the performance of a simple end-to-end driving architecture on internal driving datasets ranging in size from 16 to 8192 hours with both open-loop metrics and closed-loop simulations. Specifically, we investigate how much additi",
+   "url": "https://arxiv.org/abs/2504.04338",
+   "path": "TanitAD Research Lab/Library/papers/2504.04338_Data-Scaling-Laws-for-End-to-End-Autonomous-Driving.pdf",
+   "bytes": 1878553,
+   "sha256": "020b2fff9302726e93c9d4f36f8d98189b7d0fe268fe39058c1824f51fc612a8",
+   "banked": "2026-08-30",
+   "tags": [
+    "data-efficiency"
+   ],
+   "note": "NVIDIA/Stanford data scaling laws for E2E AD, 8192 h: open-loop FDE follows a power law but closed-loop MDBF PLATEAUS at 256 h",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-data-efficiency-thesis/RESULT.md"
+   ]
+  },
+  "2403.02877": {
+   "key": "2403.02877",
+   "kind": "arxiv",
+   "title": "ActiveAD: Planning-Oriented Active Learning for End-to-End Autonomous Driving",
+   "authors": [
+    "Han Lu",
+    "Xiaosong Jia",
+    "Yichen Xie",
+    "Wenlong Liao",
+    "Xiaokang Yang",
+    "Junchi Yan"
+   ],
+   "published": "2024-03-05",
+   "abstract": "End-to-end differentiable learning for autonomous driving (AD) has recently become a prominent paradigm. One main bottleneck lies in its voracious appetite for high-quality labeled data e.g. 3D bounding boxes and semantic segmentation, which are notoriously expensive to manually annotate. The difficulty is further pronounced due to the prominent fact that the behaviors within samples in AD often suffer from long tailed distribution. In other words, a large part of collected data can be trivial (e.g. simply driving forward in a straight road) and only a few cases are safety-critical. In this paper, we explore a practically important yet under-explored problem about how to achieve sample and label efficiency for end-to-end AD. Specifically, we design a planning-oriented active learning method which progressively annotates part of collected raw data according to the proposed diversity and u",
+   "url": "https://arxiv.org/abs/2403.02877",
+   "path": "TanitAD Research Lab/Library/papers/2403.02877_ActiveAD-Planning-Oriented-Active-Learning-for-End-to-End-Au.pdf",
+   "bytes": 1817482,
+   "sha256": "0cec133e3a140221a1b03d4c83f22fdf8a208bd706aa7f52495ba07ec9616859",
+   "banked": "2026-08-30",
+   "tags": [
+    "data-efficiency"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-data-efficiency-thesis/RESULT.md"
+   ]
+  },
+  "2604.08366": {
+   "key": "2604.08366",
+   "kind": "arxiv",
+   "title": "Scaling-Aware Data Selection for End-to-End Autonomous Driving Systems",
+   "authors": [
+    "Tolga Dimlioglu",
+    "Nadine Chang",
+    "Maying Shen",
+    "Rafid Mahmood",
+    "Jose M. Alvarez"
+   ],
+   "published": "2026-04-09",
+   "abstract": "Large-scale deep learning models for physical AI applications depend on diverse training data collection efforts. These models and correspondingly, the training data, must address different evaluation criteria necessary for the models to be deployable in real-world environments. Data selection policies can guide the development of the training set, but current frameworks do not account for the ambiguity in how data points affect different metrics. In this work, we propose Mixture Optimization via Scaling-Aware Iterative Collection (MOSAIC), a general data selection framework that operates by: (i) partitioning the dataset into domains; (ii) fitting neural scaling laws from each data domain to the evaluation metrics; and (iii) optimizing a data mixture by iteratively adding data from domains that maximize the change in metrics. We apply MOSAIC to autonomous driving (AD), where an End-to-En",
+   "url": "https://arxiv.org/abs/2604.08366",
+   "path": "TanitAD Research Lab/Library/papers/2604.08366_Scaling-Aware-Data-Selection-for-End-to-End-Autonomous-Drivi.pdf",
+   "bytes": 2290026,
+   "sha256": "99bd589b089f1c61ce9b74591b50212f3fef3f4bc9b91a23ac679bdef329e179",
+   "banked": "2026-08-30",
+   "tags": [
+    "data-efficiency"
+   ],
+   "note": "",
+   "cited_by": []
+  },
+  "2504.19077": {
+   "key": "2504.19077",
+   "kind": "arxiv",
+   "title": "Learning to Drive from a World Model",
+   "authors": [
+    "Mitchell Goff",
+    "Greg Hogan",
+    "George Hotz",
+    "Armand du Parc Locmaria",
+    "Kacper Raczy",
+    "Harald Schäfer",
+    "Adeeb Shihadeh",
+    "Weixing Zhang",
+    "Yassine Yousfi"
+   ],
+   "published": "2025-04-27",
+   "abstract": "Most self-driving systems rely on hand-coded perception outputs and engineered driving rules. Learning directly from human driving data with an end-to-end method can allow for a training architecture that is simpler and scales well with compute and data. In this work, we propose an end-to-end training architecture that uses real driving data to train a driving policy in an on-policy simulator. We show two different methods of simulation, one with reprojective simulation and one with a learned world model. We show that both methods can be used to train a policy that learns driving behavior without any hand-coded driving rules. We evaluate the performance of these policies in a closed-loop simulation and when deployed in a real-world advanced driver-assistance system.",
+   "url": "https://arxiv.org/abs/2504.19077",
+   "path": "TanitAD Research Lab/Library/papers/2504.19077_Learning-to-Drive-from-a-World-Model.pdf",
+   "bytes": 7053260,
+   "sha256": "7f064a723b3377fadb498032fac11d0dc6994c57108f8b598bae67d55ef013a9",
+   "banked": "2026-08-30",
+   "tags": [
+    "data-efficiency"
+   ],
+   "note": "",
+   "cited_by": []
+  },
+  "2206.14486": {
+   "key": "2206.14486",
+   "kind": "arxiv",
+   "title": "Beyond neural scaling laws: beating power law scaling via data pruning",
+   "authors": [
+    "Ben Sorscher",
+    "Robert Geirhos",
+    "Shashank Shekhar",
+    "Surya Ganguli",
+    "Ari S. Morcos"
+   ],
+   "published": "2022-06-29",
+   "abstract": "Widely observed neural scaling laws, in which error falls off as a power of the training set size, model size, or both, have driven substantial performance improvements in deep learning. However, these improvements through scaling alone require considerable costs in compute and energy. Here we focus on the scaling of error with dataset size and show how in theory we can break beyond power law scaling and potentially even reduce it to exponential scaling instead if we have access to a high-quality data pruning metric that ranks the order in which training examples should be discarded to achieve any pruned dataset size. We then test this improved scaling prediction with pruned dataset size empirically, and indeed observe better than power law scaling in practice on ResNets trained on CIFAR-10, SVHN, and ImageNet. Next, given the importance of finding high-quality pruning metrics, we perfor",
+   "url": "https://arxiv.org/abs/2206.14486",
+   "path": "TanitAD Research Lab/Library/papers/2206.14486_Beyond-neural-scaling-laws-beating-power-law-scaling-via-dat.pdf",
+   "bytes": 8523534,
+   "sha256": "ed12a79cc3c5b47d988d18ffe801d4de1b03ff36755da8717e8f504769979f90",
+   "banked": "2026-08-30",
+   "tags": [
+    "data-efficiency"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-data-efficiency-thesis/RESULT.md"
+   ]
+  },
+  "2302.06960": {
+   "key": "2302.06960",
+   "kind": "arxiv",
+   "title": "Data pruning and neural scaling laws: fundamental limitations of score-based algorithms",
+   "authors": [
+    "Fadhel Ayed",
+    "Soufiane Hayou"
+   ],
+   "published": "2023-02-14",
+   "abstract": "Data pruning algorithms are commonly used to reduce the memory and computational cost of the optimization process. Recent empirical results reveal that random data pruning remains a strong baseline and outperforms most existing data pruning methods in the high compression regime, i.e., where a fraction of $30\\%$ or less of the data is kept. This regime has recently attracted a lot of interest as a result of the role of data pruning in improving the so-called neural scaling laws; in [Sorscher et al.], the authors showed the need for high-quality data pruning algorithms in order to beat the sample power law. In this work, we focus on score-based data pruning algorithms and show theoretically and empirically why such algorithms fail in the high compression regime. We demonstrate ``No Free Lunch\" theorems for data pruning and present calibration protocols that enhance the performance of exis",
+   "url": "https://arxiv.org/abs/2302.06960",
+   "path": "TanitAD Research Lab/Library/papers/2302.06960_Data-pruning-and-neural-scaling-laws-fundamental-limitations.pdf",
+   "bytes": 2592289,
+   "sha256": "aa86dd12b4b6457897ca8119cda350c8e7e7ae6979d65d57b65f3328067a32a7",
+   "banked": "2026-08-30",
+   "tags": [
+    "data-efficiency"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-data-efficiency-thesis/RESULT.md"
+   ]
+  },
+  "2204.08499": {
+   "key": "2204.08499",
+   "kind": "arxiv",
+   "title": "DeepCore: A Comprehensive Library for Coreset Selection in Deep Learning",
+   "authors": [
+    "Chengcheng Guo",
+    "Bo Zhao",
+    "Yanbing Bai"
+   ],
+   "published": "2022-04-18",
+   "abstract": "Coreset selection, which aims to select a subset of the most informative training samples, is a long-standing learning problem that can benefit many downstream tasks such as data-efficient learning, continual learning, neural architecture search, active learning, etc. However, many existing coreset selection methods are not designed for deep learning, which may have high complexity and poor generalization performance. In addition, the recently proposed methods are evaluated on models, datasets, and settings of different complexities. To advance the research of coreset selection in deep learning, we contribute a comprehensive code library, namely DeepCore, and provide an empirical study on popular coreset selection methods on CIFAR10 and ImageNet datasets. Extensive experiments on CIFAR10 and ImageNet datasets verify that, although various methods have advantages in certain experiment set",
+   "url": "https://arxiv.org/abs/2204.08499",
+   "path": "TanitAD Research Lab/Library/papers/2204.08499_DeepCore-A-Comprehensive-Library-for-Coreset-Selection-in-De.pdf",
+   "bytes": 544150,
+   "sha256": "f7955ffa0b04538edfbce92b4dac4ac5154aca3a4789d723ff7d2ab5b64aca9e",
+   "banked": "2026-08-30",
+   "tags": [
+    "data-efficiency"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-data-efficiency-thesis/RESULT.md"
+   ]
+  },
+  "2404.05579": {
+   "key": "2404.05579",
+   "kind": "arxiv",
+   "title": "DRoP: Distributionally Robust Data Pruning",
+   "authors": [
+    "Artem Vysogorets",
+    "Kartik Ahuja",
+    "Julia Kempe"
+   ],
+   "published": "2024-04-08",
+   "abstract": "In the era of exceptionally data-hungry models, careful selection of the training data is essential to mitigate the extensive costs of deep learning. Data pruning offers a solution by removing redundant or uninformative samples from the dataset, which yields faster convergence and improved neural scaling laws. However, little is known about its impact on classification bias of the trained models. We conduct the first systematic study of this effect and reveal that existing data pruning algorithms can produce highly biased classifiers. We present theoretical analysis of the classification risk in a mixture of Gaussians to argue that choosing appropriate class pruning ratios, coupled with random pruning within classes has potential to improve worst-class performance. We thus propose DRoP, a distributionally robust approach to pruning and empirically demonstrate its performance on standard ",
+   "url": "https://arxiv.org/abs/2404.05579",
+   "path": "TanitAD Research Lab/Library/papers/2404.05579_DRoP-Distributionally-Robust-Data-Pruning.pdf",
+   "bytes": 23420200,
+   "sha256": "bd601cb0e364d598960e3f21389918e13ceb6ff747b41125366116edaaa8ebdb",
+   "banked": "2026-08-30",
+   "tags": [
+    "data-efficiency"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-data-efficiency-thesis/RESULT.md"
+   ]
+  },
+  "2104.03956": {
+   "key": "2104.03956",
+   "kind": "arxiv",
+   "title": "Just Label What You Need: Fine-Grained Active Selection for Perception and Prediction through Partially Labeled Scenes",
+   "authors": [
+    "Sean Segal",
+    "Nishanth Kumar",
+    "Sergio Casas",
+    "Wenyuan Zeng",
+    "Mengye Ren",
+    "Jingkang Wang",
+    "Raquel Urtasun"
+   ],
+   "published": "2021-04-08",
+   "abstract": "Self-driving vehicles must perceive and predict the future positions of nearby actors in order to avoid collisions and drive safely. A learned deep learning module is often responsible for this task, requiring large-scale, high-quality training datasets. As data collection is often significantly cheaper than labeling in this domain, the decision of which subset of examples to label can have a profound impact on model performance. Active learning techniques, which leverage the state of the current model to iteratively select examples for labeling, offer a promising solution to this problem. However, despite the appeal of this approach, there has been little scientific analysis of active learning approaches for the perception and prediction (P&amp;P) problem. In this work, we study active learning techniques for P&amp;P and find that the traditional active learning formulation is ill-suite",
+   "url": "https://arxiv.org/abs/2104.03956",
+   "path": "TanitAD Research Lab/Library/papers/2104.03956_Just-Label-What-You-Need-Fine-Grained-Active-Selection-for-P.pdf",
+   "bytes": 1521395,
+   "sha256": "ec4b95d695192b7e1241796d75a31e4ee4200decd8ee4be22eb4acef1338ab35",
+   "banked": "2026-08-30",
+   "tags": [
+    "data-efficiency"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-data-efficiency-thesis/RESULT.md"
+   ]
+  },
+  "2004.04699": {
+   "key": "2004.04699",
+   "kind": "arxiv",
+   "title": "Scalable Active Learning for Object Detection",
+   "authors": [
+    "Elmar Haussmann",
+    "Michele Fenzi",
+    "Kashyap Chitta",
+    "Jan Ivanecky",
+    "Hanson Xu",
+    "Donna Roy",
+    "Akshita Mittel",
+    "Nicolas Koumchatzky",
+    "Clement Farabet",
+    "Jose M. Alvarez"
+   ],
+   "published": "2020-04-09",
+   "abstract": "Deep Neural Networks trained in a fully supervised fashion are the dominant technology in perception-based autonomous driving systems. While collecting large amounts of unlabeled data is already a major undertaking, only a subset of it can be labeled by humans due to the effort needed for high-quality annotation. Therefore, finding the right data to label has become a key challenge. Active learning is a powerful technique to improve data efficiency for supervised learning methods, as it aims at selecting the smallest possible training set to reach a required performance. We have built a scalable production system for active learning in the domain of autonomous driving. In this paper, we describe the resulting high-level design, sketch some of the challenges and their solutions, present our current results at scale, and briefly describe the open problems and future directions.",
+   "url": "https://arxiv.org/abs/2004.04699",
+   "path": "TanitAD Research Lab/Library/papers/2004.04699_Scalable-Active-Learning-for-Object-Detection.pdf",
+   "bytes": 8516654,
+   "sha256": "4760fc7e62011f7fa55ede021ad4c89311cb958a463718e20a2a198e52fe36de",
+   "banked": "2026-08-30",
+   "tags": [
+    "data-efficiency"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-data-efficiency-thesis/RESULT.md"
+   ]
+  },
+  "2405.15613": {
+   "key": "2405.15613",
+   "kind": "arxiv",
+   "title": "Automatic Data Curation for Self-Supervised Learning: A Clustering-Based Approach",
+   "authors": [
+    "Huy V. Vo",
+    "Vasil Khalidov",
+    "Timothée Darcet",
+    "Théo Moutakanni",
+    "Nikita Smetanin",
+    "Marc Szafraniec",
+    "Hugo Touvron",
+    "Camille Couprie",
+    "Maxime Oquab",
+    "Armand Joulin",
+    "Hervé Jégou",
+    "Patrick Labatut"
+   ],
+   "published": "2024-05-24",
+   "abstract": "Self-supervised features are the cornerstone of modern machine learning systems. They are typically pre-trained on data collections whose construction and curation typically require extensive human effort. This manual process has some limitations similar to those encountered in supervised learning, e.g., the crowd-sourced selection of data is costly and time-consuming, preventing scaling the dataset size. In this work, we consider the problem of automatic curation of high-quality datasets for self-supervised pre-training. We posit that such datasets should be large, diverse and balanced, and propose a clustering-based approach for building ones satisfying all these criteria. Our method involves successive and hierarchical applications of $k$-means on a large and diverse data repository to obtain clusters that distribute uniformly among data concepts, followed by a hierarchical, balanced ",
+   "url": "https://arxiv.org/abs/2405.15613",
+   "path": "TanitAD Research Lab/Library/papers/2405.15613_Automatic-Data-Curation-for-Self-Supervised-Learning-A-Clust.pdf",
+   "bytes": 6045479,
+   "sha256": "5c41eb197db8e87113cdbb78e4625f28ef502ad26aeb79d209eafe163f2bed9e",
+   "banked": "2026-08-30",
+   "tags": [
+    "data-efficiency"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-data-efficiency-thesis/RESULT.md"
+   ]
+  },
+  "2607.04500": {
+   "key": "2607.04500",
+   "kind": "arxiv",
+   "title": "Geographic Diversity Beats Data Volume for Cross-Domain Generalization in Zero-Label JEPA Driving World Models",
+   "authors": [
+    "Santosh Jaiswal"
+   ],
+   "published": "2026-07-05",
+   "abstract": "Self-supervised latent world models can assign a surprise score to driving scenarios without any human labels. A natural follow-up question is whether such a model, trained on driving data from one geographic region, can generalize its notion of complexity to unseen cities and sensor configurations. We study this question through a controlled transfer experiment: we train JEPA-based world models on nuPlan data (Pittsburgh, Boston, Singapore) and evaluate zero-shot on held-out Argoverse 2 validation scenarios from Miami and Austin. We find that models trained on geographically diverse data generalize significantly better than models trained on equal amounts of single-geography data. In a matched-scale ablation at 63,000 scenarios per condition (n=3 seeds each), combined training reduces mean surprise score by 16.5% relative to nuPlan-only training (0.228 +/- 0.015 vs 0.273 +/- 0.008). Not",
+   "url": "https://arxiv.org/abs/2607.04500",
+   "path": "TanitAD Research Lab/Library/papers/2607.04500_Geographic-Diversity-Beats-Data-Volume-for-Cross-Domain-Gene.pdf",
+   "bytes": 287598,
+   "sha256": "7ee0ca1fcc577ab0c66af5194bc916540d549b81fb24942625992dca2f852cac",
+   "banked": "2026-08-30",
+   "tags": [
+    "data-efficiency"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-data-efficiency-thesis/RESULT.md"
+   ]
+  },
+  "2507.00049": {
+   "key": "2507.00049",
+   "kind": "arxiv",
+   "title": "AdaDeDup: Adaptive Hybrid Data Pruning for Efficient Large-Scale Object Detection Training",
+   "authors": [
+    "Feiyang Kang",
+    "Nadine Chang",
+    "Maying Shen",
+    "Marc T. Law",
+    "Rafid Mahmood",
+    "Ruoxi Jia",
+    "Jose M. Alvarez"
+   ],
+   "published": "2025-06-24",
+   "abstract": "The computational burden and inherent redundancy of large-scale datasets challenge the training of contemporary machine learning models. Data pruning offers a solution by selecting smaller, informative subsets, yet existing methods struggle: density-based approaches can be task-agnostic, while model-based techniques may introduce redundancy or prove computationally prohibitive. We introduce Adaptive De-Duplication (AdaDeDup), a novel hybrid framework that synergistically integrates density-based pruning with model-informed feedback in a cluster-adaptive manner. AdaDeDup first partitions data and applies an initial density-based pruning. It then employs a proxy model to evaluate the impact of this initial pruning within each cluster by comparing losses on kept versus pruned samples. This task-aware signal adaptively adjusts cluster-specific pruning thresholds, enabling more aggressive pru",
+   "url": "https://arxiv.org/abs/2507.00049",
+   "path": "TanitAD Research Lab/Library/papers/2507.00049_AdaDeDup-Adaptive-Hybrid-Data-Pruning-for-Efficient-Large-Sc.pdf",
+   "bytes": 30095512,
+   "sha256": "bb914620a4946acbebb3079e00794468ab4402a81c1cc74e9dbf4ad63c49eb0f",
+   "banked": "2026-08-30",
+   "tags": [
+    "data-efficiency"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-data-efficiency-thesis/RESULT.md"
+   ]
+  },
+  "1812.05159": {
+   "key": "1812.05159",
+   "kind": "arxiv",
+   "title": "An Empirical Study of Example Forgetting during Deep Neural Network Learning",
+   "authors": [
+    "Mariya Toneva",
+    "Alessandro Sordoni",
+    "Remi Tachet des Combes",
+    "Adam Trischler",
+    "Yoshua Bengio",
+    "Geoffrey J. Gordon"
+   ],
+   "published": "2018-12-12",
+   "abstract": "Inspired by the phenomenon of catastrophic forgetting, we investigate the learning dynamics of neural networks as they train on single classification tasks. Our goal is to understand whether a related phenomenon occurs when data does not undergo a clear distributional shift. We define a `forgetting event' to have occurred when an individual training example transitions from being classified correctly to incorrectly over the course of learning. Across several benchmark data sets, we find that: (i) certain examples are forgotten with high frequency, and some not at all; (ii) a data set's (un)forgettable examples generalize across neural architectures; and (iii) based on forgetting dynamics, a significant fraction of examples can be omitted from the training data set while still maintaining state-of-the-art generalization performance.",
+   "url": "https://arxiv.org/abs/1812.05159",
+   "path": "TanitAD Research Lab/Library/papers/1812.05159_An-Empirical-Study-of-Example-Forgetting-during-Deep-Neural.pdf",
+   "bytes": 1731989,
+   "sha256": "0ceef9c602d22b977baf61e1e62897ee0d3d1a043e93d34129b3a448a9120c89",
+   "banked": "2026-08-30",
+   "tags": [
+    "data-efficiency"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-data-efficiency-thesis/RESULT.md"
+   ]
+  },
+  "2107.07075": {
+   "key": "2107.07075",
+   "kind": "arxiv",
+   "title": "Deep Learning on a Data Diet: Finding Important Examples Early in Training",
+   "authors": [
+    "Mansheej Paul",
+    "Surya Ganguli",
+    "Gintare Karolina Dziugaite"
+   ],
+   "published": "2021-07-15",
+   "abstract": "Recent success in deep learning has partially been driven by training increasingly overparametrized networks on ever larger datasets. It is therefore natural to ask: how much of the data is superfluous, which examples are important for generalization, and how do we find them? In this work, we make the striking observation that, in standard vision datasets, simple scores averaged over several weight initializations can be used to identify important examples very early in training. We propose two such scores -- the Gradient Normed (GraNd) and the Error L2-Norm (EL2N) scores -- and demonstrate their efficacy on a range of architectures and datasets by pruning significant fractions of training data without sacrificing test accuracy. In fact, using EL2N scores calculated a few epochs into training, we can prune half of the CIFAR10 training set while slightly improving test accuracy. Furthermo",
+   "url": "https://arxiv.org/abs/2107.07075",
+   "path": "TanitAD Research Lab/Library/papers/2107.07075_Deep-Learning-on-a-Data-Diet-Finding-Important-Examples-Earl.pdf",
+   "bytes": 2241745,
+   "sha256": "842b7d259d98e6c900d87f730d08b689f347df70d764bf72e4a503daca213058",
+   "banked": "2026-08-30",
+   "tags": [
+    "data-efficiency"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-data-efficiency-thesis/RESULT.md"
+   ]
+  },
+  "2212.06817": {
+   "key": "2212.06817",
+   "kind": "arxiv",
+   "title": "RT-1: Robotics Transformer for Real-World Control at Scale",
+   "authors": [
+    "Anthony Brohan",
+    "Noah Brown",
+    "Justice Carbajal",
+    "Yevgen Chebotar",
+    "Joseph Dabis",
+    "Chelsea Finn",
+    "Keerthana Gopalakrishnan",
+    "Karol Hausman",
+    "Alex Herzog",
+    "Jasmine Hsu",
+    "Julian Ibarz",
+    "Brian Ichter"
+   ],
+   "published": "2022-12-13",
+   "abstract": "By transferring knowledge from large, diverse, task-agnostic datasets, modern machine learning models can solve specific downstream tasks either zero-shot or with small task-specific datasets to a high level of performance. While this capability has been demonstrated in other fields such as computer vision, natural language processing or speech recognition, it remains to be shown in robotics, where the generalization capabilities of the models are particularly critical due to the difficulty of collecting real-world robotic data. We argue that one of the keys to the success of such general robotic models lies with open-ended task-agnostic training, combined with high-capacity architectures that can absorb all of the diverse, robotic data. In this paper, we present a model class, dubbed Robotics Transformer, that exhibits promising scalable model properties. We verify our conclusions in a ",
+   "url": "https://arxiv.org/abs/2212.06817",
+   "path": "TanitAD Research Lab/Library/papers/2212.06817_RT-1-Robotics-Transformer-for-Real-World-Control-at-Scale.pdf",
+   "bytes": 14672588,
+   "sha256": "81efe669c8fa50ffc7097886dc78a442fa7a8f7f2451684b93069cb9fbeda767",
+   "banked": "2026-08-30",
+   "tags": [
+    "data-efficiency"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-data-efficiency-thesis/RESULT.md"
+   ]
+  },
+  "2402.10891": {
+   "key": "2402.10891",
+   "kind": "arxiv",
+   "title": "Instruction Diversity Drives Generalization To Unseen Tasks",
+   "authors": [
+    "Dylan Zhang",
+    "Justin Wang",
+    "Francois Charton"
+   ],
+   "published": "2024-02-16",
+   "abstract": "Instruction tuning -- fine-tuning a large language model (LLM) on pairs of instructions and desired outcomes -- is an approach that enables pre-trained language models to perform real-world tasks and follow human instructions. Its practical success depends on the model learning a broader set of instructions than those it was trained on. Yet the factors that determine model generalization to such \\emph{unseen tasks} are not well understood. %To understand the driving factors of generalization, In this paper, we experiment with string rewrites, a symbolic task that serves as a building block for Turing complete Markov algorithms while allowing experimental control of \"inputs\" and \"instructions\". We investigate the trade-off between the number of instructions the model is trained on and the number of training samples provided for each instruction and observe that the diversity of the instru",
+   "url": "https://arxiv.org/abs/2402.10891",
+   "path": "TanitAD Research Lab/Library/papers/2402.10891_Instruction-Diversity-Drives-Generalization-To-Unseen-Tasks.pdf",
+   "bytes": 519972,
+   "sha256": "3bfbddf9bf13ff0054a15290c7fed0b34593df497561488a8d431cdc6d38e573",
+   "banked": "2026-08-30",
+   "tags": [
+    "data-efficiency"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-data-efficiency-thesis/RESULT.md"
+   ]
+  },
+  "2507.06219": {
+   "key": "2507.06219",
+   "kind": "arxiv",
+   "title": "Is Diversity All You Need for Scalable Robotic Manipulation?",
+   "authors": [
+    "Modi Shi",
+    "Li Chen",
+    "Jin Chen",
+    "Yuxiang Lu",
+    "Chiming Liu",
+    "Guanghui Ren",
+    "Ping Luo",
+    "Di Huang",
+    "Maoqing Yao",
+    "Hongyang Li"
+   ],
+   "published": "2025-07-08",
+   "abstract": "Data scaling has driven remarkable success in foundation models for Natural Language Processing (NLP) and Computer Vision (CV), yet the principles of effective data scaling in robotic manipulation remain insufficiently understood. In this work, we investigate the nuanced role of data diversity in robot learning by examining three critical dimensions-task (what to do), embodiment (which robot to use), and expert (who demonstrates)-challenging the conventional intuition of \"more diverse is better\". Throughout extensive experiments on various robot platforms, we reveal that (1) task diversity proves more critical than per-task demonstration quantity, benefiting transfer from diverse pre-training tasks to novel downstream scenarios; (2) multi-embodiment pre-training data is optional for cross-embodiment transfer-models trained on high-quality single-embodiment data can efficiently transfer t",
+   "url": "https://arxiv.org/abs/2507.06219",
+   "path": "TanitAD Research Lab/Library/papers/2507.06219_Is-Diversity-All-You-Need-for-Scalable-Robotic-Manipulation.pdf",
+   "bytes": 11764174,
+   "sha256": "609956e716ed3d160dc6367e454b26e7025c164b31053e86e8fa84e48cfc9212",
+   "banked": "2026-08-30",
+   "tags": [
+    "data-efficiency"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-data-efficiency-thesis/RESULT.md"
+   ]
+  },
+  "2410.18647": {
+   "key": "2410.18647",
+   "kind": "arxiv",
+   "title": "Data Scaling Laws in Imitation Learning for Robotic Manipulation",
+   "authors": [
+    "Fanqi Lin",
+    "Yingdong Hu",
+    "Pingyue Sheng",
+    "Chuan Wen",
+    "Jiacheng You",
+    "Yang Gao"
+   ],
+   "published": "2024-10-24",
+   "abstract": "Data scaling has revolutionized fields like natural language processing and computer vision, providing models with remarkable generalization capabilities. In this paper, we investigate whether similar data scaling laws exist in robotics, particularly in robotic manipulation, and whether appropriate data scaling can yield single-task robot policies that can be deployed zero-shot for any object within the same category in any environment. To this end, we conduct a comprehensive empirical study on data scaling in imitation learning. By collecting data across numerous environments and objects, we study how a policy's generalization performance changes with the number of training environments, objects, and demonstrations. Throughout our research, we collect over 40,000 demonstrations and execute more than 15,000 real-world robot rollouts under a rigorous evaluation protocol. Our findings reve",
+   "url": "https://arxiv.org/abs/2410.18647",
+   "path": "TanitAD Research Lab/Library/papers/2410.18647_Data-Scaling-Laws-in-Imitation-Learning-for-Robotic-Manipula.pdf",
+   "bytes": 28557000,
+   "sha256": "e3ee296bdf1b34dde4816d36207a0b2b496c66ab352299702e9efc8187e7ec07",
+   "banked": "2026-08-30",
+   "tags": [
+    "data-efficiency"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-data-efficiency-thesis/RESULT.md"
+   ]
+  },
+  "2301.01006": {
+   "key": "2301.01006",
+   "kind": "arxiv",
+   "title": "Policy Pre-training for Autonomous Driving via Self-supervised Geometric Modeling",
+   "authors": [
+    "Penghao Wu",
+    "Li Chen",
+    "Hongyang Li",
+    "Xiaosong Jia",
+    "Junchi Yan",
+    "Yu Qiao"
+   ],
+   "published": "2023-01-03",
+   "abstract": "Witnessing the impressive achievements of pre-training techniques on large-scale data in the field of computer vision and natural language processing, we wonder whether this idea could be adapted in a grab-and-go spirit, and mitigate the sample inefficiency problem for visuomotor driving. Given the highly dynamic and variant nature of the input, the visuomotor driving task inherently lacks view and translation invariance, and the visual input contains massive irrelevant information for decision making, resulting in predominant pre-training approaches from general vision less suitable for the autonomous driving task. To this end, we propose PPGeo (Policy Pre-training via Geometric modeling), an intuitive and straightforward fully self-supervised framework curated for the policy pretraining in visuomotor driving. We aim at learning policy representations as a powerful abstraction by modeli",
+   "url": "https://arxiv.org/abs/2301.01006",
+   "path": "TanitAD Research Lab/Library/papers/2301.01006_Policy-Pre-training-for-Autonomous-Driving-via-Self-supervis.pdf",
+   "bytes": 2698024,
+   "sha256": "015ab48900cd9c60e0a3ffc63d3c8e4acc5d2d82339106c16d5d1614a09c597d",
+   "banked": "2026-08-30",
+   "tags": [
+    "data-efficiency"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-data-efficiency-thesis/RESULT.md"
+   ]
+  },
+  "2006.06882": {
+   "key": "2006.06882",
+   "kind": "arxiv",
+   "title": "Rethinking Pre-training and Self-training",
+   "authors": [
+    "Barret Zoph",
+    "Golnaz Ghiasi",
+    "Tsung-Yi Lin",
+    "Yin Cui",
+    "Hanxiao Liu",
+    "Ekin D. Cubuk",
+    "Quoc V. Le"
+   ],
+   "published": "2020-06-11",
+   "abstract": "Pre-training is a dominant paradigm in computer vision. For example, supervised ImageNet pre-training is commonly used to initialize the backbones of object detection and segmentation models. He et al., however, show a surprising result that ImageNet pre-training has limited impact on COCO object detection. Here we investigate self-training as another method to utilize additional data on the same setup and contrast it against ImageNet pre-training. Our study reveals the generality and flexibility of self-training with three additional insights: 1) stronger data augmentation and more labeled data further diminish the value of pre-training, 2) unlike pre-training, self-training is always helpful when using stronger data augmentation, in both low-data and high-data regimes, and 3) in the case that pre-training is helpful, self-training improves upon pre-training. For example, on the COCO ob",
+   "url": "https://arxiv.org/abs/2006.06882",
+   "path": "TanitAD Research Lab/Library/papers/2006.06882_Rethinking-Pre-training-and-Self-training.pdf",
+   "bytes": 1655938,
+   "sha256": "87538cc0d3d33c7d8bad8a1961dc3f05665f3c2edd2dd1ecbc908dd07abf5939",
+   "banked": "2026-08-30",
+   "tags": [
+    "data-efficiency"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-data-efficiency-thesis/RESULT.md"
+   ]
+  },
+  "2212.05749": {
+   "key": "2212.05749",
+   "kind": "arxiv",
+   "title": "On Pre-Training for Visuo-Motor Control: Revisiting a Learning-from-Scratch Baseline",
+   "authors": [
+    "Nicklas Hansen",
+    "Zhecheng Yuan",
+    "Yanjie Ze",
+    "Tongzhou Mu",
+    "Aravind Rajeswaran",
+    "Hao Su",
+    "Huazhe Xu",
+    "Xiaolong Wang"
+   ],
+   "published": "2022-12-12",
+   "abstract": "In this paper, we examine the effectiveness of pre-training for visuo-motor control tasks. We revisit a simple Learning-from-Scratch (LfS) baseline that incorporates data augmentation and a shallow ConvNet, and find that this baseline is surprisingly competitive with recent approaches (PVR, MVP, R3M) that leverage frozen visual representations trained on large-scale vision datasets -- across a variety of algorithms, task domains, and metrics in simulation and on a real robot. Our results demonstrate that these methods are hindered by a significant domain gap between the pre-training datasets and current benchmarks for visuo-motor control, which is alleviated by finetuning. Based on our findings, we provide recommendations for future research in pre-training for control and hope that our simple yet strong baseline will aid in accurately benchmarking progress in this area.",
+   "url": "https://arxiv.org/abs/2212.05749",
+   "path": "TanitAD Research Lab/Library/papers/2212.05749_On-Pre-Training-for-Visuo-Motor-Control-Revisiting-a-Learnin.pdf",
+   "bytes": 7976977,
+   "sha256": "f507cd09272ebae41907c010cfbfe2b67da03767241f1ba954edc4b9bd4bea13",
+   "banked": "2026-08-30",
+   "tags": [
+    "data-efficiency"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-data-efficiency-thesis/RESULT.md"
+   ]
+  },
+  "2312.17655": {
+   "key": "2312.17655",
+   "kind": "arxiv",
+   "title": "Visual Point Cloud Forecasting enables Scalable Autonomous Driving",
+   "authors": [
+    "Zetong Yang",
+    "Li Chen",
+    "Yanan Sun",
+    "Hongyang Li"
+   ],
+   "published": "2023-12-29",
+   "abstract": "In contrast to extensive studies on general vision, pre-training for scalable visual autonomous driving remains seldom explored. Visual autonomous driving applications require features encompassing semantics, 3D geometry, and temporal information simultaneously for joint perception, prediction, and planning, posing dramatic challenges for pre-training. To resolve this, we bring up a new pre-training task termed as visual point cloud forecasting - predicting future point clouds from historical visual input. The key merit of this task captures the synergic learning of semantics, 3D structures, and temporal dynamics. Hence it shows superiority in various downstream tasks. To cope with this new problem, we present ViDAR, a general model to pre-train downstream visual encoders. It first extracts historical embeddings by the encoder. These representations are then transformed to 3D geometric s",
+   "url": "https://arxiv.org/abs/2312.17655",
+   "path": "TanitAD Research Lab/Library/papers/2312.17655_Visual-Point-Cloud-Forecasting-enables-Scalable-Autonomous-D.pdf",
+   "bytes": 17613630,
+   "sha256": "ee529561e7ba721641422d8f0057bd133a9bbf9d1d5d1c6def071280ad046167",
+   "banked": "2026-08-30",
+   "tags": [
+    "data-efficiency"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-data-efficiency-thesis/RESULT.md"
+   ]
+  },
+  "2102.01293": {
+   "key": "2102.01293",
+   "kind": "arxiv",
+   "title": "Scaling Laws for Transfer",
+   "authors": [
+    "Danny Hernandez",
+    "Jared Kaplan",
+    "Tom Henighan",
+    "Sam McCandlish"
+   ],
+   "published": "2021-02-02",
+   "abstract": "We study empirical scaling laws for transfer learning between distributions in an unsupervised, fine-tuning setting. When we train increasingly large neural networks from-scratch on a fixed-size dataset, they eventually become data-limited and stop improving in performance (cross-entropy loss). When we do the same for models pre-trained on a large language dataset, the slope in performance gains is merely reduced rather than going to zero. We calculate the effective data \"transferred\" from pre-training by determining how much data a transformer of the same size would have required to achieve the same loss when training from scratch. In other words, we focus on units of data while holding everything else fixed. We find that the effective data transferred is described well in the low data regime by a power-law of parameter count and fine-tuning dataset size. We believe the exponents in the",
+   "url": "https://arxiv.org/abs/2102.01293",
+   "path": "TanitAD Research Lab/Library/papers/2102.01293_Scaling-Laws-for-Transfer.pdf",
+   "bytes": 2007160,
+   "sha256": "f85736d0852adc063f7a5a22c2a4cc12f27cbf5f2625e132bd474ecdc300c081",
+   "banked": "2026-08-30",
+   "tags": [
+    "data-efficiency"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-data-efficiency-thesis/RESULT.md"
+   ]
+  },
+  "2212.05867": {
+   "key": "2212.05867",
+   "kind": "arxiv",
+   "title": "ALSO: Automotive Lidar Self-supervision by Occupancy estimation",
+   "authors": [
+    "Alexandre Boulch",
+    "Corentin Sautier",
+    "Björn Michele",
+    "Gilles Puy",
+    "Renaud Marlet"
+   ],
+   "published": "2022-12-12",
+   "abstract": "We propose a new self-supervised method for pre-training the backbone of deep perception models operating on point clouds. The core idea is to train the model on a pretext task which is the reconstruction of the surface on which the 3D points are sampled, and to use the underlying latent vectors as input to the perception head. The intuition is that if the network is able to reconstruct the scene surface, given only sparse input points, then it probably also captures some fragments of semantic information, that can be used to boost an actual perception task. This principle has a very simple formulation, which makes it both easy to implement and widely applicable to a large range of 3D sensors and deep networks performing semantic segmentation or object detection. In fact, it supports a single-stream pipeline, as opposed to most contrastive learning approaches, allowing training on limite",
+   "url": "https://arxiv.org/abs/2212.05867",
+   "path": "TanitAD Research Lab/Library/papers/2212.05867_ALSO-Automotive-Lidar-Self-supervision-by-Occupancy-estimati.pdf",
+   "bytes": 5333538,
+   "sha256": "693deb4414696a5539162dea368c50c4e6d081e1bb1f6b7ab4324ffb27ba4972",
+   "banked": "2026-08-30",
+   "tags": [
+    "data-efficiency"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-data-efficiency-thesis/RESULT.md"
+   ]
+  },
+  "2411.04434": {
+   "key": "2411.04434",
+   "kind": "arxiv",
+   "title": "Scaling Laws for Pre-training Agents and World Models",
+   "authors": [
+    "Tim Pearce",
+    "Tabish Rashid",
+    "Dave Bignell",
+    "Raluca Georgescu",
+    "Sam Devlin",
+    "Katja Hofmann"
+   ],
+   "published": "2024-11-07",
+   "abstract": "The performance of embodied agents has been shown to improve by increasing model parameters, dataset size, and compute. This has been demonstrated in domains from robotics to video games, when generative learning objectives on offline datasets (pre-training) are used to model an agent's behavior (imitation learning) or their environment (world modeling). This paper characterizes the role of scale in these tasks more precisely. Going beyond the simple intuition that `bigger is better', we show that the same types of power laws found in language modeling also arise in world modeling and imitation learning (e.g. between loss and optimal model size). However, the coefficients of these laws are heavily influenced by the tokenizer, task \\&amp; architecture -- this has important implications on the optimal sizing of models and data.",
+   "url": "https://arxiv.org/abs/2411.04434",
+   "path": "TanitAD Research Lab/Library/papers/2411.04434_Scaling-Laws-for-Pre-training-Agents-and-World-Models.pdf",
+   "bytes": 10059692,
+   "sha256": "dd45889d1c239f56aaf4128a1f130f9935cd4ac3b728aaad5e549eb76d452b7c",
+   "banked": "2026-08-30",
+   "tags": [
+    "data-efficiency"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-data-efficiency-thesis/RESULT.md"
+   ]
+  },
+  "2302.03086": {
+   "key": "2302.03086",
+   "kind": "arxiv",
+   "title": "DITTO: Offline Imitation Learning with World Models",
+   "authors": [
+    "Branton DeMoss",
+    "Paul Duckworth",
+    "Jakob Foerster",
+    "Nick Hawes",
+    "Ingmar Posner"
+   ],
+   "published": "2023-02-06",
+   "abstract": "For imitation learning algorithms to scale to real-world challenges, they must handle high-dimensional observations, offline learning, and policy-induced covariate-shift. We propose DITTO, an offline imitation learning algorithm which addresses all three of these problems. DITTO optimizes a novel distance metric in the latent space of a learned world model: First, we train a world model on all available trajectory data, then, the imitation agent is unrolled from expert start states in the learned model, and penalized for its latent divergence from the expert dataset over multiple time steps. We optimize this multi-step latent divergence using standard reinforcement learning algorithms, which provably induces imitation learning, and empirically achieves state-of-the art performance and sample efficiency on a range of Atari environments from pixels, without any online environment access. W",
+   "url": "https://arxiv.org/abs/2302.03086",
+   "path": "TanitAD Research Lab/Library/papers/2302.03086_DITTO-Offline-Imitation-Learning-with-World-Models.pdf",
+   "bytes": 973454,
+   "sha256": "863e8a20699bab657c58fefe78498757ed0a820cc63209e8fa92ddd18ddc542e",
+   "banked": "2026-08-30",
+   "tags": [
+    "data-efficiency"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-data-efficiency-thesis/RESULT.md"
+   ]
+  },
+  "1406.2199": {
+   "key": "1406.2199",
+   "kind": "arxiv",
+   "title": "Two-Stream Convolutional Networks for Action Recognition in Videos",
+   "authors": [
+    "Karen Simonyan",
+    "Andrew Zisserman"
+   ],
+   "published": "2014-06-09",
+   "abstract": "We investigate architectures of discriminatively trained deep Convolutional Networks (ConvNets) for action recognition in video. The challenge is to capture the complementary information on appearance from still frames and motion between frames. We also aim to generalise the best performing hand-crafted features within a data-driven learning framework. Our contribution is three-fold. First, we propose a two-stream ConvNet architecture which incorporates spatial and temporal networks. Second, we demonstrate that a ConvNet trained on multi-frame dense optical flow is able to achieve very good performance in spite of limited training data. Finally, we show that multi-task learning, applied to two different action classification datasets, can be used to increase the amount of training data and improve the performance on both. Our architecture is trained and evaluated on the standard video ac",
+   "url": "https://arxiv.org/abs/1406.2199",
+   "path": "TanitAD Research Lab/Library/papers/1406.2199_Two-Stream-Convolutional-Networks-for-Action-Recognition-in.pdf",
+   "bytes": 1075236,
+   "sha256": "61c5b62c1f9d50c7445fbc35e09e72b6db3aeecfff9525694d54fd67531c1a47",
+   "banked": "2026-08-30",
+   "tags": [
+    "data-efficiency"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-data-efficiency-thesis/RESULT.md"
+   ]
+  },
+  "2101.01857": {
+   "key": "2101.01857",
+   "kind": "arxiv",
+   "title": "Reinforcement Learning with Latent Flow",
+   "authors": [
+    "Wenling Shang",
+    "Xiaofei Wang",
+    "Aravind Srinivas",
+    "Aravind Rajeswaran",
+    "Yang Gao",
+    "Pieter Abbeel",
+    "Michael Laskin"
+   ],
+   "published": "2021-01-06",
+   "abstract": "Temporal information is essential to learning effective policies with Reinforcement Learning (RL). However, current state-of-the-art RL algorithms either assume that such information is given as part of the state space or, when learning from pixels, use the simple heuristic of frame-stacking to implicitly capture temporal information present in the image observations. This heuristic is in contrast to the current paradigm in video classification architectures, which utilize explicit encodings of temporal information through methods such as optical flow and two-stream architectures to achieve state-of-the-art performance. Inspired by leading video classification architectures, we introduce the Flow of Latents for Reinforcement Learning (Flare), a network architecture for RL that explicitly encodes temporal information through latent vector differences. We show that Flare (i) recovers optim",
+   "url": "https://arxiv.org/abs/2101.01857",
+   "path": "TanitAD Research Lab/Library/papers/2101.01857_Reinforcement-Learning-with-Latent-Flow.pdf",
+   "bytes": 2787426,
+   "sha256": "06252f2af6cc3d62ee1b242ab32241cc3e440d77c55d84ad838a4d4fcdaae543",
+   "banked": "2026-08-30",
+   "tags": [
+    "data-efficiency"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-data-efficiency-thesis/RESULT.md"
+   ]
+  },
+  "2103.15691": {
+   "key": "2103.15691",
+   "kind": "arxiv",
+   "title": "ViViT: A Video Vision Transformer",
+   "authors": [
+    "Anurag Arnab",
+    "Mostafa Dehghani",
+    "Georg Heigold",
+    "Chen Sun",
+    "Mario Lučić",
+    "Cordelia Schmid"
+   ],
+   "published": "2021-03-29",
+   "abstract": "We present pure-transformer based models for video classification, drawing upon the recent success of such models in image classification. Our model extracts spatio-temporal tokens from the input video, which are then encoded by a series of transformer layers. In order to handle the long sequences of tokens encountered in video, we propose several, efficient variants of our model which factorise the spatial- and temporal-dimensions of the input. Although transformer-based models are known to only be effective when large training datasets are available, we show how we can effectively regularise the model during training and leverage pretrained image models to be able to train on comparatively small datasets. We conduct thorough ablation studies, and achieve state-of-the-art results on multiple video classification benchmarks including Kinetics 400 and 600, Epic Kitchens, Something-Somethi",
+   "url": "https://arxiv.org/abs/2103.15691",
+   "path": "TanitAD Research Lab/Library/papers/2103.15691_ViViT-A-Video-Vision-Transformer.pdf",
+   "bytes": 4770088,
+   "sha256": "1d804ea3fe37bbfd96985b4ca53bba3f864c804007a6999848086cb8f079120f",
+   "banked": "2026-08-30",
+   "tags": [
+    "data-efficiency"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-data-efficiency-thesis/RESULT.md"
+   ]
+  },
+  "2102.05095": {
+   "key": "2102.05095",
+   "kind": "arxiv",
+   "title": "Is Space-Time Attention All You Need for Video Understanding?",
+   "authors": [
+    "Gedas Bertasius",
+    "Heng Wang",
+    "Lorenzo Torresani"
+   ],
+   "published": "2021-02-09",
+   "abstract": "We present a convolution-free approach to video classification built exclusively on self-attention over space and time. Our method, named \"TimeSformer,\" adapts the standard Transformer architecture to video by enabling spatiotemporal feature learning directly from a sequence of frame-level patches. Our experimental study compares different self-attention schemes and suggests that \"divided attention,\" where temporal attention and spatial attention are separately applied within each block, leads to the best video classification accuracy among the design choices considered. Despite the radically new design, TimeSformer achieves state-of-the-art results on several action recognition benchmarks, including the best reported accuracy on Kinetics-400 and Kinetics-600. Finally, compared to 3D convolutional networks, our model is faster to train, it can achieve dramatically higher test efficiency ",
+   "url": "https://arxiv.org/abs/2102.05095",
+   "path": "TanitAD Research Lab/Library/papers/2102.05095_Is-Space-Time-Attention-All-You-Need-for-Video-Understanding.pdf",
+   "bytes": 8708681,
+   "sha256": "9b61b223ece84f8d88a60fab70871be3cd368cae2fbbac57a3281aa5f4b1517a",
+   "banked": "2026-08-30",
+   "tags": [
+    "data-efficiency"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-data-efficiency-thesis/RESULT.md"
+   ]
+  },
+  "2203.12602": {
+   "key": "2203.12602",
+   "kind": "arxiv",
+   "title": "VideoMAE: Masked Autoencoders are Data-Efficient Learners for Self-Supervised Video Pre-Training",
+   "authors": [
+    "Zhan Tong",
+    "Yibing Song",
+    "Jue Wang",
+    "Limin Wang"
+   ],
+   "published": "2022-03-23",
+   "abstract": "Pre-training video transformers on extra large-scale datasets is generally required to achieve premier performance on relatively small datasets. In this paper, we show that video masked autoencoders (VideoMAE) are data-efficient learners for self-supervised video pre-training (SSVP). We are inspired by the recent ImageMAE and propose customized video tube masking with an extremely high ratio. This simple design makes video reconstruction a more challenging self-supervision task, thus encouraging extracting more effective video representations during this pre-training process. We obtain three important findings on SSVP: (1) An extremely high proportion of masking ratio (i.e., 90% to 95%) still yields favorable performance of VideoMAE. The temporally redundant video content enables a higher masking ratio than that of images. (2) VideoMAE achieves impressive results on very small datasets (",
+   "url": "https://arxiv.org/abs/2203.12602",
+   "path": "TanitAD Research Lab/Library/papers/2203.12602_VideoMAE-Masked-Autoencoders-are-Data-Efficient-Learners-for.pdf",
+   "bytes": 6487986,
+   "sha256": "0fff5bdfb88ff8c3dc7de45d5108faf4bd3aa50d287e332a43f5fd664eb427ae",
+   "banked": "2026-08-30",
+   "tags": [
+    "data-efficiency"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-data-efficiency-thesis/RESULT.md"
+   ]
+  },
+  "1812.03982": {
+   "key": "1812.03982",
+   "kind": "arxiv",
+   "title": "SlowFast Networks for Video Recognition",
+   "authors": [
+    "Christoph Feichtenhofer",
+    "Haoqi Fan",
+    "Jitendra Malik",
+    "Kaiming He"
+   ],
+   "published": "2018-12-10",
+   "abstract": "We present SlowFast networks for video recognition. Our model involves (i) a Slow pathway, operating at low frame rate, to capture spatial semantics, and (ii) a Fast pathway, operating at high frame rate, to capture motion at fine temporal resolution. The Fast pathway can be made very lightweight by reducing its channel capacity, yet can learn useful temporal information for video recognition. Our models achieve strong performance for both action classification and detection in video, and large improvements are pin-pointed as contributions by our SlowFast concept. We report state-of-the-art accuracy on major video recognition benchmarks, Kinetics, Charades and AVA. Code has been made available at: https://github.com/facebookresearch/SlowFast",
+   "url": "https://arxiv.org/abs/1812.03982",
+   "path": "TanitAD Research Lab/Library/papers/1812.03982_SlowFast-Networks-for-Video-Recognition.pdf",
+   "bytes": 1459255,
+   "sha256": "0061172db85174526c75b8f4812c039fbedeba142effa18efd8a2930a9a3e905",
+   "banked": "2026-08-30",
+   "tags": [
+    "data-efficiency"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-data-efficiency-thesis/RESULT.md"
+   ]
+  },
+  "1706.08033": {
+   "key": "1706.08033",
+   "kind": "arxiv",
+   "title": "Decomposing Motion and Content for Natural Video Sequence Prediction",
+   "authors": [
+    "Ruben Villegas",
+    "Jimei Yang",
+    "Seunghoon Hong",
+    "Xunyu Lin",
+    "Honglak Lee"
+   ],
+   "published": "2017-06-25",
+   "abstract": "We propose a deep neural network for the prediction of future frames in natural video sequences. To effectively handle complex evolution of pixels in videos, we propose to decompose the motion and content, two key components generating dynamics in videos. Our model is built upon the Encoder-Decoder Convolutional Neural Network and Convolutional LSTM for pixel-level prediction, which independently capture the spatial layout of an image and the corresponding temporal dynamics. By independently modeling motion and content, predicting the next frame reduces to converting the extracted content features into the next frame content by the identified motion features, which simplifies the task of prediction. Our model is end-to-end trainable over multiple time steps, and naturally learns to decompose motion and content without separate training. We evaluate the proposed network architecture on hu",
+   "url": "https://arxiv.org/abs/1706.08033",
+   "path": "TanitAD Research Lab/Library/papers/1706.08033_Decomposing-Motion-and-Content-for-Natural-Video-Sequence-Pr.pdf",
+   "bytes": 4667625,
+   "sha256": "dac917af7d06dfd595f7aaecf03779f6aaa1e25d3f950cc5c47fc934bf843e54",
+   "banked": "2026-08-30",
+   "tags": [
+    "data-efficiency"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-data-efficiency-thesis/RESULT.md"
+   ]
+  },
+  "1710.02410": {
+   "key": "1710.02410",
+   "kind": "arxiv",
+   "title": "End-to-end Driving via Conditional Imitation Learning",
+   "authors": [
+    "Felipe Codevilla",
+    "Matthias Müller",
+    "Antonio López",
+    "Vladlen Koltun",
+    "Alexey Dosovitskiy"
+   ],
+   "published": "2017-10-06",
+   "abstract": "Deep networks trained on demonstrations of human driving have learned to follow roads and avoid obstacles. However, driving policies trained via imitation learning cannot be controlled at test time. A vehicle trained end-to-end to imitate an expert cannot be guided to take a specific turn at an upcoming intersection. This limits the utility of such systems. We propose to condition imitation learning on high-level command input. At test time, the learned driving policy functions as a chauffeur that handles sensorimotor coordination but continues to respond to navigational commands. We evaluate different architectures for conditional imitation learning in vision-based driving. We conduct experiments in realistic three-dimensional simulations of urban driving and on a 1/5 scale robotic truck that is trained to drive in a residential area. Both systems drive based on visual input yet remain ",
+   "url": "https://arxiv.org/abs/1710.02410",
+   "path": "TanitAD Research Lab/Library/papers/1710.02410_End-to-end-Driving-via-Conditional-Imitation-Learning.pdf",
+   "bytes": 5456740,
+   "sha256": "dc236d9391285805bb8c66e4839eb4d72f6453b235ee12a7aee71ec99eca4227",
+   "banked": "2026-08-31",
+   "tags": [
+    "v7-gate"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-31-command-conditioning-and-l3/RESULT.md"
+   ]
+  },
+  "2605.25313": {
+   "key": "2605.25313",
+   "kind": "arxiv",
+   "title": "UWM-JEPA: Predictive World Models That Imagine in Belief Space",
+   "authors": [
+    "Santosh Kumar Radha",
+    "Oktay Goktas"
+   ],
+   "published": "2026-05-25",
+   "abstract": "World models for partially observed environments must imagine multiple compatible hidden futures and steer between them under counterfactual actions. Joint Embedding Predictive Architectures (JEPAs) do this in latent space, but a vector-valued latent has no internal structure for carrying the belief over hidden continuations through blind rollout. We introduce the Unitary World Model JEPA (UWM-JEPA), a JEPA world model with a density-matrix latent on a joint system-environment space and a learned unitary predictor. The construction preserves the joint-state spectrum exactly during rollout, so the predictor itself cannot dissipate the represented uncertainty. On a hidden-velocity indicator task requiring five-step forward simulation under a given action sequence with the target observation masked, UWM-JEPA reaches 0.77 accuracy and degrades monotonically as actions are perturbed; a parame",
+   "url": "https://arxiv.org/abs/2605.25313",
+   "path": "TanitAD Research Lab/Library/papers/2605.25313_UWM-JEPA-Predictive-World-Models-That-Imagine-in-Belief-Spac.pdf",
+   "bytes": 3489026,
+   "sha256": "d78ca710e1336283519bced16d475c9c791af0c4e91699f8c79bc2b7d26c5e0d",
+   "banked": "2026-08-31",
+   "tags": [
+    "v7-gate"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-31-command-conditioning-and-l3/RESULT.md"
+   ]
+  },
+  "2607.27017": {
+   "key": "2607.27017",
+   "kind": "arxiv",
+   "title": "What Can Latent World Models Know? Physical Parameter Identifiability in Multimodal Predictive Representations",
+   "authors": [
+    "Kaizhen Tan",
+    "Xin Xu",
+    "Siru Tao",
+    "Yixiao Li",
+    "Hanzhe Hong",
+    "Yang Feng",
+    "Heqing Du"
+   ],
+   "published": "2026-07-29",
+   "abstract": "A central premise of latent world models is that predicting the future forces a representation to internalize the physics of its environment. Which physical quantities does a trained latent actually contain, and what decides this? We answer with controlled interventions in POKEWORLD, an interactive environment whose visually identical objects hide mass, drag, and contact stiffness. A certificate-gated protocol first certifies each parameter as recoverable from raw observations, then measures whether it enters the latent, so a null result can be attributed to the objective rather than to the environment. The resulting identifiability map has two organizing mechanisms and one frontier. Inputs limit what can be known, while prediction targets decide what is retained. Stiffness enters the latent only when touch is forecast ($R^2=0.50$, compared with $-0.02$ when the same signal is merely fus",
+   "url": "https://arxiv.org/abs/2607.27017",
+   "path": "TanitAD Research Lab/Library/papers/2607.27017_What-Can-Latent-World-Models-Know-Physical-Parameter-Identif.pdf",
+   "bytes": 1317854,
+   "sha256": "621eb1cd069f43437479b843178e7e56e05cc8276ded4428160adc40bd904187",
+   "banked": "2026-08-31",
+   "tags": [
+    "v7-gate"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-31-command-conditioning-and-l3/RESULT.md"
+   ]
+  },
+  "2606.09028": {
+   "key": "2606.09028",
+   "kind": "arxiv",
+   "title": "ATM: Action-Consistency Transfer Matrix for Diagnosing and Improving Latent World Models",
+   "authors": [
+    "Jiaheng Chen"
+   ],
+   "published": "2026-06-08",
+   "abstract": "Latent world models are increasingly used for control and goal-conditioned planning, yet assessing whether their learned representations are useful for planning usually requires slow, planner-coupled simulator evaluation with CEM or similar planners. Such evaluation is black-box and model-complexity-dependent: under the same protocol, different world models may require minutes to hours per checkpoint. In this work, we propose ATM, an Action-Consistency Transfer Matrix for diagnosing whether latent transitions preserve action semantics relevant to planning. ATM compares action information in real encoded transitions and model-predicted transitions through lightweight post-hoc probes, producing an interpretable matrix that reveals representation quality, transition-domain inconsistency, and failure modes without simulator rollout. It can also be collapsed into a simple screening score for ",
+   "url": "https://arxiv.org/abs/2606.09028",
+   "path": "TanitAD Research Lab/Library/papers/2606.09028_ATM-Action-Consistency-Transfer-Matrix-for-Diagnosing-and-Im.pdf",
+   "bytes": 4524742,
+   "sha256": "2688b96a620ca7f9d4fc5c48fdef44a20bc2c157179a3825f8ccb73244bfde7e",
+   "banked": "2026-08-31",
+   "tags": [
+    "v7-gate"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-31-command-conditioning-and-l3/RESULT.md"
+   ]
+  },
+  "2602.19634": {
+   "key": "2602.19634",
+   "kind": "arxiv",
+   "title": "Compositional Planning with Jumpy World Models",
+   "authors": [
+    "Jesse Farebrother",
+    "Matteo Pirotta",
+    "Andrea Tirinzoni",
+    "Marc G. Bellemare",
+    "Alessandro Lazaric",
+    "Ahmed Touati"
+   ],
+   "published": "2026-02-23",
+   "abstract": "The ability to plan with temporal abstractions is central to intelligent decision-making. Rather than reasoning over primitive actions, we study agents that compose pre-trained policies as temporally extended actions, enabling solutions to complex tasks that no constituent alone can solve. Such compositional planning remains elusive as compounding errors in long-horizon predictions make it challenging to estimate the visitation distribution induced by sequencing policies. Motivated by the geometric policy composition framework introduced in arXiv:2206.08736, we address these challenges by learning predictive models of multi-step dynamics -- so-called jumpy world models -- that capture state occupancies induced by pre-trained policies across multiple timescales in an off-policy manner. Building on Temporal Difference Flows (arXiv:2503.09817), we enhance these models with a novel consisten",
+   "url": "https://arxiv.org/abs/2602.19634",
+   "path": "TanitAD Research Lab/Library/papers/2602.19634_Compositional-Planning-with-Jumpy-World-Models.pdf",
+   "bytes": 5861063,
+   "sha256": "b39e36622c6b94a0e2ea7ab3dcbf8274f642b5c720586f3c665a76c151a4f92f",
+   "banked": "2026-08-31",
+   "tags": [
+    "v7-gate"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-31-command-conditioning-and-l3/RESULT.md"
+   ]
+  },
+  "2607.12547": {
+   "key": "2607.12547",
+   "kind": "arxiv",
+   "title": "Mind the Gap: Promises and Pitfalls of Hierarchical Planning in LeWorldModel",
+   "authors": [
+    "Niccolò Caselli",
+    "Francesco Massafra",
+    "Samuele Punzo",
+    "Salvatore Lo Sardo",
+    "Ippokratis Pantelidis",
+    "Sathya Kamesh Bhethanabhotla"
+   ],
+   "published": "2026-07-14",
+   "abstract": "We investigate whether temporal hierarchy can improve LeWorldModel on long-horizon goal-conditioned control. We introduce Hi-LeWM, an extension that freezes the pretrained low-level LeWM and adds high-level planning over latent subgoals. We evaluate Hi-LeWM on PushT and Cube across increasing goal offsets. Hierarchy does not automatically improve performance: at short horizons, the best configuration uses a one-step high-level horizon, while longer horizons reveal a mismatch between the learned high-level action space and the inference-time search distribution. Experiments with true future latent subgoals show that the frozen low-level controller can execute well-aligned intermediate targets, indicating that high-level subgoal generation is the main bottleneck. Unconstrained search can select latent macro-actions that appear favorable under the learned model but produce poor control targ",
+   "url": "https://arxiv.org/abs/2607.12547",
+   "path": "TanitAD Research Lab/Library/papers/2607.12547_Mind-the-Gap-Promises-and-Pitfalls-of-Hierarchical-Planning.pdf",
+   "bytes": 1078817,
+   "sha256": "03f0cf2e39166157c21baebb7808992f3481f9edf2b6cb4d771103e87b586533",
+   "banked": "2026-08-31",
+   "tags": [
+    "v7-gate"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-31-command-conditioning-and-l3/RESULT.md"
+   ]
+  },
+  "2605.31111": {
+   "key": "2605.31111",
+   "kind": "arxiv",
+   "title": "Subspace-Decomposed JEPAs: Disentangling Progression and Content in Latent World Models",
+   "authors": [
+    "Lucas Thil",
+    "Jesse Read",
+    "Rim Kaddah",
+    "Guillaume Doquet"
+   ],
+   "published": "2026-05-29",
+   "abstract": "Joint-Embedding Predictive Architectures (JEPAs) learn compact latent world models by predicting future embeddings, but no single coordinate of the latent is designated to encode task progression. We carve the JEPA latent into two orthogonal subspaces with disjoint roles: a low-dimensional progression subspace shaped by a cosine-margin triplet loss, and a high-dimensional content subspace regularised by the existing SIGReg objective of LeWM. We prove that the two anti-collapse forces act on disjoint coordinates, so they compose additively rather than competing on the same dimensions. Our method, SD-JEPA improves over the LeWM baseline on the majority of its control benchmarks at matched compute, and outperforms the strongest non-LeWM JEPA baseline on Push-T; a subspace-ablation falsifier confirms the split is the load-bearing ingredient. Beyond planning, the resulting 1-D angular progres",
+   "url": "https://arxiv.org/abs/2605.31111",
+   "path": "TanitAD Research Lab/Library/papers/2605.31111_Subspace-Decomposed-JEPAs-Disentangling-Progression-and-Cont.pdf",
+   "bytes": 2728942,
+   "sha256": "c9510496e19e31585d2160514dcdfc333e01fb00be3ab8d917a73a4b37e0c2ef",
+   "banked": "2026-08-31",
+   "tags": [
+    "v7-gate"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-31-command-conditioning-and-l3/RESULT.md"
+   ]
+  },
+  "2606.12987": {
+   "key": "2606.12987",
+   "kind": "arxiv",
+   "title": "Diffusion Transformer World-Action Model for AV Scene Prediction",
+   "authors": [
+    "Ruslan Sharifullin",
+    "Benjamin Jiang",
+    "Kai Xi Chew"
+   ],
+   "published": "2026-06-11",
+   "abstract": "Action-conditioned world models let an autonomous vehicle predict future camera scenes from its own planned controls, enabling planning and simulation without real-world rollouts, but at compact, trainable scale the futures are ambiguous and the field's standard distortion metrics actively mislead: they reward a blurry regression mean over a realistic prediction. We confront this with a compact latent world model that, given the present front-camera latent and a sequence of ego-actions, predicts future scene latents a frozen decoder renders to $256 \\times 256$ frames up to 8 seconds ahead, evaluated on 150 held-out nuScenes scenes. We first benchmark where to predict: across six frozen encoders spanning four representation families, V-JEPA2 with temporal context reduces steering RMSE by 40% over the best single-frame encoder. We then train a latent Diffusion Transformer (DiT) and, throug",
+   "url": "https://arxiv.org/abs/2606.12987",
+   "path": "TanitAD Research Lab/Library/papers/2606.12987_Diffusion-Transformer-World-Action-Model-for-AV-Scene-Predic.pdf",
+   "bytes": 1880456,
+   "sha256": "e91dae0327fa6fb1072506ffcd933c8b0a07a60041edbc72044527c141f0a092",
+   "banked": "2026-08-31",
+   "tags": [
+    "action-provenance"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Opponent Analysis/Research/2026-08-31-frontier-action-provenance-sweep/RESULT.md"
+   ]
+  },
+  "2607.22535": {
+   "key": "2607.22535",
+   "kind": "arxiv",
+   "title": "Robot-Factored World Models via Robot Rendering",
+   "authors": [
+    "Byungjun Kim",
+    "Taeksoo Kim",
+    "Hyunsoo Cha",
+    "Hanbyul Joo"
+   ],
+   "published": "2026-07-24",
+   "abstract": "Action-conditioned video world models predict future observations from an initial observation and an action signal. In robotics, actions influence future observations through two distinct processes: they are first realized into robot motion by the robot body and controller, and the scene then responds through contact and object motion. Conditioning directly on action commands asks the world model to learn the realization process itself, while conditioning on logged future states leaks the interaction outcomes it is meant to predict. We propose robot-factored world models, which move two robot-specific factors outside the world model. First, action realization: each command is rolled through the robot's own controller and kinematics into a deployment-available nominal trajectory, a middle signal that avoids both action-realization learning and future-state leakage. Second, robot rendering",
+   "url": "https://arxiv.org/abs/2607.22535",
+   "path": "TanitAD Research Lab/Library/papers/2607.22535_Robot-Factored-World-Models-via-Robot-Rendering.pdf",
+   "bytes": 20396757,
+   "sha256": "559ba2ac4c9fddaa59f49ba864a071f33354f56217589e5ce76357fc28cc5c33",
+   "banked": "2026-08-31",
+   "tags": [
+    "action-provenance"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Opponent Analysis/Research/2026-08-31-frontier-action-provenance-sweep/RESULT.md"
+   ]
+  },
+  "2608.04896": {
+   "key": "2608.04896",
+   "kind": "arxiv",
+   "title": "When Shared Rollouts Fail in Defensive Driving Evaluation: A NAVSIM Score Basis Audit",
+   "authors": [
+    "Ziang Wei",
+    "Minjun Yu",
+    "Zheyuan Lai",
+    "Mingjie Pang",
+    "Wei Li"
+   ],
+   "published": "2026-08-05",
+   "abstract": "Defensive driving scores are useful only when they preserve distinctions between policies that observe surrounding actors and those that do not. Re-simulation benchmarks may use reference-conditioned forgiveness, under which an agent receives credit when the logged human reference fails a compliance channel. When agent and reference share an unstable rollout transformation, this rule can propagate shared reference failures into broad compliance credit. We audit this risk in NAVSIM v2.2 original scene single-stage scoring. Under the affected documented-stack condition on the audited numerical backend, the route-blind Ignore-All probe and a route-aware actor-blind probe outrank human replay and PDM-Closed over the complete 12,146-token navtest split. A fresh installation following the public specification reproduces rollout divergence on a fixed 32-token diagnostic set. A same-source depen",
+   "url": "https://arxiv.org/abs/2608.04896",
+   "path": "TanitAD Research Lab/Library/papers/2608.04896_When-Shared-Rollouts-Fail-in-Defensive-Driving-Evaluation-A.pdf",
+   "bytes": 682398,
+   "sha256": "28826095e637947f9959c6f3005e96e0e75b9ab16adbc6e8afce6b1431a00d46",
+   "banked": "2026-08-31",
+   "tags": [
+    "action-provenance"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Opponent Analysis/Research/2026-08-31-frontier-action-provenance-sweep/RESULT.md"
+   ]
+  },
+  "2607.15898": {
+   "key": "2607.15898",
+   "kind": "arxiv",
+   "title": "Orbis 2: A Hierarchical World Model for Driving",
+   "authors": [
+    "Sudhanshu Mittal",
+    "Arian Mousakhan",
+    "Silvio Galesso",
+    "Karim Farid",
+    "Jonannes Dienert",
+    "Rajat Sahay",
+    "Thomas Brox"
+   ],
+   "published": "2026-07-17",
+   "abstract": "Current world models operate at a single level of abstraction, with most prioritizing perceptual fidelity while lacking the spatial reasoning and semantic understanding required for real-world downstream tasks. We present a hierarchical driving world model that factorizes future prediction across two levels operating at distinct temporal and abstraction scales: a high-level predictor that forecasts coarse scene structure over extended temporal horizons, and a low-level generator that produces detailed predictions conditioned on the high-level output. This decomposition yields high perceptual fidelity while also capturing strong spatial and semantic representations. We further show that pretraining with a diffusion forcing objective yields substantially richer internal representations than the standard teacher forcing objective, while teacher forcing -- predicting only the next frame from",
+   "url": "https://arxiv.org/abs/2607.15898",
+   "path": "TanitAD Research Lab/Library/papers/2607.15898_Orbis-2-A-Hierarchical-World-Model-for-Driving.pdf",
+   "bytes": 2342217,
+   "sha256": "0c11e969500d2e146f5ebe6c0faef7ab8569a31b44382a6e1adea80aed3284b2",
+   "banked": "2026-08-31",
+   "tags": [
+    "action-provenance"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Opponent Analysis/Research/2026-08-31-frontier-action-provenance-sweep/RESULT.md"
+   ]
+  },
+  "2506.09981": {
+   "key": "2506.09981",
+   "kind": "arxiv",
+   "title": "ReSim: Reliable World Simulation for Autonomous Driving",
+   "authors": [
+    "Jiazhi Yang",
+    "Kashyap Chitta",
+    "Shenyuan Gao",
+    "Long Chen",
+    "Yuqian Shao",
+    "Xiaosong Jia",
+    "Hongyang Li",
+    "Andreas Geiger",
+    "Xiangyu Yue",
+    "Li Chen"
+   ],
+   "published": "2025-06-11",
+   "abstract": "How can we reliably simulate future driving scenarios under a wide range of ego driving behaviors? Recent driving world models, developed exclusively on real-world driving data composed mainly of safe expert trajectories, struggle to follow hazardous or non-expert behaviors, which are rare in such data. This limitation restricts their applicability to tasks such as policy evaluation. In this work, we address this challenge by enriching real-world human demonstrations with diverse non-expert data collected from a driving simulator (e.g., CARLA), and building a controllable world model trained on this heterogeneous corpus. Starting with a video generator featuring a diffusion transformer architecture, we devise several strategies to effectively integrate conditioning signals and improve prediction controllability and fidelity. The resulting model, ReSim, enables Reliable Simulation of dive",
+   "url": "https://arxiv.org/abs/2506.09981",
+   "path": "TanitAD Research Lab/Library/papers/2506.09981_ReSim-Reliable-World-Simulation-for-Autonomous-Driving.pdf",
+   "bytes": 9081546,
+   "sha256": "4cea34ec1278c5e02806c4f075650f4e90290a1146d03d84b920e35ce823db1c",
+   "banked": "2026-08-31",
+   "tags": [
+    "action-provenance"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Opponent Analysis/Research/2026-08-31-frontier-action-provenance-sweep/RESULT.md"
+   ]
+  },
+  "2607.22430": {
+   "key": "2607.22430",
+   "kind": "arxiv",
+   "title": "On the Identifiability of Controlled World Models",
+   "authors": [
+    "Xiangteng Zhang",
+    "Yang Guan",
+    "Bo Zhang",
+    "Hongyang Li",
+    "Ya-Qin Zhang",
+    "Shengbo Eben Li"
+   ],
+   "published": "2026-07-24",
+   "abstract": "World model serves as a promising tool to infer environment dynamics under high-dimensional observations and candidate actions. Recently, LeCun's JEPA provides a compelling framework for learning such models in representation space. Its action-conditioned extension plays a central role in visual control and latent-space planning, but leaves a fundamental question: can it recover the controlled dynamics from nonlinear observations? This paper presents a joint identifiability condition for controlled world models with Gaussian latent states, which consists of two coupled components: (1) representation identifiability and (2) transition identifiability. The former depends on the spectral separation property while the latter is related to non-degenerate variation of conditional action. We prove that when this condition holds, minimizing the LeJEPA-style predictive objective can recover both ",
+   "url": "https://arxiv.org/abs/2607.22430",
+   "path": "TanitAD Research Lab/Library/papers/2607.22430_On-the-Identifiability-of-Controlled-World-Models.pdf",
+   "bytes": 4533482,
+   "sha256": "13c6419e236cb2c91492840d3c80da5952ef28e002c39c93a57bbf65c038ad51",
+   "banked": "2026-08-31",
+   "tags": [
+    "action-provenance"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Opponent Analysis/Research/2026-08-31-frontier-action-provenance-sweep/RESULT.md"
+   ]
+  },
+  "2608.06706": {
+   "key": "2608.06706",
+   "kind": "arxiv",
+   "title": "Dueling World Models: Advantage-Style Action Channels for Common-Mode Distractor Rejection",
+   "authors": [
+    "Jiazhuo Li",
+    "Yiming Fei",
+    "Zhiruo Zhou",
+    "Heikichi Hayashi"
+   ],
+   "published": "2026-08-07",
+   "abstract": "Latent world models plan by predicting future states from an action, but when a scene contains motion the agent does not control, they quietly go action-blind: predictions for different actions become indistinguishable even as the training loss keeps improving. Existing remedies suppress this distraction with reconstruction, task reward, or auxiliary objectives, each adding machinery or assumptions. We show that a minimal alternative suffices, borrowed from the dueling decomposition of value into a state baseline and an action advantage: in latent dynamics, subtracting a prediction's mean effect over actions cancels whatever the actions share--the action-independent variation where distractors live--leaving a clean, controllable channel, with no reward, no reconstruction, and no distractor-specific auxiliary loss. Because this is only a subtraction at readout time, it applies unchanged t",
+   "url": "https://arxiv.org/abs/2608.06706",
+   "path": "TanitAD Research Lab/Library/papers/2608.06706_Dueling-World-Models-Advantage-Style-Action-Channels-for-Com.pdf",
+   "bytes": 1088077,
+   "sha256": "9ab681f7d1b5f033f6aa4c0ff1f2d19945f7e9f1cbf33c091204cdc62cae05a8",
+   "banked": "2026-08-31",
+   "tags": [
+    "action-provenance"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Opponent Analysis/Research/2026-08-31-frontier-action-provenance-sweep/RESULT.md"
+   ]
+  },
+  "2511.23369": {
+   "key": "2511.23369",
+   "kind": "arxiv",
+   "title": "SimScale: Learning to Drive via Real-World Simulation at Scale",
+   "authors": [
+    "Haochen Tian",
+    "Tianyu Li",
+    "Haochen Liu",
+    "Jiazhi Yang",
+    "Yihang Qiu",
+    "Guang Li",
+    "Junli Wang",
+    "Yinfeng Gao",
+    "Zhang Zhang",
+    "Liang Wang",
+    "Hangjun Ye",
+    "Tieniu Tan"
+   ],
+   "published": "2025-11-28",
+   "abstract": "Achieving fully autonomous driving systems requires learning rational decisions in a wide span of scenarios, including safety-critical and out-of-distribution ones. However, such cases are underrepresented in real-world corpus collected by human experts. To complement for the lack of data diversity, we introduce a novel and scalable simulation framework capable of synthesizing massive unseen states upon existing driving logs. Our pipeline utilizes advanced neural rendering with a reactive environment to generate high-fidelity multi-view observations controlled by the perturbed ego trajectory. Furthermore, we develop a pseudo-expert trajectory generation mechanism for these newly simulated states to provide action supervision. Upon the synthesized data, we find that a simple co-training strategy on both real-world and simulated samples can lead to significant improvements in both robustne",
+   "url": "https://arxiv.org/abs/2511.23369",
+   "path": "TanitAD Research Lab/Library/papers/2511.23369_SimScale-Learning-to-Drive-via-Real-World-Simulation-at-Scal.pdf",
+   "bytes": 11746205,
+   "sha256": "69877a91da6c362bec021cc5d153951a1d0b7f0290d607f48fee2b62fff15631",
+   "banked": "2026-08-31",
+   "tags": [
+    "action-provenance"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Opponent Analysis/Research/2026-08-31-frontier-action-provenance-sweep/RESULT.md"
+   ]
+  },
+  "2607.05133": {
+   "key": "2607.05133",
+   "kind": "arxiv",
+   "title": "UNIVERSE: Unified Video Action Models for Autonomous Driving with Flexible Mask-Modulated Modality Generation",
+   "authors": [
+    "Mengmeng Liu",
+    "Diankun Zhang",
+    "Jiuming Liu",
+    "Jianfeng Cui",
+    "Hongwei Xie",
+    "Guang Chen",
+    "Hangjun Ye",
+    "Francesco Nex",
+    "Hao Cheng",
+    "Michael Ying Yang"
+   ],
+   "published": "2026-07-06",
+   "abstract": "World Action Models (WAMs) have shown strong potential for improving action generalization in autonomous driving by using future video prediction as dense supervision for scene dynamics and temporal causality. However, it remains unclear which architecture better transfers video-modeling benefits to trajectory generation. Existing cascaded or dual-DiT designs separate video imagination from action prediction, weakening the transfer of video-learned world dynamics to the trajectory branch: the action model may still overfit dataset-specific driving priors, while the video model only indirectly regularizes planning. We propose UNIVERSE, a unified video-action model built upon a single mask-modulated Diffusion Transformer. By co-training future video latents and ego-trajectory tokens within shared generative parameters, UNIVERSE allows dense video supervision to directly shape trajectory de",
+   "url": "https://arxiv.org/abs/2607.05133",
+   "path": "TanitAD Research Lab/Library/papers/2607.05133_UNIVERSE-Unified-Video-Action-Models-for-Autonomous-Driving.pdf",
+   "bytes": 3569867,
+   "sha256": "bc84493af7a2b719598f370d13d99a59e1d92e44bc6b27876be423305004ec5e",
+   "banked": "2026-08-31",
+   "tags": [
+    "action-provenance"
+   ],
+   "note": "",
+   "cited_by": [
+    "TanitAD Research Lab/Opponent Analysis/Research/2026-08-31-frontier-action-provenance-sweep/RESULT.md"
+   ]
+  },
+  "2605.09701": {
+   "key": "2605.09701",
+   "kind": "arxiv",
+   "title": "DriveFuture: Future-Aware Latent World Models for Autonomous Driving",
+   "authors": [
+    "Yufeng Hong",
+    "Xiaotian Zhou",
+    "Yingyan Li",
+    "Xiangpo Zhou",
+    "Lin Liu",
+    "Yadan Luo",
+    "Shaoqing Xu",
+    "Lei Yang",
+    "Ziying Song"
+   ],
+   "published": "2026-05-10",
+   "abstract": "Existing latent world models for autonomous driving have opened a promising path toward future-aware driving intelligence. However, they typically treat future latent states as prediction targets or auxiliary signals, rather than directly conditioning trajectory planning. This can entangle current and future features in latent space. In this work, we propose DriveFuture, a future-aware latent world modeling framework for autonomous driving that explicitly learns planning-oriented foresight by conditioning the current latent state modeling process on future world states. Specifically, during training, the model first predicts future latent world states from the current latent state and ego action, and then refines the prediction against the ground-truth future latent state via cross-attention. The resulting future-aware latent serves as an explicit condition for a diffusion-based trajecto",
+   "url": "https://arxiv.org/abs/2605.09701",
+   "path": "TanitAD Research Lab/Library/papers/2605.09701_DriveFuture-Future-Aware-Latent-World-Models-for-Autonomous.pdf",
+   "bytes": 1373148,
+   "sha256": "b6af52305c6c898c762bc1d820ac614174463ef45fad6470357e1bf746bb1d9e",
+   "banked": "2026-08-31",
+   "tags": [
+    "world-models"
+   ],
+   "note": "DriveFuture: LatentAlign sigmoid-anneals the planner condition from GT-future latent to self-predicted forecast; a scheduled-sampling cure for the train/inference latent gap",
+   "cited_by": [
+    "TanitAD Research Lab/Frontier Scan/Daily/2026-08-31/RESULT.md"
+   ]
+  },
+  "2602.06521": {
+   "key": "2602.06521",
+   "kind": "arxiv",
+   "title": "DriveWorld-VLA: Unified Latent-Space World Modeling with Vision-Language-Action for Autonomous Driving",
+   "authors": [
+    "Feiyang jia",
+    "Lin Liu",
+    "Ziying Song",
+    "Caiyan Jia",
+    "Hangjun Ye",
+    "Xiaoshuai Hao",
+    "Long Chen"
+   ],
+   "published": "2026-02-06",
+   "abstract": "End-to-end (E2E) autonomous driving has recently attracted increasing interest in unifying Vision-Language-Action (VLA) with World Models to enhance decision-making and forward-looking imagination. However, existing methods fail to effectively unify future scene evolution and action planning within a single architecture due to inadequate sharing of latent states, limiting the impact of visual imagination on action decisions. To address this limitation, we propose DriveWorld-VLA, a novel framework that unifies world modeling and planning within a latent space by tightly integrating VLA and world models at the representation level, which enables the VLA planner to benefit directly from holistic scene-evolution modeling and reducing reliance on dense annotated supervision. Additionally, DriveWorld-VLA incorporates the latent states of the world model as core decision-making states for the V",
+   "url": "https://arxiv.org/abs/2602.06521",
+   "path": "TanitAD Research Lab/Library/papers/2602.06521_DriveWorld-VLA-Unified-Latent-Space-World-Modeling-with-Visi.pdf",
+   "bytes": 8392521,
+   "sha256": "047ebabbce3437a5722302de5ac813c3e3fb664c276099f92d444f581ab579c8",
+   "banked": "2026-08-31",
+   "tags": [
+    "world-models"
+   ],
+   "note": "DriveWorld-VLA: feature-level action-conditioned imagination; target is teacher-forced GT BEV latent from the Stage-1 encoder; NAVSIMv1 PDMS 91.3 / v2 EPDMS 86.8",
+   "cited_by": [
+    "TanitAD Research Lab/Frontier Scan/Daily/2026-08-31/RESULT.md"
+   ]
+  },
+  "2602.03604": {
+   "key": "2602.03604",
+   "kind": "arxiv",
+   "title": "A Lightweight Library for Energy-Based Joint-Embedding Predictive Architectures",
+   "authors": [
+    "Basile Terver",
+    "Randall Balestriero",
+    "Megi Dervishi",
+    "David Fan",
+    "Quentin Garrido",
+    "Tushar Nagarajan",
+    "Koustuv Sinha",
+    "Wancong Zhang",
+    "Mike Rabbat",
+    "Yann LeCun",
+    "Amir Bar"
+   ],
+   "published": "2026-02-03",
+   "abstract": "We present EB-JEPA, an open-source library for learning representations and world models using Joint-Embedding Predictive Architectures (JEPAs). JEPAs learn to predict in representation space rather than pixel space, avoiding the pitfalls of generative modeling while capturing semantically meaningful features suitable for downstream tasks. Our library provides modular, self-contained implementations that illustrate how representation learning techniques developed for image-level self-supervised learning can transfer to video, where temporal dynamics add complexity, and ultimately to action-conditioned world models, where the model must additionally learn to predict the effects of control inputs. Each example is designed for single-GPU training within a few hours, making energy-based self-supervised learning accessible for research and education. We provide ablations of JEA components on ",
+   "url": "https://arxiv.org/abs/2602.03604",
+   "path": "TanitAD Research Lab/Library/papers/2602.03604_A-Lightweight-Library-for-Energy-Based-Joint-Embedding-Predi.pdf",
+   "bytes": 735179,
+   "sha256": "45cab1dc74600314965a5bd18a9fc89afb722a5a53f99e37a30c07daf6a6ec0f",
+   "banked": "2026-08-31",
+   "tags": [
+    "jepa"
+   ],
+   "note": "EB-JEPA: FAIR single-GPU library incl. action-conditioned JEPA planning (Two Rooms 97%); candidate external anti-collapse CONTROL rig for the 4060",
+   "cited_by": [
+    "TanitAD Research Lab/Frontier Scan/Daily/2026-08-31/RESULT.md"
+   ]
+  },
+  "2603.08519": {
+   "key": "2603.08519",
+   "kind": "arxiv",
+   "title": "AtomVLA: Scalable Post-Training for Robotic Manipulation via Predictive Latent World Models",
+   "authors": [
+    "Xiaoquan Sun",
+    "Zetian Xu",
+    "Chen Cao",
+    "Zonghe Liu",
+    "Yihan Sun",
+    "Jingrui Pang",
+    "Ruijian Zhang",
+    "Zhen Yang",
+    "Kang Pang",
+    "Dingxin He",
+    "Mingqi Yuan",
+    "Jiayu Chen"
+   ],
+   "published": "2026-03-09",
+   "abstract": "Vision-Language-Action (VLA) models demonstrate remarkable potential for generalizable robotic manipulation. The execution of complex multi-step behaviors in VLA models can be improved by robust instruction grounding, a critical component for effective control. However, current paradigms predominantly rely on coarse, high-level task instructions during supervised fine-tuning. This instruction grounding gap leaves models without explicit intermediate guidance, leading to severe compounding errors in long-horizon tasks. Therefore, bridging this instruction gap and providing scalable post-training for VLA models is urgent. To tackle this problem, we propose \\method, the first subtask-aware VLA framework integrated with a scalable offline post-training pipeline. Our framework leverages a large language model to decompose high-level demonstrations into fine-grained atomic subtasks. This appro",
+   "url": "https://arxiv.org/abs/2603.08519",
+   "path": "TanitAD Research Lab/Library/papers/2603.08519_AtomVLA-Scalable-Post-Training-for-Robotic-Manipulation-via.pdf",
+   "bytes": 14766183,
+   "sha256": "21263406effbbb64c06148fa37b09201279c2f3ae3ef6ea5f240dfbaf343e31a",
+   "banked": "2026-08-31",
+   "tags": [
+    "rl-post-training"
+   ],
+   "note": "AtomVLA: GRPO post-training that scores action chunks in a frozen predictive world model's latent space, avoiding physical rollouts",
+   "cited_by": [
+    "TanitAD Research Lab/Frontier Scan/Daily/2026-08-31/RESULT.md"
+   ]
+  },
+  "2601.00844": {
+   "key": "2601.00844",
+   "kind": "arxiv",
+   "title": "Value-guided action planning with JEPA world models",
+   "authors": [
+    "Matthieu Destrade",
+    "Oumayma Bounou",
+    "Quentin Le Lidec",
+    "Jean Ponce",
+    "Yann LeCun"
+   ],
+   "published": "2025-12-28",
+   "abstract": "Building deep learning models that can reason about their environment requires capturing its underlying dynamics. Joint-Embedded Predictive Architectures (JEPA) provide a promising framework to model such dynamics by learning representations and predictors through a self-supervised prediction objective. However, their ability to support effective action planning remains limited. We propose an approach to enhance planning with JEPA world models by shaping their representation space so that the negative goal-conditioned value function for a reaching cost in a given environment is approximated by a distance (or quasi-distance) between state embeddings. We introduce a practical method to enforce this constraint during training and show that it leads to significantly improved planning performance compared to standard JEPA models on simple control tasks.",
+   "url": "https://arxiv.org/abs/2601.00844",
+   "path": "TanitAD Research Lab/Library/papers/2601.00844_Value-guided-action-planning-with-JEPA-world-models.pdf",
+   "bytes": 489889,
+   "sha256": "ba1c5eb85c58ac4d1ab81b707019751689b2a7dc10f4d3f5db9ceb8d3ada35e3",
+   "banked": "2026-08-31",
+   "tags": [
+    "jepa"
+   ],
+   "note": "Value-guided action planning with JEPA world models",
+   "cited_by": [
+    "TanitAD Research Lab/Frontier Scan/Daily/2026-08-31/RESULT.md"
+   ]
+  },
+  "2601.22156": {
+   "key": "2601.22156",
+   "kind": "arxiv",
+   "title": "Hybrid Linear Attention Done Right: Efficient Distillation and Effective Architectures for Extremely Long Contexts",
+   "authors": [
+    "Yingfa Chen",
+    "Zhen Leng Thai",
+    "Zihan Zhou",
+    "Zhu Zhang",
+    "Xingyu Shen",
+    "Shuo Wang",
+    "Chaojun Xiao",
+    "Xu Han",
+    "Zhiyuan Liu"
+   ],
+   "published": "2026-01-29",
+   "abstract": "Hybrid Transformer architectures, which combine softmax attention blocks and recurrent neural networks (RNNs), have shown a desirable performance-throughput tradeoff for long-context modeling, but their adoption and studies are hindered by the prohibitive cost of large-scale pre-training from scratch. Some recent studies have shown that pre-trained softmax attention blocks can be converted into RNN blocks through parameter transfer and knowledge distillation. However, these transfer methods require substantial amounts of training data (more than 10B tokens), and the resulting hybrid models also exhibit poor long-context performance, which is the scenario where hybrid models enjoy significant inference speedups over Transformer-based models. In this paper, we present HALO (Hybrid Attention via Layer Optimization), a pipeline for distilling Transformer models into RNN-attention hybrid mode",
+   "url": "https://arxiv.org/abs/2601.22156",
+   "path": "TanitAD Research Lab/Library/papers/2601.22156_Hybrid-Linear-Attention-Done-Right-Efficient-Distillation-an.pdf",
+   "bytes": 939739,
+   "sha256": "499d7175d94e31debc3d3bfe7d724b046a1cb42cb4d965a7212e1215457d6517",
+   "banked": "2026-08-31",
+   "tags": [
+    "post-transformer"
+   ],
+   "note": "Hybrid linear attention via distillation; RELAYED claim of ~25% of from-scratch training budget - BANKED FOR VERIFICATION, not yet read",
+   "cited_by": [
+    "TanitAD Research Lab/Frontier Scan/Daily/2026-08-31/RESULT.md"
+   ]
+  },
+  "2607.07663": {
+   "key": "2607.07663",
+   "kind": "arxiv",
+   "title": "Recursive Self-Improvement in AI: From Bounded Self-Refinement to Autonomous Research Loops",
+   "authors": [
+    "Mingguang Chen",
+    "Licheng Wang",
+    "Bo Qu"
+   ],
+   "published": "2026-07-08",
+   "abstract": "AI systems increasingly participate in their own improvement: revising their outputs, adapting their own harnesses during deployment, training on data they generate, and, increasingly, conducting AI research itself. This literature is described under a vocabulary (\"self-refine,\" \"self-reward,\" \"self-play,\" \"self-evolve\") that conflates fundamentally different ambitions. We survey 1,250 arXiv papers (2024-2026) along two axes: what the system improves -- its behavior in deployment, its policy through training, its evaluator, or the research process itself -- and the degree of loop closure (human-in-the-loop to fully closed). The taxonomy separates bounded self-refinement -- convergent, evaluable, and already industrial practice -- from open-ended recursive self-improvement (RSI), which remains bounded by grounding requirements, collapse dynamics, and compute constraints on every measured ",
+   "url": "https://arxiv.org/abs/2607.07663",
+   "path": "TanitAD Research Lab/Library/papers/2607.07663_Recursive-Self-Improvement-in-AI-From-Bounded-Self-Refinemen.pdf",
+   "bytes": 5035755,
+   "sha256": "0cc637f5492ed565fc9f80fa9a1b5772d3e3743a13ef5bc294c0c081b7142f93",
+   "banked": "2026-08-31",
+   "tags": [
+    "self-improving"
+   ],
+   "note": "Recursive self-improvement survey: bounded self-refinement to autonomous research loops",
+   "cited_by": [
+    "TanitAD Research Lab/Frontier Scan/Daily/2026-08-31/RESULT.md"
+   ]
+  },
+  "2507.04559": {
+   "key": "2507.04559",
+   "kind": "arxiv",
+   "title": "MambaVideo for Discrete Video Tokenization with Channel-Split Quantization",
+   "authors": [
+    "Dawit Mureja Argaw",
+    "Xian Liu",
+    "Joon Son Chung",
+    "Ming-Yu Liu",
+    "Fitsum Reda"
+   ],
+   "published": "2025-07-06",
+   "abstract": "Discrete video tokenization is essential for efficient autoregressive generative modeling due to the high dimensionality of video data. This work introduces a state-of-the-art discrete video tokenizer with two key contributions. First, we propose a novel Mamba-based encoder-decoder architecture that overcomes the limitations of previous sequencebased tokenizers. Second, we introduce a new quantization scheme, channel-split quantization, which significantly enhances the representational power of quantized latents while preserving the token count. Our model sets a new state-of-the-art, outperforming both causal 3D convolutionbased and Transformer-based approaches across multiple datasets. Experimental results further demonstrate its robustness as a tokenizer for autoregressive video generation.",
+   "url": "https://arxiv.org/abs/2507.04559",
+   "path": "TanitAD Research Lab/Library/papers/2507.04559_MambaVideo-for-Discrete-Video-Tokenization-with-Channel-Spli.pdf",
+   "bytes": 3870094,
+   "sha256": "97ac718fdce6688b79d94164119ca59a5379922d1097f06bb1bc0944f13f494a",
+   "banked": "2026-08-31",
+   "tags": [
+    "tokenizers"
+   ],
+   "note": "MambaVideo discrete video tokenization with channel-split quantization",
+   "cited_by": [
+    "TanitAD Research Lab/Frontier Scan/Daily/2026-08-31/RESULT.md"
+   ]
+  },
+  "2606.21775": {
+   "key": "2606.21775",
+   "kind": "arxiv",
+   "title": "Beyond the Next Step: Variable-Length Latent World Models for Long-Horizon Planning",
+   "authors": [
+    "Tianqi Du",
+    "Qi Zhang",
+    "Yifei Wang",
+    "Yisen Wang"
+   ],
+   "published": "2026-06-19",
+   "abstract": "Recently, world models have emerged as a promising paradigm for building intelligent agents by learning predictive models that estimate future environment states conditioned on observations and actions. In particular, JEPA-style latent world models provide an efficient alternative to pixel space prediction by learning action-conditioned dynamics in compact representation spaces. However, existing latent world models typically rely on one-step prediction and must be recursively rolled out for long-horizon planning, which leads to compounding errors and a mismatch between training objectives and downstream planning tasks. To address this limitation, we propose Variable-length Latent World Models (VLWMs), a framework that learns to predict future latent states conditioned on action sequences of variable lengths. Instead of training only on one-step transitions, VLWMs directly model temporal",
+   "url": "https://arxiv.org/abs/2606.21775",
+   "path": "TanitAD Research Lab/Library/papers/2606.21775_Beyond-the-Next-Step-Variable-Length-Latent-World-Models-for.pdf",
+   "bytes": 1579767,
+   "sha256": "cebced1aaef59e790a4aa7c504cca7ed89038b71d13f2002712555883b6375db",
+   "banked": "2026-08-31",
+   "tags": [
+    "memory-horizon"
+   ],
+   "note": "Variable-Length Latent World Models: predict future latents conditioned on VARIABLE-LENGTH action sequences so one predictor evaluates plans across horizons - directly on our tactical-6s vs strategic-30s ladder",
+   "cited_by": [
+    "TanitAD Research Lab/Opponent Analysis/Research/2026-08-31-waymo-10-lessons-adjudication/RESULT.md"
+   ]
+  },
+  "2606.09828": {
+   "key": "2606.09828",
+   "kind": "arxiv",
+   "title": "Latent Spatial Memory for Video World Models",
+   "authors": [
+    "Weijie Wang",
+    "Haoyu Zhao",
+    "Yifan Yang",
+    "Feng Chen",
+    "Zeyu Zhang",
+    "Yefei He",
+    "Zicheng Duan",
+    "Donny Y. Chen",
+    "Yuqing Yang",
+    "Bohan Zhuang"
+   ],
+   "published": "2026-06-08",
+   "abstract": "Video world models that maintain 3D spatial consistency across generated frames typically rely on explicit point cloud memory constructed in RGB space. This design is both computationally expensive, requiring repeated rendering and VAE encoding, and inherently lossy, as the round trip through pixel space discards rich features of the learned latent representation. In this paper, we introduce \\emph{latent spatial memory} for video world models, a persistent 3D cache that stores scene information directly in the diffusion latent space, avoiding pixel-space reconstruction. Building on this, we propose Mirage, a latent-space spatial memory framework that constructs the memory by lifting latent tokens into 3D via depth-guided back-projection and queries it by synthesizing novel views through direct latent-space warping. This unified formulation eliminates both the information loss of pixel-sp",
+   "url": "https://arxiv.org/abs/2606.09828",
+   "path": "TanitAD Research Lab/Library/papers/2606.09828_Latent-Spatial-Memory-for-Video-World-Models.pdf",
+   "bytes": 16221682,
+   "sha256": "f2ac23bb1443aa5b655da52d8c2fdc1efe9ed4055d6b79d1f2c32bc0bcadcccd",
+   "banked": "2026-08-31",
+   "tags": [
+    "memory-horizon"
+   ],
+   "note": "Latent Spatial Memory for Video World Models: 10.57x faster end-to-end generation, 55x less GPU memory than RGB point-cloud methods (RELAYED numbers, verify)",
+   "cited_by": [
+    "TanitAD Research Lab/Opponent Analysis/Research/2026-08-31-waymo-10-lessons-adjudication/RESULT.md"
+   ]
+  },
+  "2603.03482": {
+   "key": "2603.03482",
+   "kind": "arxiv",
+   "title": "Beyond Pixel Histories: World Models with Persistent 3D State",
+   "authors": [
+    "Samuel Garcin",
+    "Thomas Walker",
+    "Steven McDonagh",
+    "Tim Pearce",
+    "Hakan Bilen",
+    "Tianyu He",
+    "Kaixin Wang",
+    "Jiang Bian"
+   ],
+   "published": "2026-03-03",
+   "abstract": "Interactive world models continually generate video by responding to a user's actions, enabling open-ended generation capabilities. However, existing models typically lack a 3D representation of the environment, meaning 3D consistency must be implicitly learned from data, and spatial memory is restricted to limited temporal context windows. This results in an unrealistic user experience and presents significant obstacles to downstream tasks such as training agents. To address this, we present PERSIST, a new paradigm of world model which simulates the evolution of a latent 3D scene: environment, camera, and renderer. This allows us to synthesise new frames with persistent spatial memory and consistent geometry. Both quantitative metrics and a qualitative user study show substantial improvements in spatial memory, 3D consistency, and long-horizon stability over existing methods, enabling c",
+   "url": "https://arxiv.org/abs/2603.03482",
+   "path": "TanitAD Research Lab/Library/papers/2603.03482_Beyond-Pixel-Histories-World-Models-with-Persistent-3D-State.pdf",
+   "bytes": 18614751,
+   "sha256": "d43e5cea83f08962d003ab1a3653d20bfc49204ab2c47fb647aeea606bb2f8a2",
+   "banked": "2026-08-31",
+   "tags": [
+    "3d-geometry"
+   ],
+   "note": "Beyond Pixel Histories: world models with PERSISTENT 3D STATE - spatial memory and long-horizon stability",
+   "cited_by": [
+    "TanitAD Research Lab/Opponent Analysis/Research/2026-08-31-waymo-10-lessons-adjudication/RESULT.md"
+   ]
+  },
+  "2607.04732": {
+   "key": "2607.04732",
+   "kind": "arxiv",
+   "title": "SparseOcc++: Geometry-Aware Sparse Latent Representation for Semantic Occupancy Prediction",
+   "authors": [
+    "Pin Tang",
+    "Zhongdao Wang",
+    "Guoqing Wang",
+    "Xiangxuan Ren",
+    "Chao Ma"
+   ],
+   "published": "2026-07-06",
+   "abstract": "Vision-based 3D semantic occupancy prediction is essential for autonomous driving, yet dense voxel representations waste computation on largely empty space, while BEV and TPV projections compromise fine-grained 3D structure. Fully sparse representations offer an attractive alternative, but existing methods, including SparseOcc, entangle scene completion with semantic prediction by indiscriminately propagating high-dimensional features into empty regions and applying voxel-wise classification. This creates excessive activations, computational overhead, and geometric ambiguity. We present SparseOcc++, a geometry-aware sparse framework that explicitly decouples scene completion from semantic segmentation. SparseOcc++ reformulates completion as signed-distance regression on sparse anchor voxels through a scene completion field (SCF). To model complex outdoor geometry robustly, it combines or",
+   "url": "https://arxiv.org/abs/2607.04732",
+   "path": "TanitAD Research Lab/Library/papers/2607.04732_SparseOcc-Geometry-Aware-Sparse-Latent-Representation-for-Se.pdf",
+   "bytes": 7622029,
+   "sha256": "3fdf4d3f42ff766a8c1ead17a25732244aba046e5fc284976286d3c1112f23ba",
+   "banked": "2026-08-31",
+   "tags": [
+    "3d-geometry"
+   ],
+   "note": "SparseOcc++: geometry-aware SPARSE latent representation for semantic occupancy - candidate answer to our 4x4 readout geometry ceiling",
+   "cited_by": [
+    "TanitAD Research Lab/Opponent Analysis/Research/2026-08-31-waymo-10-lessons-adjudication/RESULT.md"
+   ]
+  },
+  "2605.01694": {
+   "key": "2605.01694",
+   "kind": "arxiv",
+   "title": "Latent State Design for World Models under Sufficiency Constraints",
+   "authors": [
+    "Keon Woo Kim"
+   ],
+   "published": "2026-05-03",
+   "abstract": "A world model matters to an agent only through the state it constructs. That state must preserve some information, discard other information, and support some future function: prediction, control, planning, memory, grounding, or counterfactual reasoning. This paper treats world-model research as latent state design under sufficiency constraints. We propose a functional taxonomy that groups methods by what their latent state is for, rather than by architecture or application domain: predictive embedding, recurrent belief state, object/causal structure, latent action interface, grounded planning interface, and memory substrate. These roles expose distinctions that architecture-based groupings hide, including the gap between predictive sufficiency and control sufficiency, and the gap between passive video prediction and counterfactual action modeling. The taxonomy supports an evaluation fra",
+   "url": "https://arxiv.org/abs/2605.01694",
+   "path": "TanitAD Research Lab/Library/papers/2605.01694_Latent-State-Design-for-World-Models-under-Sufficiency-Const.pdf",
+   "bytes": 379105,
+   "sha256": "0a88bcb4ab23b0a3b785581f5eb64e3dd07e84846ab11f0597b77d784a01e6d6",
+   "banked": "2026-08-31",
+   "tags": [
+    "world-models"
+   ],
+   "note": "Latent State Design for World Models under Sufficiency Constraints - hierarchical decomposition across temporal scales",
+   "cited_by": [
+    "TanitAD Research Lab/Opponent Analysis/Research/2026-08-31-waymo-10-lessons-adjudication/RESULT.md"
+   ]
+  },
+  "2606.03238": {
+   "key": "2606.03238",
+   "kind": "arxiv",
+   "title": "When RLHF Fails: A Mechanistic Taxonomy of Reward Hacking, Collapse, and Evaluator Gaming",
+   "authors": [
+    "Zelalem Abahana",
+    "David Evans",
+    "Satish Mahadevan Srinivasan",
+    "Matjaz Gams"
+   ],
+   "published": "2026-06-02",
+   "abstract": "RLHF evaluation should track how failures emerge, where they localize, and which warning signals appear before external quality degrades. We study this problem with a compact RLHF pipeline built for this paper, including PPO, DPO, uncertainty-penalized PPO (UP-PPO), reward-model uncertainty, approximate policy drift, diversity and repetition diagnostics, and two external LLM judges. Rather than treating reward hacking as a single terminal event, we classify matched checkpoint and prompt-level transitions by the directions of learned reward R_phi, judge scores R_dag and R2_dag, and their average R_dag. The main empirical findings are that aggressive PPO produces the clearest localized reward-hacking signal, UP-PPO reduces but does not eliminate that signal, row-level diagnostics reveal failures hidden by checkpoint averages, and pre-transition features partially anticipate future localize",
+   "url": "https://arxiv.org/abs/2606.03238",
+   "path": "TanitAD Research Lab/Library/papers/2606.03238_When-RLHF-Fails-A-Mechanistic-Taxonomy-of-Reward-Hacking-Col.pdf",
+   "bytes": 468659,
+   "sha256": "7bd67073aa455f7e3ee3579694e858bef2ce7b5ee3cb60cfdc34b2e51bbb48c9",
+   "banked": "2026-08-31",
+   "tags": [
+    "eval-integrity"
+   ],
+   "note": "When RLHF Fails: mechanistic taxonomy of reward hacking, collapse and EVALUATOR GAMING - the counter-evidence to Waymo lesson 6's independent-Critic claim",
+   "cited_by": [
+    "TanitAD Research Lab/Opponent Analysis/Research/2026-08-31-waymo-10-lessons-adjudication/RESULT.md"
+   ]
+  },
+  "2604.13602": {
+   "key": "2604.13602",
+   "kind": "arxiv",
+   "title": "Reward Hacking in the Era of Large Models: Mechanisms, Emergent Misalignment, Challenges",
+   "authors": [
+    "Xiaohua Wang",
+    "Muzhao Tian",
+    "Yuqi Zeng",
+    "Zisu Huang",
+    "Jiakang Yuan",
+    "Bowen Chen",
+    "Jingwen Xu",
+    "Mingbo Zhou",
+    "Wenhao Liu",
+    "Muling Wu",
+    "Zhengkang Guo",
+    "Qi Qian"
+   ],
+   "published": "2026-04-15",
+   "abstract": "Reinforcement Learning from Human Feedback (RLHF) and related alignment paradigms have become central to steering large language models (LLMs) and multimodal large language models (MLLMs) toward human-preferred behaviors. However, these approaches introduce a systemic vulnerability: reward hacking, where models exploit imperfections in learned reward signals to maximize proxy objectives without fulfilling true task intent. As models scale and optimization intensifies, such exploitation manifests as verbosity bias, sycophancy, hallucinated justification, benchmark overfitting, and, in multimodal settings, perception--reasoning decoupling and evaluator manipulation. Recent evidence further suggests that seemingly benign shortcut behaviors can generalize into broader forms of misalignment, including deception and strategic gaming of oversight mechanisms. In this survey, we propose the Proxy",
+   "url": "https://arxiv.org/abs/2604.13602",
+   "path": "TanitAD Research Lab/Library/papers/2604.13602_Reward-Hacking-in-the-Era-of-Large-Models-Mechanisms-Emergen.pdf",
+   "bytes": 4086893,
+   "sha256": "92f3666ec048993eaa603af985e69c242d91953d231bdcbe601ea0432666c50a",
+   "banked": "2026-08-31",
+   "tags": [
+    "eval-integrity"
+   ],
+   "note": "Reward Hacking in the Era of Large Models: mechanisms and emergent misalignment",
+   "cited_by": [
+    "TanitAD Research Lab/Opponent Analysis/Research/2026-08-31-waymo-10-lessons-adjudication/RESULT.md"
+   ]
+  },
+  "2507.17596": {
+   "key": "2507.17596",
+   "kind": "arxiv",
+   "title": "PRIX: Learning to Plan from Raw Pixels for End-to-End Autonomous Driving",
+   "authors": [
+    "Maciej K. Wozniak",
+    "Lianhang Liu",
+    "Yixi Cai",
+    "Patric Jensfelt"
+   ],
+   "published": "2025-07-23",
+   "abstract": "While end-to-end autonomous driving models show promising results, their practical deployment is often hindered by large model sizes, a reliance on expensive LiDAR sensors and computationally intensive BEV feature representations. This limits their scalability, especially for mass-market vehicles equipped only with cameras. To address these challenges, we propose PRIX (Plan from Raw Pixels). Our novel and efficient end-to-end driving architecture operates using only camera data, without explicit BEV representation and forgoing the need for LiDAR. PRIX leverages a visual feature extractor coupled with a generative planning head to predict safe trajectories from raw pixel inputs directly. A core component of our architecture is the Context-aware Recalibration Transformer (CaRT), a novel module designed to effectively enhance multi-level visual features for more robust planning. We demonstr",
+   "url": "https://arxiv.org/abs/2507.17596",
+   "path": "TanitAD Research Lab/Library/papers/2507.17596_PRIX-Learning-to-Plan-from-Raw-Pixels-for-End-to-End-Autonom.pdf",
+   "bytes": 3735680,
+   "sha256": "35313c2f482fda850b4c42a4a2d8a3c2be71c5d75af1fae2dae463f0e57e4c36",
+   "banked": "2026-08-31",
+   "tags": [
+    "vision-only"
+   ],
+   "note": "PRIX: planning from RAW PIXELS end-to-end - camera-only counter-evidence to Waymo lesson 1",
+   "cited_by": [
+    "TanitAD Research Lab/Opponent Analysis/Research/2026-08-31-waymo-10-lessons-adjudication/RESULT.md"
+   ]
+  },
+  "2505.06113": {
+   "key": "2505.06113",
+   "kind": "arxiv",
+   "title": "Camera-Only Bird's Eye View Perception: A Neural Approach to LiDAR-Free Environmental Mapping for Autonomous Vehicles",
+   "authors": [
+    "Anupkumar Bochare"
+   ],
+   "published": "2025-05-09",
+   "abstract": "Autonomous vehicle perception systems have traditionally relied on costly LiDAR sensors to generate precise environmental representations. In this paper, we propose a camera-only perception framework that produces Bird's Eye View (BEV) maps by extending the Lift-Splat-Shoot architecture. Our method combines YOLOv11-based object detection with DepthAnythingV2 monocular depth estimation across multi-camera inputs to achieve comprehensive 360-degree scene understanding. We evaluate our approach on the OpenLane-V2 and NuScenes datasets, achieving up to 85% road segmentation accuracy and 85-90% vehicle detection rates when compared against LiDAR ground truth, with average positional errors limited to 1.2 meters. These results highlight the potential of deep learning to extract rich spatial information using only camera inputs, enabling cost-efficient autonomous navigation without sacrificing ",
+   "url": "https://arxiv.org/abs/2505.06113",
+   "path": "TanitAD Research Lab/Library/papers/2505.06113_Camera-Only-Bird-s-Eye-View-Perception-A-Neural-Approach-to.pdf",
+   "bytes": 13097609,
+   "sha256": "ff592bb7358b95d0de5492caa9ca8e429f6cd4ed645176a3ae0a43ca7fa4797f",
+   "banked": "2026-08-31",
+   "tags": [
+    "vision-only"
+   ],
+   "note": "Camera-only BEV perception without LiDAR - source to verify the 85.1% segmentation / 92.1% detection parity figures",
+   "cited_by": [
+    "TanitAD Research Lab/Opponent Analysis/Research/2026-08-31-waymo-10-lessons-adjudication/RESULT.md"
+   ]
+  },
+  "2602.07125": {
+   "key": "2602.07125",
+   "kind": "arxiv",
+   "title": "Reasoning-Augmented Representations for Multimodal Retrieval",
+   "authors": [
+    "Jianrui Zhang",
+    "Anirudh Sundara Rajan",
+    "Brandon Han",
+    "Soochahn Lee",
+    "Sukanta Ganguly",
+    "Yong Jae Lee"
+   ],
+   "published": "2026-02-06",
+   "abstract": "Universal Multimodal Retrieval (UMR) seeks any-to-any search across text and vision, yet modern embedding models remain brittle when queries require latent reasoning (e.g., resolving underspecified references or matching compositional constraints). We argue this brittleness is often data-induced: when images carry \"silent\" evidence and queries leave key semantics implicit, a single embedding pass must both reason and compress, encouraging spurious feature matching. We propose a data-centric framework that decouples these roles by externalizing reasoning before retrieval. Using a strong Vision--Language Model, we make implicit semantics explicit by densely captioning visual evidence in corpus entries, resolving ambiguous multimodal references in queries, and rewriting verbose instructions into concise retrieval constraints. Inference-time enhancement alone is insufficient; the retriever m",
+   "url": "https://arxiv.org/abs/2602.07125",
+   "path": "TanitAD Research Lab/Library/papers/2602.07125_Reasoning-Augmented-Representations-for-Multimodal-Retrieval.pdf",
+   "bytes": 3014544,
+   "sha256": "864a090b07e4e1c73d6f91a40d8998b0a73a9822ed3b036f5fa14333241bb9d1",
+   "banked": "2026-08-31",
+   "tags": [
+    "semantic-search"
+   ],
+   "note": "Reasoning-Augmented Representations for Multimodal Retrieval - any-to-any retrieval where queries need latent reasoning",
+   "cited_by": [
+    "TanitAD Research Lab/Opponent Analysis/Research/2026-08-31-waymo-10-lessons-adjudication/RESULT.md"
    ]
   }
  }
