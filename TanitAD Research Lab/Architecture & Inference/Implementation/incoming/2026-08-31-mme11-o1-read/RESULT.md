@@ -92,10 +92,62 @@ windows at k=60. The addendum priced this at *"~43 % of the windows (94 → 54 p
 120-frame episode)"*. The 6 s horizon buys reach and pays in sample count; that trade
 must be stated wherever a k=60 arm is compared to a k=8 one.
 
+## ⭐⭐ THIRD RESULT — MM-E17: the action signal is HEALTHY at the embedding and is DESTROYED downstream
+
+MM-E11's redirect said the defect is *"how actions enter the predictor"*. That is now
+**localised to a stage**, not merely asserted. The probe holds the SCENE fixed, varies
+the ACTION by roll, and reports the action spread **divided by the scene spread at that
+same stage** — a ratio comparable across stages, where a raw norm would not be.
+
+| stage | `postrain30k` | `o1ctrl30k` |
+|---|---|---|
+| `act_emb` (the action embedding) | **0.3341** | **0.3021** |
+| FiLM block 0 | 0.0463 | 0.0144 |
+| block 0 output (residual stream) | 0.0042 | 0.0038 |
+| `h_last` after norm | 0.0114 | 0.0061 |
+| **prediction (h1)** | **0.00595** | **0.00236** |
+
+```
+postrain30k:  act_emb 0.3341 -> film0 0.0463  (7.2x drop) -> block0 0.0042 (10.9x) -> pred 0.00595   TOTAL  56x
+o1ctrl30k:    act_emb 0.3021 -> film0 0.0144 (21.0x drop) -> block0 0.0038  (3.8x) -> pred 0.00236   TOTAL 128x
+```
+
+⭐⭐ **AT `act_emb` THE ACTION SIGNAL IS HEALTHY — 33 % of the scene's variation.** The
+action embedding carries plenty. It is then attenuated **56× (incumbent) / 128× (O1 arm)**
+before reaching the prediction, and the loss happens in two places: **act_emb → FiLM**
+(7–21×) and **FiLM → residual stream** (4–11×).
+
+⇒ ⛔ **THIS IS NOT A DATA PROBLEM AND NOT AN OBJECTIVE PROBLEM.** The action
+representation is fine and the objective family is exhausted (MM-E11). The defect is the
+**conditioning MECHANISM**: FiLM's output is small against the stream it modulates —
+`film0` scene-spread 0.54 against `block0` scene-spread **2.28**, so the modulation is a
+~4×-smaller perturbation on a large residual signal, and the action's share of it is
+swamped.
+
+⚠️ **The blocks do partially recover it** (0.0042 → 0.0069 → 0.0102 across the three),
+so the mechanism is not dead — it is *starved*, from a base two orders of magnitude below
+the scene. The head then cuts it back to 0.0059.
+
+⭐ **AND IT SUPPLIES A MECHANISM FOR WHY O1 MADE THINGS WORSE:** the O1 arm's act_emb→FiLM
+drop is **21× against the incumbent's 7.2×**, and its act_emb scene-spread is 0.046 vs
+0.102 — O1 appears to have *shrunk the action embedding's dynamic range*. ⚠️ Single seed,
+so the magnitude is unresolved; the direction is consistent with MM-E11's fall.
+
+**Both controls read their known values:** C0 identity **exactly 0.0** on both arms (the
+forward is deterministic, so these small numbers are real signal-absence); every stage's
+scene spread is large (0.045–2.45), so no stage is 0/0 VOID.
+
+⇒ **THE NEXT LEVER IS THE CONDITIONING MECHANISM'S GAIN**, not the loss and not the
+action representation: how FiLM's modulation is scaled against the residual stream it
+enters. That is a one-variable architectural change, and it is where MM-E11's
+pre-committed redirect actually points.
+
 ## Deliverable manifest
 
 | artifact | md5 |
 |---|---|
 | `raw/actdiv_o1ctrl.json` | `72606e6a01984d7f2e446da00c7f07db` |
 | `raw/k60_timing_log.jsonl` | `927eaec9f2bfa108a3f2db74e56963bc` |
+| `raw/condpath.json` (MM-E17) | `a28a13f0b0667afafb87d77b7df40175` |
+| `code/condpath_thor.py` | `e6b30bf9e6b38e6c9755e12f4b068b7d` |
 | pre-registration (incl. the pre-read amendment) | `Project Steering/PREREG_O1_CTRL.md` |
