@@ -89,7 +89,43 @@ transport the scene.
 | **drift unchanged** | ⛔ drift is INDEPENDENT of the horizon and needs its own lever; the pre-committed candidate remains the frozen/EMA teacher target |
 | drift RISES | report it; a harder task may legitimately raise it, and per the anti-gate below that is not automatically a regression |
 
-⚠️ **Committed now, at step ~600, with no drift number in hand for this arm** — the same
+### ⛔ AMENDED AT STEP ~2,800 — THE DRIFT READ HAS LOW POWER, AND I AM SAYING SO BEFORE THE NUMBER
+
+I wrote §3b without consulting `PROVEN_TRAINING_SETUP.md`. It records **the cleanest
+separation in the campaign — eight arms, no overlap:**
+
+| initialisation | drift fraction |
+|---|---|
+| **distilled** (3 arms) | 0.1753 / 0.1952 / 0.3650 |
+| **scratch** (5 arms) | **0.6138 – 0.6416** — a **4 % band across unrelated recipes** |
+
+> *"Five arms with different objectives, weights and schedules land within 4 % of each
+> other. That is what a floor looks like. Objective design was not the variable;
+> initialisation was."* — and **nine objective terms** (O1, O2, O3, O7–O11, PSG) failed
+> to move it.
+
+⛔ **`k60p30k` is a SCRATCH arm.** The prior therefore predicts drift ≈ **0.61–0.64**
+almost regardless of what `o5_k` does. ⇒ **the outcomes in the table below are NOT
+symmetric in what they license:**
+
+* **"drift unchanged" is the EXPECTED result and is NEARLY UNINFORMATIVE.** ⛔ It must
+  **not** be read as *"the horizon does not affect drift"* — it is what every scratch
+  arm does, and reading the prior back as a finding is the error this amendment exists
+  to prevent.
+* **"drift falls materially" is a HIGH-INFORMATION surprise** — it would mean `o5_k`
+  broke a floor that five unrelated recipes could not. That asymmetry is what makes the
+  read worth taking at all.
+
+⚠️ **The one reason not to discard the read outright:** `o5_k` is not another loss
+weight. It changes the **task** — a 60-step rollout versus an 8-step one — so it is not
+strictly a member of the "nine objective terms" class that failed. The read is
+**weak-but-not-void**, and that is exactly how it must be reported.
+
+⭐ **This weakens my own §3b prediction, before any number exists, on evidence I had not
+consulted when I made it.** A prior that would have explained the result afterwards is
+worth nothing; stated beforehand it changes what the result can mean.
+
+⚠️ **Committed at step ~600, with no drift number in hand for this arm** — the same
 discipline as MM-E11's pre-read amendment. ⚠️ And the incumbent's drift must be read with
 the **same instrument on the same corpus**, or this is not a comparison. ⛔ This is an
 *additional read of an arm already running for another reason* — it must never be
