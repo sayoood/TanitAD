@@ -81,6 +81,21 @@ def parse(p: Path) -> tuple[str, list[str]]:
     return title, owed
 
 
+def _open_asks(root: Path) -> list[str]:
+    """OPEN rows from LAB_ASKS.md. ⚠️ Surfaced at the TOP of the digest: an ask
+    buried under eight packages is the drawer problem again, one file along."""
+    p = root / "TanitAD Research Lab/LAB_ASKS.md"
+    if not p.exists():
+        return []
+    txt = p.read_text(encoding="utf-8", errors="replace")
+    out = []
+    for m in re.finditer(r"^### (ASK-\d+) · OPEN · (.+)$", txt, re.M):
+        q = re.search(r"^\*\*Q\.\*\* (.+)$", txt[m.end():m.end() + 900], re.M)
+        out.append(f"**{m.group(1)}** ({m.group(2)}) — "
+                   f"{(q.group(1) if q else '')[:220]}")
+    return out
+
+
 def render(root: Path) -> str:
     pk = packages(root)
     n_owed = sum(len(parse(c)[1]) for _, _, c in pk)
@@ -101,6 +116,13 @@ def render(root: Path) -> str:
         "---",
         "",
     ]
+    open_asks = _open_asks(root)
+    if open_asks:
+        out += ["## ⛔ OPEN ASKS — FlyWheel → Research Lab", "",
+                "*Unanswered questions in `LAB_ASKS.md`. The Lab addresses these "
+                "BEFORE pulling backlog seeds.*", ""]
+        out += [f"- {r}" for r in open_asks]
+        out += ["", "---", ""]
     for field, slug, c in pk:
         title, owed = parse(c)
         out.append(f"## {slug} — {field}")
