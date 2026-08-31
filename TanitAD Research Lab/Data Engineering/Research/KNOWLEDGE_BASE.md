@@ -13,6 +13,35 @@
 > **LIBRARY** (`../../Library/`) = the evidence. Every `[PUBLISHED]` entry cites a **library key**,
 > not only a URL — bank it with `python tools/kb_add.py <arxiv-id> --tag <topic> --cited-by <report>`.
 
+- [2026-08-30] [PUBLISHED lib `2511.00088`] **The two label sources are probably NOT conditionally independent:
+  Alpamayo-R1's auto-labeler is given "the ego vehicle's trajectory, dynamic states, and meta actions" — so the
+  VLM saw the geometric source's own input.** ⇒ Dawid-Skene, data programming (`1605.07723`) and spectral
+  meta-learners (`1407.7644`) are ALL inadmissible by their own identifiability assumption; `2601.22336` shows
+  ignoring the dependence can REVERSE the aggregate. ⚠️ UNVERIFIED for our clips — a 0-GPU provenance check that
+  must precede any aggregation choice — impact: D-LAT-AGREE (DataFlyWheel owns) —
+  `2026-08-30-label-source-adjudication/RESULT.md` B1
+- [2026-08-30] [PUBLISHED lib `2507.20174`+`2310.19785`] **The VLM literature PREDICTS our measured
+  `D-DATA-ALPA-LAT` a priori:** LRR-Bench finds VLMs reach human level "only on the two simplest tasks" of
+  left/right discrimination, several near zero; `2310.19785` finds all 18 VLMs poor on spatial relations (56 % vs
+  human 99 %). Our lateral 31.2 % vs 23.9 % shuffled (p=0.335) is the field's expected result, not an anomaly —
+  impact: D-LAT-AGREE background, D-DATA-COT-HALLUC — same RESULT.md B3
+- [2026-08-30] [PUBLISHED lib `1911.00068`,`1804.06872`] ⛔ **cleanlab and co-teaching are FALSE-POSITIVE
+  GENERATORS on this label problem** — both assume class-conditional noise; a deterministic geometric rule's
+  errors are a function of x (instance-dependent by construction, `2110.12088`), so small-loss/confidence
+  selection picks the MAJORITY CONVENTION and reports it clean. Admissible instead: model both sources with
+  per-annotator heads (`2110.05719`), soft targets (`2511.14117`), ordinal adaptive boundary (`2509.02351`),
+  noise-ignorant ERM on frozen features (`2411.00079`) — impact: D-LAT-AGREE method choice — same RESULT.md B4/B5
+- [2026-08-30] [measured/repo] **The lane-detector package does NOT close the `D-NUDGE-ABSORB` gap (zero detector
+  runs, zero measured transfer) — but its geometry ALREADY covers that scope.** A lane change crosses a boundary
+  at ~1.6–1.85 m (half of a 3.2–3.7 m lane), inside the package's ≤3.1 % near-pinhole ego corridor (±25°) ⇒ as-is
+  CLRerNet is geometrically sufficient, no cylindrical→pinhole rectify needed. The 39 LANE_CHANGE records are
+  absent from its 68+41 waiting-consumer list and should be a third set (minutes) — impact: D-NUDGE-ABSORB —
+  same RESULT.md A1–A3
+- [2026-08-30] [measured/source] ⚠️ **`D-NUDGE-ABSORB`'s auditability caveat went STALE the day it was written:
+  `lat_peak_m` IS now persisted** — `ego_manoeuvre.py:112` (dataclass field), emitted `:379`, with a `:316`
+  comment dating the unconditional lateral track to 2026-08-30. ⛔ Unresolved: whether the 4,719-record RELEASE
+  blob was re-emitted with it. Also: the row's NUDGE predicate is incomplete — the live condition conjoins a 5°
+  yaw gate (`:335`) — impact: D-NUDGE-ABSORB row correction — same RESULT.md A4/A5
 - [2026-08-02] [measured/corpus] **A "clean v2 val" is NOT clean for v1 — 62 of a 600-clip draw sit in v1's
   TRAIN split** (24 in v1's val). Disjointness proofs are written against ONE corpus and are silent about every
   other arm that will be scored on the split; C64 in mirror image. ⇒ any new split excludes **every** corpus an

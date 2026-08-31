@@ -13,6 +13,34 @@
 > **LIBRARY** (`../../Library/`) = the evidence. Every `[PUBLISHED]` entry cites a **library key**,
 > not only a URL — bank it with `python tools/kb_add.py <arxiv-id> --tag <topic> --cited-by <report>`.
 
+- [2026-08-30] [repo/MEASURED] ⭐⭐ **The v7-tiny T1 arms are action-conditioned BY CONSTRUCTION and action-free
+  BY OBJECTIVE — a third state that neither literature branch covers.** `models/v6.py:5455` forward takes
+  `actions` positionally; predictor built `action_dim=3` (`train_v6_staged.py:4122`); but O1 — documented as
+  *"action-conditioned prediction with L_ctrl… the ANTI-ACTION-ECHO measure"*, `default=1.0` at `:7042` — was set
+  to 0. ⇒ ⛔ *"never trained to drive"* is true of the objective, NOT the architecture, so `2411.04983`/`2412.03572`
+  (closed-loop planning with zero planner objective) are NOT excluded and the comfortable reading is unproven —
+  impact: D-T1-V7-READ scope line — `2026-08-30-t1-floor-action-sensitivity/RESULT.md` F1
+- [2026-08-30] [derived/MEASURED] ⭐ **The closed-loop vs hold-action gap is only ~1 %** (emao14_30k ade +1.37 %,
+  fde +0.64 %; o14fut30k ade +1.25 %, fde +0.94 %) — handing the model the wheel barely moves the rollout, which
+  is the ACTION-INSENSITIVITY signature, not a bad-driving signature. ⚠️ HYPOTHESIS `H-ARCH-ACTINS` only: at
+  heading MAE ~95° (chance) a degenerate rollout predicts the same small gap, and banked numbers cannot separate
+  the two — impact: D-T1-V7-READ reading — same RESULT.md F2
+- [2026-08-30] [PUBLISHED lib `2607.26712`+`2606.31232`] **"Non-echoing but non-predictive" IS a named, predicted
+  failure mode**: ActSWM's **Context Collapse** = *"nearly indistinguishable futures under different action
+  sequences"*; Delta-JEPA = *"reconstruction-free joint-embedding objectives can collapse to action-insensitive
+  representations"*. ⇒ removing the echo (`echo_index 0.0000`) without an action-response term is the PREDICTED
+  endpoint, not an anomaly — impact: D-T1-V7-READ, O1 weighting — same RESULT.md F3
+- [2026-08-30] [PUBLISHED lib `2607.26712`,`2606.07687`; repo/MEASURED] ⭐ **The discriminating test is cheap and
+  needs no training**: roll one initial state under DISTINCT action sequences, measure the spread of predicted
+  futures — spread ≈ 0 ⇒ Context Collapse ⇒ the frozen-teacher lever is aimed at the wrong defect. Second test,
+  action recoverability, needs only a PORT: `InverseDynamicsHead` exists (`inverse_dynamics.py`, used
+  `fourbrain.py:461`) but is NOT wired in `models/v6.py` — impact: pre-registration before the L2 arm —
+  same RESULT.md F4
+- [2026-08-30] [MEASURED + PUBLISHED] **τ-ramp is NEUTRAL at 30k** (drift 0.6936 vs 0.6952, nrmse 0.7408 vs
+  0.7466, cos 0.7513 vs 0.7524 — all ~20× under the measured seed spread) ⇒ EMA teacher stays at FIXED τ=0.996,
+  cosine ramp DROPPED. And the frozen-vs-EMA question is genuinely open: the literature is three-way split
+  (frozen `2411.04983`/`2509.10156` · EMA `2404.08471`/`2608.19085` · neither `2511.08544`/`2011.10566`) with
+  **no head-to-head ablation in a driving WM found** — an argument FOR running L2 — same RESULT.md F5
 - [2026-08-18] [PUBLISHED/library] ⭐⭐ **FROZEN ENCODERS SUCCEED IN EXACTLY TWO CONFIGURATIONS, AND
   REF-A WAS IN NEITHER.** (A) huge frozen VLM + wide interface + supervised head — FROST-Drive
   [`2601.03460`]: frozen 14 B **8.17 RFS / ADE@3s 1.04 m** BEATS the *same encoder fine-tuned*

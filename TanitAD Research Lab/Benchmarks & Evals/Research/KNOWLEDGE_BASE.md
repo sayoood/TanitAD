@@ -13,6 +13,34 @@
 > **LIBRARY** (`../../Library/`) = the evidence. Every `[PUBLISHED]` entry cites a **library key**,
 > not only a URL — bank it with `python tools/kb_add.py <arxiv-id> --tag <topic> --cited-by <report>`.
 
+- [2026-08-30] [PUBLISHED/library] ⭐⭐ **OUR ANTI-ECHO SUITE IS STRICTER THAN THE FIELD'S — but the claim must be
+  ACTION-SIDE only.** ⛔ *"open-loop is not driving performance"* is NOT novel (`1809.04843` 2018 · `2306.07962`
+  2023 · `2505.05638` 2025 · `2605.00066` 2026) — claiming it invites a correct reviewer objection. ⭐ What IS
+  unprecedented at five probes: a **hold-action floor a model must beat** (none found in driving WMs) and a
+  **GT-calibrated echo METRIC** (`echo_index` 0.0000 vs GT 0.2113). hold-v0 is WELL precedented (NAVSIM's
+  `ConstantVelocityAgent`, `2406.15349`) — claim no novelty there — impact: paper §methodology —
+  `2026-08-30-anti-echo-control-precedent/RESULT.md` VERDICT + F1
+- [2026-08-30] [PUBLISHED lib `2412.05337`,`2512.10958`] ⛔ **BOTH purpose-built action-fidelity benchmarks were
+  verified at source to run NO CONTROL ARM.** ACT-Bench (ICLR'25) reports IEC + ADE/FDE with no frozen-action, no
+  shuffled-action, no trivial floor, no oracle ceiling; WorldLens (CVPR'26 Oral) scores 24 dimensions incl.
+  Action-Following with no null/adversarial baseline. `2511.20325` (AD-R1) documents the DUAL defect — WMs
+  hallucinate a safe future when conditioned on an UNSAFE trajectory — narratively, with no metric — impact:
+  the open lane for our contribution — same RESULT.md F2
+- [2026-08-30] [PUBLISHED lib `2406.03877` Tab.3] ⭐ **The field's own strongest warrant for our doctrine:
+  AD-MLP — ego-state-only, no camera, no LiDAR, near-SOTA OPEN-loop — scores DS 18.05 / Success Rate 0.00 % in
+  Bench2Drive CLOSED loop.** A better citation for "T0 is not capability" than anything we have measured. The
+  presentation template for our echo result is `2312.03031`'s ego-status ablation ladder (UniAD 1.03 m with no
+  ego status → 0.66 → 0.46) — impact: paper framing — same RESULT.md F3
+- [2026-08-30] [PUBLISHED lib `2605.00066`] ⚠️ **ESTIMATOR GUARD: open-loop vs closed-loop is ρ = −0.36 with
+  n = 8 and p = 0.43** — that establishes **ABSENCE of correlation, NOT negative correlation**. Quoting ρ bare,
+  as though open-loop anti-predicts closed-loop, is the slip our own standard forbids. NAVSIM PDMS ρ = 0.90
+  (p = 0.002) but with ranking inversions — impact: any correlation claim we make — same RESULT.md F5
+- [2026-08-30] [PUBLISHED/measured] ⛔ **COMPARABILITY GUARD: no table may place a TanitAD ADE/FDE beside a
+  PDMS / DS / EPDMS score.** Our T1 numbers are metres on our own 40-episode PhysicalAI split; camera-only
+  closed-loop SOTA is SimLingo 85.07 DS / 67.27 % SR on Bench2Drive (`2503.09594` Tab.2) — different corpus,
+  metric family and simulator regime. ⚠️ Also: NAVSIM v2 EPDMS is quoted in the wild as 87.1 / 88.6 / 36.9 —
+  these CANNOT be one quantity (navhard vs navtest); name the split or do not quote — impact: TanitEval
+  portfolio, paper tables — same RESULT.md F4
 - [2026-08-02] [this run / measured] ⭐⭐ **CROSS-TRACK SAYS THE MODEL WINS; CURVATURE SAYS IT IS 3×
   WORSE THAN THE TRIVIAL FLOOR.** Four-family panel (CLAUDE.md binding rule, landed mid-run) applied to
   the arm **and every floor**, n=881: flagship-v1 `cross_mae_m` **0.1152** vs CTRV 0.1604 (+0.0452
