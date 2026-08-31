@@ -13,6 +13,48 @@
 > **LIBRARY** (`../../Library/`) = the evidence. Every `[PUBLISHED]` entry cites a **library key**,
 > not only a URL — bank it with `python tools/kb_add.py <arxiv-id> --tag <topic> --cited-by <report>`.
 
+- [2026-08-31] [MEASURED/descriptor + PUBLISHED/card] ⭐⭐ **THE GATE'S *"ONLY CORPUS THAT COULD TEST P2(b)"* IS WRONG,
+  AND THE CHEAP TRIAGE IS ALREADY UNBLOCKED.** `yaak-ai/L2D` separates realised state from actuation IN ITS OWN
+  DESCRIPTOR (`l2d_info.json` = the corpus's `meta/info.json`, re-read today): `observation.state.vehicle[8]`
+  (speed/heading/GPS/IMU) + `waypoints[10,2]` vs **`action.continuous[3]` = gas_pedal_normalized ·
+  brake_pedal_normalized · steering_angle_normalized** and **`action.discrete[2]` = gear · turn_signal**.
+  ⭐ `turn_signal` is a DECLARED INTENT — not recoverable from the path even in principle, and discrete, which is
+  the shape Codevilla branching needs. ⭐ **Neither of the gate's two blockers binds**: the triage is state-only
+  (~155 MB parquet, no video) so the 65.2°-vs-120° geometry call and "not on Thor" both drop out. ⛔ But: L2D ships
+  **NO intrinsics at all** (worse than comma2k19 for a vision arm), signal provenance is **UNVERIFIED at the card**
+  (no CAN/bus statement), and `LOOP_STATE.md:1025` holds a 🔴 **GDPR gate on frames** — which does NOT bind a
+  state-only correlation. ⛔ Parity untouched: data-only, or a separate parity key — impact: **V7 gate P2(b)
+  premise (escalated)** — `2026-08-31-command-bearing-corpora/RESULT.md` F1/F2
+- [2026-08-31] [PUBLISHED lib `2606.12987` §3 FULL TEXT] ⭐⭐⭐ **nuScenes SHIPS OUR EXACT ACTION PARAMETERISATION,
+  FROM THE BUS — probably the cheapest of the three routes.** *"Ego-vehicle actions are extracted from CAN-bus data
+  as 2D vectors aₜ=(steerₜ, accelₜ), z-score normalized using training-set statistics only"*, on 150 held-out
+  nuScenes scenes. ⇒ the *form* is held constant and only the PROVENANCE varies — the one-variable version of the
+  gate's triage. ⚠️ THREE THINGS UNVERIFIED and each is load-bearing: which nuScenes CAN field, whether we hold the
+  expansion, and the licence. ⭐ Same paper is *"genuinely action-controllable (steering drives scene displacement,
+  Spearman ρ = 0.81, vs −0.18 for regression)"* — impact: P2(b) corpus choice — same RESULT.md 4b
+- [2026-08-31] [MEASURED/repo] ⭐ **TWO B1 OPEN ITEMS EXIST AS NATIVE L2D FIELDS.** D-B1-100H's own unfilled WORK
+  ITEM — the **road-class stratum**, *"the axis governing our 88.7 %-longitudinal gap"* — is `observation.state.road`
+  (OSM highway class). And the regime D-SPEED-GATE **hard-excludes** (`physicalai_r0.py:100`, `score = 0.0` unless
+  `2.0 <= mean_v <= 14.0`, i.e. every motorway clip deleted, not down-weighted) is **directly selectable** via
+  `max_speed` + `road = motorway`. Also native: lane count, surface, precipitation/lighting, 4,219 nav instructions
+  with metric distance-to-manoeuvre, EXPERT 86.2 %/STUDENT 13.8 %. ⛔ A cross-corpus arm confounds corpus with
+  regime (Germany, one vehicle, one rig) ⇒ it cannot answer *"does high-speed data help"* — impact: D-B1-100H,
+  D-SPEED-GATE sourcing options — same RESULT.md F3
+- [2026-08-31] [PUBLISHED lib `2607.27017` abstract-only] ⚠️ **D-DATA-EFFICIENCY HAS AN OBJECTIVE-SIDE
+  PRECONDITION, MEASURED OVER A 5× DATA RANGE.** *"Every arm missing information or prediction pressure stays flat
+  over a fivefold data range"* and *"additional data improves only the parameters it already acquires"* (RH20T, two
+  robots, 4,258 episodes). ⇒ **a data lever cannot be scored honestly on an arm whose objective does not already
+  acquire the quantity** — a direct warning about the planned diversity ablation, which would read FLAT for a
+  reason that has nothing to do with the data. ⚠️ Robotics not driving; supports SEQUENCING, not a magnitude —
+  impact: D-DATA-EFFICIENCY experiment order — same RESULT.md F4
+- [2026-08-31] [method/retraction-class] ⛔ **A NARROW `Select-String` PROBE MANUFACTURED A FALSE ABSENCE AND WOULD
+  HAVE HIDDEN A LIVE BLOCKER.** Probing `'L2D|yaak'` over 3 steering files returned 1 hit, which was
+  **`adaptive_avg_pool2d`** (`pool2d` contains `l2d`) — it read as "L2D is unknown to steering". A case-sensitive
+  probe over the whole `Project Steering` dir returned **9 hits in 3 files**, including the 🔴 GDPR gate. ⇒ the
+  claim had to be rewritten DOWN from *"a corpus nobody knew"* to *"a corpus that is known, adapted and sliced,
+  whose JOIN to P2(b) was never made"*. ⭐ The generalisable rule: an absence probe whose pattern can match INSIDE
+  an unrelated identifier must be re-run case-sensitively and directory-wide before the absence is written —
+  impact: absence-claim discipline — same RESULT.md F1
 - [2026-08-30] [PUBLISHED lib `2511.00088`] **The two label sources are probably NOT conditionally independent:
   Alpamayo-R1's auto-labeler is given "the ego vehicle's trajectory, dynamic states, and meta actions" — so the
   VLM saw the geometric source's own input.** ⇒ Dawid-Skene, data programming (`1605.07723`) and spectral

@@ -13,6 +13,51 @@
 > **LIBRARY** (`../../Library/`) = the evidence. Every `[PUBLISHED]` entry cites a **library key**,
 > not only a URL — bank it with `python tools/kb_add.py <arxiv-id> --tag <topic> --cited-by <report>`.
 
+- [2026-08-31] [PUBLISHED lib `2605.25313` §4.2/§4.3 FULL TEXT] ⭐⭐⭐ **A FOURTH CAUSE OF ACTION-DEAFNESS, NOT ON THE
+  GATE'S LIST, AND IT MAKES P2(b) THE WRONG FIRST MOVE.** UWM-JEPA: *"Under a teacher-forced JEPA objective the
+  target encoder observes the trajectory that already contains the action's effect, which admits an
+  action-invariant solution"* — measured **‖H₁‖/‖H₀‖ ≈ 0.03**, restored to **1.00 ± 0.15** by targets built from a
+  counterfactual action sequence. ⭐ **Our O5 is teacher-forced in exactly that sense — MEASURED in our source**
+  (`train_v6_staged.py:48` *"against its layer's stop-grad/EMA target"*, `:1765` *"O5's teacher side"*,
+  `:4214/:4221` all three `--o5-target` modes encode the REAL future) and our ratio is 0.00408–0.00595 (MM-E10).
+  ⛔ **The mechanism is independent of channel provenance ⇒ a genuine CAN command is not predicted to fix it**, and
+  it retro-explains MM-E11's fall (0.40× — O1 is another realised-future term). ⚠️ Their fix needs *"simulator-state
+  access during training"*, which we lack — the simulator-free variant is a negative-action contrastive target —
+  impact: **V7 gate P2 candidate table (escalated), MM-E11 reading** — `2026-08-31-command-conditioning-and-l3/RESULT.md` F1
+- [2026-08-31] [PUBLISHED lib `1710.02410`] ⭐⭐ **"THE NETWORK IS NOT FORCED TO TAKE THE COMMANDS INTO ACCOUNT" IS
+  A 2018 RESULT WITH A NAMED FIX — our P2 is a re-discovery and the paper must say so.** Codevilla CIL, verbatim, on
+  the concatenation-family *command input* architecture; the fix is **architectural branching** (*"the command acts
+  as a switch"*), **64 % vs 52 %** success in the held-out town. Our FiLM/AdaLN modulation is the same family in the
+  respect that matters — never forced — and **MM-E18's CONVERGED FiLM gain is the predicted equilibrium, not an
+  anomaly**. ⭐ In a branched head the un-selected branch gets **no gradient**, so ignoring is unrepresentable.
+  ⚠️ Needs a small DISCRETE vocabulary (theirs is a 4-way nav one-hot); does not apply to our continuous 2-D channel —
+  impact: P2 conditioning mechanism, paper novelty downgrade — same RESULT.md F2
+- [2026-08-31] [PUBLISHED lib `2607.27017` abstract-only] ⭐⭐ **L3's BAR HAS A PUBLISHED NAME AND OUR LADDER WAS
+  ARRIVED AT INDEPENDENTLY.** *"only the full multimodal objective forecasts force beyond a **persistence
+  baseline**"* ⇒ `zhat`-vs-`z_t` is precedented, not invented. Their *"certificate-gated protocol"* — certify
+  recoverability from raw observations FIRST, *"so a null result can be attributed to the objective rather than to
+  the environment"* — is our L1-floor→L2→L3 with our own rationale. ⭐ Two transfers: *"under single-step prediction
+  a vision-only latent discards even perfectly visible object state"* (MM-E14 measured our predictor IS one-horizon,
+  ‖W1‖ 8.8386 vs ‖W2‖ 0.0262) and stiffness **R² 0.50 when forecast vs −0.02 when merely fused into the input** ⇒
+  the TARGET decides what is retained. ⚠️ ABSTRACT ONLY; protocol UNVERIFIED — impact: P5/L3 precedent + paper
+  citation — same RESULT.md F3
+- [2026-08-31] [PUBLISHED lib `2602.19634`+`2607.12547`] **P4's ladder is licensed AND its failure mode is named in
+  advance.** Jumpy WMs across multiple timescales with *"a novel consistency objective that aligns predictions
+  across timescales"* → **+200 % relative** on long-horizon tasks — ⭐ that consistency term is the piece MM-E16's
+  1 : ~3 : ~15 ladder does not have. But *Mind the Gap*: *"Hierarchy does not automatically improve performance"*,
+  best short-horizon config is a ONE-step high level, the bottleneck is **high-level subgoal generation**, and
+  *"unconstrained search can select latent macro-actions that appear favorable under the learned model but produce
+  poor control targets"* — constrained-to-training-trajectories search recovers **+11.3/+14.7 pts**. ⇒ judge a
+  ladder at tactical/strategic, never operative. ⚠️ Both manipulation/navigation, not driving — impact: P4 /
+  MM-E16 design — same RESULT.md F5
+- [2026-08-31] [PUBLISHED lib `2606.09028`,`2605.31111` abstract-only] **Two instruments/mechanisms we built by hand
+  exist in print.** ATM compares *"action information in real encoded transitions and model-predicted transitions
+  through lightweight post-hoc probes"*, **>100× faster than CEM-coupled eval**, plus AITS turning
+  action-identifiability into a training signal — ⛔ but *"when the true success gap is non-trivial"* makes it a
+  SCREENING instrument, never a gate verdict. SD-JEPA carves an orthogonal **progression** subspace from the
+  **content** subspace — the architectural remedy for P5's *"restating, not transporting"*; ⚠️ *"majority of its
+  control benchmarks"*, no magnitude, not driving — impact: cheap checkpoint ranking; P5 mechanism candidate —
+  same RESULT.md F4/F6
 - [2026-08-30] [repo/MEASURED] ⭐⭐ **The v7-tiny T1 arms are action-conditioned BY CONSTRUCTION and action-free
   BY OBJECTIVE — a third state that neither literature branch covers.** `models/v6.py:5455` forward takes
   `actions` positionally; predictor built `action_dim=3` (`train_v6_staged.py:4122`); but O1 — documented as
