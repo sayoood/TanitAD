@@ -295,6 +295,33 @@ successor does:** at `--clip 1.0`, **k=60 with full-chain BPTT is gradient-unsta
 k=8 was not**. The 2.4× wall-clock was the priced half of the 6 s horizon; **this is the
 unpriced half.**
 
+### ⚠️ INTERIM, step 6,200 — clip 0.5 did NOT prevent the spike; it appears to CONTAIN it
+
+The successor spiked too, inside the same window. **The shape is what differs:**
+
+| | step | gnorm | next | next |
+|---|---|---|---|---|
+| `k60p30k` (clip 1.0) | 7,000 | 28,681 | 23.7 → 212 → **4.29e7** → 43,599 → 95,729 | ⛔ escalated, killed |
+| `k60clip05p30k` (clip 0.5) | 5,800 | **13,278** | **15.25 → 2.43** | ⏳ recovered in 2 rows |
+
+⭐ **870× down in one logged row, back to baseline in two.** The predecessor never came
+back — it oscillated upward across five rows before the criterion fired. `o5_loss` here is
+undisturbed: 0.2269 → 0.1289 → 0.1982, median **0.1838** against the predecessor's
+pre-divergence 0.1977.
+
+⛔ **NO VERDICT YET, AND THE PRE-COMMITTED CRITERION GOVERNS.** Over the last 8 rows:
+gnorm median **1.43** (< 50 ✅) and `o5` median **0.1838** (< 0.25 ✅) ⇒ **CONTINUE**. ⚠️ The
+predecessor also passed at this point; what killed it was the *escalation* over the
+following five rows, not the first spike. The decisive window is steps 6,400–9,200.
+
+⚠️ **And this already narrows the mechanism, whichever way it goes.** Clip 0.5 does not
+stop the gradient blowing up — the same instability arrives — so the 60-deep BPTT chain is
+producing genuinely enormous gradients either way. What clipping changes is whether the
+update that follows destroys the trajectory. ⇒ if this arm survives, the finding is
+*"k=60 is gradient-unstable and a tighter clip contains it"*, **not** *"clip 0.5 fixes
+k=60"* — the instability is a property of the horizon, and the clip is a containment, not
+a cure.
+
 ## 4. ⛔ The anti-gates, committed before any number exists
 
 * **O5 LOSS WILL BE HIGHER, AND THAT IS NOT A REGRESSION.** A 60-step rollout is a
