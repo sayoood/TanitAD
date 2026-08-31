@@ -352,6 +352,43 @@ rule allows and all it allows. **If the extension reads DEGRADED, the arm dies a
 is refuted as a mitigation** — which is a real result about the 6 s horizon, not a failure
 of the experiment.
 
+### ⛔ THE DEGRADED BRANCH, COMMITTED AT STEP 7,200 — BEFORE THE 8,200 READ
+
+If the extension reads DEGRADED, **I do not launch a third mitigation.** That is
+pre-committed here so it cannot be re-argued once a number exists.
+
+**What I checked first, rather than assuming a fix was available:**
+* ⛔ **Truncated BPTT is NOT supported.** `metric_dynamics.py:264` says so in as many
+  words — *"this is not truncated BPTT; step 60's error still reshapes step 1's
+  prediction"* — and there is no flag. It is a code change to `rollout_transitions`.
+* ⭐ **`--o5-mode {uniform, linear-decay, endpoint}` DOES exist**, and every arm has run
+  `uniform`. `linear-decay` down-weights the late steps — precisely where a 60-deep chain
+  blows up. It is a supported one-flag lever aimed at the measured mechanism.
+
+**And I am still not spending a third 24 h arm on it, because:**
+
+1. ⛔ **The attribution is already stretched.** `k60clip05p30k` is `o5_k 60` + `clip 0.5`
+   — two changes from the incumbent, which is why a `clip 0.5` control at k=8 is already
+   REQUIRED. Adding `o5-mode` makes it **three**, and a positive result would be
+   attributable to any of them. That is the two-variable claim this gate exists to
+   prevent, one variable worse.
+2. ⭐ **Two mitigations is enough evidence to stop guessing.** clip 1.0 diverged; clip 0.5
+   contains the runaway but not the spikes. A third value would be me choosing to spend
+   the programme's only GPU on a hunch, for 24 h, while five gate problems wait.
+
+⇒ **ON DEGRADED, the recorded finding is: *a flat 60-step full-chain rollout is not
+trainable on this rig under either clip value tested*** — and the choice among
+(a) `--o5-mode linear-decay`, (b) implementing truncated BPTT, (c) temporal abstraction
+(MM-E16), or (d) stopping and taking the horizon another way **goes to the PI**, with
+costs attached.
+
+⭐⭐ **AND NOTE WHERE THAT LANDS US.** MM-E16 argued temporal abstraction from *training*
+economics; the Deployment package reached it independently from *latency* (a flat K=300
+rollout is undeployable at any scale measured). If a flat k=60 also proves untrainable,
+that is a **third independent line** arriving at the same conclusion — and three
+independent arguments for one architectural change is a much stronger position than any
+of them alone.
+
 ## 4. ⛔ The anti-gates, committed before any number exists
 
 * **O5 LOSS WILL BE HIGHER, AND THAT IS NOT A REGRESSION.** A 60-step rollout is a
