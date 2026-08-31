@@ -71,8 +71,47 @@ below may be marked closed by me.** I can report that a criterion is met; the PI
   less drift than a random subspace of equal rank) and **trivially reducible** (MM-E4 —
   the shuffle control fired), so it is a **symptom**, and **nine objective terms** failed
   to move it.
-* **CLOSES WHEN:** the ablation that distinguishes `splitp30k` from `postrain30k`
-  **with init held fixed** identifies the cause. That experiment is defined and unrun.
+* ⭐⭐ **PROGRESS 2026-08-31 — THE ABLATION IS NOW DESIGNED, AND ONE CANDIDATE HAS A
+  MEASURED MECHANISM.** Config-diffed the two arms, separating *absent keys* from
+  *value changes* (the `.get()` trap that reported 16 phantom variables on MM-E11):
+
+  ```
+  postrain30k 194 args | splitp30k 181 args
+  SHARED KEYS WITH DIFFERENT VALUES:  freeze_encoder False->True · o5_k 8->4 · out
+  keys only in postrain30k: 13, and all three TERMS are INERT (w_o9_ema/w_o10_psg/w_o11_cf = 0.0)
+  init_from: IDENTICAL (both distill_init.pt) · steps/seed/batch/lr/window/stage/w_o5/w_o6/o5_form all matched
+  ```
+
+  ⇒ **EXACTLY TWO candidate variables**, and the identical `init_from` confirms
+  E-DEC-60's retraction directly: same init, drift 0.669 vs 0.199.
+
+* ⭐⭐ **AND THE FREEZE ACTUALLY HELD — MEASURED on the checkpoints:**
+
+  | arm | encoder tensors changed | ‖Δ‖/‖init‖ |
+  |---|---|---|
+  | `splitp30k` (drift **0.199**) | **0 of 41** | **0.000000** |
+  | `postrain30k` (drift **0.669**) | **41 of 41** | **0.233** |
+
+  `splitp30k`'s encoder is **bit-identical to `distill_init.pt`**; `postrain30k`'s moved
+  23 %. ⇒ **HYPOTHESIS (not yet causal): the low drift is what a FROZEN LATENT SPACE
+  looks like, not a recipe virtue.** Drift asks how much of Δz is predictable from
+  `z_t`; with a frozen encoder the same frames map to the same latents throughout
+  training, so the space cannot shift under the predictor.
+  ⛔ **If that holds, the "lever" DISSOLVES rather than transfers** — and it would come
+  attached to the frozen-encoder ceiling REF-A already hit.
+  ⚠️ **A sharper worry it raises about the METRIC:** drift may conflate *"the predictor
+  is self-referential"* with *"the encoder moved underneath it."* That is a
+  measurement-validity question about drift itself, not about any arm.
+
+* ⛔ **STILL CONFOUNDED:** `o5_k` 8→4 moves with the freeze in this pair. ⚠️ And note its
+  direction — the LOW-drift arm used the SHORTER rollout, which cuts **against** the
+  hopeful reading of MM-E19's drift read (already flagged low-power).
+
+* **CLOSES WHEN:** one arm resolves it — `postrain30k` + `--freeze-encoder`, **one
+  variable**, matched otherwise. Reads ≈0.199 ⇒ freezing explains it and P3's lever
+  dissolves. Reads ≈0.669 ⇒ `o5_k` is the cause and the horizon story gains a second
+  front. *(Was "defined and unrun"; it is now designed, one-variable, and costed at one
+  tiny-rig arm.)*
 
 ## P4 — THE HORIZON LADDER IS SHORT OF THE LABELS
 
