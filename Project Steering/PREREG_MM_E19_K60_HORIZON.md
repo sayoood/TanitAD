@@ -208,6 +208,57 @@ the **same instrument on the same corpus**, or this is not a comparison. ⛔ Thi
 *additional read of an arm already running for another reason* — it must never be
 described as "the drift experiment", because no drift-specific variable was manipulated.
 
+## 3c. ⛔⛔ GRADIENT INSTABILITY AT k=60 — OBSERVED LIVE AT STEP 8,400, WITH A DECISION CRITERION COMMITTED NOW
+
+**MEASURED on the running arm.** Gradient norms were 1.3–3.3 through step 6,800, then:
+
+```
+step 7000   gnorm     28,680      step 7600   gnorm  42,903,160   <- 4.29e7
+step 7200   gnorm         23.7    step 7800   gnorm     43,599    (loss 1.6435, the run max)
+step 7400   gnorm        212      step 8000   gnorm     95,729
+                                  step 8200   gnorm        676
+                                  step 8400   gnorm        378
+```
+
+Seven consecutive logged rows above 50 since step 7,000, against a **run median of 5.71**.
+
+⭐ **The model is NOT being blasted, and that had to be checked rather than assumed:**
+`--clip` is **1.0** and `clip_grad_norm_` returns the **PRE-clip** norm, which is what `gnorm`
+logs. So every applied update is bounded to norm 1.0. ⚠️ **But that is not benign** — scaling
+a 4.29e7 gradient to 1.0 preserves its *direction*, so the step becomes "move 1.0 along
+whatever exploded".
+
+⛔ **AND THE OBJECTIVE IS DEGRADING, which is the part that matters:**
+
+| | before step 7,000 | after |
+|---|---|---|
+| `loss` median | 0.5888 (n=34) | 0.6305 (n=8) |
+| **`o5_loss` median** | **0.1977** | **0.3782 — +91 %, nearly double** |
+
+⭐⭐⭐ **THIS IS ITSELF AN MM-E19 RESULT, and it was not anticipated.** `rollout_transitions`
+is explicitly **not truncated BPTT** — *"step 60's error still reshapes step 1's prediction,
+which is the entire point of O5"*. A 60-deep backprop chain is exactly where exploding
+gradients live. **Every previous arm ran k=8 and was stable; k=60 blew up at step 7,000.**
+⇒ *"the 6 s horizon costs 2.4× wall-clock"* was the easy half of the price. **Gradient
+stability is the other half, and nobody had priced it.**
+
+### THE DECISION CRITERION, COMMITTED AT STEP 8,400 BEFORE THE NEXT ROWS EXIST
+
+Read at **step ~10,000** (8 more logged rows, ~1.3 h). ⚠️ Committed now precisely because
+gnorm is already falling (675 → 378) and it would be easy to rationalise either way afterwards.
+
+| outcome | criterion over the last 8 rows | action |
+|---|---|---|
+| **RECOVERED** | gnorm median **< 50** AND `o5_loss` median **< 0.25** | continue to 30k; record the excursion as a transient in the result |
+| **DEGRADED** | gnorm median **> 50** OR `o5_loss` median **> 0.30** | ⛔ **kill and relaunch with a mitigation** — the arm cannot produce a clean read, and 16 h of a degraded run is worse than 16 h of a corrected one |
+| 🔶 mixed | one of the two | extend one more window, then decide; do not extend twice |
+
+⛔ **The mitigation, chosen in advance so it is not chosen to fit the data:** relaunch at the
+**same k=60** with `--clip 0.5` first — it is the smallest change that addresses the measured
+mechanism and keeps the horizon, which is the whole point of the arm. ⚠️ **NOT** a lower `k`:
+that would abandon the hypothesis to rescue the run. ⚠️ **NOT** a lower `lr` as the first
+move: lr is matched to the incumbent and changing it adds a second variable to MM-E19.
+
 ## 4. ⛔ The anti-gates, committed before any number exists
 
 * **O5 LOSS WILL BE HIGHER, AND THAT IS NOT A REGRESSION.** A 60-step rollout is a
