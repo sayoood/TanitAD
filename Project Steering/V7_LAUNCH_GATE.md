@@ -329,8 +329,36 @@ correlate with scene identity, *"which action produced this future"* may be solv
 *"which action belongs to this scene"*, needing no dynamics. ⇒ **a same-clip-negatives
 variant** (negatives from other time windows of the SAME clip) must be run, or the result is
 uninterpretable. If discrimination survives same-clip negatives it is dynamical; if it
-collapses to the floor it was scene-matching. ⚠️ This needs a small code change to the
-negative sampler and should be written **before** the arm, not after the result.
+collapses to the floor it was scene-matching.
+
+⛔ **CORRECTION — I CALLED THIS "a small code change to the negative sampler". IT IS NOT, AND
+THE REASON MATTERS.** Read the sampler (`train_v6_staged.py:3253-3265`):
+
+```python
+off = 1 + (q % (B - 1))
+fa_neg = torch.roll(fa3, shifts=off, dims=0)   # negatives = another BATCH ROW's future actions
+```
+
+⭐ The existing code is already careful — a cyclic **roll** is a derangement by construction,
+and its comment records why `randperm` would be wrong: it fixes points with probability ~1/B,
+and a fixed point silently makes that row's "counterfactual" the TRUE action, pulling the loss
+toward the floor and **reading as action-blindness that is not there**. Same defect class the
+actdiv probe guards against, already handled here.
+
+⛔ **But a SAME-CLIP negative cannot be obtained by changing that roll.** Batch rows are windows
+sampled i.i.d. from **319,002 windows across 2,400 episodes**; at batch 8 the chance any two
+rows share a clip is **~1 %**. Same-clip negatives barely exist in a random batch, so the
+control needs **grouped batch construction** — a sampler change, not a loss change.
+
+| candidate control | what it tests | real cost |
+|---|---|---|
+| grouped same-clip negatives | cleanest: same scene, different action | ⛔ batch-construction change **and** a parity question — grouping changes the sampling distribution, so the arm is no longer same-data comparable |
+| ⭐ time-shifted negatives from the window's OWN clip | same scene family, different action, no regrouping | needs `future_actions2` **longer than `o5_k`** — at k=60 that is ≥60+shift steps per window. ⚠️ **Measure the dataset's available future-action horizon first**; if it equals `o5_k`, this is not free either |
+
+⚠️ **Neither is small, and pretending otherwise would have sent someone down the wrong one.**
+The control is still **REQUIRED** — without it a positive O11 result cannot be distinguished
+from scene-matching — but it must be scoped honestly **before** the arm is queued, and the
+dataset's future-action horizon is the first thing to measure.
 
 ## ⏳ The nearest decision point
 
