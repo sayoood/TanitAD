@@ -23,6 +23,8 @@ they meant something, MM-E14 retracted them, and the same heads then produced a
 false "the model only imagines 0.1 s" alarm. A silently dead parameter is a
 measurement hazard.
 """
+from pathlib import Path
+
 import pytest
 import torch
 
@@ -90,6 +92,40 @@ def test_forward_still_emits_every_declared_horizon():
     p = OperativePredictor(_cfg(horizons=(1, 2, 4)), STATE_DIM)
     out = p(torch.randn(2, 4, STATE_DIM), torch.randn(2, 4, 3))
     assert set(out) == {1, 2, 4}
+
+
+def test_the_refusal_text_names_o5k_and_the_binding_6s_target():
+    """⚠️ A refusal that does not say what to do instead is a wall, not a guard.
+
+    The whole point is that the horizon comes from `--o5-k`, not from the head
+    index — so the message must carry that, and the 6.0 s target, or the reader
+    fixes it by deleting heads and still trains a 0.8 s model.
+    """
+    src = (Path(__file__).resolve().parents[1] / "scripts"
+           / "train_v6_staged.py").read_text(encoding="utf-8")
+    blk = src[src.index("which NO loss consumes"):][:1600]
+    assert "--o5-k 60" in blk, "the refusal must name the 6 s setting"
+    assert "6.0 s" in blk, "the refusal must name the binding target in seconds"
+    assert "rollout_transitions" in blk, "and WHY only head 1 trains"
+
+
+def test_the_guard_does_not_fire_on_a_RESUME():
+    """⛔⛔ THE BUG THIS PINS ALMOST BRICKED A LIVE 24 h ARM.
+
+    `k60p30k` (MM-E19) runs `--horizons 1 2 4` deliberately — a matched control
+    against a banked incumbent, whose dead heads are proven inert. A preflight
+    firing on RESUME would refuse that arm's own restart after any crash, making
+    22 h unrecoverable: the guard destroying the work it exists to protect.
+
+    Resuming is not authoring. Only a FRESH run is a new decision.
+    """
+    src = (Path(__file__).resolve().parents[1] / "scripts"
+           / "train_v6_staged.py").read_text(encoding="utf-8")
+    i = src.index("which NO loss consumes")
+    blk = src[max(0, i - 2200):i]
+    assert "_resuming" in blk, "the guard must be resume-aware"
+    assert 'ckpt.pt").exists()' in blk, "and detect resume by the checkpoint"
+    assert "RESUME" in src[i - 2200:i + 1800], "and say so when it allows one"
 
 
 def test_horizon_seconds_is_o5k_times_dt_not_the_head_index():

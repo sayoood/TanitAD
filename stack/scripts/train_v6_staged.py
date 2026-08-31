@@ -7802,9 +7802,24 @@ def preflight(a) -> list[str]:
     # action-divergence ratios of ~1e-5 as if meaningful, MM-E14 retracted them,
     # and the same heads then produced a false "the model only imagines 0.1 s"
     # alarm. A silently dead parameter is a measurement hazard.
+    # ⛔⛔ RESUMING IS NOT AUTHORING EITHER — and this guard nearly bricked a live
+    # 24 h arm. `k60p30k` (MM-E19) runs `--horizons 1 2 4` DELIBERATELY: it is a
+    # matched control against a banked incumbent, and its dead heads are proven
+    # inert. A preflight that fires on RESUME would refuse that arm's own restart
+    # after any crash, making 22 h unrecoverable — the guard destroying the work
+    # it was written to protect.
+    # This is the same distinction the constructor already makes for loading a
+    # checkpoint, one level up: reading old work, and CONTINUING old work, are
+    # both records of a decision already taken. Only a FRESH run is a new
+    # decision, and only a new decision can be refused.
+    _resuming = (Path(getattr(a, "out", "") or ".") / "ckpt.pt").exists()
     hz = tuple(int(h) for h in (getattr(a, "horizons", None) or (1,)))
     dead = [h for h in hz if h != 1]
-    if dead:
+    if dead and _resuming:
+        print(f"[v6] ⚠️ horizons {hz} declare {dead}, which no loss trains — "
+              f"ALLOWED because this is a RESUME (ckpt.pt present in {a.out}). "
+              f"A run already under way is not a new design decision.", flush=True)
+    elif dead:
         problems.append(
             f"--horizons {hz} declares {dead}, which NO loss consumes. The O5 "
             f"rollout applies head '1' autoregressively "
