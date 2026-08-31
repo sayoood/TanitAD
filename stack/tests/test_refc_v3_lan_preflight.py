@@ -36,6 +36,20 @@ from tanitad.refs import refc_v3 as v3                       # noqa: E402
 ARCS = [20.0, 40.0, 80.0, 160.0]
 
 
+def _smoke_cfg(hier: bool = True):
+    """The smoke config AS THE TRAINER BUILDS IT — kin3-pinned.
+
+    ``refc_v3_train._pin_trainer_cfg`` (2026-09-01) pins ``tac_vocab_version=
+    "kin3"`` on every config the trainer constructs, and ``compute_losses_v3``
+    now REFUSES wider z_tac heads loudly (it supervises the 3x3 kinematic
+    classes). These tests exercise the LAN pathway through the trainer's loss,
+    so they build what the trainer builds — the raw v7.0 default would trip
+    the (correct) refusal and test a model the trainer can no longer produce."""
+    cfg = v3.refc_v3_smoke_config(hier)
+    cfg.tac_vocab_version = "kin3"
+    return cfg
+
+
 def _args(**kw):
     d = dict(size="small", arm="hier", smoke=True, goal_str=True,
              graft_lan=False, lan_arclengths=list(ARCS), lan_min_lead_m=5.0)
@@ -44,7 +58,7 @@ def _args(**kw):
 
 
 def _lan_ds(min_frames, lan_cfg, n_eps=2):
-    cfg = v3.refc_v3_smoke_config(True)
+    cfg = _smoke_cfg(True)
     eps = T._synth_episodes(n_eps, cfg.core, seed=0, min_frames=min_frames)
     return lan_dataset_class(T.V3Dataset)(
         eps, window=cfg.core.window, max_horizon=20,
@@ -62,7 +76,7 @@ def test_route_is_not_the_lan_route_and_never_testifies_about_it():
     ever fails, `route` has become lan-dependent and the two quantities have
     been conflated in the loss — which would also silently re-open C6.
     """
-    cfg = v3.refc_v3_smoke_config(True)
+    cfg = _smoke_cfg(True)
     eps = T._synth_episodes(2, cfg.core, seed=0, min_frames=400)
     plain = T.V3Dataset(eps, window=cfg.core.window, max_horizon=20,
                         channels=cfg.core.encoder.in_channels)
@@ -75,9 +89,9 @@ def test_route_is_not_the_lan_route_and_never_testifies_about_it():
     assert "lan" in b_lan, "the lan-wrapped dataset must emit lan"
 
     torch.manual_seed(0)
-    m1 = v3.RefCV3Model(v3.refc_v3_smoke_config(True))
+    m1 = v3.RefCV3Model(_smoke_cfg(True))
     torch.manual_seed(0)
-    cfg2 = v3.refc_v3_smoke_config(True)
+    cfg2 = _smoke_cfg(True)
     cfg2.core.lan = T.refc.LanConfig(k=len(ARCS))
     m2 = v3.RefCV3Model(cfg2)
 
@@ -89,13 +103,13 @@ def test_route_is_not_the_lan_route_and_never_testifies_about_it():
 
 def test_goal_str_is_absent_without_lan_and_present_with_it():
     """The loss dict itself is the evidence: no lan key => no goal_str key."""
-    cfg = v3.refc_v3_smoke_config(True)
+    cfg = _smoke_cfg(True)
     eps = T._synth_episodes(2, cfg.core, seed=0, min_frames=400)
     plain = T.V3Dataset(eps, window=cfg.core.window, max_horizon=20,
                         channels=cfg.core.encoder.in_channels)
     b_plain = torch.utils.data.default_collate([plain[0], plain[1]])
     torch.manual_seed(0)
-    m = v3.RefCV3Model(v3.refc_v3_smoke_config(True))
+    m = v3.RefCV3Model(_smoke_cfg(True))
     assert "goal_str" not in T.compute_losses_v3(m, b_plain, "cpu")
 
 
@@ -126,7 +140,7 @@ def test_a_long_enough_corpus_makes_the_label_live():
 # --------------------------------------------------------------------------
 
 def test_lan_arm_passes_on_a_live_label():
-    cfg = v3.refc_v3_smoke_config(True)
+    cfg = _smoke_cfg(True)
     assert T._lan_arm_preflight(cfg, _args()) == 0
 
 
@@ -137,7 +151,7 @@ def test_lan_arm_FAILS_when_the_leak_guard_kills_the_label():
     clean 0.0, and the OLD preflight would have reported PASS. The arm must
     refuse it.
     """
-    cfg = v3.refc_v3_smoke_config(True)
+    cfg = _smoke_cfg(True)
     assert T._lan_arm_preflight(cfg, _args(lan_min_lead_m=1e9)) != 0
 
 
@@ -148,14 +162,14 @@ def test_lan_arm_FAILS_when_the_corpus_cannot_reach_the_anchors():
     label is dead for a reason that has nothing to do with the guard. The arm
     must still refuse, because it checks the LABEL, not the knob.
     """
-    cfg = v3.refc_v3_smoke_config(True)
+    cfg = _smoke_cfg(True)
     rc = T._lan_arm_preflight(cfg, _args(lan_arclengths=[5000.0, 10000.0]))
     assert rc != 0
 
 
 @pytest.mark.parametrize("k", [2, 3, 4])
 def test_lan_width_is_pinned_to_the_configured_anchor_count(k):
-    cfg = v3.refc_v3_smoke_config(True)
+    cfg = _smoke_cfg(True)
     arcs = ARCS[:k]
     ds = _lan_ds(400, DataLanConfig(arclengths_m=tuple(arcs), min_lead_m=5.0))
     item = ds[0]

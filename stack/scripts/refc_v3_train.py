@@ -95,6 +95,43 @@ MILESTONES = (5000, 15000, 20000, 30000)
 MAX_H_EXT = max(v3.V3_HORIZONS)            # 60 — fetched by clamp, never enum
 
 
+def _pin_trainer_cfg(cfg: v3.RefCV3Config, args) -> v3.RefCV3Config:
+    """The trainer's OWN pins on a freshly built config (both arms, all paths).
+
+    * ``tac_vocab_version = "kin3"`` — THE documented contract this trainer
+      never wired (found 2026-09-01): ``RefCV3Config``'s field comment says
+      *"the kinematic trainer passes 'kin3' explicitly because its labels are
+      the 3x3 kinematic classes"*, and the E6 comment says *"The trainer PINS
+      its version"* — but nothing pinned it, so the v7.0 default (PI mandate
+      2026-08-27) built 8-wide z_tac heads that ``compute_losses_v3``
+      supervised with 3-class kinematic labels. That is EXACTLY the *"train
+      silently WRONG classes"* case the width refusal names, invisible to it
+      because the refusal checked only the CORE's head — and
+      ``derive_man5_logprobs`` (a [B,3]x[B,3] contract) then read v7.0's
+      LANE_CHANGE_L/R slots as turn_left/right into the H19 prior, an improper
+      AND mis-labelled 5-way. MEASURED before the pin: preflight PASSED with
+      ``tac_heads 14,364`` and ``lat_tac``/``lon_tac`` init-CE at ln(8).
+      The v7.0 head is the go-forward space and NEEDS v7 labels
+      (``SPEC_V7_LABEL_TRAINER_WIRING.md`` — label artifacts not yet
+      deliverable), so a flag would be a dead switch today; pin, don't offer.
+    * ``--image-hw`` — build the encoder at the CORPUS's geometry (e.g.
+      256 640 for the B1 ``*.v2ep.pt`` cache). Param count is UNCHANGED (the
+      trunk is fully convolutional; feat_dim = base_width*8 regardless), so
+      the registered capacity ledger still holds; only compute changes.
+      The delta gate is unaffected: both arms are pinned identically, and
+      ``config_delta`` is derived from configs built through this same helper.
+    """
+    cfg.tac_vocab_version = "kin3"
+    if args.image_hw:
+        h, w = (int(args.image_hw[0]), int(args.image_hw[1]))
+        enc = cfg.core.encoder
+        cfg.core.encoder = refc.CNNEncoderConfig(
+            in_channels=enc.in_channels, image_size=h,
+            image_width=None if w == h else w,
+            base_width=enc.base_width, blocks=enc.blocks)
+    return cfg
+
+
 # ============================================================================
 # Dataset — parity-preserving 6 s
 # ============================================================================
@@ -215,6 +252,18 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
     loss_lat_tac = torch.zeros((), device=device)
     loss_lon_tac = torch.zeros((), device=device)
     if cfg.hier:                       # the H arm's z_tac decision surface
+        # the SAME refusal for the v3 heads — the core-only check above let an
+        # 8-wide v7.0 build train silently against kin3 labels (2026-09-01).
+        if (out["lat_logits_tac"].shape[-1] != tac.N_LAT
+                or out["lon_logits_tac"].shape[-1] != tac.N_LON):
+            raise RuntimeError(
+                f"z_tac head/label vocabulary mismatch: lat "
+                f"{out['lat_logits_tac'].shape[-1]} / lon "
+                f"{out['lon_logits_tac'].shape[-1]} vs kinematic "
+                f"{tac.N_LAT}/{tac.N_LON} -- the model was built with "
+                f"tac_vocab_version={model.tac_vocab_version!r} but this "
+                f"trainer supervises the 3x3 kinematic classes. Build with "
+                f"'kin3' (the trainer pins it), or supply v7 labels.")
         loss_lat_tac = F.cross_entropy(out["lat_logits_tac"], lat_t)
         loss_lon_tac = F.cross_entropy(out["lon_logits_tac"], lon_t)
 
@@ -385,6 +434,7 @@ def preflight(args) -> int:
     if args.smoke:
         cfg_h, cfg_f = (v3.refc_v3_smoke_config(True),
                         v3.refc_v3_smoke_config(False))
+    cfg_h, cfg_f = _pin_trainer_cfg(cfg_h, args), _pin_trainer_cfg(cfg_f, args)
     delta = v3.config_delta(cfg_h, cfg_f)
     if set(delta) != REGISTERED_DELTA_KEYS:
         print(f"[v3-preflight] ⛔ FAIL: config delta {sorted(delta)} != "
@@ -457,12 +507,16 @@ def train(args) -> dict:
     device = ("cuda" if torch.cuda.is_available() else "cpu") \
         if args.device == "auto" else args.device
     torch.manual_seed(args.seed)
-    cfg = (v3.refc_v3_smoke_config(args.arm == "hier") if args.smoke else
-           v3.refc_v3_sized_config(args.size, hier=args.arm == "hier"))
+    cfg = _pin_trainer_cfg(
+        v3.refc_v3_smoke_config(args.arm == "hier") if args.smoke else
+        v3.refc_v3_sized_config(args.size, hier=args.arm == "hier"), args)
     # ⛔ The delta is derived AT THE SAME SIZE both arms run at. Deriving it at a
-    # different rung would compare a config pair neither arm uses.
-    delta = v3.config_delta(v3.refc_v3_sized_config(args.size, hier=True),
-                            v3.refc_v3_sized_config(args.size, hier=False))
+    # different rung would compare a config pair neither arm uses. The pair is
+    # pinned through the same helper as the built arm, so the recorded delta is
+    # the delta of the configs that actually train.
+    delta = v3.config_delta(
+        _pin_trainer_cfg(v3.refc_v3_sized_config(args.size, hier=True), args),
+        _pin_trainer_cfg(v3.refc_v3_sized_config(args.size, hier=False), args))
     if set(delta) != REGISTERED_DELTA_KEYS:
         raise SystemExit(f"[v3] ⛔ config delta {sorted(delta)} != registered "
                          f"{sorted(REGISTERED_DELTA_KEYS)} — amend the prereg "
@@ -476,17 +530,53 @@ def train(args) -> dict:
                          weights_only=True)
         model.core.decoder.load_anchors(anc.to(device))
 
-    # data — parity cache or CI-synthetic, never both
-    if bool(args.synth_episodes) == bool(args.data_root):
-        raise SystemExit("[v3] pass exactly one of --data-root / "
+    # data — raw epcache, v2 compressed cache, or CI-synthetic; exactly one
+    n_src = sum(1 for s in (args.data_root, args.v2_cache,
+                            args.synth_episodes) if s)
+    if n_src != 1:
+        raise SystemExit("[v3] pass exactly one of --data-root / --v2-cache / "
                          "--synth-episodes (the synthetic corpus is CI-only "
-                         "and must never masquerade as the parity cache)")
+                         "and must never masquerade as a training cache)")
+    v2_parity = None
     if args.synth_episodes:
         eps = _synth_episodes(args.synth_episodes, cfg.core, seed=args.seed)
+    elif args.v2_cache:
+        # the flagship's --v2-cache recipe (train_flagship4b.py), verbatim in
+        # structure: membership guard BEFORE any GPU work, lazy LRU-bounded
+        # providers (contract-identical episode surface), and the independent
+        # provider-vs-guard count cross-check. `require=False` keeps
+        # deliberately-non-parity corpora usable behind ONE loud line;
+        # --require-parity turns the same check into a refusal.
+        from tanitad.data import parity
+        from tanitad.data.v2_dataset import build_v2_providers
+        v2_parity = parity.assert_v2_parity_cache(
+            args.v2_cache, label="v3 v2-cache", require=args.require_parity)
+        eps = build_v2_providers(args.v2_cache, lru_size=args.v2_lru)
+        if v2_parity.get("parity") and len(eps) != v2_parity["episodes_loaded"]:
+            raise parity.ParityViolation(
+                f"PARITY VIOLATION [v3 v2-cache]: the guard verified "
+                f"{v2_parity['episodes_loaded']} clip files but the loader "
+                f"built {len(eps)} providers — the _v2manifest.pt sidecar "
+                f"disagrees with the directory; rebuild it "
+                f"(build_v2_providers(..., rebuild=True)) and re-run.")
+        if args.episodes:
+            eps = eps[:args.episodes]
+        print(f"[v3] {len(eps)} lazy v2 providers from {args.v2_cache} "
+              f"(lru {args.v2_lru})")
     else:
         eps, train_dir = load_cached_episodes(args.data_root, "*train*",
                                               args.episodes)
         print(f"[v3] {len(eps)} episodes from {train_dir}")
+    # ⛔ geometry is asserted against the EPISODES, not against the flag: a
+    # 256x640 corpus fed to a 256x256 build would run (conv is size-agnostic)
+    # and silently train a model whose config lies about its input.
+    eh, ew = cfg.core.encoder.image_hw()
+    fh, fw = int(eps[0].frames.shape[-2]), int(eps[0].frames.shape[-1])
+    if (fh, fw) != (eh, ew):
+        raise SystemExit(
+            f"[v3] ⛔ geometry mismatch: encoder built for {eh}x{ew} but the "
+            f"corpus emits {fh}x{fw} — pass --image-hw {fh} {fw} (params are "
+            f"unchanged; only compute scales), or point at a matching cache.")
     want_lan = bool(args.graft_lan or args.goal_str)
     dcls = lan_dataset_class(V3Dataset) if want_lan else V3Dataset
     kw = dict(window=cfg.core.window, max_horizon=20,   # ⛔ parity: NEVER 60
@@ -496,6 +586,12 @@ def train(args) -> dict:
             arclengths_m=tuple(args.lan_arclengths),
             min_lead_m=args.lan_min_lead_m)
     ds = dcls(eps, **kw)
+    # launch-line P4: the run PRINTS its episode/window counts at start — the
+    # only way a parity claim about the enumeration is checkable from the log.
+    print(f"[v3] {len(eps)} episodes -> {len(ds)} windows "
+          f"(window {cfg.core.window}, max_horizon 20, "
+          f"image_hw {cfg.core.encoder.image_hw()}, "
+          f"tac_vocab {cfg.tac_vocab_version})")
     dl = torch.utils.data.DataLoader(
         ds, batch_size=args.batch, shuffle=True, num_workers=args.workers,
         drop_last=True, persistent_workers=args.workers > 0)
@@ -525,6 +621,12 @@ def train(args) -> dict:
         "horizons": list(cfg.core.trajectory.horizons),
         "goal_tau_steps": list(cfg.goal_tau_steps),
         "admission_sigma_m": cfg.admission_sigma_m,
+        # the 2026-09-01 B1-readiness fields — the config.json is the ONLY
+        # durable record of what corpus/geometry/vocab a run actually used.
+        "image_hw": list(cfg.core.encoder.image_hw()),
+        "tac_vocab_version": cfg.tac_vocab_version,
+        "v2_cache": args.v2_cache, "require_parity": bool(args.require_parity),
+        "v2_parity": v2_parity,
     }, indent=1), encoding="utf-8")
 
     log = (out_dir / "metrics.jsonl").open("a", encoding="utf-8")
@@ -584,10 +686,38 @@ def main(argv=None):
                     help="v3-H (goal cascade) or v3-F (flat) — the dominance "
                          "pair; delta pinned to the registered lever set")
     ap.add_argument("--data-root", default=None,
-                    help="parity episode cache (physicalai-train-e438721ae894)")
+                    help="raw epcache root of ep_*.pt (parity-guarded; the "
+                         "physicalai-train-e438721ae894 convention)")
+    ap.add_argument("--v2-cache", nargs="+", default=None,
+                    help="v2 compressed cache dir(s) of *.v2ep.pt (e.g. the B1 "
+                         "corpus physicalai-b1-w120-256x640cyl). Swaps the raw "
+                         "loader for the lazy LRU-bounded v2 providers; the "
+                         "window contract is identical. Pair with "
+                         "--image-hw 256 640 for the B1 geometry — the run "
+                         "REFUSES a geometry mismatch either way.")
+    ap.add_argument("--v2-lru", type=int, default=6,
+                    help="per-process LRU of decoded-payload clips for "
+                         "--v2-cache. ⚠️ B1 payloads are ~34 MB/clip "
+                         "(256x640 PNG) — the old '2-4 MB' sizing is 8-17x "
+                         "low (MEASURED, V5F_SIGKILL.md), and under "
+                         "shuffle the hit rate is ~lru/n_clips, so big "
+                         "values buy RAM pressure, not throughput. 6 "
+                         "matches the v6 chain's setting.")
+    ap.add_argument("--require-parity", action="store_true",
+                    help="REFUSE unless --v2-cache references a REGISTERED "
+                         "corpus key (B1 is unregistered as of 2026-09-01: "
+                         "expect the loud NON-PARITY line without this flag; "
+                         "registering B1 is the cross-arm-comparability "
+                         "instrument)")
+    ap.add_argument("--image-hw", type=int, nargs=2, default=None,
+                    metavar=("H", "W"),
+                    help="build the encoder at this input geometry (B1: "
+                         "256 640). Params unchanged (fully-conv trunk); "
+                         "compute scales with area. Applies to --preflight "
+                         "too, so the gate runs at the launch geometry.")
     ap.add_argument("--synth-episodes", type=int, default=0,
                     help="CI-ONLY synthetic corpus (mutually exclusive with "
-                         "--data-root)")
+                         "--data-root / --v2-cache)")
     ap.add_argument("--out", required=True)
     ap.add_argument("--steps", type=int, default=30000)
     ap.add_argument("--mode", choices=("classifier", "diffusion"),

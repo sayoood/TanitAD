@@ -971,7 +971,25 @@ class ResNetEncoder(nn.Module):
             c_in = c_out
         self.stages = nn.ModuleList(stages)
         self.feat_dim = cfg.feat_dim
-        self.grid = cfg.grid
+        self.grid_shape = cfg.grid_shape      # (rows, cols) — non-square-safe
+
+    @property
+    def grid(self) -> int:
+        """Square feature-map side — raises on a non-square build ON PURPOSE
+        (mirrors :attr:`CNNEncoderConfig.grid`; :attr:`grid_shape` is the
+        general accessor). Until 2026-09-01 this was an EAGER ``__init__`` read
+        (``self.grid = cfg.grid``), which made ANY non-square construction
+        crash at build time even though every in-repo consumer of the map is
+        shape-agnostic (``flatten(2)`` / ``grid_shape``) — MEASURED as the one
+        blocker for the B1 256x640cyl corpus. Moving the raise to READ time
+        keeps the square contract for scalar callers and unblocks non-square
+        builds without touching any consumer."""
+        gh, gw = self.grid_shape
+        if gh != gw:
+            raise ValueError(
+                f"REF-C feature map is {gh}x{gw} (non-square) — this caller "
+                f"still reads the scalar `grid`. Use `grid_shape`.")
+        return gh
 
     def forward(self, x: Tensor) -> tuple[Tensor, Tensor]:
         x = self.stem(x)

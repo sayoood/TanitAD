@@ -58,9 +58,25 @@ def episode_traj_pool(episodes: list, horizons: tuple[int, ...]) -> torch.Tensor
 def build_anchors(horizons: tuple[int, ...], n_anchors: int,
                   data_root: str | None = None, episodes: int = 0,
                   pool_size: int = 4096, max_pool: int = 200_000,
-                  seed: int = 0) -> tuple[torch.Tensor, dict]:
+                  seed: int = 0, v2_cache: list[str] | None = None
+                  ) -> tuple[torch.Tensor, dict]:
     """Return (anchors [n_anchors, len(horizons), 2], metadata)."""
-    if data_root:
+    if v2_cache:
+        # v2 compressed cache (*.v2ep.pt, e.g. the B1 corpus): the pool needs
+        # POSES ONLY, and build_v2_providers keeps poses resident from a
+        # metadata-only mmap scan — no frame is ever decoded here, so anchors
+        # off a multi-thousand-clip corpus cost minutes of CPU.
+        from tanitad.data.v2_dataset import build_v2_providers
+        eps = build_v2_providers(v2_cache, lru_size=1)
+        if episodes:
+            eps = eps[:episodes]
+        pool = episode_traj_pool(eps, horizons)
+        source = f"v2-cache {list(v2_cache)} ({len(eps)} clips)"
+        if pool.shape[0] > max_pool:                      # subsample for FPS
+            g = torch.Generator().manual_seed(seed)
+            sel = torch.randperm(pool.shape[0], generator=g)[:max_pool]
+            pool = pool[sel]
+    elif data_root:
         eps, src = load_cached_episodes(data_root, "*train*", episodes)
         pool = episode_traj_pool(eps, horizons)
         source = str(src)
@@ -82,6 +98,10 @@ def main(argv=None) -> str:
     ap.add_argument("--out", required=True, help="output .pt path")
     ap.add_argument("--data-root", default=None,
                     help="epcache root (*train* dirs); omit for synthetic")
+    ap.add_argument("--v2-cache", nargs="+", default=None,
+                    help="v2 compressed cache dir(s) of *.v2ep.pt (e.g. the "
+                         "B1 corpus). Poses-only scan — no frame decode. "
+                         "Mutually exclusive with --data-root.")
     ap.add_argument("--n-anchors", type=int, default=64,
                     help="vocabulary size (64 default; 20 for smoke)")
     ap.add_argument("--horizons", default="5,10,15,20",
@@ -96,13 +116,17 @@ def main(argv=None) -> str:
                     help="force the synthetic path with a 20-anchor default")
     args = ap.parse_args(argv)
 
+    if args.data_root and args.v2_cache:
+        raise SystemExit("pass at most one of --data-root / --v2-cache")
     horizons = tuple(int(x) for x in args.horizons.split(","))
     data_root = None if args.smoke else args.data_root
+    v2_cache = None if args.smoke else args.v2_cache
     n_anchors = 20 if (args.smoke and args.n_anchors == 64) else args.n_anchors
     pool_size = 256 if args.smoke else args.pool_size
     anchors, meta = build_anchors(horizons, n_anchors, data_root=data_root,
                                   episodes=args.episodes, pool_size=pool_size,
-                                  max_pool=args.max_pool, seed=args.seed)
+                                  max_pool=args.max_pool, seed=args.seed,
+                                  v2_cache=v2_cache)
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     torch.save({"anchors": anchors, **meta}, out)
