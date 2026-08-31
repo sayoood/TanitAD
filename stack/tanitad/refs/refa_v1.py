@@ -164,12 +164,29 @@ class RefAV1Config:
     w_feat_tac: float = 0.5
     w_feat_str: float = 0.25
     # ⚠️ WAS 0.1 — set to 0.0 on 2026-08-31 so the advertisement matches the
-    # code. No imitation target exists in the stage-1 cache contract, so the
-    # trainer could only ever have multiplied this by zero. A non-zero weight
-    # here appeared in the config, in the launch record and in any published
-    # description of the recipe, while contributing nothing to the loss.
-    # ⇒ raise it again ONLY together with a real proposal target.
+    # code (no target existed). ⭐ 2026-09-01: THE TARGET NOW EXISTS — the
+    # loader emits the demonstrated (a, kappa) sequence, so `w_aux_head > 0`
+    # trains the proposal by winner-takes-all against the human demo. Still
+    # AUXILIARY and default-OFF: behaviour comes from planning; this head only
+    # SEEDS the search (GPC), so imitation here cannot echo into the metric.
     w_aux_head: float = 0.0               # imitation proposal: AUXILIARY only
+
+    # --- ⭐ MULTIMODAL proposals (Drive-JEPA 2601.22032, adapted) ----------- #
+    # Drive-JEPA's supervision-bottleneck point: one scene, one human
+    # trajectory, inherently multimodal futures. Their answer is a proposal-
+    # centric planner distilling DIVERSE (simulator + human) trajectories with
+    # momentum-aware selection. The refav1-shaped version: `proposal_k` modes
+    # + a score head, trained WTA (only the closest mode regresses the demo,
+    # so modes specialise instead of averaging), score CE toward the winner.
+    # At plan() time ALL modes seed the iCEM population (they compete inside
+    # iteration 0 and can seed the mean), and the momentum role is played by
+    # the planner's existing `prev_elites` memory across ticks.
+    # ⛔ THE SAFETY OF THE SLOT is the point: proposals only ever SEED the
+    # search — the selected behaviour still comes from imagined-consequence
+    # cost, so distilled diversity cannot become an imitation echo. Simulator
+    # distillation (AlpaSim rollouts / rule-scored candidates over the
+    # obstacle joins) slots in later as extra demo rows, same loss.
+    proposal_k: int = 1                   # 1 = the original single proposal
 
     # --- change #10: the COUNTERFACTUAL-ACTION term (PI 2026-08-31) -------- #
     # ⛔ WHY v1 NEEDED A TENTH CHANGE. Change #4 makes the primary loss "predict
@@ -325,6 +342,10 @@ class RefAV1Config:
                 "a one-frame window has no z_{t-1} to difference against")
         if self.w_tac_label < 0.0 or self.w_str_label < 0.0:
             raise ValueError("label weights must be >= 0")
+        if self.proposal_k < 1:
+            raise ValueError(f"proposal_k must be >= 1, got {self.proposal_k}")
+        if self.w_aux_head < 0.0:
+            raise ValueError("w_aux_head must be >= 0")
         if self.target_space not in ("adapter", "frozen"):
             raise ValueError(f"target_space must be 'adapter' or 'frozen', "
                              f"got {self.target_space!r}")
@@ -647,7 +668,11 @@ class RefAV1(nn.Module):
         # disposes"). w_aux_head is 0.1 and it never gates a metric.
         self.proposal = nn.Sequential(
             nn.LayerNorm(cfg.d_state), nn.Linear(cfg.d_state, 512), nn.GELU(),
-            nn.Linear(512, cfg.plan_steps * cfg.a_dim))
+            nn.Linear(512, cfg.proposal_k * cfg.plan_steps * cfg.a_dim))
+        self.proposal_score = (nn.Sequential(nn.LayerNorm(cfg.d_state),
+                                             nn.Linear(cfg.d_state,
+                                                       cfg.proposal_k))
+                               if cfg.proposal_k > 1 else None)
 
         # Nav injection (PI 2026-09-01): composed HERE, never inside the shared
         # fourbrain classes — the flagship holds the same brains, and widening
@@ -853,7 +878,9 @@ class RefAV1(nn.Module):
             out["str_ext_target_s"] = [
                 round(6.0 + (k + 1) * self.cfg.str_dt, 3) for k in range(ext_k)]
         out["proposal"] = self.proposal(pooled).reshape(
-            -1, self.cfg.plan_steps, self.cfg.a_dim)
+            -1, self.cfg.proposal_k, self.cfg.plan_steps, self.cfg.a_dim)
+        if self.proposal_score is not None:
+            out["proposal_logits"] = self.proposal_score(pooled)
 
         if future_feats is not None:
             tgt = self.adapter(self.std(future_feats))
@@ -969,6 +996,28 @@ class RefAV1(nn.Module):
                 out["loss_route_label"] = F.cross_entropy(rl, route_label)
                 out["loss"] = (out["loss"] + self.cfg.w_str_label
                                * out["loss_route_label"])
+
+        # ---- the proposal imitation term (Drive-JEPA-adapted, 2026-09-01) --
+        # The demo IS the input action sequence's first plan window — no new
+        # tensor needed. WTA: only the CLOSEST mode regresses the demo, so
+        # modes specialise; the score head learns to pick the winner.
+        if self.cfg.w_aux_head:
+            if future_feats is None:
+                raise ValueError(
+                    "w_aux_head without future_feats: the proposal term "
+                    "attaches to the training loss, which does not exist "
+                    "here — it would be advertised and silently unused")
+            demo = actions[:, :self.cfg.plan_steps]
+            modes = out["proposal"]                          # [B, M, P, A]
+            d = (modes - demo[:, None]).pow(2).mean(dim=(-1, -2))   # [B, M]
+            j = d.argmin(dim=-1)
+            out["loss_proposal_wta"] = d.gather(1, j[:, None]).mean()
+            prop_loss = out["loss_proposal_wta"]
+            if self.proposal_score is not None:
+                out["loss_proposal_pick"] = F.cross_entropy(
+                    out["proposal_logits"], j)
+                prop_loss = prop_loss + out["loss_proposal_pick"]
+            out["loss"] = out["loss"] + self.cfg.w_aux_head * prop_loss
         return out
 
     def _cf_term(self, last: Tensor, actions: Tensor, tgt: Tensor,
@@ -1069,7 +1118,18 @@ class RefAV1(nn.Module):
         brains = self._run_brains(pooled_win, nav_cmd)
         intent = None if brains is None else brains["intent"]
 
-        proposal = self.proposal(pooled).reshape(cfg.plan_steps, cfg.a_dim)
+        modes = self.proposal(pooled).reshape(cfg.proposal_k, cfg.plan_steps,
+                                              cfg.a_dim)
+        if self.proposal_score is not None:
+            # the score head picks which mode takes the classic proposal slot
+            # (it competes as a named baseline); the OTHER modes join the seed
+            # pool below — they compete inside iCEM's iteration 0 and can
+            # seed its mean, which is the Drive-JEPA proposal-set idea in the
+            # planner we already have.
+            order = self.proposal_score(pooled)[0].argsort(descending=True)
+            modes = modes[order]
+        proposal = modes[0]
+        seed_pool = modes[1:] if modes.shape[0] > 1 else None
         v0_t = torch.as_tensor([v0], dtype=torch.float32, device=feats.device)
 
         if cfg.plan_level not in ("tactical", "operative"):
@@ -1113,7 +1173,8 @@ class RefAV1(nn.Module):
                               for i in range(0, controls.shape[0], cost_chunk)])
 
         res = icem_plan(cost_fn, v0=v0, cfg=pc, proposal=proposal,
-                        prev_elites=prev_elites, device=feats.device)
+                        prev_elites=prev_elites, seed_pool=seed_pool,
+                        device=feats.device)
 
         # ⭐ COARSE-TO-FINE: the search ran on the tactical field; re-score the
         # WINNER (and the baselines it beat) on the full operative field, so the

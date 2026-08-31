@@ -582,6 +582,28 @@ designed ladder, keeps five strategic steps, and turns an unbuildable cache into
 fits with **130 GiB headroom**. ⛔ It is still a design change to a PI-directed structure
 (change #9), so it is the PI's call, not mine.
 
+### ⭐ CORPUS DECIDED + THE fp8 PATH MEASURED (PI 2026-09-01)
+
+PI: refav1 trains on **the v7.2 corpus — B1 train + the eval split, with the labels**
+(not the old parity 2,400). Same-corpus comparability with v7f/refcv3/refd restored.
+The raw data IS ready: B1 epcache 4,713 eps + val epcache 600 eps + `v72/labels/`
+(train 4,572 records md5 `0ff90213…`, eval 147 md5 `aa12c948…`) + clip indexes, all on
+Thor. What refav1 additionally needs is its ONE derived artifact — the frozen DINOv3
+feature cache (the design trains on features, never images):
+
+```
+                      train B1 4713      eval 600        total     vs 426 GiB free
+fp16  (0.2 s grid)      581.1 GiB       74.0 GiB      655.1 GiB    ⛔ does not fit
+fp8 e4m3                290.5 GiB       37.0 GiB      327.5 GiB    ✅ fits, ~98 GiB headroom
+```
+
+**MEASURED 2026-09-01 (real DINOv3-L features, 3 episodes):** fp8 e4m3 round-trip =
+**2.65 % mean relative error, per-token cosine 0.99965**, and the temporal structure
+(copy-floor curves at k = 1/5/15/30) preserved to **+0.57 %/+0.23 %/+0.08 %/+0.01 %**.
+⇒ fp8 is the viable build; the remaining gate before committing ~1 GPU-day of encode is
+the **L2 decodability panel on fp8 vs fp16 features** (quantisation must not cost the
+probe targets), plus the PI's go on the disk write.
+
 ### What this does and does not block
 
 * ✅ **refav1 on the PARITY corpus is buildable today** once the rate lands — 296 GiB fits.

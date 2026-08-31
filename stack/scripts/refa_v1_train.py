@@ -45,6 +45,7 @@ def build_model(args) -> RefAV1:
         w_cf=args.w_cf, cf_negs=args.cf_negs, cf_at_step=args.cf_at_step,
         motion_inject=args.motion_inject,
         target_space=args.target_space,
+        w_aux_head=args.w_aux_head, proposal_k=args.proposal_k,
     )
     if args.smoke:
         cfg.d_enc, cfg.n_tokens, cfg.d_state = 32, 8, 32
@@ -139,6 +140,15 @@ def main(argv=None) -> int:
                          "loose default and surviving at 0.5. v1 rolls 30 "
                          "steps with full-chain gradient through an 80 M "
                          "predictor — consider 0.5 for the first real arm.")
+    # --- Drive-JEPA-adapted multimodal proposals (2026-09-01) --------------- #
+    ap.add_argument("--w-aux-head", type=float, default=0.0,
+                    help="imitation weight on the proposal head (WTA over "
+                         "proposal-k modes vs the demonstrated (a, kappa)). "
+                         "SEEDS the planner only -- behaviour stays planned.")
+    ap.add_argument("--proposal-k", type=int, default=1,
+                    help="number of proposal modes (Drive-JEPA proposal-set "
+                         "idea); >1 adds a score head, and at plan() time all "
+                         "modes join the iCEM seed pool")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--resume", action="store_true",
                     help="continue from <out>/ckpt.pt if present")
@@ -198,12 +208,12 @@ def main(argv=None) -> int:
     # That is the defect `sanity()` refuses for w_cf, sitting in the trainer.
     # ⚠️ Fixing it means supplying a proposal target, which the cache contract
     # does not yet carry — so this REFUSES instead of pretending.
-    if cfg.w_aux_head:
+    if cfg.w_aux_head and a.smoke:
         raise SystemExit(
-            f"w_aux_head is {cfg.w_aux_head} but no imitation target exists in "
-            "the cache contract, so the term would be advertised in the launch "
-            "record and contribute exactly zero. Set it to 0.0, or wire the "
-            "proposal target first.")
+            f"w_aux_head is {cfg.w_aux_head} under --smoke: SmokeData has no "
+            "demonstrated actions, so the term would be advertised and fed "
+            "noise. With a real --cache the loader's (a, kappa) IS the demo "
+            "and the term is live.")
 
     start_step = 0
     if a.resume and (a.out / "ckpt.pt").exists():

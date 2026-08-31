@@ -183,6 +183,7 @@ def icem_plan(cost_fn: Callable[[Tensor], Tensor], *, v0: float,
               cfg: PlanConfig | None = None,
               proposal: Tensor | None = None,
               prev_elites: Tensor | None = None,
+              seed_pool: Tensor | None = None,
               device=None) -> PlanResult:
     """Plan one MPC tick. ``cost_fn`` maps ``[n, H, 2]`` controls -> ``[n]`` cost.
 
@@ -224,6 +225,11 @@ def icem_plan(cost_fn: Callable[[Tensor], Tensor], *, v0: float,
         if it == 0 and prev_elites is not None and prev_elites.numel():
             keep = max(1, int(cfg.elite_memory * cfg.n_elites))
             samples = torch.cat([samples, prev_elites[:keep].to(device)], 0)
+        # `seed_pool`: extra full candidates (e.g. the multimodal proposal
+        # modes) that must ALL compete in iteration 0 — deliberately separate
+        # from elite memory, whose [:keep] truncation would silently drop them.
+        if it == 0 and seed_pool is not None and seed_pool.numel():
+            samples = torch.cat([samples, _clip(seed_pool.to(device), cfg)], 0)
         # The baselines compete INSIDE the loop too, so they can seed the mean.
         if base_stack.numel():
             samples = torch.cat([samples, base_stack], 0)
