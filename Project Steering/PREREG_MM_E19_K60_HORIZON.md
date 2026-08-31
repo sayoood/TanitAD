@@ -71,6 +71,30 @@ optimiser should **allocate more gain on its own**. ⇒ `‖to_scale_shift‖` a
 rises but the gains do NOT, the ratio gain came from somewhere else and the mechanism
 story is wrong — report both.
 
+## 3b. ⭐ A THIRD READ, ADDED AT STEP ~600 — BEFORE ANY NUMBER EXISTS
+
+**DRIFT, and it costs nothing extra.** MM-E18's mechanism implies it: drift is the
+fraction of `Δz` predictable from `z_t` alone, and we measured it **SELF-DOMINATED**
+(MM-E6 — the scene subspace carries ~20× less drift than a random subspace of equal
+rank) and **trivially reducible** (MM-E4 — the shuffle control fired, so it is a
+symptom). ⭐ If the predictor is scene-dominated *because* one tick barely moves the
+scene, then **drift is the same artifact seen from another angle**: over 0.1 s, "predict
+`z_{t+1}` from `z_t`" is nearly the identity, so a self-referential solution is close to
+optimal. Over **60 ticks** the identity is useless and the rollout must actually
+transport the scene.
+
+| outcome | consequence |
+|---|---|
+| **drift FALLS materially at k=60** | ⭐ drift, action-deafness and the horizon are **ONE defect**, and the 6 s requirement addresses all three — the strongest possible result for the recipe |
+| **drift unchanged** | ⛔ drift is INDEPENDENT of the horizon and needs its own lever; the pre-committed candidate remains the frozen/EMA teacher target |
+| drift RISES | report it; a harder task may legitimately raise it, and per the anti-gate below that is not automatically a regression |
+
+⚠️ **Committed now, at step ~600, with no drift number in hand for this arm** — the same
+discipline as MM-E11's pre-read amendment. ⚠️ And the incumbent's drift must be read with
+the **same instrument on the same corpus**, or this is not a comparison. ⛔ This is an
+*additional read of an arm already running for another reason* — it must never be
+described as "the drift experiment", because no drift-specific variable was manipulated.
+
 ## 4. ⛔ The anti-gates, committed before any number exists
 
 * **O5 LOSS WILL BE HIGHER, AND THAT IS NOT A REGRESSION.** A 60-step rollout is a
