@@ -412,6 +412,48 @@ returns to 0.61–5.20 between them. That is a different object from the predece
 monotone escalation, and the arrival-rate read is what will separate "settling" from
 "still spiking, median flattered".
 
+### ✅/⚠️ DECISION READ AT STEP 8,200 — **RECOVERED by the criterion. ARM CONTINUES.** But it is spiking.
+
+| quantity | steps 6,800–8,200 | threshold | verdict |
+|---|---|---|---|
+| gnorm median | **3.18** | < 50 | ✅ PASS |
+| `o5_loss` median | **0.1977** | < 0.25 | ✅ PASS |
+
+⇒ **RECOVERED. The arm continues to 30k.** ⭐ `o5` median **0.1977** is *exactly* the
+predecessor's pre-divergence baseline — the objective is undamaged. Last five rows:
+gnorm 0.92 · 17.85 · 5.20 · 0.80 · 1.15.
+
+⛔⛔ **AND THE ARRIVAL-RATE CHECK — added BEFORE this read precisely so it could not be
+argued away afterwards — says the arm is NOT stable:**
+
+```
+spikes (gnorm > 50) per 1,000 steps
+  first  half, steps   200-4000 : 0.00
+  second half, steps  4200-8200 : 1.25        <- began at ~4,200 and has not stopped
+  last 10 rows                  : 3 spikes
+```
+
+⇒ **The median is clean because the last five rows happen to be quiet and the two largest
+spikes aged out of the window. The spiking itself did not stop.** That is the weakness I
+named at 7,800, materialising exactly as described.
+
+⭐⭐ **THE COMMITTED CRITERION GOVERNS AND THE ARM CONTINUES.** I am not overriding a
+pre-commitment because a supplementary metric looks worse — that is precisely as
+illegitimate as overriding it because it looks better, and it is the failure the whole
+pre-registration exists to prevent. The criterion decides CONTINUE/KILL; the arrival rate
+decides what the eventual result may CLAIM.
+
+⚠️ **THE CAVEAT THAT MUST TRAVEL WITH EVERY MM-E19 NUMBER:** this arm trained through a
+persistent intermittent-spiking regime from step ~4,200 onward. Any action-ratio or drift
+read from it is a read on a model trained under gradient instability, and must say so.
+
+⭐ **AND THE REGIME ITSELF IS A FINDING, sharper than "it diverged":** spikes are **absent**
+in the first half and **present throughout** the second. ⇒ k=60 does not start unstable —
+it *enters* an unstable regime partway through training and stays there. **The instability
+is a property of the TRAINED STATE, not of initialisation**, which is why no init-side or
+warmup-side fix would have addressed it, and why clip 0.5 contains the damage without
+preventing the cause.
+
 ## 4. ⛔ The anti-gates, committed before any number exists
 
 * **O5 LOSS WILL BE HIGHER, AND THAT IS NOT A REGRESSION.** A 60-step rollout is a
