@@ -125,8 +125,50 @@ strictly a member of the "nine objective terms" class that failed. The read is
 consulted when I made it.** A prior that would have explained the result afterwards is
 worth nothing; stated beforehand it changes what the result can mean.
 
-⚠️ **Committed at step ~600, with no drift number in hand for this arm** — the same
-discipline as MM-E11's pre-read amendment. ⚠️ And the incumbent's drift must be read with
+### ⭐⭐ A SHARPER READ EXISTS, AND IT ALREADY HAS A BANKED CONTROL — added at step ~3,400
+
+Looking for the drift instrument turned up a better quantity than drift level.
+`latentmotion.py` (E-DEC-59, RFF+ridge onto the top-8 PCA directions) reports, for the
+scratch arm `rdw8p30k` at **k=4** on a HELD-OUT split (80 clips / 7,680 rows):
+
+| column | r | t |
+|---|---|---|
+| `z_t` (DRIFT / positive control) | **0.6718** | 134.84 |
+| **`ego_state [w, a, v]`** | **0.0073** | 2.78 |
+| `z_t + ego_state` | 0.6712 | 135.21 |
+| constant (control) | **0.0000** | 0.00 |
+| **ego marginal over drift** | **−0.0006** | **−0.48** |
+
+⭐⭐ **THE EGO STATE — WHICH CONTAINS THE ACTION — ADDS NOTHING TO PREDICTING Δz BEYOND
+`z_t` ALONE.** Marginal −0.0006 at t −0.48: not merely small, *not distinguishable from
+zero*. And the constant control reads exactly 0.0000, so the panel is admissible.
+
+⇒ ⭐⭐⭐ **THIS IS MM-E18 CONFIRMED FROM THE DATA SIDE, AND IT IS STRONGER THAN MY
+MODEL-SIDE ARGUMENT.** I argued the optimiser *chose* a small action gain because the
+action barely helps. This shows the action **genuinely does not predict the latent
+transition at 0.4 s** — measured on held-out data, with no model's choices involved.
+**The model is not ignoring a useful signal; it is correctly declining to use a useless
+one.** Action-deafness is a *correct response to the horizon*, not a defect.
+
+⛔ **⇒ THE PRIMARY DRIFT-SIDE READ FOR MM-E19 IS THE EGO MARGINAL, NOT THE DRIFT LEVEL.**
+Drift level is floor-bound and low-power (previous amendment). The **ego marginal over
+drift** is exactly the quantity the horizon hypothesis predicts should move, and it has
+a banked reference and a working known-value control.
+
+| outcome at k=60 | consequence |
+|---|---|
+| **ego marginal becomes POSITIVE and material** (t ≫ 2) | ⭐⭐ the horizon hypothesis is CONFIRMED on the data side: actions predict Δz once the horizon is long enough. The 6 s requirement becomes load-bearing for the whole recipe |
+| **marginal stays ≈ 0** | ⛔ actions do not predict the latent transition at ANY horizon we can reach ⇒ the problem is the ACTION REPRESENTATION or the latent, and no horizon or objective fixes it |
+
+⚠️ **Two scope limits, stated now.** (1) The banked reference is `rdw8p30k`, a *sibling*
+scratch arm, not `postrain30k` — so the incumbent must be re-measured with this
+instrument at k=4 **and** k=60 for a clean paired comparison; the banked row is a
+reference, not the control. (2) `latentmotion.py` is run at **k=4**; extending it to
+k=60 changes the horizon of the *probe* as well as of the arm, and both arms must be
+read at both k values or the comparison confounds probe-horizon with arm-horizon.
+
+⚠️ **Committed at step ~600 (and extended at ~3,400), with no drift number in hand for
+this arm** — the same discipline as MM-E11's pre-read amendment. ⚠️ And the incumbent's drift must be read with
 the **same instrument on the same corpus**, or this is not a comparison. ⛔ This is an
 *additional read of an arm already running for another reason* — it must never be
 described as "the drift experiment", because no drift-specific variable was manipulated.
