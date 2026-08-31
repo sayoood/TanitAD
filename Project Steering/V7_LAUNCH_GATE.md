@@ -143,6 +143,49 @@ below may be marked closed by me.** I can report that a criterion is met; the PI
   front. *(Was "defined and unrun"; it is now designed, one-variable, and costed at one
   tiny-rig arm.)*
 
+## P5 — ⭐⭐ THE PREDICTOR ADDS NOTHING OVER THE CURRENT LATENT (L3)
+
+⚠️ **ADDED 2026-08-31 after the PI asked about decodability — my first list omitted it,
+and it belongs here.**
+
+* ✅ **DECODABILITY ITSELF IS NOT OPEN. L1 and L2 are MEASURED and PASSED:**
+
+  | level | criterion | result |
+  |---|---|---|
+  | **L1** no collapse | participation (σ²) val-side **≥ 8.56** (frozen DINOv3) | **3.80/3.62 → 25.58/26.96** ✅ |
+  | **L2** the latent CARRIES the environment | beat raw-pixel floor **AND** constant **AND** frozen DINOv3, paired | `splitp30k` `n_agents` **+0.1220 vs DINOv3 +0.0998**; `occ_center` +0.3351; corridor +0.2080 ✅ |
+
+  ⭐ **Our own trained encoder beats the frozen teacher we distil from, on the target
+  that matters most (other agents).** ⛔ C156 retracted the opposite claim — a
+  recommendation to replace our encoder with DINOv3 that quoted *"behind on 4 of 5"*
+  while omitting the one target we win. **The encoder learns the environment.**
+
+* ⛔ **WHAT IS OPEN IS L3 — and the programme's own words call it "the dissociation gate,
+  and the actual v7 bar":** does `zhat` beat `z_t` on the same targets, paired,
+  |t| ≥ 2.9? ⇒ *does the PREDICTOR add anything over simply looking at now?*
+
+* ⭐⭐⭐ **AND L3 IS NOT A SEPARATE TOPIC TO CHECK LATER — IT IS P2 AND P3 SEEN THROUGH
+  THE DECODABILITY LENS.** "The predictor adds nothing over `z_t`" and "Δz is largely
+  predictable from `z_t`" (drift) and "the action barely moves the prediction" are three
+  instruments on **one** phenomenon: **the predictor is not transporting the scene, it is
+  restating it.** That is precisely *"the model did not learn the driving environment and
+  extract from it the trajectory."*
+
+* ⭐⭐ **THE OBSERVATION THAT TIES IT TOGETHER, and it is uncomfortable:** `splitp30k` is
+  simultaneously **the L2 WINNER** (best representation), **the lowest-drift arm**
+  (0.199), **the FROZEN-ENCODER arm** (0 of 41 tensors moved — measured today), **and the
+  L3 DELIBERATE-REGRESSION ARM** — *"a known predictor-dead arm (t −3.69 / −5.62 /
+  −6.26)"*. ⇒ **the best encoder has the deadest predictor.** Encoder quality and
+  predictor liveness appear to TRADE OFF, and the freeze may be buying the first at the
+  cost of the second.
+  ⚠️ **HYPOTHESIS, not causal** — one arm, and `o5_k` 8→4 is still confounded with the
+  freeze (P3). But it makes P3's ablation dual-purpose: the same arm reads drift **and**
+  L3, so it can test the trade-off directly.
+
+* **CLOSES WHEN:** an arm clears **L3** — `zhat` beats `z_t` paired at |t| ≥ 2.9 — while
+  the deliberate-regression arm (`splitp30k`) still FAILS it. ⛔ Per the validation
+  standard: *if the gate does not fail the regression arm, a PASS means nothing.*
+
 ## P4 — THE HORIZON LADDER IS SHORT OF THE LABELS
 
 * **Evidence:** the labels describe events a median **12.5 s** ahead
