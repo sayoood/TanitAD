@@ -167,8 +167,43 @@ reference, not the control. (2) `latentmotion.py` is run at **k=4**; extending i
 k=60 changes the horizon of the *probe* as well as of the arm, and both arms must be
 read at both k values or the comparison confounds probe-horizon with arm-horizon.
 
-⚠️ **Committed at step ~600 (and extended at ~3,400), with no drift number in hand for
-this arm** — the same discipline as MM-E11's pre-read amendment. ⚠️ And the incumbent's drift must be read with
+### ⛔⛔ THE READ MUST RUN ON BOTH PCA BANDS, OR A NULL WILL BE OVER-READ
+
+Reading `latentmotion.py` before staging it surfaced a trap that would have corrupted
+the conclusion. Its `SPD_BAND` selects **which PCA directions of Δz are scored**, and
+the default is the **top 8**. Its own comment records why that matters:
+
+> *"`8:16` is the band where E-DEC-40's own band control found the ONLY hint of action
+> content (**+0.0258, t 2.73**) — a LOW-VARIANCE subspace the top-8 projection is
+> **blind to by construction**."*
+
+⛔ ⇒ **"ego marginal ≈ 0" in band `0:8` does NOT mean "actions carry nothing."** It means
+actions carry nothing *in the eight highest-variance directions*. A null there is
+exactly what E-DEC-40 already over-read once. ⇒ **MM-E19's ego-marginal read runs on
+`SPD_BAND=0:8` AND `SPD_BAND=8:16`, both arms, or it is not admissible.**
+
+⭐ **And the finding is now corroborated THREE times, by two instruments**, which is why
+the horizon (not the mechanism) is the live hypothesis: `deltaz.py` (E-DEC-40) measured
+action **−0.0109, t −0.57** against drift **+0.1952, t 8.38**; `latentmotion.py`
+(E-DEC-59) measured ego marginal **−0.0006, t −0.48** against drift **0.6718**; and
+MM-E18 found the model's own FiLM gain converging rather than straining. Two
+independent probes and one weight-trace agree: **at short horizon the action does not
+predict the latent transition.** Nobody has tested whether that survives a long one.
+
+### ⚠️ TWO PROBE DEFECTS TO FIX BEFORE THE READ (neither is optional)
+
+1. **`K = 4` is HARDCODED** (`latentmotion.py:63`, `F, K, DT, K_FOLDS = 100, 4, 0.1, 10`)
+   — it is not an env var. Reading at k=60 requires parameterising it, and **both arms
+   must be read at both k values** or probe-horizon confounds with arm-horizon.
+2. ⛔ **It hardcodes `sys.path.insert(0, r"C:\Users\Admin\tanitad-mirror\stack")`** — the
+   MM-C12 trap verbatim: a third mirror whose `v6.py` matches neither the repo nor G:.
+   `load_trunk_auto` **rebuilds the model from the checkpoint's config**, so the code
+   version is load-bearing. On Thor this must resolve to `/home/nvidia/TanitAD/stack`,
+   the tree these checkpoints were **trained** with, and the probe must stamp
+   `tanitad.__file__` into its output as `actdiv_thor.py` does.
+
+⚠️ **Committed at step ~600 (extended at ~3,400 and ~4,200), with no drift number in
+hand for this arm** — the same discipline as MM-E11's pre-read amendment. ⚠️ And the incumbent's drift must be read with
 the **same instrument on the same corpus**, or this is not a comparison. ⛔ This is an
 *additional read of an arm already running for another reason* — it must never be
 described as "the drift experiment", because no drift-specific variable was manipulated.
