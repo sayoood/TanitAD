@@ -12,6 +12,7 @@ measurement-refuted items.
 | **consume** — a row worked on gets `▶ TAKEN <date> <session>`; done gets `✅ DONE <date> → <artifact path>` | whoever executes (daily Lab run, FlyWheel, MM) | same turn |
 | **propose** — new rows from Lab findings ("what this changes"), retraction follow-ups, FlyWheel escalations | the finder, appended under `## PROPOSED (unranked)`, never self-ranked | same turn |
 | **fence** — a row refuted by measurement gets ⛔ REFUTED + the register row id, never silently deleted | whoever measures | same turn |
+| ⭐ **verify** — run `stack/scripts/lab_backlog_drift.py` before ranking; it lists finding-commits registered since this file was last written, and exits non-zero if any are unproposed | mechanical | every daily run |
 | **rank** — PROPOSED rows move into the ranked list; priorities re-sorted | **Master Mind only** — with each daily-run commit, full re-sort weekly | daily/weekly |
 | **⛔PI rows** — approve/unpark/kill | **the PI** — one sentence suffices; MM records it | on decision |
 
