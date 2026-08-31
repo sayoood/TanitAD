@@ -83,8 +83,52 @@ below may be marked closed by me.** I can report that a criterion is met; the PI
   command information and P2(b) becomes the strongest open candidate. ⚠️ Data-only: no
   training, no GPU, and it decides whether to spend either.
 
+* ⭐⭐⭐ **2026-08-31 — THE PREDICTOR HAS ALREADY BECOME ACTION-SENSITIVE ONCE, AND THE ARM
+  WAS ABANDONED AT 25 %.** Found by checking whether the programme had already answered
+  this before proposing it as new. `O11` is a **counterfactual-action InfoNCE**: roll the
+  same states under the true future actions and `n_neg` action sequences from other batch
+  elements, and require the true one to match the observed future.
+  ⭐ **It carries its own known-value control by construction:** *"an action-independent
+  predictor scores EXACTLY ln(1+n_neg) and cannot do better."*
+
+  **`o11p30k`, the ONE arm ever to run it (`w_o11_cf 1.0`; 28 other arms ran 0):**
+
+  ```
+  steps 1000-5200   o11_loss 1.3813-1.4462   floor 1.3863   excess ~0   pick_acc ~chance
+  step  5400        o11_loss 0.4024          excess 0.9839  pick_acc 0.750   <- BREAKOUT
+  steps 6000-7600   pick_acc 1.000 for 12 CONSECUTIVE rows, excess -> 1.386 (max 1.3863)
+  ```
+
+  ⇒ **It sat at the provable no-information floor for 5,200 steps, then went to essentially
+  perfect action discrimination and STAYED there.** ⭐ The floor is a *mathematical property
+  of the instrument*, not a cross-arm comparison, so the within-arm transition survives every
+  confound below: **this predictor's output became action-dependent.**
+  ⛔ **The run stopped at 7,600 of 30,000 — killed, not crashed** (the log ends cleanly, no
+  error lines). `ckpt.pt` is banked and probeable.
+
+* ⛔ **TWO REASONS THIS IS NOT YET A RESULT, both of which I would rather state than have
+  someone discover:**
+  1. **`o11p30k` IS NOT A ONE-VARIABLE ARM.** Against `postrain30k` it differs on **four**
+     shared keys — `w_o11_cf 0→1`, `o11_k 6→4`, `o11_negs 1→3`, and ⛔ **`init_from`
+     `distill_init.pt` → `None` (it trained from SCRATCH)**. So *O11 caused the breakout* is
+     not established; only *the breakout happened* is.
+  2. ⛔ **A NON-DYNAMICAL SHORTCUT IS AVAILABLE.** The negatives are action sequences from
+     **other batch elements — i.e. other clips**. Since actions correlate with scene identity
+     (clips differ in speed and geometry), *"which action produced this future"* may be
+     solvable as *"which action belongs to this scene"*, which requires no dynamics at all.
+     Perfect `pick_acc` is consistent with both.
+
+* ⭐ **THE DISCRIMINATING READ IS CHEAP, DEFINED, AND USES A BANKED CHECKPOINT:** run the
+  MM-E10 action-divergence probe on `o11p30k/ckpt.pt`, same corpus and n. The three 30k arms
+  sit at **0.00408 / 0.00416 / 0.00595**. If o11p30k is **materially above that band**, the
+  sensitivity is general and P2 has its first positive lever. If it sits **inside** the band,
+  the discrimination lived in the O11 head and never reached the predictor — a shortcut, and
+  the arm is a negative rather than an abandoned success. ⚠️ Needs the GPU; queued behind
+  `k60p30k`.
+
 * **CLOSES WHEN:** (a), (b) and (c) are each measured, or one of them is confirmed and
   the fix raises the action ratio materially. ⚠️ **(b) additionally needs a PI call on the
+  geometry** before any comma2k19 arm — that decision is named above and is not mine. ⚠️ **(b) additionally needs a PI call on the
   geometry** before any comma2k19 arm — that decision is named above and is not mine.
 
 ## P3 — DRIFT: A REAL, SEED-STABLE 3.3× EFFECT WHOSE CAUSE IS UNKNOWN
