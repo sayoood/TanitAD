@@ -503,6 +503,42 @@ looked like immediately before 12–14k spiked.
 steps** — the 60-step rollout error is only 2.3× the one-step error. `step_s` 2.81,
 putting 30k at roughly **12 h** out.
 
+### ⛔⛔ AMENDMENT, step ~18,600 (Evals FlyWheel dry-run, 2026-09-02) — MY "BOUNDED INTERVAL" IS RETRACTED, BY ITS OWN PRE-COMMITTED TRIGGER
+
+The 14,400 amendment above revised the caveat to a *bounded* regime (~4,000–14,000,
+"the last 2,600 steps are clean") and pre-committed the refutation trigger: *"one more
+`>1e4` excursion before 30k."* **It fired, repeatedly.** MEASURED on the full 18.6k log
+(the agent's spike-arrival stamp, same instrument, same threshold):
+
+```
+window 16,000–18,000:  8 spikes >50, rate 4.0/1000 — THE WORST WINDOW OF THE RUN
+step 18,000:           gnorm max 1.24e10 — two orders above the prior record (6.4e4),
+                       within one order of the level that killed k60p30k (2.1e9)
+```
+
+⇒ **The regime is OPEN-ENDED and ESCALATING, not bounded.** The caveat reverts to its
+stronger form: this arm trains through intermittent spiking from ~4,000 onward with the
+worst excursions LATE, and any 30k number carries that. *Root-cause class of my error:
+premature bounding — declaring a regime closed from its most recent quiet stretch, the
+exact optimism the 8,200 read refused in the other direction. The trigger I committed is
+the only reason this retraction is mechanical rather than argued.*
+
+⛔ The committed CONTINUE/KILL criterion still governs the arm (it is alive, loss finite,
+median gnorm in-band); what changes is what the result may CLAIM — and the HORIZON
+verdict's credibility now leans entirely on the k=8 clip-0.5 control.
+
+### ⚠️ TWO MORE CORRECTIONS FROM THE SAME DRY-RUN, both MEASURED
+
+1. **§3's incumbent norms were mis-attributed:** the quoted 2.97/3.06/5.44
+   (act_emb2 9.5694→9.4015) are **`o1ctrl30k`'s** (reproduced to 4 decimals from its
+   ckpt, md5 `eeb12bd1…`). The TRUE incumbent `postrain30k` reads
+   **3.8301/4.3603/4.2527, act_emb2 9.6288**. Both baselines ship in the read JSON.
+2. **A THIRD uncontrolled variable:** the incumbent carries `init_from=distill_init.pt`,
+   the k60 arm `None` — beyond the pre-registered o5_k+clip pair. Per E-DEC-60/C164
+   (the init/drift attribution retraction), any k60-vs-incumbent DRIFT comparison in
+   this read is CONFOUNDED BY INIT and must be reported as such; the h1-ratio criterion
+   applies mechanically, the interpretation carries the confound.
+
 ## 4. ⛔ The anti-gates, committed before any number exists
 
 * **O5 LOSS WILL BE HIGHER, AND THAT IS NOT A REGRESSION.** A 60-step rollout is a
