@@ -259,6 +259,42 @@ mechanism and keeps the horizon, which is the whole point of the arm. ⚠️ **N
 that would abandon the hypothesis to rescue the run. ⚠️ **NOT** a lower `lr` as the first
 move: lr is matched to the incumbent and changing it adds a second variable to MM-E19.
 
+### ⛔⛔ CRITERION READ AT STEP 9,000 — **DEGRADED**. ARM KILLED AND RELAUNCHED.
+
+The criterion committed at step 8,400, read over the last 8 rows (steps 7,600–9,000):
+
+| quantity | measured | threshold | verdict |
+|---|---|---|---|
+| gnorm median | **22,162.08** | < 50 | ⛔ **FAIL** (443× over) |
+| `o5_loss` median | **0.2953** | < 0.25 | ⛔ **FAIL** |
+
+**Both fail, and it was worsening rather than recovering** — step 9,000 logged gnorm
+**2,106,246,528** (2.1 × 10⁹), the largest of the run. ⇒ the pre-committed action was taken
+**without re-deliberation**, which is the entire reason it was written down first.
+
+**Executed 2026-08-31 ~08:29 UTC:**
+* Trainer killed by **explicit PID** (2474127), located by matching `args` and confirmed
+  with `ps -p` before the signal. ⛔ Never `pkill -f` — it matches the issuing ssh command.
+* The diverged run is **preserved, not deleted**, as
+  `k60p30k.DIVERGED-clip1.0.DO-NOT-CENSUS` with a README stating what happened. ⭐ **It IS
+  the finding** — a census over `v7tiny/*/config.json` would otherwise read it as "the k=60
+  arm". Same rename-not-delete rule that disarmed the pre-schema-fix blobs.
+* Relaunched as **`k60clip05p30k`** — a NEW name, deliberately, because reusing `k60p30k`
+  for a different config is the identity confusion this campaign has spent a day removing.
+* **ONE VARIABLE against the diverged arm, verified by `diff` on the executable lines:
+  `--clip 0.5` (and the output paths).** Everything else byte-identical, `--o5-k 60` kept.
+
+⚠️ **What the successor can and cannot establish.** If it trains stably to 30k, MM-E19's
+primary read proceeds as written — but the arm is then `postrain30k + o5_k 60 + clip 0.5`,
+**two** changes from the incumbent, so a positive action-ratio result cannot be attributed to
+the horizon alone without a `clip 0.5` control at k=8. ⛔ **That control is now REQUIRED for
+any HORIZON-WORKS verdict**, and it is cheap (k=8 runs at 1.21 s/step ≈ 10 h).
+
+⭐ **And the divergence is a RESULT in its own right, banked independently of what the
+successor does:** at `--clip 1.0`, **k=60 with full-chain BPTT is gradient-unstable while
+k=8 was not**. The 2.4× wall-clock was the priced half of the 6 s horizon; **this is the
+unpriced half.**
+
 ## 4. ⛔ The anti-gates, committed before any number exists
 
 * **O5 LOSS WILL BE HIGHER, AND THAT IS NOT A REGRESSION.** A 60-step rollout is a
