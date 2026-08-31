@@ -46,6 +46,7 @@ carries a structural floor *and* a cost-fidelity gate rather than trust.
 """
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, field
 
 import torch
@@ -144,6 +145,37 @@ class RefAV1Config:
     w_feat_str: float = 0.25
     w_aux_head: float = 0.1               # imitation proposal: AUXILIARY only
 
+    # --- change #10: the COUNTERFACTUAL-ACTION term (PI 2026-08-31) -------- #
+    # ⛔ WHY v1 NEEDED A TENTH CHANGE. Change #4 makes the primary loss "predict
+    # the future patch features". That target is TEACHER-FORCED: it already
+    # contains the action's effect, so a predictor can match it WITHOUT using
+    # the action at all. UWM-JEPA (2605.25313) states it and says the finding
+    # "applies beyond the unitary parameterisation"; our own campaign measured
+    # the same thing three ways -- action moves the prediction 0.4-0.6% as much
+    # as the scene, ego_state adds -0.0006 (t -0.48) over drift on held-out
+    # data, and the FiLM gain CONVERGED rather than straining. ⇒ v1 would have
+    # inherited REF-A's original symptom: scores on context, ignores actions.
+    #
+    # ⭐ THE TERM CARRIES ITS OWN KNOWN-VALUE CONTROL, which is why it is an
+    # instrument and not just a loss: roll the SAME state under the true future
+    # actions and `cf_negs` counterfactual ones, and require the true rollout to
+    # be the one matching the observed future. An action-INDEPENDENT predictor
+    # scores EXACTLY ln(1 + cf_negs) and cannot do better -- so `cf_excess`
+    # above 0 is proof the predictor used the action, with no baseline to argue
+    # about.
+    #
+    # ⚠️ DEFAULT OFF (w_cf = 0.0) so this changes no existing behaviour, and it
+    # adds NO parameters -- the state_dict is byte-identical either way.
+    w_cf: float = 0.0
+    cf_negs: int = 3
+    cf_tau: float = 1.0
+    #: Which operative rollout step to score. Deep enough that the action has
+    #: moved the world, shallow enough to stay cheap. ⚠️ At op_dt 0.2 s, step 4
+    #: is 0.8 s -- the horizon our own arms trained at, chosen so a null here
+    #: is comparable to the banked action-divergence numbers rather than being
+    #: a different question.
+    cf_at_step: int = 4
+
     def sanity(self) -> None:
         if self.d_state < self.d_enc:
             raise ValueError(
@@ -158,6 +190,17 @@ class RefAV1Config:
             raise ValueError("strategic horizon must reach exactly 6.0 s")
         if int(round(self.plan_horizon_s / self.op_dt)) > self.op_steps:
             raise ValueError("plan horizon exceeds the operative rollout")
+        if self.w_cf < 0.0:
+            raise ValueError(f"w_cf must be >= 0, got {self.w_cf}")
+        if self.w_cf and self.cf_negs < 1:
+            raise ValueError(
+                f"w_cf {self.w_cf} with cf_negs {self.cf_negs}: zero negatives "
+                "makes the InfoNCE a constant, so the term would be advertised "
+                "in the launch line and inert in the loss")
+        if self.w_cf and not (1 <= self.cf_at_step <= self.op_steps):
+            raise ValueError(
+                f"cf_at_step {self.cf_at_step} outside the operative rollout "
+                f"[1, {self.op_steps}]")
 
     @property
     def plan_steps(self) -> int:
@@ -561,7 +604,81 @@ class RefAV1(nn.Module):
             out["loss"] = (self.cfg.w_feat_op * out["loss_feat_op"]
                            + self.cfg.w_feat_tac * out["loss_feat_tac"]
                            + self.cfg.w_feat_str * out["loss_feat_str"])
+
+            # ---- change #10: the counterfactual-action term ---------------- #
+            if self.cfg.w_cf:
+                out.update(self._cf_term(last, actions, tgt, intent))
+                out["loss"] = out["loss"] + self.cfg.w_cf * out["cf_loss"]
         return out
+
+    def _cf_term(self, last: Tensor, actions: Tensor, tgt: Tensor,
+                 intent: Tensor | None) -> dict:
+        """InfoNCE over actions: which action sequence produced this future?
+
+        ⭐ THE PROPERTY THAT MAKES IT AN INSTRUMENT, not merely a loss: an
+        action-INDEPENDENT predictor emits the same rollout for every action, so
+        every logit is identical, the softmax is uniform, and the loss sits at
+        EXACTLY ``ln(1 + cf_negs)``. It cannot do better. ⇒ ``cf_excess > 0`` is
+        proof the action was used, against a floor that is arithmetic rather
+        than an empirical baseline someone can dispute.
+
+        ⛔ NEGATIVES ARE DRAWN BY A CYCLIC ROLL, NEVER ``randperm``. A
+        permutation fixes points with probability ~1/B, and a fixed point hands
+        that row its OWN actions as a "counterfactual" -- pulling the loss
+        toward the floor and reading as action-blindness that is not there. A
+        roll by a non-zero offset is a derangement by construction. (Same defect
+        class caught in the action-divergence probe and in O11.)
+
+        ⚠️ KNOWN LIMIT, stated because it decides what a positive result means:
+        the negatives come from OTHER BATCH ROWS, hence other clips. Since
+        actions correlate with scene identity, "which action produced this
+        future" is partly answerable as "which action belongs to this scene",
+        which needs no dynamics. ⇒ a same-clip-negatives control is REQUIRED
+        before a positive reading is called dynamical. It is not free -- batch
+        rows are sampled i.i.d. across thousands of episodes, so same-clip
+        negatives need grouped batch construction.
+        """
+        cfg = self.cfg
+        b = actions.shape[0]
+        if b < 2:
+            raise ValueError(
+                f"w_cf {cfg.w_cf} needs batch >= 2 for counterfactuals, got {b}")
+        j = min(max(cfg.cf_at_step, 1), int(tgt.shape[1])) - 1
+        n_neg = max(int(cfg.cf_negs), 1)
+
+        def roll_to(a: Tensor) -> Tensor:
+            return self.operative.rollout(last, a[:, :j + 1], intent=intent)[:, j]
+
+        pos = roll_to(actions)
+        negs = []
+        for q in range(n_neg):
+            off = 1 + (q % (b - 1))
+            negs.append(roll_to(torch.roll(actions, shifts=off, dims=0)))
+
+        # Distance to the OBSERVED future at the same step: the true action must
+        # be the one that lands there.
+        t = tgt[:, j]
+        d_pos = (pos - t).flatten(1).pow(2).mean(-1)                    # [B]
+        d_neg = torch.stack([(n - t).flatten(1).pow(2).mean(-1)
+                             for n in negs], dim=1)                     # [B,n]
+        logits = -torch.cat([d_pos[:, None], d_neg], dim=1) / cfg.cf_tau
+        target = torch.zeros(b, dtype=torch.long, device=logits.device)
+        loss = F.cross_entropy(logits, target)
+        floor = math.log(1.0 + n_neg)
+        with torch.no_grad():
+            acc = (logits.argmax(-1) == 0).float().mean()
+            sep = (d_neg.mean() - d_pos.mean())
+        return {"cf_loss": loss,
+                "cf_no_info_floor": floor,
+                # ⚠️ detach before float(): a grad-carrying tensor coerced to a
+                # scalar warns, and a logged diagnostic must never look like it
+                # participates in the graph.
+                "cf_excess": floor - float(loss.detach()),
+                "cf_pick_acc": float(acc),
+                "cf_chance_acc": 1.0 / (1 + n_neg),
+                "cf_sep_abs": float(sep),
+                "cf_at_step": j + 1,
+                "cf_negs": n_neg}
 
     # -- deployment: behaviour by PLANNING, not regression ----------------- #
     @torch.no_grad()
