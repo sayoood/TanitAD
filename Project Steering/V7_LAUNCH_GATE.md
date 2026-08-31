@@ -360,6 +360,69 @@ The control is still **REQUIRED** — without it a positive O11 result cannot be
 from scene-matching — but it must be scoped honestly **before** the arm is queued, and the
 dataset's future-action horizon is the first thing to measure.
 
+## ⭐⭐⭐ refav1 ALREADY IMPLEMENTS WHAT P4 IS ASKING FOR — and inherits P2(d) unaddressed
+
+**Reviewed 2026-08-31 on a PI question about leveraging DINOv3.** `refav1` is not a plan —
+it is **TRAINING-READY**: `stack/tanitad/refs/refa_v1.py` (`RefAV1Config`, `DINOV3_GEOMETRY`),
+a trainer, a successor `RefAV1Prime`, a design doc with nine sourced changes, **39/39 tests
+green, CPU+GPU smokes measured. Never launched** — v6F owned Thor, then v7 did.
+
+### ⭐⭐ The convergence, and it is independent
+
+**Change 9 is the temporal-abstraction ladder, built in August:**
+
+```
+operative  d0.2 s x 30 = 6.0 s      ratios 1 : 3 : 7.5
+tactical   d0.6 s x 10 = 6.0 s
+strategic  d1.5 s x  4 = 6.0 s
+```
+
+MM-E15 derived **1 : ~3 : ~15** off the label bands on 2026-08-31, with no knowledge of this
+file. ⇒ **two independent derivations of the same ladder** — one from a PI directive plus the
+literature, one from the corpus. ⭐ And it **structurally avoids the defect now killing v7f
+arms**: the deepest chain is **30 steps, not 60**, so the full-chain BPTT instability
+(gnorm → 2.1e9 at clip 1.0; a persistent spiking regime at clip 0.5) **cannot arise in the
+same form**. The Deployment finding — a flat K=300 rollout is undeployable — does not bite it
+either.
+
+⇒ **P4's answer may already be implemented and unlaunched.**
+
+### ⛔ But it inherits P2(d), and that is NOT among its nine changes
+
+**Change 4 — *"primary loss = predict future patch features (L2)"*** (DINO-WM's recipe) — is
+**teacher-forced**: the target already contains the action's effect, so an action-invariant
+solution is admissible. That is P2(d) exactly, and UWM-JEPA states the finding *"applies
+beyond the unitary parameterisation."*
+
+⛔ **MEASURED: `refa_v1.py` and `refa_v1_train.py` contain NO counterfactual-action term** —
+no InfoNCE over actions, no negatives. ⇒ the defect this campaign spent a week localising is
+inherited by refav1's primary objective, **unaddressed**, and would present as REF-A's
+original symptom: a model that scores on context and ignores its actions.
+
+⭐ **The fix is small and already written.** O11 is implemented, is the simulator-free form of
+the published counterfactual-target fix, and is the one term that ever moved our predictor
+off the no-information floor. **Adding it to refav1 before launch** would make it the first
+arm carrying **both** the horizon structure and a non-teacher-forced target.
+
+### ⚠️ Two tensions, stated rather than discovered later
+
+1. **Our TRAINED encoder beats frozen DINOv3 on `n_agents`** (+0.1220 vs +0.0998) — the
+   target the record calls the one that matters most — while being behind on the other four
+   (see P-5). A frozen-DINOv3 arm therefore **starts behind us on agents and ahead
+   elsewhere**. ⇒ refav1 is a **different trade, not a strict upgrade**, and its result must
+   be read that way.
+2. ⭐ **`RefAV1Prime` already exists** with an `ActionStreamPredictor` (`n_act_tokens = 2`,
+   deliberately set at **parameter parity** so a win isolates the design choice rather than
+   capacity). That is a **P2(c) intervention designed before we had the diagnosis** — the
+   action entering as tokens rather than as FiLM conditioning.
+
+⭐ **And the design doc's account of why REF-A failed is a good one:** REF-A had
+*"configuration A's consumer with configuration B's encoder class and neither one's
+compensating strength."* Frozen encoders succeed either as a **huge frozen VLM** with a wide
+interface and supervised head (FROST-Drive: a frozen 14 B **beats the same encoder
+fine-tuned**), or as a **moderate frozen encoder with future-feature prediction AND test-time
+planning** (DINO-WM, V-JEPA 2-AC). v1 commits to configuration B in full.
+
 ## ⏳ The nearest decision point
 
 `k60p30k` reads in ~19 h. **HORIZON-WORKS** closes P2(a) and most of P4.
