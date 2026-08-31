@@ -48,6 +48,39 @@ below may be marked closed by me.** I can report that a criterion is met; the PI
   | (a) the horizon is too short for actions to matter | ⏳ **UNDER TEST — MM-E19**, reads ~19 h |
   | (b) ⭐ **our "action" is realised motion, not a command** — E-DEC-57: the channel is a kinematic restatement of the pose change (r 0.9988) ⇒ **a genuine command channel has never been tested** | ⛔ **NEVER TESTED** |
   | (c) the action representation / latent geometry | ⛔ untested |
+  | ⭐⭐ **(d) TARGET CONSTRUCTION — our target is TEACHER-FORCED, so it already contains the action's effect and an action-invariant solution is admissible** | ⛔ **untested, and the only candidate with a published mechanism, magnitude AND fix** |
+
+* ⭐⭐⭐ **(d) ADDED 2026-08-31, AND I VERIFIED THE SOURCE MYSELF RATHER THAN RELAYING IT.**
+  The Lab agent cited `UWM-JEPA` (arXiv **2605.25313**, Radha & Goktas). I fetched the
+  paper: it exists, title and authors match, and its abstract states the claim **more
+  strongly than the agent did** —
+
+  > *"Action sensitivity itself requires training against counterfactual rather than
+  > teacher-forced targets, **a finding that applies beyond the unitary parameterisation**."*
+
+  ⇒ the authors themselves generalise it past their own architecture. And the transfer to
+  us is **MEASURED in our source, not assumed**: our `--o5-target` modes (`live`/`ema`/
+  `frozen`) **all** encode the real observed future, so we are teacher-forced in exactly
+  their sense.
+
+* ⭐⭐ **A SECOND SENTENCE IN THAT ABSTRACT INDEPENDENTLY DESCRIBES OUR P5:**
+  > *"both nevertheless tie on a held-out context probe, **locating the separation in the
+  > predictor rather than the encoder**."*
+
+  That is our pattern exactly — **L2 passes** (our encoder beats frozen DINOv3) while
+  **L3 is open** (the predictor adds nothing over `z_t`). An independent group reports the
+  same dissociation and locates it in the same place.
+
+* ⚠️ **NECESSARY, NOT SHOWN SUFFICIENT — and the abstract is the reason to be careful:** a
+  *"parameter-matched LSTM-JEPA trained under the same counterfactual-target objective and
+  action head collapses to majority-class accuracy (0.53)"*. ⇒ counterfactual targets did
+  **not** rescue their vector-latent baseline; latent geometry mattered too. **Switching
+  our target construction may be necessary and still not sufficient**, which is a reason to
+  test it cheaply before betting a scaled run on it.
+  ⛔ And the published fix uses *"simulator-state access during training"* — **we have no
+  in-loop simulator**, so the transfer is not free. ⭐ But **O11 is the simulator-free
+  version we already have**: it builds negatives from other batch elements' real action
+  sequences instead of simulated counterfactuals.
 
 * ⛔ **Eliminated, so they are not the answer:** the missing objective (MM-E11: O1 on
   → ratio **fell** 0.40× against a criterion demanding a 10× rise) · zero-init FiLM
