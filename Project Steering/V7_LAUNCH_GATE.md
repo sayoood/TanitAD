@@ -287,6 +287,51 @@ and it belongs here.**
 | v7.2 artifacts identified by path, not content (a guard pinned the WRONG copy) | `resolve_v72` keys on md5; labels **and** indexes content-addressed |
 | the 6 s cost unknown | MEASURED: 2.90 s/step, 24.2 h, 6.27 GB — no OOM risk at this scale |
 
+## ⛔ THE GPU QUEUE — ~50 h of committed work on ONE machine, and the ordering is a PI call
+
+Thor is the only compute. Every item below is designed, costed and unblocked *except* by the
+queue itself. ⚠️ **I am not silently ordering these** — the sequence decides which gate item
+closes first, which is a programme choice.
+
+| # | experiment | cost | closes / serves | dependency |
+|---|---|---|---|---|
+| **0** | `k60clip05p30k` — **RUNNING** (step 600, gnorm 1.35, 22.6 h left) | 22.6 h | P4 + P2(a) | in flight |
+| **1** | ⭐ **actdiv on `o11p30k`'s BANKED ckpt** | **~4 min** | **P2 — decides whether the O11 breakout was real or a scene-matching shortcut** | none; needs only a GPU gap |
+| **2** | clip-0.5 control at **k=8** | ~10 h | ⛔ **REQUIRED** before any HORIZON-WORKS verdict — `k60clip05p30k` differs from the incumbent in TWO places now | after 0 |
+| **3** | P3 freeze ablation — `postrain30k + --freeze-encoder` | ~8.6 h | P3 **and** P5/L3 (dual-purpose: reads drift *and* whether the freeze buys representation at the predictor's expense) | none |
+| **4** | O11 re-run with a matched init | ~8.6 h | P2(d) | ⚠️ **only if #1 says the signal is real** |
+
+⭐⭐ **#1 IS FOUR MINUTES AND IT GATES AN 8.6 h ARM.** Run it in any gap. If `o11p30k`'s
+action/scene ratio sits inside the incumbent band (0.00408–0.00595), the O11 discrimination
+never left its own head and #4 should not run at all. If it is materially above, P2 has its
+first positive lever and #4 becomes the highest-value arm in the queue.
+
+⚠️ **#2 is the one that is easy to skip and must not be.** `k60clip05p30k` now carries
+`o5_k 60` **and** `clip 0.5`. Without a k=8/clip-0.5 control, a positive result is
+attributable to either — and "we changed the horizon and it worked" would be exactly the
+kind of two-variable claim this gate exists to prevent.
+
+### The O11 re-run design (#4), so it is ready if #1 clears it
+
+**Arm:** `postrain30k` + `--w-o11-cf 1.0 --o11-k 4 --o11-negs 3` — O11 **at the settings that
+produced the breakout**, with the **distilled init retained**. That isolates the one confound
+that most threatens the finding (`o11p30k` trained from scratch, `init_from=None`). ⚠️ The
+o11 hyper-parameters are part of *the treatment*, not separate variables; this tests
+reproducibility, not tuning.
+
+⛔ **PRIMARY READ IS THE actdiv RATIO, NOT THE o11 METRIC.** `o11_excess` leaving its floor
+only proves the O11 head discriminates; the question is whether the **predictor** became
+action-sensitive. Incumbent 0.00595.
+
+⭐ **THE ANTI-SHORTCUT CONTROL, and it is the part that makes the arm worth running:** O11's
+negatives are action sequences from **other batch elements — other clips**. Since actions
+correlate with scene identity, *"which action produced this future"* may be solvable as
+*"which action belongs to this scene"*, needing no dynamics. ⇒ **a same-clip-negatives
+variant** (negatives from other time windows of the SAME clip) must be run, or the result is
+uninterpretable. If discrimination survives same-clip negatives it is dynamical; if it
+collapses to the floor it was scene-matching. ⚠️ This needs a small code change to the
+negative sampler and should be written **before** the arm, not after the result.
+
 ## ⏳ The nearest decision point
 
 `k60p30k` reads in ~19 h. **HORIZON-WORKS** closes P2(a) and most of P4.
