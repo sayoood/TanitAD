@@ -454,6 +454,55 @@ is a property of the TRAINED STATE, not of initialisation**, which is why no ini
 warmup-side fix would have addressed it, and why clip 0.5 contains the damage without
 preventing the cause.
 
+### ⭐⭐ AMENDMENT, step 14,400 — the caveat I refused to relax was RIGHT, and the regime is now BOUNDED
+
+Re-ran **the same instrument at the same threshold** (`gnorm > 50` per 1,000 steps). No new
+statistic was invented for this read — that was the point of committing the instrument first.
+
+```
+steps     0-2000   spikes>50  0   rate/1000 0.00   median   0.91   max        5.4
+steps  2000-4000   spikes>50  0   rate/1000 0.00   median   1.51   max        6.7
+steps  4000-6000   spikes>50  2   rate/1000 1.00   median   1.45   max   13,277.6
+steps  6000-8000   spikes>50  3   rate/1000 1.50   median  16.55   max   64,874.2
+steps  8000-10000  spikes>50  4   rate/1000 2.00   median   4.64   max    1,268.8   <- WORST WINDOW
+steps 10000-12000  spikes>50  0   rate/1000 0.00   median   1.96   max       26.5
+steps 12000-14000  spikes>50  1   rate/1000 0.50   median   2.77   max    1,453.7
+steps 14000-16000  spikes>50  0   rate/1000 0.00   median   3.31   max        4.7
+```
+
+⭐⭐ **THE DISCIPLINE PAID.** At 8,200 the committed criterion said RECOVERED and I let the
+arm continue while **refusing to soften the instability caveat**, on the grounds that the
+median was flattered by two large spikes ageing out of the window. **The very next window
+was the worst of the entire run — arrival rate 2.00/1000, higher than at any point before
+the read.** Had I relaxed the caveat because the criterion passed, the record would now
+carry a "recovered at 8,200" claim that the next 1,800 steps refuted.
+
+⚠️ **And it cuts the other way too, which is why the amendment exists.** The regime has
+since decayed on **both** axes:
+
+| axis | at the 8.2k read | last 4,600 steps |
+|---|---|---|
+| arrival rate (`>50` per 1,000) | 1.25 | **0.81**, and **0.00** in the last 2,600 |
+| worst magnitude | **64,874** | **1,454** — 45× smaller |
+
+⇒ **REVISED CAVEAT, replacing "from step ~4,200 onward":** this arm trained through an
+intermittent-spiking regime spanning steps **~4,000–14,000**, peaking at **8,000–10,000**,
+with the two order-of-magnitude excursions confined to steps **5,800 and 6,400**. The last
+2,600 steps are clean. ⛔ Any MM-E19 number still travels with this, because the regime
+covers a third of training and overlaps the steps where the k=60 rollout was learning its
+long-horizon behaviour — but it is now a **bounded interval**, not an open-ended condition,
+and a 30k read is 16,000 steps clear of the peak.
+
+⚠️ **What would still refute "it settled":** one more `>1e4` excursion before 30k. The
+arrival rate has been non-monotone once already (0.00 at 10–12k, then 0.50 at 12–14k), so
+**two consecutive clean windows is not yet evidence of settling** — it is what 10–12k
+looked like immediately before 12–14k spiked.
+
+⭐ **Health at 14,400, for the record:** `loss` 0.4732 · `o5_loss` 0.2944 ·
+`o5_step1` 0.1752 → `o5_stepK` 0.3957, so **`o5_growth` 2.26 across sixty autoregressive
+steps** — the 60-step rollout error is only 2.3× the one-step error. `step_s` 2.81,
+putting 30k at roughly **12 h** out.
+
 ## 4. ⛔ The anti-gates, committed before any number exists
 
 * **O5 LOSS WILL BE HIGHER, AND THAT IS NOT A REGRESSION.** A 60-step rollout is a

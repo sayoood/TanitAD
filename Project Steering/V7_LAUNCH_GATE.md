@@ -423,6 +423,99 @@ interface and supervised head (FROST-Drive: a frozen 14 B **beats the same encod
 fine-tuned**), or as a **moderate frozen encoder with future-feature prediction AND test-time
 planning** (DINO-WM, V-JEPA 2-AC). v1 commits to configuration B in full.
 
+## ⛔ refav1's STAGE-1 CACHE — the blocker is the LADDER'S FRAME GRID, not the disk
+
+Went to wire refav1's DataLoader. The trainer never touches an image — it consumes a
+stage-1 cache: `<episode>.pt` → fp16 `[T, 640, 1024]`, DINOv3 ViT-L/16 patch tokens,
+CLS discarded, 256×640 at 120°, and it **refuses** a cache whose geometry disagrees.
+
+⚠️ **RETRACTED, SAME TURN, BEFORE IT WAS QUOTED.** My first pass priced this against
+**B1 (4,713 ep)** and reported "2.9× the free space, unfixable." The design doc specifies
+the **2,400-episode parity corpus**, not B1. Corrected below. *Root-cause class: I
+substituted the corpus the rest of the campaign uses for the one this design names, and
+did the arithmetic before reading which corpus it was for.*
+
+**MEASURED** (`jpeg_len` on 15 sampled episodes per corpus, both 256×640 cylindrical):
+`T = 201` frames/episode · parity **2,400** ep · B1 **4,713** ep · Thor **426 GiB free** of 937.
+
+```
+per frame  1.250 MiB   (640 tokens x 1024 dims, fp16)
+
+                          PARITY 2400        B1 4713
+every frame  (0.1 s)        588.9 GiB       1156.4 GiB
+every 2nd    (0.2 s)      ⭐ 295.9 GiB        581.1 GiB
+```
+
+### ⭐⭐ THE ACTUAL CONSTRAINT: the ladder's rates must share a frame grid
+
+The three rates are **0.2 / 0.6 / 1.5 s** on a 10 Hz corpus — **2 / 6 / 15 frames**.
+
+```
+gcd(2, 6, 15) = 1 frame = 0.1 s
+```
+
+⛔ **`str_dt = 1.5 s` is an ODD number of frames.** Strategic targets land at
++1.5 / 3.0 / 4.5 / 6.0 s = frames **15 / 30 / 45 / 60** — two of the four are off any
+every-2nd-frame grid. ⇒ **the ladder as designed forces caching EVERY frame**, i.e.
+**589 GiB against 426 GiB free — short by 163 GiB.** The disk is not the defect; the
+rate choice is what doubles the requirement.
+
+### ⇒ The one-line fix, and it may be a BETTER ladder
+
+Every `str_dt` below keeps the **binding §4b 6.0 s horizon exactly** and keeps
+operative:tactical at 1:3, while landing on the even grid so **295.9 GiB suffices**:
+
+| `str_dt` × steps | ratios | note |
+|---|---|---|
+| 1.2 s × 5 | 1 : 3 : 6 | nearest to the designed 1 : 3 : 7.5 |
+| 2.0 s × 3 | 1 : 3 : 10 | |
+| **3.0 s × 2** | **1 : 3 : 15** | ⭐ **VERIFIED** — the ratio MM-E15 read off the corpus, carried in `GOALS_AND_CLAIMS` D-HORIZON-LADDER, `PREREG_MM_E16` and the A&I knowledge base. ⚠️ but only 2 strategic steps |
+
+⭐ **Recommendation: `str_dt = 1.2 s × 5`.** It is the smallest departure from the
+designed ladder, keeps five strategic steps, and turns an unbuildable cache into one that
+fits with **130 GiB headroom**. ⛔ It is still a design change to a PI-directed structure
+(change #9), so it is the PI's call, not mine.
+
+### What this does and does not block
+
+* ✅ **refav1 on the PARITY corpus is buildable today** once the rate lands — 296 GiB fits.
+* ⛔ **refav1 on B1 is not**: 581 GiB even on the even grid. So refav1 cannot join v7f /
+  refcv3 / refd as a same-corpus arm without freeing ~155 GiB or quantising.
+* ⚠️ **MEASURED: no DINOv3 cache exists anywhere on Thor** — unstarted work, not a
+  half-built asset. Encode cost is one gradient-free pass, resumable.
+* ⚠️ **The trainer is still a 178-line scaffold** (`SmokeData`, real DataLoader "wired in
+  later"). The model, its nine changes and change #10 are complete and tested; the data
+  path is not. That is the second launch blocker and it is code, not a decision.
+* ⛔ **Narrowing the interface is NOT on the table** — change #3 forbids it on
+  FROST-Drive's measured 8.17 → 7.68 width ablation. It is the defect v1 exists to remove.
+
+### ⭐⭐ AND THE SAME ARITHMETIC EXPOSES A REAL DESIGN QUESTION
+
+`1 : 3 : 15` is not a free parameter I picked to fit the disk — **MM-E15 read it off the
+corpus** (D-HORIZON-LADDER, `s2_labels_v7.2_train` md5 `0ff90213…`, 4,572 records). Put
+that ratio into refav1's ladder and the strategic rung becomes `str_dt = 3.0 s`. With the
+designed `str_steps = 4` that reaches **12.0 s** — and MM-E15's median manoeuvre start is
+**12.5 s**, inside the `strategic_s [8, 30]` band.
+
+⛔ **refav1's strategic rung, as designed, reaches 6.0 s — BELOW the strategic band's near
+edge of 8 s.** So it is "strategic" by *rate*, not by the band its labels occupy. That is
+the same defect MM-E15 found in the v7 arms, reproduced one level up: a level named for a
+horizon it does not reach.
+
+⚠️ **This is a PI question, not a fix I can apply**, because it touches the §4b horizon:
+
+> §4b binds the **control output** to 6 s. Does it also bind the **strategic context
+> predictor**, whose job is to FiLM the level below it rather than to emit a trajectory?
+
+If it does not, `str_dt = 3.0 s × 4 = 12.0 s` gives a strategic level that (a) reaches the
+band its own labels live in, (b) matches the corpus ratio exactly, (c) lands on the even
+frame grid, and (d) still emits control only to 6 s. If it does, `1.2 s × 5 = 6.0 s` is the
+even-grid option that stays inside the letter of §4b.
+
+⭐ Either way the cache is **295.9 GiB and fits**. The horizon question is orthogonal to
+the storage question — it just happened to surface from the same arithmetic.
+
+
 ## ⏳ The nearest decision point
 
 `k60p30k` reads in ~19 h. **HORIZON-WORKS** closes P2(a) and most of P4.
