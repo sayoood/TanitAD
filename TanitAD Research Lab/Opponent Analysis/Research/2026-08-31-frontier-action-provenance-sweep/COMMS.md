@@ -7,7 +7,7 @@
 **Recorded 2026-08-30:** *"a **HOLD-ACTION FLOOR the model must beat** — not found in any
 driving world model."*
 
-**Status: ⚠️ FLAGGED — AT RISK, NOT RESOLVED.** `2607.15898` (Orbis 2) is *reported* to run
+**Status: ✅ RESOLVED 2026-08-31 — read performed, claim NARROWED. See `RESOLUTION_2607_15898.md`.** *(was: ⚠️ FLAGGED — AT RISK, NOT RESOLVED)* `2607.15898` (Orbis 2) is *reported* to run
 counterfactual trajectory scaling against an unaltered-ground-truth arm. That report is
 **RELAYED**; I have not read the paper. Per this package's own admissibility rule, **a novelty
 claim may be neither upheld nor retracted on relayed evidence.**
