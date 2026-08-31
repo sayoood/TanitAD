@@ -43,6 +43,8 @@ def build_model(args) -> RefAV1:
         strategic_cfg=None if args.no_hierarchy else StrategicPolicyConfig(),
         tactical_cfg=None if args.no_hierarchy else TacticalPolicyConfig(),
         w_cf=args.w_cf, cf_negs=args.cf_negs, cf_at_step=args.cf_at_step,
+        motion_inject=args.motion_inject,
+        target_space=args.target_space,
     )
     if args.smoke:
         cfg.d_enc, cfg.n_tokens, cfg.d_state = 32, 8, 32
@@ -111,6 +113,20 @@ def main(argv=None) -> int:
                          "used the action.")
     ap.add_argument("--cf-negs", type=int, default=3)
     ap.add_argument("--cf-at-step", type=int, default=4)
+    # --- PI 2026-08-31: "implement and try 1" ------------------------------- #
+    ap.add_argument("--motion-inject", action="store_true",
+                    help="add a CROSS-CHANNEL projection of z_t - z_(t-1) to "
+                         "the initial rollout state. Default history path is "
+                         "the adapter's DEPTHWISE temporal conv only -- each "
+                         "channel mixes its own past, so cross-channel motion "
+                         "(parallax, an edge crossing patches) has no route "
+                         "into the state.")
+    ap.add_argument("--target-space", choices=("adapter", "frozen"),
+                    default="adapter",
+                    help="'adapter' = original form, whose primary loss has a "
+                         "COLLAPSE MINIMUM (the target passes the trained "
+                         "adapter); 'frozen' = predict std(DINOv3) itself -- "
+                         "fixed target variance, minimum removed (DINO-WM).")
     # --- MM-E19 carried over: full-chain BPTT needs a tighter clip ---------- #
     ap.add_argument("--clip", type=float, default=1.0,
                     help="grad-norm clip. ⚠️ MM-E19 MEASURED a 60-step "

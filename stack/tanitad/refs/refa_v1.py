@@ -202,6 +202,39 @@ class RefAV1Config:
     #: a different question.
     cf_at_step: int = 4
 
+    # --- observed-MOTION injection (PI 2026-08-31: "implement and try 1") -- #
+    # ⚠️ THE DEFECT, STATED CORRECTLY THE SECOND TIME. First draft claimed the
+    # rollout state is "Markovian on one static frame" — MEASURED FALSE by this
+    # feature's own control test: ``WideAdapter.tmix`` is a temporal conv, so
+    # history DOES reach ``field[:, -1]``. But tmix is DEPTHWISE (groups =
+    # d_state, kernel 3): each channel mixes only its own past — there is NO
+    # cross-channel temporal path, and scene motion (an edge moving between
+    # patch channels, an agent's parallax) is exactly a cross-channel signal.
+    # When on, the initial state becomes  z + W_m(z_t − z_{t−1})  with a FULL
+    # cross-channel W_m (down-scaled init, so training starts indistinguishable
+    # from baseline), and all three levels inherit it because they read the
+    # same injected state. The hypothesis is H-REFAV1-MOTION; the arm decides.
+    motion_inject: bool = False
+
+    # --- v7.2 LABEL supervision (PI 2026-08-31: "It must be trained with this
+    #     data") — auxiliary CE on the factored lat/lon decode and the route
+    #     head, fed by the released v7.2 s2 label set via the loader. ⚠️
+    #     AUXILIARY: future-feature prediction stays the primary loss (change
+    #     #4); these make the decision heads TRAINED rather than inert.
+    w_tac_label: float = 0.1
+    w_str_label: float = 0.1
+
+    # --- target space for the PRIMARY (operative) term --------------------- #
+    # ⛔ "adapter" (the original form) HAS A COLLAPSE MINIMUM: the target is
+    # ``adapter(std(future))`` and the adapter is TRAINED, so mapping
+    # everything to a constant zeroes the loss — LayerNorms raise the barrier
+    # (affine γ→0 re-opens it) and the trainer's adapter_std monitor DETECTS
+    # it, but nothing REMOVES the minimum. "frozen" predicts the standardised
+    # DINOv3 features themselves (std has frozen buffers, fit once): the
+    # target's variance is fixed at ~1 per channel, so a collapsed adapter
+    # scores the target variance, not zero — DINO-WM's own arrangement.
+    target_space: str = "adapter"         # "adapter" | "frozen"
+
     def sanity(self) -> None:
         if self.d_state < self.d_enc:
             raise ValueError(
@@ -272,6 +305,15 @@ class RefAV1Config:
             raise ValueError(
                 f"cf_at_step {self.cf_at_step} outside the operative rollout "
                 f"[1, {self.op_steps}]")
+        if self.motion_inject and self.op_window < 2:
+            raise ValueError(
+                f"motion_inject needs op_window >= 2 (got {self.op_window}) — "
+                "a one-frame window has no z_{t-1} to difference against")
+        if self.w_tac_label < 0.0 or self.w_str_label < 0.0:
+            raise ValueError("label weights must be >= 0")
+        if self.target_space not in ("adapter", "frozen"):
+            raise ValueError(f"target_space must be 'adapter' or 'frozen', "
+                             f"got {self.target_space!r}")
 
     @property
     def plan_steps(self) -> int:
@@ -593,6 +635,23 @@ class RefAV1(nn.Module):
             nn.LayerNorm(cfg.d_state), nn.Linear(cfg.d_state, 512), nn.GELU(),
             nn.Linear(512, cfg.plan_steps * cfg.a_dim))
 
+        # Observed-motion injection (config-gated; params exist only when on,
+        # so default state_dicts are byte-identical). Down-scaled init: the
+        # injection starts near zero and the arm starts indistinguishable from
+        # baseline — the experiment measures what training makes of it.
+        if cfg.motion_inject:
+            from tanitad.models.predictor import RESIDUAL_HEAD_INIT_SCALE
+            self.motion_in = nn.Sequential(
+                nn.LayerNorm(cfg.d_state), nn.Linear(cfg.d_state, cfg.d_state))
+            self.motion_in[-1].weight.data.mul_(RESIDUAL_HEAD_INIT_SCALE)
+            self.motion_in[-1].bias.data.mul_(RESIDUAL_HEAD_INIT_SCALE)
+        else:
+            self.motion_in = None
+
+        # Frozen-target readout (config-gated, see target_space in the config).
+        self.to_enc = (nn.Linear(cfg.d_state, cfg.d_enc)
+                       if cfg.target_space == "frozen" else None)
+
     # -- encoding ---------------------------------------------------------- #
     def encode(self, feats: Tensor) -> Tensor:
         """Cached DINOv3 patch features [B,T,N,d_enc] -> state field."""
@@ -608,6 +667,14 @@ class RefAV1(nn.Module):
     def _tac_field(self, field: Tensor) -> Tensor:
         q = self.tac_queries.expand(field.shape[0], -1, -1)
         return self.tac_pool(q, field, field, need_weights=False)[0]
+
+    def _last_state(self, field: Tensor) -> Tensor:
+        """The state every rollout starts from — ONE place, so training and
+        planning cannot drift apart on whether motion was injected."""
+        last = field[:, -1]
+        if self.motion_in is not None:
+            last = last + self.motion_in(field[:, -1] - field[:, -2])
+        return last
 
     # -- training ---------------------------------------------------------- #
     def _stride(self, dt: float) -> int:
@@ -633,6 +700,9 @@ class RefAV1(nn.Module):
                 future_feats: Tensor | None = None,
                 str_ext_targets: Tensor | None = None,
                 str_ext_actions: Tensor | None = None,
+                lat_label: Tensor | None = None,
+                lon_label: Tensor | None = None,
+                route_label: Tensor | None = None,
                 nav_cmd: Tensor | None = None,
                 ego: Tensor | None = None) -> dict:
         """``feats`` [B,W,N,d_enc] observed window, ``actions`` [B,K,a_dim].
@@ -652,7 +722,7 @@ class RefAV1(nn.Module):
         without the other is a contract error, refused loudly.
         """
         field = self.encode(feats)                       # [B,W,N,d]
-        last = field[:, -1]
+        last = self._last_state(field)
         # ⚠️ The brains take a STATE WINDOW [B, W, D], not a single state — the
         # window length is baked into their positional embeddings, so passing
         # [B,1,D] would be a silent shape-compatible wrong input.
@@ -745,7 +815,18 @@ class RefAV1(nn.Module):
                         f"{_s} — the level would train on an empty tensor "
                         "(NaN loss), not on a shorter ladder")
             k = min(tgt.shape[1], out["op_pred"].shape[1])
-            out["loss_feat_op"] = F.mse_loss(out["op_pred"][:, :k], tgt[:, :k])
+            if self.cfg.target_space == "frozen":
+                # ⭐ Collapse-proof primary: the target is std(future) — frozen
+                # buffers, no trained parameter on the target side — so its
+                # per-channel variance is pinned at ~1 and a collapsed adapter
+                # scores the target variance instead of zero. The prediction is
+                # read back to encoder width through `to_enc`.
+                tgt_op = self.std(future_feats)
+                out["loss_feat_op"] = F.mse_loss(
+                    self.to_enc(out["op_pred"][:, :k]), tgt_op[:, :k])
+            else:
+                out["loss_feat_op"] = F.mse_loss(out["op_pred"][:, :k],
+                                                 tgt[:, :k])
             tq = torch.stack([self._tac_field(tgt[:, i])
                               for i in range(tgt.shape[1])], dim=1)
             step = self._stride(self.cfg.tac_dt)
@@ -786,6 +867,50 @@ class RefAV1(nn.Module):
             if self.cfg.w_cf:
                 out.update(self._cf_term(last, actions, tgt, intent))
                 out["loss"] = out["loss"] + self.cfg.w_cf * out["cf_loss"]
+
+        # ---- v7.2 label supervision (PI 2026-08-31: "It must be trained ----
+        # with this data"). ⛔ THE DEFECT THIS ENDS: lat_head / lon_head /
+        # route_logits were EMITTED and appeared in NO loss term — inert
+        # parameters that would have sat at init through a 30k run while the
+        # eval decoded them as "the tactical action". Auxiliary by design:
+        # feature prediction stays primary (change #4).
+        if any(l is not None for l in (lat_label, lon_label, route_label)):
+            if "lat_logits" not in out:
+                raise ValueError(
+                    "labels supplied but the hierarchy is off (no_hierarchy "
+                    "arm) — there is no head for them to supervise")
+            if future_feats is None:
+                raise ValueError(
+                    "labels without future_feats: the label terms attach to "
+                    "the training loss, which does not exist here — they "
+                    "would be accepted and silently unused")
+            tac_terms = []
+            for name, lbl, key, n in (
+                    ("lat", lat_label, "lat_logits", self.n_lat),
+                    ("lon", lon_label, "lon_logits", self.n_lon)):
+                if lbl is None:
+                    continue
+                if int(lbl.min()) < 0 or int(lbl.max()) >= n:
+                    raise ValueError(
+                        f"{name}_label outside [0, {n}) — vocabulary "
+                        f"{self.cfg.tac_vocab_version} has {n} {name} actions")
+                out[f"loss_{name}_label"] = F.cross_entropy(out[key], lbl)
+                tac_terms.append(out[f"loss_{name}_label"])
+            if tac_terms:
+                out["loss"] = (out["loss"] + self.cfg.w_tac_label
+                               * torch.stack(tac_terms).mean())
+            if route_label is not None:
+                rl = out.get("route_logits")
+                if rl is None:
+                    raise ValueError(
+                        "route_label supplied but the strategic policy emits "
+                        "no route_logits")
+                if int(route_label.min()) < 0 or int(route_label.max()) >= rl.shape[-1]:
+                    raise ValueError(
+                        f"route_label outside [0, {rl.shape[-1]})")
+                out["loss_route_label"] = F.cross_entropy(rl, route_label)
+                out["loss"] = (out["loss"] + self.cfg.w_str_label
+                               * out["loss_route_label"])
         return out
 
     def _cf_term(self, last: Tensor, actions: Tensor, tgt: Tensor,
@@ -879,7 +1004,7 @@ class RefAV1(nn.Module):
             raise ValueError(f"plan horizon {pc.horizon} != cfg.plan_steps "
                              f"{cfg.plan_steps}")
         field = self.encode(feats)
-        last = field[:, -1]
+        last = self._last_state(field)
         pooled_win = field.mean(dim=-2)
         pooled = pooled_win[:, -1]
 
