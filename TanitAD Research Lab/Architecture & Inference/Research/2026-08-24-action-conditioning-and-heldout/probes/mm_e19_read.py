@@ -269,8 +269,21 @@ def main(argv=None) -> int:
                     help="pulled config.json (installed beside the ckpt)")
     ap.add_argument("--train-log", required=True,
                     help="pulled train_log.jsonl (arrival-rate stamp)")
-    ap.add_argument("--arm-name", default="k60clip05p30k")
+    # ⛔ NO DEFAULT. This used to default to "k60clip05p30k", and on 2026-09-01
+    # that silently mislabelled a DIFFERENT arm: the k=8 control was passed via
+    # --ckpt, installed into <assets>/v7tiny_k60clip05p30k/ (overwriting the k60
+    # checkpoint), and every table, log and JSON it produced was stamped
+    # "k60clip05p30k". The numbers were right and the NAME was wrong, which is
+    # the worse failure — the output looked like a k60 re-read that had moved
+    # 2.07×. Only an md5 of the installed ckpt proved which arm it really was.
+    # An identifier that can silently name the wrong artifact is not an
+    # identifier; make the caller say it.
+    ap.add_argument("--arm-name", required=True,
+                    help="the arm this ckpt IS; stamped on every output")
     ap.add_argument("--incumbent", default="postrain30k")
+    ap.add_argument("--replace-arm", action="store_true",
+                    help="allow installing a ckpt over a DIFFERENT one already "
+                         "held under this arm name (destroys that arm's assets)")
     ap.add_argument("--assets",
                     default=r"C:\Users\Admin\tanitad-caches\mm-e19-assets-20260901",
                     help="asset home: v7tiny_<arm>/, sp2/cache/, helper modules")
@@ -328,6 +341,20 @@ def main(argv=None) -> int:
         dst = arm_dir / "ckpt.pt"
         if dst.exists():
             inst["overwrote_md5"] = md5_of(dst)
+            # ⛔ REFUSE to overwrite a DIFFERENT checkpoint under this arm name.
+            # Recording "overwrote_md5" was not enough: on 2026-09-01 this line
+            # replaced the k60 checkpoint with the k=8 control and the run went
+            # on to produce a full, plausible, k60-labelled result set. The
+            # destroyed arm was only recoverable because a copy happened to
+            # survive in the pull directory.
+            if inst["overwrote_md5"] != inst["source_md5"]:
+                print(f"[REFUSED] {dst} already holds a DIFFERENT checkpoint "
+                      f"({inst['overwrote_md5'][:12]}) than the one being "
+                      f"installed ({inst['source_md5'][:12]}). Pass a correct "
+                      f"--arm-name, or --replace-arm if you really mean to "
+                      f"retire that arm's assets.", file=sys.stderr)
+                if not a.replace_arm:
+                    return 2
         shutil.copy2(src, dst)
         inst["installed_md5"] = md5_of(dst)
         if inst["installed_md5"] != inst["source_md5"]:
