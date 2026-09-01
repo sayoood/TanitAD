@@ -48,15 +48,30 @@ _DECODERS = ThreadPoolExecutor(max_workers=4)
 MID = "facebook/dinov3-vitl16-pretrain-lvd1689m"
 
 
+def _run(cmd: list[str], tries: int = 3):
+    """Transient-tolerant runner. MEASURED 2026-09-02: one scp exit-255 blip
+    inside the puller THREAD was silently swallowed, the main loop then
+    torch.load-ed a half-transferred file and died on miniz 432 episodes in —
+    the C111 family (a failure after the compute is paid). Retries + explicit
+    propagation are the fix, not hope."""
+    last = None
+    for k in range(tries):
+        try:
+            return subprocess.run(cmd, capture_output=True, text=True,
+                                  check=True)
+        except subprocess.CalledProcessError as e:
+            last = e
+            time.sleep(5 * (k + 1))
+    raise last
+
+
 def ssh(cmd: str) -> str:
-    return subprocess.run(["ssh", "-o", "ConnectTimeout=25", "-o",
-                           "BatchMode=yes", THOR, cmd],
-                          capture_output=True, text=True, check=True).stdout
+    return _run(["ssh", "-o", "ConnectTimeout=25", "-o", "BatchMode=yes",
+                 THOR, cmd]).stdout
 
 
 def scp(args: list[str]) -> None:
-    subprocess.run(["scp", "-o", "ConnectTimeout=25", *args],
-                   check=True, capture_output=True)
+    _run(["scp", "-o", "ConnectTimeout=25", *args])
 
 
 def main(split: str) -> int:
@@ -97,10 +112,14 @@ def main(split: str) -> int:
     # 243 eps/h (14.8 s/ep, ETA 19.3 h) -- transfers + serial decode were ~60 %
     # of the wall clock while the GPU idled. Pull-ahead + push-behind threads
     # + the decode pool make the encode the pacing stage.
-    def _pull(batch):
-        scp([*(f"{THOR}:{src}/{e}.v2ep.pt" for e in batch), str(WORK)])
+    def _pull(batch, box):
+        try:
+            scp([*(f"{THOR}:{src}/{e}.v2ep.pt" for e in batch), str(WORK)])
+        except Exception as e:                      # propagated, never swallowed
+            box["exc"] = e
 
-    def _push_verify(outs):
+    def _push_verify(outs, box):
+      try:
         scp([*(str(WORK / o) for o in outs), f"{THOR}:{dst}/"])
         far = ssh(f"cd {dst} && ls -l {' '.join(outs)} | awk '{{print $5, $NF}}'")
         far_sz = {l.split()[1]: int(l.split()[0]) for l in far.splitlines()}
@@ -108,21 +127,54 @@ def main(split: str) -> int:
             local = (WORK / o).stat().st_size
             assert far_sz.get(o) == local,                 f"SIZE MISMATCH {o}: {far_sz.get(o)} != {local}"
             (WORK / o).unlink()
+      except Exception as e:
+        box["exc"] = e
 
     t0, built = time.time(), 0
+    skipped: list[str] = []
     batches = [todo[i:i + BATCH] for i in range(0, len(todo), BATCH)]
-    puller = threading.Thread(target=_pull, args=(batches[0],))
+    pull_box: dict = {}
+    puller = threading.Thread(target=_pull, args=(batches[0], pull_box))
     puller.start()
-    pusher = None
+    pusher, push_box = None, {}
     for bi, batch in enumerate(batches):
         puller.join()
+        if pull_box.get("exc") is not None:
+            print(f"[{split}] pull retry for batch {bi} "
+                  f"({type(pull_box['exc']).__name__})", flush=True)
+            pull_box.clear()
+            _pull(batch, pull_box)                 # one synchronous retry
+            if pull_box.get("exc") is not None:
+                print(f"[{split}] SKIP batch {bi}: {pull_box['exc']}",
+                      flush=True)
+                skipped.extend(batch)
+                pull_box.clear()
+                if bi + 1 < len(batches):
+                    puller = threading.Thread(
+                        target=_pull, args=(batches[bi + 1], pull_box))
+                    puller.start()
+                continue
         if bi + 1 < len(batches):
-            puller = threading.Thread(target=_pull, args=(batches[bi + 1],))
+            pull_box.clear()
+            puller = threading.Thread(target=_pull,
+                                      args=(batches[bi + 1], pull_box))
             puller.start()
         outs = []
         for e in batch:
-            o = torch.load(WORK / f"{e}.v2ep.pt", map_location="cpu",
-                           weights_only=False)
+            try:
+                o = torch.load(WORK / f"{e}.v2ep.pt", map_location="cpu",
+                               weights_only=False)
+            except (RuntimeError, FileNotFoundError):
+                # a torn transfer: re-pull THIS episode once, then skip loudly
+                try:
+                    scp([f"{THOR}:{src}/{e}.v2ep.pt", str(WORK)])
+                    o = torch.load(WORK / f"{e}.v2ep.pt", map_location="cpu",
+                                   weights_only=False)
+                except Exception as e2:
+                    print(f"[{split}] SKIP {e}: {type(e2).__name__}",
+                          flush=True)
+                    skipped.append(e)
+                    continue
             assert str(o["codec"]) == "png"
             buf, lens = o["jpeg_buf"], o["jpeg_len"]
             offs = torch.cat([torch.zeros(1, dtype=lens.dtype),
@@ -147,8 +199,15 @@ def main(split: str) -> int:
         # change the size; the loader's finite/content checks cover the rest)
         if pusher is not None:
             pusher.join()
-        pusher = threading.Thread(target=_push_verify, args=(outs,))
-        pusher.start()
+            if push_box.get("exc") is not None:
+                print(f"[{split}] PUSH FAILED (kept local for resume): "
+                      f"{push_box['exc']}", flush=True)
+                push_box.clear()
+        if outs:
+            push_box = {}
+            pusher = threading.Thread(target=_push_verify,
+                                      args=(outs, push_box))
+            pusher.start()
         built += len(batch)
         rate = built / (time.time() - t0)
         print(f"[{split}] {built}/{len(todo)}  {rate*3600:.0f} eps/h  "
@@ -156,6 +215,12 @@ def main(split: str) -> int:
 
     if pusher is not None:
         pusher.join()
+        if push_box.get("exc") is not None:
+            print(f"[{split}] FINAL PUSH FAILED: {push_box['exc']}", flush=True)
+    if skipped:
+        print(f"[{split}] {len(skipped)} episodes SKIPPED (rebuild on next "
+              f"resume): {skipped[:8]}{'...' if len(skipped) > 8 else ''}",
+              flush=True)
     geo = {"episodes": all_eps, "grid": "0.2s (every 2nd frame)",
            "dtype": "float8_e4m3fn",
            "geometry": {"n_tokens": 640, "d_enc": 1024, "hfov_deg": 120.0},
