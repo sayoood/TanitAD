@@ -33,7 +33,7 @@ sys.path.insert(0, str(REPO / "stack" / "scripts"))
 import vlm_tac_prompts as P  # noqa: E402
 from tanitad.data import parity  # noqa: E402
 
-HUB = REPO / "TanitAD Research Hub" / "Data Engineering"
+HUB = REPO / "TanitAD Research Lab" / "Data Engineering"
 TAXONOMY = (HUB / "Implementation/incoming/2026-08-16-tactical-labels/raw"
             / "a1_alpamayo_taxonomy_per_clip.jsonl")
 

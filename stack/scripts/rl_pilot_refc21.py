@@ -142,8 +142,27 @@ def collate(wins, device):
     }
 
 
-def build_ctx(batch, out=None):
-    return {k: batch[k] for k in ("gt_traj", "obstacles", "lead_path", "v0", "dt")}
+#: ⛔ THE CROSS-ARM RULER FOR R5, FIXED FOR THE WHOLE CAMPAIGN. D-SAFE-CAL
+#: varies what arms TRAIN against; if the metric moved with it, a "safer" arm
+#: would just be one graded more leniently.
+R5_FIXED_SAFE_M = 5.0
+
+
+def build_ctx(batch, out=None, extras=None):
+    """Reward context for one batch.
+
+    ⚠️ ``extras`` carries THRESHOLD OVERRIDES (D-SAFE-CAL). It is deliberately
+    explicit rather than a module global, because the TRAINING context and the
+    READOUT context must be allowed to DIFFER: an arm trains against its own
+    ``proximity_safe_m`` while every reported R1/R2/R3 is scored on the DEFAULT
+    spec, so arms stay comparable across the whole campaign. A global would
+    silently make the readout follow the arm and destroy that comparability —
+    the arms would each be graded by their own ruler.
+    """
+    ctx = {k: batch[k] for k in ("gt_traj", "obstacles", "lead_path", "v0", "dt")}
+    if extras:
+        ctx.update(extras)
+    return ctx
 
 
 def load_model(ckpt_path, device):
@@ -208,16 +227,52 @@ def readout(model, src: WindowSource, spec: RewardSpec, cfg, device, n=120):
         sel = int(out["sel_score"].argmax(dim=1))                 # readout only
         ade = float((fan[0, sel] - batch["gt_traj"][0]).norm(dim=-1).mean())
 
-        e = per_ep.setdefault(stem, {"r": [], "cr": [], "ade": []})
+        # ⭐ R5 — the SELECTED candidate's clearance violation. Added for
+        # PREREG_D_SAFE_CAL exit 3, which is otherwise unmeasurable (TRAIN-C6:
+        # a pre-registered exit must name a field the readout actually emits).
+        #
+        # ⚠️ WHY IT IS SEPARATE FROM R2. R2 is the FAN collision rate — a
+        # property of all 128 candidates. R5 is a property of the ONE candidate
+        # the selector picks, i.e. the trajectory that would actually be driven.
+        # A policy can improve the fan while degrading what is driven, and that
+        # split is exactly the reward-hacking signature the prereg's exit 3
+        # rejects on. Reporting only R2 cannot see it.
+        # ⭐ R5 is reported on TWO rulers and they answer different questions:
+        #   viol      @ R5_FIXED_SAFE_M (5.0) — the CROSS-ARM ruler. Never the
+        #             arm's own threshold, or each arm is graded by the target it
+        #             was trained on and no comparison means anything.
+        #   viol_arm  @ the arm's threshold — did the TRAINED objective move?
+        # Exit 3 (reward hacking) is read on the FIXED one.
+        viol = viol_arm = float("nan")
+        obs_ = ctx.get("obstacles")
+        if obs_ is not None and obs_.numel():
+            r_ = (float(ctx.get("ego_radius_m", 1.0))
+                  + float(ctx.get("obs_radius_m", 1.0)))
+            d_ = (fan[0, sel].unsqueeze(-2) - obs_.reshape(-1, 2)
+                  .unsqueeze(-3)).norm(dim=-1)
+            clr_ = float((d_ - r_).clamp_min(0.0).amin())
+            viol = float(clr_ < R5_FIXED_SAFE_M)
+            viol_arm = float(clr_ < float(ctx.get("proximity_safe_m",
+                                                  R5_FIXED_SAFE_M)))
+
+        e = per_ep.setdefault(stem, {"r": [], "cr": [], "ade": [],
+                                    "viol": [], "viol_arm": []})
         e["r"].append(float(spec(fan, ctx).mean()))
         e["cr"].append(float((coll < 0).float().mean()))
         e["ade"].append(ade)
+        if viol == viol:                                # NaN-safe: skip no-obstacle
+            e["viol"].append(viol)                      # windows rather than
+            e["viol_arm"].append(viol_arm)              # scoring them as clean
         for k, v in parts.items():
             comp_sums[k] = comp_sums.get(k, 0.0) + float(v.mean())
         n_win += 1
 
     model.train(was_training)
-    ep_means = {k: {m: float(np.mean(v[m])) for m in v} for k, v in per_ep.items()}
+    # ⚠️ an episode whose every window lacked obstacles has viol == [] — np.mean
+    # of an empty list is nan WITH a RuntimeWarning, and a silent nan here would
+    # propagate into R5 as a number-shaped absence. Emit nan deliberately.
+    ep_means = {k: {m: (float(np.mean(v[m])) if v[m] else float("nan"))
+                    for m in v} for k, v in per_ep.items()}
     arr = lambda m: np.array([e[m] for e in ep_means.values()])
     boot = []
     ids = list(ep_means)
@@ -236,6 +291,18 @@ def readout(model, src: WindowSource, spec: RewardSpec, cfg, device, n=120):
         "R3_sel_ade_m": {"mean": float(arr("ade").mean()),
                          "ci95": [float(lo_[2]), float(hi_[2])]},
         "R4_component_means": {k: v / max(n_win, 1) for k, v in comp_sums.items()},
+        # ⭐ R5 — see the loop above. ``n`` is the episode count with ANY
+        # obstacle-bearing window; it is NOT n_episodes, and a run where the two
+        # differ is telling you the obstacle join is thin.
+        "R5_gt_clearance_violation_frac": {
+            "mean": float(np.nanmean(arr("viol"))) if len(ep_means) else float("nan"),
+            "n_episodes_with_obstacles": int(np.isfinite(arr("viol")).sum()),
+            "proximity_safe_m": R5_FIXED_SAFE_M,
+            "mean_at_arm_threshold": (float(np.nanmean(arr("viol_arm")))
+                                      if len(ep_means) else float("nan")),
+            "_what": "fraction of scored windows whose SELECTED candidate is "
+                     "inside proximity_safe_m — the driven path, not the fan",
+        },
         "per_episode": ep_means,      # ⭐ stored so the PAIRED bootstrap the house
                                       # rule requires is computable post-hoc —
                                       # the first readout kept aggregates only
@@ -257,18 +324,41 @@ def main() -> int:
     ap.add_argument("--out", required=True)
     ap.add_argument("--steps", type=int, default=2000)
     ap.add_argument("--batch", type=int, default=2)
-    ap.add_argument("--reward", choices=("default", "hackable"), default="default")
+    ap.add_argument("--reward",
+                    choices=("default", "hackable", "proximity", "proximity0"),
+                    default="default",
+                    help="'proximity' = DEFAULT + the graded barrier at 0.5 "
+                         "(AMENDMENT 2, weight pre-registered before the run); "
+                         "'proximity0' = the D-SAFE-CAL FLOOR ARM — the barrier "
+                         "PRESENT but at weight 0, so it isolates the threshold "
+                         "from the mere presence of the term. ⛔ If this arm "
+                         "moves anything, the harness is broken, not the "
+                         "science (D-SAFE-CAL exit 5).")
+    ap.add_argument("--proximity-safe-m", type=float, default=5.0,
+                    help="the clearance threshold this arm TRAINS against. "
+                         "⛔ Reported R1/R2/R3 and R5 stay on the DEFAULT spec "
+                         "and the FIXED 5.0 ruler so arms remain comparable.")
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--w-anchor", type=float, default=0.0,
+                    help="reference-policy trust region (0 = the unanchored "
+                         "P-RC21 configuration, kept as the sweep's own null)")
     ap.add_argument("--lru", type=int, default=60,
                     help="episode cache size; 60 = whole pilot corpus in RAM")
     a = ap.parse_args()
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    weights = (dict(RW.HACKABLE_WEIGHTS) if a.reward == "hackable"
-               else dict(RW.DEFAULT_WEIGHTS))
+    if a.reward == "hackable":
+        weights = dict(RW.HACKABLE_WEIGHTS)
+    elif a.reward == "proximity":
+        weights = dict(RW.DEFAULT_WEIGHTS); weights["proximity"] = 0.5
+    elif a.reward == "proximity0":
+        weights = dict(RW.DEFAULT_WEIGHTS); weights["proximity"] = 0.0
+    else:
+        weights = dict(RW.DEFAULT_WEIGHTS)
     cfg = PostTrainConfig(
         method="grpo", group_size=4, steps=a.steps, batch=a.batch, lr=1e-5,
         seed=a.seed, dt=DT_TRAJ, decoder_steps=2, reward_weights=weights,
+        w_anchor=a.w_anchor,
         trainable_prefixes=("decoder",),
         exclude_prefixes=("decoder.conf_head",),
         forbidden_prefixes=("decoder.conf_head", "scorer"),
@@ -276,8 +366,30 @@ def main() -> int:
                            # IL loss is wired for v2.1 in this pilot — the
                            # imitation anchor is the FROZEN 96 % of the model.
                            # R3's +10 % guard is the drift alarm instead.
-        out_dir=a.out, run_name=f"p-rc21-{a.reward}")
+        out_dir=a.out, run_name=f"p-rc21-{a.reward}-dsafe{a.proximity_safe_m:g}")
     cfg.validate()
+
+    # ⭐ EMIT THE RESOLVED WEIGHTS BEFORE TRAINING (D-SAFE-CAL-2 §1c).
+    # D-SAFE-CAL's arm D was bit-identical to the default arm because
+    # `--reward proximity0` set a weight DEFAULT_WEIGHTS never contained — a flag
+    # name trusted without measuring what it does. Printing the resolved dict
+    # makes an arm that cannot vary its own objective visible BEFORE it runs
+    # instead of after the readout. Operating-standard rule 1: a claim that
+    # decides a GPU-day must be MEASURED, and this is the cheapest measurement.
+    print(f"[pilot] RESOLVED reward_weights = {json.dumps(weights, sort_keys=True)}",
+          flush=True)
+    # ⛔ COMPARE THE *EFFECTIVE* OBJECTIVE, NOT THE RAW DICT. A term at weight
+    # 0.0 contributes nothing, so {"proximity": 0.0, ...} and {...} are DIFFERENT
+    # dicts and the SAME objective. The first version of this guard compared
+    # json.dumps() and would therefore have MISSED the very defect it was written
+    # for (D-SAFE-CAL arm D). Dropping zero-weight entries first is what makes
+    # the comparison mean "can this arm vary anything".
+    _eff = lambda d: {k: v for k, v in d.items() if v}
+    if _eff(weights) == _eff(dict(RW.DEFAULT_WEIGHTS)):
+        print("[pilot] ⚠️  NOTE: this arm's EFFECTIVE objective is "
+              "IDENTICAL to DEFAULT_WEIGHTS (zero-weight terms dropped) — it "
+              "cannot vary any term relative to the default arm. Correct for a "
+              "reproduction control, a DEFECT for anything else.", flush=True)
 
     model = load_model(a.ckpt, device)
     spec = RewardSpec(weights=weights, dt=DT_TRAJ)
@@ -305,7 +417,28 @@ def main() -> int:
             yield collate(wins, device)
             step += 1
 
-    sample_fn = make_refcv3_sample_fn(model, cfg, build_ctx=build_ctx)
+    # ⭐ THE REFERENCE POLICY: a frozen deepcopy of the COLD START, taken
+    # before a single optimiser step. Only built when the trust region is on, so
+    # w_anchor=0 reproduces the original unanchored arm exactly.
+    reference = None
+    if cfg.w_anchor > 0.0:
+        import copy
+        from tanitad.rl.anchor import ReferencePolicy
+        reference = ReferencePolicy(model).to(device)
+        n_frozen = reference.assert_frozen()
+        print(f"[pilot] reference policy frozen: {n_frozen:,} params, "
+              f"w_anchor={cfg.w_anchor} form={cfg.anchor_form}", flush=True)
+    # ⭐ THE ARM'S THRESHOLD ENTERS HERE AND ONLY HERE (D-SAFE-CAL). The
+    # readout above/below calls plain build_ctx, so every reported number is on
+    # the campaign's fixed ruler while the policy optimises against the arm's.
+    train_extras = {"proximity_safe_m": float(a.proximity_safe_m)}
+    print(f"[pilot] TRAINING against proximity_safe_m="
+          f"{a.proximity_safe_m:g} m · READOUT fixed at {R5_FIXED_SAFE_M:g} m",
+          flush=True)
+    sample_fn = make_refcv3_sample_fn(
+        model, cfg,
+        build_ctx=lambda b, out=None: build_ctx(b, out, extras=train_extras),
+        reference=reference)
     summary = run_posttrain(model, sample_fn, cfg, batches=batches())
 
     # ⛔ SAVE THE TRAINED DECODER. The first pilot saved none, so when the
@@ -329,6 +462,7 @@ def main() -> int:
                    / max(before["R3_sel_ade_m"]["mean"], 1e-9) - 1.0),
     }
     summary["pilot_delta"] = delta
+    summary["w_anchor"] = cfg.w_anchor
     json.dump({k: v for k, v in summary.items() if k != "history"},
               open(os.path.join(a.out, "pilot_summary.json"), "w"), indent=1)
     print(f"[pilot] DELTA   R1 {delta['R1']:+.4f}  R2 {delta['R2']:+.3%}  "

@@ -1,6 +1,6 @@
 """E-S1-0 — IS THERE A TARGET FOR S1'S CLIMB-OUT? 0 GPU, banked fans only.
 
-Pre-registration: ``TanitAD Research Hub/Architecture & Inference/Implementation/
+Pre-registration: ``TanitAD Research Lab/Architecture & Inference/Implementation/
 incoming/2026-08-03-s1-climbout/PREREG_S1_CLIMBOUT.md`` — staged BEFORE any statistic
 here was computed; the runner re-verifies the staged blob id on every arm.
 
@@ -69,7 +69,7 @@ for _p in (_REPO / "taniteval", _REPO / "stack", _HERE.parent):
 from taniteval import ci                                          # noqa: E402
 import refc_sel_probe as P                                        # noqa: E402
 
-PREREG = ("TanitAD Research Hub/Architecture & Inference/Implementation/incoming/"
+PREREG = ("TanitAD Research Lab/Architecture & Inference/Implementation/incoming/"
           "2026-08-03-s1-climbout/PREREG_S1_CLIMBOUT.md")
 
 #: A TRANSCRIPTION of prereg §4. Every value is quoted from the staged blob whose

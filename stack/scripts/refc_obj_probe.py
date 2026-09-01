@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """E-OBJ-1 — is ``refc_train.loss_rcls`` itself the liability, and WHICH HALF of it?
 
-Pre-registration: ``TanitAD Research Hub/Architecture & Inference/Implementation/incoming/
+Pre-registration: ``TanitAD Research Lab/Architecture & Inference/Implementation/incoming/
 2026-08-04-loss-rcls-objective/PREREG_LOSS_RCLS_OBJECTIVE.md``, staged and content-pinned
 **before** the first statistic. The runner re-reads it and refuses to call a result
 admissible if the staged blob and the worktree blob disagree.
@@ -45,7 +45,7 @@ import torch
 import refc_s1_climbout_probe as S          # survivor mask + features, REUSED not re-implemented
 import refc_sel_probe as P
 
-PREREG = ("TanitAD Research Hub/Architecture & Inference/Implementation/incoming/"
+PREREG = ("TanitAD Research Lab/Architecture & Inference/Implementation/incoming/"
           "2026-08-04-loss-rcls-objective/PREREG_LOSS_RCLS_OBJECTIVE.md")
 
 #: prereg §5 — fixed here, read by :func:`adjudicate`, never recomputed from data.

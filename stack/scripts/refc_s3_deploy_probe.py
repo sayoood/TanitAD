@@ -60,7 +60,7 @@ if str(_HERE.parent) not in sys.path:
 
 import refc_sel_probe as P                                       # noqa: E402
 
-PREREG_S3 = ("TanitAD Research Hub/Architecture & Inference/Implementation/"
+PREREG_S3 = ("TanitAD Research Lab/Architecture & Inference/Implementation/"
              "incoming/2026-08-03-s3-deployable/PREREG_S3_DEPLOYABLE.md")
 
 #: A TRANSCRIPTION of PREREG_S3_DEPLOYABLE.md §4/§4.1. No run may edit these.

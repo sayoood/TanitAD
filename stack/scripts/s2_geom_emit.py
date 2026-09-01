@@ -8,7 +8,7 @@ that were each measured, not suspected:
     CLIP UUID end to end — egomotion, labels and frames all key on it, so the
     entire class of error is gone. (`egomotion_source`, RETRACTION_LOG C140.)
 
- 2. ⛔ **Alpamayo's lateral/lane axes are AT CHANCE** against ego kinematics
+ 2. ⛔ **Alpamayo's lateral axis was WRONGLY called at-chance (C142)** against ego kinematics
     (31.2 % vs 23.9 % shuffled, p=0.335; lane 20.0 % vs 19.5 %, p=0.706) and its
     CoT hallucinates objects (3 correct / 2 wrong on visually checkable claims).
     `tac_str_labels.compose()` derives its lateral tier FROM `alpamayo_lane`.

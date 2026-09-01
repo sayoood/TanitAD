@@ -184,7 +184,7 @@ SUPERSEDED_NAME = "SUPERSEDED.json"
 #: the test all quote it rather than re-deriving a path. Corrected set after
 #: the PI's 2026-08-16 adjudication (commit `06b8782`).
 S2_CANONICAL_LABELS_REL = (
-    "TanitAD Research Hub/Data Engineering/Implementation/incoming/"
+    "TanitAD Research Lab/Data Engineering/Implementation/incoming/"
     "2026-08-16-s2-v1-labels/review/labels_v2")
 #: The census key for a family a record DECLINED to label. ⛔ NOT a token —
 #: `g_str`'s `NONE_ABSTAIN` is a supervised target ("no goal applies"), this is

@@ -1357,7 +1357,7 @@ def tactical_from_future_v3(poses: Tensor, t: int,
 # BECOMES MEASURABLE ON 20 s CLIPS.
 # ----------------------------------------------------------------------------
 # Two defects, both MEASURED over 500 PhysicalAI episodes / 11,504 stride-8
-# windows (`TanitAD Research Hub/Benchmarks & Eval/Implementation/incoming/
+# windows (`TanitAD Research Lab/Benchmarks & Eval/Implementation/incoming/
 # 2026-08-03-refc-corpus-and-labels/results/labelqa_pai_train_400ep.json`,
 # `labelqa_pai_val_100ep.json`, `route_gate_speed_probe.json`).
 #
@@ -1804,7 +1804,7 @@ def maneuver3_labels(poses: Tensor,
 #
 # STRATIFICATION (the second half of E7.1). PhysicalAI has no maps (settled
 # 5-probe fact), so corridor DIVERSITY is measured, not assumed: the aug road
-# classifier ("TanitAD Research Hub/Benchmarks & Eval/Research/
+# classifier ("TanitAD Research Lab/Benchmarks & Eval/Research/
 # 2026-08-06-alpamayo-augmentation/aug_road_class.json") assigns each clip one
 # of highway / urban / intersection_rich / unstructured. MEASURED 2026-08-10
 # (read from that JSON): 3592 clips = highway 384 / urban 1884 /
