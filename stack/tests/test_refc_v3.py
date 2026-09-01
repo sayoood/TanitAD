@@ -313,7 +313,8 @@ def test_the_two_size_rungs_build_and_measure():
     import dataclasses
 
     from tanitad.refs.refc_v3 import (RefCV3Model, param_breakdown_v3,
-                                      refc_v3_small_config, refc_v3_xl_config)
+                                      refc_v3_small_config, refc_v3_xl_config,
+                                      refc_v3_sized_config)
     # ⚠️ The REGISTERED rung counts are kin3-era facts (the trained/registered
     # models carry 3x3 kinematic tactical heads), so the historical pins build
     # with the version pinned — while the NAMED configs default to v7.0 per the
@@ -339,6 +340,21 @@ def test_the_two_size_rungs_build_and_measure():
         == 62_930_419 + NAV + 5_130
     assert param_breakdown_v3(RefCV3Model(refc_v3_xl_config()))["total"] \
         == 217_760_775 + NAV + 5_130
+    # ⭐ BASE is now a TRAINED rung (PI override 2026-09-02 for the B1+v7.2
+    # launch), so it is pinned like the others. MEASURED: 106,847,621 with the
+    # v7.0 heads and nav. ⚠️ It exceeds the design's "<= 80 M hard" budget by
+    # 33 % — the band assertions above deliberately guard the DEFAULT config,
+    # not this rung, so the override is explicit here rather than a loosened
+    # band that would stop catching accidental growth in the default.
+    base = param_breakdown_v3(RefCV3Model(refc_v3_sized_config("base",
+                                                              hier=True)))
+    assert base["total"] == 106_847_621, base["total"]
+    assert base["nav_inject"] == NAV
+    # and the hierarchy stays ~2.1 M at every rung: at base it is a SMALLER
+    # fraction of the model, which is what makes the dominance read harder
+    # rather than easier.
+    assert 2_000_000 < base["total"] - base["core"] < 2_300_000
+
     # ⭐ the hierarchy cost is essentially CONSTANT across the ladder, which is
     # why scale and hierarchy are separate decisions.
     assert abs((xl["total"] - xl["core"]) - (small["total"] - small["core"])) < 200_000

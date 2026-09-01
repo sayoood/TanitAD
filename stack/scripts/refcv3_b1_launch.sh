@@ -74,11 +74,17 @@ echo "[gate4] preflight PASS"
 # died on the container's 1024-fd soft limit; `ulimit -n` above lifts that, but
 # the pod's CPU quota is 7.65 (cfs_quota 765000/100000, NOT the 96 nproc
 # reports), so more workers cannot buy throughput anyway.
-# batch 20: the registered value; MEASURED peak 28.16 GB of the A40's 44.3.
+# ⭐ size base (PI override 2026-09-02): 106,847,621 params. MEASURED peak
+# 35.91 GB of the A40's 44.3 (81 %) at batch 20 -- it fits, with less headroom
+# than small's 26.85 GB (61 %), so an OOM here is a real risk to watch rather
+# than an impossibility. batch 20 is the registered value and is KEPT so the
+# sample budget (30k x 20 = 600k) matches the registered arm.
+# ⚠️ base exceeds the v3 design's "<= 80 M hard" budget by 33 %; see
+# GOALS_AND_CLAIMS D-REFCV3-SIZE for the override and the contrary measurement.
 mkdir -p "$OUT"
 echo "[launch] $(date -u +%FT%TZ) starting 30k"
 PYTHONPATH="$STACK" nohup python3 -u "$STACK/scripts/refc_v3_train.py" \
-  --arm hier --size small \
+  --arm hier --size base \
   --v2-cache "$CACHE" \
   --v7-labels "$LABELS" \
   --image-hw 256 640 \
