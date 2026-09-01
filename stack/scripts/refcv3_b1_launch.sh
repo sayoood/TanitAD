@@ -24,14 +24,24 @@ echo "=== chain start $(date -u +%FT%TZ) ==="
 # --- gate 1: the corpus is COMPLETE ---------------------------------------
 # 4,713 is the parity-gated count (6 val40 clips dropped); never 4,719.
 WANT=4713
+# ⛔ THE GATE WAITS ON PROGRESS, NOT ON LIVENESS. MEASURED TWICE 2026-09-02:
+# the builder stalled with every worker dead and the parent parked in
+# futex_wait_queue — still "alive" to any ps check, log frozen for ~2 h. A
+# liveness gate would have waited forever on that; only the FILE COUNT moving
+# distinguishes building from hung.
+LAST=$(ls "$CACHE"/*.v2ep.pt 2>/dev/null | wc -l)
+LASTT=$(date +%s)
+STALL_LIMIT=1800
 while true; do
   N=$(ls "$CACHE"/*.v2ep.pt 2>/dev/null | wc -l)
-  ALIVE=$(ps -eo args | grep -c "[p]od_build_b1_epcache")
   if [ "$N" -ge "$WANT" ]; then echo "[gate1] corpus complete: $N"; break; fi
-  if [ "$ALIVE" -eq 0 ]; then
-    echo "[gate1] ⛔ REFUSING: builder is GONE at $N/$WANT episodes."
-    echo "[gate1]   A partial corpus is NOT B1 — 30k steps on a subset is a"
-    echo "[gate1]   different experiment, not an early one. Restart the build."
+  if [ "$N" -gt "$LAST" ]; then LAST=$N; LASTT=$(date +%s); fi
+  SUP=$(ps -eo args | grep -c "[s]up_b1build")
+  if [ $(( $(date +%s) - LASTT )) -ge "$STALL_LIMIT" ]; then
+    echo "[gate1] ⛔ REFUSING: no new episode in ${STALL_LIMIT}s (at $N/$WANT,"
+    echo "[gate1]   supervisor procs=$SUP). A partial corpus is NOT B1 — 30k"
+    echo "[gate1]   steps on a subset is a DIFFERENT experiment, not an early"
+    echo "[gate1]   one. Fix the build; this chain will not launch on it."
     exit 2
   fi
   sleep 120
