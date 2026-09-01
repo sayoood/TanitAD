@@ -353,8 +353,36 @@ Every subagent brief MUST carry the preamble in
   nonlinear scene motion that is a WEAK lower bound and the claim was unsupported. State the
   function class in the verdict, or use a nonlinear probe with a **time-shuffled control** (structure
   surviving a shuffle is leakage, not dynamics).
+- ⛔⛔ **`git ls-tree -r` SILENTLY TRUNCATES ON THE G: MOUNT — IT EXITS 0, AND IT TRUNCATES
+  *CONSISTENTLY*, SO REPEATING IT LOOKS LIKE CONFIRMATION.** MEASURED 2026-09-02: the same tree
+  read **7,535** files five times in a row while `git cat-file -e <tree>:<path>` proved six
+  "missing" load-bearing files (`tools/secret_scan.py`, `taniteval/tools/t1_eval.py`,
+  `stack/tanitad/refs/refa_v1.py` …) were all **PRESENT**. Other reads of the same tree gave
+  7,536 and 7,559 — so it is neither stable nor honest. ⇒ I concluded a commit had **deleted 989
+  tracked files**, reverted a perfectly good commit, and spent an hour "recovering" content that
+  was never lost; the replacement commit's tree hashed **identical** to the one I had reverted.
+  ⚠️ **The sibling failure in the same hour:** `git diff --name-only A B`, `git diff-tree -r`
+  and `git show --stat` ALL returned **empty** for a commit that really did change 146 files.
+  **Three independent-looking probes agreed on a wrong answer because they share one failure
+  mode** — which is exactly what "take multiple samples" is supposed to protect against, and
+  does not, when the samples are drawn through the same broken channel.
+  ⇒ **ON THIS MOUNT, AN EMPTY OR SHORT GIT RESULT IS NOT EVIDENCE OF ABSENCE — it is
+  indistinguishable from a failed query. Only POSITIVE assertions are admissible:
+  `git cat-file -e <ref>:<path>`, a blob-hash comparison (`git rev-parse A:path` vs `B:path`),
+  or `git ls-files` on the index.** Never guard a commit on a file COUNT; guard it on the
+  presence of named load-bearing paths. *(Same family as the `df`/Thor `free`/cgroup
+  `usage_in_bytes` traps — a probe reporting the wrong scope, read as an answer — with the
+  aggravation that this one is reproducible enough to pass a "measure it twice" check.)*
+  ⚠️ Two more from the same session, both real: **`.git/COMMIT_EDITMSG` can become POISONED**
+  (writes fail `File too large`, `rm` fails `Device or resource busy`) which breaks every
+  porcelain `git commit` while `commit-tree` plumbing keeps working — the fresh-inode class
+  again; and a bulk `git add -- <directory>` across large trees can die with
+  **`3221225478` = `0xC0000006` STATUS_IN_PAGE_ERROR**, so add explicit FILE paths in batches,
+  never whole directories.
 - **Verify before alarming.** Check the metric's definition and take multiple samples first;
-  several "outages" were measurement artifacts.
+  several "outages" were measurement artifacts. ⚠️ **But see the `ls-tree` trap above: repeated
+  samples through ONE broken channel are one sample.** A second *probe* means a different
+  mechanism, not the same command run again.
 
 ## Git hygiene — the mistake that has now happened twice
 

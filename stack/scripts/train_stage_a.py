@@ -279,8 +279,7 @@ def stage_a_losses(predictor, step_readout, states: Tensor, aw2: Tensor,
                    rand_da: Tensor | None = None,
                    w_ctrl: float = 1.0, w_fact: float = 1.0,
                    w_scene: float = 0.3, n_basis: int = N_BASIS_DEFAULT,
-                   ctrl_form: str = "response",
-                   stopgrad_factual: bool = False) -> dict:
+                   ctrl_form: str = "response") -> dict:
     """One batch of the three stage-A losses (module docstring).
 
     ``states`` [B, W, S] (DETACHED — encoder frozen), ``aw2``/``fa2`` the
@@ -321,18 +320,7 @@ def stage_a_losses(predictor, step_readout, states: Tensor, aw2: Tensor,
         with torch.no_grad():
             an_c = analytic_endpoints(aw_c, fa_c, v0, k).float()
         if ctrl_form == "response":
-            # LIT-3 (PhyLatent CASC, ICLR 2025): "the factual prediction is
-            # treated as a STOP-GRADIENT REFERENCE, so this loss separates the
-            # counterfactual branch WITHOUT MOVING THE FACTUAL BRANCH."
-            # ⛔ MEASURED CONSEQUENCE OF NOT DOING THIS (H-PROOF-4): with `wp_f`
-            # carrying gradient, every O1 arm ended up statistically
-            # indistinguishable from NOISE on directional cos (z -0.26..0.37)
-            # while carrying the HIGHEST action response -- the model bought
-            # separation by corrupting the factual prediction, which is the only
-            # thing that has to be right. `l_fact` below still trains the factual
-            # branch; only the SEPARATION term stops seeing it.
-            ref = wp_f.detach() if stopgrad_factual else wp_f
-            l_ctrl_arms[arm] = ((wp_c - ref) - (an_c - an_f)).abs().mean()
+            l_ctrl_arms[arm] = ((wp_c - wp_f) - (an_c - an_f)).abs().mean()
         else:                                                # absolute
             l_ctrl_arms[arm] = (wp_c - an_c).abs().mean()
     l_ctrl = torch.stack(list(l_ctrl_arms.values())).mean()

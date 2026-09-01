@@ -15,7 +15,7 @@ Opponent-Analyzer ``SCENARIO_DATABASE.md`` on ONE plain-HTTP port
 Run on a pod::
 
     python scripts/scena_app.py --port 8890 \\
-        --db-md "TanitAD Research Lab/Opponent Analyzer/SCENARIO_DATABASE.md"
+        --db-md "TanitAD Research Hub/Opponent Analyzer/SCENARIO_DATABASE.md"
 
 then open ``https://<pod-id>-8890.proxy.runpod.net``. ``build_app`` is the
 importable factory the tests drive with ``fastapi.testclient.TestClient``.

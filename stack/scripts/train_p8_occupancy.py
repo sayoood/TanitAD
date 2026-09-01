@@ -668,7 +668,7 @@ P4_SPLIT_STAMP = {
         "[58.5, 60.0] deg annulus were labelled `visible` though the encoder "
         "never saw them. That contamination can only RAISE the visible arm, so "
         "it makes the published occluded>visible gap CONSERVATIVE."),
-    "artifact": "TanitAD Research Lab/Architecture & Inference/Implementation/"
+    "artifact": "TanitAD Research Hub/Architecture & Inference/Implementation/"
                 "incoming/2026-08-16-p4-fov-predicate/P4_FOV_PREDICATE.md",
     "_evidence_class": "MEASURED (ours)",
 }

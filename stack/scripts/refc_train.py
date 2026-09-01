@@ -254,7 +254,7 @@ class RouteV3Dataset(RouteV21Dataset):
         lon_active       [] bool   a longitudinal decision is live
 
     Wiring the heads that consume them is a RETRAIN and Sayed's call — see
-    "TanitAD Research Lab/Architecture & Inference/
+    "TanitAD Research Hub/Architecture & Inference/
      V3_FACTORIZED_TACTICAL_HEAD_SPEC.md". This dataset exists so the label set
     is selectable and measurable BEFORE that decision, exactly as v21 was.
     """

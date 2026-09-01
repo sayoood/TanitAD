@@ -16,7 +16,7 @@
 
 set -uo pipefail
 POD="${POD:-tanitad-pod3}"
-DEST="${1:-TanitAD Research Lab/Data Engineering/Implementation/incoming/2026-07-21-vlm-production-semantic}"
+DEST="${1:-TanitAD Research Hub/Data Engineering/Implementation/incoming/2026-07-21-vlm-production-semantic}"
 REMOTE=/root/vlmprod
 
 mkdir -p "$DEST"

@@ -166,7 +166,7 @@ UBIQUITOUS_NAMES = frozenset({
 #: A same-basename hit is a real finding only when the repo side is OURS.
 #: ``thor_profile.py`` lives under the research hub; a stray ``glam`` build
 #: script does not.
-AUTHORED_ROOTS = ("stack/", "taniteval/", "alpasim/", "TanitAD Research Lab/",
+AUTHORED_ROOTS = ("stack/", "taniteval/", "alpasim/", "TanitAD Research Hub/",
                   "Project Steering/", "scripts/", "tools/")
 
 #: ⚠️ Paths that must NEVER be pulled without reading them first. C111: the
