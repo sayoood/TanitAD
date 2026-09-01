@@ -12,7 +12,9 @@ WHAT THIS MODULE IS
 with a goal cascade built from components the programme already measured:
 
   * strategic state  = the core's own ``StrategicCtx`` GRU (existing, trained);
-    a new 195-param head reads a PREDICTED geometric route goal ``g_str`` off it;
+    a new 771-param head reads a PREDICTED geometric route goal ``g_str`` off it
+    (195 before the 2026-09-02 hierarchy rebalance widened ``d_ctx`` 64 -> 256
+    to match flagship v7's ``d_str`` and refav1's ``d_ctx``);
   * tactical state   = :class:`tanitad.models.tactical.PhiTac` — the causal-TCN
     window pool that C116 found *tested, trained, and never called*. v3 WIRES
     the orphaned component instead of rebuilding it (one-implementation rule,
@@ -193,7 +195,20 @@ def _v3_core_base() -> refc.RefCConfig:
                                      noise_std=0.1)
     cfg.anchors = refc.AnchorConfig(n_anchors=128, pool_size=4096)
     cfg.trajectory = refc.TrajectoryConfig(horizons=V3_HORIZONS)
-    cfg.strategic = refc.StrategicCtxConfig(hidden=512, d_ctx=64)
+    # ⭐⭐ HIERARCHY REBALANCE (PI 2026-09-02, "very important"): the STRATEGIC
+    # width is matched to the other arms so a cross-arm hierarchy comparison
+    # attributes to DESIGN, not to CAPACITY.
+    #   flagship v7 (train_v6_staged defaults):  d_tac 512 | d_str 256
+    #   refav1 (RefAV1Config + brains):          d_model 512 / d_intent 256
+    #                                            | d_ctx 256, str_dim 256
+    #   refc v3 BEFORE this change:              d_tac 512 | d_ctx 64  <- 4x narrow
+    # The tactical side already matched at 512; the strategic side did not, and
+    # a 4x-narrower strategic context is a capacity confound sitting inside the
+    # exact claim v3 exists to test (that the hierarchy earns its place).
+    # ⚠️ `refc_v3_sized_config` moves the ENCODER ONLY, so this width is the
+    # same at small/base/xl — the rebalance is a property of the arm, not of a
+    # rung, which is what makes it comparable across the ladder too.
+    cfg.strategic = refc.StrategicCtxConfig(hidden=512, d_ctx=256)
     cfg.factored_maneuver = True      # action space: both arms, never a lever
     cfg.tactical_speed_input = False  # goal path stays vision-pure (E11)
     cfg.sel_reach_clamp = True        # precondition, measured inert on ADE @2s

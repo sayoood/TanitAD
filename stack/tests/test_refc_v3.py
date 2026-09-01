@@ -326,20 +326,33 @@ def test_the_two_size_rungs_build_and_measure():
         refc_v3_xl_config(), tac_vocab_version="kin3")))
     # ⭐ E13 (PI 2026-09-02) adds nav -> tactical/strategic: an embedding
     # (4 x 64 = 256) + nav_to_tac (512x64 + 512 = 33,280) + nav_to_str
-    # (64x64 + 64 = 4,160) = 37,696. d_tac and d_ctx are shared across rungs,
+    # (64x256 + 256 = 16,640) = 50,176. d_tac and d_ctx are shared across rungs,
     # so the cost is IDENTICAL at both — asserted, not assumed.
-    NAV = 37_696
-    assert small["total"] == 62_930_419 + NAV
-    assert xl["total"] == 217_760_775 + NAV
+    # ⚠️ nav_to_str projects INTO d_ctx, so the hierarchy rebalance below moved
+    # this number too (4,160 -> 16,640). Two coupled constants; both re-derived
+    # rather than one bumped until the test went green.
+    NAV = 50_176
+    # ⭐ STR = the 2026-09-02 hierarchy rebalance (PI: "make them
+    # compatible"): d_ctx 64 -> 256, matching flagship v7's d_str and
+    # refav1's d_ctx. It widens the CORE's StrategicCtx output projection,
+    # so the HISTORICAL registered counts (62,930,419 / 217,760,775 --
+    # kin3-era AND d_ctx=64-era facts) no longer reproduce from the current
+    # config. Recorded rather than papered over; no refcv3 checkpoint exists
+    # yet, so nothing on disk is invalidated by it.
+    # 185,280 total for the rebalance, of which 12,480 lands in NAV above, so
+    # the core-side remainder is 172,800.
+    STR = 172_800
+    assert small["total"] == 62_930_419 + NAV + STR
+    assert xl["total"] == 217_760_775 + NAV + STR
     # and it carries its OWN ledger line rather than hiding inside another
     assert small["nav_inject"] == NAV and xl["nav_inject"] == NAV
     # The mandate's measured cost: v7.0 heads (8x8 vs 3x3) add exactly 5,130
     # params at BOTH rungs — head-only, so the rung identity is otherwise
     # unchanged and the hierarchy-cost invariant below is version-independent.
     assert param_breakdown_v3(RefCV3Model(refc_v3_small_config()))["total"] \
-        == 62_930_419 + NAV + 5_130
+        == 62_930_419 + NAV + STR + 5_130
     assert param_breakdown_v3(RefCV3Model(refc_v3_xl_config()))["total"] \
-        == 217_760_775 + NAV + 5_130
+        == 217_760_775 + NAV + STR + 5_130
     # ⭐ BASE is now a TRAINED rung (PI override 2026-09-02 for the B1+v7.2
     # launch), so it is pinned like the others. MEASURED: 106,847,621 with the
     # v7.0 heads and nav. ⚠️ It exceeds the design's "<= 80 M hard" budget by
@@ -348,7 +361,10 @@ def test_the_two_size_rungs_build_and_measure():
     # band that would stop catching accidental growth in the default.
     base = param_breakdown_v3(RefCV3Model(refc_v3_sized_config("base",
                                                               hier=True)))
-    assert base["total"] == 106_847_621, base["total"]
+    # 106,847,621 before the 2026-09-02 hierarchy rebalance (d_ctx 64 -> 256,
+    # matching flagship v7 d_str and refav1 d_ctx); +185,280 for the wider
+    # strategic context and its goal head (195 -> 771 params).
+    assert base["total"] == 107_032_901, base["total"]
     assert base["nav_inject"] == NAV
     # and the hierarchy stays ~2.1 M at every rung: at base it is a SMALLER
     # fraction of the model, which is what makes the dominance read harder
