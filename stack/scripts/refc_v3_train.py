@@ -743,6 +743,52 @@ def train(args) -> dict:
           f"(window {cfg.core.window}, max_horizon 20, "
           f"image_hw {cfg.core.encoder.image_hw()}, "
           f"tac_vocab {cfg.tac_vocab_version})")
+    # ---- held-out eval split (PI 2026-09-02: "an eval step at 100 step") ---
+    # ⛔ THE LEAK THIS CLOSES, MEASURED: the v7.2 release splits 4,572 train /
+    # 147 eval with ZERO intersection, but the raw B1 corpus is 4,713 = 4,572 +
+    # 141 of those eval clips. Training on "all of B1" therefore trains on 141
+    # eval clips, and every eval number off them would be optimistic and
+    # inadmissible. The launch trains the 4,572 and evaluates the held-out set.
+    eval_dl = None
+    if args.eval_cache and args.eval_every:
+        # the SAME provider call the train side uses (refc_v3_train:680) —
+        # a second construction path would be a second contract.
+        from tanitad.data.v2_dataset import build_v2_providers
+        e_eps = build_v2_providers([args.eval_cache], lru_size=args.v2_lru)
+        overlap = ({int(e.episode_id) for e in eps}
+                   & {int(e.episode_id) for e in e_eps})
+        if overlap:
+            raise SystemExit(
+                f"[v3] ⛔ REFUSING: {len(overlap)} episodes appear in BOTH the "
+                f"train cache and the eval cache. A held-out split that is not "
+                f"held out measures memorisation.")
+        e_ds = dcls(e_eps, **kw)
+        if args.eval_labels:
+            from tanitad.data.v2_dataset import stable_episode_id
+            e_lab, _ = v7l.load_v7_labels(args.eval_labels,
+                                          allow_oracle_nav=True)
+            e_ds.v7_by_sid = {stable_episode_id(l.clip_id): l for l in e_lab}
+            e_ds.v7_dt = 0.1
+        # FIXED **and REPRESENTATIVE** windows.
+        # ⛔ shuffle=False ALONE IS A TRAP, and it bit this eval on its first
+        # run: taking the first N windows takes them from the START of the
+        # first episodes (window NOW ~0.7-2 s), and every v7.2 record is
+        # anchored at t0 = 8.0 s with a +-2 s band — so `eval_lat_tac` read
+        # exactly 0.0000, an eval that silently never measured the tactical
+        # heads while reporting a clean number. ⇒ take a DETERMINISTIC RANDOM
+        # subset (seeded, computed once) and iterate it in a fixed order: still
+        # the same windows at every step, but drawn from the whole corpus.
+        g_ev = torch.Generator().manual_seed(12345)
+        n_need = args.eval_batches * args.batch
+        perm = torch.randperm(len(e_ds), generator=g_ev)[:n_need].tolist()
+        eval_dl = torch.utils.data.DataLoader(
+            torch.utils.data.Subset(e_ds, perm),
+            batch_size=args.batch, shuffle=False,
+            num_workers=0, drop_last=True)
+        print(f"[v3] held-out eval: {len(e_eps)} episodes -> {len(e_ds)} "
+              f"windows, {args.eval_batches} fixed batches every "
+              f"{args.eval_every} steps", flush=True)
+
     dl = torch.utils.data.DataLoader(
         ds, batch_size=args.batch, shuffle=True, num_workers=args.workers,
         drop_last=True, persistent_workers=args.workers > 0)
@@ -816,6 +862,42 @@ def train(args) -> dict:
             log.flush()
             print(f"[v3:{args.arm}] step {step} "
                   f"loss {row['loss']:.4f} traj {row['traj']:.4f}")
+        # ---- held-out eval (PI 2026-09-02) --------------------------------
+        # ⚠️ WHAT THIS IS AND IS NOT: an in-training MONITOR at T0 on the same
+        # loss surface, over a FIXED set of held-out windows. It is NOT the
+        # four-metric-family result and must never be quoted as one — the
+        # binding families (longitudinal / lateral / tactical / strategic with
+        # paired episode-cluster CIs) are a separate T1 job. What it buys is
+        # the ability to see generalisation move DURING a 25 h run instead of
+        # after it, and to catch train-only improvement early.
+        if eval_dl is not None and (step % args.eval_every == 0
+                                    or step == args.steps):
+            model.eval()
+            acc, nb_e = {}, 0
+            with torch.no_grad():
+                for eb in eval_dl:
+                    if nb_e >= args.eval_batches:
+                        break
+                    el = compute_losses_v3(model, eb, device, mode=args.mode)
+                    for k, v in el.items():
+                        if torch.is_tensor(v) and v.ndim == 0:
+                            acc[k] = acc.get(k, 0.0) + float(v.detach())
+                        elif isinstance(v, (int, float, bool)):
+                            acc[k] = acc.get(k, 0.0) + float(v)
+                    nb_e += 1
+            model.train()
+            if nb_e:
+                erow = {f"eval_{k}": round(v / nb_e, 5) for k, v in acc.items()}
+                erow.update(step=step, eval_batches=nb_e,
+                            eval_windows=nb_e * args.batch)
+                log.write(json.dumps(erow) + chr(10))
+                log.flush()
+                print(f"[v3:eval] step {step} "
+                      f"loss {erow.get('eval_loss', float('nan')):.4f} "
+                      f"traj {erow.get('eval_traj', float('nan')):.4f} "
+                      f"lat_tac {erow.get('eval_lat_tac', float('nan')):.4f}",
+                      flush=True)
+
         if step % args.save_every == 0 or step == args.steps:
             torch.save({"model": model.state_dict(),
                         "opt": opt.state_dict(), "step": step}, ck)
@@ -856,6 +938,20 @@ def main(argv=None):
                          "window contract is identical. Pair with "
                          "--image-hw 256 640 for the B1 geometry — the run "
                          "REFUSES a geometry mismatch either way.")
+    ap.add_argument("--eval-cache", default=None,
+                    help="HELD-OUT v2 cache (the v7.2 eval split). ⛔ MUST be "
+                         "disjoint from --v2-cache: 141 of the 147 v7.2 eval "
+                         "clips sit inside the raw B1 corpus, so training on "
+                         "'all of B1' trains on the eval set (MEASURED "
+                         "2026-09-02).")
+    ap.add_argument("--eval-labels", default=None,
+                    help="s2_labels_v7.2_eval.jsonl.gz for the eval split")
+    ap.add_argument("--eval-every", type=int, default=0,
+                    help="run the held-out eval every N steps (0 = off)")
+    ap.add_argument("--eval-batches", type=int, default=8,
+                    help="FIXED number of eval batches — the same windows "
+                         "every time, so step-to-step deltas are the model "
+                         "moving and not the sample moving")
     ap.add_argument("--v7-labels", default=None,
                     help="s2_labels_v7.2_*.jsonl.gz — the RELEASED tactical "
                          "vocabulary (8x8). Joined per window on "

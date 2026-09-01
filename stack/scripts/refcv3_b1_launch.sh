@@ -79,6 +79,22 @@ if ! PYTHONPATH="$STACK" python3 "$STACK/scripts/refc_v3_train.py" \
 fi
 echo "[gate4] preflight PASS"
 
+# --- gate 5: SPLIT the corpus, and refuse to train on the eval clips --------
+# MEASURED LEAK: the v7.2 release is 4,572 train / 147 eval, disjoint -- but
+# raw B1 is 4,713 = 4,572 + 141 of those eval clips. Training on 'all of B1'
+# trains on 141 of the 147 eval clips, and the leak would not announce itself:
+# the eval would simply look good.
+TRAIN_DIR=/workspace/TanitAD/data/b1-train-v72
+EVAL_DIR=/workspace/TanitAD/data/b1-eval-v72
+EVAL_LABELS=/workspace/TanitAD/data/s2_labels_v7.2_eval.jsonl.gz
+if ! PYTHONPATH="$STACK" python3 "$STACK/scripts/refcv3_make_split.py" \
+      --cache "$CACHE" --train-labels "$LABELS" --eval-labels "$EVAL_LABELS" \
+      --out-train "$TRAIN_DIR" --out-eval "$EVAL_DIR"; then
+  echo "[gate5] REFUSING: could not build a disjoint train/eval split."
+  exit 2
+fi
+echo "[gate5] split built and verified disjoint"
+
 # --- launch ----------------------------------------------------------------
 # workers 4: MEASURED 3.32x over workers=0 (6.30 -> 1.90 s/step). Higher counts
 # died on the container's 1024-fd soft limit; `ulimit -n` above lifts that, but
@@ -105,8 +121,10 @@ mkdir -p "$OUT"
 echo "[launch] $(date -u +%FT%TZ) starting 30k"
 PYTHONPATH="$STACK" nohup python3 -u "$STACK/scripts/refc_v3_train.py" \
   --arm hier --size base \
-  --v2-cache "$CACHE" \
+  --v2-cache "$TRAIN_DIR" \
   --v7-labels "$LABELS" \
+  --eval-cache "$EVAL_DIR" --eval-labels "$EVAL_LABELS" \
+  --eval-every 100 --eval-batches 8 \
   --image-hw 256 640 \
   --steps 40284 --batch 20 --workers 4 --v2-lru 6 \
   --lr 1e-4 --warmup 2000 --seed 0 \
