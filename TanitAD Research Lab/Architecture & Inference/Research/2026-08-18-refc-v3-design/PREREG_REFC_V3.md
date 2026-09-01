@@ -185,6 +185,47 @@ reported as such.
   instrument control is unpowered → the experiment does not count either way; fix, re-register the
   amendment, and only then run.
 
+## 9b. ⚠️ READING RULE — THE HIERARCHY IS 2.5 % OF THIS ARM, AND THAT BOUNDS WHAT A NULL MEANS
+
+**Registered 2026-09-02, BEFORE the H−F read exists** (PI question: *"why is the
+hierarchy so small?"*). MEASURED at the launch rung:
+
+```
+REF-C v3 base   H 107,032,901  |  F 104,386,850  |  hierarchy 2,646,051 =  2.5 %
+refav1          174,114,868                      |  hierarchy 90,700,304 = 52.1 %
+v7 flagship (tiny rig, k8 run's own param_report)
+                 19,306,072    |  layer_tac 4,885,438 + layer_str 3,561,631
+                                                 |  hierarchy  8,447,069 = 43.8 %
+```
+
+⭐ **v3 is the ODD ONE OUT by a factor of ~20, and by design.** Its hierarchy is
+a *conditioning cascade* grafted onto an unmodified REF-C core — the levels do
+not predict, they STEER a decoder that does the work (`str_goal_head` is **771
+params**; `scorer` 1,156). refav1 and the v7 flagship instead give each level
+its OWN predictor, so the hierarchy is half the model.
+
+### What this licenses, and what it does not
+
+* ✅ **A POSITIVE H−F is unusually strong here.** 2.5 % extra capacity cannot
+  plausibly explain a real gain, so a win is attributable to the *mechanism*
+  rather than to parameters — cleaner than any arm where the hierarchy is half
+  the model.
+* ⛔ **A NULL H−F DOES NOT REFUTE HIERARCHY.** It refutes *goal-mediated
+  conditioning at 2.5 % capacity on a strong flat planner*. "The cascade had too
+  little capacity to express anything" is a LIVE alternative explanation and
+  must be stated in the result, not discovered afterwards. ⇒ a null here may
+  NOT be generalised to refav1 or the v7 flagship, whose hierarchies are 44–52 %.
+* ⚠️ **THE SIZE AXIS DILUTES THE THING UNDER TEST.** The cascade is ~2.1 M at
+  EVERY rung (`refc_v3_sized_config` moves the encoder only), so its share falls
+  **small 3.3 % → base 2.5 % → xl 1.2 %**. The PI's override to `base`
+  (D-REFCV3-SIZE) therefore makes a positive result more convincing and a null
+  *harder* to interpret. Registered now precisely so it cannot be reached for as
+  a post-hoc excuse.
+* **The discriminating follow-up, named in advance:** if H−F is null, the next
+  experiment is NOT "try xl" (which dilutes further) but a capacity-matched
+  cascade — widen `d_tac`/`d_gcond` until the hierarchy is a double-digit share
+  — or the `small` rung, where the same cascade is 3.3 %.
+
 ## 10. Amendment log
 
 *(empty at registration — any entry here must predate unblinding of the read it touches)*
