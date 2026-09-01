@@ -236,24 +236,53 @@ def main():
 
     t0, nb, nok = time.time(), 0, 0
     fails = []
-    with ProcessPoolExecutor(max_workers=a.workers,
-                             max_tasks_per_child=8) as ex:
-        futs = [ex.submit(build_one, (c, a.root, a.out)) for c in todo]
-        for i, fu in enumerate(as_completed(futs)):
-            cid, b, el, err = fu.result()
-            if err:
-                fails.append((cid, err))
-                print(f"[build] FAIL {cid[:8]}: {err}", flush=True)
-            else:
-                nb += b
-                nok += 1
-            if (i + 1) % 50 == 0 or (i + 1) == len(futs):
-                w = time.time() - t0
-                eph = nok / max(w, 1e-9) * 3600
-                left = (len(futs) - (i + 1)) / max(eph / 3600, 1e-9)
-                print(f"[build] {i+1}/{len(futs)} ok={nok} fail={len(fails)} "
-                      f"{nb/1024**3:.1f}GB {eph:.0f}eps/h "
-                      f"elapsed={w/60:.1f}min eta={left/60:.1f}min", flush=True)
+    # ⛔ CHUNKED, WITH A FRESH EXECUTOR PER CHUNK. MEASURED TWICE 2026-09-02:
+    # submitting all ~4,300 futures at once with max_tasks_per_child=8 hung the
+    # build at 384 and again at 448 — every worker gone, parent parked in
+    # futex_wait_queue, process still "alive" to ps and the log frozen for
+    # nearly two hours. fd exhaustion was RULED OUT the second time (limit
+    # raised to 65,536, only 12 fds open, 436 GB RAM free, no OOM), so the
+    # remaining suspect is a child dying during recycling and leaving
+    # as_completed waiting on a result that never arrives.
+    # ⇒ short executor lifetimes: a hang now costs ONE chunk, and the
+    # content-verified resume makes a restart nearly free (14 s scan).
+    CHUNK = 200
+    i = 0
+    for c0 in range(0, len(todo), CHUNK):
+        chunk = todo[c0:c0 + CHUNK]
+        # ⛔⛔ max_tasks_per_child REMOVED — IT WAS THE DEADLOCK, and the
+        # arithmetic is exact. Three stalls, three worker counts, and each hung
+        # after PRECISELY workers x 8 tasks:
+        #     48 workers -> hung at 384 new episodes (48*8 = 384)
+        #      8 workers -> hung at  64 new episodes ( 8*8 =  64)
+        #      6 workers -> hung at  48 new episodes ( 6*8 =  48)
+        # i.e. the exact moment EVERY child reaches its task limit and the pool
+        # must recycle them all at once; the parent then parks in
+        # futex_wait_queue with no workers left, still "alive" to ps.
+        # ⚠️ TWO EARLIER DIAGNOSES WERE WRONG and both were acted on: fd
+        # exhaustion (refuted -- limit raised to 65,536, only 12 fds open) and
+        # submit-everything-at-once (chunking helped nothing, because the hang
+        # happens INSIDE the first 200-task chunk). What settled it was not a
+        # theory but three data points fitting one formula.
+        with ProcessPoolExecutor(max_workers=a.workers) as ex:
+            futs = [ex.submit(build_one, (c, a.root, a.out)) for c in chunk]
+            for fu in as_completed(futs):
+                cid, b, el, err = fu.result()
+                i += 1
+                if err:
+                    fails.append((cid, err))
+                    print(f"[build] FAIL {cid[:8]}: {err}", flush=True)
+                else:
+                    nb += b
+                    nok += 1
+                if i % 50 == 0 or i == len(todo):
+                    w = time.time() - t0
+                    eph = nok / max(w, 1e-9) * 3600
+                    left = (len(todo) - i) / max(eph / 3600, 1e-9)
+                    print(f"[build] {i}/{len(todo)} ok={nok} fail={len(fails)} "
+                          f"{nb/1024**3:.1f}GB {eph:.0f}eps/h "
+                          f"elapsed={w/60:.1f}min eta={left/60:.1f}min",
+                          flush=True)
     w = time.time() - t0
     print(f"[build] DONE ok={nok} fail={len(fails)} {nb/1024**3:.2f}GB "
           f"in {w/60:.1f}min ({nok/max(w,1e-9)*3600:.0f}eps/h)", flush=True)
