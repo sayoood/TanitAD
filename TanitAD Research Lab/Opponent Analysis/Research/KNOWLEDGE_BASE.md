@@ -13,6 +13,32 @@
 > **LIBRARY** (`../../Library/`) = the evidence. Every `[PUBLISHED]` entry cites a **library key**,
 > not only a URL — bank it with `python tools/kb_add.py <arxiv-id> --tag <topic> --cited-by <report>`.
 
+- [2026-08-31] [PUBLISHED lib `2606.12987` FULL TEXT] ⭐⭐⭐ **THE ONE FRONTIER DRIVING WM WE VERIFIED WITH A REAL
+  COMMAND CHANNEL IS ALSO THE ONE THAT DIAGNOSED OUR P5 AND FIXED IT WITH P4's MECHANISM.** DiT World-Action Model
+  (2026-06-11, 150 held-out nuScenes scenes): *"Ego-vehicle actions are extracted from **CAN-bus data** as 2D
+  vectors aₜ=(steerₜ, accelₜ)"* — **our exact parameterisation, off the bus** ⇒ the clean one-variable comparison
+  for P2(b). It is *"genuinely action-controllable"* (Spearman **ρ 0.81 vs −0.18** for regression), and it
+  *"trace[s] limited single-pass motion to a **shared-present anchor**"* — P5's *"restating, not transporting"*,
+  named in a driving model — fixed by a **1.7 M-param Δt=4 jump model** `z_t→z_{t+4}` reaching **1.02× GT motion
+  magnitude** where single-pass captures *"less than half"*. ⭐ **The fix was a temporally abstract step, not a
+  better channel and not more capacity.** ⚠️ Latent diffusion (x₀ + residual anchoring), NOT teacher-forced JEPA,
+  and it changes several things at once — impact: **V7 gate P2(b)/P4/P5** — `2026-08-31-frontier-action-provenance-sweep/RESULT.md` F1/F2
+- [2026-08-31] [method/claim-hygiene] ⛔ **OUR OWN 2026-08-30 NOVELTY CLAIM IS *FLAGGED*, AND I REFUSED TO SETTLE
+  IT EITHER WAY.** *"A hold-action floor the model must beat — not found in any driving world model"* is now at
+  risk: `2607.15898` (Orbis 2) is **reported** to run counterfactual scaling against an unaltered-GT arm. That
+  report is **RELAYED** (a delegated sweep; I did not read the paper) ⇒ per this package's admissibility rule a
+  novelty claim may be **neither upheld nor retracted on relayed evidence**. ⭐ The verified near-miss is
+  `2606.12987`'s regression baseline at ρ −0.18 — a COMPARISON baseline, not a floor — so the claim survives that
+  one. **Assign the Orbis 2 read before the paper restates it** — impact: D-ANTIECHO-PRECEDENT sub-claim status —
+  same RESULT.md F3
+- [2026-08-31] [method/verification] ⭐ **TWO OF THREE LOAD-BEARING RELAYED CLAIMS FAILED MY OWN CHECK — a
+  pass-through would have banked two unsupported numbers.** (i) *"GAIA-2 conditions on speed and curvature"* → ⛔
+  `2503.20523`'s abstract **does not state the action parameterisation at all**, and reports **no** quantitative
+  controllability metric; attribution dropped. (ii) *"a blind probe scores 79.6 EPDMS vs human replay 74.0"* → ⛔
+  **not in `2608.04896`'s abstract**; the DIRECTION is verified (*"outrank human replay and PDM-Closed"*), the
+  numbers are not. (iii) the CAN-bus line → ⭐ confirmed verbatim at full text, and it was the sweep's most
+  valuable sentence. ⇒ **banking verifies existence/title/date; only reading verifies content** — impact: how
+  delegated sweeps are admitted — same PLAN.md step 3
 - [2026-07-24] [Avride/NHTSA] FACT — NHTSA ODI opened an investigation (**2026-05-08**) into **Avride**
   (Uber robotaxi partner, Yandex SDG lineage): **16 crashes + 1 minor injury**, all tied to **"the
   competence of"** the system — lane-changing, same-lane vehicle response, stationary-object response —
@@ -297,3 +323,13 @@
   **SGDrive** (2601.05640) "scene-to-goal *hierarchical* world cognition"; **DriveFuture** (2605.09701,
   1st NAVSIM-v2 navhard Apr'26); **EponaV2** (2605.14696); **Latent-WAM** (2603.24581) — impact: H1
   differentiator being explored (not yet with our combination); deep-read SGDrive next (Architecture) — https://arxiv.org/abs/2601.05640
+
+- [2026-08-31] [PUBLISHED/vendor-model-cards `nvidia/Alpamayo-1.5-10B` + `Alpamayo2-Super`] **NVIDIA ALPAMAYO IS AN OPEN REASONING-VLA FAMILY TRAINED ON OUR OWN CORPUS (`PhysicalAI-Autonomous-Vehicles` + `-NuRec`), AND ALPASIM - WHICH WE ALREADY RUN - IS PART OF THE SAME RELEASE (CES 2026-01-05, NOT the '2026-08-10' a secondary claimed).** We adopted the simulator and never registered the models shipped beside it.
+  impact: **first possible SAME-CORPUS external opponent; also a candidate offline labeller (3.0M VLM-generated Chain-of-Causation traces); INADMISSIBLE as our inference recipe - it consumes egomotion at inference** - `Frontier Scan/Daily/2026-08-31/RESULT.md` F3
+- [2026-08-31] [PUBLISHED/vendor-model-cards] **SCALE DOES NOT MOVE THE TRAJECTORY: 10.5B -> 34.3B changes open-loop minADE_6@6.4s by 0.916 -> 0.911 m (0.5%) and the stated closed-loop AlpaSim intervals OVERLAP (1.37+-0.10 vs 1.50+-0.13); the LANGUAGE score moves most (LingoQA 74.2 -> 79.2).**
+  impact: **strongest external support yet for the sub-300M thesis, and independent corroboration of EVAL_DOCTRINE's T0/T1 split. CAVEAT: minADE_6 is BEST-OF-6, never comparable to our fwd_ade** - `Frontier Scan/Daily/2026-08-31/RESULT.md` F4
+
+- [2026-08-31] [PUBLISHED-BLOG/waymo.com 2026-08-26, ADJUDICATED] **WAYMO'S 10 LESSONS CONTAIN ZERO CONTROLLED ABLATIONS - 200M miles is EXPOSURE, not an EXPERIMENT; there is no counterfactual Waymo, so the document cannot separate 'what we built' from 'what is necessary'.** L5 (closed-loop; open-loop traffic is *completely indifferent to your actions*) and L7 (fast/slow; VLMs *too slow for real-time control* and *lack sufficient spatial awareness*) are strong INDEPENDENT confirmation of our T0/T1 doctrine and our hierarchy thesis. L3's headline is self-undercut by its own concession to *teacher-student models to optimize onboard compute* - they train large and DEPLOY SMALL.
+  impact: **13 claims adjudicated into the new append-only OPPONENT_CLAIMS_REGISTER.md; 5 strategic + 4 tactical guidelines derived** - `Opponent Analysis/Research/2026-08-31-waymo-10-lessons-adjudication/RESULT.md`
+- [2026-08-31] [PUBLISHED lib `2606.03238`,`2604.13602` abstract-only] **WAYMO L6's 'CRITIC' INDEPENDENCE IS ASSERTED, NOT DEMONSTRATED** - a LEARNED critic trained on the policy's own distribution is exactly the configuration where evaluator failure CORRELATES with policy failure; optimisation *can raise the learned reward while external quality falls*.
+  impact: **adopt the Critic pattern, but every critic ships with a constant-only control and a raw-input floor - our own four-failure ridge-probe rule wearing an opponent's costume** - `Opponent Analysis/Research/2026-08-31-waymo-10-lessons-adjudication/RESULT.md` W-6

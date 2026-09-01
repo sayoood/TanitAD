@@ -109,7 +109,7 @@ DT = 0.1
 # ⛔ THE PRE-REGISTRATION, as data. Written BEFORE the first run.               #
 # --------------------------------------------------------------------------- #
 PREREG = {
-    "source": "TanitAD Research Hub/.../2026-08-16-anchor-goal-supervision/"
+    "source": "TanitAD Research Lab/.../2026-08-16-anchor-goal-supervision/"
               "ANCHOR_GOAL_SUPERVISION.md §4, deriving from "
               "V6F_PLANNER_DESIGN.md §3.1 B / §5.2 and the E-WC2 result.",
     "incumbent_sel_ade_m": 0.4714,        # §3.1's shipped supervised selector

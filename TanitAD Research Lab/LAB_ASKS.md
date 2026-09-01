@@ -21,7 +21,9 @@ question nobody knows was asked**.
 
 ---
 
-### ASK-1 · OPEN · TrainingFlyWheel · Architecture & Inference
+### ASK-1 · ANSWERED · TrainingFlyWheel · Architecture & Inference
+
+**A.** *answered 2026-09-01* -> `TanitAD Research Lab/Architecture & Inference/Research/2026-09-01-longhorizon-bptt-stability/RESULT.md`
 *asked 2026-08-31*
 
 **Q.** Does any published recipe train a 60-step full-chain BPTT rollout stably, and with what clip/schedule? Our k=60 arm diverged at clip 1.0 (gnorm 5.71 median -> 2.1e9) while k=8 was stable.

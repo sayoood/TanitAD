@@ -1,7 +1,7 @@
 """PH0 pilot runner — per-clip VLM/ego-algorithmic/SAM/Alpamayo labeling pipeline.
 
 Implements the PH0 mini-pilot per:
-  * `TanitAD Research Hub/Architecture & Inference/Implementation/incoming/
+  * `TanitAD Research Lab/Architecture & Inference/Implementation/incoming/
     2026-08-07-hierarchical-wm-redesign/VLM_STRATEGIC_LABELING.md` (two-pass
     protocol, fusion gate, output schema v0),
   * same dir `HIERARCHY_VOCABULARY.md` (vocabulary, constraint slots, and the

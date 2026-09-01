@@ -13,6 +13,32 @@
 > **LIBRARY** (`../../Library/`) = the evidence. Every `[PUBLISHED]` entry cites a **library key**,
 > not only a URL — bank it with `python tools/kb_add.py <arxiv-id> --tag <topic> --cited-by <report>`.
 
+- [2026-08-31] [PUBLISHED/navsim-official-README, verified today] ⭐⭐ **NAVSIM'S SCORING BASIS MOVED TWICE AND THE
+  VERSION STRING HIDES BOTH — one of the changes NAMES OUR PINNED SPLIT.** (a) **2025-04-28 (v2.2)**: *"Fixed bug
+  in `openscene_meta_datas` for `navhard` and `warmup`—If you used `navhard_two_stage/openscene_meta_datas` … please
+  re-download and use the new data"*; (b) **2025-09-29**: *"Fixed a bug in metric filtering where
+  `multiplicative_metrics_prod` and `weighted_metrics` were not correctly excluded by the human filter"* — the
+  reference-forgiveness machinery itself. **Latest release is STILL v2.2** ⇒ two numbers both labelled "navhard
+  EPDMS" on opposite sides of 2025-09-29 are not the same quantity, and nothing in the version reveals it. ⇒ ⭐
+  **RULE: every EPDMS/PDMS we quote carries the NAVSIM version AND changelog date, not just the split.** ⚠️ The
+  2026-08-29 navhard-two-stage pin is NOT challenged — it needs its date basis stated — impact: benchmark
+  portfolio, any comparability table — `../../Opponent Analysis/Research/2026-08-31-frontier-action-provenance-sweep/RESULT.md` F4
+- [2026-08-31] [PUBLISHED lib `2608.04896` abstract-only] ⭐⭐ **THE EXTERNAL PRECEDENT FOR OUR FLOOR-ARM DOCTRINE:
+  a NAVSIM audit where BLIND probes outrank human replay.** *"reference-conditioned forgiveness, under which an
+  agent receives credit when the logged human reference fails a compliance channel"* ⇒ *"the route-blind Ignore-All
+  probe and a route-aware actor-blind probe outrank human replay and PDM-Closed over the complete 12,146-token
+  navtest split."* **A score a policy ignoring the input can achieve is not measuring the named capability** — the
+  eval-side twin of the model-side failure we measure. ⛔ **FIVE scope conditions must travel with any citation:**
+  *NAVSIM v2.2 · original scene · **single-stage** · "the affected documented-stack condition" · "the audited
+  numerical backend"* ⇒ it does **NOT** automatically reach our navhard-**two-stage** target. ⛔ The circulating
+  79.6/74.0 figures are NOT in the abstract — UNVERIFIED, do not quote — impact: paper §methodology, portfolio
+  reading — same RESULT.md F4
+- [2026-08-31] [PUBLISHED lib `2606.12987`] ⭐ **A DISTORTION METRIC THAT REWARDS THE BLURRY MEAN IS THE VIDEO-DOMAIN
+  TWIN OF OUR REGRESSION-TO-MEAN ADE.** Verified: *"distortion metrics (cosine similarity, SSIM) favor the blurry
+  mean, masking that the diffusion model is far closer to the real frame distribution"* — **KID 0.078 vs 0.375
+  (4.8×)** between a diffusion and a regression model that the distortion metrics rank the other way. ⇒ an
+  independent, published statement of the failure our four-family rule exists to prevent, in a different metric
+  family — impact: metric-suite argument in the paper — same RESULT.md F2
 - [2026-08-30] [PUBLISHED/library] ⭐⭐ **OUR ANTI-ECHO SUITE IS STRICTER THAN THE FIELD'S — but the claim must be
   ACTION-SIDE only.** ⛔ *"open-loop is not driving performance"* is NOT novel (`1809.04843` 2018 · `2306.07962`
   2023 · `2505.05638` 2025 · `2605.00066` 2026) — claiming it invites a correct reviewer objection. ⭐ What IS
@@ -202,3 +228,6 @@
   metrology — impact: LAL-v2 justification / metric-gap thesis — https://www.sciencedirect.com/science/article/abs/pii/S0001457522002329
 - [2026-07-05] [kickoff] Initial research baseline for all hypotheses established; discipline agenda
   seeds defined — impact: all — see `../../INITIAL_RESEARCH_SYNTHESIS.md`
+
+- [2026-09-01] [MEASURED ours, census over `taniteval/results/`] **THE BINDING LONGITUDINAL DISTANCE-KEEPING FAMILY IS FED ON ZERO ARTIFACTS** - **0 of 71** readable JSONs carry a numeric `distance_keeping.*` value; **28** carry the key with one identical stale reason, *"no lead-agent state exists (lead_state is a None stub)"*; 43 never mention it; **4 are UNREADABLE from the dev box** (two independent APIs, 3 runs) and are declared UNKNOWN, not absent.
+  impact: **the instrument is present and ADMITTED and the refusal was retired 2026-08-18 - the gap is SUPPLY (`win["lead"]` never attached), a wiring task with no new science. ⚠️ Second gap the row missed: the 08-18 correction reached the PROSE and none of the 28 artifacts, which still assert what the source calls a STALE ABSENCE-CLAIM. Pin it with a test, as the "2 of 36" count had to be** - `Benchmarks & Evals/Research/2026-09-01-distance-keeping-fed-check/RESULT.md`

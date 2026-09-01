@@ -80,7 +80,7 @@ def disclose(script: str, *, goal_source: str = "oracle_gt_future",
         "deployable": not is_oracle,
         "rule": ("V4_FLAGSHIP_DESIGN.md:558-560 — no leaderboard number may "
                  "come from a GT-derived plan or a GT-derived goal"),
-        "spec": ("TanitAD Research Hub/Architecture & Inference/Implementation/"
+        "spec": ("TanitAD Research Lab/Architecture & Inference/Implementation/"
                  "incoming/2026-07-25-hpp0-confound-audit/"
                  "HPP0_CONFOUND_AUDIT.md §1.4, PC1 item #5"),
         "_read": (

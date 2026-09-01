@@ -214,7 +214,7 @@ PYEOF
 say "artifacts:"
 ls -la "$OUT" | sed 's/^/[ff-chain] /'
 say "⭐ BANK THESE: copy $OUT/*.json back to the repo under"
-say "   'TanitAD Research Hub/Architecture & Inference/Implementation/incoming/2026-08-07-hierarchical-wm-redesign/'"
+say "   'TanitAD Research Lab/Architecture & Inference/Implementation/incoming/2026-08-07-hierarchical-wm-redesign/'"
 say "   and git add them. An artifact on ONE disk is NOT done."
 echo "FF_EXIT=0"
 exit 0

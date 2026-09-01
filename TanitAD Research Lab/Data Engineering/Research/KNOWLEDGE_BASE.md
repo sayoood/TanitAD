@@ -250,3 +250,6 @@
   steering-ratio calibration residual — impact: H7 — `...-validation-and-h7.md` §3
 - [2026-07-05] [kickoff] Initial research baseline for all hypotheses established; discipline agenda
   seeds defined — impact: all — see `../../INITIAL_RESEARCH_SYNTHESIS.md`
+
+- [2026-09-01] [MEASURED ours, analytic trajectories + set arithmetic over source] **THE TWO `g_tac` PRODUCERS ARE NOT A FORK - THEY ARE NEAR-DISJOINT** - `g_tac_geom` REFUSES **3 of 4** of `tactical_goals`' LAT tokens and **5 of 8** of its LON tokens; A's only surviving LAT token is `LAT_UNCONSTRAINED`. LON agreement **1 of 7 scenarios (14.3 %)**, the one agreement being the clean-stop control (and there they agree to **0.06 m**: 16.4 vs 16.34 m). Both controls (K1 no-stop / K2 clear-stop) PASS, so the rate is interpretable.
+  impact: **row 7's "CORRIDOR_OFFSET 2-vs-1 threshold contest" is the WRONG QUESTION. Two admissibility defects measured instead: (a) A emits `SPEED_BAND` with provenance `geometry(held-speed)` - exactly the hindsight-ego substitution B's F-14 blocker names as inadmissible; (b) A's `CORRIDOR_OFFSET` reads **21.65 m** on a plain constant-curvature arc, 21x its own 1.0 m threshold, independently reproducing B's refutation** - `Data Engineering/Research/2026-09-01-gtac-producer-cross-agreement/RESULT.md`

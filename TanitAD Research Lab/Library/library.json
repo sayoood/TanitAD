@@ -957,12 +957,14 @@
    "sha256": "d0385798e8bada8e81b915c1743be81d9ce8776f12ed937e09351995e099ce37",
    "banked": "2026-08-23",
    "tags": [
+    "long-horizon-bptt",
     "rl-model-based",
     "rollout-composition"
    ],
-   "note": "DreamerV3: RL entirely inside a learned world model | DreamerV3: one-step RSSM, imagination horizon H=15 by composition (hp table p.21)",
+   "note": "DreamerV3: RL entirely inside a learned world model | DreamerV3: one-step RSSM, imagination horizon H=15 by composition (hp table p.21) | banked for ASK-1: long-horizon latent rollout training stability",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-29-ema-warmup-rollout-composition/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-01-longhorizon-bptt-stability/RESULT.md",
     "products/P4-training-pipelines/METHOD_LIBRARY.md"
    ]
   },
@@ -3505,11 +3507,13 @@
    "sha256": "99832c555b66665ad1e26cd48e75ea9dda4f3750175b993e7ed5b8dfe399b9e0",
    "banked": "2026-08-29",
    "tags": [
+    "long-horizon-bptt",
     "rollout-composition"
    ],
-   "note": "TD-MPC2: one-step latent model UNROLLED H=3 (lambda 0.5) in training; MPPI plans at H=3 - multi-step by unrolling, never separate per-horizon heads",
+   "note": "TD-MPC2: one-step latent model UNROLLED H=3 (lambda 0.5) in training; MPPI plans at H=3 - multi-step by unrolling, never separate per-horizon heads | banked for ASK-1: long-horizon latent rollout training stability",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-29-ema-warmup-rollout-composition/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-29-ema-warmup-rollout-composition/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-01-longhorizon-bptt-stability/RESULT.md"
    ]
   },
   "1906.08253": {
@@ -5941,11 +5945,13 @@
    "sha256": "261ba6134958bd7a040e36f862f6a43233069211f0035b3732e7466539b27097",
    "banked": "2026-08-30",
    "tags": [
+    "A1_world_models",
     "closed-loop-wm"
    ],
-   "note": "",
+   "note": "Latent WM taxonomy for AD (Zeng+Dong): proposes a closed-loop metric suite + resource-aware deliberation cost EXPLICITLY to reduce the open-loop/closed-loop mismatch; abstract-only",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-t1-floor-action-sensitivity/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-t1-floor-action-sensitivity/RESULT.md",
+    "TanitAD Research Lab/Frontier Scan/Daily/2026-09-01/RESULT.md"
    ]
   },
   "2405.04390": {
@@ -8208,11 +8214,13 @@
    "sha256": "499d7175d94e31debc3d3bfe7d724b046a1cb42cb4d965a7212e1215457d6517",
    "banked": "2026-08-31",
    "tags": [
+    "B2_post_transformer",
     "post-transformer"
    ],
-   "note": "Hybrid linear attention via distillation; RELAYED claim of ~25% of from-scratch training budget - BANKED FOR VERIFICATION, not yet read",
+   "note": "Hybrid linear attention via distillation; RELAYED claim of ~25% of from-scratch training budget - BANKED FOR VERIFICATION, not yet read | CORRECTION: this is 'Hybrid Linear Attention Done Right' (HypeNet/HyPE) - its efficiency claim is TRAINING-DATA (2.3B tokens to CONVERT a transformer to hybrid, <0.01% of pretrain, vs >10B prior), NOT the relayed 25% compute budget",
    "cited_by": [
-    "TanitAD Research Lab/Frontier Scan/Daily/2026-08-31/RESULT.md"
+    "TanitAD Research Lab/Frontier Scan/Daily/2026-08-31/RESULT.md",
+    "TanitAD Research Lab/Frontier Scan/Daily/2026-09-01/RESULT.md"
    ]
   },
   "2607.07663": {
@@ -8283,10 +8291,12 @@
    "sha256": "cebced1aaef59e790a4aa7c504cca7ed89038b71d13f2002712555883b6375db",
    "banked": "2026-08-31",
    "tags": [
+    "B12_memory_horizon",
     "memory-horizon"
    ],
-   "note": "Variable-Length Latent World Models: predict future latents conditioned on VARIABLE-LENGTH action sequences so one predictor evaluates plans across horizons - directly on our tactical-6s vs strategic-30s ladder",
+   "note": "Variable-Length Latent World Models: predict future latents conditioned on VARIABLE-LENGTH action sequences so one predictor evaluates plans across horizons - directly on our tactical-6s vs strategic-30s ladder | VLWM: one-step latent WMs recursively rolled out cause compounding errors AND a train/planning objective mismatch; variable-length action-conditioned prediction +13% avg over LeWM",
    "cited_by": [
+    "TanitAD Research Lab/Frontier Scan/Daily/2026-09-01/RESULT.md",
     "TanitAD Research Lab/Opponent Analysis/Research/2026-08-31-waymo-10-lessons-adjudication/RESULT.md"
    ]
   },
@@ -8369,10 +8379,12 @@
    "sha256": "3fdf4d3f42ff766a8c1ead17a25732244aba046e5fc284976286d3c1112f23ba",
    "banked": "2026-08-31",
    "tags": [
-    "3d-geometry"
+    "3d-geometry",
+    "B13_3d_geometry"
    ],
-   "note": "SparseOcc++: geometry-aware SPARSE latent representation for semantic occupancy - candidate answer to our 4x4 readout geometry ceiling",
+   "note": "SparseOcc++: geometry-aware SPARSE latent representation for semantic occupancy - candidate answer to our 4x4 readout geometry ceiling | SparseOcc++: decouples scene completion (signed-distance on sparse anchors) from semantic seg; +2.3 IoU and 3.9x faster than SparseOcc on nuScenes; ABSTRACT-ONLY - supervision requirements NOT stated",
    "cited_by": [
+    "TanitAD Research Lab/Frontier Scan/Daily/2026-09-01/RESULT.md",
     "TanitAD Research Lab/Opponent Analysis/Research/2026-08-31-waymo-10-lessons-adjudication/RESULT.md"
    ]
   },
@@ -8496,10 +8508,12 @@
    "sha256": "ff592bb7358b95d0de5492caa9ca8e429f6cd4ed645176a3ae0a43ca7fa4797f",
    "banked": "2026-08-31",
    "tags": [
+    "D1_opponent_doctrine",
     "vision-only"
    ],
-   "note": "Camera-only BEV perception without LiDAR - source to verify the 85.1% segmentation / 92.1% detection parity figures",
+   "note": "Camera-only BEV perception without LiDAR - source to verify the 85.1% segmentation / 92.1% detection parity figures | D-1 DEBT DISCHARGED: single-author, non-peer-reviewed, NO camera-vs-lidar controlled comparison (lidar is the GROUND TRUTH not a competing arm); 'up to 85%' road seg, 85-90% veh detect, and a 1.2 m positional error the relayed version omitted",
    "cited_by": [
+    "TanitAD Research Lab/Frontier Scan/Daily/2026-09-01/RESULT.md",
     "TanitAD Research Lab/Opponent Analysis/Research/2026-08-31-waymo-10-lessons-adjudication/RESULT.md"
    ]
   },
@@ -8528,6 +8542,122 @@
    "note": "Reasoning-Augmented Representations for Multimodal Retrieval - any-to-any retrieval where queries need latent reasoning",
    "cited_by": [
     "TanitAD Research Lab/Opponent Analysis/Research/2026-08-31-waymo-10-lessons-adjudication/RESULT.md"
+   ]
+  },
+  "2412.01522": {
+   "key": "2412.01522",
+   "kind": "arxiv",
+   "title": "InfinityDrive: Breaking Time Limits in Driving World Models",
+   "authors": [
+    "Xi Guo",
+    "Chenjing Ding",
+    "Haoxuan Dou",
+    "Xin Zhang",
+    "Weixuan Tang",
+    "Wei Wu"
+   ],
+   "published": "2024-12-02",
+   "abstract": "Autonomous driving systems struggle with complex scenarios due to limited access to diverse, extensive, and out-of-distribution driving data which are critical for safe navigation. World models offer a promising solution to this challenge; however, current driving world models are constrained by short time windows and limited scenario diversity. To bridge this gap, we introduce InfinityDrive, the first driving world model with exceptional generalization capabilities, delivering state-of-the-art performance in high fidelity, consistency, and diversity with minute-scale video generation. InfinityDrive introduces an efficient spatio-temporal co-modeling module paired with an extended temporal training strategy, enabling high-resolution (576$\\times$1024) video generation with consistent spatial and temporal coherence. By incorporating memory injection and retention mechanisms alongside an ad",
+   "url": "https://arxiv.org/abs/2412.01522",
+   "path": "TanitAD Research Lab/Library/papers/2412.01522_InfinityDrive-Breaking-Time-Limits-in-Driving-World-Models.pdf",
+   "bytes": 6372187,
+   "sha256": "856b1afba234de614d20593d76d8b9df540f30a5d40f8808ba64548a09e97d47",
+   "banked": "2026-09-01",
+   "tags": [
+    "long-horizon-bptt"
+   ],
+   "note": "banked for ASK-1: long-horizon latent rollout training stability",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-01-longhorizon-bptt-stability/RESULT.md"
+   ]
+  },
+  "2608.25017": {
+   "key": "2608.25017",
+   "kind": "arxiv",
+   "title": "Rollout-Decoded Reconstruction for Long-Horizon Prediction in Latent World Models",
+   "authors": [
+    "Rishi Shah",
+    "Rishav Shrestha"
+   ],
+   "published": "2026-08-25",
+   "abstract": "A latent world model trains its decoder on latents anchored to observations, then deploys it on the model's own free-running rollout, hundreds of steps past the last observation. Rollout-Decoded Reconstruction (RDR) closes this gap with a single loss term that free-runs the model during training exactly as evaluation will, decodes every rollout latent, and penalizes reconstruction error against ground truth. The term adds no parameters, costs training-time compute only, and reduces to the standard objective at weight zero, so every comparison in this paper is a one-flag A/B. On the chaotic Kuramoto-Sivashinsky equation, RDR raises valid prediction time (the time to first crossing of normalized error 0.5) from $3.87 \\pm 0.23$ to $6.97 \\pm 0.42$ time units at an identical 193,568 parameters, a $1.80\\times$ improvement confirmed on seeds never used in selection and holding in 10 of 10 prere",
+   "url": "https://arxiv.org/abs/2608.25017",
+   "path": "TanitAD Research Lab/Library/papers/2608.25017_Rollout-Decoded-Reconstruction-for-Long-Horizon-Prediction-i.pdf",
+   "bytes": 516430,
+   "sha256": "433875d8a3598513853e16ac3489ce5790551b5c933254405efa1b0408c26d83",
+   "banked": "2026-09-01",
+   "tags": [
+    "long-horizon-bptt"
+   ],
+   "note": "banked for ASK-1: rollout-horizon curriculum / looped latent rollouts",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-01-longhorizon-bptt-stability/RESULT.md"
+   ]
+  },
+  "2606.18208": {
+   "key": "2606.18208",
+   "kind": "arxiv",
+   "title": "Looped World Models",
+   "authors": [
+    "Hongyuan Adam Lu",
+    "Z. L. Victor Wei",
+    "Qun Zhang",
+    "Jinrui Zeng",
+    "Bowen Cao",
+    "Lingwei Meng",
+    "Mocheng Li",
+    "Zezhong Wang",
+    "Haonan Yin",
+    "Naifu Xue",
+    "Minyu Chen",
+    "Cenyuan Zhang"
+   ],
+   "published": "2026-06-16",
+   "abstract": "Current world models face a fundamental tension: faithful long-horizon simulation demands deep computation, but deeper models are expensive to deploy and prone to compounding errors. We resolve this by introducing Looped World Models (LoopWM), which are the first looped architectures for world modelling. Our method iteratively refines latent environment states through a parameter-shared transformer block. This yield up to 100x parameter efficiency over conventional approaches with adaptive computation that automatically scales depth to match the complexity of each prediction step. Orthogonal to scaling model size and training data, LoopWM establishes iterative latent depth as a new scaling axis for world simulation, which might significantly push the community forward.",
+   "url": "https://arxiv.org/abs/2606.18208",
+   "path": "TanitAD Research Lab/Library/papers/2606.18208_Looped-World-Models.pdf",
+   "bytes": 3764970,
+   "sha256": "48a47ba21470c9db7be889bb35db9ad11aa840a106b67e901e346828dc028e0a",
+   "banked": "2026-09-01",
+   "tags": [
+    "long-horizon-bptt"
+   ],
+   "note": "banked for ASK-1: rollout-horizon curriculum / looped latent rollouts",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-01-longhorizon-bptt-stability/RESULT.md"
+   ]
+  },
+  "2606.31672": {
+   "key": "2606.31672",
+   "kind": "arxiv",
+   "title": "WorldRoamBench: An Open-World Benchmark for Long-Horizon Stability of Interactive World Models",
+   "authors": [
+    "Ting-Bing Xu",
+    "Jiacheng Sui",
+    "Zhe Gao",
+    "Kewei Shi",
+    "Wenjin Yang",
+    "Zhicheng Liu",
+    "Zhaoxu Sun",
+    "Mingchao Sun",
+    "Hongyu Pan",
+    "Fan Jiang",
+    "Mu Xu",
+    "Qi Fan"
+   ],
+   "published": "2026-06-30",
+   "abstract": "Despite rapid progress in interactive world models (IWMs), existing benchmarks evaluate action following only at trajectory level and ignore memory and interaction physics. We introduce WorldRoamBench, an open-world benchmark for long-horizon stability across four dimensions, each with tailored innovations: (i) Action: per-frame action metric bypassing cross-model semantic scale disparity and exposing failures hidden by trajectory; (ii) Vision: segment-based drift metric capturing non-monotonic mid-sequence collapse missed by start-vs-end comparisons; (iii) Physics: controllability-gated evaluation over mechanics, optics, and 3D consistency, scoring plausibility under faithful action execution; (iv) Memory: action-decoupled protocol evaluating scene memory via transition-localized 3D point-cloud reconstruction and subject memory via tracking-plus-VLM reasoning. The benchmark comprises 60",
+   "url": "https://arxiv.org/abs/2606.31672",
+   "path": "TanitAD Research Lab/Library/papers/2606.31672_WorldRoamBench-An-Open-World-Benchmark-for-Long-Horizon-Stab.pdf",
+   "bytes": 35450974,
+   "sha256": "ed184e7662911fee1505ced355e196967920adac102658efc05508778c5c7d9a",
+   "banked": "2026-09-01",
+   "tags": [
+    "A5_benchmarks"
+   ],
+   "note": "WorldRoamBench: per-frame action metric exposes action-following failures HIDDEN by trajectory-level metrics; segment-based drift metric catches non-monotonic mid-sequence collapse; 10+ IWMs evaluated, NONE satisfies all four dimensions",
+   "cited_by": [
+    "TanitAD Research Lab/Frontier Scan/Daily/2026-09-01/RESULT.md"
    ]
   }
  }

@@ -198,7 +198,7 @@ P4_PREDICATE_IDENTITY = {
     "granularity": {"occ": "agent centre", "fov_mask": "cell centre"},
     "identity_evidence": "MEASURED 2026-08-16: 0/7680 cells disagree at hfov "
                          "30/60/90/117/120/150/179 deg; defaults bit-identical "
-                         "(ULP gap 0.0). Artifact: TanitAD Research Hub/"
+                         "(ULP gap 0.0). Artifact: TanitAD Research Lab/"
                          "Architecture & Inference/Implementation/incoming/"
                          "2026-08-16-p4-fov-predicate/raw/"
                          "p4_predicate_identity.json",

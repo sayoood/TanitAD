@@ -56,3 +56,12 @@ findings have been living inside other areas' reports. File them here.
   loop), `2603.08747` (NVFP4/MXFP4 layer-wise sensitivity = a prior on where fallback hurts). ⛔ CAUTION: a
   search summariser fabricated a concrete per-layer SQNR example attributed to a real NVIDIA blog — the blog does
   NOT contain those numbers — impact: quant-gate literature basis — same RESULT.md F7
+
+- [2026-08-31] [RELAYED lib `2601.22156` BANKED-BUT-UNREAD] Transformer->hybrid linear-attention DISTILLATION is claimed at ~25% of from-scratch training budget; an SSM/linear-attention predictor carries O(1) state rather than a growing KV cache.
+  impact: **the only architectural family that could make the K~300 strategic rollout fit the budget today's rollout-depth measurement says nothing else fits; RELAYED, so it may NOT decide a GPU-day until the primary is read** - `Frontier Scan/Daily/2026-08-31/RESULT.md` F5
+
+- [2026-08-31] [RELAYED/UNECE-GRVA trade summary 2026-07] **GRVA reportedly discussed 'the ban of online learning' in vehicles - this lands directly on INJECTED BACKLOG ROW I-3 (online encoder updates from T1 rollout disagreement at deployment).** If adopted, I-3 survives only as an OFFLINE/fleet-loop method, never an in-vehicle one.
+  impact: **constraint-to-VERIFY, not a constraint - it is a relayed report of a DISCUSSION and no GRVA primary was read. Read the primary BEFORE designing I-3** - `Frontier Scan/LEDGER_C3_regulatory.md`
+
+- [2026-09-01] [MEASURED ours, RTX 4060, 120 reps] **AT EQUAL ROLLOUT BUDGET, BREADTH COSTS 5.94x LESS THAN DEPTH** - B=960 predictor-steps spent as (N=16, K=60) costs **73.33 ms**; as (N=320, K=3) costs **12.34 ms**. Breadth grows only **11.1x for 960x the candidates** (flat to N~32 - extra candidates are FREE), while depth is linear in K. The terminal value head that buys a small K costs **0.150 ms = 1.2 %**, flat in N.
+  impact: **"equal budget" means two different things (steps vs latency) and they differ ~6x - a step-parity comparison silently handicaps the deep arm; TD-MPC2's H=3 is also the cheapest point on OUR measured budget surface. ⛔ COST half of injected I-1 only - the QUALITY half is untouched and is the real experiment** - `Deployment & Optimization/Research/2026-09-01-terminal-value-vs-fan-scoring/RESULT.md`

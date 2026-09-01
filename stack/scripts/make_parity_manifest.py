@@ -8,7 +8,7 @@ Three modes, in order of authority:
 
    Derives the train uid set from a committed pod-side scan of the canonical
    cache. The scan used is
-   ``TanitAD Research Hub/Data Engineering/Implementation/incoming/
+   ``TanitAD Research Lab/Data Engineering/Implementation/incoming/
      2026-07-25-v2-corpus-qa/parity_profile.csv``
    — 2 376 rows, one per ``ep_*.pt``, produced by ``parity_profile.py`` reading
    ``…/_epcache/physicalai-train-e438721ae894`` (``parity_profile.json``
@@ -63,7 +63,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from tanitad.data import parity                                    # noqa: E402
 
 REPO = Path(__file__).resolve().parents[2]
-HUB = REPO / "TanitAD Research Hub"
+HUB = REPO / "TanitAD Research Lab"
 DEFAULT_PROFILE_CSV = (HUB / "Data Engineering/Implementation/incoming/"
                        "2026-07-25-v2-corpus-qa/parity_profile.csv")
 CORPUS_PROFILE_JSON = (HUB / "Data Engineering/Implementation/incoming/"

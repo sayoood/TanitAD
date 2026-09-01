@@ -42,7 +42,7 @@ SOURCES, in the order you are likely to have one
 Usage
 -----
     python scripts/make_parity_clip_digests.py \\
-        --from-listing "TanitAD Research Hub/Architecture & Inference/\\
+        --from-listing "TanitAD Research Lab/Architecture & Inference/\\
 Implementation/incoming/2026-08-17-thor-concurrency-pilot/parity_ls.txt" \\
         --out tanitad/data/parity_train_clip_digests.json
 

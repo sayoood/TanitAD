@@ -180,7 +180,7 @@ DEFAULT_LAUNCH_SOURCES = (
     "stack/scripts/v6_chain.py",
     # the operator's 3 a.m. document; §2's launch lines are pinned against
     # `v6_chain.py commands` by stack/tests/test_runbook_commands.py
-    "TanitAD Research Hub/Architecture & Inference/Implementation/incoming/"
+    "TanitAD Research Lab/Architecture & Inference/Implementation/incoming/"
     "2026-08-07-hierarchical-wm-redesign/V6_GO_PACKAGE.md",
     # the gate battery runbook — where run_gate.py / gate_emitters.py come from
     "Project Steering/GATE_PROTOCOL.md",
