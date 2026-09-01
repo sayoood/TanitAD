@@ -590,6 +590,21 @@ def preflight(args) -> int:
     ds = V3Dataset(eps, window=cfg.core.window, max_horizon=20,
                    channels=cfg.core.encoder.in_channels)
     batch = torch.utils.data.default_collate([ds[0], ds[1]])
+    # ⛔ THE PREFLIGHT MUST EXERCISE THE LAUNCH CONFIG, NOT A NEIGHBOUR OF IT.
+    # MEASURED 2026-09-02: with --v7-labels the model is built with 8-wide
+    # z_tac heads, but the synthetic preflight corpus carries no v7 records, so
+    # the loss fell back to kin3 and the vocabulary refusal fired — the gate
+    # working correctly on a config nobody would launch. A preflight that can
+    # only pass in a shape the real run never takes is not a preflight, so the
+    # synthetic batch is given v7-SHAPED labels (one in-band row and one
+    # ignored row, which also exercises the -100 path the real corpus produces
+    # on ~76 % of windows).
+    if getattr(args, "v7_labels", None):
+        n_lat, n_lon = len(v7l.HEADS["tac_lat"]), len(v7l.HEADS["tac_lon"])
+        batch["lat_v7"] = torch.tensor([0, v7l.IGNORE_ID], dtype=torch.long)
+        batch["lon_v7"] = torch.tensor([n_lon - 1, v7l.IGNORE_ID],
+                                       dtype=torch.long)
+        assert n_lat >= 1 and n_lon >= 1
     losses = compute_losses_v3(model, batch, "cpu", mode="diffusion")
     bad = [k for k, t in losses.items()
            if torch.is_tensor(t) and not bool(t.isfinite().all())]
