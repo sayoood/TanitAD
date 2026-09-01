@@ -1,188 +1,270 @@
-# B1 epcache on the A40 pod — it already existed; PULLED, not rebuilt
+# B1 epcache on the A40 pod — the corpus that was needed, built
 
-**Stream:** Data Engineering FlyWheel · **Wall-clock date:** 2026-09-01 (the
-directory carries the coordinator's `2026-09-02` label so their cross-references
-resolve; the measurements below are 2026-09-01).
-**Pod:** A40 46 GB / 96 CPU / 503 GB RAM, `69.30.85.211:22001`.
-**Outcome:** the cache REF-C v3 needs is **on the pod, content-verified, ready**.
-No build was run.
+**Stream:** Data Engineering FlyWheel · **Wall-clock:** 2026-09-01 (directory
+carries the coordinator's `2026-09-02` label so their cross-references resolve).
+**Pod:** A40 46 GB, `69.30.85.211:22001`.
+
+Two phases. Phase 1 pulled the published **parity** cache (2,400+600) and proved
+it was the wrong corpus for this launch. Phase 2 built the **B1** cache the
+launch actually needs. Both are on the pod, in separate directories.
 
 ---
 
 ## 1. Headline
 
-The epcache was **already built and pushed** — the PI's recollection was
-correct. It is published at
-
-> **`Sayood/tanitad-physicalai-w120-256x640cyl`**
-> `physicalai-train-e438721ae894-w120-256x640cyl/` — **2,400 `.v2ep.pt`, 79.15 GB**
-> `physicalai-val-0c5f7dac3b11-w120-256x640cyl/` — **600 `.v2ep.pt`, 19.75 GB**
-
-Pulling it took **2.1 min at 622.8 MB/s** against a rebuild costed at
-**3.4–4.6 h**. Every payload was opened and checked.
-
 | | MEASURED |
 |---|---|
-| train CONTENT-VERIFIED | **2,400 / 2,400 · BAD 0** |
-| val CONTENT-VERIFIED | **600 / 600 · BAD 0** |
-| reference-sample identity | **24 / 24 md5-identical** |
-| downlink | **622.8 MB/s** (train), 589.9 MB/s (val) |
+| **B1 corpus size** | **4,713 clips — NOT 4,719** (§3) |
+| B1 build throughput | **~980 eps/h** steady state, 48 workers (§6a) |
+| B1 ETA | **~4.7 h**, finishing ≈12:30 local (started 07:44) |
+| Contract test | **`jpeg_buf` BYTE-IDENTICAL** to the verified parity payload (§4) |
+| parity cache (fallback) | train 2,400/2,400 + val 600/600 CONTENT-VERIFIED, BAD 0 |
+| pod CPU ceiling | **7.65 cores, not 96** (§6) |
 
 ---
 
-## 2. ⚠️ A NAMING CORRECTION THE READER MUST NOT SKIP
+## 2. Why B1 and not parity — the label measurement
 
-**What is on the pod is the canonical PARITY corpus (2,400 clips), not a
-4,719-clip "B1".** These are two different corpora and the brief used one name
-for both:
+The coordinator measured v7.2 label coverage per corpus, and it is decisive:
 
-* `v2_compressed._ensure_ego`'s docstring records *"MEASURED 2026-08-30 on B1:
-  **4,719 clips** spread over 1,411 chunks"*, and
-  `Sayood/tanitad-v7-training-corpus` (the source the brief named) holds
-  **4,719** `.mp4`. On that reading **B1 = the 4,719-clip v7 corpus, and no
-  epcache for it exists anywhere** (§3).
-* What was published, and what the pod's own 24 reference payloads are drawn
-  from, is the **2,400-clip canonical train corpus, parity key
-  `e438721ae894`, skip-hash `f09e44db`** — the corpus `CLAUDE.md` calls sacred.
+| corpus | clips with a v7.2 label |
+|---|---|
+| parity 2,400 | 190 = **7.9 %** |
+| **B1 4,713** | **4,572 = 97.0 %** |
+| val 600 | 47 = 7.8 % |
 
-⇒ **If REF-C v3 is meant to train on the canonical parity corpus, it is
-unblocked right now.** If it was genuinely meant to train on all 4,719 v7 clips,
-that cache does not exist and is a **4 h build** — a PI/coordinator decision,
-not one I should take. Flagged, not assumed. *(Class: an identifier that omits
-its scope is not an identifier.)*
+Training the tactical/strategic heads on parity would supervise them on under
+8 % of windows. Independently reproduced here: `|v7.2 train labels ∩ B1| =
+4,572`, and B1 partitions **exactly** into 4,572 train + 147 eval labels with
+**zero unlabelled and zero train/eval intersection**.
 
----
+## 3. ⛔ THE CORPUS IS 4,713, NOT 4,719 — and I nearly built the wrong number
 
-## 3. How I established absence — two independent probes
-
-*Absence found at one location is not absence.*
-
-1. **HF API, full namespace, paginated.** `whoami-v2` → `Sayood`. Enumerated
-   **18 datasets + 26 models**, then walked each candidate's
-   `tree/main?recursive=true`. Exactly **two** repos contain any `.v2ep.pt`:
-   the w120 repo above (3,000) and `Sayood/tanitad-transfer-2026-08` (20 — a
-   duplicate val subset). `tanitad-v7-training-corpus` was walked to
-   completion: **4,744 files / 59.30 GB / 5 pages / ZERO `.v2ep.pt`** and no
-   epcache tar or zip shard — only `timestamps/timestamps.tar` (53 MB) and
-   `egomotion/`, in **subdirectories**, as the coordinator asked.
-2. **The repos' own manifests.** The w120 `README.md` and both
-   `_geometry.json` files declare the geometry and the parity key
-   independently of the file listing; the v7 `DATACARD.md` describes a
-   **camera-retrieval contract** (pull mp4s by HTTP range read), i.e. it
-   documents itself as a *source* corpus, not a built cache.
-
-⛔ **PAGINATION WAS LOAD-BEARING AND NEARLY COST THE ANSWER.** My first pass
-read one page and reported the w120 repo as *"993 files, 990 `.pt`, no
-`.v2ep.pt`"* — which would have concluded **"the cache does not exist"** and
-sent me into a 4 h rebuild. The repo actually holds **6,061 files / 424 GB**
-across 7 pages; the first page was all legacy raw `ep_NNNNN.pt` (117,381,403 B
-each — the 117.4 MB raw-uint8 figure from `CLAUDE.md`), and every `.v2ep.pt`
-lived on later pages. The same truncation understated
-`tanitad-ph0-aug120` as 909 files (actually 7,241).
-⇒ **A tree listing at exactly-or-near the page limit is a truncation until the
-`Link rel="next"` header says otherwise.** Same family as the `df` / Thor
-`free` / cgroup `usage_in_bytes` traps: a probe reporting the wrong scope,
-read as an answer. Guarded in the tool's `list_files` docstring.
-
----
-
-## 4. The schema I verified against
-
-From the repo's `_geometry.json`, matching the pod's 24 reference payloads at
-`/workspace/TanitAD/data/eps/` field-for-field:
+The brief, the DATACARD and the camera directory all say **4,719**. The parity
+instrument, run on those 4,719 ids, says:
 
 ```
-frame            {"height":256,"width":640,"f_ref":305.5774907364391,
-                  "projection":"cylindrical"}
-frame_tag        256x640f305.5775cyl
-projection_mode  cylindrical
-codec            png          <-- LOSSLESS, load-bearing
-n_stack          3
-geometry_check   requested_hfov 120.0 -> achieved 120.0, f_eff 305.5775,
-                 observed_frac 0.9348642592 (POPULATION of 600, not one clip)
-keys             jpeg_buf jpeg_len actions poses n_stack image_size episode_id
-                 clip_id quality image_h image_w frame projection_mode codec
+201 in physicalai-train-e438721ae894
+6 of 40 deployed-val episodes          (15 % of that episode set)
+DROPPED 6 -- "The corpus is 4713 clips; quote THAT number, never 4719."
 ```
 
-The `codec: png` is **not a speed knob** — `v2_dataset.py:325` and
-`slice_v2_cache.py` refuse to sub-frame a lossy cache, so only a PNG cache can
-be sliced to the `176x624` sub-frame the README names without a rebuild. The
-published cache is PNG, so that route stays open.
+Dropped: `01acc9de 026ef99a 030011f7 07f7b41f 09759d8c 0c99c815`.
+Those 6 sit inside the **40-episode val deployment behind every published
+open-loop number**, so a 4,719-clip build puts val episodes into training.
 
-`observed_frac 0.9348` is a real property, not a defect: the front-wide camera
-is **two rigs** whose principal points differ ~211 px vertically, so a
-120°×45.456° request over-runs rig B's sensor and the rectifier masks ~8.9 % of
-every rig-B frame. The manifest carries a dated `corrections` block recording
-that this figure was restamped from a false `1.0` that came from probing **one**
-clip. Consumers should read it.
+**My first launch built all 4,719.** It was caught by a background repo search
+that surfaced an earlier Thor build of the same corpus at **4,713** — the
+discrepancy is what sent me to the instrument. ⇒ The gate is now **run inside
+the driver** (`pod_build_b1_epcache.py`), not assumed, and the dropped ids are
+written into `_build_manifest.json`. A driver that calls `build_compressed`
+directly bypasses `v2_compressed.build`'s gate entirely; that bypass is silent,
+and this is the second time in this programme a gate mattered only because
+something else contradicted the headline number.
 
-## 5. Content verification — what "verified" means here
+⚠️ **A wider overlap remains and is deliberately NOT dropped:** `|B1 ∩ val600|
+= 56`, `|B1 ∩ parity2400| = 201`. Only the val40 set disqualifies a training
+corpus. But **47 of the 600 val episodes are inside B1's training set**, so a
+B1-trained arm's numbers on val600 are contaminated for those 47. State that
+before comparing a B1 arm to any val600 figure.
 
-⛔ *Verify by content, never by presence.* A pre-allocated or aborted file sits
-at full size and reads as zeros. Each of the 3,000 payloads was opened and
-required to satisfy **all** of:
+## 4. The contract test — byte-identical, not merely "same schema"
 
-* `torch.load` succeeds
-* `jpeg_len.shape[0] > 0`
-* `poses.shape[0] == actions.shape[0] == jpeg_len.shape[0]`
-* `jpeg_buf.numel() == jpeg_len.sum()` (no truncated tail)
-* `image_h/image_w == 256/640`, `projection_mode == cylindrical`,
-  `codec == png`, `n_stack == 3`
-* **a real `decode_png` of frame 0 returns `(3,256,640)` with `max() > 0`**
+Exactly **one** clip (`13141fac-…`) is in both B1 and the 24 verified parity
+reference payloads. Building it through the new driver and diffing every field
+against the known-good payload:
 
-Result: **train 2,400/2,400 in 50 s; val 600/600 in 20 s; BAD = 0; zero stray
-`.tmp`.** Reported as a *content-verified count*, never a file count.
+```
+keys equal: True
+actions (201,2) equal=True      poses (201,4) equal=True
+jpeg_buf (38544640,) equal=True jpeg_len (201,) equal=True
+frame {'height':256,'width':640,'f_ref':305.5774907364391,
+       'projection':'cylindrical'} equal=True
+codec 'png'  projection_mode 'cylindrical'  n_stack 3  quality 90
+image_h 256  image_w 640  image_size 256  episode_id 825438516   ALL equal
 
-**Independent confirmation of identity:** all **24/24** payloads that already
-sat on the pod are **md5-identical** to the ones pulled — so this is the same
-artifact those samples came from, not a lookalike at the same geometry.
+jpeg_buf md5 parity: bef95bf18bf6e92d4226f06ddb55adc3
+jpeg_buf md5 B1    : bef95bf18bf6e92d4226f06ddb55adc3
+PIXELS BYTE-IDENTICAL: True
+```
 
-## 6. Throughput MEASURED
+This is stronger than a schema check: it proves the **v7 provider egomotion
+yields the same poses** as PhysicalAI's per-chunk egomotion zips, and that the
+whole decode → cylindrical-rectify → PNG path reproduces the published cache
+bit-for-bit. Re-run and still identical after the intrinsics table was trimmed.
 
-| phase | n | bytes | rate | wall-clock |
-|---|---|---|---|---|
-| probe (16 workers) | 24 | 0.80 GB | 307.8 MB/s | 4 s |
-| train (24 workers) | 2,376 | 78.35 GB | **622.8 MB/s** | **2.1 min** |
-| val (24 workers) | 600 | 19.75 GB | 589.9 MB/s | 0.6 min |
-| verify train (24 proc) | 2,400 | 80 GB read | — | 50 s |
-| verify val (24 proc) | 600 | 20 GB read | — | 20 s |
+## 5. What made the build possible — three input adapters, each content-checked
 
-Pod disk after: **100 GB** used by the two caches; a real `dd` write still
-returns **480 MB/s** (never judged by `df`).
+The v7 corpus ships a **flat per-clip layout**, not PhysicalAI's per-chunk zips.
+Staged at `/workspace/v7build/`:
 
-Verification is fanned out across **processes** with `OMP_NUM_THREADS=1` and
-`torch.set_num_threads(1)` — torch spawns ~113 threads per process and an
-unpinned pool stalls in a way that looks exactly like a hang.
+* **camera** — the mp4s **are** shipped in the v7 repo (4,719, 57.4 GB), pulled
+  in **3.2 min at 307.7 MB/s**, 0 failures. ⚠️ `DATACARD.md` says *"Not shipped
+  (~47 GB)"* and documents an HTTP-range retrieval contract against nvidia's
+  zips — **that is stale**; the bytes were pushed on 2026-08-30, after the card
+  was written. Reading the card alone would have cost a needless range-read path.
+* **timestamps** — `timestamps.tar` → 4,719 `<clip>.timestamps.parquet`.
+* **egomotion** — the loader `physicalai.load_egomotion` opens a **ZIP** and
+  wants `<clip_id>.egomotion.parquet`; the corpus ships a **TAR** of
+  `<clip_id>.parquet`. Repacked once into a single STORED zip with the expected
+  member names, so the loader runs **unmodified**. Measured cost 0.30 s/call —
+  checked explicitly because it was my prime suspect for the slow start, and it
+  was **not** the cause.
+* **intrinsics** — pulled 1,411 `camera_intrinsics` chunk parquets from nvidia
+  (39 s, 0 errors) → per-clip CSV covering **4,719/4,719**, rig clusters
+  A median 541.9 / B median 754.2, matching the documented A≈542/B≈753 split.
+  ⛔ Load-bearing: without a per-clip table the crop silently reverts to
+  geometric-centre, ~215 px wrong for rig B — **the majority of this corpus**.
 
-## 7. Failures
+## 6. ⛔ THE POD HAS 7.65 CPUs, NOT 96 — the brief's premise was wrong
 
-**None.** 0 download failures, 0 content failures, 0 excluded episodes across
-both splits.
+The brief said *"You have 96 CPUs — PARALLELISE the encode"*. Every standard
+probe agrees with that and every one of them is answering the wrong question:
 
-## 8. Deliverables
+```
+nproc                      96
+os.sched_getaffinity(0)    96
+cpuset.cpus.effective    0-95
+cpu.cfs_quota_us      765000   <-- the real ceiling
+cpu.cfs_period_us     100000       765000/100000 = 7.65 CPUs
+```
+
+The signature that exposed it: all 48 workers sat at **exactly 15.8 % CPU**;
+48 × 15.8 = 758 % ≈ the 765 % quota. `top` confirms **78.3 % idle** system-wide
+while 45 processes are in `R`.
+
+⇒ **More workers cannot help — throughput is quota-bound.** This is the `df` /
+Thor `free` / cgroup `usage_in_bytes` family exactly: a probe reporting the
+wrong scope, read as an answer — and here it came from the brief, not the box.
+
+### 6a. ⚠️ A RATE MEASURED IN ONE WINDOW IS NOT A RATE — I quoted 1,560 eps/h and it was wrong
+
+My first throughput reading was **39 episodes in 90 s = 1,560 eps/h**, and I
+reported an ETA of 3.0 h from it. That window was a **startup burst**: all 48
+workers began simultaneously, so their *first* episodes completed within
+seconds of one another and the window happened to sit on that cohort boundary.
+
+Three samples tell the real story:
+
+| sample | rate |
+|---|---|
+| 90 s window over the first cohort | 1,560 eps/h *(artifact)* |
+| 180 s window at steady state | **980 eps/h** |
+| build's own cumulative counter | 559 → 721 eps/h, still amortizing startup |
+
+⇒ **~980 eps/h, ETA ~4.7 h.** Single-process was 173 eps/h, so 48 workers buy a
+**5.7×** speed-up on a 7.65-core quota. ⇒ **Sample a periodic process at least
+twice, on windows that do not align with its period, before quoting a rate** —
+and prefer the build's own cumulative counter once it has amortized. This is
+the "verify before alarming / take multiple samples" rule with the sign
+flipped: the single sample was not a false alarm, it was false *reassurance*,
+which nobody goes looking for.
+
+## 7. Two self-inflicted errors, logged because they are the cheap lessons
+
+1. **A join on a mis-sliced stem produced a confident false negative.** I
+   computed corpus stems with `basename[:-4]` against `.parquet` (8 chars),
+   yielding `<uuid>.par`, and reported *"v7.2 train labels inside B1: 0/4572"* —
+   flatly contradicting the coordinator's 97 %. The identifiers were fine; my
+   slice was not. Corrected by removing the **real** suffix length and
+   cross-checking three independent stem sources (camera == egomotion ==
+   timestamps, all True). *An identifier is only as good as the operator that
+   produced it.*
+2. **A missing output directory burned 10 minutes and produced nothing.** The
+   `torch.save` is the **last** step of a ~20 s decode+encode, so a probe
+   pointed at a non-existent dir paid full price per episode and failed at the
+   final line — looking exactly like a slow build. Same family as the
+   analysis-time import that dies after the rollout. `build_one` now creates the
+   directory before doing any work.
+
+## 8. Verification contract (unchanged from phase 1, applied per episode)
+
+Each payload is verified **inside the build**, and a failure deletes the file so
+it is rebuilt on resume: `torch.load` succeeds · `jpeg_len>0` ·
+`poses==actions==jpeg_len` · `jpeg_buf.numel()==sum(jpeg_len)` ·
+`image_h/w==256/640` · `projection_mode==cylindrical` · `codec==png` ·
+`n_stack==3` · **a real `decode_png` of frame 0 returning `(3,256,640)` with
+`max()>0`** (the all-zero-bank trap). Resume is **by content**: on restart every
+payload on disk is re-verified in parallel and any that fails is discarded, so
+"already built" can never mean "present but broken".
+
+## 9. Eval-split measurement (requested — measured, NOT built)
+
+All **147** v7.2 eval clips are inside B1. B1 = 4,572 train + 147 eval exactly.
+
+| where the 147 eval clips live | n |
+|---|---|
+| inside B1 (4,719 as shipped) | **147** |
+| inside val600 | 9 |
+| inside parity2400 | 11 |
+| in none of the three | **0** |
+
+⇒ **The eval split should be built from the 147 clips, which are already inside
+B1.** Two consequences for whoever builds it:
+
+* **2 of the 147 are among the 6 val40 clips the parity gate drops**, so they
+  will not exist in the built train cache — the eval split must be built as its
+  own directory, from the full 4,719, not by selecting out of the 4,713.
+* 9 of the 147 are also in val600; they are *not* trained on, so they are safe
+  as eval — but they are not independent of legacy val600 numbers.
+
+Clip ids banked at pod `/workspace/v7src/split_measure.json`.
+
+## 10. ⚠️ ESCALATION — a 4,713-episode B1 cache ALREADY EXISTS ON THOR
+
+A background repo search found `/home/nvidia/data/physicalai-b1-w120-256x640cyl`
+on **Thor** — **4,713 episodes / 177,998,547,213 B (~178 GB)**, `_geometry.json`
+sha `f0d34b84` (`Project Steering/SPEC_V7_LABEL_TRAINER_WIRING.md:219-221`;
+`…/2026-09-01-refcv3-training-readiness/READINESS.md:58-62`). It was **never
+pushed to HF**, which is why the phase-1 HF sweep could not see it — that sweep
+covered the HF namespace and the pod, **not Thor**, so its "exists nowhere" was
+true of where it looked and false of the programme.
+
+**This does not make the pod build redundant** — REF-C v3 trains on the pod, and
+moving 178 GB off Thor over wifi is slower than the 3 h rebuild. It matters
+because (a) it independently corroborates **4,713**, and (b) **no script in the
+repo has ever pushed a `.v2ep.pt` cache**; both B1 builds are single-disk
+artifacts. That is the "finish before you start" rule unmet twice over.
+
+## 11. ⛔ BANK THIS — a tree listing near 1,000 entries is a TRUNCATION
+
+The HF tree API caps at 1,000 entries per page. A single-page read of
+`Sayood/tanitad-physicalai-w120-256x640cyl` returns **993 files** — a number
+that looks like a complete small repo, and whose first page is entirely legacy
+raw `ep_NNNNN.pt`. The repo actually holds **6,061 files / 424 GB over 7 pages**,
+with every `.v2ep.pt` on later pages. **That truncation would have concluded
+"the cache does not exist" and triggered a needless 4 h rebuild.** It also
+understated `tanitad-ph0-aug120` as 909 files (actually 7,241).
+
+⇒ **Follow `Link: rel="next"` until absent; treat any count at or near the page
+limit as unproven.** Guarded in `pod_pull_b1_epcache.list_files`'s docstring.
+
+## 12. Deliverable manifest
 
 | artifact | location |
 |---|---|
-| puller + content-verifier | repo `stack/scripts/pod_pull_b1_epcache.py` (staged) |
-| these notes | repo `TanitAD Research Lab/Data Engineering/Implementation/incoming/2026-09-02-pod-b1-epcache/BUILD_NOTES.md` (staged) |
-| train cache, 2,400 verified | pod `/workspace/TanitAD/data/b1-epcache/` (80 GB) + `_geometry.json` |
-| val cache, 600 verified | pod `/workspace/TanitAD/data/b1-epcache-val/` (20 GB) + `_geometry.json` |
-| pull log | pod `/workspace/b1build.log` |
-| verify log | pod `/workspace/b1verify.log` |
-| script on pod | pod `/workspace/pod_pull_b1_epcache.py` (md5 `5318f7888afe2ce2fb99b89ce6bf3ee4`, identical to the repo copy) |
+| B1 build driver | repo `stack/scripts/pod_build_b1_epcache.py` (staged) |
+| puller + content-verifier (generalised) | repo `stack/scripts/pod_pull_b1_epcache.py` (staged) |
+| these notes | repo `…/incoming/2026-09-02-pod-b1-epcache/BUILD_NOTES.md` (staged) |
+| **B1 cache (building, 4,713)** | pod `/workspace/TanitAD/data/b1-epcache-4719/` + `_build_manifest.json` |
+| B1 build log | pod `/workspace/b1build4719.log` |
+| parity train cache (fallback) | pod `/workspace/TanitAD/data/b1-epcache/` (2,400, 80 GB) |
+| parity val cache | pod `/workspace/TanitAD/data/b1-epcache-val/` (600, 20 GB) |
+| staged v7 inputs | pod `/workspace/v7build/` (camera, timestamps, egomotion zip, intrinsics CSV) |
+| parity gate record | pod `/workspace/v7src/parity_gate.json`, `b1_kept.txt` |
+| eval-split measurement | pod `/workspace/v7src/split_measure.json` |
 
-Train and val are in **separate directories on purpose** — merging them would
-put val episodes inside a train cache, which is exactly what the parity ingest
-gate in `v2_compressed.build` exists to refuse.
+⚠️ The output directory is named `b1-epcache-4719` (as instructed) but holds
+**4,713** episodes. The count in the directory name is wrong by design of the
+instruction; `_build_manifest.json` carries the true number and the dropped ids.
 
-## 9. Escalations
+## 13. Escalations
 
-1. **Decide which corpus REF-C v3 trains on** (§2): the canonical 2,400-clip
-   parity cache (ready now) or a 4,719-clip v7 build (~4 h, does not exist).
-   This is the only thing between here and a launch.
-2. **The pod holds no source data** — no mp4, no timestamps parquet, no
-   PhysicalAI root. A v7 build would first pull ~47 GB of camera from
-   `tanitad-v7-training-corpus`; budget that on top of the build.
-3. **`Sayood/tanitad-transfer-2026-08`** carries 20 val `.v2ep.pt` duplicating
-   the w120 val dir — a redundant copy worth retiring once someone confirms
-   nothing points at it.
+1. **Neither B1 cache has ever been pushed** (§10). Both are single-disk.
+2. **`|B1 ∩ val600| = 56`** (§3) — 47 in the training set. Any B1-vs-val600
+   comparison needs this stated.
+3. **The v7 `DATACARD.md` camera section is stale** (§5) — it says the mp4s are
+   not shipped; they are.
+4. **The pod is a 7.65-core box** (§6). Any future "we have 96 CPUs" plan for
+   this pod is wrong.
+5. **The eval split must be built from the full 4,719**, not the 4,713 (§9).

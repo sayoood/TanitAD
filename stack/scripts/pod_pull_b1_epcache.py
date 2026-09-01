@@ -84,7 +84,7 @@ def _curl(url, tok, out=None, dump_hdr=None):
                           capture_output=out is None)
 
 
-def list_files(subdir, tok):
+def list_files(subdir, tok, repo=REPO, suffix=".v2ep.pt"):
     """Paginated tree listing.
 
     ⛔ PAGINATION IS LOAD-BEARING. The tree API caps at 1,000 entries per page
@@ -93,7 +93,7 @@ def list_files(subdir, tok):
     truncation is what made an earlier probe report "990 .pt files" for a repo
     that actually holds 3,000 .v2ep.pt. Follow the Link rel="next" header.
     """
-    url = (f"https://huggingface.co/api/datasets/{REPO}"
+    url = (f"https://huggingface.co/api/datasets/{repo}"
            f"/tree/main?recursive=true&limit=1000")
     hdr = "/tmp/_hfhdr.txt"
     out, pages = [], 0
@@ -118,7 +118,7 @@ def list_files(subdir, tok):
     pref = subdir + "/"
     return sorted(((f["path"], f.get("size", 0) or 0) for f in out
                    if f["path"].startswith(pref)
-                   and f["path"].endswith(".v2ep.pt")))
+                   and f["path"].endswith(suffix)))
 
 
 def verify(path):
@@ -184,10 +184,19 @@ def main():
     p.add_argument("--verify-only", action="store_true")
     p.add_argument("--limit", type=int, default=0,
                    help="stop after N files (timing probe)")
+    # Generalisation (2026-09-01): the SAME tool also pulls the v7 corpus's
+    # flat camera/ dir, so the programme keeps ONE puller instead of the five
+    # near-duplicates already in the tree (pull_val600.py, hf_poses_pull.py,
+    # s1_pull_episodes.py, p4_pull_eps.py). Defaults reproduce the verified
+    # epcache behaviour exactly.
+    p.add_argument("--repo", default=REPO)
+    p.add_argument("--subdir", default="",
+                   help="override the split subdir (e.g. 'camera')")
+    p.add_argument("--suffix", default=".v2ep.pt")
     a = p.parse_args()
     os.makedirs(a.out, exist_ok=True)
     tok = _tok(a.token_file)
-    subdir = DIRS[a.split]
+    subdir = a.subdir or DIRS[a.split]
 
     if a.verify_only:
         files = sorted(f for f in os.listdir(a.out) if f.endswith(".v2ep.pt"))
@@ -210,11 +219,11 @@ def main():
               f"({time.time()-t0:.0f}s)", flush=True)
         return 0 if not bad else 1
 
-    want = list_files(subdir, tok)
+    want = list_files(subdir, tok, repo=a.repo, suffix=a.suffix)
     if a.limit:
         want = want[:a.limit]
     total_b = sum(s for _, s in want)
-    print(f"[pull] repo={REPO} subdir={subdir} remote_files={len(want)} "
+    print(f"[pull] repo={a.repo} subdir={subdir} remote_files={len(want)} "
           f"remote_bytes={total_b/1024**3:.2f}GB", flush=True)
 
     todo = []
@@ -233,7 +242,7 @@ def main():
 
     def one(job):
         path, size, dest = job
-        url = (f"https://huggingface.co/datasets/{REPO}/resolve/main/"
+        url = (f"https://huggingface.co/datasets/{a.repo}/resolve/main/"
                + "/".join(path.split("/")))
         tmp = dest + ".tmp"
         r = _curl(url, tok, out=tmp)
