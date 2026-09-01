@@ -283,6 +283,46 @@ def is_oracle_nav(label: "V7Label") -> bool:
     return nav.get("provenance") == "ego-future" or bool(nav.get("oracle"))
 
 
+#: torch ``cross_entropy``'s ignore_index — the no-label marker for windows a
+#: clip's single record does not describe.
+IGNORE_ID = -100
+
+
+def window_in_band(label: "V7Label", t_now_s: float) -> bool:
+    """Is the window whose NOW is ``t_now_s`` described by this clip's record?
+
+    ⭐ ONE IMPLEMENTATION OF THE WINDOW RULE. It was derived for the refav1
+    loader on 2026-09-01 and is lifted here rather than copied, because a
+    second copy is a second rule and the programme has already paid for that
+    (the vocabulary-duplication precedent).
+
+    THE RULE, and why: a clip carries ONE record anchored at ``t0_s`` whose
+    tactical band describes raw seconds ``[t0+lo, t0+hi]``. A window at
+    ``t_now`` has its own forward tactical band ``[t_now+lo, t_now+hi]``. The
+    two overlap by at least half their width exactly when
+    ``|t_now - t0| <= (hi - lo) / 2`` — so that is the admission test, and the
+    half-width is computed FROM THE RECORD'S OWN BANDS, never hardcoded (a
+    derived constant that silently changes when its input changes is the
+    `HORIZON` trap). At the shipped bands this is +-2.0 s, which reproduces
+    the v6 trainer's ``S2WindowSupervision._in_band`` default
+    ``valid_window_s (-2, 2)`` as a DERIVATION instead of a coincidence.
+    """
+    lo, hi = label.bands["tactical_s"]
+    return abs(float(t_now_s) - float(label.t0_s)) <= (float(hi) - float(lo)) / 2.0
+
+
+def tactical_class_ids(label: "V7Label", t_now_s: float
+                       ) -> tuple[int, int]:
+    """``(lat_id, lon_id)`` in the v7 vocabulary, or ``(-100, -100)`` when this
+    window is outside the record's band. ⛔ Never clamps to a 'neutral' class —
+    an unlabelled window must not train a wrong one."""
+    if not window_in_band(label, t_now_s):
+        return IGNORE_ID, IGNORE_ID
+    lat = HEADS["tac_lat"].index(label.tac_lat)
+    lon = HEADS["tac_lon"].index(label.tac_lon)
+    return lat, lon
+
+
 def head_mask(head: str) -> tuple[bool, ...]:
     """Per-class LOSS mask: True = trainable, False = masked (not yet extractable).
 

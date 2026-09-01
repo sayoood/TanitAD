@@ -76,6 +76,7 @@ from tanitad.data.lan import LanConfig as DataLanConfig  # noqa: E402
 
 from tanitad.refs import refc  # noqa: E402
 from tanitad.refs import refc_tactical as tac  # noqa: E402
+from tanitad.data import v7_labels as v7l
 from tanitad.refs import refc_v3 as v3  # noqa: E402
 
 # --- v3-only loss weights (everything shared is imported above) --------------
@@ -121,7 +122,12 @@ def _pin_trainer_cfg(cfg: v3.RefCV3Config, args) -> v3.RefCV3Config:
       The delta gate is unaffected: both arms are pinned identically, and
       ``config_delta`` is derived from configs built through this same helper.
     """
-    cfg.tac_vocab_version = "kin3"
+    # ⭐ The vocabulary follows THE LABELS, not a hardcode. With --v7-labels
+    # the released v7.2 tactical vocabulary (8x8) supervises the heads (PI
+    # 2026-09-02, MANDATORY); otherwise the kinematic 3x3 derivation does, and
+    # pinning it here is what stopped an 8-wide build training on 3 classes.
+    cfg.tac_vocab_version = ("v7.0" if getattr(args, "v7_labels", None)
+                             else "kin3")
     if args.image_hw:
         h, w = (int(args.image_hw[0]), int(args.image_hw[1]))
         enc = cfg.core.encoder
@@ -137,6 +143,12 @@ def _pin_trainer_cfg(cfg: v3.RefCV3Config, args) -> v3.RefCV3Config:
 # ============================================================================
 
 class V3Dataset(RouteV21Dataset):
+    #: clip-stable-id -> V7Label, or None for the kin3 path. Set by the trainer
+    #: rather than passed through the ctor, because the base class owns the
+    #: signature and widening it would touch every RouteV21 consumer.
+    v7_by_sid: dict | None = None
+    v7_dt: float = 0.1
+
     """RouteV21Dataset + clamped/masked 6 s future + E4.1 tactical goals.
 
     ``max_horizon`` MUST stay at the caller's 20: enumeration parity. The
@@ -155,6 +167,21 @@ class V3Dataset(RouteV21Dataset):
                                              v3.GOAL_TAU_STEPS)
         item["goal_tac"] = g                                        # [K, 4]
         item["goal_tac_valid"] = gv                                 # [K] bool
+        # ---- v7.2 tactical labels (PI 2026-09-02: MANDATORY) --------------
+        # ⭐ Joined on `stable_episode_id(clip_id)` — the v7.2 clip index names
+        # it "the ONLY admissible join key", and `LazyV2Episode` carries the
+        # stable id (not the clip_id string), so this is the join the artifacts
+        # were built for rather than a string match we invented.
+        # The window's NOW is the last OBSERVED frame: t + w - 1 at dt.
+        if self.v7_by_sid is not None:
+            lab = self.v7_by_sid.get(int(ep.episode_id))
+            if lab is None:
+                lat_v7 = lon_v7 = v7l.IGNORE_ID       # clip has no record
+            else:
+                lat_v7, lon_v7 = v7l.tactical_class_ids(
+                    lab, (t + w - 1) * self.v7_dt)
+            item["lat_v7"] = torch.tensor(lat_v7, dtype=torch.long)
+            item["lon_v7"] = torch.tensor(lon_v7, dtype=torch.long)
         return item
 
 
@@ -236,36 +263,73 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
     loss_traj = (((recon - traj_tgt).abs().sum(-1)) * sv).sum() / denom
 
     # ---- factored tactical CE (2 s labels; the shared aux surface) ---------
-    lat_t, lon_t = tac.window_factored_labels(pose_last, fut_ext[:, :20])
-    # kinematic labels are 3x3; a wider head means the model was built for the
-    # v7 FlyWheel space but is being fed kin3 -- the CE would train silently
-    # WRONG classes. Refuse, never truncate. (PI vocab mandate, 2026-08-27.)
-    if out["lat_logits"].shape[-1] != tac.N_LAT:
+    # ⭐ TWO SUPERVISION SOURCES, ONE REFUSAL EACH (PI 2026-09-02 made v7.2
+    # MANDATORY for this launch). `lat_v7` present => the released v7.2
+    # tactical vocabulary (8x8), joined per window by stable episode id;
+    # absent => the runtime kin3 derivation (3x3) from poses. The head width
+    # must match ITS OWN source, and a mismatch is REFUSED, never truncated --
+    # a wider head fed narrower labels trains silently wrong classes, which is
+    # exactly the defect found in this trainer on 2026-09-01.
+    # ⛔⛔ TWO TACTICAL SURFACES, TWO VOCABULARIES — AND THE CORE'S IS FIXED.
+    # MEASURED 2026-09-02: the core's heads are `nn.Linear(aux_hidden,
+    # N_LAT_MAN)` with `N_LAT_MAN = tac.N_LAT` a MODULE-LEVEL CONSTANT
+    # (refc.py:146,1742) — the REF-C core is STRUCTURALLY kin3, and
+    # `tac_vocab_version` only sizes v3's OWN z_tac heads. Widening the core
+    # would also have to redefine `derive_man5_logprobs` (a push-forward
+    # DEFINED on the 3x3 kinematic vocabulary) and the H19 `lat_to_anchor`
+    # prior — a change to the shared core, not a wiring job.
+    # ⇒ v7.2 supervises the surface it can actually reach: the HIERARCHY's
+    # tactical decision heads (z_tac). The core's legacy aux head keeps its
+    # kinematic derivation. Both are trained; they are NOT the same label set,
+    # and the launch record says so rather than implying one vocabulary.
+    lat_k, lon_k = tac.window_factored_labels(pose_last, fut_ext[:, :20])
+    if (out["lat_logits"].shape[-1] != tac.N_LAT
+            or out["lon_logits"].shape[-1] != tac.N_LON):
         raise RuntimeError(
-            f"head/label vocabulary mismatch: lat head width "
-            f"{out['lat_logits'].shape[-1]} vs kinematic {tac.N_LAT} -- build "
-            f"with tac_vocab_version='kin3' for kinematic supervision, or "
-            f"supply v7 labels")
-    loss_lat = F.cross_entropy(out["lat_logits"], lat_t)
-    loss_lon = F.cross_entropy(out["lon_logits"], lon_t)
-    model.core.update_tactical_prior(lat_t, lon_t)
+            f"CORE head/label mismatch: heads are "
+            f"{out['lat_logits'].shape[-1]}x{out['lon_logits'].shape[-1]} vs "
+            f"kinematic {tac.N_LAT}x{tac.N_LON}. The core surface is kin3 by "
+            f"construction (refc.py N_LAT_MAN); only the v3 z_tac heads follow "
+            f"tac_vocab_version.")
+    loss_lat = F.cross_entropy(out["lat_logits"], lat_k)
+    loss_lon = F.cross_entropy(out["lon_logits"], lon_k)
+    model.core.update_tactical_prior(lat_k, lon_k)
+    # the z_tac surface's labels: v7.2 when supplied, else the same kin3
+    use_v7 = "lat_v7" in batch
+    if use_v7:
+        lat_t, lon_t = batch["lat_v7"].to(device), batch["lon_v7"].to(device)
+        n_lat_expect, n_lon_expect = (len(v7l.HEADS["tac_lat"]),
+                                      len(v7l.HEADS["tac_lon"]))
+        src = f"v7.2 ({n_lat_expect}x{n_lon_expect})"
+    else:
+        lat_t, lon_t = lat_k, lon_k
+        n_lat_expect = n_lon_expect = tac.N_LAT
+        src = f"kin3 ({tac.N_LAT}x{tac.N_LON})"
+    # ⛔ -100 marks a window this clip's single record does not describe. CE
+    # ignores those rows; an ALL-ignored batch is NaN, not zero, so it is
+    # SKIPPED (the same guard refav1 needed -- measured, not assumed).
+    lat_ok = int((lat_t != v7l.IGNORE_ID).sum())
+    lon_ok = int((lon_t != v7l.IGNORE_ID).sum())
     loss_lat_tac = torch.zeros((), device=device)
     loss_lon_tac = torch.zeros((), device=device)
     if cfg.hier:                       # the H arm's z_tac decision surface
         # the SAME refusal for the v3 heads — the core-only check above let an
         # 8-wide v7.0 build train silently against kin3 labels (2026-09-01).
-        if (out["lat_logits_tac"].shape[-1] != tac.N_LAT
-                or out["lon_logits_tac"].shape[-1] != tac.N_LON):
+        if (out["lat_logits_tac"].shape[-1] != n_lat_expect
+                or out["lon_logits_tac"].shape[-1] != n_lon_expect):
             raise RuntimeError(
                 f"z_tac head/label vocabulary mismatch: lat "
                 f"{out['lat_logits_tac'].shape[-1]} / lon "
-                f"{out['lon_logits_tac'].shape[-1]} vs kinematic "
-                f"{tac.N_LAT}/{tac.N_LON} -- the model was built with "
-                f"tac_vocab_version={model.tac_vocab_version!r} but this "
-                f"trainer supervises the 3x3 kinematic classes. Build with "
-                f"'kin3' (the trainer pins it), or supply v7 labels.")
-        loss_lat_tac = F.cross_entropy(out["lat_logits_tac"], lat_t)
-        loss_lon_tac = F.cross_entropy(out["lon_logits_tac"], lon_t)
+                f"{out['lon_logits_tac'].shape[-1]} vs {src} -- the model was "
+                f"built with tac_vocab_version={model.tac_vocab_version!r}. "
+                f"The z_tac heads and the core heads MUST share one source; "
+                f"this check mirrors the core one because a v3 build once "
+                f"passed the core check and trained 8-wide z_tac heads "
+                f"against 3-class labels (2026-09-01).")
+        loss_lat_tac = (F.cross_entropy(out["lat_logits_tac"], lat_t) if lat_ok
+                        else torch.zeros((), device=device))
+        loss_lon_tac = (F.cross_entropy(out["lon_logits_tac"], lon_t) if lon_ok
+                        else torch.zeros((), device=device))
 
     # ---- route aux (v2.1 masked CE — refc_train's convention) --------------
     # ⛔⛔ FIXED 2026-09-02, MEASURED ON THE A40: this masked by `nav_valid`,
@@ -316,6 +380,12 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
             + LON_WEIGHT * (loss_lon + loss_lon_tac))
 
     extra: dict = {}
+    # ⭐ WHICH label set trained the tactical decision surface, and how many
+    # rows survived the in-band mask, IN EVERY LOG ROW. A run that silently
+    # fell back to kin3 (missing --v7-labels, or a corpus whose clips have no
+    # record) would otherwise look identical to a v7.2 run in the log.
+    extra["tac_label_v7"] = 1.0 if use_v7 else 0.0
+    extra["tac_label_rows"] = float(lat_ok)
     if cfg.hier:
         # E8 — masked goal regression (each level trains by its OWN label).
         loss_goal = v3.masked_goal_loss(out["g_tac"], goal_tac, goal_valid)
@@ -627,6 +697,31 @@ def train(args) -> dict:
             arclengths_m=tuple(args.lan_arclengths),
             min_lead_m=args.lan_min_lead_m)
     ds = dcls(eps, **kw)
+    # ---- v7.2 label join (PI 2026-09-02: MANDATORY for this launch) --------
+    if args.v7_labels:
+        from tanitad.data.v2_dataset import stable_episode_id
+        labels, manifest = v7l.load_v7_labels(args.v7_labels,
+                                              allow_oracle_nav=True)
+        by_sid = {stable_episode_id(l.clip_id): l for l in labels}
+        ds.v7_by_sid = by_sid
+        ds.v7_dt = 0.1
+        # ⛔ COVERAGE IS REPORTED, NOT ASSUMED. MEASURED 2026-09-02: the v7.2
+        # train set joins 4,572/4,713 = 97.0 % of B1 but only 190/2,400 =
+        # 7.9 % of the PARITY corpus — so the same flag on the wrong cache
+        # silently supervises the tactical heads on ~8 % of clips. The launch
+        # record must carry the number, and a low one must be loud.
+        hit = sum(1 for e in eps if int(e.episode_id) in by_sid)
+        frac = hit / max(len(eps), 1)
+        print(f"[v3] v7.2 labels: {len(labels)} records, joined "
+              f"{hit}/{len(eps)} episodes = {100 * frac:.1f} % "
+              f"(release {manifest.release if hasattr(manifest, 'release') else '?'})")
+        if frac < 0.5:
+            raise SystemExit(
+                f"[v3] ⛔ v7.2 label coverage {100 * frac:.1f} % — refusing to "
+                f"launch. The PI made v7.2 supervision MANDATORY; below half "
+                f"the corpus the tactical/strategic heads would train on a "
+                f"minority of clips while the run LOOKED labelled. Check the "
+                f"cache is B1 (97.0 %) and not the parity corpus (7.9 %).")
     # launch-line P4: the run PRINTS its episode/window counts at start — the
     # only way a parity claim about the enumeration is checkable from the log.
     print(f"[v3] {len(eps)} episodes -> {len(ds)} windows "
@@ -688,8 +783,18 @@ def train(args) -> dict:
         opt.step()
         step += 1
         if step % args.log_every == 0 or step == args.steps:
-            row = {k: round(float(v.detach()), 5) for k, v in losses.items()
-                   if torch.is_tensor(v) and v.ndim == 0}
+            # ⚠️ The tensor filter silently DROPPED every plain-float
+            # diagnostic — `tac_label_v7`, `tac_label_rows`, `nav_injected`
+            # were emitted by the loss and never reached the log, so "did the
+            # v7.2 labels actually train?" was answerable only by INFERRING it
+            # from the CE magnitude (lat 1.22 ~ ln 3 vs lat_tac 2.13 ~ ln 8).
+            # A diagnostic that does not survive to the log is not a
+            # diagnostic. Scalars now pass through as themselves.
+            row = {k: (round(float(v.detach()), 5) if torch.is_tensor(v)
+                       else round(float(v), 5))
+                   for k, v in losses.items()
+                   if (torch.is_tensor(v) and v.ndim == 0)
+                   or isinstance(v, (int, float, bool))}
             row.update(step=step, elapsed_s=round(time.time() - t0, 1),
                        lr=opt.param_groups[0]["lr"])
             log.write(json.dumps(row) + "\n")
@@ -736,6 +841,14 @@ def main(argv=None):
                          "window contract is identical. Pair with "
                          "--image-hw 256 640 for the B1 geometry — the run "
                          "REFUSES a geometry mismatch either way.")
+    ap.add_argument("--v7-labels", default=None,
+                    help="s2_labels_v7.2_*.jsonl.gz — the RELEASED tactical "
+                         "vocabulary (8x8). Joined per window on "
+                         "stable_episode_id(clip_id), the v7.2 index's own "
+                         "'ONLY admissible join key'. Sets tac_vocab_version "
+                         "to v7.0; without it the trainer derives kin3 (3x3) "
+                         "from poses. Coverage is PRINTED and a run below "
+                         "50 %% is REFUSED.")
     ap.add_argument("--v2-lru", type=int, default=6,
                     help="per-process LRU of decoded-payload clips for "
                          "--v2-cache. ⚠️ B1 payloads are ~34 MB/clip "
