@@ -267,14 +267,42 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
         loss_lat_tac = F.cross_entropy(out["lat_logits_tac"], lat_t)
         loss_lon_tac = F.cross_entropy(out["lon_logits_tac"], lon_t)
 
-    # ---- route aux (v2.1 masked CE — refc_train's convention). ⛔ v2.1's
-    # route_target is ROUTE_UNKNOWN (= 3, deliberately OUT of the 3-class CE
-    # range) on invalid windows, so the v1 fall-back-to-all-windows path would
-    # CRASH here by design — mask by nav_valid, zero loss when none judgeable.
-    mask = nav_valid
-    loss_route = (F.cross_entropy(out["route_logits"][mask], route_tgt[mask])
-                  if bool(mask.any())
-                  else torch.zeros((), device=device))
+    # ---- route aux (v2.1 masked CE — refc_train's convention) --------------
+    # ⛔⛔ FIXED 2026-09-02, MEASURED ON THE A40: this masked by `nav_valid`,
+    # which is a DIFFERENT VALIDITY FIELD than the target it guards. v2.1's
+    # `route_target` is ROUTE_UNKNOWN (= 3, deliberately OUTSIDE the 3-class CE
+    # range) exactly where `route_valid` is False — and a window can carry a
+    # VALID nav command with an UNKNOWN route. Those rows survived the
+    # nav_valid mask and hit the CE, producing
+    #   `nll_loss_forward_reduce_cuda_kernel_2d: t >= 0 && t < n_classes`
+    # — an async device-side assert that surfaces at the NEXT CUDA call
+    # (conv2d), so the traceback blames the wrong line entirely.
+    # ⚠️ WHY IT SURVIVED EVERY SMOKE: it is window-frequency dependent. The
+    # 2-step batch-2 smoke and the batch-4 run never drew an offending window;
+    # batch 20 hit it inside 14 steps. A 30 k launch would have died hours in.
+    # ⇒ mask on `route_valid` when the v2.1 labeler supplies it (mirroring
+    # `refc_train.py`'s shared path verbatim), and keep the FAIL-LOUD check —
+    # an UNKNOWN surviving the mask is a labeler contract violation, never
+    # something to clamp to `straight`.
+    if "route_valid" in batch:
+        mask = batch["route_valid"].to(device)
+        if bool(mask.any()):
+            tgt_v = route_tgt[mask]
+            n_route = out["route_logits"].shape[-1]
+            if int(tgt_v.max()) >= n_route:
+                raise ValueError(
+                    f"ROUTE_UNKNOWN survived the valid mask (max target "
+                    f"{int(tgt_v.max())} >= n_route {n_route}) — the v2.1 "
+                    f"contract is route<3 <=> valid=True")
+            loss_route = F.cross_entropy(out["route_logits"][mask], tgt_v)
+        else:                        # no judgeable window in this batch
+            loss_route = torch.zeros((), device=device)
+    else:
+        mask = nav_valid
+        loss_route = (F.cross_entropy(out["route_logits"][mask],
+                                      route_tgt[mask])
+                      if bool(mask.any())
+                      else torch.zeros((), device=device))
 
     # ---- LAW aux (0.5 s pooled-latent target, no_grad encode) --------------
     with torch.no_grad():
