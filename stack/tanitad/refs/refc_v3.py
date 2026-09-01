@@ -152,6 +152,25 @@ class RefCV3Config:
     #: freely either way, and the read discipline lives in the prereg.
     admission_sigma_m: float = 0.8
 
+    # --- E13: nav to the tactical and strategic layers (PI 2026-09-02) ------
+    # BINDING: *"No training without feeding nav command to all layers."*
+    # Before this, nav_cmd reached `self.core` and nowhere else. Additive and
+    # ZERO-INIT, so a v3 checkpoint trained without it is unchanged at step 0.
+    # ⛔ Does NOT relax E11 — `v0` remains refused into every goal node; nav is
+    # a route command, which the admissibility ruling permits.
+    nav_inject: bool = True
+    n_nav_commands: int = 4           # == len(refb.NAV_COMMANDS), test-pinned
+    d_nav: int = 64
+
+    # --- CAVEAT-A lever: is the hierarchy CONDITIONED or OPTIMISED? ---------
+    # The E4/E7 `.detach()` buys clean attribution and costs joint optimisation:
+    # the strategic goal head never learns whether its goal HELPED. Design item
+    # D-4 registers the non-detached variant as a lever; the PI asked for it to
+    # be addressed, so it is a switch with both settings runnable.
+    # ⛔ E9's goal detach is deliberately NOT under this flag — that one is the
+    # winner's-curse firewall (SEL-1's refusal), a different failure mode.
+    uplink_grad: bool = True
+
     @property
     def n_goal_taus(self) -> int:
         return len(self.goal_tau_steps)
@@ -308,6 +327,25 @@ class RefCV3Model(nn.Module):
         self.gstr_film = nn.Linear(cfg.d_gcond, 2 * cfg.d_tac)
         nn.init.zeros_(self.gstr_film.weight)
         nn.init.zeros_(self.gstr_film.bias)
+
+        # E13 — nav into the TACTICAL and STRATEGIC states (PI 2026-09-02).
+        # Its own embedding, never the core's: the core's nav path is a
+        # measurement-encoder condition and sharing the table would couple two
+        # unrelated conditioning surfaces through one gradient. ZERO-INIT
+        # projections keep the arm bit-identical to a nav-less v3 at step 0, so
+        # the delta this edge buys is attributable to training, not to init.
+        if cfg.nav_inject:
+            # ctx is the StrategicCtx token the hook receives — d_ctx (64),
+            # read from the CORE'S OWN config so a resize cannot desync them.
+            d_ctx = cfg.core.strategic.d_ctx
+            self.nav_inj = nn.Embedding(cfg.n_nav_commands, cfg.d_nav)
+            self.nav_to_tac = nn.Linear(cfg.d_nav, cfg.d_tac)
+            self.nav_to_str = nn.Linear(cfg.d_nav, d_ctx)
+            for lin in (self.nav_to_tac, self.nav_to_str):
+                nn.init.zeros_(lin.weight)
+                nn.init.zeros_(lin.bias)
+        else:
+            self.nav_inj = None
         # E6 — factored tactical decision heads on z_tac (the H arm's decision
         # supplier; the core's own pooled-based heads keep training as the
         # shared aux surface in BOTH arms, so the supervision surface is
@@ -362,18 +400,49 @@ class RefCV3Model(nn.Module):
         }
 
     # --- the in-forward hierarchy supplier ----------------------------------
-    def _hook(self, cache: dict):
+    def _hook(self, cache: dict, nav_cmd: Tensor | None = None):
         cfg = self.cfg
 
         def hook(pooled_seq: Tensor, ctx: Tensor) -> dict:
             b = pooled_seq.shape[0]
             z_tac_raw = self.phi_tac(pooled_seq)                  # [B, d_tac]
+            # ⭐ E13 — NAV REACHES THE TACTICAL AND STRATEGIC LAYERS
+            # (PI 2026-09-02, BINDING: "No training without feeding nav command
+            # to all layers"). Before this, `nav_cmd` went to `self.core` and
+            # NOWHERE else: PhiTac and StrategicCtx never saw the route.
+            # ⛔ WHAT THIS DOES **NOT** RELAX: E11 still refuses `v0` into every
+            # goal node — nav is a ROUTE COMMAND, not ego state, and the
+            # admissibility ruling permits a goal/route input while forbidding
+            # the situation classifier's output. The intervention audit that
+            # pins the v0 edge is unchanged and still runs in the preflight.
+            # ⚠️ EVAL OBLIGATION, inseparable from this edge: nav is CONSTANT
+            # (`follow`) on ~75-79 % of windows and is `nav_cmd=None -> index 0`
+            # at eval — the C6 confound. Any nav-conditioned result carries a
+            # NAV-SHUFFLE control, or it is not evidence.
+            nav_t = nav_s = None
+            if self.nav_inj is not None and nav_cmd is not None:
+                e = self.nav_inj(nav_cmd.reshape(-1).long())      # [B, d_nav]
+                nav_t, nav_s = self.nav_to_tac(e), self.nav_to_str(e)
+                z_tac_raw = z_tac_raw + nav_t                     # -> tactical
+                ctx = ctx + nav_s                                 # -> strategic
             g = self.str_goal_head(ctx)                           # [B, 3]
             bearing = g[:, :2] / torch.linalg.vector_norm(
                 g[:, :2], dim=-1, keepdim=True).clamp_min(1e-6)
             g_str = torch.cat([bearing, torch.tanh(g[:, 2:3])], dim=-1)
-            # E4: strategic goal conditions tactical — DETACHED downward.
-            gcond = self.gstr_embed(g_str.detach())
+            # E4: strategic goal conditions tactical.
+            # ⭐ CAVEAT-A LEVER (PI 2026-09-02). The `.detach()` here and on E7
+            # is the v6 `_cut()` discipline: it buys clean ATTRIBUTION (each
+            # level trains only by its own supervision) at the cost of the
+            # hierarchy never being OPTIMISED as one — the strategic goal head
+            # is trained by its hindsight label, never by whether its goal
+            # helped the trajectory. `uplink_grad=True` opens that path; it is
+            # design item D-4, a pre-registered lever, not a new invention.
+            # ⛔ E9's goal detach is NOT covered by this flag and stays hard —
+            # it is a different mechanism (the winner's-curse firewall: letting
+            # selection train the goal toward the fan is the failure SEL-1 was
+            # refused for). Two detaches, two reasons, one flag.
+            g_down = g_str if cfg.uplink_grad else g_str.detach()
+            gcond = self.gstr_embed(g_down)
             gamma, beta = self.gstr_film(gcond).chunk(2, dim=-1)
             z_tac = z_tac_raw * (1.0 + gamma) + beta              # zero-init
             lat = self.lat_head_tac(z_tac)
@@ -383,11 +452,13 @@ class RefCV3Model(nn.Module):
                 b, cfg.n_goal_taus, GOAL_DIMS)
             cache.update(z_tac=z_tac, g_str=g_str, g_str_raw=g,
                          lat_logits_tac=lat, lon_logits_tac=lon,
-                         g_tac=g_tac)
-            # E6 live (the H19 seam is live-from-step-0 by design);
-            # E7 detached (the decoder cannot train the tactical pool).
+                         g_tac=g_tac,
+                         nav_injected=bool(nav_t is not None))
+            # E6 live (the H19 seam is live-from-step-0 by design); E7 detached
+            # unless the Caveat-A lever is open.
+            z_up = z_tac if cfg.uplink_grad else z_tac.detach()
             return {"maneuver_logits": man5,
-                    "target_latent": self.tac_latent_proj(z_tac.detach())}
+                    "target_latent": self.tac_latent_proj(z_up)}
 
         return hook
 
@@ -400,7 +471,8 @@ class RefCV3Model(nn.Module):
                              nav_known=nav_known)
         cache: dict = {}
         out = self.core(frames, nav_cmd, v0, steps=steps, lan=lan,
-                        nav_known=nav_known, hierarchy_hook=self._hook(cache))
+                        nav_known=nav_known,
+                        hierarchy_hook=self._hook(cache, nav_cmd))
         # ---- E9: goal selection over the emitted fan (post-decoder) --------
         fan = out["anchor_traj"]                                  # [B, N, S, 2]
         b = fan.shape[0]
@@ -410,7 +482,18 @@ class RefCV3Model(nn.Module):
         g2 = cache["g_tac"][:, self._tau_slot_2s(), :2].detach()  # [B, 2]
         sc = self.scorer(fan[:, :, SEAM_SLOT:SEAM_SLOT + 1],
                          cache["z_tac"].detach(), goal_point=g2)
+        # ⭐ CAVEAT-B INSTRUMENTATION (PI 2026-09-02). The gate is zero-init and
+        # must LEARN to open; if it never does, E9 contributed exactly nothing
+        # and the run cannot claim goal-selection. It is NOT structurally
+        # stuck — d(graft)/d(gate) = score != 0, so gradient reaches it — and a
+        # 0.0000 reading early is expected under the 2000-step LR warmup (lr
+        # was 5e-8 at step 1, MEASURED). ⇒ the honest instrument is to EMIT the
+        # gate and the score scale every step, so "did it open" is read off the
+        # log at 30k instead of inferred from a 14-step glance (which is the
+        # mistake that produced this caveat in the first place).
         graft = self.goal_gate * sc["score"]                      # [B, N]
+        out["goal_gate_value"] = self.goal_gate.detach()
+        out["goal_score_absmean"] = sc["score"].detach().abs().mean()
         blended, tele = sl.apply_seam_clamp(
             out["sel_score"], graft, clamp=self.cfg.seam_clamp,
             fail=self.cfg.seam_fail, fail_frac=self.cfg.seam_fail_frac,
@@ -487,6 +570,14 @@ def param_breakdown_v3(model: RefCV3Model) -> dict[str, int]:
             "tac_latent_proj": cnt(model.tac_latent_proj),
             "scorer": cnt(model.scorer) + model.goal_gate.numel(),
         })
+        # ⭐ E13 nav injection — accounted EXPLICITLY. Caught by
+        # `test_param_breakdown_smoke_sums`, whose sum-equals-total assertion
+        # fired the moment these parameters existed but had no ledger line: a
+        # capacity ledger that silently under-reports is worse than none,
+        # because the prereg quotes it as the arm's cost.
+        if model.nav_inj is not None:
+            out["nav_inject"] = (cnt(model.nav_inj) + cnt(model.nav_to_tac)
+                                 + cnt(model.nav_to_str))
     out["total"] = cnt(model)
     return out
 

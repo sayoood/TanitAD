@@ -345,6 +345,19 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
         loss = loss + SEL_V3_WEIGHT * loss_sel
         extra["sel_v3"] = loss_sel
         extra["goal_gate"] = model.goal_gate.detach()
+        # ⭐ CAVEAT-B (PI 2026-09-02): the gate value alone cannot distinguish
+        # "has not opened YET" from "will never open". Emit the score scale it
+        # multiplies and its own gradient, so the 30 k read answers the
+        # question with data instead of a 14-step glance.
+        if "goal_score_absmean" in out:
+            extra["goal_score_absmean"] = out["goal_score_absmean"]
+        if model.goal_gate.grad is not None:
+            extra["goal_gate_grad"] = model.goal_gate.grad.detach().abs()
+        # E13 telemetry: nav actually reached the tactical/strategic states on
+        # this batch. A conditioning edge that silently no-ops (nav_cmd=None
+        # everywhere) is the advertised-but-inert defect; this makes it visible.
+        if "nav_injected" in out:
+            extra["nav_injected"] = float(bool(out["nav_injected"]))
 
     return {"loss": loss, "traj": loss_traj, "cls": loss_cls, "law": loss_law,
             "route": loss_route, "lat": loss_lat, "lon": loss_lon,

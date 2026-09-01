@@ -323,15 +323,22 @@ def test_the_two_size_rungs_build_and_measure():
         refc_v3_small_config(), tac_vocab_version="kin3")))
     xl = param_breakdown_v3(RefCV3Model(dataclasses.replace(
         refc_v3_xl_config(), tac_vocab_version="kin3")))
-    assert small["total"] == 62_930_419
-    assert xl["total"] == 217_760_775
+    # ⭐ E13 (PI 2026-09-02) adds nav -> tactical/strategic: an embedding
+    # (4 x 64 = 256) + nav_to_tac (512x64 + 512 = 33,280) + nav_to_str
+    # (64x64 + 64 = 4,160) = 37,696. d_tac and d_ctx are shared across rungs,
+    # so the cost is IDENTICAL at both — asserted, not assumed.
+    NAV = 37_696
+    assert small["total"] == 62_930_419 + NAV
+    assert xl["total"] == 217_760_775 + NAV
+    # and it carries its OWN ledger line rather than hiding inside another
+    assert small["nav_inject"] == NAV and xl["nav_inject"] == NAV
     # The mandate's measured cost: v7.0 heads (8x8 vs 3x3) add exactly 5,130
     # params at BOTH rungs — head-only, so the rung identity is otherwise
     # unchanged and the hierarchy-cost invariant below is version-independent.
     assert param_breakdown_v3(RefCV3Model(refc_v3_small_config()))["total"] \
-        == 62_930_419 + 5_130
+        == 62_930_419 + NAV + 5_130
     assert param_breakdown_v3(RefCV3Model(refc_v3_xl_config()))["total"] \
-        == 217_760_775 + 5_130
+        == 217_760_775 + NAV + 5_130
     # ⭐ the hierarchy cost is essentially CONSTANT across the ladder, which is
     # why scale and hierarchy are separate decisions.
     assert abs((xl["total"] - xl["core"]) - (small["total"] - small["core"])) < 200_000
