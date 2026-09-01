@@ -13,14 +13,6 @@ Lab was writing letters into a drawer. This is the drawer, opened.
 
 ---
 
-## ⛔ OPEN ASKS — FlyWheel → Research Lab
-
-*Unanswered questions in `LAB_ASKS.md`. The Lab addresses these BEFORE pulling backlog seeds.*
-
-- **ASK-1** (TrainingFlyWheel · Architecture & Inference) — Does any published recipe train a 60-step full-chain BPTT rollout stably, and with what clip/schedule? Our k=60 arm diverged at clip 1.0 (gnorm 5.71 median -> 2.1e9) while k=8 was stable.
-
----
-
 ## 2026-08-31-rollout-depth-latency — Deployment & Optimization
 
 *COMMS — rollout depth is a deployment constraint on the horizon plan*
