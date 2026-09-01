@@ -91,6 +91,16 @@ echo "[gate4] preflight PASS"
 # sample budget (30k x 20 = 600k) matches the registered arm.
 # ⚠️ base exceeds the v3 design's "<= 80 M hard" budget by 33 %; see
 # GOALS_AND_CLAIMS D-REFCV3-SIZE for the override and the contrary measurement.
+#
+# ⭐ steps 40284 = ONE FULL EPOCH (PI 2026-09-02), not a wall-clock target.
+#   MEASURED: 170.95 windows/episode (60-episode probe: 10,257 windows) x 4,713
+#   episodes = 805,687 windows; / batch 20 = 40,284 steps. Was 30,000 = 0.74
+#   epochs, which the design chose deliberately ("still under one epoch").
+# ⛔ 40,284 IS NOT A PORTABLE CONSTANT. It is corpus-AND-batch-specific: one
+#   epoch is windows/batch, so at batch 8 on this corpus it is 100,711, and on
+#   the 2,400-episode parity corpus (415,002 windows) it is 51,875 at batch 8.
+#   Copying "40284" onto another arm would be the derived-constant-out-of-scope
+#   error this programme has paid for repeatedly. Recompute per arm.
 mkdir -p "$OUT"
 echo "[launch] $(date -u +%FT%TZ) starting 30k"
 PYTHONPATH="$STACK" nohup python3 -u "$STACK/scripts/refc_v3_train.py" \
@@ -98,7 +108,7 @@ PYTHONPATH="$STACK" nohup python3 -u "$STACK/scripts/refc_v3_train.py" \
   --v2-cache "$CACHE" \
   --v7-labels "$LABELS" \
   --image-hw 256 640 \
-  --steps 30000 --batch 20 --workers 4 --v2-lru 6 \
+  --steps 40284 --batch 20 --workers 4 --v2-lru 6 \
   --lr 1e-4 --warmup 2000 --seed 0 \
   --log-every 50 --save-every 500 \
   --out "$OUT" >> "$OUT/train.log" 2>&1 &
