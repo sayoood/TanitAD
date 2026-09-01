@@ -276,6 +276,49 @@ and it belongs here.**
   level has a mechanism — the temporal-abstraction ladder (MM-E16, ratios **1 : ~3 : ~15**
   read off the corpus), not a longer flat rollout.
 
+### ⛔⛔ MM-E19 ANSWERED IT — AND THE ANSWER IS NO (2026-09-02, read at 30k)
+
+The k=60 arm reached the tactical band in ROLLOUT LENGTH and did **not** buy
+action-conditioning. MEASURED, both arms one run, same corpus and device:
+
+```
+                     h1 action/scene    action_spread   scene_spread
+k60clip05p30k             0.002983         0.001092        0.3662
+postrain30k (k=8)         0.005950         0.001394        0.2343
+                          ^^^ 0.50x, against a pre-registered bar of >= 10x
+```
+
+⭐ **The decomposition is the finding, not the ratio.** Action response FELL
+(0.78×) while scene response ROSE (1.56×) — the model did not merely fail to
+use its actions, it got **better at the scene while getting worse at the
+action**. And `h2`/`h4` sit at **1.8e-05 on BOTH arms**: beyond one step the
+action does essentially nothing, k=60 included.
+
+⇒ **Two independent interventions have now moved this ratio the WRONG way**
+(MM-E11 0.40×, MM-E19 0.50×). Lengthening the rollout is not the lever. That
+is evidence FOR P2(d) — the teacher-forced target admits an action-invariant
+solution — and against "the horizon was too short" as the explanation.
+
+⛔ **P4 does NOT close, and it does not close as "addressed" either.** What it
+now says is sharper: *reaching the band in rollout length is not the same as
+reaching it in capability.* The strategic band (8–30 s) remains unreached, and
+MM-E16's temporal-abstraction ladder is still the only proposed mechanism —
+now with the added knowledge that a longer flat rollout demonstrably is not one.
+
+⚠️ **ATTRIBUTION IS INCOMPLETE and the verdict is scoped accordingly.** The arm
+differs from the incumbent in THREE ways: `o5_k` 60, `clip` 0.5, and
+`init_from` (incumbent `distill_init.pt`, this arm `None` — E-DEC-60/C164).
+Supported: *"this arm does not clear the bar."* NOT supported: *"the horizon
+caused the fall."* The **clip-0.5 k=8 control is RUNNING** on Thor
+(`/home/nvidia/v7tiny/k8clip05p30k`, 30,000 steps to match the arm it
+controls); the `init_from` axis still needs its own.
+
+⚠️ Every MM-E19 number carries the instability caveat: OPEN-ENDED intermittent
+spiking, worst window **16,000–18,000** at 4.0 spikes/1000, max gnorm
+**1.24e10** — it got worse late, not better. Tier **T0-DIAGNOSTIC**; nothing
+here is a driving claim. Raw: `…/2026-08-31-mm-e19-k60-horizon/raw/
+mm_e19_read_step30000.json`.
+
 ---
 
 ## ✅ Closed 2026-08-31 — no longer gates
