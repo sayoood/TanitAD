@@ -630,6 +630,19 @@ def preflight(args) -> int:
 # ============================================================================
 
 def train(args) -> dict:
+    # MEASURED on the A40 pod 2026-09-02: the FIRST real launch died within
+    # seconds -- `DataLoader worker killed by signal: Bus error ... out of
+    # shared memory`. B1 payloads are ~34 MB/clip and torch's DEFAULT tensor
+    # sharing passes them through /dev/shm, which is 24 GB in this container;
+    # 4 workers x an LRU of decoded clips exhausts it almost immediately.
+    # `file_system` sharing moves those handles off /dev/shm at no cost here
+    # (the payloads are already files on disk) -- the same fix the throughput
+    # sweep needed. MUST be set before any worker forks, hence the very top.
+    if getattr(args, "workers", 0) > 0:
+        import torch.multiprocessing as _tmp
+        _tmp.set_sharing_strategy("file_system")
+        print(f"[v3] tensor sharing = file_system (workers={args.workers}; "
+              f"/dev/shm 24 GB vs ~34 MB/clip payloads)", flush=True)
     device = ("cuda" if torch.cuda.is_available() else "cpu") \
         if args.device == "auto" else args.device
     torch.manual_seed(args.seed)
@@ -789,8 +802,22 @@ def train(args) -> dict:
               f"windows, {args.eval_batches} fixed batches every "
               f"{args.eval_every} steps", flush=True)
 
+    # ⛔ IN-FLIGHT BATCHES ARE THE SHM COST, NOT THE CLIP CACHE. MEASURED
+    # 2026-09-02: two launches died on `Bus error ... out of shared memory`
+    # even with file_system sharing. One collated batch is
+    #   20 x window 8 x 9ch x 256 x 640 x 4B ~= 940 MB
+    # so workers x prefetch_factor batches are in flight at once: 4 x 2 = 8
+    # ~= 8 GB against a 24 GB /dev/shm, plus the eval loader's own. The knob
+    # that actually bounds this is prefetch_factor, and it had been left at
+    # torch's default of 2.
+    pf = {"prefetch_factor": args.prefetch_factor} if args.workers > 0 else {}
+    if args.workers > 0:
+        print(f"[v3] loader: workers={args.workers} prefetch={args.prefetch_factor}"
+              f" -> <={args.workers * args.prefetch_factor} batches in flight",
+              flush=True)
     dl = torch.utils.data.DataLoader(
         ds, batch_size=args.batch, shuffle=True, num_workers=args.workers,
+        **pf,
         drop_last=True, persistent_workers=args.workers > 0)
 
     opt = torch.optim.Adam(model.parameters(), lr=args.lr)
@@ -938,6 +965,11 @@ def main(argv=None):
                          "window contract is identical. Pair with "
                          "--image-hw 256 640 for the B1 geometry — the run "
                          "REFUSES a geometry mismatch either way.")
+    ap.add_argument("--prefetch-factor", type=int, default=1,
+                    help="batches prefetched PER WORKER. One collated batch is "
+                         "~940 MB at batch 20, so workers x prefetch bounds "
+                         "shared-memory use; torch's default of 2 put 8 "
+                         "batches in flight and exhausted a 24 GB /dev/shm.")
     ap.add_argument("--eval-cache", default=None,
                     help="HELD-OUT v2 cache (the v7.2 eval split). ⛔ MUST be "
                          "disjoint from --v2-cache: 141 of the 147 v7.2 eval "
