@@ -23,7 +23,9 @@ import json
 import re
 import subprocess
 import sys
+import threading
 import time
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import torch
@@ -40,7 +42,9 @@ SRC = {"train": "/home/nvidia/data/physicalai-train-e438721ae894-w120-256x640cyl
 DST = {"b1": "/home/nvidia/data/dinov3-b1-fp8-w120-256x640cyl",
        "val": "/home/nvidia/data/dinov3-val600-fp8-w120-256x640cyl"}
 WORK = Path("C:/Users/Admin/refav1_probe/ship")
-BATCH = 12
+BATCH = 16
+#: PNG decode releases the GIL; 4 workers cut ~1.5 s/ep serial decode to ~0.5.
+_DECODERS = ThreadPoolExecutor(max_workers=4)
 MID = "facebook/dinov3-vitl16-pretrain-lvd1689m"
 
 
@@ -89,11 +93,32 @@ def main(split: str) -> int:
     assert torch.isfinite(back).all()
     (WORK / "_pre.pt").unlink()
 
-    t0, built = time.time(), 0
-    for i in range(0, len(todo), BATCH):
-        batch = todo[i:i + BATCH]
-        # pull
+    # MEASURED before this pipeline existed: the sequential loop ran at
+    # 243 eps/h (14.8 s/ep, ETA 19.3 h) -- transfers + serial decode were ~60 %
+    # of the wall clock while the GPU idled. Pull-ahead + push-behind threads
+    # + the decode pool make the encode the pacing stage.
+    def _pull(batch):
         scp([*(f"{THOR}:{src}/{e}.v2ep.pt" for e in batch), str(WORK)])
+
+    def _push_verify(outs):
+        scp([*(str(WORK / o) for o in outs), f"{THOR}:{dst}/"])
+        far = ssh(f"cd {dst} && ls -l {' '.join(outs)} | awk '{{print $5, $NF}}'")
+        far_sz = {l.split()[1]: int(l.split()[0]) for l in far.splitlines()}
+        for o in outs:
+            local = (WORK / o).stat().st_size
+            assert far_sz.get(o) == local,                 f"SIZE MISMATCH {o}: {far_sz.get(o)} != {local}"
+            (WORK / o).unlink()
+
+    t0, built = time.time(), 0
+    batches = [todo[i:i + BATCH] for i in range(0, len(todo), BATCH)]
+    puller = threading.Thread(target=_pull, args=(batches[0],))
+    puller.start()
+    pusher = None
+    for bi, batch in enumerate(batches):
+        puller.join()
+        if bi + 1 < len(batches):
+            puller = threading.Thread(target=_pull, args=(batches[bi + 1],))
+            puller.start()
         outs = []
         for e in batch:
             o = torch.load(WORK / f"{e}.v2ep.pt", map_location="cpu",
@@ -102,9 +127,10 @@ def main(split: str) -> int:
             buf, lens = o["jpeg_buf"], o["jpeg_len"]
             offs = torch.cat([torch.zeros(1, dtype=lens.dtype),
                               lens.cumsum(0)])
-            frames = torch.stack([torchvision.io.decode_png(
-                buf[offs[j]:offs[j + 1]].clone())
-                for j in range(0, len(lens), 2)])
+            frames = torch.stack(list(_DECODERS.map(
+                lambda j: torchvision.io.decode_png(
+                    buf[offs[j]:offs[j + 1]].clone()),
+                range(0, len(lens), 2))))
             feats = []
             with torch.inference_mode():
                 for j in range(0, frames.shape[0], 8):
@@ -117,21 +143,19 @@ def main(split: str) -> int:
             torch.save(f.to(torch.float8_e4m3fn), WORK / f"{e}.pt")
             outs.append(f"{e}.pt")
             (WORK / f"{e}.v2ep.pt").unlink()
-        # push + verify by size on the far side (md5 of every file would halve
-        # throughput; size + the loader's own finite/content checks cover the
-        # corruption modes seen to date — torn transfers change the size)
-        scp([*(str(WORK / o) for o in outs), f"{THOR}:{dst}/"])
-        far = ssh(f"cd {dst} && ls -l {' '.join(outs)} | awk '{{print $5, $NF}}'")
-        far_sz = {l.split()[1]: int(l.split()[0]) for l in far.splitlines()}
-        for o in outs:
-            local = (WORK / o).stat().st_size
-            assert far_sz.get(o) == local, f"SIZE MISMATCH {o}: {far_sz.get(o)} != {local}"
-            (WORK / o).unlink()
+        # push + size-verify BEHIND the next batch's encode (torn transfers
+        # change the size; the loader's finite/content checks cover the rest)
+        if pusher is not None:
+            pusher.join()
+        pusher = threading.Thread(target=_push_verify, args=(outs,))
+        pusher.start()
         built += len(batch)
         rate = built / (time.time() - t0)
         print(f"[{split}] {built}/{len(todo)}  {rate*3600:.0f} eps/h  "
               f"eta {((len(todo)-built)/max(rate,1e-9))/3600:.1f} h", flush=True)
 
+    if pusher is not None:
+        pusher.join()
     geo = {"episodes": all_eps, "grid": "0.2s (every 2nd frame)",
            "dtype": "float8_e4m3fn",
            "geometry": {"n_tokens": 640, "d_enc": 1024, "hfov_deg": 120.0},
