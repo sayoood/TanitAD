@@ -58,13 +58,20 @@ measurements; every line here has a code citation):
   (`s2_labels.py:587`) — as a derivation instead of a default.
 * Out-of-band windows and unlabeled episodes emit ``-100`` — torch
   ``cross_entropy``'s default ``ignore_index``, the same discipline as
-  `s2_labels.py:194-197`. ⛔ THE MODEL SIDE MUST MASK: ``RefAV1.forward``'s
-  range check (`refa_v1.py:978,:993`) currently REFUSES negative labels
-  (MEASURED — pinned in `tests/test_refav1_loader_labels.py`), so a trainer
-  must either drop -100 rows before the call or the model grows the
-  ignore-aware guard (proposed, not edited here: validate only
-  ``lbl[lbl != -100]`` and skip the term when no row is valid — an
-  all-ignored CE is NaN, also measured in that test file).
+  `s2_labels.py:194-197`. ✅ **THE MODEL SIDE NOW MASKS — this paragraph used
+  to say it did not, and that warning was STALE (corrected 2026-09-02).** The
+  guard it once described as "proposed, not edited here" has landed verbatim:
+  ``RefAV1.forward`` validates only ``lbl[lbl != -100]`` (`refa_v1.py:991`),
+  range-checks the labeled rows alone, and **skips an all-ignored family
+  rather than averaging it** (`:997`) — because an all-ignored CE is NaN and a
+  NaN there would poison every weight while reading as a batch hiccup. The
+  route path (`:1010`) is identical, and ``F.cross_entropy`` supplies
+  ``ignore_index=-100`` by default, so the -100 rows this loader emits are
+  dropped from the loss rather than refused. MEASURED: 169 refa/refav1 tests
+  pass, pinned in `tests/test_refav1_loader_labels.py`.
+  ⚠️ The lesson is why this line existed for as long as it did: a blocker
+  note is not revisited when the thing it blocks on lands, so it keeps
+  reading as a live gap. State the CHECK, not the verdict — the verdict rots.
 * ``route_label`` (3-class, `refb.ROUTE_CLASSES` order L/S/R) is derived
   from the record's ``nav_command`` token: NAV_TURN_L→route_left,
   NAV_FOLLOW_ROAD→route_straight, NAV_TURN_R→route_right — the same
