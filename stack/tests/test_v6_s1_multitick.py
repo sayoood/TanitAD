@@ -378,9 +378,53 @@ def test_preflight_refuses_K1_and_the_wrong_stages():
                    _pf("--w-s1-multi", "1.0", stage=st))
 
 
-def test_preflight_refuses_an_unreachable_K_before_the_corpus_mounts():
+def test_preflight_does_NOT_refuse_K6_because_it_cannot_know_the_corpus():
+    """⛔⛔ THIS TEST WAS INVERTED UNTIL 2026-09-02, AND IT PINNED A GUARD THAT
+    BLOCKED REAL WORK.
+
+    It used to assert the preflight REFUSES ``--s1-multi-k 6`` with *"ZERO
+    windows ... the 8-30 s band is NOT reachable"*. That refusal was arithmetic
+    on a **120-frame episode**, read out of the cache name ``...-w120-...`` —
+    and ``w120`` is the **120-DEGREE FIELD OF VIEW**, not a frame count
+    (``parity.py:222`` spells the path ``.../wide120/...``; the rig is
+    ``camera_front_wide_120fov``). Episodes are ~199 frames, so K=6 yields
+    ``199-6-120 = 73`` windows/episode and ``max_k`` is **9 (18 s)**. The guard
+    was retiring the 12-18 s strategic band on a misread filename, and this test
+    was what kept it there.
+
+    ⭐ THE CONTRACT NOW: a preflight runs BEFORE the corpus mounts, so it cannot
+    know episode lengths and must not refuse on an assumed one. The corpus-side
+    F-11 guard does the check properly — ``reachable_strategic_ticks`` on the
+    SHORTEST episode, plus a separate refusal if any episode would drop to zero
+    windows (the parity protection an assumed length cannot give). Pinned by
+    ``test_the_corpus_side_guard_is_the_authority`` below.
+    """
     p = _pf("--w-s1-multi", "1.0", "--s1-multi-k", "6")
-    assert any("ZERO windows" in x and "8-30 s band" in x for x in p)
+    offending = [x for x in p if "ZERO windows" in x or "8-30 s band" in x]
+    assert not offending, (
+        "the preflight refused K=6 on an assumed 120-frame episode; the real "
+        "corpus is ~199 frames and K=6 gives 73 windows/episode: %r" % offending)
+
+
+def test_the_corpus_side_guard_is_the_authority_and_is_length_aware():
+    """The check that REPLACES the removed preflight refusal must be the one
+    that reads real lengths — so verify it moves with the corpus rather than
+    with a constant. 120 frames really does cap K at 5; ~199 reaches 9."""
+    at120 = reachable_strategic_ticks(120, window=6, stride_str=20)
+    at199 = reachable_strategic_ticks(199, window=6, stride_str=20)
+    assert at120["max_k"] == 5, at120
+    assert at199["max_k"] == 9, at199
+    # ⭐ and the 12-18 s rungs the old guard denied are real windows, not zero.
+    # ⚠️ Keys are INTEGERS. I briefly "fixed" these to strings after reading the
+    # dict through `json.dumps`, which stringifies int keys — inferring a fact
+    # about an object from a SERIALISED VIEW of it. Same family as the mistake
+    # this whole test file is about: taking a rendering for the thing.
+    wpe = at199["windows_per_episode"]
+    assert {type(k) for k in wpe} == {int}, wpe
+    assert wpe[6] == 73, wpe            # 12 s — the old guard called this ZERO
+    assert wpe[9] == 13, wpe            # 18 s — the true ceiling
+    assert at199["horizon_s_at_max_k"] == 18.0, at199
+    assert at120["windows_per_episode"][6] == 0, at120     # true AT 120 frames
 
 
 def test_preflight_passes_a_legal_F11_launch():

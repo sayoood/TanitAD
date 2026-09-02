@@ -5133,7 +5133,12 @@ def train(a) -> dict:
             f"episodes.")
 
     # ---- F-11: is the requested strategic roll REACHABLE on this corpus? ----
-    # ⛔ THE CATALOG'S 8-30 s BAND IS NOT REACHABLE ON A 120-FRAME CACHE, and
+    # ⚠️ MOST OF THE CATALOG'S 8-30 s BAND *IS* REACHABLE — this comment used to
+    # say it was not, on a 120-FRAME cache that never existed (`w120` is the
+    # 120-DEGREE FOV; episodes are ~199 frames, max_k = 9 = 18 s). Corrected
+    # 2026-09-02. The guard below is unaffected and was always right, because it
+    # reads the REALISED episode lengths rather than assuming one — which is
+    # exactly why it survived the error that took out the prose around it. And
     # the failure without this guard is SILENT-ish: `max_h = K*stride_str` walks
     # `t_max = frames - window - max_horizon` towards zero, so episodes drop out
     # ONE AT A TIME as K rises. A corpus of unequal-length episodes would
@@ -7073,13 +7078,19 @@ def build_parser() -> argparse.ArgumentParser:
                          "In force in S-S/S-J only.")
     ap.add_argument("--s1-multi-k", type=int, default=2,
                     help="strategic ticks to roll (K). K=1 IS `--w-s1` and is "
-                         "REFUSED. ⛔ CORPUS-LIMITED: a K-tick roll needs "
-                         "max_horizon = K*stride_str, and windows/episode is "
-                         "frames-window-K*stride_str. On the 120-frame cache "
-                         "that is 114-20K, so K<=5 (10 s) and K=4 (8 s) "
-                         "already costs 64%% of the windows. The catalog's "
-                         "8-30 s band is NOT reachable on this corpus — see "
-                         "`reachable_strategic_ticks`.")
+                         "REFUSED. A K-tick roll needs max_horizon = "
+                         "K*stride_str, so windows/episode is "
+                         "frames-window-K*stride_str. ⭐ On the REAL corpus "
+                         "(~199-frame episodes, MEASURED 2026-09-02) that is "
+                         "193-20K: K=4..9 (8-18 s) are all reachable, K=9 at "
+                         "13 windows/episode. ⚠️ The help text used to say "
+                         "'114-20K, K<=5, the 8-30 s band is NOT reachable' — "
+                         "that read `w120` in the cache name as 120 FRAMES "
+                         "when it is the 120-DEGREE FOV. Only 30 s remains out "
+                         "of reach (an episode is ~19.9 s). The authoritative "
+                         "check is corpus-side: `reachable_strategic_ticks` on "
+                         "the SHORTEST episode, which also refuses any K that "
+                         "would drop an episode to zero windows.")
     # ---- F-9 / catalog T3 — THE INTERACTION CURRICULUM ---------------------
     ap.add_argument("--t3-scores", type=str, default="",
                     help="path to the per-window T3 score artifact (a torch "
@@ -7686,19 +7697,33 @@ def preflight(a) -> list[str]:
             f"zeroes it because layer_str (predictor_str / act_head_str) is "
             f"FROZEN there — the launch line would advertise a term that "
             f"trains nothing. F-11 is an S-S (or S-J) measure.")
-    if _ws1m and _k >= 6:
-        # ⛔ NOT a style warning: at stride_str 20 and window 6, K=6 needs 120
-        # future frames and a 120-frame episode yields t_max = 120-6-120 < 0,
-        # i.e. ZERO windows. The corpus-side guard refuses with the realised
-        # numbers; this one refuses before the corpus even mounts.
-        problems.append(
-            f"--s1-multi-k {_k}: at the live geometry (window 6, stride_str "
-            f"20, 120-frame cache) windows/episode is 114-20K, so K>=6 yields "
-            f"ZERO windows and K<=5 (10 s) is the ceiling. ⚠️ The catalog's "
-            f"8-30 s band (4-15 ticks) is NOT reachable on this corpus — only "
-            f"its bottom edge K=4 is, at a 64%% window cost. This needs a "
-            f"longer re-extraction of the SAME episode list (PI decision D4), "
-            f"not a bigger K.")
+    # ⛔⛔ THE `_k >= 6` REFUSAL THAT USED TO LIVE HERE WAS WRONG, AND IT WAS
+    # BLOCKING REAL WORK. REMOVED 2026-09-02.
+    #
+    # It refused any K >= 6 with: "at the live geometry (window 6, stride_str 20,
+    # 120-frame cache) windows/episode is 114-20K, so K>=6 yields ZERO windows".
+    # The arithmetic was right and the corpus was not: **`w120` in the cache name
+    # is the 120-DEGREE FIELD OF VIEW, not a frame count** (`parity.py:222`
+    # spells the path `.../wide120/...`; the rig is `camera_front_wide_120fov`).
+    # Episodes are ~199 frames, so K=6 gives 199-6-120 = **73** windows/episode,
+    # not zero, and max_k is **9 (18 s)**. This guard was retiring the 12-18 s
+    # strategic band -- the programme's own thesis -- on a misread filename.
+    #
+    # ⭐ WHY NOTHING REPLACES IT, rather than a corrected constant. A preflight
+    # runs BEFORE the corpus mounts, so it cannot know the episode lengths; any
+    # constant it uses is an assumption. The corpus-side F-11 guard above
+    # (`if w_stage.w_s1_multi:`) already does this check STRICTLY BETTER -- it
+    # calls `reachable_strategic_ticks(min(ep_lens), ...)` on the SHORTEST
+    # episode, refuses above the realised `max_k`, AND separately refuses if any
+    # episode would drop to zero windows, which is the parity protection a mean
+    # or an assumed length cannot give. Duplicating an authoritative check with a
+    # guessed constant buys a slightly earlier failure and costs a wrong verdict.
+    #
+    # ⇒ **Do not refuse on an assumption when an authoritative check exists
+    # downstream.** Fast-fail is worth having, but not at the price of failing on
+    # something that is not true. If a genuinely corpus-free bound is ever wanted
+    # here, it must be justified against the SHORTEST episode, which is currently
+    # UNMEASURED (backlog L-12) -- and that is precisely why this refuses nothing.
     # ---- F-9 / T3 interaction curriculum -----------------------------------
     _t3 = str(getattr(a, "t3_scores", "") or "")
     _t3_declared = (float(getattr(a, "t3_alpha_start", -1.0)) != -1.0
