@@ -112,3 +112,12 @@ owner-file. Items with different owner-files are independent streams and may run
 ⚠️ **Not in this list on purpose:** anything needing a GPU, and anything needing the PI's spend
 decision. Those are D1/D2 in the decision sheet. **Gated ≠ idle** — F1–F9 are ~12 h of 0-GPU work
 that all lands before S-W's first gate.
+
+## refav1 pull-list (2026-09-02, Master Mind) — 0-GPU items that gate the first refav1 read
+
+| id | item | est | GPU | pointer | depends on | why |
+|---|---|---|---|---|---|---|
+| **R1** | **Lead block for the 141-clip eval grid** — nearest lead agent per window from `obstacle.offline` (headway / time-gap / TTC), so LONGITUDINAL's distance-keeping half is PRESENT instead of UNAVAILABLE | ~3 h | **0-GPU** | `taniteval/tools/refav1_arm.py` (the `_unavailable` site), `stack/scripts/build_obstacle_join.py` | nothing | binding four-families rule: *a missing metric is a work item, not an excuse*; the adapter refuses with reason today |
+| **R2** | **Review the UNSTAGED `taniteval/tools/t1_eval.py` worktree diff** (2026-08-30, *"window follows the checkpoint"*, +18/−2) — stage with provenance or revert | ~30 min | **0-GPU** | `git diff -- taniteval/tools/t1_eval.py` | nothing | the harness behind published T1 numbers carries an unreviewed local edit; the T1 adapter was tested AGAINST it |
+| **R3** | **Run `cl_oraclegoal` (T0) beside `cl` (T1) at the step-1000 read** — the cheapest search-vs-goal discriminator: if the oracle goal also returns baselines, the search budget is the ceiling, not the goal | ~1 h dev-box GPU | 4060 | `taniteval/tools/REFAV1_ARM.md` | C-REFAV1-PLAN-NOGOAL fix landed | separates *planner cannot search* from *planner has no goal* before any T1 number is quoted |
+| **R4** | **`--nav-from-v7` for refcv3** — ship + relaunch at the next 500-step checkpoint ONLY on the PI's go (C-NAV-SOURCE-DIVERGENCE option d) | ~10 min ops | pod, no extra load | `stack/scripts/refc_v3_train.py`, `stack/scripts/sup_refcv3.sh` | ⛔ PI decision + the flag's tests green | refcv3's nav is `follow` on 94.6 % of B1 windows (MEASURED) |
