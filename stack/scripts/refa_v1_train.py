@@ -271,6 +271,12 @@ def main(argv=None) -> int:
         start_step = int(ck["step"])
         print(f"resumed from step {start_step}")
 
+    # the set  will actually take — derived from the model, never a
+    # hand-maintained list that would drift from it
+    import inspect as _inspect
+    _FWD_PARAMS = {n for n in _inspect.signature(model.forward).parameters
+                   if n != "self"}
+
     log = (a.out / "train_log.jsonl").open("a", encoding="utf-8")
     t0 = time.time()
     for step in range(start_step + 1, a.steps + 1):
@@ -282,10 +288,34 @@ def main(argv=None) -> int:
             feats = b["feats"].to(a.device)
             actions = b["actions"].to(a.device)
             future = b["future_feats"].to(a.device)
+            # ⛔ FILTER BY THE MODEL'S ACTUAL SIGNATURE, AND SAY WHAT WAS
+            # DROPPED. This used to forward EVERY batch key, which worked only
+            # while the loader emitted exactly what `forward` accepted. Turning
+            # on --labels/--nav made the loader emit its validity masks
+            # (`nav_valid`, …) and the run died on
+            # `TypeError: RefAV1.forward() got an unexpected keyword argument`.
+            # A blind pass-through is a contract between two files that nobody
+            # checks; it breaks the moment either side grows a field.
+            # ⚠️ The report matters as much as the filter: dropping a VALIDITY
+            # MASK is correct (the model masks -100 itself), but silently
+            # dropping a LABEL would narrow the experiment invisibly — the
+            # exact failure the --labels guard exists to prevent. So name them
+            # once, and let the reader judge which kind they are.
             kw = {k: (v.to(a.device) if torch.is_tensor(v) else v)
                   for k, v in b.items()
-                  if k not in ("feats", "actions", "future_feats")
+                  if k in _FWD_PARAMS
+                  and k not in ("feats", "actions", "future_feats")
                   and v is not None}
+            if step == start_step + 1:
+                dropped = sorted(set(b) - _FWD_PARAMS
+                                 - {"feats", "actions", "future_feats"})
+                print(f"[refav1] forward() consumes {sorted(kw)}", flush=True)
+                if dropped:
+                    print(f"⚠️ [refav1] loader emits but forward() does NOT "
+                          f"accept: {dropped} — verify each is a validity mask "
+                          f"(safe: the model masks -100 itself) and not a "
+                          f"label (which would narrow the run silently)",
+                          flush=True)
         out = model(feats, actions, future_feats=future, **kw)
         loss = out["loss"]
         opt.zero_grad(set_to_none=True)
