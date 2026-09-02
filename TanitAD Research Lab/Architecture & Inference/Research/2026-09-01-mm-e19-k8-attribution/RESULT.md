@@ -33,6 +33,18 @@ Diffing the two arms' `config.json` (`raw/k8_config.json` vs the k60 pull) over 
 **identical** between the two. ⇒ this is a true one-variable comparison; the incumbent
 comparison never was.
 
+⛔⛔ **AMENDED 2026-09-02 — "DERIVED" IS NOT THE SAME AS "NOT A CONFOUND", AND THIS TABLE
+ORIGINALLY CONFLATED THEM.** The `o4_n` row above is labelled *"derived (window count follows
+the horizon)"* and was treated as harmless for that reason. It is not. `415,002 → 319,002` is a
+shortfall of **exactly 96,000 = 40 × 2,400** — the horizon delta times the corpus — so the k=60
+arm trained on **76.9 % of the k=8 arm's windows, 23.1 % fewer and temporally truncated**.
+⇒ the **intervention** remains one-variable and *"the fall is caused by `o5_k`"* stands; what is
+**NOT** established is *which consequence of `o5_k`* produced it — the longer rollout, or the
+smaller/truncated training set it forces. **This control does not separate them**: it differs on
+the window-set axis too, in the same direction. Every use of the 1.71× scene rise carries that
+clause until the axis is controlled (backlog **L-10**). Caught by the Research Lab
+(`…/2026-09-02-scene-matched-action-criterion/COMMS.md` §E3), not by me.
+
 ## 3. Results — h1 action-divergence ratio (the prereg's PRIMARY instrument)
 
 | arm | `o5_k` | clip | `init_from` | h1 ratio | vs incumbent |
@@ -75,8 +87,10 @@ between reads could have been runner drift.
 **The gradient clip and the scratch init are NOT the cause.** Changing clip 1.0 → 0.5 and
 dropping the distill init, with the horizon held at 8, moves the h1 ratio **1.04×** — flat.
 
-⇒ Whatever moved the k60 arm's ratio is attributable to **`o5_k` = 60**, the horizon itself.
-This is the attribution MM-E19 could not make on its own.
+⇒ Whatever moved the k60 arm's ratio is attributable to **`o5_k` = 60** — the setting, ⚠️ **not
+necessarily "the horizon itself"** (see the amendment in §2: `o5_k` also cuts the training-window
+set by 23.1 %, and this control does not separate the two consequences). This is the attribution
+MM-E19 could not make on its own.
 
 ⚠️ **Direction matters and must not be smoothed over.** The prereg committed three outcomes —
 `HORIZON-WORKS` (≥10× rise), `HORIZON-PARTIAL` (rise <10×), `HORIZON-INERT` (unchanged within
