@@ -20,11 +20,12 @@ WHAT IS PINNED
       a_dim=3 speed channel is built from the same rule.
   (4) THE KINEMATIC-CONTRACT CONTROL reads near zero: ``ol`` (recorded (a, kappa)
       integrated from v0) reproduces the GT path within 0.3 m ADE over 2 s.
-  (5) MEASURED, not assumed: with ``goal_field=None`` plan() returns a FLOOR
-      baseline on every window (no goal term in the cost => every zero-curvature
-      constant-accel candidate scores 0 and the floor loop's LAST tie wins:
-      ``baseline:decel_1.5``), so the T1 arm is a −1.5 m/s² brake by construction
-      and the record SAYS so (baseline_won_frac == 1.0, source named).
+  (5) MEASURED, not assumed: plan() with no supplied goal imagines one
+      (``goal_source == "tactical_imagined"``, e609a98) and never brakes by tie
+      any more (the pre-e609a98 defect was ``baseline:decel_1.5`` on every
+      window); the record names the goal source, the goal space and the
+      SELECTED manoeuvre per planning arm, and on this random-init fixture the
+      plan is ``baseline:hold_v0`` (an init property, source named).
   (6) Config handling: config.json wins over ckpt['cfg'] when consistent, a
       contradiction is refused by name, an unknown field is refused by name.
 """
@@ -269,10 +270,14 @@ def test_refav1_families_strategic_tactical_wm_and_paired(e2e):
     z = wm["intervals"]["feat_mse_zero_mean_over_steps"]["mean"]
     assert abs(z - wm["tgt_std_mean"] ** 2) < 0.15, (z, wm["tgt_std_mean"])
     assert "paired_zero_minus_model_mean_over_steps" in wm
-    # the protocol is DECLARED on every arm's four-families block, not UNDECLARED
+    # the protocol is DECLARED on every arm's four-families block, not UNDECLARED;
+    # goal_source is DERIVED from the per-window PlanResult provenance (e609a98):
+    # this tiny model has the hierarchy, so its planning arms imagined their goal
     for arm, blk in rec["arms"].items():
         assert blk["four_families"]["_protocol_undeclared"] == [], arm
-        assert blk["four_families"]["_protocol"]["goal_source"].startswith("none")
+        gs = blk["four_families"]["_protocol"]["goal_source"]
+        assert gs.startswith("per arm") and "cl: tactical_imagined 100.0 %" in gs, gs
+        assert "cl_oraclegoal: supplied 100.0 %" in gs, gs
     # --- paired per-family contrasts on the same windows -------------------------
     fp = r["families_paired"]["paired_cl_minus_ha"]
     assert fp["tier"] == "T1 minus T1"
@@ -280,31 +285,54 @@ def test_refav1_families_strategic_tactical_wm_and_paired(e2e):
         assert fam in fp["families"], fam
     lon = fp["families"]["longitudinal"]["LON_speed_mae_mps"]
     assert lon["estimator"] == "paired_episode_cluster_bootstrap" and lon["n_windows"] == N
-    assert r["protocol"]["goal_source"].startswith("none")
+    gs = r["protocol"]["goal_source"]
+    assert gs.startswith("per arm") and "tactical_imagined" in gs and "supplied" in gs
+    # the per-arm goal provenance block (the SELECTED manoeuvre behind the plan)
+    for arm in ("cl", "cl_navshuf"):
+        pl = r["planner"][arm]
+        assert pl["goal_source_fractions"] == {"tactical_imagined": 1.0}, arm
+        assert pl["goal_space"] == "tactical_query_field"
+        assert pl["n_goal_action"] == N and pl["goal_action_lat"] and pl["goal_action_lon"]
+        assert abs(sum(pl["goal_action_lat"].values()) - 1.0) < 1e-3
+        ag = pl["goal_vs_declared_head_agreement"]
+        assert ag["n"] == N and ag["lat"] == 1.0 and ag["lon"] == 1.0    # one decode path
+    assert r["planner"]["cl_oraclegoal"]["goal_source_fractions"] == {"supplied": 1.0}
+    assert r["planner"]["cl_oraclegoal"]["n_goal_action"] == 0
 
 
-def test_no_goal_plan_IS_a_floor_baseline_and_the_record_names_it(e2e):
-    """MEASURED on plan(): with goal_field=None the cost has no goal term, so
-    EVERY zero-curvature constant-accel candidate (cv, hold_v0, decel_1.5) has
-    jerk 0 and scores exactly 0; `icem_plan`'s floor loop keeps the LAST tie
-    (`<=` over the baseline dict), which is `decel_1.5`. The "T1 plan" is
-    therefore a constant −1.5 m/s² brake BY CONSTRUCTION. ⛔ If this assertion
-    ever flips to another baseline, plan()'s tie-break changed — re-read every
-    quoted refav1 T1 number, because its meaning changed with it."""
+def test_default_goal_plan_is_no_longer_a_brake_by_tie_and_the_record_names_its_goal(e2e):
+    """HISTORY — WHY THIS TEST EXISTED IN ITS OLD FORM. Before e609a98, with
+    goal_field=None the cost had no goal term, so EVERY zero-curvature
+    constant-accel candidate (cv, hold_v0, decel_1.5) had jerk 0 and scored
+    exactly 0; `icem_plan`'s floor loop kept the LAST tie (`<=` over the
+    baseline dict), which was `decel_1.5`, and the "T1 plan" was a constant
+    −1.5 m/s² brake BY CONSTRUCTION — this test asserted exactly that
+    (`source_fractions == {"baseline:decel_1.5": 1.0}` + the −1.5 m/s² speed
+    profile) so the defect could not hide. `refa_v1.plan` now imagines its
+    default goal (vision + nav + v0 -> `tactical_imagined`) and resolves ties to
+    `hold_v0`, so the OLD assertion fails BY DESIGN and is replaced by its
+    negation plus the provenance the adapter now records.
+
+    ⚠️ MEASURED on this random-init fixture the plan is `baseline:hold_v0` on
+    every window — a property of the INIT (residual heads x1e-3, every rollout
+    within ~1e-3 of the start field, smoothness terms dominate), NOT of the
+    wiring; `test_refa_v1_plan_goal` pins that the search wins in an
+    informative world. What is pinned HERE: no brake by tie, the chord speeds
+    equal the held v0, and the record names the goal the plan ran against."""
     root, a, manifest, rec = e2e
     pl = rec["refav1"]["planner"]
-    assert pl["cl"]["baseline_won_frac"] == 1.0
-    assert pl["cl"]["source_fractions"] == {"baseline:decel_1.5": 1.0}
-    assert pl["cl"]["coarse_fine_agree_rate"] == 1.0
+    assert "baseline:decel_1.5" not in pl["cl"]["source_fractions"], pl["cl"]
+    assert pl["cl"]["goal_source_fractions"] == {"tactical_imagined": 1.0}
+    assert pl["cl"]["goal_space"] == "tactical_query_field"
+    assert manifest["goal"]["space"] == ["tactical_query_field"]
     d = _load_dump(Path(a.dump_dir))["ep000"]
     sp = _chord_speeds(d["cl"], ra.DT)
-    k = np.arange(sp.shape[1])[None]
-    assert np.allclose(sp, np.clip(d["v0"][:, None] - 1.5 * ra.DT * k, 0, None),
-                       atol=1e-4)                              # braking at 1.5 ...
+    assert np.allclose(sp, d["v0"][:, None], atol=1e-4)       # hold_v0: speed = v0 ...
     assert np.allclose(d["cl"][..., 1], 0.0, atol=1e-6)        # ... straight ahead
     # the oracle-goal arm is stamped T0 and its provenance is recorded too
     assert manifest["tiers"]["cl_oraclegoal"] == "T0"
     assert "cl_oraclegoal" in pl
+    assert pl["cl_oraclegoal"]["goal_source_fractions"] == {"supplied": 1.0}
 
 
 def test_kinematic_contract_control_reproduces_GT(e2e):
