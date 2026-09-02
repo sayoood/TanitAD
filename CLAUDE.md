@@ -242,6 +242,16 @@ Every subagent brief MUST carry the preamble in
   (`… >> train.log 2>> train.stderr.log 200>&- &`). To recover a live run that is already in this
   state, do **not** kill the trainer: point the supervisor at a **fresh lock path** so it can
   supervise the process holding the old one.
+  ⛔⛔ **AND `200>&-` ON THE TRAINER ALONE IS NOT ENOUGH — I SHIPPED THAT PARTIAL FIX AND IT FAILED
+  THE SAME DAY.** MEASURED 2026-09-02 on `sup_refav1.sh`: after killing the supervisor and its
+  trainer, the lock was STILL held — by **`sleep 180`**, the supervisor's own poll child, which
+  had outlived its parent and inherited fd 200. ⇒ **EVERY child inherits the lock fd, not just
+  the interesting one.** Put `200>&-` on the `sleep`s too — on every command the supervisor
+  spawns. ⚠️ And when you patch them with `sed`, an anchored `^    sleep 120$` will MISS a
+  `sleep` that sits inline after a `;` — I left exactly that one unfixed on the first pass.
+  ⭐ The diagnostic that settles it in one line is `/proc/*/fd` with the holder's cmdline:
+  `for p in /proc/[0-9]*/fd/*; do [ "$(readlink $p)" = "<lock>" ] && tr ' ' ' ' < /proc/$(echo $p|cut -d/ -f3)/cmdline; done`
+  — it names the holder, and the answer has twice been a process nobody suspected.
   ⚠️ **And never `sed -i` a supervisor script while it is running** — bash reads a script lazily by
   byte offset, so an in-place edit can make a live shell execute garbage from the middle of a line.
   Edit only while it is stopped; otherwise write a new file and switch to it.
