@@ -45,3 +45,57 @@ start-vs-end is adequate and the instrument stands; **non-monotone mid-sequence 
 drift number we hold is a lower bound and the instrument must change.**
 
 `Next in this track: full text for the segment-metric definition; then the per-frame action metric.`
+
+
+---
+
+## Entry 2026-09-02-01 — WorldRoamBench full text: the drift metric is now portable, and non-monotonicity is MEASURED
+
+`PUBLISHED lib 2606.31672 · FULL TEXT READ 2026-09-02 (was abstract-only 2026-09-01) · unblocks backlog FS-1`
+
+### The segment-based drift formulation, exactly
+
+Partition the rollout into **N = 10** windows; take the **best-quality** and **worst-quality** windows;
+report the **relative percentage change** between them.
+
+> *"D = 0.05 means the worst 10% window of the video is 5% below the best 10% window in average score;
+> unlike a fixed start/end comparison, this localizes the strongest dip wherever it occurs, so transient
+> mid-rollout collapses that are later masked by recovery still contribute to D."*
+
+Relative rather than absolute *"keeps drift comparable across models with different score magnitudes"*.
+Instantiated on aesthetic and imaging score sequences to give two lower-is-better metrics.
+
+### ⭐ The non-monotonicity FS-1 was written to test is MEASURED, not hypothesised
+
+- *"A subset of models additionally show transient mid-rollout collapse, dipping sharply mid-sequence
+  before partially recovering; **a start-vs-end comparison would treat them as stable**, but our
+  segment-based best-vs-worst drift still localizes and penalizes the dip."*
+- `minWM`: *"selective collapse, with its aesthetic score crashing after frame 150 even as imaging stays flat"*.
+- `Matrix-Game 3.0`: *"progressive, accelerating decline driven by compounding autoregressive error accumulation"*.
+- `HY-World 1.5` best: aesthetic drift **13.85**, imaging drift **15.91**. `Yume 1.5` *"starts strong yet
+  accumulates 23.01 imaging drift"*.
+- *"low drift and high average quality are correlated but not identical"* — frame-averaged quality cannot
+  substitute for a stability measure.
+
+### ⭐⭐ Second independent confirmation of our action-echo finding, now with numbers
+
+> *"Models with high trajectory alignment (trajectory score above 85) can exhibit **below 65% per-frame
+> strict action accuracy**, revealing a hidden failure mode in which a model eventually drifts."*
+
+⇒ Three independent lines now agree that trajectory-level open-loop scoring conceals action-following
+failure: ours (S-curve 97.9 % open-loop / 0.0 % hold-action / ~5 % closed-loop), Alpamayo, and this.
+**Guideline S-1 (T1 is the burden of proof) strengthens.**
+
+### ⚠️⛔ SCOPE LIMIT — this changes what FS-1 may port
+
+Their drift is computed over **image-quality** scores (aesthetic / imaging). **Ours is a trajectory/latent
+quantity.** ⇒ **Port the segment-based best-vs-worst FORMULATION, not the metric.** Quoting their
+13.85 / 23.01 against our drift numbers would be the `df` / `step_s` scope error in a new costume.
+
+⇒ FS-1 is **unblocked and executable at 0 GPU**: N=10 segments, best-vs-worst, relative change, over the
+banked v7 rollout dumps. **Committed outcome unchanged: monotone ⇒ the instrument stands; non-monotone
+⇒ every drift number we hold is a LOWER BOUND and the instrument must change** — including the MM-E1 EMA
+read (0.4531 -> 0.36-0.40) currently deciding a recipe.
+
+`Next in this track: C4 leaderboard numbers landed 2026-09-02 (see LEDGER_C1_releases.md C4 entry) but`
+`are NOT admissible into a comparability table until backlog row 3 (portfolio) and D-EPDMS-FAM land.`

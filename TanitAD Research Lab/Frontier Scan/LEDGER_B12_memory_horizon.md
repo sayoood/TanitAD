@@ -77,3 +77,69 @@ slots in the config at 1e-3 init**, ESTIMATED cost ~zero, so the VLWM arm stays 
 
 `Next in this track: full text - extract how variable-length conditioning is trained, and whether it
 needs a different data layout than our fixed-stride windows.`
+
+
+---
+
+## Entry 2026-09-02-01 — VLWM full text: FiLM conditioning is named as the mechanism that hides actions
+
+`PUBLISHED lib 2606.21775 · FULL TEXT READ 2026-09-02 (abstract-only 2026-09-01)`
+
+### ⭐⭐ The finding the abstract could not show — and it belongs to gate problem P-2
+
+> *"**Architecture-locked action conditioning.** Because actions are fused inside transformer layers, if we
+> provide multiple actions, they will be compressed into shared hidden representations, **which makes it
+> difficult to disentangle their individual contributions to the predicted dynamics**. Consequently, the
+> architecture itself dictates how many actions can be supplied."*
+
+They name the interfaces explicitly: *"dedicated conditioning mechanisms (e.g., **FiLM layers** or
+cross-attention modules)"*. VLWM replaces them with **action-as-token** — *"treats each action embedding as
+a standard transformer token and interleaves action and state tokens within a single sequence"* — which
+*"eliminates the need for a predefined action-conditioning interface"*.
+
+⛔ **This re-opens a branch we closed.** Our P-2 investigation ELIMINATED zero-init FiLM as a cause on the
+grounds that **"it trained"** (MM-E18, converged). VLWM's claim is compatible with that observation and
+still damning: **FiLM can train perfectly well and still entangle the action's contribution.**
+⇒ **"It trained" was never evidence that the conditioning interface is innocent.** P-2 branch (c)
+*representation* re-opens with a named mechanism — and with Delta-JEPA's endpoint-leak (LEDGER_A2) it now
+has **two** independent published mechanisms where a week ago it had none.
+
+### ⭐ Independent corroboration of backlog L-1 (horizon curriculum)
+
+> *"training with large prediction horizons from the outset is highly unstable. Long-horizon prediction
+> tasks are substantially more difficult, often resulting in noisy gradients, optimization failure, and
+> representation collapse."*
+
+Fixed by a **cumulative-uniform curriculum** — stage j samples k uniformly from 1 to j — which they compare
+against direct full-range training, finding *"the curriculum is essential for stable variable-length
+training"*. ⇒ **A second independent line for L-1** (curriculum, not a smaller scalar clip) against our
+k=60 divergence at clip 1.0 (gnorm median 5.71 to 2.1e9).
+
+### Other load-bearing details
+
+- **Backbone-agnostic:** *"the encoder f can be a JEPA-style, DINO-style, or any other latent encoder,
+  and prior fixed-horizon world models are recovered as special cases of p(k)."* ⇒ composes with our trunk.
+- **Planning:** partitions the horizon into contiguous chunks and evaluates the rollout as *"a few chunked
+  variable-length latent jumps"* instead of a long autoregressive rollout. ⭐ **Directly relevant to P-7**
+  (latency linear in K): fewer, larger jumps is a latency argument as much as an accuracy one.
+- Planning is CEM-based latent MPC — the same framework as LeWM and V-JEPA-2, so comparisons are fair.
+
+### ⚠️ An honest threat to H1, recorded as one
+
+> *"By combining multiple horizons within a single rollout, VLWM further enables **hierarchical planning
+> without requiring separate high-level and low-level policies**."*
+
+Against HWM they argue *"HWM requires an additional high-level predictor, whereas our approach is
+end-to-end and does not rely on auxiliary modules."*
+
+⛔ **This is the clearest published challenge to the programme's hierarchy thesis logged so far.** It is an
+**argument**, not an ablation against a hierarchy — but it must be filed as a challenge, never as support.
+It belongs in the H1b design (backlog row 18): a variable-horizon single predictor is a **legitimate third
+arm** in the hierarchy-vs-flat comparison, and arguably the strongest flat baseline available to us.
+
+### Consequence for live rows
+
+- **FS-2 STRENGTHENED** — keep the h>=2 head slots at 1e-3 init while executing backlog row 5. The
+  asymmetry argument now has a mechanism and a number (13 % over LeWM) behind it.
+- **L-1 corroborated** by a second independent primary.
+- **backlog row 18 (H1b)** gains a required third arm.

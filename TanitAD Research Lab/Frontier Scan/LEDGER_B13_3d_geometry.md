@@ -77,3 +77,71 @@ only fact that decides whether this line is reachable for TanitAD at all.**
 ⇒ ⛔ **No design work on this until the full text answers it.** Carried as an open debt.
 
 `Next in this track: full-text read of section 4 (training/supervision) ONLY - that is the whole question.`
+
+
+---
+
+## Entry 2026-09-02-01 — ⛔ SparseOcc++ debt D-5 DISCHARGED: the line is CLOSED on a pre-registered outcome
+
+`PUBLISHED lib 2607.04732 · FULL TEXT READ 2026-09-02 · register debt D-5 · backlog P-11 / guideline S-3`
+
+Backlog **P-11** pre-committed the read: *"if it requires occupancy GT we cannot produce, the line is
+CLOSED and we say so."* **It requires exactly that, on two independent supervision paths.**
+
+1. **Dense per-voxel semantic occupancy GT.**
+   > *"SCF Ground Truth Generation. To supervise SCF learning, we efficiently generate ground truth (GT)
+   > from **semantic occupancy labels**."*
+
+   Training uses **SemanticKITTI** (*"LiDAR point clouds, LiDAR segmentation labels, and semantic scene
+   completion labels"*; each voxel annotated empty or one of **19** semantic classes) and
+   **nuScenes-Occupancy** (*"dense 3D semantic occupancy annotations for keyframes"*, **16** classes plus
+   empty, built by the Augmenting-and-Purifying pipeline).
+
+2. **LiDAR, separately, for depth.**
+   > *"L_depth is calculated between the predicted depth map and the ground truth projected by **point
+   > clouds** for the supervision of the LSS component."*
+
+   Plus mask and classification losses via Hungarian bipartite matching on *"binary mask labels and
+   corresponding semantic class labels"*, and a segmentation loss on the coarse binary classifier.
+
+⛔ **PhysicalAI-AV has neither.** No map, no lane graph, no occupancy labels (settled at five probes); the
+only 3D source is `obstacle.offline` — **10 dynamic-agent classes, 87,481 cuboids** — an agent-box corpus,
+not voxel occupancy, and there is no LiDAR.
+
+⇒ **THE SPARSEOCC++ LINE IS CLOSED FOR TANITAD.** Recorded because it was pre-registered, not because it
+is convenient. Guideline **S-3** (claim the geometry gap as a differentiator) survives, but **must not be
+built on this paper**.
+
+### ⭐ The escape hatch, named by the paper itself — where B13 goes next
+
+Its related work cites a live family needing **no** occupancy GT:
+
+- **2D-rendering supervision:** RenderOcc (ICRA'24), OccNeRF, UniOcc — *"impose NeRF-style 2D supervision
+  to implicitly learn 3D geometry"*.
+- **Self-supervised:** SelfOcc (CVPR'24), GaussianOcc (ICCV'25, *"fully self-supervised"*), GaussTR
+  (CVPR'25), GeoCC (IEEE TITS'25).
+
+⭐ **We hold the assets this family runs on: NuRec scenes are open msgpack and gsplat does 492 FPS on
+Thor.** ⚠️ But it does **not** inherit SparseOcc++'s numbers (+2.3 IoU, 3.9x over SparseOcc, 5.9x over
+OccFormer on SemanticKITTI) — assuming it does would be the same scope error in a new place.
+
+⚠️ The paper also notes these methods *"often entangle geometry with appearance or require complex
+rendering pipelines"* — a real cost, and the reason this is a track direction rather than a plan.
+
+### ⭐ One transferable ablation, independent of the supervision blocker
+
+Their Table V (prediction heads):
+
+> *"the linear head achieves the highest geometry IoU of **36.8**. We hypothesize that this occurs because
+> the linear head is supervised by an **explicit geometry loss**, i.e., a cross-entropy loss between
+> occupied and non-occupied voxels. Conversely, the transformer decoder formulates occupancy prediction as
+> mask generation for semantic classes only, **imposing no explicit supervision on occupied voxels**."*
+
+⇒ **Explicit geometry supervision beats an implicit semantic formulation at geometry.** Our MEASURED
+readout-geometry ceiling (4 azimuth bins over 120 deg, 2.1-7.8x too coarse for BEV localisation) is trained
+with **no explicit geometry term at all**.
+
+⭐ **That is a materially cheaper hypothesis than re-architecting the readout, and it has never been
+tested.** Proposed as a backlog row with a committed outcome: **if an explicit geometry loss does not move
+azimuth-bin decodability, the ceiling is resolution-bound and the readout must be re-architected** — the
+expensive branch, but then a known-necessary one rather than an assumed one.

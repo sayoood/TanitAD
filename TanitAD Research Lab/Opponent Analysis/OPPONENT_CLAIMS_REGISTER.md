@@ -88,3 +88,104 @@ evidence arrives — that is why this file exists and a one-off report does not.
 | **D-4** *(new)* | The **UNECE GRVA primary text** (draft ADS regulation) is **403-blocked and UNREAD**. The "online-learning ban" is *unsupported at two probes*, **not refuted**. Blocks injected row **I-3**'s design. | next Band-D/C3 pass |
 | **D-5** *(new)* | **SparseOcc++ `2607.04732` supervision requirements** — the one question that decides reachability for us — are **not in the abstract**. ⛔ No design work until a full-text read answers it. | next B13 pass |
 | **D-6** *(new)* | **A2 (JEPA) and A4 (VLA) had no DEEP this pass.** Band A is `PARTIAL` and says so. | next pass, top of Band A rotation |
+
+
+---
+
+## Mobileye — *"Compound AI: The framework powering scalable autonomy"* (2025-07-31) + *"On the Sample Complexity of End-to-end Training vs. Semantic Abstraction Training"* (arXiv 1604.06915, 2016)
+
+`Adjudicated 2026-09-02 under DAILY_RESEARCH_CHARTER_v2_AMENDMENT.md §7.1, all seven steps.`
+`⭐ FIRST Band-D item backed by a PROOF rather than by advocacy or exposure — a case the protocol had not met.`
+`Primary banked this pass: lib 1604.06915.`
+
+### Document classification (step 1)
+
+| | |
+|---|---|
+| **Doctrine post** | Mobileye blog, **2025-07-31**. `PUBLISHED-BLOG`. |
+| **Academic primary** | Shalev-Shwartz & Shashua, arXiv **1604.06915**, 2016-04-23. `PUBLISHED` (preprint, no venue). ⚠️ **Abstract + framing read; FULL TEXT NOT READ — the construction behind *"cases in which"* is unexamined (new debt D-7).** |
+| **Competitive context** | Mobileye is a Tier-1 supplier that **sells modularity as a product**; the post is advocacy for the architecture its business model depends on, published while competitors marketed end-to-end. |
+
+### Is it an experiment? (step 2)
+
+⛔ **The blog: NO.** Zero ablations, zero A/B, zero matched comparison. Its only external citation is
+Berkeley AI Research's general remark that *"state-of-the-art AI results are increasingly obtained by
+compound systems"*. Its only numbers are hardware specs (EyeQ6 High **34 TOPS INT8**, *"over 1,000 frames
+per second on pixel-labeling neural networks"*) — **specifications, not evidence for the architecture claim.**
+
+⭐⭐ **The 2016 paper: NEITHER an experiment NOR attribution-from-exposure — a PROOF.** *"We demonstrate
+cases in which the number of training examples required by the end-to-end approach is exponentially larger
+than the number of examples required by the semantic abstraction approach."*
+
+⚠️ **The qualifier is load-bearing.** *"cases in which"* = a **constructed existence result** in a declared
+regime (*"where an extremely high accuracy is necessary"*). It proves the separation **can** occur, not
+that it **does** occur in any real driving stack. ⛔ **A proof of possibility read as a proof of necessity
+is the scope error our retraction log is built around.**
+
+### Adjudicated claims
+
+| id | claim | evidence class | verdict | binds on us? | what would FLIP it |
+|---|---|---|---|---|---|
+| **M-1** | Compound/modular AI is the right architecture for scalable autonomy | `PUBLISHED-BLOG`, no ablation | ⚠️ **CONTESTED** — confirmed by two independent stacks (Waymo W-13; Dual-System VLA `2512.16760`), contradicted by a documented field-wide shift to E2E (`2603.16050`) and two commercial E2E deployments (Tesla, Wayve). **Neither side has run a controlled comparison.** | ⭐ **PARTIALLY** — it removes "pure E2E is the industry consensus" from our positioning, but does not support our specific hierarchy | A matched-params, matched-data modular-vs-E2E ablation on a shared benchmark — **which is exactly backlog row 18 (H1b)** |
+| **M-2** | Semantic-abstraction training needs exponentially fewer samples than end-to-end | `PUBLISHED` (proof, existence result) | ⚠️ **SUPPORTED-AS-A-POSSIBILITY / UNSUPPORTED-AS-A-GENERAL-CLAIM** — the construction is not shown to instantiate in driving | ⛔ **NO, not as stated** — see the binding analysis below | A demonstration that the paper's construction (or an analogue) holds for a realistic driving decomposition; or an empirical sample-complexity curve favouring decomposition at matched accuracy |
+| **M-3** | Modularity + redundancy + abstraction yield resilience across edge cases | `PUBLISHED-BLOG` | ⛔ **UNSUPPORTED-AS-STATED** — asserted with no ablation, no metric, and a single acknowledged trade-off (*"a careful balance between flexibility and efficiency"*) | NO | Any published edge-case ablation isolating modularity from data scale |
+
+### ⭐⭐ Does M-2 bind on us? (step 6 — separate from whether it is true)
+
+⛔ **NO, and getting this wrong would flatter us.**
+
+| | Mobileye | TanitAD |
+|---|---|---|
+| components | **hand-specified**, semantically named, formal interfaces (RSS, REM) | **learned latent** strategic / tactical / operative levels |
+| decomposition | **given by design** | **must itself be learned** |
+| interfaces | engineered, formally verifiable | differentiable embeddings |
+
+**The 2016 separation assumes the semantic decomposition is GIVEN** — its advantage comes from supervising
+components directly against semantic targets. **A hierarchy whose decomposition must be discovered does not
+automatically inherit that advantage.** ⇒ **M-2 raises our prior for H1b. It is not evidence for it, and it
+decides no GPU-day.**
+
+⭐ **What DOES bind:** Mobileye is a **third** independent stack whose deployed architecture carries a
+modular or fast/slow seam (with Waymo W-13 and the Dual-System VLA family). *"Pure end-to-end is the
+industry consensus"* is not supportable and should not appear in our positioning.
+
+### Guidelines derived (step 7)
+
+- ⭐⭐ **S-5 (STRATEGIC, proposed):** State in the paper that **the modular-vs-E2E question is unresolved
+  and unablated on BOTH sides**, and that TanitAD's contribution is **to run the matched-params comparison
+  nobody has run** (backlog row 18, H1b). **This converts the programme's biggest positioning weakness — a
+  thesis hypothesis with no measured datapoint — into its differentiator.**
+- ⛔ **T-3 (TACTICAL, proposed):** **Never cite `1604.06915` as support for TanitAD's hierarchy without the
+  given-vs-learned decomposition caveat.** Recorded here so a future pass cannot quote it bare.
+
+### ⚠️ Opponent strengths recorded (amendment §7.2 — a Band-D package listing none is INCOMPLETE)
+
+1. ⭐ **Mobileye has a genuine theoretical argument, which is rare in this literature.** Waymo's doctrine
+   post had zero ablations and zero theory; Mobileye has a proof, however narrow. **On evidence quality for
+   an architecture claim, Mobileye is ahead of Waymo — and ahead of us.**
+2. **Shipping silicon with published efficiency numbers** (EyeQ6 High, 34 TOPS INT8, >1,000 FPS on
+   pixel-labeling nets). Our efficiency claim is a thesis; theirs is a part number.
+3. **Formal safety interfaces (RSS) give them something we lack entirely** — a verifiable envelope
+   independent of the learned components. We have a safety *case*, not a formal guarantee.
+4. **Doctrinal consistency since 2016**, with a product line that reflects it. Not evidence, but not
+   marketing drift either.
+
+---
+
+## ⛔ Open verification debts — updated 2026-09-02
+
+| # | debt | status |
+|---|---|---|
+| **D-4** | UNECE GRVA **primary text** unread | ⛔ **STANDS — THIRD ROUTE FAILED (HTTP 403).** Online-learning ban now **unsupported at three probes**, still **NOT refuted** — all three probes were secondaries, and a secondary's silence is not the primary's. ⭐ **Real finding instead: the SMS spans *"post-deployment"*, so an adapting model is a SAFETY-CASE obligation, not an illegality.** ⇒ **ESCALATED TO THE PI QUEUE** — the Lab has exhausted its routes. |
+| **D-5** | SparseOcc++ `2607.04732` supervision requirements | ✅ **DISCHARGED 2026-09-02 — and the PRE-REGISTERED OUTCOME CLOSES THE LINE.** It needs **dense per-voxel semantic occupancy GT** *and* **LiDAR-projected depth**. PhysicalAI-AV has neither. Backlog **P-11 retires as served-and-closed**; guideline S-3 redirects to the self-supervised / 2D-rendering occupancy family (SelfOcc, GaussianOcc, GaussTR, RenderOcc), where our NuRec + gsplat assets apply. |
+| **D-6** | A2 (JEPA) and A4 (VLA) had no DEEP | ✅ **DISCHARGED 2026-09-02.** A2 = Delta-JEPA `2606.31232` (full text); A4 = driving-VLA survey `2512.16760` (full text). **Both ledgers CREATED**, fixing the FS-6 broken links. |
+| **D-7** *(new)* | `1604.06915` **full text unread** — the construction behind *"cases in which"* decides how far M-2 generalises, and M-2 is the strongest theoretical claim any opponent has made against our positioning | next Band-D pass |
+| **D-8** *(new)* | **B9 primary unread.** The Open-Sora *70M→10M* curation figure is `RELAYED` from a survey summary and is **barred from deciding anything**; MiniWorld `2608.01127` banked but unread | next B9 pass |
+| **D-9** *(new)* | **LeWorldModel `2603.19312` and Sub-JEPA `2605.09241` are UNBANKED and unread.** ⛔ LeWM is the model whose measured action-insensitivity is this pass's headline — **we are citing a failure we have only read second-hand, through its critic.** | next A2 pass, high priority |
+
+### ⚠️ Corrections entered this pass
+
+- ⛔ **The "sub-50 ms driving-VLA latency requirement" is UNATTRIBUTED and is struck.** It came from a
+  search-engine summary; the cited primary `2512.16760` contains **no latency number at all**.
+  *(Third consecutive day on which the failing load-bearing number was one nobody had opened the primary
+  for — cf. D-1's 85.1/92.1 and B2's 25 %.)*

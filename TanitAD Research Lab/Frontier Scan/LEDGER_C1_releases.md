@@ -124,3 +124,46 @@ exactly why `quant_gate.py` is P0. ⇒ **Worth one re-test on JetPack 7.2.1**, s
 predates this release; a fail-closed gate must not inherit a stale platform assumption either.
 
 `Next in this track: re-run the FP8/FP4 precision census on JetPack 7.2.1 once quant_gate.py exists.`
+
+
+---
+
+## C4 entry 2026-09-02-01 — the first leaderboard-adjacent numbers the programme holds
+
+`Band C / C4 · PUBLISHED (paper claims) · ⛔ NOT read off a live leaderboard — see empty E7`
+
+**C4 (community signals / leaderboards) had never received a dedicated DEEP since the charter began.**
+This entry opens it, with an explicit caveat about what these numbers are.
+
+| system | score | split |
+|---|---|---|
+| **DrivoR** | **56.3 EPDMS** | NAVSIM v2 |
+| **PDM-Closed** (privileged, ground-truth perception) | **56.6 EPDMS** | NAVSIM v2 |
+| **CLOVER** | **48.3 EPDMS** | navhard-two-stage |
+| **RAP-DINO** | **36.9 EPDMS** | NAVSIM v2 |
+
+Context: NAVSIM v2 introduces **two-stage EPDMS**, adding Traffic Light Compliance, Driving Direction
+Compliance, Lane Keeping and Extended Comfort. `navhard` is a nuPlan subset — **450 stage-1 and 5,462
+stage-2 observations**. Release line: **NAVSIM v2.1.2** shipped `navhard_two_stage` and the updated EPDMS
+for the HuggingFace warmup leaderboard.
+
+### ⭐⭐ Why this sharpens the efficiency wedge
+
+**DrivoR is within 0.3 EPDMS of a PRIVILEGED planner that consumes ground-truth perception.** Combined
+with backlog row 32's ~40 M parameter figure for DrivoR, the wedge must be restated: **"sub-300M" is not
+merely community-demonstrated — a ~40 M camera-only model sits at parity with a GT-perception planner on
+this benchmark.** ⛔ Our efficiency claim has to beat *that*, not a 32 B model. Backlog row 32 is
+strengthened and should be re-read with these numbers.
+
+### ⚠️⛔ V-5 guards — both binding, both reasons these may not enter a table yet
+
+1. **The splits differ.** NAVSIM v2 overall and navhard-two-stage are **not one ranking** and must never be
+   pooled. Three of the four numbers above are not mutually comparable.
+2. **EPDMS is comparable only within one scoring-basis era**, and **none of these has been cross-checked
+   against our four-family definitions** — D-EPDMS-FAM is still open (EPDMS measures compliance and
+   outcome; nothing in it maps to `tac.manoeuvre_decision` or `strat.route_goal`).
+3. ⚠️ **These are paper claims, not a leaderboard read.** The only leaderboard snapshot surfaced was
+   **March 2026** (empty E7).
+
+⇒ **No number here may enter a TanitAD comparability table until backlog row 3 (portfolio approval) and
+D-EPDMS-FAM land.** Recorded now so the wedge argument can be written, not so the numbers can be quoted.

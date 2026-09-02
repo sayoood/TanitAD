@@ -47,3 +47,45 @@ outcome:** if the converted arm does not match the control's rank within CI, con
 transfer to short-horizon visual latents and I-2 closes on the cheap path.
 
 `Next in this track: full text - the conversion recipe and what it assumes about the source model.`
+
+
+---
+
+## Entry 2026-09-02-01 — HALO full text: the method is confirmed, the payoff regime is not ours
+
+`PUBLISHED lib 2601.22156 · FULL TEXT READ 2026-09-02 (abstract-only 2026-09-01) · injected row I-2`
+
+**HALO** (*Hybrid Attention via Layer Optimization*) converts pre-trained Transformers into RNN-attention
+hybrids. The load-bearing step is **attention-layer selection** — which layers to leave unconverted:
+
+> *"our objective is to identify which attention layers are most important for modeling recall abilities
+> and leave them unconverted."*
+
+Conversion costs **2.3B tokens, <0.01 % of pre-training data**, vs *">10B tokens"* for prior methods
+(their Table 1). Pipeline is multi-stage (initialisation + staged distillation), with some stages
+training-free. Produces **HypeNet**, converted from the Qwen3 series, using a **HyPE** position encoding
+for length generalisation.
+
+### ⛔ The regime caveat that downgrades I-2's expected payoff
+
+The efficiency case is made at **128K and 1M** context — *"For 1M context length, the Qwen3 model runs out
+of GPU memory"* — and hybrids *"enjoy significant inference speedups over Transformer-based models"*
+precisely *"in long-context scenarios"*. **Our v7 predictor operates at K in {8, 60, 300} steps.**
+
+The paper also concedes: *"distilled hybrid models typically underperform those trained from scratch"*.
+
+⇒ **The method is confirmed and the motivation is downgraded in the same read.** Yesterday's re-scope
+("CONVERT the trained v7 predictor rather than TRAIN a Mamba at matched params") stands as the correct
+*method*; today adds that the *reason to want it* may not transfer to our context lengths at all.
+**This is the honest shape of a Band-B transfer question answered against us.**
+
+### Consequence
+
+- **I-2 stays open but its priority should fall** pending P-6's benchmark.
+- ⭐ **Run backlog P-6 FIRST.** Its pre-committed read — *"SSM wins only if ms/step is flat in K AND lower
+  in absolute terms at K=60; flat-but-slower refutes"* — is exactly the regime test this paper leaves open
+  for us, and it is 0-GPU then 4060.
+- ⭐ **One idea transfers independently of the SSM question:** selecting components by *recall importance*
+  rather than uniformly. That is a general compression heuristic and may apply to our deployment work.
+- ⛔ Adopting HALO on the strength of a 1M-context result would be the `INHERITED` failure the operating
+  standard bans.

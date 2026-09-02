@@ -119,3 +119,73 @@ verified. Same family as "a tool reporting success is not evidence its output is
 4. **B1, B3–B11, C4 SCAN** — restore breadth after a deliberately depth-first pass.
 5. **WorldRoamBench full text** — the segment-based drift metric definition, for the 0-GPU re-score experiment.
 6. **`2601.22156` full text** — the conversion recipe, for the re-scoped I-2.
+
+
+---
+
+## Fourth pass, 2026-09-02 (frontier scan; the day's FIVE domain packages already existed and were NOT redone)
+
+⭐ **Three standing debts discharged (D-5, D-6, and FS-6's broken links) and the FS-1 blocker removed.**
+⛔ **One correction entered, one line CLOSED on a pre-registered outcome, and breadth FAILED for a second
+consecutive day — stated in the pass's own summary, not smoothed over.**
+
+| # | band | track | last SCAN | last DEEP | ledger | note |
+|---|---|---|---|---|---|---|
+| D1 | D | Opponent doctrine | **2026-09-02** | **2026-09-02** | [`../Opponent Analysis/OPPONENT_CLAIMS_REGISTER.md`](../Opponent%20Analysis/OPPONENT_CLAIMS_REGISTER.md) | ⭐ **Mobileye Compound AI**, 3 claims (M-1…M-3). First Band-D item backed by a **proof**; counter-search flipped it to **CONTESTED** |
+| A1 | A | World models | 2026-09-01 | 2026-09-01 | [`LEDGER_A1_world_models.md`](LEDGER_A1_world_models.md) | ⚠️ not scanned this pass |
+| A2 | A | JEPA / predictive architectures | **2026-09-02** | **2026-09-02** | ⭐ [`LEDGER_A2_jepa.md`](LEDGER_A2_jepa.md) **(CREATED — FS-6 fixed)** | ⭐⭐⭐ **Delta-JEPA `2606.31232`, full text. LeWM measured action-insensitive on OUR diagnostic; endpoint-concat probes are leak-confounded** |
+| A3 | A | Vision encoders | 2026-09-01 | — | — | ⛔ **E1 now at THREE probes, still empty.** Promote to the standing empty-search register |
+| A4 | A | VLA | **2026-09-02** | **2026-09-02** | ⭐ [`LEDGER_A4_vla.md`](LEDGER_A4_vla.md) **(CREATED — FS-6 fixed)** | `2512.16760` full text; ⛔ **"sub-50 ms" struck as UNATTRIBUTED** |
+| A5 | A | Benchmarks + evaluation | **2026-09-02** | **2026-09-02** | [`LEDGER_A5_benchmarks.md`](LEDGER_A5_benchmarks.md) | ⭐ WorldRoamBench **full text** — drift metric fully specified, **FS-1 UNBLOCKED** |
+| B1 | B | VLM / multimodal / omni | 2026-08-31 | partial | — | ⚠️ not scanned |
+| B2 | B | Post-transformer | **2026-09-02** | **2026-09-02** | [`LEDGER_B2_post_transformer.md`](LEDGER_B2_post_transformer.md) | HALO **full text**; ⛔ **payoff regime is 128K–1M context — NOT ours.** I-2 downgraded |
+| B3–B8 | B | decoding / training / RL / self-improving / diffusion / tokenizers | 2026-08-31 | varies | — | ⚠️ **not scanned** |
+| B9 | B | Data curation | **2026-09-02** | — | — | ⭐ **first B9 signal** (MiniWorld `2608.01127` banked; Summer-22B). ⚠️ Open-Sora 70M→10M figure is **RELAYED**, primary unread (debt D-8) |
+| B10 | B | Semantic search / retrieval | 2026-08-31 | 2026-08-31 | [`LEDGER_C3_regulatory.md`](LEDGER_C3_regulatory.md) (B10 section) | ⚠️ not scanned |
+| B11 | B | Physics-informed operators | 2026-08-31 | ⛔ withdrawn source | — | ⚠️ not scanned |
+| B12 | B | Memory / long context | **2026-09-02** | **2026-09-02** | [`LEDGER_B12_memory_horizon.md`](LEDGER_B12_memory_horizon.md) | ⭐⭐ VLWM **full text** — **FiLM named as the action-entangling mechanism**; re-opens P-2 branch (c); corroborates L-1 |
+| B13 | B | 3D / occupancy | **2026-09-02** | **2026-09-02** | [`LEDGER_B13_3d_geometry.md`](LEDGER_B13_3d_geometry.md) | ⛔ **D-5 DISCHARGED → LINE CLOSED** (needs occupancy GT + LiDAR). ⭐ Redirect: self-supervised occupancy + our NuRec/gsplat |
+| C1 | C | Lab + AV releases | 2026-09-01 | 2026-09-01 | [`LEDGER_C1_releases.md`](LEDGER_C1_releases.md) | ⚠️ no new releases probed this pass |
+| C2 | C | Engineering blogs / release notes | 2026-09-01 | 2026-09-01 | [`LEDGER_C1_releases.md`](LEDGER_C1_releases.md) (C2) | ⚠️ not scanned |
+| C3 | C | Regulatory | **2026-09-02** | **2026-09-02** | [`LEDGER_C3_regulatory.md`](LEDGER_C3_regulatory.md) | ⛔ **third route to the primary 403 — D-4 ESCALATED TO THE PI.** ⭐ SMS spans *post-deployment* ⇒ I-3 is a safety-case problem, not legality |
+| C4 | C | Community signals / leaderboards | **2026-09-02** | **2026-09-02** | ⭐ [`LEDGER_C1_releases.md`](LEDGER_C1_releases.md) (C4 entry, **opened**) | ⭐⭐ **DrivoR 56.3 vs privileged PDM-Closed 56.6** — the efficiency wedge must now beat ~40 M, not 32 B. ⚠️ split-mixing barred (V-5) |
+
+### ⛔ Banked-but-unread — the count FS-5 asked for, first instalment
+
+`MEASURED this pass. FS-5 proposed this column; here is the evidence that it is the Lab's dominant inefficiency.`
+
+**6 of the 8 primaries needed today were ALREADY BANKED.** Yesterday: 5 of 6. On 2026-08-31: 2 of 10.
+⛔ **The single most consequential finding of this pass — Delta-JEPA — was banked and unread**; the web
+surfaced it as a discovery and `kb_add` answered *"already banked"*.
+
+| track | known banked-but-unread |
+|---|---|
+| A2 | ⛔ was `2606.31232` (**read this pass**); `2602.03604` EB-JEPA abstract-only |
+| B5 / B6 / B7 / B8 | AtomVLA, RLVR-World, `2607.07663`, GoalFlow, MambaVideo — **all abstract-only since 2026-08-31** |
+| B9 | `2608.01127` MiniWorld (banked this pass, unread) |
+| A1 | `2603.09086` abstract-only |
+
+> ⭐ **A banked primary with no five-dimension analysis is not an asset, it is a debt with a hash — and the
+> highest-value item in the programme can sit in it.** Library: **313 entries / 2,136.4 MB.**
+
+### ⛔ Coverage failure, stated plainly
+
+**11 of 22 tracks scanned · 7 DEEP · 12 tracks NOT SCANNED** (A1, A3, B1, B3–B8, B10, B11, C2).
+
+⛔ **This is the SECOND CONSECUTIVE DAY below the breadth mandate.** Yesterday's was a deliberate one-off
+debt-clearing choice and said so. **Twice is a pattern**, and the charter's §6 fail-loudly clause applies:
+the pass met the Band-B minimum (3 deep-reads) and the Band-C sweep, and **failed track breadth**.
+⭐ The cause is structural, not lazy: **Band D + full-text debt-clearing consumes the budget, and both are
+ranked above breadth by amendment §8.1.** ⇒ **Escalated to the Master Mind as a charter tension needing a
+ruling, not another apology.**
+
+## Next rotation — pre-committed
+
+1. ⛔ **Instrument audit: check every action-decodability probe for the endpoint-concatenation leak** (A2 /
+   Delta-JEPA). 0 GPU, and it sits underneath the programme's gating problem.
+2. **LeWorldModel `2603.19312` + Sub-JEPA `2605.09241`** — bank and read (debt D-9). We are citing LeWM's
+   failure through its critic only.
+3. **`1604.06915` full text** (debt D-7) — how far does the sample-complexity separation generalise?
+4. ⭐ **B1, B3–B8, B10, B11, C2 SCAN — breadth restoration is now the top rotation item, not the last.**
+5. **B9 primary** (debt D-8) — video/driving curation, for backlog row 22.
+6. **A3 fourth probe or formal retirement of E1** — three probes is enough to stop guessing.

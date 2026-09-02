@@ -103,3 +103,62 @@ ISMR/DSSAD**, not legality. The GRVA primary remains an open debt before the arm
 
 `Next in this track: obtain the GRVA/WP.29 document text by a non-403 route (UNECE doc server, or the
 WP.29 June-2026 session papers).`
+
+
+---
+
+## Entry 2026-09-02-01 — third probe: the online-learning ban stays unfound, and the SMS is the real hook
+
+`Band C / C3 · THIRD independent probe · ⛔ primary still UNREAD (403) · register debt D-4 · injected row I-3`
+
+**Source:** Sidley EHS Brief, *"A New Global Milestone for Autonomous Vehicles"*, **2026-03-04**, Raviv &
+Wittenberg. `PUBLISHED-BLOG` (law-firm analysis).
+
+### What it says, verbatim
+
+- **ISMR:** *"The ISMR requirement provides that manufacturers must have processes to monitor ADS
+  operations, investigate and report safety-relevant occurrences to authorities, and use those learnings to
+  refine hazards."*
+- **DSSAD:** *"The draft GTR includes a data storage system for automated driving (DSSAD) capability to
+  record and store safety-related ADS performance data, with protections against unauthorized access or
+  manipulation and requirements around accessibility and format."*
+- ⭐ **SMS:** *"The GTR would require manufacturers of vehicles equipped with ADS to operate a safety
+  management system (SMS) that governs safety across the vehicle's entire life cycle, spanning
+  development, production, deployment, and **post-deployment**."*
+- **The safety case:** the draft GTR's *"center of gravity"* is *"a structured set of claims, arguments,
+  and evidence intended to demonstrate that the ADS is free from unreasonable risk."*
+
+### ⛔ What it does NOT say
+
+**Online learning, continuous or self-learning, post-deployment changes to the ADS neural network, and
+whether model updates require re-approval are ALL NOT MENTIONED** — in an analysis that does enumerate the
+regulation's obligations in detail. **Third independent probe, third non-finding.**
+
+### ⭐ The finding that actually moves injected row I-3
+
+The SMS spans *"post-deployment"*. ⇒ **A post-deployment model change falls inside the safety-management
+lifecycle, which makes an online-adapting encoder a SAFETY-CASE OBLIGATION, not an illegality.**
+I-3's design question is therefore **"can we evidence an adapting model under ISMR / DSSAD / SMS?"** —
+an auditability and traceability problem, which is a design constraint we can engineer against.
+
+⭐ That is **more useful than a ban would have been**: a ban closes the line, an evidentiary requirement
+shapes it.
+
+### ⚠️⛔ Why D-4 STILL STANDS — and this is the important part
+
+**A secondary's silence is not the primary's silence.** *"Not mentioned in this analysis"* is strictly
+weaker than *"not in the regulation"*: the analysis is a summary written for a different audience and
+purpose, and omission is its normal mode.
+
+**The GRVA primary returned HTTP 403 at a third distinct route today** (direct PDF path
+`ECE-TRANS-WP.29-GRVA-2026-02e.pdf`, in addition to the two earlier routes).
+
+⇒ **Status is "UNSUPPORTED AT THREE PROBES", NOT "REFUTED". Debt D-4 stands.** ⛔ **No I-3 design decision
+may cite the absence of a ban as settled.** Three probes through summaries are still summaries — the same
+lesson as the `ls-tree` trap: repeated samples through one *kind* of channel are not independent probes of
+the underlying fact.
+
+### Escalation
+
+**The Lab cannot obtain this primary** — three routes, all 403. This needs either an institutional route to
+UNECE documents or a PI-side download. **Raised to the PI queue rather than left as a rotating debt.**

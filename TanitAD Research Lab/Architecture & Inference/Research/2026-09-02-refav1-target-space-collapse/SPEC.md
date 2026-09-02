@@ -5,7 +5,7 @@ and do experiments to validate this before we spend many days"**
 
 ```yaml
 hypothesis: H-TSC-1
-one_variable: target_space          # "adapter" (regression) vs "frozen" (fix)
+one_variable: FALSE — B carries TWO changes; see the amendment in section 4a
 held_constant: [seed, steps, bs, lru, cache, episodes, labels, nav, lr, clip, corpus]
 success: "frozen holds adapter_std within 5 % of its start over 250 steps AND tgt_std_op stays ~1.0"
 failure: "frozen's adapter_std falls monotonically like adapter's (>15 % over 250 steps)"
@@ -65,6 +65,30 @@ it**. That is plausible, not established, and it is precisely what the arms meas
 
 250 steps each, `--seed 0 --bs 8 --lru 64`, identical data. ~89 min per arm at the MEASURED
 21.4 s/step ⇒ **~3 h total against the 5 days it protects.**
+
+## 4a. ⚠️ AMENDMENT — B IS NOT ONE-VARIABLE, AND SAYING SO WOULD HAVE BEEN THE CONFLATION ERROR
+
+Written into this SPEC as `one_variable: target_space`. **That is no longer true.** After the
+audit the defaults changed, so Arm B carries **two** differences from A:
+
+| | `target_space` | `detach_aux_targets` |
+|---|---|---|
+| **A** | `adapter` | **off** |
+| **B** | `frozen` | **on** |
+
+⇒ **If B holds, it establishes that THE SHIPPED FIX WORKS — not which half did it.** That is the
+decision-relevant question (may refav1 relaunch for a full epoch?) and it is answered in 90
+minutes. Attribution between the two halves is a *separate* question needing a third arm:
+
+* **C** = `frozen` + `--no-detach-aux-targets` ⇒ isolates `target_space`.
+
+⛔ **Recorded rather than quietly tolerated.** Declaring one variable while running two is exactly
+the error that made MM-E19's k=60 arm un-attributable for a week, and the correction cost there
+was a whole extra 8.7 h control run. Naming it now costs nothing; discovering it in the write-up
+would cost the arm.
+
+⚠️ **The verdict wording must match:** a passing B licenses *"the shipped anti-collapse
+configuration prevents the collapse"*, **never** *"frozen targets prevent the collapse"*.
 
 ⚠️ Arm A is re-run rather than reusing the banked 450 steps, because those predate the instrument
 and carry no `tgt_std_*`. Reusing them would leave the mechanism inferred — the thing this SPEC
