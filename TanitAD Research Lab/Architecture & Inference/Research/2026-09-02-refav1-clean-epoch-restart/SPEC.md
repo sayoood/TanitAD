@@ -61,3 +61,20 @@ Nothing here is a capability claim (tier T0, train-side instruments). The epoch'
 from the T1 adapter on checkpoints (step 1000 first, `taniteval/tools/refav1_arm.py`). The attribution between
 bf16 and EMA rests on the argument in the YAML block, not on separate arms; if any read is ambiguous, the
 cheapest disambiguation is a 250-step slice arm on the dev box, not a Thor restart.
+
+## 5. AMENDMENT (2026-09-02 ~23:05 Berlin) — G1 is redefined: the slice rig is VOID, so the restart IS the EMA test
+
+MEASURED (`…/2026-09-02-refav1-ema-inflation/raw/B_prime.log`): the deliberate-regression arm B′ on the 20-clip
+slice did **not** reproduce the inflation — `tgt_std_tac` 0.0201 @1 → 0.0197 @250 (R1 ratio ≈ 1, the SPEC's
+own VOID branch); the arms ran at the largest batch that fits the 4060 (bs 2; bs 4/8 OOM in the fit probe), on
+20 EVAL clips, with a step-1 tactical scale 0.020 vs 0.057 on Thor — the rig differs in batch statistics and
+data, and the inflation is evidently a full-corpus / bs-8 phenomenon (HYPOTHESIS). Arm A′ (collapse) is still
+running as the sensitivity control. **R7 MEASURED** (`raw/R7_resume.log`): `--resume --ema-targets` from an
+EMA-less checkpoint fails strict load on 20 missing `ema.*` keys ⇒ a MID-RUN switch is blocked as implemented
+(a load-path change — initialise missing EMA copies from the student — is a separate small item); a FRESH
+restart is unaffected.
+
+⇒ **G1 becomes:** *the restart's own R5/R6 (tactical scale ratio < 2 over rows 100–500; share stable < 25 %)
+against the incumbent's banked rows 1–500 (same seed, same data order) are the EMA test, on the real rig, paired.*
+The fallback in §3 stands: if R5/R6 are REFUTED with R2–R4 fine, the run continues (collapse-proof) and a
+fit-once frozen projection for the tactical target is the next pre-registered arm. G2–G4 unchanged.
