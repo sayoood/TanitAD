@@ -123,6 +123,14 @@ class PlanResult:
     fine_costs: dict = field(default_factory=dict)
     fine_best: str | None = None
     coarse_fine_agree: bool | None = None
+    # --- goal provenance (set by RefAV1.plan, 2026-09-02; D-REFAV1-PLAN-GOAL).
+    # Declared here so an arm can never be quoted at T1 without saying what
+    # its goal was: "supplied" | "tactical_imagined" | "none". ``goal_action``
+    # carries the decoded (lat, lon) tokens + canonical controls — the SELECTED
+    # manoeuvre the TACTICAL family reports.
+    goal_source: str | None = None
+    goal_space: str | None = None
+    goal_action: dict | None = None
 
 
 def colored_noise(shape: tuple[int, ...], beta: float, *,
