@@ -455,7 +455,12 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
             f"tac_vocab_version.")
     loss_lat = F.cross_entropy(out["lat_logits"], lat_k)
     loss_lon = F.cross_entropy(out["lon_logits"], lon_k)
-    model.core.update_tactical_prior(lat_k, lon_k)
+    # C-REFCV3-EVAL-PRIOR-LEAK (2026-09-02): the in-training eval reuses this function, and an
+    # unconditional update EMA'd the HELD-OUT split's label marginals into core.lat/lon_log_prior
+    # (buffers that shape decodes via logit_adjust). The v1 trainer gates the same call on
+    # model.training (refc_train.py:521); so does this one now.
+    if model.training:
+        model.core.update_tactical_prior(lat_k, lon_k)
     # the z_tac surface's labels: v7.2 when supplied, else the same kin3
     use_v7 = "lat_v7" in batch
     if use_v7:
@@ -1091,6 +1096,41 @@ def train(args) -> dict:
             log.flush()
             print(f"[v3:{args.arm}] step {step} "
                   f"loss {row['loss']:.4f} traj {row['traj']:.4f}")
+        # ---- checkpoint FIRST, eval second (C-REFCV3-EVAL-DEATH) ----------
+        # ⛔ THE ORDER OF THESE TWO BLOCKS IS LOAD-BEARING. MEASURED 2026-09-02:
+        # refcv3 died SILENTLY at --eval-every 500 boundaries (steps 2,000 /
+        # 4,500 / 6,000 / 10,500 / 17,000; empty stderr): the pod's memory
+        # cgroup (v1, 50 GB, oom_kill 24, max_usage == limit) SIGKILLs the
+        # trainer while the in-training eval decodes its 20-window batches in
+        # the MAIN process on top of the six workers' in-flight fp32 batches.
+        # The eval used to run BEFORE the save, so a death inside it lost every
+        # step since the previous boundary -- the 17,000 death left ckpt.pt at
+        # 16,500. Saving first bounds the cost of an eval death to ZERO
+        # training steps. Training itself is untouched (same steps, same
+        # losses; the eval still runs at the same point), and the checkpoint
+        # is identical either way on EVERY parameter and optimizer tensor
+        # (pinned by tests/test_refc_v3_save_before_eval.py) -- with ONE
+        # measured exception that is a pre-existing defect, not an effect of
+        # the order: compute_losses_v3 calls core.update_tactical_prior()
+        # UNCONDITIONALLY, so the eval's held-out LABELS EMA into the
+        # lat/lon_log_prior buffers (2 of 192 model tensors). The old order
+        # saved the post-eval buffers, this order saves the pre-eval ones;
+        # the leak itself is escalated (gate that call on model.training),
+        # and the test flips strict-xfail -> pass the day it lands. The only
+        # other observable change is that the step-N eval row / [v3:eval]
+        # line now come AFTER the ckpt.pt write; metrics.jsonl's own row
+        # order is unchanged (the save writes no row) and nothing consumes
+        # the cross-file order. The memory fix itself (uint8 in-flight
+        # batches) is a separate change.
+        if step % args.save_every == 0 or step == args.steps:
+            torch.save({"model": model.state_dict(),
+                        "opt": opt.state_dict(), "step": step}, ck)
+            # the one line that makes the order VERIFIABLE from train.log
+            print(f"[v3:{args.arm}] ckpt step {step} -> {ck.name}",
+                  flush=True)
+        if step in MILESTONES:
+            torch.save({"model": model.state_dict(), "step": step},
+                       out_dir / f"ckpt_{step}.pt")
         # ---- held-out eval (PI 2026-09-02) --------------------------------
         # ⚠️ WHAT THIS IS AND IS NOT: an in-training MONITOR at T0 on the same
         # loss surface, over a FIXED set of held-out windows. It is NOT the
@@ -1102,20 +1142,45 @@ def train(args) -> dict:
         if eval_dl is not None and (step % args.eval_every == 0
                                     or step == args.steps):
             model.eval()
-            acc, nb_e = {}, 0
-            with torch.no_grad():
-                for eb in eval_dl:
-                    if nb_e >= args.eval_batches:
-                        break
-                    el = compute_losses_v3(model, eb, device, mode=args.mode)
-                    for k, v in el.items():
-                        if torch.is_tensor(v) and v.ndim == 0:
-                            acc[k] = acc.get(k, 0.0) + float(v.detach())
-                        elif isinstance(v, (int, float, bool)):
-                            acc[k] = acc.get(k, 0.0) + float(v)
-                    nb_e += 1
+            acc, nb_e, eval_err = {}, 0, None
+            # ⚠️ FAIL LOUD, SURVIVE. An in-training eval is a DIAGNOSTIC; it
+            # must never take the run down. A CUDA OOM or a decode error raised
+            # in here used to propagate out of train() and END THE RUN. It is
+            # now logged as an `eval_error` row + a `[v3:eval] FAILED` line
+            # (traceback to stderr), the model goes back to train mode, and
+            # training continues from the checkpoint written just above.
+            # ⛔ A kernel SIGKILL -- the cgroup OOM killer of
+            # C-REFCV3-EVAL-DEATH -- CANNOT be caught by any Python handler;
+            # for that case the save-before-eval order above is the whole
+            # protection.
+            try:
+                with torch.no_grad():
+                    for eb in eval_dl:
+                        if nb_e >= args.eval_batches:
+                            break
+                        el = compute_losses_v3(model, eb, device,
+                                               mode=args.mode)
+                        for k, v in el.items():
+                            if torch.is_tensor(v) and v.ndim == 0:
+                                acc[k] = acc.get(k, 0.0) + float(v.detach())
+                            elif isinstance(v, (int, float, bool)):
+                                acc[k] = acc.get(k, 0.0) + float(v)
+                        nb_e += 1
+            except Exception as exc:          # noqa: BLE001 (by design)
+                import traceback            # local: this block is the boundary
+                traceback.print_exc()
+                eval_err = f"{type(exc).__name__}: {exc}"
             model.train()
-            if nb_e:
+            if eval_err is not None:
+                log.write(json.dumps({"step": step, "eval_error": eval_err,
+                                      "eval_batches_done": nb_e}) + chr(10))
+                log.flush()
+                # ASCII-safe on purpose: a UnicodeEncodeError raised while
+                # REPORTING the failure would defeat the survival.
+                print("[v3:eval] FAILED at step %d: %s -- training continues"
+                      % (step, eval_err.encode("ascii", "backslashreplace")
+                         .decode("ascii")), flush=True)
+            elif nb_e:
                 erow = {f"eval_{k}": round(v / nb_e, 5) for k, v in acc.items()}
                 erow.update(step=step, eval_batches=nb_e,
                             eval_windows=nb_e * args.batch)
@@ -1126,13 +1191,6 @@ def train(args) -> dict:
                       f"traj {erow.get('eval_traj', float('nan')):.4f} "
                       f"lat_tac {erow.get('eval_lat_tac', float('nan')):.4f}",
                       flush=True)
-
-        if step % args.save_every == 0 or step == args.steps:
-            torch.save({"model": model.state_dict(),
-                        "opt": opt.state_dict(), "step": step}, ck)
-        if step in MILESTONES:
-            torch.save({"model": model.state_dict(), "step": step},
-                       out_dir / f"ckpt_{step}.pt")
     # ⛔ the done-marker, SAME turn as completion (the v5f supervisor lesson).
     (out_dir / "summary.json").write_text(
         json.dumps({"done": True, "step": step, "arm": args.arm,
