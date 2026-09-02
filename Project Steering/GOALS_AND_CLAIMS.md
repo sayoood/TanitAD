@@ -196,10 +196,25 @@ what C164 says was missing from the original claim — and it costs one 30k arm.
 | arm | `init_from` | steps | **drift** |
 |---|---|---|---|
 | **`splitp30k`** | **distilled** | 30k | **0.199** |
-| **`postrain30k`** | **distilled** | 30k | **0.669** |
-| **`postrain30k_seed1`** | **distilled** | 30k | **0.679** |
+| **`postrain30k`** | **distilled** | 30k | **0.6674** ⚠️ *(was 0.669 — corrected 2026-09-02)* |
+| **`postrain30k_seed1`** | **distilled** | 30k | **0.6741** ⚠️ *(was 0.679 — corrected 2026-09-02)* |
 | `postrain10k` | distilled | 10k | 0.359 |
 | `rdw8p30k` | **None (scratch)** | 30k | 0.657 / 0.674 |
+
+⚠️ **TWO CELLS IN THIS TABLE WERE PROSE, NOT ARTIFACT — CORRECTED 2026-09-02.** The cited raw
+(`…/2026-08-24-action-conditioning-and-heldout/raw/seedrep.json`) reads **`postrain30k` r =
+0.6674 (t 146.85)** and **`postrain30k_seed1` r = 0.6741 (t 143.23)**; the table said **0.669**
+and **0.679**. ⭐ **The second is the one that matters: no banked artifact anywhere in the
+Architecture & Inference tree reads 0.679** — a sweep of all 1,313 JSONs for a drift `r` within
+5e-4 of 0.669 or 0.679 returns exactly one hit, and it is `rdw8p30k` band-8:16 at 0.669, a
+DIFFERENT arm and a different band. So 0.679 was never a measurement of anything; it looks like
+0.669 carried across a row and then rounded again. **Independently corroborated the same night**:
+the MM-E19 k=8 read recomputed `postrain30k` from scratch and printed `z_t (DRIFT / POSITIVE
+CONTROL) +0.6674, t 146.85` — matching the artifact to four decimals **and** on the t-statistic.
+⇒ the conclusion below is unaffected (0.199 vs 0.667 is still 0.47 apart), but this is the exact
+failure the registry rule exists for: **a number that agrees with the doc beside it and with no
+file on disk.** Every drift figure quoted from prose rather than from `raw/` is suspect until
+re-read.
 
 ⛔ **TWO ARMS `--init-from` THE SAME `distill_init.pt`, BOTH AT 30k, 0.47 APART.**
 Initialisation cannot be the lever if two arms that share it land at opposite ends

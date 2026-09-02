@@ -391,9 +391,49 @@ def reindex() -> None:
     print(f"reindexed: {len(es)} entries, {tot/1e6:.1f} MB -> {INDEX_MD}")
 
 
+def _pdf_truncated(p: Path) -> str:
+    """Return a reason string if the file is not a COMPLETE PDF, else "".
+
+    ⛔ WHY THIS EXISTS — MEASURED 2026-09-02, and it is the sharpest instrument
+    failure this tool has had. The banked `2605.09701` was truncated to **14.5 %**
+    of the real document (1,373,148 of 9,453,407 B), taking with it the very
+    ablation-table caption that resolved opponent claim CW-1 — and `--verify`
+    called the Library healthy **before AND after** the repair.
+
+    ⭐ THE MECHANISM, because it generalises: the sha256 is computed **at bank
+    time, from whatever arrived**. A download truncated *during* banking is
+    hashed in its truncated state, so the hash matches its own damage forever.
+    `--verify` therefore answers *"unchanged since banked"*, which is NOT the
+    question anyone asks it — they ask *"is the evidence intact"*. An instrument
+    that returns the same verdict for a corrupt corpus and a healthy one cannot
+    fail, and a check that cannot fail is not a check.
+
+    The probe is deliberately dependency-free and structural: a PDF opens with
+    `%PDF-` and closes with `%%EOF`. A truncated download keeps the header and
+    loses the trailer, which is exactly the observed failure.
+    """
+    try:
+        size = p.stat().st_size
+        if size < 1024:
+            return f"only {size} B"
+        with p.open("rb") as fh:
+            head = fh.read(5)
+            fh.seek(max(0, size - 2048))
+            tail = fh.read()
+    except OSError as exc:                      # the mount flaps; say so
+        return f"unreadable ({type(exc).__name__})"
+    if head != b"%PDF-":
+        return f"no %PDF- header (starts {head!r})"
+    if b"%%EOF" not in tail:
+        return "no %%EOF trailer in the last 2 KB — TRUNCATED"
+    return ""
+
+
 def verify() -> int:
     """⛔ Verify by CONTENT, never by presence — the programme's standing rule.
-    A file that exists but whose bytes changed is worse than a missing one."""
+    A file that exists but whose bytes changed is worse than a missing one.
+    ⚠️ And a file whose bytes are INTACT can still be the wrong bytes: the hash
+    only proves nothing changed *after* banking. See `_pdf_truncated`."""
     db = _load()
     bad = 0
     for k, e in sorted(db["entries"].items()):
@@ -406,6 +446,15 @@ def verify() -> int:
         if got != e["sha256"]:
             print(f"MISMATCH {k}: recorded {e['sha256'][:12]} got {got[:12]}")
             bad += 1
+            continue
+        # ⛔ The hash agreeing proves only that the file has not changed since it
+        # was banked — including when what was banked was already damaged.
+        if p.suffix.lower() == ".pdf":
+            why = _pdf_truncated(p)
+            if why:
+                print(f"CORRUPT  {k}: sha256 MATCHES but the file is not a "
+                      f"complete PDF — {why}")
+                bad += 1
 
     # ⛔ Probe the absence from the OTHER side. Iterating entries can never reveal
     # an entry that was never written — which is exactly what the concurrent-write

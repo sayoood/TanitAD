@@ -63,6 +63,42 @@ instrument. **Incumbent `postrain30k` h1 ratio = 0.00595.**
 | **HORIZON-INERT** | unchanged within noise | ⛔ action-deafness is NOT horizon-driven. Remaining candidates: the action REPRESENTATION itself, or the data. MM-E12 says actions are not redundant given scene, so information exists that nothing is using — that becomes the question |
 | 🔶 VOID | C0 ≠ 0 or any scene_spread ≈ 0 | instrument fault, no verdict (C160) |
 
+## 3a. ⛔⛔ AMENDMENT 2026-09-02 — THIS TABLE HAS TWO DEFECTS. THE VERDICT STANDS; THE TABLE MUST NOT BE REUSED AS WRITTEN.
+
+Amended by the **Master Mind** (the Lab found both and correctly refused to edit a prereg
+itself — `…/Research/2026-09-02-scene-matched-action-criterion/COMMS.md` §E1/§E3).
+⚠️ **Neither defect changes MM-E19's outcome** — the arm read **0.83× on the action side** and
+fails every bar considered. They are recorded because this table is the template for the arms
+that follow it, **row L-1's horizon curriculum first**.
+
+**DEFECT 1 — THE BAR FLOATS WITH THE ARM'S OWN MEASUREMENT.** `HORIZON-WORKS` demands a **≥10×
+rise in the RATIO** `action_spread / scene_spread`. The denominator is not a constant of the
+instrument; it is a property of the arm being judged. MEASURED: the k=60 arm's
+`scene_factor` = **1.7126**, so a 10× ratio rise required a **17.13× rise in action response** —
+a **71 % harder test than the one written down**, and one that could not be known until after
+the arm ran. ⛔ **A criterion whose threshold is a function of the result is not a
+pre-registration.** ⇒ **The consequence is worse than a mis-set bar: it is sign-blind in the
+other direction too.** An arm that ends at k=60 inherits the same scene rise, so an arm that
+genuinely **DOUBLED its action sensitivity** would report **+17 %** on the raw ratio and be
+written up as **INERT**.
+
+**DEFECT 2 — THE OUTCOME SET ADMITS NO WORSENING.** `HORIZON-WORKS` / `HORIZON-PARTIAL` /
+`HORIZON-INERT` cover a rise, a partial rise, and no change. The arm **fell 0.48×**, which is off
+the table entirely — and an off-table result invites being force-fitted onto the nearest row
+("INERT"), which would have understated a real effect. **Every outcome table from here carries a
+WORSE branch.**
+
+**HOW ARMS ON THIS STATISTIC ARE JUDGED FROM NOW ON:**
+
+| requirement | why |
+|---|---|
+| **Primary = the ACTION side** (`action_spread`), against a denominator **pinned to a named one-variable reference arm** — not the arm's own scene spread | removes the floating bar; the threshold is fixed before the arm runs |
+| `scene_spread` reported as a **co-primary**, never folded away | the scene side carried **73.7 %** of MM-E19's ratio fall; a single ratio hides which side moved |
+| the **h≥2 floor** reported every time | h2/h4 read ~1e-05 on **every** arm measured so far, k=8, k=60 and the incumbent — a defect that is horizon-INDEPENDENT and must not be re-discovered per arm |
+| a **WORSE** branch, pre-committed | see defect 2 |
+| the **training-window count** stated per arm | ⛔ `o5_k` also sets `o4_n` (415,002 → 319,002 = exactly 40 × 2,400): the k=60 arm trained on **76.9 %** of the k=8 arm's windows. *"Derived from the one variable"* does **not** mean *"not a confound"* — no arm on this statistic is interpretable without it |
+| an **interval** | neither the 0.83× nor the 1.71× carries one; the actdiv probe has no paired episode-cluster bootstrap (backlog **L-13**). A decision statistic without an interval is a gap, not a virtue |
+
 ⭐ **SECONDARY, AND IT IS MECHANISTICALLY IMPLIED — so it is a real prediction, not a
 second look at the same number:** if the horizon is what makes actions matter, the
 optimiser should **allocate more gain on its own**. ⇒ `‖to_scale_shift‖` at 30k should
