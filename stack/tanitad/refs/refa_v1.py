@@ -89,6 +89,80 @@ DINOV3_GEOMETRY = {
 #: registry §1.2) — a separate contract, named separately on purpose.
 SPEED_SCALE_MPS = 30.0
 
+# --------------------------------------------------------------------------- #
+# ⭐ THE TACTICAL BRAIN'S DECODED ACTION AS KINEMATICS — one table, one function.
+#
+# `plan()` with no supplied goal imagines the goal from the tactical brain's own
+# decision (design change #8: goals enter the planning COST). That rollout needs
+# an (a, kappa) sequence, and the decoded action is a TOKEN. The label emitter
+# (`stack/scripts/s2_geom_emit_v7.py`) DEFINES each token by a speed change over
+# the tactical band [2, 6] s and by arc geometry, so each token becomes the
+# SIMPLEST profile satisfying its own definition:
+#   * longitudinal — a first-order approach to the token's target speed with
+#     time constant GOAL_REACH_S = TACTICAL_S[0] (the band opens at 2 s), rate
+#     saturated at GOAL_A_MAX = DV_BRAKE_MS per second = the `decel_1.5` floor
+#     magnitude (`refa_v1_plan._baseline_controls`);
+#   * lateral — TURN as a constant-curvature arc over the band width (4 s) at
+#     the measured junction radius (emitter :245, R 12.2 m -> kappa 0.08);
+#     LANE_CHANGE / NUDGE as S-curves sized by the unicycle small-angle relation
+#     y = v^2 kappa t^2 / 2 at the MEASURED v0 (admissible: PI 2026-09-02).
+# ⚠️ A CONVENTION, not a measurement — reviewable in this one place. Unknown
+# tokens (a vocabulary this table predates) map to (0, 0): the goal degrades to
+# "keep going", never to a crash. Nothing here reads the future.
+# --------------------------------------------------------------------------- #
+GOAL_REACH_S = 2.0                #: s  — s2_geom_emit_v7.TACTICAL_S[0]
+GOAL_A_MAX = 1.5                  #: m/s^2 — DV_BRAKE_MS/s; = the decel_1.5 floor
+GOAL_KAPPA_MAX = 0.2              #: 1/m — PlanConfig.kappa_max
+GOAL_KAPPA_TURN = 0.08            #: 1/m — R 12.5 m (emitter's measured 12.2 m)
+GOAL_TURN_S = 4.0                 #: s — TACTICAL_S[1] - TACTICAL_S[0]
+GOAL_LANE_CHANGE = (2.0, 1.75)    #: (half-duration s, half-offset m: 3.5 m lane)
+GOAL_NUDGE = (1.0, 0.5)           #: (half-duration s, half-offset m: 1 m shift)
+GOAL_V_REF_MIN_MPS = 3.0          #: m/s floor for the S-curve sizing at low v0
+GOAL_CREEP_MPS = 1.5              #: m/s — midpoint of the emitter's CREEP band
+GOAL_CURVE_VMAX_MPS = 8.0         #: m/s — emitter TURN_MAX_VMIN_MS
+#: target speed RELATIVE to v0 (m/s): the emitter's own dv thresholds.
+GOAL_LON_DV_MPS = {"CRUISE": 0.0, "FOLLOW": -1.0, "ACCELERATE": +1.5,
+                   "YIELD_MERGE": -1.5, "BRAKE_TO": -3.0}
+
+
+def canonical_controls(lat: str, lon: str, v0: float, op_steps: int,
+                       op_dt: float) -> Tensor:
+    """(lat token, lon token, measured v0) -> ``[op_steps, 2]`` (a, kappa) on
+    the operative grid. Deterministic, future-free; see the table above."""
+    a = torch.zeros(op_steps)
+    k = torch.zeros(op_steps)
+    # --- longitudinal: approach the token's target speed, then hold ------- #
+    if lon == "HOLD":
+        v_t = 0.0
+    elif lon == "CREEP":
+        v_t = GOAL_CREEP_MPS
+    elif lon == "ADAPT_SPEED_FOR_CURVE":
+        v_t = min(float(v0), GOAL_CURVE_VMAX_MPS)
+    else:
+        v_t = max(0.0, float(v0) + GOAL_LON_DV_MPS.get(lon, 0.0))
+    v = float(v0)
+    for i in range(op_steps):
+        a_i = max(-GOAL_A_MAX, min(GOAL_A_MAX, (v_t - v) / GOAL_REACH_S))
+        a[i] = a_i
+        v += a_i * op_dt
+    # --- lateral: x forward, y left, so +kappa turns LEFT (kinematic.py) --- #
+    sign = 1.0 if lat.endswith("_L") else -1.0
+    v_ref = max(float(v0), GOAL_V_REF_MIN_MPS)
+
+    def _s_curve(half_s: float, half_m: float) -> None:
+        n = int(round(half_s / op_dt))
+        kap = min(GOAL_KAPPA_MAX, 2.0 * half_m / (v_ref ** 2 * half_s ** 2))
+        k[:n] = sign * kap
+        k[n:2 * n] = -sign * kap
+
+    if lat.startswith("TURN_"):
+        k[:int(round(GOAL_TURN_S / op_dt))] = sign * GOAL_KAPPA_TURN
+    elif lat.startswith("LANE_CHANGE_"):
+        _s_curve(*GOAL_LANE_CHANGE)
+    elif lat.startswith("NUDGE_"):
+        _s_curve(*GOAL_NUDGE)
+    return torch.stack([a, k], dim=-1)
+
 
 @dataclass
 class RefAV1Config:
@@ -1569,6 +1643,64 @@ class RefAV1(nn.Module):
                 "cf_at_step": j + 1,
                 "cf_negs": n_neg}
 
+    # -- the imagined goal: the tactical brain's own 6 s field --------------- #
+    def _imagine_tactical_goal(self, last: Tensor, brains: dict,
+                               v0: Tensor) -> tuple[Tensor, dict]:
+        """The DEFAULT planning goal (change #8), ``[B, Q, d]`` in the tactical
+        query space, from vision + nav + the measured v0 and NOTHING from the
+        future: the tactical policy's intent (from `_run_brains`, the one shared
+        nav site) is decoded by the trained factored heads into a (lat, lon)
+        token, the token becomes a control profile (`canonical_controls`), and
+        the TACTICAL predictor rolls its own field to 6 s under that profile
+        and its intent — 10 steps at 0.6 s, the actions subsampled off the
+        operative grid exactly as `forward` builds ``tac_a``, so the speed
+        channel (when on) is the same integrated v everywhere.
+
+        ⛔ WHY THIS EXISTED ONLY IN A DOCSTRING UNTIL 2026-09-02: `plan()`
+        promised this default and did ``search_goal = None``; with no goal
+        term the cost was jerk + curvature only, every zero-curvature
+        constant-acceleration candidate scored EXACTLY 0, and `icem_plan`'s
+        floor loop kept the LAST tie — `decel_1.5`. MEASURED by the T1 adapter
+        build: a constant −1.5 m/s² brake on 51/51 windows.
+        """
+        cfg = self.cfg
+        intent = brains["intent"]
+        vv = getattr(cfg, "tac_vocab_version", "v6.0")
+        lat_v, lon_v = tactical_lat_actions(vv), tactical_lon_actions_v(vv)
+        lat_i = self.lat_head(intent).argmax(-1).tolist()
+        lon_i = self.lon_head(intent).argmax(-1).tolist()
+        v0 = torch.as_tensor(v0, dtype=last.dtype, device=last.device).reshape(-1)
+        if v0.shape[0] != last.shape[0]:
+            raise ValueError(f"v0 carries {v0.shape[0]} rows for a batch of "
+                             f"{last.shape[0]}")
+        ctrl = torch.stack([
+            canonical_controls(lat_v[i], lon_v[j], v, cfg.op_steps, cfg.op_dt)
+            for i, j, v in zip(lat_i, lon_i, v0.tolist())]).to(last)   # [B,K,2]
+        stride = self._stride(cfg.tac_dt)
+        acts = self.augment_actions(ctrl, v0)[:, ::stride][:, :cfg.tac_steps]
+        goal = self.tactical.rollout(self._tac_field(last), acts, intent=intent,
+                                     last_only=True)                  # [B,Q,d]
+        return goal, {"lat": [lat_v[i] for i in lat_i],
+                      "lon": [lon_v[j] for j in lon_i], "controls": ctrl}
+
+    @torch.no_grad()
+    def imagined_goal(self, feats: Tensor, *, v0, nav_cmd: Tensor | None = None
+                      ) -> tuple[Tensor, dict]:
+        """`_imagine_tactical_goal` from raw inputs — what `plan()` uses when no
+        goal is supplied. ``(goal [B, Q, d], {"lat", "lon", "controls"})``."""
+        if self.tactical_policy is None:
+            raise ValueError("imagined_goal needs the hierarchy (tactical_cfg) "
+                             "— without a tactical brain there is no tactical "
+                             "imagination; plan() then runs goal-free")
+        field = self.encode(feats)
+        last = self._last_state(field)
+        brains = self._run_brains(field.mean(dim=-2), nav_cmd)
+        v0_t = torch.as_tensor(v0, dtype=torch.float32,
+                               device=feats.device).reshape(-1)
+        if v0_t.numel() == 1 and feats.shape[0] > 1:
+            v0_t = v0_t.expand(feats.shape[0])
+        return self._imagine_tactical_goal(last, brains, v0_t)
+
     # -- deployment: behaviour by PLANNING, not regression ----------------- #
     @torch.no_grad()
     def plan(self, feats: Tensor, *, v0: float, goal_field: Tensor | None = None,
@@ -1580,8 +1712,21 @@ class RefAV1(nn.Module):
         The cost is where the hierarchy earns its keep (change #8): the tactical
         target speed and the strategic goal field enter as **cost terms**, not as
         head outputs to be regressed. ``goal_field`` defaults to the tactical
-        brain's own imagined 6 s field, which is what makes this
-        goal-conditioning rather than goal-following.
+        brain's own imagined 6 s field (`_imagine_tactical_goal`), which is what
+        makes this goal-conditioning rather than goal-following.
+
+        ⭐ ONE GOAL SPACE — THE TACTICAL QUERY FIELD ``[Q, d]``. A supplied
+        ``goal_field`` (operative ``[1, N, d]``) is pooled through
+        `_tac_field`; an operative terminal field (fine-level search, and the
+        coarse-to-fine re-score) is pooled the same way before the cosine. That
+        pooling is the model's own `tac_pool` — the very map that defines the
+        tactical predictor's training target (``tq = _tac_field(adapter(f))``),
+        so like is compared with like at every level.
+
+        Provenance travels on the result: ``res.goal_source`` is
+        ``"supplied"`` | ``"tactical_imagined"`` | ``"none"`` (no hierarchy),
+        ``res.goal_space``, and ``res.goal_action`` (the decoded lat/lon tokens
+        + the canonical controls behind an imagined goal).
         """
         if feats.shape[0] != 1:
             raise ValueError("plan() is a single-window API (B must be 1)")
@@ -1618,14 +1763,38 @@ class RefAV1(nn.Module):
         coarse = cfg.plan_level == "tactical"
         search_pred = self.tactical if coarse else self.operative
         search_z = self._tac_field(last) if coarse else last
-        search_goal = (None if goal_field is None else
-                       (self._tac_field(goal_field) if coarse else goal_field))
 
-        def _cost_chunk(controls: Tensor, pred=None, z0=None,
-                        goal=None) -> Tensor:
+        # ⭐ THE GOAL, IN ONE SPACE (docstring). Supplied -> pooled; absent ->
+        # the tactical brain's own imagination; no hierarchy -> goal-free.
+        goal_action = None
+        if goal_field is not None:
+            goal_t, goal_source = self._tac_field(goal_field), "supplied"
+        elif brains is not None:
+            goal_t, ga = self._imagine_tactical_goal(last, brains, v0_t)
+            goal_source = "tactical_imagined"
+            goal_action = {"lat": ga["lat"][0], "lon": ga["lon"][0],
+                           "controls": ga["controls"][0]}
+        else:
+            goal_t, goal_source = None, "none"
+
+        # ⭐ THE DECODED ACTION ALSO SEEDS THE SEARCH (GPC: proposes, never
+        # disposes). MEASURED 2026-09-02 on a random-init tiny model: without
+        # this the planner returned hold_v0 on 24/24 windows against a TURN
+        # goal at BOTH residual-init scales. `icem_plan`'s coloured noise is
+        # zero-mean over time (`colored_noise` subtracts the mean) and its mean
+        # is seeded only by the injected candidates, so a SUSTAINED curvature or
+        # acceleration is unreachable unless some candidate carries it — and no
+        # baseline carries curvature. The canonical controls behind the
+        # imagined goal are that candidate: they join the iteration-0 seed pool
+        # like a proposal mode and win only on modelled cost.
+        if goal_action is not None:
+            seed = goal_action["controls"][:cfg.plan_steps][None]      # [1,H,2]
+            seed_pool = (seed if seed_pool is None
+                         else torch.cat([seed_pool, seed], dim=0))
+
+        def _cost_chunk(controls: Tensor, pred=None, z0=None) -> Tensor:
             pred = pred or search_pred
             z0 = search_z if z0 is None else z0
-            goal = search_goal if goal is None else goal
             n = controls.shape[0]
             z = z0.expand(n, -1, -1)
             # Speed channel (config-gated): each candidate's OWN accelerations
@@ -1635,10 +1804,13 @@ class RefAV1(nn.Module):
             # last_only: the cost reads the terminal field only (see rollout).
             zk = pred.rollout(z, acts, intent=intent, last_only=True)
             c = torch.zeros(n, device=controls.device)
-            if goal is not None:
-                g = goal.expand(n, -1, -1)
+            if goal_t is not None:
+                # an OPERATIVE terminal field is pooled into the tactical query
+                # space by the model's own tac_pool (see the docstring)
+                zt = zk if pred is self.tactical else self._tac_field(zk)
+                g = goal_t.expand(n, -1, -1)
                 c = c + (1.0 - F.cosine_similarity(
-                    zk.flatten(1), g.flatten(1), dim=-1))
+                    zt.flatten(1), g.flatten(1), dim=-1))
             jerk = (controls[:, 1:, 0] - controls[:, :-1, 0]) / pc.dt
             c = c + 0.02 * jerk.pow(2).mean(-1)                    # comfort
             c = c + 0.05 * controls[..., 1].pow(2).mean(-1)        # curvature
@@ -1660,6 +1832,30 @@ class RefAV1(nn.Module):
                         prev_elites=prev_elites, seed_pool=seed_pool,
                         device=feats.device)
 
+        # ⛔ TIE-BREAK — the equivalent of "hold_v0 first, keep the first tie",
+        # applied HERE because `icem_plan`'s floor loop keeps the LAST baseline
+        # on `<=` (cv, hold_v0, proposal, decel_1.5 -> decel). When the cost
+        # cannot tell tied baselines apart, doing nothing beats braking: prefer
+        # `hold_v0`, then `cv` (the same zero controls, kept as separate names
+        # by `_baseline_controls`). A tie is float-exact up to 1e-9 relative;
+        # genuinely different costs are never re-ranked.
+        if res.source.startswith("baseline:") and res.baseline_costs:
+            tied = [k for k, c in res.baseline_costs.items()
+                    if math.isclose(c, res.cost, rel_tol=1e-9, abs_tol=1e-12)]
+            for pref in ("hold_v0", "cv"):
+                if pref in tied:
+                    if res.source != f"baseline:{pref}":
+                        res.source = f"baseline:{pref}"
+                        res.controls = torch.zeros_like(res.controls)
+                        res.cost = float(res.baseline_costs[pref])
+                    break
+        # provenance for the T1 adapter's bookkeeping (plain attributes on the
+        # PlanResult — declaring them as fields is a one-line change in
+        # refa_v1_plan.py, escalated rather than made here)
+        res.goal_source = goal_source
+        res.goal_space = "tactical_query_field"
+        res.goal_action = goal_action
+
         # ⭐ COARSE-TO-FINE: the search ran on the tactical field; re-score the
         # WINNER (and the baselines it beat) on the full operative field, so the
         # reported cost is the fine-grained one and a coarse-level mistake shows
@@ -1672,8 +1868,7 @@ class RefAV1(nn.Module):
                 cands.update(_baseline_controls(pc, v0, feats.device, proposal))
             names = list(cands)
             stack = torch.stack([cands[k] for k in names])
-            fine = _cost_chunk(stack, pred=self.operative, z0=last,
-                               goal=goal_field)
+            fine = _cost_chunk(stack, pred=self.operative, z0=last)
             res.fine_costs = {k: float(v) for k, v in zip(names, fine)}
             best = min(res.fine_costs, key=res.fine_costs.get)
             res.fine_best = best
