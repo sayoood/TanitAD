@@ -9,9 +9,50 @@
 reader. MEASURED 2026-08-31: **eight existed and none had ever been routed.** The
 Lab was writing letters into a drawer. This is the drawer, opened.
 
-**8 packages · 13 addressed/owed items · newest first.**
+**13 packages · 18 addressed/owed items · newest first.**
 
 ---
+
+## 2026-09-02-scene-matched-action-criterion — Architecture & Inference
+
+*COMMS — E-ARCH-SMAS-1*
+
+- ⛔ ESCALATED TO THE MASTER MIND
+
+`TanitAD Research Lab/Architecture & Inference/Research/2026-09-02-scene-matched-action-criterion/`
+
+## 2026-09-02-o2pre-deployed-geometry-export — Deployment & Optimization
+
+*COMMS — E-DEPLOY-O2PRE-E2E*
+
+- ⛔ ESCALATED TO THE MASTER MIND AND THE DeployFlyWheel
+
+`TanitAD Research Lab/Deployment & Optimization/Research/2026-09-02-o2pre-deployed-geometry-export/`
+
+## 2026-09-02-future-action-horizon-and-window-budget — Data Engineering
+
+*COMMS — E-DATA-HORIZON-1*
+
+- ⛔ ESCALATED TO THE MASTER MIND — four items, none of which the Lab may action itself
+- E3 — MM-E19's scope sentence — a FOURTH difference, invisible to the args-diff
+
+`TanitAD Research Lab/Data Engineering/Research/2026-09-02-future-action-horizon-and-window-budget/`
+
+## 2026-09-02-drift-metric-axis-audit — Benchmarks & Evals
+
+*COMMS — E-BE-DRIFT-1*
+
+- ⛔ ESCALATED TO THE MASTER MIND AND THE EvalFlyWheel
+
+`TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-02-drift-metric-axis-audit/`
+
+## 2026-09-02-cw1-resolution-and-evidence-integrity — Opponent Analysis
+
+*COMMS — E-OPP-CW1-1*
+
+- *(no addressed line — the package speaks only to the record)*
+
+`TanitAD Research Lab/Opponent Analysis/Research/2026-09-02-cw1-resolution-and-evidence-integrity/`
 
 ## 2026-08-31-rollout-depth-latency — Deployment & Optimization
 
