@@ -168,7 +168,12 @@ below may be marked closed by me.** I can report that a criterion is met; the PI
 
 * ⛔ **DO NOT SAY "initialisation is the lever" — that was RETRACTED** (E-DEC-60/C164).
   `postrain30k` and `postrain30k_seed1` are `--init-from` the **same** distilled
-  checkpoint and read **0.669 / 0.679** — the *scratch* band — while distilled
+  checkpoint and read **0.6674 / 0.6741** *(corrected 2026-09-02 from 0.669 / 0.679 —
+those were prose; `seedrep.json` reads 0.6674 (t 146.85) and 0.6741 (t 143.23), and
+**no banked artifact anywhere reads 0.679**. The MM-E19 k=8 pass recomputed
+`postrain30k` from scratch and printed +0.6674, t 146.85, matching to four decimals
+and on the t-statistic. The conclusion is unaffected — 0.199 vs 0.667 is still 0.47
+apart)* — the *scratch* band — while distilled
   `splitp30k` reads **0.199**. Two arms share the supposed lever and sit **0.47 apart**;
   the distilled/scratch separation was a **confound**.
 * ⭐ **What survives is stronger than what was retracted:** `splitp30k`'s drift **0.199
