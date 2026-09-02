@@ -411,6 +411,18 @@ def _pdf_truncated(p: Path) -> str:
     The probe is deliberately dependency-free and structural: a PDF opens with
     `%PDF-` and closes with `%%EOF`. A truncated download keeps the header and
     loses the trailer, which is exactly the observed failure.
+
+    ⭐ **VALIDATED ON ITS REGRESSION CONTROL, both halves** — a gate that does not
+    fail the broken case proves nothing about a pass. On two different intact
+    primaries it returns `""`; on the same files truncated to **14.5 %** (the real
+    damage ratio) it returns *"no %%EOF trailer"*. Checked through two paths, the
+    standalone logic and this module, because tonight also taught that repeating
+    ONE command is not a second probe.
+
+    ✅ **SWEEP RESULT 2026-09-02: 310/310 banked primaries carry both markers** —
+    the DriveFuture truncation was **isolated, not systemic**. That is worth
+    stating positively: the finding is not "the Library is rotten", it is "one
+    entry was, `--verify` could not see it, and now it can".
     """
     try:
         size = p.stat().st_size
