@@ -11189,3 +11189,100 @@ finds a **real binary**, runs it, and does something entirely unrelated to image
 (MM-C11) with the object swapped: **the NAME resolves, so the check passes, and the
 thing behind the name is not what was asked for.** Worth proposing for the CLAUDE.md
 traps section — it is a general Windows hazard, not a TanitAD one.
+
+---
+
+# 2026-09-02 — THREE RETRACTIONS IN ONE NIGHT, ONE CLASS: **A FACT TAKEN FROM A NAME OR A NEIGHBOURING DOC INSTEAD OF FROM THE THING ITSELF — AND THEN PROPAGATED**
+
+Logged by the Master Mind. All three were found and corrected the same night; each
+had travelled further than the place it was noticed, which is the part worth the entry.
+
+## R1 — the drift pair `0.669 / 0.679` was PROSE, and it had reached the REGISTRY
+
+**Retracted:** `postrain30k` drift **0.669** and `postrain30k_seed1` **0.679**.
+**True (MEASURED, `…/2026-08-24-action-conditioning-and-heldout/raw/seedrep.json`):**
+**0.6674 (t 146.85)** and **0.6741 (t 143.23)**.
+
+⭐ **No banked artifact anywhere in the Architecture & Inference tree reads 0.679.** A
+sweep of all 1,313 JSONs for a drift `r` within 5e-4 of either value returns exactly one
+hit, and it is `rdw8p30k` band-8:16 — a **different arm and a different band**. So 0.679
+was never a measurement of anything; it reads like 0.669 carried across a row and
+rounded again. Independently confirmed the same night: the MM-E19 k=8 pass recomputed
+`postrain30k` from scratch and printed **+0.6674, t 146.85** — matching to four decimals
+*and* on the t-statistic.
+
+⛔⛔ **THE PART THAT MAKES THIS MORE THAN A TYPO: A DERIVED PROGRAMME CONSTANT SAT ON
+TOP OF IT.** `MODEL_REGISTRY.md` §13 carried a block titled *"THE PROGRAMME'S FIRST
+RUN-TO-RUN VARIANCE ESTIMATE"* — `(0.679−0.669)/0.669 = 1.49 %`, quoted as **~1.5 %** and
+offered as the yardstick for whether any single-seed gap is noise. From the artifact it
+is **1.00 %**. ⇒ **a derived statistic inherits its inputs' evidence class.** A
+MEASURED-class programme constant was resting on two numbers that agreed with the doc
+beside them and with no file on disk. *(The correction strengthens every conclusion built
+on it — a smaller seed variance makes the 0.47 between-arm gap even less attributable to
+noise — but that is luck, not method.)*
+
+**Sites:** `GOALS_AND_CLAIMS.md` (fixed first), `V7_LAUNCH_GATE.md` P3 (found by accident
+an hour later), `MODEL_REGISTRY.md` ×6 including the derived constant (found only by a
+repo-wide sweep). Dated reports under `Reports/` still carry it and are deliberately NOT
+edited — they are snapshots of what was believed on their date.
+
+## R2 — `w120` is a FIELD OF VIEW, and it was read as a FRAME COUNT into a live launch guard
+
+**Retracted:** *"a 120-frame episode cache"*, and everything derived from it — windows per
+episode `114 − 20K`, *"K ≥ 6 yields no windows at all"*, *"the corpus is exhausted"* at
+12 s, *"the catalog's 8–30 s band is NOT reachable on this corpus"*.
+
+**True:** `w120` is the **120-degree horizontal field of view**. `parity.py:222` spells
+the path `…/physicalai-train-e438721ae894/**wide120**/…`; the rig is
+`camera_front_wide_120fov`; the tag sits beside `256x640cyl`, its fellow *geometry*
+marker. Episodes are **~199 frames** (min 190, median 199, MEASURED over the 208-episode
+parity prefix), so windows per episode is `193 − 20K` and **K = 4…9 (8–18 s) are all
+reachable with every episode contributing**. Only 30 s stays out of reach.
+
+⛔⛔ **THIS WAS NOT DOCUMENTATION. IT WAS A REFUSAL.**
+`train_v6_staged.py` refused any `--s1-multi-k >= 6` outright, and a test named
+`test_preflight_refuses_an_unreachable_K_before_the_corpus_mounts` pinned it there. The
+guard was retiring the 12–18 s strategic band — **the programme's own thesis** — on a
+misread filename, and the test defended the misreading.
+
+⚠️ **The docstring had already labelled the 120 `INHERITED`** — from a design doc and a
+cache name — and drew a hard *"the corpus is exhausted"* conclusion from it anyway.
+⇒ **Stating the evidence class is not the safeguard; refusing to CONCLUDE from a weak
+class is.** A claim that decides a GPU-day must be MEASURED or PUBLISHED, never
+INHERITED.
+
+⭐ **The function was never wrong.** `reachable_strategic_ticks` is parameterised on
+`episode_frames` and returns the true table for whatever corpus it is handed — which is
+exactly why it survived the error that took out every piece of prose around it. **A
+correct implementation can ship a wrong conclusion in its documentation, and the
+documentation is what gets quoted.**
+
+## R3 — four "blockers" that had already been cleared
+
+`BACKLOG.md` and the register carried as OPEN: refav1's loader v7.2/nav join (implemented;
+169 tests green, while the loader's own docstring still warned the model "REFUSES negative
+labels" and proposed a fix that had already landed verbatim), refav1's compute-placement
+blocker (Thor idle since the k=8 control finished), A15's adjudication (done 2026-08-18)
+and A15's tool fix (landed) — and A12 was three-quarters done behind a stale *"(absent)"*
+on a file that exists and is git-tracked.
+
+⇒ **A pull-list whose rows are stale costs exactly the turns it exists to make
+productive.** `BACKLOG.md` is the answer to *"gated ≠ idle"*; a puller who spends the turn
+re-deriving state is idling with a checklist.
+
+## THE CLASS, and the two rules that are new
+
+**Class:** *a fact taken from a NAME, a NEIGHBOURING DOC, or a PRIOR VERDICT instead of
+from the artifact — which then propagates, because a plausible number needs no defending.*
+This is the `df` / Thor `free` / cgroup `usage_in_bytes` / `step_s` family with the object
+swapped from a probe to a **record**.
+
+⭐ **NEW RULE 1 — WHEN A NUMBER IS CORRECTED, SWEEP FOR IT.** A spot-fix at the site where
+you noticed it is not a correction; it is a partial one. MEASURED tonight: the drift pair
+took three sites and two accidental rediscoveries; `w120` took six sites including a
+launch guard and a test. Precedent already exists — the feature read-set count reached
+**14 documents / 17 sites** before a test pinned it.
+
+⭐ **NEW RULE 2 — A DERIVED STATISTIC INHERITS ITS INPUTS' EVIDENCE CLASS.** Re-derive,
+never re-quote. If the inputs move, the derived number moves with them, and it will be
+carrying a MEASURED stamp it did not earn.
