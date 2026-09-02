@@ -922,7 +922,15 @@ def _stack_scripts_on_path():
     return p
 
 
-_GEOM_FIELDS = ("frame_h", "frame_w", "frame_hfov", "projection")
+# ⛔ `window` belongs here, not in the caller's flags. It is the model's CONTEXT
+# WINDOW, a property of the trained predictor — `t1_eval`'s default is 8 and every
+# v7 arm trains at 6, so a flagless v7 run dies in
+# `validate_operative_inputs` with "window mismatch: got 8, predictor configured
+# for 6". MEASURED 2026-08-30 on the first T1 smoke. That refusal is correct and
+# loud, but it is the SAME defect as the geometry one wearing a different name:
+# an eval default silently disagreeing with the checkpoint. Adopting it here means
+# neither can be got wrong by forgetting a flag.
+_GEOM_FIELDS = ("frame_h", "frame_w", "frame_hfov", "projection", "window")
 
 
 def ckpt_geometry(ckpt_path):
@@ -1021,6 +1029,8 @@ def resolve_ext_frames(a):
     _stack_scripts_on_path()
     from eval_flagship_v4 import _eval_cfg, resolve_eval_frames
     adopt_ckpt_geometry(a)
+    if getattr(a, "window", None) is None:
+        a.window = W        # no checkpoint record (flagship): the historical default
     cfg = _eval_cfg()
     cache_frame, model_frame = resolve_eval_frames(a, cfg, label="t1_eval")
     return cfg, cache_frame, model_frame
@@ -1464,7 +1474,13 @@ def main(argv=None):
     ap.add_argument("--speed-input", action="store_true")
     ap.add_argument("--n-boot", type=int, default=2000)
     # -- frame/geometry (the §1.12 grid, parameterised) ---------------------- #
-    ap.add_argument("--window", type=int, default=W)
+    # ⛔ default None, NOT W: `adopt_ckpt_geometry` must be able to tell "the
+    # caller passed 8" from "nobody said", or every v7 arm (window 6) would be
+    # refused as a contradiction against a default nobody chose. Falls back to
+    # W in `resolve_ext_frames`, so the flagship path is unchanged.
+    ap.add_argument("--window", type=int, default=None,
+                    help=f"context window in frames (default: the CHECKPOINT's "
+                         f"own, else {W})")
     ap.add_argument("--horizon-k", type=int, default=K)
     ap.add_argument("--dt", type=float, default=DT)
     ap.add_argument("--wheelbase", type=float, default=WHEELBASE,
