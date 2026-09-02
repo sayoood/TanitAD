@@ -1,0 +1,65 @@
+{
+ "new_fp8": {
+  "dtype": "torch.float8_e4m3fn",
+  "shape": [
+   101,
+   640,
+   1024
+  ]
+ },
+ "new_fp16": {
+  "dtype": "torch.float16",
+  "shape": [
+   101,
+   640,
+   1024
+  ]
+ },
+ "sep01_gpu_fp8": {
+  "dtype": "torch.float8_e4m3fn",
+  "shape": [
+   101,
+   640,
+   1024
+  ]
+ },
+ "cpu_fp8_vs_sep01_gpu_fp8": {
+  "pair": "cpu-bf16 rebuild (fp8) vs Sep-1 GPU-bf16 (fp8)",
+  "exact_equal_frac": 0.6688777804374695,
+  "max_abs_diff": 0.25,
+  "mean_abs_diff": 0.003763628890737891,
+  "rel_mse": 0.0010618806118145585,
+  "rel_l2": 0.032567135989665985,
+  "cos_per_token_min": 0.9886223077774048,
+  "cos_per_token_mean": 0.9994856715202332
+ },
+ "cpu_fp8_vs_cpu_fp16": {
+  "pair": "cpu rebuild fp8 vs its own fp16 (quantisation only)",
+  "exact_equal_frac": 0.06030429154634476,
+  "max_abs_diff": 0.125,
+  "mean_abs_diff": 0.004661575425416231,
+  "rel_mse": 0.000706766324583441,
+  "rel_l2": 0.026491107419133186,
+  "cos_per_token_min": 0.9994533658027649,
+  "cos_per_token_mean": 0.9996494054794312
+ },
+ "sep01_gpu_fp8_vs_cpu_fp16": {
+  "pair": "Sep-1 GPU fp8 vs cpu fp16",
+  "exact_equal_frac": 0.046619921922683716,
+  "max_abs_diff": 0.2265625,
+  "mean_abs_diff": 0.006338988896459341,
+  "rel_mse": 0.0010594051564112306,
+  "rel_l2": 0.032532308250665665,
+  "cos_per_token_min": 0.989010751247406,
+  "cos_per_token_mean": 0.9994840025901794
+ },
+ "frac_elements_differ": 0.33112218976020813,
+ "differing_elems_median_ulps": 0.7272727489471436,
+ "differing_elems_max_ulps": 16.0,
+ "mean_abs": {
+  "new_fp8": 0.20605802536010742,
+  "sep01_gpu_fp8": 0.20618659257888794,
+  "new_fp16": 0.2062554657459259
+ },
+ "per_frame_rel_l2_max": 0.03643667697906494
+}
