@@ -2861,33 +2861,58 @@ def reachable_strategic_ticks(episode_frames: int, *, window: int,
     Returns ``max_k`` (the largest K yielding >= 1 window per episode) and the
     per-K window count, so a launch can be refused with the numbers in hand.
 
-    ⛔ **THE CONSEQUENCE, and it is a SPEC-AMENDMENT finding, not a tuning
-    note.** At the live geometry — ``window=6``, ``stride_str=20``, and a
-    **120-frame** episode cache (``physicalai-train-e438721ae894-w120-…``) — the
-    windows per episode are ``114 - 20K``:
+    ⛔⛔ **THE WORKED EXAMPLE BELOW WAS WRONG FOR ~3 WEEKS, AND IT WAS WRONG IN
+    THE DIRECTION THAT KILLS WORK. CORRECTED 2026-09-02.** It was built on a
+    **120-frame** episode, read out of the cache name
+    ``physicalai-train-e438721ae894-w120-256x640cyl``. ⭐ **`w120` IS THE
+    120-DEGREE FIELD OF VIEW, NOT A FRAME COUNT** — ``parity.py:222`` spells the
+    path out as ``…/physicalai-train-e438721ae894/**wide120**/…``, the rig is
+    ``camera_front_wide_120fov``, and the tag sits beside ``256x640cyl``, its
+    fellow *geometry* marker. Episodes are **~199 frames** (MEASURED two ways:
+    the banked ``o4_n`` counts differ by exactly 40 x 2,400 across
+    ``max_horizon`` 20 -> 60, giving mean T = 198.92; and the Research Lab
+    measured ``max_k = 9`` directly).
 
-    ======  =========  ====================  =========================
-    K       horizon    windows per episode   vs the 1-tick baseline 94
-    ======  =========  ====================  =========================
-    1        2 s        94                    --
-    2        4 s        74                    -21 %
-    3        6 s        54                    -43 %
-    4        8 s        34                    -64 %
-    5       10 s        14                    -85 %
-    6       12 s         0                    **the corpus is exhausted**
-    ======  =========  ====================  =========================
+    At the live geometry — ``window=6``, ``stride_str=20`` — windows per episode
+    are ``(T - 6) - 20K``, i.e. **``193 - 20K``**, not ``114 - 20K``:
 
-    The catalog asks for **8-30 s = 4-15 ticks**. Only its bottom edge (K=4,
-    8 s) is reachable, at a 64 % window cost; **K >= 6 yields no windows at
-    all**, and 30 s is longer than a 12 s episode. This is arithmetic on the
-    windowing rule, not an opinion about training.
+    ======  =========  ====================  ==========================
+    K       horizon    windows per episode   vs the 1-tick baseline 173
+    ======  =========  ====================  ==========================
+    1        2 s       173                    --
+    2        4 s       153                    -12 %
+    3        6 s       133                    -23 %
+    4        8 s       113                    -35 %
+    5       10 s        93                    -46 %
+    6       12 s        73                    -58 %
+    7       14 s        53                    -69 %
+    8       16 s        33                    -81 %
+    9       18 s        13                    -92 %
+    10      20 s         0                    **exhausted**
+    ======  =========  ====================  ==========================
 
-    ⚠️ Deliberately parameterised on ``episode_frames`` rather than hard-coding
-    120: the 120-frame figure is INHERITED (``V6_TRAINER_DESIGN.md §3.6``,
-    consistent with the ``-w120-`` cache name and with the MEASURED 94
-    windows/episode at ``max_horizon=20`` in ``PI_DECISIONS_2026-08-12.md``
-    §D4). The trainer calls this with the corpus it actually loaded, so a
-    different cache moves the table instead of invalidating the guard.
+    The catalog asks for **8-30 s = 4-15 ticks**. ⇒ **K = 4 through K = 9 (8-18 s)
+    are reachable with every episode contributing**, and the corpus straddles
+    MM-E15's **12.5 s** median manoeuvre start. The superseded table said *"K >= 6
+    yields no windows at all"* and *"the corpus is exhausted"* at 12 s — which
+    would have retired the strategic band on a misread filename. 30 s remains out
+    of reach (an episode is ~19.9 s), and that part stands.
+
+    ⛔ **THE LESSON IS THE EVIDENCE CLASS, AND THIS DOCSTRING ALREADY KNEW IT.**
+    The paragraph below correctly labelled 120 as **INHERITED** — from a design
+    doc and a cache NAME — and the table drew a hard *"the corpus is exhausted"*
+    conclusion from it anyway. That is exactly what the operating standard
+    forbids: **a claim that decides a GPU-day must be MEASURED or PUBLISHED,
+    never INHERITED.** Stating the class is not the safeguard; refusing to
+    conclude from a weak class is.
+
+    ⚠️ The FUNCTION was never wrong — it is parameterised on ``episode_frames``
+    and computes the true table for whatever corpus it is handed. Only this
+    worked example was, which is its own warning: a correct implementation can
+    ship a wrong conclusion in its documentation, and the documentation is what
+    gets quoted. Historical note: the *"MEASURED 94 windows/episode at
+    ``max_horizon=20``"* in ``PI_DECISIONS_2026-08-12.md`` §D4 is consistent with
+    T=120 and should be re-derived before it is cited again.
 
     ⛔ **AND THE WINDOW LOSS IS NOT A PARITY BREAK ONLY BECAUSE IT STOPS SHORT
     OF ONE.** PI decision D4 settled that ``max_horizon`` is a windowing choice

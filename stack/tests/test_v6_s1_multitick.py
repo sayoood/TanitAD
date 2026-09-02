@@ -22,13 +22,25 @@ implementation was written):
    lives in ``predictor_str``, a genuine z(t) -> z(t+stride) map, and a
    multi-tick roll is that map composed with itself.
 
-2. ⛔ **The catalog's 8-30 s HORIZON IS NOT REACHABLE ON THIS CORPUS, and that
-   is arithmetic, not opinion.** ``t_max = frames - window - max_horizon``
-   (``tanitad/data/_contract.py:120``) and a K-tick roll needs
-   ``max_horizon = K*stride_str``. On the 120-frame cache windows/episode is
-   ``114 - 20K``: K=4 (8 s) costs 64 % of the windows and K>=6 (12 s) yields
-   ZERO. 30 s is longer than a 12 s episode. Pinned below so a later launch
-   cannot quietly truncate the ladder instead of amending the spec.
+2. ⛔ **MOST of the catalog's 8-30 s horizon IS reachable — the claim this
+   paragraph used to make was wrong, corrected 2026-09-02.** ``t_max = frames -
+   window - max_horizon`` (``tanitad/data/_contract.py:120``) and a K-tick roll
+   needs ``max_horizon = K*stride_str``, so windows/episode is ``(T-6) - 20K``.
+   ⭐ **T is ~199, not 120.** The old text read the 120 out of the cache name
+   ``…-w120-256x640cyl``, where **``w120`` is the 120-DEGREE FIELD OF VIEW**
+   (``parity.py:222`` spells the path ``…/wide120/…``; the rig is
+   ``camera_front_wide_120fov``). At T=199 windows/episode is ``193 - 20K``:
+   **K=4..9 (8-18 s) all reachable with every episode contributing**, K=9 at 13
+   windows. Only 30 s stays out of reach (an episode is ~19.9 s).
+   ⚠️ The old *"K>=6 yields ZERO"* would have retired the strategic band on a
+   misread filename. Still pinned below, so a later launch cannot quietly
+   truncate the ladder instead of amending the spec — the pin was right, the
+   number in it was not.
+
+   ⚠️ **The tests below pass ``120`` EXPLICITLY and that is deliberate and
+   correct**: they exercise the guard's arithmetic on a fixed input, and its
+   arithmetic is right for any T. They never asserted that our corpus is 120
+   frames — only this prose did.
 """
 # ⚠️ FRAME PIN (2026-08-28): this suite asserts v6-ERA recorded facts
 # (byte-identity hashes, MEASURED head counts, v6 token sets). The PI's v7

@@ -305,13 +305,56 @@ reaching it in capability.* The strategic band (8–30 s) remains unreached, and
 MM-E16's temporal-abstraction ladder is still the only proposed mechanism —
 now with the added knowledge that a longer flat rollout demonstrably is not one.
 
-⚠️ **ATTRIBUTION IS INCOMPLETE and the verdict is scoped accordingly.** The arm
+⚠️ ~~**ATTRIBUTION IS INCOMPLETE and the verdict is scoped accordingly.** The arm
 differs from the incumbent in THREE ways: `o5_k` 60, `clip` 0.5, and
 `init_from` (incumbent `distill_init.pt`, this arm `None` — E-DEC-60/C164).
 Supported: *"this arm does not clear the bar."* NOT supported: *"the horizon
 caused the fall."* The **clip-0.5 k=8 control is RUNNING** on Thor
 (`/home/nvidia/v7tiny/k8clip05p30k`, 30,000 steps to match the arm it
-controls); the `init_from` axis still needs its own.
+controls); the `init_from` axis still needs its own.~~
+
+⭐⭐ **SUPERSEDED 2026-09-02 — THE CONTROL FINISHED AND THE ATTRIBUTION CLOSED.**
+`k8clip05p30k` completed its 30,000 steps and was read on the same instrument:
+**h1 = 0.006165** against the incumbent's **0.005947 — 1.04×, FLAT**. ⇒ **`clip`
+0.5 and the scratch `init_from` are NOT the cause**, and a key-by-key
+`config.json` diff makes control-vs-k60 genuinely one-variable (`args.o5_k` 8 vs
+60 is the only launched difference; everything else in the diff is derived from
+it). *"The horizon caused the fall"* is now **supported** — with the scope clause
+below.
+
+⛔ **THERE WAS A FOURTH DIFFERENCE, AND IT IS INVISIBLE TO AN ARGS DIFF.** `o5_k`
+also sets the derived `max_horizon` 20 → 60, which cut the k=60 arm's training
+windows **415,002 → 319,002** — a shortfall of **exactly 96,000 = 40 × 2,400**
+(the horizon delta times the corpus), i.e. it trained on **76.9 %** of the k=8
+arm's windows, with starts truncated to the first ~77 % of each episode. ⚠️ My
+attribution package listed `o4_n` in its diff table and dismissed it as *"derived
+(window count follows the horizon)"* — **being derived from the one variable does
+not stop it being a confound.** The k=8 control does **not** separate them: its
+banked config reads `max_horizon = 20`, so it differs on this axis too, in the
+same direction. ⇒ *which consequence* of `o5_k` produced the fall — the longer
+rollout, or the smaller/truncated corpus it forces — is **open**, and every use
+of the scene-spread rise carries that clause (backlog **L-10**). Found by the
+Research Lab (`…/2026-09-02-scene-matched-action-criterion/COMMS.md` §E3), not by
+me.
+
+⚠️ **AND THE DECOMPOSITION ABOVE SHOULD BE READ AGAINST THE CONTROL, NOT THE
+INCUMBENT.** The 0.78× / 1.56× quoted above are k=60 vs the *incumbent*, which
+differs on three axes. Against the one-variable control the pair is **action
+0.83× / scene 1.71×** (0.83/1.71 = 0.483 vs the observed 0.484 — the
+decomposition closes exactly), and the scene side carries **73.7 %** of the fall.
+⛔ Neither factor carries an interval: the actdiv probe has no paired
+episode-cluster bootstrap (backlog **L-13**). Per the estimator rule none is
+quoted rather than a wrong one — but a decision statistic without an interval is
+a gap, not a virtue.
+
+⭐ **A CORPUS FACT THAT BELONGS BESIDE THE "STRATEGIC IS UNREACHED" CLAIM.** P4's
+stated reason — 10× rollout compute on a predictor that collapses past one tick —
+**stands**. What must not be inferred from it is that the *data* is the limit:
+MEASURED 2026-09-02, `max_k = 9` (**18 s**) with **every episode contributing**,
+so **K = 6 (12 s) and K = 7 (14 s) are corpus-reachable** and the corpus straddles
+MM-E15's 12.5 s median manoeuvre start. Episodes are **~199 frames, not the 120**
+`train_v6_staged.py`'s `reachable_strategic_ticks` docstring assumes. ⇒ **the
+binding constraints are compute and the one-tick collapse, not the corpus.**
 
 ⚠️ Every MM-E19 number carries the instability caveat: OPEN-ENDED intermittent
 spiking, worst window **16,000–18,000** at 4.0 spikes/1000, max gnorm
