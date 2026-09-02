@@ -1,0 +1,25 @@
+[bank] env -> C:\Users\Admin\refav1_probe\profile_out\profile.json
+[refav1-labels] v7.2 join: labels 1/6 eps (5 missing, e.g. ['001d413e-2803-4c6b-a11a-8f7793a3534e', '09376a99-6406-4595-bdf1-b52f13b9b289', '1e3fb085-c747-4c05-a88d-a514067835cf']), 10/222 windows in-band +-[2.0]s, md5=0ff902130ce76886b8a925eceed9e3a5 | nav 1/6 eps (5 missing -> nav_cmd=0+nav_valid=False), md5=0ff902130ce76886b8a925eceed9e3a5, allow_oracle_nav=True
+loader: 222 windows over 6 episodes
+[bank] loader_join_report -> C:\Users\Admin\refav1_probe\profile_out\profile.json
+model 175,164,468 params; arms ['fwdprof', 'components']; bs 1; precision fp32
+C:\Users\Admin\venvs\tanitad\Lib\site-packages\torch\profiler\profiler.py:224: UserWarning: Warning: Profiler clears events at the end of each cycle.Only events from the current cycle will be reported.To keep events across cycles, set acc_events=True.
+  _warn_once(
+[fwdprof] bs1 fp32: kernel 1828 ms/step, GPU busy 96.6 %, trace 11.6 MB
+[bank] fwdprof_fp32_bs1_trace -> C:\Users\Admin\refav1_probe\profile_out\profile.json
+[components] encode_window: {'fwd_ms': 2.0601279735565186, 'bwd_ms': 4.086463928222656, 'fwd_all': [2.3393280506134033, 2.0691840648651123, 1.9718079566955566, 2.0224640369415283, 2.0601279735565186], 'bwd_all': [4.0879998207092285, 4.086463928222656, 4.418272018432617, 4.080287933349609, 4.085247993469238], 'max_mem_gb': 1.0369868278503418}
+[components] brains: {'fwd_ms': 8.42467212677002, 'bwd_ms': 12.377120018005371, 'fwd_all': [9.4367036819458, 8.42467212677002, 8.324224472045898, 9.074527740478516, 8.245504379272461], 'bwd_all': [12.541888236999512, 12.56112003326416, 12.110719680786133, 12.377120018005371, 11.945311546325684], 'max_mem_gb': 1.0415854454040527}
+[components] target_adapter_future[grad-recorded,as-live]: {'fwd_ms': 18.04425621032715, 'fwd_all': [18.07209587097168, 18.038240432739258, 18.04425621032715, 18.086559295654297, 17.9149112701416], 'grad_recorded': True, 'max_mem_gb': 1.4493584632873535}
+[components] target_adapter_future[no_grad]: {'fwd_ms': 17.55014419555664, 'fwd_all': [17.52191925048828, 17.557056427001953, 17.55014419555664, 17.547487258911133, 17.55174446105957], 'grad_recorded': False, 'max_mem_gb': 1.2265591621398926}
+[components] target_tac_field_x30[grad-recorded,as-live]: {'fwd_ms': 14.794591903686523, 'fwd_all': [14.784607887268066, 14.794591903686523, 14.443008422851562, 14.919072151184082, 15.342528343200684], 'grad_recorded': True, 'max_mem_gb': 1.106356143951416}
+[components] target_str_subspace[grad-recorded,as-live]: {'fwd_ms': 0.3806400001049042, 'fwd_all': [0.46880000829696655, 0.3806400001049042, 0.41328001022338867, 0.377375990152359, 0.37011200189590454], 'grad_recorded': True, 'max_mem_gb': 0.9297995567321777}
+[components] target_adapter_str_ext[grad-recorded,as-live]: {'fwd_ms': 0.9959999918937683, 'fwd_all': [0.9765120148658752, 1.0305919647216797, 0.9700800180435181, 1.3172800540924072, 0.9959999918937683], 'grad_recorded': True, 'max_mem_gb': 0.9647164344787598}
+[components] op_rollout_K15[+to_enc+mse]: {'fwd_ms': 241.289794921875, 'bwd_ms': 558.4363403320312, 'fwd_all': [248.0791015625, 241.90489196777344, 239.8907470703125, 235.8738555908203, 241.289794921875], 'bwd_all': [557.5833129882812, 562.3599853515625, 562.5142211914062, 557.6798706054688, 558.4363403320312], 'max_mem_gb': 4.808427810668945}
+[components] profiled op_rollout K15: kernel 1054 ms/step, GPU busy 98.6 %
+[components] tac_rollout_K10[+tac_field_init+mse]: {'fwd_ms': 24.375200271606445, 'bwd_ms': 55.22169494628906, 'fwd_all': [23.039936065673828, 21.825664520263672, 26.107872009277344, 24.375200271606445, 26.340511322021484], 'bwd_all': [56.68044662475586, 56.221248626708984, 55.028160095214844, 53.04054260253906, 55.22169494628906], 'max_mem_gb': 1.3308706283569336}
+[components] str_subspace+rollout_K4[+mse]: {'fwd_ms': 6.578688144683838, 'bwd_ms': 10.050592422485352, 'fwd_all': [4.918464183807373, 5.159359931945801, 6.578688144683838, 10.506784439086914, 6.678048133850098], 'bwd_all': [9.06662368774414, 8.112031936645508, 14.834752082824707, 11.743103981018066, 10.050592422485352], 'max_mem_gb': 0.9415526390075684}
+[components] proposal+heads: {'fwd_ms': 0.49584001302719116, 'bwd_ms': 1.054975986480713, 'fwd_all': [0.5352640151977539, 0.46348801255226135, 0.4721919894218445, 0.516480028629303, 0.49584001302719116], 'bwd_all': [1.3211840391159058, 1.054975986480713, 1.016767978668213, 1.0831680297851562, 1.0245440006256104], 'max_mem_gb': 0.9345002174377441}
+[components] clip 9.6 ms, adamw 58.3 ms
+[bank] components_fp32_bs1_trace -> C:\Users\Admin\refav1_probe\profile_out\profile.json
+done
+EXIT6=0
