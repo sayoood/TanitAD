@@ -22,10 +22,14 @@ Run (smoke, CPU, no cache needed):
 Run (real):
     python stack/scripts/refa_v1_train.py --cache /path/dinov3_w120 \
         --steps 30000 --bs 8 --out ~/experiments/refa-v1
+Run (the precision arm — a NEXT run, never the live one; see --precision):
+    python stack/scripts/refa_v1_train.py ... --precision bf16 --tf32
 """
 from __future__ import annotations
 
 import argparse
+import contextlib
+import dataclasses
 import json
 import math
 import time
@@ -80,6 +84,98 @@ def verify_cache(cache: Path) -> dict:
                 f"{want!r}. A narrowed visual interface trains happily and is "
                 "the defect v1 was built to remove.")
     return idx
+
+
+# --------------------------------------------------------------------------- #
+# PRECISION (Deploy & Optimization FlyWheel, D-REFAV1-STEP-PROFILE 2026-09-02).
+# MEASURED on the dev-box 4060: the step IS the 30-step operative token-field
+# rollout fwd+bwd (84-92 % of it, GPU busy 98 %), and bf16 autocast makes that
+# rollout 3.0x faster (TF32 alone 1.54x, forward). Thor's own ratio is
+# UNMEASURED. ⛔ Both switches default OFF: the live run must stay
+# reproducible from the repo, and a bf16 arm is a NUMERICS change that needs
+# its pre-registered A/B (loss, gnorm, participation, tgt_std_*) before it is
+# trusted. The OFF path is byte-identical to the pre-flag trainer — pinned by
+# `tests/test_refa_v1_precision.py` against the pre-edit step-1 numbers.
+# --------------------------------------------------------------------------- #
+def forward_context(precision: str, device_type: str):
+    """The context the FORWARD + LOSS run under — and nothing else.
+
+    ``fp32`` -> ``nullcontext`` (no autocast machinery is entered at all).
+    ``bf16`` -> ``torch.autocast(bfloat16)`` on ``device_type``. PINNED
+    DECISION: on CPU this autocasts ON CPU (torch supports bf16 there) rather
+    than refusing — the smoke/test path then exercises the SAME context wiring
+    the CUDA run uses, instead of a private path that could drift from it.
+    """
+    if precision == "fp32":
+        return contextlib.nullcontext()
+    if precision == "bf16":
+        return torch.autocast(device_type=device_type, dtype=torch.bfloat16)
+    raise ValueError(f"precision must be 'fp32' or 'bf16', got {precision!r}")
+
+
+def apply_precision_flags(precision: str, tf32: bool, device) -> dict:
+    """Set the process-global numerics BEFORE the model is built; return the
+    READ-BACK record that goes into ``config.json`` (the stamp is what the
+    process actually has, never an echo of the flag).
+
+    ``--tf32`` off touches NOTHING, so the live run keeps PyTorch's own
+    defaults (``matmul.allow_tf32`` False, ``cudnn.allow_tf32`` True) exactly
+    as it has them today; on sets both True. Inert on CPU, stamped either way.
+    """
+    dev = torch.device(device)
+    if precision not in ("fp32", "bf16"):
+        raise ValueError(f"precision must be 'fp32' or 'bf16', got {precision!r}")
+    if tf32:
+        torch.backends.cuda.matmul.allow_tf32 = True
+        torch.backends.cudnn.allow_tf32 = True
+    if (precision == "bf16" and dev.type == "cuda"
+            and not torch.cuda.is_bf16_supported()):
+        raise SystemExit(
+            f"⛔ --precision bf16 on {dev}: this CUDA device reports no bf16 "
+            "support. Refusing rather than silently running fp32 under a "
+            "launch line that says bf16.")
+    return {
+        "precision": precision,
+        # autocast covers the FORWARD + LOSS only; backward / clip / optimizer
+        # / EMA run on the fp32 master weights (autocast backward emits fp32
+        # parameter grads). No GradScaler: bf16 keeps fp32's 8-bit exponent,
+        # so the gradient UNDERFLOW that fp16 loss-scaling exists to prevent
+        # does not arise — bf16's cost is mantissa (8 bits), not range.
+        "autocast": ({"device_type": dev.type, "dtype": "bfloat16",
+                      "scope": "forward+loss"}
+                     if precision == "bf16" else None),
+        "grad_scaler": None,
+        "master_weights": "fp32",
+        "tf32": {"requested": bool(tf32),
+                 "effective": bool(tf32) and dev.type == "cuda",
+                 "matmul_allow_tf32": bool(torch.backends.cuda.matmul.allow_tf32),
+                 "cudnn_allow_tf32": bool(torch.backends.cudnn.allow_tf32),
+                 "float32_matmul_precision":
+                     torch.get_float32_matmul_precision()},
+        "device": str(dev),
+    }
+
+
+def _jsonable(o):
+    if dataclasses.is_dataclass(o) and not isinstance(o, type):
+        return dataclasses.asdict(o)
+    if isinstance(o, Path):
+        return str(o)
+    return repr(o)
+
+
+def write_config(out: Path, args, cfg, precision: dict) -> Path:
+    """``<out>/config.json`` — the launch line, the resolved model config and
+    the resolved numerics, so a run's precision is READABLE from its directory
+    (the trainer wrote no config record at all before 2026-09-02; the ckpt
+    carries ``cfg`` only, and precision is a trainer-side property that is
+    deliberately NOT in the model config — a checkpoint loads under either)."""
+    rec = {"args": dict(vars(args)), "cfg": dict(vars(cfg)), **precision,
+           "torch": torch.__version__,
+           "written_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
+    p = out / "config.json"
+    p.write_text(json.dumps(rec, indent=1, default=_jsonable), encoding="utf-8")
+    return p
 
 
 class SmokeData:
@@ -247,6 +343,23 @@ def main(argv=None) -> int:
     ap.add_argument("--smoke", action="store_true")
     ap.add_argument("--device", default="cuda" if torch.cuda.is_available()
                     else "cpu")
+    # --- PRECISION (D-REFAV1-STEP-PROFILE, 2026-09-02) --------------------- #
+    ap.add_argument("--precision", choices=("fp32", "bf16"), default="fp32",
+                    help="bf16 = torch.autocast(bfloat16) around the FORWARD "
+                         "+ LOSS only; backward, clip, optimizer and EMA stay "
+                         "on the fp32 master weights, no GradScaler (bf16 has "
+                         "fp32's exponent range). MEASURED dev-box 4060: the "
+                         "30-step operative rollout fwd+bwd 3.0x faster, and "
+                         "that rollout is 84-92 %% of the step. ⛔ DEFAULT "
+                         "fp32 — the live run must stay reproducible; a bf16 "
+                         "arm is a NUMERICS change with its own A/B")
+    ap.add_argument("--tf32", action="store_true",
+                    help="allow TF32 tensor-core matmuls/convs (sets "
+                         "torch.backends.cuda.matmul.allow_tf32 AND "
+                         "torch.backends.cudnn.allow_tf32 True before the "
+                         "model is built; off touches nothing). MEASURED "
+                         "1.54x on the rollout forward. Inert on CPU; the "
+                         "read-back flags are stamped into config.json")
     a = ap.parse_args(argv)
 
     if not a.smoke and (a.cache is None or a.episodes is None):
@@ -273,6 +386,12 @@ def main(argv=None) -> int:
     if a.cache is not None:
         verify_cache(a.cache)
 
+    # Numerics are resolved BEFORE the model exists: TF32 is a process-global
+    # switch that must precede the first matmul, and an unsupported bf16
+    # device is refused here, not after the cache is opened.
+    precision = apply_precision_flags(a.precision, a.tf32, a.device)
+    fwd_device_type = torch.device(a.device).type
+
     torch.manual_seed(a.seed)
     model = build_model(a).to(a.device)
     cfg = model.cfg
@@ -283,6 +402,9 @@ def main(argv=None) -> int:
     # would have rejected.
     cfg.sanity()
     a.out.mkdir(parents=True, exist_ok=True)
+    print(f"[refav1] config -> {write_config(a.out, a, cfg, precision)} "
+          f"(precision={precision['precision']} tf32={precision['tf32']})",
+          flush=True)
 
     # Stability item 4: adapter and predictor are SEPARATE param groups.
     # ⛔ `requires_grad` filter: the EMA teacher's parameters (`model.ema.*`,
@@ -394,8 +516,18 @@ def main(argv=None) -> int:
                       f"(safe: the model masks -100 itself) and not a "
                       f"label (which would narrow the run silently)",
                       flush=True)
-        out = model(feats, actions, future_feats=future, **kw)
-        loss = out["loss"]
+        # ⭐ PRECISION: the context wraps the FORWARD + LOSS only. `out["loss"]`
+        # is assembled inside `forward`, so this one block covers every term;
+        # backward / clip / opt.step / ema_update run OUTSIDE it on the fp32
+        # master weights. Under fp32 it is a nullcontext — byte-identical to
+        # the pre-flag trainer (pinned by tests/test_refa_v1_precision.py).
+        # Under bf16 the instruments the model emits are still read at fp32 /
+        # fp64: `_chan_std` casts `.float()` BEFORE its reduction, the
+        # participation covariance is fp64 (autocast never touches fp64), and
+        # every `mse_loss` / `cross_entropy` is on autocast's fp32 list.
+        with forward_context(a.precision, fwd_device_type):
+            out = model(feats, actions, future_feats=future, **kw)
+            loss = out["loss"]
         opt.zero_grad(set_to_none=True)
         loss.backward()
         gnorm = nn.utils.clip_grad_norm_(model.parameters(), a.clip)
@@ -411,8 +543,14 @@ def main(argv=None) -> int:
                 # per-dim std. Part 2 measured the trained REF-A adapter at
                 # 0.8011 vs 0.220 random-init — i.e. NOT collapsed. If v1 ever
                 # drives this toward 0 the run is dead regardless of the loss.
-                adapter_std = float(model.encode(feats).std(dim=(0, 1, 2)).mean())
+                # Deliberately OUTSIDE the precision context: it reads the fp32
+                # master weights' adapter, and `.float()` pins the reduction to
+                # fp32 should this block ever move under autocast (a bf16 std
+                # keeps ~3 significant digits). No-op under fp32.
+                adapter_std = float(model.encode(feats).float()
+                                    .std(dim=(0, 1, 2)).mean())
             row = {"step": step, "loss": float(loss.detach()),
+                   "precision": a.precision, "tf32": bool(a.tf32),
                    "loss_feat_op": float(out["loss_feat_op"].detach()),
                    "loss_feat_tac": float(out["loss_feat_tac"].detach()),
                    "loss_feat_str": float(out["loss_feat_str"].detach()),
