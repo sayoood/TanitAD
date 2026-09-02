@@ -95,6 +95,23 @@ def main(argv=None) -> int:
                     help="the v2ep episode dir (actions/poses at 10 Hz)")
     ap.add_argument("--lru", type=int, default=32,
                     help="episodes held in RAM (each ~130 MB fp16 fields)")
+    # ⭐ THE v7.2 JOIN. The loader has accepted these since 2026-09-01 and the
+    # model has masked -100 correctly for longer; only the TRAINER could not
+    # pass them, so a real run trained the trajectory path with the tactical and
+    # strategic heads unsupervised while every component reported itself ready.
+    ap.add_argument("--labels", type=Path, default=None,
+                    help="v7.2 s2 labels .jsonl.gz — supervises the tactical "
+                         "and strategic heads. REQUIRED with a real --cache; "
+                         "out-of-band windows emit -100 and the model skips "
+                         "that family rather than averaging a NaN")
+    ap.add_argument("--nav", type=Path, default=None,
+                    help="nav/route source joined on clip_id, fed to all three "
+                         "layers. ⛔ must NOT carry the situation classifier's "
+                         "output in any form (PI 2026-08-03)")
+    ap.add_argument("--allow-unlabelled", action="store_true",
+                    help="⛔ deliberate: run a real --cache WITHOUT --labels. "
+                         "Only for a diagnostic that does not touch the "
+                         "tactical/strategic heads — never for a registered arm")
     ap.add_argument("--out", type=Path, default=Path("./refa_v1_run"))
     ap.add_argument("--steps", type=int, default=30000)
     ap.add_argument("--bs", type=int, default=8)
@@ -159,6 +176,25 @@ def main(argv=None) -> int:
 
     if not a.smoke and (a.cache is None or a.episodes is None):
         raise SystemExit("--cache AND --episodes are required unless --smoke")
+    # ⛔ REFUSE AN UNSUPERVISED REAL RUN — and refuse it HERE, before
+    # `verify_cache` touches the disk, so the message is about the mistake and
+    # not about whichever file the cache reader happened to open first.
+    # The PI made v7.2 tactical/strategic labels and nav-to-all-layers
+    # mandatory. Without --labels those heads take NO gradient and the run
+    # still LOOKS healthy — losses fall, checkpoints land, the trajectory path
+    # learns — so nothing in the log would say the hierarchy was never trained.
+    # That is what this refuses: not a crash, a silently narrower experiment.
+    if a.cache is not None and not a.labels and not a.allow_unlabelled:
+        raise SystemExit(
+            "⛔ --cache given without --labels: the tactical and strategic "
+            "heads would take NO gradient and the run would still look "
+            "healthy. Pass --labels <s2_labels_v7.2_*.jsonl.gz> (and --nav), "
+            "or --allow-unlabelled if this is a diagnostic that deliberately "
+            "does not touch those heads.")
+    if a.cache is not None and not a.nav:
+        print("⚠️ [refav1] no --nav: the nav command reaches no layer. "
+              "Admissible only for an arm that does not claim route "
+              "conditioning.", flush=True)
     if a.cache is not None:
         verify_cache(a.cache)
 
@@ -190,13 +226,24 @@ def main(argv=None) -> int:
         # ⭐ THE LOADER GAP IS CLOSED (2026-09-01): real windows over the
         # stage-1 cache + v2ep kinematics. The loader emits (a, kappa) with the
         # MEASURED channel repair (v2ep stores kappa first, r=0.995) and the
-        # str-extension pairs; labels/nav join is the next increment.
+        # str-extension pairs.
+        # ⭐⭐ AND THE v7.2 LABEL / NAV JOIN IS NOW WIRED (2026-09-02). The line
+        # above used to end "labels/nav join is the next increment" — the LOADER
+        # had supported `labels_path`/`nav_path` for a day, and the model side
+        # had supported `-100` masking for longer, but the TRAINER had no flag
+        # to supply either. So a real run would have trained the trajectory path
+        # with the tactical/strategic heads unsupervised and nav absent, while
+        # every component reported itself ready. A capability that exists at
+        # both ends and is not connected in the middle is not a capability.
         from tanitad.data.refav1_loader import RefAV1Windows
         data = RefAV1Windows(a.cache, a.episodes, op_window=cfg.op_window,
                              op_steps=cfg.op_steps, str_dt=cfg.str_dt,
                              str_ext_steps=cfg.str_ext_steps,
-                             lru=a.lru, seed=a.seed)
+                             lru=a.lru, seed=a.seed,
+                             labels_path=a.labels, nav_path=a.nav)
         print(f"loader: {len(data)} windows over {len(data.names)} episodes")
+        print(f"loader: labels={a.labels or 'NONE'} nav={a.nav or 'NONE'}",
+              flush=True)
         with torch.no_grad():
             fit = data.batch(max(a.bs, 8))["feats"]
             model.std.fit(fit.reshape(-1, cfg.d_enc).to(a.device))
