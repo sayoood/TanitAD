@@ -3815,8 +3815,8 @@ distilled arms 0.175–0.365 vs scratch 0.614–0.642, non-overlapping"* (**C164
 
 | arm | encoder | `--init-from` | steps | **drift** | ckpt md5 |
 |---|---|---|---|---|---|
-| **`postrain30k`** | trained | `distill_init.pt` | 30,000 | **0.669** | `a58585883c279633c799a6f6968cc4b2` |
-| **`postrain30k_seed1`** | trained | `distill_init.pt` | 30,000 | **0.679** | `85c9ae2cfba3d487f9b0275fef3bf36c` |
+| **`postrain30k`** | trained | `distill_init.pt` | 30,000 | **0.6674** | `a58585883c279633c799a6f6968cc4b2` |
+| **`postrain30k_seed1`** | trained | `distill_init.pt` | 30,000 | **0.6741** | `85c9ae2cfba3d487f9b0275fef3bf36c` |
 | **`postrain30k_freeze`** | ⭐ **FROZEN** | `distill_init.pt` | 30,000 | **0.3905** | `5f5e5c92cd8fb3dc92f7b38580149689` |
 
 **Recipe (all three, byte-identical except where noted):** `--stage S-W`, `--o5-form
@@ -3826,23 +3826,40 @@ l1`, `--w-o5 1.0 --w-o6 0.1`, O1/O2/O3 **off**, `--o5-k 8`, `--sigreg-subspaces 
 only in `--seed 1`; `postrain30k_freeze` only in `--freeze-encoder`.
 
 ⛔ **WHAT THEY RETRACT.** `postrain30k` and `splitp30k` are **both** `--init-from`
-the same `distill_init.pt` at 30k and read **0.669** vs **0.199** — *0.47 apart*.
+the same `distill_init.pt` at 30k and read **0.6674** vs **0.199** — *0.47 apart*.
 ⇒ **Initialisation cannot be the lever.** The old distilled/scratch separation was a
 **confounded grouping**: the three "distilled" arms came from different recipe lines
 than the five "scratch" ones, so the label stood for a bundle. **The crossed cell
 that would have tested it (distilled init on a scratch-line recipe) was never run
 until `postrain30k` accidentally was one.**
 
-⭐⭐ **THE PROGRAMME'S FIRST RUN-TO-RUN VARIANCE ESTIMATE.** `postrain30k` 0.669 vs
-`postrain30k_seed1` 0.679 ⇒ **~1.5 % on the drift metric.** ⇒ A 0.47 between-arm gap
+⭐⭐ **THE PROGRAMME'S FIRST RUN-TO-RUN VARIANCE ESTIMATE.** `postrain30k` **0.6674** vs
+`postrain30k_seed1` **0.6741** ⇒ **~1.0 % on the drift metric.** ⇒ A 0.47 between-arm gap
 is emphatically **not** seed noise, and every single-seed comparison in §13 may now
 be read against a known variance for the first time.
 
+⚠️ **CORRECTED 2026-09-02, AND THE DERIVED NUMBER MOVED WITH ITS INPUTS.** This table
+and this estimate were built on **0.669 / 0.679**, which were **prose, not artifact**.
+`…/2026-08-24-action-conditioning-and-heldout/raw/seedrep.json` reads **0.6674
+(t 146.85)** and **0.6741 (t 143.23)**, and ⭐ **no banked artifact anywhere in the
+Architecture & Inference tree reads 0.679** — a sweep of all 1,313 JSONs for a drift
+`r` within 5e-4 returns one hit, and it is `rdw8p30k` band-8:16, a **different arm and
+band**. Independently confirmed the same night: the MM-E19 k=8 pass recomputed
+`postrain30k` from scratch and printed **+0.6674, t 146.85** — matching to four decimals
+**and** on the t-statistic. ⇒ the variance estimate falls from the published **1.49 %**
+to **1.00 %**, which *strengthens* the conclusion below rather than weakening it (a
+smaller seed variance makes a 0.47 gap even less attributable to noise). Both
+conclusions in this block stand: `0.6674 − 0.199 = 0.4684`, still "0.47 apart".
+⛔ **The lesson is the one this registry exists to enforce:** a derived statistic
+inherits its inputs' evidence class, so *"~1.5 % run-to-run"* was quoted as a MEASURED
+programme constant while resting on two numbers that agreed with the doc beside them
+and with no file on disk. Re-derive, never re-quote.
+
 ⭐ **WHAT REPLACED THE RETRACTED LEVER (E-DEC-61).** Six of seven **trained-encoder**
-arms converge to drift **0.616–0.679** across 7.5k–30k steps and *both*
+arms converge to drift **0.616–0.674** across 7.5k–30k steps and *both*
 initialisations; the two **frozen-encoder** arms (0.199, 0.337) are the only ones
 outside it. The load-bearing evidence is a **within-recipe trajectory** —
-`postrain10k` **0.359** → `postrain30k` **0.669**, same recipe, same init, only
+`postrain10k` **0.359** → `postrain30k` **0.6674**, same recipe, same init, only
 training length differing. **Hypothesis: O5 MANUFACTURES drift when the encoder is
 trainable**, because the cheapest way to satisfy `ẑ_{t+k} ≈ z_{t+k}` is an easier
 target rather than a better prediction. `postrain30k_freeze` is the crossed cell,
