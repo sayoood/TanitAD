@@ -1000,11 +1000,21 @@ class RefAV1(nn.Module):
             # buffers), so a collapsed model scores ~1.0 and CANNOT reach zero;
             # in "adapter" space it is free to fall, and this makes that
             # visible instead of inferable.
-            out["tgt_std_op"] = float(
-                (tgt_op if self.cfg.target_space == "frozen" else tgt)
-                .detach().float().std())
-            out["tgt_std_tac"] = float(tq.detach().float().std())
-            out["tgt_std_str"] = float(st.detach().float().std())
+            # ⚠️ PER-CHANNEL std, NOT global — corrected 2026-09-02 after the
+            # first run exposed the flaw. The global std sat pinned at 1.0000
+            # while `adapter_std` fell 0.4763 -> 0.4593 on the SAME tensor:
+            # under LayerNorm total variance is preserved by construction and
+            # collapse shows up as variance CONCENTRATING into fewer
+            # directions, not shrinking. A global std is blind to exactly the
+            # failure this instrument exists to see. `adapter_std` (per-channel,
+            # then averaged) is the sensitive statistic, so match it.
+            def _chan_std(x):
+                return float(x.detach().float().reshape(-1, x.shape[-1])
+                             .std(dim=0).mean())
+            out["tgt_std_op"] = _chan_std(
+                tgt_op if self.cfg.target_space == "frozen" else tgt)
+            out["tgt_std_tac"] = _chan_std(tq)
+            out["tgt_std_str"] = _chan_std(st)
             out["loss"] = (self.cfg.w_feat_op * out["loss_feat_op"]
                            + self.cfg.w_feat_tac * out["loss_feat_tac"]
                            + self.cfg.w_feat_str * out["loss_feat_str"])
