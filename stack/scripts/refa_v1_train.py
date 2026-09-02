@@ -46,6 +46,10 @@ def build_model(args) -> RefAV1:
         motion_inject=args.motion_inject,
         target_space=args.target_space,
         w_aux_head=args.w_aux_head, proposal_k=args.proposal_k,
+        w_sigreg=args.w_sigreg, var_floor=args.var_floor,
+        min_participation=args.min_participation,
+        **({} if args.detach_aux is None
+           else {"detach_aux_targets": args.detach_aux}),
     )
     if args.smoke:
         cfg.d_enc, cfg.n_tokens, cfg.d_state = 32, 8, 32
@@ -144,8 +148,33 @@ def main(argv=None) -> int:
                          "channel mixes its own past, so cross-channel motion "
                          "(parallax, an edge crossing patches) has no route "
                          "into the state.")
+    # --- ANTI-COLLAPSE (PI 2026-09-02). Each SEPARATELY switchable so its
+    # effect stays attributable; five changes in one arm would be the
+    # conflation error this programme has already paid for. ---------------- #
+    ap.add_argument("--detach-aux-targets", dest="detach_aux", default=None,
+                    action="store_true",
+                    help="stop-gradient on the tactical/strategic targets "
+                         "(SimSiam 2011.10566). DEFAULT ON; --no-detach-aux-"
+                         "targets is the deliberate-regression control")
+    ap.add_argument("--no-detach-aux-targets", dest="detach_aux",
+                    action="store_false")
+    ap.add_argument("--w-sigreg", type=float, default=0.0,
+                    help="SigReg weight on the adapter output (v6/v7 line). "
+                         "0 = off. MEASURED discriminating: 0.477 random vs "
+                         "2.61 collapsed. ⛔ DO NOT COPY v6's 0.1: on refav1's "
+                         "input scale the raw term reads ~238, so 0.1 "
+                         "contributes ~24 against a ~1.3 feature loss — a 20x "
+                         "domination. CALIBRATE against the measured term "
+                         "before use (a weight near 1e-3 puts it on scale)")
+    ap.add_argument("--var-floor", type=float, default=0.0,
+                    help="VICReg (2105.04906) per-dim std hinge on the adapter "
+                         "output. 0 = off. Punishes std BELOW the floor only")
+    ap.add_argument("--min-participation", type=float, default=0.0,
+                    help="refuse if participation falls below this (RankMe "
+                         "2210.02885 / G-RANK). 0 = MONITOR ONLY, always "
+                         "logged. Reference floor 8.56; rank-1 collapse = 1.00")
     ap.add_argument("--target-space", choices=("adapter", "frozen"),
-                    default="adapter",
+                    default="frozen",
                     help="'adapter' = original form, whose primary loss has a "
                          "COLLAPSE MINIMUM (the target passes the trained "
                          "adapter); 'frozen' = predict std(DINOv3) itself -- "
@@ -335,6 +364,18 @@ def main(argv=None) -> int:
                    "loss_feat_tac": float(out["loss_feat_tac"].detach()),
                    "loss_feat_str": float(out["loss_feat_str"].detach()),
                    "grad_norm": float(gnorm), "adapter_std": adapter_std,
+                   # ⭐ the target's own scale — a loss is only interpretable
+                   # against the variance of what it predicts (see refa_v1.py
+                   # target-scale instrument). In "frozen" these sit at ~1;
+                   # in "adapter" they are free to collapse with the loss.
+                   "participation": out.get("participation"),
+                   "loss_sigreg": (float(out["loss_sigreg"])
+                                   if "loss_sigreg" in out else None),
+                   "loss_varfloor": (float(out["loss_varfloor"])
+                                     if "loss_varfloor" in out else None),
+                   "tgt_std_op": out.get("tgt_std_op"),
+                   "tgt_std_tac": out.get("tgt_std_tac"),
+                   "tgt_std_str": out.get("tgt_std_str"),
                    "clip": a.clip,
                    # ⭐ THE REALISED LADDER, IN EVERY ROW. The horizon a level
                    # actually trains on is now readable from the log instead of

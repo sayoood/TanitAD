@@ -268,7 +268,43 @@ class RefAV1Config:
     # DINOv3 features themselves (std has frozen buffers, fit once): the
     # target's variance is fixed at ~1 per channel, so a collapsed adapter
     # scores the target variance, not zero — DINO-WM's own arrangement.
-    target_space: str = "adapter"         # "adapter" | "frozen"
+    # ⭐⭐ DEFAULT FLIPPED TO "frozen" 2026-09-02 (PI). "adapter" was the default
+    # only because it is the ORIGINAL REF-A form — a historical accident, not a
+    # judgement. It is the collapse-prone one, and MEASURED on the first refav1
+    # launch it collapsed: adapter_std 0.4763 -> 0.3385 over 450 steps with the
+    # loss falling to 0.165 and LOOKING like the best run of the day. "frozen"
+    # predicts the standardised DINOv3 features themselves (frozen std buffers)
+    # — DINO-WM's own arrangement, and the only one of the two where the target
+    # cannot move.
+    target_space: str = "frozen"          # "adapter" | "frozen"
+
+    # --- ANTI-COLLAPSE MECHANISMS (PI 2026-09-02) --------------------------- #
+    # ⛔ WHY THESE EXIST. An audit against the banked primaries found refav1 had
+    # ONE of the family's eight mechanisms (LayerNorm — whose own comment says
+    # "affine gamma->0 re-opens it"). In I-JEPA (2301.08243) and BYOL
+    # (2006.07733) the target comes from an EMA encoder BEHIND A STOP-GRADIENT;
+    # in DINO-WM (2411.04983) from a FROZEN pretrained encoder. refav1's default
+    # did neither — both sides of every feature loss flowed through the same
+    # trained adapter, with gradient on both. That is not a JEPA; it is
+    # self-prediction with a learnable target, the family those papers exist to
+    # escape. Each knob below is SEPARATELY switchable so its effect stays
+    # attributable — five changes in one arm would be the conflation error this
+    # programme has already paid for.
+    #: SimSiam (2011.10566): stop the TARGET chasing the prediction. The
+    #: tactical and strategic targets are `_tac_field(tgt)` and
+    #: `strategic.subspace(tgt)` — adapter-derived in BOTH target spaces, so
+    #: `frozen` alone does not cover them.
+    detach_aux_targets: bool = True
+    #: SigReg (our v6/v7 line, absent from refav1 until now): 0 = off.
+    #: MEASURED discriminating: 0.477 on random vs 2.61 on collapsed.
+    w_sigreg: float = 0.0
+    sigreg_slices: int = 512
+    #: VICReg (2105.04906) variance hinge on the adapter output, in units of
+    #: the target's own scale. 0 = off.
+    var_floor: float = 0.0
+    #: RankMe (2210.02885) / our G-RANK gate. 0 = MONITOR ONLY (always logged);
+    #: > 0 refuses when participation falls below it. Reference floor 8.56.
+    min_participation: float = 0.0
 
     def sanity(self) -> None:
         if self.d_state < self.d_enc:
@@ -920,6 +956,13 @@ class RefAV1(nn.Module):
                               for i in range(tgt.shape[1])], dim=1)
             step = self._stride(self.cfg.tac_dt)
             tq = tq[:, step - 1::step][:, :out["tac_pred"].shape[1]]
+            # ⭐ STOP-GRADIENT ON THE TACTICAL TARGET (SimSiam 2011.10566).
+            # `tq` is built from `tgt`, the TRAINED adapter's output, in BOTH
+            # target spaces — so without this the target chases the prediction
+            # and both can shrink to zero together. `--target-space frozen`
+            # fixes only the OPERATIVE term (:262); this covers the other two.
+            if self.cfg.detach_aux_targets:
+                tq = tq.detach()
             kt = min(tq.shape[1], out["tac_pred"].shape[1])
             out["loss_feat_tac"] = F.mse_loss(out["tac_pred"][:, :kt], tq[:, :kt])
             sstep = self._stride(self.cfg.str_dt)
@@ -933,12 +976,79 @@ class RefAV1(nn.Module):
             out["tac_target_idx"] = list(range(step - 1, tgt.shape[1], step))[:kt]
             out["str_target_idx"] = list(
                 range(sstep - 1, tgt.shape[1], sstep))[:st.shape[1]]
+            if self.cfg.detach_aux_targets:
+                st = st.detach()                      # same reason as `tq`
             ks = min(st.shape[1], out["str_pred"].shape[1])
             out["loss_feat_str"] = F.mse_loss(out["str_pred"][:, :ks],
                                               st[:, :ks])
+
+            # ⭐⭐ TARGET-SCALE INSTRUMENT (2026-09-02). In `target_space =
+            # "adapter"` BOTH sides of every feature loss come from the TRAINED
+            # adapter, so shrinking the adapter shrinks the TARGET and the loss
+            # falls toward zero with no prediction improving — the collapse
+            # minimum this class documents at :263. A falling loss is then
+            # indistinguishable from progress unless you can see the target.
+            #
+            # MEASURED 2026-09-02 on the first refav1 launch: `adapter_std`
+            # 0.4763 -> 0.3385 monotonically over 450 steps while
+            # `loss_feat_str` fell 0.0052 -> 0.0003 — two views of one event,
+            # and the loss curve alone looked like the best run of the day.
+            #
+            # ⇒ emit the TARGET's own scale beside each loss. A loss is only
+            # interpretable against the variance of the thing it predicts:
+            # in "frozen" space that variance is pinned at ~1 (frozen std
+            # buffers), so a collapsed model scores ~1.0 and CANNOT reach zero;
+            # in "adapter" space it is free to fall, and this makes that
+            # visible instead of inferable.
+            out["tgt_std_op"] = float(
+                (tgt_op if self.cfg.target_space == "frozen" else tgt)
+                .detach().float().std())
+            out["tgt_std_tac"] = float(tq.detach().float().std())
+            out["tgt_std_str"] = float(st.detach().float().std())
             out["loss"] = (self.cfg.w_feat_op * out["loss_feat_op"]
                            + self.cfg.w_feat_tac * out["loss_feat_tac"]
                            + self.cfg.w_feat_str * out["loss_feat_str"])
+
+            # ---- ANTI-COLLAPSE TERMS on the adapter's own output ------------
+            # ⭐ Applied to `tgt` (the adapter output) because that is the thing
+            # measured collapsing: `adapter_std` 0.4763 -> 0.3385. Each is
+            # separately switchable so its contribution stays attributable.
+            z_flat = tgt.reshape(-1, tgt.shape[-1])
+            if self.cfg.w_sigreg:
+                # SigReg (v6/v7 line, absent from refav1 until 2026-09-02).
+                # MEASURED discriminating: 0.477 random vs 2.61 collapsed.
+                from tanitad.models.v6 import SigReg as _SigReg
+                if not hasattr(self, "_sigreg"):
+                    self._sigreg = _SigReg(n_slices=self.cfg.sigreg_slices)
+                out["loss_sigreg"] = self._sigreg(z_flat)
+                out["loss"] = out["loss"] + self.cfg.w_sigreg * out["loss_sigreg"]
+            if self.cfg.var_floor:
+                # VICReg's hinge (2105.04906 eq. 1): punish per-dim std BELOW
+                # the floor, and only below — it must not push variance up
+                # without bound, only refuse the collapse direction.
+                sd = z_flat.float().std(dim=0)
+                out["loss_varfloor"] = F.relu(self.cfg.var_floor - sd).mean()
+                out["loss"] = (out["loss"]
+                               + self.cfg.w_feat_op * out["loss_varfloor"])
+            # ⭐ PARTICIPATION IS ALWAYS MONITORED, gated only when asked.
+            # RankMe (2210.02885) / our G-RANK floor 8.56. A rank-1 collapse
+            # reads 1.00; random 128-d reads ~13 (both MEASURED).
+            with torch.no_grad():
+                from tanitad.eval.spectral import (covariance_eigs,
+                                                   participation_ratio)
+                zc = z_flat.float()
+                if zc.shape[0] > 1:
+                    out["participation"] = participation_ratio(
+                        covariance_eigs(zc[:4096]))
+            if (self.cfg.min_participation
+                    and out.get("participation", 1e9)
+                    < self.cfg.min_participation):
+                raise SystemExit(
+                    f"⛔ participation {out['participation']:.2f} < floor "
+                    f"{self.cfg.min_participation} — the adapter has collapsed. "
+                    "Training on would produce a falling loss and no "
+                    "representation (the 2026-09-02 refav1 failure).")
+
 
             # ---- the long-horizon strategic term (PI 2026-08-31) ----------- #
             # Same target pipeline as every other level — std -> adapter ->
@@ -948,6 +1058,8 @@ class RefAV1(nn.Module):
                 text = self.adapter(self.std(str_ext_targets))
                 st_e = self.strategic.subspace(text.flatten(0, 1)).reshape(
                     text.shape[0], text.shape[1], -1)
+                if self.cfg.detach_aux_targets:
+                    st_e = st_e.detach()              # same reason as `tq`
                 out["loss_feat_str_ext"] = F.mse_loss(out["str_pred_ext"], st_e)
                 out["loss"] = (out["loss"] + self.cfg.w_feat_str_ext
                                * out["loss_feat_str_ext"])

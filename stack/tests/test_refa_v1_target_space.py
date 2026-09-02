@@ -78,9 +78,31 @@ def test_frozen_targets_carry_no_trained_parameter():
 
 
 def test_the_readout_exists_only_in_frozen_mode():
-    assert RefAV1(_cfg()).to_enc is None
+    """⚠️ NAMES THE MODE RATHER THAN LEANING ON THE DEFAULT (fixed 2026-09-02).
+
+    This used to call `_cfg()` as a stand-in for "adapter mode", which was true
+    only while `adapter` was the default. The default flipped to `frozen` (it is
+    DINO-WM's arrangement and the collapse-proof one; `adapter` was default only
+    as a historical accident), and the test failed — correctly, but for a reason
+    that had nothing to do with the behaviour it audits. A test that depends on
+    a default is testing the default.
+    """
+    assert RefAV1(_cfg(target_space="adapter")).to_enc is None
     assert RefAV1(_cfg(target_space="frozen")).to_enc is not None
-    assert "to_enc.weight" not in RefAV1(_cfg()).state_dict()
+    assert ("to_enc.weight"
+            not in RefAV1(_cfg(target_space="adapter")).state_dict())
+
+
+def test_the_default_target_space_is_the_collapse_proof_one():
+    """⛔ PINS THE 2026-09-02 FLIP. In `adapter` space both sides of every
+    feature loss come from the TRAINED adapter, so shrinking it shrinks the
+    target and the loss falls toward zero with nothing learned — MEASURED on the
+    first refav1 launch (`adapter_std` 0.4763 -> 0.3385 over 450 steps, loss
+    0.600 -> 0.165, and it looked like the best run of the day). The default
+    must not drift back."""
+    from tanitad.refs.refa_v1 import RefAV1Config
+    assert RefAV1Config().target_space == "frozen"
+    assert RefAV1Config().detach_aux_targets is True
 
 
 def test_frozen_mode_trains_end_to_end():
