@@ -34,6 +34,12 @@ only here:
     parses and then dies mid-run is the class that cost ~3.1 GPU-days.
   * ``--synth-episodes N`` — CI-only synthetic corpus so the smoke test runs
     end-to-end with zero data. REFUSED together with ``--data-root``.
+  * ``--u8-batches`` (2026-09-02, next-relaunch arm; default OFF) — the
+    DataLoader ships ``frames``/``future_frames`` as uint8 and
+    :func:`frames_to_device` applies the contract's ``/255`` on the device.
+    In-flight batches — the ``/dev/shm`` cost that pinned refcv3's 50 GB
+    cgroup at its cap: 6 workers x 3.30 GB fp32 = 19.8 GB, MEASURED — drop
+    4x; the loss is bit-identical (``tests/test_refc_v3_u8_batches.py``).
 
 Done-marker discipline: on completion this trainer writes ``summary.json`` with
 ``{"done": true}`` IN THE SAME RUN — the v5f supervisor resurrection (a
@@ -387,12 +393,46 @@ def _synth_episodes(n: int, cfg: refc.RefCConfig, seed: int = 0,
 # Losses — masked 6 s + hierarchy terms
 # ============================================================================
 
+def frames_to_device(x: torch.Tensor, device) -> torch.Tensor:
+    """THE ONE frame-ingest point of this trainer (training AND held-out eval).
+
+    ``--u8-batches`` ships frames as uint8; here they become the float32 [0,1]
+    the encoder expects (``refc.py:994`` — a bare Conv2d stem, no
+    normalisation anywhere inside the model) by ``x.float().div_(<0-dim
+    tensor 255.0 on x.device>)``: the SAME map as
+    ``tanitad.data._contract.to_float_frames`` (``x.float().div(255.0)``,
+    ``_contract.py:56``), the division IN PLACE on the fresh fp32 tensor (one
+    full-size fp32 allocation fewer on the device — 2.36 GB at the live
+    future-frames shape) and by a TENSOR divisor so that CUDA performs a true
+    division — bit-identical to the CPU contract over all 256 uint8 values on
+    BOTH devices (pinned, with the scalar form's 1-ulp drift as the control,
+    in ``tests/test_refc_v3_u8_batches.py``). A float input passes through
+    untouched, exactly as ``to_float_frames`` passes it: with the flag OFF
+    (the live run, the preflight, every existing dump) this is
+    ``x.to(device)`` and nothing else.
+    """
+    x = x.to(device)
+    if x.dtype == torch.uint8:
+        # ⛔ A 0-dim DEVICE-TENSOR divisor, NOT the Python scalar 255.0.
+        # MEASURED 2026-09-02 (torch 2.11.0+cu128, RTX 4060, exhaustive over
+        # the 256 uint8 values): with a Python scalar, CUDA's div kernel takes
+        # the multiply-by-reciprocal fast path and 126/256 values land 1 ulp
+        # (5.96e-8) off the CPU contract — `to_float_frames` itself, run on
+        # CUDA, would silently drift from HEAD's inputs. With a tensor divisor
+        # the kernel is a true IEEE division: 0/256 off, on CPU and on CUDA.
+        return x.float().div_(torch.full((), 255.0, device=x.device,
+                                         dtype=torch.float32))
+    return x
+
+
 def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
                       mode: str = "diffusion") -> dict:
     cfg = model.cfg
     core = cfg.core
-    frames = batch["frames"].to(device)
-    fut_frames = batch["future_frames"].to(device)
+    # --u8-batches: uint8 in flight -> float32 [0,1] HERE, on the device, by
+    # the contract's own /255 (frames_to_device). Float batches pass through.
+    frames = frames_to_device(batch["frames"], device)
+    fut_frames = frames_to_device(batch["future_frames"], device)
     fut_ext = batch["future_poses_ext"].to(device)          # [B, 60, 4]
     fut_valid = batch["future_valid_ext"].to(device)        # [B, 60] bool
     pose_last = batch["pose_last"].to(device)
@@ -910,6 +950,11 @@ def train(args) -> dict:
             arclengths_m=tuple(args.lan_arclengths),
             min_lead_m=args.lan_min_lead_m)
     ds = dcls(eps, **kw)
+    # --u8-batches: the dataset emits frames AS STORED (uint8); the device-side
+    # /255 is frames_to_device in compute_losses_v3. Instance attribute — the
+    # V3Dataset idiom; see FailLoudWindowDataset.u8_frames (refb_train.py).
+    u8 = bool(getattr(args, "u8_batches", False))
+    ds.u8_frames = u8
     nav_stats = eval_nav_stats = v7_manifest = None
     # ---- v7.2 label join (PI 2026-09-02: MANDATORY for this launch) --------
     if args.v7_labels:
@@ -969,6 +1014,7 @@ def train(args) -> dict:
                 f"train cache and the eval cache. A held-out split that is not "
                 f"held out measures memorisation.")
         e_ds = dcls(e_eps, **kw)
+        e_ds.u8_frames = u8     # the eval decodes in the MAIN process: 4x less there too
         if args.eval_labels:
             from tanitad.data.v2_dataset import stable_episode_id
             e_lab, e_man = v7l.load_v7_labels(args.eval_labels,
@@ -1012,6 +1058,22 @@ def train(args) -> dict:
         print(f"[v3] loader: workers={args.workers} prefetch={args.prefetch_factor}"
               f" -> <={args.workers * args.prefetch_factor} batches in flight",
               flush=True)
+    # ⭐ The in-flight bytes are COMPUTED and PRINTED (and stamped into
+    # config.json) so the shm budget is checkable from train.log: frames +
+    # future_frames per collated batch = B x (window + max_horizon) x C x H x W
+    # x (1 B uint8 | 4 B fp32). At the live shape (20 x 28 x 9 x 256 x 640)
+    # that is 3.30 GB fp32 / 0.83 GB uint8 per batch — the two /dev/shm
+    # segments MEASURED per worker on 2026-09-02 (2,359,296,064 B and
+    # 943,718,464 B) are exactly these two tensors plus a 64 B header each.
+    _h, _w = cfg.core.encoder.image_hw()
+    frame_batch_bytes = (args.batch * (cfg.core.window + kw["max_horizon"])
+                         * cfg.core.encoder.in_channels * _h * _w
+                         * (1 if u8 else 4))
+    n_flight = args.workers * args.prefetch_factor if args.workers > 0 else 1
+    print(f"[v3] u8_batches={u8}: frames+future_frames = "
+          f"{frame_batch_bytes / 1e9:.3f} GB per collated batch "
+          f"({'uint8' if u8 else 'float32'}), <= {n_flight} in flight "
+          f"-> ~{n_flight * frame_batch_bytes / 1e9:.2f} GB", flush=True)
     dl = torch.utils.data.DataLoader(
         ds, batch_size=args.batch, shuffle=True, num_workers=args.workers,
         **pf,
@@ -1048,6 +1110,10 @@ def train(args) -> dict:
         "tac_vocab_version": cfg.tac_vocab_version,
         "v2_cache": args.v2_cache, "require_parity": bool(args.require_parity),
         "v2_parity": v2_parity,
+        # --u8-batches (2026-09-02): the in-flight dtype and its per-batch
+        # frame bytes — a relaunch arm must be identifiable from its record.
+        "u8_batches": u8,
+        "frame_batch_bytes_est": frame_batch_bytes,
         # --nav-from-v7 (E-ARCH-NAVSRC-1): the nav SOURCE is stamped EITHER
         # way, so an arm is identifiable from its own artifacts
         # (C-NAV-SOURCE-DIVERGENCE). `v7_labels` is the label manifest —
@@ -1230,6 +1296,19 @@ def build_parser() -> argparse.ArgumentParser:
                          "~940 MB at batch 20, so workers x prefetch bounds "
                          "shared-memory use; torch's default of 2 put 8 "
                          "batches in flight and exhausted a 24 GB /dev/shm.")
+    ap.add_argument("--u8-batches", action="store_true",
+                    help="ship frames/future_frames through the DataLoader as "
+                         "uint8 and convert to float32 [0,1] ON THE DEVICE "
+                         "(the dataset contract's own /255). Cuts every "
+                         "in-flight batch 4x: at batch 20 / window 8 / 20 "
+                         "future frames / 9ch / 256x640 one collated batch is "
+                         "3.30 GB fp32 -> 0.83 GB uint8, so 6 workers x "
+                         "prefetch 1 hold ~4.95 GB of /dev/shm instead of "
+                         "~19.8 GB (the unreclaimable share that put refcv3's "
+                         "50 GB cgroup at its cap and OOM-killed it at eval "
+                         "steps, MEASURED 2026-09-02). Loss bit-identical "
+                         "(pinned). Default OFF: the live run resumes "
+                         "byte-identical; this is a next-relaunch arm.")
     ap.add_argument("--eval-cache", default=None,
                     help="HELD-OUT v2 cache (the v7.2 eval split). ⛔ MUST be "
                          "disjoint from --v2-cache: 141 of the 147 v7.2 eval "
