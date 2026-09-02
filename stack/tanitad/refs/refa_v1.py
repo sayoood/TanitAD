@@ -46,6 +46,7 @@ carries a structural floor *and* a cost-fidelity gate rather than trust.
 """
 from __future__ import annotations
 
+import copy
 import math
 from dataclasses import dataclass, field
 
@@ -63,7 +64,7 @@ from tanitad.models.v6 import (TACTICAL_LAT_ACTIONS,
                                tactical_lon_actions_v)
 from tanitad.refs.refa_v1_plan import PlanConfig, icem_plan, unicycle_paths
 
-__all__ = ["RefAV1Config", "RefAV1", "DINOV3_GEOMETRY",
+__all__ = ["RefAV1Config", "RefAV1", "DINOV3_GEOMETRY", "SPEED_SCALE_MPS",
            "TACTICAL_LAT_ACTIONS", "TACTICAL_LON_ACTIONS"]
 
 #: The frozen-encoder contract. Cached offline; the encoder never enters the
@@ -78,6 +79,15 @@ DINOV3_GEOMETRY = {
     "hfov_deg": 120.0,                    # vs REF-A's 51.39
     "tokens_include_cls": False,          # ⛔ patch tokens ONLY (change #5)
 }
+
+#: Fixed normaliser for the speed channel (`RefAV1Config.speed_channel`), in
+#: m/s. 30 m/s is the corpus's highway ceiling, so v/30 spans ~[0, 1] beside
+#: (a, kappa), which stay in raw SI units. ⚠️ A CONTRACT with every consumer
+#: that rolls the predictor (forward, plan(), any T1 harness): change it and a
+#: checkpoint trained under it decodes a different speed. The flagship line
+#: carries the same role as `SPEED_SCALE = 10.0` (`flagship_losses.py`,
+#: registry §1.2) — a separate contract, named separately on purpose.
+SPEED_SCALE_MPS = 30.0
 
 
 @dataclass
@@ -133,7 +143,30 @@ class RefAV1Config:
     w_feat_str_ext: float = 0.25          # same weight class as w_feat_str
 
     # --- control / planning ----------------------------------------------- #
-    a_dim: int = 2                        # (a, kappa) — Alpamayo-2 form
+    a_dim: int = 2                        # (a, kappa) — Alpamayo-2 form; the
+                                          # CONTROL width (see `a_in_dim`)
+    #: ⭐ THE SPEED CHANNEL (#5). REF-A's longitudinal blindness (3.73 m) was
+    #: repaired by a speed input (0.83 m — `MODEL_REGISTRY.md`, the REF-A
+    #: speed reset), and the deployed flagship carries `v0` as its third
+    #: action channel for the same reason (registry §1.2). refav1's predictor
+    #: sees (a, kappa) only, and its tmix is depthwise, so the ego speed has
+    #: no route into the state at all.
+    #: PI ruling 2026-09-02, verbatim: *"It is allowed to use the velocity as
+    #: initial measured state at its cycle time. It is not allowed to use the
+    #: future dynamic information from the ground truth."* ⇒ when on, the
+    #: predictor INPUT is (a, kappa, v_k / SPEED_SCALE_MPS) with v_k
+    #: INTEGRATED from the measured anchor speed, v_k = v0 + Σ_{j<k} a_j·dt
+    #: (`augment_actions`) — never indexed from a future speed. The CONTROL
+    #: space the planner searches stays `a_dim` = 2; v is derived from
+    #: plan()'s measured v0 before every rollout, so T0 and T1 run the same
+    #: code. ⛔ DEFAULT OFF: a next-run arm, and the live run's checkpoint must
+    #: load. (H-REFAV1-MOTION's refuted injection was a SCENE-motion channel;
+    #: this is the EGO state — a different lever, not a re-run of that one.)
+    speed_channel: bool = False
+    #: `WideAdapter.tmix` groups. None ⇒ d_state (depthwise — the shipped
+    #: form, each channel mixes only its own past); 1 ⇒ full cross-channel
+    #: temporal mixing, the next-run arm on H-REFAV1-MOTION's defect statement.
+    tmix_groups: int | None = None
     plan_horizon_s: float = 2.0           # optimised window; cost spans 6 s
     goal_times_s: tuple = (2.0, 4.0, 6.0)
 
@@ -295,6 +328,24 @@ class RefAV1Config:
     #: `strategic.subspace(tgt)` — adapter-derived in BOTH target spaces, so
     #: `frozen` alone does not cover them.
     detach_aux_targets: bool = True
+    #: ⭐ EMA TEACHER for the tactical/strategic targets (BYOL 2006.07733,
+    #: I-JEPA 2301.08243). SPEC E-ARCH-TSC-1 §3 / RESULT R3: `frozen` pins the
+    #: OPERATIVE target only — `tq = _tac_field(tgt)` and `st =
+    #: strategic.subspace(tgt)` are derived from the TRAINED adapter in both
+    #: target spaces, and `detach_aux_targets` stops the gradient but not the
+    #: shrinkage: a shrinking student still shrinks them. When on, those two
+    #: targets (and the str-extension target) come from a slow EMA copy of the
+    #: whole target path (`_EmaTargetPath`), so the target cannot move with
+    #: the student inside a step. ⛔ DEFAULT OFF: it is a next-run arm, and the
+    #: live run must stay reproducible from the repo (state_dict keys and
+    #: forward numerics are byte-identical when off — pinned by
+    #: `tests/test_refa_v1_ema_targets.py`).
+    ema_targets: bool = False
+    #: Decay schedule: linear `ema_decay` -> `ema_decay_end` over the run,
+    #: I-JEPA's arrangement (0.996 -> 1.0 linear; BYOL 0.996 -> 1.0 cosine).
+    #: End pinned at 0.999 rather than 1.0 so the teacher never fully freezes.
+    ema_decay: float = 0.996
+    ema_decay_end: float = 0.999
     #: SigReg (our v6/v7 line, absent from refav1 until now): 0 = off.
     #: MEASURED discriminating: 0.477 on random vs 2.61 on collapsed.
     w_sigreg: float = 0.0
@@ -396,6 +447,24 @@ class RefAV1Config:
         if self.target_space not in ("adapter", "frozen"):
             raise ValueError(f"target_space must be 'adapter' or 'frozen', "
                              f"got {self.target_space!r}")
+        if not (0.0 <= self.ema_decay <= self.ema_decay_end <= 1.0):
+            raise ValueError(
+                f"ema_decay {self.ema_decay} / ema_decay_end "
+                f"{self.ema_decay_end}: need 0 <= decay <= decay_end <= 1 — "
+                "the teacher slows down over the run, it never speeds up")
+        if self.tmix_groups is not None and (
+                self.tmix_groups < 1 or self.d_state % self.tmix_groups):
+            raise ValueError(
+                f"tmix_groups {self.tmix_groups} must be >= 1 and divide "
+                f"d_state {self.d_state} (None = d_state = depthwise)")
+
+    @property
+    def a_in_dim(self) -> int:
+        """Width of the action tensor the PREDICTORS consume: the `a_dim`
+        controls plus the derived speed channel when `speed_channel` is on.
+        `a_dim` itself stays the CONTROL width — the proposal head, the
+        planner's candidates and the loader's actions are all `a_dim`-wide."""
+        return self.a_dim + (1 if self.speed_channel else 0)
 
     @property
     def plan_steps(self) -> int:
@@ -469,8 +538,16 @@ class WideAdapter(nn.Module):
             nn.LayerNorm(cfg.d_enc),
             nn.Linear(cfg.d_enc, cfg.d_state), nn.GELU(),
             nn.Linear(cfg.d_state, cfg.d_state))
+        # groups = d_state is the shipped DEPTHWISE mix (H-REFAV1-MOTION names
+        # it as the defect: no cross-channel temporal path); `tmix_groups=1`
+        # is the full-mixing arm. None keeps the weight shape [d, 1, 3], so
+        # existing checkpoints load unchanged. `getattr`: this block is SHARED
+        # with `refd.py`, whose `RefDConfig` carries no `tmix_groups` and must
+        # keep building the depthwise form (tests/test_refd.py caught this).
+        groups = getattr(cfg, "tmix_groups", None)
         self.tmix = nn.Conv1d(cfg.d_state, cfg.d_state, kernel_size=3,
-                              padding=1, groups=cfg.d_state)
+                              padding=1,
+                              groups=cfg.d_state if groups is None else groups)
         self.out = nn.LayerNorm(cfg.d_state)
 
     def forward(self, feats: Tensor) -> Tensor:
@@ -496,7 +573,13 @@ class TokenFieldPredictor(nn.Module):
                  intent_dim: int | None = None):
         super().__init__()
         self.d = d
-        self.act = nn.Sequential(nn.Linear(cfg.a_dim, d), nn.GELU(),
+        # `a_in_dim`, not `a_dim`: the predictor consumes the controls PLUS the
+        # derived speed channel when `speed_channel` is on (3-wide); the
+        # control space the planner searches stays `a_dim`-wide. `getattr`:
+        # this class is SHARED with `refd.py` / `refa_v1p.py`, whose configs
+        # may carry only `a_dim` — for them the input width IS `a_dim`.
+        a_in = getattr(cfg, "a_in_dim", cfg.a_dim)
+        self.act = nn.Sequential(nn.Linear(a_in, d), nn.GELU(),
                                  nn.Linear(d, d))
         self.intent = nn.Linear(intent_dim, d) if intent_dim else None
         self.mix = nn.Linear(2 * d, d)
@@ -525,7 +608,7 @@ class TokenFieldPredictor(nn.Module):
 
     def step(self, field: Tensor, action: Tensor,
              intent: Tensor | None = None) -> Tensor:
-        """One latent step. ``field`` [B,N,d], ``action`` [B,a_dim] -> [B,N,d].
+        """One latent step. ``field`` [B,N,d], ``action`` [B,a_in_dim] -> [B,N,d].
 
         Residual by construction (``z_hat = z + delta``): the predictor learns
         the CHANGE, so a zero-action step is near-identity at init and the
@@ -551,7 +634,11 @@ class TokenFieldPredictor(nn.Module):
     def rollout(self, field: Tensor, actions: Tensor,
                 intent: Tensor | None = None,
                 last_only: bool = False) -> Tensor:
-        """``actions`` [B,K,a_dim] -> predicted fields [B,K,N,d].
+        """``actions`` [B,K,a_in_dim] -> predicted fields [B,K,N,d].
+
+        ``actions`` is the PREDICTOR input — `RefAV1.augment_actions` output
+        (controls + derived speed when `speed_channel`), never raw controls
+        when that flag is on; the Linear in ``act`` refuses the wrong width.
 
         ⛔ ``last_only`` IS A MEMORY REQUIREMENT, NOT AN OPTION, ON THE PLANNING
         PATH. MEASURED at the real geometry: one latent field is
@@ -646,7 +733,7 @@ class StrategicSubspacePredictor(nn.Module):
         self.head[-1].bias.data.mul_(RESIDUAL_HEAD_INIT_SCALE)
 
     def subspace(self, field: Tensor) -> Tensor:
-        return self.read(field.mean(dim=-2))          # pool tokens -> [B, str]
+        return _read_subspace(self.read, field)       # pool tokens -> [B, str]
 
     def rollout(self, s: Tensor, actions: Tensor) -> Tensor:
         out = []
@@ -657,6 +744,91 @@ class StrategicSubspacePredictor(nn.Module):
             s = s + self.head(x)
             out.append(s)
         return torch.stack(out, dim=1)
+
+
+# --------------------------------------------------------------------------- #
+# The TARGET PATH, written once — used by the student and by its EMA teacher.
+# Two copies of a formula are two conventions, and a teacher that pooled
+# differently from the student would be a silently different target.
+# --------------------------------------------------------------------------- #
+def _pool_tac(queries: Tensor, pool: nn.MultiheadAttention,
+              field: Tensor) -> Tensor:
+    """Token field [B,N,d] -> tactical query field [B,Q,d]."""
+    q = queries.expand(field.shape[0], -1, -1)
+    return pool(q, field, field, need_weights=False)[0]
+
+
+def _read_subspace(read: nn.Module, field: Tensor) -> Tensor:
+    """Token field [B,N,d] -> strategic subspace [B, str_dim]."""
+    return read(field.mean(dim=-2))
+
+
+class _EmaTargetPath(nn.Module):
+    """EMA teacher for the TACTICAL and STRATEGIC targets.
+
+    BYOL (2006.07733) and I-JEPA (2301.08243) obtain a learned-but-
+    uncollapsible target from an exponential-moving-average copy of the online
+    network behind a stop-gradient; the predictor asymmetry (our multi-step
+    rollout against a direct target) is the other half of that recipe and
+    already exists. SPEC E-ARCH-TSC-1 §3 and RESULT R3 measured why refav1
+    needs it: ``--target-space frozen`` pins the OPERATIVE target only, while
+    ``tq`` and ``st`` are derived from the TRAINED adapter in both spaces —
+    ``detach_aux_targets`` stops their gradient, not their shrinkage.
+
+    ⛔ WHY THE ADAPTER ALONE IS NOT THE TARGET PATH. The tactical target is
+    ``tac_pool(tac_queries, adapter(std(f)))`` and the strategic one is
+    ``strategic.read(mean(adapter(std(f))))`` — three trained modules and one
+    trained parameter sit on the target side. An EMA adapter under a LIVE
+    ``tac_pool`` still lets the target follow the student through the pool's
+    output projection. So the copy covers the WHOLE path: ``adapter``,
+    ``tac_queries``, ``tac_pool``, ``strategic.read``. The predictors are NOT
+    copied — the rollout-vs-target asymmetry is the point.
+
+    Every parameter here is ``requires_grad=False``: never in the optimizer,
+    moved only by :meth:`RefAV1.ema_update`, which the trainer calls after
+    each optimizer step. The copy lives in the state_dict (``ema.*``) so a
+    resumed run restores its teacher; when ``ema_targets`` is off this module
+    is never built and the state_dict is byte-identical to before it existed.
+    """
+
+    def __init__(self, model: "RefAV1"):
+        super().__init__()
+        self.adapter = copy.deepcopy(model.adapter)
+        self.tac_queries = nn.Parameter(model.tac_queries.detach().clone(),
+                                        requires_grad=False)
+        self.tac_pool = copy.deepcopy(model.tac_pool)
+        self.str_read = copy.deepcopy(model.strategic.read)
+        for p in self.parameters():
+            p.requires_grad_(False)
+        # No module on this path carries a buffer today. Refuse rather than
+        # silently leave one un-synced if that ever changes (a BatchNorm-style
+        # running stat that never follows the student is a divergent target).
+        if list(self.buffers()):
+            raise RuntimeError("EMA target path acquired buffers — "
+                               "ema_update() syncs parameters only")
+
+    def tac_field(self, field: Tensor) -> Tensor:
+        return _pool_tac(self.tac_queries, self.tac_pool, field)
+
+    def subspace(self, field: Tensor) -> Tensor:
+        return _read_subspace(self.str_read, field)
+
+    def pairs(self, model: "RefAV1") -> list[tuple[Tensor, Tensor]]:
+        """``(teacher_param, student_param)`` for every parameter on the path,
+        matched BY NAME — a positional zip would pair silently on a refactor."""
+        out = [(self.tac_queries, model.tac_queries)]
+        for nm, ema_m, stu_m in (("adapter", self.adapter, model.adapter),
+                                 ("tac_pool", self.tac_pool, model.tac_pool),
+                                 ("strategic.read", self.str_read,
+                                  model.strategic.read)):
+            e = dict(ema_m.named_parameters())
+            s = dict(stu_m.named_parameters())
+            if e.keys() != s.keys():
+                raise RuntimeError(
+                    f"EMA teacher and student disagree on {nm} parameters: "
+                    f"{sorted(e.keys() ^ s.keys())}")
+            out.extend((e[k], s[k]) for k in e)
+        return out
 
 
 # --------------------------------------------------------------------------- #
@@ -800,6 +972,37 @@ class RefAV1(nn.Module):
         self.to_enc = (nn.Linear(cfg.d_state, cfg.d_enc)
                        if cfg.target_space == "frozen" else None)
 
+        # EMA teacher for the tactical/strategic targets (config-gated; built
+        # LAST so it copies the fully-initialised target path). Off ⇒ absent,
+        # so the live run's checkpoint keys are untouched.
+        self.ema = _EmaTargetPath(self) if cfg.ema_targets else None
+
+    # -- EMA teacher ------------------------------------------------------- #
+    def ema_decay_at(self, step: int, total_steps: int) -> float:
+        """Linear ``ema_decay`` -> ``ema_decay_end`` over ``total_steps``
+        (I-JEPA 2301.08243: 0.996 -> 1.0 linear over training). ``step`` is
+        the trainer's 1-based step counter, so the last step reads exactly
+        ``ema_decay_end``."""
+        c = self.cfg
+        if total_steps <= 0:
+            return float(c.ema_decay)
+        frac = min(max(int(step), 0), int(total_steps)) / float(total_steps)
+        return float(c.ema_decay + (c.ema_decay_end - c.ema_decay) * frac)
+
+    @torch.no_grad()
+    def ema_update(self, step: int, total_steps: int) -> float:
+        """``teacher <- decay * teacher + (1 - decay) * student`` on every
+        target-path parameter. Called by the trainer AFTER ``opt.step()``;
+        returns the decay used so the log can carry it."""
+        if self.ema is None:
+            raise RuntimeError(
+                "ema_update() on a model built with ema_targets=False — the "
+                "trainer wiring and the config disagree; refusing to no-op")
+        decay = self.ema_decay_at(step, total_steps)
+        for p_ema, p_stu in self.ema.pairs(self):
+            p_ema.lerp_(p_stu.detach(), 1.0 - decay)
+        return decay
+
     # -- encoding ---------------------------------------------------------- #
     def encode(self, feats: Tensor) -> Tensor:
         """Cached DINOv3 patch features [B,T,N,d_enc] -> state field."""
@@ -813,8 +1016,7 @@ class RefAV1(nn.Module):
         return self.adapter(self.std(feats))
 
     def _tac_field(self, field: Tensor) -> Tensor:
-        q = self.tac_queries.expand(field.shape[0], -1, -1)
-        return self.tac_pool(q, field, field, need_weights=False)[0]
+        return _pool_tac(self.tac_queries, self.tac_pool, field)
 
     def _last_state(self, field: Tensor) -> Tensor:
         """The state every rollout starts from — ONE place, so training and
@@ -871,6 +1073,51 @@ class RefAV1(nn.Module):
         """
         return max(1, int(round(dt / self.cfg.op_dt)))
 
+    def augment_actions(self, controls: Tensor, v0: Tensor | None) -> Tensor:
+        """Controls [B,K,a_dim] (a, kappa) -> predictor input [B,K,a_in_dim].
+
+        ⭐ THE SPEED CHANNEL, under the PI ruling of 2026-09-02: *"It is
+        allowed to use the velocity as initial measured state at its cycle
+        time. It is not allowed to use the future dynamic information from
+        the ground truth."* The third channel is therefore INTEGRATED:
+
+            v_0 = v0                          (measured at the window anchor)
+            v_k = v0 + Σ_{j<k} a_j · op_dt    (the speed OPENING step k)
+
+        and never indexed from a future speed. Under teacher forcing the
+        loader's ``a = Δv/dt`` makes this telescope to the true grid speeds —
+        that is the T0 definition and is fine — but the CODE integrates, so
+        the identical path is correct at T1 on the model's own actions, where
+        no future speed exists to read. Normalised by ``SPEED_SCALE_MPS`` so
+        the channel is O(1) beside (a, kappa). Not clamped: a candidate that
+        integrates through zero is a planner-cost matter, not an input one.
+
+        ⛔ Refuses a pre-widened tensor: the channel is DERIVED here or it
+        does not exist — a caller handing over a 3-wide action has, by
+        construction, read a speed from somewhere this rule cannot audit.
+        """
+        cfg = self.cfg
+        if controls.shape[-1] != cfg.a_dim:
+            raise ValueError(
+                f"actions must be [.., {cfg.a_dim}] = (a, kappa) controls, got "
+                f"trailing dim {controls.shape[-1]} — the speed channel is "
+                "derived by augment_actions(), never supplied")
+        if not cfg.speed_channel:
+            return controls
+        if v0 is None:
+            raise ValueError(
+                "speed_channel=True needs v0 [B]: the speed MEASURED at the "
+                "window anchor (loader key 'v0'; plan()'s v0 argument)")
+        v0 = torch.as_tensor(v0, dtype=controls.dtype,
+                             device=controls.device).reshape(-1)
+        if v0.shape[0] != controls.shape[0]:
+            raise ValueError(f"v0 carries {v0.shape[0]} rows for a batch of "
+                             f"{controls.shape[0]}")
+        dv = torch.cumsum(controls[..., 0], dim=1) * cfg.op_dt    # after step k
+        v = v0[:, None] + torch.cat(
+            [torch.zeros_like(dv[:, :1]), dv[:, :-1]], dim=1)      # opening k
+        return torch.cat([controls, (v / SPEED_SCALE_MPS)[..., None]], dim=-1)
+
     def forward(self, feats: Tensor, actions: Tensor, *,
                 future_feats: Tensor | None = None,
                 str_ext_targets: Tensor | None = None,
@@ -879,8 +1126,15 @@ class RefAV1(nn.Module):
                 lon_label: Tensor | None = None,
                 route_label: Tensor | None = None,
                 nav_cmd: Tensor | None = None,
-                ego: Tensor | None = None) -> dict:
+                ego: Tensor | None = None,
+                v0: Tensor | None = None) -> dict:
         """``feats`` [B,W,N,d_enc] observed window, ``actions`` [B,K,a_dim].
+
+        ``v0`` [B] is the ego speed MEASURED at the window anchor (m/s, the
+        loader's ``v0``). Consumed only when ``speed_channel`` is on, where
+        ``augment_actions`` integrates it with ``actions`` into the
+        predictors' third input channel; ``actions`` itself stays the 2-wide
+        (a, kappa) control sequence everywhere.
 
         ``future_feats`` [B,K,N,d_enc] are the **targets** — future patch
         features in the SAME standardised space. That is the primary loss
@@ -926,14 +1180,25 @@ class RefAV1(nn.Module):
             out["legacy_mixed_maneuver_logits_DO_NOT_USE"] = \
                 tac.get("maneuver_logits")
 
-        out["op_pred"] = self.operative.rollout(last, actions, intent=intent)
+        # ⭐ The token-field predictors consume `acts_in` — the controls plus
+        # the derived speed channel when `speed_channel` (`augment_actions`).
+        # `actions` stays the raw (a, kappa) sequence for the strategic level,
+        # the cf negatives and the proposal demo: those live in CONTROL space.
+        acts_in = self.augment_actions(actions, v0)
+        out["op_pred"] = self.operative.rollout(last, acts_in, intent=intent)
         # ⚠️ ACTIONS keep phase ``[::stride]`` while TARGETS take
         # ``[stride-1::stride]``, and the asymmetry is deliberate: a level's
         # step j spans operative steps [j*s, (j+1)*s), so it CONSUMES the
         # action that opens that window and PREDICTS the state that closes it.
-        tac_a = actions[:, ::self._stride(self.cfg.tac_dt)]
+        tac_a = acts_in[:, ::self._stride(self.cfg.tac_dt)]
         out["tac_pred"] = self.tactical.rollout(
             self._tac_field(last), tac_a[:, :self.cfg.tac_steps], intent=intent)
+        # DECISION (2026-09-02): the strategic subspace predictor stays on the
+        # 2-wide controls. Its extension ticks at 9 / 12 s (`str_ext_actions`)
+        # carry ONE opening action each and no sequence to integrate over, so
+        # an in-window-only speed would be a second convention on one level,
+        # and a GT speed there is exactly what the ruling forbids. It also
+        # keeps the strategic prediction independently falsifiable (:255).
         str_a = actions[:, ::self._stride(self.cfg.str_dt)][:, :self.cfg.str_steps]
         # ⭐ ONE continued rollout, not two: the extension ticks roll on
         # autoregressively from the in-window strategic state, which is what
@@ -1004,8 +1269,20 @@ class RefAV1(nn.Module):
             else:
                 out["loss_feat_op"] = F.mse_loss(out["op_pred"][:, :k],
                                                  tgt[:, :k])
-            tq = torch.stack([self._tac_field(tgt[:, i])
-                              for i in range(tgt.shape[1])], dim=1)
+            # ⭐ EMA TEACHER (config-gated, `ema_targets`). The tactical and
+            # strategic targets come from the slow copy of the target path,
+            # built under no_grad so they carry no graph. The student `tgt`
+            # stays in scope because the anti-collapse terms, the cf term and
+            # the participation monitor MEASURE the student, not the teacher.
+            if self.ema is not None:
+                with torch.no_grad():
+                    tgt_aux = self.ema.adapter(self.std(future_feats))
+                _tacf, _subs = self.ema.tac_field, self.ema.subspace
+            else:
+                tgt_aux = tgt
+                _tacf, _subs = self._tac_field, self.strategic.subspace
+            tq = torch.stack([_tacf(tgt_aux[:, i])
+                              for i in range(tgt_aux.shape[1])], dim=1)
             step = self._stride(self.cfg.tac_dt)
             tq = tq[:, step - 1::step][:, :out["tac_pred"].shape[1]]
             # ⭐ STOP-GRADIENT ON THE TACTICAL TARGET (SimSiam 2011.10566).
@@ -1018,8 +1295,8 @@ class RefAV1(nn.Module):
             kt = min(tq.shape[1], out["tac_pred"].shape[1])
             out["loss_feat_tac"] = F.mse_loss(out["tac_pred"][:, :kt], tq[:, :kt])
             sstep = self._stride(self.cfg.str_dt)
-            st = self.strategic.subspace(tgt.flatten(0, 1)).reshape(
-                tgt.shape[0], tgt.shape[1], -1)[:, sstep - 1::sstep]
+            st = _subs(tgt_aux.flatten(0, 1)).reshape(
+                tgt_aux.shape[0], tgt_aux.shape[1], -1)[:, sstep - 1::sstep]
             # ⭐ THE MODEL REPORTS ITS OWN ALIGNMENT. Emitted so the realised
             # ladder is OBSERVABLE — by the test, and once per run in the log —
             # instead of being re-derived by whoever is checking. A test that
@@ -1117,8 +1394,12 @@ class RefAV1(nn.Module):
             # subspace — so the extension is the SAME prediction task at a
             # longer reach, not a differently-normalised cousin.
             if has_ext:
-                text = self.adapter(self.std(str_ext_targets))
-                st_e = self.strategic.subspace(text.flatten(0, 1)).reshape(
+                if self.ema is not None:
+                    with torch.no_grad():
+                        text = self.ema.adapter(self.std(str_ext_targets))
+                else:
+                    text = self.adapter(self.std(str_ext_targets))
+                st_e = _subs(text.flatten(0, 1)).reshape(
                     text.shape[0], text.shape[1], -1)
                 if self.cfg.detach_aux_targets:
                     st_e = st_e.detach()              # same reason as `tq`
@@ -1128,7 +1409,7 @@ class RefAV1(nn.Module):
 
             # ---- change #10: the counterfactual-action term ---------------- #
             if self.cfg.w_cf:
-                out.update(self._cf_term(last, actions, tgt, intent))
+                out.update(self._cf_term(last, actions, tgt, intent, v0))
                 out["loss"] = out["loss"] + self.cfg.w_cf * out["cf_loss"]
 
         # ---- v7.2 label supervision (PI 2026-08-31: "It must be trained ----
@@ -1215,7 +1496,7 @@ class RefAV1(nn.Module):
         return out
 
     def _cf_term(self, last: Tensor, actions: Tensor, tgt: Tensor,
-                 intent: Tensor | None) -> dict:
+                 intent: Tensor | None, v0: Tensor | None = None) -> dict:
         """InfoNCE over actions: which action sequence produced this future?
 
         ⭐ THE PROPERTY THAT MAKES IT AN INSTRUMENT, not merely a loss: an
@@ -1250,7 +1531,12 @@ class RefAV1(nn.Module):
         n_neg = max(int(cfg.cf_negs), 1)
 
         def roll_to(a: Tensor) -> Tensor:
-            return self.operative.rollout(last, a[:, :j + 1], intent=intent)[:, j]
+            # Negatives are OTHER rows' controls rolled from THIS row's
+            # measured speed: the counterfactual is "a different action from
+            # the same state", so the speed channel re-integrates per candidate.
+            return self.operative.rollout(
+                last, self.augment_actions(a[:, :j + 1], v0),
+                intent=intent)[:, j]
 
         pos = roll_to(actions)
         negs = []
@@ -1342,8 +1628,12 @@ class RefAV1(nn.Module):
             goal = search_goal if goal is None else goal
             n = controls.shape[0]
             z = z0.expand(n, -1, -1)
+            # Speed channel (config-gated): each candidate's OWN accelerations
+            # integrated from this tick's measured v0 — the same code path as
+            # the T0 forward, so T1 cannot silently read a speed T0 never had.
+            acts = self.augment_actions(controls, v0_t.expand(n))
             # last_only: the cost reads the terminal field only (see rollout).
-            zk = pred.rollout(z, controls, intent=intent, last_only=True)
+            zk = pred.rollout(z, acts, intent=intent, last_only=True)
             c = torch.zeros(n, device=controls.device)
             if goal is not None:
                 g = goal.expand(n, -1, -1)

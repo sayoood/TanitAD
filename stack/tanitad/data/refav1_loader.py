@@ -23,6 +23,15 @@ ACTIONS — (a, kappa), and the channel order is MEASURED, not assumed:
       kappa  = actions[2j, 0]                  # the measured true-kappa channel
   so a silent channel swap cannot reach the model.
 
+SPEED — ``v0`` = v[2t], the ego speed MEASURED at the window anchor (the
+  last observed cache index t), in m/s. Always emitted. ⛔ NO future speed is
+  emitted: under the PI ruling of 2026-09-02 (*"velocity as initial measured
+  state at its cycle time"* is allowed, *"future dynamic information from the
+  ground truth"* is not) the MODEL integrates v_k = v0 + Σ_{j<k} a_j·dt
+  (`RefAV1.augment_actions`, config-gated by ``speed_channel``); with the
+  ``a`` above that telescopes to v[2(t+k)] under teacher forcing, and the same
+  code runs at T1 on the model's own actions.
+
 LABELS/NAV — the v7.2 s2 join (optional ``labels_path`` / ``nav_path``).
 The parser is IMPORTED from `tanitad.data.v7_labels` (the ONE B1 label
 consumer); this module only decides WHICH window gets WHICH record's value.
@@ -411,7 +420,7 @@ class RefAV1Windows:
         return len(self.windows)
 
     def batch(self, bs: int) -> dict:
-        feats, fut, act, ext_t, ext_a = [], [], [], [], []
+        feats, fut, act, ext_t, ext_a, v0s = [], [], [], [], [], []
         lat, lon, route = [], [], []
         nav, nav_ok = [], []
         for _ in range(bs):
@@ -422,6 +431,7 @@ class RefAV1Windows:
             feats.append(F[t - self.W + 1:t + 1].float())
             fut.append(F[t + 1:t + 1 + self.K].float())
             act.append(self._kin_actions(v, kap, t, self.K))
+            v0s.append(v[2 * t])             # measured at the anchor frame 2t
             if self.k_ext:
                 ext_t.append(torch.stack([F[t + c] for c in self.ext_close]
                                          ).float())
@@ -455,6 +465,9 @@ class RefAV1Windows:
             #: the index-0 default and must be excluded from any nav-echo /
             #: route-accuracy readout.
             out["nav_valid"] = torch.tensor(nav_ok, dtype=torch.bool)
+        # the anchor speed (module docstring, SPEED) — a scalar per window;
+        # the model derives every later speed from it and the actions.
+        out["v0"] = torch.stack(v0s)
         if self.k_ext:
             out["str_ext_targets"] = torch.stack(ext_t)
             out["str_ext_actions"] = torch.stack(ext_a)

@@ -49,6 +49,9 @@ def build_model(args) -> RefAV1:
         w_sigreg=args.w_sigreg, var_floor=args.var_floor,
         min_participation=args.min_participation,
         bptt_truncate=args.bptt_truncate,
+        ema_targets=args.ema_targets, ema_decay=args.ema_decay,
+        ema_decay_end=args.ema_decay_end,
+        speed_channel=args.speed_channel, tmix_groups=args.tmix_groups,
         **({} if args.detach_aux is None
            else {"detach_aux_targets": args.detach_aux}),
     )
@@ -80,16 +83,23 @@ def verify_cache(cache: Path) -> dict:
 
 
 class SmokeData:
-    """Random fields with the right shapes — proves the loop, never a number."""
+    """Random fields with the right shapes — proves the loop, never a number.
+
+    Same dict contract as `RefAV1Windows.batch` (incl. ``v0``), so the smoke
+    path exercises the SAME forward-kwarg filter as a real run instead of a
+    private tuple path that could drift from it."""
 
     def __init__(self, cfg: RefAV1Config, bs: int):
         self.cfg, self.bs = cfg, bs
 
-    def batch(self):
-        c = self.cfg
-        return (torch.randn(self.bs, c.op_window, c.n_tokens, c.d_enc),
-                torch.randn(self.bs, c.op_steps, c.a_dim) * 0.1,
-                torch.randn(self.bs, c.op_steps, c.n_tokens, c.d_enc))
+    def batch(self, bs: int | None = None) -> dict:
+        c, bs = self.cfg, (self.bs if bs is None else int(bs))
+        return {"feats": torch.randn(bs, c.op_window, c.n_tokens, c.d_enc),
+                "actions": torch.randn(bs, c.op_steps, c.a_dim) * 0.1,
+                "future_feats": torch.randn(bs, c.op_steps, c.n_tokens,
+                                            c.d_enc),
+                # a "measured" anchor speed in m/s — the loader's `v0` role
+                "v0": torch.rand(bs) * 20.0}
 
 
 def main(argv=None) -> int:
@@ -182,6 +192,33 @@ def main(argv=None) -> int:
                          "agreeing. Without it: gnorm 3.6e3 / 5.7e7 / inf "
                          "within 300 steps. The FORWARD rollout is unchanged; "
                          "only the gradient path is bounded")
+    # --- #5 the speed channel, under the PI ruling of 2026-09-02 ------------ #
+    ap.add_argument("--speed-channel", action="store_true",
+                    help="third predictor input channel v_k/30 with v_k "
+                         "INTEGRATED from the loader's measured anchor speed "
+                         "v0 and the action sequence (v_k = v0 + sum_{j<k} "
+                         "a_j dt) — never a future GT speed (PI 2026-09-02: "
+                         "'velocity as initial measured state at its cycle "
+                         "time' only). The planner's control space stays "
+                         "(a, kappa). DEFAULT OFF — a next-run arm")
+    ap.add_argument("--tmix-groups", type=int, default=None,
+                    help="WideAdapter.tmix conv groups: default None = "
+                         "d_state (depthwise, the shipped form); 1 = full "
+                         "cross-channel temporal mixing (next-run arm)")
+    ap.add_argument("--ema-targets", action="store_true",
+                    help="tactical/strategic targets from an EMA copy of the "
+                         "target path behind a stop-gradient (BYOL 2006.07733, "
+                         "I-JEPA 2301.08243). SPEC E-ARCH-TSC-1 §3: 'frozen' "
+                         "pins the OPERATIVE target only; these two still "
+                         "derive from the trained adapter and shrink with it. "
+                         "DEFAULT OFF — a next-run arm; the live run must stay "
+                         "reproducible from the repo")
+    ap.add_argument("--ema-decay", type=float, default=0.996,
+                    help="EMA decay at step 0 (BYOL/I-JEPA 0.996)")
+    ap.add_argument("--ema-decay-end", type=float, default=0.999,
+                    help="EMA decay at the last step (linear schedule; I-JEPA "
+                         "ends at 1.0, pinned at 0.999 so the teacher never "
+                         "fully freezes)")
     ap.add_argument("--target-space", choices=("adapter", "frozen"),
                     default="frozen",
                     help="'adapter' = original form, whose primary loss has a "
@@ -248,9 +285,14 @@ def main(argv=None) -> int:
     a.out.mkdir(parents=True, exist_ok=True)
 
     # Stability item 4: adapter and predictor are SEPARATE param groups.
-    adapter_p = list(model.adapter.parameters())
+    # ⛔ `requires_grad` filter: the EMA teacher's parameters (`model.ema.*`,
+    # when --ema-targets) are frozen copies moved ONLY by `model.ema_update`;
+    # handing them to AdamW would be harmless today (no grad ⇒ skipped) and a
+    # silent weight-decay on the teacher the day that changes.
+    adapter_p = [p for p in model.adapter.parameters() if p.requires_grad]
     ids = {id(p) for p in adapter_p}
-    rest_p = [p for p in model.parameters() if id(p) not in ids]
+    rest_p = [p for p in model.parameters()
+              if p.requires_grad and id(p) not in ids]
     opt = torch.optim.AdamW(
         [{"params": adapter_p, "lr": a.lr * a.adapter_lr_mult},
          {"params": rest_p, "lr": a.lr}], weight_decay=0.01)
@@ -258,8 +300,7 @@ def main(argv=None) -> int:
     if a.smoke:
         data = SmokeData(cfg, a.bs)
         with torch.no_grad():
-            feats, _, _ = data.batch()
-            model.std.fit(feats.to(a.device))
+            model.std.fit(data.batch()["feats"].to(a.device))
     else:
         # ⭐ THE LOADER GAP IS CLOSED (2026-09-01): real windows over the
         # stage-1 cache + v2ep kinematics. The loader emits (a, kappa) with the
@@ -318,48 +359,51 @@ def main(argv=None) -> int:
     log = (a.out / "train_log.jsonl").open("a", encoding="utf-8")
     t0 = time.time()
     for step in range(start_step + 1, a.steps + 1):
-        if a.smoke:
-            feats, actions, future = (x.to(a.device) for x in data.batch())
-            kw = {}
-        else:
-            b = data.batch(a.bs)
-            feats = b["feats"].to(a.device)
-            actions = b["actions"].to(a.device)
-            future = b["future_feats"].to(a.device)
-            # ⛔ FILTER BY THE MODEL'S ACTUAL SIGNATURE, AND SAY WHAT WAS
-            # DROPPED. This used to forward EVERY batch key, which worked only
-            # while the loader emitted exactly what `forward` accepted. Turning
-            # on --labels/--nav made the loader emit its validity masks
-            # (`nav_valid`, …) and the run died on
-            # `TypeError: RefAV1.forward() got an unexpected keyword argument`.
-            # A blind pass-through is a contract between two files that nobody
-            # checks; it breaks the moment either side grows a field.
-            # ⚠️ The report matters as much as the filter: dropping a VALIDITY
-            # MASK is correct (the model masks -100 itself), but silently
-            # dropping a LABEL would narrow the experiment invisibly — the
-            # exact failure the --labels guard exists to prevent. So name them
-            # once, and let the reader judge which kind they are.
-            kw = {k: (v.to(a.device) if torch.is_tensor(v) else v)
-                  for k, v in b.items()
-                  if k in _FWD_PARAMS
-                  and k not in ("feats", "actions", "future_feats")
-                  and v is not None}
-            if step == start_step + 1:
-                dropped = sorted(set(b) - _FWD_PARAMS
-                                 - {"feats", "actions", "future_feats"})
-                print(f"[refav1] forward() consumes {sorted(kw)}", flush=True)
-                if dropped:
-                    print(f"⚠️ [refav1] loader emits but forward() does NOT "
-                          f"accept: {dropped} — verify each is a validity mask "
-                          f"(safe: the model masks -100 itself) and not a "
-                          f"label (which would narrow the run silently)",
-                          flush=True)
+        # One path for smoke and real data: both loaders emit the same dict
+        # contract, so the smoke run exercises the SAME kwarg filter (it used
+        # to take a private tuple path that could not carry `v0`).
+        b = data.batch(a.bs)
+        feats = b["feats"].to(a.device)
+        actions = b["actions"].to(a.device)
+        future = b["future_feats"].to(a.device)
+        # ⛔ FILTER BY THE MODEL'S ACTUAL SIGNATURE, AND SAY WHAT WAS
+        # DROPPED. This used to forward EVERY batch key, which worked only
+        # while the loader emitted exactly what `forward` accepted. Turning
+        # on --labels/--nav made the loader emit its validity masks
+        # (`nav_valid`, …) and the run died on
+        # `TypeError: RefAV1.forward() got an unexpected keyword argument`.
+        # A blind pass-through is a contract between two files that nobody
+        # checks; it breaks the moment either side grows a field.
+        # ⚠️ The report matters as much as the filter: dropping a VALIDITY
+        # MASK is correct (the model masks -100 itself), but silently
+        # dropping a LABEL would narrow the experiment invisibly — the
+        # exact failure the --labels guard exists to prevent. So name them
+        # once, and let the reader judge which kind they are.
+        kw = {k: (v.to(a.device) if torch.is_tensor(v) else v)
+              for k, v in b.items()
+              if k in _FWD_PARAMS
+              and k not in ("feats", "actions", "future_feats")
+              and v is not None}
+        if step == start_step + 1:
+            dropped = sorted(set(b) - _FWD_PARAMS
+                             - {"feats", "actions", "future_feats"})
+            print(f"[refav1] forward() consumes {sorted(kw)}", flush=True)
+            if dropped:
+                print(f"⚠️ [refav1] loader emits but forward() does NOT "
+                      f"accept: {dropped} — verify each is a validity mask "
+                      f"(safe: the model masks -100 itself) and not a "
+                      f"label (which would narrow the run silently)",
+                      flush=True)
         out = model(feats, actions, future_feats=future, **kw)
         loss = out["loss"]
         opt.zero_grad(set_to_none=True)
         loss.backward()
         gnorm = nn.utils.clip_grad_norm_(model.parameters(), a.clip)
         opt.step()
+        # EMA teacher follows the student AFTER the optimizer step, on the
+        # linear decay schedule over the whole run (I-JEPA 2301.08243).
+        ema_decay = (model.ema_update(step, a.steps)
+                     if cfg.ema_targets else None)
 
         if step % a.log_every == 0 or step == 1:
             with torch.no_grad():
@@ -385,6 +429,9 @@ def main(argv=None) -> int:
                    "tgt_std_op": out.get("tgt_std_op"),
                    "tgt_std_tac": out.get("tgt_std_tac"),
                    "tgt_std_str": out.get("tgt_std_str"),
+                   # None unless --ema-targets: tgt_std_tac/str then read the
+                   # TEACHER's targets, and this is the decay that moved it.
+                   "ema_decay": ema_decay,
                    "clip": a.clip,
                    # ⭐ THE REALISED LADDER, IN EVERY ROW. The horizon a level
                    # actually trains on is now readable from the log instead of
