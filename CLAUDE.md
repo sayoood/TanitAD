@@ -228,6 +228,26 @@ Every subagent brief MUST carry the preamble in
   the log looks like a normal startup. Wait until the old supervisor **and** trainer are actually
   gone (poll `ps`), then start. If a lock is left behind with no holder (scan `/proc/*/fd`), it is
   debris — `rm` it. Same shape as the stale `.git/index.lock` rule below.
+  ⛔⛔ **AND THERE IS A SECOND, WORSE MECHANISM — THE SPAWNED TRAINER INHERITS THE LOCK FD AND HOLDS
+  IT FOR ITS ENTIRE LIFE.** MEASURED 2026-09-02, and it made the run **unsupervised for ~3 min while
+  I believed I had restarted supervision.** `exec 200>"$LOCK"; flock -n 200` puts the lock on fd
+  200; a child launched as `nohup python3 … &` **inherits every open fd**, so the *trainer* ends up
+  holding the supervisor's lock. Scanning `/proc/*/fd` named the holders as the trainer PID **and
+  its five dataloader workers** — not a supervisor at all. ⇒ once the old supervisor is killed the
+  lock is **never released while its trainer lives**, so *no* replacement can ever start, and the
+  documented advice above ("wait until the old is gone, then start") **cannot succeed**. It is not a
+  race in that state; it is a permanent block that merely *looks* like a race, and the `.out` file
+  says the same reassuring sentence either way.
+  ⇒ **Launch children with the lock fd CLOSED: append `200>&-` to the trainer's redirection list**
+  (`… >> train.log 2>> train.stderr.log 200>&- &`). To recover a live run that is already in this
+  state, do **not** kill the trainer: point the supervisor at a **fresh lock path** so it can
+  supervise the process holding the old one.
+  ⚠️ **And never `sed -i` a supervisor script while it is running** — bash reads a script lazily by
+  byte offset, so an in-place edit can make a live shell execute garbage from the middle of a line.
+  Edit only while it is stopped; otherwise write a new file and switch to it.
+  ⭐ **The check that would have caught it in one line:** after starting a supervisor, assert it is
+  actually there — `ps -eo args | grep -c 'sup[_]refcv3'` — instead of trusting the launch. Every
+  failure in this family reports success and leaves nothing running.
 - ⛔ **`uv pip install <anything>` CAN SILENTLY REPLACE TORCH WITH A WHEEL THE DRIVER CANNOT RUN.**
   MEASURED TWICE on pod4 2026-08-11/12: `uv pip install -U accelerate` and then, 20 minutes later,
   `uv pip install "compressed-tensors>=0.15.0"` each resolved **torch from the default PyPI index**

@@ -23,9 +23,9 @@ set -uo pipefail
 OUT=/workspace/experiments/refcv3-b1-v72-30k
 STACK=/workspace/TanitAD/stack
 TARGET=40284
-MAX_RELAUNCH=24
+MAX_RELAUNCH=80
 POLL=120
-LOCK=/workspace/.sup_refcv3.lock
+LOCK=/workspace/.sup_refcv3b.lock
 SLOG=$OUT/supervisor.log
 
 exec 200>"$LOCK"
@@ -72,7 +72,7 @@ launch() {
     --steps "$TARGET" --batch 20 --workers 6 --prefetch-factor 1 --v2-lru 24 \
     --lr 1e-4 --warmup 2000 --seed 0 \
     --log-every 50 --save-every 500 \
-    --out "$OUT" >> "$OUT/train.log" 2>> "$OUT/train.stderr.log" &
+    --out "$OUT" >> "$OUT/train.log" 2>> "$OUT/train.stderr.log" 200>&- &
   echo $!
 }
 
