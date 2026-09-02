@@ -11286,3 +11286,11 @@ launch guard and a test. Precedent already exists — the feature read-set count
 ⭐ **NEW RULE 2 — A DERIVED STATISTIC INHERITS ITS INPUTS' EVIDENCE CLASS.** Re-derive,
 never re-quote. If the inputs move, the derived number moves with them, and it will be
 carrying a MEASURED stamp it did not earn.
+
+# 2026-09-03 — 'same seed, same data order' (refav1 clean epoch vs the incumbent)
+
+**Retracted:** H-EPOCH-2 and D-REFAV1-EPOCH2-LAUNCHED claimed the clean epoch replays the incumbent's batches ("same seed, same order") and read R2 as a PAIRED comparison. **MEASURED:** `stack/tanitad/data/refav1_loader.py:218` draws one `randperm` over all windows; the window counts differ (168,910 vs 168,873 — the rebuilt episode), so the permutations differ from the first draw. The "evidence" was a 3-decimal loss match at step 1, where every batch reads ≈ 1.38 at init.
+
+**Root-cause class: COINCIDENCE READ AS IDENTITY.** A value two systems share by construction (a near-init loss) was read as proof that they share a mechanism (a data order). Same family as "`grad_norm` finite ⇒ healthy" and the 3-decimal `heldout`/`full_set` agreement that hid the estimator bias for a month. **Rule: an identity claim between two runs names the MECHANISM — the sampler line, the seed AND the permutation length — or it is written as 'matched-step'.**
+
+⚠️ The consequence was not cosmetic: "paired" licensed a 9-row mean of −1.7 % as a quality verdict; the honest matched-step read over 19 rows is +5.5 % with a +14 % window (rows 550–900) that ended in a clipped 2.5e18 gradient. The paired read that can settle it (the T1 adapter on both step-1,000 checkpoints, same windows) is scheduled, and two guards that would have caught the window (operative-loss rise, sustained spiking) are on Thor.
