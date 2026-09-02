@@ -65,7 +65,7 @@ none since, until the fixed-clock cron was re-created on 2026-09-02 evening):
 | charter breadth (22 tracks/day) | fails 2 days running | `TRACKS.md`: 19/22 (08-31), 10/22 (09-01), 11/22 (09-02); escalated as GS-7 |
 | run summary per day, numbered | deviates | 08-30 missing; packages say "run 004" while LAB-RUN-004 = 08-31 |
 | KB per field | matches since 08-30 | 0 entries 08-20…08-28 (audit S-1), 62 after; the router still says "175 entries across 7 areas" |
-| brief as a versioned, rewritten handoff (§4.4) | deviates | static SKILL.md outside the repo; no copy in `Project Steering/` or `.claude/` (two probes) |
+| brief as a versioned, rewritten handoff (§4.4) | deviates | static SKILL.md outside the repo; no copy found in `Project Steering/` or `.claude/` — ⚠️ ONE completed probe (Select-String); the repo-wide grep was killed before finishing, so this absence is single-probe until a second mechanism confirms it (correction 2026-09-02 23:55 Berlin) |
 | skills (§8) | 3 of 7 exist; none for the Lab | `.claude/skills/`: BenchmarkCriteria, Review, ValidateAIDesign only |
 
 ## D. Content spot-check — the two most recent Lab packages (both 09-02, full schema + tests)
