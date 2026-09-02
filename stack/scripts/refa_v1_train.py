@@ -198,6 +198,124 @@ class SmokeData:
                 "v0": torch.rand(bs) * 20.0}
 
 
+# --------------------------------------------------------------------------- #
+# RESUME x EMA (Architecture & Inference FlyWheel, D-REFAV1-EMA-RESUME
+# 2026-09-03). MEASURED, E-ARCH-TSC-2 R7 (`TanitAD Research Lab/Architecture &
+# Inference/Research/2026-09-02-refav1-ema-inflation/raw/R7_resume.log`):
+# `--resume --ema-targets` on a checkpoint written WITHOUT `--ema-targets` died
+# in 2.8 s — `Missing key(s) in state_dict: "ema.tac_queries",
+# "ema.adapter.pos", … "ema.str_read.1.bias"`, 20 keys, strict load, no
+# teacher-from-student init. So a run could NOT be switched to EMA targets at a
+# checkpoint: register row C-REFAV1-TAC-INFLATION option (b) was blocked by
+# exactly this, and the clean-epoch restart only routed around it.
+# --------------------------------------------------------------------------- #
+def load_resume_state(model: RefAV1, state: dict, step: int) -> dict:
+    """Load a resume checkpoint's ``model`` state_dict STRICTLY — with exactly
+    one named exception, and a refusal on its mirror image.
+
+    THE EXCEPTION — teacher from student. When the model carries a teacher
+    (``--ema-targets``) and the checkpoint lacks EXACTLY the ``ema.*`` keys
+    and nothing else, the teacher is INITIALISED FROM THE LOADED STUDENT: a
+    copy, not a lerp — what BYOL / I-JEPA do at their own step 0 — so the EMA
+    walks from the checkpointed student instead of from a random init. The
+    teacher entries are synthesised INTO the state_dict from the student's,
+    keyed through ``_EmaTargetPath.pairs`` (the one source of the
+    teacher<->student pairing; no hand-written name table to drift from it),
+    and the whole dict then goes through ONE ``strict=True`` load. So any
+    OTHER missing or unexpected key — a PARTIAL teacher included — still
+    refuses with the key named. There is no ``strict=False`` on this path.
+
+    THE MIRROR IMAGE — PINNED DECISION (`tests/test_refa_v1_ema_resume.py`):
+    a checkpoint that HAS ``ema.*`` keys under a launch with ``--ema-targets``
+    OFF is REFUSED (SystemExit), not silently stripped. Dropping the teacher
+    continues the run as a DIFFERENT experiment — the tactical/strategic
+    targets fall back from the slow teacher to the live student path — under
+    a launch line that says nothing about it, and the run would look healthy.
+    That is the stale-manifest relaunch (`supervise_run.sh` replays the
+    TRAIN_CMD it booted with) meeting the silently-narrower-experiment class
+    this trainer already refuses for --labels and for cache geometry. A
+    deliberate teacher-off continuation is a NEW ARM: strip the ``ema.*``
+    keys into a new checkpoint on purpose and register it, so the lineage
+    shows the choice instead of an omitted flag.
+
+    Returns ``{"ema_init": "student" | "checkpoint" | None, "n_ema_keys":
+    int, "step": int}`` — what happened, for the caller and the log.
+    """
+    want = set(model.state_dict())
+    have = set(state)
+    ema_want = {k for k in want if k.startswith("ema.")}
+    ema_have = {k for k in have if k.startswith("ema.")}
+    missing_other = sorted((want - have) - ema_want)
+    unexpected_other = sorted((have - want) - ema_have)
+    if missing_other or unexpected_other:
+        raise RuntimeError(
+            "Error(s) in loading state_dict for RefAV1 (--resume): "
+            + (f"Missing key(s) in state_dict: {missing_other}. "
+               if missing_other else "")
+            + (f"Unexpected key(s) in state_dict: {unexpected_other}. "
+               if unexpected_other else "")
+            + f"[ema.* keys: model wants {len(ema_want)}, checkpoint has "
+              f"{len(ema_have)} — the teacher is initialised from the student "
+              "ONLY when nothing else is wrong]")
+    if ema_have and not ema_want:
+        raise SystemExit(
+            f"⛔ [refav1] resume REFUSED: the checkpoint carries an EMA "
+            f"teacher ({len(ema_have)} ema.* keys, written under "
+            "--ema-targets) but this launch has --ema-targets OFF. Dropping "
+            "the teacher would continue the run as a DIFFERENT experiment "
+            "(tactical/strategic targets fall back from the teacher to the "
+            "live student path) under a launch line that says nothing about "
+            "it. Pass --ema-targets to continue the run as trained; a "
+            "deliberate teacher-off continuation is a NEW arm from a "
+            "checkpoint stripped of its ema.* keys on purpose — never an "
+            "omitted flag.")
+    state = dict(state)                       # never mutate the caller's dict
+    init = None
+    if ema_want and not ema_have:
+        name_of = {id(p): n for n, p in model.named_parameters()}
+        added = set()
+        for p_ema, p_stu in model.ema.pairs(model):
+            k_ema, k_stu = name_of[id(p_ema)], name_of[id(p_stu)]
+            state[k_ema] = state[k_stu].detach().clone()
+            added.add(k_ema)
+        if added != ema_want:
+            raise RuntimeError(
+                "EMA teacher parameters not covered by _EmaTargetPath.pairs(): "
+                f"{sorted(ema_want ^ added)} — refusing to leave a teacher "
+                "parameter at its random init")
+        init = "student"
+    elif ema_want:
+        init = "checkpoint"           # strict below: a partial teacher raises
+    res = model.load_state_dict(state, strict=True)
+    if res.missing_keys or res.unexpected_keys:      # strict=True has raised;
+        raise RuntimeError(f"resume load left keys unmatched: {res}")  # belt
+    if init == "student":
+        print(f"[refav1] resume: EMA targets initialised from the student "
+              f"(checkpoint had no ema.* keys; step {step})", flush=True)
+    elif init == "checkpoint":
+        print(f"[refav1] resume: EMA teacher restored from the checkpoint "
+              f"({len(ema_have)} ema.* keys; step {step})", flush=True)
+    return {"ema_init": init, "n_ema_keys": len(ema_want), "step": int(step)}
+
+
+def verify_resume_optimizer(model: RefAV1, opt: torch.optim.Optimizer) -> None:
+    """After ``opt.load_state_dict`` on resume: the teacher is FROZEN and
+    OUTSIDE the optimizer. The optimizer is built from the ``requires_grad``
+    filter in ``main``, so this holds by construction today; it is asserted so
+    that the day a refactor hands the teacher to AdamW (a silent weight-decay
+    on the target) the resume dies here instead of training on it."""
+    if model.ema is None:
+        return
+    in_opt = {id(p) for g in opt.param_groups for p in g["params"]}
+    for n, p in model.ema.named_parameters():
+        if p.requires_grad:
+            raise RuntimeError(f"EMA teacher parameter ema.{n} has "
+                               "requires_grad=True after resume")
+        if id(p) in in_opt:
+            raise RuntimeError(f"EMA teacher parameter ema.{n} is inside the "
+                               "optimizer after resume")
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--cache", type=Path,
@@ -467,9 +585,15 @@ def main(argv=None) -> int:
     if a.resume and (a.out / "ckpt.pt").exists():
         ck = torch.load(a.out / "ckpt.pt", map_location=a.device,
                         weights_only=False)
-        model.load_state_dict(ck["model"])
-        opt.load_state_dict(ck["opt"])
         start_step = int(ck["step"])
+        # ⭐ Strict, with ONE named exception (teacher initialised from the
+        # student when the checkpoint has no ema.* keys) and ONE refusal
+        # (teacher present, --ema-targets off) — `load_resume_state`,
+        # D-REFAV1-EMA-RESUME. The optimizer state is the student's and loads
+        # as before; the teacher never enters it (asserted, not assumed).
+        load_resume_state(model, ck["model"], start_step)
+        opt.load_state_dict(ck["opt"])
+        verify_resume_optimizer(model, opt)
         print(f"resumed from step {start_step}")
 
     # the set  will actually take — derived from the model, never a
