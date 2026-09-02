@@ -48,6 +48,7 @@ def build_model(args) -> RefAV1:
         w_aux_head=args.w_aux_head, proposal_k=args.proposal_k,
         w_sigreg=args.w_sigreg, var_floor=args.var_floor,
         min_participation=args.min_participation,
+        bptt_truncate=args.bptt_truncate,
         **({} if args.detach_aux is None
            else {"detach_aux_targets": args.detach_aux}),
     )
@@ -173,6 +174,14 @@ def main(argv=None) -> int:
                     help="refuse if participation falls below this (RankMe "
                          "2210.02885 / G-RANK). 0 = MONITOR ONLY, always "
                          "logged. Reference floor 8.56; rank-1 collapse = 1.00")
+    ap.add_argument("--bptt-truncate", type=int, default=15,
+                    help="detach the carried rollout state every N steps. "
+                         "0 = FULL CHAIN (the deliberate-regression control). "
+                         "15 = DreamerV3's imagination horizon AND Looped-WM's "
+                         "ceil(mu_rec/2) at our K=30 — two independent recipes "
+                         "agreeing. Without it: gnorm 3.6e3 / 5.7e7 / inf "
+                         "within 300 steps. The FORWARD rollout is unchanged; "
+                         "only the gradient path is bounded")
     ap.add_argument("--target-space", choices=("adapter", "frozen"),
                     default="frozen",
                     help="'adapter' = original form, whose primary loss has a "

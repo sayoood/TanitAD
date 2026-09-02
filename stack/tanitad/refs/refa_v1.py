@@ -306,6 +306,13 @@ class RefAV1Config:
     #: > 0 refuses when participation falls below it. Reference floor 8.56.
     min_participation: float = 0.0
 
+    #: ⛔ TRUNCATED BPTT depth for the operative rollout. 0 = full chain (the
+    #: deliberate-regression control). DEFAULT 15 = DreamerV3's imagination
+    #: horizon (2301.04104) AND Looped-WM's ceil(mu_rec/2) for our 30-step
+    #: rollout (2606.18208) — the two independent recipes agree on this value
+    #: at our K. MEASURED without it: gnorm 3.6e3 / 5.7e7 / inf within 300 steps.
+    bptt_truncate: int = 15
+
     def sanity(self) -> None:
         if self.d_state < self.d_enc:
             raise ValueError(
@@ -556,14 +563,51 @@ class TokenFieldPredictor(nn.Module):
         class (an analysis-time failure after the compute is paid).
         """
         z = field
+        # ⛔⛔ TRUNCATED BPTT (PI 2026-09-02). Until now this loop applied the
+        # predictor `K` times with NO detach — a 30-deep back-prop chain through
+        # shared parameters at the live config. MEASURED on the first refav1
+        # launch: gnorm 3.6e3 at step 50, 5.7e7 at 150, `inf` at 300.
+        #
+        # ⭐ THE LAB'S ASK-1 LITERATURE PASS FOUND NO PUBLISHED RECIPE IN OUR
+        # REFERENCE CLASS BACK-PROPAGATES THAT FAR, and four independent
+        # mechanisms all avoid it — none of them "lower the clip":
+        #   TD-MPC2 (2310.16828)      H = 3   + learned terminal value
+        #   DreamerV3 (2301.04104)    H = 15  + AGC(0.3) + lambda-returns
+        #   Looped-WM (2606.18208)    truncate at mu_bwd = ceil(mu_rec / 2)
+        #   InfinityDrive (2412.01522) curriculum 16 -> 32 -> 64 -> 128
+        # Looped-WM states our failure verbatim: "Training directly with a large
+        # K is unstable because gradients must back-propagate through K x T
+        # shared-parameter applications."
+        #
+        # ⇒ detach the carried state every `bptt_truncate` steps. The FORWARD
+        # rollout is unchanged — every step still sees the true previous state,
+        # so the prediction task is identical; only the gradient path is bounded.
+        # 0 disables truncation (the deliberate-regression control).
+        trunc = int(getattr(self, "bptt_truncate", 0) or 0)
+
+        n_steps = actions.shape[1]
+
+        def _carry(z_, k_):
+            # Detach AFTER step k so the chain is at most `trunc` deep.
+            # ⛔ NEVER on the LAST step: in `last_only` mode that tensor IS the
+            # return value, and detaching it hands the caller a gradient-free
+            # result — the planning path would silently backprop nothing. Caught
+            # by `test_last_only_path_truncates_too`, which is the whole reason
+            # that test exists: the first implementation returned a fully
+            # detached field whenever K was a multiple of `trunc`, and every
+            # other test still passed.
+            cut = trunc and (k_ + 1) % trunc == 0 and k_ < n_steps - 1
+            return z_.detach() if cut else z_
+
         if last_only:
-            for k in range(actions.shape[1]):
-                z = self.step(z, actions[:, k], intent=intent)
+            for k in range(n_steps):
+                z = _carry(self.step(z, actions[:, k], intent=intent), k)
             return z
         out = []
         for k in range(actions.shape[1]):
             z = self.step(z, actions[:, k], intent=intent)
-            out.append(z)
+            out.append(z)          # the OUTPUT keeps its gradient path
+            z = _carry(z, k)       # only the CARRIED state is cut
         return torch.stack(out, dim=1)
 
 
@@ -652,6 +696,14 @@ class RefAV1(nn.Module):
         self.tactical = TokenFieldPredictor(cfg, cfg.d_state, cfg.tac_layers,
                                             cfg.op_heads, intent_dim)
         self.strategic = StrategicSubspacePredictor(cfg)
+        # ⛔ TRUNCATED BPTT reaches BOTH token-field predictors. The operative
+        # rollout is the 30-deep one that produced gnorm inf, but `tactical`
+        # is the SAME class rolling its own multi-step chain — fixing only the
+        # one that happened to blow up would leave the identical defect next
+        # door, which is the shape of half the bugs in this file's history.
+        # The strategic predictor rolls 2 (+2 ext) steps and needs no cut.
+        self.operative.bptt_truncate = int(cfg.bptt_truncate)
+        self.tactical.bptt_truncate = int(cfg.bptt_truncate)
 
         # Hierarchy brains — the SAME classes the flagship holds, so the
         # conditioning chain is identical and comparisons stay on one axis.
