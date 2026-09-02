@@ -78,6 +78,8 @@ from tanitad.refs import refc  # noqa: E402
 from tanitad.refs import refc_tactical as tac  # noqa: E402
 from tanitad.data import v7_labels as v7l
 from tanitad.refs import refc_v3 as v3  # noqa: E402
+from tanitad.models import vocab_v7  # noqa: E402
+from tanitad.refs import refb  # noqa: E402
 
 # --- v3-only loss weights (everything shared is imported above) --------------
 #: tactical goal regression (E8) — sized with the route/maneuver aux family;
@@ -94,6 +96,23 @@ REGISTERED_DELTA_KEYS = {"hier", "core.graft_target_latent"}
 
 MILESTONES = (5000, 15000, 20000, 30000)
 MAX_H_EXT = max(v3.V3_HORIZONS)            # 60 — fetched by clamp, never enum
+
+# --- --nav-from-v7: the nav SOURCE switch (E-ARCH-NAVSRC-1, 2026-09-02) ------
+#: v7.2 nav token -> legacy ``refb.NAV_COMMANDS`` name, POSITION-pinned: the
+#: model's nav one-hot / embedding rows are ordered by ``NAV_COMMANDS``
+#: (refc.py:2024, refc_v3.py:164) while the v7.2 ids enumerate
+#: ``vocab_v7.NAV_COMMAND_TOKENS``. This is the SAME mapping
+#: ``refav1_loader._NAV_TOKEN_TO_LEGACY`` pins (equality asserted by
+#: tests/test_refc_v3_nav_from_v7.py). It is a local copy ON PURPOSE: the
+#: trainer must not acquire an import-time dependency on a loader that is
+#: shipped to pods separately; :func:`assert_nav_token_alignment` re-checks
+#: the position pin at dataset init and in the preflight, so drift is loud.
+NAV_TOKEN_TO_LEGACY = {"NAV_FOLLOW_ROAD": "follow", "NAV_TURN_L": "left",
+                       "NAV_TURN_R": "right"}
+#: the config.json stamps — an arm must be identifiable from its own artifacts
+NAV_FROM_V7_DERIVATION = ("v7.2 nav_command token (oracle, provenance "
+                          "ego-future; allow_oracle_nav=True)")
+NAV_V1_DERIVATION = "refb_labels.nav_command (v1, unchanged)"
 
 
 def _pin_trainer_cfg(cfg: v3.RefCV3Config, args) -> v3.RefCV3Config:
@@ -142,17 +161,143 @@ def _pin_trainer_cfg(cfg: v3.RefCV3Config, args) -> v3.RefCV3Config:
 # Dataset — parity-preserving 6 s
 # ============================================================================
 
+def assert_nav_token_alignment() -> None:
+    """⛔ The position pin: ``vocab_v7.NAV_COMMAND_TOKENS[i]`` must name
+    ``refb.NAV_COMMANDS[i]`` through :data:`NAV_TOKEN_TO_LEGACY`, and the core
+    must one-hot against the same tuple (``refc.NAV_COMMANDS``). Verified, not
+    assumed — a silent re-ordering would land the token on the wrong nav row
+    and train on a plausible wrong signal."""
+    toks = tuple(vocab_v7.NAV_COMMAND_TOKENS)
+    legacy = tuple(refb.NAV_COMMANDS)
+    for i, tok in enumerate(toks):
+        want = NAV_TOKEN_TO_LEGACY.get(tok)
+        have = legacy[i] if i < len(legacy) else None
+        if want is None or want != have:
+            raise AssertionError(
+                f"[v3 nav-from-v7] nav index alignment broken: "
+                f"NAV_COMMAND_TOKENS[{i}]={tok!r} maps to {want!r} but "
+                f"refb.NAV_COMMANDS[{i}]={have!r} — the v7.2 token would land "
+                f"on the wrong nav row")
+    if tuple(refc.NAV_COMMANDS) != legacy:
+        raise AssertionError(
+            f"[v3 nav-from-v7] refc.NAV_COMMANDS {tuple(refc.NAV_COMMANDS)} != "
+            f"refb.NAV_COMMANDS {legacy} — the core one-hots nav_cmd against "
+            f"its own tuple (refc.py:2024); the two must stay identical")
+    if legacy.index("follow") != refb_labels.NAV_FOLLOW:
+        raise AssertionError(
+            f"[v3 nav-from-v7] 'follow' sits at {legacy.index('follow')} in "
+            f"refb.NAV_COMMANDS but refb_labels.NAV_FOLLOW is "
+            f"{refb_labels.NAV_FOLLOW} — the unlabeled default would not be "
+            f"'follow'")
+
+
+def _check_nav_from_v7_args(args) -> None:
+    """Refuse AT START a --nav-from-v7 launch that would die or mislead later.
+
+    * without ``--v7-labels`` there is no token to read — the flag would be a
+      dead switch that LOOKS switched;
+    * with an in-training eval (``--eval-cache`` + ``--eval-every``) but no
+      ``--eval-labels``, train and eval would be fed DIFFERENT nav sources and
+      every eval row would compare a v7.2-fed model against the v1 input —
+      an eval that silently measures something else.
+    ``getattr`` throughout: test rigs build partial Namespaces."""
+    if not getattr(args, "nav_from_v7", False):
+        return
+    if not getattr(args, "v7_labels", None):
+        raise SystemExit("[v3] ⛔ --nav-from-v7 needs --v7-labels: the nav "
+                         "token is read from the v7.2 label records, and "
+                         "without them the flag would be a dead switch that "
+                         "looks switched.")
+    if (getattr(args, "eval_cache", None) and getattr(args, "eval_every", 0)
+            and not getattr(args, "eval_labels", None)):
+        raise SystemExit("[v3] ⛔ --nav-from-v7 with an in-training eval needs "
+                         "--eval-labels: the eval dataset must see the SAME "
+                         "nav source as training, or every eval row compares "
+                         "against the v1 derivation.")
+
+
 class V3Dataset(RouteV21Dataset):
     #: clip-stable-id -> V7Label, or None for the kin3 path. Set by the trainer
     #: rather than passed through the ctor, because the base class owns the
     #: signature and widening it would touch every RouteV21 consumer.
     v7_by_sid: dict | None = None
     v7_dt: float = 0.1
+    #: --nav-from-v7 (E-ARCH-NAVSRC-1): when True, ``nav_cmd``/``nav_valid``
+    #: are OVERRIDDEN per window from the clip's v7.2 ``nav_command`` token
+    #: (see :meth:`enable_nav_from_v7`). ⛔ Default False keeps the v1
+    #: derivation (``refb_labels.nav_command`` via ``FailLoudWindowDataset``)
+    #: byte-identical — the live run resumes through this class.
+    nav_from_v7: bool = False
+    v7_manifest = None
+    _nav_by_sid: dict | None = None
+    nav_from_v7_stats: dict | None = None
 
     """RouteV21Dataset + clamped/masked 6 s future + E4.1 tactical goals.
 
     ``max_horizon`` MUST stay at the caller's 20: enumeration parity. The
     extended future is fetched here per item from the episode's own poses."""
+
+    def enable_nav_from_v7(self, manifest) -> dict:
+        """Switch THIS dataset's ``nav_cmd`` INPUT to the clip's v7.2 token.
+
+        Per-clip constant (the release's ``t0_constant`` semantics — token
+        and args are window-independent, ``v7_labels.NavEmitter``), resolved
+        once here so ``__getitem__`` is a lookup. Requires the v7.2 join
+        (``v7_by_sid``) and the loaded labels' ``LabelManifest`` carrying
+        ``allow_oracle_nav=True``: ``v7_labels.oracle_nav`` is the ONLY route
+        to the token and it checks the MANIFEST, so the permission and the
+        run's recorded config cannot disagree. Returns the per-clip stats
+        that go into config.json — the token distribution over THIS
+        dataset's clips and the count of clips without a record.
+        """
+        if self.v7_by_sid is None:
+            raise ValueError(
+                "[v3] --nav-from-v7 needs the v7.2 join (v7_by_sid is None) — "
+                "the trainer sets it from --v7-labels / --eval-labels first")
+        if not getattr(manifest, "allow_oracle_nav", False):
+            raise v7l.OracleNavRefused(
+                "[v3] --nav-from-v7 reads an ORACLE nav (provenance ego-future) "
+                "— load_v7_labels(..., allow_oracle_nav=True) is required so "
+                "the manifest carries the stamp")
+        assert_nav_token_alignment()
+        nav_by_sid: dict[int, int] = {}
+        for sid, lab in self.v7_by_sid.items():
+            nav = v7l.oracle_nav(lab, manifest) or {}      # ⭐ the gate
+            tok = nav.get("token")
+            if tok not in NAV_TOKEN_TO_LEGACY:
+                raise ValueError(
+                    f"[v3] ⛔ clip {lab.clip_id!r}: nav token {tok!r} has no "
+                    f"legacy mapping (known: {sorted(NAV_TOKEN_TO_LEGACY)}) — "
+                    f"vocabulary drift is a different experiment, refused")
+            nav_by_sid[sid] = refb.NAV_COMMANDS.index(NAV_TOKEN_TO_LEGACY[tok])
+        counts = {name: 0 for name in NAV_TOKEN_TO_LEGACY.values()}
+        missing = 0
+        for ep in self.episodes:
+            idx = nav_by_sid.get(int(ep.episode_id))
+            if idx is None:
+                missing += 1
+            else:
+                counts[refb.NAV_COMMANDS[idx]] += 1
+        n = len(self.episodes)
+        if n and missing == n:
+            raise ValueError(
+                f"[v3] ⛔ --nav-from-v7 joined ZERO of {n} clips — wrong label "
+                f"blob for this corpus (md5={manifest.md5})")
+        self._nav_by_sid = nav_by_sid
+        self.v7_manifest = manifest
+        self.nav_from_v7 = True
+        self.nav_from_v7_stats = {
+            "n_clips": n, **counts, "missing": missing,
+            "derivation": NAV_FROM_V7_DERIVATION,
+            "unlabeled_default": "nav_cmd=0 ('follow') + nav_valid=False "
+                                 "(refav1_loader convention)",
+            "label_md5": manifest.md5,
+            "allow_oracle_nav": bool(manifest.allow_oracle_nav)}
+        # ASCII-only by design: this prints at dataset init.
+        print(f"[v3] nav_from_v7: follow {counts['follow']} / left "
+              f"{counts['left']} / right {counts['right']}, missing {missing} "
+              f"(of {n} clips; md5={manifest.md5})", flush=True)
+        return self.nav_from_v7_stats
 
     def __getitem__(self, i: int):
         item = super().__getitem__(i)
@@ -182,6 +327,23 @@ class V3Dataset(RouteV21Dataset):
                     lab, (t + w - 1) * self.v7_dt)
             item["lat_v7"] = torch.tensor(lat_v7, dtype=torch.long)
             item["lon_v7"] = torch.tensor(lon_v7, dtype=torch.long)
+        # ---- --nav-from-v7: the nav INPUT from the clip's v7.2 token -------
+        # ⛔ OVERRIDES the v1 nav_cmd/nav_valid the base chain assigned
+        # (refb_train.py:220-222, refb_labels.nav_command). `route_target` /
+        # `route_valid` are the aux TARGET and stay untouched — RouteV21Dataset
+        # documents that separation. A clip with NO record feeds NAV_FOLLOW +
+        # nav_valid=False — refav1_loader's convention (index 0 is the
+        # codebase's unlabeled default, refb.py:60) — counted at init and
+        # stamped into config.json.
+        if self.nav_from_v7:
+            nav_idx = self._nav_by_sid.get(int(ep.episode_id))
+            if nav_idx is None:
+                item["nav_cmd"] = torch.tensor(refb_labels.NAV_FOLLOW,
+                                               dtype=torch.long)
+                item["nav_valid"] = torch.tensor(False)
+            else:
+                item["nav_cmd"] = torch.tensor(nav_idx, dtype=torch.long)
+                item["nav_valid"] = torch.tensor(True)
         return item
 
 
@@ -539,6 +701,7 @@ def _lan_arm_preflight(cfg, args) -> int:
 
 
 def preflight(args) -> int:
+    _check_nav_from_v7_args(args)          # no-op unless --nav-from-v7
     print("[v3-preflight] building both arms + pinning the delta …")
     cfg_h = v3.refc_v3_sized_config(args.size, hier=True)
     cfg_f = v3.refc_v3_sized_config(args.size, hier=False)
@@ -605,6 +768,19 @@ def preflight(args) -> int:
         batch["lon_v7"] = torch.tensor([n_lon - 1, v7l.IGNORE_ID],
                                        dtype=torch.long)
         assert n_lat >= 1 and n_lon >= 1
+    # --nav-from-v7: the launch feeds v7.2 tokens, so the preflight batch gets
+    # v7-SHAPED nav too (one turn each way, both valid) and the position pin
+    # runs HERE — a broken pin must fail the preflight, not the pod launch.
+    if getattr(args, "nav_from_v7", False):
+        try:
+            assert_nav_token_alignment()
+        except AssertionError as e:
+            print(f"[v3-preflight] ⛔ FAIL: {e}")
+            return 7
+        batch["nav_cmd"] = torch.tensor(
+            [refb.NAV_COMMANDS.index("left"), refb.NAV_COMMANDS.index("right")],
+            dtype=torch.long)
+        batch["nav_valid"] = torch.tensor([True, True])
     losses = compute_losses_v3(model, batch, "cpu", mode="diffusion")
     bad = [k for k, t in losses.items()
            if torch.is_tensor(t) and not bool(t.isfinite().all())]
@@ -630,6 +806,10 @@ def preflight(args) -> int:
 # ============================================================================
 
 def train(args) -> dict:
+    # --nav-from-v7 (E-ARCH-NAVSRC-1): refuse a mis-specified switch BEFORE any
+    # data or GPU work; a no-op with the flag off.
+    _check_nav_from_v7_args(args)
+    nav_on = bool(getattr(args, "nav_from_v7", False))
     # MEASURED on the A40 pod 2026-09-02: the FIRST real launch died within
     # seconds -- `DataLoader worker killed by signal: Bus error ... out of
     # shared memory`. B1 payloads are ~34 MB/clip and torch's DEFAULT tensor
@@ -725,6 +905,7 @@ def train(args) -> dict:
             arclengths_m=tuple(args.lan_arclengths),
             min_lead_m=args.lan_min_lead_m)
     ds = dcls(eps, **kw)
+    nav_stats = eval_nav_stats = v7_manifest = None
     # ---- v7.2 label join (PI 2026-09-02: MANDATORY for this launch) --------
     if args.v7_labels:
         from tanitad.data.v2_dataset import stable_episode_id
@@ -733,6 +914,7 @@ def train(args) -> dict:
         by_sid = {stable_episode_id(l.clip_id): l for l in labels}
         ds.v7_by_sid = by_sid
         ds.v7_dt = 0.1
+        v7_manifest = manifest.to_dict()      # md5 + the oracle stamp
         # ⛔ COVERAGE IS REPORTED, NOT ASSUMED. MEASURED 2026-09-02: the v7.2
         # train set joins 4,572/4,713 = 97.0 % of B1 but only 190/2,400 =
         # 7.9 % of the PARITY corpus — so the same flag on the wrong cache
@@ -750,6 +932,12 @@ def train(args) -> dict:
                 f"the corpus the tactical/strategic heads would train on a "
                 f"minority of clips while the run LOOKED labelled. Check the "
                 f"cache is B1 (97.0 %) and not the parity corpus (7.9 %).")
+        # ---- --nav-from-v7 (E-ARCH-NAVSRC-1, PI 2026-09-02): the nav INPUT
+        # from the record's token — the input refav1 already trains on. The
+        # v1 derivation feeds `follow` (+invalid) on 94.6 % of B1 windows
+        # (MEASURED, nav-source-agreement package); the two agree on 65.5 %.
+        if nav_on:
+            nav_stats = ds.enable_nav_from_v7(manifest)
     # launch-line P4: the run PRINTS its episode/window counts at start — the
     # only way a parity claim about the enumeration is checkable from the log.
     print(f"[v3] {len(eps)} episodes -> {len(ds)} windows "
@@ -778,10 +966,14 @@ def train(args) -> dict:
         e_ds = dcls(e_eps, **kw)
         if args.eval_labels:
             from tanitad.data.v2_dataset import stable_episode_id
-            e_lab, _ = v7l.load_v7_labels(args.eval_labels,
-                                          allow_oracle_nav=True)
+            e_lab, e_man = v7l.load_v7_labels(args.eval_labels,
+                                              allow_oracle_nav=True)
             e_ds.v7_by_sid = {stable_episode_id(l.clip_id): l for l in e_lab}
             e_ds.v7_dt = 0.1
+            # the in-training eval sees the SAME nav source as training
+            # (refused above when --eval-labels is missing)
+            if nav_on:
+                eval_nav_stats = e_ds.enable_nav_from_v7(e_man)
         # FIXED **and REPRESENTATIVE** windows.
         # ⛔ shuffle=False ALONE IS A TRAP, and it bit this eval on its first
         # run: taking the first N windows takes them from the START of the
@@ -851,6 +1043,16 @@ def train(args) -> dict:
         "tac_vocab_version": cfg.tac_vocab_version,
         "v2_cache": args.v2_cache, "require_parity": bool(args.require_parity),
         "v2_parity": v2_parity,
+        # --nav-from-v7 (E-ARCH-NAVSRC-1): the nav SOURCE is stamped EITHER
+        # way, so an arm is identifiable from its own artifacts
+        # (C-NAV-SOURCE-DIVERGENCE). `v7_labels` is the label manifest —
+        # md5 + the allow_oracle_nav stamp — None without --v7-labels.
+        "nav_from_v7": nav_on,
+        "nav_cmd_derivation": (NAV_FROM_V7_DERIVATION if nav_on
+                               else NAV_V1_DERIVATION),
+        "nav_from_v7_stats": ({"train": nav_stats, "eval": eval_nav_stats}
+                              if nav_on else None),
+        "v7_labels": v7_manifest,
     }, indent=1), encoding="utf-8")
 
     log = (out_dir / "metrics.jsonl").open("a", encoding="utf-8")
@@ -942,7 +1144,7 @@ def train(args) -> dict:
     return {"step": step}
 
 
-def main(argv=None):
+def build_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--size", choices=tuple(v3.V3_SIZES), default="small",
                     help="encoder rung. 'small' is the AS-REGISTERED arm "
@@ -1046,7 +1248,25 @@ def main(argv=None):
     ap.add_argument("--preflight", action="store_true",
                     help="build + pin delta + C115 gate + E11 audit + one "
                          "synthetic loss step, then exit")
-    args = ap.parse_args(argv)
+    ap.add_argument("--nav-from-v7", action="store_true",
+                    help="feed the model's nav_cmd INPUT from the clip's v7.2 "
+                         "nav_command token (oracle, provenance ego-future; "
+                         "loaded with allow_oracle_nav=True and STAMPED in "
+                         "config.json) instead of refb_labels.nav_command "
+                         "(v1: net yaw over the next 15-25 s of future poses "
+                         "— `follow`+invalid on 94.6 %% of B1 windows, "
+                         "E-ARCH-NAVSRC-1 2026-09-02). The same input refav1 "
+                         "trains on. Applies to the train AND the held-out "
+                         "eval dataset (needs --eval-labels when the eval is "
+                         "on). A clip without a record feeds follow + "
+                         "nav_valid=False and is COUNTED. Default OFF = "
+                         "byte-identical v1 behaviour (the live run resumes "
+                         "through this file).")
+    return ap
+
+
+def main(argv=None):
+    args = build_parser().parse_args(argv)
     if args.preflight:
         raise SystemExit(preflight(args))
     train(args)
