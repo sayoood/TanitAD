@@ -162,3 +162,11 @@ that all lands before S-W's first gate.
 - **R23 — wire `--w-trunk-anchor`** (v7f rung R3's `anchored` arm is blocked without it): a SECOND frozen forward of the seed's own ViT-B/16 plus the live encoder's patch tokens at the loss site. O7's teacher cannot be reused (wrong network, wrong granularity, absent at `--w-o7-distill 0`). Loss-composition path; the flag currently refuses at any non-zero value rather than training inert.
 - **R24 — PI decision: authorise (or refuse) the DINOv3 ViT-B/16 pull.** Only ViT-L/16 and dinov2-base are on the box; the converter never downloads. Blocks the v7f seed at the prereg's chosen geometry.
 - **R25 — the `-k` selection in every v7 brief misses new test files by name.** `test_dinov3_seed.py` matches none of `v6|staged|parity|v7_labels|intrain|v7_wiring|eval_exclusion`; the agent correctly refused to rename tests to game the filter. Fix the brief template, not the tests.
+
+## Added 2026-09-03 11:00 Berlin (from D-REFAV1-COST-SURFACE)
+
+- **R10 — STRUCK 2026-09-03**: the cost-surface panel is measured and banked.
+- **R26 — URGENT: complete the κ→steer conversion or remove the flag.** `as_command` is called at ONE site (`refa_v1.py:1832`); `_imagine_tactical_goal` (`:1680`) still rolls the goal in raw κ, so `model_action_units="steer"` converts one side and makes the turn ONE ULP worse. Convert both sides or neither. Blocks R21's cut-over decision.
+- **R27 — the cost's TIME units**: `_cost_chunk` consumes the 2.0 s plan on the 0.6 s tactical clock and imagines 6.0 s, while the goal is subsampled correctly. Also: T4 (`target_speed`) is dead code — three live terms, not four.
+- **R28 — THE LEVER (training, not planning): the tactical decoder.** It asks for a turn on 0 of 27 human-turn windows (incumbent; ep2 0.333) and the goal it emits IS the cv rollout on 79–92 % of windows. A planner cannot search for a turn it is never asked to make. This is repair R4 of the package and the highest -value refav1 item; it needs a pre-registration (`TanitAD_ValidateAIDesign`).
+- **R29 — the cosine cost is float32-saturated along κ** (2.00 ULPs median vs 167.5/19,804 along `a`; the shipped winning cost takes six distinct values over 140 windows, some negative). Package repair R2 proposes the chord distance `‖ẑ−ĝ‖`, monotone-equivalent, taking κ from ~2 to ~10⁷ representable steps.
