@@ -446,6 +446,19 @@ def main(argv=None) -> int:
                          "loose default and surviving at 0.5. v1 rolls 30 "
                          "steps with full-chain gradient through an 80 M "
                          "predictor — consider 0.5 for the first real arm.")
+    # ⭐ bf16 OVERFLOW GUARD (D-REFAV1-SKIP-NONFINITE, 2026-09-03). MEASURED on
+    # the clean epoch (Thor, --precision bf16 --tf32): two gradient-overflow
+    # events in 3,750 steps — row 900 pre-clip norm 2.5e18, row 2750 `inf`
+    # (batch loss 1.28 → 2.26 on the next row, ~150 steps to recover) — where
+    # the fp32 incumbent's 900 rows peaked at 4.3. `clip_grad_norm_` on an
+    # `inf` total norm scales every gradient by 0 (finite elements → 0, an
+    # `inf` element → NaN), and the optimizer then steps anyway. Default OFF:
+    # the pre-flag trainer stays byte-identical (test_refa_v1_precision.py).
+    ap.add_argument("--skip-nonfinite", action="store_true",
+                    help="skip the optimizer step (and count it) when the "
+                         "pre-clip gradient norm is non-finite; the batch is "
+                         "dropped instead of applied. GradScaler semantics "
+                         "for bf16, which has no scaler.")
     # --- Drive-JEPA-adapted multimodal proposals (2026-09-01) --------------- #
     ap.add_argument("--w-aux-head", type=float, default=0.0,
                     help="imitation weight on the proposal head (WTA over "
@@ -536,6 +549,7 @@ def main(argv=None) -> int:
     opt = torch.optim.AdamW(
         [{"params": adapter_p, "lr": a.lr * a.adapter_lr_mult},
          {"params": rest_p, "lr": a.lr}], weight_decay=0.01)
+    n_skipped = 0   # --skip-nonfinite event counter (logged in every row)
 
     if a.smoke:
         data = SmokeData(cfg, a.bs)
@@ -655,7 +669,16 @@ def main(argv=None) -> int:
         opt.zero_grad(set_to_none=True)
         loss.backward()
         gnorm = nn.utils.clip_grad_norm_(model.parameters(), a.clip)
-        opt.step()
+        if a.skip_nonfinite and not bool(torch.isfinite(gnorm)):
+            # the clip has already scaled the grads by 0 (and any inf element
+            # to NaN): drop them, count the event, leave the weights alone.
+            n_skipped += 1
+            opt.zero_grad(set_to_none=True)
+            print(f"[refav1] step {step}: NON-FINITE pre-clip grad norm "
+                  f"({float(gnorm)}) — optimizer step SKIPPED "
+                  f"({n_skipped} skipped so far)", flush=True)
+        else:
+            opt.step()
         # EMA teacher follows the student AFTER the optimizer step, on the
         # linear decay schedule over the whole run (I-JEPA 2301.08243).
         ema_decay = (model.ema_update(step, a.steps)
@@ -695,6 +718,10 @@ def main(argv=None) -> int:
                    # TEACHER's targets, and this is the decay that moved it.
                    "ema_decay": ema_decay,
                    "clip": a.clip,
+                   # --skip-nonfinite: optimizer steps dropped so far (0 and
+                   # absent-in-effect when the flag is off; the row still
+                   # carries it so a run's event count is readable).
+                   "skipped_steps": n_skipped,
                    # ⭐ THE REALISED LADDER, IN EVERY ROW. The horizon a level
                    # actually trains on is now readable from the log instead of
                    # inferred from the config — which is how a strategic rung
