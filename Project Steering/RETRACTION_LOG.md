@@ -11334,3 +11334,11 @@ carrying a MEASURED stamp it did not earn.
 **Root-cause class: A PLAUSIBLE DECOMPOSITION SUBSTITUTED FOR A MEASURED ONE.** Each factor I named was real and separately measured; the ORDERING and the SHARES were mine, and I stated them as a reading rather than a hypothesis. The register text hedged with “NOT measured here”, and the very next sentence commissioned the measurement — which is why this cost nothing and was caught in four hours. **The rule this earns: naming the factors is not apportioning them. A share is a number or it is not stated — and a decomposition offered without shares must say which factor could be zero.** Mine could, and was.
 
 ⭐ Worth recording beside it: the steer/curvature contract is still CORRECT (the geometry over-rotated by 2.9× and the PI sited its repair correctly) and is now measured to be IRRELEVANT to the flat plan. A fix can be right and not be the lever.
+
+# 2026-09-03 (#8) — “the run's lowest traj” (refcv3 in-training eval)
+
+**Corrected:** `D-REFCV3-19K` and `D-REFCV3-21K` headlined the 19,000 and 21,000 evals as “the run's lowest traj”. The number is right and the words are not: `eval_traj` scores the anchor chosen by `dist.argmin` — the one NEAREST THE GROUND TRUTH — while the model's own choice agrees on 57 % of windows, and the quantity is a mean L1 per coordinate, not an ADE. It is a loose LOWER BOUND on what refcv3 would drive.
+
+**Root-cause class: TRUE BUT WRONG FOR THE READER, in a metric's NAME.** `traj` reads as “trajectory error” and I quoted it three times as though it tracked driving quality. Nothing in the number was wrong; the reader I was writing for would have drawn a conclusion the metric cannot support. **Rule: before a metric appears in a headline, read the LINE THAT COMPUTES IT and state in the same sentence what it is selected on and what norm it uses.** An oracle-selected quantity carries the word ORACLE every time it is quoted.
+
+⚠️ Banked beside it, a tooling trap that nearly hid a verification: **`Select-String -Path` on this mount silently returned 0 hits for markers that WERE present; `-LiteralPath` found all of them.** Caught only because two probes disagreed. `grep` already under-reports here; the second probe must now differ in its PATH-BINDING too, not merely in its tool.
