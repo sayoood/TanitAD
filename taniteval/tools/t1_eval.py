@@ -145,6 +145,13 @@ STATIONARY_DS = 0.05   # m — analyze_cl's fixed step-displacement gate
 DEFAULT_TIERS = {
     "cl": "T1", "c16": "T1", "c6": "T1",
     "ha": "T1", "h16": "T1",
+    # ⭐ ha0 (2026-09-03, D-REFAV1-HA0-ARM): constant velocity at the MEASURED v0
+    # (a = 0, kappa = 0). Like `ha` it consumes no recorded future, so it belongs
+    # in the T1 battery — and it is the STRONGER trivial baseline: `ha` holds the
+    # last observed (a, kappa), which on this corpus drifts 0.12 m even where the
+    # human drives straight, so an arm can beat `ha` by doing nothing at all.
+    # MEASURED that day: refav1's closed loop IS this arm on 140/140 windows.
+    "ha0": "T1",
     "ol": "T0", "o16": "T0", "o6": "T0",
 }
 _TIER_NOTE = {

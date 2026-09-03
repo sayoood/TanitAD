@@ -200,3 +200,7 @@ that all lands before S-W's first gate.
 - **R38 — PARTLY STRUCK**: the seed reproduces its goal 64/64 at 0.000° under `goal_time_grid="plan"` (default OFF). What remains is the DESIGN half — see R34.
 - **R41 — the cost repair is now the critical path, and the chord is NOT optional.** Only one configuration ranks a turn at shipped weights (L0 identity + chord + steer units) and it is 4 episodes of one token; the κ² weight that would tip the shipped cost is 1.66e-08, a deletion. Land the chord WITH L4, on the tiny ladder, per `PREREG_TACTICAL_DECODER.md` §5.
 - **R42 — scope note on `D-REFAV1-BOUNDARY-NULL`**: the steer conversion wins nothing under the SHIPPED cost but is NECESSARY under the only cost that ranks a turn. Any future statement of its value must name the cost it is measured under.
+
+## Added 2026-09-03 10:20 Berlin
+
+- **R13 — STRUCK**: `"ha0": "T1"` is in `t1_eval.DEFAULT_TIERS`; a standalone read no longer aborts after the rollout, and the constant-velocity floor is present by default.
