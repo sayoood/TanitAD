@@ -156,7 +156,11 @@ DEFAULT_TIERS = {
 }
 _TIER_NOTE = {
     "T0": "teacher-forced — prediction quality only, NEVER driving performance",
-    "T1": "action-closed loop (imagination) — the PRIMARY offline tier",
+    # ⛔ NOT "closed loop" — PI ruling 2026-09-02. The predictor consuming its
+    # own planner's actions is STILL OPEN LOOP: the trajectory does not affect
+    # the ego data, which keeps arriving from the eval recording. TRUE closed
+    # loop needs the trajectory to DRIVE the vehicle (AlpaSim / a real vehicle).
+    "T1": "self-action OPEN loop (imagination) — the PRIMARY offline tier; the model does NOT control the vehicle",
 }
 _FAN_SUFFIXES = ("_fan_err", "_sel_idx", "_fan_scores")
 # Per-episode metadata written beside the arms. NOT arms: they carry no

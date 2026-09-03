@@ -11370,3 +11370,45 @@ carrying a MEASURED stamp it did not earn.
 **Corrected:** I banked that ratio in `D-ACTDIV-ANCHORED-REFAV1` and repeated it in three briefs. Under the STEER convention — which is the one the model is actually trained on — it reads **1/107th to 1/14th** (0.00935 and 0.06966, ×2.84 and ×2.77 the banked values). And the qualifier was wrong on its own terms: 0.1 rad/m is **6.09 σ** on the curvature axis against 2.02 σ on the acceleration axis, so the two were **never compared at matched σ** in the reading I published.
 
 **Root-cause class: A UNIT CONVENTION INHERITED THROUGH AN INVARIANCE ARGUMENT THAT WAS NEVER TESTED.** The original package argued — correctly — that SEPARATION is invariant under a monotone reparametrisation, and I let that carry every OTHER number in the same table. Separation is invariant; a ratio of magnitudes at fixed nominal levels is not. **Rule: an invariance argument licenses exactly the statistics it is stated for. Every other number in the table must be re-derived in the convention it will be quoted in, or quoted with its convention attached.** The fix is cheap and general: σ-matched comparisons ARE convention-invariant (the arctan map is within 0.23 % of identity at ≈ 2σ), so state levels in σ, not in raw units.
+
+# 2026-09-02 (#13) — "T1 is the action-CLOSED loop tier" (the whole programme's tier vocabulary)
+
+**Corrected by the PI, not by us.** Every tier table, arm spec and report we have
+written calls T1 "action-closed loop". The PI ruled, verbatim: *"The open loop
+performance corresponds n my understanding to the fact that the ai model (does not
+matter refav1 or refcv3) is not controlling the vehicle in the world. The fact that
+the predictor is consuming the output of the planner of the World model based system
+is also opne loop because the trajectory of the model is not affecting the new ego
+data (this will be fed from the eval ego data). Closed llop means that the trahectory
+is controlling th evehicle in the simulation, this cabn be done e.g. in Alpasim or in
+a real test vehicle"*.
+
+**Root-cause class: A LOOP CLOSED IN THE WRONG PLACE.** We closed the loop from the
+planner back into the *predictor* and called that closed loop. The loop that defines
+the term runs through the *world*: the trajectory moves the vehicle, the vehicle sees
+something new, and the new observation is a consequence of the model's own output. In
+our harness the ego data keeps arriving from the eval recording no matter what the
+model does — so the world never answers, and the loop is open. The name was measuring
+where the data flowed inside our code instead of whether the model was driving.
+
+**What is now binding**
+- T0 and T1 are BOTH open loop. T1's name is **self-action open loop**.
+- We have published **NO closed-loop number** under the correct definition. Every
+  figure we have ever called closed-loop — including the 1.7318 m in the deprecated
+  vocabulary row — is a self-action open-loop figure.
+- TRUE closed loop requires AlpaSim or a real test vehicle. Feasibility is being
+  established in `Project Steering/CLOSED_LOOP_FEASIBILITY_2026-09-03.md`.
+
+⭐ **What this REPAIRS rather than breaks.** I had an open question to the PI asking
+whether refav1's `cl` arm and refcv3's `os` arm were comparable at all, given that one
+is autoregressive and the other one-shot. Under the correct definition the question
+dissolves: **both are open loop**, both are handed the same recorded ego data, and
+neither controls anything. They are directly comparable as open-loop trajectory
+predictions, and the comparison the PI asked for is legitimate. The one thing that
+must change is the word on the axis label.
+
+⚠️ **Not yet propagated.** This entry and the corrections to `VOCABULARY.md` and
+`taniteval/tools/t1_eval.py` are the first pass. `REFAV1_ARM.md`, `REFCV3_ARM.md`,
+`EVAL_DOCTRINE`, the banked reports and the registry rows still carry the old word;
+they are being swept. Until the sweep lands, read "closed loop" in any TanitAD
+document dated before 2026-09-02 as "self-action open loop".

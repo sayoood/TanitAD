@@ -21,12 +21,15 @@ terms VERBATIM — no synonyms, no drift.`
 | term | meaning | since |
 |---|---|---|
 | **4B** | the four-brain hierarchy: operative / tactical / strategic / (context) | phase 0 |
-| **T0 / T1 / T2** | eval tiers: teacher-forced WM diagnostic / action-closed loop (PRIMARY) / re-perception sim | EVAL_DOCTRINE |
+| **T0 / T1 / T2** | eval tiers, ALL THREE OPEN LOOP except T2-sim: teacher-forced WM diagnostic / self-action open loop (PRIMARY offline) / re-perception sim | EVAL_DOCTRINE, corrected 2026-09-02 |
+| **OPEN LOOP** | the model is NOT controlling the vehicle: its trajectory does not affect the ego data it is next fed. ⚠️ A planner whose own output is consumed by its own predictor is STILL OPEN LOOP — the recorded eval ego data keeps arriving regardless. Covers T0, T1 and every arm in `taniteval` today. | PI ruling 2026-09-02 |
+| **CLOSED LOOP** | the model's trajectory CONTROLS the vehicle, so the next observation and the next ego state are consequences of the model's own output. Requires a simulator that re-renders (AlpaSim) or a real test vehicle. ⛔ We have published NO closed-loop number under this definition. | PI ruling 2026-09-02 |
+| **self-action open loop** | the former (mis)name "action-closed loop": the predictor consumes the planner's own actions, but the world does not respond. This is T1. Use this name, never "closed loop". | 2026-09-02 |
 | **parity key** | `physicalai-train-e438721ae894`, 2376 eps, skip-hash `f09e44db` — the canonical corpus identity | phase 0 |
 | **EM (explained movement)** | 1 − ‖ẑ−z⁺‖²/‖z−z⁺‖² vs the HOLD baseline | 2026-08-22 |
 | **HOLD** | the predict-no-change baseline | 2026-08-22 |
 | **collapse (dimensional)** | representation variance concentrated in few directions; measured by PARTICIPATION (σ²), never effective_rank(σ) alone | C132 |
-| **participation (ratio)** | (Σλ)²/Σλ² on covariance eigenvalues — THE collapse statistic; floor 8.56 (frozen DINOv3, measured on our frames) | C132 |
+| **participation (ratio)** | (Σλ)²/Σλ² on covariance eigenvalues — THE collapse statistic. ⛔ The absolute floor 8.56 is RETIRED (not reproducible; the corpus it was sourced to reads 5.756) — the gate is "beats a MATCHED reference: same corpus, same episode count, same ambient d" | C132, floor retired 2026-08-23 |
 | **decodability** | linear/probe recovery of world state (ego speed/yaw/d_ego; detection AP) above the pixel floor AND the constant control | 2026-08-22 |
 | **rank AND decodability** | the pass condition for a representation; rank alone admits v1 (C131) | C131 |
 | **the pixel floor** | raw pooled frames as a feature baseline; a learned representation below it has added nothing | 2026-08-22 |
@@ -54,7 +57,7 @@ terms VERBATIM — no synonyms, no drift.`
 |---|---|---|
 | "Research Hub" (agent rotation) | TanitAD Research Lab | 2026-08-22 |
 | effective_rank as the collapse gate | participation ratio (σ²) | C132 |
-| "the 0.452 m driving result" | `wm_fidelity_ade_2s` (T0 WM fidelity; closed-loop is 1.7318) | C131 |
+| "the 0.452 m driving result" | `wm_fidelity_ade_2s` (T0 WM fidelity; the 1.7318 figure is the SELF-ACTION OPEN LOOP arm, not closed loop — see the 2026-09-02 ruling) | C131 |
 
 ## ⛔ "anchor" is AMBIGUOUS — say which one (TrainingFlyWheel find, MM ruling, 2026-08-29)
 
