@@ -171,7 +171,7 @@ That is the whole distinction, and it is exactly the phase-0 "safety-grade half"
 
 | not available | why, from source |
 |---|---|
-| **Off-road / drivable-area departure rate** | There is **no map in the harness at all** — `grep -iE "xodr\|off_road\|offroad\|drivable"` over `closedloop_drive.py`, `cl_metrics.py`, `actor_map.py` returns **zero hits**. (NuRec scenes ship a `map.xodr`, and a research package read it — but **it is not wired into this harness**.) `route_corridor_departure_rate` is a **corridor around the logged path**, not a lane or a road edge. |
+| **Off-road / drivable-area departure rate** | There is **no map in the harness at all** — `grep -iE "xodr\|off_road\|offroad\|drivable"` over `closedloop_drive.py`, `cl_metrics.py`, `actor_map.py` returns **zero hits**. (NuRec scenes ship a `map.xodr`, and a research package read it — but **it is not wired into this harness**.) `route_corridor_departure_rate` is a **corridor around the logged path**, not a lane or a road edge — verified at source: `cl_metrics.py:386` is literally `int(abs(ct) > CORRIDOR_M)` on the **cross-track distance to the logged trajectory**. A model that departs the corridor may be perfectly on-road, and one that stays inside it may be off-road; the metric cannot tell. |
 | **A real collision rate** | The only collision metric is `synth_lead_collision_rate_inlane` (`cl_metrics.py:634`) — a **geometric headway ≤ 0 test, lane-gated**, against a **scripted** lead. Its ungated sibling is literally named `synth_lead_collision_rate_UNGATED_DO_NOT_QUOTE` (`:632`) because 13 of flagship-v1/cutin's "collisions" had **median \|y\| 13.795 m**, i.e. 0 % in-lane (`:409-414`). The bicycle has **no collision response**: it drives straight through everything. |
 | **Anything involving a REACTIVE agent** | Actors are **replayed** from the log or **synthesised** on a fixed script (`actor_map.py`, `synth_actor.py`). Nothing brakes, yields, or swerves because of us. So no right-of-way, no negotiation, no merge, no induced-collision measurement. |
 | **Absolute rates of any kind** | ⛔ **WITHIN-SIM RELATIVE**, stated in the artifact's own `within_sim_note`: REF-C open-loop ADE **1.5157** on these reconstructions vs **0.4728** on real footage — **3.21× OOD**. Orderings survive; absolute rates do not. |
@@ -398,25 +398,26 @@ bootstrap, the honest verdict is *"the arms are indistinguishable in closed loop
 
 | artifact | where it lives | only one place? |
 |---|---|---|
-| This document | `repo:Project Steering/CLOSED_LOOP_FEASIBILITY_2026-09-03.md` — **STAGED** on `agent/arch-inf-20260803`, blob-verified (index blob == `git hash-object` of the worktree file). ⚠️ **NOT committed** — see the blocker below. | no |
+| This document | `repo:Project Steering/CLOSED_LOOP_FEASIBILITY_2026-09-03.md` — **committed on `agent/arch-inf-20260803`** via `stack/scripts/scoped_commit.py`, and **verified scoped: `1 file changed`**, no sibling work swept. Not pushed; not on `main`. | no |
 
-⚠️ **COMMIT BLOCKED, and the blocker is worth recording as its own finding.**
-`stack/scripts/scoped_commit.py` fails at `git read-tree HEAD -> 128` on
-`fatal: Unable to create '.git/scoped-commit-index.lock': File exists`. The lock is **0 bytes** and
-**no `scoped_commit` process is alive** — but **both `rm` and `mv` on it fail with `Device or
-resource busy`**, i.e. a live handle is held by one of the **59 orphaned `git.exe` processes**
-currently on this box. That is the poisoned-file class CLAUDE.md already documents for
-`.git/COMMIT_EDITMSG`, reproduced here on the scratch-index lock.
-⛔ **A pathspec-free `git commit -F` is NOT an acceptable fallback here**: the shared index holds
-**19 entries, 18 of which are another agent's live work** (`…/2026-09-03-cost-repair/`,
+⚠️ **One operational note worth recording, because it will recur on this mount.**
+The first two `scoped_commit.py` attempts died at `git read-tree HEAD -> 128` on
+`fatal: Unable to create '.git/scoped-commit-index.lock': File exists` — and **both `rm` and `mv` on
+that 0-byte lock failed with `Device or resource busy`** while **no `scoped_commit` process was
+alive**: a handle held by one of the **59 orphaned `git.exe` processes** on this box. That is the
+poisoned-file class CLAUDE.md documents for `.git/COMMIT_EDITMSG`, reproduced on the scratch-index
+lock. It cleared on its own; the third attempt succeeded after **~13 minutes** of `read-tree` over
+8 952 files on the `G:` mount. ⇒ **Budget minutes, not seconds, for `scoped_commit` here, and do not
+kill git processes to "unblock" it** — that is the intervention that caused the previous index
+corruption on this mount.
+⛔ **A pathspec-free `git commit -F` would NOT have been an acceptable fallback**: the shared index
+held **19 entries, 18 of them another agent's live work** (`…/2026-09-03-cost-repair/`,
 `stack/tanitad/refs/refa_v1.py`, `Project Steering/MODEL_REGISTRY.md`,
-`taniteval/tools/ref{a,c}v3_arm.py`, …). Committing the whole index would sweep them under this
-message — the exact failure CLAUDE.md records having happened twice. **The shared `.git/index.lock`
-is absent and the staged state is intact**, so nothing is at risk by waiting.
-⇒ **Whoever can quiesce the repo should clear `.git/scoped-commit-index.lock` and re-run the scoped
-commit.** Killing 59 `git.exe` processes mid-flight with several agents live is precisely the
-intervention that caused the previous index corruption on this mount, so it is deliberately **not**
-done here.
+`taniteval/tools/ref{a,c}v3_arm.py`, …). Committing the whole index would have swept them under this
+message — the exact failure CLAUDE.md records having happened twice. **`scoped_commit` is the right
+tool precisely because it refuses that.**
+⚠️ **HEAD moved under me mid-turn** (another agent landed `76143cd` while I worked), which is the
+documented normal state here — re-verified staging at the end of the turn rather than trusting it.
 | Host probe outputs | quoted inline in §§1-9; every probe is read-only and reproducible from the commands named there | n/a — no host artifacts created |
 | Code changes | **none.** No file was modified; no harness was patched; no render was started. | n/a |
 
