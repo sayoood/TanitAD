@@ -155,11 +155,12 @@
     "rollout-composition",
     "world-model"
    ],
-   "note": "DINO-WM: frozen DINOv2 PATCH features + latent L2 + CEM/MPC; CLS/global ablation degrades badly | DINO-WM: one-step teacher-forced predictor (frameskip 1-5), multi-step ONLY by autoregressive composition at plan time (CEM/MPC receding horizon)",
+   "note": "DINO-WM: frozen DINOv2 PATCH features + latent L2 + CEM/MPC; CLS/global ablation degrades badly | DINO-WM: one-step teacher-forced predictor (frameskip 1-5), multi-step ONLY by autoregressive composition at plan time (CEM/MPC receding horizon) | RE-READ 2026-09-03: frozen DINOv2 PATCH tokens + trained ViT predictor + CEM; Table 2 Push-T success / Rope chamfer: patch 0.90 / 0.41 vs CLS 0.44 / 0.84, R3M 0.42 / 1.13, ResNet 0.20 / 1.08 - the pooled feature loses what planning needs",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-18-frozen-encoder-literature/FROZEN_ENCODER_LITERATURE.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-29-ema-warmup-rollout-composition/RESULT.md",
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-t1-floor-action-sensitivity/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-t1-floor-action-sensitivity/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-decodability/RESULT.md"
    ]
   },
   "2502.00622": {
@@ -223,12 +224,15 @@
     "planning",
     "world-model"
    ],
-   "note": "V-JEPA 2 / 2-AC: frozen video ViT + compact action-conditioned predictor on <62h Droid, MPC to a goal image | V-JEPA2-AC: teacher-forcing + rollout loss with T=2 (one recurrent step of gradient); error accumulation over long rollouts acknowledged verbatim",
+   "note": "V-JEPA 2 / 2-AC: frozen video ViT + compact action-conditioned predictor on <62h Droid, MPC to a goal image | V-JEPA2-AC: teacher-forcing + rollout loss with T=2 (one recurrent step of gradient); error accumulation over long rollouts acknowledged verbatim | RE-READ section 3.1 2026-09-03: V-JEPA 2-AC = frozen ViT-g (16x16x1408 feature maps) + 300M time-causal predictor; actions = change in end-effector state between adjacent frames (realised motion); L = teacher-forcing L1 + rollout loss with T=2, 'only differentiate the predictor through one recurrent step'; no action-sensitivity metric",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-18-frozen-encoder-literature/FROZEN_ENCODER_LITERATURE.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-29-ema-warmup-rollout-composition/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-data-efficiency-thesis/RESULT.md",
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-t1-floor-action-sensitivity/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-t1-floor-action-sensitivity/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-decodability/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-drift/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-encoder/RESULT.md"
    ]
   },
   "2509.11417": {
@@ -278,13 +282,16 @@
    "sha256": "bd97804862ae0da306c5406ef76d59003b425dc5c44921d2653ac6029451151c",
    "banked": "2026-08-18",
    "tags": [
-    "frozen-encoder",
     "driving",
-    "e2e-planning"
+    "e2e-planning",
+    "frozen-encoder",
+    "sota-2026-09-03",
+    "sota-2026-09-03-encoder"
    ],
-   "note": "FROST-Drive: frozen 14B VLM 8.17 RFS BEATS the same encoder fine-tuned 8.13; frozen ImageNet ViT is the WORST arm 7.39",
+   "note": "FROST-Drive: frozen 14B VLM 8.17 RFS BEATS the same encoder fine-tuned 8.13; frozen ImageNet ViT is the WORST arm 7.39 | FROST-Drive: E2E driving with a frozen vision encoder; frozen beats fine-tuned 14B VLM (to verify) | RE-READ 2026-09-03: Table 3 rows - ViT (ImageNet) 7.39, ViT fine-tuned 7.79, VLM 14B fine-tuned 8.13 / ADE@3s 1.47, VLM 14B frozen 8.17 / 1.04, VLM 38B 8.17, VLM 78B 8.24; embedding width 256 -> 7.68; fine-tuning HURTS a strong trunk and HELPS a weak one",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-18-frozen-encoder-literature/FROZEN_ENCODER_LITERATURE.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-18-frozen-encoder-literature/FROZEN_ENCODER_LITERATURE.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-encoder/RESULT.md"
    ]
   },
   "2602.04880": {
@@ -476,9 +483,12 @@
    "tags": [
     "world-model"
    ],
-   "note": "LeWorldModel (LeWM): FIRST JEPA trained stably END-TO-END FROM PIXELS with only TWO loss terms - next-embedding prediction + Gaussian latent regularizer. 6 loss hyperparams -> 1. ~15M params, single GPU, hours. Plans up to 48x faster than foundation-model WMs. Latent PROBED for physical quantities; surprise eval detects implausible events. THE paper the TanitAD trained-WM track follows.",
+   "note": "LeWorldModel (LeWM): FIRST JEPA trained stably END-TO-END FROM PIXELS with only TWO loss terms - next-embedding prediction + Gaussian latent regularizer. 6 loss hyperparams -> 1. ~15M params, single GPU, hours. Plans up to 48x faster than foundation-model WMs. Latent PROBED for physical quantities; surprise eval detects implausible events. THE paper the TanitAD trained-WM track follows. | RE-READ 2026-09-03: two-term loss (prediction + SIGReg lambda 0.1, M 1024), ViT-tiny 5M encoder + 10M predictor, explicitly NO stop-gradient and NO EMA; ~200x fewer tokens and ~50x faster planning than DINO-WM; Fig 6 vs DINO-WM/PLDM read from bars (INHERITED); VoE surprise; SIGReg weak in low-dim envs",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-19-simwam-analysis/LEWM_VS_OURS.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-19-simwam-analysis/LEWM_VS_OURS.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-decodability/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-drift/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-encoder/RESULT.md"
    ]
   },
   "2411.15139": {
@@ -649,9 +659,10 @@
    "tags": [
     "world-models"
    ],
-   "note": "Sub-JEPA: SIGReg's isotropic-Gaussian prior in the FULL embedding space is an overly strong bias because latents live on low-dim manifolds; applies Gaussian constraints over multiple RANDOM SUBSPACES instead. Beats LeWM on 4 continuous-control envs. Directly relevant: our v6F latent sits at effective rank 5.86 in d=2048.",
+   "note": "Sub-JEPA: SIGReg's isotropic-Gaussian prior in the FULL embedding space is an overly strong bias because latents live on low-dim manifolds; applies Gaussian constraints over multiple RANDOM SUBSPACES instead. Beats LeWM on 4 continuous-control envs. Directly relevant: our v6F latent sits at effective rank 5.86 in d=2048. | RE-READ 2026-09-03: K frozen row-orthonormal projections with SIGReg per subspace (K=32, Push-T 16); Table 1 (6 seeds) LeWM 84.33/82.67/84.67/67.33 -> 95.00/84.00/89.00/76.33; Table 2 Push-T collapses at K=32 (28.00); Table 3 random-frozen 53.00/68.00/13.33/61.00, trainable-ortho 61.67/82.67/57.00/70.33; Fig 5 open-loop rollout to t=95 LeWM drifts, Sub-JEPA holds - QUALITATIVE, no drift number",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-19-simwam-analysis/V7_TINY_RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-19-simwam-analysis/V7_TINY_RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-drift/RESULT.md"
    ]
   },
   "2510.12796": {
@@ -706,11 +717,14 @@
    "sha256": "28912665a8316b8545a1c5918465f8959dfd8a71114fcb35299d9220721ad5ab",
    "banked": "2026-08-23",
    "tags": [
-    "anti-collapse"
+    "anti-collapse",
+    "sota-2026-09-03",
+    "sota-2026-09-03-decodability"
    ],
-   "note": "Global non-collapse is INSUFFICIENT: names 3 dynamics-collapse modes (invariance/identifiability/counterfactual) invisible to rank - independent convergence with our rank-AND-decodability gate (C131)",
+   "note": "Global non-collapse is INSUFFICIENT: names 3 dynamics-collapse modes (invariance/identifiability/counterfactual) invisible to rank - independent convergence with our rank-AND-decodability gate (C131) | PhyLatent: dynamics-relevant representations (to verify) | READ IN FULL 2026-09-03: three dynamics-collapse modes on LeWM/Cube (Table 1): invariance 15.60%, identifiability 6.71%, counterfactual r_cf<0.5 8.41% -> PhyLatent 7.53/0.95/4.62; success 70.00 -> 78.10 (Table 5; w/o PSG+FRA 74.00, w/o SVIC 77.00, w/o CASC+LD 73.33); TwoRooms 81 -> 98, PushT 77.67 -> 75.33; needs simulator physical targets",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/2026-08-22-lab-run-001/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/2026-08-22-lab-run-001/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-decodability/RESULT.md"
    ]
   },
   "2607.08029": {
@@ -1905,12 +1919,16 @@
    "banked": "2026-08-25",
    "tags": [
     "action-conditioning",
-    "closed-loop-wm"
+    "closed-loop-wm",
+    "sota-2026-09-03",
+    "sota-2026-09-03-action"
    ],
-   "note": "ActSWM: names our failure CONTEXT COLLAPSE (rollouts insensitive to actions while matching future states); diagnoses it with a recorded-vs-ZERO-action gap = our zero_sa; fix = HINGE loss on rollout separation + a RANDOMLY-INITIALISED FROZEN action readout on [z_t,z_t+1] whose loss backprops through the LATENT INPUTS (so it shapes the ENCODER, unlike our O11 which only touched the predictor FiLM); AND independently reproduces our O11 degeneracy - a JOINTLY TRAINED readout raised separation while fidelity fell 0.972->0.698",
+   "note": "ActSWM: names our failure CONTEXT COLLAPSE (rollouts insensitive to actions while matching future states); diagnoses it with a recorded-vs-ZERO-action gap = our zero_sa; fix = HINGE loss on rollout separation + a RANDOMLY-INITIALISED FROZEN action readout on [z_t,z_t+1] whose loss backprops through the LATENT INPUTS (so it shapes the ENCODER, unlike our O11 which only touched the predictor FiLM); AND independently reproduces our O11 degeneracy - a JOINTLY TRAINED readout raised separation while fidelity fell 0.972->0.698 | ActSWM: action-conditioning collapse named; counterfactual rollout comparison as the sensitivity metric (to verify) | READ IN FULL 2026-09-03: Table 5 step-31 cos GT/zero/gap on LeWM: H3 0.239/0.244/-0.005, H32+rollout 0.972/0.970/0.002, +frozen random readout 0.698/0.106/0.592, ActSWM hinge+readout 0.923/0.163/0.760; hinge max(0, cos-(1-m)) lambda 0.5 m 0.3 K 12, readout lambda 1.0 on [z_t,z_t+1] encoded AND predicted; Minecraft 10/20 -> 19/20 (Table 8); prediction levers leave the gap at 0",
    "cited_by": [
     "Project Steering/GOALS_AND_CLAIMS.md",
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-t1-floor-action-sensitivity/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-t1-floor-action-sensitivity/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-action/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-drift/RESULT.md"
    ]
   },
   "2412.05337": {
@@ -2117,11 +2135,16 @@
    "banked": "2026-08-27",
    "tags": [
     "jepa-driving",
+    "sota-2026-09-03",
+    "sota-2026-09-03-decodability",
     "world-models"
    ],
-   "note": "Latent-WAM: distilled-foundation latent + causal transformer WM, 89.3 EPDMS NAVSIM v2 perception-free | Latent-WAM: spatially-aware compressive world encoder + dynamic latent world model for E2E driving",
+   "note": "Latent-WAM: distilled-foundation latent + causal transformer WM, 89.3 EPDMS NAVSIM v2 perception-free | Latent-WAM: spatially-aware compressive world encoder + dynamic latent world model for E2E driving | Latent-WAM: latent world-action modeling for E2E driving; what its latent is probed for (to verify) | RE-READ 2026-09-03: DINOv2 backbone FULLY fine-tuned with geometric distillation, EMA target encoder, 16 learnable query tokens per view (attention on lane markings); Table 4 w/o geometric feature 88.3, frozen-feature concatenation 88.0, distillation 89.3; Table 5 Small 86.3, Small-LoRA 84.7, Base-LoRA 68.5 (Base full 89.3); NO frozen-backbone row; Table 6 stride 88.4/89.3/89.1",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-27-jepa-driving-survey/JEPA_DRIVING_SURVEY.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-decodability/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-drift/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-encoder/RESULT.md",
     "TanitAD Research Lab/Frontier Scan/Daily/2026-08-31/RESULT.md"
    ]
   },
@@ -5687,9 +5710,11 @@
     "A2_jepa",
     "closed-loop-wm"
    ],
-   "note": "Delta-JEPA: diagnoses action-insensitivity in JEPA latent world models and predicts latent DIFFERENCES rather than absolute next-latents",
+   "note": "Delta-JEPA: diagnoses action-insensitivity in JEPA latent world models and predicts latent DIFFERENCES rather than absolute next-latents | READ IN FULL 2026-09-03: LDAD decodes a_t from dz=z_{t+1}-z_t (two ENCODER outputs), ViT-Tiny from scratch; lambda=0 nearly collapses, 50 best (Fig 3); Table 1 Delta-JEPA 100/81.33/89.07/79.27 vs LeWM 74.93/79.87/84.53/64.13; Table 2 dz beats concat +4.07/+1.07/+12.60/+0.67; Table 3 realised end-effector decode target 64.93 vs raw action 81.33; Table 5 dx-from-dz linear r 0.992 vs LeWM 0.765",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-t1-floor-action-sensitivity/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-decodability/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-encoder/RESULT.md",
     "TanitAD Research Lab/Frontier Scan/Daily/2026-09-02/RESULT.md"
    ]
   },
@@ -5714,12 +5739,16 @@
    "banked": "2026-08-30",
    "tags": [
     "closed-loop-wm",
-    "data-efficiency"
+    "data-efficiency",
+    "sota-2026-09-03",
+    "sota-2026-09-03-action"
    ],
-   "note": "",
+   "note": "What makes video world-model latents action-relevant: prediction over reconstruction (to verify) | READ IN FULL 2026-09-03: inverse-dynamics objective on FROZEN features multiplies action-relevant R2 (MLP probe, LIBERO task-OOD, 3 seeds): V-JEPA 2 ViT-L 0.40 -> 0.85, V-JEPA 2.1 ViT-B 0.44 -> 0.82, VideoMAE 0.46 -> 0.75, Web-DINO ViT-L -0.01 -> 0.16, SigLIP2 0.05 -> 0.17, Dreamer 4 -0.04 -> -0.04; ID is a multiplier on temporal-predictive structure; L1 inverse 0.629 > forward dynamics 0.408 > temporal contrastive 0.073; k-step ID peaks k=4; action-conditioning paradox Table 6: actions into the trunk drop R2 0.26 -> -0.32; actions are realised end-effector deltas",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-data-efficiency-thesis/RESULT.md",
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-t1-floor-action-sensitivity/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-t1-floor-action-sensitivity/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-action/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-encoder/RESULT.md"
    ]
   },
   "1604.04004": {
@@ -5764,11 +5793,15 @@
    "sha256": "a1777d8a809f803ebfe90bf5245ddcd633bb0cfa1e96b2055424b7599949d8a5",
    "banked": "2026-08-30",
    "tags": [
-    "closed-loop-wm"
+    "closed-loop-wm",
+    "sota-2026-09-03",
+    "sota-2026-09-03-decodability"
    ],
-   "note": "",
+   "note": "Cloning deterministic worlds: latent geometry and long-horizon world models (to verify) | READ IN FULL 2026-09-03: cloning deterministic worlds - with the TRUE state (oracle) the rollout error stays near zero; a standard reconstruction-trained autoencoder latent accumulates error fast; a temporal-contrastive geometric regulariser closes most of the gap (probe MSE 0.082 -> 0.031); 'the representation geometry, not the dynamics model, is the bottleneck'",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-t1-floor-action-sensitivity/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-t1-floor-action-sensitivity/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-decodability/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-drift/RESULT.md"
    ]
   },
   "2507.09095": {
@@ -6366,10 +6399,14 @@
    "sha256": "57cb755b08952285bb25ff4839e9aa9354318ed2ae07c60f832b257f6d0bb150",
    "banked": "2026-08-30",
    "tags": [
-    "anti-echo-control"
+    "anti-echo-control",
+    "sota-2026-09-03",
+    "sota-2026-09-03-action"
    ],
-   "note": "",
+   "note": "How should world models be evaluated? decision-centric position; defines action sensitivity ratio + counterfactual outcome divergence (to verify) | READ IN FULL 2026-09-03: position paper; L0-L7 evaluation ladder, objective mismatch (logged-future prediction weakly tied to control), interventional do(a), pipeline entanglement with IDM-inferred actions, exploitability gap; defines NO numeric action-sensitivity ratio (grep 0 hits) - cite for the framework only",
    "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-action/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-drift/RESULT.md",
     "TanitAD Research Lab/Benchmarks & Evals/Research/2026-08-30-anti-echo-control-precedent/RESULT.md",
     "TanitAD Research Lab/Opponent Analysis/Research/2026-08-30-anti-echo-control-precedent/RESULT.md"
    ]
@@ -7662,7 +7699,7 @@
    "tags": [
     "v7-gate"
    ],
-   "note": "",
+   "note": "READ IN FULL 2026-09-03: teacher-forced target gives ||H1||/||H0|| = 0.03, counterfactual simulator-rollout targets 1.00+-0.15; Table 2 indicator correct/no-action/shuffled/wrong 0.770/0.733/0.685/0.639 vs LSTM-CF 0.530 flat; Table 3 blind dR2 0.023/0.069/0.091 (k=1/3/5); toy envs; needs a simulator",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-31-command-conditioning-and-l3/RESULT.md"
    ]
@@ -7690,9 +7727,10 @@
    "tags": [
     "v7-gate"
    ],
-   "note": "",
+   "note": "READ IN FULL 2026-09-03: identifiability map (Fig 1, linear-probe R2 as the objective is enriched: prediction-only / +multi-horizon / +cross-modal targets / +fusion vs recoverability certificate): object position 0.04 / 0.89 / 0.97 / 0.98 vs 1.00; mass 0.04 / 0.15 / 0.26 / 0.29 vs 0.86; stiffness -0.02 / -0.01 / 0.46 / 0.50 vs 0.87; drag 0.00 / 0.00 / 0.13 / 0.12 vs 0.89 (blind region). LAZY EQUILIBRIUM: single-step vision-only WMs discard visible predictable state (position 0.04); escapes: cross-modal targets 0.58, multi-horizon action-conditioned heads 0.89, composed 0.98; direct long-horizon heads beat autoregressive composition (0.10 vs 0.19 arena units; static 0.21). Target pressure causal and modality-specific (stiffness 0.40-0.57 as a target vs -0.02 fused vs -0.01 proprio substitute). Force forecast beats persistence only with touch fused AND forecast: VFX 0.39 -> 0.51 held-out, paired episode-bootstrap CIs [+0.01,+0.17] at 800 and [+0.14,+0.28] at 4,258 episodes; camera-only VX -0.05/-0.11/-0.05. SIGReg 60x sweep = monotone dose-response on metric precision (stiffness 0.12 -> 0.57). Certificate gate: a recurrent probe on RAW observations must certify recoverability before any model claim.",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-31-command-conditioning-and-l3/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-31-command-conditioning-and-l3/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-decodability/RESULT.md"
    ]
   },
   "2606.09028": {
@@ -7710,11 +7748,15 @@
    "sha256": "2688b96a620ca7f9d4fc5c48fdef44a20bc2c157179a3825f8ccb73244bfde7e",
    "banked": "2026-08-31",
    "tags": [
+    "sota-2026-09-03",
+    "sota-2026-09-03-action",
     "v7-gate"
    ],
-   "note": "",
+   "note": "ATM: action-consistency transfer matrix — a DIAGNOSTIC for latent WM action use (to verify) | READ IN FULL 2026-09-03: transfer matrix D_TT/D_TP/D_PT/D_PP with 2-layer MLP probes; rho(-L_pred,success) 0.4983 vs rho(-D_TT,success) 0.8130 on Cube; ranking 82.84% of pairs, 98.81% at >5% margin; AITS training LeWM 87/96/74 -> 92/100/84, Cube D_TT 36.65 -> 15.87; AITS-P on predicted transitions creates predicted-domain-specific action codes; 3-5 s per read",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-31-command-conditioning-and-l3/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-31-command-conditioning-and-l3/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-action/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-decodability/RESULT.md"
    ]
   },
   "2602.19634": {
@@ -7975,10 +8017,13 @@
    "sha256": "9ab681f7d1b5f033f6aa4c0ff1f2d19945f7e9f1cbf33c091204cdc62cae05a8",
    "banked": "2026-08-31",
    "tags": [
-    "action-provenance"
+    "action-provenance",
+    "sota-2026-09-03",
+    "sota-2026-09-03-action"
    ],
-   "note": "",
+   "note": "Dueling World Models: advantage-style action channel (anchored against a common mode) for distractor rejection (to verify) | READ IN FULL 2026-09-03: zhat = B(z) + [Delta(z,a) - mean_a Delta(z,a)] (K=16), exact common-mode cancellation (Props 1-2); separation collapses 1.28 -> 0.002 at >=30 distractors while val loss improves; val-loss checkpoint selection picks collapsed ckpts 17/36 (Freeway); POST-HOC centring on frozen RePo/TIA raises the action-delta probe from -0.002..+0.052 to 0.19-0.52; DMC trained-in vs post-hoc 0.533/0.328/0.186 vs 0.528/0.323/0.192; action-correlated distractors -> chance",
    "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-action/RESULT.md",
     "TanitAD Research Lab/Opponent Analysis/Research/2026-08-31-frontier-action-provenance-sweep/RESULT.md"
    ]
   },
@@ -8071,7 +8116,7 @@
    "tags": [
     "world-models"
    ],
-   "note": "DriveFuture: LatentAlign sigmoid-anneals the planner condition from GT-future latent to self-predicted forecast; a scheduled-sampling cure for the train/inference latent gap | DriveFuture navhard EPDMS 55.5 (CW-1 subject); re-banked 2026-09-02 after the first copy was found TRUNCATED (no %%EOF) | ⚠️ REPAIRED 2026-09-02: the banked copy was TRUNCATED to 1373148 B (14.5%, no %%EOF, unparseable) while kb_add --verify reported it healthy; refetched complete (9453407 B). Old sha256 b6af52305c6c898c...",
+   "note": "DriveFuture: LatentAlign sigmoid-anneals the planner condition from GT-future latent to self-predicted forecast; a scheduled-sampling cure for the train/inference latent gap | DriveFuture navhard EPDMS 55.5 (CW-1 subject); re-banked 2026-09-02 after the first copy was found TRUNCATED (no %%EOF) | ⚠️ REPAIRED 2026-09-02: the banked copy was TRUNCATED to 1373148 B (14.5%, no %%EOF, unparseable) while kb_add --verify reported it healthy; refetched complete (9453407 B). Old sha256 b6af52305c6c898c... | READ IN FULL 2026-09-03: BEV latent + ego-status token; action-source mixture {p_gt, p_kin, p_null} with learned null token and constant-acceleration surrogate; LatentAlign alpha(e) = 1 - sigmoid(beta(e-e0)) from grounded sg(enc(I_t+T)) to self-prediction; navhard EPDMS w/o scorer 30.9 -> 32.1 (MSE) -> 32.0 -> 34.6 (Table 4); t_f 0.5/1.0/1.5 -> 30.2/31.2/34.6, q_s 4/16/64 -> 28.2/34.6/33.7, e_o 0.75/0.83/0.95 -> 29.2/34.6/28.9 (Table 5); NO action-sensitivity metric; ego status used at inference",
    "cited_by": [
     "TanitAD Research Lab/Frontier Scan/Daily/2026-08-31/RESULT.md",
     "TanitAD Research Lab/Opponent Analysis/Research/2026-09-02-cw1-resolution-and-evidence-integrity/RESULT.md"
@@ -8132,7 +8177,7 @@
    "tags": [
     "jepa"
    ],
-   "note": "EB-JEPA: FAIR single-GPU library incl. action-conditioned JEPA planning (Two Rooms 97%); candidate external anti-collapse CONTROL rig for the 4060",
+   "note": "EB-JEPA: FAIR single-GPU library incl. action-conditioned JEPA planning (Two Rooms 97%); candidate external anti-collapse CONTROL rig for the 4060 | READ IN FULL 2026-09-03: Two-Rooms 97+-2 (MPPI); Table 4 ablation: IDM omega=0 -> 1+-1 (collapse), variance alpha=0 47+-3, covariance beta=0 46+-3, temporal delta=0 61+-2; IDM = MLP(z_t, z_t+1) concat form; K=8 rollout, Pareto k=4 on Moving MNIST",
    "cited_by": [
     "TanitAD Research Lab/Frontier Scan/Daily/2026-08-31/RESULT.md"
    ]
@@ -8746,6 +8791,442 @@
    "note": "MiniWorld: training video world models from scratch under constrained compute",
    "cited_by": [
     "TanitAD Research Lab/Frontier Scan/Daily/2026-09-02/RESULT.md"
+   ]
+  },
+  "2608.24044": {
+   "key": "2608.24044",
+   "kind": "arxiv",
+   "title": "JEPA-x: Cross-Predictive Physics Grounding for Forecastable Latent Dynamics",
+   "authors": [
+    "Kehan Wen",
+    "Ziming Li",
+    "Siyuan Luo",
+    "Fan Shi"
+   ],
+   "published": "2026-08-25",
+   "abstract": "Latent world models plan by predicting how candidate actions advance learned latent dynamics. In self-predictive models, however, the encoder and predictor are optimized jointly and can co-adapt to latent transitions that are easy to predict but weakly constrained by the physical evolution of the scene. We introduce the cross-predictive JEPA (JEPA-x), which grounds latent dynamics in privileged physical trajectories. JEPA-x treats visual observations and physical states as corresponding views of the same action-conditioned trajectory, advances both through a shared predictor, and matches each prediction to the future representations of both modalities. This encourages the action-conditioned predictor to learn a common transition rule across the two views. Privileged physical state is used only during training, leaving a visual-only model at deployment. Empirical results show that JEPA-x ",
+   "url": "https://arxiv.org/abs/2608.24044",
+   "path": "TanitAD Research Lab/Library/papers/2608.24044_JEPA-x-Cross-Predictive-Physics-Grounding-for-Forecastable-L.pdf",
+   "bytes": 11354567,
+   "sha256": "aea0efad156349fc3aa77417880b0104ddf4f9821f74b4c55e34a5f12e109e8c",
+   "banked": "2026-09-03",
+   "tags": [
+    "sota-2026-09-03",
+    "sota-2026-09-03-drift"
+   ],
+   "note": "JEPA-x cross-predictive physics grounding; claims reduced rollout drift (to verify in full text) | READ IN FULL 2026-09-03: drift(h) = E||zhat-z||^2 / E||z_t - z_{t+h}||^2 persistence-normalised, fresh 3-layer MLP predictor on the frozen encoder, 20-step rollout on recorded actions; multi-task drift VISUAL 0.361 -> JEPA-x 0.104 (REGRESS 0.373, DISTILL 0.516, SHUFFLE 0.540), control 53.6 -> 78.2%; Table 1 Two-Room 0.503 -> 0.221, Block 0.507 -> 0.269, Push-T 0.399 -> 0.258, Reacher 0.313 -> 0.233; Table 3 CROSS-ONLY 0.101/73.0, SHARE-ONLY 0.309/56.7, ALIGN-ONLY 0.158/72.6; state regression raises R2 0.978 -> 0.991 but not drift; action-conditioned next-state/increment heads 0.386/0.359 no gain; rank-matched gap 0.121 vs 0.453 at k=57; the field drift is NOT our r(dz|z_t)",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-decodability/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-drift/RESULT.md"
+   ]
+  },
+  "2607.16314": {
+   "key": "2607.16314",
+   "kind": "arxiv",
+   "title": "Depth-Regularized JEPA World Models Learn More Transferable Representations from Real Outdoor Robot Data",
+   "authors": [
+    "Usman M. Khan"
+   ],
+   "published": "2026-07-15",
+   "abstract": "World models, especially based on JEPA architectures, have been shown to learn robust dynamics of various environments. However, learning from visually complex real-world data remains a challenge, especially in unpredictable outdoor environments. We introduce depth as a geometric prior during training in learning more robust latent dynamics directly from robot video data and handling visual complexity. This combines depth supervision with an isotropy-inducing latent regularizer (SIGReg), maximizing task-agnostic latent diversity while constraining how that diversity is organized, with the combined objective targeting the highest-entropy representation consistent with scene geometry. To satisfy this greater complexity without increasing inference time, we also add training-only overparameterization. Training an 18M-parameter model on video from a real agricultural robot, we evaluate with ",
+   "url": "https://arxiv.org/abs/2607.16314",
+   "path": "TanitAD Research Lab/Library/papers/2607.16314_Depth-Regularized-JEPA-World-Models-Learn-More-Transferable.pdf",
+   "bytes": 2442758,
+   "sha256": "d9e1c8525d622bb5e9ffdcb3121742aa273faaf311a8e520f6ba10450e6eee5d",
+   "banked": "2026-09-03",
+   "tags": [
+    "sota-2026-09-03",
+    "sota-2026-09-03-drift"
+   ],
+   "note": "Depth-regularized JEPA WM; multi-step rollout fidelity under domain shift, gains grow with horizon (to verify) | READ IN FULL 2026-09-03: LeWM + 1-cos(f(RGB), sg f(depth)) (0.1) + training-only RepLinear overparam; 18M, 31K real ag-robot frames; Table 1 VO probe MSE 0.0022 -> 0.0015 (frozen DINOv2 0.0029); surprise separation 0.067 -> 0.120, OOD 0.035 -> 0.099; rollout goal similarity h=10 in-domain 0.903 -> 0.890 (DINOv2 0.951), OOD h=10 0.716 -> 0.745, h=20 0.458 -> 0.537; SINGLE run; authors caution rollout similarity rewards slow latents",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-decodability/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-drift/RESULT.md"
+   ]
+  },
+  "2607.05238": {
+   "key": "2607.05238",
+   "kind": "arxiv",
+   "title": "Branch-JEPA: Finite-Support Predictive Distributions for JEPA World Models",
+   "authors": [
+    "Zhi Song",
+    "Ximing Xing",
+    "Zhenchao Tang",
+    "hanbo Huang",
+    "Jiehui Huang",
+    "Weilong Yan",
+    "Tianxu Lv",
+    "Minghao Yang",
+    "Zhongzheng Niu",
+    "Bing He",
+    "Lusheng Wang",
+    "Jianhua Yao"
+   ],
+   "published": "2026-07-06",
+   "abstract": "Joint-embedding predictive architectures (JEPAs) learn dynamics by predicting future observations in representation space. Yet most JEPA world models return one latent successor, even when hidden intent, partial observation, or stochastic dynamics make several futures plausible. We introduce Branch-JEPA, which replaces this point-valued transition with a context-weighted finite set of latent successors. Every branch is decoded independently, and the complete set is retained at inference. The architecture supports two complementary training regimes: specialization for recovering separated successors and full-set Energy-Score training for distributional fidelity. In a locked five-seed evaluation on the Argoverse~2 official validation split, full-set training improves trajectory Energy Score by $5.8$--$6.5\\%$ and probability-weighted trajectory distance by $9.3$--$10.4\\%$ over matched-$K{=}",
+   "url": "https://arxiv.org/abs/2607.05238",
+   "path": "TanitAD Research Lab/Library/papers/2607.05238_Branch-JEPA-Finite-Support-Predictive-Distributions-for-JEPA.pdf",
+   "bytes": 6076401,
+   "sha256": "49e5f032904862abc9317449562145e2e8c71cfcdb7b972d988b55fe4ed29b9d",
+   "banked": "2026-09-03",
+   "tags": [
+    "sota-2026-09-03",
+    "sota-2026-09-03-drift"
+   ],
+   "note": "MoP-JEPA hard-assigned predictor mixtures for stochastic JEPA world models (to verify) | CORRECTION 2026-09-03: this entry is Branch-JEPA (finite-support predictive distributions, K weighted latent successors), NOT \"MoP-JEPA\" as the search relay said. READ IN FULL: Argoverse 2 Table 1 energy score full-set 2.0766 vs specialization 2.2201 vs MDN 2.3827; Table 2 Standard JEPA K=1 2.8426, output-only branching 2.1142, Branch-JEPA 2.0766 (N_eff 5.797); EMA tau 0.996; multimodality, tangential to drift",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-drift/RESULT.md"
+   ]
+  },
+  "2602.12218": {
+   "key": "2602.12218",
+   "kind": "arxiv",
+   "title": "The Observer Effect in World Models: Invasive Adaptation Corrupts Latent Physics",
+   "authors": [
+    "Christian Internò",
+    "Jumpei Yamaguchi",
+    "Loren Amdahl-Culleton",
+    "Markus Olhofer",
+    "David Klindt",
+    "Barbara Hammer"
+   ],
+   "published": "2026-02-12",
+   "abstract": "Determining whether neural models internalize physical laws as world models, rather than exploiting statistical shortcuts, remains challenging, especially under out-of-distribution (OOD) shifts. Standard evaluations often test latent capability via downstream adaptation (e.g., fine-tuning or high-capacity probes), but such interventions can change the representations being measured and thus confound what was learned during self-supervised learning (SSL). We propose a non-invasive evaluation protocol, PhyIP. We test whether physical quantities are linearly decodable from frozen representations, motivated by the linear representation hypothesis. Across fluid dynamics and orbital mechanics, we find that when SSL achieves low error, latent structure becomes linearly accessible. PhyIP recovers internal energy and Newtonian inverse-square scaling on OOD tests (e.g., $ρ&gt; 0.90$). In contrast,",
+   "url": "https://arxiv.org/abs/2602.12218",
+   "path": "TanitAD Research Lab/Library/papers/2602.12218_The-Observer-Effect-in-World-Models-Invasive-Adaptation-Corr.pdf",
+   "bytes": 5805110,
+   "sha256": "a568e25b556faece2bf69c94ab11919df4a28abb2dbd33ecee49570362295c99",
+   "banked": "2026-09-03",
+   "tags": [
+    "sota-2026-09-03",
+    "sota-2026-09-03-encoder"
+   ],
+   "note": "Observer effect: invasive adaptation corrupts latent physics — frozen vs fine-tuned encoder evidence (to verify) | READ IN FULL 2026-09-03: PhyIP linear probe on frozen features rho 0.91 vs full fine-tune (IBP) 0.05 vs last-layer FT 0.65; a kinematic invariant drops 0.94 -> -0.03 under fine-tuning; deep blocks B5-B10 shift most (CKA < 0.2); Speed/Radius erased, Mass kept; invasive adaptation hallucinates competence (MAPE 140% -> 18% by learning the probe task); instrument rule: linear probes on FROZEN features with raw-input baseline, time-dependent probes, OOD splits",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-decodability/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-encoder/RESULT.md"
+   ]
+  },
+  "2608.29434": {
+   "key": "2608.29434",
+   "kind": "arxiv",
+   "title": "Does Latent Planning Survive Point Clouds? Action-Conditioned JEPA World Models for Geometric Observations",
+   "authors": [
+    "Fabio F. Oberweger",
+    "Michael Schwingshackl"
+   ],
+   "published": "2026-08-29",
+   "abstract": "JEPA world models make latent-space planning a practical route to control, but they are built almost exclusively on images. Whether latent prediction survives geometric observations is unclear: point clouds are sparse, unordered, and self-occluded, and with 0.3-15% of scene points moving, the slow-feature optimum of latent prediction compounds with the geometric shortcut of 3D self-supervision. We lift three canonical JEPA designs to point clouds, frozen-encoder, distribution-prior, and action-sensitive, and re-sense the stable-worldmodel benchmark so that only the observation differs from the image baselines. All three plan without collapse: the distribution-prior model is statistically equivalent to its re-evaluated image counterpart on every benchmark, and the action-sensitive model attains the strongest result in our controlled comparison where the most geometry moves. Probing explai",
+   "url": "https://arxiv.org/abs/2608.29434",
+   "path": "TanitAD Research Lab/Library/papers/2608.29434_Does-Latent-Planning-Survive-Point-Clouds-Action-Conditioned.pdf",
+   "bytes": 5494469,
+   "sha256": "7536fd9b8d974ec96eaf6bcc1f4962a945cbc5ebe71eac0222848353422f91fc",
+   "banked": "2026-09-03",
+   "tags": [
+    "sota-2026-09-03",
+    "sota-2026-09-03-encoder"
+   ],
+   "note": "Action-conditioned JEPA WMs on point clouds: frozen-encoder vs distribution-prior vs action-sensitive variants compared (to verify) | READ IN FULL 2026-09-03: Utonia-WM = frozen 137M PTv3 + random orthogonal projection + trained predictor: 94.0/71.2/46.6/71.2 (Two-Room/Reacher/Push-T/Cube); Vox-WM (frozen encoder ablated) 81.4/54.4/35.2/63.4; Point-LeWM 87.0/80.4/83.6/66.0, Point-Delta-JEPA 100.0/77.6/70.8/83.4 (Table 7 top row, 10 seeds); Push-T 46.6 = 'the price of a representation that cannot adapt'; App D probes: ridge (lambda on val) + MLP, episode split 72/8/20, NO constant/raw floor; Push-T block angle linear R2 0.891 LeWM vs 0.657 Delta; Cube joint velocity MLP R2 0.626 Delta vs 0.102 LeWM; modality equivalence by paired TOST",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-decodability/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-drift/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-encoder/RESULT.md"
+   ]
+  },
+  "2507.19468": {
+   "key": "2507.19468",
+   "kind": "arxiv",
+   "title": "Back to the Features: DINO as a Foundation for Video World Models",
+   "authors": [
+    "Federico Baldassarre",
+    "Marc Szafraniec",
+    "Basile Terver",
+    "Vasil Khalidov",
+    "Francisco Massa",
+    "Yann LeCun",
+    "Patrick Labatut",
+    "Maximilian Seitzer",
+    "Piotr Bojanowski"
+   ],
+   "published": "2025-07-25",
+   "abstract": "We present DINO-world, a powerful generalist video world model trained to predict future frames in the latent space of DINOv2. By leveraging a pre-trained image encoder and training a future predictor on a large-scale uncurated video dataset, DINO-world learns the temporal dynamics of diverse scenes, from driving and indoor scenes to simulated environments. We show that DINO-world outperforms previous models on a variety of video prediction benchmarks, e.g. segmentation and depth forecasting, and demonstrates strong understanding of intuitive physics. Furthermore, we show that it is possible to fine-tune the predictor on observation-action trajectories. The resulting action-conditioned world model can be used for planning by simulating candidate trajectories in latent space.",
+   "url": "https://arxiv.org/abs/2507.19468",
+   "path": "TanitAD Research Lab/Library/papers/2507.19468_Back-to-the-Features-DINO-as-a-Foundation-for-Video-World-Mo.pdf",
+   "bytes": 15181494,
+   "sha256": "91c0e4f12ff5e7b097d6ec345c32dd147dfc7b659a408fcec58aa510ed22c4d4",
+   "banked": "2026-09-03",
+   "tags": [
+    "sota-2026-09-03",
+    "sota-2026-09-03-encoder"
+   ],
+   "note": "DINO-world: frozen DINOv2 patch features + large-scale video predictor; action-conditioned fine-tuning of the predictor (to verify) | READ IN FULL 2026-09-03: frozen DINOv2 ViT-B patch features + 1.1B predictor on 60M videos; Table 1 (VSPW | Cityscapes | KITTI depth; current/short/mid): Copy-Last 52.8/47.9/42.1 | 68.6/53.2/39.7 | 2.963/3.778/4.745; DINO-world 52.8/51.6/47.0 | 68.6/64.7/55.1 | 2.963/3.214/4.268; V-JEPA ViT-L joint encoder-predictor 29.1/8.2/7.7 | 48.8/15.5/14.0; Table 3 encoders (mid CS/VSPW) SD3.5-VAE 13.0/1.5, SigLIP2 50.5/41.0, DINOv2 53.2/46.8; Table 4 planning scratch 46.9/87.1/59.4, action-only 49.4/91.1/61.6, fine-tuned predictor 59.4/93.8/68.7; the predictor beats persistence on dense physical targets = a published L3 clearance",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-decodability/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-encoder/RESULT.md"
+   ]
+  },
+  "2602.18639": {
+   "key": "2602.18639",
+   "kind": "arxiv",
+   "title": "Learning Invariant Visual Representations for Planning with Joint-Embedding Predictive World Models",
+   "authors": [
+    "Leonardo F. Toso",
+    "Davit Shadunts",
+    "Yunyang Lu",
+    "Nihal Sharma",
+    "Donglin Zhan",
+    "Nam H. Nguyen",
+    "James Anderson"
+   ],
+   "published": "2026-02-20",
+   "abstract": "World models learned from high-dimensional visual observations allow agents to make decisions and plan directly in latent space, avoiding pixel-level reconstruction. However, recent latent predictive architectures (JEPAs), including the DINO world model (DINO-WM), display a degradation in test time robustness due to their sensitivity to \"slow features\". These include visual variations such as background changes and distractors that are irrelevant to the task being solved. We address this limitation by augmenting the predictive objective with a bisimulation encoder that enforces control-relevant state equivalence, mapping states with similar transition dynamics to nearby latent states while limiting contributions from slow features. We evaluate our model on a simple navigation task under different test-time background changes and visual distractors. Across all benchmarks, our model consis",
+   "url": "https://arxiv.org/abs/2602.18639",
+   "path": "TanitAD Research Lab/Library/papers/2602.18639_Learning-Invariant-Visual-Representations-for-Planning-with.pdf",
+   "bytes": 3816562,
+   "sha256": "13fdcc3b2a11f94d53a719e34bf5720c939c31d3a3c45d60f4005a08b2e52b5f",
+   "banked": "2026-09-03",
+   "tags": [
+    "sota-2026-09-03",
+    "sota-2026-09-03-encoder"
+   ],
+   "note": "Invariant visual representations for JEPA planning: frozen pretrained encoder + trainable bisimulation encoder (to verify) | READ IN FULL 2026-09-03: 196x384 -> 196x32 per-patch adapter on FROZEN DINOv2 trained with the transition model (bisimulation / dynamics-similarity + PCA-VICReg); PointMaze success under shift: DINO-WM 0.80 0.72 0.60 0.56 0.48 0.78 vs ours 0.78 0.80 0.76 0.86 0.78 0.82 (LCG 0.48 -> 0.78); encoder table No-Encoder 0.68 0.44 0.70 0.26 0.36 0.64, DINOv2 0.78 0.8 0.76 0.86 0.78 0.82, SimDINOv2 0.40.., iBOT 0.72..; encoder-agnostic; latent 12x smaller",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-encoder/RESULT.md"
+   ]
+  },
+  "2607.02403": {
+   "key": "2607.02403",
+   "kind": "arxiv",
+   "title": "ACID: Action Consistency via Inverse Dynamics for Planning with World Models",
+   "authors": [
+    "Gawon Seo",
+    "Dongwon Kim",
+    "Suha Kwak"
+   ],
+   "published": "2026-07-02",
+   "abstract": "Decision-time planning with action-conditioned world models has become a popular paradigm for embodied control. However, the standard planning cost judges a candidate solely by how close its predicted terminal state lies to the goal, leaving the realizability of the intermediate transitions unchecked -- a predicted trajectory can look convincing while the environment rollout drifts away from it. In this paper, we propose ACID, a decision-time planning framework that introduces cycle action consistency: the action inferred backward from a predicted transition by an inverse dynamics model should recover the one that was conditioned on. We fold this per-step residual into the planning cost via a scale-invariant adaptive weight. Across four action-conditioned world models and six tasks spanning rigid and deformable manipulation, articulated control, and visual navigation, ACID consistently i",
+   "url": "https://arxiv.org/abs/2607.02403",
+   "path": "TanitAD Research Lab/Library/papers/2607.02403_ACID-Action-Consistency-via-Inverse-Dynamics-for-Planning-wi.pdf",
+   "bytes": 24818388,
+   "sha256": "42091f54e6b078ac3a1df2009262261e79d54fc157e700b87bab249b70f2e978",
+   "banked": "2026-09-03",
+   "tags": [
+    "sota-2026-09-03",
+    "sota-2026-09-03-action"
+   ],
+   "note": "ACID: cycle action consistency via inverse dynamics on the PREDICTED transition; 4 WMs x 6 tasks (to verify) | READ IN FULL 2026-09-03: planning-cost c = c_g + w_a c_a, w_a = lambda sigma_g/sigma_a; IDM = flow-matching prefix-suffix transformer (4 layers, width 192) trained 200K steps on FROZEN WM latents; Le-WM Cube/Reacher/PushT 70/76/96 -> 74/88/100, PLDM 58/76/72 -> 68/90/76; DINO-WM rope chamfer 1.38 -> 0.56; lambda robust 0.005-0.1; +8.9-39% planning latency; needs consecutive observations",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-action/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-encoder/RESULT.md"
+   ]
+  },
+  "2606.20104": {
+   "key": "2606.20104",
+   "kind": "arxiv",
+   "title": "Sensorimotor World Models: Perception for Action via Inverse Dynamics",
+   "authors": [
+    "Petr Ivashkov",
+    "Randall Balestriero",
+    "Bernhard Schölkopf"
+   ],
+   "published": "2026-06-18",
+   "abstract": "Perception for action suggests that representations of the world should be shaped not by visual fidelity alone, but by their relevance for actions. At the same time, latent JEPA-style world models advocate learning compact predictive states from high-dimensional observations to facilitate the prediction of future states, but end-to-end training of these models is nontrivial because representations may collapse if our only goal is to construct a latent state that is easy to predict. We introduce a sensorimotor world model (SMWM): a latent world model trained end-to-end with inverse dynamics regularization. This single regularizer addresses both issues: it prevents representation collapse and induces action-aligned representations. By forcing latent states to preserve information about the action underlying a transition, it biases the model toward the controllable degrees of freedom of the",
+   "url": "https://arxiv.org/abs/2606.20104",
+   "path": "TanitAD Research Lab/Library/papers/2606.20104_Sensorimotor-World-Models-Perception-for-Action-via-Inverse.pdf",
+   "bytes": 4299450,
+   "sha256": "1a366a3764e80702ab9f652d6e1670a662c806f0936377861838301168380862",
+   "banked": "2026-09-03",
+   "tags": [
+    "sota-2026-09-03",
+    "sota-2026-09-03-action"
+   ],
+   "note": "Sensorimotor World Models: inverse-dynamics regularisation prevents collapse, action-aligned latents (to verify) | READ IN FULL 2026-09-03: L = L_fwd + lambda L_inv, inverse MLP on [z_t; z_t+1] as the SOLE anti-collapse term; lambda env-specific 0.1/5/30/1 (0.1 collapses Reacher); Fig 5 SMWM/SIGReg/random/fwd-only: 99/94/30/37, 66/67/14/11, 83/87/3/2, 84/59/43/44; effective dimension tracks controllable DOF; single-frame encoder cannot capture velocities; action-correlated distractors are captured",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-action/RESULT.md"
+   ]
+  },
+  "2607.09185": {
+   "key": "2607.09185",
+   "kind": "arxiv",
+   "title": "Causally Debiased Latent Action Model for Embodied Action Conditioned World Models",
+   "authors": [
+    "Yufan Wei",
+    "Kun Zhou",
+    "Lingjun Mao",
+    "Zijun Zhang",
+    "Ziming Xu",
+    "Ziqiao Xi",
+    "Shuang Liang",
+    "Ruobing Han",
+    "Yuchen Yan",
+    "Xinyue Wang",
+    "Fan Feng",
+    "Biwei Huang"
+   ],
+   "published": "2026-07-10",
+   "abstract": "Action-conditioned world models (ACWMs) aim to simulate future observations conditioned on embodied actions, offering a promising foundation for robot planning, policy evaluation, and data augmentation. However, learning controllable ACWMs requires large-scale action-labeled data, which remains costly to collect in the real world. Latent action models (LAMs) mitigate this bottleneck by inferring latent actions from unlabeled videos, but existing LAMs are typically trained with reconstruction-only objectives and therefore entangle action-relevant dynamics with action-irrelevant visual factors such as backgrounds and untouched objects. In this work, we identify this action-irrelevant bias as a key obstacle to controllable ACWMs and introduce evaluation metrics to measure latent-action bias, action following, and robustness. We propose CD-LAM, a causally debiased framework for LAM-based ACW",
+   "url": "https://arxiv.org/abs/2607.09185",
+   "path": "TanitAD Research Lab/Library/papers/2607.09185_Causally-Debiased-Latent-Action-Model-for-Embodied-Action-Co.pdf",
+   "bytes": 9910486,
+   "sha256": "ccc241997eb59a0356cb05f1ff8033630df0cd997d0419f76ab7cb1d4a8e1b76",
+   "banked": "2026-09-03",
+   "tags": [
+    "sota-2026-09-03",
+    "sota-2026-09-03-action"
+   ],
+   "note": "Causally debiased latent action model: contrastive action objective + latent calibration against collapsed latent actions (to verify) | NOT READ in the 2026-09-03 pass (banked, never extracted); NOT cited by 2026-09-03-sota-action/RESULT.md despite the cited_by entry written at banking time - treat that citation record as void until the paper is read",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-action/RESULT.md"
+   ]
+  },
+  "2603.21546": {
+   "key": "2603.21546",
+   "kind": "arxiv",
+   "title": "What Do World Models Learn in RL? Probing Latent Representations in Learned Environment Simulators",
+   "authors": [
+    "Xinyu Zhang"
+   ],
+   "published": "2026-03-23",
+   "abstract": "World models learn to simulate environment dynamics from experience, enabling sample-efficient reinforcement learning. But what do these models actually represent internally? We apply interpretability techniques--including linear and nonlinear probing, causal interventions, and attention analysis--to two architecturally distinct world models: IRIS (discrete token transformer) and DIAMOND (continuous diffusion UNet), trained on Atari Breakout and Pong. Using linear probes, we find that both models develop linearly decodable representations of game state variables (object positions, scores), with MLP probes yielding only marginally higher R^2, confirming that these representations are approximately linear. Causal interventions--shifting hidden states along probe-derived directions--produce correlated changes in model predictions, providing evidence that representations are functionally use",
+   "url": "https://arxiv.org/abs/2603.21546",
+   "path": "TanitAD Research Lab/Library/papers/2603.21546_What-Do-World-Models-Learn-in-RL-Probing-Latent-Representati.pdf",
+   "bytes": 289023,
+   "sha256": "4980c3ff385b2d0801e5d1c0470ee66e45b225049725e7c2de584c9c1482a895",
+   "banked": "2026-09-03",
+   "tags": [
+    "sota-2026-09-03",
+    "sota-2026-09-03-decodability"
+   ],
+   "note": "What do world models learn in RL? Probing latent representations of learned simulators (to verify) | READ IN FULL 2026-09-03: probes IRIS / DIAMOND hidden states per layer; Ridge (alpha=1.0) + 2-layer MLP (256->128->1), 5-fold CV R2; controls RAW PIXELS, RANDOM MODEL, SHUFFLED LABELS - Table 1 (Breakout, best layer): random model -1.21/-1.22/-1.14/-1.18, shuffled -0.51/-0.49/-0.53/-0.52, raw pixels -1.31/-0.48/0.9989/0.9998 (floors are target-specific); IRIS ball position R2 > 0.99 at every layer (Pong >= 0.95, Breakout <= 0.85); DIAMOND bottleneck linear 0.81, decoder layers nonlinear (MLP 0.91 vs linear -0.27); selectivity gap = MLP - linear; causal interventions along the probe weight",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-decodability/RESULT.md"
+   ]
+  },
+  "2603.20327": {
+   "key": "2603.20327",
+   "kind": "arxiv",
+   "title": "Probing the Latent World: Emergent Discrete Symbols and Physical Structure in Latent Representations",
+   "authors": [
+    "Liu hung ming"
+   ],
+   "published": "2026-03-20",
+   "abstract": "Video world models trained with Joint Embedding Predictive Architectures (JEPA) acquire rich spatiotemporal representations by predicting masked regions in latent space rather than reconstructing pixels. This removes the visual verification pathway of generative models, creating a structural interpretability gap: the encoder has learned physical structure inaccessible in any inspectable form. Existing probing methods either operate in continuous space without a structured intermediate layer, or attach generative components whose parameters confound attribution of behavior to the encoder. We propose the AI Mother Tongue (AIM) framework as a passive quantization probe: a lightweight, vocabulary-free probe that converts V-JEPA 2 continuous latent vectors into discrete symbol sequences without task-specific supervision or modifying the encoder. Because the encoder is kept completely frozen, ",
+   "url": "https://arxiv.org/abs/2603.20327",
+   "path": "TanitAD Research Lab/Library/papers/2603.20327_Probing-the-Latent-World-Emergent-Discrete-Symbols-and-Physi.pdf",
+   "bytes": 890086,
+   "sha256": "198abbf818101af1b4e114269b3e890cb217a61caf2bbcb7aa7e8582ad33717f",
+   "banked": "2026-09-03",
+   "tags": [
+    "sota-2026-09-03",
+    "sota-2026-09-03-decodability"
+   ],
+   "note": "Probing the latent world: emergent discrete symbols and physical structure in latent representations (to verify) | READ IN FULL 2026-09-03: discrete-symbol probing of a latent WM; temporal MEAN POOLING over the 196 spatial tokens collapses codebook utilisation to 5%, spatial tokens restore 62.5% - 'mean pooling erases spatial local semantic differences'; treated by the authors as a diagnostic finding",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-decodability/RESULT.md"
+   ]
+  },
+  "2504.03861": {
+   "key": "2504.03861",
+   "kind": "arxiv",
+   "title": "Improving World Models using Deep Supervision with Linear Probes",
+   "authors": [
+    "Andrii Zahorodnii"
+   ],
+   "published": "2025-04-04",
+   "abstract": "Developing effective world models is crucial for creating artificial agents that can reason about and navigate complex environments. In this paper, we investigate a deep supervision technique for encouraging the development of a world model in a network trained end-to-end to predict the next observation. While deep supervision has been widely applied for task-specific learning, our focus is on improving the world models. Using an experimental environment based on the Flappy Bird game, where the agent receives only LIDAR measurements as observations, we explore the effect of adding a linear probe component to the network's loss function. This additional term encourages the network to encode a subset of the true underlying world features into its hidden state. Our experiments demonstrate that this supervision technique improves both training and test performance, enhances training stabilit",
+   "url": "https://arxiv.org/abs/2504.03861",
+   "path": "TanitAD Research Lab/Library/papers/2504.03861_Improving-World-Models-using-Deep-Supervision-with-Linear-Pr.pdf",
+   "bytes": 4671526,
+   "sha256": "decdcd885e4e731ef02da0b39f99b843cd675cb5c43eeddfb2366af0c40576a8",
+   "banked": "2026-09-03",
+   "tags": [
+    "sota-2026-09-03",
+    "sota-2026-09-03-decodability"
+   ],
+   "note": "Improving world models using deep supervision with linear probes (to verify) | READ IN FULL 2026-09-03: LSTM/MDN world model on a low-dim latent; a linear-probe loss on the latent (lambda up to 64) reduces 'distribution drift' (loss growth after the teacher-forcing cut-off) and improves predictive loss monotonically, claimed equivalent to ~2x model size; a different regime from JEPA - conflicts on the surface with JEPA-x REGRESS (state regression gives no drift gain)",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-decodability/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-drift/RESULT.md"
+   ]
+  },
+  "2512.24497": {
+   "key": "2512.24497",
+   "kind": "arxiv",
+   "title": "What Drives Success in Physical Planning with Joint-Embedding Predictive World Models?",
+   "authors": [
+    "Basile Terver",
+    "Tsung-Yen Yang",
+    "Jean Ponce",
+    "Adrien Bardes",
+    "Yann LeCun"
+   ],
+   "published": "2025-12-30",
+   "abstract": "A long-standing challenge in AI is to develop agents capable of solving a wide range of physical tasks and generalizing to new, unseen tasks and environments. A popular recent approach involves training a world model from state-action trajectories and subsequently use it with a planning algorithm to solve new tasks. Planning is commonly performed in the input space, but a recent family of methods has introduced planning algorithms that optimize in the learned representation space of the world model, with the promise that abstracting irrelevant details yields more efficient planning. In this work, we characterize models from this family as JEPA-WMs and investigate the technical choices that make algorithms from this class work. We propose a comprehensive study of several key components with the objective of finding the optimal approach within the family. We conducted experiments using bot",
+   "url": "https://arxiv.org/abs/2512.24497",
+   "path": "TanitAD Research Lab/Library/papers/2512.24497_What-Drives-Success-in-Physical-Planning-with-Joint-Embeddin.pdf",
+   "bytes": 10659584,
+   "sha256": "f154b8409c3190bcbb8db61ae80b201304d2f5bd9f7a850d3e40ced85fe6582b",
+   "banked": "2026-09-03",
+   "tags": [
+    "sota-2026-09-03",
+    "sota-2026-09-03-encoder"
+   ],
+   "note": "What drives success in physical planning with JEPA world models: AdaLN/RoPE/k-step ablations; previously cited from HTML only (to verify) | READ IN FULL (chunks) 2026-09-03: all encoders FROZEN raw patch tokens (Table 7); DINOv2/v3 > V-JEPA/2 at ViT-L, DINOv3 only on photorealistic DROID/Robocasa; proprioception helps because metric quantities are implicit and patch-quantised; multi-step rollout loss = TBPTT last-step, K=2 optimal in sim, K=6 on DROID, Prop 1 / Remark 1 accuracy-robustness (Lipschitz) trade-off; scaling helps only on real data; Table 2 Ours 83.9/78.8/70.2/58.2/41.6/25.4/30.7/48.2 vs DINO-WM 81.6/64.1/66.0/44.8/35.1/19.1/21.7/39.4 vs VJ2AC -/-/-/-/-/16.2/33.1/42.9; Tables 13-16: best success proxy is the ONE-step embedding loss, H>1 unroll metrics better only on Metaworld",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-decodability/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-drift/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-encoder/RESULT.md"
+   ]
+  },
+  "2608.29029": {
+   "key": "2608.29029",
+   "kind": "arxiv",
+   "title": "Flow-JEPA: Flow Matching for Robust Latent Dynamics in JEPA World Models",
+   "authors": [
+    "Yanchen Huo",
+    "Ziying Song",
+    "Yadan Luo"
+   ],
+   "published": "2026-08-29",
+   "abstract": "Joint-Embedding Predictive Architectures (JEPAs) have shown strong potential for learning compact predictive representations, and LeWorldModel (LeWM) extends this paradigm to reconstruction-free latent world modeling from pixels. However, its deterministic autoregressive predictor generates future states through repeated one-step transitions, which can accumulate errors and remain sensitive to task-irrelevant visual perturbations. In this work, we propose Flow-JEPA (F-JEPA), a conditional flow matching dynamics model that jointly generates a sequence of future latent states conditioned on the current observation and actions. A Gaussian distribution serves as the flow source, exposing the vector field to perturbed latent trajectories as it learns to transport them toward clean future representations. This formulation retains the reconstruction-free JEPA framework while replacing point-wis",
+   "url": "https://arxiv.org/abs/2608.29029",
+   "path": "TanitAD Research Lab/Library/papers/2608.29029_Flow-JEPA-Flow-Matching-for-Robust-Latent-Dynamics-in-JEPA-W.pdf",
+   "bytes": 1039431,
+   "sha256": "713999c064605896d49f22098242b59abf02f95c7d6903439d0a29b4cc1409bd",
+   "banked": "2026-09-03",
+   "tags": [
+    "sota-2026-09-03",
+    "sota-2026-09-03-drift"
+   ],
+   "note": "Flow-JEPA: flow matching for robust latent dynamics in JEPA WMs (to verify) | READ IN FULL 2026-09-03: conditional flow matching over the whole h=5 future latent trajectory (no recursion), SIGReg kept; Table 1 clean mean 86 -> 92 (100/90/96/82), Table 2 noisy 67 -> 86; 8 Euler steps; 5.0 ms per flow step vs 2.1 ms LeWM; Push-T uses a frozen LeWM encoder; success only - NO drift metric in the PDF",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-drift/RESULT.md"
+   ]
+  },
+  "2606.26217": {
+   "key": "2606.26217",
+   "kind": "arxiv",
+   "title": "Fast LeWorldModel",
+   "authors": [
+    "Yuntian Gao",
+    "Xiangyu Xu"
+   ],
+   "published": "2026-06-24",
+   "abstract": "Joint-Embedding Predictive Architectures (JEPAs), including recent LeWorldModel (LeWM), have become a promising foundation for reconstruction-free visual world models. For visual planning, however, LeWM evaluates candidate action sequences by repeatedly applying a local one-step latent transition model. This autoregressive rollout makes planning computationally expensive and exposes the predicted trajectory to accumulated latent errors as the horizon grows. We propose Fast LeWorldModel (Fast-LeWM), a fast latent world model that replaces repeated local rollout with action-prefix prediction. Given the current latent and a candidate action sequence, Fast-LeWM encodes its prefixes and predicts the future latents reached after executing those prefixes in parallel. By making action prefixes the basic prediction unit, Fast-LeWM directly models action effects accumulated to different extents ov",
+   "url": "https://arxiv.org/abs/2606.26217",
+   "path": "TanitAD Research Lab/Library/papers/2606.26217_Fast-LeWorldModel.pdf",
+   "bytes": 2155469,
+   "sha256": "2714f69dd4b279fd77b046b8497602b61049f41587310d1637fbabb691f1d9ff",
+   "banked": "2026-09-03",
+   "tags": [
+    "sota-2026-09-03",
+    "sota-2026-09-03-encoder"
+   ],
+   "note": "Fast LeWorldModel (to verify) | READ IN FULL 2026-09-03: replaces recursion by parallel action-PREFIX prediction of all future latents from z_t; open-loop latent error lower and slower-growing (slope) on four tasks; success 85.8 -> 90.5 (92.0 with self-consistency); dynamics time 31.4 -> 8.0 s; Table 4 Long-Action LeWM 76/70/80/58 vs terminal-only prefix 96/80/90/72 vs full prefix 98/88/96/80",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-decodability/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-drift/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-encoder/RESULT.md"
    ]
   }
  }
