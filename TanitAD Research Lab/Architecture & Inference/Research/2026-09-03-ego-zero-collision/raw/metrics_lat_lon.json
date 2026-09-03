@@ -1,0 +1,289 @@
+{
+ "n_rows": 873,
+ "n_eval_rows": 78,
+ "n_train_rows": 795,
+ "step_range": [
+  550,
+  37450
+ ],
+ "marginal_entropy_nats_eval_corpus": {
+  "lat": 0.5194876563086847,
+  "lon": 0.8426898260190319
+ },
+ "vocab": {
+  "lat": 3,
+  "lon": 3,
+  "lat_tac": 8,
+  "lon_tac": 8
+ },
+ "chance_CE_nats": {
+  "lat": 1.0986122886681098,
+  "lon": 1.0986122886681098,
+  "lat_tac": 2.0794415416798357,
+  "lon_tac": 2.0794415416798357
+ },
+ "ci": "NOT COMPUTABLE from this file \u2014 each row is already a pooled mean over 160 windows, no per-window rows, no episode ids",
+ "eras": {
+  "A_pre_nav_switch": {
+   "n_eval_rows": 37,
+   "step_range": [
+    600,
+    16000
+   ],
+   "eval_lat": {
+    "n": 37,
+    "mean": 0.2624964864864865,
+    "first": 0.44236,
+    "last": 0.10998,
+    "best": 0.10998,
+    "last10_mean": 0.137059,
+    "skill_vs_marginal_last10": 0.7361650496685561,
+    "skill_vs_marginal_mean": 0.49470120550755015,
+    "H_marginal": 0.5194876563086847
+   },
+   "eval_lon": {
+    "n": 37,
+    "mean": 0.7949318918918918,
+    "first": 0.87885,
+    "last": 0.7591,
+    "best": 0.72785,
+    "last10_mean": 0.761219,
+    "skill_vs_marginal_last10": 0.09667949404813614,
+    "skill_vs_marginal_mean": 0.05667320602736392,
+    "H_marginal": 0.8426898260190319
+   },
+   "eval_lat_tac": {
+    "n": 37,
+    "mean": 1.2229445945945947,
+    "first": 1.44308,
+    "last": 1.09645,
+    "best": 1.05423,
+    "last10_mean": 1.098603
+   },
+   "eval_lon_tac": {
+    "n": 37,
+    "mean": 1.3363710810810812,
+    "first": 1.6706,
+    "last": 1.18012,
+    "best": 1.1648,
+    "last10_mean": 1.2168750000000002
+   },
+   "eval_goal2s_err_m": {
+    "n": 37,
+    "mean": 4.832512702702703,
+    "first": 8.44056,
+    "last": 2.6035,
+    "best": 2.4016,
+    "last10_mean": 2.914247
+   },
+   "eval_traj": {
+    "n": 37,
+    "mean": 1.5108551351351351,
+    "first": 2.43208,
+    "last": 1.28315,
+    "best": 1.08512,
+    "last10_mean": 1.1789539999999998
+   },
+   "eval_anchor_acc": {
+    "n": 37,
+    "mean": 0.47195945945945933,
+    "first": 0.175,
+    "last": 0.5125,
+    "best": 0.58125,
+    "last10_mean": 0.5318750000000001
+   },
+   "skill_core_kin3": {
+    "lat_last10": 0.736165049668556,
+    "lon_last10": 0.09667949404813611,
+    "lat_minus_lon_last10": 0.6394855556204199,
+    "lat_mean": 0.4947012055075502,
+    "lon_mean": 0.056673206027363816,
+    "lat_minus_lon_mean": 0.4380279994801864,
+    "n_rows_lat_beats_lon": 36,
+    "note": "skill = 1 - CE/H(marginal); 0 = prior-only control, same units for both heads. Paired over identical rows."
+   },
+   "z_tac_raw_CE_8class": {
+    "lat_last10": 1.098603,
+    "lon_last10": 1.2168750000000002,
+    "lon_over_lat_last10": 1.1076567240395303,
+    "n_rows_lon_worse": 35,
+    "n": 37,
+    "caveat": "marginals for the v7.2 8-class heads were NOT measured here, so this is a raw-CE ratio, not a skill comparison. 5 of 16 tactical classes have zero support (R40), so the two priors differ."
+   }
+  },
+  "B_leaked": {
+   "n_eval_rows": 3,
+   "step_range": [
+    16500,
+    17500
+   ],
+   "eval_lat": {
+    "n": 3,
+    "mean": 0.13181666666666667,
+    "first": 0.12669,
+    "last": 0.13566,
+    "best": 0.12669,
+    "last10_mean": 0.13181666666666667,
+    "skill_vs_marginal_last10": 0.7462564026962367,
+    "skill_vs_marginal_mean": 0.7462564026962367,
+    "H_marginal": 0.5194876563086847
+   },
+   "eval_lon": {
+    "n": 3,
+    "mean": 0.75175,
+    "first": 0.75181,
+    "last": 0.75897,
+    "best": 0.74447,
+    "last10_mean": 0.75175,
+    "skill_vs_marginal_last10": 0.10791613142957057,
+    "skill_vs_marginal_mean": 0.10791613142957057,
+    "H_marginal": 0.8426898260190319
+   },
+   "eval_lat_tac": {
+    "n": 3,
+    "mean": 1.0456666666666665,
+    "first": 1.06956,
+    "last": 1.04076,
+    "best": 1.02668,
+    "last10_mean": 1.0456666666666665
+   },
+   "eval_lon_tac": {
+    "n": 3,
+    "mean": 1.2327833333333333,
+    "first": 1.21533,
+    "last": 1.23144,
+    "best": 1.21533,
+    "last10_mean": 1.2327833333333333
+   },
+   "eval_goal2s_err_m": {
+    "n": 3,
+    "mean": 2.5577533333333338,
+    "first": 2.73715,
+    "last": 2.66281,
+    "best": 2.2733,
+    "last10_mean": 2.5577533333333338
+   },
+   "eval_traj": {
+    "n": 3,
+    "mean": 1.1257733333333333,
+    "first": 1.16872,
+    "last": 1.11964,
+    "best": 1.08896,
+    "last10_mean": 1.1257733333333333
+   },
+   "eval_anchor_acc": {
+    "n": 3,
+    "mean": 0.53125,
+    "first": 0.5375,
+    "last": 0.49375,
+    "best": 0.5625,
+    "last10_mean": 0.53125
+   },
+   "skill_core_kin3": {
+    "lat_last10": 0.7462564026962367,
+    "lon_last10": 0.10791613142957064,
+    "lat_minus_lon_last10": 0.638340271266666,
+    "lat_mean": 0.7462564026962367,
+    "lon_mean": 0.10791613142957064,
+    "lat_minus_lon_mean": 0.638340271266666,
+    "n_rows_lat_beats_lon": 3,
+    "note": "skill = 1 - CE/H(marginal); 0 = prior-only control, same units for both heads. Paired over identical rows."
+   },
+   "z_tac_raw_CE_8class": {
+    "lat_last10": 1.0456666666666665,
+    "lon_last10": 1.2327833333333333,
+    "lon_over_lat_last10": 1.1789448517692065,
+    "n_rows_lon_worse": 3,
+    "n": 3,
+    "caveat": "marginals for the v7.2 8-class heads were NOT measured here, so this is a raw-CE ratio, not a skill comparison. 5 of 16 tactical classes have zero support (R40), so the two priors differ."
+   }
+  },
+  "C_clean": {
+   "n_eval_rows": 38,
+   "step_range": [
+    18000,
+    37000
+   ],
+   "eval_lat": {
+    "n": 38,
+    "mean": 0.12450078947368418,
+    "first": 0.12225,
+    "last": 0.12604,
+    "best": 0.10928,
+    "last10_mean": 0.12329699999999999,
+    "skill_vs_marginal_last10": 0.7626565357180773,
+    "skill_vs_marginal_mean": 0.7603392728167065,
+    "H_marginal": 0.5194876563086847
+   },
+   "eval_lon": {
+    "n": 38,
+    "mean": 0.7280831578947368,
+    "first": 0.73793,
+    "last": 0.72629,
+    "best": 0.69505,
+    "last10_mean": 0.721602,
+    "skill_vs_marginal_last10": 0.1436920469196422,
+    "skill_vs_marginal_mean": 0.13600101079386562,
+    "H_marginal": 0.8426898260190319
+   },
+   "eval_lat_tac": {
+    "n": 38,
+    "mean": 0.9165281578947367,
+    "first": 0.9806,
+    "last": 0.8561,
+    "best": 0.83556,
+    "last10_mean": 0.8633770000000001
+   },
+   "eval_lon_tac": {
+    "n": 38,
+    "mean": 1.1541871052631578,
+    "first": 1.23716,
+    "last": 1.12701,
+    "best": 1.09439,
+    "last10_mean": 1.12697
+   },
+   "eval_goal2s_err_m": {
+    "n": 38,
+    "mean": 2.117164210526316,
+    "first": 2.16344,
+    "last": 2.01059,
+    "best": 1.87202,
+    "last10_mean": 2.003837
+   },
+   "eval_traj": {
+    "n": 38,
+    "mean": 0.9843463157894735,
+    "first": 1.15026,
+    "last": 0.93111,
+    "best": 0.91607,
+    "last10_mean": 0.9324669999999999
+   },
+   "eval_anchor_acc": {
+    "n": 38,
+    "mean": 0.5942434210526316,
+    "first": 0.575,
+    "last": 0.59375,
+    "best": 0.64375,
+    "last10_mean": 0.6137500000000001
+   },
+   "skill_core_kin3": {
+    "lat_last10": 0.7626565357180773,
+    "lon_last10": 0.1436920469196422,
+    "lat_minus_lon_last10": 0.6189644887984351,
+    "lat_mean": 0.7603392728167064,
+    "lon_mean": 0.13600101079386553,
+    "lat_minus_lon_mean": 0.6243382620228409,
+    "n_rows_lat_beats_lon": 38,
+    "note": "skill = 1 - CE/H(marginal); 0 = prior-only control, same units for both heads. Paired over identical rows."
+   },
+   "z_tac_raw_CE_8class": {
+    "lat_last10": 0.8633770000000001,
+    "lon_last10": 1.12697,
+    "lon_over_lat_last10": 1.3053046351709623,
+    "n_rows_lon_worse": 38,
+    "n": 38,
+    "caveat": "marginals for the v7.2 8-class heads were NOT measured here, so this is a raw-CE ratio, not a skill comparison. 5 of 16 tactical classes have zero support (R40), so the two priors differ."
+   }
+  }
+ }
+}
