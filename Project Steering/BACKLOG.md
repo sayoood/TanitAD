@@ -193,3 +193,10 @@ that all lands before S-W's first gate.
 - **R39 — THE DEPLOYMENT QUESTION: the tactical decision is oracle nav, not scene.** Under `nav_zero` the ranking collapses to 0.520 and a nav-only predictor beats the model (0.684 > 0.650). nav will not exist at deployment. This binds the v7 line as much as refav1 — every nav-conditioned tactical claim needs the nav-zero arm beside the nav-shuffle one.
 - **R29 — REFRAMED (not struck)**: the chord cost alone flips 1 of 25 windows and silently reweights by 5,793×; it is necessary with L3 + L4 jointly, not sufficient alone.
 - **R40 — 5 of 16 tactical classes have ZERO support** in the training labels, and 8.13 % of batch-8 steps see no labelled row at all (~2.15 rows per step). A class-balanced loss cannot conjure support that is absent; the label pipeline is the Data FlyWheel's item.
+
+## Added 2026-09-03 10:10 Berlin (from D-TACDEC-L0-L1-E0)
+
+- **R37 — STRUCK**: the decoder's loss is logged (four keys, `None` never `0.0`); the pre-registration's preflight is discharged and its arms are unblocked.
+- **R38 — PARTLY STRUCK**: the seed reproduces its goal 64/64 at 0.000° under `goal_time_grid="plan"` (default OFF). What remains is the DESIGN half — see R34.
+- **R41 — the cost repair is now the critical path, and the chord is NOT optional.** Only one configuration ranks a turn at shipped weights (L0 identity + chord + steer units) and it is 4 episodes of one token; the κ² weight that would tip the shipped cost is 1.66e-08, a deletion. Land the chord WITH L4, on the tiny ladder, per `PREREG_TACTICAL_DECODER.md` §5.
+- **R42 — scope note on `D-REFAV1-BOUNDARY-NULL`**: the steer conversion wins nothing under the SHIPPED cost but is NECESSARY under the only cost that ranks a turn. Any future statement of its value must name the cost it is measured under.

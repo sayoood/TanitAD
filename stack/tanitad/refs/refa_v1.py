@@ -156,6 +156,59 @@ def _check_cost_time_grid(grid: str) -> str:
     return grid
 
 
+#: ⛔ THE GOAL'S OWN TIME GRID (`plan(goal_time_grid=...)`, 2026-09-03, L0 /
+#: BACKLOG R38). THE SEED IS NOT THE GOAL, and no re-gridding can make it be.
+#: MEASURED (`2026-09-03-tactical-decoder/raw/seed_goal_mismatch.json`):
+#: **62 of the 64 (lat, lon) token pairs** give a different tactical action
+#: sequence to the GOAL and to the SEED that chases it -- under BOTH
+#: `COST_TIME_GRIDS` -- with `TURN_L` over-rotating its own goal by **82.5 deg**;
+#: the only agreeing pairs are `(LANE_KEEP, CRUISE)` and `(ABORT_LC, CRUISE)`,
+#: i.e. the all-zero control.
+#:
+#: ⭐ THE CAUSE IS A TRUNCATION, NOT A REGRID. `_imagine_tactical_goal` rolls
+#: the goal from operative indices ``[0, stride, ..., (tac_steps-1)*stride]`` =
+#: ``[0,3,...,27]`` (6.0 s), while the seed is ``controls[:cfg.plan_steps]`` =
+#: ``[0..9]`` (2.0 s, `plan_horizon_s` 2.0 / `op_dt` 0.2). **The goal's actions
+#: at operative indices 12, 15, 18, 21, 24 and 27 are not in the seed at all**,
+#: so no `cost_time_grid` can address them: ``"dense"`` reads ``[0..9]`` and
+#: ``"tactical"`` reads ``[0,3,6,9,9,9,9,9,9,9]``.
+#:   * ``"full"``  -- DEFAULT and byte-identical to every pre-2026-09-03 caller:
+#:     the goal is the token's FULL `op_steps` manoeuvre subsampled onto the
+#:     tactical grid. The 62/64 mismatch is preserved, because every banked
+#:     number was produced under it and must stay reproducible.
+#:   * ``"plan"``  -- the goal is re-rolled from the SEED'S OWN action feed: the
+#:     same `_model_actions` call, the same `tac_idx` re-grid, the same
+#:     predictor and the same ``z0`` a candidate gets, so the canonical seed's
+#:     cost rollout and the goal rollout are THE SAME FORWARD PASS and
+#:     ``1 - cos`` is 0 by construction on 64/64 tokens, in both
+#:     `COST_TIME_GRIDS` and at both `plan_level`s.
+#: ⚠️ ``"plan"`` BUYS IDENTITY, NOT HORIZON -- say so in any claim. The goal
+#: it builds is the manoeuvre's first `plan_horizon_s` (``"dense"``) or its
+#: first `plan_horizon_s` held to 6 s (``"tactical"``), NOT the 6 s manoeuvre
+#: the token names. Making the seed span the token's own manoeuvre needs
+#: `plan_horizon_s` 2.0 -> 6.0, which changes the optimised window, the search
+#: dimensionality, the proposal head's output shape (:1093) and the length of
+#: the returned plan -- a DESIGN decision, not a repair, and not this file's to
+#: take unilaterally.
+#: ⛔ A THIRD "REPAIR" THAT LOOKS RIGHT AND IS WRONG, recorded so it is not
+#: re-proposed: packing the goal's stride-3 actions into the 10 seed slots
+#: (``seed = ctrl[::stride][:plan_steps]``) does give 64/64 -- under ``"dense"``
+#: ONLY -- but the plan is EXECUTED on the operative grid at `op_dt`
+#: (`PlanConfig(horizon=cfg.plan_steps, dt=cfg.op_dt)`) and the coarse->fine
+#: re-score rolls `self.operative` over the same tensor with no regrid, so it
+#: would drive a 6 s manoeuvre in 2 s. Under ``"tactical"`` it cannot work at
+#: all: `tac_idx` takes 4 distinct values and cannot address 10 distinct
+#: goal actions.
+GOAL_TIME_GRIDS = ("full", "plan")
+
+
+def _check_goal_time_grid(grid: str) -> str:
+    if grid not in GOAL_TIME_GRIDS:
+        raise ValueError(f"goal_time_grid must be one of {GOAL_TIME_GRIDS}, "
+                         f"got {grid!r}")
+    return grid
+
+
 def canonical_controls(lat: str, lon: str, v0: float, op_steps: int,
                        op_dt: float) -> Tensor:
     """(lat token, lon token, measured v0) -> ``[op_steps, 2]`` (a, kappa) on
@@ -1796,7 +1849,7 @@ class RefAV1(nn.Module):
              target_speed: float | None = None, nav_cmd: Tensor | None = None,
              plan_cfg: PlanConfig | None = None, prev_elites: Tensor | None = None,
              cost_chunk: int = 64, model_action_units: str = "kappa",
-             cost_time_grid: str = "dense"):
+             cost_time_grid: str = "dense", goal_time_grid: str = "full"):
         """One MPC tick for ONE window (B must be 1).
 
         ⭐ ``model_action_units`` — THE PLANNER->MODEL CROSSING (PI ruling
@@ -1841,9 +1894,21 @@ class RefAV1(nn.Module):
         of `self.tactical`; the coarse->fine re-score on the operative predictor
         is untouched, and a CONSTANT candidate costs the same under both.
 
-        ⚠️ Both are CALL-SITE arguments, not `RefAV1Config` fields, on purpose:
-        adding a config field would change every serialised config dict while a
-        training run is live. Nothing on the training path can see them.
+        ⛔ ``goal_time_grid`` -- THE SEED IS NOT THE GOAL (L0 / BACKLOG R38).
+        ``"full"`` (DEFAULT, byte-identical to every pre-2026-09-03 caller)
+        rolls the goal from the token's FULL `op_steps` manoeuvre, of which the
+        seed -- ``controls[:cfg.plan_steps]`` -- holds only the first
+        `plan_horizon_s`, so 62 of the 64 token pairs seed a control the goal
+        was never rolled from and ``1 - cos = 0`` is UNREACHABLE even with a
+        perfect world model. ``"plan"`` re-rolls the goal from the seed's own
+        action feed, making the two the same forward pass. See
+        `GOAL_TIME_GRIDS` for the measurement, for why the truncation (not the
+        regrid) is the cause, and for what ``"plan"`` does NOT buy.
+
+        ⚠️ All three are CALL-SITE arguments, not `RefAV1Config` fields, on
+        purpose: adding a config field would change every serialised config
+        dict while a training run is live. Nothing on the training path can
+        see them.
 
         The cost is where the hierarchy earns its keep (change #8): the tactical
         target speed and the strategic goal field enter as **cost terms**, not as
@@ -1868,6 +1933,7 @@ class RefAV1(nn.Module):
             raise ValueError("plan() is a single-window API (B must be 1)")
         _check_units(model_action_units)
         _check_cost_time_grid(cost_time_grid)
+        _check_goal_time_grid(goal_time_grid)
         cfg = self.cfg
         pc = plan_cfg or PlanConfig(horizon=cfg.plan_steps, dt=cfg.op_dt)
         if pc.horizon != cfg.plan_steps:
@@ -1902,6 +1968,22 @@ class RefAV1(nn.Module):
         search_pred = self.tactical if coarse else self.operative
         search_z = self._tac_field(last) if coarse else last
 
+        # ⭐ THE COARSE COST'S TIME GRID (R27; `COST_TIME_GRIDS`). Built once,
+        # outside the chunk loop, and applied ONLY to rollouts of the tactical
+        # predictor: the coarse->fine re-score rolls `self.operative`, whose step
+        # IS `op_dt`, so it has no defect to repair.
+        # ⚠️ HOISTED ABOVE THE GOAL BLOCK 2026-09-03 (L0): with
+        # `goal_time_grid="plan"` the GOAL is re-rolled from the seed's
+        # own feed and needs the same re-grid, so it must exist first.
+        # Pure code motion -- `tac_idx` is read only inside `_cost_chunk`
+        # and by the goal repair below, both defined after this point.
+        tac_idx = None
+        if cost_time_grid == "tactical":
+            _s = self._stride(cfg.tac_dt)
+            tac_idx = torch.tensor(
+                [min(j * _s, pc.horizon - 1) for j in range(cfg.tac_steps)],
+                dtype=torch.long, device=feats.device)
+
         # ⭐ THE GOAL, IN ONE SPACE (docstring). Supplied -> pooled; absent ->
         # the tactical brain's own imagination; no hierarchy -> goal-free.
         goal_action = None
@@ -1930,19 +2012,33 @@ class RefAV1(nn.Module):
         # like a proposal mode and win only on modelled cost.
         if goal_action is not None:
             seed = goal_action["controls"][:cfg.plan_steps][None]      # [1,H,2]
+            # ⛔ AND HERE IS WHERE THE SEED STOPS BEING THE GOAL (L0 / R38).
+            # `[:cfg.plan_steps]` keeps operative actions [0..9] of a manoeuvre
+            # the goal was rolled from at [0,3,...,27]. `goal_time_grid="plan"`
+            # closes it the only way that does not change `plan_horizon_s`: by
+            # re-rolling the GOAL from THIS seed's own feed -- the same
+            # `_model_actions` spelling, the same `tac_idx` re-grid, the same
+            # predictor and the same z0 a candidate gets in `_cost_chunk`, so
+            # the canonical seed's cost rollout and the goal rollout are the
+            # SAME forward pass and `1 - cos` is 0 by construction. Read
+            # `GOAL_TIME_GRIDS` before quoting this: it buys IDENTITY, not
+            # HORIZON. ``goal_source`` deliberately does NOT change -- the
+            # provenance of this choice is the call-site argument, exactly as
+            # for `cost_time_grid` and `model_action_units`.
+            # ⚠️ COST: one EXTRA tactical rollout per tick under the flag --
+            # `_imagine_tactical_goal` must still run, because its `ctrl` IS
+            # the seed. Repairing it in place instead would need
+            # `_imagine_tactical_goal` to know `plan_steps` and `tac_idx`,
+            # which widens the edit past the seed site for one rollout.
+            if goal_time_grid == "plan":
+                g_acts = self._model_actions(seed, v0_t, model_action_units)
+                if tac_idx is not None and search_pred is self.tactical:
+                    g_acts = g_acts.index_select(1, tac_idx)
+                g_zk = search_pred.rollout(search_z, g_acts, intent=intent,
+                                           last_only=True)
+                goal_t = g_zk if coarse else self._tac_field(g_zk)
             seed_pool = (seed if seed_pool is None
                          else torch.cat([seed_pool, seed], dim=0))
-
-        # ⭐ THE COARSE COST'S TIME GRID (R27; `COST_TIME_GRIDS`). Built once,
-        # outside the chunk loop, and applied ONLY to rollouts of the tactical
-        # predictor: the coarse->fine re-score rolls `self.operative`, whose step
-        # IS `op_dt`, so it has no defect to repair.
-        tac_idx = None
-        if cost_time_grid == "tactical":
-            _s = self._stride(cfg.tac_dt)
-            tac_idx = torch.tensor(
-                [min(j * _s, pc.horizon - 1) for j in range(cfg.tac_steps)],
-                dtype=torch.long, device=feats.device)
 
         def _cost_chunk(controls: Tensor, pred=None, z0=None) -> Tensor:
             pred = pred or search_pred
@@ -2027,6 +2123,7 @@ class RefAV1(nn.Module):
         # from a date. Both defaults are the legacy path.
         res.model_action_units = model_action_units
         res.cost_time_grid = cost_time_grid
+        res.goal_time_grid = goal_time_grid
 
         # ⭐ COARSE-TO-FINE: the search ran on the tactical field; re-score the
         # WINNER (and the baselines it beat) on the full operative field, so the

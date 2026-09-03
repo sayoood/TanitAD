@@ -696,11 +696,58 @@ def main(argv=None) -> int:
                 # keeps ~3 significant digits). No-op under fp32.
                 adapter_std = float(model.encode(feats).float()
                                     .std(dim=(0, 1, 2)).mean())
+            # ---- the LABEL terms, which NO refav1 log has ever carried --
+            # `refa_v1.py:1645` computes `loss_lat_label` / `loss_lon_label`
+            # and folds them in at `:1648` with `w_tac_label`; `:1662`/`:1663`
+            # do the same for `loss_route_label` with `w_str_label`. MEASURED
+            # 2026-09-03 on the two banked step-1,000 checkpoints: the tactical
+            # label term is 13.59 % (incumbent) / 20.51 % (ep2) of the
+            # label+feature sum -- and 0 rows of the 9 banked
+            # `train_log.jsonl` carry it, so the term the arm exists to move
+            # has never been visible. BACKLOG R37; a preflight condition for
+            # every arm in `Project Steering/PREREG_TACTICAL_DECODER.md` (3).
+            # ⛔ `None`, NEVER 0.0, when the model did not emit the term. A
+            # 0.0 in this column reads as "supervised, and perfect", so an
+            # UNLABELLED step and a PERFECTLY CLASSIFIED step would print the
+            # same character -- the distinction is the whole point of the key.
+            # The loader emits `-100` for out-of-band windows and unlabeled
+            # episodes and `refa_v1.py:1643` SKIPS an all-ignored family, so
+            # this is the common case, not an edge one: 8.13 % of batch-8
+            # steps carry no lateral label at all (MEASURED, `2026-09-03-
+            # tactical-decoder/raw/window_band_census.json`).
+            loss_f = float(loss.detach())
+            lab = {k: (float(out[k].detach()) if k in out else None)
+                   for k in ("loss_lat_label", "loss_lon_label",
+                             "loss_route_label")}
+            _tac = [v for k, v in lab.items()
+                    if k != "loss_route_label" and v is not None]
+            # ⭐ THE WEIGHTED SHARE, FOLDED EXACTLY AS THE MODEL FOLDS IT, so
+            # the row is hand-checkable against `refa_v1.py:1646-1649` (the
+            # MEAN over the present families, then * w_tac_label) and
+            # `:1663-1664` (* w_str_label). Denominator is this row's own
+            # `loss`. None -- not 0.0 -- when no label term was emitted.
+            _w = 0.0
+            if _tac:
+                _w += cfg.w_tac_label * (sum(_tac) / len(_tac))
+            if lab["loss_route_label"] is not None:
+                _w += cfg.w_str_label * lab["loss_route_label"]
+            lab["loss_label_weighted_share"] = (
+                _w / loss_f
+                if (_tac or lab["loss_route_label"] is not None) and loss_f
+                else None)
             row = {"step": step, "loss": float(loss.detach()),
                    "precision": a.precision, "tf32": bool(a.tf32),
                    "loss_feat_op": float(out["loss_feat_op"].detach()),
                    "loss_feat_tac": float(out["loss_feat_tac"].detach()),
                    "loss_feat_str": float(out["loss_feat_str"].detach()),
+                   # ⭐ the tactical/strategic LABEL terms and their weighted
+                   # share of this row's `loss` -- None (never 0.0) when the
+                   # model did not emit them. See the block above.
+                   "loss_lat_label": lab["loss_lat_label"],
+                   "loss_lon_label": lab["loss_lon_label"],
+                   "loss_route_label": lab["loss_route_label"],
+                   "loss_label_weighted_share":
+                       lab["loss_label_weighted_share"],
                    "grad_norm": float(gnorm), "adapter_std": adapter_std,
                    # ⭐ the target's own scale — a loss is only interpretable
                    # against the variance of what it predicts (see refa_v1.py

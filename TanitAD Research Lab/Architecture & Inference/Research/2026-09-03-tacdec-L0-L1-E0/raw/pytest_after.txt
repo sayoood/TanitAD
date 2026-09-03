@@ -1,0 +1,27 @@
+SYNCED
+        hits = DC.search(["REF-A"], context=2, require_all=True)
+>       assert hits, "REF-A must be findable — it is the measured frozen arm"
+E       AssertionError: REF-A must be findable — it is the measured frozen arm
+E       assert []
+
+stack\tests\test_decision_check.py:45: AssertionError
+---------------------------- Captured stdout call -----------------------------
+  ⚠️  DECISION: DECISIONS_2026-07-20.md NOT FOUND — the record this tool checks is incomplete, and that is itself a finding
+  ⚠️  REGISTRY: MODEL_REGISTRY.md NOT FOUND — the record this tool checks is incomplete, and that is itself a finding
+  ⚠️  RETRACTION: RETRACTION_LOG.md NOT FOUND — the record this tool checks is incomplete, and that is itself a finding
+============================== warnings summary ===============================
+tests/test_anchor_tactical.py::test_anchor_loss_finite_backward_and_grad_reach
+  C:\Users\Admin\tanitad-wt\stack\tests\test_anchor_tactical.py:176: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+    assert float(loss_wta) >= 0.0 and float(loss_cls) >= 0.0
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED stack\tests\test_decision_check.py::test_refa_surfaces_the_measured_arm
+1 failed, 736 passed, 1 skipped, 5053 deselected, 1 warning in 112.56s (0:01:52)
+
+[exited with code 0]
+
+--- skip reason, re-run with -rs (2026-09-03) ---
+SKIPPED [1] stack/tests/test_refa_v1_precision.py:330: GPU busy - util 47 %, 810/8188 MiB, other python compute apps []: another agent no job must not be disturbed (TANITAD_REFAV1_CUDA_TEST=1 forces)
+Forced re-run: TANITAD_REFAV1_CUDA_TEST=1 pytest stack/tests/test_refa_v1_precision.py -> 8 passed in 3.94s
