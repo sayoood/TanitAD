@@ -242,3 +242,12 @@ that all lands before S-W's first gate.
 - **R55 — `chord` must NOT become the default.** Default-safe as a flag, but a 5,793× reweighting wearing a metric's clothes; any adoption needs the weight re-derived WITH it.
 - **R56 — unreconciled: the κ² charge reads 3.20e-04 (cost-repair) vs 2.24e-04 (cost-surface), 1.43×.** Both MEASURED in different packages, neither withdrawn. Reconcile before either number is quoted again.
 - **R57 — an unowned file appeared inside another stream's package dir**: `…/2026-09-03-cost-repair/PROPOSED_REGISTER_ROWS.md` (12,695 B) at 11:28, after the Master Mind's 11:15 listing; a file of that name belongs to `2026-09-03-anchored-actdiv-refav1`. Unread, unstaged, unmodified by the stream that found it. Identify its owner before staging anything from that directory.
+
+## Added 2026-09-03 13:45 Berlin (from H-GS9-1 / D-ACTDIV-UNITS-INVARIANCE)
+
+- **R12, R22 — STRUCK**: the banked GS-9 raw is read (L3-TRANSITION-FAIL, on an ADMISSIBLE estimator) and the unit-invariance argument is tested (INVARIANCE-PARTIAL).
+- **R58 — `v` leaks in at the MODEL BOUNDARY, not in a decode target.** `clip_features:521` lifts `v0` into the third channel while the zero-action arm zeroes only steer and accel; `v_t` alone scores `dx_fwd` at 0.9986. Every probe that feeds a model through `_lift3` needs a `v`-zeroed arm, and `D-V-EXCLUDED` must be restated to cover INPUTS, not only targets.
+- **R59 — `run_panel()` silently skips unknown cells**, a false-negative generator: it would have dropped the `v_t` control that found R58 without a word. Two-line refusal needed (not the finding stream's file).
+- **R60 — `transition_probe.py` is wired into nothing**; `mm_e19_read.py` still calls `actdiv_local.py`, which carries the H-LEAK-1 speed-scale defect. It is the ONLY instrument that answers L3's question on an admissible estimator.
+- **R61 — raw pixels carry 5–200× more transition-specific structure than the learned Δz** (RFF floor, point estimates, no CI). If that survives a CI it is a representation finding, not an instrument one.
+- **R62 — `MODEL_REGISTRY.md` has no row for `k8clip05p30k`** (0 hits, two probes).

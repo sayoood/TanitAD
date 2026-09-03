@@ -832,6 +832,12 @@ def main(argv=None) -> int:
         if not a.out:
             raise SystemExit("--out is required")
         return refav1_main(a)
+    # ⛔ --action-units is refav1/PhysicalAI-only. STEER_WHEELBASE_M is the ENCODING constant
+    # of OUR cache build; cross-applying it to another corpus injects an error the encoding
+    # never had. Refuse loudly rather than silently ignoring the flag.
+    if a.action_units != "kappa":
+        raise SystemExit(f"--action-units {a.action_units!r} is refav1-only "
+                         f"(--family v7 got it); the encoding wheelbase does not travel")
 
     import torch
     torch.set_num_threads(max(1, min(6, os.cpu_count() or 1)))
@@ -991,6 +997,57 @@ REFAV1_CHANNELS = (1, 0)                     # (a, κ) controls: κ is channel 1
 REFAV1_SUBSAMPLE = 8192                      # fixed coordinate subsample of the full field
 REFAV1_VERDICTS = ("VOID", "LAT-INSENSITIVE-CONFIRMED", "LAT-INSENSITIVE-REFUTED",
                    "BOTH-INSENSITIVE")
+
+#: ``--action-units``: how the swept channel-1 LEVEL is turned into the number the model
+#: is FED (D-ACTDIV-UNITS-INVARIANCE, 2026-09-03).
+ACTION_UNITS_CHOICES = ("kappa", "steer")
+
+
+def apply_action_units(cands, units, wheelbase=None, channels=REFAV1_CHANNELS):
+    """PASS-THROUGH on the candidate grid: reinterpret the swept channel-1 level.
+
+    ``units="kappa"`` — the LEGACY path. The candidate list is returned **object-identical**
+    (not a copy, not a re-scale), so a legacy caller is byte-identical to the banked run.
+
+    ``units="steer"`` — the swept ``level`` is read as a TRUE CURVATURE in rad/m and the value
+    fed at the model boundary becomes ``arctan(L_enc * level)``, applied by the repo's own
+    encoder-side inverse :func:`tanitad.models.kinematic.as_command` — never a hand-rolled
+    ``atan``. ``level`` / ``abs_level`` keep the NOMINAL curvature so linearity is measured
+    against the swept action levels; ``fed_value`` records what the model actually received.
+
+    ⛔ ``STEER_WHEELBASE_M`` is the ENCODING constant (``physicalai.signals_at`` wrote
+    ``steer = arctan(2.9 * curvature)`` for every shipped cache). It is refav1/PhysicalAI-only
+    and must NEVER be cross-applied to ZOD, l2d or alpasim, which encode differently.
+    """
+    import torch
+    from tanitad.models.kinematic import STEER_WHEELBASE_M, as_command  # noqa: PLC0415
+    if units not in ACTION_UNITS_CHOICES:
+        raise ValueError(f"--action-units must be one of {ACTION_UNITS_CHOICES}, got {units!r}")
+    L = float(STEER_WHEELBASE_M if wheelbase is None else wheelbase)
+    if units == "kappa":
+        return cands, {"action_units": "kappa", "wheelbase_m": None,
+                       "note": "LEGACY: the swept level is fed unchanged (identity pass-through)"}
+    ch = int(channels[0])                       # AXIS_NAMES[0] == "kappa"
+    out = []
+    for c in cands:
+        c = dict(c)
+        a2 = list(c["a2"])
+        if c.get("axis_name") == "kappa" and a2[ch] != 0.0:
+            # as_command expects channel 1 in GEOMETRY (kappa); refav1's (a, kappa) layout
+            # already puts kappa at channel 1, which is why the model's own tensor shape is
+            # handed over unchanged rather than reordered here.
+            conv = as_command(torch.tensor([a2], dtype=torch.float64), "steer", L)
+            a2 = [float(x) for x in conv[0].tolist()]
+        c["a2"] = a2
+        c["fed_value"] = float(a2[ch])
+        out.append(c)
+    return out, {"action_units": "steer", "wheelbase_m": L,
+                 "wheelbase_source": "tanitad.models.kinematic.STEER_WHEELBASE_M (the ENCODING "
+                                     "constant physicalai.signals_at used: steer = arctan(L*curv))"
+                                     if wheelbase is None else "--steer-wheelbase (explicit)",
+                 "map": "fed = arctan(L_enc * level) via tanitad.models.kinematic.as_command",
+                 "note": "the swept level is a TRUE CURVATURE in rad/m; level/abs_level keep the "
+                         "nominal curvature, fed_value is what the model received"}
 
 
 def _load_refav1_arm():
@@ -1221,6 +1278,12 @@ def refav1_main(a) -> int:
     kl = tuple(float(x) for x in a.kappa_levels.split(","))
     al = tuple(float(x) for x in a.accel_levels.split(","))
     cands = candidate_grid_abs(kl, al, REFAV1_CHANNELS)
+    cands, units_prov = apply_action_units(cands, a.action_units, a.steer_wheelbase,
+                                           REFAV1_CHANNELS)
+    _p(f"  [units] action_units={units_prov['action_units']} "
+       f"wheelbase={units_prov['wheelbase_m']}  kappa levels fed as "
+       + ", ".join(f"{c['abs_level']:g}->{c.get('fed_value', c['a2'][REFAV1_CHANNELS[0]]):.7f}"
+                   for c in cands if c.get("axis_name") == "kappa" and c["level"] > 0))
     # ⛔ D-P2-LEAK-AUDIT / H-LEAK-1: the speed channel MUST be fed at the model's OWN
     # trained scale. This tool never builds the third channel itself — it calls the
     # model's ``augment_actions``, which divides by ``refa_v1.SPEED_SCALE_MPS``. The
@@ -1241,6 +1304,7 @@ def refav1_main(a) -> int:
            "nav": a.refav1_nav, "episodes_n": a.episodes_n, "window_stride": a.window_stride,
            "horizon": "h=1 (one operative step, 0.2 s); the h=10 planner-horizon read is a GPU follow-up",
            "kappa_levels": list(kl), "accel_levels": list(al), "channels": REFAV1_CHANNELS,
+           "action_units": units_prov,
            "verdict_space": "tac (the planner's cost space: _tac_field of the terminal field)",
            "n_perm": a.n_perm, "seed": a.seed, "thresholds": THRESHOLDS,
            "generated_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "arms": {}}
@@ -1317,6 +1381,15 @@ def _add_refav1_args(ap):
     ap.add_argument("--batch", type=int, default=4)
     ap.add_argument("--kappa-levels", default=",".join(f"{x:g}" for x in REFAV1_KAPPA_LEVELS))
     ap.add_argument("--accel-levels", default=",".join(f"{x:g}" for x in REFAV1_ACCEL_LEVELS))
+    ap.add_argument("--action-units", default="kappa", choices=ACTION_UNITS_CHOICES,
+                    help="refav1 only. 'kappa' (default) feeds the swept level UNCHANGED — the "
+                         "legacy path, byte-identical to the banked run. 'steer' reads the swept "
+                         "level as a TRUE CURVATURE in rad/m and feeds arctan(L_enc * level) at "
+                         "the model boundary via tanitad.models.kinematic.as_command.")
+    ap.add_argument("--steer-wheelbase", type=float, default=None,
+                    help="L_enc for --action-units steer. Default: "
+                         "tanitad.models.kinematic.STEER_WHEELBASE_M (2.9, the ENCODING constant). "
+                         "NEVER cross-apply it to ZOD / l2d / alpasim.")
 
 
 if __name__ == "__main__":

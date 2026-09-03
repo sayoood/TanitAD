@@ -489,3 +489,99 @@ def test_refav1_planted_accel_only_response_reads_CONFIRMED_end_to_end():
     fx = r["full_field_exact"]
     assert max(fx["axes"]["kappa"]["norm_by_level"].values()) == 0.0
     assert min(fx["axes"]["accel"]["norm_by_level"].values()) > 0.0
+
+
+# ---------------------------------------------------------------------------
+# (8) --action-units: the units PASS-THROUGH (D-ACTDIV-UNITS-INVARIANCE, 2026-09-03)
+#
+# The banked refav1 read swept levels {0.02, 0.05, 0.1} on channel 1 and called them
+# CURVATURES. `physicalai.signals_at` writes `steer = arctan(2.9 * curvature)` into that
+# channel, so the swept numbers were STEER ANGLES. The pass-through lets the same grid be
+# fed in either convention, ONE VARIABLE apart, so the "separation is invariant under a
+# monotone reparametrisation" argument can be MEASURED rather than inherited.
+# ---------------------------------------------------------------------------
+def test_action_units_kappa_is_an_identity_pass_through():
+    """The legacy path must be byte-identical: same objects, not a re-scaled copy."""
+    cands = aa.candidate_grid_abs((0.02, 0.05, 0.1), (0.5, 1.5), aa.REFAV1_CHANNELS)
+    out, prov = aa.apply_action_units(cands, "kappa")
+    assert out is cands                                   # object-identical, not a copy
+    assert prov["action_units"] == "kappa" and prov["wheelbase_m"] is None
+    assert all("fed_value" not in c for c in out)         # nothing added to the legacy record
+
+
+def test_action_units_steer_feeds_arctan_of_L_times_level():
+    """steer: fed = arctan(2.9 * level); the NOMINAL level is kept so linearity is still
+    measured against the swept action levels."""
+    cands = aa.candidate_grid_abs((0.02, 0.05, 0.1), (0.5, 1.5), aa.REFAV1_CHANNELS)
+    out, prov = aa.apply_action_units(cands, "steer")
+    assert prov["action_units"] == "steer" and prov["wheelbase_m"] == pytest.approx(2.9)
+    k = next(c for c in out if c["id"] == "kappa+0.1")
+    assert k["level"] == pytest.approx(0.1)               # nominal curvature preserved
+    assert k["abs_level"] == pytest.approx(0.1)
+    assert k["fed_value"] == pytest.approx(0.28225742, abs=1e-7)
+    assert k["a2"][1] == pytest.approx(0.28225742, abs=1e-7)
+    assert k["a2"][0] == 0.0
+    kn = next(c for c in out if c["id"] == "kappa-0.1")
+    assert kn["fed_value"] == pytest.approx(-0.28225742, abs=1e-7)   # arctan is ODD
+
+
+def test_action_units_steer_leaves_the_accel_axis_and_the_zero_anchor_untouched():
+    cands = aa.candidate_grid_abs((0.02, 0.1), (0.5, 1.5), aa.REFAV1_CHANNELS)
+    out, _ = aa.apply_action_units(cands, "steer")
+    for cid in ("accel+1.5", "accel-0.5"):
+        src = next(c for c in cands if c["id"] == cid)
+        dst = next(c for c in out if c["id"] == cid)
+        assert dst["a2"] == src["a2"]                     # longitudinal channel is NOT converted
+    z = next(c for c in out if c["id"] == "zero")
+    assert z["a2"] == [0.0, 0.0]                          # the anchor stays exactly zero
+
+
+def test_action_units_steer_uses_the_repos_own_kinematic_inverse():
+    """⛔ Not a hand-rolled atan: the conversion must go through kinematic.as_command, and
+    it must invert exactly with kappa_of_steer at the ENCODING wheelbase."""
+    from tanitad.models import kinematic as kin
+    assert kin.STEER_WHEELBASE_M == 2.9
+    cands = aa.candidate_grid_abs((0.05,), (0.5,), aa.REFAV1_CHANNELS)
+    out, _ = aa.apply_action_units(cands, "steer")
+    fed = next(c for c in out if c["id"] == "kappa+0.05")["fed_value"]
+    ref = float(kin.as_command(torch.tensor([[0.0, 0.05]], dtype=torch.float64), "steer")[0, 1])
+    assert fed == pytest.approx(ref, rel=0, abs=0.0)      # the same code path, to the bit
+    back = float(kin.kappa_of_steer(torch.tensor(fed, dtype=torch.float64)))
+    assert back == pytest.approx(0.05, abs=1e-12)
+
+
+def test_action_units_steer_honours_an_explicit_wheelbase():
+    cands = aa.candidate_grid_abs((0.1,), (0.5,), aa.REFAV1_CHANNELS)
+    out, prov = aa.apply_action_units(cands, "steer", 3.085)
+    assert prov["wheelbase_m"] == pytest.approx(3.085)
+    assert "explicit" in prov["wheelbase_source"]
+    assert next(c for c in out if c["id"] == "kappa+0.1")["fed_value"] == pytest.approx(
+        float(np.arctan(3.085 * 0.1)), abs=1e-12)
+
+
+def test_action_units_rejects_an_unknown_convention():
+    cands = aa.candidate_grid_abs((0.1,), (0.5,), aa.REFAV1_CHANNELS)
+    with pytest.raises(ValueError, match="action-units"):
+        aa.apply_action_units(cands, "curvature_per_metre")
+
+
+def test_action_units_steer_is_refused_on_the_v7_family():
+    """⛔ STEER_WHEELBASE_M is OUR cache's ENCODING constant. ZOD / l2d / alpasim encode
+    with different wheelbases, so the flag must not travel — refuse loudly, never ignore."""
+    with pytest.raises(SystemExit, match="refav1-only"):
+        aa.main(["--family", "v7", "--action-units", "steer", "--out", "x.json"])
+
+
+def test_action_units_steer_changes_the_stimulus_by_the_arctan_gain_not_a_constant():
+    """The discriminating arithmetic the SPEC commits: the per-level gain is NOT constant
+    (2.897 / 2.880 / 2.823), so a response that is linear in the FED value cannot also be
+    linear in the NOMINAL level. This is what makes the invariance argument testable."""
+    cands = aa.candidate_grid_abs((0.02, 0.05, 0.1), (1.5,), aa.REFAV1_CHANNELS)
+    out, _ = aa.apply_action_units(cands, "steer")
+    fed = {c["abs_level"]: c["fed_value"] for c in out
+           if c.get("axis_name") == "kappa" and c["level"] > 0}
+    gains = {lv: fed[lv] / lv for lv in fed}
+    assert gains[0.02] == pytest.approx(2.8968, abs=1e-3)
+    assert gains[0.1] == pytest.approx(2.8226, abs=1e-3)
+    assert gains[0.02] > gains[0.05] > gains[0.1]          # arctan compresses as |level| grows
+    assert fed[0.1] / fed[0.02] == pytest.approx(4.8720, abs=1e-3)   # NOT 5.000
