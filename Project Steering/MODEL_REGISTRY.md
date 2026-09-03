@@ -2561,7 +2561,7 @@ drives from observations via its tactical policy (same reconstruction-OOD caveat
 
 ---
 
-### 4.5 REF-C **v3** — `refcv3-b1-v72-30k` — 🟢 **LIVE** (step 37,400 / 40,284 @ 2026-09-03T19:24Z) · ⛔ **NO EVAL RESULT EXISTS — do not quote an accuracy number**
+### 4.5 REF-C **v3** — `refcv3-b1-v72-30k` — 🟢 **LIVE** to 40,284 · ✅ **step-30,000 EVALUATED 2026-09-03 (four families, T1-stamped/UNRULED, OPEN LOOP)** · ⛔ **a trivial hold-action control BEATS it**
 
 **The goal-mediated strategic/tactical/operative hierarchy on the supervised anchor arm.** Code
 `stack/tanitad/refs/refc_v3.py`, trainer `stack/scripts/refc_v3_train.py`. Design + pre-registration:
@@ -2586,28 +2586,71 @@ drives from observations via its tactical policy (same reconstruction-OOD caveat
 | **`ckpt_30000.pt`** | 428,519,790 B, md5 **`00da81c6efcd91e7b618a1fbddb3b78f`** (MEASURED on the pod and again after transfer to the dev box — both agree) |
 | **HF** | ✅ **`Sayood/tanitad-refc-v3`** — public + **gated `manual`**, created 2026-09-03. Naming follows the family convention `tanitad-<arm>-<variant>` (cf. `tanitad-refc-base`, `tanitad-refc-xl`). In-repo card copy: `Project Steering/HF_CARD_tanitad-refc-v3.md` |
 
-#### ⛔ Results — THERE ARE NONE. The four binding families are **NOT MEASURED**.
+#### Results — MEASURED 2026-09-03 on `ckpt_30000.pt` [TIER T1 stamped, **ruling UNRULED**; OPEN LOOP]
 
-| family | status |
-|---|---|
-| LONGITUDINAL (target-speed, distance-keeping / headway / TTC) | **NOT MEASURED** |
-| LATERAL (heading, curvature, yaw-rate, cross-track) | **NOT MEASURED** |
-| TACTICAL (manoeuvre decision, tactical goal-setting) | **NOT MEASURED** |
-| STRATEGIC (strategic decision, goal/route setting) | **NOT MEASURED** |
+⛔ **Scope.** Raw: `taniteval/results/refcv3-30k-openloop-20260903-2004.json` (+ `.RESULT.md`,
+`-dump.tar.gz`). Scored on **`ckpt_30000.pt`, step 30,000**, md5 `00da81c6efcd91e7b618a1fbddb3b78f`
+— **verified byte-identical** to the file the evaluator loaded (`manifest.model.ckpt`).
+⛔ **These numbers do NOT describe the final step-40,284 `ckpt.pt`.**
+Instrument `taniteval/tools/refcv3_arm.py`; **n = 4,823 windows / 141 episodes** of the v7.2 EVAL
+split (labels md5 `aa12c948f062181c3297265b51526ec5`); grid `2s`, dt 0.5 s, 4 horizon steps;
+**episode-cluster bootstrap B = 2,000, paired for deltas**.
 
-The **instrument** exists — `taniteval/tools/refcv3_arm.py` (arms `os` / `os_navshuf` / `ha` / `ha0`,
-all four families with `n` and episode-cluster-bootstrap CIs, two degeneracy gates,
-`stack/tests/test_refcv3_arm.py` 18 passed; package
-`TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-03-refcv3-arm/`). **No run against these
-weights has been completed.** Raw artifact when it lands: `taniteval/results/refcv3-30k-openloop-*.json`.
+| arm | what it is | ADE (m) |
+|---|---|---|
+| `ha` | hold-action: the (a, steer) closing at t0, held | **0.2998** |
+| `oracle_sel` (T0) | GT-nearest anchor's refinement — a ceiling | 0.3999 |
+| **`os`** | **the model**, own `sel_score_v3` choice | **0.4798** · own CI [0.4472, 0.5140] · FDE 0.9889 [0.9183, 1.0609] |
+| `os_navshuf` | nav permuted | 0.4984 |
+| `os_navzero` | **nav withheld — the deployment condition** | 0.5034 |
+| `ha0` | constant velocity at measured v0 — the trivial floor | 0.6726 |
 
-⚠️ **The tier of the `os` arm is an UNRULED question** (BACKLOG R30). The instrument stamps it `T1`
-with `status: UNRULED` and frames every headline as a **margin over the shared `ha0` floor.
+**Paired margins over the shared `ha0` floor** (the only admissible cross-model comparison):
 
-⛔ **OPEN LOOP ONLY — no closed-loop claim exists or may be inferred.** Binding PI ruling 2026-09-02:
-a model consuming **its own planner's output is still open loop**, because the emitted trajectory does
-not affect the incoming ego data. True closed loop requires the trajectory to drive the vehicle
-(AlpaSim or a real test vehicle).
+| contrast | ADE Δ | CI95 | separated |
+|---|---|---|---|
+| `os` − `ha0` | **−0.1924** | [−0.2525, −0.1379] | ✅ |
+| `os_navzero` − `ha0` (deployment) | −0.1689 | [−0.2312, −0.1109] | ✅ |
+| `os` − `os_navzero` (oracle nav's worth) | −0.0235 | [−0.0383, −0.0112] | ✅ |
+| `os` − `os_navshuf` | −0.0186 | [−0.0261, −0.0114] | ✅ |
+| **`ha` − `ha0`** | **−0.3727** | [−0.4346, −0.3161] | ✅ |
+
+> ⛔⛔ **THE HEADLINE IS NOT "IT BEATS THE FLOOR". A TRIVIAL HOLD-ACTION CONTROL BEATS THE MODEL.**
+> `ha` 0.2998 vs `os` 0.4798, and `ha` clears the floor by **0.3727 m** against the model's
+> **0.1924 m** — nearly 2×. On this corpus and grid, holding the action that closes at t0 is the
+> better trajectory predictor. Any claim that refcv3 "works" must survive this row.
+> ⛔ **And `os` − `ha0` on speed MAE is +0.0112 [−0.0169, +0.0395], NOT separated** — the model adds
+> **nothing measurable over constant velocity longitudinally**; the whole margin is path shape. The
+> instrument marks `_longitudinal_claim_admissible: false`.
+> ⚠️ The oracle nav — the input that will not exist at deployment — is worth **2.35 cm** of ADE.
+
+**The four families** (never pooled; each with its `n`):
+
+| family | headline | n |
+|---|---|---|
+| **LONGITUDINAL** | speed MAE **0.4992** [0.4675, 0.5318] m/s, bias +0.0673 · along MAE 0.4380 [0.4063, 0.4714] m · accel MAE 0.8026 m/s² · target-speed within 0.5/1.0/2.0 m/s = 0.6823/0.8607/0.9655 · ego-progress ratio 1.0187 | 4,823 windows / 19,292 steps |
+| *distance-keeping* | headway **28.31 m** [24.16, 32.89] · time-gap 3.98 s · min TTC 24.30 s ⚠️ **739/1,244 censored at the 30 s cap; n_closing = 505** — never quote the TTC mean alone | 1,244 win / 68 eps |
+| **LATERAL** | heading MAE **1.4891°** [0.916, 2.5892] · yaw-rate MAE 2.2053 °/s · curvature MAE 0.00945 m⁻¹ · cross-track MAE 0.1165 m, final 0.2422 m | 18,147 / 13,559 steps |
+| **TACTICAL** | lateral acc **0.9494**, κ 0.7753 (lane_keep r 0.9825 · turn_left 0.7689 · turn_right 0.7146). ⛔ longitudinal: **brake_stop recall 0.3106**, accelerate precision **0.2811** (1,014 predicted vs 538 true) — the known longitudinal defect, still present | 4,823 |
+| **STRATEGIC** | ⛔ **UNAVAILABLE**, `n = 0`: *"strategic decisions not present in the scored pass (missing `route_pred`/`route_gt`) — a world-model FIDELITY pass does not traverse the hierarchy."* Needs map-derived option sets; the instrument states a route label off the ego's own future yaw is **not** a substitute. **A WORK ITEM, not a pass.** | 0 |
+
+⇒ block reports **`_complete: false`**, `_families_unavailable: ['strategic']`, `_rule_satisfied: true`.
+
+**Head ablations (true nav − shuffled nav, accuracy):** lateral **+0.0233 [−0.0026, +0.0537] NOT
+separated** · longitudinal **+0.0225 [+0.0009, +0.0417] separated** · ⚠️ **route head exactly
++0.0000 [0.0000, 0.0000]** — entirely insensitive to which nav command it is given.
+
+**Degeneracy / echo guards — why the numbers are trustworthy:** selection profile **51 of 128**
+anchors used, modal anchor 57 at 15.36 %, entropy ratio 0.5782, agrees with oracle on 55.98 % →
+**`degenerate: false`** · `os` `trivial_frac` **0.0000** (only `ha0` is trivial, by construction) ·
+anti-echo: hold-v0 NOT separated, copy-detector **CLEAN** (echo index 0.0097 vs GT 0.1719) ·
+`goal_gate` **0.15595** — the zero-init E9 gate did learn to open · `law_diagnostic` **REFUSED**
+(inputs missing — a work item, not a pass).
+
+⭐ **The selection profile is a NEW gate the T1 runbook lacks.** MEASURED by the Benchmarks
+FlyWheel: a randomly-initialised RefCV3 selecting **one anchor on 42/42 windows** reads
+`trivial_frac 0.0000` — the standard trivial-profile gate is **blind to this architecture's
+characteristic degeneracy**. `T1_CHECKLIST.md` GATE 6 needs the second bullet.
 
 #### In-training monitor at step 30,000 — a T0 loss-surface diagnostic, **never a result**
 
