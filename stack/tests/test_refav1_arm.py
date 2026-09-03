@@ -191,11 +191,14 @@ def test_dump_is_the_t1_contract_and_analyze_reads_it(e2e):
     d = _load_dump(dump)["ep000"]
     N = d["g"].shape[0]
     assert d["g"].shape == (N, 10, 2) and d["g"].dtype == np.float32
-    for arm in ("cl", "ha", "ol", "cl_navshuf", "cl_oraclegoal"):
+    # `ha0` (constant velocity, D-REFAV1-HA0-ARM, 2026-09-03) is ADDITIVE: it joins
+    # the default arm list; its own semantics are pinned in test_refav1_kin_contract.py.
+    for arm in ("cl", "ha", "ha0", "ol", "cl_navshuf", "cl_oraclegoal"):
         assert d[arm].shape == (N, 10, 2), arm
     assert d["v0"].shape == (N,) and d["eid"].tolist() == [0]
-    assert set(rec["arms"]) == {"cl", "ha", "ol", "cl_navshuf", "cl_oraclegoal"}
-    assert rec["tiers"] == {"cl": "T1", "ha": "T1", "ol": "T0",
+    assert set(rec["arms"]) == {"cl", "ha", "ha0", "ol", "cl_navshuf",
+                                "cl_oraclegoal"}
+    assert rec["tiers"] == {"cl": "T1", "ha": "T1", "ha0": "T1", "ol": "T0",
                             "cl_navshuf": "T1", "cl_oraclegoal": "T0"}
     assert rec["n_windows"] == manifest["grid"]["n_windows"] == 3 * N
     for arm, blk in rec["arms"].items():
@@ -220,7 +223,13 @@ def test_the_t1_eval_CLI_still_reads_the_dump_untouched(e2e):
     env = dict(os.environ, PYTHONIOENCODING="utf-8")
     r = subprocess.run([sys.executable, str(T1_TOOL), "--arm", "x",
                         "--analyze-only", a.dump_dir, "--out", str(out),
-                        "--tiers", "cl_navshuf=T1,cl_oraclegoal=T0",
+                        # ⚠️ `ha0=T1` is passed EXPLICITLY because
+                        # `t1_eval.DEFAULT_TIERS` does not know the arm yet — the bare
+                        # t1_eval CLI REFUSES an unstamped arm (t1_eval.py:307, and
+                        # that guard is correct). The durable fix is one line in
+                        # DEFAULT_TIERS; until it lands this flag is required for any
+                        # refav1 dump read through the standalone CLI.
+                        "--tiers", "cl_navshuf=T1,cl_oraclegoal=T0,ha0=T1",
                         "--n-boot", "30", "--dt", "0.2"],
                        capture_output=True, text=True, env=env)
     assert r.returncode == 0, r.stdout[-2000:] + r.stderr[-2000:]

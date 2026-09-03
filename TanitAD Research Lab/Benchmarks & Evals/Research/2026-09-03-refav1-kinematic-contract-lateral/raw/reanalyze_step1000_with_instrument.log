@@ -1,0 +1,19 @@
+[trivial-profile] 140 windows — arm SHAPE before any family row (straight |y|<1e-06 m, const-speed spread<0.0001 m)
+  cl             n= 140 straight=1.0000 const_speed=1.0000 CONSTANT-VELOCITY=1.0000  identical_to: cl_navshuf=122/140, cl_oraclegoal=96/140, ha=1/140, ol=1/140
+  ha             n= 140 straight=0.0214 const_speed=0.0071 CONSTANT-VELOCITY=0.0071  identical_to: cl=1/140, cl_navshuf=1/140, cl_oraclegoal=2/140, ol=1/140
+  ol             n= 140 straight=0.0071 const_speed=0.0071 CONSTANT-VELOCITY=0.0071  identical_to: cl=1/140, cl_navshuf=1/140, cl_oraclegoal=1/140, ha=1/140
+  cl_navshuf     n= 140 straight=1.0000 const_speed=0.8714 CONSTANT-VELOCITY=0.8714  identical_to: cl=122/140, cl_oraclegoal=84/140, ha=1/140, ol=1/140
+  cl_oraclegoal  n= 140 straight=1.0000 const_speed=0.6857 CONSTANT-VELOCITY=0.6857  identical_to: cl=96/140, cl_navshuf=84/140, ha=2/140, ol=1/140
+  ⚠️ CONSTANT-VELOCITY on > 50 % of windows: ['cl', 'cl_navshuf', 'cl_oraclegoal'] — read their LATERAL rows as a control, never as planning skill
+[lead] b1_eval_lead_block.npz: 140 windows / 20 eps · OK eps 20 · LEAD 43 NO_LEAD 27 NOT_STRAIGHT 60 NO_LABEL 10 (no-row 0) · speed-check max 1e-05 m/s · PRESENT
+[out] C:/Users/Admin/AppData/Local/Temp/claude/G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD/8e7cfa33-c625-47cf-88aa-711db80ac113/scratchpad/kin/pkg/raw/reanalyze_step1000_with_instrument.json
+  cl             tier=T1  ADE=0.5466 [0.4035, 0.7213]  families_unavailable=['strategic']  distance_keeping=OK n=43 headway=33.4037 time_gap=3.5488 min_ttc=24.457
+  ha             tier=T1  ADE=0.6101 [0.4198, 0.8362]  families_unavailable=['strategic']  distance_keeping=OK n=43 headway=33.2308 time_gap=3.5219 min_ttc=24.024
+  ol             tier=T0  ADE=0.4994 [0.3286, 0.6886]  families_unavailable=['strategic']  distance_keeping=OK n=43 headway=33.2768 time_gap=3.5252 min_ttc=23.9291
+  cl_navshuf     tier=T1  ADE=0.642 [0.4882, 0.8221]  families_unavailable=['strategic']  distance_keeping=OK n=43 headway=33.4665 time_gap=3.5518 min_ttc=24.5023
+  cl_oraclegoal  tier=T0  ADE=0.7184 [0.6067, 0.847]  families_unavailable=['strategic']  distance_keeping=OK n=43 headway=33.6071 time_gap=3.5751 min_ttc=25.0121
+  distance_keeping coverage: {'LEAD': 43, 'NO_LEAD': 27, 'NOT_STRAIGHT': 60, 'NO_LABEL': 10} of 140 windows (no-row 0; eps OK 20/20) status=PRESENT
+  planner[cl] baseline_won_frac=0.7571 sources={'cem': 0.2429, 'baseline:hold_v0': 0.7571} goal={'tactical_imagined': 1.0} goal_action_lon={'CRUISE': 0.7, 'ADAPT_SPEED_FOR_CURVE': 0.3}
+  planner[cl_navshuf] baseline_won_frac=0.7286 sources={'cem': 0.2714, 'baseline:hold_v0': 0.6429, 'baseline:decel_1.5': 0.0857} goal={'tactical_imagined': 1.0} goal_action_lon={'CRUISE': 0.7, 'ADAPT_SPEED_FOR_CURVE': 0.3}
+  planner[cl_oraclegoal] baseline_won_frac=0.5786 sources={'cem': 0.4214, 'baseline:hold_v0': 0.3929, 'baseline:decel_1.5': 0.1857} goal={'supplied': 1.0} goal_action_lon=None
+  strategic nav_valid_frac=1.0 n_labeled=40

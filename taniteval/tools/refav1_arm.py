@@ -17,6 +17,11 @@ stamp, and the stamp travels into ``t1_eval.analyze`` unchanged:
     ha            T1  HOLD-ACTION control: the last OBSERVED (a, kappa) — the action
                       that CLOSES at t0 — held for K steps. Consumes no recorded
                       future (pinned by stack/tests/test_refav1_arm.py).
+    ha0           T1  CONSTANT-VELOCITY control: a = 0, kappa = 0 at the measured v0 —
+                      a straight line at constant speed. ⭐ THE STRONGEST TRIVIAL
+                      BASELINE, and the one the echo test must actually be run
+                      against (D-REFAV1-HA0-ARM, 2026-09-03). It consumes strictly
+                      LESS than ``ha``: not even the last observed action.
     ol            T0  the RECORDED future (a, kappa) integrated from v0 — for refav1
                       this is the KINEMATIC-CONTRACT control (the corpus action
                       contract must reproduce the GT path), NOT a WM diagnostic.
@@ -176,7 +181,7 @@ t1 = _load_t1()
 DT = 0.2                 # refav1's operative tick (the loader REFUSES any other)
 K_TRAJ_DEFAULT = 10      # 2.0 s = cfg.plan_steps at defaults = t1_eval's 20 x 0.1 s
 ARM_TIERS = {"cl": "T1", "cl_navshuf": "T1", "cl_nonav": "T1",
-             "cl_oraclegoal": "T0", "ha": "T1", "ol": "T0"}
+             "cl_oraclegoal": "T0", "ha": "T1", "ha0": "T1", "ol": "T0"}
 ARM_MEANING = {
     "cl": "T1 — plan() at t0, TRUE nav; predictor consumes the planner's own "
           "actions; trajectory = unicycle(controls, measured v0)",
@@ -187,6 +192,10 @@ ARM_MEANING = {
                      "(future information => T0; search-vs-goal attribution)",
     "ha": "T1 — hold the last OBSERVED (a, kappa) (closes at t0) for K steps; "
           "consumes no recorded future",
+    "ha0": "T1 — CONSTANT VELOCITY: a = 0, kappa = 0 at the measured v0, i.e. a "
+           "straight line at constant speed. The STRONGEST TRIVIAL BASELINE and "
+           "the echo test's real bar; consumes strictly less than ha (not even "
+           "the last observed action)",
     "ol": "T0 — the RECORDED future (a, kappa) integrated from v0: the "
           "kinematic-contract control (must reproduce GT), NOT a WM diagnostic",
 }
@@ -380,6 +389,28 @@ def hold_action_controls(loader, v, kap, t: int):
     return loader._kin_actions(v, kap, t - 1, 1)[0]              # [2]
 
 
+def hold_v0_controls(k: int):
+    """⭐ THE STRONGEST TRIVIAL BASELINE: ``a = 0, kappa = 0`` for K steps.
+
+    Integrated from the measured ``v0`` this is a CONSTANT-VELOCITY STRAIGHT LINE — the
+    control C101 measured our CEM planner 35.8 % worse than, and the one the echo test
+    must actually be run against.
+
+    ⛔ WHY IT EXISTS (MEASURED 2026-09-03, and it voided a read): at step 1,000 the
+    closed-loop arm ``cl`` was a straight constant-speed line on **140/140** windows, so
+    the whole "lateral planning beats holding" reading was a straight line beating the
+    hold-action control's held, NOISY kappa (which drifts 0.12 m even where the human
+    drives straight). Against ``ha`` alone that reads as lateral SKILL. Against ``ha0``
+    it reads as what it is: nothing. ``ha`` is NOT the trivial floor — it is a control
+    that can be WORSE than trivial, and comparing only to it manufactures a win.
+
+    Consumes strictly less than ``hold_action_controls``: no recorded action at all,
+    only the measured ``v0`` the PI ruling of 2026-09-02 admits.
+    """
+    import torch
+    return torch.zeros(int(k), 2, dtype=torch.float32)           # [K, 2]
+
+
 def paths_from_controls(controls, v0: float, dt: float, k: int):
     """``[K',>=2]`` controls -> ``[1,K,2]`` ego-frame path via the programme's
     ONE unicycle integrator (``refa_v1_plan.unicycle_paths``): position advances
@@ -546,7 +577,7 @@ def run_dump(a) -> dict:
             nav_valid[i] = nid is not None
     nav_shuf, shuf_stats = shuffle_nav(nav_true, nav_valid, a.nav_shuffle_seed)
 
-    arms = ["cl", "ha", "ol"]
+    arms = ["cl", "ha", "ha0", "ol"]
     if ld._nav_on and not a.no_navshuf:
         arms.append("cl_navshuf")
     if a.with_nonav_arm:
@@ -606,6 +637,9 @@ def run_dump(a) -> dict:
                 ol = paths_from_controls(act[0], v0, DT, k)
                 hold = hold_action_controls(ld, v_ep, kap_ep, t).to(dev)
                 ha = paths_from_controls(hold[None].expand(k, 2), v0, DT, k)
+                # ⭐ the constant-velocity floor: SAME integrator, SAME v0, zero
+                # controls — so any difference from `ha` is the held action alone.
+                ha0 = paths_from_controls(hold_v0_controls(k).to(dev), v0, DT, k)
                 # -- T0 WM diagnostic + true-nav decisions via forward() ------
                 # 2-wide controls + measured v0: the MODEL derives any speed
                 # channel (augment_actions) — never widened here.
@@ -670,6 +704,7 @@ def run_dump(a) -> dict:
             acc["g"].append(g.float().cpu().numpy())
             acc["ol"].append(ol.float().cpu().numpy())
             acc["ha"].append(ha.float().cpu().numpy())
+            acc["ha0"].append(ha0.float().cpu().numpy())
             acc["v0"].append(np.array([v0], dtype=np.float32))
             for arm, res in plans.items():
                 ctrl = res.controls.detach()
@@ -774,6 +809,7 @@ def run_dump(a) -> dict:
                      "this adapter passes 2-wide (a, kappa) + measured v0 and "
                      "never widens actions (the model refuses a 3-wide input)")},
         "hold_action_rule": hold_action_controls.__doc__,
+        "hold_v0_rule": hold_v0_controls.__doc__,
         "goal": {"source_names": list(GOAL_SOURCE_NAMES),
                  "space": sorted(goal_space_seen) or None,
                  "rule": ("per window from PlanResult.goal_source / goal_space / "
@@ -1305,6 +1341,109 @@ def _paired_families(comps: dict, arm_a: str, arm_b: str, eid, tiers, n_boot, se
     return out
 
 
+# --------------------------------------------------------------------------- #
+# THE TRIVIAL-PROFILE INSTRUMENT — printed BEFORE any family row                #
+# --------------------------------------------------------------------------- #
+#: a plan whose max |y| is below this is a STRAIGHT LINE (metres).
+TRIVIAL_STRAIGHT_M = 1e-6
+#: a plan whose chord-length spread is below this is CONSTANT SPEED (metres).
+TRIVIAL_CONST_SPEED_M = 1e-4
+#: two arms whose trajectories agree everywhere within this are IDENTICAL (metres).
+TRIVIAL_IDENTICAL_M = 1e-9
+
+
+def trivial_profile(files, arms, dt: float = DT) -> dict:
+    """⛔ WHAT SHAPE IS EACH ARM'S TRAJECTORY, BEFORE ANY METRIC IS COMPUTED?
+
+    Per arm, over every window: the fraction that are an exactly STRAIGHT line
+    (``max |y| < 1e-6``), the fraction that are CONSTANT SPEED (chord-length spread
+    < 1e-4 m), the fraction that are BOTH (the constant-velocity trivial profile), and
+    which OTHER arms it is bit-identical to.
+
+    ⭐ WHY IT PRINTS FIRST, AND WHY IT IS NOT OPTIONAL. MEASURED 2026-09-03: a full T1
+    read shipped a paragraph reading *"lateral planning already beats holding"* —
+    heading −2.0°, cross-track −18 cm, all separated — while **every one of the 140
+    ``cl`` plans was a straight constant-speed line**. The "gain" was a straight line
+    beating the hold-action control's noisy held kappa. `cl` was also bit-identical to
+    `cl_navshuf` on 122/140 windows and to `cl_oraclegoal` on 96/140. Every family row
+    was correctly computed and every one of them was read wrong, because nobody had
+    asked what SHAPE the arm was. **A family table cannot answer that question; this
+    instrument answers it in four lines and it costs one pass over the dump.**
+
+    Returns per-arm rows plus ``degenerate_arms`` (constant-velocity on > 50 % of
+    windows) — the flag that says *"read this arm's LATERAL rows as a control, not as
+    skill"*.
+    """
+    prof = {a: {"n": 0, "n_straight": 0, "n_const_speed": 0, "n_trivial": 0}
+            for a in arms}
+    ident = {a: {b: 0 for b in arms if b != a} for a in arms}
+    n_tot = 0
+    for f in files:
+        with np.load(f) as d:
+            P = {a: d[a][..., :2].astype(np.float64) for a in arms if a in d.files}
+        n = next(iter(P.values())).shape[0]
+        n_tot += n
+        for a, tr in P.items():
+            steps = np.linalg.norm(
+                np.diff(np.concatenate([np.zeros((n, 1, 2)), tr], axis=1), axis=1),
+                axis=-1)
+            st = np.abs(tr[..., 1]).max(axis=1) < TRIVIAL_STRAIGHT_M
+            cs = np.ptp(steps, axis=1) < TRIVIAL_CONST_SPEED_M
+            prof[a]["n"] += n
+            prof[a]["n_straight"] += int(st.sum())
+            prof[a]["n_const_speed"] += int(cs.sum())
+            prof[a]["n_trivial"] += int((st & cs).sum())
+        for a in P:
+            for b in P:
+                if a < b:
+                    same = int((np.abs(P[a] - P[b]).reshape(n, -1).max(axis=1)
+                                < TRIVIAL_IDENTICAL_M).sum())
+                    ident[a][b] += same
+                    ident[b][a] += same
+    out = {"n_windows": n_tot, "rule": {
+        "straight_m": TRIVIAL_STRAIGHT_M, "const_speed_m": TRIVIAL_CONST_SPEED_M,
+        "identical_m": TRIVIAL_IDENTICAL_M,
+        "trivial": "straight AND constant-speed = the constant-velocity profile"},
+        "arms": {}}
+    for a in arms:
+        p = prof[a]
+        if not p["n"]:
+            continue
+        out["arms"][a] = {
+            "n": p["n"],
+            "straight_frac": round(p["n_straight"] / p["n"], 4),
+            "const_speed_frac": round(p["n_const_speed"] / p["n"], 4),
+            "trivial_frac": round(p["n_trivial"] / p["n"], 4),
+            "identical_to": {b: {"n": c, "frac": round(c / p["n"], 4)}
+                             for b, c in sorted(ident[a].items()) if c},
+        }
+    out["degenerate_arms"] = sorted(
+        a for a, r in out["arms"].items() if r["trivial_frac"] > 0.5)
+    out["note"] = (
+        "An arm with trivial_frac near 1.0 emits the CONSTANT-VELOCITY plan: its "
+        "LATERAL rows are a property of the baseline, not of planning, and a win over "
+        "`ha` (hold observed a, kappa) is NOT evidence of lateral skill — compare it "
+        "to `ha0`. identical_to counts windows where two arms agree to "
+        f"{TRIVIAL_IDENTICAL_M:g} m: an ablation identical to its own reference "
+        "measured nothing on those windows.")
+    return out
+
+
+def _print_trivial_profile(tp: dict) -> None:
+    _p(f"[trivial-profile] {tp['n_windows']} windows — arm SHAPE before any family "
+       f"row (straight |y|<{TRIVIAL_STRAIGHT_M:g} m, const-speed spread<"
+       f"{TRIVIAL_CONST_SPEED_M:g} m)")
+    for a, r in tp["arms"].items():
+        same = ", ".join(f"{b}={v['n']}/{r['n']}" for b, v in r["identical_to"].items())
+        _p(f"  {a:14s} n={r['n']:4d} straight={r['straight_frac']:.4f} "
+           f"const_speed={r['const_speed_frac']:.4f} "
+           f"CONSTANT-VELOCITY={r['trivial_frac']:.4f}"
+           + (f"  identical_to: {same}" if same else ""))
+    if tp["degenerate_arms"]:
+        _p(f"  ⚠️ CONSTANT-VELOCITY on > 50 % of windows: {tp['degenerate_arms']} — "
+           f"read their LATERAL rows as a control, never as planning skill")
+
+
 def analyze_refav1(dump_dir: str, *, n_boot: int = 2000, seed: int = 0,
                    dt: float = DT, tiers: dict | None = None,
                    lead_block: str | None = None) -> dict:
@@ -1332,10 +1471,18 @@ def analyze_refav1(dump_dir: str, *, n_boot: int = 2000, seed: int = 0,
     pairs = [(x, y, nm) for x, y, nm in (
         ("ol", "cl", "paired_closed_minus_open"),
         ("ha", "cl", "paired_cl_minus_ha"),
+        # ⭐ the echo test's REAL bar: cl against the constant-velocity straight line.
+        # `cl - ha` alone let a straight-line plan read as lateral skill (2026-09-03).
+        ("ha0", "cl", "paired_cl_minus_ha0"),
         ("cl_navshuf", "cl", "paired_cl_minus_navshuf"),
         ("cl_nonav", "cl", "paired_cl_minus_nonav"),
         ("cl_oraclegoal", "cl", "paired_cl_minus_oraclegoal"))
         if x in arms and y in arms]
+    # ---- ⭐ THE TRIVIAL-PROFILE INSTRUMENT, BEFORE ANY FAMILY ROW -------------
+    # It runs here, not later, ON PURPOSE: a reader who sees the family table
+    # first has already formed the reading this instrument exists to prevent.
+    triv = trivial_profile(files, arms, dt=dt)
+    _print_trivial_profile(triv)
     # ---- the lead block join (backlog R1), BEFORE analyze ---------------------
     lead, dk_info = None, None
     if lead_block:
@@ -1371,6 +1518,8 @@ def analyze_refav1(dump_dir: str, *, n_boot: int = 2000, seed: int = 0,
     ref = {"n_windows": N, "n_episodes": len(files), "tiers": {x: tiers[x] for x in arms},
            "arm_meaning": {x: ARM_MEANING.get(x) for x in arms},
            "_tier_doctrine": rec["_tier_doctrine"],
+           # ⭐ banked FIRST in the record too, for the same reason it prints first.
+           "trivial_profile": triv,
            "families_paired": {nm: _paired_families(comps, x, y, eid_w, tiers, n_boot, seed)
                                for x, y, nm in pairs},
            "families_note": (

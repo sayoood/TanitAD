@@ -51,6 +51,7 @@ full record (t1 block + `rec["refav1"]`).
 | `cl` | **T1** | ONE `plan()` per window at t0 with the TRUE nav token; iCEM rolls the operative/tactical predictor under the **planner's own candidate actions**; trajectory = `unicycle_paths(controls, v0_measured)` | **no** (test-pinned bit-identical under future perturbation) |
 | `cl_navshuf` | **T1** | as `cl` with `nav_cmd` permuted across the eval windows (among nav-valid ones) — the D-REFAV1-NAV-DEPTH obligation | no |
 | `ha` | **T1** | hold-action control: the last **closed** action `(a, κ)` spanning cache steps `[t−1, t]` = `(v[2t]−v[2t−2])/0.2, kap[2t−2]` held K steps | **no** (pinned) |
+| `ha0` | **T1** | ⭐ constant-velocity control: `a = 0, κ = 0` at the measured `v0` — a straight line at constant speed. **The strongest trivial baseline** and the bar the echo test is actually run against (§3a). Consumes strictly less than `ha`: not even the last observed action | **no** |
 | `ol` | **T0** | the RECORDED future `(a, κ)` integrated from v0 — for refav1 the **kinematic-contract control**, not a WM diagnostic (see §5) | yes (by definition) |
 | `cl_nonav` | T1 (opt-in) | `plan()` with `nav_cmd=None` → index 0 "follow" | no |
 | `cl_oraclegoal` | **T0** (opt-in) | `plan()` with the TRUE future field at t+plan_steps as `goal_field` — a goal read from the future is future information | yes |
@@ -66,6 +67,72 @@ the only ego state used; `plan(v0=)`, `forward(v0=)` and the unicycle all integr
 (`RefAV1Config.speed_channel`) is derived by the MODEL (`augment_actions`, which
 refuses a pre-widened tensor); the adapter passes 2-wide `(a, κ)` + `v0` everywhere,
 so there is one convention in the programme, not two.
+
+## 3a. `ha0` and the TRIVIAL-PROFILE INSTRUMENT — why an arm's SHAPE is read before its metrics
+
+⛔ **THE FAILURE THIS EXISTS TO PREVENT, MEASURED 2026-09-03.** The first real T1 read of refav1
+(step 1,000, 140 windows) shipped a paragraph saying *"lateral planning already beats holding"* —
+heading −2.0°, cross-track −18 cm, yaw-rate −0.048 rad/s, every interval separated, every number
+correctly computed. **Every one of the 140 `cl` plans was a straight, constant-speed line.** The
+"gain" was a straight line beating `ha`'s held, noisy κ. `cl` was also **bit-identical** to
+`cl_navshuf` on 122/140 windows and to `cl_oraclegoal` on 96/140 — two "controls" that measured
+nothing on most of the slice. Nothing in a four-families table can say any of that, because a
+family table answers *how far off* and never *what shape*.
+
+**Two additions close it, and both are ON by default:**
+
+1. **`ha0`** (`hold_v0_controls`, tier T1): `a = 0, κ = 0` at the measured `v0`. It is trivial **by
+   construction** and therefore cannot be broken by a data defect — which matters, because `ha` can:
+   with the loader's current κ channel (see §3b) `ha` over-rotates by ~2.9× and reads *worse* than
+   `ha0`, and the November-fresh reader concludes "planning beats holding". Repaired, `ha` beats
+   `ha0` on both channels. ⇒ **`ha` is not the trivial floor. `ha0` is.** The paired block
+   `paired_cl_minus_ha0` is emitted beside `paired_cl_minus_ha`.
+2. **`trivial_profile()`**, printed **BEFORE any family row** and banked first in the record
+   (`rec['refav1']['trivial_profile']`): per arm the fraction of windows that are straight
+   (`max |y| < 1e-6`), constant-speed (chord-length spread `< 1e-4` m), **both** (the
+   constant-velocity profile), and the count of windows where it is **bit-identical** to each other
+   arm (`< 1e-9` m). Any arm at `trivial_frac > 0.5` is listed in `degenerate_arms` with the
+   sentence *"read their LATERAL rows as a control, never as planning skill"*.
+
+On the banked step-1,000 dump it prints, before any metric:
+
+```
+  cl             n= 140 straight=1.0000 const_speed=1.0000 CONSTANT-VELOCITY=1.0000  identical_to: cl_navshuf=122/140, cl_oraclegoal=96/140, ...
+  ⚠️ CONSTANT-VELOCITY on > 50 % of windows: ['cl', 'cl_navshuf', 'cl_oraclegoal']
+```
+
+Pinned by `stack/tests/test_refav1_kin_contract.py` (A1–A6): `ha0` straight and constant-speed on
+every window; `ha` not, where the observed κ ≠ 0; the instrument reads 1.0 for `ha0`; two arms that
+ARE equal are reported as equal; `ha0` reaches the record as T1 with families and the paired block;
+and no existing arm moves (each is rederived from its own documented rule and matched bit for bit).
+
+⚠️ **`t1_eval.DEFAULT_TIERS` does not know `ha0` yet**, so the **standalone** `t1_eval.py
+--analyze-only` CLI refuses a dump containing it (`t1_eval.py:307`, and that guard is right).
+`refav1_arm.py`'s own analysis path is unaffected. Pass `--tiers ha0=T1`, or land the one-line
+`"ha0": "T1"` addition in `DEFAULT_TIERS` — see §8.7.
+
+## 3b. ⛔ THE `ol` / `ha` ARMS ARE CURRENTLY MIS-SCALED — the κ channel is a STEERING ANGLE
+
+MEASURED 2026-09-03, 140 windows / 20 episodes, 0 GPU
+(`TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-03-refav1-kinematic-contract-lateral/`,
+tool `taniteval/tools/refav1_kin_contract_probe.py`):
+
+`physicalai.signals_at` (`physicalai.py:620-630`) writes `steer = atan(L·κ)` — a **road-wheel
+angle** — into `v2ep actions[:, 0]`. `refav1_loader.py:264` reads it **as κ**. Every curvature is
+therefore inflated by ~**L = 2.9×**, and:
+
+| | `ol` LAT curved (72) | LAT straight (68) | LON all (140) |
+|---|---|---|---|
+| as shipped | **0.7156** (worse than a straight line's 0.4960) | 0.0685 | 0.2395 |
+| with `κ = tan(steer)/2.9` | **0.0600** | 0.0141 | 0.1199 |
+| pose-yaw FLOOR | 0.0527 | 0.0096 | 0.1189 |
+
+Integrated-vs-pose yaw ratio **×2.870 → ×0.995**; yaw RMSE **19.81° → 0.63°**. Sign, one-step
+timing, mid-frame, integration order and the GT frame are all REFUTED in the same panel.
+⇒ **Until the repair lands, every LATERAL row of every refav1 read is off by a known 2.9×
+over-rotation.** The fix is PROPOSED, not applied — it changes the live Thor run's training input
+distribution and the units of `canonical_controls` / `PlanConfig.kappa_max`. See RESULT.md §6 and
+§8.7 below.
 
 ## 4. What the record contains
 
@@ -186,3 +253,19 @@ PYTHONPATH=<repo>/stack:<repo>/taniteval python3 taniteval/tools/refav1_arm.py \
 5. Whether to run `cl_oraclegoal` (T0) on the real checkpoint — it is the cheapest
    discriminator between "the search is the bottleneck" and "the goal is".
 6. Compute budget: stride and search size (see §6).
+7. ⛔ **THE κ UNIT (§3b) — a PI/Master-Mind call, not a patch.** The corpus stores
+   `atan(L·κ)` and three sites disagree about what the channel means: the loader feeds
+   it to the model as κ (**this is the live Thor run's training input**),
+   `kinematic.rollout_unicycle` integrates it as 1/m, and `refa_v1.canonical_controls`
+   / `GOAL_KAPPA_TURN = 0.08` / `PlanConfig.kappa_max = 0.2` mint proposals in true
+   1/m — so the tactical proposals are ~2.9× **under-actuated** (a TURN proposal is
+   R 36 m in the model's learned action space, not the intended 12.5 m). Options:
+   (a) repair at the loader behind a `steer_channel` flag and retrain (the diff is in
+   the package's RESULT.md §6 — PROPOSED, not applied); (b) an eval-only stopgap that
+   repairs `ol`/`ha` in this adapter — **which does NOT repair `cl`**, whose planned
+   actions are in steer units and get integrated as curvature, and would put two
+   conventions in one table; (c) accept and stamp the 2.9× on every LATERAL row.
+   Not decided here.
+8. **One-line integration:** add `"ha0": "T1"` to `t1_eval.DEFAULT_TIERS`
+   (`t1_eval.py:145`) so the standalone CLI reads a refav1 dump without
+   `--tiers ha0=T1`. Not made here — `t1_eval.py` is outside this change's ownership.

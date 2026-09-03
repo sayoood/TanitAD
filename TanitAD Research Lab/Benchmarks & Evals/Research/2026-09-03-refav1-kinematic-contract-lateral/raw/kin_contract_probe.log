@@ -1,0 +1,57 @@
+
+=== STAGE A — the banked dumps (140 windows, 72 curved / 68 straight; curved = max_k |y_gt[k]| >= 0.3 m) ===
+arm                straight   const-v  LAT curved  LAT straight   LON all
+cl                  140/140   140/140      0.4960        0.0350    0.3768
+ha                    3/140     1/140      0.7625        0.1203    0.3175
+ol                    1/140     1/140      0.7156        0.0685    0.2395
+cl_navshuf          140/140   122/140      0.4960        0.0350    0.4839
+cl_oraclegoal       140/140    96/140      0.4960        0.0350    0.5685
+_line_y0            140/140   140/140      0.4960        0.0350 -
+
+=== HARNESS CHECKS (these gate everything below) ===
+  replayed ol   vs banked ol : max |d| = 3.815e-06 m
+  recomputed GT vs banked g  : max |d| = 0.000e+00 m
+  numpy integrator vs rollout_unicycle : verified per window (< 0.0001 m)
+  n = 140 windows over 20 episodes
+
+=== STAGE B — one-variable hypotheses (n curved = 72, n all = 140); bar = the straight line's 0.4960 m ===
+id                LATcurved           [95% CI]  LATstraight   LONall      vs shipped (paired)  verdict
+ref_ol               0.7156    [0.4804,0.9405]       0.0685   0.2395                        -  control
+ref_line             0.4960    [0.3439,0.6572]       0.0350   0.3768  -0.220 [-0.333,-0.112]*  control
+ref_floor            0.0527    [0.0373,0.0698]       0.0096   0.1189  -0.663 [-0.878,-0.439]*  control
+ref_kapose           0.0527    [0.0373,0.0698]       0.0096   0.1189  -0.663 [-0.878,-0.439]*  control
+ref_floor_mid        0.0325    [0.0134,0.0567]       0.0107   0.1217  -0.683 [-0.888,-0.465]*  control
+h_a_sign             1.7052    [1.1703,2.2375]       0.1306   0.2395  +0.990 [+0.685,+1.312]*  worse
+h_b1_shift_m1        0.7258    [0.4898,0.9529]       0.0839   0.2413  +0.010 [-0.019,+0.039]   worse
+h_b2_shift_p1        0.7166    [0.4811,0.9325]       0.0570   0.2372  +0.001 [-0.027,+0.032]   worse
+h_b3_midframe        0.7144    [0.4808,0.9335]       0.0616   0.2384  -0.001 [-0.016,+0.015]   partial
+h_c0_half            0.1542    [0.0969,0.2121]       0.0226   0.1375  -0.561 [-0.727,-0.383]*  RESOLVES
+h_c1_wb              0.0600    [0.0427,0.0800]       0.0141   0.1199  -0.656 [-0.870,-0.435]*  RESOLVES
+h_c2_wbfit           0.0607    [0.0424,0.0814]       0.0141   0.1194  -0.655 [-0.866,-0.434]*  RESOLVES
+h_d1_yawfirst        1.0828    [0.7360,1.4114]       0.0965   0.2972  +0.367 [+0.250,+0.476]*  worse
+h_d2_midpoint        0.9008    [0.6075,1.1787]       0.0823   0.2665  +0.185 [+0.126,+0.241]*  worse
+h_c1_d2              0.0433    [0.0220,0.0673]       0.0152   0.1224  -0.672 [-0.876,-0.457]*  RESOLVES
+
+(e) FRAME  h_e1 GT y sign flipped: LAT curved 1.7052 m  (shipped 0.7156)
+(e) FRAME  h_e2 GT in the t0 VELOCITY frame: LAT curved 0.7518 m, LON all 0.2419 m; mean |heading - velocity| angle 0.236 deg
+(f) SLIP   yaw over 10 steps, integrated / pose  (n turning = 75, |dyaw_pose| > 0.02 rad): shipped x2.870, h_c0_half x1.435, h_c1_wb x0.995
+(f) SLIP   yaw RMSE vs the pose: shipped 19.812 deg, h_c1_wb 0.632 deg  (n = 140)
+(f) SLIP   h_c0_half yaw RMSE 4.769 deg — a HALF is not the gain
+
+h_c1_wb — the 10 largest per-window LATERAL residuals of 72 curved:
+  episode       t     v0  |y_gt|max     LAT     LON   floor
+  18b72291     63   5.12      4.776   0.251   0.023   0.229
+  1bd040a8     13   5.07      4.992   0.247   0.052   0.239
+  1bd040a8      3   4.82      2.644   0.202   0.025   0.132
+  18b72291     53   5.90      2.813   0.189   0.071   0.142
+  24fee8a5     43   1.26      2.393   0.165   0.301   0.122
+  142a3a72     33  21.90      3.251   0.162   0.168   0.104
+  24fee8a5     63   9.08      1.172   0.157   0.300   0.006
+  18b72291      3   5.65      3.335   0.151   0.096   0.145
+  262b900f     33  17.04      2.804   0.131   0.108   0.093
+  01be5919     53   6.75      3.026   0.115   0.071   0.133
+
+implied wheelbase L (LS fit, ORACLE): n 20 eps, min 1.782 max 3.108 median 2.855; repair constant physicalai.WHEELBASE = 2.9
+[kin-probe] wrote C:/Users/Admin/AppData/Local/Temp/claude/G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD/8e7cfa33-c625-47cf-88aa-711db80ac113/scratchpad/kin/pkg/raw\per_window_dump_arms.csv (140 rows)
+[kin-probe] wrote C:/Users/Admin/AppData/Local/Temp/claude/G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD/8e7cfa33-c625-47cf-88aa-711db80ac113/scratchpad/kin/pkg/raw\per_window_hypotheses.csv (140 rows)
+[kin-probe] wrote C:/Users/Admin/AppData/Local/Temp/claude/G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD/8e7cfa33-c625-47cf-88aa-711db80ac113/scratchpad/kin/pkg/raw/kin_contract.json
