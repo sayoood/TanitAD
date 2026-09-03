@@ -10,7 +10,7 @@ a fresh context reads after the constitution.`
 
 | id | goal | status |
 |---|---|---|
-| G1 | Sub-300M hierarchical 4-brain latent world model that drives (T1, four families) | OPEN |
+| G1 | Sub-300M hierarchical 4-brain latent world model that drives (⛔ **criterion AMENDED 2026-09-02**: "drives" requires **T2**, not T1 — T1 is OPEN loop and cannot establish driving; four families still apply at every tier) | **OPEN — and now BLOCKED ON AN INSTRUMENT WE DO NOT HAVE** |
 | G2 | The 8 products of TANITAD_PROGRAMME.md §1 shipped production-ready | OPEN |
 | G3 | Beat published SOTA on community benchmarks (NavSim …) via TanitEval | OPEN |
 
@@ -18,6 +18,12 @@ a fresh context reads after the constitution.`
 
 | id | claim / hypothesis | status | evidence |
 |---|---|---|---|
+| D-LOOP-1 | ⛔⛔ **T1 is NOT a closed loop.** A predictor consuming its own planner's actions is OPEN loop: the trajectory never reaches the ego data, which keeps arriving from the eval recording. Closed loop means the trajectory CONTROLS the vehicle (AlpaSim / real vehicle) | **BINDING (PI ruling 2026-09-02)** | `VOCABULARY.md`, `EVAL_DOCTRINE.md` (amended), `RETRACTION_LOG.md` #13, commits `32e319149` + `7ad852294` |
+| D-LOOP-2 | ⛔ **The programme has published NO closed-loop number.** Every figure ever quoted as closed-loop — including the 1.7318 m of registry §1.12 — is a SELF-ACTION OPEN LOOP figure. The measurements are valid; only the word was wrong | **SUPPORTED** | `MODEL_REGISTRY.md` §1.12 + the 1.7318 block, both re-labelled 2026-09-03, numbers unchanged |
+| D-LOOP-3 | ⚠️ **The C1 claim "It drives" is NOT admissible from any instrument we currently run.** EVAL_DOCTRINE rule 2 formerly licensed a driving claim at "T1 or better"; amended, it requires T2, which is NOT PROVISIONED | **REFUTED AS PREVIOUSLY STATED** — the claim is not disproven, it is UNTESTED and was scored with the wrong instrument | `EVAL_DOCTRINE.md` rule 2 (amended 2026-09-02); `PROGRAM_OVERVIEW.md` C1 row still carries the old framing and is NOT yet swept |
+| D-LOOP-4 | ⭐ **refav1 and refcv3 ARE comparable**, despite one being autoregressive and the other one-shot: under the corrected definition BOTH are open loop, both are handed the same recorded ego data, neither controls anything | **SUPPORTED — this RESOLVES a previously open question** (I had asked the PI whether the arms were comparable at all; the ruling dissolves it) | paired open-loop harness in flight; `taniteval/results/paired-openloop-refav1-vs-refcv3-*.json` |
+| X-EGO-1 | refcv3 consumes measured ego data and never future/GT ego data — but it is exactly ONE SCALAR (`v0` at the last OBSERVED frame), no yaw rate and no longitudinal acceleration | **SUPPORTED (MEASURED at source)** | `refc_v3.py:480` (no action arg), `refc_v3_train.py:445` (`v0 = pose_last[:,3]`), `refc.py:1649`; future reads confined to `compute_losses_v3` target-building |
+| X-EGO-2 | ⚠️ **Zero-collision in refcv3's speed channel**: with `ego_dropout=0.5` and `ego_valid_channel=False`, a WITHHELD `v0` is byte-identical at the model input to a genuine **0.0 m/s stationary** ego — the X15 defect, same family as the nav `follow`/UNKNOWN collapse | **OPEN — base rate and longitudinal signature being measured** | `refc.py:429` / `:585` / `:2033` (dropout is TRAINING-ONLY, so eval is unaffected); work package `…/2026-09-03-ego-zero-collision/` |
 | H-RANK-1 | v6's trunk representation is dimensionally collapsed (encoder tokens ~1 effective direction) | **SUPPORTED** | rank probe 2026-08-22, `…/2026-08-19-simwam-analysis/raw/v6F_v7tiny_rank_probe.txt` (99.7 % top-1 energy) |
 | H-RANK-2 | Collapse is a TRAINING dynamic, not initialisation (rank rises to ~16k then falls) | **SUPPORTED** | rank-vs-step: 6.43→8.96@16k→5.55@20k (σ² basis, ckpt sweep) |
 | H-RANK-3 | SIGReg WEIGHT is the lever | **REFUTED** | 1000× λ sweep flat: partic 2.94→3.34 |
