@@ -16,7 +16,14 @@
    has to decide when to turn it ON.** OFF is byte-identical to today; ON reproduces the repaired
    panel exactly. It is a *decision*, not a merge: every banked refav1 lateral number was produced
    OFF, and the two are not comparable.
-3. **A SECOND ARM HAS THE SAME DEFECT AND IS NOT FIXED HERE: `taniteval/tools/refcv3_arm.py:477-507`**
+3. **⭐ THESE FILES MUST LAND TOGETHER WITH THE ArchInf COST-SURFACE PACKAGE.**
+   `taniteval/tools/cost_surface_probe.py` (staged `A` by another FlyWheel at ~07:20 today, while
+   this package was being written) **imports `STEER_WHEELBASE_M` and `as_command` from
+   `stack/tanitad/models/kinematic.py` — i.e. from this package's bridge — and will not import
+   without it.** Its own `C7 CONVERSION AGREEMENT` control cross-checks its one-line map against
+   `as_command`; I ran that control against the staged code and it reads **max |diff| = 0.000e+00
+   at L ∈ {2.9, 2.73, 3.216}**. ⇒ the two packages are consistent, and neither is shippable alone.
+4. **A SECOND ARM HAS THE SAME DEFECT AND IS NOT FIXED HERE: `taniteval/tools/refcv3_arm.py:477-507`**
    (`recorded_controls` → `integrate_select`) replays the recorded steer channel through the same
    integrator and calls it `kappa`. It picks the new keyword up automatically but nothing passes it.
    **Owner: whoever owns refcv3.** (Full list in §4.)
@@ -148,6 +155,10 @@ package's UNVERIFIED item is CLOSED.
 |---|---|---|
 | `grep -n "wheelbase\|WHEELBASE"` | | **exit 1, 0 hits** |
 | `Select-String -Pattern 'wheelbase' -CaseSensitive:$false` | | **0 hits** |
+
+A **third, independent** confirmation arrived from the whole-repo probe: the ARCHIVED copy of the
+same builder, `TanitAD Research Lab/Data Engineering/Implementation/incoming/2026-07-24-v2-corpus-50h-balanced/v2_compressed.py`,
+likewise has **0** wheelbase occurrences and likewise calls `signals_at(ego, t_query)` bare (`:89`).
 
 `v2_compressed._resampled:124` calls `signals_at(ego, t_query)` with **no wheelbase argument at
 all** — so the module cannot mint anything but `const2p9`, and `physicalai.DEFAULT_WHEELBASE_MODE`
@@ -312,6 +323,20 @@ AFFECTED · converts already ⇒ ALREADY CORRECT.** Two probes for every absence
 | 26 | flagship / REF-B / REF-C **training** action inputs | via `physicalai` v2 caches → predictor | COMMAND | ✅ **NOT AFFECTED** — same reasoning as row 1 |
 | 27 | `build_pai_cache.py --wheelbase-mode per_clip_v1` caches | `stack/scripts/build_pai_cache.py:49-50,135,147` | would encode a **per-clip** `L_enc` | ⚠️ **UNVERIFIED — none is known to exist.** If one is ever built, `STEER_WHEELBASE_M` is the wrong divisor for it and the manifest's `L_enc_m` must carry the per-clip value. Probes: no `wheelbase_mode` key found in any local cache manifest, and `label_params` returns `{}` for legacy so a legacy cache carries **no** marker either way — **absence of the key does NOT prove `const2p9`; only §2.2's inversion does, and it was run per clip** |
 | 28 | `stack/scripts/rebuild_pai_rolling.py` | `:87-88,111,215` | same regime switch | ⚠️ **UNVERIFIED**, same as row 27 |
+
+| 29 | **`taniteval/tools/cost_surface_probe.py`** (ArchInf FlyWheel, staged `A` ~07:20 today) | `:199-204` `to_steer`, `:254-282` `score(units=)`, `:579-584` the C7 control, `:999-1002` `--wheelbase` | scores the planner cost in BOTH conventions, converting at the model boundary | ✅ **ALREADY CORRECT — and it CONSUMES this package's bridge.** Imports `STEER_WHEELBASE_M` + `as_command` from `kinematic.py`; **cannot import without this package staged.** Its C7 control reads **0.000e+00** against `as_command` at L ∈ {2.9, 2.73, 3.216} (verified here) |
+
+⚠️ **HONESTY NOTE ON THIS TABLE'S COVERAGE.** Rows 1-28 were swept against a fast off-Drive mirror
+of `stack/`, `taniteval/`, `colab/`, `tools/`. **Row 29 did not exist when that sweep ran** — it was
+created by another FlyWheel *during* this session and was surfaced only when the slow whole-repo
+`Select-String` second probe finally returned. Two consequences, both stated rather than papered
+over: (i) **a mirror is not the repo**, and a sweep is a snapshot, not a standing guarantee — a
+blast-radius table on a live tree has a timestamp; (ii) the same probe also surfaced
+`.claude/worktrees/**` (≈ 25 stale worktree copies of `physicalai.py` and its tests — **not
+production, not affected**) and seven Research Lab package scripts, each checked here and each
+reading **0** occurrences of `actions[:,0]` / `rollout_unicycle` / `unicycle_paths`
+(`sc_dump_poses.py`, `fov_labels.py`, `closed_loop_dump.py`, `score_v2_pool.py`,
+`wb_tier1_label_delta.py`, `run_join.py`, `make_standin_cache.py`).
 
 **Anything I could not classify is row 27/28 and is marked UNVERIFIED, not "not affected".**
 
@@ -488,6 +513,7 @@ D-KAPPA-REPAIR | DECISION | 2026-09-03 | PI ruling, implemented by Data Eng
 | # | item | owner | why it cannot wait |
 |---|---|---|---|
 | E1 | **When does `--action-units steer` become the default?** Every banked refav1 lateral number is OFF; flipping it silently makes old and new incomparable. Proposal: flip it at the next refav1 T1 read and re-stamp the banked ones as `action_units=kappa`. | Master Mind | the next T1 read will otherwise quote an unconverted `ol` again |
+| E0 | **`taniteval/tools/cost_surface_probe.py` and this package are ONE landing.** That file imports `STEER_WHEELBASE_M` / `as_command` from `kinematic.py` and does not import without it. Land them together, or neither. | Master Mind | staging one without the other leaves a tracked file that cannot be imported |
 | E2 | **`taniteval/tools/refcv3_arm.py:477-507` has the identical defect** and is not fixed here (not my ownership). It picks up the new kwarg for free; someone must pass it and re-read refcv3's lateral rows. | refcv3 owner | refcv3 lateral numbers are currently ×2.9 over-rotated |
 | E3 | `t1_eval.DEFAULT_TIERS` (`taniteval/tools/t1_eval.py:145`) still does not know `ha0` — carried over unresolved from the Benchmarks package. One line: `"ha0": "T1"`. | t1_eval owner | the standalone `--analyze-only` CLI refuses any dump containing `ha0` |
 | E4 | `stack/scripts/stage_a_probes.py:145,168-177` duplicates `WHEELBASE` + `kappa_of_steer`/`steer_of_kappa`, and `w7_roll_rerank.py:166` imports them from there. Consolidating onto `kinematic.STEER_WHEELBASE_M` is correct but touches a script another line imports. | Master Mind | two copies of a constant is how this class of defect starts |
