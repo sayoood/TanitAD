@@ -2859,6 +2859,544 @@ def load_s2_labels_any(path, *, allow_any_labels: bool = False, stack=None):
 
 
 # ============================================================================
+# D-V7-EVAL-EXCLUSION — the EVAL split's pixels may not enter the TRAIN set
+# ============================================================================
+#: ⛔ THE HAZARD (BACKLOG R8; a v7f LAUNCH BLOCKER). The B1 cache
+#: `physicalai-b1-w120-256x640cyl` holds 4,713 clips, and the v7.2 EVAL split is
+#: 147 label records of which **141 HAVE THEIR PIXELS IN THAT SAME CACHE** — the
+#: cache is union(v7.2 train 4,572, v7.2 eval 147) minus the 6 deployed-val40
+#: clips (`parity_manifest.json` → corpora[B1].provenance). `--v2-cache` carried
+#: no exclusion list, so a v7f run would train its world-model objectives on the
+#: evaluation split and every later T1 number would be contaminated. Nothing
+#: crashes; the numbers are plausible and wrong. refav1/refcv3 are NOT affected
+#: (their 4,572-clip caches exclude the 141 by construction,
+#: D-REFAV1-CACHE-COMPLETE).
+#:
+#: ⛔⛔ AND IT IS NOT A FILTER — IT IS A JOIN. Two places map `ep_idx → clip_id`
+#: BY SORTED CACHE ORDER and verify BY COUNT: the PSG/O10 join and the NAV join.
+#: Dropping clips from the dataset and NOT from those lists (or the reverse)
+#: either refuses at startup or — far worse — SHIFTS EVERY LABEL BY N CLIPS
+#: while training happily, which no loss curve would show. ⇒ there is exactly
+#: ONE canonical exclusion, :func:`eval_exclusion`, resolved once per run, and
+#: all three consumers read it: :func:`apply_eval_exclusion` filters the
+#: providers, and :func:`join_clip_ids` is what BOTH joins glob through.
+#:
+#: ⭐ THE COUNT CHECKS ARE STRENGTHENED, NOT WEAKENED. The equality that
+#: actually PROVES the join is the PRE-FILTER one — `len(all cache clips) ==
+#: len(all providers)` — and :func:`apply_eval_exclusion` asserts it before it
+#: drops anything, then filters both sides in lockstep from the same list. Each
+#: join keeps its own POST-filter refusal (:func:`assert_cache_join`), which now
+#: also fires if a caller hands it a list built under a different exclusion.
+#:
+#: ⭐ THE DEFAULT IS EXCLUSION, NOT A WARNING. `--exclude-eval-clips auto` is on
+#: unless someone types `--exclude-eval-clips none` (which then REFUSES on an
+#: overlap) or the stamped `--allow-eval-clips-in-train`. A default that must be
+#: remembered is the defect this closes: the flag that has to be added is the
+#: one that gets forgotten under launch pressure.
+#:
+#: 🔒 CONFIDENTIALITY. Clip ids are gated PhysicalAI-AV content. Every printed
+#: line and every key written into `config.json` is COUNTS ONLY — the ids live
+#: under `_excluded` and are stripped by :func:`eval_exclusion_record`.
+
+#: `--exclude-eval-clips auto` consults this env var FIRST, so a host that keeps
+#: the v7.2 release somewhere unusual says so once instead of on every launch.
+V72_ROOT_ENV = "TANITAD_V72_ROOT"
+
+#: ⛔ THE LITERALS ARE DELIBERATE, and pinned against `parity` below.
+#: The first draft of this change replaced every `".v2ep.pt"` in this module
+#: with `parity.V2_SUFFIX` — tidier, and it silently REMOVED train_v6_staged.py
+#: from `tests/test_build_parity_guard.py`'s corpus-writer DERIVATION, whose
+#: population is keyed on that literal appearing as a string constant. The
+#: suite went one entry greener for a refactor that changed no behaviour: the
+#: C110 failure exactly ("a shorter population is NOT a cleaner codebase — it is
+#: an instrument whose own filter produced the undercount"). ⚠️ An instrument's
+#: population must never move as a SIDE EFFECT; keeping the literal keeps this
+#: module in view, and :func:`_assert_v2ep_naming` keeps it TRUE.
+V2EP_SUFFIX = ".v2ep.pt"
+V2EP_GLOB = "*.v2ep.pt"
+
+
+def _assert_v2ep_naming() -> None:
+    """The joins glob by NAME; if ``parity`` ever renames the v2 episode file
+    these constants would match NOTHING and every count check would compare two
+    empty lists — a guard that passes because it sees nothing."""
+    from tanitad.data import parity                        # noqa: PLC0415
+    if (V2EP_SUFFIX, V2EP_GLOB) != (parity.V2_SUFFIX, parity.V2_EPISODE_GLOB):
+        raise SystemExit(
+            f"[v6] ⛔ the v2 episode naming moved: this module pins "
+            f"({V2EP_SUFFIX!r}, {V2EP_GLOB!r}) but tanitad.data.parity says "
+            f"({parity.V2_SUFFIX!r}, {parity.V2_EPISODE_GLOB!r}). Every "
+            f"ep_idx->clip_id join here globs by name and would silently "
+            f"match nothing.")
+
+#: resolved ONCE per (cache, flags) tuple — the joins and the provider filter
+#: must see the same object or the whole point is lost.
+_EVAL_EXCL_CACHE: dict[tuple, dict] = {}
+
+
+def _eval_excl_key(a) -> tuple:
+    return (tuple(str(x) for x in (getattr(a, "v2_cache", None) or ())),
+            str(getattr(a, "exclude_eval_clips", "auto")),
+            bool(getattr(a, "allow_eval_clips_in_train", False)),
+            str(getattr(a, "s2_labels", None)),
+            str(getattr(a, "nav_labels", None)),
+            os.environ.get(V72_ROOT_ENV, ""))
+
+
+def eval_exclusion_roots(a) -> list[str]:
+    """Where ``--exclude-eval-clips auto`` looks for the v7.2 EVAL blob.
+
+    The label flags first (a run that already names the release knows where it
+    is), then the cache dirs and their parents (on Thor the release and the
+    cache are siblings under ``/home/nvidia/data``, so a run that passes NO
+    label flag at all still resolves — which is the case that matters, because
+    an S-W world-stage arm needs no labels and is exactly the arm that would
+    otherwise train on eval pixels)."""
+    roots: list[str] = []
+    env = os.environ.get(V72_ROOT_ENV)
+    if env:
+        roots.append(env)
+    for p in (getattr(a, "s2_labels", None), getattr(a, "nav_labels", None)):
+        if p:
+            q = Path(p)
+            q = q if q.is_dir() else q.parent
+            roots += [str(q), str(q.parent)]
+    for d in (getattr(a, "v2_cache", None) or ()):
+        q = Path(d)
+        roots += [str(q), str(q.parent)]
+    out: list[str] = []
+    for r in roots:                                   # dedupe, order preserved
+        if r not in out and Path(r).is_dir():
+            out.append(r)
+    return out
+
+
+def eval_clip_ids_from(path) -> tuple[frozenset[str], dict]:
+    """The EVAL split's clip ids READ FROM THE ARTIFACT — never hard-coded.
+
+    Accepts the v7.2 label blob (``*.jsonl.gz`` / ``*.jsonl``: one record per
+    line carrying ``clip_id``) or the clip index beside it (``*.json`` with a
+    ``{"clips": {...}}`` map, or a bare list of ids). The md5 is computed and
+    matched against ``intrain_eval.V72`` so the stamp says WHICH blob this was;
+    the count of records comes out of the file, so the 141-with-pixels figure is
+    an INTERSECTION this code derives and never a literal."""
+    import gzip                                            # noqa: PLC0415
+    import hashlib                                         # noqa: PLC0415
+    from tanitad.train.intrain_eval import (               # noqa: PLC0415
+        V72, V72_INDEX)
+    p = Path(path)
+    raw = p.read_bytes()
+    md5 = hashlib.md5(raw).hexdigest()
+    ids: set[str] = set()
+    n_records = 0
+    if p.suffix == ".json":
+        doc = json.loads(raw.decode("utf-8"))
+        if isinstance(doc, dict) and isinstance(doc.get("clips"), dict):
+            ids = {str(c) for c in doc["clips"]}
+            kind = "v7.2 clip index"
+        elif isinstance(doc, list):
+            ids = {str(c) for c in doc}
+            kind = "clip-id list"
+        else:
+            raise SystemExit(
+                f"[v6] ⛔ --exclude-eval-clips {p}: a .json source must be a "
+                f"clip index ({{'clips': {{...}}}}) or a bare list of clip "
+                f"ids; this is neither.")
+        n_records = len(ids)
+    else:
+        text = gzip.decompress(raw) if raw[:2] == b"\x1f\x8b" else raw
+        for line in text.decode("utf-8").splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            n_records += 1
+            cid = json.loads(line).get("clip_id")
+            if not cid:
+                raise SystemExit(
+                    f"[v6] ⛔ --exclude-eval-clips {p}: record {n_records} has "
+                    f"no `clip_id`. An exclusion source that cannot name its "
+                    f"clips excludes nothing, silently.")
+            ids.add(str(cid))
+        kind = "v7.2 label blob"
+    if not ids:
+        raise SystemExit(
+            f"[v6] ⛔ --exclude-eval-clips {p} yielded ZERO clip ids. An empty "
+            f"exclusion is indistinguishable from no exclusion at all, and "
+            f"that is the failure this flag exists to prevent.")
+    #: the md5 IS the identity, and a canonical eval CLIP INDEX is as
+    #: legitimate a source as the eval BLOB — recognising only the blob would
+    #: silently switch the cross-check below off on the index route.
+    side = next((k for k, spec in {**V72, **V72_INDEX}.items()
+                 if spec["md5"] == md5), None)
+    return frozenset(ids), {
+        "path": str(p), "md5": md5, "kind": kind, "v72_side": side,
+        "n_records": n_records, "n_clips": len(ids),
+        "canonical_eval_md5": V72["eval"]["md5"],
+    }
+
+
+def registered_eval_overlap(cache_dirs, clip_ids) -> dict:
+    """What ``parity_manifest.json`` already RECORDS about eval pixels here.
+
+    The corpus is identified by the DIGEST OF ITS CLIP IDS (exact; it cannot be
+    fooled by a renamed directory) and falls back to
+    :func:`parity.corpus_key_of` — the established substring rule — so a cache
+    that is mid-build or partially synced still resolves to a key. Counts only.
+    This is the SECOND probe: it is what lets the run refuse on a cache that is
+    known to hold eval pixels even when no label blob can be resolved at all."""
+    import hashlib                                         # noqa: PLC0415
+    from tanitad.data import parity                        # noqa: PLC0415
+    ids = sorted({str(c) for c in clip_ids})
+    digest = hashlib.sha256("\n".join(ids).encode("utf-8")).hexdigest()
+    try:
+        man = parity.load_manifest()
+    except SystemExit:                              # firewall direction
+        return {"corpus_key": None, "matched_by": None,
+                "clip_id_sha256_sorted": digest,
+                "registered_eval_md5": None, "registered_n_with_pixels": None}
+    corpora = man.get("corpora") or {}
+    key, how = None, None
+    for k, ent in corpora.items():
+        cm = ent.get("clip_membership") or {}
+        if cm.get("clip_id_sha256_sorted") == digest:
+            key, how = k, "clip-id digest (exact)"
+            break
+    if key is None:
+        for d in (cache_dirs if not isinstance(cache_dirs, (str, Path))
+                  else [cache_dirs]):
+            key = parity.corpus_key_of(d)
+            if key:
+                how = "path (parity.corpus_key_of)"
+                break
+    lab = (((corpora.get(key) or {}).get("provenance") or {})
+           .get("labels") or {}).get("eval") or {}
+    n_px = lab.get("n_with_pixels_in_this_cache")
+    return {"corpus_key": key, "matched_by": how,
+            "clip_id_sha256_sorted": digest,
+            "registered_eval_md5": lab.get("md5"),
+            "registered_n_with_pixels": (int(n_px) if n_px is not None
+                                         else None)}
+
+
+def _resolve_eval_exclusion(a) -> dict:
+    """The decision, taken ONCE. See :func:`eval_exclusion`."""
+    from tanitad.data import parity                        # noqa: PLC0415
+    from tanitad.train.intrain_eval import (               # noqa: PLC0415
+        V72, EvalSplitError, resolve_v72)
+    flag = str(getattr(a, "exclude_eval_clips", "auto") or "auto")
+    override = bool(getattr(a, "allow_eval_clips_in_train", False))
+    dirs = [str(x) for x in (getattr(a, "v2_cache", None) or ())]
+    rec: dict = {
+        "flag": "--exclude-eval-clips", "flag_value": flag,
+        "override_flag": "--allow-eval-clips-in-train",
+        "allow_eval_clips_in_train": override,
+        "mode": "not-applicable", "why": None,
+        "source": None, "source_md5": None, "source_kind": None,
+        "v72_side": None, "canonical_eval_md5": V72["eval"]["md5"],
+        "digest_set": None, "roots_searched": [],
+        "n_cache_clips": 0, "n_eval_labels": 0, "n_eval_clips": 0,
+        "n_overlap": 0, "n_removed": 0, "n_episodes_after": None,
+        "registered": None,
+        "_excluded": frozenset(),
+        "_read": "COUNTS ONLY — clip ids are gated-confidential and are never "
+                 "printed nor written into config.json",
+        "_evidence_class": "MEASURED (ours; this run's own cache + eval split)",
+    }
+    if not dirs:
+        rec["why"] = "no --v2-cache (a dry run or a synthetic smoke)"
+        return rec
+    _assert_v2ep_naming()
+    cache_ids = parity.v2_clip_ids(dirs)          # refuses cross-dir duplicates
+    rec["n_cache_clips"] = len(cache_ids)
+    rec["registered"] = registered_eval_overlap(dirs, cache_ids)
+
+    # ---- 1. the PRIMARY source: the v7.2 EVAL label blob -------------------
+    ids: frozenset[str] | None = None
+    if flag not in ("auto", "none"):
+        p = Path(flag)
+        if not p.exists():
+            rec["mode"] = "UNRESOLVED"
+            rec["why"] = f"--exclude-eval-clips {flag} does not exist"
+            return rec
+        ids, stamp = eval_clip_ids_from(p)
+    elif flag == "auto":
+        # ⚠️ ONE ROOT AT A TIME, stopping at the first hit. `resolve_v72`
+        # globs `<root>/**` recursively, so handing it every root at once makes
+        # a launch pay for walking the LARGEST of them even when the answer sat
+        # in the first. On a pod whose --v2-cache parent is a whole MooseFS
+        # volume that is the difference between milliseconds and minutes.
+        # ⇒ set $TANITAD_V72_ROOT to make this O(1); the ambiguity refusal is
+        # unchanged, it just applies per root (which is also the priority order).
+        roots = eval_exclusion_roots(a)
+        rec["roots_searched"] = roots
+        src = None
+        for r in roots:
+            try:
+                src = resolve_v72("eval", [r])
+            except EvalSplitError as e:
+                rec["mode"] = "UNRESOLVED"
+                rec["why"] = f"intrain_eval.resolve_v72 refused under {r}: {e}"
+                return rec
+            if src:
+                rec["resolved_under"] = r
+                break
+        ids, stamp = eval_clip_ids_from(src) if src else (None, None)
+    if ids is not None:
+        rec |= {"source": stamp["path"], "source_md5": stamp["md5"],
+                "source_kind": stamp["kind"], "v72_side": stamp["v72_side"],
+                "n_eval_labels": stamp["n_records"],
+                "n_eval_clips": stamp["n_clips"]}
+
+    # ---- 2. the committed digest set: the FALLBACK *and* the cross-check ---
+    # ⭐ Two oracles rather than one, because the blob is gated release content
+    # that does not live in the repo: on a host without it the question "does
+    # this cache overlap the eval split?" would be UNANSWERABLE, and
+    # unanswerable is exactly the state in which a provenance assumption gets
+    # made instead (parity.py §10's own lesson, C112).
+    digs: frozenset[str] | None = None
+    try:
+        digs = parity.v72_eval_clip_digests()
+        rec["digest_set"] = {"path": str(parity.V72_EVAL_DIGESTS_PATH),
+                             "n_clips": len(digs), "agrees_with_blob": None}
+    #: ⛔ `ParityViolation` is a `SystemExit` SUBCLASS, so a bare `except
+    #: Exception` does NOT catch a missing or self-inconsistent digest file and
+    #: the "cannot resolve" branch below would be unreachable. Caught by NAME,
+    #: never by catching SystemExit broadly — that would swallow every other
+    #: refusal in this module.
+    except (parity.ParityViolation, OSError, ValueError) as e:
+        rec["digest_set"] = {"path": str(parity.V72_EVAL_DIGESTS_PATH),
+                             "n_clips": None,
+                             "error": f"{type(e).__name__}: "
+                                      f"{(str(e).strip().splitlines() or [''])[0]}"}
+    if ids is not None and digs is not None:
+        agrees = {parity.clip_digest(c) for c in ids} == set(digs)
+        rec["digest_set"]["agrees_with_blob"] = agrees
+        if not agrees and rec["v72_side"] in ("eval", "eval_index"):
+            rec["mode"] = "UNRESOLVED"
+            rec["why"] = (
+                f"the CANONICAL v7.2 eval blob (md5 {rec['source_md5']}) and "
+                f"the committed digest set {parity.V72_EVAL_DIGESTS_PATH} "
+                f"disagree on the membership of the eval split. Two oracles "
+                f"that must agree do not; refusing rather than picking one. "
+                f"Re-mint the digest set from the blob.")
+            return rec
+
+    # ---- 3. the overlap, MEASURED (never a literal) ------------------------
+    if ids is not None:
+        overlap = frozenset(c for c in cache_ids if c in ids)
+    elif digs is not None:
+        overlap = frozenset(parity.clips_in_v72_eval(cache_ids))
+        rec |= {"source": str(parity.V72_EVAL_DIGESTS_PATH),
+                "source_kind": "committed per-clip digest set (FALLBACK — the "
+                               "v7.2 EVAL blob did not resolve)",
+                "n_eval_labels": len(digs), "n_eval_clips": len(digs)}
+    else:
+        rec["mode"] = "UNRESOLVED"
+        rec["why"] = ("neither the v7.2 EVAL label blob nor the committed "
+                      "digest set could be read")
+        return rec
+    rec["n_overlap"] = len(overlap)
+
+    # ---- 4. what actually happens ------------------------------------------
+    if override:
+        rec["mode"] = "OVERRIDE"
+        rec["why"] = ("--allow-eval-clips-in-train: the eval split STAYS in "
+                      "training by explicit, stamped choice")
+    elif flag == "none":
+        rec["mode"] = "not-excluded"
+        rec["why"] = "--exclude-eval-clips none: the operator asked for none"
+    elif overlap:
+        rec["mode"] = "excluded"
+        rec["_excluded"] = overlap
+        rec["n_removed"] = len(overlap)
+    else:
+        rec["mode"] = "clean"
+        rec["why"] = "the cache and the v7.2 EVAL split are disjoint"
+    return rec
+
+
+def eval_exclusion(a) -> dict:
+    """THE canonical eval-exclusion decision for this run, resolved once.
+
+    ⛔ Every consumer reads THIS — :func:`apply_eval_exclusion` (the providers),
+    :func:`join_clip_ids` (both `ep_idx → clip_id` joins) and
+    :func:`_preflight_eval_exclusion` (the refusal). A second, independently
+    computed exclusion would be the off-by-N hazard wearing a fix's name."""
+    k = _eval_excl_key(a)
+    if k not in _EVAL_EXCL_CACHE:
+        _EVAL_EXCL_CACHE[k] = _resolve_eval_exclusion(a)
+    return _EVAL_EXCL_CACHE[k]
+
+
+def eval_exclusion_record(rec: dict) -> dict:
+    """The `config.json`-safe view: 🔒 the clip ids are stripped."""
+    return {k: (sorted(v) if isinstance(v, (set, frozenset)) else v)
+            for k, v in rec.items()
+            if not (k.startswith("_") and k not in ("_read",
+                                                    "_evidence_class"))}
+
+
+def cache_clip_ids_in_provider_order(cache_dirs) -> list[str]:
+    """The clip ids in EXACTLY the order ``build_v2_providers`` emits them.
+
+    Per dir, `load_or_build_manifest` → `_list_clips` → ``sorted(basename)``,
+    and the dirs are concatenated in the order given. Sorting by basename and
+    sorting by stem are the same order because the suffix is constant, so this
+    is also the order the two joins' own `sorted(...glob(...))` produces."""
+    _assert_v2ep_naming()
+    if isinstance(cache_dirs, (str, Path)):
+        cache_dirs = [cache_dirs]
+    out: list[str] = []
+    for cd in cache_dirs:
+        out += sorted(q.name[:-len(V2EP_SUFFIX)]
+                      for q in Path(cd).glob(V2EP_GLOB))
+    return out
+
+
+def join_clip_ids(a, cache_dir) -> list[str]:
+    """The clip ids an ``ep_idx → clip_id`` join indexes, WITH this run's
+    exclusion applied — the same list :func:`apply_eval_exclusion` filtered the
+    providers by, so the two cannot desynchronise."""
+    ids = sorted(q.name[:-len(V2EP_SUFFIX)]
+                 for q in Path(cache_dir).glob(V2EP_GLOB))
+    excl = eval_exclusion(a)["_excluded"]
+    return [c for c in ids if c not in excl] if excl else ids
+
+
+def assert_cache_join(clip_ids, n_ep: int, *, who: str,
+                      excluded: int = 0) -> None:
+    """⛔ The ``ep_idx → clip_id`` join is BY SORTED CACHE ORDER and is verified
+    by COUNT — a silent length mismatch would shift every label by one clip,
+    which no loss curve would show (C146's lesson: an aggregate over the wrong
+    set is a confident answer to a question never asked).
+
+    Extracted from the two inline joins so the check is ONE piece of code with
+    ONE negative control, and so the exclusion can say so in the message."""
+    if len(clip_ids) == n_ep:
+        return
+    head = "PSG:" if who == "PSG" else "[nav] ⛔"
+    tail = ("the ep_idx->clip_id join would be off-by-N." if who == "PSG" else
+            "the ep_idx->clip_id join would be off-by-N and every window "
+            "would get another clip's route.")
+    extra = (f" ⚠️ {excluded} clip(s) were removed by --exclude-eval-clips; "
+             f"the dataset and this list must be filtered by the SAME "
+             f"exclusion (train_v6_staged.eval_exclusion) — a list built "
+             f"under a different one is precisely the off-by-N."
+             if excluded else "")
+    raise SystemExit(f"{head} cache lists {len(clip_ids)} clips but the "
+                     f"dataset holds {n_ep} episodes; {tail}{extra}")
+
+
+def _print_eval_exclusion(rec: dict) -> None:
+    """The ONE line — cache count, eval-label count, intersection removed,
+    resulting episode count. 🔒 counts only."""
+    src = rec.get("source") or "—"
+    md5 = rec.get("source_md5")
+    print(f"[v6] eval-exclusion {rec['mode']}: cache {rec['n_cache_clips']} "
+          f"clips · v7.2 EVAL {rec['n_eval_labels']} label records · overlap "
+          f"{rec['n_overlap']} · REMOVED {rec['n_removed']} · "
+          f"{rec['n_episodes_after']} training episodes remain "
+          f"[{rec['flag']} {rec['flag_value']} · source {src}"
+          f"{f' md5={md5}' if md5 else ''}]", flush=True)
+    if rec["mode"] == "OVERRIDE":
+        print("=" * 72, flush=True)
+        print(f"[v6] ⚠️  --allow-eval-clips-in-train IN FORCE — "
+              f"{rec['n_overlap']} v7.2 EVAL clip(s) are IN THIS TRAINING SET. "
+              f"NOTHING this arm produces on the v7.2 eval split is a held-out "
+              f"number; it is a measurement on training data. The choice is "
+              f"stamped in config.json.", flush=True)
+        print("=" * 72, flush=True)
+
+
+def apply_eval_exclusion(a, train_eps):
+    """Drop the v7.2 EVAL clips from the provider list — the ONE place it
+    happens, and the place the ``ep_idx → clip_id`` join is PROVEN.
+
+    ⭐ The pre-filter equality below is the assertion that actually proves the
+    join; the two post-filter checks in the PSG and NAV joins prove that their
+    lists came through the SAME exclusion. With nothing to exclude this function
+    returns the provider list UNTOUCHED and asserts nothing new, so every arm on
+    a cache that does not overlap the eval split is byte-identical to before."""
+    rec = dict(eval_exclusion(a))
+    excl = rec["_excluded"]
+    if not excl:
+        rec["n_episodes_after"] = len(train_eps)
+        _print_eval_exclusion(rec)
+        return list(train_eps), rec
+    ordered = cache_clip_ids_in_provider_order(
+        [str(x) for x in (getattr(a, "v2_cache", None) or ())])
+    if len(ordered) != len(train_eps):
+        raise SystemExit(
+            f"[v6] ⛔ eval-exclusion: the cache lists {len(ordered)} clips but "
+            f"build_v2_providers returned {len(train_eps)} providers. The "
+            f"ep_idx->clip_id join is BY SORTED CACHE ORDER, so filtering "
+            f"under a length mismatch would drop the WRONG episodes and shift "
+            f"every downstream label. Refusing before anything is dropped.")
+    keep = [i for i, c in enumerate(ordered) if c not in excl]
+    out = [train_eps[i] for i in keep]
+    if len(train_eps) - len(out) != len(excl):
+        raise SystemExit(
+            f"[v6] ⛔ eval-exclusion: asked to remove {len(excl)} clip(s) but "
+            f"{len(train_eps) - len(out)} providers were dropped. The cache "
+            f"order and the exclusion disagree; refusing.")
+    rec["n_episodes_after"] = len(out)
+    _print_eval_exclusion(rec)
+    return out, rec
+
+
+def _preflight_eval_exclusion(a) -> list[str]:
+    """⛔ REFUSE rather than contaminate — in milliseconds, at startup.
+
+    Two refusals, and both are about the run being unable to PROVE it is not
+    training on the evaluation split:
+      * the exclusion could not be resolved at all (no blob, no digest set, or
+        two oracles that disagree) — and the cache is not provably clean;
+      * the operator said `--exclude-eval-clips none` on a cache that DOES
+        overlap, without the stamped `--allow-eval-clips-in-train`.
+    A dry run trains nothing and mounts no corpus, so neither applies there."""
+    if bool(getattr(a, "dry_run", False)):
+        return []
+    if not (getattr(a, "v2_cache", None) or ()):
+        return []
+    rec = eval_exclusion(a)
+    flag, ovr = rec["flag"], rec["override_flag"]
+    if rec["mode"] == "UNRESOLVED":
+        reg = rec.get("registered") or {}
+        n_reg = reg.get("registered_n_with_pixels")
+        known = (f"⛔ AND parity_manifest.json RECORDS {n_reg} v7.2 eval "
+                 f"clip(s) with pixels in {reg.get('corpus_key')!r} (matched "
+                 f"by {reg.get('matched_by')}) — this cache is KNOWN to hold "
+                 f"the evaluation split."
+                 if n_reg else
+                 "The manifest records no eval overlap for this cache, but "
+                 "absence of a record is not proof of disjointness.")
+        return [
+            f"the v7.2 EVAL split could not be resolved, so this run CANNOT "
+            f"PROVE it is not training on the evaluation split's pixels: "
+            f"{rec['why']}.\n"
+            f"     {known}\n"
+            f"     Roots searched: {rec['roots_searched'] or '(none)'}\n"
+            f"     ⇒ point {flag} at the v7.2 EVAL blob (md5 "
+            f"{rec['canonical_eval_md5']}, 147 records) or its clip index, or "
+            f"set ${V72_ROOT_ENV} to the release root. If training ON the "
+            f"eval split is the deliberate experiment, say so with {ovr} — it "
+            f"is printed as a banner and stamped into config.json."]
+    if (rec["n_overlap"] and rec["n_removed"] == 0
+            and not rec["allow_eval_clips_in_train"]):
+        return [
+            f"--v2-cache OVERLAPS THE v7.2 EVAL SPLIT ON {rec['n_overlap']} "
+            f"OF {rec['n_cache_clips']} CLIP(S) and {flag} "
+            f"{rec['flag_value']} switches the exclusion OFF. Training the "
+            f"world-model objectives on those pixels contaminates every later "
+            f"T1 number and NOTHING CRASHES — the numbers come out plausible "
+            f"and wrong (the REF-A I-JEPA class).\n"
+            f"     ⇒ drop the flag (the default {flag} auto excludes them), "
+            f"or, if training on them IS the experiment, say so with {ovr} — "
+            f"it is printed as a banner and stamped into config.json."]
+    return []
+
+
+# ============================================================================
 # F-7 / catalog T2 — MANOEUVRE CONTRASTIVES
 # ============================================================================
 
@@ -5673,6 +6211,11 @@ def train(a) -> dict:
 
     train_eps, _tp = build_train_episodes(a, cache_frame=cache_frame,
                                           train_frame=model_frame)
+    # ⛔ D-V7-EVAL-EXCLUSION — BEFORE the dataset is constructed, so no window
+    # of an evaluation clip can exist at all. This call is also where the
+    # ep_idx -> clip_id join is PROVEN (the pre-filter count), which is what
+    # lets the PSG and NAV joins below keep their own post-filter checks.
+    train_eps, excl_rec = apply_eval_exclusion(a, train_eps)
     ds_train = FlagshipWindowDataset(
         train_eps, window=stack.cfg.predictor.window, max_horizon=max_h,
         maneuver_h=plan.maneuver_h,
@@ -6031,14 +6574,14 @@ def train(a) -> dict:
         # assumed: a silent length mismatch would shift every label by one clip,
         # which no loss curve would show (C146's lesson -- an aggregate over the
         # wrong set is a confident answer to a question never asked).
+        # ⛔ D-V7-EVAL-EXCLUSION: `join_clip_ids` applies THIS RUN'S exclusion to
+        # that same sorted order, so this list is the one `apply_eval_exclusion`
+        # filtered the providers by. Building it any other way is the off-by-N.
         cache_dir = Path(a.v2_cache[0])
-        clip_ids = sorted(q.name[:-len(".v2ep.pt")]
-                          for q in cache_dir.glob("*.v2ep.pt"))
+        clip_ids = join_clip_ids(a, cache_dir)
         n_ep = len(ds_train.episodes)
-        if len(clip_ids) != n_ep:
-            raise SystemExit(
-                f"PSG: cache lists {len(clip_ids)} clips but the dataset holds "
-                f"{n_ep} episodes; the ep_idx->clip_id join would be off-by-N.")
+        assert_cache_join(clip_ids, n_ep, who="PSG",
+                          excluded=len(eval_exclusion(a)["_excluded"]))
         tgt = load_targets(a.psg_labels)
         missing = [c for c in clip_ids if c not in tgt]
         if missing:
@@ -6089,15 +6632,13 @@ def train(a) -> dict:
         # mismatch would shift every label by one clip, which no loss curve would
         # show". A wrong-clip nav is worse than a crash: the model would train on
         # a plausible route for the wrong scene.
+        # ⛔ D-V7-EVAL-EXCLUSION: the SAME filtered list the providers were
+        # built from (`join_clip_ids` -> `eval_exclusion`), never a second glob.
         _cache = Path(a.v2_cache[0])
-        _clip_ids = sorted(q.name[:-len(".v2ep.pt")]
-                           for q in _cache.glob("*.v2ep.pt"))
+        _clip_ids = join_clip_ids(a, _cache)
         _n_ep = len(ds_train.episodes)
-        if len(_clip_ids) != _n_ep:
-            raise SystemExit(
-                f"[nav] ⛔ cache lists {len(_clip_ids)} clips but the dataset "
-                f"holds {_n_ep} episodes; the ep_idx->clip_id join would be "
-                f"off-by-N and every window would get another clip's route.")
+        assert_cache_join(_clip_ids, _n_ep, who="nav",
+                          excluded=len(eval_exclusion(a)["_excluded"]))
         _labels, _manifest = load_v7_labels(a.nav_labels, allow_oracle_nav=True)
         _by_clip = {x.clip_id for x in _labels}
         _missing = [c for c in _clip_ids if c not in _by_clip]
@@ -6162,6 +6703,12 @@ def train(a) -> dict:
     # the stratum shares records the diversity and hides the volume it cost,
     # and the catalog row's whole claim is that the first is worth the second.
     cfg_json["domain_mix"] = dmixlog
+    # ⭐ D-V7-EVAL-EXCLUSION: the four numbers travel with the RUN ROW, not just
+    # the console — cache clips, v7.2 EVAL label records, the intersection
+    # actually removed, and the resulting episode count. A later reader must be
+    # able to see that this arm did not train on the evaluation split's pixels
+    # without having the launch log. 🔒 counts only; the ids are stripped.
+    cfg_json["eval_exclusion"] = eval_exclusion_record(excl_rec)
     # ⭐ F-11's reachability census likewise: the window count per episode is
     # what a later reader needs to know this arm was not silently truncated.
     if w_stage.w_s1_multi:
@@ -8066,6 +8613,38 @@ def build_parser() -> argparse.ArgumentParser:
                          f"({STAGE_LAMBDA_PLAN}). 0 in S-W BY CONSTRUCTION.")
     # ---- data --------------------------------------------------------------
     ap.add_argument("--v2-cache", nargs="+", default=[])
+    ap.add_argument("--exclude-eval-clips", default="auto",
+                    metavar="auto|none|PATH",
+                    help="⛔ D-V7-EVAL-EXCLUSION (BACKLOG R8). Drop the v7.2 "
+                         "EVAL split's clips from the TRAINING corpus before "
+                         "the dataset is built. 'auto' (DEFAULT) resolves the "
+                         "canonical v7.2 EVAL blob BY CONTENT (md5 "
+                         "aa12c948f062181c3297265b51526ec5, 147 records; "
+                         "intrain_eval.V72) beside --s2-labels/--nav-labels, "
+                         "beside the cache, or under $TANITAD_V72_ROOT, and "
+                         "falls back to the committed digest set "
+                         "tanitad/data/v72_eval_clip_digests.json when the "
+                         "blob is not on this host — the two are CROSS-CHECKED "
+                         "whenever both resolve. A PATH names the blob or its "
+                         "clip index explicitly. 'none' switches the exclusion "
+                         "OFF and then REFUSES on an overlap unless "
+                         "--allow-eval-clips-in-train is also given. "
+                         "⛔ WHY THE DEFAULT IS ON: 141 of the 147 v7.2 EVAL "
+                         "records have their pixels inside the 4,713-clip B1 "
+                         "cache, so a v7f run on it would train its world-model "
+                         "objectives on the evaluation split and nothing would "
+                         "crash. The exclusion is a no-op on a cache that does "
+                         "not overlap (refav1/refcv3), so the default costs "
+                         "those arms nothing.")
+    ap.add_argument("--allow-eval-clips-in-train", action="store_true",
+                    default=False,
+                    help="⛔ THE STAMPED OVERRIDE: keep the v7.2 EVAL clips IN "
+                         "the training set. Printed as a banner and recorded in "
+                         "config.json under `eval_exclusion`, so no eval number "
+                         "from this arm can ever be quoted as held-out without "
+                         "the stamp being visible. For a deliberate experiment "
+                         "(e.g. measuring the contamination itself), never a "
+                         "convenience.")
     # ⛔ accepted only so the launch fails with an EXPLANATION rather than
     # argparse's bare "unrecognized arguments" (P4-5). It is refused in main().
     ap.add_argument("--v2-val-cache", nargs="+", default=[],
@@ -8687,6 +9266,7 @@ def preflight(a) -> list[str]:
             f"below passed is worthless if this stage then trains on a "
             f"randomly-initialised trunk — that is not the staged protocol, "
             f"it is four unrelated models with a gate between them.")
+    problems += _preflight_eval_exclusion(a)
     problems += _preflight_subframe(a)
     problems += _preflight_seam_dump(a)
     return problems

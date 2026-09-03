@@ -143,3 +143,9 @@ that all lands before S-W's first gate.
 - **R15 — v7f LAUNCH BLOCKER: the DINOv3 → seed-checkpoint converter.** No loader puts DINOv3 weights into `ViTEncoder`/`ViT5Encoder`; `--init-from` refuses a partial checkpoint (`train_v6_staged.py:7236-7247`). Needs the converter plus three flags: trunk LR multiplier, trunk warmup, distillation-anchor weight (the optimizer is one flat AdamW at `:6120`, `--freeze-encoder` is all-or-nothing at `:5964`). Tests: the seeded encoder reproduces DINOv3's features at step 0 to a stated tolerance, and the OFF path is byte-identical.
 - **R16 — sweep every retired threshold through the instruction documents** (`.claude/skills/`, `CLAUDE.md`, the PREREG templates), not only through the register: the 8.56 floor survived eleven days in the validation skill after the code and the registry retired it (RETRACTION_LOG 2026-09-03 #5).
 - **R17 — rung R0 of the v7f ladder is 0 GPU and can refute the LDAD line before an arm is spent** (`PREREG_V7F.md`); run it before any v7f compute is scheduled.
+
+## Added 2026-09-03 08:15 Berlin
+
+- **R8 — STRUCK 2026-09-03** (D-V7-EVAL-EXCLUSION): exclusion is ON by default and a contaminated run refuses at preflight without a stamped override.
+- **R18 — gate the fp8 shipper** (`stack/scripts/dinov3_fp8_encode_ship.py`, C-FP8-SHIPPER-UNGATED): call `parity.guard_corpus_build` on the SOURCE split before encoding (preferred), or classify it in `test_build_parity_guard.NOT_AN_INGEST_DOOR` with a stated reason AND an assertion that the shipped set equals the source set. The guard stays RED until then. It built a clip of the live refav1 training cache on 2026-09-02.
+- **R19 — bound `_artifact_path_names`' two-hop closure** in `test_build_parity_guard.py`: it reached ~200 unrelated locals and produced a spurious ungated-writer entry; the owner of that suite should bound it so the instrument's population is stable under unrelated edits.

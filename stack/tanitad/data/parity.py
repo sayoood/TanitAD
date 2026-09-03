@@ -2444,3 +2444,52 @@ def require_ingest_gate(where: str):
             f"{where}: the parity ingest oracles are EMPTY (train={n_train}, "
             f"val={n_val}). Refusing to build an unchecked corpus.")
     return {"parity_train_clips": n_train, "deployed_val_clips": n_val}
+
+
+# --------------------------------------------------------------------------- #
+# 10d. THE v7.2 EVAL SPLIT — the membership oracle the OTHER two cannot answer  #
+# --------------------------------------------------------------------------- #
+# ⛔ THE HAZARD (BACKLOG R8 / D-V7-EVAL-EXCLUSION). §10 asks *"does this EVAL
+# split contain parity TRAIN clips?"* and §10b asks *"does this TRAIN corpus
+# contain the DEPLOYED VAL clips?"*. **Neither can answer the v7 question**,
+# because the v7.2 eval split is neither of those sets: the B1 train cache
+# ``physicalai-b1-w120-256x640cyl`` holds 4,713 clips and **141 of the v7.2 EVAL
+# split's 147 records have their PIXELS INSIDE IT** — the cache is
+# union(v7.2 train 4,572, v7.2 eval 147) minus the 6 deployed-val40 clips
+# (``parity_manifest.json`` corpora[B1].provenance.labels.eval). A v7 trainer
+# pointed at that cache with no exclusion trains its world-model objectives on
+# the evaluation split; nothing crashes and every later T1 number is quietly
+# contaminated — the REF-A I-JEPA class, approached from the training side.
+#
+# ⭐ WHY A COMMITTED DIGEST SET AND NOT ONLY THE BLOB. The v7.2 EVAL label blob
+# is the PRIMARY source and ``train_v6_staged.eval_clip_ids_from`` reads it
+# whenever it resolves. But the blob is gated release content that does not live
+# in the repo, so on a host without it the question *"does this cache overlap
+# the eval split?"* is UNANSWERABLE — and unanswerable is exactly the state in
+# which a provenance assumption gets made instead (§10's own lesson, C112). The
+# committed digests answer membership exactly, enumerate nothing, and the
+# trainer CROSS-CHECKS the two oracles whenever both are present.
+#
+# 🔒 CONFIDENTIALITY unchanged: per-clip sha256 only; counts only in messages.
+# The set is minted from THREE agreeing artifacts of the v7.2 release (the label
+# blob md5 aa12c948…, the clip index md5 2f68790b…, and the release's own
+# eval_v72_clip_digests.txt) and is self-checked by :func:`load_clip_digests`.
+
+V72_EVAL_DIGESTS_PATH = Path(__file__).with_name("v72_eval_clip_digests.json")
+
+
+def v72_eval_clip_digests(path: str | Path | None = None) -> frozenset[str]:
+    """``sha256(clip_id)`` for every clip of the v7.2 EVAL split (147)."""
+    return frozenset(load_clip_digests(path or V72_EVAL_DIGESTS_PATH)
+                     ["clip_id_digests"])
+
+
+def clips_in_v72_eval(clip_ids: Iterable[str],
+                      path: str | Path | None = None) -> list[str]:
+    """Which of ``clip_ids`` are in the v7.2 EVAL split (sorted).
+
+    Returns the IDS, like :func:`clips_in_parity_train`: the caller already
+    holds them, so this discloses nothing it did not supply, and a caller that
+    must FILTER a training corpus cannot act on a count."""
+    digs = v72_eval_clip_digests(path)
+    return sorted({str(c) for c in clip_ids if clip_digest(c) in digs})
