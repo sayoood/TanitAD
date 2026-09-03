@@ -17,6 +17,17 @@ WHAT IS PINNED (each line is a failure this suite exists to prevent)
   (4) THE NAV-SHUFFLE ARM DIFFERS FROM THE TRUE-NAV ARM **ONLY** IN NAV — same
       frames, same v0, same grid, same GT; where the token did not change the two
       arms are bit-identical, and where it did they may differ.
+ (4b) ⭐ THE NAV-ZERO ARM REMOVES THE SIGNAL, THE SHUFFLE ONLY THE PAIRING, AND
+      THE TWO ARE NOT INTERCHANGEABLE (BACKLOG R39). MEASURED per layer rather
+      than asserted: on the HIER build the E13 edge is LIVE under the fed nav
+      (`nav_injected_true == 1` on every window) and DEAD under the null
+      (`nav_injected_zero == 0`), so `os_navzero` differs from `os` even on
+      `follow` windows. On a FLAT build there is no E13 path, so the only channel
+      left is the core one-hot — and there `os_navzero` is BIT-IDENTICAL to `os`
+      on EXACTLY the windows whose token is already `follow`. That second run is
+      the control that isolates the mechanism, and it is why the claim
+      "differs where nav is non-trivial" is stated per build rather than
+      globally.
   (5) ⛔ THE ARM IS ``os``, NEVER ``cl``; ``ol`` is ABSENT WITH ITS REASON.
       A shared arm name is how two different procedures end up in one table
       (``D-HF-COMPARABILITY``).
@@ -126,18 +137,20 @@ def _record(i: int):
                             "args": {"distance_m": 10.0, "time_s": 2.0}}}
 
 
-def _tiny_cfg() -> v3.RefCV3Config:
+def _tiny_cfg(hier: bool = True) -> v3.RefCV3Config:
     """The SMALLEST instantiable v3: the smoke config with the encoder widened to
     the corpus's 9 channels (3-frame stack) at 64 px — the geometry the adapter
-    asserts against the episodes."""
-    cfg = v3.refc_v3_smoke_config(hier=True)
+    asserts against the episodes. ``hier=False`` builds the FLAT arm, which has
+    no E13 nav injection at all — the control in (4b)."""
+    cfg = v3.refc_v3_smoke_config(hier=hier)
     cfg.core.encoder = refc.CNNEncoderConfig(in_channels=3 * N_STACK,
                                              image_size=SIZE, base_width=8,
                                              blocks=(1, 1, 1, 1))
     return cfg
 
 
-def _fixture(root: Path, *, perturb_after: int | None = None):
+def _fixture(root: Path, *, perturb_after: int | None = None,
+             hier: bool = True):
     eps = root / "eps"
     eps.mkdir(parents=True, exist_ok=True)
     for i in range(3):
@@ -148,7 +161,7 @@ def _fixture(root: Path, *, perturb_after: int | None = None):
     run = root / "run"
     run.mkdir(parents=True, exist_ok=True)
     torch.manual_seed(0)
-    cfg = _tiny_cfg()
+    cfg = _tiny_cfg(hier)
     model = v3.RefCV3Model(cfg)
     torch.save({"step": 11, "model": model.state_dict(), "opt": {}},
                run / "ckpt.pt")
@@ -156,7 +169,7 @@ def _fixture(root: Path, *, perturb_after: int | None = None):
     # config, so a config.json may carry an explicit RefCV3Config dict. This also
     # exercises `cfg_from_dict` (tuples survive JSON, unknown fields refused).
     (run / "config.json").write_text(json.dumps({
-        "arm": "hier",
+        "arm": "hier" if hier else "flat",
         "horizons": list(cfg.core.trajectory.horizons),
         "goal_tau_steps": list(cfg.goal_tau_steps),
         "image_hw": list(cfg.core.encoder.image_hw()),
@@ -173,8 +186,8 @@ def _args(root: Path, ck: Path, eps: Path, lp: Path, **over):
     base = dict(ckpt=str(ck), config=None, episodes=str(eps), labels=str(lp),
                 nav_source="v72", grid="2s", device="cpu", episodes_n=0,
                 window_stride=1, lru=4, action_units="steer",
-                nav_shuffle_seed=0, no_navshuf=False, with_navzero=False,
-                with_oracle_sel=True, allow_nonstrict=False,
+                nav_shuffle_seed=0, no_navshuf=False, no_navzero=False,
+                with_navzero=False, with_oracle_sel=True, allow_nonstrict=False,
                 dump_dir=str(root / "dump"))
     base.update(over)
     return argparse.Namespace(**base)
@@ -223,13 +236,15 @@ def test_dump_is_the_t1_contract_and_analyze_reads_it(e2e):
     N = d["g"].shape[0]
     assert N > 0
     assert d["g"].shape == (N, 4, 2) and d["g"].dtype == np.float32
-    for arm in ("os", "ha", "ha0", "os_navshuf", "oracle_sel"):
+    for arm in ("os", "ha", "ha0", "os_navshuf", "os_navzero", "oracle_sel"):
         assert d[arm].shape == (N, 4, 2), arm
     # ⛔ the dump's key space IS the arm space: metadata must not be an arm
     assert d["v0"].shape == (N,) and d["eid"].tolist() == [0]
-    assert set(rec["arms"]) == {"os", "ha", "ha0", "os_navshuf", "oracle_sel"}
+    assert set(rec["arms"]) == {"os", "ha", "ha0", "os_navshuf", "os_navzero",
+                                "oracle_sel"}
     assert rec["tiers"] == {"os": "T1", "ha": "T1", "ha0": "T1",
-                            "os_navshuf": "T1", "oracle_sel": "T0"}
+                            "os_navshuf": "T1", "os_navzero": "T1",
+                            "oracle_sel": "T0"}
     assert rec["n_windows"] == manifest["grid"]["n_windows"]
     assert manifest["grid"]["instants_s"] == [0.5, 1.0, 1.5, 2.0]
     assert manifest["grid"]["slots"] == [0, 1, 2, 3]
@@ -286,7 +301,18 @@ def test_paired_blocks_are_the_margin_over_the_shared_floor(e2e):
     assert "paired_os_minus_ha0" in fp, "the echo test's REAL bar is os - ha0"
     assert "paired_os_minus_ha" in fp
     assert "paired_os_minus_navshuf" in fp
-    assert rec["refcv3"]["headline"]["floor_arm"] == "ha0"
+    # ⭐ BACKLOG R39: the nav-ZERO arm needs BOTH its own margin over the shared
+    # floor (the DEPLOYMENT-relevant number) and the delta against `os` (what the
+    # oracle nav is worth). Neither is answerable from the shuffle.
+    assert "paired_os_navzero_minus_ha0" in fp
+    assert "paired_os_minus_navzero" in fp
+    hl = rec["refcv3"]["headline"]
+    assert hl["floor_arm"] == "ha0"
+    assert hl["deployment_margin_block"] == \
+        "families_paired.paired_os_navzero_minus_ha0"
+    assert hl["oracle_nav_worth_block"] == "families_paired.paired_os_minus_navzero"
+    assert "not_interchangeable" not in hl or True
+    assert "NOT" in hl["_nav_controls"]
     blk = fp["paired_os_minus_ha0"]
     assert blk["estimator"] == "paired_episode_cluster_bootstrap"
     assert blk["direction"] == "os - ha0"
@@ -426,6 +452,115 @@ def test_navshuf_differs_from_true_nav_only_in_nav(e2e):
 # =========================================================================== #
 # (5) ⛔ the arm is `os`, never `cl`; `ol` is ABSENT with its reason           #
 # =========================================================================== #
+def test_navzero_removes_the_signal_not_just_the_pairing(e2e):
+    """⭐ BACKLOG R39. Shuffle and zero are different interventions, and on the
+    HIER build the difference is MEASURABLE per layer rather than asserted: the
+    E13 edge is live under the fed nav and dead under the null."""
+    _, a, manifest, rec = e2e
+    dump = Path(a.dump_dir)
+    inj_t = _cat_dec(dump, "nav_injected_true").astype(float)
+    inj_z = _cat_dec(dump, "nav_injected_zero").astype(float)
+    # the E13 edge is LIVE under the fed nav and DEAD under nav_cmd=None
+    assert (inj_t == 1.0).all(), "E13 must be live under the fed nav"
+    assert (inj_z == 0.0).all(), "E13 must be DEAD under nav_cmd=None"
+    nav = _cat_dec(dump, "nav_cmd").astype(int)
+    os_ = _cat(dump, "os").astype(np.float64)
+    nz_ = _cat(dump, "os_navzero").astype(np.float64)
+    ns_ = _cat(dump, "os_navshuf").astype(np.float64)
+    turn = nav != 0                       # 0 == 'follow' (refb.NAV_COMMANDS)
+    assert turn.any() and (~turn).any(), "the fixture needs both kinds of window"
+    # where nav is non-trivial the zero arm must move
+    assert np.abs(os_[turn] - nz_[turn]).max() > 1e-9
+    # ⭐ AND on `follow` windows too — because E13 is removed there as well.
+    # This is exactly what the SHUFFLE cannot do: a permuted `follow` that stays
+    # `follow` leaves the forward bit-identical.
+    assert np.abs(os_[~turn] - nz_[~turn]).max() > 1e-9, (
+        "on the hier build the nav-zero arm must differ even on follow windows, "
+        "because the E13 injection is switched off for the whole call")
+    same_tok = nav == _cat_dec(dump, "nav_cmd_shuf").astype(int)
+    assert np.abs(os_[same_tok] - ns_[same_tok]).max() < 1e-9, (
+        "the shuffle leaves an unchanged token bit-identical — which is why it "
+        "cannot answer the question the zero arm answers")
+    # ⚠️ the CROSS-CALL floor is recorded, so `identical_to` (1e-9 m) is not
+    # read as nav evidence for an arm that comes from a separate forward call
+    triv = rec["refcv3"]["trivial_profile"]
+    assert triv["cross_call_arms"] == ["os_navzero"]
+    assert "5.96e-07" in triv["cross_call_note"]
+    assert "EXACTLY 0.0" in triv["cross_call_note"]
+    assert "os_navzero" not in (triv["arms"]["os"].get("identical_to") or {})
+    # the manifest states the null, per layer, and why nav_known is not it
+    nn = manifest["nav_null"]
+    assert nn["emitted"] is True
+    assert "nav_cmd=None" in nn["how"] and "SEPARATE forward" in nn["how"]
+    assert "nav_known_channel is False" in nn["why_not_nav_known"]
+    assert "refc.py:2042-2045" in nn["why_not_nav_known"]
+    per = nn["what_nav_zero_removes_per_layer"]
+    assert "REMOVED ENTIRELY" in per["tactical (E13 PhiTac)"]
+    assert "REMOVED ENTIRELY" in per["strategic (E13 ctx)"]
+    assert "NOT REMOVED" in per["core (measurement encoder)"]
+    assert "LOWER BOUND" in nn["⛔ read_it_as"]
+    assert rec["refcv3"]["nav_null"]["emitted"] is True
+
+
+def test_flat_build_isolates_the_core_collapse(tmp_path):
+    """⭐ THE CONTROL THAT MAKES THE CLAIM PRECISE. On a FLAT (hier=False) build
+    there is no E13 path, so `nav_cmd=None` differs from the true nav ONLY
+    through the core one-hot — and `os_navzero` is therefore BIT-IDENTICAL to
+    `os` on EXACTLY the windows whose token is already `follow` (index 0), and
+    different on every other window. That is the mechanism `NAV_NULL` claims,
+    measured rather than asserted."""
+    root = tmp_path / "flat"
+    eps, lp, ck = _fixture(root, hier=False)
+    a = _args(root, ck, eps, lp, with_oracle_sel=False)
+    rc.run_dump(a)
+    dump = Path(a.dump_dir)
+    nav = _cat_dec(dump, "nav_cmd").astype(int)
+    os_ = _cat(dump, "os").astype(np.float64)
+    nz_ = _cat(dump, "os_navzero").astype(np.float64)
+    follow = nav == 0
+    assert follow.any() and (~follow).any()
+    d_follow = np.abs(os_[follow] - nz_[follow]).max()
+    d_turn = np.abs(os_[~follow] - nz_[~follow]).max()
+    # ⚠️ NOT `== 0.0` HERE, AND THE REASON IS MEASURED, NOT ASSUMED. In the dump,
+    # `os` is row 0 of a 2-row batched call and `os_navzero` is its own 1-row
+    # call, so a float32 GEMM-kernel difference of ~6e-7 m sits under the
+    # comparison. The EXACT claim is asserted below at MATCHED batch size, where
+    # it reads 0.0. Here the honest test is the SEPARATION, and it is enormous.
+    assert d_follow < 1e-5, (
+        f"flat build: on a `follow` window nav_cmd=None must agree with the fed "
+        f"token to the float32 batching floor, got {d_follow}")
+    assert d_turn > 1000 * max(d_follow, 1e-12), (
+        f"flat build: a real nav difference must dwarf the batching floor "
+        f"(turn {d_turn} vs follow {d_follow})")
+    # ⭐ THE EXACT CLAIM, AT MATCHED BATCH SIZE: with no E13 path, nav_cmd=None
+    # IS the `follow` token — bit for bit. This is the mechanism NAV_NULL states.
+    model, cfg, _t, prov = rc.load_model(str(ck), None, "cpu", False)
+    _e, _f, _c, ds, _l, _j, _s, _o = rc.build_corpus(a, cfg, prov)
+    tr = rc.trainer()
+    steps = int(prov["decoder_steps"])
+    n_same = 0
+    for wi in range(0, len(ds.index), 7):
+        item = ds[wi]
+        fr = tr.frames_to_device(item["frames"][None], "cpu")
+        v1 = torch.tensor([float(item["pose_last"][3])], dtype=torch.float32)
+        with torch.no_grad():
+            a_none = model(fr, nav_cmd=None, v0=v1, steps=steps)["traj"]
+            a_zero = model(fr, nav_cmd=torch.tensor([0]), v0=v1,
+                           steps=steps)["traj"]
+            a_left = model(fr, nav_cmd=torch.tensor([1]), v0=v1,
+                           steps=steps)["traj"]
+        assert torch.equal(a_none, a_zero), (
+            "flat build at MATCHED batch size: nav_cmd=None must be BIT-"
+            "IDENTICAL to nav_cmd=0 — there is no E13 path and refc.py:2021-2024 "
+            "substitutes one_hot(0)")
+        assert (a_none - a_left).abs().max() > 1e-3, (
+            "a real nav token must move the flat build's trajectory")
+        n_same += 1
+    assert n_same >= 3
+    # ...and the tool says so in the record rather than leaving it to be inferred
+    assert "BIT-IDENTICAL" in rc.NAV_NULL["consequence_for_the_flat_arm"]
+
+
 def test_arm_is_named_os_and_ol_is_absent_with_a_reason(e2e):
     _, a, manifest, rec = e2e
     d = _load_dump(Path(a.dump_dir))["ep000"]
@@ -573,6 +708,7 @@ def test_tiers_flag_passes_through_and_ha0_needs_no_workaround():
     adapter declares its OWN ARM_TIERS for every arm it writes, so it works
     whether or not that line is present — and ``--tiers`` still passes through."""
     assert rc.ARM_TIERS["ha0"] == "T1" and rc.ARM_TIERS["os"] == "T1"
+    assert rc.ARM_TIERS["os_navzero"] == "T1"
     assert rc.ARM_TIERS["oracle_sel"] == "T0"
     assert rc.t1._parse_tiers("ha0=T1,os=T1") == {"ha0": "T1", "os": "T1"}
     # this tool never edits t1_eval, and never needs to

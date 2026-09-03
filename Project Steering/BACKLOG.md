@@ -229,3 +229,9 @@ that all lands before S-W's first gate.
 - **R50 — the SELECTION PROFILE gate, and it generalises.** A random-init anchor model picked ONE anchor on 42/42 windows while the trivial-profile gate read 0.0000: our degeneracy instrument asks whether a TRAJECTORY is trivial, not whether a SELECTION is. Add it as `T1_CHECKLIST.md` GATE 6's second bullet and carry it on every anchor-model read.
 - **R51 — `REFCV3_ARM.md` §2 needs a human read before any refcv3 number is quoted** (GATE 2 is blocked on that, not on GPU).
 - **R52 — the lead-block join reaches only EVEN raw frames** (`_odd_raw_frames` prints the count); fix before the real read or state the coverage in the result.
+
+## Added 2026-09-03 12:40 Berlin (from D-REFCV3-NAVZERO)
+
+- **R39 — DISCHARGED for refcv3**: the nav-zero arm ships on by default, with its per-layer removal stated and its lower-bound caveat carried in the record. refav1 still needs the same arm on its trajectory side.
+- **R53 — `trivial_profile.identity_to`'s 1e-9 m threshold is unresolvable for CROSS-CALL arms.** The batching floor alone is 5.96e-07 m (different batch sizes take different GEMM paths), so two arms that are provably identical read as different, and a reader can take that as evidence. Fix the threshold in `refav1_arm.py` (batch-aware, or compare at matched batch), or make the instrument refuse to compare across calls.
+- **R54 — PI decision D3b: which margin leads the H-vs-F table**, the fed-nav one or the deployment (nav-zero) one. Quoting only the fed-nav margin overstates the system, since nav is an oracle input that will not exist at deployment. Default: lead with the deployment margin and report the fed-nav one beside it.

@@ -40,9 +40,23 @@ into ``t1_eval.analyze`` unchanged):
                      core's own ``sel_score`` (``refc.py:1531-1534``) on the flat
                      arm. ⛔ NEVER ``a_star``.
     os_navshuf  T1*  the same forward with nav_cmd PERMUTED across the eval
-                     windows — MANDATORY for every nav-conditioned result: nav is
-                     an INPUT, and flagship v1's route head scored 1.0000 by
-                     echoing it.
+                     windows. Breaks the PAIRING, PRESERVES the nav marginal:
+                     "is the model using THIS window's nav?"
+    os_navzero  T1*  ⭐ the same forward with nav WITHHELD (nav_cmd=None): the
+                     E13 injection into the tactical and strategic layers is
+                     SKIPPED ENTIRELY (refc_v3.py:437-441) and the core collapses
+                     to the 'follow' one-hot (refc.py:2021-2024). "What does the
+                     model do when the ORACLE nav is not there?" — i.e. what
+                     DEPLOYMENT looks like, since nav here is an oracle input
+                     (provenance ego-future) that will not exist at deployment.
+                     ⛔ SHUFFLE AND ZERO ARE NOT INTERCHANGEABLE and BACKLOG R39
+                     binds BOTH: a shuffle preserves the distribution and breaks
+                     the pairing, a zero removes the signal. MEASURED elsewhere
+                     (D-REFAV1-TAC-DECODER-PANEL): refav1's tactical head ranked
+                     turns at AUC 0.873 under true nav and collapsed to 0.520
+                     (chance) under nav_zero, while a NAV-ONLY predictor beat the
+                     model outright (0.684 > 0.650). See ``NAV_NULL`` for what
+                     each of the three conditions removes, per layer.
     ha          T1   HOLD-ACTION control: the (a, steer) that CLOSES at t0, held
                      for the horizon through the programme's ONE unicycle. Reads
                      only frames <= t0. NOT a floor — it can be WORSE than
@@ -95,7 +109,7 @@ and ``ha0`` is zero in either unit.
 
 DUMP SCHEMA — two files per episode, so ``t1_eval.py --analyze-only`` stays valid:
     <dump>/ep{fi:03d}.npz            the t1_eval contract (unchanged):
-        g [N,K,2]  os ha ha0 [os_navshuf] [oracle_sel] [N,K,2]
+        g [N,K,2]  os ha ha0 [os_navshuf] [os_navzero] [oracle_sel] [N,K,2]
         ws [N] PROVIDER frame index of the window origin t0
         eid [1]  clip_index [1]  v0 [N]
     <dump>/decisions/ep{fi:03d}.npz  the refcv3 sidecar (_SIDECAR_DOC)
@@ -220,16 +234,112 @@ def trainer():
 DT_FRAME = 0.1           # the 10 Hz corpus tick (the v2ep provider's own grid)
 #: ``--grid`` -> (dt_s, K). Both are index-selects of V3_HORIZONS; nothing else is.
 GRIDS = {"2s": (0.5, 4), "6s": (1.0, 6)}
-ARM_TIERS = {"os": "T1", "os_navshuf": "T1", "ha": "T1", "ha0": "T1",
-             "oracle_sel": "T0"}
+ARM_TIERS = {"os": "T1", "os_navshuf": "T1", "os_navzero": "T1", "ha": "T1",
+             "ha0": "T1", "oracle_sel": "T0"}
+#: ⛔ THE NAV NULL, DERIVED FROM SOURCE — not invented, and not ``nav_known``.
+#: The question asked was whether ``RefCV3Model.forward``'s ``nav_known``
+#: argument gives a principled null. MEASURED: it does NOT.
+#:   * ``RefCConfig.nav_known_channel`` defaults to **False** (``refc.py:594``),
+#:     nothing in the v3 path turns it on (0 references in ``refc_v3.py``, 0 in
+#:     ``refc_v3_train._pin_trainer_cfg``), and
+#:   * ``refc.py:2042-2045`` RAISES if ``nav_known`` is supplied while the gate
+#:     is off ("it would be silently dropped. Turn the gate on or stop passing
+#:     it").
+#: ⇒ passing ``nav_known`` would be REFUSED, not principled. The model's OWN
+#: no-nav path is ``nav_cmd=None``, which is also the published REF-C eval
+#: convention (``refc.py:343-345``: *"every published REF-C number decodes with
+#: nav_cmd=None -> index 0"*) and what DEPLOYMENT looks like — nav here is an
+#: ORACLE input (provenance ego-future) that will not exist at deployment.
+NAV_NULL = {
+    "arm": "os_navzero",
+    "how": "model(frames, nav_cmd=None, v0=v0, steps=steps) — a SEPARATE forward",
+    "why_not_nav_known": (
+        "RefCConfig.nav_known_channel is False for every v3 build (refc.py:594 "
+        "default; 0 references in refc_v3.py and in _pin_trainer_cfg), and "
+        "refc.py:2042-2045 RAISES if nav_known is supplied while the gate is "
+        "off. There is no companion bit to set, so nav_known is not available "
+        "as a null here."),
+    "why_not_a_zero_embedding": (
+        "zeroing nav_inj's output would be an INVENTED null the model was never "
+        "trained to see. nav_cmd=None is the model's own documented path and "
+        "the published REF-C eval convention."),
+    "what_each_condition_removes": {
+        "nav_true": "nothing — the clip's real v7.2 token, the input the run "
+                    "trained on",
+        "nav_shuffled": "the PAIRING between the window and its token. The nav "
+                        "MARGINAL is preserved exactly (it is a permutation), so "
+                        "the model still sees a plausible token on every window. "
+                        "Answers: is the model using THIS window's nav?",
+        "nav_zero": "the SIGNAL. Answers: what happens when the oracle nav is "
+                    "absent, i.e. at deployment. ⛔ Not a stronger shuffle — a "
+                    "different intervention.",
+    },
+    "what_nav_zero_removes_per_layer": {
+        "tactical (E13 PhiTac)": "REMOVED ENTIRELY — refc_v3.py:437-441 guards "
+                                 "the injection on `nav_cmd is not None`, so "
+                                 "nav_to_tac is never added to z_tac_raw",
+        "strategic (E13 ctx)": "REMOVED ENTIRELY — the same guard; nav_to_str is "
+                               "never added to ctx, and out['nav_injected'] "
+                               "reads False (refc_v3.py:471)",
+        "core (measurement encoder)": (
+            "⚠️ NOT REMOVED — COLLAPSED ONTO THE MAJORITY TOKEN. "
+            "refc.py:2021-2024 substitutes one_hot(0) = 'follow'. NAV_COMMANDS "
+            "(refc.py:136) has no 'unknown' entry and nav_known_channel is off, "
+            "so at the core's input 'no nav' and 'a genuine follow' are "
+            "BYTE-IDENTICAL — the exact defect nav_known_channel was written to "
+            "fix (refc.py:594-604: 62.4 % of `follow` windows are a collapsed "
+            "UNKNOWN)."),
+    },
+    "⛔ read_it_as": (
+        "`os_navzero` removes nav COMPLETELY at 2 of the 3 layers it is injected "
+        "at and PINS it to the majority class at the third. It is therefore a "
+        "LOWER BOUND on how much this model leans on nav: a model that read nav "
+        "only through the core would look LESS nav-dependent here than it is. "
+        "State that beside any nav-dependence number taken from it."),
+    "consequence_for_the_flat_arm": (
+        "on a hier=False build there is no E13 path at all, so nav_cmd=None "
+        "differs from the true nav ONLY through the core one-hot — and therefore "
+        "`os_navzero` is BIT-IDENTICAL to `os` on exactly the windows whose token "
+        "is already `follow` (index 0). That is the control that isolates the "
+        "mechanism, and stack/tests/test_refcv3_arm.py runs it."),
+    "⚠️ cross_call_float32_floor": (
+        "`os_navzero` is produced by a SEPARATE forward call (nav_cmd=None is a "
+        "whole-call property), while `os` and `os_navshuf` are two ROWS of one "
+        "batched call. Different batch sizes take different GEMM kernel paths, "
+        "so two arms that are the SAME computation still differ by a float32 "
+        "floor. MEASURED on the flat smoke build, CPU: batch-2-row-0 vs batch-1 "
+        "with the SAME nav = max 5.96e-07 m; the same call at MATCHED batch size "
+        "with nav_cmd=None vs nav_cmd=0 = EXACTLY 0.0; a real nav difference "
+        "(follow vs left) = 2.78e-02..3.41e-02 m, i.e. ~4.7e4x the floor. "
+        "⛔ CONSEQUENCE: `trivial_profile.identical_to` uses a 1e-9 m threshold "
+        "and therefore CANNOT resolve a cross-call arm as identical even when it "
+        "is. Read `identical_to` for os-vs-os_navshuf (same call, exact) and "
+        "IGNORE it for os-vs-os_navzero; the separation above is what makes a "
+        "nav-zero difference readable, and it is 4-5 orders of magnitude clear."),
+    "why_it_is_not_the_shuffle": (
+        "MEASURED elsewhere (D-REFAV1-TAC-DECODER-PANEL): refav1's tactical head "
+        "ranked turns at AUC 0.873 under true nav but collapsed to 0.520 "
+        "(chance) under nav_zero, and a NAV-ONLY predictor beat the model "
+        "outright (0.684 > 0.650). BACKLOG R39 binds every nav-conditioned claim "
+        "to carry the nav-ZERO arm beside the nav-shuffle one."),
+}
 ARM_MEANING = {
     "os": "T1 (RULING OPEN) — ONE forward pass at t0: observed frames + the "
           "clip's v7.2 nav token + the MEASURED v0, path = the model's OWN "
           "sel_score_v3 selection out['traj']. NEVER a_star. No action input, "
           "no rollout, no loop to close — hence 'os', never 'cl'.",
     "os_navshuf": "T1 (RULING OPEN) — as os with nav_cmd PERMUTED across the "
-                  "eval windows: the mandatory control for any nav-conditioned "
-                  "claim (nav is an INPUT; an echo scores well and learns nothing)",
+                  "eval windows: breaks the PAIRING while preserving the nav "
+                  "marginal. Answers 'is the model using THIS window\'s nav?' "
+                  "(nav is an INPUT; an echo scores well and learns nothing)",
+    "os_navzero": "T1 (RULING OPEN) — ⭐ as os with nav WITHHELD "
+                  "(nav_cmd=None): the E13 injection into the tactical and "
+                  "strategic layers is SKIPPED ENTIRELY and the core collapses "
+                  "to the 'follow' one-hot. Answers 'what does the model do when "
+                  "the ORACLE nav is not there' — i.e. what DEPLOYMENT looks "
+                  "like. ⛔ NOT interchangeable with the shuffle; BACKLOG R39 "
+                  "binds both. See NAV_NULL for the per-layer breakdown and why "
+                  "it is a LOWER BOUND on nav dependence.",
     "ha": "T1 — HOLD-ACTION control: the (a, steer) that CLOSES at t0 held for "
           "the horizon. Consumes no recorded future. NOT the floor — a held "
           "noisy steer drifts, so this arm can be WORSE than trivial.",
@@ -311,7 +421,13 @@ _SIDECAR_DOC = {
     "route_label": "the v2.1 route target (ROUTE_UNKNOWN/invalid -> -100)",
     "nav_cmd/nav_cmd_shuf/nav_valid": "the fed token, its permutation, validity",
     "{lat,lon,route}_pred_{nav_true,nav_shuffled,nav_zero}": "the DECLARED head "
-        "argmaxes under each nav conditioning (-1 = the head does not exist)",
+        "argmaxes under each nav conditioning (-1 = the head does not exist or "
+        "the conditioning was not rolled). ⭐ nav_zero comes from the SEPARATE "
+        "nav_cmd=None forward, not from a row of the fed batch — see NAV_NULL",
+    "nav_injected_true/nav_injected_zero": "out['nav_injected'] (refc_v3.py:471) "
+        "under each forward: the E13 edge is LIVE under the fed nav and DEAD "
+        "under nav_cmd=None. A conditioning edge that silently no-ops is the "
+        "advertised-but-inert defect; this makes it visible per window.",
     "ha_controls": "the held (a, channel-1) actually integrated, in the run's "
                    "declared action units",
 }
@@ -793,22 +909,50 @@ def run_dump(a) -> dict:
     arms = ["os", "ha", "ha0"]
     if nav_on and not a.no_navshuf:
         arms.append("os_navshuf")
+    # ⭐ THE NAV-ZERO TRAJECTORY ARM (BACKLOG R39). Shuffle and zero are NOT
+    # interchangeable (NAV_NULL), and the zero arm is the DEPLOYMENT-relevant
+    # one, because nav here is an ORACLE input (provenance ego-future).
+    if nav_on and not a.no_navzero:
+        arms.append("os_navzero")
     if a.with_oracle_sel:
         arms.append("oracle_sel")
     if nav_on and a.no_navshuf:
         _p("[nav] ⚠️ --no-navshuf: the record is NOT admissible for any "
            "nav-conditioned (STRATEGIC) claim")
+    if nav_on and a.no_navzero:
+        _p("[nav] ⚠️ --no-navzero: BACKLOG R39 binds every nav-conditioned claim "
+           "to carry the nav-ZERO arm BESIDE the nav-shuffle one; this record "
+           "carries only the shuffle")
     if not nav_on:
-        _p("[nav] nav source 'none': nav_cmd=0 on every window; no os_navshuf arm "
-           "and the STRATEGIC family will be REFUSED with that reason")
-    # the head conditionings that need their own forward row
-    conds = ["nav_true"] + (["nav_shuffled"] if "os_navshuf" in arms else [])
-    if a.with_navzero:
-        conds.append("nav_zero")
+        _p("[nav] nav source 'none': the true-nav forward ALREADY passes "
+           "nav_cmd=None, so `os` IS the nav-zero arm — os_navshuf and "
+           "os_navzero would be bit-identical to it and are NOT emitted; the "
+           "STRATEGIC family will be REFUSED with that reason")
+    # ⛔ nav_cmd=None IS A WHOLE-CALL PROPERTY, NOT A PER-ROW VALUE: it switches
+    # off the E13 injection for the entire forward (refc_v3.py:437-441). It
+    # therefore CANNOT ride in the batched token tensor and gets its own call.
+    # ⚠️ THIS FIXES A DEFECT IN THE FIRST VERSION OF THIS TOOL: `--with-navzero`
+    # put index 0 into the batched tensor, which is nav-CONSTANT (E13 ON, fed the
+    # `follow` embedding) — NOT nav-zero. Two different interventions, and the
+    # first one silently answered a question nobody asked.
+    conds_fed = ["nav_true"] + (["nav_shuffled"] if "os_navshuf" in arms else [])
+    do_navzero = ("os_navzero" in arms) or (a.with_navzero and nav_on)
+    conds = conds_fed + (["nav_zero"] if do_navzero else [])
 
     _p(f"[roll] {len(sel)} windows / {len(eps)} episodes · arms={arms} · "
-       f"conditionings={conds} · nav_shuffle changed "
-       f"{shuf_stats['n_changed']}/{shuf_stats['n_windows']}")
+       f"fed conditionings={conds_fed}"
+       + (" + a SEPARATE nav_cmd=None forward (nav_zero)" if do_navzero else "")
+       + f" · nav_shuffle changed {shuf_stats['n_changed']}"
+         f"/{shuf_stats['n_windows']}")
+    if do_navzero:
+        _p("[nav-null] os_navzero = model(..., nav_cmd=None): the E13 tactical + "
+           "strategic injection is SKIPPED (refc_v3.py:437-441; nav_injected "
+           "reads False), and the CORE collapses to one_hot(0)='follow' "
+           "(refc.py:2021-2024). ⚠️ At the core that is a COLLAPSE ONTO THE "
+           "MAJORITY TOKEN, not a removal — NAV_COMMANDS has no 'unknown' and "
+           "nav_known_channel is False (refc.py:594) — so this arm is a LOWER "
+           "BOUND on nav dependence. ⛔ nav_known is NOT usable as the null: "
+           "refc.py:2042-2045 raises when the gate is off.")
     os.makedirs(a.dump_dir, exist_ok=True)
     os.makedirs(os.path.join(a.dump_dir, "decisions"), exist_ok=True)
 
@@ -863,29 +1007,43 @@ def run_dump(a) -> dict:
                                    action_units=units)
             # -- the model, one batched forward over the nav conditionings -----
             fr = tr.frames_to_device(item["frames"][None], dev)   # [1, W, C, H, W]
-            b = len(conds)
+            b = len(conds_fed)
             fr_b = fr.expand(b, *fr.shape[1:]).contiguous() if b > 1 else fr
             nav_vals = {"nav_true": int(nav_true[i]),
-                        "nav_shuffled": int(nav_shuf[i]), "nav_zero": 0}
-            nav_t = torch.tensor([nav_vals[c] for c in conds],
+                        "nav_shuffled": int(nav_shuf[i])}
+            nav_t = torch.tensor([nav_vals[c] for c in conds_fed],
                                  dtype=torch.long, device=dev)
             v0_t = torch.full((b,), v0, dtype=torch.float32, device=dev)
             tf = time.time()
             with torch.no_grad():
                 out = model(fr_b, nav_cmd=nav_t if nav_on else None,
                             v0=v0_t, steps=steps)
+                # ⭐ THE NAV NULL — ITS OWN CALL. `nav_cmd=None` is a whole-call
+                # property (it gates the E13 injection, refc_v3.py:437-441), so
+                # it cannot be one row of the batch above. Same frames, same v0,
+                # same window, same grid: the ONLY difference is the nav.
+                out_z = None
+                if do_navzero:
+                    out_z = model(fr, nav_cmd=None,
+                                  v0=v0_t[:1], steps=steps)
             if t_fwd_first is None:
                 t_fwd_first = time.time() - tf
-                _p(f"[cost] first forward ({b} row(s)) took {t_fwd_first:.2f} s "
-                   f"-> ESTIMATED {t_fwd_first * len(sel) / 3600:.2f} h for "
-                   f"{len(sel)} windows (forward only; IO/analysis extra)")
+                n_calls = b + (1 if do_navzero else 0)
+                _p(f"[cost] first forward ({b} fed row(s)"
+                   f"{' + 1 nav-null call' if do_navzero else ''}, "
+                   f"{n_calls} rows total) took {t_fwd_first:.2f} s -> ESTIMATED "
+                   f"{t_fwd_first * len(sel) / 3600:.2f} h for {len(sel)} windows "
+                   f"(forward only; IO/analysis extra)")
             # ⭐ THE DEPLOYED SELECTION IS out["traj"] AND NOTHING ELSE
             # (refc_v3.py:520-525 on hier; refc.py:1531-1534 on flat).
             traj = out["traj"].float()                            # [b, S, 2]
             acc["os"].append(traj[0:1, slots].cpu().numpy())
             if "os_navshuf" in arms:
-                r = conds.index("nav_shuffled")
+                r = conds_fed.index("nav_shuffled")
                 acc["os_navshuf"].append(traj[r:r + 1, slots].cpu().numpy())
+            if "os_navzero" in arms:
+                acc["os_navzero"].append(
+                    out_z["traj"].float()[0:1, slots].cpu().numpy())
             # -- the ORACLE ceiling, exactly as the trainer computes it --------
             if "oracle_sel" in arms:
                 sv = torch.stack([fv[h - 1] for h in horizons]).to(traj.dtype)
@@ -927,18 +1085,35 @@ def run_dump(a) -> dict:
             dec.setdefault("goal_dist_sel", []).append(
                 float(out["goal_dist"][0, sel_idx]) if "goal_dist" in out
                 else float("nan"))
-            for ci_, cname in enumerate(conds):
+            lat_key = "lat_logits_tac" if hier else "lat_decision"
+            lon_key = "lon_logits_tac" if hier else "lon_decision"
+            for ci_, cname in enumerate(conds_fed):
                 dec.setdefault(f"lat_pred_{cname}", []).append(
-                    _head_argmax(out, "lat_logits_tac" if hier else "lat_decision", ci_))
+                    _head_argmax(out, lat_key, ci_))
                 dec.setdefault(f"lon_pred_{cname}", []).append(
-                    _head_argmax(out, "lon_logits_tac" if hier else "lon_decision", ci_))
+                    _head_argmax(out, lon_key, ci_))
                 dec.setdefault(f"route_pred_{cname}", []).append(
                     _head_argmax(out, "route_logits", ci_))
+            if do_navzero:
+                dec.setdefault("lat_pred_nav_zero", []).append(
+                    _head_argmax(out_z, lat_key, 0))
+                dec.setdefault("lon_pred_nav_zero", []).append(
+                    _head_argmax(out_z, lon_key, 0))
+                dec.setdefault("route_pred_nav_zero", []).append(
+                    _head_argmax(out_z, "route_logits", 0))
             for cname in ("nav_true", "nav_shuffled", "nav_zero"):
                 if cname in conds:
                     continue
                 for hk in ("lat", "lon", "route"):
                     dec.setdefault(f"{hk}_pred_{cname}", []).append(-1)
+            # ⭐ the E13 edge, per window: LIVE under the fed nav, DEAD under the
+            # null. An advertised-but-inert conditioning edge is a real defect
+            # class; this is the measurement, not the declaration.
+            dec.setdefault("nav_injected_true", []).append(
+                float(bool(out.get("nav_injected", False))))
+            dec.setdefault("nav_injected_zero", []).append(
+                float(bool(out_z.get("nav_injected", False))) if do_navzero
+                else float("nan"))
             lat_v7 = int(item["lat_v7"]) if "lat_v7" in item else -100
             lon_v7 = int(item["lon_v7"]) if "lon_v7" in item else -100
             from tanitad.data import v7_labels as _v7l
@@ -1051,7 +1226,14 @@ def run_dump(a) -> dict:
         "hold_action_rule": hold_controls.__doc__,
         "hold_v0_rule": hold_v0_controls.__doc__,
         "nav_shuffle": shuf_stats,
+        "nav_null": (dict(NAV_NULL, emitted=bool(do_navzero))
+                     if do_navzero else
+                     {**NAV_NULL, "emitted": False,
+                      "reason_absent": ("--no-navzero, or nav source 'none' (in "
+                                        "which case `os` already IS the "
+                                        "nav-zero arm)")}),
         "head_conditionings": conds,
+        "fed_conditionings": conds_fed,
         "sidecar_schema": _SIDECAR_DOC,
         "corpus": {"episodes": a.episodes, "labels": a.labels,
                    "n_episodes_available": len(files), **join},
@@ -1391,6 +1573,12 @@ def analyze_refcv3(dump_dir: str, *, n_boot: int = 2000, seed: int = 0,
         ("ha0", "os", "paired_os_minus_ha0"),
         ("ha", "os", "paired_os_minus_ha"),
         ("os_navshuf", "os", "paired_os_minus_navshuf"),
+        # ⭐ BACKLOG R39. The nav-ZERO arm needs BOTH of these: its own MARGIN
+        # over the shared floor (the deployment-relevant number — this is what
+        # the model is worth without the oracle nav) and the Δ against `os`
+        # (what the oracle nav is worth). The shuffle answers neither.
+        ("ha0", "os_navzero", "paired_os_navzero_minus_ha0"),
+        ("os_navzero", "os", "paired_os_minus_navzero"),
         ("ha0", "ha", "paired_ha_minus_ha0"),
         ("os", "oracle_sel", "paired_oraclesel_minus_os"))
         if x in arms and y in arms]
@@ -1415,6 +1603,22 @@ def analyze_refcv3(dump_dir: str, *, n_boot: int = 2000, seed: int = 0,
            f"CONSTANT-VELOCITY plan on > 50 % of windows. A read whose arm is "
            f"the baseline, or bit-identical to another arm, is stamped VOID — "
            f"never reported as 'no difference'.")
+    # ⚠️ CROSS-CALL ARMS AND THE 1e-9 THRESHOLD. `identical_to` is exact only
+    # for arms produced by the SAME forward call. `os_navzero` is its own call
+    # (nav_cmd=None gates E13 for the whole call), so a float32 batching floor of
+    # ~6e-7 m sits under it and it can NEVER read as identical at 1e-9 — even
+    # where the computation is provably the same (MEASURED at matched batch size:
+    # exactly 0.0). Say so here, or the diagnostic reads as evidence it is not.
+    cross_call = [x for x in arms if x == "os_navzero"]
+    triv["cross_call_arms"] = cross_call
+    triv["cross_call_note"] = (NAV_NULL["⚠️ cross_call_float32_floor"]
+                               if cross_call else None)
+    if cross_call:
+        _p(f"  ⚠️ cross-call arms {cross_call}: produced by a SEPARATE forward "
+           f"(nav_cmd=None gates E13 for the whole call), so a float32 batching "
+           f"floor of ~6e-7 m sits under them — `identical_to` at "
+           f"{ra.TRIVIAL_IDENTICAL_M:g} m cannot resolve them and must not be "
+           f"read as nav evidence. A REAL nav difference measured ~4.7e4x that.")
     ident_os = ((triv["arms"].get("os") or {}).get("identical_to") or {})
     for other, r in ident_os.items():
         if other != "ha0" and r["frac"] > 0.5:
@@ -1478,7 +1682,18 @@ def analyze_refcv3(dump_dir: str, *, n_boot: int = 2000, seed: int = 0,
             "margin_block": "families_paired.paired_os_minus_ha0",
             "floor_arm": "ha0",
             "floor_is_bit_comparable_with_refav1": True,
+            # ⭐ BACKLOG R39: nav is an ORACLE input that will not exist at
+            # deployment, so the margin WITHOUT it is the deployment-relevant
+            # one and must be quoted beside the oracle-nav margin.
+            "deployment_margin_block":
+                "families_paired.paired_os_navzero_minus_ha0",
+            "oracle_nav_worth_block": "families_paired.paired_os_minus_navzero",
+            "_nav_controls": ("BOTH are binding and they are NOT "
+                              "interchangeable: os_navshuf breaks the PAIRING "
+                              "with the nav marginal preserved; os_navzero "
+                              "removes the SIGNAL. See refcv3.nav_null."),
         },
+        "nav_null": (manifest or {}).get("nav_null"),
         "families_note": (
             "LONGITUDINAL / LATERAL / ADE and the TRAJECTORY-DERIVED tactical "
             "rows per arm live in rec['arms'][arm]['four_families'] (t1_eval, "
@@ -1792,9 +2007,15 @@ def main(argv=None):
     ap.add_argument("--no-navshuf", action="store_true",
                     help="skip the nav-shuffle arm (⛔ then the record is NOT "
                          "admissible for any nav-conditioned claim)")
+    ap.add_argument("--no-navzero", action="store_true",
+                    help="skip the nav-ZERO trajectory arm (⛔ BACKLOG R39 binds "
+                         "every nav-conditioned claim to carry it BESIDE the "
+                         "nav-shuffle arm: a shuffle preserves the nav marginal "
+                         "and breaks only the pairing, a zero removes the "
+                         "signal, and the zero is what DEPLOYMENT looks like)")
     ap.add_argument("--with-navzero", action="store_true",
-                    help="ALSO roll a nav_cmd=0 head conditioning (one more "
-                         "forward row per window)")
+                    help="force the nav_cmd=None head conditioning even when the "
+                         "os_navzero ARM is skipped (implied by the arm)")
     ap.add_argument("--with-oracle-sel", action="store_true",
                     help="ALSO bank the T0 `oracle_sel` ceiling arm (the "
                          "a_star / GT-nearest anchor). Never compared to T1.")
@@ -1870,6 +2091,15 @@ def main(argv=None):
            f"n_win={ade.get('n_windows')} n_ep={ade.get('n_episodes')}"
            + ("  ⛔ DEGENERATE (float64 resolution — arms effectively IDENTICAL)"
               if ade.get("degenerate") else ""))
+    nn_ = r.get("nav_null") or {}
+    if nn_.get("emitted"):
+        _p("  nav controls: os_navshuf (pairing broken, marginal preserved) AND "
+           "os_navzero (signal removed; E13 tactical+strategic OFF, core "
+           "collapsed to 'follow') — BACKLOG R39 binds both; the nav-zero margin "
+           "over ha0 is the DEPLOYMENT-relevant number")
+    elif nn_:
+        _p(f"  ⚠️ nav-zero arm ABSENT: {nn_.get('reason_absent')} — ⛔ BACKLOG "
+           f"R39 requires it beside the shuffle for any nav-conditioned claim")
     sp = r.get("selection_profile") or {}
     if sp.get("degenerate"):
         _p(f"  ⛔ the selection is CONSTANT on {sp['modal_frac']:.2%} of windows "

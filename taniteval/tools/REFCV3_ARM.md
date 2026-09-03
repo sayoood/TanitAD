@@ -33,7 +33,8 @@ a paid-for 2-arm/40-episode rollout once):
     os  [N, K, 2]     the arm under test         (T1-candidate, UNRULED — §2.5)
     ha0 [N, K, 2]     constant velocity at the measured v0        (T1)
     ha  [N, K, 2]     hold the last OBSERVED (a, steer)           (T1)
-    os_navshuf [N, K, 2]  os with nav_cmd permuted across windows (T1)
+    os_navshuf [N, K, 2]  os with nav_cmd PERMUTED across windows (T1)
+    os_navzero [N, K, 2]  os with nav WITHHELD (nav_cmd=None)     (T1)  ⭐ §2.8
     [oracle_sel [N, K, 2]]  the a_star-selected anchor, opt-in    (T0)
     ws  [N]           window origin, in PROVIDER frame index t0
     eid [1]  clip_index [1]  v0 [N]
@@ -78,6 +79,11 @@ conditioning, the agreement block (`four_families._agreement_block`, `four_famil
 the **echo index** (`route_pred == the route the FED token maps to`), the majority-class rate, the
 paired true-minus-shuffled accuracy, and the **changed subset** — the windows whose token actually
 moved, which is where the control has power at all.
+
+⛔ **THREE conditionings, not two, and they are not interchangeable — see §2.8.** `nav_true`
+withholds nothing, `nav_shuffled` withholds the **pairing**, `nav_zero` withholds the **signal**.
+BACKLOG R39 binds both controls to every nav-conditioned claim, because nav here is an **oracle**
+input that will not exist at deployment.
 
 ### 1.4 The lead-block join (LONGITUDINAL, second half)
 
@@ -149,8 +155,13 @@ not need to work around it. It works either way: `--tiers` is passed straight th
 `ARM_TIERS` for every arm it writes, so `resolve_tiers` never sees an unstamped key even against
 an older `t1_eval.py`. ⛔ `t1_eval.py` was **not** edited.
 
-`os`, `os_navshuf`, `ha`, `ha0` are stamped **T1**; `oracle_sel` is stamped **T0**. ⚠️ The `os`
-stamp additionally carries `tier_status = "UNRULED"` in the record — see §2.5.
+`os`, `os_navshuf`, `os_navzero`, `ha`, `ha0` are stamped **T1**; `oracle_sel` is stamped **T0**.
+⚠️ The `os*` stamps additionally carry `status = "UNRULED"` in the record — see §2.5.
+
+⚠️ **A new arm needs its stamp on the command line too when the dump is re-read through the
+untouched `t1_eval.py --analyze-only` CLI.** MEASURED: omitting `os_navzero=T1` there exits **1**
+with *"arms ['os_navzero'] carry no T0/T1 tier stamp"* — the guard working exactly as designed.
+Use `--tiers os=T1,os_navshuf=T1,os_navzero=T1,oracle_sel=T0`.
 
 ### 1.8 REFUSED and ABSENT — the two states, and the reasons they carry
 
@@ -197,7 +208,7 @@ a diffusion-step count, an optional lane-graph feature, an optional nav-known ma
 | input | source at eval | admissible? |
 |---|---|---|
 | `frames` | the observed window only — `[t, t+w)`, `pose_last = poses[t + w - 1]` (`refb_train.py:229`) | ✅ vision, by construction |
-| `nav_cmd` | the clip's v7.2 `nav_command` token (`V3Dataset.enable_nav_from_v7`, `refc_v3_train.py:246–306`) | ✅ a goal/route input — PI 2026-08-03 |
+| `nav_cmd` | the clip's v7.2 `nav_command` token (`V3Dataset.enable_nav_from_v7`, `refc_v3_train.py:246–306`) | ✅ a goal/route input — PI 2026-08-03. ⚠️ It is an **ORACLE** (provenance `ego-future`) and will not exist at deployment, which is why §2.8's nav-zero arm exists. |
 | `v0` | `v0 = pose_last[:, 3]` (`refc_v3_train.py:445`) — the speed **measured at the last observed frame** | ✅ PI ruling 2026-09-02: *"velocity as initial measured state at its cycle time"* |
 | `steps` | the decoder's diffusion-step count | ✅ a hyper-parameter |
 | `lan` | not fed by this adapter | — |
@@ -322,8 +333,66 @@ T1 number**.
 > anchors; scored on the index-selected grid against the trainer's own waypoint targets. It is a
 > one-shot planning-free trajectory prediction — there is no action loop to close, its tier is an
 > open ruling, and it may only be compared to refav1 through each arm's margin over the shared
-> `ha0` floor.**
+> `ha0` floor. **Because its nav token is an ORACLE that will not exist at deployment, the arm is
+> reported beside `os_navzero` — the same forward with nav withheld — and `os_navzero − ha0` is the
+> deployment-relevant margin.****
 
+### 2.8 ⛔ THE THREE NAV CONDITIONS — what each one removes, and why two controls
+
+Nav reaches refcv3 at **three** places: the core measurement encoder (`refc.py:2021–2024`) and,
+through E13, the **tactical** and **strategic** states (`refc_v3.py:437–441`). The arm therefore
+needs two different nulls, and they answer different questions:
+
+| condition | what is withheld | what it answers | arm |
+|---|---|---|---|
+| `nav_true` | nothing — the clip's real v7.2 token | the deployed reading | `os` |
+| `nav_shuffled` | the **pairing** between the window and its token. The nav **marginal is preserved exactly** (it is a permutation), so the model still sees a plausible token everywhere. | *is the model using **this** window's nav?* | `os_navshuf` |
+| `nav_zero` | the **signal** | *what does the model do when the oracle nav is **not there*** — i.e. **deployment** | `os_navzero` |
+
+⛔ **They are not interchangeable, and a shuffle cannot stand in for a zero.** MEASURED elsewhere
+(`D-REFAV1-TAC-DECODER-PANEL`): refav1's tactical head ranked turns at **AUC 0.873** under true nav
+and **collapsed to 0.520 — chance — under nav_zero**, while a **nav-only predictor beat the model
+outright (0.684 > 0.650)**. `BACKLOG R39` binds every nav-conditioned claim to carry the nav-zero
+arm beside the nav-shuffle one.
+
+**The null, derived from source — and it is NOT `nav_known`.** The obvious candidate is
+`RefCV3Model.forward`'s `nav_known` argument. MEASURED: **it is not usable here.**
+`RefCConfig.nav_known_channel` defaults to **`False`** (`refc.py:594`), nothing in the v3 path turns
+it on (**0** references in `refc_v3.py`, **0** in `refc_v3_train._pin_trainer_cfg`), and
+`refc.py:2042–2045` **raises** if `nav_known` is supplied while the gate is off — *"it would be
+silently dropped. Turn the gate on or stop passing it."* So passing it would be **refused**, not
+principled.
+
+⇒ the null is **`nav_cmd=None`**, which is the model's **own** documented no-nav path and the
+published REF-C eval convention (`refc.py:343–345`: *"every published REF-C number decodes with
+`nav_cmd=None` -> index 0"*). Nothing is invented. What it removes, per layer:
+
+| layer | under `nav_cmd=None` |
+|---|---|
+| **tactical** (E13 `PhiTac`) | ⭐ **REMOVED ENTIRELY** — `refc_v3.py:437–441` guards the injection on `nav_cmd is not None`, so `nav_to_tac` is never added |
+| **strategic** (E13 `ctx`) | ⭐ **REMOVED ENTIRELY** — same guard; `out["nav_injected"]` reads **False** (`refc_v3.py:471`), and the tool banks it per window |
+| **core** (measurement encoder) | ⚠️ **NOT removed — COLLAPSED onto the majority token.** `refc.py:2021–2024` substitutes `one_hot(0)` = `follow`. `NAV_COMMANDS` (`refc.py:136`) has no `unknown` entry and `nav_known_channel` is off, so **"no nav" and "a genuine follow" are byte-identical at the core's input** — the exact defect `nav_known_channel` was written to fix (`refc.py:594–604`: **62.4 %** of `follow` windows are a collapsed UNKNOWN). |
+
+⛔ **Therefore `os_navzero` is a LOWER BOUND on nav dependence**, and the record says so: a model
+that read nav only through the core would look *less* nav-dependent here than it is. State that
+beside any nav-dependence number taken from this arm.
+
+⭐ **The mechanism is measured, not asserted.** `stack/tests/test_refcv3_arm.py` pins it two ways:
+on the **hier** build the E13 edge is **live under the fed nav (`nav_injected_true == 1` on every
+window) and dead under the null (`nav_injected_zero == 0`)**, so `os_navzero` differs from `os`
+*even on `follow` windows* — which the shuffle provably cannot do; and on a **flat** build, where no
+E13 path exists, `nav_cmd=None` is **bit-identical** to a fed `follow` token at matched batch size
+(`torch.equal`, max |Δ| **exactly 0.0**) while a fed `left` moves the path by **> 1e-3 m**.
+
+⚠️ **One instrument caveat that follows from this, and it is a trap.** `os_navzero` is produced by a
+**separate forward call** (`nav_cmd=None` is a whole-call property), while `os` and `os_navshuf` are
+two **rows of one batched call**. Different batch sizes take different GEMM kernel paths, so a
+float32 floor sits under any cross-call comparison: **MEASURED 5.96e-07 m** (batch-2 row 0 vs
+batch-1, same nav) against **0.0 exactly** at matched batch size, while a real nav difference is
+**2.78e-02 – 3.41e-02 m — ~4.7 × 10⁴ times the floor**. ⇒ `trivial_profile.identical_to` uses a
+**1e-9 m** threshold and **cannot** resolve a cross-call arm as identical even when it is. The
+record names the cross-call arms and carries this measurement; read `identical_to` for
+`os`-vs-`os_navshuf` (same call, exact) and **ignore it** for `os`-vs-`os_navzero`.
 ---
 
 ## 3. The real read, AFTER the epoch ends
@@ -348,7 +417,7 @@ OMP_NUM_THREADS=6 python taniteval/tools/refcv3_arm.py \
   --nav-source v72 --grid 2s --action-units steer \
   --episodes-n 2 --with-oracle-sel \
   --dump-dir /workspace/eval/refcv3_t1_probe --out /workspace/eval/refcv3_probe.json \
-  --tiers os=T1,os_navshuf=T1,oracle_sel=T0
+  --tiers os=T1,os_navshuf=T1,os_navzero=T1,oracle_sel=T0
 ```
 
 **Step 2 — the real read**, with the stride chosen from step 1's `[cost]` line and the banked lead
@@ -363,10 +432,15 @@ OMP_NUM_THREADS=6 python taniteval/tools/refcv3_arm.py \
   --window-stride <from step 1> --with-oracle-sel \
   --lead-block "TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-02-b1-eval-lead-block/raw/b1_eval_lead_block.npz" \
   --dump-dir /workspace/eval/refcv3_t1_dump --out /workspace/eval/refcv3_t1.json \
-  --n-boot 2000 --seed 0 --tiers os=T1,os_navshuf=T1,oracle_sel=T0
+  --n-boot 2000 --seed 0 --tiers os=T1,os_navshuf=T1,os_navzero=T1,oracle_sel=T0
 ```
 
-* `--tiers os=T1,os_navshuf=T1,oracle_sel=T0` is **belt and braces**, not a requirement: this tool
+* ⭐ **Both nav controls are on by default** (`os_navshuf` and `os_navzero`); `--no-navshuf` /
+  `--no-navzero` turn them off and the tool warns that the record is then not admissible for a
+  nav-conditioned claim. The nav-zero arm costs **one extra forward per window** (it cannot share
+  the batch — §2.8), so budget for it in step 1's `[cost]` line.
+* `--tiers os=T1,os_navshuf=T1,os_navzero=T1,oracle_sel=T0` is **belt and braces** here, not a
+  requirement: this tool
   declares its own `ARM_TIERS` (§1.7) and `t1_eval.DEFAULT_TIERS` already carries `"ha0": "T1"`
   (`t1_eval.py:154`, BACKLOG R13 landed). Pass it anyway — it makes the tier stamps visible on the
   command line, and it is what the **untouched** `t1_eval.py --analyze-only` CLI needs if the dump
@@ -409,7 +483,8 @@ reproducible. ⛔ Do not quote a wall-clock from this file — quote the `[cost]
    `identical_to`,
 3. ⭐ the **selection profile** — `n_distinct_selected`, the modal anchor and its share, the
    selection entropy, and how often the deployed selection coincides with the oracle,
-4. only then the family rows and the paired margins.
+4. only then the family rows and the paired margins — **including `os_navzero − ha0`, the
+   deployment margin, beside `os − ha0`**.
 
 ⛔ **If either profile is degenerate the read is VOID, not negative.** Void means the instrument saw
 the baseline (or one constant anchor), not the model.
@@ -421,7 +496,9 @@ the baseline (or one constant anchor), not the model.
 **What ran (2026-09-03, dev box, CPU, 0 GPU):** a random-init `RefCV3Model` at
 `refc_v3_smoke_config(hier=True)` with the encoder widened to the corpus's 9 channels at 64 px,
 over a synthetic 3-clip v2 cache (40 raw frames/clip, JPEG, `n_stack = 3`) with a 3-record v7.2
-label blob. **42 windows, 3 episodes, 5 arms.** `stack/tests/test_refcv3_arm.py`: **18 passed**.
+label blob. **42 windows, 3 episodes, 6 arms** (`os`, `os_navshuf`, `os_navzero`, `ha`, `ha0`, `oracle_sel`),
+plus a second **flat** (`hier=False`) build for the nav-mechanism control.
+`stack/tests/test_refcv3_arm.py`: **20 passed**.
 
 ⛔ **These are INSTRUMENT numbers on a random-init model. They are not evidence about refcv3.**
 They are here because a control that reads a **known value** is the only thing that shows the
@@ -435,6 +512,11 @@ instrument works:
 | `os` identical to `os_navshuf` | **17/42** | exactly the 42 − 25 windows whose nav token the permutation did **not** change |
 | `os − ha0` (ADE, paired) | **+7.96 m [6.15, 9.76], separated** | a random-init model must **lose** to the constant-velocity floor |
 | `os − os_navshuf` (ADE, paired) | **−0.0002 m [−0.0024, 0.0016], not separated** | untrained weights carry no nav dependence |
+| `os − os_navzero` (ADE, paired) | **−0.0001 m [−0.0021, 0.0017], not separated** | same — and the two controls agree, as they must on an untrained model |
+| `os_navzero − ha0` (ADE, paired) | **+7.9572 m [6.1513, 9.7646], separated** | the deployment margin must also lose to the floor at random init |
+| E13 edge, per window | `nav_injected_true` **1.0** on 42/42; `nav_injected_zero` **0.0** on 42/42 | ⭐ the per-layer claim of §2.8, MEASURED rather than asserted |
+| flat build, matched batch | `nav_cmd=None` vs fed `follow`: **exactly 0.0** (`torch.equal`); vs fed `left`: **> 1e-3 m** | with no E13 path the null IS the `follow` token, bit for bit |
+| cross-call float32 floor | **5.96e-07 m** (batch-2 row 0 vs batch-1, same nav) vs a real nav difference **2.78e-02 – 3.41e-02 m** = **~4.7 × 10⁴ ×** | the separation that makes a nav-zero reading trustworthy — and the reason `identical_to` at 1e-9 m must not be read across calls |
 | `ha − ha0` (ADE, paired) | **+0.133 m [−0.050, 0.233], not separated** | ⭐ **the whole reason `ha0` exists**: holding a noisy observed steer is *not better* than doing nothing, so a win over `ha` alone is not skill |
 | `anchor_acc` | **0.0000** (chance 1/20 = 0.05) | untrained logits do not find the GT-nearest anchor |
 | selection profile | `n_distinct = 1`, modal #2 at **100 %**, entropy **0.0** | ⛔ and the trivial profile read **0.0000** on the same arm — see below |
@@ -476,7 +558,8 @@ refined" would have been read as scene understanding.
 |---|---|---|
 | **D1** | ⛔ **The tier ruling (BACKLOG R30 / RESULT §5.4 W6): does the doctrine admit as T1 a model that consumes NO actions?** | It is a change to `EVAL_DOCTRINE.md`'s meaning, not a measurement. The instrument stamps `T1` + `status: UNRULED` and carries the margin framing so the numbers are correct either way (§2.5). **Benchmarks recommends: admit it, keep the name `os`.** |
 | **D2** | Whether `oracle_sel` (T0) is published beside the deployed arm in the H-vs-F table. | It is the ceiling and it flatters the model; it belongs in the record, and whether it belongs in the *headline* is an editorial call. ⛔ It may never be compared to a T1 number. |
-| **D3** | The `--window-stride` for the real read, from step 1's `[cost]` line. | It is a compute-spend decision, and it fixes the grid both models must share. |
+| **D3** | The `--window-stride` for the real read, from step 1's `[cost]` line. | It is a compute-spend decision, and it fixes the grid both models must share. ⚠️ The nav-zero arm adds one forward per window (§2.8); price it in. |
+| **D3b** | ⭐ Whether the **deployment margin** (`os_navzero − ha0`) or the **oracle-nav margin** (`os − ha0`) is the headline of the H-vs-F table. | Both are computed and both are admissible. Benchmarks' view, flagged as a view: the oracle-nav margin is the fair like-for-like against refav1 (which is also fed nav), and the deployment margin is the one that answers "does this drive"; quoting only the first overstates the system. |
 | **D4** | Whether the **odd-raw-frame** limitation in the lead join (§4.1) is fixed before the read or accepted with its printed count. | It trades a code change against tonight's schedule. |
 | **D5** | Whether to rebuild the lead block on refcv3's own grid (`build_lead_block_b1.py --dt 0.5 --k 4`) so the full 2 s horizon is scoreable instead of `{1.0, 2.0} s`. | Same trade; the record states the instants it scored either way. |
 

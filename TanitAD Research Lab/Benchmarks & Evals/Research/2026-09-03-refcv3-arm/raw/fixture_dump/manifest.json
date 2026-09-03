@@ -304,6 +304,7 @@
   "ha",
   "ha0",
   "os_navshuf",
+  "os_navzero",
   "oracle_sel"
  ],
  "tiers": {
@@ -311,13 +312,15 @@
   "ha": "T1",
   "ha0": "T1",
   "os_navshuf": "T1",
+  "os_navzero": "T1",
   "oracle_sel": "T0"
  },
  "arm_meaning": {
   "os": "T1 (RULING OPEN) \u2014 ONE forward pass at t0: observed frames + the clip's v7.2 nav token + the MEASURED v0, path = the model's OWN sel_score_v3 selection out['traj']. NEVER a_star. No action input, no rollout, no loop to close \u2014 hence 'os', never 'cl'.",
   "ha": "T1 \u2014 HOLD-ACTION control: the (a, steer) that CLOSES at t0 held for the horizon. Consumes no recorded future. NOT the floor \u2014 a held noisy steer drifts, so this arm can be WORSE than trivial.",
   "ha0": "T1 \u2014 \u2b50 CONSTANT VELOCITY: a = 0, kappa = 0 at the measured v0, i.e. a straight line at constant speed. The STRONGEST TRIVIAL BASELINE, the echo test's real bar, and the ONLY arm bit-comparable with refav1's (zero is zero in either action unit).",
-  "os_navshuf": "T1 (RULING OPEN) \u2014 as os with nav_cmd PERMUTED across the eval windows: the mandatory control for any nav-conditioned claim (nav is an INPUT; an echo scores well and learns nothing)",
+  "os_navshuf": "T1 (RULING OPEN) \u2014 as os with nav_cmd PERMUTED across the eval windows: breaks the PAIRING while preserving the nav marginal. Answers 'is the model using THIS window's nav?' (nav is an INPUT; an echo scores well and learns nothing)",
+  "os_navzero": "T1 (RULING OPEN) \u2014 \u2b50 as os with nav WITHHELD (nav_cmd=None): the E13 injection into the tactical and strategic layers is SKIPPED ENTIRELY and the core collapses to the 'follow' one-hot. Answers 'what does the model do when the ORACLE nav is not there' \u2014 i.e. what DEPLOYMENT looks like. \u26d4 NOT interchangeable with the shuffle; BACKLOG R39 binds both. See NAV_NULL for the per-layer breakdown and why it is a LOWER BOUND on nav dependence.",
   "oracle_sel": "T0 \u2014 the a_star-selected anchor's refinement: a_star is the GT-NEAREST anchor (refc_v3_train.py:460), so this is the CEILING, not a driveable arm. Never compared to a T1 number."
  },
  "absent_arms": {
@@ -353,7 +356,33 @@
   "changed_frac": 0.5952,
   "rule": "permutation among nav_valid windows; invalid rows keep nav_cmd=0 / nav_valid=False and are EXCLUDED from route accuracy"
  },
+ "nav_null": {
+  "arm": "os_navzero",
+  "how": "model(frames, nav_cmd=None, v0=v0, steps=steps) \u2014 a SEPARATE forward",
+  "why_not_nav_known": "RefCConfig.nav_known_channel is False for every v3 build (refc.py:594 default; 0 references in refc_v3.py and in _pin_trainer_cfg), and refc.py:2042-2045 RAISES if nav_known is supplied while the gate is off. There is no companion bit to set, so nav_known is not available as a null here.",
+  "why_not_a_zero_embedding": "zeroing nav_inj's output would be an INVENTED null the model was never trained to see. nav_cmd=None is the model's own documented path and the published REF-C eval convention.",
+  "what_each_condition_removes": {
+   "nav_true": "nothing \u2014 the clip's real v7.2 token, the input the run trained on",
+   "nav_shuffled": "the PAIRING between the window and its token. The nav MARGINAL is preserved exactly (it is a permutation), so the model still sees a plausible token on every window. Answers: is the model using THIS window's nav?",
+   "nav_zero": "the SIGNAL. Answers: what happens when the oracle nav is absent, i.e. at deployment. \u26d4 Not a stronger shuffle \u2014 a different intervention."
+  },
+  "what_nav_zero_removes_per_layer": {
+   "tactical (E13 PhiTac)": "REMOVED ENTIRELY \u2014 refc_v3.py:437-441 guards the injection on `nav_cmd is not None`, so nav_to_tac is never added to z_tac_raw",
+   "strategic (E13 ctx)": "REMOVED ENTIRELY \u2014 the same guard; nav_to_str is never added to ctx, and out['nav_injected'] reads False (refc_v3.py:471)",
+   "core (measurement encoder)": "\u26a0\ufe0f NOT REMOVED \u2014 COLLAPSED ONTO THE MAJORITY TOKEN. refc.py:2021-2024 substitutes one_hot(0) = 'follow'. NAV_COMMANDS (refc.py:136) has no 'unknown' entry and nav_known_channel is off, so at the core's input 'no nav' and 'a genuine follow' are BYTE-IDENTICAL \u2014 the exact defect nav_known_channel was written to fix (refc.py:594-604: 62.4 % of `follow` windows are a collapsed UNKNOWN)."
+  },
+  "\u26d4 read_it_as": "`os_navzero` removes nav COMPLETELY at 2 of the 3 layers it is injected at and PINS it to the majority class at the third. It is therefore a LOWER BOUND on how much this model leans on nav: a model that read nav only through the core would look LESS nav-dependent here than it is. State that beside any nav-dependence number taken from it.",
+  "consequence_for_the_flat_arm": "on a hier=False build there is no E13 path at all, so nav_cmd=None differs from the true nav ONLY through the core one-hot \u2014 and therefore `os_navzero` is BIT-IDENTICAL to `os` on exactly the windows whose token is already `follow` (index 0). That is the control that isolates the mechanism, and stack/tests/test_refcv3_arm.py runs it.",
+  "\u26a0\ufe0f cross_call_float32_floor": "`os_navzero` is produced by a SEPARATE forward call (nav_cmd=None is a whole-call property), while `os` and `os_navshuf` are two ROWS of one batched call. Different batch sizes take different GEMM kernel paths, so two arms that are the SAME computation still differ by a float32 floor. MEASURED on the flat smoke build, CPU: batch-2-row-0 vs batch-1 with the SAME nav = max 5.96e-07 m; the same call at MATCHED batch size with nav_cmd=None vs nav_cmd=0 = EXACTLY 0.0; a real nav difference (follow vs left) = 2.78e-02..3.41e-02 m, i.e. ~4.7e4x the floor. \u26d4 CONSEQUENCE: `trivial_profile.identical_to` uses a 1e-9 m threshold and therefore CANNOT resolve a cross-call arm as identical even when it is. Read `identical_to` for os-vs-os_navshuf (same call, exact) and IGNORE it for os-vs-os_navzero; the separation above is what makes a nav-zero difference readable, and it is 4-5 orders of magnitude clear.",
+  "why_it_is_not_the_shuffle": "MEASURED elsewhere (D-REFAV1-TAC-DECODER-PANEL): refav1's tactical head ranked turns at AUC 0.873 under true nav but collapsed to 0.520 (chance) under nav_zero, and a NAV-ONLY predictor beat the model outright (0.684 > 0.650). BACKLOG R39 binds every nav-conditioned claim to carry the nav-ZERO arm beside the nav-shuffle one.",
+  "emitted": true
+ },
  "head_conditionings": [
+  "nav_true",
+  "nav_shuffled",
+  "nav_zero"
+ ],
+ "fed_conditionings": [
   "nav_true",
   "nav_shuffled"
  ],
@@ -370,7 +399,8 @@
   "lat_label/lon_label": "the v7.2 tactical class ids (IGNORE_ID -> -100)",
   "route_label": "the v2.1 route target (ROUTE_UNKNOWN/invalid -> -100)",
   "nav_cmd/nav_cmd_shuf/nav_valid": "the fed token, its permutation, validity",
-  "{lat,lon,route}_pred_{nav_true,nav_shuffled,nav_zero}": "the DECLARED head argmaxes under each nav conditioning (-1 = the head does not exist)",
+  "{lat,lon,route}_pred_{nav_true,nav_shuffled,nav_zero}": "the DECLARED head argmaxes under each nav conditioning (-1 = the head does not exist or the conditioning was not rolled). \u2b50 nav_zero comes from the SEPARATE nav_cmd=None forward, not from a row of the fed batch \u2014 see NAV_NULL",
+  "nav_injected_true/nav_injected_zero": "out['nav_injected'] (refc_v3.py:471) under each forward: the E13 edge is LIVE under the fed nav and DEAD under nav_cmd=None. A conditioning edge that silently no-ops is the advertised-but-inert defect; this makes it visible per window.",
   "ha_controls": "the held (a, channel-1) actually integrated, in the run's declared action units"
  },
  "corpus": {
@@ -434,7 +464,7 @@
    "n_windows": 14
   }
  ],
- "wallclock_s": 3.0,
- "first_forward_s": 0.07130312919616699,
+ "wallclock_s": 1.5,
+ "first_forward_s": 0.02306365966796875,
  "_unverified": "UNVERIFIED on a real checkpoint \u2014 this box is forbidden from contacting the training pod `tanitad-refcv3`; validated on a random-init RefCV3Model at refc_v3_smoke_config over a synthetic 3-episode slice only"
 }
