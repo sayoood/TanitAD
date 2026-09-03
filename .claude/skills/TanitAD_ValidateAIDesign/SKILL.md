@@ -47,7 +47,7 @@ means nothing.
 
 | gate | criterion | reference |
 |---|---|---|
-| **G-RANK** | `participation_ratio` (σ², NOT effective_rank) ≥ **8.56** | frozen DINOv3, MEASURED on our frames |
+| **G-RANK** | `participation_ratio` (σ², NOT effective_rank) beats a **MATCHED reference** — same corpus, same episode count, same ambient `d` | `O6_PARTICIPATION_REFERENCES`, `v6.py` |
 | **G-DECODE** | ego probe (speed/yaw/yaw-rate/d_ego) beats BOTH the raw-pixel floor AND the constant control; detection AP > `prior` and > `pixel`, paired | — |
 | **G-DRIVE** | T1, four metric families, paired episode-cluster bootstrap | registry rows |
 
@@ -58,6 +58,24 @@ points and fails closed-loop. **Never pass an arm on rank alone.**
 ⛔ **Use participation (σ²), never effective_rank (σ)** (C132): the two disagree by
 up to 141×, and effective_rank PASSES a representation with 55 % of its energy in
 one direction. Collapse is an ENERGY question.
+
+⛔⛔ **THE BARE 8.56 FLOOR IS RETIRED — DO NOT FAIL, OR PASS, AN ARM ON IT**
+(corrected 2026-09-03; the registry has said so since 2026-08-23 and this file did
+not). MEASURED through `spectrum_report` itself, frozen DINOv3 ViT-L/16, n=1440:
+the 12 clips 8.56 is sourced to read **5.756**, and the 130-clip corpus 40.77 is
+sourced to reads **20.228 ± 0.327** — *neither published number is reproduced*.
+The 3.51× spread between them is EPISODE DIVERSITY alone (same encoder, same `d`,
+same `n`, same instrument), so participation measures how many distinct scenes the
+SAMPLE spans as much as it measures the representation; and `d` differs across the
+things we routinely compare (`z_op` is d=2048, the DINOv3 column d=1024), so those
+are not comparable in either direction. See `stack/tanitad/models/v6.py`
+(`O6_PARTICIPATION_FLOOR` and the block beneath it), `MODEL_REGISTRY.md` §13.3,
+and `stack/tests/test_participation_floor_provenance.py`.
+⇒ A participation number is admissible ONLY against a reference at matched corpus,
+matched episode count and matched `d`. Absent one, the honest reading is
+**UNDECIDABLE — neither pass nor fail** (the precedent is champ30k, whose recorded
+FAIL at 6.489 the registry withdrew). ⚠️ Any report that quotes "participation ≥
+8.56" as a cleared gate is quoting a bar no live instrument reproduces.
 
 ⚠️ Quote **val-side** participation for representation claims. The gate's pooled
 reading comes from the O4-weighted TRAIN stream and runs high (~5.5 vs ~3.4 on the

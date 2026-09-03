@@ -137,3 +137,9 @@ that all lands before S-W's first gate.
 - **R12 — read the banked GS-9 transition-probe JSON**: the rescued package's RESULT §4 still says pending while its raw JSON exists and is unread.
 - **R13 — `t1_eval.DEFAULT_TIERS` needs `"ha0": "T1"`** (`taniteval/tools/t1_eval.py:145`); until then the standalone CLI needs `--tiers ha0=T1` (D-REFAV1-HA0-ARM's one-line integration).
 - **R14 — the anti-stranding rule, operational**: a completed run's artifacts lived only in `C:\Users\Admin\tanitad-wt\_gs89_pkg\` until a later agent rescued 17 files. Every agent brief already says "never leave work that took real effort living ONLY in a worktree"; add the CHECK — the Master Mind verifies the manifest's 'only one place' column before closing a stream.
+
+## Added 2026-09-03 07:45 Berlin (from D-PREREG-V7F)
+
+- **R15 — v7f LAUNCH BLOCKER: the DINOv3 → seed-checkpoint converter.** No loader puts DINOv3 weights into `ViTEncoder`/`ViT5Encoder`; `--init-from` refuses a partial checkpoint (`train_v6_staged.py:7236-7247`). Needs the converter plus three flags: trunk LR multiplier, trunk warmup, distillation-anchor weight (the optimizer is one flat AdamW at `:6120`, `--freeze-encoder` is all-or-nothing at `:5964`). Tests: the seeded encoder reproduces DINOv3's features at step 0 to a stated tolerance, and the OFF path is byte-identical.
+- **R16 — sweep every retired threshold through the instruction documents** (`.claude/skills/`, `CLAUDE.md`, the PREREG templates), not only through the register: the 8.56 floor survived eleven days in the validation skill after the code and the registry retired it (RETRACTION_LOG 2026-09-03 #5).
+- **R17 — rung R0 of the v7f ladder is 0 GPU and can refute the LDAD line before an arm is spent** (`PREREG_V7F.md`); run it before any v7f compute is scheduled.
