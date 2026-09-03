@@ -127,6 +127,34 @@ GOAL_CURVE_VMAX_MPS = 8.0         #: m/s — emitter TURN_MAX_VMIN_MS
 GOAL_LON_DV_MPS = {"CRUISE": 0.0, "FOLLOW": -1.0, "ACCELERATE": +1.5,
                    "YIELD_MERGE": -1.5, "BRAKE_TO": -3.0}
 
+#: ⭐ THE COARSE COST'S TIME GRID (`plan(cost_time_grid=...)`, 2026-09-03).
+#: The planner optimises `plan_steps` OPERATIVE actions (0.2 s each); with
+#: `plan_level="tactical"` the cost rolls the TACTICAL predictor, whose step is
+#: `tac_dt` = 0.6 s.
+#:   * ``"dense"``    — DEFAULT and byte-identical to every pre-2026-09-03
+#:     caller: all `H` operative entries are fed straight to the tactical
+#:     predictor, so the 2.0 s plan is imagined as 6.0 s and the candidate's
+#:     tactical action `j` is operative action `j`. ⛔ This is the LEGACY path
+#:     and it is wrong in time the same way ``model_action_units="kappa"`` is
+#:     wrong in units: EVERY tactical action the predictor was trained on is
+#:     operative action ``j*stride`` (`forward`, ``tac_a``), and the imagined
+#:     GOAL is built on that same grid (`_imagine_tactical_goal`). Kept as the
+#:     default only so every banked number stays reproducible.
+#:   * ``"tactical"`` — tactical step `j` consumes operative action
+#:     ``min(j*stride, H-1)``: exactly ``[::stride]`` while the plan lasts, then
+#:     a zero-order hold of the plan's final action, which is the standard
+#:     receding-horizon continuation and the only defined way to span the 6 s
+#:     the cost is documented to span (`plan_horizon_s`, :247). The candidate's
+#:     terminal field then sits at the goal's own 6.0 s.
+COST_TIME_GRIDS = ("dense", "tactical")
+
+
+def _check_cost_time_grid(grid: str) -> str:
+    if grid not in COST_TIME_GRIDS:
+        raise ValueError(f"cost_time_grid must be one of {COST_TIME_GRIDS}, "
+                         f"got {grid!r}")
+    return grid
+
 
 def canonical_controls(lat: str, lon: str, v0: float, op_steps: int,
                        op_dt: float) -> Tensor:
@@ -1195,6 +1223,39 @@ class RefAV1(nn.Module):
             [torch.zeros_like(dv[:, :1]), dv[:, :-1]], dim=1)      # opening k
         return torch.cat([controls, (v / SPEED_SCALE_MPS)[..., None]], dim=-1)
 
+    # -- ⭐ THE PLANNER->MODEL BOUNDARY, IN ONE PLACE ----------------------- #
+    def _model_actions(self, controls: Tensor, v0: Tensor | None,
+                       units: str) -> Tensor:
+        """GEOMETRY controls ``[B,K,a_dim]`` -> predictor input. **The only
+        planner-side crossing into the model**, so a new crossing cannot open a
+        second action convention without being seen.
+
+        ⛔ WHY THIS IS A NAMED FUNCTION AND NOT TWO ``as_command`` CALLS.
+        MEASURED 2026-09-03 (`D-REFAV1-BOUNDARY-NULL`): ``as_command`` was
+        called at exactly ONE site — inside `plan`'s ``_cost_chunk`` — so
+        ``model_action_units="steer"`` converted the CANDIDATE while
+        `_imagine_tactical_goal` still rolled the GOAL in raw curvature, and the
+        two were compared across two different conventions. The converted
+        canonical turn then landed one float32 ULP FURTHER from its own goal
+        (goal term 5.96e-08 -> 1.19e-07; advantage over ``cv`` 0 -> -5.96e-08).
+        A repair that merely adds a second ``as_command`` call leaves the same
+        shape of bug available to the third crossing somebody writes next; a
+        named boundary makes "did this crossing convert?" one grep.
+
+        ⛔ PLANNER-SIDE ONLY. The TRAINING path's ``actions`` are the v2ep
+        COMMAND channel ALREADY, so `forward` and `_cf_term` call
+        `augment_actions` directly — routing training through here would
+        double-convert every live run.
+
+        Order is safe: ``as_command`` touches channel 1 only and
+        `augment_actions` derives channel 2 from channel 0, so the two commute
+        on every channel either one reads, and both commute with a slice on the
+        time axis. ``units="kappa"`` returns the input OBJECT unchanged
+        (`kinematic.as_command`), so the default path is byte-identical to a
+        bare `augment_actions` call.
+        """
+        return self.augment_actions(as_command(controls, units), v0)
+
     def forward(self, feats: Tensor, actions: Tensor, *,
                 future_feats: Tensor | None = None,
                 str_ext_targets: Tensor | None = None,
@@ -1647,8 +1708,9 @@ class RefAV1(nn.Module):
                 "cf_negs": n_neg}
 
     # -- the imagined goal: the tactical brain's own 6 s field --------------- #
-    def _imagine_tactical_goal(self, last: Tensor, brains: dict,
-                               v0: Tensor) -> tuple[Tensor, dict]:
+    def _imagine_tactical_goal(self, last: Tensor, brains: dict, v0: Tensor,
+                               *, units: str = "kappa"
+                               ) -> tuple[Tensor, dict]:
         """The DEFAULT planning goal (change #8), ``[B, Q, d]`` in the tactical
         query space, from vision + nav + the measured v0 and NOTHING from the
         future: the tactical policy's intent (from `_run_brains`, the one shared
@@ -1665,6 +1727,16 @@ class RefAV1(nn.Module):
         constant-acceleration candidate scored EXACTLY 0, and `icem_plan`'s
         floor loop kept the LAST tie — `decel_1.5`. MEASURED by the T1 adapter
         build: a constant −1.5 m/s² brake on 51/51 windows.
+        ⭐ ``units`` — THE GOAL'S OWN PLANNER->MODEL CROSSING (2026-09-03,
+        BACKLOG R26). ``ctrl`` is GEOMETRY (`canonical_controls`;
+        ``GOAL_KAPPA_TURN`` is 1/m) and the tactical predictor consumes COMMAND,
+        so the goal crosses the SAME boundary a candidate does and it now
+        crosses through the SAME function (`_model_actions`). ⛔ Until this
+        argument existed the crossing was HALF applied — the candidate converted
+        and the goal did not — see `_model_actions` for the measurement.
+        ``"kappa"`` is the legacy pass-through and is byte-identical to the
+        pre-2026-09-03 expression; `plan` forwards its own
+        ``model_action_units`` here, so the two sides can no longer disagree.
         """
         cfg = self.cfg
         intent = brains["intent"]
@@ -1680,17 +1752,30 @@ class RefAV1(nn.Module):
             canonical_controls(lat_v[i], lon_v[j], v, cfg.op_steps, cfg.op_dt)
             for i, j, v in zip(lat_i, lon_i, v0.tolist())]).to(last)   # [B,K,2]
         stride = self._stride(cfg.tac_dt)
-        acts = self.augment_actions(ctrl, v0)[:, ::stride][:, :cfg.tac_steps]
+        # ⭐ THE GOAL CROSSES INTO THE MODEL HERE — through the same boundary a
+        # planner candidate crosses (`_model_actions`), so `units` cannot apply
+        # to one side and not the other. The subsample is AFTER the crossing on
+        # purpose: `augment_actions` integrates the speed channel on the
+        # OPERATIVE grid, so tactical step j opens at the speed of operative
+        # step j*stride — exactly as `forward` builds `tac_a`.
+        acts = self._model_actions(ctrl, v0, units)[:, ::stride][:, :cfg.tac_steps]
         goal = self.tactical.rollout(self._tac_field(last), acts, intent=intent,
                                      last_only=True)                  # [B,Q,d]
         return goal, {"lat": [lat_v[i] for i in lat_i],
                       "lon": [lon_v[j] for j in lon_i], "controls": ctrl}
 
     @torch.no_grad()
-    def imagined_goal(self, feats: Tensor, *, v0, nav_cmd: Tensor | None = None
+    def imagined_goal(self, feats: Tensor, *, v0, nav_cmd: Tensor | None = None,
+                      model_action_units: str = "kappa"
                       ) -> tuple[Tensor, dict]:
         """`_imagine_tactical_goal` from raw inputs — what `plan()` uses when no
-        goal is supplied. ``(goal [B, Q, d], {"lat", "lon", "controls"})``."""
+        goal is supplied. ``(goal [B, Q, d], {"lat", "lon", "controls"})``.
+
+        ``model_action_units`` is the same planner->model crossing `plan` takes
+        and MUST match the value used there: a goal imagined under one spelling
+        and scored against candidates converted under the other is the exact
+        defect `_model_actions` documents. ``"controls"`` comes back in
+        CURVATURE either way — it is a search-space object, not a model input."""
         if self.tactical_policy is None:
             raise ValueError("imagined_goal needs the hierarchy (tactical_cfg) "
                              "— without a tactical brain there is no tactical "
@@ -1702,14 +1787,16 @@ class RefAV1(nn.Module):
                                device=feats.device).reshape(-1)
         if v0_t.numel() == 1 and feats.shape[0] > 1:
             v0_t = v0_t.expand(feats.shape[0])
-        return self._imagine_tactical_goal(last, brains, v0_t)
+        return self._imagine_tactical_goal(last, brains, v0_t,
+                                           units=model_action_units)
 
     # -- deployment: behaviour by PLANNING, not regression ----------------- #
     @torch.no_grad()
     def plan(self, feats: Tensor, *, v0: float, goal_field: Tensor | None = None,
              target_speed: float | None = None, nav_cmd: Tensor | None = None,
              plan_cfg: PlanConfig | None = None, prev_elites: Tensor | None = None,
-             cost_chunk: int = 64, model_action_units: str = "kappa"):
+             cost_chunk: int = 64, model_action_units: str = "kappa",
+             cost_time_grid: str = "dense"):
         """One MPC tick for ONE window (B must be 1).
 
         ⭐ ``model_action_units`` — THE PLANNER->MODEL CROSSING (PI ruling
@@ -1731,9 +1818,32 @@ class RefAV1(nn.Module):
           nowhere else. The search, the clip, the cost's own curvature penalty
           and the integrated path all stay in curvature.
 
-        ⚠️ It is a CALL-SITE argument, not a `RefAV1Config` field, on purpose:
+        ⛔ IT APPLIES TO BOTH SIDES OF THE COMPARISON since 2026-09-03
+        (BACKLOG R26). It is forwarded to `_imagine_tactical_goal`, so the goal
+        and the candidates cross into the model through ONE function
+        (`_model_actions`) under ONE spelling. Before that fix the conversion
+        was applied to the candidate only and the converted turn landed one
+        float32 ULP FURTHER from its own goal — see `_model_actions`. ⚠️ The
+        repair buys the planner NOTHING measurable (`D-REFAV1-BOUNDARY-NULL`:
+        ``share = 0.0000 [0, 0]`` on 140/140 windows, both checkpoints); it
+        removes a trap, it does not win anything.
+
+        ⭐ ``cost_time_grid`` — THE SAME CROSSING IN TIME (BACKLOG R27).
+        ``"dense"`` (DEFAULT, byte-identical to every pre-2026-09-03 caller)
+        feeds all ``H`` optimised OPERATIVE actions straight to whichever
+        predictor is rolling, so with ``plan_level="tactical"`` the 2.0 s plan is
+        imagined as 6.0 s and candidate action ``j`` lands on tactical step
+        ``j``, while the GOAL's action ``j`` is operative step ``j*stride``
+        (`_imagine_tactical_goal`) — two time grids in one cosine.
+        ``"tactical"`` puts the candidate on the goal's (and the TRAINING path's)
+        grid: tactical step ``j`` consumes operative action
+        ``min(j*stride, H-1)``. See `COST_TIME_GRIDS`. It affects only rollouts
+        of `self.tactical`; the coarse->fine re-score on the operative predictor
+        is untouched, and a CONSTANT candidate costs the same under both.
+
+        ⚠️ Both are CALL-SITE arguments, not `RefAV1Config` fields, on purpose:
         adding a config field would change every serialised config dict while a
-        training run is live. Nothing on the training path can see this.
+        training run is live. Nothing on the training path can see them.
 
         The cost is where the hierarchy earns its keep (change #8): the tactical
         target speed and the strategic goal field enter as **cost terms**, not as
@@ -1757,6 +1867,7 @@ class RefAV1(nn.Module):
         if feats.shape[0] != 1:
             raise ValueError("plan() is a single-window API (B must be 1)")
         _check_units(model_action_units)
+        _check_cost_time_grid(cost_time_grid)
         cfg = self.cfg
         pc = plan_cfg or PlanConfig(horizon=cfg.plan_steps, dt=cfg.op_dt)
         if pc.horizon != cfg.plan_steps:
@@ -1797,7 +1908,10 @@ class RefAV1(nn.Module):
         if goal_field is not None:
             goal_t, goal_source = self._tac_field(goal_field), "supplied"
         elif brains is not None:
-            goal_t, ga = self._imagine_tactical_goal(last, brains, v0_t)
+            # ⭐ the crossing travels to the GOAL too (R26): one spelling on
+            # both sides of the cosine, or the comparison is across conventions.
+            goal_t, ga = self._imagine_tactical_goal(
+                last, brains, v0_t, units=model_action_units)
             goal_source = "tactical_imagined"
             goal_action = {"lat": ga["lat"][0], "lon": ga["lon"][0],
                            "controls": ga["controls"][0]}
@@ -1819,23 +1933,41 @@ class RefAV1(nn.Module):
             seed_pool = (seed if seed_pool is None
                          else torch.cat([seed_pool, seed], dim=0))
 
+        # ⭐ THE COARSE COST'S TIME GRID (R27; `COST_TIME_GRIDS`). Built once,
+        # outside the chunk loop, and applied ONLY to rollouts of the tactical
+        # predictor: the coarse->fine re-score rolls `self.operative`, whose step
+        # IS `op_dt`, so it has no defect to repair.
+        tac_idx = None
+        if cost_time_grid == "tactical":
+            _s = self._stride(cfg.tac_dt)
+            tac_idx = torch.tensor(
+                [min(j * _s, pc.horizon - 1) for j in range(cfg.tac_steps)],
+                dtype=torch.long, device=feats.device)
+
         def _cost_chunk(controls: Tensor, pred=None, z0=None) -> Tensor:
             pred = pred or search_pred
             z0 = search_z if z0 is None else z0
             n = controls.shape[0]
             z = z0.expand(n, -1, -1)
             # ⭐ THE PLANNER->MODEL CROSSING. `controls` is GEOMETRY (kappa);
-            # the predictor consumes COMMAND (steer). Converted HERE and only
-            # here, so the search, the clip and the integrated path all stay in
-            # curvature. `model_action_units="kappa"` is the legacy pass-through
-            # and returns the same object (see kinematic.as_command).
-            controls_m = as_command(controls, model_action_units)
+            # the predictor consumes COMMAND (steer). Converted at the boundary
+            # and nowhere else, so the search, the clip and the integrated path
+            # all stay in curvature. The GOAL crosses the SAME boundary under
+            # the SAME spelling (`_imagine_tactical_goal(units=...)`), which is
+            # what makes the cosine a comparison and not a units mismatch.
             # Speed channel (config-gated): each candidate's OWN accelerations
             # integrated from this tick's measured v0 — the same code path as
             # the T0 forward, so T1 cannot silently read a speed T0 never had.
             # ⚠️ channel 0 (accel) is unit-invariant, so the speed channel is
             # identical under either spelling — verified by test C3.
-            acts = self.augment_actions(controls_m, v0_t.expand(n))
+            acts = self._model_actions(controls, v0_t.expand(n),
+                                       model_action_units)
+            # ⭐ ...AND THE CROSSING IN TIME. A `tac_dt` step spans operative
+            # steps [j*s, (j+1)*s) and consumes the action that OPENS it, which
+            # is how `forward` builds `tac_a` and how the goal is rolled; past
+            # the optimised window the plan's last action is held.
+            if tac_idx is not None and pred is self.tactical:
+                acts = acts.index_select(1, tac_idx)
             # last_only: the cost reads the terminal field only (see rollout).
             zk = pred.rollout(z, acts, intent=intent, last_only=True)
             c = torch.zeros(n, device=controls.device)
@@ -1890,6 +2022,11 @@ class RefAV1(nn.Module):
         res.goal_source = goal_source
         res.goal_space = "tactical_query_field"
         res.goal_action = goal_action
+        # ⭐ the two crossings travel ON the result, so a banked decision says
+        # which conventions produced it instead of the reader inferring them
+        # from a date. Both defaults are the legacy path.
+        res.model_action_units = model_action_units
+        res.cost_time_grid = cost_time_grid
 
         # ⭐ COARSE-TO-FINE: the search ran on the tactical field; re-score the
         # WINNER (and the baselines it beat) on the full operative field, so the

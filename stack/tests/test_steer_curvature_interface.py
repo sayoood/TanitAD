@@ -243,20 +243,50 @@ def test_D1_plan_default_is_byte_identical_to_the_legacy_call():
 
 
 def test_D2_the_flag_actually_REACHES_the_model():
-    """If ON and OFF gave the same cost the crossing would not be wired."""
+    """If ON and OFF gave the same cost the crossing would not be wired.
+
+    ⚠️ AMENDED 2026-09-03 (BACKLOG R26), and the amendment is the point. This
+    test used to assert that the ZERO-channel-1 baselines (``cv``, ``hold_v0``)
+    do NOT move, "because arctan(0) == 0". **That was only true while the
+    conversion was HALF applied.** ``as_command`` was called at exactly one site
+    (``_cost_chunk``), so the flag converted the CANDIDATE while
+    `_imagine_tactical_goal` still rolled the GOAL in raw curvature — and a
+    zero-curvature candidate, scored against an unchanged goal, could not move.
+    The flag now converts BOTH sides through one boundary
+    (`RefAV1._model_actions`), so with an IMAGINED goal the goal FIELD itself
+    moves and EVERY candidate is scored against a different reference.
+
+    The original invariant is not discarded, it is relocated to the
+    configuration where it still holds: a SUPPLIED ``goal_field`` is not built
+    from controls, so no conversion touches it.
+    """
     m, cfg, feats = _tiny_model()
     with torch.no_grad():
         a = m.plan(feats, v0=8.0, plan_cfg=_pc(cfg), model_action_units="kappa")
         b = m.plan(feats, v0=8.0, plan_cfg=_pc(cfg), model_action_units="steer")
     assert a.baseline_costs and b.baseline_costs
+    assert a.goal_source == "tactical_imagined" == b.goal_source
     moved = [k for k in a.baseline_costs
              if abs(a.baseline_costs[k] - b.baseline_costs[k]) > 1e-9]
-    # every baseline that carries a NON-ZERO channel-1 must move; the zero ones
-    # (cv / hold_v0) must NOT, because arctan(0) == 0.
     assert moved, "no baseline cost moved — the conversion never reached the model"
+
+    # SUPPLIED goal: nothing converts the reference, so a zero-curvature
+    # candidate must score identically under either spelling and a curved one
+    # must not. This is the assertion the imagined-goal arm used to carry.
+    torch.manual_seed(1)
+    goal = torch.randn(1, cfg.n_tokens, cfg.d_state)
+    with torch.no_grad():
+        ga = m.plan(feats, v0=8.0, plan_cfg=_pc(cfg), goal_field=goal,
+                    model_action_units="kappa")
+        gb = m.plan(feats, v0=8.0, plan_cfg=_pc(cfg), goal_field=goal,
+                    model_action_units="steer")
+    assert ga.goal_source == "supplied" == gb.goal_source
     for z in ("cv", "hold_v0"):
-        if z in a.baseline_costs:
-            assert abs(a.baseline_costs[z] - b.baseline_costs[z]) < 1e-9, z
+        if z in ga.baseline_costs:
+            assert abs(ga.baseline_costs[z] - gb.baseline_costs[z]) < 1e-9, z
+    assert [k for k in ga.baseline_costs
+            if abs(ga.baseline_costs[k] - gb.baseline_costs[k]) > 1e-9], \
+        "no baseline moved with a supplied goal — the candidate crossing broke"
 
 
 def test_D3_bad_units_are_refused_loudly():

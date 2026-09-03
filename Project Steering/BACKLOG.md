@@ -177,3 +177,11 @@ that all lands before S-W's first gate.
 - **R31 — the in-training eval must dump PER-WINDOW values with episode ids.** Every number in `metrics.jsonl` is already a pooled mean, so no estimator can put an interval on it and the information is NOT recoverable later. Forward-looking fix; it makes every future in-training eval quotable with a CI.
 - **R32 — reconcile the leaked-eval count**: `C-REFCV3-EVAL-PRIOR-LEAK` says 34, the metrics file measures 40, and the file starts at step 550 so neither covers the whole run.
 - **R33 — pick up `taniteval/tools/refcv3_metrics_read.py`**: a naive read of `metrics.jsonl` is wrong in three separate ways (era segmentation, the `elapsed_s` resets across 10 launches, and the oracle-selected `eval_traj`). Route any future read through it.
+
+## Added 2026-09-03 09:30 Berlin (from D-STEER-CONVERSION-COMPLETE)
+
+- **R26 — STRUCK 2026-09-03**: the κ→steer crossing is single and complete (`_model_actions`).
+- **R27 — STRUCK (repair)**: `cost_time_grid` implemented; the DEFAULT FLIP remains a decision (see R36).
+- **R34 — DESIGN: the plan spans 2.0 s of a 6.0 s goal.** The planner's own canonical seed cannot reproduce its own goal, which sits directly beside the measurement that a correct turn buys one float32 ULP. Decide `plan_horizon_s` (or subsample the goal to the plan's reach) before any further planner tuning.
+- **R35 — decide T4 (`target_speed`) deliberately**: unused by production, exercised by two tests, so neither deletion nor wiring is free. Recommendation: KEEP until the cost is redesigned.
+- **R36 — decide when `cost_time_grid="tactical"` becomes the default.** The banked panel is provably unaffected (the winner is constant on 140/140), so the flip is safe for what is banked — but it changes what every FUTURE number means, so it needs a stated cut-over like R21's.
