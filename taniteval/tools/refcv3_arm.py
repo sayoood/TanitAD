@@ -962,7 +962,10 @@ def run_dump(a) -> dict:
 
     horizons = list(cfg.core.trajectory.horizons)
     slots = grid["slots"]
-    anchors_bank = model.core.decoder.anchors.detach()          # [N, S, 2]
+    # .cpu(): `traj_tgt` (:994) and `sv` (:980) are CPU dataset tensors; the bank
+    # is used ONLY in the a_star argmin below (:1051/:1059), so keeping it on CPU
+    # matches the CPU path the fixture validated and fixes a CUDA/CPU device clash.
+    anchors_bank = model.core.decoder.anchors.detach().cpu()    # [N, S, 2]
     episodes_manifest, n_done, n_skipped = [], 0, 0
     t_fwd_first = None
     skip_reasons: dict[str, int] = {}
@@ -1345,17 +1348,21 @@ def _distance_keeping(rec, files, manifest, lead_path, arms, P_cat, G_all,
         raw = ws + int(raw_off)
         odd += int((raw % 2 != 0).sum())
         sf = os.path.join(shim_dir, os.path.basename(f))
-        np.savez(sf, ws=raw // 2, **({"v0": v0} if v0 is not None else {}))
+        # frame-identity: this corpus's provider index IS the raw frame, so the
+        # shim carries `raw` itself and the join is told frame_of_t = identity.
+        # (`raw // 2` + the default 2t map truncated every ODD frame to frame-1,
+        # which the label-free speed proof correctly refused.)
+        np.savez(sf, ws=raw, **({"v0": v0} if v0 is not None else {}))
         shim_files.append(sf)
     if odd:
         base["_odd_raw_frames"] = (
             f"{odd} window origins land on an ODD raw frame; the B1 block carries "
-            f"a row per RAW frame but join_lead_block reaches only EVEN ones "
-            f"(frame = 2t). Those windows join to frame-1 and are caught by the "
-            f"label-free speed proof if the lead differs. WORK ITEM: give "
-            f"join_lead_block a frame-identity mode.")
+            f"a row per RAW frame. RESOLVED: join_lead_block now takes "
+            f"frame_of_t and this call passes IDENTITY, so each window joins "
+            f"its own raw frame exactly; this count is informational only.")
     lead = ra.join_lead_block(shim_files, manifest, view, idx,
-                              k=info["k"], dt=info["dt_s"])
+                              k=info["k"], dt=info["dt_s"],
+                              frame_of_t=lambda t: t)
     cov = lead.pop("coverage")
     out = dict(base)
     out.update({"grid": info, "coverage": cov})
