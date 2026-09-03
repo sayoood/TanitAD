@@ -195,7 +195,53 @@ printing a family table.
 
 ---
 
-## 4. DRY-RUN VALIDATION — what was actually run
+## 4. VALIDATION — ⭐ ON THE REAL `ckpt_30000.pt` RECORD, and on the fixture
+
+### 4.0 ⭐ THE REAL ONE — refcv3 at step 30,000, 4,823 windows / 141 episodes
+
+**MEASURED 2026-09-03**, consuming the Benchmarks stream's banked arm record
+(`taniteval/results/refcv3-30k-openloop-20260903-2004.json` + its dump tarball) through
+`--arm-json … --dump-dir …`. **Zero GPU.** Banked:
+`taniteval/results/openloop-suite-refcv3-30k-ckpt30000.{json,md,html}`.
+
+```
+criteria checker      0 VIOLATIONS, 0 WORK ITEMS   (registry v2.5.0, all four families PRESENT)
+const0 self-paired    0.0 [0.0, 0.0], not separated          <- BIT-EXACT
+const0 ADE            14.248286 vs 14.248286 expected (|d| 1.07e-07)
+const0 LON speed MAE  11.395674 vs 11.395674 expected (|d| 0.0)
+ha0 straight/const    1.0 / 1.0 / 1.0                        <- its value by construction
+void gates            no degenerate arm besides the floor; selection 51/128 distinct anchors,
+                      modal 15.4 %, entropy 2.81/4.85 -> NOT degenerate, so the read is VALID
+loop-vocab guard      CLEAN
+```
+
+⛔ **The arm numbers are the Benchmarks stream's** (`INHERITED` at the arm level — this suite did
+not roll them out). Everything this layer computes — `const0`, the verdicts, the criteria
+verdict — is `MEASURED (ours)` on their banked per-window arrays.
+
+**The four families vs the `ha0` floor, paired, oracle-nav | deployment (nav withheld):**
+
+| family | verdict (oracle nav) | verdict (deployment) |
+|---|---|---|
+| **ADE** | WON 2/2 | WON 2/2 |
+| **LONGITUDINAL** | 1 WON, 1 LOST, 1 TIED | 1 LOST, 2 TIED |
+| **LATERAL** | 2 WON, 1 LOST | 2 WON, 1 LOST |
+| **TACTICAL** | 1 WON, 1 LOST | 1 WON, 1 LOST |
+| **STRATEGIC** | 3 WON, 1 TIED (vs its no-information rate) | in-family, via the `nav_zero` row |
+
+⭐ **A finding the controls exist to surface, and only a control could:** the route head reads
+**0.7717 [0.7136, 0.8273] under ALL THREE nav conditionings** — true, shuffled and zero — and
+the paired true-minus-shuffled accuracy is **exactly +0.0000 [0.0000, 0.0000]**. The strategic
+head is **entirely nav-independent on these windows**. Its 0.7717 does beat the 0.6742
+majority-class rate, so it is reading *something* — but nothing it reads comes from the route
+token it is given. ⛔ Do not quote that accuracy as evidence that the route input works.
+
+⚠️ Read beside it: `os` beats `ha0` on **ADE and FDE**, but **loses on acceleration MAE and
+yaw-rate MAE** and only ties on target-speed MAE — i.e. the win is positional, not dynamic, and
+the deployment column is weaker than the oracle-nav column on LONGITUDINAL (along-track drops
+from WON to TIED without the nav token).
+
+### 4.1 The instrument-control run — the fixture
 
 **MEASURED 2026-09-03, dev box, CPU, 0 GPU.** The full path — rollout → dump →
 `analyze_refcv3` → suite artifact → `criteria_check` → MD + HTML — over
@@ -237,25 +283,24 @@ longer a risk to tonight's read.
 config gets `AttributeError: 'tuple' object has no attribute 'core'`. Noted for anyone calling
 it directly.
 
-### What the dry run could NOT validate — say it plainly
+### What is STILL not validated — say it plainly
 
-* ⛔ **Nothing about refcv3 itself.** `ckpt_30000.pt` was **not reachable from this box**: every
-  host in `~/.ssh/config` refuses on its advertised port (`tanitad-pod` 38.147.83.15:39198 and
-  `tanitad-pod5` 69.30.85.106:22039 both `Connection refused`), and `tanitad-refcv3` is not in
-  the config at all. The suite was therefore validated on the fixture, and **no number in the
-  dry-run artifacts is a claim about the model.**
-* **The lead-block join at real scale.** The fixture has no lead block, so
-  `long.distance_keeping` is the single REFUSED work item — which is the correct state, and it
-  is what proves the REFUSED path renders as a work item rather than vanishing.
-* **`--arm-json` against a real banked record.** ⭐ The ROUND-TRIP **is** exercised: the arm
-  record was banked standalone from the dump exactly as another stream would bank it, then
-  consumed through `--arm-json … --dump-dir …` — **0 violations, `const0` OK, exit 0**. What is
-  untested is that path against *refcv3's* record specifically; no other stream had banked one
-  when this was built (`taniteval/results/` held none).
-  ⚠️ Pass `--dump-dir` alongside `--arm-json`, or the constant-only control is REFUSED for want
-  of the per-window arrays — the suite says so rather than dropping it.
+* ⛔ **The ROLLOUT path against a real checkpoint.** §4.0 consumed a banked record and its
+  banked per-window dump; **this box never loaded refcv3's weights.** No host in
+  `~/.ssh/config` answers (`tanitad-pod` 38.147.83.15:39198 and `tanitad-pod5`
+  69.30.85.106:22039 both `Connection refused`; `tanitad-refcv3` is not in the config at all),
+  so `--ckpt …` at real scale — model load, `rebuild_config` from a real `config.json` in
+  anger, the forward pass, `--expect-step` against a real checkpoint — is exercised **only on
+  the fixture**. Step 1 of §2 exists to smoke exactly that in ~2 clips before the expensive run.
 * **Wall-clock at real scale.** Quote the arm tool's `[cost]` line from step 1, never a number
   from this file.
+* ⚠️ **The 30k read is a MID-RUN snapshot**, not the epoch. `ckpt_30000.pt` is a `MILESTONES`
+  checkpoint that predates the last ~10,000 steps; the final read is step 40,284, and the two
+  are not interchangeable. Say which one any number came from.
+* ⚠️ **`--arm-json` carries the arm numbers as `INHERITED`.** This layer re-derives `const0` and
+  every verdict from the banked per-window arrays, but it does **not** re-roll the arms. Pass
+  `--dump-dir` alongside `--arm-json`, or the constant-only control is REFUSED for want of those
+  arrays — the suite says so rather than dropping it.
 
 ---
 
