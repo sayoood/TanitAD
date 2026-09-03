@@ -1271,7 +1271,7 @@ with every non-regression gate green — registered as the best open-loop head i
 
 ### 1.12 SELF-ACTION OPEN LOOP (decoder-conditioned predictor) — MEASURED 2026-08-06 [TIER T1 — the PRIMARY OFFLINE eval per EVAL_DOCTRINE.md]
 
-> ⛔ **RE-LABELLED 2026-09-02 (PI ruling).** This section was titled "CLOSED-LOOP" and every figure in it has been quoted as a closed-loop result. It is **OPEN LOOP**: the predictor consumes its own actions, but the trajectory never reaches the ego data, which keeps arriving from the recording. The MEASUREMENTS BELOW ARE UNCHANGED AND REMAIN VALID — only the word changes. A true closed-loop number (T2) does not yet exist anywhere in this registry. See `RETRACTION_LOG.md` entry #13.
+> ⛔ **RE-LABELLED 2026-09-02 (PI ruling).** This section was titled "CLOSED-LOOP" and every figure in it has been quoted as a closed-loop result. It is **OPEN LOOP**: the predictor consumes its own actions, but the trajectory never reaches the ego data, which keeps arriving from the recording. The MEASUREMENTS BELOW ARE UNCHANGED AND REMAIN VALID — only the word changes. See `RETRACTION_LOG.md` entry #13. ⛔ **This banner first claimed no true closed-loop number existed; that was FALSE (RETRACTION_LOG #14).** ⭐ **We DO have closed-loop numbers**: the AlpaSim/NuRec panel of 2026-08-03 (PROGRAM_OVERVIEW §5.0.1) — 9 rollout starts x 50 ticks in a reconstruction RENDERED ON THE JETSON THOR, 437 paired windows, four families, `stack/experiments/alpasim-gsplat/`. ⚠️ But the scene has **no reactive agents**, so safety-grade metrics (collision, off-road) remain out of reach — and **neither refav1 nor refcv3 has been through that harness**.
 
 **The predictor rolled on the DECODER'S OWN actions** (steer = atan(2.9·κ), accel direct — the
 `signals_at` contract), no recorded future anywhere; perception context unchanged (imagination
@@ -2558,6 +2558,81 @@ drives from observations via its tactical policy (same reconstruction-OOD caveat
 > scene `01d503d4`. **C6** — the n=12 *"REF-C fails ~half closed-loop"* is **reconstruction-OOD confounded**
 > (open-loop-on-reconstructions control 3.21×): run the open-loop-vs-known control **before** attributing a
 > closed-loop failure to the model.
+
+---
+
+### 4.5 REF-C **v3** — `refcv3-b1-v72-30k` — 🟢 **LIVE** (step 37,400 / 40,284 @ 2026-09-03T19:24Z) · ⛔ **NO EVAL RESULT EXISTS — do not quote an accuracy number**
+
+**The goal-mediated strategic/tactical/operative hierarchy on the supervised anchor arm.** Code
+`stack/tanitad/refs/refc_v3.py`, trainer `stack/scripts/refc_v3_train.py`. Design + pre-registration:
+`TanitAD Research Lab/Architecture & Inference/Research/2026-08-18-refc-v3-design/`
+(`REFC_V3_DESIGN.md` = edge list E1..E12, `PREREG_REFC_V3.md` = the experiment).
+
+| Field | Value |
+|---|---|
+| **What it is** | a supervised **ONE-SHOT** anchor-trajectory model: **128 anchors × 8 slots**, the whole 6 s path from **one forward pass**. **No action input, no rollout, no per-step decode** — MEASURED, `refc_v3.py:480` (the signature has no action argument), `:196`/`:197`/`:106`, and the checkpoint's own `core.decoder.anchors` buffer of shape `(128, 8, 2)` |
+| **Inference inputs** | vision (3 frames → 9 ch, **256×640 cylindrical**) · the **v7.2 nav command** · **one** measured ego scalar `v0` = speed at the last OBSERVED frame (`refc_v3_train.py:445`). **No future ego, no GT future.** `lan` is a TRAIN-ONLY label (E12); no ego reaches any goal head (E11) |
+| **`ego_dropout`** | **0.5, TRAINING ONLY** — `refc.py:2033` guards on `self.training` (default at `refc.py:429`). At inference `v0` is always present |
+| **Role** | **REFERENCE ARM**, not the flagship |
+| **Params** | **107,032,901** — MEASURED twice and in exact agreement: `config.json` `param_breakdown.total`, and `ckpt_30000.pt`'s state_dict (544 tensors / 107,082,365 elements − 201 buffer tensors / 49,464 elements). ⚠️ **107,082,365 is the all-tensor count; quote 107,032,901** |
+| | breakdown: core 104,879,522 · phi_tac 1,757,440 · tac_latent_proj 262,656 · gstr_cond 66,816 · nav_inject 50,176 · tac_heads 14,364 · scorer 1,156 · str_goal_head 771 |
+| **Horizons** | `(5,10,15,20,30,40,50,60)` @ 10 Hz = **0.5…6.0 s** (`refc_v3.py:106`) · goal taus `(20,40,60)` = **2/4/6 s** |
+| **Corpus** | ⛔ **B1 `physicalai-b1-w120-256x640cyl` — NOT the `physicalai-train-e438721ae894` parity set.** 4,572 train clips / 141 eval clips; labels `s2_labels_v7.2_train.jsonl.gz` md5 `0ff902130ce76886b8a925eceed9e3a5`, eval md5 `aa12c948f062181c3297265b51526ec5`. `config.json` records `require_parity false`, `v2_parity.parity false`, `checked false`, `corpus_key null`, and the trainer prints its own NON-PARITY warning on line 2 of `train.log` |
+| **Args** | `--arm hier --size base --image-hw 256 640 --steps 40284 --batch 20 --workers 6 --lr 1e-4 --warmup 2000 --seed 0 --nav-from-v7 --u8-batches --v2-lru 24` |
+| **Nav source** | ⚠️ **ORACLE** — `config.json` `nav_cmd_derivation` = *"v7.2 nav_command token (oracle, provenance ego-future; allow_oracle_nav=True)"*. On PhysicalAI-derived data the only route supplier is the ego's own future path, so a supplied nav command is **optimistic by construction** |
+| **Goal provenance** | `contains_situation_classifier_output: false`, `situation_classifier_in_graph: false`, `supplied_or_predicted: "predicted"`, goal inference inputs = `pooled` conv features only. Shared **encoder** declared; attributability rests on the zero-init gates (an argument, not a measurement) |
+| **Split** | ⭐ **LEAK-GUARDED.** `/root/data/train` and `/root/data/eval` are symlink views of ONE built B1 epcache, split by v7.2 `clip_id` by `stack/scripts/refcv3_make_split.py`, which **refuses to run if the label sets intersect**. It exists because of a MEASURED leak (2026-09-02): v7.2 ships 4,572 train / **147** eval, and raw B1 is **4,713 = 4,572 + 141 of those eval clips** (the other 6 are val40 clips the parity gate drops) — so training on all of B1 and evaluating on the v7.2 eval split would have trained on 141 of the 147 eval clips. The run's own **4,572 + 141 = 4,713** is the independent check that the split happened. |
+| **Location** | `tanitad-refcv3` (= `tanitad-a40`) `:/workspace/experiments/refcv3-b1-v72-30k/` — `ckpt.pt` (model+opt+step), milestones `ckpt_{5000,15000,20000,30000}.pt` (`MILESTONES` at `refc_v3_train.py:103`; **40,284 is NOT a milestone**, so the final artifact is `ckpt.pt`) |
+| **`ckpt_30000.pt`** | 428,519,790 B, md5 **`00da81c6efcd91e7b618a1fbddb3b78f`** (MEASURED on the pod and again after transfer to the dev box — both agree) |
+| **HF** | ✅ **`Sayood/tanitad-refc-v3`** — public + **gated `manual`**, created 2026-09-03. Naming follows the family convention `tanitad-<arm>-<variant>` (cf. `tanitad-refc-base`, `tanitad-refc-xl`). In-repo card copy: `Project Steering/HF_CARD_tanitad-refc-v3.md` |
+
+#### ⛔ Results — THERE ARE NONE. The four binding families are **NOT MEASURED**.
+
+| family | status |
+|---|---|
+| LONGITUDINAL (target-speed, distance-keeping / headway / TTC) | **NOT MEASURED** |
+| LATERAL (heading, curvature, yaw-rate, cross-track) | **NOT MEASURED** |
+| TACTICAL (manoeuvre decision, tactical goal-setting) | **NOT MEASURED** |
+| STRATEGIC (strategic decision, goal/route setting) | **NOT MEASURED** |
+
+The **instrument** exists — `taniteval/tools/refcv3_arm.py` (arms `os` / `os_navshuf` / `ha` / `ha0`,
+all four families with `n` and episode-cluster-bootstrap CIs, two degeneracy gates,
+`stack/tests/test_refcv3_arm.py` 18 passed; package
+`TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-03-refcv3-arm/`). **No run against these
+weights has been completed.** Raw artifact when it lands: `taniteval/results/refcv3-30k-openloop-*.json`.
+
+⚠️ **The tier of the `os` arm is an UNRULED question** (BACKLOG R30). The instrument stamps it `T1`
+with `status: UNRULED` and frames every headline as a **margin over the shared `ha0` floor.
+
+⛔ **OPEN LOOP ONLY — no closed-loop claim exists or may be inferred.** Binding PI ruling 2026-09-02:
+a model consuming **its own planner's output is still open loop**, because the emitted trajectory does
+not affect the incoming ego data. True closed loop requires the trajectory to drive the vehicle
+(AlpaSim or a real test vehicle).
+
+#### In-training monitor at step 30,000 — a T0 loss-surface diagnostic, **never a result**
+
+`eval_loss 7.94893 · eval_traj 0.93026 · eval_anchor_acc 0.56875 · eval_slot_valid_frac 0.91953 ·
+eval_goal2s_err_m 1.91019 · goal_gate 0.15595` (MEASURED, `metrics.jsonl` step 30000; 8 batches /
+160 windows). The trainer's own source says this block *"is NOT the four-metric-family result and must
+never be quoted as one"*. The last figure is the **Caveat-B instrument**: the zero-init `goal_gate` has
+**opened to 0.15595**, so the E9 goal-selection edge is live — which says nothing about whether it helped.
+
+#### ⚠️ Three caveats that travel with this row
+
+1. **The run is a RESUMED COMPOSITE and its recipe changed mid-run.** `supervisor.log` records relaunches
+   at steps 2,000 / 4,500 / 6,000 / 10,500 / 17,000 / 17,500 / 18,500; **`--nav-from-v7` was added at step
+   17,000** (supervisor v2) and **`--u8-batches` at step 18,500** (supervisor v3, after repeated cgroup OOM
+   kills at eval boundaries). Steps 0–17,000 did **not** take the nav command from the v7.2 token. Resume is
+   a strict `load_state_dict` (`refc_v3_train.py:1093`). **Do not describe this as a single-recipe run.**
+2. **Six buffer values may carry a held-out-label EMA.** `compute_losses_v3` called
+   `core.update_tactical_prior()` unconditionally, so the in-training eval's held-out label marginals EMA'd
+   into `core.lat_log_prior` / `core.lon_log_prior` (3 + 3 values, which shape the manoeuvre decode through
+   `logit_adjust`). The `if model.training:` guard (`refc_v3_train.py:501`) is **confirmed live in the
+   running trainer** (read in the repo AND on the pod), but it landed 2026-09-02 — after this run's early
+   segments — and buffers carry across resumes. 6 of 107,032,901 values.
+3. **The 6 s band's statistics are NOT inherited from the 2 s band.** v1/v2 REF-C planned to 2.0 s over
+   4 slots. The 2 s-band reachability figures (72.08 % clipped / 3.58×) must not be quoted here;
+   `slot_valid_frac ≈ 0.92` at step 30,000 means ~8 % of far slots are masked on a given batch.
 
 ---
 
