@@ -280,7 +280,7 @@ CI [+1.04, +1.64]** (CI-separated). Upcoming-curvature decode R² 0.254 vs 0.031
 **OOD:** physicalai (in-dist) 0.427 vs floor 0.523, win 49.7 % ✅ | comma2k19 0.849 vs floor 0.372, win
 17.5 % ✗ | cosmos 0.583 vs 0.358, win 29.4 % ✗. **Generalization is the open gap.**
 
-**Closed-loop (imagination-in-the-loop, no renderer):** closed_bike ADE@2s **1.7318** [1.5707, 1.9070]
+**Self-action OPEN loop (imagination-in-the-loop, no renderer — ⛔ re-labelled 2026-09-02, this is NOT closed loop):** closed_bike ADE@2s **1.7318** [1.5707, 1.9070]
 (episode-cluster bootstrap, 881 win / 40 ep), FDE **3.6190** [3.2453, 4.0215], divergence >5 m **23.50 %**
 [16.80 %, 30.27 %]. Open-loop **0.4271** → closed-loop **1.7318** (**4.05×**): **open-loop does not
 predict closed-loop.**
@@ -1269,7 +1269,9 @@ with every non-regression gate green — registered as the best open-loop head i
 **not** as the lag fix. Speed_l1 evidence: `results/run6_train_log.jsonl.xz`; analysis:
 `results/closed_loop_analysis.json`.
 
-### 1.12 CLOSED-LOOP (decoder-conditioned predictor) — MEASURED 2026-08-06 [TIER T1 — the PRIMARY eval per EVAL_DOCTRINE.md]
+### 1.12 SELF-ACTION OPEN LOOP (decoder-conditioned predictor) — MEASURED 2026-08-06 [TIER T1 — the PRIMARY OFFLINE eval per EVAL_DOCTRINE.md]
+
+> ⛔ **RE-LABELLED 2026-09-02 (PI ruling).** This section was titled "CLOSED-LOOP" and every figure in it has been quoted as a closed-loop result. It is **OPEN LOOP**: the predictor consumes its own actions, but the trajectory never reaches the ego data, which keeps arriving from the recording. The MEASUREMENTS BELOW ARE UNCHANGED AND REMAIN VALID — only the word changes. A true closed-loop number (T2) does not yet exist anywhere in this registry. See `RETRACTION_LOG.md` entry #13.
 
 **The predictor rolled on the DECODER'S OWN actions** (steer = atan(2.9·κ), accel direct — the
 `signals_at` contract), no recorded future anywhere; perception context unchanged (imagination
