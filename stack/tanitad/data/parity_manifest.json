@@ -2776,6 +2776,114 @@
         "registered_on": "2026-07-27",
         "evidence_class": "MEASURED (live scan of the built cache + set-diff against the exported parity clip split)"
       }
+    },
+    "physicalai-b1-w120-256x640cyl": {
+      "corpus_key": "physicalai-b1-w120-256x640cyl",
+      "split": "train",
+      "episode_count": 4713,
+      "uid_kind": "v2ep_clipid",
+      "uid_source": "DERIVED 2026-09-03 from the validated B1 release (v7.2 clip indexes: 4,572 train + 147 eval = 4,719 clips, whose sorted-id sha256 REPRODUCES MANIFEST.json corpus.corpus_id_sha256_16 = a48251e89c7a8603) minus the 6 deployed-val40 clips the build excludes. NOT yet re-measured on the built cache — see provenance.verification_status.",
+      "episode_uid_sha256": "e8bfb98e06ebd62edf6566906f0f961b7e6efaf1869ee4aa6646511a9f1509da",
+      "clip_membership": {
+        "n_clips": 4713,
+        "clip_id_sha256_sorted": "e8bfb98e06ebd62edf6566906f0f961b7e6efaf1869ee4aa6646511a9f1509da",
+        "uid_kind": "v2ep_clipid",
+        "ordered_equals_sorted": null,
+        "n_clips_released": 4719,
+        "clip_id_sha256_sorted_released_4719": "a48251e89c7a86032415a55a375d5e5f440360586b21011d7326c7790aa6d342",
+        "derivation": "union(clip_index_v7.2_train.json 4,572, clip_index_v7.2_eval.json 147) = 4,719 ids; sha256 of '\\n'.join(sorted(ids)) = a48251e8… == the release manifest's corpus_id_sha256_16 (independent cross-check); minus the 6 ids whose sha256(clip_id) is in deployed_val40_clip_digests.json = 4,713 — exactly the set of v2ep_file names the two indexes carry, and exactly the eval index's _clips_without_episode (6).",
+        "_read": "a digest-only expectation: verify_v2_membership(cache, source_key=this key) can prove a built cache against it without any clip list leaving a pod"
+      },
+      "skip_indices": [],
+      "skip_count": 0,
+      "provenance": {
+        "derived_from": null,
+        "relation": "NEW DOMAIN (D-CORPUS-B1): the scaled-v7 training corpus — Alpamayo-labelled PhysicalAI-AV clips, NOT a re-selection or a geometry sibling of physicalai-train-e438721ae894. Arms trained on it are never same-data-compared to parity arms; the parity rule stays intact WITHIN each domain.",
+        "release": {
+          "name": "tanitad-v7-training-corpus",
+          "hf_repo": "Sayood/tanitad-v7-training-corpus (PRIVATE, dataset repo)",
+          "released": "2026-08-29",
+          "validated": "2026-08-30 (validate_release.py: 4,719/4,719 decode-probed, all four joins 4719/4719, 0 exclusion violations)",
+          "manifest_sha256": "5feda062a72a32adc3104ffc4ca4f49ceba5c7f8ee64136058c09bb680d91f19",
+          "manifest_sha256_16": "5feda062a72a32ad",
+          "supersedes_manifest_sha256_16": "71e8706c291ebd85",
+          "corpus_id_sha256_16": "a48251e89c7a8603",
+          "n_clips": 4719,
+          "hours": 26.2
+        },
+        "exclusion_rule": {
+          "required_build_flags": "--corpus-role train --exclude-parity-overlap",
+          "gate": "tanitad.data.parity.guard_corpus_build(role='train', mode='exclude') — §10c",
+          "excluded": 6,
+          "why": "these 6 clips are in THE deployed val40 (physicalai-val-0c5f7dac3b11, the split behind every published open-loop statistic); training on them would measure the model partly on its own training data (C6/leak family)",
+          "effect": "4,719 - 6 = 4,713 clips enter the epcache",
+          "excluded_clip_id_sha256": [
+            "7b7cd0636a3301ab2b5e08dadc6c66061ab7b8809a057bf2b8a726937f57d8c4",
+            "a26c7f0ef8774609c21431e6c525f7e4583415dc079fdbf1648bfe769da4b5e3",
+            "a2bd72d903854fca9f9a829021b3a0d8eb16b26ed638bd17e9931f18516f3405",
+            "b8c8727d24748c232268f9e810381b829286388707510386314fafd2bcb94b3b",
+            "ba9a53c67540f8abed622ca9294fb7e1423e5d050faa90295b83e857812c0bac",
+            "cde81aaedb2df097c39f1a8b24d1aec69e790c77de263c65be229bb87f06589d"
+          ],
+          "sanctioned_audit_is_NOT_a_way_past_this": true
+        },
+        "labels": {
+          "release": "v7.2",
+          "schema_version": "s2-geom-v7",
+          "vocab": "v7",
+          "train": {
+            "file": "labels/s2_labels_v7.2_train.jsonl.gz",
+            "md5": "0ff902130ce76886b8a925eceed9e3a5",
+            "n_records": 4572
+          },
+          "eval": {
+            "file": "labels/s2_labels_v7.2_eval.jsonl.gz",
+            "md5": "aa12c948f062181c3297265b51526ec5",
+            "n_records": 147,
+            "n_with_pixels_in_this_cache": 141,
+            "n_in_the_EVAL6_cache": 6
+          },
+          "train_index": {
+            "file": "index/clip_index_v7.2_train.json",
+            "md5": "ca03aeadd25c57a7ac4bb555f3224559",
+            "n_clips": 4572
+          },
+          "eval_index": {
+            "file": "index/clip_index_v7.2_eval.json",
+            "md5": "2f68790b0a6fc9d7041331a190b245d4",
+            "n_clips": 147
+          },
+          "pins": "tanitad.train.intrain_eval.V72 / V72_INDEX (md5 is the identity)",
+          "_read": "the 141 eval clips WITH pixels live INSIDE this 4,713-clip train cache (SPEC_V7_LABEL_TRAINER_WIRING.md §6); the eval set is the UNION of this root's 141 and the EVAL6 root's 6"
+        },
+        "geometry": {
+          "frame": {
+            "height": 256,
+            "width": 640,
+            "f_ref": 305.5774907364391,
+            "projection": "cylindrical"
+          },
+          "frame_tag": "256x640f305.5775cyl",
+          "projection_mode": "cylindrical",
+          "geometry_check": {
+            "requested_hfov_deg": 120.0,
+            "achieved_hfov_deg": 120.0,
+            "f_eff": 305.5775,
+            "observed_frac": 1.0
+          },
+          "codec": null,
+          "_read": "INHERITED from SPEC_V7_LABEL_TRAINER_WIRING.md §6 (Thor _geometry.json sha f0d34b84 was NOT re-read on the dev box); f_ref copied from the registered w120 siblings (identical frame tag). codec not recorded here."
+        },
+        "thor_cache_dir": "/home/nvidia/data/physicalai-b1-w120-256x640cyl",
+        "eval6_cache_dir": "/home/nvidia/data/physicalai-b1-EVAL6-w120-256x640cyl (6 clips; NOT covered by this key)",
+        "in_parity_train": {
+          "n": 201,
+          "of": 4713,
+          "_read": "comparability census by per-clip sha256 (parity §10): 201 of the 4,713 B1 clips are ALSO in the parity train split. Not a leak for B1 arms (a new domain), but a B1-trained checkpoint is not a held-out reader of any parity-train-derived split."
+        },
+        "verification_status": "EXPECTED membership, derived on the dev box 2026-09-03 from the local release copy (C:/Users/Admin/tanitad-wt/_s2build/release). The first --require-parity launch on Thor VERIFIES the built cache against this digest via assert_v2_parity_cache; a mismatch means the cache or this entry is wrong and both must be reconciled with scripts/register_v2_sibling.py --verify-only before training.",
+        "registered_by": "ArchInf FlyWheel, D-V7-WIRING (2026-09-03)"
+      }
     }
   },
   "notes": {

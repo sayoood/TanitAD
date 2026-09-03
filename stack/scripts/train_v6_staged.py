@@ -2203,6 +2203,11 @@ def _s2_family(head_out: dict, ids: Tensor, args: Tensor, mask: Tensor,
     logits = head_out["logits"].float()                        # [B, V]
     pred_args = head_out["args"].float()                       # [B, 8]
     b, v = logits.shape
+    if len(tokens) != v:
+        raise ValueError(
+            f"{where}_str head width {v} != {len(tokens)} token names — the "
+            f"log would name ids through the WRONG vocabulary (v6 and v7 are "
+            f"restructures of different widths). Pass the head's own tokens.")
     if ids.shape != (b,) or ids.dtype != torch.long:
         raise ValueError(f"{where}_id must be [{b}] long, got "
                          f"{tuple(ids.shape)} {ids.dtype}")
@@ -2265,8 +2270,22 @@ def _s2_family_valid(batch: dict, key: str, valid: Tensor) -> Tensor:
     return valid & m.bool()
 
 
-def s2_goal_loss(g_out: dict, a_out: dict, batch: dict) -> tuple[Tensor, dict]:
+def s2_goal_loss(g_out: dict, a_out: dict, batch: dict, *,
+                 g_tokens: tuple = STRATEGIC_GOAL_TOKENS,
+                 a_tokens: tuple = STRATEGIC_ACTION_TOKENS
+                 ) -> tuple[Tensor, dict]:
     """The S2 term (S2_STRATEGIC_GAP.md §1.2)::
+
+    ``g_tokens`` / ``a_tokens`` (D-V7-WIRING, 2026-09-03) are the HEADS' OWN
+    vocabularies — `v6_loss_step` passes ``stack.vocab_str.tokens`` /
+    ``stack.vocab_a_str.tokens``. The defaults are the v6 tuples, so every
+    direct caller keeps today's behaviour byte-identically. ⚠️ MEASURED on the
+    first v7.2 dry-run: with the v6 tuples hardcoded, a v7 head's id 3 was
+    logged as ``EXIT_LEFT`` when it meant ``STOP_AT_FOLLOW_ROUTE`` — right
+    numbers, wrong names, in every log row — and the ROUTE_TO gate compared a
+    v7 id against a v6 index (7 = ``LANE_CHANGE_R_FOLLOW_ROUTE`` on v7). Both
+    now follow the vocabulary that is actually on the head; a head whose width
+    disagrees with its names is refused rather than mislabelled.
 
         L_s2 = CE(g_str.logits, g_str_id) + CE(a_str.logits, a_str_id)
              + |g_str.args − g_str_args|·g_str_arg_mask   (mean over set slots)
@@ -2300,8 +2319,12 @@ def s2_goal_loss(g_out: dict, a_out: dict, batch: dict) -> tuple[Tensor, dict]:
     valid = batch["s2_valid"].bool()
     g_valid = _s2_family_valid(batch, "g_str_valid", valid)
     a_valid = _s2_family_valid(batch, "a_str_valid", valid)
-    if g_valid.any() and bool((batch["g_str_id"][g_valid]
-                               == _S2_ROUTE_TO_ID).any()):
+    # ⛔ the gate follows the VOCABULARY on the head: ROUTE_TO exists in v6
+    # (index 7) and not in v7, where index 7 is a different token entirely.
+    g_tokens, a_tokens = tuple(g_tokens), tuple(a_tokens)
+    route_to = g_tokens.index("ROUTE_TO") if "ROUTE_TO" in g_tokens else None
+    if route_to is not None and g_valid.any() and bool(
+            (batch["g_str_id"][g_valid] == route_to).any()):
         raise ValueError(
             "a valid S2 window carries g_str_id == ROUTE_TO, which is GATED "
             "(G1 CLOSED 0/31; no categorical arg channel on vocab_str). The "
@@ -2309,10 +2332,10 @@ def s2_goal_loss(g_out: dict, a_out: dict, batch: dict) -> tuple[Tensor, dict]:
             "batch cannot reach the head with it.")
     g_ce, g_l1, g_log = _s2_family(
         g_out, batch["g_str_id"], batch["g_str_args"], batch["g_str_arg_mask"],
-        g_valid, STRATEGIC_GOAL_TOKENS, "g")
+        g_valid, g_tokens, "g")
     a_ce, a_l1, a_log = _s2_family(
         a_out, batch["a_str_id"], batch["a_str_args"], batch["a_str_arg_mask"],
-        a_valid, STRATEGIC_ACTION_TOKENS, "a")
+        a_valid, a_tokens, "a")
     loss = g_ce + a_ce + g_l1 + a_l1
     log = {"s2_n_valid": int(valid.sum()), "s2_n_windows": int(valid.numel()),
            # ⚠️ PER FAMILY. `s2_n_valid` is the WINDOW count; these are the
@@ -2324,6 +2347,515 @@ def s2_goal_loss(g_out: dict, a_out: dict, batch: dict) -> tuple[Tensor, dict]:
            **g_log, **a_log,
            "s2_loss": float(loss.detach())}
     return loss, log
+
+
+# ============================================================================
+# THE S2 LABEL DOOR — ONE flag (`--s2-labels`), TWO schemas, sniffed from the
+# RECORD (SPEC_V7_LABEL_TRAINER_WIRING.md §2; register D-V72-WIRING → D-V7-WIRING)
+# ============================================================================
+#: ⛔ Dispatch is on the first record's `schema_version` (+ `vocab`), NEVER on
+#: the filename: a name is a claim about a file, the field is the file. The
+#: path-based `s2_labels._refuse_if_superseded` stays as a SECOND guard on the
+#: v1 route, not as a substitute (spec §2).
+S2_SCHEMA_V1 = "s2-strategic-v1"
+S2_SCHEMA_V72 = "s2-geom-v7"
+S2_VOCAB_V72 = "v7"
+#: ⛔ The v7.2 route supervises the strategic TOKENS only (CE), never the args.
+#: `v7_labels.V7Label` — the ONE B1 consumer module — does not surface
+#: `a_str.args` / `g_str.args`, and on the 4,572-record blob those are NAMED
+#: dicts (`within_m`, `by_time_s`, `hold_for_s`, `v_target_ms`; MEASURED
+#: 2026-09-03) rather than the v1 [8] slot vector (`GOAL_ARG_NAMES` = arg0..3 +
+#: the constraint slots). Mapping names onto slots needs the explicit encoder
+#: spec §3.2 assigns to the DataFlyWheel. Until it lands the arg L1 receives an
+#: ALL-ZERO mask — exactly zero gradient — and config.json says so
+#: (`args_supervised: false`) instead of fabricating slot positions.
+V72_ARGS_SUPERVISED = False
+#: The factored tactical keys the v7.2 join ADDS to the batch. ⛔ lat and lon
+#: stay SEPARATE (the lat+lon-mixing 5-way softmax is the programme's largest
+#: known defect). No loss term reads them yet — landing the tensors is this
+#: change; a tactical CE on `out["a_lat"]` / `out["a_lon"]` is a pre-registered
+#: follow-up, not a silent addition here.
+V72_TACTICAL_BATCH_KEYS = ("tac_lat_id", "tac_lon_id", "tac_valid")
+
+
+def _sniff_label_schema(path) -> dict:
+    """Read the FIRST record of a label artifact -> its schema facts.
+
+    Accepts the shapes both loaders accept: a directory (first
+    ``s2_labels_*.jsonl[.gz]`` inside it), a ``.jsonl`` or a ``.jsonl.gz``.
+    Returns ``{"file", "schema_version", "vocab", "keys"}``. Refuses
+    (``SystemExit``) an artifact with no readable record: a door that cannot
+    tell what it is holding must not guess."""
+    import gzip
+    p = Path(path)
+    if not p.exists():
+        raise SystemExit(f"[v6] ⛔ --s2-labels {p} does not exist")
+    if p.is_dir():
+        files = sorted(list(p.glob("s2_labels_*.jsonl"))
+                       + list(p.glob("s2_labels_*.jsonl.gz")))
+        if not files:
+            raise SystemExit(
+                f"[v6] ⛔ --s2-labels {p} holds no s2_labels_*.jsonl[.gz] — "
+                f"nothing to sniff a schema from, nothing to supervise with.")
+        f = files[0]
+    else:
+        f = p
+    opener = gzip.open if f.suffix == ".gz" else open
+    first = None
+    with opener(f, "rt", encoding="utf-8") as fh:
+        for line in fh:
+            if line.strip():
+                first = json.loads(line)
+                break
+    if not isinstance(first, dict):
+        raise SystemExit(f"[v6] ⛔ --s2-labels {f}: no JSON record to sniff "
+                         f"the schema from.")
+    return {"file": str(f), "schema_version": first.get("schema_version"),
+            "vocab": first.get("vocab"), "keys": sorted(first.keys())}
+
+
+def s2_label_route(path) -> str:
+    """``"v1"`` | ``"v72"`` from the sniff; anything else is refused BY NAME."""
+    s = _sniff_label_schema(path)
+    if s["schema_version"] == S2_SCHEMA_V1:
+        return "v1"
+    if s["schema_version"] == S2_SCHEMA_V72 and s["vocab"] == S2_VOCAB_V72:
+        return "v72"
+    raise SystemExit(
+        f"[v6] ⛔ --s2-labels {s['file']}: schema_version="
+        f"{s['schema_version']!r} vocab={s['vocab']!r} is neither "
+        f"{S2_SCHEMA_V1!r} (s2_labels.load_s2_labels) nor {S2_SCHEMA_V72!r}/"
+        f"vocab {S2_VOCAB_V72!r} (tanitad.data.v7_labels.load_v7_labels). A "
+        f"blob with another schema is a different experiment — refusing "
+        f"rather than coercing. First-record keys: {s['keys']}")
+
+
+_V72_CLASSES: dict = {}
+
+
+def _v72_classes() -> dict:
+    """The v7.2 adapter classes, built ONCE on first use.
+
+    ⛔ Defined inside a function, not at module level, because they subclass
+    `s2_labels.S2LabelSet` / `S2WindowSupervision` and `s2_labels` must stay a
+    LAZY import — the import-time closure is pinned by
+    `tests/test_runbook_commands.py` (see `S2_CANONICAL_LABELS_REL` above).
+
+    ⭐ "REUSE THE MACHINERY, REPLACE ONLY THE ROWS" (spec §3): the stable-id
+    lookup, the legacy-16-bit-id refusal, the `n_stack` frame offset, the
+    per-token window census and the seven-key batch are the incumbent's,
+    untouched. The adapter changes what a ROW contains (v7 ids, per-record
+    strategic band) and ADDS the factored tactical keys — nothing else."""
+    if _V72_CLASSES:
+        return _V72_CLASSES
+    from s2_labels import (IGNORE_ID, NO_LABEL, S2LabelSet,  # noqa: PLC0415
+                           S2WindowSupervision)
+    from tanitad.data.v7_labels import (  # noqa: PLC0415
+        IGNORE_ID as V7_IGNORE_ID, tactical_class_ids)
+    from tanitad.models.vocab_v7 import NOT_YET_EXTRACTABLE  # noqa: PLC0415
+    if int(IGNORE_ID) != int(V7_IGNORE_ID):
+        raise RuntimeError(f"s2_labels.IGNORE_ID {IGNORE_ID} != "
+                           f"v7_labels.IGNORE_ID {V7_IGNORE_ID}")
+
+    class V72LabelSet(S2LabelSet):
+        """`S2LabelSet` whose rows were built from `v7_labels.V7Label`s."""
+
+        def __init__(self, rows_by_stable, *, v7_by_stable, manifest,
+                     t0_s, band, source, v72):
+            super().__init__(rows_by_stable, {}, t0_s, band, source)
+            self.v7_by_stable = dict(v7_by_stable)
+            self.manifest = manifest
+            self.v72 = v72
+
+        def report(self) -> dict:
+            base = super().report()
+            # NOT `s2-strategic-v1`: the parent hardcodes its own schema
+            base["schema_version"] = self.manifest.schema_version
+            base["join"] = ("stable_episode_id (blake2b>>1) from the record's "
+                            "clip_id; per-FAMILY bands — strategic: "
+                            "|t_now-t0| <= (hi-lo)/2 of bands.strategic_s; "
+                            "tactical: v7_labels.tactical_class_ids "
+                            "(bands.tactical_s). Legacy ids: none.")
+            base["disjointness"] = (
+                "v7.2 records carry NO per-record disjointness stamp (spec "
+                "§3.3: 0 of 4,719) and none is INVENTED here; the goal payload "
+                "is geometry/CoT tokens and the situation classifier is not "
+                "an input to the extractor (D-LABEL-GT).")
+            base["v72"] = self.v72
+            return base
+
+        def supervision(self, episodes, *, window: int, dt: float, index):
+            return V72WindowSupervision(self, episodes, window=window, dt=dt,
+                                        index=index)
+
+    class V72WindowSupervision(S2WindowSupervision):
+        """The incumbent join (seven keys, strategic) + the FACTORED tactical
+        keys, each family on ITS OWN band (spec §3.1)."""
+
+        TAC_KEYS = V72_TACTICAL_BATCH_KEYS
+
+        def __init__(self, labels, episodes, *, window: int, dt: float,
+                     index):
+            super().__init__(labels, episodes, window=window, dt=dt,
+                             index=index)
+            self._v7 = [labels.v7_by_stable.get(int(ep.episode_id))
+                        for ep in episodes]
+            self.n_windows_in_band_tac = 0
+            self.n_windows_supervised["tac_lat"] = 0
+            self.n_windows_supervised["tac_lon"] = 0
+            lat_w: dict[str, int] = {}
+            lon_w: dict[str, int] = {}
+            for e_i, t in self._index:
+                lab = self._v7[e_i]
+                if lab is None:
+                    continue
+                lat, lon, ok = self._tac_ids(lab, e_i, int(t))
+                if not ok:
+                    continue
+                self.n_windows_in_band_tac += 1
+                self.n_windows_supervised["tac_lat"] += int(lat != IGNORE_ID)
+                self.n_windows_supervised["tac_lon"] += int(lon != IGNORE_ID)
+                lk = lab.tac_lat if lat != IGNORE_ID else NO_LABEL
+                nk = lab.tac_lon if lon != IGNORE_ID else NO_LABEL
+                lat_w[lk] = lat_w.get(lk, 0) + 1
+                lon_w[nk] = lon_w.get(nk, 0) + 1
+            # PER FAMILY, never pooled (spec §7.2)
+            self.window_token_census["tac_lat"] = dict(sorted(lat_w.items()))
+            self.window_token_census["tac_lon"] = dict(sorted(lon_w.items()))
+
+        def _t_now_s(self, e_i: int, t: int) -> float:
+            # the SAME expression as S2WindowSupervision._in_band: the window's
+            # NOW on the RAW clip timeline (provider index + n_stack-1)
+            return (int(t) + self._window - 1 + self._offs[e_i]) * self._dt
+
+        def _tac_ids(self, lab, e_i: int, t: int) -> tuple[int, int, bool]:
+            """``(lat_id, lon_id, in_tactical_band)``. The MASK is applied to
+            the loss: a NOT_YET_EXTRACTABLE token is an ABSENT target, so that
+            axis gets IGNORE while the other axis keeps its label."""
+            lat, lon = tactical_class_ids(lab, self._t_now_s(e_i, t))
+            if lat == V7_IGNORE_ID:
+                return IGNORE_ID, IGNORE_ID, False
+            if lab.tac_lat in NOT_YET_EXTRACTABLE:
+                lat = IGNORE_ID
+            if lab.tac_lon in NOT_YET_EXTRACTABLE:
+                lon = IGNORE_ID
+            return int(lat), int(lon), True
+
+        def report(self) -> dict:
+            return super().report() | {
+                "n_windows_in_band_tac": self.n_windows_in_band_tac,
+                "bands": ("PER FAMILY: strategic keys on the record's "
+                          "strategic_s half-width, tactical keys on its "
+                          "tactical_s half-width (v7_labels.window_in_band "
+                          "derivation) — never one band for all families"),
+                "tactical_keys": list(self.TAC_KEYS),
+                "tactical_consumer": ("NONE — the keys land in the batch; no "
+                                      "loss term reads them yet (pre-registered "
+                                      "follow-up, not a silent addition)"),
+            }
+
+        def batch(self, idx) -> dict[str, Tensor]:
+            out = super().batch(idx)
+            n = len(idx)
+            out["tac_lat_id"] = torch.full((n,), IGNORE_ID, dtype=torch.long)
+            out["tac_lon_id"] = torch.full((n,), IGNORE_ID, dtype=torch.long)
+            out["tac_valid"] = torch.zeros(n, dtype=torch.bool)
+            for j, i in enumerate(idx):
+                e_i, t = self._index[int(i)]
+                lab = self._v7[e_i]
+                if lab is None:
+                    continue
+                lat, lon, ok = self._tac_ids(lab, e_i, int(t))
+                if not ok:
+                    continue
+                out["tac_valid"][j] = True
+                out["tac_lat_id"][j] = lat
+                out["tac_lon_id"][j] = lon
+            return out
+
+    _V72_CLASSES.update({"V72LabelSet": V72LabelSet,
+                         "V72WindowSupervision": V72WindowSupervision})
+    return _V72_CLASSES
+
+
+def load_v72_labels_for_trainer(path, *, allow_any_labels: bool = False,
+                                stack=None, allow_oracle_nav: bool = True):
+    """A v7.2 (`s2-geom-v7`) blob -> `V72LabelSet` for the S2 join.
+
+    The route, in order, each step a refusal before the next:
+      1. `v7_labels.load_v7_labels(..., allow_oracle_nav)` — the ONE consumer
+         module validates schema/vocab and returns the blob's md5 in the
+         manifest (the STAMP, written into config.json verbatim; the nav path
+         at `--nav-labels` loads the same blob with the same stamp, so one run
+         cannot carry two contradictory stamps for one file);
+      2. the md5 must be one of `intrain_eval.V72`'s two canonical pins
+         (train 4,572 / eval 147) unless `allow_any_labels` — printed either
+         way, because six copies exist under three roots with differing md5s;
+      3. `intrain_eval.resolve_v72` resolves the blob AND its clip index BY
+         CONTENT beside it; the index's recorded `episode_id_stable` is
+         cross-checked against `stable_episode_id` (the s2_labels drift
+         guard) — a drift is a silent zero-match and is refused;
+      4. the built stack's four vocabularies must BE the v7 `HEADS` tuples: a
+         v6-vocab head fed v7 ids trains a plausible wrong class silently
+         (v7 is a RESTRUCTURE of v6, not an append);
+      5. rows: strategic ids = `HEADS[...].index(token)`; NOT_YET_EXTRACTABLE
+         tokens make that family UNSUPERVISED for the record (mask on the
+         loss); args all-zero + all-zero mask (`V72_ARGS_SUPERVISED`); the
+         strategic band = ±(hi-lo)/2 of the record's own `bands.strategic_s`.
+    """
+    import hashlib  # noqa: PLC0415  (md5 is the identity — steps 2 and 3)
+    from collections import Counter  # noqa: PLC0415
+    from s2_labels import IGNORE_ID, NO_LABEL, S2Row, stable_episode_id  # noqa: PLC0415
+    from tanitad.data.v7_labels import (  # noqa: PLC0415
+        HEADS, assert_mask_matches_presence, effective_mask, load_v7_labels)
+    from tanitad.models.vocab_v7 import NOT_YET_EXTRACTABLE  # noqa: PLC0415
+    from tanitad.train.intrain_eval import (  # noqa: PLC0415
+        V72, V72_INDEX, EvalSplitError, resolve_v72)
+    cls = _v72_classes()
+    f = Path(_sniff_label_schema(path)["file"])
+
+    # ---- 1. the STAMP -------------------------------------------------------
+    labels, manifest = load_v7_labels(f, allow_oracle_nav=allow_oracle_nav)
+    md5 = manifest.md5
+    side = next((s for s, spec in V72.items() if spec["md5"] == md5), None)
+    print(f"[v6] s2-labels v7.2: {f} md5={md5} records={manifest.n_records} "
+          f"schema={manifest.schema_version} vocab={manifest.vocab} "
+          f"side={side or 'NON-CANONICAL'} allow_oracle_nav="
+          f"{manifest.allow_oracle_nav}", flush=True)
+
+    # ---- 2. the md5 pin -----------------------------------------------------
+    if side is None and not allow_any_labels:
+        raise SystemExit(
+            f"[v6] ⛔ --s2-labels {f} has md5 {md5}, which is NEITHER canonical "
+            f"v7.2 blob: train {V72['train']['md5']} ({V72['train']['n']} "
+            f"records) / eval {V72['eval']['md5']} ({V72['eval']['n']}). Six "
+            f"copies of this blob exist under three roots with differing md5s "
+            f"and the pre-schema-fix ones open cleanly — refusing rather than "
+            f"guessing. If this is a deliberate experiment on another blob, "
+            f"say so with --allow-any-labels (the md5 is recorded either way).")
+    if side is not None and manifest.n_records != int(V72[side]["n"]):
+        raise SystemExit(
+            f"[v6] ⛔ --s2-labels {f}: md5 {md5} is the canonical {side} blob "
+            f"but it holds {manifest.n_records} records, not "
+            f"{V72[side]['n']} — the intrain_eval pin and the file disagree; "
+            f"one of them is stale.")
+
+    # ---- 3. resolve BY CONTENT beside the blob + index cross-check ----------
+    roots = [str(f.parent)]
+    if f.parent.parent != f.parent:
+        roots.append(str(f.parent.parent))
+    resolved: dict = {"labels": None, "index": None, "index_mode": None,
+                      "mode": "by content (intrain_eval.resolve_v72)"}
+    idx_path = None
+    if side is not None:
+        try:
+            resolved["labels"] = resolve_v72(side, roots)
+            ip = resolve_v72(f"{side}_index", roots)
+        except EvalSplitError as e:
+            raise SystemExit(f"[v6] ⛔ intrain_eval.resolve_v72 refused the "
+                             f"v7.2 artifacts beside {f}: {e}") from None
+        if ip:
+            idx_path = Path(ip)
+            resolved["index_mode"] = "by content (intrain_eval.resolve_v72)"
+    if idx_path is None:
+        # ⚠️ MEASURED 2026-09-03: the local build names the TRAIN index
+        # `clip_index.json`, which is not among intrain_eval's aliases, so
+        # resolve_v72 returns None beside a perfectly canonical blob. The md5
+        # is the identity and the name only a hint (that module's own rule):
+        # a candidate beside the blob whose md5 IS the V72_INDEX pin is the
+        # index; a lone unpinned candidate is used for the REFUSAL-ONLY
+        # cross-check and said so; anything else means no index.
+        want_idx = V72_INDEX[f"{side}_index"]["md5"] if side else None
+        cands = sorted(f.parent.glob("clip_index*.json"))
+        by_md5 = {hashlib.md5(c.read_bytes()).hexdigest(): c for c in cands}
+        if want_idx and want_idx in by_md5:
+            idx_path = by_md5[want_idx]
+            resolved["index_mode"] = ("by content (md5 == V72_INDEX pin; "
+                                      "local alias name)")
+        elif len(cands) == 1:
+            idx_path = cands[0]
+            resolved["index_mode"] = ("BY NAME (md5 is not a V72_INDEX pin; "
+                                      "used for the refusal-only cross-check)")
+    resolved["index"] = str(idx_path) if idx_path else None
+    if side is None:
+        resolved["mode"] = "non-canonical blob (--allow-any-labels); unverified"
+    index_report: dict = {"path": None, "checked": False, "n_index_clips": 0,
+                          "n_clips_without_episode": None, "n_excluded": 0,
+                          "stable_id_drift": None}
+    if idx_path is not None:
+        idx = json.loads(Path(idx_path).read_text(encoding="utf-8"))
+        clips = idx.get("clips") or {}
+        if not isinstance(clips, dict) or not clips:
+            raise SystemExit(f"[v6] ⛔ {idx_path} has no 'clips' map — not a "
+                             f"clip index")
+        n_missing = sum(1 for x in labels if x.clip_id not in clips)
+        if n_missing:
+            raise SystemExit(
+                f"[v6] ⛔ {n_missing} of {len(labels)} label records are not "
+                f"in {idx_path} — an unjoinable label is a label that silently "
+                f"never fires, refused instead (clip ids withheld — gated).")
+        drift = 0
+        for x in labels:
+            st_rec = (clips.get(x.clip_id) or {}).get("episode_id_stable")
+            if st_rec is not None and int(st_rec) != stable_episode_id(x.clip_id):
+                drift += 1
+        if drift:
+            raise SystemExit(
+                f"[v6] ⛔ {idx_path}: episode_id_stable disagrees with "
+                f"stable_episode_id on {drift} clip(s). The index and the code "
+                f"drifted; a join under a drifted hash is a silent zero-match. "
+                f"Rebuild the index or fix the drift.")
+        index_report = {
+            "path": str(idx_path), "checked": True,
+            "n_index_clips": len(clips),
+            "n_clips_without_episode": len(idx.get("_clips_without_episode")
+                                           or []),
+            "n_excluded": sum(bool(e.get("excluded")) for e in clips.values()),
+            "stable_id_drift": 0,
+            "_t0_s": idx.get("_t0_s"), "_valid_window_s": idx.get("_valid_window_s"),
+            "_note": ("_valid_window_s is the v1 loader's ONE-band default; "
+                      "the v7.2 join ignores it and reads each record's own "
+                      "per-family bands (spec §3.1)"),
+        }
+    else:
+        print(f"[v6] ⚠ s2-labels v7.2: no clip index resolved beside {f}; the "
+              f"join is by stable_episode_id(clip_id) (the same function the "
+              f"index records) and the index cross-check was NOT performed.",
+              flush=True)
+
+    # ---- 4. the heads must BE the v7 vocabulary ----------------------------
+    vocab_check = "NOT checked (no stack supplied)"
+    if stack is not None:
+        want = {"vocab_str": HEADS["str_goal"], "vocab_a_str": HEADS["str_action"],
+                "vocab_a_lat": HEADS["tac_lat"], "vocab_a_lon": HEADS["tac_lon"]}
+        bad = []
+        for attr, toks in want.items():
+            have = tuple(getattr(getattr(stack, attr, None), "tokens", ()))
+            if have != tuple(toks):
+                bad.append(f"{attr}: stack {len(have)} tokens {have[:3]}… vs "
+                           f"v7.2 labels {len(toks)} tokens {tuple(toks)[:3]}…")
+        if bad:
+            raise SystemExit(
+                "[v6] ⛔ v7.2 labels against a NON-v7 head:\n      "
+                + "\n      ".join(bad)
+                + "\n      v7 is a RESTRUCTURE of v6, not an append — index "
+                  "meaning changes, so a v6-shaped head fed v7 ids trains a "
+                  "plausible wrong class silently. Build the stack with "
+                  "tac_vocab_version v7.0 (the default for new builds).")
+        vocab_check = "stack.vocab_{str,a_str,a_lat,a_lon}.tokens == v7 HEADS"
+
+    # ---- 5. rows ------------------------------------------------------------
+    rows: dict = {}
+    v7_by_stable: dict = {}
+    masked: dict = {"str_goal": {}, "str_action": {}}
+    unknown: list = []
+    bands = Counter()
+    zeros = torch.zeros(GOAL_ARG_SLOTS)
+    for x in labels:
+        st = stable_episode_id(x.clip_id)
+        if st in rows:
+            raise SystemExit(f"[v6] ⛔ stable-id collision inside {f} — "
+                             f"refusing the join.")
+        if x.str_goal not in HEADS["str_goal"] or \
+                x.str_action not in HEADS["str_action"]:
+            unknown.append((x.str_goal, x.str_action))
+            continue
+        try:
+            lo, hi = x.bands["strategic_s"]
+            hw = (float(hi) - float(lo)) / 2.0
+        except (KeyError, TypeError, ValueError):
+            raise SystemExit(f"[v6] ⛔ a v7.2 record carries no usable "
+                             f"bands.strategic_s ({x.bands!r}) — the strategic "
+                             f"band is the record's, never a default.") from None
+        bands[(tuple(x.bands.get("tactical_s", ())), (float(lo), float(hi)))] += 1
+        g_sup = x.str_goal not in NOT_YET_EXTRACTABLE
+        a_sup = x.str_action not in NOT_YET_EXTRACTABLE
+        if not g_sup:
+            masked["str_goal"][x.str_goal] = masked["str_goal"].get(x.str_goal, 0) + 1
+        if not a_sup:
+            masked["str_action"][x.str_action] = \
+                masked["str_action"].get(x.str_action, 0) + 1
+        rows[st] = S2Row(
+            clip_id=x.clip_id, split=f"v7.2_{side or 'noncanonical'}",
+            g_id=HEADS["str_goal"].index(x.str_goal) if g_sup else IGNORE_ID,
+            g_args=zeros.clone(), g_mask=zeros.clone(),
+            a_id=HEADS["str_action"].index(x.str_action) if a_sup else IGNORE_ID,
+            a_args=zeros.clone(), a_mask=zeros.clone(),
+            t0_s=float(x.t0_s), band=(-hw, hw),
+            g_token=x.str_goal if g_sup else NO_LABEL,
+            a_token=x.str_action if a_sup else NO_LABEL,
+            g_provenance="v7.2 geometry/CoT (per-record provenance is not "
+                         "surfaced by V7Label)",
+            a_provenance="v7.2 geometry/CoT (per-record provenance is not "
+                         "surfaced by V7Label)",
+            g_sup=g_sup, a_sup=a_sup)
+        v7_by_stable[st] = x
+    if unknown:
+        raise SystemExit(
+            f"[v6] ⛔ {len(unknown)} of {len(labels)} records carry a strategic "
+            f"token outside the FROZEN v7 vocabulary (e.g. {unknown[:3]}) — a "
+            f"blob with another vocabulary is a different experiment.")
+    if not rows:
+        raise SystemExit(f"[v6] ⛔ {f}: zero usable records")
+    masks = {}
+    for head in HEADS:
+        m, prov = effective_mask(labels, head)
+        masks[head] = {"trainable": list(m), "masked": prov}
+    try:
+        mask_presence = {"ok": True,
+                         "report": assert_mask_matches_presence(labels)}
+    except AssertionError as e:                             # expected on the
+        mask_presence = {"ok": False, "error": str(e)}      # canonical blob
+        print(f"[v6] ⚠ s2-labels v7.2: mask/presence mismatch (recorded, not "
+              f"refused — v7_labels.effective_mask is the trainer-safe mask):"
+              f" {str(e)[:300]}", flush=True)
+    t0 = Counter(float(x.t0_s) for x in labels).most_common(1)[0][0]
+    (_, (b_lo, b_hi)), _n = bands.most_common(1)[0]
+    hw0 = (b_hi - b_lo) / 2.0
+    v72 = {
+        "manifest": manifest.to_dict(),
+        "md5": md5, "side": side, "canonical": side is not None,
+        "allow_any_labels": bool(allow_any_labels),
+        "canonical_md5s": {s: spec["md5"] for s, spec in V72.items()},
+        "resolved": resolved, "clip_index": index_report,
+        "vocab_check": vocab_check,
+        "args_supervised": V72_ARGS_SUPERVISED,
+        "args_note": ("strategic args are a NAMED dict in v7.2 and V7Label "
+                      "does not surface them; the arg L1 mask is all-zero "
+                      "(exactly zero gradient) until the slot encoder of "
+                      "spec §3.2 lands"),
+        "strategic_band_rule": ("|t_now - t0| <= (hi - lo)/2 of the record's "
+                                "bands.strategic_s (v7_labels.window_in_band's "
+                                "derivation applied to the strategic family)"),
+        "bands_census": {f"tactical_s={k[0]} strategic_s={k[1]}": v
+                         for k, v in bands.items()},
+        "masks": masks, "mask_presence": mask_presence,
+        "masked_records": masked,
+        "tactical_batch_keys": list(V72_TACTICAL_BATCH_KEYS),
+        "_evidence_class": "MEASURED (ours; this load)",
+    }
+    return cls["V72LabelSet"](
+        rows, v7_by_stable=v7_by_stable, manifest=manifest, t0_s=t0,
+        band=(-hw0, hw0),
+        source={"labels_files": [str(f)], "clip_index": index_report["path"],
+                "n_index_clips": index_report["n_index_clips"],
+                "n_index_excluded": index_report.get("n_excluded", 0),
+                "role": "train"},
+        v72=v72)
+
+
+def load_s2_labels_any(path, *, allow_any_labels: bool = False, stack=None):
+    """THE `--s2-labels` door: sniff the record, dispatch.
+
+    ``"v1"`` -> ``s2_labels.load_s2_labels(path)`` — the incumbent call,
+    byte-identical (its own path-based SUPERSEDED guard still runs inside).
+    ``"v72"`` -> :func:`load_v72_labels_for_trainer`."""
+    route = s2_label_route(path)
+    if route == "v1":
+        from s2_labels import load_s2_labels  # noqa: PLC0415
+        return load_s2_labels(path)
+    return load_v72_labels_for_trainer(path, allow_any_labels=allow_any_labels,
+                                       stack=stack)
 
 
 # ============================================================================
@@ -3066,6 +3598,7 @@ def v6_loss_step(stack: V6Stack, batch: dict, *, stage: str,
                  o6_innovation: bool = False,
                  o6_innovation_shuffle: bool = False,
                  rollout_grad_checkpoint: bool | None = None,
+                 bptt_truncate: int = 0,
                  anchor_objective: str = "metric",
                  anchor_axis_w: tuple[float, float] = ANCHOR_AXIS_W_DEFAULT,
                  t2_positive: str = "photometric",
@@ -3247,9 +3780,23 @@ def v6_loss_step(stack: V6Stack, batch: dict, *, stage: str,
         # Default preserves the old behaviour exactly when unset.
         rgc = (cfg.encoder.grad_checkpoint if rollout_grad_checkpoint is None
                else bool(rollout_grad_checkpoint))
+        # ⛔ `bptt_truncate` (D-V7-WIRING, 2026-09-03): default 0 = the full
+        # chain, byte-identical. N > 0 detaches the CARRIED window every N
+        # steps inside `rollout_transitions` — forward unchanged, gradient
+        # path bounded (the refav1 `bptt_truncate=15` fix; k=60 diverged at
+        # gnorm 2.1e9 without it). Passed to BOTH rolls below: a fix applied
+        # to one of two loops is half a fix (test_refa_v1_bptt_truncation).
+        # ⚠️ SCOPE, measured: the O1 response-form rolls (stage_a_losses,
+        # k = o1_k, 6 of the 8 rolls per step) live in train_stage_a.py and
+        # are NOT governed by this flag — named in --help and in the register
+        # row rather than silently left out.
         trans = rollout_transitions(stack.predictor_op, states, aw3, fa3,
-                                    k_roll, grad_checkpoint=rgc)
+                                    k_roll, grad_checkpoint=rgc,
+                                    bptt_truncate=int(bptt_truncate))
         zhat_steps = [t[1] for t in trans]
+        if bptt_truncate:
+            # logged ONLY when in force, so the default log row is unchanged
+            log["bptt_truncate"] = int(bptt_truncate)
         # PSG (E-DEC-18) needs the PREDICTED latent as well as the encoded one --
         # PhyLatent's whole point is that the SAME state head sees both, so the
         # predictor is pulled into the same physical-state space rather than into
@@ -3286,7 +3833,8 @@ def v6_loss_step(stack: V6Stack, batch: dict, *, stage: str,
                 off = 1 + (q % (B - 1))
                 fa_neg = torch.roll(fa3, shifts=off, dims=0)
                 tn = rollout_transitions(stack.predictor_op, states, aw3,
-                                         fa_neg, jc + 1, grad_checkpoint=rgc)
+                                         fa_neg, jc + 1, grad_checkpoint=rgc,
+                                         bptt_truncate=int(bptt_truncate))
                 negs.append(tn[jc][1])
             l11, lg11 = o11_counterfactual_action_loss(
                 zhat_steps[jc], negs, z_true[jc], tau=o11_tau)
@@ -3586,7 +4134,9 @@ def v6_loss_step(stack: V6Stack, batch: dict, *, stage: str,
                 "never any WM trunk loss' is BINDING (HIERARCHY_VOCABULARY "
                 "§2); unlike --no-isolate-planner's other consumers there is "
                 "NO control arm for a binding rule.")
-        ls2, lg_s2 = s2_goal_loss(out["g_str"], out["a_str"], batch)
+        ls2, lg_s2 = s2_goal_loss(out["g_str"], out["a_str"], batch,
+                                  g_tokens=tuple(stack.vocab_str.tokens),
+                                  a_tokens=tuple(stack.vocab_a_str.tokens))
         terms["s2"] = w.w_s2_goal * ls2
         log |= lg_s2
 
@@ -4505,8 +5055,12 @@ def dry_run(a, stack: V6Stack | None = None) -> dict:
                           "runs on synthetic keys when w_s2_goal is in "
                           "force, and the loader was NOT exercised."}
     if getattr(a, "s2_labels", None):
-        from s2_labels import load_s2_labels
-        s2_report = load_s2_labels(a.s2_labels).report() | {
+        # ONE door, TWO schemas — the RECORD decides (spec §2). The v1 route
+        # is the incumbent `load_s2_labels` call, unchanged.
+        s2_report = load_s2_labels_any(
+            a.s2_labels,
+            allow_any_labels=bool(getattr(a, "allow_any_labels", False)),
+            stack=stack).report() | {
             "exercised": True,
             "join": "NOT exercised (dry-run has no corpus) — load + "
                     "validation only"}
@@ -4539,6 +5093,7 @@ def dry_run(a, stack: V6Stack | None = None) -> dict:
         L = v6_loss_step(stack, b, stage=a.stage, weights=weights, o1_k=o1_k,
                          o5_k=o5_k, o5_mode=a.o5_mode, o5_form=getattr(a, "o5_form", "l1"),
                          sigreg_bank=sigreg_bank,
+                         bptt_truncate=int(getattr(a, "bptt_truncate", 0)),
                          o6_innovation=bool(
                              getattr(a, "o6_innovation", False)),
                          o6_innovation_shuffle=bool(
@@ -5192,8 +5747,14 @@ def train(a) -> dict:
     s2_sup = None
     s2_cfg: dict | None = None
     if a.s2_labels and w_stage.w_s2_goal:
-        from s2_labels import load_s2_labels
-        s2_set = load_s2_labels(a.s2_labels)
+        # ONE door, TWO schemas — sniffed from the RECORD (spec §2). v1 is the
+        # incumbent `load_s2_labels` call unchanged; v7.2 goes through
+        # `tanitad.data.v7_labels.load_v7_labels` (the STAMP), lands its
+        # strategic ids on the v7 heads and adds the factored tactical keys.
+        s2_set = load_s2_labels_any(
+            a.s2_labels,
+            allow_any_labels=bool(getattr(a, "allow_any_labels", False)),
+            stack=stack)
         s2_sup = s2_set.supervision(train_eps,
                                     window=stack.cfg.predictor.window,
                                     dt=a.dt, index=ds_train.index)
@@ -5920,6 +6481,7 @@ def train(a) -> dict:
                              rand_da=da.to(device), generator=gen,
                              rollout_grad_checkpoint=resolve_gc(
                                  a, "rollout_grad_checkpoint"),
+                             bptt_truncate=int(getattr(a, "bptt_truncate", 0)),
                              anchor_objective=getattr(a, "anchor_objective",
                                                       "metric"),
                              anchor_axis_w=tuple(getattr(
@@ -6788,6 +7350,24 @@ def build_parser() -> argparse.ArgumentParser:
                     default="auto",
                     help="override checkpointing for the k-step ROLLOUT only; "
                          "turning this off at k=60 restores a measured OOM")
+    # ---- truncated BPTT on the k-step rollout — DEFAULT OFF (D-V7-WIRING) --
+    ap.add_argument("--bptt-truncate", type=int, default=0,
+                    help="truncated-BPTT depth for the k-step ROLLOUT "
+                         "(metric_dynamics.rollout_transitions): detach the "
+                         "CARRIED latent window every N steps so the "
+                         "back-prop chain through the shared predictor is at "
+                         "most N deep. 0 = today's full chain (byte-"
+                         "identical). The FORWARD pass is unchanged; only the "
+                         "gradient path is bounded. MEASURED without it: the "
+                         "k=60 rollout diverged (gnorm 2.1e9). refav1 ships "
+                         "15 (DreamerV3's horizon = Looped-WM's ceil(mu_rec/2) "
+                         "at K=30). N >= --o5-k never cuts and is REFUSED as "
+                         "an advertised-but-inert flag. SCOPE: the O5 factual "
+                         "roll (k = --o5-k) and the O11 counterfactual rolls "
+                         "made by v6_loss_step. ⚠️ NOT the O1 response-form "
+                         "rolls in train_stage_a.stage_a_losses (k = --o1-k; "
+                         "a file this change does not own) — MEASURED: 6 of 8 "
+                         "rolls per step at the default weights are O1's.")
     ap.add_argument("--readout-grid", type=int, default=4)
     ap.add_argument("--readout-grid-w", type=int, default=None)
     ap.add_argument("--readout-dim", type=int, default=128)
@@ -7429,7 +8009,21 @@ def build_parser() -> argparse.ArgumentParser:
                          "OF EGO STATE and must clear the goal/situation "
                          "information-disjointness rule first (PI 2026-08-03).")
     ap.add_argument("--s2-labels", default=None,
-                    help="s2-strategic-v1 label artifact: the labels DIR "
+                    help="strategic/tactical label artifact — TWO schemas, "
+                         "SNIFFED from the FIRST RECORD, never from the name "
+                         "(SPEC_V7_LABEL_TRAINER_WIRING.md §2). "
+                         "(a) s2-geom-v7 = the v7.2 blob "
+                         "(labels/s2_labels_v7.2_{train,eval}.jsonl.gz, loaded "
+                         "through tanitad.data.v7_labels.load_v7_labels — the "
+                         "STAMP): its md5 must be one of intrain_eval.V72's two "
+                         "canonical pins unless --allow-any-labels; the clip "
+                         "index beside it is resolved BY CONTENT "
+                         "(intrain_eval.resolve_v72) and cross-checked; the "
+                         "strategic ids land on the v7 heads; the FACTORED "
+                         "tac_lat_id/tac_lon_id/tac_valid keys ride along "
+                         "(no loss reads them yet); args are NOT supervised "
+                         "(named dict, no slot encoder). "
+                         "(b) s2-strategic-v1 label artifact: the labels DIR "
                          "(clip_index.json + s2_labels_*.jsonl) or one "
                          ".jsonl with clip_index.json beside it. ⛔ THE "
                          "CANONICAL SET IS s2_labels.S2_CANONICAL_LABELS_REL "
@@ -7442,6 +8036,15 @@ def build_parser() -> argparse.ArgumentParser:
                          "— the legacy 16-bit id collides (69/2400 + 7/600) "
                          "and is refused. ROUTE_TO records are refused "
                          "(G1 gated), mirroring s2_schema.validate().")
+    ap.add_argument("--allow-any-labels", action="store_true", default=False,
+                    help="waive the v7.2 md5 pin on --s2-labels (the two "
+                         "canonical blobs are intrain_eval.V72). The md5 is "
+                         "printed and recorded EITHER way; a non-canonical "
+                         "blob is stamped canonical=false in config.json. Six "
+                         "copies of that blob exist under three roots with "
+                         "differing md5s — this flag is for a deliberate "
+                         "experiment on another one, never a convenience. "
+                         "Refused without --s2-labels (inert flag).")
     # ---- X2 seam dump: bank the 60-step plan — DEFAULT OFF ----------------
     ap.add_argument("--dump-seam-plan", default=None,
                     help="DIR to bank the emitted 60-step plan into, one "
@@ -7939,8 +8542,10 @@ def preflight(a) -> list[str]:
     #
     # WHY, and it is BY DESIGN rather than a bug: `rollout_transitions` reaches
     # long horizons by applying the 1-step head AUTOREGRESSIVELY --
-    # `predictor(ws, wa)[1]`, k times, full-chain gradient (explicitly NOT
-    # truncated BPTT) -- and O5 supervises the error at EVERY step. So the
+    # `predictor(ws, wa)[1]`, k times, full-chain gradient BY DEFAULT (since
+    # 2026-09-03 `--bptt-truncate N` bounds the gradient path to N steps
+    # WITHOUT changing the forward, D-V7-WIRING; the heads argument below is
+    # unaffected) -- and O5 supervises the error at EVERY step. So the
     # horizon is set by `--o5-k` (= o5_k * dt seconds), and heads for k != 1 are
     # allocated, computed in `forward`, and consumed by NO loss.
     #
@@ -7986,6 +8591,22 @@ def preflight(a) -> list[str]:
     s2p = getattr(a, "s2_labels", None)
     if w_s2 < 0.0:
         problems.append(f"--w-s2-goal must be non-negative, got {w_s2}")
+    # ---- D-V7-WIRING flags: neither may sit INERT on a launch line ----------
+    if bool(getattr(a, "allow_any_labels", False)) and not s2p:
+        problems.append(
+            "--allow-any-labels without --s2-labels: the flag waives the v7.2 "
+            "md5 pin and there is nothing to waive it on — an inert flag on "
+            "the launch line (the --w-s2-goal-without-labels family).")
+    _bt = int(getattr(a, "bptt_truncate", 0) or 0)
+    _o5k = int(getattr(a, "o5_k", 0) or 0)
+    if _bt < 0:
+        problems.append(f"--bptt-truncate must be >= 0, got {_bt}")
+    elif _bt and _bt >= _o5k:
+        problems.append(
+            f"--bptt-truncate {_bt} >= --o5-k {_o5k}: the rollout is only "
+            f"o5_k steps deep, so a cut every {_bt} steps NEVER fires — an "
+            f"advertised-but-inert flag (the --w-select/--w-anchor-in-S-S "
+            f"family). Lower it below o5_k, or drop it.")
     if w_s2 and a.stage in ("S-W", "S-T"):
         problems.append(
             f"--w-s2-goal {w_s2} in {a.stage}: the strategic goal heads "

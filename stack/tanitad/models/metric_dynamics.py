@@ -246,7 +246,8 @@ def rollout_decode(predictor, states: Tensor, actions: Tensor,
 
 def rollout_transitions(predictor, states: Tensor, actions: Tensor,
                         future_actions: Tensor | None, k: int,
-                        grad_checkpoint: bool = False
+                        grad_checkpoint: bool = False,
+                        bptt_truncate: int = 0
                         ) -> list[tuple[Tensor, Tensor]]:
     """Roll ``predictor`` ``k`` steps under the TRUE action sequence and return
     the per-step ``(z_prev, z_hat)`` latent transitions (the input pairs a step
@@ -261,9 +262,42 @@ def rollout_transitions(predictor, states: Tensor, actions: Tensor,
     7.08 GiB"). Checkpointing each step stores only the step BOUNDARY latents
     and recomputes block activations in backward: memory O(1) in k instead of
     O(k), compute ~2x for the predictor part. ⚠️ It preserves the full-chain
-    gradient EXACTLY — this is not truncated BPTT; step 60's error still
-    reshapes step 1's prediction, which is the entire point of O5. Guarded to
-    training + grad-enabled so eval paths are byte-identical to before."""
+    gradient EXACTLY — checkpointing is not truncated BPTT; step 60's error
+    still reshapes step 1's prediction, which is the entire point of O5.
+    Guarded to training + grad-enabled so eval paths are byte-identical to
+    before.
+
+    ⛔ ``bptt_truncate`` (D-V7-WIRING, 2026-09-03; default ``0`` = the full
+    chain, byte-identical). ``N > 0`` DETACHES THE CARRIED WINDOW every ``N``
+    steps, so the back-prop chain through the shared predictor is at most ``N``
+    applications deep. The FORWARD pass is unchanged — every step still sees
+    the true previous latents, so the prediction task is identical and every
+    returned pair is value-identical; only the gradient path is bounded.
+    MEASURED without it: the k=60 O5 rollout diverged (gnorm 2.1e9, killed at
+    9,000; PREREG_MM_E19) — the same shared-parameter-chain failure refav1
+    fixed with ``TokenFieldPredictor.rollout``'s ``bptt_truncate`` (gnorm 3.6e3
+    → 5.7e7 → inf within 300 steps; DreamerV3 H=15, Looped-WM ceil(mu_rec/2)).
+    Mirrors that implementation's three properties, each test-pinned
+    (``tests/test_metric_dynamics_bptt.py``):
+
+      * the cut is on the CARRIED state (``win_s`` after the append), never on
+        the recorded output — ``trans[j][1]`` keeps its own path at every ``j``,
+        so a readout decoding any step still trains the predictor;
+      * ⚠️ the WHOLE window is detached, not only the appended latent. The
+        window is a sliding buffer of ``W`` latents; detaching just the newest
+        leaves the ``W-1`` older entries attached and the chain to the input
+        stays alive through them (MEASURED while writing the test: at W=3 that
+        "cut" was a no-op). refav1 carries a single field, so its
+        ``z_.detach()`` IS the whole state — here the whole state is the window;
+      * NEVER on the last step: step ``k-1`` has no carry, so the last returned
+        ``z_hat`` is never detached (the refav1 ``last_only`` defect cannot
+        recur here by construction, and the test asserts it anyway).
+
+    ``N >= k`` cuts nothing; the trainer's preflight refuses that as an
+    advertised-but-inert flag rather than letting it pass silently."""
+    trunc = int(bptt_truncate or 0)
+    if trunc < 0:
+        raise ValueError(f"bptt_truncate must be >= 0, got {trunc}")
     win_s, win_a = states, actions
     trans: list[tuple[Tensor, Tensor]] = []
     use_ckpt = (grad_checkpoint and torch.is_grad_enabled()
@@ -284,6 +318,10 @@ def rollout_transitions(predictor, states: Tensor, actions: Tensor,
                       else win_a[:, -1])
             win_s = torch.cat([win_s[:, 1:], z_hat.unsqueeze(1)], dim=1)
             win_a = torch.cat([win_a[:, 1:], a_next.unsqueeze(1)], dim=1)
+            if trunc and (j + 1) % trunc == 0:
+                # the CARRIED window is cut; the pair recorded above keeps its
+                # path. `j < k - 1` above is what makes the last step exempt.
+                win_s = win_s.detach()
     return trans
 
 
