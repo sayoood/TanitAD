@@ -1,0 +1,90 @@
+{
+ "tool": "decode_audit.py",
+ "tier": "T0",
+ "tier_note": "banked open-loop step-1,000 dumps; no simulator, no training. A re-read of artifacts, not a new measurement of the world.",
+ "evidence_class": "MEASURED",
+ "written_utc": "2026-09-03T06:38:15Z",
+ "vocabulary": {
+  "source": "stack-verified",
+  "lat": [
+   "LANE_KEEP",
+   "LANE_CHANGE_L",
+   "LANE_CHANGE_R",
+   "ABORT_LC",
+   "NUDGE_L",
+   "NUDGE_R",
+   "TURN_L",
+   "TURN_R"
+  ],
+  "lon": [
+   "FOLLOW",
+   "CRUISE",
+   "YIELD_MERGE",
+   "BRAKE_TO",
+   "CREEP",
+   "HOLD",
+   "ADAPT_SPEED_FOR_CURVE",
+   "ACCELERATE"
+  ]
+ },
+ "inputs": {
+  "dumps": {
+   "incumbent": "C:/Users/Admin/refav1_eval_slice/t1_dump",
+   "ep2": "C:/Users/Admin/refav1_eval_slice/t1_dump_ep2"
+  },
+  "costs": {
+   "incumbent": "G:/Meine Ablage/SayBouBase/raw/Projects/TanitAD/TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-refav1-cost-surface/raw/cost_surface_incumbent.json",
+   "ep2": "G:/Meine Ablage/SayBouBase/raw/Projects/TanitAD/TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-refav1-cost-surface/raw/cost_surface_ep2.json"
+  },
+  "labels": "C:/Users/Admin/tanitad-wt/_s2build/release/v72/s2_labels_v7.2_eval.jsonl.gz",
+  "train_labels": "C:/Users/Admin/tanitad-wt/_s2build/release/v72/s2_labels_v7.2_train.jsonl.gz"
+ },
+ "estimators": {
+  "interval": "episode-cluster bootstrap, percentile, full-set point",
+  "null": "label permutation within the in-band panel"
+ },
+ "label_census_eval": {
+  "path": "C:/Users/Admin/tanitad-wt/_s2build/release/v72/s2_labels_v7.2_eval.jsonl.gz",
+  "md5": "aa12c948f062181c3297265b51526ec5",
+  "n_records": 147,
+  "lat_counts": {
+   "NUDGE_R": 21,
+   "TURN_R": 8,
+   "LANE_KEEP": 99,
+   "NUDGE_L": 14,
+   "TURN_L": 5
+  },
+  "lon_counts": {
+   "CRUISE": 44,
+   "ADAPT_SPEED_FOR_CURVE": 23,
+   "ACCELERATE": 40,
+   "CREEP": 6,
+   "FOLLOW": 10,
+   "BRAKE_TO": 22,
+   "HOLD": 2
+  },
+  "lat_fracs": {
+   "NUDGE_R": 0.142857,
+   "TURN_R": 0.054422,
+   "LANE_KEEP": 0.673469,
+   "NUDGE_L": 0.
+
+=== incumbent ===
+  in-band 40/140
+  lat: pred_hist={'LANE_KEEP': 140}
+       in-band acc=0.65 macro=0.2 (const-only base=0.65 macro=0.2)
+       recall={'LANE_KEEP': 1.0, 'LANE_CHANGE_L': None, 'LANE_CHANGE_R': None, 'ABORT_LC': None, 'NUDGE_L': 0.0, 'NUDGE_R': 0.0, 'TURN_L': 0.0, 'TURN_R': 0.0}
+  lon: pred_hist={'CRUISE': 98, 'ADAPT_SPEED_FOR_CURVE': 42}
+       in-band acc=0.55 macro=0.377778 (const-only base=0.45 macro=0.2)
+       recall={'FOLLOW': 0.0, 'CRUISE': 0.888889, 'YIELD_MERGE': None, 'BRAKE_TO': None, 'CREEP': 0.0, 'HOLD': None, 'ADAPT_SPEED_FOR_CURVE': 1.0, 'ACCELERATE': 0.0}
+
+=== ep2 ===
+  in-band 40/140
+  lat: pred_hist={'LANE_KEEP': 115, 'TURN_R': 25}
+       in-band acc=0.675 macro=0.376923 (const-only base=0.65 macro=0.2)
+       recall={'LANE_KEEP': 0.884615, 'LANE_CHANGE_L': None, 'LANE_CHANGE_R': None, 'ABORT_LC': None, 'NUDGE_L': 0.0, 'NUDGE_R': 0.0, 'TURN_L': 0.0, 'TURN_R': 1.0}
+  lon: pred_hist={'CRUISE': 98, 'ADAPT_SPEED_FOR_CURVE': 42}
+       in-band acc=0.55 macro=0.377778 (const-only base=0.45 macro=0.2)
+       recall={'FOLLOW': 0.0, 'CRUISE': 0.888889, 'YIELD_MERGE': None, 'BRAKE_TO': None, 'CREEP': 0.0, 'HOLD': None, 'ADAPT_SPEED_FOR_CURVE': 1.0, 'ACCELERATE': 0.0}
+
+wrote C:/Users/Admin/AppData/Local/Temp/claude/G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD/8e7cfa33-c625-47cf-88aa-711db80ac113/scratchpad/tacdec/decode_audit.json

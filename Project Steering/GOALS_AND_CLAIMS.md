@@ -1721,6 +1721,147 @@ o1ctrl30k:    act_emb 0.3021 → film0 0.0144 (21.0× drop) → block0 0.0038  (
 
 📊 **H-TSC-2 / E-ARCH-TSC-2 — OPEN, UNTESTED ON THE DEV BOX: the deliberate-regression arm did NOT reproduce the inflation, so the slice rig is VOID for the EMA question; it DOES see collapse (2026-09-02, ArchInf FlyWheel; `Research/2026-09-02-refav1-ema-inflation/RESULT.md`, 32 raw files).** MEASURED: B′ (the live recipe) ran 250 steps and `tgt_std_tac` went 0.02006 → 0.01968 (×0.98; peak ×2.25 on any row) — the committed VOID branch (< 3), so arm E was not run and R2/R3/R6 are VOID. **Why (HYPOTHESIS, prime suspect):** nothing above bs 1 fits the 4060 (bs 8/4 OOM at the WDDM over-commit ceiling; bs 2 pages at 41 s/step; bs 1 ran at 13–16 s/step with `max_memory_allocated` 12.29 GB, paging through host RAM) — 250 windows seen vs 2,000 on Thor by step 250, where TSC-1's bs-8 arm B read ×14.7. **R4 CONFIRMED** (read at step 220 — A′ was killed at ~226 by the tool harness's ~60-min background-task ceiling): adapter space collapses on the rig, `adapter_std` 0.4508 → 0.3349 (−25.7 %), participation 27.3 → 9.0 — the rig sees collapse but is blind to inflation. **R5 CONFIRMED**: `tgt_std_op` 0.9825 → 0.9794. **R7 MEASURED: `--resume --ema-targets` on an EMA-less checkpoint REFUSES** — strict `load_state_dict` (`refa_v1_train.py:348`), 20 missing `ema.*` keys, no teacher-from-student init ⇒ a mid-run EMA switch is a code change with its own test, not an operation. ⚠️ Trap for the Master Mind: any run > ~55 min must be launched DETACHED, not as a tool background task. Consequence already applied: E-ARCH-REFAV1-EPOCH-2 §5 makes the Thor restart's own rows 100–500 the EMA test, paired against the incumbent's banked rows 1–500. Tier T0, models discarded.
 
+⛔⛔ **D-REFAV1-TAC-DECODER-PANEL — THE DIAGNOSIS CORRECTS THE BRIEF I WROTE, FINDS A DEFECT PRIOR TO BOTH FIXES I PROPOSED, AND SHOWS THE TACTICAL HEAD'S APPARENT SKILL IS ORACLE NAV (2026-09-03, ArchInf FlyWheel; `Project Steering/PREREG_TACTICAL_DECODER.md` + `Research/2026-09-03-tactical-decoder/`, 5 tools, 12 raw artifacts; the rows below are the FlyWheel's PROPOSED text, applied VERBATIM — statuses stay PROPOSED until the PI reads them).** Three things the Master Mind must carry: **(1) ⛔ MY BRIEF'S PREMISE WAS WRONG AND IT INVERTED THE LEVER ORDERING.** I wrote that the tactical term is 0.1–0.8 % of the loss and inferred a starved head. VERIFIED at source before applying: that is `loss_feat_tac`, the tactical FIELD PREDICTOR's MSE. The DECODER's supervision is a separate cross-entropy — `refa_v1.py:1592` `out[f"loss_{name}_label"] = F.cross_entropy(...)`, folded in at `:1595` with `w_tac_label` (default 0.1) — and it is **13.59 % (incumbent) / 20.51 % (ep2)** of the total loss. ⇒ "unsupervised head" is **REFUTED** and raising the label weight is NOT the lever. **(2) ⛔ THAT TERM HAS NEVER BEEN LOGGED, IN ANY RUN.** MEASURED by the Master Mind: the trainer's row (`refa_v1_train.py:699–716`) carries `loss_feat_op` / `loss_feat_tac` / `loss_feat_str` and **no `loss_*_label` key exists anywhere in the trainer** (`grep -c` = 0), so a term worth a fifth of the loss is invisible across all 9 banked `train_log.jsonl`. That is why I misread it, and it is why the misreading survived: **an uninstrumented term is not merely unmeasured, it is actively misleading, because the nearest similarly-named number gets read in its place.** Adding the four keys is a PREFLIGHT CONDITION for every arm in the new pre-registration (BACKLOG R37), and it must NOT be shipped to Thor mid-run — the live epoch keeps its launch line. **(3) ⛔ A DEFECT PRIOR TO BOTH FIXES: THE PLANNER'S SEED IS NOT ITS GOAL'S CONTROL.** **62 of 64 token pairs differ** (48 of them in curvature) under BOTH `cost_time_grid` modes, and a `TURN` **over-rotates its own goal by 82.5°**. The only agreeing pairs are the all-zero controls — *the one manoeuvre the planner can faithfully chase is doing nothing.* ⭐ Credit where it is due: the steer-conversion agent escalated this qualitatively hours earlier in `4139203` ("the plan spans 2.0 s of a 6.0 s goal, so the seed can never reproduce its own goal"); what is new is the MEASUREMENT, and that **`4139203`'s time-grid repair does NOT close it** — the cause is the truncation to `plan_steps`, not the regrid. **The mechanism**, with the alternatives separated rather than asserted: not plumbing (`goal_lat == argmax` on 140/140), not unsupervised (see 1), not purely representational — it is **majority-class collapse of the DECISION RULE on top of a nav-borne latent**. The head RANKS turns at **AUC 0.873 / 0.922** while emitting `LANE_KEEP` on 140/140, and `CE_lat 0.8665 < H(p) 1.0944` so it does beat the prior — **but under `nav_zero` the incumbent's ranking collapses to 0.520, and a NAV-ONLY predictor BEATS the model (0.684 > 0.650)**. ⚠️ nav is an ORACLE input that will not exist at deployment, so the decoder's apparent competence is borrowed from a signal we cannot ship. That is the most consequential sentence in the panel and it belongs to the v7 line too. Labels: 64.70 % `LANE_KEEP` against 35.30 % (a 1.83:1 majority, NOT extreme) but **5 of 16 classes have ZERO support**, and the head sees ~2.15 labelled rows per batch-8 step with 8.13 % of steps seeing none. **Ordering adopted:** L1 (log the term) and L0 (make the seed reproduce the goal) BEFORE any training arm; then L3 + L4 jointly — the chord cost ALONE flips 1 of 25 windows and silently reweights by 5,793×, which **corrects BACKLOG R29's framing**; class-balanced CE last. The cheapest discriminating arm is **E0 at ~0 GPU** on ep2's 25 already-curved goals and it can refute the whole line. Thor untouched; the first training arm is sized at ≈ 2.2 h bf16 and cannot start before 2026-09-04 02:00Z, and the dev box **cannot** train refav1 (no batch fits in 8 GB). ⭐ Two self-caught errors recorded in place: the tool first hard-coded a NON-DEFAULT `cost_time_grid` (a "+20.6°" reading that is 0.000° under the banked default — it now reads the grid set and default from source via `inspect` and reports both), and a shuffled-label null was row-wise while its docstring claimed clustered (fixed to report both; the clustered one moves p from 0.0001 to 0.0098). All 23 source citations were re-pointed after the repo advanced mid-session, 14 spot-checked against HEAD, 0 stale.
+
+## New DECIDED / MEASURED rows
+
+### `D-REFAV1-SEED-GOAL-MISMATCH` — ⛔ **BLOCKING, and prior to both fixes R28 proposed**
+
+ℹ️ **Attribution: escalated qualitatively by the steer-conversion agent in commit `4139203`** (*"a 2 s plan is judged against a 6 s goal, so the planner's own seed cannot reproduce its own goal"*). This row is the MEASUREMENT of that residual, and it shows the same commit's `cost_time_grid` repair does not close it.
+
+**MEASURED at source, 0 GPU, exact arithmetic on the shipped code.** `plan()` rolls the imagined
+goal from the FULL 30-step canonical control subsampled onto the tactical grid — operative indices
+`[0,3,6,9,12,15,18,21,24,27]` (`refa_v1.py:1761`) — but seeds the search with that control
+TRUNCATED to `cfg.plan_steps = 10` (`refa_v1.py:1932`) ⇒ `[0..9]` under the DEFAULT
+`cost_time_grid="dense"` — **the behaviour every BANKED refav1 number was produced under; the
+parameter did not exist before `4139203`** — or `[0,3,6,9,9,…]` under that commit's new
+`"tactical"` regrid. **62 of 64 (lat, lon) v7.0 token pairs hand the goal and the seed DIFFERENT
+tactical action sequences UNDER BOTH GRIDS** (48/64 differ in curvature alone, under both), because
+the cause is the TRUNCATION, not the regrid — ⚠️ **so `4139203`'s time-grid repair does NOT close
+this residual.** The only two pairs that agree, `(LANE_KEEP, CRUISE)` and `(ABORT_LC, CRUISE)`,
+are the all-zero control — *the one manoeuvre the planner can faithfully chase is doing nothing*,
+which is the behaviour observed on 140/140 windows. At v0 = 10 m/s under the DEFAULT grid:
+`TURN_L`/`TURN_R` over-rotate their own goal by **±82.506°** (ψ 3.360 → 4.800 rad); `LANE_CHANGE_R`
+loses its return arc's sign and reads **−27.072°**; `NUDGE_R`'s S-curve is stretched **2.5× in
+time** so **8 of 10** tactical steps carry the wrong curvature (its NET heading still matches, which
+is why heading excess alone is not a sufficient gate); `LANE_KEEP × BRAKE_TO` differs on **9 of
+10** accel steps and ends at **6.66×** the goal's final deceleration (−0.5811 vs −0.0872 m/s²).
+⇒ The cost is not measuring the right pair imprecisely — **it is measuring the wrong pair.**
+Must land before any decoder or metric arm is spent. Evidence: `raw/seed_goal_mismatch.json`,
+`RESULT.md` §8.
+
+### `D-REFAV1-TAC-DECODER` — the lateral head IS the constant predictor, to the digit
+
+**MEASURED, T0, 140 windows / 20 episodes, in-band n = 40.** The incumbent (fp32) step-1,000
+checkpoint emits `LANE_KEEP` on **140/140** windows; its in-band accuracy **0.650** equals the
+constant-only base rate **EXACTLY** and its macro-recall **0.200** equals **1/K = 1/5 EXACTLY**;
+the clustered label-permutation null gives `p(macro ≥ observed) = 1.0000`. Per class: `LANE_KEEP`
+1.000 (n 26), `NUDGE_L` 0.000 (6), `NUDGE_R` 0.000 (2), `TURN_L` 0.000 (2), `TURN_R` 0.000 (4).
+The EMA+bf16 arm (ep2) emits `TURN_R` on 25/140, reaching accuracy 0.675 / macro 0.377
+(clustered p = 0.0168) with `TURN_R` recall 1.000 — **but that is a nav echo**: under nav-shuffle
+its macro falls to **0.177, BELOW the constant control**, and under nav-zero it returns to
+`LANE_KEEP` 140/140. On the geometric turn stratum (`gt_turn_deg ≥ 5°`, n = 27/140, 10 episodes)
+the incumbent asks for a turn on **0/27** (0.000 [0.000, 0.000]) and ep2 on **9/27**
+(0.333 [0.000, 0.667]). ⚠️ Only 8 of those 27 are in-band and only 3 carry a `TURN_*` label — the
+geometric stratum is not the v7.2 token. **Longitudinally the head is NOT collapsed** (accuracy
+0.550 vs 0.450, macro 0.378 vs 0.200, clustered p = 0.0098) and its predictions are row-for-row
+identical on both checkpoints. Evidence: `raw/decode_audit.json`, `RESULT.md` §6.
+
+### `D-REFAV1-TAC-LABEL-SHARE` — ⚠️ **CORRECTS the R28 brief and inverts its lever ordering**
+
+**MEASURED.** The R28 brief read the decoder's supervision as 0.1–0.8 % of the loss from
+`loss_feat_tac`. That is the tactical **FIELD PREDICTOR's** MSE — a different term. The decoder's
+own term is `w_tac_label · mean(CE_lat, CE_lon)` and on the 140 eval windows it is **0.11313
+(incumbent) / 0.11695 (ep2)** against feature terms summing to **0.71918 / 0.45324** — i.e.
+**13.59 % / 20.51 %** of the label+feature sum. `w_tac_label = 0.1` in both recorded configs and the
+live ep2 run passed real `--labels`. ⇒ **"the head is unsupervised / the term is too weak" is
+REFUTED, and raising `w_tac_label` is NOT the lever.** Two further reads settle the mechanism:
+`CE_lat = 0.8665 nats` sits **BELOW** the in-band label entropy `H = 1.0944` (the head carries
+0.228 nats beyond the marginal *while its argmax is constant*), and the head's own
+`P(TURN_L)+P(TURN_R)` ranks the label at **AUC 0.873 [0.686, 1.000]** (ep2 0.922 [0.737, 1.000])
+against a no-information 0.500. **The head ranks; it does not decide.** ⇒ the lever is the DECISION
+RULE (class-balanced / focal CE), not the weight. Evidence: `raw/intent_probe_*.json`, `RESULT.md` §2.
+
+### `D-REFAV1-TAC-NAV-ECHO` — every scrap of the tactical decision is oracle nav, not scene
+
+**MEASURED, and it discharges the standing nav-shuffle obligation (`refa_v1.py:395`).** With
+`nav_zero`, the incumbent's `CE_lat` rises 0.8665 → **1.3390** (ep2 0.9420 → 1.3684) — **above** the
+marginal entropy 1.0944 — and its turn-ranking AUC collapses **0.873 → 0.520**. The longitudinal
+head collapses to `CRUISE` 140/140 (accuracy 0.450 = the base rate, macro 0.200 = 1/K). A predictor
+reading **nothing but `nav_cmd`** (leave-one-episode-out) scores **0.684** on the same 38 scorable
+in-band rows — **above the model's 0.650 and above the constant control's 0.650.** ⚠️ `nav` is an
+**ORACLE (ego-future)** derivation, training-input only. ⇒ The one signal the tactical head has
+learned to read is the one that will not exist at deployment. ep2 alone retains a vision-borne
+component (`nav_zero` label-TURN AUC **0.858 [0.667, 1.000]**, CI excluding 0.500).
+Evidence: `raw/decode_audit.json`, `raw/intent_probe_*.json`, `RESULT.md` §6.
+
+### `D-REFAV1-TAC-LABEL-SPARSITY` — the head sees ~2 labelled rows per batch-8 step
+
+**MEASURED (this slice) / INFERRED (train corpus).** `s2_labels_v7.2_train.jsonl.gz` carries
+**4,572 records**, one per clip, with `bands.tactical_s = [2.0, 6.0]` and **`t0_s ≡ 8.0` on
+4,572/4,572** — so the label attaches only to windows whose NOW lies in `[6.0 s, 10.0 s]`
+(`refav1_loader.py:443`). In the TRAINING loader shape (`str_ext_steps = 2`, reach 60) that is
+**199 / 739 = 26.93 %** of windows (eval shape: 420 / 1,339 = 31.37 %, confirmed independently by
+the loader's own banner). **8.13 %** of batch-8 steps carry NO labelled row and the term is
+`continue`-skipped entirely. ⚠️ `F.cross_entropy` uses `reduction='mean'` over non-ignored rows, so
+the term's magnitude does not shrink — its **sample size** does, to ~2.15 rows per step. **The
+gradient is noisy, not weak; reading "27 % of rows" as "27 % less loss" picks the wrong lever.**
+Label distribution: `LANE_KEEP` 2,958 (64.70 %), `NUDGE_R` 592, `NUDGE_L` 488, `TURN_L` 275,
+`TURN_R` 259; **`LANE_CHANGE_L`, `LANE_CHANGE_R`, `ABORT_LC`, `YIELD_MERGE` = 0** — 5 of the head's
+16 output units have zero support. Evidence: `raw/window_band_census.json`,
+`raw/decode_audit.json` `label_census_train`, `RESULT.md` §§3–4.
+
+### `D-REFAV1-CHORD-INSUFFICIENT` — ⚠️ **CORRECTS BACKLOG R29's framing**
+
+**MEASURED, 0 GPU, on ep2's 25 already-curved-goal windows.** `chord = √(2(1−cos))` is strictly
+monotone in `1−cos`, so it cannot change the goal term's own ordering; what it changes is that
+term's **leverage inside the cost SUM**, by a measured **median 5,792.6× (conv A) / 4,096.0×
+(conv B)**. That flips **1 of 25** windows under convention A and **0 of 25** under B. As shipped
+the turn wins **0/25** under both. The deeper reason: on **17/25** (A) and **21/25** (B) windows the
+canonical turn's goal term is **no better than constant velocity** — the direction is wrong, not
+only the magnitude (see `D-REFAV1-SEED-GOAL-MISMATCH` for why). The goal term's κ-range is
+**1.63e-10 (f64)** against the `0.05·κ²` penalty's **2.00e-03** — a factor **1.2 × 10⁷**, of which
+the chord's √ recovers ~2 × 10³. ⚠️ And because the cost is a SUM, swapping the metric while holding
+`0.05` fixed is **not a one-variable arm**: it is a metric change *and* an implicit 5,793×
+reweighting. ⚠️ **SCOPE: the banked panel predates the steer-conversion repair** (`4139203`, same
+day), whose tiny-model evidence puts the units-FIXED turn advantage at **+5.364e-07** (vs
+**−2.384e-07** half-applied). Chord-transformed, that value would clear the 3.200e-04 charge by
+**2.33×** — but on a TINY MODEL, not these checkpoints. The two readings disagree and only the
+0-GPU E0 arm on the real checkpoints settles it. ⚠️ The κ² penalty is also not the only charge — the `0.02·jerk²` term from the
+canonical control's own longitudinal step has mean **1.695e-04** and max **3.218e-03**, exceeding
+the curvature charge on 2/25 windows. ⇒ **R29 is NECESSARY but far from SUFFICIENT and must be
+declared jointly with the goal:penalty balance.** Evidence: `raw/turn_decomposition_{A,B}.json`,
+`RESULT.md` §9.
+
+### `D-REFAV1-TAC-LOSS-UNINSTRUMENTED` — the mandated term has no instrument
+
+**MEASURED by CONTENT.** `refa_v1_train.py:699-734` writes `loss`, `loss_feat_op`, `loss_feat_tac`,
+`loss_feat_str`, `grad_norm`, `adapter_std`, `participation`, `loss_sigreg`, `loss_varfloor`,
+`tgt_std_{op,tac,str}`, `ema_decay`, `clip`, `skipped_steps`, `tac_target_s`, `str_target_s`,
+`elapsed_s` — and **no `loss_lat_label`, `loss_lon_label`, `loss_route_label` or
+`loss_feat_str_ext`**. Every row of all **nine** banked refav1 `train_log.jsonl` artifacts was
+parsed: **0 rows** carry any of them. Consequence: the residual
+`loss − (1.0·op + 0.5·tac + 0.25·str)` in any banked refav1 log conflates three terms and cannot be
+attributed, which is why `D-REFAV1-TAC-LABEL-SHARE` had to be recomputed from checkpoints. ⇒ The one
+term the PI made mandatory (2026-08-31, *"It must be trained with this data"*) is the one term with
+no telemetry. **Four lines; a preflight condition for every arm in `PREREG_TACTICAL_DECODER.md`.**
+Evidence: `RESULT.md` §7.
+
+---
+
+## New OPEN hypotheses (pre-registered, no arm launched)
+
+| id | text (abridged — full text in `Project Steering/PREREG_TACTICAL_DECODER.md` §2) | status |
+|---|---|---|
+| **`H-REFAV1-TAC-DECODER-1`** | refav1's lateral tactical decision is a majority-class collapse of the DECISION RULE, not a missing gradient and not missing information in the logits; correcting the decision rule alone (class-balanced / focal CE at UNCHANGED `w_tac_label`, label set and trunk) will raise in-band lateral macro-recall above the constant-only 0.200 with a 95 % interval excluding zero, ≥ 2 minority classes at recall ≥ 0.25, and a gain that survives `nav_zero`. | **OPEN** — pre-registered 2026-09-03, no arm spent |
+| **`H-REFAV1-COST-SEED-1`** | the planner cannot faithfully chase any manoeuvre except "do nothing" because the control it seeds is not the control its goal was rolled from (62/64 token pairs under BOTH `cost_time_grid` modes); making them identical will raise the count of windows where the canonical turn's goal term beats cv above 8/25 (A) / 4/25 (B), and is a precondition for any decoder improvement being observable at T1. | **OPEN** — pre-registered 2026-09-03, verifiable at 0 GPU |
+
+**Registered prediction, so it is falsifiable:** `PREREG_TACTICAL_DECODER.md` §7 predicts S1 and S2
+will hold and **S3 will FAIL** (the repaired cost will rank a correct turn in fewer than 13/25
+windows). If that prediction is wrong it goes in `RETRACTION_LOG.md`.
+
+---
+
 ✅ **D-STEER-CONVERSION-COMPLETE — THE TRAP IS CLOSED AT ONE CROSSING RATHER THAN PATCHED WITH A SECOND CALL; AND THE COST'S TIME GRID IS REPAIRED FLAG-GATED, WITH THE BANKED PANEL PROVEN UNAFFECTED MODEL-FREE (2026-09-03, ArchInf FlyWheel, 0 GPU, BACKLOG R26 + R27; 76 tests re-run green by the Master Mind; agent's selection 404 P / 1 F / 0 S against a 389 P / 1 F / 1 S baseline — +14 = exactly the new file, the one failure the known mirror artifact).** Confirmed at source before editing: HEAD had **exactly ONE functional `as_command` call** (`refa_v1.py:1832`) against four `augment_actions` sites — `:1264` / `:1615` (TRAINING, already in command units), **`:1683` the UNCONVERTED goal**, `:1838` the converted candidate ⇒ **1 of the 14 crossing points in `plan()`'s graph was wrong** (the full crossing table is `SPEC.md` §1). ⭐ **The repair went one level UP, not sideways**: a new `RefAV1._model_actions(controls, v0, units)` is now the ONLY planner-side crossing and both sites call it, while training keeps calling `augment_actions` directly — which is exactly why the conversion cannot live inside `augment_actions`. A second `as_command` call would have left the same shape of defect one edit away; the register records that reasoning in the function's own docstring. `_imagine_tactical_goal(units=)` and `imagined_goal(model_action_units=)` are keyword-only with legacy defaults, so `cost_surface_probe.py:243`'s 3-positional call is untouched. **The trap reproduced in miniature** (tiny model, decode pinned to `TURN_R`, `raw/evidence.json`): the turn's advantage over the straight line reads **0.0** (κ on both sides) → **−2.38e-07** (the shipped half-conversion) → **+5.36e-07** (fixed) — the same sign pattern as the 0 → −5.96e-08 measured on real windows. ⚠️ **This buys the planner NOTHING measurable and is not sold as a win**: `D-REFAV1-BOUNDARY-NULL`'s `share = +0.0000 [0, 0]` stands; a correctness trap was removed. **TIME GRID (R27):** `plan(cost_time_grid=)` with `"dense"` the byte-identical default and `"tactical"` = `[0,3,6,9,9,9,9,9,9,9]` against today's `[0..9]` and the goal's `[0,3,…,27]`. ⭐ A source fact stronger than the original finding: **`forward()` builds `tac_a = acts_in[:, ::stride]` (`refa_v1.py:1270`), so the dense feed is OUT OF THE TRAINING DISTRIBUTION**, not merely off-clock. ⭐ **And the banked-panel question is answerable MODEL-FREE, exactly**: the banked config has `speed_channel: false`, so the regrid is the IDENTITY on any candidate that is constant over the plan horizon — and across all 20 episodes / 140 windows / 3 arms of `t1_dump/decisions/` **the winner is constant on 140/140 in every arm** (`cl` all-zero on 140/140) ⇒ every banked winner's cost is bit-identical under the corrected grid, so `D-REFAV1-COST-SURFACE` needs no re-read. UNVERIFIED: the argmin over the REMAINING candidates and the panel's surface statistics (the dumps carry no fields; one dev-box GPU job when the card is free). ⛔ **A RESIDUAL THE REPAIR DOES NOT REMOVE, and it may matter more than either defect: the plan spans 2.0 s of a 6.0 s goal, so the planner's own seed can NEVER reproduce its own goal.** That is a `plan_horizon_s` DESIGN question, escalated, and it sits directly beside D-REFAV1-COST-SURFACE's finding that the correct turn buys one float32 ULP — a 2 s candidate judged against a 6 s target is a plausible reason why. BACKLOG R34. **T4 is NOT deleted:** `target_speed` is unused by production but NOT unreachable — `test_refa_v1.py:413` and `test_refa_v1_speed_channel.py:213` both exercise it, so removal would not be a pure deletion, and wiring it to the decoded `lon` token would change what the cost IS. Recommendation adopted: **KEEP, decide deliberately** (BACKLOG R35). ⚠️ **One pre-existing test was amended outside the agent's declared ownership and it is right that it was:** `test_steer_curvature_interface.py::test_D2` asserted that `cv` / `hold_v0` do not move between spellings "because arctan(0) == 0" — an invariant that held **only because the conversion was half-applied**. It was RELOCATED to a supplied `goal_field` (which no conversion touches) rather than deleted, and flagged. A test that passes because of the bug it should have caught is the most expensive kind. ⭐ **Propagate:** `1 − cos(x, x)` is **not 0.0 in float32** — 2.00 ULPs here, matching the cost-surface probe's C3 control failing its exactly-0.0 form at 2.00 / 4.00 ULPs on the banked checkpoints. Two independent rigs, same floor.
 
 📉 **D-REFCV3-EPOCH-READ / D-HF-COMPARABILITY — refcv3's CLEAN ERA IS FLAT IN EVERY HEADLINE COLUMN WHILE ITS TRAIN–EVAL GAP FLIPS SIGN, ITS `eval_traj` IS AN ORACLE-SELECTED L1 AND NOT AN ADE, AND THE H-vs-F DOMINANCE COMPARISON IS BLOCKED ON A DOCTRINE RULING RATHER THAN ON COMPUTE (2026-09-03, Benchmarks & Evals FlyWheel, 0 GPU; the two rows below are the FlyWheel's PROPOSED text, applied VERBATIM — statuses stay PROPOSED until the PI reads them).** Master Mind's own additions: **(1) I MUST CORRECT TWO OF MY OWN ROWS.** `D-REFCV3-19K` and `D-REFCV3-21K` called the 19,000 / 21,000 evals "the run's lowest traj". Verified at source before applying: `refc_v3_train.py:459` computes `a_star = dist.argmin(dim=1)` — **the anchor nearest the GROUND TRUTH** — and `:463` scores `anchor_traj[ar, a_star]`, while the model's OWN selection agrees on only **57 %** of windows (`eval_anchor_acc` 0.569 against a 1/128 chance rate); and `:462–465` is `|Δ|.sum(-1) / (sv.sum()·2)`, a **mean L1 PER COORDINATE**, where an ADE is an L2 norm. So both rows are lowest **oracle-selected L1**, a loose LOWER BOUND on what refcv3 would drive, and neither is an ADE nor comparable to one. The numbers were right; the words implied driving quality they cannot carry — the "true but wrong for the reader" class, logged again. **(2) The strongest operational conclusion is a STOPPING one:** era C (≥ 18,000, the only clean era, n = 15 over 7,500 steps) moves **less than one unit of the series' own step-to-step scatter** in `eval_lat_tac` (0.36×), `eval_lon_tac` (0.41×), `eval_goal2s_err_m` (0.16×), `eval_anchor_acc` (0.22×) and `eval_loss` (0.87×), while the train–eval gap flips from −0.886 to **+0.238** on loss and from −0.020 to **+0.311** on the 2 s goal error — a flip that SURVIVES the pre-registered robustness pass dropping post-resume rows. Train keeps improving; held-out does not. ⇒ **read the epoch-end checkpoint at T1; do not extend the run.** Projected end 2026-09-03 22:43Z (ESTIMATED). **(3) The PI's CAVEAT-B is answered with data**: the goal gate is OPENING, 0.0733 → 0.1307 (14.5× scatter, R² 0.987) — but the two flattest columns in the whole panel are the goal error and the goal loss, so the strategic path is being USED and is not yet shown to HELP. **(4) ⛔ THE BLOCKER FOR REGISTER DECISION 9 IS A DOCTRINE RULING, NOT COMPUTE, AND IT IS THE PI's:** refcv3 is a supervised ONE-SHOT anchor trajectory model — 128 anchors × 8 slots, **no action input, no rollout, no per-step decode**. `t1_eval.roll_closed` can carry the flagship only because the flagship is supervised AND **autoregressive** (it decodes `(a_j, yaw_j)` per step and feeds `(steer = arctan(L·κ), a_j)` back); **refcv3 has no action to feed back, so the closed loop cannot be ported.** Consequences the register now binds: only `ha0` (the constant-velocity floor) is bit-comparable across the two systems; `ol` does not exist for refcv3; and refcv3's one-shot arm **must not be called `cl`** — the FlyWheel proposes `os`, and the Master Mind adopts it, because a shared name is how two different procedures end up in one table. ⭐ **The admissible claim is therefore the DIFFERENCE OF EACH ARM'S MARGIN OVER THE SAME `ha0` FLOOR, per family, paired — never `cl` vs `os` as levels.** The open question for the PI: **does the doctrine admit as T1 a model that consumes no actions at all?** Default if unanswered: score refcv3 at its own tier with the margin-over-`ha0` framing and refuse any head-to-head level comparison. **(5) ⛔ A REFUSAL THAT IS NOT RECOVERABLE LATER: no confidence interval is computable from `metrics.jsonl` by any estimator** — every value is ALREADY the pooled mean over the 160 windows, and the file carries no per-window values and no `eid`, both of which `taniteval.ci` requires. Every statement in these rows is a DIRECTION. The fix is forward-looking only: the in-training eval must dump per-window values with episode ids, or its numbers can never carry an interval. **(6) A conflict reported rather than reconciled**: `C-REFCV3-EVAL-PRIOR-LEAK` says 34 leaked evals; this file measures 40 — and since it begins at step 550, neither count covers the whole run. **(7) Enabling check passed**: `eval_windows` 160 and four other stamps each take exactly ONE distinct value across all 55 evals and all 10 launches, so the window set really is fixed and the two controls read their known value in every era. Engineering: ≈ 4.3 h lost to six deaths, three switches and nine restarts; uint8 measured at **−13.4 %** s/step over 143 rows, cross-checked by two independent clocks agreeing to < 1 %.

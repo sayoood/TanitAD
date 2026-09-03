@@ -1,0 +1,35 @@
+{
+ "tool": "in-session reference (banked so the number has an artifact)",
+ "what": "fresh-init reference for the tactical decode heads' final Linear(256,8) -- the baseline the trained head's W_fro is compared against in RESULT.md 2.4",
+ "tier": "T0",
+ "evidence_class": "MEASURED",
+ "module": "torch.nn.Linear(256, 8) default init (kaiming_uniform_ a=sqrt(5))",
+ "torch": "2.11.0+cu128",
+ "n_seeds": 20,
+ "W_fro": {
+  "mean": 1.633196,
+  "sd": 0.016715,
+  "min": 1.593825,
+  "max": 1.663334
+ },
+ "row_norm": {
+  "mean": 0.57722,
+  "sd": 0.016358
+ },
+ "abs_bias_mean": 0.02961,
+ "observed_trained": {
+  "incumbent_lat_W_fro": 1.8042640686035156,
+  "ep2_lat_W_fro": 1.8332723379135132,
+  "incumbent_lat_row_norms": [
+   0.5228464007377625,
+   0.7459220886230469,
+   0.7423970103263855,
+   0.7223700881004333,
+   0.5608862638473511,
+   0.5424067974090576,
+   0.6125096678733826,
+   0.6071754693984985
+  ],
+  "note": "LANE_KEEP's row norm (0.5228) is BELOW the fresh-init mean while the three ZERO-SUPPORT classes (LANE_CHANGE_L/R, ABORT_LC) sit ABOVE it -- reported, not interpreted"
+ }
+}

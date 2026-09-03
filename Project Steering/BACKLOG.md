@@ -185,3 +185,11 @@ that all lands before S-W's first gate.
 - **R34 — DESIGN: the plan spans 2.0 s of a 6.0 s goal.** The planner's own canonical seed cannot reproduce its own goal, which sits directly beside the measurement that a correct turn buys one float32 ULP. Decide `plan_horizon_s` (or subsample the goal to the plan's reach) before any further planner tuning.
 - **R35 — decide T4 (`target_speed`) deliberately**: unused by production, exercised by two tests, so neither deletion nor wiring is free. Recommendation: KEEP until the cost is redesigned.
 - **R36 — decide when `cost_time_grid="tactical"` becomes the default.** The banked panel is provably unaffected (the winner is constant on 140/140), so the flip is safe for what is banked — but it changes what every FUTURE number means, so it needs a stated cut-over like R21's.
+
+## Added 2026-09-03 10:15 Berlin (from D-REFAV1-TAC-DECODER-PANEL)
+
+- **R37 — L1, PREFLIGHT for every arm in `PREREG_TACTICAL_DECODER.md`: log the decoder's loss.** Four keys (`loss_lat_label`, `loss_lon_label`, `loss_route_label`, and their weighted share) in `refa_v1_train.py`'s row. The term is 13.6–20.5 % of the loss and has NEVER appeared in a log. ⛔ Do NOT ship to Thor mid-run — stage for the next launch.
+- **R38 — L0: make the planner's canonical seed reproduce its own goal.** 62 of 64 token pairs differ, `TURN` over-rotates its goal by 82.5°, and `4139203`'s time-grid repair does NOT close it (the cause is the truncation to `plan_steps`). Prior to every other planner or decoder fix.
+- **R39 — THE DEPLOYMENT QUESTION: the tactical decision is oracle nav, not scene.** Under `nav_zero` the ranking collapses to 0.520 and a nav-only predictor beats the model (0.684 > 0.650). nav will not exist at deployment. This binds the v7 line as much as refav1 — every nav-conditioned tactical claim needs the nav-zero arm beside the nav-shuffle one.
+- **R29 — REFRAMED (not struck)**: the chord cost alone flips 1 of 25 windows and silently reweights by 5,793×; it is necessary with L3 + L4 jointly, not sufficient alone.
+- **R40 — 5 of 16 tactical classes have ZERO support** in the training labels, and 8.13 % of batch-8 steps see no labelled row at all (~2.15 rows per step). A class-balanced loss cannot conjure support that is absent; the label pipeline is the Data FlyWheel's item.
