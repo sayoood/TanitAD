@@ -11412,3 +11412,49 @@ must change is the word on the axis label.
 `EVAL_DOCTRINE`, the banked reports and the registry rows still carry the old word;
 they are being swept. Until the sweep lands, read "closed loop" in any TanitAD
 document dated before 2026-09-02 as "self-action open loop".
+
+# 2026-09-03 (#14) — "the programme has published NO closed-loop number" (mine, corrected within the hour)
+
+**Retracted.** While landing the PI's open/closed-loop ruling I wrote that sentence into
+**five committed files** — `VOCABULARY.md`, `EVAL_DOCTRINE.md`, `MODEL_REGISTRY.md`
+§1.12, `GOALS_AND_CLAIMS.md` D-LOOP-2, and RETRACTION_LOG #13. It is false.
+`PROGRAM_OVERVIEW.md` §5.0.1 is a genuine closed-loop measurement under the PI's own
+definition: **9 rollout starts x 50 ticks in a NuRec reconstruction RENDERED ON THE
+JETSON THOR**, paired over **437 shared windows** with an episode-cluster bootstrap, all
+four metric families reported separately, videos verified by **decoding them back** and
+md5-matching to Thor, and a determinism control reading exactly **0.0 on 450/450
+windows**. Code `stack/experiments/alpasim-gsplat/`; results dir confirmed present by
+two probes with different path-binding (13+ JSON files ~55 KB each under
+`results/closedloop-hq-render/`, plus sibling scene dirs). The model drives, the
+reconstruction re-renders, the next observation is a consequence of the model's own
+output. That is closed loop.
+
+**Root-cause class: A STALE ABSENCE-LINE GENERALISED TO A PROGRAMME-WIDE ABSENCE — the
+exact failure the "absence at ONE location is not absence" rule exists to stop.** I read
+`EVAL_DOCTRINE.md`'s T2 cell, *"NOT YET PROVISIONED"*, and generalised it. One second
+probe would have refuted it, and the aggravating detail is the chronology: the doctrine
+is dated **2026-08-09** and the closed-loop panel **2026-08-03**, so the line I trusted
+was *already stale when it was written*. I then propagated it into four more documents in
+the same turn — including the registry, which is the programme's ONLY quotable source.
+
+⚠️ **The mechanism that made this dangerous is the correction itself.** I was mid-way
+through a doctrine sweep, i.e. writing with unusual authority into exactly the files
+other agents and future contexts treat as ground truth. A sweep is the worst possible
+place to carry an unverified premise, because every file it touches gains the premise's
+authority. **A sweep must verify each claim it ADDS at least as hard as the claim it
+REMOVES** — I verified the removals (every "closed loop" occurrence checked by exact
+match) and asserted the addition from memory.
+
+**What survives untouched:** the re-labelling itself. T1 IS open loop; the `taniteval`
+figures including 1.7318 m ARE self-action open-loop numbers; their measurements are
+valid and only the word was wrong; `EVAL_DOCTRINE` rule 2 DID license driving claims it
+should not have. None of that depended on the false sentence.
+
+⭐ **And the correction improves the programme's position rather than worsening it.** The
+PI asked to compare open and closed loop for refav1 and refcv3. Closed loop is therefore
+**not a research project** — it is pointing an existing, already-validated harness at two
+new checkpoints. The real gaps are narrower and nameable: (a) the scene has **no reactive
+agents**, so collision and off-road rates stay out of reach; (b) refcv3 emits a
+trajectory and no controls, so it needs a **tracking controller** and a re-plan rate;
+(c) the harness renders **on Thor**, which is training refav1 until ≈00:50Z, so runs are
+compute-gated, not capability-gated.

@@ -12,8 +12,10 @@
 > registry, the reports and the model cards. T2 was ALREADY defined as the real thing,
 > so T1's name was stealing T2's word.
 >
-> ⇒ **T0 and T1 are both OPEN LOOP. T2 is the only closed loop, and it is not
-> provisioned — so the programme has published NO closed-loop number.** Read
+> ⇒ **T0 and T1 are both OPEN LOOP. T2 is the only closed loop.** ⛔ **CORRECTED
+> a few hours after this banner was first written:** I asserted here that T2 was
+> not provisioned and that no closed-loop number existed. Both are FALSE — see
+> RETRACTION_LOG #14. ⭐ **We DO have closed-loop numbers**: the AlpaSim/NuRec panel of 2026-08-03 (PROGRAM_OVERVIEW §5.0.1) — 9 rollout starts x 50 ticks in a reconstruction RENDERED ON THE JETSON THOR, 437 paired windows, four families, `stack/experiments/alpasim-gsplat/`. ⚠️ But the scene has **no reactive agents**, so safety-grade metrics (collision, off-road) remain out of reach — and **neither refav1 nor refcv3 has been through that harness**. Read
 > "closed loop" in any TanitAD document dated before 2026-09-02 as "self-action open
 > loop". Glossary: `VOCABULARY.md`; retraction: `RETRACTION_LOG.md` entry #13.
 
@@ -27,7 +29,7 @@ reproduction 97.9 % → ~5 %; hold-action arm 0.0 %).
 |---|---|---|---|
 | **T0** | teacher-forced: predictor consumes recorded future actions | WM fidelity, readout quality, attribution of decode-side changes | "prediction quality" — ⛔ NEVER "driving performance" |
 | **T1** | **self-action OPEN loop**: predictor consumes the decoder/planner's own actions; perception context fixed at t0. ⚠️ The trajectory never reaches the ego data, which keeps arriving from the recording — so the model is NOT driving anything | trajectory quality when the model supplies its own actions — **the PRIMARY OFFLINE eval** | "self-action open-loop (imagination)" — ⛔ NEVER "closed-loop", that word belongs to T2 |
-| **T2** | ⭐ **THE ONLY CLOSED LOOP.** The trajectory CONTROLS the vehicle and the sim re-renders, so the next observation is a consequence of the model's own output (AlpaSim/NuRec, or a real test vehicle) | true closed-loop driving incl. scene interaction | "closed-loop driving" — ⛔ **NOT YET PROVISIONED, so we have published NO closed-loop number** |
+| **T2** | ⭐ **THE ONLY CLOSED LOOP.** The trajectory CONTROLS the vehicle and the sim re-renders, so the next observation is a consequence of the model's own output (AlpaSim/NuRec, or a real test vehicle) | true closed-loop driving incl. scene interaction | "closed-loop driving" — ⭐ **PROVISIONED AND USED** (AlpaSim/NuRec on Thor, 2026-08-03); the old "NOT YET PROVISIONED" was stale. ⚠️ No reactive agents yet |
 
 **Rules.**
 1. Every registry results block states its tier. Pre-doctrine blocks are stamped
