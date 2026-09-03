@@ -1,0 +1,2647 @@
+{
+  "format": "tanitad-encoder-seed",
+  "format_version": 1,
+  "tool": "stack/scripts/dinov3_seed_checkpoint.py",
+  "created_utc": "2026-09-03T05:24:47Z",
+  "argv": [
+    "--source",
+    "C:/Users/Admin/.cache/huggingface/hub/models--facebook--dinov3-vitl16-pretrain-lvd1689m/snapshots/ea8dc2863c51be0a264bab82070e3e8836b02d51",
+    "--out",
+    "C:/Users/Admin/AppData/Local/Temp/claude/G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD/8e7cfa33-c625-47cf-88aa-711db80ac113/scratchpad/dinov3_vitl16_seed.pt",
+    "--json",
+    "C:/Users/Admin/AppData/Local/Temp/claude/G--Meine-Ablage-SayBouBase-raw-Projects-TanitAD/8e7cfa33-c625-47cf-88aa-711db80ac113/scratchpad/dinov3_vitl16_seed.stamp.json",
+    "--enc-dim",
+    "1024",
+    "--enc-depth",
+    "24",
+    "--enc-heads",
+    "16",
+    "--patch",
+    "16",
+    "--frame-h",
+    "256",
+    "--frame-w",
+    "640",
+    "--in-channels",
+    "3"
+  ],
+  "dinov3_model_id": "facebook/dinov3-vitl16-pretrain-lvd1689m",
+  "dinov3_variant": "vitl16",
+  "source_prefix_stripped": null,
+  "source_path": "C:\\Users\\Admin\\.cache\\huggingface\\hub\\models--facebook--dinov3-vitl16-pretrain-lvd1689m\\snapshots\\ea8dc2863c51be0a264bab82070e3e8836b02d51",
+  "source_weight_file": "C:\\Users\\Admin\\.cache\\huggingface\\hub\\models--facebook--dinov3-vitl16-pretrain-lvd1689m\\snapshots\\ea8dc2863c51be0a264bab82070e3e8836b02d51\\model.safetensors",
+  "source_sha256": "dcb2e45127cccbf1601e5f42fef165eea275c8e5213197e8dcf3f48822718179",
+  "source_bytes": 1212559808,
+  "source_config_file": "C:\\Users\\Admin\\.cache\\huggingface\\hub\\models--facebook--dinov3-vitl16-pretrain-lvd1689m\\snapshots\\ea8dc2863c51be0a264bab82070e3e8836b02d51\\config.json",
+  "source_config_sha256": "135ecd23e34a70b6fbed8b083fdecb319b7e3a54e3d849258bbe4ddcf1783bb5",
+  "source_geometry": {
+    "d_model": 1024,
+    "depth": 24,
+    "n_heads": 16,
+    "patch_size": 16,
+    "in_channels": 3,
+    "intermediate_size": 4096,
+    "n_heads_source": "config.json",
+    "variant": "vitl16"
+  },
+  "target_geometry": {
+    "class": "ViTEncoder",
+    "d_model": 1024,
+    "depth": 24,
+    "n_heads": 16,
+    "patch_size": 16,
+    "in_channels": 3,
+    "image_size": 256,
+    "image_width": 640,
+    "n_tokens": 640,
+    "token_grid": [
+      16,
+      40
+    ]
+  },
+  "mapping": [
+    {
+      "target": "patch.weight",
+      "sources": [
+        "embeddings.patch_embeddings.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "patch.bias",
+      "sources": [
+        "embeddings.patch_embeddings.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.0.norm1.weight",
+      "sources": [
+        "layer.0.norm1.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.0.norm1.bias",
+      "sources": [
+        "layer.0.norm1.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.0.attn.in_proj_weight",
+      "sources": [
+        "layer.0.attention.q_proj.weight",
+        "layer.0.attention.k_proj.weight",
+        "layer.0.attention.v_proj.weight"
+      ],
+      "transform": "qkv_row_concat"
+    },
+    {
+      "target": "blocks.0.attn.in_proj_bias",
+      "sources": [
+        "layer.0.attention.q_proj.bias",
+        "layer.0.attention.k_proj.bias",
+        "layer.0.attention.v_proj.bias"
+      ],
+      "transform": "qkv_bias_concat_zero_fill_missing"
+    },
+    {
+      "target": "blocks.0.attn.out_proj.weight",
+      "sources": [
+        "layer.0.attention.o_proj.weight",
+        "layer.0.layer_scale1.lambda1"
+      ],
+      "transform": "layerscale_fold_rows"
+    },
+    {
+      "target": "blocks.0.attn.out_proj.bias",
+      "sources": [
+        "layer.0.attention.o_proj.bias",
+        "layer.0.layer_scale1.lambda1"
+      ],
+      "transform": "layerscale_fold_vector"
+    },
+    {
+      "target": "blocks.0.norm2.weight",
+      "sources": [
+        "layer.0.norm2.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.0.norm2.bias",
+      "sources": [
+        "layer.0.norm2.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.0.mlp.0.weight",
+      "sources": [
+        "layer.0.mlp.up_proj.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.0.mlp.0.bias",
+      "sources": [
+        "layer.0.mlp.up_proj.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.0.mlp.2.weight",
+      "sources": [
+        "layer.0.mlp.down_proj.weight",
+        "layer.0.layer_scale2.lambda1"
+      ],
+      "transform": "layerscale_fold_rows"
+    },
+    {
+      "target": "blocks.0.mlp.2.bias",
+      "sources": [
+        "layer.0.mlp.down_proj.bias",
+        "layer.0.layer_scale2.lambda1"
+      ],
+      "transform": "layerscale_fold_vector"
+    },
+    {
+      "target": "blocks.1.norm1.weight",
+      "sources": [
+        "layer.1.norm1.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.1.norm1.bias",
+      "sources": [
+        "layer.1.norm1.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.1.attn.in_proj_weight",
+      "sources": [
+        "layer.1.attention.q_proj.weight",
+        "layer.1.attention.k_proj.weight",
+        "layer.1.attention.v_proj.weight"
+      ],
+      "transform": "qkv_row_concat"
+    },
+    {
+      "target": "blocks.1.attn.in_proj_bias",
+      "sources": [
+        "layer.1.attention.q_proj.bias",
+        "layer.1.attention.k_proj.bias",
+        "layer.1.attention.v_proj.bias"
+      ],
+      "transform": "qkv_bias_concat_zero_fill_missing"
+    },
+    {
+      "target": "blocks.1.attn.out_proj.weight",
+      "sources": [
+        "layer.1.attention.o_proj.weight",
+        "layer.1.layer_scale1.lambda1"
+      ],
+      "transform": "layerscale_fold_rows"
+    },
+    {
+      "target": "blocks.1.attn.out_proj.bias",
+      "sources": [
+        "layer.1.attention.o_proj.bias",
+        "layer.1.layer_scale1.lambda1"
+      ],
+      "transform": "layerscale_fold_vector"
+    },
+    {
+      "target": "blocks.1.norm2.weight",
+      "sources": [
+        "layer.1.norm2.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.1.norm2.bias",
+      "sources": [
+        "layer.1.norm2.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.1.mlp.0.weight",
+      "sources": [
+        "layer.1.mlp.up_proj.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.1.mlp.0.bias",
+      "sources": [
+        "layer.1.mlp.up_proj.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.1.mlp.2.weight",
+      "sources": [
+        "layer.1.mlp.down_proj.weight",
+        "layer.1.layer_scale2.lambda1"
+      ],
+      "transform": "layerscale_fold_rows"
+    },
+    {
+      "target": "blocks.1.mlp.2.bias",
+      "sources": [
+        "layer.1.mlp.down_proj.bias",
+        "layer.1.layer_scale2.lambda1"
+      ],
+      "transform": "layerscale_fold_vector"
+    },
+    {
+      "target": "blocks.2.norm1.weight",
+      "sources": [
+        "layer.2.norm1.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.2.norm1.bias",
+      "sources": [
+        "layer.2.norm1.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.2.attn.in_proj_weight",
+      "sources": [
+        "layer.2.attention.q_proj.weight",
+        "layer.2.attention.k_proj.weight",
+        "layer.2.attention.v_proj.weight"
+      ],
+      "transform": "qkv_row_concat"
+    },
+    {
+      "target": "blocks.2.attn.in_proj_bias",
+      "sources": [
+        "layer.2.attention.q_proj.bias",
+        "layer.2.attention.k_proj.bias",
+        "layer.2.attention.v_proj.bias"
+      ],
+      "transform": "qkv_bias_concat_zero_fill_missing"
+    },
+    {
+      "target": "blocks.2.attn.out_proj.weight",
+      "sources": [
+        "layer.2.attention.o_proj.weight",
+        "layer.2.layer_scale1.lambda1"
+      ],
+      "transform": "layerscale_fold_rows"
+    },
+    {
+      "target": "blocks.2.attn.out_proj.bias",
+      "sources": [
+        "layer.2.attention.o_proj.bias",
+        "layer.2.layer_scale1.lambda1"
+      ],
+      "transform": "layerscale_fold_vector"
+    },
+    {
+      "target": "blocks.2.norm2.weight",
+      "sources": [
+        "layer.2.norm2.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.2.norm2.bias",
+      "sources": [
+        "layer.2.norm2.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.2.mlp.0.weight",
+      "sources": [
+        "layer.2.mlp.up_proj.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.2.mlp.0.bias",
+      "sources": [
+        "layer.2.mlp.up_proj.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.2.mlp.2.weight",
+      "sources": [
+        "layer.2.mlp.down_proj.weight",
+        "layer.2.layer_scale2.lambda1"
+      ],
+      "transform": "layerscale_fold_rows"
+    },
+    {
+      "target": "blocks.2.mlp.2.bias",
+      "sources": [
+        "layer.2.mlp.down_proj.bias",
+        "layer.2.layer_scale2.lambda1"
+      ],
+      "transform": "layerscale_fold_vector"
+    },
+    {
+      "target": "blocks.3.norm1.weight",
+      "sources": [
+        "layer.3.norm1.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.3.norm1.bias",
+      "sources": [
+        "layer.3.norm1.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.3.attn.in_proj_weight",
+      "sources": [
+        "layer.3.attention.q_proj.weight",
+        "layer.3.attention.k_proj.weight",
+        "layer.3.attention.v_proj.weight"
+      ],
+      "transform": "qkv_row_concat"
+    },
+    {
+      "target": "blocks.3.attn.in_proj_bias",
+      "sources": [
+        "layer.3.attention.q_proj.bias",
+        "layer.3.attention.k_proj.bias",
+        "layer.3.attention.v_proj.bias"
+      ],
+      "transform": "qkv_bias_concat_zero_fill_missing"
+    },
+    {
+      "target": "blocks.3.attn.out_proj.weight",
+      "sources": [
+        "layer.3.attention.o_proj.weight",
+        "layer.3.layer_scale1.lambda1"
+      ],
+      "transform": "layerscale_fold_rows"
+    },
+    {
+      "target": "blocks.3.attn.out_proj.bias",
+      "sources": [
+        "layer.3.attention.o_proj.bias",
+        "layer.3.layer_scale1.lambda1"
+      ],
+      "transform": "layerscale_fold_vector"
+    },
+    {
+      "target": "blocks.3.norm2.weight",
+      "sources": [
+        "layer.3.norm2.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.3.norm2.bias",
+      "sources": [
+        "layer.3.norm2.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.3.mlp.0.weight",
+      "sources": [
+        "layer.3.mlp.up_proj.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.3.mlp.0.bias",
+      "sources": [
+        "layer.3.mlp.up_proj.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.3.mlp.2.weight",
+      "sources": [
+        "layer.3.mlp.down_proj.weight",
+        "layer.3.layer_scale2.lambda1"
+      ],
+      "transform": "layerscale_fold_rows"
+    },
+    {
+      "target": "blocks.3.mlp.2.bias",
+      "sources": [
+        "layer.3.mlp.down_proj.bias",
+        "layer.3.layer_scale2.lambda1"
+      ],
+      "transform": "layerscale_fold_vector"
+    },
+    {
+      "target": "blocks.4.norm1.weight",
+      "sources": [
+        "layer.4.norm1.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.4.norm1.bias",
+      "sources": [
+        "layer.4.norm1.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.4.attn.in_proj_weight",
+      "sources": [
+        "layer.4.attention.q_proj.weight",
+        "layer.4.attention.k_proj.weight",
+        "layer.4.attention.v_proj.weight"
+      ],
+      "transform": "qkv_row_concat"
+    },
+    {
+      "target": "blocks.4.attn.in_proj_bias",
+      "sources": [
+        "layer.4.attention.q_proj.bias",
+        "layer.4.attention.k_proj.bias",
+        "layer.4.attention.v_proj.bias"
+      ],
+      "transform": "qkv_bias_concat_zero_fill_missing"
+    },
+    {
+      "target": "blocks.4.attn.out_proj.weight",
+      "sources": [
+        "layer.4.attention.o_proj.weight",
+        "layer.4.layer_scale1.lambda1"
+      ],
+      "transform": "layerscale_fold_rows"
+    },
+    {
+      "target": "blocks.4.attn.out_proj.bias",
+      "sources": [
+        "layer.4.attention.o_proj.bias",
+        "layer.4.layer_scale1.lambda1"
+      ],
+      "transform": "layerscale_fold_vector"
+    },
+    {
+      "target": "blocks.4.norm2.weight",
+      "sources": [
+        "layer.4.norm2.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.4.norm2.bias",
+      "sources": [
+        "layer.4.norm2.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.4.mlp.0.weight",
+      "sources": [
+        "layer.4.mlp.up_proj.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.4.mlp.0.bias",
+      "sources": [
+        "layer.4.mlp.up_proj.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.4.mlp.2.weight",
+      "sources": [
+        "layer.4.mlp.down_proj.weight",
+        "layer.4.layer_scale2.lambda1"
+      ],
+      "transform": "layerscale_fold_rows"
+    },
+    {
+      "target": "blocks.4.mlp.2.bias",
+      "sources": [
+        "layer.4.mlp.down_proj.bias",
+        "layer.4.layer_scale2.lambda1"
+      ],
+      "transform": "layerscale_fold_vector"
+    },
+    {
+      "target": "blocks.5.norm1.weight",
+      "sources": [
+        "layer.5.norm1.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.5.norm1.bias",
+      "sources": [
+        "layer.5.norm1.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.5.attn.in_proj_weight",
+      "sources": [
+        "layer.5.attention.q_proj.weight",
+        "layer.5.attention.k_proj.weight",
+        "layer.5.attention.v_proj.weight"
+      ],
+      "transform": "qkv_row_concat"
+    },
+    {
+      "target": "blocks.5.attn.in_proj_bias",
+      "sources": [
+        "layer.5.attention.q_proj.bias",
+        "layer.5.attention.k_proj.bias",
+        "layer.5.attention.v_proj.bias"
+      ],
+      "transform": "qkv_bias_concat_zero_fill_missing"
+    },
+    {
+      "target": "blocks.5.attn.out_proj.weight",
+      "sources": [
+        "layer.5.attention.o_proj.weight",
+        "layer.5.layer_scale1.lambda1"
+      ],
+      "transform": "layerscale_fold_rows"
+    },
+    {
+      "target": "blocks.5.attn.out_proj.bias",
+      "sources": [
+        "layer.5.attention.o_proj.bias",
+        "layer.5.layer_scale1.lambda1"
+      ],
+      "transform": "layerscale_fold_vector"
+    },
+    {
+      "target": "blocks.5.norm2.weight",
+      "sources": [
+        "layer.5.norm2.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.5.norm2.bias",
+      "sources": [
+        "layer.5.norm2.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.5.mlp.0.weight",
+      "sources": [
+        "layer.5.mlp.up_proj.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.5.mlp.0.bias",
+      "sources": [
+        "layer.5.mlp.up_proj.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.5.mlp.2.weight",
+      "sources": [
+        "layer.5.mlp.down_proj.weight",
+        "layer.5.layer_scale2.lambda1"
+      ],
+      "transform": "layerscale_fold_rows"
+    },
+    {
+      "target": "blocks.5.mlp.2.bias",
+      "sources": [
+        "layer.5.mlp.down_proj.bias",
+        "layer.5.layer_scale2.lambda1"
+      ],
+      "transform": "layerscale_fold_vector"
+    },
+    {
+      "target": "blocks.6.norm1.weight",
+      "sources": [
+        "layer.6.norm1.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.6.norm1.bias",
+      "sources": [
+        "layer.6.norm1.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.6.attn.in_proj_weight",
+      "sources": [
+        "layer.6.attention.q_proj.weight",
+        "layer.6.attention.k_proj.weight",
+        "layer.6.attention.v_proj.weight"
+      ],
+      "transform": "qkv_row_concat"
+    },
+    {
+      "target": "blocks.6.attn.in_proj_bias",
+      "sources": [
+        "layer.6.attention.q_proj.bias",
+        "layer.6.attention.k_proj.bias",
+        "layer.6.attention.v_proj.bias"
+      ],
+      "transform": "qkv_bias_concat_zero_fill_missing"
+    },
+    {
+      "target": "blocks.6.attn.out_proj.weight",
+      "sources": [
+        "layer.6.attention.o_proj.weight",
+        "layer.6.layer_scale1.lambda1"
+      ],
+      "transform": "layerscale_fold_rows"
+    },
+    {
+      "target": "blocks.6.attn.out_proj.bias",
+      "sources": [
+        "layer.6.attention.o_proj.bias",
+        "layer.6.layer_scale1.lambda1"
+      ],
+      "transform": "layerscale_fold_vector"
+    },
+    {
+      "target": "blocks.6.norm2.weight",
+      "sources": [
+        "layer.6.norm2.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.6.norm2.bias",
+      "sources": [
+        "layer.6.norm2.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.6.mlp.0.weight",
+      "sources": [
+        "layer.6.mlp.up_proj.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.6.mlp.0.bias",
+      "sources": [
+        "layer.6.mlp.up_proj.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.6.mlp.2.weight",
+      "sources": [
+        "layer.6.mlp.down_proj.weight",
+        "layer.6.layer_scale2.lambda1"
+      ],
+      "transform": "layerscale_fold_rows"
+    },
+    {
+      "target": "blocks.6.mlp.2.bias",
+      "sources": [
+        "layer.6.mlp.down_proj.bias",
+        "layer.6.layer_scale2.lambda1"
+      ],
+      "transform": "layerscale_fold_vector"
+    },
+    {
+      "target": "blocks.7.norm1.weight",
+      "sources": [
+        "layer.7.norm1.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.7.norm1.bias",
+      "sources": [
+        "layer.7.norm1.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.7.attn.in_proj_weight",
+      "sources": [
+        "layer.7.attention.q_proj.weight",
+        "layer.7.attention.k_proj.weight",
+        "layer.7.attention.v_proj.weight"
+      ],
+      "transform": "qkv_row_concat"
+    },
+    {
+      "target": "blocks.7.attn.in_proj_bias",
+      "sources": [
+        "layer.7.attention.q_proj.bias",
+        "layer.7.attention.k_proj.bias",
+        "layer.7.attention.v_proj.bias"
+      ],
+      "transform": "qkv_bias_concat_zero_fill_missing"
+    },
+    {
+      "target": "blocks.7.attn.out_proj.weight",
+      "sources": [
+        "layer.7.attention.o_proj.weight",
+        "layer.7.layer_scale1.lambda1"
+      ],
+      "transform": "layerscale_fold_rows"
+    },
+    {
+      "target": "blocks.7.attn.out_proj.bias",
+      "sources": [
+        "layer.7.attention.o_proj.bias",
+        "layer.7.layer_scale1.lambda1"
+      ],
+      "transform": "layerscale_fold_vector"
+    },
+    {
+      "target": "blocks.7.norm2.weight",
+      "sources": [
+        "layer.7.norm2.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.7.norm2.bias",
+      "sources": [
+        "layer.7.norm2.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.7.mlp.0.weight",
+      "sources": [
+        "layer.7.mlp.up_proj.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.7.mlp.0.bias",
+      "sources": [
+        "layer.7.mlp.up_proj.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.7.mlp.2.weight",
+      "sources": [
+        "layer.7.mlp.down_proj.weight",
+        "layer.7.layer_scale2.lambda1"
+      ],
+      "transform": "layerscale_fold_rows"
+    },
+    {
+      "target": "blocks.7.mlp.2.bias",
+      "sources": [
+        "layer.7.mlp.down_proj.bias",
+        "layer.7.layer_scale2.lambda1"
+      ],
+      "transform": "layerscale_fold_vector"
+    },
+    {
+      "target": "blocks.8.norm1.weight",
+      "sources": [
+        "layer.8.norm1.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.8.norm1.bias",
+      "sources": [
+        "layer.8.norm1.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.8.attn.in_proj_weight",
+      "sources": [
+        "layer.8.attention.q_proj.weight",
+        "layer.8.attention.k_proj.weight",
+        "layer.8.attention.v_proj.weight"
+      ],
+      "transform": "qkv_row_concat"
+    },
+    {
+      "target": "blocks.8.attn.in_proj_bias",
+      "sources": [
+        "layer.8.attention.q_proj.bias",
+        "layer.8.attention.k_proj.bias",
+        "layer.8.attention.v_proj.bias"
+      ],
+      "transform": "qkv_bias_concat_zero_fill_missing"
+    },
+    {
+      "target": "blocks.8.attn.out_proj.weight",
+      "sources": [
+        "layer.8.attention.o_proj.weight",
+        "layer.8.layer_scale1.lambda1"
+      ],
+      "transform": "layerscale_fold_rows"
+    },
+    {
+      "target": "blocks.8.attn.out_proj.bias",
+      "sources": [
+        "layer.8.attention.o_proj.bias",
+        "layer.8.layer_scale1.lambda1"
+      ],
+      "transform": "layerscale_fold_vector"
+    },
+    {
+      "target": "blocks.8.norm2.weight",
+      "sources": [
+        "layer.8.norm2.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.8.norm2.bias",
+      "sources": [
+        "layer.8.norm2.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.8.mlp.0.weight",
+      "sources": [
+        "layer.8.mlp.up_proj.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.8.mlp.0.bias",
+      "sources": [
+        "layer.8.mlp.up_proj.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.8.mlp.2.weight",
+      "sources": [
+        "layer.8.mlp.down_proj.weight",
+        "layer.8.layer_scale2.lambda1"
+      ],
+      "transform": "layerscale_fold_rows"
+    },
+    {
+      "target": "blocks.8.mlp.2.bias",
+      "sources": [
+        "layer.8.mlp.down_proj.bias",
+        "layer.8.layer_scale2.lambda1"
+      ],
+      "transform": "layerscale_fold_vector"
+    },
+    {
+      "target": "blocks.9.norm1.weight",
+      "sources": [
+        "layer.9.norm1.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.9.norm1.bias",
+      "sources": [
+        "layer.9.norm1.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.9.attn.in_proj_weight",
+      "sources": [
+        "layer.9.attention.q_proj.weight",
+        "layer.9.attention.k_proj.weight",
+        "layer.9.attention.v_proj.weight"
+      ],
+      "transform": "qkv_row_concat"
+    },
+    {
+      "target": "blocks.9.attn.in_proj_bias",
+      "sources": [
+        "layer.9.attention.q_proj.bias",
+        "layer.9.attention.k_proj.bias",
+        "layer.9.attention.v_proj.bias"
+      ],
+      "transform": "qkv_bias_concat_zero_fill_missing"
+    },
+    {
+      "target": "blocks.9.attn.out_proj.weight",
+      "sources": [
+        "layer.9.attention.o_proj.weight",
+        "layer.9.layer_scale1.lambda1"
+      ],
+      "transform": "layerscale_fold_rows"
+    },
+    {
+      "target": "blocks.9.attn.out_proj.bias",
+      "sources": [
+        "layer.9.attention.o_proj.bias",
+        "layer.9.layer_scale1.lambda1"
+      ],
+      "transform": "layerscale_fold_vector"
+    },
+    {
+      "target": "blocks.9.norm2.weight",
+      "sources": [
+        "layer.9.norm2.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.9.norm2.bias",
+      "sources": [
+        "layer.9.norm2.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.9.mlp.0.weight",
+      "sources": [
+        "layer.9.mlp.up_proj.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.9.mlp.0.bias",
+      "sources": [
+        "layer.9.mlp.up_proj.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.9.mlp.2.weight",
+      "sources": [
+        "layer.9.mlp.down_proj.weight",
+        "layer.9.layer_scale2.lambda1"
+      ],
+      "transform": "layerscale_fold_rows"
+    },
+    {
+      "target": "blocks.9.mlp.2.bias",
+      "sources": [
+        "layer.9.mlp.down_proj.bias",
+        "layer.9.layer_scale2.lambda1"
+      ],
+      "transform": "layerscale_fold_vector"
+    },
+    {
+      "target": "blocks.10.norm1.weight",
+      "sources": [
+        "layer.10.norm1.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.10.norm1.bias",
+      "sources": [
+        "layer.10.norm1.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.10.attn.in_proj_weight",
+      "sources": [
+        "layer.10.attention.q_proj.weight",
+        "layer.10.attention.k_proj.weight",
+        "layer.10.attention.v_proj.weight"
+      ],
+      "transform": "qkv_row_concat"
+    },
+    {
+      "target": "blocks.10.attn.in_proj_bias",
+      "sources": [
+        "layer.10.attention.q_proj.bias",
+        "layer.10.attention.k_proj.bias",
+        "layer.10.attention.v_proj.bias"
+      ],
+      "transform": "qkv_bias_concat_zero_fill_missing"
+    },
+    {
+      "target": "blocks.10.attn.out_proj.weight",
+      "sources": [
+        "layer.10.attention.o_proj.weight",
+        "layer.10.layer_scale1.lambda1"
+      ],
+      "transform": "layerscale_fold_rows"
+    },
+    {
+      "target": "blocks.10.attn.out_proj.bias",
+      "sources": [
+        "layer.10.attention.o_proj.bias",
+        "layer.10.layer_scale1.lambda1"
+      ],
+      "transform": "layerscale_fold_vector"
+    },
+    {
+      "target": "blocks.10.norm2.weight",
+      "sources": [
+        "layer.10.norm2.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.10.norm2.bias",
+      "sources": [
+        "layer.10.norm2.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.10.mlp.0.weight",
+      "sources": [
+        "layer.10.mlp.up_proj.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.10.mlp.0.bias",
+      "sources": [
+        "layer.10.mlp.up_proj.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.10.mlp.2.weight",
+      "sources": [
+        "layer.10.mlp.down_proj.weight",
+        "layer.10.layer_scale2.lambda1"
+      ],
+      "transform": "layerscale_fold_rows"
+    },
+    {
+      "target": "blocks.10.mlp.2.bias",
+      "sources": [
+        "layer.10.mlp.down_proj.bias",
+        "layer.10.layer_scale2.lambda1"
+      ],
+      "transform": "layerscale_fold_vector"
+    },
+    {
+      "target": "blocks.11.norm1.weight",
+      "sources": [
+        "layer.11.norm1.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.11.norm1.bias",
+      "sources": [
+        "layer.11.norm1.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.11.attn.in_proj_weight",
+      "sources": [
+        "layer.11.attention.q_proj.weight",
+        "layer.11.attention.k_proj.weight",
+        "layer.11.attention.v_proj.weight"
+      ],
+      "transform": "qkv_row_concat"
+    },
+    {
+      "target": "blocks.11.attn.in_proj_bias",
+      "sources": [
+        "layer.11.attention.q_proj.bias",
+        "layer.11.attention.k_proj.bias",
+        "layer.11.attention.v_proj.bias"
+      ],
+      "transform": "qkv_bias_concat_zero_fill_missing"
+    },
+    {
+      "target": "blocks.11.attn.out_proj.weight",
+      "sources": [
+        "layer.11.attention.o_proj.weight",
+        "layer.11.layer_scale1.lambda1"
+      ],
+      "transform": "layerscale_fold_rows"
+    },
+    {
+      "target": "blocks.11.attn.out_proj.bias",
+      "sources": [
+        "layer.11.attention.o_proj.bias",
+        "layer.11.layer_scale1.lambda1"
+      ],
+      "transform": "layerscale_fold_vector"
+    },
+    {
+      "target": "blocks.11.norm2.weight",
+      "sources": [
+        "layer.11.norm2.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.11.norm2.bias",
+      "sources": [
+        "layer.11.norm2.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.11.mlp.0.weight",
+      "sources": [
+        "layer.11.mlp.up_proj.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.11.mlp.0.bias",
+      "sources": [
+        "layer.11.mlp.up_proj.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.11.mlp.2.weight",
+      "sources": [
+        "layer.11.mlp.down_proj.weight",
+        "layer.11.layer_scale2.lambda1"
+      ],
+      "transform": "layerscale_fold_rows"
+    },
+    {
+      "target": "blocks.11.mlp.2.bias",
+      "sources": [
+        "layer.11.mlp.down_proj.bias",
+        "layer.11.layer_scale2.lambda1"
+      ],
+      "transform": "layerscale_fold_vector"
+    },
+    {
+      "target": "blocks.12.norm1.weight",
+      "sources": [
+        "layer.12.norm1.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.12.norm1.bias",
+      "sources": [
+        "layer.12.norm1.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.12.attn.in_proj_weight",
+      "sources": [
+        "layer.12.attention.q_proj.weight",
+        "layer.12.attention.k_proj.weight",
+        "layer.12.attention.v_proj.weight"
+      ],
+      "transform": "qkv_row_concat"
+    },
+    {
+      "target": "blocks.12.attn.in_proj_bias",
+      "sources": [
+        "layer.12.attention.q_proj.bias",
+        "layer.12.attention.k_proj.bias",
+        "layer.12.attention.v_proj.bias"
+      ],
+      "transform": "qkv_bias_concat_zero_fill_missing"
+    },
+    {
+      "target": "blocks.12.attn.out_proj.weight",
+      "sources": [
+        "layer.12.attention.o_proj.weight",
+        "layer.12.layer_scale1.lambda1"
+      ],
+      "transform": "layerscale_fold_rows"
+    },
+    {
+      "target": "blocks.12.attn.out_proj.bias",
+      "sources": [
+        "layer.12.attention.o_proj.bias",
+        "layer.12.layer_scale1.lambda1"
+      ],
+      "transform": "layerscale_fold_vector"
+    },
+    {
+      "target": "blocks.12.norm2.weight",
+      "sources": [
+        "layer.12.norm2.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.12.norm2.bias",
+      "sources": [
+        "layer.12.norm2.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.12.mlp.0.weight",
+      "sources": [
+        "layer.12.mlp.up_proj.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.12.mlp.0.bias",
+      "sources": [
+        "layer.12.mlp.up_proj.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.12.mlp.2.weight",
+      "sources": [
+        "layer.12.mlp.down_proj.weight",
+        "layer.12.layer_scale2.lambda1"
+      ],
+      "transform": "layerscale_fold_rows"
+    },
+    {
+      "target": "blocks.12.mlp.2.bias",
+      "sources": [
+        "layer.12.mlp.down_proj.bias",
+        "layer.12.layer_scale2.lambda1"
+      ],
+      "transform": "layerscale_fold_vector"
+    },
+    {
+      "target": "blocks.13.norm1.weight",
+      "sources": [
+        "layer.13.norm1.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.13.norm1.bias",
+      "sources": [
+        "layer.13.norm1.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.13.attn.in_proj_weight",
+      "sources": [
+        "layer.13.attention.q_proj.weight",
+        "layer.13.attention.k_proj.weight",
+        "layer.13.attention.v_proj.weight"
+      ],
+      "transform": "qkv_row_concat"
+    },
+    {
+      "target": "blocks.13.attn.in_proj_bias",
+      "sources": [
+        "layer.13.attention.q_proj.bias",
+        "layer.13.attention.k_proj.bias",
+        "layer.13.attention.v_proj.bias"
+      ],
+      "transform": "qkv_bias_concat_zero_fill_missing"
+    },
+    {
+      "target": "blocks.13.attn.out_proj.weight",
+      "sources": [
+        "layer.13.attention.o_proj.weight",
+        "layer.13.layer_scale1.lambda1"
+      ],
+      "transform": "layerscale_fold_rows"
+    },
+    {
+      "target": "blocks.13.attn.out_proj.bias",
+      "sources": [
+        "layer.13.attention.o_proj.bias",
+        "layer.13.layer_scale1.lambda1"
+      ],
+      "transform": "layerscale_fold_vector"
+    },
+    {
+      "target": "blocks.13.norm2.weight",
+      "sources": [
+        "layer.13.norm2.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.13.norm2.bias",
+      "sources": [
+        "layer.13.norm2.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.13.mlp.0.weight",
+      "sources": [
+        "layer.13.mlp.up_proj.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.13.mlp.0.bias",
+      "sources": [
+        "layer.13.mlp.up_proj.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.13.mlp.2.weight",
+      "sources": [
+        "layer.13.mlp.down_proj.weight",
+        "layer.13.layer_scale2.lambda1"
+      ],
+      "transform": "layerscale_fold_rows"
+    },
+    {
+      "target": "blocks.13.mlp.2.bias",
+      "sources": [
+        "layer.13.mlp.down_proj.bias",
+        "layer.13.layer_scale2.lambda1"
+      ],
+      "transform": "layerscale_fold_vector"
+    },
+    {
+      "target": "blocks.14.norm1.weight",
+      "sources": [
+        "layer.14.norm1.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.14.norm1.bias",
+      "sources": [
+        "layer.14.norm1.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.14.attn.in_proj_weight",
+      "sources": [
+        "layer.14.attention.q_proj.weight",
+        "layer.14.attention.k_proj.weight",
+        "layer.14.attention.v_proj.weight"
+      ],
+      "transform": "qkv_row_concat"
+    },
+    {
+      "target": "blocks.14.attn.in_proj_bias",
+      "sources": [
+        "layer.14.attention.q_proj.bias",
+        "layer.14.attention.k_proj.bias",
+        "layer.14.attention.v_proj.bias"
+      ],
+      "transform": "qkv_bias_concat_zero_fill_missing"
+    },
+    {
+      "target": "blocks.14.attn.out_proj.weight",
+      "sources": [
+        "layer.14.attention.o_proj.weight",
+        "layer.14.layer_scale1.lambda1"
+      ],
+      "transform": "layerscale_fold_rows"
+    },
+    {
+      "target": "blocks.14.attn.out_proj.bias",
+      "sources": [
+        "layer.14.attention.o_proj.bias",
+        "layer.14.layer_scale1.lambda1"
+      ],
+      "transform": "layerscale_fold_vector"
+    },
+    {
+      "target": "blocks.14.norm2.weight",
+      "sources": [
+        "layer.14.norm2.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.14.norm2.bias",
+      "sources": [
+        "layer.14.norm2.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.14.mlp.0.weight",
+      "sources": [
+        "layer.14.mlp.up_proj.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.14.mlp.0.bias",
+      "sources": [
+        "layer.14.mlp.up_proj.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.14.mlp.2.weight",
+      "sources": [
+        "layer.14.mlp.down_proj.weight",
+        "layer.14.layer_scale2.lambda1"
+      ],
+      "transform": "layerscale_fold_rows"
+    },
+    {
+      "target": "blocks.14.mlp.2.bias",
+      "sources": [
+        "layer.14.mlp.down_proj.bias",
+        "layer.14.layer_scale2.lambda1"
+      ],
+      "transform": "layerscale_fold_vector"
+    },
+    {
+      "target": "blocks.15.norm1.weight",
+      "sources": [
+        "layer.15.norm1.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.15.norm1.bias",
+      "sources": [
+        "layer.15.norm1.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.15.attn.in_proj_weight",
+      "sources": [
+        "layer.15.attention.q_proj.weight",
+        "layer.15.attention.k_proj.weight",
+        "layer.15.attention.v_proj.weight"
+      ],
+      "transform": "qkv_row_concat"
+    },
+    {
+      "target": "blocks.15.attn.in_proj_bias",
+      "sources": [
+        "layer.15.attention.q_proj.bias",
+        "layer.15.attention.k_proj.bias",
+        "layer.15.attention.v_proj.bias"
+      ],
+      "transform": "qkv_bias_concat_zero_fill_missing"
+    },
+    {
+      "target": "blocks.15.attn.out_proj.weight",
+      "sources": [
+        "layer.15.attention.o_proj.weight",
+        "layer.15.layer_scale1.lambda1"
+      ],
+      "transform": "layerscale_fold_rows"
+    },
+    {
+      "target": "blocks.15.attn.out_proj.bias",
+      "sources": [
+        "layer.15.attention.o_proj.bias",
+        "layer.15.layer_scale1.lambda1"
+      ],
+      "transform": "layerscale_fold_vector"
+    },
+    {
+      "target": "blocks.15.norm2.weight",
+      "sources": [
+        "layer.15.norm2.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.15.norm2.bias",
+      "sources": [
+        "layer.15.norm2.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.15.mlp.0.weight",
+      "sources": [
+        "layer.15.mlp.up_proj.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.15.mlp.0.bias",
+      "sources": [
+        "layer.15.mlp.up_proj.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.15.mlp.2.weight",
+      "sources": [
+        "layer.15.mlp.down_proj.weight",
+        "layer.15.layer_scale2.lambda1"
+      ],
+      "transform": "layerscale_fold_rows"
+    },
+    {
+      "target": "blocks.15.mlp.2.bias",
+      "sources": [
+        "layer.15.mlp.down_proj.bias",
+        "layer.15.layer_scale2.lambda1"
+      ],
+      "transform": "layerscale_fold_vector"
+    },
+    {
+      "target": "blocks.16.norm1.weight",
+      "sources": [
+        "layer.16.norm1.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.16.norm1.bias",
+      "sources": [
+        "layer.16.norm1.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.16.attn.in_proj_weight",
+      "sources": [
+        "layer.16.attention.q_proj.weight",
+        "layer.16.attention.k_proj.weight",
+        "layer.16.attention.v_proj.weight"
+      ],
+      "transform": "qkv_row_concat"
+    },
+    {
+      "target": "blocks.16.attn.in_proj_bias",
+      "sources": [
+        "layer.16.attention.q_proj.bias",
+        "layer.16.attention.k_proj.bias",
+        "layer.16.attention.v_proj.bias"
+      ],
+      "transform": "qkv_bias_concat_zero_fill_missing"
+    },
+    {
+      "target": "blocks.16.attn.out_proj.weight",
+      "sources": [
+        "layer.16.attention.o_proj.weight",
+        "layer.16.layer_scale1.lambda1"
+      ],
+      "transform": "layerscale_fold_rows"
+    },
+    {
+      "target": "blocks.16.attn.out_proj.bias",
+      "sources": [
+        "layer.16.attention.o_proj.bias",
+        "layer.16.layer_scale1.lambda1"
+      ],
+      "transform": "layerscale_fold_vector"
+    },
+    {
+      "target": "blocks.16.norm2.weight",
+      "sources": [
+        "layer.16.norm2.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.16.norm2.bias",
+      "sources": [
+        "layer.16.norm2.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.16.mlp.0.weight",
+      "sources": [
+        "layer.16.mlp.up_proj.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.16.mlp.0.bias",
+      "sources": [
+        "layer.16.mlp.up_proj.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.16.mlp.2.weight",
+      "sources": [
+        "layer.16.mlp.down_proj.weight",
+        "layer.16.layer_scale2.lambda1"
+      ],
+      "transform": "layerscale_fold_rows"
+    },
+    {
+      "target": "blocks.16.mlp.2.bias",
+      "sources": [
+        "layer.16.mlp.down_proj.bias",
+        "layer.16.layer_scale2.lambda1"
+      ],
+      "transform": "layerscale_fold_vector"
+    },
+    {
+      "target": "blocks.17.norm1.weight",
+      "sources": [
+        "layer.17.norm1.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.17.norm1.bias",
+      "sources": [
+        "layer.17.norm1.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.17.attn.in_proj_weight",
+      "sources": [
+        "layer.17.attention.q_proj.weight",
+        "layer.17.attention.k_proj.weight",
+        "layer.17.attention.v_proj.weight"
+      ],
+      "transform": "qkv_row_concat"
+    },
+    {
+      "target": "blocks.17.attn.in_proj_bias",
+      "sources": [
+        "layer.17.attention.q_proj.bias",
+        "layer.17.attention.k_proj.bias",
+        "layer.17.attention.v_proj.bias"
+      ],
+      "transform": "qkv_bias_concat_zero_fill_missing"
+    },
+    {
+      "target": "blocks.17.attn.out_proj.weight",
+      "sources": [
+        "layer.17.attention.o_proj.weight",
+        "layer.17.layer_scale1.lambda1"
+      ],
+      "transform": "layerscale_fold_rows"
+    },
+    {
+      "target": "blocks.17.attn.out_proj.bias",
+      "sources": [
+        "layer.17.attention.o_proj.bias",
+        "layer.17.layer_scale1.lambda1"
+      ],
+      "transform": "layerscale_fold_vector"
+    },
+    {
+      "target": "blocks.17.norm2.weight",
+      "sources": [
+        "layer.17.norm2.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.17.norm2.bias",
+      "sources": [
+        "layer.17.norm2.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.17.mlp.0.weight",
+      "sources": [
+        "layer.17.mlp.up_proj.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.17.mlp.0.bias",
+      "sources": [
+        "layer.17.mlp.up_proj.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.17.mlp.2.weight",
+      "sources": [
+        "layer.17.mlp.down_proj.weight",
+        "layer.17.layer_scale2.lambda1"
+      ],
+      "transform": "layerscale_fold_rows"
+    },
+    {
+      "target": "blocks.17.mlp.2.bias",
+      "sources": [
+        "layer.17.mlp.down_proj.bias",
+        "layer.17.layer_scale2.lambda1"
+      ],
+      "transform": "layerscale_fold_vector"
+    },
+    {
+      "target": "blocks.18.norm1.weight",
+      "sources": [
+        "layer.18.norm1.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.18.norm1.bias",
+      "sources": [
+        "layer.18.norm1.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.18.attn.in_proj_weight",
+      "sources": [
+        "layer.18.attention.q_proj.weight",
+        "layer.18.attention.k_proj.weight",
+        "layer.18.attention.v_proj.weight"
+      ],
+      "transform": "qkv_row_concat"
+    },
+    {
+      "target": "blocks.18.attn.in_proj_bias",
+      "sources": [
+        "layer.18.attention.q_proj.bias",
+        "layer.18.attention.k_proj.bias",
+        "layer.18.attention.v_proj.bias"
+      ],
+      "transform": "qkv_bias_concat_zero_fill_missing"
+    },
+    {
+      "target": "blocks.18.attn.out_proj.weight",
+      "sources": [
+        "layer.18.attention.o_proj.weight",
+        "layer.18.layer_scale1.lambda1"
+      ],
+      "transform": "layerscale_fold_rows"
+    },
+    {
+      "target": "blocks.18.attn.out_proj.bias",
+      "sources": [
+        "layer.18.attention.o_proj.bias",
+        "layer.18.layer_scale1.lambda1"
+      ],
+      "transform": "layerscale_fold_vector"
+    },
+    {
+      "target": "blocks.18.norm2.weight",
+      "sources": [
+        "layer.18.norm2.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.18.norm2.bias",
+      "sources": [
+        "layer.18.norm2.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.18.mlp.0.weight",
+      "sources": [
+        "layer.18.mlp.up_proj.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.18.mlp.0.bias",
+      "sources": [
+        "layer.18.mlp.up_proj.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.18.mlp.2.weight",
+      "sources": [
+        "layer.18.mlp.down_proj.weight",
+        "layer.18.layer_scale2.lambda1"
+      ],
+      "transform": "layerscale_fold_rows"
+    },
+    {
+      "target": "blocks.18.mlp.2.bias",
+      "sources": [
+        "layer.18.mlp.down_proj.bias",
+        "layer.18.layer_scale2.lambda1"
+      ],
+      "transform": "layerscale_fold_vector"
+    },
+    {
+      "target": "blocks.19.norm1.weight",
+      "sources": [
+        "layer.19.norm1.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.19.norm1.bias",
+      "sources": [
+        "layer.19.norm1.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.19.attn.in_proj_weight",
+      "sources": [
+        "layer.19.attention.q_proj.weight",
+        "layer.19.attention.k_proj.weight",
+        "layer.19.attention.v_proj.weight"
+      ],
+      "transform": "qkv_row_concat"
+    },
+    {
+      "target": "blocks.19.attn.in_proj_bias",
+      "sources": [
+        "layer.19.attention.q_proj.bias",
+        "layer.19.attention.k_proj.bias",
+        "layer.19.attention.v_proj.bias"
+      ],
+      "transform": "qkv_bias_concat_zero_fill_missing"
+    },
+    {
+      "target": "blocks.19.attn.out_proj.weight",
+      "sources": [
+        "layer.19.attention.o_proj.weight",
+        "layer.19.layer_scale1.lambda1"
+      ],
+      "transform": "layerscale_fold_rows"
+    },
+    {
+      "target": "blocks.19.attn.out_proj.bias",
+      "sources": [
+        "layer.19.attention.o_proj.bias",
+        "layer.19.layer_scale1.lambda1"
+      ],
+      "transform": "layerscale_fold_vector"
+    },
+    {
+      "target": "blocks.19.norm2.weight",
+      "sources": [
+        "layer.19.norm2.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.19.norm2.bias",
+      "sources": [
+        "layer.19.norm2.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.19.mlp.0.weight",
+      "sources": [
+        "layer.19.mlp.up_proj.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.19.mlp.0.bias",
+      "sources": [
+        "layer.19.mlp.up_proj.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.19.mlp.2.weight",
+      "sources": [
+        "layer.19.mlp.down_proj.weight",
+        "layer.19.layer_scale2.lambda1"
+      ],
+      "transform": "layerscale_fold_rows"
+    },
+    {
+      "target": "blocks.19.mlp.2.bias",
+      "sources": [
+        "layer.19.mlp.down_proj.bias",
+        "layer.19.layer_scale2.lambda1"
+      ],
+      "transform": "layerscale_fold_vector"
+    },
+    {
+      "target": "blocks.20.norm1.weight",
+      "sources": [
+        "layer.20.norm1.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.20.norm1.bias",
+      "sources": [
+        "layer.20.norm1.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.20.attn.in_proj_weight",
+      "sources": [
+        "layer.20.attention.q_proj.weight",
+        "layer.20.attention.k_proj.weight",
+        "layer.20.attention.v_proj.weight"
+      ],
+      "transform": "qkv_row_concat"
+    },
+    {
+      "target": "blocks.20.attn.in_proj_bias",
+      "sources": [
+        "layer.20.attention.q_proj.bias",
+        "layer.20.attention.k_proj.bias",
+        "layer.20.attention.v_proj.bias"
+      ],
+      "transform": "qkv_bias_concat_zero_fill_missing"
+    },
+    {
+      "target": "blocks.20.attn.out_proj.weight",
+      "sources": [
+        "layer.20.attention.o_proj.weight",
+        "layer.20.layer_scale1.lambda1"
+      ],
+      "transform": "layerscale_fold_rows"
+    },
+    {
+      "target": "blocks.20.attn.out_proj.bias",
+      "sources": [
+        "layer.20.attention.o_proj.bias",
+        "layer.20.layer_scale1.lambda1"
+      ],
+      "transform": "layerscale_fold_vector"
+    },
+    {
+      "target": "blocks.20.norm2.weight",
+      "sources": [
+        "layer.20.norm2.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.20.norm2.bias",
+      "sources": [
+        "layer.20.norm2.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.20.mlp.0.weight",
+      "sources": [
+        "layer.20.mlp.up_proj.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.20.mlp.0.bias",
+      "sources": [
+        "layer.20.mlp.up_proj.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.20.mlp.2.weight",
+      "sources": [
+        "layer.20.mlp.down_proj.weight",
+        "layer.20.layer_scale2.lambda1"
+      ],
+      "transform": "layerscale_fold_rows"
+    },
+    {
+      "target": "blocks.20.mlp.2.bias",
+      "sources": [
+        "layer.20.mlp.down_proj.bias",
+        "layer.20.layer_scale2.lambda1"
+      ],
+      "transform": "layerscale_fold_vector"
+    },
+    {
+      "target": "blocks.21.norm1.weight",
+      "sources": [
+        "layer.21.norm1.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.21.norm1.bias",
+      "sources": [
+        "layer.21.norm1.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.21.attn.in_proj_weight",
+      "sources": [
+        "layer.21.attention.q_proj.weight",
+        "layer.21.attention.k_proj.weight",
+        "layer.21.attention.v_proj.weight"
+      ],
+      "transform": "qkv_row_concat"
+    },
+    {
+      "target": "blocks.21.attn.in_proj_bias",
+      "sources": [
+        "layer.21.attention.q_proj.bias",
+        "layer.21.attention.k_proj.bias",
+        "layer.21.attention.v_proj.bias"
+      ],
+      "transform": "qkv_bias_concat_zero_fill_missing"
+    },
+    {
+      "target": "blocks.21.attn.out_proj.weight",
+      "sources": [
+        "layer.21.attention.o_proj.weight",
+        "layer.21.layer_scale1.lambda1"
+      ],
+      "transform": "layerscale_fold_rows"
+    },
+    {
+      "target": "blocks.21.attn.out_proj.bias",
+      "sources": [
+        "layer.21.attention.o_proj.bias",
+        "layer.21.layer_scale1.lambda1"
+      ],
+      "transform": "layerscale_fold_vector"
+    },
+    {
+      "target": "blocks.21.norm2.weight",
+      "sources": [
+        "layer.21.norm2.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.21.norm2.bias",
+      "sources": [
+        "layer.21.norm2.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.21.mlp.0.weight",
+      "sources": [
+        "layer.21.mlp.up_proj.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.21.mlp.0.bias",
+      "sources": [
+        "layer.21.mlp.up_proj.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.21.mlp.2.weight",
+      "sources": [
+        "layer.21.mlp.down_proj.weight",
+        "layer.21.layer_scale2.lambda1"
+      ],
+      "transform": "layerscale_fold_rows"
+    },
+    {
+      "target": "blocks.21.mlp.2.bias",
+      "sources": [
+        "layer.21.mlp.down_proj.bias",
+        "layer.21.layer_scale2.lambda1"
+      ],
+      "transform": "layerscale_fold_vector"
+    },
+    {
+      "target": "blocks.22.norm1.weight",
+      "sources": [
+        "layer.22.norm1.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.22.norm1.bias",
+      "sources": [
+        "layer.22.norm1.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.22.attn.in_proj_weight",
+      "sources": [
+        "layer.22.attention.q_proj.weight",
+        "layer.22.attention.k_proj.weight",
+        "layer.22.attention.v_proj.weight"
+      ],
+      "transform": "qkv_row_concat"
+    },
+    {
+      "target": "blocks.22.attn.in_proj_bias",
+      "sources": [
+        "layer.22.attention.q_proj.bias",
+        "layer.22.attention.k_proj.bias",
+        "layer.22.attention.v_proj.bias"
+      ],
+      "transform": "qkv_bias_concat_zero_fill_missing"
+    },
+    {
+      "target": "blocks.22.attn.out_proj.weight",
+      "sources": [
+        "layer.22.attention.o_proj.weight",
+        "layer.22.layer_scale1.lambda1"
+      ],
+      "transform": "layerscale_fold_rows"
+    },
+    {
+      "target": "blocks.22.attn.out_proj.bias",
+      "sources": [
+        "layer.22.attention.o_proj.bias",
+        "layer.22.layer_scale1.lambda1"
+      ],
+      "transform": "layerscale_fold_vector"
+    },
+    {
+      "target": "blocks.22.norm2.weight",
+      "sources": [
+        "layer.22.norm2.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.22.norm2.bias",
+      "sources": [
+        "layer.22.norm2.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.22.mlp.0.weight",
+      "sources": [
+        "layer.22.mlp.up_proj.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.22.mlp.0.bias",
+      "sources": [
+        "layer.22.mlp.up_proj.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.22.mlp.2.weight",
+      "sources": [
+        "layer.22.mlp.down_proj.weight",
+        "layer.22.layer_scale2.lambda1"
+      ],
+      "transform": "layerscale_fold_rows"
+    },
+    {
+      "target": "blocks.22.mlp.2.bias",
+      "sources": [
+        "layer.22.mlp.down_proj.bias",
+        "layer.22.layer_scale2.lambda1"
+      ],
+      "transform": "layerscale_fold_vector"
+    },
+    {
+      "target": "blocks.23.norm1.weight",
+      "sources": [
+        "layer.23.norm1.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.23.norm1.bias",
+      "sources": [
+        "layer.23.norm1.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.23.attn.in_proj_weight",
+      "sources": [
+        "layer.23.attention.q_proj.weight",
+        "layer.23.attention.k_proj.weight",
+        "layer.23.attention.v_proj.weight"
+      ],
+      "transform": "qkv_row_concat"
+    },
+    {
+      "target": "blocks.23.attn.in_proj_bias",
+      "sources": [
+        "layer.23.attention.q_proj.bias",
+        "layer.23.attention.k_proj.bias",
+        "layer.23.attention.v_proj.bias"
+      ],
+      "transform": "qkv_bias_concat_zero_fill_missing"
+    },
+    {
+      "target": "blocks.23.attn.out_proj.weight",
+      "sources": [
+        "layer.23.attention.o_proj.weight",
+        "layer.23.layer_scale1.lambda1"
+      ],
+      "transform": "layerscale_fold_rows"
+    },
+    {
+      "target": "blocks.23.attn.out_proj.bias",
+      "sources": [
+        "layer.23.attention.o_proj.bias",
+        "layer.23.layer_scale1.lambda1"
+      ],
+      "transform": "layerscale_fold_vector"
+    },
+    {
+      "target": "blocks.23.norm2.weight",
+      "sources": [
+        "layer.23.norm2.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.23.norm2.bias",
+      "sources": [
+        "layer.23.norm2.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.23.mlp.0.weight",
+      "sources": [
+        "layer.23.mlp.up_proj.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.23.mlp.0.bias",
+      "sources": [
+        "layer.23.mlp.up_proj.bias"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "blocks.23.mlp.2.weight",
+      "sources": [
+        "layer.23.mlp.down_proj.weight",
+        "layer.23.layer_scale2.lambda1"
+      ],
+      "transform": "layerscale_fold_rows"
+    },
+    {
+      "target": "blocks.23.mlp.2.bias",
+      "sources": [
+        "layer.23.mlp.down_proj.bias",
+        "layer.23.layer_scale2.lambda1"
+      ],
+      "transform": "layerscale_fold_vector"
+    },
+    {
+      "target": "norm.weight",
+      "sources": [
+        "norm.weight"
+      ],
+      "transform": "identity"
+    },
+    {
+      "target": "norm.bias",
+      "sources": [
+        "norm.bias"
+      ],
+      "transform": "identity"
+    }
+  ],
+  "n_mapped": 292,
+  "n_skipped_allowlist": 3,
+  "n_left_at_init": 1,
+  "mapped_keys": [
+    "blocks.0.attn.in_proj_bias",
+    "blocks.0.attn.in_proj_weight",
+    "blocks.0.attn.out_proj.bias",
+    "blocks.0.attn.out_proj.weight",
+    "blocks.0.mlp.0.bias",
+    "blocks.0.mlp.0.weight",
+    "blocks.0.mlp.2.bias",
+    "blocks.0.mlp.2.weight",
+    "blocks.0.norm1.bias",
+    "blocks.0.norm1.weight",
+    "blocks.0.norm2.bias",
+    "blocks.0.norm2.weight",
+    "blocks.1.attn.in_proj_bias",
+    "blocks.1.attn.in_proj_weight",
+    "blocks.1.attn.out_proj.bias",
+    "blocks.1.attn.out_proj.weight",
+    "blocks.1.mlp.0.bias",
+    "blocks.1.mlp.0.weight",
+    "blocks.1.mlp.2.bias",
+    "blocks.1.mlp.2.weight",
+    "blocks.1.norm1.bias",
+    "blocks.1.norm1.weight",
+    "blocks.1.norm2.bias",
+    "blocks.1.norm2.weight",
+    "blocks.10.attn.in_proj_bias",
+    "blocks.10.attn.in_proj_weight",
+    "blocks.10.attn.out_proj.bias",
+    "blocks.10.attn.out_proj.weight",
+    "blocks.10.mlp.0.bias",
+    "blocks.10.mlp.0.weight",
+    "blocks.10.mlp.2.bias",
+    "blocks.10.mlp.2.weight",
+    "blocks.10.norm1.bias",
+    "blocks.10.norm1.weight",
+    "blocks.10.norm2.bias",
+    "blocks.10.norm2.weight",
+    "blocks.11.attn.in_proj_bias",
+    "blocks.11.attn.in_proj_weight",
+    "blocks.11.attn.out_proj.bias",
+    "blocks.11.attn.out_proj.weight",
+    "blocks.11.mlp.0.bias",
+    "blocks.11.mlp.0.weight",
+    "blocks.11.mlp.2.bias",
+    "blocks.11.mlp.2.weight",
+    "blocks.11.norm1.bias",
+    "blocks.11.norm1.weight",
+    "blocks.11.norm2.bias",
+    "blocks.11.norm2.weight",
+    "blocks.12.attn.in_proj_bias",
+    "blocks.12.attn.in_proj_weight",
+    "blocks.12.attn.out_proj.bias",
+    "blocks.12.attn.out_proj.weight",
+    "blocks.12.mlp.0.bias",
+    "blocks.12.mlp.0.weight",
+    "blocks.12.mlp.2.bias",
+    "blocks.12.mlp.2.weight",
+    "blocks.12.norm1.bias",
+    "blocks.12.norm1.weight",
+    "blocks.12.norm2.bias",
+    "blocks.12.norm2.weight",
+    "blocks.13.attn.in_proj_bias",
+    "blocks.13.attn.in_proj_weight",
+    "blocks.13.attn.out_proj.bias",
+    "blocks.13.attn.out_proj.weight",
+    "blocks.13.mlp.0.bias",
+    "blocks.13.mlp.0.weight",
+    "blocks.13.mlp.2.bias",
+    "blocks.13.mlp.2.weight",
+    "blocks.13.norm1.bias",
+    "blocks.13.norm1.weight",
+    "blocks.13.norm2.bias",
+    "blocks.13.norm2.weight",
+    "blocks.14.attn.in_proj_bias",
+    "blocks.14.attn.in_proj_weight",
+    "blocks.14.attn.out_proj.bias",
+    "blocks.14.attn.out_proj.weight",
+    "blocks.14.mlp.0.bias",
+    "blocks.14.mlp.0.weight",
+    "blocks.14.mlp.2.bias",
+    "blocks.14.mlp.2.weight",
+    "blocks.14.norm1.bias",
+    "blocks.14.norm1.weight",
+    "blocks.14.norm2.bias",
+    "blocks.14.norm2.weight",
+    "blocks.15.attn.in_proj_bias",
+    "blocks.15.attn.in_proj_weight",
+    "blocks.15.attn.out_proj.bias",
+    "blocks.15.attn.out_proj.weight",
+    "blocks.15.mlp.0.bias",
+    "blocks.15.mlp.0.weight",
+    "blocks.15.mlp.2.bias",
+    "blocks.15.mlp.2.weight",
+    "blocks.15.norm1.bias",
+    "blocks.15.norm1.weight",
+    "blocks.15.norm2.bias",
+    "blocks.15.norm2.weight",
+    "blocks.16.attn.in_proj_bias",
+    "blocks.16.attn.in_proj_weight",
+    "blocks.16.attn.out_proj.bias",
+    "blocks.16.attn.out_proj.weight",
+    "blocks.16.mlp.0.bias",
+    "blocks.16.mlp.0.weight",
+    "blocks.16.mlp.2.bias",
+    "blocks.16.mlp.2.weight",
+    "blocks.16.norm1.bias",
+    "blocks.16.norm1.weight",
+    "blocks.16.norm2.bias",
+    "blocks.16.norm2.weight",
+    "blocks.17.attn.in_proj_bias",
+    "blocks.17.attn.in_proj_weight",
+    "blocks.17.attn.out_proj.bias",
+    "blocks.17.attn.out_proj.weight",
+    "blocks.17.mlp.0.bias",
+    "blocks.17.mlp.0.weight",
+    "blocks.17.mlp.2.bias",
+    "blocks.17.mlp.2.weight",
+    "blocks.17.norm1.bias",
+    "blocks.17.norm1.weight",
+    "blocks.17.norm2.bias",
+    "blocks.17.norm2.weight",
+    "blocks.18.attn.in_proj_bias",
+    "blocks.18.attn.in_proj_weight",
+    "blocks.18.attn.out_proj.bias",
+    "blocks.18.attn.out_proj.weight",
+    "blocks.18.mlp.0.bias",
+    "blocks.18.mlp.0.weight",
+    "blocks.18.mlp.2.bias",
+    "blocks.18.mlp.2.weight",
+    "blocks.18.norm1.bias",
+    "blocks.18.norm1.weight",
+    "blocks.18.norm2.bias",
+    "blocks.18.norm2.weight",
+    "blocks.19.attn.in_proj_bias",
+    "blocks.19.attn.in_proj_weight",
+    "blocks.19.attn.out_proj.bias",
+    "blocks.19.attn.out_proj.weight",
+    "blocks.19.mlp.0.bias",
+    "blocks.19.mlp.0.weight",
+    "blocks.19.mlp.2.bias",
+    "blocks.19.mlp.2.weight",
+    "blocks.19.norm1.bias",
+    "blocks.19.norm1.weight",
+    "blocks.19.norm2.bias",
+    "blocks.19.norm2.weight",
+    "blocks.2.attn.in_proj_bias",
+    "blocks.2.attn.in_proj_weight",
+    "blocks.2.attn.out_proj.bias",
+    "blocks.2.attn.out_proj.weight",
+    "blocks.2.mlp.0.bias",
+    "blocks.2.mlp.0.weight",
+    "blocks.2.mlp.2.bias",
+    "blocks.2.mlp.2.weight",
+    "blocks.2.norm1.bias",
+    "blocks.2.norm1.weight",
+    "blocks.2.norm2.bias",
+    "blocks.2.norm2.weight",
+    "blocks.20.attn.in_proj_bias",
+    "blocks.20.attn.in_proj_weight",
+    "blocks.20.attn.out_proj.bias",
+    "blocks.20.attn.out_proj.weight",
+    "blocks.20.mlp.0.bias",
+    "blocks.20.mlp.0.weight",
+    "blocks.20.mlp.2.bias",
+    "blocks.20.mlp.2.weight",
+    "blocks.20.norm1.bias",
+    "blocks.20.norm1.weight",
+    "blocks.20.norm2.bias",
+    "blocks.20.norm2.weight",
+    "blocks.21.attn.in_proj_bias",
+    "blocks.21.attn.in_proj_weight",
+    "blocks.21.attn.out_proj.bias",
+    "blocks.21.attn.out_proj.weight",
+    "blocks.21.mlp.0.bias",
+    "blocks.21.mlp.0.weight",
+    "blocks.21.mlp.2.bias",
+    "blocks.21.mlp.2.weight",
+    "blocks.21.norm1.bias",
+    "blocks.21.norm1.weight",
+    "blocks.21.norm2.bias",
+    "blocks.21.norm2.weight",
+    "blocks.22.attn.in_proj_bias",
+    "blocks.22.attn.in_proj_weight",
+    "blocks.22.attn.out_proj.bias",
+    "blocks.22.attn.out_proj.weight",
+    "blocks.22.mlp.0.bias",
+    "blocks.22.mlp.0.weight",
+    "blocks.22.mlp.2.bias",
+    "blocks.22.mlp.2.weight",
+    "blocks.22.norm1.bias",
+    "blocks.22.norm1.weight",
+    "blocks.22.norm2.bias",
+    "blocks.22.norm2.weight",
+    "blocks.23.attn.in_proj_bias",
+    "blocks.23.attn.in_proj_weight",
+    "blocks.23.attn.out_proj.bias",
+    "blocks.23.attn.out_proj.weight",
+    "blocks.23.mlp.0.bias",
+    "blocks.23.mlp.0.weight",
+    "blocks.23.mlp.2.bias",
+    "blocks.23.mlp.2.weight",
+    "blocks.23.norm1.bias",
+    "blocks.23.norm1.weight",
+    "blocks.23.norm2.bias",
+    "blocks.23.norm2.weight",
+    "blocks.3.attn.in_proj_bias",
+    "blocks.3.attn.in_proj_weight",
+    "blocks.3.attn.out_proj.bias",
+    "blocks.3.attn.out_proj.weight",
+    "blocks.3.mlp.0.bias",
+    "blocks.3.mlp.0.weight",
+    "blocks.3.mlp.2.bias",
+    "blocks.3.mlp.2.weight",
+    "blocks.3.norm1.bias",
+    "blocks.3.norm1.weight",
+    "blocks.3.norm2.bias",
+    "blocks.3.norm2.weight",
+    "blocks.4.attn.in_proj_bias",
+    "blocks.4.attn.in_proj_weight",
+    "blocks.4.attn.out_proj.bias",
+    "blocks.4.attn.out_proj.weight",
+    "blocks.4.mlp.0.bias",
+    "blocks.4.mlp.0.weight",
+    "blocks.4.mlp.2.bias",
+    "blocks.4.mlp.2.weight",
+    "blocks.4.norm1.bias",
+    "blocks.4.norm1.weight",
+    "blocks.4.norm2.bias",
+    "blocks.4.norm2.weight",
+    "blocks.5.attn.in_proj_bias",
+    "blocks.5.attn.in_proj_weight",
+    "blocks.5.attn.out_proj.bias",
+    "blocks.5.attn.out_proj.weight",
+    "blocks.5.mlp.0.bias",
+    "blocks.5.mlp.0.weight",
+    "blocks.5.mlp.2.bias",
+    "blocks.5.mlp.2.weight",
+    "blocks.5.norm1.bias",
+    "blocks.5.norm1.weight",
+    "blocks.5.norm2.bias",
+    "blocks.5.norm2.weight",
+    "blocks.6.attn.in_proj_bias",
+    "blocks.6.attn.in_proj_weight",
+    "blocks.6.attn.out_proj.bias",
+    "blocks.6.attn.out_proj.weight",
+    "blocks.6.mlp.0.bias",
+    "blocks.6.mlp.0.weight",
+    "blocks.6.mlp.2.bias",
+    "blocks.6.mlp.2.weight",
+    "blocks.6.norm1.bias",
+    "blocks.6.norm1.weight",
+    "blocks.6.norm2.bias",
+    "blocks.6.norm2.weight",
+    "blocks.7.attn.in_proj_bias",
+    "blocks.7.attn.in_proj_weight",
+    "blocks.7.attn.out_proj.bias",
+    "blocks.7.attn.out_proj.weight",
+    "blocks.7.mlp.0.bias",
+    "blocks.7.mlp.0.weight",
+    "blocks.7.mlp.2.bias",
+    "blocks.7.mlp.2.weight",
+    "blocks.7.norm1.bias",
+    "blocks.7.norm1.weight",
+    "blocks.7.norm2.bias",
+    "blocks.7.norm2.weight",
+    "blocks.8.attn.in_proj_bias",
+    "blocks.8.attn.in_proj_weight",
+    "blocks.8.attn.out_proj.bias",
+    "blocks.8.attn.out_proj.weight",
+    "blocks.8.mlp.0.bias",
+    "blocks.8.mlp.0.weight",
+    "blocks.8.mlp.2.bias",
+    "blocks.8.mlp.2.weight",
+    "blocks.8.norm1.bias",
+    "blocks.8.norm1.weight",
+    "blocks.8.norm2.bias",
+    "blocks.8.norm2.weight",
+    "blocks.9.attn.in_proj_bias",
+    "blocks.9.attn.in_proj_weight",
+    "blocks.9.attn.out_proj.bias",
+    "blocks.9.attn.out_proj.weight",
+    "blocks.9.mlp.0.bias",
+    "blocks.9.mlp.0.weight",
+    "blocks.9.mlp.2.bias",
+    "blocks.9.mlp.2.weight",
+    "blocks.9.norm1.bias",
+    "blocks.9.norm1.weight",
+    "blocks.9.norm2.bias",
+    "blocks.9.norm2.weight",
+    "norm.bias",
+    "norm.weight",
+    "patch.bias",
+    "patch.weight"
+  ],
+  "skipped_source_keys": [
+    "embeddings.cls_token",
+    "embeddings.mask_token",
+    "embeddings.register_tokens"
+  ],
+  "left_at_init_keys": [
+    "pos"
+  ],
+  "layer_scale_folded": true,
+  "target_param_count": 303754240,
+  "seeded_param_count": 303098880,
+  "declared_losses": [
+    "POSITIONAL: DINOv3 is RoPE-only and carries NO learned absolute-position table; ViTEncoder's `pos` is LEFT AT ITS OWN INIT. The seeded trunk is DINOv3 content at a fresh positional code.",
+    "TOKENS: DINOv3's CLS / register / mask tokens are dropped (ViTEncoder has none). DINOv3 was trained with those tokens attending, so the seeded forward is not bit-identical to the published trunk.",
+    "\u21d2 The Observer-Effect step-0 control (PREREG_V7F \u00a76.2b) therefore measures THIS trunk, not the published DINOv3. Any report that quotes the published rho 0.91 alongside this seed must say so."
+  ],
+  "seed_sha256": "acd988e3e50ba3af803e28b9532d1ea6aea7ea02c40edebfcd06026c30d58fa6",
+  "_evidence_class": "MEASURED (ours; sha256 over the source file and over the emitted tensors)",
+  "source_config": {
+    "architectures": [
+      "DINOv3ViTModel"
+    ],
+    "attention_dropout": 0.0,
+    "drop_path_rate": 0.0,
+    "hidden_act": "gelu",
+    "hidden_size": 1024,
+    "image_size": 224,
+    "initializer_range": 0.02,
+    "intermediate_size": 4096,
+    "key_bias": false,
+    "layer_norm_eps": 1e-05,
+    "layerscale_value": 1.0,
+    "mlp_bias": true,
+    "model_type": "dinov3_vit",
+    "num_attention_heads": 16,
+    "num_channels": 3,
+    "num_hidden_layers": 24,
+    "num_register_tokens": 4,
+    "patch_size": 16,
+    "pos_embed_jitter": null,
+    "pos_embed_rescale": 2.0,
+    "pos_embed_shift": null,
+    "proj_bias": true,
+    "query_bias": true,
+    "rope_theta": 100.0,
+    "torch_dtype": "float32",
+    "transformers_version": "4.56.0.dev0",
+    "use_gated_mlp": false,
+    "value_bias": true
+  }
+}

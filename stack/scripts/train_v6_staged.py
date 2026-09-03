@@ -5580,6 +5580,16 @@ def dry_run(a, stack: V6Stack | None = None) -> dict:
         print(f"[v6 dry] init-from OK · introduced="
               f"{init_report['introduced_keys']} · trunk_md5="
               f"{init_report['trunk_md5_after_load'][:12]}", flush=True)
+    # ⛔ D-V7-DINO-SEED: the dry-run EXERCISES the seed for the same reason it
+    # exercises --init-from and --s2-labels — "a pre-launch verifier that skips
+    # a flag the launch carries is structurally incapable of catching that
+    # flag's failure class".
+    enc_seed_report = apply_encoder_seed(a, stack)
+    if enc_seed_report.get("init_encoder_from"):
+        _resync_ema_o5(stack)
+        _resync_ema_o5(stack)
+        enc_seed_report["exercised"] = True
+    assert_trunk_anchor_unwired(a)
     freeze = apply_stage_freeze(stack, a.stage)
     weights = _weights_from_args(a)
     w_stage_dry = weights.for_stage(a.stage)
@@ -5608,8 +5618,11 @@ def dry_run(a, stack: V6Stack | None = None) -> dict:
     o1_k = min(a.o1_k, a.dry_k)
     o5_k = min(a.o5_k, a.dry_k)
     trainable = [p for p in stack.parameters() if p.requires_grad]
-    opt = (torch.optim.AdamW(trainable, lr=a.lr, weight_decay=a.wd)
-           if trainable else None)
+    # D-V7-DINO-SEED: identical to the previous line at the flag defaults.
+    trunk_opt_report = {"trunk_lr_split": False, "n_groups": 0}
+    opt = None
+    if trainable:
+        opt, trunk_opt_report = build_trunk_optimizer(a, stack, trainable)
     gen = torch.Generator().manual_seed(a.seed)
     rows: list[dict] = []
     t0 = time.time()
@@ -5716,6 +5729,8 @@ def dry_run(a, stack: V6Stack | None = None) -> dict:
         "n_trainable_tensors": len(trainable),
         "precondition": pre,
         "init": init_report,
+        "encoder_seed": enc_seed_report,          # D-V7-DINO-SEED
+        "trunk_optimizer": trunk_opt_report,      # D-V7-DINO-SEED
         "s2_labels": s2_report,
         "gate_verdict": gate["verdict"],
         "_read": "synthetic tensors — NO corpus. This proves the launch "
@@ -6124,6 +6139,15 @@ def train(a) -> dict:
         _resync_ema_o5(stack)
         _resync_ema_o5(stack)
         print(f"[v6] initialised from {json.dumps(init_report)}", flush=True)
+    # ---- D-V7-DINO-SEED: the encoder-only seed (mutually exclusive above) ---
+    enc_seed_report = apply_encoder_seed(a, stack)
+    if enc_seed_report.get("init_encoder_from"):
+        # the O5 EMA/frozen teachers are COPIES of the encoder — resyncing here
+        # is the same reason `--init-from` does it: a teacher left at random
+        # init while the student is seeded is a silent two-model run.
+        _resync_ema_o5(stack)
+        _resync_ema_o5(stack)
+    assert_trunk_anchor_unwired(a)
     stack = stack.to(device)
     freeze = apply_stage_freeze(stack, a.stage)
     print(f"[v6] stage {a.stage}: trainable "
@@ -6658,8 +6682,10 @@ def train(a) -> dict:
               f"allow_oracle_nav={_manifest.allow_oracle_nav} "
               f"(PI-reviewed: Alpamayo CoT + ego)", flush=True)
 
-    opt = torch.optim.AdamW(trainable, lr=a.lr, weight_decay=a.wd)
-    sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=a.steps)
+    # ⛔ D-V7-DINO-SEED: at the flag defaults this IS the previous one-liner
+    # (one flat group + CosineAnnealingLR); see build_trunk_optimizer().
+    opt, trunk_opt_report = build_trunk_optimizer(a, stack, trainable)
+    sched = build_lr_scheduler(a, opt)
     start_step = 0
     if rg["mode"] == "resume":
         start_step = load_resume(stack, opt, rg["from"], stage=a.stage)
@@ -6691,6 +6717,13 @@ def train(a) -> dict:
     cfg_json = _run_config(a, stack, freeze) | {"o4": o4log,
                                                 "precondition": pre,
                                                 "init": init_report,
+                                                # D-V7-DINO-SEED: the trunk's
+                                                # provenance and its schedule
+                                                # travel INTO the run row, not
+                                                # only into a console line.
+                                                "encoder_seed": enc_seed_report,
+                                                "trunk_optimizer":
+                                                    trunk_opt_report,
                                                 "max_horizon": max_h,
                                                 "launch_mode": rg}
     # ⭐ F-9's provenance stamp travels INTO THE RUN ROW, not just the log.
@@ -7817,6 +7850,372 @@ def load_stage_init(stack: V6Stack, ckpt_path, *, strict: bool = True,
 
 
 # ============================================================================
+# D-V7-DINO-SEED — the ENCODER-ONLY seed path (--init-encoder-from)
+# ============================================================================
+#: ⛔ WHY A SECOND DOOR RATHER THAN A LOOSER `--init-from`. `load_stage_init`
+#: above exists to REFUSE a partial checkpoint: a stage that silently starts on
+#: a randomly-initialised trunk "while its log looks healthy" is the failure its
+#: whole message is written against. A DINOv3 seed IS partial by construction
+#: (it carries the encoder subtree and nothing else), so relaxing `--init-from`
+#: to accept it would delete that refusal for every caller — including the
+#: staged ladder, where it is load-bearing.
+#:
+#: ⇒ `--init-encoder-from` is a SEPARATE flag with its OWN, STRICTER contract,
+#: and the `--init-from` path above is left byte-identical.
+#:
+#: NAME (the brief asked for a justification): `--init-encoder-from` reads as a
+#: sibling of `--init-from` — same verb, narrower object — and argparse lists
+#: the two together. The pre-registration's draft spelling `--enc-init-from` is
+#: kept as an ALIAS so `PREREG_V7F.md` §9's launch line runs verbatim, but it is
+#: NOT the canonical name: every other `--enc-*` flag in this parser
+#: (`--enc-dim`, `--enc-depth`, `--enc-heads`) is a GEOMETRY knob, and a fourth
+#: `--enc-*` that is really a checkpoint path would read as a fifth geometry
+#: knob at the exact moment an operator is scanning a launch line for geometry.
+ENCODER_SEED_MARKER = "_tanitad_encoder_seed"
+ENCODER_SEED_FORMAT = "tanitad-encoder-seed"
+
+
+def _encoder_modules(stack: V6Stack) -> list[tuple[str, torch.nn.Module]]:
+    """Every encoder module present on the stack, in a stable order.
+
+    Under `shared_encoder` (the default, and v7f's setting) this is exactly
+    ``[("encoder", ...)]``; arm (b) adds the per-layer trunks. ⛔ Seeding only
+    ``stack.encoder`` while `encoder_tac`/`encoder_str` stayed random would be
+    the partial seed with a different shape, so all of them are seeded and the
+    list of what was seeded is RECORDED."""
+    out = []
+    for name in ("encoder", "encoder_tac", "encoder_str"):
+        m = getattr(stack, name, None)
+        if m is not None:
+            out.append((name, m))
+    return out
+
+
+def load_encoder_seed(stack: V6Stack, seed_path, *, strict: bool = True) -> dict:
+    """Load an ENCODER-ONLY seed (``stack/scripts/dinov3_seed_checkpoint.py``).
+
+    ⛔⛔ THE FAILURE THIS GUARDS IS A SILENT PARTIAL SEED — a load that puts most
+    of the trunk in place and leaves the rest at random init, which then looks
+    EXACTLY like a successful init in every artifact the run writes. So:
+
+      * a seed with **no provenance stamp is REFUSED** (an unstamped tensor bag
+        cannot be audited later, and "it loaded" is not evidence it was DINOv3);
+      * a **geometry disagreement** with the live encoder is REFUSED, field by
+        field;
+      * a **class disagreement** is REFUSED (a `ViTEncoder` seed must not be
+        poured into a `ViT5Encoder` — that is PREREG_V7F D1 option B, which the
+        pre-registration rejects as lossy and unauditable);
+      * **`unexpected` keys** are REFUSED;
+      * **`missing` keys must equal the stamp's `left_at_init_keys` EXACTLY** —
+        not "be a subset of". A seed that quietly dropped a tensor would
+        otherwise pass as a seed that never carried it.
+    """
+    p = Path(seed_path)
+    if not p.exists():
+        raise SystemExit(f"[v6] ⛔ --init-encoder-from {p} does not exist")
+    ck = torch.load(p, map_location="cpu", weights_only=False)
+    if not isinstance(ck, dict) or ENCODER_SEED_MARKER not in ck \
+            or "encoder" not in ck:
+        raise SystemExit(
+            f"[v6] ⛔ --init-encoder-from {p} is not an encoder seed "
+            f"(no {ENCODER_SEED_MARKER!r} / 'encoder' entry). Build one with "
+            f"stack/scripts/dinov3_seed_checkpoint.py. ⚠️ A WHOLE-STACK "
+            f"checkpoint goes through --init-from, not this flag.")
+    prov = ck.get("_provenance")
+    if not isinstance(prov, dict) or not prov.get("format"):
+        raise SystemExit(
+            f"[v6] ⛔ --init-encoder-from {p} carries NO PROVENANCE STAMP. "
+            f"Refusing: an unstamped seed cannot be audited, so a run row "
+            f"could name DINOv3 while standing on anything at all. Rebuild it "
+            f"with stack/scripts/dinov3_seed_checkpoint.py.")
+    if prov.get("format") != ENCODER_SEED_FORMAT:
+        raise SystemExit(
+            f"[v6] ⛔ --init-encoder-from {p}: stamp format "
+            f"{prov.get('format')!r} != {ENCODER_SEED_FORMAT!r}")
+
+    mods = _encoder_modules(stack)
+    if not mods:
+        raise SystemExit("[v6] ⛔ the stack has no encoder module to seed")
+    live_cls = type(mods[0][1]).__name__
+    want_cls = (prov.get("target_geometry") or {}).get("class")
+    if want_cls != live_cls:
+        raise SystemExit(
+            f"[v6] ⛔ --init-encoder-from {p} was built for {want_cls!r} but "
+            f"this run's encoder is {live_cls!r}. ⚠️ If you passed "
+            f"--vit5-encoder: a DINOv3 port onto ViT5Encoder must DROP the "
+            f"LayerNorm biases and the q/v biases (RMSNorm + bias-free qkv), "
+            f"which is PREREG_V7F.md §10 D1 option B — rejected there as "
+            f"'lossy and unauditable'. Drop --vit5-encoder, or build a seed "
+            f"for the encoder you are actually running.")
+
+    ec = stack.cfg.encoder
+    tg = prov.get("target_geometry") or {}
+    # ⚠️ RESOLVED geometry on BOTH sides. `image_width=None` and
+    # `image_width == image_size` are the SAME geometry by EncoderConfig's own
+    # `image_hw()` contract, and comparing the RAW field refuses two identical
+    # configs (measured: the converter's square cfg carries None while
+    # `build_stack_from_args` carries the width).
+    ih, iw = ec.image_hw()
+    live = {"d_model": int(ec.d_model), "depth": int(ec.depth),
+            "n_heads": int(ec.n_heads), "patch_size": int(ec.patch_size),
+            "in_channels": int(ec.in_channels), "image_size": int(ih),
+            "image_width": int(iw),
+            "n_tokens": int(mods[0][1].n_tokens)}
+    bad = [(k, tg.get(k), v) for k, v in live.items()
+           if k in tg and tg.get(k) != v]
+    if bad:
+        raise SystemExit(
+            "[v6] ⛔ --init-encoder-from geometry disagrees with this run:\n"
+            + "\n".join(f"    {k}: seed says {s}, run builds {r}"
+                        for k, s, r in bad)
+            + "\n  A seed loaded across a geometry mismatch is the "
+              "silent-partial failure both this loader and the converter "
+              "exist to refuse.")
+
+    sd = {k: v for k, v in ck["encoder"].items()}
+    declared_init = sorted(prov.get("left_at_init_keys") or [])
+    per_module = []
+    for name, mod in mods:
+        missing, unexpected = mod.load_state_dict(sd, strict=False)
+        missing, unexpected = sorted(missing), sorted(unexpected)
+        if strict and unexpected:
+            raise SystemExit(
+                f"[v6] ⛔ --init-encoder-from {p}: the seed carries "
+                f"{len(unexpected)} tensor(s) {name} does not have: "
+                f"{unexpected[:8]}")
+        if strict and missing != declared_init:
+            raise SystemExit(
+                f"[v6] ⛔ --init-encoder-from {p}: {name} would be left at "
+                f"RANDOM INIT on {missing} but the stamp declares "
+                f"{declared_init}. ⛔ These must match EXACTLY — a seed that "
+                f"quietly dropped a tensor is indistinguishable from a seed "
+                f"that never carried one, and that is the whole failure "
+                f"class.")
+        per_module.append({"module": name, "n_loaded": len(sd),
+                           "left_at_init": missing, "unexpected": unexpected})
+
+    import hashlib
+    h = hashlib.md5()
+    for n, prm in sorted(stack.named_parameters()):
+        if stack.group_of(n) == "encoder":
+            h.update(n.encode())
+            h.update(prm.detach().cpu().numpy().tobytes())
+    return {
+        "init_encoder_from": str(p),
+        "seeded_modules": [m["module"] for m in per_module],
+        "per_module": per_module,
+        "n_tensors_in_seed": len(sd),
+        "left_at_init": declared_init,
+        "dinov3_model_id": prov.get("dinov3_model_id"),
+        "dinov3_variant": prov.get("dinov3_variant"),
+        "source_sha256": prov.get("source_sha256"),
+        "seed_sha256": prov.get("seed_sha256"),
+        "layer_scale_folded": prov.get("layer_scale_folded"),
+        "declared_losses": prov.get("declared_losses"),
+        "n_mapped": prov.get("n_mapped"),
+        "n_skipped_allowlist": prov.get("n_skipped_allowlist"),
+        "n_left_at_init": prov.get("n_left_at_init"),
+        "encoder_md5_after_seed": h.hexdigest(),
+        "_evidence_class": "MEASURED (ours; md5 over the seeded encoder)",
+    }
+
+
+def apply_encoder_seed(a, stack: V6Stack) -> dict:
+    """Call site shared by the real run and by ``--dry-run``.
+
+    ⚠️ The dry-run wires this DELIBERATELY: *"a pre-launch verifier that skips a
+    flag the launch carries is structurally incapable of catching that flag's
+    failure class"* — the reason `--init-from` and `--s2-labels` are already
+    exercised there."""
+    path = getattr(a, "init_encoder_from", None)
+    if not path:
+        return {"init_encoder_from": None,
+                "_read": "--init-encoder-from was NOT supplied; the trunk is "
+                         "at its own init (or at whatever --init-from loaded)."}
+    if getattr(a, "init_from", None):
+        raise SystemExit(
+            "[v6] ⛔ --init-from and --init-encoder-from together are AMBIGUOUS "
+            "— the whole-stack checkpoint also carries an encoder, so which "
+            "trunk the run stands on would depend on load order. Pass exactly "
+            "one. (The same class as the resume/--init-from collision this "
+            "file already supersedes in place.)")
+    rep = load_encoder_seed(stack, path)
+    print(f"[v6] ⭐ trunk SEEDED from {rep['dinov3_model_id']} "
+          f"({rep['dinov3_variant']}) · modules={rep['seeded_modules']} · "
+          f"mapped={rep['n_mapped']} skipped={rep['n_skipped_allowlist']} "
+          f"left_at_init={rep['left_at_init']} · "
+          f"layer_scale_folded={rep['layer_scale_folded']} · "
+          f"encoder_md5={rep['encoder_md5_after_seed'][:12]}", flush=True)
+    for line in (rep.get("declared_losses") or []):
+        print(f"[v6]   ⚠️ {line}", flush=True)
+    return rep
+
+
+# ============================================================================
+# D-V7-DINO-SEED — the restrained unfreeze: trunk LR group + warmup
+# ============================================================================
+#: ⛔ DEFAULTS PRESERVE TODAY'S BEHAVIOUR *EXACTLY*, and "exactly" here means
+#: ONE param group, not two equal ones. Two groups with identical `lr` compute
+#: the same update, but they change `opt.state_dict()['param_groups']` — and
+#: `load_resume` calls `opt.load_state_dict`, which REFUSES a different group
+#: count. Splitting unconditionally would therefore have made every existing
+#: checkpoint unresumable while every arithmetic test still passed.
+#:
+#: Precedent for the split itself: `stack/scripts/refa_v1_train.py:549-551`
+#: (`adapter_lr_mult`), which builds AdamW from two `{"params", "lr"}` groups.
+TRUNK_GROUP = "encoder"          # V6Stack.group_of(); readouts keep the full LR
+
+
+def trunk_lr_split_active(a) -> bool:
+    """True iff either trunk flag departs from its behaviour-preserving default."""
+    return (float(getattr(a, "trunk_lr_scale", 1.0)) != 1.0
+            or int(getattr(a, "trunk_lr_warmup_steps", 0)) > 0)
+
+
+def build_trunk_optimizer(a, stack: V6Stack, trainable: list) -> tuple:
+    """``(optimizer, report)``. At the defaults this IS today's one-liner.
+
+    The trunk group is exactly ``V6Stack.group_of(name) == "encoder"`` — the
+    DINOv3-seeded ViT and nothing else. ⚠️ The READOUT deliberately stays in the
+    full-LR group: it is fresh at v7f, was never seeded, and `encoder_parameters`
+    (which bundles the two) exists for a different purpose — X3's planner
+    firewall, not a learning-rate policy.
+
+    Auxiliary modules built later in `train()` (O7/O8/O9/O10 heads) are already
+    inside ``trainable`` and are NOT stack parameters; the split is by ``id``,
+    so they land in the non-trunk group, which is where they belong."""
+    if not trunk_lr_split_active(a):
+        opt = torch.optim.AdamW(trainable, lr=a.lr, weight_decay=a.wd)
+        return opt, {"trunk_lr_split": False, "n_groups": 1,
+                     "n_params": len(trainable),
+                     "_read": "defaults: ONE flat AdamW group, byte-identical "
+                              "to every arm trained before D-V7-DINO-SEED"}
+    trunk_ids = {id(p) for n, p in stack.named_parameters()
+                 if stack.group_of(n) == TRUNK_GROUP}
+    trunk_p = [p for p in trainable if id(p) in trunk_ids]
+    rest_p = [p for p in trainable if id(p) not in trunk_ids]
+    if not trunk_p:
+        raise SystemExit(
+            f"[v6] ⛔ --trunk-lr-scale/--trunk-lr-warmup-steps were set but the "
+            f"'{TRUNK_GROUP}' group has NO trainable parameter — the stage "
+            f"freeze or --freeze-encoder already froze it. A trunk schedule on "
+            f"a frozen trunk is a flag that does nothing, which is worse than "
+            f"an error because the run row would record the schedule.")
+    assert len(trunk_p) + len(rest_p) == len(trainable), (
+        "the trunk split lost or duplicated a parameter")
+    # ⚠️ BOTH groups are created at `a.lr`. The trunk's multiplier lives in the
+    # SCHEDULER's lambda, not in `initial_lr` — otherwise the two would compose
+    # and the trunk would run at `scale**2`.
+    opt = torch.optim.AdamW(
+        [{"params": trunk_p, "lr": a.lr, "tanitad_group": TRUNK_GROUP},
+         {"params": rest_p, "lr": a.lr, "tanitad_group": "rest"}],
+        lr=a.lr, weight_decay=a.wd)
+    rep = {"trunk_lr_split": True, "n_groups": 2,
+           "n_trunk_params": len(trunk_p), "n_rest_params": len(rest_p),
+           "n_trunk_numel": int(sum(p.numel() for p in trunk_p)),
+           "trunk_lr_scale": float(getattr(a, "trunk_lr_scale", 1.0)),
+           "trunk_lr_warmup_steps": int(getattr(a, "trunk_lr_warmup_steps", 0)),
+           "group_definition": f"V6Stack.group_of(name) == {TRUNK_GROUP!r}"}
+    print(f"[trunk] discriminative LR ON · scale={rep['trunk_lr_scale']:g} "
+          f"warmup={rep['trunk_lr_warmup_steps']} steps · "
+          f"{rep['n_trunk_params']} trunk tensors "
+          f"({rep['n_trunk_numel'] / 1e6:.2f} M) vs {rep['n_rest_params']} "
+          f"others", flush=True)
+    return opt, rep
+
+
+def trunk_lr_factor(step: int, a) -> float:
+    """The trunk group's multiplier at ``step`` — 0 during warmup, else scale.
+
+    ⚠️ A HARD GATE, NOT A RAMP. `PREREG_V7F.md` §10 D7 asks for *"a 2,000-step
+    warmup during which the trunk LR is 0"* so the heads learn against a
+    STATIONARY trunk first; a linear ramp would make "stationary" untrue from
+    step 1 and is deliberately not implemented."""
+    warm = int(getattr(a, "trunk_lr_warmup_steps", 0))
+    if warm > 0 and step < warm:
+        return 0.0
+    return float(getattr(a, "trunk_lr_scale", 1.0))
+
+
+def build_lr_scheduler(a, opt):
+    """Today's `CosineAnnealingLR`, or its closed form plus the trunk factor.
+
+    ⛔ WHY NOT "COSINE, THEN OVERWRITE THE TRUNK GROUP'S `lr`":
+    `CosineAnnealingLR.get_lr()` is RECURSIVE — it derives the next value from
+    the group's CURRENT `lr` (that is what makes it chainable). Mutating
+    `group['lr']` between steps therefore does not apply a factor, it CORRUPTS
+    the schedule from that step on, silently and only for the trunk. The
+    closed form `(1 + cos(pi*e/T))/2` is what `CosineAnnealingLR(eta_min=0)`
+    computes, so at `trunk_factor == 1` the two agree to float rounding
+    (pinned by stack/tests/test_dinov3_seed.py).
+
+    ⇒ At the defaults this returns the incumbent `CosineAnnealingLR` object
+    itself, so nothing about the default path is even re-derived."""
+    if not trunk_lr_split_active(a):
+        return torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=a.steps)
+    import math as _math
+    t_max = max(1, int(a.steps))
+
+    def _cos(e: int) -> float:
+        return (1.0 + _math.cos(_math.pi * min(e, t_max) / t_max)) / 2.0
+
+    return torch.optim.lr_scheduler.LambdaLR(
+        opt, [lambda e: trunk_lr_factor(int(e), a) * _cos(int(e)),
+              lambda e: _cos(int(e))])
+
+
+def assert_trunk_anchor_unwired(a) -> float:
+    """`--w-trunk-anchor` is DECLARED but NOT WIRED. Non-zero REFUSES.
+
+    ⛔ WHY A REFUSAL AND NOT A NO-OP. This repo's own words, from
+    `refa_v1_train.py`: *"A capability that exists at both ends and is not
+    connected in the middle is not a capability."* A weight flag that is
+    accepted, recorded in `config.json`, and then contributes nothing would
+    produce a run row claiming a distillation anchor that never ran — the exact
+    "looks like a successful init" class this whole change is written against.
+
+    ⭐ WHAT IS MISSING, AND WHY IT IS NOT A SMALL EDIT (MEASURED, source read):
+      1. **O7's teacher CANNOT be reused.** Three independent reasons, any one
+         sufficient: (a) it is `facebook/dinov3-vitl16-…` (1024-d ViT-L/16),
+         while the anchor must be the frozen copy of the *seed's own* ViT-B/16
+         weights — anchoring to a different network is not an anchor; (b) its
+         `target()` returns READOUT CELLS (`[B, n_cells, 1024]`, pooled through
+         `grid_hw`), not the per-patch trunk tokens the anchor pulls on; (c) it
+         is constructed ONLY when `--w-o7-distill > 0`, and `PREREG_V7F.md` §4.1
+         puts O7 on the do-not-add list at **zero** for every v7f arm — so on
+         the v7f launch line no teacher exists at all.
+         ⇒ **A SECOND FROZEN FORWARD IS REQUIRED.** That is the honest answer to
+         the brief's question, and it is a cost the schedule must carry.
+      2. The anchor also needs the LIVE encoder's patch tokens at the loss site.
+         `stage_a_losses` does not expose them (`L["out"]` carries `z_op_win`,
+         `z_tac`, `z_str`, `plan` — grep `L["out"][` — there is no token entry),
+         and `encode_window(..., return_tokens=True)` exists but is not called
+         by the trainer. Reaching them means either changing the forward's
+         return contract or paying a second LIVE encoder forward.
+
+    ⇒ ESCALATED, not silently narrowed: the loss-composition path is owned
+    elsewhere and (2) is a change to it. `--w-trunk-anchor 0.0` (the default) is
+    byte-identical to today; any other value stops the run here."""
+    w = float(getattr(a, "w_trunk_anchor", 0.0))
+    if w:
+        raise SystemExit(
+            f"[v6] ⛔ --w-trunk-anchor {w:g} is DECLARED BUT NOT WIRED "
+            f"(D-V7-DINO-SEED). Refusing rather than training without it and "
+            f"recording it in config.json.\n"
+            f"  Two things are missing, both outside this change's file "
+            f"ownership:\n"
+            f"    1. a FROZEN second copy of the seed's own DINOv3 weights — "
+            f"O7's teacher cannot be reused (it is vitl16 not vitb16, it "
+            f"returns readout CELLS not patch tokens, and at "
+            f"--w-o7-distill 0 it is never constructed at all);\n"
+            f"    2. the LIVE encoder's patch tokens at the loss site — "
+            f"`stage_a_losses` does not return them today.\n"
+            f"  Run with --w-trunk-anchor 0 (the `full`/regression arm of "
+            f"PREREG_V7F R3), or wire the term first.")
+    return w
+
+
+# ============================================================================
 # CLI
 # ============================================================================
 
@@ -7846,6 +8245,43 @@ def build_parser() -> argparse.ArgumentParser:
                     help="previous stage's ckpt.pt — S-T/S-S/S-J MUST start "
                          "from the stage below, or the ladder is four "
                          "unrelated models with a gate between them")
+    # ---- D-V7-DINO-SEED: the trunk arrives from OUTSIDE the ladder ----------
+    ap.add_argument("--init-encoder-from", "--enc-init-from",
+                    dest="init_encoder_from", default=None,
+                    help="ENCODER-ONLY seed built by "
+                         "stack/scripts/dinov3_seed_checkpoint.py (the PI's "
+                         "'DINO as init'). ⛔ Refuses without a provenance "
+                         "stamp, on a geometry disagreement, or if any tensor "
+                         "would be left at random init that the stamp does not "
+                         "declare. Mutually exclusive with --init-from. "
+                         "(--enc-init-from is an alias so PREREG_V7F §9's "
+                         "launch line runs verbatim.)")
+    ap.add_argument("--trunk-lr-scale", type=float, default=1.0,
+                    help="multiply the TRUNK group's LR by this "
+                         "(V6Stack.group_of == 'encoder'; the readout keeps "
+                         "the full LR). ⛔ 1.0 = today: ONE flat AdamW group, "
+                         "not two equal ones — a second group would break "
+                         "--resume against every existing checkpoint. "
+                         "PREREG_V7F D7 recommends 0.1")
+    ap.add_argument("--trunk-lr-warmup-steps", type=int, default=0,
+                    help="steps during which the trunk LR is EXACTLY 0, so the "
+                         "heads learn against a stationary trunk first "
+                         "(PREREG_V7F D7: 2000). A hard gate, not a ramp — a "
+                         "ramp would make 'stationary' untrue from step 1. "
+                         "0 = today's behaviour")
+    ap.add_argument("--w-trunk-anchor", type=float, default=0.0,
+                    help="⛔ DECLARED BUT NOT WIRED — any non-zero value "
+                         "REFUSES at startup rather than training without the "
+                         "term while config.json records it. Needs a second "
+                         "frozen DINOv3 forward (O7's teacher is vitl16, "
+                         "returns readout cells, and is absent at "
+                         "--w-o7-distill 0) plus encoder patch tokens at the "
+                         "loss site. See assert_trunk_anchor_unwired()")
+    ap.add_argument("--trunk-anchor-model", type=str,
+                    default="facebook/dinov3-vitb16-pretrain-lvd1689m",
+                    help="the frozen teacher --w-trunk-anchor would pull "
+                         "toward; RECORDED in config.json today, inert until "
+                         "the term is wired")
     ap.add_argument("--gate-probes", default=None,
                     help="JSON of externally-run battery probes to fold into "
                          "this stage's gate")

@@ -305,13 +305,13 @@ is not R1, and R1 reports its per-arm window census beside every number.
 
 ## 9. The launch line
 
-⛔ **Illustrative and NOT runnable as written.** Three items are unresolved: `--enc-init-from` does
+⛔ **THREE DEFECTS WERE FOUND IN THIS LAUNCH LINE AFTER PUBLICATION AND ARE CORRECTED IN PLACE BELOW (D-V7-DINO-SEED, 2026-09-03): the stage was `S-S` (frozen trunk, the opposite of this document's premise), `--vit5-encoder` contradicted D1, and `--param-budget` takes RAW PARAMS so D5's shorthand `300` refuses instantly — write `300000000`.** ⛔ **Illustrative and NOT runnable as written.** Three items are unresolved: `--enc-init-from` does
 not exist (E1 / §10 D1), the LDAD flag does not exist (§10 D4), and the eval-exclusion flag is the
 other agent's deliverable (E2). Paths are Thor-side and must be re-verified on the actual box.
 
 ```bash
 PYTHONPATH=/workspace/TanitAD/stack python3 stack/scripts/train_v6_staged.py \
-  --stage S-S --out /home/nvidia/experiments/v7f-b1-1ep \
+  --stage S-W --out /home/nvidia/experiments/v7f-b1-1ep \n  `# ⛔ CORRECTED 2026-09-03 (D-V7-DINO-SEED E1): this line said --stage S-S, which trains ONLY` \n  `# layer_str (v6.py STAGE_GROUPS: S-S -> ('layer_str',)) -- the trunk AND the operative predictor` \n  `# would have been FROZEN, i.e. the exact opposite of this document's premise. S-W trains` \n  `# ('encoder','readout','predictor_op','aux'). Verified by executing STAGE_GROUPS.` \
   \
   `# ---- corpus + parity + eval exclusion (E2 is a PRECONDITION) ----` \
   --v2-cache /home/nvidia/data/physicalai-b1-w120-256x640cyl \
@@ -327,7 +327,7 @@ PYTHONPATH=/workspace/TanitAD/stack python3 stack/scripts/train_v6_staged.py \
   `# ---- the trunk: DINOv3 ViT-B/16, TRAINABLE, anchored (§10 D1/D2) ----` \
   --enc-init-from <seed_ckpt with the DINOv3-converted encoder subtree>   `# ⛔ NEW` \
   --newest-frame-only --in-channels 3 \
-  --vit5-encoder --n-registers 4 --enc-dim 768 --enc-depth 12 --enc-heads 12 \
+  `# ⛔ CORRECTED 2026-09-03 (E2): --vit5-encoder --n-registers 4 REMOVED -- they contradict this` \n  `# document's own D1, which rejects a DINOv3 port onto ViT5Encoder as lossy and unauditable` \n  `# (RMSNorm has no bias and qkv/proj are bias-free, so DINOv3's LayerNorm and q/v biases would` \n  `# be silently dropped). The converter refuses --target vit5 and the loader refuses the class.` \n  --enc-dim 768 --enc-depth 12 --enc-heads 12 \
   --patch 16 --frame-h 256 --frame-w 640 --projection cylindrical --frame-hfov 120 \
   --trunk-lr-scale 0.1 --trunk-lr-warmup-steps 2000 \                     `# ⛔ NEW (§10 D1)` \
   --w-trunk-anchor 1.0 --trunk-anchor-model facebook/dinov3-vitb16-pretrain-lvd1689m \  `# ⛔ NEW` \

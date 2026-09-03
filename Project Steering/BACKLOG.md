@@ -155,3 +155,10 @@ that all lands before S-W's first gate.
 - **R20 — refcv3 T1 adapter: triage the rescued draft** (`Benchmarks & Evals/Implementation/incoming/2026-09-03-refcv3-arm-UNVERIFIED/`). Re-derive the T1 definition for a supervised trajectory model FIRST (the killed agent never wrote it down), then decide: finish the draft or restart from the current `refav1_arm.py`, which has since gained `ha0`, the trivial-profile instrument and `--action-units`. It also carries C-REFCV3-ARM-SAME-DEFECT. refcv3 ends ≈ 2026-09-03 23:00Z and has no admissible T1 instrument until this lands.
 - **R21 — decide when `--action-units steer` becomes the default** (D-STEER-INTERFACE-RESOLVED). Every banked refav1 lateral number was produced OFF; ON and OFF numbers are not comparable, so the flip needs a stated cut-over and a re-read of anything quoted across it.
 - **R22 — run `actdiv_anchored`'s `d(a)` in BOTH unit conventions** (~15 min CPU): the only admissible test of what the unit costs the imagination, and item (iii) of D-ACTDIV-ANCHORED-REFAV1's next-probe list.
+
+## Added 2026-09-03 10:05 Berlin (from D-V7-DINO-SEED)
+
+- **R15 — STRUCK 2026-09-03**: the DINOv3 seed converter, `--init-encoder-from`, and the trunk-LR / warmup flags are wired and tested.
+- **R23 — wire `--w-trunk-anchor`** (v7f rung R3's `anchored` arm is blocked without it): a SECOND frozen forward of the seed's own ViT-B/16 plus the live encoder's patch tokens at the loss site. O7's teacher cannot be reused (wrong network, wrong granularity, absent at `--w-o7-distill 0`). Loss-composition path; the flag currently refuses at any non-zero value rather than training inert.
+- **R24 — PI decision: authorise (or refuse) the DINOv3 ViT-B/16 pull.** Only ViT-L/16 and dinov2-base are on the box; the converter never downloads. Blocks the v7f seed at the prereg's chosen geometry.
+- **R25 — the `-k` selection in every v7 brief misses new test files by name.** `test_dinov3_seed.py` matches none of `v6|staged|parity|v7_labels|intrain|v7_wiring|eval_exclusion`; the agent correctly refused to rename tests to game the filter. Fix the brief template, not the tests.
